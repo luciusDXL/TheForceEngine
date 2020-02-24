@@ -1,0 +1,57 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.iobj
+*.ipch
+*.idb
+*.db
+*.suo
+*.pdb
+*.ipdb
+*.ilk
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+*.res
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Text Files
+*.txt
+*.log
+*.tlog
+*.user
+*.ini
+
+#Directories
+.vs/
+DarkXL2/Mods/
+DarkXL2/screenshots/
+Build/
+DarkXL2/bug_reports/
+WDFuseCommonFiles/

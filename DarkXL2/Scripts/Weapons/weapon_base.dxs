@@ -1,0 +1,23 @@
+////////////////////////////////////////////////////////////////////////////////////
+// Base Weapon defines and functions
+////////////////////////////////////////////////////////////////////////////////////
+enum WeaponState
+{
+	WSTATE_IDLE = 0,
+	WSTATE_ANIM_ON,
+	WSTATE_ANIM_OFF,
+	WSTATE_NEXT,
+	WSTATE_PRIMARY_FIRE,
+	WSTATE_COUNT
+};
+
+const int weaponOnMoveY = 6;
+const int weaponOffMoveY = 6;
+
+const int weaponOnMoveX = 3;
+const int weaponOffMoveX = 3;
+
+int applyScale(int value, int scale)
+{
+	return value * scale / 256;
+}

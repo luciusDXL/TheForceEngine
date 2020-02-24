@@ -1,0 +1,10 @@
+//////////////////////////////////////////
+// Logic Script
+//////////////////////////////////////////
+#include "basic_enemy.dxs"
+
+void spawnPowerup()
+{
+	Vec3f pos = DXL2_BiasTowardsPlayer(self.position, 0.1f);
+	int objectId = DXL2_SpawnObject(pos, self.angles, self.sectorId, CLASS_FRAME, "IENERGY.FME");
+}

@@ -1,0 +1,1069 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{e4bc45f2-bc7c-4cea-bb69-be1fabdac498}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\glew">
+      <UniqueIdentifier>{1228fb2e-d026-4eee-81f6-0d7df8c63143}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\glew\include">
+      <UniqueIdentifier>{b38077d4-3376-4bb4-ad37-f702496170b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\glew\src">
+      <UniqueIdentifier>{890e91d0-5f1b-4e50-bc46-c1e0a808a2ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\glew\include\GL">
+      <UniqueIdentifier>{1a85b53b-2818-4bf6-8676-6001bcaeb370}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_System">
+      <UniqueIdentifier>{ebf71e02-80ad-4702-a373-012052d406bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Input">
+      <UniqueIdentifier>{3a0682bb-4a78-4913-9955-2a21320aba01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Ui">
+      <UniqueIdentifier>{aba68a93-10de-498a-8a54-ea43f24a4daa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Ui\imGUI">
+      <UniqueIdentifier>{68fab648-63a8-4293-b7b4-7fbf8ba6e6c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_FileSystem">
+      <UniqueIdentifier>{6c511967-59a2-46a6-89ea-83c258bbab1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Renderer">
+      <UniqueIdentifier>{5e2ddf97-f9fe-4a81-bcf9-551cb94251b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Renderer\DXL2_SoftRenderCPU">
+      <UniqueIdentifier>{74bb86b0-f06c-4583-b7a8-5dccd1fce465}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Settings">
+      <UniqueIdentifier>{ef6de83e-9331-4ec3-a8e7-1af08d047a9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Archive">
+      <UniqueIdentifier>{7f0b8e84-1b30-41dc-8dd1-3af94a588ff1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Editor">
+      <UniqueIdentifier>{f94316a4-c755-422d-9653-514822ae5e1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Ui\imGUI\Dirent">
+      <UniqueIdentifier>{50e6eea5-e12a-4e74-87f9-de96ae5de258}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Asset">
+      <UniqueIdentifier>{67ef4364-5919-42c0-887c-cc3818121db5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Game">
+      <UniqueIdentifier>{0a664b9e-5f55-4f7b-955c-711546e09a03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_ScriptSystem">
+      <UniqueIdentifier>{2dd51e17-513d-4c42-9e08-99285a96d717}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Scripts">
+      <UniqueIdentifier>{cc3599c1-ef7d-4bd9-baff-43ab40a8f149}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Scripts\Logics">
+      <UniqueIdentifier>{cd30f449-83c9-4d78-9f4d-c69636059cbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_ScriptSystem\add_on">
+      <UniqueIdentifier>{73c1ef01-cf47-4e2f-9b48-a8fda28105f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_ScriptSystem\add_on\scriptstdstring">
+      <UniqueIdentifier>{afad1863-7fab-4f39-8af1-9124c21cc8d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_ScriptSystem\add_on\scriptbuilder">
+      <UniqueIdentifier>{2ab57aca-2b04-4e0e-8b10-7806e83f385d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_ScriptSystem\add_on\scriptarray">
+      <UniqueIdentifier>{dc246ae5-231b-47e2-bff2-b6c3cd306013}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_LogicSystem">
+      <UniqueIdentifier>{7f16273c-1780-47fa-b722-ca88daa62553}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Scripts\Weapons">
+      <UniqueIdentifier>{02c72b97-39bf-4d84-afc1-2ae96b72fff2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_WeaponSystem">
+      <UniqueIdentifier>{e559bdb1-a166-4b7b-b7f6-56b56630f4bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_InfSystem">
+      <UniqueIdentifier>{33f9fd16-37b7-46c6-a812-f1fe68aabcb9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Polygon">
+      <UniqueIdentifier>{7bc61a74-1f16-4dba-aa19-98a7412735fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_RenderBackend">
+      <UniqueIdentifier>{14eb510b-49f0-4f69-a5dd-e4a87d0c55e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_RenderBackend\Win32OpenGL">
+      <UniqueIdentifier>{24d26e54-31bd-4025-ab27-6adadcd8eeb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shaders">
+      <UniqueIdentifier>{611fa99b-a25f-4491-96c8-c9b3bc0bc331}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Editor\Rendering">
+      <UniqueIdentifier>{7c36ac8c-b077-418a-a7b9-5355961093d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_Editor\Help">
+      <UniqueIdentifier>{359d6537-4a20-4279-aad7-423dc2254889}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Documentation">
+      <UniqueIdentifier>{1cacf2da-5cbb-4ac8-8571-01d106636e3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Documentation\markdown">
+      <UniqueIdentifier>{6814371d-e9b6-4021-8e0a-1c36702e9f76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Documentation\markdown\Game">
+      <UniqueIdentifier>{bcba4e73-dab5-4cd8-b3ba-b19d41e1e2ae}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="main.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="glew\include\GL\glew.h">
+      <Filter>Source\glew\include\GL</Filter>
+    </ClInclude>
+    <ClInclude Include="glew\include\GL\glxew.h">
+      <Filter>Source\glew\include\GL</Filter>
+    </ClInclude>
+    <ClInclude Include="glew\include\GL\wglew.h">
+      <Filter>Source\glew\include\GL</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\types.h">
+      <Filter>Source\DXL2_System</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Input\input.h">
+      <Filter>Source\DXL2_Input</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Input\inputEnum.h">
+      <Filter>Source\DXL2_Input</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imconfig.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imgui.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imgui_impl_opengl3.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imgui_impl_sdl.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imgui_internal.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imstb_rectpack.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imstb_textedit.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imstb_truetype.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\ui.h">
+      <Filter>Source\DXL2_Ui</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\system.h">
+      <Filter>Source\DXL2_System</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_FileSystem\filestream.h">
+      <Filter>Source\DXL2_FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_FileSystem\fileutil.h">
+      <Filter>Source\DXL2_FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_FileSystem\stream.h">
+      <Filter>Source\DXL2_FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Renderer\renderer.h">
+      <Filter>Source\DXL2_Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Renderer\DXL2_SoftRenderCPU\renderer_softCPU.h">
+      <Filter>Source\DXL2_Renderer\DXL2_SoftRenderCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_FileSystem\paths.h">
+      <Filter>Source\DXL2_FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Settings\settings.h">
+      <Filter>Source\DXL2_Settings</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Archive\archive.h">
+      <Filter>Source\DXL2_Archive</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Archive\gobArchive.h">
+      <Filter>Source\DXL2_Archive</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\editor.h">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\perfWindow.h">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\Dirent\dirent.h">
+      <Filter>Source\DXL2_Ui\imGUI\Dirent</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\imGUI\imgui_file_browser.h">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Archive\lfdArchive.h">
+      <Filter>Source\DXL2_Archive</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\archiveViewer.h">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\parser.h">
+      <Filter>Source\DXL2_System</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\paletteAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\textureAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\levelAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\fontAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\spriteAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\colormapAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\math.h">
+      <Filter>Source\DXL2_System</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\assetSystem.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\levelObjectsAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\logicTypes.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\modelAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\geometry.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\modelRendering.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\physics.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\player.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\renderCommon.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\view.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\gameLoop.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\gameHud.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_ScriptSystem\scriptSystem.h">
+      <Filter>Source\DXL2_ScriptSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring.h">
+      <Filter>Source\DXL2_ScriptSystem\add_on\scriptstdstring</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptbuilder\scriptbuilder.h">
+      <Filter>Source\DXL2_ScriptSystem\add_on\scriptbuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptarray\scriptarray.h">
+      <Filter>Source\DXL2_ScriptSystem\add_on\scriptarray</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_LogicSystem\logicSystem.h">
+      <Filter>Source\DXL2_LogicSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\gameObject.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_WeaponSystem\weaponSystem.h">
+      <Filter>Source\DXL2_WeaponSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_WeaponSystem\weapons.h">
+      <Filter>Source\DXL2_WeaponSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\gameMessages.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\levelList.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_InfSystem\infSystem.h">
+      <Filter>Source\DXL2_InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\infAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\memoryPool.h">
+      <Filter>Source\DXL2_System</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\level.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\levelEditor.h">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Asset\imageAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Polygon\clipper.hpp">
+      <Filter>Source\DXL2_Polygon</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Polygon\MPE_fastpoly2tri.h">
+      <Filter>Source\DXL2_Polygon</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Polygon\polygon.h">
+      <Filter>Source\DXL2_Polygon</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_RenderBackend\Win32OpenGL\blit.h">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_RenderBackend\Win32OpenGL\renderTarget.h">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_RenderBackend\renderBackend.h">
+      <Filter>Source\DXL2_RenderBackend</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_RenderBackend\indexBuffer.h">
+      <Filter>Source\DXL2_RenderBackend</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_RenderBackend\shader.h">
+      <Filter>Source\DXL2_RenderBackend</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_RenderBackend\vertexBuffer.h">
+      <Filter>Source\DXL2_RenderBackend</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_RenderBackend\renderState.h">
+      <Filter>Source\DXL2_RenderBackend</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Rendering\lineDraw2d.h">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_RenderBackend\textureGpu.h">
+      <Filter>Source\DXL2_RenderBackend</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Rendering\grid2d.h">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Rendering\trianglesColor2d.h">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Rendering\trianglesTextured2d.h">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Rendering\grid3d.h">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Rendering\lineDraw3d.h">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Rendering\trianglesColor3d.h">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Rendering\editorRender.h">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Ui\markdown.h">
+      <Filter>Source\DXL2_Ui</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\Help\helpWindow.h">
+      <Filter>Source\DXL2_Editor\Help</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Editor\levelEditorData.h">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="glew\src\glew.c">
+      <Filter>Source\glew\src</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Input\input.cpp">
+      <Filter>Source\DXL2_Input</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\imGUI\imgui.cpp">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_demo.cpp">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_draw.cpp">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_impl_opengl3.cpp">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_impl_sdl.cpp">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_widgets.cpp">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\ui.cpp">
+      <Filter>Source\DXL2_Ui</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_System\system.cpp">
+      <Filter>Source\DXL2_System</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_System\log.cpp">
+      <Filter>Source\DXL2_System</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_FileSystem\filestream.cpp">
+      <Filter>Source\DXL2_FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_FileSystem\fileutil.cpp">
+      <Filter>Source\DXL2_FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Renderer\renderer.cpp">
+      <Filter>Source\DXL2_Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Renderer\DXL2_SoftRenderCPU\renderer_softCPU.cpp">
+      <Filter>Source\DXL2_Renderer\DXL2_SoftRenderCPU</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_FileSystem\paths.cpp">
+      <Filter>Source\DXL2_FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Settings\settings.cpp">
+      <Filter>Source\DXL2_Settings</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Archive\gobArchive.cpp">
+      <Filter>Source\DXL2_Archive</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Archive\archive.cpp">
+      <Filter>Source\DXL2_Archive</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\editor.cpp">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\perfWindow.cpp">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_file_browser.cpp">
+      <Filter>Source\DXL2_Ui\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Archive\lfdArchive.cpp">
+      <Filter>Source\DXL2_Archive</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\archiveViewer.cpp">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_System\parser.cpp">
+      <Filter>Source\DXL2_System</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\paletteAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\textureAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\levelAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\fontAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\spriteAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\colormapAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\assetSystem.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\levelObjectsAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\modelAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\geometry.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\modelRendering.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\physics.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\player.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\renderCommon.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\view.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\gameLoop.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\gameHud.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_ScriptSystem\scriptSystem.cpp">
+      <Filter>Source\DXL2_ScriptSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring.cpp">
+      <Filter>Source\DXL2_ScriptSystem\add_on\scriptstdstring</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring_utils.cpp">
+      <Filter>Source\DXL2_ScriptSystem\add_on\scriptstdstring</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptbuilder\scriptbuilder.cpp">
+      <Filter>Source\DXL2_ScriptSystem\add_on\scriptbuilder</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptarray\scriptarray.cpp">
+      <Filter>Source\DXL2_ScriptSystem\add_on\scriptarray</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_LogicSystem\logicSystem.cpp">
+      <Filter>Source\DXL2_LogicSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_WeaponSystem\weaponSystem.cpp">
+      <Filter>Source\DXL2_WeaponSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\gameObject.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\gameMessages.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\levelList.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_InfSystem\infSystem.cpp">
+      <Filter>Source\DXL2_InfSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\infAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_System\memoryPool.cpp">
+      <Filter>Source\DXL2_System</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\level.cpp">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\levelEditor.cpp">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\imageAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Polygon\clipper.cpp">
+      <Filter>Source\DXL2_Polygon</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Polygon\polygon.cpp">
+      <Filter>Source\DXL2_Polygon</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\blit.cpp">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\renderTarget.cpp">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\shader.cpp">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\renderBackend.cpp">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\vertexBuffer.cpp">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\indexBuffer.cpp">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\renderState.cpp">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Rendering\lineDraw2d.cpp">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\textureGpu.cpp">
+      <Filter>Source\DXL2_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Rendering\grid2d.cpp">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Rendering\trianglesColor2d.cpp">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Rendering\trianglesTextured2d.cpp">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_System\math.cpp">
+      <Filter>Source\DXL2_System</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Rendering\grid3d.cpp">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Rendering\lineDraw3d.cpp">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Rendering\trianglesColor3d.cpp">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Rendering\editorRender.cpp">
+      <Filter>Source\DXL2_Editor\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Ui\markdown.cpp">
+      <Filter>Source\DXL2_Ui</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\Help\helpWindow.cpp">
+      <Filter>Source\DXL2_Editor\Help</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Editor\levelEditorData.cpp">
+      <Filter>Source\DXL2_Editor</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DarkXL2.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="DarkXL2.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Scripts\Logics\logic_yellow.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_anim.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_autogun.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_barrel.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_battery.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_blue.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_boba_fett.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_bossk.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_cannon.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_cleats.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code1.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code2.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code3.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code4.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code5.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code6.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code7.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code8.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_code9.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_commando.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_concussion.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_d_troop1.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_d_troop2.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_d_troop3.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_datatape.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_detonator.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_detonators.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_dt_weapon.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_energy.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_fusion.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_g_guard.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_generator.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_goggles.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer1.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer2.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer3.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer4.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer5.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer6.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer7.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer8.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officer9.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officerr.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officery.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_int_droid.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_invincible.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_kell.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_key.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_land_mine.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_life.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_mask.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_medkit.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_mine.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_mines.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_missiles.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_mortar.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_mousebot.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_nava.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_phrik.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_pile.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_plans.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_plasma.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_player.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_power.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_probe_droid.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_red.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_ree_yees.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_ree_yees2.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_remote.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_revive.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_rifle.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_scenery.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_sewer1.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_shell.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_shells.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_shield.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_storm1.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_supercharge.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_troop.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_turret.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_update.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_welder.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_template.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\enemy_states.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Weapons\weapon_pistol.dxs">
+      <Filter>Source\Scripts\Weapons</Filter>
+    </None>
+    <None Include="Scripts\Weapons\weapon_base.dxs">
+      <Filter>Source\Scripts\Weapons</Filter>
+    </None>
+    <None Include="Scripts\Weapons\weapon_punch.dxs">
+      <Filter>Source\Scripts\Weapons</Filter>
+    </None>
+    <None Include="Scripts\Weapons\weapon_rifle.dxs">
+      <Filter>Source\Scripts\Weapons</Filter>
+    </None>
+    <None Include="Scripts\Logics\basic_enemy.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_missile.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Scripts\Logics\logic_i_officerb.dxs">
+      <Filter>Source\Scripts\Logics</Filter>
+    </None>
+    <None Include="Shaders\blit.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\blit.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\grid2d.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\grid2d.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\line2d.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\line2d.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri2dColor.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri2dColor.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri2dTextured.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri2dTextured.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\grid3d.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\grid3d.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\line3d.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\line3d.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dColor.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dColor.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dTexture.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dTexture.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dTextureTrans.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\tri3dTextureClamp.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_Elevators.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_FormattingDifferences.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_Functions.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_InteractiveElements.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_SimpleInteractiveElements.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_Teleporters.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_Triggers.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_Tutorials.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_Variables.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\InfScript.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\InfTut_BasicDoor.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\InfTut_BasicElevator.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\InfTut_RedKeyDoor.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\InfTut_SwitchDoor.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Level Editor Shortcuts.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Manifesto.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Manual.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\About.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Inf_Editor.md">
+      <Filter>Documentation\markdown</Filter>
+    </None>
+    <None Include="Documentation\markdown\Game\About.md">
+      <Filter>Documentation\markdown\Game</Filter>
+    </None>
+    <None Include="Documentation\markdown\Game\DarkXL2 Manual.md">
+      <Filter>Documentation\markdown\Game</Filter>
+    </None>
+    <None Include="Documentation\markdown\Game\GameManual.md">
+      <Filter>Documentation\markdown\Game</Filter>
+    </None>
+  </ItemGroup>
+</Project>

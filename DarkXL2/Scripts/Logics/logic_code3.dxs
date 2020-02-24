@@ -1,0 +1,24 @@
+//////////////////////////////////////////
+// Logic Script
+//////////////////////////////////////////
+
+// Start is called when the object is spawned.
+void start()
+{
+	DXL2_SetCollision(self.objectId, /*radius*/1.0f, /*height*/2.0f, COLLIDE_PLAYER | COLLIDE_TRIGGER);
+}
+
+// Handle message is called when specific events occur, such as
+// when another object collides with the current object or when
+// the object is shot or is subject to an explosion.
+void handleMessage(int msgId, int arg0, int arg1)
+{
+	if (msgId == LOGIC_MSG_PLAYER_COLLISION)
+	{
+		DXL2_GivePlayerKey(KEY_CODE_3);
+		DXL2_PrintMessage(503);
+		DXL2_Hide(self.objectId);
+		DXL2_SetCollision(self.objectId, 0.0f, 0.0f, COLLIDE_NONE);
+	}
+}
+

@@ -1,0 +1,63 @@
+///////////////////////////////////////
+// Basic enemy template.
+///////////////////////////////////////
+#include "enemy_states.dxs"
+
+// Start is called when the object is spawned.
+void start()
+{
+	self.state = ESTATE_STILL;
+	DXL2_SetAnimFrame(self.objectId, ESTATE_STILL, 0);
+	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
+}
+
+// Stop is called when the object is despawned.
+void stop()
+{
+}
+
+// Tick is called at a fixed rate.
+void tick()
+{
+	if (self.state != ESTATE_STILL && self.state != ESTATE_DEAD)
+	{
+		float frameRate = DXL2_GetAnimFramerate(self.objectId, self.state);
+		uint frameCount = DXL2_GetAnimFrameCount(self.objectId, self.state);
+
+		// Update the animation time.
+		self.time += timeStep;	
+
+		// Loop the animation time.
+		float animLength = float(frameCount) / frameRate;
+		if (self.time >= animLength && self.state == ESTATE_DYING_SHOT)
+		{
+			startAnimation(ESTATE_DEAD);
+			spawnPowerup();
+		}
+		else if (self.time >= animLength)
+		{
+			self.time -= animLength;
+		}
+
+		// Compute the frame index given the current animation time.
+		if (self.state != ESTATE_DEAD)
+		{
+			int	frameIndex = int(self.time * frameRate);
+			DXL2_SetAnimFrame(self.objectId, self.state, frameIndex);
+		}
+	}
+}
+
+// Handle message is called when specific events occur, such as
+// when another object collides with the current object or when
+// the object is shot or is subject to an explosion.
+void handleMessage(int msgId, int arg0, int arg1)
+{
+	if (msgId == LOGIC_MSG_DAMAGED)
+	{
+		// for now just kill...
+		self.hp = 0;
+		DXL2_SetCollision(self.objectId, 0.0f, 0.0f, COLLIDE_NONE);
+		startAnimation(ESTATE_DYING_SHOT);
+	}
+}
