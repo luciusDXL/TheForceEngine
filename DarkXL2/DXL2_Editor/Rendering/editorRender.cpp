@@ -180,7 +180,7 @@ namespace DXL2_EditorRender
 				}
 				else
 				{
-					TrianglesColor3d::addTriangle(triVtx, nullptr, clr32, TrianglesColor3d::TRANS_BLEND);
+					TrianglesColor3d::addTriangle(triVtx, nullptr, clr32, true);
 				}
 
 				if (texTri) { texTri++; }
@@ -241,7 +241,7 @@ namespace DXL2_EditorRender
 				}
 				else
 				{
-					TrianglesColor3d::addTriangles(2, triVtx, nullptr, color, TrianglesColor3d::TRANS_BLEND);
+					TrianglesColor3d::addTriangles(2, triVtx, nullptr, color, true);
 				}
 
 				if (qtex) { qtex++; }
