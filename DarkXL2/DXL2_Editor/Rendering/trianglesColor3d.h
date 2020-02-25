@@ -19,6 +19,7 @@ namespace TrianglesColor3d
 		TRANS_CUTOUT,		// Cutout transparent texels
 		TRANS_CLAMP,		// Cutout transparent texels AND cutout any texels outside of the 0 - 1 range.
 		TRANS_BLEND,		// Alpha blend.
+		TRANS_BLEND_CLAMP,	// Cutout transparent texels AND cutout any texels outside of the 0 - 1 range and blend.
 		TRANS_COUNT,
 	};
 

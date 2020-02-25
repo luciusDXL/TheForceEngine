@@ -24,6 +24,7 @@
 // Convert the level editor to use this instead of the source data directly.
 
 #define TEXTURES_GOB_START_TEX 41
+struct Model;
 
 enum InfType
 {
@@ -144,6 +145,7 @@ struct EditorLevelObject
 
 	// Editor display
 	EditorTexture* display;
+	Model* displayModel;
 
 	// Logics
 	std::vector<Logic> logics;
@@ -255,6 +257,8 @@ namespace LevelEditorData
 	bool generateLevelData();
 	bool generateInfAsset();
 	bool generateObjects();
+
+	EditorTexture* createTexture(const Texture* src);
 
 	// Get the editor level data.
 	EditorLevel* getEditorLevelData();

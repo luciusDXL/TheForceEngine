@@ -101,4 +101,6 @@ namespace DXL2_Math
 	Mat3 transpose(const Mat3& mtx);
 	Mat4 computeProjMatrix(f32 fovInRadians, f32 aspectRatio, f32 zNear, f32 zFar);
 	Mat4 computeInvProjMatrix(const Mat4& mtx);
+
+	void buildRotationMatrix(Vec3f angles, Vec3f* mat);
 }

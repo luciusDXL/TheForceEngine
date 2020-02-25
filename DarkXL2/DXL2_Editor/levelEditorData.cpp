@@ -53,6 +53,7 @@ namespace LevelEditorData
 
 	EditorTexture* getEditorTexture(const Texture* src)
 	{
+		if (!src) { return nullptr; }
 		return getEditorTexture(src->name);
 	}
 
@@ -82,6 +83,35 @@ namespace LevelEditorData
 		}
 
 		return trueColor;
+	}
+
+	EditorTexture* createTexture(const Texture* src)
+	{
+		if (!src) { return nullptr; }
+
+		EditorTexture* tex = getEditorTexture(src->name);
+		if (tex) { return tex; }
+		if (s_objIcons.capacity() == 0) { s_objIcons.reserve(4096u); }
+
+		s_objIcons.push_back({});
+		tex = &s_objIcons.back();
+		tex->scale = { 1.0f, 1.0f };
+
+		const u32* trueColor = convertPalImageToTrueColor(src->frames[0].width, src->frames[0].height, src->frames[0].image);
+		tex->texture = DXL2_RenderBackend::createTexture(src->frames[0].width, src->frames[0].height, trueColor);
+		tex->width   = src->frames[0].width;
+		tex->height  = src->frames[0].height;
+		strcpy(tex->name, src->name);
+
+		tex->scale.x = 1.0f;
+		tex->scale.z = 1.0f;
+		tex->rect[0] = 0.0f;
+		tex->rect[1] = 0.0f;
+		tex->rect[2] = 0.0f;
+		tex->rect[3] = 0.0f;
+
+		s_editorLevel.textureMap[tex->name] = tex;
+		return tex;
 	}
 
 	EditorTexture* createObjectTexture(ObjectClass oclass, const char* dataFile)
@@ -219,6 +249,12 @@ namespace LevelEditorData
 		{
 			DXL2_RenderBackend::freeTexture(s_editorLevel.textures[t].texture);
 		}
+		const size_t iconCount = s_objIcons.size();
+		for (size_t t = 0; t < iconCount; t++)
+		{
+			DXL2_RenderBackend::freeTexture(s_objIcons[t].texture);
+		}
+		s_objIcons.clear();
 		s_editorLevel.textures.clear();
 		s_editorLevel.textureMap.clear();
 	}
@@ -1293,7 +1329,11 @@ namespace LevelEditorData
 					dstObj.dataFile.clear();
 				}
 
-				dstObj.display = createObjectTexture(srcObj->oclass, dstObj.dataFile.c_str());
+				dstObj.display = nullptr;
+				dstObj.displayModel = nullptr;
+
+				if (srcObj->oclass == CLASS_3D) { dstObj.displayModel = DXL2_Model::get(dstObj.dataFile.c_str()); }
+				else { dstObj.display = createObjectTexture(srcObj->oclass, dstObj.dataFile.c_str()); }
 			}
 		}
 	}

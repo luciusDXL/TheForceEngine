@@ -98,7 +98,9 @@ namespace TrianglesColor3d
 		{
 			return false;
 		}
-
+		s_shaderInfo[4] = s_shaderInfo[1];
+		s_shaderInfo[5] = s_shaderInfo[3];
+		
 		// Create buffers
 		// Create vertex and index buffers.
 		u32* indices = new u32[3 * TRI_MAX];
@@ -282,7 +284,7 @@ namespace TrianglesColor3d
 			ShaderInfo* sinfo = &s_shaderInfo[shaderIndex];
 
 			// Enable blending.
-			if (s_drawCalls[i].trans == TRANS_BLEND)
+			if (s_drawCalls[i].trans == TRANS_BLEND || s_drawCalls[i].trans == TRANS_BLEND_CLAMP)
 			{
 				DXL2_RenderState::setStateEnable(true, STATE_BLEND);
 				DXL2_RenderState::setBlendMode(BLEND_ONE, BLEND_ONE_MINUS_SRC_ALPHA);

@@ -2,6 +2,7 @@
 #include "renderCommon.h"
 #include <DXL2_Asset/textureAsset.h>
 #include <DXL2_Asset/levelAsset.h>
+#include <DXL2_System/math.h>
 #include <algorithm>
 #include <vector>
 #include <assert.h>
@@ -132,41 +133,7 @@ namespace DXL2_ModelRender
 		2, 6,
 		3, 7
 	};
-
-	void buildRotationMatrix(Vec3f angles, Vec3f* mat)
-	{
-		if (angles.x == 0.0f && angles.y == 0.0f && angles.z == 0.0f)
-		{
-			// Identity.
-			mat[0] = { 1.0f, 0.0f, 0.0f };
-			mat[1] = { 0.0f, 1.0f, 0.0f };
-			mat[2] = { 0.0f, 0.0f, 1.0f };
-		}
-		else if (angles.x == 0.0f && angles.z == 0.0f)
-		{
-			// Yaw only.
-			const f32 ca = cosf(angles.y);
-			const f32 sa = sinf(angles.y);
-			mat[0] = { ca, 0.0f, sa };
-			mat[1] = { 0.0f, 1.0f, 0.0f };
-			mat[2] = { -sa, 0.0f, ca };
-		}
-		else
-		{
-			// Full orientation.
-			const f32 cX = cosf(angles.x);
-			const f32 sX = sinf(angles.x);
-			const f32 cY = cosf(angles.y);
-			const f32 sY = sinf(angles.y);
-			const f32 cZ = cosf(angles.z);
-			const f32 sZ = sinf(angles.z);
-
-			mat[0] = { cZ * cY, cZ * sY * sX - sZ * cX, cZ * sY * cX + sZ * sX };
-			mat[1] = { sZ * cY, sZ * sY * sX + cZ * cX, sZ * sY * cX - cZ * sX };
-			mat[2] = {     -sY,                cY * sX,                cY * cX };
-		}
-	}
-
+		
 	// Inputs: model, position, orientation and camera data.
 	// Output: screen rect - the screenspace area that the model covers: min = screenRect[0], max = screenRect[1]
 	//         returns true if the model is at least partially on screen, false if not visible.
@@ -178,7 +145,7 @@ namespace DXL2_ModelRender
 		const f32 roll = modelOrientation->z * PI / 180.0f;
 
 		Vec3f mat33[3];
-		buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
 
 		// Transform the local AABB into view space.
 		const Vec3f aabbLocal[] =
@@ -311,7 +278,7 @@ namespace DXL2_ModelRender
 		const f32 roll = modelOrientation->z * PI / 180.0f;
 
 		Vec3f mat33[3];
-		buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
 
 		s_heightOffset = heightOffset ? heightOffset : s_halfHeight;
 		s_sector = sector;

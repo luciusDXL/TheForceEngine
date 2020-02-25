@@ -1212,7 +1212,13 @@ namespace LevelEditor
 			for (u32 i = 0; i < objCount; i++, obj++)
 			{
 				// Skip 3D for now.
-				if (obj->oclass != CLASS_3D)
+				if (obj->oclass == CLASS_3D)
+				{
+					const Vec2f pos = { obj->pos.x, obj->pos.z };
+					DXL2_EditorRender::drawModel2d_Bounds(obj->displayModel, &obj->pos, &obj->orientation, 0x0051331a | alphaBg);
+					DXL2_EditorRender::drawModel2d(sector, obj->displayModel, &pos, &obj->orientation, s_palette->colors, alphaFg);
+				}
+				else
 				{
 					f32 width  = obj->display ? (f32)obj->display->width : 1.0f;
 					f32 height = obj->display ? (f32)obj->display->height : 1.0f;
@@ -2335,7 +2341,12 @@ namespace LevelEditor
 			for (u32 i = 0; i < objCount; i++, obj++)
 			{
 				// Skip 3D for now.
-				if (obj->oclass != CLASS_3D)
+				if (obj->oclass == CLASS_3D)
+				{
+					DXL2_EditorRender::drawModel3d(sector, obj->displayModel, &obj->pos, &obj->orientation, s_palette->colors, alphaFg);
+					DXL2_EditorRender::drawModel3d_Bounds(obj->displayModel, &obj->pos, &obj->orientation, 3.0f / f32(rtHeight), 0x00ffd7a4 | alphaBg);
+				}
+				else
 				{
 					f32 width = obj->display ? (f32)obj->display->width : 1.0f;
 					f32 height = obj->display ? (f32)obj->display->height : 1.0f;
@@ -2387,7 +2398,7 @@ namespace LevelEditor
 							{0.0f, 1.0f},
 						};
 						u32 colorFg[2] = { 0x00ffffff | alphaFg, 0x00ffffff | alphaFg };
-						TrianglesColor3d::addTexturedTriangles(2, vtx, uv, uv, colorFg, obj->display->texture, TrianglesColor3d::TRANS_CLAMP);
+						TrianglesColor3d::addTexturedTriangles(2, vtx, uv, uv, colorFg, obj->display->texture, TrianglesColor3d::TRANS_BLEND_CLAMP);
 					}
 				}
 			}
