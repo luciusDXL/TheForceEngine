@@ -141,7 +141,7 @@ struct EditorLevelObject
 	std::string dataFile;
 	Vec3f pos;
 	Vec3f orientation;
-	u32 difficulty;
+	s32 difficulty;
 
 	// Editor display
 	EditorTexture* display;

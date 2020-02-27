@@ -170,7 +170,7 @@ namespace DXL2_LevelObjects
 					else if (strcasecmp(tokens[t].c_str(), "DIFF:") == 0)
 					{
 						t++;
-						object->difficulty = strtoul(tokens[t].c_str(), &endPtr, 10);
+						object->difficulty = strtol(tokens[t].c_str(), &endPtr, 10);
 					}
 				}
 			}

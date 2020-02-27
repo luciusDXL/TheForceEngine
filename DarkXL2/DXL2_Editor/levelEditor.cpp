@@ -524,7 +524,7 @@ namespace LevelEditor
 				const EditorLevelObject* obj = sector->objects.data();
 				for (u32 i = 0; i < count; i++, obj++)
 				{
-					const f32 width  = obj->display ? (f32)obj->display->width : 1.0f;
+					const f32 width = obj->display ? (f32)obj->display->width : 1.0f;
 					const f32 height = obj->display ? (f32)obj->display->height : 1.0f;
 					// Half width
 					f32 w;
@@ -551,6 +551,11 @@ namespace LevelEditor
 						}
 					}
 				}
+			}
+			if (DXL2_Input::mousePressed(MBUTTON_LEFT))
+			{
+				s_selectedEntity = s_hoveredEntity;
+				s_selectedEntitySector = s_hoveredEntitySector;
 			}
 		}
 
@@ -1266,7 +1271,8 @@ namespace LevelEditor
 			const EditorLevelObject* obj = sector->objects.data();
 			for (u32 o = 0; o < objCount; o++, obj++)
 			{
-				const bool highlight = (s_hoveredEntity == o && s_hoveredEntitySector == i);
+				const bool selected = s_selectedEntity == o && s_selectedEntitySector == i;
+				const bool highlight = (s_hoveredEntity == o && s_hoveredEntitySector == i) || selected;
 				const u32 clrBg = highlight ? (0xffae8653 | alphaBg) : (0x0051331a | alphaBg);
 
 				if (obj->oclass == CLASS_3D)
@@ -1328,16 +1334,42 @@ namespace LevelEditor
 						{1.0f, 0.0f},
 						{0.0f, 0.0f},
 					};
-					const u32 colorFg[2] = { 0x00ffffff | alphaFg, 0x00ffffff | alphaFg };
+					const u32 baseRGB = selected ? 0x00ffa0a0 : 0x00ffffff;
+					const u32 colorFg[2] = { baseRGB | alphaFg, baseRGB | alphaFg };
 					const u32 colorBg[2] = { clrBg, clrBg };
 
 					TriColoredDraw2d::addTriangles(2, vtxClr, colorBg);
 					if (obj->display) { TriTexturedDraw2d::addTriangles(2, vtxTex, uv, colorFg, obj->display->texture); }
+
+					// Draw a direction.
+					const f32 angle = obj->orientation.y * PI / 180.0f;
+					Vec2f dir = { sinf(angle), cosf(angle) };
+
+					// Make an arrow.
+					f32 dx = dir.x * obj->worldExt.x;
+					f32 dz = dir.z * obj->worldExt.z;
+					f32 cx = obj->pos.x + dx;
+					f32 cz = obj->pos.z + dz;
+					f32 tx = -dir.z * obj->worldExt.x * 0.5f;
+					f32 tz =  dir.x * obj->worldExt.z * 0.5f;
+
+					Vec2f vtx[]=
+					{
+						{cx, cz}, {cx + tx - dx * 0.25f, cz + tz - dz * 0.25f},
+						{cx, cz}, {cx - tx - dx * 0.25f, cz - tz - dz * 0.25f},
+					};
+
+					const u32 alphaArrow = s_editMode == LEDIT_ENTITY ? (highlight ? 0xA0000000 : 0x60000000) : 0x30000000;
+					u32 baseRGBArrow = 0x00ffff00;
+					u32 baseClrArrow = baseRGBArrow | alphaArrow;
+					u32 color[] = { baseClrArrow, baseClrArrow, baseClrArrow, baseClrArrow };
+					LineDraw2d::addLines(2, 2.0f, vtx, color);
 				}
 			}
 		}
 		TriColoredDraw2d::drawTriangles();
 		TriTexturedDraw2d::drawTriangles();
+		LineDraw2d::drawLines();
 
 		// Vertices
 		const u32 color[4] = { 0xffae8653, 0xffae8653, 0xff51331a, 0xff51331a };
@@ -2393,7 +2425,8 @@ namespace LevelEditor
 			{
 				f32 bwidth = 3.0f / f32(rtHeight);
 				u32 bcolor = 0x00ffd7a4 | alphaBg;
-				if (s_hoveredEntity == o && s_hoveredEntitySector == i)
+				const bool selected = s_selectedEntity == o && s_selectedEntitySector == i;
+				if ((s_hoveredEntity == o && s_hoveredEntitySector == i) || selected)
 				{
 					bwidth *= 1.25f;
 					bcolor = 0x00ffe7b4 | alphaFg;
@@ -2434,8 +2467,33 @@ namespace LevelEditor
 							{1.0f, 1.0f},
 							{0.0f, 1.0f},
 						};
-						u32 colorFg[2] = { 0x00ffffff | alphaFg, 0x00ffffff | alphaFg };
+						u32 baseRGB = selected ? 0x00ffa0a0 : 0x00ffffff;
+						u32 colorFg[2] = { baseRGB | alphaFg, baseRGB | alphaFg };
 						TrianglesColor3d::addTexturedTriangles(2, vtx, uv, uv, colorFg, obj->display->texture, TrianglesColor3d::TRANS_BLEND_CLAMP);
+
+						// Draw a direction.
+						const f32 angle = obj->orientation.y * PI / 180.0f;
+						const Vec3f dir = { sinf(angle), 0.0f, cosf(angle) };
+
+						// Make an arrow.
+						Vec3f dP  = { dir.x * obj->worldExt.x, obj->worldExt.y, dir.z * obj->worldExt.z };
+						Vec3f cen = { obj->worldCen.x + dP.x, obj->worldCen.y + dP.y, obj->worldCen.z + dP.z };
+						Vec3f tan = { -dir.z * obj->worldExt.x * 0.5f, 0.0f, dir.x * obj->worldExt.z * 0.5f };
+						// Make sure the direction arrow is visible.
+						cen.y = std::min(cen.y, sector->floorAlt - 0.1f);
+
+						Vec3f arrowVtx[] =
+						{
+							cen, {cen.x + tan.x - dP.x * 0.25f, cen.y, cen.z + tan.z - dP.z * 0.25f},
+							cen, {cen.x - tan.x - dP.x * 0.25f, cen.y, cen.z - tan.z - dP.z * 0.25f},
+						};
+
+						const bool highlight = (s_hoveredEntity == o && s_hoveredEntitySector == i) || selected;
+						const u32 alphaArrow = s_editMode == LEDIT_ENTITY ? (highlight ? 0xA0000000 : 0x60000000) : 0x30000000;
+						u32 baseRGBArrow = 0x00ffff00;
+						u32 baseClrArrow = baseRGBArrow | alphaArrow;
+						u32 color[] = { baseClrArrow, baseClrArrow, baseClrArrow, baseClrArrow };
+						LineDraw3d::addLines(2, bwidth, arrowVtx, color);
 					}
 				}
 			}
@@ -3787,6 +3845,75 @@ namespace LevelEditor
 
 	void infoPanelEntity()
 	{
+		s32 entityId = s_selectedEntity >= 0 ? s_selectedEntity : s_hoveredEntity;
+		if (entityId < 0 || !s_levelData) { return; }
+
+		EditorSector* sector = s_levelData->sectors.data() + (s_selectedEntity >= 0 ? s_selectedEntitySector : s_hoveredEntitySector);
+		EditorLevelObject* obj = sector->objects.data() + entityId;
+
+		// difficulty: -3, -2, -1, 0, 1, 2, 3 <+ 3> = 0, 1, 2, 3, 4, 5, 6
+		const s32 diffToFlagMap[] = { DIFF_EASY | DIFF_MEDIUM | DIFF_HARD, DIFF_EASY | DIFF_MEDIUM, DIFF_EASY, DIFF_EASY | DIFF_MEDIUM | DIFF_HARD, DIFF_EASY | DIFF_MEDIUM | DIFF_HARD, DIFF_MEDIUM | DIFF_HARD, DIFF_HARD };
+		u32 diffFlags = diffToFlagMap[obj->difficulty + 3];
+
+		// Entity name = resource.
+		ImGui::LabelText("##Entity", "Entity: %s", obj->dataFile.c_str());
+		// Class.
+		ImGui::LabelText("##EntityClass", "Class: %s", c_objectClassName[obj->oclass]);
+		// Difficulty.
+		ImGui::LabelText("##EntityDiff", "Difficulty:  Easy");  ImGui::SameLine(136.0f);
+		ImGui::CheckboxFlags("##EntityDiffEasy", &diffFlags, DIFF_EASY); ImGui::SameLine(168.0f);
+		ImGui::LabelText("##EntityDiffM", "Medium");  ImGui::SameLine(220.0f);
+		ImGui::CheckboxFlags("##EntityDiffMed", &diffFlags, DIFF_MEDIUM); ImGui::SameLine(252.0f);
+		ImGui::LabelText("##EntityDiffH", "Hard");  ImGui::SameLine(290.0f);
+		ImGui::CheckboxFlags("##EntityDiffHard", &diffFlags, DIFF_HARD);
+		// Position.
+		ImGui::LabelText("##EntityClass", "Position:"); ImGui::SameLine(96.0f);
+		ImGui::InputFloat3("##EntityPos", obj->pos.m, "%0.2f");
+		// Orientation.
+		ImGui::PushItemWidth(64.0f);
+		ImGui::LabelText("##EntityAngleLabel", "Angle"); ImGui::SameLine(64.0f);
+		ImGui::InputFloat("##EntityAngle", &obj->orientation.y, 0.0f, 0.0f, "%0.2f"); ImGui::SameLine(150.0f);
+		ImGui::LabelText("##EntityPitchLabel", "Pitch"); ImGui::SameLine(204.0f);
+		ImGui::InputFloat("##EntityPitch", &obj->orientation.x, 0.0f, 0.0f, "%0.2f"); ImGui::SameLine(290.0f);
+		ImGui::LabelText("##EntityRollLabel", "Roll"); ImGui::SameLine(344.0f);
+		ImGui::InputFloat("##EntityRoll", &obj->orientation.z, 0.0f, 0.0f, "%0.2f");
+		ImGui::PopItemWidth();
+		// TODO: Visual controls for orientation (on the map).
+		
+		// Correct the bounding box center if needed.
+		obj->worldCen = obj->pos;
+		obj->worldCen.y = obj->pos.y - obj->worldExt.y;
+		if (obj->oclass != CLASS_SPIRIT && obj->oclass != CLASS_SAFE && obj->oclass != CLASS_SOUND && obj->display)
+		{
+			obj->worldCen.y += obj->display->scale.z * fabsf(obj->display->rect[1]) * c_spriteTexelToWorldScale;
+		}
+
+		// Fixup difficulty
+		if (diffFlags == (DIFF_EASY | DIFF_MEDIUM | DIFF_HARD))
+		{
+			obj->difficulty = 0;
+		}
+		else if (diffFlags == (DIFF_EASY | DIFF_MEDIUM))
+		{
+			obj->difficulty = -2;
+		}
+		else if (diffFlags == (DIFF_MEDIUM | DIFF_HARD))
+		{
+			obj->difficulty = 2;
+		}
+		else if (diffFlags == DIFF_EASY)
+		{
+			obj->difficulty = -1;
+		}
+		else if (diffFlags == DIFF_MEDIUM)
+		{
+			// This is not actually valid, so pick medium + easy.
+			obj->difficulty = -2;
+		}
+		else if (diffFlags == DIFF_HARD)
+		{
+			obj->difficulty = 3;
+		}
 	}
 
 	void infoToolEnd()

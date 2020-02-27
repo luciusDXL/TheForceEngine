@@ -20,6 +20,13 @@ enum LogicCommonFlags
 	LCF_PAUSE = (1 << 2),
 };
 
+enum Difficulty
+{
+	DIFF_EASY = (1 << 0),
+	DIFF_MEDIUM = (1 << 1),
+	DIFF_HARD = (1 << 2),
+};
+
 // Generates enemies once its sector is activated ("MASTER: ON" message). Continues until the numTerminate is reached or "MASTER: OFF" message is sent.
 // Will not generate enemies when the player can see the generator.
 struct EnemyGenerator
@@ -54,7 +61,7 @@ struct LevelObject
 	u32	dataOffset;
 	Vec3f pos;
 	Vec3f orientation;
-	u32 difficulty;
+	s32 difficulty;
 
 	// Logics
 	std::vector<Logic> logics;

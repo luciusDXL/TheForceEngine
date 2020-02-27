@@ -1305,7 +1305,7 @@ namespace LevelEditorData
 		// Hit objects.
 		if (ray->objSelect)
 		{
-			Vec3f rayInv = { 1.0f/ray->dir.x, 1.0f/ray->dir.y, 1.0f/ray->dir.z };
+			const Vec3f rayInv = { 1.0f/ray->dir.x, 1.0f/ray->dir.y, 1.0f/ray->dir.z };
 			f32 hitDist = (hitInfo->hitSectorId >= 0) ? DXL2_Math::distance(&ray->origin, &hitInfo->hitPoint) : ray->maxDist;
 
 			sector = s_editorLevel.sectors.data();
@@ -1336,12 +1336,12 @@ namespace LevelEditorData
 					else
 					{
 						// Transform the ray into object space and test against the local AABB.
-						Vec3f newDir;
+						// This is the same as intersecting the ray with the OOBB in world space.
 						const Vec3f* mat33 = obj->rotMtxT.m;
+						Vec3f newDir;
 						newDir.x = ray->dir.x*mat33[0].x + ray->dir.y*mat33[0].y + ray->dir.z*mat33[0].z;
 						newDir.y = ray->dir.x*mat33[1].x + ray->dir.y*mat33[1].y + ray->dir.z*mat33[1].z;
 						newDir.z = ray->dir.x*mat33[2].x + ray->dir.y*mat33[2].y + ray->dir.z*mat33[2].z;
-						newDir = DXL2_Math::normalize(&newDir);
 
 						const Vec3f relRayOrigin = { ray->origin.x - obj->pos.x, ray->origin.y - obj->pos.y, ray->origin.z - obj->pos.z };
 						Vec3f localRayOrigin;
