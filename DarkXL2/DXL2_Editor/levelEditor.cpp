@@ -737,6 +737,16 @@ namespace LevelEditor
 						s_selectedVertex = -1;
 					}
 				}
+				else if (s_editMode == LEDIT_ENTITY)
+				{
+					if (DXL2_Input::mousePressed(MBUTTON_LEFT))
+					{
+						s_selectedEntitySector = hitInfo.hitSectorId;
+						s_selectedEntity = hitInfo.hitObjectId;
+					}
+					s_hoveredEntity = hitInfo.hitObjectId;
+					s_hoveredEntitySector = hitInfo.hitSectorId;
+				}
 
 				if (s_editMode != LEDIT_SECTOR) { s_selectedSector = -1; }
 				if (s_editMode != LEDIT_WALL)   { s_selectedWall = -1;   }
@@ -1244,8 +1254,8 @@ namespace LevelEditor
 		}
 
 		// Objects
-		u32 alphaFg = s_editMode == LEDIT_ENTITY ? 0xff000000 : 0xA0000000;
-		u32 alphaBg = s_editMode == LEDIT_ENTITY ? 0xA0000000 : 0x60000000;
+		const u32 alphaFg = s_editMode == LEDIT_ENTITY ? 0xff000000 : 0xA0000000;
+		const u32 alphaBg = s_editMode == LEDIT_ENTITY ? 0xA0000000 : 0x60000000;
 		sector = s_levelData->sectors.data();
 		for (u32 i = 0; i < sectorCount; i++, sector++)
 		{
@@ -1267,25 +1277,25 @@ namespace LevelEditor
 				}
 				else
 				{
-					f32 width  = obj->display ? (f32)obj->display->width : 1.0f;
+					f32 width  = obj->display ? (f32)obj->display->width  : 1.0f;
 					f32 height = obj->display ? (f32)obj->display->height : 1.0f;
 					
 					f32 x0 = -obj->worldExt.x, z0 = -obj->worldExt.z;
 					f32 x1 =  obj->worldExt.x, z1 =  obj->worldExt.z;
 					if (height > width)
 					{
-						f32 dx = obj->worldExt.x * width / height;
+						const f32 dx = obj->worldExt.x * width / height;
 						x0 = -dx;
 						x1 = x0 + 2.0f * dx;
 					}
 					else if (width > height)
 					{
-						f32 dz = obj->worldExt.z * height / width;
+						const f32 dz = obj->worldExt.z * height / width;
 						z0 = -dz;
 						z1 = z0 + 2.0f * dz;
 					}
 
-					Vec2f vtxTex[6]=
+					const Vec2f vtxTex[6]=
 					{
 						{obj->worldCen.x + x0, obj->worldCen.z + z0},
 						{obj->worldCen.x + x1, obj->worldCen.z + z0},
@@ -1308,7 +1318,7 @@ namespace LevelEditor
 						{obj->worldCen.x - obj->worldExt.x*scale, obj->worldCen.z + obj->worldExt.z*scale},
 					};
 
-					Vec2f uv[6] =
+					const Vec2f uv[6] =
 					{
 						{0.0f, 1.0f},
 						{1.0f, 1.0f},
@@ -1318,8 +1328,8 @@ namespace LevelEditor
 						{1.0f, 0.0f},
 						{0.0f, 0.0f},
 					};
-					u32 colorFg[2] = { 0x00ffffff | alphaFg, 0x00ffffff | alphaFg };
-					u32 colorBg[2] = { clrBg, clrBg };
+					const u32 colorFg[2] = { 0x00ffffff | alphaFg, 0x00ffffff | alphaFg };
+					const u32 colorBg[2] = { clrBg, clrBg };
 
 					TriColoredDraw2d::addTriangles(2, vtxClr, colorBg);
 					if (obj->display) { TriTexturedDraw2d::addTriangles(2, vtxTex, uv, colorFg, obj->display->texture); }
@@ -2379,18 +2389,25 @@ namespace LevelEditor
 			// For now just draw a quad + image.
 			const u32 objCount = (u32)sector->objects.size();
 			const EditorLevelObject* obj = sector->objects.data();
-			for (u32 i = 0; i < objCount; i++, obj++)
+			for (u32 o = 0; o < objCount; o++, obj++)
 			{
-				// Skip 3D for now.
+				f32 bwidth = 3.0f / f32(rtHeight);
+				u32 bcolor = 0x00ffd7a4 | alphaBg;
+				if (s_hoveredEntity == o && s_hoveredEntitySector == i)
+				{
+					bwidth *= 1.25f;
+					bcolor = 0x00ffe7b4 | alphaFg;
+				}
+
 				if (obj->oclass == CLASS_3D)
 				{
 					DXL2_EditorRender::drawModel3d(sector, obj->displayModel, &obj->pos, &obj->rotMtx, s_palette->colors, alphaFg);
-					DXL2_EditorRender::drawModel3d_Bounds(obj->displayModel, &obj->pos, &obj->rotMtx, 3.0f / f32(rtHeight), 0x00ffd7a4 | alphaBg);
+					DXL2_EditorRender::drawModel3d_Bounds(obj->displayModel, &obj->pos, &obj->rotMtx, bwidth, bcolor);
 				}
 				else
 				{
 					// Draw the bounding box.
-					drawBounds(&obj->worldCen, &obj->worldExt, 3.0f / f32(rtHeight), 0x00ffd7a4 | alphaBg);
+					drawBounds(&obj->worldCen, &obj->worldExt, bwidth, bcolor);
 
 					if (obj->display)
 					{

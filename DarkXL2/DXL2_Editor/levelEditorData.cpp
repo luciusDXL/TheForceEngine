@@ -1125,6 +1125,23 @@ namespace LevelEditorData
 		return closestId;
 	}
 
+	f32 rayAabbIntersect(const Vec3f* aabb, const Vec3f* rayInv, const Vec3f* rayOrigin)
+	{
+		const Vec3f t0 = { (aabb[0].x - rayOrigin->x) * rayInv->x, (aabb[0].y - rayOrigin->y) * rayInv->y, (aabb[0].z - rayOrigin->z) * rayInv->z };
+		const Vec3f t1 = { (aabb[1].x - rayOrigin->x) * rayInv->x, (aabb[1].y - rayOrigin->y) * rayInv->y, (aabb[1].z - rayOrigin->z) * rayInv->z };
+
+		f32 tMin = std::min(t0.x, t1.x);
+		tMin = std::max(tMin, std::min(t0.y, t1.y));
+		tMin = std::max(tMin, std::min(t0.z, t1.z));
+
+		f32 tMax = std::max(t0.x, t1.x);
+		tMax = std::min(tMax, std::max(t0.y, t1.y));
+		tMax = std::min(tMax, std::max(t0.z, t1.z));
+		if (tMax < tMin) { return -1.0f; }
+
+		return tMin >= 0.0f ? tMin : tMax;
+	}
+
 	// Traces a ray from outside the level.
 	// The ray needs to ignore backfaces and report the first face/sector hit and position.
 	bool traceRay(const Ray* ray, RayHitInfoLE* hitInfo)
@@ -1288,6 +1305,9 @@ namespace LevelEditorData
 		// Hit objects.
 		if (ray->objSelect)
 		{
+			Vec3f rayInv = { 1.0f/ray->dir.x, 1.0f/ray->dir.y, 1.0f/ray->dir.z };
+			f32 hitDist = (hitInfo->hitSectorId >= 0) ? DXL2_Math::distance(&ray->origin, &hitInfo->hitPoint) : ray->maxDist;
+
 			sector = s_editorLevel.sectors.data();
 			for (s32 s = 0; s < sectorCount; s++, sector++)
 			{
@@ -1298,7 +1318,48 @@ namespace LevelEditorData
 				const EditorLevelObject* obj = sector->objects.data();
 				for (size_t o = 0; o < objCount; o++, obj++)
 				{
-					
+					if (obj->oclass != CLASS_3D)
+					{
+						// Test ray against AABB.
+						const Vec3f aabb[] = { {obj->worldCen.x - obj->worldExt.x, obj->worldCen.y - obj->worldExt.y, obj->worldCen.z - obj->worldExt.z},
+											   {obj->worldCen.x + obj->worldExt.x, obj->worldCen.y + obj->worldExt.y, obj->worldCen.z + obj->worldExt.z} };
+						const f32 i = rayAabbIntersect(aabb, &rayInv, &ray->origin);
+						if (i > 0.0f && i < hitDist)
+						{
+							hitDist = i;
+							hitInfo->hitSectorId = s;
+							hitInfo->hitObjectId = o;
+							hitInfo->hitWallId   = -1;
+							hitInfo->hitPoint    = {ray->origin.x + ray->dir.x*i, ray->origin.y + ray->dir.y*i, ray->origin.z + ray->dir.z*i };
+						}
+					}
+					else
+					{
+						// Transform the ray into object space and test against the local AABB.
+						Vec3f newDir;
+						const Vec3f* mat33 = obj->rotMtxT.m;
+						newDir.x = ray->dir.x*mat33[0].x + ray->dir.y*mat33[0].y + ray->dir.z*mat33[0].z;
+						newDir.y = ray->dir.x*mat33[1].x + ray->dir.y*mat33[1].y + ray->dir.z*mat33[1].z;
+						newDir.z = ray->dir.x*mat33[2].x + ray->dir.y*mat33[2].y + ray->dir.z*mat33[2].z;
+						newDir = DXL2_Math::normalize(&newDir);
+
+						const Vec3f relRayOrigin = { ray->origin.x - obj->pos.x, ray->origin.y - obj->pos.y, ray->origin.z - obj->pos.z };
+						Vec3f localRayOrigin;
+						localRayOrigin.x = relRayOrigin.x*mat33[0].x + relRayOrigin.y*mat33[0].y + relRayOrigin.z*mat33[0].z;
+						localRayOrigin.y = relRayOrigin.x*mat33[1].x + relRayOrigin.y*mat33[1].y + relRayOrigin.z*mat33[1].z;
+						localRayOrigin.z = relRayOrigin.x*mat33[2].x + relRayOrigin.y*mat33[2].y + relRayOrigin.z*mat33[2].z;
+
+						const Vec3f newRayInv = { 1.0f / newDir.x, 1.0f / newDir.y, 1.0f / newDir.z };
+						const f32 i = rayAabbIntersect(obj->displayModel->localAabb, &newRayInv, &localRayOrigin);
+						if (i > 0.0f && i < hitDist)
+						{
+							hitDist = i;
+							hitInfo->hitSectorId = s;
+							hitInfo->hitObjectId = o;
+							hitInfo->hitWallId   = -1;
+							hitInfo->hitPoint    = { ray->origin.x + ray->dir.x*i, ray->origin.y + ray->dir.y*i, ray->origin.z + ray->dir.z*i };
+						}
+					}
 				}
 			}
 		}
