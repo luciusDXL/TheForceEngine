@@ -146,6 +146,12 @@ struct EditorLevelObject
 	// Editor display
 	EditorTexture* display;
 	Model* displayModel;
+	// Bounds
+	Vec3f worldCen;
+	Vec3f worldExt;
+	// Matrix
+	Mat3  rotMtx;
+	Mat3  rotMtxT;
 
 	// Logics
 	std::vector<Logic> logics;
@@ -245,6 +251,16 @@ struct EditorLevel
 	std::vector<EditorSector> sectors;
 };
 
+struct RayHitInfoLE
+{
+	Vec3f hitPoint;
+	s32 hitSectorId;
+	s32 hitWallId;
+	RayHitPart hitPart;
+
+	s32 hitObjectId;
+};
+
 namespace LevelEditorData
 {
 	// Convert runtime level data to editor format.
@@ -270,5 +286,5 @@ namespace LevelEditorData
 	EditorSector* getSector(const char* name);
 
 	s32 findClosestWall(s32* sectorId, s32 layer, const Vec2f* pos, f32 maxDist);
-	bool traceRay(const Ray* ray, RayHitInfo* hitInfo);
+	bool traceRay(const Ray* ray, RayHitInfoLE* hitInfo);
 }

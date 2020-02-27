@@ -1127,7 +1127,7 @@ namespace LevelEditorData
 
 	// Traces a ray from outside the level.
 	// The ray needs to ignore backfaces and report the first face/sector hit and position.
-	bool traceRay(const Ray* ray, RayHitInfo* hitInfo)
+	bool traceRay(const Ray* ray, RayHitInfoLE* hitInfo)
 	{
 		if (s_editorLevel.sectors.empty()) { return false; }
 
@@ -1146,7 +1146,7 @@ namespace LevelEditorData
 		hitInfo->hitWallId = -1;
 		hitInfo->hitPart = HIT_PART_MID;	// 0 = mid, 1 = lower, 2 = upper OR 0 = floor, 1 = ceiling
 		hitInfo->hitPoint = { 0 };
-		hitInfo->obj = nullptr;
+		hitInfo->hitObjectId = -1;
 
 		// TODO: Compute bounds for each sector and test ray vs. bounds before testing against the walls and planes.
 		// See reference: https://github.com/erich666/GraphicsGems/blob/master/gems/RayBox.c
@@ -1285,6 +1285,24 @@ namespace LevelEditorData
 			}
 		}
 
+		// Hit objects.
+		if (ray->objSelect)
+		{
+			sector = s_editorLevel.sectors.data();
+			for (s32 s = 0; s < sectorCount; s++, sector++)
+			{
+				if (sector->layer != ray->layer && ray->layer > -256) { continue; }
+				const size_t objCount = sector->objects.size();
+				if (!objCount) { continue; }
+
+				const EditorLevelObject* obj = sector->objects.data();
+				for (size_t o = 0; o < objCount; o++, obj++)
+				{
+					
+				}
+			}
+		}
+
 		return hitInfo->hitSectorId >= 0;
 	}
 
@@ -1332,8 +1350,42 @@ namespace LevelEditorData
 				dstObj.display = nullptr;
 				dstObj.displayModel = nullptr;
 
-				if (srcObj->oclass == CLASS_3D) { dstObj.displayModel = DXL2_Model::get(dstObj.dataFile.c_str()); }
-				else { dstObj.display = createObjectTexture(srcObj->oclass, dstObj.dataFile.c_str()); }
+				if (srcObj->oclass == CLASS_3D)
+				{
+					dstObj.displayModel = DXL2_Model::get(dstObj.dataFile.c_str());
+
+					const f32 yaw   = dstObj.orientation.y * PI / 180.0f;
+					const f32 pitch = dstObj.orientation.x * PI / 180.0f;
+					const f32 roll  = dstObj.orientation.z * PI / 180.0f;
+					DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, dstObj.rotMtx.m);
+					dstObj.rotMtxT = DXL2_Math::transpose(dstObj.rotMtx);
+				}
+				else
+				{
+					dstObj.display = createObjectTexture(srcObj->oclass, dstObj.dataFile.c_str());
+
+					f32 width  = dstObj.display ? (f32)dstObj.display->width  : 1.0f;
+					f32 height = dstObj.display ? (f32)dstObj.display->height : 1.0f;
+					// Half width
+					f32 w = dstObj.display ? (f32)dstObj.display->width  * dstObj.display->scale.x / 8.0f : 1.0f;
+					f32 h = dstObj.display ? (f32)dstObj.display->height * dstObj.display->scale.z / 8.0f : 1.0f;
+					f32 y0 = dstObj.pos.y;
+					if (dstObj.oclass == CLASS_SPIRIT || dstObj.oclass == CLASS_SAFE || dstObj.oclass == CLASS_SOUND)
+					{
+						w = 3.0f;
+						h = 3.0f;
+					}
+					else if (dstObj.display)
+					{
+						w = dstObj.display->scale.x * fabsf(dstObj.display->rect[0] - dstObj.display->rect[2]) * c_spriteTexelToWorldScale;
+						h = dstObj.display->scale.z * fabsf(dstObj.display->rect[1] - dstObj.display->rect[3]) * c_spriteTexelToWorldScale;
+						y0 += dstObj.display->scale.z * fabsf(dstObj.display->rect[1]) * c_spriteTexelToWorldScale;
+					}
+
+					// AABB
+					dstObj.worldCen = { dstObj.pos.x, y0 - h*0.5f, dstObj.pos.z };
+					dstObj.worldExt = { w*0.5f, h*0.5f, w*0.5f };
+				}
 			}
 		}
 	}

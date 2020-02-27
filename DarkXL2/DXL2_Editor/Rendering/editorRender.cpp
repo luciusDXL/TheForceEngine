@@ -54,7 +54,7 @@ namespace DXL2_EditorRender
 
 	static std::vector<Vec3f> s_vertexBuffer3d;
 
-	void drawModel3d_Bounds(const Model* model, const Vec3f* pos, const Vec3f* orientation, f32 width, u32 color)
+	void drawModel3d_Bounds(const Model* model, const Vec3f* pos, const Mat3* orientation, f32 width, u32 color)
 	{
 		Vec3f oobb[8];
 		const Vec3f  aabb[8]=
@@ -70,12 +70,7 @@ namespace DXL2_EditorRender
 			{model->localAabb[0].x, model->localAabb[1].y, model->localAabb[1].z},
 		};
 
-		const f32 yaw = orientation->y * PI / 180.0f;
-		const f32 pitch = orientation->x * PI / 180.0f;
-		const f32 roll = orientation->z * PI / 180.0f;
-
-		Vec3f mat33[3];
-		DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		const Vec3f* mat33 = orientation->m;
 
 		for (u32 v = 0; v < 8; v++)
 		{
@@ -100,14 +95,9 @@ namespace DXL2_EditorRender
 		}
 	}
 
-	void drawModel3d(const EditorSector* sector, const Model* model, const Vec3f* pos, const Vec3f* orientation, const u32* pal, u32 alpha)
+	void drawModel3d(const EditorSector* sector, const Model* model, const Vec3f* pos, const Mat3* orientation, const u32* pal, u32 alpha)
 	{
-		const f32 yaw = orientation->y * PI / 180.0f;
-		const f32 pitch = orientation->x * PI / 180.0f;
-		const f32 roll = orientation->z * PI / 180.0f;
-
-		Vec3f mat33[3];
-		DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		const Vec3f* mat33 = orientation->m;
 
 		const ModelObject* obj = model->objects.data();
 		for (u32 i = 0; i < model->objectCount; i++, obj++)
@@ -251,7 +241,7 @@ namespace DXL2_EditorRender
 
 	static std::vector<Vec2f> s_vertexBuffer;
 
-	void drawModel2d_Bounds(const Model* model, const Vec3f* pos, const Vec3f* orientation, u32 color)
+	void drawModel2d_Bounds(const Model* model, const Vec3f* pos, const Mat3* orientation, u32 color, bool highlight)
 	{
 		Vec2f oobb[4];
 		const Vec3f aabb[4] =
@@ -262,17 +252,12 @@ namespace DXL2_EditorRender
 			{model->localAabb[0].x, model->localAabb[0].y, model->localAabb[1].z},
 		};
 
-		const f32 yaw   = orientation->y * PI / 180.0f;
-		const f32 pitch = orientation->x * PI / 180.0f;
-		const f32 roll  = orientation->z * PI / 180.0f;
-
-		Vec3f mat33[3];
-		DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
-
+		f32 scale = highlight ? 1.5f : 1.0f;
+		const Vec3f* mat33 = orientation->m;
 		for (u32 v = 0; v < 4; v++)
 		{
-			oobb[v].x = aabb[v].x*mat33[0].x + aabb[v].y*mat33[0].y + aabb[v].z*mat33[0].z + pos->x;
-			oobb[v].z = aabb[v].x*mat33[2].x + aabb[v].y*mat33[2].y + aabb[v].z*mat33[2].z + pos->z;
+			oobb[v].x = (aabb[v].x*mat33[0].x + aabb[v].y*mat33[0].y + aabb[v].z*mat33[0].z)*scale + pos->x;
+			oobb[v].z = (aabb[v].x*mat33[2].x + aabb[v].y*mat33[2].y + aabb[v].z*mat33[2].z)*scale + pos->z;
 		}
 
 		const Vec2f bounds2d[]=
@@ -285,14 +270,9 @@ namespace DXL2_EditorRender
 		TriColoredDraw2d::addTriangles(2, bounds2d, colorBg);
 	}
 
-	void drawModel2d(const EditorSector* sector, const Model* model, const Vec2f* pos, const Vec3f* orientation, const u32* pal, u32 alpha)
+	void drawModel2d(const EditorSector* sector, const Model* model, const Vec2f* pos, const Mat3* orientation, const u32* pal, u32 alpha)
 	{
-		const f32 yaw   = orientation->y * PI / 180.0f;
-		const f32 pitch = orientation->x * PI / 180.0f;
-		const f32 roll  = orientation->z * PI / 180.0f;
-
-		Vec3f mat33[3];
-		DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		const Vec3f* mat33 = orientation->m;
 
 		const ModelObject* obj = model->objects.data();
 		for (u32 i = 0; i < model->objectCount; i++, obj++)

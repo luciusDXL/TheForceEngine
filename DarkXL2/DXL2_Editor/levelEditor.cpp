@@ -198,6 +198,10 @@ namespace LevelEditor
 	static s32 s_hoveredSector = -1;
 	static s32 s_selectedWall = -1;
 	static s32 s_hoveredWall = -1;
+	static s32 s_selectedEntity = -1;
+	static s32 s_hoveredEntity = -1;
+	static s32 s_selectedEntitySector = -1;
+	static s32 s_hoveredEntitySector = -1;
 	static RayHitPart s_selectWallPart;
 	static RayHitPart s_hoveredWallPart;
 	static s32 s_selectedWallSector = -1;
@@ -460,10 +464,8 @@ namespace LevelEditor
 		{
 			s_hoveredSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
 		}
-		if (s_editMode != LEDIT_SECTOR)
-		{
-			s_selectedSector = -1;
-		}
+		if (s_editMode != LEDIT_SECTOR) { s_selectedSector = -1; }
+		if (s_editMode != LEDIT_ENTITY) { s_selectedEntity = -1; }
 
 		// Select Wall.
 		if (DXL2_Input::mousePressed(MBUTTON_LEFT) && s_levelData && s_editMode == LEDIT_WALL)
@@ -511,6 +513,47 @@ namespace LevelEditor
 			}
 		}
 
+		s_hoveredEntity = -1;
+		if (s_editMode == LEDIT_ENTITY && s_levelData)
+		{
+			s_hoveredEntitySector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
+			if (s_hoveredEntitySector >= 0)
+			{
+				const EditorSector* sector = s_levelData->sectors.data() + s_hoveredEntitySector;
+				const u32 count = (u32)sector->objects.size();
+				const EditorLevelObject* obj = sector->objects.data();
+				for (u32 i = 0; i < count; i++, obj++)
+				{
+					const f32 width  = obj->display ? (f32)obj->display->width : 1.0f;
+					const f32 height = obj->display ? (f32)obj->display->height : 1.0f;
+					// Half width
+					f32 w;
+					if (obj->oclass == CLASS_SPIRIT || obj->oclass == CLASS_SAFE || obj->oclass == CLASS_SOUND) { w = 1.0f; }
+					else if (obj->oclass == CLASS_3D && obj->displayModel)
+					{
+						if (worldPos.x >= obj->displayModel->localAabb[0].x + obj->pos.x && worldPos.x < obj->displayModel->localAabb[1].x + obj->pos.x &&
+							worldPos.z >= obj->displayModel->localAabb[0].z + obj->pos.z && worldPos.z < obj->displayModel->localAabb[1].z + obj->pos.z)
+						{
+							s_hoveredEntity = i;
+							break;
+						}
+					}
+					else { w = obj->display ? (f32)obj->display->width * obj->display->scale.x / 16.0f : 1.0f; }
+
+					if (obj->oclass != CLASS_3D)
+					{
+						const f32 x0 = obj->pos.x - w, x1 = obj->pos.x + w;
+						const f32 z0 = obj->pos.z - w, z1 = obj->pos.z + w;
+						if (worldPos.x >= x0 && worldPos.x < x1 && worldPos.z >= z0 && worldPos.z < z1)
+						{
+							s_hoveredEntity = i;
+							break;
+						}
+					}
+				}
+			}
+		}
+
 		s_offsetVis.x = floorf(s_offset.x * 100.0f) * 0.01f;
 		s_offsetVis.z = floorf(s_offset.z * 100.0f) * 0.01f;
 	}
@@ -549,12 +592,13 @@ namespace LevelEditor
 		s_hoveredWall = -1;
 		s_hoveredVertex = -1;
 		s_hoveredVertexSector = -1;
+		s_hoveredEntity = -1;
 		if (!DXL2_Input::relativeModeEnabled() && s_hideFrames == 0)
 		{
 			s_rayDir = getWorldDir(mx - (s32)s_editWinMapCorner.x, my - (s32)s_editWinMapCorner.z, rtWidth, rtHeight);
 
-			const Ray ray = { s_camera.pos, s_rayDir, -1, 1000.0f, false, s_layerIndex + s_layerMin };
-			RayHitInfo hitInfo;
+			const Ray ray = { s_camera.pos, s_rayDir, -1, 1000.0f, s_editMode == LEDIT_ENTITY, s_layerIndex + s_layerMin };
+			RayHitInfoLE hitInfo;
 			if (LevelEditorData::traceRay(&ray, &hitInfo))
 			{
 				s_cursor3d = hitInfo.hitPoint;
@@ -697,6 +741,7 @@ namespace LevelEditor
 				if (s_editMode != LEDIT_SECTOR) { s_selectedSector = -1; }
 				if (s_editMode != LEDIT_WALL)   { s_selectedWall = -1;   }
 				if (s_editMode != LEDIT_VERTEX) { s_selectedVertex = -1; }
+				if (s_editMode != LEDIT_ENTITY) { s_selectedEntity = -1; }
 			}
 			else if (DXL2_Input::mousePressed(MBUTTON_LEFT))
 			{
@@ -1209,61 +1254,58 @@ namespace LevelEditor
 			// For now just draw a quad + image.
 			const u32 objCount = (u32)sector->objects.size();
 			const EditorLevelObject* obj = sector->objects.data();
-			for (u32 i = 0; i < objCount; i++, obj++)
+			for (u32 o = 0; o < objCount; o++, obj++)
 			{
-				// Skip 3D for now.
+				const bool highlight = (s_hoveredEntity == o && s_hoveredEntitySector == i);
+				const u32 clrBg = highlight ? (0xffae8653 | alphaBg) : (0x0051331a | alphaBg);
+
 				if (obj->oclass == CLASS_3D)
 				{
 					const Vec2f pos = { obj->pos.x, obj->pos.z };
-					DXL2_EditorRender::drawModel2d_Bounds(obj->displayModel, &obj->pos, &obj->orientation, 0x0051331a | alphaBg);
-					DXL2_EditorRender::drawModel2d(sector, obj->displayModel, &pos, &obj->orientation, s_palette->colors, alphaFg);
+					DXL2_EditorRender::drawModel2d_Bounds(obj->displayModel, &obj->pos, &obj->rotMtx, clrBg, highlight);
+					DXL2_EditorRender::drawModel2d(sector, obj->displayModel, &pos, &obj->rotMtx, s_palette->colors, alphaFg);
 				}
 				else
 				{
 					f32 width  = obj->display ? (f32)obj->display->width : 1.0f;
 					f32 height = obj->display ? (f32)obj->display->height : 1.0f;
-					// Half width
-					f32 w = obj->display ? (f32)obj->display->width * obj->display->scale.x / 16.0f : 1.0f;
-					if (obj->oclass == CLASS_SPIRIT || obj->oclass == CLASS_SAFE || obj->oclass == CLASS_SOUND)
-					{
-						w = 1.0f;
-					}
-
-					f32 x0 = -w, z0 = -w;
-					f32 x1 =  w, z1 =  w;
+					
+					f32 x0 = -obj->worldExt.x, z0 = -obj->worldExt.z;
+					f32 x1 =  obj->worldExt.x, z1 =  obj->worldExt.z;
 					if (height > width)
 					{
-						f32 dx = w * width / height;
+						f32 dx = obj->worldExt.x * width / height;
 						x0 = -dx;
 						x1 = x0 + 2.0f * dx;
 					}
 					else if (width > height)
 					{
-						f32 dz = w * height / width;
+						f32 dz = obj->worldExt.z * height / width;
 						z0 = -dz;
 						z1 = z0 + 2.0f * dz;
 					}
 
 					Vec2f vtxTex[6]=
 					{
-						{obj->pos.x + x0, obj->pos.z + z0},
-						{obj->pos.x + x1, obj->pos.z + z0},
-						{obj->pos.x + x1, obj->pos.z + z1},
+						{obj->worldCen.x + x0, obj->worldCen.z + z0},
+						{obj->worldCen.x + x1, obj->worldCen.z + z0},
+						{obj->worldCen.x + x1, obj->worldCen.z + z1},
 
-						{obj->pos.x + x0, obj->pos.z + z0},
-						{obj->pos.x + x1, obj->pos.z + z1},
-						{obj->pos.x + x0, obj->pos.z + z1},
+						{obj->worldCen.x + x0, obj->worldCen.z + z0},
+						{obj->worldCen.x + x1, obj->worldCen.z + z1},
+						{obj->worldCen.x + x0, obj->worldCen.z + z1},
 					};
 
+					const f32 scale = highlight ? 1.25f : 1.0f;
 					Vec2f vtxClr[6]=
 					{
-						{obj->pos.x - w, obj->pos.z - w},
-						{obj->pos.x + w, obj->pos.z - w},
-						{obj->pos.x + w, obj->pos.z + w},
+						{obj->worldCen.x - obj->worldExt.x*scale, obj->worldCen.z - obj->worldExt.z*scale},
+						{obj->worldCen.x + obj->worldExt.x*scale, obj->worldCen.z - obj->worldExt.z*scale},
+						{obj->worldCen.x + obj->worldExt.x*scale, obj->worldCen.z + obj->worldExt.z*scale},
 
-						{obj->pos.x - w, obj->pos.z - w},
-						{obj->pos.x + w, obj->pos.z + w},
-						{obj->pos.x - w, obj->pos.z + w},
+						{obj->worldCen.x - obj->worldExt.x*scale, obj->worldCen.z - obj->worldExt.z*scale},
+						{obj->worldCen.x + obj->worldExt.x*scale, obj->worldCen.z + obj->worldExt.z*scale},
+						{obj->worldCen.x - obj->worldExt.x*scale, obj->worldCen.z + obj->worldExt.z*scale},
 					};
 
 					Vec2f uv[6] =
@@ -1277,7 +1319,7 @@ namespace LevelEditor
 						{0.0f, 0.0f},
 					};
 					u32 colorFg[2] = { 0x00ffffff | alphaFg, 0x00ffffff | alphaFg };
-					u32 colorBg[2] = { 0x0051331a | alphaBg, 0x0051331a | alphaBg };
+					u32 colorBg[2] = { clrBg, clrBg };
 
 					TriColoredDraw2d::addTriangles(2, vtxClr, colorBg);
 					if (obj->display) { TriTexturedDraw2d::addTriangles(2, vtxTex, uv, colorFg, obj->display->texture); }
@@ -1696,25 +1738,24 @@ namespace LevelEditor
 		LineDraw3d::addLines(12, lineWidth, lines, colors);
 	}
 
-	void drawBounds(const Vec3f* center, f32 side, f32 height, f32 lineWidth, u32 color)
+	void drawBounds(const Vec3f* center, const Vec3f* ext, f32 lineWidth, u32 color)
 	{
-		const f32 w = side * 0.5f;
 		const Vec3f lines[] =
 		{
-			{center->x - w, center->y, center->z - w}, {center->x + w, center->y, center->z - w},
-			{center->x + w, center->y, center->z - w}, {center->x + w, center->y, center->z + w},
-			{center->x + w, center->y, center->z + w}, {center->x - w, center->y, center->z + w},
-			{center->x - w, center->y, center->z + w}, {center->x - w, center->y, center->z - w},
+			{center->x - ext->x, center->y + ext->y, center->z - ext->z}, {center->x + ext->x, center->y + ext->y, center->z - ext->z},
+			{center->x + ext->x, center->y + ext->y, center->z - ext->z}, {center->x + ext->x, center->y + ext->y, center->z + ext->z},
+			{center->x + ext->x, center->y + ext->y, center->z + ext->z}, {center->x - ext->x, center->y + ext->y, center->z + ext->z},
+			{center->x - ext->x, center->y + ext->y, center->z + ext->z}, {center->x - ext->x, center->y + ext->y, center->z - ext->z},
 
-			{center->x - w, center->y - height, center->z - w}, {center->x + w, center->y - height, center->z - w},
-			{center->x + w, center->y - height, center->z - w}, {center->x + w, center->y - height, center->z + w},
-			{center->x + w, center->y - height, center->z + w}, {center->x - w, center->y - height, center->z + w},
-			{center->x - w, center->y - height, center->z + w}, {center->x - w, center->y - height, center->z - w},
+			{center->x - ext->x, center->y - ext->y, center->z - ext->z}, {center->x + ext->x, center->y - ext->y, center->z - ext->z},
+			{center->x + ext->x, center->y - ext->y, center->z - ext->z}, {center->x + ext->x, center->y - ext->y, center->z + ext->z},
+			{center->x + ext->x, center->y - ext->y, center->z + ext->z}, {center->x - ext->x, center->y - ext->y, center->z + ext->z},
+			{center->x - ext->x, center->y - ext->y, center->z + ext->z}, {center->x - ext->x, center->y - ext->y, center->z - ext->z},
 
-			{center->x - w, center->y, center->z - w}, {center->x - w, center->y - height, center->z - w},
-			{center->x + w, center->y, center->z - w}, {center->x + w, center->y - height, center->z - w},
-			{center->x + w, center->y, center->z + w}, {center->x + w, center->y - height, center->z + w},
-			{center->x - w, center->y, center->z + w}, {center->x - w, center->y - height, center->z + w},
+			{center->x - ext->x, center->y + ext->y, center->z - ext->z}, {center->x - ext->x, center->y - ext->y, center->z - ext->z},
+			{center->x + ext->x, center->y + ext->y, center->z - ext->z}, {center->x + ext->x, center->y - ext->y, center->z - ext->z},
+			{center->x + ext->x, center->y + ext->y, center->z + ext->z}, {center->x + ext->x, center->y - ext->y, center->z + ext->z},
+			{center->x - ext->x, center->y + ext->y, center->z + ext->z}, {center->x - ext->x, center->y - ext->y, center->z + ext->z},
 		};
 		u32 colors[12];
 		for (u32 i = 0; i < 12; i++)
@@ -2343,51 +2384,30 @@ namespace LevelEditor
 				// Skip 3D for now.
 				if (obj->oclass == CLASS_3D)
 				{
-					DXL2_EditorRender::drawModel3d(sector, obj->displayModel, &obj->pos, &obj->orientation, s_palette->colors, alphaFg);
-					DXL2_EditorRender::drawModel3d_Bounds(obj->displayModel, &obj->pos, &obj->orientation, 3.0f / f32(rtHeight), 0x00ffd7a4 | alphaBg);
+					DXL2_EditorRender::drawModel3d(sector, obj->displayModel, &obj->pos, &obj->rotMtx, s_palette->colors, alphaFg);
+					DXL2_EditorRender::drawModel3d_Bounds(obj->displayModel, &obj->pos, &obj->rotMtx, 3.0f / f32(rtHeight), 0x00ffd7a4 | alphaBg);
 				}
 				else
 				{
-					f32 width = obj->display ? (f32)obj->display->width : 1.0f;
-					f32 height = obj->display ? (f32)obj->display->height : 1.0f;
-					// Half width
-					f32 w = obj->display ? (f32)obj->display->width  * obj->display->scale.x / 8.0f : 1.0f;
-					f32 h = obj->display ? (f32)obj->display->height * obj->display->scale.z / 8.0f : 1.0f;
-					f32 y0 = obj->pos.y;
-					if (obj->oclass == CLASS_SPIRIT || obj->oclass == CLASS_SAFE || obj->oclass == CLASS_SOUND)
-					{
-						w = 3.0f;
-						h = 3.0f;
-					}
-					else if (obj->display)
-					{
-						w = obj->display->scale.x * fabsf(obj->display->rect[0] - obj->display->rect[2]) * c_spriteTexelToWorldScale;
-						h = obj->display->scale.z * fabsf(obj->display->rect[1] - obj->display->rect[3]) * c_spriteTexelToWorldScale;
-						y0 += obj->display->scale.z * fabsf(obj->display->rect[1]) * c_spriteTexelToWorldScale;
-					}
-
-					// Draw a box.
-					const Vec3f aabbPos = { obj->pos.x, y0, obj->pos.z };
-					drawBounds(&aabbPos, w, h, 3.0f / f32(rtHeight), 0x00ffd7a4 | alphaBg);
+					// Draw the bounding box.
+					drawBounds(&obj->worldCen, &obj->worldExt, 3.0f / f32(rtHeight), 0x00ffd7a4 | alphaBg);
 
 					if (obj->display)
 					{
-						Vec3f r = s_camera.viewMtx.m0;
-						Vec3f u = { 0.0f, 1.0f, 0.0f };
-
-						w *= 0.5f;
-						Vec3f vtx[] =
+						const Vec3f r = s_camera.viewMtx.m0;
+						const Vec3f u = { 0.0f, 1.0f, 0.0f };
+						const Vec3f vtx[] =
 						{
-							{obj->pos.x - w * r.x - h * u.x, y0 - w * r.y - h * u.y, obj->pos.z - w * r.z - h * u.z },
-							{obj->pos.x + w * r.x - h * u.x, y0 + w * r.y - h * u.y, obj->pos.z + w * r.z - h * u.z },
-							{obj->pos.x + w * r.x,           y0 + w * r.y          , obj->pos.z + w * r.z },
+							{obj->worldCen.x - obj->worldExt.x * r.x, obj->worldCen.y - obj->worldExt.x * r.y - obj->worldExt.y * u.y, obj->worldCen.z - obj->worldExt.z * r.z },
+							{obj->worldCen.x + obj->worldExt.x * r.x, obj->worldCen.y + obj->worldExt.x * r.y - obj->worldExt.y * u.y, obj->worldCen.z + obj->worldExt.z * r.z },
+							{obj->worldCen.x + obj->worldExt.x * r.x, obj->worldCen.y + obj->worldExt.x * r.y + obj->worldExt.y * u.y, obj->worldCen.z + obj->worldExt.z * r.z },
 
-							{obj->pos.x - w * r.x - h * u.x, y0 - w * r.y - h * u.y, obj->pos.z - w * r.z - h * u.z },
-							{obj->pos.x + w * r.x,           y0 + w * r.y          , obj->pos.z + w * r.z },
-							{obj->pos.x - w * r.x,           y0 - w * r.y          , obj->pos.z - w * r.z },
+							{obj->worldCen.x - obj->worldExt.x * r.x, obj->worldCen.y - obj->worldExt.x * r.y - obj->worldExt.y * u.y, obj->worldCen.z - obj->worldExt.z * r.z },
+							{obj->worldCen.x + obj->worldExt.x * r.x, obj->worldCen.y + obj->worldExt.x * r.y + obj->worldExt.y * u.y, obj->worldCen.z + obj->worldExt.z * r.z },
+							{obj->worldCen.x - obj->worldExt.x * r.x, obj->worldCen.y - obj->worldExt.x * r.y + obj->worldExt.y * u.y, obj->worldCen.z - obj->worldExt.z * r.z },
 						};
 
-						Vec2f uv[6] =
+						const Vec2f uv[6] =
 						{
 							{0.0f, 0.0f},
 							{1.0f, 0.0f},
@@ -2503,6 +2523,10 @@ namespace LevelEditor
 			else if (s_hoveredWall >= 0 || s_selectedWall >= 0)
 			{
 				infoPanelWall();
+			}
+			else if (s_hoveredEntity >= 0 || s_selectedEntity >= 0)
+			{
+				infoPanelEntity();
 			}
 			else
 			{
