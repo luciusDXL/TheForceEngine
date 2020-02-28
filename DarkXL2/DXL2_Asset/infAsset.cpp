@@ -821,8 +821,9 @@ namespace DXL2_InfAsset
 				}
 				else
 				{
-					// What should the default be? -- will need to figure this out
-					stop->code |= STOP_VALUE1_TYPE(INF_STOP1_TERMINATE);
+					// In this case, we wait a default amount of time.
+					stop->code |= STOP_VALUE1_TYPE(INF_STOP1_TIME);
+					stop->time = 3.0f;
 				}
 			}
 			else if (strcasecmp("client:", tokens[0].c_str()) == 0 && tokens.size() >= 2 && curClass != nullptr)
