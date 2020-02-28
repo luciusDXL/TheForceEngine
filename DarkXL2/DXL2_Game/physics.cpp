@@ -3,6 +3,7 @@
 #include "gameObject.h"
 #include <DXL2_System/math.h>
 #include <DXL2_LogicSystem/logicSystem.h>
+#include <DXL2_InfSystem/infSystem.h>
 #include <assert.h>
 #include <algorithm>
 
@@ -400,7 +401,47 @@ namespace DXL2_Physics
 		*ceilHeight = maxHeight;
 	}
 
-	bool correctPosition(Vec3f* pos, s32* curSectorId, f32 radius)
+	void checkWallCrossing(const Vec3f* prevPos, const Vec3f* curPos, f32 radius, s32 curSectorId)
+	{
+		const f32 diff = DXL2_Math::distance(prevPos, curPos);
+		Sector* curSector = s_level->sectors.data() + curSectorId;
+
+		s_overlapSectorCnt = 0;
+		s_overlapSectors[s_overlapSectorCnt++] = curSector;
+		gatherAllOverlappingSectors(curSector, curPos, radius, false);
+		u32 lines[256];
+		u32 lineCount = getOverlappingLines(curPos, radius + diff * 0.5f, true, lines, 256);
+
+		for (u32 l = 0; l < lineCount; l++)
+		{
+			// Get sector and wallId
+			u32 sectorId = lines[l] & 0xffffu;
+			u32 wallId = lines[l] >> 16u;
+			const Sector* sector = s_level->sectors.data() + sectorId;
+			const Vec2f* vertices = s_level->vertices.data() + sector->vtxOffset;
+			const SectorWall* wall = s_level->walls.data() + wallId + sector->wallOffset;
+			if (wall->adjoin < 0) { continue; }
+
+			const Vec2f v0 = vertices[wall->i0];
+			const Vec2f v1 = vertices[wall->i1];
+			Vec2f dir = { v1.x - v0.x, v1.z - v0.z };
+			// Normal is reversed due to winding order. This way normals point "in" towards the collision.
+			Vec2f nrm = { dir.z, -dir.x };
+
+			// has the player crossed?
+			Vec2f relPrev = { prevPos->x - v0.x, prevPos->z - v0.z };
+			Vec2f relCur = { curPos->x - v0.x, curPos->z - v0.z };
+			f32 distPrev = DXL2_Math::dot(&relPrev, &nrm);
+			f32 distCur = DXL2_Math::dot(&relCur, &nrm);
+			if (DXL2_Math::sign(distPrev) != DXL2_Math::sign(distCur))
+			{
+				// The player has crossed this wall.
+				DXL2_InfSystem::firePlayerEvent(distPrev >= 0.0f ? INF_EVENT_CROSS_LINE_FRONT : INF_EVENT_CROSS_LINE_BACK, sectorId, wallId);
+			}
+		}
+	}
+
+	bool correctPosition(Vec3f* pos, s32* curSectorId, f32 radius, bool sendInfMsg)
 	{
 		bool correctionNeeded = false;
 		bool invalidSector = false;
@@ -426,6 +467,9 @@ namespace DXL2_Physics
 		correctionNeeded |= (!tryMoveSecList(pos, radius));
 		if (!correctionNeeded) { return false; }
 
+		Vec3f prevPos = *pos;
+		s32 prevSector = *curSectorId;
+
 		// Apply corrections by pushing the position away from walls as little as possible to get a new valid position.
 		s32 iter = 0;
 		f32 rSq = radius * radius + FLT_EPSILON;
@@ -434,7 +478,6 @@ namespace DXL2_Physics
 			// First push away from walls.
 			for (u32 l = 0; l < lineCount; l++)
 			{
-
 				// Get sector and wallId
 				u32 sectorId = lines[l] & 0xffffu;
 				u32 wallId = lines[l] >> 16u;
@@ -471,10 +514,17 @@ namespace DXL2_Physics
 		// Now find out the correct sector.
 		*curSectorId = getCurrentSectorId(pos);
 		assert(*curSectorId >= 0);
+
+		// Finally check to see if the player has crossed any walls (adjoins).
+		if (sendInfMsg && (prevPos.x != pos->x || prevPos.z != pos->z || prevSector != *curSectorId))
+		{
+			checkWallCrossing(&prevPos, pos, radius, *curSectorId);
+		}
+
 		return true;
 	}
 
-	bool move(const Vec3f* startPoint, const Vec3f* desiredMove, s32 curSectorId, Vec3f* actualMove, s32* newSectorId, f32 height)
+	bool move(const Vec3f* startPoint, const Vec3f* desiredMove, s32 curSectorId, Vec3f* actualMove, s32* newSectorId, f32 height, bool sendInfMsg)
 	{
 		const f32 radius = c_playerRadius;
 		s_height = fabsf(height);
@@ -697,6 +747,12 @@ namespace DXL2_Physics
 
 		*actualMove = { endPos.x - startPoint->x, endPos.y - startPoint->y, endPos.z - startPoint->z };
 		*newSectorId = getCurrentSectorId(&endPos);
+
+		// Finally check to see if the player has crossed any walls (adjoins).
+		if (sendInfMsg && (startPoint->x != endPos.x || startPoint->z != endPos.z || baseSectorId != *newSectorId))
+		{
+			checkWallCrossing(startPoint, &endPos, radius, *newSectorId);
+		}
 
 		return (endPos.x != startPoint->x || endPos.z != startPoint->z);
 	}

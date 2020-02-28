@@ -867,6 +867,37 @@ namespace DXL2_InfSystem
 		DXL2_System::logWrite(LOG_MSG, "INF", "Runtime INF state memory size: %u bytes.", s_memoryPool->getMemoryUsed());
 	}
 
+	bool firePlayerEvent(u32 evt, s32 sectorId, s32 wallId)
+	{
+		if (s_sectorItemMap[sectorId].lineCount < 1) { return false; }
+		s32 itemId = -1;
+		for (u32 i = 0; i < s_sectorItemMap[sectorId].lineCount; i++)
+		{
+			if (s_sectorItemMap[sectorId].lineItemId[i].wallId == wallId)
+			{
+				itemId = s_sectorItemMap[sectorId].lineItemId[i].itemId;
+				break;
+			}
+		}
+		if (itemId < 0) { return false; }
+
+		// Go through each class and see if the entity_mask and event_mask match what we are doing.
+		InfItem* item = &s_infData->item[itemId];
+		const u32 classCount = item->classCount;
+		for (u32 c = 0; c < classCount; c++)
+		{
+			InfClassData* classData = &item->classData[c];
+			// If the class has been turned off, then skip.
+			if (!classData->var.master || item->type != INF_ITEM_LINE) { continue; }
+			// Otherwise check the mask flags.
+			if ((classData->var.entity_mask & INF_ENTITY_PLAYER) && (classData->var.event_mask & evt))
+			{
+				activateLineOrSector(classData);
+			}
+		}
+		return true;
+	}
+
 	bool firePlayerEvent(u32 evt, s32 sectorId, Player* player)
 	{
 		const s32 itemId = s_sectorItemMap[sectorId].sectorItemId;

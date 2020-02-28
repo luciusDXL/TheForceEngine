@@ -49,12 +49,12 @@ namespace DXL2_Physics
 	bool init(LevelData* level);
 	void shutdown();
 
-	bool move(const Vec3f* startPoint, const Vec3f* desiredMove, s32 curSectorId, Vec3f* actualMove, s32* newSectorId, f32 height);
+	bool move(const Vec3f* startPoint, const Vec3f* desiredMove, s32 curSectorId, Vec3f* actualMove, s32* newSectorId, f32 height, bool sendInfMsg = true);
 	void getValidHeightRange(const Vec3f* pos, s32 curSectorId, f32* floorHeight, f32* visualFloorHeight, f32* ceilHeight);
 	void getOverlappingLinesAndSectors(const Vec3f* pos, s32 curSectorId, f32 radius, u32 maxCount, u32* lines, u32* sectors, u32* outLineCount, u32* outSectorCount);
 	const Sector** getOverlappingSectors(const Vec3f* pos, s32 curSectorId, f32 radius, u32* outSectorCount);
 
-	bool correctPosition(Vec3f* pos, s32* curSectorId, f32 radius);
+	bool correctPosition(Vec3f* pos, s32* curSectorId, f32 radius, bool sendInfMsg = true);
 
 	s32 findSector(s32 layer, const Vec2f* pos);
 	s32 findSector(const Vec3f* pos);

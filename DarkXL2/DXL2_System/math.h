@@ -6,6 +6,11 @@
 
 namespace DXL2_Math
 {
+	inline f32 sign(f32 x)
+	{
+		return x < 0.0f ? -1.0f : 1.0f;
+	}
+
 	inline bool isPow2(u32 x)
 	{
 		return (x > 0) && (x & (x - 1)) == 0;

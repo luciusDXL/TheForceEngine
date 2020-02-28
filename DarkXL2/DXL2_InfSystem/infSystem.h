@@ -22,6 +22,7 @@ namespace DXL2_InfSystem
 	void activate(const Vec3f* pos, s32 curSectorId, u32 keys);
 	// Returns true if the player should continue falling.
 	bool firePlayerEvent(u32 evt, s32 sectorId, Player* player);
+	bool firePlayerEvent(u32 evt, s32 sectorId, s32 wallId);
 	// player shoots a wall.
 	void shootWall(const Vec3f* hitPoint, s32 hitSectorId, s32 hitWallId);
 
