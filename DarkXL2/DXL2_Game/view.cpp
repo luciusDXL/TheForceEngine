@@ -512,7 +512,17 @@ namespace DXL2_View
 	bool portalVisited(s32 x0, s32 x1, s32 drawIndex)
 	{
 		const s32 wallIndex = (s32)s_drawWalls[drawIndex].wall + (s32)s_level->sectors[s_drawWalls[drawIndex].sectorId].wallOffset;
-		const s32 portalIndex = s_wallToPortalMapping[wallIndex];
+		s32 portalIndex = s_wallToPortalMapping[wallIndex];
+		if (portalIndex < 0)
+		{
+			s32 portalCount = (s32)s_portalVisList.size();
+			portalIndex = portalCount;
+
+			s_wallToPortalMapping[wallIndex] = portalCount;
+			portalCount++;
+
+			s_portalVisList.push_back({0});
+		}
 		assert(portalIndex >= 0);
 
 		// for now just skip the whole portal if already visited.
