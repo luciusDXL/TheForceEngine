@@ -953,12 +953,11 @@ namespace DXL2_InfSystem
 			// If the class has been turned off, then skip.
 			if (!classData->var.master || item->type != INF_ITEM_SECTOR) { continue; }
 			// Otherwise check the mask flags.
-			if (classData->iclass == INF_CLASS_TELEPORTER && classData->isubclass == TELEPORTER_CHUTE && classData->var.target >= 0)
+			if (classData->iclass == INF_CLASS_TELEPORTER && classData->isubclass == TELEPORTER_CHUTE && classData->var.target >= 0 && (classData->var.event_mask&evt))
 			{
 				// This needs more work but it does allow chute areas to be traversed.
 				continueFalling = true;
 				player->m_sectorId = classData->var.target;
-				player->pos.y = s_levelData->sectors[player->m_sectorId].ceilAlt + 6.8f;
 			}
 			else if ((classData->var.entity_mask & INF_ENTITY_PLAYER) && (classData->var.event_mask & evt))
 			{

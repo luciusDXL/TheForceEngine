@@ -548,6 +548,11 @@ namespace DXL2_GameLoop
 				s_fallHeight = 0.0f;
 				s_player.vel.y = 0.0f;
 			}
+			else
+			{
+				s_player.vel.y += c_gravityAccel * dt;
+				DXL2_Physics::getValidHeightRange(&s_player.pos, s_player.m_sectorId, &floorHeight, &visualFloorHeight, &ceilHeight);
+			}
 		}
 
 		f32 dY = handleLandAnim(dt);

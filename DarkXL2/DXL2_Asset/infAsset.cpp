@@ -1232,6 +1232,10 @@ namespace DXL2_InfAsset
 		{
 			classInfo->var.event_mask = INF_EVENT_CROSS_LINE_FRONT | INF_EVENT_CROSS_LINE_BACK | INF_EVENT_ENTER_SECTOR | INF_EVENT_LEAVE_SECTOR | INF_EVENT_NUDGE_FRONT | INF_EVENT_NUDGE_BACK | INF_EVENT_LAND;
 		}
+		else if (classInfo->iclass == INF_CLASS_TELEPORTER)
+		{
+			classInfo->var.event_mask = INF_EVENT_LAND;
+		}
 
 		// TODO: Figure out the default speed for each type of elevator.
 		if (classInfo->isubclass == ELEVATOR_DOOR || classInfo->isubclass == ELEVATOR_DOOR_INV || classInfo->isubclass == ELEVATOR_DOOR_MID)
