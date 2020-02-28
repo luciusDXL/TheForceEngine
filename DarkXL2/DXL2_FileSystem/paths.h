@@ -7,6 +7,7 @@ enum DXL2_PathType
 	PATH_PROGRAM_DATA,		// ProgramData/ on Windows - save temporary or cached data here.
 	PATH_USER_DOCUMENTS,	// Users/username/Documents/ on Windows - save settings here.
 	PATH_SOURCE_DATA,		// This is the location of the source data, such as maps, textures, etc.
+	PATH_DOSBOX,			// Path to the dosbox exe (for the editor).
 	PATH_MOD,				// Use this to reference mods.
 	PATH_COUNT
 };

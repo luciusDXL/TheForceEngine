@@ -3,6 +3,7 @@
 #include <DXL2_Asset/assetSystem.h>
 #include <DXL2_Archive/archive.h>
 #include <DXL2_System/parser.h>
+#include <DXL2_FileSystem/filestream.h>
 #include <assert.h>
 #include <algorithm>
 
@@ -50,6 +51,119 @@ namespace DXL2_LevelObjects
 
 		s_data.objectCount = 0;
 		s_data.objects.clear();
+	}
+
+	void save(const char* name, const char* path)
+	{
+		FileStream outFile;
+		if (!outFile.open(path, FileStream::MODE_WRITE))
+		{
+			return;
+		}
+
+		outFile.writeString("O 1.1\r\n\r\n");
+		outFile.writeString("/* ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~\r\n");
+		outFile.writeString("This file has been created by DarkXL 2 from %s.\r\n\r\n", name);
+		outFile.writeString("~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~*/\r\n\r\n");
+
+		outFile.writeString("LEVELNAME %s\r\n\r\n", name);
+
+		const u32 podCount = (u32)s_data.pods.size();
+		const std::string* pod = s_data.pods.data();
+		outFile.writeString("PODS %u\r\n", podCount);
+		for (u32 i = 0; i < podCount; i++, pod++)
+		{
+			outFile.writeString("    POD: %s\r\n", pod->c_str());
+		}
+
+		const u32 spriteCount = (u32)s_data.sprites.size();
+		const std::string* sprite = s_data.sprites.data();
+		outFile.writeString("\r\nSPRS %u\r\n", spriteCount);
+		for (u32 i = 0; i < spriteCount; i++, sprite++)
+		{
+			outFile.writeString("    SPR: %s\r\n", sprite->c_str());
+		}
+
+		const u32 fmeCount = (u32)s_data.frames.size();
+		const std::string* frame = s_data.frames.data();
+		outFile.writeString("\r\nFMES %u\r\n", fmeCount);
+		for (u32 i = 0; i < fmeCount; i++, frame++)
+		{
+			outFile.writeString("    FME: %s\r\n", frame->c_str());
+		}
+
+		const u32 sndCount = (u32)s_data.sounds.size();
+		const std::string* sound = s_data.sounds.data();
+		outFile.writeString("\r\nSOUNDS %u\r\n", sndCount);
+		for (u32 i = 0; i < sndCount; i++, sound++)
+		{
+			outFile.writeString("    SOUND: %s\r\n", sound->c_str());
+		}
+
+		const u32 objCount = (u32)s_data.objects.size();
+		const LevelObject* obj = s_data.objects.data();
+		outFile.writeString("\r\nOBJECTS %u\r\n", objCount);
+		for (u32 i = 0; i < objCount; i++, obj++)
+		{
+			outFile.writeString("    CLASS: %s	DATA: %u	X: %2.2f Y: %2.2f Z: %2.2f PCH: %2.2f YAW: %2.2f ROL: %2.2f	DIFF: %u\r\n",
+				c_objectClassName[obj->oclass], obj->dataOffset, obj->pos.x, obj->pos.y, obj->pos.z, obj->orientation.x, obj->orientation.y, obj->orientation.z, obj->difficulty);
+			outFile.writeString("        SEQ\r\n");
+
+			// Logics
+			const u32 logicCount = (u32)obj->logics.size();
+			const Logic* logic = obj->logics.data();
+			for (u32 l = 0; l < logicCount; l++, logic++)
+			{
+				outFile.writeString("            LOGIC:	%s\r\n", c_logicName[logic->type]);
+				if (logic->type == LOGIC_UPDATE)
+				{
+					outFile.writeString("            FLAGS:	%u\r\n", logic->flags);
+					if (logic->flags & 8)  { outFile.writeString("            D_PITCH:	%2.2f\r\n", logic->rotation.x); }
+					if (logic->flags & 16) { outFile.writeString("            D_YAW:	%2.2f\r\n", logic->rotation.y); }
+					if (logic->flags & 32) { outFile.writeString("            D_ROLL:	%2.2f\r\n", logic->rotation.z); }
+				}
+				else if (logic->type == LOGIC_KEY)
+				{
+					outFile.writeString("            VUE: %s \"%s\"\r\n", logic->Vue.c_str(), logic->VueId.c_str());
+					if (!logic->VueAppend.empty())
+					{
+						outFile.writeString("            VUE_APPEND: %s \"%s\"\r\n", logic->VueAppend.c_str(), logic->VueAppendId.c_str());
+					}
+					outFile.writeString("            PAUSE: %s", obj->comFlags & LCF_PAUSE ? "TRUE" : "FALSE");
+					if (logic->frameRate != 0.0f) { outFile.writeString("            FRAME_RATE: %2.2f", logic->frameRate); }
+				}
+			}
+			
+			// Generators
+			const u32 genCount = (u32)obj->generators.size();
+			const EnemyGenerator* gen = obj->generators.data();
+			for (u32 l = 0; l < genCount; l++, gen++)
+			{
+				outFile.writeString("            LOGIC:	GENERATOR %s\r\n", c_logicName[gen->type]);
+				outFile.writeString("            DELAY: %2.2f\r\n", gen->delay);
+				outFile.writeString("            INTERVAL : %2.2f\r\n", gen->interval);
+				outFile.writeString("            MIN_DIST : %2.2f\r\n", gen->minDist);
+				outFile.writeString("            MAX_DIST : %2.2f\r\n", gen->maxDist);
+				outFile.writeString("            MAX_ALIVE : %d\r\n", gen->maxAlive);
+				outFile.writeString("            NUM_TERMINATE : %d\r\n", gen->numTerminate);
+				outFile.writeString("            WANDER_TIME : 2.2f\r\n", gen->wanderTime);
+			}
+
+			// Variables
+			if (obj->comFlags & LCF_EYE)  { outFile.writeString("            EYE: TRUE\r\n"); }
+			if (obj->comFlags & LCF_BOSS) { outFile.writeString("            BOSS: TRUE\r\n"); }
+			if (obj->radius != 0.0f)
+			{
+				outFile.writeString("            RADIUS: %2.2f\r\n", obj->radius);
+			}
+			if (obj->height != 0.0f)
+			{
+				outFile.writeString("            HEIGHT: %2.2f\r\n", obj->height);
+			}
+
+			outFile.writeString("        SEQEND\r\n");
+		}
+		outFile.close();
 	}
 
 	LevelObjectData* getLevelObjectData()

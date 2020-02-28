@@ -16,6 +16,7 @@ public:
 	~LfdArchive() override;
 
 	// Archive
+	bool create(const char *archivePath) override;
 	bool open(const char *archivePath) override;
 	void close() override;
 
@@ -35,6 +36,9 @@ public:
 	u32 getFileCount() override;
 	const char* getFileName(u32 index) override;
 	size_t getFileLength(u32 index) override;
+
+	// Edit
+	void addFile(const char* fileName, const char* filePath) override;
 
 private:
 	#pragma pack(push)

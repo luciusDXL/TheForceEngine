@@ -7,7 +7,24 @@ LfdArchive::~LfdArchive()
 	close();
 }
 
-// Archive
+bool LfdArchive::create(const char *archivePath)
+{
+	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_WRITE);
+	m_curFile = -1;
+	if (!m_archiveOpen) { return false; }
+
+	// Write the directory.
+	LFD_Entry_t root = { 0 }, entry = { 0 };
+	m_file.writeBuffer(&root, sizeof(LFD_Entry_t));
+	m_fileList.MASTERN = 0;
+	m_fileList.entries = nullptr;
+
+	strcpy(m_archivePath, archivePath);
+	m_file.close();
+
+	return true;
+}
+
 bool LfdArchive::open(const char *archivePath)
 {
 	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_READ);
@@ -170,4 +187,10 @@ size_t LfdArchive::getFileLength(u32 index)
 {
 	if (!m_archiveOpen) { return 0; }
 	return m_fileList.entries[index].LENGTH;
+}
+
+// Edit
+void LfdArchive::addFile(const char* fileName, const char* filePath)
+{
+
 }

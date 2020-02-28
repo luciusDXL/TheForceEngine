@@ -564,8 +564,7 @@ namespace LevelEditorData
 			{
 				if (strcasecmp(output->sprites[i].c_str(), dataFile) == 0)
 				{
-					dataOffset = i;
-					break;
+					return i;
 				}
 			}
 			dataOffset = (u32)output->sprites.size();

@@ -3,6 +3,7 @@
 #include <DXL2_Asset/assetSystem.h>
 #include <DXL2_Archive/archive.h>
 #include <DXL2_System/parser.h>
+#include <DXL2_FileSystem/filestream.h>
 #include <assert.h>
 #include <algorithm>
 
@@ -59,6 +60,80 @@ namespace DXL2_LevelAsset
 
 		s_data.layerMin = 127;
 		s_data.layerMax = -127;
+	}
+
+	void save(const char* name, const char* path)
+	{
+		FileStream outFile;
+		if (!outFile.open(path, FileStream::MODE_WRITE))
+		{
+			return;
+		}
+
+		outFile.writeString("LEV 2.1\r\n");
+		outFile.writeString("#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
+		outFile.writeString("# This file has been written from the DarkXL 2 file '%s'.\r\n", name);
+		outFile.writeString("#\r\n");
+		outFile.writeString("#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n");
+
+		outFile.writeString("LEVELNAME %s\r\n", name);
+		outFile.writeString("PALETTE %s.PAL\r\n", name);
+		outFile.writeString("MUSIC AVENGE.GMD\r\n");
+		outFile.writeString("PARALLAX %04.4f %04.4f\r\n", s_data.parallax[0], s_data.parallax[1]);
+
+		const u32 texCount = (u32)s_data.textures.size();
+		outFile.writeString("#`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~\r\n");
+		outFile.writeString("#               T e x t u r e   T a b l e\r\n");
+		outFile.writeString("#\r\n");
+		outFile.writeString("#`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~`~\r\n");
+		outFile.writeString("TEXTURES %u\r\n", texCount);
+		const Texture* const* textures = s_data.textures.data();
+		for (u32 i = 0; i < texCount; i++)
+		{
+			outFile.writeString("  TEXTURE: %s			#%u\r\n", textures[i]->name, i);
+		}
+
+		const u32 sectorCount = (u32)s_data.sectors.size();
+		outFile.writeString("\r\n\r\nNUMSECTORS %u\r\n", sectorCount);
+
+		Sector* sector = s_data.sectors.data();
+		for (u32 s = 0; s < sectorCount; s++, sector++)
+		{
+			outFile.writeString("\r\n# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\r\n");
+			outFile.writeString("#               S e c t o r   D e f i n i t i o n\r\n");
+			outFile.writeString("# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\r\n");
+
+			outFile.writeString("SECTOR %u\r\n", sector->id);
+			outFile.writeString("  NAME %s\r\n", sector->name);
+			outFile.writeString("  AMBIENT %u\r\n", sector->ambient);
+			outFile.writeString("  FLOOR TEXTURE %u %2.2f %2.2f %u\r\n", sector->floorTexture.texId, sector->floorTexture.baseOffsetX, sector->floorTexture.baseOffsetY, sector->floorTexture.flag);
+			outFile.writeString("  FLOOR ALTITUDE %2.2f\r\n", sector->floorAlt);
+			outFile.writeString("  CEILING TEXTURE %u %2.2f %2.2f %u\r\n", sector->ceilTexture.texId, sector->ceilTexture.baseOffsetX, sector->ceilTexture.baseOffsetY, sector->ceilTexture.flag);
+			outFile.writeString("  CEILING ALTITUDE %2.2f\r\n", sector->ceilAlt);
+			outFile.writeString("  SECOND ALTITUDE %2.2f\r\n", sector->secAlt);
+			outFile.writeString("  FLAGS %u %u %u\r\n", sector->flags[0], sector->flags[1], sector->flags[2]);
+			outFile.writeString("  LAYER %d\r\n", sector->layer);
+
+			outFile.writeString("\r\n\r\n  VERTICES %u\r\n", sector->vtxCount);
+			const Vec2f* vtx = s_data.vertices.data() + sector->vtxOffset;
+			for (u32 v = 0; v < sector->vtxCount; v++, vtx++)
+			{
+				outFile.writeString("    X: %2.2f	Z: %2.2f	#  %u\r\n", vtx->x, vtx->z, v);
+			}
+
+			outFile.writeString("\r\n\r\n  WALLS %u\r\n", sector->wallCount);
+			const SectorWall* wall = s_data.walls.data() + sector->wallOffset;
+			for (u32 w = 0; w < sector->wallCount; w++, wall++)
+			{
+				outFile.writeString("    WALL LEFT: %u RIGHT: %u MID: %d %2.2f %2.2f %u TOP: %d %2.2f %2.2f %u BOT: %d %2.2f %2.2f %u SIGN: %d %2.2f %2.2f ADJOIN: %d MIRROR: %d WALK: %d FLAGS: %u %u %u LIGHT: %u\r\n",
+					wall->i0, wall->i1, wall->mid.texId, wall->mid.baseOffsetX, wall->mid.baseOffsetY, wall->mid.flag,
+					wall->top.texId, wall->top.baseOffsetX, wall->top.baseOffsetY, wall->top.flag,
+					wall->bot.texId, wall->bot.baseOffsetX, wall->bot.baseOffsetY, wall->bot.flag,
+					wall->sign.texId, wall->sign.baseOffsetX, wall->sign.baseOffsetY, wall->adjoin, wall->mirror, wall->walk, wall->flags[0], wall->flags[1], wall->flags[2], u16(wall->light));
+			}
+		}
+
+		outFile.close();
 	}
 
 	const char* getName()

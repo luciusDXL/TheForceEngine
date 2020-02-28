@@ -56,6 +56,8 @@ public:
 	void write(const std::string* ptr, u32 count=1) { writeType(ptr, count); }
 	void writeBuffer(const void* ptr, u32 size, u32 count=1);
 
+	void writeString(const char* fmt, ...);
+
 private:
 	template <typename T>
 	void readType(T* ptr, u32 count);

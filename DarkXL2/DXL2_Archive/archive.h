@@ -19,11 +19,15 @@ public:
 	static void freeArchive(Archive* archive);
 	static void freeAllArchives();
 
+	static Archive* createCustomArchive(ArchiveType type, const char* path);
+	static void deleteCustomArchive(Archive* archive);
+	
 	// Public Archive API
 public:
 	virtual ~Archive() {}
 
 	// Archive
+	virtual bool create(const char *archivePath) = 0;
 	virtual bool open(const char *archivePath) = 0;
 	virtual void close() = 0;
 
@@ -46,6 +50,9 @@ public:
 	virtual u32 getFileCount() = 0;
 	virtual const char* getFileName(u32 index) = 0;
 	virtual size_t getFileLength(u32 index) = 0;
+
+	// Edit
+	virtual void addFile(const char* fileName, const char* filePath) = 0;
 
 	// Shared Private State
 protected:

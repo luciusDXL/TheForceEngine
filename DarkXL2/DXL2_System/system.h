@@ -30,4 +30,7 @@ namespace DXL2_System
 	bool logOpen(const char* filename);
 	void logClose();
 	void logWrite(LogWriteType type, const char* tag, const char* str, ...);
+
+	// System
+	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion);
 }

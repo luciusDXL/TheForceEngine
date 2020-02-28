@@ -48,4 +48,6 @@ public:
 	virtual void write(const f64* ptr, u32 count=1)=0;
 	virtual void write(const std::string* ptr, u32 count=1)=0;
 	virtual void writeBuffer(const void* ptr, u32 size, u32 count=1)=0;
+
+	virtual void writeString(const char* fmt, ...)=0;
 };

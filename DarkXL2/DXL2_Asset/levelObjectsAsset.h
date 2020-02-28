@@ -88,5 +88,7 @@ namespace DXL2_LevelObjects
 	bool load(const char* name);
 	void unload();
 
+	void save(const char* name, const char* path);
+
 	LevelObjectData* getLevelObjectData();
 };

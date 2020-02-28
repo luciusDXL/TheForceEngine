@@ -220,6 +220,7 @@ int main(int argc, char* argv[])
 
 	// TODO: The data path is hard coded and should be set.
 	DXL2_Paths::setPath(PATH_SOURCE_DATA, "D:\\Program Files (x86)\\Steam\\steamapps\\common\\dark forces\\Game\\");
+	DXL2_Paths::setPath(PATH_DOSBOX, "D:\\Program Files (x86)\\Steam\\steamapps\\common\\dark forces\\");
 
 	DXL2_System::logOpen("darkxl2_log.txt");
 	DXL2_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"", DXL2_Paths::getPath(PATH_PROGRAM));

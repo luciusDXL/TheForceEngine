@@ -76,3 +76,51 @@ void Archive::freeAllArchives()
 		s_archives[i].clear();
 	}
 }
+
+Archive* Archive::createCustomArchive(ArchiveType type, const char* path)
+{
+	ArchiveMap::iterator iArchive = s_archives[type].find(path);
+	if (iArchive != s_archives[type].end())
+	{
+		return iArchive->second;
+	}
+
+	Archive* archive = nullptr;
+	switch (type)
+	{
+	case ARCHIVE_GOB:
+	{
+		archive = new GobArchive();
+	}
+	break;
+	case ARCHIVE_LFD:
+	{
+		archive = new LfdArchive();
+	}
+	break;
+	default:
+		assert(0);
+		break;
+	};
+
+	if (archive)
+	{
+		strcpy(archive->m_name, path);
+		archive->create(path);
+		archive->m_type = type;
+		(s_archives[type])[path] = archive;
+	}
+	return archive;
+}
+
+void Archive::deleteCustomArchive(Archive* archive)
+{
+	if (!archive) { return; }
+
+	ArchiveMap::iterator iArchive = s_archives[archive->m_type].find(archive->m_name);
+	if (iArchive != s_archives[archive->m_type].end())
+	{
+		s_archives->erase(iArchive);
+	}
+	delete archive;
+}

@@ -158,6 +158,8 @@ namespace DXL2_LevelAsset
 	bool load(const char* name);
 	void unload();
 
+	void save(const char* name, const char* path);
+
 	const char* getName();
 	LevelData* getLevelData();
 };

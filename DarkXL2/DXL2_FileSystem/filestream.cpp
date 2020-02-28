@@ -1,6 +1,8 @@
 #pragma once
 #include "filestream.h"
 #include <assert.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 //Work buffers for handling special cases like std::string without allocating memory (beyond what the strings needs itself).
 static u32  s_workBufferU32[1024];		//4k buffer.
@@ -97,6 +99,20 @@ void FileStream::writeBuffer(const void* ptr, u32 size, u32 count)
 {
 	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
 	fwrite(ptr, size, count, m_file);
+}
+
+void FileStream::writeString(const char* fmt, ...)
+{
+	static char tmpStr[4096];
+	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
+
+	va_list arg;
+	va_start(arg, fmt);
+	vsprintf(tmpStr, fmt, arg);
+	va_end(arg);
+
+	const size_t len = strlen(tmpStr);
+	fwrite(tmpStr, len, 1, m_file);
 }
 
 void FileStream::flush()

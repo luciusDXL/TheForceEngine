@@ -1,5 +1,6 @@
 #include <DXL2_System/system.h>
 #include "gobArchive.h"
+#include <assert.h>
 #include <algorithm>
 
 GobArchive::~GobArchive()
@@ -7,7 +8,31 @@ GobArchive::~GobArchive()
 	close();
 }
 
-// Archive
+bool GobArchive::create(const char *archivePath)
+{
+	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_WRITE);
+	m_curFile = -1;
+	if (!m_archiveOpen) { return false; }
+
+	memset(&m_header, 0, sizeof(GOB_Header_t));
+	m_header.GOB_MAGIC[0] = 'G';
+	m_header.GOB_MAGIC[1] = 'O';
+	m_header.GOB_MAGIC[2] = 'B';
+	m_header.GOB_MAGIC[3] = '\n';
+	m_header.MASTERX = sizeof(GOB_Header_t);
+	
+	m_fileList.MASTERN = 0;
+	m_fileList.entries = nullptr;
+
+	m_file.writeBuffer(&m_header, sizeof(GOB_Header_t));
+	m_file.writeBuffer(&m_fileList.MASTERN, sizeof(long));
+
+	strcpy(m_archivePath, archivePath);
+	m_file.close();
+
+	return true;
+}
+
 bool GobArchive::open(const char *archivePath)
 {
 	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_READ);
@@ -147,4 +172,58 @@ size_t GobArchive::getFileLength(u32 index)
 {
 	if (!m_archiveOpen) { return 0; }
 	return m_fileList.entries[index].LEN;
+}
+
+// Edit
+void GobArchive::addFile(const char* fileName, const char* filePath)
+{
+	FileStream file;
+	if (!file.open(filePath, FileStream::MODE_READ))
+	{
+		return;
+	}
+	const size_t len = file.getSize();
+	const long newId = m_fileList.MASTERN;
+	m_fileList.MASTERN++;
+	GOB_Entry_t* newEntries = new GOB_Entry_t[m_fileList.MASTERN];
+	memcpy(newEntries, m_fileList.entries, sizeof(GOB_Entry_t) * newId);
+	m_fileList.entries = newEntries;
+
+	GOB_Entry_t* newFile = &m_fileList.entries[newId];
+	memset(newFile, 0, sizeof(GOB_Entry_t));
+	newFile->IX  = newId > 0 ? m_fileList.entries[newId - 1].IX + m_fileList.entries[newId - 1].LEN : sizeof(GOB_Header_t);
+	newFile->LEN = long(len);
+	strcpy(newFile->NAME, fileName);
+	m_header.MASTERX += newFile->LEN;
+
+	// Read all of the file data.
+	std::vector<std::vector<u8>> fileData(m_fileList.MASTERN);
+	if (m_file.open(m_archivePath, FileStream::MODE_READ))
+	{
+		for (u32 f = 0; f < m_fileList.MASTERN - 1; f++)
+		{
+			fileData[f].resize(m_fileList.entries[f].LEN);
+			m_file.seek(m_fileList.entries[f].IX);
+			m_file.readBuffer(fileData[f].data(), m_fileList.entries[f].LEN);
+		}
+		m_file.close();
+
+		fileData[newId].resize(len);
+		file.readBuffer(fileData[newId].data(), len);
+		file.close();
+	}
+
+	// Now write the new file.
+	if (m_file.open(m_archivePath, FileStream::MODE_WRITE))
+	{
+		m_file.writeBuffer(&m_header, sizeof(GOB_Header_t));
+		for (u32 f = 0; f < m_fileList.MASTERN; f++)
+		{
+			m_file.writeBuffer(fileData[f].data(), m_fileList.entries[f].LEN);
+		}
+		assert(m_file.getLoc() == m_header.MASTERX);
+		m_file.writeBuffer(&m_fileList.MASTERN, sizeof(long));
+		m_file.writeBuffer(m_fileList.entries, sizeof(GOB_Entry_t), m_fileList.MASTERN);
+		m_file.close();
+	}
 }

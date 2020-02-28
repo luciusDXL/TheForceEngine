@@ -24,6 +24,8 @@
 #include <DXL2_Asset/levelObjectsAsset.h>
 #include <DXL2_Ui/markdown.h>
 #include <DXL2_RenderBackend/renderBackend.h>
+#include <DXL2_FileSystem/filestream.h>
+#include <DXL2_FileSystem/paths.h>
 
 //Help
 #include "help/helpWindow.h"
@@ -219,6 +221,8 @@ namespace LevelEditor
 	static const Palette256* s_palette;
 	static bool s_runLevel = false;
 
+	static Archive* s_outGob = nullptr;
+
 	// Error message
 	static bool s_showError = false;
 	static char s_errorMessage[DXL2_MAX_PATH];
@@ -247,6 +251,8 @@ namespace LevelEditor
 	// Browser panels
 	void browseTextures();
 	void browseEntities();
+
+	void play(bool playFromDos);
 
 	// Draw
 	void drawSector3d(const EditorSector* sector, const SectorTriangles* poly, bool overlay = false, bool hover = false);
@@ -298,7 +304,10 @@ namespace LevelEditor
 
 	void disable()
 	{
+		Archive::deleteCustomArchive(s_outGob);
 		DXL2_EditorRender::destroy();
+
+		s_outGob = nullptr;
 	}
 		
 	bool render3dView()
@@ -2507,6 +2516,130 @@ namespace LevelEditor
 		}
 	}
 
+	bool writeDosBoxConfig(const char* levelName)
+	{
+		// Read the existing config.
+		char srcConfigPath[DXL2_MAX_PATH];
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_PROGRAM, "DosBox/DefaultDosBoxConfig.txt", srcConfigPath);
+
+		FileStream srcConfig;
+		if (!srcConfig.open(srcConfigPath, FileStream::MODE_READ))
+		{
+			return false;
+		}
+
+		const size_t len = srcConfig.getSize();
+		std::vector<char> dosBoxConfig(len + 512);
+		srcConfig.readBuffer(dosBoxConfig.data(), len);
+		srcConfig.close();
+
+		char* newConfig = dosBoxConfig.data();
+		char commandLine[512];
+		sprintf(commandLine, "dark.exe -uEDITOR.GOB -l%s\r\nexit\r\n", levelName);
+		strcat(newConfig, commandLine);
+
+		char dstConfigPath[DXL2_MAX_PATH];
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.conf", dstConfigPath);
+
+		FileStream config;
+		if (!config.open(dstConfigPath, FileStream::MODE_WRITE))
+		{
+			return false;
+		}
+		config.writeBuffer(newConfig, strlen(newConfig));
+		config.close();
+
+		return true;
+	}
+	
+	void play(bool playFromDos)
+	{
+		bool res = LevelEditorData::generateLevelData();
+		res &= LevelEditorData::generateInfAsset();
+		res &= LevelEditorData::generateObjects();
+		if (res)
+		{
+			Vec2f pos2d = { s_camera.pos.x, s_camera.pos.z };
+			s32 sectorId = LevelEditorData::findSector(s_layerIndex + s_layerMin, &pos2d);
+			LevelObjectData* levelObj = DXL2_LevelObjects::getLevelObjectData();
+
+			if (playFromDos)
+			{
+				// Temporarily move the start point.
+				s32 startIndex = -1;
+				Vec3f originalStartPos;
+				f32 originalAngle;
+				LevelObject* obj = levelObj->objects.data();
+				for (s32 i = 0; i < levelObj->objectCount; i++, obj++)
+				{
+					if (obj->oclass == CLASS_SPIRIT && obj->logics.size() && obj->logics[0].type == LOGIC_PLAYER)
+					{
+						startIndex = i;
+						originalStartPos = obj->pos;
+						originalAngle = obj->orientation.y;
+						obj->pos = s_camera.pos;
+						obj->orientation.y = 180.0f + 360.0f * s_camera.yaw / (2.0f * PI);
+					}
+				}
+
+				// Create GOB
+				char gobPath[DXL2_MAX_PATH];
+				DXL2_Paths::appendPath(PATH_SOURCE_DATA, "editor.gob", gobPath);
+				Archive::deleteCustomArchive(s_outGob);
+				s_outGob = Archive::createCustomArchive(ARCHIVE_GOB, gobPath);
+
+				char basePath[DXL2_MAX_PATH];
+				DXL2_Paths::appendPath(PATH_PROGRAM_DATA, s_levelData->name.c_str(), basePath);
+
+				char levName[DXL2_MAX_PATH];
+				char objName[DXL2_MAX_PATH];
+				char infName[DXL2_MAX_PATH];
+				sprintf(levName, "%s.LEV", s_levelData->name.c_str());
+				sprintf(objName, "%s.O",   s_levelData->name.c_str());
+				sprintf(infName, "%s.INF", s_levelData->name.c_str());
+
+				char levPath[DXL2_MAX_PATH];
+				char objPath[DXL2_MAX_PATH];
+				char infPath[DXL2_MAX_PATH];
+				DXL2_Paths::appendPath(PATH_PROGRAM_DATA, levName, levPath);
+				DXL2_Paths::appendPath(PATH_PROGRAM_DATA, objName, objPath);
+				DXL2_Paths::appendPath(PATH_PROGRAM_DATA, infName, infPath);
+
+				DXL2_LevelAsset::save(s_levelData->name.c_str(), levPath);
+				//DXL2_InfAsset::save(infName, infPath);
+				DXL2_LevelObjects::save(s_levelData->name.c_str(), objPath);
+
+				s_outGob->addFile(levName, levPath);
+				s_outGob->addFile(objName, objPath);
+				//s_outGob->addFile(infName, infPath);
+
+				// Run
+				writeDosBoxConfig(s_levelData->name.c_str());
+
+				char dosBoxPath[DXL2_MAX_PATH];
+				DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.exe", dosBoxPath);
+				DXL2_System::osShellExecute(dosBoxPath, DXL2_Paths::getPath(DXL2_PathType::PATH_DOSBOX), nullptr, true);
+
+				if (startIndex >= 0)
+				{
+					LevelObject* obj = levelObj->objects.data() + startIndex;
+					obj->pos = originalStartPos;
+					obj->orientation.y = originalAngle;
+				}
+			}
+			else
+			{
+				u32 w = 320, h = 200;
+				if (DXL2_GameLoop::startLevelFromExisting(&s_camera.pos, -s_camera.yaw + PI, sectorId, s_palette, levelObj, s_renderer, w, h))
+				{
+					s_runLevel = true;
+					DXL2_Input::enableRelativeMode(true);
+					s_renderer->enableScreenClear(false);
+				}
+			}
+		}
+	}
+
 	void draw(bool* isActive)
 	{
 		if (s_runLevel)
@@ -2519,23 +2652,7 @@ namespace LevelEditor
 		{
 			if (drawToolbarButton(s_editCtrlToolbarData, 0, false))
 			{
-				bool res = LevelEditorData::generateLevelData();
-				res &= LevelEditorData::generateInfAsset();
-				res &= LevelEditorData::generateObjects();
-				if (res)
-				{
-					Vec2f pos2d = { s_camera.pos.x, s_camera.pos.z };
-					s32 sectorId = LevelEditorData::findSector(s_layerIndex + s_layerMin, &pos2d);
-					LevelObjectData* levelObj = DXL2_LevelObjects::getLevelObjectData();
-
-					u32 w = 320, h = 200;
-					if (DXL2_GameLoop::startLevelFromExisting(&s_camera.pos, -s_camera.yaw + PI, sectorId, s_palette, levelObj, s_renderer, w, h))
-					{
-						s_runLevel = true;
-						DXL2_Input::enableRelativeMode(true);
-						s_renderer->enableScreenClear(false);
-					}
-				}
+				play(false);
 			}
 			ImGui::SameLine(0.0f, 32.0f);
 
@@ -2879,9 +2996,11 @@ namespace LevelEditor
 		{
 			if (ImGui::MenuItem("Run [DarkXL 2]", "Ctrl+R", (bool*)NULL))
 			{
+				play(false);
 			}
 			if (ImGui::MenuItem("Run [Dark Forces]", "Ctrl+T", (bool*)NULL))
 			{
+				play(true);
 			}
 			ImGui::EndMenu();
 		}
