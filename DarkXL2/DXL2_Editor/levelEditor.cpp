@@ -542,8 +542,8 @@ namespace LevelEditor
 
 					if (obj->oclass != CLASS_3D)
 					{
-						const f32 x0 = obj->pos.x - w, x1 = obj->pos.x + w;
-						const f32 z0 = obj->pos.z - w, z1 = obj->pos.z + w;
+						const f32 x0 = obj->worldCen.x - obj->worldExt.x, x1 = obj->worldCen.x + obj->worldExt.x;
+						const f32 z0 = obj->worldCen.z - obj->worldExt.z, z1 = obj->worldCen.z + obj->worldExt.z;
 						if (worldPos.x >= x0 && worldPos.x < x1 && worldPos.z >= z0 && worldPos.z < z1)
 						{
 							s_hoveredEntity = i;
@@ -3905,10 +3905,28 @@ namespace LevelEditor
 					strcat(updateFlags, "Z-Axis");
 				}
 
-				ImGui::Text("    FLAGS: %u (%s)", logic->flags, updateFlags);
-				if (logic->flags & 8)  { ImGui::Text("    D_PITCH: %2.2f", logic->rotation.x); }
-				if (logic->flags & 16) { ImGui::Text("    D_YAW: %2.2f",   logic->rotation.y); }
-				if (logic->flags & 32) { ImGui::Text("    D_ROLL: %2.2f",  logic->rotation.z); }
+				ImGui::LabelText("##UpdateFlags", "    FLAGS: %u (%s)", logic->flags, updateFlags);
+				if (logic->flags & 8)
+				{
+					ImGui::LabelText("##UpdatePitch", "    D_PITCH:");
+					ImGui::SameLine(96.0f);
+					ImGui::SetNextItemWidth(96.0f);
+					ImGui::InputFloat("##UpdatePitchInput", &logic->rotation.x, 0.0f, 0.0f, "%.2f");
+				}
+				if (logic->flags & 16)
+				{
+					ImGui::LabelText("##UpdateYaw", "    D_YAW:");
+					ImGui::SameLine(96.0f);
+					ImGui::SetNextItemWidth(96.0f);
+					ImGui::InputFloat("##UpdateYawInput", &logic->rotation.y, 0.0f, 0.0f, "%.2f");
+				}
+				if (logic->flags & 32)
+				{
+					ImGui::LabelText("##UpdateRoll", "    D_ROLL:");
+					ImGui::SameLine(96.0f);
+					ImGui::SetNextItemWidth(96.0f);
+					ImGui::InputFloat("##UpdateRollInput", &logic->rotation.z, 0.0f, 0.0f, "%.2f");
+				}
 			}
 			else if (logic->type == LOGIC_KEY)
 			{
@@ -3926,14 +3944,13 @@ namespace LevelEditor
 		}
 		ImGui::Separator();
 		ImGui::Text("Common Variables");
-		if (obj->comFlags & LCF_EYE)
-		{
-			ImGui::Text("  EYE: TRUE");
-		}
-		if (obj->comFlags & LCF_BOSS)
-		{
-			ImGui::Text("  BOSS: TRUE");
-		}
+
+		ImGui::LabelText("##EntityEYELabel", "  EYE"); ImGui::SameLine(48.0f);
+		ImGui::CheckboxFlags("##EntityEYE", &obj->comFlags, LCF_EYE);  ImGui::SameLine(108.0f);
+
+		ImGui::LabelText("##EntityBOSSLabel", "  BOSS"); ImGui::SameLine(156.0f);
+		ImGui::CheckboxFlags("##EntityBOSS", &obj->comFlags, LCF_BOSS);
+
 		ImGui::LabelText("##EntityRadius", "  RADIUS:"); ImGui::SameLine(96.0f);
 		ImGui::SetNextItemWidth(96.0f);
 		ImGui::InputFloat("##EntityRadiusInput", &obj->radius, 0.0f, 0.0f, "%.2f");
