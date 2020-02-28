@@ -4070,9 +4070,12 @@ namespace LevelEditor
 		ImGui::LabelText("##EntityBOSSLabel", "  BOSS"); ImGui::SameLine(156.0f);
 		ImGui::CheckboxFlags("##EntityBOSS", &obj->comFlags, LCF_BOSS);
 
-		ImGui::LabelText("##EntityRadius", "  RADIUS:"); ImGui::SameLine(96.0f);
-		ImGui::SetNextItemWidth(96.0f);
-		ImGui::InputFloat("##EntityRadiusInput", &obj->radius, 0.0f, 0.0f, "%.2f");
+		if (obj->radius >= 0.0f)
+		{
+			ImGui::LabelText("##EntityRadius", "  RADIUS:"); ImGui::SameLine(96.0f);
+			ImGui::SetNextItemWidth(96.0f);
+			ImGui::InputFloat("##EntityRadiusInput", &obj->radius, 0.0f, 0.0f, "%.2f");
+		}
 
 		ImGui::LabelText("##EntityHeight", "  HEIGHT:"); ImGui::SameLine(96.0f);
 		ImGui::SetNextItemWidth(96.0f);

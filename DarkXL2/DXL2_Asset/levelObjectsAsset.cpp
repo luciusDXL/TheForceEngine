@@ -112,6 +112,7 @@ namespace DXL2_LevelObjects
 			// Logics
 			const u32 logicCount = (u32)obj->logics.size();
 			const Logic* logic = obj->logics.data();
+			bool isScenery = false;
 			for (u32 l = 0; l < logicCount; l++, logic++)
 			{
 				outFile.writeString("            LOGIC:	%s\r\n", c_logicName[logic->type]);
@@ -131,6 +132,10 @@ namespace DXL2_LevelObjects
 					}
 					outFile.writeString("            PAUSE: %s", obj->comFlags & LCF_PAUSE ? "TRUE" : "FALSE");
 					if (logic->frameRate != 0.0f) { outFile.writeString("            FRAME_RATE: %2.2f", logic->frameRate); }
+				}
+				else if (logic->type == LOGIC_SCENERY)
+				{
+					isScenery = true;
 				}
 			}
 			
@@ -152,7 +157,7 @@ namespace DXL2_LevelObjects
 			// Variables
 			if (obj->comFlags & LCF_EYE)  { outFile.writeString("            EYE: TRUE\r\n"); }
 			if (obj->comFlags & LCF_BOSS) { outFile.writeString("            BOSS: TRUE\r\n"); }
-			if (obj->radius != 0.0f)
+			if (obj->radius >= 0.0f)
 			{
 				outFile.writeString("            RADIUS: %2.2f\r\n", obj->radius);
 			}

@@ -64,7 +64,7 @@ struct LevelObject
 
 	// Common Variables.
 	u32 comFlags = 0;		// common flags - see LogicCommonFlags.
-	f32 radius = 0.0f;
+	f32 radius = -1.0f;
 	f32 height = 0.0f;
 
 	// Logics

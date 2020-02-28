@@ -1442,7 +1442,7 @@ namespace LevelEditorData
 					{
 						w = 3.0f;
 						h = 3.0f;
-						if (dstObj.radius != 0)
+						if (dstObj.radius > 0.0f)
 						{
 							w = dstObj.radius * 2.0f;
 						}
