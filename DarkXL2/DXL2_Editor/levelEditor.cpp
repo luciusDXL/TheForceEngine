@@ -2535,7 +2535,7 @@ namespace LevelEditor
 
 		char* newConfig = dosBoxConfig.data();
 		char commandLine[512];
-		sprintf(commandLine, "dark.exe -uEDITOR.GOB -l%s\r\nexit\r\n", levelName);
+		sprintf(commandLine, "dark.exe -uEDITOR.GOB -l%s -c\r\nexit\r\n", levelName);
 		strcat(newConfig, commandLine);
 
 		char dstConfigPath[DXL2_MAX_PATH];
