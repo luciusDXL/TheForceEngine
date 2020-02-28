@@ -428,7 +428,7 @@ namespace DXL2_InfAsset
 				curClass->stop[0].func = nullptr;
 				curClass->stop[0].time = 0.0f;
 				curClass->stop[1].func = nullptr;
-				curClass->stop[1].time = 2.0f;
+				curClass->stop[1].time = 4.0f;
 
 				curClass->slaveCount = 0;
 				curClass->mergeStart = -1;
@@ -1234,7 +1234,14 @@ namespace DXL2_InfAsset
 		}
 
 		// TODO: Figure out the default speed for each type of elevator.
-		classInfo->var.speed = 30.0f;
+		if (classInfo->isubclass == ELEVATOR_DOOR || classInfo->isubclass == ELEVATOR_DOOR_INV || classInfo->isubclass == ELEVATOR_DOOR_MID)
+		{
+			classInfo->var.speed = 30.0f;
+		}
+		else
+		{
+			classInfo->var.speed = 10.0f;
+		}
 
 		// Flags
 		classInfo->var.flags = 0;

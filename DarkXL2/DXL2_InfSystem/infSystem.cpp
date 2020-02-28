@@ -19,6 +19,8 @@ namespace DXL2_InfSystem
 	// this can be roughly 16x larger - this gives about 0.5Mb. So bumping it up to 1Mb just to be sure.
 	#define DXL2_RUNTIME_INF_POOL (1 * 1024 * 1024)
 	const f32 c_step = 1.0f / 60.0f;
+	const f32 c_lightSpeedScale = 3.2f;
+	static u32 s_frame = 0;
 		
 	enum InfState
 	{
@@ -569,14 +571,20 @@ namespace DXL2_InfSystem
 		if (curState->curStop < 0)
 		{
 			forceStop0 = true;
-			curState->curStop = classData->var.start;
+			curState->curStop  = classData->var.start;
 			curState->nextStop = classData->var.start;
 		}
 		const f32 stop0Value = getStopValue(classData, curState, sector, curState->curStop, -1);
 		const f32 stop1Value = getStopValue(classData, curState, sector, curState->nextStop, -1);
 
 		// Move towards the next value based on the var.speed
-		const f32 moveStep = stop1Value >= stop0Value ? c_step : -c_step;
+		f32 moveStep = stop1Value >= stop0Value ? c_step : -c_step;
+		// Lights...
+		if (classData->isubclass == ELEVATOR_CHANGE_LIGHT || classData->isubclass == ELEVATOR_CHANGE_WALL_LIGHT)
+		{
+			moveStep *= c_lightSpeedScale;
+		}
+
 		if (!forceStop0)
 		{
 			if (classData->var.speed == 0.0f)
@@ -636,7 +644,7 @@ namespace DXL2_InfSystem
 						
 			// Only execute functions if the elevator has not been terminated.
 			const u32 funcCount = stop1->code >> 8u;
-			if (curState->state != INF_STATE_TERMINATED)
+			if (curState->state != INF_STATE_TERMINATED && (s_frame > 0 || curState->state != INF_STATE_HOLDING))
 			{
 				executeFunctions(funcCount, stop1->func);
 			}
@@ -660,7 +668,7 @@ namespace DXL2_InfSystem
 		// If stop 0 is a hold stop, this will be setup after the initial execution.
 		ItemState* itemState = &s_infState[classData->stateIndex];
 		itemState->state = INF_STATE_MOVING;
-		itemState->curStop = -1;
+		itemState->curStop  = -1;
 		itemState->nextStop = 0;
 
 		// Set the initial state, for relative changes.
@@ -772,6 +780,7 @@ namespace DXL2_InfSystem
 		s_accum = 0.0f;
 		s_memoryPool->clear();
 		s_queuedFuncCount = 0;
+		s_frame = 0;
 		Sector* sectors = s_levelData->sectors.data();
 
 		// Map between sectors and items.
@@ -1188,6 +1197,8 @@ namespace DXL2_InfSystem
 					}
 				}
 			}
+
+			s_frame++;
 		}
 
 		// DEBUG
