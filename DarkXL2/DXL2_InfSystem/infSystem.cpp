@@ -90,7 +90,7 @@ namespace DXL2_InfSystem
 	u32 s_queuedFuncCount = 0;
 
 	Sector* getSlaveSector(const InfClassData* classData, u32 index);
-	void executeFunctions(u32 funcCount, InfFunction* func);
+	void executeFunctions(u32 funcCount, InfFunction* func, u32 evt=0);
 	NudgeType activateLineOrSector(InfClassData* classData);
 
 	bool init()
@@ -131,7 +131,7 @@ namespace DXL2_InfSystem
 		s_queuedFuncCount = 0;
 	}
 
-	void executeFunc(u32 type, u32 argCount, InfArg* arg, u32 sectorId, u32 wallId)
+	void executeFunc(u32 type, u32 argCount, InfArg* arg, u32 sectorId, u32 wallId, u32 evt)
 	{
 		s32 itemId = -1;
 		// Find the correct item to target.
@@ -167,6 +167,7 @@ namespace DXL2_InfSystem
 
 					// Optional event mask.
 					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
 
 					// And finally activate - but only if it is going "holding" and waiting to be activated.
 					ItemState* itemState = &s_infState[classData->stateIndex];
@@ -217,6 +218,7 @@ namespace DXL2_InfSystem
 
 					// Optional event mask.
 					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
 
 					// And finally activate - but only if it is going "holding" and waiting to be activated.
 					ItemState* itemState = &s_infState[classData->stateIndex];
@@ -236,6 +238,7 @@ namespace DXL2_InfSystem
 
 					// Optional event mask.
 					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
 
 					// And finally activate - but only if it is going "holding" and waiting to be activated.
 					ItemState* itemState = &s_infState[classData->stateIndex];
@@ -253,6 +256,7 @@ namespace DXL2_InfSystem
 
 					// Optional event mask.
 					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
 
 					// If the class has been turned off, then skip.
 					classData->var.master = true;
@@ -265,6 +269,7 @@ namespace DXL2_InfSystem
 
 					// Optional event mask.
 					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
 
 					// If the class has been turned off, then skip.
 					classData->var.master = false;
@@ -344,7 +349,7 @@ namespace DXL2_InfSystem
 		}
 	}
 	   
-	void executeFunctions(u32 funcCount, InfFunction* func)
+	void executeFunctions(u32 funcCount, InfFunction* func, u32 evt/*=0*/)
 	{
 		for (u32 f = 0; f < funcCount; f++)
 		{
@@ -358,7 +363,7 @@ namespace DXL2_InfSystem
 				const u32 sectorId = clientId & 0xffffu;
 				const u32 wallId = (clientId >> 16u) & 0xffffu;
 
-				executeFunc(type, argCount, func[f].arg, sectorId, wallId);
+				executeFunc(type, argCount, func[f].arg, sectorId, wallId, evt);
 			}
 		}
 	}
@@ -960,7 +965,7 @@ namespace DXL2_InfSystem
 				}
 
 				const u32 funcCount = classData->stop[0].code >> 8u;
-				executeFunctions(funcCount, classData->stop[0].func);
+				executeFunctions(funcCount, classData->stop[0].func, classData->var.event);
 
 				if (classData->isubclass == TRIGGER_SWITCH1 || classData->isubclass == TRIGGER_SINGLE)
 				{
