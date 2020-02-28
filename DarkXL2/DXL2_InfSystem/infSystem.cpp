@@ -136,26 +136,28 @@ namespace DXL2_InfSystem
 	void executeFunc(u32 type, u32 argCount, InfArg* arg, u32 sectorId, u32 wallId, u32 evt)
 	{
 		s32 itemId = -1;
-		// Find the correct item to target.
-		if (wallId < 0xffffu)
+		if (sectorId < 0xffffu)
 		{
-			for (u32 i = 0; i < s_sectorItemMap[sectorId].lineCount; i++)
+			// Find the correct item to target.
+			if (wallId < 0xffffu)
 			{
-				if (s_sectorItemMap[sectorId].lineItemId[i].wallId == wallId)
+				for (u32 i = 0; i < s_sectorItemMap[sectorId].lineCount; i++)
 				{
-					itemId = s_sectorItemMap[sectorId].lineItemId[i].itemId;
-					break;
+					if (s_sectorItemMap[sectorId].lineItemId[i].wallId == wallId)
+					{
+						itemId = s_sectorItemMap[sectorId].lineItemId[i].itemId;
+						break;
+					}
 				}
 			}
+			else
+			{
+				itemId = s_sectorItemMap[sectorId].sectorItemId;
+			}
 		}
-		else
-		{
-			itemId = s_sectorItemMap[sectorId].sectorItemId;
-		}
-		if (itemId < 0) { return; }
 
-		InfItem* item = &s_infData->item[itemId];
-		const u32 classCount = item->classCount;
+		InfItem* item = itemId >= 0 ? &s_infData->item[itemId] : nullptr;
+		const u32 classCount = item ? item->classCount : 0;
 
 		switch (type)
 		{
@@ -279,7 +281,7 @@ namespace DXL2_InfSystem
 				break;
 			case INF_MSG_CLEAR_BITS:
 				{
-					s32 flagIdx = arg[0].iValue;
+					s32 flagIdx = arg[0].iValue - 1;
 					s32 bits = arg[1].iValue;
 
 					if (wallId < 0xffffu)
@@ -294,7 +296,7 @@ namespace DXL2_InfSystem
 				break;
 			case INF_MSG_SET_BITS:
 				{
-					s32 flagIdx = arg[0].iValue;
+					s32 flagIdx = arg[0].iValue - 1;
 					s32 bits = arg[1].iValue;
 					
 					if (wallId < 0xffffu)
@@ -309,7 +311,26 @@ namespace DXL2_InfSystem
 				break;
 			case INF_MSG_COMPLETE:
 				// Parameter determines the GOL being completed.
-				//advanceCompleteElevator();
+
+				// Move the recipient elevator to its next stop.
+				for (u32 c = 0; c < classCount; c++)
+				{
+					InfClassData* classData = &item->classData[c];
+					// If the class has been turned off, then skip.
+					if (!classData->var.master) { continue; }
+
+					// Optional event mask.
+					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+					// And finally activate - but only if it is going "holding" and waiting to be activated.
+					ItemState* itemState = &s_infState[classData->stateIndex];
+					if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+					{
+						itemState->state = INF_STATE_MOVING;
+						itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+					}
+				}
 				break;
 			case INF_MSG_DONE:
 				for (u32 c = 0; c < classCount; c++)
@@ -366,6 +387,10 @@ namespace DXL2_InfSystem
 				const u32 wallId = (clientId >> 16u) & 0xffffu;
 
 				executeFunc(type, argCount, func[f].arg, sectorId, wallId, evt);
+			}
+			if (clientCount < 1)
+			{
+				executeFunc(type, argCount, func[f].arg, 0xffffu, 0xffffu, evt);
 			}
 		}
 	}

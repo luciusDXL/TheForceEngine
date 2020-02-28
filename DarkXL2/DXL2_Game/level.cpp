@@ -640,8 +640,8 @@ namespace DXL2_Level
 	void changeAdjoin(s32 sector1, s32 wall1, s32 sector2, s32 wall2)
 	{
 		const size_t count = s_levelData->sectors.size();
-		Sector* sectors = s_levelData->sectors.data();
-		SectorWall* walls = s_levelData->walls.data();
+		Sector* sectors    = s_levelData->sectors.data();
+		SectorWall* walls  = s_levelData->walls.data();
 
 		walls[sectors[sector1].wallOffset + wall1].adjoin = sector2;
 		walls[sectors[sector1].wallOffset + wall1].mirror = wall2;
