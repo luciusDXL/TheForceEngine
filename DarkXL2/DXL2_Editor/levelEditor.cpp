@@ -3878,7 +3878,69 @@ namespace LevelEditor
 		ImGui::LabelText("##EntityRollLabel", "Roll"); ImGui::SameLine(344.0f);
 		ImGui::InputFloat("##EntityRoll", &obj->orientation.z, 0.0f, 0.0f, "%0.2f");
 		ImGui::PopItemWidth();
+		ImGui::Separator();
+		ImGui::Text("Logics");
 		// TODO: Visual controls for orientation (on the map).
+		// TODO: Logic and Variable editing.
+		const u32 logicCount = (u32)obj->logics.size();
+		Logic* logic = obj->logics.data();
+		for (u32 i = 0; i < logicCount; i++, logic++)
+		{
+			ImGui::Text("  %s", c_logicName[logic->type]);
+			if (logic->type == LOGIC_UPDATE)
+			{
+				char updateFlags[256]="";
+				if (logic->flags & 8)
+				{
+					strcat(updateFlags, "X-Axis");
+					if (logic->flags > 8) { strcat(updateFlags, "|"); }
+				}
+				if (logic->flags & 16)
+				{
+					strcat(updateFlags, "Y-Axis");
+					if (logic->flags > 16) { strcat(updateFlags, "|"); }
+				}
+				if (logic->flags & 32)
+				{
+					strcat(updateFlags, "Z-Axis");
+				}
+
+				ImGui::Text("    FLAGS: %u (%s)", logic->flags, updateFlags);
+				if (logic->flags & 8)  { ImGui::Text("    D_PITCH: %2.2f", logic->rotation.x); }
+				if (logic->flags & 16) { ImGui::Text("    D_YAW: %2.2f",   logic->rotation.y); }
+				if (logic->flags & 32) { ImGui::Text("    D_ROLL: %2.2f",  logic->rotation.z); }
+			}
+			else if (logic->type == LOGIC_KEY)
+			{
+				ImGui::Text("    VUE: %s %s", logic->Vue.c_str(), logic->VueId.c_str());
+				ImGui::Text("    VUE_APPEND: %s %s", logic->VueAppend.c_str(), logic->VueAppendId.c_str());
+				ImGui::Text("    PAUSE: %s", obj->comFlags & LCF_PAUSE ? "true" : "false");
+				ImGui::Text("    FRAME_RATE: %2.2f", logic->frameRate);
+			}
+		}
+		const u32 genCount = (u32)obj->generators.size();
+		EnemyGenerator* gen = obj->generators.data();
+		for (u32 i = 0; i < genCount; i++, gen++)
+		{
+			ImGui::Text("  Generator %s", c_logicName[gen->type]);
+		}
+		ImGui::Separator();
+		ImGui::Text("Common Variables");
+		if (obj->comFlags & LCF_EYE)
+		{
+			ImGui::Text("  EYE: TRUE");
+		}
+		if (obj->comFlags & LCF_BOSS)
+		{
+			ImGui::Text("  BOSS: TRUE");
+		}
+		ImGui::LabelText("##EntityRadius", "  RADIUS:"); ImGui::SameLine(96.0f);
+		ImGui::SetNextItemWidth(96.0f);
+		ImGui::InputFloat("##EntityRadiusInput", &obj->radius, 0.0f, 0.0f, "%.2f");
+
+		ImGui::LabelText("##EntityHeight", "  HEIGHT:"); ImGui::SameLine(96.0f);
+		ImGui::SetNextItemWidth(96.0f);
+		ImGui::InputFloat("##EntityHeightInput", &obj->height, 0.0f, 0.0f, "%.2f");
 		
 		// Correct the bounding box center if needed.
 		obj->worldCen = obj->pos;

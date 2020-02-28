@@ -249,29 +249,29 @@ namespace DXL2_LevelObjects
 					generator->wanderTime = (f32)strtod(tokens[1].c_str(), &endPtr);
 				}
 				// Logic
-				else if (logic && strcasecmp("EYE:", tokens[0].c_str()) == 0 && strcasecmp(tokens[1].c_str(), "TRUE") == 0)
+				else if (strcasecmp("EYE:", tokens[0].c_str()) == 0 && strcasecmp(tokens[1].c_str(), "TRUE") == 0)
 				{
-					logic->comFlags |= LCF_EYE;
+					object->comFlags |= LCF_EYE;
 				}
-				else if (logic && strcasecmp("BOSS:", tokens[0].c_str()) == 0 && strcasecmp(tokens[1].c_str(), "TRUE") == 0)
+				else if (strcasecmp("BOSS:", tokens[0].c_str()) == 0 && strcasecmp(tokens[1].c_str(), "TRUE") == 0)
 				{
-					logic->comFlags |= LCF_BOSS;
+					object->comFlags |= LCF_BOSS;
 				}
-				else if (logic && strcasecmp("PAUSE:", tokens[0].c_str()) == 0 && strcasecmp(tokens[1].c_str(), "TRUE") == 0)
+				else if (strcasecmp("PAUSE:", tokens[0].c_str()) == 0 && strcasecmp(tokens[1].c_str(), "TRUE") == 0)
 				{
-					logic->comFlags |= LCF_PAUSE;
+					object->comFlags |= LCF_PAUSE;
 				}
 				else if (logic && strcasecmp("FLAGS:", tokens[0].c_str()) == 0)
 				{
 					logic->flags = strtoul(tokens[1].c_str(), &endPtr, 10);
 				}
-				else if (logic && strcasecmp("RADIUS:", tokens[0].c_str()) == 0)
+				else if (strcasecmp("RADIUS:", tokens[0].c_str()) == 0)
 				{
-					logic->radius = (f32)strtod(tokens[1].c_str(), &endPtr);
+					object->radius = (f32)strtod(tokens[1].c_str(), &endPtr);
 				}
-				else if (logic && strcasecmp("HEIGHT:", tokens[0].c_str()) == 0)
+				else if (strcasecmp("HEIGHT:", tokens[0].c_str()) == 0)
 				{
-					logic->height = (f32)strtod(tokens[1].c_str(), &endPtr);
+					object->height = (f32)strtod(tokens[1].c_str(), &endPtr);
 				}
 				else if (logic && strcasecmp("FRAMERATE:", tokens[0].c_str()) == 0)
 				{
@@ -292,10 +292,12 @@ namespace DXL2_LevelObjects
 				else if (logic && strcasecmp("VUE:", tokens[0].c_str()) == 0)
 				{
 					logic->Vue = tokens[1];
+					logic->VueId = tokens[2];
 				}
 				else if (logic && strcasecmp("VUE_APPEND:", tokens[0].c_str()) == 0)
 				{
 					logic->VueAppend = tokens[1];
+					logic->VueAppendId = tokens[2];
 				}
 			}
 		}

@@ -302,6 +302,9 @@ namespace DXL2_View
 				secobject->collisionRadius = 0.0f;
 				secobject->collisionHeight = 0.0f;
 				secobject->show = true;
+				secobject->comFlags = object[i].comFlags;
+				secobject->radius = object[i].radius;
+				secobject->height = object[i].height;
 
 				secobject->animId = 0;
 				secobject->frameIndex = 0;

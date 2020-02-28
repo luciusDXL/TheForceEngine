@@ -646,6 +646,10 @@ namespace LevelEditorData
 				dstObj->difficulty = srcObj->difficulty;
 				dstObj->logics = srcObj->logics;
 				dstObj->generators = srcObj->generators;
+
+				dstObj->comFlags = srcObj->comFlags;
+				dstObj->radius = srcObj->radius;
+				dstObj->height = srcObj->height;
 			}
 		}
 		
@@ -1386,6 +1390,10 @@ namespace LevelEditorData
 				dstObj.difficulty  = srcObj->difficulty;
 				dstObj.logics      = srcObj->logics;
 				dstObj.generators  = srcObj->generators;
+
+				dstObj.comFlags = srcObj->comFlags;
+				dstObj.radius   = srcObj->radius;
+				dstObj.height   = srcObj->height;
 
 				if (srcObj->oclass == CLASS_SPRITE)
 				{

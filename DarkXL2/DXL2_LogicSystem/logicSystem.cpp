@@ -488,14 +488,14 @@ namespace DXL2_LogicSystem
 		prop.push_back({ "int state",		offsetof(GameObject, state) });
 		prop.push_back({ "int hp",			offsetof(GameObject, hp) });
 		prop.push_back({ "float time",		offsetof(GameObject, time) });
+		prop.push_back({ "const uint commonFlags", offsetof(GameObject, comFlags) });
+		prop.push_back({ "const float radius", offsetof(GameObject, radius) });
+		prop.push_back({ "const float height", offsetof(GameObject, height) });
 		DXL2_ScriptSystem::registerRefType("GameObject", prop);
 
 		// Logic Parameters
 		prop.clear();
-		prop.push_back({"const uint commonFlags", offsetof(Logic, comFlags) });
 		prop.push_back({"const uint flags", offsetof(Logic, flags) });
-		prop.push_back({"const float radius", offsetof(Logic, radius) });
-		prop.push_back({"const float height", offsetof(Logic, height) });
 		prop.push_back({"const float frameRate", offsetof(Logic, frameRate) });
 		prop.push_back({"const Vec3f rotation", offsetof(Logic, rotation) });
 		DXL2_ScriptSystem::registerRefType("LogicParam", prop);

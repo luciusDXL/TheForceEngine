@@ -44,14 +44,13 @@ struct EnemyGenerator
 struct Logic
 {
 	LogicType type = LOGIC_INVALID;
-	u32 comFlags   = 0;		// common flags - see LogicCommonFlags.
 	u32 flags      = 0;		// logic specific flags.
-	f32 radius     = 0.0f;
-	f32 height     = 0.0f;
 	f32 frameRate  = 0.0f;
 	Vec3f rotation = { 0.0f, 0.0f, 0.0f };
 	std::string Vue;
 	std::string VueAppend;
+	std::string VueId;
+	std::string VueAppendId;
 };
 
 struct LevelObject
@@ -62,6 +61,11 @@ struct LevelObject
 	Vec3f pos;
 	Vec3f orientation;
 	s32 difficulty;
+
+	// Common Variables.
+	u32 comFlags = 0;		// common flags - see LogicCommonFlags.
+	f32 radius = 0.0f;
+	f32 height = 0.0f;
 
 	// Logics
 	std::vector<Logic> logics;
