@@ -18,6 +18,9 @@ namespace FileUtil
 	void getFilePath(const char* filename, char* path);
 	void getFileExtension(const char* filename, char* extension);
 
+	void copyFile(const char* srcFile, const char* dstFile);
+	void deleteFile(const char* srcFile);
+
 	bool exists(const char* path);
 	u64  getModifiedTime(const char* path);
 }

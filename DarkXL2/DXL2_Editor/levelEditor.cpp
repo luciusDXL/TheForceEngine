@@ -26,6 +26,7 @@
 #include <DXL2_RenderBackend/renderBackend.h>
 #include <DXL2_FileSystem/filestream.h>
 #include <DXL2_FileSystem/paths.h>
+#include <DXL2_FileSystem/fileUtil.h>
 
 //Help
 #include "help/helpWindow.h"
@@ -2516,6 +2517,27 @@ namespace LevelEditor
 		}
 	}
 
+	void saveDosBoxConfig()
+	{
+		char srcConfigPath[DXL2_MAX_PATH];
+		char dstConfigPath[DXL2_MAX_PATH];
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.conf", srcConfigPath);
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox_Temp.conf", dstConfigPath);
+
+		FileUtil::copyFile(srcConfigPath, dstConfigPath);
+	}
+
+	void restoreDosBoxConfig()
+	{
+		char srcConfigPath[DXL2_MAX_PATH];
+		char dstConfigPath[DXL2_MAX_PATH];
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox_Temp.conf", srcConfigPath);
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.conf", dstConfigPath);
+
+		FileUtil::copyFile(srcConfigPath, dstConfigPath);
+		FileUtil::deleteFile(srcConfigPath);
+	}
+
 	bool writeDosBoxConfig(const char* levelName)
 	{
 		// Read the existing config.
@@ -2614,12 +2636,14 @@ namespace LevelEditor
 				//s_outGob->addFile(infName, infPath);
 
 				// Run
+				saveDosBoxConfig();
 				writeDosBoxConfig(s_levelData->name.c_str());
 
 				char dosBoxPath[DXL2_MAX_PATH];
 				DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.exe", dosBoxPath);
 				DXL2_System::osShellExecute(dosBoxPath, DXL2_Paths::getPath(DXL2_PathType::PATH_DOSBOX), nullptr, true);
 
+				restoreDosBoxConfig();
 				if (startIndex >= 0)
 				{
 					LevelObject* obj = levelObj->objects.data() + startIndex;

@@ -188,6 +188,16 @@ namespace FileUtil
 		name[c-start] = 0;
 	}
 
+	void copyFile(const char* srcFile, const char* dstFile)
+	{
+		CopyFile(srcFile, dstFile, FALSE);
+	}
+
+	void deleteFile(const char* srcFile)
+	{
+		DeleteFile(srcFile);
+	}
+
 	bool exists( const char *path )
 	{
 		return !(GetFileAttributesA(path)==INVALID_FILE_ATTRIBUTES && GetLastError()==ERROR_FILE_NOT_FOUND);
