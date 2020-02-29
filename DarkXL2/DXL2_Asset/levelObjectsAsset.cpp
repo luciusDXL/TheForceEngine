@@ -411,12 +411,12 @@ namespace DXL2_LevelObjects
 				else if (logic && strcasecmp("VUE:", tokens[0].c_str()) == 0)
 				{
 					logic->Vue = tokens[1];
-					logic->VueId = tokens[2];
+					logic->VueId = tokens.size() > 2 ? tokens[2] : "";
 				}
 				else if (logic && strcasecmp("VUE_APPEND:", tokens[0].c_str()) == 0)
 				{
 					logic->VueAppend = tokens[1];
-					logic->VueAppendId = tokens[2];
+					logic->VueAppendId = tokens.size() > 2 ? tokens[2] : "";
 				}
 			}
 		}
