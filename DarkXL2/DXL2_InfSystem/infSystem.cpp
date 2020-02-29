@@ -701,6 +701,10 @@ namespace DXL2_InfSystem
 
 		// Get the first stop value.
 		itemState->curValue = getStopValue(classData, itemState, sector, classData->var.start, -1);
+		for (u32 i = 0; i < classData->slaveCount; i++)
+		{
+			itemState->slaveState[i].curValue = getStopValue(classData, itemState, getSlaveSector(classData, i), classData->var.start, i);
+		}
 
 		// interpret the value based on the elevator type.
 		applyValueToSector(classData, itemState, sector->id, itemState->curValue, -1);
