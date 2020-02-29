@@ -430,6 +430,11 @@ namespace DXL2_LogicSystem
 		DXL2_InfSystem::advanceCompleteElevator();
 	}
 
+	void DXL2_BossKilled()
+	{
+		DXL2_InfSystem::advanceBossElevator();
+	}
+
 	void DXL2_GiveGear()
 	{
 		// TODO: Give gear back...
@@ -525,6 +530,7 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerFunction("void DXL2_AddLogic(int objectId, int logicId)", SCRIPT_FUNCTION(DXL2_AddLogic));
 		DXL2_ScriptSystem::registerFunction("void DXL2_GivePlayerKey(int keyType)", SCRIPT_FUNCTION(DXL2_GivePlayerKey));
 		DXL2_ScriptSystem::registerFunction("void DXL2_AddGoalItem()", SCRIPT_FUNCTION(DXL2_AddGoalItem));
+		DXL2_ScriptSystem::registerFunction("void DXL2_BossKilled()", SCRIPT_FUNCTION(DXL2_BossKilled));
 		DXL2_ScriptSystem::registerFunction("void DXL2_GiveGear()", SCRIPT_FUNCTION(DXL2_GiveGear));
 
 		DXL2_ScriptSystem::registerFunction("void DXL2_PrintMessage(uint msgId)", SCRIPT_FUNCTION(DXL2_PrintMessage));
@@ -552,6 +558,11 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_TRIGGER", COLLIDE_TRIGGER);
 		DXL2_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_PLAYER", COLLIDE_PLAYER);
 		DXL2_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_ENEMY", COLLIDE_ENEMY);
+
+		DXL2_ScriptSystem::registerEnumType("LogicCommonFlags");
+		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_EYE",   LCF_EYE);
+		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_BOSS",  LCF_BOSS);
+		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_PAUSE", LCF_PAUSE);
 		
 		registerKeyTypes();
 		registerLogicTypes();

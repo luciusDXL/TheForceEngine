@@ -27,4 +27,5 @@ namespace DXL2_InfSystem
 	void shootWall(const Vec3f* hitPoint, s32 hitSectorId, s32 hitWallId);
 
 	void advanceCompleteElevator();
+	void advanceBossElevator();
 }

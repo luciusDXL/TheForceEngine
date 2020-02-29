@@ -17,11 +17,11 @@ namespace DXL2_InfSystem
 {
 	// Allocate 1 Mb. The largest MOD level uses around 32Kb @ 2K sectors. The engine supports 32K sectors, so if we assume
 	// this can be roughly 16x larger - this gives about 0.5Mb. So bumping it up to 1Mb just to be sure.
-	#define DXL2_RUNTIME_INF_POOL (1 * 1024 * 1024)
+#define DXL2_RUNTIME_INF_POOL (1 * 1024 * 1024)
 	const f32 c_step = 1.0f / 60.0f;
 	const f32 c_lightSpeedScale = 3.2f;
 	static u32 s_frame = 0;
-		
+
 	enum InfState
 	{
 		INF_STATE_MOVING = 0,	// Moving to the next stop.
@@ -92,7 +92,7 @@ namespace DXL2_InfSystem
 	u32 s_queuedFuncCount = 0;
 
 	Sector* getSlaveSector(const InfClassData* classData, u32 index);
-	void executeFunctions(u32 funcCount, InfFunction* func, u32 evt=0);
+	void executeFunctions(u32 funcCount, InfFunction* func, u32 evt = 0);
 	NudgeType activateLineOrSector(InfClassData* classData);
 
 	bool init()
@@ -118,7 +118,7 @@ namespace DXL2_InfSystem
 	{
 		return s_levelData->sectors.data() + classData->slaves[index];
 	}
-		
+
 	void queueFunction(u32 funcCount, InfFunction* func)
 	{
 		s_queuedFunc[s_queuedFuncCount++] = { funcCount, func };
@@ -161,217 +161,214 @@ namespace DXL2_InfSystem
 
 		switch (type)
 		{
-			case INF_MSG_M_TRIGGER:
+		case INF_MSG_M_TRIGGER:
+			for (u32 c = 0; c < classCount; c++)
 			{
-				for (u32 c = 0; c < classCount; c++)
+				InfClassData* classData = &item->classData[c];
+				// If the class has been turned off, then skip.
+				if (!classData->var.master) { continue; }
+
+				// Optional event mask.
+				if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+				// And finally activate - but only if it is going "holding" and waiting to be activated.
+				ItemState* itemState = &s_infState[classData->stateIndex];
+				if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
 				{
-					InfClassData* classData = &item->classData[c];
-					// If the class has been turned off, then skip.
-					if (!classData->var.master) { continue; }
-
-					// Optional event mask.
-					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
-					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
-
-					// And finally activate - but only if it is going "holding" and waiting to be activated.
-					ItemState* itemState = &s_infState[classData->stateIndex];
-					if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+					itemState->state = INF_STATE_MOVING;
+					itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+				}
+				else if (classData->iclass == INF_CLASS_TRIGGER && itemState->state == INF_STATE_HOLDING)
+				{
+					if (classData->isubclass == TRIGGER_SINGLE)
 					{
-						itemState->state = INF_STATE_MOVING;
-						itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+						itemState->state = INF_STATE_TERMINATED;
 					}
-					else if (classData->iclass == INF_CLASS_TRIGGER && itemState->state == INF_STATE_HOLDING)
+					else if (classData->isubclass == TRIGGER_SWITCH1)
 					{
-						if (classData->isubclass == TRIGGER_SINGLE)
-						{
-							itemState->state = INF_STATE_TERMINATED;
-						}
-						else if (classData->isubclass == TRIGGER_SWITCH1)
-						{
-							itemState->state = INF_STATE_ACTIVATED;
-						}
+						itemState->state = INF_STATE_ACTIVATED;
+					}
 
-						// Queue the functions to avoid recursion.
-						const u32 funcCount = classData->stop[0].code >> 8u;
-						queueFunction(funcCount, classData->stop[0].func);
+					// Queue the functions to avoid recursion.
+					const u32 funcCount = classData->stop[0].code >> 8u;
+					queueFunction(funcCount, classData->stop[0].func);
+				}
+			}
+			break;
+		case INF_MSG_GOTO_STOP:
+			for (u32 c = 0; c < classCount; c++)
+			{
+				InfClassData* classData = &item->classData[c];
+				// If the class has been turned off, then skip.
+				if (!classData->var.master) { continue; }
+
+				// And finally activate - but only if it is going "holding" and waiting to be activated.
+				ItemState* itemState = &s_infState[classData->stateIndex];
+				if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+				{
+					itemState->state = INF_STATE_MOVING;
+					itemState->nextStop = arg[0].iValue;
+				}
+			}
+			break;
+		case INF_MSG_NEXT_STOP:
+			for (u32 c = 0; c < classCount; c++)
+			{
+				InfClassData* classData = &item->classData[c];
+				// If the class has been turned off, then skip.
+				if (!classData->var.master) { continue; }
+
+				// Optional event mask.
+				if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+				// And finally activate - but only if it is going "holding" and waiting to be activated.
+				ItemState* itemState = &s_infState[classData->stateIndex];
+				if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+				{
+					itemState->state = INF_STATE_MOVING;
+					itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+				}
+			}
+			break;
+		case INF_MSG_PREV_STOP:
+			for (u32 c = 0; c < classCount; c++)
+			{
+				InfClassData* classData = &item->classData[c];
+				// If the class has been turned off, then skip.
+				if (!classData->var.master) { continue; }
+
+				// Optional event mask.
+				if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+				// And finally activate - but only if it is going "holding" and waiting to be activated.
+				ItemState* itemState = &s_infState[classData->stateIndex];
+				if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+				{
+					itemState->state = INF_STATE_MOVING;
+					itemState->nextStop = itemState->curStop > 0 ? itemState->curStop - 1 : classData->stopCount - 1;
+				}
+			}
+			break;
+		case INF_MSG_MASTER_ON:
+			for (u32 c = 0; c < classCount; c++)
+			{
+				InfClassData* classData = &item->classData[c];
+
+				// Optional event mask.
+				if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+				classData->var.master = true;
+			}
+			break;
+		case INF_MSG_MASTER_OFF:
+			for (u32 c = 0; c < classCount; c++)
+			{
+				InfClassData* classData = &item->classData[c];
+
+				// Optional event mask.
+				if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
+				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+				// If the class has been turned off, then skip.
+				classData->var.master = false;
+			}
+			break;
+		case INF_MSG_CLEAR_BITS:
+		{
+			s32 flagIdx = arg[0].iValue - 1;
+			s32 bits = arg[1].iValue;
+
+			if (wallId < 0xffffu)
+			{
+				DXL2_Level::clearFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
+			}
+			else
+			{
+				DXL2_Level::clearFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
+			}
+		}
+		break;
+		case INF_MSG_SET_BITS:
+		{
+			s32 flagIdx = arg[0].iValue - 1;
+			s32 bits = arg[1].iValue;
+
+			if (wallId < 0xffffu)
+			{
+				DXL2_Level::setFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
+			}
+			else
+			{
+				DXL2_Level::setFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
+			}
+		}
+		break;
+		case INF_MSG_COMPLETE:
+			// Parameter determines the GOL being completed.
+
+			// Move the recipient elevator to its next stop.
+			for (u32 c = 0; c < classCount; c++)
+			{
+				InfClassData* classData = &item->classData[c];
+				// If the class has been turned off, then skip.
+				if (!classData->var.master) { continue; }
+
+				// Optional event mask.
+				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+				// And finally activate - but only if it is going "holding" and waiting to be activated.
+				ItemState* itemState = &s_infState[classData->stateIndex];
+				if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+				{
+					itemState->state = INF_STATE_MOVING;
+					itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+				}
+			}
+			break;
+		case INF_MSG_DONE:
+			for (u32 c = 0; c < classCount; c++)
+			{
+				InfClassData* classData = &item->classData[c];
+				if (!classData->var.master) { continue; }
+
+				if (classData->iclass == INF_CLASS_TRIGGER && classData->isubclass != TRIGGER_SINGLE && s_infState[classData->stateIndex].state == INF_STATE_ACTIVATED)
+				{
+					s_infState[classData->stateIndex].state = INF_STATE_HOLDING;
+
+					if (wallId < 0xffffu && classData->isubclass == TRIGGER_SWITCH1)
+					{
+						DXL2_Level::setTextureFrame(sectorId, SP_SIGN, WSP_NONE, 0, wallId);
 					}
 				}
-			}   break;
-			case INF_MSG_GOTO_STOP:
-				for (u32 c = 0; c < classCount; c++)
-				{
-					InfClassData* classData = &item->classData[c];
-					// If the class has been turned off, then skip.
-					if (!classData->var.master) { continue; }
-
-					// And finally activate - but only if it is going "holding" and waiting to be activated.
-					ItemState* itemState = &s_infState[classData->stateIndex];
-					if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
-					{
-						itemState->state = INF_STATE_MOVING;
-						itemState->nextStop = arg[0].iValue;
-					}
-				}
-				break;
-			case INF_MSG_NEXT_STOP:
-				for (u32 c = 0; c < classCount; c++)
-				{
-					InfClassData* classData = &item->classData[c];
-					// If the class has been turned off, then skip.
-					if (!classData->var.master) { continue; }
-
-					// Optional event mask.
-					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
-					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
-
-					// And finally activate - but only if it is going "holding" and waiting to be activated.
-					ItemState* itemState = &s_infState[classData->stateIndex];
-					if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
-					{
-						itemState->state = INF_STATE_MOVING;
-						itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
-					}
-				}
-				break;
-			case INF_MSG_PREV_STOP:
-				for (u32 c = 0; c < classCount; c++)
-				{
-					InfClassData* classData = &item->classData[c];
-					// If the class has been turned off, then skip.
-					if (!classData->var.master) { continue; }
-
-					// Optional event mask.
-					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
-					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
-
-					// And finally activate - but only if it is going "holding" and waiting to be activated.
-					ItemState* itemState = &s_infState[classData->stateIndex];
-					if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
-					{
-						itemState->state = INF_STATE_MOVING;
-						itemState->nextStop = itemState->curStop > 0 ? itemState->curStop - 1 : classData->stopCount - 1;
-					}
-				}
-				break;
-			case INF_MSG_MASTER_ON:
-				for (u32 c = 0; c < classCount; c++)
-				{
-					InfClassData* classData = &item->classData[c];
-
-					// Optional event mask.
-					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
-					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
-
-					// If the class has been turned off, then skip.
-					classData->var.master = true;
-				}
-				break;
-			case INF_MSG_MASTER_OFF:
-				for (u32 c = 0; c < classCount; c++)
-				{
-					InfClassData* classData = &item->classData[c];
-
-					// Optional event mask.
-					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
-					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
-
-					// If the class has been turned off, then skip.
-					classData->var.master = false;
-				}
-				break;
-			case INF_MSG_CLEAR_BITS:
-				{
-					s32 flagIdx = arg[0].iValue - 1;
-					s32 bits = arg[1].iValue;
-
-					if (wallId < 0xffffu)
-					{
-						DXL2_Level::clearFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
-					}
-					else
-					{
-						DXL2_Level::clearFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
-					}
-				}
-				break;
-			case INF_MSG_SET_BITS:
-				{
-					s32 flagIdx = arg[0].iValue - 1;
-					s32 bits = arg[1].iValue;
-					
-					if (wallId < 0xffffu)
-					{
-						DXL2_Level::setFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
-					}
-					else
-					{
-						DXL2_Level::setFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
-					}
-				}
-				break;
-			case INF_MSG_COMPLETE:
-				// Parameter determines the GOL being completed.
-
-				// Move the recipient elevator to its next stop.
-				for (u32 c = 0; c < classCount; c++)
-				{
-					InfClassData* classData = &item->classData[c];
-					// If the class has been turned off, then skip.
-					if (!classData->var.master) { continue; }
-
-					// Optional event mask.
-					if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
-					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
-
-					// And finally activate - but only if it is going "holding" and waiting to be activated.
-					ItemState* itemState = &s_infState[classData->stateIndex];
-					if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
-					{
-						itemState->state = INF_STATE_MOVING;
-						itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
-					}
-				}
-				break;
-			case INF_MSG_DONE:
-				for (u32 c = 0; c < classCount; c++)
-				{
-					InfClassData* classData = &item->classData[c];
-					if (!classData->var.master) { continue; }
-
-					if (classData->iclass == INF_CLASS_TRIGGER && classData->isubclass != TRIGGER_SINGLE && s_infState[classData->stateIndex].state == INF_STATE_ACTIVATED)
-					{
-						s_infState[classData->stateIndex].state = INF_STATE_HOLDING;
-
-						if (wallId < 0xffffu && classData->isubclass == TRIGGER_SWITCH1)
-						{
-							DXL2_Level::setTextureFrame(sectorId, SP_SIGN, WSP_NONE, 0, wallId);
-						}
-					}
-				}
-				break;
-			case INF_MSG_WAKEUP:
-				// VUE (TODO)
-				break;
-			case INF_MSG_LIGHTS:
-				DXL2_Level::turnOnTheLights();
-				break;
-			case INF_MSG_ADJOIN:
-				DXL2_Level::changeAdjoin(arg[0].iValue, arg[1].iValue, arg[2].iValue, arg[3].iValue);
-				break;
-			case INF_MSG_PAGE:
-				// Sound (TODO)
-				break;
-			case INF_MSG_TEXT:
-				DXL2_GameHud::setMessage(DXL2_GameMessages::getMessage(arg[0].iValue));
-				break;
-			case INF_MSG_TEXTURE:
-				SectorPart part = arg[0].iValue == 0 ? SP_FLOOR : SP_CEILING;
-				const u32 donorTexId = DXL2_Level::getTextureId(arg[1].iValue, part, WSP_NONE);
-				DXL2_Level::setTextureId(sectorId, part, WSP_NONE, donorTexId);
-				break;
+			}
+			break;
+		case INF_MSG_WAKEUP:
+			// VUE (TODO)
+			break;
+		case INF_MSG_LIGHTS:
+			DXL2_Level::turnOnTheLights();
+			break;
+		case INF_MSG_ADJOIN:
+			DXL2_Level::changeAdjoin(arg[0].iValue, arg[1].iValue, arg[2].iValue, arg[3].iValue);
+			break;
+		case INF_MSG_PAGE:
+			// Sound (TODO)
+			break;
+		case INF_MSG_TEXT:
+			DXL2_GameHud::setMessage(DXL2_GameMessages::getMessage(arg[0].iValue));
+			break;
+		case INF_MSG_TEXTURE:
+			SectorPart part = arg[0].iValue == 0 ? SP_FLOOR : SP_CEILING;
+			const u32 donorTexId = DXL2_Level::getTextureId(arg[1].iValue, part, WSP_NONE);
+			DXL2_Level::setTextureId(sectorId, part, WSP_NONE, donorTexId);
+			break;
 		}
 	}
-	   
+
 	void executeFunctions(u32 funcCount, InfFunction* func, u32 evt/*=0*/)
 	{
 		for (u32 f = 0; f < funcCount; f++)
@@ -394,7 +391,7 @@ namespace DXL2_InfSystem
 			}
 		}
 	}
-	
+
 	// Add a function to get the stop value in absolute terms.
 	f32 getStopValue(const InfClassData* classData, ItemState* curState, Sector* sector, s32 stopId, s32 slaveIndex)
 	{
@@ -432,8 +429,8 @@ namespace DXL2_InfSystem
 				value = DXL2_Level::getAmbient(stop->value0.iValue);
 		}
 		else if (isubclass == ELEVATOR_MORPH_SPIN1 || isubclass == ELEVATOR_MORPH_SPIN2 || isubclass == ELEVATOR_ROTATE_WALL ||
-				 isubclass == ELEVATOR_MORPH_MOVE1 || isubclass == ELEVATOR_MORPH_MOVE2 || isubclass == ELEVATOR_MOVE_WALL || 
-				 isubclass == ELEVATOR_SCROLL_FLOOR || isubclass == ELEVATOR_SCROLL_CEILING || isubclass == ELEVATOR_SCROLL_WALL)
+			isubclass == ELEVATOR_MORPH_MOVE1 || isubclass == ELEVATOR_MORPH_MOVE2 || isubclass == ELEVATOR_MOVE_WALL ||
+			isubclass == ELEVATOR_SCROLL_FLOOR || isubclass == ELEVATOR_SCROLL_CEILING || isubclass == ELEVATOR_SCROLL_WALL)
 		{
 			if (value0Type == INF_STOP0_ABSOLUTE)
 				value = stop->value0.fValue;
@@ -459,70 +456,70 @@ namespace DXL2_InfSystem
 		// interpret the value based on the elevator type.
 		switch (classData->isubclass)
 		{
-			case ELEVATOR_DOOR:
-			case ELEVATOR_INV:
-			case ELEVATOR_MOVE_CEILING:
-				DXL2_Level::setCeilingHeight(sectorId, value);
-				break;
-			case ELEVATOR_BASIC:
-			case ELEVATOR_MOVE_FLOOR:
-			case ELEVATOR_BASIC_AUTO:
-			case ELEVATOR_DOOR_INV:
-				DXL2_Level::setFloorHeight(sectorId, value, true);
-				break;
-			case ELEVATOR_MOVE_OFFSET:
-				DXL2_Level::setSecondHeight(sectorId, value, true);
-				break;
-			case ELEVATOR_MOVE_FC:
-			{
-				f32 init0 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[0] : curState->initState[0];
-				f32 init1 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[1] : curState->initState[1];
-				DXL2_Level::setFloorHeight(sectorId, value, true);
-				DXL2_Level::setCeilingHeight(sectorId, value - init0 + init1);
-			}   break;
-			case ELEVATOR_DOOR_MID:
-			{
-				f32 init0 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[0] : curState->initState[0];
-				f32 init1 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[1] : curState->initState[1];
-				const f32 mid = (init0 + init1) * 0.5f;
-				DXL2_Level::setFloorHeight(sectorId, mid + value);
-				DXL2_Level::setCeilingHeight(sectorId, mid - value);
-			}   break;
-			case ELEVATOR_CHANGE_LIGHT:
-				DXL2_Level::setAmbient(sectorId, (u8)std::min(31.0f, std::max(0.0f, value)));
-				break;
-			case ELEVATOR_MORPH_SPIN1:
-			case ELEVATOR_MORPH_SPIN2:
-			case ELEVATOR_ROTATE_WALL:
-				DXL2_Level::rotate(sectorId, value, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
-				break;
-			case ELEVATOR_MORPH_MOVE1:
-			case ELEVATOR_MORPH_MOVE2:
-			case ELEVATOR_MOVE_WALL:
-				DXL2_Level::moveWalls(sectorId, classData->var.angle, value, classData->var.speed * c_step, moveFloor, moveSecAlt);
-				break;
-			case ELEVATOR_SCROLL_FLOOR:
-			{
-				// Modify the floor texture offset.
-				f32 angle = classData->var.angle * PI / 180.0f - PI * 0.5f;
-				Vec2f offset = { cosf(angle) * value, -sinf(angle) * value };
-				DXL2_Level::setTextureOffset(sectorId, SP_FLOOR, &offset, moveFloor, moveSecAlt);
-			} break;
-			case ELEVATOR_SCROLL_CEILING:
-			{
-				// Modify the floor texture offset.
-				f32 angle = classData->var.angle * PI / 180.0f - PI * 0.5f;
-				Vec2f offset = { cosf(angle) * value, -sinf(angle) * value };
-				DXL2_Level::setTextureOffset(sectorId, SP_CEILING, &offset);
-			} break;
-			case ELEVATOR_SCROLL_WALL:
-			{
-				// Modify the floor texture offset.
-				const f32 angle = -classData->var.angle * PI / 180.0f + PI * 0.5f;
-				Vec2f offset = { cosf(angle) * value * c_texelToWorldScale, sinf(angle) * value * c_texelToWorldScale };
-				DXL2_Level::setTextureOffset(sectorId, SP_WALL, &offset);
-				DXL2_Level::setTextureOffset(sectorId, SP_SIGN, &offset);
-			} break;
+		case ELEVATOR_DOOR:
+		case ELEVATOR_INV:
+		case ELEVATOR_MOVE_CEILING:
+			DXL2_Level::setCeilingHeight(sectorId, value);
+			break;
+		case ELEVATOR_BASIC:
+		case ELEVATOR_MOVE_FLOOR:
+		case ELEVATOR_BASIC_AUTO:
+		case ELEVATOR_DOOR_INV:
+			DXL2_Level::setFloorHeight(sectorId, value, true);
+			break;
+		case ELEVATOR_MOVE_OFFSET:
+			DXL2_Level::setSecondHeight(sectorId, value, true);
+			break;
+		case ELEVATOR_MOVE_FC:
+		{
+			f32 init0 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[0] : curState->initState[0];
+			f32 init1 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[1] : curState->initState[1];
+			DXL2_Level::setFloorHeight(sectorId, value, true);
+			DXL2_Level::setCeilingHeight(sectorId, value - init0 + init1);
+		}   break;
+		case ELEVATOR_DOOR_MID:
+		{
+			f32 init0 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[0] : curState->initState[0];
+			f32 init1 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[1] : curState->initState[1];
+			const f32 mid = (init0 + init1) * 0.5f;
+			DXL2_Level::setFloorHeight(sectorId, mid + value);
+			DXL2_Level::setCeilingHeight(sectorId, mid - value);
+		}   break;
+		case ELEVATOR_CHANGE_LIGHT:
+			DXL2_Level::setAmbient(sectorId, (u8)std::min(31.0f, std::max(0.0f, value)));
+			break;
+		case ELEVATOR_MORPH_SPIN1:
+		case ELEVATOR_MORPH_SPIN2:
+		case ELEVATOR_ROTATE_WALL:
+			DXL2_Level::rotate(sectorId, value, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
+			break;
+		case ELEVATOR_MORPH_MOVE1:
+		case ELEVATOR_MORPH_MOVE2:
+		case ELEVATOR_MOVE_WALL:
+			DXL2_Level::moveWalls(sectorId, classData->var.angle, value, classData->var.speed * c_step, moveFloor, moveSecAlt);
+			break;
+		case ELEVATOR_SCROLL_FLOOR:
+		{
+			// Modify the floor texture offset.
+			f32 angle = classData->var.angle * PI / 180.0f - PI * 0.5f;
+			Vec2f offset = { cosf(angle) * value, -sinf(angle) * value };
+			DXL2_Level::setTextureOffset(sectorId, SP_FLOOR, &offset, moveFloor, moveSecAlt);
+		} break;
+		case ELEVATOR_SCROLL_CEILING:
+		{
+			// Modify the floor texture offset.
+			f32 angle = classData->var.angle * PI / 180.0f - PI * 0.5f;
+			Vec2f offset = { cosf(angle) * value, -sinf(angle) * value };
+			DXL2_Level::setTextureOffset(sectorId, SP_CEILING, &offset);
+		} break;
+		case ELEVATOR_SCROLL_WALL:
+		{
+			// Modify the floor texture offset.
+			const f32 angle = -classData->var.angle * PI / 180.0f + PI * 0.5f;
+			Vec2f offset = { cosf(angle) * value * c_texelToWorldScale, sinf(angle) * value * c_texelToWorldScale };
+			DXL2_Level::setTextureOffset(sectorId, SP_WALL, &offset);
+			DXL2_Level::setTextureOffset(sectorId, SP_SIGN, &offset);
+		} break;
 		}
 	}
 
@@ -596,7 +593,7 @@ namespace DXL2_InfSystem
 		if (curState->curStop < 0)
 		{
 			forceStop0 = true;
-			curState->curStop  = classData->var.start;
+			curState->curStop = classData->var.start;
 			curState->nextStop = classData->var.start;
 		}
 		const f32 stop0Value = getStopValue(classData, curState, sector, curState->curStop, -1);
@@ -666,7 +663,7 @@ namespace DXL2_InfSystem
 				curState->state = INF_STATE_WAITING;
 				curState->delay = stop1->time;
 			}
-						
+
 			// Only execute functions if the elevator has not been terminated.
 			const u32 funcCount = stop1->code >> 8u;
 			if (curState->state != INF_STATE_TERMINATED && (s_frame > 0 || curState->state != INF_STATE_HOLDING))
@@ -693,7 +690,7 @@ namespace DXL2_InfSystem
 		// If stop 0 is a hold stop, this will be setup after the initial execution.
 		ItemState* itemState = &s_infState[classData->stateIndex];
 		itemState->state = INF_STATE_MOVING;
-		itemState->curStop  = -1;
+		itemState->curStop = -1;
 		itemState->nextStop = 0;
 
 		// Set the initial state, for relative changes.
@@ -721,86 +718,86 @@ namespace DXL2_InfSystem
 
 		switch (classData->isubclass)
 		{
-			case ELEVATOR_CHANGE_LIGHT:
-			case ELEVATOR_CHANGE_WALL_LIGHT:
-			case ELEVATOR_BASIC:
-			case ELEVATOR_MOVE_FLOOR:
-			case ELEVATOR_BASIC_AUTO:
-			case ELEVATOR_DOOR_INV:
-			case ELEVATOR_INV:
-			case ELEVATOR_DOOR:
-			case ELEVATOR_MOVE_CEILING:
-			case ELEVATOR_MOVE_FC:
-			case ELEVATOR_DOOR_MID:
-			case ELEVATOR_MOVE_OFFSET:
-			case ELEVATOR_MOVE_WALL:
-				DXL2_System::logWrite(LOG_WARNING, "INF", "Attempting to use a non-compatible elevator type without stops.");
-				assert(0);
+		case ELEVATOR_CHANGE_LIGHT:
+		case ELEVATOR_CHANGE_WALL_LIGHT:
+		case ELEVATOR_BASIC:
+		case ELEVATOR_MOVE_FLOOR:
+		case ELEVATOR_BASIC_AUTO:
+		case ELEVATOR_DOOR_INV:
+		case ELEVATOR_INV:
+		case ELEVATOR_DOOR:
+		case ELEVATOR_MOVE_CEILING:
+		case ELEVATOR_MOVE_FC:
+		case ELEVATOR_DOOR_MID:
+		case ELEVATOR_MOVE_OFFSET:
+		case ELEVATOR_MOVE_WALL:
+			DXL2_System::logWrite(LOG_WARNING, "INF", "Attempting to use a non-compatible elevator type without stops.");
+			assert(0);
 			break;
-			case ELEVATOR_SCROLL_FLOOR:
-			{
-				// Modify the floor texture offset.
-				f32 angle = classData->var.angle * PI / 180.0f - PI * 0.5f;
-				f32 scale = classData->var.speed * c_step;
-				Vec2f offset = { cosf(angle) * scale, -sinf(angle) * scale };
-				DXL2_Level::moveTextureOffset(sector->id, SP_FLOOR, &offset, moveFloor, moveSecAlt);
+		case ELEVATOR_SCROLL_FLOOR:
+		{
+			// Modify the floor texture offset.
+			f32 angle = classData->var.angle * PI / 180.0f - PI * 0.5f;
+			f32 scale = classData->var.speed * c_step;
+			Vec2f offset = { cosf(angle) * scale, -sinf(angle) * scale };
+			DXL2_Level::moveTextureOffset(sector->id, SP_FLOOR, &offset, moveFloor, moveSecAlt);
 
-				u32 mergeStart = classData->mergeStart >= 0 ? classData->mergeStart : classData->slaveCount;
-				for (u32 s = 0; s < classData->slaveCount; s++)
-				{
-					const bool applyMove = (classData->mergeStart >= 0 && s32(s) >= classData->mergeStart);
-					Sector* slaveSector = getSlaveSector(classData, s);
-					DXL2_Level::moveTextureOffset(slaveSector->id, SP_FLOOR, &offset, applyMove && moveFloor, applyMove && moveSecAlt);
-				}
-			} break;
-			case ELEVATOR_SCROLL_CEILING:
+			u32 mergeStart = classData->mergeStart >= 0 ? classData->mergeStart : classData->slaveCount;
+			for (u32 s = 0; s < classData->slaveCount; s++)
 			{
-				// Modify the floor texture offset.
-				f32 angle = classData->var.angle * PI / 180.0f - PI * 0.5f;
-				f32 scale = classData->var.speed * c_step;
-				Vec2f offset = { cosf(angle) * scale, -sinf(angle) * scale };
-				DXL2_Level::moveTextureOffset(sector->id, SP_CEILING, &offset);
+				const bool applyMove = (classData->mergeStart >= 0 && s32(s) >= classData->mergeStart);
+				Sector* slaveSector = getSlaveSector(classData, s);
+				DXL2_Level::moveTextureOffset(slaveSector->id, SP_FLOOR, &offset, applyMove && moveFloor, applyMove && moveSecAlt);
+			}
+		} break;
+		case ELEVATOR_SCROLL_CEILING:
+		{
+			// Modify the floor texture offset.
+			f32 angle = classData->var.angle * PI / 180.0f - PI * 0.5f;
+			f32 scale = classData->var.speed * c_step;
+			Vec2f offset = { cosf(angle) * scale, -sinf(angle) * scale };
+			DXL2_Level::moveTextureOffset(sector->id, SP_CEILING, &offset);
 
-				for (u32 s = 0; s < classData->slaveCount; s++)
-				{
-					Sector* slaveSector = getSlaveSector(classData, s);
-					DXL2_Level::moveTextureOffset(slaveSector->id, SP_CEILING, &offset);
-				}
-			} break;
-			case ELEVATOR_MORPH_SPIN1:
-			case ELEVATOR_MORPH_SPIN2:
-			case ELEVATOR_ROTATE_WALL:
+			for (u32 s = 0; s < classData->slaveCount; s++)
 			{
-				u32 mergeStart = classData->mergeStart >= 0 ? classData->mergeStart : classData->slaveCount;
-				DXL2_Level::rotate(sector->id, itemState->curValue, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
-				for (u32 s = 0; s < classData->slaveCount; s++)
-				{
-					Sector* slaveSector = getSlaveSector(classData, s);
-					DXL2_Level::rotate(slaveSector->id, itemState->curValue, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
-				}
-				itemState->curValue += classData->var.speed * c_step;
-			}	break;
-			case ELEVATOR_MORPH_MOVE1:
-			case ELEVATOR_MORPH_MOVE2:
-				break;
-			case ELEVATOR_SCROLL_WALL:
+				Sector* slaveSector = getSlaveSector(classData, s);
+				DXL2_Level::moveTextureOffset(slaveSector->id, SP_CEILING, &offset);
+			}
+		} break;
+		case ELEVATOR_MORPH_SPIN1:
+		case ELEVATOR_MORPH_SPIN2:
+		case ELEVATOR_ROTATE_WALL:
+		{
+			u32 mergeStart = classData->mergeStart >= 0 ? classData->mergeStart : classData->slaveCount;
+			DXL2_Level::rotate(sector->id, itemState->curValue, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
+			for (u32 s = 0; s < classData->slaveCount; s++)
 			{
-				// Modify the floor texture offset.
-				const f32 angle = -classData->var.angle * PI / 180.0f + PI * 0.5f;
-				const f32 scale = classData->var.speed * c_step * c_texelToWorldScale;
-				Vec2f offset = { cosf(angle) * scale, sinf(angle) * scale };
+				Sector* slaveSector = getSlaveSector(classData, s);
+				DXL2_Level::rotate(slaveSector->id, itemState->curValue, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
+			}
+			itemState->curValue += classData->var.speed * c_step;
+		}	break;
+		case ELEVATOR_MORPH_MOVE1:
+		case ELEVATOR_MORPH_MOVE2:
+			break;
+		case ELEVATOR_SCROLL_WALL:
+		{
+			// Modify the floor texture offset.
+			const f32 angle = -classData->var.angle * PI / 180.0f + PI * 0.5f;
+			const f32 scale = classData->var.speed * c_step * c_texelToWorldScale;
+			Vec2f offset = { cosf(angle) * scale, sinf(angle) * scale };
 
-				const u32 count = 1 + classData->slaveCount;
-				for (u32 i = 0; i < count; i++)
-				{
-					Sector* curSector = i == 0 ? sector : getSlaveSector(classData, i - 1);
-					DXL2_Level::moveTextureOffset(curSector->id, SP_WALL, &offset);
-					DXL2_Level::moveTextureOffset(curSector->id, SP_SIGN, &offset);
-				}
-			} break;
+			const u32 count = 1 + classData->slaveCount;
+			for (u32 i = 0; i < count; i++)
+			{
+				Sector* curSector = i == 0 ? sector : getSlaveSector(classData, i - 1);
+				DXL2_Level::moveTextureOffset(curSector->id, SP_WALL, &offset);
+				DXL2_Level::moveTextureOffset(curSector->id, SP_SIGN, &offset);
+			}
+		} break;
 		}
 	}
-		
+
 	void setupLevel(InfData* infData, LevelData* levelData)
 	{
 		assert(infData && levelData);
@@ -837,7 +834,7 @@ namespace DXL2_InfSystem
 			s_sectorItemMap[i].lineCount = 0;
 			s_sectorItemMap[i].lineItemId = nullptr;
 		}
-		
+
 		// First of 2 passes, setteing up sector item ids and counting lines.
 		for (u32 i = 0; i < count; i++)
 		{
@@ -1017,7 +1014,7 @@ namespace DXL2_InfSystem
 
 		return nudgeType;
 	}
-		
+
 	NudgeType nudgeLine(u32 evt, InfItem* item)
 	{
 		const u32 classCount = item->classCount;
@@ -1062,6 +1059,54 @@ namespace DXL2_InfSystem
 		else if (nudgeType == NUDGE_SET)
 		{
 			DXL2_Level::setTextureFrame(hitSectorId, SP_SIGN, WSP_NONE, 1, hitWallId);
+		}
+	}
+
+	void advanceElevator(s32 sectorId)
+	{
+		s32 itemId = s_sectorItemMap[sectorId].sectorItemId;
+		if (itemId < 0) { return; }
+
+		InfItem* item = &s_infData->item[itemId];
+		const u32 classCount = item->classCount;
+
+		for (u32 c = 0; c < classCount; c++)
+		{
+			InfClassData* classData = &item->classData[c];
+
+			// And finally activate - but only if it is going "holding" and waiting to be activated.
+			ItemState* itemState = &s_infState[classData->stateIndex];
+			if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+			{
+				itemState->state = INF_STATE_MOVING;
+				itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+			}
+		}
+	}
+
+	void advanceBossElevator()
+	{
+		// search for the "boss" elevator
+		const u32 sectorCount = (u32)s_levelData->sectors.size();
+		const Sector* sector = s_levelData->sectors.data();
+		for (u32 s = 0; s < sectorCount; s++, sector++)
+		{
+			if (strcasecmp(sector->name, "boss") == 0)
+			{
+				advanceElevator(sector->id);
+				return;
+			}
+		}
+
+		// the boss elevator wasn't found, search for "mohc" instead.
+		sector = s_levelData->sectors.data();
+		for (u32 s = 0; s < sectorCount; s++, sector++)
+		{
+			if (strcasecmp(sector->name, "mohc") == 0)
+			{
+				advanceElevator(sector->id);
+				return;
+			}
 		}
 	}
 

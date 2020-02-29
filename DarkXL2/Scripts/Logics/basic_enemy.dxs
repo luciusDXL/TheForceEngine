@@ -33,6 +33,10 @@ void tick()
 		{
 			startAnimation(ESTATE_DEAD);
 			spawnPowerup();
+			if ((self.commonFlags & LCF_BOSS) != 0)
+			{
+				DXL2_BossKilled();
+			}
 		}
 		else if (self.time >= animLength)
 		{
