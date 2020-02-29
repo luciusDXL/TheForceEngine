@@ -81,16 +81,16 @@ namespace DXL2_Math
 		else
 		{
 			// Full orientation.
-			const f32 cX = cosf(angles.x);
-			const f32 sX = sinf(angles.x);
+			const f32 cZ = cosf(angles.x);
+			const f32 sZ = sinf(angles.x);
 			const f32 cY = cosf(angles.y);
 			const f32 sY = sinf(angles.y);
-			const f32 cZ = cosf(angles.z);
-			const f32 sZ = sinf(angles.z);
+			const f32 cX = cosf(angles.z);
+			const f32 sX = sinf(angles.z);
 
 			mat[0] = { cZ * cY, cZ * sY * sX - sZ * cX, cZ * sY * cX + sZ * sX };
 			mat[1] = { sZ * cY, sZ * sY * sX + cZ * cX, sZ * sY * cX - cZ * sX };
-			mat[2] = { -sY,                cY * sX,                cY * cX };
+			mat[2] = {-sY,                cY * sX,                cY * cX };
 		}
 	}
 }

@@ -1108,7 +1108,10 @@ namespace DXL2_InfSystem
 				// If the class has been turned off, then skip.
 				if (!classData->var.master) { continue; }
 				// Otherwise check the mask flags.
-				if ((classData->var.entity_mask & INF_ENTITY_PLAYER) && (classData->var.event_mask & nudgeDir))
+				const bool maskMatches = (classData->var.entity_mask & INF_ENTITY_PLAYER) && (classData->var.event_mask & nudgeDir);
+				if (!maskMatches) { continue; }
+				// Then activate if an elevator or sector based trigger.
+				if (classData->iclass == INF_CLASS_ELEVATOR)
 				{
 					if (!(classData->var.key & keys) && classData->var.key != 0)
 					{
@@ -1129,6 +1132,25 @@ namespace DXL2_InfSystem
 					{
 						itemState->state = INF_STATE_MOVING;
 						itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+					}
+				}
+				else if (classData->iclass == INF_CLASS_TRIGGER && item->type == INF_ITEM_SECTOR)
+				{
+					ItemState* itemState = &s_infState[classData->stateIndex];
+
+					if (itemState->state == INF_STATE_HOLDING)
+					{
+						if (classData->isubclass == TRIGGER_SINGLE)
+						{
+							itemState->state = INF_STATE_TERMINATED;
+						}
+						else if (classData->isubclass == TRIGGER_SWITCH1)
+						{
+							itemState->state = INF_STATE_ACTIVATED;
+						}
+
+						const u32 funcCount = classData->stop[0].code >> 8u;
+						executeFunctions(funcCount, classData->stop[0].func, classData->var.event);
 					}
 				}
 			}
