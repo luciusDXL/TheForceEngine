@@ -450,7 +450,7 @@ namespace DXL2_InfSystem
 		return value;
 	}
 
-	void applyValueToSector(const InfClassData* classData, const ItemState* curState, u32 sectorId, f32 value, s32 slaveIndex)
+	void applyValueToSector(const InfClassData* classData, const ItemState* curState, u32 sectorId, f32 value, f32 valueDelta, s32 slaveIndex)
 	{
 		// For some reason scroll slaves don't cause objects to move but slave rotation/move does...
 		const bool applyMove = slaveIndex < 0 || (classData->mergeStart >= 0 && slaveIndex >= classData->mergeStart)
@@ -496,12 +496,12 @@ namespace DXL2_InfSystem
 		case ELEVATOR_MORPH_SPIN1:
 		case ELEVATOR_MORPH_SPIN2:
 		case ELEVATOR_ROTATE_WALL:
-			DXL2_Level::rotate(sectorId, value, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
+			DXL2_Level::rotate(sectorId, value, valueDelta, &classData->var.center, moveFloor, moveSecAlt);
 			break;
 		case ELEVATOR_MORPH_MOVE1:
 		case ELEVATOR_MORPH_MOVE2:
 		case ELEVATOR_MOVE_WALL:
-			DXL2_Level::moveWalls(sectorId, classData->var.angle, value, classData->var.speed * c_step, moveFloor, moveSecAlt);
+			DXL2_Level::moveWalls(sectorId, classData->var.angle, value, valueDelta, moveFloor, moveSecAlt);
 			break;
 		case ELEVATOR_SCROLL_FLOOR:
 		{
@@ -612,6 +612,7 @@ namespace DXL2_InfSystem
 			moveStep *= c_lightSpeedScale;
 		}
 
+		const f32 prevValue = forceStop0 ? stop1Value : curState->curValue;
 		if (!forceStop0)
 		{
 			if (classData->var.speed == 0.0f)
@@ -676,12 +677,13 @@ namespace DXL2_InfSystem
 				executeFunctions(funcCount, stop1->func);
 			}
 		}
+		const f32 valueDelta = curState->curValue - prevValue;
 
 		// interpret the value based on the elevator type.
-		applyValueToSector(classData, curState, sector->id, curState->curValue, -1);
+		applyValueToSector(classData, curState, sector->id, curState->curValue, valueDelta, -1);
 		for (u32 i = 0; i < classData->slaveCount; i++)
 		{
-			applyValueToSector(classData, curState, getSlaveSector(classData, i)->id, curState->slaveState[i].curValue, i);
+			applyValueToSector(classData, curState, getSlaveSector(classData, i)->id, curState->slaveState[i].curValue, valueDelta, i);
 		}
 	}
 
@@ -709,10 +711,10 @@ namespace DXL2_InfSystem
 		}
 
 		// interpret the value based on the elevator type.
-		applyValueToSector(classData, itemState, sector->id, itemState->curValue, -1);
+		applyValueToSector(classData, itemState, sector->id, itemState->curValue, 0.0f, -1);
 		for (u32 i = 0; i < classData->slaveCount; i++)
 		{
-			applyValueToSector(classData, itemState, getSlaveSector(classData, i)->id, itemState->slaveState[i].curValue, i);
+			applyValueToSector(classData, itemState, getSlaveSector(classData, i)->id, itemState->slaveState[i].curValue, 0.0f, i);
 		}
 	}
 
