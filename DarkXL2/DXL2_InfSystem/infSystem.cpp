@@ -273,59 +273,62 @@ namespace DXL2_InfSystem
 				if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
 				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
 
-				// If the class has been turned off, then skip.
 				classData->var.master = false;
 			}
 			break;
 		case INF_MSG_CLEAR_BITS:
-		{
-			s32 flagIdx = arg[0].iValue - 1;
-			s32 bits = arg[1].iValue;
-
-			if (wallId < 0xffffu)
 			{
-				DXL2_Level::clearFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
-			}
-			else
-			{
-				DXL2_Level::clearFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
-			}
-		}
-		break;
-		case INF_MSG_SET_BITS:
-		{
-			s32 flagIdx = arg[0].iValue - 1;
-			s32 bits = arg[1].iValue;
+				const s32 flagIdx = arg[0].iValue - 1;
+				const s32 bits = arg[1].iValue;
 
-			if (wallId < 0xffffu)
-			{
-				DXL2_Level::setFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
-			}
-			else
-			{
-				DXL2_Level::setFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
-			}
-		}
-		break;
-		case INF_MSG_COMPLETE:
-			// Parameter determines the GOL being completed.
-
-			// Move the recipient elevator to its next stop.
-			for (u32 c = 0; c < classCount; c++)
-			{
-				InfClassData* classData = &item->classData[c];
-				// If the class has been turned off, then skip.
-				if (!classData->var.master) { continue; }
-
-				// Optional event mask.
-				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
-
-				// And finally activate - but only if it is going "holding" and waiting to be activated.
-				ItemState* itemState = &s_infState[classData->stateIndex];
-				if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+				if (wallId < 0xffffu)
 				{
-					itemState->state = INF_STATE_MOVING;
-					itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+					DXL2_Level::clearFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
+				}
+				else
+				{
+					DXL2_Level::clearFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
+				}
+			}
+			break;
+		case INF_MSG_SET_BITS:
+			{
+				const s32 flagIdx = arg[0].iValue - 1;
+				const s32 bits = arg[1].iValue;
+
+				if (wallId < 0xffffu)
+				{
+					DXL2_Level::setFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
+				}
+				else
+				{
+					DXL2_Level::setFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
+				}
+			}
+			break;
+		case INF_MSG_COMPLETE:
+			{
+				// Parameter determines the GOL being completed.
+				const s32 goalId = arg[0].iValue;
+				// TODO: Update player goals with goalId.
+
+				// Move the recipient elevator to its next stop.
+				for (u32 c = 0; c < classCount; c++)
+				{
+					InfClassData* classData = &item->classData[c];
+					// If the class has been turned off, then skip.
+					if (!classData->var.master) { continue; }
+
+					// Optional event mask.
+					if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+					// And finally activate - but only if it is going "holding" and waiting to be activated.
+					ItemState* itemState = &s_infState[classData->stateIndex];
+					if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+					{
+						itemState->state = INF_STATE_MOVING;
+						itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+					}
 				}
 			}
 			break;
@@ -362,9 +365,11 @@ namespace DXL2_InfSystem
 			DXL2_GameHud::setMessage(DXL2_GameMessages::getMessage(arg[0].iValue));
 			break;
 		case INF_MSG_TEXTURE:
-			SectorPart part = arg[0].iValue == 0 ? SP_FLOOR : SP_CEILING;
-			const u32 donorTexId = DXL2_Level::getTextureId(arg[1].iValue, part, WSP_NONE);
-			DXL2_Level::setTextureId(sectorId, part, WSP_NONE, donorTexId);
+			{
+				const SectorPart part = arg[0].iValue == 0 ? SP_FLOOR : SP_CEILING;
+				const u32 donorTexId = DXL2_Level::getTextureId(arg[1].iValue, part, WSP_NONE);
+				DXL2_Level::setTextureId(sectorId, part, WSP_NONE, donorTexId);
+			}
 			break;
 		}
 	}

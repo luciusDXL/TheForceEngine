@@ -326,8 +326,19 @@ namespace DXL2_Level
 		Sector* sector = &s_levelData->sectors[sectorId];
 		if (part == SP_FLOOR)
 		{
+			const Vec2f prevPos = { sector->floorTexture.offsetX, sector->floorTexture.offsetY };
 			sector->floorTexture.offsetX = offset->x + sector->floorTexture.baseOffsetX;
 			sector->floorTexture.offsetY = offset->z + sector->floorTexture.baseOffsetY;
+
+			if ((addSectorMotion && playerOnFloor(sectorId)) || (addSecMotionSecondAlt && playerOnSecAlt(sectorId)))
+			{
+				const Vec2f move = { sector->floorTexture.offsetX - prevPos.x, sector->floorTexture.offsetY - prevPos.z };
+
+				// Go through list of objects that are standing on the floor of the sector and add the motion to them.
+				s_player->pos.x += move.x;
+				s_player->pos.z += move.z;
+				s_player->m_onScrollFloor = true;
+			}
 		}
 		else if (part == SP_CEILING)
 		{
