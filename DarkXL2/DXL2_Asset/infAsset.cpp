@@ -92,6 +92,8 @@ namespace DXL2_InfAsset
 	void setupClassDefaults(InfClassData* classInfo);
 	void finishClass(InfItem* item, InfClassData* curClass, const u32* clients, const u16* slaves, const InfStop* stops, const InfFuncTemp* funcs, u32 clientCount, u32 slaveCount, u32 stopCount, u32 funcCount, s32 mergeStart = -1);
 
+	s32 getSectorId(const char* name, bool getNextUnused = false, s32 count = -1);
+
 	bool load(const char* name)
 	{
 		s_memoryPool.init(INF_POOL_SIZE_BYTES, "Inf_Asset_Memory");
@@ -326,7 +328,7 @@ namespace DXL2_InfAsset
 		return hasDoors;
 	}
 
-	s32 getSectorId(const char* name)
+	s32 getSectorId(const char* name, bool getNextUnused, s32 itemCount)
 	{
 		char lowerCaseName[64];
 		strtolower(name, lowerCaseName);
@@ -334,8 +336,44 @@ namespace DXL2_InfAsset
 		SectorBucketMap::iterator iSec = s_sectorNameMap.find(lowerCaseName);
 		if (iSec != s_sectorNameMap.end())
 		{
-			// for now just return the first one.
-			return iSec->second.sectors[0];
+			if (getNextUnused) // Return the next matching sector that is not used by INF.
+			{
+				// If there is only one sector with a name, then it is always what we return regardless of the
+				// getNextUnused value.
+				const u32  count = (u32)iSec->second.sectors.size();
+				if (count == 1)
+				{
+					return iSec->second.sectors[0];
+				}
+
+				// Otherwise search for the next unused sector.
+				const s32* index = iSec->second.sectors.data();
+				for (u32 s = 0; s < count; s++, index++)
+				{
+					// Is this index used yet?
+					bool itemFound = false;
+					const InfItem* item = s_data.item;
+					for (u32 i = 0; i < itemCount; i++, item++)
+					{
+						const u32 sectorId = item->id & 0xffffu;
+						if (*index == sectorId && item->type == INF_ITEM_LINE)
+						{
+							itemFound = true;
+							break;
+						}
+					}
+					if (!itemFound)
+					{
+						return *index;
+					}
+				}
+				// ?All sectors are used, just return the first one.
+				return iSec->second.sectors[0];
+			}
+			else // Return the first sector.
+			{
+				return iSec->second.sectors[0];
+			}
 		}
 		return -1;
 	}
@@ -360,6 +398,25 @@ namespace DXL2_InfAsset
 			return count;
 		}
 		return 0;
+	}
+
+	s32 findWallWithSign(u32 sectorId)
+	{
+		if (sectorId >= 0xffffu) { return -1; }
+
+		const LevelData* levelData = DXL2_LevelAsset::getLevelData();
+		const Sector* sector = levelData->sectors.data() + sectorId;
+		const u32 wallCount = sector->wallCount;
+		const SectorWall* wall = levelData->walls.data() + sector->wallOffset;
+
+		for (u32 w = 0; w < wallCount; w++, wall++)
+		{
+			if (wall->sign.texId >= 0)
+			{
+				return s32(w);
+			}
+		}
+		return -1;
 	}
 		
 	void finishClass(InfItem* item, InfClassData* curClass, const u32* clients, const u16* slaves, const InfStop* stops, const InfFuncTemp* funcs, u32 clientCount, u32 slaveCount, u32 stopCount, u32 funcCount, s32 mergeStart)
@@ -621,12 +678,13 @@ namespace DXL2_InfAsset
 				curItem->id = curItem->type == INF_ITEM_LEVEL ? 0xffffffff : 0xffff0000;	// no wall by default.
 				const char* name = nullptr;
 				bool addExtraSectorsAsSlaves = curItem->type == INF_ITEM_SECTOR;
+				bool wallNumFound = false;
 				for (size_t t = 2; t < tokens.size();)
 				{
 					if (strcasecmp(tokens[t].c_str(), "name:") == 0)
 					{
 						name = tokens[t + 1].c_str();
-						s32 sectorId = getSectorId(name);
+						s32 sectorId = getSectorId(name, curItem->type == INF_ITEM_LINE, itemIndex);
 						if (sectorId < 0)
 						{
 							DXL2_System::logWrite(LOG_WARNING, "INF", "Inf Item \"%s\" does not match a sector in the level.", name);
@@ -636,6 +694,7 @@ namespace DXL2_InfAsset
 					}
 					else if (strcasecmp(tokens[t].c_str(), "num:") == 0)
 					{
+						wallNumFound = true;
 						s32 wallNum = strtol(tokens[t + 1].c_str(), &endPtr, 10);
 						if (wallNum < 0 && curItem->type == INF_ITEM_LINE)
 						{
@@ -648,6 +707,19 @@ namespace DXL2_InfAsset
 						}
 						addExtraSectorsAsSlaves = false;
 						t += 2;
+					}
+				}
+
+				// In some cases no wall num: is specified but it is clearly a "line" type.
+				// In this case, we have to search
+				if (curItem->type == INF_ITEM_LINE && !wallNumFound)
+				{
+					// Search for the wall with a sign...
+					s32 wallNum = findWallWithSign(curItem->id & 0xffffu);
+					if (wallNum >= 0)
+					{
+						curItem->id &= 0x0000ffff;
+						curItem->id |= (u32(wallNum) << 16u);
 					}
 				}
 

@@ -129,8 +129,8 @@ namespace LevelEditor
 		"256",
 	};
 
-	static u32 s_recentCount = 10;
-	static LevelFilePath s_recentLevels[10] =
+	static u32 s_recentCount = 14;	// 10 (just adding the rest for testing)
+	static LevelFilePath s_recentLevels[14] =
 	{
 		{"DARK.GOB", "SECBASE.LEV",  "Secret Base",       "DARK.GOB"},
 		{"DARK.GOB", "TALAY.LEV",    "Talay: Tak Base",   "DARK.GOB"},
@@ -141,7 +141,12 @@ namespace LevelEditor
 		{"DARK.GOB", "RAMSHED.LEV",  "Ramsees Hed",       "DARK.GOB"},
 		{"DARK.GOB", "ROBOTICS.LEV", "Robotics Facility", "DARK.GOB"},
 		{"DARK.GOB", "NARSHADA.LEV", "Nar Shaddaa",       "DARK.GOB"},
-		{"DARK.GOB", "JABSHIP.LEV",  "Jabba's Ship",      "DARK.GOB"}
+		{"DARK.GOB", "JABSHIP.LEV",  "Jabba's Ship",      "DARK.GOB"},
+
+		{"DARK.GOB", "IMPCITY.LEV",  "Imperial City",     "DARK.GOB"},
+		{"DARK.GOB", "FUELSTAT.LEV", "Fuel Station",      "DARK.GOB"},
+		{"DARK.GOB", "EXECUTOR.LEV", "The Executor",      "DARK.GOB"},
+		{"DARK.GOB", "ARC.LEV",		 "The Arc Hammer",    "DARK.GOB"}
 	};
 	
 	static EditorView s_editView = EDIT_VIEW_2D;
@@ -3937,8 +3942,8 @@ namespace LevelEditor
 		EditorTexture* floorTex = sector->floorTexture.tex;
 		EditorTexture* ceilTex = sector->ceilTexture.tex;
 
-		void* floorPtr = DXL2_RenderBackend::getGpuPtr(floorTex->texture);
-		void* ceilPtr  = DXL2_RenderBackend::getGpuPtr(ceilTex->texture);
+		void* floorPtr = floorTex ? DXL2_RenderBackend::getGpuPtr(floorTex->texture) : nullptr;
+		void* ceilPtr  = ceilTex ? DXL2_RenderBackend::getGpuPtr(ceilTex->texture) : nullptr;
 
 		const f32 texCol = 150.0f;
 		// Labels
@@ -3946,10 +3951,10 @@ namespace LevelEditor
 		ImGui::Text("Ceiling Texture");
 		
 		// Textures
-		const f32 floorScale = 1.0f / (f32)std::max(floorTex->width, floorTex->height);
-		const f32 ceilScale  = 1.0f / (f32)std::max(ceilTex->width, ceilTex->height);
-		const f32 aspectFloor[] = { f32(floorTex->width) * floorScale, f32(floorTex->height) * floorScale };
-		const f32 aspectCeil[] = { f32(ceilTex->width) * ceilScale, f32(ceilTex->height) * ceilScale };
+		const f32 floorScale = floorTex ? 1.0f / (f32)std::max(floorTex->width, floorTex->height) : 1.0f;
+		const f32 ceilScale  = ceilTex ? 1.0f / (f32)std::max(ceilTex->width, ceilTex->height) : 1.0f;
+		const f32 aspectFloor[] = { floorTex ? f32(floorTex->width) * floorScale : 1.0f, floorTex ? f32(floorTex->height) * floorScale : 1.0f };
+		const f32 aspectCeil[] = { ceilTex ? f32(ceilTex->width) * ceilScale : 1.0f, ceilTex ? f32(ceilTex->height) * ceilScale : 1.0f };
 
 		ImGui::ImageButton(floorPtr, { 128.0f * aspectFloor[0], 128.0f * aspectFloor[1] });
 		ImGui::SameLine(texCol);
@@ -3958,8 +3963,14 @@ namespace LevelEditor
 		const ImVec2 imageRight = ImGui::GetItemRectMax();
 
 		// Names
-		ImGui::Text("%s %dx%d", floorTex->name, floorTex->width, floorTex->height); ImGui::SameLine(texCol);
-		ImGui::Text("%s %dx%d", ceilTex->name, ceilTex->width, ceilTex->height); ImGui::SameLine();
+		if (floorTex)
+		{
+			ImGui::Text("%s %dx%d", floorTex->name, floorTex->width, floorTex->height); ImGui::SameLine(texCol);
+		}
+		if (ceilTex)
+		{
+			ImGui::Text("%s %dx%d", ceilTex->name, ceilTex->width, ceilTex->height); ImGui::SameLine();
+		}
 
 		// Texture Offsets
 		DisplayInfo displayInfo;
@@ -4302,8 +4313,8 @@ namespace LevelEditor
 		const Vec2f* vtx = poly->vtx.data();
 
 		const f32* texOffsets = floorTex ? &sector->floorTexture.offsetX : &sector->ceilTexture.offsetX;
-		const f32 scaleX = -8.0f / f32(texture->width);
-		const f32 scaleZ = -8.0f / f32(texture->height);
+		const f32 scaleX = texture ? -8.0f / f32(texture->width)  : 1.0f;
+		const f32 scaleZ = texture ? -8.0f / f32(texture->height) : 1.0f;
 
 		// Draw the sector polygon which has already been triangulated.
 		for (u32 p = 0; p < triCount; p++, vtx += 3)
@@ -4311,7 +4322,7 @@ namespace LevelEditor
 			Vec2f uv[3] = { { (vtx[0].x - texOffsets[0]) * scaleX, (vtx[0].z - texOffsets[1]) * scaleZ },
 							{ (vtx[1].x - texOffsets[0]) * scaleX, (vtx[1].z - texOffsets[1]) * scaleZ },
 							{ (vtx[2].x - texOffsets[0]) * scaleX, (vtx[2].z - texOffsets[1]) * scaleZ } };
-			TriTexturedDraw2d::addTriangles(1, vtx, uv, &color, texture->texture);
+			TriTexturedDraw2d::addTriangles(1, vtx, uv, &color, texture ? texture->texture : nullptr);
 		}
 	}
 

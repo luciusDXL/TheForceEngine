@@ -191,7 +191,7 @@ namespace TriTexturedDraw2d
 		for (u32 i = 0; i < s_drawCount; i++)
 		{
 			const DrawCall* draw = &s_drawCalls[i];
-			draw->texture->bind();
+			if (draw->texture) { draw->texture->bind(); }
 			DXL2_RenderBackend::drawIndexedTriangles(draw->count, sizeof(u32), draw->start);
 		}
 

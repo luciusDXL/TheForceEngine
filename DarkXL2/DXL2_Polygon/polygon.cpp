@@ -47,6 +47,21 @@ namespace DXL2_Polygon
 		for (s32 i = 0; i < dst.vtxCount; i++) { dst.vtx[i] = src.vtx[i]; }
 	}
 
+	f32 signedArea(const Polygon* poly)
+	{
+		f32 area = 0.0f;
+		u32 vPrev = poly->vtxCount - 1;
+		for (u32 v = 0; v < poly->vtxCount; v++)
+		{
+			const Vec2f& v0 = poly->vtx[vPrev];
+			const Vec2f& v1 = poly->vtx[v];
+			vPrev = v;
+			
+			area += (v0.x + v1.x) * (v0.z - v1.z);
+		}
+		return area;
+	}
+
 	Triangle* decomposeComplexPolygon(u32 contourCount, const Polygon* contours, u32* outConvexPolyCount)
 	{
 		Polygon outerPoly[16];
@@ -90,6 +105,21 @@ namespace DXL2_Polygon
 					}
 				}
 			}
+						
+			// Polygons should skip zero area contours
+			u8 skipContours[256];
+			for (u32 c = 0; c < contourCount; c++)
+			{
+				f32 area = signedArea(&contours[c]);
+				if (c != outer) { area = -area; }
+				skipContours[c] = 0;
+
+				if (area < 0.02f)
+				{
+					assert(c != outer);
+					skipContours[c] = 1;
+				}
+			}
 
 			// Convert the outer contour to a polygon.
 			copyPolygon(outerPoly[0], contours[outer]);
@@ -103,10 +133,12 @@ namespace DXL2_Polygon
 				const ClipperLib::PolyFillType pft = ClipperLib::pftEvenOdd;
 				ClipperLib::Path hole;
 				hole.reserve(1024);
+				s_clipper.StrictlySimple(true);
 				for (u32 c = 0; c < contourCount; c++)
 				{
-					if (c == outer) { continue; }
+					if (c == outer || skipContours[c]) { continue; }
 					hole.resize(contours[c].vtxCount);
+
 					for (s32 v = 0; v < contours[c].vtxCount; v++)
 					{
 						const f32 sx = contours[c].vtx[v].x < 0.0f ? -1.0f : 1.0f;
@@ -137,7 +169,7 @@ namespace DXL2_Polygon
 				// Then convert and count all of the inner contours
 				for (u32 c = 0; c < contourCount; c++)
 				{
-					if (c == outer) { continue; }
+					if (c == outer || skipContours[c]) { continue; }
 					copyPolygon(innerPoly[innerCount], contours[c]);
 					innerCount++;
 				}
