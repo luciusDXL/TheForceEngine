@@ -28,4 +28,5 @@ namespace DXL2_InfSystem
 
 	void advanceCompleteElevator();
 	void advanceBossElevator();
+	void advanceMohcElevator();
 }

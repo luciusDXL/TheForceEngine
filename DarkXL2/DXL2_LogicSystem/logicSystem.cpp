@@ -435,6 +435,11 @@ namespace DXL2_LogicSystem
 		DXL2_InfSystem::advanceBossElevator();
 	}
 
+	void DXL2_MohcKilled()
+	{
+		DXL2_InfSystem::advanceMohcElevator();
+	}
+
 	void DXL2_GiveGear()
 	{
 		// TODO: Give gear back...
@@ -531,6 +536,7 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerFunction("void DXL2_GivePlayerKey(int keyType)", SCRIPT_FUNCTION(DXL2_GivePlayerKey));
 		DXL2_ScriptSystem::registerFunction("void DXL2_AddGoalItem()", SCRIPT_FUNCTION(DXL2_AddGoalItem));
 		DXL2_ScriptSystem::registerFunction("void DXL2_BossKilled()", SCRIPT_FUNCTION(DXL2_BossKilled));
+		DXL2_ScriptSystem::registerFunction("void DXL2_MohcKilled()", SCRIPT_FUNCTION(DXL2_MohcKilled));
 		DXL2_ScriptSystem::registerFunction("void DXL2_GiveGear()", SCRIPT_FUNCTION(DXL2_GiveGear));
 
 		DXL2_ScriptSystem::registerFunction("void DXL2_PrintMessage(uint msgId)", SCRIPT_FUNCTION(DXL2_PrintMessage));

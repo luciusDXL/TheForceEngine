@@ -455,7 +455,7 @@ namespace DXL2_InfSystem
 		// For some reason scroll slaves don't cause objects to move but slave rotation/move does...
 		const bool applyMove = slaveIndex < 0 || (classData->mergeStart >= 0 && slaveIndex >= classData->mergeStart)
 			|| classData->isubclass != ELEVATOR_SCROLL_FLOOR;
-		const bool moveFloor = applyMove && (classData->var.flags & INF_MOVE_FLOOR);
+		const bool moveFloor  = applyMove && (classData->var.flags & INF_MOVE_FLOOR);
 		const bool moveSecAlt = applyMove && (classData->var.flags & INF_MOVE_SECALT);
 
 		// interpret the value based on the elevator type.
@@ -1104,8 +1104,13 @@ namespace DXL2_InfSystem
 				return;
 			}
 		}
+	}
 
-		// the boss elevator wasn't found, search for "mohc" instead.
+	void advanceMohcElevator()
+	{
+		// Search for "mohc" elevator - a special elevator only used by the last boss.
+		const u32 sectorCount = (u32)s_levelData->sectors.size();
+		const Sector* sector = s_levelData->sectors.data();
 		sector = s_levelData->sectors.data();
 		for (u32 s = 0; s < sectorCount; s++, sector++)
 		{
