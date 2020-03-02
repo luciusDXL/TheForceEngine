@@ -62,6 +62,46 @@ namespace DXL2_Polygon
 		return area;
 	}
 
+	u32 fixupOuterPolygon(Polygon* outerPoly)
+	{
+		// The outer polygon may self-intersect (such as in Jabba's ship, sector 348). So we have to clean it up just in case.
+			// However this should only be done if it has more than 4 edges so that simple sectors are fast to triangulate.
+			// Note this may miss cases where 4 vertices intersect - though I suspect that doesn't happen in existing data and can just be flagged as an error in new data.
+		u32 outerCount = 1;
+		if (outerPoly[0].vtxCount > 4)
+		{
+			s_clipper.Clear();
+			ClipperLib::Path outer(outerPoly[0].vtxCount);
+
+			for (s32 v = 0; v < outerPoly[0].vtxCount; v++)
+			{
+				const f32 sx = outerPoly[0].vtx[v].x < 0.0f ? -1.0f : 1.0f;
+				const f32 sz = outerPoly[0].vtx[v].z < 0.0f ? -1.0f : 1.0f;
+
+				outer[v].X = s32(outerPoly[0].vtx[v].x * 100.0f + 0.5f*sx);
+				outer[v].Y = s32(outerPoly[0].vtx[v].z * 100.0f + 0.5f*sz);
+			}
+
+			ClipperLib::Paths solution;
+			s_clipper.StrictlySimple(true);
+			s_clipper.AddPath(outer, ClipperLib::ptSubject, true);
+			s_clipper.Execute(ClipperLib::ctUnion, solution, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+			outerCount = (s32)solution.size();
+			for (s32 i = 0; i < outerCount; i++)
+			{
+				ClipperLib::Path& path = solution[i];
+				outerPoly[i].vtxCount = (u32)path.size();
+				for (s32 v = 0; v < outerPoly[i].vtxCount; v++)
+				{
+					outerPoly[i].vtx[v].x = f32(path[v].X) * 0.01f;
+					outerPoly[i].vtx[v].z = f32(path[v].Y) * 0.01f;
+				}
+			}
+		}
+		return outerCount;
+	}
+
 	Triangle* decomposeComplexPolygon(u32 contourCount, const Polygon* contours, u32* outConvexPolyCount)
 	{
 		Polygon outerPoly[16];
@@ -108,6 +148,7 @@ namespace DXL2_Polygon
 						
 			// Polygons should skip zero area contours
 			u8 skipContours[256];
+			u32 nonSkipInnerCount = 0;
 			for (u32 c = 0; c < contourCount; c++)
 			{
 				f32 area = signedArea(&contours[c]);
@@ -118,6 +159,10 @@ namespace DXL2_Polygon
 				{
 					assert(c != outer);
 					skipContours[c] = 1;
+				}
+				else if (c != outer)
+				{
+					nonSkipInnerCount++;
 				}
 			}
 
@@ -164,6 +209,11 @@ namespace DXL2_Polygon
 					}
 				}
 			}
+			else if (!nonSkipInnerCount)
+			{
+				// No interior holes, fix up the outer polygon.
+				outerCount = fixupOuterPolygon(outerPoly);
+			}
 			else
 			{
 				// Then convert and count all of the inner contours
@@ -178,41 +228,7 @@ namespace DXL2_Polygon
 		else
 		{
 			copyPolygon(outerPoly[0], contours[0]);
-
-			// The outer polygon may self-intersect (such as in Jabba's ship, sector 348). So we have to clean it up just in case.
-			// However this should only be done if it has more than 4 edges so that simple sectors are fast to triangulate.
-			// Note this may miss cases where 4 vertices intersect - though I suspect that doesn't happen in existing data and can just be flagged as an error in new data.
-			if (outerPoly[0].vtxCount > 4)
-			{
-				s_clipper.Clear();
-				ClipperLib::Path outer(outerPoly[0].vtxCount);
-
-				for (s32 v = 0; v < outerPoly[0].vtxCount; v++)
-				{
-					const f32 sx = outerPoly[0].vtx[v].x < 0.0f ? -1.0f : 1.0f;
-					const f32 sz = outerPoly[0].vtx[v].z < 0.0f ? -1.0f : 1.0f;
-
-					outer[v].X = s32(outerPoly[0].vtx[v].x * 100.0f + 0.5f*sx);
-					outer[v].Y = s32(outerPoly[0].vtx[v].z * 100.0f + 0.5f*sz);
-				}
-
-				ClipperLib::Paths solution;
-				s_clipper.StrictlySimple(true);
-				s_clipper.AddPath(outer, ClipperLib::ptSubject, true);
-				s_clipper.Execute(ClipperLib::ctUnion, solution, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
-
-				outerCount = (s32)solution.size();
-				for (s32 i = 0; i < outerCount; i++)
-				{
-					ClipperLib::Path& path = solution[i];
-					outerPoly[i].vtxCount = (u32)path.size();
-					for (s32 v = 0; v < outerPoly[i].vtxCount; v++)
-					{
-						outerPoly[i].vtx[v].x = f32(path[v].X) * 0.01f;
-						outerPoly[i].vtx[v].z = f32(path[v].Y) * 0.01f;
-					}
-				}
-			}
+			outerCount = fixupOuterPolygon(outerPoly);
 		}
 				
 		u32 triOffset = 0;

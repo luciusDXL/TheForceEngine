@@ -932,7 +932,10 @@ namespace LevelEditorData
 	{
 		const u32 wallCount = (u32)sector->walls.size();
 		const Vec2f* vtx = sector->vertices.data();
-
+		
+		// TODO: Fuel Station sectors 376, 377 and 388 have strange contours that are specified out of order.
+		// This causes the resulting polygons to be incorrect.
+		
 		// Find the contours.
 		static Polygon contours[128];
 		const EditorWall* wall = sector->walls.data();
@@ -1486,7 +1489,7 @@ namespace LevelEditorData
 			const u32 srcWallId = (src->id >> 16u) & 0xffffu;
 			const s32 wallId    = srcWallId == 0xffffu ? -1 : (s32)srcWallId;
 
-			if (s_editorLevel.sectors[sectorId].name[0])
+			if (sectorId < 0xffffu && s_editorLevel.sectors[sectorId].name[0])
 				dst->sectorName = s_editorLevel.sectors[sectorId].name;
 			else
 				dst->sectorName.clear();
