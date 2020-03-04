@@ -355,11 +355,15 @@ namespace DXL2_GameLoop
 		s32 prevSectorId = s_player.m_sectorId;
 		if (DXL2_Physics::correctPosition(&s_player.pos, &s_player.m_sectorId, c_playerRadius))
 		{
-			if (prevSectorId != s_player.m_sectorId)
+			if (prevSectorId != s_player.m_sectorId && s_player.m_sectorId >= 0)
 			{
 				DXL2_InfSystem::firePlayerEvent(INF_EVENT_ENTER_SECTOR, s_player.m_sectorId, &s_player);
 				DXL2_InfSystem::firePlayerEvent(INF_EVENT_LEAVE_SECTOR, prevSectorId, &s_player);
 			}
+		}
+		if (prevSectorId >= 0 && s_player.m_sectorId < 0)
+		{
+			s_player.m_sectorId = prevSectorId;
 		}
 
 		const f32 dt = (f32)DXL2_System::getDeltaTime();

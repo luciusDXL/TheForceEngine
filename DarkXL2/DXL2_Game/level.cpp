@@ -155,7 +155,7 @@ namespace DXL2_Level
 	}
 
 	// Morph
-	void moveWalls(s32 sectorId, f32 angle, f32 distance, f32 deltaDist, bool addSectorMotion, bool addSecMotionSecondAlt)
+	void moveWalls(s32 sectorId, f32 angle, f32 distance, f32 deltaDist, bool addSectorMotion, bool addSecMotionSecondAlt, bool useVertexCache)
 	{
 		const f32 angleRad = angle * PI / 180.0f - PI * 0.5f;
 		const f32 ca =  cosf(angleRad);
@@ -196,15 +196,27 @@ namespace DXL2_Level
 
 		const Vec2f* srcVtx = s_vertexCache;
 		Vec2f* dstVtx = s_levelData->vertices.data();
-		for (u32 i = 0; i < indexCount; i++)
+		if (useVertexCache)
 		{
-			const u32 idx = indices[i];
-			dstVtx[idx].x = srcVtx[idx].x + ca * distance;
-			dstVtx[idx].z = srcVtx[idx].z + sa * distance;
+			for (u32 i = 0; i < indexCount; i++)
+			{
+				const u32 idx = indices[i];
+				dstVtx[idx].x = srcVtx[idx].x + ca * distance;
+				dstVtx[idx].z = srcVtx[idx].z + sa * distance;
+			}
+		}
+		else
+		{
+			for (u32 i = 0; i < indexCount; i++)
+			{
+				const u32 idx = indices[i];
+				dstVtx[idx].x += ca * distance;
+				dstVtx[idx].z += sa * distance;
+			}
 		}
 	}
 
-	void rotate(s32 sectorId, f32 angle, f32 angleDelta, const Vec2f* center, bool addSectorMotion, bool addSecMotionSecondAlt)
+	void rotate(s32 sectorId, f32 angle, f32 angleDelta, const Vec2f* center, bool addSectorMotion, bool addSecMotionSecondAlt, bool useVertexCache)
 	{
 		const f32 angleRad = -angle * PI / 180.0f;
 		const f32 ca = cosf(angleRad);
@@ -219,7 +231,7 @@ namespace DXL2_Level
 
 			const f32 x = s_player->pos.x - center->x;
 			const f32 z = s_player->pos.z - center->z;
-			s_player->pos.x = dca * x + dsa * z + center->x;
+			s_player->pos.x =  dca * x + dsa * z + center->x;
 			s_player->pos.z = -dsa * x + dca * z + center->z;
 			s_player->m_yaw += angleDelta * PI / 180.0f;
 		}
@@ -252,14 +264,29 @@ namespace DXL2_Level
 
 		const Vec2f* srcVtx = s_vertexCache;
 		Vec2f* dstVtx = s_levelData->vertices.data();
-		for (u32 i = 0; i < indexCount; i++)
+		if (useVertexCache)
 		{
-			const u32 idx = indices[i];
-			const f32 x = srcVtx[idx].x - center->x;
-			const f32 z = srcVtx[idx].z - center->z;
+			for (u32 i = 0; i < indexCount; i++)
+			{
+				const u32 idx = indices[i];
+				const f32 x = srcVtx[idx].x - center->x;
+				const f32 z = srcVtx[idx].z - center->z;
 
-			dstVtx[idx].x =  ca*x + sa*z + center->x;
-			dstVtx[idx].z = -sa*x + ca*z + center->z;
+				dstVtx[idx].x =  ca*x + sa*z + center->x;
+				dstVtx[idx].z = -sa*x + ca*z + center->z;
+			}
+		}
+		else
+		{
+			for (u32 i = 0; i < indexCount; i++)
+			{
+				const u32 idx = indices[i];
+				const f32 x = dstVtx[idx].x - center->x;
+				const f32 z = dstVtx[idx].z - center->z;
+
+				dstVtx[idx].x =  ca*x + sa*z + center->x;
+				dstVtx[idx].z = -sa*x + ca*z + center->z;
+			}
 		}
 	}
 

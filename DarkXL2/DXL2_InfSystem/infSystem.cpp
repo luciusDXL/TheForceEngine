@@ -83,13 +83,7 @@ namespace DXL2_InfSystem
 	static SectorItems* s_sectorItemMap;
 	static u32 s_stateCount;
 
-	struct QueuedFunctions
-	{
-		u32 funcCount;
-		InfFunction* func;
-	};
-	QueuedFunctions s_queuedFunc[1024];
-	u32 s_queuedFuncCount = 0;
+	static bool s_useVertexCache;
 
 	Sector* getSlaveSector(const InfClassData* classData, u32 index);
 	void executeFunctions(u32 funcCount, InfFunction* func, u32 evt = 0);
@@ -117,20 +111,6 @@ namespace DXL2_InfSystem
 	Sector* getSlaveSector(const InfClassData* classData, u32 index)
 	{
 		return s_levelData->sectors.data() + classData->slaves[index];
-	}
-
-	void queueFunction(u32 funcCount, InfFunction* func)
-	{
-		s_queuedFunc[s_queuedFuncCount++] = { funcCount, func };
-	}
-
-	void executeQueuedFunctions()
-	{
-		for (u32 i = 0; i < s_queuedFuncCount; i++)
-		{
-			executeFunctions(s_queuedFunc[i].funcCount, s_queuedFunc[i].func);
-		}
-		s_queuedFuncCount = 0;
 	}
 
 	void executeFunc(u32 type, u32 argCount, InfArg* arg, u32 sectorId, u32 wallId, u32 evt)
@@ -190,9 +170,14 @@ namespace DXL2_InfSystem
 						itemState->state = INF_STATE_ACTIVATED;
 					}
 
-					// Queue the functions to avoid recursion.
-					const u32 funcCount = classData->stop[0].code >> 8u;
-					queueFunction(funcCount, classData->stop[0].func);
+					if (classData->isubclass == TRIGGER_TOGGLE)
+					{
+						DXL2_Level::toggleTextureFrame(sectorId, SP_SIGN, WSP_NONE, wallId);
+					}
+					else if (classData->isubclass == TRIGGER_SINGLE || classData->isubclass == TRIGGER_SWITCH1)
+					{
+						DXL2_Level::setTextureFrame(sectorId, SP_SIGN, WSP_NONE, 1, wallId);
+					}
 				}
 			}
 			break;
@@ -496,12 +481,14 @@ namespace DXL2_InfSystem
 		case ELEVATOR_MORPH_SPIN1:
 		case ELEVATOR_MORPH_SPIN2:
 		case ELEVATOR_ROTATE_WALL:
-			DXL2_Level::rotate(sectorId, value, valueDelta, &classData->var.center, moveFloor, moveSecAlt);
+			DXL2_Level::rotate(sectorId, value, valueDelta, &classData->var.center, moveFloor, moveSecAlt, s_useVertexCache);
+			if (slaveIndex < 0) { s_useVertexCache = false; }
 			break;
 		case ELEVATOR_MORPH_MOVE1:
 		case ELEVATOR_MORPH_MOVE2:
 		case ELEVATOR_MOVE_WALL:
-			DXL2_Level::moveWalls(sectorId, classData->var.angle, value, valueDelta, moveFloor, moveSecAlt);
+			DXL2_Level::moveWalls(sectorId, classData->var.angle, value, valueDelta, moveFloor, moveSecAlt, s_useVertexCache);
+			if (slaveIndex < 0) { s_useVertexCache = false; }
 			break;
 		case ELEVATOR_SCROLL_FLOOR:
 		{
@@ -680,11 +667,11 @@ namespace DXL2_InfSystem
 		const f32 valueDelta = curState->curValue - prevValue;
 
 		// interpret the value based on the elevator type.
-		applyValueToSector(classData, curState, sector->id, curState->curValue, valueDelta, -1);
 		for (u32 i = 0; i < classData->slaveCount; i++)
 		{
 			applyValueToSector(classData, curState, getSlaveSector(classData, i)->id, curState->slaveState[i].curValue, valueDelta, i);
 		}
+		applyValueToSector(classData, curState, sector->id, curState->curValue, valueDelta, -1);
 	}
 
 	void prepareForFirstStop(const InfClassData* classData, Sector* sector)
@@ -711,11 +698,11 @@ namespace DXL2_InfSystem
 		}
 
 		// interpret the value based on the elevator type.
-		applyValueToSector(classData, itemState, sector->id, itemState->curValue, 0.0f, -1);
 		for (u32 i = 0; i < classData->slaveCount; i++)
 		{
 			applyValueToSector(classData, itemState, getSlaveSector(classData, i)->id, itemState->slaveState[i].curValue, 0.0f, i);
 		}
+		applyValueToSector(classData, itemState, sector->id, itemState->curValue, 0.0f, -1);
 	}
 
 	void executeStopless(const InfClassData* classData, ItemState* itemState, Sector* sector, s32 wallId)
@@ -776,12 +763,14 @@ namespace DXL2_InfSystem
 		case ELEVATOR_ROTATE_WALL:
 		{
 			u32 mergeStart = classData->mergeStart >= 0 ? classData->mergeStart : classData->slaveCount;
-			DXL2_Level::rotate(sector->id, itemState->curValue, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
+			DXL2_Level::rotate(sector->id, itemState->curValue, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt, s_useVertexCache);
 			for (u32 s = 0; s < classData->slaveCount; s++)
 			{
 				Sector* slaveSector = getSlaveSector(classData, s);
-				DXL2_Level::rotate(slaveSector->id, itemState->curValue, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt);
+				DXL2_Level::rotate(slaveSector->id, itemState->curValue, classData->var.speed * c_step, &classData->var.center, moveFloor, moveSecAlt, s_useVertexCache);
 			}
+			s_useVertexCache = false;
+
 			itemState->curValue += classData->var.speed * c_step;
 		}	break;
 		case ELEVATOR_MORPH_MOVE1:
@@ -812,7 +801,6 @@ namespace DXL2_InfSystem
 		s_levelData = levelData;
 		s_accum = 0.0f;
 		s_memoryPool->clear();
-		s_queuedFuncCount = 0;
 		s_frame = 0;
 		Sector* sectors = s_levelData->sectors.data();
 
@@ -891,6 +879,7 @@ namespace DXL2_InfSystem
 			Sector* sector = &sectors[sectorId];
 
 			const u32 classCount = item->classCount;
+			s_useVertexCache = true;
 			for (u32 c = 0; c < classCount; c++)
 			{
 				InfClassData* classData = &item->classData[c];
@@ -1245,6 +1234,11 @@ namespace DXL2_InfSystem
 		}
 	}
 
+	bool isSlidingOrRotatingElevator(const u8 isubclass)
+	{
+		return isubclass >= ELEVATOR_MORPH_MOVE1 && isubclass <= ELEVATOR_ROTATE_WALL;
+	}
+
 	void tick()
 	{
 		if (!s_levelData) { return; }
@@ -1260,7 +1254,6 @@ namespace DXL2_InfSystem
 		while (s_accum >= c_step)
 		{
 			s_accum -= dt;
-			executeQueuedFunctions();
 
 			const u32 count = s_infData->itemCount;
 			for (u32 i = 0; i < count; i++)
@@ -1272,14 +1265,33 @@ namespace DXL2_InfSystem
 				Sector* sector = &sectors[sectorId];
 
 				const u32 classCount = item->classCount;
+
+				f32 sectorAngle = 0.0f;
+				Vec2f sectorMove = { 0 };
+
+				s_useVertexCache = true;
 				for (u32 c = 0; c < classCount; c++)
 				{
 					InfClassData* classData = &item->classData[c];
 					// Switches don't need constant updates and just wait to be activated.
 					// Do not update classes with master = off.
-					if (classData->iclass != INF_CLASS_ELEVATOR || !classData->var.master) { continue; }
+					if (classData->iclass != INF_CLASS_ELEVATOR) { continue; }
 
 					ItemState* curState = &s_infState[classData->stateIndex];
+					if (!classData->var.master)
+					{
+						if (isSlidingOrRotatingElevator(classData->isubclass))
+						{
+							// We still have to apply the current state.
+							for (u32 i = 0; i < classData->slaveCount; i++)
+							{
+								applyValueToSector(classData, curState, getSlaveSector(classData, i)->id, curState->slaveState[i].curValue, 0.0f, i);
+							}
+							applyValueToSector(classData, curState, sector->id, curState->curValue, 0.0f, -1);
+						}
+						continue;
+					}
+
 					if (classData->iclass == INF_CLASS_ELEVATOR && classData->stopCount == 0)
 					{
 						// Elevators without stops keep going forever - useful for things like flowing water.
@@ -1287,6 +1299,8 @@ namespace DXL2_InfSystem
 					}
 					else if (classData->iclass == INF_CLASS_ELEVATOR && classData->stopCount)
 					{
+						const bool applyCurValue = curState->state != INF_STATE_MOVING && isSlidingOrRotatingElevator(classData->isubclass);
+
 						// Otherwise update the elevator state
 						if (curState->state == INF_STATE_MOVING)
 						{
@@ -1300,6 +1314,16 @@ namespace DXL2_InfSystem
 								curState->delay = 0.0f;
 								curState->state = INF_STATE_MOVING;
 							}
+						}
+
+						if (applyCurValue)
+						{
+							// interpret the value based on the elevator type.
+							for (u32 i = 0; i < classData->slaveCount; i++)
+							{
+								applyValueToSector(classData, curState, getSlaveSector(classData, i)->id, curState->slaveState[i].curValue, 0.0f, i);
+							}
+							applyValueToSector(classData, curState, sector->id, curState->curValue, 0.0f, -1);
 						}
 					}
 				}

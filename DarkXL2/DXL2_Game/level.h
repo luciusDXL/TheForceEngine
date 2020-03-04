@@ -57,8 +57,8 @@ namespace DXL2_Level
 	const SectorBaseHeight* getBaseSectorHeight(s32 sectorId);
 
 	// Morph
-	void moveWalls(s32 sectorId, f32 angle, f32 distance, f32 deltaDist, bool addSectorMotion = false, bool addSecMotionSecondAlt = false);
-	void rotate(s32 sectorId, f32 angle, f32 angleDelta, const Vec2f* center, bool addSectorMotion = false, bool addSecMotionSecondAlt = false);
+	void moveWalls(s32 sectorId, f32 angle, f32 distance, f32 deltaDist, bool addSectorMotion = false, bool addSecMotionSecondAlt = false, bool useVertexCache = true);
+	void rotate(s32 sectorId, f32 angle, f32 angleDelta, const Vec2f* center, bool addSectorMotion = false, bool addSecMotionSecondAlt = false, bool useVertexCache = true);
 
 	// Textures.
 	void moveTextureOffset(s32 sectorId, SectorPart part, const Vec2f* offsetDelta, bool addSectorMotion = false, bool addSecMotionSecondAlt = false);

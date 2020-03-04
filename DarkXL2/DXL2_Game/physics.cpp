@@ -403,6 +403,8 @@ namespace DXL2_Physics
 
 	void checkWallCrossing(const Vec3f* prevPos, const Vec3f* curPos, f32 radius, s32 curSectorId)
 	{
+		if (curSectorId < 0) { return; }
+
 		const f32 diff = DXL2_Math::distance(prevPos, curPos);
 		Sector* curSector = s_level->sectors.data() + curSectorId;
 
