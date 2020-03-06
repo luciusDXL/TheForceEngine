@@ -437,7 +437,8 @@ namespace DXL2_GameLoop
 		// Use
 		if (DXL2_Input::keyPressed(KEY_E))
 		{
-			DXL2_InfSystem::activate(&s_player.pos, s_player.m_sectorId, s_player.m_keys);
+			const Vec3f forwardDir = { -sinf(s_player.m_yaw), 0.0f, cosf(s_player.m_yaw) };
+			DXL2_InfSystem::activate(&s_player.pos, &forwardDir, s_player.m_sectorId, s_player.m_keys);
 		}
 
 		// Weapons

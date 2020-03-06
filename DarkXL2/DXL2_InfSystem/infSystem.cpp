@@ -1,11 +1,13 @@
 #include "infSystem.h"
 #include <DXL2_System/system.h>
 #include <DXL2_System/memoryPool.h>
+#include <DXL2_System/math.h>
 #include <DXL2_Game/level.h>
 #include <DXL2_Game/physics.h>
 #include <DXL2_Game/player.h>
 #include <DXL2_Game/renderCommon.h>
 #include <DXL2_Game/gameHud.h>
+#include <DXL2_Game/geometry.h>
 #include <DXL2_Asset/gameMessages.h>
 #include <assert.h>
 #include <stdio.h>
@@ -1011,7 +1013,87 @@ namespace DXL2_InfSystem
 		return nudgeType;
 	}
 
-	NudgeType nudgeLine(u32 evt, InfItem* item)
+	bool insideSign(const Vec3f* point, u32 sectorId, u32 wallId)
+	{
+		if (sectorId == 0xffffu || wallId == 0xffffu) { return false; }
+
+		const Sector* sector = s_levelData->sectors.data() + sectorId;
+		const SectorWall* wall = s_levelData->walls.data() + sector->wallOffset + wallId;
+		const Vec2f* vtx = s_levelData->vertices.data() + sector->vtxOffset;
+		if (wall->sign.texId < 0 || wall->sign.texId >= s_levelData->textures.size()) { return false; }
+
+		const Vec2f* vtx0 = &vtx[wall->i0];
+		const Vec2f* vtx1 = &vtx[wall->i1];
+		const f32 dx = vtx1->x - vtx0->x;
+		const f32 dz = vtx1->z - vtx0->z;
+		
+		const f32 wallLenInTexels = sqrtf(dx*dx + dz*dz) * c_worldToTexelScale;
+		f32 y0, y1;
+		f32 offsetX, offsetY;
+		bool hasSign = false;
+		if (wall->adjoin < 0)
+		{
+			offsetX =  wall->mid.offsetX - wall->sign.offsetX;
+			offsetY = -DXL2_Math::fract(std::max(wall->mid.offsetY, 0.0f)) + wall->sign.offsetY;
+
+			y0 = sector->floorAlt;
+			y1 = sector->ceilAlt;
+			hasSign = true;
+		}
+		else
+		{
+			const Sector* next = s_levelData->sectors.data() + wall->adjoin;
+			if (next->floorAlt < sector->floorAlt)
+			{
+				offsetX =  wall->bot.offsetX - wall->sign.offsetX;
+				offsetY = -DXL2_Math::fract(std::max(wall->bot.offsetY, 0.0f)) + wall->sign.offsetY;
+
+				y0 = sector->floorAlt;
+				y1 = next->floorAlt;
+				hasSign = true;
+			}
+			else if (next->ceilAlt > sector->ceilAlt)
+			{
+				offsetX =  wall->top.offsetX - wall->sign.offsetX;
+				offsetY = -DXL2_Math::fract(std::max(wall->top.offsetY, 0.0f)) + wall->sign.offsetY;
+								
+				y0 = next->ceilAlt;
+				y1 = sector->ceilAlt;
+				hasSign = true;
+			}
+		}
+		if (!hasSign)
+		{
+			return false;
+		}
+
+		const f32 texW = s_levelData->textures[wall->sign.texId]->frames[0].width;
+		const f32 texH = s_levelData->textures[wall->sign.texId]->frames[0].height;
+
+		const f32 h  = y0 - y1;
+		if (fabsf(h) < 0.001f)
+		{
+			return false;
+		}
+
+		const f32 u0 = offsetX * c_worldToTexelScale;
+		const f32 u1 = u0 + wallLenInTexels;
+		const f32 v0 = (-offsetY - h) * c_worldToTexelScale;
+		const f32 v1 = (-offsetY) * c_worldToTexelScale;
+
+		const f32 s = fabsf(dx) >= fabsf(dz) ? (point->x - vtx0->x) / dx : (point->z - vtx0->z) / dz;
+		const f32 t = (point->y - y0) / h;
+
+		const f32 u = u0 + (u1 - u0) * s;
+		const f32 v = v0 + (v1 - v0) * t;
+		if (u >= -4.0f && u < texW + 4.0f)// && v >= -4.0f && v < texH + 4.0f)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	NudgeType nudgeLine(u32 evt, InfItem* item, const Vec3f* hitPoint)
 	{
 		const u32 classCount = item->classCount;
 		NudgeType nudgeType = NUDGE_NONE;
@@ -1023,6 +1105,16 @@ namespace DXL2_InfSystem
 			// Otherwise check the mask flags.
 			if ((classData->var.entity_mask & INF_ENTITY_PLAYER) && (classData->var.event_mask & evt))
 			{
+				// Determine if the "hitPoint" is close enough (or that we actually care, i.e. this is a sign).
+				if (classData->iclass == INF_CLASS_TRIGGER && classData->isubclass >= TRIGGER_SWITCH1)
+				{
+					// Compute the sign uv from the hitPoint.
+					if (!insideSign(hitPoint, item->id & 0xffffu, (item->id >> 16u)))
+					{
+						continue;
+					}
+				}
+
 				NudgeType nt = activateLineOrSector(classData);
 				if (nt != NUDGE_NONE) { nudgeType = nt; }
 			}
@@ -1047,7 +1139,7 @@ namespace DXL2_InfSystem
 
 		// Go through each class and see if the entity_mask and event_mask match what we are doing.
 		InfItem* item = &s_infData->item[itemId];
-		const NudgeType nudgeType = nudgeLine(INF_EVENT_SHOOT_LINE, item);
+		const NudgeType nudgeType = nudgeLine(INF_EVENT_SHOOT_LINE, item, hitPoint);
 		if (nudgeType == NUDGE_TOGGLE)
 		{
 			DXL2_Level::toggleTextureFrame(hitSectorId, SP_SIGN, WSP_NONE, hitWallId);
@@ -1134,12 +1226,19 @@ namespace DXL2_InfSystem
 		}
 	}
 
-	void activate(const Vec3f* pos, s32 curSectorId, u32 keys)
+	void activate(const Vec3f* pos, const Vec3f* viewDir, s32 curSectorId, u32 keys)
 	{
 		const f32 c_activateRadius = 2.5f;
 		u32 lines[256];
 		u32 sectors[256];
 		u32 lineCount = 0, sectorCount = 0;
+		// TODO:
+		// This is problematic because it relies on walkability - which is fine for player overlap tests but not so great for nudges.
+		// Nudges should work this way:
+		//   * Nudge the sector the player is inside of.
+		//   * Nudge the closest sector using a raytrace - the ray can continue if nothing was nudged in the current sector/wall if valid.
+		//   * This will play into the test below because we will now have to have a valid hit point.
+		//   * The position needs to be the "eye" position, rays are assumed to be flat (i.e. depends on player height, not pitch).
 		DXL2_Physics::getOverlappingLinesAndSectors(pos, curSectorId, c_activateRadius, 256, lines, sectors, &lineCount, &sectorCount);
 		// Nudge sectors.
 		for (u32 s = 0; s < sectorCount; s++)
@@ -1218,8 +1317,21 @@ namespace DXL2_InfSystem
 			{
 				if (s_sectorItemMap[sectorId].lineItemId[i].wallId == lineId)
 				{
+					// compute the intersection of the wall line and the view direction and see if it is close enough...
+					const Vec2f p0 = { pos->x, pos->z };
+					const Vec2f p1 = { pos->x + viewDir->x*8.0f, pos->z + viewDir->z*8.0f };
+					const Vec2f* vtx = s_levelData->vertices.data() + s_levelData->sectors[sectorId].vtxOffset;
+					const SectorWall* wall = s_levelData->walls.data() + s_levelData->sectors[sectorId].wallOffset + lineId;
+					f32 s = 0.0f, t = 0.0f;
+					if (!Geometry::lineSegmentIntersect(&p0, &p1, &vtx[wall->i0], &vtx[wall->i1], &s, &t))
+					{
+						continue;
+					}
+
+					// For switches, make sure the player is looking right at the switch and isn't too high or low.
 					InfItem* item = &s_infData->item[s_sectorItemMap[sectorId].lineItemId[i].itemId];
-					const NudgeType nudgeType = nudgeLine(INF_EVENT_NUDGE_FRONT, item);
+					const Vec3f hitPoint = { p0.x + s * (p1.x - p0.x), pos->y, p0.z + s * (p1.z - p0.z) };
+					const NudgeType nudgeType = nudgeLine(INF_EVENT_NUDGE_FRONT, item, &hitPoint);
 					if (nudgeType == NUDGE_TOGGLE)
 					{
 						DXL2_Level::toggleTextureFrame(sectorId, SP_SIGN, WSP_NONE, lineId);
