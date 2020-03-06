@@ -8,6 +8,7 @@
 #include <DXL2_FileSystem/fileutil.h>
 #include <DXL2_FileSystem/paths.h>
 #include <DXL2_Archive/archive.h>
+#include <DXL2_Ui/ui.h>
 
 #include <DXL2_Ui/imGUI/imgui_file_browser.h>
 #include <DXL2_Ui/imGUI/imgui.h>
@@ -30,9 +31,14 @@ namespace DXL2_Editor
 
 	void enable(DXL2_Renderer* renderer)
 	{
+		// Ui begin/render is called so we have a "UI Frame" in which to setup UI state.
+		DXL2_Ui::begin();
+
 		ArchiveViewer::init(renderer);
 		LevelEditor::init(renderer);
 		HelpWindow::init();
+
+		DXL2_Ui::render();
 	}
 
 	void disable()

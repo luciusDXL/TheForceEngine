@@ -200,6 +200,38 @@ bool sdlInit()
 	return true;
 }
 
+enum AppState
+{
+	APP_STATE_MENU = 0,
+	APP_STATE_EDITOR,
+	APP_STATE_DARK_FORCES,
+	APP_STATE_COUNT
+};
+static AppState s_appState = APP_STATE_MENU;
+
+void setAppState(AppState newState, DXL2_Renderer* renderer)
+{
+	if (newState != APP_STATE_EDITOR)
+	{
+		DXL2_Editor::disable();
+	}
+
+	switch (newState)
+	{
+	case APP_STATE_MENU:
+		break;
+	case APP_STATE_EDITOR:
+		renderer->changeResolution(640, 480);
+		DXL2_Editor::enable(renderer);
+		break;
+	case APP_STATE_DARK_FORCES:
+		renderer->changeResolution(320, 200);
+		break;
+	};
+
+	s_appState = newState;
+}
+
 int main(int argc, char* argv[])
 {
 	// Paths
@@ -220,6 +252,7 @@ int main(int argc, char* argv[])
 
 	// TODO: The data path is hard coded and should be set.
 	DXL2_Paths::setPath(PATH_SOURCE_DATA, "D:\\Program Files (x86)\\Steam\\steamapps\\common\\dark forces\\Game\\");
+	// DosBox is only required for the level editor - if running the Dos version to test.
 	DXL2_Paths::setPath(PATH_DOSBOX, "D:\\Program Files (x86)\\Steam\\steamapps\\common\\dark forces\\");
 
 	DXL2_System::logOpen("darkxl2_log.txt");
@@ -283,10 +316,12 @@ int main(int argc, char* argv[])
 					
 	// Game loop
 	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "DarkXL 2 Game Loop Started");
+
+	// For now enable the editor by default.
+	setAppState(APP_STATE_EDITOR, renderer);
 	   
 	u32 frame = 0u;
 	bool showPerf = false;
-	bool enableEditor = false;
 	bool relativeMode = false;
 	while (s_loop)
 	{
@@ -321,31 +356,23 @@ int main(int argc, char* argv[])
 		{
 			DXL2_Editor::showPerf(frame);
 		}
-		if (DXL2_Input::keyPressed(KEY_GRAVE))
-		{
-			enableEditor = !enableEditor;
-			if (enableEditor)
-			{
-				renderer->changeResolution(640, 480);
-				DXL2_Editor::enable(renderer);
-			}
-			else
-			{
-				renderer->changeResolution(320, 200);
-				DXL2_Editor::disable();
-			}
-		}
 
-		if (enableEditor)
+		if (s_appState == APP_STATE_MENU)
+		{
+		}
+		else if (s_appState == APP_STATE_EDITOR)
 		{
 			DXL2_Editor::update();
+		}
+		else if (s_appState == APP_STATE_DARK_FORCES)
+		{
 		}
 
 		// Render
 		renderer->begin();
 		// Do stuff
-		bool swap = !enableEditor;
-		if (enableEditor)
+		bool swap = s_appState != APP_STATE_EDITOR;
+		if (s_appState == APP_STATE_EDITOR)
 		{
 			swap = DXL2_Editor::render();
 		}
