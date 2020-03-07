@@ -2,9 +2,18 @@
 #include "geometry.h"
 #include "gameObject.h"
 #include "player.h"
+#include <DXL2_Game/physics.h>
 #include <DXL2_System/system.h>
 #include <DXL2_System/math.h>
 #include <DXL2_System/memoryPool.h>
+
+#include <DXL2_Asset/spriteAsset.h>
+#include <DXL2_Asset/textureAsset.h>
+#include <DXL2_Asset/paletteAsset.h>
+#include <DXL2_Asset/colormapAsset.h>
+#include <DXL2_Asset/modelAsset.h>
+#include <DXL2_LogicSystem/logicSystem.h>
+
 #include <assert.h>
 #include <algorithm>
 
@@ -46,7 +55,7 @@ namespace DXL2_Level
 		s_memoryPool->clear();
 	}
 
-	void startLevel(LevelData* level)
+	void startLevel(LevelData* level, LevelObjectData* levelObj)
 	{
 		s_memoryPool->clear();
 		if (!level) { return; }
@@ -76,6 +85,94 @@ namespace DXL2_Level
 		for (u32 i = 0; i < sectorCount; i++)
 		{
 			(*s_sectorObjects)[i].list.clear();
+		}
+
+		// Setup objects
+		if (levelObj)
+		{
+			const u32 objectCount = levelObj->objectCount;
+			const LevelObject* object = levelObj->objects.data();
+			s_objects->reserve(objectCount + 1024);
+			s_objects->resize(objectCount);
+			for (u32 i = 0; i < objectCount; i++)
+			{
+				const ObjectClass oclass = object[i].oclass;
+				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D) { continue; }
+
+				// Get the position and sector.
+				Vec3f pos = object[i].pos;
+				s32 sectorId = DXL2_Physics::findSector(&pos);
+				// Skip objects that are not in sectors.
+				if (sectorId < 0) { continue; }
+
+				std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
+				list.push_back(i);
+
+				GameObject* secobject = &(*s_objects)[i];
+				secobject->id = i;
+				secobject->pos = pos;
+				secobject->angles = object[i].orientation;
+				secobject->sectorId = sectorId;
+				secobject->oclass = oclass;
+				secobject->fullbright = false;
+				secobject->collisionRadius = 0.0f;
+				secobject->collisionHeight = 0.0f;
+				secobject->physicsFlags = PHYSICS_GRAVITY;
+				secobject->verticalVel = 0.0f;
+				secobject->show = true;
+				secobject->comFlags = object[i].comFlags;
+				secobject->radius = object[i].radius;
+				secobject->height = object[i].height;
+
+				secobject->animId = 0;
+				secobject->frameIndex = 0;
+
+				if (!object[i].logics.empty() && (object[i].logics[0].type == LOGIC_LIFE || (object[i].logics[0].type >= LOGIC_BLUE && object[i].logics[0].type <= LOGIC_PILE)))
+				{
+					secobject->fullbright = true;
+				}
+
+				if (oclass == CLASS_SPRITE)
+				{
+					// HACK to fix Detention center, for some reason land-mines are mapped to Ewoks.
+					if (!object[i].logics.empty() && object[i].logics[0].type == LOGIC_LAND_MINE)
+					{
+						secobject->oclass = CLASS_FRAME;
+						secobject->frame = DXL2_Sprite::getFrame("WMINE.FME");
+					}
+					else
+					{
+						secobject->sprite = DXL2_Sprite::getSprite(levelObj->sprites[object[i].dataOffset].c_str());
+					}
+
+					// This is just temporary until Logics are implemented.
+					if (!object[i].logics.empty() && object[i].logics[0].type >= LOGIC_I_OFFICER && object[i].logics[0].type <= LOGIC_REE_YEES2)
+					{
+						secobject->animId = 5;
+					}
+				}
+				else if (oclass == CLASS_FRAME)
+				{
+					// HACK to fix Detention center, for some reason land-mines are mapped to Ewoks.
+					if (!object[i].logics.empty() && object[i].logics[0].type == LOGIC_LAND_MINE)
+					{
+						secobject->frame = DXL2_Sprite::getFrame("WMINE.FME");
+					}
+					else
+					{
+						secobject->frame = DXL2_Sprite::getFrame(levelObj->frames[object[i].dataOffset].c_str());
+					}
+				}
+				else if (oclass == CLASS_3D)
+				{
+					secobject->model = DXL2_Model::get(levelObj->pods[object[i].dataOffset].c_str());
+					// 3D objects, by default, have no gravity since they are likely environmental props (like bridges).
+					secobject->physicsFlags = PHYSICS_NONE;
+				}
+
+				// Register the object logic.
+				DXL2_LogicSystem::registerObjectLogics(secobject, object[i].logics, object[i].generators);
+			}
 		}
 
 		DXL2_System::logWrite(LOG_MSG, "Level", "Level Runtime used %u bytes.", s_memoryPool->getMemoryUsed());
@@ -120,21 +217,23 @@ namespace DXL2_Level
 		GameObject* objects = s_objects->data();
 		
 		const std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
-		const u32 objCount = list.size();
+		const u32 objCount = (u32)list.size();
 		const u32* indices = list.data();
 		for (u32 i = 0; i < objCount; i++)
 		{
 			GameObject* obj = &objects[indices[i]];
 			f32 testHeight = newHeight;
+			f32 baseHeight = sector->floorAlt;
 			if (sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f)
 			{
-				testHeight = newHeight + sector->secAlt;
+				testHeight += sector->secAlt;
+				baseHeight += sector->secAlt;
 			}
 
 			// Move the object if it is close to the floor (so it sticks when going down)
 			// or below the floor.
 			// This way if an object is in the air (jumping, flying) it isn't moved unless necessary.
-			if (obj->pos.y >= testHeight || fabsf(obj->pos.y - testHeight) < 0.1f)
+			if (obj->pos.y >= testHeight || fabsf(obj->pos.y - baseHeight) < 0.1f)
 			{
 				obj->pos.y = testHeight;
 			}

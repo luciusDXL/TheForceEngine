@@ -67,7 +67,7 @@ namespace DXL2_GameLoop
 
 	void startRenderer(DXL2_Renderer* renderer, s32 w, s32 h)
 	{
-		DXL2_View::init(nullptr, nullptr, renderer, w, h, false);
+		DXL2_View::init(nullptr, renderer, w, h, false);
 	}
 
 	bool startLevelFromExisting(const Vec3f* startPos, f32 yaw, s32 startSectorId, const Palette256* pal, LevelObjectData* levelObj, DXL2_Renderer* renderer, s32 w, s32 h)
@@ -78,7 +78,11 @@ namespace DXL2_GameLoop
 		InfData* infData = DXL2_InfAsset::getInfData();
 		if (!level || !infData) { return false; }
 
-		DXL2_Level::startLevel(level);
+		// Initialize the Logic system.
+		DXL2_LogicSystem::init(&s_player);
+
+		DXL2_Physics::init(s_level);
+		DXL2_Level::startLevel(level, levelObj);
 		s_level = level;
 		s_motion = 0.0f;
 		s_motionTime = 0.0f;
@@ -87,14 +91,10 @@ namespace DXL2_GameLoop
 		s_landAnim = 0.0f;
 		s_land = false;
 		s_jump = false;
-
-		// Initialize the Logic system.
-		DXL2_LogicSystem::init(&s_player);
-
+				
 		// Current no objects...
 		s_levelObjects = levelObj;
 
-		DXL2_Physics::init(s_level);
 		DXL2_InfSystem::setupLevel(DXL2_InfAsset::getInfData(), level);
 
 		// Setup the player.
@@ -107,7 +107,7 @@ namespace DXL2_GameLoop
 		s_player.m_keys = 0;
 		s_heightVisual = s_player.pos.y;
 
-		DXL2_View::init(level, s_levelObjects, renderer, w, h, false);
+		DXL2_View::init(level, renderer, w, h, false);
 		renderer->changeResolution(w, h);
 
 		s_eyeHeight = c_standingEyeHeight;
@@ -127,8 +127,7 @@ namespace DXL2_GameLoop
 	bool startLevel(LevelData* level, const StartLocation& start, DXL2_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
 	{
 		if (!level) { return false; }
-		DXL2_Level::startLevel(level);
-
+		
 		s_level = level;
 		s_motion = 0.0f;
 		s_motionTime = 0.0f;
@@ -165,6 +164,8 @@ namespace DXL2_GameLoop
 		if (!s_levelObjects) { return false; }
 
 		DXL2_Physics::init(s_level);
+		DXL2_Level::startLevel(level, s_levelObjects);
+
 		DXL2_InfSystem::setupLevel(DXL2_InfAsset::getInfData(), level);
 
 		// for now only overriding the start position is supported.
@@ -208,7 +209,7 @@ namespace DXL2_GameLoop
 		s_player.m_keys = 0;
 		s_heightVisual = s_player.pos.y;
 			   			   
-		DXL2_View::init(level, s_levelObjects, renderer, w, h, enableViewStats);
+		DXL2_View::init(level, renderer, w, h, enableViewStats);
 		renderer->changeResolution(w, h);
 
 		s_eyeHeight = c_standingEyeHeight;

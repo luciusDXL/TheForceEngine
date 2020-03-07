@@ -34,12 +34,14 @@ enum WallSubPart
 	WSP_COUNT
 };
 
+struct LevelObjectData;
+
 namespace DXL2_Level
 {
 	bool init();
 	void shutdown();
 
-	void startLevel(LevelData* level);
+	void startLevel(LevelData* level, LevelObjectData* levelObj);
 	void endLevel();
 
 	// Player (for interactions)

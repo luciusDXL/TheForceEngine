@@ -30,7 +30,7 @@ struct ViewStats
 
 namespace DXL2_View
 {
-	bool init(const LevelData* level, LevelObjectData* levelObjects, DXL2_Renderer* renderer, s32 w=320, s32 h=200, bool enableViewStats=true);
+	bool init(const LevelData* level, DXL2_Renderer* renderer, s32 w=320, s32 h=200, bool enableViewStats=true);
 	void shutdown();
 
 	void update(const Vec3f* cameraPos, f32 yaw, f32 pitch, s32 sectorId, LightMode lightMode);

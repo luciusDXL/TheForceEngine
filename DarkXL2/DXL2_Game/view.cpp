@@ -80,7 +80,6 @@ namespace DXL2_View
 	static s32 s_maskHeightOffset = 0;
 		
 	static const LevelData* s_level;
-	static const LevelObjectData* s_levelObjects;
 	static DXL2_Renderer* s_renderer;
 	static std::vector<Vec2f> s_transformedVtx;
 
@@ -151,7 +150,7 @@ namespace DXL2_View
 	static GameObjectList* s_objects;
 	static SectorObjectList* s_sectorObjects;
 		
-	bool init(const LevelData* level, LevelObjectData* levelObjects, DXL2_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
+	bool init(const LevelData* level, DXL2_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
 	{
 		s_objects = LevelGameObjects::getGameObjectList();
 		s_sectorObjects = LevelGameObjects::getSectorObjectList();
@@ -206,7 +205,6 @@ namespace DXL2_View
 		s_enableViewStats = enableViewStats;
 
 		s_level = level;
-		s_levelObjects = levelObjects;
 		s_renderer = renderer;
 		s_frame = 0;
 
@@ -262,102 +260,6 @@ namespace DXL2_View
 			if (!s_textures[t]) { s_textures[t] = firstValid; }
 		}
 		s_textureList = s_textures.data();
-
-		// Add sprites and frames.
-		// One object container per sector.
-		const u32 sectorCount = (u32)s_level->sectors.size();
-		s_sectorObjects->resize(sectorCount);
-		for (u32 i = 0; i < sectorCount; i++)
-		{
-			(*s_sectorObjects)[i].list.clear();
-		}
-
-		if (s_levelObjects)
-		{
-			const u32 objectCount = s_levelObjects->objectCount;
-			const LevelObject* object = s_levelObjects->objects.data();
-			s_objects->reserve(objectCount + 1024);
-			s_objects->resize(objectCount);
-			for (u32 i = 0; i < objectCount; i++)
-			{
-				const ObjectClass oclass = object[i].oclass;
-				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D) { continue; }
-
-				// Get the position and sector.
-				Vec3f pos = object[i].pos;
-				s32 sectorId = DXL2_Physics::findSector(&pos);
-				// Skip objects that are not in sectors.
-				if (sectorId < 0) { continue; }
-
-				std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
-				list.push_back(i);
-
-				GameObject* secobject = &(*s_objects)[i];
-				secobject->id = i;
-				secobject->pos = pos;
-				secobject->angles = object[i].orientation;
-				secobject->sectorId = sectorId;
-				secobject->oclass = oclass;
-				secobject->fullbright = false;
-				secobject->collisionRadius = 0.0f;
-				secobject->collisionHeight = 0.0f;
-				secobject->physicsFlags = PHYSICS_GRAVITY;
-				secobject->verticalVel = 0.0f;
-				secobject->show = true;
-				secobject->comFlags = object[i].comFlags;
-				secobject->radius = object[i].radius;
-				secobject->height = object[i].height;
-
-				secobject->animId = 0;
-				secobject->frameIndex = 0;
-
-				if (!object[i].logics.empty() && (object[i].logics[0].type == LOGIC_LIFE || (object[i].logics[0].type >= LOGIC_BLUE && object[i].logics[0].type <= LOGIC_PILE)))
-				{
-					secobject->fullbright = true;
-				}
-								
-				if (oclass == CLASS_SPRITE)
-				{
-					// HACK to fix Detention center, for some reason land-mines are mapped to Ewoks.
-					if (!object[i].logics.empty() && object[i].logics[0].type == LOGIC_LAND_MINE)
-					{
-						secobject->oclass = CLASS_FRAME;
-						secobject->frame = DXL2_Sprite::getFrame("WMINE.FME");
-					}
-					else
-					{
-						secobject->sprite = DXL2_Sprite::getSprite(s_levelObjects->sprites[object[i].dataOffset].c_str());
-					}
-
-					// This is just temporary until Logics are implemented.
-					if (!object[i].logics.empty() && object[i].logics[0].type >= LOGIC_I_OFFICER && object[i].logics[0].type <= LOGIC_REE_YEES2)
-					{
-						secobject->animId = 5;
-					}
-				}
-				else if (oclass == CLASS_FRAME)
-				{
-					// HACK to fix Detention center, for some reason land-mines are mapped to Ewoks.
-					if (!object[i].logics.empty() && object[i].logics[0].type == LOGIC_LAND_MINE)
-					{
-						secobject->frame = DXL2_Sprite::getFrame("WMINE.FME");
-					}
-					else
-					{
-						secobject->frame = DXL2_Sprite::getFrame(s_levelObjects->frames[object[i].dataOffset].c_str());
-					}
-				}
-				else if (oclass == CLASS_3D)
-				{
-					secobject->model = DXL2_Model::get(s_levelObjects->pods[object[i].dataOffset].c_str());
-					// 3D objects, by default, have no gravity since they are likely environmental props (like bridges).
-					secobject->physicsFlags = PHYSICS_NONE;
-				}
-
-				// Register the object logic.
-				DXL2_LogicSystem::registerObjectLogics(secobject, object[i].logics, object[i].generators);
-			}
-		}
 		
 		return true;
 	}
