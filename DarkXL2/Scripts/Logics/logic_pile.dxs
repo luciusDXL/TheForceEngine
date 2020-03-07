@@ -6,6 +6,7 @@
 void start()
 {
 	DXL2_SetCollision(self.objectId, /*radius*/2.5f, /*height*/2.0f, COLLIDE_PLAYER | COLLIDE_TRIGGER);
+	DXL2_SetPhysics(self.objectId, PHYSICS_NONE);
 }
 
 // Handle message is called when specific events occur, such as

@@ -25,6 +25,9 @@ namespace DXL2_Level
 	static const s32* s_floorId = nullptr;
 	static const s32* s_secAltId = nullptr;
 
+	GameObjectList* s_objects;
+	SectorObjectList* s_sectorObjects;
+
 	bool init()
 	{
 		s_memoryPool = new MemoryPool();
@@ -63,9 +66,18 @@ namespace DXL2_Level
 		for (u32 s = 0; s < sectorCount; s++)
 		{
 			s_baseSectorHeight[s].floorAlt = s_levelData->sectors[s].floorAlt;
-			s_baseSectorHeight[s].ceilAlt = s_levelData->sectors[s].ceilAlt;
+			s_baseSectorHeight[s].ceilAlt  = s_levelData->sectors[s].ceilAlt;
 		}
-		
+
+		s_objects = LevelGameObjects::getGameObjectList();
+		s_sectorObjects = LevelGameObjects::getSectorObjectList();
+
+		s_sectorObjects->resize(sectorCount);
+		for (u32 i = 0; i < sectorCount; i++)
+		{
+			(*s_sectorObjects)[i].list.clear();
+		}
+
 		DXL2_System::logWrite(LOG_MSG, "Level", "Level Runtime used %u bytes.", s_memoryPool->getMemoryUsed());
 	}
 
@@ -101,6 +113,33 @@ namespace DXL2_Level
 		}
 		return false;
 	}
+		
+	void setObjectFloorHeight(s32 sectorId, f32 newHeight)
+	{
+		Sector* sector = s_levelData->sectors.data() + sectorId;
+		GameObject* objects = s_objects->data();
+		
+		const std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
+		const u32 objCount = list.size();
+		const u32* indices = list.data();
+		for (u32 i = 0; i < objCount; i++)
+		{
+			GameObject* obj = &objects[indices[i]];
+			f32 testHeight = newHeight;
+			if (sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f)
+			{
+				testHeight = newHeight + sector->secAlt;
+			}
+
+			// Move the object if it is close to the floor (so it sticks when going down)
+			// or below the floor.
+			// This way if an object is in the air (jumping, flying) it isn't moved unless necessary.
+			if (obj->pos.y >= testHeight || fabsf(obj->pos.y - testHeight) < 0.1f)
+			{
+				obj->pos.y = testHeight;
+			}
+		}
+	}
 
 	// Floor, ceiling, second height
 	void setFloorHeight(s32 sectorId, f32 height, bool addSectorMotion)
@@ -111,9 +150,11 @@ namespace DXL2_Level
 		}
 		else if (addSectorMotion && playerOnFloor(sectorId))
 		{
-			// Go through list of objects that are standing on the floor of the sector and add the motion to them.
 			s_player->pos.y = height;
 		}
+
+		// Go through list of objects that are standing on the floor of the sector and add the motion to them.
+		setObjectFloorHeight(sectorId, height);
 
 		s_levelData->sectors[sectorId].floorAlt = height;
 	}

@@ -20,6 +20,13 @@ enum CollisionFlags
 	COLLIDE_ENEMY = (1 << 2),		// Only collides with enemies.
 };
 
+enum PhysicsFlags
+{
+	PHYSICS_NONE    = 0,
+	PHYSICS_GRAVITY = (1 << 0),		// The object will fall due to gravity.
+	PHYSICS_BOUNCE  = (1 << 1),		// The object will bounce when it hits a surface.
+};
+
 struct GameObject
 {
 	ObjectClass oclass;
@@ -37,6 +44,7 @@ struct GameObject
 	// General
 	u32 id;
 	s32 sectorId;
+	f32 verticalVel;
 	Vec3f pos;
 	Vec3f angles;
 	
@@ -60,6 +68,9 @@ struct GameObject
 	u32 collisionFlags;
 	f32 collisionRadius;
 	f32 collisionHeight;
+
+	// Physics
+	u32 physicsFlags;
 };
 
 struct SectorObjects

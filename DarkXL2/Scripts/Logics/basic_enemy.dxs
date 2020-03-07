@@ -9,6 +9,8 @@ void start()
 	self.state = ESTATE_STILL;
 	DXL2_SetAnimFrame(self.objectId, ESTATE_STILL, 0);
 	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
+
+	setEnemySpecificFlags();
 }
 
 // Stop is called when the object is despawned.
@@ -63,5 +65,8 @@ void handleMessage(int msgId, int arg0, int arg1)
 		self.hp = 0;
 		DXL2_SetCollision(self.objectId, 0.0f, 0.0f, COLLIDE_NONE);
 		startAnimation(ESTATE_DYING_SHOT);
+
+		// Allow falling even if previously floating.
+		DXL2_SetPhysics(self.objectId, PHYSICS_GRAVITY);
 	}
 }

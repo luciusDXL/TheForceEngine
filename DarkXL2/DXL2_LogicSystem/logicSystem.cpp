@@ -343,6 +343,15 @@ namespace DXL2_LogicSystem
 		obj->gameObj->collisionFlags  = collisionFlags;
 	}
 
+	void DXL2_SetPhysics(s32 objectId, u32 physicsFlags)
+	{
+		if (objectId < 0 || objectId >= s_scriptObjects.size()) { return; }
+		ScriptObject* obj = &s_scriptObjects[objectId];
+
+		obj->gameObj->physicsFlags = physicsFlags;
+		obj->gameObj->verticalVel = 0.0f;
+	}
+
 	void DXL2_Hide(s32 objectId)
 	{
 		if (objectId < 0 || objectId >= s_scriptObjects.size()) { return; }
@@ -379,6 +388,8 @@ namespace DXL2_LogicSystem
 		obj->animId = 0;
 		obj->collisionHeight = 0.0f;
 		obj->collisionRadius = 0.0f;
+		obj->physicsFlags = PHYSICS_GRAVITY;	// Gravity is the default.
+		obj->verticalVel = 0.0f;
 		obj->flags = 0;
 		obj->frameIndex = 0;
 		obj->fullbright = false;
@@ -528,8 +539,9 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerFunction("uint DXL2_GetAnimFrameCount(int objectId, int animationId)", SCRIPT_FUNCTION(DXL2_GetAnimFrameCount));
 		DXL2_ScriptSystem::registerFunction("void DXL2_SetAnimFrame(int objectId, int animationId, int frameIndex)", SCRIPT_FUNCTION(DXL2_SetAnimFrame));
 		DXL2_ScriptSystem::registerFunction("void DXL2_SetCollision(int objectId, float radius, float height, uint collisionFlags)", SCRIPT_FUNCTION(DXL2_SetCollision));
+		DXL2_ScriptSystem::registerFunction("void DXL2_SetPhysics(int objectId, uint physicsFlags)", SCRIPT_FUNCTION(DXL2_SetPhysics));
 		DXL2_ScriptSystem::registerFunction("void DXL2_Hide(int objectId)", SCRIPT_FUNCTION(DXL2_Hide));
-
+		
 		DXL2_ScriptSystem::registerFunction("Vec3f DXL2_BiasTowardsPlayer(Vec3f pos, float bias)", SCRIPT_FUNCTION(DXL2_BiasTowardsPlayer));
 		DXL2_ScriptSystem::registerFunction("int DXL2_SpawnObject(Vec3f pos, Vec3f angles, int sectorId, int objectClass, const string &in)", SCRIPT_FUNCTION(DXL2_SpawnObject));
 		DXL2_ScriptSystem::registerFunction("void DXL2_AddLogic(int objectId, int logicId)", SCRIPT_FUNCTION(DXL2_AddLogic));
@@ -564,6 +576,11 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_TRIGGER", COLLIDE_TRIGGER);
 		DXL2_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_PLAYER", COLLIDE_PLAYER);
 		DXL2_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_ENEMY", COLLIDE_ENEMY);
+
+		DXL2_ScriptSystem::registerEnumType("PhysicsFlags");
+		DXL2_ScriptSystem::registerEnumValue("PhysicsFlags", "PHYSICS_NONE", PHYSICS_NONE);
+		DXL2_ScriptSystem::registerEnumValue("PhysicsFlags", "PHYSICS_GRAVITY", PHYSICS_GRAVITY);
+		DXL2_ScriptSystem::registerEnumValue("PhysicsFlags", "PHYSICS_BOUNCE", PHYSICS_BOUNCE);
 
 		DXL2_ScriptSystem::registerEnumType("LogicCommonFlags");
 		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_EYE",   LCF_EYE);

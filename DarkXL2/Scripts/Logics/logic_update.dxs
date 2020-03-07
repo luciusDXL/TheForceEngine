@@ -19,6 +19,11 @@ bool IsFlagSet(uint flags, uint flagBit)
 	return (flags & flagBit) != 0;
 }
 
+void start()
+{
+	DXL2_SetPhysics(self.objectId, PHYSICS_NONE);
+}
+
 void tick()
 {
 	Vec3f rotation;

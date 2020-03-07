@@ -1070,7 +1070,7 @@ namespace DXL2_InfSystem
 		const f32 texW = s_levelData->textures[wall->sign.texId]->frames[0].width;
 		const f32 texH = s_levelData->textures[wall->sign.texId]->frames[0].height;
 
-		const f32 h  = y0 - y1;
+		const f32 h = y0 - y1;
 		if (fabsf(h) < 0.001f)
 		{
 			return false;

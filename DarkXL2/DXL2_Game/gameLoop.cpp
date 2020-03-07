@@ -8,6 +8,7 @@
 #include <DXL2_Game/geometry.h>
 #include <DXL2_Game/player.h>
 #include <DXL2_Game/level.h>
+#include <DXL2_Game/gameObject.h>
 #include <DXL2_System/system.h>
 #include <DXL2_System/math.h>
 #include <DXL2_FileSystem/paths.h>
@@ -58,6 +59,11 @@ namespace DXL2_GameLoop
 	static f32 s_landAnim = 0.0f;
 	static bool s_land = false;
 	static bool s_jump = false;
+
+	static f32 s_accum = 0.0f;
+	static f32 c_step = 1.0f / 60.0f;
+
+	void updateObjects();
 
 	void startRenderer(DXL2_Renderer* renderer, s32 w, s32 h)
 	{
@@ -113,6 +119,7 @@ namespace DXL2_GameLoop
 
 		// For now switch over to the pistol.
 		DXL2_WeaponSystem::switchToWeapon(WEAPON_PISTOL);
+		s_accum = 0.0f;
 
 		return true;
 	}
@@ -213,6 +220,7 @@ namespace DXL2_GameLoop
 
 		// For now switch over to the pistol.
 		DXL2_WeaponSystem::switchToWeapon(WEAPON_PISTOL);
+		s_accum = 0.0f;
 		
 		return true;
 	}
@@ -652,6 +660,9 @@ namespace DXL2_GameLoop
 		DXL2_LogicSystem::update();
 		DXL2_WeaponSystem::update(s_motion, &s_player);
 
+		// Update objects based on their physics settings (to handle explosions, gravity, bouncing, etc.).
+		updateObjects();
+
 		if (DXL2_Input::mouseDown(MBUTTON_LEFT))
 		{
 			DXL2_WeaponSystem::shoot(&s_player, &forwardDir);
@@ -670,7 +681,7 @@ namespace DXL2_GameLoop
 		if (!model) { return; }
 		
 		Vec3f modelPos = { 0.0f, 0.0f, 0.0f };
-		Vec3f cameraPos = { model->center.x, -model->center.y, model->center.z - model->radius * 1.5f };
+		Vec3f cameraPos = { model->center.x, -model->center.y, model->center.z - model->radius*1.5f };
 		f32 cameraRot[] = { 1.0f, 0.0f };
 
 		DXL2_ModelRender::draw(model, orientation, &modelPos, &cameraPos, cameraRot, 0);
@@ -679,4 +690,51 @@ namespace DXL2_GameLoop
 	//////////////////////////////////////////////
 	// Internal
 	//////////////////////////////////////////////
+	void updateObjects()
+	{
+		GameObject* objects = LevelGameObjects::getGameObjectList()->data();
+		SectorObjectList* sectorObjects = LevelGameObjects::getSectorObjectList();
+		const u32 secCount = (u32)s_level->sectors.size();
+
+		s_accum += (f32)DXL2_System::getDeltaTime();
+		while (s_accum >= c_step)
+		{
+			Sector* sector = s_level->sectors.data();
+			for (u32 s = 0; s < secCount; s++, sector++)
+			{
+				const std::vector<u32>& list = (*sectorObjects)[s].list;
+				const u32 objCount = list.size();
+				const u32* indices = list.data();
+				for (u32 i = 0; i < objCount; i++)
+				{
+					GameObject* obj = &objects[indices[i]];
+					// Is the object affected by gravity?
+					if (!(obj->physicsFlags&PHYSICS_GRAVITY)) { obj->verticalVel = 0.0f; continue; }
+
+					// Is the object close enough to stick to the floor or second alt?
+					const f32 dFloor = fabsf(obj->pos.y - sector->floorAlt);
+					const f32 dSec   = fabsf(obj->pos.y - sector->floorAlt - std::min(sector->secAlt, 0.0f));
+					if (dSec < 0.1f) { obj->pos.y = sector->floorAlt + sector->secAlt; obj->verticalVel = 0.0f; continue; }
+					else if (dFloor < 0.1f) { obj->pos.y = sector->floorAlt + sector->secAlt; obj->verticalVel = 0.0f; continue; }
+
+					// The object should fall towards the floor.
+					bool aboveSecHeight = sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f;
+					f32 floorHeight = aboveSecHeight ? sector->floorAlt + sector->secAlt : sector->floorAlt;
+
+					obj->pos.y += obj->verticalVel * c_step;
+					if (obj->pos.y >= floorHeight)
+					{
+						obj->verticalVel = 0.0f;
+						obj->pos.y = floorHeight;
+					}
+					else
+					{
+						obj->verticalVel += c_gravityAccel * c_step;
+					}
+				}
+			}
+
+			s_accum -= c_step;
+		}
+	}
 }

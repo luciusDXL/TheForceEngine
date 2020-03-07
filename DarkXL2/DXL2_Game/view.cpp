@@ -301,6 +301,8 @@ namespace DXL2_View
 				secobject->fullbright = false;
 				secobject->collisionRadius = 0.0f;
 				secobject->collisionHeight = 0.0f;
+				secobject->physicsFlags = PHYSICS_GRAVITY;
+				secobject->verticalVel = 0.0f;
 				secobject->show = true;
 				secobject->comFlags = object[i].comFlags;
 				secobject->radius = object[i].radius;
@@ -348,6 +350,8 @@ namespace DXL2_View
 				else if (oclass == CLASS_3D)
 				{
 					secobject->model = DXL2_Model::get(s_levelObjects->pods[object[i].dataOffset].c_str());
+					// 3D objects, by default, have no gravity since they are likely environmental props (like bridges).
+					secobject->physicsFlags = PHYSICS_NONE;
 				}
 
 				// Register the object logic.
