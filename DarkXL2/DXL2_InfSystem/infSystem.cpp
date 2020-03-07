@@ -1082,11 +1082,11 @@ namespace DXL2_InfSystem
 		const f32 v1 = (-offsetY) * c_worldToTexelScale;
 
 		const f32 s = fabsf(dx) >= fabsf(dz) ? (point->x - vtx0->x) / dx : (point->z - vtx0->z) / dz;
-		const f32 t = (point->y - y0) / h;
+		const f32 t = (point->y - y1) / h;
 
-		const f32 u = u0 + (u1 - u0) * s;
-		const f32 v = v0 + (v1 - v0) * t;
-		if (u >= -4.0f && u < texW + 4.0f)// && v >= -4.0f && v < texH + 4.0f)
+		const f32 u =   u0 + (u1 - u0) * s;
+		const f32 v = -(v0 + (v1 - v0) * t);
+		if (u >= -4.0f && u < texW + 4.0f && v >= -4.0f && v < texH + 4.0f)
 		{
 			return true;
 		}
