@@ -77,13 +77,13 @@ namespace DXL2_GameLoop
 		LevelData* level = DXL2_LevelAsset::getLevelData();
 		InfData* infData = DXL2_InfAsset::getInfData();
 		if (!level || !infData) { return false; }
+		s_level = level;
 
 		// Initialize the Logic system.
 		DXL2_LogicSystem::init(&s_player);
 
 		DXL2_Physics::init(s_level);
 		DXL2_Level::startLevel(level, levelObj);
-		s_level = level;
 		s_motion = 0.0f;
 		s_motionTime = 0.0f;
 		s_fallHeight = 0.0f;

@@ -210,6 +210,70 @@ namespace DXL2_Level
 		}
 		return false;
 	}
+
+	enum MoveFlags
+	{
+		MOVE_FLOOR = (1 << 0),
+		MOVE_SEC_ALT = (1 << 1),
+	};
+
+	void moveObjectsInSector(s32 sectorId, const Vec2f* move, u32 flags)
+	{
+		Sector* sector = s_levelData->sectors.data() + sectorId;
+		GameObject* objects = s_objects->data();
+		if (flags == MOVE_SEC_ALT && sector->secAlt >= 0.0f) { return; }
+
+		const f32 height = sector->floorAlt;
+		const f32 secAltHeight = sector->floorAlt + sector->secAlt;
+
+		const std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
+		const u32 objCount = (u32)list.size();
+		const u32* indices = list.data();
+		for (u32 i = 0; i < objCount; i++)
+		{
+			GameObject* obj = &objects[indices[i]];
+			const f32 dFloor  = fabsf(obj->pos.y - height);
+			const f32 dSecAlt = fabsf(obj->pos.y - secAltHeight);
+			if (((flags & MOVE_FLOOR) && dFloor < 0.1f) || ((flags & MOVE_SEC_ALT) && dSecAlt < 0.1f))
+			{
+				obj->pos.x += move->x;
+				obj->pos.z += move->z;
+			}
+		}
+	}
+
+	void rotateObjectsInSector(s32 sectorId, f32 angleDelta, const Vec2f* center, u32 flags)
+	{
+		Sector* sector = s_levelData->sectors.data() + sectorId;
+		GameObject* objects = s_objects->data();
+		if (flags == MOVE_SEC_ALT && sector->secAlt >= 0.0f) { return; }
+
+		const f32 height = sector->floorAlt;
+		const f32 secAltHeight = sector->floorAlt + sector->secAlt;
+
+		// Go through list of objects that are standing on the floor of the sector and add the motion to them.
+		const f32 angleDeltaRad = -angleDelta * PI / 180.0f;
+		const f32 ca = cosf(angleDeltaRad);
+		const f32 sa = sinf(angleDeltaRad);
+
+		const std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
+		const u32 objCount = (u32)list.size();
+		const u32* indices = list.data();
+		for (u32 i = 0; i < objCount; i++)
+		{
+			GameObject* obj = &objects[indices[i]];
+			const f32 dFloor = fabsf(obj->pos.y - height);
+			const f32 dSecAlt = fabsf(obj->pos.y - secAltHeight);
+			if (((flags & MOVE_FLOOR) && dFloor < 0.1f) || ((flags & MOVE_SEC_ALT) && dSecAlt < 0.1f))
+			{
+				const f32 x = obj->pos.x - center->x;
+				const f32 z = obj->pos.z - center->z;
+				obj->pos.x =  ca*x + sa*z + center->x;
+				obj->pos.z = -sa*x + ca*z + center->z;
+				obj->angles.y += angleDelta * PI / 180.0f;
+			}
+		}
+	}
 		
 	void setObjectFloorHeight(s32 sectorId, f32 newHeight)
 	{
@@ -229,6 +293,30 @@ namespace DXL2_Level
 				testHeight += sector->secAlt;
 				baseHeight += sector->secAlt;
 			}
+
+			// Move the object if it is close to the floor (so it sticks when going down)
+			// or below the floor.
+			// This way if an object is in the air (jumping, flying) it isn't moved unless necessary.
+			if (obj->pos.y >= testHeight || fabsf(obj->pos.y - baseHeight) < 0.1f)
+			{
+				obj->pos.y = testHeight;
+			}
+		}
+	}
+
+	void setObjectSecAlt(s32 sectorId, f32 newHeight)
+	{
+		Sector* sector = s_levelData->sectors.data() + sectorId;
+		GameObject* objects = s_objects->data();
+
+		const std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
+		const u32 objCount = (u32)list.size();
+		const u32* indices = list.data();
+		for (u32 i = 0; i < objCount; i++)
+		{
+			GameObject* obj = &objects[indices[i]];
+			f32 baseHeight = sector->floorAlt + sector->secAlt;
+			f32 testHeight = sector->floorAlt + newHeight;
 
 			// Move the object if it is close to the floor (so it sticks when going down)
 			// or below the floor.
@@ -271,6 +359,9 @@ namespace DXL2_Level
 			s_player->pos.y = s_levelData->sectors[sectorId].floorAlt + height;
 		}
 
+		// Go through list of objects that are standing on the floor of the sector and add the motion to them.
+		setObjectSecAlt(sectorId, height);
+
 		s_levelData->sectors[sectorId].secAlt = height;
 	}
 
@@ -301,12 +392,18 @@ namespace DXL2_Level
 		const f32 ca =  cosf(angleRad);
 		const f32 sa = -sinf(angleRad);
 
+		const Vec2f move = { ca * deltaDist, sa * deltaDist };
 		if ((addSectorMotion && playerOnFloor(sectorId)) || (addSecMotionSecondAlt && playerOnSecAlt(sectorId)))
 		{
 			// Go through list of objects that are standing on the floor of the sector and add the motion to them.
-			s_player->pos.x += ca * deltaDist;
-			s_player->pos.z += sa * deltaDist;
+			s_player->pos.x += move.x;
+			s_player->pos.z += move.z;
 		}
+		// Object movement.
+		u32 moveFlags = 0;
+		if (addSectorMotion) { moveFlags |= MOVE_FLOOR; }
+		if (addSecMotionSecondAlt) { moveFlags |= MOVE_SEC_ALT; }
+		moveObjectsInSector(sectorId, &move, moveFlags);
 
 		// gather vertex indices.
 		u32 indices[1024];
@@ -375,6 +472,11 @@ namespace DXL2_Level
 			s_player->pos.z = -dsa * x + dca * z + center->z;
 			s_player->m_yaw += angleDelta * PI / 180.0f;
 		}
+		// Object movement.
+		u32 moveFlags = 0;
+		if (addSectorMotion) { moveFlags |= MOVE_FLOOR; }
+		if (addSecMotionSecondAlt) { moveFlags |= MOVE_SEC_ALT; }
+		rotateObjectsInSector(sectorId, angleDelta, center, moveFlags);
 
 		// gather vertex indices.
 		u32 indices[1024];
