@@ -438,7 +438,19 @@ namespace DXL2_GameLoop
 		if (DXL2_Input::keyPressed(KEY_E))
 		{
 			const Vec3f forwardDir = { -sinf(s_player.m_yaw), 0.0f, cosf(s_player.m_yaw) };
-			DXL2_InfSystem::activate(&s_player.pos, &forwardDir, s_player.m_sectorId, s_player.m_keys);
+			// Fire a short ray into the world and gather all of the lines it hits until a solid wall is reached or the ray terminates.
+			// Then we will process the list in order from closest to farthest until the activate() is consumed or the list is exhausted.
+			const Ray ray =
+			{
+				{s_player.pos.x, s_player.pos.y + s_eyeHeight, s_player.pos.z},
+				forwardDir,
+				s_player.m_sectorId,
+				3.5f,
+				false,
+			};
+			MultiRayHitInfo hitInfo;
+			DXL2_Physics::traceRayMulti(&ray, &hitInfo);
+			DXL2_InfSystem::activate(&s_player.pos, &hitInfo, s_player.m_sectorId, s_player.m_keys);
 		}
 
 		// Weapons

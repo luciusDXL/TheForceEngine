@@ -936,6 +936,140 @@ namespace DXL2_Physics
 		s_spritesToCheck[s_spriteCount++] = id;
 	}
 
+	void addSector(MultiRayHitInfo* hitInfo, u32 sectorId)
+	{
+		if (hitInfo->sectorCount >= 16) { return; }
+
+		for (u32 s = 0; s < hitInfo->sectorCount; s++)
+		{
+			if (hitInfo->sectors[s] == sectorId) { return; }
+		}
+		hitInfo->sectors[hitInfo->sectorCount++] = sectorId;
+	}
+
+	// Gather multiple hits until the ray hits a solid surface.
+	bool traceRayMulti(const Ray* ray, MultiRayHitInfo* hitInfo)
+	{
+		assert(ray && hitInfo);
+		hitInfo->hitCount = 0;
+		hitInfo->sectorCount = 1;
+		hitInfo->sectors[0] = ray->originSectorId;
+
+		f32 maxDist  = ray->maxDist;
+		Vec3f origin = ray->origin;
+		Vec2f p0xz = { origin.x, origin.z };
+		Vec2f p1xz = { p0xz.x + ray->dir.x * maxDist, p0xz.z + ray->dir.z * maxDist };
+
+		const s32 sectorCount   = (s32)s_level->sectors.size();
+		const Sector* sectors   = s_level->sectors.data();
+		const SectorWall* walls = s_level->walls.data();
+		const Vec2f* vertices   = s_level->vertices.data();
+
+		s32 nextSector = ray->originSectorId;
+		s32 windowId = -1, prevSector = -1;
+		bool hitFound = false;
+		while (nextSector >= 0 && hitInfo->hitCount < 16)
+		{
+			const s32 sectorId = nextSector;
+			const Sector* curSector = &sectors[sectorId];
+			const SectorWall* curWalls = walls + curSector->wallOffset;
+			const Vec2f* curVtx = vertices + curSector->vtxOffset;
+			const s32 wallCount = (s32)curSector->wallCount;
+			nextSector = -1;
+
+			// Check the ray against all of the walls and take the closest hit, if any.
+			f32 closestHit = FLT_MAX;
+			s32 closestWallId = -1;
+			for (s32 w = 0; w < wallCount; w++)
+			{
+				// skip if this is the portal we just went through.
+				// TODO: Figure out why this doesn't always work.
+				if (curWalls[w].adjoin >= 0 && curWalls[w].mirror == windowId && curWalls[w].adjoin == prevSector)
+				{
+					continue;
+				}
+
+				const s32 i0 = curWalls[w].i0;
+				const s32 i1 = curWalls[w].i1;
+				const Vec2f* v0 = &curVtx[i0];
+				const Vec2f* v1 = &curVtx[i1];
+
+				f32 s, t;
+				if (Geometry::lineSegmentIntersect(&p0xz, &p1xz, v0, v1, &s, &t))
+				{
+					if (s < closestHit)
+					{
+						closestHit = s;
+						closestWallId = w;
+					}
+				}
+			}
+			if (closestWallId < 0)
+			{
+				break;
+			}
+			closestHit *= maxDist;
+
+			// Check the floor.
+			Vec3f p0 = origin;
+			Vec3f p1 = { p0.x + ray->dir.x*closestHit, p0.y + ray->dir.y*closestHit, p0.z + ray->dir.z*closestHit };
+			Vec3f hitPoint;
+			bool planeHit = false;
+			if (Geometry::lineYPlaneIntersect(&p0, &p1, curSector->floorAlt, &hitPoint))
+			{
+				p1 = hitPoint;
+				planeHit = true;
+			}
+			else if (Geometry::lineYPlaneIntersect(&p0, &p1, curSector->ceilAlt, &hitPoint))
+			{
+				p1 = hitPoint;
+				planeHit = true;
+			}
+						
+			addSector(hitInfo, sectorId);
+			if (planeHit)
+			{
+				break;
+			}
+			else
+			{
+				hitInfo->hitSectorId[hitInfo->hitCount] = sectorId;
+				hitInfo->wallHitId[hitInfo->hitCount] = closestWallId;
+				hitInfo->hitPoint[hitInfo->hitCount] = p1;
+				hitInfo->hitCount++;
+
+				if (curWalls[closestWallId].adjoin < 0)
+				{
+					break;
+				}
+				else
+				{
+					nextSector = curWalls[closestWallId].adjoin;
+
+					// Always add the next sector even if it is not traversable in order to handle things like doors and elevators that can be toggled
+					// from the outside.
+					addSector(hitInfo, nextSector);
+					
+					const Sector* next = &sectors[nextSector];
+					if (p1.y >= next->floorAlt || p1.y <= next->ceilAlt)
+					{
+						// If the ray hits the top or bottom section than stop traversing here.
+						break;
+					}
+
+					// Otherwise we'll continue to add more hits.
+					origin = p1;
+					p0xz = { origin.x, origin.z };
+					maxDist = ray->maxDist - DXL2_Math::distance(&ray->origin, &origin);
+					windowId = closestWallId;
+					prevSector = sectorId;
+				}
+			}
+		}
+
+		return hitInfo->hitCount > 0 || hitInfo->sectorCount;
+	}
+
 	// Traces a ray through the level.
 	// Returns true if the ray hit something.
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo)

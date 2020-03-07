@@ -1226,24 +1226,15 @@ namespace DXL2_InfSystem
 		}
 	}
 
-	void activate(const Vec3f* pos, const Vec3f* viewDir, s32 curSectorId, u32 keys)
+	void activate(const Vec3f* pos, const MultiRayHitInfo* hitInfo, s32 curSectorId, u32 keys)
 	{
-		const f32 c_activateRadius = 2.5f;
-		u32 lines[256];
-		u32 sectors[256];
-		u32 lineCount = 0, sectorCount = 0;
-		// TODO:
-		// This is problematic because it relies on walkability - which is fine for player overlap tests but not so great for nudges.
-		// Nudges should work this way:
-		//   * Nudge the sector the player is inside of.
-		//   * Nudge the closest sector using a raytrace - the ray can continue if nothing was nudged in the current sector/wall if valid.
-		//   * This will play into the test below because we will now have to have a valid hit point.
-		//   * The position needs to be the "eye" position, rays are assumed to be flat (i.e. depends on player height, not pitch).
-		DXL2_Physics::getOverlappingLinesAndSectors(pos, curSectorId, c_activateRadius, 256, lines, sectors, &lineCount, &sectorCount);
-		// Nudge sectors.
-		for (u32 s = 0; s < sectorCount; s++)
+		if (!hitInfo || (hitInfo->hitCount < 1 && hitInfo->sectorCount <1)) { return; }
+
+		// Nudge Sectors
+		for (u32 s = 0; s < hitInfo->sectorCount; s++)
 		{
-			u32 sectorId = sectors[s];
+			u32 sectorId = hitInfo->sectors[s];
+
 			// If the sector is not linked to an INF item, it can be skipped.
 			if (s_sectorItemMap[sectorId].sectorItemId < 0) { continue; }
 			// Tells the system if we are inside the sector or not.
@@ -1305,11 +1296,11 @@ namespace DXL2_InfSystem
 			}
 		}
 
-		// Nudge lines.
-		for (u32 l = 0; l < lineCount; l++)
+		// Nudge Lines
+		for (u32 s = 0; s < hitInfo->hitCount; s++)
 		{
-			u32 sectorId = lines[l] & 0xffffu;
-			u32 lineId = lines[l] >> 16u;
+			u32 sectorId = hitInfo->hitSectorId[s];
+			u32 lineId = hitInfo->wallHitId[s];
 			if (s_sectorItemMap[sectorId].lineCount < 1) continue;
 
 			// There are lines in this sector, is this particular line one of them?
@@ -1317,21 +1308,9 @@ namespace DXL2_InfSystem
 			{
 				if (s_sectorItemMap[sectorId].lineItemId[i].wallId == lineId)
 				{
-					// compute the intersection of the wall line and the view direction and see if it is close enough...
-					const Vec2f p0 = { pos->x, pos->z };
-					const Vec2f p1 = { pos->x + viewDir->x*8.0f, pos->z + viewDir->z*8.0f };
-					const Vec2f* vtx = s_levelData->vertices.data() + s_levelData->sectors[sectorId].vtxOffset;
-					const SectorWall* wall = s_levelData->walls.data() + s_levelData->sectors[sectorId].wallOffset + lineId;
-					f32 s = 0.0f, t = 0.0f;
-					if (!Geometry::lineSegmentIntersect(&p0, &p1, &vtx[wall->i0], &vtx[wall->i1], &s, &t))
-					{
-						continue;
-					}
-
 					// For switches, make sure the player is looking right at the switch and isn't too high or low.
 					InfItem* item = &s_infData->item[s_sectorItemMap[sectorId].lineItemId[i].itemId];
-					const Vec3f hitPoint = { p0.x + s * (p1.x - p0.x), pos->y, p0.z + s * (p1.z - p0.z) };
-					const NudgeType nudgeType = nudgeLine(INF_EVENT_NUDGE_FRONT, item, &hitPoint);
+					const NudgeType nudgeType = nudgeLine(INF_EVENT_NUDGE_FRONT, item, &hitInfo->hitPoint[s]);
 					if (nudgeType == NUDGE_TOGGLE)
 					{
 						DXL2_Level::toggleTextureFrame(sectorId, SP_SIGN, WSP_NONE, lineId);

@@ -256,10 +256,10 @@ int main(int argc, char* argv[])
 	DXL2_Paths::setPath(PATH_DOSBOX, "D:\\Program Files (x86)\\Steam\\steamapps\\common\\dark forces\\");
 
 	DXL2_System::logOpen("darkxl2_log.txt");
-	DXL2_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"", DXL2_Paths::getPath(PATH_PROGRAM));
-	DXL2_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"", DXL2_Paths::getPath(PATH_PROGRAM_DATA));
+	DXL2_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   DXL2_Paths::getPath(PATH_PROGRAM));
+	DXL2_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   DXL2_Paths::getPath(PATH_PROGRAM_DATA));
 	DXL2_System::logWrite(LOG_MSG, "Paths", "User Documents: \"%s\"", DXL2_Paths::getPath(PATH_USER_DOCUMENTS));
-	DXL2_System::logWrite(LOG_MSG, "Paths", "Source Data: \"%s\"", DXL2_Paths::getPath(PATH_SOURCE_DATA));
+	DXL2_System::logWrite(LOG_MSG, "Paths", "Source Data: \"%s\"",    DXL2_Paths::getPath(PATH_SOURCE_DATA));
 
 	// Initialize SDL
 	if (!sdlInit())
@@ -271,9 +271,9 @@ int main(int argc, char* argv[])
 
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
-	if (s_fullscreen) { DXL2_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled."); windowFlags |= WINFLAG_FULLSCREEN; }
-	if (s_vsync) { DXL2_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
-		
+	if (s_fullscreen) { DXL2_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");    windowFlags |= WINFLAG_FULLSCREEN; }
+	if (s_vsync)      { DXL2_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
+
 	const WindowState windowState =
 	{
 		"DarkXL 2: A New Hope",
@@ -313,13 +313,14 @@ int main(int argc, char* argv[])
 		DXL2_System::logClose();
 		return PROGRAM_ERROR;
 	}
-					
+
 	// Game loop
 	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "DarkXL 2 Game Loop Started");
 
 	// For now enable the editor by default.
+	// Once the main menu works, switch to that with a command line option to skip directly to the desired mode.
 	setAppState(APP_STATE_EDITOR, renderer);
-	   
+
 	u32 frame = 0u;
 	bool showPerf = false;
 	bool relativeMode = false;

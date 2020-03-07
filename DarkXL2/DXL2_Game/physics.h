@@ -44,6 +44,20 @@ struct RayHitInfo
 	const GameObject* obj;
 };
 
+// Ray hits in order from closest to farthest.
+struct MultiRayHitInfo
+{
+	u32 hitCount;
+	// Wall hits
+	u16 hitSectorId[16];
+	u16 wallHitId[16];
+	Vec3f hitPoint[16];
+
+	// Sectors
+	u32 sectorCount;
+	u16 sectors[16];
+};
+
 namespace DXL2_Physics
 {
 	bool init(LevelData* level);
@@ -68,4 +82,7 @@ namespace DXL2_Physics
 	// Traces a ray through the level.
 	// Returns true if the ray hit something.
 	bool traceRay(const Ray* ray, RayHitInfo* hitInfo);
+
+	// Gather multiple hits until the ray hits a solid surface.
+	bool traceRayMulti(const Ray* ray, MultiRayHitInfo* hitInfo);
 }

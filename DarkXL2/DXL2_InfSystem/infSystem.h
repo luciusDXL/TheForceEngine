@@ -10,6 +10,7 @@
 #include <string>
 
 class Player;
+struct MultiRayHitInfo;
 
 namespace DXL2_InfSystem
 {
@@ -19,7 +20,7 @@ namespace DXL2_InfSystem
 	void setupLevel(InfData* infData, LevelData* levelData);
 	void tick();
 
-	void activate(const Vec3f* pos, const Vec3f* viewDir, s32 curSectorId, u32 keys);
+	void activate(const Vec3f* pos, const MultiRayHitInfo* hitInfo, s32 curSectorId, u32 keys);
 	// Returns true if the player should continue falling.
 	bool firePlayerEvent(u32 evt, s32 sectorId, Player* player);
 	bool firePlayerEvent(u32 evt, s32 sectorId, s32 wallId);
