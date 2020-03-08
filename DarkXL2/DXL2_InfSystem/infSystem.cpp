@@ -1424,6 +1424,7 @@ namespace DXL2_InfSystem
 		}
 
 		// DEBUG
+		#if 0
 		s32 completeNewStop = s_infState[s_infData->item[s_infData->completeId].classData[0].stateIndex].curStop;
 		if (completeStop != completeNewStop && completeNewStop < s_infData->item[s_infData->completeId].classData[0].stopCount - 1)
 		{
@@ -1431,5 +1432,6 @@ namespace DXL2_InfSystem
 			sprintf(debugMsg, "Complete Elevator stop %d", completeNewStop);
 			DXL2_GameHud::setMessage(debugMsg);
 		}
+		#endif
 	}
 }

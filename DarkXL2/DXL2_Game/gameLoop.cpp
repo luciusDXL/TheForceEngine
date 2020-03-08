@@ -715,8 +715,8 @@ namespace DXL2_GameLoop
 					// Is the object close enough to stick to the floor or second alt?
 					const f32 dFloor = fabsf(obj->pos.y - sector->floorAlt);
 					const f32 dSec   = fabsf(obj->pos.y - sector->floorAlt - std::min(sector->secAlt, 0.0f));
-					if (dSec < 0.1f) { obj->pos.y = sector->floorAlt + sector->secAlt; obj->verticalVel = 0.0f; continue; }
-					else if (dFloor < 0.1f) { obj->pos.y = sector->floorAlt + sector->secAlt; obj->verticalVel = 0.0f; continue; }
+					if (dSec < 0.1f && sector->secAlt < 0.0f) { obj->pos.y = sector->floorAlt + sector->secAlt; obj->verticalVel = 0.0f; continue; }
+					else if (dFloor < 0.1f) { obj->pos.y = sector->floorAlt; obj->verticalVel = 0.0f; continue; }
 
 					// The object should fall towards the floor.
 					bool aboveSecHeight = sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f;
