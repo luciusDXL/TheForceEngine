@@ -17,6 +17,7 @@
 namespace DXL2_System
 {
 	static u64 s_time;
+	static u64 s_startTime;
 	static f64 s_freq;
 	static f64 s_refreshRate;
 
@@ -24,10 +25,12 @@ namespace DXL2_System
 	static const f64 c_maxDt = 0.05;	// 20 fps
 
 	static bool s_synced = false;
+	static bool s_resetStartTime = false;
 
 	void init(f32 refreshRate, bool synced)
 	{
 		s_time = SDL_GetPerformanceCounter();
+		s_startTime = s_time;
 		s_freq = 1.0 / (f64)SDL_GetPerformanceFrequency();
 		s_refreshRate = f64(refreshRate);
 		s_synced = synced;
@@ -37,6 +40,11 @@ namespace DXL2_System
 	{
 	}
 
+	void resetStartTime()
+	{
+		s_resetStartTime = true;
+	}
+
 	void update()
 	{
 		// This assumes that SDL_GetPerformanceCounter() is monotonic.
@@ -44,6 +52,11 @@ namespace DXL2_System
 		const u64 curTime = SDL_GetPerformanceCounter();
 		const u64 uDt = curTime - s_time;
 		s_time = curTime;
+		if (s_resetStartTime)
+		{
+			s_startTime = s_time;
+			s_resetStartTime = false;
+		}
 
 		// Delta time since the previous frame.
 		f64 dt = f64(uDt) * s_freq;
@@ -68,6 +81,13 @@ namespace DXL2_System
 	f64 getDeltaTime()
 	{
 		return s_dt;
+	}
+
+	// Get time since "start time"
+	f64 getTime()
+	{
+		const u64 uDt = s_time - s_startTime;
+		return f64(uDt) * s_freq;
 	}
 
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion)

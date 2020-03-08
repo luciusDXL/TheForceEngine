@@ -38,6 +38,7 @@ namespace DXL2_GameLoop
 
 	const f32 c_jumpImpulse = -36.828f;
 	const f32 c_gravityAccel = 111.6f;
+	const f32 c_gravityAccelStep = 1.86f;	// gravity acceleration per 1/60 step. Recalculate if stepsize changes.
 	
 	static LevelData* s_level = nullptr;
 	static LevelObjectData* s_levelObjects = nullptr;
@@ -718,9 +719,9 @@ namespace DXL2_GameLoop
 					if (dSec < 0.1f && sector->secAlt < 0.0f) { obj->pos.y = sector->floorAlt + sector->secAlt; obj->verticalVel = 0.0f; continue; }
 					else if (dFloor < 0.1f) { obj->pos.y = sector->floorAlt; obj->verticalVel = 0.0f; continue; }
 
-					// The object should fall towards the floor.
-					bool aboveSecHeight = sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f;
-					f32 floorHeight = aboveSecHeight ? sector->floorAlt + sector->secAlt : sector->floorAlt;
+					// The object should fall towards the floor or second height.
+					const bool aboveSecHeight = sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f;
+					const f32 floorHeight = aboveSecHeight ? sector->floorAlt + sector->secAlt : sector->floorAlt;
 
 					obj->pos.y += obj->verticalVel * c_step;
 					if (obj->pos.y >= floorHeight)
@@ -730,7 +731,7 @@ namespace DXL2_GameLoop
 					}
 					else
 					{
-						obj->verticalVel += c_gravityAccel * c_step;
+						obj->verticalVel += c_gravityAccelStep;
 					}
 				}
 			}

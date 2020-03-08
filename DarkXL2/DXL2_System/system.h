@@ -19,12 +19,17 @@ namespace DXL2_System
 {
 	void init(f32 refreshRate, bool synced);
 	void shutdown();
+	void resetStartTime();
 
 	void update();
 
 	// Timing
+	// --- The current time and delta time are determined once per frame, during the update() function.
+	//     In other words an entire frame operates on a single instance of time.
 	// Return the delta time.
 	f64 getDeltaTime();
+	// Get the absolute time since the last start time.
+	f64 getTime();
 
 	// Log
 	bool logOpen(const char* filename);
