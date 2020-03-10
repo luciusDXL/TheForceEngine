@@ -1108,7 +1108,7 @@ namespace DXL2_InfSystem
 			if ((classData->var.entity_mask & INF_ENTITY_PLAYER) && (classData->var.event_mask & evt))
 			{
 				// Determine if the "hitPoint" is close enough (or that we actually care, i.e. this is a sign).
-				if (classData->iclass == INF_CLASS_TRIGGER && classData->isubclass >= TRIGGER_SWITCH1)
+				if (classData->iclass == INF_CLASS_TRIGGER && classData->isubclass >= TRIGGER_SWITCH1 && evt != INF_EVENT_EXPLOSION)
 				{
 					// Compute the sign uv from the hitPoint.
 					if (!insideSign(hitPoint, item->id & 0xffffu, (item->id >> 16u)))
@@ -1322,6 +1322,83 @@ namespace DXL2_InfSystem
 						DXL2_Level::setTextureFrame(sectorId, SP_SIGN, WSP_NONE, 1, lineId);
 					}
 					break;
+				}
+			}
+		}
+	}
+
+	void explosion(const Vec3f* pos, s32 curSectorId, f32 radius)
+	{
+		const f32 c_activateRadius = 2.5f;
+		u32 lines[256];
+		u32 sectors[256];
+		u32 lineCount = 0, sectorCount = 0;
+		DXL2_Physics::getOverlappingLinesAndSectors(pos, curSectorId, c_activateRadius, 256, lines, sectors, &lineCount, &sectorCount);
+		for (u32 s = 0; s < sectorCount; s++)
+		{
+			u32 sectorId = sectors[s];
+
+			// If the sector is not linked to an INF item, it can be skipped.
+			if (s_sectorItemMap[sectorId].sectorItemId < 0) { continue; }
+			// Go through each class and see if the entity_mask and event_mask match what we are doing.
+			InfItem* item = &s_infData->item[s_sectorItemMap[sectorId].sectorItemId];
+			const u32 classCount = item->classCount;
+			for (u32 c = 0; c < classCount; c++)
+			{
+				InfClassData* classData = &item->classData[c];
+				// If the class has been turned off, then skip.
+				if (!classData->var.master) { continue; }
+				// Otherwise check the mask flags.
+				const bool maskMatches = classData->var.event_mask & INF_EVENT_EXPLOSION;
+				if (!maskMatches) { continue; }
+				// Then activate if an elevator or sector based trigger.
+				if (classData->iclass == INF_CLASS_ELEVATOR)
+				{
+					// And finally activate - but only if it is going "holding" and waiting to be activated.
+					ItemState* itemState = &s_infState[classData->stateIndex];
+					if (itemState->state == INF_STATE_HOLDING)
+					{
+						itemState->state = INF_STATE_MOVING;
+						itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
+					}
+				}
+				else if (classData->iclass == INF_CLASS_TRIGGER && item->type == INF_ITEM_SECTOR)
+				{
+					ItemState* itemState = &s_infState[classData->stateIndex];
+
+					if (itemState->state == INF_STATE_HOLDING)
+					{
+						if (classData->isubclass == TRIGGER_SINGLE)
+						{
+							itemState->state = INF_STATE_TERMINATED;
+						}
+						else if (classData->isubclass == TRIGGER_SWITCH1)
+						{
+							itemState->state = INF_STATE_ACTIVATED;
+						}
+
+						const u32 funcCount = classData->stop[0].code >> 8u;
+						executeFunctions(funcCount, classData->stop[0].func, classData->var.event);
+					}
+				}
+			}
+		}
+
+		// Nudge lines.
+		for (u32 l = 0; l < lineCount; l++)
+		{
+			u32 sectorId = lines[l] & 0xffffu;
+			u32 lineId = lines[l] >> 16u;
+			if (s_sectorItemMap[sectorId].lineCount < 1) continue;
+
+			// There are lines in this sector, is this particular line one of them?
+			for (u32 i = 0; i < s_sectorItemMap[sectorId].lineCount; i++)
+			{
+				if (s_sectorItemMap[sectorId].lineItemId[i].wallId == lineId)
+				{
+					// For switches, make sure the player is looking right at the switch and isn't too high or low.
+					InfItem* item = &s_infData->item[s_sectorItemMap[sectorId].lineItemId[i].itemId];
+					nudgeLine(INF_EVENT_EXPLOSION, item, nullptr);
 				}
 			}
 		}

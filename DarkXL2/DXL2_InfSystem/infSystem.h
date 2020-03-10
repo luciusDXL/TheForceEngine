@@ -21,6 +21,7 @@ namespace DXL2_InfSystem
 	void tick();
 
 	void activate(const Vec3f* pos, const MultiRayHitInfo* hitInfo, s32 curSectorId, u32 keys);
+	void explosion(const Vec3f* pos, s32 curSectorId, f32 radius);
 	// Returns true if the player should continue falling.
 	bool firePlayerEvent(u32 evt, s32 sectorId, Player* player);
 	bool firePlayerEvent(u32 evt, s32 sectorId, s32 wallId);

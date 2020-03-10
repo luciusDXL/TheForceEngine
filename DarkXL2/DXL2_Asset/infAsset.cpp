@@ -90,7 +90,7 @@ namespace DXL2_InfAsset
 	InfMessage getInfMessage(const char* type);
 	void splitReceiver(const char* str, char* outSecName, s32* outLineId);
 	void setupClassDefaults(InfClassData* classInfo);
-	void finishClass(InfItem* item, InfClassData* curClass, const u32* clients, const u16* slaves, const InfStop* stops, const InfFuncTemp* funcs, u32 clientCount, u32 slaveCount, u32 stopCount, u32 funcCount, s32 mergeStart = -1);
+	void finishClass(InfItem* item, InfClassData* curClass, const u32* clients, const u16* slaves, const InfStop* stops, const InfFuncTemp* funcs, u32 clientCount, u32 slaveCount, u32 stopCount, u32 funcCount, s32 mergeStart = -1, bool overrideAsExp = false);
 
 	s32 getSectorId(const char* name, bool getNextUnused = false, s32 count = -1);
 
@@ -253,7 +253,7 @@ namespace DXL2_InfAsset
 		const Sector* sector = levelData->sectors.data();
 		for (s32 s = 0; s < sectorCount; s++, sector++)
 		{
-			if (sector->flags[0] & SEC_FLAGS1_DOOR)
+			if ((sector->flags[0] & SEC_FLAGS1_DOOR) || (sector->flags[0] & SEC_FLAGS1_EXP_WALL))
 			{
 				doorCount++;
 			}
@@ -287,7 +287,7 @@ namespace DXL2_InfAsset
 					s_sectorNameMap[lowerCaseName].sectors.push_back(sector->id);
 				}
 			}
-			if (sector->flags[0] & SEC_FLAGS1_DOOR)
+			if ((sector->flags[0] & SEC_FLAGS1_DOOR) || (sector->flags[0] & SEC_FLAGS1_EXP_WALL))
 			{
 				doorCount++;
 			}
@@ -302,7 +302,7 @@ namespace DXL2_InfAsset
 		bool hasDoors = false;
 		for (s32 s = 0; s < sectorCount; s++, sector++)
 		{
-			if (sector->flags[0] & SEC_FLAGS1_DOOR)
+			if ((sector->flags[0] & SEC_FLAGS1_DOOR) || (sector->flags[0] & SEC_FLAGS1_EXP_WALL))
 			{
 				hasDoors = true;
 
@@ -322,7 +322,7 @@ namespace DXL2_InfAsset
 				curClass->stop = nullptr;
 				setupClassDefaults(curClass);
 
-				finishClass(curItem, curClass, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0);
+				finishClass(curItem, curClass, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, -1, (sector->flags[0] & SEC_FLAGS1_EXP_WALL)!=0);
 			}
 		}
 		return hasDoors;
@@ -419,7 +419,7 @@ namespace DXL2_InfAsset
 		return -1;
 	}
 		
-	void finishClass(InfItem* item, InfClassData* curClass, const u32* clients, const u16* slaves, const InfStop* stops, const InfFuncTemp* funcs, u32 clientCount, u32 slaveCount, u32 stopCount, u32 funcCount, s32 mergeStart)
+	void finishClass(InfItem* item, InfClassData* curClass, const u32* clients, const u16* slaves, const InfStop* stops, const InfFuncTemp* funcs, u32 clientCount, u32 slaveCount, u32 stopCount, u32 funcCount, s32 mergeStart, bool overrideAsExp)
 	{
 		if (!curClass) { return; }
 
@@ -491,7 +491,17 @@ namespace DXL2_InfAsset
 				curClass->mergeStart = -1;
 				curClass->slaves = nullptr;
 
-				if (curClass->isubclass == ELEVATOR_DOOR)
+				if (curClass->isubclass == ELEVATOR_DOOR && overrideAsExp)
+				{
+					curClass->stop[0].code = STOP_FUNC_COUNT(0) | STOP_VALUE0_TYPE(INF_STOP0_ABSOLUTE) | STOP_VALUE1_TYPE(INF_STOP1_HOLD);
+					curClass->stop[1].code = STOP_FUNC_COUNT(0) | STOP_VALUE0_TYPE(INF_STOP0_ABSOLUTE) | STOP_VALUE1_TYPE(INF_STOP1_TERMINATE);
+					curClass->var.speed = 0.0f;
+					curClass->var.event_mask = INF_EVENT_EXPLOSION;
+
+					curClass->stop[0].value0.fValue = -sector->floorAlt;
+					curClass->stop[1].value0.fValue = -sector->ceilAlt;
+				}
+				else if (curClass->isubclass == ELEVATOR_DOOR)
 				{
 					curClass->stop[0].code = STOP_FUNC_COUNT(0) | STOP_VALUE0_TYPE(INF_STOP0_ABSOLUTE) | STOP_VALUE1_TYPE(INF_STOP1_HOLD);
 					curClass->stop[1].code = STOP_FUNC_COUNT(0) | STOP_VALUE0_TYPE(INF_STOP0_ABSOLUTE) | STOP_VALUE1_TYPE(INF_STOP1_TIME);
@@ -607,7 +617,7 @@ namespace DXL2_InfAsset
 
 		const LevelData* levelData = DXL2_LevelAsset::getLevelData();
 		u32 doorCount = registerSectorNamesAndCountDoors(levelData);
-
+		
 		u16 slave[MAX_SLAVES];
 		u32 slaveCount = 0;
 

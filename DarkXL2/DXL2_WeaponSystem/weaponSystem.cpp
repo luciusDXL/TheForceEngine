@@ -10,6 +10,7 @@
 #include <DXL2_Game/physics.h>
 #include <DXL2_Game/gameObject.h>
 #include <DXL2_Game/gameConstants.h>
+#include <DXL2_Game/level.h>
 #include <DXL2_InfSystem/infSystem.h>
 #include <DXL2_FileSystem/filestream.h>
 #include <DXL2_FileSystem/paths.h>
@@ -585,6 +586,8 @@ namespace DXL2_WeaponSystem
 								DXL2_LogicSystem::damageObject(obj, damage, DMG_EXPLOSION);
 							}
 						}
+
+						DXL2_InfSystem::explosion(&hitInfo.hitPoint, hitInfo.hitSectorId, radius);
 					}
 				}
 				// Handle bouncing, etc.
@@ -594,7 +597,7 @@ namespace DXL2_WeaponSystem
 				proj->obj->show = false;
 
 				// Delete from the sector.
-				u32 index = (u32)((u8*)proj->obj - (u8*)s_weapon.projPool->obj) / sizeof(GameObject);
+				u32 index = (u32)((u8*)proj->obj - (u8*)proj->pool->obj) / sizeof(GameObject);
 				u32 startIndex = proj->pool->startIndex;
 
 				// Remove from the old sector.
@@ -614,7 +617,7 @@ namespace DXL2_WeaponSystem
 			}
 			if (proj->obj->sectorId != hitInfo.hitSectorId && hitInfo.hitSectorId > -1)
 			{
-				u32 index = (u32)((u8*)proj->obj - (u8*)s_weapon.projPool->obj) / sizeof(GameObject);
+				u32 index = (u32)((u8*)proj->obj - (u8*)proj->pool->obj) / sizeof(GameObject);
 				u32 startIndex = proj->pool->startIndex;
 
 				// Remove from the old sector.
