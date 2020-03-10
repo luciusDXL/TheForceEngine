@@ -1085,9 +1085,10 @@ namespace DXL2_InfAsset
 				funcCount++;
 				curFunc = &func[funcNum];
 				curFunc->stopNum = strtol(tokens[1].c_str(), &endPtr, 10);
-				curFunc->func.client = nullptr;
+				curFunc->func.client = (u32*)s_memoryPool.allocate(sizeof(u32));
+				curFunc->func.client[0] = u32(curItem->id & 0xffffu) | ((0xffffu) << 16u);
 
-				curFunc->func.code = FUNC_TYPE(INF_MSG_TEXTURE) | FUNC_CLIENT_COUNT(0u) | FUNC_ARG_COUNT(2u);
+				curFunc->func.code = FUNC_TYPE(INF_MSG_TEXTURE) | FUNC_CLIENT_COUNT(1u) | FUNC_ARG_COUNT(2u);
 				curFunc->func.arg = (InfArg*)s_memoryPool.allocate(sizeof(InfArg) * 2);
 				const char* flag = tokens[2].c_str();
 				curFunc->func.arg[0].iValue = flag[0] >= '0' && flag[0] <= '9' ? 0 : 1;	// number = floor, letter = ceiling
