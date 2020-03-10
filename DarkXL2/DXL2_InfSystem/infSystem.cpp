@@ -23,8 +23,20 @@ namespace DXL2_InfSystem
 	// Allocate 1 Mb. The largest MOD level uses around 32Kb @ 2K sectors. The engine supports 32K sectors, so if we assume
 	// this can be roughly 16x larger - this gives about 0.5Mb. So bumping it up to 1Mb just to be sure.
 #define DXL2_RUNTIME_INF_POOL (1 * 1024 * 1024)
+#define MAX_FUNC_IN_FLIGHT 1024
+
+	struct FuncQueue
+	{
+		u32 funcCount;
+		u32 evt;
+		InfFunction* func;
+	};
+	
 	const f32 c_lightSpeedScale = 3.2f;
 	static u32 s_frame = 0;
+
+	static u32 s_funcQueueCount = 0;
+	static FuncQueue s_funcQueue[MAX_FUNC_IN_FLIGHT];
 
 	enum InfState
 	{
@@ -623,7 +635,7 @@ namespace DXL2_InfSystem
 			break;
 		};
 	}
-
+		
 	void executeStopMove(const InfClassData* classData, ItemState* curState, Sector* sector, s32 wallId)
 	{
 		const InfStop* stop0 = &classData->stop[curState->curStop];
@@ -705,14 +717,17 @@ namespace DXL2_InfSystem
 			else if (value1Type == INF_STOP1_TIME)
 			{
 				curState->state = INF_STATE_WAITING;
-				curState->delay = stop1->time;
+				curState->delay = std::max(stop1->time, c_minInfDelay);
 			}
 
 			// Only execute functions if the elevator has not been terminated.
 			const u32 funcCount = stop1->code >> 8u;
 			if (curState->state != INF_STATE_TERMINATED && (s_frame > 0 || curState->state != INF_STATE_HOLDING))
 			{
-				executeFunctions(funcCount, stop1->func);
+				if (s_funcQueueCount < MAX_FUNC_IN_FLIGHT)
+				{
+					s_funcQueue[s_funcQueueCount++] = { funcCount, 0, stop1->func };
+				}
 			}
 		}
 		const f32 valueDelta = curState->curValue - prevValue;
@@ -853,6 +868,7 @@ namespace DXL2_InfSystem
 		s_accum = 0.0f;
 		s_memoryPool->clear();
 		s_frame = 0;
+		s_funcQueueCount = 0;
 		Sector* sectors = s_levelData->sectors.data();
 
 		// Map between sectors and items.
@@ -1046,7 +1062,7 @@ namespace DXL2_InfSystem
 				}
 
 				const u32 funcCount = classData->stop[0].code >> 8u;
-				executeFunctions(funcCount, classData->stop[0].func, classData->var.event);
+				s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
 
 				if (classData->isubclass == TRIGGER_SWITCH1 || classData->isubclass == TRIGGER_SINGLE)
 				{
@@ -1339,7 +1355,7 @@ namespace DXL2_InfSystem
 						}
 
 						const u32 funcCount = classData->stop[0].code >> 8u;
-						executeFunctions(funcCount, classData->stop[0].func, classData->var.event);
+						s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
 					}
 				}
 			}
@@ -1425,7 +1441,7 @@ namespace DXL2_InfSystem
 						}
 
 						const u32 funcCount = classData->stop[0].code >> 8u;
-						executeFunctions(funcCount, classData->stop[0].func, classData->var.event);
+						s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
 					}
 				}
 			}
@@ -1545,6 +1561,13 @@ namespace DXL2_InfSystem
 					}
 				}
 			}
+
+			// Execute queued functions.
+			for (u32 f = 0; f < s_funcQueueCount; f++)
+			{
+				executeFunctions(s_funcQueue[f].funcCount, s_funcQueue[f].func, s_funcQueue[f].evt);
+			}
+			s_funcQueueCount = 0;
 
 			s_frame++;
 		}

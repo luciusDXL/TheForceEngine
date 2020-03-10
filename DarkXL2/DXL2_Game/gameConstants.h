@@ -11,6 +11,10 @@
 
 namespace DXL2_GameConstants
 {
+	static f32 c_step = 1.0f / 60.0f;
+	//static f32 c_step = 1.0f / 35.0f;
+	static f32 c_minInfDelay = 0.0f;
+
 	static const f32 c_walkSpeed = 32.0f;
 	static const f32 c_runSpeed = 64.0f;
 	static const f32 c_crouchWalk = 17.0f;
@@ -23,7 +27,7 @@ namespace DXL2_GameConstants
 
 	static const f32 c_jumpImpulse = -36.828f;
 	static const f32 c_gravityAccel = 111.6f;
-	static const f32 c_gravityAccelStep = 1.86f;	// gravity acceleration per 1/60 step. Recalculate if stepsize changes.
+	static const f32 c_gravityAccelStep = c_gravityAccel * c_step;	// gravity acceleration per step.
 
 	static const f32 c_standingEyeHeight = -46.0f * 0.125f;  // Kyle's standing eye height is 46 texels.
 	static const f32 c_crouchingEyeHeight = -16.0f * 0.125f;  // Kyle's crouching eye height is 16 texels.
@@ -31,6 +35,4 @@ namespace DXL2_GameConstants
 	static const f32 c_crouchingHeight = 3.0f;
 	static const f32 c_crouchOnSpeed = 12.0f;	// DFU's per second.
 	static const f32 c_crouchOffSpeed = 12.0f;
-
-	static f32 c_step = 1.0f / 60.0f;
 }
