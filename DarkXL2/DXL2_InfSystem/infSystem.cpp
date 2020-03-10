@@ -7,6 +7,7 @@
 #include <DXL2_Game/player.h>
 #include <DXL2_Game/renderCommon.h>
 #include <DXL2_Game/gameHud.h>
+#include <DXL2_Game/gameConstants.h>
 #include <DXL2_Game/geometry.h>
 #include <DXL2_Asset/gameMessages.h>
 #include <assert.h>
@@ -15,12 +16,13 @@
 #include <assert.h>
 #include <algorithm>
 
+using namespace DXL2_GameConstants;
+
 namespace DXL2_InfSystem
 {
 	// Allocate 1 Mb. The largest MOD level uses around 32Kb @ 2K sectors. The engine supports 32K sectors, so if we assume
 	// this can be roughly 16x larger - this gives about 0.5Mb. So bumping it up to 1Mb just to be sure.
 #define DXL2_RUNTIME_INF_POOL (1 * 1024 * 1024)
-	const f32 c_step = 1.0f / 60.0f;
 	const f32 c_lightSpeedScale = 3.2f;
 	static u32 s_frame = 0;
 
@@ -1344,7 +1346,7 @@ namespace DXL2_InfSystem
 		s_accum += dt;
 		while (s_accum >= c_step)
 		{
-			s_accum -= dt;
+			s_accum -= c_step;
 
 			const u32 count = s_infData->itemCount;
 			for (u32 i = 0; i < count; i++)

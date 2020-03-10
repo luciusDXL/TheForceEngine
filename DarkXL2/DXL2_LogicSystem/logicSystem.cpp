@@ -3,6 +3,7 @@
 #include <DXL2_Asset/modelAsset.h>
 #include <DXL2_Asset/gameMessages.h>
 #include <DXL2_Game/gameHud.h>
+#include <DXL2_Game/gameConstants.h>
 #include <DXL2_ScriptSystem/scriptSystem.h>
 #include <DXL2_System/system.h>
 #include <DXL2_FileSystem/filestream.h>
@@ -15,6 +16,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <algorithm>
+
+using namespace DXL2_GameConstants;
 
 void DXL2_PrintVec3f(std::string& msg, Vec3f value0)
 {
@@ -186,7 +189,6 @@ namespace DXL2_LogicSystem
 	static Player* s_player;
 
 	static f32 s_accum = 0.0f;
-	static f32 c_step = 1.0f / 60.0f;
 
 	void registerKeyTypes();
 	void registerLogicTypes();
@@ -262,18 +264,26 @@ namespace DXL2_LogicSystem
 		return true;
 	}
 
-	void damageObject(const GameObject* gameObject, s32 damage)
+	void damageObject(GameObject* gameObject, s32 damage, DamageType type)
 	{
+		if (gameObject->id >= s_scriptObjects.size()) { return; }
+
 		ScriptObject* obj = &s_scriptObjects[gameObject->id];
 		size_t count = obj->logic.size();
 		ScriptLogic* logic = obj->logic.data();
 		for (size_t i = 0; i < count; i++)
 		{
-			if (logic[i].handleMessage)
+			if (logic[i].handleMessage && gameObject->collisionFlags)
 			{
 				s_self = (GameObject*)gameObject;
 				s_param = &logic[i].param;
-				DXL2_ScriptSystem::executeScriptFunction(SCRIPT_TYPE_LOGIC, logic[i].handleMessage, LOGIC_MSG_DAMAGE, damage, 0);
+				DXL2_ScriptSystem::executeScriptFunction(SCRIPT_TYPE_LOGIC, logic[i].handleMessage, LOGIC_MSG_DAMAGE, damage, type);
+
+				if (type == DMG_EXPLOSION)
+				{
+					gameObject->pos.y -= 0.2f;
+					gameObject->verticalVel -= 32.0f;
+				}
 			}
 		}
 	}
@@ -586,6 +596,11 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_EYE",   LCF_EYE);
 		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_BOSS",  LCF_BOSS);
 		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_PAUSE", LCF_PAUSE);
+
+		DXL2_ScriptSystem::registerEnumType("DamageType");
+		DXL2_ScriptSystem::registerEnumValue("DamageType", "DMG_SHOT", DMG_SHOT);
+		DXL2_ScriptSystem::registerEnumValue("DamageType", "DMG_FIST", DMG_FIST);
+		DXL2_ScriptSystem::registerEnumValue("DamageType", "DMG_EXPLOSION", DMG_EXPLOSION);
 		
 		registerKeyTypes();
 		registerLogicTypes();

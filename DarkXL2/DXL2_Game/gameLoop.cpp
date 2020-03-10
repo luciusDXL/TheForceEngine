@@ -5,6 +5,7 @@
 #include "physics.h"
 #include "view.h"
 #include "gameHud.h"
+#include <DXL2_Game/gameConstants.h>
 #include <DXL2_Game/geometry.h>
 #include <DXL2_Game/player.h>
 #include <DXL2_Game/level.h>
@@ -24,31 +25,13 @@
 #include <vector>
 #include <algorithm>
 
+using namespace DXL2_GameConstants;
+
 namespace DXL2_GameLoop
 {
-	const f32 c_walkSpeed = 32.0f;
-	const f32 c_runSpeed = 64.0f;
-	const f32 c_crouchWalk = 17.0f;
-	const f32 c_crouchRun = 34.0f;
-
-	const f32 c_walkSpeedJump = 22.50f;
-	const f32 c_runSpeedJump = 45.00f;
-	const f32 c_crouchWalkJump = 11.95f;
-	const f32 c_crouchRunJump = 23.91f;
-
-	const f32 c_jumpImpulse = -36.828f;
-	const f32 c_gravityAccel = 111.6f;
-	const f32 c_gravityAccelStep = 1.86f;	// gravity acceleration per 1/60 step. Recalculate if stepsize changes.
-	
 	static LevelData* s_level = nullptr;
 	static LevelObjectData* s_levelObjects = nullptr;
 	static Player s_player;
-	static const f32 c_standingEyeHeight  = -46.0f * 0.125f;  // Kyle's standing eye height is 46 texels.
-	static const f32 c_crouchingEyeHeight = -16.0f * 0.125f;  // Kyle's crouching eye height is 16 texels.
-	static const f32 c_standingHeight = 6.8f;
-	static const f32 c_crouchingHeight = 3.0f;
-	static const f32 c_crouchOnSpeed  = 12.0f;	// DFU's per second.
-	static const f32 c_crouchOffSpeed = 12.0f;
 	static bool s_crouching = false;
 	static f32 s_heightVisual;
 	static f32 s_eyeHeight;
@@ -62,8 +45,7 @@ namespace DXL2_GameLoop
 	static bool s_jump = false;
 
 	static f32 s_accum = 0.0f;
-	static f32 c_step = 1.0f / 60.0f;
-
+	
 	void updateObjects();
 
 	void startRenderer(DXL2_Renderer* renderer, s32 w, s32 h)
@@ -476,6 +458,10 @@ namespace DXL2_GameLoop
 		{
 			DXL2_WeaponSystem::switchToWeapon(WEAPON_RIFLE);
 		}
+		else if (DXL2_Input::keyPressed(KEY_4))
+		{
+			DXL2_WeaponSystem::switchToWeapon(WEAPON_THERMAL_DETONATOR);
+		}
 				
 		// get the desired movement.
 		// Get the floor sector first at the same time as getting the speed info.
@@ -669,6 +655,10 @@ namespace DXL2_GameLoop
 		{
 			DXL2_WeaponSystem::shoot(&s_player, &forwardDir);
 		}
+		else
+		{
+			DXL2_WeaponSystem::release();
+		}
 	}
 		
 	void draw()
@@ -705,7 +695,7 @@ namespace DXL2_GameLoop
 			for (u32 s = 0; s < secCount; s++, sector++)
 			{
 				const std::vector<u32>& list = (*sectorObjects)[s].list;
-				const u32 objCount = list.size();
+				const u32 objCount = (u32)list.size();
 				const u32* indices = list.data();
 				for (u32 i = 0; i < objCount; i++)
 				{

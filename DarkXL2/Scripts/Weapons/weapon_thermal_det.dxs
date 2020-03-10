@@ -4,22 +4,23 @@
 ////////////////////////////////////////////////////////////////////////////////////
 #include "weapon_base.dxs"
 
-const int weaponWidth  = 84;
-const int weaponHeight = 57;
+const int weaponWidth  = 0;
+const int weaponHeight = 68;
 
 // Called when switching to the weapon.
 void switchTo()
 {
 	// Load frames and sound effects.
-	DXL2_LoadWeaponFrame(0, "PISTOL1.BM");
-	DXL2_LoadWeaponFrame(1, "PISTOL2.BM");
-	DXL2_LoadWeaponFrame(2, "PISTOL3.BM");
-	DXL2_LoadHitEffect("EXPTINY.WAX");
+	DXL2_LoadWeaponFrame(0, "THERM1.BM");
+	DXL2_LoadWeaponFrame(1, "THERM2.BM");
+	DXL2_LoadWeaponFrame(2, "THERM3.BM");
+	DXL2_LoadProjectile("WDET.FME");
+	DXL2_LoadHitEffect("DETEXP.WAX");
 	
 	weapon.scaledWidth  = applyScale(weaponWidth,  screen.scaleX);
 	weapon.scaledHeight = applyScale(weaponHeight, screen.scaleY);
 
-	int weaponX = screen.width/2;
+	int weaponX = screen.width/2 + weapon.scaledWidth;
 	int weaponXOffset = applyScale(weaponHeight/weaponOffMoveY * weaponOffMoveX, screen.scaleX);
 	// Begin on screen animation if the previous weapon was
 	// moved off screen if needed.
@@ -58,7 +59,7 @@ void tick()
 		weapon.time = 0.0f;
 		if (weapon.y <= screen.height - weapon.scaledHeight)
 		{
-			weapon.x = screen.width/2;
+			weapon.x = screen.width/2 + weapon.scaledWidth;
 			weapon.y = screen.height - weapon.scaledHeight;
 			weapon.state = WSTATE_IDLE;
 		}
@@ -79,7 +80,7 @@ void tick()
 		float motionY = DXL2_GetCosMotion(weapon.time) * weapon.motion;
 		if (motionY < 0.0f) { motionY = -motionY; }
 
-		weapon.x = screen.width/2 + applyScale(int(motionX * 16.0f), screen.scaleX);
+		weapon.x = screen.width/2 + weapon.scaledWidth + applyScale(int(motionX * 16.0f), screen.scaleX);
 		weapon.y = screen.height - weapon.scaledHeight - applyScale(int(motionY * 8.0f), screen.scaleY);
 		
 		weapon.time += timeStep * 0.6;
@@ -89,19 +90,47 @@ void tick()
 	{
 		weapon.x = screen.width/2;
 		weapon.y = screen.height - weapon.scaledHeight;
-		int prevFrame = weapon.frame;
-		weapon.frame = int(weapon.time * 12.0f);
+
+		float prevTime = weapon.time;
 		weapon.time += timeStep;
+		if (weapon.hold)
+		{
+			weapon.holdTime += timeStep;
+		}
 		
-		if (prevFrame == 0 && weapon.frame == 1)
+		if (weapon.time < 0.1143f)
 		{
-			DXL2_WeaponFire();
+			weapon.frame = 1;
+			weapon.y += int(weapon.time * weapon.scaledHeight * 8.0f);
 		}
-		else if (weapon.frame == 2)
+		else if (weapon.hold)
 		{
-			DXL2_WeaponLightEnd();
+			weapon.frame = 1;
+			weapon.time = 0.1143f;
+			weapon.y += weapon.scaledHeight;
 		}
-		else if (weapon.frame == 3)
+		else if (weapon.time < 0.46f)
+		{
+			// if the previous frame is 1, then fire the dt.
+			if (weapon.frame == 1)
+			{
+				// Needs more tweaking but good enough for now.
+				DXL2_PlayerSpawnProjectile(screen.width, screen.height, weapon.holdTime * 75.0f + 25.0f, -30.0f - weapon.holdTime * 30.0f, PFLAG_HAS_GRAVITY | PFLAG_EXPLODE_ON_IMPACT, 10, 16.0f, 0.0f);
+			}
+
+			weapon.frame = 2;
+			float delta = weapon.time;
+			if (delta > 0.17143) { delta = 0.17143; }
+
+			weapon.y += int(0.1143f * weapon.scaledHeight * 8.0f - delta * weapon.scaledHeight * 8.0f);
+		}
+		else
+		{
+			weapon.frame = 1;
+			weapon.y += int(0.1143f * weapon.scaledHeight * 6.0f);
+		}
+
+		if (weapon.time >= 0.54f)
 		{
 			DXL2_WeaponPrimed(15);
 			weapon.frame = 0;
@@ -120,6 +149,7 @@ void firePrimary()
 	// Start the animation.
 	weapon.state = WSTATE_PRIMARY_FIRE;
 	weapon.time = 0.0;
+	weapon.holdTime = 0.0;
 }
 
 // Called when secondary fire is triggered.

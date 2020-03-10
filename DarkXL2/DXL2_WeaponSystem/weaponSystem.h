@@ -19,4 +19,5 @@ namespace DXL2_WeaponSystem
 	void draw(Player* player, Vec3f* cameraPos, u8 ambient);
 
 	void shoot(Player* player, const Vec2f* dir);
+	void release();
 }

@@ -400,6 +400,9 @@
     <ClInclude Include="DXL2_Editor\levelEditorData.h">
       <Filter>Source\DXL2_Editor</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Game\gameConstants.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1064,6 +1067,9 @@
     </None>
     <None Include="Documentation\markdown\Game\GameManual.md">
       <Filter>Documentation\markdown\Game</Filter>
+    </None>
+    <None Include="Scripts\Weapons\weapon_thermal_det.dxs">
+      <Filter>Source\Scripts\Weapons</Filter>
     </None>
   </ItemGroup>
 </Project>

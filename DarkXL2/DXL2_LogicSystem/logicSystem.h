@@ -10,6 +10,13 @@ struct Logic;
 struct EnemyGenerator;
 class Player;
 
+enum DamageType
+{
+	DMG_SHOT = 0,
+	DMG_FIST,
+	DMG_EXPLOSION,
+};
+
 namespace DXL2_LogicSystem
 {
 	bool init(Player* player);
@@ -20,6 +27,6 @@ namespace DXL2_LogicSystem
 	void clearObjectLogics();
 	bool registerObjectLogics(GameObject* gameObject, const std::vector<Logic>& logics, const std::vector<EnemyGenerator>& generators);
 
-	void damageObject(const GameObject* gameObject, s32 damage);
+	void damageObject(GameObject* gameObject, s32 damage, DamageType type = DMG_SHOT);
 	void sendPlayerCollisionTrigger(const GameObject* gameObject);
 }

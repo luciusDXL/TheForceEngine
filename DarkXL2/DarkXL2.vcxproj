@@ -186,6 +186,7 @@
     <ClInclude Include="DXL2_FileSystem\fileutil.h" />
     <ClInclude Include="DXL2_FileSystem\paths.h" />
     <ClInclude Include="DXL2_FileSystem\stream.h" />
+    <ClInclude Include="DXL2_Game\gameConstants.h" />
     <ClInclude Include="DXL2_Game\gameHud.h" />
     <ClInclude Include="DXL2_Game\gameLoop.h" />
     <ClInclude Include="DXL2_Game\gameObject.h" />
@@ -461,6 +462,7 @@
     <None Include="Scripts\Weapons\weapon_pistol.dxs" />
     <None Include="Scripts\Weapons\weapon_punch.dxs" />
     <None Include="Scripts\Weapons\weapon_rifle.dxs" />
+    <None Include="Scripts\Weapons\weapon_thermal_det.dxs" />
     <None Include="Shaders\blit.frag" />
     <None Include="Shaders\blit.vert" />
     <None Include="Shaders\grid2d.frag" />

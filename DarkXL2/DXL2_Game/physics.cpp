@@ -11,7 +11,7 @@ namespace DXL2_Physics
 {
 	#define MOVE_ITER_END 4
 	#define HEIGHT_EPS 0.5f
-	const f32 c_stepSize = 3.5f;
+	const f32 c_stepUpSize = 3.5f;
 	const f32 c_minHeight = 3.0f;
 	const f32 c_minStandHeight = 6.80f;
 
@@ -236,7 +236,7 @@ namespace DXL2_Physics
 		}
 
 		// ledge
-		const bool canStep = (yPos - floorHeight <= c_stepSize);
+		const bool canStep = (yPos - floorHeight <= c_stepUpSize);
 		if (!canStep && !(wall->flags[2]&WF3_ALWAYS_WALK))
 		{
 			return false;
@@ -1151,9 +1151,12 @@ namespace DXL2_Physics
 			}
 			if (closestWallId < 0)
 			{
-				break;
+				closestHit = maxDist;
 			}
-			closestHit *= maxDist;
+			else
+			{
+				closestHit *= maxDist;
+			}
 
 			// Check the floor.
 			Vec3f p0 = origin;
@@ -1165,11 +1168,15 @@ namespace DXL2_Physics
 				p1 = hitPoint;
 				planeHit = true;
 			}
-
 			if (Geometry::lineYPlaneIntersect(&p0, &p1, curSector->ceilAlt, &hitPoint))
 			{
 				p1 = hitPoint;
 				planeHit = true;
+			}
+
+			if (!planeHit && closestWallId < 0)
+			{
+				break;
 			}
 
 			if (planeHit)
@@ -1228,7 +1235,7 @@ namespace DXL2_Physics
 		p0xz = { p0.x, p0.z };
 		p1xz = { p1.x, p1.z };
 		const Vec2f dirxz = { ray->dir.x, ray->dir.z };
-		f32 minDist = FLT_MAX;
+		f32 minDist = ray->maxDist;
 		s32 closestSprite = -1;
 		s32 spriteSectorId = -1;
 		Vec3f spriteHitPoint;

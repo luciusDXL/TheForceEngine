@@ -66,7 +66,8 @@ namespace DXL2_System
 		// 1 vsync interval.
 		if (s_synced && s_refreshRate > 0.0f)
 		{
-			dt = floor(dt * s_refreshRate + 0.5) / s_refreshRate;
+			const f64 intervals = std::max(1.0, floor(dt * s_refreshRate + 0.1));
+			dt = intervals / s_refreshRate;
 		}
 
 		// Next make sure that if the current fps is too low, that the game just slows down.
