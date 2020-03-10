@@ -1305,11 +1305,11 @@ namespace DXL2_InfAsset
 		}
 		else if (classInfo->iclass == INF_CLASS_ELEVATOR && (classInfo->isubclass == ELEVATOR_BASIC || classInfo->isubclass == ELEVATOR_INV || classInfo->isubclass == ELEVATOR_BASIC_AUTO))
 		{
-			classInfo->var.event_mask = 52;
+			classInfo->var.event_mask = INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
 		}
 		else if (classInfo->iclass == INF_CLASS_ELEVATOR && (classInfo->isubclass == ELEVATOR_MORPH_MOVE1 || classInfo->isubclass == ELEVATOR_MORPH_MOVE2 || classInfo->isubclass == ELEVATOR_MORPH_SPIN1 || classInfo->isubclass == ELEVATOR_MORPH_SPIN2))
 		{
-			classInfo->var.event_mask = 60;
+			classInfo->var.event_mask = INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR | INF_EVENT_LEAVE_SECTOR;
 		}
 		else if (classInfo->iclass == INF_CLASS_TRIGGER)
 		{
