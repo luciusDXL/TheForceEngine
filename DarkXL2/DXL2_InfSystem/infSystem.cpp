@@ -186,19 +186,27 @@ namespace DXL2_InfSystem
 			}
 			break;
 		case INF_MSG_GOTO_STOP:
-			for (u32 c = 0; c < classCount; c++)
+			if (argCount >= 1 && arg)
 			{
-				InfClassData* classData = &item->classData[c];
-				// If the class has been turned off, then skip.
-				if (!classData->var.master) { continue; }
-
-				// And finally activate - but only if it is going "holding" and waiting to be activated.
-				ItemState* itemState = &s_infState[classData->stateIndex];
-				if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+				for (u32 c = 0; c < classCount; c++)
 				{
-					itemState->state = INF_STATE_MOVING;
-					itemState->nextStop = arg[0].iValue;
+					InfClassData* classData = &item->classData[c];
+					// If the class has been turned off, then skip.
+					if (!classData->var.master) { continue; }
+
+					// And finally activate - but only if it is going "holding" and waiting to be activated.
+					ItemState* itemState = &s_infState[classData->stateIndex];
+					if (classData->iclass == INF_CLASS_ELEVATOR && itemState->state == INF_STATE_HOLDING)
+					{
+						itemState->state = INF_STATE_MOVING;
+						itemState->nextStop = arg[0].iValue;
+					}
 				}
+			}
+			else
+			{
+				DXL2_System::logWrite(LOG_ERROR, "INF", "Function goto_stop() called without enough arguments, %u supplied but 1 is required. Target sector \"%s\"",
+					s_levelData->sectors[sectorId].name);
 			}
 			break;
 		case INF_MSG_NEXT_STOP:
@@ -266,6 +274,7 @@ namespace DXL2_InfSystem
 			}
 			break;
 		case INF_MSG_CLEAR_BITS:
+			if (argCount >= 2 && arg)
 			{
 				const s32 flagIdx = arg[0].iValue - 1;
 				const s32 bits = arg[1].iValue;
@@ -279,8 +288,14 @@ namespace DXL2_InfSystem
 					DXL2_Level::clearFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
 				}
 			}
+			else
+			{
+				DXL2_System::logWrite(LOG_ERROR, "INF", "Function clearBits() called without enough arguments, %u supplied but 2 are required. Target \"%s\"(%d)",
+					argCount, s_levelData->sectors[sectorId].name, wallId < 0xffffu ? wallId : -1);
+			}
 			break;
 		case INF_MSG_SET_BITS:
+			if (argCount >= 2 && arg)
 			{
 				const s32 flagIdx = arg[0].iValue - 1;
 				const s32 bits = arg[1].iValue;
@@ -294,11 +309,16 @@ namespace DXL2_InfSystem
 					DXL2_Level::setFlagBits(sectorId, SP_SECTOR, flagIdx, bits);
 				}
 			}
+			else
+			{
+				DXL2_System::logWrite(LOG_ERROR, "INF", "Function setBits() called without enough arguments, %u supplied but 2 are required. Target \"%s\"(%d)",
+					argCount, s_levelData->sectors[sectorId].name, wallId < 0xffffu ? wallId : -1);
+			}
 			break;
 		case INF_MSG_COMPLETE:
 			{
 				// Parameter determines the GOL being completed.
-				const s32 goalId = arg[0].iValue;
+				const s32 goalId = argCount >= 1 ? arg[0].iValue : 0;
 				// TODO: Update player goals with goalId.
 
 				// Move the recipient elevator to its next stop.
@@ -345,19 +365,46 @@ namespace DXL2_InfSystem
 			DXL2_Level::turnOnTheLights();
 			break;
 		case INF_MSG_ADJOIN:
-			DXL2_Level::changeAdjoin(arg[0].iValue, arg[1].iValue, arg[2].iValue, arg[3].iValue);
+			if (argCount >= 4 && arg)
+			{
+				DXL2_Level::changeAdjoin(arg[0].iValue, arg[1].iValue, arg[2].iValue, arg[3].iValue);
+			}
+			else
+			{
+				DXL2_System::logWrite(LOG_ERROR, "INF", "Function adjoin() called without enough arguments, %u supplied but 4 are required.");
+			}
 			break;
 		case INF_MSG_PAGE:
 			// Sound (TODO)
 			break;
 		case INF_MSG_TEXT:
-			DXL2_GameHud::setMessage(DXL2_GameMessages::getMessage(arg[0].iValue));
+			if (argCount >= 1 && arg)
+			{
+				DXL2_GameHud::setMessage(DXL2_GameMessages::getMessage(arg[0].iValue));
+			}
+			else
+			{
+				DXL2_System::logWrite(LOG_ERROR, "INF", "Function text() called without enough arguments, %u supplied but 1 is required.");
+			}
 			break;
 		case INF_MSG_TEXTURE:
+			if (argCount >= 2 && arg)
 			{
 				const SectorPart part = arg[0].iValue == 0 ? SP_FLOOR : SP_CEILING;
 				const u32 donorTexId = DXL2_Level::getTextureId(arg[1].iValue, part, WSP_NONE);
-				DXL2_Level::setTextureId(sectorId, part, WSP_NONE, donorTexId);
+				if (sectorId < 0xffffu)
+				{
+					DXL2_Level::setTextureId(sectorId, part, WSP_NONE, donorTexId);
+				}
+				else
+				{
+					DXL2_System::logWrite(LOG_ERROR, "INF", "Function texture() called on invalid sector.");
+				}
+			}
+			else
+			{
+				DXL2_System::logWrite(LOG_ERROR, "INF", "Function texture() called without enough arguments, %u supplied but 2 are required. Target sector \"%s\"",
+					s_levelData->sectors[sectorId].name);
 			}
 			break;
 		}
