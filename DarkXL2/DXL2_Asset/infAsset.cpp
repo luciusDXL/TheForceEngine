@@ -1325,6 +1325,18 @@ namespace DXL2_InfAsset
 		{
 			classInfo->var.speed = 30.0f;
 		}
+		else if (classInfo->isubclass == ELEVATOR_MORPH_SPIN1 || classInfo->isubclass == ELEVATOR_MORPH_SPIN2)
+		{
+			classInfo->var.speed = 20.0f;
+		}
+		else if (classInfo->isubclass == ELEVATOR_MORPH_MOVE1)
+		{
+			classInfo->var.speed = 18.0f;
+		}
+		else if (classInfo->isubclass == ELEVATOR_MORPH_MOVE2)
+		{
+			classInfo->var.speed = 15.0f;
+		}
 		else
 		{
 			classInfo->var.speed = 10.0f;
