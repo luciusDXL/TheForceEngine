@@ -795,7 +795,7 @@ namespace DXL2_InfAsset
 			else if (strcasecmp("class:", tokens[0].c_str()) == 0 && tokens.size() >= 2)
 			{
 				//[1] = class
-				//[2] = subclass (used for elevators).
+				//[2] = subclass
 				if (curClass)
 				{
 					// Add extra slaves for other sectors with the same name.
@@ -1115,11 +1115,6 @@ namespace DXL2_InfAsset
 				if (!curClass) { DXL2_System::logWrite(LOG_ERROR, "INF", "Assigning the variable \"%s\" but there is no class.", tokens[0].c_str()); continue; }
 				curClass->var.event_mask = tokens[1].c_str()[0] == '*' ? 0xffffffff : strtoul(tokens[1].c_str(), &endPtr, 10);
 			}
-			else if (tokens.size() >= 3 && strcasecmp("event", tokens[0].c_str()) == 0 && strcasecmp("mask:", tokens[1].c_str()) == 0)
-			{
-				if (!curClass) { DXL2_System::logWrite(LOG_ERROR, "INF", "Assigning the variable \"%s\" but there is no class.", tokens[0].c_str()); continue; }
-				curClass->var.event_mask = tokens[2].c_str()[0] == '*' ? 0xffffffff : strtoul(tokens[2].c_str(), &endPtr, 10);
-			}
 			else if (strcasecmp("event:", tokens[0].c_str()) == 0 && tokens.size() >= 2)
 			{
 				assert(tokens.size() >= 2);
@@ -1193,7 +1188,7 @@ namespace DXL2_InfAsset
 				// Can I ignore addon here?
 				curClass->var.flags = strtoul(tokens[1].c_str(), &endPtr, 10);
 			}
-			else if (strcasecmp("sound:", tokens[0].c_str()) == 0 || strcasecmp("soudn:", tokens[0].c_str()) == 0)
+			else if (strcasecmp("sound:", tokens[0].c_str()) == 0)
 			{
 				assert(tokens.size() >= 2);
 				if (!curClass) { DXL2_System::logWrite(LOG_ERROR, "INF", "Assigning the variable \"%s\" but there is no class.", tokens[0].c_str()); continue; }
@@ -1262,8 +1257,9 @@ namespace DXL2_InfAsset
 			else
 			{
 				// Am I missing anything?
-				// amb_sound: is missing - it doesn't work in the original game?
+				// amb_sound: is missing - it doesn't seem to work in the original game though it might be fixed for Outlaws.
 				// seed: is missing - they probably meant speed.
+				// soudn: mispelling of sound.
 				// entity_enter: a hidden function, needs to be cleared up.
 				DXL2_System::logWrite(LOG_WARNING, "INF", "Unrecognized command \"%s\"", tokens[0].c_str());
 			}
