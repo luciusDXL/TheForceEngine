@@ -724,7 +724,7 @@ namespace DXL2_InfSystem
 			const u32 funcCount = stop1->code >> 8u;
 			if (curState->state != INF_STATE_TERMINATED && (s_frame > 0 || curState->state != INF_STATE_HOLDING))
 			{
-				if (s_funcQueueCount < MAX_FUNC_IN_FLIGHT)
+				if (s_funcQueueCount < MAX_FUNC_IN_FLIGHT && funcCount)
 				{
 					s_funcQueue[s_funcQueueCount++] = { funcCount, 0, stop1->func };
 				}
@@ -1062,7 +1062,10 @@ namespace DXL2_InfSystem
 				}
 
 				const u32 funcCount = classData->stop[0].code >> 8u;
-				s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
+				if (funcCount)
+				{
+					s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
+				}
 
 				if (classData->isubclass == TRIGGER_SWITCH1 || classData->isubclass == TRIGGER_SINGLE)
 				{
@@ -1085,7 +1088,8 @@ namespace DXL2_InfSystem
 		const Sector* sector = s_levelData->sectors.data() + sectorId;
 		const SectorWall* wall = s_levelData->walls.data() + sector->wallOffset + wallId;
 		const Vec2f* vtx = s_levelData->vertices.data() + sector->vtxOffset;
-		if (wall->sign.texId < 0 || wall->sign.texId >= s_levelData->textures.size()) { return false; }
+		// If there is no sign, use the whole line.
+		if (wall->sign.texId < 0 || wall->sign.texId >= s_levelData->textures.size()) { return true; }
 
 		const Vec2f* vtx0 = &vtx[wall->i0];
 		const Vec2f* vtx1 = &vtx[wall->i1];
@@ -1355,7 +1359,10 @@ namespace DXL2_InfSystem
 						}
 
 						const u32 funcCount = classData->stop[0].code >> 8u;
-						s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
+						if (funcCount)
+						{
+							s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
+						}
 					}
 				}
 			}
@@ -1441,7 +1448,10 @@ namespace DXL2_InfSystem
 						}
 
 						const u32 funcCount = classData->stop[0].code >> 8u;
-						s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
+						if (funcCount)
+						{
+							s_funcQueue[s_funcQueueCount++] = { funcCount, classData->var.event, classData->stop[0].func };
+						}
 					}
 				}
 			}
