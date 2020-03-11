@@ -1480,7 +1480,7 @@ namespace DXL2_InfSystem
 		Sector* sectors = s_levelData->sectors.data();
 
 		// DEBUG
-		s32 completeStop = s_infState[s_infData->item[s_infData->completeId].classData[0].stateIndex].curStop;
+		s32 completeStop = s_infData->completeId > -1 ? s_infState[s_infData->item[s_infData->completeId].classData[0].stateIndex].curStop : 0;
 				
 		// Update INF at a fixed framerate.
 		s_accum += dt;

@@ -532,6 +532,19 @@ namespace DXL2_Level
 		}
 	}
 
+	// Handle 1024 texel texture / 8 for world scale.
+	void addTextureOffset(f32* dst, const f32* src)
+	{
+		dst[0] = fmodf(dst[0] + src[0], 128.0f);
+		dst[1] = fmodf(dst[1] + src[1], 128.0f);
+	}
+
+	void addTextureOffset(f32* dst, const f32* src0, const f32* src1)
+	{
+		dst[0] = fmodf(src0[0] + src1[0], 128.0f);
+		dst[1] = fmodf(src0[1] + src1[1], 128.0f);
+	}
+
 	// Textures.
 	void moveTextureOffset(s32 sectorId, SectorPart part, const Vec2f* offsetDelta, bool addSectorMotion, bool addSecMotionSecondAlt)
 	{
@@ -546,13 +559,11 @@ namespace DXL2_Level
 		Sector* sector = &s_levelData->sectors[sectorId];
 		if (part == SP_FLOOR)
 		{
-			sector->floorTexture.offsetX += offsetDelta->x;
-			sector->floorTexture.offsetY += offsetDelta->z;
+			addTextureOffset(&sector->floorTexture.offsetX, offsetDelta->m);
 		}
 		else if (part == SP_CEILING)
 		{
-			sector->ceilTexture.offsetX += offsetDelta->x;
-			sector->ceilTexture.offsetY += offsetDelta->z;
+			addTextureOffset(&sector->ceilTexture.offsetX, offsetDelta->m);
 		}
 		else if (part == SP_WALL)
 		{
@@ -561,18 +572,15 @@ namespace DXL2_Level
 				SectorWall* wall = &s_levelData->walls[w + sector->wallOffset];
 				if (wall->flags[0] & WF1_SCROLL_TOP_TEX)
 				{
-					wall->top.offsetX += offsetDelta->x;
-					wall->top.offsetY += offsetDelta->z;
+					addTextureOffset(&wall->top.offsetX, offsetDelta->m);
 				}
 				if (wall->flags[0] & WF1_SCROLL_MID_TEX)
 				{
-					wall->mid.offsetX += offsetDelta->x;
-					wall->mid.offsetY += offsetDelta->z;
+					addTextureOffset(&wall->mid.offsetX, offsetDelta->m);
 				}
 				if (wall->flags[0] & WF1_SCROLL_BOT_TEX)
 				{
-					wall->bot.offsetX += offsetDelta->x;
-					wall->bot.offsetY += offsetDelta->z;
+					addTextureOffset(&wall->bot.offsetX, offsetDelta->m);
 				}
 			}
 		}
@@ -583,8 +591,7 @@ namespace DXL2_Level
 				SectorWall* wall = &s_levelData->walls[w + sector->wallOffset];
 				if (wall->flags[0] & WF1_SCROLL_SIGN_TEX)
 				{
-					wall->sign.offsetX += offsetDelta->x;
-					wall->sign.offsetY += offsetDelta->z;
+					addTextureOffset(&wall->sign.offsetX, offsetDelta->m);
 				}
 			}
 		}
@@ -611,8 +618,7 @@ namespace DXL2_Level
 		}
 		else if (part == SP_CEILING)
 		{
-			sector->ceilTexture.offsetX = offset->x + sector->ceilTexture.baseOffsetX;
-			sector->ceilTexture.offsetY = offset->z + sector->ceilTexture.baseOffsetY;
+			addTextureOffset(&sector->ceilTexture.offsetX, offset->m, &sector->ceilTexture.baseOffsetX);
 		}
 		else if (part == SP_WALL)
 		{
@@ -621,18 +627,15 @@ namespace DXL2_Level
 				SectorWall* wall = &s_levelData->walls[w + sector->wallOffset];
 				if (wall->flags[0] & WF1_SCROLL_TOP_TEX)
 				{
-					wall->top.offsetX = offset->x + wall->top.baseOffsetX;
-					wall->top.offsetY = offset->z + wall->top.baseOffsetY;
+					addTextureOffset(&wall->top.offsetX, offset->m, &wall->top.baseOffsetX);
 				}
 				if (wall->flags[0] & WF1_SCROLL_MID_TEX)
 				{
-					wall->mid.offsetX = offset->x + wall->mid.baseOffsetX;
-					wall->mid.offsetY = offset->z + wall->mid.baseOffsetY;
+					addTextureOffset(&wall->mid.offsetX, offset->m, &wall->mid.baseOffsetX);
 				}
 				if (wall->flags[0] & WF1_SCROLL_BOT_TEX)
 				{
-					wall->bot.offsetX = offset->x + wall->bot.baseOffsetX;
-					wall->bot.offsetY = offset->z + wall->bot.baseOffsetY;
+					addTextureOffset(&wall->bot.offsetX, offset->m, &wall->bot.baseOffsetX);
 				}
 			}
 		}
@@ -643,8 +646,7 @@ namespace DXL2_Level
 				SectorWall* wall = &s_levelData->walls[w + sector->wallOffset];
 				if (wall->flags[0] & WF1_SCROLL_SIGN_TEX)
 				{
-					wall->sign.offsetX = offset->x + wall->sign.baseOffsetX;
-					wall->sign.offsetY = offset->z + wall->sign.baseOffsetY;
+					addTextureOffset(&wall->sign.offsetX, offset->m, &wall->sign.baseOffsetX);
 				}
 			}
 		}
