@@ -1488,9 +1488,6 @@ namespace DXL2_InfSystem
 
 		f32 dt = (f32)DXL2_System::getDeltaTime();
 		Sector* sectors = s_levelData->sectors.data();
-
-		// DEBUG
-		s32 completeStop = s_infData->completeId > -1 ? s_infState[s_infData->item[s_infData->completeId].classData[0].stateIndex].curStop : 0;
 				
 		// Update INF at a fixed framerate.
 		s_accum += dt;
@@ -1523,9 +1520,11 @@ namespace DXL2_InfSystem
 					ItemState* curState = &s_infState[classData->stateIndex];
 					if (!classData->var.master)
 					{
+						// Moving and rotating sector types start from cached data and then apply one transform after the other.
+						// For this to work, transforms must be applied even when the item is not active in case other classes are active on the same item.
+						// Note that other types, such as moving floors or scrolling do not require this treatment.
 						if (isSlidingOrRotatingElevator(classData->isubclass))
 						{
-							// We still have to apply the current state.
 							for (u32 i = 0; i < classData->slaveCount; i++)
 							{
 								applyValueToSector(classData, curState, getSlaveSector(classData, i)->id, curState->slaveState[i].curValue, 0.0f, i);
@@ -1559,9 +1558,11 @@ namespace DXL2_InfSystem
 							}
 						}
 
+						// Moving and rotating sector types start from cached data and then apply one transform after the other.
+						// For this to work, transforms must be applied even when waiting.
+						// Note that other types, such as moving floors or scrolling do not require this treatment.
 						if (applyCurValue)
 						{
-							// interpret the value based on the elevator type.
 							for (u32 i = 0; i < classData->slaveCount; i++)
 							{
 								applyValueToSector(classData, curState, getSlaveSector(classData, i)->id, curState->slaveState[i].curValue, 0.0f, i);
@@ -1581,16 +1582,5 @@ namespace DXL2_InfSystem
 
 			s_frame++;
 		}
-
-		// DEBUG
-		#if 0
-		s32 completeNewStop = s_infState[s_infData->item[s_infData->completeId].classData[0].stateIndex].curStop;
-		if (completeStop != completeNewStop && completeNewStop < s_infData->item[s_infData->completeId].classData[0].stopCount - 1)
-		{
-			char debugMsg[256];
-			sprintf(debugMsg, "Complete Elevator stop %d", completeNewStop);
-			DXL2_GameHud::setMessage(debugMsg);
-		}
-		#endif
 	}
 }
