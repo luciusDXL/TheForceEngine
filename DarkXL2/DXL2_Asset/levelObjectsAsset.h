@@ -49,10 +49,10 @@ struct Logic
 	f32 frameRate  = 0.0f;
 	Vec3f rotation = { 0.0f, 0.0f, 0.0f };
 
-	VueAsset* vue;
-	VueAsset* vueAppend;
-	s32 vueId;
-	s32 vueAppendId;
+	VueAsset* vue = nullptr;
+	VueAsset* vueAppend = nullptr;
+	s32 vueId = -1;
+	s32 vueAppendId = -1;
 };
 
 struct LevelObject

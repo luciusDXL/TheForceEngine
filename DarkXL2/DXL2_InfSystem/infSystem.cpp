@@ -371,7 +371,7 @@ namespace DXL2_InfSystem
 			}
 			break;
 		case INF_MSG_WAKEUP:
-			// VUE (TODO)
+			DXL2_Level::wakeUp(sectorId);
 			break;
 		case INF_MSG_LIGHTS:
 			DXL2_Level::turnOnTheLights();

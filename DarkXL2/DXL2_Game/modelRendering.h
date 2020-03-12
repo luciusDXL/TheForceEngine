@@ -7,6 +7,7 @@
 #include <DXL2_System/types.h>
 #include <DXL2_Renderer/renderer.h>
 #include <DXL2_Asset/modelAsset.h>
+#include <DXL2_Asset/vueAsset.h>
 
 struct Sector;
 

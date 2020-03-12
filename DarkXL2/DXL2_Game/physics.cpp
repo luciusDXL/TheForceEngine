@@ -1284,4 +1284,84 @@ namespace DXL2_Physics
 
 		return hitFound;
 	}
+
+	// Traces a ray through the level.
+	// Ignores height and will always pass through walls with adjoins.
+	bool traceRayIgnoreHeight(const RayIgnoreHeight* ray, s32* newSectorId)
+	{
+		assert(ray && newSectorId);
+
+		Vec2f p0 = ray->p0;
+		Vec2f p1 = ray->p1;
+
+		const s32 sectorCount = (s32)s_level->sectors.size();
+		const Sector* sectors = s_level->sectors.data();
+		const SectorWall* walls = s_level->walls.data();
+		const Vec2f* vertices = s_level->vertices.data();
+
+		s32 nextSector = ray->originalSectorId;
+		s32 windowId = -1, prevSector = -1;
+		bool hitFound = false;
+		while (nextSector >= 0)
+		{
+			const s32 sectorId = nextSector;
+			const Sector* curSector = &sectors[sectorId];
+			const SectorWall* curWalls = walls + curSector->wallOffset;
+			const Vec2f* curVtx = vertices + curSector->vtxOffset;
+			const s32 wallCount = (s32)curSector->wallCount;
+			nextSector = -1;
+
+			*newSectorId = sectorId;
+
+			// Check the ray against all of the walls and take the closest hit, if any.
+			f32 closestHit = FLT_MAX;
+			s32 closestWallId = -1;
+			for (s32 w = 0; w < wallCount; w++)
+			{
+				// skip if this is the portal we just went through.
+				// TODO: Figure out why this doesn't always work.
+				if (curWalls[w].adjoin >= 0 && curWalls[w].mirror == windowId && curWalls[w].adjoin == prevSector)
+				{
+					continue;
+				}
+
+				const s32 i0 = curWalls[w].i0;
+				const s32 i1 = curWalls[w].i1;
+				const Vec2f* v0 = &curVtx[i0];
+				const Vec2f* v1 = &curVtx[i1];
+
+				f32 s, t;
+				if (Geometry::lineSegmentIntersect(&p0, &p1, v0, v1, &s, &t))
+				{
+					if (s < closestHit)
+					{
+						closestHit = s;
+						closestWallId = w;
+					}
+				}
+			}
+
+			if (closestHit < 0)
+			{
+				return false;
+			}
+
+			p1.x = p0.x + closestHit * (p1.x - p0.x);
+			p1.z = p0.z + closestHit * (p1.z - p0.z);
+
+			if (curWalls[closestWallId].adjoin >= 0)
+			{
+				// given the hit point, is it below the next floor or above the next ceiling?
+				const Sector* next = &sectors[curWalls[closestWallId].adjoin];
+				nextSector = curWalls[closestWallId].adjoin;
+				windowId = closestWallId;
+				prevSector = sectorId;
+			}
+			else
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 }

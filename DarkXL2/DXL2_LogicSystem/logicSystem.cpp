@@ -10,6 +10,7 @@
 #include <DXL2_FileSystem/paths.h>
 #include <DXL2_Game/gameObject.h>
 #include <DXL2_Game/player.h>
+#include <DXL2_Game/physics.h>
 #include <DXL2_InfSystem/infSystem.h>
 #include <assert.h>
 #include <stdio.h>
@@ -313,6 +314,99 @@ namespace DXL2_LogicSystem
 		obj->gameObj->angles.y += angleChange.y;
 		obj->gameObj->angles.z += angleChange.z;
 	}
+		
+	f32 DXL2_GetVueLength(s32 objectId, s32 viewIndex)
+	{
+		if (objectId < 0 || objectId >= s_scriptObjects.size()) { return 0.0f; }
+
+		ScriptObject* obj = &s_scriptObjects[objectId];
+		if (viewIndex == 0 && s_param->vue)
+		{
+			return f32(s_param->vue->frameCount) / s_param->frameRate;
+		}
+		else if (viewIndex == 1 && s_param->vueAppend)
+		{
+			return f32(s_param->vueAppend->frameCount) / s_param->frameRate;
+		}
+		else
+		{
+			DXL2_System::logWrite(LOG_ERROR, "Scripting", "Object %d VUE index %d out of range.\n", objectId, viewIndex);
+		}
+
+		return 0.0f;
+	}
+
+	u32 DXL2_GetVueCount(s32 objectId)
+	{
+		if (objectId < 0 || objectId >= s_scriptObjects.size()) { return 0; }
+
+		ScriptObject* obj = &s_scriptObjects[objectId];
+		u32 vueCount = 0;
+		if (s_param->vueAppend) { vueCount = 2; }
+		else if (s_param->vue) { vueCount = 1; }
+		
+		return vueCount;
+	}
+
+	void DXL2_SetVueAnimTime(s32 objectId, s32 viewIndex, f32 time)
+	{
+		if (objectId < 0 || objectId >= s_scriptObjects.size()) { return; }
+
+		ScriptObject* obj = &s_scriptObjects[objectId];
+		const VueAsset* vue = nullptr;
+		if (viewIndex == 0 && s_param->vue)
+		{
+			vue = s_param->vue;
+		}
+		else if (viewIndex == 1 && s_param->vueAppend)
+		{
+			vue = s_param->vueAppend;
+		}
+		else
+		{
+			DXL2_System::logWrite(LOG_ERROR, "Scripting", "Object %d VUE index %d out of range.\n", objectId, viewIndex);
+			return;
+		}
+
+		const s32 frameIndex = std::min(s32(time * s_param->frameRate), (s32)vue->frameCount - 1);
+		const s32 transformIndex = s_param->vueId;
+		if (obj->gameObj)
+		{
+			const VueTransform* newTransform = &vue->transforms[frameIndex * vue->transformCount + transformIndex];
+
+			const Vec3f prevPos = obj->gameObj->pos;
+			const Vec3f newPos = { newTransform->translation.x, -newTransform->translation.z, -newTransform->translation.y };
+
+			// Trace a ray to update the new sectorId.
+			// For this we will force our way through any adjoins.
+			// Upon failure we will have to search for the new sector id.
+			const RayIgnoreHeight ray=
+			{
+				{prevPos.x, prevPos.z}, {newPos.x, newPos.z},
+				obj->gameObj->sectorId,
+			};
+
+			s32 newSectorId;
+			if (DXL2_Physics::traceRayIgnoreHeight(&ray, &newSectorId))
+			{
+				// We hit something... which is bad. Now we have to search for the correct sector...
+				newSectorId = DXL2_Physics::findSector(&newPos);
+				if (newSectorId < 0)
+				{
+					newSectorId = obj->gameObj->sectorId;
+				}
+			}
+			else
+			{
+				obj->gameObj->sectorId = newSectorId;
+			}
+
+			// update the object position.
+			obj->gameObj->pos = newPos;
+			// set the new transform.
+			obj->gameObj->vueTransform = &newTransform->rotScale;
+		}
+	}
 	
 	f32 DXL2_GetAnimFramerate(s32 objectId, s32 animationId)
 	{
@@ -519,7 +613,7 @@ namespace DXL2_LogicSystem
 		prop.push_back({ "int state",		offsetof(GameObject, state) });
 		prop.push_back({ "int hp",			offsetof(GameObject, hp) });
 		prop.push_back({ "float time",		offsetof(GameObject, time) });
-		prop.push_back({ "const uint commonFlags", offsetof(GameObject, comFlags) });
+		prop.push_back({ "uint commonFlags", offsetof(GameObject, comFlags) });
 		prop.push_back({ "const float radius", offsetof(GameObject, radius) });
 		prop.push_back({ "const float height", offsetof(GameObject, height) });
 		DXL2_ScriptSystem::registerRefType("GameObject", prop);
@@ -562,6 +656,10 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerFunction("void DXL2_GiveGear()", SCRIPT_FUNCTION(DXL2_GiveGear));
 
 		DXL2_ScriptSystem::registerFunction("void DXL2_PrintMessage(uint msgId)", SCRIPT_FUNCTION(DXL2_PrintMessage));
+
+		DXL2_ScriptSystem::registerFunction("float DXL2_GetVueLength(int objectId, int viewIndex)", SCRIPT_FUNCTION(DXL2_GetVueLength));
+		DXL2_ScriptSystem::registerFunction("uint DXL2_GetVueCount(int objectId)", SCRIPT_FUNCTION(DXL2_GetVueCount));
+		DXL2_ScriptSystem::registerFunction("void DXL2_SetVueAnimTime(int objectId, int viewIndex, float time)", SCRIPT_FUNCTION(DXL2_SetVueAnimTime));
 
 		// Register "self" and Logic parameters.
 		DXL2_ScriptSystem::registerGlobalProperty("GameObject @self",  &s_self);

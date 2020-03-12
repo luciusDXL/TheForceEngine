@@ -123,6 +123,7 @@ namespace DXL2_Level
 				secobject->comFlags = object[i].comFlags;
 				secobject->radius = object[i].radius;
 				secobject->height = object[i].height;
+				secobject->vueTransform = nullptr;
 
 				secobject->animId = 0;
 				secobject->frameIndex = 0;
@@ -325,6 +326,20 @@ namespace DXL2_Level
 			{
 				obj->pos.y = testHeight;
 			}
+		}
+	}
+
+	void wakeUp(u32 sectorId)
+	{
+		if (sectorId >= 0xffffu) { return; }
+
+		Sector* sector = s_levelData->sectors.data() + sectorId;
+		GameObject* object = s_objects->data();
+		const u32 objCount = (u32)s_objects->size();
+
+		for (u32 i = 0; i < objCount; i++, object++)
+		{
+			object->comFlags &= ~LCF_PAUSE;
 		}
 	}
 

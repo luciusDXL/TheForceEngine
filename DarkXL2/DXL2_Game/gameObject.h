@@ -71,6 +71,9 @@ struct GameObject
 
 	// Physics
 	u32 physicsFlags;
+
+	// Vue Transform.
+	const Mat3* vueTransform = nullptr;
 };
 
 struct SectorObjects

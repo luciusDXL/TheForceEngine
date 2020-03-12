@@ -43,9 +43,12 @@ namespace DXL2_Level
 
 	void startLevel(LevelData* level, LevelObjectData* levelObj);
 	void endLevel();
-
+		
 	// Player (for interactions)
 	void setPlayerSector(Player* player, s32 floorCount, s32 secAltCount, const s32* floorId, const s32* secAltId);
+
+	// Animation
+	void wakeUp(u32 sectorId);
 
 	// Floor, ceiling, second height
 	void setFloorHeight(s32 sectorId, f32 height, bool addSectorMotion = false);

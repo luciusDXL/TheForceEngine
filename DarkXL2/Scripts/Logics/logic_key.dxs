@@ -6,6 +6,8 @@
 void start()
 {
 	DXL2_SetPhysics(self.objectId, PHYSICS_NONE);
+	self.state = 0;	// first Vue animation
+	self.time = 0.0;
 }
 
 // Stop is called when the object is despawned.
@@ -16,6 +18,33 @@ void stop()
 // Tick is called at a fixed rate.
 void tick()
 {
+	if ((self.commonFlags & LCF_PAUSE) == 0 && self.state >= 0)
+	{
+		// Update the animation time.
+		self.time += timeStep;
+		float len = DXL2_GetVueLength(self.objectId, self.state);
+		if (self.time >= len)
+		{
+			if (DXL2_GetVueCount(self.objectId) > self.state + 1)
+			{
+				self.time = 0.0;
+				self.state++;
+				self.commonFlags |= LCF_PAUSE;
+			}
+			else
+			{
+				// Make sure to set the last frame in case it stays here for a while.
+				DXL2_SetVueAnimTime(self.objectId, self.state, len);
+
+				self.time  = len;
+				self.state = -1;
+			}
+		}
+		if (self.state >= 0)
+		{
+			DXL2_SetVueAnimTime(self.objectId, self.state, self.time);
+		}
+	}
 }
 
 // Handle message is called when specific events occur, such as
