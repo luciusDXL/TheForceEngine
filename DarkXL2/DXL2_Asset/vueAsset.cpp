@@ -133,7 +133,12 @@ namespace DXL2_VueAsset
 			}
 			else if (strcasecmp("transform", tokens[0].c_str()) == 0)
 			{
-				assert(frameIndex >= 0);
+				// if no frame is specified, then assume that this is a frame.
+				if (frameIndex < 0)
+				{
+					frameIndex++;
+					frameCount++;
+				}
 				assert(tokens.size() == 14u);
 				const char* transformName = tokens[1].c_str();
 				Mat3 rotScale = { 0 };

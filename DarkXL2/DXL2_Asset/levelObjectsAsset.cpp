@@ -248,6 +248,7 @@ namespace DXL2_LevelObjects
 				objectIndex++;
 
 				object->oclass = getObjectClass(tokens[1].c_str());
+				object->comFlags = LCF_LOOP;
 				const u32 tokenCount = (u32)tokens.size();
 				for (u32 t = 2; t < tokenCount; t++)
 				{
@@ -385,7 +386,8 @@ namespace DXL2_LevelObjects
 				}
 				else if (strcasecmp("PAUSE:", tokens[0].c_str()) == 0 && strcasecmp(tokens[1].c_str(), "TRUE") == 0)
 				{
-					object->comFlags |= LCF_PAUSE;
+					object->comFlags |=  LCF_PAUSE;
+					object->comFlags &= ~LCF_LOOP;
 				}
 				else if (logic && strcasecmp("FLAGS:", tokens[0].c_str()) == 0)
 				{

@@ -19,6 +19,7 @@ enum LogicCommonFlags
 	LCF_EYE   = (1 << 0),
 	LCF_BOSS  = (1 << 1),
 	LCF_PAUSE = (1 << 2),
+	LCF_LOOP  = (1 << 3),
 };
 
 enum Difficulty

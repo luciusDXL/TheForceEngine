@@ -31,6 +31,10 @@ void tick()
 				self.state++;
 				self.commonFlags |= LCF_PAUSE;
 			}
+			else if ((self.commonFlags & LCF_LOOP) != 0)
+			{
+				self.time -= len;
+			}
 			else
 			{
 				// Make sure to set the last frame in case it stays here for a while.

@@ -395,11 +395,9 @@ namespace DXL2_LogicSystem
 				{
 					newSectorId = obj->gameObj->sectorId;
 				}
-			}
-			else
-			{
 				obj->gameObj->sectorId = newSectorId;
 			}
+			obj->gameObj->sectorId = newSectorId;
 
 			// update the object position.
 			obj->gameObj->pos = newPos;
@@ -694,6 +692,7 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_EYE",   LCF_EYE);
 		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_BOSS",  LCF_BOSS);
 		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_PAUSE", LCF_PAUSE);
+		DXL2_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_LOOP",  LCF_LOOP);
 
 		DXL2_ScriptSystem::registerEnumType("DamageType");
 		DXL2_ScriptSystem::registerEnumValue("DamageType", "DMG_SHOT", DMG_SHOT);
