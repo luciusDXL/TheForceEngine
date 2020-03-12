@@ -403,6 +403,9 @@
     <ClInclude Include="DXL2_Game\gameConstants.h">
       <Filter>Source\DXL2_Game</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Archive\labArchive.h">
+      <Filter>Source\DXL2_Archive</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -650,6 +653,9 @@
     </ClCompile>
     <ClCompile Include="DXL2_Editor\levelEditorData.cpp">
       <Filter>Source\DXL2_Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Archive\labArchive.cpp">
+      <Filter>Source\DXL2_Archive</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

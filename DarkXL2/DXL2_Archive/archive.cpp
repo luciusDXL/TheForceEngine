@@ -1,6 +1,7 @@
 #include "archive.h"
 #include "gobArchive.h"
 #include "lfdArchive.h"
+#include "labArchive.h"
 #include <assert.h>
 #include <string>
 #include <map>
@@ -30,6 +31,11 @@ Archive* Archive::getArchive(ArchiveType type, const char* name, const char* pat
 		case ARCHIVE_LFD:
 		{
 			archive = new LfdArchive();
+		}
+		break;
+		case ARCHIVE_LAB:
+		{
+			archive = new LabArchive();
 		}
 		break;
 		default:
@@ -96,6 +102,11 @@ Archive* Archive::createCustomArchive(ArchiveType type, const char* path)
 	case ARCHIVE_LFD:
 	{
 		archive = new LfdArchive();
+	}
+	break;
+	case ARCHIVE_LAB:
+	{
+		archive = new LabArchive();
 	}
 	break;
 	default:

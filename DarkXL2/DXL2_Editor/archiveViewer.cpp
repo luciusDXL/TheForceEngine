@@ -480,7 +480,7 @@ namespace ArchiveViewer
 			}
 		}
 
-		if (s_fileDialog.showOpenFileDialog("Open File", ImVec2(scaleUi(600), scaleUi(300)), ".gob,.GOB,.lfd,.LFD"))
+		if (s_fileDialog.showOpenFileDialog("Open File", ImVec2(scaleUi(600), scaleUi(300)), ".gob,.GOB,.lfd,.LFD,.lab,.LAB"))
 		{
 			strcpy(s_curArchiveFile, s_fileDialog.selected_fn.c_str());
 			FileUtil::getFileNameFromPath(s_curArchiveFile, s_curArchiveName, true);
@@ -491,6 +491,7 @@ namespace ArchiveViewer
 			ArchiveType type = ARCHIVE_COUNT;
 			if (strcasecmp(extension, "gob") == 0) { type = ARCHIVE_GOB; }
 			else if (strcasecmp(extension, "lfd") == 0) { type = ARCHIVE_LFD; }
+			else if (strcasecmp(extension, "lab") == 0) { type = ARCHIVE_LAB; }
 			else { assert(0); }
 
 			s_curArchive = Archive::getArchive(type, s_curArchiveName, s_curArchiveFile);

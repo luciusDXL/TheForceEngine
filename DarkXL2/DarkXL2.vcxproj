@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClInclude Include="DXL2_Archive\archive.h" />
     <ClInclude Include="DXL2_Archive\gobArchive.h" />
+    <ClInclude Include="DXL2_Archive\labArchive.h" />
     <ClInclude Include="DXL2_Archive\lfdArchive.h" />
     <ClInclude Include="DXL2_Asset\assetSystem.h" />
     <ClInclude Include="DXL2_Asset\colormapAsset.h" />
@@ -249,6 +250,7 @@
   <ItemGroup>
     <ClCompile Include="DXL2_Archive\archive.cpp" />
     <ClCompile Include="DXL2_Archive\gobArchive.cpp" />
+    <ClCompile Include="DXL2_Archive\labArchive.cpp" />
     <ClCompile Include="DXL2_Archive\lfdArchive.cpp" />
     <ClCompile Include="DXL2_Asset\assetSystem.cpp" />
     <ClCompile Include="DXL2_Asset\colormapAsset.cpp" />

@@ -6,6 +6,7 @@ enum ArchiveType
 {
 	ARCHIVE_GOB = 0,
 	ARCHIVE_LFD,
+	ARCHIVE_LAB,
 	ARCHIVE_COUNT,
 };
 
