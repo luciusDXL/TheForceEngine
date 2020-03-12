@@ -125,10 +125,10 @@ namespace DXL2_LevelObjects
 				}
 				else if (logic->type == LOGIC_KEY)
 				{
-					outFile.writeString("            VUE: %s \"%s\"\r\n", logic->Vue.c_str(), logic->VueId.c_str());
-					if (!logic->VueAppend.empty())
+					outFile.writeString("            VUE: %s \"%s\"\r\n", logic->vue->name, DXL2_VueAsset::getTransformName(logic->vue, logic->vueId));
+					if (logic->vueAppend)
 					{
-						outFile.writeString("            VUE_APPEND: %s \"%s\"\r\n", logic->VueAppend.c_str(), logic->VueAppendId.c_str());
+						outFile.writeString("            VUE_APPEND: %s \"%s\"\r\n", logic->vueAppend->name, DXL2_VueAsset::getTransformName(logic->vueAppend, logic->vueAppendId));
 					}
 					outFile.writeString("            PAUSE: %s", obj->comFlags & LCF_PAUSE ? "TRUE" : "FALSE");
 					if (logic->frameRate != 0.0f) { outFile.writeString("            FRAME_RATE: %2.2f", logic->frameRate); }
@@ -329,6 +329,11 @@ namespace DXL2_LevelObjects
 						object->logics.push_back({});
 						logic = &object->logics[index];
 
+						logic->vue = nullptr;
+						logic->vueAppend = nullptr;
+						logic->vueId = -1;
+						logic->vueAppendId = -1;
+
 						// ITEM XXX is just referenced as XXX since "ITEM SHIELD" is the same as "SHIELD" and they are used interchangably (and similar for other items).
 						std::string logicName = tokens[1];
 						if (tokens.size() == 3 && strcasecmp(logicName.c_str(), "ITEM") == 0)
@@ -410,13 +415,21 @@ namespace DXL2_LevelObjects
 				}
 				else if (logic && strcasecmp("VUE:", tokens[0].c_str()) == 0)
 				{
-					logic->Vue = tokens[1];
-					logic->VueId = tokens.size() > 2 ? tokens[2] : "";
+					logic->vue = DXL2_VueAsset::get(tokens[1].c_str());
+					logic->vueId = -1;
+					if (logic->vue)
+					{
+						logic->vueId = tokens.size() > 2 ? DXL2_VueAsset::getTransformIndex(logic->vue, tokens[2].c_str()) : 0;
+					}
 				}
 				else if (logic && strcasecmp("VUE_APPEND:", tokens[0].c_str()) == 0)
 				{
-					logic->VueAppend = tokens[1];
-					logic->VueAppendId = tokens.size() > 2 ? tokens[2] : "";
+					logic->vueAppend = DXL2_VueAsset::get(tokens[1].c_str());
+					logic->vueAppendId = -1;
+					if (logic->vueAppend)
+					{
+						logic->vueAppendId = tokens.size() > 2 ? DXL2_VueAsset::getTransformIndex(logic->vueAppend, tokens[2].c_str()) : 0;
+					}
 				}
 			}
 		}

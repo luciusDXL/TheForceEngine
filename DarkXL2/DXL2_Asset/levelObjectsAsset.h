@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <DXL2_System/types.h>
 #include "logicTypes.h"
+#include "vueAsset.h"
 #include <string>
 #include <vector>
 
@@ -47,10 +48,11 @@ struct Logic
 	u32 flags      = 0;		// logic specific flags.
 	f32 frameRate  = 0.0f;
 	Vec3f rotation = { 0.0f, 0.0f, 0.0f };
-	std::string Vue;
-	std::string VueAppend;
-	std::string VueId;
-	std::string VueAppendId;
+
+	VueAsset* vue;
+	VueAsset* vueAppend;
+	s32 vueId;
+	s32 vueAppendId;
 };
 
 struct LevelObject

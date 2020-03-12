@@ -4084,8 +4084,8 @@ namespace LevelEditor
 			}
 			else if (logic->type == LOGIC_KEY)
 			{
-				ImGui::Text("    VUE: %s %s", logic->Vue.c_str(), logic->VueId.c_str());
-				ImGui::Text("    VUE_APPEND: %s %s", logic->VueAppend.c_str(), logic->VueAppendId.c_str());
+				ImGui::Text("    VUE: %s %s", logic->vue->name, DXL2_VueAsset::getTransformName(logic->vue, logic->vueId));
+				ImGui::Text("    VUE_APPEND: %s %s", logic->vueAppend->name, DXL2_VueAsset::getTransformName(logic->vueAppend, logic->vueAppendId));
 				ImGui::Text("    PAUSE: %s", obj->comFlags & LCF_PAUSE ? "true" : "false");
 				ImGui::Text("    FRAME_RATE: %2.2f", logic->frameRate);
 			}

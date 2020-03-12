@@ -406,6 +406,9 @@
     <ClInclude Include="DXL2_Archive\labArchive.h">
       <Filter>Source\DXL2_Archive</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Asset\vueAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -656,6 +659,9 @@
     </ClCompile>
     <ClCompile Include="DXL2_Archive\labArchive.cpp">
       <Filter>Source\DXL2_Archive</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\vueAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
