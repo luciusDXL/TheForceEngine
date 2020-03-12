@@ -395,7 +395,27 @@ namespace DXL2_LogicSystem
 				{
 					newSectorId = obj->gameObj->sectorId;
 				}
-				obj->gameObj->sectorId = newSectorId;
+			}
+			const s32 prevSectorId = obj->gameObj->sectorId;
+			if (prevSectorId != newSectorId)
+			{
+				SectorObjectList* secList = LevelGameObjects::getSectorObjectList();
+
+				// Remove from the old sector.
+				std::vector<u32>& prevlist = (*secList)[prevSectorId].list;
+				const size_t prevCount = prevlist.size();
+				for (u32 i = 0; i < prevCount; i++)
+				{
+					if (prevlist[i] == obj->gameObj->id)
+					{
+						prevlist.erase(prevlist.begin() + i);
+						break;
+					}
+				}
+
+				// Add to the new sector.
+				std::vector<u32>& newlist = (*secList)[newSectorId].list;
+				newlist.push_back(obj->gameObj->id);
 			}
 			obj->gameObj->sectorId = newSectorId;
 

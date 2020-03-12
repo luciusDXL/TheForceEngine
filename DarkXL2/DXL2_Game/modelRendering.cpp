@@ -325,7 +325,7 @@ namespace DXL2_ModelRender
 		// 1. Go through objects, transform vertices and add polygons to be sorted.
 		Vec3f* transformed = s_modelTransformed.data();
 		u32 polygonOffset = 0;
-		f32 vertScale = optionalTransform && s_flipVert ? -1.0f : 1.0f;
+		f32 vertScale = s_flipVert ? -1.0f : 1.0f;
 		for (u32 i = 0; i < objectCount; i++)
 		{
 			const ModelObject* obj = &model->objects[i];
