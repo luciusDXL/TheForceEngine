@@ -25,15 +25,15 @@ bool LabArchive::open(const char *archivePath)
 	m_stringTable = new char[m_header.stringTableSize + 1];
 	m_entries = new LAB_Entry_t[m_header.fileCount];
 
-	//now read the entries.
+	// Read the file entries.
 	m_file.readBuffer(m_entries, sizeof(LAB_Entry_t), m_header.fileCount);
 
-	//now read string table.
+	// Read string table.
 	m_file.readBuffer(m_stringTable, m_header.stringTableSize);
+	m_file.close();
 		
 	strcpy(m_archivePath, archivePath);
-	m_file.close();
-
+	
 	return true;
 }
 
