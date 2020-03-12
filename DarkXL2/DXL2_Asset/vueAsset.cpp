@@ -175,6 +175,18 @@ namespace DXL2_VueAsset
 			strcpy(vue->transformNames[i], transformNames[i].c_str());
 		}
 		memcpy(vue->transforms, transforms.data(), sizeof(VueTransform)*transforms.size());
+		// Fixup transforms - Vues were authored in 3Ds MAX with a different coordinate system than Dark Forces uses
+		// (Z up for example). By fixing the transforms up during load the rest of the code doesn't need to be aware of these differences.
+		const u32 count = vue->transformCount * vue->frameCount;
+		for (u32 i = 0; i < count; i++)
+		{
+			vue->transforms[i].translation = { vue->transforms[i].translation.x, -vue->transforms[i].translation.z, -vue->transforms[i].translation.y };
+
+			const Mat3 matVue = vue->transforms[i].rotScale;
+			vue->transforms[i].rotScale.m0 = { matVue.m0.x, matVue.m2.x, matVue.m1.x };
+			vue->transforms[i].rotScale.m1 = { matVue.m0.z, matVue.m2.z, matVue.m1.z };
+			vue->transforms[i].rotScale.m2 = { matVue.m0.y, matVue.m2.y, matVue.m1.y };
+		}
 
 		return true;
 	}

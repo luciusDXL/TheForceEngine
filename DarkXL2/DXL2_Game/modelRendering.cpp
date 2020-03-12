@@ -138,14 +138,23 @@ namespace DXL2_ModelRender
 	// Output: screen rect - the screenspace area that the model covers: min = screenRect[0], max = screenRect[1]
 	//         returns true if the model is at least partially on screen, false if not visible.
 	// TODO: Save transform matrix.
-	bool computeScreenSize(const Model* model, const Vec3f* modelOrientation, const Vec3f* modelPos, const Vec3f* cameraPos, const f32* cameraRot, f32 heightOffset, Vec2i* screenRect)
+	bool computeScreenSize(const Model* model, const Vec3f* modelOrientation, const Vec3f* modelPos, const Mat3* optionalTransform, const Vec3f* cameraPos, const f32* cameraRot, f32 heightOffset, Vec2i* screenRect)
 	{
 		const f32 yaw = modelOrientation->y * PI / 180.0f;
 		const f32 pitch = modelOrientation->x * PI / 180.0f;
 		const f32 roll = modelOrientation->z * PI / 180.0f;
 
 		Vec3f mat33[3];
-		DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		if (optionalTransform)
+		{
+			mat33[0] = optionalTransform->m0;
+			mat33[1] = optionalTransform->m1;
+			mat33[2] = optionalTransform->m2;
+		}
+		else
+		{
+			DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		}
 
 		// Transform the local AABB into view space.
 		const Vec3f aabbLocal[] =
@@ -271,14 +280,23 @@ namespace DXL2_ModelRender
 		s_scale = *scale;
 	}
 							
-	void draw(const Model* model, const Vec3f* modelOrientation, const Vec3f* modelPos, const Vec3f* cameraPos, const f32* cameraRot, f32 heightOffset, const Sector* sector)
+	void draw(const Model* model, const Vec3f* modelOrientation, const Vec3f* modelPos, const Mat3* optionalTransform, const Vec3f* cameraPos, const f32* cameraRot, f32 heightOffset, const Sector* sector)
 	{
 		const f32 yaw = modelOrientation->y * PI / 180.0f;
 		const f32 pitch = modelOrientation->x * PI / 180.0f;
 		const f32 roll = modelOrientation->z * PI / 180.0f;
 
 		Vec3f mat33[3];
-		DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		if (optionalTransform)
+		{
+			mat33[0] = optionalTransform->m0;
+			mat33[1] = optionalTransform->m1;
+			mat33[2] = optionalTransform->m2;
+		}
+		else
+		{
+			DXL2_Math::buildRotationMatrix({ roll, yaw, pitch }, mat33);
+		}
 
 		s_heightOffset = heightOffset ? heightOffset : s_halfHeight;
 		s_sector = sector;
@@ -307,7 +325,7 @@ namespace DXL2_ModelRender
 		// 1. Go through objects, transform vertices and add polygons to be sorted.
 		Vec3f* transformed = s_modelTransformed.data();
 		u32 polygonOffset = 0;
-		f32 vertScale = s_flipVert ? -1.0f : 1.0f;
+		f32 vertScale = optionalTransform && s_flipVert ? -1.0f : 1.0f;
 		for (u32 i = 0; i < objectCount; i++)
 		{
 			const ModelObject* obj = &model->objects[i];
@@ -320,11 +338,11 @@ namespace DXL2_ModelRender
 				f32 wx =  vertices[v].x * s_scale.x;
 				f32 wy =  vertices[v].y * vertScale * s_scale.y;
 				f32 wz =  vertices[v].z * s_scale.z;
-
-				f32 vx = wx * mat33[0].x + wy * mat33[0].y + wz * mat33[0].z + modelPos->x - cameraPos->x;
-				f32 vy = wx * mat33[1].x + wy * mat33[1].y + wz * mat33[1].z + modelPos->y - cameraPos->y;
-				f32 vz = wx * mat33[2].x + wy * mat33[2].y + wz * mat33[2].z + modelPos->z - cameraPos->z;
 				
+				const f32 vx = wx * mat33[0].x + wy * mat33[0].y + wz * mat33[0].z + modelPos->x - cameraPos->x;
+				const f32 vy = wx * mat33[1].x + wy * mat33[1].y + wz * mat33[1].z + modelPos->y - cameraPos->y;
+				const f32 vz = wx * mat33[2].x + wy * mat33[2].y + wz * mat33[2].z + modelPos->z - cameraPos->z;
+								
 				transformed[v + vertexOffset].x = vx * cameraRot[0] + vz * cameraRot[1];
 				transformed[v + vertexOffset].y = vy;
 				transformed[v + vertexOffset].z = -vx * cameraRot[1] + vz * cameraRot[0];

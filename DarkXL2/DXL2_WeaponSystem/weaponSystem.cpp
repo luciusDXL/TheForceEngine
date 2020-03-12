@@ -977,7 +977,7 @@ namespace DXL2_WeaponSystem
 			Vec3f modelScale = { 1.0f, 1.0f, 0.05f }, defaultScale = { 1.0f, 1.0f, 1.0f };
 			DXL2_ModelRender::setModelScale(&modelScale);
 			DXL2_ModelRender::setClip(0, s32(w)-1, nullptr, nullptr);
-			DXL2_ModelRender::draw(s_model, &angles, &s_shotLoc, cameraPos, rot, (f32)pitchOffset, nullptr);
+			DXL2_ModelRender::draw(s_model, &angles, &s_shotLoc, nullptr, cameraPos, rot, (f32)pitchOffset, nullptr);
 			DXL2_ModelRender::setModelScale(&defaultScale);
 
 			// Trace a ray between the current location and the next. Then check if it hit anything.

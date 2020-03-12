@@ -375,7 +375,7 @@ namespace DXL2_LogicSystem
 			const VueTransform* newTransform = &vue->transforms[frameIndex * vue->transformCount + transformIndex];
 
 			const Vec3f prevPos = obj->gameObj->pos;
-			const Vec3f newPos = { newTransform->translation.x, -newTransform->translation.z, -newTransform->translation.y };
+			const Vec3f newPos = newTransform->translation;
 
 			// Trace a ray to update the new sectorId.
 			// For this we will force our way through any adjoins.

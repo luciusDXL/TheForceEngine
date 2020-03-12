@@ -739,7 +739,7 @@ namespace DXL2_View
 		const s16* lower = &s_lowerHeightMask[seg->heightOffset];
 
 		DXL2_ModelRender::setClip(seg->ix0, seg->ix1, upper, lower);
-		DXL2_ModelRender::draw(model, &obj->angles, &obj->pos, cameraPos, s_rot, (f32)s_pitchOffset, &s_level->sectors[obj->sectorId]);
+		DXL2_ModelRender::draw(model, &obj->angles, &obj->pos, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, &s_level->sectors[obj->sectorId]);
 	}
 
 	void drawSprite(s32 index)
@@ -1946,7 +1946,7 @@ namespace DXL2_View
 				model = obj->model;
 
 				Vec2i screenRect[2];
-				if (!DXL2_ModelRender::computeScreenSize(model, &obj->angles, &obj->pos, cameraPos, s_rot, (f32)s_pitchOffset, screenRect))
+				if (!DXL2_ModelRender::computeScreenSize(model, &obj->angles, &obj->pos, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, screenRect))
 				{
 					continue;
 				}

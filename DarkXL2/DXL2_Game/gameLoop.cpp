@@ -676,7 +676,7 @@ namespace DXL2_GameLoop
 		Vec3f cameraPos = { model->center.x, -model->center.y, model->center.z - model->radius*1.5f };
 		f32 cameraRot[] = { 1.0f, 0.0f };
 
-		DXL2_ModelRender::draw(model, orientation, &modelPos, &cameraPos, cameraRot, 0);
+		DXL2_ModelRender::draw(model, orientation, &modelPos, nullptr, &cameraPos, cameraRot, 0);
 	}
 
 	//////////////////////////////////////////////
