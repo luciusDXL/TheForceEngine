@@ -21,34 +21,16 @@ bool LabArchive::open(const char *archivePath)
 	if (!m_archiveOpen) { return false; }
 
 	// Read the directory.
-	m_file.readBuffer(&m_header, sizeof(GOB_Header_t));
-
-	int stringTableSize;
-	m_file.readBuffer(&m_fileList.MASTERN, sizeof(long));
-	m_file.readBuffer(&stringTableSize, sizeof(long));
-	m_fileList.entries = new GOB_Entry_t[m_fileList.MASTERN];
-
-	//now read string table.
-	m_file.seek(16 * (m_fileList.MASTERN + 1));
-	char *stringTable = new char[stringTableSize + 1];
-	m_file.readBuffer(stringTable, stringTableSize);
+	m_file.readBuffer(&m_header, sizeof(LAB_Header_t));
+	m_stringTable = new char[m_header.stringTableSize + 1];
+	m_entries = new LAB_Entry_t[m_header.fileCount];
 
 	//now read the entries.
-	m_file.seek(16);
-	for (s32 e = 0; e < m_fileList.MASTERN; e++)
-	{
-		u32 fname_offs, start, size, pad32;
-		m_file.read(&fname_offs);
-		m_file.read(&start);
-		m_file.read(&size);
-		m_file.read(&pad32);
+	m_file.readBuffer(m_entries, sizeof(LAB_Entry_t), m_header.fileCount);
 
-		m_fileList.entries[e].IX = start;
-		m_fileList.entries[e].LEN = size;
-		strcpy(m_fileList.entries[e].NAME, &stringTable[fname_offs]);
-	}
-	delete[] stringTable;
-
+	//now read string table.
+	m_file.readBuffer(m_stringTable, m_header.stringTableSize);
+		
 	strcpy(m_archivePath, archivePath);
 	m_file.close();
 
@@ -59,6 +41,8 @@ void LabArchive::close()
 {
 	m_file.close();
 	m_archiveOpen = false;
+	delete[] m_entries;
+	delete[] m_stringTable;
 }
 
 // File Access
@@ -70,9 +54,9 @@ bool LabArchive::openFile(const char *file)
 	m_curFile = -1;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_header.fileCount; i++)
 	{
-		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
+		if (strcasecmp(file, &m_stringTable[m_entries[i].nameOffset]) == 0)
 		{
 			m_curFile = i;
 			break;
@@ -108,9 +92,9 @@ u32 LabArchive::getFileIndex(const char* file)
 	m_curFile = -1;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_header.fileCount; i++)
 	{
-		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
+		if (strcasecmp(file, &m_stringTable[m_entries[i].nameOffset]) == 0)
 		{
 			return i;
 		}
@@ -124,9 +108,9 @@ bool LabArchive::fileExists(const char *file)
 	m_curFile = -1;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_header.fileCount; i++)
 	{
-		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
+		if (strcasecmp(file, &m_stringTable[m_entries[i].nameOffset]) == 0)
 		{
 			return true;
 		}
@@ -149,10 +133,10 @@ size_t LabArchive::getFileLength()
 bool LabArchive::readFile(void *data, size_t size)
 {
 	if (m_curFile < 0) { return false; }
-	if (size == 0) { size = m_fileList.entries[m_curFile].LEN; }
-	const size_t sizeToRead = std::min(size, (size_t)m_fileList.entries[m_curFile].LEN);
+	if (size == 0) { size = m_entries[m_curFile].len; }
+	const size_t sizeToRead = std::min(size, (size_t)m_entries[m_curFile].len);
 
-	m_file.seek(m_fileList.entries[m_curFile].IX);
+	m_file.seek(m_entries[m_curFile].dataOffset);
 	m_file.readBuffer(data, (u32)sizeToRead);
 	return true;
 }
@@ -161,19 +145,19 @@ bool LabArchive::readFile(void *data, size_t size)
 u32 LabArchive::getFileCount()
 {
 	if (!m_archiveOpen) { return 0; }
-	return (u32)m_fileList.MASTERN;
+	return m_header.fileCount;
 }
 
 const char* LabArchive::getFileName(u32 index)
 {
 	if (!m_archiveOpen) { return nullptr; }
-	return m_fileList.entries[index].NAME;
+	return &m_stringTable[m_entries[index].nameOffset];
 }
 
 size_t LabArchive::getFileLength(u32 index)
 {
 	if (!m_archiveOpen) { return 0; }
-	return m_fileList.entries[index].LEN;
+	return m_entries[index].len;
 }
 
 // Edit

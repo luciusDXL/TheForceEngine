@@ -57,6 +57,7 @@ void GobArchive::close()
 {
 	m_file.close();
 	m_archiveOpen = false;
+	delete[] m_fileList.entries;
 }
 
 // File Access

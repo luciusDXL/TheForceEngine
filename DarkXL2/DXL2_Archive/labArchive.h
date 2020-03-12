@@ -38,32 +38,29 @@ public:
 private:
 	#pragma pack(push)
 	#pragma pack(1)
-
-	typedef struct
+	struct LAB_Header_t
 	{
-		char GOB_MAGIC[4];
-		long MASTERX;	//offset to GOX_Index_t
-	} GOB_Header_t;
+		char LAB_MAGIC[4];
+		u32  version;	// 0x10000 for Outlaws
+		u32  fileCount;
+		u32  stringTableSize;
+	};
 
-	typedef struct
+	struct LAB_Entry_t
 	{
-		long IX;		//offset to the start of the file.
-		long LEN;		//length of the file.
-		char NAME[13];	//file name.
-	} GOB_Entry_t;
-
-	typedef struct
-	{
-		long MASTERN;	//num files
-		GOB_Entry_t *entries;
-	} GOB_Index_t;
-
+		u32 nameOffset;
+		u32 dataOffset;
+		u32 len;
+		u8  typeId[4];
+	};
 	#pragma pack(pop)
 
 	FileStream m_file;
 	bool m_archiveOpen;
 
-	GOB_Header_t m_header;
-	GOB_Index_t m_fileList;
+	LAB_Header_t m_header;
+	char* m_stringTable;
+	LAB_Entry_t* m_entries;
+
 	s32 m_curFile;
 };
