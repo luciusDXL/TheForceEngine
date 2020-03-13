@@ -1134,23 +1134,26 @@ namespace DXL2_View
 		}
 	}
 
-	void drawSign(const TextureFrame* signFrame, const Sector* curSector, const SectorWall* curWall, const SectorTexture* baseTex, f32 u, s32 x, s32 y0, s32 y1, f32 floorAlt, f32 ceilAlt, f32 hBase, u8 lightLevel)
+	void drawSign(const TextureFrame* signFrame, const Sector* curSector, const SectorWall* curWall, const SectorTexture* baseTex, f32 u, s32 x, s32 y0, s32 y1, f32 floorAlt, f32 ceilAlt, f32 hBase, u8 lightLevel, f32 delta)
 	{
 		if (!signFrame) { return; }
 		if (curWall->flags[0] & WF1_ILLUM_SIGN) { lightLevel = 31; }
 
 		const f32 offsetX = baseTex->offsetX - curWall->sign.offsetX;
 		// The way the mid offset Y is factored in is quite strange but has been arrived at by looking at the data...
-		const f32 offsetY = -DXL2_Math::fract(std::max(baseTex->offsetY, 0.0f)) + curWall->sign.offsetY;
-		const f32 uWall = (u + offsetX) * c_worldToTexelScale;
-		const s32 U = s32(uWall);
-
-		// TODO: Fix sign anchoring.
-		if (curWall->flags[0] & WF1_SIGN_ANCHORED)
+		f32 offsetY = -DXL2_Math::fract(std::max(baseTex->offsetY, 0.0f)) + curWall->sign.offsetY;
+		if (curWall->flags[0] & WF1_SCROLL_SIGN_TEX)
 		{
-			
+			offsetY = curWall->sign.offsetY;
+		}
+		if ((curWall->flags[0] & WF1_SIGN_ANCHORED) && delta != 0.0f)
+		{
+			offsetY += delta;
 		}
 
+		const f32 uWall = (u + offsetX) * c_worldToTexelScale;
+		const s32 U = s32(uWall);
+		
 		// TODO: Move this out?
 		f32 signV[2];
 		const f32 h = hBase * c_worldToTexelScale;
@@ -1601,7 +1604,8 @@ namespace DXL2_View
 						s_renderer->drawTexturedColumn(x, y0, y1, v0p, v1p, lightLevel, &midFrame->image[U*midDim[1]], midDim[1]);
 					}
 
-					drawSign(signFrame, curSector, curWall, &curWall->mid, u, x, y0, y1, floorAlt, ceilAlt, curSector->floorAlt - curSector->ceilAlt, lightLevel);
+					const f32 dy = DXL2_Level::getBaseSectorHeight(curSector->id)->floorAlt - curSector->floorAlt;
+					drawSign(signFrame, curSector, curWall, &curWall->mid, u, x, y0, y1, floorAlt, ceilAlt, curSector->floorAlt - curSector->ceilAlt, lightLevel, dy);
 
 					//s_lowerHeight[x] = s_height>>1;
 					//s_upperHeight[x] = s_height>>1;
@@ -1651,7 +1655,18 @@ namespace DXL2_View
 								s_renderer->drawTexturedColumn(x, ly0, ly1, v0p, v1p, lightLevel, &botFrame->image[U*botDim[1]], botDim[1]);
 							}
 
-							drawSign(signFrame, curSector, curWall, &curWall->bot, u, x, ly0, ly1, floorAlt, ceilAlt, lowerHeight, lightLevel);
+							f32 dy = 0.0f;
+							if (curWall->flags[0] & WF1_SIGN_ANCHORED)
+							{
+								// Handle next sector moving.
+								f32 baseHeight = DXL2_Level::getBaseSectorHeight(next->id)->floorAlt;
+								dy -= (baseHeight - next->floorAlt);
+
+								// Handle current sector moving.
+								baseHeight = DXL2_Level::getBaseSectorHeight(curSector->id)->floorAlt;
+								dy += (baseHeight - curSector->floorAlt);
+							}
+							drawSign(signFrame, curSector, curWall, &curWall->bot, u, x, ly0, ly1, floorAlt, ceilAlt, lowerHeight, lightLevel, dy);
 							s_lowerHeight[x] = std::min(s_lowerHeight[x], ly0);
 
 							// Perf stats
@@ -1704,7 +1719,18 @@ namespace DXL2_View
 							}
 							if (!hasLower)
 							{
-								drawSign(signFrame, curSector, curWall, &curWall->top, u, x, uy0, uy1, floorAlt, ceilAlt, upperHeight, lightLevel);
+								f32 dy = 0.0f;
+								if (curWall->flags[0] & WF1_SIGN_ANCHORED)
+								{
+									// Handle next sector moving.
+									f32 baseHeight = DXL2_Level::getBaseSectorHeight(next->id)->ceilAlt;
+									dy -= (baseHeight - next->floorAlt);
+
+									// Handle current sector moving.
+									baseHeight = DXL2_Level::getBaseSectorHeight(curSector->id)->ceilAlt;
+									dy += (baseHeight - curSector->ceilAlt);
+								}
+								drawSign(signFrame, curSector, curWall, &curWall->top, u, x, uy0, uy1, floorAlt, ceilAlt, upperHeight, lightLevel, dy);
 							}
 							s_upperHeight[x] = std::max(s_upperHeight[x], uy1);
 

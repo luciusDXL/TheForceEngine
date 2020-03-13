@@ -1104,6 +1104,14 @@ namespace DXL2_InfSystem
 		{
 			offsetX =  wall->mid.offsetX - wall->sign.offsetX;
 			offsetY = -DXL2_Math::fract(std::max(wall->mid.offsetY, 0.0f)) + wall->sign.offsetY;
+			if (wall->flags[0] & WF1_SCROLL_SIGN_TEX)
+			{
+				offsetY = wall->sign.offsetY;
+			}
+			if (wall->flags[0] & WF1_SIGN_ANCHORED)
+			{
+				offsetY += DXL2_Level::getBaseSectorHeight(sector->id)->floorAlt - sector->floorAlt;
+			}
 
 			y0 = sector->floorAlt;
 			y1 = sector->ceilAlt;
@@ -1116,6 +1124,24 @@ namespace DXL2_InfSystem
 			{
 				offsetX =  wall->bot.offsetX - wall->sign.offsetX;
 				offsetY = -DXL2_Math::fract(std::max(wall->bot.offsetY, 0.0f)) + wall->sign.offsetY;
+				if (wall->flags[0] & WF1_SCROLL_SIGN_TEX)
+				{
+					offsetY = wall->sign.offsetY;
+				}
+				if (wall->flags[0] & WF1_SIGN_ANCHORED)
+				{
+					f32 dy = 0.0f;
+
+					// Handle next sector moving.
+					f32 baseHeight = DXL2_Level::getBaseSectorHeight(next->id)->floorAlt;
+					dy -= (baseHeight - next->floorAlt);
+
+					// Handle current sector moving.
+					baseHeight = DXL2_Level::getBaseSectorHeight(sector->id)->floorAlt;
+					dy += (baseHeight - sector->floorAlt);
+
+					offsetY += dy;
+				}
 
 				y0 = sector->floorAlt;
 				y1 = next->floorAlt;
@@ -1125,7 +1151,25 @@ namespace DXL2_InfSystem
 			{
 				offsetX =  wall->top.offsetX - wall->sign.offsetX;
 				offsetY = -DXL2_Math::fract(std::max(wall->top.offsetY, 0.0f)) + wall->sign.offsetY;
-								
+				if (wall->flags[0] & WF1_SCROLL_SIGN_TEX)
+				{
+					offsetY = wall->sign.offsetY;
+				}
+				if (wall->flags[0] & WF1_SIGN_ANCHORED)
+				{
+					f32 dy = 0.0f;
+
+					// Handle next sector moving.
+					f32 baseHeight = DXL2_Level::getBaseSectorHeight(next->id)->ceilAlt;
+					dy -= (baseHeight - next->ceilAlt);
+
+					// Handle current sector moving.
+					baseHeight = DXL2_Level::getBaseSectorHeight(sector->id)->ceilAlt;
+					dy += (baseHeight - sector->ceilAlt);
+
+					offsetY += dy;
+				}
+
 				y0 = next->ceilAlt;
 				y1 = sector->ceilAlt;
 				hasSign = true;
@@ -1172,7 +1216,8 @@ namespace DXL2_InfSystem
 			// If the class has been turned off, then skip.
 			if (!classData->var.master) { continue; }
 			// Otherwise check the mask flags.
-			if ((classData->var.entity_mask & INF_ENTITY_PLAYER) && (classData->var.event_mask & evt))
+			const u32 entityRequired = (evt & INF_EVENT_SHOOT_LINE) ? INF_ENTITY_WEAPON : INF_ENTITY_PLAYER;
+			if ((classData->var.entity_mask & entityRequired) && (classData->var.event_mask & evt))
 			{
 				// Determine if the "hitPoint" is close enough (or that we actually care, i.e. this is a sign).
 				if (classData->iclass == INF_CLASS_TRIGGER && classData->isubclass >= TRIGGER_SWITCH1 && evt != INF_EVENT_EXPLOSION)
