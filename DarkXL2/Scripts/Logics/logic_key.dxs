@@ -25,15 +25,16 @@ void tick()
 		float len = DXL2_GetVueLength(self.objectId, self.state);
 		if (self.time >= len)
 		{
-			if (DXL2_GetVueCount(self.objectId) > self.state + 1)
+			if ((self.commonFlags & LCF_LOOP) != 0)
+			{
+				self.time -= len;
+				self.state = (self.state + 1) % DXL2_GetVueCount(self.objectId);
+			}
+			else if (DXL2_GetVueCount(self.objectId) > self.state + 1)
 			{
 				self.time = 0.0;
 				self.state++;
 				self.commonFlags |= LCF_PAUSE;
-			}
-			else if ((self.commonFlags & LCF_LOOP) != 0)
-			{
-				self.time -= len;
 			}
 			else
 			{
