@@ -189,7 +189,7 @@ namespace DXL2_VueAsset
 
 			const Mat3 matVue = vue->transforms[i].rotScale;
 			vue->transforms[i].rotScale.m0 = { matVue.m0.x, matVue.m2.x, matVue.m1.x };
-			vue->transforms[i].rotScale.m1 = { matVue.m0.z, matVue.m2.z, matVue.m1.z };
+			vue->transforms[i].rotScale.m1 = {-matVue.m0.z,-matVue.m2.z,-matVue.m1.z };
 			vue->transforms[i].rotScale.m2 = { matVue.m0.y, matVue.m2.y, matVue.m1.y };
 		}
 

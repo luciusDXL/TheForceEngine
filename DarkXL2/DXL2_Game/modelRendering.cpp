@@ -57,6 +57,7 @@ namespace DXL2_ModelRender
 	static f32 s_focalLength;
 	static f32 s_heightScale;
 	static bool s_flipVert = false;
+	static bool s_flipCull = false;
 	static bool s_persCorrect = false;
 
 	static s32 s_XClip[2];
@@ -325,7 +326,9 @@ namespace DXL2_ModelRender
 		// 1. Go through objects, transform vertices and add polygons to be sorted.
 		Vec3f* transformed = s_modelTransformed.data();
 		u32 polygonOffset = 0;
-		f32 vertScale = s_flipVert ? -1.0f : 1.0f;
+		f32 vertScale = (s_flipVert || optionalTransform) ? -1.0f : 1.0f;
+		s_flipCull = s_flipVert && !optionalTransform;
+
 		for (u32 i = 0; i < objectCount; i++)
 		{
 			const ModelObject* obj = &model->objects[i];
@@ -342,7 +345,7 @@ namespace DXL2_ModelRender
 				const f32 vx = wx * mat33[0].x + wy * mat33[0].y + wz * mat33[0].z + modelPos->x - cameraPos->x;
 				const f32 vy = wx * mat33[1].x + wy * mat33[1].y + wz * mat33[1].z + modelPos->y - cameraPos->y;
 				const f32 vz = wx * mat33[2].x + wy * mat33[2].y + wz * mat33[2].z + modelPos->z - cameraPos->z;
-								
+												
 				transformed[v + vertexOffset].x = vx * cameraRot[0] + vz * cameraRot[1];
 				transformed[v + vertexOffset].y = vy;
 				transformed[v + vertexOffset].z = -vx * cameraRot[1] + vz * cameraRot[0];
@@ -743,7 +746,7 @@ namespace DXL2_ModelRender
 		const Vec3f U = { clipPoly->vtx[1].x - clipPoly->vtx[0].x, clipPoly->vtx[1].y - clipPoly->vtx[0].y, clipPoly->vtx[1].z - clipPoly->vtx[0].z };
 		const Vec3f V = { clipPoly->vtx[2].x - clipPoly->vtx[0].x, clipPoly->vtx[2].y - clipPoly->vtx[0].y, clipPoly->vtx[2].z - clipPoly->vtx[0].z };
 		const f32 zN = U.x*V.y - U.y*V.x;
-		if ((zN < 0.0f && !s_flipVert) || (zN > 0.0f && s_flipVert)) { return; }
+		if ((zN < 0.0f && !s_flipCull) || (zN > 0.0f && s_flipCull)) { return; }
 
 		assert(clipPoly->count >= 3);
 		// 1. Find the minimum and maximum Y vertex.
