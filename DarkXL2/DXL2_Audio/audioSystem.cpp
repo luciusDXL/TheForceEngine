@@ -189,6 +189,9 @@ namespace DXL2_Audio
 	}
 
 	// Internal
+	static const f32 c_scale[] = { 2.0f / 255.0f, 2.0f / 65535.0f, 1.0f };
+	static const f32 c_offset[] = { -1.0f, -1.0f, 0.0f };
+
 	void cleanupSources()
 	{
 		s32 end = (s32)s_sourceCount - 1;
@@ -202,26 +205,39 @@ namespace DXL2_Audio
 			s_sourceCount--;
 		}
 	}
+		
+	f32 sampleBuffer(u32 index, SoundDataType type, const u8* data)
+	{
+		f32 sampleValue;
+		switch (type)
+		{
+			case SOUND_DATA_8BIT:  { sampleValue = (f32)data[index]; } break;
+			case SOUND_DATA_16BIT: { sampleValue = (f32)(*((u16*)data + index)); } break;
+			case SOUND_DATA_FLOAT: { sampleValue = *((f32*)data + index); } break;
+		};
+
+		return sampleValue * c_scale[type] + c_offset[type];
+	}
 
 	// Audio callback
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData)
 	{
 		f32* buffer = (f32*)outputBuffer;
-
+		
 		MUTEX_LOCK(&s_mutex);
 		for (u32 i = 0; i < bufferSize; i++, buffer += 2)
 		{
-			f32 value  = 0.0f;
-			f32 scale  = 2.0f / 255.0f;
-			f32 offset = -1.0f;
-
+			f32 value = 0.0f;
+			
 			// Treat all sounds as mono sources for now.
 			SoundSource* snd = s_sources;
 			for (u32 s = 0; s < s_sourceCount; s++, snd++)
 			{
 				if (!(snd->flags&SND_FLAG_PLAYING)) { continue; }
 
-				value += (f32)snd->buffer->data[snd->sampleIndex] * scale + offset;
+				// Compute the sample value.
+				value += snd->volume * sampleBuffer(snd->sampleIndex, snd->buffer->type, snd->buffer->data);
+
 				snd->sampleIndex++;
 				if (snd->sampleIndex >= snd->buffer->size)
 				{

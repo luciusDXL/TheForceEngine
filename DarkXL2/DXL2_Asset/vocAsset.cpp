@@ -109,6 +109,12 @@ namespace DXL2_VocAsset
 	{
 		assert(codec == CODEC_8BITS);
 		voc->sampleRate = sampleRate;
+		// For some reason Dark Forces VOCs specify 10989Hz sample rate but are played back by the engine at 11025Hz
+		// So just change it here so the sound system doesn't try to resample.
+		if (voc->sampleRate == 10989)
+		{
+			voc->sampleRate = 11025;
+		}
 		continueSoundData(voc, soundData, size);
 	}
 		
@@ -146,6 +152,7 @@ namespace DXL2_VocAsset
 		const u8* buffer = s_buffer.data();
 		const u8* end = buffer + len;
 		memset(voc, 0, sizeof(SoundBuffer));
+		voc->type = SOUND_DATA_8BIT;
 
 		// Read the header.
 		VocHeader* header = (VocHeader*)buffer;
