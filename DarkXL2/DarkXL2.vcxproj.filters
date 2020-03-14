@@ -119,6 +119,9 @@
     <Filter Include="Documentation\markdown\Game">
       <UniqueIdentifier>{bcba4e73-dab5-4cd8-b3ba-b19d41e1e2ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\DXL2_Audio">
+      <UniqueIdentifier>{c72c8565-5f70-4ecc-8a91-352dbc222cd9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -409,6 +412,18 @@
     <ClInclude Include="DXL2_Asset\vueAsset.h">
       <Filter>Source\DXL2_Asset</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Asset\vocAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Audio\audioDevice.h">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Audio\audioSystem.h">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Audio\RtAudio.h">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -662,6 +677,18 @@
     </ClCompile>
     <ClCompile Include="DXL2_Asset\vueAsset.cpp">
       <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\vocAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Audio\audioDevice.cpp">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Audio\audioSystem.cpp">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Audio\RtAudio.cpp">
+      <Filter>Source\DXL2_Audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

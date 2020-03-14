@@ -14,8 +14,10 @@
 #include <DXL2_Asset/modelAsset.h>
 #include <DXL2_Asset/gameMessages.h>
 #include <DXL2_Asset/levelList.h>
+#include <DXL2_Asset/vocAsset.h>
 #include <DXL2_Ui/ui.h>
 #include <DXL2_RenderBackend/renderBackend.h>
+#include <DXL2_Audio/audioSystem.h>
 
 #include <DXL2_Ui/imGUI/imgui_file_browser.h>
 #include <DXL2_Ui/imGUI/imgui.h>
@@ -42,6 +44,7 @@ namespace ArchiveViewer
 		TYPE_FRAME,
 		TYPE_SPRITE,
 		TYPE_3D,
+		TYPE_VOC,
 		TYPE_BIN,
 		TYPE_COUNT
 	};
@@ -469,6 +472,13 @@ namespace ArchiveViewer
 					s_fileType = TYPE_3D;
 					s_curModel = DXL2_Model::get(s_items[s_currentFile]);
 					DXL2_GameLoop::startRenderer(s_renderer, 640, 480);
+				}
+				else if (strcasecmp(extension, "VOC") == 0)
+				{
+					s_fileType = TYPE_VOC;
+					const SoundBuffer* sound = DXL2_VocAsset::get(s_items[s_currentFile]);
+
+					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, sound, false);
 				}
 
 				for (size_t i = 0; i < len; i++)

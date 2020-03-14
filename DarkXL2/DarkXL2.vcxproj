@@ -169,7 +169,11 @@
     <ClInclude Include="DXL2_Asset\paletteAsset.h" />
     <ClInclude Include="DXL2_Asset\spriteAsset.h" />
     <ClInclude Include="DXL2_Asset\textureAsset.h" />
+    <ClInclude Include="DXL2_Asset\vocAsset.h" />
     <ClInclude Include="DXL2_Asset\vueAsset.h" />
+    <ClInclude Include="DXL2_Audio\audioDevice.h" />
+    <ClInclude Include="DXL2_Audio\audioSystem.h" />
+    <ClInclude Include="DXL2_Audio\RtAudio.h" />
     <ClInclude Include="DXL2_Editor\archiveViewer.h" />
     <ClInclude Include="DXL2_Editor\editor.h" />
     <ClInclude Include="DXL2_Editor\Help\helpWindow.h" />
@@ -266,7 +270,11 @@
     <ClCompile Include="DXL2_Asset\paletteAsset.cpp" />
     <ClCompile Include="DXL2_Asset\spriteAsset.cpp" />
     <ClCompile Include="DXL2_Asset\textureAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\vocAsset.cpp" />
     <ClCompile Include="DXL2_Asset\vueAsset.cpp" />
+    <ClCompile Include="DXL2_Audio\audioDevice.cpp" />
+    <ClCompile Include="DXL2_Audio\audioSystem.cpp" />
+    <ClCompile Include="DXL2_Audio\RtAudio.cpp" />
     <ClCompile Include="DXL2_Editor\archiveViewer.cpp" />
     <ClCompile Include="DXL2_Editor\editor.cpp" />
     <ClCompile Include="DXL2_Editor\Help\helpWindow.cpp" />

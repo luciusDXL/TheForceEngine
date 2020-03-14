@@ -5,6 +5,7 @@
 #include <DXL2_InfSystem/infSystem.h>
 #include <DXL2_Editor/editor.h>
 #include <DXL2_Game/level.h>
+#include <DXL2_Audio/audioSystem.h>
 #include <DXL2_FileSystem/paths.h>
 #include <DXL2_Polygon/polygon.h>
 #include <DXL2_RenderBackend/renderBackend.h>
@@ -293,6 +294,7 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 	DXL2_System::init(s_refreshRate, s_vsync);
+	DXL2_Audio::init();
 	DXL2_Polygon::init();
 	DXL2_Image::init();
 	DXL2_ScriptSystem::init();
@@ -388,6 +390,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Cleanup
+	DXL2_Audio::shutdown();
 	DXL2_Polygon::shutdown();
 	DXL2_Image::shutdown();
 	DXL2_Level::shutdown();
