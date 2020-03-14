@@ -15,6 +15,7 @@ struct SoundSource
 {
 	SoundType type;
 	f32 volume;
+	f32 seperation;		//stereo seperation.
 	u32 sampleIndex;
 	u32 flags;
 
@@ -68,7 +69,7 @@ namespace DXL2_Audio
 
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() and freeAllSounds() is called.
 	// Note that looping one shots are valid.
-	bool playOneShot(SoundType type, f32 volume, const SoundBuffer* buffer, bool looping, const Vec3f* pos)
+	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos)
 	{
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
@@ -100,6 +101,7 @@ namespace DXL2_Audio
 			newSource->buffer = buffer;
 			newSource->sampleIndex = 0u;
 			newSource->pos = pos;
+			newSource->seperation = stereoSeperation;
 		}
 		MUTEX_UNLOCK(&s_mutex);
 
@@ -107,7 +109,7 @@ namespace DXL2_Audio
 	}
 
 	// Sound source that the client holds onto.
-	SoundSource* createSoundSource(SoundType type, f32 volume, const SoundBuffer* buffer, const Vec3f* pos)
+	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos)
 	{
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
@@ -135,6 +137,7 @@ namespace DXL2_Audio
 			newSource->buffer = buffer;
 			newSource->sampleIndex = 0u;
 			newSource->pos = pos;
+			newSource->seperation = stereoSeperation;
 		}
 		MUTEX_UNLOCK(&s_mutex);
 
@@ -167,6 +170,11 @@ namespace DXL2_Audio
 	void setSourceVolume(SoundSource* source, f32 volume)
 	{
 		source->volume = volume;
+	}
+
+	void setSourceStereoSeperation(SoundSource* source, f32 stereoSeperation)
+	{
+		source->seperation = std::max(0.0f, std::min(stereoSeperation, 1.0f));
 	}
 
 	// This will restart the sound and change the buffer.
@@ -227,16 +235,21 @@ namespace DXL2_Audio
 		MUTEX_LOCK(&s_mutex);
 		for (u32 i = 0; i < bufferSize; i++, buffer += 2)
 		{
-			f32 value = 0.0f;
+			f32 valueLeft  = 0.0f;
+			f32 valueRight = 0.0f;
 			
-			// Treat all sounds as mono sources for now.
 			SoundSource* snd = s_sources;
 			for (u32 s = 0; s < s_sourceCount; s++, snd++)
 			{
 				if (!(snd->flags&SND_FLAG_PLAYING)) { continue; }
 
 				// Compute the sample value.
-				value += snd->volume * sampleBuffer(snd->sampleIndex, snd->buffer->type, snd->buffer->data);
+				const f32 sampleValue = sampleBuffer(snd->sampleIndex, snd->buffer->type, snd->buffer->data);
+				// Stereo Seperation.
+				const f32 sepSq = snd->seperation*snd->seperation;
+				const f32 invSepSq = (1.0f - snd->seperation) * (1.0f - snd->seperation);
+				valueLeft  += std::max(snd->volume - sepSq, 0.0f) * sampleValue;
+				valueRight += std::max(snd->volume - invSepSq, 0.0f) * sampleValue;
 
 				snd->sampleIndex++;
 				if (snd->sampleIndex >= snd->buffer->size)
@@ -258,15 +271,13 @@ namespace DXL2_Audio
 				}
 			}
 
-			//head room.
-			value *= 0.5;
-
 			//clamp.
-			value = std::min(value, 0.98f);
+			valueLeft  = std::min(valueLeft  * 0.5f, 0.98f);
+			valueRight = std::min(valueRight * 0.5f, 0.98f);
 
 			//stereo output.
-			buffer[0] = f32(value);
-			buffer[1] = f32(value);
+			buffer[0] = valueLeft;
+			buffer[1] = valueRight;
 		}
 		cleanupSources();
 		MUTEX_UNLOCK(&s_mutex);

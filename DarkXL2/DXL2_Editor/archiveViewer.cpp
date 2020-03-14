@@ -478,7 +478,7 @@ namespace ArchiveViewer
 					s_fileType = TYPE_VOC;
 					const SoundBuffer* sound = DXL2_VocAsset::get(s_items[s_currentFile]);
 
-					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, sound, false);
+					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, sound, false);
 				}
 
 				for (size_t i = 0; i < len; i++)

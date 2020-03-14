@@ -168,8 +168,9 @@ void handleEvent(SDL_Event& Event)
 
 bool sdlInit()
 {
-	int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS |
-		                SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER | SDL_INIT_SENSOR);
+	// Audio is handled outside of SDL2.
+	// Using the DarkXL2 Audio system for sound mixing, FluidSynth for Midi handling and rtAudio for audio I/O.
+	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
 	if (code != 0) { return false; }
 
 	// Determine the display mode settings based on the desktop.
