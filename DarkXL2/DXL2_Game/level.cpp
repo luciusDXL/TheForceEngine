@@ -12,6 +12,8 @@
 #include <DXL2_Asset/paletteAsset.h>
 #include <DXL2_Asset/colormapAsset.h>
 #include <DXL2_Asset/modelAsset.h>
+#include <DXL2_Asset/vocAsset.h>
+#include <DXL2_Audio/audioSystem.h>
 #include <DXL2_LogicSystem/logicSystem.h>
 
 #include <assert.h>
@@ -97,7 +99,7 @@ namespace DXL2_Level
 			for (u32 i = 0; i < objectCount; i++)
 			{
 				const ObjectClass oclass = object[i].oclass;
-				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D) { continue; }
+				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D && oclass != CLASS_SOUND) { continue; }
 
 				// Get the position and sector.
 				Vec3f pos = object[i].pos;
@@ -170,6 +172,15 @@ namespace DXL2_Level
 					// 3D objects, by default, have no gravity since they are likely environmental props (like bridges).
 					secobject->physicsFlags = PHYSICS_NONE;
 				}
+				else if (oclass == CLASS_SOUND)
+				{
+					// Cheat and just start up a one shot here...
+					SoundBuffer* soundBuffer = DXL2_VocAsset::get(levelObj->sounds[object[i].dataOffset].c_str());
+					if (soundBuffer)
+					{
+						DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, soundBuffer, true, &secobject->pos);
+					}
+				}
 
 				// Register the object logic.
 				DXL2_LogicSystem::registerObjectLogics(secobject, object[i].logics, object[i].generators);
@@ -182,6 +193,7 @@ namespace DXL2_Level
 	void endLevel()
 	{
 		s_vertexCache = nullptr;
+		DXL2_Audio::stopAllSounds();
 	}
 
 	// Player (for interactions)

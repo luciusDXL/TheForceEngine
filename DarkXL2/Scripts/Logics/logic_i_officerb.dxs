@@ -18,3 +18,9 @@ void spawnPowerup()
 	// Attach the appropriate logic to the new object.
 	DXL2_AddLogic(objectId, LOGIC_BLUE);
 }
+
+void playDeathSound()
+{
+	// Replace with correct death sound.
+	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "ST-DIE-1.VOC");
+}

@@ -68,5 +68,7 @@ void handleMessage(int msgId, int arg0, int arg1)
 
 		// Allow falling even if previously floating.
 		DXL2_SetPhysics(self.objectId, PHYSICS_GRAVITY);
+
+		playDeathSound();
 	}
 }

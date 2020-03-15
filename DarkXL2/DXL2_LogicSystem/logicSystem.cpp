@@ -2,6 +2,7 @@
 #include <DXL2_Asset/spriteAsset.h>
 #include <DXL2_Asset/modelAsset.h>
 #include <DXL2_Asset/gameMessages.h>
+#include <DXL2_Asset/vocAsset.h>
 #include <DXL2_Game/gameHud.h>
 #include <DXL2_Game/gameConstants.h>
 #include <DXL2_ScriptSystem/scriptSystem.h>
@@ -12,6 +13,7 @@
 #include <DXL2_Game/player.h>
 #include <DXL2_Game/physics.h>
 #include <DXL2_InfSystem/infSystem.h>
+#include <DXL2_Audio/audioSystem.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -583,6 +585,17 @@ namespace DXL2_LogicSystem
 		DXL2_GameHud::setMessage(DXL2_GameMessages::getMessage(msgId));
 	}
 
+	void DXL2_Sound_PlayOneShot(u32 type, f32 volume, const std::string& soundName)
+	{
+		const SoundBuffer* buffer = DXL2_VocAsset::get(soundName.c_str());
+		if (buffer)
+		{
+			// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
+			// Note that looping one shots are valid though may generate too many sound sources if not used carefully.
+			DXL2_Audio::playOneShot(SoundType(type), volume, MONO_SEPERATION, buffer, false, &s_self->pos);
+		}
+	}
+
 	bool init(Player* player)
 	{
 		clearObjectLogics();
@@ -679,6 +692,8 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerFunction("uint DXL2_GetVueCount(int objectId)", SCRIPT_FUNCTION(DXL2_GetVueCount));
 		DXL2_ScriptSystem::registerFunction("void DXL2_SetVueAnimTime(int objectId, int viewIndex, float time)", SCRIPT_FUNCTION(DXL2_SetVueAnimTime));
 
+		DXL2_ScriptSystem::registerFunction("void DXL2_Sound_PlayOneShot(uint type, float volume, const string &in)", SCRIPT_FUNCTION(DXL2_Sound_PlayOneShot));
+
 		// Register "self" and Logic parameters.
 		DXL2_ScriptSystem::registerGlobalProperty("GameObject @self",  &s_self);
 		DXL2_ScriptSystem::registerGlobalProperty("LogicParam @param", &s_param);
@@ -718,7 +733,11 @@ namespace DXL2_LogicSystem
 		DXL2_ScriptSystem::registerEnumValue("DamageType", "DMG_SHOT", DMG_SHOT);
 		DXL2_ScriptSystem::registerEnumValue("DamageType", "DMG_FIST", DMG_FIST);
 		DXL2_ScriptSystem::registerEnumValue("DamageType", "DMG_EXPLOSION", DMG_EXPLOSION);
-		
+
+		DXL2_ScriptSystem::registerEnumType("SoundType");
+		DXL2_ScriptSystem::registerEnumValue("SoundType", "SOUND_2D", SOUND_2D);
+		DXL2_ScriptSystem::registerEnumValue("SoundType", "SOUND_3D", SOUND_3D);
+				
 		registerKeyTypes();
 		registerLogicTypes();
 			   

@@ -2,6 +2,7 @@
 #include <DXL2_Asset/spriteAsset.h>
 #include <DXL2_Asset/textureAsset.h>
 #include <DXL2_Asset/modelAsset.h>
+#include <DXL2_Asset/vocAsset.h>
 #include <DXL2_LogicSystem/logicSystem.h>
 #include <DXL2_ScriptSystem/scriptSystem.h>
 #include <DXL2_System/system.h>
@@ -16,6 +17,7 @@
 #include <DXL2_FileSystem/paths.h>
 #include <DXL2_Renderer/renderer.h>
 #include <DXL2_Game/player.h>
+#include <DXL2_Audio/audioSystem.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -88,6 +90,7 @@ namespace DXL2_WeaponSystem
 		const TextureFrame* frames[MAX_WEAPON_FRAMES];
 		ProjectilePool* projPool;
 		ProjectilePool* hitEffectPool;
+		const SoundBuffer* hitEffectSound = nullptr;
 	};
 
 	struct ScreenObject
@@ -112,6 +115,7 @@ namespace DXL2_WeaponSystem
 		GameObject* obj;
 		ProjectilePool* pool;
 		ProjectilePool* effectPool;
+		const SoundBuffer* hitEffectSound = nullptr;
 		Vec3f pos;
 		Vec3f vel;
 		u32 flags;	// ProjectileFlags
@@ -238,6 +242,17 @@ namespace DXL2_WeaponSystem
 		s_callSwitchTo = true;
 		s_activeWeapon = s_nextWeapon;
 		s_nextWeapon = -1;
+	}
+
+	void DXL2_Sound_PlayOneShot(f32 volume, const std::string& soundName)
+	{
+		const SoundBuffer* buffer = DXL2_VocAsset::get(soundName.c_str());
+		if (buffer)
+		{
+			// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
+			// Note that looping one shots are valid though may generate too many sound sources if not used carefully.
+			DXL2_Audio::playOneShot(SOUND_2D, volume, MONO_SEPERATION, buffer, false);
+		}
 	}
 
 	GameObject* getProjectile(ProjectilePool* projPool)
@@ -370,6 +385,12 @@ namespace DXL2_WeaponSystem
 		s_weapon.hitEffectPool = createProjectilePool(PROJ_SPRITE, effect);
 	}
 
+	void DXL2_LoadHitSound(std::string& soundName)
+	{
+		const SoundBuffer* buffer = DXL2_VocAsset::get(soundName.c_str());
+		s_weapon.hitEffectSound = buffer;
+	}
+
 	void DXL2_PlayerSpawnProjectile(s32 x, s32 y, f32 fwdSpeed, f32 upwardSpeed, u32 flags, u32 damage, f32 value0, f32 value1)
 	{
 		// Convert from screen pixel offset to world position.
@@ -423,6 +444,7 @@ namespace DXL2_WeaponSystem
 		proj->obj = projObj;
 		proj->pool = s_weapon.projPool;
 		proj->effectPool = s_weapon.hitEffectPool;
+		proj->hitEffectSound = s_weapon.hitEffectSound;
 
 		SectorObjectList* secList = LevelGameObjects::getSectorObjectList();
 		std::vector<u32>& list = (*secList)[hitInfo.hitSectorId].list;
@@ -561,6 +583,10 @@ namespace DXL2_WeaponSystem
 					if (proj->effectPool)
 					{
 						spawnEffect(proj->effectPool, &hitInfo.hitPoint, hitInfo.hitSectorId);
+						if (proj->hitEffectSound)
+						{
+							DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, proj->hitEffectSound, false, &proj->pos, true);
+						}
 					}
 					// Damage.
 					const f32 radius = proj->value0;
@@ -734,6 +760,7 @@ namespace DXL2_WeaponSystem
 		DXL2_ScriptSystem::registerFunction("void DXL2_NextWeapon()", SCRIPT_FUNCTION(DXL2_NextWeapon));
 		DXL2_ScriptSystem::registerFunction("void DXL2_LoadProjectile(const string &in)", SCRIPT_FUNCTION(DXL2_LoadProjectile));
 		DXL2_ScriptSystem::registerFunction("void DXL2_LoadHitEffect(const string &in)", SCRIPT_FUNCTION(DXL2_LoadHitEffect));
+		DXL2_ScriptSystem::registerFunction("void DXL2_LoadHitSound(const string &in)", SCRIPT_FUNCTION(DXL2_LoadHitSound));
 		DXL2_ScriptSystem::registerFunction("float DXL2_GetSineMotion(float time)", SCRIPT_FUNCTION(DXL2_GetSineMotion));
 		DXL2_ScriptSystem::registerFunction("float DXL2_GetCosMotion(float time)", SCRIPT_FUNCTION(DXL2_GetCosMotion));
 		DXL2_ScriptSystem::registerFunction("void DXL2_WeaponFire()", SCRIPT_FUNCTION(DXL2_WeaponFire));
@@ -741,6 +768,8 @@ namespace DXL2_WeaponSystem
 		DXL2_ScriptSystem::registerFunction("void DXL2_WeaponLightEnd()", SCRIPT_FUNCTION(DXL2_WeaponLightEnd));
 		DXL2_ScriptSystem::registerFunction("void DXL2_PlayerSpawnProjectile(int x, int y, float fwdSpeed, float upwardSpeed, uint flags, uint damage, float value0, float value1)",
 											SCRIPT_FUNCTION(DXL2_PlayerSpawnProjectile));
+
+		DXL2_ScriptSystem::registerFunction("void DXL2_Sound_PlayOneShot(float volume, const string &in)", SCRIPT_FUNCTION(DXL2_Sound_PlayOneShot));
 
 		// Register "self" and Logic parameters.
 		DXL2_ScriptSystem::registerGlobalProperty("WeaponObject @weapon", &s_weaponPtr);

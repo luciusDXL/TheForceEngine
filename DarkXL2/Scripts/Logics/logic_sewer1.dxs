@@ -13,3 +13,8 @@ void setEnemySpecificFlags()
 void spawnPowerup()
 {
 }
+
+void playDeathSound()
+{
+	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "CREATDIE.VOC");
+}

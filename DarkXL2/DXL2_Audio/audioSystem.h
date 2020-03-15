@@ -47,12 +47,12 @@ namespace DXL2_Audio
 	void shutdown();
 	void stopAllSounds();
 
-	// For positional audio, a listener is required.
-	void setListenerPosition(const Vec3f* pos);
+	// Update position audio and other audio effects.
+	void update(const Vec3f* listenerPos, const Vec3f* listenerDir);
 
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 	// Note that looping one shots are valid though may generate too many sound sources if not used carefully.
-	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos = nullptr);
+	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos = nullptr, bool copyPosition = false);
 
 	// Sound source that the client holds onto.
 	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos = nullptr);

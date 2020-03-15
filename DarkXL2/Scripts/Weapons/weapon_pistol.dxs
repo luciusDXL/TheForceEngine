@@ -120,6 +120,7 @@ void firePrimary()
 	// Start the animation.
 	weapon.state = WSTATE_PRIMARY_FIRE;
 	weapon.time = 0.0;
+	DXL2_Sound_PlayOneShot(1.0f, "PISTOL-1.VOC");
 }
 
 // Called when secondary fire is triggered.

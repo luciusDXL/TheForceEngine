@@ -180,6 +180,7 @@ namespace ArchiveViewer
 				s_showUi = true;
 				DXL2_Input::enableRelativeMode(false);
 				s_renderer->enableScreenClear(true);
+				DXL2_Audio::stopAllSounds();
 
 				// Reload the level
 				DXL2_LevelAsset::load(s_levelFile);
@@ -261,6 +262,8 @@ namespace ArchiveViewer
 	
 	void unloadAssets()
 	{
+		DXL2_Audio::stopAllSounds();
+
 		// Free all assets
 		DXL2_Palette::freeAll();
 		DXL2_ColorMap::freeAll();

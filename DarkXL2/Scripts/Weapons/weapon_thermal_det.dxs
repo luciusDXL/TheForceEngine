@@ -16,6 +16,7 @@ void switchTo()
 	DXL2_LoadWeaponFrame(2, "THERM3.BM");
 	DXL2_LoadProjectile("WDET.FME");
 	DXL2_LoadHitEffect("DETEXP.WAX");
+	DXL2_LoadHitSound("EX-SMALL.VOC");
 	
 	weapon.scaledWidth  = applyScale(weaponWidth,  screen.scaleX);
 	weapon.scaledHeight = applyScale(weaponHeight, screen.scaleY);

@@ -18,6 +18,7 @@
 #include <DXL2_Asset/levelObjectsAsset.h>
 #include <DXL2_Asset/infAsset.h>
 #include <DXL2_Asset/modelAsset.h>
+#include <DXL2_Audio/audioSystem.h>
 #include <DXL2_InfSystem/infSystem.h>
 #include <DXL2_LogicSystem/logicSystem.h>
 #include <DXL2_WeaponSystem/weaponSystem.h>
@@ -659,6 +660,9 @@ namespace DXL2_GameLoop
 		{
 			DXL2_WeaponSystem::release();
 		}
+
+		const Vec3f flattenedForward = { forwardDir.x, 0.0f, forwardDir.z };
+		DXL2_Audio::update(&s_cameraPos, &flattenedForward);
 	}
 		
 	void draw()

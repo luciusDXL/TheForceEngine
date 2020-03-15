@@ -15,3 +15,9 @@ void spawnPowerup()
 	Vec3f pos = DXL2_BiasTowardsPlayer(self.position, 0.1f);
 	int objectId = DXL2_SpawnObject(pos, self.angles, self.sectorId, CLASS_FRAME, "IENERGY.FME");
 }
+
+void playDeathSound()
+{
+	// Replace with correct death sound.
+	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "ST-DIE-1.VOC");
+}
