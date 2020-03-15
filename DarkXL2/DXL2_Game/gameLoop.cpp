@@ -18,6 +18,7 @@
 #include <DXL2_Asset/levelObjectsAsset.h>
 #include <DXL2_Asset/infAsset.h>
 #include <DXL2_Asset/modelAsset.h>
+#include <DXL2_Asset/vocAsset.h>
 #include <DXL2_Audio/audioSystem.h>
 #include <DXL2_InfSystem/infSystem.h>
 #include <DXL2_LogicSystem/logicSystem.h>
@@ -30,6 +31,13 @@ using namespace DXL2_GameConstants;
 
 namespace DXL2_GameLoop
 {
+	struct PlayerSounds
+	{
+		const SoundBuffer* jump;
+		const SoundBuffer* land;
+		const SoundBuffer* fall;
+	};
+
 	static LevelData* s_level = nullptr;
 	static LevelObjectData* s_levelObjects = nullptr;
 	static Player s_player;
@@ -44,7 +52,8 @@ namespace DXL2_GameLoop
 	static f32 s_landAnim = 0.0f;
 	static bool s_land = false;
 	static bool s_jump = false;
-
+	static PlayerSounds s_playerSounds;
+	
 	static f32 s_accum = 0.0f;
 	
 	void updateObjects();
@@ -104,6 +113,10 @@ namespace DXL2_GameLoop
 		// For now switch over to the pistol.
 		DXL2_WeaponSystem::switchToWeapon(WEAPON_PISTOL);
 		s_accum = 0.0f;
+
+		s_playerSounds.jump = DXL2_VocAsset::get("JUMP-1.VOC");
+		s_playerSounds.land = DXL2_VocAsset::get("LAND-1.VOC");
+		s_playerSounds.fall = DXL2_VocAsset::get("FALL.VOC");
 
 		return true;
 	}
@@ -206,6 +219,10 @@ namespace DXL2_GameLoop
 		// For now switch over to the pistol.
 		DXL2_WeaponSystem::switchToWeapon(WEAPON_PISTOL);
 		s_accum = 0.0f;
+
+		s_playerSounds.jump = DXL2_VocAsset::get("JUMP-1.VOC");
+		s_playerSounds.land = DXL2_VocAsset::get("LAND-1.VOC");
+		s_playerSounds.fall = DXL2_VocAsset::get("FALL.VOC");
 		
 		return true;
 	}
@@ -539,6 +556,7 @@ namespace DXL2_GameLoop
 		{
 			s_jump = true;
 			s_player.vel.y += c_jumpImpulse;
+			DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, s_playerSounds.jump, false);
 		}
 
 		// Gravity.
@@ -557,6 +575,11 @@ namespace DXL2_GameLoop
 				s_landDist = s_fallHeight * 0.075f;
 				s_landAnim = 0.0f;
 				s_land = true;
+
+				if (s_fallHeight > 3.0f)
+				{
+					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, s_playerSounds.land, false);
+				}
 
 				// Clear Velocity and fall height.
 				s_fallHeight = 0.0f;
@@ -578,6 +601,10 @@ namespace DXL2_GameLoop
 			if (s_player.pos.y + dy >= floorHeight)
 			{
 				dy = floorHeight - s_player.pos.y;
+			}
+			if (s_fallHeight < c_yellThreshold && s_fallHeight + dy >= c_yellThreshold)
+			{
+				DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, s_playerSounds.fall, false);
 			}
 			s_fallHeight += dy;
 		}

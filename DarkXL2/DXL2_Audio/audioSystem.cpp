@@ -126,6 +126,8 @@ namespace DXL2_Audio
 	// Note that looping one shots are valid.
 	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos, bool copyPosition)
 	{
+		if (!buffer) { return false; }
+
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
 		SoundSource* snd = s_sources;
@@ -175,6 +177,8 @@ namespace DXL2_Audio
 	// Sound source that the client holds onto.
 	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos)
 	{
+		if (!buffer) { return false; }
+
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
 		SoundSource* snd = s_sources;

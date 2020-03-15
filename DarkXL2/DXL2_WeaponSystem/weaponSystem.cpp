@@ -954,6 +954,8 @@ namespace DXL2_WeaponSystem
 				{
 					DXL2_InfSystem::shootWall(&hitInfo.hitPoint, hitInfo.hitSectorId, hitInfo.hitWallId);
 				}
+				const SoundBuffer* expTiny = DXL2_VocAsset::get("EX-TINY1.VOC");
+				DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, expTiny, false, &hitInfo.hitPoint, true);
 			}
 			else
 			{
@@ -1035,6 +1037,8 @@ namespace DXL2_WeaponSystem
 				{
 					DXL2_InfSystem::shootWall(&hitInfo.hitPoint, hitInfo.hitSectorId, hitInfo.hitWallId);
 				}
+				const SoundBuffer* expTiny = DXL2_VocAsset::get("EX-TINY1.VOC");
+				DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, expTiny, false, &hitInfo.hitPoint, true);
 			}
 			else
 			{
