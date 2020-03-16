@@ -26,6 +26,18 @@ namespace DXL2_Math
 		return x - floorf(x);
 	}
 
+	// the effective range is (-4.8, 4.8]. Outside of that the value is clamped at [-1, 1].
+	inline f32 tanhf_series(f32 beta)
+	{
+		if (beta > 4.8f) { return 1.0f; }
+		else if (beta <= -4.8f) { return -1.0f; }
+
+		const f32 x2 = beta * beta;
+		const f32 a  = beta * (135135.0f + x2 * (17325.0f + x2 * (378.0f + x2)));
+		const f32 b  = 135135.0f + x2 * (62370.0f + x2 * (3150.0f + x2 * 28.0f));
+		return a / b;
+	}
+
 	inline f32 dot(const Vec2f* p0, const Vec2f* p1)
 	{
 		return p0->x*p1->x + p0->z*p1->z;

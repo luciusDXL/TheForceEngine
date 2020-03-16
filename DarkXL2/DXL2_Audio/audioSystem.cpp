@@ -4,6 +4,11 @@
 #include <assert.h>
 #include <algorithm>
 
+// Comment out the desired sigmoid function and comment all of the others.
+//#define AUDIO_SIGMOID_CLIP 1
+#define AUDIO_SIGMOID_TANH 1
+//#define AUDIO_SIGMOID_RCP_SQRT 1
+
 enum SoundSourceFlags
 {
 	SND_FLAG_ONE_SHOT = (1 << 0),
@@ -39,10 +44,23 @@ struct SoundSource
 namespace DXL2_Audio
 {
 	#define MAX_SOUND_SOURCES 256
+	// Attenuation factors. Sounds closer than c_closeDistance are played at full volume and sounds farther than c_clipDistance are clipped.
+	// The system smoothly interpolates between the extremes.
 	static const f32 c_closeDistance = 20.0f;
-	static const f32 c_clipDistance = 140.0f;
-	static const f32 c_stereoSwing = 0.45f;
-	static const f32 c_channelLimit = 0.98f;
+	static const f32 c_clipDistance  = 140.0f;
+	// This assumes 2 channel support only. This will do for the initial release.
+	// TODO: Support surround sound setups (5.1, 7.1, etc).
+	// TODO: Support proper HRTF data (optional).
+	static const f32 c_stereoSwing   = 0.45f;	// 0.0 = mono positional audio (sound equal in both speakers), 0.5 = full swing (i.e. sound to the left is ONLY heard in the left speaker).
+	static const f32 c_channelLimit  = 1.0f;
+	static const f32 c_soundHeadroom = 0.35f;	// approximately 1 / sqrt(8); assuming 8 uncorrelated sounds playing at full volume.
+
+	// Client volume controls, ranging from [0, 1]
+	static f32 s_soundFxVolume = 1.0f;
+	static f32 s_musicVolume = 1.0f;
+	// Internal sound scale based on the client volume and headroom.
+	static f32 s_soundFxScale = s_soundFxVolume * c_soundHeadroom;	// actual volume scale based on client set volume and headroom.
+	static f32 s_musicScale   = s_musicVolume * c_soundHeadroom;	// actual volume scale based on client set volume and headroom.
 
 	static u32 s_sourceCount;
 	static Vec3f s_listener;
@@ -338,7 +356,7 @@ namespace DXL2_Audio
 				if (!(snd->flags&SND_FLAG_PLAYING)) { continue; }
 
 				// Compute the sample value.
-				const f32 sampleValue = sampleBuffer(snd->sampleIndex, snd->buffer->type, snd->buffer->data);
+				const f32 sampleValue = sampleBuffer(snd->sampleIndex, snd->buffer->type, snd->buffer->data) * s_soundFxScale;
 				// Stereo Seperation.
 				const f32 sepSq = snd->seperation*snd->seperation;
 				const f32 invSepSq = (1.0f - snd->seperation) * (1.0f - snd->seperation);
@@ -366,9 +384,21 @@ namespace DXL2_Audio
 				}
 			}
 
-			//clamp.
-			valueLeft  = std::max(-c_channelLimit, std::min(valueLeft  * 0.5f, c_channelLimit));
-			valueRight = std::max(-c_channelLimit, std::min(valueRight * 0.5f, c_channelLimit));
+			// Audio outside of the [-1, 1] range will cause overflow, which is a major artifact.
+			// Instead the audio needs to be limited in range, which can be done in several ways.
+			// Sigmoid functions map an arbitrary range into [-1, 1] generall along an S-Curve, allowing us to avoid overflow.
+		#if defined(AUDIO_SIGMOID_CLIP)		// Not really a Sigmoid function but acts in a similar way, naively mapping to the required range.
+			valueLeft  = std::max(-c_channelLimit, std::min(valueLeft,  c_channelLimit));
+			valueRight = std::max(-c_channelLimit, std::min(valueRight, c_channelLimit));
+		#elif defined(AUDIO_SIGMOID_TANH)	// Considered one of the most "musical sounding" sigmoid functions, it avoids hard clipping.
+			// Note the usable range is approximately -4.8 to 4.8 so the volumes should be adjusted to stay within those ranges when possible.
+			// Still much better than the effect -1 to 1 range with hard clipping and cheaper than the more accurate library tanh(). :)
+			valueLeft  = DXL2_Math::tanhf_series(valueLeft);
+			valueRight = DXL2_Math::tanhf_series(valueRight);
+		#elif defined(AUDIO_SIGMOID_RCP_SQRT)
+			valueLeft  = valueLeft  / sqrtf(1.0f + valueLeft  * valueLeft);
+			valueRight = valueRight / sqrtf(1.0f + valueRight * valueRight);
+		#endif
 
 			//stereo output.
 			buffer[0] = valueLeft;
