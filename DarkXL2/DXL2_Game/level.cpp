@@ -39,6 +39,8 @@ namespace DXL2_Level
 	GameObjectList* s_objects;
 	SectorObjectList* s_sectorObjects;
 
+	void updateSectorCenter(Sector* sector);
+
 	bool init()
 	{
 		s_memoryPool = new MemoryPool();
@@ -74,10 +76,12 @@ namespace DXL2_Level
 		// Copy base floor and ceiling heights for texturing.
 		const u32 sectorCount = (u32)s_levelData->sectors.size();
 		s_baseSectorHeight = (SectorBaseHeight*)s_memoryPool->allocate(sectorCount * sizeof(SectorBaseHeight));
-		for (u32 s = 0; s < sectorCount; s++)
+		Sector* sector = s_levelData->sectors.data();
+		for (u32 s = 0; s < sectorCount; s++, sector++)
 		{
-			s_baseSectorHeight[s].floorAlt = s_levelData->sectors[s].floorAlt;
-			s_baseSectorHeight[s].ceilAlt  = s_levelData->sectors[s].ceilAlt;
+			s_baseSectorHeight[s].floorAlt = sector->floorAlt;
+			s_baseSectorHeight[s].ceilAlt  = sector->ceilAlt;
+			updateSectorCenter(sector);
 		}
 
 		s_objects = LevelGameObjects::getGameObjectList();
@@ -119,7 +123,7 @@ namespace DXL2_Level
 				secobject->fullbright = false;
 				secobject->collisionRadius = 0.0f;
 				secobject->collisionHeight = 0.0f;
-				secobject->physicsFlags = PHYSICS_GRAVITY;
+				secobject->physicsFlags = object[i].logics.empty() ? PHYSICS_NONE : PHYSICS_GRAVITY;
 				secobject->verticalVel = 0.0f;
 				secobject->show = true;
 				secobject->comFlags = object[i].comFlags;
@@ -355,6 +359,21 @@ namespace DXL2_Level
 		}
 	}
 
+	void updateSectorCenter(Sector* sector)
+	{
+		sector->center = { 0 };
+		sector->center.y = (sector->floorAlt + sector->ceilAlt) * 0.5f;
+		const Vec2f* vtx = s_levelData->vertices.data() + sector->vtxOffset;
+		for (u32 v = 0; v < sector->vtxCount; v++)
+		{
+			sector->center.x += vtx[v].x;
+			sector->center.z += vtx[v].z;
+		}
+		const f32 scale = sector->vtxCount > 0 ? 1.0f / f32(sector->vtxCount) : 1.0f;
+		sector->center.x *= scale;
+		sector->center.z *= scale;
+	}
+
 	// Floor, ceiling, second height
 	void setFloorHeight(s32 sectorId, f32 height, bool addSectorMotion)
 	{
@@ -371,11 +390,13 @@ namespace DXL2_Level
 		setObjectFloorHeight(sectorId, height);
 
 		s_levelData->sectors[sectorId].floorAlt = height;
+		s_levelData->sectors[sectorId].center.y = (s_levelData->sectors[sectorId].floorAlt + s_levelData->sectors[sectorId].ceilAlt) * 0.5f;
 	}
 
 	void setCeilingHeight(s32 sectorId, f32 height)
 	{
 		s_levelData->sectors[sectorId].ceilAlt = height;
+		s_levelData->sectors[sectorId].center.y = (s_levelData->sectors[sectorId].floorAlt + s_levelData->sectors[sectorId].ceilAlt) * 0.5f;
 	}
 
 	void setSecondHeight(s32 sectorId, f32 height, bool addSectorMotion)
@@ -478,6 +499,8 @@ namespace DXL2_Level
 				dstVtx[idx].z += sa * distance;
 			}
 		}
+
+		updateSectorCenter(sector);
 	}
 
 	void rotate(s32 sectorId, f32 angle, f32 angleDelta, const Vec2f* center, bool addSectorMotion, bool addSecMotionSecondAlt, bool useVertexCache)
@@ -557,6 +580,8 @@ namespace DXL2_Level
 				dstVtx[idx].z = -sa*x + ca*z + center->z;
 			}
 		}
+
+		updateSectorCenter(sector);
 	}
 
 	// Handle 1024 texel texture / 8 for world scale.

@@ -71,6 +71,8 @@ namespace DXL2_InfSystem
 		f32 curValue;		// current value.
 		// Value state for slaves.
 		ItemSlaveState* slaveState;
+		bool soundsPlaying[3];
+		SoundSource* moveSound;
 
 		s32 curStop;
 		s32 nextStop;
@@ -106,6 +108,9 @@ namespace DXL2_InfSystem
 	Sector* getSlaveSector(const InfClassData* classData, u32 index);
 	void executeFunctions(u32 funcCount, InfFunction* func, u32 evt = 0);
 	NudgeType activateLineOrSector(InfClassData* classData);
+
+	void startMovingSound(Sector* sector, const InfClassData* classData);
+	void stopMovingSound(Sector* sector, const InfClassData* classData);
 
 	bool init()
 	{
@@ -283,6 +288,13 @@ namespace DXL2_InfSystem
 				// Optional event mask.
 				if (argCount > 0 && arg[0].iValue != 0 && !(classData->var.event_mask & arg[0].iValue)) { continue; }
 				if (evt != 0 && !(classData->var.event_mask & evt)) { continue; }
+
+				ItemState* state = &s_infState[classData->stateIndex];
+				if (state->moveSound)
+				{
+					DXL2_Audio::freeSource(state->moveSound);
+					state->moveSound = nullptr;
+				}
 
 				classData->var.master = false;
 			}
@@ -658,7 +670,6 @@ namespace DXL2_InfSystem
 
 		// Move towards the next value based on the var.speed
 		f32 moveStep = stop1Value >= stop0Value ? c_step : -c_step;
-		// Lights...
 		if (classData->isubclass == ELEVATOR_CHANGE_LIGHT || classData->isubclass == ELEVATOR_CHANGE_WALL_LIGHT)
 		{
 			moveStep *= c_lightSpeedScale;
@@ -667,6 +678,11 @@ namespace DXL2_InfSystem
 		const f32 prevValue = forceStop0 ? stop1Value : curState->curValue;
 		if (!forceStop0)
 		{
+			if (curState->curValue == stop0Value && stop1Value != stop0Value)
+			{
+				startMovingSound(sector, classData);
+			}
+
 			if (classData->var.speed == 0.0f)
 			{
 				curState->curValue = stop1Value;
@@ -697,6 +713,11 @@ namespace DXL2_InfSystem
 			for (u32 i = 0; i < classData->slaveCount; i++)
 			{
 				curState->slaveState[i].curValue = getStopValue(classData, curState, getSlaveSector(classData, i), curState->nextStop, i);
+			}
+
+			if (!forceStop0 && curState->curStop != curState->nextStop)
+			{
+				stopMovingSound(sector, classData);
 			}
 
 			curState->curStop = curState->nextStop;
@@ -742,6 +763,45 @@ namespace DXL2_InfSystem
 		applyValueToSector(classData, curState, sector->id, curState->curValue, valueDelta, -1);
 	}
 
+	void soundFinishedCallback(void* userData, s32 arg)
+	{
+		InfClassData* classData = (InfClassData*)userData;
+		ItemState* state = &s_infState[classData->stateIndex];
+		state->soundsPlaying[arg] = false;
+	}
+		
+	void startMovingSound(Sector* sector, const InfClassData* classData)
+	{
+		ItemState* state = &s_infState[classData->stateIndex];
+		if (classData->var.sound[0] >= 0 && !state->soundsPlaying[0])
+		{
+			state->soundsPlaying[0] = true;
+			DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[0]), false, &sector->center, false, soundFinishedCallback, (void*)classData, 0);
+		}
+
+		if (classData->var.sound[1] >= 0 && !state->moveSound)
+		{
+			// Start the looping middle sound...
+			state->moveSound = DXL2_Audio::createSoundSource(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[1]), &sector->center);
+			DXL2_Audio::playSource(state->moveSound, true);
+		}
+	}
+
+	void stopMovingSound(Sector* sector, const InfClassData* classData)
+	{
+		ItemState* state = &s_infState[classData->stateIndex];
+		if (state->moveSound)
+		{
+			DXL2_Audio::freeSource(state->moveSound);
+			state->moveSound = nullptr;
+		}
+		if (classData->var.sound[2] >= 0 && !state->soundsPlaying[2])
+		{
+			state->soundsPlaying[2] = true;
+			DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[2]), false, &sector->center, false, soundFinishedCallback, (void*)classData, 2);
+		}
+	}
+
 	void prepareForFirstStop(const InfClassData* classData, Sector* sector)
 	{
 		// Verify that a first stop is setup.
@@ -777,6 +837,12 @@ namespace DXL2_InfSystem
 	{
 		const bool moveFloor = (classData->var.flags & INF_MOVE_FLOOR) != 0;
 		const bool moveSecAlt = (classData->var.flags & INF_MOVE_SECALT) != 0;
+
+		if (classData->var.sound[1] >= 0 && !itemState->moveSound)
+		{
+			itemState->moveSound = DXL2_Audio::createSoundSource(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[1]), &sector->center);
+			DXL2_Audio::playSource(itemState->moveSound, true);
+		}
 
 		switch (classData->isubclass)
 		{
@@ -952,17 +1018,21 @@ namespace DXL2_InfSystem
 			for (u32 c = 0; c < classCount; c++)
 			{
 				InfClassData* classData = &item->classData[c];
+				ItemState* state = &s_infState[classData->stateIndex];
+				for (u32 s = 0; s < 3; s++) { state->soundsPlaying[s] = false; }
+				state->moveSound = nullptr;
+
 				// Allocate state space for slaves.
-				s_infState[classData->stateIndex].slaveState = (ItemSlaveState*)s_memoryPool->allocate(sizeof(ItemSlaveState) * classData->slaveCount);
+				state->slaveState = (ItemSlaveState*)s_memoryPool->allocate(sizeof(ItemSlaveState) * classData->slaveCount);
 				// Prepare for the first stop (if applicable).
 				if (classData->iclass != INF_CLASS_ELEVATOR)
 				{
-					s_infState[classData->stateIndex].state = INF_STATE_HOLDING;
+					state->state = INF_STATE_HOLDING;
 					continue;
 				}
 				if (classData->stopCount == 0)
 				{
-					s_infState[classData->stateIndex].state = INF_STATE_MOVING;
+					state->state = INF_STATE_MOVING;
 					continue;
 				}
 				prepareForFirstStop(classData, sector);
@@ -1230,9 +1300,16 @@ namespace DXL2_InfSystem
 						continue;
 					}
 				}
-
+								
 				NudgeType nt = activateLineOrSector(classData);
-				if (nt != NUDGE_NONE) { nudgeType = nt; }
+				if (nt != NUDGE_NONE)
+				{
+					nudgeType = nt;
+					if (classData->var.sound[0] >= 0)
+					{
+						DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[0]), false, hitPoint, true);
+					}
+				}
 			}
 		}
 
@@ -1405,6 +1482,11 @@ namespace DXL2_InfSystem
 							itemState->state = INF_STATE_ACTIVATED;
 						}
 
+						if (classData->var.sound[0] >= 0)
+						{
+							DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[0]), false);
+						}
+
 						const u32 funcCount = classData->stop[0].code >> 8u;
 						if (funcCount)
 						{
@@ -1438,6 +1520,7 @@ namespace DXL2_InfSystem
 					{
 						DXL2_Level::setTextureFrame(sectorId, SP_SIGN, WSP_NONE, 1, lineId);
 					}
+										
 					break;
 				}
 			}

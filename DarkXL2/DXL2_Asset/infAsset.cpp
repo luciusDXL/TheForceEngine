@@ -323,6 +323,14 @@ namespace DXL2_InfAsset
 				curClass->stop = nullptr;
 				setupClassDefaults(curClass);
 
+				// Turn off default "door" sounds if exploding wall.
+				if (sector->flags[0] & SEC_FLAGS1_EXP_WALL)
+				{
+					curClass->var.sound[0] = -1;
+					curClass->var.sound[1] = -1;
+					curClass->var.sound[2] = -1;
+				}
+							   
 				finishClass(curItem, curClass, nullptr, nullptr, nullptr, nullptr, 0, 0, 0, 0, -1, (sector->flags[0] & SEC_FLAGS1_EXP_WALL)!=0);
 			}
 		}
@@ -1197,22 +1205,24 @@ namespace DXL2_InfAsset
 				// Can I ignore addon here?
 				if (tokens.size() == 3)
 				{
-					s32 index = strtol(tokens[1].c_str(), &endPtr, 10) - 1;
-					bool silent = (tokens[2].c_str()[0] == '0');
-					curClass->var.sound[index] = index;
-					if (silent)
+					const s32 index = strtol(tokens[1].c_str(), &endPtr, 10) - 1;
+					if (index >= 0)
 					{
-						curClass->var.sound[index] |= ((0xffffffu) << 8u);	// silent
-					}
-					else
-					{
-						curClass->var.sound[index] |= ((0x0u) << 8u);	// TODO: voc sound asset ID [tokens[2].c_str()]
+						bool silent = (tokens[2].c_str()[0] == '0');
+						curClass->var.sound[index] = index;
+						if (silent)
+						{
+							curClass->var.sound[index] = -1;	// silent
+						}
+						else
+						{
+							curClass->var.sound[index] = DXL2_VocAsset::getIndex(tokens[2].c_str());
+						}
 					}
 				}
 				else
 				{
-					curClass->var.sound[0] = 0;
-					curClass->var.sound[0] |= ((0x0u) << 8u);	// TODO: voc sound asset ID [tokens[1].c_str()]
+					curClass->var.sound[0] = DXL2_VocAsset::getIndex(tokens[1].c_str());
 				}
 			}
 			else if (strcasecmp("object_mask:", tokens[0].c_str()) == 0)
@@ -1345,6 +1355,41 @@ namespace DXL2_InfAsset
 		if (classInfo->iclass == INF_CLASS_ELEVATOR && (classInfo->isubclass == ELEVATOR_SCROLL_FLOOR || classInfo->isubclass == ELEVATOR_MORPH_MOVE2 || classInfo->isubclass == ELEVATOR_MORPH_SPIN2))
 		{
 			classInfo->var.flags = INF_MOVE_FLOOR | INF_MOVE_SECALT;
+		}
+
+		// Sound
+		classInfo->var.sound[0] = -1;
+		classInfo->var.sound[1] = -1;
+		classInfo->var.sound[2] = -1;
+		const u8 subclass = classInfo->isubclass;
+		if (classInfo->iclass == INF_CLASS_ELEVATOR)
+		{
+			// TODO: Split door mid into two sound effects?
+			if (subclass == ELEVATOR_MOVE_FLOOR || subclass == ELEVATOR_MOVE_FC || subclass == ELEVATOR_BASIC || subclass == ELEVATOR_BASIC_AUTO || subclass == ELEVATOR_MOVE_OFFSET ||
+				subclass == ELEVATOR_DOOR_INV || subclass == ELEVATOR_DOOR_MID)
+			{
+				classInfo->var.sound[0] = DXL2_VocAsset::getIndex("ELEV2-1.VOC");
+				classInfo->var.sound[1] = DXL2_VocAsset::getIndex("ELEV2-2.VOC");
+				classInfo->var.sound[2] = DXL2_VocAsset::getIndex("ELEV2-3.VOC");
+			}
+			else if (subclass == ELEVATOR_MOVE_CEILING || subclass == ELEVATOR_INV || subclass == ELEVATOR_MORPH_MOVE1 || subclass == ELEVATOR_MORPH_MOVE2 || subclass == ELEVATOR_MORPH_SPIN1 ||
+				subclass == ELEVATOR_MORPH_SPIN2 || subclass == ELEVATOR_ROTATE_WALL || subclass == ELEVATOR_MOVE_WALL)
+			{
+				classInfo->var.sound[0] = DXL2_VocAsset::getIndex("DOOR2-1.VOC");
+				classInfo->var.sound[1] = DXL2_VocAsset::getIndex("DOOR2-2.VOC");
+				classInfo->var.sound[2] = DXL2_VocAsset::getIndex("DOOR2-3.VOC");
+			}
+			else if (subclass == ELEVATOR_DOOR)
+			{
+				classInfo->var.sound[0] = DXL2_VocAsset::getIndex("DOOR.VOC");
+			}
+		}
+		else if (classInfo->iclass == INF_CLASS_TRIGGER)
+		{
+			if (subclass == TRIGGER_SWITCH1 || subclass == TRIGGER_SINGLE || subclass == TRIGGER_TOGGLE)
+			{
+				classInfo->var.sound[0] = DXL2_VocAsset::getIndex("SWITCH3.VOC");
+			}
 		}
 	}
 

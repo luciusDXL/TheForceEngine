@@ -242,6 +242,8 @@ namespace DXL2_WeaponSystem
 		s_callSwitchTo = true;
 		s_activeWeapon = s_nextWeapon;
 		s_nextWeapon = -1;
+		s_primeTimer = 0;
+		s_player->m_shooting = false;
 	}
 
 	void DXL2_Sound_PlayOneShot(f32 volume, const std::string& soundName)

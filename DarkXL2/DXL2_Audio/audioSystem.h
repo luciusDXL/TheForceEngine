@@ -42,6 +42,8 @@ enum SoundType
 
 #define MONO_SEPERATION 0.5f
 
+typedef void (*SoundFinishedCallback)(void* userData, s32 arg);
+
 namespace DXL2_Audio
 {
 	bool init();
@@ -53,7 +55,8 @@ namespace DXL2_Audio
 
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 	// Note that looping one shots are valid though may generate too many sound sources if not used carefully.
-	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos = nullptr, bool copyPosition = false);
+	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos = nullptr, bool copyPosition = false,
+					 SoundFinishedCallback finishedCallback = nullptr, void* cbUserData = nullptr, s32 cbArg = 0);
 
 	// Sound source that the client holds onto.
 	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos = nullptr);

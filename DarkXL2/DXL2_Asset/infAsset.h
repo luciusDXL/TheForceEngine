@@ -215,7 +215,7 @@ struct InfVariables
 	f32 speed = 0.0f;	// Speed an elevator moves between stops. 0 = instant.
 	f32 speed_addon[2]; // Addon for door_mid
 	/////////////////////// Sound ///////////////////////
-	u32 sound[3];		// index | soundAssetId << 8 (TODO: Fill in with defaults)
+	s32 sound[3];		// VOC sound index. 0 is used for triggers, 0 - 2 for elevators. Note -1 means no sound at all.
 	/////////////////////// Target/Slave ///////////////////////
 	s32 target;			// Target sector for teleport.
 };

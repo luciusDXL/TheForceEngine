@@ -10,6 +10,7 @@ enum SoundSourceFlags
 	SND_FLAG_ACTIVE   = (1 << 1),
 	SND_FLAG_LOOPING  = (1 << 2),
 	SND_FLAG_PLAYING  = (1 << 3),
+	SND_FLAG_FINISHED = (1 << 4),
 };
 
 struct SoundSource
@@ -28,6 +29,11 @@ struct SoundSource
 	const Vec3f* pos;
 	// local position if a pointer isn't used - this is for transient effects.
 	Vec3f localPos;
+
+	// Callback.
+	SoundFinishedCallback finishedCallback = nullptr;
+	void* finishedUserData = nullptr;
+	s32 finishedArg = 0;
 };
 
 namespace DXL2_Audio
@@ -124,7 +130,7 @@ namespace DXL2_Audio
 
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() and freeAllSounds() is called.
 	// Note that looping one shots are valid.
-	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos, bool copyPosition)
+	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos, bool copyPosition, SoundFinishedCallback finishedCallback, void* cbUserData, s32 cbArg)
 	{
 		if (!buffer) { return false; }
 
@@ -168,6 +174,9 @@ namespace DXL2_Audio
 				newSource->pos = pos;
 			}
 			newSource->seperation = stereoSeperation;
+			newSource->finishedCallback = finishedCallback;
+			newSource->finishedUserData = cbUserData;
+			newSource->finishedArg = cbArg;
 		}
 		MUTEX_UNLOCK(&s_mutex);
 
@@ -207,6 +216,8 @@ namespace DXL2_Audio
 			newSource->sampleIndex = 0u;
 			newSource->pos = pos;
 			newSource->seperation = stereoSeperation;
+			newSource->finishedCallback = nullptr;
+			newSource->finishedUserData = nullptr;
 		}
 		MUTEX_UNLOCK(&s_mutex);
 
@@ -215,12 +226,12 @@ namespace DXL2_Audio
 
 	void playSource(SoundSource* source, bool looping)
 	{
-		if (source->flags & SND_FLAG_PLAYING)
+		if (!source || (source->flags & SND_FLAG_PLAYING))
 		{
 			return;
 		}
 		
-		source->flags = SND_FLAG_PLAYING;
+		source->flags |= SND_FLAG_PLAYING;
 		if (looping) { source->flags |= SND_FLAG_LOOPING; }
 		source->sampleIndex = 0u;
 	}
@@ -271,7 +282,20 @@ namespace DXL2_Audio
 
 	void cleanupSources()
 	{
-		s32 end = (s32)s_sourceCount - 1;
+		// call any finished callbacks.
+		for (u32 s = 0; s < s_sourceCount; s++)
+		{
+			if (s_sources[s].flags&SND_FLAG_FINISHED)
+			{
+				s_sources[s].flags &= ~SND_FLAG_FINISHED;
+				if (s_sources[s].finishedCallback)
+				{
+					s_sources[s].finishedCallback(s_sources[s].finishedUserData, s_sources[s].finishedArg);
+				}
+			}
+		}
+
+		const s32 end = (s32)s_sourceCount - 1;
 		//shrink the number of sources until an active source is found.
 		for (s32 s = end; s >= 0; s--)
 		{
@@ -330,6 +354,7 @@ namespace DXL2_Audio
 					else
 					{
 						snd->flags &= ~SND_FLAG_PLAYING;
+						snd->flags |= SND_FLAG_FINISHED;
 						snd->sampleIndex = 0u;
 						// If this is a one shot, flag for later removal.
 						if (snd->flags&SND_FLAG_ONE_SHOT)

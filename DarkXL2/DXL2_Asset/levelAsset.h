@@ -123,6 +123,7 @@ struct Sector
 	u8 ambient;
 	SectorTexture floorTexture;
 	SectorTexture ceilTexture;
+	Vec3f center;
 	f32 floorAlt;
 	f32 ceilAlt;
 	f32 secAlt;

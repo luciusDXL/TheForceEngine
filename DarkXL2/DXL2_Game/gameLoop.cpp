@@ -35,6 +35,7 @@ namespace DXL2_GameLoop
 	{
 		const SoundBuffer* jump;
 		const SoundBuffer* land;
+		const SoundBuffer* landWater;
 		const SoundBuffer* fall;
 	};
 
@@ -117,6 +118,7 @@ namespace DXL2_GameLoop
 		s_playerSounds.jump = DXL2_VocAsset::get("JUMP-1.VOC");
 		s_playerSounds.land = DXL2_VocAsset::get("LAND-1.VOC");
 		s_playerSounds.fall = DXL2_VocAsset::get("FALL.VOC");
+		s_playerSounds.landWater = DXL2_VocAsset::get("SWIM-IN.VOC");
 
 		return true;
 	}
@@ -223,6 +225,7 @@ namespace DXL2_GameLoop
 		s_playerSounds.jump = DXL2_VocAsset::get("JUMP-1.VOC");
 		s_playerSounds.land = DXL2_VocAsset::get("LAND-1.VOC");
 		s_playerSounds.fall = DXL2_VocAsset::get("FALL.VOC");
+		s_playerSounds.landWater = DXL2_VocAsset::get("SWIM-IN.VOC");
 		
 		return true;
 	}
@@ -578,7 +581,9 @@ namespace DXL2_GameLoop
 
 				if (s_fallHeight > 3.0f)
 				{
-					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, s_playerSounds.land, false);
+					// Is this water?
+					const bool isWater = s_level->sectors[s_player.m_sectorId].secAlt > 0.0f;
+					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, isWater ? s_playerSounds.landWater : s_playerSounds.land, false);
 				}
 
 				// Clear Velocity and fall height.

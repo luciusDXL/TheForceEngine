@@ -335,7 +335,7 @@ namespace DXL2_LevelObjects
 						logic->vueId = -1;
 						logic->vueAppendId = -1;
 						// Default frame rate: TODO: Adjust.
-						logic->frameRate = 30.0f;
+						logic->frameRate = 20.0f;
 
 						// ITEM XXX is just referenced as XXX since "ITEM SHIELD" is the same as "SHIELD" and they are used interchangably (and similar for other items).
 						std::string logicName = tokens[1];
