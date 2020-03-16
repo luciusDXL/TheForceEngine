@@ -1416,6 +1416,9 @@ namespace DXL2_InfSystem
 					itemState->nextStop = (itemState->curStop + 1) % classData->stopCount;
 				}
 			}
+
+			SoundBuffer* buffer = DXL2_VocAsset::get("COMPLETE.VOC");
+			DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, buffer, false);
 		}
 	}
 
@@ -1455,6 +1458,9 @@ namespace DXL2_InfSystem
 						if (msgId != 0)
 						{
 							DXL2_GameHud::setMessage(DXL2_GameMessages::getMessage(msgId));
+
+							SoundBuffer* buffer = DXL2_VocAsset::get("LOCKED-1.VOC");
+							DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, buffer, false);
 						}
 						continue;
 					}

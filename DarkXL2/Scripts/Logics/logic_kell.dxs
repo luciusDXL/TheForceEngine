@@ -16,6 +16,5 @@ void spawnPowerup()
 
 void playDeathSound()
 {
-	// Replace with correct death sound.
-	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "ST-DIE-1.VOC");
+	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "KELL-7.VOC");
 }

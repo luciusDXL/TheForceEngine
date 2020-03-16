@@ -19,5 +19,7 @@ void handleMessage(int msgId, int arg0, int arg1)
 		DXL2_PrintMessage(301);
 		DXL2_Hide(self.objectId);
 		DXL2_SetCollision(self.objectId, 0.0f, 0.0f, COLLIDE_NONE);
+
+		DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "KEY.VOC");
 	}
 }
