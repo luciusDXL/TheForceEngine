@@ -21,6 +21,7 @@ enum SoundBufferFlags
 struct SoundBuffer
 {
 	SoundDataType type;
+	u32 id = 0;			// Used by the asset system.
 	u32 flags;
 	u32 size;
 	u32 sampleRate;

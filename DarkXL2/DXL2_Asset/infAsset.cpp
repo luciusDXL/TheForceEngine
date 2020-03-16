@@ -3,6 +3,7 @@
 #include <DXL2_System/memoryPool.h>
 #include <DXL2_Asset/assetSystem.h>
 #include <DXL2_Asset/levelAsset.h>
+#include <DXL2_Asset/vocAsset.h>
 #include <DXL2_Archive/archive.h>
 #include <DXL2_System/parser.h>
 #include <assert.h>
@@ -1057,8 +1058,8 @@ namespace DXL2_InfAsset
 				curFunc->func.client = nullptr;
 
 				curFunc->func.code = FUNC_TYPE(INF_MSG_PAGE) | FUNC_CLIENT_COUNT(0u) | FUNC_ARG_COUNT(1u);
-				curFunc->func.arg = (InfArg*)s_memoryPool.allocate(sizeof(InfArg) * 4);
-				curFunc->func.arg[0].iValue = 0;	// TODO: should be voc file [tokens[2].c_str()] asset ID.
+				curFunc->func.arg = (InfArg*)s_memoryPool.allocate(sizeof(InfArg) * 1);
+				curFunc->func.arg[0].iValue = DXL2_VocAsset::getIndex(tokens[2].c_str());
 			}
 			else if (strcasecmp("text:", tokens[0].c_str()) == 0)
 			{
@@ -1068,12 +1069,12 @@ namespace DXL2_InfAsset
 				u32 funcNum = funcCount;
 				funcCount++;
 				curFunc = &func[funcNum];
-				curFunc->stopNum = strtol(tokens[1].c_str(), &endPtr, 10);
+				curFunc->stopNum = tokens.size() >= 3 ? strtol(tokens[1].c_str(), &endPtr, 10) : 0;
 				curFunc->func.client = nullptr;
 
 				curFunc->func.code = FUNC_TYPE(INF_MSG_TEXT) | FUNC_CLIENT_COUNT(0u) | FUNC_ARG_COUNT(1u);
 				curFunc->func.arg = (InfArg*)s_memoryPool.allocate(sizeof(InfArg) * 1);
-				curFunc->func.arg[0].iValue = strtol(tokens[1].c_str(), &endPtr, 10);
+				curFunc->func.arg[0].iValue = strtol(tokens.size() >= 3 ? tokens[2].c_str() : tokens[1].c_str(), &endPtr, 10);
 			}
 			else if (strcasecmp("texture:", tokens[0].c_str()) == 0)
 			{

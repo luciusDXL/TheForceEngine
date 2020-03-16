@@ -9,7 +9,9 @@
 #include <DXL2_Game/gameHud.h>
 #include <DXL2_Game/gameConstants.h>
 #include <DXL2_Game/geometry.h>
+#include <DXL2_Audio/audioSystem.h>
 #include <DXL2_Asset/gameMessages.h>
+#include <DXL2_Asset/vocAsset.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -387,7 +389,7 @@ namespace DXL2_InfSystem
 			}
 			break;
 		case INF_MSG_PAGE:
-			// Sound (TODO)
+			DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(arg[0].iValue), false);
 			break;
 		case INF_MSG_TEXT:
 			if (argCount >= 1 && arg)

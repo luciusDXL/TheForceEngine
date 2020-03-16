@@ -11,7 +11,9 @@
 namespace DXL2_VocAsset
 {
 	typedef std::map<std::string, SoundBuffer*> VocMap;
+	typedef std::vector<SoundBuffer*> VocList;
 	static VocMap s_vocAssets;
+	static VocList s_vocAssetList;
 	static std::vector<u8> s_buffer;
 	static const char* c_defaultGob = "SOUNDS.GOB";
 
@@ -39,19 +41,55 @@ namespace DXL2_VocAsset
 		}
 
 		s_vocAssets[name] = voc;
+		voc->id = (u32)s_vocAssetList.size();
+		s_vocAssetList.push_back(voc);
 		return voc;
 	}
 
 	void freeAll()
 	{
-		VocMap::iterator iVoc = s_vocAssets.begin();
-		for (; iVoc != s_vocAssets.end(); ++iVoc)
+		VocList::iterator iVoc = s_vocAssetList.begin();
+		for (; iVoc != s_vocAssetList.end(); ++iVoc)
 		{
-			SoundBuffer* voc = iVoc->second;
+			SoundBuffer* voc = *iVoc;
 			delete[] voc->data;
 			delete voc;
 		}
 		s_vocAssets.clear();
+		s_vocAssetList.clear();
+	}
+
+	s32 getIndex(const char* name)
+	{
+		VocMap::iterator iVoc = s_vocAssets.find(name);
+		if (iVoc != s_vocAssets.end())
+		{
+			return (s32)iVoc->second->id;
+		}
+
+		// It doesn't exist yet, try to load the font.
+		if (!DXL2_AssetSystem::readAssetFromGob(c_defaultGob, name, s_buffer))
+		{
+			return -1;
+		}
+
+		SoundBuffer* voc = new SoundBuffer;
+		if (!parseVoc(voc))
+		{
+			delete voc;
+			return -1;
+		}
+
+		s_vocAssets[name] = voc;
+		voc->id = (u32)s_vocAssetList.size();
+		s_vocAssetList.push_back(voc);
+		return (s32)voc->id;
+	}
+
+	SoundBuffer* getFromIndex(s32 index)
+	{
+		if (index < 0) { return nullptr; }
+		return s_vocAssetList[index];
 	}
 
 	////////////////////////////////////////

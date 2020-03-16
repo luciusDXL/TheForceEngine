@@ -14,4 +14,7 @@ namespace DXL2_VocAsset
 {
 	SoundBuffer* get(const char* name);
 	void freeAll();
+
+	s32 getIndex(const char* name);
+	SoundBuffer* getFromIndex(s32 index);
 };
