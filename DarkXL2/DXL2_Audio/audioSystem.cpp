@@ -42,6 +42,7 @@ namespace DXL2_Audio
 	static const f32 c_closeDistance = 20.0f;
 	static const f32 c_clipDistance = 140.0f;
 	static const f32 c_stereoSwing = 0.45f;
+	static const f32 c_channelLimit = 0.98f;
 
 	static u32 s_sourceCount;
 	static Vec3f s_listener;
@@ -366,8 +367,8 @@ namespace DXL2_Audio
 			}
 
 			//clamp.
-			valueLeft  = std::min(valueLeft  * 0.5f, 0.98f);
-			valueRight = std::min(valueRight * 0.5f, 0.98f);
+			valueLeft  = std::max(-c_channelLimit, std::min(valueLeft  * 0.5f, c_channelLimit));
+			valueRight = std::max(-c_channelLimit, std::min(valueRight * 0.5f, c_channelLimit));
 
 			//stereo output.
 			buffer[0] = valueLeft;
