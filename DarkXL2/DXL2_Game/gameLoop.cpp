@@ -68,6 +68,7 @@ namespace DXL2_GameLoop
 	bool startLevelFromExisting(const Vec3f* startPos, f32 yaw, s32 startSectorId, const Palette256* pal, LevelObjectData* levelObj, DXL2_Renderer* renderer, s32 w, s32 h)
 	{
 		if (!startPos || !renderer || startSectorId < 0) { return false; }
+		DXL2_Audio::stopAllSounds();
 
 		LevelData* level = DXL2_LevelAsset::getLevelData();
 		InfData* infData = DXL2_InfAsset::getInfData();
@@ -127,6 +128,7 @@ namespace DXL2_GameLoop
 	bool startLevel(LevelData* level, const StartLocation& start, DXL2_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
 	{
 		if (!level) { return false; }
+		DXL2_Audio::stopAllSounds();
 		
 		s_level = level;
 		s_motion = 0.0f;

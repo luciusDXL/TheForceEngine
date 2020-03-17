@@ -103,23 +103,17 @@ namespace DXL2_Level
 			for (u32 i = 0; i < objectCount; i++)
 			{
 				const ObjectClass oclass = object[i].oclass;
-				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D && oclass != CLASS_SOUND) { continue; }
-
+				GameObject* secobject = &(*s_objects)[i];
 				// Get the position and sector.
 				Vec3f pos = object[i].pos;
 				s32 sectorId = DXL2_Physics::findSector(&pos);
-				// Skip objects that are not in sectors.
-				if (sectorId < 0) { continue; }
 
-				std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
-				list.push_back(i);
-
-				GameObject* secobject = &(*s_objects)[i];
 				secobject->id = i;
-				secobject->pos = pos;
-				secobject->angles = object[i].orientation;
-				secobject->sectorId = sectorId;
 				secobject->oclass = oclass;
+				secobject->pos = pos;
+				secobject->sectorId = sectorId;
+
+				secobject->angles = object[i].orientation;
 				secobject->fullbright = false;
 				secobject->collisionRadius = 0.0f;
 				secobject->collisionHeight = 0.0f;
@@ -135,6 +129,13 @@ namespace DXL2_Level
 				secobject->animId = 0;
 				secobject->frameIndex = 0;
 
+				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D && oclass != CLASS_SOUND) { continue; }
+				// Skip objects that are not in sectors.
+				if (sectorId < 0) { continue; }
+
+				std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
+				list.push_back(i);
+				
 				if (!object[i].logics.empty() && (object[i].logics[0].type == LOGIC_LIFE || (object[i].logics[0].type >= LOGIC_BLUE && object[i].logics[0].type <= LOGIC_PILE)))
 				{
 					secobject->fullbright = true;

@@ -225,7 +225,7 @@ namespace DXL2_Audio
 		{
 			newSource->type = type;
 			newSource->flags = SND_FLAG_ACTIVE;
-			newSource->volume = volume;
+			newSource->volume = type == SOUND_2D ? volume : 0.0f;
 			newSource->baseVolume = volume;
 			newSource->buffer = buffer;
 			newSource->sampleIndex = 0u;
