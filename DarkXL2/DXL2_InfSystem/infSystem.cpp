@@ -71,7 +71,6 @@ namespace DXL2_InfSystem
 		f32 curValue;		// current value.
 		// Value state for slaves.
 		ItemSlaveState* slaveState;
-		bool soundsPlaying[3];
 		SoundSource* moveSound;
 
 		s32 curStop;
@@ -763,20 +762,12 @@ namespace DXL2_InfSystem
 		applyValueToSector(classData, curState, sector->id, curState->curValue, valueDelta, -1);
 	}
 
-	void soundFinishedCallback(void* userData, s32 arg)
-	{
-		InfClassData* classData = (InfClassData*)userData;
-		ItemState* state = &s_infState[classData->stateIndex];
-		state->soundsPlaying[arg] = false;
-	}
-		
 	void startMovingSound(Sector* sector, const InfClassData* classData)
 	{
 		ItemState* state = &s_infState[classData->stateIndex];
-		if (classData->var.sound[0] >= 0 && !state->soundsPlaying[0])
+		if (classData->var.sound[0] >= 0)
 		{
-			state->soundsPlaying[0] = true;
-			DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[0]), false, &sector->center, false, soundFinishedCallback, (void*)classData, 0);
+			DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[0]), false, &sector->center, false);
 		}
 
 		if (classData->var.sound[1] >= 0 && !state->moveSound)
@@ -795,10 +786,9 @@ namespace DXL2_InfSystem
 			DXL2_Audio::freeSource(state->moveSound);
 			state->moveSound = nullptr;
 		}
-		if (classData->var.sound[2] >= 0 && !state->soundsPlaying[2])
+		if (classData->var.sound[2] >= 0)
 		{
-			state->soundsPlaying[2] = true;
-			DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[2]), false, &sector->center, false, soundFinishedCallback, (void*)classData, 2);
+			DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, DXL2_VocAsset::getFromIndex(classData->var.sound[2]), false, &sector->center, false);
 		}
 	}
 
@@ -1019,7 +1009,6 @@ namespace DXL2_InfSystem
 			{
 				InfClassData* classData = &item->classData[c];
 				ItemState* state = &s_infState[classData->stateIndex];
-				for (u32 s = 0; s < 3; s++) { state->soundsPlaying[s] = false; }
 				state->moveSound = nullptr;
 
 				// Allocate state space for slaves.
