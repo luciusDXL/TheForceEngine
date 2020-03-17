@@ -1,6 +1,7 @@
 #include "audioSystem.h"
 #include "audioDevice.h"
 #include <DXL2_System/math.h>
+#include <DXL2_Game/gameHud.h>
 #include <assert.h>
 #include <algorithm>
 
@@ -43,11 +44,7 @@ struct SoundSource
 
 namespace DXL2_Audio
 {
-	#define MAX_SOUND_SOURCES 256
-	// Attenuation factors. Sounds closer than c_closeDistance are played at full volume and sounds farther than c_clipDistance are clipped.
-	// The system smoothly interpolates between the extremes.
-	static const f32 c_closeDistance = 20.0f;
-	static const f32 c_clipDistance  = 140.0f;
+	#define MAX_SOUND_SOURCES 128
 	// This assumes 2 channel support only. This will do for the initial release.
 	// TODO: Support surround sound setups (5.1, 7.1, etc).
 	// TODO: Support proper HRTF data (optional).

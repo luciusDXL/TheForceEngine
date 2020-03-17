@@ -58,6 +58,7 @@ namespace DXL2_GameLoop
 	static f32 s_accum = 0.0f;
 	
 	void updateObjects();
+	void updateSoundObjects(const Vec3f* listenerPos);
 
 	void startRenderer(DXL2_Renderer* renderer, s32 w, s32 h)
 	{
@@ -683,6 +684,7 @@ namespace DXL2_GameLoop
 
 		// Update objects based on their physics settings (to handle explosions, gravity, bouncing, etc.).
 		updateObjects();
+		updateSoundObjects(&s_cameraPos);
 
 		if (DXL2_Input::mouseDown(MBUTTON_LEFT))
 		{
@@ -763,6 +765,39 @@ namespace DXL2_GameLoop
 			}
 
 			s_accum -= c_step;
+		}
+	}
+
+	// Go through level objects and add or remove sound sources based on proximity to the listener.
+	void updateSoundObjects(const Vec3f* listenerPos)
+	{
+		const u32 count = (u32)LevelGameObjects::getGameObjectList()->size();
+		const f32 borderSq = 16.0f * 16.0f;
+		const f32 soundMaxDistSq = DXL2_Audio::c_clipDistance * DXL2_Audio::c_clipDistance;
+
+		GameObject* object = LevelGameObjects::getGameObjectList()->data();
+		for (u32 i = 0; i < count; i++, object++)
+		{
+			if (object->oclass != CLASS_SOUND || !object->buffer) { continue; }
+
+			const Vec3f offset = { object->pos.x - listenerPos->x, object->pos.y - listenerPos->y, object->pos.z - listenerPos->z };
+			const f32 distSq = DXL2_Math::dot(&offset, &offset);
+
+			if (distSq <= soundMaxDistSq && !object->source)
+			{
+				// Add a new looping 3D source.
+				object->source = DXL2_Audio::createSoundSource(SOUND_3D, 1.0f, MONO_SEPERATION, object->buffer, &object->pos);
+				if (object->source)
+				{
+					DXL2_Audio::playSource(object->source, true);
+				}
+			}
+			else if (distSq > soundMaxDistSq + borderSq && object->source)
+			{
+				// Remove the looping 3D source. Note a border area is added so we aren't constantly adding and removing sounds with small movements.
+				DXL2_Audio::freeSource(object->source);
+				object->source = nullptr;
+			}
 		}
 	}
 }

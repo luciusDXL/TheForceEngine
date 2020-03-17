@@ -46,6 +46,13 @@ typedef void (*SoundFinishedCallback)(void* userData, s32 arg);
 
 namespace DXL2_Audio
 {
+	// constants
+	// Attenuation factors. Sounds closer than c_closeDistance are played at full volume and sounds farther than c_clipDistance are clipped.
+	// The system smoothly interpolates between the extremes.
+	static const f32 c_closeDistance = 20.0f;
+	static const f32 c_clipDistance = 140.0f;
+
+	// functions
 	bool init();
 	void shutdown();
 	void stopAllSounds();

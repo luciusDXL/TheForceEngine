@@ -130,6 +130,7 @@ namespace DXL2_Level
 				secobject->radius = object[i].radius;
 				secobject->height = object[i].height;
 				secobject->vueTransform = nullptr;
+				secobject->source = nullptr;
 
 				secobject->animId = 0;
 				secobject->frameIndex = 0;
@@ -179,11 +180,7 @@ namespace DXL2_Level
 				else if (oclass == CLASS_SOUND)
 				{
 					// Cheat and just start up a one shot here...
-					SoundBuffer* soundBuffer = DXL2_VocAsset::get(levelObj->sounds[object[i].dataOffset].c_str());
-					if (soundBuffer)
-					{
-						DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, soundBuffer, true, &secobject->pos);
-					}
+					secobject->buffer = DXL2_VocAsset::get(levelObj->sounds[object[i].dataOffset].c_str());
 				}
 
 				// Register the object logic.

@@ -11,6 +11,8 @@
 struct Sprite;
 struct Frame;
 struct Model;
+struct SoundBuffer;
+struct SoundSource;
 
 enum CollisionFlags
 {
@@ -37,6 +39,7 @@ struct GameObject
 		Sprite* sprite;
 		Frame* frame;
 		Model* model;
+		SoundBuffer* buffer;
 	};
 	bool fullbright;
 	bool show;
@@ -73,7 +76,10 @@ struct GameObject
 	u32 physicsFlags;
 
 	// Vue Transform.
-	const Mat3* vueTransform = nullptr;
+	const Mat3* vueTransform;
+
+	// Sound Source.
+	SoundSource* source;
 };
 
 struct SectorObjects
