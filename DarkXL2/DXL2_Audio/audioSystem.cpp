@@ -93,14 +93,15 @@ namespace DXL2_Audio
 		s_sourceCount = 0u;
 		memset(s_sources, 0, sizeof(SoundSource) * MAX_SOUND_SOURCES);
 	}
-		
+
 	void update(const Vec3f* listenerPos, const Vec3f* listenerDir)
 	{
-		SoundSource* snd = s_sources;
-
+		// Currently positional audio only accounts for the "horizontal plane"
+		// TODO: Support proper HRTF as an option, though we want to keep the "old school" handling in for the classic mode.
 		Vec2f listDirXZ = { listenerDir->x, listenerDir->z };
 		listDirXZ = DXL2_Math::normalize(&listDirXZ);
 
+		SoundSource* snd = s_sources;
 		for (u32 s = 0; s < s_sourceCount; s++, snd++)
 		{
 			if (!(snd->flags & SND_FLAG_ACTIVE)) { continue; }
@@ -112,11 +113,9 @@ namespace DXL2_Audio
 			else
 			{
 				// Compute attentuation and channel seperation.
-				// Do we care about vertical attenuation?
 				const Vec3f offset = { snd->pos->x - listenerPos->x, snd->pos->y - listenerPos->y, snd->pos->z - listenerPos->z };
 				const f32 distSq = DXL2_Math::dot(&offset, &offset);
 
-				snd->seperation = 0.5f;
 				if (distSq >= c_clipDistance * c_clipDistance)
 				{
 					snd->volume = 0.0f;
@@ -128,11 +127,11 @@ namespace DXL2_Audio
 				else
 				{
 					const f32 dist = sqrtf(distSq);
-					f32 atten = (1.0f - (dist - c_closeDistance) / (c_clipDistance - c_closeDistance));
-					atten *= atten;
-					snd->volume = snd->baseVolume * atten;
+					const f32 atten = 1.0f - (dist - c_closeDistance) / (c_clipDistance - c_closeDistance);
+					snd->volume = snd->baseVolume * atten * atten;
 				}
 
+				snd->seperation = 0.5f;
 				if (snd->volume > FLT_EPSILON)
 				{
 					// Spatialization is done on the XZ plane.
@@ -147,7 +146,7 @@ namespace DXL2_Audio
 		}
 	}
 
-	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() and freeAllSounds() is called.
+	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 	// Note that looping one shots are valid.
 	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos, bool copyPosition, SoundFinishedCallback finishedCallback, void* cbUserData, s32 cbArg)
 	{
