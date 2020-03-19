@@ -114,6 +114,8 @@ namespace DXL2_Level
 				secobject->sectorId = sectorId;
 
 				secobject->angles = object[i].orientation;
+				secobject->zbias = 0.0f;
+				secobject->scale = { 1.0f, 1.0f, 1.0f };
 				secobject->fullbright = false;
 				secobject->collisionRadius = 0.0f;
 				secobject->collisionHeight = 0.0f;

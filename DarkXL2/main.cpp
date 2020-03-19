@@ -27,7 +27,7 @@
 #endif
 #endif
 
-#define PROGRAM_ERROR 1
+#define PROGRAM_ERROR   1
 #define PROGRAM_SUCCESS 0
 
 #pragma comment(lib, "SDL2main.lib")

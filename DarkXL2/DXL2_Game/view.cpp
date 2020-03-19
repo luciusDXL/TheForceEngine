@@ -739,6 +739,7 @@ namespace DXL2_View
 		const s16* lower = &s_lowerHeightMask[seg->heightOffset];
 
 		DXL2_ModelRender::setClip(seg->ix0, seg->ix1, upper, lower);
+		DXL2_ModelRender::setModelScale(&obj->scale);
 		DXL2_ModelRender::draw(model, &obj->angles, &obj->pos, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, &s_level->sectors[obj->sectorId]);
 	}
 
@@ -1970,8 +1971,9 @@ namespace DXL2_View
 			else if (obj->oclass == CLASS_3D && obj->model)
 			{
 				model = obj->model;
-
+				
 				Vec2i screenRect[2];
+				DXL2_ModelRender::setModelScale(&obj->scale);
 				if (!DXL2_ModelRender::computeScreenSize(model, &obj->angles, &obj->pos, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, screenRect))
 				{
 					continue;
@@ -1998,7 +2000,7 @@ namespace DXL2_View
 			seg->x1 = x1;
 			seg->y0 = y0;
 			seg->y1 = y1;
-			seg->z  = vz;
+			seg->z  = vz + obj->zbias;
 			seg->obj = obj;
 			seg->lightLevel = lightLevel;
 			if (frame) { seg->type = 0; seg->frame = frame; }
@@ -2190,5 +2192,8 @@ namespace DXL2_View
 		}
 
 		drawViewObjects(cameraPos);
+
+		Vec3f unitScale = { 1.0f, 1.0f, 1.0f };
+		DXL2_ModelRender::setModelScale(&unitScale);
 	}
 }

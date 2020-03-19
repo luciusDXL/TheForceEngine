@@ -48,8 +48,10 @@ struct GameObject
 	u32 id;
 	s32 sectorId;
 	f32 verticalVel;
+	f32 zbias;
 	Vec3f pos;
 	Vec3f angles;
+	Vec3f scale;
 	
 	// Animation
 	s16 animId;

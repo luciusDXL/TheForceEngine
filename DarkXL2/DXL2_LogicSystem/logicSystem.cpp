@@ -514,6 +514,7 @@ namespace DXL2_LogicSystem
 		obj->collisionRadius = 0.0f;
 		obj->physicsFlags = PHYSICS_GRAVITY;	// Gravity is the default.
 		obj->verticalVel = 0.0f;
+		obj->zbias = 0.0f;
 		obj->flags = 0;
 		obj->frameIndex = 0;
 		obj->fullbright = false;
@@ -526,6 +527,7 @@ namespace DXL2_LogicSystem
 		obj->id = objectId;
 		obj->sectorId = sectorId;
 		obj->angles = angles;
+		obj->scale = { 1.0f,1.0f, 1.0f };
 		obj->pos = pos;
 
 		if (objectClass == CLASS_SPRITE)

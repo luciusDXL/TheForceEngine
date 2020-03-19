@@ -14,7 +14,12 @@ void switchTo()
 	DXL2_LoadWeaponFrame(0, "PISTOL1.BM");
 	DXL2_LoadWeaponFrame(1, "PISTOL2.BM");
 	DXL2_LoadWeaponFrame(2, "PISTOL3.BM");
+	DXL2_LoadProjectile("WRBOLT.3DO");
+	DXL2_SetProjectileScale(1.0f, 1.0f, 0.015f);
+	DXL2_SetProjectileRenderOffset(5.0f);
+
 	DXL2_LoadHitEffect("EXPTINY.WAX");
+	DXL2_LoadHitSound("EX-TINY1.VOC");
 	
 	weapon.scaledWidth  = applyScale(weaponWidth,  screen.scaleX);
 	weapon.scaledHeight = applyScale(weaponHeight, screen.scaleY);
@@ -95,11 +100,12 @@ void tick()
 		
 		if (prevFrame == 0 && weapon.frame == 1)
 		{
-			DXL2_WeaponFire();
+			DXL2_PlayerSpawnProjectile(weapon.x + applyScale(16, screen.scaleX), weapon.y + weapon.yOffset, 300.0f, 0.0f, PFLAG_EXPLODE_ON_IMPACT, 1, 0.0f, 0.0f);
+			DXL2_MuzzleFlashBegin();
 		}
 		else if (weapon.frame == 2)
 		{
-			DXL2_WeaponLightEnd();
+			DXL2_MuzzleFlashEnd();
 		}
 		else if (weapon.frame == 3)
 		{

@@ -141,9 +141,9 @@ namespace DXL2_ModelRender
 	// TODO: Save transform matrix.
 	bool computeScreenSize(const Model* model, const Vec3f* modelOrientation, const Vec3f* modelPos, const Mat3* optionalTransform, const Vec3f* cameraPos, const f32* cameraRot, f32 heightOffset, Vec2i* screenRect)
 	{
-		const f32 yaw = modelOrientation->y * PI / 180.0f;
+		const f32 yaw   = modelOrientation->y * PI / 180.0f;
 		const f32 pitch = modelOrientation->x * PI / 180.0f;
-		const f32 roll = modelOrientation->z * PI / 180.0f;
+		const f32 roll  = modelOrientation->z * PI / 180.0f;
 
 		Vec3f mat33[3];
 		if (optionalTransform)

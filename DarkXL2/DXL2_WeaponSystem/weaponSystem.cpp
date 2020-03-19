@@ -84,6 +84,9 @@ namespace DXL2_WeaponSystem
 		f32 pitch;
 		f32 time;
 
+		Vec3f scale;
+		f32 renderOffset;
+
 		bool hold;
 		f32  holdTime;
 
@@ -164,21 +167,8 @@ namespace DXL2_WeaponSystem
 	static DXL2_Renderer* s_renderer;
 	static MemoryPool* s_memoryPool;
 
-	static bool s_shot = false;
 	static s32 s_primeTimer = 0;
-	static Vec3f s_shotLoc;
-	static s32 s_shotSectorId;
-	static f32 s_shotYaw;
-	static f32 s_shotPitch;
-	static Model* s_model;
 	static Player* s_player;
-
-	static bool s_showExplosion = false;
-	static Vec3f s_explosionLoc;
-	static f32 s_explosionAnimTime;
-	static Sprite* s_explosionSprite = nullptr;
-
-	static Vec3f s_shootDir;
 	static u32 s_projPoolCount = 0;
 	static ProjectilePool s_projectilePool[MAX_POOL_COUNT];
 
@@ -187,20 +177,19 @@ namespace DXL2_WeaponSystem
 	static Projectile s_proj[MAX_ACTIVE_PROJECTILES];
 	static HitEffect s_effect[MAX_ACTIVE_EFFECTS];
 
-	void DXL2_WeaponFire();
 	void DXL2_WeaponPrimed(s32 primeCount);
-	void DXL2_WeaponLightEnd();
+	void DXL2_MuzzleFlashBegin();
+	void DXL2_MuzzleFlashEnd();
+	void DXL2_SetProjectileScale(f32 x, f32 y, f32 z);
+	void DXL2_SetProjectileRenderOffset(f32 offset);
+	void explodeOnImpact(ProjectilePool* effectPool, const SoundBuffer* hitEffectSound, const Vec3f* hitPoint, s32 hitSectorId, s32 hitWallId, GameObject* hitObject, f32 radius, u32 damage);
 
 	void clearWeapons()
 	{
 		s_activeWeapon = -1;
 		s_nextWeapon = -1;
 		s_callSwitchTo = false;
-		s_showExplosion = false;
 		s_primeTimer = 0;
-		s_model = nullptr;
-		s_explosionSprite = nullptr;
-		s_explosionAnimTime = 0.0f;
 		s_projPoolCount = 0;
 		s_projCount = 0;
 		s_effectCount = 0;
@@ -238,12 +227,13 @@ namespace DXL2_WeaponSystem
 	{
 		memset(&s_weapon, 0, sizeof(WeaponObject));
 		s_weapon.state = 0; // had a previous weapon.
+		s_weapon.scale = { 1.0f, 1.0f, 1.0f };
 
 		s_callSwitchTo = true;
 		s_activeWeapon = s_nextWeapon;
 		s_nextWeapon = -1;
 		s_primeTimer = 0;
-		s_player->m_shooting = false;
+		if (s_player) { s_player->m_shooting = false; }
 	}
 
 	void DXL2_Sound_PlayOneShot(f32 volume, const std::string& soundName)
@@ -340,7 +330,7 @@ namespace DXL2_WeaponSystem
 		newPool->activeObj = (u32*)s_memoryPool->allocate(sizeof(u32) * newPool->count);
 		newPool->freeCount = newPool->count;
 		newPool->activeCount = 0;
-		newPool->startIndex = startIndex;
+		newPool->startIndex = u32(startIndex);
 		for (u32 i = 0; i < newPool->freeCount; i++)
 		{
 			newPool->freeObj[i] = i;
@@ -423,7 +413,10 @@ namespace DXL2_WeaponSystem
 		RayHitInfo hitInfo;
 		if (DXL2_Physics::traceRay(&ray, &hitInfo))
 		{
-			// We hit something right away so no point in spawning.
+			// Damage.
+			// Bias the explosion effect forward slightly.
+			const Vec3f spawnPos = { hitInfo.hitPoint.x + dir.x, hitInfo.hitPoint.y + dir.y, hitInfo.hitPoint.z + dir.z };
+			explodeOnImpact(s_weapon.hitEffectPool, s_weapon.hitEffectSound, &spawnPos, hitInfo.hitSectorId, hitInfo.hitWallId, (GameObject*)hitInfo.obj, value0, damage);
 			return;
 		}
 
@@ -448,6 +441,28 @@ namespace DXL2_WeaponSystem
 		proj->effectPool = s_weapon.hitEffectPool;
 		proj->hitEffectSound = s_weapon.hitEffectSound;
 
+		if (proj->obj->oclass == CLASS_3D)
+		{
+			Vec3f fwd = { dir.x, 0.0f, dir.z };
+			fwd = DXL2_Math::normalize(&fwd);
+
+			// get Yaw and pitch from direction.
+			f32 yaw = -atan2f(dir.z, dir.x) * 180.0f / PI - 90.0f;
+			f32 cosPitch = (fwd.x*dir.x + fwd.z*dir.z);
+			f32 pitch = acosf(cosPitch) * 180.0f * DXL2_Math::sign(dir.y) / PI;
+			
+			proj->obj->angles = { pitch, yaw, 0.0f };
+			proj->obj->scale  = s_weapon.scale;
+			proj->obj->zbias = -s_weapon.renderOffset;
+
+			proj->obj->fullbright = true;
+		}
+		else
+		{
+			proj->obj->scale = { 1.0f, 1.0f, 1.0f };
+			proj->obj->zbias = 0.0f;
+		}
+
 		SectorObjectList* secList = LevelGameObjects::getSectorObjectList();
 		std::vector<u32>& list = (*secList)[hitInfo.hitSectorId].list;
 		u32 index = (u32)((u8*)projObj - (u8*)s_weapon.projPool->obj) / sizeof(GameObject);
@@ -462,7 +477,7 @@ namespace DXL2_WeaponSystem
 		proj->value0 = value0;
 		proj->value1 = value1;
 
-		projObj->pos = origin;
+		projObj->pos = { origin.x + dir.x * s_weapon.renderOffset, origin.y + dir.y * s_weapon.renderOffset, origin.z + dir.z * s_weapon.renderOffset };
 	}
 
 	void spawnEffect(ProjectilePool* effectPool, const Vec3f* pos, s32 sectorId)
@@ -544,11 +559,91 @@ namespace DXL2_WeaponSystem
 				}
 			}
 
-			for (s32 j = index; j < s_effectCount - 1; j++)
+			for (s32 j = index; j < (s32)s_effectCount - 1; j++)
 			{
 				s_effect[j] = s_effect[j + 1];
 			}
 			s_effectCount--;
+		}
+	}
+
+	void explodeOnImpact(ProjectilePool* effectPool, const SoundBuffer* hitEffectSound, const Vec3f* hitPoint, s32 hitSectorId, s32 hitWallId, GameObject* hitObject, f32 radius, u32 damage)
+	{
+		// Explode here.
+		if (effectPool)
+		{
+			spawnEffect(effectPool, hitPoint, hitSectorId);
+			if (hitEffectSound)
+			{
+				DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, hitEffectSound, false, hitPoint, true);
+			}
+		}
+		// Damage.
+		if (radius == 0.0f)	// Radius of 0 means only the target is damaged.
+		{
+			if (hitObject)           { DXL2_LogicSystem::damageObject(hitObject, damage); }
+			else if (hitWallId >= 0) { DXL2_InfSystem::shootWall(hitPoint, hitSectorId, hitWallId); }
+		}
+		else  // Otherwise effect all objects in range.
+		{
+			GameObjectList* objects = LevelGameObjects::getGameObjectList();
+			GameObject* obj = objects->data();
+
+			const u32 count = (u32)objects->size();
+			const f32 rSq = radius * radius;
+			for (u32 j = 0; j < count; j++, obj++)
+			{
+				if (!obj->show) { continue; }
+				const f32 distSq = DXL2_Math::distanceSq(&obj->pos, hitPoint);
+				if (distSq <= rSq)
+				{
+					// TODO: Damage falloff and explosion effect.
+					DXL2_LogicSystem::damageObject(obj, damage, DMG_EXPLOSION);
+				}
+			}
+
+			DXL2_InfSystem::explosion(hitPoint, hitSectorId, radius);
+		}
+	}
+
+	void projectileHit(Projectile* proj, const RayHitInfo* hitInfo)
+	{
+		SectorObjectList* secList = LevelGameObjects::getSectorObjectList();
+
+		if (proj->flags & PFLAG_EXPLODE_ON_IMPACT)
+		{
+			// Explode here.
+			if (proj->effectPool)
+			{
+				spawnEffect(proj->effectPool, &hitInfo->hitPoint, hitInfo->hitSectorId);
+				if (proj->hitEffectSound)
+				{
+					DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, proj->hitEffectSound, false, &proj->pos, true);
+				}
+			}
+			// Damage.
+			explodeOnImpact(proj->effectPool, proj->hitEffectSound, &hitInfo->hitPoint, hitInfo->hitSectorId, hitInfo->hitWallId, (GameObject*)hitInfo->obj, proj->value0, proj->damage);
+		}
+		// Handle bouncing, etc.
+
+		// Remove object
+		returnProjectile(proj->pool, proj->obj);
+		proj->obj->show = false;
+
+		// Delete from the sector.
+		u32 index = (u32)((u8*)proj->obj - (u8*)proj->pool->obj) / sizeof(GameObject);
+		u32 startIndex = proj->pool->startIndex;
+
+		// Remove from the old sector.
+		std::vector<u32>& prevlist = (*secList)[proj->obj->sectorId].list;
+		const size_t prevCount = prevlist.size();
+		for (u32 j = 0; j < prevCount; j++)
+		{
+			if (prevlist[j] == index + startIndex)
+			{
+				prevlist.erase(prevlist.begin() + j);
+				break;
+			}
 		}
 	}
 
@@ -579,68 +674,8 @@ namespace DXL2_WeaponSystem
 			RayHitInfo hitInfo;
 			if (DXL2_Physics::traceRay(&ray, &hitInfo))
 			{
-				if (proj->flags & PFLAG_EXPLODE_ON_IMPACT)
-				{
-					// Explode here.
-					if (proj->effectPool)
-					{
-						spawnEffect(proj->effectPool, &hitInfo.hitPoint, hitInfo.hitSectorId);
-						if (proj->hitEffectSound)
-						{
-							DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, proj->hitEffectSound, false, &proj->pos, true);
-						}
-					}
-					// Damage.
-					const f32 radius = proj->value0;
-					const u32 damage = proj->damage;
-					if (radius == 0.0f)	// Radius of 0 means only the target is damaged.
-					{
-						DXL2_LogicSystem::damageObject((GameObject*)hitInfo.obj, damage);
-					}
-					else  // Otherwise effect all objects in range.
-					{
-						GameObjectList* objects = LevelGameObjects::getGameObjectList();
-						GameObject* obj = objects->data();
-
-						const u32 count = (u32)objects->size();
-						const f32 rSq = radius * radius;
-						for (u32 j = 0; j < count; j++, obj++)
-						{
-							if (!obj->show) { continue; }
-							const f32 distSq = DXL2_Math::distanceSq(&obj->pos, &hitInfo.hitPoint);
-							if (distSq <= rSq)
-							{
-								// TODO: Damage falloff and explosion effect.
-								DXL2_LogicSystem::damageObject(obj, damage, DMG_EXPLOSION);
-							}
-						}
-
-						DXL2_InfSystem::explosion(&hitInfo.hitPoint, hitInfo.hitSectorId, radius);
-					}
-				}
-				// Handle bouncing, etc.
-
-				// Remove object
-				returnProjectile(proj->pool, proj->obj);
-				proj->obj->show = false;
-
-				// Delete from the sector.
-				u32 index = (u32)((u8*)proj->obj - (u8*)proj->pool->obj) / sizeof(GameObject);
-				u32 startIndex = proj->pool->startIndex;
-
-				// Remove from the old sector.
-				std::vector<u32>& prevlist = (*secList)[proj->obj->sectorId].list;
-				const size_t prevCount = prevlist.size();
-				for (u32 j = 0; j < prevCount; j++)
-				{
-					if (prevlist[j] == index + startIndex)
-					{
-						prevlist.erase(prevlist.begin() + j);
-						break;
-					}
-				}
+				projectileHit(proj, &hitInfo);
 				delList[delCount++] = i;
-
 				continue;
 			}
 			if (proj->obj->sectorId != hitInfo.hitSectorId && hitInfo.hitSectorId > -1)
@@ -669,7 +704,7 @@ namespace DXL2_WeaponSystem
 			
 			// Assuming no collision.
 			proj->pos = p1;
-			proj->obj->pos = p1;
+			proj->obj->pos = { p1.x + dir.x * s_weapon.renderOffset, p1.y + dir.y * s_weapon.renderOffset, p1.z + dir.z * s_weapon.renderOffset };
 
 			// Physics
 			if (proj->flags & PFLAG_HAS_GRAVITY)
@@ -681,7 +716,7 @@ namespace DXL2_WeaponSystem
 		for (s32 i = delCount - 1; i >= 0; i--)
 		{
 			s32 index = delList[i];
-			for (s32 j = index; j < s_projCount - 1; j++)
+			for (s32 j = index; j < (s32)s_projCount - 1; j++)
 			{
 				s_proj[j] = s_proj[j + 1];
 			}
@@ -765,9 +800,11 @@ namespace DXL2_WeaponSystem
 		DXL2_ScriptSystem::registerFunction("void DXL2_LoadHitSound(const string &in)", SCRIPT_FUNCTION(DXL2_LoadHitSound));
 		DXL2_ScriptSystem::registerFunction("float DXL2_GetSineMotion(float time)", SCRIPT_FUNCTION(DXL2_GetSineMotion));
 		DXL2_ScriptSystem::registerFunction("float DXL2_GetCosMotion(float time)", SCRIPT_FUNCTION(DXL2_GetCosMotion));
-		DXL2_ScriptSystem::registerFunction("void DXL2_WeaponFire()", SCRIPT_FUNCTION(DXL2_WeaponFire));
 		DXL2_ScriptSystem::registerFunction("void DXL2_WeaponPrimed(int primeCount)", SCRIPT_FUNCTION(DXL2_WeaponPrimed));
-		DXL2_ScriptSystem::registerFunction("void DXL2_WeaponLightEnd()", SCRIPT_FUNCTION(DXL2_WeaponLightEnd));
+		DXL2_ScriptSystem::registerFunction("void DXL2_MuzzleFlashBegin()", SCRIPT_FUNCTION(DXL2_MuzzleFlashBegin));
+		DXL2_ScriptSystem::registerFunction("void DXL2_MuzzleFlashEnd()", SCRIPT_FUNCTION(DXL2_MuzzleFlashEnd));
+		DXL2_ScriptSystem::registerFunction("void DXL2_SetProjectileScale(float x, float y, float z)", SCRIPT_FUNCTION(DXL2_SetProjectileScale));
+		DXL2_ScriptSystem::registerFunction("void DXL2_SetProjectileRenderOffset(float offset)", SCRIPT_FUNCTION(DXL2_SetProjectileRenderOffset));
 		DXL2_ScriptSystem::registerFunction("void DXL2_PlayerSpawnProjectile(int x, int y, float fwdSpeed, float upwardSpeed, uint flags, uint damage, float value0, float value1)",
 											SCRIPT_FUNCTION(DXL2_PlayerSpawnProjectile));
 
@@ -863,19 +900,29 @@ namespace DXL2_WeaponSystem
 		}
 	}
 	
-	void DXL2_WeaponFire()
-	{
-		s_shot = true;
-	}
-
 	void DXL2_WeaponPrimed(s32 primeCount)
 	{
 		s_primeTimer = primeCount;
 	}
 
-	void DXL2_WeaponLightEnd()
+	void DXL2_MuzzleFlashBegin()
+	{
+		if (s_player) { s_player->m_shooting = true; }
+	}
+
+	void DXL2_MuzzleFlashEnd()
 	{
 		if (s_player) { s_player->m_shooting = false; }
+	}
+	
+	void DXL2_SetProjectileScale(f32 x, f32 y, f32 z)
+	{
+		s_weapon.scale = { x, y, z };
+	}
+
+	void DXL2_SetProjectileRenderOffset(f32 offset)
+	{
+		s_weapon.renderOffset = offset;
 	}
 
 	// HACKY DEBUG CODE, REPLACE WITH REAL SHOOTING CODE!
@@ -890,80 +937,13 @@ namespace DXL2_WeaponSystem
 		if (s_primeTimer > 0) { return; }
 
 		s_weapon.hold = true;
-
-		u32 w, h;
-		s_renderer->getResolution(&w, &h);
-
-		Vec3f origin = DXL2_RenderCommon::unproject({ s_weapon.x + 16 * s_screen.scaleX / 256, s_weapon.y + s_weapon.yOffset }, 1.0f);
-		Vec3f target = DXL2_RenderCommon::unproject({ s32(w) / 2, s32(h) / 2 }, 10000.0f);
-
 		s_player = player;
-		s_shotLoc = origin;
-		s_shotSectorId = player->m_sectorId;
-		s_shotYaw = -player->m_yaw * 180.0f / PI;
-		s_shotPitch = 1.0f * player->m_pitch * 180.0f / PI;
-		s_model = DXL2_Model::get("WRBOLT.3DO");
-
-		s_shootDir = { target.x - origin.x, target.y - origin.y, target.z - origin.z };
-				
-		f32 magSq = s_shootDir.x*s_shootDir.x + s_shootDir.z*s_shootDir.z + s_shootDir.y*s_shootDir.y;
-		f32 dirScale = 1.0f / sqrtf(magSq);
-		s_shootDir.x *= dirScale;
-		s_shootDir.y *= dirScale;
-		s_shootDir.z *= dirScale;
-
-		// get Yaw and pitch from direction.
-		s_shotYaw = -atan2f(s_shootDir.z, s_shootDir.x) * 180.0f / PI + 90.0f;
-		//s_shotPitch = -atan2f(s_shootDir.y, s_shootDir.z) * 180.0f / PI * 0.5f;
-
+	
 		if (s_scriptWeapons[s_activeWeapon].firePrimary)
 		{
 			DXL2_ScriptSystem::executeScriptFunction(SCRIPT_TYPE_WEAPON, s_scriptWeapons[s_activeWeapon].firePrimary);
 		}
 		s_primeTimer = INT_MAX;
-		if (s_activeWeapon != WEAPON_THERMAL_DETONATOR)
-		{
-			if (s_player) { s_player->m_shooting = true; }
-
-			// Do an initial trace from the player to the weapon start, to catch cases where sectors should change.
-			Vec3f playerOrigin = { s_player->pos.x, origin.y, s_player->pos.z };
-			f32 dist = DXL2_Math::distance(&playerOrigin, &s_shotLoc);
-			Vec3f initDir = { s_shotLoc.x - playerOrigin.x, s_shotLoc.y - playerOrigin.y, s_shotLoc.z - playerOrigin.z };
-			initDir = DXL2_Math::normalize(&initDir);
-
-			const Ray ray =
-			{
-				playerOrigin,
-				initDir,
-				s_shotSectorId,
-				dist
-			};
-			RayHitInfo hitInfo;
-			if (DXL2_Physics::traceRay(&ray, &hitInfo))
-			{
-				// Stop the projectile.
-				s_shot = false;
-				s_showExplosion = true;
-				s_explosionLoc = hitInfo.hitPoint;
-				s_explosionAnimTime = 0.0f;
-				s_explosionSprite = DXL2_Sprite::getSprite("EXPTINY.WAX");
-
-				if (hitInfo.obj)
-				{
-					DXL2_LogicSystem::damageObject((GameObject*)hitInfo.obj, 1);
-				}
-				else if (hitInfo.hitWallId >= 0)
-				{
-					DXL2_InfSystem::shootWall(&hitInfo.hitPoint, hitInfo.hitSectorId, hitInfo.hitWallId);
-				}
-				const SoundBuffer* expTiny = DXL2_VocAsset::get("EX-TINY1.VOC");
-				DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, expTiny, false, &hitInfo.hitPoint, true);
-			}
-			else
-			{
-				s_shotSectorId = hitInfo.hitSectorId;
-			}
-		}
 	}
 
 	void draw(Player* player, Vec3f* cameraPos, u8 ambient)
@@ -972,119 +952,6 @@ namespace DXL2_WeaponSystem
 
 		const TextureFrame* frame = s_weapon.frames[s_weapon.frame];
 		if (!frame) { return; }
-
-		// TEST RAYTRACE
-		u32 w, h;
-		s_renderer->getResolution(&w, &h);
-		Ray ray =
-		{
-			*cameraPos,
-			DXL2_RenderCommon::unproject({ s32(w) / 2, s32(h) / 2 }, 10000.0f),
-			player->m_sectorId,
-			1000.0f
-		};
-		f32 rayLen = sqrtf(ray.dir.x*ray.dir.x + ray.dir.y*ray.dir.y + ray.dir.z*ray.dir.z);
-		f32 rayScale = 1.0f / rayLen;
-		ray.dir.x *= rayScale; ray.dir.y *= rayScale; ray.dir.z *= rayScale;
-
-		RayHitInfo hitInfo;
-		if (0 && DXL2_Physics::traceRay(&ray, &hitInfo))
-		{
-			Vec3f screenPos = DXL2_RenderCommon::project(&hitInfo.hitPoint);
-			if (screenPos.x >= 0 && screenPos.y >= 0 && screenPos.x < w && screenPos.y < h)
-			{
-				s32 sz = (s32)std::max(screenPos.z * 100.0f, 1.0f);
-				s_renderer->drawColoredQuad(s32(screenPos.x)-sz/2, s32(screenPos.y)-sz/2, sz, sz, 6);
-			}
-		}
-
-		// DEBUG
-		if (s_shot && s_model)
-		{
-			Vec3f angles = { 0.0f, s_shotYaw, s_shotPitch };
-			const f32 ca = cosf(s_player->m_yaw);
-			const f32 sa = sinf(s_player->m_yaw);
-			f32 rot[] = {ca, sa};
-			s32 pitchOffset = s32(f32(h/2) * s_player->m_pitch * PITCH_PIXEL_SCALE / PITCH_LIMIT) + (h/2);
-						
-			Vec3f modelScale = { 1.0f, 1.0f, 0.05f }, defaultScale = { 1.0f, 1.0f, 1.0f };
-			DXL2_ModelRender::setModelScale(&modelScale);
-			DXL2_ModelRender::setClip(0, s32(w)-1, nullptr, nullptr);
-			DXL2_ModelRender::draw(s_model, &angles, &s_shotLoc, nullptr, cameraPos, rot, (f32)pitchOffset, nullptr);
-			DXL2_ModelRender::setModelScale(&defaultScale);
-
-			// Trace a ray between the current location and the next. Then check if it hit anything.
-			const Ray ray =
-			{
-				s_shotLoc,
-				s_shootDir,
-				s_shotSectorId,
-				10.0f
-			};
-			RayHitInfo hitInfo;
-			if (DXL2_Physics::traceRay(&ray, &hitInfo))
-			{
-				// Stop the projectile.
-				s_shot = false;
-				s_showExplosion = true;
-				s_explosionLoc = hitInfo.hitPoint;
-				s_explosionAnimTime = 0.0f;
-				s_explosionSprite = DXL2_Sprite::getSprite("EXPTINY.WAX");
-
-				if (hitInfo.obj)
-				{
-					DXL2_LogicSystem::damageObject((GameObject*)hitInfo.obj, 1);
-				}
-				else if (hitInfo.hitWallId >= 0)
-				{
-					DXL2_InfSystem::shootWall(&hitInfo.hitPoint, hitInfo.hitSectorId, hitInfo.hitWallId);
-				}
-				const SoundBuffer* expTiny = DXL2_VocAsset::get("EX-TINY1.VOC");
-				DXL2_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, expTiny, false, &hitInfo.hitPoint, true);
-			}
-			else
-			{
-				s_shotSectorId = hitInfo.hitSectorId;
-				s_shotLoc.x += s_shootDir.x * 10.0f;
-				s_shotLoc.y += s_shootDir.y * 10.0f;
-				s_shotLoc.z += s_shootDir.z * 10.0f;
-			}
-		}
-		else if (s_showExplosion && s_explosionSprite)
-		{
-			f32 frameTime = s_explosionSprite->anim[0].frameRate * s_explosionAnimTime;
-			s32 frame = s32(frameTime);
-			if (frame >= s_explosionSprite->anim[0].angles[0].frameCount)
-			{
-				s_showExplosion = false;
-				s_explosionAnimTime = 0.0f;
-			}
-			else
-			{
-				s32 frameIndex = s_explosionSprite->anim[0].angles[0].frameIndex[frame];
-				Frame* frame = &s_explosionSprite->frames[frameIndex];
-
-				s_explosionAnimTime += (f32)DXL2_System::getDeltaTime();
-				TextureFrame texFrame = { 0 };
-				texFrame.width = frame->width;
-				texFrame.height = frame->height;
-				texFrame.image = frame->image;
-
-				Vec3f eProj = DXL2_RenderCommon::project(&s_explosionLoc);
-				if (eProj.x >= 0.0f && eProj.y >= 0.0f)
-				{
-					f32 focalLength = DXL2_RenderCommon::getFocalLength() / 8.0f;
-					f32 heightScale = DXL2_RenderCommon::getHeightScale() / 8.0f;
-
-					f32 ew = frame->width  * focalLength * eProj.z;
-					f32 eh = frame->height * heightScale * eProj.z;
-					s32 sx = s32(256 * focalLength * eProj.z);
-					s32 sy = s32(256 * heightScale * eProj.z);
-
-					s_renderer->blitImage(&texFrame, s32(eProj.x - ew/2), s32(eProj.y - eh/2), sx, sy, 31);
-				}
-			}
-		}
 
 		if (s_player && s_player->m_shooting) { ambient = 31; }
 		s_renderer->blitImage(frame, s_weapon.x, s_weapon.y + s_weapon.yOffset, s_screen.scaleX, s_screen.scaleY, ambient);
