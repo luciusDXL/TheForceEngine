@@ -1448,7 +1448,7 @@ namespace DXL2_InfSystem
 						{
 							DXL2_GameHud::setMessage(DXL2_GameMessages::getMessage(msgId));
 
-							SoundBuffer* buffer = DXL2_VocAsset::get("LOCKED-1.VOC");
+							const SoundBuffer* buffer = DXL2_VocAsset::get("LOCKED-1.VOC");
 							DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, buffer, false);
 						}
 						continue;

@@ -202,9 +202,10 @@ namespace DXL2_VocAsset
 		{
 			const BlockType type = BlockType(*buffer); buffer++;
 			// Break if this is the final block.
-			if (type == VOC_TERMINATOR) { break; }
+			// TODO: Figure out what type = 170 means; for now abort.
+			if (type == VOC_TERMINATOR || type > VOC_END_REPEAT) { break; }
 			// All other blocks have a 3 byte size (up to 16MB).
-			const u32 len = buffer[0] | (buffer[1] << 8u) | (buffer[2] << 16u);
+			const u32 blockLen = buffer[0] | (buffer[1] << 8u) | (buffer[2] << 16u);
 			buffer += 3;
 			// Block parsing.
 			switch (type)
@@ -214,12 +215,12 @@ namespace DXL2_VocAsset
 					const s32 sampleRate = 1000000 / (256 - (s32)buffer[0]);
 					const u8  codec = buffer[1];
 					const u8* soundData = &buffer[2];
-					addSoundData(voc, sampleRate, codec, soundData, len - 2);
+					addSoundData(voc, sampleRate, codec, soundData, blockLen - 2);
 				} break;
 				case VOC_SOUND_CONTINUE:
 				{
 					const u8* soundData = &buffer[2];
-					continueSoundData(voc, soundData, len);
+					continueSoundData(voc, soundData, blockLen);
 				} break;
 				case VOC_SILENCE:
 				{
@@ -249,7 +250,7 @@ namespace DXL2_VocAsset
 					assert(0);
 			};
 			// Move to the next block.
-			buffer += len;
+			buffer += blockLen;
 		}
 
 		if (!(voc->flags & SBUFFER_FLAG_LOOPING))

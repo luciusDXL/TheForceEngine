@@ -1341,7 +1341,7 @@ namespace DXL2_Physics
 				}
 			}
 
-			if (closestHit < 0)
+			if (closestHit < 0 || closestWallId < 0)
 			{
 				return false;
 			}
