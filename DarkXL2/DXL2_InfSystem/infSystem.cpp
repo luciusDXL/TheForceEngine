@@ -1496,8 +1496,21 @@ namespace DXL2_InfSystem
 		for (u32 s = 0; s < hitInfo->hitCount; s++)
 		{
 			u32 sectorId = hitInfo->hitSectorId[s];
-			u32 lineId = hitInfo->wallHitId[s];
-			if (s_sectorItemMap[sectorId].lineCount < 1) continue;
+			u32 lineId   = hitInfo->wallHitId[s];
+			u32 evt = INF_EVENT_NUDGE_FRONT;
+			if (s_sectorItemMap[sectorId].lineCount < 1)
+			{
+				// Try the backside of the line.
+				Sector* sector = s_levelData->sectors.data() + sectorId;
+				SectorWall* wall = s_levelData->walls.data() + sector->wallOffset + lineId;
+				if (wall->adjoin >= 0 && s_sectorItemMap[wall->adjoin].lineCount >= 0)
+				{
+					sectorId = wall->adjoin;
+					lineId   = wall->mirror;
+					evt = INF_EVENT_NUDGE_BACK;
+				}
+				if (evt != INF_EVENT_NUDGE_BACK) { continue; }
+			}
 
 			// There are lines in this sector, is this particular line one of them?
 			for (u32 i = 0; i < s_sectorItemMap[sectorId].lineCount; i++)
@@ -1506,7 +1519,7 @@ namespace DXL2_InfSystem
 				{
 					// For switches, make sure the player is looking right at the switch and isn't too high or low.
 					InfItem* item = &s_infData->item[s_sectorItemMap[sectorId].lineItemId[i].itemId];
-					const NudgeType nudgeType = nudgeLine(INF_EVENT_NUDGE_FRONT, item, &hitInfo->hitPoint[s]);
+					const NudgeType nudgeType = nudgeLine(evt, item, &hitInfo->hitPoint[s]);
 					if (nudgeType == NUDGE_TOGGLE)
 					{
 						DXL2_Level::toggleTextureFrame(sectorId, SP_SIGN, WSP_NONE, lineId);
