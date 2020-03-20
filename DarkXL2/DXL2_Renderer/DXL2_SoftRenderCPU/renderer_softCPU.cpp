@@ -827,6 +827,11 @@ Palette256 DXL2_SoftRenderCPU::getPalette()
 	return m_curPal;
 }
 
+const ColorMap* DXL2_SoftRenderCPU::getColorMap()
+{
+	return m_curColorMap;
+}
+
 //N.8 fixed point, 256 = 1.0.
 void DXL2_SoftRenderCPU::blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel, TextureLayout layout)
 {

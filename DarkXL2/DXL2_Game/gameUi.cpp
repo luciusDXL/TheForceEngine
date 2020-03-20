@@ -7,6 +7,7 @@
 #include <DXL2_Asset/textureAsset.h>
 #include <DXL2_Asset/fontAsset.h>
 #include <DXL2_Asset/paletteAsset.h>
+#include <DXL2_Asset/colormapAsset.h>
 #include <DXL2_Input/input.h>
 #include <DXL2_RenderBackend/renderBackend.h>
 #include <assert.h>
@@ -20,6 +21,8 @@ namespace DXL2_GameUi
 	static s32 s_uiScale = 256;
 	static Palette256* s_menuPal;
 	static Palette256 s_prevPal;
+	static const ColorMap* s_menuCMap;
+	static const ColorMap* s_prevCMap;
 	static Texture* s_menu;
 	static Texture* s_cursor;
 	static Vec2i s_cursorPos;
@@ -36,7 +39,8 @@ namespace DXL2_GameUi
 		s_scaleX = 256 * s_uiScale * width  / (320 * 256);
 		s_scaleY = 256 * s_uiScale * height / (200 * 256);
 
-		s_menuPal = DXL2_Palette::get256("SECBASE.PAL");// PalFromPltt("menu.pltt", "LFD/MENU.LFD");
+		s_menuPal = DXL2_Palette::get256("SECBASE.PAL");
+		s_menuCMap = DXL2_ColorMap::get("SECBASE.CMP");
 		s_menu    = DXL2_Texture::getFromAnim("escmenu.anim", "LFD/MENU.LFD");
 		s_cursor  = DXL2_Texture::getFromDelt("cursor.delt",  "LFD/MENU.LFD");
 	}
@@ -45,7 +49,9 @@ namespace DXL2_GameUi
 	{
 		s_escMenuOpen = true;
 		s_prevPal = s_renderer->getPalette();
+		s_prevCMap = s_renderer->getColorMap();
 		s_renderer->setPalette(s_menuPal);
+		s_renderer->setColorMap(s_menuCMap);
 		DXL2_RenderCommon::enableGrayScale(true);
 		s_cursorPos = { 0 };
 		s_cursorPosAccum = { 0 };
@@ -63,6 +69,7 @@ namespace DXL2_GameUi
 			s_escMenuOpen = false;
 			DXL2_RenderCommon::enableGrayScale(false);
 			s_renderer->setPalette(&s_prevPal);
+			s_renderer->setColorMap(s_prevCMap);
 		}
 
 		if (s_escMenuOpen)

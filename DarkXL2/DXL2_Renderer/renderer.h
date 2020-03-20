@@ -44,6 +44,7 @@ public:
 	virtual void setColorMap(const ColorMap* cmp) = 0;
 	virtual void setPaletteColor(u8 index, u32 color) = 0;
 	virtual Palette256 getPalette() = 0;
+	virtual const ColorMap* getColorMap() = 0;
 	virtual void enablePalEffects(bool grayScale, bool green) = 0;
 	virtual void drawMapLines(s32 layers, f32 xOffset, f32 zOffset, f32 scale) = 0;
 	virtual void drawPalette() = 0;

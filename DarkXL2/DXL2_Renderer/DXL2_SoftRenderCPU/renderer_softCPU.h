@@ -38,6 +38,7 @@ public:
 	void setColorMap(const ColorMap* cmp) override;
 	void setPaletteColor(u8 index, u32 color) override;
 	Palette256 getPalette() override;
+	const ColorMap* getColorMap() override;
 	void enablePalEffects(bool grayScale, bool green) override;
 	void drawMapLines(s32 layers, f32 xOffset, f32 zOffset, f32 scale) override;
 	void drawPalette() override;
