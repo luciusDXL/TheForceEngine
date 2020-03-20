@@ -212,9 +212,15 @@ namespace ArchiveViewer
 			s32 x = 320 - (s_curTexture->frames[0].width>>1);
 			s32 y = 240 - (s_curTexture->frames[0].height >> 1);
 			if (s_curTexture->layout == TEX_LAYOUT_VERT)
+			{
 				s_renderer->drawTexture(s_curTexture, x, y);
+			}
 			else
+			{
+				s32 x = 160;
+				s32 y = 140;
 				s_renderer->drawTextureHorizontal(s_curTexture, x, y);
+			}
 		}
 		else if (s_fileType == TYPE_FRAME)
 		{
@@ -495,6 +501,11 @@ namespace ArchiveViewer
 				{
 					s_fileType = TYPE_TEX;
 					s_curTexture = DXL2_Texture::getFromDelt(s_items[s_currentFile], s_curArchiveFile);
+				}
+				else if (strcasecmp(extension, "ANIM") == 0)
+				{
+					s_fileType = TYPE_TEX;
+					s_curTexture = DXL2_Texture::getFromAnim(s_items[s_currentFile], s_curArchiveFile);
 				}
 
 				for (size_t i = 0; i < len; i++)

@@ -216,6 +216,8 @@ namespace DXL2_Texture
 
 				texture->frames[f].uvWidth = frame->idemX;
 				texture->frames[f].uvHeight = frame->idemY;
+				texture->frames[f].offsetX = 0;
+				texture->frames[f].offsetY = 0;
 				
 				texture->frames[f].image = texture->memory + offset;
 				offset += frame->SizeX * frame->SizeY;
@@ -231,6 +233,8 @@ namespace DXL2_Texture
 			texture->frames[0].width = header->SizeX;
 			texture->frames[0].height = header->SizeY;
 			texture->frames[0].logSizeY = header->logSizeY;
+			texture->frames[0].offsetX = 0;
+			texture->frames[0].offsetY = 0;
 
 			texture->frames[0].opacity = OPACITY_NORMAL;
 			if (header->Transparent == 0x36) { texture->frames[0].opacity = OPACITY_NORMAL; }
@@ -265,62 +269,39 @@ namespace DXL2_Texture
 	};
 #pragma pack(pop)
 
-	Texture* getFromDelt(const char* name, const char* archivePath)
+	void loadDeltIntoFrame(TextureFrame* frame, u8** imageDst, const u8* buffer, u32 size)
 	{
-		TextureMap::iterator iTex = s_textures.find(name);
-		if (iTex != s_textures.end())
-		{
-			return iTex->second;
-		}
-
-		// It doesn't exist yet, try to load the palette.
-		if (!DXL2_AssetSystem::readAssetFromArchive(archivePath, name, s_buffer))
-		{
-			return nullptr;
-		}
-
-		// Then read out the data.
-		DeltHeader header = *((DeltHeader*)s_buffer.data());
+		DeltHeader header = *((DeltHeader*)buffer);
 		header.sizeX++;
 		header.sizeY++;
 
-		Texture* texture = new Texture();
-		strcpy(texture->name, name);
-		
-		u32 allocSize = 0u;
-		allocSize += sizeof(TextureFrame);
-		allocSize += header.sizeX * header.sizeY;
-		// Allocate memory.
-		texture->memory = new u8[allocSize];
-		texture->frames = (TextureFrame*)texture->memory;
-		texture->frameCount = 1;
-		texture->frameRate = 0;
-		texture->layout = TEX_LAYOUT_HORZ;
-		size_t offset = sizeof(TextureFrame);
+		frame->width    = header.sizeX;
+		frame->height   = header.sizeY;
+		frame->logSizeY = 0;
+		frame->opacity  = OPACITY_TRANS;
+		frame->uvWidth  = header.sizeX;
+		frame->uvHeight = header.sizeY;
+		frame->image    = *imageDst;
 
-		texture->frames[0].image = texture->memory + offset;
-		memset(texture->frames[0].image, 0, header.sizeX * header.sizeY);
+		frame->offsetX = header.offsetX;
+		frame->offsetY = header.offsetY;
 
-		texture->frames[0].width = header.sizeX;
-		texture->frames[0].height = header.sizeY;
-		texture->frames[0].logSizeY = 0;	//unused
-		texture->frames[0].opacity = OPACITY_TRANS;
-		texture->frames[0].uvWidth = header.sizeX;
-		texture->frames[0].uvHeight = header.sizeY;
+		memset(frame->image, 0, header.sizeX * header.sizeY);
+		(*imageDst) += header.sizeX * header.sizeY;
 
-		u8* data = s_buffer.data() + sizeof(DeltHeader);
-		u8* end = s_buffer.data() + s_buffer.size();
+		const u8* data = buffer + sizeof(DeltHeader);
+		const u8* end = buffer + size;
 		while (data < end)
 		{
 			const DeltLine* line = (DeltLine*)data;
 			data += sizeof(DeltLine);
 
-			const s32 startX = line->xStart - header.offsetX;
-			const s32 startY = header.sizeY - (line->yStart - header.offsetY) - 1;
+			const s32 startX = line->xStart;
+			const s32 startY = line->yStart;//header.sizeY - (line->yStart) - 1;
 			const bool rle = (line->sizeAndType & 1) ? true : false;
 			s32 pixelCount = (line->sizeAndType >> 1) & 0x3FFF;
 
-			u8* image = texture->frames[0].image + startX + startY * header.sizeX;
+			u8* image = frame->image + startX + startY * header.sizeX;
 			while (pixelCount > 0)
 			{
 				if (rle)
@@ -356,6 +337,100 @@ namespace DXL2_Texture
 					pixelCount = 0;
 				}
 			}
+		}
+	}
+
+	Texture* getFromDelt(const char* name, const char* archivePath)
+	{
+		TextureMap::iterator iTex = s_textures.find(name);
+		if (iTex != s_textures.end())
+		{
+			return iTex->second;
+		}
+
+		// It doesn't exist yet, try to load the palette.
+		if (!DXL2_AssetSystem::readAssetFromArchive(archivePath, name, s_buffer))
+		{
+			return nullptr;
+		}
+
+		// Then read out the data.
+		DeltHeader header = *((DeltHeader*)s_buffer.data());
+		header.sizeX++;
+		header.sizeY++;
+
+		Texture* texture = new Texture();
+		strcpy(texture->name, name);
+		
+		u32 allocSize = 0u;
+		allocSize += sizeof(TextureFrame);
+		allocSize += header.sizeX * header.sizeY;
+		// Allocate memory.
+		texture->memory = new u8[allocSize];
+		texture->frames = (TextureFrame*)texture->memory;
+		texture->frameCount = 1;
+		texture->frameRate = 0;
+		texture->layout = TEX_LAYOUT_HORZ;
+
+		size_t offset = sizeof(TextureFrame);
+		texture->frames[0].image = texture->memory + offset;
+		memset(texture->frames[0].image, 0, header.sizeX * header.sizeY);
+
+		u8* imageDst = texture->memory + offset;
+		loadDeltIntoFrame(&texture->frames[0], &imageDst, s_buffer.data(), (u32)s_buffer.size());
+
+		s_textures[name] = texture;
+		return texture;
+	}
+
+	Texture* getFromAnim(const char* name, const char* archivePath)
+	{
+		TextureMap::iterator iTex = s_textures.find(name);
+		if (iTex != s_textures.end())
+		{
+			return iTex->second;
+		}
+
+		// It doesn't exist yet, try to load the anim.
+		if (!DXL2_AssetSystem::readAssetFromArchive(archivePath, name, s_buffer))
+		{
+			return nullptr;
+		}
+
+		const s16 frameCount = *((s16*)s_buffer.data());
+		const u8* frames = s_buffer.data() + 2;
+
+		// First compute the total size.
+		u32 allocSize = sizeof(TextureFrame) * frameCount;
+		for (s32 i = 0; i < frameCount; i++)
+		{
+			u32 size = *((u32*)frames); frames += 4;
+			DeltHeader header = *((DeltHeader*)frames);
+			header.sizeX++;
+			header.sizeY++;
+			allocSize += header.sizeX*header.sizeY;
+
+			frames += size;
+		}
+
+		Texture* texture = new Texture();
+		strcpy(texture->name, name);
+
+		// Allocate memory.
+		texture->memory = new u8[allocSize];
+		texture->frames = (TextureFrame*)texture->memory;
+		texture->frameCount = frameCount;
+		texture->frameRate = 15;	// arbitrary.
+		texture->layout = TEX_LAYOUT_HORZ;
+
+		// Then load the DELTs.
+		frames = s_buffer.data() + 2;
+		u8* imageDst = texture->memory + sizeof(TextureFrame) * frameCount;
+		for (s32 i = 0; i < frameCount; i++)
+		{
+			u32 size = *((u32*)frames); frames += 4;
+			loadDeltIntoFrame(&texture->frames[i], &imageDst, frames, size);
+			frames += size;
 		}
 
 		s_textures[name] = texture;

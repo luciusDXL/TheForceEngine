@@ -878,6 +878,8 @@ void DXL2_SoftRenderCPU::drawTextureHorizontal(Texture* texture, s32 x0, s32 y0)
 
 	s32 startX = 0;
 	s32 startY = 0;
+	x0 += texture->frames[0].offsetX;
+	y0 += texture->frames[0].offsetY;
 	if (x0 < 0) { startX -= x0; image -= x0; }
 	if (y0 < 0) { startY -= y0; image -= y0 * w; }
 
@@ -885,7 +887,10 @@ void DXL2_SoftRenderCPU::drawTextureHorizontal(Texture* texture, s32 x0, s32 y0)
 	{
 		for (s32 x = startX; x < w && (x + x0) < (s32)m_width; x++)
 		{
-			m_display[(y + y0)*m_width + x + x0] = image[x];
+			u8 color = image[x];
+			if (image[x] == 0) { continue; }
+
+			m_display[(480 - y - y0 - 1)*m_width + x + x0] = image[x];
 		}
 	}
 }

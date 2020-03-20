@@ -30,6 +30,9 @@ struct TextureFrame
 	s16 uvWidth;	// width and height to use when computing uvs.
 	s16 uvHeight;
 
+	s16 offsetX;
+	s16 offsetY;
+
 	u8 logSizeY;
 	u8 pad[3];
 
@@ -54,6 +57,7 @@ namespace DXL2_Texture
 {
 	Texture* get(const char* name);
 	Texture* getFromDelt(const char* name, const char* archivePath);
+	Texture* getFromAnim(const char* name, const char* archivePath);
 	void free(Texture* texture);
 	void freeAll();
 }
