@@ -21,7 +21,7 @@ namespace DXL2_GameMessages
 	{
 		if (s_loaded) { return true; }
 
-		if (DXL2_AssetSystem::readAssetFromGob(c_defaultGob, "TEXT.MSG", s_buffer))
+		if (DXL2_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, "TEXT.MSG", s_buffer))
 		{
 			DXL2_Parser parser;
 			size_t len = s_buffer.size();

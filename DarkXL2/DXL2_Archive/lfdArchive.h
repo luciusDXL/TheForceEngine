@@ -53,8 +53,7 @@ private:
 
 	typedef struct
 	{
-		char TYPE[5];
-		char NAME[9];
+		char NAME[16];
 		long LENGTH;		//length of the file.
 		long IX;
 	} LFD_EntryFinal_t;

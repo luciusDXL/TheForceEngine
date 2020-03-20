@@ -4,9 +4,8 @@
 // Handles global asset state, such as custom archive sources.
 //////////////////////////////////////////////////////////////////////
 #include <DXL2_System/types.h>
+#include <DXL2_Archive/archive.h>
 #include <vector>
-
-class Archive;
 
 namespace DXL2_AssetSystem
 {
@@ -14,6 +13,8 @@ namespace DXL2_AssetSystem
 	void clearCustomArchive();
 
 	Archive* getCustomArchive();
-	bool readAssetFromGob(const char* defaultGob, const char* filename, std::vector<u8>& buffer);
-	bool readAssetFromGob(const char* defaultGob, const char* filename, std::vector<char>& buffer);
+	bool readAssetFromArchive(const char* defaultArchive, ArchiveType type, const char* filename, std::vector<u8>& buffer);
+	bool readAssetFromArchive(const char* defaultArchive, ArchiveType type, const char* filename, std::vector<char>& buffer);
+	bool readAssetFromArchive(const char* defaultArchive, const char* filename, std::vector<u8>& buffer);
+	bool readAssetFromArchive(const char* defaultArchive, const char* filename, std::vector<char>& buffer);
 }

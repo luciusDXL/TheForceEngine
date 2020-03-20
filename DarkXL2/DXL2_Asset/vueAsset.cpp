@@ -25,7 +25,7 @@ namespace DXL2_VueAsset
 		}
 
 		// It doesn't exist yet, try to load the font.
-		if (!DXL2_AssetSystem::readAssetFromGob(c_defaultGob, name, s_buffer))
+		if (!DXL2_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, name, s_buffer))
 		{
 			return nullptr;
 		}

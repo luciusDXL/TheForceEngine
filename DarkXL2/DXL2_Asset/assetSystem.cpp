@@ -21,7 +21,7 @@ namespace DXL2_AssetSystem
 		return s_customArchive;
 	}
 
-	Archive* openGobFile(const char* defaultGob, const char* filename)
+	Archive* openArchiveFile(const char* defaultArchive, ArchiveType type, const char* filename)
 	{
 		// First try reading from the custom Archive, if there is one.
 		if (s_customArchive)
@@ -35,8 +35,8 @@ namespace DXL2_AssetSystem
 
 		// Otherwise read from the specified GOB archive.
 		char gobPath[DXL2_MAX_PATH];
-		DXL2_Paths::appendPath(PATH_SOURCE_DATA, defaultGob, gobPath);
-		Archive* archive = Archive::getArchive(ARCHIVE_GOB, defaultGob, gobPath);
+		DXL2_Paths::appendPath(PATH_SOURCE_DATA, defaultArchive, gobPath);
+		Archive* archive = Archive::getArchive(type, defaultArchive, gobPath);
 		if (!archive)
 		{
 			DXL2_System::logWrite(LOG_ERROR, "Archive", "Cannot open source archive file \"%s\"", gobPath);
@@ -49,10 +49,10 @@ namespace DXL2_AssetSystem
 		}
 		return archive;
 	}
-
-	bool readAssetFromGob(const char* defaultGob, const char* filename, std::vector<u8>& buffer)
+		
+	bool readAssetFromArchive(const char* defaultArchive, ArchiveType type, const char* filename, std::vector<u8>& buffer)
 	{
-		Archive* archive = openGobFile(defaultGob, filename);
+		Archive* archive = openArchiveFile(defaultArchive, type, filename);
 		if (archive)
 		{
 			// Read the file into memory for parsing.
@@ -65,9 +65,41 @@ namespace DXL2_AssetSystem
 		return false;
 	}
 
-	bool readAssetFromGob(const char* defaultGob, const char* filename, std::vector<char>& buffer)
+	bool readAssetFromArchive(const char* defaultArchive, ArchiveType type, const char* filename, std::vector<char>& buffer)
 	{
-		Archive* archive = openGobFile(defaultGob, filename);
+		Archive* archive = openArchiveFile(defaultArchive, type, filename);
+		if (archive)
+		{
+			// Read the file into memory for parsing.
+			const size_t len = archive->getFileLength();
+			buffer.resize(len);
+			archive->readFile(buffer.data(), len);
+			archive->closeFile();
+			return true;
+		}
+		return false;
+	}
+
+	bool readAssetFromArchive(const char* defaultArchive, const char* filename, std::vector<u8>& buffer)
+	{
+		const ArchiveType type = Archive::getArchiveTypeFromName(defaultArchive);
+		Archive* archive = openArchiveFile(defaultArchive, type, filename);
+		if (archive)
+		{
+			// Read the file into memory for parsing.
+			const size_t len = archive->getFileLength();
+			buffer.resize(len);
+			archive->readFile(buffer.data(), len);
+			archive->closeFile();
+			return true;
+		}
+		return false;
+	}
+
+	bool readAssetFromArchive(const char* defaultArchive, const char* filename, std::vector<char>& buffer)
+	{
+		const ArchiveType type = Archive::getArchiveTypeFromName(defaultArchive);
+		Archive* archive = openArchiveFile(defaultArchive, type, filename);
 		if (archive)
 		{
 			// Read the file into memory for parsing.

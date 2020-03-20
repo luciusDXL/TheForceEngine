@@ -1334,7 +1334,7 @@ namespace LevelEditorData
 						{
 							hitDist = i;
 							hitInfo->hitSectorId = s;
-							hitInfo->hitObjectId = o;
+							hitInfo->hitObjectId = s32(o);
 							hitInfo->hitWallId   = -1;
 							hitInfo->hitPoint    = {ray->origin.x + ray->dir.x*i, ray->origin.y + ray->dir.y*i, ray->origin.z + ray->dir.z*i };
 						}
@@ -1361,7 +1361,7 @@ namespace LevelEditorData
 						{
 							hitDist = i;
 							hitInfo->hitSectorId = s;
-							hitInfo->hitObjectId = o;
+							hitInfo->hitObjectId = s32(o);
 							hitInfo->hitWallId   = -1;
 							hitInfo->hitPoint    = { ray->origin.x + ray->dir.x*i, ray->origin.y + ray->dir.y*i, ray->origin.z + ray->dir.z*i };
 						}

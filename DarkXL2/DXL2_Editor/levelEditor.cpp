@@ -2557,7 +2557,7 @@ namespace LevelEditor
 
 		const size_t len = srcConfig.getSize();
 		std::vector<char> dosBoxConfig(len + 512);
-		srcConfig.readBuffer(dosBoxConfig.data(), len);
+		srcConfig.readBuffer(dosBoxConfig.data(), (u32)len);
 		srcConfig.close();
 
 		char* newConfig = dosBoxConfig.data();
@@ -2573,7 +2573,7 @@ namespace LevelEditor
 		{
 			return false;
 		}
-		config.writeBuffer(newConfig, strlen(newConfig));
+		config.writeBuffer(newConfig, (u32)strlen(newConfig));
 		config.close();
 
 		return true;
@@ -2597,11 +2597,11 @@ namespace LevelEditor
 				Vec3f originalStartPos;
 				f32 originalAngle;
 				LevelObject* obj = levelObj->objects.data();
-				for (s32 i = 0; i < levelObj->objectCount; i++, obj++)
+				for (u32 i = 0; i < levelObj->objectCount; i++, obj++)
 				{
 					if (obj->oclass == CLASS_SPIRIT && obj->logics.size() && obj->logics[0].type == LOGIC_PLAYER)
 					{
-						startIndex = i;
+						startIndex = s32(i);
 						originalStartPos = obj->pos;
 						originalAngle = obj->orientation.y;
 						obj->pos = s_camera.pos;

@@ -8,6 +8,7 @@ enum ArchiveType
 	ARCHIVE_LFD,
 	ARCHIVE_LAB,
 	ARCHIVE_COUNT,
+	ARCHIVE_UNKNOWN = ARCHIVE_COUNT
 };
 
 #define INVALID_FILE 0xffffffff
@@ -22,6 +23,8 @@ public:
 
 	static Archive* createCustomArchive(ArchiveType type, const char* path);
 	static void deleteCustomArchive(Archive* archive);
+
+	static ArchiveType getArchiveTypeFromName(const char* path);
 	
 	// Public Archive API
 public:

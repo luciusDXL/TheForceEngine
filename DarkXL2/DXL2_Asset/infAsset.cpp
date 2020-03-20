@@ -104,7 +104,7 @@ namespace DXL2_InfAsset
 		// Unload the current level.
 		unload();
 
-		if (!DXL2_AssetSystem::readAssetFromGob(c_defaultGob, name, s_buffer))
+		if (!DXL2_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, name, s_buffer))
 		{
 			return false;
 		}
@@ -362,7 +362,7 @@ namespace DXL2_InfAsset
 					// Is this index used yet?
 					bool itemFound = false;
 					const InfItem* item = s_data.item;
-					for (u32 i = 0; i < itemCount; i++, item++)
+					for (s32 i = 0; i < itemCount; i++, item++)
 					{
 						const u32 sectorId = item->id & 0xffffu;
 						if (*index == sectorId && item->type == INF_ITEM_LINE)

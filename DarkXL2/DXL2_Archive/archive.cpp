@@ -12,6 +12,26 @@ namespace
 	static ArchiveMap s_archives[ARCHIVE_COUNT];
 }
 
+static const char* c_archiveExt[ARCHIVE_COUNT]=
+{
+	"GOB", // ARCHIVE_GOB
+	"LFD", // ARCHIVE_LFD
+	"LAB", // ARCHIVE_LAB
+};
+
+ArchiveType Archive::getArchiveTypeFromName(const char* path)
+{
+	const size_t len = strlen(path);
+	for (u32 i = 0; i < ARCHIVE_COUNT; i++)
+	{
+		if (strcasecmp(&path[len - 3], c_archiveExt[i]) == 0)
+		{
+			return ArchiveType(i);
+		}
+	}
+	return ARCHIVE_UNKNOWN;
+}
+
 Archive* Archive::getArchive(ArchiveType type, const char* name, const char* path)
 {
 	ArchiveMap::iterator iArchive = s_archives[type].find(name);

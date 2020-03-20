@@ -42,10 +42,13 @@ bool LfdArchive::open(const char *archivePath)
 	{
 		m_file.readBuffer(&entry, sizeof(LFD_Entry_t));
 
-		memcpy(m_fileList.entries[i].TYPE, entry.TYPE, 4);
-		m_fileList.entries[i].TYPE[4] = 0;
-		memcpy(m_fileList.entries[i].NAME, entry.NAME, 8);
-		m_fileList.entries[i].NAME[8] = 0;
+		char name[9] = { 0 };
+		char ext[5]  = { 0 };
+		memcpy(name, entry.NAME, 8);
+		memcpy(ext, entry.TYPE, 5);
+		ext[4] = 0;
+
+		sprintf(m_fileList.entries[i].NAME, "%s.%s", name, ext);
 		m_fileList.entries[i].LENGTH = entry.LENGTH;
 		m_fileList.entries[i].IX = IX + sizeof(LFD_Entry_t);
 

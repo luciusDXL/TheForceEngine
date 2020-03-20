@@ -30,7 +30,7 @@ namespace DXL2_LevelList
 		// TODO: It would be more robust to modify the parser to allow it to ignore white space
 		// in favor of seperators (except for leading/trailing whitespace) - as an option. This
 		// way the first two tokens will be the name and file name, making the code simpler and less likely to break.
-		if (DXL2_AssetSystem::readAssetFromGob(c_defaultGob, "JEDI.LVL", s_buffer))
+		if (DXL2_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, "JEDI.LVL", s_buffer))
 		{
 			DXL2_Parser parser;
 			size_t len = s_buffer.size();

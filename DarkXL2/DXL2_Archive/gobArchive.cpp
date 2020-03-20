@@ -201,7 +201,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 	std::vector<std::vector<u8>> fileData(m_fileList.MASTERN);
 	if (m_file.open(m_archivePath, FileStream::MODE_READ))
 	{
-		for (u32 f = 0; f < m_fileList.MASTERN - 1; f++)
+		for (s32 f = 0; f < m_fileList.MASTERN - 1; f++)
 		{
 			fileData[f].resize(m_fileList.entries[f].LEN);
 			m_file.seek(m_fileList.entries[f].IX);
@@ -210,7 +210,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 		m_file.close();
 
 		fileData[newId].resize(len);
-		file.readBuffer(fileData[newId].data(), len);
+		file.readBuffer(fileData[newId].data(), (u32)len);
 		file.close();
 	}
 
@@ -218,7 +218,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 	if (m_file.open(m_archivePath, FileStream::MODE_WRITE))
 	{
 		m_file.writeBuffer(&m_header, sizeof(GOB_Header_t));
-		for (u32 f = 0; f < m_fileList.MASTERN; f++)
+		for (s32 f = 0; f < m_fileList.MASTERN; f++)
 		{
 			m_file.writeBuffer(fileData[f].data(), m_fileList.entries[f].LEN);
 		}
