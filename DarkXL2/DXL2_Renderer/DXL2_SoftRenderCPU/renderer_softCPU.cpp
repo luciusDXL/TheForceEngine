@@ -815,7 +815,7 @@ void DXL2_SoftRenderCPU::print(const char* text, const Font* font, s32 x0, s32 y
 		frame.image = (u8*)image;
 		blitImage(&frame, xPos, yPos, scaleX, scaleY);
 		
-		x += (w+1) * scaleX;
+		x += font->step[index] * scaleX;
 	}
 }
 
@@ -890,7 +890,7 @@ void DXL2_SoftRenderCPU::drawTextureHorizontal(Texture* texture, s32 x0, s32 y0)
 			u8 color = image[x];
 			if (image[x] == 0) { continue; }
 
-			m_display[(480 - y - y0 - 1)*m_width + x + x0] = image[x];
+			m_display[(m_height - y - y0 - 1)*m_width + x + x0] = image[x];
 		}
 	}
 }
@@ -918,7 +918,9 @@ void DXL2_SoftRenderCPU::drawFont(Font* font)
 		{
 			for (s32 y = 0; y < h; y++)
 			{
-				m_display[(y+y0)*m_width + x+x0] = image[y];
+				const u8 color = image[y];
+				if (color == 0u) { continue; }
+				m_display[(y+y0)*m_width + x+x0] = color;
 			}
 		}
 	}

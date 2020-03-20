@@ -507,6 +507,11 @@ namespace ArchiveViewer
 					s_fileType = TYPE_TEX;
 					s_curTexture = DXL2_Texture::getFromAnim(s_items[s_currentFile], s_curArchiveFile);
 				}
+				else if (strcasecmp(extension, "FONT") == 0)
+				{
+					s_fileType = TYPE_FNT;
+					s_curFont = DXL2_Font::getFromFont(s_items[s_currentFile], s_curArchiveFile);
+				}
 
 				for (size_t i = 0; i < len; i++)
 				{

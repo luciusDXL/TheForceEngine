@@ -19,6 +19,7 @@ struct Font
 	u8 pad[3];
 
 	u8 width[256];
+	u8 step[256];	// x step which may be different than rendered width.
 	u32 imageOffset[256];
 
 	u8* imageData;
@@ -27,5 +28,6 @@ struct Font
 namespace DXL2_Font
 {
 	Font* get(const char* name);
+	Font* getFromFont(const char* name, const char* archivePath);
 	void freeAll();
 }
