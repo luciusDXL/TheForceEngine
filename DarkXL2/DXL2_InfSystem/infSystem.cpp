@@ -473,9 +473,18 @@ namespace DXL2_InfSystem
 		f32 init0 = slaveIndex >= 0 ? curState->slaveState[slaveIndex].initState[0] : curState->initState[0];
 
 		// Elevators that move the floor and/or ceiling.
-		if (isubclass == ELEVATOR_DOOR || isubclass == ELEVATOR_INV || isubclass == ELEVATOR_MOVE_CEILING ||
+		if (isubclass == ELEVATOR_MOVE_OFFSET)
+		{
+			if (value0Type == INF_STOP0_ABSOLUTE)
+				value = stop->value0.fValue;
+			else if (value0Type == INF_STOP0_RELATIVE)
+				value = (init0 + stop->value0.fValue);
+			else if (stop->value0.iValue >= 0)
+				value = DXL2_Level::getFloorHeight(stop->value0.iValue);
+		}
+		else if (isubclass == ELEVATOR_DOOR || isubclass == ELEVATOR_INV || isubclass == ELEVATOR_MOVE_CEILING ||
 			isubclass == ELEVATOR_BASIC || isubclass == ELEVATOR_MOVE_FLOOR || isubclass == ELEVATOR_BASIC_AUTO || isubclass == ELEVATOR_DOOR_INV ||
-			isubclass == ELEVATOR_MOVE_FC || isubclass == ELEVATOR_MOVE_OFFSET || isubclass == ELEVATOR_DOOR_MID)
+			isubclass == ELEVATOR_MOVE_FC || isubclass == ELEVATOR_DOOR_MID)
 		{
 			// Does move_offset use the floorAlt for relative and sectorname?
 			if (value0Type == INF_STOP0_ABSOLUTE)
@@ -620,11 +629,12 @@ namespace DXL2_InfSystem
 			}
 			break;
 		case ELEVATOR_MOVE_OFFSET:
-			// Does move_offset use the floorAlt for relative and sectorname?
-			curState->initState[0] = sector->secAlt;
+			// For some reason relative movement is no different from absolute movement
+			// for "move_offset" elevators. This is the only setting that works for the "Assassin" mod.
+			curState->initState[0] = 0.0f; // sector->secAlt;
 			for (u32 i = 0; i < classData->slaveCount; i++)
 			{
-				curState->slaveState[i].initState[0] = getSlaveSector(classData, i)->secAlt;
+				curState->slaveState[i].initState[0] = 0.0f; // getSlaveSector(classData, i)->secAlt;
 			}
 			break;
 		case ELEVATOR_CHANGE_WALL_LIGHT:
@@ -1216,20 +1226,8 @@ namespace DXL2_InfSystem
 				{
 					offsetY = wall->sign.offsetY;
 				}
-				if (wall->flags[0] & WF1_SIGN_ANCHORED)
-				{
-					f32 dy = 0.0f;
-
-					// Handle next sector moving.
-					f32 baseHeight = DXL2_Level::getBaseSectorHeight(next->id)->ceilAlt;
-					dy -= (baseHeight - next->ceilAlt);
-
-					// Handle current sector moving.
-					baseHeight = DXL2_Level::getBaseSectorHeight(sector->id)->ceilAlt;
-					dy += (baseHeight - sector->ceilAlt);
-
-					offsetY += dy;
-				}
+				// Upper signs are "auto-anchored" due to the way the texture coordinates are calculated.
+				// So ignore the WF1_SIGN_ANCHORED flag.
 
 				y0 = next->ceilAlt;
 				y1 = sector->ceilAlt;

@@ -201,7 +201,7 @@ namespace DXL2_Audio
 	// Sound source that the client holds onto.
 	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos)
 	{
-		if (!buffer) { return false; }
+		if (!buffer) { return nullptr; }
 
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
@@ -350,6 +350,7 @@ namespace DXL2_Audio
 			for (u32 s = 0; s < s_sourceCount; s++, snd++)
 			{
 				if (!(snd->flags&SND_FLAG_PLAYING)) { continue; }
+				assert(snd->buffer->data);
 
 				// Compute the sample value.
 				const f32 sampleValue = sampleBuffer(snd->sampleIndex, snd->buffer->type, snd->buffer->data) * s_soundFxScale;

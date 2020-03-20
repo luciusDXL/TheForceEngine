@@ -1721,16 +1721,7 @@ namespace DXL2_View
 							if (!hasLower)
 							{
 								f32 dy = 0.0f;
-								if (curWall->flags[0] & WF1_SIGN_ANCHORED)
-								{
-									// Handle next sector moving.
-									f32 baseHeight = DXL2_Level::getBaseSectorHeight(next->id)->ceilAlt;
-									dy -= (baseHeight - next->floorAlt);
-
-									// Handle current sector moving.
-									baseHeight = DXL2_Level::getBaseSectorHeight(curSector->id)->ceilAlt;
-									dy += (baseHeight - curSector->ceilAlt);
-								}
+								// Upper signs are "auto-anchored" due to the way the texture coordinates are calculated.
 								drawSign(signFrame, curSector, curWall, &curWall->top, u, x, uy0, uy1, floorAlt, ceilAlt, upperHeight, lightLevel, dy);
 							}
 							s_upperHeight[x] = std::max(s_upperHeight[x], uy1);
@@ -2055,7 +2046,15 @@ namespace DXL2_View
 		s_stackRead = 0;
 		s_stackWrite = 0;
 		s_sectorStack[s_stackWrite++] = { sectorId, -1, -1, {0, s_width - 1} };
-		s_viewStats = { 0 };
+
+		// Clear stats.
+		s_viewStats.iterCount = 0;
+		s_viewStats.segWallRendered = 0;
+		s_viewStats.segLowerRendered = 0;
+		s_viewStats.segUpperRendered = 0;
+		s_viewStats.floorPolyRendered = 0;
+		s_viewStats.ceilPolyRendered = 0;
+		s_viewStats.maxTraversalDepth = 0;
 		
 		s32 iter = 0;
 		s_wallCount = 0;

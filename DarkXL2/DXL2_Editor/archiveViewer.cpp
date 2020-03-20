@@ -311,10 +311,16 @@ namespace ArchiveViewer
 		{
 			if (s_viewStats && s_showUi)
 			{
+				LevelData* level = DXL2_LevelAsset::getLevelData();
+
 				static bool viewStatsActive = true;
 				ImGui::Begin("ViewStats", &viewStatsActive);
 					ImGui::Text("Level Name \"%s\"", s_items[s_currentFile]);
 					ImGui::Text("SectorId %d", s_viewStats->sectorId);
+					if (s_viewStats->sectorId >= 0 && level->sectors[s_viewStats->sectorId].name[0])
+					{
+						ImGui::Text("Sector \"%s\"", level->sectors[s_viewStats->sectorId].name);
+					}
 					ImGui::Text("Pos (%2.2f, %2.2f)", s_viewStats->pos.x, s_viewStats->pos.z);
 					ImGui::Text("Height %2.2f", s_viewStats->pos.y);
 					ImGui::Text("Angles (%2.2f, %2.2f)pi", s_viewStats->yaw/PI, s_viewStats->pitch/PI);

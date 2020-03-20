@@ -259,6 +259,6 @@ namespace DXL2_VocAsset
 			voc->loopEnd = voc->size;
 		}
 
-		return true;
+		return voc->data != nullptr;
 	}
 }
