@@ -173,6 +173,11 @@ namespace DXL2_GameHud
 		s_msgTime = MSG_SCREEN_TIME;
 	}
 
+	void clearMessage()
+	{
+		s_msgTime = 0.0f;
+	}
+
 	void update(Player* player)
 	{
 		sprintf(s_hudText[0], "%03d", player->m_shields);

@@ -7,6 +7,7 @@
 #include <DXL2_Game/player.h>
 #include <DXL2_Game/renderCommon.h>
 #include <DXL2_Game/gameHud.h>
+#include <DXL2_Game/gameUi.h>
 #include <DXL2_Game/gameConstants.h>
 #include <DXL2_Game/geometry.h>
 #include <DXL2_Audio/audioSystem.h>
@@ -745,6 +746,7 @@ namespace DXL2_InfSystem
 			{
 				curState->state = INF_STATE_TERMINATED;
 				DXL2_GameHud::setMessage("Level Complete");
+				DXL2_GameUi::toggleNextMission(true);
 			}
 			else if (value1Type == INF_STOP1_TIME)
 			{

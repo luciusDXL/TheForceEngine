@@ -116,6 +116,8 @@ namespace DXL2_GameLoop
 		DXL2_GameHud::init(renderer);
 		DXL2_GameUi::init(renderer);
 		DXL2_WeaponSystem::init(renderer);
+		DXL2_GameUi::toggleNextMission(false);
+		DXL2_GameHud::clearMessage();
 
 		// For now switch over to the pistol.
 		DXL2_WeaponSystem::switchToWeapon(WEAPON_PISTOL);
@@ -227,6 +229,8 @@ namespace DXL2_GameLoop
 		DXL2_GameHud::init(renderer);
 		DXL2_GameUi::init(renderer);
 		DXL2_WeaponSystem::init(renderer);
+		DXL2_GameUi::toggleNextMission(false);
+		DXL2_GameHud::clearMessage();
 
 		// For now switch over to the pistol.
 		DXL2_WeaponSystem::switchToWeapon(WEAPON_PISTOL);
@@ -350,9 +354,11 @@ namespace DXL2_GameLoop
 
 		return dY;
 	}
-
-	void update()
+		
+	GameUpdateState update()
 	{
+		GameUpdateState state = GSTATE_CONTINUE;
+
 		LightMode mode = LIGHT_OFF;
 		if (s_player.m_shooting) { mode = LIGHT_BRIGHT; }
 		else if (s_player.m_headlampOn) { mode = LIGHT_NORMAL; }
@@ -360,15 +366,25 @@ namespace DXL2_GameLoop
 		// Check for the game ui first.
 		if (DXL2_GameUi::isEscMenuOpen())
 		{
-			DXL2_GameUi::update(&s_player);
+			EscapeMenuResult result = DXL2_GameUi::update(&s_player);
 			DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
-			return;
+
+			if (result == ESC_MENU_ABORT || result == ESC_MENU_QUIT)
+			{
+				state = GSTATE_QUIT;
+			}
+			else if (result == ESC_MENU_NEXT)
+			{
+				state = GSTATE_NEXT;
+			}
+
+			return state;
 		}
 		else if (DXL2_Input::keyPressed(KEY_ESCAPE))
 		{
 			DXL2_GameUi::openEscMenu();
 			DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
-			return;
+			return state;
 		}
 
 		s_player.m_onScrollFloor = false;
@@ -726,6 +742,8 @@ namespace DXL2_GameLoop
 
 		const Vec3f flattenedForward = { forwardDir.x, 0.0f, forwardDir.z };
 		DXL2_Audio::update(&s_cameraPos, &flattenedForward);
+
+		return state;
 	}
 		
 	void draw()

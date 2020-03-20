@@ -20,4 +20,5 @@ namespace DXL2_GameHud
 	void draw(Player* player);
 
 	void setMessage(const char* msg);
+	void clearMessage();
 }
