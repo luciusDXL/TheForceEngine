@@ -6,6 +6,7 @@
 // post processing).
 //////////////////////////////////////////////////////////////////////
 #include <DXL2_System/types.h>
+#include <DXL2_Asset/textureAsset.h>
 
 enum RendererType
 {
@@ -31,6 +32,7 @@ public:
 	virtual void destroy() = 0;
 
 	virtual void begin() = 0;
+	virtual void applyColorEffect() = 0;
 	virtual void end() = 0;
 
 	virtual bool changeResolution(u32 width, u32 height) = 0;
@@ -41,6 +43,7 @@ public:
 	virtual void setPalette(const Palette256* pal) = 0;
 	virtual void setColorMap(const ColorMap* cmp) = 0;
 	virtual void setPaletteColor(u8 index, u32 color) = 0;
+	virtual Palette256 getPalette() = 0;
 	virtual void enablePalEffects(bool grayScale, bool green) = 0;
 	virtual void drawMapLines(s32 layers, f32 xOffset, f32 zOffset, f32 scale) = 0;
 	virtual void drawPalette() = 0;
@@ -50,7 +53,7 @@ public:
 	virtual void drawFrame(Frame* frame, s32 x, s32 y) = 0;
 	virtual void drawSprite(Sprite* sprite, s32 x, s32 y, u32 anim, u8 angle) = 0;
 
-	virtual void blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel = 31) = 0;
+	virtual void blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel = 31, TextureLayout layout = TEX_LAYOUT_VERT) = 0;
 	virtual void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY) = 0;
 	
 	virtual void drawLine(const Vec2f* v0, const Vec2f* v1, u8 color) = 0;

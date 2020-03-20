@@ -26,6 +26,7 @@ public:
 	void destroy() override;
 	   
 	void begin() override;
+	void applyColorEffect() override;
 	void end() override;
 
 	bool changeResolution(u32 width, u32 height) override;
@@ -36,6 +37,7 @@ public:
 	void setPalette(const Palette256* pal) override;
 	void setColorMap(const ColorMap* cmp) override;
 	void setPaletteColor(u8 index, u32 color) override;
+	Palette256 getPalette() override;
 	void enablePalEffects(bool grayScale, bool green) override;
 	void drawMapLines(s32 layers, f32 xOffset, f32 zOffset, f32 scale) override;
 	void drawPalette() override;
@@ -45,7 +47,7 @@ public:
 	void drawFrame(Frame* frame, s32 x, s32 y) override;
 	void drawSprite(Sprite* sprite, s32 x, s32 y, u32 anim, u8 angle) override;
 
-	void blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel = 31) override;
+	void blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel = 31, TextureLayout layout = TEX_LAYOUT_VERT) override;
 	void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY) override;
 
 	void drawLine(const Vec2f* v0, const Vec2f* v1, u8 color) override;

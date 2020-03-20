@@ -424,6 +424,9 @@
     <ClInclude Include="DXL2_Audio\RtAudio.h">
       <Filter>Source\DXL2_Audio</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Game\gameUi.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -689,6 +692,9 @@
     </ClCompile>
     <ClCompile Include="DXL2_Audio\RtAudio.cpp">
       <Filter>Source\DXL2_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\gameUi.cpp">
+      <Filter>Source\DXL2_Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

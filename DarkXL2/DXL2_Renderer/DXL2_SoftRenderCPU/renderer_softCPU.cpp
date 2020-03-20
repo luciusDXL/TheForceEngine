@@ -134,6 +134,18 @@ u8 DXL2_SoftRenderCPU::convertToGrayScale(u32 input)
 	return m_grayScaleColorMap[input];
 }
 
+void DXL2_SoftRenderCPU::applyColorEffect()
+{
+	if (m_enableGrayscale)
+	{
+		const u32 pixelCount = m_width * m_height;
+		for (u32 p = 0; p < pixelCount; p++)
+		{
+			m_display[p] = m_grayScaleColorMap[m_display[p]];
+		}
+	}
+}
+
 void DXL2_SoftRenderCPU::end()
 {
 	// Convert from 8 bit to 32 bit.
@@ -144,13 +156,6 @@ void DXL2_SoftRenderCPU::end()
 		for (u32 p = 0; p < pixelCount; p++)
 		{
 			m_display32[p] = m_greenScalePal[m_display[p]];
-		}
-	}
-	else if (m_enableGrayscale)
-	{
-		for (u32 p = 0; p < pixelCount; p++)
-		{
-			m_display32[p] = pal[convertToGrayScale(m_display[p])];
 		}
 	}
 	else
@@ -817,8 +822,13 @@ void DXL2_SoftRenderCPU::setPaletteColor(u8 index, u32 color)
 	m_curPal.colors[index] = color;
 }
 
+Palette256 DXL2_SoftRenderCPU::getPalette()
+{
+	return m_curPal;
+}
+
 //N.8 fixed point, 256 = 1.0.
-void DXL2_SoftRenderCPU::blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel)
+void DXL2_SoftRenderCPU::blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel, TextureLayout layout)
 {
 	const s32 w = texture->width;
 	const s32 h = texture->height;
@@ -839,19 +849,40 @@ void DXL2_SoftRenderCPU::blitImage(const TextureFrame* texture, s32 x0, s32 y0, 
 	// Blit.
 	u32 colorOffset = lightLevel * 256;
 	const u8* colorMap = m_curColorMap->colorMap;
-	for (s32 x = xStart; x < dx; x++)
+	if (layout == TEX_LAYOUT_VERT)
 	{
-		const s32 xImage = (x << 8) / scaleX;
-		image = &texture->image[xImage*h];
+		for (s32 x = xStart; x < dx; x++)
+		{
+			const s32 xImage = (x << 8) / scaleX;
+			image = &texture->image[xImage*h];
 
+			for (s32 y = yStart; y < dy; y++)
+			{
+				const s32 yImage = h - ((y << 8) / scaleY) - 1;
+				const u8 baseColor = image[yImage];
+				const u8 color = lightLevel < 31 ? colorMap[colorOffset + baseColor] : baseColor;
+				if (baseColor == 0) { continue; }
+
+				outBuffer[(y + y0)*m_width + x + x0] = color;
+			}
+		}
+	}
+	else
+	{
 		for (s32 y = yStart; y < dy; y++)
 		{
-			const s32 yImage = h - ((y << 8) / scaleY) - 1;
-			const u8 baseColor = image[yImage];
-			const u8 color = lightLevel < 31 ? colorMap[colorOffset + baseColor] : baseColor;
-			if (baseColor == 0) { continue; }
+			const s32 yImage = (y << 8) / scaleY;
+			image = &texture->image[yImage*w];
 
-			outBuffer[(y+y0)*m_width + x+x0] = color;
+			for (s32 x = xStart; x < dx; x++)
+			{
+				const s32 xImage = (x << 8) / scaleX;
+				const u8 baseColor = image[xImage];
+				const u8 color = lightLevel < 31 ? colorMap[colorOffset + baseColor] : baseColor;
+				if (baseColor == 0) { continue; }
+
+				outBuffer[(y + y0)*m_width + x + x0] = color;
+			}
 		}
 	}
 }

@@ -173,7 +173,7 @@ namespace ArchiveViewer
 			DXL2_GameLoop::draw();
 			s_viewStats = DXL2_GameLoop::getViewStats();
 
-			if (DXL2_Input::keyPressed(KEY_ESCAPE))
+			if (DXL2_Input::keyPressed(KEY_BACKSPACE))
 			{
 				s_renderer->changeResolution(640, 480);
 				s_runLevel = false;

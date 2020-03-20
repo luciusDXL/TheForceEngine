@@ -5,6 +5,7 @@
 #include "physics.h"
 #include "view.h"
 #include "gameHud.h"
+#include "gameUi.h"
 #include <DXL2_Game/gameConstants.h>
 #include <DXL2_Game/geometry.h>
 #include <DXL2_Game/player.h>
@@ -113,6 +114,7 @@ namespace DXL2_GameLoop
 		s_crouching = false;
 
 		DXL2_GameHud::init(renderer);
+		DXL2_GameUi::init(renderer);
 		DXL2_WeaponSystem::init(renderer);
 
 		// For now switch over to the pistol.
@@ -223,6 +225,7 @@ namespace DXL2_GameLoop
 		s_crouching = false;
 
 		DXL2_GameHud::init(renderer);
+		DXL2_GameUi::init(renderer);
 		DXL2_WeaponSystem::init(renderer);
 
 		// For now switch over to the pistol.
@@ -350,6 +353,24 @@ namespace DXL2_GameLoop
 
 	void update()
 	{
+		LightMode mode = LIGHT_OFF;
+		if (s_player.m_shooting) { mode = LIGHT_BRIGHT; }
+		else if (s_player.m_headlampOn) { mode = LIGHT_NORMAL; }
+
+		// Check for the game ui first.
+		if (DXL2_GameUi::isEscMenuOpen())
+		{
+			DXL2_GameUi::update(&s_player);
+			DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
+			return;
+		}
+		else if (DXL2_Input::keyPressed(KEY_ESCAPE))
+		{
+			DXL2_GameUi::openEscMenu();
+			DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
+			return;
+		}
+
 		s_player.m_onScrollFloor = false;
 		s32 playerFloorCount = 0, playerSecAltCount = 0;
 		s32 playerFloor[256], playerSecAlt[256];
@@ -683,13 +704,10 @@ namespace DXL2_GameLoop
 		s_motionTime += 1.2f * (f32)DXL2_System::getDeltaTime();
 		if (s_motionTime > 1.0f) { s_motionTime -= 1.0f; }
 		s_cameraPos.y += cosf(s_motionTime * 2.0f * PI) * s_motion * 0.5f;
-
-		LightMode mode = LIGHT_OFF;
-		if (s_player.m_shooting) { mode = LIGHT_BRIGHT; }
-		else if (s_player.m_headlampOn) { mode = LIGHT_NORMAL; }
-				
+						
 		DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
 		DXL2_GameHud::update(&s_player);
+		DXL2_GameUi::update(&s_player);
 		DXL2_LogicSystem::update();
 		DXL2_WeaponSystem::update(s_motion, &s_player);
 
@@ -715,6 +733,7 @@ namespace DXL2_GameLoop
 		DXL2_View::draw(&s_cameraPos, s_player.m_sectorId);
 		DXL2_WeaponSystem::draw(&s_player, &s_cameraPos, s_player.m_headlampOn ? 31 : s_level->sectors[s_player.m_sectorId].ambient);
 		DXL2_GameHud::draw(&s_player);
+		DXL2_GameUi::draw(&s_player);
 	}
 
 	void drawModel(const Model* model, const Vec3f* orientation)

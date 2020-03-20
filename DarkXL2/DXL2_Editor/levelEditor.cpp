@@ -323,7 +323,7 @@ namespace LevelEditor
 			DXL2_GameLoop::update();
 			DXL2_GameLoop::draw();
 
-			if (DXL2_Input::keyPressed(KEY_ESCAPE))
+			if (DXL2_Input::keyPressed(KEY_BACKSPACE))
 			{
 				s_runLevel = false;
 				DXL2_Input::enableRelativeMode(false);
