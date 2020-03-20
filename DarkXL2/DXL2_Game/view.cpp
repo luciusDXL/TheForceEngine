@@ -1989,7 +1989,7 @@ namespace DXL2_View
 			if (s32(x1) < win[0] || s32(x0) > win[1] || y0 >= s_height || y1 < 0) { continue; }
 
 			// Compute the light level.
-			const s32 lightLevel = obj->fullbright ? 31 : DXL2_RenderCommon::lightFalloff(ambient, vz);
+			const s32 lightLevel = obj->fullbright ? 31 : DXL2_RenderCommon::lightFalloff(ambient, vz, true);
 
 			// Store the sprite segment to be clipped after sorting.
 			const u32 segIndex = s_segInSector;
@@ -2046,6 +2046,8 @@ namespace DXL2_View
 		
 	void draw(const Vec3f* cameraPos, s32 sectorId)
 	{
+		s_renderer->enablePalEffects(DXL2_RenderCommon::isGrayScaleEnabled(), DXL2_RenderCommon::isNightVisionEnabled());
+
 		const Sector* sectors = s_level->sectors.data();
 		const SectorWall* walls = s_level->walls.data();
 		const Vec2f* vertices = s_level->vertices.data();

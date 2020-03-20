@@ -6,7 +6,9 @@ namespace DXL2_RenderCommon
 {
 	static LightMode s_lightMode = LIGHT_OFF;
 	static const ColorMap* s_colorMap = nullptr;
-
+	static bool s_nightVision = false;
+	static bool s_grayScale = false;
+		
 	void init(const ColorMap* cmap)
 	{
 		s_colorMap = cmap;
@@ -18,21 +20,47 @@ namespace DXL2_RenderCommon
 		s_lightMode = mode;
 	}
 
-	s32 lightFalloff(s32 level, f32 z)
+	void enableNightVision(bool enable)
+	{
+		s_nightVision = enable;
+	}
+		
+	void enableGrayScale(bool enable)
+	{
+		s_grayScale = enable;
+		s_nightVision = false;
+	}
+
+	bool isNightVisionEnabled()
+	{
+		return s_nightVision;
+	}
+
+	bool isGrayScaleEnabled()
+	{
+		return s_grayScale;
+	}
+		
+	s32 lightFalloff(s32 level, f32 z, bool brightObj)
 	{
 		s32 maxFalloff = 3;
 		//level = level - std::min(maxFalloff, std::max(0, s32((z - 6) / 8.0f)));
+
+		if (s_nightVision)
+		{
+			level = brightObj ? 31 : 18;
+		}
 
 		f32 scale = f32(level) / 256.0f;
 		level = level - std::min(maxFalloff, std::max(0, s32((z - 4) * scale)));
 
 		// Add in the headlamp if enabled.
-		if (s_lightMode == LIGHT_NORMAL)
+		if (s_lightMode == LIGHT_NORMAL && !s_nightVision)
 		{
 			s32 lightZ = 127 - std::max(0, std::min(s32((z - 2)*6.0f), 127));
 			level += s_colorMap->lightSourceRamp[lightZ];
 		}
-		else if (s_lightMode == LIGHT_BRIGHT)
+		else if (s_lightMode == LIGHT_BRIGHT && !s_nightVision)
 		{
 			s32 lightZ = 127 - std::max(0, std::min(s32((z - 2)*3.0f), 127));
 			level += s_colorMap->lightSourceRamp[lightZ];

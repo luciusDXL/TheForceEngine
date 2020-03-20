@@ -29,6 +29,7 @@ public:
 	u32 m_keys;
 
 	bool m_headlampOn;
+	bool m_nightVisionOn;
 	bool m_shooting;
 	bool m_onScrollFloor;
 };

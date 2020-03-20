@@ -40,6 +40,9 @@ bool DXL2_SoftRenderCPU::init()
 	m_display32 = new u32[m_width * m_height];
 
 	m_rcpHalfWidth = 1.0f / (f32(m_width)*0.5f);
+
+	m_enableGrayscale = false;
+	m_enableNightVision = false;
 	
 	return true;
 }
@@ -48,6 +51,12 @@ void DXL2_SoftRenderCPU::destroy()
 {
 	delete[] m_display;
 	delete[] m_display32;
+}
+
+void DXL2_SoftRenderCPU::enablePalEffects(bool grayScale, bool green)
+{
+	m_enableGrayscale = grayScale;
+	m_enableNightVision = green;
 }
 
 bool DXL2_SoftRenderCPU::changeResolution(u32 width, u32 height)
@@ -92,15 +101,68 @@ void DXL2_SoftRenderCPU::begin()
 	m_time += DXL2_System::getDeltaTime();
 }
 
+void DXL2_SoftRenderCPU::buildGrayScaleColorMap(u32 start, u32 len, bool invert, const u32* pal)
+{
+	for (u32 i = 0; i < 256; i++)
+	{
+		const u32 input = pal[i];
+		u32 L = std::max((input >> 16) & 0xff, std::max((input & 0xff), ((input >> 8) & 0xff)));
+		L = L * len / 256;
+		if (i >= 24 && i < 32) { L >>= 1; }
+		m_grayScaleColorMap[i] = invert ? len - L - 1 + start : L + start;
+	}
+}
+
+void DXL2_SoftRenderCPU::buildGreenScalePalette(const u32* pal)
+{
+	for (u32 i = 0; i < 256; i++)
+	{
+		const u32 input = pal[i];
+		u32 r = (input) & 0xff;
+		u32 g = (input >> 8u) & 0xff;
+		u32 b = (input >> 16u) & 0xff;
+
+		// Approximate luminance, with some loss, based on measurements.
+		u32 L = (r*26 + g*153 + b*52) >> 8;
+
+		m_greenScalePal[i] = (L << 8u) | (0xff << 24u);
+	}
+}
+
+u8 DXL2_SoftRenderCPU::convertToGrayScale(u32 input)
+{
+	return m_grayScaleColorMap[input];
+}
+
 void DXL2_SoftRenderCPU::end()
 {
 	// Convert from 8 bit to 32 bit.
 	const u32 pixelCount = m_width * m_height;
 	const u32* pal = m_curPal.colors;
-	for (u32 p = 0; p < pixelCount; p++)
+	if (m_enableNightVision)
 	{
-		m_display32[p] = pal[m_display[p]];
+		for (u32 p = 0; p < pixelCount; p++)
+		{
+			m_display32[p] = m_greenScalePal[m_display[p]];
+		}
 	}
+	else if (m_enableGrayscale)
+	{
+		for (u32 p = 0; p < pixelCount; p++)
+		{
+			m_display32[p] = pal[convertToGrayScale(m_display[p])];
+		}
+	}
+	else
+	{
+		for (u32 p = 0; p < pixelCount; p++)
+		{
+			m_display32[p] = pal[m_display[p]];
+		}
+	}
+
+	// TODO: Add spot for overlay so that effects can be applied to the background but not the overlay.
+	// ...
 
 	DXL2_RenderBackend::updateVirtualDisplay(m_display32, m_width * m_height * 4u);
 	m_frame++;
@@ -483,7 +545,7 @@ void DXL2_SoftRenderCPU::drawHLineGouraud(s32 x0, s32 x1, s32 l0, s32 l1, s32 y,
 		{
 			if (upperMask && (y < *upperMask || y > *lowerMask)) { continue; }
 
-			const s32 L = l >> 16;
+			const s32 L = (l >> 16);
 			assert(L <= 31);
 			*outBuffer = colorMap[L*256 + color];
 		}
@@ -492,7 +554,7 @@ void DXL2_SoftRenderCPU::drawHLineGouraud(s32 x0, s32 x1, s32 l0, s32 l1, s32 y,
 	{
 		for (s32 x = 0; x < count; x++, l += dl, outBuffer++)
 		{
-			const s32 L = l >> 16;
+			const s32 L = (l >> 16);
 			assert(L <= 31);
 			*outBuffer = colorMap[L*256 + color];
 		}
@@ -740,6 +802,9 @@ void DXL2_SoftRenderCPU::setPalette(const Palette256* pal)
 	{
 		m_curPal = *DXL2_Palette::getDefault256();
 	}
+	// Rebuild palette tables.
+	buildGreenScalePalette(m_curPal.colors);
+	buildGrayScaleColorMap(32, 32, true, m_curPal.colors);
 }
 
 void DXL2_SoftRenderCPU::setColorMap(const ColorMap* cmp)

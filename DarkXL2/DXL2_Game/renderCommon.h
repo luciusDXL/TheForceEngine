@@ -38,7 +38,8 @@ namespace DXL2_RenderCommon
 {
 	void init(const ColorMap* cmap);
 	void enableLightSource(LightMode mode);
-	s32 lightFalloff(s32 level, f32 z);
+	// use brightObj for objects that should show up bright in special modes such as night vision.
+	s32 lightFalloff(s32 level, f32 z, bool brightObj = false);
 	Vec3f unproject(const Vec2i& screenPos, f32 viewZ);
 	Vec3f project(const Vec3f* worldPos);
 
@@ -47,4 +48,10 @@ namespace DXL2_RenderCommon
 
 	void setProjectionParam(s32 width, s32 height, f32 focalLength, f32 heightScale, s32 pitchOffset);
 	void setViewParam(const f32* rot, const Vec3f* cameraPos);
+
+	void enableNightVision(bool enable);
+	bool isNightVisionEnabled();
+
+	void enableGrayScale(bool enable);
+	bool isGrayScaleEnabled();
 }

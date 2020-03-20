@@ -953,7 +953,8 @@ namespace DXL2_WeaponSystem
 		const TextureFrame* frame = s_weapon.frames[s_weapon.frame];
 		if (!frame) { return; }
 
-		if (s_player && s_player->m_shooting) { ambient = 31; }
+		if (DXL2_RenderCommon::isNightVisionEnabled()) { ambient = 18; }
+		else if (s_player && s_player->m_shooting) { ambient = 31; }
 		s_renderer->blitImage(frame, s_weapon.x, s_weapon.y + s_weapon.yOffset, s_screen.scaleX, s_screen.scaleY, ambient);
 	}
 }

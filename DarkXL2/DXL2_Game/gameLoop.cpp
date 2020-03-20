@@ -100,8 +100,10 @@ namespace DXL2_GameLoop
 		s_player.m_yaw = yaw;
 		s_player.m_pitch = 0;
 		s_player.m_headlampOn = false;
+		s_player.m_nightVisionOn = false;
 		s_player.m_keys = 0;
 		s_heightVisual = s_player.pos.y;
+		DXL2_RenderCommon::enableNightVision(false);
 
 		DXL2_View::init(level, renderer, w, h, false);
 		renderer->changeResolution(w, h);
@@ -208,8 +210,10 @@ namespace DXL2_GameLoop
 		s_player.m_yaw = yaw;
 		s_player.m_pitch = 0;
 		s_player.m_headlampOn = false;
+		s_player.m_nightVisionOn = false;
 		s_player.m_keys = 0;
 		s_heightVisual = s_player.pos.y;
+		DXL2_RenderCommon::enableNightVision(false);
 			   			   
 		DXL2_View::init(level, renderer, w, h, enableViewStats);
 		renderer->changeResolution(w, h);
@@ -648,11 +652,16 @@ namespace DXL2_GameLoop
 		if (actualSpeed < FLT_EPSILON && s_motion < 0.0001f) { s_motion = 0.0f; }
 		
 		// Items.
-		if (DXL2_Input::keyPressed(KEY_F5))
+		if (DXL2_Input::keyPressed(KEY_F2))
+		{
+			s_player.m_nightVisionOn = !s_player.m_nightVisionOn;
+			DXL2_RenderCommon::enableNightVision(s_player.m_nightVisionOn);
+		}
+		else if (DXL2_Input::keyPressed(KEY_F5))
 		{
 			s_player.m_headlampOn = !s_player.m_headlampOn;
 		}
-
+		
 		// DEBUG
 		if (DXL2_Input::keyPressed(KEY_RIGHTBRACKET))
 		{

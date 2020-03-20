@@ -36,6 +36,7 @@ public:
 	void setPalette(const Palette256* pal) override;
 	void setColorMap(const ColorMap* cmp) override;
 	void setPaletteColor(u8 index, u32 color) override;
+	void enablePalEffects(bool grayScale, bool green) override;
 	void drawMapLines(s32 layers, f32 xOffset, f32 zOffset, f32 scale) override;
 	void drawPalette() override;
 	void drawTexture(Texture* texture, s32 x, s32 y) override;
@@ -81,9 +82,18 @@ private:
 	Palette256 m_curPal;
 	const ColorMap* m_curColorMap;
 
+	bool m_enableGrayscale;
+	bool m_enableNightVision;
+	u8 m_grayScaleColorMap[256];
+	u32 m_greenScalePal[256];
+
 	u32 m_frame;
 	bool m_clearScreen;
 
 	void drawLineBresenham(f32 ax, f32 ay, f32 bx, f32 by, u8 color);
 	bool clip(s32& x0, s32& y0, s32& w, s32& h);
+
+	void buildGrayScaleColorMap(u32 start, u32 len, bool invert, const u32* pal);
+	void buildGreenScalePalette(const u32* pal);
+	u8 convertToGrayScale(u32 input);
 };
