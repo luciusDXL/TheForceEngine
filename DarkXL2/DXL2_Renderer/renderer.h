@@ -44,6 +44,7 @@ public:
 	virtual void drawMapLines(s32 layers, f32 xOffset, f32 zOffset, f32 scale) = 0;
 	virtual void drawPalette() = 0;
 	virtual void drawTexture(Texture* texture, s32 x, s32 y) = 0;
+	virtual void drawTextureHorizontal(Texture* texture, s32 x, s32 y) = 0;
 	virtual void drawFont(Font* font) = 0;
 	virtual void drawFrame(Frame* frame, s32 x, s32 y) = 0;
 	virtual void drawSprite(Sprite* sprite, s32 x, s32 y, u32 anim, u8 angle) = 0;

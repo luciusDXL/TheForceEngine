@@ -863,6 +863,33 @@ void DXL2_SoftRenderCPU::drawTexture(Texture* texture, s32 x0, s32 y0)
 	}
 }
 
+void DXL2_SoftRenderCPU::drawTextureHorizontal(Texture* texture, s32 x0, s32 y0)
+{
+	s32 frame = 0;
+	if (texture->frameRate)
+	{
+		frame = s32(m_time * f64(texture->frameRate)) % texture->frameCount;
+	}
+
+	TextureFrame* tex = &texture->frames[frame];
+	const s32 w = tex->width;
+	const s32 h = tex->height;
+	const u8* image = tex->image;
+
+	s32 startX = 0;
+	s32 startY = 0;
+	if (x0 < 0) { startX -= x0; image -= x0; }
+	if (y0 < 0) { startY -= y0; image -= y0 * w; }
+
+	for (s32 y = startY; y < h && (y + y0) < (s32)m_height; y++, image += w)
+	{
+		for (s32 x = startX; x < w && (x + x0) < (s32)m_width; x++)
+		{
+			m_display[(y + y0)*m_width + x + x0] = image[x];
+		}
+	}
+}
+
 void DXL2_SoftRenderCPU::drawFont(Font* font)
 {
 	s32 maxW = font->maxWidth + 1;

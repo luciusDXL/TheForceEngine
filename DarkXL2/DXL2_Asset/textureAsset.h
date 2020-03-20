@@ -16,6 +16,12 @@ enum Opacity
 	OPACITY_COUNT
 };
 
+enum TextureLayout
+{
+	TEX_LAYOUT_VERT = 0,	// default for most textures
+	TEX_LAYOUT_HORZ,		// "normal" horizontal layout (used for menus, cutscenes, etc.).
+};
+
 struct TextureFrame
 {
 	s16 width;
@@ -40,11 +46,14 @@ struct Texture
 
 	u8* memory;
 	TextureFrame* frames;
+
+	TextureLayout layout;
 };
 
 namespace DXL2_Texture
 {
 	Texture* get(const char* name);
+	Texture* getFromDelt(const char* name, const char* archivePath);
 	void free(Texture* texture);
 	void freeAll();
 }

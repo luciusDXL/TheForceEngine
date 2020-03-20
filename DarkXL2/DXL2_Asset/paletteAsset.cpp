@@ -52,6 +52,39 @@ namespace DXL2_Palette
 		return pal;
 	}
 
+	Palette256* getPalFromPltt(const char* name, const char* archivePath)
+	{
+		Palette256Map::iterator iPal = s_pal256.find(name);
+		if (iPal != s_pal256.end())
+		{
+			return iPal->second;
+		}
+
+		// It doesn't exist yet, try to load the palette.
+		if (!DXL2_AssetSystem::readAssetFromArchive(archivePath, name, s_buffer))
+		{
+			return nullptr;
+		}
+
+		// Then convert from 24 bit color to 32 bit color.
+		Palette256* pal = new Palette256;
+		u8* src = s_buffer.data();
+
+		s32 first = (s32)src[0];
+		s32 last  = (s32)src[1];
+		s32 count = last - first + 1;
+		memset(pal->colors, 0, sizeof(u32) * 256);
+
+		const u8* color = src + 2;
+		for (u32 i = first; i <= last; i++, color += 3)
+		{
+			pal->colors[i] = color[0] | (color[1] << 8u) | (color[2] << 16u) | (0xff << 24u);
+		}
+
+		s_pal256[name] = pal;
+		return pal;
+	}
+
 	Palette256* getDefault256()
 	{
 		return &s_default;

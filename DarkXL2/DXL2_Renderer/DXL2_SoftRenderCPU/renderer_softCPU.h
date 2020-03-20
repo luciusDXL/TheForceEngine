@@ -39,6 +39,7 @@ public:
 	void drawMapLines(s32 layers, f32 xOffset, f32 zOffset, f32 scale) override;
 	void drawPalette() override;
 	void drawTexture(Texture* texture, s32 x, s32 y) override;
+	void drawTextureHorizontal(Texture* texture, s32 x, s32 y) override;
 	void drawFont(Font* font) override;
 	void drawFrame(Frame* frame, s32 x, s32 y) override;
 	void drawSprite(Sprite* sprite, s32 x, s32 y, u32 anim, u8 angle) override;

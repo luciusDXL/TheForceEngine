@@ -17,6 +17,7 @@ namespace DXL2_Palette
 {
 	void createDefault256();
 	Palette256* get256(const char* name);
+	Palette256* getPalFromPltt(const char* name, const char* archivePath);
 	Palette256* getDefault256();
 	void freeAll();
 }

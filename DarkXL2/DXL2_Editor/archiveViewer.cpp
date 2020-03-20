@@ -211,7 +211,10 @@ namespace ArchiveViewer
 		{
 			s32 x = 320 - (s_curTexture->frames[0].width>>1);
 			s32 y = 240 - (s_curTexture->frames[0].height >> 1);
-			s_renderer->drawTexture(s_curTexture, x, y);
+			if (s_curTexture->layout == TEX_LAYOUT_VERT)
+				s_renderer->drawTexture(s_curTexture, x, y);
+			else
+				s_renderer->drawTextureHorizontal(s_curTexture, x, y);
 		}
 		else if (s_fileType == TYPE_FRAME)
 		{
@@ -482,6 +485,16 @@ namespace ArchiveViewer
 					const SoundBuffer* sound = DXL2_VocAsset::get(s_items[s_currentFile]);
 
 					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, sound, false);
+				}
+				else if (strcasecmp(extension, "PLTT") == 0)
+				{
+					s_fileType = TYPE_PAL;
+					s_curPal = DXL2_Palette::getPalFromPltt(s_items[s_currentFile], s_curArchiveFile);
+				}
+				else if (strcasecmp(extension, "DELT") == 0)
+				{
+					s_fileType = TYPE_TEX;
+					s_curTexture = DXL2_Texture::getFromDelt(s_items[s_currentFile], s_curArchiveFile);
 				}
 
 				for (size_t i = 0; i < len; i++)

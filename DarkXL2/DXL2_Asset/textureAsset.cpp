@@ -188,6 +188,7 @@ namespace DXL2_Texture
 		texture->frames = (TextureFrame*)texture->memory;
 		texture->frameCount = frameCount;
 		texture->frameRate = frameRate;
+		texture->layout = TEX_LAYOUT_VERT;
 		size_t offset = sizeof(TextureFrame) * frameCount;
 
 		// Then pass through again to decompress.
@@ -240,6 +241,121 @@ namespace DXL2_Texture
 			texture->frames[0].uvHeight = header->idemY;
 
 			loadTextureFrame(header->SizeX, header->SizeY, header->Compressed, header->DataSize, data, texture->frames[0].image);
+		}
+
+		s_textures[name] = texture;
+		return texture;
+	}
+
+#pragma pack(push)
+#pragma pack(1)
+	struct DeltHeader
+	{
+		s16 offsetX;
+		s16 offsetY;
+		s16 sizeX;
+		s16 sizeY;
+	};
+
+	struct DeltLine
+	{
+		s16 sizeAndType;
+		s16 xStart;
+		s16 yStart;
+	};
+#pragma pack(pop)
+
+	Texture* getFromDelt(const char* name, const char* archivePath)
+	{
+		TextureMap::iterator iTex = s_textures.find(name);
+		if (iTex != s_textures.end())
+		{
+			return iTex->second;
+		}
+
+		// It doesn't exist yet, try to load the palette.
+		if (!DXL2_AssetSystem::readAssetFromArchive(archivePath, name, s_buffer))
+		{
+			return nullptr;
+		}
+
+		// Then read out the data.
+		DeltHeader header = *((DeltHeader*)s_buffer.data());
+		header.sizeX++;
+		header.sizeY++;
+
+		Texture* texture = new Texture();
+		strcpy(texture->name, name);
+		
+		u32 allocSize = 0u;
+		allocSize += sizeof(TextureFrame);
+		allocSize += header.sizeX * header.sizeY;
+		// Allocate memory.
+		texture->memory = new u8[allocSize];
+		texture->frames = (TextureFrame*)texture->memory;
+		texture->frameCount = 1;
+		texture->frameRate = 0;
+		texture->layout = TEX_LAYOUT_HORZ;
+		size_t offset = sizeof(TextureFrame);
+
+		texture->frames[0].image = texture->memory + offset;
+		memset(texture->frames[0].image, 0, header.sizeX * header.sizeY);
+
+		texture->frames[0].width = header.sizeX;
+		texture->frames[0].height = header.sizeY;
+		texture->frames[0].logSizeY = 0;	//unused
+		texture->frames[0].opacity = OPACITY_TRANS;
+		texture->frames[0].uvWidth = header.sizeX;
+		texture->frames[0].uvHeight = header.sizeY;
+
+		u8* data = s_buffer.data() + sizeof(DeltHeader);
+		u8* end = s_buffer.data() + s_buffer.size();
+		while (data < end)
+		{
+			const DeltLine* line = (DeltLine*)data;
+			data += sizeof(DeltLine);
+
+			const s32 startX = line->xStart - header.offsetX;
+			const s32 startY = header.sizeY - (line->yStart - header.offsetY) - 1;
+			const bool rle = (line->sizeAndType & 1) ? true : false;
+			s32 pixelCount = (line->sizeAndType >> 1) & 0x3FFF;
+
+			u8* image = texture->frames[0].image + startX + startY * header.sizeX;
+			while (pixelCount > 0)
+			{
+				if (rle)
+				{
+					//read count byte...
+					u8 count = *data; data++;
+					if (!(count & 1)) // direct
+					{
+						count >>= 1;
+						for (s32 p = 0; p < count; p++, image++, data++)
+						{
+							*image = *data;
+						}
+						pixelCount -= count;
+					}
+					else	//rle
+					{
+						count >>= 1;
+						const u8 pixel = *data; data++;
+
+						memset(image, pixel, count);
+						image += count;
+
+						pixelCount -= count;
+					}
+				}
+				else
+				{
+					for (s32 p = 0; p < pixelCount; p++, image++, data++)
+					{
+						*image = *data;
+					}
+					pixelCount = 0;
+				}
+			}
 		}
 
 		s_textures[name] = texture;
