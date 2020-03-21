@@ -433,6 +433,9 @@
     <ClInclude Include="DXL2_FrontEndUI\frontEndUi.h">
       <Filter>Source\DXL2_FrontEndUI</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Game\gameMain.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -704,6 +707,9 @@
     </ClCompile>
     <ClCompile Include="DXL2_FrontEndUI\frontEndUi.cpp">
       <Filter>Source\DXL2_FrontEndUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\gameMain.cpp">
+      <Filter>Source\DXL2_Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

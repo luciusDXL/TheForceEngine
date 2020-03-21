@@ -55,6 +55,7 @@ namespace DXL2_FrontEndUI
 
 		if (ImGui::Button("Start    "))
 		{
+			s_appState = APP_STATE_DARK_FORCES;
 		}
 		if (ImGui::Button("Configure"))
 		{

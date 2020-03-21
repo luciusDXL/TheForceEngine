@@ -360,6 +360,7 @@ namespace DXL2_GameLoop
 		// Handle Game UI
 		GameUpdateState state = GSTATE_CONTINUE;
 				
+		const bool escMenuOpen = DXL2_GameUi::isEscMenuOpen();
 		const GameUiResult result = DXL2_GameUi::update(&s_player);
 		if (result == GAME_ABORT || result == GAME_QUIT)
 		{
@@ -370,7 +371,7 @@ namespace DXL2_GameLoop
 			return GSTATE_NEXT;
 		}
 
-		if (!DXL2_GameUi::isEscMenuOpen() && DXL2_Input::keyPressed(KEY_ESCAPE))
+		if (!escMenuOpen && DXL2_Input::keyPressed(KEY_ESCAPE))
 		{
 			DXL2_GameUi::openEscMenu();
 		}

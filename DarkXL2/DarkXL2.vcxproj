@@ -196,6 +196,7 @@
     <ClInclude Include="DXL2_Game\gameConstants.h" />
     <ClInclude Include="DXL2_Game\gameHud.h" />
     <ClInclude Include="DXL2_Game\gameLoop.h" />
+    <ClInclude Include="DXL2_Game\gameMain.h" />
     <ClInclude Include="DXL2_Game\gameObject.h" />
     <ClInclude Include="DXL2_Game\gameUi.h" />
     <ClInclude Include="DXL2_Game\geometry.h" />
@@ -297,6 +298,7 @@
     <ClCompile Include="DXL2_FrontEndUI\frontEndUi.cpp" />
     <ClCompile Include="DXL2_Game\gameHud.cpp" />
     <ClCompile Include="DXL2_Game\gameLoop.cpp" />
+    <ClCompile Include="DXL2_Game\gameMain.cpp" />
     <ClCompile Include="DXL2_Game\gameObject.cpp" />
     <ClCompile Include="DXL2_Game\gameUi.cpp" />
     <ClCompile Include="DXL2_Game\geometry.cpp" />

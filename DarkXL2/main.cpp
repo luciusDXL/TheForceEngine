@@ -5,6 +5,8 @@
 #include <DXL2_InfSystem/infSystem.h>
 #include <DXL2_Editor/editor.h>
 #include <DXL2_Game/level.h>
+#include <DXL2_Game/gameMain.h>
+#include <DXL2_Game/gameUi.h>
 #include <DXL2_Audio/audioSystem.h>
 #include <DXL2_FileSystem/paths.h>
 #include <DXL2_Polygon/polygon.h>
@@ -222,6 +224,9 @@ void setAppState(AppState newState, DXL2_Renderer* renderer)
 		break;
 	case APP_STATE_DARK_FORCES:
 		renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
+		renderer->enableScreenClear(false);
+		DXL2_Input::enableRelativeMode(true);
+		DXL2_GameMain::init(renderer);
 		break;
 	};
 }
@@ -379,6 +384,10 @@ int main(int argc, char* argv[])
 		}
 		else if (appState == APP_STATE_DARK_FORCES)
 		{
+			if (DXL2_GameMain::loop() == GSTATE_QUIT)
+			{
+				s_loop = false;
+			}
 		}
 
 		// Render
