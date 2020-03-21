@@ -247,7 +247,9 @@ int main(int argc, char* argv[])
 	}
 
 	// Setup game paths.
-	const DXL2_Settings_Game* gameSettings = DXL2_Settings::getGameSettings("Dark Forces");
+	// Get the current game.
+	const DXL2_Game* game = DXL2_Settings::getGame();
+	const DXL2_Settings_Game* gameSettings = DXL2_Settings::getGameSettings(game->game);
 	DXL2_Paths::setPath(PATH_SOURCE_DATA, gameSettings->sourcePath);
 	DXL2_Paths::setPath(PATH_EMULATOR, gameSettings->emulatorPath);
 

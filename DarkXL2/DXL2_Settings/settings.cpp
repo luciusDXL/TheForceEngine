@@ -40,6 +40,7 @@ namespace DXL2_Settings
 	static char s_settingsPath[DXL2_MAX_PATH];
 	static DXL2_Settings_Window s_windowSettings = {};
 	static DXL2_Settings_Graphics s_graphicsSettings = {};
+	static DXL2_Game s_game = {};
 	static DXL2_Settings_Game s_gameSettings[Game_Count];
 	static char s_lineBuffer[LINEBUF_LEN];
 	static std::vector<char> s_iniBuffer;
@@ -48,6 +49,7 @@ namespace DXL2_Settings
 	{
 		SECTION_WINDOW = 0,
 		SECTION_GRAPHICS,
+		SECTION_GAME,
 		SECTION_DARK_FORCES,
 		SECTION_OUTLAWS,
 		SECTION_COUNT,
@@ -59,6 +61,7 @@ namespace DXL2_Settings
 	{
 		"Window",
 		"Graphics",
+		"Game",
 		"Dark_Forces",
 		"Outlaws",
 	};
@@ -70,12 +73,14 @@ namespace DXL2_Settings
 	void writeWindowSettings(FileStream& settings);
 	void writeGraphicsSettings(FileStream& settings);
 	void writeGameSettings(FileStream& settings);
+	void writePerGameSettings(FileStream& settings);
 
 	// Read
 	bool readFromDisk();
 	void parseIniFile(const char* buffer, size_t len);
 	void parseWindowSettings(const char* key, const char* value);
 	void parseGraphicsSettings(const char* key, const char* value);
+	void parseGame(const char* key, const char* value);
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
 
@@ -84,15 +89,16 @@ namespace DXL2_Settings
 	//////////////////////////////////////////////////////////////////////////////////
 	bool init()
 	{
-		DXL2_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
-		if (FileUtil::exists(s_settingsPath)) { return readFromDisk(); }
-
+		// Clear out game settings.
 		memset(s_gameSettings, 0, sizeof(DXL2_Settings_Game) * Game_Count);
 		for (u32 i = 0; i < Game_Count; i++)
 		{
 			strcpy(s_gameSettings[i].gameName, c_gameName[i]);
 		}
 
+		DXL2_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
+		if (FileUtil::exists(s_settingsPath)) { return readFromDisk(); }
+			
 		return writeToDisk();
 	}
 
@@ -127,6 +133,7 @@ namespace DXL2_Settings
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);
 			writeGameSettings(settings);
+			writePerGameSettings(settings);
 			settings.close();
 
 			return true;
@@ -143,6 +150,11 @@ namespace DXL2_Settings
 	DXL2_Settings_Graphics* getGraphicsSettings()
 	{
 		return &s_graphicsSettings;
+	}
+
+	DXL2_Game* getGame()
+	{
+		return &s_game;
 	}
 
 	DXL2_Settings_Game* getGameSettings(const char* gameName)
@@ -209,6 +221,12 @@ namespace DXL2_Settings
 
 	void writeGameSettings(FileStream& settings)
 	{
+		writeHeader(settings, "Game");
+		writeKeyValue_String(settings, "game", s_game.game);
+	}
+
+	void writePerGameSettings(FileStream& settings)
+	{
 		for (u32 i = 0; i < Game_Count; i++)
 		{
 			writeHeader(settings, c_sectionNames[SECTION_GAME_START + i]);
@@ -273,6 +291,9 @@ namespace DXL2_Settings
 					break;
 				case SECTION_GRAPHICS:
 					parseGraphicsSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
+				case SECTION_GAME:
+					parseGame(tokens[0].c_str(), tokens[1].c_str());
 					break;
 				case SECTION_DARK_FORCES:
 					parseDark_ForcesSettings(tokens[0].c_str(), tokens[1].c_str());
@@ -340,6 +361,14 @@ namespace DXL2_Settings
 		else if (strcasecmp("gameHeight", key) == 0)
 		{
 			s_graphicsSettings.gameResolution.z = parseInt(value);
+		}
+	}
+
+	void parseGame(const char* key, const char* value)
+	{
+		if (strcasecmp("game", key) == 0)
+		{
+			strcpy(s_game.game, value);
 		}
 	}
 

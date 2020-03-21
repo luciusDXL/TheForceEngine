@@ -27,6 +27,11 @@ struct DXL2_Settings_Graphics
 	Vec2i gameResolution = { 320, 200 };
 };
 
+struct DXL2_Game
+{
+	char game[64] = "Dark Forces";
+};
+
 struct DXL2_Settings_Game
 {
 	char gameName[64];
@@ -44,5 +49,6 @@ namespace DXL2_Settings
 	// Get and set settings.
 	DXL2_Settings_Window* getWindowSettings();
 	DXL2_Settings_Graphics* getGraphicsSettings();
+	DXL2_Game* getGame();
 	DXL2_Settings_Game* getGameSettings(const char* gameName);
 }
