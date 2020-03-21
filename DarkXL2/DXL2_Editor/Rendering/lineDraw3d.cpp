@@ -37,7 +37,7 @@ namespace LineDraw3d
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer  s_indexBuffer;
 
-	static LineVertex* s_vertices;
+	static LineVertex* s_vertices = nullptr;
 	static u32 s_lineCount;
 
 	bool init()
@@ -85,6 +85,7 @@ namespace LineDraw3d
 		s_vertexBuffer.destroy();
 		s_indexBuffer.destroy();
 		delete[] s_vertices;
+		s_vertices = nullptr;
 	}
 	
 	void addLines(u32 count, f32 width, const Vec3f* lines, const u32* lineColors)

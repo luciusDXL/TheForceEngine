@@ -10,12 +10,23 @@
 #include <DXL2_System/types.h>
 #include <DXL2_Renderer/renderer.h>
 
-namespace DXL2_Editor
+enum AppState
 {
-	void enable(DXL2_Renderer* renderer);
-	void disable();
-	bool update();
-	bool render();
+	APP_STATE_MENU = 0,
+	APP_STATE_EDITOR,
+	APP_STATE_DARK_FORCES,
+	APP_STATE_QUIT,
+	APP_STATE_COUNT,
+	APP_STATE_UNINIT = APP_STATE_COUNT
+};
 
-	void showPerf(u32 frame);
+namespace DXL2_FrontEndUI
+{
+	void init();
+	void shutdown();
+
+	AppState update();
+	void draw();
+
+	void setAppState(AppState state);
 }

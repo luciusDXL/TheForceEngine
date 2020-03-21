@@ -16,6 +16,7 @@
 #include <DXL2_Asset/paletteAsset.h>
 #include <DXL2_Asset/imageAsset.h>
 #include <DXL2_Ui/ui.h>
+#include <DXL2_FrontEndUI/frontEndUi.h>
 #include <algorithm>
 
 #ifdef _WIN32
@@ -202,15 +203,6 @@ bool sdlInit()
 	return true;
 }
 
-enum AppState
-{
-	APP_STATE_MENU = 0,
-	APP_STATE_EDITOR,
-	APP_STATE_DARK_FORCES,
-	APP_STATE_COUNT
-};
-static AppState s_appState = APP_STATE_MENU;
-
 void setAppState(AppState newState, DXL2_Renderer* renderer)
 {
 	if (newState != APP_STATE_EDITOR)
@@ -230,9 +222,9 @@ void setAppState(AppState newState, DXL2_Renderer* renderer)
 		renderer->changeResolution(320, 200);
 		break;
 	};
-
-	s_appState = newState;
 }
+
+static AppState s_curState = APP_STATE_UNINIT;
 
 int main(int argc, char* argv[])
 {
@@ -302,7 +294,8 @@ int main(int argc, char* argv[])
 	DXL2_InfSystem::init();
 	DXL2_Level::init();
 	DXL2_Palette::createDefault256();
-
+	DXL2_FrontEndUI::init();
+	
 	DXL2_Renderer* renderer = DXL2_Renderer::create(DXL2_RENDERER_SOFTWARE_CPU);
 	if (!renderer)
 	{
@@ -319,10 +312,6 @@ int main(int argc, char* argv[])
 
 	// Game loop
 	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "DarkXL 2 Game Loop Started");
-
-	// For now enable the editor by default.
-	// Once the main menu works, switch to that with a command line option to skip directly to the desired mode.
-	setAppState(APP_STATE_EDITOR, renderer);
 
 	u32 frame = 0u;
 	bool showPerf = false;
@@ -347,8 +336,20 @@ int main(int argc, char* argv[])
 		SDL_GetMouseState(&mouseAbsX, &mouseAbsY);
 		DXL2_Input::setRelativeMousePos(mouseX, mouseY);
 		DXL2_Input::setMousePos(mouseAbsX, mouseAbsY);
+
+		const AppState appState = DXL2_FrontEndUI::update();
+		if (appState == APP_STATE_QUIT)
+		{
+			s_loop = false;
+		}
+		else if (appState != s_curState)
+		{
+			s_curState = appState;
+			setAppState(s_curState, renderer);
+		}
+
 		DXL2_Ui::begin();
-		
+						
 		// Update
 		if (DXL2_Input::keyPressed(KEY_F9))
 		{
@@ -361,22 +362,26 @@ int main(int argc, char* argv[])
 			DXL2_Editor::showPerf(frame);
 		}
 
-		if (s_appState == APP_STATE_MENU)
+		if (appState == APP_STATE_MENU)
 		{
+			DXL2_FrontEndUI::draw();
 		}
-		else if (s_appState == APP_STATE_EDITOR)
+		else if (appState == APP_STATE_EDITOR)
 		{
-			DXL2_Editor::update();
+			if (DXL2_Editor::update())
+			{
+				DXL2_FrontEndUI::setAppState(APP_STATE_MENU);
+			}
 		}
-		else if (s_appState == APP_STATE_DARK_FORCES)
+		else if (appState == APP_STATE_DARK_FORCES)
 		{
 		}
 
 		// Render
 		renderer->begin();
 		// Do stuff
-		bool swap = s_appState != APP_STATE_EDITOR;
-		if (s_appState == APP_STATE_EDITOR)
+		bool swap = appState != APP_STATE_EDITOR;
+		if (appState == APP_STATE_EDITOR)
 		{
 			swap = DXL2_Editor::render();
 		}
@@ -391,6 +396,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Cleanup
+	DXL2_FrontEndUI::shutdown();
 	DXL2_Audio::shutdown();
 	DXL2_Polygon::shutdown();
 	DXL2_Image::shutdown();

@@ -26,6 +26,7 @@ namespace DXL2_Editor
 	static DXL2_Renderer* s_renderer = nullptr;
 	static EditorMode s_editorMode = EDIT_ASSET;
 	static Help s_showHelp = HELP_NONE;
+	static bool s_exitEditor = false;
 	
 	void menu();
 
@@ -39,6 +40,7 @@ namespace DXL2_Editor
 		HelpWindow::init();
 
 		DXL2_Ui::render();
+		s_exitEditor = false;
 	}
 
 	void disable()
@@ -46,7 +48,7 @@ namespace DXL2_Editor
 		LevelEditor::disable();
 	}
 
-	void update()
+	bool update()
 	{
 		bool fullscreen = s_editorMode == EDIT_ASSET ? ArchiveViewer::isFullscreen() : LevelEditor::isFullscreen();
 		if (!fullscreen) { menu(); }
@@ -65,6 +67,13 @@ namespace DXL2_Editor
 				s_showHelp = HELP_NONE;
 			}
 		}
+
+		if (s_exitEditor)
+		{
+			disable();
+		}
+
+		return s_exitEditor;
 	}
 
 	bool render()
@@ -123,6 +132,7 @@ namespace DXL2_Editor
 				}
 				if (ImGui::MenuItem("Return to Game", NULL, (bool*)NULL))
 				{
+					s_exitEditor = true;
 				}
 				if (ImGui::MenuItem("Exit", NULL, (bool*)NULL))
 				{

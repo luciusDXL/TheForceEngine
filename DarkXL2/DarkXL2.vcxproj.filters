@@ -122,6 +122,9 @@
     <Filter Include="Source\DXL2_Audio">
       <UniqueIdentifier>{c72c8565-5f70-4ecc-8a91-352dbc222cd9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\DXL2_FrontEndUI">
+      <UniqueIdentifier>{a8504c90-e13a-4a84-b3dc-faa166cfaabf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -427,6 +430,9 @@
     <ClInclude Include="DXL2_Game\gameUi.h">
       <Filter>Source\DXL2_Game</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_FrontEndUI\frontEndUi.h">
+      <Filter>Source\DXL2_FrontEndUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -695,6 +701,9 @@
     </ClCompile>
     <ClCompile Include="DXL2_Game\gameUi.cpp">
       <Filter>Source\DXL2_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_FrontEndUI\frontEndUi.cpp">
+      <Filter>Source\DXL2_FrontEndUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -27,7 +27,7 @@ namespace TriColoredDraw2d
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer s_indexBuffer;
 
-	static TriangleVertex* s_vertices;
+	static TriangleVertex* s_vertices = nullptr;
 	static u32 s_triCount;
 
 	bool init()
@@ -69,6 +69,7 @@ namespace TriColoredDraw2d
 		s_indexBuffer.destroy();
 
 		delete[] s_vertices;
+		s_vertices = nullptr;
 	}
 
 	static u32 s_width, s_height;

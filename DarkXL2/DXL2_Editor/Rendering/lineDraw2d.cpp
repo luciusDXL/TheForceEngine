@@ -31,7 +31,7 @@ namespace LineDraw2d
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer  s_indexBuffer;
 
-	static LineVertex* s_vertices;
+	static LineVertex* s_vertices = nullptr;
 	static u32 s_lineCount;
 
 	bool init()
@@ -77,6 +77,7 @@ namespace LineDraw2d
 		s_vertexBuffer.destroy();
 		s_indexBuffer.destroy();
 		delete[] s_vertices;
+		s_vertices = nullptr;
 	}
 
 	static u32 s_width, s_height;

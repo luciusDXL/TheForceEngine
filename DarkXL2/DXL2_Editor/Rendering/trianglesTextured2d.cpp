@@ -31,8 +31,8 @@ namespace TriTexturedDraw2d
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer s_indexBuffer;
 
-	static TriangleVertex* s_vertices;
-	static const TextureGpu* s_curTexture;
+	static TriangleVertex* s_vertices = nullptr;
+	static const TextureGpu* s_curTexture = nullptr;
 	static u32 s_triCount;
 
 	bool init()
@@ -75,6 +75,7 @@ namespace TriTexturedDraw2d
 		s_indexBuffer.destroy();
 
 		delete[] s_vertices;
+		s_vertices = nullptr;
 	}
 
 	static u32 s_width, s_height;

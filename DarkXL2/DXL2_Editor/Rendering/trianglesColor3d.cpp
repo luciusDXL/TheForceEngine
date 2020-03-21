@@ -52,7 +52,7 @@ namespace TrianglesColor3d
 	static VertexBuffer s_vertexBuffer;
 	static IndexBuffer  s_indexBuffer;
 
-	static TriVertex* s_vertices;
+	static TriVertex* s_vertices = nullptr;
 	static u32 s_triCount;
 
 	static TextureGpu* s_filterMap;
@@ -132,6 +132,7 @@ namespace TrianglesColor3d
 		s_vertexBuffer.destroy();
 		s_indexBuffer.destroy();
 		delete[] s_vertices;
+		s_vertices = nullptr;
 	}
 	
 	void addTriangles(u32 count, const Vec3f* vtx, const Vec2f* uv, const u32* triColors, bool blend)
