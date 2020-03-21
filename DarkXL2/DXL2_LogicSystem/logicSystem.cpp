@@ -12,6 +12,7 @@
 #include <DXL2_Game/gameObject.h>
 #include <DXL2_Game/player.h>
 #include <DXL2_Game/physics.h>
+#include <DXL2_Game/geometry.h>
 #include <DXL2_InfSystem/infSystem.h>
 #include <DXL2_Audio/audioSystem.h>
 #include <assert.h>
@@ -388,16 +389,38 @@ namespace DXL2_LogicSystem
 				obj->gameObj->sectorId,
 			};
 
-			s32 newSectorId;
+			// TODO: Simplifiy this code since it can call findSector() twice in failure cases.
+			s32 newSectorId = ray.originalSectorId;
 			if (DXL2_Physics::traceRayIgnoreHeight(&ray, &newSectorId))
 			{
 				// We hit something... which is bad. Now we have to search for the correct sector...
-				newSectorId = DXL2_Physics::findSector(&newPos);
-				if (newSectorId < 0)
+				s32 findSectorId = DXL2_Physics::findSector(&newPos);
+				if (findSectorId >= 0)
 				{
-					newSectorId = obj->gameObj->sectorId;
+					newSectorId = findSectorId;
 				}
 			}
+
+			// Make sure the object is in the new sector.
+			bool objInside = false;
+			if (newSectorId >= 0)
+			{
+				const LevelData* level = DXL2_LevelAsset::getLevelData();
+				const Sector* sector = level->sectors.data() + newSectorId;
+				const Vec2f* vtx = level->vertices.data() + sector->vtxOffset;
+				const SectorWall* walls = level->walls.data() + sector->wallOffset;
+				const Vec2f posXZ = { newPos.x, newPos.z };
+				objInside = Geometry::pointInSector(&posXZ, sector->vtxCount, vtx, sector->wallCount, walls);
+			}
+			if (!objInside)
+			{
+				s32 findSectorId = DXL2_Physics::findSector(&newPos);
+				if (findSectorId >= 0)
+				{
+					newSectorId = findSectorId;
+				}
+			}
+
 			const s32 prevSectorId = obj->gameObj->sectorId;
 			if (prevSectorId != newSectorId)
 			{

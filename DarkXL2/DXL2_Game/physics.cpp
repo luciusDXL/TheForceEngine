@@ -1290,6 +1290,7 @@ namespace DXL2_Physics
 	bool traceRayIgnoreHeight(const RayIgnoreHeight* ray, s32* newSectorId)
 	{
 		assert(ray && newSectorId);
+		if (ray->originalSectorId < 0) { return false; }
 
 		Vec2f p0 = ray->p0;
 		Vec2f p1 = ray->p1;
@@ -1341,13 +1342,13 @@ namespace DXL2_Physics
 				}
 			}
 
-			if (closestHit < 0 || closestWallId < 0)
+			if (closestWallId < 0)
 			{
 				return false;
 			}
 
-			p1.x = p0.x + closestHit * (p1.x - p0.x);
-			p1.z = p0.z + closestHit * (p1.z - p0.z);
+			p0.x += closestHit * (p1.x - p0.x);
+			p0.z += closestHit * (p1.z - p0.z);
 
 			if (curWalls[closestWallId].adjoin >= 0)
 			{
