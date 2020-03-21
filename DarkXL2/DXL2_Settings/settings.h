@@ -21,6 +21,11 @@ struct DXL2_Settings_Window
 	bool fullscreen = false;
 };
 
+struct DXL2_Settings_Graphics
+{
+	Vec2i gameResolution = { 320, 200 };
+};
+
 namespace DXL2_Settings
 {
 	bool init();
@@ -30,4 +35,5 @@ namespace DXL2_Settings
 
 	// Get and set settings.
 	DXL2_Settings_Window* getWindowSettings();
+	DXL2_Settings_Graphics* getGraphicsSettings();
 }

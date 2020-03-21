@@ -9,17 +9,31 @@
 namespace DXL2_Settings
 {
 	//////////////////////////////////////////////////////////////////////////////////
+	// Resolution Info
+	//////////////////////////////////////////////////////////////////////////////////
+	// Base Cost: ~2.6 ms / 1M pixels.
+	// 4K only possible with palette conversion during blit in the shader.
+	// Possibly double buffer (+1 frame latency).
+	//s32 w = 320,  h = 200;	// 200p
+	//s32 w = 1440, h = 1080;	//1080p
+	//s32 w = 1920, h = 1440;	//1440p
+	//s32 w = 2880, h = 2160;	//4K
+	//s32 w = 1024, h = 768;
+
+	//////////////////////////////////////////////////////////////////////////////////
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
 #define LINEBUF_LEN 1024
 	static char s_settingsPath[DXL2_MAX_PATH];
 	static DXL2_Settings_Window s_windowSettings = {};
+	static DXL2_Settings_Graphics s_graphicsSettings = {};
 	static char s_lineBuffer[LINEBUF_LEN];
 	static std::vector<char> s_iniBuffer;
 
 	enum SectionID
 	{
 		SECTION_WINDOW = 0,
+		SECTION_GRAPHICS,
 		SECTION_COUNT,
 		SECTION_INVALID = SECTION_COUNT
 	};
@@ -27,6 +41,7 @@ namespace DXL2_Settings
 	static const char* c_sectionNames[SECTION_COUNT] =
 	{
 		"Window",
+		"Graphics",
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -34,11 +49,13 @@ namespace DXL2_Settings
 	//////////////////////////////////////////////////////////////////////////////////
 	// Write
 	void writeWindowSettings(FileStream& settings);
+	void writeGraphicsSettings(FileStream& settings);
 
 	// Read
 	bool readFromDisk();
 	void parseIniFile(const char* buffer, size_t len);
 	void parseWindowSettings(const char* key, const char* value);
+	void parseGraphicsSettings(const char* key, const char* value);
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
@@ -80,6 +97,7 @@ namespace DXL2_Settings
 		if (settings.open(s_settingsPath, FileStream::MODE_WRITE))
 		{
 			writeWindowSettings(settings);
+			writeGraphicsSettings(settings);
 			settings.close();
 
 			return true;
@@ -91,6 +109,11 @@ namespace DXL2_Settings
 	DXL2_Settings_Window* getWindowSettings()
 	{
 		return &s_windowSettings;
+	}
+
+	DXL2_Settings_Graphics* getGraphicsSettings()
+	{
+		return &s_graphicsSettings;
 	}
 
 	void writeHeader(FileStream& file, const char* section)
@@ -133,6 +156,13 @@ namespace DXL2_Settings
 		writeKeyValue_Int(settings, "baseWidth", s_windowSettings.baseWidth);
 		writeKeyValue_Int(settings, "baseHeight", s_windowSettings.baseHeight);
 		writeKeyValue_Bool(settings, "fullscreen", s_windowSettings.fullscreen);
+	}
+
+	void writeGraphicsSettings(FileStream& settings)
+	{
+		writeHeader(settings, "Graphics");
+		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
+		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
 	}
 		
 	SectionID parseSectionName(const char* name)
@@ -186,6 +216,9 @@ namespace DXL2_Settings
 				case SECTION_WINDOW:
 					parseWindowSettings(tokens[0].c_str(), tokens[1].c_str());
 					break;
+				case SECTION_GRAPHICS:
+					parseGraphicsSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
 				default:
 					assert(0);
 				};
@@ -234,6 +267,18 @@ namespace DXL2_Settings
 		else if (strcasecmp("fullscreen", key) == 0)
 		{
 			s_windowSettings.fullscreen = parseBool(value);
+		}
+	}
+
+	void parseGraphicsSettings(const char* key, const char* value)
+	{
+		if (strcasecmp("gameWidth", key) == 0)
+		{
+			s_graphicsSettings.gameResolution.x = parseInt(value);
+		}
+		else if (strcasecmp("gameHeight", key) == 0)
+		{
+			s_graphicsSettings.gameResolution.z = parseInt(value);
 		}
 	}
 }

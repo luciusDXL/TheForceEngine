@@ -205,6 +205,8 @@ bool sdlInit()
 
 void setAppState(AppState newState, DXL2_Renderer* renderer)
 {
+	const DXL2_Settings_Graphics* config = DXL2_Settings::getGraphicsSettings();
+
 	if (newState != APP_STATE_EDITOR)
 	{
 		DXL2_Editor::disable();
@@ -219,7 +221,7 @@ void setAppState(AppState newState, DXL2_Renderer* renderer)
 		DXL2_Editor::enable(renderer);
 		break;
 	case APP_STATE_DARK_FORCES:
-		renderer->changeResolution(320, 200);
+		renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
 		break;
 	};
 }

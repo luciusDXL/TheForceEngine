@@ -15,6 +15,7 @@
 #include <DXL2_Asset/gameMessages.h>
 #include <DXL2_Asset/levelList.h>
 #include <DXL2_Asset/vocAsset.h>
+#include <DXL2_Settings/settings.h>
 #include <DXL2_Ui/ui.h>
 #include <DXL2_RenderBackend/renderBackend.h>
 #include <DXL2_Audio/audioSystem.h>
@@ -88,16 +89,6 @@ namespace ArchiveViewer
 	static s32 s_uiScale;
 	static char s_levelFile[DXL2_MAX_PATH];
 	static const ViewStats* s_viewStats = nullptr;
-
-	// Base Cost: ~2.6 ms / 1M pixels.
-	// 4K only possible with palette conversion during blit in the shader.
-	// Possibly double buffer (+1 frame latency).
-	//s32 w = 320,  h = 200;	// 200p
-	//s32 w = 1440, h = 1080;	//1080p
-	//s32 w = 1920, h = 1440;	//1440p
-	//s32 w = 2880, h = 2160;	//4K
-	//s32 w = 1024, h = 768;
-	static Vec2i s_gameResolution = { 320, 200 };
 		
 	f32 scaleUi(s32 x)
 	{
@@ -169,6 +160,8 @@ namespace ArchiveViewer
 		
 	bool render3dView()
 	{
+		const DXL2_Settings_Graphics* config = DXL2_Settings::getGraphicsSettings();
+
 		if (s_runLevel)
 		{
 			if (DXL2_Input::keyPressed(KEY_F10))
@@ -192,7 +185,7 @@ namespace ArchiveViewer
 				strcpy(s_levelFile, s_levelFiles[s_curLevel]);
 				DXL2_LevelAsset::load(s_levelFiles[s_curLevel]);
 				LevelData* level = DXL2_LevelAsset::getLevelData();
-				DXL2_GameLoop::startLevel(level, start, s_renderer, s_gameResolution.x, s_gameResolution.z, true);
+				DXL2_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true);
 			}
 			else if (DXL2_Input::keyPressed(KEY_BACKSPACE) || state == GSTATE_QUIT || state == GSTATE_NEXT)
 			{
@@ -327,6 +320,8 @@ namespace ArchiveViewer
 		
 	void draw(bool* isActive)
 	{
+		const DXL2_Settings_Graphics* config = DXL2_Settings::getGraphicsSettings();
+
 		// Do not show the editor while running the level.
 		if (s_runLevel)
 		{
@@ -398,9 +393,9 @@ namespace ArchiveViewer
 				StartLocation start = {};
 				start.overrideStart = false;
 
-				if (DXL2_GameLoop::startLevel(level, start, s_renderer, s_gameResolution.x, s_gameResolution.z, true))
+				if (DXL2_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true))
 				{
-					s_renderer->changeResolution(s_gameResolution.x, s_gameResolution.z);
+					s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
 					s_runLevel = true;
 					s_showUi = false;
 					DXL2_Input::enableRelativeMode(true);
@@ -606,9 +601,9 @@ namespace ArchiveViewer
 					start.pos = s_mapPos;
 					start.layer = s_layer;
 
-					if (DXL2_GameLoop::startLevel(level, start, s_renderer, s_gameResolution.x, s_gameResolution.z, true))
+					if (DXL2_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true))
 					{
-						s_renderer->changeResolution(s_gameResolution.x, s_gameResolution.z);
+						s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
 						s_runLevel = true;
 						s_showUi = false;
 						DXL2_Input::enableRelativeMode(true);
@@ -621,9 +616,9 @@ namespace ArchiveViewer
 				StartLocation start = {};
 				start.overrideStart = false;
 
-				if (DXL2_GameLoop::startLevel(level, start, s_renderer, s_gameResolution.x, s_gameResolution.z, true))
+				if (DXL2_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true))
 				{
-					s_renderer->changeResolution(s_gameResolution.x, s_gameResolution.z);
+					s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
 					s_runLevel = true;
 					s_showUi = false;
 					DXL2_Input::enableRelativeMode(true);
