@@ -24,9 +24,23 @@ namespace DXL2_Settings
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
 #define LINEBUF_LEN 1024
+	enum Games
+	{
+		Game_Dark_Forces = 0,
+		Game_Outlaws,
+		Game_Count
+	};
+
+	static const char* c_gameName[]=
+	{
+		"Dark Forces",
+		"Outlaws",
+	};
+
 	static char s_settingsPath[DXL2_MAX_PATH];
 	static DXL2_Settings_Window s_windowSettings = {};
 	static DXL2_Settings_Graphics s_graphicsSettings = {};
+	static DXL2_Settings_Game s_gameSettings[Game_Count];
 	static char s_lineBuffer[LINEBUF_LEN];
 	static std::vector<char> s_iniBuffer;
 
@@ -34,14 +48,19 @@ namespace DXL2_Settings
 	{
 		SECTION_WINDOW = 0,
 		SECTION_GRAPHICS,
+		SECTION_DARK_FORCES,
+		SECTION_OUTLAWS,
 		SECTION_COUNT,
-		SECTION_INVALID = SECTION_COUNT
+		SECTION_INVALID = SECTION_COUNT,
+		SECTION_GAME_START = SECTION_DARK_FORCES
 	};
 
 	static const char* c_sectionNames[SECTION_COUNT] =
 	{
 		"Window",
 		"Graphics",
+		"Dark_Forces",
+		"Outlaws",
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -50,12 +69,15 @@ namespace DXL2_Settings
 	// Write
 	void writeWindowSettings(FileStream& settings);
 	void writeGraphicsSettings(FileStream& settings);
+	void writeGameSettings(FileStream& settings);
 
 	// Read
 	bool readFromDisk();
 	void parseIniFile(const char* buffer, size_t len);
 	void parseWindowSettings(const char* key, const char* value);
 	void parseGraphicsSettings(const char* key, const char* value);
+	void parseDark_ForcesSettings(const char* key, const char* value);
+	void parseOutlawsSettings(const char* key, const char* value);
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
@@ -64,6 +86,12 @@ namespace DXL2_Settings
 	{
 		DXL2_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
 		if (FileUtil::exists(s_settingsPath)) { return readFromDisk(); }
+
+		memset(s_gameSettings, 0, sizeof(DXL2_Settings_Game) * Game_Count);
+		for (u32 i = 0; i < Game_Count; i++)
+		{
+			strcpy(s_gameSettings[i].gameName, c_gameName[i]);
+		}
 
 		return writeToDisk();
 	}
@@ -98,6 +126,7 @@ namespace DXL2_Settings
 		{
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);
+			writeGameSettings(settings);
 			settings.close();
 
 			return true;
@@ -114,6 +143,19 @@ namespace DXL2_Settings
 	DXL2_Settings_Graphics* getGraphicsSettings()
 	{
 		return &s_graphicsSettings;
+	}
+
+	DXL2_Settings_Game* getGameSettings(const char* gameName)
+	{
+		for (u32 i = 0; i < Game_Count; i++)
+		{
+			if (strcasecmp(gameName, c_gameName[i]) == 0)
+			{
+				return &s_gameSettings[i];
+			}
+		}
+
+		return nullptr;
 	}
 
 	void writeHeader(FileStream& file, const char* section)
@@ -163,6 +205,19 @@ namespace DXL2_Settings
 		writeHeader(settings, "Graphics");
 		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
 		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
+	}
+
+	void writeGameSettings(FileStream& settings)
+	{
+		for (u32 i = 0; i < Game_Count; i++)
+		{
+			writeHeader(settings, c_sectionNames[SECTION_GAME_START + i]);
+			writeKeyValue_String(settings, "sourcePath", s_gameSettings[i].sourcePath);
+			if (s_gameSettings[i].emulatorPath[0])
+			{
+				writeKeyValue_String(settings, "emulatorPath", s_gameSettings[i].emulatorPath);
+			}
+		}
 	}
 		
 	SectionID parseSectionName(const char* name)
@@ -218,6 +273,12 @@ namespace DXL2_Settings
 					break;
 				case SECTION_GRAPHICS:
 					parseGraphicsSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
+				case SECTION_DARK_FORCES:
+					parseDark_ForcesSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
+				case SECTION_OUTLAWS:
+					parseOutlawsSettings(tokens[0].c_str(), tokens[1].c_str());
 					break;
 				default:
 					assert(0);
@@ -279,6 +340,26 @@ namespace DXL2_Settings
 		else if (strcasecmp("gameHeight", key) == 0)
 		{
 			s_graphicsSettings.gameResolution.z = parseInt(value);
+		}
+	}
+
+	void parseDark_ForcesSettings(const char* key, const char* value)
+	{
+		if (strcasecmp("sourcePath", key) == 0)
+		{
+			strcpy(s_gameSettings[Game_Dark_Forces].sourcePath, value);
+		}
+		else if (strcasecmp("emulatorPath", key) == 0)
+		{
+			strcpy(s_gameSettings[Game_Dark_Forces].emulatorPath, value);
+		}
+	}
+
+	void parseOutlawsSettings(const char* key, const char* value)
+	{
+		if (strcasecmp("sourcePath", key) == 0)
+		{
+			strcpy(s_gameSettings[Game_Outlaws].sourcePath, value);
 		}
 	}
 }

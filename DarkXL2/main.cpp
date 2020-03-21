@@ -246,10 +246,10 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 
-	// TODO: The data path is hard coded and should be set.
-	DXL2_Paths::setPath(PATH_SOURCE_DATA, "D:\\Program Files (x86)\\Steam\\steamapps\\common\\dark forces\\Game\\");
-	// DosBox is only required for the level editor - if running the Dos version to test.
-	DXL2_Paths::setPath(PATH_DOSBOX, "D:\\Program Files (x86)\\Steam\\steamapps\\common\\dark forces\\");
+	// Setup game paths.
+	const DXL2_Settings_Game* gameSettings = DXL2_Settings::getGameSettings("Dark Forces");
+	DXL2_Paths::setPath(PATH_SOURCE_DATA, gameSettings->sourcePath);
+	DXL2_Paths::setPath(PATH_EMULATOR, gameSettings->emulatorPath);
 
 	DXL2_System::logOpen("darkxl2_log.txt");
 	DXL2_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   DXL2_Paths::getPath(PATH_PROGRAM));

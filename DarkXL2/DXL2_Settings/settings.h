@@ -9,6 +9,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <DXL2_System/types.h>
+#include <DXL2_FileSystem/paths.h>
 
 struct DXL2_Settings_Window
 {
@@ -26,6 +27,13 @@ struct DXL2_Settings_Graphics
 	Vec2i gameResolution = { 320, 200 };
 };
 
+struct DXL2_Settings_Game
+{
+	char gameName[64];
+	char sourcePath[DXL2_MAX_PATH];
+	char emulatorPath[DXL2_MAX_PATH];
+};
+
 namespace DXL2_Settings
 {
 	bool init();
@@ -36,4 +44,5 @@ namespace DXL2_Settings
 	// Get and set settings.
 	DXL2_Settings_Window* getWindowSettings();
 	DXL2_Settings_Graphics* getGraphicsSettings();
+	DXL2_Settings_Game* getGameSettings(const char* gameName);
 }

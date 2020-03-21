@@ -2526,8 +2526,8 @@ namespace LevelEditor
 	{
 		char srcConfigPath[DXL2_MAX_PATH];
 		char dstConfigPath[DXL2_MAX_PATH];
-		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.conf", srcConfigPath);
-		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox_Temp.conf", dstConfigPath);
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_EMULATOR, "Dosbox.conf", srcConfigPath);
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_EMULATOR, "Dosbox_Temp.conf", dstConfigPath);
 
 		FileUtil::copyFile(srcConfigPath, dstConfigPath);
 	}
@@ -2536,8 +2536,8 @@ namespace LevelEditor
 	{
 		char srcConfigPath[DXL2_MAX_PATH];
 		char dstConfigPath[DXL2_MAX_PATH];
-		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox_Temp.conf", srcConfigPath);
-		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.conf", dstConfigPath);
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_EMULATOR, "Dosbox_Temp.conf", srcConfigPath);
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_EMULATOR, "Dosbox.conf", dstConfigPath);
 
 		FileUtil::copyFile(srcConfigPath, dstConfigPath);
 		FileUtil::deleteFile(srcConfigPath);
@@ -2566,7 +2566,7 @@ namespace LevelEditor
 		strcat(newConfig, commandLine);
 
 		char dstConfigPath[DXL2_MAX_PATH];
-		DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.conf", dstConfigPath);
+		DXL2_Paths::appendPath(DXL2_PathType::PATH_EMULATOR, "Dosbox.conf", dstConfigPath);
 
 		FileStream config;
 		if (!config.open(dstConfigPath, FileStream::MODE_WRITE))
@@ -2645,8 +2645,8 @@ namespace LevelEditor
 				writeDosBoxConfig(s_levelData->name.c_str());
 
 				char dosBoxPath[DXL2_MAX_PATH];
-				DXL2_Paths::appendPath(DXL2_PathType::PATH_DOSBOX, "Dosbox.exe", dosBoxPath);
-				DXL2_System::osShellExecute(dosBoxPath, DXL2_Paths::getPath(DXL2_PathType::PATH_DOSBOX), nullptr, true);
+				DXL2_Paths::appendPath(DXL2_PathType::PATH_EMULATOR, "Dosbox.exe", dosBoxPath);
+				DXL2_System::osShellExecute(dosBoxPath, DXL2_Paths::getPath(DXL2_PathType::PATH_EMULATOR), nullptr, true);
 
 				restoreDosBoxConfig();
 				if (startIndex >= 0)
