@@ -7,6 +7,30 @@
 #include <DXL2_System/types.h>
 #include <DXL2_Asset/infAsset.h>
 
+#if 0  // Support for multiple games
+// Game-specific player data.
+struct GameData
+{
+	u32 gameId;
+	u32 sizeInBytes;
+	u32 flags;			// Game specific flags.
+	// Game specific
+};
+
+struct DarkForcesData
+{
+	s32 m_shields;
+	s32 m_lives;
+	s32 m_dtCount;
+	//...
+};
+
+struct OutlawsData
+{
+	//...
+};
+#endif
+
 class Player
 {
 public:
@@ -28,7 +52,7 @@ public:
 
 	u32 m_keys;
 
-	bool m_headlampOn;
+	bool m_headlampOn;		// TODO: Convert to stateFlags - General (shooting, onScrollFloor) and Game Specific (headlampOn, nightVisionOn).
 	bool m_nightVisionOn;
 	bool m_shooting;
 	bool m_onScrollFloor;

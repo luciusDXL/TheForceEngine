@@ -357,36 +357,42 @@ namespace DXL2_GameLoop
 		
 	GameUpdateState update()
 	{
+		// Handle Game UI
 		GameUpdateState state = GSTATE_CONTINUE;
-
-		LightMode mode = LIGHT_OFF;
-		if (s_player.m_shooting) { mode = LIGHT_BRIGHT; }
-		else if (s_player.m_headlampOn) { mode = LIGHT_NORMAL; }
-
-		// Check for the game ui first.
-		if (DXL2_GameUi::isEscMenuOpen())
+				
+		const GameUiResult result = DXL2_GameUi::update(&s_player);
+		if (result == GAME_ABORT || result == GAME_QUIT)
 		{
-			EscapeMenuResult result = DXL2_GameUi::update(&s_player);
-			DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
-
-			if (result == ESC_MENU_ABORT || result == ESC_MENU_QUIT)
-			{
-				state = GSTATE_QUIT;
-			}
-			else if (result == ESC_MENU_NEXT)
-			{
-				state = GSTATE_NEXT;
-			}
-
-			return state;
+			return GSTATE_QUIT;
 		}
-		else if (DXL2_Input::keyPressed(KEY_ESCAPE))
+		else if (result == GAME_NEXT_LEVEL)
+		{
+			return GSTATE_NEXT;
+		}
+
+		if (!DXL2_GameUi::isEscMenuOpen() && DXL2_Input::keyPressed(KEY_ESCAPE))
 		{
 			DXL2_GameUi::openEscMenu();
-			DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
+		}
+
+		LightMode mode = LIGHT_OFF;
+		if (DXL2_GameUi::shouldDrawGame())
+		{
+			if (s_player.m_shooting) { mode = LIGHT_BRIGHT; }
+			else if (s_player.m_headlampOn) { mode = LIGHT_NORMAL; }
+			// If the game should not be updated, the view still needs updating to avoid visual glitches.
+			// Otherwise it will be updated after the player input and physics.
+			if (!DXL2_GameUi::shouldUpdateGame())
+			{
+				DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
+			}
+		}
+		if (!DXL2_GameUi::shouldUpdateGame())
+		{
 			return state;
 		}
 
+		// Then handle player update and prepare to draw.
 		s_player.m_onScrollFloor = false;
 		s32 playerFloorCount = 0, playerSecAltCount = 0;
 		s32 playerFloor[256], playerSecAlt[256];
@@ -723,7 +729,6 @@ namespace DXL2_GameLoop
 						
 		DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
 		DXL2_GameHud::update(&s_player);
-		DXL2_GameUi::update(&s_player);
 		DXL2_LogicSystem::update();
 		DXL2_WeaponSystem::update(s_motion, &s_player);
 
@@ -748,9 +753,12 @@ namespace DXL2_GameLoop
 		
 	void draw()
 	{
-		DXL2_View::draw(&s_cameraPos, s_player.m_sectorId);
-		DXL2_WeaponSystem::draw(&s_player, &s_cameraPos, s_player.m_headlampOn ? 31 : s_level->sectors[s_player.m_sectorId].ambient);
-		DXL2_GameHud::draw(&s_player);
+		if (DXL2_GameUi::shouldDrawGame())
+		{
+			DXL2_View::draw(&s_cameraPos, s_player.m_sectorId);
+			DXL2_WeaponSystem::draw(&s_player, &s_cameraPos, s_player.m_headlampOn ? 31 : s_level->sectors[s_player.m_sectorId].ambient);
+			DXL2_GameHud::draw(&s_player);
+		}
 		DXL2_GameUi::draw(&s_player);
 	}
 

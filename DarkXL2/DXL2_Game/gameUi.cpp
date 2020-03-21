@@ -63,6 +63,9 @@ namespace DXL2_GameUi
 	static bool s_escMenuOpen = false;
 	static bool s_nextMission = false;
 
+	static s32 s_selectedLevel = 1;
+	static s32 s_selectedDifficulty = 1;
+
 	void init(DXL2_Renderer* renderer)
 	{
 		s_renderer = renderer;
@@ -112,9 +115,9 @@ namespace DXL2_GameUi
 		s_renderer->setColorMap(s_prevCMap);
 	}
 		
-	EscapeMenuResult update(Player* player)
+	GameUiResult update(Player* player)
 	{
-		EscapeMenuResult result = ESC_MENU_CONTINUE;
+		GameUiResult result = GAME_CONTINUE;
 
 		if (DXL2_Input::keyPressed(KEY_ESCAPE) && s_escMenuOpen)
 		{
@@ -182,11 +185,11 @@ namespace DXL2_GameUi
 						case ESC_ABORT:
 							if (s_nextMission)
 							{
-								result = ESC_MENU_NEXT;
+								result = GAME_NEXT_LEVEL;
 							}
 							else
 							{
-								result = ESC_MENU_ABORT;
+								result = GAME_ABORT;
 							}
 							closeEscMenu();
 							break;
@@ -194,7 +197,7 @@ namespace DXL2_GameUi
 							// TODO
 							break;
 						case ESC_QUIT:
-							result = ESC_MENU_QUIT;
+							result = GAME_QUIT;
 							closeEscMenu();
 							break;
 						case ESC_RETURN:
@@ -210,6 +213,27 @@ namespace DXL2_GameUi
 		}
 
 		return result;
+	}
+
+	// Returns true if the game view should be drawn.
+	// This will be false for fullscreen UI.
+	bool shouldDrawGame()
+	{
+		return true;
+	}
+
+	// Returns true if the game view should be updated.
+	// This will be false for modal UI.
+	bool shouldUpdateGame()
+	{
+		return !s_escMenuOpen;
+	}
+		
+	// Get the level selected in the UI.
+	s32 getSelectedLevel(s32* difficulty)
+	{
+		*difficulty = s_selectedDifficulty;
+		return s_selectedLevel;
 	}
 
 	void draw(Player* player)

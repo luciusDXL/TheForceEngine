@@ -12,12 +12,13 @@
 class DXL2_Renderer;
 class Player;
 
-enum EscapeMenuResult
+enum GameUiResult
 {
-	ESC_MENU_CONTINUE,	// Continue as we have been, nothing to report.
-	ESC_MENU_ABORT,		// Abort the mission!
-	ESC_MENU_NEXT,		// Progress to the next mission.
-	ESC_MENU_QUIT		// Quit the game.
+	GAME_CONTINUE,		// Continue as we have been, nothing to report.
+	GAME_ABORT,			// Abort the mission!
+	GAME_NEXT_LEVEL,	// Progress to the next mission at the same difficulty level.
+	GAME_SELECT_LEVEL,	// Level selected, time to start.
+	GAME_QUIT,			// Quit the game.
 };
 
 namespace DXL2_GameUi
@@ -27,6 +28,13 @@ namespace DXL2_GameUi
 	bool isEscMenuOpen();
 	void toggleNextMission(bool enable);
 
-	EscapeMenuResult update(Player* player);
+	GameUiResult update(Player* player);
 	void draw(Player* player);
+
+	// Returns true if the game view should be drawn.
+	// This will be false for fullscreen UI.
+	bool shouldDrawGame();
+	bool shouldUpdateGame();
+	// Get the level selected in the UI.
+	s32  getSelectedLevel(s32* difficulty);
 }
