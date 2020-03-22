@@ -25,6 +25,7 @@ namespace DXL2_GameUi
 {
 	void init(DXL2_Renderer* renderer);
 	void openEscMenu();
+	void openAgentMenu();
 	bool isEscMenuOpen();
 	void toggleNextMission(bool enable);
 

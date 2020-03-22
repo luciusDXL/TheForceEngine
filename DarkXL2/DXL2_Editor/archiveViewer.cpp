@@ -187,7 +187,7 @@ namespace ArchiveViewer
 				LevelData* level = DXL2_LevelAsset::getLevelData();
 				DXL2_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true);
 			}
-			else if (DXL2_Input::keyPressed(KEY_BACKSPACE) || state == GSTATE_QUIT || state == GSTATE_NEXT)
+			else if (DXL2_Input::keyPressed(KEY_BACKSPACE) || state == GSTATE_QUIT || state == GSTATE_ABORT || state == GSTATE_NEXT)
 			{
 				s_renderer->changeResolution(640, 480);
 				s_runLevel = false;

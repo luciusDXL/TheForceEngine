@@ -304,7 +304,7 @@ int main(int argc, char* argv[])
 	DXL2_Level::init();
 	DXL2_Palette::createDefault256();
 	DXL2_FrontEndUI::init();
-	
+		
 	DXL2_Renderer* renderer = DXL2_Renderer::create(DXL2_RENDERER_SOFTWARE_CPU);
 	if (!renderer)
 	{
@@ -321,6 +321,7 @@ int main(int argc, char* argv[])
 
 	// Game loop
 	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "DarkXL 2 Game Loop Started");
+	DXL2_GameUi::init(renderer);
 
 	u32 frame = 0u;
 	bool showPerf = false;

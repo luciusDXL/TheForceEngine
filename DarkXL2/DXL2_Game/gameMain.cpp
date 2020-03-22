@@ -1,5 +1,6 @@
 #include "gameMain.h"
 #include "gameLoop.h"
+#include "gameUi.h"
 #include "player.h"
 #include <DXL2_System/system.h>
 #include <DXL2_Renderer/renderer.h>
@@ -34,8 +35,7 @@ namespace DXL2_GameMain
 
 		s_levelCount = DXL2_LevelList::getLevelCount();
 
-		// For now just start the first level...
-		startLevel();
+		DXL2_GameUi::openAgentMenu();
 	}
 
 	GameUpdateState loop()
@@ -48,6 +48,18 @@ namespace DXL2_GameMain
 			// Go to the next level in the list.
 			s_curLevel++;
 			startLevel();
+		}
+		else if (state == GSTATE_SELECT_LEVEL)
+		{
+			// Start the selected level.
+			s32 difficulty = 1;
+			s_curLevel = DXL2_GameUi::getSelectedLevel(&difficulty);
+			startLevel();
+		}
+		else if (state == GSTATE_ABORT)
+		{
+			DXL2_GameUi::openAgentMenu();
+			state = GSTATE_CONTINUE;
 		}
 
 		return state;

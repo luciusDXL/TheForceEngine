@@ -37,4 +37,6 @@ namespace DXL2_GameConstants
 	static const f32 c_crouchOffSpeed = 12.0f;
 
 	static const f32 c_yellThreshold = 40.0f;
+
+	static const s32 c_levelLoadInputDelay = 15;
 }

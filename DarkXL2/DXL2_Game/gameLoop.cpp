@@ -52,6 +52,7 @@ namespace DXL2_GameLoop
 	static f32 s_fallHeight;
 	static f32 s_landDist = 0.0f;
 	static f32 s_landAnim = 0.0f;
+	static s32 s_inputDelay = 0;	// A small delay to avoid "click through" and similar effects.
 	static bool s_land = false;
 	static bool s_jump = false;
 	static PlayerSounds s_playerSounds;
@@ -127,6 +128,8 @@ namespace DXL2_GameLoop
 		s_playerSounds.land = DXL2_VocAsset::get("LAND-1.VOC");
 		s_playerSounds.fall = DXL2_VocAsset::get("FALL.VOC");
 		s_playerSounds.landWater = DXL2_VocAsset::get("SWIM-IN.VOC");
+
+		s_inputDelay = c_levelLoadInputDelay;
 
 		return true;
 	}
@@ -240,6 +243,8 @@ namespace DXL2_GameLoop
 		s_playerSounds.land = DXL2_VocAsset::get("LAND-1.VOC");
 		s_playerSounds.fall = DXL2_VocAsset::get("FALL.VOC");
 		s_playerSounds.landWater = DXL2_VocAsset::get("SWIM-IN.VOC");
+
+		s_inputDelay = c_levelLoadInputDelay;
 		
 		return true;
 	}
@@ -361,34 +366,45 @@ namespace DXL2_GameLoop
 		GameUpdateState state = GSTATE_CONTINUE;
 				
 		const bool escMenuOpen = DXL2_GameUi::isEscMenuOpen();
+		const bool shouldDrawGame = DXL2_GameUi::shouldDrawGame();
+		const bool shouldUpdateGame = DXL2_GameUi::shouldUpdateGame();
 		const GameUiResult result = DXL2_GameUi::update(&s_player);
-		if (result == GAME_ABORT || result == GAME_QUIT)
+		if (result == GAME_QUIT)
 		{
 			return GSTATE_QUIT;
+		}
+		else if (result == GAME_ABORT)
+		{
+			return GSTATE_ABORT;
 		}
 		else if (result == GAME_NEXT_LEVEL)
 		{
 			return GSTATE_NEXT;
 		}
+		else if (result == GAME_SELECT_LEVEL)
+		{
+			return GSTATE_SELECT_LEVEL;
+		}
 
-		if (!escMenuOpen && DXL2_Input::keyPressed(KEY_ESCAPE))
+		// If draw game isn't set, then we cannot use the escape menu.
+		if (!escMenuOpen && shouldDrawGame && DXL2_Input::keyPressed(KEY_ESCAPE) && s_inputDelay <= 0)
 		{
 			DXL2_GameUi::openEscMenu();
 		}
 
 		LightMode mode = LIGHT_OFF;
-		if (DXL2_GameUi::shouldDrawGame())
+		if (shouldDrawGame)
 		{
 			if (s_player.m_shooting) { mode = LIGHT_BRIGHT; }
 			else if (s_player.m_headlampOn) { mode = LIGHT_NORMAL; }
 			// If the game should not be updated, the view still needs updating to avoid visual glitches.
 			// Otherwise it will be updated after the player input and physics.
-			if (!DXL2_GameUi::shouldUpdateGame())
+			if (!shouldUpdateGame)
 			{
 				DXL2_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
 			}
 		}
-		if (!DXL2_GameUi::shouldUpdateGame())
+		if (!shouldUpdateGame)
 		{
 			return state;
 		}
@@ -434,18 +450,18 @@ namespace DXL2_GameLoop
 		const f32 turnSpeed = 2.1f;
 
 		// hack in some controls.
-		if (DXL2_Input::keyDown(KEY_LEFT))
+		if (DXL2_Input::keyDown(KEY_LEFT) && s_inputDelay <= 0)
 		{
 			s_player.m_yaw += turnSpeed * dt;
 			if (s_player.m_yaw >= 2.0f*PI) { s_player.m_yaw -= 2.0f*PI; }
 		}
-		else if (DXL2_Input::keyDown(KEY_RIGHT))
+		else if (DXL2_Input::keyDown(KEY_RIGHT) && s_inputDelay <= 0)
 		{
 			s_player.m_yaw -= turnSpeed * dt;
 			if (s_player.m_yaw < 0.0f) { s_player.m_yaw += 2.0f*PI; }
 		}
 
-		if (DXL2_Input::relativeModeEnabled())
+		if (DXL2_Input::relativeModeEnabled() && s_inputDelay <= 0)
 		{
 			s32 mdx, mdy;
 			DXL2_Input::getMouseMove(&mdx, &mdy);
@@ -469,17 +485,17 @@ namespace DXL2_GameLoop
 			}
 		}
 
-		if (DXL2_Input::keyDown(KEY_PAGEUP))
+		if (DXL2_Input::keyDown(KEY_PAGEUP) && s_inputDelay <= 0)
 		{
 			s_player.m_pitch += turnSpeed * dt;
 			if (s_player.m_pitch >= c_pitchLimit) { s_player.m_pitch = c_pitchLimit; }
 		}
-		else if (DXL2_Input::keyDown(KEY_PAGEDOWN))
+		else if (DXL2_Input::keyDown(KEY_PAGEDOWN) && s_inputDelay <= 0)
 		{
 			s_player.m_pitch -= turnSpeed * dt;
 			if (s_player.m_pitch < -c_pitchLimit) { s_player.m_pitch = -c_pitchLimit; }
 		}
-		else if (DXL2_Input::keyDown(KEY_END))
+		else if (DXL2_Input::keyDown(KEY_END) && s_inputDelay <= 0)
 		{
 			s_player.m_pitch = 0.0f;
 		}
@@ -499,7 +515,7 @@ namespace DXL2_GameLoop
 		}
 
 		// Use
-		if (DXL2_Input::keyPressed(KEY_E))
+		if (DXL2_Input::keyPressed(KEY_E) && s_inputDelay <= 0)
 		{
 			const Vec3f forwardDir = { -sinf(s_player.m_yaw), 0.0f, cosf(s_player.m_yaw) };
 			// Fire a short ray into the world and gather all of the lines it hits until a solid wall is reached or the ray terminates.
@@ -545,22 +561,22 @@ namespace DXL2_GameLoop
 		const Vec2f forward = { forwardDir.x * speed, forwardDir.z * speed };
 		const Vec2f right = { -forward.z, forward.x };
 				
-		if (DXL2_Input::keyDown(KEY_W))
+		if (DXL2_Input::keyDown(KEY_W) && s_inputDelay <= 0)
 		{
 			move.x += forward.x;
 			move.z += forward.z;
 		}
-		else if (DXL2_Input::keyDown(KEY_S))
+		else if (DXL2_Input::keyDown(KEY_S) && s_inputDelay <= 0)
 		{
 			move.x -= forward.x;
 			move.z -= forward.z;
 		}
-		if (DXL2_Input::keyDown(KEY_A))
+		if (DXL2_Input::keyDown(KEY_A) && s_inputDelay <= 0)
 		{
 			move.x += right.x;
 			move.z += right.z;
 		}
-		else if (DXL2_Input::keyDown(KEY_D))
+		else if (DXL2_Input::keyDown(KEY_D) && s_inputDelay <= 0)
 		{
 			move.x -= right.x;
 			move.z -= right.z;
@@ -737,7 +753,7 @@ namespace DXL2_GameLoop
 		updateObjects();
 		updateSoundObjects(&s_cameraPos);
 
-		if (DXL2_Input::mouseDown(MBUTTON_LEFT))
+		if (DXL2_Input::mouseDown(MBUTTON_LEFT) && s_inputDelay <= 0)
 		{
 			DXL2_WeaponSystem::shoot(&s_player, &forwardDir);
 		}
@@ -748,6 +764,7 @@ namespace DXL2_GameLoop
 
 		const Vec3f flattenedForward = { forwardDir.x, 0.0f, forwardDir.z };
 		DXL2_Audio::update(&s_cameraPos, &flattenedForward);
+		if (s_inputDelay > 0) { s_inputDelay--; }
 
 		return state;
 	}

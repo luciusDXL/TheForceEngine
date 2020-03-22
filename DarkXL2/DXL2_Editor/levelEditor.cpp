@@ -323,7 +323,7 @@ namespace LevelEditor
 			GameUpdateState state = DXL2_GameLoop::update();
 			DXL2_GameLoop::draw();
 
-			if (DXL2_Input::keyPressed(KEY_BACKSPACE) || state == GSTATE_QUIT || state == GSTATE_NEXT)
+			if (DXL2_Input::keyPressed(KEY_BACKSPACE) || state == GSTATE_QUIT || state == GSTATE_ABORT || state == GSTATE_NEXT)
 			{
 				s_runLevel = false;
 				DXL2_Input::enableRelativeMode(false);
