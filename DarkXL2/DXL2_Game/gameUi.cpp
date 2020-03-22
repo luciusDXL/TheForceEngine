@@ -38,6 +38,23 @@ namespace DXL2_GameUi
 	};
 	static const Vec2i c_escButtonDim = { 96, 16 };
 
+	enum AgentMenuButtons
+	{
+		AGENT_NEW,
+		AGENT_REMOVE,
+		AGENT_EXIT,
+		AGENT_BEGIN,
+		AGENT_COUNT
+	};
+	static const Vec2i c_agentButtons[AGENT_COUNT] =
+	{
+		{21, 165},	// AGENT_NEW
+		{90, 165},	// AGENT_REMOVE
+		{164, 165},	// AGENT_EXIT
+		{239, 165},	// AGENT_BEGIN
+	};
+	static const Vec2i c_agentButtonDim = { 60, 25 };
+
 	struct GameMenus
 	{
 		Palette256* pal  = nullptr;
@@ -70,6 +87,7 @@ namespace DXL2_GameUi
 		Texture* agentMenu;
 		Texture* agentDlg;
 		Texture* cursor;
+		Font* font8;
 		// state
 
 		bool load()
@@ -78,6 +96,7 @@ namespace DXL2_GameUi
 			agentMenu = DXL2_Texture::getFromAnim("agentmnu.anim", "LFD/AGENTMNU.LFD");
 			agentDlg  = DXL2_Texture::getFromAnim("agentdlg.anim", "LFD/AGENTMNU.LFD");
 			cursor    = DXL2_Texture::getFromDelt("cursor.delt", "LFD/AGENTMNU.LFD");
+			font8     = DXL2_Font::getFromFont("font8.font", "LFD/MENU.LFD");
 			return (pal && agentMenu && agentDlg && cursor);
 		}
 
@@ -374,18 +393,92 @@ namespace DXL2_GameUi
 		// Draw the menu
 		s_renderer->blitImage(&s_agentMenu.agentMenu->frames[0], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
 
+		// Draw the buttons
+		// 1 = New Agent highlighted, 2 = New Agent normal
+		// 3 = Remove Agent highlighted, 4 = Remove Agent normal
+		// 5 = DOS highlighted, 6 = DOS normal
+		// 7 = Begin higlighted, 8 = Begin normal
+		for (s32 i = 0; i < 4; i++)
+		{
+			s32 index;
+			if (s_buttonPressed == i && s_buttonHover) { index = i * 2 + 1; }
+			else { index = i * 2 + 2; }
+			s_renderer->blitImage(&s_agentMenu.agentMenu->frames[index], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+
 		// draw the mouse cursor.
 		s_renderer->blitImage(&s_gameMenus.cursor->frames[0], s_cursorPos.x, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+
+		//char mousePos[256];
+		//sprintf(mousePos, "%03d, %03d", s_virtualCursorPos.x, s_virtualCursorPos.z);
+		//DXL2_GameHud::setMessage(mousePos);
+		//s_renderer->print(mousePos, s_agentMenu.font8, 26, 36, s_scaleX, s_scaleY);
+		//s_renderer->print("Doomed XL", s_agentMenu.font8, 26, 36, s_scaleX, s_scaleY);
 	}
 
 	GameUiResult updateAgentMenu()
 	{
-		// For now just continue...
-		if (DXL2_Input::mouseDown(MBUTTON_LEFT))
+		GameUiResult result = GAME_CONTINUE;
+
+		if (DXL2_Input::mousePressed(MBUTTON_LEFT))
 		{
-			closeAgentMenu();
-			return GAME_SELECT_LEVEL;
+			const s32 x = s_virtualCursorPos.x;
+			const s32 z = s_virtualCursorPos.z;
+			s_buttonPressed = -1;
+			for (u32 i = 0; i < AGENT_COUNT; i++)
+			{
+				if (x >= c_agentButtons[i].x && x < c_agentButtons[i].x + c_agentButtonDim.x &&
+					z >= c_agentButtons[i].z && z < c_agentButtons[i].z + c_agentButtonDim.z)
+				{
+					s_buttonPressed = s32(i);
+					s_buttonHover = true;
+					break;
+				}
+			}
 		}
-		return GAME_CONTINUE;
+		else if (DXL2_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
+		{
+			// Verify that the mouse is still over the button.
+			const s32 x = s_virtualCursorPos.x;
+			const s32 z = s_virtualCursorPos.z;
+			if (x >= c_agentButtons[s_buttonPressed].x && x < c_agentButtons[s_buttonPressed].x + c_agentButtonDim.x &&
+				z >= c_agentButtons[s_buttonPressed].z && z < c_agentButtons[s_buttonPressed].z + c_agentButtonDim.z)
+			{
+				s_buttonHover = true;
+			}
+			else
+			{
+				s_buttonHover = false;
+			}
+		}
+		else
+		{
+			// Activate button 's_escButtonPressed'
+			if (s_buttonPressed >= AGENT_NEW && s_buttonHover)
+			{
+				switch (s_buttonPressed)
+				{
+				case AGENT_NEW:
+					// TODO
+					break;
+				case AGENT_REMOVE:
+					// TODO
+					break;
+				case AGENT_EXIT:
+					result = GAME_QUIT;
+					closeAgentMenu();
+					break;
+				case AGENT_BEGIN:
+					result = GAME_SELECT_LEVEL;
+					closeAgentMenu();
+					break;
+				};
+			}
+
+			// Reset.
+			s_buttonPressed = -1;
+			s_buttonHover = false;
+		}
+		return result;
 	}
 }
