@@ -175,6 +175,7 @@
     <ClInclude Include="DXL2_Asset\vueAsset.h" />
     <ClInclude Include="DXL2_Audio\audioDevice.h" />
     <ClInclude Include="DXL2_Audio\audioSystem.h" />
+    <ClInclude Include="DXL2_Audio\midi.h" />
     <ClInclude Include="DXL2_Audio\midiDevice.h" />
     <ClInclude Include="DXL2_Audio\RtAudio.h" />
     <ClInclude Include="DXL2_Audio\RtMidi.h" />

@@ -454,6 +454,9 @@
     <ClInclude Include="DXL2_Audio\RtMidi.h">
       <Filter>Source\DXL2_Audio</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Audio\midi.h">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
