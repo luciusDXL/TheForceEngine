@@ -827,15 +827,15 @@ namespace DXL2_GameUi
 			{
 				switch (s_buttonPressed)
 				{
-				case NEW_AGENT_YES:
-				{
-					quit = true;
-					s_quitConfirmDlg = false;
-				} break;
-				case NEW_AGENT_NO:
-				{
-					s_quitConfirmDlg = false;
-				} break;
+					case NEW_AGENT_YES:
+					{
+						quit = true;
+						s_quitConfirmDlg = false;
+					} break;
+					case NEW_AGENT_NO:
+					{
+						s_quitConfirmDlg = false;
+					} break;
 				};
 			}
 			// Reset.
@@ -934,10 +934,44 @@ namespace DXL2_GameUi
 				s_buttonPressed = AGENT_EXIT;
 				s_buttonHover = true;
 			}
-			else if (DXL2_Input::keyPressed(KEY_B))
+			else if (DXL2_Input::keyPressed(KEY_B) || DXL2_Input::keyPressed(KEY_RETURN) || DXL2_Input::keyPressed(KEY_KP_ENTER))
 			{
 				s_buttonPressed = AGENT_BEGIN;
 				s_buttonHover = true;
+			}
+
+			// Arrow keys to change the selected agent or mission.
+			if (DXL2_Input::bufferedKeyDown(KEY_DOWN))
+			{
+				if (s_lastSelectedAgent && s_agentCount > 0)
+				{
+					s_selectedAgent++;
+					if (s_selectedAgent >= s_agentCount) { s_selectedAgent = 0; }
+					if (s_selectedAgent >= 0 && s_agentCount > 0) { s_selectedMission = s_agent[s_selectedAgent].selectedMission; }
+				}
+				else if (!s_lastSelectedAgent && s_selectedAgent >= 0 && s_agent[s_selectedAgent].nextMission > 0)
+				{
+					s_selectedMission++;
+					if (s_selectedMission > s_agent[s_selectedAgent].nextMission) { s_selectedMission = 0; }
+				}
+			}
+			else if (DXL2_Input::bufferedKeyDown(KEY_UP))
+			{
+				if (s_lastSelectedAgent && s_agentCount > 0)
+				{
+					s_selectedAgent--;
+					if (s_selectedAgent < 0) { s_selectedAgent = s_agentCount - 1; }
+					if (s_selectedAgent >= 0 && s_agentCount > 0) { s_selectedMission = s_agent[s_selectedAgent].selectedMission; }
+				}
+				else if (!s_lastSelectedAgent && s_selectedAgent >= 0 && s_agent[s_selectedAgent].nextMission > 0)
+				{
+					s_selectedMission--;
+					if (s_selectedMission < 0) { s_selectedMission = s_agent[s_selectedAgent].nextMission; }
+				}
+			}
+			else if (DXL2_Input::bufferedKeyDown(KEY_LEFT) || DXL2_Input::bufferedKeyDown(KEY_RIGHT))
+			{
+				s_lastSelectedAgent = !s_lastSelectedAgent;
 			}
 
 			// Activate button 's_escButtonPressed'
@@ -959,9 +993,12 @@ namespace DXL2_GameUi
 					s_quitConfirmDlg = true;
 					break;
 				case AGENT_BEGIN:
-					result = GAME_SELECT_LEVEL;
-					s_selectedLevel = s_selectedMission;
-					closeAgentMenu();
+					if (s_agentCount > 0 && s_selectedMission >= 0)
+					{
+						result = GAME_SELECT_LEVEL;
+						s_selectedLevel = s_selectedMission;
+						closeAgentMenu();
+					}
 					break;
 				};
 			}
