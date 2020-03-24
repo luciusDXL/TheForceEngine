@@ -193,6 +193,7 @@
     <ClInclude Include="DXL2_FileSystem\paths.h" />
     <ClInclude Include="DXL2_FileSystem\stream.h" />
     <ClInclude Include="DXL2_FrontEndUI\frontEndUi.h" />
+    <ClInclude Include="DXL2_Game\editBox.h" />
     <ClInclude Include="DXL2_Game\gameConstants.h" />
     <ClInclude Include="DXL2_Game\gameHud.h" />
     <ClInclude Include="DXL2_Game\gameLoop.h" />
@@ -296,6 +297,7 @@
     <ClCompile Include="DXL2_FileSystem\fileutil.cpp" />
     <ClCompile Include="DXL2_FileSystem\paths.cpp" />
     <ClCompile Include="DXL2_FrontEndUI\frontEndUi.cpp" />
+    <ClCompile Include="DXL2_Game\editBox.cpp" />
     <ClCompile Include="DXL2_Game\gameHud.cpp" />
     <ClCompile Include="DXL2_Game\gameLoop.cpp" />
     <ClCompile Include="DXL2_Game\gameMain.cpp" />

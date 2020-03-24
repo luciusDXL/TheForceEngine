@@ -1,6 +1,7 @@
 #include "gameLoop.h"
 #include "gameUi.h"
 #include "gameHud.h"
+#include "editBox.h"
 #include "player.h"
 #include <DXL2_System/system.h>
 #include <DXL2_Renderer/renderer.h>
@@ -449,12 +450,13 @@ namespace DXL2_GameUi
 
 	static s32 s_selectedAgent = 0;
 	static s32 s_selectedMission = 0;
-	static s32 s_editCursor = 0;
 	static s32 s_editCursorFlicker = 0;
 	static bool s_lastSelectedAgent = true;
 	static bool s_newAgentDlg = false;
 	static bool s_removeAgentDlg = false;
 	static bool s_quitConfirmDlg = false;
+
+	static EditBox s_editBox = {};
 
 	void drawNewAgentDlg()
 	{
@@ -473,7 +475,7 @@ namespace DXL2_GameUi
 		{
 			char textToCursor[64];
 			strcpy(textToCursor, s_newAgentName);
-			textToCursor[s_editCursor] = 0;
+			textToCursor[s_editBox.cursor] = 0;
 			s32 drawPos = s_renderer->getStringPixelLength(textToCursor, s_agentMenu.sysFont);
 			s_renderer->drawHorizontalLine(110 + drawPos, 114 + drawPos, 98, 36);
 		}
@@ -625,33 +627,6 @@ namespace DXL2_GameUi
 		s_renderer->print(mousePos, s_agentMenu.sysFont, 26, 190, s_scaleX, s_scaleY);
 	}
 
-#define NAME_EDIT_MAX 16
-
-	void insertChar(char* output, s32* cursor, char input)
-	{
-		if ((*cursor) >= NAME_EDIT_MAX)
-		{
-			return;
-		}
-
-		size_t len = strlen(output);
-		if (*cursor == len)
-		{
-			output[len] = input;
-			output[len + 1] = 0;
-		}
-		else
-		{
-			for (s32 i = (s32)len - 1; i > *cursor; i--)
-			{
-				output[i + 1] = output[i];
-			}
-			output[*cursor] = input;
-			output[len + 1] = 0;
-		}
-		(*cursor)++;
-	}
-
 	s32 alphabeticalAgentCmp(const void* a, const void* b)
 	{
 		const Agent* agent0 = (Agent*)a;
@@ -697,38 +672,8 @@ namespace DXL2_GameUi
 
 	void updateNewAgentDlg()
 	{
-		const char* input = DXL2_Input::getBufferedText();
-		const s32 len = (s32)strlen(input);
-		s32 start = s_editCursor;
-		for (s32 c = 0; c < len; c++)
-		{
-			insertChar(s_newAgentName, &s_editCursor, input[c]);
-		}
+		updateEditBox(&s_editBox);
 
-		s32 nameLen = (s32)strlen(s_newAgentName);
-		if (DXL2_Input::bufferedKeyDown(KEY_BACKSPACE))
-		{
-			if (s_editCursor > 0)
-			{
-				for (s32 c = s_editCursor - 1; c < nameLen - 1; c++)
-				{
-					s_newAgentName[c] = s_newAgentName[c + 1];
-				}
-				s_newAgentName[nameLen - 1] = 0;
-				s_editCursor--;
-			}
-		}
-		else if (DXL2_Input::bufferedKeyDown(KEY_DELETE))
-		{
-			if (s_editCursor < nameLen)
-			{
-				for (s32 c = s_editCursor; c < nameLen - 1; c++)
-				{
-					s_newAgentName[c] = s_newAgentName[c + 1];
-				}
-				s_newAgentName[nameLen - 1] = 0;
-			}
-		}
 		if (DXL2_Input::keyPressed(KEY_RETURN) || DXL2_Input::keyPressed(KEY_KP_ENTER))
 		{
 			createNewAgent();
@@ -739,23 +684,6 @@ namespace DXL2_GameUi
 		{
 			s_newAgentDlg = false;
 			return;
-		}
-
-		if (DXL2_Input::bufferedKeyDown(KEY_LEFT) && s_editCursor > 0)
-		{
-			s_editCursor--;
-		}
-		else if (DXL2_Input::bufferedKeyDown(KEY_RIGHT) && s_editCursor < nameLen)
-		{
-			s_editCursor++;
-		}
-		if (DXL2_Input::bufferedKeyDown(KEY_HOME))
-		{
-			s_editCursor = 0;
-		}
-		else if (DXL2_Input::bufferedKeyDown(KEY_END))
-		{
-			s_editCursor = nameLen;
 		}
 
 		const s32 x = s_virtualCursorPos.x;
@@ -1042,7 +970,9 @@ namespace DXL2_GameUi
 				case AGENT_NEW:
 					s_newAgentDlg = true;
 					memset(s_newAgentName, 0, 32);
-					s_editCursor = 0;
+					s_editBox.cursor = 0;
+					s_editBox.inputField = s_newAgentName;
+					s_editBox.maxLen = 16;
 					break;
 				case AGENT_REMOVE:
 					s_removeAgentDlg = true;
