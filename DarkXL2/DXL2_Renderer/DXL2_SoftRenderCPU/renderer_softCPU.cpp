@@ -488,6 +488,34 @@ void DXL2_SoftRenderCPU::drawSpanClip(s32 x0, s32 x1, s32 y, f32 z, f32 r0, f32 
 	}
 }
 
+void DXL2_SoftRenderCPU::drawHorizontalLine(s32 x0, s32 x1, s32 y, u8 color)
+{
+	x0 = std::max(x0, 0);
+	x1 = std::min(x1, (s32)m_width-1);
+	if (x0 > x1 || y < 0 || y >= m_height) { return; }
+
+	u8* outBuffer = &m_display[y * m_width + x0];
+	const s32 count = x1 - x0 + 1;
+	for (s32 x = 0; x < count; x++, outBuffer++)
+	{
+		*outBuffer = color;
+	}
+}
+
+void DXL2_SoftRenderCPU::drawVerticalLine(s32 y0, s32 y1, s32 x, u8 color)
+{
+	y0 = std::max(y0, 0);
+	y1 = std::min(y1, (s32)m_height - 1);
+	if (y0 > y1 || x < 0 || x >= m_width) { return; }
+
+	u8* outBuffer = &m_display[y0 * m_width + x];
+	const s32 count = y1 - y0 + 1;
+	for (s32 y = 0; y < count; y++, outBuffer+=m_width)
+	{
+		*outBuffer = color;
+	}
+}
+
 void DXL2_SoftRenderCPU::setHLineClip(s32 x0, s32 x1, const s16* upperYMask, const s16* lowerYMask)
 {
 	m_XClip[0] = x0;
@@ -833,6 +861,41 @@ const ColorMap* DXL2_SoftRenderCPU::getColorMap()
 }
 
 //N.8 fixed point, 256 = 1.0.
+void DXL2_SoftRenderCPU::blitFontGlyph(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor)
+{
+	const s32 w = texture->width;
+	const s32 h = texture->height;
+	const u8* image = texture->image;
+
+	u8* outBuffer = m_display;
+	s32 xStart = 0, yStart = 0;
+	s32 dx = (w*scaleX) >> 8, dy = (h*scaleY) >> 8;
+	if (y0 + dy < 0 || y0 >= (s32)m_height || x0 + dx < 0 || x0 >= (s32)m_width) { return; }
+
+	// Clip
+	if (x0 < 0) { xStart = -x0; }
+	if (x0 + dx > (s32)m_width) { dx = (s32)m_width - x0; }
+
+	if (y0 < 0) { yStart = -y0; }
+	if (y0 + dy > (s32)m_height) { dy = (s32)m_height - y0; }
+
+	// Blit.
+	for (s32 x = xStart; x < dx; x++)
+	{
+		const s32 xImage = (x << 8) / scaleX;
+		image = &texture->image[xImage*h];
+
+		for (s32 y = yStart; y < dy; y++)
+		{
+			const s32 yImage = h - ((y << 8) / scaleY) - 1;
+			const u8 color = image[yImage];
+			if (color == 0) { continue; }
+
+			outBuffer[(y + y0)*m_width + x + x0] = overrideColor ? overrideColor : color;
+		}
+	}
+}
+
 void DXL2_SoftRenderCPU::blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel, TextureLayout layout)
 {
 	const s32 w = texture->width;
@@ -892,7 +955,7 @@ void DXL2_SoftRenderCPU::blitImage(const TextureFrame* texture, s32 x0, s32 y0, 
 	}
 }
 
-void DXL2_SoftRenderCPU::print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY)
+void DXL2_SoftRenderCPU::print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor)
 {
 	if (!text || !font) { return; }
 
@@ -914,10 +977,29 @@ void DXL2_SoftRenderCPU::print(const char* text, const Font* font, s32 x0, s32 y
 		s32 xPos = x >> 8;
 		frame.width = w;
 		frame.image = (u8*)image;
-		blitImage(&frame, xPos, yPos, scaleX, scaleY);
+		blitFontGlyph(&frame, xPos, yPos, scaleX, scaleY, overrideColor);
 		
 		x += font->step[index] * scaleX;
 	}
+}
+
+s32 DXL2_SoftRenderCPU::getStringPixelLength(const char* str, const Font* font)
+{
+	if (!str || !font) { return 0; }
+	const s32 len = (s32)strlen(str);
+	if (len < 1) { return 0; }
+
+	s32 pixelLen = 0;
+	s32 dx = font->maxWidth;
+	for (s32 i = 0; i < len; i++, str++)
+	{
+		const char c = *str;
+		if (c < font->startChar || c > font->endChar) { pixelLen += dx;  continue; }
+
+		const s32 index = s32(c) - font->startChar;
+		pixelLen += font->step[index];
+	}
+	return pixelLen;
 }
 
 void DXL2_SoftRenderCPU::drawPalette()

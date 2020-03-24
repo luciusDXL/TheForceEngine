@@ -95,6 +95,11 @@ void handleEvent(SDL_Event& Event)
 			{
 				DXL2_Input::setKeyDown(KeyboardCode(Event.key.keysym.scancode));
 			}
+
+			if (Event.key.keysym.scancode)
+			{
+				DXL2_Input::setBufferedKey(KeyboardCode(Event.key.keysym.scancode));
+			}
 		} break;
 		case SDL_KEYUP:
 		{
@@ -110,6 +115,10 @@ void handleEvent(SDL_Event& Event)
 					DXL2_RenderBackend::enableFullscreen(s_fullscreen);
 				}
 			}
+		} break;
+		case SDL_TEXTINPUT:
+		{
+			DXL2_Input::setBufferedInput(Event.text.text);
 		} break;
 		case SDL_CONTROLLERAXISMOTION:
 		{

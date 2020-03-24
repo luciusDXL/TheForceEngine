@@ -29,5 +29,7 @@ namespace DXL2_Font
 {
 	Font* get(const char* name);
 	Font* getFromFont(const char* name, const char* archivePath);
+	// create the embedded system font
+	Font* createSystemFont6x8();
 	void freeAll();
 }

@@ -9,6 +9,7 @@
 #include <DXL2_Asset/fontAsset.h>
 #include <DXL2_Asset/paletteAsset.h>
 #include <DXL2_Asset/colormapAsset.h>
+#include <DXL2_Asset/levelList.h>
 #include <DXL2_Input/input.h>
 #include <DXL2_RenderBackend/renderBackend.h>
 #include <assert.h>
@@ -55,6 +56,19 @@ namespace DXL2_GameUi
 	};
 	static const Vec2i c_agentButtonDim = { 60, 25 };
 
+	enum NewAgentDlg
+	{
+		NEW_AGENT_NO,
+		NEW_AGENT_YES,
+		NEW_AGENT_COUNT
+	};
+	static const Vec2i c_newAgentButtons[NEW_AGENT_COUNT] =
+	{
+		{167, 107},	// NEW_AGENT_NO
+		{206, 107},	// NEW_AGENT_YES
+	};
+	static const Vec2i c_newAgentButtonDim = { 28, 15 };
+
 	struct GameMenus
 	{
 		Palette256* pal  = nullptr;
@@ -87,7 +101,7 @@ namespace DXL2_GameUi
 		Texture* agentMenu;
 		Texture* agentDlg;
 		Texture* cursor;
-		Font* font8;
+		Font* sysFont;
 		// state
 
 		bool load()
@@ -96,7 +110,7 @@ namespace DXL2_GameUi
 			agentMenu = DXL2_Texture::getFromAnim("agentmnu.anim", "LFD/AGENTMNU.LFD");
 			agentDlg  = DXL2_Texture::getFromAnim("agentdlg.anim", "LFD/AGENTMNU.LFD");
 			cursor    = DXL2_Texture::getFromDelt("cursor.delt", "LFD/AGENTMNU.LFD");
-			font8     = DXL2_Font::getFromFont("font8.font", "LFD/MENU.LFD");
+			sysFont   = DXL2_Font::createSystemFont6x8();
 			return (pal && agentMenu && agentDlg && cursor);
 		}
 
@@ -141,6 +155,7 @@ namespace DXL2_GameUi
 	void drawAgentMenu();
 	GameUiResult updateEscapeMenu();
 	GameUiResult updateAgentMenu();
+	void loadAgents();
 
 	void init(DXL2_Renderer* renderer)
 	{
@@ -155,6 +170,9 @@ namespace DXL2_GameUi
 		// But its pretty safe to just load it all at once for now.
 		s_gameMenus.load();
 		s_agentMenu.load();
+
+		DXL2_LevelList::load();
+		loadAgents();
 	}
 
 	void openAgentMenu()
@@ -384,6 +402,125 @@ namespace DXL2_GameUi
 		return result;
 	}
 
+	struct Agent
+	{
+		char name[32];
+		u8 completeDifficulty[14];
+		u8 nextMission;	//14 = game complete.
+		u8 selectedMission;
+	};
+
+	static Agent s_agent[14];
+	static u32 s_agentCount;
+	static char s_newAgentName[32];
+
+	void loadAgents()
+	{
+		// Hardcode test agents.
+		s_agentCount = 5;
+
+		strcpy(s_agent[0].name, "DoomedXL");
+		for (u32 i = 0; i < 3; i++) { s_agent[0].completeDifficulty[i] = 0; }
+		s_agent[0].nextMission = 3;
+		s_agent[0].selectedMission = 2;
+
+		strcpy(s_agent[1].name, "Jeremy");
+		for (u32 i = 0; i < 3; i++) { s_agent[1].completeDifficulty[i] = 0; }
+		for (u32 i = 3; i < 7; i++) { s_agent[1].completeDifficulty[i] = 1; }
+		for (u32 i = 8; i < 14; i++) { s_agent[1].completeDifficulty[i] = 2; }
+		s_agent[1].nextMission = 13;
+		s_agent[1].selectedMission = 3;
+		
+		strcpy(s_agent[2].name, "Kyle");
+		s_agent[2].nextMission = 0;
+		s_agent[2].selectedMission = 0;
+
+		strcpy(s_agent[3].name, "Playthrough");
+		for (u32 i = 0; i < 5; i++) { s_agent[3].completeDifficulty[i] = 1; }
+		s_agent[3].nextMission = 5;
+		s_agent[3].selectedMission = 5;
+
+		strcpy(s_agent[4].name, "Test");
+		for (u32 i = 0; i < 8; i++) { s_agent[4].completeDifficulty[i] = 1; }
+		s_agent[4].completeDifficulty[8] = 0;
+		s_agent[4].nextMission = 9;
+		s_agent[4].selectedMission = 8;
+	}
+
+	static s32 s_selectedAgent = 0;
+	static s32 s_selectedMission = 0;
+	static s32 s_editCursor = 0;
+	static s32 s_editCursorFlicker = 0;
+	static bool s_lastSelectedAgent = true;
+	static bool s_newAgentDlg = false;
+	static bool s_removeAgentDlg = false;
+	static bool s_quitConfirmDlg = false;
+
+	void drawNewAgentDlg()
+	{
+		// Draw the dialog
+		s_renderer->blitImage(&s_agentMenu.agentDlg->frames[2], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+
+		// 3 = No tabbed, 4 = No selected (with TAB), 5 = Yes un-tabbed, 6 = Yes selected (without TAB), 7 = ?, 8 = No selected (without TAB), 9 = ?, 10 = Yes selected (with TAB), 11 = markers
+		// Draw the edit box
+		s_renderer->drawHorizontalLine(106, 216, 87, 47);
+		s_renderer->drawHorizontalLine(106, 216, 100, 32);
+		s_renderer->drawVerticalLine(88, 99, 106, 47);
+		s_renderer->drawVerticalLine(88, 99, 216, 47);
+		s_renderer->drawColoredQuad(107, 88, 109, 12, 0);
+		s_renderer->print(s_newAgentName, s_agentMenu.sysFont, 110, 91, s_scaleX, s_scaleY, 32);
+		if ((s_editCursorFlicker >> 4) & 1)
+		{
+			char textToCursor[64];
+			strcpy(textToCursor, s_newAgentName);
+			textToCursor[s_editCursor] = 0;
+			s32 drawPos = s_renderer->getStringPixelLength(textToCursor, s_agentMenu.sysFont);
+			s_renderer->drawHorizontalLine(110 + drawPos, 114 + drawPos, 98, 36);
+		}
+		if (s_buttonPressed == 0 && s_buttonHover)
+		{
+			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[8], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+		else if (s_buttonPressed == 1 && s_buttonHover)
+		{
+			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[10], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+
+		s_editCursorFlicker++;
+	}
+
+	void drawRemoveAgentDlg()
+	{
+		// Draw the dialog
+		s_renderer->blitImage(&s_agentMenu.agentDlg->frames[0], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+
+		// Get the buttons...
+		if (s_buttonPressed == 0 && s_buttonHover)
+		{
+			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[4], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+		else if (s_buttonPressed == 1 && s_buttonHover)
+		{
+			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[6], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+	}
+
+	void drawQuitConfirmDlg()
+	{
+		// Draw the dialog
+		s_renderer->blitImage(&s_agentMenu.agentDlg->frames[1], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		
+		// Get the buttons...
+		if (s_buttonPressed == 0 && s_buttonHover)
+		{
+			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[4], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+		else if (s_buttonPressed == 1 && s_buttonHover)
+		{
+			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[6], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+	}
+
 	void drawAgentMenu()
 	{
 		// Clear part of the background.
@@ -394,31 +531,438 @@ namespace DXL2_GameUi
 		s_renderer->blitImage(&s_agentMenu.agentMenu->frames[0], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
 
 		// Draw the buttons
-		// 1 = New Agent highlighted, 2 = New Agent normal
-		// 3 = Remove Agent highlighted, 4 = Remove Agent normal
-		// 5 = DOS highlighted, 6 = DOS normal
-		// 7 = Begin higlighted, 8 = Begin normal
 		for (s32 i = 0; i < 4; i++)
 		{
 			s32 index;
-			if (s_buttonPressed == i && s_buttonHover) { index = i * 2 + 1; }
-			else { index = i * 2 + 2; }
+			if (s_newAgentDlg)
+			{
+				if (i == 0) { index = i * 2 + 1; }
+				else { index = i * 2 + 2; }
+			}
+			else if (s_removeAgentDlg)
+			{
+				if (i == 1) { index = i * 2 + 1; }
+				else { index = i * 2 + 2; }
+			}
+			else if (s_quitConfirmDlg)
+			{
+				if (i == 2) { index = i * 2 + 1; }
+				else { index = i * 2 + 2; }
+			}
+			else
+			{
+				if (s_buttonPressed == i && s_buttonHover) { index = i * 2 + 1; }
+				else { index = i * 2 + 2; }
+			}
 			s_renderer->blitImage(&s_agentMenu.agentMenu->frames[index], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+				
+		// 11 = easy, 12 = medium, 13 = hard
+		s32 yOffset = -20;
+		s32 textX = 174;
+		s32 textY = 36;
+		u8 color = 47;
+		if (s_selectedAgent >= 0 && s_agentCount > 0)
+		{
+			for (u32 i = 0; i < s_agent[s_selectedAgent].nextMission; i++)
+			{
+				color = 47;
+				if (s_selectedMission == i)
+				{
+					color = 32;
+					s_renderer->drawColoredQuad(textX - 3, textY - 1, 118, 9, s_lastSelectedAgent ? 13 : 12);
+				}
+
+				s_renderer->print(DXL2_LevelList::getLevelName(i), s_agentMenu.sysFont, textX, textY, s_scaleX, s_scaleY, color);
+				s32 diff = s_agent[s_selectedAgent].completeDifficulty[i] + 11;
+				s_renderer->blitImage(&s_agentMenu.agentMenu->frames[diff], 0, yOffset, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+				yOffset += 8;
+				textY += 8;
+			}
+			color = 47;
+			if (s_selectedMission == s_agent[s_selectedAgent].nextMission)
+			{
+				color = 32;
+				s_renderer->drawColoredQuad(textX - 3, textY - 1, 118, 9, s_lastSelectedAgent ? 13 : 12);
+			}
+			s_renderer->print(DXL2_LevelList::getLevelName(s_agent[s_selectedAgent].nextMission), s_agentMenu.sysFont, textX, textY, s_scaleX, s_scaleY, color);
+		}
+
+		// Draw agents.
+		textX = 28;
+		textY = 36;
+		for (u32 i = 0; i < s_agentCount; i++)
+		{
+			color = 47;
+			if (s_selectedAgent == i)
+			{
+				color = 32;
+				s_renderer->drawColoredQuad(textX - 3, textY - 1, 118, 9, s_lastSelectedAgent ? 12 : 13);
+			}
+			s_renderer->print(s_agent[i].name, s_agentMenu.sysFont, textX, textY, s_scaleX, s_scaleY, color);
+			textY += 8;
+		}
+
+		if (s_newAgentDlg)
+		{
+			drawNewAgentDlg();
+		}
+		else if (s_removeAgentDlg)
+		{
+			drawRemoveAgentDlg();
+		}
+		else if (s_quitConfirmDlg)
+		{
+			drawQuitConfirmDlg();
 		}
 
 		// draw the mouse cursor.
-		s_renderer->blitImage(&s_gameMenus.cursor->frames[0], s_cursorPos.x, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		s_renderer->blitImage(&s_agentMenu.cursor->frames[0], s_cursorPos.x, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
 
-		//char mousePos[256];
-		//sprintf(mousePos, "%03d, %03d", s_virtualCursorPos.x, s_virtualCursorPos.z);
-		//DXL2_GameHud::setMessage(mousePos);
-		//s_renderer->print(mousePos, s_agentMenu.font8, 26, 36, s_scaleX, s_scaleY);
-		//s_renderer->print("Doomed XL", s_agentMenu.font8, 26, 36, s_scaleX, s_scaleY);
+		char mousePos[256];
+		sprintf(mousePos, "%03d.%03d", s_virtualCursorPos.x, s_virtualCursorPos.z);
+		DXL2_GameHud::setMessage(mousePos);
+		s_renderer->print(mousePos, s_agentMenu.sysFont, 26, 190, s_scaleX, s_scaleY);
+	}
+
+#define NAME_EDIT_MAX 16
+
+	void insertChar(char* output, s32* cursor, char input)
+	{
+		if ((*cursor) >= NAME_EDIT_MAX)
+		{
+			return;
+		}
+
+		size_t len = strlen(output);
+		if (*cursor == len)
+		{
+			output[len] = input;
+			output[len + 1] = 0;
+		}
+		else
+		{
+			for (s32 i = (s32)len - 1; i > *cursor; i--)
+			{
+				output[i + 1] = output[i];
+			}
+			output[*cursor] = input;
+			output[len + 1] = 0;
+		}
+		(*cursor)++;
+	}
+
+	s32 alphabeticalAgentCmp(const void* a, const void* b)
+	{
+		const Agent* agent0 = (Agent*)a;
+		const Agent* agent1 = (Agent*)b;
+		return strcasecmp(agent0->name, agent1->name);
+	}
+
+	void createNewAgent()
+	{
+		// Create the new agent.
+		Agent* agent = &s_agent[s_agentCount];
+		strcpy(agent->name, s_newAgentName);
+		agent->nextMission = 0;
+		agent->selectedMission = 0;
+		s_selectedMission = 0;
+		s_agentCount++;
+
+		// Sort agents alphabetically.
+		std::qsort(s_agent, s_agentCount, sizeof(Agent), alphabeticalAgentCmp);
+
+		// Then select the new agent.
+		for (u32 i = 0; i < s_agentCount; i++)
+		{
+			if (strcasecmp(s_newAgentName, s_agent[i].name) == 0)
+			{
+				s_selectedAgent = i;
+				break;
+			}
+		}
+	}
+
+	void removeAgent(s32 index)
+	{
+		for (s32 i = index; i < (s32)s_agentCount; i++)
+		{
+			s_agent[i] = s_agent[i + 1];
+		}
+		s_agentCount--;
+
+		s_selectedAgent = s_agentCount > 0 ? 0 : -1;
+		s_selectedMission = s_agentCount > 0 ? s_agent[0].selectedMission : -1;
+	}
+
+	void updateNewAgentDlg()
+	{
+		const char* input = DXL2_Input::getBufferedText();
+		const s32 len = (s32)strlen(input);
+		s32 start = s_editCursor;
+		for (s32 c = 0; c < len; c++)
+		{
+			insertChar(s_newAgentName, &s_editCursor, input[c]);
+		}
+
+		s32 nameLen = (s32)strlen(s_newAgentName);
+		if (DXL2_Input::bufferedKeyDown(KEY_BACKSPACE))
+		{
+			if (s_editCursor > 0)
+			{
+				for (s32 c = s_editCursor - 1; c < nameLen - 1; c++)
+				{
+					s_newAgentName[c] = s_newAgentName[c + 1];
+				}
+				s_newAgentName[nameLen - 1] = 0;
+				s_editCursor--;
+			}
+		}
+		else if (DXL2_Input::bufferedKeyDown(KEY_DELETE))
+		{
+			if (s_editCursor < nameLen)
+			{
+				for (s32 c = s_editCursor; c < nameLen - 1; c++)
+				{
+					s_newAgentName[c] = s_newAgentName[c + 1];
+				}
+				s_newAgentName[nameLen - 1] = 0;
+			}
+		}
+		if (DXL2_Input::keyPressed(KEY_RETURN) || DXL2_Input::keyPressed(KEY_KP_ENTER))
+		{
+			createNewAgent();
+			s_newAgentDlg = false;
+			return;
+		}
+		else if (DXL2_Input::keyPressed(KEY_ESCAPE))
+		{
+			s_newAgentDlg = false;
+			return;
+		}
+
+		if (DXL2_Input::bufferedKeyDown(KEY_LEFT) && s_editCursor > 0)
+		{
+			s_editCursor--;
+		}
+		else if (DXL2_Input::bufferedKeyDown(KEY_RIGHT) && s_editCursor < nameLen)
+		{
+			s_editCursor++;
+		}
+		if (DXL2_Input::bufferedKeyDown(KEY_HOME))
+		{
+			s_editCursor = 0;
+		}
+		else if (DXL2_Input::bufferedKeyDown(KEY_END))
+		{
+			s_editCursor = nameLen;
+		}
+
+		const s32 x = s_virtualCursorPos.x;
+		const s32 z = s_virtualCursorPos.z;
+
+		if (DXL2_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_buttonPressed = -1;
+			for (u32 i = 0; i < NEW_AGENT_COUNT; i++)
+			{
+				if (x >= c_newAgentButtons[i].x && x < c_newAgentButtons[i].x + c_newAgentButtonDim.x &&
+					z >= c_newAgentButtons[i].z && z < c_newAgentButtons[i].z + c_newAgentButtonDim.z)
+				{
+					s_buttonPressed = s32(i);
+					s_buttonHover = true;
+					break;
+				}
+			}
+		}
+		else if (DXL2_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
+		{
+			// Verify that the mouse is still over the button.
+			if (x >= c_newAgentButtons[s_buttonPressed].x && x < c_newAgentButtons[s_buttonPressed].x + c_newAgentButtonDim.x &&
+				z >= c_newAgentButtons[s_buttonPressed].z && z < c_newAgentButtons[s_buttonPressed].z + c_newAgentButtonDim.z)
+			{
+				s_buttonHover = true;
+			}
+			else
+			{
+				s_buttonHover = false;
+			}
+		}
+		else
+		{
+			// Activate button 's_escButtonPressed'
+			if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
+			{
+				switch (s_buttonPressed)
+				{
+				case NEW_AGENT_YES:
+				{
+					createNewAgent();
+					s_newAgentDlg = false;
+					return;
+				} break;
+				case NEW_AGENT_NO:
+					s_newAgentDlg = false;
+					break;
+				};
+			}
+			// Reset.
+			s_buttonPressed = -1;
+			s_buttonHover = false;
+		}
+	}
+
+	void updateRemoveAgentDlg()
+	{
+		if (DXL2_Input::keyPressed(KEY_RETURN) || DXL2_Input::keyPressed(KEY_KP_ENTER) || DXL2_Input::keyPressed(KEY_ESCAPE))
+		{
+			s_removeAgentDlg = false;
+			return;
+		}
+
+		const s32 x = s_virtualCursorPos.x;
+		const s32 z = s_virtualCursorPos.z;
+
+		if (DXL2_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_buttonPressed = -1;
+			for (u32 i = 0; i < NEW_AGENT_COUNT; i++)
+			{
+				if (x >= c_newAgentButtons[i].x && x < c_newAgentButtons[i].x + c_newAgentButtonDim.x &&
+					z >= c_newAgentButtons[i].z && z < c_newAgentButtons[i].z + c_newAgentButtonDim.z)
+				{
+					s_buttonPressed = s32(i);
+					s_buttonHover = true;
+					break;
+				}
+			}
+		}
+		else if (DXL2_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
+		{
+			// Verify that the mouse is still over the button.
+			if (x >= c_newAgentButtons[s_buttonPressed].x && x < c_newAgentButtons[s_buttonPressed].x + c_newAgentButtonDim.x &&
+				z >= c_newAgentButtons[s_buttonPressed].z && z < c_newAgentButtons[s_buttonPressed].z + c_newAgentButtonDim.z)
+			{
+				s_buttonHover = true;
+			}
+			else
+			{
+				s_buttonHover = false;
+			}
+		}
+		else
+		{
+			// Activate button 's_escButtonPressed'
+			if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
+			{
+				switch (s_buttonPressed)
+				{
+					case NEW_AGENT_YES:
+					{
+						removeAgent(s_selectedAgent);
+						s_removeAgentDlg = false;
+					} break;
+					case NEW_AGENT_NO:
+					{
+						s_removeAgentDlg = false;
+					} break;
+				};
+			}
+			// Reset.
+			s_buttonPressed = -1;
+			s_buttonHover = false;
+		}
+	}
+
+	bool updateQuitConfirmDlg()
+	{
+		bool quit = false;
+
+		if (DXL2_Input::keyPressed(KEY_RETURN) || DXL2_Input::keyPressed(KEY_KP_ENTER) || DXL2_Input::keyPressed(KEY_ESCAPE))
+		{
+			s_quitConfirmDlg = false;
+			return quit;
+		}
+
+		const s32 x = s_virtualCursorPos.x;
+		const s32 z = s_virtualCursorPos.z;
+
+		if (DXL2_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_buttonPressed = -1;
+			for (u32 i = 0; i < NEW_AGENT_COUNT; i++)
+			{
+				if (x >= c_newAgentButtons[i].x && x < c_newAgentButtons[i].x + c_newAgentButtonDim.x &&
+					z >= c_newAgentButtons[i].z && z < c_newAgentButtons[i].z + c_newAgentButtonDim.z)
+				{
+					s_buttonPressed = s32(i);
+					s_buttonHover = true;
+					break;
+				}
+			}
+		}
+		else if (DXL2_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
+		{
+			// Verify that the mouse is still over the button.
+			if (x >= c_newAgentButtons[s_buttonPressed].x && x < c_newAgentButtons[s_buttonPressed].x + c_newAgentButtonDim.x &&
+				z >= c_newAgentButtons[s_buttonPressed].z && z < c_newAgentButtons[s_buttonPressed].z + c_newAgentButtonDim.z)
+			{
+				s_buttonHover = true;
+			}
+			else
+			{
+				s_buttonHover = false;
+			}
+		}
+		else
+		{
+			// Activate button 's_escButtonPressed'
+			if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
+			{
+				switch (s_buttonPressed)
+				{
+				case NEW_AGENT_YES:
+				{
+					quit = true;
+					s_quitConfirmDlg = false;
+				} break;
+				case NEW_AGENT_NO:
+				{
+					s_quitConfirmDlg = false;
+				} break;
+				};
+			}
+			// Reset.
+			s_buttonPressed = -1;
+			s_buttonHover = false;
+		}
+
+		return quit;
 	}
 
 	GameUiResult updateAgentMenu()
 	{
 		GameUiResult result = GAME_CONTINUE;
+
+		if (s_newAgentDlg)
+		{
+			updateNewAgentDlg();
+			return result;
+		}
+		else if (s_removeAgentDlg)
+		{
+			updateRemoveAgentDlg();
+			return result;
+		}
+		else if (s_quitConfirmDlg)
+		{
+			if (updateQuitConfirmDlg())
+			{
+				closeAgentMenu();
+				result = GAME_QUIT;
+			}
+			return result;
+		}
 
 		if (DXL2_Input::mousePressed(MBUTTON_LEFT))
 		{
@@ -433,6 +977,22 @@ namespace DXL2_GameUi
 					s_buttonPressed = s32(i);
 					s_buttonHover = true;
 					break;
+				}
+			}
+
+			if (s_buttonPressed < 0)
+			{
+				if (x >= 25 && x < 122 && z >= 35 && z < 147 && s_agentCount > 0)
+				{
+					s_selectedAgent = std::max(0, std::min((z - 35) / 8, (s32)s_agentCount-1));
+					s_selectedMission = s_agent[s_selectedAgent].selectedMission;
+					s_lastSelectedAgent = true;
+				}
+				else if (x >= 171 && x < 290 && z >= 35 && z < 147 && s_agentCount > 0)
+				{
+					s_selectedMission = std::max(0, std::min((z - 35) / 8, (s32)s_agent[s_selectedAgent].nextMission));
+					s_agent[s_selectedAgent].selectedMission = s_selectedMission;
+					s_lastSelectedAgent = false;
 				}
 			}
 		}
@@ -453,23 +1013,46 @@ namespace DXL2_GameUi
 		}
 		else
 		{
+			if (DXL2_Input::keyPressed(KEY_N))
+			{
+				s_buttonPressed = AGENT_NEW;
+				s_buttonHover = true;
+			}
+			else if (DXL2_Input::keyPressed(KEY_R))
+			{
+				s_buttonPressed = AGENT_REMOVE;
+				s_buttonHover = true;
+			}
+			else if (DXL2_Input::keyPressed(KEY_D))
+			{
+				s_buttonPressed = AGENT_EXIT;
+				s_buttonHover = true;
+			}
+			else if (DXL2_Input::keyPressed(KEY_B))
+			{
+				s_buttonPressed = AGENT_BEGIN;
+				s_buttonHover = true;
+			}
+
 			// Activate button 's_escButtonPressed'
 			if (s_buttonPressed >= AGENT_NEW && s_buttonHover)
 			{
 				switch (s_buttonPressed)
 				{
 				case AGENT_NEW:
-					// TODO
+					s_newAgentDlg = true;
+					memset(s_newAgentName, 0, 32);
+					s_editCursor = 0;
 					break;
 				case AGENT_REMOVE:
-					// TODO
+					s_removeAgentDlg = true;
 					break;
 				case AGENT_EXIT:
-					result = GAME_QUIT;
-					closeAgentMenu();
+					s_quitConfirmDlg = true;
 					break;
 				case AGENT_BEGIN:
 					result = GAME_SELECT_LEVEL;
+					s_selectedLevel = s_selectedMission;
 					closeAgentMenu();
 					break;
 				};

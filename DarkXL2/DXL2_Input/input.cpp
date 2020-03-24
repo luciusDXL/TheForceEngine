@@ -1,9 +1,12 @@
 #include <DXL2_Input/input.h>
 #include <memory.h>
+#include <string.h>
 #include <assert.h>
 
 namespace DXL2_Input
 {
+	#define BUFFERED_TEXT_LEN 64
+
 	////////////////////////////////////////////////////////
 	// Input State
 	////////////////////////////////////////////////////////
@@ -13,6 +16,9 @@ namespace DXL2_Input
 
 	u8 s_keyDown[KEY_COUNT] = { 0 };
 	u8 s_keyPressed[KEY_COUNT] = { 0 };
+
+	char s_bufferedText[BUFFERED_TEXT_LEN];
+	u8 s_bufferedKey[KEY_COUNT];
 
 	u8 s_mouseDown[MBUTTON_COUNT] = { 0 };
 	u8 s_mousePressed[MBUTTON_COUNT] = { 0 };
@@ -39,6 +45,8 @@ namespace DXL2_Input
 		s_mouseWheel[0] = 0;
 		s_mouseWheel[1] = 0;
 		memset(s_keyPressed, 0, KEY_COUNT);
+		memset(s_bufferedKey, 0, KEY_COUNT);
+		memset(s_bufferedText, 0, BUFFERED_TEXT_LEN);
 	}
 
 	// Set, from the OS
@@ -111,6 +119,17 @@ namespace DXL2_Input
 	{
 		s_relativeMode = enable;
 	}
+	
+	// Buffered Input
+	void setBufferedInput(const char* text)
+	{
+		strcpy(s_bufferedText, text);
+	}
+
+	void setBufferedKey(KeyboardCode key)
+	{
+		s_bufferedKey[key] = 1;
+	}
 
 	// Get
 	f32 getAxis(Axis axis)
@@ -175,5 +194,16 @@ namespace DXL2_Input
 	bool relativeModeEnabled()
 	{
 		return s_relativeMode;
+	}
+
+	// Buffered Input
+	const char* getBufferedText()
+	{
+		return s_bufferedText;
+	}
+
+	bool bufferedKeyDown(KeyboardCode key)
+	{
+		return s_bufferedKey[key];
 	}
 }

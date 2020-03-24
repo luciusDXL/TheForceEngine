@@ -49,7 +49,8 @@ public:
 	void drawSprite(Sprite* sprite, s32 x, s32 y, u32 anim, u8 angle) override;
 
 	void blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel = 31, TextureLayout layout = TEX_LAYOUT_VERT) override;
-	void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY) override;
+	void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor = 0) override;
+	s32  getStringPixelLength(const char* str, const Font* font) override;
 
 	void drawLine(const Vec2f* v0, const Vec2f* v1, u8 color) override;
 	void drawColoredColumn(s32 x0, s32 y0, s32 y1, u8 color) override;
@@ -70,6 +71,10 @@ public:
 	void drawHLineTexturedGouraudPC(s32 x0, s32 x1, s32 y, s32 u0, s32 v0, s32 u1, s32 v1, s32 z0, s32 z1, s32 l0, s32 l1, s32 texWidth, s32 texHeight, const u8* image) override;
 
 	void setHLineClip(s32 x0, s32 x1, const s16* upperYMask, const s16* lowerYMask) override;
+
+	// Basic pure horizontal and vertical lines
+	void drawHorizontalLine(s32 x0, s32 x1, s32 y, u8 color) override;
+	void drawVerticalLine(s32 y0, s32 y1, s32 x, u8 color) override;
 
 	// Debug
 	void clearMapMarkers() override;
@@ -98,5 +103,6 @@ private:
 
 	void buildGrayScaleColorMap(u32 start, u32 len, bool invert, const u32* pal);
 	void buildGreenScalePalette(const u32* pal);
+	void blitFontGlyph(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor);
 	u8 convertToGrayScale(u32 input);
 };

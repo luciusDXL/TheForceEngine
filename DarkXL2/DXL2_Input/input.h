@@ -34,6 +34,10 @@ namespace DXL2_Input
 	void setMousePos(s32 x, s32 y);
 
 	void enableRelativeMode(bool enable);
+
+	// Buffered Input
+	void setBufferedInput(const char* text);
+	void setBufferedKey(KeyboardCode key);
 		
 	// Get
 	f32 getAxis(Axis axis);
@@ -47,4 +51,7 @@ namespace DXL2_Input
 	bool mouseDown(MouseButton button);
 	bool mousePressed(MouseButton button);
 	bool relativeModeEnabled();
+	// Buffered Input
+	const char* getBufferedText();
+	bool bufferedKeyDown(KeyboardCode key);
 };

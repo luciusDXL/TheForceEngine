@@ -55,7 +55,8 @@ public:
 	virtual void drawSprite(Sprite* sprite, s32 x, s32 y, u32 anim, u8 angle) = 0;
 
 	virtual void blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel = 31, TextureLayout layout = TEX_LAYOUT_VERT) = 0;
-	virtual void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY) = 0;
+	virtual void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor = 0) = 0;
+	virtual s32  getStringPixelLength(const char* str, const Font* font) = 0;
 	
 	virtual void drawLine(const Vec2f* v0, const Vec2f* v1, u8 color) = 0;
 	virtual void drawColoredColumn(s32 x0, s32 y0, s32 y1, u8 color) = 0;
@@ -66,7 +67,7 @@ public:
 	virtual void drawSpriteColumn(s32 x0, s32 y0, s32 y1, f32 v0, f32 v1, s8 lightLevel, const u8* image, s32 texHeight) = 0;
 	virtual void drawSpan(s32 x0, s32 x1, s32 y, f32 z, f32 r0, f32 r1, f32 xOffset, f32 zOffset, s8 lightLevel, s32 texWidth, s32 texHeight, const u8* image) = 0;
 	virtual void drawSpanClip(s32 x0, s32 x1, s32 y, f32 z, f32 r0, f32 r1, f32 xOffset, f32 zOffset, s8 lightLevel, s32 texWidth, s32 texHeight, const u8* image) = 0;
-
+	
 	virtual void drawColoredQuad(s32 x, s32 y, s32 w, s32 h, u8 color) = 0;
 	virtual void drawHLine(s32 x0, s32 x1, s32 y, u8 color, u8 lightLevel) = 0;
 	virtual void drawHLineGouraud(s32 x0, s32 x1, s32 l0, s32 l1, s32 y, u8 color) = 0;
@@ -74,8 +75,12 @@ public:
 	virtual void drawHLineTexturedPC(s32 x0, s32 x1, s32 y, s32 u0, s32 v0, s32 u1, s32 v1, s32 z0, s32 z1, s32 texWidth, s32 texHeight, const u8* image, u8 lightLevel) = 0;
 	virtual void drawHLineTexturedGouraud(s32 x0, s32 x1, s32 y, s32 u0, s32 v0, s32 u1, s32 v1, s32 l0, s32 l1, s32 texWidth, s32 texHeight, const u8* image) = 0;
 	virtual void drawHLineTexturedGouraudPC(s32 x0, s32 x1, s32 y, s32 u0, s32 v0, s32 u1, s32 v1, s32 z0, s32 z1, s32 l0, s32 l1, s32 texWidth, s32 texHeight, const u8* image) = 0;
-
+		
 	virtual void setHLineClip(s32 x0, s32 x1, const s16* upperYMask, const s16* lowerYMask) = 0;
+
+	// Basic pure horizontal and vertical lines
+	virtual void drawHorizontalLine(s32 x0, s32 x1, s32 y, u8 color) = 0;
+	virtual void drawVerticalLine(s32 y0, s32 y1, s32 x, u8 color) = 0;
 
 	// Debug
 	virtual void clearMapMarkers() = 0;
