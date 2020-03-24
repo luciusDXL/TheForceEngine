@@ -445,6 +445,9 @@
     <ClInclude Include="DXL2_Game\GameUI\escMenu.h">
       <Filter>Source\DXL2_Game\GameUI</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Game\GameUI\agentMenu.h">
+      <Filter>Source\DXL2_Game\GameUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -724,6 +727,9 @@
       <Filter>Source\DXL2_Game\GameUI</Filter>
     </ClCompile>
     <ClCompile Include="DXL2_Game\GameUI\escMenu.cpp">
+      <Filter>Source\DXL2_Game\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\GameUI\agentMenu.cpp">
       <Filter>Source\DXL2_Game\GameUI</Filter>
     </ClCompile>
   </ItemGroup>

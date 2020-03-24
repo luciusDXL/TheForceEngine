@@ -43,23 +43,19 @@ namespace DXL2_EscapeMenu
 	static Palette256* s_pal = nullptr;
 	static ColorMap* s_cmap = nullptr;
 	static Texture* s_escMenu = nullptr;
-	static Texture* s_cursor = nullptr;
 		
 	bool load()
 	{
 		s_pal = DXL2_Palette::get256("SECBASE.PAL");
 		s_cmap = DXL2_ColorMap::get("SECBASE.CMP");
 		s_escMenu = DXL2_Texture::getFromAnim("escmenu.anim", "LFD/MENU.LFD");
-		s_cursor = DXL2_Texture::getFromDelt("cursor.delt", "LFD/MENU.LFD");
-		return s_pal && s_cmap && s_escMenu && s_cursor;
+		return s_pal && s_cmap && s_escMenu;
 	}
 
 	void unload()
 	{
 		DXL2_Texture::free(s_escMenu);
-		DXL2_Texture::free(s_cursor);
 		s_escMenu = nullptr;
-		s_cursor = nullptr;
 	}
 
 	void open(DXL2_Renderer* renderer)

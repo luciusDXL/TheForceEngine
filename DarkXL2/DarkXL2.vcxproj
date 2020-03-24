@@ -198,6 +198,7 @@
     <ClInclude Include="DXL2_Game\gameLoop.h" />
     <ClInclude Include="DXL2_Game\gameMain.h" />
     <ClInclude Include="DXL2_Game\gameObject.h" />
+    <ClInclude Include="DXL2_Game\GameUI\agentMenu.h" />
     <ClInclude Include="DXL2_Game\GameUI\editBox.h" />
     <ClInclude Include="DXL2_Game\GameUI\escMenu.h" />
     <ClInclude Include="DXL2_Game\GameUI\gameUi.h" />
@@ -302,6 +303,7 @@
     <ClCompile Include="DXL2_Game\gameLoop.cpp" />
     <ClCompile Include="DXL2_Game\gameMain.cpp" />
     <ClCompile Include="DXL2_Game\gameObject.cpp" />
+    <ClCompile Include="DXL2_Game\GameUI\agentMenu.cpp" />
     <ClCompile Include="DXL2_Game\GameUI\editBox.cpp" />
     <ClCompile Include="DXL2_Game\GameUI\escMenu.cpp" />
     <ClCompile Include="DXL2_Game\GameUI\gameUi.cpp" />
