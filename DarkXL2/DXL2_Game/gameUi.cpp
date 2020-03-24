@@ -458,69 +458,30 @@ namespace DXL2_GameUi
 
 	static EditBox s_editBox = {};
 
+	void drawYesNoButtons(u32 indexNo, u32 indexYes)
+	{
+		if (s_buttonPressed == 0 && s_buttonHover)
+		{
+			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[indexNo], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+		else if (s_buttonPressed == 1 && s_buttonHover)
+		{
+			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[indexYes], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		}
+	}
+
+	void drawYesNoDlg(u32 baseFrame)
+	{
+		s_renderer->blitImage(&s_agentMenu.agentDlg->frames[baseFrame], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+		drawYesNoButtons(4, 6);
+	}
+
 	void drawNewAgentDlg()
 	{
 		// Draw the dialog
 		s_renderer->blitImage(&s_agentMenu.agentDlg->frames[2], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-
-		// 3 = No tabbed, 4 = No selected (with TAB), 5 = Yes un-tabbed, 6 = Yes selected (without TAB), 7 = ?, 8 = No selected (without TAB), 9 = ?, 10 = Yes selected (with TAB), 11 = markers
-		// Draw the edit box
-		s_renderer->drawHorizontalLine(106, 216, 87, 47);
-		s_renderer->drawHorizontalLine(106, 216, 100, 32);
-		s_renderer->drawVerticalLine(88, 99, 106, 47);
-		s_renderer->drawVerticalLine(88, 99, 216, 47);
-		s_renderer->drawColoredQuad(107, 88, 109, 12, 0);
-		s_renderer->print(s_newAgentName, s_agentMenu.sysFont, 110, 91, s_scaleX, s_scaleY, 32);
-		if ((s_editCursorFlicker >> 4) & 1)
-		{
-			char textToCursor[64];
-			strcpy(textToCursor, s_newAgentName);
-			textToCursor[s_editBox.cursor] = 0;
-			s32 drawPos = s_renderer->getStringPixelLength(textToCursor, s_agentMenu.sysFont);
-			s_renderer->drawHorizontalLine(110 + drawPos, 114 + drawPos, 98, 36);
-		}
-		if (s_buttonPressed == 0 && s_buttonHover)
-		{
-			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[8], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-		}
-		else if (s_buttonPressed == 1 && s_buttonHover)
-		{
-			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[10], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-		}
-
-		s_editCursorFlicker++;
-	}
-
-	void drawRemoveAgentDlg()
-	{
-		// Draw the dialog
-		s_renderer->blitImage(&s_agentMenu.agentDlg->frames[0], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-
-		// Get the buttons...
-		if (s_buttonPressed == 0 && s_buttonHover)
-		{
-			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[4], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-		}
-		else if (s_buttonPressed == 1 && s_buttonHover)
-		{
-			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[6], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-		}
-	}
-
-	void drawQuitConfirmDlg()
-	{
-		// Draw the dialog
-		s_renderer->blitImage(&s_agentMenu.agentDlg->frames[1], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-		
-		// Get the buttons...
-		if (s_buttonPressed == 0 && s_buttonHover)
-		{
-			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[4], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-		}
-		else if (s_buttonPressed == 1 && s_buttonHover)
-		{
-			s_renderer->blitImage(&s_agentMenu.agentDlg->frames[6], 0, 0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-		}
+		drawEditBox(&s_editBox, s_agentMenu.sysFont, 106, 87, 216, 100, s_scaleX, s_scaleY, s_renderer);
+		drawYesNoButtons(8, 10);
 	}
 
 	void drawAgentMenu()
@@ -611,11 +572,11 @@ namespace DXL2_GameUi
 		}
 		else if (s_removeAgentDlg)
 		{
-			drawRemoveAgentDlg();
+			drawYesNoDlg(0);
 		}
 		else if (s_quitConfirmDlg)
 		{
-			drawQuitConfirmDlg();
+			drawYesNoDlg(1);
 		}
 
 		// draw the mouse cursor.
@@ -780,8 +741,16 @@ namespace DXL2_GameUi
 		}
 		else
 		{
-			// Activate button 's_escButtonPressed'
-			if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
+			if (DXL2_Input::keyPressed(KEY_Y))
+			{
+				removeAgent(s_selectedAgent);
+				s_removeAgentDlg = false;
+			}
+			else if (DXL2_Input::keyPressed(KEY_N))
+			{
+				s_removeAgentDlg = false;
+			}
+			else if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
 			{
 				switch (s_buttonPressed)
 				{
@@ -845,7 +814,16 @@ namespace DXL2_GameUi
 		else
 		{
 			// Activate button 's_escButtonPressed'
-			if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
+			if (DXL2_Input::keyPressed(KEY_Y))
+			{
+				quit = true;
+				s_quitConfirmDlg = false;
+			}
+			else if (DXL2_Input::keyPressed(KEY_N))
+			{
+				s_quitConfirmDlg = false;
+			}
+			else if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
 			{
 				switch (s_buttonPressed)
 				{

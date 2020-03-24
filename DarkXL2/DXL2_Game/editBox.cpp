@@ -1,6 +1,8 @@
 #include "editBox.h"
 #include <DXL2_System/system.h>
 #include <DXL2_Input/input.h>
+#include <DXL2_Asset/fontAsset.h>
+#include <DXL2_Renderer/renderer.h>
 #include <string.h>
 
 namespace
@@ -33,6 +35,8 @@ namespace
 
 namespace DXL2_GameUi
 {
+	static u32 s_editCursorFlicker = 0;
+
 	void updateEditBox(EditBox* editBox)
 	{
 		const char* input = DXL2_Input::getBufferedText();
@@ -84,5 +88,24 @@ namespace DXL2_GameUi
 		{
 			editBox->cursor = nameLen;
 		}
+	}
+		
+	void drawEditBox(EditBox* editBox, Font* font, s32 x0, s32 y0, s32 x1, s32 y1, s32 scaleX, s32 scaleY, DXL2_Renderer* renderer)
+	{
+		renderer->drawHorizontalLine(x0, x1, y0, 47);
+		renderer->drawHorizontalLine(x0, x1, y1, 32);
+		renderer->drawVerticalLine(y0 + 1, y1 - 1, x0, 47);
+		renderer->drawVerticalLine(y0 + 1, y1 - 1, x1, 47);
+		renderer->drawColoredQuad(x0 + 1, y0 + 1, x1 - x0 - 1, y1 - y0 - 1, 0);
+		renderer->print(editBox->inputField, font, x0 + 4, y0 + 4, scaleX, scaleY, 32);
+		if ((s_editCursorFlicker >> 4) & 1)
+		{
+			char textToCursor[64];
+			strcpy(textToCursor, editBox->inputField);
+			textToCursor[editBox->cursor] = 0;
+			s32 drawPos = renderer->getStringPixelLength(textToCursor, font);
+			renderer->drawHorizontalLine(x0 + 4 + drawPos, x0 + 8 + drawPos, y1 - 2, 36);
+		}
+		s_editCursorFlicker++;
 	}
 }
