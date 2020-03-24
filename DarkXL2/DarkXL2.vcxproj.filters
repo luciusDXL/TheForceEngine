@@ -448,6 +448,12 @@
     <ClInclude Include="DXL2_Game\GameUI\agentMenu.h">
       <Filter>Source\DXL2_Game\GameUI</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Audio\midiDevice.h">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Audio\RtMidi.h">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -731,6 +737,12 @@
     </ClCompile>
     <ClCompile Include="DXL2_Game\GameUI\agentMenu.cpp">
       <Filter>Source\DXL2_Game\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Audio\midiDevice.cpp">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Audio\RtMidi.cpp">
+      <Filter>Source\DXL2_Audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

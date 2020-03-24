@@ -5,6 +5,34 @@
 #include <assert.h>
 #include <algorithm>
 
+// TODO: Add a command queue to avoid locking on the audio thread.
+// Commands for adding/removing sources, changing volume, etc.
+/*
+#include <atomic>
+typedef std::atomic_int  s32_atomic;
+typedef std::atomic_uint u32_atomic;
+#define atomicFetchAdd(a,b)   std::atomic_fetch_add(a,b)
+#define atomicWrite(a, value) std::atomic_store(a, value)
+#define atomicRead(a)         std::atomic_load(a)
+
+u32 writeBuffer;
+u32_atomic readBuffer;	// just keep incrementing and fixup after read.
+
+writeBuffer = 0;
+atomicWrite(&readBuffer, BUFFER_COUNT - 1);
+
+// Write data to [writeBuffer]
+// ...
+// Increment writeBuffer for next frame.
+writeBuffer = (writeBuffer + 1) % BUFFER_COUNT;
+// Increment read buffer once the data is ready.
+atomicFetchAdd(&readBuffer, 1);
+
+// Read current buffer index in the audio thread.
+u32 index = atomicRead(&readBuffer);
+index %= BUFFER_COUNT;
+*/
+
 // Comment out the desired sigmoid function and comment all of the others.
 //#define AUDIO_SIGMOID_CLIP 1
 #define AUDIO_SIGMOID_TANH 1
@@ -61,6 +89,7 @@ namespace DXL2_Audio
 
 	static u32 s_sourceCount;
 	static Vec3f s_listener;
+	// TODO: This will need to be buffered to avoid locks.
 	static SoundSource s_sources[MAX_SOUND_SOURCES];
 	static Mutex s_mutex;
 
