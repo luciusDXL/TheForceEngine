@@ -7,9 +7,9 @@
 #include <DXL2_Game/player.h>
 #include <DXL2_Game/renderCommon.h>
 #include <DXL2_Game/gameHud.h>
-#include <DXL2_Game/gameUi.h>
 #include <DXL2_Game/gameConstants.h>
 #include <DXL2_Game/geometry.h>
+#include <DXL2_Game/GameUI/gameUi.h>
 #include <DXL2_Audio/audioSystem.h>
 #include <DXL2_Asset/gameMessages.h>
 #include <DXL2_Asset/vocAsset.h>

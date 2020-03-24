@@ -7,7 +7,7 @@
 
 #include <DXL2_System/types.h>
 #include <DXL2_Asset/levelAsset.h>
-#include "view.h"
+#include <DXL2_Game/view.h>
 
 class DXL2_Renderer;
 class Player;

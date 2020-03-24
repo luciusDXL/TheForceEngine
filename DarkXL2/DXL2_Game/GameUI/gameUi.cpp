@@ -1,8 +1,8 @@
-#include "gameLoop.h"
 #include "gameUi.h"
-#include "gameHud.h"
 #include "editBox.h"
-#include "player.h"
+#include <DXL2_Game/gameLoop.h>
+#include <DXL2_Game/gameHud.h>
+#include <DXL2_Game/player.h>
 #include <DXL2_System/system.h>
 #include <DXL2_Renderer/renderer.h>
 #include <DXL2_FileSystem/paths.h>

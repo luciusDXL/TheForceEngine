@@ -125,6 +125,9 @@
     <Filter Include="Source\DXL2_FrontEndUI">
       <UniqueIdentifier>{a8504c90-e13a-4a84-b3dc-faa166cfaabf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\DXL2_Game\GameUI">
+      <UniqueIdentifier>{b1b96865-8280-4732-98ed-98963f450bd9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -427,17 +430,17 @@
     <ClInclude Include="DXL2_Audio\RtAudio.h">
       <Filter>Source\DXL2_Audio</Filter>
     </ClInclude>
-    <ClInclude Include="DXL2_Game\gameUi.h">
-      <Filter>Source\DXL2_Game</Filter>
-    </ClInclude>
     <ClInclude Include="DXL2_FrontEndUI\frontEndUi.h">
       <Filter>Source\DXL2_FrontEndUI</Filter>
     </ClInclude>
     <ClInclude Include="DXL2_Game\gameMain.h">
       <Filter>Source\DXL2_Game</Filter>
     </ClInclude>
-    <ClInclude Include="DXL2_Game\editBox.h">
-      <Filter>Source\DXL2_Game</Filter>
+    <ClInclude Include="DXL2_Game\GameUI\editBox.h">
+      <Filter>Source\DXL2_Game\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_Game\GameUI\gameUi.h">
+      <Filter>Source\DXL2_Game\GameUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -705,17 +708,17 @@
     <ClCompile Include="DXL2_Audio\RtAudio.cpp">
       <Filter>Source\DXL2_Audio</Filter>
     </ClCompile>
-    <ClCompile Include="DXL2_Game\gameUi.cpp">
-      <Filter>Source\DXL2_Game</Filter>
-    </ClCompile>
     <ClCompile Include="DXL2_FrontEndUI\frontEndUi.cpp">
       <Filter>Source\DXL2_FrontEndUI</Filter>
     </ClCompile>
     <ClCompile Include="DXL2_Game\gameMain.cpp">
       <Filter>Source\DXL2_Game</Filter>
     </ClCompile>
-    <ClCompile Include="DXL2_Game\editBox.cpp">
-      <Filter>Source\DXL2_Game</Filter>
+    <ClCompile Include="DXL2_Game\GameUI\editBox.cpp">
+      <Filter>Source\DXL2_Game\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Game\GameUI\gameUi.cpp">
+      <Filter>Source\DXL2_Game\GameUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

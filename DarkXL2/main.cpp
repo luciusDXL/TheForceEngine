@@ -6,7 +6,7 @@
 #include <DXL2_Editor/editor.h>
 #include <DXL2_Game/level.h>
 #include <DXL2_Game/gameMain.h>
-#include <DXL2_Game/gameUi.h>
+#include <DXL2_Game/GameUI/gameUi.h>
 #include <DXL2_Audio/audioSystem.h>
 #include <DXL2_FileSystem/paths.h>
 #include <DXL2_Polygon/polygon.h>

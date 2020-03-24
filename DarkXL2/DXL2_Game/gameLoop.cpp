@@ -5,7 +5,7 @@
 #include "physics.h"
 #include "view.h"
 #include "gameHud.h"
-#include "gameUi.h"
+#include <DXL2_Game/GameUI/gameUi.h>
 #include <DXL2_Game/gameConstants.h>
 #include <DXL2_Game/geometry.h>
 #include <DXL2_Game/player.h>
