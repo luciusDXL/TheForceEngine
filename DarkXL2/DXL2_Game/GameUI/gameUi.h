@@ -33,6 +33,8 @@ namespace DXL2_GameUi
 	GameUiResult update(Player* player);
 	void draw(Player* player);
 
+	void reset();
+
 	// Returns true if the game view should be drawn.
 	// This will be false for fullscreen UI.
 	bool shouldDrawGame();

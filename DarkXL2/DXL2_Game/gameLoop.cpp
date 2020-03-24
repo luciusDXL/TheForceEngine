@@ -71,6 +71,7 @@ namespace DXL2_GameLoop
 	{
 		if (!startPos || !renderer || startSectorId < 0) { return false; }
 		DXL2_Audio::stopAllSounds();
+		DXL2_GameUi::reset();
 
 		LevelData* level = DXL2_LevelAsset::getLevelData();
 		InfData* infData = DXL2_InfAsset::getInfData();
@@ -138,6 +139,7 @@ namespace DXL2_GameLoop
 	{
 		if (!level) { return false; }
 		DXL2_Audio::stopAllSounds();
+		DXL2_GameUi::reset();
 		
 		s_level = level;
 		s_motion = 0.0f;

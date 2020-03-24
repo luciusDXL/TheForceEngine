@@ -117,7 +117,14 @@ namespace DXL2_GameUi
 		s_renderer->setPalette(&s_prevPal);
 		s_renderer->setColorMap(s_prevCMap);
 	}
-				
+
+	void reset()
+	{
+		s_escMenuOpen = false;
+		s_agentMenuOpen = false;
+		s_drawMouseCursor = false;
+	}
+
 	GameUiResult update(Player* player)
 	{
 		GameUiResult result = GAME_CONTINUE;
