@@ -19,6 +19,7 @@ enum GameUiResult
 	GAME_NEXT_LEVEL,	// Progress to the next mission at the same difficulty level.
 	GAME_SELECT_LEVEL,	// Level selected, time to start.
 	GAME_QUIT,			// Quit the game.
+	GAME_CLOSE,			// Close the current dialog.
 };
 
 namespace DXL2_GameUi

@@ -1,5 +1,6 @@
 #include "gameUi.h"
 #include "editBox.h"
+#include "escMenu.h"
 #include <DXL2_Game/gameLoop.h>
 #include <DXL2_Game/gameHud.h>
 #include <DXL2_Game/player.h>
@@ -23,23 +24,6 @@ namespace DXL2_GameUi
 	// UI Definitions
 	// TODO: Move these to game data.
 	///////////////////////////////////////
-	enum EscapeButtons
-	{
-		ESC_ABORT,
-		ESC_CONFIG,
-		ESC_QUIT,
-		ESC_RETURN,
-		ESC_COUNT
-	};
-	static const Vec2i c_escButtons[ESC_COUNT] =
-	{
-		{64, 35},	// ESC_ABORT
-		{64, 55},	// ESC_CONFIG
-		{64, 75},	// ESC_QUIT
-		{64, 99},	// ESC_RETURN
-	};
-	static const Vec2i c_escButtonDim = { 96, 16 };
-
 	enum AgentMenuButtons
 	{
 		AGENT_NEW,
@@ -69,32 +53,6 @@ namespace DXL2_GameUi
 		{206, 107},	// NEW_AGENT_YES
 	};
 	static const Vec2i c_newAgentButtonDim = { 28, 15 };
-
-	struct GameMenus
-	{
-		Palette256* pal  = nullptr;
-		ColorMap* cmap   = nullptr;
-		Texture* escMenu = nullptr;
-		Texture* cursor  = nullptr;
-		// state
-
-		bool load()
-		{
-			pal     = DXL2_Palette::get256("SECBASE.PAL");
-			cmap    = DXL2_ColorMap::get("SECBASE.CMP");
-			escMenu = DXL2_Texture::getFromAnim("escmenu.anim", "LFD/MENU.LFD");
-			cursor  = DXL2_Texture::getFromDelt("cursor.delt", "LFD/MENU.LFD");
-			return (pal && cmap && escMenu && cursor);
-		}
-
-		void unload()
-		{
-			DXL2_Texture::free(escMenu);
-			DXL2_Texture::free(cursor);
-			escMenu = nullptr;
-			cursor = nullptr;
-		}
-	};
 
 	struct AgentMenu
 	{
@@ -142,7 +100,6 @@ namespace DXL2_GameUi
 	// Accumlation, so the movement speed can be consistent across resolutions.
 	static Vec2i s_cursorPosAccum = { 0 };
 
-	static GameMenus s_gameMenus = {};
 	static AgentMenu s_agentMenu = {};
 
 	static bool s_escMenuOpen = false;
@@ -152,9 +109,7 @@ namespace DXL2_GameUi
 	static s32 s_selectedLevel = 0;
 	static s32 s_selectedDifficulty = 1;
 
-	void drawEscapeMenu();
 	void drawAgentMenu();
-	GameUiResult updateEscapeMenu();
 	GameUiResult updateAgentMenu();
 	void loadAgents();
 
@@ -169,7 +124,7 @@ namespace DXL2_GameUi
 
 		// Preload everything - the original games would only load what was needed at the moment to save memory.
 		// But its pretty safe to just load it all at once for now.
-		s_gameMenus.load();
+		DXL2_EscapeMenu::load();
 		s_agentMenu.load();
 
 		DXL2_LevelList::load();
@@ -197,9 +152,7 @@ namespace DXL2_GameUi
 		s_escMenuOpen = true;
 		s_prevPal = s_renderer->getPalette();
 		s_prevCMap = s_renderer->getColorMap();
-		s_renderer->setPalette(s_gameMenus.pal);
-		s_renderer->setColorMap(s_gameMenus.cmap);
-		DXL2_RenderCommon::enableGrayScale(true);
+		DXL2_EscapeMenu::open(s_renderer);
 
 		s_buttonPressed = -1;
 		s_buttonHover = false;
@@ -218,7 +171,7 @@ namespace DXL2_GameUi
 	void closeEscMenu()
 	{
 		s_escMenuOpen = false;
-		DXL2_RenderCommon::enableGrayScale(false);
+		DXL2_EscapeMenu::close();
 		s_renderer->setPalette(&s_prevPal);
 		s_renderer->setColorMap(s_prevCMap);
 	}
@@ -262,7 +215,12 @@ namespace DXL2_GameUi
 		}
 		else if (s_escMenuOpen)
 		{
-			result = updateEscapeMenu();
+			result = DXL2_EscapeMenu::update(&s_virtualCursorPos, s_nextMission, &s_buttonPressed, &s_buttonHover);
+			if (result == GAME_CLOSE)
+			{
+				closeEscMenu();
+				result = GAME_CONTINUE;
+			}
 		}
 
 		return result;
@@ -297,112 +255,15 @@ namespace DXL2_GameUi
 		}
 		else if (s_escMenuOpen)
 		{
-			drawEscapeMenu();
+			DXL2_EscapeMenu::draw(s_renderer, s_scaleX, s_scaleY, s_buttonPressed, s_buttonHover, s_nextMission);
+			// draw the mouse cursor.
+			s_renderer->blitImage(&s_agentMenu.cursor->frames[0], s_cursorPos.x, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
 		}
 	}
 		
 	//////////////////////////////////////////////////////////////////
 	// Internal
 	//////////////////////////////////////////////////////////////////
-	void drawEscapeMenu()
-	{
-		s_renderer->applyColorEffect();
-		// TODO: Figure out the real formula for this - this works for now though.
-		const s32 x0 = ((s_gameMenus.escMenu->frames[0].width >> 2) - s_gameMenus.escMenu->frames[0].offsetX) * s_scaleX >> 8;
-		const s32 y0 = ((s_gameMenus.escMenu->frames[0].height >> 2) - s_gameMenus.escMenu->frames[0].offsetY - 8) * s_scaleY >> 8;
-
-		// Draw the menu
-		s_renderer->blitImage(&s_gameMenus.escMenu->frames[0], x0, y0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-
-		// Draw the next mission button if the mission has been completed.
-		if (s_nextMission)
-		{
-			if (s_buttonPressed == ESC_ABORT && s_buttonHover)
-			{
-				s_renderer->blitImage(&s_gameMenus.escMenu->frames[3], x0, y0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-			}
-			else
-			{
-				s_renderer->blitImage(&s_gameMenus.escMenu->frames[4], x0, y0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-			}
-		}
-		if ((s_buttonPressed > ESC_ABORT || (s_buttonPressed == ESC_ABORT && !s_nextMission)) && s_buttonHover)
-		{
-			// Draw the highlight button
-			const s32 highlightIndices[] = { 1, 7, 9, 5 };
-			s_renderer->blitImage(&s_gameMenus.escMenu->frames[highlightIndices[s_buttonPressed]], x0, y0, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-		}
-
-		// draw the mouse cursor.
-		s_renderer->blitImage(&s_gameMenus.cursor->frames[0], s_cursorPos.x, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
-	}
-
-	GameUiResult updateEscapeMenu()
-	{
-		GameUiResult result = GAME_CONTINUE;
-		
-		if (DXL2_Input::mousePressed(MBUTTON_LEFT))
-		{
-			const s32 x = s_virtualCursorPos.x;
-			const s32 z = s_virtualCursorPos.z;
-			s_buttonPressed = -1;
-			for (u32 i = 0; i < ESC_COUNT; i++)
-			{
-				if (x >= c_escButtons[i].x && x < c_escButtons[i].x + c_escButtonDim.x &&
-					z >= c_escButtons[i].z && z < c_escButtons[i].z + c_escButtonDim.z)
-				{
-					s_buttonPressed = s32(i);
-					s_buttonHover = true;
-					break;
-				}
-			}
-		}
-		else if (DXL2_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
-		{
-			// Verify that the mouse is still over the button.
-			const s32 x = s_virtualCursorPos.x;
-			const s32 z = s_virtualCursorPos.z;
-			if (x >= c_escButtons[s_buttonPressed].x && x < c_escButtons[s_buttonPressed].x + c_escButtonDim.x &&
-				z >= c_escButtons[s_buttonPressed].z && z < c_escButtons[s_buttonPressed].z + c_escButtonDim.z)
-			{
-				s_buttonHover = true;
-			}
-			else
-			{
-				s_buttonHover = false;
-			}
-		}
-		else
-		{
-			// Activate button 's_escButtonPressed'
-			if (s_buttonPressed >= ESC_ABORT && s_buttonHover)
-			{
-				switch (s_buttonPressed)
-				{
-				case ESC_ABORT:
-					result = s_nextMission ? GAME_NEXT_LEVEL : GAME_ABORT;
-					closeEscMenu();
-					break;
-				case ESC_CONFIG:
-					// TODO
-					break;
-				case ESC_QUIT:
-					result = GAME_QUIT;
-					closeEscMenu();
-					break;
-				case ESC_RETURN:
-					closeEscMenu();
-					break;
-				};
-			}
-
-			// Reset.
-			s_buttonPressed = -1;
-			s_buttonHover = false;
-		}
-		return result;
-	}
-
 	struct Agent
 	{
 		char name[32];
@@ -582,10 +443,10 @@ namespace DXL2_GameUi
 		// draw the mouse cursor.
 		s_renderer->blitImage(&s_agentMenu.cursor->frames[0], s_cursorPos.x, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
 
-		char mousePos[256];
-		sprintf(mousePos, "%03d.%03d", s_virtualCursorPos.x, s_virtualCursorPos.z);
-		DXL2_GameHud::setMessage(mousePos);
-		s_renderer->print(mousePos, s_agentMenu.sysFont, 26, 190, s_scaleX, s_scaleY);
+		//char mousePos[256];
+		//sprintf(mousePos, "%03d.%03d", s_virtualCursorPos.x, s_virtualCursorPos.z);
+		//DXL2_GameHud::setMessage(mousePos);
+		//s_renderer->print(mousePos, s_agentMenu.sysFont, 26, 190, s_scaleX, s_scaleY);
 	}
 
 	s32 alphabeticalAgentCmp(const void* a, const void* b)
@@ -946,7 +807,7 @@ namespace DXL2_GameUi
 				if (s_lastSelectedAgent && s_agentCount > 0)
 				{
 					s_selectedAgent++;
-					if (s_selectedAgent >= s_agentCount) { s_selectedAgent = 0; }
+					if (s_selectedAgent >= (s32)s_agentCount) { s_selectedAgent = 0; }
 					if (s_selectedAgent >= 0 && s_agentCount > 0) { s_selectedMission = s_agent[s_selectedAgent].selectedMission; }
 				}
 				else if (!s_lastSelectedAgent && s_selectedAgent >= 0 && s_agent[s_selectedAgent].nextMission > 0)
