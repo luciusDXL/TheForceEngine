@@ -99,6 +99,18 @@ namespace DXL2_AgentMenu
 		s_agentDlg = DXL2_Texture::getFromAnim("agentdlg.anim", "LFD/AGENTMNU.LFD");
 		s_sysFont = DXL2_Font::createSystemFont6x8();
 		loadAgents();
+
+		if (s_agentCount > 0)
+		{
+			s_selectedAgent = 0;
+			s_selectedMission = s_agent[s_selectedAgent].selectedMission;
+		}
+		else
+		{
+			s_selectedAgent = -1;
+			s_selectedMission = 0;
+		}
+
 		return (s_pal && s_agentMenu && s_agentDlg);
 	}
 
