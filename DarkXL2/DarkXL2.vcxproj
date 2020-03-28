@@ -251,6 +251,7 @@
     <ClInclude Include="DXL2_Audio\audioSystem.h" />
     <ClInclude Include="DXL2_Audio\midi.h" />
     <ClInclude Include="DXL2_Audio\midiDevice.h" />
+    <ClInclude Include="DXL2_Audio\midiPlayer.h" />
     <ClInclude Include="DXL2_Audio\RtAudio.h" />
     <ClInclude Include="DXL2_Audio\RtMidi.h" />
     <ClInclude Include="DXL2_Editor\archiveViewer.h" />
@@ -314,6 +315,12 @@
     <ClInclude Include="DXL2_System\memoryPool.h" />
     <ClInclude Include="DXL2_System\parser.h" />
     <ClInclude Include="DXL2_System\system.h" />
+    <ClInclude Include="DXL2_System\Threads\mutex.h" />
+    <ClInclude Include="DXL2_System\Threads\signal.h" />
+    <ClInclude Include="DXL2_System\Threads\thread.h" />
+    <ClInclude Include="DXL2_System\Threads\Win32\mutexWin32.h" />
+    <ClInclude Include="DXL2_System\Threads\Win32\signalWin32.h" />
+    <ClInclude Include="DXL2_System\Threads\Win32\threadWin32.h" />
     <ClInclude Include="DXL2_System\types.h" />
     <ClInclude Include="DXL2_Ui\imGUI\Dirent\dirent.h" />
     <ClInclude Include="DXL2_Ui\imGUI\imconfig.h" />
@@ -361,6 +368,7 @@
     <ClCompile Include="DXL2_Audio\audioDevice.cpp" />
     <ClCompile Include="DXL2_Audio\audioSystem.cpp" />
     <ClCompile Include="DXL2_Audio\midiDevice.cpp" />
+    <ClCompile Include="DXL2_Audio\midiPlayer.cpp" />
     <ClCompile Include="DXL2_Audio\RtAudio.cpp" />
     <ClCompile Include="DXL2_Audio\RtMidi.cpp" />
     <ClCompile Include="DXL2_Editor\archiveViewer.cpp" />
@@ -422,6 +430,9 @@
     <ClCompile Include="DXL2_System\memoryPool.cpp" />
     <ClCompile Include="DXL2_System\parser.cpp" />
     <ClCompile Include="DXL2_System\system.cpp" />
+    <ClCompile Include="DXL2_System\Threads\Win32\mutexWin32.cpp" />
+    <ClCompile Include="DXL2_System\Threads\Win32\signalWin32.cpp" />
+    <ClCompile Include="DXL2_System\Threads\Win32\threadWin32.cpp" />
     <ClCompile Include="DXL2_Ui\imGUI\imgui.cpp" />
     <ClCompile Include="DXL2_Ui\imGUI\imgui_demo.cpp" />
     <ClCompile Include="DXL2_Ui\imGUI\imgui_draw.cpp" />

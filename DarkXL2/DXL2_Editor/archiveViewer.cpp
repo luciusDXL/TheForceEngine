@@ -20,6 +20,7 @@
 #include <DXL2_Ui/ui.h>
 #include <DXL2_RenderBackend/renderBackend.h>
 #include <DXL2_Audio/audioSystem.h>
+#include <DXL2_Audio/midiPlayer.h>
 
 #include <DXL2_Ui/imGUI/imgui_file_browser.h>
 #include <DXL2_Ui/imGUI/imgui.h>
@@ -427,6 +428,8 @@ namespace ArchiveViewer
 				s_curArchive->readFile((void*)s_text.data(), len);
 				s_curArchive->closeFile();
 
+				DXL2_MidiPlayer::stop();
+
 				char extension[16];
 				FileUtil::getFileExtension(s_items[s_currentFile], extension);
 				s_fileType = TYPE_BIN;
@@ -511,8 +514,7 @@ namespace ArchiveViewer
 				{
 					s_fileType = TYPE_GMID;
 					const GMidiAsset* song = DXL2_GmidAsset::get(s_items[s_currentFile]);
-
-					// DXL2_Music::playSongOnce(song);
+					DXL2_MidiPlayer::playSong(song, false);
 				}
 				else if (strcasecmp(extension, "PLTT") == 0)
 				{

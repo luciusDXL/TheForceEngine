@@ -22,7 +22,7 @@
 #include <algorithm>
 
 // Replace with music system
-#include <DXL2_Audio/midiDevice.h>
+#include <DXL2_Audio/midiPlayer.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
 	DXL2_FrontEndUI::init();
 
 	// Replace with DXL2_Music
-	DXL2_MidiDevice::init();
+	DXL2_MidiPlayer::init();
 		
 	DXL2_Renderer* renderer = DXL2_Renderer::create(DXL2_RENDERER_SOFTWARE_CPU);
 	if (!renderer)
@@ -440,7 +440,7 @@ int main(int argc, char* argv[])
 	SDL_Quit();
 
 	// Replace with DXL2_Music
-	DXL2_MidiDevice::destroy();
+	DXL2_MidiPlayer::destroy();
 
 	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "DarkXL 2 Game Loop Ended.");
 	DXL2_System::logClose();

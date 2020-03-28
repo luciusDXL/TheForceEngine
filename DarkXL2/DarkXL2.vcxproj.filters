@@ -128,6 +128,12 @@
     <Filter Include="Source\DXL2_Game\GameUI">
       <UniqueIdentifier>{b1b96865-8280-4732-98ed-98963f450bd9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\DXL2_System\Threads">
+      <UniqueIdentifier>{f874d79b-66c7-41e5-a393-96ab92bea739}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DXL2_System\Threads\Win32">
+      <UniqueIdentifier>{1389f658-d350-4b30-91ca-293ec673341e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -460,6 +466,27 @@
     <ClInclude Include="DXL2_Asset\gmidAsset.h">
       <Filter>Source\DXL2_Asset</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Audio\midiPlayer.h">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\Threads\mutex.h">
+      <Filter>Source\DXL2_System\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\Threads\signal.h">
+      <Filter>Source\DXL2_System\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\Threads\thread.h">
+      <Filter>Source\DXL2_System\Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\Threads\Win32\mutexWin32.h">
+      <Filter>Source\DXL2_System\Threads\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\Threads\Win32\signalWin32.h">
+      <Filter>Source\DXL2_System\Threads\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="DXL2_System\Threads\Win32\threadWin32.h">
+      <Filter>Source\DXL2_System\Threads\Win32</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -752,6 +779,18 @@
     </ClCompile>
     <ClCompile Include="DXL2_Asset\gmidAsset.cpp">
       <Filter>Source\DXL2_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Audio\midiPlayer.cpp">
+      <Filter>Source\DXL2_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_System\Threads\Win32\mutexWin32.cpp">
+      <Filter>Source\DXL2_System\Threads\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_System\Threads\Win32\signalWin32.cpp">
+      <Filter>Source\DXL2_System\Threads\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_System\Threads\Win32\threadWin32.cpp">
+      <Filter>Source\DXL2_System\Threads\Win32</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

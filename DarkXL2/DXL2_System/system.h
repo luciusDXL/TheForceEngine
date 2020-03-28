@@ -22,6 +22,7 @@ namespace DXL2_System
 	void resetStartTime();
 
 	void update();
+	f64 updateThreadLocal(u64* localTime);
 
 	// Timing
 	// --- The current time and delta time are determined once per frame, during the update() function.

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <float.h>
+#include <atomic>
 
 typedef uint64_t u64;
 typedef int64_t s64;
@@ -14,6 +15,11 @@ typedef uint8_t u8;
 typedef int8_t s8;
 typedef float f32;
 typedef double f64;
+
+typedef std::atomic<uint32_t> atomic_u32;
+typedef std::atomic<int32_t>  atomic_s32;
+typedef std::atomic<float>    atomic_f32;
+typedef std::atomic<bool>     atomic_bool;
 
 struct Vec2f
 {
@@ -90,6 +96,12 @@ struct Mat4
 #ifdef _WIN32
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
+#endif
+
+#ifdef _WIN32
+#define DXL2_STDCALL __stdcall
+#else
+#define DXL2_STDCALL
 #endif
 
 #define DXL2_ARRAYSIZE(arr) (sizeof(arr)/sizeof(*arr))         // Size of a static C-style array. Don't use on pointers!

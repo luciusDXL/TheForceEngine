@@ -45,6 +45,17 @@ namespace DXL2_System
 		s_resetStartTime = true;
 	}
 
+	f64 updateThreadLocal(u64* localTime)
+	{
+		const u64 curTime = SDL_GetPerformanceCounter();
+		const u64 uDt = (*localTime) > 0u ? curTime - (*localTime) : 0u;
+
+		const f64 dt = f64(uDt) * s_freq;
+		*localTime = curTime;
+
+		return dt;
+	}
+
 	void update()
 	{
 		// This assumes that SDL_GetPerformanceCounter() is monotonic.

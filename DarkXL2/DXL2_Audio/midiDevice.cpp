@@ -59,12 +59,12 @@ namespace DXL2_MidiDevice
 
 	void sendMessage(const u8* msg, u32 size)
 	{
-		s_midiout->sendMessage(msg, (size_t)size);
+		if (s_midiout) { s_midiout->sendMessage(msg, (size_t)size); }
 	}
 
 	void sendMessage(u8 arg0, u8 arg1, u8 arg2)
 	{
 		const u8 msg[3] = { arg0, arg1, arg2 };
-		s_midiout->sendMessage(msg, 3);
+		if (s_midiout) { s_midiout->sendMessage(msg, 3); }
 	}
 }
