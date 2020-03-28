@@ -146,13 +146,28 @@ namespace DXL2_GmidAsset
 		strcpy(track->markers[index].name, text);
 	}
 
-	void addSysExEvent(Track* track, u32 tick, u8 type, const char* data)
+#define TICKS_PER_BEAT 480
+
+	void addSysExEvent(Track* track, u32 tick, u8 type, u32 size, const char* data)
 	{
 		const u32 index = (u32)track->imuseEvents.size();
 		track->eventList.push_back({ tick, MTK_IMUSE, index });
 		track->imuseEvents.push_back({});
 		track->imuseEvents[index].id = type;
-		strcpy(track->imuseEvents[index].msg, data);
+		memcpy(track->imuseEvents[index].msg, data, size);
+		if (type == 1)
+		{
+			// For now just treat this as loop points.
+			if (track->loopStart < 0)
+			{
+				track->loopStart = tick;
+			}
+			else
+			{
+				track->loopEnd = tick;
+			}
+		}
+		assert(type == 1 || type == 3);
 	}
 
 	bool parseGMidi(GMidiAsset* midi)
@@ -205,6 +220,8 @@ namespace DXL2_GmidAsset
 					curTrack->length = 0;
 					curTrack->id = 0;
 					curTrack->pad16 = 0;
+					curTrack->loopStart = -1;
+					curTrack->loopEnd = -1;
 				} break;
 				case c_MTrk:
 				{
@@ -283,6 +300,8 @@ namespace DXL2_GmidAsset
 									curTrack->id = trackIndex;
 									curTrack->length = 0;
 									curTrack->pad16 = 0;
+									curTrack->loopStart = -1;
+									curTrack->loopEnd = -1;
 								}
 							}
 
@@ -294,7 +313,7 @@ namespace DXL2_GmidAsset
 							const u32 size = readVariableLength(chunkData);
 							if (*chunkData == DARK_FORCES_SYSEX)
 							{
-								addSysExEvent(curTrack, tick, *(chunkData+1), (const char*)chunkData + 2);
+								addSysExEvent(curTrack, tick, *(chunkData+1), size - 3, (const char*)chunkData + 2);
 							}
 							while (*chunkData != 0xf7) { chunkData++; }
 							assert(*chunkData == 0xf7);
@@ -314,8 +333,8 @@ namespace DXL2_GmidAsset
 						}
 						else
 						{
-							assert(0);
 							DXL2_System::logWrite(LOG_ERROR, "Midi", "Running status not supported.");
+							chunkData++;
 						}
 					}
 				} break;
@@ -329,7 +348,6 @@ namespace DXL2_GmidAsset
 			buffer += chunk.size;
 		}
 
-		assert(trackIndex == midi->trackCount);
-		return trackIndex > 0;
+		return midi->trackCount > 0;
 	}
 }

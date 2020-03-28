@@ -54,6 +54,9 @@ struct Track
 	f32 msPerTick;	// tempo at time 0.
 	u32 length;
 
+	s32 loopStart;
+	s32 loopEnd;
+
 	// Ordered event list.
 	std::vector<MidiTrackEvent> eventList;
 

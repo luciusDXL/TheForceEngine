@@ -503,14 +503,14 @@ namespace ArchiveViewer
 					s_curModel = DXL2_Model::get(s_items[s_currentFile]);
 					DXL2_GameLoop::startRenderer(s_renderer, 640, 480);
 				}
-				else if (strcasecmp(extension, "VOC") == 0)
+				else if (strcasecmp(extension, "VOC") == 0 || strcasecmp(extension, "VOIC") == 0)
 				{
 					s_fileType = TYPE_VOC;
 					const SoundBuffer* sound = DXL2_VocAsset::get(s_items[s_currentFile]);
 
 					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, sound, false);
 				}
-				else if (strcasecmp(extension, "GMD") == 0)
+				else if (strcasecmp(extension, "GMD") == 0 || strcasecmp(extension, "GMID") == 0)
 				{
 					s_fileType = TYPE_GMID;
 					const GMidiAsset* song = DXL2_GmidAsset::get(s_items[s_currentFile]);
