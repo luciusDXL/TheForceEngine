@@ -457,6 +457,9 @@
     <ClInclude Include="DXL2_Audio\midi.h">
       <Filter>Source\DXL2_Audio</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Asset\gmidAsset.h">
+      <Filter>Source\DXL2_Asset</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -746,6 +749,9 @@
     </ClCompile>
     <ClCompile Include="DXL2_Audio\RtMidi.cpp">
       <Filter>Source\DXL2_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="DXL2_Asset\gmidAsset.cpp">
+      <Filter>Source\DXL2_Asset</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

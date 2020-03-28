@@ -12,6 +12,7 @@
 #include <DXL2_Asset/gameMessages.h>
 #include <DXL2_Asset/levelAsset.h>
 #include <DXL2_Asset/levelList.h>
+#include <DXL2_Audio/audioSystem.h>
 #include <DXL2_Settings/settings.h>
 #include <assert.h>
 #include <vector>
@@ -58,6 +59,9 @@ namespace DXL2_GameMain
 		}
 		else if (state == GSTATE_ABORT)
 		{
+			DXL2_Audio::stopAllSounds();
+			DXL2_GameUi::reset();
+
 			DXL2_GameUi::openAgentMenu();
 			state = GSTATE_CONTINUE;
 		}

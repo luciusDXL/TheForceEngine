@@ -23,14 +23,13 @@ atomicWrite(&readBuffer, BUFFER_COUNT - 1);
 
 // Write data to [writeBuffer]
 // ...
+// Mark the readBuffer = writeBuffer
+atomicWrite(&readBuffer, writeBuffer);
 // Increment writeBuffer for next frame.
 writeBuffer = (writeBuffer + 1) % BUFFER_COUNT;
-// Increment read buffer once the data is ready.
-atomicFetchAdd(&readBuffer, 1);
 
 // Read current buffer index in the audio thread.
 u32 index = atomicRead(&readBuffer);
-index %= BUFFER_COUNT;
 */
 
 // Comment out the desired sigmoid function and comment all of the others.

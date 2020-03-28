@@ -15,6 +15,7 @@
 #include <DXL2_Asset/gameMessages.h>
 #include <DXL2_Asset/levelList.h>
 #include <DXL2_Asset/vocAsset.h>
+#include <DXL2_Asset/gmidAsset.h>
 #include <DXL2_Settings/settings.h>
 #include <DXL2_Ui/ui.h>
 #include <DXL2_RenderBackend/renderBackend.h>
@@ -46,6 +47,7 @@ namespace ArchiveViewer
 		TYPE_SPRITE,
 		TYPE_3D,
 		TYPE_VOC,
+		TYPE_GMID,
 		TYPE_BIN,
 		TYPE_COUNT
 	};
@@ -504,6 +506,13 @@ namespace ArchiveViewer
 					const SoundBuffer* sound = DXL2_VocAsset::get(s_items[s_currentFile]);
 
 					DXL2_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, sound, false);
+				}
+				else if (strcasecmp(extension, "GMD") == 0)
+				{
+					s_fileType = TYPE_GMID;
+					const GMidiAsset* song = DXL2_GmidAsset::get(s_items[s_currentFile]);
+
+					// DXL2_Music::playSongOnce(song);
 				}
 				else if (strcasecmp(extension, "PLTT") == 0)
 				{

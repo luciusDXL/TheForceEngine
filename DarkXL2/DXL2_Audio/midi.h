@@ -1,8 +1,9 @@
 #pragma once
 
 // Midi Message = MidiMessageType + Channel, data byte 1, data byte 2
-// Example: DXL2_MidiDevice::sendMessage(MID_NOTE_ON, note, velocity);
-//          DXL2_MidiDevice::sendMessage(MID_CONTROL_CHANGE, MID_VOLUME_MSB, 100);
+// Examples assume: u8 channelId = 0x00 - 0x0f (16 channels)
+// Example: DXL2_MidiDevice::sendMessage(MID_NOTE_ON + channelId, note, velocity);
+//          DXL2_MidiDevice::sendMessage(MID_CONTROL_CHANGE + channelId, MID_VOLUME_MSB, 100);
 
 // Channel message type
 enum MidiMessageType
@@ -29,6 +30,25 @@ enum MidiMessageType
 	MID_STOP            = 0xFC,
 	MID_ACTIVE_SENSING  = 0xFE,
 	MID_RESET           = 0xFF,
+};
+
+enum MetaType
+{
+	META_SEQ_NUMBER = 0x00,
+	META_TEXT_EVENT,
+	META_COPYRIGHT_NOTICE,
+	META_SEQ_NAME,
+	META_INSTR_NAME,
+	META_LYRIC_TEXT,
+	META_MARKER_TEXT,
+	META_CUE_POINT,
+	META_MIDI_CHANNEL_PREFIX = 0x20,
+	META_END_OF_TRACK = 0x2f,
+	META_TEMPO = 0x51,
+	META_SMPTE_OFFSET = 0x54,
+	META_TIME_SIG = 0x58,
+	META_KEY_SIG = 0x59,
+	META_SEQ_SPECIFIC = 0x7f
 };
 
 // Midi controller numbers

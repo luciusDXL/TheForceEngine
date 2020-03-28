@@ -3,6 +3,14 @@
 //////////////////////////////////////////
 #include "basic_enemy.dxs"
 
+/*
+TODO: Add preload() function to avoid pauses during gameplay.
+void preload()
+{
+	DXL2_Sound_Preload("ST-DIE-1.VOC");
+}
+*/
+
 void setEnemySpecificFlags()
 {
 	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
