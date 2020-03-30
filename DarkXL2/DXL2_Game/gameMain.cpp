@@ -52,12 +52,20 @@ namespace DXL2_GameMain
 
 		if (state == GSTATE_NEXT && s_curLevel + 1 < s_levelCount)
 		{
+			// Stop the sounds.
+			DXL2_Audio::stopAllSounds();
+			DXL2_MidiPlayer::stop();
+
 			// Go to the next level in the list.
 			s_curLevel++;
 			startLevel();
 		}
 		else if (state == GSTATE_SELECT_LEVEL)
 		{
+			// Stop the sounds.
+			DXL2_Audio::stopAllSounds();
+			DXL2_MidiPlayer::stop();
+
 			// Start the selected level.
 			s32 difficulty = 1;
 			s_curLevel = DXL2_GameUi::getSelectedLevel(&difficulty);

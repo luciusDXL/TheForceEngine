@@ -148,26 +148,202 @@ namespace DXL2_GmidAsset
 
 #define TICKS_PER_BEAT 480
 
+	const char* c_iMuseCommandStrings[]=
+	{
+		"start new",		//IMUSE_START_NEW = 0,
+		"stalk trans",		//IMUSE_STALK_TRANS,
+		"fight trans",		//IMUSE_FIGHT_TRANS,
+		"engage trans",		//IMUSE_ENGAGE_TRANS,
+		"from fight",		//IMUSE_FROM_FIGHT,
+		"from stalk",		//IMUSE_FROM_STALK,
+		"from boss",		//IMUSE_FROM_BOSS,
+		"clear callback",	//IMUSE_CLEAR_CALLBACK,
+		"to",				//IMUSE_TO
+	};
+		
 	void addSysExEvent(Track* track, u32 tick, u8 type, u32 size, const char* data)
 	{
 		const u32 index = (u32)track->imuseEvents.size();
 		track->eventList.push_back({ tick, MTK_IMUSE, index });
-		track->imuseEvents.push_back({});
-		track->imuseEvents[index].id = type;
-		memcpy(track->imuseEvents[index].msg, data, size);
+		iMuseEvent evt = {};
+
 		if (type == 1)
 		{
 			// For now just treat this as loop points.
 			if (track->loopStart < 0)
 			{
 				track->loopStart = tick;
+				evt.cmd = IMUSE_LOOP_START;
+				evt.arg[0].nArg = tick;
 			}
 			else
 			{
 				track->loopEnd = tick;
+				evt.cmd = IMUSE_LOOP_END;
+				evt.arg[0].nArg = track->loopStart;
+				evt.arg[1].nArg = tick;
+			}
+		}
+		else
+		{
+			// parse the command.
+			DXL2_Parser parser;
+			TokenList tokens;
+			
+			evt.cmd = IMUSE_UNKNOWN;
+			for (u32 i = 0; i < DXL2_ARRAYSIZE(c_iMuseCommandStrings); i++)
+			{
+				if (strncasecmp(data, c_iMuseCommandStrings[i], strlen(c_iMuseCommandStrings[i])) == 0)
+				{
+					parser.tokenizeLine(&data[strlen(c_iMuseCommandStrings[i])], tokens);
+					evt.cmd = iMuseCommand(i);
+				}
+			}
+			if (evt.cmd == IMUSE_UNKNOWN) { return; }
+			
+			char* endPtr = nullptr;
+			switch (evt.cmd)
+			{
+				case IMUSE_START_NEW:
+				{
+
+				} break;
+				case IMUSE_STALK_TRANS:
+				{
+					assert(tokens.size() >= 1 && tokens.size() < 3);
+					if (tokens.size() >= 1)
+					{
+						evt.arg[0].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
+						if (tokens.size() >= 2)
+							evt.arg[1].fArg = (f32)strtod(tokens[1].c_str(), &endPtr);
+						else
+							evt.arg[1].fArg = 0.0f;
+					}
+				} break;
+				case IMUSE_FIGHT_TRANS:
+				{
+					assert(tokens.size() >= 1 && tokens.size() <= 3);
+					if (tokens.size() >= 1)
+					{
+						evt.arg[0].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
+						
+						if (tokens.size() >= 2)
+							evt.arg[1].fArg = (f32)strtod(tokens[1].c_str(), &endPtr);
+						else
+							evt.arg[1].fArg = 0.0f;
+
+						if (tokens.size() >= 3)
+							evt.arg[2].fArg = (f32)strtod(tokens[2].c_str(), &endPtr);
+						else
+							evt.arg[2].fArg = 0.0f;
+					}
+				} break;
+				case IMUSE_ENGAGE_TRANS:
+				{
+					assert(tokens.size() == 1);
+					if (tokens.size() >= 1)
+					{
+						evt.arg[0].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
+					}
+				} break;
+				case IMUSE_FROM_FIGHT:
+				{
+					assert(tokens.size() >= 1);
+					if (tokens.size() >= 1)
+					{
+						evt.arg[0].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
+
+						if (tokens.size() >= 2)
+							evt.arg[1].fArg = (f32)strtod(tokens[1].c_str(), &endPtr);
+						else
+							evt.arg[1].fArg = 0.0f;
+
+						if (tokens.size() >= 3)
+							evt.arg[2].fArg = (f32)strtod(tokens[2].c_str(), &endPtr);
+						else
+							evt.arg[2].fArg = 0.0f;
+					}
+				} break;
+				case IMUSE_FROM_STALK:
+				{
+					assert(tokens.size() >= 1);
+					if (tokens.size() >= 1)
+					{
+						evt.arg[0].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
+
+						if (tokens.size() >= 2)
+							evt.arg[1].fArg = (f32)strtod(tokens[1].c_str(), &endPtr);
+						else
+							evt.arg[1].fArg = 0.0f;
+
+						if (tokens.size() >= 3)
+							evt.arg[2].fArg = (f32)strtod(tokens[2].c_str(), &endPtr);
+						else
+							evt.arg[2].fArg = 0.0f;
+					}
+				} break;
+				case IMUSE_FROM_BOSS:
+				{
+					assert(tokens.size() >= 1 && tokens.size() < 3);
+					if (tokens.size() >= 1)
+					{
+						evt.arg[0].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
+						if (tokens.size() >= 2)
+							evt.arg[1].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
+						else
+							evt.arg[1].fArg = 0.0f;
+					}
+				} break;
+				case IMUSE_CLEAR_CALLBACK:
+				{
+
+				} break;
+				case IMUSE_TO:
+				{
+					assert(tokens.size() >= 1);
+					const char* X[] = { "A", "B", "C", "D", "E" };
+
+					if (tokens.size() >= 2)
+					{
+						assert(strcasecmp(tokens[1].c_str(), "slow") == 0);
+						evt.arg[0].nArg = -1;
+						evt.arg[1].nArg = -1;
+						for (u32 i = 0; i < 5; i++)
+						{
+							if (strcasecmp(tokens[0].c_str(), X[i]) == 0)
+							{
+								evt.arg[0].nArg = i;
+								evt.arg[1].nArg = 1;	//slow
+							}
+						}
+						assert(evt.arg[0].nArg >= 0 && evt.arg[1].nArg >= 0);
+					}
+					else if (tokens.size() >= 1)
+					{
+						const char* Xslow[] = { "Aslow", "Bslow", "Cslow", "Dslow", "Eslow" };
+						
+						evt.arg[0].nArg = -1;
+						evt.arg[1].nArg = -1;
+						for (u32 i = 0; i < 5; i++)
+						{
+							if (strcasecmp(tokens[0].c_str(), Xslow[i]) == 0)
+							{
+								evt.arg[0].nArg = i;
+								evt.arg[1].nArg = 1;	//slow
+							}
+							else if (strcasecmp(tokens[0].c_str(), X[i]) == 0)
+							{
+								evt.arg[0].nArg = i;
+								evt.arg[1].nArg = 0;	//normal
+							}
+						}
+						assert(evt.arg[0].nArg >= 0 && evt.arg[1].nArg >= 0);
+					}
+				} break;
 			}
 		}
 		assert(type == 1 || type == 3);
+		track->imuseEvents.push_back(evt);
 	}
 
 	bool parseGMidi(GMidiAsset* midi)

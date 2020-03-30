@@ -57,6 +57,7 @@ namespace DXL2_MidiPlayer
 	static atomic_bool s_resetThreadLocalTime;
 
 	DXL2_THREADRET midiUpdateFunc(void* userData);
+	void stopAllNotes();
 
 	bool init()
 	{
@@ -80,9 +81,11 @@ namespace DXL2_MidiPlayer
 	void destroy()
 	{
 		// Destroy the thread before shutting down the Midi Device.
+		stop();
 		s_runMusicThread.store(false);
-		delete s_thread;
+		s_thread->waitOnExit();
 
+		delete s_thread;
 		DXL2_MidiDevice::destroy();
 	}
 
@@ -132,6 +135,14 @@ namespace DXL2_MidiPlayer
 		s_isPlaying.store(false);
 	}
 
+	void stopAllNotes()
+	{
+		for (u32 i = 0; i < 16; i++)
+		{
+			DXL2_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_ALL_NOTES_OFF);
+		}
+	}
+
 	// Thread Function
 	DXL2_THREADRET midiUpdateFunc(void* userData)
 	{
@@ -146,10 +157,7 @@ namespace DXL2_MidiPlayer
 				if (wasPlaying)
 				{
 					// Stop all of the notes.
-					for (u32 i = 0; i < 16; i++)
-					{
-						DXL2_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_ALL_NOTES_OFF);
-					}
+					stopAllNotes();
 					wasPlaying = false;
 					loopStart = -1;
 				}
@@ -163,6 +171,7 @@ namespace DXL2_MidiPlayer
 			s_resetThreadLocalTime.store(false);
 			if (resetLocalTime)
 			{
+				stopAllNotes();
 				localTime = 0u;
 				loopStart = -1;
 			}
@@ -189,7 +198,8 @@ namespace DXL2_MidiPlayer
 
 				const u32 evtCount = (u32)track->eventList.size();
 				const MidiTrackEvent* evt = track->eventList.data();
-				for (u32 e = u32(runtimeTrack->lastEvent + 1); e < evtCount; e++)
+				bool breakFromLoop = false;
+				for (u32 e = u32(runtimeTrack->lastEvent + 1); e < evtCount && !breakFromLoop; e++)
 				{
 					if (evt[e].tick >= start && evt[e].tick <= end)
 					{
@@ -221,29 +231,49 @@ namespace DXL2_MidiPlayer
 							} break;
 							case MTK_IMUSE:
 							{
-								const MidiSysExImuse* imuse = &track->imuseEvents[evt[e].index];
-								if (imuse->id == 3)
+								const iMuseEvent* imuse = &track->imuseEvents[evt[e].index];
+								switch (imuse->cmd)
 								{
-									//DXL2_System::logWrite(LOG_MSG, "iMuse", "Track %d, Msg \"%s\", Tick %u", i, imuse->msg, (u32)runtimeTrack->curTick);
-									if (transition != TRANSITION_NONE)
+									case IMUSE_START_NEW:
 									{
-										// is this a transition point?
-									}
-								}
-								else
-								{
-									//DXL2_System::logWrite(LOG_MSG, "iMuse", "Track %d, ID %d, Tick %u", i, imuse->id, (u32)runtimeTrack->curTick);
-									if (end >= track->loopEnd && track->loopEnd > 0 && s_runtime.loop)
+									} break;
+									case IMUSE_STALK_TRANS:
 									{
-										nextTick = track->loopStart;
+									} break;
+									case IMUSE_FIGHT_TRANS:
+									{
+									} break;
+									case IMUSE_ENGAGE_TRANS:
+									{
+									} break;
+									case IMUSE_FROM_FIGHT:
+									{
+									} break;
+									case IMUSE_FROM_STALK:
+									{
+									} break;
+									case IMUSE_FROM_BOSS:
+									{
+									} break;
+									case IMUSE_CLEAR_CALLBACK:
+									{
+										//clearCallback();
+									} break;
+									case IMUSE_TO:
+									{
+										//setCallback();
+									} break;
+									case IMUSE_LOOP_START:
+									{
+									} break;
+									case IMUSE_LOOP_END:
+									{
+										nextTick = imuse->arg[0].nArg;
 										runtimeTrack->lastEvent = -1;
-										for (u32 i = 0; i < 16; i++)
-										{
-											DXL2_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_ALL_NOTES_OFF);
-										}
-										break;
-									}
-								}
+										breakFromLoop = true;
+										stopAllNotes();
+									} break;
+								};
 							} break;
 						}
 					}
