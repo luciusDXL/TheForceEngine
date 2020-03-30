@@ -34,7 +34,7 @@ namespace DXL2_MidiPlayer
 	struct MidiRuntime
 	{
 		const GMidiAsset* asset;
-		MidiRuntimeTrack tracks[16];
+		MidiRuntimeTrack tracks[8];
 		bool loop;
 	};
 
@@ -83,6 +83,10 @@ namespace DXL2_MidiPlayer
 		// Destroy the thread before shutting down the Midi Device.
 		stop();
 		s_runMusicThread.store(false);
+		if (s_thread->isPaused())
+		{
+			s_thread->resume();
+		}
 		s_thread->waitOnExit();
 
 		delete s_thread;
@@ -167,8 +171,8 @@ namespace DXL2_MidiPlayer
 			}
 			wasPlaying = true;
 
-			bool resetLocalTime = s_resetThreadLocalTime.load();
-			s_resetThreadLocalTime.store(false);
+			// Returns the current value while atomically updating the variable.
+			bool resetLocalTime = s_resetThreadLocalTime.exchange(false);
 			if (resetLocalTime)
 			{
 				stopAllNotes();
