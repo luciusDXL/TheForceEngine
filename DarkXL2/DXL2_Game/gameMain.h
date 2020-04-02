@@ -14,5 +14,5 @@ class DXL2_Renderer;
 namespace DXL2_GameMain
 {
 	void init(DXL2_Renderer* renderer);
-	GameUpdateState loop();
+	GameTransition loop();
 }

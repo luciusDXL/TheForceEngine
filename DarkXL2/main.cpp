@@ -335,12 +335,12 @@ int main(int argc, char* argv[])
 	}
 
 	// Game loop
-	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "DarkXL 2 Game Loop Started");
 	DXL2_GameUi::init(renderer);
 		
 	u32 frame = 0u;
 	bool showPerf = false;
 	bool relativeMode = false;
+	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "DarkXL 2 Game Loop Started");
 	while (s_loop)
 	{
 		bool enableRelative = DXL2_Input::relativeModeEnabled();
@@ -400,7 +400,7 @@ int main(int argc, char* argv[])
 		}
 		else if (appState == APP_STATE_DARK_FORCES)
 		{
-			if (DXL2_GameMain::loop() == GSTATE_QUIT)
+			if (DXL2_GameMain::loop() == TRANS_QUIT)
 			{
 				s_loop = false;
 			}

@@ -1,5 +1,6 @@
 #include "audioSystem.h"
 #include "audioDevice.h"
+#include <DXL2_System/system.h>
 #include <DXL2_System/math.h>
 #include <DXL2_Game/gameHud.h>
 #include <assert.h>
@@ -96,6 +97,7 @@ namespace DXL2_Audio
 
 	bool init()
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_AudioSystem::init");
 		s_sourceCount = 0u;
 		s_listener = { 0 };
 

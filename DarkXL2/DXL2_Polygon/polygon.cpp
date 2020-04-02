@@ -1,6 +1,7 @@
 #include "polygon.h"
 #include "clipper.hpp"
 #include "math.h"
+#include <DXL2_System/system.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +29,7 @@ namespace DXL2_Polygon
 		
 	bool init()
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_Polygon::init");
 		s_memoryPoolSize = (u32)MPE_PolyMemoryRequired(c_maxPointCount);
 		s_memoryPool = malloc(s_memoryPoolSize);
 

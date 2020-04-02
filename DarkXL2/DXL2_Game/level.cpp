@@ -43,6 +43,8 @@ namespace DXL2_Level
 
 	bool init()
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_Level::init");
+
 		s_memoryPool = new MemoryPool();
 		s_memoryPool->init(DXL2_LEVEL_RUNTIME_SIZE, "Level_Runtime_Memory");
 		s_memoryPool->setWarningWatermark(DXL2_LEVEL_RUNTIME_SIZE * 3 / 4);

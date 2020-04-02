@@ -320,10 +320,10 @@ namespace LevelEditor
 	{
 		if (s_runLevel)
 		{
-			GameUpdateState state = DXL2_GameLoop::update();
+			GameTransition trans = DXL2_GameLoop::update();
 			DXL2_GameLoop::draw();
 
-			if (DXL2_Input::keyPressed(KEY_BACKSPACE) || state == GSTATE_QUIT || state == GSTATE_ABORT || state == GSTATE_NEXT)
+			if (DXL2_Input::keyPressed(KEY_BACKSPACE) || trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)
 			{
 				s_runLevel = false;
 				DXL2_Input::enableRelativeMode(false);

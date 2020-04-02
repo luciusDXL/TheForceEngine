@@ -61,6 +61,8 @@ namespace DXL2_MidiPlayer
 
 	bool init()
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_MidiPlayer::init");
+
 		bool res = DXL2_MidiDevice::init();
 		DXL2_MidiDevice::selectDevice(0);
 		s_runMusicThread.store(true);

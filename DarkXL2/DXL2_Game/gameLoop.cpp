@@ -362,10 +362,10 @@ namespace DXL2_GameLoop
 		return dY;
 	}
 		
-	GameUpdateState update()
+	GameTransition update(GameState* curState, GameOverlay* curOverlay)
 	{
 		// Handle Game UI
-		GameUpdateState state = GSTATE_CONTINUE;
+		GameTransition trans = TRANS_NONE;
 				
 		const bool escMenuOpen = DXL2_GameUi::isEscMenuOpen();
 		const bool shouldDrawGame = DXL2_GameUi::shouldDrawGame();
@@ -373,19 +373,19 @@ namespace DXL2_GameLoop
 		const GameUiResult result = DXL2_GameUi::update(&s_player);
 		if (result == GAME_QUIT)
 		{
-			return GSTATE_QUIT;
+			return TRANS_QUIT;
 		}
 		else if (result == GAME_ABORT)
 		{
-			return GSTATE_ABORT;
+			return TRANS_TO_AGENT_MENU;
 		}
 		else if (result == GAME_NEXT_LEVEL)
 		{
-			return GSTATE_NEXT;
+			return TRANS_NEXT_LEVEL;
 		}
 		else if (result == GAME_SELECT_LEVEL)
 		{
-			return GSTATE_SELECT_LEVEL;
+			return TRANS_START_LEVEL;
 		}
 
 		// If draw game isn't set, then we cannot use the escape menu.
@@ -408,7 +408,7 @@ namespace DXL2_GameLoop
 		}
 		if (!shouldUpdateGame)
 		{
-			return state;
+			return trans;
 		}
 
 		// Then handle player update and prepare to draw.
@@ -768,7 +768,7 @@ namespace DXL2_GameLoop
 		DXL2_Audio::update(&s_cameraPos, &flattenedForward);
 		if (s_inputDelay > 0) { s_inputDelay--; }
 
-		return state;
+		return trans;
 	}
 		
 	void draw()

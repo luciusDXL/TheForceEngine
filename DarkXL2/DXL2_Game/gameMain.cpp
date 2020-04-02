@@ -45,12 +45,12 @@ namespace DXL2_GameMain
 		DXL2_GameUi::openAgentMenu();
 	}
 
-	GameUpdateState loop()
+	GameTransition loop()
 	{
-		GameUpdateState state = DXL2_GameLoop::update();
+		GameTransition trans = DXL2_GameLoop::update();
 		DXL2_GameLoop::draw();
 
-		if (state == GSTATE_NEXT && s_curLevel + 1 < s_levelCount)
+		if (trans == TRANS_NEXT_LEVEL && s_curLevel + 1 < s_levelCount)
 		{
 			// Stop the sounds.
 			DXL2_Audio::stopAllSounds();
@@ -60,7 +60,7 @@ namespace DXL2_GameMain
 			s_curLevel++;
 			startLevel();
 		}
-		else if (state == GSTATE_SELECT_LEVEL)
+		else if (trans == TRANS_START_LEVEL)
 		{
 			// Stop the sounds.
 			DXL2_Audio::stopAllSounds();
@@ -71,17 +71,17 @@ namespace DXL2_GameMain
 			s_curLevel = DXL2_GameUi::getSelectedLevel(&difficulty);
 			startLevel();
 		}
-		else if (state == GSTATE_ABORT)
+		else if (trans == TRANS_TO_AGENT_MENU)
 		{
 			DXL2_Audio::stopAllSounds();
 			DXL2_MidiPlayer::stop();
 			DXL2_GameUi::reset();
 
 			DXL2_GameUi::openAgentMenu();
-			state = GSTATE_CONTINUE;
+			trans = TRANS_NONE;
 		}
 
-		return state;
+		return trans;
 	}
 
 	//////////////////////////////

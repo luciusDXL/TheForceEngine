@@ -16,6 +16,7 @@ namespace DXL2_FrontEndUI
 
 	void init()
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_FrontEndUI::init");
 		s_appState = APP_STATE_MENU;
 
 		ImGuiIO& io = ImGui::GetIO();

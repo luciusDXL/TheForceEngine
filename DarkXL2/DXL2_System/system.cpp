@@ -29,6 +29,7 @@ namespace DXL2_System
 
 	void init(f32 refreshRate, bool synced)
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_System::init");
 		s_time = SDL_GetPerformanceCounter();
 		s_startTime = s_time;
 		s_freq = 1.0 / (f64)SDL_GetPerformanceFrequency();

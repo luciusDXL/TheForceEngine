@@ -278,6 +278,7 @@
     <ClInclude Include="DXL2_Game\gameLoop.h" />
     <ClInclude Include="DXL2_Game\gameMain.h" />
     <ClInclude Include="DXL2_Game\gameObject.h" />
+    <ClInclude Include="DXL2_Game\gameState.h" />
     <ClInclude Include="DXL2_Game\GameUI\agentMenu.h" />
     <ClInclude Include="DXL2_Game\GameUI\editBox.h" />
     <ClInclude Include="DXL2_Game\GameUI\escMenu.h" />

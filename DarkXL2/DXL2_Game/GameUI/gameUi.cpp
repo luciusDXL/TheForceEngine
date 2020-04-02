@@ -21,6 +21,32 @@
 
 namespace DXL2_GameUi
 {
+	// Game states, such as cutscenes, agent/save menu, mission briefings, etc.
+	enum GameState
+	{
+		// Out of game menus
+		GAME_TITLE = 0,				// Title cutscenes.
+		GAME_AGENT_MENU,			// Agent Menu.
+		GAME_PRE_MISSION_CUTSCENE,	// Current level "pre mission" cutscene (if there is one).
+		GAME_MISSION_BRIEFING,		// Current level "mission briefing"
+		GAME_POST_MISSION_CUTSCENE,	// Current level "post mission" cutscene (if there is one).
+		// In-Game level
+		GAME_LEVEL,
+		GAME_COUNT
+	};
+	// Overlayed game states that occur during the "GAME_LEVEL" state - 
+	// such as the escape menu and in-game PDA.
+	enum GameOverlay
+	{
+		OVERLAY_NONE = 0,
+		OVERLAY_MENU_ESCAPE,
+		OVERLAY_PDA,
+		OVERLAY_COUNT
+	};
+
+	static GameState   s_gameState   = GAME_AGENT_MENU;
+	static GameOverlay s_gameOverlay = OVERLAY_NONE;
+
 	static Texture* s_cursor;
 
 	static s32 s_buttonPressed = -1;
@@ -47,11 +73,10 @@ namespace DXL2_GameUi
 	static s32 s_selectedLevel = 0;
 	static s32 s_selectedDifficulty = 1;
 
-	void drawAgentMenu();
-	GameUiResult updateAgentMenu();
-
 	void init(DXL2_Renderer* renderer)
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_GameUi::create");
+
 		s_renderer = renderer;
 		u32 width, height;
 		s_renderer->getResolution(&width, &height);

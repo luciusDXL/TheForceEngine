@@ -20,6 +20,8 @@ namespace DXL2_Image
 
 	void init()
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_Image::init");
+
 		// Initialize IL
 		ilInit();
 		iluInit();

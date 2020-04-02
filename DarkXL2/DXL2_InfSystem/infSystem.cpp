@@ -114,6 +114,8 @@ namespace DXL2_InfSystem
 
 	bool init()
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_InfSystem::init");
+
 		s_infData = nullptr;
 		s_levelData = nullptr;
 

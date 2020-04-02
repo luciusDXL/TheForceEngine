@@ -487,6 +487,9 @@
     <ClInclude Include="DXL2_System\Threads\Win32\threadWin32.h">
       <Filter>Source\DXL2_System\Threads\Win32</Filter>
     </ClInclude>
+    <ClInclude Include="DXL2_Game\gameState.h">
+      <Filter>Source\DXL2_Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

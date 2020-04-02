@@ -50,6 +50,8 @@ namespace DXL2_ScriptSystem
 
 	bool init()
 	{
+		DXL2_System::logWrite(LOG_MSG, "Startup", "DXL2_ScriptSystem::init");
+
 		// Create the script engine
 		s_engine = asCreateScriptEngine();
 		if (!s_engine)

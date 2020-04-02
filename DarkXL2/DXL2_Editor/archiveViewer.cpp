@@ -173,11 +173,11 @@ namespace ArchiveViewer
 				DXL2_Input::enableRelativeMode(!s_showUi);
 			}
 
-			GameUpdateState state = DXL2_GameLoop::update();
+			GameTransition trans = DXL2_GameLoop::update();
 			DXL2_GameLoop::draw();
 			s_viewStats = DXL2_GameLoop::getViewStats();
 
-			if (state == GSTATE_NEXT && s_curLevel >= 0 && s_curLevel + 1 < (s32)s_levelCount)
+			if (trans == TRANS_NEXT_LEVEL && s_curLevel >= 0 && s_curLevel + 1 < (s32)s_levelCount)
 			{
 				// Go to the next level in the list.
 				s_curLevel++;
@@ -190,7 +190,7 @@ namespace ArchiveViewer
 				LevelData* level = DXL2_LevelAsset::getLevelData();
 				DXL2_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true);
 			}
-			else if (DXL2_Input::keyPressed(KEY_BACKSPACE) || state == GSTATE_QUIT || state == GSTATE_ABORT || state == GSTATE_NEXT)
+			else if (DXL2_Input::keyPressed(KEY_BACKSPACE) || trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)
 			{
 				s_renderer->changeResolution(640, 480);
 				s_runLevel = false;

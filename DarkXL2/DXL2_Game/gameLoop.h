@@ -7,6 +7,7 @@
 
 #include <DXL2_System/types.h>
 #include <DXL2_Asset/levelAsset.h>
+#include "gameState.h"
 #include "view.h"
 
 class DXL2_Renderer;
@@ -21,23 +22,13 @@ struct StartLocation
 	s32 layer;
 };
 
-enum GameUpdateState
-{
-	GSTATE_CONTINUE,
-	GSTATE_QUIT,
-	GSTATE_NEXT,
-	GSTATE_SELECT_LEVEL,
-	GSTATE_ABORT,
-	GSTATE_COUNT
-};
-
 namespace DXL2_GameLoop
 {
 	bool startLevel(LevelData* level, const StartLocation& start, DXL2_Renderer* renderer, s32 w=320, s32 h=200, bool enableViewStats=true);
 	bool startLevelFromExisting(const Vec3f* startPos, f32 yaw, s32 startSectorId, const Palette256* pal, LevelObjectData* levelObj, DXL2_Renderer* renderer, s32 w=320, s32 h=200);
 	void endLevel();
 
-	GameUpdateState update();
+	GameTransition update(GameState* curState = nullptr, GameOverlay* curOverlay = nullptr);
 	void draw();
 
 	void startRenderer(DXL2_Renderer* renderer, s32 w, s32 h);
