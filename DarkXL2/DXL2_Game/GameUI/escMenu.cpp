@@ -102,7 +102,7 @@ namespace DXL2_EscapeMenu
 
 	GameUiResult update(const Vec2i* cursor, bool nextMission, s32* buttonPressed, bool* buttonHover)
 	{
-		GameUiResult result = GAME_CONTINUE;
+		GameUiResult result = GAME_UI_CONTINUE;
 		
 		const s32 x = cursor->x;
 		const s32 z = cursor->z;
@@ -141,18 +141,18 @@ namespace DXL2_EscapeMenu
 				switch (*buttonPressed)
 				{
 				case ESC_ABORT:
-					result = nextMission ? GAME_NEXT_LEVEL : GAME_ABORT;
+					result = nextMission ? GAME_UI_NEXT_LEVEL : GAME_UI_ABORT;
 					close();
 					break;
 				case ESC_CONFIG:
 					// TODO
 					break;
 				case ESC_QUIT:
-					result = GAME_QUIT;
+					result = GAME_UI_QUIT;
 					close();
 					break;
 				case ESC_RETURN:
-					result = GAME_CLOSE;
+					result = GAME_UI_CLOSE;
 					break;
 				};
 			}

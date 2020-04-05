@@ -14,12 +14,12 @@ class Player;
 
 enum GameUiResult
 {
-	GAME_CONTINUE,		// Continue as we have been, nothing to report.
-	GAME_ABORT,			// Abort the mission!
-	GAME_NEXT_LEVEL,	// Progress to the next mission at the same difficulty level.
-	GAME_SELECT_LEVEL,	// Level selected, time to start.
-	GAME_QUIT,			// Quit the game.
-	GAME_CLOSE,			// Close the current dialog.
+	GAME_UI_CONTINUE,		// Continue as we have been, nothing to report.
+	GAME_UI_ABORT,			// Abort the mission!
+	GAME_UI_NEXT_LEVEL,	// Progress to the next mission at the same difficulty level.
+	GAME_UI_SELECT_LEVEL,	// Level selected, time to start.
+	GAME_UI_QUIT,			// Quit the game.
+	GAME_UI_CLOSE,			// Close the current dialog.
 };
 
 namespace DXL2_GameUi

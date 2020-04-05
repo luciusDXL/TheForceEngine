@@ -362,7 +362,7 @@ namespace DXL2_GameLoop
 		return dY;
 	}
 		
-	GameTransition update(GameState* curState, GameOverlay* curOverlay)
+	GameTransition update(GameState curState, GameOverlay curOverlay)
 	{
 		// Handle Game UI
 		GameTransition trans = TRANS_NONE;
@@ -371,19 +371,19 @@ namespace DXL2_GameLoop
 		const bool shouldDrawGame = DXL2_GameUi::shouldDrawGame();
 		const bool shouldUpdateGame = DXL2_GameUi::shouldUpdateGame();
 		const GameUiResult result = DXL2_GameUi::update(&s_player);
-		if (result == GAME_QUIT)
+		if (result == GAME_UI_QUIT)
 		{
 			return TRANS_QUIT;
 		}
-		else if (result == GAME_ABORT)
+		else if (result == GAME_UI_ABORT)
 		{
 			return TRANS_TO_AGENT_MENU;
 		}
-		else if (result == GAME_NEXT_LEVEL)
+		else if (result == GAME_UI_NEXT_LEVEL)
 		{
 			return TRANS_NEXT_LEVEL;
 		}
-		else if (result == GAME_SELECT_LEVEL)
+		else if (result == GAME_UI_SELECT_LEVEL)
 		{
 			return TRANS_START_LEVEL;
 		}

@@ -14,7 +14,7 @@ namespace
 			return;
 		}
 
-		size_t len = strlen(output);
+		const size_t len = strlen(output);
 		if (*cursor == len)
 		{
 			output[len] = input;
@@ -35,19 +35,24 @@ namespace
 
 namespace DXL2_GameUi
 {
+	const u8 c_editBoxBackground =  0u;
+	const u8 c_editBoxColor      = 47u;
+	const u8 c_editBoxHighlight  = 32u;
+	const u8 c_editBoxText       = 32u;
+	const u8 c_cursorColor       = 36u;
+
 	static u32 s_editCursorFlicker = 0;
 
 	void updateEditBox(EditBox* editBox)
 	{
 		const char* input = DXL2_Input::getBufferedText();
 		const s32 len = (s32)strlen(input);
-		s32 start = editBox->cursor;
 		for (s32 c = 0; c < len; c++)
 		{
 			insertChar(editBox->inputField, &editBox->cursor, input[c], editBox->maxLen);
 		}
 
-		s32 nameLen = (s32)strlen(editBox->inputField);
+		const s32 nameLen = (s32)strlen(editBox->inputField);
 		if (DXL2_Input::bufferedKeyDown(KEY_BACKSPACE))
 		{
 			if (editBox->cursor > 0)
@@ -89,22 +94,22 @@ namespace DXL2_GameUi
 			editBox->cursor = nameLen;
 		}
 	}
-		
+				
 	void drawEditBox(EditBox* editBox, Font* font, s32 x0, s32 y0, s32 x1, s32 y1, s32 scaleX, s32 scaleY, DXL2_Renderer* renderer)
 	{
-		renderer->drawHorizontalLine(x0, x1, y0, 47);
-		renderer->drawHorizontalLine(x0, x1, y1, 32);
-		renderer->drawVerticalLine(y0 + 1, y1 - 1, x0, 47);
-		renderer->drawVerticalLine(y0 + 1, y1 - 1, x1, 47);
-		renderer->drawColoredQuad(x0 + 1, y0 + 1, x1 - x0 - 1, y1 - y0 - 1, 0);
-		renderer->print(editBox->inputField, font, x0 + 4, y0 + 4, scaleX, scaleY, 32);
+		renderer->drawHorizontalLine(x0, x1, y0, c_editBoxColor);
+		renderer->drawHorizontalLine(x0, x1, y1, c_editBoxHighlight);
+		renderer->drawVerticalLine(y0 + 1, y1 - 1, x0, c_editBoxColor);
+		renderer->drawVerticalLine(y0 + 1, y1 - 1, x1, c_editBoxColor);
+		renderer->drawColoredQuad(x0 + 1, y0 + 1, x1 - x0 - 1, y1 - y0 - 1, c_editBoxBackground);
+		renderer->print(editBox->inputField, font, x0 + 4, y0 + 4, scaleX, scaleY, c_editBoxText);
 		if ((s_editCursorFlicker >> 4) & 1)
 		{
 			char textToCursor[64];
 			strcpy(textToCursor, editBox->inputField);
 			textToCursor[editBox->cursor] = 0;
 			s32 drawPos = renderer->getStringPixelLength(textToCursor, font);
-			renderer->drawHorizontalLine(x0 + 4 + drawPos, x0 + 8 + drawPos, y1 - 2, 36);
+			renderer->drawHorizontalLine(x0 + 4 + drawPos, x0 + 8 + drawPos, y1 - 2, c_cursorColor);
 		}
 		s_editCursorFlicker++;
 	}

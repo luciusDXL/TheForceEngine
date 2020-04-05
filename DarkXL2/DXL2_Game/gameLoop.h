@@ -28,7 +28,7 @@ namespace DXL2_GameLoop
 	bool startLevelFromExisting(const Vec3f* startPos, f32 yaw, s32 startSectorId, const Palette256* pal, LevelObjectData* levelObj, DXL2_Renderer* renderer, s32 w=320, s32 h=200);
 	void endLevel();
 
-	GameTransition update(GameState* curState = nullptr, GameOverlay* curOverlay = nullptr);
+	GameTransition update(GameState curState = GAME_LEVEL, GameOverlay curOverlay = OVERLAY_NONE);
 	void draw();
 
 	void startRenderer(DXL2_Renderer* renderer, s32 w, s32 h);

@@ -152,7 +152,7 @@ namespace DXL2_GameUi
 
 	GameUiResult update(Player* player)
 	{
-		GameUiResult result = GAME_CONTINUE;
+		GameUiResult result = GAME_UI_CONTINUE;
 		s_drawGame = !s_agentMenuOpen;
 		// Mouse Handling
 		DisplayInfo displayInfo;
@@ -186,7 +186,7 @@ namespace DXL2_GameUi
 		if (s_agentMenuOpen)
 		{
 			result = DXL2_AgentMenu::update(&s_virtualCursorPos, &s_buttonPressed, &s_buttonHover, &s_selectedLevel);
-			if (result == GAME_SELECT_LEVEL)
+			if (result == GAME_UI_SELECT_LEVEL)
 			{
 				closeAgentMenu();
 			}
@@ -194,10 +194,10 @@ namespace DXL2_GameUi
 		else if (s_escMenuOpen)
 		{
 			result = DXL2_EscapeMenu::update(&s_virtualCursorPos, s_nextMission, &s_buttonPressed, &s_buttonHover);
-			if (result == GAME_CLOSE)
+			if (result == GAME_UI_CLOSE)
 			{
 				closeEscMenu();
-				result = GAME_CONTINUE;
+				result = GAME_UI_CONTINUE;
 			}
 		}
 

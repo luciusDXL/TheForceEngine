@@ -26,6 +26,9 @@ namespace DXL2_GameMain
 	static s32 s_levelCount;
 	static DXL2_Renderer* s_renderer;
 
+	static GameState   s_gameState   = GAME_TITLE;
+	static GameOverlay s_gameOverlay = OVERLAY_NONE;
+
 	static const GMidiAsset* s_levelStalk;
 	static const GMidiAsset* s_levelFight;
 	static const GMidiAsset* s_levelBoss;
@@ -45,41 +48,98 @@ namespace DXL2_GameMain
 		DXL2_GameUi::openAgentMenu();
 	}
 
+	GameTransition applyTransition(GameTransition trans)
+	{
+		// We get back the next transition.
+		switch (trans)
+		{
+			case TRANS_NONE:
+			{
+				// No change.
+			} break;
+			case TRANS_START_GAME:
+			{
+				// TODO: Cutscenes.
+				// startCutscene(Title);
+			} break;
+			case TRANS_TO_AGENT_MENU:
+			{
+				DXL2_Audio::stopAllSounds();
+				DXL2_MidiPlayer::stop();
+				DXL2_GameUi::reset();
+
+				DXL2_GameUi::openAgentMenu();
+
+				trans = TRANS_NONE;
+				s_gameState = GAME_AGENT_MENU;
+				s_gameOverlay = OVERLAY_NONE;
+			} break;
+			case TRANS_TO_PREMISSION_CUTSCENE:
+			{
+				// TODO: Cutscenes.
+				// startCutscene(Title);
+			} break;
+			case TRANS_TO_MISSION_BRIEFING:
+			{
+				// TODO: Mission Briefing
+			} break;
+			case TRANS_START_LEVEL:
+			{
+				// Stop the sounds.
+				DXL2_Audio::stopAllSounds();
+				DXL2_MidiPlayer::stop();
+
+				// Start the selected level.
+				s32 difficulty = 1;
+				s_curLevel = DXL2_GameUi::getSelectedLevel(&difficulty);
+				startLevel();
+
+				trans = TRANS_NONE;
+				s_gameState = GAME_LEVEL;
+				s_gameOverlay = OVERLAY_NONE;
+			} break;
+			case TRANS_TO_POSTMISSION_CUTSCENE:
+			{
+				// TODO: Cutscenes
+			} break;
+			case TRANS_NEXT_LEVEL:
+			{
+				// Stop the sounds.
+				DXL2_Audio::stopAllSounds();
+				DXL2_MidiPlayer::stop();
+
+				// Go to the next level in the list.
+				s_curLevel++;
+				startLevel();
+
+				trans = TRANS_NONE;
+				s_gameState = GAME_LEVEL;
+				s_gameOverlay = OVERLAY_NONE;
+			} break;
+			case TRANS_QUIT:
+			{
+				return TRANS_QUIT;
+			} break;
+			case TRANS_RETURN_TO_FRONTEND:
+			{
+				return TRANS_RETURN_TO_FRONTEND;
+			} break;
+			default:
+			{
+				assert(0);
+			}
+		};
+
+		return trans;
+	}
+
 	GameTransition loop()
 	{
-		GameTransition trans = DXL2_GameLoop::update();
+		GameTransition trans = DXL2_GameLoop::update(s_gameState, s_gameOverlay);
 		DXL2_GameLoop::draw();
 
-		if (trans == TRANS_NEXT_LEVEL && s_curLevel + 1 < s_levelCount)
-		{
-			// Stop the sounds.
-			DXL2_Audio::stopAllSounds();
-			DXL2_MidiPlayer::stop();
-
-			// Go to the next level in the list.
-			s_curLevel++;
-			startLevel();
-		}
-		else if (trans == TRANS_START_LEVEL)
-		{
-			// Stop the sounds.
-			DXL2_Audio::stopAllSounds();
-			DXL2_MidiPlayer::stop();
-
-			// Start the selected level.
-			s32 difficulty = 1;
-			s_curLevel = DXL2_GameUi::getSelectedLevel(&difficulty);
-			startLevel();
-		}
-		else if (trans == TRANS_TO_AGENT_MENU)
-		{
-			DXL2_Audio::stopAllSounds();
-			DXL2_MidiPlayer::stop();
-			DXL2_GameUi::reset();
-
-			DXL2_GameUi::openAgentMenu();
-			trans = TRANS_NONE;
-		}
+		// Update the current state.
+		trans = applyTransition(trans);
 
 		return trans;
 	}

@@ -229,7 +229,7 @@ namespace DXL2_AgentMenu
 
 	GameUiResult update(const Vec2i* cursor, s32* buttonPressed, bool* buttonHover, s32* selectedLevel)
 	{
-		GameUiResult result = GAME_CONTINUE;
+		GameUiResult result = GAME_UI_CONTINUE;
 
 		const s32 x = cursor->x;
 		const s32 z = cursor->z;
@@ -247,7 +247,7 @@ namespace DXL2_AgentMenu
 		{
 			if (updateQuitConfirmDlg(x, z, buttonPressed, buttonHover))
 			{
-				result = GAME_QUIT;
+				result = GAME_UI_QUIT;
 			}
 			return result;
 		}
@@ -373,7 +373,7 @@ namespace DXL2_AgentMenu
 				case AGENT_BEGIN:
 					if (s_agentCount > 0 && s_selectedMission >= 0)
 					{
-						result = GAME_SELECT_LEVEL;
+						result = GAME_UI_SELECT_LEVEL;
 						*selectedLevel = s_selectedMission;
 					}
 					break;
