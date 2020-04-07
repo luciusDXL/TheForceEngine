@@ -7,7 +7,7 @@ Beta 1.0.00
 ### Release Date
 (unreleased)
 
-## What is DarkXL 2: A New Hope?
+## What is the Force Engine?
 DarkXL 2 is a full re-write of DarkXL, focusing on accuracy, completeness and cross platform compatibility.
   * [DarkXL 2 Design Manifesto](local://Manifesto)
   * [Github Link](https://github.com/jchernobieffHome/DarkXL2)

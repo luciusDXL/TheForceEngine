@@ -59,12 +59,37 @@ namespace DXL2_Texture
 		s16 Compressed;			// 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
 		u8 pad3[3];				// 12 times 0x00
 	};
+
+	#define PCX_MAGIC 0x0A
+	struct PcxHeader
+	{
+		u8 magic;			// should be PCX_MAGIC
+		u8 version;
+		u8 encoding;		// 0 = uncompressed, 1 = rle
+		u8 bitsPerPixel;	// bits per pixel per plane.
+		u16 xMin;
+		u16 yMin;
+		u16 xMax;
+		u16 yMax;
+		u16 horizontalDPI;
+		u16 verticalDPI;
+		u8  egaPal[48];
+		u8  reserved1;
+		u8  colorPlaneCount;
+		u16 colorPlaneStride;	// number of bytes per scanline for a single color plane.
+		u16 palMode;			// 1 = monochrome/color, 2 = grayscale
+		u16 srcScreenWidth;
+		u16 srcScreenHeight;
+		u8  reserved2[54];
+	};
 	#pragma pack(pop)
 
 	typedef std::map<std::string, Texture*> TextureMap;
 	static TextureMap s_textures;
 	static std::vector<u8> s_buffer;
 	static const char* c_defaultGob = "TEXTURES.GOB";
+	// Used to store the most recent palette.
+	static Palette256 s_tempPal = { 0 };
 
 	void loadTextureFrame(s32 w, s32 h, s16 compressed, s32 dataSize, const u8* srcData, u8* dstImage)
 	{
@@ -435,6 +460,100 @@ namespace DXL2_Texture
 
 		s_textures[name] = texture;
 		return texture;
+	}
+
+	Texture* getFromPCX(const char* name, const char* archivePath)
+	{
+		TextureMap::iterator iTex = s_textures.find(name);
+		if (iTex != s_textures.end())
+		{
+			return iTex->second;
+		}
+
+		// It doesn't exist yet, try to load the anim.
+		if (!DXL2_AssetSystem::readAssetFromArchive(archivePath, name, s_buffer))
+		{
+			return nullptr;
+		}
+
+		const u8* buffer = s_buffer.data();
+		const PcxHeader* header = (PcxHeader*)buffer;
+		const u32 width  = header->xMax - header->xMin + 1;
+		const u32 height = header->yMax - header->yMin + 1;
+		// Currently only 8bit PCX files are supported.
+		if (header->bitsPerPixel != 8 || header->colorPlaneCount != 1)
+		{
+			return nullptr;
+		}
+
+		const u8* pixelData = buffer + sizeof(PcxHeader);
+		const u32 imageSize = s_buffer.size() - 769 - sizeof(PcxHeader);
+
+		Texture* texture = new Texture();
+		strcpy(texture->name, name);
+
+		// Allocate memory.
+		texture->memory = new u8[sizeof(TextureFrame) + width * height];
+		texture->frames = (TextureFrame*)texture->memory;
+		texture->frameCount = 1;
+		texture->frameRate = 0;	// arbitrary.
+		texture->layout = TEX_LAYOUT_HORZ;
+		texture->frames[0].image = texture->memory + sizeof(TextureFrame);
+		u8* imageOut = texture->frames[0].image;
+
+		texture->frames[0].width = width;
+		texture->frames[0].height = height;
+		texture->frames[0].logSizeY = 0;
+		texture->frames[0].offsetX = 0;
+		texture->frames[0].offsetY = 0;
+		texture->frames[0].opacity = OPACITY_NORMAL;
+		texture->frames[0].uvWidth = width;
+		texture->frames[0].uvHeight = height;
+		
+		if (header->encoding == 1)
+		{
+			for (u32 y = 0; y < height; y++)
+			{
+				u8* dst = &imageOut[y * width];
+				for (s32 x = 0; x < width;)
+				{
+					u8 c = *pixelData;
+					pixelData++;
+					if (c < 192)
+					{
+						dst[x++] = c;
+					}
+					else
+					{
+						u8 count = c & 63;
+						c = *pixelData;
+						pixelData++;
+						for (u32 i = 0; i < count; i++)
+						{
+							dst[x++] = c;
+						}
+					}
+				}
+			}
+		}
+				
+		// Verify that the palette is valid.
+		assert(buffer[s_buffer.size() - 769] == 0x0C);
+		const u8* pal = buffer + s_buffer.size() - 768;
+
+		// Load the palette which can be retrieved later.
+		for (u32 i = 0; i < 256; i++, pal += 3)
+		{
+			s_tempPal.colors[i] = pal[0] | (pal[1] << 8) | (pal[2] << 16) | (0xff << 24);
+		}
+
+		s_textures[name] = texture;
+		return texture;
+	}
+
+	Palette256* getPreviousPalette()
+	{
+		return &s_tempPal;
 	}
 
 	void free(Texture* texture)

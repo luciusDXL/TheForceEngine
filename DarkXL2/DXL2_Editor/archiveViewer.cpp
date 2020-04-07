@@ -224,18 +224,18 @@ namespace ArchiveViewer
 		{
 			s_renderer->drawPalette();
 		}
-		else if (s_fileType == TYPE_TEX)
+		else if (s_fileType == TYPE_TEX && s_curTexture)
 		{
-			s32 x = 320 - (s_curTexture->frames[0].width>>1);
-			s32 y = 240 - (s_curTexture->frames[0].height >> 1);
+			s32 x = s_curTexture->frames[0].width  < 640 ? 320 - (s_curTexture->frames[0].width >>1) : 0;
+			s32 y = s_curTexture->frames[0].height < 480 ? 240 - (s_curTexture->frames[0].height>>1) : 0;
 			if (s_curTexture->layout == TEX_LAYOUT_VERT)
 			{
 				s_renderer->drawTexture(s_curTexture, x, y);
 			}
 			else
 			{
-				s32 x = 160;
-				s32 y = 140;
+				s32 x = s_curTexture->frames[0].width <= 320 ? 160 : 0;
+				s32 y = s_curTexture->frames[0].width <= 240 ? 140 : 0;
 				s_renderer->drawTextureHorizontal(s_curTexture, x, y);
 			}
 		}
@@ -479,6 +479,12 @@ namespace ArchiveViewer
 				{
 					s_fileType = TYPE_TEX;
 					s_curTexture = DXL2_Texture::get(s_items[s_currentFile]);
+				}
+				else if (strcasecmp(extension, "PCX") == 0)
+				{
+					s_fileType = TYPE_TEX;
+					s_curTexture = DXL2_Texture::getFromPCX(s_items[s_currentFile], s_curArchiveFile);
+					s_curPal = DXL2_Texture::getPreviousPalette();
 				}
 				else if (strcasecmp(extension, "FNT") == 0)
 				{

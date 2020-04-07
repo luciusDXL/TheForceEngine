@@ -48,6 +48,39 @@ namespace DXL2_GameMain
 		DXL2_GameUi::openAgentMenu();
 	}
 
+	void transitionToAgentMenu()
+	{
+		DXL2_Audio::stopAllSounds();
+		DXL2_MidiPlayer::stop();
+		DXL2_GameUi::reset();
+
+		DXL2_GameUi::openAgentMenu();
+
+		s_gameState = GAME_AGENT_MENU;
+		s_gameOverlay = OVERLAY_NONE;
+	}
+
+	void transitionToLevel(bool incrLevel)
+	{
+		DXL2_Audio::stopAllSounds();
+		DXL2_MidiPlayer::stop();
+
+		// Start the selected level.
+		s32 difficulty = 1;
+		if (incrLevel)
+		{
+			s_curLevel++;
+		}
+		else
+		{
+			s_curLevel = DXL2_GameUi::getSelectedLevel(&difficulty);
+		}
+		startLevel();
+
+		s_gameState = GAME_LEVEL;
+		s_gameOverlay = OVERLAY_NONE;
+	}
+
 	GameTransition applyTransition(GameTransition trans)
 	{
 		// We get back the next transition.
@@ -61,23 +94,22 @@ namespace DXL2_GameMain
 			{
 				// TODO: Cutscenes.
 				// startCutscene(Title);
+
+				// Cutscenes are not implemented yet, so just go straight to the Agent Menu.
+				transitionToAgentMenu();
+				trans = TRANS_NONE;
 			} break;
 			case TRANS_TO_AGENT_MENU:
 			{
-				DXL2_Audio::stopAllSounds();
-				DXL2_MidiPlayer::stop();
-				DXL2_GameUi::reset();
-
-				DXL2_GameUi::openAgentMenu();
-
+				transitionToAgentMenu();
 				trans = TRANS_NONE;
-				s_gameState = GAME_AGENT_MENU;
-				s_gameOverlay = OVERLAY_NONE;
 			} break;
 			case TRANS_TO_PREMISSION_CUTSCENE:
 			{
 				// TODO: Cutscenes.
 				// startCutscene(Title);
+
+				// 
 			} break;
 			case TRANS_TO_MISSION_BRIEFING:
 			{
@@ -85,18 +117,8 @@ namespace DXL2_GameMain
 			} break;
 			case TRANS_START_LEVEL:
 			{
-				// Stop the sounds.
-				DXL2_Audio::stopAllSounds();
-				DXL2_MidiPlayer::stop();
-
-				// Start the selected level.
-				s32 difficulty = 1;
-				s_curLevel = DXL2_GameUi::getSelectedLevel(&difficulty);
-				startLevel();
-
+				transitionToLevel(false);
 				trans = TRANS_NONE;
-				s_gameState = GAME_LEVEL;
-				s_gameOverlay = OVERLAY_NONE;
 			} break;
 			case TRANS_TO_POSTMISSION_CUTSCENE:
 			{
@@ -104,17 +126,8 @@ namespace DXL2_GameMain
 			} break;
 			case TRANS_NEXT_LEVEL:
 			{
-				// Stop the sounds.
-				DXL2_Audio::stopAllSounds();
-				DXL2_MidiPlayer::stop();
-
-				// Go to the next level in the list.
-				s_curLevel++;
-				startLevel();
-
+				transitionToLevel(true);
 				trans = TRANS_NONE;
-				s_gameState = GAME_LEVEL;
-				s_gameOverlay = OVERLAY_NONE;
 			} break;
 			case TRANS_QUIT:
 			{

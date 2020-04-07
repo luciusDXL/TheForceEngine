@@ -184,7 +184,7 @@ void handleEvent(SDL_Event& Event)
 bool sdlInit()
 {
 	// Audio is handled outside of SDL2.
-	// Using the DarkXL2 Audio system for sound mixing, FluidSynth for Midi handling and rtAudio for audio I/O.
+	// Using the Force Engine Audio system for sound mixing, FluidSynth for Midi handling and rtAudio for audio I/O.
 	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_HAPTIC | SDL_INIT_GAMECONTROLLER);
 	if (code != 0) { return false; }
 
@@ -291,7 +291,7 @@ int main(int argc, char* argv[])
 
 	const WindowState windowState =
 	{
-		"DarkXL 2: A New Hope",
+		"The Force Engine",
 		s_displayWidth,
 		s_displayHeight,
 		s_baseWindowWidth,

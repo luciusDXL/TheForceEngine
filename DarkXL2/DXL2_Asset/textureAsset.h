@@ -7,6 +7,7 @@
 //    (vertices, lines, sectors)
 //////////////////////////////////////////////////////////////////////
 #include <DXL2_System/types.h>
+#include "paletteAsset.h"
 
 enum Opacity
 {
@@ -58,6 +59,8 @@ namespace DXL2_Texture
 	Texture* get(const char* name);
 	Texture* getFromDelt(const char* name, const char* archivePath);
 	Texture* getFromAnim(const char* name, const char* archivePath);
+	Texture* getFromPCX(const char* name, const char* archivePath);
+	Palette256* getPreviousPalette();
 	void free(Texture* texture);
 	void freeAll();
 }
