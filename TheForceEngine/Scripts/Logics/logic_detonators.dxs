@@ -1,0 +1,25 @@
+//////////////////////////////////////////
+// Logic Script
+//////////////////////////////////////////
+
+// Start is called when the object is spawned.
+void start()
+{
+}
+
+// Stop is called when the object is despawned.
+void stop()
+{
+}
+
+// Tick is called at a fixed rate.
+void tick()
+{
+}
+
+// Handle message is called when specific events occur, such as
+// when another object collides with the current object or when
+// the object is shot or is subject to an explosion.
+void handleMessage(int msgId, int arg0, int arg1)
+{
+}

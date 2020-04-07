@@ -1,0 +1,610 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|Win32">
+      <Configuration>Profile</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|x64">
+      <Configuration>Profile</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TheForceEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>D:\dev\sdl2\include;D:\dev\TheForceEngine\TheForceEngine;D:\dev\TheForceEngine\TheForceEngine\glew\include;D:\dev\TheForceEngine\TheForceEngine\DXL2_ScriptSystem\AngelScript\sdk\angelscript\include;D:\dev\TheForceEngine\TheForceEngine\DXL2_ScriptSystem\AngelScript\sdk\add_on;D:\dev\TheForceEngine\TheForceEngine\devILx64\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\dev\sdl2\lib\x64;D:\dev\TheForceEngine\TheForceEngine\lib;D:\dev\TheForceEngine\TheForceEngine\devILx64\lib\x64\Release;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>D:\dev\sdl2\include;D:\dev\TheForceEngine\TheForceEngine;D:\dev\TheForceEngine\TheForceEngine\glew\include;D:\dev\TheForceEngine\TheForceEngine\DXL2_ScriptSystem\AngelScript\sdk\angelscript\include;D:\dev\TheForceEngine\TheForceEngine\DXL2_ScriptSystem\AngelScript\sdk\add_on;D:\dev\TheForceEngine\TheForceEngine\devILx64\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\dev\sdl2\lib\x64;D:\dev\TheForceEngine\TheForceEngine\lib;D:\dev\TheForceEngine\TheForceEngine\devILx64\lib\x64\Release;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>D:\dev\sdl2\include;D:\dev\TheForceEngine\TheForceEngine;D:\dev\TheForceEngine\TheForceEngine\glew\include;D:\dev\TheForceEngine\TheForceEngine\DXL2_ScriptSystem\AngelScript\sdk\angelscript\include;D:\dev\TheForceEngine\TheForceEngine\DXL2_ScriptSystem\AngelScript\sdk\add_on;D:\dev\TheForceEngine\TheForceEngine\devILx64\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\dev\sdl2\lib\x64;D:\dev\TheForceEngine\TheForceEngine\lib;D:\dev\TheForceEngine\TheForceEngine\devILx64\lib\x64\Release;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;WIN32_OPENGL;__WINDOWS_MM__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;WIN32_OPENGL;__WINDOWS_MM__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;WIN32_OPENGL;__WINDOWS_MM__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="DXL2_Archive\archive.h" />
+    <ClInclude Include="DXL2_Archive\gobArchive.h" />
+    <ClInclude Include="DXL2_Archive\labArchive.h" />
+    <ClInclude Include="DXL2_Archive\lfdArchive.h" />
+    <ClInclude Include="DXL2_Asset\assetSystem.h" />
+    <ClInclude Include="DXL2_Asset\colormapAsset.h" />
+    <ClInclude Include="DXL2_Asset\fontAsset.h" />
+    <ClInclude Include="DXL2_Asset\gameMessages.h" />
+    <ClInclude Include="DXL2_Asset\gmidAsset.h" />
+    <ClInclude Include="DXL2_Asset\imageAsset.h" />
+    <ClInclude Include="DXL2_Asset\infAsset.h" />
+    <ClInclude Include="DXL2_Asset\levelAsset.h" />
+    <ClInclude Include="DXL2_Asset\levelList.h" />
+    <ClInclude Include="DXL2_Asset\levelObjectsAsset.h" />
+    <ClInclude Include="DXL2_Asset\logicTypes.h" />
+    <ClInclude Include="DXL2_Asset\modelAsset.h" />
+    <ClInclude Include="DXL2_Asset\paletteAsset.h" />
+    <ClInclude Include="DXL2_Asset\spriteAsset.h" />
+    <ClInclude Include="DXL2_Asset\textureAsset.h" />
+    <ClInclude Include="DXL2_Asset\vocAsset.h" />
+    <ClInclude Include="DXL2_Asset\vueAsset.h" />
+    <ClInclude Include="DXL2_Audio\audioDevice.h" />
+    <ClInclude Include="DXL2_Audio\audioSystem.h" />
+    <ClInclude Include="DXL2_Audio\midi.h" />
+    <ClInclude Include="DXL2_Audio\midiDevice.h" />
+    <ClInclude Include="DXL2_Audio\midiPlayer.h" />
+    <ClInclude Include="DXL2_Audio\RtAudio.h" />
+    <ClInclude Include="DXL2_Audio\RtMidi.h" />
+    <ClInclude Include="DXL2_Editor\archiveViewer.h" />
+    <ClInclude Include="DXL2_Editor\editor.h" />
+    <ClInclude Include="DXL2_Editor\Help\helpWindow.h" />
+    <ClInclude Include="DXL2_Editor\levelEditor.h" />
+    <ClInclude Include="DXL2_Editor\levelEditorData.h" />
+    <ClInclude Include="DXL2_Editor\perfWindow.h" />
+    <ClInclude Include="DXL2_Editor\Rendering\editorRender.h" />
+    <ClInclude Include="DXL2_Editor\Rendering\grid2d.h" />
+    <ClInclude Include="DXL2_Editor\Rendering\grid3d.h" />
+    <ClInclude Include="DXL2_Editor\Rendering\lineDraw2d.h" />
+    <ClInclude Include="DXL2_Editor\Rendering\lineDraw3d.h" />
+    <ClInclude Include="DXL2_Editor\Rendering\trianglesColor2d.h" />
+    <ClInclude Include="DXL2_Editor\Rendering\trianglesColor3d.h" />
+    <ClInclude Include="DXL2_Editor\Rendering\trianglesTextured2d.h" />
+    <ClInclude Include="DXL2_FileSystem\filestream.h" />
+    <ClInclude Include="DXL2_FileSystem\fileutil.h" />
+    <ClInclude Include="DXL2_FileSystem\paths.h" />
+    <ClInclude Include="DXL2_FileSystem\stream.h" />
+    <ClInclude Include="DXL2_FrontEndUI\frontEndUi.h" />
+    <ClInclude Include="DXL2_Game\gameConstants.h" />
+    <ClInclude Include="DXL2_Game\gameHud.h" />
+    <ClInclude Include="DXL2_Game\gameLoop.h" />
+    <ClInclude Include="DXL2_Game\gameMain.h" />
+    <ClInclude Include="DXL2_Game\gameObject.h" />
+    <ClInclude Include="DXL2_Game\gameState.h" />
+    <ClInclude Include="DXL2_Game\GameUI\agentMenu.h" />
+    <ClInclude Include="DXL2_Game\GameUI\editBox.h" />
+    <ClInclude Include="DXL2_Game\GameUI\escMenu.h" />
+    <ClInclude Include="DXL2_Game\GameUI\gameUi.h" />
+    <ClInclude Include="DXL2_Game\geometry.h" />
+    <ClInclude Include="DXL2_Game\level.h" />
+    <ClInclude Include="DXL2_Game\modelRendering.h" />
+    <ClInclude Include="DXL2_Game\physics.h" />
+    <ClInclude Include="DXL2_Game\player.h" />
+    <ClInclude Include="DXL2_Game\renderCommon.h" />
+    <ClInclude Include="DXL2_Game\view.h" />
+    <ClInclude Include="DXL2_InfSystem\infSystem.h" />
+    <ClInclude Include="DXL2_Input\input.h" />
+    <ClInclude Include="DXL2_Input\inputEnum.h" />
+    <ClInclude Include="DXL2_LogicSystem\logicSystem.h" />
+    <ClInclude Include="DXL2_Polygon\clipper.hpp" />
+    <ClInclude Include="DXL2_Polygon\MPE_fastpoly2tri.h" />
+    <ClInclude Include="DXL2_Polygon\polygon.h" />
+    <ClInclude Include="DXL2_RenderBackend\indexBuffer.h" />
+    <ClInclude Include="DXL2_RenderBackend\renderBackend.h" />
+    <ClInclude Include="DXL2_RenderBackend\renderState.h" />
+    <ClInclude Include="DXL2_RenderBackend\shader.h" />
+    <ClInclude Include="DXL2_RenderBackend\textureGpu.h" />
+    <ClInclude Include="DXL2_RenderBackend\vertexBuffer.h" />
+    <ClInclude Include="DXL2_RenderBackend\Win32OpenGL\blit.h" />
+    <ClInclude Include="DXL2_RenderBackend\Win32OpenGL\renderTarget.h" />
+    <ClInclude Include="DXL2_Renderer\DXL2_SoftRenderCPU\renderer_softCPU.h" />
+    <ClInclude Include="DXL2_Renderer\renderer.h" />
+    <ClInclude Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptarray\scriptarray.h" />
+    <ClInclude Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptbuilder\scriptbuilder.h" />
+    <ClInclude Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring.h" />
+    <ClInclude Include="DXL2_ScriptSystem\scriptSystem.h" />
+    <ClInclude Include="DXL2_Settings\settings.h" />
+    <ClInclude Include="DXL2_System\math.h" />
+    <ClInclude Include="DXL2_System\memoryPool.h" />
+    <ClInclude Include="DXL2_System\parser.h" />
+    <ClInclude Include="DXL2_System\system.h" />
+    <ClInclude Include="DXL2_System\Threads\mutex.h" />
+    <ClInclude Include="DXL2_System\Threads\signal.h" />
+    <ClInclude Include="DXL2_System\Threads\thread.h" />
+    <ClInclude Include="DXL2_System\Threads\Win32\mutexWin32.h" />
+    <ClInclude Include="DXL2_System\Threads\Win32\signalWin32.h" />
+    <ClInclude Include="DXL2_System\Threads\Win32\threadWin32.h" />
+    <ClInclude Include="DXL2_System\types.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\Dirent\dirent.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imconfig.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imgui.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imgui_file_browser.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imgui_impl_opengl3.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imgui_impl_sdl.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imgui_internal.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imstb_rectpack.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imstb_textedit.h" />
+    <ClInclude Include="DXL2_Ui\imGUI\imstb_truetype.h" />
+    <ClInclude Include="DXL2_Ui\markdown.h" />
+    <ClInclude Include="DXL2_Ui\ui.h" />
+    <ClInclude Include="DXL2_WeaponSystem\weapons.h" />
+    <ClInclude Include="DXL2_WeaponSystem\weaponSystem.h" />
+    <ClInclude Include="glew\include\GL\glew.h" />
+    <ClInclude Include="glew\include\GL\glxew.h" />
+    <ClInclude Include="glew\include\GL\wglew.h" />
+    <ClInclude Include="main.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DXL2_Archive\archive.cpp" />
+    <ClCompile Include="DXL2_Archive\gobArchive.cpp" />
+    <ClCompile Include="DXL2_Archive\labArchive.cpp" />
+    <ClCompile Include="DXL2_Archive\lfdArchive.cpp" />
+    <ClCompile Include="DXL2_Asset\assetSystem.cpp" />
+    <ClCompile Include="DXL2_Asset\colormapAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\fontAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\gameMessages.cpp" />
+    <ClCompile Include="DXL2_Asset\gmidAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\imageAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\infAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\levelAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\levelList.cpp" />
+    <ClCompile Include="DXL2_Asset\levelObjectsAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\modelAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\paletteAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\spriteAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\textureAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\vocAsset.cpp" />
+    <ClCompile Include="DXL2_Asset\vueAsset.cpp" />
+    <ClCompile Include="DXL2_Audio\audioDevice.cpp" />
+    <ClCompile Include="DXL2_Audio\audioSystem.cpp" />
+    <ClCompile Include="DXL2_Audio\midiDevice.cpp" />
+    <ClCompile Include="DXL2_Audio\midiPlayer.cpp" />
+    <ClCompile Include="DXL2_Audio\RtAudio.cpp" />
+    <ClCompile Include="DXL2_Audio\RtMidi.cpp" />
+    <ClCompile Include="DXL2_Editor\archiveViewer.cpp" />
+    <ClCompile Include="DXL2_Editor\editor.cpp" />
+    <ClCompile Include="DXL2_Editor\Help\helpWindow.cpp" />
+    <ClCompile Include="DXL2_Editor\levelEditor.cpp" />
+    <ClCompile Include="DXL2_Editor\levelEditorData.cpp" />
+    <ClCompile Include="DXL2_Editor\perfWindow.cpp" />
+    <ClCompile Include="DXL2_Editor\Rendering\editorRender.cpp" />
+    <ClCompile Include="DXL2_Editor\Rendering\grid2d.cpp" />
+    <ClCompile Include="DXL2_Editor\Rendering\grid3d.cpp" />
+    <ClCompile Include="DXL2_Editor\Rendering\lineDraw2d.cpp" />
+    <ClCompile Include="DXL2_Editor\Rendering\lineDraw3d.cpp" />
+    <ClCompile Include="DXL2_Editor\Rendering\trianglesColor2d.cpp" />
+    <ClCompile Include="DXL2_Editor\Rendering\trianglesColor3d.cpp" />
+    <ClCompile Include="DXL2_Editor\Rendering\trianglesTextured2d.cpp" />
+    <ClCompile Include="DXL2_FileSystem\filestream.cpp" />
+    <ClCompile Include="DXL2_FileSystem\fileutil.cpp" />
+    <ClCompile Include="DXL2_FileSystem\paths.cpp" />
+    <ClCompile Include="DXL2_FrontEndUI\frontEndUi.cpp" />
+    <ClCompile Include="DXL2_Game\gameHud.cpp" />
+    <ClCompile Include="DXL2_Game\gameLoop.cpp" />
+    <ClCompile Include="DXL2_Game\gameMain.cpp" />
+    <ClCompile Include="DXL2_Game\gameObject.cpp" />
+    <ClCompile Include="DXL2_Game\GameUI\agentMenu.cpp" />
+    <ClCompile Include="DXL2_Game\GameUI\editBox.cpp" />
+    <ClCompile Include="DXL2_Game\GameUI\escMenu.cpp" />
+    <ClCompile Include="DXL2_Game\GameUI\gameUi.cpp" />
+    <ClCompile Include="DXL2_Game\geometry.cpp" />
+    <ClCompile Include="DXL2_Game\level.cpp" />
+    <ClCompile Include="DXL2_Game\modelRendering.cpp" />
+    <ClCompile Include="DXL2_Game\physics.cpp" />
+    <ClCompile Include="DXL2_Game\player.cpp" />
+    <ClCompile Include="DXL2_Game\renderCommon.cpp" />
+    <ClCompile Include="DXL2_Game\view.cpp" />
+    <ClCompile Include="DXL2_InfSystem\infSystem.cpp" />
+    <ClCompile Include="DXL2_Input\input.cpp" />
+    <ClCompile Include="DXL2_LogicSystem\logicSystem.cpp" />
+    <ClCompile Include="DXL2_Polygon\clipper.cpp" />
+    <ClCompile Include="DXL2_Polygon\polygon.cpp" />
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\blit.cpp" />
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\indexBuffer.cpp" />
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\renderBackend.cpp" />
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\renderState.cpp" />
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\renderTarget.cpp" />
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\shader.cpp" />
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\textureGpu.cpp" />
+    <ClCompile Include="DXL2_RenderBackend\Win32OpenGL\vertexBuffer.cpp" />
+    <ClCompile Include="DXL2_Renderer\DXL2_SoftRenderCPU\renderer_softCPU.cpp" />
+    <ClCompile Include="DXL2_Renderer\renderer.cpp" />
+    <ClCompile Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptarray\scriptarray.cpp" />
+    <ClCompile Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptbuilder\scriptbuilder.cpp" />
+    <ClCompile Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring.cpp" />
+    <ClCompile Include="DXL2_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
+    <ClCompile Include="DXL2_ScriptSystem\scriptSystem.cpp" />
+    <ClCompile Include="DXL2_Settings\settings.cpp" />
+    <ClCompile Include="DXL2_System\log.cpp" />
+    <ClCompile Include="DXL2_System\math.cpp" />
+    <ClCompile Include="DXL2_System\memoryPool.cpp" />
+    <ClCompile Include="DXL2_System\parser.cpp" />
+    <ClCompile Include="DXL2_System\system.cpp" />
+    <ClCompile Include="DXL2_System\Threads\Win32\mutexWin32.cpp" />
+    <ClCompile Include="DXL2_System\Threads\Win32\signalWin32.cpp" />
+    <ClCompile Include="DXL2_System\Threads\Win32\threadWin32.cpp" />
+    <ClCompile Include="DXL2_Ui\imGUI\imgui.cpp" />
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_demo.cpp" />
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_draw.cpp" />
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_file_browser.cpp" />
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_impl_sdl.cpp" />
+    <ClCompile Include="DXL2_Ui\imGUI\imgui_widgets.cpp" />
+    <ClCompile Include="DXL2_Ui\markdown.cpp" />
+    <ClCompile Include="DXL2_Ui\ui.cpp" />
+    <ClCompile Include="DXL2_WeaponSystem\weaponSystem.cpp" />
+    <ClCompile Include="glew\src\glew.c" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="TheForceEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="TheForceEngine.ico" />
+    <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="DXL2_ScriptSystem\AngelScript\sdk\angelscript\projects\msvc2017\angelscript.vcxproj">
+      <Project>{39e6af97-6ba3-4a72-8c61-bcebf214ebfd}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Documentation\markdown\About.md" />
+    <None Include="Documentation\markdown\Game\About.md" />
+    <None Include="Documentation\markdown\Game\TheForceEngine Manual.md" />
+    <None Include="Documentation\markdown\Game\GameManual.md" />
+    <None Include="Documentation\markdown\InfScript.md" />
+    <None Include="Documentation\markdown\InfTut_BasicDoor.md" />
+    <None Include="Documentation\markdown\InfTut_BasicElevator.md" />
+    <None Include="Documentation\markdown\InfTut_RedKeyDoor.md" />
+    <None Include="Documentation\markdown\InfTut_SwitchDoor.md" />
+    <None Include="Documentation\markdown\Inf_Editor.md" />
+    <None Include="Documentation\markdown\Inf_Elevators.md" />
+    <None Include="Documentation\markdown\Inf_FormattingDifferences.md" />
+    <None Include="Documentation\markdown\Inf_Functions.md" />
+    <None Include="Documentation\markdown\Inf_InteractiveElements.md" />
+    <None Include="Documentation\markdown\Inf_SimpleInteractiveElements.md" />
+    <None Include="Documentation\markdown\Inf_Teleporters.md" />
+    <None Include="Documentation\markdown\Inf_Triggers.md" />
+    <None Include="Documentation\markdown\Inf_Tutorials.md" />
+    <None Include="Documentation\markdown\Inf_Variables.md" />
+    <None Include="Documentation\markdown\Level Editor Shortcuts.md" />
+    <None Include="Documentation\markdown\Manifesto.md" />
+    <None Include="Documentation\markdown\Manual.md" />
+    <None Include="Scripts\Logics\basic_enemy.dxs" />
+    <None Include="Scripts\Logics\enemy_states.dxs" />
+    <None Include="Scripts\Logics\logic_anim.dxs" />
+    <None Include="Scripts\Logics\logic_autogun.dxs" />
+    <None Include="Scripts\Logics\logic_barrel.dxs" />
+    <None Include="Scripts\Logics\logic_battery.dxs" />
+    <None Include="Scripts\Logics\logic_blue.dxs" />
+    <None Include="Scripts\Logics\logic_boba_fett.dxs" />
+    <None Include="Scripts\Logics\logic_bossk.dxs" />
+    <None Include="Scripts\Logics\logic_cannon.dxs" />
+    <None Include="Scripts\Logics\logic_cleats.dxs" />
+    <None Include="Scripts\Logics\logic_code1.dxs" />
+    <None Include="Scripts\Logics\logic_code2.dxs" />
+    <None Include="Scripts\Logics\logic_code3.dxs" />
+    <None Include="Scripts\Logics\logic_code4.dxs" />
+    <None Include="Scripts\Logics\logic_code5.dxs" />
+    <None Include="Scripts\Logics\logic_code6.dxs" />
+    <None Include="Scripts\Logics\logic_code7.dxs" />
+    <None Include="Scripts\Logics\logic_code8.dxs" />
+    <None Include="Scripts\Logics\logic_code9.dxs" />
+    <None Include="Scripts\Logics\logic_commando.dxs" />
+    <None Include="Scripts\Logics\logic_concussion.dxs" />
+    <None Include="Scripts\Logics\logic_datatape.dxs" />
+    <None Include="Scripts\Logics\logic_detonator.dxs" />
+    <None Include="Scripts\Logics\logic_detonators.dxs" />
+    <None Include="Scripts\Logics\logic_dt_weapon.dxs" />
+    <None Include="Scripts\Logics\logic_d_troop1.dxs" />
+    <None Include="Scripts\Logics\logic_d_troop2.dxs" />
+    <None Include="Scripts\Logics\logic_d_troop3.dxs" />
+    <None Include="Scripts\Logics\logic_energy.dxs" />
+    <None Include="Scripts\Logics\logic_fusion.dxs" />
+    <None Include="Scripts\Logics\logic_generator.dxs" />
+    <None Include="Scripts\Logics\logic_goggles.dxs" />
+    <None Include="Scripts\Logics\logic_g_guard.dxs" />
+    <None Include="Scripts\Logics\logic_int_droid.dxs" />
+    <None Include="Scripts\Logics\logic_invincible.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer1.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer2.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer3.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer4.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer5.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer6.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer7.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer8.dxs" />
+    <None Include="Scripts\Logics\logic_i_officer9.dxs" />
+    <None Include="Scripts\Logics\logic_i_officerb.dxs" />
+    <None Include="Scripts\Logics\logic_i_officerr.dxs" />
+    <None Include="Scripts\Logics\logic_i_officery.dxs" />
+    <None Include="Scripts\Logics\logic_kell.dxs" />
+    <None Include="Scripts\Logics\logic_key.dxs" />
+    <None Include="Scripts\Logics\logic_land_mine.dxs" />
+    <None Include="Scripts\Logics\logic_life.dxs" />
+    <None Include="Scripts\Logics\logic_mask.dxs" />
+    <None Include="Scripts\Logics\logic_medkit.dxs" />
+    <None Include="Scripts\Logics\logic_mine.dxs" />
+    <None Include="Scripts\Logics\logic_mines.dxs" />
+    <None Include="Scripts\Logics\logic_missile.dxs" />
+    <None Include="Scripts\Logics\logic_missiles.dxs" />
+    <None Include="Scripts\Logics\logic_mortar.dxs" />
+    <None Include="Scripts\Logics\logic_mousebot.dxs" />
+    <None Include="Scripts\Logics\logic_nava.dxs" />
+    <None Include="Scripts\Logics\logic_phrik.dxs" />
+    <None Include="Scripts\Logics\logic_pile.dxs" />
+    <None Include="Scripts\Logics\logic_plans.dxs" />
+    <None Include="Scripts\Logics\logic_plasma.dxs" />
+    <None Include="Scripts\Logics\logic_player.dxs" />
+    <None Include="Scripts\Logics\logic_power.dxs" />
+    <None Include="Scripts\Logics\logic_probe_droid.dxs" />
+    <None Include="Scripts\Logics\logic_red.dxs" />
+    <None Include="Scripts\Logics\logic_ree_yees.dxs" />
+    <None Include="Scripts\Logics\logic_ree_yees2.dxs" />
+    <None Include="Scripts\Logics\logic_remote.dxs" />
+    <None Include="Scripts\Logics\logic_revive.dxs" />
+    <None Include="Scripts\Logics\logic_rifle.dxs" />
+    <None Include="Scripts\Logics\logic_scenery.dxs" />
+    <None Include="Scripts\Logics\logic_sewer1.dxs" />
+    <None Include="Scripts\Logics\logic_shell.dxs" />
+    <None Include="Scripts\Logics\logic_shells.dxs" />
+    <None Include="Scripts\Logics\logic_shield.dxs" />
+    <None Include="Scripts\Logics\logic_storm1.dxs" />
+    <None Include="Scripts\Logics\logic_supercharge.dxs" />
+    <None Include="Scripts\Logics\logic_template.dxs" />
+    <None Include="Scripts\Logics\logic_troop.dxs" />
+    <None Include="Scripts\Logics\logic_turret.dxs" />
+    <None Include="Scripts\Logics\logic_update.dxs" />
+    <None Include="Scripts\Logics\logic_welder.dxs" />
+    <None Include="Scripts\Logics\logic_yellow.dxs" />
+    <None Include="Scripts\Weapons\weapon_base.dxs" />
+    <None Include="Scripts\Weapons\weapon_pistol.dxs" />
+    <None Include="Scripts\Weapons\weapon_punch.dxs" />
+    <None Include="Scripts\Weapons\weapon_rifle.dxs" />
+    <None Include="Scripts\Weapons\weapon_thermal_det.dxs" />
+    <None Include="Shaders\blit.frag" />
+    <None Include="Shaders\blit.vert" />
+    <None Include="Shaders\grid2d.frag" />
+    <None Include="Shaders\grid2d.vert" />
+    <None Include="Shaders\grid3d.frag" />
+    <None Include="Shaders\grid3d.vert" />
+    <None Include="Shaders\line2d.frag" />
+    <None Include="Shaders\line2d.vert" />
+    <None Include="Shaders\line3d.frag" />
+    <None Include="Shaders\line3d.vert" />
+    <None Include="Shaders\tri2dColor.frag" />
+    <None Include="Shaders\tri2dColor.vert" />
+    <None Include="Shaders\tri2dTextured.frag" />
+    <None Include="Shaders\tri2dTextured.vert" />
+    <None Include="Shaders\tri3dColor.frag" />
+    <None Include="Shaders\tri3dColor.vert" />
+    <None Include="Shaders\tri3dTexture.frag" />
+    <None Include="Shaders\tri3dTexture.vert" />
+    <None Include="Shaders\tri3dTextureClamp.frag" />
+    <None Include="Shaders\tri3dTextureTrans.frag" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

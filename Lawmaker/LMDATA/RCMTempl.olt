@@ -1,0 +1,18 @@
+[Simple RCM]
+RCP 1.0
+NAME: Multiplayer level
+MODES: CKMD
+
+STORY:
+BEGIN
+ LEVEL: HIDEOUT
+END;
+
+[Level] Alt+L
+ LEVEL: HIDEOUT
+[Movie] Alt+M
+ MOVIE: In_shb.san
+[Credits] Alt+C
+ CREDITS: rae.san 2
+[Text] Alt+T
+ TEXT: a.txt

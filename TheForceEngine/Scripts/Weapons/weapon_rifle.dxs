@@ -1,0 +1,99 @@
+////////////////////////////////////////////////////////////////////////////////////
+// Weapon Script
+// Only one weapon is active at a time.
+////////////////////////////////////////////////////////////////////////////////////
+#include "weapon_base.dxs"
+
+const int weaponWidth  = 47;
+const int weaponHeight = 72;
+
+// Called when switching to the weapon.
+void switchTo()
+{
+	// Load frames and sound effects.
+	DXL2_LoadWeaponFrame(0, "RIFLE1.BM");
+	DXL2_LoadWeaponFrame(1, "RIFLE2.BM");
+	
+	weapon.scaledWidth  = applyScale(weaponWidth,  screen.scaleX);
+	weapon.scaledHeight = applyScale(weaponHeight, screen.scaleY);
+
+	int weaponX = screen.width/2 - weapon.scaledWidth;
+	int weaponXOffset = applyScale(weaponHeight/weaponOffMoveY * weaponOffMoveX, screen.scaleX);
+	// Begin on screen animation if the previous weapon was
+	// moved off screen if needed.
+	if (weapon.state >= 0)
+	{
+		weapon.x = weaponX + weaponXOffset;
+		weapon.y = screen.height;
+		weapon.state = WSTATE_ANIM_ON;
+	}
+	else
+	{
+		weapon.x = weaponX;
+		weapon.y = screen.height - weapon.scaledHeight;
+		weapon.state = WSTATE_IDLE;
+	}
+	
+	weapon.frame = 0;
+	weapon.time = 0.0f;
+	weapon.yOffset = 0;
+}
+
+// Called when switching away from the weapon.
+void switchFrom()
+{
+	weapon.state = WSTATE_ANIM_OFF;
+	weapon.frame = 0;
+}
+
+// Tick is called at a fixed rate.
+void tick()
+{
+	if (weapon.state == WSTATE_ANIM_ON)
+	{
+		weapon.x -= applyScale(weaponOffMoveX, screen.scaleX);
+		weapon.y -= applyScale(weaponOffMoveY, screen.scaleY);
+		weapon.time = 0.0f;
+		if (weapon.y <= screen.height - weapon.scaledHeight)
+		{
+			weapon.x = screen.width/2 - weapon.scaledWidth;
+			weapon.y = screen.height - weapon.scaledHeight;
+			weapon.state = WSTATE_IDLE;
+		}
+	}
+	else if (weapon.state == WSTATE_ANIM_OFF)
+	{
+		weapon.x += applyScale(weaponOnMoveX, screen.scaleX);
+		weapon.y += applyScale(weaponOnMoveY, screen.scaleY);
+		weapon.time = 0.0f;
+		if (weapon.y >= screen.height)
+		{
+			DXL2_NextWeapon();
+		}
+	}
+	else if (weapon.state == WSTATE_IDLE)
+	{
+		float motionX = DXL2_GetSineMotion(weapon.time) * weapon.motion;
+		float motionY = DXL2_GetCosMotion(weapon.time) * weapon.motion;
+		if (motionY < 0.0f) { motionY = -motionY; }
+
+		weapon.x = screen.width/2 - weapon.scaledWidth + applyScale(int(motionX * 16.0f), screen.scaleX);
+		weapon.y = screen.height - weapon.scaledHeight - applyScale(int(motionY * 8.0f), screen.scaleY);
+		
+		weapon.time += timeStep * 0.6;
+		if (weapon.time > 1.0f) { weapon.time -= 1.0f; }
+	}
+	
+	// Adjust the weapon based on pitch.
+	weapon.yOffset = int(weapon.pitch * applyScale(30, screen.scaleY));
+}
+
+// Called when the primary fire is triggered.
+void firePrimary()
+{
+}
+
+// Called when secondary fire is triggered.
+void fireSecondary()
+{
+}

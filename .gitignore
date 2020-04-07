@@ -50,9 +50,11 @@
 
 #Directories
 .vs/
-DarkXL2/Mods/
-DarkXL2/screenshots/
-DarkXL2/Reference/
+TheForceEngine/Mods/
+TheForceEngine/screenshots/
+TheForceEngine/Reference/
+TheForceEngine/LawMaker/
+TheForceEngine/VTune Profiler Results/
 Build/
-DarkXL2/bug_reports/
+TheForceEngine/bug_reports/
 WDFuseCommonFiles/

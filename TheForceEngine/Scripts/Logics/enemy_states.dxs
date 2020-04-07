@@ -1,0 +1,27 @@
+///////////////////////////////////////
+// Enemy Animation States
+///////////////////////////////////////
+enum EnemyState
+{
+	ESTATE_MOVING = 0,				// walking, floating, etc.
+	ESTATE_PRIMARY_ATTACK = 1,		// primary attack animation
+	ESTATE_DYING_PUNCH = 2,			// dying from a punch.
+	ESTATE_DYING_SHOT = 3,			// dying from being shot or blown up.
+	ESTATE_DEAD = 4,				// lying dead.
+	ESTATE_STILL = 5,				// staying still, not sighted player yet.
+	ESTATE_PRIMARY_FT = 6,			// primary attack follow through animation, such as the kick of a gun.
+	ESTATE_SECONDARY_ATTACK = 7,	// secondary attack, such as TD for Reyees, green shots from Interrogation Droid, etc.
+	ESTATE_SECONDARY_FT = 8,		// secondary attack follow through.
+	ESTATE_JUMP = 9,				// jump animation (Kell Dragon).
+	// 10, 11 ?
+	ESTATE_INJURED = 12,			// getting injured, looking around for Dianoga
+	ESTATE_SPECIAL = 13,			// special action; Shield for D_TROOP1, flying for D_TROOP2 and 3, submerging for Dianoga.
+	// 14 ?
+};
+
+void startAnimation(int state)
+{
+	self.state = state;
+	self.time = 0.0f;
+	DXL2_SetAnimFrame(self.objectId, state, 0);
+}

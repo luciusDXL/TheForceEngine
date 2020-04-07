@@ -1,0 +1,20 @@
+//////////////////////////////////////////
+// Logic Script
+//////////////////////////////////////////
+#include "basic_enemy.dxs"
+
+void setEnemySpecificFlags()
+{
+	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
+	// Ground based enemy
+	DXL2_SetPhysics(self.objectId, PHYSICS_GRAVITY);
+}
+
+void spawnPowerup()
+{
+}
+
+void playDeathSound()
+{
+	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "BOSSKDIE.VOC");
+}

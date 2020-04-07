@@ -1,0 +1,51 @@
+IL_INCLUDE_PATH="/usr/include"
+IL_LIB_PATH="/usr/lib"
+LUA_INCLUDE_PATH="/usr/include/lua5.1"
+LUA_LIB_PATH="/usr/lib"
+OSX=no
+
+echo "Building the lua binding!"
+
+export SWIG_FEATURES="-I$IL_INCLUDE_PATH"
+swig -lua DevIL.i
+if [ $? -ne 0 ] ; then
+	echo "swig Failed to build the lua interface"
+	exit 1
+fi
+
+compile() {
+	gcc luadevil.c "$1" -o luadevil "-L$LUA_LIB_PATH" "-I$LUA_INCLUDE_PATH" "-I$IL_LIB_PATH" -lIL -lILU -lILUT -llua5.1 &>/dev/null
+	err=$?
+	if [ "$OSX" = "no" ] ; then
+		gcc -shared "$1" -o DevIL.so "-L$LUA_LIB_PATH" "-I$LUA_INCLUDE_PATH" "-I$IL_LIB_PATH" -lIL -lILU -lILUT &>/dev/null
+	else
+	    gcc -bundle -undefined dynamic_lookup "$1" -o DevIL.so "-L$LUA_LIB_PATH" "-I$LUA_INCLUDE_PATH" "-I$IL_LIB_PATH" -lIL -lILU -lILUT &>/dev/null
+	fi
+	return $err
+}
+
+compile DevIL_wrap.c
+if [ $? -ne 0 ] ; then
+	echo 'Failed compilation'
+	echo 'On some platform the file malloc.h is not present and produces a compilation error'
+	echo -n 'it can be removed safely, try [y/n] ? '
+	while read i ; do 
+		if [ "$i" = "y" ] ; then
+			sed 's/\#include\ \<malloc\.h\>//' < DevIL_wrap.c > DevIL_wrap.mod.c
+			compile "DevIL_wrap.mod.c"
+			if [ $? -ne 0 ] ; then
+				echo 'still failing...'
+				exit 2
+			fi
+			exit 0
+		elif [ "$i" = "n" ] ; then
+			echo 'ok, failing...'
+			exit 3
+		else
+			echo 'Unknown command [y/n] ? '
+		fi
+	done
+fi
+
+echo "ok!"
+exit 0

@@ -1,0 +1,23 @@
+//////////////////////////////////////////
+// Logic Script
+//////////////////////////////////////////
+#include "basic_enemy.dxs"
+
+void setEnemySpecificFlags()
+{
+	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
+	// Ground based enemy
+	DXL2_SetPhysics(self.objectId, PHYSICS_GRAVITY);
+}
+
+void spawnPowerup()
+{
+	Vec3f pos = DXL2_BiasTowardsPlayer(self.position, 0.1f);
+	int objectId = DXL2_SpawnObject(pos, self.angles, self.sectorId, CLASS_FRAME, "IST-GUNI.FME");
+}
+
+void playDeathSound()
+{
+	// Replace with correct death sound.
+	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "ST-DIE-1.VOC");
+}
