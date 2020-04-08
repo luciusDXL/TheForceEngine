@@ -1,5 +1,5 @@
 # The Force Engine (TFE)
-The Force Engine is a project to reverse engineer and rebuild the Jedi Engine for modern systems. The project includes modern, built-in tools, such as a level editor and makes it easy to play Dark Forces and Outlaws on modern systems as well as the many community "mods" designed to work with the original games.
+The Force Engine is a project to reverse engineer and rebuild the Jedi Engine for modern systems. The project includes modern, built-in tools, such as a level editor and makes it easy to play **Dark Forces** and **Outlaws** on modern systems as well as the many community **mods** designed to work with the original games.
 
 Playing Dark Forces or Outlaws using the Force Engine adds ease of use and modern features such as higher resolutions and modern control schemes such as mouse-look. Using the built-in tools allows for easier modding with more modern tools, greater flexibility and the ability to use enhancements made to the Jedi Engine for Outlaws in custom Dark Forces levels - such as slopes, stacked sectors, per-sector color maps and more.
 
