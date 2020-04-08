@@ -5,22 +5,22 @@
 
 void setEnemySpecificFlags()
 {
-	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
+	TFE_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
 	// Ground based enemy
-	DXL2_SetPhysics(self.objectId, PHYSICS_GRAVITY);
+	TFE_SetPhysics(self.objectId, PHYSICS_GRAVITY);
 }
 
 void spawnPowerup()
 {
-	Vec3f pos = DXL2_BiasTowardsPlayer(self.position, 0.1f);
-	int objectId = DXL2_SpawnObject(pos, self.angles, self.sectorId, CLASS_FRAME, "IKEYB.FME");
+	Vec3f pos = TFE_BiasTowardsPlayer(self.position, 0.1f);
+	int objectId = TFE_SpawnObject(pos, self.angles, self.sectorId, CLASS_FRAME, "IKEYB.FME");
 
 	// Attach the appropriate logic to the new object.
-	DXL2_AddLogic(objectId, LOGIC_BLUE);
+	TFE_AddLogic(objectId, LOGIC_BLUE);
 }
 
 void playDeathSound()
 {
 	// Replace with correct death sound.
-	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "ST-DIE-1.VOC");
+	TFE_Sound_PlayOneShot(SOUND_3D, 1.0f, "ST-DIE-1.VOC");
 }

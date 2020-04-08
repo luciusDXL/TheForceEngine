@@ -5,7 +5,7 @@
 // Start is called when the object is spawned.
 void start()
 {
-	DXL2_SetPhysics(self.objectId, PHYSICS_NONE);
+	TFE_SetPhysics(self.objectId, PHYSICS_NONE);
 	self.state = 0;	// first Vue animation
 	self.time = 0.0;
 }
@@ -22,15 +22,15 @@ void tick()
 	{
 		// Update the animation time.
 		self.time += timeStep;
-		float len = DXL2_GetVueLength(self.objectId, self.state);
+		float len = TFE_GetVueLength(self.objectId, self.state);
 		if (self.time >= len)
 		{
 			if ((self.commonFlags & LCF_LOOP) != 0)
 			{
 				self.time -= len;
-				self.state = (self.state + 1) % DXL2_GetVueCount(self.objectId);
+				self.state = (self.state + 1) % TFE_GetVueCount(self.objectId);
 			}
-			else if (DXL2_GetVueCount(self.objectId) > uint(self.state) + 1)
+			else if (TFE_GetVueCount(self.objectId) > uint(self.state) + 1)
 			{
 				self.time = 0.0;
 				self.state++;
@@ -39,7 +39,7 @@ void tick()
 			else
 			{
 				// Make sure to set the last frame in case it stays here for a while.
-				DXL2_SetVueAnimTime(self.objectId, self.state, len);
+				TFE_SetVueAnimTime(self.objectId, self.state, len);
 
 				self.time  = len;
 				self.state = -1;
@@ -47,7 +47,7 @@ void tick()
 		}
 		if (self.state >= 0)
 		{
-			DXL2_SetVueAnimTime(self.objectId, self.state, self.time);
+			TFE_SetVueAnimTime(self.objectId, self.state, self.time);
 		}
 	}
 }

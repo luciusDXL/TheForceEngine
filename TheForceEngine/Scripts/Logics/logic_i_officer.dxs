@@ -7,25 +7,25 @@
 TODO: Add preload() function to avoid pauses during gameplay.
 void preload()
 {
-	DXL2_Sound_Preload("ST-DIE-1.VOC");
+	TFE_Sound_Preload("ST-DIE-1.VOC");
 }
 */
 
 void setEnemySpecificFlags()
 {
-	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
+	TFE_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
 	// Ground based enemy
-	DXL2_SetPhysics(self.objectId, PHYSICS_GRAVITY);
+	TFE_SetPhysics(self.objectId, PHYSICS_GRAVITY);
 }
 
 void spawnPowerup()
 {
-	Vec3f pos = DXL2_BiasTowardsPlayer(self.position, 0.1f);
-	int objectId = DXL2_SpawnObject(pos, self.angles, self.sectorId, CLASS_FRAME, "IENERGY.FME");
+	Vec3f pos = TFE_BiasTowardsPlayer(self.position, 0.1f);
+	int objectId = TFE_SpawnObject(pos, self.angles, self.sectorId, CLASS_FRAME, "IENERGY.FME");
 }
 
 void playDeathSound()
 {
 	// Replace with correct death sound.
-	DXL2_Sound_PlayOneShot(SOUND_3D, 1.0f, "ST-DIE-1.VOC");
+	TFE_Sound_PlayOneShot(SOUND_3D, 1.0f, "ST-DIE-1.VOC");
 }

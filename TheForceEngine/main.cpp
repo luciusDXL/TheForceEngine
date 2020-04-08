@@ -1,28 +1,28 @@
 // main.cpp : Defines the entry point for the application.
 #include <SDL.h>
-#include <DXL2_System/types.h>
-#include <DXL2_ScriptSystem/scriptSystem.h>
-#include <DXL2_InfSystem/infSystem.h>
-#include <DXL2_Editor/editor.h>
-#include <DXL2_Game/level.h>
-#include <DXL2_Game/gameMain.h>
-#include <DXL2_Game/GameUI/gameUi.h>
-#include <DXL2_Audio/audioSystem.h>
-#include <DXL2_FileSystem/paths.h>
-#include <DXL2_Polygon/polygon.h>
-#include <DXL2_RenderBackend/renderBackend.h>
-#include <DXL2_Input/input.h>
-#include <DXL2_Renderer/renderer.h>
-#include <DXL2_Settings/settings.h>
-#include <DXL2_System/system.h>
-#include <DXL2_Asset/paletteAsset.h>
-#include <DXL2_Asset/imageAsset.h>
-#include <DXL2_Ui/ui.h>
-#include <DXL2_FrontEndUI/frontEndUi.h>
+#include <TFE_System/types.h>
+#include <TFE_ScriptSystem/scriptSystem.h>
+#include <TFE_InfSystem/infSystem.h>
+#include <TFE_Editor/editor.h>
+#include <TFE_Game/level.h>
+#include <TFE_Game/gameMain.h>
+#include <TFE_Game/GameUI/gameUi.h>
+#include <TFE_Audio/audioSystem.h>
+#include <TFE_FileSystem/paths.h>
+#include <TFE_Polygon/polygon.h>
+#include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Input/input.h>
+#include <TFE_Renderer/renderer.h>
+#include <TFE_Settings/settings.h>
+#include <TFE_System/system.h>
+#include <TFE_Asset/paletteAsset.h>
+#include <TFE_Asset/imageAsset.h>
+#include <TFE_Ui/ui.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
 #include <algorithm>
 
 // Replace with music system
-#include <DXL2_Audio/midiPlayer.h>
+#include <TFE_Audio/midiPlayer.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
@@ -52,7 +52,7 @@ static u32  s_monitorHeight = 720;
 
 void handleEvent(SDL_Event& Event)
 {
-	DXL2_Ui::setUiInput(&Event);
+	TFE_Ui::setUiInput(&Event);
 
 	switch (Event.type)
 	{
@@ -64,7 +64,7 @@ void handleEvent(SDL_Event& Event)
 		{
 			if (Event.window.event == SDL_WINDOWEVENT_RESIZED || Event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 			{
-				DXL2_RenderBackend::resize(Event.window.data1, Event.window.data2);
+				TFE_RenderBackend::resize(Event.window.data1, Event.window.data2);
 			}
 		} break;
 		case SDL_CONTROLLERDEVICEADDED:
@@ -82,26 +82,26 @@ void handleEvent(SDL_Event& Event)
 		} break;
 		case SDL_MOUSEBUTTONDOWN:
 		{
-			DXL2_Input::setMouseButtonDown(MouseButton(Event.button.button - SDL_BUTTON_LEFT));
+			TFE_Input::setMouseButtonDown(MouseButton(Event.button.button - SDL_BUTTON_LEFT));
 		} break;
 		case SDL_MOUSEBUTTONUP:
 		{
-			DXL2_Input::setMouseButtonUp(MouseButton(Event.button.button - SDL_BUTTON_LEFT));
+			TFE_Input::setMouseButtonUp(MouseButton(Event.button.button - SDL_BUTTON_LEFT));
 		} break;
 		case SDL_MOUSEWHEEL:
 		{
-			DXL2_Input::setMouseWheel(Event.wheel.x, Event.wheel.y);
+			TFE_Input::setMouseWheel(Event.wheel.x, Event.wheel.y);
 		} break;
 		case SDL_KEYDOWN:
 		{
 			if (Event.key.keysym.scancode && Event.key.repeat == 0)
 			{
-				DXL2_Input::setKeyDown(KeyboardCode(Event.key.keysym.scancode));
+				TFE_Input::setKeyDown(KeyboardCode(Event.key.keysym.scancode));
 			}
 
 			if (Event.key.keysym.scancode)
 			{
-				DXL2_Input::setBufferedKey(KeyboardCode(Event.key.keysym.scancode));
+				TFE_Input::setBufferedKey(KeyboardCode(Event.key.keysym.scancode));
 			}
 		} break;
 		case SDL_KEYUP:
@@ -109,19 +109,19 @@ void handleEvent(SDL_Event& Event)
 			if (Event.key.keysym.scancode)
 			{
 				const KeyboardCode code = KeyboardCode(Event.key.keysym.scancode);
-				DXL2_Input::setKeyUp(KeyboardCode(Event.key.keysym.scancode));
+				TFE_Input::setKeyUp(KeyboardCode(Event.key.keysym.scancode));
 
 				// Fullscreen toggle.
 				if (code == KeyboardCode::KEY_F11)
 				{
 					s_fullscreen = !s_fullscreen;
-					DXL2_RenderBackend::enableFullscreen(s_fullscreen);
+					TFE_RenderBackend::enableFullscreen(s_fullscreen);
 				}
 			}
 		} break;
 		case SDL_TEXTINPUT:
 		{
-			DXL2_Input::setBufferedInput(Event.text.text);
+			TFE_Input::setBufferedInput(Event.text.text);
 		} break;
 		case SDL_CONTROLLERAXISMOTION:
 		{
@@ -129,50 +129,50 @@ void handleEvent(SDL_Event& Event)
 			if ((Event.caxis.value < -deadzone) || (Event.caxis.value > deadzone))
 			{
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-				{ DXL2_Input::setAxis(AXIS_LEFT_X, f32(Event.caxis.value) / 32768.0f); }
+				{ TFE_Input::setAxis(AXIS_LEFT_X, f32(Event.caxis.value) / 32768.0f); }
 				else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
-				{ DXL2_Input::setAxis(AXIS_LEFT_Y, -f32(Event.caxis.value) / 32768.0f); }
+				{ TFE_Input::setAxis(AXIS_LEFT_Y, -f32(Event.caxis.value) / 32768.0f); }
 
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
-				{ DXL2_Input::setAxis(AXIS_RIGHT_X, f32(Event.caxis.value) / 32768.0f); }
+				{ TFE_Input::setAxis(AXIS_RIGHT_X, f32(Event.caxis.value) / 32768.0f); }
 				else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
-				{ DXL2_Input::setAxis(AXIS_RIGHT_Y, -f32(Event.caxis.value) / 32768.0f); }
+				{ TFE_Input::setAxis(AXIS_RIGHT_Y, -f32(Event.caxis.value) / 32768.0f); }
 
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
-				{ DXL2_Input::setAxis(AXIS_LEFT_TRIGGER, f32(Event.caxis.value) / 32768.0f); }
+				{ TFE_Input::setAxis(AXIS_LEFT_TRIGGER, f32(Event.caxis.value) / 32768.0f); }
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
-				{ DXL2_Input::setAxis(AXIS_RIGHT_TRIGGER, -f32(Event.caxis.value) / 32768.0f); }
+				{ TFE_Input::setAxis(AXIS_RIGHT_TRIGGER, -f32(Event.caxis.value) / 32768.0f); }
 			}
 			else
 			{
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-				{ DXL2_Input::setAxis(AXIS_LEFT_X, 0.0f); }
+				{ TFE_Input::setAxis(AXIS_LEFT_X, 0.0f); }
 				else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
-				{ DXL2_Input::setAxis(AXIS_LEFT_Y, 0.0f); }
+				{ TFE_Input::setAxis(AXIS_LEFT_Y, 0.0f); }
 
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
-				{ DXL2_Input::setAxis(AXIS_RIGHT_X, 0.0f); }
+				{ TFE_Input::setAxis(AXIS_RIGHT_X, 0.0f); }
 				else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
-				{ DXL2_Input::setAxis(AXIS_RIGHT_Y, 0.0f); }
+				{ TFE_Input::setAxis(AXIS_RIGHT_Y, 0.0f); }
 
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
-				{ DXL2_Input::setAxis(AXIS_LEFT_TRIGGER, 0.0f); }
+				{ TFE_Input::setAxis(AXIS_LEFT_TRIGGER, 0.0f); }
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
-				{ DXL2_Input::setAxis(AXIS_RIGHT_TRIGGER, 0.0f); }
+				{ TFE_Input::setAxis(AXIS_RIGHT_TRIGGER, 0.0f); }
 			}
 		} break;
 		case SDL_CONTROLLERBUTTONDOWN:
 		{
 			if (Event.cbutton.button < CONTROLLER_BUTTON_COUNT)
 			{
-				DXL2_Input::setButtonDown(Button(Event.cbutton.button));
+				TFE_Input::setButtonDown(Button(Event.cbutton.button));
 			}
 		} break;
 		case SDL_CONTROLLERBUTTONUP:
 		{
 			if (Event.cbutton.button < CONTROLLER_BUTTON_COUNT)
 			{
-				DXL2_Input::setButtonUp(Button(Event.cbutton.button));
+				TFE_Input::setButtonUp(Button(Event.cbutton.button));
 			}
 		} break;
 		default:
@@ -193,7 +193,7 @@ bool sdlInit()
 	SDL_GetDesktopDisplayMode(0, &mode);
 	s_refreshRate = (f32)mode.refresh_rate;
 
-	DXL2_Settings_Window* windowSettings = DXL2_Settings::getWindowSettings();
+	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
 	s_fullscreen = windowSettings->fullscreen;
 	s_displayWidth = windowSettings->width;
 	s_displayHeight = windowSettings->height;
@@ -217,13 +217,13 @@ bool sdlInit()
 	return true;
 }
 
-void setAppState(AppState newState, DXL2_Renderer* renderer)
+void setAppState(AppState newState, TFE_Renderer* renderer)
 {
-	const DXL2_Settings_Graphics* config = DXL2_Settings::getGraphicsSettings();
+	const TFE_Settings_Graphics* config = TFE_Settings::getGraphicsSettings();
 
 	if (newState != APP_STATE_EDITOR)
 	{
-		DXL2_Editor::disable();
+		TFE_Editor::disable();
 	}
 
 	switch (newState)
@@ -232,13 +232,13 @@ void setAppState(AppState newState, DXL2_Renderer* renderer)
 		break;
 	case APP_STATE_EDITOR:
 		renderer->changeResolution(640, 480);
-		DXL2_Editor::enable(renderer);
+		TFE_Editor::enable(renderer);
 		break;
 	case APP_STATE_DARK_FORCES:
 		renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
 		renderer->enableScreenClear(false);
-		DXL2_Input::enableRelativeMode(true);
-		DXL2_GameMain::init(renderer);
+		TFE_Input::enableRelativeMode(true);
+		TFE_GameMain::init(renderer);
 		break;
 	};
 }
@@ -249,45 +249,45 @@ int main(int argc, char* argv[])
 {
 	// Paths
 	bool pathsSet = true;
-	pathsSet &= DXL2_Paths::setProgramPath();
-	pathsSet &= DXL2_Paths::setProgramDataPath("TheForceEngine");
-	pathsSet &= DXL2_Paths::setUserDocumentsPath("TheForceEngine");
+	pathsSet &= TFE_Paths::setProgramPath();
+	pathsSet &= TFE_Paths::setProgramDataPath("TheForceEngine");
+	pathsSet &= TFE_Paths::setUserDocumentsPath("TheForceEngine");
 	if (!pathsSet)
 	{
 		return PROGRAM_ERROR;
 	}
 
 	// Initialize settings so that the paths can be read.
-	if (!DXL2_Settings::init())
+	if (!TFE_Settings::init())
 	{
 		return PROGRAM_ERROR;
 	}
 
 	// Setup game paths.
 	// Get the current game.
-	const DXL2_Game* game = DXL2_Settings::getGame();
-	const DXL2_Settings_Game* gameSettings = DXL2_Settings::getGameSettings(game->game);
-	DXL2_Paths::setPath(PATH_SOURCE_DATA, gameSettings->sourcePath);
-	DXL2_Paths::setPath(PATH_EMULATOR, gameSettings->emulatorPath);
+	const TFE_Game* game = TFE_Settings::getGame();
+	const TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings(game->game);
+	TFE_Paths::setPath(PATH_SOURCE_DATA, gameSettings->sourcePath);
+	TFE_Paths::setPath(PATH_EMULATOR, gameSettings->emulatorPath);
 
-	DXL2_System::logOpen("the_force_engine_log.txt");
-	DXL2_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   DXL2_Paths::getPath(PATH_PROGRAM));
-	DXL2_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   DXL2_Paths::getPath(PATH_PROGRAM_DATA));
-	DXL2_System::logWrite(LOG_MSG, "Paths", "User Documents: \"%s\"", DXL2_Paths::getPath(PATH_USER_DOCUMENTS));
-	DXL2_System::logWrite(LOG_MSG, "Paths", "Source Data: \"%s\"",    DXL2_Paths::getPath(PATH_SOURCE_DATA));
+	TFE_System::logOpen("the_force_engine_log.txt");
+	TFE_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM));
+	TFE_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM_DATA));
+	TFE_System::logWrite(LOG_MSG, "Paths", "User Documents: \"%s\"", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
+	TFE_System::logWrite(LOG_MSG, "Paths", "Source Data: \"%s\"",    TFE_Paths::getPath(PATH_SOURCE_DATA));
 
 	// Initialize SDL
 	if (!sdlInit())
 	{
-		DXL2_System::logWrite(LOG_CRITICAL, "SDL", "Cannot initialize SDL.");
-		DXL2_System::logClose();
+		TFE_System::logWrite(LOG_CRITICAL, "SDL", "Cannot initialize SDL.");
+		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
 
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
-	if (s_fullscreen) { DXL2_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");    windowFlags |= WINFLAG_FULLSCREEN; }
-	if (s_vsync)      { DXL2_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
+	if (s_fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");    windowFlags |= WINFLAG_FULLSCREEN; }
+	if (s_vsync)      { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
 
 	const WindowState windowState =
 	{
@@ -301,49 +301,49 @@ int main(int argc, char* argv[])
 		windowFlags,
 		s_refreshRate
 	};
-	if (!DXL2_RenderBackend::init(windowState))
+	if (!TFE_RenderBackend::init(windowState))
 	{
-		DXL2_System::logWrite(LOG_CRITICAL, "GPU", "Cannot initialize GPU/Window.");
-		DXL2_System::logClose();
+		TFE_System::logWrite(LOG_CRITICAL, "GPU", "Cannot initialize GPU/Window.");
+		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
-	DXL2_System::init(s_refreshRate, s_vsync);
-	DXL2_Audio::init();
-	DXL2_Polygon::init();
-	DXL2_Image::init();
-	DXL2_ScriptSystem::init();
-	DXL2_InfSystem::init();
-	DXL2_Level::init();
-	DXL2_Palette::createDefault256();
-	DXL2_FrontEndUI::init();
+	TFE_System::init(s_refreshRate, s_vsync);
+	TFE_Audio::init();
+	TFE_Polygon::init();
+	TFE_Image::init();
+	TFE_ScriptSystem::init();
+	TFE_InfSystem::init();
+	TFE_Level::init();
+	TFE_Palette::createDefault256();
+	TFE_FrontEndUI::init();
 
-	// Replace with DXL2_Music
-	DXL2_MidiPlayer::init();
+	// Replace with TFE_Music
+	TFE_MidiPlayer::init();
 		
-	DXL2_Renderer* renderer = DXL2_Renderer::create(DXL2_RENDERER_SOFTWARE_CPU);
+	TFE_Renderer* renderer = TFE_Renderer::create(TFE_RENDERER_SOFTWARE_CPU);
 	if (!renderer)
 	{
-		DXL2_System::logWrite(LOG_CRITICAL, "Renderer", "Cannot create software renderer.");
-		DXL2_System::logClose();
+		TFE_System::logWrite(LOG_CRITICAL, "Renderer", "Cannot create software renderer.");
+		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
 	if (!renderer->init())
 	{
-		DXL2_System::logWrite(LOG_CRITICAL, "Renderer", "Cannot initialize software renderer.");
-		DXL2_System::logClose();
+		TFE_System::logWrite(LOG_CRITICAL, "Renderer", "Cannot initialize software renderer.");
+		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
 
 	// Game loop
-	DXL2_GameUi::init(renderer);
+	TFE_GameUi::init(renderer);
 		
 	u32 frame = 0u;
 	bool showPerf = false;
 	bool relativeMode = false;
-	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
+	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
 	while (s_loop)
 	{
-		bool enableRelative = DXL2_Input::relativeModeEnabled();
+		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)
 		{
 			relativeMode = enableRelative;
@@ -359,10 +359,10 @@ int main(int argc, char* argv[])
 		s32 mouseAbsX, mouseAbsY;
 		u32 state = SDL_GetRelativeMouseState(&mouseX, &mouseY);
 		SDL_GetMouseState(&mouseAbsX, &mouseAbsY);
-		DXL2_Input::setRelativeMousePos(mouseX, mouseY);
-		DXL2_Input::setMousePos(mouseAbsX, mouseAbsY);
+		TFE_Input::setRelativeMousePos(mouseX, mouseY);
+		TFE_Input::setMousePos(mouseAbsX, mouseAbsY);
 
-		const AppState appState = DXL2_FrontEndUI::update();
+		const AppState appState = TFE_FrontEndUI::update();
 		if (appState == APP_STATE_QUIT)
 		{
 			s_loop = false;
@@ -373,34 +373,34 @@ int main(int argc, char* argv[])
 			setAppState(s_curState, renderer);
 		}
 
-		DXL2_Ui::begin();
+		TFE_Ui::begin();
 						
 		// Update
-		if (DXL2_Input::keyPressed(KEY_F9))
+		if (TFE_Input::keyPressed(KEY_F9))
 		{
 			showPerf = !showPerf;
 		}
 
-		DXL2_System::update();
+		TFE_System::update();
 		if (showPerf)
 		{
-			DXL2_Editor::showPerf(frame);
+			TFE_Editor::showPerf(frame);
 		}
 
 		if (appState == APP_STATE_MENU)
 		{
-			DXL2_FrontEndUI::draw();
+			TFE_FrontEndUI::draw();
 		}
 		else if (appState == APP_STATE_EDITOR)
 		{
-			if (DXL2_Editor::update())
+			if (TFE_Editor::update())
 			{
-				DXL2_FrontEndUI::setAppState(APP_STATE_MENU);
+				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
 		}
 		else if (appState == APP_STATE_DARK_FORCES)
 		{
-			if (DXL2_GameMain::loop() == TRANS_QUIT)
+			if (TFE_GameMain::loop() == TRANS_QUIT)
 			{
 				s_loop = false;
 			}
@@ -412,37 +412,37 @@ int main(int argc, char* argv[])
 		bool swap = appState != APP_STATE_EDITOR;
 		if (appState == APP_STATE_EDITOR)
 		{
-			swap = DXL2_Editor::render();
+			swap = TFE_Editor::render();
 		}
 		renderer->end();
 
 		// Blit the frame to the window and draw UI.
-		DXL2_RenderBackend::swap(swap);
+		TFE_RenderBackend::swap(swap);
 
 		// Clear transitory input state.
-		DXL2_Input::endFrame();
+		TFE_Input::endFrame();
 		frame++;
 	}
 
 	// Cleanup
-	DXL2_FrontEndUI::shutdown();
-	DXL2_Audio::shutdown();
-	DXL2_Polygon::shutdown();
-	DXL2_Image::shutdown();
-	DXL2_Level::shutdown();
-	DXL2_InfSystem::shutdown();
-	DXL2_ScriptSystem::shutdown();
-	DXL2_Palette::freeAll();
-	DXL2_RenderBackend::updateSettings();
-	DXL2_Settings::shutdown();
-	DXL2_Renderer::destroy(renderer);
-	DXL2_RenderBackend::destroy();
+	TFE_FrontEndUI::shutdown();
+	TFE_Audio::shutdown();
+	TFE_Polygon::shutdown();
+	TFE_Image::shutdown();
+	TFE_Level::shutdown();
+	TFE_InfSystem::shutdown();
+	TFE_ScriptSystem::shutdown();
+	TFE_Palette::freeAll();
+	TFE_RenderBackend::updateSettings();
+	TFE_Settings::shutdown();
+	TFE_Renderer::destroy(renderer);
+	TFE_RenderBackend::destroy();
 	SDL_Quit();
 
-	// Replace with DXL2_Music
-	DXL2_MidiPlayer::destroy();
+	// Replace with TFE_Music
+	TFE_MidiPlayer::destroy();
 
-	DXL2_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
-	DXL2_System::logClose();
+	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
+	TFE_System::logClose();
 	return PROGRAM_SUCCESS;
 }

@@ -5,9 +5,9 @@
 // Start is called when the object is spawned.
 void start()
 {
-	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
+	TFE_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
 	// Flying enemy
-	DXL2_SetPhysics(self.objectId, PHYSICS_NONE);
+	TFE_SetPhysics(self.objectId, PHYSICS_NONE);
 }
 
 // Stop is called when the object is despawned.

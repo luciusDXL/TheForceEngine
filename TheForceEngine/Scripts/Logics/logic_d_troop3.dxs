@@ -7,10 +7,10 @@
 void start()
 {
 	self.state = ESTATE_STILL;
-	DXL2_SetAnimFrame(self.objectId, ESTATE_STILL, 0);
-	DXL2_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
+	TFE_SetAnimFrame(self.objectId, ESTATE_STILL, 0);
+	TFE_SetCollision(self.objectId, /*radius*/1.4f, /*height*/7.5f, COLLIDE_PLAYER | COLLIDE_ENEMY);
 	// Flying enemy
-	DXL2_SetPhysics(self.objectId, PHYSICS_NONE);
+	TFE_SetPhysics(self.objectId, PHYSICS_NONE);
 }
 
 // Stop is called when the object is despawned.
@@ -23,8 +23,8 @@ void tick()
 {
 	if (self.state != ESTATE_STILL && self.state != ESTATE_DEAD)
 	{
-		float frameRate = DXL2_GetAnimFramerate(self.objectId, self.state);
-		uint frameCount = DXL2_GetAnimFrameCount(self.objectId, self.state);
+		float frameRate = TFE_GetAnimFramerate(self.objectId, self.state);
+		uint frameCount = TFE_GetAnimFrameCount(self.objectId, self.state);
 
 		// Update the animation time.
 		self.time += timeStep;	
@@ -36,7 +36,7 @@ void tick()
 			startAnimation(ESTATE_DEAD);
 			if ((self.commonFlags & LCF_BOSS) != 0)
 			{
-				DXL2_MohcKilled();
+				TFE_MohcKilled();
 			}
 		}
 		else if (self.time >= animLength)
@@ -48,7 +48,7 @@ void tick()
 		if (self.state != ESTATE_DEAD)
 		{
 			int	frameIndex = int(self.time * frameRate);
-			DXL2_SetAnimFrame(self.objectId, self.state, frameIndex);
+			TFE_SetAnimFrame(self.objectId, self.state, frameIndex);
 		}
 	}
 }
@@ -62,7 +62,7 @@ void handleMessage(int msgId, int arg0, int arg1)
 	{
 		// for now just kill...
 		self.hp = 0;
-		DXL2_SetCollision(self.objectId, 0.0f, 0.0f, COLLIDE_NONE);
+		TFE_SetCollision(self.objectId, 0.0f, 0.0f, COLLIDE_NONE);
 		startAnimation(ESTATE_DYING_SHOT);
 	}
 }

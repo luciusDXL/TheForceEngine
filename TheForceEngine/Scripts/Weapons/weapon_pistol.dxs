@@ -11,15 +11,15 @@ const int weaponHeight = 57;
 void switchTo()
 {
 	// Load frames and sound effects.
-	DXL2_LoadWeaponFrame(0, "PISTOL1.BM");
-	DXL2_LoadWeaponFrame(1, "PISTOL2.BM");
-	DXL2_LoadWeaponFrame(2, "PISTOL3.BM");
-	DXL2_LoadProjectile("WRBOLT.3DO");
-	DXL2_SetProjectileScale(1.0f, 1.0f, 0.015f);
-	DXL2_SetProjectileRenderOffset(5.0f);
+	TFE_LoadWeaponFrame(0, "PISTOL1.BM");
+	TFE_LoadWeaponFrame(1, "PISTOL2.BM");
+	TFE_LoadWeaponFrame(2, "PISTOL3.BM");
+	TFE_LoadProjectile("WRBOLT.3DO");
+	TFE_SetProjectileScale(1.0f, 1.0f, 0.015f);
+	TFE_SetProjectileRenderOffset(5.0f);
 
-	DXL2_LoadHitEffect("EXPTINY.WAX");
-	DXL2_LoadHitSound("EX-TINY1.VOC");
+	TFE_LoadHitEffect("EXPTINY.WAX");
+	TFE_LoadHitSound("EX-TINY1.VOC");
 	
 	weapon.scaledWidth  = applyScale(weaponWidth,  screen.scaleX);
 	weapon.scaledHeight = applyScale(weaponHeight, screen.scaleY);
@@ -75,13 +75,13 @@ void tick()
 		weapon.time = 0.0f;
 		if (weapon.y >= screen.height)
 		{
-			DXL2_NextWeapon();
+			TFE_NextWeapon();
 		}
 	}
 	else if (weapon.state == WSTATE_IDLE)
 	{
-		float motionX = DXL2_GetSineMotion(weapon.time) * weapon.motion;
-		float motionY = DXL2_GetCosMotion(weapon.time) * weapon.motion;
+		float motionX = TFE_GetSineMotion(weapon.time) * weapon.motion;
+		float motionY = TFE_GetCosMotion(weapon.time) * weapon.motion;
 		if (motionY < 0.0f) { motionY = -motionY; }
 
 		weapon.x = screen.width/2 + applyScale(int(motionX * 16.0f), screen.scaleX);
@@ -100,16 +100,16 @@ void tick()
 		
 		if (prevFrame == 0 && weapon.frame == 1)
 		{
-			DXL2_PlayerSpawnProjectile(weapon.x + applyScale(16, screen.scaleX), weapon.y + weapon.yOffset, 300.0f, 0.0f, PFLAG_EXPLODE_ON_IMPACT, 1, 0.0f, 0.0f);
-			DXL2_MuzzleFlashBegin();
+			TFE_PlayerSpawnProjectile(weapon.x + applyScale(16, screen.scaleX), weapon.y + weapon.yOffset, 300.0f, 0.0f, PFLAG_EXPLODE_ON_IMPACT, 1, 0.0f, 0.0f);
+			TFE_MuzzleFlashBegin();
 		}
 		else if (weapon.frame == 2)
 		{
-			DXL2_MuzzleFlashEnd();
+			TFE_MuzzleFlashEnd();
 		}
 		else if (weapon.frame == 3)
 		{
-			DXL2_WeaponPrimed(15);
+			TFE_WeaponPrimed(15);
 			weapon.frame = 0;
 			weapon.time = 0.0f;
 			weapon.state = WSTATE_IDLE;
@@ -126,7 +126,7 @@ void firePrimary()
 	// Start the animation.
 	weapon.state = WSTATE_PRIMARY_FIRE;
 	weapon.time = 0.0;
-	DXL2_Sound_PlayOneShot(1.0f, "PISTOL-1.VOC");
+	TFE_Sound_PlayOneShot(1.0f, "PISTOL-1.VOC");
 }
 
 // Called when secondary fire is triggered.

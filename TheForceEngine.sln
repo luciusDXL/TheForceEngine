@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.28307.705
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TheForceEngine", "TheForceEngine\TheForceEngine.vcxproj", "{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "angelscript", "TheForceEngine\DXL2_ScriptSystem\AngelScript\sdk\angelscript\projects\msvc2017\angelscript.vcxproj", "{39E6AF97-6BA3-4A72-8C61-BCEBF214EBFD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "angelscript", "TheForceEngine\TFE_ScriptSystem\AngelScript\sdk\angelscript\projects\msvc2017\angelscript.vcxproj", "{39E6AF97-6BA3-4A72-8C61-BCEBF214EBFD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

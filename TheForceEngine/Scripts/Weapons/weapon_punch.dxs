@@ -11,10 +11,10 @@ const int weaponHeight = 58;
 void switchTo()
 {
 	// Load frames and sound effects.
-	DXL2_LoadWeaponFrame(0, "RHAND1.BM");
-	DXL2_LoadWeaponFrame(1, "PUNCH1.BM");
-	DXL2_LoadWeaponFrame(2, "PUNCH2.BM");
-	DXL2_LoadWeaponFrame(3, "PUNCH3.BM");
+	TFE_LoadWeaponFrame(0, "RHAND1.BM");
+	TFE_LoadWeaponFrame(1, "PUNCH1.BM");
+	TFE_LoadWeaponFrame(2, "PUNCH2.BM");
+	TFE_LoadWeaponFrame(3, "PUNCH3.BM");
 	
 	weapon.scaledWidth  = applyScale(weaponWidth,  screen.scaleX);
 	weapon.scaledHeight = applyScale(weaponHeight, screen.scaleY);
@@ -70,13 +70,13 @@ void tick()
 		weapon.time = 0.0f;
 		if (weapon.y >= screen.height)
 		{
-			DXL2_NextWeapon();
+			TFE_NextWeapon();
 		}
 	}
 	else if (weapon.state == WSTATE_IDLE)
 	{
-		float motionX = DXL2_GetSineMotion(weapon.time) * weapon.motion;
-		float motionY = DXL2_GetCosMotion(weapon.time) * weapon.motion;
+		float motionX = TFE_GetSineMotion(weapon.time) * weapon.motion;
+		float motionY = TFE_GetCosMotion(weapon.time) * weapon.motion;
 		if (motionY < 0.0f) { motionY = -motionY; }
 
 		weapon.x = screen.width/2 + weapon.scaledWidth + applyScale(int(motionX * 16.0f), screen.scaleX);

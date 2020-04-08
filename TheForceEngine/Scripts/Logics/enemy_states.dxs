@@ -23,5 +23,5 @@ void startAnimation(int state)
 {
 	self.state = state;
 	self.time = 0.0f;
-	DXL2_SetAnimFrame(self.objectId, state, 0);
+	TFE_SetAnimFrame(self.objectId, state, 0);
 }

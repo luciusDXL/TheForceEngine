@@ -5,7 +5,7 @@
 // Start is called when the object is spawned.
 void start()
 {
-	DXL2_SetCollision(self.objectId, /*radius*/2.5f, /*height*/2.0f, COLLIDE_PLAYER | COLLIDE_TRIGGER);
+	TFE_SetCollision(self.objectId, /*radius*/2.5f, /*height*/2.0f, COLLIDE_PLAYER | COLLIDE_TRIGGER);
 }
 
 // Handle message is called when specific events occur, such as
@@ -15,9 +15,9 @@ void handleMessage(int msgId, int arg0, int arg1)
 {
 	if (msgId == LOGIC_MSG_PLAYER_COLLISION)
 	{
-		DXL2_AddGoalItem();
-		DXL2_PrintMessage(402);
-		DXL2_Hide(self.objectId);
-		DXL2_SetCollision(self.objectId, 0.0f, 0.0f, COLLIDE_NONE);
+		TFE_AddGoalItem();
+		TFE_PrintMessage(402);
+		TFE_Hide(self.objectId);
+		TFE_SetCollision(self.objectId, 0.0f, 0.0f, COLLIDE_NONE);
 	}
 }

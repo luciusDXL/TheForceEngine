@@ -21,7 +21,7 @@ bool IsFlagSet(uint flags, uint flagBit)
 
 void start()
 {
-	DXL2_SetPhysics(self.objectId, PHYSICS_NONE);
+	TFE_SetPhysics(self.objectId, PHYSICS_NONE);
 }
 
 void tick()
@@ -31,5 +31,5 @@ void tick()
 	rotation.y = IsFlagSet(param.flags, ROTATE_Y) ? param.rotation.y * timeStep : 0.0f;
 	rotation.z = IsFlagSet(param.flags, ROTATE_Z) ? param.rotation.z * timeStep : 0.0f;
 
-	DXL2_ChangeAngles(self.objectId, rotation);
+	TFE_ChangeAngles(self.objectId, rotation);
 }

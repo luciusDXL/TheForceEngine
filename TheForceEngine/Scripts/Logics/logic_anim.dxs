@@ -10,14 +10,14 @@
 void start()
 {
 	self.time = 0.0f;
-	DXL2_SetAnimFrame(self.objectId, 0, 0);
+	TFE_SetAnimFrame(self.objectId, 0, 0);
 }
 
 // Tick is called at a fixed rate.
 void tick()
 {
-	float frameRate = DXL2_GetAnimFramerate(self.objectId, 0);
-	uint frameCount = DXL2_GetAnimFrameCount(self.objectId, 0);
+	float frameRate = TFE_GetAnimFramerate(self.objectId, 0);
+	uint frameCount = TFE_GetAnimFrameCount(self.objectId, 0);
 
 	// Update the animation time.
 	self.time += timeStep;	
@@ -31,5 +31,5 @@ void tick()
 
 	// Compute the frame index given the current animation time.
 	int frameIndex = int(self.time * frameRate);
-	DXL2_SetAnimFrame(self.objectId, 0, frameIndex);
+	TFE_SetAnimFrame(self.objectId, 0, frameIndex);
 }
