@@ -129,8 +129,8 @@ namespace LevelEditor
 		"256",
 	};
 
-	static u32 s_recentCount = 14;	// 10 (just adding the rest for testing)
-	static LevelFilePath s_recentLevels[14] =
+	static u32 s_recentCount = 15;	// 10 (just adding the rest for testing)
+	static LevelFilePath s_recentLevels[15] =
 	{
 		{"DARK.GOB", "SECBASE.LEV",  "Secret Base",       "DARK.GOB"},
 		{"DARK.GOB", "TALAY.LEV",    "Talay: Tak Base",   "DARK.GOB"},
@@ -146,7 +146,9 @@ namespace LevelEditor
 		{"DARK.GOB", "IMPCITY.LEV",  "Imperial City",     "DARK.GOB"},
 		{"DARK.GOB", "FUELSTAT.LEV", "Fuel Station",      "DARK.GOB"},
 		{"DARK.GOB", "EXECUTOR.LEV", "The Executor",      "DARK.GOB"},
-		{"DARK.GOB", "ARC.LEV",		 "The Arc Hammer",    "DARK.GOB"}
+		{"DARK.GOB", "ARC.LEV",		 "The Arc Hammer",    "DARK.GOB"},
+
+		{"DEMO1.GOB", "SECBASE.LEV", "Demo 1", "DEMO1.GOB"},
 	};
 	
 	static EditorView s_editView = EDIT_VIEW_2D;

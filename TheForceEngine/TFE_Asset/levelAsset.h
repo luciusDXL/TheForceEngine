@@ -11,17 +11,6 @@
 #include <string>
 #include <vector>
 
-/*
-Finished flags:
-SEC_FLAGS1_EXTERIOR
-SEC_FLAGS1_PIT
-SEC_FLAGS1_EXT_ADJ
-SEC_FLAGS1_EXT_FLOOR_ADJ
-SEC_FLAGS1_NOWALL_DRAW
-
-Next:
-
-*/
 enum SectorFlags1
 {
 	SEC_FLAGS1_EXTERIOR = (1 << 0),
@@ -52,15 +41,6 @@ enum SectorFlags1
 	SEC_FLAGS1_CEIL_MOVED = (1 << 24),
 	SEC_FLAGS1_CHUTE = (1 << 25),
 };
-
-/*
-Finished flags:
-WF1_FLIP_HORIZ
-
-Next:
-WF1_ADJ_MID_TEX
-WF1_ILLUM_SIGN
-*/
 
 enum WallFlags1
 {

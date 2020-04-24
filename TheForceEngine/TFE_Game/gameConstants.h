@@ -29,8 +29,8 @@ namespace TFE_GameConstants
 	static const f32 c_gravityAccel = 111.6f;
 	static const f32 c_gravityAccelStep = c_gravityAccel * c_step;	// gravity acceleration per step.
 
-	static const f32 c_standingEyeHeight = -46.0f * 0.125f;  // Kyle's standing eye height is 46 texels.
-	static const f32 c_crouchingEyeHeight = -16.0f * 0.125f;  // Kyle's crouching eye height is 16 texels.
+	static const f32 c_standingEyeHeight  = -380108.0f / 65536.0f;  // Kyle's standing eye height is ~5.8 (-380108/65536 = -5.7999878)
+	static const f32 c_crouchingEyeHeight = -16.0f * 0.125f;		// Kyle's crouching eye height is 16 texels.
 	static const f32 c_standingHeight = 6.8f;
 	static const f32 c_crouchingHeight = 3.0f;
 	static const f32 c_crouchOnSpeed = 12.0f;	// DFU's per second.

@@ -201,6 +201,7 @@ namespace TFE_View
 		s_height = h;
 		s_halfWidth = f32(s_width >> 1);
 		s_halfHeight = f32(s_height >> 1);
+		// Re-evaluate based on reverse engineering efforts soon.
 		s_heightScale = floorf(s_halfHeight * c_aspect);
 		s_enableViewStats = enableViewStats;
 
