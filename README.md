@@ -7,12 +7,14 @@ The Force Engine is a project to reverse engineer and rebuild the Jedi Engine fo
 Playing Dark Forces or Outlaws using the Force Engine adds ease of use and modern features such as higher resolutions and modern control schemes such as mouse-look. Using the built-in tools allows for easier modding with more modern UI, greater flexibility and the ability to use enhancements made to the Jedi Engine for Outlaws in custom Dark Forces levels - such as slopes, stacked sectors, per-sector color maps and more.
 
 ## Minimum Requirements
-* Windows 7 / Linux (Version Info TBD)
+Note that older OS versions might work (such as Vista) but at least Windows 7 is highly recommended. Software rendering still relies on OpenGL to accelerate blitting. Generally a 2010 or later PC is recommended, though machines as old as 2009 or even 2006, depending on OS, may work but will likely not perform well at more than modest resolutions.
+* A 2009 or 2006 era PC or newer (depending on OS)
+* Windows 7 (2009) / Linux (Version Info TBD)
 * 32 bit or 64 bit
 * CPU with SSE2 support (any desktop/laptop CPU released after 2004)
 * Recommeded 2+ GB RAM
-* OpenGL 2.x for Software Rendering
-* OpenGL 3.x for Hardware Rendering
+* OpenGL 2.1 for Software Rendering (2006 era GPU)
+* OpenGL 3.3 for Hardware Rendering (2010 era GPU)
 
 ## Features
 The project is focused on accuracy - by using reverse engineering techniques to reconstruct the original code and algorithms - the Force Engine is designed to be extremely accurate, a complete replacement for the original executables. The engine supports three feature templates to make it easier to tune the experience:
