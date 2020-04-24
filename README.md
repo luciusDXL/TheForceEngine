@@ -8,7 +8,9 @@ Playing Dark Forces or Outlaws using the Force Engine adds ease of use and moder
 
 ## Minimum Requirements
 * Windows 7 / Linux (Version Info TBD)
+* 32 bit or 64 bit
 * CPU with SSE2 support (any desktop/laptop CPU released after 2004)
+* Recommeded 2+ GB RAM
 * OpenGL 2.x for Software Rendering
 * OpenGL 3.x for Hardware Rendering
 
