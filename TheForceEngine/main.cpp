@@ -380,6 +380,10 @@ int main(int argc, char* argv[])
 		{
 			showPerf = !showPerf;
 		}
+		if (TFE_Input::keyPressed(KEY_GRAVE))
+		{
+			TFE_FrontEndUI::toggleConsole();
+		}
 
 		TFE_System::update();
 		if (showPerf)
@@ -387,24 +391,22 @@ int main(int argc, char* argv[])
 			TFE_Editor::showPerf(frame);
 		}
 
-		if (appState == APP_STATE_MENU)
+		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
+		if (appState == APP_STATE_EDITOR)
 		{
-			TFE_FrontEndUI::draw();
-		}
-		else if (appState == APP_STATE_EDITOR)
-		{
-			if (TFE_Editor::update())
+			if (TFE_Editor::update(isConsoleOpen))
 			{
 				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
 		}
 		else if (appState == APP_STATE_DARK_FORCES)
 		{
-			if (TFE_GameMain::loop() == TRANS_QUIT)
+			if (TFE_GameMain::loop(isConsoleOpen) == TRANS_QUIT)
 			{
 				s_loop = false;
 			}
 		}
+		TFE_FrontEndUI::draw(appState == APP_STATE_MENU);
 
 		// Render
 		renderer->begin();

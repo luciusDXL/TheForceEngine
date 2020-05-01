@@ -146,9 +146,9 @@ namespace TFE_GameMain
 		return trans;
 	}
 
-	GameTransition loop()
+	GameTransition loop(bool consoleOpen)
 	{
-		GameTransition trans = TFE_GameLoop::update(s_gameState, s_gameOverlay);
+		GameTransition trans = TFE_GameLoop::update(consoleOpen, s_gameState, s_gameOverlay);
 		TFE_GameLoop::draw();
 
 		// Update the current state.

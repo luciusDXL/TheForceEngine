@@ -14,7 +14,7 @@ namespace TFE_Editor
 {
 	void enable(TFE_Renderer* renderer);
 	void disable();
-	bool update();
+	bool update(bool consoleOpen = false);
 	bool render();
 
 	void showPerf(u32 frame);

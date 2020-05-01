@@ -22,7 +22,10 @@ namespace TFE_FrontEndUI
 	static AppState s_appState;
 	static ImFont* s_menuFont;
 	static ImFont* s_titleFont;
+	static ImFont* s_consoleFont;
 	static SubUI s_subUI;
+
+	static bool s_consoleActive = false;
 	
 	void init()
 	{
@@ -33,6 +36,7 @@ namespace TFE_FrontEndUI
 		ImGuiIO& io = ImGui::GetIO();
 		s_menuFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 32);
 		s_titleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 48);
+		s_consoleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 20);
 	}
 
 	void shutdown()
@@ -49,7 +53,17 @@ namespace TFE_FrontEndUI
 		s_appState = state;
 	}
 
-	void draw()
+	void toggleConsole()
+	{
+		s_consoleActive = !s_consoleActive;
+	}
+
+	bool isConsoleOpen()
+	{
+		return s_consoleActive;
+	}
+
+	void draw(bool drawFrontEnd)
 	{
 		DisplayInfo display;
 		TFE_RenderBackend::getDisplayInfo(&display);
@@ -57,6 +71,17 @@ namespace TFE_FrontEndUI
 		u32 h = display.height;
 		u32 menuWidth = 173;
 		u32 menuHeight = 264;
+
+		if (s_consoleActive)
+		{
+			ImGui::OpenPopup("console");
+			if (ImGui::BeginPopup("console"))
+			{
+				ImGui::Text("Console");
+				ImGui::EndPopup();
+			}
+		}
+		if (!drawFrontEnd) { return; }
 
 		if (s_subUI == FEUI_NONE)
 		{

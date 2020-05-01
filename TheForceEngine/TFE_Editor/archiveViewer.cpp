@@ -173,7 +173,7 @@ namespace ArchiveViewer
 				TFE_Input::enableRelativeMode(!s_showUi);
 			}
 
-			GameTransition trans = TFE_GameLoop::update();
+			GameTransition trans = TFE_GameLoop::update(false);
 			TFE_GameLoop::draw();
 			s_viewStats = TFE_GameLoop::getViewStats();
 

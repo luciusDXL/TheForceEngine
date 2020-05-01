@@ -322,7 +322,7 @@ namespace LevelEditor
 	{
 		if (s_runLevel)
 		{
-			GameTransition trans = TFE_GameLoop::update();
+			GameTransition trans = TFE_GameLoop::update(false);
 			TFE_GameLoop::draw();
 
 			if (TFE_Input::keyPressed(KEY_BACKSPACE) || trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)

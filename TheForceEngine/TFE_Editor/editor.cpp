@@ -48,7 +48,7 @@ namespace TFE_Editor
 		LevelEditor::disable();
 	}
 
-	bool update()
+	bool update(bool consoleOpen)
 	{
 		bool fullscreen = s_editorMode == EDIT_ASSET ? ArchiveViewer::isFullscreen() : LevelEditor::isFullscreen();
 		if (!fullscreen) { menu(); }

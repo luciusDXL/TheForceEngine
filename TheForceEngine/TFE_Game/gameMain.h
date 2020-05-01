@@ -14,5 +14,5 @@ class TFE_Renderer;
 namespace TFE_GameMain
 {
 	void init(TFE_Renderer* renderer);
-	GameTransition loop();
+	GameTransition loop(bool consoleOpen);
 }

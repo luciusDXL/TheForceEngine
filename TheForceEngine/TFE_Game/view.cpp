@@ -196,7 +196,7 @@ namespace TFE_View
 		}
 		renderer->setColorMap(s_colorMap);
 		TFE_RenderCommon::init(s_colorMap);
-				
+
 		s_width = w;
 		s_height = h;
 		s_halfWidth = f32(s_width >> 1);

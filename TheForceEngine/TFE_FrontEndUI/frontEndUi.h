@@ -26,7 +26,10 @@ namespace TFE_FrontEndUI
 	void shutdown();
 
 	AppState update();
-	void draw();
+	void draw(bool drawFrontEnd = true);
 
 	void setAppState(AppState state);
+	void toggleConsole();
+
+	bool isConsoleOpen();
 }

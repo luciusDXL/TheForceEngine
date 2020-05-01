@@ -362,15 +362,15 @@ namespace TFE_GameLoop
 		return dY;
 	}
 		
-	GameTransition update(GameState curState, GameOverlay curOverlay)
+	GameTransition update(bool consoleOpen, GameState curState, GameOverlay curOverlay)
 	{
 		// Handle Game UI
 		GameTransition trans = TRANS_NONE;
 				
 		const bool escMenuOpen = TFE_GameUi::isEscMenuOpen();
 		const bool shouldDrawGame = TFE_GameUi::shouldDrawGame();
-		const bool shouldUpdateGame = TFE_GameUi::shouldUpdateGame();
-		const GameUiResult result = TFE_GameUi::update(&s_player);
+		const bool shouldUpdateGame = TFE_GameUi::shouldUpdateGame() && !consoleOpen;
+		const GameUiResult result = consoleOpen ? GAME_UI_CONTINUE : TFE_GameUi::update(&s_player);
 		if (result == GAME_UI_QUIT)
 		{
 			return TRANS_QUIT;
@@ -389,7 +389,7 @@ namespace TFE_GameLoop
 		}
 
 		// If draw game isn't set, then we cannot use the escape menu.
-		if (!escMenuOpen && shouldDrawGame && TFE_Input::keyPressed(KEY_ESCAPE) && s_inputDelay <= 0)
+		if (!escMenuOpen && shouldDrawGame && TFE_Input::keyPressed(KEY_ESCAPE) && s_inputDelay <= 0 && !consoleOpen)
 		{
 			TFE_GameUi::openEscMenu();
 		}
