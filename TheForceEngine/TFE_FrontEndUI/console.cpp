@@ -7,12 +7,19 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
+#include <TFE_System/parser.h>
 
 #include <TFE_Ui/imGUI/imgui.h>
 #include <algorithm>
 
-namespace Console
+namespace TFE_Console
 {
+	struct HistoryEntry
+	{
+		Vec4f color;
+		std::string text;
+	};
+
 	static f32 c_maxConsoleHeight = 0.50f;
 
 	static ImFont* s_consoleFont;
@@ -21,8 +28,22 @@ namespace Console
 	static s32 s_historyIndex;
 	static s32 s_historyScroll;
 
-	static std::vector<std::string> s_history;
+	static std::vector<HistoryEntry> s_history;
 	static char s_cmdLine[4096];
+
+	static const Vec4f c_historyDefaultColor = { 0.5f, 0.5f, 0.75f, 1.0f };
+	static const Vec4f c_historyLogColor     = { 0.5f, 0.5f, 0.5f, 1.0f };
+	static const Vec4f c_historyErrorColor   = { 0.75f, 0.1f, 0.1f, 1.0f };
+
+	static std::vector<CVar> s_var;
+
+	// temp.
+	static s32 s_varTest = -1;
+	static f32 s_varTest2 = 0.274f;
+	static bool s_varTestBool = false;
+	static char s_varTestStr[32] = "Test String";
+	
+	void registerTestVar();
 
 	bool init()
 	{
@@ -32,6 +53,8 @@ namespace Console
 		s_anim = 0.0f;
 		s_historyIndex = -1;
 		s_historyScroll = 0;
+
+		registerTestVar();
 		return true;
 	}
 
@@ -64,7 +87,7 @@ namespace Console
 					if (index >= 0)
 					{
 						data->DeleteChars(0, data->BufTextLen);
-						data->InsertChars(0, s_history[index].c_str());
+						data->InsertChars(0, s_history[index].text.c_str());
 					}
 				}
 				else if (prevHistoryIndex != s_historyIndex)
@@ -75,17 +98,219 @@ namespace Console
 		};
 		return 0;
 	}
+			
+	void registerCVarInt(const char* name, u32 flags, s32* var)
+	{
+		CVar newCVar;
+		newCVar.name = name;
+		newCVar.type = CVAR_INT;
+		newCVar.flags = flags;
+		newCVar.valueInt = var;
+		s_var.push_back(newCVar);
+	}
 
+	void registerCVarFloat(const char* name, u32 flags, f32* var)
+	{
+		CVar newCVar;
+		newCVar.name = name;
+		newCVar.type = CVAR_FLOAT;
+		newCVar.flags = flags;
+		newCVar.valueFloat = var;
+		s_var.push_back(newCVar);
+	}
+
+	void registerCVarBool(const char* name, u32 flags, bool* var)
+	{
+		CVar newCVar;
+		newCVar.name = name;
+		newCVar.type = CVAR_BOOL;
+		newCVar.flags = flags;
+		newCVar.valueBool = var;
+		s_var.push_back(newCVar);
+	}
+
+	void registerCVarString(const char* name, u32 flags, char* var, u32 maxLen)
+	{
+		CVar newCVar;
+		newCVar.name = name;
+		newCVar.type = CVAR_STRING;
+		newCVar.flags = flags;
+		newCVar.stringValue = var;
+		newCVar.maxLen = maxLen;
+		s_var.push_back(newCVar);
+	}
+
+	void registerTestVar()
+	{
+		CVAR_INT(s_varTest, "r_testInt", 0);
+		CVAR_FLOAT(s_varTest2, "r_testFloat", 0);
+		CVAR_BOOL(s_varTestBool, "r_testBool", 0);
+		CVAR_STRING(s_varTestStr, "r_testString", 0);
+	}
+
+	void setVariableValue(CVar* var, const char* value)
+	{
+		char* endPtr;
+		char msg[4096];
+		switch (var->type)
+		{
+			case CVAR_INT:
+				*var->valueInt = strtol(value, &endPtr, 10);
+				sprintf(msg, "set %s = %d", var->name.c_str(), *var->valueInt);
+			break;
+			case CVAR_FLOAT:
+				*var->valueFloat = (f32)strtod(value, &endPtr);
+				sprintf(msg, "set %s = %f", var->name.c_str(), *var->valueFloat);
+			break;
+			case CVAR_BOOL:
+				if (strcasecmp(value, "true") == 0)
+				{
+					*var->valueBool = true;
+				}
+				else if (strcasecmp(value, "false") == 0)
+				{
+					*var->valueBool = false;
+				}
+				else
+				{
+					s32 intValue = strtol(value, &endPtr, 10);
+					*var->valueBool = intValue != 0;
+				}
+				sprintf(msg, "set %s = %s", var->name.c_str(), *var->valueBool ? "true" : "false");
+			break;
+			case CVAR_STRING:
+				const size_t sizeToCopy = std::min(strlen(value), (size_t)var->maxLen);
+				strncpy(var->stringValue, value, sizeToCopy);
+				var->stringValue[sizeToCopy] = 0;
+				sprintf(msg, "set %s = \"%s\"", var->name.c_str(), var->stringValue);
+			break;
+		};
+
+		s_history.push_back({ c_historyDefaultColor, msg });
+	}
+
+	void setVariable(const char* name, const char* value)
+	{
+		size_t count = s_var.size();
+		for (size_t i = 0; i < count; i++)
+		{
+			if (s_var[i].name == name)
+			{
+				setVariableValue(&s_var[i], value);
+				return;
+			}
+		}
+
+		char errorMsg[4096];
+		sprintf(errorMsg, "set - Unknown variable \"%s\"", name);
+		s_history.push_back({ c_historyErrorColor, errorMsg });
+	}
+
+	void getVariable(const char* name, char* value)
+	{
+		CVar* var = nullptr;
+		size_t count = s_var.size();
+		for (size_t i = 0; i < count; i++)
+		{
+			if (s_var[i].name == name)
+			{
+				var = &s_var[i];
+				break;
+			}
+		}
+		if (!var)
+		{
+			char errorMsg[4096];
+			sprintf(errorMsg, "get - Unknown variable \"%s\"", name);
+			s_history.push_back({ c_historyErrorColor, errorMsg });
+			return;
+		}
+
+		char msg[4096];
+		switch (var->type)
+		{
+		case CVAR_INT:
+			sprintf(msg, "%s = %d", var->name.c_str(), *var->valueInt);
+			break;
+		case CVAR_FLOAT:
+			sprintf(msg, "%s = %f", var->name.c_str(), *var->valueFloat);
+			break;
+		case CVAR_BOOL:
+			sprintf(msg, "%s = %s", var->name.c_str(), *var->valueBool ? "true" : "false");
+			break;
+		case CVAR_STRING:
+			sprintf(msg, "%s = \"%s\"", var->name.c_str(), var->stringValue);
+			break;
+		};
+
+		s_history.push_back({ c_historyDefaultColor, msg });
+	}
+
+	// TODO: Proper handling and registering of commands.
 	void handleCommand(const char* cmd)
 	{
-		if (strcasecmp(cmd, "clear") == 0)
+		char errorMsg[4096];
+
+		TFE_Parser parser;
+		parser.init(cmd, strlen(cmd));
+
+		TokenList tokens;
+		parser.tokenizeLine(cmd, tokens);
+		if (tokens.size() < 1)
+		{
+			char errorMsg[4096];
+			sprintf(errorMsg, "Invalid Command - only whitespace found.");
+			s_history.push_back({ c_historyErrorColor, errorMsg });
+
+			return;
+		}
+
+		if (strcasecmp(tokens[0].c_str(), "clear") == 0)
 		{
 			s_history.clear();
 			s_historyIndex = -1;
 		}
+		else if (strcasecmp(tokens[0].c_str(), "exit") == 0)
+		{
+			s_history.push_back({ c_historyDefaultColor, cmd });
+			startClose();
+		}
+		else if (strcasecmp(tokens[0].c_str(), "echo") == 0)
+		{
+			if (tokens.size() > 1 && tokens[1].length())
+			{
+				s_history.push_back({ c_historyDefaultColor, tokens[1].c_str() });
+			}
+		}
+		else if (strcasecmp(tokens[0].c_str(), "set") == 0)
+		{
+			if (tokens.size() >= 3)
+			{
+				setVariable(tokens[1].c_str(), tokens[2].c_str());
+			}
+			else
+			{
+				sprintf(errorMsg, "set - not enough arguments %d: set name value", tokens.size());
+				s_history.push_back({ c_historyErrorColor, errorMsg });
+			}
+		}
+		else if (strcasecmp(tokens[0].c_str(), "get") == 0)
+		{
+			if (tokens.size() >= 2)
+			{
+				char value[64];
+				getVariable(tokens[1].c_str(), value);
+			}
+			else
+			{
+				sprintf(errorMsg, "get - not enough arguments %d: get name", tokens.size());
+				s_history.push_back({ c_historyErrorColor, errorMsg });
+			}
+		}
 		else
 		{
-			s_history.push_back(cmd);
+			sprintf(errorMsg, "Invalid command \"%s\"", tokens[0].c_str());
+			s_history.push_back({ c_historyErrorColor, errorMsg });
 		}
 	}
 
@@ -139,7 +364,7 @@ namespace Console
 			for (s32 i = start; i >= 0 && y > -20; i--, y -= 20)
 			{
 				ImGui::SetCursorPosY(y);
-				ImGui::TextColored(ImVec4({ 1.0f, 1.0f, 1.0f, 1.0f }), s_history[i].c_str());
+				ImGui::TextColored(ImVec4(s_history[i].color.x, s_history[i].color.y, s_history[i].color.z, s_history[i].color.w), s_history[i].text.c_str());
 			}
 
 			ImGui::SetKeyboardFocusHere();
@@ -190,6 +415,6 @@ namespace Console
 
 	void addToHistory(const char* str)
 	{
-		s_history.push_back(str);
+		s_history.push_back({ c_historyLogColor, str });
 	}
 }

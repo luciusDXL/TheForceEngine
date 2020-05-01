@@ -17,6 +17,7 @@
 #include <TFE_Asset/colormapAsset.h>
 #include <TFE_Asset/modelAsset.h>
 #include <TFE_LogicSystem/logicSystem.h>
+#include <TFE_FrontEndUI/console.h>
 #include <algorithm>
 #include <assert.h>
 
@@ -154,6 +155,9 @@ namespace TFE_View
 	{
 		s_objects = LevelGameObjects::getGameObjectList();
 		s_sectorObjects = LevelGameObjects::getSectorObjectList();
+
+		CVAR_FLOAT(s_focalLength, "r_focalLength", 0);
+		CVAR_FLOAT(s_heightScale, "r_heightScale", 0);
 
 		if (!level)
 		{

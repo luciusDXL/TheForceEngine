@@ -37,12 +37,12 @@ namespace TFE_FrontEndUI
 		s_menuFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 32);
 		s_titleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 48);
 
-		Console::init();
+		TFE_Console::init();
 	}
 
 	void shutdown()
 	{
-		Console::destroy();
+		TFE_Console::destroy();
 	}
 
 	AppState update()
@@ -61,22 +61,22 @@ namespace TFE_FrontEndUI
 		// Start open
 		if (s_consoleActive)
 		{
-			Console::startOpen();
+			TFE_Console::startOpen();
 		}
 		else
 		{
-			Console::startClose();
+			TFE_Console::startClose();
 		}
 	}
 
 	bool isConsoleOpen()
 	{
-		return Console::isOpen();
+		return TFE_Console::isOpen();
 	}
 
 	void logToConsole(const char* str)
 	{
-		Console::addToHistory(str);
+		TFE_Console::addToHistory(str);
 	}
 
 	void draw(bool drawFrontEnd)
@@ -88,9 +88,9 @@ namespace TFE_FrontEndUI
 		u32 menuWidth = 173;
 		u32 menuHeight = 264;
 
-		if (Console::isOpen())
+		if (TFE_Console::isOpen())
 		{
-			Console::update();
+			TFE_Console::update();
 		}
 		if (!drawFrontEnd) { return; }
 
