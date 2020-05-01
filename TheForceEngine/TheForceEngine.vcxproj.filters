@@ -490,6 +490,9 @@
     <ClInclude Include="TFE_Game\gameState.h">
       <Filter>Source\TFE_Game</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_FrontEndUI\console.h">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -794,6 +797,9 @@
     </ClCompile>
     <ClCompile Include="TFE_System\Threads\Win32\threadWin32.cpp">
       <Filter>Source\TFE_System\Threads\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_FrontEndUI\console.cpp">
+      <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -2,6 +2,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -74,5 +75,8 @@ namespace TFE_System
 		{
 			assert(0);
 		}
+
+		sprintf(s_workStr, "[%s] %s", tag, s_msgStr);
+		TFE_FrontEndUI::logToConsole(s_workStr);
 	}
 }

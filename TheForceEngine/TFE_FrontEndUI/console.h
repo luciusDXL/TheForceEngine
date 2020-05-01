@@ -10,27 +10,15 @@
 #include <TFE_System/types.h>
 #include <TFE_Renderer/renderer.h>
 
-enum AppState
+namespace Console
 {
-	APP_STATE_MENU = 0,
-	APP_STATE_EDITOR,
-	APP_STATE_DARK_FORCES,
-	APP_STATE_QUIT,
-	APP_STATE_COUNT,
-	APP_STATE_UNINIT = APP_STATE_COUNT
-};
+	bool init();
+	void destroy();
 
-namespace TFE_FrontEndUI
-{
-	void init();
-	void shutdown();
+	void update();
+	bool isOpen();
+	void startOpen();
+	void startClose();
 
-	AppState update();
-	void draw(bool drawFrontEnd = true);
-
-	void setAppState(AppState state);
-	void toggleConsole();
-
-	bool isConsoleOpen();
-	void logToConsole(const char* str);
+	void addToHistory(const char* str);
 }

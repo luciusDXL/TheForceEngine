@@ -1,4 +1,5 @@
 #include "frontEndUi.h"
+#include "console.h"
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -22,7 +23,6 @@ namespace TFE_FrontEndUI
 	static AppState s_appState;
 	static ImFont* s_menuFont;
 	static ImFont* s_titleFont;
-	static ImFont* s_consoleFont;
 	static SubUI s_subUI;
 
 	static bool s_consoleActive = false;
@@ -36,11 +36,13 @@ namespace TFE_FrontEndUI
 		ImGuiIO& io = ImGui::GetIO();
 		s_menuFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 32);
 		s_titleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 48);
-		s_consoleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 20);
+
+		Console::init();
 	}
 
 	void shutdown()
 	{
+		Console::destroy();
 	}
 
 	AppState update()
@@ -56,11 +58,25 @@ namespace TFE_FrontEndUI
 	void toggleConsole()
 	{
 		s_consoleActive = !s_consoleActive;
+		// Start open
+		if (s_consoleActive)
+		{
+			Console::startOpen();
+		}
+		else
+		{
+			Console::startClose();
+		}
 	}
 
 	bool isConsoleOpen()
 	{
-		return s_consoleActive;
+		return Console::isOpen();
+	}
+
+	void logToConsole(const char* str)
+	{
+		Console::addToHistory(str);
 	}
 
 	void draw(bool drawFrontEnd)
@@ -72,14 +88,9 @@ namespace TFE_FrontEndUI
 		u32 menuWidth = 173;
 		u32 menuHeight = 264;
 
-		if (s_consoleActive)
+		if (Console::isOpen())
 		{
-			ImGui::OpenPopup("console");
-			if (ImGui::BeginPopup("console"))
-			{
-				ImGui::Text("Console");
-				ImGui::EndPopup();
-			}
+			Console::update();
 		}
 		if (!drawFrontEnd) { return; }
 

@@ -272,6 +272,7 @@
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
     <ClInclude Include="TFE_FileSystem\paths.h" />
     <ClInclude Include="TFE_FileSystem\stream.h" />
+    <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
     <ClInclude Include="TFE_Game\gameConstants.h" />
     <ClInclude Include="TFE_Game\gameHud.h" />
@@ -389,6 +390,7 @@
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
+    <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
     <ClCompile Include="TFE_Game\gameHud.cpp" />
     <ClCompile Include="TFE_Game\gameLoop.cpp" />
