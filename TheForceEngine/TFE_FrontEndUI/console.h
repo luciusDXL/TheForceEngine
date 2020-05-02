@@ -10,11 +10,17 @@
 #include <TFE_System/types.h>
 #include <TFE_Renderer/renderer.h>
 #include <string>
+#include <vector>
 
-#define CVAR_INT(var, name, flags) TFE_Console::registerCVarInt(name, flags, &##var)
-#define CVAR_FLOAT(var, name, flags) TFE_Console::registerCVarFloat(name, flags, &##var)
-#define CVAR_BOOL(var, name, flags) TFE_Console::registerCVarBool(name, flags, &##var)
-#define CVAR_STRING(var, name, flags) TFE_Console::registerCVarString(name, flags, ##var, sizeof(var))
+#define CVAR_INT(var, name, flags, help) TFE_Console::registerCVarInt(name, flags, &##var, help)
+#define CVAR_FLOAT(var, name, flags, help) TFE_Console::registerCVarFloat(name, flags, &##var, help)
+#define CVAR_BOOL(var, name, flags, help) TFE_Console::registerCVarBool(name, flags, &##var, help)
+#define CVAR_STRING(var, name, flags, help) TFE_Console::registerCVarString(name, flags, ##var, sizeof(var), help)
+
+// Register a basic command
+#define CCMD(name, func, argCount, help) TFE_Console::registerCommand(name, func, argCount, help)
+// Register a command that is not repeated in the output (such as echo).
+#define CCMD_NOREPEAT(name, func, argCount, help) TFE_Console::registerCommand(name, func, argCount, help, false)
 
 namespace TFE_Console
 {
@@ -29,6 +35,7 @@ namespace TFE_Console
 	struct CVar
 	{
 		std::string name;
+		std::string helpString;
 		CVarType type;
 		u32 flags;
 		u32 maxLen = 0;
@@ -40,11 +47,14 @@ namespace TFE_Console
 			char* stringValue;
 		};
 	};
-		
-	void registerCVarInt(const char* name, u32 flags, s32* var);
-	void registerCVarFloat(const char* name, u32 flags, f32* var);
-	void registerCVarBool(const char* name, u32 flags, bool* var);
-	void registerCVarString(const char* name, u32 flags, char* var, u32 maxLen);
+
+	typedef void(*ConsoleFunc)(const std::vector<std::string>& args);
+			
+	void registerCVarInt(const char* name, u32 flags, s32* var, const char* helpString);
+	void registerCVarFloat(const char* name, u32 flags, f32* var, const char* helpString);
+	void registerCVarBool(const char* name, u32 flags, bool* var, const char* helpString);
+	void registerCVarString(const char* name, u32 flags, char* var, u32 maxLen, const char* helpString);
+	void registerCommand(const char* name, ConsoleFunc func, u32 argCount, const char* helpString, bool repeat = true);
 
 	bool init();
 	void destroy();

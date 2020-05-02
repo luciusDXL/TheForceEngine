@@ -156,8 +156,8 @@ namespace TFE_View
 		s_objects = LevelGameObjects::getGameObjectList();
 		s_sectorObjects = LevelGameObjects::getSectorObjectList();
 
-		CVAR_FLOAT(s_focalLength, "r_focalLength", 0);
-		CVAR_FLOAT(s_heightScale, "r_heightScale", 0);
+		CVAR_FLOAT(s_focalLength, "r_focalLength", 0, "Focal Length - combined virtual width and field of view scalar - default is virtual width / 2");
+		CVAR_FLOAT(s_heightScale, "r_heightScale", 0, "Height Scale - combined virtual height, field of view and aspect ratio - default is virtual height * 4/3");
 
 		if (!level)
 		{
