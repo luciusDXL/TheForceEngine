@@ -271,7 +271,7 @@ namespace TFE_Console
 		{
 			if (strcasecmp(cmd->name.c_str(), args[0].c_str()) == 0)
 			{
-				if (argCount < cmd->argCount)
+				if (argCount < (s32)cmd->argCount)
 				{
 					sprintf(errorMsg, "Too few arguments (%d) for console command \"%s\"", argCount, cmd->name.c_str());
 					s_history.push_back({ c_historyErrorColor, errorMsg });
@@ -341,8 +341,8 @@ namespace TFE_Console
 		const f32 consoleHeight = floorf(s_height * c_maxConsoleHeight * f32(h));
 		ImGui::PushFont(s_consoleFont);
 		ImGui::OpenPopup("console");
-		ImGui::SetNextWindowSize(ImVec2(w, consoleHeight));
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		ImGui::SetNextWindowSize(ImVec2(f32(w), consoleHeight));
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 		ImGui::SetWindowFocus("##InputField");
 		if (ImGui::BeginPopup("console", ImGuiWindowFlags_NoScrollbar))
 		{
@@ -356,20 +356,20 @@ namespace TFE_Console
 			}
 
 			const s32 count = (s32)s_history.size();
-			const s32 elementsPerPage = (consoleHeight - 36) / 20;
+			const s32 elementsPerPage = ((s32)consoleHeight - 36) / 20;
 			s_historyScroll = std::max(0, std::min(s_historyScroll, count - elementsPerPage));
 			s32 start = count - 1 - s_historyScroll;
 
-			s32 y = consoleHeight - 56;
+			s32 y = (s32)consoleHeight - 56;
 			for (s32 i = start; i >= 0 && y > -20; i--, y -= 20)
 			{
-				ImGui::SetCursorPosY(y);
+				ImGui::SetCursorPosY(f32(y));
 				ImGui::TextColored(ImVec4(s_history[i].color.x, s_history[i].color.y, s_history[i].color.z, s_history[i].color.w), s_history[i].text.c_str());
 			}
 
 			ImGui::SetKeyboardFocusHere();
-			ImGui::SetNextItemWidth(w - 16);
-			ImGui::SetCursorPosY(consoleHeight - 32);
+			ImGui::SetNextItemWidth(f32(w - 16));
+			ImGui::SetCursorPosY(consoleHeight - 32.0f);
 			u32 flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_NoHorizontalScroll |
 						ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
 			// Make sure the key to close the console doesn't make its was into the command line.

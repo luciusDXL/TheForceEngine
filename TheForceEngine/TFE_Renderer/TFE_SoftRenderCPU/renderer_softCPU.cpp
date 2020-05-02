@@ -492,7 +492,7 @@ void TFE_SoftRenderCPU::drawHorizontalLine(s32 x0, s32 x1, s32 y, u8 color)
 {
 	x0 = std::max(x0, 0);
 	x1 = std::min(x1, (s32)m_width-1);
-	if (x0 > x1 || y < 0 || y >= m_height) { return; }
+	if (x0 > x1 || y < 0 || y >= (s32)m_height) { return; }
 
 	u8* outBuffer = &m_display[y * m_width + x0];
 	const s32 count = x1 - x0 + 1;
@@ -506,7 +506,7 @@ void TFE_SoftRenderCPU::drawVerticalLine(s32 y0, s32 y1, s32 x, u8 color)
 {
 	y0 = std::max(y0, 0);
 	y1 = std::min(y1, (s32)m_height - 1);
-	if (y0 > y1 || x < 0 || x >= m_width) { return; }
+	if (y0 > y1 || x < 0 || x >= (s32)m_width) { return; }
 
 	u8* outBuffer = &m_display[y0 * m_width + x];
 	const s32 count = y1 - y0 + 1;

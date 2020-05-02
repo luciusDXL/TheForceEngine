@@ -487,7 +487,7 @@ namespace TFE_Texture
 		}
 
 		const u8* pixelData = buffer + sizeof(PcxHeader);
-		const u32 imageSize = s_buffer.size() - 769 - sizeof(PcxHeader);
+		const u32 imageSize = u32(s_buffer.size() - 769 - sizeof(PcxHeader));
 
 		Texture* texture = new Texture();
 		strcpy(texture->name, name);
@@ -515,7 +515,7 @@ namespace TFE_Texture
 			for (u32 y = 0; y < height; y++)
 			{
 				u8* dst = &imageOut[y * width];
-				for (s32 x = 0; x < width;)
+				for (u32 x = 0; x < width;)
 				{
 					u8 c = *pixelData;
 					pixelData++;

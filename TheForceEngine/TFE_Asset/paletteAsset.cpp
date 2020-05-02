@@ -76,7 +76,7 @@ namespace TFE_Palette
 		memset(pal->colors, 0, sizeof(u32) * 256);
 
 		const u8* color = src + 2;
-		for (u32 i = first; i <= last; i++, color += 3)
+		for (s32 i = first; i <= last; i++, color += 3)
 		{
 			pal->colors[i] = color[0] | (color[1] << 8u) | (color[2] << 16u) | (0xff << 24u);
 		}

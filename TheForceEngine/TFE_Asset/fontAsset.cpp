@@ -123,19 +123,19 @@ namespace TFE_Font
 		memset(font, 0, sizeof(Font));
 		FontHeader* header = (FontHeader*)s_buffer.data();
 		
-		font->startChar = header->first;
-		font->endChar = header->last;
-		font->height = header->height;
-		font->charCount = header->last - header->first + 1;
+		font->startChar = (u8)header->first;
+		font->endChar = (u8)header->last;
+		font->height = (u8)header->height;
+		font->charCount = u8(header->last - header->first + 1);
 
 		//character widths.
 		const s32 count = font->charCount;
 		const u8* data = s_buffer.data() + sizeof(FontHeader);
 		u32 pixelCount = 0u;
 		// Why is the data invalid? - only the font height seems to work.
-		for (u32 i = 0; i < count; i++, data++)
+		for (s32 i = 0; i < count; i++, data++)
 		{
-			font->width[i] = header->bitsPerLine;
+			font->width[i] = (u8)header->bitsPerLine;
 			font->step[i] = (*data) + 2;
 			font->maxWidth = std::max(font->maxWidth, font->step[i]);
 			pixelCount += font->width[i] * font->height;
@@ -144,7 +144,7 @@ namespace TFE_Font
 		font->imageData = new u8[pixelCount];
 		u32 imageOffset = 0u;
 		const u8* srcBitmap = s_buffer.data() + sizeof(FontHeader) + header->last;
-		for (u32 i = 0; i < count; i++)
+		for (s32 i = 0; i < count; i++)
 		{
 			const u8 width = font->width[i];
 			u8* dstImage = font->imageData + imageOffset;
@@ -411,7 +411,7 @@ namespace TFE_Font
 		u32 pixelCount = 0u;
 		// Why is the data invalid? - only the font height seems to work.
 		font->maxWidth = c_sysFontWidth;
-		for (u32 i = 0; i < count; i++)
+		for (s32 i = 0; i < count; i++)
 		{
 			font->step[i]  = c_systemFont[i * 7 + 6];
 			font->width[i] = (font->step[i] < c_sysFontWidth) ? font->step[i] : c_sysFontWidth;
@@ -423,7 +423,7 @@ namespace TFE_Font
 
 		u32 imageOffset = 0u;
 		const u8* srcBitmap = c_systemFont;
-		for (u32 i = 0; i < count; i++)
+		for (s32 i = 0; i < count; i++)
 		{
 			const u8 width = font->width[i];
 			u8* dstImage = font->imageData + imageOffset;

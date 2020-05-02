@@ -98,7 +98,7 @@ namespace TFE_FrontEndUI
 		{
 			// Title
 			ImGui::PushFont(s_titleFont);
-			ImGui::SetNextWindowPos(ImVec2((w - 16*24 - 24) / 2, 100));
+			ImGui::SetNextWindowPos(ImVec2(f32((w - 16*24 - 24) / 2), 100.0f));
 			bool titleActive = true;
 			ImGui::Begin("##Title", &titleActive, ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
 			ImGui::Text("The Force Engine");
@@ -109,8 +109,8 @@ namespace TFE_FrontEndUI
 			ImGui::PushFont(s_menuFont);
 
 			bool active = true;
-			ImGui::SetNextWindowPos(ImVec2((w - menuWidth) / 2, h - menuHeight - 100));
-			ImGui::SetNextWindowSize(ImVec2(menuWidth, menuHeight));
+			ImGui::SetNextWindowPos(ImVec2(f32((w - menuWidth) / 2), f32(h - menuHeight - 100)));
+			ImGui::SetNextWindowSize(ImVec2((f32)menuWidth, (f32)menuHeight));
 			ImGui::Begin("##MainMenu", &active, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
 				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
 
@@ -143,8 +143,8 @@ namespace TFE_FrontEndUI
 		else if (s_subUI == FEUI_MANUAL)
 		{
 			bool active = true;
-			ImGui::SetNextWindowPos(ImVec2(160, 160));
-			ImGui::SetNextWindowSize(ImVec2(w - 320, h - 320));
+			ImGui::SetNextWindowPos(ImVec2(160.0f, 160.0f));
+			ImGui::SetNextWindowSize(ImVec2(f32(w - 320), f32(h - 320)));
 		}
 	}
 }

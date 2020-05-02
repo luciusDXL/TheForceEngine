@@ -53,7 +53,7 @@ namespace TFE_Polygon
 	{
 		f32 area = 0.0f;
 		u32 vPrev = poly->vtxCount - 1;
-		for (u32 v = 0; v < poly->vtxCount; v++)
+		for (s32 v = 0; v < poly->vtxCount; v++)
 		{
 			const Vec2f& v0 = poly->vtx[vPrev];
 			const Vec2f& v1 = poly->vtx[v];
@@ -89,8 +89,8 @@ namespace TFE_Polygon
 			s_clipper.AddPath(outer, ClipperLib::ptSubject, true);
 			s_clipper.Execute(ClipperLib::ctUnion, solution, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
-			outerCount = (s32)solution.size();
-			for (s32 i = 0; i < outerCount; i++)
+			outerCount = (u32)solution.size();
+			for (u32 i = 0; i < outerCount; i++)
 			{
 				ClipperLib::Path& path = solution[i];
 				outerPoly[i].vtxCount = (u32)path.size();
