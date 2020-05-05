@@ -12,6 +12,12 @@
 #include <string>
 #include <vector>
 
+enum CVarFlag
+{
+	CVFLAG_NONE = 0,
+	CVFLAG_READ_ONLY = (1 << 0),
+};
+
 #define CVAR_INT(var, name, flags, help) TFE_Console::registerCVarInt(name, flags, &##var, help)
 #define CVAR_FLOAT(var, name, flags, help) TFE_Console::registerCVarFloat(name, flags, &##var, help)
 #define CVAR_BOOL(var, name, flags, help) TFE_Console::registerCVarBool(name, flags, &##var, help)

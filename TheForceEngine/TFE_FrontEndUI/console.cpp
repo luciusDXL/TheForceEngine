@@ -502,17 +502,24 @@ namespace TFE_Console
 
 	void setVariable(const char* name, const char* value)
 	{
+		char errorMsg[4096];
+
 		size_t count = s_var.size();
 		for (size_t i = 0; i < count; i++)
 		{
 			if (s_var[i].name == name)
 			{
+				if (s_var[i].flags & CVFLAG_READ_ONLY)
+				{
+					sprintf(errorMsg, "Cannot change Read-Only variable \"%s\"", name);
+					s_history.push_back({ c_historyErrorColor, errorMsg });
+					return;
+				}
 				setVariableValue(&s_var[i], value);
 				return;
 			}
 		}
 
-		char errorMsg[4096];
 		sprintf(errorMsg, "set - Unknown variable \"%s\"", name);
 		s_history.push_back({ c_historyErrorColor, errorMsg });
 	}
