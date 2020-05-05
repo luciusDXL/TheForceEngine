@@ -400,7 +400,7 @@ namespace TFE_AgentMenu
 		s_agent[0].nextMission = 3;
 		s_agent[0].selectedMission = 2;
 
-		strcpy(s_agent[1].name, "Jeremy");
+		strcpy(s_agent[1].name, "James");
 		for (u32 i = 0; i < 3; i++) { s_agent[1].completeDifficulty[i] = 0; }
 		for (u32 i = 3; i < 7; i++) { s_agent[1].completeDifficulty[i] = 1; }
 		for (u32 i = 8; i < 14; i++) { s_agent[1].completeDifficulty[i] = 2; }
