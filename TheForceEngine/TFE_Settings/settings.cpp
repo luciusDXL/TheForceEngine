@@ -278,7 +278,6 @@ namespace TFE_Settings
 				curSection = parseSectionName(tokens[0].c_str());
 				if (curSection == SECTION_INVALID)
 				{
-					assert(0);
 					return;
 				}
 			}
