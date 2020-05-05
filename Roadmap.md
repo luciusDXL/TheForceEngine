@@ -8,7 +8,7 @@ General
 * Keybinding.
 * Quake-style console.
 * Windows support.
-* Linux support (might not have distrited exe).
+* Linux support (might not have distributed exe).
 
 Engine
 * Support for Dark Forces and Outlaws sector features such as slopes, dual adjoins, vertical adjoins, etc.
