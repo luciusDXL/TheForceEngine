@@ -290,6 +290,33 @@ namespace TFE_Console
 			}
 		}
 
+		// If no function is called, we might be directly accessing a variable (shortcut for get/set).
+		const size_t varCount = s_var.size();
+		CVar* var = s_var.data();
+
+		std::vector<std::string> varArgs;
+		if (argCount < 1)
+		{
+			varArgs.push_back("get");
+			varArgs.push_back(args[0]);
+		}
+		else
+		{
+			varArgs.push_back("set");
+			varArgs.push_back(args[0]);
+			varArgs.push_back(args[1]);
+		}
+
+		for (size_t i = 0; i < varCount; i++, var++)
+		{
+			if (strcasecmp(var->name.c_str(), args[0].c_str()) == 0)
+			{
+				if (argCount < 1) { c_get(varArgs); }
+				else { c_set(varArgs); }
+				return;
+			}
+		}
+
 		sprintf(errorMsg, "Invalid command \"%s\"", args[0].c_str());
 		s_history.push_back({ c_historyErrorColor, errorMsg });
 	}

@@ -165,7 +165,7 @@ namespace TFE_View
 			s_height = h;
 			s_halfWidth = f32(s_width >> 1);
 			s_halfHeight = f32(s_height >> 1);
-			s_heightScale = floorf(s_halfHeight * c_aspect);
+			s_heightScale = floorf(s_halfHeight * c_pixelAspect);
 			s_renderer = renderer;
 
 			// This should be computed only when the resolution changes.
@@ -206,7 +206,7 @@ namespace TFE_View
 		s_halfWidth = f32(s_width >> 1);
 		s_halfHeight = f32(s_height >> 1);
 		// Re-evaluate based on reverse engineering efforts soon.
-		s_heightScale = floorf(s_halfHeight * c_aspect);
+		s_heightScale = floorf(s_halfHeight * c_pixelAspect);
 		s_enableViewStats = enableViewStats;
 
 		s_level = level;
