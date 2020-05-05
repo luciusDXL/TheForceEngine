@@ -14,6 +14,8 @@ The reason is simple - these elements will be filled in and/or corrected based o
 
 The project will be properly announced and released with pre-built binaries, clean master branch, website, forums and the like once Dark Forces support is complete (full INF, iMuse, all cutscenes, full AI, etc.) and Outlaws support is at "tech demo" status - mainly so that the new Jedi Engine features are in-place even if Outlaws gameplay code is not yet ready. Note that pull requests are very unlikely to be accepted until release because __*the code and even structure will change drastically*__ as the reverse-engineered code is ported from Dark Forces and Outlaws and refactored.
 
+This section will be updated near release and contain a better description of the how & whys of this project.
+
 ## Minimum Requirements
 Note that older OS versions might work (such as Vista) but at least Windows 7 is highly recommended. Software rendering still relies on OpenGL to accelerate blitting. Generally a 2010 or later PC is recommended, though machines as old as 2009 or even 2006, depending on OS, may work but will likely not perform well unless running at a modest resolution. Note that some older GPUs may perform poorly with hardware rendering due to driver issues or poor support for required features (such as older integrated Intel chipsets) - in these cases software rendering should be used.
 * Recommended 2010 era PC or newer
