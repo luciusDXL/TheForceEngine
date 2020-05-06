@@ -113,9 +113,32 @@ namespace TFE_Console
 		};
 		return 0;
 	}
+
+	CVar* getCVar(const char* name)
+	{
+		const size_t count = s_var.size();
+		CVar* cvar = s_var.data();
+		for (size_t i = 0; i < count; i++, cvar++)
+		{
+			if (strcasecmp(name, cvar->name.c_str()) == 0)
+			{
+				return cvar;
+			}
+		}
+		return nullptr;
+	}
 			
 	void registerCVarInt(const char* name, u32 flags, s32* var, const char* helpString)
 	{
+		CVar* cvar = getCVar(name);
+		if (cvar)
+		{
+			cvar->type = CVAR_INT;
+			cvar->flags = flags;
+			cvar->valueInt = var;
+			return;
+		}
+
 		CVar newCVar;
 		newCVar.name = name;
 		newCVar.helpString = helpString;
@@ -127,6 +150,15 @@ namespace TFE_Console
 
 	void registerCVarFloat(const char* name, u32 flags, f32* var, const char* helpString)
 	{
+		CVar* cvar = getCVar(name);
+		if (cvar)
+		{
+			cvar->type = CVAR_FLOAT;
+			cvar->flags = flags;
+			cvar->valueFloat = var;
+			return;
+		}
+
 		CVar newCVar;
 		newCVar.name = name;
 		newCVar.helpString = helpString;
@@ -138,6 +170,15 @@ namespace TFE_Console
 
 	void registerCVarBool(const char* name, u32 flags, bool* var, const char* helpString)
 	{
+		CVar* cvar = getCVar(name);
+		if (cvar)
+		{
+			cvar->type = CVAR_BOOL;
+			cvar->flags = flags;
+			cvar->valueBool = var;
+			return;
+		}
+
 		CVar newCVar;
 		newCVar.name = name;
 		newCVar.helpString = helpString;
@@ -149,6 +190,15 @@ namespace TFE_Console
 
 	void registerCVarString(const char* name, u32 flags, char* var, u32 maxLen, const char* helpString)
 	{
+		CVar* cvar = getCVar(name);
+		if (cvar)
+		{
+			cvar->type = CVAR_STRING;
+			cvar->flags = flags;
+			cvar->stringValue = var;
+			return;
+		}
+
 		CVar newCVar;
 		newCVar.name = name;
 		newCVar.helpString = helpString;
