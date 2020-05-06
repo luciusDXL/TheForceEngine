@@ -1,5 +1,5 @@
 # The Force Engine (TFE)
-[Roadmap](Roadmap.md)
+[Website](https://theforceengine.github.io/)
 
 ## About
 The Force Engine is a project to reverse engineer and rebuild the Jedi Engine for modern systems and the games that used that engine - **Dark Forces** and **Outlaws**. The project includes modern, built-in tools, such as a level editor and makes it easy to play **Dark Forces** and **Outlaws** on modern systems as well as the many community **mods** designed to work with the original games.
@@ -15,6 +15,8 @@ The reason is simple - these elements will be filled in and/or corrected based o
 The project will be properly announced and released with pre-built binaries, clean master branch, website, forums and the like once Dark Forces support is complete (full INF, iMuse, all cutscenes, full AI, etc.) and Outlaws support is at "tech demo" status - mainly so that the new Jedi Engine features are in-place even if Outlaws gameplay code is not yet ready. Note that pull requests are very unlikely to be accepted until release because __*the code and even structure will change drastically*__ as the reverse-engineered code is ported from Dark Forces and Outlaws and refactored.
 
 This section will be updated near release and contain a better description of the how & whys of this project.
+
+A note on building - the project does build on Windows, however the setup is pretty fragile. Build it using Visual Studio 2017, only x64 builds (Debug/Release). The first time you run it will likely crash because it can't find the game assets (it is not ready for release yet, keep that in mind). Once that happens a settings.ini file will be created in Documents/TheForceEngine folder. Open that file in a text editor, set the game to "Dark Forces" and the sourcePath to the game data, like "C:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/". Only a Steam installation has been tested but GOG and CD installations should be supported before release.
 
 ## Minimum Requirements
 Note that older OS versions might work (such as Vista) but at least Windows 7 is highly recommended. Software rendering still relies on OpenGL to accelerate blitting. Generally a 2010 or later PC is recommended, though machines as old as 2009 or even 2006, depending on OS, may work but will likely not perform well unless running at a modest resolution. Note that some older GPUs may perform poorly with hardware rendering due to driver issues or poor support for required features (such as older integrated Intel chipsets) - in these cases software rendering should be used.
