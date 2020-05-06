@@ -25,6 +25,7 @@ enum GameUiResult
 namespace TFE_GameUi
 {
 	void init(TFE_Renderer* renderer);
+	void updateUiResolution();
 	void openEscMenu();
 	void openAgentMenu();
 	bool isEscMenuOpen();

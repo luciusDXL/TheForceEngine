@@ -78,11 +78,7 @@ namespace TFE_GameUi
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_GameUi::create");
 
 		s_renderer = renderer;
-		u32 width, height;
-		s_renderer->getResolution(&width, &height);
-
-		s_scaleX = 256 * s_uiScale * width  / (320 * 256);
-		s_scaleY = 256 * s_uiScale * height / (200 * 256);
+		updateUiResolution();
 		
 		// Preload everything - the original games would only load what was needed at the moment to save memory.
 		// But its pretty safe to just load it all at once for now.
@@ -91,6 +87,15 @@ namespace TFE_GameUi
 		TFE_AgentMenu::load();
 				
 		s_cursor = TFE_Texture::getFromDelt("cursor.delt", "LFD/AGENTMNU.LFD");
+	}
+
+	void updateUiResolution()
+	{
+		u32 width, height;
+		s_renderer->getResolution(&width, &height);
+
+		s_scaleX = 256 * s_uiScale * width / (320 * 256);
+		s_scaleY = 256 * s_uiScale * height / (200 * 256);
 	}
 
 	void openAgentMenu()

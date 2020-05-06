@@ -21,6 +21,13 @@ using namespace TFE_GameUi;
 
 namespace TFE_AgentMenu
 {
+	// TODO: Improve upscaled rendering -
+	// The plan is to render into a 320x200 buffer and then upscale using the GPU, which will allow all of this scaling code to go away
+	// and produce cleaner looking results. Since all UI can be rendered into the same texture, this should cost very little in terms of
+	// bandwidth.
+	#define SX(x) (((x) * scaleX) >> 8)
+	#define SY(y) (((y) * scaleY) >> 8)
+
 	///////////////////////////////////////
 	// TODO: Save System
 	///////////////////////////////////////
@@ -130,12 +137,12 @@ namespace TFE_AgentMenu
 	void close()
 	{
 	}
-		
+
 	void draw(TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover, bool nextMission)
 	{
 		// Clear part of the background.
 		// TODO: Fade out the game view when existing, so the screen is black when drawing the menu.
-		renderer->drawColoredQuad(0, 0, 320, 200, 0);
+		renderer->drawColoredQuad(0, 0, SX(320), SY(200), 0);
 
 		// Draw the menu
 		renderer->blitImage(&s_agentMenu->frames[0], 0, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
@@ -180,12 +187,12 @@ namespace TFE_AgentMenu
 				if (s_selectedMission == i)
 				{
 					color = 32;
-					renderer->drawColoredQuad(textX - 3, textY - 1, 118, 9, s_lastSelectedAgent ? 13 : 12);
+					renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), SX(118), SY(9), s_lastSelectedAgent ? 13 : 12);
 				}
 
-				renderer->print(TFE_LevelList::getLevelName(i), s_sysFont, textX, textY, scaleX, scaleY, color);
+				renderer->print(TFE_LevelList::getLevelName(i), s_sysFont, SX(textX), SY(textY), scaleX, scaleY, color);
 				s32 diff = s_agent[s_selectedAgent].completeDifficulty[i] + 11;
-				renderer->blitImage(&s_agentMenu->frames[diff], 0, yOffset, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
+				renderer->blitImage(&s_agentMenu->frames[diff], 0, SY(yOffset), scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
 				yOffset += 8;
 				textY += 8;
 			}
@@ -193,9 +200,9 @@ namespace TFE_AgentMenu
 			if (s_selectedMission == s_agent[s_selectedAgent].nextMission)
 			{
 				color = 32;
-				renderer->drawColoredQuad(textX - 3, textY - 1, 118, 9, s_lastSelectedAgent ? 13 : 12);
+				renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), SX(118), SY(9), s_lastSelectedAgent ? 13 : 12);
 			}
-			renderer->print(TFE_LevelList::getLevelName(s_agent[s_selectedAgent].nextMission), s_sysFont, textX, textY, scaleX, scaleY, color);
+			renderer->print(TFE_LevelList::getLevelName(s_agent[s_selectedAgent].nextMission), s_sysFont, SX(textX), SY(textY), scaleX, scaleY, color);
 		}
 
 		// Draw agents.
@@ -207,9 +214,9 @@ namespace TFE_AgentMenu
 			if (s_selectedAgent == i)
 			{
 				color = 32;
-				renderer->drawColoredQuad(textX - 3, textY - 1, 118, 9, s_lastSelectedAgent ? 12 : 13);
+				renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), SX(118), SY(9), s_lastSelectedAgent ? 12 : 13);
 			}
-			renderer->print(s_agent[i].name, s_sysFont, textX, textY, scaleX, scaleY, color);
+			renderer->print(s_agent[i].name, s_sysFont, SX(textX), SY(textY), scaleX, scaleY, color);
 			textY += 8;
 		}
 

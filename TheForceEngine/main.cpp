@@ -232,6 +232,7 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 		break;
 	case APP_STATE_EDITOR:
 		renderer->changeResolution(640, 480);
+		TFE_GameUi::updateUiResolution();
 		TFE_Editor::enable(renderer);
 		break;
 	case APP_STATE_DARK_FORCES:
@@ -239,6 +240,7 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 		renderer->enableScreenClear(false);
 		TFE_Input::enableRelativeMode(true);
 		TFE_GameMain::init(renderer);
+		TFE_GameUi::updateUiResolution();
 		break;
 	};
 }
