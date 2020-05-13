@@ -37,6 +37,8 @@
 
 namespace ArchiveViewer
 {
+	#define TFE_MAX_LEVELS 32
+
 	enum FileType
 	{
 		TYPE_TEXT = 0,
@@ -86,8 +88,8 @@ namespace ArchiveViewer
 
 	static s32 s_curLevel = 0;
 	static u32 s_levelCount = 0;
-	static char* s_levelNames[14] = { 0 };
-	static char* s_levelFiles[14] = { 0 };
+	static char* s_levelNames[TFE_MAX_LEVELS] = { 0 };
+	static char* s_levelFiles[TFE_MAX_LEVELS] = { 0 };
 
 	static s32 s_uiScale;
 	static char s_levelFile[TFE_MAX_PATH];
@@ -103,7 +105,7 @@ namespace ArchiveViewer
 		s_renderer = renderer;
 
 		// Allocate space for level names.
-		for (u32 i = 0; i < 14; i++)
+		for (u32 i = 0; i < TFE_MAX_LEVELS; i++)
 		{
 			s_levelNames[i] = new char[256];
 			s_levelFiles[i] = new char[256];
@@ -308,7 +310,7 @@ namespace ArchiveViewer
 		TFE_GameMessages::load();
 		TFE_LevelList::load();
 
-		s_levelCount = TFE_LevelList::getLevelCount();
+		s_levelCount = std::min((u32)TFE_MAX_LEVELS, TFE_LevelList::getLevelCount());
 		for (u32 i = 0; i < s_levelCount; i++)
 		{
 			sprintf(s_levelNames[i], "%s", TFE_LevelList::getLevelName(i));
