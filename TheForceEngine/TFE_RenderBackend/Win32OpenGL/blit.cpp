@@ -71,9 +71,9 @@ namespace BlitOpenGL
 		TFE_RenderBackend::getDisplayInfo(&display);
 		const f32 scaleX = 2.0f * f32(width) / f32(display.width);
 		const f32 scaleY = 2.0f * f32(height) / f32(display.height);
-		const f32 offsetX = 2.0f * f32(x) / f32(display.width) - 1.0f;
+		const f32 offsetX = 2.0f * f32(x) / f32(display.width)  - 1.0f;
 		const f32 offsetY = 2.0f * f32(y) / f32(display.height) - 1.0f;
-				
+
 		TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_BLEND | STATE_DEPTH_TEST);
 		
 		s_shader.bind();

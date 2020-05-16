@@ -4,5 +4,5 @@ out vec4 Out_Color;
 void main()
 {
     Out_Color.rgb = texture(VirtualDisplay, Frag_UV).rgb;
-	 Out_Color.a = 1.0;
+	Out_Color.a = 1.0;
 }
