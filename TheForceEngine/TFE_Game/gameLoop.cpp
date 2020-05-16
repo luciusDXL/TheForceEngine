@@ -552,6 +552,9 @@ namespace TFE_GameLoop
 		{
 			TFE_WeaponSystem::switchToWeapon(WEAPON_THERMAL_DETONATOR);
 		}
+
+		// TODO: Movement and collision should use a fixed time step, otherwise collision gets strange with really
+		// small time steps.
 				
 		// get the desired movement.
 		// Get the floor sector first at the same time as getting the speed info.
@@ -742,7 +745,7 @@ namespace TFE_GameLoop
 		{
 			s_cameraPos.y = std::min(s_level->sectors[s_player.m_sectorId].floorAlt - 0.1f, s_level->sectors[s_player.m_sectorId].ceilAlt + 0.2f);
 		}
-		s_motionTime += 1.2f * (f32)TFE_System::getDeltaTime();
+		s_motionTime += 1.2f * dt;
 		if (s_motionTime > 1.0f) { s_motionTime -= 1.0f; }
 		s_cameraPos.y += cosf(s_motionTime * 2.0f * PI) * s_motion * 0.5f;
 						
