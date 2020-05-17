@@ -95,6 +95,11 @@ namespace TFE_Paths
 		return s_paths[pathType].c_str();
 	}
 
+	bool hasPath(TFE_PathType pathType)
+	{
+		return !s_paths[pathType].empty();
+	}
+
 	void appendPath(TFE_PathType pathType, const char* filename, char* path, size_t bufferLen/* = TFE_MAX_PATH*/)
 	{
 		snprintf(path, bufferLen, "%s%s", getPath(pathType), filename);

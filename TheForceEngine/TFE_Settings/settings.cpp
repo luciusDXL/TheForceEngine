@@ -37,6 +37,20 @@ namespace TFE_Settings
 		"Outlaws",
 	};
 
+	static const char* c_darkForcesLocations[] =
+	{
+		// C drive
+		"C:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
+		"C:/Program Files/Steam/steamapps/common/dark forces/Game/",
+		"C:/Program Files (x86)/GOG.com/dark forces/Game/",
+		"C:/GOG Games/dark forces/Game/",
+		// D drive
+		"D:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
+		"D:/Program Files/Steam/steamapps/common/dark forces/Game/",
+		"D:/Program Files (x86)/GOG.com/dark forces/Game/",
+		"D:/GOG Games/dark forces/Game/",
+	};
+
 	static char s_settingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
@@ -107,6 +121,26 @@ namespace TFE_Settings
 		// Write any settings to disk before shutting down.
 		writeToDisk();
 	}
+		
+	void checkGameData()
+	{
+		// Check game data
+		const size_t sourcePathLen = strlen(s_gameSettings[Game_Dark_Forces].sourcePath);
+		bool pathValid = sourcePathLen && FileUtil::directoryExits(s_gameSettings[Game_Dark_Forces].sourcePath);
+		if (!pathValid)
+		{
+			// Try various possible locations.
+			for (u32 i = 0; i < TFE_ARRAYSIZE(c_darkForcesLocations); i++)
+			{
+				if (FileUtil::directoryExits(c_darkForcesLocations[i]))
+				{
+					strcpy(s_gameSettings[Game_Dark_Forces].sourcePath, c_darkForcesLocations[i]);
+					break;
+				}
+			}
+		}
+		writeToDisk();
+	}
 
 	bool readFromDisk()
 	{
@@ -120,6 +154,8 @@ namespace TFE_Settings
 			settings.close();
 
 			parseIniFile(s_iniBuffer.data(), len);
+			checkGameData();
+			
 			return true;
 		}
 		return false;
@@ -231,13 +267,10 @@ namespace TFE_Settings
 		{
 			writeHeader(settings, c_sectionNames[SECTION_GAME_START + i]);
 			writeKeyValue_String(settings, "sourcePath", s_gameSettings[i].sourcePath);
-			if (s_gameSettings[i].emulatorPath[0])
-			{
-				writeKeyValue_String(settings, "emulatorPath", s_gameSettings[i].emulatorPath);
-			}
+			writeKeyValue_String(settings, "emulatorPath", s_gameSettings[i].emulatorPath);
 		}
 	}
-		
+
 	SectionID parseSectionName(const char* name)
 	{
 		char sectionName[LINEBUF_LEN];

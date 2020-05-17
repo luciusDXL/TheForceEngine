@@ -27,5 +27,6 @@ namespace TFE_Paths
 	bool setProgramPath();
 	
 	const char* getPath(TFE_PathType pathType);
+	bool hasPath(TFE_PathType pathType);
 	void appendPath(TFE_PathType pathType, const char* filename, char* path, size_t bufferLen = TFE_MAX_PATH);
 }

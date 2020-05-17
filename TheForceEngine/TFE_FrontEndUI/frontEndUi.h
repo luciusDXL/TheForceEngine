@@ -16,6 +16,7 @@ enum AppState
 	APP_STATE_EDITOR,
 	APP_STATE_DARK_FORCES,
 	APP_STATE_QUIT,
+	APP_STATE_NO_GAME_DATA,
 	APP_STATE_COUNT,
 	APP_STATE_UNINIT = APP_STATE_COUNT
 };
@@ -26,7 +27,7 @@ namespace TFE_FrontEndUI
 	void shutdown();
 
 	AppState update();
-	void draw(bool drawFrontEnd = true);
+	void draw(bool drawFrontEnd = true, bool noGameData = false);
 
 	void setAppState(AppState state);
 	void toggleConsole();

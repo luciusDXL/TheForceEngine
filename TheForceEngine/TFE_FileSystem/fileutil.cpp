@@ -198,6 +198,13 @@ namespace FileUtil
 		DeleteFile(srcFile);
 	}
 
+	bool directoryExits(const char* path)
+	{
+		DWORD attr = GetFileAttributesA(path);
+		if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES) { return false; }
+		return (attr & FILE_ATTRIBUTE_DIRECTORY) != 0;
+	}
+
 	bool exists( const char *path )
 	{
 		return !(GetFileAttributesA(path)==INVALID_FILE_ATTRIBUTES && GetLastError()==ERROR_FILE_NOT_FOUND);

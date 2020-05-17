@@ -5,6 +5,7 @@
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 
@@ -23,6 +24,7 @@ namespace TFE_FrontEndUI
 	static AppState s_appState;
 	static ImFont* s_menuFont;
 	static ImFont* s_titleFont;
+	static ImFont* s_dialogFont;
 	static SubUI s_subUI;
 
 	static bool s_consoleActive = false;
@@ -36,6 +38,7 @@ namespace TFE_FrontEndUI
 		ImGuiIO& io = ImGui::GetIO();
 		s_menuFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 32);
 		s_titleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 48);
+		s_dialogFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 20);
 
 		TFE_Console::init();
 	}
@@ -79,7 +82,30 @@ namespace TFE_FrontEndUI
 		TFE_Console::addToHistory(str);
 	}
 
-	void draw(bool drawFrontEnd)
+	void showNoGameDataUI()
+	{
+		char settingsPath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", settingsPath);
+		const TFE_Game* game = TFE_Settings::getGame();
+		
+		ImGui::PushFont(s_dialogFont);
+		
+		bool active = true;
+		ImGui::Begin("##NoGameData", &active, ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
+		ImGui::Text("No valid \"%s\" game data found. Please exit the application and edit the \"settings.ini\" file at", game->game);
+		ImGui::Text("\"%s\"", settingsPath);
+		ImGui::Separator();
+		ImGui::Text("An example path, if the game was purchased through Steam is: \"D:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/\" ");
+		ImGui::Separator();
+		if (ImGui::Button("Return to Menu"))
+		{
+			s_appState = APP_STATE_MENU;
+		}
+		ImGui::End();
+		ImGui::PopFont();
+	}
+
+	void draw(bool drawFrontEnd, bool noGameData)
 	{
 		DisplayInfo display;
 		TFE_RenderBackend::getDisplayInfo(&display);
@@ -91,6 +117,11 @@ namespace TFE_FrontEndUI
 		if (TFE_Console::isOpen())
 		{
 			TFE_Console::update();
+		}
+		if (noGameData)
+		{
+			drawFrontEnd = false;
+			showNoGameDataUI();
 		}
 		if (!drawFrontEnd) { return; }
 

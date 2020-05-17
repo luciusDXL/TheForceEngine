@@ -218,6 +218,8 @@ bool sdlInit()
 	return true;
 }
 
+static AppState s_curState = APP_STATE_UNINIT;
+
 void setAppState(AppState newState, TFE_Renderer* renderer)
 {
 	const TFE_Settings_Graphics* config = TFE_Settings::getGraphicsSettings();
@@ -237,16 +239,24 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 		TFE_Editor::enable(renderer);
 		break;
 	case APP_STATE_DARK_FORCES:
-		renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
-		renderer->enableScreenClear(false);
-		TFE_Input::enableRelativeMode(true);
-		TFE_GameMain::init(renderer);
-		TFE_GameUi::updateUiResolution();
+		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+		{
+			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
+			renderer->enableScreenClear(false);
+			TFE_Input::enableRelativeMode(true);
+			TFE_GameMain::init(renderer);
+			TFE_GameUi::updateUiResolution();
+		}
+		else
+		{
+
+			newState = APP_STATE_NO_GAME_DATA;
+		}
 		break;
 	};
-}
 
-static AppState s_curState = APP_STATE_UNINIT;
+	s_curState = newState;
+}
 
 int main(int argc, char* argv[])
 {
@@ -371,8 +381,7 @@ int main(int argc, char* argv[])
 		}
 		else if (appState != s_curState)
 		{
-			s_curState = appState;
-			setAppState(s_curState, renderer);
+			setAppState(appState, renderer);
 		}
 
 		TFE_Ui::begin();
@@ -394,27 +403,27 @@ int main(int argc, char* argv[])
 		}
 
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
-		if (appState == APP_STATE_EDITOR)
+		if (s_curState == APP_STATE_EDITOR)
 		{
 			if (TFE_Editor::update(isConsoleOpen))
 			{
 				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
 		}
-		else if (appState == APP_STATE_DARK_FORCES)
+		else if (s_curState == APP_STATE_DARK_FORCES)
 		{
 			if (TFE_GameMain::loop(isConsoleOpen) == TRANS_QUIT)
 			{
 				s_loop = false;
 			}
 		}
-		TFE_FrontEndUI::draw(appState == APP_STATE_MENU);
+		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU, s_curState == APP_STATE_NO_GAME_DATA);
 
 		// Render
 		renderer->begin();
 		// Do stuff
-		bool swap = appState != APP_STATE_EDITOR;
-		if (appState == APP_STATE_EDITOR)
+		bool swap = s_curState != APP_STATE_EDITOR;
+		if (s_curState == APP_STATE_EDITOR)
 		{
 			swap = TFE_Editor::render();
 		}
