@@ -10,8 +10,7 @@
 
 TFE_Renderer* TFE_Renderer::create(RendererType type)
 {
-	TFE_System::logWrite(LOG_MSG, "Startup", "TFE_Renderer::create");
-
+	TFE_System::logWrite(LOG_MSG, "Startup", "TFE_Renderer::create - type = %d", type);
 	if (type == TFE_RENDERER_SOFTWARE_CPU)
 	{
 		return new TFE_SoftRenderCPU();

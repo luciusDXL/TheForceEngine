@@ -4605,12 +4605,32 @@ void RtApiWasapi::stopStream( void )
   stream_.state = STREAM_STOPPING;
 
   // wait until stream thread is stopped
+  // but make sure we don't get stuck in an infinite loop...
+  int max_wait_ms = 100;
   while( stream_.state != STREAM_STOPPED ) {
     Sleep( 1 );
+
+	max_wait_ms--;
+	if (max_wait_ms <= 0) {
+	  break;
+	}
+  }
+  // The thread isn't stopping, so forcibly abort...
+  if (stream_.state != STREAM_STOPPED) {
+	stream_.state = STREAM_STOPPED;
+	TerminateThread((void*)stream_.callbackInfo.thread, 0);
+	CloseHandle((void*)stream_.callbackInfo.thread);
+	stream_.callbackInfo.thread = (ThreadHandle)NULL;
+
+	errorText_ = "RtApiWasapi::stopStream: Callback thread stop timed out, forcibly aborting.";
+	error(RtAudioError::THREAD_ERROR);
+	return;
   }
 
   // Wait for the last buffer to play before stopping.
-  Sleep( 1000 * stream_.bufferSize / stream_.sampleRate );
+  if (stream_.sampleRate) {
+	Sleep(1000 * stream_.bufferSize / stream_.sampleRate);
+  }
 
   // close thread handle
   if ( stream_.callbackInfo.thread && !CloseHandle( ( void* ) stream_.callbackInfo.thread ) ) {
@@ -5392,7 +5412,12 @@ void RtApiWasapi::wasapiThread()
     if ( renderAudioClient ) {
       // if the callback output buffer was not pushed to renderBuffer, wait for next render event
       if ( callbackPulled && !callbackPushed ) {
-        WaitForSingleObject( renderEvent, INFINITE );
+        //WaitForSingleObject( renderEvent, INFINITE );
+		// Replace with a long but limited timeout.
+		if (WaitForSingleObject(renderEvent, 1000) == WAIT_TIMEOUT) {
+		  errorText = "RtApiWasapi::wasapiThread: renderEvent wait timed out.";
+	      goto Exit;
+		}
       }
 
       // Get render buffer from stream

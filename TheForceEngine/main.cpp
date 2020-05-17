@@ -58,6 +58,7 @@ void handleEvent(SDL_Event& Event)
 	{
 		case SDL_QUIT:
 		{
+			TFE_System::logWrite(LOG_MSG, "Main", "App Quit");
 			s_loop = false;
 		} break;
 		case SDL_WINDOWEVENT:
@@ -254,6 +255,8 @@ int main(int argc, char* argv[])
 	pathsSet &= TFE_Paths::setProgramPath();
 	pathsSet &= TFE_Paths::setProgramDataPath("TheForceEngine");
 	pathsSet &= TFE_Paths::setUserDocumentsPath("TheForceEngine");
+	TFE_System::logOpen("the_force_engine_log.txt");
+	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine Log Start");
 	if (!pathsSet)
 	{
 		return PROGRAM_ERROR;
@@ -272,7 +275,6 @@ int main(int argc, char* argv[])
 	TFE_Paths::setPath(PATH_SOURCE_DATA, gameSettings->sourcePath);
 	TFE_Paths::setPath(PATH_EMULATOR, gameSettings->emulatorPath);
 
-	TFE_System::logOpen("the_force_engine_log.txt");
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM));
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM_DATA));
 	TFE_System::logWrite(LOG_MSG, "Paths", "User Documents: \"%s\"", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
@@ -311,6 +313,7 @@ int main(int argc, char* argv[])
 	}
 	TFE_System::init(s_refreshRate, s_vsync);
 	TFE_Audio::init();
+	TFE_MidiPlayer::init();
 	TFE_Polygon::init();
 	TFE_Image::init();
 	TFE_ScriptSystem::init();
@@ -318,10 +321,7 @@ int main(int argc, char* argv[])
 	TFE_Level::init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
-
-	// Replace with TFE_Music
-	TFE_MidiPlayer::init();
-		
+			
 	TFE_Renderer* renderer = TFE_Renderer::create(TFE_RENDERER_SOFTWARE_CPU);
 	if (!renderer)
 	{
@@ -431,6 +431,7 @@ int main(int argc, char* argv[])
 	// Cleanup
 	TFE_FrontEndUI::shutdown();
 	TFE_Audio::shutdown();
+	TFE_MidiPlayer::destroy();
 	TFE_Polygon::shutdown();
 	TFE_Image::shutdown();
 	TFE_Level::shutdown();
@@ -442,10 +443,7 @@ int main(int argc, char* argv[])
 	TFE_Renderer::destroy(renderer);
 	TFE_RenderBackend::destroy();
 	SDL_Quit();
-
-	// Replace with TFE_Music
-	TFE_MidiPlayer::destroy();
-
+		
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();
 	return PROGRAM_SUCCESS;

@@ -16,12 +16,18 @@ namespace TFE_MidiDevice
 	RtMidiOut *s_midiout = nullptr;
 	static s32 s_openPort = -1;
 
+	void midiErrorCallback(RtMidiError::Type type, const std::string &errorText, void *userData)
+	{
+		TFE_System::logWrite(LOG_ERROR, "Midi Device", "%s", errorText.c_str());
+	}
+
 	bool init()
 	{
 		s_midiout = new RtMidiOut();
+		s_midiout->setErrorCallback(midiErrorCallback);
 		s_openPort = -1;
 
-		return false;
+		return true;
 	}
 
 	void destroy()

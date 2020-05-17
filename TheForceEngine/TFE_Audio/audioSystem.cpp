@@ -110,15 +110,19 @@ namespace TFE_Audio
 
 	void shutdown()
 	{
+		TFE_System::logWrite(LOG_MSG, "Audio", "Shutdown");
 		stopAllSounds();
+
 		TFE_AudioDevice::destroy();
 		MUTEX_DESTROY(&s_mutex);
 	}
 
 	void stopAllSounds()
 	{
+		MUTEX_LOCK(&s_mutex);
 		s_sourceCount = 0u;
 		memset(s_sources, 0, sizeof(SoundSource) * MAX_SOUND_SOURCES);
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	void update(const Vec3f* listenerPos, const Vec3f* listenerDir)
@@ -369,7 +373,7 @@ namespace TFE_Audio
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData)
 	{
 		f32* buffer = (f32*)outputBuffer;
-		
+	
 		MUTEX_LOCK(&s_mutex);
 		for (u32 i = 0; i < bufferSize; i++, buffer += 2)
 		{

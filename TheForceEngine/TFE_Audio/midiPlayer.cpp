@@ -74,7 +74,6 @@ namespace TFE_MidiPlayer
 		if (s_thread)
 		{
 			s_thread->run();
-			s_thread->pause();
 		}
 
 		return res && s_thread;
@@ -82,6 +81,7 @@ namespace TFE_MidiPlayer
 
 	void destroy()
 	{
+		TFE_System::logWrite(LOG_MSG, "MidiPlayer", "Shutdown");
 		// Destroy the thread before shutting down the Midi Device.
 		stop();
 		s_runMusicThread.store(false);
@@ -186,8 +186,9 @@ namespace TFE_MidiPlayer
 
 			const u32 trackCount = s_runtime.asset->trackCount;
 			bool allTracksFinished = true;
-			u32 i = 0;
+			if (trackCount)
 			{
+				const u32 i = 0;
 				const Track* track = &s_runtime.asset->tracks[i];
 				MidiRuntimeTrack* runtimeTrack = &s_runtime.tracks[i];
 				if ((u32)runtimeTrack->curTick >= track->length)

@@ -72,6 +72,7 @@ namespace TFE_AudioDevice
 	{
 		if (s_device && s_streamStarted)
 		{
+			TFE_System::logWrite(LOG_MSG, "Audio", "Stop Audio Stream.");
 			s_device->stopStream();
 			s_streamStarted = false;
 		}

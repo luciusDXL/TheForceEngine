@@ -9,6 +9,7 @@
 #define MUTEX_INITIALIZE(A) InitializeCriticalSection(A)
 #define MUTEX_DESTROY(A)    DeleteCriticalSection(A)
 #define MUTEX_LOCK(A)       EnterCriticalSection(A)
+#define MUTEX_TRYLOCK(A)    TryEnterCriticalSection(A)
 #define MUTEX_UNLOCK(A)     LeaveCriticalSection(A)
 
 typedef CRITICAL_SECTION Mutex;

@@ -41,8 +41,8 @@ namespace TFE_System
 
 	void logWrite(LogWriteType type, const char* tag, const char* str, ...)
 	{
-		assert(type < LOG_COUNT);
-		assert( s_logFile.isOpen() && tag && str );
+		if (type >= LOG_COUNT || !s_logFile.isOpen() || !tag || !str) { return; }
+
 		//Handle the variable input, "printf" style messages
 		va_list arg;
 		va_start(arg, str);
@@ -60,7 +60,7 @@ namespace TFE_System
 		//Write to disk
 		s_logFile.writeBuffer(s_workStr, (u32)strlen(s_workStr));
 		//Make sure to flush the file to disk if a crash is likely.
-		if (type == LOG_ERROR || type == LOG_CRITICAL)
+		//if (type == LOG_ERROR || type == LOG_CRITICAL)
 		{
 			s_logFile.flush();
 		}
