@@ -58,6 +58,8 @@ namespace TFE_GameLoop
 	static PlayerSounds s_playerSounds;
 	
 	static f32 s_accum = 0.0f;
+	static f32 s_accumMove = 0.0f;
+	static f32 s_actualSpeed = 0.0f;
 	
 	void updateObjects();
 	void updateSoundObjects(const Vec3f* listenerPos);
@@ -124,6 +126,8 @@ namespace TFE_GameLoop
 		// For now switch over to the pistol.
 		TFE_WeaponSystem::switchToWeapon(WEAPON_PISTOL);
 		s_accum = 0.0f;
+		s_accumMove = 0.0f;
+		s_actualSpeed = 0.0f;
 
 		s_playerSounds.jump = TFE_VocAsset::get("JUMP-1.VOC");
 		s_playerSounds.land = TFE_VocAsset::get("LAND-1.VOC");
@@ -240,6 +244,8 @@ namespace TFE_GameLoop
 		// For now switch over to the pistol.
 		TFE_WeaponSystem::switchToWeapon(WEAPON_PISTOL);
 		s_accum = 0.0f;
+		s_accumMove = 0.0f;
+		s_actualSpeed = 0.0f;
 
 		s_playerSounds.jump = TFE_VocAsset::get("JUMP-1.VOC");
 		s_playerSounds.land = TFE_VocAsset::get("LAND-1.VOC");
@@ -361,7 +367,7 @@ namespace TFE_GameLoop
 
 		return dY;
 	}
-		
+
 	GameTransition update(bool consoleOpen, GameState curState, GameOverlay curOverlay)
 	{
 		// Handle Game UI
@@ -592,36 +598,56 @@ namespace TFE_GameLoop
 
 		// TODO: Add conveyors, current, etc.
 
-		// Now the move is the final velocity, factoring in frame time.
-		move.x = s_player.vel.x * dt;
-		move.z = s_player.vel.z * dt;
-
-		// then apply to the physics system and get the actual movement (if any).
-		Vec3f startPos = { s_player.pos.x, s_player.pos.y, s_player.pos.z };
-		Vec3f actualMove;
-		s32 newSectorId;
-		prevSectorId = s_player.m_sectorId;
+		s_accumMove += dt;
 		bool moveMatches = true;
-		if (TFE_Physics::move(&startPos, &move, s_player.m_sectorId, &actualMove, &newSectorId, s_height))
+		while (s_accumMove >= c_step)
 		{
-			s_player.pos.x += actualMove.x;
-			s_player.pos.y += actualMove.y;
-			s_player.pos.z += actualMove.z;
+			s_accumMove -= c_step;
 
-			f32 dx = fabsf(actualMove.x - move.x);
-			f32 dz = fabsf(actualMove.z - move.z);
-			if (dx > 0.00001f || dz > 0.00001f)
+			// Now the move is the final velocity, factoring in frame time.
+			move.x = s_player.vel.x * c_step;
+			move.z = s_player.vel.z * c_step;
+
+			// then apply to the physics system and get the actual movement (if any).
+			Vec3f startPos = { s_player.pos.x, s_player.pos.y, s_player.pos.z };
+			Vec3f actualMove;
+			s32 newSectorId;
+			prevSectorId = s_player.m_sectorId;
+			if (TFE_Physics::move(&startPos, &move, s_player.m_sectorId, &actualMove, &newSectorId, s_height))
 			{
-				moveMatches = false;
+				s_player.pos.x += actualMove.x;
+				s_player.pos.y += actualMove.y;
+				s_player.pos.z += actualMove.z;
+
+				f32 dx = fabsf(actualMove.x - move.x);
+				f32 dz = fabsf(actualMove.z - move.z);
+				if (dx > 0.00001f || dz > 0.00001f)
+				{
+					moveMatches = false;
+				}
+
+				s_player.m_sectorId = newSectorId;
+				if (prevSectorId != newSectorId)
+				{
+					TFE_InfSystem::firePlayerEvent(INF_EVENT_ENTER_SECTOR, newSectorId, &s_player);
+					TFE_InfSystem::firePlayerEvent(INF_EVENT_LEAVE_SECTOR, prevSectorId, &s_player);
+				}
 			}
 
-			s_player.m_sectorId = newSectorId;
-			if (prevSectorId != newSectorId)
+			move.x = s_player.pos.x - startPos.x;
+			move.z = s_player.pos.z - startPos.z;
+			s_actualSpeed = sqrtf(move.x*move.x + move.z*move.z) / c_step;
+
+			// Adjust velocity based on collisions.
+			if (!moveMatches)
 			{
-				TFE_InfSystem::firePlayerEvent(INF_EVENT_ENTER_SECTOR, newSectorId, &s_player);
-				TFE_InfSystem::firePlayerEvent(INF_EVENT_LEAVE_SECTOR, prevSectorId, &s_player);
+				Vec2f hVel = { move.x, move.z };
+				hVel = TFE_Math::normalize(&hVel);
+				Vec3f newVel = { hVel.x * s_actualSpeed, s_player.vel.y, hVel.z * s_actualSpeed };
+				s_player.vel = newVel;
 			}
 		}
+
 		f32 floorHeight, ceilHeight, visualFloorHeight;
 		TFE_Physics::getValidHeightRange(&s_player.pos, s_player.m_sectorId, &floorHeight, &visualFloorHeight, &ceilHeight);
 		s_forceCrouch = (floorHeight - ceilHeight < c_standingHeight);
@@ -698,23 +724,11 @@ namespace TFE_GameLoop
 			s_eyeHeight = visualFloorHeight - 0.625f - s_player.pos.y;
 		}
 
-		// How fast is the player moving?
-		move.x = s_player.pos.x - startPos.x;
-		move.z = s_player.pos.z - startPos.z;
-		f32 actualSpeed = dt ? sqrtf(move.x*move.x + move.z*move.z) / dt : 0.0f;
-		// Adjust velocity based on collisions.
-		if (!moveMatches)
-		{
-			Vec2f hVel = { move.x, move.z };
-			hVel = TFE_Math::normalize(&hVel);
-			Vec3f newVel = { hVel.x * actualSpeed, s_player.vel.y, hVel.z * actualSpeed };
-			s_player.vel = newVel;
-		}
 		// Motion for head and weapon movement.
 		f32 blend = std::min(1.0f, dt * 10.0f);
-		if (s_player.m_onScrollFloor) { actualSpeed *= 2.0f; }
-		s_motion = std::max(0.0f, std::min((actualSpeed / c_walkSpeed)*blend + s_motion*(1.0f - blend), 1.0f));
-		if (actualSpeed < FLT_EPSILON && s_motion < 0.0001f) { s_motion = 0.0f; }
+		if (s_player.m_onScrollFloor) { s_actualSpeed *= 2.0f; }
+		s_motion = std::max(0.0f, std::min((s_actualSpeed / c_walkSpeed)*blend + s_motion*(1.0f - blend), 1.0f));
+		if (s_actualSpeed < FLT_EPSILON && s_motion < 0.0001f) { s_motion = 0.0f; }
 		
 		// Items.
 		if (TFE_Input::keyPressed(KEY_F2))
@@ -738,7 +752,8 @@ namespace TFE_GameLoop
 		}
 		TFE_View::setIterationOverride(s_iterOverride);
 
-		s_heightVisual = (s_heightVisual + s_player.pos.y) * 0.5f;
+		f32 e = 0.5f * dt / c_step;
+		s_heightVisual = s_player.pos.y*e + s_heightVisual*(1.0f - e);
 		s_cameraPos = { s_player.pos.x, std::min(s_heightVisual + s_eyeHeight + dY, floorHeight - 0.5f), s_player.pos.z };
 		// Check the current sector and lower the camera to fit.
 		if (s_cameraPos.y < s_level->sectors[s_player.m_sectorId].ceilAlt + 0.2f)
