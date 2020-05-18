@@ -113,6 +113,9 @@ namespace TFE_Settings
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
 		if (FileUtil::exists(s_settingsPath)) { return readFromDisk(); }
 			
+		strcpy(s_gameSettings[Game_Dark_Forces].gameName, "Dark Forces");
+		strcpy(s_gameSettings[Game_Outlaws].gameName, "Outlaws");
+		strcpy(s_game.game, "Dark Forces");
 		return writeToDisk();
 	}
 
@@ -404,15 +407,27 @@ namespace TFE_Settings
 		}
 	}
 
+	void appendSlash(char* path)
+	{
+		size_t len = strlen(path);
+		if (len == 0) { return; }
+		if (path[len - 1] == '\\' || path[len - 1] == '/') { return; }
+		
+		path[len] = '/';
+		path[len + 1] = 0;
+	}
+
 	void parseDark_ForcesSettings(const char* key, const char* value)
 	{
 		if (strcasecmp("sourcePath", key) == 0)
 		{
 			strcpy(s_gameSettings[Game_Dark_Forces].sourcePath, value);
+			appendSlash(s_gameSettings[Game_Dark_Forces].sourcePath);
 		}
 		else if (strcasecmp("emulatorPath", key) == 0)
 		{
 			strcpy(s_gameSettings[Game_Dark_Forces].emulatorPath, value);
+			appendSlash(s_gameSettings[Game_Dark_Forces].emulatorPath);
 		}
 	}
 
@@ -421,6 +436,7 @@ namespace TFE_Settings
 		if (strcasecmp("sourcePath", key) == 0)
 		{
 			strcpy(s_gameSettings[Game_Outlaws].sourcePath, value);
+			appendSlash(s_gameSettings[Game_Outlaws].sourcePath);
 		}
 	}
 }

@@ -357,7 +357,7 @@ namespace LevelEditor
 
 	void cameraControl2d(s32 mx, s32 my)
 	{
-		f32 moveSpd = s_zoomVisual * 960.0f * TFE_System::getDeltaTime();
+		f32 moveSpd = s_zoomVisual * f32(960.0 * TFE_System::getDeltaTime());
 		if (TFE_Input::keyDown(KEY_W))
 		{
 			s_offset.z -= moveSpd;
@@ -404,7 +404,7 @@ namespace LevelEditor
 	bool cameraControl3d(s32 mx, s32 my)
 	{
 		// Movement
-		f32 moveSpd = 16.0f * TFE_System::getDeltaTime();
+		f32 moveSpd = f32(16.0 * TFE_System::getDeltaTime());
 		if (TFE_Input::keyDown(KEY_LSHIFT) || TFE_Input::keyDown(KEY_RSHIFT))
 		{
 			moveSpd *= 10.0f;
