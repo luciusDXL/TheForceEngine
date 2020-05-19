@@ -6,6 +6,10 @@
 
 #include "types.h"
 
+#define TFE_MAJOR_VERSION 0
+#define TFE_MINOR_VERSION 1
+#define TFE_BUILD_VERSION 4
+
 enum LogWriteType
 {
 	LOG_MSG = 0,
@@ -39,4 +43,6 @@ namespace TFE_System
 
 	// System
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion);
+
+	const char* getVersionString();
 }

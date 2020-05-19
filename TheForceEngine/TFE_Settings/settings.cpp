@@ -97,6 +97,7 @@ namespace TFE_Settings
 	void parseGame(const char* key, const char* value);
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
+	void checkGameData();
 
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
@@ -109,13 +110,12 @@ namespace TFE_Settings
 		{
 			strcpy(s_gameSettings[i].gameName, c_gameName[i]);
 		}
+		strcpy(s_game.game, s_gameSettings[0].gameName);
 
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
 		if (FileUtil::exists(s_settingsPath)) { return readFromDisk(); }
 			
-		strcpy(s_gameSettings[Game_Dark_Forces].gameName, "Dark Forces");
-		strcpy(s_gameSettings[Game_Outlaws].gameName, "Outlaws");
-		strcpy(s_game.game, "Dark Forces");
+		checkGameData();
 		return writeToDisk();
 	}
 

@@ -27,6 +27,8 @@ namespace TFE_System
 	static bool s_synced = false;
 	static bool s_resetStartTime = false;
 
+	static char s_versionString[64];
+
 	void init(f32 refreshRate, bool synced)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_System::init");
@@ -35,10 +37,17 @@ namespace TFE_System
 		s_freq = 1.0 / (f64)SDL_GetPerformanceFrequency();
 		s_refreshRate = f64(refreshRate);
 		s_synced = synced;
+
+		sprintf(s_versionString, "%d.%02d.%03d", TFE_MAJOR_VERSION, TFE_MINOR_VERSION, TFE_BUILD_VERSION);
 	}
 
 	void shutdown()
 	{
+	}
+
+	const char* getVersionString()
+	{
+		return s_versionString;
 	}
 
 	void resetStartTime()

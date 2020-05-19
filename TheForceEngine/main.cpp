@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
 	pathsSet &= TFE_Paths::setProgramDataPath("TheForceEngine");
 	pathsSet &= TFE_Paths::setUserDocumentsPath("TheForceEngine");
 	TFE_System::logOpen("the_force_engine_log.txt");
-	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine Log Start");
+	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine v%d.%02d.%03d", TFE_MAJOR_VERSION, TFE_MINOR_VERSION, TFE_BUILD_VERSION);
 	if (!pathsSet)
 	{
 		return PROGRAM_ERROR;
@@ -297,15 +297,16 @@ int main(int argc, char* argv[])
 		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
+	TFE_System::init(s_refreshRate, s_vsync);
 
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
 	if (s_fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");    windowFlags |= WINFLAG_FULLSCREEN; }
 	if (s_vsync)      { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
-
-	const WindowState windowState =
+		
+	WindowState windowState =
 	{
-		"The Force Engine",
+		"",
 		s_displayWidth,
 		s_displayHeight,
 		s_baseWindowWidth,
@@ -315,13 +316,13 @@ int main(int argc, char* argv[])
 		windowFlags,
 		s_refreshRate
 	};
+	sprintf(windowState.name, "The Force Engine  v%s", TFE_System::getVersionString());
 	if (!TFE_RenderBackend::init(windowState))
 	{
 		TFE_System::logWrite(LOG_CRITICAL, "GPU", "Cannot initialize GPU/Window.");
 		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
-	TFE_System::init(s_refreshRate, s_vsync);
 	TFE_Audio::init();
 	TFE_MidiPlayer::init();
 	TFE_Polygon::init();
