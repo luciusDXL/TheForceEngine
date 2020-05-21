@@ -140,20 +140,26 @@ namespace TFE_VueAsset
 					frameCount++;
 				}
 				assert(tokens.size() == 14u);
-				const char* transformName = tokens[1].c_str();
-				Mat3 rotScale = { 0 };
-				for (u32 i = 0; i < 9; i++)
+				const char* transformName = tokens.size() > 1 ? tokens[1].c_str() : "";
+				Mat3 rotScale = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
+				if (tokens.size() > 10)
 				{
-					Vec3f& row = rotScale.m[i / 3];
-					row.m[i%3] = (f32)strtod(tokens[2 + i].c_str(), &endPtr);
+					for (u32 i = 0; i < 9; i++)
+					{
+						Vec3f& row = rotScale.m[i / 3];
+						row.m[i % 3] = (f32)strtod(tokens[2 + i].c_str(), &endPtr);
+					}
 				}
 				Vec3f translation = { 0 };
-				for (u32 i = 0; i < 3; i++)
+				if (tokens.size() > 13)
 				{
-					translation.m[i] = (f32)strtod(tokens[11 + i].c_str(), &endPtr);
+					for (u32 i = 0; i < 3; i++)
+					{
+						translation.m[i] = (f32)strtod(tokens[11 + i].c_str(), &endPtr);
+					}
+					translation.y = -translation.y;
 				}
-				translation.y = -translation.y;
-
+				
 				if (frameIndex == 0)
 				{
 					transformNames.push_back(transformName);

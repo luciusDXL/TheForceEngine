@@ -8,7 +8,7 @@
 
 #define TFE_MAJOR_VERSION 0
 #define TFE_MINOR_VERSION 1
-#define TFE_BUILD_VERSION 4
+#define TFE_BUILD_VERSION 5
 
 enum LogWriteType
 {

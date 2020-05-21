@@ -220,7 +220,9 @@ namespace TFE_Sprite
 
 		s_tempFrames.clear();
 		s_tempCells.clear();
-
+		s_tempFrames.reserve(128);
+		s_tempCells.reserve(128);
+			   
 		// Go through the data and compute the allocation size.
 		for (s32 i = 0; i < animationCount; i++)
 		{

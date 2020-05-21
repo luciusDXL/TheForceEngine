@@ -100,7 +100,7 @@ namespace TFE_Level
 		{
 			const u32 objectCount = levelObj->objectCount;
 			const LevelObject* object = levelObj->objects.data();
-			s_objects->reserve(objectCount + 1024);
+			s_objects->reserve(objectCount + 4096);
 			s_objects->resize(objectCount);
 			for (u32 i = 0; i < objectCount; i++)
 			{
@@ -136,6 +136,11 @@ namespace TFE_Level
 				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D && oclass != CLASS_SOUND) { continue; }
 				// Skip objects that are not in sectors.
 				if (sectorId < 0) { continue; }
+				if (sectorId >= sectorCount)
+				{
+					TFE_System::logWrite(LOG_ERROR, "Level", "Sector ID for object is invalid: %d.", sectorId);
+					continue;
+				}
 
 				std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
 				list.push_back(i);

@@ -169,7 +169,7 @@ namespace TFE_LevelAsset
 	void applyFixups(const char* name)
 	{
 		// Fixups - fix errors in the original data rather than hacking up the systems such as INF.
-		if (strcasecmp(name, "ROBOTICS.LEV") == 0)
+		if (strcasecmp(name, "ROBOTICS.LEV") == 0 && s_data.sectors.size() > 376)
 		{
 			if (strcasecmp(s_data.sectors[376].name, "pitroom2") == 0 && s_data.sectors[376].flags[0] == 2049 && s_data.sectors[376].wallCount == 11)
 			{
