@@ -4,6 +4,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Ui/ui.h>
@@ -24,7 +25,8 @@ namespace TFE_FrontEndUI
 
 	enum ConfigTab
 	{
-		CONFIG_GAME = 0,
+		CONFIG_ABOUT=0,
+		CONFIG_GAME,
 		CONFIG_GRAPHICS,
 		CONFIG_SOUND,
 		CONFIG_COUNT
@@ -32,10 +34,49 @@ namespace TFE_FrontEndUI
 
 	const char* c_configLabels[]=
 	{
+		"About",
 		"Game Settings",
 		"Graphics",
 		"Sound",
 	};
+
+	static const Vec2i c_resolutionDim[] =
+	{
+		{320,200},
+		{640,400},
+		{640,480},
+		{800,600},
+		{960,720},
+		{1024,768},
+		{1280,960},
+		{1440,1050},
+		{1440,1080},
+		{1600,1200},
+		{1856,1392},
+		{1920,1440},
+		{2048,1536}
+	};
+
+	static const char* c_resolutions[] =
+	{
+		"200p  (320x200)",
+		"400p  (640x400)",
+		"480p  (640x480)",
+		"600p  (800x600)",
+		"720p  (960x720)",
+		"768p  (1024x768)",
+		"960p  (1280x960)",
+		"1050p (1440x1050)",
+		"1080p (1440x1080)",
+		"1200p (1600x1200)",
+		"1392p (1856x1392)",
+		"1440p (1920x1440)",
+		"1536p (2048x1536)",
+		"Custom",
+	};
+
+	static s32 s_resIndex = 0;
+	static char* s_aboutDisplayStr;
 	
 	static AppState s_appState;
 	static ImFont* s_menuFont;
@@ -47,9 +88,11 @@ namespace TFE_FrontEndUI
 	static bool s_consoleActive = false;
 	static imgui_addons::ImGuiFileBrowser s_fileDialog;
 
+	void configAbout();
 	void configGame();
 	void configGraphics();
 	void configSound();
+	void pickCurrentResolution();
 	
 	void init()
 	{
@@ -181,6 +224,7 @@ namespace TFE_FrontEndUI
 				s_configTab = CONFIG_GAME;
 
 				s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_SOURCE_DATA));
+				pickCurrentResolution();
 			}
 			if (ImGui::Button("Mods     "))
 			{
@@ -205,23 +249,6 @@ namespace TFE_FrontEndUI
 		}
 		else if (s_subUI == FEUI_CONFIG)
 		{
-			// Game Source Paths
-			// Dark Forces [.............................] [Browse]
-			// Outlaws     [.............................] [Browse]
-			// 
-			// Selected Game [Dark Forces]V]
-			//
-			// Graphics
-			// [] Fullscreen
-			// [] Windowed
-			// Resolution: [320x200]V]
-			//             [640x400
-			//             [640x480
-			//             [...
-			//             [Fit Window
-			//             [Custom
-			// Custom Resolution: [     ] x [     ]
-
 			bool active = true;
 			const u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
 				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
@@ -232,6 +259,11 @@ namespace TFE_FrontEndUI
 
 			ImVec2 sideBarButtonSize(144, 24);
 			ImGui::PushFont(s_dialogFont);
+			if (ImGui::Button("About", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_ABOUT;
+				TFE_Settings::writeToDisk();
+			}
 			if (ImGui::Button("Game", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_GAME;
@@ -268,6 +300,9 @@ namespace TFE_FrontEndUI
 			ImGui::Separator();
 			switch (s_configTab)
 			{
+			case CONFIG_ABOUT:
+				configAbout();
+				break;
 			case CONFIG_GAME:
 				configGame();
 				break;
@@ -281,6 +316,31 @@ namespace TFE_FrontEndUI
 
 			ImGui::End();
 		}
+	}
+
+	void configAbout()
+	{
+		if (!s_aboutDisplayStr)
+		{
+			// The document has not been loaded yet.
+			char path[TFE_MAX_PATH];
+			char fileName[TFE_MAX_PATH];
+			strcpy(fileName, "Documentation/markdown/theforceengine.md");
+			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+
+			FileStream file;
+			if (file.open(path, FileStream::MODE_READ))
+			{
+				const size_t len = file.getSize();
+				s_aboutDisplayStr = new char[len + 1];
+				file.readBuffer(s_aboutDisplayStr, (u32)len);
+				s_aboutDisplayStr[len] = 0;
+
+				file.close();
+			}
+		}
+
+		if (s_aboutDisplayStr) { TFE_Markdown::draw(s_aboutDisplayStr); }
 	}
 
 	void configGame()
@@ -324,10 +384,8 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 
 		ImGui::SetNextItemWidth(256.0f);
-		if (ImGui::Combo("##Current Game", &s_gameIndex, c_games, IM_ARRAYSIZE(c_games)))
-		{
-		}
-
+		ImGui::Combo("##Current Game", &s_gameIndex, c_games, IM_ARRAYSIZE(c_games));
+		
 		// File dialogs...
 		char exePath[TFE_MAX_PATH];
 		if (s_fileDialog.showOpenFileDialog("Select DARK.EXE or DARK.GOB", ImVec2(600, 300), ".EXE,.exe,.GOB,.gob"))
@@ -341,12 +399,78 @@ namespace TFE_FrontEndUI
 			FileUtil::getFilePath(exePath, outlaws->sourcePath);
 		}
 	}
-
+		
 	void configGraphics()
 	{
-	}
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		TFE_Settings_Window* window = TFE_Settings::getWindowSettings();
 
+		//////////////////////////////////////////////////////
+		// Window Settings.
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Window");
+		ImGui::PopFont();
+
+		bool fullscreen = window->fullscreen;
+		bool windowed = !fullscreen;
+		if (ImGui::Checkbox("Fullscreen", &fullscreen))
+		{
+			windowed = !fullscreen;
+		}
+		if (ImGui::Checkbox("Windowed", &windowed))
+		{
+			fullscreen = !windowed;
+		}
+		if (fullscreen != window->fullscreen)
+		{
+			TFE_RenderBackend::enableFullscreen(fullscreen);
+		}
+		window->fullscreen = fullscreen;
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
+		// Resolution
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Virtual Resolution");
+		ImGui::PopFont();
+
+		ImGui::LabelText("##ConfigLabel", "Standard Resolution:"); ImGui::SameLine(150);
+		ImGui::SetNextItemWidth(196);
+		ImGui::Combo("##Resolution", &s_resIndex, c_resolutions, IM_ARRAYSIZE(c_resolutions));
+		if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim))
+		{
+			ImGui::LabelText("##ConfigLabel", "Custom:"); ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(196);
+			ImGui::InputInt2("##CustomInput", graphics->gameResolution.m);
+		}
+		else
+		{
+			graphics->gameResolution = c_resolutionDim[s_resIndex];
+		}
+	}
+	
 	void configSound()
 	{
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Under Construction");
+		ImGui::PopFont();
+	}
+
+	void pickCurrentResolution()
+	{
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+
+		const size_t count = TFE_ARRAYSIZE(c_resolutionDim);
+		for (size_t i = 0; i < count; i++)
+		{
+			if (graphics->gameResolution.x == c_resolutionDim[i].x && graphics->gameResolution.z == c_resolutionDim[i].z)
+			{
+				s_resIndex = i;
+				return;
+			}
+		}
+		s_resIndex = count;
 	}
 }

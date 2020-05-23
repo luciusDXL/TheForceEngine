@@ -39,7 +39,6 @@
 #pragma comment(lib, "SDL2main.lib")
 
 // Replace with settings.
-static bool s_fullscreen = false;
 static bool s_vsync = true;
 static bool s_loop  = true;
 static f32  s_refreshRate = 0;
@@ -53,6 +52,7 @@ static u32  s_monitorHeight = 720;
 void handleEvent(SDL_Event& Event)
 {
 	TFE_Ui::setUiInput(&Event);
+	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
 
 	switch (Event.type)
 	{
@@ -115,8 +115,8 @@ void handleEvent(SDL_Event& Event)
 				// Fullscreen toggle.
 				if (code == KeyboardCode::KEY_F11)
 				{
-					s_fullscreen = !s_fullscreen;
-					TFE_RenderBackend::enableFullscreen(s_fullscreen);
+					windowSettings->fullscreen = !windowSettings->fullscreen;
+					TFE_RenderBackend::enableFullscreen(windowSettings->fullscreen);
 				}
 			}
 		} break;
@@ -195,13 +195,13 @@ bool sdlInit()
 	s_refreshRate = (f32)mode.refresh_rate;
 
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
-	s_fullscreen = windowSettings->fullscreen;
+	bool fullscreen = windowSettings->fullscreen;
 	s_displayWidth = windowSettings->width;
 	s_displayHeight = windowSettings->height;
 	s_baseWindowWidth = windowSettings->baseWidth;
 	s_baseWindowHeight = windowSettings->baseHeight;
 
-	if (s_fullscreen)
+	if (fullscreen)
 	{
 		s_displayWidth = mode.w;
 		s_displayHeight = mode.h;
@@ -298,10 +298,11 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 	TFE_System::init(s_refreshRate, s_vsync);
+	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
 
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
-	if (s_fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");    windowFlags |= WINFLAG_FULLSCREEN; }
+	if (windowSettings->fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");    windowFlags |= WINFLAG_FULLSCREEN; }
 	if (s_vsync)      { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
 		
 	WindowState windowState =
