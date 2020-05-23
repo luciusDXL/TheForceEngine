@@ -18,16 +18,38 @@ namespace TFE_FrontEndUI
 	{
 		FEUI_NONE = 0,
 		FEUI_MANUAL,
+		FEUI_CONFIG,
 		FEUI_COUNT
 	};
 
+	enum ConfigTab
+	{
+		CONFIG_GAME = 0,
+		CONFIG_GRAPHICS,
+		CONFIG_SOUND,
+		CONFIG_COUNT
+	};
+
+	const char* c_configLabels[]=
+	{
+		"Game Settings",
+		"Graphics",
+		"Sound",
+	};
+	
 	static AppState s_appState;
 	static ImFont* s_menuFont;
 	static ImFont* s_titleFont;
 	static ImFont* s_dialogFont;
 	static SubUI s_subUI;
+	static ConfigTab s_configTab;
 
 	static bool s_consoleActive = false;
+	static imgui_addons::ImGuiFileBrowser s_fileDialog;
+
+	void configGame();
+	void configGraphics();
+	void configSound();
 	
 	void init()
 	{
@@ -155,6 +177,10 @@ namespace TFE_FrontEndUI
 			}
 			if (ImGui::Button("Configure"))
 			{
+				s_subUI = FEUI_CONFIG;
+				s_configTab = CONFIG_GAME;
+
+				s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_SOURCE_DATA));
 			}
 			if (ImGui::Button("Mods     "))
 			{
@@ -177,5 +203,150 @@ namespace TFE_FrontEndUI
 			ImGui::SetNextWindowPos(ImVec2(160.0f, 160.0f));
 			ImGui::SetNextWindowSize(ImVec2(f32(w - 320), f32(h - 320)));
 		}
+		else if (s_subUI == FEUI_CONFIG)
+		{
+			// Game Source Paths
+			// Dark Forces [.............................] [Browse]
+			// Outlaws     [.............................] [Browse]
+			// 
+			// Selected Game [Dark Forces]V]
+			//
+			// Graphics
+			// [] Fullscreen
+			// [] Windowed
+			// Resolution: [320x200]V]
+			//             [640x400
+			//             [640x480
+			//             [...
+			//             [Fit Window
+			//             [Custom
+			// Custom Resolution: [     ] x [     ]
+
+			bool active = true;
+			const u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+
+			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+			ImGui::SetNextWindowSize(ImVec2(160.0f, h));
+			ImGui::Begin("##Sidebar", &active, window_flags);
+
+			ImVec2 sideBarButtonSize(144, 24);
+			ImGui::PushFont(s_dialogFont);
+			if (ImGui::Button("Game", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_GAME;
+				TFE_Settings::writeToDisk();
+			}
+			if (ImGui::Button("Graphics", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_GRAPHICS;
+				TFE_Settings::writeToDisk();
+			}
+			if (ImGui::Button("Sound", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_SOUND;
+				TFE_Settings::writeToDisk();
+			}
+			ImGui::Separator();
+			if (ImGui::Button("Return", sideBarButtonSize))
+			{
+				s_subUI = FEUI_NONE;
+				TFE_Settings::writeToDisk();
+			}
+			ImGui::PopFont();
+
+			ImGui::End();
+
+			ImGui::SetNextWindowPos(ImVec2(160.0f, 0.0f));
+			ImGui::SetNextWindowSize(ImVec2(w-160.0f, h));
+			ImGui::SetNextWindowBgAlpha(0.25f);
+			ImGui::Begin("##Settings", &active, window_flags);
+
+			ImGui::PushFont(s_dialogFont);
+			ImGui::LabelText("##ConfigLabel", "%s", c_configLabels[s_configTab]);
+			ImGui::PopFont();
+			ImGui::Separator();
+			switch (s_configTab)
+			{
+			case CONFIG_GAME:
+				configGame();
+				break;
+			case CONFIG_GRAPHICS:
+				configGraphics();
+				break;
+			case CONFIG_SOUND:
+				configSound();
+				break;
+			};
+
+			ImGui::End();
+		}
+	}
+
+	void configGame()
+	{
+		TFE_Settings_Game* darkForces = TFE_Settings::getGameSettings("Dark Forces");
+		TFE_Settings_Game* outlaws = TFE_Settings::getGameSettings("Outlaws");
+
+		//////////////////////////////////////////////////////
+		// Source Game Data
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Game Source Data");
+		ImGui::PopFont();
+
+		ImGui::Text("Dark Forces:"); ImGui::SameLine(100);
+		ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024); ImGui::SameLine();
+		if (ImGui::Button("Browse##DarkForces"))
+		{
+			ImGui::OpenPopup("Select DARK.EXE or DARK.GOB");
+		}
+
+		ImGui::Text("Outlaws:"); ImGui::SameLine(100);
+		ImGui::InputText("##OutlawsSource", outlaws->sourcePath, 1024); ImGui::SameLine();
+		if (ImGui::Button("Browse##Outlaws"))
+		{
+			ImGui::OpenPopup("Select OUTLAWS.EXE or OUTLAWS.LAB");
+		}
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
+		// Current Game
+		//////////////////////////////////////////////////////
+		const char* c_games[]=
+		{
+			"Dark Forces",
+			// "Outlaws",  -- TODO
+		};
+		static s32 s_gameIndex = 0;
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Current Game");
+		ImGui::PopFont();
+
+		ImGui::SetNextItemWidth(256.0f);
+		if (ImGui::Combo("##Current Game", &s_gameIndex, c_games, IM_ARRAYSIZE(c_games)))
+		{
+		}
+
+		// File dialogs...
+		char exePath[TFE_MAX_PATH];
+		if (s_fileDialog.showOpenFileDialog("Select DARK.EXE or DARK.GOB", ImVec2(600, 300), ".EXE,.exe,.GOB,.gob"))
+		{
+			strcpy(exePath, s_fileDialog.selected_fn.c_str());
+			FileUtil::getFilePath(exePath, darkForces->sourcePath);
+		}
+		else if (s_fileDialog.showOpenFileDialog("Select OUTLAWS.EXE or OUTLAWS.LAB", ImVec2(600, 300), ".EXE,.exe,.LAB,.lab"))
+		{
+			strcpy(exePath, s_fileDialog.selected_fn.c_str());
+			FileUtil::getFilePath(exePath, outlaws->sourcePath);
+		}
+	}
+
+	void configGraphics()
+	{
+	}
+
+	void configSound()
+	{
 	}
 }

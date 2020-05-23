@@ -314,7 +314,7 @@ namespace TFE_Settings
 				curSection = parseSectionName(tokens[0].c_str());
 				if (curSection == SECTION_INVALID)
 				{
-					return;
+					continue;
 				}
 			}
 			else if (tokens.size() == 2)
