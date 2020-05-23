@@ -2,6 +2,7 @@
 #include "gobArchive.h"
 #include "lfdArchive.h"
 #include "labArchive.h"
+#include <TFE_FileSystem/fileutil.h>
 #include <assert.h>
 #include <string>
 #include <map>
@@ -38,6 +39,10 @@ Archive* Archive::getArchive(ArchiveType type, const char* name, const char* pat
 	if (iArchive != s_archives[type].end())
 	{
 		return iArchive->second;
+	}
+	if (!FileUtil::exists(path))
+	{
+		return nullptr;
 	}
 
 	Archive* archive = nullptr;

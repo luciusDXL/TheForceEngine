@@ -2,6 +2,7 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_RenderBackend/textureGpu.h>
+#include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
 #include "renderTarget.h"
 #include "blit.h"
 #include <SDL.h>
@@ -20,6 +21,11 @@
 
 namespace TFE_RenderBackend
 {
+	// Screenshot stuff... needs to be refactored.
+	static char s_screenshotPath[TFE_MAX_PATH];
+	static bool s_screenshotQueued = false;
+	static u32* s_screenshotBuffer = nullptr;
+
 	static WindowState m_windowState;
 	static void* m_window;
 	static TextureGpu* s_virtualDisplay = nullptr;
@@ -110,7 +116,7 @@ namespace TFE_RenderBackend
 
 		memcpy(s_clearColor, color, sizeof(f32) * 4);
 	}
-
+		
 	void swap(bool blitVirtualDisplay)
 	{
 		// Blit the texture or render target to the screen.
@@ -124,6 +130,23 @@ namespace TFE_RenderBackend
 
 		// Update the window.
 		SDL_GL_SwapWindow((SDL_Window*)m_window);
+
+		if (s_screenshotQueued)
+		{
+			s_screenshotQueued = false;
+			s_screenshotBuffer = (u32*)realloc(s_screenshotBuffer, m_windowState.width * m_windowState.height * 4u);
+
+			glReadBuffer(GL_BACK);
+			glReadPixels(0, 0, m_windowState.width, m_windowState.height, GL_RGBA, GL_UNSIGNED_BYTE, s_screenshotBuffer);
+
+			TFE_Image::writeImage(s_screenshotPath, m_windowState.width, m_windowState.height, s_screenshotBuffer);
+		}
+	}
+		
+	void queueScreenshot(const char* screenshotPath)
+	{
+		strcpy(s_screenshotPath, screenshotPath);
+		s_screenshotQueued = true;
 	}
 
 	void updateSettings()

@@ -56,6 +56,7 @@ namespace TFE_RenderBackend
 
 	void setClearColor(const f32* color);
 	void swap(bool blitVirtualDisplay);
+	void queueScreenshot(const char* screenshotPath);
 
 	void resize(s32 width, s32 height);
 	void enableFullscreen(bool enable);

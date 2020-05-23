@@ -105,6 +105,8 @@ namespace TFE_FrontEndUI
 		s_titleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 48);
 		s_dialogFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 20);
 
+		s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
+
 		TFE_Console::init();
 	}
 
@@ -157,10 +159,12 @@ namespace TFE_FrontEndUI
 		
 		bool active = true;
 		ImGui::Begin("##NoGameData", &active, ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
-		ImGui::Text("No valid \"%s\" game data found. Please exit the application and edit the \"settings.ini\" file at", game->game);
-		ImGui::Text("\"%s\"", settingsPath);
+		ImGui::Text("No valid \"%s\" game data found.", game->game);
+		ImGui::Text("Please select Configure from the menu,");
+		ImGui::Text("open up Game settings and setup the game path.");
 		ImGui::Separator();
-		ImGui::Text("An example path, if the game was purchased through Steam is: \"D:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/\" ");
+		ImGui::Text("An example path, if the game was purchased through Steam is:");
+		ImGui::Text("\"D:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/\" ");
 		ImGui::Separator();
 		if (ImGui::Button("Return to Menu"))
 		{
@@ -185,8 +189,10 @@ namespace TFE_FrontEndUI
 		}
 		if (noGameData)
 		{
-			drawFrontEnd = false;
-			showNoGameDataUI();
+			s_subUI = FEUI_CONFIG;
+			s_configTab = CONFIG_GAME;
+			s_appState = APP_STATE_MENU;
+			pickCurrentResolution();
 		}
 		if (!drawFrontEnd) { return; }
 
@@ -223,7 +229,14 @@ namespace TFE_FrontEndUI
 				s_subUI = FEUI_CONFIG;
 				s_configTab = CONFIG_GAME;
 
-				s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_SOURCE_DATA));
+				if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+				{
+					s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_SOURCE_DATA));
+				}
+				else
+				{
+					s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
+				}
 				pickCurrentResolution();
 			}
 			if (ImGui::Button("Mods     "))
@@ -283,6 +296,7 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
 				s_subUI = FEUI_NONE;
+				s_appState = APP_STATE_MENU;
 				TFE_Settings::writeToDisk();
 			}
 			ImGui::PopFont();
@@ -388,15 +402,51 @@ namespace TFE_FrontEndUI
 		
 		// File dialogs...
 		char exePath[TFE_MAX_PATH];
+		char filePath[TFE_MAX_PATH];
 		if (s_fileDialog.showOpenFileDialog("Select DARK.EXE or DARK.GOB", ImVec2(600, 300), ".EXE,.exe,.GOB,.gob"))
 		{
 			strcpy(exePath, s_fileDialog.selected_fn.c_str());
-			FileUtil::getFilePath(exePath, darkForces->sourcePath);
+			FileUtil::getFilePath(exePath, filePath);
+
+			// Before accepting this path, verify that some of the required files are here...
+			char testFile[TFE_MAX_PATH];
+			sprintf(testFile, "%sDARK.GOB", filePath);
+			if (FileUtil::exists(testFile))
+			{
+				strcpy(darkForces->sourcePath, filePath);
+				TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+			}
+			else
+			{
+				ImGui::OpenPopup("Invalid Source Data");
+			}
 		}
 		else if (s_fileDialog.showOpenFileDialog("Select OUTLAWS.EXE or OUTLAWS.LAB", ImVec2(600, 300), ".EXE,.exe,.LAB,.lab"))
 		{
 			strcpy(exePath, s_fileDialog.selected_fn.c_str());
-			FileUtil::getFilePath(exePath, outlaws->sourcePath);
+			FileUtil::getFilePath(exePath, filePath);
+
+			// Before accepting this path, verify that some of the required files are here...
+			char testFile[TFE_MAX_PATH];
+			sprintf(testFile, "%sOutlaws.lab", filePath);
+			if (FileUtil::exists(testFile))
+			{
+				strcpy(outlaws->sourcePath, filePath);
+				// TFE_Paths::setPath(PATH_SOURCE_DATA, outlaws->sourcePath);
+			}
+			else
+			{
+				ImGui::OpenPopup("Invalid Source Data");
+			}
+		}
+
+		if (ImGui::BeginPopupModal("Invalid Source Data", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Invalid source data path!");
+			ImGui::Text("Please select the source game executable or source asset (GOB or LAB).");
+
+			if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+			ImGui::EndPopup();
 		}
 	}
 		

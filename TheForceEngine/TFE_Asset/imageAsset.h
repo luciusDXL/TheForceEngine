@@ -21,4 +21,6 @@ namespace TFE_Image
 	Image* get(const char* imagePath);
 	void free(Image* image);
 	void freeAll();
+
+	void writeImage(const char* path, u32 width, u32 height, u32* pixelData);
 }

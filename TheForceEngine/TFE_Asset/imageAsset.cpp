@@ -105,4 +105,18 @@ namespace TFE_Image
 		}
 		s_images.clear();
 	}
+
+	void writeImage(const char* path, u32 width, u32 height, u32* pixelData)
+	{
+		ILuint handle;
+		ilGenImages(1, &handle);
+		ilBindImage(handle);
+
+		ilTexImage(width, height, 1, 4, IL_RGBA, IL_UNSIGNED_BYTE, (void*)pixelData);
+		ilSetData((void*)pixelData);
+		ilSaveImage(path);
+
+		ilBindImage(0);
+		ilDeleteImage(handle);
+	}
 }

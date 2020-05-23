@@ -4,6 +4,7 @@
 #include <TFE_ScriptSystem/scriptSystem.h>
 #include <TFE_InfSystem/infSystem.h>
 #include <TFE_Editor/editor.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <TFE_Game/level.h>
 #include <TFE_Game/gameMain.h>
 #include <TFE_Game/GameUI/gameUi.h>
@@ -20,6 +21,9 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <algorithm>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/timeb.h>
 
 // Replace with music system
 #include <TFE_Audio/midiPlayer.h>
@@ -48,6 +52,7 @@ static u32  s_displayWidth = s_baseWindowWidth;
 static u32  s_displayHeight = s_baseWindowHeight;
 static u32  s_monitorWidth = 1280;
 static u32  s_monitorHeight = 720;
+static bool s_gameUiInitRequired = true;
 
 void handleEvent(SDL_Event& Event)
 {
@@ -117,6 +122,24 @@ void handleEvent(SDL_Event& Event)
 				{
 					windowSettings->fullscreen = !windowSettings->fullscreen;
 					TFE_RenderBackend::enableFullscreen(windowSettings->fullscreen);
+				}
+				else if (code == KeyboardCode::KEY_PRINTSCREEN)
+				{
+					char screenshotDir[TFE_MAX_PATH];
+					TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
+
+					if (!FileUtil::directoryExits(screenshotDir))
+					{
+						FileUtil::makeDirectory(screenshotDir);
+					}
+
+					__time64_t ltime;
+					_time64(&ltime);
+
+					char screenshotPath[TFE_MAX_PATH];
+					sprintf(screenshotPath, "%stfe_screenshot_%llx.png", screenshotDir, ltime);
+
+					TFE_RenderBackend::queueScreenshot(screenshotPath);
 				}
 			}
 		} break;
@@ -234,13 +257,32 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 	case APP_STATE_MENU:
 		break;
 	case APP_STATE_EDITOR:
-		renderer->changeResolution(640, 480);
-		TFE_GameUi::updateUiResolution();
-		TFE_Editor::enable(renderer);
+		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+		{
+			if (s_gameUiInitRequired)
+			{
+				TFE_GameUi::init(renderer);
+				s_gameUiInitRequired = false;
+			}
+
+			renderer->changeResolution(640, 480);
+			TFE_GameUi::updateUiResolution();
+			TFE_Editor::enable(renderer);
+		}
+		else
+		{
+			newState = APP_STATE_NO_GAME_DATA;
+		}
 		break;
 	case APP_STATE_DARK_FORCES:
 		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 		{
+			if (s_gameUiInitRequired)
+			{
+				TFE_GameUi::init(renderer);
+				s_gameUiInitRequired = false;
+			}
+			
 			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
 			renderer->enableScreenClear(false);
 			TFE_Input::enableRelativeMode(true);
@@ -249,7 +291,6 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 		}
 		else
 		{
-
 			newState = APP_STATE_NO_GAME_DATA;
 		}
 		break;
@@ -349,7 +390,15 @@ int main(int argc, char* argv[])
 	}
 
 	// Game loop
-	TFE_GameUi::init(renderer);
+	if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+	{
+		TFE_GameUi::init(renderer);
+		s_gameUiInitRequired = false;
+	}
+	else
+	{
+		s_gameUiInitRequired = true;
+	}
 		
 	u32 frame = 0u;
 	bool showPerf = false;
@@ -419,7 +468,7 @@ int main(int argc, char* argv[])
 				s_loop = false;
 			}
 		}
-		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU, s_curState == APP_STATE_NO_GAME_DATA);
+		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
 
 		// Render
 		renderer->begin();
