@@ -11,6 +11,8 @@ namespace TFE_Physics
 {
 	#define MOVE_ITER_END 4
 	#define HEIGHT_EPS 0.5f
+	#define MAX_COLLISION_RAY_ITER 256
+
 	const f32 c_stepUpSize = 3.5f;
 	const f32 c_minHeight = 3.0f;
 	const f32 c_minStandHeight = 6.80f;
@@ -1094,9 +1096,12 @@ namespace TFE_Physics
 
 		s32 nextSector = ray->originSectorId;
 		s32 windowId = -1, prevSector = -1;
+		s32 iter = 0;
 		bool hitFound = false;
-		while (nextSector >= 0)
+		while (nextSector >= 0 && iter < MAX_COLLISION_RAY_ITER)
 		{
+			iter++;
+
 			const s32 sectorId = nextSector;
 			const Sector* curSector = &sectors[sectorId];
 			const SectorWall* curWalls = walls + curSector->wallOffset;
