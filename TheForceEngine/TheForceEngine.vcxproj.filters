@@ -134,6 +134,9 @@
     <Filter Include="Source\TFE_System\Threads\Win32">
       <UniqueIdentifier>{1389f658-d350-4b30-91ca-293ec673341e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Settings\registry">
+      <UniqueIdentifier>{10925be4-50d6-4ecd-af01-46e353a79d4b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -493,6 +496,9 @@
     <ClInclude Include="TFE_FrontEndUI\console.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Settings\windows\registry.h">
+      <Filter>Source\TFE_Settings\registry</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -800,6 +806,9 @@
     </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\console.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Settings\windows\registry.cpp">
+      <Filter>Source\TFE_Settings\registry</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

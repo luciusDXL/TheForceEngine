@@ -313,6 +313,7 @@
     <ClInclude Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring.h" />
     <ClInclude Include="TFE_ScriptSystem\scriptSystem.h" />
     <ClInclude Include="TFE_Settings\settings.h" />
+    <ClInclude Include="TFE_Settings\windows\registry.h" />
     <ClInclude Include="TFE_System\math.h" />
     <ClInclude Include="TFE_System\memoryPool.h" />
     <ClInclude Include="TFE_System\parser.h" />
@@ -428,6 +429,7 @@
     <ClCompile Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
     <ClCompile Include="TFE_ScriptSystem\scriptSystem.cpp" />
     <ClCompile Include="TFE_Settings\settings.cpp" />
+    <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\log.cpp" />
     <ClCompile Include="TFE_System\math.cpp" />
     <ClCompile Include="TFE_System\memoryPool.cpp" />

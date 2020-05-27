@@ -6,6 +6,10 @@
 #include <assert.h>
 #include <vector>
 
+#ifdef _WIN32
+#include "windows/registry.h"
+#endif
+
 namespace TFE_Settings
 {
 	//////////////////////////////////////////////////////////////////////////////////
@@ -37,18 +41,51 @@ namespace TFE_Settings
 		"Outlaws",
 	};
 
+	// GOG Product IDs:
+	static const char* c_gogProductId[Game_Count]=
+	{
+		"1421404433",	// Game_Dark_Forces
+		"1425302464"	// Game_Outlaws
+	};
+
+	static const char* c_steamLocalPath[Game_Count]=
+	{
+		"dark forces/Game/",	// Game_Dark_Forces
+		"outlaws/Game/",		// Game_Outlaws
+	};
+
 	static const char* c_darkForcesLocations[] =
 	{
 		// C drive
 		"C:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
 		"C:/Program Files/Steam/steamapps/common/dark forces/Game/",
-		"C:/Program Files (x86)/GOG.com/dark forces/Game/",
-		"C:/GOG Games/dark forces/Game/",
+		"C:/Program Files (x86)/GOG.com/Star Wars - Dark Forces/",
+		"C:/GOG Games/Star Wars - Dark Forces/",
 		// D drive
 		"D:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
 		"D:/Program Files/Steam/steamapps/common/dark forces/Game/",
-		"D:/Program Files (x86)/GOG.com/dark forces/Game/",
-		"D:/GOG Games/dark forces/Game/",
+		"D:/Program Files (x86)/GOG.com/Star Wars - Dark Forces/",
+		"D:/GOG Games/Star Wars - Dark Forces/",
+	};
+	static const char* c_outlawsLocations[] =
+	{
+		// C drive
+		"C:/Program Files (x86)/Steam/steamapps/common/outlaws/",
+		"C:/Program Files/Steam/steamapps/common/outlaws/",
+		"C:/Program Files (x86)/GOG.com/outlaws/",
+		"C:/GOG Games/outlaws/",
+		// D drive
+		"D:/Program Files (x86)/Steam/steamapps/common/outlaws/",
+		"D:/Program Files/Steam/steamapps/common/outlaws/",
+		"D:/Program Files (x86)/GOG.com/outlaws/",
+		"D:/GOG Games/outlaws/",
+	};
+	static const u32 c_hardcodedPathCount = TFE_ARRAYSIZE(c_darkForcesLocations);
+
+	static const char** c_gameLocations[] =
+	{
+		c_darkForcesLocations,
+		c_outlawsLocations
 	};
 
 	static char s_settingsPath[TFE_MAX_PATH];
@@ -127,18 +164,35 @@ namespace TFE_Settings
 		
 	void checkGameData()
 	{
-		// Check game data
-		const size_t sourcePathLen = strlen(s_gameSettings[Game_Dark_Forces].sourcePath);
-		bool pathValid = sourcePathLen && FileUtil::directoryExits(s_gameSettings[Game_Dark_Forces].sourcePath);
-		if (!pathValid)
+		for (u32 gameId = 0; gameId < Game_Count; gameId++)
 		{
-			// Try various possible locations.
-			for (u32 i = 0; i < TFE_ARRAYSIZE(c_darkForcesLocations); i++)
+			const size_t sourcePathLen = strlen(s_gameSettings[gameId].sourcePath);
+			bool pathValid = sourcePathLen && FileUtil::directoryExits(s_gameSettings[gameId].sourcePath);
+		#ifdef _WIN32
+			// First try looking through the registry.
+			if (!pathValid)
 			{
-				if (FileUtil::directoryExits(c_darkForcesLocations[i]))
+				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamLocalPath[gameId], s_gameSettings[gameId].sourcePath);
+			
+				if (!pathValid)
 				{
-					strcpy(s_gameSettings[Game_Dark_Forces].sourcePath, c_darkForcesLocations[i]);
-					break;
+					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], s_gameSettings[gameId].sourcePath);
+				}
+			}
+		#endif
+			// If the registry approach fails, just try looking in the various hardcoded paths.
+			if (!pathValid)
+			{
+				// Try various possible locations.
+				const char** locations = c_gameLocations[gameId];
+				for (u32 i = 0; i < c_hardcodedPathCount; i++)
+				{
+					if (FileUtil::directoryExits(locations[i]))
+					{
+						strcpy(s_gameSettings[gameId].sourcePath, locations[i]);
+						pathValid = true;
+						break;
+					}
 				}
 			}
 		}
