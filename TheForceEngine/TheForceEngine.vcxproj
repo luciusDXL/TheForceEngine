@@ -312,6 +312,7 @@
     <ClInclude Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptbuilder\scriptbuilder.h" />
     <ClInclude Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring.h" />
     <ClInclude Include="TFE_ScriptSystem\scriptSystem.h" />
+    <ClInclude Include="TFE_Settings\gameSourceData.h" />
     <ClInclude Include="TFE_Settings\settings.h" />
     <ClInclude Include="TFE_Settings\windows\registry.h" />
     <ClInclude Include="TFE_System\math.h" />

@@ -499,6 +499,9 @@
     <ClInclude Include="TFE_Settings\windows\registry.h">
       <Filter>Source\TFE_Settings\registry</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Settings\gameSourceData.h">
+      <Filter>Source\TFE_Settings</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
