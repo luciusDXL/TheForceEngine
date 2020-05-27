@@ -26,7 +26,7 @@ namespace TFE_Settings
 	static const char* c_steamLocalPath[Game_Count] =
 	{
 		"dark forces/Game/",	// Game_Dark_Forces
-		"outlaws/Game/",		// Game_Outlaws
+		"outlaws/",				// Game_Outlaws
 	};
 
 	static const char* c_darkForcesLocations[] =
