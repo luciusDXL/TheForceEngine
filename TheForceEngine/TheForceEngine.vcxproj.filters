@@ -520,6 +520,9 @@
     <ClInclude Include="TFE_Game\RendererClassic\rwall.h">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rcommon.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -835,6 +838,9 @@
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Game\RendererClassic\rwall.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rcommon.cpp">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClCompile>
   </ItemGroup>

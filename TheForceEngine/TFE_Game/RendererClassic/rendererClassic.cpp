@@ -2,6 +2,7 @@
 #include "fixedPoint.h"
 #include "rsector.h"
 #include "rwall.h"
+#include "rcommon.h"
 
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
@@ -46,9 +47,6 @@ namespace RendererClassic
 	static s32 s_curWallSeg;
 	static s32 s_drawFrame = 0;
 		
-	static RWallSegment s_wallSegListDst[MAX_SEG];
-	static RWallSegment s_wallSegListSrc[MAX_SEG];
-
 	void loadLevel();
 	void drawSector();
 	void copySector(RSector* out, RSector* sectorList, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures);
@@ -60,6 +58,12 @@ namespace RendererClassic
 
 		// Build tables.
 		// Setup resolution, projection parameters, etc.
+
+		s_width  = 320;
+		s_height = 200;
+		s_halfWidth  = s_width >> 1;
+		s_halfHeight = s_height >> 1;
+		s_focalLength = s_halfWidth;
 	}
 	
 	void setupLevel()
@@ -87,11 +91,10 @@ namespace RendererClassic
 		s_drawFrame++;
 	}
 		
-	// For now we assume 320x200 - this will be updated soon.
 	void draw(u8* display)
 	{
 		// Clear the screen for now so we can get away with only drawing walls.
-		memset(display, 15, 320 * 200);
+		memset(display, 0, s_width * s_height);
 
 		// Draws a single sector.
 		s_curSector = &s_rsectors[s_sectorId];

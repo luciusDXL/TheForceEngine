@@ -291,6 +291,7 @@
     <ClInclude Include="TFE_Game\player.h" />
     <ClInclude Include="TFE_Game\renderCommon.h" />
     <ClInclude Include="TFE_Game\RendererClassic\fixedPoint.h" />
+    <ClInclude Include="TFE_Game\RendererClassic\rcommon.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rendererClassic.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rmath.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rsector.h" />
@@ -413,6 +414,7 @@
     <ClCompile Include="TFE_Game\physics.cpp" />
     <ClCompile Include="TFE_Game\player.cpp" />
     <ClCompile Include="TFE_Game\renderCommon.cpp" />
+    <ClCompile Include="TFE_Game\RendererClassic\rcommon.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rendererClassic.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rwall.cpp" />
     <ClCompile Include="TFE_Game\view.cpp" />

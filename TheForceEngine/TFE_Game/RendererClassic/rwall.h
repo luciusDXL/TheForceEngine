@@ -12,6 +12,20 @@ struct TextureFrame;
 #define MAX_SEG 384
 #define MAX_SPLIT_WALLS 40
 
+enum WallOrient
+{
+	WORIENT_DZ_DX = 0,
+	WORIENT_DX_DZ = 1
+};
+
+enum WallDrawFlags
+{
+	WDF_MIDDLE      = 0,
+	WDF_TOP         = 1,
+	WDF_BOT         = 2,
+	WDF_TOP_AND_BOT = 3,
+};
+
 struct RWall
 {
 	s32 visible;		
@@ -74,7 +88,7 @@ struct RWallSegment
 	s32 x0View;			// Viewspace vertex 0 X coordinate.
 	s32 wallX0;			// Clipped projected X Coordinates.
 	s32 wallX1;
-	u8  orient;			// Wall orientation (DX_DZ or DZ_DX)
+	u8  orient;			// Wall orientation (WORIENT_DZ_DX or WORIENT_DX_DZ)
 	u8  pad8[3];
 	s32 slope;			// Wall slope
 	s32 uScale;			// dUdX or dUdZ based on wall orientation.
