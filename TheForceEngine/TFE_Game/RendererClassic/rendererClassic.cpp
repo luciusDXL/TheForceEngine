@@ -120,48 +120,42 @@ namespace RendererClassic
 
 	void drawSector()
 	{
-		// For now we are just drawing a single sector...
-		// Always updating the sector for now since there is only one.
-		s32 startWall = 0;
-		s32 drawWallCount = 0;
+		s32 startWall     = s_curSector->startWall;
+		s32 drawWallCount = s_curSector->drawWallCnt;
+
 		if (s_drawFrame != s_curSector->prevDrawFrame)
 		{
 			vec2* vtxWS = s_curSector->verticesWS;
 			vec2* vtxVS = s_curSector->verticesVS;
 			for (s32 v = 0; v < s_curSector->vertexCount; v++)
 			{
-				vtxVS->x = mul16(vtxWS->x, s_cosYaw) + mul16(vtxWS->z, s_sinYaw) + s_xCameraTrans;
+				vtxVS->x = mul16(vtxWS->x, s_cosYaw)    + mul16(vtxWS->z, s_sinYaw) + s_xCameraTrans;
 				vtxVS->z = mul16(vtxWS->x, s_negSinYaw) + mul16(vtxWS->z, s_cosYaw) + s_zCameraTrans;
 				vtxVS++;
 				vtxWS++;
 			}
 
-			startWall = s_nextWall;
+			startWall   = s_nextWall;
 			RWall* wall = s_curSector->walls;
 			for (s32 i = 0; i < s_curSector->wallCount; i++, wall++)
 			{
 				wall_process(wall);
 			}
-
-			s_curSector->startWall = startWall;
-			s_curSector->prevDrawFrame = s_drawFrame;
 			drawWallCount = s_nextWall - startWall;
-			s_curSector->drawWallCnt = drawWallCount;
-		}
-		else
-		{
-			startWall = s_curSector->startWall;
-			drawWallCount = s_curSector->drawWallCnt;
+
+			s_curSector->startWall     = startWall;
+			s_curSector->drawWallCnt   = drawWallCount;
+			s_curSector->prevDrawFrame = s_drawFrame;
 		}
 
 		RWallSegment* wallSegment = &s_wallSegListDst[s_curWallSeg];
-		s32 addedCount = wall_mergeSort(wallSegment, MAX_SEG - s_curWallSeg, startWall, drawWallCount);
-		s_curWallSeg += addedCount;
+		s32 drawSegCnt = wall_mergeSort(wallSegment, MAX_SEG - s_curWallSeg, startWall, drawWallCount);
+		s_curWallSeg  += drawSegCnt;
 
-		qsort(wallSegment, addedCount, sizeof(RWallSegment), wallSortX);
+		qsort(wallSegment, drawSegCnt, sizeof(RWallSegment), wallSortX);
 
-		// for now assume every wall is solid
-		for (s32 i = 0; i < addedCount; i++, wallSegment++)
+		// Draw each wall segment in the sector.
+		for (s32 i = 0; i < drawSegCnt; i++, wallSegment++)
 		{
 			RWall* srcWall = wallSegment->srcWall;
 			//RSector* nextSector = srcWall->sector;
