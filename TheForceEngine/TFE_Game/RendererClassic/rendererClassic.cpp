@@ -50,14 +50,16 @@ namespace RendererClassic
 	static RWallSegment s_wallSegListSrc[MAX_SEG];
 
 	void loadLevel();
-	void copySector(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures);
+	void drawSector();
+	void copySector(RSector* out, RSector* sectorList, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures);
 
 	void init()
 	{
 		if (s_init) { return; }
 		s_init = false;
 
-		// ...
+		// Build tables.
+		// Setup resolution, projection parameters, etc.
 	}
 	
 	void setupLevel()
@@ -78,30 +80,46 @@ namespace RendererClassic
 		s_zCameraTrans = mul16(z, s_cosYaw) + mul16(x, s_negSinYaw);
 		s_xCameraTrans = mul16(x, s_cosYaw) + mul16(z, s_sinYaw);
 
-		if (s_sectorId != sectorId)
-		{
-			s_memPool.clear();
-		}
 		s_sectorId = sectorId;
-		s_curSector = &s_rsectors[sectorId];
-
+		
 		s_nextWall = 0;
 		s_curWallSeg = 0;
 		s_drawFrame++;
 	}
-
-	s32 wallSortX(const void* r0, const void* r1)	// eax, edx
-	{
-		return ((const RWallSegment*)r0)->wallX0 - ((const RWallSegment*)r1)->wallX0;
-	}
-
+		
+	// For now we assume 320x200 - this will be updated soon.
 	void draw(u8* display)
 	{
 		// Clear the screen for now so we can get away with only drawing walls.
 		memset(display, 15, 320 * 200);
 
 		// Draws a single sector.
+		s_curSector = &s_rsectors[s_sectorId];
+		drawSector();
+	}
 
+	void updateSector(u32 sectorId)
+	{
+		LevelData* level = TFE_LevelAsset::getLevelData();
+		Texture** textures = level->textures.data();
+
+		Sector* sector = &level->sectors[sectorId];
+		SectorWall* walls = level->walls.data() + sector->wallOffset;
+		Vec2f* vertices = level->vertices.data() + sector->vtxOffset;
+
+		copySector(&s_rsectors[sectorId], s_rsectors, sector, walls, vertices, textures);
+	}
+
+	//////////////////////////////////////////////////
+	// Internal
+	//////////////////////////////////////////////////
+	s32 wallSortX(const void* r0, const void* r1)
+	{
+		return ((const RWallSegment*)r0)->wallX0 - ((const RWallSegment*)r1)->wallX0;
+	}
+
+	void drawSector()
+	{
 		// For now we are just drawing a single sector...
 		// Always updating the sector for now since there is only one.
 		s32 startWall = 0;
@@ -112,7 +130,7 @@ namespace RendererClassic
 			vec2* vtxVS = s_curSector->verticesVS;
 			for (s32 v = 0; v < s_curSector->vertexCount; v++)
 			{
-				vtxVS->x = mul16(vtxWS->x, s_cosYaw)    + mul16(vtxWS->z, s_sinYaw) + s_xCameraTrans;
+				vtxVS->x = mul16(vtxWS->x, s_cosYaw) + mul16(vtxWS->z, s_sinYaw) + s_xCameraTrans;
 				vtxVS->z = mul16(vtxWS->x, s_negSinYaw) + mul16(vtxWS->z, s_cosYaw) + s_zCameraTrans;
 				vtxVS++;
 				vtxWS++;
@@ -146,7 +164,9 @@ namespace RendererClassic
 		for (s32 i = 0; i < addedCount; i++, wallSegment++)
 		{
 			RWall* srcWall = wallSegment->srcWall;
-			RSector* nextSector = srcWall->sector;
+			//RSector* nextSector = srcWall->sector;
+			// TODO: port wallSegment render flags and handle different configurations.
+			RSector* nextSector = nullptr;
 
 			// This will always be true for now.
 			if (!nextSector)
@@ -160,48 +180,39 @@ namespace RendererClassic
 		}
 	}
 
-	void updateSector(u32 sectorId)
+	void copySector(RSector* out, RSector* sectorList, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
 	{
-		LevelData* level = TFE_LevelAsset::getLevelData();
-		Texture** textures = level->textures.data();
-
-		Sector* sector = &level->sectors[sectorId];
-		SectorWall* walls = level->walls.data() + sector->wallOffset;
-		Vec2f* vertices = level->vertices.data() + sector->vtxOffset;
-
-		copySector(&s_rsectors[sectorId], sector, walls, vertices, textures);
-	}
-
-	// Internal
-	void copySector(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
-	{
-		memset(out, 0, sizeof(RSector));
 		out->vertexCount = sector->vtxCount;
 		out->wallCount = sector->wallCount;
 
-		out->ambientFixed = sector->ambient << 16;
-		out->floorHeight = s32(sector->floorAlt * 65536.0f);
+		out->ambientFixed  = sector->ambient << 16;
+		out->floorHeight   = s32(sector->floorAlt * 65536.0f);
 		out->ceilingHeight = s32(sector->ceilAlt * 65536.0f);
-		out->secHeight = s32(sector->secAlt * 65536.0f);
-		out->flags1 = sector->flags[0];
-		out->startWall = 0;
-		out->drawWallCnt = 0;
+		out->secHeight     = s32(sector->secAlt * 65536.0f);
+		out->flags1        = sector->flags[0];
+		out->flags2        = sector->flags[1];
+		out->flags3        = sector->flags[2];
+		out->startWall     = 0;
+		out->drawWallCnt   = 0;
 		
-		out->verticesWS = (vec2*)s_memPool.allocate(sizeof(vec2) * out->vertexCount);
-		out->verticesVS = (vec2*)s_memPool.allocate(sizeof(vec2) * out->vertexCount);
-		out->walls = (RWall*)s_memPool.allocate(sizeof(RWall) * out->wallCount);
+		if (!out->verticesWS)
+		{
+			out->verticesWS = (vec2*)s_memPool.allocate(sizeof(vec2) * out->vertexCount);
+			out->verticesVS = (vec2*)s_memPool.allocate(sizeof(vec2) * out->vertexCount);
+			out->walls = (RWall*)s_memPool.allocate(sizeof(RWall) * out->wallCount);
+		}
 
 		for (s32 v = 0; v < out->vertexCount; v++)
 		{
 			out->verticesWS[v].x = s32(vertices[v].x * 65536.0f);
 			out->verticesWS[v].z = s32(vertices[v].z * 65536.0f);
 		}
-		memset(out->walls, 0, sizeof(RWall) * out->wallCount);
+
 		RWall* wall = out->walls;
 		for (s32 w = 0; w < out->wallCount; w++, wall++)
 		{
 			wall->sector = out;
-			wall->nextSector = nullptr;
+			wall->nextSector = (walls[w].adjoin >= 0) ? &sectorList[walls[w].adjoin] : nullptr;
 
 			wall->w0 = &out->verticesWS[walls[w].i0];
 			wall->w1 = &out->verticesWS[walls[w].i1];
@@ -245,6 +256,7 @@ namespace RendererClassic
 		LevelData* level = TFE_LevelAsset::getLevelData();
 		s_sectorCount = (u32)level->sectors.size();
 		s_rsectors = (RSector*)s_memPool.allocate(sizeof(RSector) * level->sectors.size());
+		memset(s_rsectors, 0, sizeof(RSector) * level->sectors.size());
 		Texture** textures = level->textures.data();
 		for (u32 i = 0; i < s_sectorCount; i++)
 		{
@@ -252,7 +264,7 @@ namespace RendererClassic
 			SectorWall* walls = level->walls.data() + sector->wallOffset;
 			Vec2f* vertices = level->vertices.data() + sector->vtxOffset;
 
-			copySector(&s_rsectors[i], sector, walls, vertices, textures);
+			copySector(&s_rsectors[i], s_rsectors, sector, walls, vertices, textures);
 		}
 	}
 }
