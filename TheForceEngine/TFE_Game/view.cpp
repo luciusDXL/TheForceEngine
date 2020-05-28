@@ -4,6 +4,7 @@
 #include "physics.h"
 #include "modelRendering.h"
 #include "renderCommon.h"
+#include "RendererClassic/rendererClassic.h"
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
@@ -150,6 +151,22 @@ namespace TFE_View
 		
 	static GameObjectList* s_objects;
 	static SectorObjectList* s_sectorObjects;
+
+	// Enable WIP "classic renderer" - defaults to false while still working on it.
+	static bool s_enableClassic = false;
+
+	void enableClassicRenderer(const std::vector<std::string>& args)
+	{
+		if (args.size() < 2 || args[1] == "false" || args[1] == "0")
+		{
+			s_enableClassic = false;
+		}
+		else
+		{
+			s_enableClassic = true;
+			RendererClassic::setupLevel();
+		}
+	}
 		
 	bool init(const LevelData* level, TFE_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
 	{
@@ -158,6 +175,7 @@ namespace TFE_View
 
 		CVAR_FLOAT(s_focalLength, "r_focalLength", 0, "Focal Length - combined virtual width and field of view scalar - default is virtual width / 2 (90 degrees)");
 		CVAR_FLOAT(s_heightScale, "r_heightScale", 0, "Height Scale - combined virtual height, field of view and aspect ratio - default is virtual height * 16/10");
+		CCMD("enableClassic", enableClassicRenderer, 0, "Enable classic renderer - enableClassic true/false");
 
 		if (!level)
 		{
@@ -2038,10 +2056,18 @@ namespace TFE_View
 		TFE_RenderCommon::setProjectionParam(s_width, s_height, s_focalLength, s_heightScale, s_pitchOffset);
 		TFE_RenderCommon::setViewParam(s_rot, cameraPos);
 		TFE_ModelRender::buildClipPlanes(s_pitchOffset);
+
+		RendererClassic::setCamera(s32(s_rot[0]*65536.0f), s32(s_rot[1] * 65536.0f), s32(cameraPos->x * 65536.0f), s32(cameraPos->y * 65536.0f), s32(cameraPos->z * 65536.0f), sectorId);
 	}
 		
 	void draw(const Vec3f* cameraPos, s32 sectorId)
 	{
+		if (s_enableClassic)
+		{
+			RendererClassic::draw(s_renderer->getDisplay());
+			return;
+		}
+
 		s_renderer->enablePalEffects(TFE_RenderCommon::isGrayScaleEnabled(), TFE_RenderCommon::isNightVisionEnabled());
 
 		const Sector* sectors = s_level->sectors.data();
