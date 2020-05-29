@@ -11,7 +11,13 @@ namespace RendererClassic
 	// Projection
 	s32 s_focalLength;
 
+	// Window
+	s32 s_minScreenX;
+	s32 s_maxScreenX;
+
 	// Segment list.
 	RWallSegment s_wallSegListDst[MAX_SEG];
 	RWallSegment s_wallSegListSrc[MAX_SEG];
+
+	s32 s_nextWall;
 }
