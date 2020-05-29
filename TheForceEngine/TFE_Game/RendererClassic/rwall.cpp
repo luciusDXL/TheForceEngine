@@ -33,6 +33,14 @@ namespace RClassicWall
 	};
 
 	static s32 s_segmentCross;
+	static s32 s_texHeightMask;
+	static s32 s_yPixelCount;
+	static s32 s_vCoordStep;
+	static s32 s_vCoordFixed;
+	static u8  s_columnAtten;
+	static u8* s_texImage;
+	static u8* s_columnOut;
+
 	s32 segmentCrossesLine(s32 ax0, s32 ay0, s32 ax1, s32 ay1, s32 bx0, s32 by0, s32 bx1, s32 by1);
 	s32 solveForZ_Numerator(RWallSegment* wallSegment);
 	s32 solveForZ(RWallSegment* wallSegment, s32 x, s32 numerator, s32* outViewDx=nullptr);
@@ -261,10 +269,10 @@ namespace RClassicWall
 		wallSeg->slope  = slope;
 		wallSeg->uScale = div16(texelLenRem, den);
 		wallSeg->orient = orient;
-		if (x0pixel == x1pixel)
-		{
-			wallSeg->slope = 0;
-		}
+		//if (x0pixel == x1pixel)
+		//{
+			//wallSeg->slope = 0;
+		//}
 
 		wall->visible = 1;
 	}
@@ -551,14 +559,7 @@ namespace RClassicWall
 
 		return outIndex;
 	}
-
-	static s32 s_texHeightMask;
-	static s32 s_yPixelCount;
-	static s32 s_vCoordStep;
-	static s32 s_vCoordFixed;
-	static u8  s_columnAtten;
-	static u8* s_texImage;
-
+	
 	void wall_drawSolid(RWallSegment* wallSegment)
 	{
 		RWall* srcWall = wallSegment->srcWall;
@@ -574,9 +575,6 @@ namespace RClassicWall
 		s32 z0 = wallSegment->z0;
 		s32 z1 = wallSegment->z1;
 
-		// s_halfWidthFixed -> s_focalLength
-		// halfHeight * tan(fov/2) * aspect, where aspect = 320/200, so:
-		// 100 * 1.0 * 320/200 = 160
 		s32 y0C = div16(mul16(ceilEyeRel,  s_focalLength), z0) + s_halfHeight;
 		s32 y0F = div16(mul16(floorEyeRel, s_focalLength), z0) + s_halfHeight;
 
@@ -667,7 +665,7 @@ namespace RClassicWall
 				// texture wrapping, assumes texWidth is a power of 2.
 				s32 texelU = (uCoord >> 16) & (texWidth - 1);
 				// flip texture coordinate if flag set.
-				if (flipHorz) { texelU = texWidth - texelU; }
+				if (flipHorz) { texelU = texWidth - texelU - 1; }
 
 				// Calculate the vertical texture coordinate start and increment.
 				s32 wallHeightPixels = y0F - y0C + ONE_16;
@@ -689,9 +687,10 @@ namespace RClassicWall
 				s_texImage = texture->image + (texelU << texture->logSizeY);
 
 				// Skip for now and just write directly to the screen...
-				// columnOutStart + (x*200 + top) * 80;
+				// columnOutStart + (x*320 + top) * 80;
 				//s_curColumnOut = s_columnOut[x] + s_scaleX80[top];
 				//s_columnAtten = computeColumnAtten(z, srcWall->wallLight);
+				s_columnOut = &s_display[top * s_width + x];
 				s_columnAtten = 0;
 
 				// draw the column
@@ -706,7 +705,6 @@ namespace RClassicWall
 
 				if (signTex)
 				{
-					// 1FD9E3:
 				}
 			}
 
@@ -765,7 +763,7 @@ namespace RClassicWall
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
-			s32 xView = wallSegment->slope ? div16(numerator, s_column_Y_Over_X[x] - wallSegment->slope) : 0;
+			s32 xView = div16(numerator, s_column_Y_Over_X[x] - wallSegment->slope);
 			// Use the saved x0View to get dx in viewspace.
 			s32 dxView = xView - wallSegment->x0View;
 			// avoid recalculating for u coordinate computation.
@@ -778,7 +776,7 @@ namespace RClassicWall
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			z = wallSegment->slope ? div16(numerator, s_column_X_Over_Y[x] - wallSegment->slope) : 0;
+			z = div16(numerator, s_column_X_Over_Y[x] - wallSegment->slope);
 		}
 
 		return z;
@@ -793,17 +791,16 @@ namespace RClassicWall
 		s32 v = floor16(vCoordFixed) & s_texHeightMask;
 		s32 end = s_yPixelCount - 1;
 
-		s32 offset = end * 80;
-		u8* display = &s_display[x + y1*s_width];
-		for (s32 i = end; i >= 0; i--, offset -= 80)
+		s32 offset = end * s_width;// 80;
+		//for (s32 i = end; i >= 0; i--, offset -= 80)
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
 			const u8 c = tex[v];
 			vCoordFixed += s_vCoordStep;		// edx
 			v = floor16(vCoordFixed) & s_texHeightMask;
 			//s_curColumnOut[offset] = c;
 			// Temporary - replace with proper columnOut code.
-			*display = c;
-			display -= s_width;
+			s_columnOut[offset] = c;
 		}
 	}
 }
