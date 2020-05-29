@@ -66,6 +66,23 @@ namespace RendererClassic
 
 		s_minScreenX = 0;
 		s_maxScreenX = s_width - 1;
+		s_minSegZ = 0;
+
+		s_depth1d = (s32*)realloc(s_depth1d, s_width * sizeof(s32));
+		s_columnTop = (u8*)realloc(s_columnTop, s_width);
+		s_columnBot = (u8*)realloc(s_columnBot, s_width);
+		s_windowTop = (u8*)realloc(s_windowTop, s_width);
+		s_windowBot = (u8*)realloc(s_windowBot, s_width);
+
+		// Build tables
+		s_column_Y_Over_X = (s32*)realloc(s_column_Y_Over_X, s_width * sizeof(s32));
+		s_column_X_Over_Y = (s32*)realloc(s_column_X_Over_Y, s_width * sizeof(s32));
+		s32 halfWidth = s_width >> 1;
+		for (s32 x = 0; x < s_width; x++)
+		{
+			s_column_Y_Over_X[x] = x != halfWidth ? div16(s_halfWidth, intToFixed16(x - halfWidth)) : 0;
+			s_column_X_Over_Y[x] = div16(intToFixed16(x - halfWidth), s_halfWidth);
+		}
 	}
 	
 	void setupLevel()
@@ -85,6 +102,7 @@ namespace RendererClassic
 
 		s_zCameraTrans = mul16(-z, s_cosYaw) + mul16(-x, s_negSinYaw);
 		s_xCameraTrans = mul16(-x, s_cosYaw) + mul16(-z, s_sinYaw);
+		s_eyeHeight = y;
 
 		s_sectorId = sectorId;
 		
@@ -97,7 +115,22 @@ namespace RendererClassic
 	{
 		// Clear the screen for now so we can get away with only drawing walls.
 		memset(display, 0, s_width * s_height);
+		s_display = display;
 
+		s_windowMinX = s_minScreenX;
+		s_windowMaxX = s_maxScreenX;
+		s_windowMinY = 1;
+		s_windowMaxY = s_height - 1;
+		memset(s_depth1d, 0, s_width * sizeof(u32));
+
+		for (u32 i = 0; i < s_width; i++)
+		{
+			s_columnTop[i] = 1;
+			s_columnBot[i] = s_height - 1;
+			s_windowTop[i] = 1;
+			s_windowBot[i] = s_height - 1;
+		}
+						
 		// Draws a single sector.
 		s_curSector = &s_rsectors[s_sectorId];
 		drawSector();
@@ -270,10 +303,10 @@ namespace RendererClassic
 			wall->v0 = &out->verticesVS[walls[w].i0];
 			wall->v1 = &out->verticesVS[walls[w].i1];
 
-			wall->topTex  = walls[w].top.texId  >= 0 ? &textures[walls[w].top.texId]->frames[0]  : nullptr;
-			wall->midTex  = walls[w].mid.texId  >= 0 ? &textures[walls[w].mid.texId]->frames[0]  : nullptr;
-			wall->botTex  = walls[w].bot.texId  >= 0 ? &textures[walls[w].bot.texId]->frames[0]  : nullptr;
-			wall->signTex = walls[w].sign.texId >= 0 ? &textures[walls[w].sign.texId]->frames[0] : nullptr;
+			wall->topTex  = walls[w].top.texId  >= 0 && textures[walls[w].top.texId]  ? &textures[walls[w].top.texId]->frames[0]  : nullptr;
+			wall->midTex  = walls[w].mid.texId  >= 0 && textures[walls[w].mid.texId]  ? &textures[walls[w].mid.texId]->frames[0]  : nullptr;
+			wall->botTex  = walls[w].bot.texId  >= 0 && textures[walls[w].bot.texId]  ? &textures[walls[w].bot.texId]->frames[0]  : nullptr;
+			wall->signTex = walls[w].sign.texId >= 0 && textures[walls[w].sign.texId] ? &textures[walls[w].sign.texId]->frames[0] : nullptr;
 
 			const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
 			f32 len = sqrtf(offset.x * offset.x + offset.z * offset.z);

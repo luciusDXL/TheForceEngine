@@ -10,10 +10,28 @@ namespace RendererClassic
 
 	// Projection
 	s32 s_focalLength;
+	s32 s_eyeHeight;
+	s32* s_depth1d = nullptr;
 
 	// Window
 	s32 s_minScreenX;
 	s32 s_maxScreenX;
+	s32 s_windowMinX;
+	s32 s_windowMaxX;
+	s32 s_windowMinY;
+	s32 s_windowMaxY;
+	s32 s_minSegZ;
+
+	// Display
+	u8* s_display;
+
+	// Column Heights
+	u8* s_columnTop = nullptr;
+	u8* s_columnBot = nullptr;
+	u8* s_windowTop = nullptr;
+	u8* s_windowBot = nullptr;
+	s32* s_column_Y_Over_X = nullptr;
+	s32* s_column_X_Over_Y = nullptr;
 
 	// Segment list.
 	RWallSegment s_wallSegListDst[MAX_SEG];
