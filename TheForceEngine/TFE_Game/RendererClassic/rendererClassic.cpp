@@ -80,7 +80,7 @@ namespace RendererClassic
 		s32 halfWidth = s_width >> 1;
 		for (s32 x = 0; x < s_width; x++)
 		{
-			s_column_Y_Over_X[x] = x != halfWidth ? div16(s_halfWidth, intToFixed16(x - halfWidth)) : 0;
+			s_column_Y_Over_X[x] = (x != halfWidth) ? div16(s_halfWidth, intToFixed16(x - halfWidth)) : s_halfWidth;
 			s_column_X_Over_Y[x] = div16(intToFixed16(x - halfWidth), s_halfWidth);
 		}
 	}
