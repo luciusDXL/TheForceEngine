@@ -1,4 +1,5 @@
 #include "registry.h"
+#include <TFE_FileSystem/fileutil.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <assert.h>
@@ -52,7 +53,7 @@ namespace WindowsRegistry
 		}
 		sprintf(outPath, "%s/", gogPath);
 		fixPathSlashes(outPath);
-		return true;
+		return FileUtil::directoryExits(outPath);
 	}
 
 	bool getSteamPathFromRegistry(const char* localPath, char* outPath)
@@ -65,6 +66,6 @@ namespace WindowsRegistry
 		}
 		sprintf(outPath, "%s/SteamApps/common/%s", steamPath, localPath);
 		fixPathSlashes(outPath);
-		return true;
+		return FileUtil::directoryExits(outPath);
 	}
 }
