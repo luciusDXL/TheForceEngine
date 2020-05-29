@@ -53,7 +53,7 @@ namespace RendererClassic
 	void init()
 	{
 		if (s_init) { return; }
-		s_init = false;
+		s_init = true;
 
 		// Build tables.
 		// Setup resolution, projection parameters, etc.
