@@ -38,4 +38,7 @@ namespace RendererClassic
 	RWallSegment s_wallSegListSrc[MAX_SEG];
 
 	s32 s_nextWall;
+
+	// Debug
+	s32 s_maxWallCount;
 }

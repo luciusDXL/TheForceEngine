@@ -192,7 +192,7 @@ namespace ArchiveViewer
 				LevelData* level = TFE_LevelAsset::getLevelData();
 				TFE_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true);
 			}
-			else if (TFE_Input::keyPressed(KEY_BACKSPACE) || trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)
+			else if (trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)
 			{
 				s_renderer->changeResolution(640, 480);
 				s_runLevel = false;

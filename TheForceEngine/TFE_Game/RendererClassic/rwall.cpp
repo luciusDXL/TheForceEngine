@@ -91,7 +91,8 @@ namespace RClassicWall
 		s32 curU = 0;
 		s32 clipLeft = 0;
 		s32 clipRight = 0;
-		s32 clipX0 = 0;
+		s32 clipX1_Near = 0;
+		s32 clipX0_Near = 0;
 
 		s32 texelLen = wall->texelLength;
 		s32 texelLenRem = texelLen;
@@ -192,8 +193,92 @@ namespace RClassicWall
 		//////////////////////////////////////////////////
 		// Clip the Wall Segment by the near plane.
 		//////////////////////////////////////////////////
-		// TODO
+		if ((z0 < 0 || z1 < 0) && segmentCrossesLine(0, 0, 0, -s_halfHeight, x0, x0, x1, z1) != 0)
+		{
+			wall->visible = 0;
+			return;
+		}
+		if (z0 < ONE_16 && z1 < ONE_16)
+		{
+			if (clipLeft != 0)
+			{
+				clipX0_Near = -1;
+				x0 = -ONE_16;
+			}
+			else
+			{
+				x0 = div16(x0, z0);
+			}
+			if (clipRight != 0)
+			{
+				x1 = ONE_16;
+				clipX1_Near = -1;
+			}
+			else
+			{
+				x1 = div16(x1, z1);
+			}
+			dx = x1 - x0;
+			dz = 0;
+			z0 = ONE_16;
+			z1 = ONE_16;
+		}
+		else if (z0 < ONE_16)
+		{
+			if (clipLeft != 0)
+			{
+				if (dz != 0)
+				{
+					s32 left = div16(z0, dz);
+					x0 += mul16(dx, left);
+					//curU += mul16(texelLenRem, left);
 
+					dx = x1 - x0;
+					texelLenRem = texelLen - curU;
+				}
+				z0 = ONE_16;
+				clipX0_Near = -1;
+				dz = z1 - ONE_16;
+			}
+			else
+			{
+				// BUG: This is NOT correct but matches the original implementation.
+				// I am leaving it as-is to match the original DOS renderer.
+				// Fortunately hitting this case is VERY rare in practice.
+				x0 = div16(x0, z0);
+				z0 = ONE_16;
+				dz = z1 - ONE_16;
+				dx -= x0;
+			}
+		}
+		else if (z1 < ONE_16)
+		{
+			if (clipRight != 0)
+			{
+				if (dz != 0)
+				{
+					s32 s = div16(ONE_16 - x1, dz);
+					x1 += mul16(dx, s);
+					texelLen += mul16(texelLenRem, s);
+					texelLenRem = texelLen - curU;
+					dx = x1 - x0;
+				}
+				z1 = ONE_16;
+				dz = ONE_16 - z0;
+				clipX1_Near = -1;
+			}
+			else
+			{
+				// BUG: This is NOT correct but matches the original implementation.
+				// I am leaving it as-is to match the original DOS renderer.
+				// Fortunately hitting this case is VERY rare in practice.
+				x1 = div16(x1, z1);
+				z1 = ONE_16;
+				dx = x1 - x0;
+				dz = z1 - z0;
+			}
+		}
+		
 		//////////////////////////////////////////////////
 		// Project.
 		//////////////////////////////////////////////////
@@ -201,14 +286,18 @@ namespace RClassicWall
 		s32 x1proj  = div16(mul16(x1, s_focalLength), z1) + s_halfWidth;
 		s32 x0pixel = round16(x0proj);
 		s32 x1pixel = round16(x1proj) - 1;
-		if (clipX0 != 0)
+
+		// Handle near plane clipping by adjusting the walls to avoid holes.
+		if (clipX0_Near != 0 && x0pixel > s_minScreenX)
 		{
-			if (x0pixel < s_minScreenX)
-			{
-				x0 = -ONE_16;
-				x1 += ONE_16;
-				x0pixel = s_minScreenX;
-			}
+			x0 = -ONE_16;
+			dx = x1 + ONE_16;
+			x0pixel = s_minScreenX;
+		}
+		if (clipX1_Near != 0 && x1pixel < s_maxScreenX)
+		{
+			dx = ONE_16 - x0;
+			x1pixel = s_maxScreenX;
 		}
 
 		// The wall is backfacing if x0 > x1
@@ -233,9 +322,9 @@ namespace RClassicWall
 		RWallSegment* wallSeg = &s_wallSegListSrc[s_nextWall];
 		s_nextWall++;
 
-		if (x0pixel < clipX0)
+		if (x0pixel < s_minScreenX)//clipX0_Near)
 		{
-			x0pixel = clipX0;
+			x0pixel = s_minScreenX;// clipX0_Near;
 		}
 		if (x1pixel > s_maxScreenX)
 		{
@@ -269,16 +358,18 @@ namespace RClassicWall
 		wallSeg->slope  = slope;
 		wallSeg->uScale = div16(texelLenRem, den);
 		wallSeg->orient = orient;
-		//if (x0pixel == x1pixel)
-		//{
-			//wallSeg->slope = 0;
-		//}
+		/*if (x0pixel == x1pixel)
+		{
+			wallSeg->slope = 0;
+		}*/
 
 		wall->visible = 1;
 	}
 
 	s32 wall_mergeSort(RWallSegment* segOutList, s32 availSpace, s32 start, s32 count)
 	{
+		count = min(count, s_maxWallCount);
+
 		s32 outIndex = 0;
 		s32 srcIndex = 0;
 		s32 splitWallCount = 0;
@@ -290,7 +381,7 @@ namespace RClassicWall
 		RWallSegment  tempSeg;
 		RWallSegment* newSeg = &tempSeg;
 		RWallSegment  splitWalls[MAX_SPLIT_WALLS];
-
+				
 		while (1)
 		{
 			RWall* srcWall = srcSeg->srcWall;
@@ -367,15 +458,15 @@ namespace RClassicWall
 							RWallSegment* outCur = sortedSeg;
 							RWallSegment* outNext = sortedSeg + 1;
 
+							// We are deleting outCur since it is completely hidden by moving all segments from outNext onwards to outCur.
+							memmove(outCur, outNext, copyCount * sizeof(RWallSegment));
+
 							// We are deleting outCur since it is completely hidden by 'newSeg'
 							// Back up 1 step in the loop, so that outNext is processed (it will hold the same location as outCur before deletion).
 							curSegOut = curSegOut - 1;
 							sortedSeg = sortedSeg - 1;
 							outIndex--;
 							n--;
-
-							// We are deleting outCur since it is completely hidden by moving all segments from outNext onwards to outCur.
-							memmove(outCur, outNext, copyCount * sizeof(RWallSegment));
 						}
 						// 'newSeg' is behind 'sortedSeg' and they overlap.
 						else    // (side == BACK)
@@ -467,9 +558,10 @@ namespace RClassicWall
 									// Split sortedSeg into 2 and insert newSeg in between.
 									// { sortedSeg | newSeg | splitWall (from sortedSeg) }
 									RWallSegment* splitWall = &splitWalls[splitWallCount];
+									splitWallCount++;
+
 									*splitWall = *sortedSeg;
 									splitWall->wallX0 = newSeg->wallX1 + 1;
-									splitWallCount++;
 									sortedSeg->wallX1 = newSeg->wallX0 - 1;
 								}
 							}
@@ -487,7 +579,7 @@ namespace RClassicWall
 						{
 							if (newMinZ > outMaxZ)
 							{
-								if (newV1->z >= newV0->z)
+								if (newV1->z >= outV0->z)
 								{
 									newSeg->wallX1 = sortedSeg->wallX0 - 1;
 								}
@@ -500,6 +592,11 @@ namespace RClassicWall
 								     segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0)
 							{
 								newSeg->wallX1 = sortedSeg->wallX0 - 1;
+							}
+							// Is this real?
+							else
+							{
+								sortedSeg->wallX0 = newSeg->wallX1 + 1;
 							}
 						}
 						else if (newMaxZ < outMinZ || newMinZ > outMaxZ)
@@ -632,7 +729,7 @@ namespace RClassicWall
 		}
 		//addWallPartScreen(length, wallSegment->wallX0, dYdXbot, y0F, dYdXtop, y0C);
 
-		const s32 texWidth = texture->width;
+		const s32 texWidth = texture ? texture->width : 0;
 		const bool flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) != 0;
 				
 		for (s32 i = 0; i < length; i++, x++)
@@ -684,7 +781,12 @@ namespace RClassicWall
 				s_vCoordFixed = v0 + srcWall->midVOffset;
 
 				// Texture image data = imageStart + u * texHeight
-				s_texImage = texture->image + (texelU << texture->logSizeY);
+				// ***Checks against texture are because all walls are being forced to render as solid***
+				// TODO: Use wall render flags and then remove checks
+				if (texture)
+				{
+					s_texImage = texture->image + (texelU << texture->logSizeY);
+				}
 
 				// Skip for now and just write directly to the screen...
 				// columnOutStart + (x*320 + top) * 80;

@@ -83,6 +83,9 @@ namespace RendererClassic
 			s_column_Y_Over_X[x] = (x != halfWidth) ? div16(s_halfWidth, intToFixed16(x - halfWidth)) : s_halfWidth;
 			s_column_X_Over_Y[x] = div16(intToFixed16(x - halfWidth), s_halfWidth);
 		}
+
+		s_maxWallCount = 0xffff;
+		CVAR_INT(s_maxWallCount, "d_maxWallCount", 0, "Maximum wall count for a given sector.");
 	}
 	
 	void setupLevel()
