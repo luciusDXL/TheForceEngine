@@ -41,8 +41,11 @@ namespace RendererClassic
 
 	// Lighting
 	const ColorMap* s_colorMap;
+	const u8* s_lightSourceRamp;
 	s32 s_sectorAmbient;
 	s32 s_scaledAmbient;
+	s32 s_cameraLightSource;
+	s32 s_worldAmbient;
 
 	// Debug
 	s32 s_maxWallCount;

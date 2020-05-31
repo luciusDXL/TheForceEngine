@@ -38,7 +38,7 @@ namespace RClassicWall
 	static s32 s_yPixelCount;
 	static s32 s_vCoordStep;
 	static s32 s_vCoordFixed;
-	static u8  s_columnAtten;
+	static u8  s_columnLight;
 	static u8* s_texImage;
 	static u8* s_columnOut;
 
@@ -794,11 +794,11 @@ namespace RClassicWall
 				// Skip for now and just write directly to the screen...
 				// columnOutStart + (x*320 + top) * 80;
 				//s_curColumnOut = s_columnOut[x] + s_scaleX80[top];
-				s_columnAtten = wall_computeColumnLight(z, srcWall->wallLight);
+				s_columnLight = wall_computeColumnLight(z, srcWall->wallLight);
 				s_columnOut = &s_display[top * s_width + x];
 
 				// draw the column
-				if (s_columnAtten != 0)
+				if (s_columnLight != 0)
 				{
 					drawColumn_Lit(top, bot);
 				}
@@ -818,7 +818,7 @@ namespace RClassicWall
 
 		//srcWall->y1 = -1;
 	}
-		
+				
 	s32 wall_computeColumnLight(s32 depth, s32 wallLight)
 	{
 		if (s_sectorAmbient >= 31)
@@ -828,8 +828,16 @@ namespace RClassicWall
 		depth = max(depth, 0);
 		s32 light = 0;
 
-		// handle headlamp/firing/etc.
-		// TODO
+		// handle camera lightsource
+		if (s_worldAmbient < 31 && s_cameraLightSource != 0)
+		{
+			s32 depthScaled = min(depth >> 14, 127);
+			s32 lightSource = 31 - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
+			if (lightSource > 0)
+			{
+				light += lightSource;
+			}
+		}
 
 		s32 secAmb = s_sectorAmbient;
 		if (light < secAmb) { light = secAmb; }
@@ -943,7 +951,7 @@ namespace RClassicWall
 
 		s32 v = floor16(vCoordFixed) & s_texHeightMask;
 		s32 end = s_yPixelCount - 1;
-		const u8* cmap = &s_colorMap->colorMap[s_columnAtten << 8u];
+		const u8* cmap = &s_colorMap->colorMap[s_columnLight << 8u];
 
 		s32 offset = end * s_width;// 80;
 		//for (s32 i = end; i >= 0; i--, offset -= 80)

@@ -108,6 +108,21 @@ namespace RendererClassic
 		s_eyeHeight = y;
 
 		s_sectorId = sectorId;
+		s_cameraLightSource = 0;
+		s_worldAmbient = 31;
+		LightMode mode = TFE_RenderCommon::getLightMode();
+		if (mode != LIGHT_OFF)
+		{
+			if (mode == LIGHT_NORMAL)
+			{
+				s_worldAmbient = 0;
+			}
+			else
+			{
+				s_worldAmbient = -9;
+			}
+			s_cameraLightSource = -1;
+		}
 		
 		s_nextWall = 0;
 		s_curWallSeg = 0;
@@ -120,6 +135,7 @@ namespace RendererClassic
 		memset(display, 0, s_width * s_height);
 		s_display = display;
 		s_colorMap = colormap;
+		s_lightSourceRamp = s_colorMap->lightSourceRamp;
 
 		s_windowMinX = s_minScreenX;
 		s_windowMaxX = s_maxScreenX;

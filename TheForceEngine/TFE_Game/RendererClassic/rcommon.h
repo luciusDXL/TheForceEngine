@@ -3,6 +3,7 @@
 #include "rwall.h"
 
 struct ColorMap;
+#define LIGHT_SOURCE_LEVELS 128
 
 namespace RendererClassic
 {
@@ -45,8 +46,11 @@ namespace RendererClassic
 
 	// Lighting
 	extern const ColorMap* s_colorMap;
+	extern const u8* s_lightSourceRamp;
 	extern s32 s_sectorAmbient;
 	extern s32 s_scaledAmbient;
+	extern s32 s_cameraLightSource;
+	extern s32 s_worldAmbient;
 
 	// Debug
 	extern s32 s_maxWallCount;
