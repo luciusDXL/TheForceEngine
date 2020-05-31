@@ -38,11 +38,11 @@ namespace RClassicWall
 	static s32 s_yPixelCount;
 	static s32 s_vCoordStep;
 	static s32 s_vCoordFixed;
-	static u8  s_columnLight;
+	static const u8* s_columnLight;
 	static u8* s_texImage;
 	static u8* s_columnOut;
 
-	s32 wall_computeColumnLight(s32 depth, s32 wallLight);
+	const u8* wall_computeColumnLight(s32 depth, s32 wallLight);
 	s32 segmentCrossesLine(s32 ax0, s32 ay0, s32 ax1, s32 ay1, s32 bx0, s32 by0, s32 bx1, s32 by1);
 	s32 solveForZ_Numerator(RWallSegment* wallSegment);
 	s32 solveForZ(RWallSegment* wallSegment, s32 x, s32 numerator, s32* outViewDx=nullptr);
@@ -798,7 +798,7 @@ namespace RClassicWall
 				s_columnOut = &s_display[top * s_width + x];
 
 				// draw the column
-				if (s_columnLight != 0)
+				if (s_columnLight)
 				{
 					drawColumn_Lit(top, bot);
 				}
@@ -819,11 +819,11 @@ namespace RClassicWall
 		//srcWall->y1 = -1;
 	}
 				
-	s32 wall_computeColumnLight(s32 depth, s32 wallLight)
+	const u8* wall_computeColumnLight(s32 depth, s32 wallLight)
 	{
 		if (s_sectorAmbient >= 31)
 		{
-			return 0;
+			return nullptr;
 		}
 		depth = max(depth, 0);
 		s32 light = 0;
@@ -851,8 +851,9 @@ namespace RClassicWall
 		{
 			light += wallLight;
 		}
-		if (light >= 31) { light = 0; }
-		return light;
+		if (light >= 31) { return nullptr; }
+
+		return &s_colorMap->colorMap[light << 8];
 	}
 
 	// Determines if segment A is disjoint from the line formed by B - i.e. they do not intersect.
@@ -951,13 +952,12 @@ namespace RClassicWall
 
 		s32 v = floor16(vCoordFixed) & s_texHeightMask;
 		s32 end = s_yPixelCount - 1;
-		const u8* cmap = &s_colorMap->colorMap[s_columnLight << 8u];
 
 		s32 offset = end * s_width;// 80;
 		//for (s32 i = end; i >= 0; i--, offset -= 80)
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
-			const u8 c = cmap[tex[v]];
+			const u8 c = s_columnLight[tex[v]];
 			vCoordFixed += s_vCoordStep;		// edx
 			v = floor16(vCoordFixed) & s_texHeightMask;
 			//s_curColumnOut[offset] = c;
