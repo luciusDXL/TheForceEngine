@@ -45,7 +45,7 @@ namespace RendererClassic
 	extern s32 s_nextWall;
 
 	// Lighting
-	extern const ColorMap* s_colorMap;
+	extern const u8* s_colorMap;
 	extern const u8* s_lightSourceRamp;
 	extern s32 s_sectorAmbient;
 	extern s32 s_scaledAmbient;

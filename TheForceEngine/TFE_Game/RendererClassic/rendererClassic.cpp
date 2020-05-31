@@ -134,8 +134,8 @@ namespace RendererClassic
 		// Clear the screen for now so we can get away with only drawing walls.
 		memset(display, 0, s_width * s_height);
 		s_display = display;
-		s_colorMap = colormap;
-		s_lightSourceRamp = s_colorMap->lightSourceRamp;
+		s_colorMap = colormap->colorMap;
+		s_lightSourceRamp = colormap->lightSourceRamp;
 
 		s_windowMinX = s_minScreenX;
 		s_windowMaxX = s_maxScreenX;
@@ -143,7 +143,7 @@ namespace RendererClassic
 		s_windowMaxY = s_height - 1;
 		memset(s_depth1d, 0, s_width * sizeof(u32));
 
-		for (u32 i = 0; i < s_width; i++)
+		for (s32 i = 0; i < s_width; i++)
 		{
 			s_columnTop[i] = 1;
 			s_columnBot[i] = s_height - 1;

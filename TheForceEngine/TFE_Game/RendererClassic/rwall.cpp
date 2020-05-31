@@ -853,7 +853,7 @@ namespace RClassicWall
 		}
 		if (light >= 31) { return nullptr; }
 
-		return &s_colorMap->colorMap[light << 8];
+		return &s_colorMap[light << 8];
 	}
 
 	// Determines if segment A is disjoint from the line formed by B - i.e. they do not intersect.
@@ -923,7 +923,6 @@ namespace RClassicWall
 		return z;
 	}
 
-	// x coordinate is temporary, just to get something showing.
 	void drawColumn_Fullbright(s32 y0, s32 y1)
 	{
 		s32 vCoordFixed = s_vCoordFixed;
@@ -937,7 +936,7 @@ namespace RClassicWall
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
 			const u8 c = tex[v];
-			vCoordFixed += s_vCoordStep;		// edx
+			vCoordFixed += s_vCoordStep;
 			v = floor16(vCoordFixed) & s_texHeightMask;
 			//s_curColumnOut[offset] = c;
 			// Temporary - replace with proper columnOut code.
@@ -958,7 +957,7 @@ namespace RClassicWall
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
 			const u8 c = s_columnLight[tex[v]];
-			vCoordFixed += s_vCoordStep;		// edx
+			vCoordFixed += s_vCoordStep;
 			v = floor16(vCoordFixed) & s_texHeightMask;
 			//s_curColumnOut[offset] = c;
 			// Temporary - replace with proper columnOut code.
