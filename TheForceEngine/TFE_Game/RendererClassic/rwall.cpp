@@ -9,6 +9,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/levelAsset.h>
 #include <TFE_Asset/levelObjectsAsset.h>
+#include <TFE_Asset/colormapAsset.h>
 #include <TFE_Game/level.h>
 #include <TFE_Asset/spriteAsset.h>
 #include <TFE_Asset/textureAsset.h>
@@ -41,10 +42,12 @@ namespace RClassicWall
 	static u8* s_texImage;
 	static u8* s_columnOut;
 
+	s32 wall_computeColumnAtten(s32 depth, s32 wallLight);
 	s32 segmentCrossesLine(s32 ax0, s32 ay0, s32 ax1, s32 ay1, s32 bx0, s32 by0, s32 bx1, s32 by1);
 	s32 solveForZ_Numerator(RWallSegment* wallSegment);
 	s32 solveForZ(RWallSegment* wallSegment, s32 x, s32 numerator, s32* outViewDx=nullptr);
-	void drawColumn_Fullbright(s32 x, s32 y0, s32 y1);
+	void drawColumn_Fullbright(s32 y0, s32 y1);
+	void drawColumn_Lit(s32 y0, s32 y1);
 
 	// Process the wall and produce an RWallSegment for rendering if the wall is potentially visible.
 	void wall_process(RWall* wall)
@@ -791,18 +794,17 @@ namespace RClassicWall
 				// Skip for now and just write directly to the screen...
 				// columnOutStart + (x*320 + top) * 80;
 				//s_curColumnOut = s_columnOut[x] + s_scaleX80[top];
-				//s_columnAtten = computeColumnAtten(z, srcWall->wallLight);
+				s_columnAtten = wall_computeColumnAtten(z, srcWall->wallLight);
 				s_columnOut = &s_display[top * s_width + x];
-				s_columnAtten = 0;
 
 				// draw the column
 				if (s_columnAtten != 0)
 				{
-					//drawColumn_Lit(top, bot);
+					drawColumn_Lit(top, bot);
 				}
 				else
 				{
-					drawColumn_Fullbright(x, top, bot);
+					drawColumn_Fullbright(top, bot);
 				}
 
 				if (signTex)
@@ -815,6 +817,36 @@ namespace RClassicWall
 		}
 
 		//srcWall->y1 = -1;
+	}
+		
+	s32 wall_computeColumnAtten(s32 depth, s32 wallLight)
+	{
+		if (s_sectorAmbient >= 31)
+		{
+			return 0;
+		}
+		depth = max(depth, 0);
+		s32 atten = 0;
+
+		// handle headlamp/firing/etc.
+		// TODO
+
+		s32 secAmb = s_sectorAmbient;
+		if (atten < secAmb) { atten = secAmb; }
+
+		s32 d16 = depth >> 20;	// depth / 16
+		s32 d32 = depth >> 21;  // depth / 32
+		atten -= (d16 + d32);
+		if (atten < s_scaledAmbient)
+		{
+			atten = s_scaledAmbient;
+		}
+		if (wallLight != 0)
+		{
+			atten += wallLight;
+		}
+		if (atten >= 31) { atten = 0; }
+		return atten;
 	}
 
 	// Determines if segment A is disjoint from the line formed by B - i.e. they do not intersect.
@@ -885,7 +917,7 @@ namespace RClassicWall
 	}
 
 	// x coordinate is temporary, just to get something showing.
-	void drawColumn_Fullbright(s32 x, s32 y0, s32 y1)
+	void drawColumn_Fullbright(s32 y0, s32 y1)
 	{
 		s32 vCoordFixed = s_vCoordFixed;
 		u8* tex = s_texImage;
@@ -898,6 +930,28 @@ namespace RClassicWall
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
 			const u8 c = tex[v];
+			vCoordFixed += s_vCoordStep;		// edx
+			v = floor16(vCoordFixed) & s_texHeightMask;
+			//s_curColumnOut[offset] = c;
+			// Temporary - replace with proper columnOut code.
+			s_columnOut[offset] = c;
+		}
+	}
+
+	void drawColumn_Lit(s32 y0, s32 y1)
+	{
+		s32 vCoordFixed = s_vCoordFixed;
+		u8* tex = s_texImage;
+
+		s32 v = floor16(vCoordFixed) & s_texHeightMask;
+		s32 end = s_yPixelCount - 1;
+		const u8* cmap = &s_colorMap->colorMap[s_columnAtten << 8u];
+
+		s32 offset = end * s_width;// 80;
+		//for (s32 i = end; i >= 0; i--, offset -= 80)
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		{
+			const u8 c = cmap[tex[v]];
 			vCoordFixed += s_vCoordStep;		// edx
 			v = floor16(vCoordFixed) & s_texHeightMask;
 			//s_curColumnOut[offset] = c;

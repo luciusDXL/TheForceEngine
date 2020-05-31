@@ -39,6 +39,11 @@ namespace RendererClassic
 
 	s32 s_nextWall;
 
+	// Lighting
+	const ColorMap* s_colorMap;
+	s32 s_sectorAmbient;
+	s32 s_scaledAmbient;
+
 	// Debug
 	s32 s_maxWallCount;
 }

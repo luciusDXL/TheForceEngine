@@ -114,11 +114,12 @@ namespace RendererClassic
 		s_drawFrame++;
 	}
 		
-	void draw(u8* display)
+	void draw(u8* display, const ColorMap* colormap)
 	{
 		// Clear the screen for now so we can get away with only drawing walls.
 		memset(display, 0, s_width * s_height);
 		s_display = display;
+		s_colorMap = colormap;
 
 		s_windowMinX = s_minScreenX;
 		s_windowMaxX = s_maxScreenX;
@@ -213,6 +214,9 @@ namespace RendererClassic
 	{
 		s32 startWall     = s_curSector->startWall;
 		s32 drawWallCount = s_curSector->drawWallCnt;
+
+		s_sectorAmbient = round16(s_curSector->ambientFixed);
+		s_scaledAmbient = (s_sectorAmbient >> 1) + (s_sectorAmbient >> 2) + (s_sectorAmbient >> 3);
 
 		if (s_drawFrame != s_curSector->prevDrawFrame)
 		{

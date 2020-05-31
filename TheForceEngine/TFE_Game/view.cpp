@@ -2064,7 +2064,7 @@ namespace TFE_View
 	{
 		if (s_enableClassic)
 		{
-			RendererClassic::draw(s_renderer->getDisplay());
+			RendererClassic::draw(s_renderer->getDisplay(), s_colorMap);
 			return;
 		}
 

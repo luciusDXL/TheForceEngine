@@ -2,6 +2,8 @@
 #include <TFE_System/types.h>
 #include "rwall.h"
 
+struct ColorMap;
+
 namespace RendererClassic
 {
 	// Resolution
@@ -40,6 +42,11 @@ namespace RendererClassic
 	extern RWallSegment s_wallSegListSrc[MAX_SEG];
 
 	extern s32 s_nextWall;
+
+	// Lighting
+	extern const ColorMap* s_colorMap;
+	extern s32 s_sectorAmbient;
+	extern s32 s_scaledAmbient;
 
 	// Debug
 	extern s32 s_maxWallCount;
