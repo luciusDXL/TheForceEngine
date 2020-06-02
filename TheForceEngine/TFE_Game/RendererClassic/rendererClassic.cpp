@@ -84,6 +84,14 @@ namespace RendererClassic
 			s_column_X_Over_Y[x] = div16(intToFixed16(x - halfWidth), s_halfWidth);
 		}
 
+		s_rcp_yMinusHalfHeight = (s32*)realloc(s_rcp_yMinusHalfHeight, s_height * sizeof(s32));
+		s32 halfHeight = s_height >> 1;
+		for (s32 y = 0; y < s_height; y++)
+		{
+			s32 yMinusHalf = y - halfHeight;
+			s_rcp_yMinusHalfHeight[y] = (yMinusHalf != 0) ? 65536 / yMinusHalf : 65536;
+		}
+
 		s_maxWallCount = 0xffff;
 		CVAR_INT(s_maxWallCount, "d_maxWallCount", 0, "Maximum wall count for a given sector.");
 	}
@@ -110,22 +118,13 @@ namespace RendererClassic
 		s_sectorId = sectorId;
 		s_cameraLightSource = 0;
 		s_worldAmbient = 31;
-		LightMode mode = TFE_RenderCommon::getLightMode();
+		const LightMode mode = TFE_RenderCommon::getLightMode();
 		if (mode != LIGHT_OFF)
 		{
-			if (mode == LIGHT_NORMAL)
-			{
-				s_worldAmbient = 0;
-			}
-			else
-			{
-				s_worldAmbient = -9;
-			}
+			s_worldAmbient = (mode == LIGHT_NORMAL) ? 0 : -9;
 			s_cameraLightSource = -1;
 		}
 		
-		s_nextWall = 0;
-		s_curWallSeg = 0;
 		s_drawFrame++;
 	}
 		
@@ -141,6 +140,9 @@ namespace RendererClassic
 		s_windowMaxX = s_maxScreenX;
 		s_windowMinY = 1;
 		s_windowMaxY = s_height - 1;
+		s_wallCount  = 0;
+		s_nextWall   = 0;
+		s_curWallSeg = 0;
 		memset(s_depth1d, 0, s_width * sizeof(u32));
 
 		for (s32 i = 0; i < s_width; i++)
@@ -174,6 +176,11 @@ namespace RendererClassic
 		out->flags1 = sector->flags[0];
 		out->flags2 = sector->flags[1];
 		out->flags3 = sector->flags[2];
+
+		out->floorOffsetX = mul16(intToFixed16(8), s32(sector->floorTexture.offsetX * 65536.0f));
+		out->floorOffsetZ = mul16(intToFixed16(8), s32(sector->floorTexture.offsetY * 65536.0f));
+		out->ceilOffsetX  = mul16(intToFixed16(8), s32(sector->ceilTexture.offsetX  * 65536.0f));
+		out->ceilOffsetZ  = mul16(intToFixed16(8), s32(sector->ceilTexture.offsetY  * 65536.0f));
 
 		for (s32 v = 0; v < out->vertexCount; v++)
 		{
@@ -299,7 +306,13 @@ namespace RendererClassic
 		out->flags3        = sector->flags[2];
 		out->startWall     = 0;
 		out->drawWallCnt   = 0;
-		
+		out->floorTex = &textures[sector->floorTexture.texId]->frames[0];
+		out->ceilTex = &textures[sector->ceilTexture.texId]->frames[0];
+		out->floorOffsetX = mul16(intToFixed16(8), s32(sector->floorTexture.offsetX * 65536.0f));
+		out->floorOffsetZ = mul16(intToFixed16(8), s32(sector->floorTexture.offsetY * 65536.0f));
+		out->ceilOffsetX  = mul16(intToFixed16(8), s32(sector->ceilTexture.offsetX  * 65536.0f));
+		out->ceilOffsetZ  = mul16(intToFixed16(8), s32(sector->ceilTexture.offsetY  * 65536.0f));
+
 		if (!out->verticesWS)
 		{
 			out->verticesWS = (vec2*)s_memPool.allocate(sizeof(vec2) * out->vertexCount);

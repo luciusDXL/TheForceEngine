@@ -39,6 +39,10 @@ namespace RendererClassic
 
 	s32 s_nextWall;
 
+	// Flats
+	s32 s_wallCount;
+	s32* s_rcp_yMinusHalfHeight;
+
 	// Lighting
 	const u8* s_colorMap;
 	const u8* s_lightSourceRamp;

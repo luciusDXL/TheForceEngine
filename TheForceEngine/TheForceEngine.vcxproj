@@ -293,6 +293,7 @@
     <ClInclude Include="TFE_Game\RendererClassic\fixedPoint.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rcommon.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rendererClassic.h" />
+    <ClInclude Include="TFE_Game\RendererClassic\rflat.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rmath.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rsector.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rwall.h" />
@@ -416,6 +417,7 @@
     <ClCompile Include="TFE_Game\renderCommon.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rcommon.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rendererClassic.cpp" />
+    <ClCompile Include="TFE_Game\RendererClassic\rflat.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rwall.cpp" />
     <ClCompile Include="TFE_Game\view.cpp" />
     <ClCompile Include="TFE_InfSystem\infSystem.cpp" />

@@ -37,12 +37,16 @@ namespace RendererClassic
 	extern u8* s_windowBot;
 	extern s32* s_column_Y_Over_X;
 	extern s32* s_column_X_Over_Y;
-
+	
 	// WallSegments
 	extern RWallSegment s_wallSegListDst[MAX_SEG];
 	extern RWallSegment s_wallSegListSrc[MAX_SEG];
 
 	extern s32 s_nextWall;
+
+	// Flats
+	extern s32 s_wallCount;
+	extern s32* s_rcp_yMinusHalfHeight;
 
 	// Lighting
 	extern const u8* s_colorMap;
