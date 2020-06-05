@@ -286,8 +286,11 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
 			renderer->enableScreenClear(false);
 			TFE_Input::enableRelativeMode(true);
-			TFE_GameMain::init(renderer);
-			TFE_GameUi::updateUiResolution();
+			if (TFE_FrontEndUI::restartGame())
+			{
+				TFE_GameMain::init(renderer);
+				TFE_GameUi::updateUiResolution();
+			}
 		}
 		else
 		{
@@ -412,6 +415,10 @@ int main(int argc, char* argv[])
 			relativeMode = enableRelative;
 			SDL_SetRelativeMouseMode(relativeMode ? SDL_TRUE : SDL_FALSE);
 		}
+		if (TFE_FrontEndUI::shouldClearScreen())
+		{
+			renderer->enableScreenClear(true);
+		}
 
 		// System events
 		SDL_Event event;
@@ -445,6 +452,11 @@ int main(int argc, char* argv[])
 		if (TFE_Input::keyPressed(KEY_GRAVE))
 		{
 			TFE_FrontEndUI::toggleConsole();
+		}
+		if ((TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1))
+		{
+			TFE_FrontEndUI::enableConfigMenu();
+			TFE_FrontEndUI::setMenuReturnState(s_curState);
 		}
 
 		TFE_System::update();

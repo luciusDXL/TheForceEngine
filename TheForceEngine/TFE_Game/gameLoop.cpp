@@ -11,6 +11,7 @@
 #include <TFE_Game/player.h>
 #include <TFE_Game/level.h>
 #include <TFE_Game/gameObject.h>
+#include <TFE_Audio/midiPlayer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
 #include <TFE_FileSystem/paths.h>
@@ -60,6 +61,8 @@ namespace TFE_GameLoop
 	static f32 s_accum = 0.0f;
 	static f32 s_accumMove = 0.0f;
 	static f32 s_actualSpeed = 0.0f;
+
+	static TFE_Renderer* s_renderer = nullptr;
 	
 	void updateObjects();
 	void updateSoundObjects(const Vec3f* listenerPos);
@@ -92,6 +95,7 @@ namespace TFE_GameLoop
 		s_landAnim = 0.0f;
 		s_land = false;
 		s_jump = false;
+		s_renderer = renderer;
 				
 		// Current no objects...
 		s_levelObjects = levelObj;
@@ -153,6 +157,7 @@ namespace TFE_GameLoop
 		s_landAnim = 0.0f;
 		s_land = false;
 		s_jump = false;
+		s_renderer = renderer;
 
 		// Initialize the Logic system.
 		TFE_LogicSystem::init(&s_player);
@@ -261,6 +266,23 @@ namespace TFE_GameLoop
 	{
 		s_level = nullptr;
 		TFE_Level::endLevel();
+
+		TFE_Audio::stopAllSounds();
+		TFE_MidiPlayer::stop();
+		TFE_GameUi::reset();
+	}
+
+	void changeResolution(s32 width, s32 height)
+	{
+		u32 prevWidth, prevHeight;
+		s_renderer->getResolution(&prevWidth, &prevHeight);
+		if (width == prevWidth && height == prevHeight) { return; }
+
+		s_renderer->changeResolution(width, height);
+		TFE_View::changeResolution(width, height);
+		TFE_GameUi::updateUiResolution();
+		TFE_GameHud::init(s_renderer);
+		TFE_WeaponSystem::updateResolution();
 	}
 
 	const ViewStats* getViewStats()

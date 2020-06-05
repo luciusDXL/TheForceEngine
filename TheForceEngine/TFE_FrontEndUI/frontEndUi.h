@@ -30,7 +30,12 @@ namespace TFE_FrontEndUI
 	void draw(bool drawFrontEnd = true, bool noGameData = false);
 
 	void setAppState(AppState state);
+	void enableConfigMenu();
+	void setMenuReturnState(AppState state);
 	void toggleConsole();
+
+	bool shouldClearScreen();
+	bool restartGame();
 
 	bool isConsoleOpen();
 	void logToConsole(const char* str);

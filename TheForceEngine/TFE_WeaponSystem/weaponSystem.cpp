@@ -838,6 +838,22 @@ namespace TFE_WeaponSystem
 	{
 		delete s_memoryPool;
 	}
+
+	void updateResolution()
+	{
+		u32 width, height;
+		s_renderer->getResolution(&width, &height);
+		s_screen.width = width;
+		s_screen.height = height;
+		s_screen.scaleX = 256 * width / 320;
+		s_screen.scaleY = 256 * height / 200;
+
+		s32 active = s_activeWeapon;
+
+		clearWeapons();
+		registerWeapons();
+		switchToWeapon((Weapon)active);
+	}
 		
 	void switchToWeapon(Weapon weapon)
 	{

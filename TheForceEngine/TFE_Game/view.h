@@ -37,5 +37,7 @@ namespace TFE_View
 	void draw(const Vec3f* cameraPos, s32 sectorId);
 	void setIterationOverride(s32 iterMax = 0);
 
+	void changeResolution(s32 w, s32 h);
+
 	const ViewStats* getViewStats();
 }

@@ -167,6 +167,32 @@ namespace TFE_View
 			RendererClassic::setupLevel();
 		}
 	}
+
+	void changeResolution(s32 w, s32 h)
+	{
+		s_width = w;
+		s_height = h;
+		s_halfWidth = f32(s_width >> 1);
+		s_halfHeight = f32(s_height >> 1);
+		s_heightScale = floorf(s_halfHeight * c_pixelAspect);
+
+		s_focalLength = s_halfWidth / tanf(PI*0.25f);
+		buildClipLines(0, s_width - 1);
+		TFE_ModelRender::init(s_renderer, w, h, s_focalLength, s_heightScale);
+
+		buildSkyWarpTable(true);
+
+		delete[] s_upperHeight;
+		delete[] s_lowerHeight;
+		s_upperHeight = new s32[s_width];
+		s_lowerHeight = new s32[s_width];
+
+		if (!s_upperHeightMask)
+		{
+			s_upperHeightMask = new s16[MAX_MASK_HEIGHT];	// 64Kb
+			s_lowerHeightMask = new s16[MAX_MASK_HEIGHT];	// 64Kb
+		}
+	}
 		
 	bool init(const LevelData* level, TFE_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
 	{

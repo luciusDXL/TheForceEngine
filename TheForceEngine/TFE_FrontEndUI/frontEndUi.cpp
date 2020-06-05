@@ -7,8 +7,10 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_Input/input.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
+#include <TFE_Game/gameLoop.h>
 
 #include <TFE_Ui/imGUI/imgui_file_browser.h>
 #include <TFE_Ui/imGUI/imgui.h>
@@ -72,13 +74,41 @@ namespace TFE_FrontEndUI
 		"1392p (1856x1392)",
 		"1440p (1920x1440)",
 		"1536p (2048x1536)",
+		"Match Window",
 		"Custom",
 	};
 
+	static const char* c_resolutionsWide[] =
+	{
+		"200p",
+		"400p",
+		"480p",
+		"600p",
+		"720p",
+		"768p",
+		"960p",
+		"1050p",
+		"1080p",
+		"1200p",
+		"1392p",
+		"1440p",
+		"1536p",
+		"Match Window",
+		"Custom",
+	};
+
+	static const char* c_renderer[] =
+	{
+		"Classic (Software)",
+		"Classic (Hardware)",
+	};
+
 	static s32 s_resIndex = 0;
+	static s32 s_rendererIndex = 0;
 	static char* s_aboutDisplayStr;
 	
 	static AppState s_appState;
+	static AppState s_menuRetState;
 	static ImFont* s_menuFont;
 	static ImFont* s_titleFont;
 	static ImFont* s_dialogFont;
@@ -87,6 +117,8 @@ namespace TFE_FrontEndUI
 
 	static bool s_consoleActive = false;
 	static imgui_addons::ImGuiFileBrowser s_fileDialog;
+	static bool s_relativeMode;
+	static bool s_restartGame;
 
 	void configAbout();
 	void configGame();
@@ -98,7 +130,10 @@ namespace TFE_FrontEndUI
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_FrontEndUI::init");
 		s_appState = APP_STATE_MENU;
+		s_menuRetState = APP_STATE_MENU;
 		s_subUI = FEUI_NONE;
+		s_relativeMode = false;
+		s_restartGame = true;
 
 		ImGuiIO& io = ImGui::GetIO();
 		s_menuFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 32);
@@ -123,6 +158,30 @@ namespace TFE_FrontEndUI
 	void setAppState(AppState state)
 	{
 		s_appState = state;
+	}
+		
+	void enableConfigMenu()
+	{
+		s_appState = APP_STATE_MENU;
+		s_subUI = FEUI_CONFIG;
+		s_relativeMode = TFE_Input::relativeModeEnabled();
+		TFE_Input::enableRelativeMode(false);
+		pickCurrentResolution();
+	}
+
+	void setMenuReturnState(AppState state)
+	{
+		s_menuRetState = state;
+	}
+
+	bool restartGame()
+	{
+		return s_restartGame;
+	}
+
+	bool shouldClearScreen()
+	{
+		return s_appState == APP_STATE_MENU && s_subUI == FEUI_NONE;
 	}
 
 	void toggleConsole()
@@ -180,7 +239,7 @@ namespace TFE_FrontEndUI
 		TFE_RenderBackend::getDisplayInfo(&display);
 		u32 w = display.width;
 		u32 h = display.height;
-		u32 menuWidth = 173;
+		u32 menuWidth = 156;
 		u32 menuHeight = 264;
 
 		if (TFE_Console::isOpen())
@@ -198,6 +257,9 @@ namespace TFE_FrontEndUI
 
 		if (s_subUI == FEUI_NONE)
 		{
+			s_menuRetState = APP_STATE_MENU;
+			s_relativeMode = false;
+
 			// Title
 			ImGui::PushFont(s_titleFont);
 			ImGui::SetNextWindowPos(ImVec2(f32((w - 16*24 - 24) / 2), 100.0f));
@@ -216,15 +278,15 @@ namespace TFE_FrontEndUI
 			ImGui::Begin("##MainMenu", &active, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
 				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
 
-			if (ImGui::Button("Start    "))
+			if (ImGui::Button("Start   "))
 			{
 				s_appState = APP_STATE_DARK_FORCES;
 			}
-			if (ImGui::Button("Manual   "))
+			if (ImGui::Button("Manual  "))
 			{
 				//s_subUI = FEUI_MANUAL;
 			}
-			if (ImGui::Button("Configure"))
+			if (ImGui::Button("Settings"))
 			{
 				s_subUI = FEUI_CONFIG;
 				s_configTab = CONFIG_GAME;
@@ -239,14 +301,14 @@ namespace TFE_FrontEndUI
 				}
 				pickCurrentResolution();
 			}
-			if (ImGui::Button("Mods     "))
+			if (ImGui::Button("Mods    "))
 			{
 			}
-			if (ImGui::Button("Editor   "))
+			if (ImGui::Button("Editor  "))
 			{
 				s_appState = APP_STATE_EDITOR;
 			}
-			if (ImGui::Button("Exit     "))
+			if (ImGui::Button("Exit    "))
 			{
 				s_appState = APP_STATE_QUIT;
 			}
@@ -295,17 +357,39 @@ namespace TFE_FrontEndUI
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
+				s_restartGame = s_menuRetState == APP_STATE_MENU;
+
+				s_subUI = FEUI_NONE;
+				s_appState = s_menuRetState;
+				TFE_Settings::writeToDisk();
+				TFE_Input::enableRelativeMode(s_relativeMode);
+			}
+			if (s_menuRetState != APP_STATE_MENU && ImGui::Button("Exit to Menu", sideBarButtonSize))
+			{
+				s_restartGame = true;
+				s_menuRetState = APP_STATE_MENU;
+
 				s_subUI = FEUI_NONE;
 				s_appState = APP_STATE_MENU;
 				TFE_Settings::writeToDisk();
+
+				// End the current game.
+				TFE_GameLoop::endLevel();
 			}
 			ImGui::PopFont();
 
 			ImGui::End();
 
+			// adjust the width based on tab.
+			s32 tabWidth = w - 160;
+			if (s_configTab == CONFIG_GRAPHICS)
+			{
+				tabWidth = 400;
+			}
+
 			ImGui::SetNextWindowPos(ImVec2(160.0f, 0.0f));
-			ImGui::SetNextWindowSize(ImVec2(w-160.0f, h));
-			ImGui::SetNextWindowBgAlpha(0.25f);
+			ImGui::SetNextWindowSize(ImVec2(f32(tabWidth), h));
+			ImGui::SetNextWindowBgAlpha(0.95f);
 			ImGui::Begin("##Settings", &active, window_flags);
 
 			ImGui::PushFont(s_dialogFont);
@@ -464,9 +548,15 @@ namespace TFE_FrontEndUI
 
 		bool fullscreen = window->fullscreen;
 		bool windowed = !fullscreen;
+		bool vsync = true;
 		if (ImGui::Checkbox("Fullscreen", &fullscreen))
 		{
 			windowed = !fullscreen;
+		}
+		// TODO
+		ImGui::SameLine();
+		if (ImGui::Checkbox("Vsync", &vsync))
+		{
 		}
 		if (ImGui::Checkbox("Windowed", &windowed))
 		{
@@ -482,14 +572,20 @@ namespace TFE_FrontEndUI
 		//////////////////////////////////////////////////////
 		// Resolution
 		//////////////////////////////////////////////////////
+		// TODO
+		static bool s_widescreen = false;
+
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Virtual Resolution");
 		ImGui::PopFont();
 
 		ImGui::LabelText("##ConfigLabel", "Standard Resolution:"); ImGui::SameLine(150);
 		ImGui::SetNextItemWidth(196);
-		ImGui::Combo("##Resolution", &s_resIndex, c_resolutions, IM_ARRAYSIZE(c_resolutions));
+		ImGui::Combo("##Resolution", &s_resIndex, s_widescreen ? c_resolutionsWide : c_resolutions, IM_ARRAYSIZE(c_resolutions));
 		if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim))
+		{
+		}
+		else if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim) + 1)
 		{
 			ImGui::LabelText("##ConfigLabel", "Custom:"); ImGui::SameLine(100);
 			ImGui::SetNextItemWidth(196);
@@ -498,6 +594,146 @@ namespace TFE_FrontEndUI
 		else
 		{
 			graphics->gameResolution = c_resolutionDim[s_resIndex];
+			if (s_menuRetState != APP_STATE_MENU)
+			{
+				TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
+				TFE_GameLoop::update(true);
+				TFE_GameLoop::draw();
+			}
+		}
+
+		ImGui::Checkbox("Widescreen", &s_widescreen);
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
+		// Renderer
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Rendering");
+		ImGui::PopFont();
+
+		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75);
+		ImGui::SetNextItemWidth(196);
+		ImGui::Combo("##Renderer", &s_rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
+		if (s_rendererIndex == 0)
+		{
+			static bool s_asyncFramebuffer = false;
+			static bool s_gpuColorConv = true;
+			static bool s_perspectiveCorrect = false;
+
+			// Software
+			ImGui::Checkbox("Async Framebuffer", &s_asyncFramebuffer);
+			ImGui::Checkbox("GPU Color Conversion", &s_gpuColorConv);
+			ImGui::Checkbox("Perspective Correct 3DO Texturing", &s_perspectiveCorrect);
+		}
+		else if (s_rendererIndex == 1)
+		{
+			static const char* c_colorDepth[]      = { "8-bit", "True color" };
+			static const char* c_3d_object_sort[]  = { "Software Sort", "Depth buffering" };
+			static const char* c_near_tex_filter[] = { "None", "Bilinear", "Sharp Bilinear" };
+			static const char* c_far_tex_filter[]  = { "None", "Bilinear", "Trilinear", "Anisotropic" };
+			static const char* c_colormap_interp[] = { "None", "Quantized", "Linear", "Smooth" };
+			static const char* c_aa[] = { "None", "MSAA 2x", "MSAA 4x", "MSAA 8x" };
+
+			static s32 s_colorDepth = 1;
+			static s32 s_objectSort = 1;
+			static s32 s_nearTexFilter = 2;
+			static s32 s_farTexFilter = 3;
+			static s32 s_colormapInterp = 3;
+			static s32 s_msaa = 3;
+			static f32 s_filterSharpness = 0.8f;
+
+			const s32 comboOffset = 170;
+
+			// Hardware
+			ImGui::LabelText("##ConfigLabel", "Color Depth"); ImGui::SameLine(comboOffset);
+			ImGui::SetNextItemWidth(196);
+			if (ImGui::Combo("##ColorDepth", &s_colorDepth, c_colorDepth, IM_ARRAYSIZE(c_colorDepth)))
+			{
+				if (s_colorDepth == 0) { s_nearTexFilter = 0; s_farTexFilter = 0; }
+				else { s_nearTexFilter = 2; s_farTexFilter = 3; }
+			}
+
+			if (s_colorDepth == 1)
+			{
+				ImGui::LabelText("##ConfigLabel", "Colormap Interpolation"); ImGui::SameLine(comboOffset);
+				ImGui::SetNextItemWidth(196);
+				ImGui::Combo("##ColormapInterp", &s_colormapInterp, c_colormap_interp, IM_ARRAYSIZE(c_colormap_interp));
+			}
+
+			ImGui::LabelText("##ConfigLabel", "3D Polygon Sorting"); ImGui::SameLine(comboOffset);
+			ImGui::SetNextItemWidth(196);
+			ImGui::Combo("##3DSort", &s_objectSort, c_3d_object_sort, IM_ARRAYSIZE(c_3d_object_sort));
+
+			ImGui::LabelText("##ConfigLabel", "Texture Filter Near"); ImGui::SameLine(comboOffset);
+			ImGui::SetNextItemWidth(196);
+			ImGui::Combo("##TexFilterNear", &s_nearTexFilter, c_near_tex_filter, IM_ARRAYSIZE(c_near_tex_filter));
+
+			if (s_nearTexFilter == 2)
+			{
+				ImGui::SetNextItemWidth(196);
+				ImGui::SliderFloat("Sharpness", &s_filterSharpness, 0.0f, 1.0f);
+				ImGui::Spacing();
+			}
+
+			ImGui::LabelText("##ConfigLabel", "Texture Filter Far"); ImGui::SameLine(comboOffset);
+			ImGui::SetNextItemWidth(196);
+			ImGui::Combo("##TexFilterFar", &s_farTexFilter, c_far_tex_filter, IM_ARRAYSIZE(c_far_tex_filter));
+
+			ImGui::LabelText("##ConfigLabel", "Anti-aliasing"); ImGui::SameLine(comboOffset);
+			ImGui::SetNextItemWidth(196);
+			ImGui::Combo("##MSAA", &s_msaa, c_aa, IM_ARRAYSIZE(c_aa));
+		}
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
+		// Color Correction
+		//////////////////////////////////////////////////////
+		static bool s_cgEnable = true;
+		static f32 s_cgBrightness = 1.0f;
+		static f32 s_cgContrast = 1.0f;
+		static f32 s_cgSaturation = 1.0f;
+		static f32 s_cgGamma = 1.0f;
+
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Color Correction");
+		ImGui::PopFont();
+
+		ImGui::Checkbox("Enable", &s_cgEnable);
+		if (s_cgEnable)
+		{
+			ImGui::SetNextItemWidth(196);
+			ImGui::SliderFloat("Brightness", &s_cgBrightness, 0.0f, 2.0f);
+
+			ImGui::SetNextItemWidth(196);
+			ImGui::SliderFloat("Contrast", &s_cgContrast, 0.0f, 2.0f);
+
+			ImGui::SetNextItemWidth(196);
+			ImGui::SliderFloat("Saturation", &s_cgSaturation, 0.0f, 2.0f);
+
+			ImGui::SetNextItemWidth(196);
+			ImGui::SliderFloat("Gamma", &s_cgGamma, 0.0f, 2.0f);
+		}
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
+		// Post-FX
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Post-FX");
+		ImGui::PopFont();
+
+		static bool s_bloom = false;
+		static f32  s_bloomSoftness = 0.5f;
+		static f32  s_bloomIntensity = 0.5f;
+
+		ImGui::Checkbox("Bloom", &s_bloom);
+		if (s_bloom)
+		{
+			ImGui::SetNextItemWidth(196);
+			ImGui::SliderFloat("Softness", &s_bloomSoftness, 0.0f, 1.0f);
+			ImGui::SetNextItemWidth(196);
+			ImGui::SliderFloat("Intensity", &s_bloomIntensity, 0.0f, 1.0f);
 		}
 	}
 	

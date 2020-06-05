@@ -28,6 +28,8 @@ namespace TFE_GameLoop
 	bool startLevelFromExisting(const Vec3f* startPos, f32 yaw, s32 startSectorId, const Palette256* pal, LevelObjectData* levelObj, TFE_Renderer* renderer, s32 w=320, s32 h=200);
 	void endLevel();
 
+	void changeResolution(s32 width, s32 height);
+
 	GameTransition update(bool consoleOpen, GameState curState = GAME_LEVEL, GameOverlay curOverlay = OVERLAY_NONE);
 	void draw();
 

@@ -13,6 +13,8 @@ namespace TFE_WeaponSystem
 	bool init(TFE_Renderer* renderer);
 	void shutdown();
 
+	void updateResolution();
+
 	void switchToWeapon(Weapon weapon);
 	// Motion is roughly a 0 - 1 value that maps from player motion.
 	void update(f32 motion, Player* player);
