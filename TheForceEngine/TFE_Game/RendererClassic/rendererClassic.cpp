@@ -99,7 +99,7 @@ namespace RendererClassic
 	void setupLevel()
 	{
 		init();
-		s_memPool.init(2 * 1024 * 1024, "Classic Renderer - Software");
+		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
 		s_sectorId = -1;
 
 		loadLevel();
