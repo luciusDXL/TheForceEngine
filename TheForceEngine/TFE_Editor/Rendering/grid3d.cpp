@@ -23,6 +23,7 @@ namespace Grid3d
 	static s32 s_svCameraView = -1;
 	static s32 s_svCameraProj = -1;
 	static s32 s_svGridOpacity = -1;
+	static s32 s_svGridHeight = -1;
 
 	static TextureGpu* s_filterMap;
 
@@ -37,6 +38,7 @@ namespace Grid3d
 		s_svCameraView = s_shader.getVariableId("CameraView");
 		s_svCameraProj = s_shader.getVariableId("CameraProj");
 		s_svGridOpacity = s_shader.getVariableId("GridOpacitySubGrid");
+		s_svGridHeight = s_shader.getVariableId("GridHeight");
 		s_shader.bindTextureNameToSlot("filterMap", 0);
 		if (s_svCameraPos < 0 || s_svCameraView < 0 || s_svCameraProj < 0)
 		{
@@ -72,7 +74,7 @@ namespace Grid3d
 		s_indexBuffer.destroy();
 	}
 
-	void draw(f32 gridScale, f32 subGridSize, f32 gridOpacity, f32 pixelSize, const Vec3f* camPos, const Mat3* viewMtx, const Mat4* projMtx)
+	void draw(f32 gridScale, f32 height, f32 subGridSize, f32 gridOpacity, f32 pixelSize, const Vec3f* camPos, const Mat3* viewMtx, const Mat4* projMtx)
 	{
 		DisplayInfo display;
 		TFE_RenderBackend::getDisplayInfo(&display);
@@ -90,6 +92,7 @@ namespace Grid3d
 		s_shader.setVariable(s_svCameraView, SVT_MAT3x3, (f32*)viewMtx);
 		s_shader.setVariable(s_svCameraProj, SVT_MAT4x4, (f32*)projMtx);
 		s_shader.setVariable(s_svGridOpacity, SVT_VEC3, gridOpacitySubGrid);
+		s_shader.setVariable(s_svGridHeight, SVT_SCALAR, &height);
 		s_filterMap->bind();
 		
 		// Bind vertex/index buffers and setup attributes for BlitVert

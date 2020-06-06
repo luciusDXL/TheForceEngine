@@ -197,6 +197,13 @@ namespace LevelEditor
 	static const s32 s_layerMin = -15;
 	static s32 s_layerIndex = 1 - s_layerMin;
 	static s32 s_infoHeight = 300;
+
+	// Editing
+	static f32 s_gridHeight = 0.0f;
+	static bool s_drawStarted = false;
+	static Vec3f s_drawPlaneNrm;
+	static Vec3f s_drawPlaneOrg;
+	static bool s_moveVertex = false;
 		
 	// Sector Rendering
 	static SectorDrawMode s_sectorDrawMode = SDM_WIREFRAME;
@@ -325,7 +332,7 @@ namespace LevelEditor
 			GameTransition trans = TFE_GameLoop::update(false);
 			TFE_GameLoop::draw();
 
-			if (TFE_Input::keyPressed(KEY_BACKSPACE) || trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)
+			if (trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)
 			{
 				s_runLevel = false;
 				TFE_Input::enableRelativeMode(false);
@@ -374,6 +381,16 @@ namespace LevelEditor
 		else if (TFE_Input::keyDown(KEY_D))
 		{
 			s_offset.x += moveSpd;
+		}
+
+		// Mouse scrolling.
+		if (TFE_Input::mouseDown(MBUTTON_RIGHT))
+		{
+			s32 dx, dy;
+			TFE_Input::getMouseMove(&dx, &dy);
+
+			s_offset.x -= f32(dx) * s_zoomVisual;
+			s_offset.z -= f32(dy) * s_zoomVisual;
 		}
 
 		s32 dx, dy;
@@ -469,17 +486,22 @@ namespace LevelEditor
 		s32 relY = s32(my - s_editWinMapCorner.z);
 		// Old position in world units.
 		Vec2f worldPos;
-		worldPos.x = s_offset.x + f32(relX) * s_zoomVisual;
+		worldPos.x =   s_offset.x + f32(relX) * s_zoomVisual;
 		worldPos.z = -(s_offset.z + f32(relY) * s_zoomVisual);
+		s32 curSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
 
+		s_cursor3d.x = worldPos.x;
+		s_cursor3d.y = (curSector >= 0) ? s_levelData->sectors[curSector].floorAlt : s_gridHeight;
+		s_cursor3d.z = worldPos.z;
+		
 		// Select sector.
 		if (TFE_Input::mousePressed(MBUTTON_LEFT) && s_levelData && s_editMode == LEDIT_SECTOR)
 		{
-			s_selectedSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
+			s_selectedSector = curSector;
 		}
 		else if (s_levelData && s_editMode == LEDIT_SECTOR)
 		{
-			s_hoveredSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
+			s_hoveredSector = curSector;
 		}
 		if (s_editMode != LEDIT_SECTOR) { s_selectedSector = -1; }
 		if (s_editMode != LEDIT_ENTITY) { s_selectedEntity = -1; }
@@ -510,6 +532,8 @@ namespace LevelEditor
 			const EditorSector* sector = s_levelData->sectors.data();
 			const f32 maxValidDistSq = s_zoomVisual * s_zoomVisual * 256.0f;
 			f32 minDistSq = maxValidDistSq;
+
+			s32 curVtx = -1, curVtxSector = -1;
 			for (s32 s = 0; s < sectorCount; s++, sector++)
 			{
 				if (sector->layer != s_layerIndex + s_layerMin) { continue; }
@@ -523,10 +547,33 @@ namespace LevelEditor
 					if (distSq < minDistSq && distSq < maxValidDistSq)
 					{
 						minDistSq = distSq;
-						s_hoveredVertex = v;
-						s_hoveredVertexSector = s;
+						curVtx = v;
+						curVtxSector = s;
 					}
 				}
+			}
+
+			if (curVtx >= 0)
+			{
+				if (TFE_Input::mousePressed(MBUTTON_LEFT))
+				{
+					s_selectedVertexSector = curVtxSector;
+					s_selectedVertex = curVtx;
+					s_moveVertex = true;
+					// get the plane...
+					s_drawPlaneNrm = { 0.0f, 1.0f, 0.0f };
+					s_drawPlaneOrg = s_cursor3d;
+				}
+				else if (!s_moveVertex)
+				{
+					s_hoveredVertexSector = curVtxSector;
+					s_hoveredVertex = curVtx;
+				}
+			}
+			else if (TFE_Input::mousePressed(MBUTTON_LEFT))
+			{
+				s_selectedVertexSector = -1;
+				s_selectedVertex = -1;
 			}
 		}
 
@@ -576,6 +623,11 @@ namespace LevelEditor
 			}
 		}
 
+		if (s_editMode == LEDIT_DRAW)
+		{
+			//handleDraw(s_cursor3d);
+		}
+
 		s_offsetVis.x = floorf(s_offset.x * 100.0f) * 0.01f;
 		s_offsetVis.z = floorf(s_offset.z * 100.0f) * 0.01f;
 	}
@@ -608,6 +660,92 @@ namespace LevelEditor
 		return TFE_Math::normalize(&posRelWorld);
 	}
 
+	Vec3f rayGridPlaneHit(const Vec3f& origin, const Vec3f& rayDir)
+	{
+		Vec3f hit = { 0 };
+		if (fabsf(rayDir.y) < FLT_EPSILON) { return hit; }
+
+		f32 s = (s_gridHeight - origin.y) / rayDir.y;
+		if (s <= 0) { return hit; }
+
+		hit.x = origin.x + s*rayDir.x;
+		hit.y = origin.y + s*rayDir.y;
+		hit.z = origin.z + s*rayDir.z;
+		return hit;
+	}
+
+	bool rayPlaneHit(const Vec3f& origin, const Vec3f& rayDir, Vec3f* hit)
+	{
+		const f32 den = TFE_Math::dot(&rayDir, &s_drawPlaneNrm);
+		if (fabsf(den) <= FLT_EPSILON) { return false; }
+
+		Vec3f offset = { s_drawPlaneOrg.x - origin.x, s_drawPlaneOrg.y - origin.y, s_drawPlaneOrg.z - origin.z };
+		f32 s = TFE_Math::dot(&offset, &s_drawPlaneNrm) / den;
+		if (s < 0.0f) { return false; }
+
+		*hit = { origin.x + rayDir.x * s, origin.y + rayDir.y * s, origin.z + rayDir.z * s };
+		return true;
+	}
+
+	static const f32 c_vertexMerge = 0.005f;
+
+	bool vec2Equals(const Vec2f& a, const Vec2f& b)
+	{
+		return fabsf(a.x - b.x) < c_vertexMerge && fabsf(a.z - b.z) < c_vertexMerge;
+	}
+
+	void handleVertexMove(bool view2d)
+	{
+		if (s_selectedVertex < 0)
+		{
+			s_moveVertex = false;
+			return;
+		}
+
+		// first determine the real hit location on the edit plane.
+		Vec3f hit;
+		if (view2d)
+		{
+			hit = s_cursor3d;
+		}
+		else
+		{
+			Vec3f dir = { s_cursor3d.x - s_camera.pos.x, s_cursor3d.y - s_camera.pos.y, s_cursor3d.z - s_camera.pos.z };
+			dir = TFE_Math::normalize(&dir);
+			if (!rayPlaneHit(s_camera.pos, dir, &hit)) { return; }
+		}
+
+		EditorSector& sector = s_levelData->sectors[s_selectedVertexSector];
+		sector.needsUpdate = true;
+
+		Vec2f vtxPos = sector.vertices[s_selectedVertex];
+		sector.vertices[s_selectedVertex] = { hit.x, hit.z };
+
+		// Next handle any sectors across adjoins that have been moved.
+		const size_t wallCount = sector.walls.size();
+		for (size_t w = 0; w < wallCount; w++)
+		{
+			if ((sector.walls[w].i0 == s_selectedVertex || sector.walls[w].i1 == s_selectedVertex) && sector.walls[w].adjoin >= 0)
+			{
+				s32 mirror = sector.walls[w].mirror;
+				EditorSector& sectorNext = s_levelData->sectors[sector.walls[w].adjoin];
+				sectorNext.needsUpdate = true;
+
+				EditorWall& wall = sectorNext.walls[mirror];
+				if (vec2Equals(vtxPos, sectorNext.vertices[wall.i0]))
+				{
+					sectorNext.vertices[wall.i0] = { hit.x, hit.z };
+				}
+				else if (vec2Equals(vtxPos, sectorNext.vertices[wall.i1]))
+				{
+					sectorNext.vertices[wall.i1] = { hit.x, hit.z };
+				}
+			}
+		}
+
+		LevelEditorData::updateSectors();
+	}
+
 	void editWinControls3d(s32 mx, s32 my, s32 rtWidth, s32 rtHeight)
 	{
 		s_hoveredSector = -1;
@@ -624,7 +762,7 @@ namespace LevelEditor
 			if (LevelEditorData::traceRay(&ray, &hitInfo))
 			{
 				s_cursor3d = hitInfo.hitPoint;
-
+				
 				if (s_editMode == LEDIT_SECTOR)
 				{
 					if (TFE_Input::mousePressed(MBUTTON_LEFT))
@@ -750,11 +888,18 @@ namespace LevelEditor
 							s_selectedVertexSector = hitInfo.hitSectorId;
 							s_selectedVertex = closestVtx;
 							s_selectVertexPart = closestPart;
+							s_moveVertex = true;
+							// get the plane...
+							s_drawPlaneNrm = { 0.0f, 1.0f, 0.0f };
+							s_drawPlaneOrg = s_cursor3d;
 						}
-						s_hoveredVertex = closestVtx;
-						s_hoveredVertexPart = closestPart;
+						else if (!s_moveVertex)
+						{
+							s_hoveredVertex = closestVtx;
+							s_hoveredVertexPart = closestPart;
+						}
 					}
-					else if (TFE_Input::mousePressed(MBUTTON_LEFT))
+					else if (TFE_Input::mousePressed(MBUTTON_LEFT) && !s_moveVertex)
 					{
 						s_selectedVertex = -1;
 					}
@@ -780,7 +925,19 @@ namespace LevelEditor
 				s_selectedSector = -1;
 				s_selectedWall = -1;
 				s_selectedVertex = -1;
-				s_cursor3d = { 0 };
+
+				// Intersect the ray with the grid plane.
+				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+			}
+			else
+			{
+				// Intersect the ray with the grid plane.
+				s_cursor3d = rayGridPlaneHit(s_camera.pos, s_rayDir);
+			}
+			
+			if (s_editMode == LEDIT_DRAW)
+			{
+				//handleDraw(s_cursor3d);
 			}
 		}
 
@@ -799,6 +956,7 @@ namespace LevelEditor
 			return;
 		}
 
+		bool relEnabled = false;
 		if (s_editView == EDIT_VIEW_2D)
 		{
 			cameraControl2d(mx, my);
@@ -806,10 +964,26 @@ namespace LevelEditor
 		}
 		else
 		{
-			const bool relEnabled = cameraControl3d(mx, my);
+			relEnabled = cameraControl3d(mx, my);
 			editWinControls3d(mx, my, rtWidth, rtHeight);
-
 			TFE_Input::enableRelativeMode(relEnabled);
+		}
+
+		// Vertex move
+		if (TFE_Input::mouseDown(MBUTTON_LEFT) && s_moveVertex && s_editMode == LEDIT_VERTEX && !relEnabled)
+		{
+			handleVertexMove(s_editView == EDIT_VIEW_2D);
+		}
+		else if (s_moveVertex)
+		{
+			LevelEditorData::updateSectors();
+			s_moveVertex = false;
+		}
+
+		// Set the current grid height to the cursor height.
+		if ((TFE_Input::keyDown(KEY_LCTRL) || TFE_Input::keyDown(KEY_RCTRL)) && TFE_Input::keyPressed(KEY_G))
+		{
+			s_gridHeight = s_cursor3d.y;
 		}
 	}
 
@@ -1413,6 +1587,11 @@ namespace LevelEditor
 		if (s_hoveredVertex >= 0 && s_hoveredVertex < (s32)s_levelData->sectors[s_hoveredVertexSector].vertices.size())
 		{
 			const Vec2f* vtx = &s_levelData->sectors[s_hoveredVertexSector].vertices[s_hoveredVertex];
+			drawVertex(vtx, scale * 1.5f, colorSelected);
+		}
+		if (s_selectedVertex >= 0 && s_selectedVertex < (s32)s_levelData->sectors[s_selectedVertexSector].vertices.size())
+		{
+			const Vec2f* vtx = &s_levelData->sectors[s_selectedVertexSector].vertices[s_selectedVertex];
 			drawVertex(vtx, scale * 1.5f, colorSelected);
 		}
 		flushTriangles();
@@ -2276,11 +2455,15 @@ namespace LevelEditor
 		const s32 layer = s_layerIndex + s_layerMin;
 		const Vec2f topDownPos = { s_camera.pos.x, s_camera.pos.z };
 		s32 overSector = LevelEditorData::findSector(layer, &topDownPos);
+		if (overSector >= 0 && s_levelData->sectors[overSector].floorAlt < s_camera.pos.y)
+		{
+			overSector = -1;
+		}
 
 		f32 pixelSize = 1.0f / (f32)rtHeight;
 		if (!s_levelData)
 		{
-			Grid3d::draw(s_gridSize, s_subGridSize, 1.0f, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+			Grid3d::draw(s_gridSize, s_gridHeight, s_subGridSize, 1.0f, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
 		}
 
 		if (!s_levelData) { return; }
@@ -2322,8 +2505,15 @@ namespace LevelEditor
 			}
 		}
 
-		// Debug to show the 3d cursor (should be hidden).
-		//drawBox(&s_cursor3d, 1.0f, 3.0f / f32(rtHeight));
+		// Draw the 3d cursor in "Draw Mode"
+		if (s_editMode == LEDIT_DRAW)
+		{
+			const f32 distFromCam = TFE_Math::distance(&s_cursor3d, &s_camera.pos);
+			const f32 size = distFromCam * 16.0f / f32(rtHeight);
+
+			drawBox(&s_cursor3d, size, 3.0f / f32(rtHeight), 0x80ff8020);
+		}
+
 		LineDraw3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
 
 		// Draw selected or hovered elements.
@@ -2520,7 +2710,11 @@ namespace LevelEditor
 		
 		if (overSector < 0)
 		{
-			Grid3d::draw(s_gridSize, s_subGridSize, 1.0f, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+			Grid3d::draw(s_gridSize, s_gridHeight, s_subGridSize, 1.0f, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+		}
+		else
+		{
+			s_gridHeight = s_levelData->sectors[overSector].floorAlt;
 		}
 	}
 
@@ -2693,6 +2887,8 @@ namespace LevelEditor
 				{
 					s_editMode = i;
 					s_enableInfEditor = false;
+					s_drawStarted = false;
+					s_moveVertex = false;
 				}
 				ImGui::SameLine();
 			}
@@ -2975,6 +3171,7 @@ namespace LevelEditor
 					s_offset.z = -s_camera.pos.z - scale.z*s_zoomVisual;
 				}
 				s_editView = EDIT_VIEW_2D;
+				s_drawStarted = false;
 			}
 			if (ImGui::MenuItem("3D (Editor)", "Ctrl+2", s_editView == EDIT_VIEW_3D))
 			{
@@ -2985,6 +3182,7 @@ namespace LevelEditor
 					s_camera.pos.z = -s_offset.z - scale.z*s_zoomVisual;
 				}
 				s_editView = EDIT_VIEW_3D;
+				s_drawStarted = false;
 			}
 			if (ImGui::MenuItem("3D (Game)", "Ctrl+3", s_editView == EDIT_VIEW_3D_GAME))
 			{
@@ -3114,7 +3312,7 @@ namespace LevelEditor
 
 		ImGui::EndChild();
 	}
-	   
+			   
 	void infoToolBegin(s32 height)
 	{
 		bool infoTool = true;
@@ -3127,7 +3325,7 @@ namespace LevelEditor
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
 			| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-		ImGui::Begin("Info Panel", &infoTool, window_flags);
+		ImGui::Begin("Info Panel", &infoTool, window_flags); ImGui::SameLine();
 	}
 		
 	void infoPanelMap()
@@ -3139,6 +3337,10 @@ namespace LevelEditor
 		ImGui::Text("Level File: %s", s_levelFile);
 		ImGui::Text("Sector Count: %u", s_levelData->sectors.size());
 		ImGui::Text("Layer Range: %d, %d", s_levelData->layerMin, s_levelData->layerMax);
+		ImGui::Separator();
+		ImGui::LabelText("##GridLabel", "Grid Height");
+		ImGui::SetNextItemWidth(196.0f);
+		ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
 	}
 
 	void infoPanelVertex()
