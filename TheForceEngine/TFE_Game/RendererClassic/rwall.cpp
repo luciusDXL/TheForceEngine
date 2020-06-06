@@ -42,7 +42,7 @@ namespace RClassicWall
 	static u8* s_texImage;
 	static u8* s_columnOut;
 
-	const u8* wall_computeColumnLight(s32 depth, s32 wallLight);
+	const u8* computeLighting(s32 depth, s32 lightOffset);
 	s32 segmentCrossesLine(s32 ax0, s32 ay0, s32 ax1, s32 ay1, s32 bx0, s32 by0, s32 bx1, s32 by1);
 	s32 solveForZ_Numerator(RWallSegment* wallSegment);
 	s32 solveForZ(RWallSegment* wallSegment, s32 x, s32 numerator, s32* outViewDx=nullptr);
@@ -794,7 +794,7 @@ namespace RClassicWall
 				// Skip for now and just write directly to the screen...
 				// columnOutStart + (x*320 + top) * 80;
 				//s_curColumnOut = s_columnOut[x] + s_scaleX80[top];
-				s_columnLight = wall_computeColumnLight(z, srcWall->wallLight);
+				s_columnLight = computeLighting(z, srcWall->wallLight);
 				s_columnOut = &s_display[top * s_width + x];
 
 				// draw the column
@@ -819,7 +819,7 @@ namespace RClassicWall
 		//srcWall->y1 = -1;
 	}
 				
-	const u8* wall_computeColumnLight(s32 depth, s32 wallLight)
+	const u8* computeLighting(s32 depth, s32 lightOffset)
 	{
 		if (s_sectorAmbient >= 31)
 		{
@@ -847,9 +847,9 @@ namespace RClassicWall
 		s32 depthAtten = (depth >> 20) + (depth >> 21);		// depth/16 + depth/32
 		light = max(light - depthAtten, s_scaledAmbient);
 
-		if (wallLight != 0)
+		if (lightOffset != 0)
 		{
-			light += wallLight;
+			light += lightOffset;
 		}
 		if (light >= 31) { return nullptr; }
 
