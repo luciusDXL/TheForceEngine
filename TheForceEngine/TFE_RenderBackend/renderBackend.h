@@ -75,6 +75,7 @@ namespace TFE_RenderBackend
 	void freeRenderTarget(RenderTargetHandle handle);
 	void bindRenderTarget(RenderTargetHandle handle);
 	void clearRenderTarget(RenderTargetHandle handle, const f32* clearColor, f32 clearDepth = 1.0f);
+	void clearRenderTargetDepth(RenderTargetHandle handle, f32 clearDepth = 1.0f);
 	void unbindRenderTarget();
 	const TextureGpu* getRenderTargetTexture(RenderTargetHandle rtHandle);
 	void getRenderTargetDim(RenderTargetHandle rtHandle, u32* width, u32* height);

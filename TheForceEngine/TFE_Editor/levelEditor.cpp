@@ -270,10 +270,10 @@ namespace LevelEditor
 	void play(bool playFromDos);
 
 	// Draw
-	void drawSector3d(const EditorSector* sector, const SectorTriangles* poly, bool overlay = false, bool hover = false);
+	void drawSector3d(const EditorSector* sector, const SectorTriangles* poly, bool overlay = false, bool hover = false, bool lowerLayer = false);
 	void drawSector3d_Lines(const EditorSector* sector, f32 width, u32 color, bool overlay = false, bool hover = false);
 	void drawInfWalls3d(f32 width, u32 color);
-	void drawWallColor(const EditorSector* sector, const Vec2f* vtx, const EditorWall* wall, const u32* color, bool blend = false, RayHitPart part = HIT_PART_UNKNOWN);
+	void drawWallColor(const EditorSector* sector, const Vec2f* vtx, const EditorWall* wall, const u32* color, bool blend = false, RayHitPart part = HIT_PART_UNKNOWN, bool showAllWallsOnBlend = true);
 
 	// Error Handling
 	bool isValidName(const char* name);
@@ -1773,7 +1773,7 @@ namespace LevelEditor
 		wallUv1[5] = { u0, v1 };
 	}
 
-	void drawWallColor(const EditorSector* sector, const Vec2f* vtx, const EditorWall* wall, const u32* color, bool blend, RayHitPart part)
+	void drawWallColor(const EditorSector* sector, const Vec2f* vtx, const EditorWall* wall, const u32* color, bool blend, RayHitPart part, bool showAllWallsOnBlend)
 	{
 		const Vec2f* v0 = &vtx[wall->i0];
 		const Vec2f* v1 = &vtx[wall->i1];
@@ -1805,7 +1805,7 @@ namespace LevelEditor
 			}
 
 			// mask wall or highlight.
-			if (((wall->flags[0] & WF1_ADJ_MID_TEX) || blend) && (part == HIT_PART_UNKNOWN || part == HIT_PART_MID))
+			if (((wall->flags[0] & WF1_ADJ_MID_TEX) || (blend && showAllWallsOnBlend)) && (part == HIT_PART_UNKNOWN || part == HIT_PART_MID))
 			{
 				const f32 ceilAlt = std::max(nextCeilAlt, sector->ceilAlt);
 				const f32 floorAlt = std::min(nextFloorAlt, sector->floorAlt);
@@ -2004,15 +2004,21 @@ namespace LevelEditor
 		LineDraw3d::addLines(12, lineWidth, lines, colors);
 	}
 		
-	void drawSector3d(const EditorSector* sector, const SectorTriangles* poly, bool overlay, bool hover)
+	void drawSector3d(const EditorSector* sector, const SectorTriangles* poly, bool overlay, bool hover, bool lowerLayer)
 	{
 		// Draw the floor and ceiling polygons.
 		const u32 triCount = poly->count;
 		const Vec2f* vtx = poly->vtx.data();
 
 		u32 color[4];
+		const bool textured = s_sectorDrawMode == SDM_TEXTURED_FLOOR || s_sectorDrawMode == SDM_TEXTURED_CEIL;
+		const bool blend = overlay;// || (!textured && lowerLayer);
 
-		if (overlay)
+		if (lowerLayer)
+		{
+			for (u32 t = 0; t < 4; t++) { color[t] = textured ? 0x80ffff20 : 0xa0ffa020; }
+		}
+		else if (overlay)
 		{
 			for (u32 t = 0; t < 4; t++) { color[t] = hover ? 0x40ff8020 : 0x40ff4020; }
 		}
@@ -2032,7 +2038,7 @@ namespace LevelEditor
 
 		if (s_sectorDrawMode == SDM_WIREFRAME || s_sectorDrawMode == SDM_LIGHTING || overlay)
 		{
-			drawSectorFloorAndCeilColor(sector, poly, color, overlay);
+			drawSectorFloorAndCeilColor(sector, poly, color, blend);
 		}
 		else
 		{
@@ -2045,9 +2051,13 @@ namespace LevelEditor
 		vtx = sector->vertices.data();
 		for (u32 w = 0; w < wallCount; w++, wall++)
 		{
-			if (overlay)
+			if (lowerLayer)
 			{
-				for (u32 t = 0; t < 4; t++) { color[t] = hover ? 0x40ff8020 : 0x40ff4020;; }
+				for (u32 t = 0; t < 4; t++) { color[t] = textured ? 0x80ffff20 : 0x80ffa020; }
+			}
+			else if (overlay)
+			{
+				for (u32 t = 0; t < 4; t++) { color[t] = hover ? 0x40ff8020 : 0x40ff4020; }
 			}
 			else if (s_sectorDrawMode != SDM_WIREFRAME)
 			{
@@ -2067,7 +2077,7 @@ namespace LevelEditor
 
 			if (s_sectorDrawMode == SDM_WIREFRAME || s_sectorDrawMode == SDM_LIGHTING || overlay)
 			{
-				drawWallColor(sector, vtx, wall, color, overlay);
+				drawWallColor(sector, vtx, wall, color, blend, HIT_PART_UNKNOWN, !lowerLayer);
 			}
 			else
 			{
@@ -2460,6 +2470,20 @@ namespace LevelEditor
 			overSector = -1;
 		}
 
+		if (s_levelData && s_showLowerLayers)
+		{
+			u32 sectorCount = (u32)s_levelData->sectors.size();
+			EditorSector* sector = s_levelData->sectors.data();
+
+			for (u32 i = 0; i < sectorCount; i++, sector++)
+			{
+				if (sector->layer >= layer) { continue; }
+				drawSector3d(sector, &sector->triangles, false, false, true);
+			}
+			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+			TFE_RenderBackend::clearRenderTargetDepth(s_view3d, 1.0f);
+		}
+		
 		f32 pixelSize = 1.0f / (f32)rtHeight;
 		if (!s_levelData)
 		{

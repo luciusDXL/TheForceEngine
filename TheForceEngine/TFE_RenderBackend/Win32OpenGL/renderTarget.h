@@ -16,6 +16,7 @@ public:
 	bool create(TextureGpu* texture, bool depthBuffer);
 	void bind();
 	void clear(const f32* color, f32 depth);
+	void clearDepth(f32 depth);
 	static void unbind();
 
 	inline const TextureGpu* getTexture() const { return m_texture; }
