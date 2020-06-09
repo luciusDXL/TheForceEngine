@@ -1629,14 +1629,17 @@ namespace LevelEditor
 
 	void drawSectorFloorAndCeilTextured(const EditorSector* sector, const SectorTriangles* poly, u32 color)
 	{
+		const bool hasFloorTex = sector->floorTexture.tex != nullptr;
+		const bool hasCeilTex  = sector->ceilTexture.tex  != nullptr;
+
 		const f32* floorOff = &sector->floorTexture.offsetX;
 		const f32* ceilOff = &sector->ceilTexture.offsetX;
-		const TextureGpu* floorTex = sector->floorTexture.tex->texture;
-		const TextureGpu* ceilTex = sector->ceilTexture.tex->texture;
-		const f32 scaleFloorX = -8.0f / f32(sector->floorTexture.tex->width);
-		const f32 scaleFloorZ = -8.0f / f32(sector->floorTexture.tex->height);
-		const f32 scaleCeilX  = -8.0f / f32(sector->ceilTexture.tex->width);
-		const f32 scaleCeilZ  = -8.0f / f32(sector->ceilTexture.tex->height);
+		const TextureGpu* floorTex = hasFloorTex ? sector->floorTexture.tex->texture : nullptr;
+		const TextureGpu* ceilTex  = hasCeilTex  ? sector->ceilTexture.tex->texture  : nullptr;
+		const f32 scaleFloorX = hasFloorTex ? -8.0f / f32(sector->floorTexture.tex->width)  : 1.0f;
+		const f32 scaleFloorZ = hasFloorTex ? -8.0f / f32(sector->floorTexture.tex->height) : 1.0f;
+		const f32 scaleCeilX  = hasCeilTex  ? -8.0f / f32(sector->ceilTexture.tex->width)   : 1.0f;
+		const f32 scaleCeilZ  = hasCeilTex  ? -8.0f / f32(sector->ceilTexture.tex->height)  : 1.0f;
 
 		const u32 triCount = poly->count;
 		
