@@ -8,11 +8,23 @@ namespace RendererClassic
 	s32 s_height;
 	s32 s_halfWidth;
 	s32 s_halfHeight;
+	s32 s_minScreenY;
+	s32 s_maxScreenY;
+	s32 s_screenXMid;
 
 	// Projection
 	s32 s_focalLength;
 	s32 s_eyeHeight;
 	s32* s_depth1d = nullptr;
+
+	// Camera
+	s32 s_cameraPosX;
+	s32 s_cameraPosZ;
+	s32 s_xCameraTrans;
+	s32 s_zCameraTrans;
+	s32 s_cosYaw;
+	s32 s_sinYaw;
+	s32 s_negSinYaw;
 
 	// Window
 	s32 s_minScreenX;
@@ -27,8 +39,8 @@ namespace RendererClassic
 	u8* s_display;
 
 	// Column Heights
-	u8* s_columnTop = nullptr;
-	u8* s_columnBot = nullptr;
+	s32* s_columnTop = nullptr;
+	s32* s_columnBot = nullptr;
 	u8* s_windowTop = nullptr;
 	u8* s_windowBot = nullptr;
 	s32* s_column_Y_Over_X = nullptr;
@@ -45,6 +57,8 @@ namespace RendererClassic
 	s32* s_rcp_yMinusHalfHeight;
 	s32 s_wallMaxCeilY;
 	s32 s_wallMinFloorY;
+	s32 s_yMin;
+	s32 s_yMax;
 	FlatEdges* s_lowerFlatEdge;
 	FlatEdges  s_lowerFlatEdgeList[MAX_SEG];
 

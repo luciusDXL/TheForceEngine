@@ -526,6 +526,9 @@
     <ClInclude Include="TFE_Game\RendererClassic\rflat.h">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rlighting.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -847,6 +850,9 @@
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Game\RendererClassic\rflat.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rlighting.cpp">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClCompile>
   </ItemGroup>

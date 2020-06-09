@@ -30,13 +30,6 @@ using namespace RClassicFlat;
 
 namespace RendererClassic
 {
-	s32 s_xCameraTrans;
-	s32 s_zCameraTrans;
-
-	s32 s_cosYaw;
-	s32 s_sinYaw;
-	s32 s_negSinYaw;
-
 	s32 s_sectorId = -1;
 
 	static bool s_init = false;
@@ -65,14 +58,17 @@ namespace RendererClassic
 		s_halfWidth  = intToFixed16(s_width >> 1);
 		s_halfHeight = intToFixed16(s_height >> 1);
 		s_focalLength = s_halfWidth;
+		s_screenXMid = s_width >> 1;
 
 		s_minScreenX = 0;
 		s_maxScreenX = s_width - 1;
+		s_minScreenY = 1;
+		s_maxScreenY = s_height - 1;
 		s_minSegZ = 0;
 
 		s_depth1d = (s32*)realloc(s_depth1d, s_width * sizeof(s32));
-		s_columnTop = (u8*)realloc(s_columnTop, s_width);
-		s_columnBot = (u8*)realloc(s_columnBot, s_width);
+		s_columnTop = (s32*)realloc(s_columnTop, s_width*4);
+		s_columnBot = (s32*)realloc(s_columnBot, s_width*4);
 		s_windowTop = (u8*)realloc(s_windowTop, s_width);
 		s_windowBot = (u8*)realloc(s_windowBot, s_width);
 
@@ -117,6 +113,9 @@ namespace RendererClassic
 		s_xCameraTrans = mul16(-x, s_cosYaw) + mul16(-z, s_sinYaw);
 		s_eyeHeight = y;
 
+		s_cameraPosX = x;
+		s_cameraPosZ = z;
+
 		s_sectorId = sectorId;
 		s_cameraLightSource = 0;
 		s_worldAmbient = 31;
@@ -126,7 +125,7 @@ namespace RendererClassic
 			s_worldAmbient = (mode == LIGHT_NORMAL) ? 0 : -9;
 			s_cameraLightSource = -1;
 		}
-		
+						
 		s_drawFrame++;
 	}
 		
@@ -142,6 +141,8 @@ namespace RendererClassic
 		s_windowMaxX = s_maxScreenX;
 		s_windowMinY = 1;
 		s_windowMaxY = s_height - 1;
+		s_yMin = s_minScreenY;
+		s_yMax = s_maxScreenY;
 		s_flatCount  = 0;
 		s_nextWall   = 0;
 		s_curWallSeg = 0;
@@ -301,6 +302,9 @@ namespace RendererClassic
 		}
 
 		// Draw flats
+		// Note: in the DOS code flat drawing functions are called through function pointers.
+		// Since the function pointers always seem to be the same, the functions are called directly in this code.
+		// Most likely this was used for testing or debug drawing and may be added back in the future.
 		const s32 newFlatCount = s_flatCount - flatCount;
 		if (s_curSector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
@@ -336,10 +340,10 @@ namespace RendererClassic
 		out->drawWallCnt   = 0;
 		out->floorTex = &textures[sector->floorTexture.texId]->frames[0];
 		out->ceilTex = &textures[sector->ceilTexture.texId]->frames[0];
-		out->floorOffsetX = mul16(intToFixed16(8), s32(sector->floorTexture.offsetX * 65536.0f));
-		out->floorOffsetZ = mul16(intToFixed16(8), s32(sector->floorTexture.offsetY * 65536.0f));
-		out->ceilOffsetX  = mul16(intToFixed16(8), s32(sector->ceilTexture.offsetX  * 65536.0f));
-		out->ceilOffsetZ  = mul16(intToFixed16(8), s32(sector->ceilTexture.offsetY  * 65536.0f));
+		out->floorOffsetX = s32(sector->floorTexture.offsetX * 65536.0f);
+		out->floorOffsetZ = s32(sector->floorTexture.offsetY * 65536.0f);
+		out->ceilOffsetX  = s32(sector->ceilTexture.offsetX  * 65536.0f);
+		out->ceilOffsetZ  = s32(sector->ceilTexture.offsetY  * 65536.0f);
 
 		if (!out->verticesWS)
 		{

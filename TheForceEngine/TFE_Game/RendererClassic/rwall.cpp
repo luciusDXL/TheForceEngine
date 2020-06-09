@@ -1,5 +1,6 @@
 #include "rwall.h"
 #include "rflat.h"
+#include "rlighting.h"
 #include "rsector.h"
 #include "fixedPoint.h"
 #include "rmath.h"
@@ -26,6 +27,7 @@ using namespace RendererClassic;
 using namespace FixedPoint;
 using namespace RMath;
 using namespace RClassicFlat;
+using namespace RClassicLighting;
 
 namespace RClassicWall
 {
@@ -44,7 +46,6 @@ namespace RClassicWall
 	static u8* s_texImage;
 	static u8* s_columnOut;
 
-	const u8* computeLighting(s32 depth, s32 lightOffset);
 	s32 segmentCrossesLine(s32 ax0, s32 ay0, s32 ax1, s32 ay1, s32 bx0, s32 by0, s32 bx1, s32 by1);
 	s32 solveForZ_Numerator(RWallSegment* wallSegment);
 	s32 solveForZ(RWallSegment* wallSegment, s32 x, s32 numerator, s32* outViewDx=nullptr);
@@ -819,43 +820,6 @@ namespace RClassicWall
 		}
 
 		//srcWall->y1 = -1;
-	}
-				
-	const u8* computeLighting(s32 depth, s32 lightOffset)
-	{
-		if (s_sectorAmbient >= 31)
-		{
-			return nullptr;
-		}
-		depth = max(depth, 0);
-		s32 light = 0;
-
-		// handle camera lightsource
-		if (s_worldAmbient < 31 && s_cameraLightSource != 0)
-		{
-			s32 depthScaled = min(depth >> 14, 127);
-			s32 lightSource = 31 - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
-			if (lightSource > 0)
-			{
-				light += lightSource;
-			}
-		}
-
-		s32 secAmb = s_sectorAmbient;
-		if (light < secAmb) { light = secAmb; }
-
-		// depthScale = 0.09375 (3/32)
-		// light = max(light - depth * depthScale, secAmb*0.875)
-		s32 depthAtten = (depth >> 20) + (depth >> 21);		// depth/16 + depth/32
-		light = max(light - depthAtten, s_scaledAmbient);
-
-		if (lightOffset != 0)
-		{
-			light += lightOffset;
-		}
-		if (light >= 31) { return nullptr; }
-
-		return &s_colorMap[light << 8];
 	}
 
 	// Determines if segment A is disjoint from the line formed by B - i.e. they do not intersect.
