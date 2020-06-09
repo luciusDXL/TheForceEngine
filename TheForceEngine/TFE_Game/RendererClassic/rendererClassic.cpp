@@ -2,6 +2,7 @@
 #include "fixedPoint.h"
 #include "rsector.h"
 #include "rwall.h"
+#include "rflat.h"
 #include "rcommon.h"
 
 #include <TFE_Renderer/renderer.h>
@@ -25,6 +26,7 @@
 
 using namespace FixedPoint;
 using namespace RClassicWall;
+using namespace RClassicFlat;
 
 namespace RendererClassic
 {
@@ -140,7 +142,7 @@ namespace RendererClassic
 		s_windowMaxX = s_maxScreenX;
 		s_windowMinY = 1;
 		s_windowMaxY = s_height - 1;
-		s_wallCount  = 0;
+		s_flatCount  = 0;
 		s_nextWall   = 0;
 		s_curWallSeg = 0;
 		memset(s_depth1d, 0, s_width * sizeof(u32));
@@ -241,6 +243,9 @@ namespace RendererClassic
 		s_sectorAmbient = round16(s_curSector->ambientFixed);
 		s_scaledAmbient = (s_sectorAmbient >> 1) + (s_sectorAmbient >> 2) + (s_sectorAmbient >> 3);
 
+		s_wallMaxCeilY  = s_windowMinY;
+		s_wallMinFloorY = s_windowMaxY;
+
 		if (s_drawFrame != s_curSector->prevDrawFrame)
 		{
 			vec2* vtxWS = s_curSector->verticesWS;
@@ -272,6 +277,10 @@ namespace RendererClassic
 
 		qsort(wallSegment, drawSegCnt, sizeof(RWallSegment), wallSortX);
 
+		s32 flatCount = s_flatCount;
+		FlatEdges* lowerFlatEdge = &s_lowerFlatEdgeList[s_flatCount];
+		s_lowerFlatEdge = lowerFlatEdge;
+
 		// Draw each wall segment in the sector.
 		for (s32 i = 0; i < drawSegCnt; i++, wallSegment++)
 		{
@@ -290,8 +299,27 @@ namespace RendererClassic
 				// ...
 			}
 		}
-	}
 
+		// Draw flats
+		const s32 newFlatCount = s_flatCount - flatCount;
+		if (s_curSector->flags1 & SEC_FLAGS1_EXTERIOR)
+		{
+			// TODO - just leave black for now.
+		}
+		else
+		{
+			flat_drawCeiling(s_curSector, lowerFlatEdge, newFlatCount);
+		}
+		if (s_curSector->flags1 & SEC_FLAGS1_PIT)
+		{
+			// TODO - just leave black for now.
+		}
+		else
+		{
+			flat_drawFloor(s_curSector, lowerFlatEdge, newFlatCount);
+		}
+	}
+		
 	void copySector(RSector* out, RSector* sectorList, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
 	{
 		out->vertexCount = sector->vtxCount;

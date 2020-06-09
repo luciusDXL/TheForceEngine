@@ -1,4 +1,5 @@
 #include "rcommon.h"
+#include "rflat.h"
 
 namespace RendererClassic
 {
@@ -40,8 +41,12 @@ namespace RendererClassic
 	s32 s_nextWall;
 
 	// Flats
-	s32 s_wallCount;
+	s32 s_flatCount;
 	s32* s_rcp_yMinusHalfHeight;
+	s32 s_wallMaxCeilY;
+	s32 s_wallMinFloorY;
+	FlatEdges* s_lowerFlatEdge;
+	FlatEdges  s_lowerFlatEdgeList[MAX_SEG];
 
 	// Lighting
 	const u8* s_colorMap;

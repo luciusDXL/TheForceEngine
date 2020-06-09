@@ -1,4 +1,5 @@
 #include "rwall.h"
+#include "rflat.h"
 #include "rsector.h"
 #include "fixedPoint.h"
 #include "rmath.h"
@@ -24,6 +25,7 @@
 using namespace RendererClassic;
 using namespace FixedPoint;
 using namespace RMath;
+using namespace RClassicFlat;
 
 namespace RClassicWall
 {
@@ -730,7 +732,7 @@ namespace RClassicWall
 			y0C += mul16(dYdXtop, clippedXDelta);
 			y0F += mul16(dYdXbot, clippedXDelta);
 		}
-		//addWallPartScreen(length, wallSegment->wallX0, dYdXbot, y0F, dYdXtop, y0C);
+		flat_addEdges(length, wallSegment->wallX0, dYdXbot, y0F, dYdXtop, y0C);
 
 		const s32 texWidth = texture ? texture->width : 0;
 		const bool flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) != 0;

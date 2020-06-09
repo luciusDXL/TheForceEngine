@@ -1,4 +1,5 @@
 #include "rflat.h"
+#include "rsector.h"
 #include "fixedPoint.h"
 #include "rmath.h"
 #include "rcommon.h"
@@ -9,7 +10,7 @@ using namespace RMath;
 
 namespace RClassicFlat
 {
-	void flat_addEdges(s32 length, s32 x0, s32 dyFloor_dx, s32 yFloor1, s32 yFloor, s32 dyCeil_dx, s32 yCeil, s32 yCeil1, FlatEdges* flat)
+	void flat_setup(s32 length, s32 x0, s32 dyFloor_dx, s32 yFloor1, s32 yFloor, s32 dyCeil_dx, s32 yCeil, s32 yCeil1, FlatEdges* flat)
 	{
 		const s32 yF0 = round16(yFloor);
 		const s32 yF1 = round16(yFloor1);
@@ -51,8 +52,7 @@ namespace RClassicFlat
 
 	void flat_addEdges(s32 length, s32 x0, s32 dyFloor_dx, s32 yFloor, s32 dyCeil_dx, s32 yCeil)
 	{
-#if 0
-		if (s_wallCount < MAX_SEG && length > 0)
+		if (s_flatCount < MAX_SEG && length > 0)
 		{
 			const s32 lengthFixed = (length - 1) << 16;
 
@@ -67,28 +67,37 @@ namespace RClassicFlat
 				yFloor1 += mul16(dyFloor_dx, lengthFixed);
 			}
 
-			flat_setup(length, x0, dyFloor_dx, yFloor1, yFloor, dyCeil_dx, yCeil, yCeil1, s_lowerWallPart);
+			flat_setup(length, x0, dyFloor_dx, yFloor1, yFloor, dyCeil_dx, yCeil, yCeil1, s_lowerFlatEdge);
 
-			if (s_lowerWallPart->yPixel_C1 - 1 > s_wallMinY)
+			if (s_lowerFlatEdge->yPixel_C1 - 1 > s_wallMaxCeilY)
 			{
-				s_wallMinY = s_lowerWallPart->yPixel_C1 - 1;
+				s_wallMaxCeilY = s_lowerFlatEdge->yPixel_C1 - 1;
 			}
-			if (s_lowerWallPart->yPixel_F1 + 1 < s_wallMaxY)
+			if (s_lowerFlatEdge->yPixel_F1 + 1 < s_wallMinFloorY)
 			{
-				s_wallMaxY = s_lowerWallPart->yPixel_F1 + 1;
+				s_wallMinFloorY = s_lowerFlatEdge->yPixel_F1 + 1;
 			}
-			if (s_wallMaxY < s_windowMinY)
+			if (s_wallMaxCeilY < s_windowMinY)
 			{
-				s_wallMaxY = s_windowMinY;
+				s_wallMaxCeilY = s_windowMinY;
 			}
-			if (s_wallMinY > s_windowMaxY)
+			if (s_wallMinFloorY > s_windowMaxY)
 			{
-				s_wallMinY = s_windowMaxY;
+				s_wallMinFloorY = s_windowMaxY;
 			}
 
-			s_lowerWallPart++;
-			s_wallCount++;
+			s_lowerFlatEdge++;
+			s_flatCount++;
 		}
-#endif
+	}
+
+	void flat_drawCeiling(RSector* sector, FlatEdges* edges, s32 count)
+	{
+		// TODO
+	}
+
+	void flat_drawFloor(RSector* sector, FlatEdges* edges, s32 count)
+	{
+		// TODO
 	}
 }

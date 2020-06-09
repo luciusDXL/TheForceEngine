@@ -6,6 +6,8 @@
 #include <TFE_System/types.h>
 #include "rmath.h"
 
+struct RSector;
+
 struct FlatEdges
 {
 	// Ceiling
@@ -34,4 +36,7 @@ namespace RClassicFlat
 {
 	void flat_addEdges(s32 length, s32 x0, s32 dyFloor_dx, s32 yFloor, s32 dyCeil_dx, s32 yCeil);
 	void flat_setup(s32 length, s32 x0, s32 dyFloor_dx, s32 yFloor1, s32 yFloor, s32 dyCeil_dx, s32 yCeil, s32 yCeil1, FlatEdges* wallPart);
+
+	void flat_drawCeiling(RSector* sector, FlatEdges* edges, s32 count);
+	void flat_drawFloor(RSector* sector, FlatEdges* edges, s32 count);
 }
