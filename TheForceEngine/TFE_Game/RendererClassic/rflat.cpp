@@ -402,6 +402,7 @@ namespace RClassicFlat
 
 		s32 relFloor          = sector->floorHeight - s_eyeHeight;
 		s32 scaledRelFloor    = mul16(relFloor, s_focalLength);
+
 		s32 cosScaledRelFloor = mul16(scaledRelFloor, s_cosYaw);
 		s32 negSinRelFloor    =-mul16(relFloor, s_sinYaw);
 		s32 sinScaledRelFloor = mul16(scaledRelFloor, s_sinYaw);
@@ -546,7 +547,7 @@ namespace RClassicFlat
 					s32 u0 = mul16(sinScaledRelFloor + mul16(negCosRelFloor, rightClip), yRcp);
 					s_scanlineU0 = (u0 - textureOffsetU) * 8;
 
-					s_scanline_dVdX = mul16(negSinRelFloor, yRcp) * 8;
+					s_scanline_dVdX =  mul16(negSinRelFloor, yRcp) * 8;
 					s_scanline_dUdX = -mul16(negCosRelFloor, yRcp) * 8;
 					s_scanlineLight = computeLighting(z, 0);
 

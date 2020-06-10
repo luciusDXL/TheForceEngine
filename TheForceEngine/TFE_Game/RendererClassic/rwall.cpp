@@ -318,7 +318,7 @@ namespace RClassicWall
 			wall->visible = 0;
 			return;
 		}
-		if (s_nextWall == MAX_SEG)	// ebx = 0
+		if (s_nextWall == MAX_SEG)
 		{
 			TFE_System::logWrite(LOG_ERROR, "ClassicRenderer", "Wall_Process : Maximum processed walls exceeded!");
 			wall->visible = 0;
@@ -328,9 +328,9 @@ namespace RClassicWall
 		RWallSegment* wallSeg = &s_wallSegListSrc[s_nextWall];
 		s_nextWall++;
 
-		if (x0pixel < s_minScreenX)//clipX0_Near)
+		if (x0pixel < s_minScreenX)
 		{
-			x0pixel = s_minScreenX;// clipX0_Near;
+			x0pixel = s_minScreenX;
 		}
 		if (x1pixel > s_maxScreenX)
 		{
@@ -905,15 +905,12 @@ namespace RClassicWall
 		s32 v = floor16(vCoordFixed) & s_texHeightMask;
 		s32 end = s_yPixelCount - 1;
 
-		s32 offset = end * s_width;// 80;
-		//for (s32 i = end; i >= 0; i--, offset -= 80)
+		s32 offset = end * s_width;
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
 			const u8 c = tex[v];
 			vCoordFixed += s_vCoordStep;
 			v = floor16(vCoordFixed) & s_texHeightMask;
-			//s_curColumnOut[offset] = c;
-			// Temporary - replace with proper columnOut code.
 			s_columnOut[offset] = c;
 		}
 	}
@@ -926,15 +923,12 @@ namespace RClassicWall
 		s32 v = floor16(vCoordFixed) & s_texHeightMask;
 		s32 end = s_yPixelCount - 1;
 
-		s32 offset = end * s_width;// 80;
-		//for (s32 i = end; i >= 0; i--, offset -= 80)
+		s32 offset = end * s_width;
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
 			const u8 c = s_columnLight[tex[v]];
 			vCoordFixed += s_vCoordStep;
 			v = floor16(vCoordFixed) & s_texHeightMask;
-			//s_curColumnOut[offset] = c;
-			// Temporary - replace with proper columnOut code.
 			s_columnOut[offset] = c;
 		}
 	}
