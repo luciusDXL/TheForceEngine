@@ -394,33 +394,31 @@ namespace RClassicFlat
 		}
 	}
 
+	// TODO: Spot check against DOS code.
 	void flat_drawFloor(RSector* sector, FlatEdges* edges, s32 count)
 	{
-		return;
-		
-		// This code hasn't been verified yet, just seeing if it works.
 		s32 textureOffsetU = s_cameraPosX - sector->floorOffsetX;
 		s32 textureOffsetV = sector->floorOffsetZ - s_cameraPosZ;
 
-		s32 relFloor = sector->floorHeight - s_eyeHeight;
-		s32 scaledRelFloor = mul16(relFloor, s_focalLength);
+		s32 relFloor          = sector->floorHeight - s_eyeHeight;
+		s32 scaledRelFloor    = mul16(relFloor, s_focalLength);
 		s32 cosScaledRelFloor = mul16(scaledRelFloor, s_cosYaw);
-		s32 negSinRelFloor = -mul16(relFloor, s_sinYaw);
+		s32 negSinRelFloor    =-mul16(relFloor, s_sinYaw);
 		s32 sinScaledRelFloor = mul16(scaledRelFloor, s_sinYaw);
-		s32 negCosRelFloor = -mul16(relFloor, s_cosYaw);
+		s32 negCosRelFloor    =-mul16(relFloor, s_cosYaw);
 
 		TextureFrame* floorTex = sector->floorTex;
-		s_ftexHeight = floorTex->height;
-		s_ftexWidthMask = floorTex->width - 1;
+		s_ftexHeight     = floorTex->height;
+		s_ftexWidthMask  = floorTex->width - 1;
 		s_ftexHeightMask = floorTex->height - 1;
 		s_ftexHeightLog2 = floorTex->logSizeY;
-		s_ftexImage = floorTex->image;
-		s_ftexDataEnd = floorTex->width * floorTex->height - 1;
+		s_ftexImage      = floorTex->image;
+		s_ftexDataEnd    = floorTex->width * floorTex->height - 1;
 
 		for (s32 y = s_wallMinFloorY; y <= s_windowMaxY; y++)
 		{
 			s32 x = s_windowMinX;
-			s32 colOffset = y * s_width;
+			s32 yOffset = y * s_width;
 			// TODO: setup y shear
 			s32 yShear = 0; // s_heightInPixelsConst - s_heightInPixels;
 			s32 yRcp = s_rcp_yMinusHalfHeight[yShear + y];
@@ -428,8 +426,7 @@ namespace RClassicFlat
 
 			s32 left = 0;
 			s32 right = 0;
-			s32 i = 0;
-			while (i < count)
+			for (s32 i = 0; i < count;)
 			{
 				s32 winMaxX = s_windowMaxX;
 
@@ -439,14 +436,14 @@ namespace RClassicFlat
 				while (i < count && hasLeft == 0)
 				{
 					FlatEdges* edge = &edges[i];
-					if (y < edge->yPixel_F0)	// Y is above the current edge, so start at left = x
+					if (y >= edge->yPixel_F0)	// Y is above the current edge, so start at left = x
 					{
 						left = x;
 						i++;
 						hasLeft = -1;
 						x = edge->x1 + 1;
 					}
-					else if (y >= edge->yPixel_F1)	// Y is inside the current edge, so step to the end (left not set yet).
+					else if (y < edge->yPixel_F1)	// Y is inside the current edge, so step to the end (left not set yet).
 					{
 						x = edge->x1 + 1;
 						i++;
@@ -456,42 +453,25 @@ namespace RClassicFlat
 							left = x;
 						}
 					}
-					else  // we have to find the left intersection.
+					else if (edge->dyFloor_dx < 0)  // find the left intersection.
 					{
-						s32 dydxFloor = edge->dyFloor_dx;
-						if (dydxFloor != 0)
+						x = edge->x0;
+						s32 ey = s_columnBot[x];
+						while (x < winMaxX && y < ey)
 						{
-							s32 ey;
-							if (dydxFloor > 0)
-							{
-								x = edge->x0;
-								ey = s_columnBot[x];
-								while (x < winMaxX && y > ey)
-								{
-									x++;
-									ey = s_columnBot[x];
-								};
-							}
-							else  // dydxFloor < 0
-							{
-								x = edge->x0;
-								ey = s_columnBot[x];
-								while (x < winMaxX && y >= ey)//ey >= y)
-								{
-									x++;
-									ey = s_columnBot[x];
-								};
-							}
-							left = x;
-							x = edges[i].x1 + 1;
-							hasLeft = -1;
-							i++;
-						}
-						else
-						{
-							left = x;
-							hasLeft = -1;
-						}
+							x++;
+							ey = s_columnBot[x];
+						};
+
+						left = x;
+						x = edge->x1 + 1;
+						hasLeft = -1;
+						i++;
+					}
+					else
+					{
+						left = x;
+						hasLeft = -1;
 					}
 				}  // while (i < count && hasLeft == 0)
 
@@ -501,9 +481,9 @@ namespace RClassicFlat
 					while (i < count && hasRight == 0)
 					{
 						FlatEdges* edge = &edges[i];
-						if (y < edge->yPixel_F0)		// Y is above the current edge, so move on to the next edge.
+						if (y >= edge->yPixel_F0)		// Y is above the current edge, so move on to the next edge.
 						{
-							x = edge->x1 + 1;	//
+							x = edge->x1 + 1;
 							i++;
 							if (i >= count)
 							{
@@ -511,16 +491,16 @@ namespace RClassicFlat
 								hasRight = -1;
 							}
 						}
-						else if (y >= edge->yPixel_F1)	// Y is below the current edge so it must be the end.
+						else if (y < edge->yPixel_F1)	// Y is below the current edge so it must be the end.
 						{
-							right = x;
+							right = x - 1;
 							x = edge->x1 + 1;
 							i++;
 							hasRight = -1;
 						}
 						else
 						{
-							if (edge->dyFloor_dx >= 0)
+							if (edge->dyFloor_dx <= 0)
 							{
 								hasRight = -1;
 								right = x;
@@ -530,14 +510,14 @@ namespace RClassicFlat
 							{
 								x = edge->x0;
 								s32 ey = s_columnBot[x];
-								while (x < winMaxX && ey >= y)
+								while (x < winMaxX && ey <= y)
 								{
 									x++;
 									ey = s_columnBot[x];
 								}
-								i++;
 								right = x;
-								x = edges[i].x1 + 1;
+								x = edge->x1 + 1;
+								i++;
 								hasRight = -1;
 								break;
 							}
@@ -554,15 +534,16 @@ namespace RClassicFlat
 				s_scanlineWidth = right - left + 1;
 				if (s_scanlineWidth > 0)
 				{
-					assert(left >= 0 && left + s_scanlineWidth <= 320);
-					assert(y >= 0 && y < 200);
+					assert(left >= 0 && left + s_scanlineWidth <= s_width);
+					assert(y >= 0 && y < s_height);
 					s_scanlineX0 = left;
-					s_scanlineOut = &s_display[left + colOffset];
-					s32 rightFixed = (right - s_screenXMid) << 16;
-					s32 v0 = mul16(cosScaledRelFloor - mul16(negSinRelFloor, rightFixed), yRcp);
+					s_scanlineOut = &s_display[left + yOffset];
+					s32 rightClip = (right - s_screenXMid) << 16;
+
+					s32 v0 = mul16(cosScaledRelFloor - mul16(negSinRelFloor, rightClip), yRcp);
 					s_scanlineV0 = (v0 - textureOffsetV) * 8;
 
-					s32 u0 = mul16(sinScaledRelFloor + mul16(negCosRelFloor, rightFixed), yRcp);
+					s32 u0 = mul16(sinScaledRelFloor + mul16(negCosRelFloor, rightClip), yRcp);
 					s_scanlineU0 = (u0 - textureOffsetU) * 8;
 
 					s_scanline_dVdX = mul16(negSinRelFloor, yRcp) * 8;
