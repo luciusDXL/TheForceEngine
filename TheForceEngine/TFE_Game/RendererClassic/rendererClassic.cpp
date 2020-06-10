@@ -180,10 +180,10 @@ namespace RendererClassic
 		out->flags2 = sector->flags[1];
 		out->flags3 = sector->flags[2];
 
-		out->floorOffsetX = mul16(intToFixed16(8), s32(sector->floorTexture.offsetX * 65536.0f));
-		out->floorOffsetZ = mul16(intToFixed16(8), s32(sector->floorTexture.offsetY * 65536.0f));
-		out->ceilOffsetX  = mul16(intToFixed16(8), s32(sector->ceilTexture.offsetX  * 65536.0f));
-		out->ceilOffsetZ  = mul16(intToFixed16(8), s32(sector->ceilTexture.offsetY  * 65536.0f));
+		out->floorOffsetX = s32(sector->floorTexture.offsetX * 65536.0f);
+		out->floorOffsetZ = s32(sector->floorTexture.offsetY * 65536.0f);
+		out->ceilOffsetX  = s32(sector->ceilTexture.offsetX  * 65536.0f);
+		out->ceilOffsetZ  = s32(sector->ceilTexture.offsetY  * 65536.0f);
 
 		for (s32 v = 0; v < out->vertexCount; v++)
 		{

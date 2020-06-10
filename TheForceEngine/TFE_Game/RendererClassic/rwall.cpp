@@ -870,7 +870,11 @@ namespace RClassicWall
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
-			s32 xView = div16(numerator, s_column_Y_Over_X[x] - wallSegment->slope);
+			s32 den = s_column_Y_Over_X[x] - wallSegment->slope;
+			// Avoid divide by zero.
+			if (den == 0) { den = 1; }
+
+			s32 xView = div16(numerator, den);
 			// Use the saved x0View to get dx in viewspace.
 			s32 dxView = xView - wallSegment->x0View;
 			// avoid recalculating for u coordinate computation.
@@ -883,7 +887,11 @@ namespace RClassicWall
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			z = div16(numerator, s_column_X_Over_Y[x] - wallSegment->slope);
+			s32 den = s_column_X_Over_Y[x] - wallSegment->slope;
+			// Avoid divide by 0.
+			if (den == 0) { den = 1; }
+
+			z = div16(numerator, den);
 		}
 
 		return z;
