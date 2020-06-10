@@ -131,7 +131,7 @@ namespace RClassicFlat
 		}
 		if (y < s_yMin)
 		{
-			u8* top = &s_windowTop[x0];
+			s32* top = &s_windowTop[x0];
 			while (*top > y && x1 >= x0)
 			{
 				x0++;
@@ -140,7 +140,7 @@ namespace RClassicFlat
 			*left = x0;
 			if (x0 <= x1)
 			{
-				u8* top = &s_windowTop[x0];
+				s32* top = &s_windowTop[x0];
 				while (*top > y && x1 >= x0)
 				{
 					x1--;
@@ -151,7 +151,7 @@ namespace RClassicFlat
 		}
 		else if (y > s_yMax)
 		{
-			u8* bot = &s_windowBot[x0];
+			s32* bot = &s_windowBot[x0];
 			while (*bot < y && x0 <= x1)
 			{
 				x0++;
@@ -232,7 +232,7 @@ namespace RClassicFlat
 		s32 textureOffsetV = sector->ceilOffsetZ - s_cameraPosZ;
 
 		s32 relCeil          =  sector->ceilingHeight - s_eyeHeight;
-		s32 scaledRelCeil    =  mul16(relCeil, s_focalLength);
+		s32 scaledRelCeil    =  mul16(relCeil, s_focalLenAspect);
 		s32 cosScaledRelCeil =  mul16(scaledRelCeil, s_cosYaw);
 		s32 negSinRelCeil    = -mul16(relCeil, s_sinYaw);
 		s32 sinScaledRelCeil =  mul16(scaledRelCeil, s_sinYaw);
@@ -380,7 +380,7 @@ namespace RClassicFlat
 					s_scanline_dVdX =  mul16(negSinRelCeil, yRcp) * 8;
 					s_scanline_dUdX = -mul16(negCosRelCeil, yRcp) * 8;
 					s_scanlineLight =  computeLighting(z, 0);
-
+					
 					if (s_scanlineLight)
 					{
 						drawScanline();
@@ -401,7 +401,7 @@ namespace RClassicFlat
 		s32 textureOffsetV = sector->floorOffsetZ - s_cameraPosZ;
 
 		s32 relFloor          = sector->floorHeight - s_eyeHeight;
-		s32 scaledRelFloor    = mul16(relFloor, s_focalLength);
+		s32 scaledRelFloor    = mul16(relFloor, s_focalLenAspect);
 
 		s32 cosScaledRelFloor = mul16(scaledRelFloor, s_cosYaw);
 		s32 negSinRelFloor    =-mul16(relFloor, s_sinYaw);

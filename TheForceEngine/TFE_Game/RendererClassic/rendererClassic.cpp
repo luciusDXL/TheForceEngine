@@ -49,16 +49,26 @@ namespace RendererClassic
 	{
 		if (s_init) { return; }
 		s_init = true;
+		s_maxWallCount = 0xffff;
+		CVAR_INT(s_maxWallCount, "d_maxWallCount", 0, "Maximum wall count for a given sector.");
+	}
 
-		// Build tables.
-		// Setup resolution, projection parameters, etc.
+	void changeResolution(s32 width, s32 height)
+	{
+		if (width == s_width && height == s_height) { return; }
 
-		s_width  = 320;
-		s_height = 200;
-		s_halfWidth  = intToFixed16(s_width >> 1);
+		s_width = width;
+		s_height = height;
+		s_halfWidth = intToFixed16(s_width >> 1);
 		s_halfHeight = intToFixed16(s_height >> 1);
 		s_focalLength = s_halfWidth;
+		s_focalLenAspect = s_focalLength;
 		s_screenXMid = s_width >> 1;
+
+		if (width * 10 / height != 16)
+		{
+			s_focalLenAspect *= 1.2;
+		}
 
 		s_minScreenX = 0;
 		s_maxScreenX = s_width - 1;
@@ -67,10 +77,10 @@ namespace RendererClassic
 		s_minSegZ = 0;
 
 		s_depth1d = (s32*)realloc(s_depth1d, s_width * sizeof(s32));
-		s_columnTop = (s32*)realloc(s_columnTop, s_width*4);
-		s_columnBot = (s32*)realloc(s_columnBot, s_width*4);
-		s_windowTop = (u8*)realloc(s_windowTop, s_width);
-		s_windowBot = (u8*)realloc(s_windowBot, s_width);
+		s_columnTop = (s32*)realloc(s_columnTop, s_width * 4);
+		s_columnBot = (s32*)realloc(s_columnBot, s_width * 4);
+		s_windowTop = (s32*)realloc(s_windowTop, s_width * 4);
+		s_windowBot = (s32*)realloc(s_windowBot, s_width * 4);
 
 		// Build tables
 		s_column_Y_Over_X = (s32*)realloc(s_column_Y_Over_X, s_width * sizeof(s32));
@@ -89,14 +99,13 @@ namespace RendererClassic
 			s32 yMinusHalf = y - halfHeight;
 			s_rcp_yMinusHalfHeight[y] = (yMinusHalf != 0) ? 65536 / yMinusHalf : 65536;
 		}
-
-		s_maxWallCount = 0xffff;
-		CVAR_INT(s_maxWallCount, "d_maxWallCount", 0, "Maximum wall count for a given sector.");
 	}
 	
-	void setupLevel()
+	void setupLevel(s32 width, s32 height)
 	{
 		init();
+		changeResolution(width, height);
+
 		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
 		s_sectorId = -1;
 

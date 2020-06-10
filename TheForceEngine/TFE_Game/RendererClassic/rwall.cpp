@@ -678,11 +678,11 @@ namespace RClassicWall
 		s32 z0 = wallSegment->z0;
 		s32 z1 = wallSegment->z1;
 
-		s32 y0C = div16(mul16(ceilEyeRel,  s_focalLength), z0) + s_halfHeight;
-		s32 y0F = div16(mul16(floorEyeRel, s_focalLength), z0) + s_halfHeight;
+		s32 y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z0) + s_halfHeight;
+		s32 y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
 
-		s32 y1C = div16(mul16(ceilEyeRel,  s_focalLength), z1) + s_halfHeight;
-		s32 y1F = div16(mul16(floorEyeRel, s_focalLength), z1) + s_halfHeight;
+		s32 y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z1) + s_halfHeight;
+		s32 y1F = div16(mul16(floorEyeRel, s_focalLenAspect), z1) + s_halfHeight;
 
 		s32 y0C_pixel = round16(y0C);
 		s32 y1C_pixel = round16(y1C);

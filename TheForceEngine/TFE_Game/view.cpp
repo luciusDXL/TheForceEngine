@@ -164,7 +164,7 @@ namespace TFE_View
 		else
 		{
 			s_enableClassic = true;
-			RendererClassic::setupLevel();
+			RendererClassic::setupLevel(s_width, s_height);
 		}
 	}
 
@@ -192,6 +192,8 @@ namespace TFE_View
 			s_upperHeightMask = new s16[MAX_MASK_HEIGHT];	// 64Kb
 			s_lowerHeightMask = new s16[MAX_MASK_HEIGHT];	// 64Kb
 		}
+
+		RendererClassic::changeResolution(w, h);
 	}
 		
 	bool init(const LevelData* level, TFE_Renderer* renderer, s32 w, s32 h, bool enableViewStats)

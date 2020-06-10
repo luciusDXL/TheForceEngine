@@ -19,6 +19,7 @@ namespace RendererClassic
 
 	// Projection
 	extern s32  s_focalLength;
+	extern s32  s_focalLenAspect;
 	extern s32  s_eyeHeight;
 	extern s32* s_depth1d;
 
@@ -46,8 +47,8 @@ namespace RendererClassic
 	// Column Heights
 	extern s32* s_columnTop;
 	extern s32* s_columnBot;
-	extern u8* s_windowTop;
-	extern u8* s_windowBot;
+	extern s32* s_windowTop;
+	extern s32* s_windowBot;
 	extern s32* s_column_Y_Over_X;
 	extern s32* s_column_X_Over_Y;
 	

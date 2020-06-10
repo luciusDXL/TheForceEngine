@@ -4,8 +4,8 @@
 namespace RendererClassic
 {
 	// Resolution
-	s32 s_width;
-	s32 s_height;
+	s32 s_width = 0;
+	s32 s_height = 0;
 	s32 s_halfWidth;
 	s32 s_halfHeight;
 	s32 s_minScreenY;
@@ -14,6 +14,7 @@ namespace RendererClassic
 
 	// Projection
 	s32 s_focalLength;
+	s32 s_focalLenAspect;
 	s32 s_eyeHeight;
 	s32* s_depth1d = nullptr;
 
@@ -41,8 +42,8 @@ namespace RendererClassic
 	// Column Heights
 	s32* s_columnTop = nullptr;
 	s32* s_columnBot = nullptr;
-	u8* s_windowTop = nullptr;
-	u8* s_windowBot = nullptr;
+	s32* s_windowTop = nullptr;
+	s32* s_windowBot = nullptr;
 	s32* s_column_Y_Over_X = nullptr;
 	s32* s_column_X_Over_Y = nullptr;
 
