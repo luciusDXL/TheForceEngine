@@ -57,6 +57,8 @@ namespace RendererClassic
 	extern RWallSegment s_wallSegListSrc[MAX_SEG];
 
 	extern s32 s_nextWall;
+	extern s32 s_curWallSeg;
+	extern s32 s_drawFrame;
 
 	// Flats
 	extern s32 s_flatCount;

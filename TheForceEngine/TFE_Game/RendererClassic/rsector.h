@@ -3,7 +3,12 @@
 // Sector
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_System/memoryPool.h>
 #include "rmath.h"
+
+struct Sector;
+struct SectorWall;
+struct Texture;
 
 struct RWall;
 struct TextureFrame;
@@ -37,3 +42,16 @@ struct RSector
 	u32 flags2;
 	u32 flags3;
 };
+
+namespace RClassicSector
+{
+	void sector_setMemoryPool(MemoryPool* memPool);
+	
+	void sector_allocate(u32 count);
+	RSector* sector_get();
+	
+	void sector_setCurrent(RSector* sector);
+	void sector_update(u32 sectorId);
+	void sector_draw();
+	void sector_copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures);
+}

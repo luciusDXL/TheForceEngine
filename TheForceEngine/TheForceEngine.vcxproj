@@ -420,6 +420,7 @@
     <ClCompile Include="TFE_Game\RendererClassic\rendererClassic.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rflat.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rlighting.cpp" />
+    <ClCompile Include="TFE_Game\RendererClassic\rsector.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rwall.cpp" />
     <ClCompile Include="TFE_Game\view.cpp" />
     <ClCompile Include="TFE_InfSystem\infSystem.cpp" />

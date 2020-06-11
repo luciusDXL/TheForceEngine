@@ -855,6 +855,9 @@
     <ClCompile Include="TFE_Game\RendererClassic\rlighting.cpp">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rsector.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
