@@ -54,4 +54,7 @@ namespace RClassicSector
 	void sector_update(u32 sectorId);
 	void sector_draw();
 	void sector_copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures);
+
+	// Not for the original code, to be replaced.
+	void sector_setupWallDrawFlags(RSector* sector);
 }

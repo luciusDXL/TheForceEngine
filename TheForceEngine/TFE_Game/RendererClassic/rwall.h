@@ -98,5 +98,10 @@ namespace RClassicWall
 {
 	void wall_process(RWall* wall);
 	s32  wall_mergeSort(RWallSegment* segOutList, s32 availSpace, s32 start, s32 count);
+
 	void wall_drawSolid(RWallSegment* wallSegment);
+	void wall_drawMask(RWallSegment* wallSegment);
+	void wall_drawBottom(RWallSegment* wallSegment);
+	void wall_drawTop(RWallSegment* wallSegment);
+	void wall_drawTopAndBottom(RWallSegment* wallSegment);
 }

@@ -154,10 +154,10 @@ namespace RendererClassic
 
 		for (s32 i = 0; i < s_width; i++)
 		{
-			s_columnTop[i] = 1;
-			s_columnBot[i] = s_height - 1;
-			s_windowTop[i] = 1;
-			s_windowBot[i] = s_height - 1;
+			s_columnTop[i] = s_minScreenY;
+			s_columnBot[i] = s_maxScreenY;
+			s_windowTop[i] = s_minScreenY;
+			s_windowBot[i] = s_maxScreenY;
 		}
 						
 		// Draws a single sector.

@@ -1423,8 +1423,8 @@ namespace TFE_View
 			const TextureFrame* floorFrame = getTextureFrame(curSector->floorTexture.texId, 0);
 			
 			// Mid Texturing.
-			s32 midDim[2], botDim[2], topDim[2];
-			f32 midV[2], botV[2], topV[2];
+			s32 midDim[2] = { 0 }, botDim[2], topDim[2];
+			f32 midV[2] = { 0 }, botV[2], topV[2];
 			if (curWall->adjoin < 0 || curWall->adjoin == drawInfo.sectorId)
 			{
 				midDim[0] = midFrame ? midFrame->width : 0;

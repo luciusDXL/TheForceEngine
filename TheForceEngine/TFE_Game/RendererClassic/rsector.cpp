@@ -97,6 +97,9 @@ namespace RClassicSector
 			s_curSector->startWall = startWall;
 			s_curSector->drawWallCnt = drawWallCount;
 			s_curSector->prevDrawFrame = s_drawFrame;
+
+			// Setup wall flags not from the original code, still to be replaced.
+			sector_setupWallDrawFlags(s_curSector);
 		}
 
 		RWallSegment* wallSegment = &s_wallSegListDst[s_curWallSeg];
@@ -113,9 +116,7 @@ namespace RClassicSector
 		for (s32 i = 0; i < drawSegCnt; i++, wallSegment++)
 		{
 			RWall* srcWall = wallSegment->srcWall;
-			//RSector* nextSector = srcWall->sector;
-			// TODO: port wallSegment render flags and handle different configurations.
-			RSector* nextSector = nullptr;
+			RSector* nextSector = srcWall->nextSector;
 
 			// This will always be true for now.
 			if (!nextSector)
@@ -124,7 +125,59 @@ namespace RClassicSector
 			}
 			else
 			{
-				// ...
+				const s32 df = srcWall->drawFlags;
+				if (df <= WDF_MIDDLE)
+				{
+					if (df == WDF_MIDDLE || (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
+					{
+						wall_drawMask(wallSegment);
+					}
+					else
+					{
+						wall_drawBottom(wallSegment);
+					}
+				}
+				else if (df == WDF_TOP)
+				{
+					if (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ)
+					{
+						wall_drawMask(wallSegment);
+					}
+					else
+					{
+						wall_drawTop(wallSegment);
+					}
+				}
+				else if (df == WDF_TOP_AND_BOT)
+				{
+					if ((nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
+					{
+						wall_drawMask(wallSegment);
+					}
+					else if (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ)
+					{
+						wall_drawBottom(wallSegment);
+					}
+					else if (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ)
+					{
+						wall_drawTop(wallSegment);
+					}
+					else
+					{
+						wall_drawTopAndBottom(wallSegment);
+					}
+				}
+				else // WDF_BOT
+				{
+					if (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ)
+					{
+						wall_drawMask(wallSegment);
+					}
+					else
+					{
+						wall_drawBottom(wallSegment);
+					}
+				}
 			}
 		}
 
@@ -148,6 +201,40 @@ namespace RClassicSector
 		else
 		{
 			flat_drawFloor(s_curSector, lowerFlatEdge, newFlatCount);
+		}
+	}
+
+	// Setup wall flags not from the original code, still to be replaced.
+	void sector_setupWallDrawFlags(RSector* sector)
+	{
+		RWall* wall = sector->walls;
+		const f32 midHeight = mul16(intToFixed16(8), sector->floorHeight - sector->ceilingHeight);
+		for (s32 w = 0; w < sector->wallCount; w++, wall++)
+		{
+			const RSector* next = wall->nextSector;
+			wall->drawFlags = WDF_MIDDLE;
+			if (!next)
+			{
+				wall->midTexelHeight = midHeight;
+				continue;
+			}
+
+			if (next->floorHeight < sector->floorHeight && next->ceilingHeight > sector->ceilingHeight)
+			{
+				wall->drawFlags = WDF_TOP_AND_BOT;
+				wall->botTexelHeight = mul16(intToFixed16(8), sector->floorHeight - next->floorHeight);
+				wall->topTexelHeight = mul16(intToFixed16(8), next->ceilingHeight - sector->ceilingHeight);
+			}
+			else if (next->floorHeight < sector->floorHeight)
+			{
+				wall->drawFlags = WDF_BOT;
+				wall->botTexelHeight = mul16(intToFixed16(8), sector->floorHeight - next->floorHeight);
+			}
+			else if (next->ceilingHeight > sector->ceilingHeight)
+			{
+				wall->drawFlags = WDF_TOP;
+				wall->topTexelHeight = mul16(intToFixed16(8), next->ceilingHeight - sector->ceilingHeight);
+			}
 		}
 	}
 
@@ -178,7 +265,7 @@ namespace RClassicSector
 			out->verticesVS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
 			out->walls = (RWall*)s_memPool->allocate(sizeof(RWall) * out->wallCount);
 		}
-
+		
 		for (s32 v = 0; v < out->vertexCount; v++)
 		{
 			out->verticesWS[v].x = s32(vertices[v].x * 65536.0f);
@@ -221,6 +308,7 @@ namespace RClassicSector
 			wall->botVOffset = mul16(intToFixed16(8), s32(walls[w].bot.offsetY * 65536.0f));
 
 			wall->drawFrame = 0;
+			wall->drawFlags = WDF_MIDDLE;
 
 			wall->flags1 = walls[w].flags[0];
 			wall->flags2 = walls[w].flags[1];

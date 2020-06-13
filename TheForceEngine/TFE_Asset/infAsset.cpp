@@ -20,6 +20,7 @@ namespace TFE_InfAsset
 	#define MAX_CLIENTS 32
 	#define MAX_STOPS 1024
 	#define MAX_FUNC 1024
+	#define MAX_CLASSES	64
 
 	#define STOP_FUNC_COUNT(x) ((x) << 8u)
 	#define STOP_VALUE0_TYPE(x) (x)
@@ -134,6 +135,7 @@ namespace TFE_InfAsset
 				//copy s_data.item[i] -> s_data.item[itemId]
 				u32 oldCount = s_data.item[index].classCount;
 				u32 newCount = s_data.item[index].classCount + s_data.item[i].classCount;
+				assert(oldCount <= MAX_CLASSES && newCount <= MAX_CLASSES);
 				// ptr, oldsize, newsize
 				s_data.item[index].classData = (InfClassData*)s_memoryPool.reallocate(s_data.item[index].classData, oldCount * sizeof(InfClassData), newCount * sizeof(InfClassData));
 				memcpy(&s_data.item[index].classData[oldCount], s_data.item[i].classData, sizeof(InfClassData) * s_data.item[i].classCount);
@@ -615,7 +617,7 @@ namespace TFE_InfAsset
 		bool secondPass = false;
 
 		// Work area so classes can be allocated together.
-		InfClassData classes[64];
+		InfClassData classes[MAX_CLASSES];
 		u32 classCount = 0;
 
 		InfStop stops[MAX_STOPS];
@@ -819,7 +821,8 @@ namespace TFE_InfAsset
 				curClass = &classes[classCount];
 				memset(curClass, 0, sizeof(InfClass));
 				classCount++;
-
+				assert(classCount <= MAX_CLASSES);
+				
 				curClass->iclass = getInfClass(tokens[1].c_str());
 				curClass->isubclass = SUBCLASS_NONE;
 				curClass->stateIndex = 0;
