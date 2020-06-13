@@ -203,7 +203,9 @@ namespace LevelEditor
 	static bool s_drawStarted = false;
 	static Vec3f s_drawPlaneNrm;
 	static Vec3f s_drawPlaneOrg;
+	static Vec2f s_drawBaseVtx[2];
 	static bool s_moveVertex = false;
+	static bool s_moveWall = false;
 		
 	// Sector Rendering
 	static SectorDrawMode s_sectorDrawMode = SDM_WIREFRAME;
@@ -511,8 +513,19 @@ namespace LevelEditor
 		{
 			s_selectedWallSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
 			s_selectedWall = LevelEditorData::findClosestWall(&s_selectedWallSector, s_layerIndex + s_layerMin, &worldPos, s_zoomVisual * 32.0f);
+			if (!s_moveWall)
+			{
+				s_moveWall = true;
+				// get the plane...
+				s_drawPlaneNrm = { 0.0f, 1.0f, 0.0f };
+				s_drawPlaneOrg = s_cursor3d;
+
+				EditorWall* wall = &s_levelData->sectors[s_selectedWallSector].walls[s_selectedWall];
+				s_drawBaseVtx[0] = s_levelData->sectors[s_selectedWallSector].vertices[wall->i0];
+				s_drawBaseVtx[1] = s_levelData->sectors[s_selectedWallSector].vertices[wall->i1];
+			}
 		}
-		else if (s_levelData && s_editMode == LEDIT_WALL)
+		else if (s_levelData && s_editMode == LEDIT_WALL && !s_moveWall)
 		{
 			s_hoveredWallSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
 			s_hoveredWall = LevelEditorData::findClosestWall(&s_hoveredWallSector, s_layerIndex + s_layerMin, &worldPos, s_zoomVisual * 32.0f);
@@ -694,6 +707,164 @@ namespace LevelEditor
 		return fabsf(a.x - b.x) < c_vertexMerge && fabsf(a.z - b.z) < c_vertexMerge;
 	}
 
+	void snapToGrid(Vec3f* pos, bool view2d)
+	{
+		// Holding alt disables snap to grid.
+		if (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT))
+		{
+			return;
+		}
+
+		if (view2d)
+		{
+			f32 gridScale = s_gridSize / s_subGridSize;
+
+			Vec2f posGridSpace = { pos->x / gridScale, pos->z / gridScale };
+			pos->x = floorf(posGridSpace.x + 0.5f) * gridScale;
+			pos->z = floorf(posGridSpace.z + 0.5f) * gridScale;
+		}
+		else
+		{
+			Vec2f posGridSpace = { pos->x, pos->z };
+			pos->x = floorf(posGridSpace.x + 0.5f);
+			pos->z = floorf(posGridSpace.z + 0.5f);
+		}
+	}
+
+	// Given a ray (origin + dir); snap the distance to the grid.
+	// i.e. given the previous and next intersection points, find the closest.
+	// TODO: Change to find where segment intersects with grid points while moving along the direction.
+	f32 snapToGrid(const Vec3f* pos, const Vec3f* dir, f32 dist, bool view2d)
+	{
+		// Holding alt disables snap to grid.
+		if (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT))
+		{
+			return dist;
+		}
+
+		f32 gridScale;
+		if (view2d)
+		{
+			gridScale = s_gridSize / s_subGridSize;
+		}
+		else
+		{
+			gridScale = 1.0f;
+		}
+
+		// get nearest X intersection.
+		f32 dX = FLT_MAX;
+		f32 dZ = FLT_MAX;
+
+		if (fabsf(dir->x) > FLT_EPSILON)
+		{
+			f32 curX = pos->x + dist * dir->x;
+			f32 gridSpaceX = curX / gridScale;
+			f32 snapX = floorf(gridSpaceX + 0.5f) * gridScale;
+
+			dX = (snapX - pos->x) / dir->x;
+		}
+		if (fabsf(dir->z) > FLT_EPSILON)
+		{
+			f32 curZ = pos->z + dist * dir->z;
+			f32 gridSpaceZ = curZ / gridScale;
+			f32 snapZ = floorf(gridSpaceZ + 0.5f) * gridScale;
+
+			dZ = (snapZ - pos->z) / dir->z;
+		}
+
+		if (dX < FLT_MAX && fabsf(dX - dist) < fabsf(dZ - dist))
+		{
+			return dX;
+		}
+		else if (dZ < FLT_MAX)
+		{
+			return dZ;
+		}
+		return dist;
+	}
+
+	void moveVertices(s32 sectorId, s32 wallIndex, const Vec2f& vtxPos, const Vec2f& newPos)
+	{
+		EditorSector* sectorNext = &s_levelData->sectors[sectorId];
+		sectorNext->needsUpdate = true;
+
+		EditorWall& wall = sectorNext->walls[wallIndex];
+		if (vec2Equals(vtxPos, sectorNext->vertices[wall.i0]))
+		{
+			sectorNext->vertices[wall.i0] = newPos;
+		}
+		else if (vec2Equals(vtxPos, sectorNext->vertices[wall.i1]))
+		{
+			sectorNext->vertices[wall.i1] = newPos;
+		}
+	}
+
+	void handleWallMove(bool view2d)
+	{
+		if (s_selectedWall < 0)
+		{
+			s_moveWall = false;
+			return;
+		}
+
+		EditorSector* sector = s_levelData->sectors.data() + s_selectedWallSector;
+		const EditorWall* wall = sector->walls.data() + s_selectedWall;
+		Vec2f* vtx = sector->vertices.data();
+		sector->needsUpdate = true;
+
+		// Get the wall normal.
+		const s32 i0 = wall->i0;
+		const s32 i1 = wall->i1;
+		Vec2f* v0 = &vtx[i0];
+		Vec2f* v1 = &vtx[i1];
+
+		Vec3f hit;
+		if (view2d)
+		{
+			hit = s_cursor3d;
+		}
+		else
+		{
+			Vec3f dir = { s_cursor3d.x - s_camera.pos.x, s_cursor3d.y - s_camera.pos.y, s_cursor3d.z - s_camera.pos.z };
+			dir = TFE_Math::normalize(&dir);
+			if (!rayPlaneHit(s_camera.pos, dir, &hit)) { return; }
+		}
+		
+		Vec3f normal;
+		normal.x = -(v1->z - v0->z);
+		normal.y =   0.0f;
+		normal.z =   v1->x - v0->x;
+		normal = TFE_Math::normalize(&normal);
+
+		Vec3f offset = { hit.x - s_drawPlaneOrg.x, hit.y - s_drawPlaneOrg.y, hit.z - s_drawPlaneOrg.z };
+		f32   dist   = TFE_Math::dot(&offset, &normal);
+		dist = snapToGrid(&s_drawPlaneOrg, &normal, dist, view2d);
+
+		Vec2f vtx0 = *v0;
+		Vec2f vtx1 = *v1;
+
+		// now compute the movement along the normal direction.
+		*v0 = { s_drawBaseVtx[0].x + normal.x * dist, s_drawBaseVtx[0].z + normal.z * dist };
+		*v1 = { s_drawBaseVtx[1].x + normal.x * dist, s_drawBaseVtx[1].z + normal.z * dist };
+				
+		// Next handle any sectors across adjoins that have been moved.
+		const size_t wallCount = sector->walls.size();
+		for (size_t w = 0; w < wallCount; w++)
+		{
+			if ((sector->walls[w].i0 == i0 || sector->walls[w].i1 == i0) && sector->walls[w].adjoin >= 0)
+			{
+				moveVertices(sector->walls[w].adjoin, sector->walls[w].mirror, vtx0, *v0);
+			}
+			if ((sector->walls[w].i0 == i1 || sector->walls[w].i1 == i1) && sector->walls[w].adjoin >= 0)
+			{
+				moveVertices(sector->walls[w].adjoin, sector->walls[w].mirror, vtx1, *v1);
+			}
+		}
+
+		LevelEditorData::updateSectors();
+	}
+
 	void handleVertexMove(bool view2d)
 	{
 		if (s_selectedVertex < 0)
@@ -714,6 +885,7 @@ namespace LevelEditor
 			dir = TFE_Math::normalize(&dir);
 			if (!rayPlaneHit(s_camera.pos, dir, &hit)) { return; }
 		}
+		snapToGrid(&hit, view2d);
 
 		EditorSector& sector = s_levelData->sectors[s_selectedVertexSector];
 		sector.needsUpdate = true;
@@ -727,19 +899,7 @@ namespace LevelEditor
 		{
 			if ((sector.walls[w].i0 == s_selectedVertex || sector.walls[w].i1 == s_selectedVertex) && sector.walls[w].adjoin >= 0)
 			{
-				s32 mirror = sector.walls[w].mirror;
-				EditorSector& sectorNext = s_levelData->sectors[sector.walls[w].adjoin];
-				sectorNext.needsUpdate = true;
-
-				EditorWall& wall = sectorNext.walls[mirror];
-				if (vec2Equals(vtxPos, sectorNext.vertices[wall.i0]))
-				{
-					sectorNext.vertices[wall.i0] = { hit.x, hit.z };
-				}
-				else if (vec2Equals(vtxPos, sectorNext.vertices[wall.i1]))
-				{
-					sectorNext.vertices[wall.i1] = { hit.x, hit.z };
-				}
+				moveVertices(sector.walls[w].adjoin, sector.walls[w].mirror, vtxPos, { hit.x,hit.z });
 			}
 		}
 
@@ -781,8 +941,20 @@ namespace LevelEditor
 						s_selectedWallSector = hitInfo.hitSectorId;
 						s_selectedWall = hitInfo.hitWallId;
 						s_selectWallPart = hitInfo.hitPart;
+
+						if (!s_moveWall)
+						{
+							s_moveWall = true;
+							// get the plane...
+							s_drawPlaneNrm = { 0.0f, 1.0f, 0.0f };
+							s_drawPlaneOrg = s_cursor3d;
+
+							EditorWall* wall = &s_levelData->sectors[s_selectedWallSector].walls[s_selectedWall];
+							s_drawBaseVtx[0] = s_levelData->sectors[s_selectedWallSector].vertices[wall->i0];
+							s_drawBaseVtx[1] = s_levelData->sectors[s_selectedWallSector].vertices[wall->i1];
+						}
 					}
-					else
+					else if (!s_moveWall)
 					{
 						s_hoveredWallSector = hitInfo.hitSectorId;
 						s_hoveredWall = hitInfo.hitWallId;
@@ -978,6 +1150,16 @@ namespace LevelEditor
 		{
 			LevelEditorData::updateSectors();
 			s_moveVertex = false;
+		}
+
+		if (TFE_Input::mouseDown(MBUTTON_LEFT) && s_moveWall && s_editMode == LEDIT_WALL && !relEnabled)
+		{
+			handleWallMove(s_editView == EDIT_VIEW_2D);
+		}
+		else if (s_moveWall)
+		{
+			LevelEditorData::updateSectors();
+			s_moveWall = false;
 		}
 
 		// Set the current grid height to the cursor height.
