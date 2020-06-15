@@ -5,6 +5,7 @@
 #include "modelRendering.h"
 #include "renderCommon.h"
 #include "RendererClassic/rendererClassic.h"
+#include "RendererClassic/fixedPoint.h"
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
@@ -21,6 +22,8 @@
 #include <TFE_FrontEndUI/console.h>
 #include <algorithm>
 #include <assert.h>
+
+using namespace FixedPoint;
 
 namespace TFE_View
 {
@@ -2085,7 +2088,7 @@ namespace TFE_View
 		TFE_RenderCommon::setViewParam(s_rot, cameraPos);
 		TFE_ModelRender::buildClipPlanes(s_pitchOffset);
 
-		RendererClassic::setCamera(s32(s_rot[0]*65536.0f), s32(s_rot[1] * 65536.0f), s32(cameraPos->x * 65536.0f), s32(cameraPos->y * 65536.0f), s32(cameraPos->z * 65536.0f), sectorId);
+		RendererClassic::setCamera(floatToFixed16(s_rot[0]), floatToFixed16(s_rot[1]), floatToFixed16(cameraPos->x), floatToFixed16(cameraPos->y), floatToFixed16(cameraPos->z), sectorId);
 	}
 		
 	void draw(const Vec3f* cameraPos, s32 sectorId)

@@ -55,6 +55,11 @@ namespace FixedPoint
 		return fixed16(x) << fixed16(16);
 	}
 
+	inline fixed16 floatToFixed16(f32 x)
+	{
+		return fixed16(x * 65536.0f);
+	}
+
 	inline s32 fixed16to12(fixed16 x)
 	{
 		return s32(x >> 4);
