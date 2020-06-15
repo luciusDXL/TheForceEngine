@@ -766,7 +766,7 @@ namespace RClassicWall
 			if (s_yPixelCount > 0)
 			{
 				// texture wrapping, assumes texWidth is a power of 2.
-				s32 texelU = (uCoord >> 16) & (texWidth - 1);
+				s32 texelU = floor16(uCoord) & (texWidth - 1);
 				// flip texture coordinate if flag set.
 				if (flipHorz) { texelU = texWidth - texelU - 1; }
 
@@ -1112,7 +1112,7 @@ namespace RClassicWall
 				if (s_yPixelCount > 0)
 				{
 					s32 widthMask = tex->width - 1;
-					s32 texelU = (u >> 16) & widthMask;
+					s32 texelU = floor16(u) & widthMask;
 					if (flipHorz != 0)
 					{
 						texelU = widthMask - texelU;
@@ -1262,7 +1262,7 @@ namespace RClassicWall
 				if (s_yPixelCount > 0)
 				{
 					s32 widthMask = topTex->width - 1;
-					s32 texelU = (u >> 16) & widthMask;
+					s32 texelU = floor16(u) & widthMask;
 					if (flipHorz)
 					{
 						texelU = widthMask - texelU;
@@ -1444,7 +1444,7 @@ namespace RClassicWall
 				if (s_yPixelCount > 0)
 				{
 					s32 widthMask = topTex->width - 1;
-					s32 texelU = (u >> 16) & widthMask;
+					s32 texelU = floor16(u) & widthMask;
 					if (flipHorz)
 					{
 						texelU = widthMask - texelU;
@@ -1547,7 +1547,7 @@ namespace RClassicWall
 					if (s_yPixelCount > 0)
 					{
 						s32 widthMask = botTex->width - 1;
-						s32 texelU = (u >> 16) & widthMask;
+						s32 texelU = floor16(u) & widthMask;
 						if (flipHorz)
 						{
 							texelU = widthMask - texelU;
