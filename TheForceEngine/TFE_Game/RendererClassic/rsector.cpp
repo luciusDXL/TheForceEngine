@@ -243,7 +243,7 @@ namespace RClassicSector
 		out->vertexCount = sector->vtxCount;
 		out->wallCount = sector->wallCount;
 
-		out->ambientFixed = sector->ambient << 16;
+		out->ambientFixed = intToFixed16(sector->ambient);
 		out->floorHeight = fixed16(sector->floorAlt * 65536.0f);
 		out->ceilingHeight = fixed16(sector->ceilAlt * 65536.0f);
 		out->secHeight = fixed16(sector->secAlt * 65536.0f);
@@ -329,7 +329,7 @@ namespace RClassicSector
 		Vec2f* vertices = level->vertices.data() + sector->vtxOffset;
 
 		RSector* out = &s_rsectors[sectorId];
-		out->ambientFixed = sector->ambient << 16;
+		out->ambientFixed = intToFixed16(sector->ambient);
 		out->floorHeight = fixed16(sector->floorAlt * 65536.0f);
 		out->ceilingHeight = fixed16(sector->ceilAlt * 65536.0f);
 		out->secHeight = fixed16(sector->secAlt * 65536.0f);

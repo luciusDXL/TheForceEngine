@@ -74,7 +74,7 @@ namespace RClassicFlat
 	{
 		if (s_flatCount < MAX_SEG && length > 0)
 		{
-			const fixed16 lengthFixed = (length - 1) << 16;
+			const fixed16 lengthFixed = intToFixed16(length - 1);
 
 			fixed16 yCeil1 = yCeil;
 			if (dyCeil_dx != 0)

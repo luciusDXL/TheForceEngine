@@ -698,7 +698,7 @@ namespace RClassicWall
 		// For some reason we only early-out if the ceiling is below the view.
 		if (y0C_pixel > s_windowMaxY && y1C_pixel > s_windowMaxY)
 		{
-			s32 yMax = (s_windowMaxY + 1) << 16;
+			s32 yMax = intToFixed16(s_windowMaxY + 1);
 			//addWallPartScreen(length, x, 0, yMax, 0, yMax);
 
 			for (s32 i = 0; i < length; i++, x++)
@@ -719,7 +719,7 @@ namespace RClassicWall
 			// 1fd683:
 		}
 
-		fixed16 wallDeltaX = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
+		fixed16 wallDeltaX = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 		fixed16 dYdXtop = 0, dYdXbot = 0;
 		if (wallDeltaX != 0)
 		{
@@ -727,7 +727,7 @@ namespace RClassicWall
 			dYdXbot = div16(y1F - y0F, wallDeltaX);
 		}
 
-		fixed16 clippedXDelta = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
+		fixed16 clippedXDelta = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
 		if (clippedXDelta != 0)
 		{
 			y0C += mul16(dYdXtop, clippedXDelta);
@@ -779,7 +779,7 @@ namespace RClassicWall
 				s_vCoordStep = div16(wallHeightTexels, wallHeightPixels);
 
 				// texel offset from the actual fixed point y position and the truncated y position.
-				fixed16 vPixelOffset = y0F - (bot << 16) + HALF_16;
+				fixed16 vPixelOffset = y0F - intToFixed16(bot) + HALF_16;
 
 				// scale the texel offset based on the v coord step.
 				// the result is the sub-texel offset
@@ -836,7 +836,7 @@ namespace RClassicWall
 		fixed16 cProj0, cProj1;
 		if ((flags1 & SEC_FLAGS1_EXTERIOR) && (nextFlags1 & SEC_FLAGS1_EXT_ADJ))  // ceiling
 		{
-			cProj0 = cProj1 = (s_windowMinY << 16);
+			cProj0 = cProj1 = intToFixed16(s_windowMinY);
 		}
 		else
 		{
@@ -851,7 +851,7 @@ namespace RClassicWall
 		{
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
-			flat_addEdges(length, x, 0, (s_windowMaxY + 1) << 16, 0, (s_windowMaxY + 1) << 16);
+			flat_addEdges(length, x, 0, intToFixed16(s_windowMaxY + 1), 0, intToFixed16(s_windowMaxY + 1));
 			const fixed16 numerator = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
@@ -866,7 +866,7 @@ namespace RClassicWall
 		fixed16 fProj0, fProj1;
 		if ((sector->flags1 & SEC_FLAGS1_PIT) && (nextFlags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))	// floor
 		{
-			fProj0 = fProj1 = (s_windowMaxY << 16);
+			fProj0 = fProj1 = intToFixed16(s_windowMaxY);
 		}
 		else
 		{
@@ -881,7 +881,7 @@ namespace RClassicWall
 		{
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
-			flat_addEdges(length, x, 0, (s_windowMinY - 1) << 16, 0, (s_windowMinY - 1) << 16);
+			flat_addEdges(length, x, 0, intToFixed16(s_windowMinY - 1), 0, intToFixed16(s_windowMinY - 1));
 
 			const fixed16 numerator = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
@@ -894,11 +894,11 @@ namespace RClassicWall
 			return;
 		}
 
-		fixed16 xStartOffset = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
+		fixed16 xStartOffset = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 
 		fixed16 numerator = solveForZ_Numerator(wallSegment);
-		fixed16 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
+		fixed16 lengthRaw = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 		fixed16 dydxCeil = 0;
 		fixed16 dydxFloor = 0;
 		if (lengthRaw != 0)
@@ -955,7 +955,7 @@ namespace RClassicWall
 		fixed16 cProj0, cProj1;
 		if ((sector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 		{
-			cProj1 = s_windowMinY << 16;
+			cProj1 = intToFixed16(s_windowMinY);
 			cProj0 = cProj1;
 		}
 		else
@@ -997,7 +997,7 @@ namespace RClassicWall
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - x + 1;
 
-			flat_addEdges(length, x, 0, (s_windowMinY - 1) << 16, 0, (s_windowMinY - 1) << 16);
+			flat_addEdges(length, x, 0, intToFixed16(s_windowMinY - 1), 0, intToFixed16(s_windowMinY - 1));
 
 			fixed16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
@@ -1015,8 +1015,8 @@ namespace RClassicWall
 		s32 xOffset = wallSegment->wallX0 - wallSegment->wallX0_raw;
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 		s32 lengthRaw = wallSegment->wallX1_raw - wallSegment->wallX0_raw;
-		fixed16 lengthRawFixed = lengthRaw << 16;
-		fixed16 xOffsetFixed = xOffset << 16;
+		fixed16 lengthRawFixed = intToFixed16(lengthRaw);
+		fixed16 xOffsetFixed = intToFixed16(xOffset);
 
 		fixed16 floorNext_dYdX = 0;
 		fixed16 floor_dYdX = 0;
@@ -1119,7 +1119,7 @@ namespace RClassicWall
 					}
 
 					s_vCoordStep = div16(wall->botTexelHeight, yBot - yTop + ONE_16);
-					fixed16 v0 = mul16(yBot - (yBot_pixel << 16) + HALF_16, s_vCoordStep);
+					fixed16 v0 = mul16(yBot - intToFixed16(yBot_pixel) + HALF_16, s_vCoordStep);
 					s_vCoordFixed = v0 + wall->botVOffset;
 					s_texImage = &tex->image[texelU << tex->logSizeY];
 					s_columnOut = &s_display[yTop_pixel * s_width + x];
@@ -1153,9 +1153,9 @@ namespace RClassicWall
 		fixed16 z0 = wallSegment->z0;
 		fixed16 z1 = wallSegment->z1;
 		s32 x0 = wallSegment->wallX0;
-		fixed16 xOffset = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
+		fixed16 xOffset = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
-		fixed16 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
+		fixed16 lengthRaw = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 
 		fixed16 ceilRel = sector->ceilingHeight - s_eyeHeight;
 		fixed16 cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
@@ -1168,7 +1168,7 @@ namespace RClassicWall
 			srcWall->visible = 0;
 			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMaxY; }
 
-			flat_addEdges(length, x0, 0, (s_windowMaxY + 1) << 16, 0, (s_windowMaxY + 1) << 16);
+			flat_addEdges(length, x0, 0, intToFixed16(s_windowMaxY + 1), 0, intToFixed16(s_windowMaxY + 1));
 			fixed16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
@@ -1188,7 +1188,7 @@ namespace RClassicWall
 			srcWall->visible = 0;
 			for (s32 i = 0; i < length; i++) { s_columnBot[x0 + i] = s_windowMinY; }
 
-			flat_addEdges(length, x0, 0, (s_windowMinY - 1) << 16, 0, (s_windowMinY - 1) << 16);
+			flat_addEdges(length, x0, 0, intToFixed16(s_windowMinY - 1), 0, intToFixed16(s_windowMinY - 1));
 			fixed16 num = solveForZ_Numerator(wallSegment);
 
 			for (s32 i = 0, x = x0; i < length; i++, x++)
@@ -1268,7 +1268,7 @@ namespace RClassicWall
 						texelU = widthMask - texelU;
 					}
 					s_vCoordStep = div16(srcWall->topTexelHeight, yC1 - yC0 + ONE_16);
-					fixed16 yOffset = yC1 - (yC1_pixel << 16) + HALF_16;
+					fixed16 yOffset = yC1 - intToFixed16(yC1_pixel) + HALF_16;
 					s_vCoordFixed = mul16(yOffset, s_vCoordStep) + srcWall->topVOffset;
 					s_texImage = &topTex->image[texelU << topTex->logSizeY];
 					s_columnOut = &s_display[yC0_pixel * s_width + x];
@@ -1335,9 +1335,9 @@ namespace RClassicWall
 		fixed16 z0 = wallSegment->z0;
 		fixed16 z1 = wallSegment->z1;
 		s32 x0 = wallSegment->wallX0;
-		fixed16 xOffset   = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
+		fixed16 xOffset   = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
 		s32 length    =  wallSegment->wallX1 - wallSegment->wallX0 + 1;
-		fixed16 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
+		fixed16 lengthRaw = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 
 		fixed16 ceilRel = sector->ceilingHeight - s_eyeHeight;
 		fixed16 cProj0  = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
@@ -1350,7 +1350,7 @@ namespace RClassicWall
 			srcWall->visible = 0;
 			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMaxY; }
 
-			flat_addEdges(length, x0, 0, (s_windowMaxY + 1) << 16, 0, (s_windowMaxY + 1) << 16);
+			flat_addEdges(length, x0, 0, intToFixed16(s_windowMaxY + 1), 0, intToFixed16(s_windowMaxY + 1));
 			fixed16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
@@ -1370,7 +1370,7 @@ namespace RClassicWall
 			srcWall->visible = 0;
 			for (s32 i = 0; i < length; i++) { s_columnBot[x0 + i] = s_windowMinY; }
 
-			flat_addEdges(length, x0, 0, (s_windowMinY - 1) << 16, 0, (s_windowMinY - 1) << 16);
+			flat_addEdges(length, x0, 0, intToFixed16(s_windowMinY - 1), 0, intToFixed16(s_windowMinY - 1));
 			fixed16 num = solveForZ_Numerator(wallSegment);
 
 			for (s32 i = 0, x = x0; i < length; i++, x++)
@@ -1450,7 +1450,7 @@ namespace RClassicWall
 						texelU = widthMask - texelU;
 					}
 					s_vCoordStep = div16(srcWall->topTexelHeight, yC1 - yC0 + ONE_16);
-					fixed16 yOffset = yC1 - (yC1_pixel << 16) + HALF_16;
+					fixed16 yOffset = yC1 - intToFixed16(yC1_pixel) + HALF_16;
 					s_vCoordFixed = mul16(yOffset, s_vCoordStep) + srcWall->topVOffset;
 					s_texImage = &topTex->image[texelU << topTex->logSizeY];
 					s_columnOut = &s_display[yC0_pixel * s_width + x];
@@ -1553,7 +1553,7 @@ namespace RClassicWall
 							texelU = widthMask - texelU;
 						}
 						s_vCoordStep = div16(srcWall->botTexelHeight, yF1 - yF0 + ONE_16);
-						s_vCoordFixed = srcWall->botVOffset + mul16(yF1 - (yF1_pixel << 16) + HALF_16, s_vCoordStep);
+						s_vCoordFixed = srcWall->botVOffset + mul16(yF1 - intToFixed16(yF1_pixel) + HALF_16, s_vCoordStep);
 						s_texImage = &botTex->image[texelU << botTex->logSizeY];
 						s_columnOut = &s_display[yF0_pixel * s_width + x];
 						s_columnLight = computeLighting(z, srcWall->wallLight);
