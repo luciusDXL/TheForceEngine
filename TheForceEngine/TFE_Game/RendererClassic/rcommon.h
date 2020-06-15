@@ -33,12 +33,12 @@ namespace RendererClassic
 	extern fixed16 s_negSinYaw;
 
 	// Window
-	extern fixed16 s_minScreenX;
-	extern fixed16 s_maxScreenX;
-	extern fixed16 s_windowMinX;
-	extern fixed16 s_windowMaxX;
-	extern fixed16 s_windowMinY;
-	extern fixed16 s_windowMaxY;
+	extern s32 s_minScreenX;
+	extern s32 s_maxScreenX;
+	extern s32 s_windowMinX;
+	extern s32 s_windowMaxX;
+	extern s32 s_windowMinY;
+	extern s32 s_windowMaxY;
 	extern fixed16 s_minSegZ;
 	
 	// Display
@@ -63,8 +63,8 @@ namespace RendererClassic
 	// Flats
 	extern s32 s_flatCount;
 	extern fixed16* s_rcp_yMinusHalfHeight;
-	extern fixed16 s_wallMaxCeilY;
-	extern fixed16 s_wallMinFloorY;
+	extern s32 s_wallMaxCeilY;
+	extern s32 s_wallMinFloorY;
 	extern s32 s_yMin;
 	extern s32 s_yMax;
 	extern FlatEdges* s_lowerFlatEdge;

@@ -177,10 +177,10 @@ namespace RClassicFlat
 	void drawScanline()
 	{
 		// Convert from 16.16 coordinates to 6.10 coordinates
-		s32 V = (s_scanlineV0 >> 6);
-		s32 U = (s_scanlineU0 >> 6);
-		s32 dVdX = (s_scanline_dVdX >> 6);
-		s32 dUdX = (s_scanline_dUdX >> 6);
+		s32 V = s32(s_scanlineV0 >> 6);
+		s32 U = s32(s_scanlineU0 >> 6);
+		s32 dVdX = s32(s_scanline_dVdX >> 6);
+		s32 dUdX = s32(s_scanline_dUdX >> 6);
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
@@ -203,10 +203,10 @@ namespace RClassicFlat
 	void drawScanline_Fullbright()
 	{
 		// Convert from 16.16 coordinates to 6.10 coordinates
-		s32 V = (s_scanlineV0 >> 6);
-		s32 U = (s_scanlineU0 >> 6);
-		s32 dVdX = (s_scanline_dVdX >> 6);
-		s32 dUdX = (s_scanline_dUdX >> 6);
+		s32 V = s32(s_scanlineV0 >> 6);
+		s32 U = s32(s_scanlineU0 >> 6);
+		s32 dVdX = s32(s_scanline_dVdX >> 6);
+		s32 dUdX = s32(s_scanline_dUdX >> 6);
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
@@ -369,7 +369,7 @@ namespace RClassicFlat
 					assert(y >= 0 && y < s_height);
 					s_scanlineX0  = left;
 					s_scanlineOut = &s_display[left + yOffset];
-					fixed16 rightClip = (right - s_screenXMid) << 16;
+					fixed16 rightClip = intToFixed16(right - s_screenXMid);
 
 					fixed16 v0 = mul16(cosScaledRelCeil - mul16(negSinRelCeil, rightClip), yRcp);
 					s_scanlineV0 = (v0 - textureOffsetV) * 8;
@@ -377,8 +377,9 @@ namespace RClassicFlat
 					fixed16 u0 = mul16(sinScaledRelCeil + mul16(negCosRelCeil, rightClip), yRcp);
 					s_scanlineU0 = (u0 - textureOffsetU) * 8;
 
-					s_scanline_dVdX =  mul16(negSinRelCeil, yRcp) * 8;
-					s_scanline_dUdX = -mul16(negCosRelCeil, yRcp) * 8;
+					const fixed16 worldToTexelScale = fixed16(8);
+					s_scanline_dVdX =  mul16(negSinRelCeil, yRcp) * worldToTexelScale;
+					s_scanline_dUdX = -mul16(negCosRelCeil, yRcp) * worldToTexelScale;
 					s_scanlineLight =  computeLighting(z, 0);
 					
 					if (s_scanlineLight)
@@ -539,7 +540,7 @@ namespace RClassicFlat
 					assert(y >= 0 && y < s_height);
 					s_scanlineX0 = left;
 					s_scanlineOut = &s_display[left + yOffset];
-					s32 rightClip = (right - s_screenXMid) << 16;
+					fixed16 rightClip = intToFixed16(right - s_screenXMid);
 
 					fixed16 v0 = mul16(cosScaledRelFloor - mul16(negSinRelFloor, rightClip), yRcp);
 					s_scanlineV0 = (v0 - textureOffsetV) * 8;
@@ -547,8 +548,9 @@ namespace RClassicFlat
 					fixed16 u0 = mul16(sinScaledRelFloor + mul16(negCosRelFloor, rightClip), yRcp);
 					s_scanlineU0 = (u0 - textureOffsetU) * 8;
 
-					s_scanline_dVdX =  mul16(negSinRelFloor, yRcp) * 8;
-					s_scanline_dUdX = -mul16(negCosRelFloor, yRcp) * 8;
+					fixed16 worldToTexelScale = fixed16(8);
+					s_scanline_dVdX =  mul16(negSinRelFloor, yRcp) * worldToTexelScale;
+					s_scanline_dUdX = -mul16(negCosRelFloor, yRcp) * worldToTexelScale;
 					s_scanlineLight = computeLighting(z, 0);
 
 					if (s_scanlineLight)

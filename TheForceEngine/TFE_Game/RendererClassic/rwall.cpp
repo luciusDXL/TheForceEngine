@@ -37,7 +37,7 @@ namespace RClassicWall
 		BACK = 0,
 	};
 
-	static s32 s_segmentCross;
+	static fixed16 s_segmentCross;
 	static s32 s_texHeightMask;
 	static s32 s_yPixelCount;
 	static fixed16 s_vCoordStep;
@@ -87,7 +87,7 @@ namespace RClassicWall
 		fixed16 dz = z1 - z0;
 		// Cull the wall if it is back facing.
 		// y0*dx - x0*dy
-		const s32 side = mul16(z0, dx) - mul16(x0, dz);
+		const fixed16 side = mul16(z0, dx) - mul16(x0, dz);
 		if (side < 0)
 		{
 			wall->visible = 0;
@@ -182,8 +182,8 @@ namespace RClassicWall
 			z1 = xz;
 			if (s != 0)
 			{
-				s32 adjLen = texelLen + mul16(texelLenRem, s);
-				s32 adjLenMinU = adjLen - curU;
+				fixed16 adjLen = texelLen + mul16(texelLenRem, s);
+				fixed16 adjLenMinU = adjLen - curU;
 
 				texelLen = adjLen;
 				texelLenRem = adjLenMinU;
@@ -1412,8 +1412,8 @@ namespace RClassicWall
 
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
-				fixed16 yC1_pixel = round16(yC1);
-				fixed16 yC0_pixel = round16(yC0);
+				s32 yC1_pixel = round16(yC1);
+				s32 yC0_pixel = round16(yC0);
 				s_columnTop[x] = yC0_pixel - 1;
 				s32 top = s_windowTop[x];
 				if (yC0_pixel < top)

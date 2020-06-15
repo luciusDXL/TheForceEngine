@@ -9,7 +9,11 @@
 #define HALF_16 0x8000
 #define ONE_16 0x10000
 
+#define ENABLE_HIGH_PRECISION_FIXED_POINT 0
 typedef s32 fixed16;
+// Experiment with a drop in way of fixing precision issues at higher resolutions.
+// #define ENABLE_HIGH_PRECISION_FIXED_POINT 1
+// typedef s64 fixed16;
 
 namespace FixedPoint
 {
@@ -36,23 +40,23 @@ namespace FixedPoint
 	// truncates a 16.16 fixed point number, returns an int: x >> 16
 	inline s32 floor16(fixed16 x)
 	{
-		return x >> 16;
+		return s32(x >> 16);
 	}
 
 	// rounds a 16.16 fixed point number, returns an int: (x + HALF_16) >> 16
 	inline s32 round16(fixed16 x)
 	{
-		return (x + HALF_16) >> 16;
+		return s32((x + HALF_16) >> 16);
 	}
 
 	// converts an integer to a fixed point number: x << 16
 	inline fixed16 intToFixed16(s32 x)
 	{
-		return x << 16;
+		return fixed16(x) << fixed16(16);
 	}
 
 	inline s32 fixed16to12(fixed16 x)
 	{
-		return x >> 4;
+		return s32(x >> 4);
 	}
 }

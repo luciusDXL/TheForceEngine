@@ -32,4 +32,21 @@ namespace RMath
 	{
 		return a > b ? a : b;
 	}
+
+#if ENABLE_HIGH_PRECISION_FIXED_POINT == 1
+	inline fixed16 abs(fixed16 x)
+	{
+		return x < 0 ? -x : x;
+	}
+
+	inline fixed16 min(fixed16 a, fixed16 b)
+	{
+		return a < b ? a : b;
+	}
+
+	inline fixed16 max(fixed16 a, fixed16 b)
+	{
+		return a > b ? a : b;
+	}
+#endif
 }
