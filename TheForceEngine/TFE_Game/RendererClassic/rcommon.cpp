@@ -6,35 +6,35 @@ namespace RendererClassic
 	// Resolution
 	s32 s_width = 0;
 	s32 s_height = 0;
-	s32 s_halfWidth;
-	s32 s_halfHeight;
+	fixed16 s_halfWidth;
+	fixed16 s_halfHeight;
 	s32 s_minScreenY;
 	s32 s_maxScreenY;
 	s32 s_screenXMid;
 
 	// Projection
-	s32 s_focalLength;
-	s32 s_focalLenAspect;
-	s32 s_eyeHeight;
-	s32* s_depth1d = nullptr;
+	fixed16 s_focalLength;
+	fixed16 s_focalLenAspect;
+	fixed16 s_eyeHeight;
+	fixed16* s_depth1d = nullptr;
 
 	// Camera
-	s32 s_cameraPosX;
-	s32 s_cameraPosZ;
-	s32 s_xCameraTrans;
-	s32 s_zCameraTrans;
-	s32 s_cosYaw;
-	s32 s_sinYaw;
-	s32 s_negSinYaw;
+	fixed16 s_cameraPosX;
+	fixed16 s_cameraPosZ;
+	fixed16 s_xCameraTrans;
+	fixed16 s_zCameraTrans;
+	fixed16 s_cosYaw;
+	fixed16 s_sinYaw;
+	fixed16 s_negSinYaw;
 
 	// Window
-	s32 s_minScreenX;
-	s32 s_maxScreenX;
-	s32 s_windowMinX;
-	s32 s_windowMaxX;
-	s32 s_windowMinY;
-	s32 s_windowMaxY;
-	s32 s_minSegZ;
+	fixed16 s_minScreenX;
+	fixed16 s_maxScreenX;
+	fixed16 s_windowMinX;
+	fixed16 s_windowMaxX;
+	fixed16 s_windowMinY;
+	fixed16 s_windowMaxY;
+	fixed16 s_minSegZ;
 
 	// Display
 	u8* s_display;
@@ -44,8 +44,8 @@ namespace RendererClassic
 	s32* s_columnBot = nullptr;
 	s32* s_windowTop = nullptr;
 	s32* s_windowBot = nullptr;
-	s32* s_column_Y_Over_X = nullptr;
-	s32* s_column_X_Over_Y = nullptr;
+	fixed16* s_column_Y_Over_X = nullptr;
+	fixed16* s_column_X_Over_Y = nullptr;
 
 	// Segment list.
 	RWallSegment s_wallSegListDst[MAX_SEG];
@@ -57,9 +57,9 @@ namespace RendererClassic
 
 	// Flats
 	s32 s_flatCount;
-	s32* s_rcp_yMinusHalfHeight;
-	s32 s_wallMaxCeilY;
-	s32 s_wallMinFloorY;
+	fixed16* s_rcp_yMinusHalfHeight;
+	fixed16 s_wallMaxCeilY;
+	fixed16 s_wallMinFloorY;
 	s32 s_yMin;
 	s32 s_yMax;
 	FlatEdges* s_lowerFlatEdge;

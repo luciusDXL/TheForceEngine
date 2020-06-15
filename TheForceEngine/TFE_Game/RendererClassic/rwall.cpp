@@ -40,15 +40,15 @@ namespace RClassicWall
 	static s32 s_segmentCross;
 	static s32 s_texHeightMask;
 	static s32 s_yPixelCount;
-	static s32 s_vCoordStep;
-	static s32 s_vCoordFixed;
+	static fixed16 s_vCoordStep;
+	static fixed16 s_vCoordFixed;
 	static const u8* s_columnLight;
 	static u8* s_texImage;
 	static u8* s_columnOut;
 
-	s32 segmentCrossesLine(s32 ax0, s32 ay0, s32 ax1, s32 ay1, s32 bx0, s32 by0, s32 bx1, s32 by1);
-	s32 solveForZ_Numerator(RWallSegment* wallSegment);
-	s32 solveForZ(RWallSegment* wallSegment, s32 x, s32 numerator, s32* outViewDx=nullptr);
+	s32 segmentCrossesLine(fixed16 ax0, fixed16 ay0, fixed16 ax1, fixed16 ay1, fixed16 bx0, fixed16 by0, fixed16 bx1, fixed16 by1);
+	fixed16 solveForZ_Numerator(RWallSegment* wallSegment);
+	fixed16 solveForZ(RWallSegment* wallSegment, s32 x, fixed16 numerator, fixed16* outViewDx=nullptr);
 	void drawColumn_Fullbright();
 	void drawColumn_Lit();
 
@@ -59,16 +59,16 @@ namespace RClassicWall
 		const vec2* p1 = wall->v1;
 
 		// viewspace wall coordinates.
-		s32 x0 = p0->x;
-		s32 x1 = p1->x;
-		s32 z0 = p0->z;
-		s32 z1 = p1->z;
+		fixed16 x0 = p0->x;
+		fixed16 x1 = p1->x;
+		fixed16 z0 = p0->z;
+		fixed16 z1 = p1->z;
 
 		// x values of frustum lines that pass through (x0,z0) and (x1,z1)
-		s32 left0 = -z0;
-		s32 left1 = -z1;
-		s32 right0 = z0;
-		s32 right1 = z1;
+		fixed16 left0 = -z0;
+		fixed16 left1 = -z1;
+		fixed16 right0 = z0;
+		fixed16 right1 = z1;
 
 		// Cull the wall if it is completely beyind the camera.
 		if (z0 < 0 && z1 < 0)
@@ -83,8 +83,8 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 dx = x1 - x0;
-		s32 dz = z1 - z0;
+		fixed16 dx = x1 - x0;
+		fixed16 dz = z1 - z0;
 		// Cull the wall if it is back facing.
 		// y0*dx - x0*dy
 		const s32 side = mul16(z0, dx) - mul16(x0, dz);
@@ -94,14 +94,14 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 curU = 0;
+		fixed16 curU = 0;
 		s32 clipLeft = 0;
 		s32 clipRight = 0;
 		s32 clipX1_Near = 0;
 		s32 clipX0_Near = 0;
 
-		s32 texelLen = wall->texelLength;
-		s32 texelLenRem = texelLen;
+		fixed16 texelLen = wall->texelLength;
+		fixed16 texelLenRem = texelLen;
 
 		//////////////////////////////////////////////
 		// Clip the Wall Segment by the left and right
@@ -112,8 +112,8 @@ namespace RClassicWall
 		if (x0 < left0)
 		{
 			// Intersect the segment (x0, z0),(x1, z1) with the frustum line that passes through (-z0, z0) and (-z1, z1)
-			s32 xz = mul16(x0, z1) - mul16(z0, x1);
-			s32 dyx = -dz - dx;
+			fixed16 xz = mul16(x0, z1) - mul16(z0, x1);
+			fixed16 dyx = -dz - dx;
 			if (dyx != 0)
 			{
 				xz = div16(xz, dyx);
@@ -121,7 +121,7 @@ namespace RClassicWall
 
 			// Compute the parametric intersection of the segment and the left frustum line
 			// where s is in the range of [0.0, 1.0]
-			s32 s = 0;
+			fixed16 s = 0;
 			if (dz != 0 && RMath::abs(dz) > RMath::abs(dx))
 			{
 				s = div16(xz - z0, dz);
@@ -138,7 +138,7 @@ namespace RClassicWall
 			if (s != 0)
 			{
 				// length of the clipped portion of the remaining texel length.
-				s32 clipLen = mul16(texelLenRem, s);
+				fixed16 clipLen = mul16(texelLenRem, s);
 				// adjust the U texel offset.
 				curU += clipLen;
 				// adjust the remaining texel length.
@@ -157,8 +157,8 @@ namespace RClassicWall
 			// Compute the coordinate where x0 + s*dx = z0 + s*dz
 			// Solve for s = (x0 - y0)/(dz - dx)
 			// Substitute: x = x0 + ((x0 - z0)/(dz - dx))*dx = (x0*z1 - z0*x1) / (dz - dx)
-			s32 xz = mul16(x0, z1) - mul16(z0, x1);
-			s32 dyx = dz - dx;
+			fixed16 xz = mul16(x0, z1) - mul16(z0, x1);
+			fixed16 dyx = dz - dx;
 			if (dyx != 0)
 			{
 				xz = div16(xz, dyx);
@@ -167,7 +167,7 @@ namespace RClassicWall
 			// Compute the parametric intersection of the segment and the left frustum line
 			// where s is in the range of [0.0, 1.0]
 			// Note we are computing from the right side, i.e. distance from (x1,y1).
-			s32 s = 0;
+			fixed16 s = 0;
 			if (dz != 0 && RMath::abs(dz) > RMath::abs(dx))
 			{
 				s = div16(xz - z1, dz);
@@ -235,7 +235,7 @@ namespace RClassicWall
 			{
 				if (dz != 0)
 				{
-					s32 left = div16(z0, dz);
+					fixed16 left = div16(z0, dz);
 					x0 += mul16(dx, left);
 					//curU += mul16(texelLenRem, left);
 
@@ -263,7 +263,7 @@ namespace RClassicWall
 			{
 				if (dz != 0)
 				{
-					s32 s = div16(ONE_16 - x1, dz);
+					fixed16 s = div16(ONE_16 - x1, dz);
 					x1 += mul16(dx, s);
 					texelLen += mul16(texelLenRem, s);
 					texelLenRem = texelLen - curU;
@@ -288,8 +288,8 @@ namespace RClassicWall
 		//////////////////////////////////////////////////
 		// Project.
 		//////////////////////////////////////////////////
-		s32 x0proj  = div16(mul16(x0, s_focalLength), z0) + s_halfWidth;
-		s32 x1proj  = div16(mul16(x1, s_focalLength), z1) + s_halfWidth;
+		fixed16 x0proj  = div16(mul16(x0, s_focalLength), z0) + s_halfWidth;
+		fixed16 x1proj  = div16(mul16(x1, s_focalLength), z1) + s_halfWidth;
 		s32 x0pixel = round16(x0proj);
 		s32 x1pixel = round16(x1proj) - 1;
 
@@ -347,7 +347,8 @@ namespace RClassicWall
 		wallSeg->wallX1 = x1pixel;
 		wallSeg->x0View = x0;
 
-		s32 slope, den, orient;
+		fixed16 slope, den;
+		s32 orient;
 		if (RMath::abs(dx) > RMath::abs(dz))
 		{
 			slope = div16(dz, dx);
@@ -421,10 +422,10 @@ namespace RClassicWall
 					vec2* newV0 = newSrcWall->v0;
 					vec2* newV1 = newSrcWall->v1;
 
-					s32 newMinZ = min(newV0->z, newV1->z);
-					s32 newMaxZ = max(newV0->z, newV1->z);
-					s32 outMinZ = min(outV0->z, outV1->z);
-					s32 outMaxZ = max(outV0->z, outV1->z);
+					fixed16 newMinZ = min(newV0->z, newV1->z);
+					fixed16 newMaxZ = max(newV0->z, newV1->z);
+					fixed16 outMinZ = min(outV0->z, outV1->z);
+					fixed16 outMaxZ = max(outV0->z, outV1->z);
 					s32 side;
 
 					if (newSeg->wallX0 <= sortedSeg->wallX0 && newSeg->wallX1 >= sortedSeg->wallX1)
@@ -669,20 +670,20 @@ namespace RClassicWall
 		RSector* sector = srcWall->sector;
 		TextureFrame* texture = srcWall->midTex;
 
-		s32 ceilingHeight = sector->ceilingHeight;
-		s32 floorHeight = sector->floorHeight;
+		fixed16 ceilingHeight = sector->ceilingHeight;
+		fixed16 floorHeight = sector->floorHeight;
 
-		s32 ceilEyeRel  = ceilingHeight - s_eyeHeight;
-		s32 floorEyeRel = floorHeight   - s_eyeHeight;
+		fixed16 ceilEyeRel  = ceilingHeight - s_eyeHeight;
+		fixed16 floorEyeRel = floorHeight   - s_eyeHeight;
 
-		s32 z0 = wallSegment->z0;
-		s32 z1 = wallSegment->z1;
+		fixed16 z0 = wallSegment->z0;
+		fixed16 z1 = wallSegment->z1;
 
-		s32 y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z0) + s_halfHeight;
-		s32 y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
 
-		s32 y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z1) + s_halfHeight;
-		s32 y1F = div16(mul16(floorEyeRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 y1F = div16(mul16(floorEyeRel, s_focalLenAspect), z1) + s_halfHeight;
 
 		s32 y0C_pixel = round16(y0C);
 		s32 y1C_pixel = round16(y1C);
@@ -692,7 +693,7 @@ namespace RClassicWall
 
 		s32 x = wallSegment->wallX0;
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
-		s32 numerator = solveForZ_Numerator(wallSegment);
+		fixed16 numerator = solveForZ_Numerator(wallSegment);
 
 		// For some reason we only early-out if the ceiling is below the view.
 		if (y0C_pixel > s_windowMaxY && y1C_pixel > s_windowMaxY)
@@ -718,15 +719,15 @@ namespace RClassicWall
 			// 1fd683:
 		}
 
-		s32 wallDeltaX = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
-		s32 dYdXtop = 0, dYdXbot = 0;
+		fixed16 wallDeltaX = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
+		fixed16 dYdXtop = 0, dYdXbot = 0;
 		if (wallDeltaX != 0)
 		{
 			dYdXtop = div16(y1C - y0C, wallDeltaX);
 			dYdXbot = div16(y1F - y0F, wallDeltaX);
 		}
 
-		s32 clippedXDelta = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
+		fixed16 clippedXDelta = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
 		if (clippedXDelta != 0)
 		{
 			y0C += mul16(dYdXtop, clippedXDelta);
@@ -754,13 +755,13 @@ namespace RClassicWall
 			}
 			s_yPixelCount = bot - top + 1;
 
-			s32 dxView = 0;
-			s32 z = solveForZ(wallSegment, x, numerator, &dxView);
+			fixed16 dxView = 0;
+			fixed16 z = solveForZ(wallSegment, x, numerator, &dxView);
 			s_depth1d[x] = z;
 
-			s32 uScale = wallSegment->uScale;
-			s32 uCoord0 = wallSegment->uCoord0 + srcWall->midUOffset;
-			s32 uCoord = uCoord0 + ((wallSegment->orient == WORIENT_DZ_DX) ? mul16(dxView, uScale) : mul16(z - z0, uScale));
+			fixed16 uScale = wallSegment->uScale;
+			fixed16 uCoord0 = wallSegment->uCoord0 + srcWall->midUOffset;
+			fixed16 uCoord = uCoord0 + ((wallSegment->orient == WORIENT_DZ_DX) ? mul16(dxView, uScale) : mul16(z - z0, uScale));
 
 			if (s_yPixelCount > 0)
 			{
@@ -770,19 +771,19 @@ namespace RClassicWall
 				if (flipHorz) { texelU = texWidth - texelU - 1; }
 
 				// Calculate the vertical texture coordinate start and increment.
-				s32 wallHeightPixels = y0F - y0C + ONE_16;
-				s32 wallHeightTexels = srcWall->midTexelHeight;
+				fixed16 wallHeightPixels = y0F - y0C + ONE_16;
+				fixed16 wallHeightTexels = srcWall->midTexelHeight;
 
 				// s_vCoordStep = tex coord "v" step per y pixel step -> dVdY;
 				// Note the result is in x.16 fixed point, which is why it must be shifted by 16 again before divide.
 				s_vCoordStep = div16(wallHeightTexels, wallHeightPixels);
 
 				// texel offset from the actual fixed point y position and the truncated y position.
-				s32 vPixelOffset = y0F - (bot << 16) + HALF_16;
+				fixed16 vPixelOffset = y0F - (bot << 16) + HALF_16;
 
 				// scale the texel offset based on the v coord step.
 				// the result is the sub-texel offset
-				s32 v0 = mul16(s_vCoordStep, vPixelOffset);
+				fixed16 v0 = mul16(s_vCoordStep, vPixelOffset);
 				s_vCoordFixed = v0 + srcWall->midVOffset;
 
 				// Texture image data = imageStart + u * texHeight
@@ -827,19 +828,19 @@ namespace RClassicWall
 		RSector* sector = srcWall->sector;
 		RSector* nextSector = srcWall->nextSector;
 
-		s32 z0 = wallSegment->z0;
-		s32 z1 = wallSegment->z1;
+		fixed16 z0 = wallSegment->z0;
+		fixed16 z1 = wallSegment->z1;
 		u32 flags1 = sector->flags1;
 		u32 nextFlags1 = nextSector->flags1;
 
-		s32 cProj0, cProj1;
+		fixed16 cProj0, cProj1;
 		if ((flags1 & SEC_FLAGS1_EXTERIOR) && (nextFlags1 & SEC_FLAGS1_EXT_ADJ))  // ceiling
 		{
 			cProj0 = cProj1 = (s_windowMinY << 16);
 		}
 		else
 		{
-			s32 ceilRel = sector->ceilingHeight - s_eyeHeight;
+			fixed16 ceilRel = sector->ceilingHeight - s_eyeHeight;
 			cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
 			cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
 		}
@@ -851,7 +852,7 @@ namespace RClassicWall
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 			flat_addEdges(length, x, 0, (s_windowMaxY + 1) << 16, 0, (s_windowMaxY + 1) << 16);
-			const s32 numerator = solveForZ_Numerator(wallSegment);
+			const fixed16 numerator = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
 				s_depth1d[x] = solveForZ(wallSegment, x, numerator);
@@ -862,14 +863,14 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 fProj0, fProj1;
+		fixed16 fProj0, fProj1;
 		if ((sector->flags1 & SEC_FLAGS1_PIT) && (nextFlags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))	// floor
 		{
 			fProj0 = fProj1 = (s_windowMaxY << 16);
 		}
 		else
 		{
-			s32 floorRel = sector->floorHeight - s_eyeHeight;
+			fixed16 floorRel = sector->floorHeight - s_eyeHeight;
 			fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
 			fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
 		}
@@ -882,7 +883,7 @@ namespace RClassicWall
 			s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 			flat_addEdges(length, x, 0, (s_windowMinY - 1) << 16, 0, (s_windowMinY - 1) << 16);
 
-			const s32 numerator = solveForZ_Numerator(wallSegment);
+			const fixed16 numerator = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
 				s_depth1d[x] = solveForZ(wallSegment, x, numerator);
@@ -893,20 +894,20 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 xStartOffset = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
+		fixed16 xStartOffset = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 
-		s32 numerator = solveForZ_Numerator(wallSegment);
-		s32 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
-		s32 dydxCeil = 0;
-		s32 dydxFloor = 0;
+		fixed16 numerator = solveForZ_Numerator(wallSegment);
+		fixed16 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
+		fixed16 dydxCeil = 0;
+		fixed16 dydxFloor = 0;
 		if (lengthRaw != 0)
 		{
 			dydxCeil = div16(cProj1 - cProj0, lengthRaw);
 			dydxFloor = div16(fProj1 - fProj0, lengthRaw);
 		}
-		s32 y0 = cProj0;
-		s32 y1 = fProj0;
+		fixed16 y0 = cProj0;
+		fixed16 y1 = fProj0;
 		s32 x = wallSegment->wallX0;
 		if (xStartOffset != 0)
 		{
@@ -915,8 +916,8 @@ namespace RClassicWall
 		}
 
 		flat_addEdges(length, x, dydxFloor, y1, dydxCeil, y0);
-		s32 nextFloor = nextSector->floorHeight;
-		s32 nextCeil  = nextSector->ceilingHeight;
+		fixed16 nextFloor = nextSector->floorHeight;
+		fixed16 nextCeil  = nextSector->ceilingHeight;
 		// There is an opening in this wall to the next sector.
 		if (nextFloor > nextCeil)
 		{
@@ -948,10 +949,10 @@ namespace RClassicWall
 		RSector* nextSector = wall->nextSector;
 		TextureFrame* tex = wall->botTex;
 
-		s32 z0 = wallSegment->z0;
-		s32 z1 = wallSegment->z1;
+		fixed16 z0 = wallSegment->z0;
+		fixed16 z1 = wallSegment->z1;
 
-		s32 cProj0, cProj1;
+		fixed16 cProj0, cProj1;
 		if ((sector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 		{
 			cProj1 = s_windowMinY << 16;
@@ -959,7 +960,7 @@ namespace RClassicWall
 		}
 		else
 		{
-			s32 ceilRel = sector->ceilingHeight - s_eyeHeight;
+			fixed16 ceilRel = sector->ceilingHeight - s_eyeHeight;
 			cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
 			cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
 		}
@@ -974,7 +975,7 @@ namespace RClassicWall
 
 			flat_addEdges(length, x, 0, s_windowMaxY + 1, 0, s_windowMaxY + 1);
 
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
 				s_depth1d[x] = solveForZ(wallSegment, x, num);
@@ -984,9 +985,9 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 floorRel = sector->floorHeight - s_eyeHeight;
-		s32 fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
-		s32 fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 floorRel = sector->floorHeight - s_eyeHeight;
+		fixed16 fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
 		s32 fy0 = round16(fProj0);
 		s32 fy1 = round16(fProj1);
 		if (fy0 < s_windowMinY && fy1 < s_windowMinY)
@@ -998,7 +999,7 @@ namespace RClassicWall
 
 			flat_addEdges(length, x, 0, (s_windowMinY - 1) << 16, 0, (s_windowMinY - 1) << 16);
 
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
 				s_depth1d[x] = solveForZ(wallSegment, x, num);
@@ -1008,18 +1009,18 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 floorRelNext = nextSector->floorHeight - s_eyeHeight;
-		s32 fNextProj0 = div16(mul16(floorRelNext, s_focalLenAspect), z0) + s_halfHeight;
-		s32 fNextProj1 = div16(mul16(floorRelNext, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 floorRelNext = nextSector->floorHeight - s_eyeHeight;
+		fixed16 fNextProj0 = div16(mul16(floorRelNext, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 fNextProj1 = div16(mul16(floorRelNext, s_focalLenAspect), z1) + s_halfHeight;
 		s32 xOffset = wallSegment->wallX0 - wallSegment->wallX0_raw;
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 		s32 lengthRaw = wallSegment->wallX1_raw - wallSegment->wallX0_raw;
-		s32 lengthRawFixed = lengthRaw << 16;
-		s32 xOffsetFixed = xOffset << 16;
+		fixed16 lengthRawFixed = lengthRaw << 16;
+		fixed16 xOffsetFixed = xOffset << 16;
 
-		s32 floorNext_dYdX = 0;
-		s32 floor_dYdX = 0;
-		s32 ceil_dYdX = 0;
+		fixed16 floorNext_dYdX = 0;
+		fixed16 floor_dYdX = 0;
+		fixed16 ceil_dYdX = 0;
 		if (lengthRawFixed != 0)
 		{
 			floorNext_dYdX = div16(fNextProj1 - fNextProj0, lengthRawFixed);
@@ -1033,9 +1034,9 @@ namespace RClassicWall
 			cProj0 += mul16(ceil_dYdX, xOffsetFixed);
 		}
 
-		s32 yTop = fNextProj0;
-		s32 yC = cProj0;
-		s32 yBot = fProj0;
+		fixed16 yTop = fNextProj0;
+		fixed16 yC = cProj0;
+		fixed16 yBot = fProj0;
 		s32 x = wallSegment->wallX0;
 		flat_addEdges(length, wallSegment->wallX0, floor_dYdX, fProj0, ceil_dYdX, cProj0);
 
@@ -1050,7 +1051,7 @@ namespace RClassicWall
 		if (yTop0 > s_windowMaxY && yTop1 > s_windowMaxY)
 		{
 			s32 bot = s_windowMaxY + 1;
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++, yC += ceil_dYdX)
 			{
 				s32 yC_pixel = min(round16(yC), s_windowBot[x]);
@@ -1062,8 +1063,8 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 u0 = wallSegment->uCoord0;
-		s32 num = solveForZ_Numerator(wallSegment);
+		fixed16 u0 = wallSegment->uCoord0;
+		fixed16 num = solveForZ_Numerator(wallSegment);
 		s_texHeightMask = tex->height - 1;
 		s32 flipHorz = (wall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
 		s32 illumSign = (wall->flags1 & WF1_ILLUM_SIGN) ? -1 : 0;
@@ -1095,16 +1096,16 @@ namespace RClassicWall
 				s_yPixelCount = yBot_pixel - yTop_pixel + 1;
 
 				// Calculate perspective correct Z and U (texture coordinate).
-				s32 dxView;
-				s32 z = solveForZ(wallSegment, x, num, &dxView);
-				s32 u;
+				fixed16 dxView;
+				fixed16 z = solveForZ(wallSegment, x, num, &dxView);
+				fixed16 u;
 				if (wallSegment->orient == WORIENT_DZ_DX)
 				{
 					u = u0 + mul16(dxView, wallSegment->uScale) + wall->botUOffset;
 				}
 				else
 				{
-					s32 dz = z - z0;
+					fixed16 dz = z - z0;
 					u = u0 + mul16(dz, wallSegment->uScale) + wall->botUOffset;
 				}
 				s_depth1d[x] = z;
@@ -1118,7 +1119,7 @@ namespace RClassicWall
 					}
 
 					s_vCoordStep = div16(wall->botTexelHeight, yBot - yTop + ONE_16);
-					s32 v0 = mul16(yBot - (yBot_pixel << 16) + HALF_16, s_vCoordStep);
+					fixed16 v0 = mul16(yBot - (yBot_pixel << 16) + HALF_16, s_vCoordStep);
 					s_vCoordFixed = v0 + wall->botVOffset;
 					s_texImage = &tex->image[texelU << tex->logSizeY];
 					s_columnOut = &s_display[yTop_pixel * s_width + x];
@@ -1149,16 +1150,16 @@ namespace RClassicWall
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
 		TextureFrame* topTex = srcWall->topTex;
-		s32 z0 = wallSegment->z0;
-		s32 z1 = wallSegment->z1;
+		fixed16 z0 = wallSegment->z0;
+		fixed16 z1 = wallSegment->z1;
 		s32 x0 = wallSegment->wallX0;
-		s32 xOffset = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
+		fixed16 xOffset = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
-		s32 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
+		fixed16 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
 
-		s32 ceilRel = sector->ceilingHeight - s_eyeHeight;
-		s32 cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-		s32 cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 ceilRel = sector->ceilingHeight - s_eyeHeight;
+		fixed16 cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
 		s32 c0_pixel = round16(cProj0);
 		s32 c1_pixel = round16(cProj1);
 
@@ -1168,7 +1169,7 @@ namespace RClassicWall
 			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMaxY; }
 
 			flat_addEdges(length, x0, 0, (s_windowMaxY + 1) << 16, 0, (s_windowMaxY + 1) << 16);
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
 				s_depth1d[x] = solveForZ(wallSegment, x, num);
@@ -1177,9 +1178,9 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 floorRel = sector->floorHeight - s_eyeHeight;
-		s32 fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
-		s32 fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 floorRel = sector->floorHeight - s_eyeHeight;
+		fixed16 fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
 		s32 f0_pixel = round16(fProj0);
 		s32 f1_pixel = round16(fProj1);
 		if (f0_pixel < s_windowMinY && f1_pixel < s_windowMinY)
@@ -1188,7 +1189,7 @@ namespace RClassicWall
 			for (s32 i = 0; i < length; i++) { s_columnBot[x0 + i] = s_windowMinY; }
 
 			flat_addEdges(length, x0, 0, (s_windowMinY - 1) << 16, 0, (s_windowMinY - 1) << 16);
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 num = solveForZ_Numerator(wallSegment);
 
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
@@ -1199,11 +1200,11 @@ namespace RClassicWall
 		}
 
 		RSector* nextSector = srcWall->nextSector;
-		s32 next_ceilRel = nextSector->ceilingHeight - s_eyeHeight;
-		s32 next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-		s32 next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect), z1) + s_halfHeight;
-		s32 ceil_dYdX = 0;
-		s32 next_ceil_dYdX = 0;
+		fixed16 next_ceilRel = nextSector->ceilingHeight - s_eyeHeight;
+		fixed16 next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 ceil_dYdX = 0;
+		fixed16 next_ceil_dYdX = 0;
 		if (lengthRaw != 0)
 		{
 			ceil_dYdX = div16(cProj1 - cProj0, lengthRaw);
@@ -1215,15 +1216,15 @@ namespace RClassicWall
 			next_cProj0 += mul16(next_ceil_dYdX, xOffset);
 		}
 
-		s32 yC0 = cProj0;
-		s32 yC1 = next_cProj0;
+		fixed16 yC0 = cProj0;
+		fixed16 yC1 = next_cProj0;
 
 		s32 cn0_pixel = round16(next_cProj0);
 		s32 cn1_pixel = round16(next_cProj1);
 		if (cn0_pixel >= s_windowMinY || cn1_pixel >= s_windowMinY)
 		{
-			s32 u0 = wallSegment->uCoord0;
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 u0 = wallSegment->uCoord0;
+			fixed16 num = solveForZ_Numerator(wallSegment);
 			s_texHeightMask = topTex->height - 1;
 			s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
 
@@ -1245,16 +1246,16 @@ namespace RClassicWall
 				s_yPixelCount = yC1_pixel - yC0_pixel + 1;
 
 				// Calculate perspective correct Z and U (texture coordinate).
-				s32 dxView;
-				s32 z = solveForZ(wallSegment, x, num, &dxView);
-				s32 u;
+				fixed16 dxView;
+				fixed16 z = solveForZ(wallSegment, x, num, &dxView);
+				fixed16 u;
 				if (wallSegment->orient == WORIENT_DZ_DX)
 				{
 					u = u0 + mul16(dxView, wallSegment->uScale) + srcWall->topUOffset;
 				}
 				else
 				{
-					s32 dz = z - z0;
+					fixed16 dz = z - z0;
 					u = u0 + mul16(dz, wallSegment->uScale) + srcWall->topUOffset;
 				}
 				s_depth1d[x] = z;
@@ -1267,7 +1268,7 @@ namespace RClassicWall
 						texelU = widthMask - texelU;
 					}
 					s_vCoordStep = div16(srcWall->topTexelHeight, yC1 - yC0 + ONE_16);
-					s32 yOffset = yC1 - (yC1_pixel << 16) + HALF_16;
+					fixed16 yOffset = yC1 - (yC1_pixel << 16) + HALF_16;
 					s_vCoordFixed = mul16(yOffset, s_vCoordStep) + srcWall->topVOffset;
 					s_texImage = &topTex->image[texelU << topTex->logSizeY];
 					s_columnOut = &s_display[yC0_pixel * s_width + x];
@@ -1292,7 +1293,7 @@ namespace RClassicWall
 		}
 
 		// Verify the floor code.
-		s32 floor_dYdX = 0;
+		fixed16 floor_dYdX = 0;
 		if (lengthRaw > 0)
 		{
 			floor_dYdX = div16(fProj1 - fProj0, lengthRaw);
@@ -1302,7 +1303,7 @@ namespace RClassicWall
 			fProj0 += mul16(floor_dYdX, xOffset);
 		}
 
-		s32 yF0 = fProj0;
+		fixed16 yF0 = fProj0;
 		for (s32 i = 0, x = x0; i < length; i++, x++)
 		{
 			s32 ypixel = round16(yF0);
@@ -1331,16 +1332,16 @@ namespace RClassicWall
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
 		TextureFrame* topTex = srcWall->topTex;
-		s32 z0 = wallSegment->z0;
-		s32 z1 = wallSegment->z1;
+		fixed16 z0 = wallSegment->z0;
+		fixed16 z1 = wallSegment->z1;
 		s32 x0 = wallSegment->wallX0;
-		s32 xOffset   = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
+		fixed16 xOffset   = (wallSegment->wallX0 - wallSegment->wallX0_raw) << 16;
 		s32 length    =  wallSegment->wallX1 - wallSegment->wallX0 + 1;
-		s32 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
+		fixed16 lengthRaw = (wallSegment->wallX1_raw - wallSegment->wallX0_raw) << 16;
 
-		s32 ceilRel = sector->ceilingHeight - s_eyeHeight;
-		s32 cProj0  = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-		s32 cProj1  = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 ceilRel = sector->ceilingHeight - s_eyeHeight;
+		fixed16 cProj0  = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 cProj1  = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
 		s32 c0_pixel = round16(cProj0);
 		s32 c1_pixel = round16(cProj1);
 				
@@ -1350,7 +1351,7 @@ namespace RClassicWall
 			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMaxY; }
 
 			flat_addEdges(length, x0, 0, (s_windowMaxY + 1) << 16, 0, (s_windowMaxY + 1) << 16);
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
 				s_depth1d[x] = solveForZ(wallSegment, x, num);
@@ -1359,9 +1360,9 @@ namespace RClassicWall
 			return;
 		}
 
-		s32 floorRel = sector->floorHeight - s_eyeHeight;
-		s32 fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
-		s32 fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 floorRel = sector->floorHeight - s_eyeHeight;
+		fixed16 fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
 		s32 f0_pixel = round16(fProj0);
 		s32 f1_pixel = round16(fProj1);
 		if (f0_pixel < s_windowMinY && f1_pixel < s_windowMinY)
@@ -1370,7 +1371,7 @@ namespace RClassicWall
 			for (s32 i = 0; i < length; i++) { s_columnBot[x0 + i] = s_windowMinY; }
 
 			flat_addEdges(length, x0, 0, (s_windowMinY - 1) << 16, 0, (s_windowMinY - 1) << 16);
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 num = solveForZ_Numerator(wallSegment);
 
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
@@ -1381,11 +1382,11 @@ namespace RClassicWall
 		}
 
 		RSector* nextSector = srcWall->nextSector;
-		s32 next_ceilRel = nextSector->ceilingHeight - s_eyeHeight;
-		s32 next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-		s32 next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect), z1) + s_halfHeight;
-		s32 ceil_dYdX = 0;
-		s32 next_ceil_dYdX = 0;
+		fixed16 next_ceilRel = nextSector->ceilingHeight - s_eyeHeight;
+		fixed16 next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 ceil_dYdX = 0;
+		fixed16 next_ceil_dYdX = 0;
 		if (lengthRaw != 0)
 		{
 			ceil_dYdX = div16(cProj1 - cProj0, lengthRaw);
@@ -1397,22 +1398,22 @@ namespace RClassicWall
 			next_cProj0 += mul16(next_ceil_dYdX, xOffset);
 		}
 
-		s32 yC0 = cProj0;
-		s32 yC1 = next_cProj0;
+		fixed16 yC0 = cProj0;
+		fixed16 yC1 = next_cProj0;
 		
 		s32 cn0_pixel = round16(next_cProj0);
 		s32 cn1_pixel = round16(next_cProj1);
 		if (cn0_pixel >= s_windowMinY || cn1_pixel >= s_windowMinY)
 		{
-			s32 u0 = wallSegment->uCoord0;
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 u0 = wallSegment->uCoord0;
+			fixed16 num = solveForZ_Numerator(wallSegment);
 			s_texHeightMask = topTex->height - 1;
 			s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
 
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
-				s32 yC1_pixel = round16(yC1);
-				s32 yC0_pixel = round16(yC0);
+				fixed16 yC1_pixel = round16(yC1);
+				fixed16 yC0_pixel = round16(yC0);
 				s_columnTop[x] = yC0_pixel - 1;
 				s32 top = s_windowTop[x];
 				if (yC0_pixel < top)
@@ -1427,16 +1428,16 @@ namespace RClassicWall
 				s_yPixelCount = yC1_pixel - yC0_pixel + 1;
 
 				// Calculate perspective correct Z and U (texture coordinate).
-				s32 dxView;
-				s32 z = solveForZ(wallSegment, x, num, &dxView);
-				s32 u;
+				fixed16 dxView;
+				fixed16 z = solveForZ(wallSegment, x, num, &dxView);
+				fixed16 u;
 				if (wallSegment->orient == WORIENT_DZ_DX)
 				{
 					u = u0 + mul16(dxView, wallSegment->uScale) + srcWall->topUOffset;
 				}
 				else
 				{
-					s32 dz = z - z0;
+					fixed16 dz = z - z0;
 					u = u0 + mul16(dz, wallSegment->uScale) + srcWall->topUOffset;
 				}
 				s_depth1d[x] = z;
@@ -1449,7 +1450,7 @@ namespace RClassicWall
 						texelU = widthMask - texelU;
 					}
 					s_vCoordStep = div16(srcWall->topTexelHeight, yC1 - yC0 + ONE_16);
-					s32 yOffset = yC1 - (yC1_pixel << 16) + HALF_16;
+					fixed16 yOffset = yC1 - (yC1_pixel << 16) + HALF_16;
 					s_vCoordFixed = mul16(yOffset, s_vCoordStep) + srcWall->topVOffset;
 					s_texImage = &topTex->image[texelU << topTex->logSizeY];
 					s_columnOut = &s_display[yC0_pixel * s_width + x];
@@ -1473,12 +1474,12 @@ namespace RClassicWall
 			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMinY - 1; }
 		}
 
-		s32 next_floorRel = nextSector->floorHeight - s_eyeHeight;
-		s32 next_fProj0 = div16(mul16(next_floorRel, s_focalLenAspect), z0) + s_halfHeight;
-		s32 next_fProj1 = div16(mul16(next_floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 next_floorRel = nextSector->floorHeight - s_eyeHeight;
+		fixed16 next_fProj0 = div16(mul16(next_floorRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 next_fProj1 = div16(mul16(next_floorRel, s_focalLenAspect), z1) + s_halfHeight;
 
-		s32 next_floor_dYdX = 0;
-		s32 floor_dYdX = 0;
+		fixed16 next_floor_dYdX = 0;
+		fixed16 floor_dYdX = 0;
 		if (lengthRaw > 0)
 		{
 			next_floor_dYdX = div16(next_fProj1 - next_fProj0, lengthRaw);
@@ -1490,16 +1491,16 @@ namespace RClassicWall
 			fProj0 += mul16(floor_dYdX, xOffset);
 		}
 
-		s32 yF0 = next_fProj0;
-		s32 yF1 = fProj0;
+		fixed16 yF0 = next_fProj0;
+		fixed16 yF1 = fProj0;
 		TextureFrame* botTex = srcWall->botTex;
 		f0_pixel = round16(next_fProj0);
 		f1_pixel = round16(next_fProj1);
 
 		if (f0_pixel <= s_windowMaxY || f1_pixel <= s_windowMaxY)
 		{
-			s32 u0 = wallSegment->uCoord0;
-			s32 num = solveForZ_Numerator(wallSegment);
+			fixed16 u0 = wallSegment->uCoord0;
+			fixed16 num = solveForZ_Numerator(wallSegment);
 
 			s_texHeightMask = botTex->height - 1;
 			s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
@@ -1530,16 +1531,16 @@ namespace RClassicWall
 					s_yPixelCount = yF1_pixel - yF0_pixel + 1;	// eax
 
 					// Calculate perspective correct Z and U (texture coordinate).
-					s32 dxView;
-					s32 z = solveForZ(wallSegment, x, num, &dxView);
-					s32 u;
+					fixed16 dxView;
+					fixed16 z = solveForZ(wallSegment, x, num, &dxView);
+					fixed16 u;
 					if (wallSegment->orient == WORIENT_DZ_DX)
 					{
 						u = u0 + mul16(dxView, wallSegment->uScale) + srcWall->botUOffset;
 					}
 					else
 					{
-						s32 dz = z - z0;
+						fixed16 dz = z - z0;
 						u = u0 + mul16(dz, wallSegment->uScale) + srcWall->botUOffset;
 					}
 					s_depth1d[x] = z;
@@ -1598,17 +1599,17 @@ namespace RClassicWall
 	
 	// Determines if segment A is disjoint from the line formed by B - i.e. they do not intersect.
 	// Returns 1 if segment A does NOT cross line B or 0 if it does.
-	s32 segmentCrossesLine(s32 ax0, s32 ay0, s32 ax1, s32 ay1, s32 bx0, s32 by0, s32 bx1, s32 by1)
+	s32 segmentCrossesLine(fixed16 ax0, fixed16 ay0, fixed16 ax1, fixed16 ay1, fixed16 bx0, fixed16 by0, fixed16 bx1, fixed16 by1)
 	{
 		// Convert from 16 fractional bits to 12.
-		bx0 >>= 4;
-		by0 >>= 4;
-		ax1 >>= 4;
-		ax0 >>= 4;
-		ay0 >>= 4;
-		ay1 >>= 4;
-		bx1 >>= 4;
-		by1 >>= 4;
+		bx0 = fixed16to12(bx0);
+		by0 = fixed16to12(by0);
+		ax1 = fixed16to12(ax1);
+		ax0 = fixed16to12(ax0);
+		ay0 = fixed16to12(ay0);
+		ay1 = fixed16to12(ay1);
+		bx1 = fixed16to12(bx1);
+		by1 = fixed16to12(by1);
 
 		// mul16() functions on 12 bit values is equivalent to: a * b / 16
 		// [ (a1-b0)x(b1-b0) ].[ (a0-b0)x(b1 - b0) ]
@@ -1620,11 +1621,11 @@ namespace RClassicWall
 	}
 		
 	// When solving for Z, part of the computation can be done once per wall.
-	s32 solveForZ_Numerator(RWallSegment* wallSegment)
+	fixed16 solveForZ_Numerator(RWallSegment* wallSegment)
 	{
-		const s32 z0 = wallSegment->z0;
+		const fixed16 z0 = wallSegment->z0;
 
-		s32 numerator;
+		fixed16 numerator;
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
 			numerator = z0 - mul16(wallSegment->slope, wallSegment->x0View);
@@ -1638,30 +1639,30 @@ namespace RClassicWall
 	}
 	
 	// Solve for perspective correct Z at the current x pixel coordinate.
-	s32 solveForZ(RWallSegment* wallSegment, s32 x, s32 numerator, s32* outViewDx/*=nullptr*/)
+	fixed16 solveForZ(RWallSegment* wallSegment, s32 x, fixed16 numerator, fixed16* outViewDx/*=nullptr*/)
 	{
-		s32 z;	// perspective correct z coordinate at the current x pixel coordinate.
+		fixed16 z;	// perspective correct z coordinate at the current x pixel coordinate.
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
-			s32 den = s_column_Y_Over_X[x] - wallSegment->slope;
+			fixed16 den = s_column_Y_Over_X[x] - wallSegment->slope;
 			// Avoid divide by zero.
 			if (den == 0) { den = 1; }
 
-			s32 xView = div16(numerator, den);
+			fixed16 xView = div16(numerator, den);
 			// Use the saved x0View to get dx in viewspace.
-			s32 dxView = xView - wallSegment->x0View;
+			fixed16 dxView = xView - wallSegment->x0View;
 			// avoid recalculating for u coordinate computation.
 			if (outViewDx) { *outViewDx = dxView; }
 			// Once we have dx in viewspace, we multiply by the slope (dZ/dX) in order to get dz.
-			s32 dz = mul16(dxView, wallSegment->slope);
+			fixed16 dz = mul16(dxView, wallSegment->slope);
 			// Then add z0 to get z(x) that is perspective correct.
 			z = wallSegment->z0 + dz;
 		}
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			s32 den = s_column_X_Over_Y[x] - wallSegment->slope;
+			fixed16 den = s_column_X_Over_Y[x] - wallSegment->slope;
 			// Avoid divide by 0.
 			if (den == 0) { den = 1; }
 
@@ -1673,7 +1674,7 @@ namespace RClassicWall
 
 	void drawColumn_Fullbright()
 	{
-		s32 vCoordFixed = s_vCoordFixed;
+		fixed16 vCoordFixed = s_vCoordFixed;
 		u8* tex = s_texImage;
 
 		s32 v = floor16(vCoordFixed) & s_texHeightMask;
@@ -1691,7 +1692,7 @@ namespace RClassicWall
 
 	void drawColumn_Lit()
 	{
-		s32 vCoordFixed = s_vCoordFixed;
+		fixed16 vCoordFixed = s_vCoordFixed;
 		u8* tex = s_texImage;
 
 		s32 v = floor16(vCoordFixed) & s_texHeightMask;

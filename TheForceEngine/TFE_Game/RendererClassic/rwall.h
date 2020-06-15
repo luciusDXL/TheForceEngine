@@ -48,22 +48,22 @@ struct RWall
 	TextureFrame* signTex;
 
 	// Wall length in texels.
-	s32 texelLength;
+	fixed16 texelLength;
 
 	// Wall heights in texels.
-	s32 topTexelHeight;
-	s32 midTexelHeight;
-	s32 botTexelHeight;
+	fixed16 topTexelHeight;
+	fixed16 midTexelHeight;
+	fixed16 botTexelHeight;
 
 	// Texture Offsets
-	s32 topUOffset;
-	s32 topVOffset;
+	fixed16 topUOffset;
+	fixed16 topVOffset;
 
-	s32 midUOffset;
-	s32 midVOffset;
+	fixed16 midUOffset;
+	fixed16 midVOffset;
 
-	s32 botUOffset;
-	s32 botVOffset;
+	fixed16 botUOffset;
+	fixed16 botVOffset;
 
 	// Update Frame
 	s32 drawFrame;
@@ -82,16 +82,16 @@ struct RWallSegment
 	RWall* srcWall;		// Source wall
 	s32 wallX0_raw;		// Projected wall X coordinates before adjoin/wall clipping.
 	s32 wallX1_raw;
-	s32 z0;				// Depth
-	s32 z1;
-	s32 uCoord0;		// Texture U coordinate offset based on clipping.
-	s32 x0View;			// Viewspace vertex 0 X coordinate.
+	fixed16 z0;			// Depth
+	fixed16 z1;
+	fixed16 uCoord0;	// Texture U coordinate offset based on clipping.
+	fixed16 x0View;		// Viewspace vertex 0 X coordinate.
 	s32 wallX0;			// Clipped projected X Coordinates.
 	s32 wallX1;
 	u8  orient;			// Wall orientation (WORIENT_DZ_DX or WORIENT_DX_DZ)
 	u8  pad8[3];
-	s32 slope;			// Wall slope
-	s32 uScale;			// dUdX or dUdZ based on wall orientation.
+	fixed16 slope;		// Wall slope
+	fixed16 uScale;		// dUdX or dUdZ based on wall orientation.
 };
 
 namespace RClassicWall

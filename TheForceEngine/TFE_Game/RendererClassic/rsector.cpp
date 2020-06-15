@@ -208,7 +208,7 @@ namespace RClassicSector
 	void sector_setupWallDrawFlags(RSector* sector)
 	{
 		RWall* wall = sector->walls;
-		const f32 midHeight = mul16(intToFixed16(8), sector->floorHeight - sector->ceilingHeight);
+		const fixed16 midHeight = mul16(intToFixed16(8), sector->floorHeight - sector->ceilingHeight);
 		for (s32 w = 0; w < sector->wallCount; w++, wall++)
 		{
 			const RSector* next = wall->nextSector;
@@ -244,9 +244,9 @@ namespace RClassicSector
 		out->wallCount = sector->wallCount;
 
 		out->ambientFixed = sector->ambient << 16;
-		out->floorHeight = s32(sector->floorAlt * 65536.0f);
-		out->ceilingHeight = s32(sector->ceilAlt * 65536.0f);
-		out->secHeight = s32(sector->secAlt * 65536.0f);
+		out->floorHeight = fixed16(sector->floorAlt * 65536.0f);
+		out->ceilingHeight = fixed16(sector->ceilAlt * 65536.0f);
+		out->secHeight = fixed16(sector->secAlt * 65536.0f);
 		out->flags1 = sector->flags[0];
 		out->flags2 = sector->flags[1];
 		out->flags3 = sector->flags[2];
@@ -254,10 +254,10 @@ namespace RClassicSector
 		out->drawWallCnt = 0;
 		out->floorTex = &textures[sector->floorTexture.texId]->frames[0];
 		out->ceilTex = &textures[sector->ceilTexture.texId]->frames[0];
-		out->floorOffsetX = s32(sector->floorTexture.offsetX * 65536.0f);
-		out->floorOffsetZ = s32(sector->floorTexture.offsetY * 65536.0f);
-		out->ceilOffsetX = s32(sector->ceilTexture.offsetX  * 65536.0f);
-		out->ceilOffsetZ = s32(sector->ceilTexture.offsetY  * 65536.0f);
+		out->floorOffsetX = fixed16(sector->floorTexture.offsetX * 65536.0f);
+		out->floorOffsetZ = fixed16(sector->floorTexture.offsetY * 65536.0f);
+		out->ceilOffsetX = fixed16(sector->ceilTexture.offsetX  * 65536.0f);
+		out->ceilOffsetZ = fixed16(sector->ceilTexture.offsetY  * 65536.0f);
 
 		if (!out->verticesWS)
 		{
@@ -268,11 +268,11 @@ namespace RClassicSector
 		
 		for (s32 v = 0; v < out->vertexCount; v++)
 		{
-			out->verticesWS[v].x = s32(vertices[v].x * 65536.0f);
-			out->verticesWS[v].z = s32(vertices[v].z * 65536.0f);
+			out->verticesWS[v].x = fixed16(vertices[v].x * 65536.0f);
+			out->verticesWS[v].z = fixed16(vertices[v].z * 65536.0f);
 		}
 
-		const s32 midTexelHeight = mul16(intToFixed16(8), s32((sector->floorAlt - sector->ceilAlt) * 65536.0f));
+		const fixed16 midTexelHeight = mul16(intToFixed16(8), fixed16((sector->floorAlt - sector->ceilAlt) * 65536.0f));
 
 		RWall* wall = out->walls;
 		for (s32 w = 0; w < out->wallCount; w++, wall++)
@@ -292,7 +292,7 @@ namespace RClassicSector
 
 			const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
 			f32 len = sqrtf(offset.x * offset.x + offset.z * offset.z);
-			wall->texelLength = mul16(intToFixed16(8), s32(len * 65536.0f));
+			wall->texelLength = mul16(intToFixed16(8), fixed16(len * 65536.0f));
 
 			// For now just assume solid walls.
 			wall->topTexelHeight = 0;
@@ -300,12 +300,12 @@ namespace RClassicSector
 			wall->midTexelHeight = midTexelHeight;
 
 			// Texture Offsets
-			wall->topUOffset = mul16(intToFixed16(8), s32(walls[w].top.offsetX * 65536.0f));
-			wall->topVOffset = mul16(intToFixed16(8), s32(walls[w].top.offsetY * 65536.0f));
-			wall->midUOffset = mul16(intToFixed16(8), s32(walls[w].mid.offsetX * 65536.0f));
-			wall->midVOffset = mul16(intToFixed16(8), s32(walls[w].mid.offsetY * 65536.0f));
-			wall->botUOffset = mul16(intToFixed16(8), s32(walls[w].bot.offsetX * 65536.0f));
-			wall->botVOffset = mul16(intToFixed16(8), s32(walls[w].bot.offsetY * 65536.0f));
+			wall->topUOffset = mul16(intToFixed16(8), fixed16(walls[w].top.offsetX * 65536.0f));
+			wall->topVOffset = mul16(intToFixed16(8), fixed16(walls[w].top.offsetY * 65536.0f));
+			wall->midUOffset = mul16(intToFixed16(8), fixed16(walls[w].mid.offsetX * 65536.0f));
+			wall->midVOffset = mul16(intToFixed16(8), fixed16(walls[w].mid.offsetY * 65536.0f));
+			wall->botUOffset = mul16(intToFixed16(8), fixed16(walls[w].bot.offsetX * 65536.0f));
+			wall->botVOffset = mul16(intToFixed16(8), fixed16(walls[w].bot.offsetY * 65536.0f));
 
 			wall->drawFrame = 0;
 			wall->drawFlags = WDF_MIDDLE;
@@ -330,25 +330,25 @@ namespace RClassicSector
 
 		RSector* out = &s_rsectors[sectorId];
 		out->ambientFixed = sector->ambient << 16;
-		out->floorHeight = s32(sector->floorAlt * 65536.0f);
-		out->ceilingHeight = s32(sector->ceilAlt * 65536.0f);
-		out->secHeight = s32(sector->secAlt * 65536.0f);
+		out->floorHeight = fixed16(sector->floorAlt * 65536.0f);
+		out->ceilingHeight = fixed16(sector->ceilAlt * 65536.0f);
+		out->secHeight = fixed16(sector->secAlt * 65536.0f);
 		out->flags1 = sector->flags[0];
 		out->flags2 = sector->flags[1];
 		out->flags3 = sector->flags[2];
 
-		out->floorOffsetX = s32(sector->floorTexture.offsetX * 65536.0f);
-		out->floorOffsetZ = s32(sector->floorTexture.offsetY * 65536.0f);
-		out->ceilOffsetX = s32(sector->ceilTexture.offsetX  * 65536.0f);
-		out->ceilOffsetZ = s32(sector->ceilTexture.offsetY  * 65536.0f);
+		out->floorOffsetX = fixed16(sector->floorTexture.offsetX * 65536.0f);
+		out->floorOffsetZ = fixed16(sector->floorTexture.offsetY * 65536.0f);
+		out->ceilOffsetX = fixed16(sector->ceilTexture.offsetX  * 65536.0f);
+		out->ceilOffsetZ = fixed16(sector->ceilTexture.offsetY  * 65536.0f);
 
 		for (s32 v = 0; v < out->vertexCount; v++)
 		{
-			out->verticesWS[v].x = s32(vertices[v].x * 65536.0f);
-			out->verticesWS[v].z = s32(vertices[v].z * 65536.0f);
+			out->verticesWS[v].x = fixed16(vertices[v].x * 65536.0f);
+			out->verticesWS[v].z = fixed16(vertices[v].z * 65536.0f);
 		}
 
-		const s32 midTexelHeight = mul16(intToFixed16(8), s32((sector->floorAlt - sector->ceilAlt) * 65536.0f));
+		const fixed16 midTexelHeight = mul16(intToFixed16(8), fixed16((sector->floorAlt - sector->ceilAlt) * 65536.0f));
 
 		RWall* wall = out->walls;
 		for (s32 w = 0; w < out->wallCount; w++)
@@ -362,7 +362,7 @@ namespace RClassicSector
 
 			const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
 			const f32 len = sqrtf(offset.x * offset.x + offset.z * offset.z);
-			wall->texelLength = mul16(intToFixed16(8), s32(len * 65536.0f));
+			wall->texelLength = mul16(intToFixed16(8), fixed16(len * 65536.0f));
 
 			// For now just assume solid walls.
 			wall->topTexelHeight = 0;
@@ -370,12 +370,12 @@ namespace RClassicSector
 			wall->midTexelHeight = midTexelHeight;
 
 			// Texture Offsets
-			wall->topUOffset = mul16(intToFixed16(8), s32(walls[w].top.offsetX * 65536.0f));
-			wall->topVOffset = mul16(intToFixed16(8), s32(walls[w].top.offsetY * 65536.0f));
-			wall->midUOffset = mul16(intToFixed16(8), s32(walls[w].mid.offsetX * 65536.0f));
-			wall->midVOffset = mul16(intToFixed16(8), s32(walls[w].mid.offsetY * 65536.0f));
-			wall->botUOffset = mul16(intToFixed16(8), s32(walls[w].bot.offsetX * 65536.0f));
-			wall->botVOffset = mul16(intToFixed16(8), s32(walls[w].bot.offsetY * 65536.0f));
+			wall->topUOffset = mul16(intToFixed16(8), fixed16(walls[w].top.offsetX * 65536.0f));
+			wall->topVOffset = mul16(intToFixed16(8), fixed16(walls[w].top.offsetY * 65536.0f));
+			wall->midUOffset = mul16(intToFixed16(8), fixed16(walls[w].mid.offsetX * 65536.0f));
+			wall->midVOffset = mul16(intToFixed16(8), fixed16(walls[w].mid.offsetY * 65536.0f));
+			wall->botUOffset = mul16(intToFixed16(8), fixed16(walls[w].bot.offsetX * 65536.0f));
+			wall->botVOffset = mul16(intToFixed16(8), fixed16(walls[w].bot.offsetY * 65536.0f));
 
 			wall->flags1 = walls[w].flags[0];
 			wall->flags2 = walls[w].flags[1];

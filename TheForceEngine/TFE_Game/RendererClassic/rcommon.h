@@ -11,35 +11,35 @@ namespace RendererClassic
 	// Resolution
 	extern s32 s_width;
 	extern s32 s_height;
-	extern s32 s_halfWidth;
-	extern s32 s_halfHeight;
+	extern fixed16 s_halfWidth;
+	extern fixed16 s_halfHeight;
 	extern s32 s_minScreenY;
 	extern s32 s_maxScreenY;
 	extern s32 s_screenXMid;
 
 	// Projection
-	extern s32  s_focalLength;
-	extern s32  s_focalLenAspect;
-	extern s32  s_eyeHeight;
-	extern s32* s_depth1d;
+	extern fixed16  s_focalLength;
+	extern fixed16  s_focalLenAspect;
+	extern fixed16  s_eyeHeight;
+	extern fixed16* s_depth1d;
 
 	// Camera
-	extern s32 s_cameraPosX;
-	extern s32 s_cameraPosZ;
-	extern s32 s_xCameraTrans;
-	extern s32 s_zCameraTrans;
-	extern s32 s_cosYaw;
-	extern s32 s_sinYaw;
-	extern s32 s_negSinYaw;
+	extern fixed16 s_cameraPosX;
+	extern fixed16 s_cameraPosZ;
+	extern fixed16 s_xCameraTrans;
+	extern fixed16 s_zCameraTrans;
+	extern fixed16 s_cosYaw;
+	extern fixed16 s_sinYaw;
+	extern fixed16 s_negSinYaw;
 
 	// Window
-	extern s32 s_minScreenX;
-	extern s32 s_maxScreenX;
-	extern s32 s_windowMinX;
-	extern s32 s_windowMaxX;
-	extern s32 s_windowMinY;
-	extern s32 s_windowMaxY;
-	extern s32 s_minSegZ;
+	extern fixed16 s_minScreenX;
+	extern fixed16 s_maxScreenX;
+	extern fixed16 s_windowMinX;
+	extern fixed16 s_windowMaxX;
+	extern fixed16 s_windowMinY;
+	extern fixed16 s_windowMaxY;
+	extern fixed16 s_minSegZ;
 	
 	// Display
 	extern u8* s_display;
@@ -49,8 +49,8 @@ namespace RendererClassic
 	extern s32* s_columnBot;
 	extern s32* s_windowTop;
 	extern s32* s_windowBot;
-	extern s32* s_column_Y_Over_X;
-	extern s32* s_column_X_Over_Y;
+	extern fixed16* s_column_Y_Over_X;
+	extern fixed16* s_column_X_Over_Y;
 	
 	// WallSegments
 	extern RWallSegment s_wallSegListDst[MAX_SEG];
@@ -62,9 +62,9 @@ namespace RendererClassic
 
 	// Flats
 	extern s32 s_flatCount;
-	extern s32* s_rcp_yMinusHalfHeight;
-	extern s32 s_wallMaxCeilY;
-	extern s32 s_wallMinFloorY;
+	extern fixed16* s_rcp_yMinusHalfHeight;
+	extern fixed16 s_wallMaxCeilY;
+	extern fixed16 s_wallMinFloorY;
 	extern s32 s_yMin;
 	extern s32 s_yMax;
 	extern FlatEdges* s_lowerFlatEdge;

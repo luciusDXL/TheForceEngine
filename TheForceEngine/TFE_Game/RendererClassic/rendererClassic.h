@@ -6,11 +6,12 @@
 
 #include <TFE_System/types.h>
 #include <TFE_Asset/colormapAsset.h>
+#include "fixedPoint.h"
 #include "../renderCommon.h"
 
 namespace RendererClassic
 {
-	void setCamera(s32 cosYaw, s32 sinYaw, s32 x, s32 y, s32 z, s32 sectorId);
+	void setCamera(fixed16 cosYaw, fixed16 sinYaw, s32 x, s32 y, s32 z, s32 sectorId);
 	void draw(u8* display, const ColorMap* colormap);
 
 	void setupLevel(s32 width, s32 height);

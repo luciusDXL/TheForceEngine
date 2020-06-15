@@ -8,7 +8,7 @@ using namespace RMath;
 
 namespace RClassicLighting
 {
-	const u8* computeLighting(s32 depth, s32 lightOffset)
+	const u8* computeLighting(fixed16 depth, s32 lightOffset)
 	{
 		if (s_sectorAmbient >= 31)
 		{

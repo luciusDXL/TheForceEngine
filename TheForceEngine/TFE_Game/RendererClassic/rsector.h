@@ -20,21 +20,21 @@ struct RSector
 	vec2* verticesWS;		// world space and view space XZ vertex positions.
 	vec2* verticesVS;
 	s32 wallCount;			// number of walls.
-	RWall* walls;			// wall list.
-	s32 floorHeight;		// floor height (Y); -Y up, larger = lower.
-	s32 ceilingHeight;		// ceiling height (Y); -Y up, smaller = higher.
-	s32 secHeight;			// second height; equals floor height if second height in the data = 0.
-	s32 ambientFixed;		// sector ambient in fixed point in the range of [0.0, 31.0]
+	RWall*  walls;			// wall list.
+	fixed16 floorHeight;	// floor height (Y); -Y up, larger = lower.
+	fixed16 ceilingHeight;	// ceiling height (Y); -Y up, smaller = higher.
+	fixed16 secHeight;		// second height; equals floor height if second height in the data = 0.
+	fixed16 ambientFixed;	// sector ambient in fixed point in the range of [0.0, 31.0]
 
 	// Textures
 	TextureFrame* floorTex;
 	TextureFrame* ceilTex;
 
 	// Texture offsets
-	s32 floorOffsetX;
-	s32 floorOffsetZ;
-	s32 ceilOffsetX;
-	s32 ceilOffsetZ;
+	fixed16 floorOffsetX;
+	fixed16 floorOffsetZ;
+	fixed16 ceilOffsetX;
+	fixed16 ceilOffsetZ;
 
 	s32 startWall;			// wall segment start index for rendering
 	s32 drawWallCnt;		// wall segment draw count for rendering

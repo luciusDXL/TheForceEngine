@@ -350,14 +350,13 @@ namespace TFE_GameLoop
 		// move curVel towards newVel
 		Vec2f diff = { newVel->x - curVel->x, newVel->z - curVel->z };
 		const f32 lenSq = TFE_Math::dot(&diff, &diff);
-		if (lenSq > FLT_EPSILON)
+		if (lenSq > 0.002f)
 		{
 			const f32 len = sqrtf(lenSq);
 			const f32 scale = std::min(len, c_limit) / len;
 			diff.x *= scale;
 			diff.z *= scale;
 		}
-
 		Vec3f limitedVel = { curVel->x + diff.x, curVel->y, curVel->z + diff.z };
 		return limitedVel;
 	}

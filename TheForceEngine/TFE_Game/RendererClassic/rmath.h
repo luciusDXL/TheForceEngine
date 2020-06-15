@@ -8,12 +8,12 @@
 
 struct vec2
 {
-	s32 x, z;
+	fixed16 x, z;
 };
 
 struct vec3
 {
-	s32 x, y, z;
+	fixed16 x, y, z;
 };
 
 namespace RMath

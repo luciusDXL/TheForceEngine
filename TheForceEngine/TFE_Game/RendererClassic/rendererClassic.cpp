@@ -61,7 +61,8 @@ namespace RendererClassic
 		// HACK: TODO - compute correctly.
 		if (width * 10 / height != 16)
 		{
-			s_focalLenAspect *= 1.2;
+			const fixed16 mul1_2 = 78643;
+			s_focalLenAspect = mul16(s_focalLenAspect, mul1_2);
 		}
 
 		s_minScreenX = 0;
@@ -70,15 +71,15 @@ namespace RendererClassic
 		s_maxScreenY = s_height - 1;
 		s_minSegZ = 0;
 
-		s_depth1d   = (s32*)realloc(s_depth1d, s_width * sizeof(s32));
-		s_columnTop = (s32*)realloc(s_columnTop, s_width * 4);
-		s_columnBot = (s32*)realloc(s_columnBot, s_width * 4);
-		s_windowTop = (s32*)realloc(s_windowTop, s_width * 4);
-		s_windowBot = (s32*)realloc(s_windowBot, s_width * 4);
+		s_depth1d   = (fixed16*)realloc(s_depth1d, s_width * sizeof(fixed16));
+		s_columnTop = (s32*)realloc(s_columnTop, s_width * sizeof(s32));
+		s_columnBot = (s32*)realloc(s_columnBot, s_width * sizeof(s32));
+		s_windowTop = (s32*)realloc(s_windowTop, s_width * sizeof(s32));
+		s_windowBot = (s32*)realloc(s_windowBot, s_width * sizeof(s32));
 
 		// Build tables
-		s_column_Y_Over_X = (s32*)realloc(s_column_Y_Over_X, s_width * sizeof(s32));
-		s_column_X_Over_Y = (s32*)realloc(s_column_X_Over_Y, s_width * sizeof(s32));
+		s_column_Y_Over_X = (fixed16*)realloc(s_column_Y_Over_X, s_width * sizeof(fixed16));
+		s_column_X_Over_Y = (fixed16*)realloc(s_column_X_Over_Y, s_width * sizeof(fixed16));
 		s32 halfWidth = s_width >> 1;
 		for (s32 x = 0; x < s_width; x++)
 		{
@@ -86,7 +87,7 @@ namespace RendererClassic
 			s_column_X_Over_Y[x] = div16(intToFixed16(x - halfWidth), s_halfWidth);
 		}
 
-		s_rcp_yMinusHalfHeight = (s32*)realloc(s_rcp_yMinusHalfHeight, s_height * sizeof(s32));
+		s_rcp_yMinusHalfHeight = (fixed16*)realloc(s_rcp_yMinusHalfHeight, s_height * sizeof(fixed16));
 		s32 halfHeight = s_height >> 1;
 		for (s32 y = 0; y < s_height; y++)
 		{
@@ -107,7 +108,7 @@ namespace RendererClassic
 		loadLevel();
 	}
 
-	void setCamera(s32 cosYaw, s32 sinYaw, s32 x, s32 y, s32 z, s32 sectorId)
+	void setCamera(fixed16 cosYaw, fixed16 sinYaw, s32 x, s32 y, s32 z, s32 sectorId)
 	{
 		s_cosYaw = cosYaw;
 		s_sinYaw = sinYaw;
@@ -150,7 +151,7 @@ namespace RendererClassic
 		s_flatCount  = 0;
 		s_nextWall   = 0;
 		s_curWallSeg = 0;
-		memset(s_depth1d, 0, s_width * sizeof(u32));
+		memset(s_depth1d, 0, s_width * sizeof(fixed16));
 
 		for (s32 i = 0; i < s_width; i++)
 		{
