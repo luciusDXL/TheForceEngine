@@ -61,8 +61,7 @@ namespace RendererClassic
 		// HACK: TODO - compute correctly.
 		if (width * 10 / height != 16)
 		{
-			const fixed16 mul1_2 = 78643;
-			s_focalLenAspect = mul16(s_focalLenAspect, mul1_2);
+			s_focalLenAspect = intToFixed16((height / 2) * 8 / 5);
 		}
 
 		s_minScreenX = 0;
@@ -91,8 +90,8 @@ namespace RendererClassic
 		s32 halfHeight = s_height >> 1;
 		for (s32 y = 0; y < s_height; y++)
 		{
-			s32 yMinusHalf = y - halfHeight;
-			s_rcp_yMinusHalfHeight[y] = (yMinusHalf != 0) ? 65536 / yMinusHalf : 65536;
+			fixed16 yMinusHalf = fixed16(y - halfHeight);
+			s_rcp_yMinusHalfHeight[y] = (yMinusHalf != 0) ? ONE_16 / yMinusHalf : ONE_16;
 		}
 	}
 	

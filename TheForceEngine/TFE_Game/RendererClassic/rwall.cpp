@@ -698,8 +698,8 @@ namespace RClassicWall
 		// For some reason we only early-out if the ceiling is below the view.
 		if (y0C_pixel > s_windowMaxY && y1C_pixel > s_windowMaxY)
 		{
-			s32 yMax = intToFixed16(s_windowMaxY + 1);
-			//addWallPartScreen(length, x, 0, yMax, 0, yMax);
+			fixed16 yMax = intToFixed16(s_windowMaxY + 1);
+			flat_addEdges(length, x, 0, yMax, 0, yMax);
 
 			for (s32 i = 0; i < length; i++, x++)
 			{

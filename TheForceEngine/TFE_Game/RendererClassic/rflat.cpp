@@ -172,15 +172,16 @@ namespace RClassicFlat
 		}
 	}
 		
+#if ENABLE_HIGH_PRECISION_FIXED_POINT == 0
 	// This produces functionally identical results to the original but splits apart the U/V and dUdx/dVdx into seperate variables
 	// to account for C vs ASM differences.
 	void drawScanline()
 	{
 		// Convert from 16.16 coordinates to 6.10 coordinates
-		s32 V = s32(s_scanlineV0 >> 6);
-		s32 U = s32(s_scanlineU0 >> 6);
-		s32 dVdX = s32(s_scanline_dVdX >> 6);
-		s32 dUdX = s32(s_scanline_dUdX >> 6);
+		s32 V = s32(s_scanlineV0 >> SUB_TEXEL_SHIFT);
+		s32 U = s32(s_scanlineU0 >> SUB_TEXEL_SHIFT);
+		s32 dVdX = s32(s_scanline_dVdX >> SUB_TEXEL_SHIFT);
+		s32 dUdX = s32(s_scanline_dUdX >> SUB_TEXEL_SHIFT);
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
@@ -203,10 +204,10 @@ namespace RClassicFlat
 	void drawScanline_Fullbright()
 	{
 		// Convert from 16.16 coordinates to 6.10 coordinates
-		s32 V = s32(s_scanlineV0 >> 6);
-		s32 U = s32(s_scanlineU0 >> 6);
-		s32 dVdX = s32(s_scanline_dVdX >> 6);
-		s32 dUdX = s32(s_scanline_dUdX >> 6);
+		s32 V = s32(s_scanlineV0 >> SUB_TEXEL_SHIFT);
+		s32 U = s32(s_scanlineU0 >> SUB_TEXEL_SHIFT);
+		s32 dVdX = s32(s_scanline_dVdX >> SUB_TEXEL_SHIFT);
+		s32 dUdX = s32(s_scanline_dUdX >> SUB_TEXEL_SHIFT);
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
@@ -225,6 +226,59 @@ namespace RClassicFlat
 			s_scanlineOut[i] = c;
 		}
 	}
+#else
+	// This produces functionally identical results to the original but splits apart the U/V and dUdx/dVdx into seperate variables
+	// to account for C vs ASM differences.
+	void drawScanline()
+	{
+		fixed16 V = s_scanlineV0;
+		fixed16 U = s_scanlineU0;
+		fixed16 dVdX = s_scanline_dVdX;
+		fixed16 dUdX = s_scanline_dUdX;
+
+		// Note this produces a distorted mapping if the texture is not 64x64.
+		// This behavior matches the original.
+		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+		texel &= s_ftexDataEnd;
+		U += dUdX;
+		V += dVdX;
+
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		{
+			u8 c = s_scanlineLight[s_ftexImage[texel]];
+			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+			texel &= s_ftexDataEnd;
+			U += dUdX;
+			V += dVdX;
+			s_scanlineOut[i] = c;
+		}
+	}
+
+	void drawScanline_Fullbright()
+	{
+		fixed16 V = s_scanlineV0;
+		fixed16 U = s_scanlineU0;
+		fixed16 dVdX = s_scanline_dVdX;
+		fixed16 dUdX = s_scanline_dUdX;
+
+		// Note this produces a distorted mapping if the texture is not 64x64.
+		// This behavior matches the original.
+		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+		texel &= s_ftexDataEnd;
+		U += dUdX;
+		V += dVdX;
+
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		{
+			u8 c = s_ftexImage[texel];
+			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+			texel &= s_ftexDataEnd;
+			U += dUdX;
+			V += dVdX;
+			s_scanlineOut[i] = c;
+		}
+	}
+#endif
 
 	void flat_drawCeiling(RSector* sector, FlatEdges* edges, s32 count)
 	{
@@ -541,14 +595,13 @@ namespace RClassicFlat
 					s_scanlineX0 = left;
 					s_scanlineOut = &s_display[left + yOffset];
 					fixed16 rightClip = intToFixed16(right - s_screenXMid);
+					fixed16 worldToTexelScale = fixed16(8);
 
 					fixed16 v0 = mul16(cosScaledRelFloor - mul16(negSinRelFloor, rightClip), yRcp);
-					s_scanlineV0 = (v0 - textureOffsetV) * 8;
-
 					fixed16 u0 = mul16(sinScaledRelFloor + mul16(negCosRelFloor, rightClip), yRcp);
-					s_scanlineU0 = (u0 - textureOffsetU) * 8;
+					s_scanlineV0 = (v0 - textureOffsetV) * worldToTexelScale;
+					s_scanlineU0 = (u0 - textureOffsetU) * worldToTexelScale;
 
-					fixed16 worldToTexelScale = fixed16(8);
 					s_scanline_dVdX =  mul16(negSinRelFloor, yRcp) * worldToTexelScale;
 					s_scanline_dUdX = -mul16(negCosRelFloor, yRcp) * worldToTexelScale;
 					s_scanlineLight = computeLighting(z, 0);

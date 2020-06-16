@@ -6,14 +6,24 @@
 #include <TFE_System/types.h>
 #include <math.h>
 
+// Experiment with a drop in way of fixing precision issues at higher resolutions.
+#define ENABLE_HIGH_PRECISION_FIXED_POINT 0
+
+#if ENABLE_HIGH_PRECISION_FIXED_POINT == 0
+typedef s32 fixed16;
 #define HALF_16 0x8000
 #define ONE_16 0x10000
-
-#define ENABLE_HIGH_PRECISION_FIXED_POINT 0
-typedef s32 fixed16;
-// Experiment with a drop in way of fixing precision issues at higher resolutions.
-// #define ENABLE_HIGH_PRECISION_FIXED_POINT 1
-// typedef s64 fixed16;
+#define FRAC_BITS 16
+#define SUB_TEXEL_SHIFT 6
+#define FLOAT_SCALE 65536.0f
+#else
+typedef s64 fixed16;
+#define HALF_16  0x80000ll
+#define ONE_16  0x100000ll
+#define FRAC_BITS 20ll
+#define SUB_TEXEL_SHIFT 10ll
+#define FLOAT_SCALE 1048576.0f
+#endif
 
 namespace FixedPoint
 {
@@ -24,7 +34,7 @@ namespace FixedPoint
 		const s64 x64 = s64(x);
 		const s64 y64 = s64(y);
 
-		return fixed16((x64 * y64) >> 16ll);
+		return fixed16((x64 * y64) >> FRAC_BITS);
 	}
 
 	// divides 2 fixed point numbers, the result is fixed point.
@@ -34,30 +44,30 @@ namespace FixedPoint
 		const s64 num64 = s64(num);
 		const s64 den64 = s64(denom);
 
-		return fixed16((num64 << 16ll) / den64);
+		return fixed16((num64 << FRAC_BITS) / den64);
 	}
 
 	// truncates a 16.16 fixed point number, returns an int: x >> 16
 	inline s32 floor16(fixed16 x)
 	{
-		return s32(x >> 16);
+		return s32(x >> FRAC_BITS);
 	}
 
 	// rounds a 16.16 fixed point number, returns an int: (x + HALF_16) >> 16
 	inline s32 round16(fixed16 x)
 	{
-		return s32((x + HALF_16) >> 16);
+		return s32((x + HALF_16) >> FRAC_BITS);
 	}
 
 	// converts an integer to a fixed point number: x << 16
 	inline fixed16 intToFixed16(s32 x)
 	{
-		return fixed16(x) << fixed16(16);
+		return fixed16(x) << FRAC_BITS;
 	}
 
 	inline fixed16 floatToFixed16(f32 x)
 	{
-		return fixed16(x * 65536.0f);
+		return fixed16(x * FLOAT_SCALE);
 	}
 
 	inline s32 fixed16to12(fixed16 x)
