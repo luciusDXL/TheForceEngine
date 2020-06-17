@@ -8,6 +8,9 @@ namespace RendererClassic
 	s32 s_height = 0;
 	fixed16 s_halfWidth;
 	fixed16 s_halfHeight;
+	fixed16 s_halfHeightBase;
+	s32 s_heightInPixels;
+	s32 s_heightInPixelsBase;
 	s32 s_minScreenY;
 	s32 s_maxScreenY;
 	s32 s_screenXMid;

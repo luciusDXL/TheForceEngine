@@ -54,9 +54,13 @@ namespace RendererClassic
 		s_height = height;
 		s_halfWidth = intToFixed16(s_width >> 1);
 		s_halfHeight = intToFixed16(s_height >> 1);
+		s_halfHeightBase = s_halfHeight;
 		s_focalLength = s_halfWidth;
 		s_focalLenAspect = s_focalLength;
 		s_screenXMid = s_width >> 1;
+
+		s_heightInPixels = s_height;
+		s_heightInPixelsBase = s_height;
 
 		// HACK: TODO - compute correctly.
 		if (width * 10 / height != 16)
@@ -86,11 +90,11 @@ namespace RendererClassic
 			s_column_X_Over_Y[x] = div16(intToFixed16(x - halfWidth), s_halfWidth);
 		}
 
-		s_rcp_yMinusHalfHeight = (fixed16*)realloc(s_rcp_yMinusHalfHeight, s_height * sizeof(fixed16));
+		s_rcp_yMinusHalfHeight = (fixed16*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed16));
 		s32 halfHeight = s_height >> 1;
-		for (s32 y = 0; y < s_height; y++)
+		for (s32 y = 0; y < s_height * 3; y++)
 		{
-			fixed16 yMinusHalf = fixed16(y - halfHeight);
+			fixed16 yMinusHalf = fixed16(-s_height + y - halfHeight);
 			s_rcp_yMinusHalfHeight[y] = (yMinusHalf != 0) ? ONE_16 / yMinusHalf : ONE_16;
 		}
 	}
@@ -107,7 +111,7 @@ namespace RendererClassic
 		loadLevel();
 	}
 
-	void setCamera(fixed16 cosYaw, fixed16 sinYaw, s32 x, s32 y, s32 z, s32 sectorId)
+	void setCamera(fixed16 cosYaw, fixed16 sinYaw, fixed16 sinPitch, s32 x, s32 y, s32 z, s32 sectorId)
 	{
 		s_cosYaw = cosYaw;
 		s_sinYaw = sinYaw;
@@ -119,6 +123,10 @@ namespace RendererClassic
 
 		s_cameraPosX = x;
 		s_cameraPosZ = z;
+
+		fixed16 pitchOffset = mul16(sinPitch, s_focalLenAspect);
+		s_halfHeight = s_halfHeightBase + pitchOffset;
+		s_heightInPixels = s_heightInPixelsBase + floor16(pitchOffset);
 
 		s_sectorId = sectorId;
 		s_cameraLightSource = 0;

@@ -13,6 +13,9 @@ namespace RendererClassic
 	extern s32 s_height;
 	extern fixed16 s_halfWidth;
 	extern fixed16 s_halfHeight;
+	extern fixed16 s_halfHeightBase;
+	extern s32 s_heightInPixels;
+	extern s32 s_heightInPixelsBase;
 	extern s32 s_minScreenY;
 	extern s32 s_maxScreenY;
 	extern s32 s_screenXMid;

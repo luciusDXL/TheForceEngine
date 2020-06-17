@@ -304,9 +304,8 @@ namespace RClassicFlat
 		{
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
-			// TODO: setup y shear
-			s32 yShear = 0; // s_heightInPixelsConst - s_heightInPixels;
-			fixed16 yRcp = s_rcp_yMinusHalfHeight[yShear + y];
+			s32 yShear = s_heightInPixelsBase - s_heightInPixels;
+			fixed16 yRcp = s_rcp_yMinusHalfHeight[yShear + y + s_height];
 			fixed16 z = mul16(scaledRelCeil, yRcp);
 
 			s32 left = 0;
@@ -475,9 +474,8 @@ namespace RClassicFlat
 		{
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
-			// TODO: setup y shear
-			s32 yShear = 0; // s_heightInPixelsConst - s_heightInPixels;
-			fixed16 yRcp = s_rcp_yMinusHalfHeight[yShear + y];
+			s32 yShear = s_heightInPixelsBase - s_heightInPixels;
+			fixed16 yRcp = s_rcp_yMinusHalfHeight[yShear + y + s_height];
 			fixed16 z = mul16(scaledRelFloor, yRcp);
 
 			s32 left = 0;

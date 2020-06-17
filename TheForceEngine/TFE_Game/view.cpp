@@ -2088,7 +2088,8 @@ namespace TFE_View
 		TFE_RenderCommon::setViewParam(s_rot, cameraPos);
 		TFE_ModelRender::buildClipPlanes(s_pitchOffset);
 
-		RendererClassic::setCamera(floatToFixed16(s_rot[0]), floatToFixed16(s_rot[1]), floatToFixed16(cameraPos->x), floatToFixed16(cameraPos->y), floatToFixed16(cameraPos->z), sectorId);
+		f32 sinPitch = sinf(pitch);
+		RendererClassic::setCamera(floatToFixed16(s_rot[0]), floatToFixed16(s_rot[1]), floatToFixed16(sinPitch), floatToFixed16(cameraPos->x), floatToFixed16(cameraPos->y), floatToFixed16(cameraPos->z), sectorId);
 	}
 		
 	void draw(const Vec3f* cameraPos, s32 sectorId)
