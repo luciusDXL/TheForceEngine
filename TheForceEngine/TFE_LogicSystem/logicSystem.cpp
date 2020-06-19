@@ -758,7 +758,7 @@ namespace TFE_LogicSystem
 		SCRIPT_ENUM(SoundType);
 		SCRIPT_ENUM_VALUE(SoundType, SOUND_2D);
 		SCRIPT_ENUM_VALUE(SoundType, SOUND_3D);
-				
+
 		registerKeyTypes();
 		registerLogicTypes();
 			   

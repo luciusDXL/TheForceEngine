@@ -807,11 +807,10 @@ namespace TFE_WeaponSystem
 
 		SCRIPT_NATIVE_FUNC(TFE_Sound_PlayOneShot,         void TFE_Sound_PlayOneShot(float volume, const string &in));
 
-		// Register "self" and Logic parameters.
+		// Register weapon and screen parameters.
 		SCRIPT_GLOBAL_PROPERTY(WeaponObject, weapon, s_weaponPtr);
 		SCRIPT_GLOBAL_PROPERTY(ScreenObject, screen, s_screenPtr);
 
-		// Register global constants.
 		// Register enums
 		SCRIPT_ENUM(ProjectileFlags);
 		SCRIPT_ENUM_VALUE(ProjectileFlags, PFLAG_HAS_GRAVITY);
