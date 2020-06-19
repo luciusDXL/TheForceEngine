@@ -24,6 +24,7 @@ namespace TFE_ScriptSystem
 
 	asIScriptEngine* s_engine;
 	asIScriptContext* s_context[SCRIPT_TYPE_COUNT];
+	std::vector<ScriptTypeProp> s_prop;
 
 	void messageCallback(const asSMessageInfo *msg, void *param);
 
@@ -51,6 +52,8 @@ namespace TFE_ScriptSystem
 	bool init()
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_ScriptSystem::init");
+
+		s_prop.reserve(16);
 
 		// Create the script engine
 		s_engine = asCreateScriptEngine();

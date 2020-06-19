@@ -345,7 +345,7 @@ namespace TFE_GameLoop
 		{
 			return { newVel->x, curVel->y, newVel->z };
 		}
-		const f32 c_limit = 90.0f * dt;	// 1.5 @ 60 fps
+		const f32 c_limit = 135.0f * dt;	// 2.25 @ 60 fps
 
 		// move curVel towards newVel
 		Vec2f diff = { newVel->x - curVel->x, newVel->z - curVel->z };
@@ -857,20 +857,20 @@ namespace TFE_GameLoop
 					if (!(obj->physicsFlags&PHYSICS_GRAVITY)) { obj->verticalVel = 0.0f; continue; }
 
 					// Is the object close enough to stick to the floor or second alt?
-					const f32 dFloor = fabsf(obj->pos.y - sector->floorAlt);
-					const f32 dSec   = fabsf(obj->pos.y - sector->floorAlt - std::min(sector->secAlt, 0.0f));
-					if (dSec < 0.1f && sector->secAlt < 0.0f) { obj->pos.y = sector->floorAlt + sector->secAlt; obj->verticalVel = 0.0f; continue; }
-					else if (dFloor < 0.1f) { obj->pos.y = sector->floorAlt; obj->verticalVel = 0.0f; continue; }
+					const f32 dFloor = fabsf(obj->position.y - sector->floorAlt);
+					const f32 dSec   = fabsf(obj->position.y - sector->floorAlt - std::min(sector->secAlt, 0.0f));
+					if (dSec < 0.1f && sector->secAlt < 0.0f) { obj->position.y = sector->floorAlt + sector->secAlt; obj->verticalVel = 0.0f; continue; }
+					else if (dFloor < 0.1f) { obj->position.y = sector->floorAlt; obj->verticalVel = 0.0f; continue; }
 
 					// The object should fall towards the floor or second height.
-					const bool aboveSecHeight = sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f;
+					const bool aboveSecHeight = sector->secAlt < 0.0f && obj->position.y < sector->floorAlt + sector->secAlt + 0.1f;
 					const f32 floorHeight = aboveSecHeight ? sector->floorAlt + sector->secAlt : sector->floorAlt;
 
-					obj->pos.y += obj->verticalVel * c_step;
-					if (obj->pos.y >= floorHeight)
+					obj->position.y += obj->verticalVel * c_step;
+					if (obj->position.y >= floorHeight)
 					{
 						obj->verticalVel = 0.0f;
-						obj->pos.y = floorHeight;
+						obj->position.y = floorHeight;
 					}
 					else
 					{
@@ -895,13 +895,13 @@ namespace TFE_GameLoop
 		{
 			if (object->oclass != CLASS_SOUND || !object->buffer) { continue; }
 
-			const Vec3f offset = { object->pos.x - listenerPos->x, object->pos.y - listenerPos->y, object->pos.z - listenerPos->z };
+			const Vec3f offset = { object->position.x - listenerPos->x, object->position.y - listenerPos->y, object->position.z - listenerPos->z };
 			const f32 distSq = TFE_Math::dot(&offset, &offset);
 
 			if (distSq <= soundMaxDistSq && !object->source)
 			{
 				// Add a new looping 3D source.
-				object->source = TFE_Audio::createSoundSource(SOUND_3D, 1.0f, MONO_SEPERATION, object->buffer, &object->pos);
+				object->source = TFE_Audio::createSoundSource(SOUND_3D, 1.0f, MONO_SEPERATION, object->buffer, &object->position);
 				if (object->source)
 				{
 					TFE_Audio::playSource(object->source, true);

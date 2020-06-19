@@ -110,9 +110,9 @@ namespace TFE_Level
 				Vec3f pos = object[i].pos;
 				s32 sectorId = TFE_Physics::findSector(&pos);
 
-				secobject->id = i;
+				secobject->objectId = i;
 				secobject->oclass = oclass;
-				secobject->pos = pos;
+				secobject->position = pos;
 				secobject->sectorId = sectorId;
 
 				secobject->angles = object[i].orientation;
@@ -124,7 +124,7 @@ namespace TFE_Level
 				secobject->physicsFlags = object[i].logics.empty() ? PHYSICS_NONE : PHYSICS_GRAVITY;
 				secobject->verticalVel = 0.0f;
 				secobject->show = true;
-				secobject->comFlags = object[i].comFlags;
+				secobject->commonFlags = object[i].comFlags;
 				secobject->radius = object[i].radius;
 				secobject->height = object[i].height;
 				secobject->vueTransform = nullptr;
@@ -256,12 +256,12 @@ namespace TFE_Level
 		for (u32 i = 0; i < objCount; i++)
 		{
 			GameObject* obj = &objects[indices[i]];
-			const f32 dFloor  = fabsf(obj->pos.y - height);
-			const f32 dSecAlt = fabsf(obj->pos.y - secAltHeight);
+			const f32 dFloor  = fabsf(obj->position.y - height);
+			const f32 dSecAlt = fabsf(obj->position.y - secAltHeight);
 			if (((flags & MOVE_FLOOR) && dFloor < 0.1f) || ((flags & MOVE_SEC_ALT) && dSecAlt < 0.1f))
 			{
-				obj->pos.x += move->x;
-				obj->pos.z += move->z;
+				obj->position.x += move->x;
+				obj->position.z += move->z;
 			}
 		}
 	}
@@ -286,14 +286,14 @@ namespace TFE_Level
 		for (u32 i = 0; i < objCount; i++)
 		{
 			GameObject* obj = &objects[indices[i]];
-			const f32 dFloor = fabsf(obj->pos.y - height);
-			const f32 dSecAlt = fabsf(obj->pos.y - secAltHeight);
+			const f32 dFloor = fabsf(obj->position.y - height);
+			const f32 dSecAlt = fabsf(obj->position.y - secAltHeight);
 			if (((flags & MOVE_FLOOR) && dFloor < 0.1f) || ((flags & MOVE_SEC_ALT) && dSecAlt < 0.1f))
 			{
-				const f32 x = obj->pos.x - center->x;
-				const f32 z = obj->pos.z - center->z;
-				obj->pos.x =  ca*x + sa*z + center->x;
-				obj->pos.z = -sa*x + ca*z + center->z;
+				const f32 x = obj->position.x - center->x;
+				const f32 z = obj->position.z - center->z;
+				obj->position.x =  ca*x + sa*z + center->x;
+				obj->position.z = -sa*x + ca*z + center->z;
 				obj->angles.y += angleDelta * PI / 180.0f;
 			}
 		}
@@ -312,7 +312,7 @@ namespace TFE_Level
 			GameObject* obj = &objects[indices[i]];
 			f32 testHeight = newHeight;
 			f32 baseHeight = sector->floorAlt;
-			if (sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f)
+			if (sector->secAlt < 0.0f && obj->position.y < sector->floorAlt + sector->secAlt + 0.1f)
 			{
 				testHeight += sector->secAlt;
 				baseHeight += sector->secAlt;
@@ -321,9 +321,9 @@ namespace TFE_Level
 			// Move the object if it is close to the floor (so it sticks when going down)
 			// or below the floor.
 			// This way if an object is in the air (jumping, flying) it isn't moved unless necessary.
-			if (obj->pos.y >= testHeight || fabsf(obj->pos.y - baseHeight) < 0.1f)
+			if (obj->position.y >= testHeight || fabsf(obj->position.y - baseHeight) < 0.1f)
 			{
-				obj->pos.y = testHeight;
+				obj->position.y = testHeight;
 			}
 		}
 	}
@@ -345,9 +345,9 @@ namespace TFE_Level
 			// Move the object if it is close to the floor (so it sticks when going down)
 			// or below the floor.
 			// This way if an object is in the air (jumping, flying) it isn't moved unless necessary.
-			if (obj->pos.y >= testHeight || fabsf(obj->pos.y - baseHeight) < 0.1f)
+			if (obj->position.y >= testHeight || fabsf(obj->position.y - baseHeight) < 0.1f)
 			{
-				obj->pos.y = testHeight;
+				obj->position.y = testHeight;
 			}
 		}
 	}
@@ -362,7 +362,7 @@ namespace TFE_Level
 
 		for (u32 i = 0; i < objCount; i++, object++)
 		{
-			object->comFlags &= ~LCF_PAUSE;
+			object->commonFlags &= ~LCF_PAUSE;
 		}
 	}
 

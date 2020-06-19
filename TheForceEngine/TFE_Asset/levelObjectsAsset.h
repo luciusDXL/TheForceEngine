@@ -42,6 +42,8 @@ struct EnemyGenerator
 	s32 numTerminate;	// number of enemies to generate after which the generator will terminate. -1 = infinite spawns.
 	f32 wanderTime;		// time in seconds that a generate enemy walks around before becoming inactive.
 };
+// For Scripts
+typedef EnemyGenerator GenParam;
 
 struct Logic
 {
@@ -55,6 +57,8 @@ struct Logic
 	s32 vueId = -1;
 	s32 vueAppendId = -1;
 };
+// For scripts
+typedef Logic LogicParam;
 
 struct LevelObject
 {

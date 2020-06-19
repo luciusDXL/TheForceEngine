@@ -794,7 +794,7 @@ namespace TFE_View
 
 		TFE_ModelRender::setClip(seg->ix0, seg->ix1, upper, lower);
 		TFE_ModelRender::setModelScale(&obj->scale);
-		TFE_ModelRender::draw(model, &obj->angles, &obj->pos, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, &s_level->sectors[obj->sectorId]);
+		TFE_ModelRender::draw(model, &obj->angles, &obj->position, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, &s_level->sectors[obj->sectorId]);
 	}
 
 	void drawSprite(s32 index)
@@ -1966,9 +1966,9 @@ namespace TFE_View
 			if (!obj->show) { continue; }
 
 			// Compute the view position.
-			const f32 wx = obj->pos.x - cameraPos->x;
-			const f32 wy = obj->pos.y - cameraPos->y;
-			const f32 wz = obj->pos.z - cameraPos->z;
+			const f32 wx = obj->position.x - cameraPos->x;
+			const f32 wy = obj->position.y - cameraPos->y;
+			const f32 wz = obj->position.z - cameraPos->z;
 			const f32 vx =  wx * ca + wz * sa;
 			const f32 vz = -wx * sa + wz * ca;
 
@@ -2019,7 +2019,7 @@ namespace TFE_View
 				
 				Vec2i screenRect[2];
 				TFE_ModelRender::setModelScale(&obj->scale);
-				if (!TFE_ModelRender::computeScreenSize(model, &obj->angles, &obj->pos, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, screenRect))
+				if (!TFE_ModelRender::computeScreenSize(model, &obj->angles, &obj->position, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, screenRect))
 				{
 					continue;
 				}

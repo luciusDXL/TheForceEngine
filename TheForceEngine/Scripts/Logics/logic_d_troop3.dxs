@@ -58,7 +58,7 @@ void tick()
 // the object is shot or is subject to an explosion.
 void handleMessage(int msgId, int arg0, int arg1)
 {
-	if (msgId == LOGIC_MSG_DAMAGED)
+	if (msgId == LOGIC_MSG_DAMAGE)
 	{
 		// for now just kill...
 		self.hp = 0;

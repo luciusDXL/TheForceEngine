@@ -477,7 +477,7 @@ namespace TFE_WeaponSystem
 		proj->value0 = value0;
 		proj->value1 = value1;
 
-		projObj->pos = { origin.x + dir.x * s_weapon.renderOffset, origin.y + dir.y * s_weapon.renderOffset, origin.z + dir.z * s_weapon.renderOffset };
+		projObj->position = { origin.x + dir.x * s_weapon.renderOffset, origin.y + dir.y * s_weapon.renderOffset, origin.z + dir.z * s_weapon.renderOffset };
 	}
 
 	void spawnEffect(ProjectilePool* effectPool, const Vec3f* pos, s32 sectorId)
@@ -506,7 +506,7 @@ namespace TFE_WeaponSystem
 		effect->pool = effectPool;
 		effect->pos = *pos;
 
-		effectObj->pos = *pos;
+		effectObj->position = *pos;
 		effectObj->sectorId = sectorId;
 		effectObj->animId = 0;
 		effectObj->frameIndex = 0;
@@ -594,7 +594,7 @@ namespace TFE_WeaponSystem
 			for (u32 j = 0; j < count; j++, obj++)
 			{
 				if (!obj->show) { continue; }
-				const f32 distSq = TFE_Math::distanceSq(&obj->pos, hitPoint);
+				const f32 distSq = TFE_Math::distanceSq(&obj->position, hitPoint);
 				if (distSq <= rSq)
 				{
 					// TODO: Damage falloff and explosion effect.
@@ -704,7 +704,7 @@ namespace TFE_WeaponSystem
 			
 			// Assuming no collision.
 			proj->pos = p1;
-			proj->obj->pos = { p1.x + dir.x * s_weapon.renderOffset, p1.y + dir.y * s_weapon.renderOffset, p1.z + dir.z * s_weapon.renderOffset };
+			proj->obj->position = { p1.x + dir.x * s_weapon.renderOffset, p1.y + dir.y * s_weapon.renderOffset, p1.z + dir.z * s_weapon.renderOffset };
 
 			// Physics
 			if (proj->flags & PFLAG_HAS_GRAVITY)
@@ -764,63 +764,60 @@ namespace TFE_WeaponSystem
 		}
 		s_initialized = true;
 						
-		// register script functions.
-		std::vector<ScriptTypeProp> prop;
-		prop.reserve(16);
+		// Register script functions.
 
 		// WeaponObject type
-		prop.clear();
-		prop.push_back({ "int x",				offsetof(WeaponObject, x) });
-		prop.push_back({ "int y",				offsetof(WeaponObject, y) });
-		prop.push_back({ "int yOffset",         offsetof(WeaponObject, yOffset) });
-		prop.push_back({ "int state",			offsetof(WeaponObject, state) });
-		prop.push_back({ "int frame",			offsetof(WeaponObject, frame) });
-		prop.push_back({ "int scaledWidth",		offsetof(WeaponObject, scaledWidth) });
-		prop.push_back({ "int scaledHeight",	offsetof(WeaponObject, scaledHeight) });
-		prop.push_back({ "const float motion",	offsetof(WeaponObject, motion) });
-		prop.push_back({ "const float pitch",	offsetof(WeaponObject, pitch) });
-		prop.push_back({ "const bool hold",		offsetof(WeaponObject, hold) });
-		prop.push_back({ "float time",			offsetof(WeaponObject, time) });
-		prop.push_back({ "float holdTime",		offsetof(WeaponObject, holdTime) });
-		TFE_ScriptSystem::registerRefType("WeaponObject", prop);
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER(WeaponObject, int, x);
+		SCRIPT_STRUCT_MEMBER(WeaponObject, int, y);
+		SCRIPT_STRUCT_MEMBER(WeaponObject, int, yOffset);
+		SCRIPT_STRUCT_MEMBER(WeaponObject, int, state);
+		SCRIPT_STRUCT_MEMBER(WeaponObject, int, frame);
+		SCRIPT_STRUCT_MEMBER(WeaponObject, int, scaledWidth);
+		SCRIPT_STRUCT_MEMBER(WeaponObject, int, scaledHeight);
+		SCRIPT_STRUCT_MEMBER_CONST(WeaponObject, float, motion);
+		SCRIPT_STRUCT_MEMBER_CONST(WeaponObject, float, pitch);
+		SCRIPT_STRUCT_MEMBER_CONST(WeaponObject, bool, hold);
+		SCRIPT_STRUCT_MEMBER(WeaponObject, float, time);
+		SCRIPT_STRUCT_MEMBER(WeaponObject, float, holdTime);
+		SCRIPT_STRUCT_REF(WeaponObject);
 
 		// Screen Object
-		prop.clear();
-		prop.push_back({"const int width",  offsetof(ScreenObject, width) });
-		prop.push_back({"const int height", offsetof(ScreenObject, height) });
-		prop.push_back({"const int scaleX", offsetof(ScreenObject, scaleX) });
-		prop.push_back({"const int scaleY", offsetof(ScreenObject, scaleY) });
-		TFE_ScriptSystem::registerRefType("ScreenObject", prop);
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER_CONST(ScreenObject, int, width);
+		SCRIPT_STRUCT_MEMBER_CONST(ScreenObject, int, height);
+		SCRIPT_STRUCT_MEMBER_CONST(ScreenObject, int, scaleX);
+		SCRIPT_STRUCT_MEMBER_CONST(ScreenObject, int, scaleY);
+		SCRIPT_STRUCT_REF(ScreenObject);
 
 		// Functions
-		TFE_ScriptSystem::registerFunction("void TFE_LoadWeaponFrame(int frameIndex, const string &in)", SCRIPT_FUNCTION(TFE_LoadWeaponFrame));
-		TFE_ScriptSystem::registerFunction("void TFE_NextWeapon()", SCRIPT_FUNCTION(TFE_NextWeapon));
-		TFE_ScriptSystem::registerFunction("void TFE_LoadProjectile(const string &in)", SCRIPT_FUNCTION(TFE_LoadProjectile));
-		TFE_ScriptSystem::registerFunction("void TFE_LoadHitEffect(const string &in)", SCRIPT_FUNCTION(TFE_LoadHitEffect));
-		TFE_ScriptSystem::registerFunction("void TFE_LoadHitSound(const string &in)", SCRIPT_FUNCTION(TFE_LoadHitSound));
-		TFE_ScriptSystem::registerFunction("float TFE_GetSineMotion(float time)", SCRIPT_FUNCTION(TFE_GetSineMotion));
-		TFE_ScriptSystem::registerFunction("float TFE_GetCosMotion(float time)", SCRIPT_FUNCTION(TFE_GetCosMotion));
-		TFE_ScriptSystem::registerFunction("void TFE_WeaponPrimed(int primeCount)", SCRIPT_FUNCTION(TFE_WeaponPrimed));
-		TFE_ScriptSystem::registerFunction("void TFE_MuzzleFlashBegin()", SCRIPT_FUNCTION(TFE_MuzzleFlashBegin));
-		TFE_ScriptSystem::registerFunction("void TFE_MuzzleFlashEnd()", SCRIPT_FUNCTION(TFE_MuzzleFlashEnd));
-		TFE_ScriptSystem::registerFunction("void TFE_SetProjectileScale(float x, float y, float z)", SCRIPT_FUNCTION(TFE_SetProjectileScale));
-		TFE_ScriptSystem::registerFunction("void TFE_SetProjectileRenderOffset(float offset)", SCRIPT_FUNCTION(TFE_SetProjectileRenderOffset));
-		TFE_ScriptSystem::registerFunction("void TFE_PlayerSpawnProjectile(int x, int y, float fwdSpeed, float upwardSpeed, uint flags, uint damage, float value0, float value1)",
-											SCRIPT_FUNCTION(TFE_PlayerSpawnProjectile));
+		SCRIPT_NATIVE_FUNC(TFE_LoadWeaponFrame,           void TFE_LoadWeaponFrame(int frameIndex, const string &in));
+		SCRIPT_NATIVE_FUNC(TFE_NextWeapon,                void TFE_NextWeapon());
+		SCRIPT_NATIVE_FUNC(TFE_LoadProjectile,            void TFE_LoadProjectile(const string &in));
+		SCRIPT_NATIVE_FUNC(TFE_LoadHitEffect,             void TFE_LoadHitEffect(const string &in));
+		SCRIPT_NATIVE_FUNC(TFE_LoadHitSound,              void TFE_LoadHitSound(const string &in));
+		SCRIPT_NATIVE_FUNC(TFE_GetSineMotion,             float TFE_GetSineMotion(float time));
+		SCRIPT_NATIVE_FUNC(TFE_GetCosMotion,              float TFE_GetCosMotion(float time));
+		SCRIPT_NATIVE_FUNC(TFE_WeaponPrimed,              void TFE_WeaponPrimed(int primeCount));
+		SCRIPT_NATIVE_FUNC(TFE_MuzzleFlashBegin,          void TFE_MuzzleFlashBegin());
+		SCRIPT_NATIVE_FUNC(TFE_MuzzleFlashEnd,            void TFE_MuzzleFlashEnd());
+		SCRIPT_NATIVE_FUNC(TFE_SetProjectileScale,        void TFE_SetProjectileScale(float x, float y, float z));
+		SCRIPT_NATIVE_FUNC(TFE_SetProjectileRenderOffset, void TFE_SetProjectileRenderOffset(float offset));
+		SCRIPT_NATIVE_FUNC(TFE_PlayerSpawnProjectile,     void TFE_PlayerSpawnProjectile(int x, int y, float fwdSpeed, float upwardSpeed, uint flags, uint damage, float value0, float value1));
 
-		TFE_ScriptSystem::registerFunction("void TFE_Sound_PlayOneShot(float volume, const string &in)", SCRIPT_FUNCTION(TFE_Sound_PlayOneShot));
+		SCRIPT_NATIVE_FUNC(TFE_Sound_PlayOneShot,         void TFE_Sound_PlayOneShot(float volume, const string &in));
 
 		// Register "self" and Logic parameters.
-		TFE_ScriptSystem::registerGlobalProperty("WeaponObject @weapon", &s_weaponPtr);
-		TFE_ScriptSystem::registerGlobalProperty("ScreenObject @screen", &s_screenPtr);
+		SCRIPT_GLOBAL_PROPERTY(WeaponObject, weapon, s_weaponPtr);
+		SCRIPT_GLOBAL_PROPERTY(ScreenObject, screen, s_screenPtr);
 
 		// Register global constants.
 		// Register enums
-		TFE_ScriptSystem::registerEnumType("ProjectileFlags");
-		TFE_ScriptSystem::registerEnumValue("ProjectileFlags", "PFLAG_HAS_GRAVITY", PFLAG_HAS_GRAVITY);
-		TFE_ScriptSystem::registerEnumValue("ProjectileFlags", "PFLAG_EXPLODE_ON_IMPACT", PFLAG_EXPLODE_ON_IMPACT);
-		TFE_ScriptSystem::registerEnumValue("ProjectileFlags", "PFLAG_TIMED_EXPLOSION", PFLAG_TIMED_EXPLOSION);
-		TFE_ScriptSystem::registerEnumValue("ProjectileFlags", "PFLAG_EXPLODE_ON_RANGE", PFLAG_EXPLODE_ON_RANGE);
+		SCRIPT_ENUM(ProjectileFlags);
+		SCRIPT_ENUM_VALUE(ProjectileFlags, PFLAG_HAS_GRAVITY);
+		SCRIPT_ENUM_VALUE(ProjectileFlags, PFLAG_EXPLODE_ON_IMPACT);
+		SCRIPT_ENUM_VALUE(ProjectileFlags, PFLAG_TIMED_EXPLOSION);
+		SCRIPT_ENUM_VALUE(ProjectileFlags, PFLAG_EXPLODE_ON_RANGE);
 
 		u32 width, height;
 		s_renderer->getResolution(&width, &height);
