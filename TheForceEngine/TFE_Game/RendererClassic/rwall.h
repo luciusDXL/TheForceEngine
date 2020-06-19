@@ -10,6 +10,7 @@ struct RSector;
 struct TextureFrame;
 
 #define MAX_SEG 384
+#define MAX_ADJOIN_SEG 128
 #define MAX_SPLIT_WALLS 40
 
 enum WallOrient
@@ -104,4 +105,6 @@ namespace RClassicWall
 	void wall_drawBottom(RWallSegment* wallSegment);
 	void wall_drawTop(RWallSegment* wallSegment);
 	void wall_drawTopAndBottom(RWallSegment* wallSegment);
+
+	void wall_addAdjoinSegment(s32 length, s32 x0, s32 top_dydx, s32 y1, s32 bot_dydx, s32 y0, RWallSegment* wallSegment);
 }

@@ -2,6 +2,7 @@
 #include "rflat.h"
 #include "rlighting.h"
 #include "rsector.h"
+#include "redgePair.h"
 #include "fixedPoint.h"
 #include "rmath.h"
 #include "rcommon.h"
@@ -28,6 +29,7 @@ using namespace FixedPoint;
 using namespace RMath;
 using namespace RClassicFlat;
 using namespace RClassicLighting;
+using namespace RClassicEdgePair;
 
 namespace RClassicWall
 {
@@ -1705,6 +1707,32 @@ namespace RClassicWall
 			vCoordFixed += s_vCoordStep;
 			v = floor16(vCoordFixed) & s_texHeightMask;
 			s_columnOut[offset] = c;
+		}
+	}
+
+	void wall_addAdjoinSegment(s32 length, s32 x0, s32 top_dydx, s32 y1, s32 bot_dydx, s32 y0, RWallSegment* wallSegment)
+	{
+		if (s_adjoinSegCount < MAX_ADJOIN_SEG)
+		{
+			s32 lengthFixed = (length - 1) << 16;
+			s32 y0End = y0;
+			if (bot_dydx != 0)
+			{
+				y0End += mul16(bot_dydx, lengthFixed);
+			}
+			s32 y1End = y1;
+			if (top_dydx != 0)
+			{
+				y1End += mul16(top_dydx, lengthFixed);
+			}
+			edgePair_setup(length, x0, top_dydx, y1End, y1, bot_dydx, y0, y0End, s_adjoinEdge);
+			s_adjoinEdge++;
+			s_adjoinSegCount++;
+
+			// Segment list, to do
+			//s_workSegment->srcWall = wallSegment->srcWall;
+			// this doesn't make any sense... - TODO figure out what is going on here.
+			//s_workSegment = (WallSegment*)&s_workSegment->wallX0_raw;
 		}
 	}
 }

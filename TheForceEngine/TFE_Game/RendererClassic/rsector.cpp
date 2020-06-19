@@ -2,6 +2,7 @@
 #include "rflat.h"
 #include "rlighting.h"
 #include "rsector.h"
+#include "redgePair.h"
 #include "fixedPoint.h"
 #include "rmath.h"
 #include "rcommon.h"
@@ -26,6 +27,7 @@
 using namespace RendererClassic;
 using namespace RClassicWall;
 using namespace RClassicFlat;
+using namespace RClassicEdgePair;
 using namespace RClassicLighting;
 using namespace FixedPoint;
 using namespace RMath;
@@ -109,8 +111,8 @@ namespace RClassicSector
 		qsort(wallSegment, drawSegCnt, sizeof(RWallSegment), wallSortX);
 
 		s32 flatCount = s_flatCount;
-		FlatEdges* lowerFlatEdge = &s_lowerFlatEdgeList[s_flatCount];
-		s_lowerFlatEdge = lowerFlatEdge;
+		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
+		s_flatEdge = flatEdge;
 
 		// Draw each wall segment in the sector.
 		for (s32 i = 0; i < drawSegCnt; i++, wallSegment++)
@@ -192,7 +194,7 @@ namespace RClassicSector
 		}
 		else
 		{
-			flat_drawCeiling(s_curSector, lowerFlatEdge, newFlatCount);
+			flat_drawCeiling(s_curSector, flatEdge, newFlatCount);
 		}
 		if (s_curSector->flags1 & SEC_FLAGS1_PIT)
 		{
@@ -200,7 +202,7 @@ namespace RClassicSector
 		}
 		else
 		{
-			flat_drawFloor(s_curSector, lowerFlatEdge, newFlatCount);
+			flat_drawFloor(s_curSector, flatEdge, newFlatCount);
 		}
 	}
 

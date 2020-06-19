@@ -529,6 +529,9 @@
     <ClInclude Include="TFE_Game\RendererClassic\rlighting.h">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\redgePair.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -856,6 +859,9 @@
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Game\RendererClassic\rsector.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\redgePair.cpp">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClCompile>
   </ItemGroup>

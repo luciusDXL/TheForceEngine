@@ -1,6 +1,7 @@
 #include "rflat.h"
 #include "rlighting.h"
 #include "rsector.h"
+#include "redgePair.h"
 #include "fixedPoint.h"
 #include "rmath.h"
 #include "rcommon.h"
@@ -9,6 +10,7 @@
 
 using namespace RendererClassic;
 using namespace RClassicLighting;
+using namespace RClassicEdgePair;
 using namespace FixedPoint;
 using namespace RMath;
 
@@ -29,47 +31,7 @@ namespace RClassicFlat
 	static s32 s_ftexWidthMask;
 	static s32 s_ftexHeightMask;
 	static s32 s_ftexHeightLog2;
-
-	void flat_setup(s32 length, s32 x0, fixed16 dyFloor_dx, fixed16 yFloor1, fixed16 yFloor, fixed16 dyCeil_dx, fixed16 yCeil, fixed16 yCeil1, FlatEdges* flat)
-	{
-		const s32 yF0 = round16(yFloor);
-		const s32 yF1 = round16(yFloor1);
-		const s32 yC0 = round16(yCeil);
-		const s32 yC1 = round16(yCeil1);
-
-		flat->yCeil0 = yCeil;
-		flat->yCeil1 = yCeil1;
-		flat->dyCeil_dx = dyCeil_dx;
-		if (yC0 < yC1)
-		{
-			flat->yPixel_C0 = yC0;
-			flat->yPixel_C1 = yC1;
-		}
-		else
-		{
-			flat->yPixel_C0 = yC1;
-			flat->yPixel_C1 = yC0;
-		}
-
-		flat->yFloor0 = yFloor;
-		flat->yFloor1 = yFloor1;
-		flat->dyFloor_dx = dyFloor_dx;
-		if (yF0 > yF1)
-		{
-			flat->yPixel_F0 = yF0;
-			flat->yPixel_F1 = yF1;
-		}
-		else
-		{
-			flat->yPixel_F0 = yF1;
-			flat->yPixel_F1 = yF0;
-		}
-
-		flat->lengthInPixels = length;
-		flat->x0 = x0;
-		flat->x1 = x0 + length - 1;
-	}
-
+	
 	void flat_addEdges(s32 length, s32 x0, fixed16 dyFloor_dx, fixed16 yFloor, fixed16 dyCeil_dx, fixed16 yCeil)
 	{
 		if (s_flatCount < MAX_SEG && length > 0)
@@ -87,15 +49,15 @@ namespace RClassicFlat
 				yFloor1 += mul16(dyFloor_dx, lengthFixed);
 			}
 
-			flat_setup(length, x0, dyFloor_dx, yFloor1, yFloor, dyCeil_dx, yCeil, yCeil1, s_lowerFlatEdge);
+			edgePair_setup(length, x0, dyFloor_dx, yFloor1, yFloor, dyCeil_dx, yCeil, yCeil1, s_flatEdge);
 
-			if (s_lowerFlatEdge->yPixel_C1 - 1 > s_wallMaxCeilY)
+			if (s_flatEdge->yPixel_C1 - 1 > s_wallMaxCeilY)
 			{
-				s_wallMaxCeilY = s_lowerFlatEdge->yPixel_C1 - 1;
+				s_wallMaxCeilY = s_flatEdge->yPixel_C1 - 1;
 			}
-			if (s_lowerFlatEdge->yPixel_F1 + 1 < s_wallMinFloorY)
+			if (s_flatEdge->yPixel_F1 + 1 < s_wallMinFloorY)
 			{
-				s_wallMinFloorY = s_lowerFlatEdge->yPixel_F1 + 1;
+				s_wallMinFloorY = s_flatEdge->yPixel_F1 + 1;
 			}
 			if (s_wallMaxCeilY < s_windowMinY)
 			{
@@ -106,11 +68,11 @@ namespace RClassicFlat
 				s_wallMinFloorY = s_windowMaxY;
 			}
 
-			s_lowerFlatEdge++;
+			s_flatEdge++;
 			s_flatCount++;
 		}
 	}
-
+	
 	void clipScanline(s32* left, s32* right, s32 y)
 	{
 		s32 x0 = *left;
@@ -280,7 +242,7 @@ namespace RClassicFlat
 	}
 #endif
 
-	void flat_drawCeiling(RSector* sector, FlatEdges* edges, s32 count)
+	void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count)
 	{
 		fixed16 textureOffsetU = s_cameraPosX - sector->ceilOffsetX;
 		fixed16 textureOffsetV = sector->ceilOffsetZ - s_cameraPosZ;
@@ -319,7 +281,7 @@ namespace RClassicFlat
 				s32 hasRight = 0;
 				while (i < count && hasLeft == 0)
 				{
-					FlatEdges* edge = &edges[i];
+					EdgePair* edge = &edges[i];
 					if (y < edge->yPixel_C0)	// Y is above the current edge, so start at left = x
 					{
 						left = x;
@@ -364,7 +326,7 @@ namespace RClassicFlat
 					// Search for the right edge of the scanline.
 					while (i < count && hasRight == 0)
 					{
-						FlatEdges* edge = &edges[i];
+						EdgePair* edge = &edges[i];
 						if (y < edge->yPixel_C0)		// Y is above the current edge, so move on to the next edge.
 						{
 							x = edge->x1 + 1;
@@ -449,7 +411,7 @@ namespace RClassicFlat
 	}
 
 	// TODO: Spot check against DOS code.
-	void flat_drawFloor(RSector* sector, FlatEdges* edges, s32 count)
+	void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count)
 	{
 		fixed16 textureOffsetU = s_cameraPosX - sector->floorOffsetX;
 		fixed16 textureOffsetV = sector->floorOffsetZ - s_cameraPosZ;
@@ -489,7 +451,7 @@ namespace RClassicFlat
 				s32 hasRight = 0;
 				while (i < count && hasLeft == 0)
 				{
-					FlatEdges* edge = &edges[i];
+					EdgePair* edge = &edges[i];
 					if (y >= edge->yPixel_F0)	// Y is above the current edge, so start at left = x
 					{
 						left = x;
@@ -534,7 +496,7 @@ namespace RClassicFlat
 					// Search for the right edge of the scanline.
 					while (i < count && hasRight == 0)
 					{
-						FlatEdges* edge = &edges[i];
+						EdgePair* edge = &edges[i];
 						if (y >= edge->yPixel_F0)		// Y is above the current edge, so move on to the next edge.
 						{
 							x = edge->x1 + 1;

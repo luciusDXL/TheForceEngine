@@ -1,5 +1,5 @@
 #include "rcommon.h"
-#include "rflat.h"
+#include "redgePair.h"
 
 namespace RendererClassic
 {
@@ -56,6 +56,7 @@ namespace RendererClassic
 
 	s32 s_nextWall;
 	s32 s_curWallSeg;
+	s32 s_adjoinSegCount;
 	s32 s_drawFrame;
 
 	// Flats
@@ -65,8 +66,10 @@ namespace RendererClassic
 	s32 s_wallMinFloorY;
 	s32 s_yMin;
 	s32 s_yMax;
-	FlatEdges* s_lowerFlatEdge;
-	FlatEdges  s_lowerFlatEdgeList[MAX_SEG];
+	EdgePair* s_flatEdge;
+	EdgePair  s_flatEdgeList[MAX_SEG];
+	EdgePair* s_adjoinEdge;
+	EdgePair  s_adjoinEdgeList[MAX_ADJOIN_SEG];
 
 	// Lighting
 	const u8* s_colorMap;

@@ -3,7 +3,7 @@
 #include "rwall.h"
 
 struct ColorMap;
-struct FlatEdges;
+struct EdgePair;
 #define LIGHT_SOURCE_LEVELS 128
 
 namespace RendererClassic
@@ -61,6 +61,7 @@ namespace RendererClassic
 
 	extern s32 s_nextWall;
 	extern s32 s_curWallSeg;
+	extern s32 s_adjoinSegCount;
 	extern s32 s_drawFrame;
 
 	// Flats
@@ -70,8 +71,10 @@ namespace RendererClassic
 	extern s32 s_wallMinFloorY;
 	extern s32 s_yMin;
 	extern s32 s_yMax;
-	extern FlatEdges* s_lowerFlatEdge;
-	extern FlatEdges  s_lowerFlatEdgeList[MAX_SEG];
+	extern EdgePair* s_flatEdge;
+	extern EdgePair  s_flatEdgeList[MAX_SEG];
+	extern EdgePair* s_adjoinEdge;
+	extern EdgePair  s_adjoinEdgeList[MAX_ADJOIN_SEG];
 
 	// Lighting
 	extern const u8* s_colorMap;
