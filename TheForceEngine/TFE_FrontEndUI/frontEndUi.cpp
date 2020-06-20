@@ -21,6 +21,7 @@ namespace TFE_FrontEndUI
 	{
 		FEUI_NONE = 0,
 		FEUI_MANUAL,
+		FEUI_CREDITS,
 		FEUI_CONFIG,
 		FEUI_COUNT
 	};
@@ -105,7 +106,9 @@ namespace TFE_FrontEndUI
 
 	static s32 s_resIndex = 0;
 	static s32 s_rendererIndex = 0;
-	static char* s_aboutDisplayStr;
+	static char* s_aboutDisplayStr = nullptr;
+	static char* s_manualDisplayStr = nullptr;
+	static char* s_creditsDisplayStr = nullptr;
 	
 	static AppState s_appState;
 	static AppState s_menuRetState;
@@ -125,6 +128,8 @@ namespace TFE_FrontEndUI
 	void configGraphics();
 	void configSound();
 	void pickCurrentResolution();
+	void manual();
+	void credits();
 	
 	void init()
 	{
@@ -147,6 +152,9 @@ namespace TFE_FrontEndUI
 
 	void shutdown()
 	{
+		delete[] s_aboutDisplayStr;
+		delete[] s_manualDisplayStr;
+		delete[] s_creditsDisplayStr;
 		TFE_Console::destroy();
 	}
 
@@ -240,7 +248,7 @@ namespace TFE_FrontEndUI
 		u32 w = display.width;
 		u32 h = display.height;
 		u32 menuWidth = 156;
-		u32 menuHeight = 264;
+		u32 menuHeight = 306;
 
 		if (TFE_Console::isOpen())
 		{
@@ -284,7 +292,11 @@ namespace TFE_FrontEndUI
 			}
 			if (ImGui::Button("Manual  "))
 			{
-				//s_subUI = FEUI_MANUAL;
+				s_subUI = FEUI_MANUAL;
+			}
+			if (ImGui::Button("Credits "))
+			{
+				s_subUI = FEUI_CREDITS;
 			}
 			if (ImGui::Button("Settings"))
 			{
@@ -319,8 +331,34 @@ namespace TFE_FrontEndUI
 		else if (s_subUI == FEUI_MANUAL)
 		{
 			bool active = true;
-			ImGui::SetNextWindowPos(ImVec2(160.0f, 160.0f));
-			ImGui::SetNextWindowSize(ImVec2(f32(w - 320), f32(h - 320)));
+			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+			ImGui::SetNextWindowSize(ImVec2(f32(w), f32(h)));
+
+			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+
+			ImGui::Begin("Manual", &active, window_flags);
+			if (ImGui::Button("Return") || !active)
+			{
+				s_subUI = FEUI_NONE;
+			}
+			manual();
+			ImGui::End();
+		}
+		else if (s_subUI == FEUI_CREDITS)
+		{
+			bool active = true;
+			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+			ImGui::SetNextWindowSize(ImVec2(f32(w), f32(h)));
+
+			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+
+			ImGui::Begin("Credits", &active, window_flags);
+			if (ImGui::Button("Return") || !active)
+			{
+				s_subUI = FEUI_NONE;
+			}
+			credits();
+			ImGui::End();
 		}
 		else if (s_subUI == FEUI_CONFIG)
 		{
@@ -414,6 +452,56 @@ namespace TFE_FrontEndUI
 
 			ImGui::End();
 		}
+	}
+		
+	void manual()
+	{
+		if (!s_manualDisplayStr)
+		{
+			// The document has not been loaded yet.
+			char path[TFE_MAX_PATH];
+			char fileName[TFE_MAX_PATH];
+			strcpy(fileName, "Documentation/markdown/TheForceEngineManual.md");
+			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+
+			FileStream file;
+			if (file.open(path, FileStream::MODE_READ))
+			{
+				const size_t len = file.getSize();
+				s_manualDisplayStr = new char[len + 1];
+				file.readBuffer(s_manualDisplayStr, (u32)len);
+				s_manualDisplayStr[len] = 0;
+
+				file.close();
+			}
+		}
+
+		if (s_manualDisplayStr) { TFE_Markdown::draw(s_manualDisplayStr); }
+	}
+
+	void credits()
+	{
+		if (!s_creditsDisplayStr)
+		{
+			// The document has not been loaded yet.
+			char path[TFE_MAX_PATH];
+			char fileName[TFE_MAX_PATH];
+			strcpy(fileName, "Documentation/markdown/credits.md");
+			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
+
+			FileStream file;
+			if (file.open(path, FileStream::MODE_READ))
+			{
+				const size_t len = file.getSize();
+				s_creditsDisplayStr = new char[len + 1];
+				file.readBuffer(s_creditsDisplayStr, (u32)len);
+				s_creditsDisplayStr[len] = 0;
+
+				file.close();
+			}
+		}
+
+		if (s_creditsDisplayStr) { TFE_Markdown::draw(s_creditsDisplayStr); }
 	}
 
 	void configAbout()
