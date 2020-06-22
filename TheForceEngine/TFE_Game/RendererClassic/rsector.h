@@ -16,6 +16,7 @@ struct TextureFrame;
 struct RSector
 {
 	s32 prevDrawFrame;		// previous frame that this sector was drawn/updated.
+	s32 prevDrawFrame2;		// previous frame drawn (again...)
 	s32 vertexCount;		// number of vertices.
 	vec2* verticesWS;		// world space and view space XZ vertex positions.
 	vec2* verticesVS;
@@ -50,9 +51,8 @@ namespace RClassicSector
 	void sector_allocate(u32 count);
 	RSector* sector_get();
 	
-	void sector_setCurrent(RSector* sector);
 	void sector_update(u32 sectorId);
-	void sector_draw();
+	void sector_draw(RSector* sector);
 	void sector_copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures);
 
 	// Not for the original code, to be replaced.

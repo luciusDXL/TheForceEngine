@@ -53,6 +53,8 @@ namespace RClassicWall
 	fixed16 solveForZ(RWallSegment* wallSegment, s32 x, fixed16 numerator, fixed16* outViewDx=nullptr);
 	void drawColumn_Fullbright();
 	void drawColumn_Lit();
+	void drawColumn_Fullbright_Trans();
+	void drawColumn_Lit_Trans();
 
 	// Process the wall and produce an RWallSegment for rendering if the wall is potentially visible.
 	void wall_process(RWall* wall)
@@ -395,8 +397,8 @@ namespace RClassicWall
 		{
 			RWall* srcWall = srcSeg->srcWall;
 			// TODO : fix this 
-			//bool processed = (s_drawFrame == srcWall->drawFrame);
-			bool processed = false;
+			bool processed = (s_drawFrame == srcWall->drawFrame);
+			//bool processed = false;
 			bool insideWindow = ((srcSeg->z0 >= s_minSegZ || srcSeg->z1 >= s_minSegZ) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX);
 			if (!processed && insideWindow)
 			{
@@ -824,6 +826,149 @@ namespace RClassicWall
 		//srcWall->y1 = -1;
 	}
 
+	// TODO: Verify Code
+	void wall_drawTransparent(RWallSegment* wallSegment)
+	{
+		RWall* srcWall = wallSegment->srcWall;
+		RSector* sector = srcWall->sector;
+		TextureFrame* texture = srcWall->midTex;
+
+		fixed16 ceilingHeight = sector->ceilingHeight;
+		fixed16 floorHeight = sector->floorHeight;
+
+		fixed16 ceilEyeRel = ceilingHeight - s_eyeHeight;
+		fixed16 floorEyeRel = floorHeight - s_eyeHeight;
+
+		fixed16 z0 = wallSegment->z0;
+		fixed16 z1 = wallSegment->z1;
+
+		fixed16 y0C = div16(mul16(ceilEyeRel, s_focalLenAspect), z0) + s_halfHeight;
+		fixed16 y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
+
+		fixed16 y1C = div16(mul16(ceilEyeRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16 y1F = div16(mul16(floorEyeRel, s_focalLenAspect), z1) + s_halfHeight;
+
+		s32 y0C_pixel = round16(y0C);
+		s32 y1C_pixel = round16(y1C);
+
+		s32 y0F_pixel = round16(y0F);
+		s32 y1F_pixel = round16(y1F);
+
+		s32 x = wallSegment->wallX0;
+		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
+		fixed16 numerator = solveForZ_Numerator(wallSegment);
+
+		// For some reason we only early-out if the ceiling is below the view.
+		if (y0C_pixel > s_windowMaxY && y1C_pixel > s_windowMaxY)
+		{
+			srcWall->visible = 0;
+			//srcWall->y1 = -1;
+			return;
+		}
+
+		s_texHeightMask = texture ? texture->height - 1 : 0;
+		TextureFrame* signTex = srcWall->signTex;
+		if (signTex)	// ecx
+		{
+			// 1fd683:
+		}
+
+		fixed16 wallDeltaX = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
+		fixed16 dYdXtop = 0, dYdXbot = 0;
+		if (wallDeltaX != 0)
+		{
+			dYdXtop = div16(y1C - y0C, wallDeltaX);
+			dYdXbot = div16(y1F - y0F, wallDeltaX);
+		}
+
+		fixed16 clippedXDelta = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
+		if (clippedXDelta != 0)
+		{
+			y0C += mul16(dYdXtop, clippedXDelta);
+			y0F += mul16(dYdXbot, clippedXDelta);
+		}
+
+		const s32 texWidth = texture ? texture->width : 0;
+		const bool flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) != 0;
+
+		for (s32 i = 0; i < length; i++, x++)
+		{
+			s32 top = round16(y0C);
+			s32 bot = round16(y0F);
+
+			if (top < s_windowTop[x])
+			{
+				top = s_windowTop[x];
+			}
+			if (bot > s_windowBot[x])
+			{
+				bot = s_windowBot[x];
+			}
+			s_yPixelCount = bot - top + 1;
+
+			fixed16 dxView = 0;
+			fixed16 z = solveForZ(wallSegment, x, numerator, &dxView);
+			fixed16 uScale = wallSegment->uScale;
+			fixed16 uCoord0 = wallSegment->uCoord0 + srcWall->midUOffset;
+			fixed16 uCoord = uCoord0 + ((wallSegment->orient == WORIENT_DZ_DX) ? mul16(dxView, uScale) : mul16(z - z0, uScale));
+
+			if (s_yPixelCount > 0)
+			{
+				// texture wrapping, assumes texWidth is a power of 2.
+				s32 texelU = floor16(uCoord) & (texWidth - 1);
+				// flip texture coordinate if flag set.
+				if (flipHorz) { texelU = texWidth - texelU - 1; }
+
+				// Calculate the vertical texture coordinate start and increment.
+				fixed16 wallHeightPixels = y0F - y0C + ONE_16;
+				fixed16 wallHeightTexels = srcWall->midTexelHeight;
+
+				// s_vCoordStep = tex coord "v" step per y pixel step -> dVdY;
+				// Note the result is in x.16 fixed point, which is why it must be shifted by 16 again before divide.
+				s_vCoordStep = div16(wallHeightTexels, wallHeightPixels);
+
+				// texel offset from the actual fixed point y position and the truncated y position.
+				fixed16 vPixelOffset = y0F - intToFixed16(bot) + HALF_16;
+
+				// scale the texel offset based on the v coord step.
+				// the result is the sub-texel offset
+				fixed16 v0 = mul16(s_vCoordStep, vPixelOffset);
+				s_vCoordFixed = v0 + srcWall->midVOffset;
+
+				// Texture image data = imageStart + u * texHeight
+				// ***Checks against texture are because all walls are being forced to render as solid***
+				// TODO: Use wall render flags and then remove checks
+				if (texture)
+				{
+					s_texImage = texture->image + (texelU << texture->logSizeY);
+				}
+
+				// Skip for now and just write directly to the screen...
+				// columnOutStart + (x*320 + top) * 80;
+				//s_curColumnOut = s_columnOut[x] + s_scaleX80[top];
+				s_columnLight = computeLighting(z, srcWall->wallLight);
+				s_columnOut = &s_display[top * s_width + x];
+
+				// draw the column
+				if (s_columnLight)
+				{
+					drawColumn_Lit_Trans();
+				}
+				else
+				{
+					drawColumn_Fullbright_Trans();
+				}
+
+				if (signTex)
+				{
+				}
+			}
+
+			y0C += dYdXtop;
+			y0F += dYdXbot;
+		}
+	}
+
 	void wall_drawMask(RWallSegment* wallSegment)
 	{
 		RWall* srcWall = wallSegment->srcWall;
@@ -923,8 +1068,7 @@ namespace RClassicWall
 		// There is an opening in this wall to the next sector.
 		if (nextFloor > nextCeil)
 		{
-			// TODO:
-			//func_1fb0c4(length, x, dydxFloor, y1, dydxCeil, y0, wallSegment);
+			wall_addAdjoinSegment(length, x, dydxFloor, y1, dydxCeil, y0, wallSegment);
 		}
 		if (length != 0)
 		{
@@ -1046,8 +1190,7 @@ namespace RClassicWall
 		s32 yTop1 = round16(fNextProj1);
 		if ((yTop0 > s_windowMinY || yTop1 > s_windowMinY) && sector->ceilingHeight < nextSector->floorHeight)
 		{
-			// TODO
-			//func_1fb0c4(length, wallSegment->wallX0, floorNext_dYdX, fNextProj0, ceil_dYdX, cProj0, wallSegment);
+			wall_addAdjoinSegment(length, wallSegment->wallX0, floorNext_dYdX, fNextProj0, ceil_dYdX, cProj0, wallSegment);
 		}
 
 		if (yTop0 > s_windowMaxY && yTop1 > s_windowMaxY)
@@ -1314,19 +1457,18 @@ namespace RClassicWall
 		}
 		flat_addEdges(length, x0, floor_dYdX, fProj0, ceil_dYdX, cProj0);
 
-		// TODO: Handle this...
-		/*
-		s32 next_c0_pixel = round16(next_cProj0);
-		s32 next_c1_pixel = round16(next_cProj1);
+	#if 0	// TODO
+		s32 next_f0_pixel = round16(next_fProj0);
+		s32 next_f1_pixel = round16(next_fProj1);
 		if ((next_f0_pixel <= s_windowMinY && next_f1_pixel <= s_windowMinY) || (next_c0_pixel >= s_windowMaxY && next_c1_pixel >= s_windowMaxY) || (nextSector->floorHeight <= nextSector->ceilingHeight))
 		{
 			// srcWall->y1 = -1;
 			return;
 		}
 		
-		//func_1fb0c4(length, x, next_floor_dYdX, next_fProj0 - ONE_16, next_ceil_dYdX, next_cProj0 + ONE_16, wallSegment);
+		wall_addAdjoinSegment(length, x0, next_floor_dYdX, next_fProj0 - ONE_16, next_ceil_dYdX, next_cProj0 + ONE_16, wallSegment);
+	#endif
 		//srcWall->y1 = -1;
-		*/
 	}
 
 	void wall_drawTopAndBottom(RWallSegment* wallSegment)
@@ -1595,7 +1737,7 @@ namespace RClassicWall
 			return;
 		}
 
-		//func_1fb0c4(length, x, next_floor_dYdX, next_fProj0 - ONE_16, next_ceil_dYdX, next_cProj0 + ONE_16, wallSegment);
+		wall_addAdjoinSegment(length, x0, next_floor_dYdX, next_fProj0 - ONE_16, next_ceil_dYdX, next_cProj0 + ONE_16, wallSegment);
 		//srcWall->y1 = -1;
 	}
 	
@@ -1710,6 +1852,47 @@ namespace RClassicWall
 		}
 	}
 
+	void drawColumn_Fullbright_Trans()
+	{
+		fixed16 vCoordFixed = s_vCoordFixed;
+		u8* tex = s_texImage;
+
+		s32 v = floor16(vCoordFixed) & s_texHeightMask;
+		s32 end = s_yPixelCount - 1;
+
+		s32 offset = end * s_width;
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		{
+			const u8 c = tex[v];
+			if (c == 0) { continue; }
+
+			vCoordFixed += s_vCoordStep;
+			v = floor16(vCoordFixed) & s_texHeightMask;
+			s_columnOut[offset] = c;
+		}
+	}
+
+	void drawColumn_Lit_Trans()
+	{
+		fixed16 vCoordFixed = s_vCoordFixed;
+		u8* tex = s_texImage;
+
+		s32 v = floor16(vCoordFixed) & s_texHeightMask;
+		s32 end = s_yPixelCount - 1;
+
+		s32 offset = end * s_width;
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		{
+			u8 c = tex[v];
+			if (c == 0) { continue; }
+
+			c = s_columnLight[c];
+			vCoordFixed += s_vCoordStep;
+			v = floor16(vCoordFixed) & s_texHeightMask;
+			s_columnOut[offset] = c;
+		}
+	}
+
 	void wall_addAdjoinSegment(s32 length, s32 x0, s32 top_dydx, s32 y1, s32 bot_dydx, s32 y0, RWallSegment* wallSegment)
 	{
 		if (s_adjoinSegCount < MAX_ADJOIN_SEG)
@@ -1726,13 +1909,12 @@ namespace RClassicWall
 				y1End += mul16(top_dydx, lengthFixed);
 			}
 			edgePair_setup(length, x0, top_dydx, y1End, y1, bot_dydx, y0, y0End, s_adjoinEdge);
+
 			s_adjoinEdge++;
 			s_adjoinSegCount++;
 
-			// Segment list, to do
-			//s_workSegment->srcWall = wallSegment->srcWall;
-			// this doesn't make any sense... - TODO figure out what is going on here.
-			//s_workSegment = (WallSegment*)&s_workSegment->wallX0_raw;
+			*s_adjoinSegment = wallSegment;
+			s_adjoinSegment++;
 		}
 	}
 }

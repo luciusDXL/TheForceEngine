@@ -84,14 +84,46 @@ namespace RClassicFlat
 		}
 		if (x0 < s_windowMinX) { x0 = s_windowMinX; *left  = x0; }
 		if (x1 > s_windowMaxX) { x1 = s_windowMaxX; *right = x1; }
-	
-		// Shouldn't hit yet.
-		if (y < s_yMin && y > s_yMax)
+
+		// s_yMaxCeil and s_yMinFloor overlap and y is inside that overlap.
+		if (y < s_yMaxCeil && y > s_yMinFloor)
 		{
-			// TODO
-			assert(0);
+			// Find the left side of the scanline.
+ 			s32* top = &s_windowTop[x0];
+			s32* bot = &s_windowBot[x0];
+			while (x0 <= x1)
+			{
+				if (y >= *top && y <= *bot)
+				{
+					break;
+				}
+				x0++;
+				top++;
+				bot++;
+			};
+			*left = x0;
+			if (x0 > x1)
+			{
+				return;
+			}
+
+			// Find the right side of the scanline.
+			top = &s_windowTop[x1];
+			bot = &s_windowBot[x1];
+			while (1)
+			{
+				if ((y >= *top && y <= *bot) || (x0 > x1))
+				{
+					*right = x1;
+					return;
+				}
+				x1--;
+				top--;
+				bot--;
+			};
 		}
-		if (y < s_yMin)
+		// y is on the ceiling plane.
+		if (y < s_yMaxCeil)
 		{
 			s32* top = &s_windowTop[x0];
 			while (*top > y && x1 >= x0)
@@ -102,7 +134,7 @@ namespace RClassicFlat
 			*left = x0;
 			if (x0 <= x1)
 			{
-				s32* top = &s_windowTop[x0];
+				s32* top = &s_windowTop[x1];
 				while (*top > y && x1 >= x0)
 				{
 					x1--;
@@ -111,7 +143,8 @@ namespace RClassicFlat
 				*right = x1;
 			}
 		}
-		else if (y > s_yMax)
+		// y is on the floor plane.
+		else if (y > s_yMinFloor)
 		{
 			s32* bot = &s_windowBot[x0];
 			while (*bot < y && x0 <= x1)

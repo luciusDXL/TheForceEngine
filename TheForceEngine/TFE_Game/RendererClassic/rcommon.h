@@ -24,6 +24,7 @@ namespace RendererClassic
 	extern fixed16  s_focalLength;
 	extern fixed16  s_focalLenAspect;
 	extern fixed16  s_eyeHeight;
+	extern fixed16* s_depth1d_all;
 	extern fixed16* s_depth1d;
 
 	// Camera
@@ -47,9 +48,20 @@ namespace RendererClassic
 	// Display
 	extern u8* s_display;
 
+	// Render
+	extern s32 s_sectorIndex;
+	extern RSector* s_prevSector;
+	extern s32 s_maxAdjoinIndex;
+	extern s32 s_adjoinIndex;
+	extern s32 s_maxAdjoinDepth;
+	extern s32 s_windowX0;
+	extern s32 s_windowX1;
+
 	// Column Heights
 	extern s32* s_columnTop;
 	extern s32* s_columnBot;
+	extern s32* s_windowTop_all;
+	extern s32* s_windowBot_all;
 	extern s32* s_windowTop;
 	extern s32* s_windowBot;
 	extern fixed16* s_column_Y_Over_X;
@@ -58,10 +70,12 @@ namespace RendererClassic
 	// WallSegments
 	extern RWallSegment s_wallSegListDst[MAX_SEG];
 	extern RWallSegment s_wallSegListSrc[MAX_SEG];
+	extern RWallSegment** s_adjoinSegment;
 
 	extern s32 s_nextWall;
 	extern s32 s_curWallSeg;
 	extern s32 s_adjoinSegCount;
+	extern s32 s_adjoinDepth;
 	extern s32 s_drawFrame;
 
 	// Flats
@@ -69,8 +83,8 @@ namespace RendererClassic
 	extern fixed16* s_rcp_yMinusHalfHeight;
 	extern s32 s_wallMaxCeilY;
 	extern s32 s_wallMinFloorY;
-	extern s32 s_yMin;
-	extern s32 s_yMax;
+	extern s32 s_yMaxCeil;	// s_yMin
+	extern s32 s_yMinFloor;	// s_yMax
 	extern EdgePair* s_flatEdge;
 	extern EdgePair  s_flatEdgeList[MAX_SEG];
 	extern EdgePair* s_adjoinEdge;

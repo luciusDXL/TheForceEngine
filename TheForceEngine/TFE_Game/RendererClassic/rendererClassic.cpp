@@ -74,11 +74,14 @@ namespace RendererClassic
 		s_maxScreenY = s_height - 1;
 		s_minSegZ = 0;
 
-		s_depth1d   = (fixed16*)realloc(s_depth1d, s_width * sizeof(fixed16));
-		s_columnTop = (s32*)realloc(s_columnTop, s_width * sizeof(s32));
-		s_columnBot = (s32*)realloc(s_columnBot, s_width * sizeof(s32));
-		s_windowTop = (s32*)realloc(s_windowTop, s_width * sizeof(s32));
-		s_windowBot = (s32*)realloc(s_windowBot, s_width * sizeof(s32));
+		s_windowX0 = s_minScreenX;
+		s_windowX1 = s_maxScreenX;
+
+		s_columnTop   = (s32*)realloc(s_columnTop, s_width * sizeof(s32));
+		s_columnBot   = (s32*)realloc(s_columnBot, s_width * sizeof(s32));
+		s_depth1d_all = (fixed16*)realloc(s_depth1d, s_width * sizeof(fixed16) * (MAX_ADJOIN_DEPTH + 1));
+		s_windowTop_all = (s32*)realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
+		s_windowBot_all = (s32*)realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
 		// Build tables
 		s_column_Y_Over_X = (fixed16*)realloc(s_column_Y_Over_X, s_width * sizeof(fixed16));
@@ -153,24 +156,33 @@ namespace RendererClassic
 		s_windowMaxX = s_maxScreenX;
 		s_windowMinY = 1;
 		s_windowMaxY = s_height - 1;
-		s_yMin = s_minScreenY;
-		s_yMax = s_maxScreenY;
+		s_yMaxCeil = s_minScreenY;
+		s_yMinFloor = s_maxScreenY;
 		s_flatCount  = 0;
 		s_nextWall   = 0;
 		s_curWallSeg = 0;
-		memset(s_depth1d, 0, s_width * sizeof(fixed16));
+		memset(s_depth1d_all, 0, s_width * sizeof(fixed16));
+
+		s_prevSector = nullptr;
+		s_sectorIndex = 0;
+		s_maxAdjoinIndex = 0;
+		s_adjoinSegCount = 1;
+		s_adjoinIndex = 0;
+		s_minSegZ = 0;
+
+		s_adjoinDepth = 1;
+		s_maxAdjoinDepth = 1;
 
 		for (s32 i = 0; i < s_width; i++)
 		{
 			s_columnTop[i] = s_minScreenY;
 			s_columnBot[i] = s_maxScreenY;
-			s_windowTop[i] = s_minScreenY;
-			s_windowBot[i] = s_maxScreenY;
+			s_windowTop_all[i] = s_minScreenY;
+			s_windowBot_all[i] = s_maxScreenY;
 		}
 						
 		// Draws a single sector.
-		sector_setCurrent(sector_get() + s_sectorId);
-		sector_draw();
+		sector_draw(sector_get() + s_sectorId);
 	}
 		
 	void loadLevel()

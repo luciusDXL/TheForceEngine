@@ -12,6 +12,7 @@ struct TextureFrame;
 #define MAX_SEG 384
 #define MAX_ADJOIN_SEG 128
 #define MAX_SPLIT_WALLS 40
+#define MAX_ADJOIN_DEPTH 40
 
 enum WallOrient
 {
@@ -101,6 +102,7 @@ namespace RClassicWall
 	s32  wall_mergeSort(RWallSegment* segOutList, s32 availSpace, s32 start, s32 count);
 
 	void wall_drawSolid(RWallSegment* wallSegment);
+	void wall_drawTransparent(RWallSegment* wallSegment);
 	void wall_drawMask(RWallSegment* wallSegment);
 	void wall_drawBottom(RWallSegment* wallSegment);
 	void wall_drawTop(RWallSegment* wallSegment);

@@ -19,6 +19,7 @@ namespace RendererClassic
 	fixed16 s_focalLength;
 	fixed16 s_focalLenAspect;
 	fixed16 s_eyeHeight;
+	fixed16* s_depth1d_all = nullptr;
 	fixed16* s_depth1d = nullptr;
 
 	// Camera
@@ -42,9 +43,20 @@ namespace RendererClassic
 	// Display
 	u8* s_display;
 
+	// Render
+	s32 s_sectorIndex;
+	RSector* s_prevSector;
+	s32 s_maxAdjoinIndex;
+	s32 s_adjoinIndex;
+	s32 s_maxAdjoinDepth;
+	s32 s_windowX0;
+	s32 s_windowX1;
+
 	// Column Heights
 	s32* s_columnTop = nullptr;
 	s32* s_columnBot = nullptr;
+	s32* s_windowTop_all = nullptr;
+	s32* s_windowBot_all = nullptr;
 	s32* s_windowTop = nullptr;
 	s32* s_windowBot = nullptr;
 	fixed16* s_column_Y_Over_X = nullptr;
@@ -53,10 +65,12 @@ namespace RendererClassic
 	// Segment list.
 	RWallSegment s_wallSegListDst[MAX_SEG];
 	RWallSegment s_wallSegListSrc[MAX_SEG];
+	RWallSegment** s_adjoinSegment;
 
 	s32 s_nextWall;
 	s32 s_curWallSeg;
 	s32 s_adjoinSegCount;
+	s32 s_adjoinDepth;
 	s32 s_drawFrame;
 
 	// Flats
@@ -64,8 +78,8 @@ namespace RendererClassic
 	fixed16* s_rcp_yMinusHalfHeight;
 	s32 s_wallMaxCeilY;
 	s32 s_wallMinFloorY;
-	s32 s_yMin;
-	s32 s_yMax;
+	s32 s_yMaxCeil;
+	s32 s_yMinFloor;
 	EdgePair* s_flatEdge;
 	EdgePair  s_flatEdgeList[MAX_SEG];
 	EdgePair* s_adjoinEdge;
