@@ -202,4 +202,9 @@ namespace RendererClassic
 			sector_copy(&sectors[i], sector, walls, vertices, textures);
 		}
 	}
+
+	void updateSector(s32 id)
+	{
+		sector_update(id);
+	}
 }

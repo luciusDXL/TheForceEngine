@@ -102,6 +102,7 @@ struct Sector
 	f32 secAlt;
 	u32 flags[3];
 	s8 layer;
+	bool dirty;
 
 	u16 vtxCount;
 	u16 wallCount;

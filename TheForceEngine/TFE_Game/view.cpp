@@ -2094,15 +2094,26 @@ namespace TFE_View
 		
 	void draw(const Vec3f* cameraPos, s32 sectorId)
 	{
+		const Sector* sectors = s_level->sectors.data();
 		if (s_enableClassic)
 		{
+			const u32 sectorCount = (u32)s_level->sectors.size();
+			for (u32 i = 0; i < sectorCount; i++)
+			{
+				if (sectors[i].dirty)
+				{
+					// Temporary hack.
+					((Sector*)&sectors[i])->dirty = false;
+					RendererClassic::updateSector(i);
+				}
+			}
+
 			RendererClassic::draw(s_renderer->getDisplay(), s_colorMap);
 			return;
 		}
 
 		s_renderer->enablePalEffects(TFE_RenderCommon::isGrayScaleEnabled(), TFE_RenderCommon::isNightVisionEnabled());
 
-		const Sector* sectors = s_level->sectors.data();
 		const SectorWall* walls = s_level->walls.data();
 		const Vec2f* vertices = s_level->vertices.data();
 		clearHeightArray();

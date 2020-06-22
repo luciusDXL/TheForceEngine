@@ -398,12 +398,14 @@ namespace TFE_Level
 
 		s_levelData->sectors[sectorId].floorAlt = height;
 		s_levelData->sectors[sectorId].center.y = (s_levelData->sectors[sectorId].floorAlt + s_levelData->sectors[sectorId].ceilAlt) * 0.5f;
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	void setCeilingHeight(s32 sectorId, f32 height)
 	{
 		s_levelData->sectors[sectorId].ceilAlt = height;
 		s_levelData->sectors[sectorId].center.y = (s_levelData->sectors[sectorId].floorAlt + s_levelData->sectors[sectorId].ceilAlt) * 0.5f;
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	void setSecondHeight(s32 sectorId, f32 height, bool addSectorMotion)
@@ -418,6 +420,7 @@ namespace TFE_Level
 		setObjectSecAlt(sectorId, height);
 
 		s_levelData->sectors[sectorId].secAlt = height;
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	f32 getFloorHeight(s32 sectorId)
@@ -481,10 +484,12 @@ namespace TFE_Level
 					if (adjoined->flags[0] & WF1_WALL_MORPHS)
 					{
 						indices[indexCount++] = adjoined->i0 + adjoinedSec->vtxOffset;
+						adjoinedSec->dirty = true;
 					}
 				}
 			}
 		}
+		sector->dirty = true;
 
 		const Vec2f* srcVtx = s_vertexCache;
 		Vec2f* dstVtx = s_levelData->vertices.data();
@@ -556,10 +561,12 @@ namespace TFE_Level
 					if (adjoined->flags[0] & WF1_WALL_MORPHS)
 					{
 						indices[indexCount++] = adjoined->i0 + adjoinedSec->vtxOffset;
+						adjoinedSec->dirty = true;
 					}
 				}
 			}
 		}
+		sector->dirty = true;
 
 		const Vec2f* srcVtx = s_vertexCache;
 		Vec2f* dstVtx = s_levelData->vertices.data();
@@ -654,6 +661,7 @@ namespace TFE_Level
 				}
 			}
 		}
+		sector->dirty = true;
 	}
 
 	void setTextureOffset(s32 sectorId, SectorPart part, const Vec2f* offset, bool addSectorMotion, bool addSecMotionSecondAlt)
@@ -709,6 +717,7 @@ namespace TFE_Level
 				}
 			}
 		}
+		sector->dirty = true;
 	}
 
 	void setTextureFrame(s32 sectorId, SectorPart part, WallSubPart subpart, u32 frame, s32 wallId)
@@ -743,6 +752,7 @@ namespace TFE_Level
 				s_levelData->walls[sector->wallOffset + wallId].bot.frame = frame;
 			}
 		}
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	void toggleTextureFrame(s32 sectorId, SectorPart part, WallSubPart subpart, s32 wallId)
@@ -777,6 +787,7 @@ namespace TFE_Level
 				s_levelData->walls[sector->wallOffset + wallId].bot.frame = !s_levelData->walls[sector->wallOffset + wallId].bot.frame;
 			}
 		}
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	void setTextureId(s32 sectorId, SectorPart part, WallSubPart subpart, u32 textureId, s32 wallId)
@@ -811,6 +822,7 @@ namespace TFE_Level
 				s_levelData->walls[sector->wallOffset + wallId].bot.texId = textureId;
 			}
 		}
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	Vec2f getTextureOffset(s32 sectorId, SectorPart part, WallSubPart subpart, s32 wallId)
@@ -925,6 +937,7 @@ namespace TFE_Level
 			if (wallId < 0) { return; }
 			s_levelData->walls[sector->wallOffset + wallId].flags[flagIndex] = flagBits;
 		}
+		sector->dirty = true;
 	}
 
 	void clearFlagBits(s32 sectorId, SectorPart part, u32 flagIndex, u32 flagBits, s32 wallId)
@@ -939,6 +952,7 @@ namespace TFE_Level
 			if (wallId < 0) { return; }
 			s_levelData->walls[sector->wallOffset + wallId].flags[flagIndex] &= ~flagBits;
 		}
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	u32 getFlagBits(s32 sectorId, SectorPart part, u32 flagIndex, s32 wallId)
@@ -960,6 +974,7 @@ namespace TFE_Level
 	void setAmbient(s32 sectorId, u8 ambient)
 	{
 		s_levelData->sectors[sectorId].ambient = ambient;
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	u8 getAmbient(s32 sectorId)
@@ -974,6 +989,7 @@ namespace TFE_Level
 		for (size_t i = 0; i < count; i++, sector++)
 		{
 			sector->ambient = sector->flags[2];
+			sector->dirty = true;
 		}
 	}
 
@@ -989,5 +1005,8 @@ namespace TFE_Level
 
 		walls[sectors[sector2].wallOffset + wall2].adjoin = sector1;
 		walls[sectors[sector2].wallOffset + wall2].mirror = wall1;
+
+		sectors[sector1].dirty = true;
+		sectors[sector2].dirty = true;
 	}
 }

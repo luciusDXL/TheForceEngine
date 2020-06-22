@@ -1006,7 +1006,7 @@ namespace RClassicWall
 			}
 
 			srcWall->visible = 0;
-			srcWall->drawFlags = -1;
+			//srcWall->drawFlags = -1;
 			return;
 		}
 
@@ -1037,7 +1037,7 @@ namespace RClassicWall
 				s_columnBot[x] = s_windowMinY;
 			}
 			srcWall->visible = 0;
-			srcWall->drawFlags = -1;
+			//srcWall->drawFlags = -1;
 			return;
 		}
 
@@ -1085,7 +1085,7 @@ namespace RClassicWall
 			}
 		}
 
-		srcWall->drawFlags = -1;
+		//srcWall->drawFlags = -1;
 	}
 
 	void wall_drawBottom(RWallSegment* wallSegment)

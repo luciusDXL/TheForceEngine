@@ -187,6 +187,7 @@ namespace RClassicSector
 			else
 			{
 				const s32 df = srcWall->drawFlags;
+				assert(df >= 0);
 				if (df <= WDF_MIDDLE)
 				{
 					if (df == WDF_MIDDLE || (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
@@ -378,6 +379,33 @@ namespace RClassicSector
 		out->vertexCount = sector->vtxCount;
 		out->wallCount = sector->wallCount;
 
+		if (!out->verticesWS)
+		{
+			out->verticesWS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
+			out->verticesVS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
+			out->walls = (RWall*)s_memPool->allocate(sizeof(RWall) * out->wallCount);
+
+			out->prevDrawFrame = 0;
+			out->prevDrawFrame2 = 0;
+		}
+
+		sector_update(sector->id);
+	}
+
+	// In the future, renderer sectors can be changed directly by INF, but for now just copy from the level data.
+	void sector_update(u32 sectorId)
+	{
+		LevelData* level = TFE_LevelAsset::getLevelData();
+		Texture** textures = level->textures.data();
+
+		Sector* sector = &level->sectors[sectorId];
+		SectorWall* walls = level->walls.data() + sector->wallOffset;
+		Vec2f* vertices = level->vertices.data() + sector->vtxOffset;
+
+		RSector* out = &s_rsectors[sectorId];
+		out->vertexCount = sector->vtxCount;
+		out->wallCount = sector->wallCount;
+
 		out->ambientFixed = intToFixed16(sector->ambient);
 		out->floorHeight = floatToFixed16(sector->floorAlt);
 		out->ceilingHeight = floatToFixed16(sector->ceilAlt);
@@ -393,17 +421,7 @@ namespace RClassicSector
 		out->floorOffsetZ = floatToFixed16(sector->floorTexture.offsetY);
 		out->ceilOffsetX = floatToFixed16(sector->ceilTexture.offsetX);
 		out->ceilOffsetZ = floatToFixed16(sector->ceilTexture.offsetY);
-				
-		if (!out->verticesWS)
-		{
-			out->verticesWS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
-			out->verticesVS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
-			out->walls = (RWall*)s_memPool->allocate(sizeof(RWall) * out->wallCount);
 
-			out->prevDrawFrame = 0;
-			out->prevDrawFrame2 = 0;
-		}
-		
 		for (s32 v = 0; v < out->vertexCount; v++)
 		{
 			out->verticesWS[v].x = floatToFixed16(vertices[v].x);
@@ -447,73 +465,6 @@ namespace RClassicSector
 
 			wall->drawFrame = 0;
 			wall->drawFlags = WDF_MIDDLE;
-
-			wall->flags1 = walls[w].flags[0];
-			wall->flags2 = walls[w].flags[1];
-			wall->flags3 = walls[w].flags[2];
-
-			wall->wallLight = walls[w].light;
-		}
-	}
-
-	// In the future, renderer sectors can be changed directly by INF, but for now just copy from the level data.
-	void sector_update(u32 sectorId)
-	{
-		LevelData* level = TFE_LevelAsset::getLevelData();
-		Texture** textures = level->textures.data();
-
-		Sector* sector = &level->sectors[sectorId];
-		SectorWall* walls = level->walls.data() + sector->wallOffset;
-		Vec2f* vertices = level->vertices.data() + sector->vtxOffset;
-
-		RSector* out = &s_rsectors[sectorId];
-		out->ambientFixed = intToFixed16(sector->ambient);
-		out->floorHeight = floatToFixed16(sector->floorAlt);
-		out->ceilingHeight = floatToFixed16(sector->ceilAlt);
-		out->secHeight = floatToFixed16(sector->secAlt);
-		out->flags1 = sector->flags[0];
-		out->flags2 = sector->flags[1];
-		out->flags3 = sector->flags[2];
-
-		out->floorOffsetX = floatToFixed16(sector->floorTexture.offsetX);
-		out->floorOffsetZ = floatToFixed16(sector->floorTexture.offsetY);
-		out->ceilOffsetX = floatToFixed16(sector->ceilTexture.offsetX);
-		out->ceilOffsetZ = floatToFixed16(sector->ceilTexture.offsetY);
-
-		for (s32 v = 0; v < out->vertexCount; v++)
-		{
-			out->verticesWS[v].x = floatToFixed16(vertices[v].x);
-			out->verticesWS[v].z = floatToFixed16(vertices[v].z);
-		}
-
-		const fixed16 midTexelHeight = mul16(intToFixed16(8), floatToFixed16(sector->floorAlt - sector->ceilAlt));
-
-		RWall* wall = out->walls;
-		for (s32 w = 0; w < out->wallCount; w++)
-		{
-			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
-
-			wall->topTex = walls[w].top.texId >= 0 ? &textures[walls[w].top.texId]->frames[0] : nullptr;
-			wall->midTex = walls[w].mid.texId >= 0 ? &textures[walls[w].mid.texId]->frames[0] : nullptr;
-			wall->botTex = walls[w].bot.texId >= 0 ? &textures[walls[w].bot.texId]->frames[0] : nullptr;
-			wall->signTex = walls[w].sign.texId >= 0 ? &textures[walls[w].sign.texId]->frames[0] : nullptr;
-
-			const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
-			const f32 len = sqrtf(offset.x * offset.x + offset.z * offset.z);
-			wall->texelLength = mul16(intToFixed16(8), floatToFixed16(len));
-
-			// For now just assume solid walls.
-			wall->topTexelHeight = 0;
-			wall->botTexelHeight = 0;
-			wall->midTexelHeight = midTexelHeight;
-
-			// Texture Offsets
-			wall->topUOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].top.offsetX));
-			wall->topVOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].top.offsetY));
-			wall->midUOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].mid.offsetX));
-			wall->midVOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].mid.offsetY));
-			wall->botUOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].bot.offsetX));
-			wall->botVOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].bot.offsetY));
 
 			wall->flags1 = walls[w].flags[0];
 			wall->flags2 = walls[w].flags[1];

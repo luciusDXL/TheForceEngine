@@ -16,4 +16,6 @@ namespace RendererClassic
 
 	void setupLevel(s32 width, s32 height);
 	void changeResolution(s32 width, s32 height);
+
+	void updateSector(s32 id);
 }

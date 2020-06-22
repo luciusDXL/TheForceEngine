@@ -288,6 +288,9 @@ namespace RClassicFlat
 		fixed16 negCosRelCeil    = -mul16(relCeil, s_cosYaw);
 
 		TextureFrame* ceilTex = sector->ceilTex;
+		// What should happen with a missing texture?
+		if (!ceilTex) { return; }
+
 		s_ftexHeight     = ceilTex->height;
 		s_ftexWidthMask  = ceilTex->width  - 1;
 		s_ftexHeightMask = ceilTex->height - 1;
