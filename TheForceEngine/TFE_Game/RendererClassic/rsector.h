@@ -25,7 +25,7 @@ struct RSector
 	fixed16 floorHeight;	// floor height (Y); -Y up, larger = lower.
 	fixed16 ceilingHeight;	// ceiling height (Y); -Y up, smaller = higher.
 	fixed16 secHeight;		// second height; equals floor height if second height in the data = 0.
-	fixed16 ambientFixed;	// sector ambient in fixed point in the range of [0.0, 31.0]
+	fixed16 ambientFixed;	// sector ambient in fixed point in the range of [0.0, MAX_LIGHT_LEVEL]
 
 	// Textures
 	TextureFrame* floorTex;

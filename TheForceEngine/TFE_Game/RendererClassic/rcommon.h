@@ -1,10 +1,10 @@
 #pragma once
 #include <TFE_System/types.h>
 #include "rwall.h"
+#include "rlimits.h"
 
 struct ColorMap;
 struct EdgePair;
-#define LIGHT_SOURCE_LEVELS 128
 
 namespace RendererClassic
 {
@@ -43,6 +43,8 @@ namespace RendererClassic
 	extern s32 s_windowMaxX;
 	extern s32 s_windowMinY;
 	extern s32 s_windowMaxY;
+	extern s32 s_windowMaxCeil;
+	extern s32 s_windowMinFloor;
 	extern fixed16 s_minSegZ;
 	
 	// Display
@@ -83,8 +85,6 @@ namespace RendererClassic
 	extern fixed16* s_rcp_yMinusHalfHeight;
 	extern s32 s_wallMaxCeilY;
 	extern s32 s_wallMinFloorY;
-	extern s32 s_yMaxCeil;	// s_yMin
-	extern s32 s_yMinFloor;	// s_yMax
 	extern EdgePair* s_flatEdge;
 	extern EdgePair  s_flatEdgeList[MAX_SEG];
 	extern EdgePair* s_adjoinEdge;

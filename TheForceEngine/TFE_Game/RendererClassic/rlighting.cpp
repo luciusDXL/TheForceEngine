@@ -2,6 +2,7 @@
 #include "fixedPoint.h"
 #include "rmath.h"
 #include "rcommon.h"
+#include "rlimits.h"
 
 using namespace RendererClassic;
 using namespace RMath;
@@ -20,7 +21,7 @@ namespace RClassicLighting
 {
 	const u8* computeLighting(fixed16 depth, s32 lightOffset)
 	{
-		if (s_sectorAmbient >= 31)
+		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)
 		{
 			return nullptr;
 		}
@@ -28,10 +29,10 @@ namespace RClassicLighting
 		s32 light = 0;
 
 		// handle camera lightsource
-		if (s_worldAmbient < 31 && s_cameraLightSource != 0)
+		if (s_worldAmbient < MAX_LIGHT_LEVEL && s_cameraLightSource != 0)
 		{
 			s32 depthScaled = min(s32(depth >> LIGHT_SCALE), 127);
-			s32 lightSource = 31 - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
+			s32 lightSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
 			if (lightSource > 0)
 			{
 				light += lightSource;
@@ -50,7 +51,7 @@ namespace RClassicLighting
 		{
 			light += lightOffset;
 		}
-		if (light >= 31) { return nullptr; }
+		if (light >= MAX_LIGHT_LEVEL) { return nullptr; }
 
 		return &s_colorMap[light << 8];
 	}

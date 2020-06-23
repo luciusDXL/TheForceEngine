@@ -2097,15 +2097,11 @@ namespace TFE_View
 		const Sector* sectors = s_level->sectors.data();
 		if (s_enableClassic)
 		{
+			// For now update all sectors.
 			const u32 sectorCount = (u32)s_level->sectors.size();
 			for (u32 i = 0; i < sectorCount; i++)
 			{
-				if (sectors[i].dirty)
-				{
-					// Temporary hack.
-					((Sector*)&sectors[i])->dirty = false;
-					RendererClassic::updateSector(i);
-				}
+				RendererClassic::updateSector(i);
 			}
 
 			RendererClassic::draw(s_renderer->getDisplay(), s_colorMap);

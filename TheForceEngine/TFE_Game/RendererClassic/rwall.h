@@ -5,14 +5,10 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "rmath.h"
+#include "rlimits.h"
 
 struct RSector;
 struct TextureFrame;
-
-#define MAX_SEG 384
-#define MAX_ADJOIN_SEG 128
-#define MAX_SPLIT_WALLS 40
-#define MAX_ADJOIN_DEPTH 40
 
 enum WallOrient
 {

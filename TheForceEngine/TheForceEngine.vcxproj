@@ -296,8 +296,10 @@
     <ClInclude Include="TFE_Game\RendererClassic\rendererClassic.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rflat.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rlighting.h" />
+    <ClInclude Include="TFE_Game\RendererClassic\rlimits.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rmath.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rsector.h" />
+    <ClInclude Include="TFE_Game\RendererClassic\rtexture.h" />
     <ClInclude Include="TFE_Game\RendererClassic\rwall.h" />
     <ClInclude Include="TFE_Game\view.h" />
     <ClInclude Include="TFE_InfSystem\infSystem.h" />
@@ -423,6 +425,7 @@
     <ClCompile Include="TFE_Game\RendererClassic\rflat.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rlighting.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rsector.cpp" />
+    <ClCompile Include="TFE_Game\RendererClassic\rtexture.cpp" />
     <ClCompile Include="TFE_Game\RendererClassic\rwall.cpp" />
     <ClCompile Include="TFE_Game\view.cpp" />
     <ClCompile Include="TFE_InfSystem\infSystem.cpp" />

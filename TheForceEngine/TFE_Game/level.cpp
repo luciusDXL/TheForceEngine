@@ -399,6 +399,15 @@ namespace TFE_Level
 		s_levelData->sectors[sectorId].floorAlt = height;
 		s_levelData->sectors[sectorId].center.y = (s_levelData->sectors[sectorId].floorAlt + s_levelData->sectors[sectorId].ceilAlt) * 0.5f;
 		s_levelData->sectors[sectorId].dirty = true;
+
+		const SectorWall* walls = s_levelData->walls.data();
+		for (u32 w = 0; w < s_levelData->sectors[sectorId].wallCount; w++)
+		{
+			if (walls->adjoin >= 0)
+			{
+				s_levelData->sectors[walls->adjoin].dirty = true;
+			}
+		}
 	}
 
 	void setCeilingHeight(s32 sectorId, f32 height)
@@ -406,6 +415,15 @@ namespace TFE_Level
 		s_levelData->sectors[sectorId].ceilAlt = height;
 		s_levelData->sectors[sectorId].center.y = (s_levelData->sectors[sectorId].floorAlt + s_levelData->sectors[sectorId].ceilAlt) * 0.5f;
 		s_levelData->sectors[sectorId].dirty = true;
+
+		const SectorWall* walls = s_levelData->walls.data();
+		for (u32 w = 0; w < s_levelData->sectors[sectorId].wallCount; w++)
+		{
+			if (walls->adjoin >= 0)
+			{
+				s_levelData->sectors[walls->adjoin].dirty = true;
+			}
+		}
 	}
 
 	void setSecondHeight(s32 sectorId, f32 height, bool addSectorMotion)

@@ -1,3 +1,34 @@
+//////////////////////////////////////////////////////////////////////////
+// Renderer Classic TODO
+// {6/23-6/28}
+// -- Finish Adjoins --
+// 1. wall_drawTop() - finally handle this correctly, including adjoins.
+// 2. wall_drawTransparent() - handle correctly.
+// 3. fix any adjoin bugs that don't exist in the original.
+// -- Finish Sector Rendering --
+// 4. Draw sky (exterior/pit/exterior adjoin/pit adjoin/etc.).
+// 5. Draw signs.
+// {6/29-7/05}
+// 6. Texture animation.
+// 7. Find code that handles texture offset calculations and fixup (handle
+//    where sectors move due to INF and fix up texture offsets based on
+//    flags).
+// -- Sprite drawing --
+// {7/06-7/12}
+// -- 3D object drawing --
+// -- Verify correct rendering using vanilla and test levels --
+// {7/13-7/19}
+// -- Refactor renderer - replace with Classic.
+// -- GPU Rendering.
+// {7/20-7/26}
+// -- Cleanup.
+// -- Finish UI setup.
+// -- Finish rendering features.
+// {7/27}
+// ** Release **
+//////////////////////////////////////////////////////////////////////////
+
+
 #include "rendererClassic.h"
 #include "fixedPoint.h"
 #include "rsector.h"
@@ -133,14 +164,14 @@ namespace RendererClassic
 
 		s_sectorId = sectorId;
 		s_cameraLightSource = 0;
-		s_worldAmbient = 31;
+		s_worldAmbient = MAX_LIGHT_LEVEL;
 		const LightMode mode = TFE_RenderCommon::getLightMode();
 		if (mode != LIGHT_OFF)
 		{
 			s_worldAmbient = (mode == LIGHT_NORMAL) ? 0 : -9;
 			s_cameraLightSource = -1;
 		}
-						
+
 		s_drawFrame++;
 	}
 		
@@ -156,8 +187,8 @@ namespace RendererClassic
 		s_windowMaxX = s_maxScreenX;
 		s_windowMinY = 1;
 		s_windowMaxY = s_height - 1;
-		s_yMaxCeil = s_minScreenY;
-		s_yMinFloor = s_maxScreenY;
+		s_windowMaxCeil = s_minScreenY;
+		s_windowMinFloor = s_maxScreenY;
 		s_flatCount  = 0;
 		s_nextWall   = 0;
 		s_curWallSeg = 0;

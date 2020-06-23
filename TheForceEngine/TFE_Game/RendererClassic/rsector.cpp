@@ -3,6 +3,7 @@
 #include "rlighting.h"
 #include "rsector.h"
 #include "redgePair.h"
+#include "rtexture.h"
 #include "fixedPoint.h"
 #include "rmath.h"
 #include "rcommon.h"
@@ -29,6 +30,7 @@ using namespace RClassicWall;
 using namespace RClassicFlat;
 using namespace RClassicEdgePair;
 using namespace RClassicLighting;
+using namespace RClassicTexture;
 using namespace FixedPoint;
 using namespace RMath;
 
@@ -46,8 +48,8 @@ namespace RClassicSector
 		u32     windowX1;
 		s32     windowMinY;
 		s32     windowMaxY;
-		s32     yMaxCeil;
-		s32     yMinFloor;
+		s32     windowMaxCeil;
+		s32     windowMinFloor;
 		s32     wallMaxCeilY;
 		s32     wallMinFloorY;
 		u32     windowMinX;
@@ -391,7 +393,7 @@ namespace RClassicSector
 
 		sector_update(sector->id);
 	}
-
+	
 	// In the future, renderer sectors can be changed directly by INF, but for now just copy from the level data.
 	void sector_update(u32 sectorId)
 	{
@@ -406,6 +408,10 @@ namespace RClassicSector
 		out->vertexCount = sector->vtxCount;
 		out->wallCount = sector->wallCount;
 
+		const SectorBaseHeight* baseHeight = TFE_Level::getBaseSectorHeight(sectorId);
+		fixed16 ceilDelta  = floatToFixed16(sector->ceilAlt - baseHeight->ceilAlt);
+		fixed16 floorDelta = floatToFixed16(sector->floorAlt - baseHeight->floorAlt);
+
 		out->ambientFixed = intToFixed16(sector->ambient);
 		out->floorHeight = floatToFixed16(sector->floorAlt);
 		out->ceilingHeight = floatToFixed16(sector->ceilAlt);
@@ -415,8 +421,8 @@ namespace RClassicSector
 		out->flags3 = sector->flags[2];
 		out->startWall = 0;
 		out->drawWallCnt = 0;
-		out->floorTex = &textures[sector->floorTexture.texId]->frames[0];
-		out->ceilTex = &textures[sector->ceilTexture.texId]->frames[0];
+		out->floorTex = texture_getFrame(textures[sector->floorTexture.texId]);
+		out->ceilTex = texture_getFrame(textures[sector->ceilTexture.texId]);
 		out->floorOffsetX = floatToFixed16(sector->floorTexture.offsetX);
 		out->floorOffsetZ = floatToFixed16(sector->floorTexture.offsetY);
 		out->ceilOffsetX = floatToFixed16(sector->ceilTexture.offsetX);
@@ -435,16 +441,16 @@ namespace RClassicSector
 		{
 			wall->sector = out;
 			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
-
+			
 			wall->w0 = &out->verticesWS[walls[w].i0];
 			wall->w1 = &out->verticesWS[walls[w].i1];
 			wall->v0 = &out->verticesVS[walls[w].i0];
 			wall->v1 = &out->verticesVS[walls[w].i1];
 
-			wall->topTex = walls[w].top.texId >= 0 && textures[walls[w].top.texId] ? &textures[walls[w].top.texId]->frames[0] : nullptr;
-			wall->midTex = walls[w].mid.texId >= 0 && textures[walls[w].mid.texId] ? &textures[walls[w].mid.texId]->frames[0] : nullptr;
-			wall->botTex = walls[w].bot.texId >= 0 && textures[walls[w].bot.texId] ? &textures[walls[w].bot.texId]->frames[0] : nullptr;
-			wall->signTex = walls[w].sign.texId >= 0 && textures[walls[w].sign.texId] ? &textures[walls[w].sign.texId]->frames[0] : nullptr;
+			wall->topTex = texture_getFrame(textures[walls[w].top.texId]);
+			wall->midTex = texture_getFrame(textures[walls[w].mid.texId]);
+			wall->botTex = texture_getFrame(textures[walls[w].bot.texId]);
+			wall->signTex = texture_getFrame(walls[w].sign.texId >= 0 ? textures[walls[w].sign.texId] : nullptr);
 
 			const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
 			f32 len = sqrtf(offset.x * offset.x + offset.z * offset.z);
@@ -462,6 +468,24 @@ namespace RClassicSector
 			wall->midVOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].mid.offsetY));
 			wall->botUOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].bot.offsetX));
 			wall->botVOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].bot.offsetY));
+
+			if (walls[w].flags[0] & WF1_TEX_ANCHORED)
+			{
+				wall->topVOffset += mul16(intToFixed16(8), ceilDelta);
+				wall->midVOffset -= mul16(intToFixed16(8), floorDelta);
+				wall->botVOffset -= mul16(intToFixed16(8), floorDelta);
+
+				////////////// Next Sector //////////////
+				const s32 nextId = walls[w].adjoin;
+				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
+				const Sector* nextSrc = (nextId >= 0) ? &level->sectors[nextId] : nullptr;
+				if (nextSrc)
+				{
+					// Handle next sector moving.
+					wall->botVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
+					wall->topVOffset += floatToFixed16(8.0f * (baseHeightNext->ceilAlt - nextSrc->ceilAlt));
+				}
+			}
 
 			wall->drawFrame = 0;
 			wall->drawFlags = WDF_MIDDLE;
@@ -528,14 +552,14 @@ namespace RClassicSector
 			s_windowMaxY = yF;
 		}
 		yC = adjoinEdges->yPixel_C1;
-		if (yC > s_yMaxCeil)
+		if (yC > s_windowMaxCeil)
 		{
-			s_yMaxCeil = yC;
+			s_windowMaxCeil = yC;
 		}
 		yF = adjoinEdges->yPixel_F1;
-		if (yF < s_yMinFloor)
+		if (yF < s_windowMinFloor)
 		{
-			s_yMinFloor = yF;
+			s_windowMinFloor = yF;
 		}
 		s_wallMaxCeilY = s_windowMinY - 1;
 		s_wallMinFloorY = s_windowMaxY + 1;
@@ -556,8 +580,8 @@ namespace RClassicSector
 		dst->windowX1 = s_windowX1;
 		dst->windowMinY = s_windowMinY;
 		dst->windowMaxY = s_windowMaxY;
-		dst->yMaxCeil = s_yMaxCeil;
-		dst->yMinFloor = s_yMinFloor;
+		dst->windowMaxCeil = s_windowMaxCeil;
+		dst->windowMinFloor = s_windowMinFloor;
 		dst->wallMaxCeilY = s_wallMaxCeilY;
 		dst->wallMinFloorY = s_wallMinFloorY;
 		dst->windowMinX = s_windowMinX;
@@ -581,8 +605,8 @@ namespace RClassicSector
 		s_windowX1 = src->windowX1;
 		s_windowMinY = src->windowMinY;
 		s_windowMaxY = src->windowMaxY;
-		s_yMaxCeil = src->yMaxCeil;
-		s_yMinFloor = src->yMinFloor;
+		s_windowMaxCeil = src->windowMaxCeil;
+		s_windowMinFloor = src->windowMinFloor;
 		s_wallMaxCeilY = src->wallMaxCeilY;
 		s_wallMinFloorY = src->wallMinFloorY;
 		s_windowMinX = src->windowMinX;

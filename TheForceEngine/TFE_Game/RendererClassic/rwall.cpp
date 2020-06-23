@@ -936,8 +936,6 @@ namespace RClassicWall
 				s_vCoordFixed = v0 + srcWall->midVOffset;
 
 				// Texture image data = imageStart + u * texHeight
-				// ***Checks against texture are because all walls are being forced to render as solid***
-				// TODO: Use wall render flags and then remove checks
 				if (texture)
 				{
 					s_texImage = texture->image + (texelU << texture->logSizeY);
