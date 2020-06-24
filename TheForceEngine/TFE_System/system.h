@@ -36,6 +36,9 @@ namespace TFE_System
 	// Get the absolute time since the last start time.
 	f64 getTime();
 
+	u64 getCurrentTimeInTicks();
+	f64 convertFromTicksToSeconds(u64 ticks);
+
 	// Log
 	bool logOpen(const char* filename);
 	void logClose();

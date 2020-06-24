@@ -10,6 +10,7 @@
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
+#include <TFE_System/profiler.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/levelAsset.h>
 #include <TFE_Asset/levelObjectsAsset.h>
@@ -132,37 +133,43 @@ namespace RClassicSector
 
 		if (s_drawFrame != s_curSector->prevDrawFrame)
 		{
-			vec2* vtxWS = s_curSector->verticesWS;
-			vec2* vtxVS = s_curSector->verticesVS;
-			for (s32 v = 0; v < s_curSector->vertexCount; v++)
-			{
-				vtxVS->x = mul16(vtxWS->x, s_cosYaw) + mul16(vtxWS->z, s_sinYaw) + s_xCameraTrans;
-				vtxVS->z = mul16(vtxWS->x, s_negSinYaw) + mul16(vtxWS->z, s_cosYaw) + s_zCameraTrans;
-				vtxVS++;
-				vtxWS++;
-			}
+			TFE_ZONE_BEGIN(secXform, "Sector Vertex Transform");
+				vec2* vtxWS = s_curSector->verticesWS;
+				vec2* vtxVS = s_curSector->verticesVS;
+				for (s32 v = 0; v < s_curSector->vertexCount; v++)
+				{
+					vtxVS->x = mul16(vtxWS->x, s_cosYaw) + mul16(vtxWS->z, s_sinYaw) + s_xCameraTrans;
+					vtxVS->z = mul16(vtxWS->x, s_negSinYaw) + mul16(vtxWS->z, s_cosYaw) + s_zCameraTrans;
+					vtxVS++;
+					vtxWS++;
+				}
+			TFE_ZONE_END(secXform);
 
-			startWall = s_nextWall;
-			RWall* wall = s_curSector->walls;
-			for (s32 i = 0; i < s_curSector->wallCount; i++, wall++)
-			{
-				wall_process(wall);
-			}
-			drawWallCount = s_nextWall - startWall;
+			TFE_ZONE_BEGIN(wallProcess, "Sector Wall Process");
+				startWall = s_nextWall;
+				RWall* wall = s_curSector->walls;
+				for (s32 i = 0; i < s_curSector->wallCount; i++, wall++)
+				{
+					wall_process(wall);
+				}
+				drawWallCount = s_nextWall - startWall;
 
-			s_curSector->startWall = startWall;
-			s_curSector->drawWallCnt = drawWallCount;
-			s_curSector->prevDrawFrame = s_drawFrame;
+				s_curSector->startWall = startWall;
+				s_curSector->drawWallCnt = drawWallCount;
+				s_curSector->prevDrawFrame = s_drawFrame;
 
-			// Setup wall flags not from the original code, still to be replaced.
-			sector_setupWallDrawFlags(s_curSector);
+				// Setup wall flags not from the original code, still to be replaced.
+				sector_setupWallDrawFlags(s_curSector);
+			TFE_ZONE_END(wallProcess);
 		}
 
 		RWallSegment* wallSegment = &s_wallSegListDst[s_curWallSeg];
 		s32 drawSegCnt = wall_mergeSort(wallSegment, MAX_SEG - s_curWallSeg, startWall, drawWallCount);
 		s_curWallSeg += drawSegCnt;
 
-		qsort(wallSegment, drawSegCnt, sizeof(RWallSegment), wallSortX);
+		TFE_ZONE_BEGIN(wallQSort, "Wall QSort");
+			qsort(wallSegment, drawSegCnt, sizeof(RWallSegment), wallSortX);
+		TFE_ZONE_END(wallQSort);
 
 		s32 flatCount = s_flatCount;
 		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
@@ -176,6 +183,7 @@ namespace RClassicSector
 		s_adjoinSegment = adjoinList;
 
 		// Draw each wall segment in the sector.
+		TFE_ZONE_BEGIN(secDrawWalls, "Draw Walls");
 		for (s32 i = 0; i < drawSegCnt; i++, wallSegment++)
 		{
 			RWall* srcWall = wallSegment->srcWall;
@@ -244,28 +252,31 @@ namespace RClassicSector
 				}
 			}
 		}
+		TFE_ZONE_END(secDrawWalls);
 
-		// Draw flats
-		// Note: in the DOS code flat drawing functions are called through function pointers.
-		// Since the function pointers always seem to be the same, the functions are called directly in this code.
-		// Most likely this was used for testing or debug drawing and may be added back in the future.
-		const s32 newFlatCount = s_flatCount - flatCount;
-		if (s_curSector->flags1 & SEC_FLAGS1_EXTERIOR)
-		{
-			// TODO - just leave black for now.
-		}
-		else
-		{
-			flat_drawCeiling(s_curSector, flatEdge, newFlatCount);
-		}
-		if (s_curSector->flags1 & SEC_FLAGS1_PIT)
-		{
-			// TODO - just leave black for now.
-		}
-		else
-		{
-			flat_drawFloor(s_curSector, flatEdge, newFlatCount);
-		}
+		TFE_ZONE_BEGIN(secDrawFlats, "Draw Flats");
+			// Draw flats
+			// Note: in the DOS code flat drawing functions are called through function pointers.
+			// Since the function pointers always seem to be the same, the functions are called directly in this code.
+			// Most likely this was used for testing or debug drawing and may be added back in the future.
+			const s32 newFlatCount = s_flatCount - flatCount;
+			if (s_curSector->flags1 & SEC_FLAGS1_EXTERIOR)
+			{
+				// TODO - just leave black for now.
+			}
+			else
+			{
+				flat_drawCeiling(s_curSector, flatEdge, newFlatCount);
+			}
+			if (s_curSector->flags1 & SEC_FLAGS1_PIT)
+			{
+				// TODO - just leave black for now.
+			}
+			else
+			{
+				flat_drawFloor(s_curSector, flatEdge, newFlatCount);
+			}
+		TFE_ZONE_END(secDrawFlats);
 
 		// Adjoins
 		s32 adjoinCount = s_adjoinSegCount - adjoinStart;
@@ -327,6 +338,7 @@ namespace RClassicSector
 					srcWall->drawFrame = 0;
 					if (srcWall->flags1 & WF1_ADJ_MID_TEX)
 					{
+						TFE_ZONE("Draw Transparent Walls");
 						wall_drawTransparent(curAdjoinSeg);
 					}
 				}
@@ -381,11 +393,30 @@ namespace RClassicSector
 		out->vertexCount = sector->vtxCount;
 		out->wallCount = sector->wallCount;
 
+		// Initial setup.
 		if (!out->verticesWS)
 		{
 			out->verticesWS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
 			out->verticesVS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
 			out->walls = (RWall*)s_memPool->allocate(sizeof(RWall) * out->wallCount);
+
+			out->startWall = 0;
+			out->drawWallCnt = 0;
+
+			RWall* wall = out->walls;
+			for (s32 w = 0; w < out->wallCount; w++, wall++)
+			{
+				wall->sector = out;
+				wall->drawFrame = 0;
+				wall->drawFlags = WDF_MIDDLE;
+				wall->topTexelHeight = 0;
+				wall->botTexelHeight = 0;
+
+				wall->w0 = &out->verticesWS[walls[w].i0];
+				wall->w1 = &out->verticesWS[walls[w].i1];
+				wall->v0 = &out->verticesVS[walls[w].i0];
+				wall->v1 = &out->verticesVS[walls[w].i1];
+			}
 
 			out->prevDrawFrame = 0;
 			out->prevDrawFrame2 = 0;
@@ -393,10 +424,22 @@ namespace RClassicSector
 
 		sector_update(sector->id);
 	}
+
+	void sector_updateAll()
+	{
+		for (u32 s = 0; s < s_sectorCount; s++)
+		{
+			sector_update(s);
+		}
+	}
 	
 	// In the future, renderer sectors can be changed directly by INF, but for now just copy from the level data.
+	// TODO: Currently all sector data is updated - get the "dirty" flag to work reliably so only partial data needs to be updated (textures).
+	// TODO: Properly handle switch textures (after reverse-engineering of switch rendering is done).
 	void sector_update(u32 sectorId)
 	{
+		TFE_ZONE("Sector Update");
+
 		LevelData* level = TFE_LevelAsset::getLevelData();
 		Texture** textures = level->textures.data();
 
@@ -409,73 +452,63 @@ namespace RClassicSector
 		out->wallCount = sector->wallCount;
 
 		const SectorBaseHeight* baseHeight = TFE_Level::getBaseSectorHeight(sectorId);
-		fixed16 ceilDelta  = floatToFixed16(sector->ceilAlt - baseHeight->ceilAlt);
-		fixed16 floorDelta = floatToFixed16(sector->floorAlt - baseHeight->floorAlt);
+		fixed16 ceilDelta  = floatToFixed16(8.0f * (sector->ceilAlt - baseHeight->ceilAlt));
+		fixed16 floorDelta = floatToFixed16(8.0f * (sector->floorAlt - baseHeight->floorAlt));
 
-		out->ambientFixed = intToFixed16(sector->ambient);
-		out->floorHeight = floatToFixed16(sector->floorAlt);
+		out->ambientFixed  = intToFixed16(sector->ambient);
+		out->floorHeight   = floatToFixed16(sector->floorAlt);
 		out->ceilingHeight = floatToFixed16(sector->ceilAlt);
-		out->secHeight = floatToFixed16(sector->secAlt);
-		out->flags1 = sector->flags[0];
-		out->flags2 = sector->flags[1];
-		out->flags3 = sector->flags[2];
-		out->startWall = 0;
-		out->drawWallCnt = 0;
-		out->floorTex = texture_getFrame(textures[sector->floorTexture.texId]);
-		out->ceilTex = texture_getFrame(textures[sector->ceilTexture.texId]);
-		out->floorOffsetX = floatToFixed16(sector->floorTexture.offsetX);
-		out->floorOffsetZ = floatToFixed16(sector->floorTexture.offsetY);
-		out->ceilOffsetX = floatToFixed16(sector->ceilTexture.offsetX);
-		out->ceilOffsetZ = floatToFixed16(sector->ceilTexture.offsetY);
+		out->secHeight     = floatToFixed16(sector->secAlt);
+		out->flags1        = sector->flags[0];
+		out->flags2        = sector->flags[1];
+		out->flags3        = sector->flags[2];
+		out->floorTex      = texture_getFrame(textures[sector->floorTexture.texId]);
+		out->ceilTex       = texture_getFrame(textures[sector->ceilTexture.texId]);
+		out->floorOffsetX  = floatToFixed16(sector->floorTexture.offsetX);
+		out->floorOffsetZ  = floatToFixed16(sector->floorTexture.offsetY);
+		out->ceilOffsetX   = floatToFixed16(sector->ceilTexture.offsetX);
+		out->ceilOffsetZ   = floatToFixed16(sector->ceilTexture.offsetY);
 
+		TFE_ZONE_BEGIN(secVtx, "Sector Update Vertices");
 		for (s32 v = 0; v < out->vertexCount; v++)
 		{
 			out->verticesWS[v].x = floatToFixed16(vertices[v].x);
 			out->verticesWS[v].z = floatToFixed16(vertices[v].z);
 		}
-
-		const fixed16 midTexelHeight = mul16(intToFixed16(8), floatToFixed16(sector->floorAlt - sector->ceilAlt));
-
+		TFE_ZONE_END(secVtx);
+				
+		TFE_ZONE_BEGIN(secWall, "Sector Update Walls");
 		RWall* wall = out->walls;
+		const fixed16 midTexelHeight = mul16(intToFixed16(8), floatToFixed16(sector->floorAlt - sector->ceilAlt));
 		for (s32 w = 0; w < out->wallCount; w++, wall++)
 		{
-			wall->sector = out;
 			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
-			
-			wall->w0 = &out->verticesWS[walls[w].i0];
-			wall->w1 = &out->verticesWS[walls[w].i1];
-			wall->v0 = &out->verticesVS[walls[w].i0];
-			wall->v1 = &out->verticesVS[walls[w].i1];
-
+						
 			wall->topTex = texture_getFrame(textures[walls[w].top.texId]);
 			wall->midTex = texture_getFrame(textures[walls[w].mid.texId]);
 			wall->botTex = texture_getFrame(textures[walls[w].bot.texId]);
 			wall->signTex = texture_getFrame(walls[w].sign.texId >= 0 ? textures[walls[w].sign.texId] : nullptr);
 
 			const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
-			f32 len = sqrtf(offset.x * offset.x + offset.z * offset.z);
-			wall->texelLength = mul16(intToFixed16(8), floatToFixed16(len));
+			wall->texelLength = floatToFixed16(8.0f * sqrtf(offset.x * offset.x + offset.z * offset.z));
 
 			// For now just assume solid walls.
-			wall->topTexelHeight = 0;
-			wall->botTexelHeight = 0;
 			wall->midTexelHeight = midTexelHeight;
 
 			// Texture Offsets
-			wall->topUOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].top.offsetX));
-			wall->topVOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].top.offsetY));
-			wall->midUOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].mid.offsetX));
-			wall->midVOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].mid.offsetY));
-			wall->botUOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].bot.offsetX));
-			wall->botVOffset = mul16(intToFixed16(8), floatToFixed16(walls[w].bot.offsetY));
+			wall->topUOffset = floatToFixed16(8.0f * walls[w].top.offsetX);
+			wall->topVOffset = floatToFixed16(8.0f * walls[w].top.offsetY);
+			wall->midUOffset = floatToFixed16(8.0f * walls[w].mid.offsetX);
+			wall->midVOffset = floatToFixed16(8.0f * walls[w].mid.offsetY);
+			wall->botUOffset = floatToFixed16(8.0f * walls[w].bot.offsetX);
+			wall->botVOffset = floatToFixed16(8.0f * walls[w].bot.offsetY);
 
 			if (walls[w].flags[0] & WF1_TEX_ANCHORED)
 			{
-				wall->topVOffset += mul16(intToFixed16(8), ceilDelta);
-				wall->midVOffset -= mul16(intToFixed16(8), floorDelta);
-				wall->botVOffset -= mul16(intToFixed16(8), floorDelta);
+				wall->topVOffset += ceilDelta;
+				wall->midVOffset -= floorDelta;
+				wall->botVOffset -= floorDelta;
 
-				////////////// Next Sector //////////////
 				const s32 nextId = walls[w].adjoin;
 				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
 				const Sector* nextSrc = (nextId >= 0) ? &level->sectors[nextId] : nullptr;
@@ -483,12 +516,9 @@ namespace RClassicSector
 				{
 					// Handle next sector moving.
 					wall->botVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
-					wall->topVOffset += floatToFixed16(8.0f * (baseHeightNext->ceilAlt - nextSrc->ceilAlt));
+					wall->topVOffset += floatToFixed16(8.0f * (baseHeightNext->ceilAlt  - nextSrc->ceilAlt));
 				}
 			}
-
-			wall->drawFrame = 0;
-			wall->drawFlags = WDF_MIDDLE;
 
 			wall->flags1 = walls[w].flags[0];
 			wall->flags2 = walls[w].flags[1];
@@ -496,10 +526,13 @@ namespace RClassicSector
 
 			wall->wallLight = walls[w].light;
 		}
+		TFE_ZONE_END(secWall);
 	}
 		
 	void adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePair* adjoinEdges, s32 adjoinCount)
 	{
+		TFE_ZONE("Setup Adjoin Window");
+
 		// Note: This is pretty inefficient, especially at higher resolutions.
 		// The column loops below can be adjusted to do the copy only in the required ranges.
 		memcpy(&winTopNext[s_minScreenX], &winTop[s_minScreenX], s_width * 4);

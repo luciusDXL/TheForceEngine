@@ -1,6 +1,7 @@
 // main.cpp : Defines the entry point for the application.
 #include <SDL.h>
 #include <TFE_System/types.h>
+#include <TFE_System/profiler.h>
 #include <TFE_ScriptSystem/scriptSystem.h>
 #include <TFE_InfSystem/infSystem.h>
 #include <TFE_Editor/editor.h>
@@ -409,6 +410,8 @@ int main(int argc, char* argv[])
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
 	while (s_loop)
 	{
+		TFE_FRAME_BEGIN();
+
 		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)
 		{
@@ -452,6 +455,10 @@ int main(int argc, char* argv[])
 		if (TFE_Input::keyPressed(KEY_GRAVE))
 		{
 			TFE_FrontEndUI::toggleConsole();
+		}
+		if (TFE_Input::keyPressed(KEY_F10))
+		{
+			TFE_FrontEndUI::toggleProfilerView();
 		}
 		if ((TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1))
 		{
@@ -498,6 +505,8 @@ int main(int argc, char* argv[])
 		// Clear transitory input state.
 		TFE_Input::endFrame();
 		frame++;
+
+		TFE_FRAME_END();
 	}
 
 	// Cleanup

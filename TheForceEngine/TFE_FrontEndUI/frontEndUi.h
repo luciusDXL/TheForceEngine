@@ -39,4 +39,6 @@ namespace TFE_FrontEndUI
 
 	bool isConsoleOpen();
 	void logToConsole(const char* str);
+
+	void toggleProfilerView();
 }

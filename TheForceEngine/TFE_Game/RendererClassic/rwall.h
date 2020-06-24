@@ -104,5 +104,5 @@ namespace RClassicWall
 	void wall_drawTop(RWallSegment* wallSegment);
 	void wall_drawTopAndBottom(RWallSegment* wallSegment);
 
-	void wall_addAdjoinSegment(s32 length, s32 x0, s32 top_dydx, s32 y1, s32 bot_dydx, s32 y0, RWallSegment* wallSegment);
+	void wall_addAdjoinSegment(s32 length, s32 x0, fixed16 top_dydx, fixed16 y1, fixed16 bot_dydx, fixed16 y0, RWallSegment* wallSegment);
 }

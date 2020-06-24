@@ -1,5 +1,6 @@
 #include "frontEndUi.h"
 #include "console.h"
+#include "profilerView.h"
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -148,6 +149,7 @@ namespace TFE_FrontEndUI
 		s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
 
 		TFE_Console::init();
+		TFE_ProfilerView::init();
 	}
 
 	void shutdown()
@@ -156,6 +158,7 @@ namespace TFE_FrontEndUI
 		delete[] s_manualDisplayStr;
 		delete[] s_creditsDisplayStr;
 		TFE_Console::destroy();
+		TFE_ProfilerView::destroy();
 	}
 
 	AppState update()
@@ -216,6 +219,12 @@ namespace TFE_FrontEndUI
 		TFE_Console::addToHistory(str);
 	}
 
+	void toggleProfilerView()
+	{
+		bool isEnabled = TFE_ProfilerView::isEnabled();
+		TFE_ProfilerView::enable(!isEnabled);
+	}
+
 	void showNoGameDataUI()
 	{
 		char settingsPath[TFE_MAX_PATH];
@@ -253,6 +262,10 @@ namespace TFE_FrontEndUI
 		if (TFE_Console::isOpen())
 		{
 			TFE_Console::update();
+		}
+		if (TFE_ProfilerView::isEnabled())
+		{
+			TFE_ProfilerView::update();
 		}
 		if (noGameData)
 		{
@@ -367,7 +380,7 @@ namespace TFE_FrontEndUI
 				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
 
 			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-			ImGui::SetNextWindowSize(ImVec2(160.0f, h));
+			ImGui::SetNextWindowSize(ImVec2(160.0f, f32(h)));
 			ImGui::Begin("##Sidebar", &active, window_flags);
 
 			ImVec2 sideBarButtonSize(144, 24);
@@ -426,7 +439,7 @@ namespace TFE_FrontEndUI
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(160.0f, 0.0f));
-			ImGui::SetNextWindowSize(ImVec2(f32(tabWidth), h));
+			ImGui::SetNextWindowSize(ImVec2(f32(tabWidth), f32(h)));
 			ImGui::SetNextWindowBgAlpha(0.95f);
 			ImGui::Begin("##Settings", &active, window_flags);
 
@@ -841,7 +854,7 @@ namespace TFE_FrontEndUI
 		{
 			if (graphics->gameResolution.x == c_resolutionDim[i].x && graphics->gameResolution.z == c_resolutionDim[i].z)
 			{
-				s_resIndex = i;
+				s_resIndex = s32(i);
 				return;
 			}
 		}

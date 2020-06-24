@@ -274,6 +274,7 @@
     <ClInclude Include="TFE_FileSystem\stream.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
+    <ClInclude Include="TFE_FrontEndUI\profilerView.h" />
     <ClInclude Include="TFE_Game\gameConstants.h" />
     <ClInclude Include="TFE_Game\gameHud.h" />
     <ClInclude Include="TFE_Game\gameLoop.h" />
@@ -329,6 +330,7 @@
     <ClInclude Include="TFE_System\math.h" />
     <ClInclude Include="TFE_System\memoryPool.h" />
     <ClInclude Include="TFE_System\parser.h" />
+    <ClInclude Include="TFE_System\profiler.h" />
     <ClInclude Include="TFE_System\system.h" />
     <ClInclude Include="TFE_System\Threads\mutex.h" />
     <ClInclude Include="TFE_System\Threads\signal.h" />
@@ -405,6 +407,7 @@
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
+    <ClCompile Include="TFE_FrontEndUI\profilerView.cpp" />
     <ClCompile Include="TFE_Game\gameHud.cpp" />
     <ClCompile Include="TFE_Game\gameLoop.cpp" />
     <ClCompile Include="TFE_Game\gameMain.cpp" />
@@ -454,6 +457,7 @@
     <ClCompile Include="TFE_System\math.cpp" />
     <ClCompile Include="TFE_System\memoryPool.cpp" />
     <ClCompile Include="TFE_System\parser.cpp" />
+    <ClCompile Include="TFE_System\profiler.cpp" />
     <ClCompile Include="TFE_System\system.cpp" />
     <ClCompile Include="TFE_System\Threads\Win32\mutexWin32.cpp" />
     <ClCompile Include="TFE_System\Threads\Win32\signalWin32.cpp" />

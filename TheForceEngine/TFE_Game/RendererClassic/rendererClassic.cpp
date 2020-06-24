@@ -9,8 +9,8 @@
 // 4. Draw sky (exterior/pit/exterior adjoin/pit adjoin/etc.).
 // 5. Draw signs.
 // {6/29-7/05}
-// 6. Texture animation.
-// 7. Find code that handles texture offset calculations and fixup (handle
+// 6. [X] Texture animation.
+// 7. [X] Find code that handles texture offset calculations and fixup (handle
 //    where sectors move due to INF and fix up texture offsets based on
 //    flags).
 // -- Sprite drawing --
@@ -27,8 +27,6 @@
 // {7/27}
 // ** Release **
 //////////////////////////////////////////////////////////////////////////
-
-
 #include "rendererClassic.h"
 #include "fixedPoint.h"
 #include "rsector.h"
@@ -39,6 +37,7 @@
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
+#include <TFE_System/profiler.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/levelAsset.h>
 #include <TFE_Asset/levelObjectsAsset.h>
@@ -75,6 +74,13 @@ namespace RendererClassic
 		s_init = true;
 		s_maxWallCount = 0xffff;
 		CVAR_INT(s_maxWallCount, "d_maxWallCount", 0, "Maximum wall count for a given sector.");
+
+		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
+		TFE_COUNTER(s_maxAdjoinIndex, "Maximum Adjoin Count");
+		TFE_COUNTER(s_sectorIndex,    "Sector Count");
+		TFE_COUNTER(s_flatCount,      "Flat Count");
+		TFE_COUNTER(s_curWallSeg,     "Wall Segment Count");
+		TFE_COUNTER(s_adjoinSegCount, "Adjoin Segment Count");
 	}
 
 	void changeResolution(s32 width, s32 height)
@@ -145,7 +151,7 @@ namespace RendererClassic
 		loadLevel();
 	}
 
-	void setCamera(fixed16 cosYaw, fixed16 sinYaw, fixed16 sinPitch, s32 x, s32 y, s32 z, s32 sectorId)
+	void setCamera(fixed16 cosYaw, fixed16 sinYaw, fixed16 sinPitch, fixed16 x, fixed16 y, fixed16 z, s32 sectorId)
 	{
 		s_cosYaw = cosYaw;
 		s_sinYaw = sinYaw;
@@ -174,7 +180,7 @@ namespace RendererClassic
 
 		s_drawFrame++;
 	}
-		
+				
 	void draw(u8* display, const ColorMap* colormap)
 	{
 		// Clear the screen for now so we can get away with only drawing walls.
@@ -213,9 +219,12 @@ namespace RendererClassic
 		}
 						
 		// Draws a single sector.
-		sector_draw(sector_get() + s_sectorId);
+		{
+			TFE_ZONE("Sector Draw");
+			sector_draw(sector_get() + s_sectorId);
+		}
 	}
-		
+
 	void loadLevel()
 	{
 		LevelData* level = TFE_LevelAsset::getLevelData();

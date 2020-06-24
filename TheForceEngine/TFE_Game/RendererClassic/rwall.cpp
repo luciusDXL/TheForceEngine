@@ -9,6 +9,7 @@
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
+#include <TFE_System/profiler.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/levelAsset.h>
 #include <TFE_Asset/levelObjectsAsset.h>
@@ -379,6 +380,8 @@ namespace RClassicWall
 
 	s32 wall_mergeSort(RWallSegment* segOutList, s32 availSpace, s32 start, s32 count)
 	{
+		TFE_ZONE("Wall Merge/Sort");
+
 		count = min(count, s_maxWallCount);
 
 		s32 outIndex = 0;
@@ -1891,17 +1894,17 @@ namespace RClassicWall
 		}
 	}
 
-	void wall_addAdjoinSegment(s32 length, s32 x0, s32 top_dydx, s32 y1, s32 bot_dydx, s32 y0, RWallSegment* wallSegment)
+	void wall_addAdjoinSegment(s32 length, s32 x0, fixed16 top_dydx, fixed16 y1, fixed16 bot_dydx, fixed16 y0, RWallSegment* wallSegment)
 	{
 		if (s_adjoinSegCount < MAX_ADJOIN_SEG)
 		{
-			s32 lengthFixed = (length - 1) << 16;
-			s32 y0End = y0;
+			fixed16 lengthFixed = intToFixed16(length - 1);
+			fixed16 y0End = y0;
 			if (bot_dydx != 0)
 			{
 				y0End += mul16(bot_dydx, lengthFixed);
 			}
-			s32 y1End = y1;
+			fixed16 y1End = y1;
 			if (top_dydx != 0)
 			{
 				y1End += mul16(top_dydx, lengthFixed);

@@ -136,7 +136,7 @@ namespace TFE_Level
 				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D && oclass != CLASS_SOUND) { continue; }
 				// Skip objects that are not in sectors.
 				if (sectorId < 0) { continue; }
-				if (sectorId >= sectorCount)
+				if (sectorId >= s32(sectorCount))
 				{
 					TFE_System::logWrite(LOG_ERROR, "Level", "Sector ID for object is invalid: %d.", sectorId);
 					continue;
