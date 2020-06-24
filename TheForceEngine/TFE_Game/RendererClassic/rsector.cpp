@@ -339,7 +339,7 @@ namespace RClassicSector
 					if (srcWall->flags1 & WF1_ADJ_MID_TEX)
 					{
 						TFE_ZONE("Draw Transparent Walls");
-						wall_drawTransparent(curAdjoinSeg);
+						wall_drawTransparent(curAdjoinSeg, adjoinEdges);
 					}
 				}
 			}

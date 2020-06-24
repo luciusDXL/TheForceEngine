@@ -829,128 +829,56 @@ namespace RClassicWall
 		//srcWall->y1 = -1;
 	}
 
-	// TODO: Verify Code
-	void wall_drawTransparent(RWallSegment* wallSegment)
+	void wall_drawTransparent(RWallSegment* wallSegment, EdgePair* edge)
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
 		TextureFrame* texture = srcWall->midTex;
 
-		fixed16 ceilingHeight = sector->ceilingHeight;
-		fixed16 floorHeight = sector->floorHeight;
-
-		fixed16 ceilEyeRel = ceilingHeight - s_eyeHeight;
-		fixed16 floorEyeRel = floorHeight - s_eyeHeight;
-
 		fixed16 z0 = wallSegment->z0;
-		fixed16 z1 = wallSegment->z1;
+		fixed16 yC0 = edge->yCeil0;
+		fixed16 yF0 = edge->yFloor0;
+		fixed16 uScale = wallSegment->uScale;
+		fixed16 uCoord0 = wallSegment->uCoord0 + srcWall->midUOffset;
+		s32 lengthInPixels = edge->lengthInPixels;
 
-		fixed16 y0C = div16(mul16(ceilEyeRel, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16 y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
+		s_texHeightMask = texture->height - 1;
+		s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
 
-		fixed16 y1C = div16(mul16(ceilEyeRel, s_focalLenAspect), z1) + s_halfHeight;
-		fixed16 y1F = div16(mul16(floorEyeRel, s_focalLenAspect), z1) + s_halfHeight;
+		s32 ceil_dYdX = edge->dyCeil_dx;
+		s32 floor_dYdX = edge->dyFloor_dx;
+		s32 num = solveForZ_Numerator(wallSegment);
 
-		s32 y0C_pixel = round16(y0C);
-		s32 y1C_pixel = round16(y1C);
-
-		s32 y0F_pixel = round16(y0F);
-		s32 y1F_pixel = round16(y1F);
-
-		s32 x = wallSegment->wallX0;
-		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
-		fixed16 numerator = solveForZ_Numerator(wallSegment);
-
-		// For some reason we only early-out if the ceiling is below the view.
-		if (y0C_pixel > s_windowMaxY && y1C_pixel > s_windowMaxY)
+		for (s32 i = 0, x = edge->x0; i < lengthInPixels; i++, x++)
 		{
-			srcWall->visible = 0;
-			//srcWall->y1 = -1;
-			return;
-		}
+			s32 top = s_windowTop[x];
+			s32 bot = s_windowBot[x];
 
-		s_texHeightMask = texture ? texture->height - 1 : 0;
-		TextureFrame* signTex = srcWall->signTex;
-		if (signTex)	// ecx
-		{
-			// 1fd683:
-		}
+			s32 yC_pixel = max(round16(yC0), top);
+			s32 yF_pixel = min(round16(yF0), bot);
 
-		fixed16 wallDeltaX = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
-		fixed16 dYdXtop = 0, dYdXbot = 0;
-		if (wallDeltaX != 0)
-		{
-			dYdXtop = div16(y1C - y0C, wallDeltaX);
-			dYdXbot = div16(y1F - y0F, wallDeltaX);
-		}
-
-		fixed16 clippedXDelta = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
-		if (clippedXDelta != 0)
-		{
-			y0C += mul16(dYdXtop, clippedXDelta);
-			y0F += mul16(dYdXbot, clippedXDelta);
-		}
-
-		const s32 texWidth = texture ? texture->width : 0;
-		const bool flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) != 0;
-
-		for (s32 i = 0; i < length; i++, x++)
-		{
-			s32 top = round16(y0C);
-			s32 bot = round16(y0F);
-
-			if (top < s_windowTop[x])
-			{
-				top = s_windowTop[x];
-			}
-			if (bot > s_windowBot[x])
-			{
-				bot = s_windowBot[x];
-			}
-			s_yPixelCount = bot - top + 1;
-
-			fixed16 dxView = 0;
-			fixed16 z = solveForZ(wallSegment, x, numerator, &dxView);
-			fixed16 uScale = wallSegment->uScale;
-			fixed16 uCoord0 = wallSegment->uCoord0 + srcWall->midUOffset;
-			fixed16 uCoord = uCoord0 + ((wallSegment->orient == WORIENT_DZ_DX) ? mul16(dxView, uScale) : mul16(z - z0, uScale));
-
+			s_yPixelCount = yF_pixel - yC_pixel + 1;
 			if (s_yPixelCount > 0)
 			{
-				// texture wrapping, assumes texWidth is a power of 2.
-				s32 texelU = floor16(uCoord) & (texWidth - 1);
-				// flip texture coordinate if flag set.
-				if (flipHorz) { texelU = texWidth - texelU - 1; }
+				s32 dxView;
+				s32 z = solveForZ(wallSegment, x, num, &dxView);
+				s32 uCoord = uCoord0 + ((wallSegment->orient == WORIENT_DZ_DX) ? mul16(dxView, uScale) : mul16(z - z0, uScale));
 
-				// Calculate the vertical texture coordinate start and increment.
-				fixed16 wallHeightPixels = y0F - y0C + ONE_16;
-				fixed16 wallHeightTexels = srcWall->midTexelHeight;
-
-				// s_vCoordStep = tex coord "v" step per y pixel step -> dVdY;
-				// Note the result is in x.16 fixed point, which is why it must be shifted by 16 again before divide.
-				s_vCoordStep = div16(wallHeightTexels, wallHeightPixels);
-
-				// texel offset from the actual fixed point y position and the truncated y position.
-				fixed16 vPixelOffset = y0F - intToFixed16(bot) + HALF_16;
-
-				// scale the texel offset based on the v coord step.
-				// the result is the sub-texel offset
-				fixed16 v0 = mul16(s_vCoordStep, vPixelOffset);
-				s_vCoordFixed = v0 + srcWall->midVOffset;
-
-				// Texture image data = imageStart + u * texHeight
-				if (texture)
+				s32 widthMask = texture->width - 1;
+				s32 texelU = floor16(uCoord) & widthMask;
+				if (flipHorz)
 				{
-					s_texImage = texture->image + (texelU << texture->logSizeY);
+					texelU = widthMask - texelU;
 				}
 
-				// Skip for now and just write directly to the screen...
-				// columnOutStart + (x*320 + top) * 80;
-				//s_curColumnOut = s_columnOut[x] + s_scaleX80[top];
-				s_columnLight = computeLighting(z, srcWall->wallLight);
-				s_columnOut = &s_display[top * s_width + x];
+				s_texImage = &texture->image[texelU << texture->logSizeY];
+				s_vCoordStep  = div16(srcWall->midTexelHeight, yF0 - yC0 + ONE_16);
+				s_vCoordFixed = mul16(yF0 - intToFixed16(yF_pixel) + HALF_16, s_vCoordStep) + srcWall->midVOffset;
 
-				// draw the column
+				s_columnOut = &s_display[yC_pixel*s_width + x];
+				s_depth1d[x] = z;
+				s_columnLight = computeLighting(z, srcWall->wallLight);
+
 				if (s_columnLight)
 				{
 					drawColumn_Lit_Trans();
@@ -959,14 +887,10 @@ namespace RClassicWall
 				{
 					drawColumn_Fullbright_Trans();
 				}
-
-				if (signTex)
-				{
-				}
 			}
 
-			y0C += dYdXtop;
-			y0F += dYdXbot;
+			yC0 += ceil_dYdX;
+			yF0 += floor_dYdX;
 		}
 	}
 
@@ -1865,11 +1789,9 @@ namespace RClassicWall
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
 			const u8 c = tex[v];
-			if (c == 0) { continue; }
-
 			vCoordFixed += s_vCoordStep;
 			v = floor16(vCoordFixed) & s_texHeightMask;
-			s_columnOut[offset] = c;
+			if (c) { s_columnOut[offset] = c; }
 		}
 	}
 
@@ -1884,13 +1806,10 @@ namespace RClassicWall
 		s32 offset = end * s_width;
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
-			u8 c = tex[v];
-			if (c == 0) { continue; }
-
-			c = s_columnLight[c];
+			const u8 c = tex[v];
 			vCoordFixed += s_vCoordStep;
 			v = floor16(vCoordFixed) & s_texHeightMask;
-			s_columnOut[offset] = c;
+			if (c) { s_columnOut[offset] = s_columnLight[c]; }
 		}
 	}
 
