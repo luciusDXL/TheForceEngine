@@ -30,6 +30,7 @@ namespace TFE_ProfilerView
 	{
 		if (!s_open) { return; }
 
+		ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 		ImGui::SetNextWindowSize(ImVec2(800, 512));
 		ImGui::Begin("Profiler View", &s_open);
 
@@ -41,7 +42,7 @@ namespace TFE_ProfilerView
 		{
 			TFE_CounterInfo info;
 			TFE_Profiler::getCounterInfo(c, &info);
-			ImGui::Text("%d", info.value); ImGui::SameLine(128);
+			ImGui::Text("%d", info.value); ImGui::SameLine(64);
 			ImGui::Text("%s", info.name);
 		}
 		ImGui::Unindent();
