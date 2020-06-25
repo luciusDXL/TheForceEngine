@@ -491,9 +491,9 @@ namespace RClassicSector
 		{
 			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
 						
-			wall->topTex  = texture_getFrame(textures[walls[w].top.texId]);
-			wall->midTex  = texture_getFrame(textures[walls[w].mid.texId]);
-			wall->botTex  = texture_getFrame(textures[walls[w].bot.texId]);
+			wall->topTex  = texture_getFrame(walls[w].top.texId >= 0 ? textures[walls[w].top.texId] : nullptr);
+			wall->midTex  = texture_getFrame(walls[w].mid.texId >= 0 ? textures[walls[w].mid.texId] : nullptr);
+			wall->botTex  = texture_getFrame(walls[w].bot.texId >= 0 ? textures[walls[w].bot.texId] : nullptr);
 			wall->signTex = texture_getFrame(walls[w].sign.texId >= 0 ? textures[walls[w].sign.texId] : nullptr);
 
 			if (updateFlags & SEC_UPDATE_GEO)
@@ -515,7 +515,6 @@ namespace RClassicSector
 
 			if (walls[w].flags[0] & WF1_TEX_ANCHORED)
 			{
-				wall->topVOffset -= ceilDelta;
 				wall->midVOffset -= floorDelta;
 				wall->botVOffset -= floorDelta;
 
@@ -526,7 +525,7 @@ namespace RClassicSector
 				{
 					// Handle next sector moving.
 					wall->botVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
-					wall->topVOffset -= floatToFixed16(8.0f * (baseHeightNext->ceilAlt  - nextSrc->ceilAlt));
+					wall->topVOffset = -wall->topVOffset + (wall->topTex ? wall->topTex->height : 0);
 				}
 			}
 

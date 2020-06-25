@@ -2,7 +2,7 @@
 // Renderer Classic TODO
 // {6/23-6/28}
 // -- Finish Adjoins --
-// 1. wall_drawTop() - finally handle this correctly, including adjoins.
+// 1. [X] wall_drawTop() - finally handle this correctly, including adjoins.
 // 2. [X] wall_drawTransparent() - handle correctly.
 // 3. fix any adjoin bugs that don't exist in the original.
 // -- Finish Sector Rendering --

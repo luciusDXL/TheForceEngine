@@ -52,6 +52,7 @@ namespace RClassicLighting
 			light += lightOffset;
 		}
 		if (light >= MAX_LIGHT_LEVEL) { return nullptr; }
+		light = max(light, 0);
 
 		return &s_colorMap[light << 8];
 	}
