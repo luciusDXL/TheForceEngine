@@ -9,11 +9,13 @@
 namespace TFE_Profiler
 {
 	#define ZONE_BUFFER_COUNT 2
-
+	#define MAX_ZONE_STACK 256
+	
 	struct Zone
 	{
 		u32  id;
 		u32  level;
+		u32  parent;
 		u64  path;
 		char name[64];
 		char func[64];
@@ -21,6 +23,7 @@ namespace TFE_Profiler
 
 		f64  timeInZone[ZONE_BUFFER_COUNT];
 		f64  timeInZoneAve;
+		f64  fractOfParentAve;
 	};
 
 	struct Counter
@@ -47,6 +50,7 @@ namespace TFE_Profiler
 	static u32 s_readBuffer = 0;
 	static u32 s_writeBuffer = 1;
 	static u32 s_level;
+	static u32 s_zoneStack[MAX_ZONE_STACK];
 	static u64 s_currentPath;
 	
 	u32 beginZone(const char* name, const char* func, u32 lineNumber)
@@ -68,6 +72,7 @@ namespace TFE_Profiler
 			zone.timeInZone[s_readBuffer]  = 0;
 			zone.timeInZone[s_writeBuffer] = 0;
 			zone.timeInZoneAve = 0.0;
+			zone.fractOfParentAve = 0.0;
 
 			s_zoneList.push_back(zone);
 			s_zoneMap[name] = id;
@@ -77,6 +82,8 @@ namespace TFE_Profiler
 			id = iZone->second;
 		}
 
+		s_zoneList[id].parent = s_level > 0 ? s_zoneStack[s_level - 1] : NULL_ZONE;
+		s_zoneStack[s_level] = id;
 		s_level++;
 
 		return id;
@@ -109,7 +116,6 @@ namespace TFE_Profiler
 	void frameBegin()
 	{
 		std::swap(s_readBuffer, s_writeBuffer);
-
 		s_level = 0;
 
 		// Swap buffers, s_readBuffer is safe to read in the middle of the next frame.
@@ -134,10 +140,13 @@ namespace TFE_Profiler
 	{
 		s_frameTime = TFE_System::convertFromTicksToSeconds(TFE_System::getCurrentTimeInTicks() - s_frameBegin);
 		const size_t zoneCount = s_zoneList.size();
-		const f64 expBlend = 0.95;
+		const f64 expBlend = 0.99;
 		for (size_t i = 0; i < zoneCount; i++)
 		{
 			s_zoneList[i].timeInZoneAve = expBlend*s_zoneList[i].timeInZoneAve + (1.0 - expBlend)*s_zoneList[i].timeInZone[s_writeBuffer];
+
+			f64 parentTime = (s_zoneList[i].parent != NULL_ZONE) ? s_zoneList[s_zoneList[i].parent].timeInZone[s_writeBuffer] : s_frameTime;
+			s_zoneList[i].fractOfParentAve = expBlend * s_zoneList[i].fractOfParentAve + (1.0 - expBlend)*s_zoneList[i].timeInZone[s_writeBuffer] / parentTime;
 		}
 	}
 
@@ -157,6 +166,8 @@ namespace TFE_Profiler
 		info->lineNumber = zone.lineNumber;
 		info->timeInZone = zone.timeInZone[s_readBuffer];
 		info->timeInZoneAve = zone.timeInZoneAve;
+		info->fractOfParentAve = zone.fractOfParentAve;
+		info->parentId = zone.parent;
 	}
 
 	f64 getTimeInFrame()

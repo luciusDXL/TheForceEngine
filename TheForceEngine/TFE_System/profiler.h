@@ -29,6 +29,8 @@
 #define TFE_COUNTER(varName, name)
 #endif
 
+#define NULL_ZONE 0xffffffff
+
 #ifdef TFE_PROFILE_ENABLED
 struct TFE_ZoneInfo
 {
@@ -36,8 +38,10 @@ struct TFE_ZoneInfo
 	char* func;
 	u32  lineNumber;
 	u32  level;
+	u32  parentId;
 	f64  timeInZone;
 	f64  timeInZoneAve;
+	f64  fractOfParentAve;
 };
 
 struct TFE_CounterInfo

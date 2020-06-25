@@ -6,6 +6,14 @@
 #include <TFE_System/memoryPool.h>
 #include "rmath.h"
 
+enum SectorUpdateFlags
+{
+	SEC_UPDATE = (1 << 0),
+	SEC_UPDATE_GEO = (1 << 1),
+
+	SEC_UPDATE_ALL = SEC_UPDATE | SEC_UPDATE_GEO
+};
+
 struct Sector;
 struct SectorWall;
 struct Texture;
@@ -51,7 +59,7 @@ namespace RClassicSector
 	void sector_allocate(u32 count);
 	RSector* sector_get();
 	
-	void sector_update(u32 sectorId);
+	void sector_update(u32 sectorId, u32 updateFlags = SEC_UPDATE_ALL);
 	void sector_draw(RSector* sector);
 	void sector_copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures);
 

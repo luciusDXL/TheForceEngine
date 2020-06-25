@@ -3,7 +3,7 @@
 // {6/23-6/28}
 // -- Finish Adjoins --
 // 1. wall_drawTop() - finally handle this correctly, including adjoins.
-// 2. wall_drawTransparent() - handle correctly.
+// 2. [X] wall_drawTransparent() - handle correctly.
 // 3. fix any adjoin bugs that don't exist in the original.
 // -- Finish Sector Rendering --
 // 4. Draw sky (exterior/pit/exterior adjoin/pit adjoin/etc.).
@@ -193,7 +193,7 @@ namespace RendererClassic
 		s_windowMaxX = s_maxScreenX;
 		s_windowMinY = 1;
 		s_windowMaxY = s_height - 1;
-		s_windowMaxCeil = s_minScreenY;
+		s_windowMaxCeil  = s_minScreenY;
 		s_windowMinFloor = s_maxScreenY;
 		s_flatCount  = 0;
 		s_nextWall   = 0;
@@ -218,7 +218,7 @@ namespace RendererClassic
 			s_windowBot_all[i] = s_maxScreenY;
 		}
 						
-		// Draws a single sector.
+		// Recursively draws sectors and their contents (sprites, 3D objects).
 		{
 			TFE_ZONE("Sector Draw");
 			sector_draw(sector_get() + s_sectorId);
@@ -227,6 +227,9 @@ namespace RendererClassic
 
 	void loadLevel()
 	{
+		// Insert this zone here to make sure it gets added first...
+		TFE_ZONE("Draw");
+
 		LevelData* level = TFE_LevelAsset::getLevelData();
 		u32 count = (u32)level->sectors.size();
 		sector_allocate(count);

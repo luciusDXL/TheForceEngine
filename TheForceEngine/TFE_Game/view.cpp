@@ -9,6 +9,7 @@
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
+#include <TFE_System/profiler.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/levelAsset.h>
 #include <TFE_Asset/levelObjectsAsset.h>
@@ -2097,6 +2098,8 @@ namespace TFE_View
 		const Sector* sectors = s_level->sectors.data();
 		if (s_enableClassic)
 		{
+			TFE_ZONE("Draw");
+
 			// For now update all sectors.
 			const u32 sectorCount = (u32)s_level->sectors.size();
 			for (u32 i = 0; i < sectorCount; i++)

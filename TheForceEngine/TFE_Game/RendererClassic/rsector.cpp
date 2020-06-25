@@ -358,7 +358,7 @@ namespace RClassicSector
 	void sector_setupWallDrawFlags(RSector* sector)
 	{
 		RWall* wall = sector->walls;
-		const fixed16 midHeight = mul16(intToFixed16(8), sector->floorHeight - sector->ceilingHeight);
+		const fixed16 midHeight = 8 * (sector->floorHeight - sector->ceilingHeight);
 		for (s32 w = 0; w < sector->wallCount; w++, wall++)
 		{
 			const RSector* next = wall->nextSector;
@@ -374,16 +374,19 @@ namespace RClassicSector
 				wall->drawFlags = WDF_TOP_AND_BOT;
 				wall->botTexelHeight = mul16(intToFixed16(8), sector->floorHeight - next->floorHeight);
 				wall->topTexelHeight = mul16(intToFixed16(8), next->ceilingHeight - sector->ceilingHeight);
+				wall->midTexelHeight = mul16(intToFixed16(8), next->floorHeight - next->ceilingHeight);
 			}
 			else if (next->floorHeight < sector->floorHeight)
 			{
 				wall->drawFlags = WDF_BOT;
 				wall->botTexelHeight = mul16(intToFixed16(8), sector->floorHeight - next->floorHeight);
+				wall->midTexelHeight = mul16(intToFixed16(8), next->floorHeight - sector->ceilingHeight);
 			}
 			else if (next->ceilingHeight > sector->ceilingHeight)
 			{
 				wall->drawFlags = WDF_TOP;
 				wall->topTexelHeight = mul16(intToFixed16(8), next->ceilingHeight - sector->ceilingHeight);
+				wall->midTexelHeight = mul16(intToFixed16(8), sector->floorHeight - next->ceilingHeight);
 			}
 		}
 	}
@@ -432,13 +435,14 @@ namespace RClassicSector
 			sector_update(s);
 		}
 	}
-	
+			
 	// In the future, renderer sectors can be changed directly by INF, but for now just copy from the level data.
 	// TODO: Currently all sector data is updated - get the "dirty" flag to work reliably so only partial data needs to be updated (textures).
 	// TODO: Properly handle switch textures (after reverse-engineering of switch rendering is done).
-	void sector_update(u32 sectorId)
+	void sector_update(u32 sectorId, u32 updateFlags)
 	{
 		TFE_ZONE("Sector Update");
+		if (updateFlags == 0) { return; }
 
 		LevelData* level = TFE_LevelAsset::getLevelData();
 		Texture** textures = level->textures.data();
@@ -470,13 +474,16 @@ namespace RClassicSector
 		out->ceilOffsetZ   = floatToFixed16(sector->ceilTexture.offsetY);
 
 		TFE_ZONE_BEGIN(secVtx, "Sector Update Vertices");
-		for (s32 v = 0; v < out->vertexCount; v++)
+		if (updateFlags & SEC_UPDATE_GEO)
 		{
-			out->verticesWS[v].x = floatToFixed16(vertices[v].x);
-			out->verticesWS[v].z = floatToFixed16(vertices[v].z);
+			for (s32 v = 0; v < out->vertexCount; v++)
+			{
+				out->verticesWS[v].x = floatToFixed16(vertices[v].x);
+				out->verticesWS[v].z = floatToFixed16(vertices[v].z);
+			}
 		}
 		TFE_ZONE_END(secVtx);
-				
+		
 		TFE_ZONE_BEGIN(secWall, "Sector Update Walls");
 		RWall* wall = out->walls;
 		const fixed16 midTexelHeight = mul16(intToFixed16(8), floatToFixed16(sector->floorAlt - sector->ceilAlt));
@@ -484,15 +491,18 @@ namespace RClassicSector
 		{
 			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
 						
-			wall->topTex = texture_getFrame(textures[walls[w].top.texId]);
-			wall->midTex = texture_getFrame(textures[walls[w].mid.texId]);
-			wall->botTex = texture_getFrame(textures[walls[w].bot.texId]);
+			wall->topTex  = texture_getFrame(textures[walls[w].top.texId]);
+			wall->midTex  = texture_getFrame(textures[walls[w].mid.texId]);
+			wall->botTex  = texture_getFrame(textures[walls[w].bot.texId]);
 			wall->signTex = texture_getFrame(walls[w].sign.texId >= 0 ? textures[walls[w].sign.texId] : nullptr);
 
-			const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
-			wall->texelLength = floatToFixed16(8.0f * sqrtf(offset.x * offset.x + offset.z * offset.z));
+			if (updateFlags & SEC_UPDATE_GEO)
+			{
+				const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
+				wall->texelLength = floatToFixed16(8.0f * sqrtf(offset.x*offset.x + offset.z*offset.z));
+			}
 
-			// For now just assume solid walls.
+			// Prime with mid texture height, other heights will be computed as needed.
 			wall->midTexelHeight = midTexelHeight;
 
 			// Texture Offsets
@@ -505,7 +515,7 @@ namespace RClassicSector
 
 			if (walls[w].flags[0] & WF1_TEX_ANCHORED)
 			{
-				wall->topVOffset += ceilDelta;
+				wall->topVOffset -= ceilDelta;
 				wall->midVOffset -= floorDelta;
 				wall->botVOffset -= floorDelta;
 
@@ -516,7 +526,7 @@ namespace RClassicSector
 				{
 					// Handle next sector moving.
 					wall->botVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
-					wall->topVOffset += floatToFixed16(8.0f * (baseHeightNext->ceilAlt  - nextSrc->ceilAlt));
+					wall->topVOffset -= floatToFixed16(8.0f * (baseHeightNext->ceilAlt  - nextSrc->ceilAlt));
 				}
 			}
 
