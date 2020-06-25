@@ -490,10 +490,10 @@ namespace RClassicSector
 		for (s32 w = 0; w < out->wallCount; w++, wall++)
 		{
 			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
-						
-			wall->topTex  = texture_getFrame(walls[w].top.texId >= 0 ? textures[walls[w].top.texId] : nullptr);
-			wall->midTex  = texture_getFrame(walls[w].mid.texId >= 0 ? textures[walls[w].mid.texId] : nullptr);
-			wall->botTex  = texture_getFrame(walls[w].bot.texId >= 0 ? textures[walls[w].bot.texId] : nullptr);
+
+			wall->topTex  = texture_getFrame(walls[w].top.texId  >= 0 ? textures[walls[w].top.texId]  : nullptr);
+			wall->midTex  = texture_getFrame(walls[w].mid.texId  >= 0 ? textures[walls[w].mid.texId]  : nullptr);
+			wall->botTex  = texture_getFrame(walls[w].bot.texId  >= 0 ? textures[walls[w].bot.texId]  : nullptr);
 			wall->signTex = texture_getFrame(walls[w].sign.texId >= 0 ? textures[walls[w].sign.texId] : nullptr);
 
 			if (updateFlags & SEC_UPDATE_GEO)
