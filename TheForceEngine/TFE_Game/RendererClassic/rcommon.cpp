@@ -30,6 +30,11 @@ namespace RendererClassic
 	fixed16 s_cosYaw;
 	fixed16 s_sinYaw;
 	fixed16 s_negSinYaw;
+	fixed16 s_cameraYaw;
+	fixed16 s_cameraPitch;
+	fixed16 s_skyYawOffset;
+	fixed16 s_skyPitchOffset;
+	fixed16* s_skyTable;
 
 	// Window
 	s32 s_minScreenX;

@@ -4,9 +4,9 @@
 // -- Finish Adjoins --
 // 1. [X] wall_drawTop() - finally handle this correctly, including adjoins.
 // 2. [X] wall_drawTransparent() - handle correctly.
-// 3. fix any adjoin bugs that don't exist in the original.
+// 3. [X] fix any adjoin bugs that don't exist in the original.
 // -- Finish Sector Rendering --
-// 4. Draw sky (exterior/pit/exterior adjoin/pit adjoin/etc.).
+// 4. [~] Draw sky (exterior/pit/exterior adjoin/pit adjoin/etc.).
 // 5. Draw signs.
 // {6/29-7/05}
 // 6. [X] Texture animation.
@@ -120,6 +120,8 @@ namespace RendererClassic
 		s_windowTop_all = (s32*)realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowBot_all = (s32*)realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
+		s_skyTable = (fixed16*)realloc(s_skyTable, s_width * sizeof(fixed16));
+
 		// Build tables
 		s_column_Y_Over_X = (fixed16*)realloc(s_column_Y_Over_X, s_width * sizeof(fixed16));
 		s_column_X_Over_Y = (fixed16*)realloc(s_column_X_Over_Y, s_width * sizeof(fixed16));
@@ -128,6 +130,12 @@ namespace RendererClassic
 		{
 			s_column_Y_Over_X[x] = (x != halfWidth) ? div16(s_halfWidth, intToFixed16(x - halfWidth)) : s_halfWidth;
 			s_column_X_Over_Y[x] = div16(intToFixed16(x - halfWidth), s_halfWidth);
+
+			// This result isn't *exactly* the same as the original, but it is accurate to within 1 decimal point (example: -88.821585 vs -88.8125 @ x=63)
+			// The original result is likely from a arc tangent table, which is more approximate. However the end difference is less
+			// than a single pixel at 320x200. The more accurate result will look better at higher resolutions as well. :)
+			// TODO: Extract the original table to use at 320x200?
+			s_skyTable[x] = floatToFixed16(512.0f * atanf(f32(x - halfWidth) / f32(halfWidth)) / PI);
 		}
 
 		s_rcp_yMinusHalfHeight = (fixed16*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed16));
@@ -150,12 +158,14 @@ namespace RendererClassic
 
 		loadLevel();
 	}
-
-	void setCamera(fixed16 cosYaw, fixed16 sinYaw, fixed16 sinPitch, fixed16 x, fixed16 y, fixed16 z, s32 sectorId)
+			
+	void setCamera(fixed16 yaw, fixed16 pitch, fixed16 cosYaw, fixed16 sinYaw, fixed16 sinPitch, fixed16 x, fixed16 y, fixed16 z, s32 sectorId)
 	{
 		s_cosYaw = cosYaw;
 		s_sinYaw = sinYaw;
 		s_negSinYaw = -sinYaw;
+		s_cameraYaw = yaw;
+		s_cameraPitch = pitch;
 
 		s_zCameraTrans = mul16(-z, s_cosYaw) + mul16(-x, s_negSinYaw);
 		s_xCameraTrans = mul16(-x, s_cosYaw) + mul16(-z, s_sinYaw);
@@ -180,7 +190,17 @@ namespace RendererClassic
 
 		s_drawFrame++;
 	}
-				
+		
+	void computeSkyOffsets()
+	{
+		const LevelData* level = TFE_LevelAsset::getLevelData();
+
+		// angles range from -16384 to 16383; multiply by 4 to convert to [-1, 1) range.
+		// TODO: Handle high precision fixed point (i.e. match scale a constant).
+		s_skyYawOffset   =  mul16(s_cameraYaw * 4,   intToFixed16((s32)level->parallax[0]));
+		s_skyPitchOffset = -mul16(s_cameraPitch * 4, intToFixed16((s32)level->parallax[1]));
+	}
+
 	void draw(u8* display, const ColorMap* colormap)
 	{
 		// Clear the screen for now so we can get away with only drawing walls.
@@ -209,6 +229,8 @@ namespace RendererClassic
 
 		s_adjoinDepth = 1;
 		s_maxAdjoinDepth = 1;
+
+		computeSkyOffsets();
 
 		for (s32 i = 0; i < s_width; i++)
 		{

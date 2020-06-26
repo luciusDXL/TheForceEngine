@@ -2090,9 +2090,9 @@ namespace TFE_View
 		TFE_ModelRender::buildClipPlanes(s_pitchOffset);
 
 		f32 sinPitch = sinf(pitch);
-		RendererClassic::setCamera(floatToFixed16(s_rot[0]), floatToFixed16(s_rot[1]), floatToFixed16(sinPitch), floatToFixed16(cameraPos->x), floatToFixed16(cameraPos->y), floatToFixed16(cameraPos->z), sectorId);
+		RendererClassic::setCamera(floatAngleToFixed(yaw), floatAngleToFixed(pitch), floatToFixed16(s_rot[0]), floatToFixed16(s_rot[1]), floatToFixed16(sinPitch), floatToFixed16(cameraPos->x), floatToFixed16(cameraPos->y), floatToFixed16(cameraPos->z), sectorId);
 	}
-		
+
 	void draw(const Vec3f* cameraPos, s32 sectorId)
 	{
 		const Sector* sectors = s_level->sectors.data();

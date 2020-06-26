@@ -35,7 +35,12 @@ namespace RendererClassic
 	extern fixed16 s_cosYaw;
 	extern fixed16 s_sinYaw;
 	extern fixed16 s_negSinYaw;
-
+	extern fixed16 s_cameraYaw;
+	extern fixed16 s_cameraPitch;
+	extern fixed16 s_skyYawOffset;
+	extern fixed16 s_skyPitchOffset;
+	extern fixed16* s_skyTable;
+	
 	// Window
 	extern s32 s_minScreenX;
 	extern s32 s_maxScreenX;

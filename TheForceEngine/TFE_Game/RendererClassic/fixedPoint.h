@@ -70,6 +70,13 @@ namespace FixedPoint
 		return fixed16(x * FLOAT_SCALE);
 	}
 
+	// Convert a floating point angle from [0, 2pi) to a fixed point value where 0 -> 0 and 2pi -> 16384
+	// This isn't really the same as fixed16 but matches the original source.
+	inline fixed16 floatAngleToFixed(f32 angle)
+	{
+		return fixed16(16384.0f * angle / (2.0f*PI));
+	}
+
 	inline s32 fixed16to12(fixed16 x)
 	{
 		return s32(x >> 4);

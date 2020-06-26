@@ -262,7 +262,14 @@ namespace RClassicSector
 			const s32 newFlatCount = s_flatCount - flatCount;
 			if (s_curSector->flags1 & SEC_FLAGS1_EXTERIOR)
 			{
-				// TODO - just leave black for now.
+				if (s_curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
+				{
+					// TODO
+				}
+				else
+				{
+					wall_drawSkyTop(s_curSector);
+				}
 			}
 			else
 			{

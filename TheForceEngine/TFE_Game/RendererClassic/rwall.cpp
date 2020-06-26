@@ -1668,6 +1668,33 @@ namespace RClassicWall
 		wall_addAdjoinSegment(length, x0, next_floor_dYdX, next_fProj0 - ONE_16, next_ceil_dYdX, next_cProj0 + ONE_16, wallSegment);
 		//srcWall->y1 = -1;
 	}
+
+	void wall_drawSkyTop(RSector* sector)
+	{
+		if (s_wallMaxCeilY < s_windowMinY) { return; }
+
+		TextureFrame* texture = sector->ceilTex;
+		s_vCoordStep = ONE_16;
+		s_texHeightMask = texture->height - 1;
+		const s32 texWidthMask = texture->width - 1;
+
+		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
+		{
+			const s32 y0 = s_windowTop[x];
+			const s32 y1 = min(s_columnTop[x], s_windowBot[x]);
+
+			s_yPixelCount = y1 - y0 + 1;
+			if (s_yPixelCount > 0)
+			{
+				s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset - sector->ceilOffsetZ;
+
+				s32 texelU = ( floor16(sector->ceilOffsetX - s_skyYawOffset + s_skyTable[x]) ) & texWidthMask;
+				s_texImage = &texture->image[texelU << texture->logSizeY];
+				s_columnOut = &s_display[y0*s_width + x];
+				drawColumn_Fullbright();
+			}
+		}
+	}
 	
 	// Determines if segment A is disjoint from the line formed by B - i.e. they do not intersect.
 	// Returns 1 if segment A does NOT cross line B or 0 if it does.
