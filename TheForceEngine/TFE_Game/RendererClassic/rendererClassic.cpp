@@ -73,7 +73,9 @@ namespace RendererClassic
 		if (s_init) { return; }
 		s_init = true;
 		s_maxWallCount = 0xffff;
+		s_maxDepthCount = 0xffff;
 		CVAR_INT(s_maxWallCount, "d_maxWallCount", 0, "Maximum wall count for a given sector.");
+		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", 0, "Maximum adjoin depth count.");
 
 		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
 		TFE_COUNTER(s_maxAdjoinIndex, "Maximum Adjoin Count");

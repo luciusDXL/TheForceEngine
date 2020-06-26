@@ -299,7 +299,7 @@ namespace RClassicWall
 		fixed16 x1proj  = div16(mul16(x1, s_focalLength), z1) + s_halfWidth;
 		s32 x0pixel = round16(x0proj);
 		s32 x1pixel = round16(x1proj) - 1;
-
+		
 		// Handle near plane clipping by adjusting the walls to avoid holes.
 		if (clipX0_Near != 0 && x0pixel > s_minScreenX)
 		{
@@ -385,6 +385,7 @@ namespace RClassicWall
 		TFE_ZONE("Wall Merge/Sort");
 
 		count = min(count, s_maxWallCount);
+		if (!count) { return 0; }
 
 		s32 outIndex = 0;
 		s32 srcIndex = 0;

@@ -100,4 +100,5 @@ namespace RendererClassic
 
 	// Debug
 	s32 s_maxWallCount;
+	s32 s_maxDepthCount;
 }

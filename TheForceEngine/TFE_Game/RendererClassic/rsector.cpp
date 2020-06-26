@@ -303,7 +303,7 @@ namespace RClassicSector
 				RWall* srcWall = curAdjoinSeg->srcWall;
 				RWallSegment* nextAdjoin = (i < adjoinEnd) ? *(seg + 1) : nullptr;
 				RSector* nextSector = srcWall->nextSector;
-				if (s_adjoinDepth < MAX_ADJOIN_DEPTH)
+				if (s_adjoinDepth < MAX_ADJOIN_DEPTH && s_adjoinDepth < s_maxDepthCount)
 				{
 					s32 index = s_adjoinDepth - 1;
 					sector_saveValues(index);
