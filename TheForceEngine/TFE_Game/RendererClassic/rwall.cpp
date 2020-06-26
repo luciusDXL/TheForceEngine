@@ -34,6 +34,8 @@ using namespace RClassicEdgePair;
 
 namespace RClassicWall
 {
+	#define SKY_BASE_HEIGHT 200
+
 	enum SegSide
 	{
 		FRONT = 0xffff,
@@ -1669,12 +1671,27 @@ namespace RClassicWall
 		//srcWall->y1 = -1;
 	}
 
+	// Parts of the code inside 's_height == SKY_BASE_HEIGHT' are based on the original DOS exe.
+	// Other parts of those same conditionals are modified to handle higher resolutions.
 	void wall_drawSkyTop(RSector* sector)
 	{
 		if (s_wallMaxCeilY < s_windowMinY) { return; }
+		TFE_ZONE("Draw Sky");
 
 		TextureFrame* texture = sector->ceilTex;
-		s_vCoordStep = ONE_16;
+		fixed16 heightScale;
+		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
+		// However with higher resolutions this must be scaled to look the same.
+		if (s_height == SKY_BASE_HEIGHT)
+		{
+			s_vCoordStep = ONE_16;
+			heightScale = ONE_16;
+		}
+		else
+		{
+			s_vCoordStep = ONE_16 * SKY_BASE_HEIGHT / s_height;
+			heightScale = div16(intToFixed16(SKY_BASE_HEIGHT), intToFixed16(s_height));
+		}
 		s_texHeightMask = texture->height - 1;
 		const s32 texWidthMask = texture->width - 1;
 
@@ -1686,7 +1703,14 @@ namespace RClassicWall
 			s_yPixelCount = y1 - y0 + 1;
 			if (s_yPixelCount > 0)
 			{
-				s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset - sector->ceilOffsetZ;
+				if (s_height == SKY_BASE_HEIGHT)
+				{
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset - sector->ceilOffsetZ;
+				}
+				else
+				{
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset - sector->ceilOffsetZ;
+				}
 
 				s32 texelU = ( floor16(sector->ceilOffsetX - s_skyYawOffset + s_skyTable[x]) ) & texWidthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];

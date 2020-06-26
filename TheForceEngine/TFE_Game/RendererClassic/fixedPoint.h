@@ -16,6 +16,7 @@ typedef s32 fixed16;
 #define FRAC_BITS 16
 #define SUB_TEXEL_SHIFT 6
 #define FLOAT_SCALE 65536.0f
+#define ANGLE_TO_FIXED_SCALE 4
 #else
 typedef s64 fixed16;
 #define HALF_16  0x80000ll
@@ -23,6 +24,7 @@ typedef s64 fixed16;
 #define FRAC_BITS 20ll
 #define SUB_TEXEL_SHIFT 10ll
 #define FLOAT_SCALE 1048576.0f
+#define ANGLE_TO_FIXED_SCALE 64
 #endif
 
 namespace FixedPoint

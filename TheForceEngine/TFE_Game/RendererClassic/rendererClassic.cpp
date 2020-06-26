@@ -120,11 +120,10 @@ namespace RendererClassic
 		s_windowTop_all = (s32*)realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowBot_all = (s32*)realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
-		s_skyTable = (fixed16*)realloc(s_skyTable, s_width * sizeof(fixed16));
-
 		// Build tables
 		s_column_Y_Over_X = (fixed16*)realloc(s_column_Y_Over_X, s_width * sizeof(fixed16));
 		s_column_X_Over_Y = (fixed16*)realloc(s_column_X_Over_Y, s_width * sizeof(fixed16));
+		s_skyTable = (fixed16*)realloc(s_skyTable, s_width * sizeof(fixed16));
 		s32 halfWidth = s_width >> 1;
 		for (s32 x = 0; x < s_width; x++)
 		{
@@ -196,9 +195,8 @@ namespace RendererClassic
 		const LevelData* level = TFE_LevelAsset::getLevelData();
 
 		// angles range from -16384 to 16383; multiply by 4 to convert to [-1, 1) range.
-		// TODO: Handle high precision fixed point (i.e. match scale a constant).
-		s_skyYawOffset   =  mul16(s_cameraYaw * 4,   intToFixed16((s32)level->parallax[0]));
-		s_skyPitchOffset = -mul16(s_cameraPitch * 4, intToFixed16((s32)level->parallax[1]));
+		s_skyYawOffset   =  mul16(s_cameraYaw   * ANGLE_TO_FIXED_SCALE, intToFixed16((s32)level->parallax[0]));
+		s_skyPitchOffset = -mul16(s_cameraPitch * ANGLE_TO_FIXED_SCALE, intToFixed16((s32)level->parallax[1]));
 	}
 
 	void draw(u8* display, const ColorMap* colormap)
