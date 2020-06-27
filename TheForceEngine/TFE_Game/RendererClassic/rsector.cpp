@@ -264,7 +264,7 @@ namespace RClassicSector
 			{
 				if (s_curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
 				{
-					// TODO
+					wall_drawSkyTopNoWall(s_curSector);
 				}
 				else
 				{
@@ -277,7 +277,14 @@ namespace RClassicSector
 			}
 			if (s_curSector->flags1 & SEC_FLAGS1_PIT)
 			{
-				// TODO - just leave black for now.
+				if (s_curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
+				{
+					wall_drawSkyBottomNoWall(s_curSector);
+				}
+				else
+				{
+					wall_drawSkyBottom(s_curSector);
+				}
 			}
 			else
 			{

@@ -13,7 +13,7 @@
 typedef s32 fixed16;
 #define HALF_16 0x8000
 #define ONE_16 0x10000
-#define FRAC_BITS 16
+#define FRAC_BITS 16ll
 #define SUB_TEXEL_SHIFT 6
 #define FLOAT_SCALE 65536.0f
 #define ANGLE_TO_FIXED_SCALE 4
@@ -35,7 +35,6 @@ namespace FixedPoint
 	{
 		const s64 x64 = s64(x);
 		const s64 y64 = s64(y);
-
 		return fixed16((x64 * y64) >> FRAC_BITS);
 	}
 
@@ -45,7 +44,6 @@ namespace FixedPoint
 	{
 		const s64 num64 = s64(num);
 		const s64 den64 = s64(denom);
-
 		return fixed16((num64 << FRAC_BITS) / den64);
 	}
 

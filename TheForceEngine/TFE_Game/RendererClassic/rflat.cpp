@@ -446,7 +446,6 @@ namespace RClassicFlat
 		}
 	}
 
-	// TODO: Spot check against DOS code.
 	void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count)
 	{
 		fixed16 textureOffsetU = s_cameraPosX - sector->floorOffsetX;
@@ -461,6 +460,8 @@ namespace RClassicFlat
 		fixed16 negCosRelFloor    =-mul16(relFloor, s_cosYaw);
 
 		TextureFrame* floorTex = sector->floorTex;
+		if (!floorTex) { return; }
+
 		s_ftexHeight     = floorTex->height;
 		s_ftexWidthMask  = floorTex->width - 1;
 		s_ftexHeightMask = floorTex->height - 1;

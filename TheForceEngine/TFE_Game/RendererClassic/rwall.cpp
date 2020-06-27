@@ -1720,6 +1720,149 @@ namespace RClassicWall
 			}
 		}
 	}
+
+	void wall_drawSkyTopNoWall(RSector* sector)
+	{
+		TFE_ZONE("Draw Sky");
+		const TextureFrame* texture = sector->ceilTex;
+
+		fixed16 heightScale;
+		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
+		// However with higher resolutions this must be scaled to look the same.
+		if (s_height == SKY_BASE_HEIGHT)
+		{
+			s_vCoordStep = ONE_16;
+			heightScale = ONE_16;
+		}
+		else
+		{
+			s_vCoordStep = ONE_16 * SKY_BASE_HEIGHT / s_height;
+			heightScale = div16(intToFixed16(SKY_BASE_HEIGHT), intToFixed16(s_height));
+		}
+
+		s_texHeightMask = texture->height - 1;
+		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
+		{
+			const s32 y0 = s_windowTop[x];
+			const s32 y1 = min(s_heightInPixels - 1, s_windowBot[x]);
+
+			s_yPixelCount = y1 - y0 + 1;
+			if (s_yPixelCount > 0)
+			{
+				if (s_height == SKY_BASE_HEIGHT)
+				{
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset - sector->ceilOffsetZ;
+				}
+				else
+				{
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset - sector->ceilOffsetZ;
+				}
+
+				s32 widthMask = texture->width - 1;
+				s32 texelU = floor16(sector->ceilOffsetX - s_skyYawOffset + s_skyTable[x]) & widthMask;
+				s_texImage = &texture->image[texelU << texture->logSizeY];
+				s_columnOut = &s_display[y0*s_width + x];
+
+				drawColumn_Fullbright();
+			}
+		}
+	}
+
+	// Parts of the code inside 's_height == SKY_BASE_HEIGHT' are based on the original DOS exe.
+	// Other parts of those same conditionals are modified to handle higher resolutions.
+	void wall_drawSkyBottom(RSector* sector)
+	{
+		if (s_wallMinFloorY > s_windowMaxY) { return; }
+		TFE_ZONE("Draw Sky");
+
+		TextureFrame* texture = sector->floorTex;
+		fixed16 heightScale;
+		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
+		// However with higher resolutions this must be scaled to look the same.
+		if (s_height == SKY_BASE_HEIGHT)
+		{
+			s_vCoordStep = ONE_16;
+			heightScale = ONE_16;
+		}
+		else
+		{
+			s_vCoordStep = ONE_16 * SKY_BASE_HEIGHT / s_height;
+			heightScale = div16(intToFixed16(SKY_BASE_HEIGHT), intToFixed16(s_height));
+		}
+		s_texHeightMask = texture->height - 1;
+		const s32 texWidthMask = texture->width - 1;
+
+		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
+		{
+			const s32 y0 = max(s_columnBot[x], s_windowTop[x]);
+			const s32 y1 = s_windowBot[x];
+
+			s_yPixelCount = y1 - y0 + 1;
+			if (s_yPixelCount > 0)
+			{
+				if (s_height == SKY_BASE_HEIGHT)
+				{
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset - sector->floorOffsetZ;
+				}
+				else
+				{
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset - sector->floorOffsetZ;
+				}
+
+				s32 texelU = floor16(sector->floorOffsetX - s_skyYawOffset + s_skyTable[x]) & texWidthMask;
+				s_texImage = &texture->image[texelU << texture->logSizeY];
+				s_columnOut = &s_display[y0*s_width + x];
+				drawColumn_Fullbright();
+			}
+		}
+	}
+
+	void wall_drawSkyBottomNoWall(RSector* sector)
+	{
+		TFE_ZONE("Draw Sky");
+		const TextureFrame* texture = sector->floorTex;
+
+		fixed16 heightScale;
+		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
+		// However with higher resolutions this must be scaled to look the same.
+		if (s_height == SKY_BASE_HEIGHT)
+		{
+			s_vCoordStep = ONE_16;
+			heightScale = ONE_16;
+		}
+		else
+		{
+			s_vCoordStep = ONE_16 * SKY_BASE_HEIGHT / s_height;
+			heightScale = div16(intToFixed16(SKY_BASE_HEIGHT), intToFixed16(s_height));
+		}
+
+		s_texHeightMask = texture->height - 1;
+		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
+		{
+			const s32 y0 = min(s_heightInPixels, s_windowTop[x]);
+			const s32 y1 = s_windowBot[x];
+
+			s_yPixelCount = y1 - y0 + 1;
+			if (s_yPixelCount > 0)
+			{
+				if (s_height == SKY_BASE_HEIGHT)
+				{
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset - sector->floorOffsetZ;
+				}
+				else
+				{
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset - sector->floorOffsetZ;
+				}
+
+				s32 widthMask = texture->width - 1;
+				s32 texelU = floor16(sector->floorOffsetX - s_skyYawOffset + s_skyTable[x]) & widthMask;
+				s_texImage = &texture->image[texelU << texture->logSizeY];
+				s_columnOut = &s_display[y0*s_width + x];
+
+				drawColumn_Fullbright();
+			}
+		}
+	}
 	
 	// Determines if segment A is disjoint from the line formed by B - i.e. they do not intersect.
 	// Returns 1 if segment A does NOT cross line B or 0 if it does.
