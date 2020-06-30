@@ -21,15 +21,14 @@ namespace TFE_Texture
 		s16 idemX;		// portion of texture actually used
 		s16 idemY;		// portion of texture actually used
 
-		u8 Transparent;
-		// 0x36 for normal
-		// 0x3E for transparent
-		// 0x08 for weapons
-
+		u8 flags;
 		u8 logSizeY;		// logSizeY = log2(SizeY)
 							// logSizeY = 0 for weapons
-		s16 Compressed;		// 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
-		s32 DataSize;		// Data size for compressed BM// excluding header and columns starts table// If not compressed, DataSize is unused
+
+		s16 compressed;		// 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
+		s32 dataSize;		// Data size for compressed BM
+							// excluding header and columns starts table
+							// If not compressed, DataSize is unused
 		u8 pad1[12];		// 12 times 0x00
 	};
 
@@ -41,7 +40,7 @@ namespace TFE_Texture
 		s16 idemX;		// portion of texture actually used
 		s16 idemY;		// portion of texture actually used
 
-		s32 DataSize;	// Data size for compressed BM
+		s32 dataSize;	// Data size for compressed BM
 						// excluding header and columns starts table
 						// If not compressed, DataSize is unused
 
@@ -51,13 +50,10 @@ namespace TFE_Texture
 		u8 u1[3];
 		u8 pad2[5];
 
-		u8 Transparent;
-		// 0x36 for normal
-		// 0x3E for transparent
-		// 0x08 for weapons
-
-		s16 Compressed;			// 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
-		u8 pad3[3];				// 12 times 0x00
+		// 4 bytes
+		u8  flags;
+		s16 compressed;			// 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
+		u8  pad3;
 	};
 
 	#define PCX_MAGIC 0x0A
@@ -198,7 +194,6 @@ namespace TFE_Texture
 			for (s32 f = 0; f < frameCount; f++)
 			{
 				BM_SubHeader* frame = (BM_SubHeader*)&data[offsets[f] + 2];
-				u8* imageData = (u8*)frame + sizeof(BM_SubHeader);
 				allocSize += frame->SizeX * frame->SizeY;
 			}
 		}
@@ -233,11 +228,7 @@ namespace TFE_Texture
 				texture->frames[f].width = frame->SizeX;
 				texture->frames[f].height = frame->SizeY;
 				texture->frames[f].logSizeY = frame->logSizeY;
-
-				texture->frames[f].opacity = OPACITY_NORMAL;
-				if (frame->Transparent == 0x36) { texture->frames[f].opacity = OPACITY_NORMAL; }
-				else if (frame->Transparent == 0x3E) { texture->frames[f].opacity = OPACITY_TRANS; }
-				else if (frame->Transparent == 0x08) { texture->frames[f].opacity = OPACITY_WEAPON; }
+				texture->frames[f].opacity = (frame->flags&8) ? OPACITY_TRANS : OPACITY_NORMAL;
 
 				texture->frames[f].uvWidth = frame->idemX;
 				texture->frames[f].uvHeight = frame->idemY;
@@ -247,7 +238,7 @@ namespace TFE_Texture
 				texture->frames[f].image = texture->memory + offset;
 				offset += frame->SizeX * frame->SizeY;
 
-				loadTextureFrame(frame->SizeX, frame->SizeY, frame->Compressed, frame->DataSize, imageData, texture->frames[f].image);
+				loadTextureFrame(frame->SizeX, frame->SizeY, frame->compressed, frame->dataSize, imageData, texture->frames[f].image);
 			}
 		}
 		else
@@ -255,21 +246,19 @@ namespace TFE_Texture
 			texture->frames[0].image = texture->memory + offset;
 			offset += header->SizeX * header->SizeY;
 
-			texture->frames[0].width = header->SizeX;
+			texture->frames[0].width  = header->SizeX;
 			texture->frames[0].height = header->SizeY;
 			texture->frames[0].logSizeY = header->logSizeY;
 			texture->frames[0].offsetX = 0;
 			texture->frames[0].offsetY = 0;
 
-			texture->frames[0].opacity = OPACITY_NORMAL;
-			if (header->Transparent == 0x36) { texture->frames[0].opacity = OPACITY_NORMAL; }
-			else if (header->Transparent == 0x3E) { texture->frames[0].opacity = OPACITY_TRANS; }
-			else if (header->Transparent == 0x08) { texture->frames[0].opacity = OPACITY_WEAPON; }
+			// I'm not sure yet what the other flags do, but 8 refers to a transparent texture as seen in the DOS code.
+			texture->frames[0].opacity = (header->flags & 8) ? OPACITY_TRANS : OPACITY_NORMAL;
 
 			texture->frames[0].uvWidth = header->idemX;
 			texture->frames[0].uvHeight = header->idemY;
 
-			loadTextureFrame(header->SizeX, header->SizeY, header->Compressed, header->DataSize, data, texture->frames[0].image);
+			loadTextureFrame(header->SizeX, header->SizeY, header->compressed, header->dataSize, data, texture->frames[0].image);
 		}
 
 		s_textures[name] = texture;
