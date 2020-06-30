@@ -1417,10 +1417,30 @@ namespace RClassicWall
 		fixed16 uCoord0 = wallSegment->uCoord0;
 		s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
 		s32 illumSign = (srcWall->flags1 & WF1_ILLUM_SIGN) ? -1 : 0;
+
 		TextureFrame* signTex = srcWall->signTex;
+		fixed16 signU0 = 0, signU1 = 0;
+		ColumnFunction signFullbright = nullptr, signLit = nullptr;
 		if (signTex)
 		{
-			// TODO
+			// Compute the U texel range, the overlay is only drawn within this range.
+			signU0 = srcWall->signUOffset;
+			signU1 = signU0 + intToFixed16(signTex->width);
+
+			// Determine the column functions based on texture opacity and flags.
+			// In the original DOS code, the sign column functions are different but only because they do not apply the texture height mask
+			// per pixel. I decided to keep it simple, removing the extra binary AND per pixel is not worth adding 4 extra functions that are
+			// mostly redundant.
+			if (signTex->opacity == OPACITY_TRANS)
+			{
+				signFullbright = s_columnFunc[COLFUNC_FULLBRIGHT_TRANS];
+				signLit = s_columnFunc[illumSign ? COLFUNC_FULLBRIGHT_TRANS : COLFUNC_LIT_TRANS];
+			}
+			else
+			{
+				signFullbright = s_columnFunc[COLFUNC_FULLBRIGHT];
+				signLit = s_columnFunc[illumSign ? COLFUNC_FULLBRIGHT : COLFUNC_LIT];
+			}
 		}
 
 		for (s32 i = 0, x = x0; i < lengthInPixels; i++, x++)
@@ -1476,9 +1496,30 @@ namespace RClassicWall
 				{
 					drawColumn_Fullbright();
 				}
-				if (signTex)
+
+				// Handle the "sign texture" - a wall overlay.
+				if (signTex && uCoord >= signU0 && uCoord <= signU1)
 				{
-					// TODO
+					fixed16 signYBase = next_yC0 + div16(srcWall->signVOffset, s_vCoordStep);
+					s32 y0 = max(floor16(signYBase - div16(intToFixed16(signTex->height), s_vCoordStep) + ONE_16 + HALF_16), yC0_pixel);
+					s32 y1 = min(floor16(signYBase + HALF_16), next_yC0_pixel);
+					s_yPixelCount = y1 - y0 + 1;
+
+					if (s_yPixelCount > 0)
+					{
+						s_vCoordFixed = mul16(signYBase - intToFixed16(y1) + HALF_16, s_vCoordStep);
+						s_columnOut = &s_display[y0*s_width + x];
+						texelU = floor16(uCoord - signU0);
+						s_texImage = &signTex->image[texelU << signTex->logSizeY];
+						if (s_columnLight)
+						{
+							signLit();
+						}
+						else
+						{
+							signFullbright();
+						}
+					}
 				}
 			}
 
