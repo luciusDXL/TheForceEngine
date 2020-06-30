@@ -59,6 +59,25 @@ namespace RClassicWall
 	void drawColumn_Fullbright_Trans();
 	void drawColumn_Lit_Trans();
 
+	// Column rendering functions that can be chosen at runtime.
+	enum ColumnFuncId
+	{
+		COLFUNC_FULLBRIGHT = 0,
+		COLFUNC_LIT,
+		COLFUNC_FULLBRIGHT_TRANS,
+		COLFUNC_LIT_TRANS,
+		COLFUNC_COUNT
+	};
+
+	typedef void(*ColumnFunction)();
+	ColumnFunction s_columnFunc[COLFUNC_COUNT] =
+	{
+		drawColumn_Fullbright,			// COLFUNC_FULLBRIGHT
+		drawColumn_Lit,					// COLFUNC_LIT
+		drawColumn_Fullbright_Trans,	// COLFUNC_FULLBRIGHT_TRANS
+		drawColumn_Lit_Trans,			// COLFUNC_LIT_TRANS
+	};
+
 	// Process the wall and produce an RWallSegment for rendering if the wall is potentially visible.
 	void wall_process(RWall* wall)
 	{
@@ -673,12 +692,13 @@ namespace RClassicWall
 
 		return outIndex;
 	}
-	
+
 	void wall_drawSolid(RWallSegment* wallSegment)
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
 		TextureFrame* texture = srcWall->midTex;
+		if (!texture) { return; }
 
 		fixed16 ceilingHeight = sector->ceilingHeight;
 		fixed16 floorHeight = sector->floorHeight;
@@ -724,9 +744,28 @@ namespace RClassicWall
 
 		s_texHeightMask = texture ? texture->height - 1 : 0;
 		TextureFrame* signTex = srcWall->signTex;
-		if (signTex)	// ecx
+		fixed16 signU0 = 0, signU1 = 0;
+		ColumnFunction signFullbright = nullptr, signLit = nullptr;
+		if (signTex)
 		{
-			// 1fd683:
+			// Compute the U texel range, the overlay is only drawn within this range.
+			signU0 = srcWall->signUOffset;
+			signU1 = signU0 + intToFixed16(signTex->width);
+
+			// Determine the column functions based on texture opacity and flags.
+			// In the original DOS code, the sign column functions are different but only because they do not apply the texture height mask
+			// per pixel. I decided to keep it simple, removing the extra binary AND per pixel is not worth adding 4 extra functions that are
+			// mostly redundant.
+			if (signTex->opacity == OPACITY_TRANS)
+			{
+				signFullbright = s_columnFunc[COLFUNC_FULLBRIGHT_TRANS];
+				signLit = s_columnFunc[(srcWall->flags1 & WF1_ILLUM_SIGN) ? COLFUNC_FULLBRIGHT_TRANS : COLFUNC_LIT_TRANS];
+			}
+			else
+			{
+				signFullbright = s_columnFunc[COLFUNC_FULLBRIGHT];
+				signLit = s_columnFunc[(srcWall->flags1 & WF1_ILLUM_SIGN) ? COLFUNC_FULLBRIGHT : COLFUNC_LIT];
+			}
 		}
 
 		fixed16 wallDeltaX = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
@@ -755,14 +794,8 @@ namespace RClassicWall
 			s_columnBot[x] = bot + 1;
 			s_columnTop[x] = top - 1;
 
-			if (top < s_windowTop[x])
-			{
-				top = s_windowTop[x];
-			}
-			if (bot > s_windowBot[x])
-			{
-				bot = s_windowBot[x];
-			}
+			top = max(top, s_windowTop[x]);
+			bot = min(bot, s_windowBot[x]);
 			s_yPixelCount = bot - top + 1;
 
 			fixed16 dxView = 0;
@@ -785,7 +818,6 @@ namespace RClassicWall
 				fixed16 wallHeightTexels = srcWall->midTexelHeight;
 
 				// s_vCoordStep = tex coord "v" step per y pixel step -> dVdY;
-				// Note the result is in x.16 fixed point, which is why it must be shifted by 16 again before divide.
 				s_vCoordStep = div16(wallHeightTexels, wallHeightPixels);
 
 				// texel offset from the actual fixed point y position and the truncated y position.
@@ -797,17 +829,9 @@ namespace RClassicWall
 				s_vCoordFixed = v0 + srcWall->midVOffset;
 
 				// Texture image data = imageStart + u * texHeight
-				// ***Checks against texture are because all walls are being forced to render as solid***
-				// TODO: Use wall render flags and then remove checks
-				if (texture)
-				{
-					s_texImage = texture->image + (texelU << texture->logSizeY);
-				}
-
-				// Skip for now and just write directly to the screen...
-				// columnOutStart + (x*320 + top) * 80;
-				//s_curColumnOut = s_columnOut[x] + s_scaleX80[top];
+				s_texImage = texture->image + (texelU << texture->logSizeY);
 				s_columnLight = computeLighting(z, srcWall->wallLight);
+				// column write output.
 				s_columnOut = &s_display[top * s_width + x];
 
 				// draw the column
@@ -820,8 +844,29 @@ namespace RClassicWall
 					drawColumn_Fullbright();
 				}
 
-				if (signTex)
+				// Handle the "sign texture" - a wall overlay.
+				if (signTex && uCoord >= signU0 && uCoord <= signU1)
 				{
+					fixed16 signYBase = y0F + div16(srcWall->signVOffset, s_vCoordStep);
+					s32 y0 = max(floor16(signYBase - div16(intToFixed16(signTex->height), s_vCoordStep) + ONE_16 + HALF_16), top);
+					s32 y1 = min(floor16(signYBase + HALF_16), bot);
+					s_yPixelCount = y1 - y0 + 1;
+
+					if (s_yPixelCount > 0)
+					{
+						s_vCoordFixed = mul16(signYBase - intToFixed16(y1) + HALF_16, s_vCoordStep);
+						s_columnOut = &s_display[y0*s_width + x];
+						texelU = floor16(uCoord - signU0);
+						s_texImage = &signTex->image[texelU << signTex->logSizeY];
+						if (s_columnLight)
+						{
+							signLit();
+						}
+						else
+						{
+							signFullbright();
+						}
+					}
 				}
 			}
 
@@ -1938,7 +1983,7 @@ namespace RClassicWall
 
 		return z;
 	}
-
+		
 	void drawColumn_Fullbright()
 	{
 		fixed16 vCoordFixed = s_vCoordFixed;

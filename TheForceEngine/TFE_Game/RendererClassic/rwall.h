@@ -64,6 +64,9 @@ struct RWall
 	fixed16 botUOffset;
 	fixed16 botVOffset;
 
+	fixed16 signUOffset;
+	fixed16 signVOffset;
+
 	// Update Frame
 	s32 drawFrame;
 

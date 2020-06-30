@@ -33,6 +33,11 @@ namespace RMath
 		return a > b ? a : b;
 	}
 
+	inline s32 clamp(s32 x, s32 a, s32 b)
+	{
+		return min(max(x, a), b);
+	}
+
 #if ENABLE_HIGH_PRECISION_FIXED_POINT == 1
 	inline fixed16 abs(fixed16 x)
 	{
@@ -47,6 +52,11 @@ namespace RMath
 	inline fixed16 max(fixed16 a, fixed16 b)
 	{
 		return a > b ? a : b;
+	}
+
+	inline fixed16 clamp(fixed16 x, fixed16 a, fixed16 b)
+	{
+		return min(max(x, a), b);
 	}
 #endif
 }

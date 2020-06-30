@@ -526,11 +526,14 @@ namespace RClassicSector
 			wall->midVOffset = floatToFixed16(8.0f * walls[w].mid.offsetY);
 			wall->botUOffset = floatToFixed16(8.0f * walls[w].bot.offsetX);
 			wall->botVOffset = floatToFixed16(8.0f * walls[w].bot.offsetY);
+			wall->signUOffset = floatToFixed16(8.0f * walls[w].sign.offsetX);
+			wall->signVOffset = floatToFixed16(8.0f * walls[w].sign.offsetY);
 
 			if (walls[w].flags[0] & WF1_TEX_ANCHORED)
 			{
 				wall->midVOffset -= floorDelta;
 				wall->botVOffset -= floorDelta;
+				wall->signVOffset -= floorDelta;
 
 				const s32 nextId = walls[w].adjoin;
 				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
@@ -538,8 +541,9 @@ namespace RClassicSector
 				if (nextSrc)
 				{
 					// Handle next sector moving.
-					wall->botVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
-					wall->topVOffset = -wall->topVOffset + (wall->topTex ? wall->topTex->height : 0);
+					wall->botVOffset  -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
+					wall->signVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
+					wall->topVOffset   = -wall->topVOffset + (wall->topTex ? wall->topTex->height : 0);
 				}
 			}
 
