@@ -533,8 +533,7 @@ namespace RClassicSector
 			{
 				wall->midVOffset -= floorDelta;
 				wall->botVOffset -= floorDelta;
-				wall->signVOffset -= floorDelta;
-
+				
 				const s32 nextId = walls[w].adjoin;
 				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
 				const Sector* nextSrc = (nextId >= 0) ? &level->sectors[nextId] : nullptr;
@@ -542,8 +541,19 @@ namespace RClassicSector
 				{
 					// Handle next sector moving.
 					wall->botVOffset  -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
-					wall->signVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
 					wall->topVOffset   = -wall->topVOffset + (wall->topTex ? wall->topTex->height : 0);
+				}
+			}
+			if (walls[w].flags[0] & WF1_SIGN_ANCHORED)
+			{
+				wall->signVOffset -= floorDelta;
+				const s32 nextId = walls[w].adjoin;
+				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
+				const Sector* nextSrc = (nextId >= 0) ? &level->sectors[nextId] : nullptr;
+				if (nextSrc)
+				{
+					// Handle next sector moving.
+					wall->signVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
 				}
 			}
 
