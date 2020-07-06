@@ -66,6 +66,8 @@ namespace RendererClassic
 	s32* s_windowBot_all = nullptr;
 	s32* s_windowTop = nullptr;
 	s32* s_windowBot = nullptr;
+	s32* s_windowTopPrev = nullptr;
+	s32* s_windowBotPrev = nullptr;
 	fixed16* s_column_Y_Over_X = nullptr;
 	fixed16* s_column_X_Over_Y = nullptr;
 

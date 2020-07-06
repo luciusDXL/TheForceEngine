@@ -57,8 +57,8 @@ namespace RClassicSector
 		u32     windowMaxX;
 		s32*    windowTop;
 		s32*    windowBot;
-		s32*    windowTop2;
-		s32*    windowBot2;
+		s32*    windowTopPrev;
+		s32*    windowBotPrev;
 		s32     sectorAmbient;
 		s32     scaledAmbient;
 		s32     scaledAmbient2k;
@@ -540,9 +540,9 @@ namespace RClassicSector
 				if (nextSrc)
 				{
 					// Handle next sector moving.
-					wall->botVOffset  -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
-					wall->topVOffset   = -wall->topVOffset + (wall->topTex ? wall->topTex->height : 0);
+					wall->botVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
 				}
+				wall->topVOffset = -wall->topVOffset + (wall->topTex ? wall->topTex->height : 0);
 			}
 			if (walls[w].flags[0] & WF1_SIGN_ANCHORED)
 			{
@@ -635,8 +635,8 @@ namespace RClassicSector
 		s_wallMinFloorY = s_windowMaxY + 1;
 		s_windowMinX = adjoinEdges->x0;
 		s_windowMaxX = adjoinEdges->x1;
-		//s_windowTop2 = s_windowTop;
-		//s_windowBot2 = s_windowBot;
+		s_windowTopPrev = s_windowTop;
+		s_windowBotPrev = s_windowBot;
 		s_prevSector = s_curSector;
 	}
 			
@@ -658,8 +658,8 @@ namespace RClassicSector
 		dst->windowMaxX = s_windowMaxX;
 		dst->windowTop = s_windowTop;
 		dst->windowBot = s_windowBot;
-		//dst->windowTop2 = s_windowTop2;
-		//dst->windowBot2 = s_windowBot2;
+		dst->windowTopPrev = s_windowTopPrev;
+		dst->windowBotPrev = s_windowBotPrev;
 		dst->sectorAmbient = s_sectorAmbient;
 		dst->scaledAmbient = s_scaledAmbient;
 		//dst->scaledAmbient2k = s_scaledAmbient2k;
@@ -683,8 +683,8 @@ namespace RClassicSector
 		s_windowMaxX = src->windowMaxX;
 		s_windowTop = src->windowTop;
 		s_windowBot = src->windowBot;
-		//s_windowTop2 = src->windowTop2;
-		//s_windowBot2 = src->windowBot2;
+		s_windowTopPrev = src->windowTopPrev;
+		s_windowBotPrev = src->windowBotPrev;
 		s_sectorAmbient = src->sectorAmbient;
 		s_scaledAmbient = src->scaledAmbient;
 		//s_scaledAmbient2k = src->scaledAmbient2k;

@@ -22,13 +22,13 @@ namespace TFE_Texture
 		s16 idemY;		// portion of texture actually used
 
 		u8 flags;
-		u8 logSizeY;		// logSizeY = log2(SizeY)
-							// logSizeY = 0 for weapons
+		u8 logSizeY;        // logSizeY = log2(SizeY)
+                            // logSizeY = 0 for weapons
 
-		s16 compressed;		// 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
-		s32 dataSize;		// Data size for compressed BM
-							// excluding header and columns starts table
-							// If not compressed, DataSize is unused
+		s16 compressed;     // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
+		s32 dataSize;       // Data size for compressed BM
+                            // excluding header and columns starts table
+                            // If not compressed, DataSize is unused
 		u8 pad1[12];		// 12 times 0x00
 	};
 
@@ -52,7 +52,7 @@ namespace TFE_Texture
 
 		// 4 bytes
 		u8  flags;
-		s16 compressed;			// 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
+		s16 compressed; // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
 		u8  pad3;
 	};
 
@@ -228,6 +228,8 @@ namespace TFE_Texture
 				texture->frames[f].width = frame->SizeX;
 				texture->frames[f].height = frame->SizeY;
 				texture->frames[f].logSizeY = frame->logSizeY;
+
+				// I'm not sure yet what the other flags do, but 8 refers to a transparent texture as seen in the DOS code.
 				texture->frames[f].opacity = (frame->flags&8) ? OPACITY_TRANS : OPACITY_NORMAL;
 
 				texture->frames[f].uvWidth = frame->idemX;

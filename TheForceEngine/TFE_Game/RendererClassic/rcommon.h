@@ -71,6 +71,8 @@ namespace RendererClassic
 	extern s32* s_windowBot_all;
 	extern s32* s_windowTop;
 	extern s32* s_windowBot;
+	extern s32* s_windowTopPrev;
+	extern s32* s_windowBotPrev;
 	extern fixed16* s_column_Y_Over_X;
 	extern fixed16* s_column_X_Over_Y;
 	

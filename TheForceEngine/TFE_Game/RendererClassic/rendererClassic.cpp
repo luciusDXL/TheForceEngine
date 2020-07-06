@@ -6,16 +6,22 @@
 // 2. [X] wall_drawTransparent() - handle correctly.
 // 3. [X] fix any adjoin bugs that don't exist in the original.
 // -- Finish Sector Rendering --
-// 4. [~] Draw sky (exterior/pit/exterior adjoin/pit adjoin/etc.).
-// 5. Draw signs.
+// 4. [X] Draw sky (exterior/pit/exterior adjoin/pit adjoin/etc.).
+// 5. [X]Draw signs.
 // {6/29-7/05}
 // 6. [X] Texture animation.
 // 7. [X] Find code that handles texture offset calculations and fixup (handle
 //    where sectors move due to INF and fix up texture offsets based on
 //    flags).
 // -- Sprite drawing --
+// 8. [X] Object sorting.
+// 9. [X] Sprite drawing code.
+// 10.[~] Loading code / object-sector assignment.
 // {7/06-7/12}
 // -- 3D object drawing --
+// 11.[~] Loading code / object-sector assignment.
+// 12. Model rendering.
+// 13. Perspective correct texturing support (optional feature).
 // -- Verify correct rendering using vanilla and test levels --
 // {7/13-7/19}
 // -- Refactor renderer - replace with Classic.
@@ -204,7 +210,7 @@ namespace RendererClassic
 	void draw(u8* display, const ColorMap* colormap)
 	{
 		// Clear the screen for now so we can get away with only drawing walls.
-		memset(display, 0, s_width * s_height);
+		//memset(display, 0, s_width * s_height);
 		s_display = display;
 		s_colorMap = colormap->colorMap;
 		s_lightSourceRamp = colormap->lightSourceRamp;
