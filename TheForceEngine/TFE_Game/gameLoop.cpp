@@ -33,6 +33,38 @@ using namespace TFE_GameConstants;
 
 namespace TFE_GameLoop
 {
+	// Controls - TODO: move to an action remapping system.
+	/*
+	Controller default layout:
+	==========================================
+	right axis - turn
+	left axis  - move/strafe
+	jump - A
+	crouch - B
+	use - Y
+	run - X
+	shoot primary - right trigger
+	shoot secondary - left trigger
+	map - dpad up
+	headlamp - dpad right
+	night vision - dpad down
+	gas mask - dpad left
+	esc menu - start
+	system menu - select
+	rbutton - next weapon
+	lbutton - previous weapon
+	left stick - PDA
+	*/
+
+	// Actions
+	bool actionCrouch();
+	bool actionRun();
+	bool actionUse();
+	bool actionJump();
+	bool actionShootPrimary();
+	bool actionNightvision();
+	bool actionHeadlamp();
+
 	struct PlayerSounds
 	{
 		const SoundBuffer* jump;
@@ -302,7 +334,7 @@ namespace TFE_GameLoop
 		TFE_Physics::getValidHeightRange(&s_player.pos, s_player.m_sectorId, &floorHeight, &visualFloorHeight, &ceilHeight);
 
 		// Running?
-		bool running = TFE_Input::keyDown(KEY_LSHIFT) || TFE_Input::keyDown(KEY_RSHIFT);
+		bool running = actionRun();
 		if (TFE_Input::keyPressed(KEY_CAPSLOCK))
 		{
 			s_slowToggle = !s_slowToggle;
@@ -387,6 +419,66 @@ namespace TFE_GameLoop
 		}
 
 		return dY;
+	}
+		
+	void handleControllerTurn(f32 dt)
+	{
+		const f32 axisX = TFE_Input::getAxis(AXIS_RIGHT_X);
+		const f32 axisY = TFE_Input::getAxis(AXIS_RIGHT_Y);
+
+		const f32 controllerTurnSpeed = 2.1f;
+		s_player.m_yaw   -= axisX * controllerTurnSpeed * dt;
+		s_player.m_pitch += axisY * controllerTurnSpeed * dt;
+
+		if (s_player.m_pitch < -c_pitchLimit) { s_player.m_pitch = -c_pitchLimit; }
+		if (s_player.m_pitch >= c_pitchLimit) { s_player.m_pitch =  c_pitchLimit; }
+	}
+
+	void handleControllerMove(Vec3f& move, const Vec2f& forward, const Vec2f& right)
+	{
+		const f32 axisX = TFE_Input::getAxis(AXIS_LEFT_X);
+		const f32 axisY = TFE_Input::getAxis(AXIS_LEFT_Y);
+
+		move.x += forward.x * axisY;
+		move.z += forward.z * axisY;
+
+		move.x -= right.x * axisX;
+		move.z -= right.z * axisX;
+	}
+				
+	bool actionCrouch()
+	{
+		return TFE_Input::keyDown(KEY_LCTRL) || TFE_Input::buttonDown(CONTROLLER_BUTTON_B);
+	}
+
+	bool actionRun()
+	{
+		return TFE_Input::keyDown(KEY_LSHIFT) || TFE_Input::keyDown(KEY_RSHIFT) || TFE_Input::buttonDown(CONTROLLER_BUTTON_X);
+	}
+
+	bool actionUse()
+	{
+		return TFE_Input::keyPressed(KEY_E) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_Y);
+	}
+
+	bool actionJump()
+	{
+		return TFE_Input::keyPressed(KEY_SPACE) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_A);
+	}
+
+	bool actionShootPrimary()
+	{
+		return TFE_Input::mouseDown(MBUTTON_LEFT) || TFE_Input::getAxis(AXIS_RIGHT_TRIGGER) < -0.5f;
+	}
+
+	bool actionNightvision()
+	{
+		return TFE_Input::keyPressed(KEY_F2) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_DOWN);
+	}
+
+	bool actionHeadlamp()
+	{
+		return TFE_Input::keyPressed(KEY_F5) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_RIGHT);
 	}
 
 	GameTransition update(bool consoleOpen, GameState curState, GameOverlay curOverlay)
@@ -489,7 +581,7 @@ namespace TFE_GameLoop
 			s_player.m_yaw -= turnSpeed * dt;
 			if (s_player.m_yaw < 0.0f) { s_player.m_yaw += 2.0f*PI; }
 		}
-
+		
 		if (TFE_Input::relativeModeEnabled() && s_inputDelay <= 0)
 		{
 			s32 mdx, mdy;
@@ -529,7 +621,9 @@ namespace TFE_GameLoop
 			s_player.m_pitch = 0.0f;
 		}
 
-		s_crouching = TFE_Input::keyDown(KEY_LCTRL) || s_forceCrouch;
+		handleControllerTurn(dt);
+
+		s_crouching = actionCrouch() || s_forceCrouch;
 		if (s_crouching)
 		{
 			s_eyeHeight += c_crouchOnSpeed * dt;
@@ -544,7 +638,7 @@ namespace TFE_GameLoop
 		}
 
 		// Use
-		if (TFE_Input::keyPressed(KEY_E) && s_inputDelay <= 0)
+		if (actionUse() && s_inputDelay <= 0)
 		{
 			const Vec3f forwardDir = { -sinf(s_player.m_yaw), 0.0f, cosf(s_player.m_yaw) };
 			// Fire a short ray into the world and gather all of the lines it hits until a solid wall is reached or the ray terminates.
@@ -592,7 +686,7 @@ namespace TFE_GameLoop
 		const Vec2f forwardDir = { -sinf(s_player.m_yaw), cosf(s_player.m_yaw) };
 		const Vec2f forward = { forwardDir.x * speed, forwardDir.z * speed };
 		const Vec2f right = { -forward.z, forward.x };
-				
+
 		if (TFE_Input::keyDown(KEY_W) && s_inputDelay <= 0)
 		{
 			move.x += forward.x;
@@ -613,7 +707,8 @@ namespace TFE_GameLoop
 			move.x -= right.x;
 			move.z -= right.z;
 		}
-				
+		handleControllerMove(move, forward, right);
+
 		// Adjust the velocity based on move.
 		s_player.vel = changeVelocity(&s_player.vel, &move, inAir, dt);
 
@@ -674,7 +769,7 @@ namespace TFE_GameLoop
 		s_forceCrouch = (floorHeight - ceilHeight < c_standingHeight);
 		s_player.pos.y = std::min(floorHeight, s_player.pos.y);
 				
-		if (TFE_Input::keyPressed(KEY_SPACE) && s_player.pos.y == floorHeight && s_player.vel.y == 0.0f)
+		if (actionJump() && s_player.pos.y == floorHeight && s_player.vel.y == 0.0f)
 		{
 			s_jump = true;
 			s_player.vel.y += c_jumpImpulse;
@@ -752,26 +847,15 @@ namespace TFE_GameLoop
 		if (s_actualSpeed < FLT_EPSILON && s_motion < 0.0001f) { s_motion = 0.0f; }
 		
 		// Items.
-		if (TFE_Input::keyPressed(KEY_F2))
+		if (actionNightvision())
 		{
 			s_player.m_nightVisionOn = !s_player.m_nightVisionOn;
 			TFE_RenderCommon::enableNightVision(s_player.m_nightVisionOn);
 		}
-		else if (TFE_Input::keyPressed(KEY_F5))
+		else if (actionHeadlamp())
 		{
 			s_player.m_headlampOn = !s_player.m_headlampOn;
 		}
-		
-		// DEBUG
-		if (TFE_Input::keyPressed(KEY_RIGHTBRACKET))
-		{
-			s_iterOverride = std::min(s_iterOverride + 1, 256);
-		}
-		else if (TFE_Input::keyPressed(KEY_LEFTBRACKET))
-		{
-			s_iterOverride = std::max(s_iterOverride - 1, 0);
-		}
-		TFE_View::setIterationOverride(s_iterOverride);
 
 		f32 e = 0.5f * dt / c_step;
 		s_heightVisual = s_player.pos.y*e + s_heightVisual*(1.0f - e);
@@ -794,7 +878,7 @@ namespace TFE_GameLoop
 		updateObjects();
 		updateSoundObjects(&s_cameraPos);
 
-		if (TFE_Input::mouseDown(MBUTTON_LEFT) && s_inputDelay <= 0)
+		if (actionShootPrimary() && s_inputDelay <= 0)
 		{
 			TFE_WeaponSystem::shoot(&s_player, &forwardDir);
 		}
