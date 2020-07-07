@@ -55,8 +55,9 @@ namespace TFE_Image
 		ilBindImage(handle);
 		if (ilLoadImage(imagePath) == IL_FALSE)
 		{
-			ILenum error = ilGetError();
-			return false;
+			// TODO: handle error.
+			// ILenum error = ilGetError();
+			return nullptr;
 		}
 
 		// Let’s spy on it a little bit

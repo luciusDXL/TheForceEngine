@@ -29,7 +29,6 @@ public:
 	virtual void read(u32* ptr, u32 count=1)=0;
 	virtual void read(s64* ptr, u32 count=1)=0;
 	virtual void read(u64* ptr, u32 count=1)=0;
-	//virtual void read(f16* ptr, u32 count=1)=0;
 	virtual void read(f32* ptr, u32 count=1)=0;
 	virtual void read(f64* ptr, u32 count=1)=0;
 	virtual void read(std::string* ptr, u32 count=1)=0;
@@ -43,7 +42,6 @@ public:
 	virtual void write(const u32* ptr, u32 count=1)=0;
 	virtual void write(const s64* ptr, u32 count=1)=0;
 	virtual void write(const u64* ptr, u32 count=1)=0;
-	//virtual void write(const f16* ptr, u32 count=1)=0;
 	virtual void write(const f32* ptr, u32 count=1)=0;
 	virtual void write(const f64* ptr, u32 count=1)=0;
 	virtual void write(const std::string* ptr, u32 count=1)=0;

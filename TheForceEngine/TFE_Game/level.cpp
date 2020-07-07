@@ -860,15 +860,15 @@ namespace TFE_Level
 		}
 		else if (part == SP_WALL && wallId >= 0)
 		{
-			if (part == WSP_TOP)
+			if (subpart == WSP_TOP)
 			{
 				return { s_levelData->walls[sector->wallOffset + wallId].top.offsetX, s_levelData->walls[sector->wallOffset + wallId].top.offsetY };
 			}
-			else if (part == WSP_MID)
+			else if (subpart == WSP_MID)
 			{
 				return { s_levelData->walls[sector->wallOffset + wallId].mid.offsetX, s_levelData->walls[sector->wallOffset + wallId].mid.offsetY };
 			}
-			else if (part == WSP_BOT)
+			else if (subpart == WSP_BOT)
 			{
 				return { s_levelData->walls[sector->wallOffset + wallId].bot.offsetX, s_levelData->walls[sector->wallOffset + wallId].bot.offsetY };
 			}

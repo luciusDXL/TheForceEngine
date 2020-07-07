@@ -226,7 +226,7 @@ namespace TFE_InfAsset
 		{
 			return c_infFuncName[funcId - INF_MSG_ADJOIN];
 		}
-		return c_infFuncName[INF_MSG_TEXTURE + 1];
+		return c_infFuncName[INF_MSG_TEXTURE - INF_MSG_ADJOIN + 1];
 	}
 
 	struct SectorBucket

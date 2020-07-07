@@ -332,7 +332,7 @@ namespace TFE_AgentMenu
 				{
 					s_selectedAgent++;
 					if (s_selectedAgent >= (s32)s_agentCount) { s_selectedAgent = 0; }
-					if (s_selectedAgent >= 0 && s_agentCount > 0) { s_selectedMission = s_agent[s_selectedAgent].selectedMission; }
+					if (s_selectedAgent >= 0) { s_selectedMission = s_agent[s_selectedAgent].selectedMission; }
 				}
 				else if (!s_lastSelectedAgent && s_selectedAgent >= 0 && s_agent[s_selectedAgent].nextMission > 0)
 				{
@@ -346,7 +346,7 @@ namespace TFE_AgentMenu
 				{
 					s_selectedAgent--;
 					if (s_selectedAgent < 0) { s_selectedAgent = s_agentCount - 1; }
-					if (s_selectedAgent >= 0 && s_agentCount > 0) { s_selectedMission = s_agent[s_selectedAgent].selectedMission; }
+					if (s_selectedAgent >= 0) { s_selectedMission = s_agent[s_selectedAgent].selectedMission; }
 				}
 				else if (!s_lastSelectedAgent && s_selectedAgent >= 0 && s_agent[s_selectedAgent].nextMission > 0)
 				{
