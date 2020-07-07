@@ -276,6 +276,7 @@
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
     <ClInclude Include="TFE_FrontEndUI\profilerView.h" />
     <ClInclude Include="TFE_Game\gameConstants.h" />
+    <ClInclude Include="TFE_Game\gameControlMapping.h" />
     <ClInclude Include="TFE_Game\gameHud.h" />
     <ClInclude Include="TFE_Game\gameLoop.h" />
     <ClInclude Include="TFE_Game\gameMain.h" />
@@ -408,6 +409,7 @@
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp" />
+    <ClCompile Include="TFE_Game\gameControlMapping.cpp" />
     <ClCompile Include="TFE_Game\gameHud.cpp" />
     <ClCompile Include="TFE_Game\gameLoop.cpp" />
     <ClCompile Include="TFE_Game\gameMain.cpp" />

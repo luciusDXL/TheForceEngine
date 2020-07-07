@@ -317,6 +317,12 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 
+	// Before loading settings, read in the Input key lists.
+	if (!TFE_Input::loadKeyNames("UI_Text/KeyText.txt"))
+	{
+		return PROGRAM_ERROR;
+	}
+
 	// Initialize settings so that the paths can be read.
 	if (!TFE_Settings::init())
 	{

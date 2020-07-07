@@ -544,6 +544,9 @@
     <ClInclude Include="TFE_FrontEndUI\profilerView.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Game\gameControlMapping.h">
+      <Filter>Source\TFE_Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -884,6 +887,9 @@
     </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\gameControlMapping.cpp">
+      <Filter>Source\TFE_Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

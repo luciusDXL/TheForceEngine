@@ -11,6 +11,7 @@
 #include <TFE_Game/player.h>
 #include <TFE_Game/level.h>
 #include <TFE_Game/gameObject.h>
+#include <TFE_Game/gameControlMapping.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
@@ -56,15 +57,6 @@ namespace TFE_GameLoop
 	left stick - PDA
 	*/
 
-	// Actions
-	bool actionCrouch();
-	bool actionRun();
-	bool actionUse();
-	bool actionJump();
-	bool actionShootPrimary();
-	bool actionNightvision();
-	bool actionHeadlamp();
-
 	struct PlayerSounds
 	{
 		const SoundBuffer* jump;
@@ -102,6 +94,134 @@ namespace TFE_GameLoop
 	void startRenderer(TFE_Renderer* renderer, s32 w, s32 h)
 	{
 		TFE_View::init(nullptr, renderer, w, h, false);
+	}
+
+	enum SystemAction
+	{
+		SYSACTION_SYSTEM_UI = 0,
+		SYSACTION_SCREENSHOT,
+		SYSACTION_CONSOLE,
+
+		SYSACTION_COUNT
+	};
+
+	enum GameAction
+	{
+		// Core
+		ACTION_SHOOT_PRIMARY = 0,
+		ACTION_SHOOT_SECONDARY,
+		ACTION_USE,
+		ACTION_JUMP,
+		ACTION_CROUCH,
+		ACTION_RUN,
+		ACTION_SLOW_TOGGLE,
+		// Movement
+		ACTION_MOVE_LEFT,
+		ACTION_MOVE_RIGHT,
+		ACTION_MOVE_FORWARD,
+		ACTION_MOVE_BACKWARD,
+		// Looking / Rotation
+		ACTION_TURN_LEFT,
+		ACTION_TURN_RIGHT,
+		ACTION_LOOK_UP,
+		ACTION_LOOK_DOWN,
+		ACTION_CENTER_VIEW,
+		// ITEMS / DISPLAYS
+		ACTION_AUTO_MAP,
+		ACTION_MENU,
+		ACTION_PDA,
+		ACTION_NIGHTVISION,
+		ACTION_CLEATS,
+		ACTION_GASMASK,
+		ACTION_HEADLAMP,
+		ACTION_HEADWAVE,
+		ACTION_HUD_TOGGLE,
+		ACTION_HOLSTER_WEAPON,
+		ACTION_PREV_WEAPON,
+		ACTION_NEXT_WEAPON,
+		ACTION_LAST_WEAPON,
+		ACTION_WEAPON_1,
+		ACTION_WEAPON_2,
+		ACTION_WEAPON_3,
+		ACTION_WEAPON_4,
+		ACTION_WEAPON_5,
+		ACTION_WEAPON_6,
+		ACTION_WEAPON_7,
+		ACTION_WEAPON_8,
+		ACTION_WEAPON_9,
+		ACTION_WEAPON_10,
+
+		ACTION_COUNT
+	};
+
+	void setupActionMapping()
+	{
+		TFE_GameControlMapping::clearActions();
+
+		// ACTION_CROUCH
+		TFE_GameControlMapping::bindAction(ACTION_CROUCH, GCTRL_KEY, GTRIGGER_DOWN, KEY_LCTRL);
+		TFE_GameControlMapping::bindAction(ACTION_CROUCH, GCTRL_CONTROLLER_BUTTON, GTRIGGER_DOWN, CONTROLLER_BUTTON_B);
+
+		// ACTION_RUN
+		TFE_GameControlMapping::bindAction(ACTION_RUN, GCTRL_KEY, GTRIGGER_DOWN, KEY_LSHIFT);
+		TFE_GameControlMapping::bindAction(ACTION_RUN, GCTRL_CONTROLLER_BUTTON, GTRIGGER_DOWN, CONTROLLER_BUTTON_X);
+
+		// ACTION_USE
+		TFE_GameControlMapping::bindAction(ACTION_USE, GCTRL_KEY, GTRIGGER_PRESSED, KEY_E);
+		TFE_GameControlMapping::bindAction(ACTION_USE, GCTRL_CONTROLLER_BUTTON, GTRIGGER_PRESSED, CONTROLLER_BUTTON_Y);
+
+		// ACTION_JUMP
+		TFE_GameControlMapping::bindAction(ACTION_JUMP, GCTRL_KEY, GTRIGGER_PRESSED, KEY_SPACE);
+		TFE_GameControlMapping::bindAction(ACTION_JUMP, GCTRL_CONTROLLER_BUTTON, GTRIGGER_PRESSED, CONTROLLER_BUTTON_A);
+
+		// ACTION_SHOOT_PRIMARY
+		TFE_GameControlMapping::bindAction(ACTION_SHOOT_PRIMARY, GCTRL_MOUSE_BUTTON, GTRIGGER_DOWN, MBUTTON_LEFT);
+		TFE_GameControlMapping::bindAction(ACTION_SHOOT_PRIMARY, GCTRL_CONTROLLER_AXIS, GTRIGGER_DOWN, AXIS_RIGHT_TRIGGER);
+
+		// ACTION_SHOOT_SECONDARY
+		TFE_GameControlMapping::bindAction(ACTION_SHOOT_SECONDARY, GCTRL_MOUSE_BUTTON, GTRIGGER_DOWN, MBUTTON_RIGHT);
+		TFE_GameControlMapping::bindAction(ACTION_SHOOT_SECONDARY, GCTRL_CONTROLLER_AXIS, GTRIGGER_DOWN, AXIS_LEFT_TRIGGER);
+
+		// ACTION_NIGHTVISION
+		TFE_GameControlMapping::bindAction(ACTION_NIGHTVISION, GCTRL_KEY, GTRIGGER_PRESSED, KEY_F2);
+		TFE_GameControlMapping::bindAction(ACTION_NIGHTVISION, GCTRL_CONTROLLER_BUTTON, GTRIGGER_PRESSED, CONTROLLER_BUTTON_DPAD_DOWN);
+
+		// ACTION_HEADLAMP
+		TFE_GameControlMapping::bindAction(ACTION_HEADLAMP, GCTRL_KEY, GTRIGGER_PRESSED, KEY_F5);
+		TFE_GameControlMapping::bindAction(ACTION_HEADLAMP, GCTRL_CONTROLLER_BUTTON, GTRIGGER_PRESSED, CONTROLLER_BUTTON_DPAD_RIGHT);
+
+		///////////////////////////////////////////////////
+		// Movement
+		///////////////////////////////////////////////////
+
+		// ACTION_MOVE_LEFT
+		TFE_GameControlMapping::bindAction(ACTION_MOVE_LEFT, GCTRL_KEY, GTRIGGER_DOWN, KEY_A);
+		TFE_GameControlMapping::bindAction(ACTION_MOVE_LEFT, GCTRL_CONTROLLER_AXIS, GTRIGGER_UPDATE, AXIS_LEFT_X, 0, -1.0f);
+
+		// ACTION_MOVE_RIGHT
+		TFE_GameControlMapping::bindAction(ACTION_MOVE_RIGHT, GCTRL_KEY, GTRIGGER_DOWN, KEY_D);
+		TFE_GameControlMapping::bindAction(ACTION_MOVE_RIGHT, GCTRL_CONTROLLER_AXIS, GTRIGGER_UPDATE, AXIS_LEFT_X, 0, 1.0f);
+
+		// ACTION_MOVE_FORWARD
+		TFE_GameControlMapping::bindAction(ACTION_MOVE_FORWARD, GCTRL_KEY, GTRIGGER_DOWN, KEY_W);
+		TFE_GameControlMapping::bindAction(ACTION_MOVE_FORWARD, GCTRL_CONTROLLER_AXIS, GTRIGGER_UPDATE, AXIS_LEFT_Y, 0, 1.0f);
+
+		// ACTION_MOVE_BACKWARD
+		TFE_GameControlMapping::bindAction(ACTION_MOVE_BACKWARD, GCTRL_KEY, GTRIGGER_DOWN, KEY_S);
+		TFE_GameControlMapping::bindAction(ACTION_MOVE_BACKWARD, GCTRL_CONTROLLER_AXIS, GTRIGGER_UPDATE, AXIS_LEFT_Y, 0, -1.0f);
+
+		///////////////////////////////////////////////////////
+		// Rotation
+		///////////////////////////////////////////////////////
+		//ACTION_TURN_LEFT,
+		//ACTION_TURN_RIGHT,
+		//ACTION_LOOK_UP,
+		//ACTION_LOOK_DOWN,
+	}
+
+	inline bool getAction(GameAction action)
+	{
+		return TFE_GameControlMapping::getAction(action) != 0.0f;
 	}
 
 	bool startLevelFromExisting(const Vec3f* startPos, f32 yaw, s32 startSectorId, const Palette256* pal, LevelObjectData* levelObj, TFE_Renderer* renderer, s32 w, s32 h)
@@ -171,6 +291,7 @@ namespace TFE_GameLoop
 		s_playerSounds.landWater = TFE_VocAsset::get("SWIM-IN.VOC");
 
 		s_inputDelay = c_levelLoadInputDelay;
+		setupActionMapping();
 
 		return true;
 	}
@@ -290,6 +411,7 @@ namespace TFE_GameLoop
 		s_playerSounds.landWater = TFE_VocAsset::get("SWIM-IN.VOC");
 
 		s_inputDelay = c_levelLoadInputDelay;
+		setupActionMapping();
 		
 		return true;
 	}
@@ -334,7 +456,7 @@ namespace TFE_GameLoop
 		TFE_Physics::getValidHeightRange(&s_player.pos, s_player.m_sectorId, &floorHeight, &visualFloorHeight, &ceilHeight);
 
 		// Running?
-		bool running = actionRun();
+		bool running = getAction(ACTION_RUN);
 		if (TFE_Input::keyPressed(KEY_CAPSLOCK))
 		{
 			s_slowToggle = !s_slowToggle;
@@ -432,53 +554,6 @@ namespace TFE_GameLoop
 
 		if (s_player.m_pitch < -c_pitchLimit) { s_player.m_pitch = -c_pitchLimit; }
 		if (s_player.m_pitch >= c_pitchLimit) { s_player.m_pitch =  c_pitchLimit; }
-	}
-
-	void handleControllerMove(Vec3f& move, const Vec2f& forward, const Vec2f& right)
-	{
-		const f32 axisX = TFE_Input::getAxis(AXIS_LEFT_X);
-		const f32 axisY = TFE_Input::getAxis(AXIS_LEFT_Y);
-
-		move.x += forward.x * axisY;
-		move.z += forward.z * axisY;
-
-		move.x -= right.x * axisX;
-		move.z -= right.z * axisX;
-	}
-				
-	bool actionCrouch()
-	{
-		return TFE_Input::keyDown(KEY_LCTRL) || TFE_Input::buttonDown(CONTROLLER_BUTTON_B);
-	}
-
-	bool actionRun()
-	{
-		return TFE_Input::keyDown(KEY_LSHIFT) || TFE_Input::keyDown(KEY_RSHIFT) || TFE_Input::buttonDown(CONTROLLER_BUTTON_X);
-	}
-
-	bool actionUse()
-	{
-		return TFE_Input::keyPressed(KEY_E) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_Y);
-	}
-
-	bool actionJump()
-	{
-		return TFE_Input::keyPressed(KEY_SPACE) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_A);
-	}
-
-	bool actionShootPrimary()
-	{
-		return TFE_Input::mouseDown(MBUTTON_LEFT) || TFE_Input::getAxis(AXIS_RIGHT_TRIGGER) < -0.5f;
-	}
-
-	bool actionNightvision()
-	{
-		return TFE_Input::keyPressed(KEY_F2) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_DOWN);
-	}
-
-	bool actionHeadlamp()
-	{
-		return TFE_Input::keyPressed(KEY_F5) || TFE_Input::buttonPressed(CONTROLLER_BUTTON_DPAD_RIGHT);
 	}
 
 	GameTransition update(bool consoleOpen, GameState curState, GameOverlay curOverlay)
@@ -623,7 +698,7 @@ namespace TFE_GameLoop
 
 		handleControllerTurn(dt);
 
-		s_crouching = actionCrouch() || s_forceCrouch;
+		s_crouching = getAction(ACTION_CROUCH) || s_forceCrouch;
 		if (s_crouching)
 		{
 			s_eyeHeight += c_crouchOnSpeed * dt;
@@ -638,7 +713,7 @@ namespace TFE_GameLoop
 		}
 
 		// Use
-		if (actionUse() && s_inputDelay <= 0)
+		if (getAction(ACTION_USE) && s_inputDelay <= 0)
 		{
 			const Vec3f forwardDir = { -sinf(s_player.m_yaw), 0.0f, cosf(s_player.m_yaw) };
 			// Fire a short ray into the world and gather all of the lines it hits until a solid wall is reached or the ray terminates.
@@ -687,27 +762,29 @@ namespace TFE_GameLoop
 		const Vec2f forward = { forwardDir.x * speed, forwardDir.z * speed };
 		const Vec2f right = { -forward.z, forward.x };
 
-		if (TFE_Input::keyDown(KEY_W) && s_inputDelay <= 0)
+		// Movement
+		if (s_inputDelay <= 0)
 		{
-			move.x += forward.x;
-			move.z += forward.z;
+			f32 mLeft = TFE_GameControlMapping::getAction(ACTION_MOVE_LEFT);
+			move.x += mLeft * right.x;
+			move.z += mLeft * right.z;
+			if (mLeft == 0.0f)
+			{
+				f32 mRight = TFE_GameControlMapping::getAction(ACTION_MOVE_RIGHT);
+				move.x -= mRight * right.x;
+				move.z -= mRight * right.z;
+			}
+
+			f32 mForward = TFE_GameControlMapping::getAction(ACTION_MOVE_FORWARD);
+			move.x += mForward * forward.x;
+			move.z += mForward * forward.z;
+			if (mForward == 0.0f)
+			{
+				f32 mBackward = TFE_GameControlMapping::getAction(ACTION_MOVE_BACKWARD);
+				move.x -= mBackward * forward.x;
+				move.z -= mBackward * forward.z;
+			}
 		}
-		else if (TFE_Input::keyDown(KEY_S) && s_inputDelay <= 0)
-		{
-			move.x -= forward.x;
-			move.z -= forward.z;
-		}
-		if (TFE_Input::keyDown(KEY_A) && s_inputDelay <= 0)
-		{
-			move.x += right.x;
-			move.z += right.z;
-		}
-		else if (TFE_Input::keyDown(KEY_D) && s_inputDelay <= 0)
-		{
-			move.x -= right.x;
-			move.z -= right.z;
-		}
-		handleControllerMove(move, forward, right);
 
 		// Adjust the velocity based on move.
 		s_player.vel = changeVelocity(&s_player.vel, &move, inAir, dt);
@@ -769,7 +846,7 @@ namespace TFE_GameLoop
 		s_forceCrouch = (floorHeight - ceilHeight < c_standingHeight);
 		s_player.pos.y = std::min(floorHeight, s_player.pos.y);
 				
-		if (actionJump() && s_player.pos.y == floorHeight && s_player.vel.y == 0.0f)
+		if (getAction(ACTION_JUMP) && s_player.pos.y == floorHeight && s_player.vel.y == 0.0f)
 		{
 			s_jump = true;
 			s_player.vel.y += c_jumpImpulse;
@@ -847,12 +924,12 @@ namespace TFE_GameLoop
 		if (s_actualSpeed < FLT_EPSILON && s_motion < 0.0001f) { s_motion = 0.0f; }
 		
 		// Items.
-		if (actionNightvision())
+		if (getAction(ACTION_NIGHTVISION))
 		{
 			s_player.m_nightVisionOn = !s_player.m_nightVisionOn;
 			TFE_RenderCommon::enableNightVision(s_player.m_nightVisionOn);
 		}
-		else if (actionHeadlamp())
+		else if (getAction(ACTION_HEADLAMP))
 		{
 			s_player.m_headlampOn = !s_player.m_headlampOn;
 		}
@@ -878,7 +955,7 @@ namespace TFE_GameLoop
 		updateObjects();
 		updateSoundObjects(&s_cameraPos);
 
-		if (actionShootPrimary() && s_inputDelay <= 0)
+		if (getAction(ACTION_SHOOT_PRIMARY) && s_inputDelay <= 0)
 		{
 			TFE_WeaponSystem::shoot(&s_player, &forwardDir);
 		}
