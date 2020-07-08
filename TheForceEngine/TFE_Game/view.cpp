@@ -4,9 +4,12 @@
 #include "physics.h"
 #include "modelRendering.h"
 #include "renderCommon.h"
+#include "RendererClassic/rendererClassic.h"
+#include "RendererClassic/fixedPoint.h"
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
+#include <TFE_System/profiler.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/levelAsset.h>
 #include <TFE_Asset/levelObjectsAsset.h>
@@ -20,6 +23,8 @@
 #include <TFE_FrontEndUI/console.h>
 #include <algorithm>
 #include <assert.h>
+
+using namespace FixedPoint;
 
 namespace TFE_View
 {
@@ -150,6 +155,50 @@ namespace TFE_View
 		
 	static GameObjectList* s_objects;
 	static SectorObjectList* s_sectorObjects;
+
+	// Enable WIP "classic renderer" - defaults to false while still working on it.
+	static bool s_enableClassic = false;
+
+	void enableClassicRenderer(const std::vector<std::string>& args)
+	{
+		if (args.size() < 2 || args[1] == "false" || args[1] == "0")
+		{
+			s_enableClassic = false;
+		}
+		else
+		{
+			s_enableClassic = true;
+			RendererClassic::setupLevel(s_width, s_height);
+		}
+	}
+
+	void changeResolution(s32 w, s32 h)
+	{
+		s_width = w;
+		s_height = h;
+		s_halfWidth = f32(s_width >> 1);
+		s_halfHeight = f32(s_height >> 1);
+		s_heightScale = floorf(s_halfHeight * c_pixelAspect);
+
+		s_focalLength = s_halfWidth / tanf(PI*0.25f);
+		buildClipLines(0, s_width - 1);
+		TFE_ModelRender::init(s_renderer, w, h, s_focalLength, s_heightScale);
+
+		buildSkyWarpTable(true);
+
+		delete[] s_upperHeight;
+		delete[] s_lowerHeight;
+		s_upperHeight = new s32[s_width];
+		s_lowerHeight = new s32[s_width];
+
+		if (!s_upperHeightMask)
+		{
+			s_upperHeightMask = new s16[MAX_MASK_HEIGHT];	// 64Kb
+			s_lowerHeightMask = new s16[MAX_MASK_HEIGHT];	// 64Kb
+		}
+
+		RendererClassic::changeResolution(w, h);
+	}
 		
 	bool init(const LevelData* level, TFE_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
 	{
@@ -158,6 +207,7 @@ namespace TFE_View
 
 		CVAR_FLOAT(s_focalLength, "r_focalLength", 0, "Focal Length - combined virtual width and field of view scalar - default is virtual width / 2 (90 degrees)");
 		CVAR_FLOAT(s_heightScale, "r_heightScale", 0, "Height Scale - combined virtual height, field of view and aspect ratio - default is virtual height * 16/10");
+		CCMD("enableClassic", enableClassicRenderer, 0, "Enable classic renderer - enableClassic true/false");
 
 		if (!level)
 		{
@@ -745,7 +795,7 @@ namespace TFE_View
 
 		TFE_ModelRender::setClip(seg->ix0, seg->ix1, upper, lower);
 		TFE_ModelRender::setModelScale(&obj->scale);
-		TFE_ModelRender::draw(model, &obj->angles, &obj->pos, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, &s_level->sectors[obj->sectorId]);
+		TFE_ModelRender::draw(model, &obj->angles, &obj->position, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, &s_level->sectors[obj->sectorId]);
 	}
 
 	void drawSprite(s32 index)
@@ -1377,8 +1427,8 @@ namespace TFE_View
 			const TextureFrame* floorFrame = getTextureFrame(curSector->floorTexture.texId, 0);
 			
 			// Mid Texturing.
-			s32 midDim[2], botDim[2], topDim[2];
-			f32 midV[2], botV[2], topV[2];
+			s32 midDim[2] = { 0 }, botDim[2], topDim[2];
+			f32 midV[2] = { 0 }, botV[2], topV[2];
 			if (curWall->adjoin < 0 || curWall->adjoin == drawInfo.sectorId)
 			{
 				midDim[0] = midFrame ? midFrame->width : 0;
@@ -1916,9 +1966,9 @@ namespace TFE_View
 			if (!obj->show) { continue; }
 
 			// Compute the view position.
-			const f32 wx = obj->pos.x - cameraPos->x;
-			const f32 wy = obj->pos.y - cameraPos->y;
-			const f32 wz = obj->pos.z - cameraPos->z;
+			const f32 wx = obj->position.x - cameraPos->x;
+			const f32 wy = obj->position.y - cameraPos->y;
+			const f32 wz = obj->position.z - cameraPos->z;
 			const f32 vx =  wx * ca + wz * sa;
 			const f32 vz = -wx * sa + wz * ca;
 
@@ -1969,7 +2019,7 @@ namespace TFE_View
 				
 				Vec2i screenRect[2];
 				TFE_ModelRender::setModelScale(&obj->scale);
-				if (!TFE_ModelRender::computeScreenSize(model, &obj->angles, &obj->pos, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, screenRect))
+				if (!TFE_ModelRender::computeScreenSize(model, &obj->angles, &obj->position, obj->vueTransform, cameraPos, s_rot, (f32)s_pitchOffset, screenRect))
 				{
 					continue;
 				}
@@ -2037,13 +2087,31 @@ namespace TFE_View
 		TFE_RenderCommon::setProjectionParam(s_width, s_height, s_focalLength, s_heightScale, s_pitchOffset);
 		TFE_RenderCommon::setViewParam(s_rot, cameraPos);
 		TFE_ModelRender::buildClipPlanes(s_pitchOffset);
+
+		f32 sinPitch = sinf(pitch);
+		RendererClassic::setCamera(floatAngleToFixed(yaw), floatAngleToFixed(pitch), floatToFixed16(s_rot[0]), floatToFixed16(s_rot[1]), floatToFixed16(sinPitch), floatToFixed16(cameraPos->x), floatToFixed16(cameraPos->y), floatToFixed16(cameraPos->z), sectorId);
 	}
-		
+
 	void draw(const Vec3f* cameraPos, s32 sectorId)
 	{
+		const Sector* sectors = s_level->sectors.data();
+		if (s_enableClassic)
+		{
+			TFE_ZONE("Draw");
+
+			// For now update all sectors.
+			const u32 sectorCount = (u32)s_level->sectors.size();
+			for (u32 i = 0; i < sectorCount; i++)
+			{
+				RendererClassic::updateSector(i);
+			}
+
+			RendererClassic::draw(s_renderer->getDisplay(), s_colorMap);
+			return;
+		}
+
 		s_renderer->enablePalEffects(TFE_RenderCommon::isGrayScaleEnabled(), TFE_RenderCommon::isNightVisionEnabled());
 
-		const Sector* sectors = s_level->sectors.data();
 		const SectorWall* walls = s_level->walls.data();
 		const Vec2f* vertices = s_level->vertices.data();
 		clearHeightArray();

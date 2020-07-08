@@ -1,4 +1,7 @@
 #include <TFE_Input/input.h>
+#include <TFE_FileSystem/filestream.h>
+#include <TFE_System/system.h>
+#include <TFE_System/parser.h>
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
@@ -28,6 +31,12 @@ namespace TFE_Input
 	s32 s_mousePos[2] = { 0 };
 
 	bool s_relativeMode = false;
+
+	static const char* const* s_controllerAxisNames;
+	static const char* const* s_controllerButtonNames;
+	static const char* const* s_mouseAxisNames;
+	static const char* const* s_mouseButtonNames;
+	static const char* const* s_keyboardNames;
 
 	////////////////////////////////////////////////////////
 	// Implementation
@@ -205,5 +214,131 @@ namespace TFE_Input
 	bool bufferedKeyDown(KeyboardCode key)
 	{
 		return s_bufferedKey[key];
+	}
+
+	bool loadKeyNames(const char* path)
+	{
+		FileStream file;
+		if (!file.open(path, FileStream::MODE_READ))
+		{
+			return false;
+		}
+
+		// Read the file into memory.
+		const size_t len = file.getSize();
+		char* contents = new char[len+1];
+		if (!contents)
+		{
+			file.close();
+			return false;
+		}
+		file.readBuffer(contents, (u32)len);
+		file.close();
+
+		TFE_Parser parser;
+		parser.init(contents, len);
+		parser.addCommentString(";");
+		parser.addCommentString("#");
+		parser.addCommentString("//");
+
+		size_t bufferPos = 0;
+		enum KeySection
+		{
+			Unknown = 0,
+			ControllerAxis,
+			ControllerButtons,
+			MouseAxis,
+			MouseButtons,
+			Keyboard,
+		};
+
+		KeySection section = Unknown;
+		char** curList = nullptr;
+		while (bufferPos < len)
+		{
+			const char* line = parser.readLine(bufferPos);
+			if (!line) { break; }
+
+			TokenList tokens;
+			parser.tokenizeLine(line, tokens);
+			if (tokens.size() < 1) { continue; }
+			const char* item = tokens[0].c_str();
+
+			if (strcasecmp(item, "[ControllerAxis]") == 0)
+			{
+				section = ControllerAxis;
+				s_controllerAxisNames = new const char*[AXIS_COUNT];
+				curList = (char**)s_controllerAxisNames;
+			}
+			else if (strcasecmp(item, "[ControllerButtons]") == 0)
+			{
+				section = ControllerButtons;
+				s_controllerButtonNames = new const char*[CONTROLLER_BUTTON_COUNT];
+				curList = (char**)s_controllerButtonNames;
+			}
+			else if (strcasecmp(item, "[MouseAxis]") == 0)
+			{
+				section = MouseAxis;
+				s_mouseAxisNames = new const char*[MOUSE_AXIS_COUNT];
+				curList = (char**)s_mouseAxisNames;
+			}
+			else if (strcasecmp(item, "[MouseButtons]") == 0)
+			{
+				section = MouseButtons;
+				s_mouseButtonNames = new const char*[MBUTTON_COUNT];
+				curList = (char**)s_mouseButtonNames;
+			}
+			else if (strcasecmp(item, "[Keyboard]") == 0)
+			{
+				section = Keyboard;
+				s_keyboardNames = new const char*[KEY_LAST + 2];
+				curList = (char**)s_keyboardNames;
+			}
+			else if (section == Unknown)
+			{
+				TFE_System::logWrite(LOG_ERROR, "Input", "Cannot parse Key Name lists '%s'", path);
+				delete[] contents;
+				return false;
+			}
+			else
+			{
+				*curList = new char[strlen(item) + 1];
+				strcpy(*curList, item);
+				curList++;
+			}
+		};
+
+		delete[] contents;
+		return true;
+	}
+
+	const char* getControllerAxisName(Axis axis)
+	{
+		return s_controllerAxisNames ? s_controllerAxisNames[axis] : "";
+	}
+
+	const char* getControllButtonName(Button button)
+	{
+		return s_controllerButtonNames ? s_controllerButtonNames[button] : "";
+	}
+
+	const char* getMouseAxisName(MouseAxis axis)
+	{
+		return s_mouseAxisNames ? s_mouseAxisNames[axis] : "";
+	}
+
+	const char* getMouseButtonName(MouseButton button)
+	{
+		return s_mouseButtonNames ? s_mouseButtonNames[button] : "";
+	}
+
+	const char* getKeyboardName(KeyboardCode key)
+	{
+		if (key > KEY_LAST && s_controllerAxisNames)
+		{
+			return s_keyboardNames[KEY_LAST];
+		}
+
+		return s_keyboardNames ? s_keyboardNames[key] : "";
 	}
 }

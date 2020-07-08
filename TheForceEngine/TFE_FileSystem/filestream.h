@@ -21,42 +21,40 @@ public:
 	void close();
 	
 	//derived functions.
-	void seek(u32 offset, Origin origin=ORIGIN_START);
-	size_t getLoc();
-	size_t getSize();
+	void seek(u32 offset, Origin origin=ORIGIN_START) override;
+	size_t getLoc() override;
+	size_t getSize() override;
 	bool   isOpen()  const;
 
 	void flush();
 
-	void read(s8*  ptr, u32 count=1) { readType(ptr, count); }
-	void read(u8*  ptr, u32 count=1) { readType(ptr, count); }
-	void read(s16* ptr, u32 count=1) { readType(ptr, count); }
-	void read(u16* ptr, u32 count=1) { readType(ptr, count); }
-	void read(s32* ptr, u32 count=1) { readType(ptr, count); }
-	void read(u32* ptr, u32 count=1) { readType(ptr, count); }
-	void read(s64* ptr, u32 count=1) { readType(ptr, count); }
-	void read(u64* ptr, u32 count=1) { readType(ptr, count); }
-	//void read(f16* ptr, u32 count=1) { readType(ptr, count); }
-	void read(f32* ptr, u32 count=1) { readType(ptr, count); }
-	void read(f64* ptr, u32 count=1) { readType(ptr, count); }
-	void read(std::string* ptr, u32 count=1) { readType(ptr, count); }
-	void readBuffer(void* ptr, u32 size, u32 count=1);
+	void read(s8*  ptr, u32 count=1) override { readType(ptr, count); }
+	void read(u8*  ptr, u32 count=1) override { readType(ptr, count); }
+	void read(s16* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(u16* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(s32* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(u32* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(s64* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(u64* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(f32* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(f64* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(std::string* ptr, u32 count=1) override { readType(ptr, count); }
+	void readBuffer(void* ptr, u32 size, u32 count=1) override;
 
-	void write(const s8*  ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const u8*  ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const s16* ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const u16* ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const s32* ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const u32* ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const s64* ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const u64* ptr, u32 count=1) { writeType(ptr, count); }
-	//void write(const f16* ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const f32* ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const f64* ptr, u32 count=1) { writeType(ptr, count); }
-	void write(const std::string* ptr, u32 count=1) { writeType(ptr, count); }
-	void writeBuffer(const void* ptr, u32 size, u32 count=1);
+	void write(const s8*  ptr, u32 count=1)  override { writeType(ptr, count); }
+	void write(const u8*  ptr, u32 count=1)  override { writeType(ptr, count); }
+	void write(const s16* ptr, u32 count=1)  override { writeType(ptr, count); }
+	void write(const u16* ptr, u32 count=1)  override { writeType(ptr, count); }
+	void write(const s32* ptr, u32 count=1)  override { writeType(ptr, count); }
+	void write(const u32* ptr, u32 count=1)  override { writeType(ptr, count); }
+	void write(const s64* ptr, u32 count=1)  override { writeType(ptr, count); }
+	void write(const u64* ptr, u32 count=1)  override { writeType(ptr, count); }
+	void write(const f32* ptr, u32 count=1) override { writeType(ptr, count); }
+	void write(const f64* ptr, u32 count=1) override { writeType(ptr, count); }
+	void write(const std::string* ptr, u32 count=1) override { writeType(ptr, count); }
+	void writeBuffer(const void* ptr, u32 size, u32 count=1) override;
 
-	void writeString(const char* fmt, ...);
+	void writeString(const char* fmt, ...) override;
 
 private:
 	template <typename T>

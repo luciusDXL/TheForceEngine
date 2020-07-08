@@ -38,6 +38,7 @@ namespace TFE_RenderCommon
 {
 	void init(const ColorMap* cmap);
 	void enableLightSource(LightMode mode);
+	LightMode getLightMode();
 	// use brightObj for objects that should show up bright in special modes such as night vision.
 	s32 lightFalloff(s32 level, f32 z, bool brightObj = false);
 	Vec3f unproject(const Vec2i& screenPos, f32 viewZ);

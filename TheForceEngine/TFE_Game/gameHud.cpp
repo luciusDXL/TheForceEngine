@@ -126,7 +126,7 @@ namespace TFE_GameHud
 		// VALIGN_CENTER
 		return (height / 2) + yScaled;
 	}
-					
+
 	void init(TFE_Renderer* renderer)
 	{
 		s_renderer = renderer;

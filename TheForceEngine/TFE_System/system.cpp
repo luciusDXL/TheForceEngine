@@ -111,6 +111,16 @@ namespace TFE_System
 		const u64 uDt = s_time - s_startTime;
 		return f64(uDt) * s_freq;
 	}
+	
+	u64 getCurrentTimeInTicks()
+	{
+		return SDL_GetPerformanceCounter() - s_startTime;
+	}
+
+	f64 convertFromTicksToSeconds(u64 ticks)
+	{
+		return f64(ticks) * s_freq;
+	}
 
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion)
 	{

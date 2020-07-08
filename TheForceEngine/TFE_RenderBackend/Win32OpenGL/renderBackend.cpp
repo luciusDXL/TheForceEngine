@@ -3,6 +3,7 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
+#include <TFE_System/profiler.h>
 #include "renderTarget.h"
 #include "blit.h"
 #include <SDL.h>
@@ -123,13 +124,17 @@ namespace TFE_RenderBackend
 		if (blitVirtualDisplay) { drawVirtualDisplay(); }
 		else { glClear(GL_COLOR_BUFFER_BIT); }
 
+		TFE_ZONE_BEGIN(swapUi, "System UI");
 		// Handle the UI.
 		TFE_Ui::render();
 		// Reset the state due to UI changes.
 		TFE_RenderState::clear();
+		TFE_ZONE_END(swapUi);
 
+		TFE_ZONE_BEGIN(swapGpu, "GPU Swap Buffers");
 		// Update the window.
 		SDL_GL_SwapWindow((SDL_Window*)m_window);
+		TFE_ZONE_END(swapGpu);
 
 		if (s_screenshotQueued)
 		{
@@ -249,11 +254,13 @@ namespace TFE_RenderBackend
 
 	void updateVirtualDisplay(const void* buffer, size_t size)
 	{
+		TFE_ZONE("Update Virtual Display");
 		s_virtualDisplay->update(buffer, size);
 	}
 
 	void drawVirtualDisplay()
 	{
+		TFE_ZONE("Draw Virtual Display");
 		if (!s_virtualDisplay) { return; }
 
 		// Only clear if (1) s_virtualDisplay == null or (2) m_displayMode != DMODE_STRETCH

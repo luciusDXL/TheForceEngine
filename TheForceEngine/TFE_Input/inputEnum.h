@@ -34,6 +34,13 @@ enum Button
 	CONTROLLER_BUTTON_COUNT
 };
 
+enum MouseAxis
+{
+	MOUSE_AXIS_X = 0,
+	MOUSE_AXIS_Y,
+	MOUSE_AXIS_COUNT
+};
+
 enum MouseButton
 {
 	MBUTTON_LEFT = 0,
@@ -290,5 +297,6 @@ enum KeyboardCode
 	KEY_APP2 = 284,
 	KEY_AUDIOREWIND = 285,
 	KEY_AUDIOFASTFORWARD = 286,
+	KEY_LAST = 286,
 	KEY_COUNT = 512 // not a key, just marks the number of scancodes for array bounds
 };

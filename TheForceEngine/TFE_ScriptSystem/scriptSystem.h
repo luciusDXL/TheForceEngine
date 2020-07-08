@@ -30,6 +30,22 @@ struct ScriptTypeProp
 	size_t offset;
 };
 
+// Enums and Global properties.
+#define SCRIPT_ENUM(type)				TFE_ScriptSystem::registerEnumType(#type);
+#define SCRIPT_ENUM_VALUE(type, value)	TFE_ScriptSystem::registerEnumValue(#type, #value, value);
+#define SCRIPT_GLOBAL_PROPERTY(type, name, ptr) TFE_ScriptSystem::registerGlobalProperty(#type " @" #name, &ptr);
+#define SCRIPT_GLOBAL_PROPERTY_CONST(type, name, ptr) TFE_ScriptSystem::registerGlobalProperty("const " #type " " #name, &ptr);
+
+// Structure definitions available to scripts.
+#define SCRIPT_STRUCT_START TFE_ScriptSystem::s_prop.clear();
+#define SCRIPT_STRUCT_MEMBER(str, type, name) TFE_ScriptSystem::s_prop.push_back({ #type " " #name, offsetof(str, name) });
+#define SCRIPT_STRUCT_MEMBER_CONST(str, type, name) TFE_ScriptSystem::s_prop.push_back({ "const " #type " " #name, offsetof(str, name) });
+#define SCRIPT_STRUCT_VALUE(str) TFE_ScriptSystem::registerValueType(#str, sizeof(str), TFE_ScriptSystem::getTypeTraits<str>(), TFE_ScriptSystem::s_prop);
+#define SCRIPT_STRUCT_REF(str) TFE_ScriptSystem::registerRefType(#str, TFE_ScriptSystem::s_prop);
+
+// Native Functions
+#define SCRIPT_NATIVE_FUNC(name, decl) TFE_ScriptSystem::registerFunction(#decl, SCRIPT_FUNCTION(name))
+
 namespace TFE_ScriptSystem
 {
 	bool init();
@@ -54,4 +70,6 @@ namespace TFE_ScriptSystem
 	void registerFunction(const char* declaration, const ScriptFuncPtr& funcPtr);
 	
 	void update();
+
+	extern std::vector<ScriptTypeProp> s_prop;
 }

@@ -696,7 +696,7 @@ namespace LevelEditorData
 				dstItem->id |= (0xffffu << 16u);
 			}
 
-			dstItem->type = dstItem->type;
+			dstItem->type = srcItem->type;
 			dstItem->classCount = (u32)srcItem->classData.size();
 			dstItem->classData = (InfClassData*)memoryPool->allocate(sizeof(InfClassData) * dstItem->classCount);
 
@@ -795,7 +795,6 @@ namespace LevelEditorData
 				}
 
 				//Slaves.
-				dstClass->mergeStart = -1;
 				dstClass->mergeStart = -1;
 				dstClass->slaveCount = 0;
 				dstClass->slaves = nullptr;

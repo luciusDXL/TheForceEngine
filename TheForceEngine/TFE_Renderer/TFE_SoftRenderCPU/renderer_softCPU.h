@@ -33,6 +33,9 @@ public:
 	void getResolution(u32* width, u32* height) override;
 	void enableScreenClear(bool enable) override;
 
+	// Temporary.
+	u8*  getDisplay() override { return m_display; }
+
 	// Draw Commands
 	void setPalette(const Palette256* pal) override;
 	void setColorMap(const ColorMap* cmp) override;

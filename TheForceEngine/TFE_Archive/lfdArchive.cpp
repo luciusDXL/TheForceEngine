@@ -14,7 +14,7 @@ bool LfdArchive::create(const char *archivePath)
 	if (!m_archiveOpen) { return false; }
 
 	// Write the directory.
-	LFD_Entry_t root = { 0 }, entry = { 0 };
+	LFD_Entry_t root = { 0 };
 	m_file.writeBuffer(&root, sizeof(LFD_Entry_t));
 	m_fileList.MASTERN = 0;
 	m_fileList.entries = nullptr;
@@ -45,7 +45,7 @@ bool LfdArchive::open(const char *archivePath)
 		char name[9] = { 0 };
 		char ext[5]  = { 0 };
 		memcpy(name, entry.NAME, 8);
-		memcpy(ext, entry.TYPE, 5);
+		memcpy(ext, entry.TYPE, 4);
 		ext[4] = 0;
 
 		sprintf(m_fileList.entries[i].NAME, "%s.%s", name, ext);

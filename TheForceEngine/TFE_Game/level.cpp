@@ -110,9 +110,9 @@ namespace TFE_Level
 				Vec3f pos = object[i].pos;
 				s32 sectorId = TFE_Physics::findSector(&pos);
 
-				secobject->id = i;
+				secobject->objectId = i;
 				secobject->oclass = oclass;
-				secobject->pos = pos;
+				secobject->position = pos;
 				secobject->sectorId = sectorId;
 
 				secobject->angles = object[i].orientation;
@@ -124,7 +124,7 @@ namespace TFE_Level
 				secobject->physicsFlags = object[i].logics.empty() ? PHYSICS_NONE : PHYSICS_GRAVITY;
 				secobject->verticalVel = 0.0f;
 				secobject->show = true;
-				secobject->comFlags = object[i].comFlags;
+				secobject->commonFlags = object[i].comFlags;
 				secobject->radius = object[i].radius;
 				secobject->height = object[i].height;
 				secobject->vueTransform = nullptr;
@@ -136,7 +136,7 @@ namespace TFE_Level
 				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D && oclass != CLASS_SOUND) { continue; }
 				// Skip objects that are not in sectors.
 				if (sectorId < 0) { continue; }
-				if (sectorId >= sectorCount)
+				if (sectorId >= s32(sectorCount))
 				{
 					TFE_System::logWrite(LOG_ERROR, "Level", "Sector ID for object is invalid: %d.", sectorId);
 					continue;
@@ -256,12 +256,12 @@ namespace TFE_Level
 		for (u32 i = 0; i < objCount; i++)
 		{
 			GameObject* obj = &objects[indices[i]];
-			const f32 dFloor  = fabsf(obj->pos.y - height);
-			const f32 dSecAlt = fabsf(obj->pos.y - secAltHeight);
+			const f32 dFloor  = fabsf(obj->position.y - height);
+			const f32 dSecAlt = fabsf(obj->position.y - secAltHeight);
 			if (((flags & MOVE_FLOOR) && dFloor < 0.1f) || ((flags & MOVE_SEC_ALT) && dSecAlt < 0.1f))
 			{
-				obj->pos.x += move->x;
-				obj->pos.z += move->z;
+				obj->position.x += move->x;
+				obj->position.z += move->z;
 			}
 		}
 	}
@@ -286,14 +286,14 @@ namespace TFE_Level
 		for (u32 i = 0; i < objCount; i++)
 		{
 			GameObject* obj = &objects[indices[i]];
-			const f32 dFloor = fabsf(obj->pos.y - height);
-			const f32 dSecAlt = fabsf(obj->pos.y - secAltHeight);
+			const f32 dFloor = fabsf(obj->position.y - height);
+			const f32 dSecAlt = fabsf(obj->position.y - secAltHeight);
 			if (((flags & MOVE_FLOOR) && dFloor < 0.1f) || ((flags & MOVE_SEC_ALT) && dSecAlt < 0.1f))
 			{
-				const f32 x = obj->pos.x - center->x;
-				const f32 z = obj->pos.z - center->z;
-				obj->pos.x =  ca*x + sa*z + center->x;
-				obj->pos.z = -sa*x + ca*z + center->z;
+				const f32 x = obj->position.x - center->x;
+				const f32 z = obj->position.z - center->z;
+				obj->position.x =  ca*x + sa*z + center->x;
+				obj->position.z = -sa*x + ca*z + center->z;
 				obj->angles.y += angleDelta * PI / 180.0f;
 			}
 		}
@@ -312,7 +312,7 @@ namespace TFE_Level
 			GameObject* obj = &objects[indices[i]];
 			f32 testHeight = newHeight;
 			f32 baseHeight = sector->floorAlt;
-			if (sector->secAlt < 0.0f && obj->pos.y < sector->floorAlt + sector->secAlt + 0.1f)
+			if (sector->secAlt < 0.0f && obj->position.y < sector->floorAlt + sector->secAlt + 0.1f)
 			{
 				testHeight += sector->secAlt;
 				baseHeight += sector->secAlt;
@@ -321,9 +321,9 @@ namespace TFE_Level
 			// Move the object if it is close to the floor (so it sticks when going down)
 			// or below the floor.
 			// This way if an object is in the air (jumping, flying) it isn't moved unless necessary.
-			if (obj->pos.y >= testHeight || fabsf(obj->pos.y - baseHeight) < 0.1f)
+			if (obj->position.y >= testHeight || fabsf(obj->position.y - baseHeight) < 0.1f)
 			{
-				obj->pos.y = testHeight;
+				obj->position.y = testHeight;
 			}
 		}
 	}
@@ -345,9 +345,9 @@ namespace TFE_Level
 			// Move the object if it is close to the floor (so it sticks when going down)
 			// or below the floor.
 			// This way if an object is in the air (jumping, flying) it isn't moved unless necessary.
-			if (obj->pos.y >= testHeight || fabsf(obj->pos.y - baseHeight) < 0.1f)
+			if (obj->position.y >= testHeight || fabsf(obj->position.y - baseHeight) < 0.1f)
 			{
-				obj->pos.y = testHeight;
+				obj->position.y = testHeight;
 			}
 		}
 	}
@@ -362,7 +362,7 @@ namespace TFE_Level
 
 		for (u32 i = 0; i < objCount; i++, object++)
 		{
-			object->comFlags &= ~LCF_PAUSE;
+			object->commonFlags &= ~LCF_PAUSE;
 		}
 	}
 
@@ -398,12 +398,32 @@ namespace TFE_Level
 
 		s_levelData->sectors[sectorId].floorAlt = height;
 		s_levelData->sectors[sectorId].center.y = (s_levelData->sectors[sectorId].floorAlt + s_levelData->sectors[sectorId].ceilAlt) * 0.5f;
+		s_levelData->sectors[sectorId].dirty = true;
+
+		const SectorWall* walls = s_levelData->walls.data();
+		for (u32 w = 0; w < s_levelData->sectors[sectorId].wallCount; w++)
+		{
+			if (walls->adjoin >= 0)
+			{
+				s_levelData->sectors[walls->adjoin].dirty = true;
+			}
+		}
 	}
 
 	void setCeilingHeight(s32 sectorId, f32 height)
 	{
 		s_levelData->sectors[sectorId].ceilAlt = height;
 		s_levelData->sectors[sectorId].center.y = (s_levelData->sectors[sectorId].floorAlt + s_levelData->sectors[sectorId].ceilAlt) * 0.5f;
+		s_levelData->sectors[sectorId].dirty = true;
+
+		const SectorWall* walls = s_levelData->walls.data();
+		for (u32 w = 0; w < s_levelData->sectors[sectorId].wallCount; w++)
+		{
+			if (walls->adjoin >= 0)
+			{
+				s_levelData->sectors[walls->adjoin].dirty = true;
+			}
+		}
 	}
 
 	void setSecondHeight(s32 sectorId, f32 height, bool addSectorMotion)
@@ -418,6 +438,7 @@ namespace TFE_Level
 		setObjectSecAlt(sectorId, height);
 
 		s_levelData->sectors[sectorId].secAlt = height;
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	f32 getFloorHeight(s32 sectorId)
@@ -481,10 +502,12 @@ namespace TFE_Level
 					if (adjoined->flags[0] & WF1_WALL_MORPHS)
 					{
 						indices[indexCount++] = adjoined->i0 + adjoinedSec->vtxOffset;
+						adjoinedSec->dirty = true;
 					}
 				}
 			}
 		}
+		sector->dirty = true;
 
 		const Vec2f* srcVtx = s_vertexCache;
 		Vec2f* dstVtx = s_levelData->vertices.data();
@@ -556,10 +579,12 @@ namespace TFE_Level
 					if (adjoined->flags[0] & WF1_WALL_MORPHS)
 					{
 						indices[indexCount++] = adjoined->i0 + adjoinedSec->vtxOffset;
+						adjoinedSec->dirty = true;
 					}
 				}
 			}
 		}
+		sector->dirty = true;
 
 		const Vec2f* srcVtx = s_vertexCache;
 		Vec2f* dstVtx = s_levelData->vertices.data();
@@ -654,6 +679,7 @@ namespace TFE_Level
 				}
 			}
 		}
+		sector->dirty = true;
 	}
 
 	void setTextureOffset(s32 sectorId, SectorPart part, const Vec2f* offset, bool addSectorMotion, bool addSecMotionSecondAlt)
@@ -709,6 +735,7 @@ namespace TFE_Level
 				}
 			}
 		}
+		sector->dirty = true;
 	}
 
 	void setTextureFrame(s32 sectorId, SectorPart part, WallSubPart subpart, u32 frame, s32 wallId)
@@ -743,6 +770,7 @@ namespace TFE_Level
 				s_levelData->walls[sector->wallOffset + wallId].bot.frame = frame;
 			}
 		}
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	void toggleTextureFrame(s32 sectorId, SectorPart part, WallSubPart subpart, s32 wallId)
@@ -777,6 +805,7 @@ namespace TFE_Level
 				s_levelData->walls[sector->wallOffset + wallId].bot.frame = !s_levelData->walls[sector->wallOffset + wallId].bot.frame;
 			}
 		}
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	void setTextureId(s32 sectorId, SectorPart part, WallSubPart subpart, u32 textureId, s32 wallId)
@@ -811,6 +840,7 @@ namespace TFE_Level
 				s_levelData->walls[sector->wallOffset + wallId].bot.texId = textureId;
 			}
 		}
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	Vec2f getTextureOffset(s32 sectorId, SectorPart part, WallSubPart subpart, s32 wallId)
@@ -830,15 +860,15 @@ namespace TFE_Level
 		}
 		else if (part == SP_WALL && wallId >= 0)
 		{
-			if (part == WSP_TOP)
+			if (subpart == WSP_TOP)
 			{
 				return { s_levelData->walls[sector->wallOffset + wallId].top.offsetX, s_levelData->walls[sector->wallOffset + wallId].top.offsetY };
 			}
-			else if (part == WSP_MID)
+			else if (subpart == WSP_MID)
 			{
 				return { s_levelData->walls[sector->wallOffset + wallId].mid.offsetX, s_levelData->walls[sector->wallOffset + wallId].mid.offsetY };
 			}
-			else if (part == WSP_BOT)
+			else if (subpart == WSP_BOT)
 			{
 				return { s_levelData->walls[sector->wallOffset + wallId].bot.offsetX, s_levelData->walls[sector->wallOffset + wallId].bot.offsetY };
 			}
@@ -863,15 +893,15 @@ namespace TFE_Level
 		}
 		else if (part == SP_WALL && wallId >= 0)
 		{
-			if (part == WSP_TOP)
+			if (subpart == WSP_TOP)
 			{
 				return s_levelData->walls[sector->wallOffset + wallId].top.frame;
 			}
-			else if (part == WSP_MID)
+			else if (subpart == WSP_MID)
 			{
 				return s_levelData->walls[sector->wallOffset + wallId].mid.frame;
 			}
-			else if (part == WSP_BOT)
+			else if (subpart == WSP_BOT)
 			{
 				return s_levelData->walls[sector->wallOffset + wallId].bot.frame;
 			}
@@ -925,6 +955,7 @@ namespace TFE_Level
 			if (wallId < 0) { return; }
 			s_levelData->walls[sector->wallOffset + wallId].flags[flagIndex] = flagBits;
 		}
+		sector->dirty = true;
 	}
 
 	void clearFlagBits(s32 sectorId, SectorPart part, u32 flagIndex, u32 flagBits, s32 wallId)
@@ -939,6 +970,7 @@ namespace TFE_Level
 			if (wallId < 0) { return; }
 			s_levelData->walls[sector->wallOffset + wallId].flags[flagIndex] &= ~flagBits;
 		}
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	u32 getFlagBits(s32 sectorId, SectorPart part, u32 flagIndex, s32 wallId)
@@ -960,6 +992,7 @@ namespace TFE_Level
 	void setAmbient(s32 sectorId, u8 ambient)
 	{
 		s_levelData->sectors[sectorId].ambient = ambient;
+		s_levelData->sectors[sectorId].dirty = true;
 	}
 
 	u8 getAmbient(s32 sectorId)
@@ -974,6 +1007,7 @@ namespace TFE_Level
 		for (size_t i = 0; i < count; i++, sector++)
 		{
 			sector->ambient = sector->flags[2];
+			sector->dirty = true;
 		}
 	}
 
@@ -989,5 +1023,8 @@ namespace TFE_Level
 
 		walls[sectors[sector2].wallOffset + wall2].adjoin = sector1;
 		walls[sectors[sector2].wallOffset + wall2].mirror = wall1;
+
+		sectors[sector1].dirty = true;
+		sectors[sector2].dirty = true;
 	}
 }

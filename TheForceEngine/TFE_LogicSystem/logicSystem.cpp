@@ -205,12 +205,12 @@ namespace TFE_LogicSystem
 
 	bool registerObjectLogics(GameObject* gameObject, const std::vector<Logic>& logics, const std::vector<EnemyGenerator>& generators)
 	{
-		if (s_scriptObjects.size() <= gameObject->id)
+		if (s_scriptObjects.size() <= gameObject->objectId)
 		{
-			s_scriptObjects.resize(gameObject->id + 1);
+			s_scriptObjects.resize(gameObject->objectId + 1);
 		}
 
-		const size_t index = gameObject->id;
+		const size_t index = gameObject->objectId;
 		const size_t logicCount = logics.size();
 		const size_t genCount = generators.size();
 
@@ -270,9 +270,9 @@ namespace TFE_LogicSystem
 
 	void damageObject(GameObject* gameObject, s32 damage, DamageType type)
 	{
-		if (gameObject->id >= s_scriptObjects.size()) { return; }
+		if (gameObject->objectId >= s_scriptObjects.size()) { return; }
 
-		ScriptObject* obj = &s_scriptObjects[gameObject->id];
+		ScriptObject* obj = &s_scriptObjects[gameObject->objectId];
 		size_t count = obj->logic.size();
 		ScriptLogic* logic = obj->logic.data();
 		for (size_t i = 0; i < count; i++)
@@ -285,7 +285,7 @@ namespace TFE_LogicSystem
 
 				if (type == DMG_EXPLOSION)
 				{
-					gameObject->pos.y -= 0.2f;
+					gameObject->position.y -= 0.2f;
 					gameObject->verticalVel -= 32.0f;
 				}
 			}
@@ -294,7 +294,7 @@ namespace TFE_LogicSystem
 
 	void sendPlayerCollisionTrigger(const GameObject* gameObject)
 	{
-		ScriptObject* obj = &s_scriptObjects[gameObject->id];
+		ScriptObject* obj = &s_scriptObjects[gameObject->objectId];
 		size_t count = obj->logic.size();
 		ScriptLogic* logic = obj->logic.data();
 		for (size_t i = 0; i < count; i++)
@@ -377,7 +377,7 @@ namespace TFE_LogicSystem
 		{
 			const VueTransform* newTransform = &vue->transforms[frameIndex * vue->transformCount + transformIndex];
 
-			const Vec3f prevPos = obj->gameObj->pos;
+			const Vec3f prevPos = obj->gameObj->position;
 			const Vec3f newPos = newTransform->translation;
 
 			// Trace a ray to update the new sectorId.
@@ -431,7 +431,7 @@ namespace TFE_LogicSystem
 				const size_t prevCount = prevlist.size();
 				for (u32 i = 0; i < prevCount; i++)
 				{
-					if (prevlist[i] == obj->gameObj->id)
+					if (prevlist[i] == obj->gameObj->objectId)
 					{
 						prevlist.erase(prevlist.begin() + i);
 						break;
@@ -440,12 +440,12 @@ namespace TFE_LogicSystem
 
 				// Add to the new sector.
 				std::vector<u32>& newlist = (*secList)[newSectorId].list;
-				newlist.push_back(obj->gameObj->id);
+				newlist.push_back(obj->gameObj->objectId);
 			}
 			obj->gameObj->sectorId = newSectorId;
 
 			// update the object position.
-			obj->gameObj->pos = newPos;
+			obj->gameObj->position = newPos;
 			// set the new transform.
 			obj->gameObj->vueTransform = &newTransform->rotScale;
 		}
@@ -547,11 +547,11 @@ namespace TFE_LogicSystem
 		obj->show = true;
 
 		obj->oclass = ObjectClass(objectClass);
-		obj->id = objectId;
+		obj->objectId = objectId;
 		obj->sectorId = sectorId;
 		obj->angles = angles;
 		obj->scale = { 1.0f,1.0f, 1.0f };
-		obj->pos = pos;
+		obj->position = pos;
 
 		if (objectClass == CLASS_SPRITE)
 		{
@@ -617,7 +617,7 @@ namespace TFE_LogicSystem
 		{
 			// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 			// Note that looping one shots are valid though may generate too many sound sources if not used carefully.
-			TFE_Audio::playOneShot(SoundType(type), volume, MONO_SEPERATION, buffer, false, &s_self->pos);
+			TFE_Audio::playOneShot(SoundType(type), volume, MONO_SEPERATION, buffer, false, &s_self->position);
 		}
 	}
 
@@ -632,142 +632,138 @@ namespace TFE_LogicSystem
 		// register script functions.
 
 		// register types.
-		// Math types (move into math)
-		std::vector<ScriptTypeProp> prop;
-		prop.reserve(16);
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER(Vec2f, float, x);
+		SCRIPT_STRUCT_MEMBER(Vec2f, float, z);
+		SCRIPT_STRUCT_VALUE(Vec2f);
 
-		prop.clear();
-		prop.push_back({ "float x", offsetof(Vec2f, x) });
-		prop.push_back({ "float z", offsetof(Vec2f, z) });
-		TFE_ScriptSystem::registerValueType("Vec2f", sizeof(Vec2f), TFE_ScriptSystem::getTypeTraits<Vec2f>(), prop);
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER(Vec2i, int, x);
+		SCRIPT_STRUCT_MEMBER(Vec2i, int, z);
+		SCRIPT_STRUCT_VALUE(Vec2i);
 
-		prop.clear();
-		prop.push_back({ "int x", offsetof(Vec2i, x) });
-		prop.push_back({ "int z", offsetof(Vec2i, z) });
-		TFE_ScriptSystem::registerValueType("Vec2i", sizeof(Vec2i), TFE_ScriptSystem::getTypeTraits<Vec2i>(), prop);
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER(Vec3f, float, x);
+		SCRIPT_STRUCT_MEMBER(Vec3f, float, y);
+		SCRIPT_STRUCT_MEMBER(Vec3f, float, z);
+		SCRIPT_STRUCT_VALUE(Vec3f);
 
-		prop.clear();
-		prop.push_back({"float x", offsetof(Vec3f, x)});
-		prop.push_back({"float y", offsetof(Vec3f, y)});
-		prop.push_back({"float z", offsetof(Vec3f, z)});
-		TFE_ScriptSystem::registerValueType("Vec3f", sizeof(Vec3f), TFE_ScriptSystem::getTypeTraits<Vec3f>(), prop);
-
-		prop.clear();
-		prop.push_back({"int x", offsetof(Vec3i, x)});
-		prop.push_back({"int y", offsetof(Vec3i, y)});
-		prop.push_back({"int z", offsetof(Vec3i, z)});
-		TFE_ScriptSystem::registerValueType("Vec3i", sizeof(Vec3i), TFE_ScriptSystem::getTypeTraits<Vec3i>(), prop);
-
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER(Vec3i, int, x);
+		SCRIPT_STRUCT_MEMBER(Vec3i, int, y);
+		SCRIPT_STRUCT_MEMBER(Vec3i, int, z);
+		SCRIPT_STRUCT_VALUE(Vec3i);
+		
 		// GameObject type.
-		prop.clear();
-		prop.push_back({ "const int objectId",	offsetof(GameObject, id) });
-		prop.push_back({ "const int sectorId",	offsetof(GameObject, sectorId) });
-		prop.push_back({ "const Vec3f position",offsetof(GameObject, pos) });
-		prop.push_back({ "const Vec3f angles",	offsetof(GameObject, angles) });
-		prop.push_back({ "uint flags",		offsetof(GameObject, flags) });
-		prop.push_back({ "uint messageMask",offsetof(GameObject, messageMask) });
-		prop.push_back({ "int state",		offsetof(GameObject, state) });
-		prop.push_back({ "int hp",			offsetof(GameObject, hp) });
-		prop.push_back({ "float time",		offsetof(GameObject, time) });
-		prop.push_back({ "uint commonFlags", offsetof(GameObject, comFlags) });
-		prop.push_back({ "const float radius", offsetof(GameObject, radius) });
-		prop.push_back({ "const float height", offsetof(GameObject, height) });
-		TFE_ScriptSystem::registerRefType("GameObject", prop);
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER_CONST(GameObject, int, objectId);
+		SCRIPT_STRUCT_MEMBER_CONST(GameObject, int, sectorId);
+		SCRIPT_STRUCT_MEMBER_CONST(GameObject, Vec3f, position);
+		SCRIPT_STRUCT_MEMBER_CONST(GameObject, Vec3f, angles);
+		SCRIPT_STRUCT_MEMBER(GameObject, uint, flags);
+		SCRIPT_STRUCT_MEMBER(GameObject, uint, messageMask);
+		SCRIPT_STRUCT_MEMBER(GameObject, int, state);
+		SCRIPT_STRUCT_MEMBER(GameObject, int, hp);
+		SCRIPT_STRUCT_MEMBER(GameObject, float, time);
+		SCRIPT_STRUCT_MEMBER(GameObject, uint, commonFlags);
+		SCRIPT_STRUCT_MEMBER_CONST(GameObject, float, radius);
+		SCRIPT_STRUCT_MEMBER_CONST(GameObject, float, height);
+		SCRIPT_STRUCT_REF(GameObject);
 
 		// Logic Parameters
-		prop.clear();
-		prop.push_back({"const uint flags", offsetof(Logic, flags) });
-		prop.push_back({"const float frameRate", offsetof(Logic, frameRate) });
-		prop.push_back({"const Vec3f rotation", offsetof(Logic, rotation) });
-		TFE_ScriptSystem::registerRefType("LogicParam", prop);
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER_CONST(LogicParam, uint, flags);
+		SCRIPT_STRUCT_MEMBER_CONST(LogicParam, float, frameRate);
+		SCRIPT_STRUCT_MEMBER_CONST(LogicParam, Vec3f, rotation);
+		SCRIPT_STRUCT_REF(LogicParam);
 
-		prop.clear();
-		prop.push_back({ "const uint type", offsetof(EnemyGenerator, type) });
-		prop.push_back({ "const float delay", offsetof(EnemyGenerator, delay) });
-		prop.push_back({ "const float interval", offsetof(EnemyGenerator, interval) });
-		prop.push_back({ "const float minDist", offsetof(EnemyGenerator, minDist) });
-		prop.push_back({ "const float maxDist", offsetof(EnemyGenerator, maxDist) });
-		prop.push_back({ "const int maxAlive", offsetof(EnemyGenerator, maxAlive) });
-		prop.push_back({ "const int numTerminate", offsetof(EnemyGenerator, numTerminate) });
-		prop.push_back({ "const float wanderTime", offsetof(EnemyGenerator, wanderTime) });
-		TFE_ScriptSystem::registerRefType("GenParam", prop);
+		SCRIPT_STRUCT_START;
+		SCRIPT_STRUCT_MEMBER_CONST(GenParam, uint, type);
+		SCRIPT_STRUCT_MEMBER_CONST(GenParam, float, delay);
+		SCRIPT_STRUCT_MEMBER_CONST(GenParam, float, interval);
+		SCRIPT_STRUCT_MEMBER_CONST(GenParam, float, minDist);
+		SCRIPT_STRUCT_MEMBER_CONST(GenParam, float, maxDist);
+		SCRIPT_STRUCT_MEMBER_CONST(GenParam, int, maxAlive);
+		SCRIPT_STRUCT_MEMBER_CONST(GenParam, int, numTerminate);
+		SCRIPT_STRUCT_MEMBER_CONST(GenParam, float, wanderTime);
+		SCRIPT_STRUCT_REF(GenParam);
 
 		// Functions
-		TFE_ScriptSystem::registerFunction("void TFE_Print(const string &in, Vec3f value)", SCRIPT_FUNCTION(TFE_PrintVec3f));
-		TFE_ScriptSystem::registerFunction("void TFE_ChangeAngles(int objectId, Vec3f angleChange)", SCRIPT_FUNCTION(TFE_ChangeAngles));
-		TFE_ScriptSystem::registerFunction("float TFE_GetAnimFramerate(int objectId, int animationId)", SCRIPT_FUNCTION(TFE_GetAnimFramerate));
-		TFE_ScriptSystem::registerFunction("uint TFE_GetAnimFrameCount(int objectId, int animationId)", SCRIPT_FUNCTION(TFE_GetAnimFrameCount));
-		TFE_ScriptSystem::registerFunction("void TFE_SetAnimFrame(int objectId, int animationId, int frameIndex)", SCRIPT_FUNCTION(TFE_SetAnimFrame));
-		TFE_ScriptSystem::registerFunction("void TFE_SetCollision(int objectId, float radius, float height, uint collisionFlags)", SCRIPT_FUNCTION(TFE_SetCollision));
-		TFE_ScriptSystem::registerFunction("void TFE_SetPhysics(int objectId, uint physicsFlags)", SCRIPT_FUNCTION(TFE_SetPhysics));
-		TFE_ScriptSystem::registerFunction("void TFE_Hide(int objectId)", SCRIPT_FUNCTION(TFE_Hide));
+		SCRIPT_NATIVE_FUNC(TFE_PrintVec3f,        void TFE_Print(const string &in, Vec3f value));
+		SCRIPT_NATIVE_FUNC(TFE_ChangeAngles,      void TFE_ChangeAngles(int objectId, Vec3f angleChange));
+		SCRIPT_NATIVE_FUNC(TFE_GetAnimFramerate,  float TFE_GetAnimFramerate(int objectId, int animationId));
+		SCRIPT_NATIVE_FUNC(TFE_GetAnimFrameCount, uint TFE_GetAnimFrameCount(int objectId, int animationId));
+		SCRIPT_NATIVE_FUNC(TFE_SetAnimFrame,      void TFE_SetAnimFrame(int objectId, int animationId, int frameIndex));
+		SCRIPT_NATIVE_FUNC(TFE_SetCollision,      void TFE_SetCollision(int objectId, float radius, float height, uint collisionFlags));
+		SCRIPT_NATIVE_FUNC(TFE_SetPhysics,        void TFE_SetPhysics(int objectId, uint physicsFlags));
+		SCRIPT_NATIVE_FUNC(TFE_Hide,              void TFE_Hide(int objectId));
 		
-		TFE_ScriptSystem::registerFunction("Vec3f TFE_BiasTowardsPlayer(Vec3f pos, float bias)", SCRIPT_FUNCTION(TFE_BiasTowardsPlayer));
-		TFE_ScriptSystem::registerFunction("int TFE_SpawnObject(Vec3f pos, Vec3f angles, int sectorId, int objectClass, const string &in)", SCRIPT_FUNCTION(TFE_SpawnObject));
-		TFE_ScriptSystem::registerFunction("void TFE_AddLogic(int objectId, int logicId)", SCRIPT_FUNCTION(TFE_AddLogic));
-		TFE_ScriptSystem::registerFunction("void TFE_GivePlayerKey(int keyType)", SCRIPT_FUNCTION(TFE_GivePlayerKey));
-		TFE_ScriptSystem::registerFunction("void TFE_AddGoalItem()", SCRIPT_FUNCTION(TFE_AddGoalItem));
-		TFE_ScriptSystem::registerFunction("void TFE_BossKilled()", SCRIPT_FUNCTION(TFE_BossKilled));
-		TFE_ScriptSystem::registerFunction("void TFE_MohcKilled()", SCRIPT_FUNCTION(TFE_MohcKilled));
-		TFE_ScriptSystem::registerFunction("void TFE_GiveGear()", SCRIPT_FUNCTION(TFE_GiveGear));
+		SCRIPT_NATIVE_FUNC(TFE_BiasTowardsPlayer, Vec3f TFE_BiasTowardsPlayer(Vec3f pos, float bias));
+		SCRIPT_NATIVE_FUNC(TFE_SpawnObject,       int TFE_SpawnObject(Vec3f pos, Vec3f angles, int sectorId, int objectClass, const string &in));
+		SCRIPT_NATIVE_FUNC(TFE_AddLogic,          void TFE_AddLogic(int objectId, int logicId));
+		SCRIPT_NATIVE_FUNC(TFE_GivePlayerKey,     void TFE_GivePlayerKey(int keyType));
+		SCRIPT_NATIVE_FUNC(TFE_AddGoalItem,       void TFE_AddGoalItem());
+		SCRIPT_NATIVE_FUNC(TFE_BossKilled,        void TFE_BossKilled());
+		SCRIPT_NATIVE_FUNC(TFE_MohcKilled,        void TFE_MohcKilled());
+		SCRIPT_NATIVE_FUNC(TFE_GiveGear,          void TFE_GiveGear());
 
-		TFE_ScriptSystem::registerFunction("void TFE_PrintMessage(uint msgId)", SCRIPT_FUNCTION(TFE_PrintMessage));
+		SCRIPT_NATIVE_FUNC(TFE_PrintMessage,      void TFE_PrintMessage(uint msgId));
 
-		TFE_ScriptSystem::registerFunction("float TFE_GetVueLength(int objectId, int viewIndex)", SCRIPT_FUNCTION(TFE_GetVueLength));
-		TFE_ScriptSystem::registerFunction("uint TFE_GetVueCount(int objectId)", SCRIPT_FUNCTION(TFE_GetVueCount));
-		TFE_ScriptSystem::registerFunction("void TFE_SetVueAnimTime(int objectId, int viewIndex, float time)", SCRIPT_FUNCTION(TFE_SetVueAnimTime));
+		SCRIPT_NATIVE_FUNC(TFE_GetVueLength,      float TFE_GetVueLength(int objectId, int viewIndex));
+		SCRIPT_NATIVE_FUNC(TFE_GetVueCount,       uint TFE_GetVueCount(int objectId));
+		SCRIPT_NATIVE_FUNC(TFE_SetVueAnimTime,    void TFE_SetVueAnimTime(int objectId, int viewIndex, float time));
 
-		TFE_ScriptSystem::registerFunction("void TFE_Sound_PlayOneShot(uint type, float volume, const string &in)", SCRIPT_FUNCTION(TFE_Sound_PlayOneShot));
+		SCRIPT_NATIVE_FUNC(TFE_Sound_PlayOneShot, void TFE_Sound_PlayOneShot(uint type, float volume, const string &in));
 
 		// Register "self" and Logic parameters.
-		TFE_ScriptSystem::registerGlobalProperty("GameObject @self",  &s_self);
-		TFE_ScriptSystem::registerGlobalProperty("LogicParam @param", &s_param);
-		TFE_ScriptSystem::registerGlobalProperty("GenParam   @genParam", &s_genParam);
+		SCRIPT_GLOBAL_PROPERTY(GameObject, self,  s_self);
+		SCRIPT_GLOBAL_PROPERTY(LogicParam, param, s_param);
+		SCRIPT_GLOBAL_PROPERTY(GenParam,   genParam, s_genParam);
 
 		// Register enums
-		TFE_ScriptSystem::registerEnumType("LogicMsg");
-		TFE_ScriptSystem::registerEnumValue("LogicMsg", "LOGIC_MSG_DAMAGED", LOGIC_MSG_DAMAGE);
-		TFE_ScriptSystem::registerEnumValue("LogicMsg", "LOGIC_MSG_PLAYER_COLLISION", LOGIC_MSG_PLAYER_COLLISION);
+		SCRIPT_ENUM(LogicMsg);
+		SCRIPT_ENUM_VALUE(LogicMsg, LOGIC_MSG_DAMAGE);
+		SCRIPT_ENUM_VALUE(LogicMsg, LOGIC_MSG_PLAYER_COLLISION);
 
-		TFE_ScriptSystem::registerEnumType("ObjectClass");
-		TFE_ScriptSystem::registerEnumValue("ObjectClass", "CLASS_SPIRIT", CLASS_SPIRIT);
-		TFE_ScriptSystem::registerEnumValue("ObjectClass", "CLASS_SAFE",	CLASS_SAFE);
-		TFE_ScriptSystem::registerEnumValue("ObjectClass", "CLASS_SPRITE", CLASS_SPRITE);
-		TFE_ScriptSystem::registerEnumValue("ObjectClass", "CLASS_FRAME",	CLASS_FRAME);
-		TFE_ScriptSystem::registerEnumValue("ObjectClass", "CLASS_3D",		CLASS_3D);
-		TFE_ScriptSystem::registerEnumValue("ObjectClass", "CLASS_SOUND",	CLASS_SOUND);
+		SCRIPT_ENUM(ObjectClass);
+		SCRIPT_ENUM_VALUE(ObjectClass, CLASS_SPIRIT);
+		SCRIPT_ENUM_VALUE(ObjectClass, CLASS_SAFE);
+		SCRIPT_ENUM_VALUE(ObjectClass, CLASS_SPRITE);
+		SCRIPT_ENUM_VALUE(ObjectClass, CLASS_FRAME);
+		SCRIPT_ENUM_VALUE(ObjectClass, CLASS_3D);
+		SCRIPT_ENUM_VALUE(ObjectClass, CLASS_SOUND);
 
-		TFE_ScriptSystem::registerEnumType("CollisionFlags");
-		TFE_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_NONE", COLLIDE_NONE);
-		TFE_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_TRIGGER", COLLIDE_TRIGGER);
-		TFE_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_PLAYER", COLLIDE_PLAYER);
-		TFE_ScriptSystem::registerEnumValue("CollisionFlags", "COLLIDE_ENEMY", COLLIDE_ENEMY);
+		SCRIPT_ENUM(CollisionFlags);
+		SCRIPT_ENUM_VALUE(CollisionFlags, COLLIDE_NONE);
+		SCRIPT_ENUM_VALUE(CollisionFlags, COLLIDE_TRIGGER);
+		SCRIPT_ENUM_VALUE(CollisionFlags, COLLIDE_PLAYER);
+		SCRIPT_ENUM_VALUE(CollisionFlags, COLLIDE_ENEMY);
 
-		TFE_ScriptSystem::registerEnumType("PhysicsFlags");
-		TFE_ScriptSystem::registerEnumValue("PhysicsFlags", "PHYSICS_NONE", PHYSICS_NONE);
-		TFE_ScriptSystem::registerEnumValue("PhysicsFlags", "PHYSICS_GRAVITY", PHYSICS_GRAVITY);
-		TFE_ScriptSystem::registerEnumValue("PhysicsFlags", "PHYSICS_BOUNCE", PHYSICS_BOUNCE);
+		SCRIPT_ENUM(PhysicsFlags);
+		SCRIPT_ENUM_VALUE(PhysicsFlags, PHYSICS_NONE);
+		SCRIPT_ENUM_VALUE(PhysicsFlags, PHYSICS_GRAVITY);
+		SCRIPT_ENUM_VALUE(PhysicsFlags, PHYSICS_BOUNCE);
 
-		TFE_ScriptSystem::registerEnumType("LogicCommonFlags");
-		TFE_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_EYE",   LCF_EYE);
-		TFE_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_BOSS",  LCF_BOSS);
-		TFE_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_PAUSE", LCF_PAUSE);
-		TFE_ScriptSystem::registerEnumValue("LogicCommonFlags", "LCF_LOOP",  LCF_LOOP);
+		SCRIPT_ENUM(LogicCommonFlags);
+		SCRIPT_ENUM_VALUE(LogicCommonFlags, LCF_EYE);
+		SCRIPT_ENUM_VALUE(LogicCommonFlags, LCF_BOSS);
+		SCRIPT_ENUM_VALUE(LogicCommonFlags, LCF_PAUSE);
+		SCRIPT_ENUM_VALUE(LogicCommonFlags, LCF_LOOP);
 
-		TFE_ScriptSystem::registerEnumType("DamageType");
-		TFE_ScriptSystem::registerEnumValue("DamageType", "DMG_SHOT", DMG_SHOT);
-		TFE_ScriptSystem::registerEnumValue("DamageType", "DMG_FIST", DMG_FIST);
-		TFE_ScriptSystem::registerEnumValue("DamageType", "DMG_EXPLOSION", DMG_EXPLOSION);
+		SCRIPT_ENUM(DamageType);
+		SCRIPT_ENUM_VALUE(DamageType, DMG_SHOT);
+		SCRIPT_ENUM_VALUE(DamageType, DMG_FIST);
+		SCRIPT_ENUM_VALUE(DamageType, DMG_EXPLOSION);
 
-		TFE_ScriptSystem::registerEnumType("SoundType");
-		TFE_ScriptSystem::registerEnumValue("SoundType", "SOUND_2D", SOUND_2D);
-		TFE_ScriptSystem::registerEnumValue("SoundType", "SOUND_3D", SOUND_3D);
-				
+		SCRIPT_ENUM(SoundType);
+		SCRIPT_ENUM_VALUE(SoundType, SOUND_2D);
+		SCRIPT_ENUM_VALUE(SoundType, SOUND_3D);
+
 		registerKeyTypes();
 		registerLogicTypes();
 			   
 		// Register global constants.
-		TFE_ScriptSystem::registerGlobalProperty("const float timeStep", &c_step);
+		SCRIPT_GLOBAL_PROPERTY_CONST(float, timeStep, c_step);
 
 		return true;
 	}
@@ -834,122 +830,122 @@ namespace TFE_LogicSystem
 
 	void registerKeyTypes()
 	{
-		TFE_ScriptSystem::registerEnumType("KeyType");
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_RED", KEY_RED);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_YELLOW", KEY_YELLOW);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_BLUE", KEY_BLUE);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_1", KEY_CODE_1);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_2", KEY_CODE_2);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_3", KEY_CODE_3);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_4", KEY_CODE_4);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_5", KEY_CODE_5);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_6", KEY_CODE_6);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_7", KEY_CODE_7);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_8", KEY_CODE_8);
-		TFE_ScriptSystem::registerEnumValue("KeyType", "KEY_CODE_9", KEY_CODE_9);
+		SCRIPT_ENUM(KeyType);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_RED);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_YELLOW);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_BLUE);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_1);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_2);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_3);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_4);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_5);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_6);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_7);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_8);
+		SCRIPT_ENUM_VALUE(KeyType, KEY_CODE_9);
 	}
 
 	void registerLogicTypes()
 	{
-		TFE_ScriptSystem::registerEnumType("LogicType");
+		SCRIPT_ENUM(LogicType);
 		// Player
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_PLAYER", LOGIC_PLAYER);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_SHIELD", LOGIC_SHIELD);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_BATTERY", LOGIC_BATTERY);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CLEATS", LOGIC_CLEATS);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_GOGGLES", LOGIC_GOGGLES);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_MASK", LOGIC_MASK);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_MEDKIT", LOGIC_MEDKIT);
-					// Weapons -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_RIFLE", LOGIC_RIFLE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_AUTOGUN", LOGIC_AUTOGUN);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_FUSION", LOGIC_FUSION);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_MORTAR", LOGIC_MORTAR);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CONCUSSION", LOGIC_CONCUSSION);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CANNON", LOGIC_CANNON);
-			// Ammo -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_ENERGY", LOGIC_ENERGY);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_DETONATOR", LOGIC_DETONATOR);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_DETONATORS", LOGIC_DETONATORS);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_POWER", LOGIC_POWER);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_MINE", LOGIC_MINE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_MINES", LOGIC_MINES);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_SHELL", LOGIC_SHELL);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_SHELLS", LOGIC_SHELLS);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_PLASMA", LOGIC_PLASMA);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_MISSILE", LOGIC_MISSILE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_MISSILES", LOGIC_MISSILES);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_PLAYER);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_SHIELD);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_BATTERY);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CLEATS);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_GOGGLES);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_MASK);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_MEDKIT);
+		// Weapons -
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_RIFLE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_AUTOGUN);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_FUSION);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_MORTAR);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CONCUSSION);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CANNON);
+		// Ammo -
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_ENERGY);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_DETONATOR);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_DETONATORS);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_POWER);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_MINE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_MINES);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_SHELL);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_SHELLS);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_PLASMA);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_MISSILE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_MISSILES);
 		// Bonuses -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_SUPERCHARGE", LOGIC_SUPERCHARGE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_INVINCIBLE", LOGIC_INVINCIBLE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_LIFE", LOGIC_LIFE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_REVIVE", LOGIC_REVIVE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_SUPERCHARGE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_INVINCIBLE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_LIFE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_REVIVE);
 		// Keys -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_BLUE", LOGIC_BLUE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_RED", LOGIC_RED);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_YELLOW", LOGIC_YELLOW);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE1", LOGIC_CODE1);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE2", LOGIC_CODE2);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE3", LOGIC_CODE3);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE4", LOGIC_CODE4);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE5", LOGIC_CODE5);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE6", LOGIC_CODE6);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE7", LOGIC_CODE7);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE8", LOGIC_CODE8);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_CODE9", LOGIC_CODE9);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_BLUE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_RED);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_YELLOW);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE1);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE2);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE3);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE4);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE5);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE6);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE7);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE8);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_CODE9);
 		// Goal items -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_DATATAPE", LOGIC_DATATAPE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_PLANS", LOGIC_PLANS);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_DT_WEAPON", LOGIC_DT_WEAPON);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "CLASLOGIC_NAVAS_SPIRIT", LOGIC_NAVA);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_PHRIK", LOGIC_PHRIK);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_PILE", LOGIC_PILE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_DATATAPE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_PLANS);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_DT_WEAPON);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_NAVA);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_PHRIK);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_PILE);
 		// Enemy logics
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_GENERATOR", LOGIC_GENERATOR);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_GENERATOR);
 		// Imperials -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER", LOGIC_I_OFFICER);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICERR", LOGIC_I_OFFICERR);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICERB", LOGIC_I_OFFICERB);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICERY", LOGIC_I_OFFICERY);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER1", LOGIC_I_OFFICER1);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER2", LOGIC_I_OFFICER2);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER3", LOGIC_I_OFFICER3);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER4", LOGIC_I_OFFICER4);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER5", LOGIC_I_OFFICER5);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER6", LOGIC_I_OFFICER6);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER7", LOGIC_I_OFFICER7);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER8", LOGIC_I_OFFICER8);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_I_OFFICER9", LOGIC_I_OFFICER9);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_TROOP", LOGIC_TROOP);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_STORM1", LOGIC_STORM1);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_COMMANDO", LOGIC_COMMANDO);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICERR);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICERB);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICERY);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER1);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER2);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER3);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER4);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER5);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER6);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER7);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER8);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_I_OFFICER9);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_TROOP);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_STORM1);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_COMMANDO);
 		// Aliens -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_BOSSK", LOGIC_BOSSK);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_G_GUARD", LOGIC_G_GUARD);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_REE_YEES", LOGIC_REE_YEES);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_REE_YEES2", LOGIC_REE_YEES2);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_SEWER1", LOGIC_SEWER1);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_BOSSK);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_G_GUARD);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_REE_YEES);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_REE_YEES2);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_SEWER1);
 		// Robots -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_INT_DROID", LOGIC_INT_DROID);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_PROBE_DROID", LOGIC_PROBE_DROID);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_REMOTE", LOGIC_REMOTE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_INT_DROID);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_PROBE_DROID);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_REMOTE);
 		// Bosses -
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_BOBA_FETT", LOGIC_BOBA_FETT);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_KELL", LOGIC_KELL);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_D_TROOP1", LOGIC_D_TROOP1);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_D_TROOP2", LOGIC_D_TROOP2);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_D_TROOP3", LOGIC_D_TROOP3);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_BOBA_FETT);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_KELL);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_D_TROOP1);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_D_TROOP2);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_D_TROOP3);
 		// Special sprite logics
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_SCENERY", LOGIC_SCENERY);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_ANIM", LOGIC_ANIM);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_BARREL", LOGIC_BARREL);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_LAND_MINE", LOGIC_LAND_MINE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_SCENERY);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_ANIM);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_BARREL);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_LAND_MINE);
 		// 3D object logics
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_TURRET", LOGIC_TURRET);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_MOUSEBOT", LOGIC_MOUSEBOT);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_WELDER", LOGIC_WELDER);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_TURRET);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_MOUSEBOT);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_WELDER);
 		// 3D object motion logics
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_UPDATE", LOGIC_UPDATE);
-		TFE_ScriptSystem::registerEnumValue("LogicType", "LOGIC_KEY", LOGIC_KEY);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_UPDATE);
+		SCRIPT_ENUM_VALUE(LogicType, LOGIC_KEY);
 	}
 }

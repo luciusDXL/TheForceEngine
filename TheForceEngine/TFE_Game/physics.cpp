@@ -116,12 +116,12 @@ namespace TFE_Physics
 			if (curObj->collisionFlags & COLLIDE_PLAYER)
 			{
 				// overlap collision
-				const Vec2f objPosXZ = { curObj->pos.x, curObj->pos.z };
+				const Vec2f objPosXZ = { curObj->position.x, curObj->position.z };
 				if (TFE_Math::distanceSq(&newPosXZ, &objPosXZ) < rSq + curObj->collisionRadius*curObj->collisionRadius)
 				{
 					// do heights overlap?
 					f32 h0[] = { newPos->y, newPos->y - 6.0f };
-					f32 h1[] = { curObj->pos.y, curObj->pos.y - curObj->collisionHeight };
+					f32 h1[] = { curObj->position.y, curObj->position.y - curObj->collisionHeight };
 					if (h0[0] > h1[1] && h1[0] > h0[1])
 					{
 						if (curObj->collisionFlags & COLLIDE_TRIGGER)
@@ -199,12 +199,12 @@ namespace TFE_Physics
 				if (curObj->collisionFlags & COLLIDE_PLAYER)
 				{
 					// overlap collision
-					const Vec2f objPosXZ = { curObj->pos.x, curObj->pos.z };
+					const Vec2f objPosXZ = { curObj->position.x, curObj->position.z };
 					if (TFE_Math::distanceSq(&newPosXZ, &objPosXZ) < rSq + curObj->collisionRadius*curObj->collisionRadius)
 					{
 						// do heights overlap?
 						f32 h0[] = { newPos->y, newPos->y - 6.0f };
-						f32 h1[] = { curObj->pos.y, curObj->pos.y - curObj->collisionHeight };
+						f32 h1[] = { curObj->position.y, curObj->position.y - curObj->collisionHeight };
 						if (h0[0] > h1[1] && h1[0] > h0[1])
 						{
 							if (curObj->collisionFlags & COLLIDE_TRIGGER)
@@ -1247,7 +1247,7 @@ namespace TFE_Physics
 		for (u32 i = 0; i < s_spriteCount; i++)
 		{
 			const GameObject* obj = &objects[s_spritesToCheck[i]];
-			const Vec2f objPosxz = { obj->pos.x, obj->pos.z };
+			const Vec2f objPosxz = { obj->position.x, obj->position.z };
 			f32 t[2];
 			Vec2f points[2];
 			if (intersectLineCircle(p0xz, dirxz, objPosxz, obj->collisionRadius, t, points))
@@ -1263,11 +1263,11 @@ namespace TFE_Physics
 				{
 					// check if the height is in range.
 					f32 intersectHeight = p0.y + t[minPt] * ray->dir.y;
-					if (intersectHeight <= obj->pos.y && intersectHeight >= obj->pos.y - obj->collisionHeight)
+					if (intersectHeight <= obj->position.y && intersectHeight >= obj->position.y - obj->collisionHeight)
 					{
 						spriteHitPoint = { points[minPt].x, intersectHeight, points[minPt].z };
 						minDist = t[minPt];
-						closestSprite = s32(obj->id);
+						closestSprite = s32(obj->objectId);
 						spriteSectorId = obj->sectorId;
 					}
 				}

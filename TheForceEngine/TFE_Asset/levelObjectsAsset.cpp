@@ -130,7 +130,7 @@ namespace TFE_LevelObjects
 					{
 						outFile.writeString("            VUE_APPEND: %s \"%s\"\r\n", logic->vueAppend->name, TFE_VueAsset::getTransformName(logic->vueAppend, logic->vueAppendId));
 					}
-					outFile.writeString("            PAUSE: %s\r\n", obj->comFlags & LCF_PAUSE ? "TRUE" : "FALSE");
+					outFile.writeString("            PAUSE: %s\r\n", (obj->comFlags & LCF_PAUSE) ? "TRUE" : "FALSE");
 					if (logic->frameRate != 0.0f) { outFile.writeString("            FRAME_RATE: %2.2f\r\n", logic->frameRate); }
 				}
 				else if (logic->type == LOGIC_SCENERY)

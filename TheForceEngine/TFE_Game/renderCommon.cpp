@@ -31,6 +31,11 @@ namespace TFE_RenderCommon
 		s_nightVision = false;
 	}
 
+	LightMode getLightMode()
+	{
+		return s_lightMode;
+	}
+
 	bool isNightVisionEnabled()
 	{
 		return s_nightVision;

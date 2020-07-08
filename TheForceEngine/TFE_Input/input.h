@@ -12,6 +12,8 @@
 #include <TFE_System/types.h>
 #include <TFE_Input/inputEnum.h>
 
+typedef void(*KeyBindingCallback)(f32 value);
+
 namespace TFE_Input
 {
 	// Call this once at the end of each frame
@@ -38,7 +40,7 @@ namespace TFE_Input
 	// Buffered Input
 	void setBufferedInput(const char* text);
 	void setBufferedKey(KeyboardCode key);
-		
+
 	// Get
 	f32 getAxis(Axis axis);
 	void getMouseMove(s32* x, s32* y);
@@ -54,4 +56,11 @@ namespace TFE_Input
 	// Buffered Input
 	const char* getBufferedText();
 	bool bufferedKeyDown(KeyboardCode key);
+
+	bool loadKeyNames(const char* path);
+	const char* getControllerAxisName(Axis axis);
+	const char* getControllButtonName(Button button);
+	const char* getMouseAxisName(MouseAxis axis);
+	const char* getMouseButtonName(MouseButton button);
+	const char* getKeyboardName(KeyboardCode key);
 };

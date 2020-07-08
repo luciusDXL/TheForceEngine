@@ -3,6 +3,7 @@
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_System/system.h>
+#include <TFE_System/profiler.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <vector>
 
@@ -67,6 +68,8 @@ namespace BlitOpenGL
 				
 	void blitToScreen(TextureGpu* texture, s32 x, s32 y, s32 width, s32 height)
 	{
+		TFE_ZONE("Blit To Screen (CPU)");
+
 		DisplayInfo display;
 		TFE_RenderBackend::getDisplayInfo(&display);
 		const f32 scaleX = 2.0f * f32(width) / f32(display.width);

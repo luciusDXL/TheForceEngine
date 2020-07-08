@@ -45,11 +45,11 @@ struct GameObject
 	bool show;
 
 	// General
-	u32 id;
+	u32 objectId;
 	s32 sectorId;
 	f32 verticalVel;
 	f32 zbias;
-	Vec3f pos;
+	Vec3f position;
 	Vec3f angles;
 	Vec3f scale;
 	
@@ -65,7 +65,7 @@ struct GameObject
 	f32 time;			// generic time field, useful for animations and other effects requiring timing.
 
 	// Common Variables.
-	u32 comFlags = 0;		// common flags - see LogicCommonFlags.
+	u32 commonFlags = 0;		// common flags - see LogicCommonFlags.
 	f32 radius = 0.0f;
 	f32 height = 0.0f;
 

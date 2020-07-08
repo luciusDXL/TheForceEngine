@@ -10,6 +10,7 @@
 #include <TFE_Asset/modelAsset.h>
 
 #include <TFE_System/system.h>
+#include <TFE_System/profiler.h>
 #include <assert.h>
 #include <algorithm>
 
@@ -148,26 +149,28 @@ void TFE_SoftRenderCPU::applyColorEffect()
 
 void TFE_SoftRenderCPU::end()
 {
-	// Convert from 8 bit to 32 bit.
-	const u32 pixelCount = m_width * m_height;
-	const u32* pal = m_curPal.colors;
-	if (m_enableNightVision)
-	{
-		for (u32 p = 0; p < pixelCount; p++)
+	TFE_ZONE_BEGIN(softConv, "8bit to 32bit Conversion");
+		// Convert from 8 bit to 32 bit.
+		const u32 pixelCount = m_width * m_height;
+		const u32* pal = m_curPal.colors;
+		if (m_enableNightVision)
 		{
-			m_display32[p] = m_greenScalePal[m_display[p]];
+			for (u32 p = 0; p < pixelCount; p++)
+			{
+				m_display32[p] = m_greenScalePal[m_display[p]];
+			}
 		}
-	}
-	else
-	{
-		for (u32 p = 0; p < pixelCount; p++)
+		else
 		{
-			m_display32[p] = pal[m_display[p]];
+			for (u32 p = 0; p < pixelCount; p++)
+			{
+				m_display32[p] = pal[m_display[p]];
+			}
 		}
-	}
 
-	// TODO: Add spot for overlay so that effects can be applied to the background but not the overlay.
-	// ...
+		// TODO: Add spot for overlay so that effects can be applied to the background but not the overlay.
+		// ...
+	TFE_ZONE_END(softConv);
 
 	TFE_RenderBackend::updateVirtualDisplay(m_display32, m_width * m_height * 4u);
 	m_frame++;

@@ -137,6 +137,9 @@
     <Filter Include="Source\TFE_Settings\registry">
       <UniqueIdentifier>{10925be4-50d6-4ecd-af01-46e353a79d4b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Game\RendererClassic">
+      <UniqueIdentifier>{3b43ebc1-af67-4c34-82cd-5b9a540b2393}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -502,6 +505,48 @@
     <ClInclude Include="TFE_Settings\gameSourceData.h">
       <Filter>Source\TFE_Settings</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rendererClassic.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\fixedPoint.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rmath.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rsector.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rwall.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rcommon.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rflat.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rlighting.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\redgePair.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rlimits.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\rtexture.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_System\profiler.h">
+      <Filter>Source\TFE_System</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_FrontEndUI\profilerView.h">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\gameControlMapping.h">
+      <Filter>Source\TFE_Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -812,6 +857,39 @@
     </ClCompile>
     <ClCompile Include="TFE_Settings\windows\registry.cpp">
       <Filter>Source\TFE_Settings\registry</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rendererClassic.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rwall.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rcommon.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rflat.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rlighting.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rsector.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\redgePair.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\rtexture.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_System\profiler.cpp">
+      <Filter>Source\TFE_System</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_FrontEndUI\profilerView.cpp">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\gameControlMapping.cpp">
+      <Filter>Source\TFE_Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

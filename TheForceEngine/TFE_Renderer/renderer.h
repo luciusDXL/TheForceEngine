@@ -39,6 +39,9 @@ public:
 	virtual void getResolution(u32* width, u32* height) = 0;
 	virtual void enableScreenClear(bool enable) = 0;
 
+	// Temporary.
+	virtual u8*  getDisplay() = 0;
+
 	// Draw Commands
 	virtual void setPalette(const Palette256* pal) = 0;
 	virtual void setColorMap(const ColorMap* cmp) = 0;

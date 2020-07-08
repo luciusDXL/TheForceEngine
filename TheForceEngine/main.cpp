@@ -1,6 +1,7 @@
 // main.cpp : Defines the entry point for the application.
 #include <SDL.h>
 #include <TFE_System/types.h>
+#include <TFE_System/profiler.h>
 #include <TFE_ScriptSystem/scriptSystem.h>
 #include <TFE_InfSystem/infSystem.h>
 #include <TFE_Editor/editor.h>
@@ -286,8 +287,11 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
 			renderer->enableScreenClear(false);
 			TFE_Input::enableRelativeMode(true);
-			TFE_GameMain::init(renderer);
-			TFE_GameUi::updateUiResolution();
+			if (TFE_FrontEndUI::restartGame())
+			{
+				TFE_GameMain::init(renderer);
+				TFE_GameUi::updateUiResolution();
+			}
 		}
 		else
 		{
@@ -309,6 +313,12 @@ int main(int argc, char* argv[])
 	TFE_System::logOpen("the_force_engine_log.txt");
 	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine v%d.%02d.%03d", TFE_MAJOR_VERSION, TFE_MINOR_VERSION, TFE_BUILD_VERSION);
 	if (!pathsSet)
+	{
+		return PROGRAM_ERROR;
+	}
+
+	// Before loading settings, read in the Input key lists.
+	if (!TFE_Input::loadKeyNames("UI_Text/KeyText.txt"))
 	{
 		return PROGRAM_ERROR;
 	}
@@ -406,11 +416,17 @@ int main(int argc, char* argv[])
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
 	while (s_loop)
 	{
+		TFE_FRAME_BEGIN();
+
 		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)
 		{
 			relativeMode = enableRelative;
 			SDL_SetRelativeMouseMode(relativeMode ? SDL_TRUE : SDL_FALSE);
+		}
+		if (TFE_FrontEndUI::shouldClearScreen())
+		{
+			renderer->enableScreenClear(true);
 		}
 
 		// System events
@@ -445,6 +461,15 @@ int main(int argc, char* argv[])
 		if (TFE_Input::keyPressed(KEY_GRAVE))
 		{
 			TFE_FrontEndUI::toggleConsole();
+		}
+		if (TFE_Input::keyPressed(KEY_F10))
+		{
+			TFE_FrontEndUI::toggleProfilerView();
+		}
+		if ((TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1))
+		{
+			TFE_FrontEndUI::enableConfigMenu();
+			TFE_FrontEndUI::setMenuReturnState(s_curState);
 		}
 
 		TFE_System::update();
@@ -486,6 +511,8 @@ int main(int argc, char* argv[])
 		// Clear transitory input state.
 		TFE_Input::endFrame();
 		frame++;
+
+		TFE_FRAME_END();
 	}
 
 	// Cleanup
