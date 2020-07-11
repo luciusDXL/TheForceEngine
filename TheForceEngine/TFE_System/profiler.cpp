@@ -263,12 +263,12 @@ namespace TFE_Profiler
 
 	u32 getZoneCount()
 	{
-		return (u32)s_zoneList.size();
+		return (u32)s_sortedZoneList.size();
 	}
 
 	void getZoneInfo(u32 index, TFE_ZoneInfo* info)
 	{
-		if (index >= (u32)s_zoneList.size()) { return; }
+		if (index >= (u32)s_sortedZoneList.size()) { return; }
 
 		Zone& zone = s_zoneList[s_sortedZoneList[index]];
 		info->name = zone.name;
