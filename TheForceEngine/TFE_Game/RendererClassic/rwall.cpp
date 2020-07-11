@@ -424,7 +424,7 @@ namespace RClassicWall
 			// TODO : fix this 
 			bool processed = (s_drawFrame == srcWall->drawFrame);
 			//bool processed = false;
-			bool insideWindow = ((srcSeg->z0 >= s_minSegZ || srcSeg->z1 >= s_minSegZ) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX);
+			bool insideWindow = ((srcSeg->z0 >= s_windowMinZ || srcSeg->z1 >= s_windowMinZ) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX);
 			if (!processed && insideWindow)
 			{
 				// Copy the source segment into "newSeg" so it can be modified.
@@ -470,7 +470,7 @@ namespace RClassicWall
 							if ((segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0 ||	// (outV0, 0) does NOT cross (newV0, newV1)
 								 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0) &&	// (outV1, 0) does NOT cross (newV0, newV1)
 								(segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||	// (newV0, 0) crosses (outV0, outV1)
-								 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0))		// (newV1, 0) crosses (outV0, outV1)
+								 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0))	// (newV1, 0) crosses (outV0, outV1)
 							{
 								side = BACK;
 							}

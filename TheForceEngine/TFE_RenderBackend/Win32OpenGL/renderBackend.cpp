@@ -124,12 +124,12 @@ namespace TFE_RenderBackend
 		if (blitVirtualDisplay) { drawVirtualDisplay(); }
 		else { glClear(GL_COLOR_BUFFER_BIT); }
 
-		TFE_ZONE_BEGIN(swapUi, "System UI");
+		TFE_ZONE_BEGIN(systemUi, "System UI");
 		// Handle the UI.
 		TFE_Ui::render();
 		// Reset the state due to UI changes.
 		TFE_RenderState::clear();
-		TFE_ZONE_END(swapUi);
+		TFE_ZONE_END(systemUi);
 
 		TFE_ZONE_BEGIN(swapGpu, "GPU Swap Buffers");
 		// Update the window.

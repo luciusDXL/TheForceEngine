@@ -117,7 +117,7 @@ namespace RendererClassic
 		s_maxScreenX = s_width - 1;
 		s_minScreenY = 1;
 		s_maxScreenY = s_height - 1;
-		s_minSegZ = 0;
+		s_windowMinZ = 0;
 
 		s_windowX0 = s_minScreenX;
 		s_windowX1 = s_maxScreenX;
@@ -231,7 +231,7 @@ namespace RendererClassic
 		s_maxAdjoinIndex = 0;
 		s_adjoinSegCount = 1;
 		s_adjoinIndex = 0;
-		s_minSegZ = 0;
+		s_windowMinZ = 0;
 
 		s_adjoinDepth = 1;
 		s_maxAdjoinDepth = 1;

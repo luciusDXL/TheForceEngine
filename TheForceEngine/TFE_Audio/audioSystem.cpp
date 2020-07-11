@@ -125,6 +125,18 @@ namespace TFE_Audio
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
+	// Issue - too many locks, wasted time looping over inactive sources.
+	// TODO: Reduce audio thread cost and remove locks:
+	// 1. SoundSource base array.
+	// 2. SoundSource active array, only contains active sounds, sounds with data, etc.
+	// 3. Add small queue with finished sounds; do cleanup during main thread update().
+	//
+	// Better:
+	// Keep threads data seperate.
+	// Add command buffer.
+	// Add/Remove from main thread (add sound when play is called, set volume, etc.)
+	// Setup finished queue to handle sounds finishing.
+
 	void update(const Vec3f* listenerPos, const Vec3f* listenerDir)
 	{
 		// Currently positional audio only accounts for the "horizontal plane"
@@ -368,7 +380,7 @@ namespace TFE_Audio
 
 		return sampleValue * c_scale[type] + c_offset[type];
 	}
-
+		
 	// Audio callback
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData)
 	{

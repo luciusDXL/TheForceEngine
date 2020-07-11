@@ -254,7 +254,7 @@ namespace TFE_LevelAsset
 			else if (strcasecmp("SECTOR", tokens[0].c_str()) == 0)
 			{
 				curSectorIndex++;
-				// Some levels have IDs that don't match indices, so just use the index for id [id = strtoul(tokens[1].c_str(), &endPtr, 10)]
+				// Some levels have IDs that don't match indices, so adjust the number of sectors if needed.
 				if (curSectorIndex >= s_data.sectors.size())
 				{
 					s_data.sectors.resize(curSectorIndex + 1);

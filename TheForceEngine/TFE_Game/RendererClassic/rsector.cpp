@@ -340,7 +340,7 @@ namespace RClassicSector
 						}
 					}
 
-					s_minSegZ = min(curAdjoinSeg->z0, curAdjoinSeg->z1);
+					s_windowMinZ = min(curAdjoinSeg->z0, curAdjoinSeg->z1);
 					sector_draw(nextSector);
 
 					if (s_adjoinDepth)

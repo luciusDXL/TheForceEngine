@@ -50,7 +50,7 @@ namespace RendererClassic
 	extern s32 s_windowMaxY;
 	extern s32 s_windowMaxCeil;
 	extern s32 s_windowMinFloor;
-	extern fixed16 s_minSegZ;
+	extern fixed16 s_windowMinZ;
 	
 	// Display
 	extern u8* s_display;
