@@ -4,8 +4,7 @@ I believe that I have captured all of the individual contributors and dependenci
 ## Individual Contributors
 luciusDXL (me) - Principle Developer / Project Lead (really only developer for now)
 
-Craig Yates - Minimalist title screen design.
-klasodeth - Small size logo idea (for the website and application icon).
+Craig Yates - TFE Logo design. Minimalist title screen design.
 Bela Lugosi is cold (and dead) - Thorough testing and very cool test levels that are now used internally to provide regression testing.
 
 ## Libraries / Source Code

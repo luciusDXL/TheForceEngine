@@ -72,7 +72,7 @@ bool TextureGpu::createFilterTex()
 	return true;
 }
 
-bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer)
+bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFilter magFilter)
 {
 	m_width = width;
 	m_height = height;
@@ -86,7 +86,7 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer)
 	f32 maxAniso = 1.0f;
 	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_NONE ? GL_NEAREST : GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, maxAniso);

@@ -8,6 +8,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_Asset/imageAsset.h>
 #include <TFE_Input/input.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
@@ -18,6 +19,13 @@
 
 namespace TFE_FrontEndUI
 {
+	struct UiImage
+	{
+		void* image;
+		u32 width;
+		u32 height;
+	};
+
 	enum SubUI
 	{
 		FEUI_NONE = 0,
@@ -114,6 +122,7 @@ namespace TFE_FrontEndUI
 	static AppState s_appState;
 	static AppState s_menuRetState;
 	static ImFont* s_menuFont;
+	static ImFont* s_versionFont;
 	static ImFont* s_titleFont;
 	static ImFont* s_dialogFont;
 	static SubUI s_subUI;
@@ -124,6 +133,9 @@ namespace TFE_FrontEndUI
 	static bool s_relativeMode;
 	static bool s_restartGame;
 
+	static UiImage s_logoGpuImage;
+	static UiImage s_titleGpuImage;
+
 	void configAbout();
 	void configGame();
 	void configGraphics();
@@ -131,6 +143,22 @@ namespace TFE_FrontEndUI
 	void pickCurrentResolution();
 	void manual();
 	void credits();
+		
+	bool loadGpuImage(const char* localPath, UiImage* uiImage)
+	{
+		char imagePath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
+		Image* image = TFE_Image::get(imagePath);
+		if (image)
+		{
+			TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+			uiImage->image = TFE_RenderBackend::getGpuPtr(gpuImage);
+			uiImage->width = image->width;
+			uiImage->height = image->height;
+			return true;
+		}
+		return false;
+	}
 	
 	void init()
 	{
@@ -143,8 +171,18 @@ namespace TFE_FrontEndUI
 
 		ImGuiIO& io = ImGui::GetIO();
 		s_menuFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 32);
+		s_versionFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 16);
 		s_titleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 48);
 		s_dialogFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 20);
+
+		if (!loadGpuImage("UI_Images/TFE_TitleLogo.png", &s_logoGpuImage))
+		{
+			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE logo: \"UI_Images/TFE_TitleLogo.png\"");
+		}
+		if (!loadGpuImage("UI_Images/TFE_TitleText.png", &s_titleGpuImage))
+		{
+			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE Title: \"UI_Images/TFE_TitleText.png\"");
+		}
 
 		s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
 
@@ -280,14 +318,43 @@ namespace TFE_FrontEndUI
 		{
 			s_menuRetState = APP_STATE_MENU;
 			s_relativeMode = false;
+						
+			const f32 windowPadding = 16.0f;	// required padding so that a window completely holds a control without clipping.
+			const u32 windowInvisFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings;
+
+			const s32 logoScale = 2160;	// logo and title are authored for 2160p so it looks good at high resolutions, such as 1440p and 4k.
+			const s32 posScale = 1080;	// positions are at 1080p so must be scaled for different resolutions.
+			const s32 titlePosY = 100;
+			
+			const s32 logoHeight  = s_logoGpuImage.height  * h / logoScale;
+			const s32 logoWidth   = s_logoGpuImage.width   * h / logoScale;
+			const s32 titleHeight = s_titleGpuImage.height * h / logoScale;
+			const s32 titleWidth  = s_titleGpuImage.width  * h / logoScale;
+			const s32 topOffset = titlePosY * h / posScale;
 
 			// Title
-			ImGui::PushFont(s_titleFont);
-			ImGui::SetNextWindowPos(ImVec2(f32((w - 16*24 - 24) / 2), 100.0f));
 			bool titleActive = true;
-			ImGui::Begin("##Title", &titleActive, ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
-			ImGui::Text("The Force Engine");
+			ImGui::SetNextWindowSize(ImVec2(logoWidth + windowPadding, logoHeight + windowPadding));
+			ImGui::SetNextWindowPos(ImVec2(f32((w - logoWidth - titleWidth) / 2), (f32)topOffset));
+			ImGui::Begin("##Logo", &titleActive, windowInvisFlags);
+			ImGui::Image(s_logoGpuImage.image, ImVec2((f32)logoWidth, (f32)logoHeight));
 			ImGui::End();
+
+			ImGui::SetNextWindowSize(ImVec2(titleWidth + windowPadding, titleWidth + windowPadding));
+			ImGui::SetNextWindowPos(ImVec2(f32((w + logoWidth - titleWidth) / 2), (f32)topOffset + (logoHeight - titleHeight)/2));
+			ImGui::Begin("##Title", &titleActive, windowInvisFlags);
+			ImGui::Image(s_titleGpuImage.image, ImVec2((f32)titleWidth, (f32)titleHeight));
+			ImGui::End();
+
+			ImGui::PushFont(s_versionFont);
+				char versionText[256];
+				sprintf(versionText, "Version %s", TFE_System::getVersionString());
+				const f32 stringWidth = s_versionFont->CalcTextSizeA(16.0f, 1024.0f, 0.0f, versionText).x;
+
+				ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - 32.0f, f32(h) - 32.0f));
+				ImGui::Begin("##Version", &titleActive, windowInvisFlags);
+				ImGui::Text(versionText);
+				ImGui::End();
 			ImGui::PopFont();
 
 			// Main Menu

@@ -350,10 +350,10 @@ namespace TFE_RenderBackend
 	}
 
 	// Create a GPU version of a texture, assumes RGBA8 and returns a GPU handle.
-	TextureGpu* createTexture(u32 width, u32 height, const u32* data)
+	TextureGpu* createTexture(u32 width, u32 height, const u32* data, MagFilter magFilter)
 	{
 		TextureGpu* texture = new TextureGpu();
-		texture->createWithData(width, height, data);
+		texture->createWithData(width, height, data, magFilter);
 		return texture;
 	}
 

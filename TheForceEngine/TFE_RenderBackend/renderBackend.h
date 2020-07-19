@@ -12,6 +12,7 @@
 
 #include <TFE_System/types.h>
 #include <TFE_RenderBackend/renderState.h>
+#include <TFE_RenderBackend/textureGpu.h>
 
 enum WindowFlags
 {
@@ -80,7 +81,7 @@ namespace TFE_RenderBackend
 	void getRenderTargetDim(RenderTargetHandle rtHandle, u32* width, u32* height);
 	   
 	// Create a GPU version of a texture, assumes RGBA8 and returns a GPU handle.
-	TextureGpu* createTexture(u32 width, u32 height, const u32* data);
+	TextureGpu* createTexture(u32 width, u32 height, const u32* data, MagFilter magFilter = MAG_FILTER_NONE);
 	TextureGpu* createFilterTexture();
 	void freeTexture(TextureGpu* texture);
 	void getTextureDim(TextureGpu* texture, u32* width, u32* height);

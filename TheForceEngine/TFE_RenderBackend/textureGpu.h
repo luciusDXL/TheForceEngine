@@ -6,6 +6,12 @@
 
 #include <TFE_System/types.h>
 
+enum MagFilter
+{
+	MAG_FILTER_NONE = 0,
+	MAG_FILTER_LINEAR,
+};
+
 class TextureGpu
 {
 public:
@@ -13,7 +19,7 @@ public:
 	~TextureGpu();
 
 	bool create(u32 width, u32 height);
-	bool createWithData(u32 width, u32 height, const void* buffer);
+	bool createWithData(u32 width, u32 height, const void* buffer, MagFilter magFilter = MAG_FILTER_NONE);
 	bool createFilterTex();
 	bool update(const void* buffer, size_t size);
 	void bind(u32 slot = 0) const;
