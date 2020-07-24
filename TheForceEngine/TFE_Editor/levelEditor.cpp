@@ -514,7 +514,7 @@ namespace LevelEditor
 		{
 			s_selectedWallSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
 			s_selectedWall = LevelEditorData::findClosestWall(&s_selectedWallSector, s_layerIndex + s_layerMin, &worldPos, s_zoomVisual * 32.0f);
-			if (!s_moveWall)
+			if (!s_moveWall && s_selectedWall >= 0)
 			{
 				s_moveWall = true;
 				// get the plane...
@@ -2673,7 +2673,7 @@ namespace LevelEditor
 		f32 pixelSize = 1.0f / (f32)rtHeight;
 		if (!s_levelData)
 		{
-			Grid3d::draw(s_gridSize, s_gridHeight, s_subGridSize, 1.0f, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+			Grid3d::draw(s_gridSize, s_gridHeight, s_subGridSize, s_gridOpacity, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
 		}
 
 		if (!s_levelData) { return; }
@@ -2920,7 +2920,7 @@ namespace LevelEditor
 		
 		if (overSector < 0)
 		{
-			Grid3d::draw(s_gridSize, s_gridHeight, s_subGridSize, 1.0f, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+			Grid3d::draw(s_gridSize, s_gridHeight, s_subGridSize, s_gridOpacity, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
 		}
 		else
 		{

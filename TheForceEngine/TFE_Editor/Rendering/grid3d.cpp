@@ -48,10 +48,10 @@ namespace Grid3d
 		// Upload vertex/index buffers
 		const Vec3f vertices[] =
 		{
-			{-100.0f, 0.0f,  100.0f},
-			{ 100.0f, 0.0f,  100.0f},
-			{ 100.0f, 0.0f, -100.0f},
-			{-100.0f, 0.0f, -100.0f},
+			{-10000.0f, 0.0f,  10000.0f},
+			{ 10000.0f, 0.0f,  10000.0f},
+			{ 10000.0f, 0.0f, -10000.0f},
+			{-10000.0f, 0.0f, -10000.0f},
 		};
 		const u16 indices[] =
 		{
