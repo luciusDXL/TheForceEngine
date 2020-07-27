@@ -7,8 +7,8 @@
 #include "types.h"
 
 #define TFE_MAJOR_VERSION 0
-#define TFE_MINOR_VERSION 1
-#define TFE_BUILD_VERSION 6
+#define TFE_MINOR_VERSION 2
+#define TFE_BUILD_VERSION 1
 
 enum LogWriteType
 {

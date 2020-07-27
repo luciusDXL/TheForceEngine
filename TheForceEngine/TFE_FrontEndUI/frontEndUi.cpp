@@ -37,14 +37,14 @@ namespace TFE_FrontEndUI
 
 	enum ConfigTab
 	{
-		CONFIG_ABOUT=0,
+		CONFIG_ABOUT = 0,
 		CONFIG_GAME,
 		CONFIG_GRAPHICS,
 		CONFIG_SOUND,
 		CONFIG_COUNT
 	};
 
-	const char* c_configLabels[]=
+	const char* c_configLabels[] =
 	{
 		"About",
 		"Game Settings",
@@ -113,12 +113,14 @@ namespace TFE_FrontEndUI
 		"Classic (Hardware)",
 	};
 
+	typedef void(*MenuItemSelected)();
+
 	static s32 s_resIndex = 0;
 	static s32 s_rendererIndex = 0;
 	static char* s_aboutDisplayStr = nullptr;
 	static char* s_manualDisplayStr = nullptr;
 	static char* s_creditsDisplayStr = nullptr;
-	
+
 	static AppState s_appState;
 	static AppState s_menuRetState;
 	static ImFont* s_menuFont;
@@ -136,6 +138,11 @@ namespace TFE_FrontEndUI
 	static UiImage s_logoGpuImage;
 	static UiImage s_titleGpuImage;
 
+	static UiImage s_buttonNormal[7];
+	static UiImage s_buttonSelected[7];
+
+	static MenuItemSelected s_menuItemselected[7];
+
 	void configAbout();
 	void configGame();
 	void configGraphics();
@@ -143,7 +150,15 @@ namespace TFE_FrontEndUI
 	void pickCurrentResolution();
 	void manual();
 	void credits();
-		
+
+	void menuItem_Start();
+	void menuItem_Manual();
+	void menuItem_Credits();
+	void menuItem_Settings();
+	void menuItem_Mods();
+	void menuItem_Editor();
+	void menuItem_Exit();
+
 	bool loadGpuImage(const char* localPath, UiImage* uiImage)
 	{
 		char imagePath[TFE_MAX_PATH];
@@ -159,7 +174,7 @@ namespace TFE_FrontEndUI
 		}
 		return false;
 	}
-	
+
 	void init()
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_FrontEndUI::init");
@@ -184,10 +199,39 @@ namespace TFE_FrontEndUI
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE Title: \"UI_Images/TFE_TitleText.png\"");
 		}
 
+		bool buttonsLoaded = true;
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_StartNormal.png", &s_buttonNormal[0]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_StartSelected.png", &s_buttonSelected[0]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualNormal.png", &s_buttonNormal[1]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualSelected.png", &s_buttonSelected[1]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsNormal.png", &s_buttonNormal[2]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsSelected.png", &s_buttonSelected[2]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsNormal.png", &s_buttonNormal[3]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsSelected.png", &s_buttonSelected[3]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsNormal.png", &s_buttonNormal[4]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsSelected.png", &s_buttonSelected[4]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorNormal.png", &s_buttonNormal[5]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorSelected.png", &s_buttonSelected[5]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitNormal.png", &s_buttonNormal[6]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitSelected.png", &s_buttonSelected[6]);
+		if (!buttonsLoaded)
+		{
+			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load title screen button images.");
+		}
+
 		s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
 
 		TFE_Console::init();
 		TFE_ProfilerView::init();
+
+		// Setup menu item callbacks
+		s_menuItemselected[0] = menuItem_Start;
+		s_menuItemselected[1] = menuItem_Manual;
+		s_menuItemselected[2] = menuItem_Credits;
+		s_menuItemselected[3] = menuItem_Settings;
+		s_menuItemselected[4] = menuItem_Mods;
+		s_menuItemselected[5] = menuItem_Editor;
+		s_menuItemselected[6] = menuItem_Exit;
 	}
 
 	void shutdown()
@@ -208,7 +252,7 @@ namespace TFE_FrontEndUI
 	{
 		s_appState = state;
 	}
-		
+
 	void enableConfigMenu()
 	{
 		s_appState = APP_STATE_MENU;
@@ -268,9 +312,9 @@ namespace TFE_FrontEndUI
 		char settingsPath[TFE_MAX_PATH];
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", settingsPath);
 		const TFE_Game* game = TFE_Settings::getGame();
-		
+
 		ImGui::PushFont(s_dialogFont);
-		
+
 		bool active = true;
 		ImGui::Begin("##NoGameData", &active, ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings);
 		ImGui::Text("No valid \"%s\" game data found.", game->game);
@@ -318,18 +362,20 @@ namespace TFE_FrontEndUI
 		{
 			s_menuRetState = APP_STATE_MENU;
 			s_relativeMode = false;
-						
+
 			const f32 windowPadding = 16.0f;	// required padding so that a window completely holds a control without clipping.
 			const u32 windowInvisFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings;
 
 			const s32 logoScale = 2160;	// logo and title are authored for 2160p so it looks good at high resolutions, such as 1440p and 4k.
 			const s32 posScale = 1080;	// positions are at 1080p so must be scaled for different resolutions.
 			const s32 titlePosY = 100;
-			
-			const s32 logoHeight  = s_logoGpuImage.height  * h / logoScale;
-			const s32 logoWidth   = s_logoGpuImage.width   * h / logoScale;
+
+			const s32 logoHeight = s_logoGpuImage.height  * h / logoScale;
+			const s32 logoWidth = s_logoGpuImage.width   * h / logoScale;
 			const s32 titleHeight = s_titleGpuImage.height * h / logoScale;
-			const s32 titleWidth  = s_titleGpuImage.width  * h / logoScale;
+			const s32 titleWidth = s_titleGpuImage.width  * h / logoScale;
+			const s32 textHeight = s_buttonNormal[0].height * h / logoScale;
+			const s32 textWidth = s_buttonNormal[0].width * h / logoScale;
 			const s32 topOffset = titlePosY * h / posScale;
 
 			// Title
@@ -341,68 +387,39 @@ namespace TFE_FrontEndUI
 			ImGui::End();
 
 			ImGui::SetNextWindowSize(ImVec2(titleWidth + windowPadding, titleWidth + windowPadding));
-			ImGui::SetNextWindowPos(ImVec2(f32((w + logoWidth - titleWidth) / 2), (f32)topOffset + (logoHeight - titleHeight)/2));
+			ImGui::SetNextWindowPos(ImVec2(f32((w + logoWidth - titleWidth) / 2), (f32)topOffset + (logoHeight - titleHeight) / 2));
 			ImGui::Begin("##Title", &titleActive, windowInvisFlags);
 			ImGui::Image(s_titleGpuImage.image, ImVec2((f32)titleWidth, (f32)titleHeight));
 			ImGui::End();
 
 			ImGui::PushFont(s_versionFont);
-				char versionText[256];
-				sprintf(versionText, "Version %s", TFE_System::getVersionString());
-				const f32 stringWidth = s_versionFont->CalcTextSizeA(16.0f, 1024.0f, 0.0f, versionText).x;
+			char versionText[256];
+			sprintf(versionText, "Version %s", TFE_System::getVersionString());
+			const f32 stringWidth = s_versionFont->CalcTextSizeA(16.0f, 1024.0f, 0.0f, versionText).x;
 
-				ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - 32.0f, f32(h) - 32.0f));
-				ImGui::Begin("##Version", &titleActive, windowInvisFlags);
-				ImGui::Text(versionText);
-				ImGui::End();
+			ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - 32.0f, f32(h) - 32.0f));
+			ImGui::Begin("##Version", &titleActive, windowInvisFlags);
+			ImGui::Text(versionText);
+			ImGui::End();
 			ImGui::PopFont();
 
 			// Main Menu
 			ImGui::PushFont(s_menuFont);
 
 			bool active = true;
-			ImGui::SetNextWindowPos(ImVec2(f32((w - menuWidth) / 2), f32(h - menuHeight - 100)));
-			ImGui::SetNextWindowSize(ImVec2((f32)menuWidth, (f32)menuHeight));
+			s32 menuHeight = (textHeight + 24) * 7 + 4;
+			ImGui::SetNextWindowPos(ImVec2(f32((w - textWidth - 24) / 2), f32(h - menuHeight - topOffset)));
+			ImGui::SetNextWindowSize(ImVec2((f32)textWidth + 24, f32(menuHeight)));
 			ImGui::Begin("##MainMenu", &active, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
-				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings);
+				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
 
-			if (ImGui::Button("Start   "))
+			ImVec2 textSize = ImVec2(f32(textWidth), f32(textHeight));
+			for (s32 i = 0; i < 7; i++)
 			{
-				s_appState = APP_STATE_DARK_FORCES;
-			}
-			if (ImGui::Button("Manual  "))
-			{
-				s_subUI = FEUI_MANUAL;
-			}
-			if (ImGui::Button("Credits "))
-			{
-				s_subUI = FEUI_CREDITS;
-			}
-			if (ImGui::Button("Settings"))
-			{
-				s_subUI = FEUI_CONFIG;
-				s_configTab = CONFIG_GAME;
-
-				if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+				if (ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize))
 				{
-					s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_SOURCE_DATA));
+					s_menuItemselected[i]();
 				}
-				else
-				{
-					s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
-				}
-				pickCurrentResolution();
-			}
-			if (ImGui::Button("Mods    "))
-			{
-			}
-			if (ImGui::Button("Editor  "))
-			{
-				s_appState = APP_STATE_EDITOR;
-			}
-			if (ImGui::Button("Exit    "))
-			{
-				s_appState = APP_STATE_QUIT;
 			}
 
 			ImGui::End();
@@ -533,7 +550,7 @@ namespace TFE_FrontEndUI
 			ImGui::End();
 		}
 	}
-		
+
 	void manual()
 	{
 		if (!s_manualDisplayStr)
@@ -639,7 +656,7 @@ namespace TFE_FrontEndUI
 		//////////////////////////////////////////////////////
 		// Current Game
 		//////////////////////////////////////////////////////
-		const char* c_games[]=
+		const char* c_games[] =
 		{
 			"Dark Forces",
 			// "Outlaws",  -- TODO
@@ -651,7 +668,7 @@ namespace TFE_FrontEndUI
 
 		ImGui::SetNextItemWidth(256.0f);
 		ImGui::Combo("##Current Game", &s_gameIndex, c_games, IM_ARRAYSIZE(c_games));
-		
+
 		// File dialogs...
 		char exePath[TFE_MAX_PATH];
 		char filePath[TFE_MAX_PATH];
@@ -701,7 +718,7 @@ namespace TFE_FrontEndUI
 			ImGui::EndPopup();
 		}
 	}
-		
+
 	void configGraphics()
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
@@ -796,10 +813,10 @@ namespace TFE_FrontEndUI
 		}
 		else if (s_rendererIndex == 1)
 		{
-			static const char* c_colorDepth[]      = { "8-bit", "True color" };
-			static const char* c_3d_object_sort[]  = { "Software Sort", "Depth buffering" };
+			static const char* c_colorDepth[] = { "8-bit", "True color" };
+			static const char* c_3d_object_sort[] = { "Software Sort", "Depth buffering" };
 			static const char* c_near_tex_filter[] = { "None", "Bilinear", "Sharp Bilinear" };
-			static const char* c_far_tex_filter[]  = { "None", "Bilinear", "Trilinear", "Anisotropic" };
+			static const char* c_far_tex_filter[] = { "None", "Bilinear", "Trilinear", "Anisotropic" };
 			static const char* c_colormap_interp[] = { "None", "Quantized", "Linear", "Smooth" };
 			static const char* c_aa[] = { "None", "MSAA 2x", "MSAA 4x", "MSAA 8x" };
 
@@ -904,7 +921,7 @@ namespace TFE_FrontEndUI
 			ImGui::SliderFloat("Intensity", &s_bloomIntensity, 0.0f, 1.0f);
 		}
 	}
-	
+
 	void configSound()
 	{
 		ImGui::PushFont(s_dialogFont);
@@ -926,5 +943,53 @@ namespace TFE_FrontEndUI
 			}
 		}
 		s_resIndex = count;
+	}
+
+	////////////////////////////////////////////////////////////////
+	// Main menu callbacks
+	////////////////////////////////////////////////////////////////
+	void menuItem_Start()
+	{
+		s_appState = APP_STATE_DARK_FORCES;
+	}
+
+	void menuItem_Manual()
+	{
+		s_subUI = FEUI_MANUAL;
+	}
+
+	void menuItem_Credits()
+	{
+		s_subUI = FEUI_CREDITS;
+	}
+
+	void menuItem_Settings()
+	{
+		s_subUI = FEUI_CONFIG;
+		s_configTab = CONFIG_GAME;
+
+		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+		{
+			s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_SOURCE_DATA));
+		}
+		else
+		{
+			s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
+		}
+		pickCurrentResolution();
+	}
+
+	void menuItem_Mods()
+	{
+	}
+
+	void menuItem_Editor()
+	{
+		s_appState = APP_STATE_EDITOR;
+	}
+
+	void menuItem_Exit()
+	{
+		s_appState = APP_STATE_QUIT;
 	}
 }
