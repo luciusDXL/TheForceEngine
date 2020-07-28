@@ -272,6 +272,30 @@ namespace RendererClassic
 
 			sector_copy(&sectors[i], sector, walls, vertices, textures);
 		}
+
+		///////////////////////////////////////
+		// Process sectors after load
+		///////////////////////////////////////
+		RSector* sector = sector_get();
+		for (u32 i = 0; i < count; i++, sector++)
+		{
+			RWall* wall = sector->walls;
+			for (s32 w = 0; w < sector->wallCount; w++, wall++)
+			{
+				RSector* nextSector = wall->nextSector;
+				if (nextSector)
+				{
+					RWall* mirror = &nextSector->walls[wall->mirror];
+					wall->mirrorWall = mirror;
+					// Both sides of a mirror should have the same lower flags3 (such as walkability).
+					wall->flags3 |= (mirror->flags3 & 0x0f);
+					mirror->flags3 |= (wall->flags3 & 0x0f);
+				}
+			}
+			sector_setupWallDrawFlags(sector);
+			sector_adjustHeights(sector, 0, 0, 0);
+			sector_computeBounds(sector);
+		}
 	}
 
 	void updateSector(s32 id)

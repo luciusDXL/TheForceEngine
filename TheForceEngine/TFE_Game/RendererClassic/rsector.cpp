@@ -367,42 +367,148 @@ namespace RClassicSector
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
 		s_curSector->prevDrawFrame2 = s_drawFrame;
 	}
-
-	// Setup wall flags not from the original code, still to be replaced.
+		
 	void sector_setupWallDrawFlags(RSector* sector)
 	{
 		RWall* wall = sector->walls;
-		const fixed16 midHeight = 8 * (sector->floorHeight - sector->ceilingHeight);
 		for (s32 w = 0; w < sector->wallCount; w++, wall++)
 		{
-			const RSector* next = wall->nextSector;
-			wall->drawFlags = WDF_MIDDLE;
-			if (!next)
+			if (wall->nextSector)
 			{
-				wall->midTexelHeight = midHeight;
-				continue;
-			}
+				RSector* wSector = wall->sector;
+				fixed16 wFloorHeight = wSector->floorHeight;
+				fixed16 wCeilHeight = wSector->ceilingHeight;
 
-			if (next->floorHeight < sector->floorHeight && next->ceilingHeight > sector->ceilingHeight)
-			{
-				wall->drawFlags = WDF_TOP_AND_BOT;
-				wall->botTexelHeight = mul16(intToFixed16(8), sector->floorHeight - next->floorHeight);
-				wall->topTexelHeight = mul16(intToFixed16(8), next->ceilingHeight - sector->ceilingHeight);
-				wall->midTexelHeight = mul16(intToFixed16(8), next->floorHeight - next->ceilingHeight);
+				RWall* mirror = wall->mirrorWall;
+				RSector* mSector = mirror->sector;
+				fixed16 mFloorHeight = mSector->floorHeight;
+				fixed16 mCeilHeight = mSector->ceilingHeight;
+
+				wall->drawFlags = 0;
+				mirror->drawFlags = 0;
+
+				if (wCeilHeight < mCeilHeight)
+				{
+					wall->drawFlags |= WDF_TOP;
+				}
+				if (wFloorHeight > mFloorHeight)
+				{
+					wall->drawFlags |= WDF_BOT;
+				}
+				if (mCeilHeight < wCeilHeight)
+				{
+					mirror->drawFlags |= WDF_TOP;
+				}
+				if (mFloorHeight > wFloorHeight)
+				{
+					mirror->drawFlags |= WDF_BOT;
+				}
+				wall_computeTexelHeights(wall->mirrorWall);
 			}
-			else if (next->floorHeight < sector->floorHeight)
+			wall_computeTexelHeights(wall);
+		}
+	}
+
+	void sector_adjustHeights(RSector* sector, fixed16 floorOffset, fixed16 ceilOffset, fixed16 secondHeightOffset)
+	{
+		// Adjust objects.
+		if (sector->objectCount)
+		{
+			s32 heightOffset = secondHeightOffset + floorOffset;
+			for (s32 i = 0; i < sector->objectCapacity; i++)
 			{
-				wall->drawFlags = WDF_BOT;
-				wall->botTexelHeight = mul16(intToFixed16(8), sector->floorHeight - next->floorHeight);
-				wall->midTexelHeight = mul16(intToFixed16(8), next->floorHeight - sector->ceilingHeight);
-			}
-			else if (next->ceilingHeight > sector->ceilingHeight)
-			{
-				wall->drawFlags = WDF_TOP;
-				wall->topTexelHeight = mul16(intToFixed16(8), next->ceilingHeight - sector->ceilingHeight);
-				wall->midTexelHeight = mul16(intToFixed16(8), sector->floorHeight - next->ceilingHeight);
+				SecObject* obj = sector->objectList[i];
+				if (obj)
+				{
+					// TODO: Adjust sector objects.
+				}
 			}
 		}
+		// Adjust sector heights.
+		sector->ceilingHeight += ceilOffset;
+		sector->floorHeight += floorOffset;
+		sector->secHeight += secondHeightOffset;
+
+		// Update wall data.
+		s32 wallCount = sector->wallCount;
+		RWall* wall = sector->walls;
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			if (wall->nextSector)
+			{
+				wall_setupAdjoinDrawFlags(wall);
+				wall_computeTexelHeights(wall->mirrorWall);
+			}
+			wall_computeTexelHeights(wall);
+		}
+
+		// Update collision data.
+		fixed16 floorHeight = sector->floorHeight;
+		if (sector->flags1 & SEC_FLAGS1_PIT)
+		{
+			floorHeight += 100 * ONE_16;
+		}
+		fixed16 ceilHeight = sector->ceilingHeight;
+		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
+		{
+			ceilHeight -= 100 * ONE_16;
+		}
+		fixed16 secHeight = sector->floorHeight + sector->secHeight;
+		if (sector->secHeight >= 0 && floorHeight > secHeight)
+		{
+			secHeight = floorHeight;
+		}
+
+		sector->colFloorHeight = floorHeight;
+		sector->colCeilHeight = ceilHeight;
+		sector->colSecHeight = secHeight;
+		sector->colMinHeight = ceilHeight;
+	}
+
+	void sector_computeBounds(RSector* sector)
+	{
+		RWall* wall = sector->walls;
+		vec2* w0 = wall->w0;
+		fixed16 maxX = w0->x;
+		fixed16 maxZ = w0->z;
+		fixed16 minX = maxX;
+		fixed16 minZ = maxZ;
+
+		for (s32 i = 1; i < sector->wallCount; i++, wall++)
+		{
+			w0 = wall->w0;
+
+			minX = min(minX, w0->x);
+			minZ = min(minZ, w0->z);
+
+			maxX = max(maxX, w0->x);
+			maxZ = max(maxZ, w0->z);
+		}
+
+		sector->minX = minX;
+		sector->maxX = maxX;
+		sector->minZ = minZ;
+		sector->maxZ = maxZ;
+
+		// Setup when needed.
+		//s_minX = minX;
+		//s_maxX = maxX;
+		//s_minZ = minZ;
+		//s_maxZ = maxZ;
+	}
+
+	void sector_clear(RSector* sector)
+	{
+		sector->vertexCount = 0;
+		sector->wallCount = 0;
+		sector->objectCount = 0;
+		sector->secHeight = 0;
+		sector->id = 0;
+		sector->prevDrawFrame = 0;
+		sector->objectCapacity = 0;
+		sector->verticesWS = nullptr;
+		sector->verticesVS = nullptr;
+		sector->self = sector;
 	}
 
 	void sector_copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
@@ -504,7 +610,8 @@ namespace RClassicSector
 		for (s32 w = 0; w < out->wallCount; w++, wall++)
 		{
 			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
-
+			wall->mirror = walls[w].mirror;
+			
 			wall->topTex  = texture_getFrame(walls[w].top.texId  >= 0 ? textures[walls[w].top.texId]  : nullptr);
 			wall->midTex  = texture_getFrame(walls[w].mid.texId  >= 0 ? textures[walls[w].mid.texId]  : nullptr);
 			wall->botTex  = texture_getFrame(walls[w].bot.texId  >= 0 ? textures[walls[w].bot.texId]  : nullptr);

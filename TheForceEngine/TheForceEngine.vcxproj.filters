@@ -547,6 +547,9 @@
     <ClInclude Include="TFE_Game\gameControlMapping.h">
       <Filter>Source\TFE_Game</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Game\RendererClassic\robject.h">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -890,6 +893,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Game\gameControlMapping.cpp">
       <Filter>Source\TFE_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\RendererClassic\robject.cpp">
+      <Filter>Source\TFE_Game\RendererClassic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

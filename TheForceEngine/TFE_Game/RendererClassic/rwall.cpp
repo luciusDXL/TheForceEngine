@@ -2204,4 +2204,89 @@ namespace RClassicWall
 			s_adjoinSegment++;
 		}
 	}
+
+	void wall_setupAdjoinDrawFlags(RWall* wall)
+	{
+		if (wall->nextSector)
+		{
+			RSector* sector = wall->sector;
+			RWall* mirror = wall->mirrorWall;
+			fixed16 wFloorHeight = sector->floorHeight;
+			fixed16 wCeilHeight = sector->ceilingHeight;
+			RSector* nextSector = mirror->sector;
+			fixed16 mFloorHeight = nextSector->floorHeight;
+			fixed16 mCeilHeight = nextSector->ceilingHeight;
+			wall->drawFlags = 0;
+			mirror->drawFlags = 0;
+
+			if (wCeilHeight < mCeilHeight)
+			{
+				wall->drawFlags |= WDF_TOP;
+			}
+			if (wFloorHeight > mFloorHeight)
+			{
+				wall->drawFlags |= WDF_BOT;
+			}
+			if (mCeilHeight < wCeilHeight)
+			{
+				mirror->drawFlags |= WDF_TOP;
+			}
+			if (mFloorHeight > wFloorHeight)
+			{
+				mirror->drawFlags |= WDF_BOT;
+			}
+		}
+	}
+
+	void wall_computeTexelHeights(RWall* wall)
+	{
+		if (wall->nextSector)
+		{
+			if (wall->drawFlags & 1)
+			{
+				RSector* next = wall->nextSector;
+				RSector* cur = wall->sector;
+				wall->topTexelHeight = (next->ceilingHeight - cur->ceilingHeight) * 8;
+			}
+			if (wall->drawFlags & 2)
+			{
+				RSector* cur = wall->sector;
+				RSector* next = wall->nextSector;
+				wall->botTexelHeight = (cur->floorHeight - next->floorHeight) * 8;
+			}
+			if (wall->midTex)
+			{
+				if (!(wall->drawFlags & 2) && !(wall->drawFlags & 1))
+				{
+					RSector* midSector = wall->sector;
+					fixed16 midFloorHeight = wall->sector->floorHeight;
+					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
+				}
+				else if (!(wall->drawFlags & 2))
+				{
+					RSector* midSector = wall->nextSector;
+					fixed16 midFloorHeight = wall->sector->floorHeight;
+					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
+				}
+				else if (!(wall->drawFlags & 1))
+				{
+					RSector* midSector = wall->sector;
+					fixed16 midFloorHeight = wall->nextSector->floorHeight;
+					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
+				}
+				else
+				{
+					RSector* midSector = wall->nextSector;
+					fixed16 midFloorHeight = wall->nextSector->floorHeight;
+					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
+				}
+			}
+		}
+		else
+		{
+			RSector* midSector = wall->sector;
+			s32 midFloorHeight = midSector->floorHeight;
+			wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
+		}
+	}
 }

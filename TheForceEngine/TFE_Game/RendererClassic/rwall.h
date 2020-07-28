@@ -30,7 +30,9 @@ struct RWall
 	s32 visible;		
 	RSector* sector;	
 	RSector* nextSector;
-	s32 drawFlags;		
+	RWall* mirrorWall;
+	s32 drawFlags;
+	s32 mirror;
 
 	// Vertices (worldspace)
 	vec2* w0;
@@ -67,6 +69,11 @@ struct RWall
 	fixed16 signUOffset;
 	fixed16 signVOffset;
 
+	fixed16 wallDirX;
+	fixed16 wallDirZ;
+	// Wall length (fixed point).
+	fixed16 length;
+
 	// Update Frame
 	s32 drawFrame;
 
@@ -75,8 +82,14 @@ struct RWall
 	u32 flags2;
 	u32 flags3;
 
+	fixed16 worldX0;
+	fixed16 worldZ0;
+
 	// Lighting
 	s32 wallLight;
+
+	// Wall angle.
+	s32 angle;
 };
 
 struct RWallSegment
@@ -114,4 +127,7 @@ namespace RClassicWall
 	void wall_drawSkyBottomNoWall(RSector* sector);
 
 	void wall_addAdjoinSegment(s32 length, s32 x0, fixed16 top_dydx, fixed16 y1, fixed16 bot_dydx, fixed16 y0, RWallSegment* wallSegment);
+
+	void wall_setupAdjoinDrawFlags(RWall* wall);
+	void wall_computeTexelHeights(RWall* wall);
 }
