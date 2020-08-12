@@ -742,22 +742,21 @@ namespace RClassicWall
 		{
 			// Original DOS code
 			y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z0) + s_halfHeight;
-			y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
 			y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z1) + s_halfHeight;
+			y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
 			y1F = div16(mul16(floorEyeRel, s_focalLenAspect), z1) + s_halfHeight;
 		}
 		else
 		{
 			// Improved code that better avoids overflow, as seen in the MAC version.
 			y0C = fusedMulDiv(ceilEyeRel,  s_focalLenAspect, z0) + s_halfHeight;
-			y0F = fusedMulDiv(floorEyeRel, s_focalLenAspect, z0) + s_halfHeight;
 			y1C = fusedMulDiv(ceilEyeRel,  s_focalLenAspect, z1) + s_halfHeight;
+			y0F = fusedMulDiv(floorEyeRel, s_focalLenAspect, z0) + s_halfHeight;
 			y1F = fusedMulDiv(floorEyeRel, s_focalLenAspect, z1) + s_halfHeight;
 		}
 
 		s32 y0C_pixel = round16(y0C);
 		s32 y1C_pixel = round16(y1C);
-
 		s32 y0F_pixel = round16(y0F);
 		s32 y1F_pixel = round16(y1F);
 
@@ -778,7 +777,6 @@ namespace RClassicWall
 			}
 
 			srcWall->visible = 0;
-			//srcWall->y1 = -1;
 			return;
 		}
 
