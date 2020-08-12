@@ -737,11 +737,23 @@ namespace RClassicWall
 		fixed16_16 z0 = wallSegment->z0;
 		fixed16_16 z1 = wallSegment->z1;
 
-		fixed16_16 y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
-
-		fixed16_16 y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z1) + s_halfHeight;
-		fixed16_16 y1F = div16(mul16(floorEyeRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 y0C, y0F, y1C, y1F;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z0) + s_halfHeight;
+			y0F = div16(mul16(floorEyeRel, s_focalLenAspect), z0) + s_halfHeight;
+			y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect), z1) + s_halfHeight;
+			y1F = div16(mul16(floorEyeRel, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			y0C = fusedMulDiv(ceilEyeRel,  s_focalLenAspect, z0) + s_halfHeight;
+			y0F = fusedMulDiv(floorEyeRel, s_focalLenAspect, z0) + s_halfHeight;
+			y1C = fusedMulDiv(ceilEyeRel,  s_focalLenAspect, z1) + s_halfHeight;
+			y1F = fusedMulDiv(floorEyeRel, s_focalLenAspect, z1) + s_halfHeight;
+		}
 
 		s32 y0C_pixel = round16(y0C);
 		s32 y1C_pixel = round16(y1C);
@@ -989,8 +1001,18 @@ namespace RClassicWall
 		else
 		{
 			fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight;
-			cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-			cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+			if (!s_enableHighPrecision)
+			{
+				// Original DOS code
+				cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+				cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+			}
+			else
+			{
+				// Improved code that better avoids overflow, as seen in the MAC version.
+				cProj0 = fusedMulDiv(ceilRel, s_focalLenAspect, z0) + s_halfHeight;
+				cProj1 = fusedMulDiv(ceilRel, s_focalLenAspect, z1) + s_halfHeight;
+			}
 		}
 
 		s32 c0pixel = round16(cProj0);
@@ -1019,8 +1041,18 @@ namespace RClassicWall
 		else
 		{
 			fixed16_16 floorRel = sector->floorHeight - s_eyeHeight;
-			fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
-			fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+			if (!s_enableHighPrecision)
+			{
+				// Original DOS code
+				fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
+				fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+			}
+			else
+			{
+				// Improved code that better avoids overflow, as seen in the MAC version.
+				fProj0 = fusedMulDiv(floorRel, s_focalLenAspect, z0) + s_halfHeight;
+				fProj1 = fusedMulDiv(floorRel, s_focalLenAspect, z1) + s_halfHeight;
+			}
 		}
 
 		s32 f0pixel = round16(fProj0);
@@ -1108,8 +1140,18 @@ namespace RClassicWall
 		else
 		{
 			fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight;
-			cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-			cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+			if (!s_enableHighPrecision)
+			{
+				// Original DOS code
+				cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+				cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+			}
+			else
+			{
+				// Improved code that better avoids overflow, as seen in the MAC version.
+				cProj0 = fusedMulDiv(ceilRel, s_focalLenAspect, z0) + s_halfHeight;
+				cProj1 = fusedMulDiv(ceilRel, s_focalLenAspect, z1) + s_halfHeight;
+			}
 		}
 
 		s32 cy0 = round16(cProj0);
@@ -1133,8 +1175,19 @@ namespace RClassicWall
 		}
 
 		fixed16_16 floorRel = sector->floorHeight - s_eyeHeight;
-		fixed16_16 fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 fProj0, fProj1;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
+			fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			fProj0 = fusedMulDiv(floorRel, s_focalLenAspect, z0) + s_halfHeight;
+			fProj1 = fusedMulDiv(floorRel, s_focalLenAspect, z1) + s_halfHeight;
+		}
 		s32 fy0 = round16(fProj0);
 		s32 fy1 = round16(fProj1);
 		if (fy0 < s_windowMinY && fy1 < s_windowMinY)
@@ -1157,8 +1210,19 @@ namespace RClassicWall
 		}
 
 		fixed16_16 floorRelNext = nextSector->floorHeight - s_eyeHeight;
-		fixed16_16 fNextProj0 = div16(mul16(floorRelNext, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 fNextProj1 = div16(mul16(floorRelNext, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 fNextProj0, fNextProj1;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			fNextProj0 = div16(mul16(floorRelNext, s_focalLenAspect), z0) + s_halfHeight;
+			fNextProj1 = div16(mul16(floorRelNext, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			fNextProj0 = fusedMulDiv(floorRelNext, s_focalLenAspect, z0) + s_halfHeight;
+			fNextProj1 = fusedMulDiv(floorRelNext, s_focalLenAspect, z1) + s_halfHeight;
+		}
 		s32 xOffset = wallSegment->wallX0 - wallSegment->wallX0_raw;
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 		s32 lengthRaw = wallSegment->wallX1_raw - wallSegment->wallX0_raw;
@@ -1348,8 +1412,19 @@ namespace RClassicWall
 		s32 lengthInPixels = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 
 		fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight;
-		fixed16_16 yC0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 yC1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 yC0, yC1;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			yC0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+			yC1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			yC0 = fusedMulDiv(ceilRel, s_focalLenAspect, z0) + s_halfHeight;
+			yC1 = fusedMulDiv(ceilRel, s_focalLenAspect, z1) + s_halfHeight;
+		}
 		s32 yC0_pixel = round16(yC0);
 		s32 yC1_pixel = round16(yC1);
 
@@ -1376,8 +1451,18 @@ namespace RClassicWall
 		else
 		{
 			fixed16_16 floorRel = sector->floorHeight - s_eyeHeight;
-			yF0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
-			yF1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+			if (!s_enableHighPrecision)
+			{
+				// Original DOS code
+				yF0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
+				yF1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+			}
+			else
+			{
+				// Improved code that better avoids overflow, as seen in the MAC version.
+				yF0 = fusedMulDiv(floorRel, s_focalLenAspect, z0) + s_halfHeight;
+				yF1 = fusedMulDiv(floorRel, s_focalLenAspect, z1) + s_halfHeight;
+			}
 		}
 		s32 yF0_pixel = round16(yF0);
 		s32 yF1_pixel = round16(yF1);
@@ -1395,8 +1480,19 @@ namespace RClassicWall
 		}
 
 		fixed16_16 next_ceilRel = next->ceilingHeight - s_eyeHeight;
-		fixed16_16 next_yC0 = div16(mul16(next_ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 next_yC1 = div16(mul16(next_ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 next_yC0, next_yC1;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			next_yC0 = div16(mul16(next_ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+			next_yC1 = div16(mul16(next_ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			next_yC0 = fusedMulDiv(next_ceilRel, s_focalLenAspect, z0) + s_halfHeight;
+			next_yC1 = fusedMulDiv(next_ceilRel, s_focalLenAspect, z1) + s_halfHeight;
+		}
 		fixed16_16 xOffset = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
 		fixed16_16 length = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 		fixed16_16 ceil_dYdX = 0;
@@ -1572,8 +1668,19 @@ namespace RClassicWall
 		fixed16_16 lengthRaw = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 
 		fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight;
-		fixed16_16 cProj0  = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 cProj1  = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 cProj0, cProj1;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			cProj0 = div16(mul16(ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+			cProj1 = div16(mul16(ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			cProj0 = fusedMulDiv(ceilRel, s_focalLenAspect, z0) + s_halfHeight;
+			cProj1 = fusedMulDiv(ceilRel, s_focalLenAspect, z1) + s_halfHeight;
+		}
 		s32 c0_pixel = round16(cProj0);
 		s32 c1_pixel = round16(cProj1);
 				
@@ -1593,8 +1700,19 @@ namespace RClassicWall
 		}
 
 		fixed16_16 floorRel = sector->floorHeight - s_eyeHeight;
-		fixed16_16 fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 fProj0, fProj1;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			fProj0 = div16(mul16(floorRel, s_focalLenAspect), z0) + s_halfHeight;
+			fProj1 = div16(mul16(floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			fProj0 = fusedMulDiv(floorRel, s_focalLenAspect, z0) + s_halfHeight;
+			fProj1 = fusedMulDiv(floorRel, s_focalLenAspect, z1) + s_halfHeight;
+		}
 		s32 f0_pixel = round16(fProj0);
 		s32 f1_pixel = round16(fProj1);
 		if (f0_pixel < s_windowMinY && f1_pixel < s_windowMinY)
@@ -1615,8 +1733,19 @@ namespace RClassicWall
 
 		RSector* nextSector = srcWall->nextSector;
 		fixed16_16 next_ceilRel = nextSector->ceilingHeight - s_eyeHeight;
-		fixed16_16 next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 next_cProj0, next_cProj1;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect), z0) + s_halfHeight;
+			next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			next_cProj0 = fusedMulDiv(next_ceilRel, s_focalLenAspect, z0) + s_halfHeight;
+			next_cProj1 = fusedMulDiv(next_ceilRel, s_focalLenAspect, z1) + s_halfHeight;
+		}
 		fixed16_16 ceil_dYdX = 0;
 		fixed16_16 next_ceil_dYdX = 0;
 		if (lengthRaw != 0)
@@ -1707,8 +1836,19 @@ namespace RClassicWall
 		}
 
 		fixed16_16 next_floorRel = nextSector->floorHeight - s_eyeHeight;
-		fixed16_16 next_fProj0 = div16(mul16(next_floorRel, s_focalLenAspect), z0) + s_halfHeight;
-		fixed16_16 next_fProj1 = div16(mul16(next_floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		fixed16_16 next_fProj0, next_fProj1;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			next_fProj0 = div16(mul16(next_floorRel, s_focalLenAspect), z0) + s_halfHeight;
+			next_fProj1 = div16(mul16(next_floorRel, s_focalLenAspect), z1) + s_halfHeight;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			next_fProj0 = fusedMulDiv(next_floorRel, s_focalLenAspect, z0) + s_halfHeight;
+			next_fProj1 = fusedMulDiv(next_floorRel, s_focalLenAspect, z1) + s_halfHeight;
+		}
 
 		fixed16_16 next_floor_dYdX = 0;
 		fixed16_16 floor_dYdX = 0;
