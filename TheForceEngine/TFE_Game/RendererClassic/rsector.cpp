@@ -414,7 +414,7 @@ namespace RClassicSector
 		// Adjust objects.
 		if (sector->objectCount)
 		{
-			s32 heightOffset = secondHeightOffset + floorOffset;
+			fixed16 heightOffset = secondHeightOffset + floorOffset;
 			for (s32 i = 0; i < sector->objectCapacity; i++)
 			{
 				SecObject* obj = sector->objectList[i];
