@@ -78,6 +78,33 @@ namespace RClassicWall
 		drawColumn_Lit_Trans,			// COLFUNC_LIT_TRANS
 	};
 
+	fixed16_16 frustumIntersect(fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1, fixed16_16 dx, fixed16_16 dz)
+	{
+		fixed16_16 xz;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code.
+			xz = mul16(x0, z1) - mul16(z0, x1);
+			fixed16_16 dyx = dz - dx;
+			if (dyx != 0)
+			{
+				xz = div16(xz, dyx);
+			}
+		}
+		else
+		{
+			// Overflow resistent code as seen in later versions of the engine.
+			fixed48_16 xzLarge = mul16(fixed48_16(x0), fixed48_16(z1)) - mul16(fixed48_16(z0), fixed48_16(x1));
+			fixed48_16 dyx = dz - dx;
+			if (dyx != 0)
+			{
+				xzLarge = div16(xzLarge, dyx);
+			}
+			xz = fixed16_16(xzLarge);
+		}
+		return xz;
+	}
+
 	// Process the wall and produce an RWallSegment for rendering if the wall is potentially visible.
 	void wall_process(RWall* wall)
 	{
@@ -138,12 +165,7 @@ namespace RClassicWall
 		if (x0 < left0)
 		{
 			// Intersect the segment (x0, z0),(x1, z1) with the frustum line that passes through (-z0, z0) and (-z1, z1)
-			fixed16_16 xz = mul16(x0, z1) - mul16(z0, x1);
-			fixed16_16 dyx = -dz - dx;
-			if (dyx != 0)
-			{
-				xz = div16(xz, dyx);
-			}
+			const fixed16_16 xz = frustumIntersect(x0, z0, x1, z1, dx, -dz);
 
 			// Compute the parametric intersection of the segment and the left frustum line
 			// where s is in the range of [0.0, 1.0]
@@ -183,12 +205,7 @@ namespace RClassicWall
 			// Compute the coordinate where x0 + s*dx = z0 + s*dz
 			// Solve for s = (x0 - y0)/(dz - dx)
 			// Substitute: x = x0 + ((x0 - z0)/(dz - dx))*dx = (x0*z1 - z0*x1) / (dz - dx)
-			fixed16_16 xz = mul16(x0, z1) - mul16(z0, x1);
-			fixed16_16 dyx = dz - dx;
-			if (dyx != 0)
-			{
-				xz = div16(xz, dyx);
-			}
+			const fixed16_16 xz = frustumIntersect(x0, z0, x1, z1, dx, dz);
 
 			// Compute the parametric intersection of the segment and the left frustum line
 			// where s is in the range of [0.0, 1.0]
