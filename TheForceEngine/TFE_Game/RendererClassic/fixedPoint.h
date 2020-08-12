@@ -5,6 +5,12 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <math.h>
+#include <assert.h>
+
+// Set to 1 to assert on overflow, to ferret out precision issues with the Classic Renderer.
+// Note, however, that overflow is expected when running at 320x200, so this should be 0 when making 
+// releases.
+#define ASSERT_ON_OVERFLOW 0
 
 // Experiment with a drop in way of fixing precision issues at higher resolutions.
 #define ENABLE_HIGH_PRECISION_FIXED_POINT 0
@@ -35,6 +41,12 @@ namespace FixedPoint
 	{
 		const s64 x64 = s64(x);
 		const s64 y64 = s64(y);
+
+		// Overflow precision test.
+		#if ASSERT_ON_OVERFLOW == 1
+		assert(((x64 * y64) >> FRAC_BITS) == fixed16((x64 * y64) >> FRAC_BITS));
+		#endif
+
 		return fixed16((x64 * y64) >> FRAC_BITS);
 	}
 
@@ -44,6 +56,12 @@ namespace FixedPoint
 	{
 		const s64 num64 = s64(num);
 		const s64 den64 = s64(denom);
+
+		// Overflow precision test.
+		#if ASSERT_ON_OVERFLOW == 1
+		assert(((num64 << FRAC_BITS) / den64) == fixed16((num64 << FRAC_BITS) / den64));
+		#endif
+
 		return fixed16((num64 << FRAC_BITS) / den64);
 	}
 
