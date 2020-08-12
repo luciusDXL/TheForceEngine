@@ -9,5 +9,5 @@
 
 namespace RClassicLighting
 {
-	const u8* computeLighting(fixed16 depth, s32 lightOffset);
+	const u8* computeLighting(fixed16_16 depth, s32 lightOffset);
 }

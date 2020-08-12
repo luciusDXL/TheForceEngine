@@ -14,9 +14,9 @@ namespace RendererClassic
 	// Resolution
 	extern s32 s_width;
 	extern s32 s_height;
-	extern fixed16 s_halfWidth;
-	extern fixed16 s_halfHeight;
-	extern fixed16 s_halfHeightBase;
+	extern fixed16_16 s_halfWidth;
+	extern fixed16_16 s_halfHeight;
+	extern fixed16_16 s_halfHeightBase;
 	extern s32 s_heightInPixels;
 	extern s32 s_heightInPixelsBase;
 	extern s32 s_minScreenY;
@@ -24,25 +24,25 @@ namespace RendererClassic
 	extern s32 s_screenXMid;
 
 	// Projection
-	extern fixed16  s_focalLength;
-	extern fixed16  s_focalLenAspect;
-	extern fixed16  s_eyeHeight;
-	extern fixed16* s_depth1d_all;
-	extern fixed16* s_depth1d;
+	extern fixed16_16  s_focalLength;
+	extern fixed16_16  s_focalLenAspect;
+	extern fixed16_16  s_eyeHeight;
+	extern fixed16_16* s_depth1d_all;
+	extern fixed16_16* s_depth1d;
 
 	// Camera
-	extern fixed16 s_cameraPosX;
-	extern fixed16 s_cameraPosZ;
-	extern fixed16 s_xCameraTrans;
-	extern fixed16 s_zCameraTrans;
-	extern fixed16 s_cosYaw;
-	extern fixed16 s_sinYaw;
-	extern fixed16 s_negSinYaw;
-	extern fixed16 s_cameraYaw;
-	extern fixed16 s_cameraPitch;
-	extern fixed16 s_skyYawOffset;
-	extern fixed16 s_skyPitchOffset;
-	extern fixed16* s_skyTable;
+	extern fixed16_16 s_cameraPosX;
+	extern fixed16_16 s_cameraPosZ;
+	extern fixed16_16 s_xCameraTrans;
+	extern fixed16_16 s_zCameraTrans;
+	extern fixed16_16 s_cosYaw;
+	extern fixed16_16 s_sinYaw;
+	extern fixed16_16 s_negSinYaw;
+	extern fixed16_16 s_cameraYaw;
+	extern fixed16_16 s_cameraPitch;
+	extern fixed16_16 s_skyYawOffset;
+	extern fixed16_16 s_skyPitchOffset;
+	extern fixed16_16* s_skyTable;
 	
 	// Window
 	extern s32 s_minScreenX;
@@ -53,7 +53,7 @@ namespace RendererClassic
 	extern s32 s_windowMaxY;
 	extern s32 s_windowMaxCeil;
 	extern s32 s_windowMinFloor;
-	extern fixed16 s_windowMinZ;
+	extern fixed16_16 s_windowMinZ;
 	
 	// Display
 	extern u8* s_display;
@@ -76,8 +76,8 @@ namespace RendererClassic
 	extern s32* s_windowBot;
 	extern s32* s_windowTopPrev;
 	extern s32* s_windowBotPrev;
-	extern fixed16* s_column_Y_Over_X;
-	extern fixed16* s_column_X_Over_Y;
+	extern fixed16_16* s_column_Y_Over_X;
+	extern fixed16_16* s_column_X_Over_Y;
 	
 	// WallSegments
 	extern RWallSegment s_wallSegListDst[MAX_SEG];
@@ -92,7 +92,7 @@ namespace RendererClassic
 
 	// Flats
 	extern s32 s_flatCount;
-	extern fixed16* s_rcp_yMinusHalfHeight;
+	extern fixed16_16* s_rcp_yMinusHalfHeight;
 	extern s32 s_wallMaxCeilY;
 	extern s32 s_wallMinFloorY;
 	extern EdgePair* s_flatEdge;

@@ -4,7 +4,7 @@ using namespace FixedPoint;
 
 namespace RClassicEdgePair
 {
-	void edgePair_setup(s32 length, s32 x0, fixed16 dyFloor_dx, fixed16 yFloor1, fixed16 yFloor, fixed16 dyCeil_dx, fixed16 yCeil, fixed16 yCeil1, EdgePair* edgePair)
+	void edgePair_setup(s32 length, s32 x0, fixed16_16 dyFloor_dx, fixed16_16 yFloor1, fixed16_16 yFloor, fixed16_16 dyCeil_dx, fixed16_16 yCeil, fixed16_16 yCeil1, EdgePair* edgePair)
 	{
 		const s32 yF0 = round16(yFloor);
 		const s32 yF1 = round16(yFloor1);

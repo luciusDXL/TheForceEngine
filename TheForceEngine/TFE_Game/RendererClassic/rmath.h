@@ -8,12 +8,12 @@
 
 struct vec2
 {
-	fixed16 x, z;
+	fixed16_16 x, z;
 };
 
 struct vec3
 {
-	fixed16 x, y, z;
+	fixed16_16 x, y, z;
 };
 
 namespace RMath
@@ -38,25 +38,23 @@ namespace RMath
 		return min(max(x, a), b);
 	}
 
-#if ENABLE_HIGH_PRECISION_FIXED_POINT == 1
-	inline fixed16 abs(fixed16 x)
+	inline fixed48_16 abs(fixed48_16 x)
 	{
 		return x < 0 ? -x : x;
 	}
 
-	inline fixed16 min(fixed16 a, fixed16 b)
+	inline fixed48_16 min(fixed48_16 a, fixed48_16 b)
 	{
 		return a < b ? a : b;
 	}
 
-	inline fixed16 max(fixed16 a, fixed16 b)
+	inline fixed48_16 max(fixed48_16 a, fixed48_16 b)
 	{
 		return a > b ? a : b;
 	}
 
-	inline fixed16 clamp(fixed16 x, fixed16 a, fixed16 b)
+	inline fixed48_16 clamp(fixed48_16 x, fixed48_16 a, fixed48_16 b)
 	{
 		return min(max(x, a), b);
 	}
-#endif
 }

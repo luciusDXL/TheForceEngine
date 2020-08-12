@@ -9,9 +9,9 @@ namespace RendererClassic
 	// Resolution
 	s32 s_width = 0;
 	s32 s_height = 0;
-	fixed16 s_halfWidth;
-	fixed16 s_halfHeight;
-	fixed16 s_halfHeightBase;
+	fixed16_16 s_halfWidth;
+	fixed16_16 s_halfHeight;
+	fixed16_16 s_halfHeightBase;
 	s32 s_heightInPixels;
 	s32 s_heightInPixelsBase;
 	s32 s_minScreenY;
@@ -19,25 +19,25 @@ namespace RendererClassic
 	s32 s_screenXMid;
 
 	// Projection
-	fixed16 s_focalLength;
-	fixed16 s_focalLenAspect;
-	fixed16 s_eyeHeight;
-	fixed16* s_depth1d_all = nullptr;
-	fixed16* s_depth1d = nullptr;
+	fixed16_16 s_focalLength;
+	fixed16_16 s_focalLenAspect;
+	fixed16_16 s_eyeHeight;
+	fixed16_16* s_depth1d_all = nullptr;
+	fixed16_16* s_depth1d = nullptr;
 
 	// Camera
-	fixed16 s_cameraPosX;
-	fixed16 s_cameraPosZ;
-	fixed16 s_xCameraTrans;
-	fixed16 s_zCameraTrans;
-	fixed16 s_cosYaw;
-	fixed16 s_sinYaw;
-	fixed16 s_negSinYaw;
-	fixed16 s_cameraYaw;
-	fixed16 s_cameraPitch;
-	fixed16 s_skyYawOffset;
-	fixed16 s_skyPitchOffset;
-	fixed16* s_skyTable;
+	fixed16_16 s_cameraPosX;
+	fixed16_16 s_cameraPosZ;
+	fixed16_16 s_xCameraTrans;
+	fixed16_16 s_zCameraTrans;
+	fixed16_16 s_cosYaw;
+	fixed16_16 s_sinYaw;
+	fixed16_16 s_negSinYaw;
+	fixed16_16 s_cameraYaw;
+	fixed16_16 s_cameraPitch;
+	fixed16_16 s_skyYawOffset;
+	fixed16_16 s_skyPitchOffset;
+	fixed16_16* s_skyTable;
 
 	// Window
 	s32 s_minScreenX;
@@ -48,7 +48,7 @@ namespace RendererClassic
 	s32 s_windowMaxY;
 	s32 s_windowMaxCeil;
 	s32 s_windowMinFloor;
-	fixed16 s_windowMinZ;
+	fixed16_16 s_windowMinZ;
 
 	// Display
 	u8* s_display;
@@ -71,8 +71,8 @@ namespace RendererClassic
 	s32* s_windowBot = nullptr;
 	s32* s_windowTopPrev = nullptr;
 	s32* s_windowBotPrev = nullptr;
-	fixed16* s_column_Y_Over_X = nullptr;
-	fixed16* s_column_X_Over_Y = nullptr;
+	fixed16_16* s_column_Y_Over_X = nullptr;
+	fixed16_16* s_column_X_Over_Y = nullptr;
 
 	// Segment list.
 	RWallSegment s_wallSegListDst[MAX_SEG];
@@ -87,7 +87,7 @@ namespace RendererClassic
 
 	// Flats
 	s32 s_flatCount;
-	fixed16* s_rcp_yMinusHalfHeight;
+	fixed16_16* s_rcp_yMinusHalfHeight;
 	s32 s_wallMaxCeilY;
 	s32 s_wallMinFloorY;
 	EdgePair* s_flatEdge;

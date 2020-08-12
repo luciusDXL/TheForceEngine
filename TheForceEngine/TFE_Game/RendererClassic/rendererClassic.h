@@ -11,7 +11,7 @@
 
 namespace RendererClassic
 {
-	void setCamera(fixed16 yaw, fixed16 pitch, fixed16 cosYaw, fixed16 sinYaw, fixed16 sinPitch, fixed16 x, fixed16 y, fixed16 z, s32 sectorId);
+	void setCamera(fixed16_16 yaw, fixed16_16 pitch, fixed16_16 cosYaw, fixed16_16 sinYaw, fixed16_16 sinPitch, fixed16_16 x, fixed16_16 y, fixed16_16 z, s32 sectorId);
 	void draw(u8* display, const ColorMap* colormap);
 
 	void setupLevel(s32 width, s32 height);

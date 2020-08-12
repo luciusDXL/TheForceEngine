@@ -36,26 +36,26 @@ struct RSector
 	RWall*  walls;			// wall list.
 
 	// Render heights.
-	fixed16 floorHeight;	// floor height (Y); -Y up, larger = lower.
-	fixed16 ceilingHeight;	// ceiling height (Y); -Y up, smaller = higher.
-	fixed16 secHeight;		// second height; equals floor height if second height in the data = 0.
-	fixed16 ambientFixed;	// sector ambient in fixed point in the range of [0.0, MAX_LIGHT_LEVEL]
+	fixed16_16 floorHeight;	// floor height (Y); -Y up, larger = lower.
+	fixed16_16 ceilingHeight;	// ceiling height (Y); -Y up, smaller = higher.
+	fixed16_16 secHeight;		// second height; equals floor height if second height in the data = 0.
+	fixed16_16 ambientFixed;	// sector ambient in fixed point in the range of [0.0, MAX_LIGHT_LEVEL]
 
 	// Collision heights.
-	fixed16 colFloorHeight;
-	fixed16 colCeilHeight;
-	fixed16 colSecHeight;
-	fixed16 colMinHeight;
+	fixed16_16 colFloorHeight;
+	fixed16_16 colCeilHeight;
+	fixed16_16 colSecHeight;
+	fixed16_16 colMinHeight;
 
 	// Textures
 	TextureFrame* floorTex;
 	TextureFrame* ceilTex;
 
 	// Texture offsets
-	fixed16 floorOffsetX;
-	fixed16 floorOffsetZ;
-	fixed16 ceilOffsetX;
-	fixed16 ceilOffsetZ;
+	fixed16_16 floorOffsetX;
+	fixed16_16 floorOffsetZ;
+	fixed16_16 ceilOffsetX;
+	fixed16_16 ceilOffsetZ;
 
 	// Objects
 	s32 objectCount;
@@ -71,10 +71,10 @@ struct RSector
 	s32 layer;
 
 	// Bounds
-	fixed16 minX;
-	fixed16 minZ;
-	fixed16 maxX;
-	fixed16 maxZ;
+	fixed16_16 minX;
+	fixed16_16 minZ;
+	fixed16_16 maxX;
+	fixed16_16 maxZ;
 };
 
 namespace RClassicSector
@@ -90,6 +90,6 @@ namespace RClassicSector
 
 	void sector_clear(RSector* sector);
 	void sector_setupWallDrawFlags(RSector* sector);
-	void sector_adjustHeights(RSector* sector, fixed16 floorOffset, fixed16 ceilOffset, fixed16 secondHeightOffset);
+	void sector_adjustHeights(RSector* sector, fixed16_16 floorOffset, fixed16_16 ceilOffset, fixed16_16 secondHeightOffset);
 	void sector_computeBounds(RSector* sector);
 }

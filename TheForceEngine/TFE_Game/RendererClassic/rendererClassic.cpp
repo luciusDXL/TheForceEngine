@@ -127,14 +127,14 @@ namespace RendererClassic
 
 		s_columnTop   = (s32*)realloc(s_columnTop, s_width * sizeof(s32));
 		s_columnBot   = (s32*)realloc(s_columnBot, s_width * sizeof(s32));
-		s_depth1d_all = (fixed16*)realloc(s_depth1d, s_width * sizeof(fixed16) * (MAX_ADJOIN_DEPTH + 1));
+		s_depth1d_all = (fixed16_16*)realloc(s_depth1d, s_width * sizeof(fixed16_16) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowTop_all = (s32*)realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowBot_all = (s32*)realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
 		// Build tables
-		s_column_Y_Over_X = (fixed16*)realloc(s_column_Y_Over_X, s_width * sizeof(fixed16));
-		s_column_X_Over_Y = (fixed16*)realloc(s_column_X_Over_Y, s_width * sizeof(fixed16));
-		s_skyTable = (fixed16*)realloc(s_skyTable, s_width * sizeof(fixed16));
+		s_column_Y_Over_X = (fixed16_16*)realloc(s_column_Y_Over_X, s_width * sizeof(fixed16_16));
+		s_column_X_Over_Y = (fixed16_16*)realloc(s_column_X_Over_Y, s_width * sizeof(fixed16_16));
+		s_skyTable = (fixed16_16*)realloc(s_skyTable, s_width * sizeof(fixed16_16));
 		s32 halfWidth = s_width >> 1;
 		for (s32 x = 0; x < s_width; x++)
 		{
@@ -148,11 +148,11 @@ namespace RendererClassic
 			s_skyTable[x] = floatToFixed16(512.0f * atanf(f32(x - halfWidth) / f32(halfWidth)) / PI);
 		}
 
-		s_rcp_yMinusHalfHeight = (fixed16*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed16));
+		s_rcp_yMinusHalfHeight = (fixed16_16*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed16_16));
 		s32 halfHeight = s_height >> 1;
 		for (s32 y = 0; y < s_height * 3; y++)
 		{
-			fixed16 yMinusHalf = fixed16(-s_height + y - halfHeight);
+			fixed16_16 yMinusHalf = fixed16_16(-s_height + y - halfHeight);
 			s_rcp_yMinusHalfHeight[y] = (yMinusHalf != 0) ? ONE_16 / yMinusHalf : ONE_16;
 		}
 	}
@@ -169,7 +169,7 @@ namespace RendererClassic
 		loadLevel();
 	}
 			
-	void setCamera(fixed16 yaw, fixed16 pitch, fixed16 cosYaw, fixed16 sinYaw, fixed16 sinPitch, fixed16 x, fixed16 y, fixed16 z, s32 sectorId)
+	void setCamera(fixed16_16 yaw, fixed16_16 pitch, fixed16_16 cosYaw, fixed16_16 sinYaw, fixed16_16 sinPitch, fixed16_16 x, fixed16_16 y, fixed16_16 z, s32 sectorId)
 	{
 		s_cosYaw = cosYaw;
 		s_sinYaw = sinYaw;
@@ -184,7 +184,7 @@ namespace RendererClassic
 		s_cameraPosX = x;
 		s_cameraPosZ = z;
 
-		fixed16 pitchOffset = mul16(sinPitch, s_focalLenAspect);
+		fixed16_16 pitchOffset = mul16(sinPitch, s_focalLenAspect);
 		s_halfHeight = s_halfHeightBase + pitchOffset;
 		s_heightInPixels = s_heightInPixelsBase + floor16(pitchOffset);
 
@@ -227,7 +227,7 @@ namespace RendererClassic
 		s_flatCount  = 0;
 		s_nextWall   = 0;
 		s_curWallSeg = 0;
-		memset(s_depth1d_all, 0, s_width * sizeof(fixed16));
+		memset(s_depth1d_all, 0, s_width * sizeof(fixed16_16));
 
 		s_prevSector = nullptr;
 		s_sectorIndex = 0;

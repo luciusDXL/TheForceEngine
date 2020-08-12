@@ -49,30 +49,30 @@ struct RWall
 	TextureFrame* signTex;
 
 	// Wall length in texels.
-	fixed16 texelLength;
+	fixed16_16 texelLength;
 
 	// Wall heights in texels.
-	fixed16 topTexelHeight;
-	fixed16 midTexelHeight;
-	fixed16 botTexelHeight;
+	fixed16_16 topTexelHeight;
+	fixed16_16 midTexelHeight;
+	fixed16_16 botTexelHeight;
 
 	// Texture Offsets
-	fixed16 topUOffset;
-	fixed16 topVOffset;
+	fixed16_16 topUOffset;
+	fixed16_16 topVOffset;
 
-	fixed16 midUOffset;
-	fixed16 midVOffset;
+	fixed16_16 midUOffset;
+	fixed16_16 midVOffset;
 
-	fixed16 botUOffset;
-	fixed16 botVOffset;
+	fixed16_16 botUOffset;
+	fixed16_16 botVOffset;
 
-	fixed16 signUOffset;
-	fixed16 signVOffset;
+	fixed16_16 signUOffset;
+	fixed16_16 signVOffset;
 
-	fixed16 wallDirX;
-	fixed16 wallDirZ;
+	fixed16_16 wallDirX;
+	fixed16_16 wallDirZ;
 	// Wall length (fixed point).
-	fixed16 length;
+	fixed16_16 length;
 
 	// Update Frame
 	s32 drawFrame;
@@ -82,8 +82,8 @@ struct RWall
 	u32 flags2;
 	u32 flags3;
 
-	fixed16 worldX0;
-	fixed16 worldZ0;
+	fixed16_16 worldX0;
+	fixed16_16 worldZ0;
 
 	// Lighting
 	s32 wallLight;
@@ -97,16 +97,16 @@ struct RWallSegment
 	RWall* srcWall;		// Source wall
 	s32 wallX0_raw;		// Projected wall X coordinates before adjoin/wall clipping.
 	s32 wallX1_raw;
-	fixed16 z0;			// Depth
-	fixed16 z1;
-	fixed16 uCoord0;	// Texture U coordinate offset based on clipping.
-	fixed16 x0View;		// Viewspace vertex 0 X coordinate.
+	fixed16_16 z0;			// Depth
+	fixed16_16 z1;
+	fixed16_16 uCoord0;	// Texture U coordinate offset based on clipping.
+	fixed16_16 x0View;		// Viewspace vertex 0 X coordinate.
 	s32 wallX0;			// Clipped projected X Coordinates.
 	s32 wallX1;
 	u8  orient;			// Wall orientation (WORIENT_DZ_DX or WORIENT_DX_DZ)
 	u8  pad8[3];
-	fixed16 slope;		// Wall slope
-	fixed16 uScale;		// dUdX or dUdZ based on wall orientation.
+	fixed16_16 slope;		// Wall slope
+	fixed16_16 uScale;		// dUdX or dUdZ based on wall orientation.
 };
 
 namespace RClassicWall
@@ -126,7 +126,7 @@ namespace RClassicWall
 	void wall_drawSkyBottom(RSector* sector);
 	void wall_drawSkyBottomNoWall(RSector* sector);
 
-	void wall_addAdjoinSegment(s32 length, s32 x0, fixed16 top_dydx, fixed16 y1, fixed16 bot_dydx, fixed16 y0, RWallSegment* wallSegment);
+	void wall_addAdjoinSegment(s32 length, s32 x0, fixed16_16 top_dydx, fixed16_16 y1, fixed16_16 bot_dydx, fixed16_16 y0, RWallSegment* wallSegment);
 
 	void wall_setupAdjoinDrawFlags(RWall* wall);
 	void wall_computeTexelHeights(RWall* wall);

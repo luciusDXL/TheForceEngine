@@ -19,13 +19,13 @@ using namespace RMath;
 
 namespace RClassicLighting
 {
-	const u8* computeLighting(fixed16 depth, s32 lightOffset)
+	const u8* computeLighting(fixed16_16 depth, s32 lightOffset)
 	{
 		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)
 		{
 			return nullptr;
 		}
-		depth = max(depth, fixed16(0));
+		depth = max(depth, fixed16_16(0));
 		s32 light = 0;
 
 		// handle camera lightsource

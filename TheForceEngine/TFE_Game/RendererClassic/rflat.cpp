@@ -17,10 +17,10 @@ using namespace RMath;
 namespace RClassicFlat
 {
 	static s32 s_scanlineX0;
-	static fixed16 s_scanlineU0;
-	static fixed16 s_scanlineV0;
-	static fixed16 s_scanline_dUdX;
-	static fixed16 s_scanline_dVdX;
+	static fixed16_16 s_scanlineU0;
+	static fixed16_16 s_scanlineV0;
+	static fixed16_16 s_scanline_dUdX;
+	static fixed16_16 s_scanline_dVdX;
 	static s32 s_scanlineWidth;
 	static const u8* s_scanlineLight;
 	static u8* s_scanlineOut;
@@ -32,18 +32,18 @@ namespace RClassicFlat
 	static s32 s_ftexHeightMask;
 	static s32 s_ftexHeightLog2;
 	
-	void flat_addEdges(s32 length, s32 x0, fixed16 dyFloor_dx, fixed16 yFloor, fixed16 dyCeil_dx, fixed16 yCeil)
+	void flat_addEdges(s32 length, s32 x0, fixed16_16 dyFloor_dx, fixed16_16 yFloor, fixed16_16 dyCeil_dx, fixed16_16 yCeil)
 	{
 		if (s_flatCount < MAX_SEG && length > 0)
 		{
-			const fixed16 lengthFixed = intToFixed16(length - 1);
+			const fixed16_16 lengthFixed = intToFixed16(length - 1);
 
-			fixed16 yCeil1 = yCeil;
+			fixed16_16 yCeil1 = yCeil;
 			if (dyCeil_dx != 0)
 			{
 				yCeil1 += mul16(dyCeil_dx, lengthFixed);
 			}
-			fixed16 yFloor1 = yFloor;
+			fixed16_16 yFloor1 = yFloor;
 			if (dyFloor_dx != 0)
 			{
 				yFloor1 += mul16(dyFloor_dx, lengthFixed);
@@ -226,10 +226,10 @@ namespace RClassicFlat
 	// to account for C vs ASM differences.
 	void drawScanline()
 	{
-		fixed16 V = s_scanlineV0;
-		fixed16 U = s_scanlineU0;
-		fixed16 dVdX = s_scanline_dVdX;
-		fixed16 dUdX = s_scanline_dUdX;
+		fixed16_16 V = s_scanlineV0;
+		fixed16_16 U = s_scanlineU0;
+		fixed16_16 dVdX = s_scanline_dVdX;
+		fixed16_16 dUdX = s_scanline_dUdX;
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
@@ -251,10 +251,10 @@ namespace RClassicFlat
 
 	void drawScanline_Fullbright()
 	{
-		fixed16 V = s_scanlineV0;
-		fixed16 U = s_scanlineU0;
-		fixed16 dVdX = s_scanline_dVdX;
-		fixed16 dUdX = s_scanline_dUdX;
+		fixed16_16 V = s_scanlineV0;
+		fixed16_16 U = s_scanlineU0;
+		fixed16_16 dVdX = s_scanline_dVdX;
+		fixed16_16 dUdX = s_scanline_dUdX;
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
@@ -277,15 +277,15 @@ namespace RClassicFlat
 
 	void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count)
 	{
-		fixed16 textureOffsetU = s_cameraPosX - sector->ceilOffsetX;
-		fixed16 textureOffsetV = sector->ceilOffsetZ - s_cameraPosZ;
+		fixed16_16 textureOffsetU = s_cameraPosX - sector->ceilOffsetX;
+		fixed16_16 textureOffsetV = sector->ceilOffsetZ - s_cameraPosZ;
 
-		fixed16 relCeil          =  sector->ceilingHeight - s_eyeHeight;
-		fixed16 scaledRelCeil    =  mul16(relCeil, s_focalLenAspect);
-		fixed16 cosScaledRelCeil =  mul16(scaledRelCeil, s_cosYaw);
-		fixed16 negSinRelCeil    = -mul16(relCeil, s_sinYaw);
-		fixed16 sinScaledRelCeil =  mul16(scaledRelCeil, s_sinYaw);
-		fixed16 negCosRelCeil    = -mul16(relCeil, s_cosYaw);
+		fixed16_16 relCeil          =  sector->ceilingHeight - s_eyeHeight;
+		fixed16_16 scaledRelCeil    =  mul16(relCeil, s_focalLenAspect);
+		fixed16_16 cosScaledRelCeil =  mul16(scaledRelCeil, s_cosYaw);
+		fixed16_16 negSinRelCeil    = -mul16(relCeil, s_sinYaw);
+		fixed16_16 sinScaledRelCeil =  mul16(scaledRelCeil, s_sinYaw);
+		fixed16_16 negCosRelCeil    = -mul16(relCeil, s_cosYaw);
 
 		TextureFrame* ceilTex = sector->ceilTex;
 		// What should happen with a missing texture?
@@ -303,8 +303,8 @@ namespace RClassicFlat
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_heightInPixelsBase - s_heightInPixels;
-			fixed16 yRcp = s_rcp_yMinusHalfHeight[yShear + y + s_height];
-			fixed16 z = mul16(scaledRelCeil, yRcp);
+			fixed16_16 yRcp = s_rcp_yMinusHalfHeight[yShear + y + s_height];
+			fixed16_16 z = mul16(scaledRelCeil, yRcp);
 
 			s32 left = 0;
 			s32 right = 0;
@@ -420,15 +420,15 @@ namespace RClassicFlat
 					assert(y >= 0 && y < s_height);
 					s_scanlineX0  = left;
 					s_scanlineOut = &s_display[left + yOffset];
-					fixed16 rightClip = intToFixed16(right - s_screenXMid);
+					fixed16_16 rightClip = intToFixed16(right - s_screenXMid);
 
-					fixed16 v0 = mul16(cosScaledRelCeil - mul16(negSinRelCeil, rightClip), yRcp);
+					fixed16_16 v0 = mul16(cosScaledRelCeil - mul16(negSinRelCeil, rightClip), yRcp);
 					s_scanlineV0 = (v0 - textureOffsetV) * 8;
 
-					fixed16 u0 = mul16(sinScaledRelCeil + mul16(negCosRelCeil, rightClip), yRcp);
+					fixed16_16 u0 = mul16(sinScaledRelCeil + mul16(negCosRelCeil, rightClip), yRcp);
 					s_scanlineU0 = (u0 - textureOffsetU) * 8;
 
-					const fixed16 worldToTexelScale = fixed16(8);
+					const fixed16_16 worldToTexelScale = fixed16_16(8);
 					s_scanline_dVdX =  mul16(negSinRelCeil, yRcp) * worldToTexelScale;
 					s_scanline_dUdX = -mul16(negCosRelCeil, yRcp) * worldToTexelScale;
 					s_scanlineLight =  computeLighting(z, 0);
@@ -448,16 +448,16 @@ namespace RClassicFlat
 
 	void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count)
 	{
-		fixed16 textureOffsetU = s_cameraPosX - sector->floorOffsetX;
-		fixed16 textureOffsetV = sector->floorOffsetZ - s_cameraPosZ;
+		fixed16_16 textureOffsetU = s_cameraPosX - sector->floorOffsetX;
+		fixed16_16 textureOffsetV = sector->floorOffsetZ - s_cameraPosZ;
 
-		fixed16 relFloor       = sector->floorHeight - s_eyeHeight;
-		fixed16 scaledRelFloor = mul16(relFloor, s_focalLenAspect);
+		fixed16_16 relFloor       = sector->floorHeight - s_eyeHeight;
+		fixed16_16 scaledRelFloor = mul16(relFloor, s_focalLenAspect);
 
-		fixed16 cosScaledRelFloor = mul16(scaledRelFloor, s_cosYaw);
-		fixed16 negSinRelFloor    =-mul16(relFloor, s_sinYaw);
-		fixed16 sinScaledRelFloor = mul16(scaledRelFloor, s_sinYaw);
-		fixed16 negCosRelFloor    =-mul16(relFloor, s_cosYaw);
+		fixed16_16 cosScaledRelFloor = mul16(scaledRelFloor, s_cosYaw);
+		fixed16_16 negSinRelFloor    =-mul16(relFloor, s_sinYaw);
+		fixed16_16 sinScaledRelFloor = mul16(scaledRelFloor, s_sinYaw);
+		fixed16_16 negCosRelFloor    =-mul16(relFloor, s_cosYaw);
 
 		TextureFrame* floorTex = sector->floorTex;
 		if (!floorTex) { return; }
@@ -474,8 +474,8 @@ namespace RClassicFlat
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_heightInPixelsBase - s_heightInPixels;
-			fixed16 yRcp = s_rcp_yMinusHalfHeight[yShear + y + s_height];
-			fixed16 z = mul16(scaledRelFloor, yRcp);
+			fixed16_16 yRcp = s_rcp_yMinusHalfHeight[yShear + y + s_height];
+			fixed16_16 z = mul16(scaledRelFloor, yRcp);
 
 			s32 left = 0;
 			s32 right = 0;
@@ -591,11 +591,11 @@ namespace RClassicFlat
 					assert(y >= 0 && y < s_height);
 					s_scanlineX0 = left;
 					s_scanlineOut = &s_display[left + yOffset];
-					fixed16 rightClip = intToFixed16(right - s_screenXMid);
-					fixed16 worldToTexelScale = fixed16(8);
+					fixed16_16 rightClip = intToFixed16(right - s_screenXMid);
+					fixed16_16 worldToTexelScale = fixed16_16(8);
 
-					fixed16 v0 = mul16(cosScaledRelFloor - mul16(negSinRelFloor, rightClip), yRcp);
-					fixed16 u0 = mul16(sinScaledRelFloor + mul16(negCosRelFloor, rightClip), yRcp);
+					fixed16_16 v0 = mul16(cosScaledRelFloor - mul16(negSinRelFloor, rightClip), yRcp);
+					fixed16_16 u0 = mul16(sinScaledRelFloor + mul16(negCosRelFloor, rightClip), yRcp);
 					s_scanlineV0 = (v0 - textureOffsetV) * worldToTexelScale;
 					s_scanlineU0 = (u0 - textureOffsetU) * worldToTexelScale;
 

@@ -44,7 +44,7 @@ namespace RClassicSector
 	{
 		RSector* curSector;
 		RSector* prevSector;
-		fixed16* depth1d;
+		fixed16_16* depth1d;
 		u32     windowX0;
 		u32     windowX1;
 		s32     windowMinY;
@@ -121,7 +121,7 @@ namespace RClassicSector
 
 		s_windowTop = winTop;
 		s_windowBot = winBot;
-		fixed16* depthPrev = nullptr;
+		fixed16_16* depthPrev = nullptr;
 		if (s_adjoinDepth > 1)
 		{
 			depthPrev = &s_depth1d_all[(s_adjoinDepth - 2) * s_width];
@@ -361,7 +361,7 @@ namespace RClassicSector
 
 		if (!(s_curSector->flags1 & SEC_FLAGS1_SUBSECTOR) && depthPrev && s_drawFrame != s_prevSector->prevDrawFrame2)
 		{
-			memcpy(&depthPrev[s_windowMinX], &s_depth1d[s_windowMinX], (s_windowMaxX - s_windowMinX + 1) * sizeof(fixed16));
+			memcpy(&depthPrev[s_windowMinX], &s_depth1d[s_windowMinX], (s_windowMaxX - s_windowMinX + 1) * sizeof(fixed16_16));
 		}
 
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
@@ -376,13 +376,13 @@ namespace RClassicSector
 			if (wall->nextSector)
 			{
 				RSector* wSector = wall->sector;
-				fixed16 wFloorHeight = wSector->floorHeight;
-				fixed16 wCeilHeight = wSector->ceilingHeight;
+				fixed16_16 wFloorHeight = wSector->floorHeight;
+				fixed16_16 wCeilHeight = wSector->ceilingHeight;
 
 				RWall* mirror = wall->mirrorWall;
 				RSector* mSector = mirror->sector;
-				fixed16 mFloorHeight = mSector->floorHeight;
-				fixed16 mCeilHeight = mSector->ceilingHeight;
+				fixed16_16 mFloorHeight = mSector->floorHeight;
+				fixed16_16 mCeilHeight = mSector->ceilingHeight;
 
 				wall->drawFlags = 0;
 				mirror->drawFlags = 0;
@@ -409,12 +409,12 @@ namespace RClassicSector
 		}
 	}
 
-	void sector_adjustHeights(RSector* sector, fixed16 floorOffset, fixed16 ceilOffset, fixed16 secondHeightOffset)
+	void sector_adjustHeights(RSector* sector, fixed16_16 floorOffset, fixed16_16 ceilOffset, fixed16_16 secondHeightOffset)
 	{
 		// Adjust objects.
 		if (sector->objectCount)
 		{
-			fixed16 heightOffset = secondHeightOffset + floorOffset;
+			fixed16_16 heightOffset = secondHeightOffset + floorOffset;
 			for (s32 i = 0; i < sector->objectCapacity; i++)
 			{
 				SecObject* obj = sector->objectList[i];
@@ -443,17 +443,17 @@ namespace RClassicSector
 		}
 
 		// Update collision data.
-		fixed16 floorHeight = sector->floorHeight;
+		fixed16_16 floorHeight = sector->floorHeight;
 		if (sector->flags1 & SEC_FLAGS1_PIT)
 		{
 			floorHeight += 100 * ONE_16;
 		}
-		fixed16 ceilHeight = sector->ceilingHeight;
+		fixed16_16 ceilHeight = sector->ceilingHeight;
 		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
 			ceilHeight -= 100 * ONE_16;
 		}
-		fixed16 secHeight = sector->floorHeight + sector->secHeight;
+		fixed16_16 secHeight = sector->floorHeight + sector->secHeight;
 		if (sector->secHeight >= 0 && floorHeight > secHeight)
 		{
 			secHeight = floorHeight;
@@ -469,10 +469,10 @@ namespace RClassicSector
 	{
 		RWall* wall = sector->walls;
 		vec2* w0 = wall->w0;
-		fixed16 maxX = w0->x;
-		fixed16 maxZ = w0->z;
-		fixed16 minX = maxX;
-		fixed16 minZ = maxZ;
+		fixed16_16 maxX = w0->x;
+		fixed16_16 maxZ = w0->z;
+		fixed16_16 minX = maxX;
+		fixed16_16 minZ = maxZ;
 
 		for (s32 i = 1; i < sector->wallCount; i++, wall++)
 		{
@@ -576,8 +576,8 @@ namespace RClassicSector
 		out->wallCount = sector->wallCount;
 
 		const SectorBaseHeight* baseHeight = TFE_Level::getBaseSectorHeight(sectorId);
-		fixed16 ceilDelta  = floatToFixed16(8.0f * (sector->ceilAlt - baseHeight->ceilAlt));
-		fixed16 floorDelta = floatToFixed16(8.0f * (sector->floorAlt - baseHeight->floorAlt));
+		fixed16_16 ceilDelta  = floatToFixed16(8.0f * (sector->ceilAlt - baseHeight->ceilAlt));
+		fixed16_16 floorDelta = floatToFixed16(8.0f * (sector->floorAlt - baseHeight->floorAlt));
 
 		out->ambientFixed  = intToFixed16(sector->ambient);
 		out->floorHeight   = floatToFixed16(sector->floorAlt);
@@ -606,7 +606,7 @@ namespace RClassicSector
 		
 		TFE_ZONE_BEGIN(secWall, "Sector Update Walls");
 		RWall* wall = out->walls;
-		const fixed16 midTexelHeight = mul16(intToFixed16(8), floatToFixed16(sector->floorAlt - sector->ceilAlt));
+		const fixed16_16 midTexelHeight = mul16(intToFixed16(8), floatToFixed16(sector->floorAlt - sector->ceilAlt));
 		for (s32 w = 0; w < out->wallCount; w++, wall++)
 		{
 			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
@@ -689,8 +689,8 @@ namespace RClassicSector
 			const s32 x0 = adjoinEdges->x0;
 			const s32 x1 = adjoinEdges->x1;
 
-			const fixed16 ceil_dYdX = adjoinEdges->dyCeil_dx;
-			fixed16 y = adjoinEdges->yCeil0;
+			const fixed16_16 ceil_dYdX = adjoinEdges->dyCeil_dx;
+			fixed16_16 y = adjoinEdges->yCeil0;
 			for (s32 x = x0; x <= x1; x++, y += ceil_dYdX)
 			{
 				s32 yPixel = round16(y);
@@ -701,7 +701,7 @@ namespace RClassicSector
 					winTopNext[x] = (yPixel <= yBot) ? yPixel : yBot + 1;
 				}
 			}
-			const fixed16 floor_dYdX = adjoinEdges->dyFloor_dx;
+			const fixed16_16 floor_dYdX = adjoinEdges->dyFloor_dx;
 			y = adjoinEdges->yFloor0;
 			for (s32 x = x0; x <= x1; x++, y += floor_dYdX)
 			{
