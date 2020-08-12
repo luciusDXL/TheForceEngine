@@ -86,6 +86,12 @@ namespace FixedPoint
 		const s64 b64 = s64(b);
 		const s64 c64 = s64(c);
 		s64 value = (a64 * b64) / c64;
+
+		// Overflow precision test.
+		#if ASSERT_ON_OVERFLOW == 1
+		assert(((a64 * b64) / c64) == fixed16_16((a64 * b64) / c64));
+		#endif
+
 		return fixed16_16(value);
 	}
 	
@@ -96,6 +102,12 @@ namespace FixedPoint
 		const s64 b64 = s64(b);
 		const s64 c64 = s64(c);
 		s64 value = (a64 * b64 * c64) >> (FRAC_BITS + FRAC_BITS);
+
+		// Overflow precision test.
+		#if ASSERT_ON_OVERFLOW == 1
+		assert(((a64 * b64 * c64) >> (FRAC_BITS + FRAC_BITS)) == fixed16_16((a64 * b64 * c64) >> (FRAC_BITS + FRAC_BITS)));
+		#endif
+
 		return fixed16_16(value);
 	}
 
