@@ -314,8 +314,19 @@ namespace RClassicWall
 		//////////////////////////////////////////////////
 		// Project.
 		//////////////////////////////////////////////////
-		fixed16 x0proj  = div16(mul16(x0, s_focalLength), z0) + s_halfWidth;
-		fixed16 x1proj  = div16(mul16(x1, s_focalLength), z1) + s_halfWidth;
+		fixed16 x0proj, x1proj;
+		if (!s_enableHighPrecision)
+		{
+			// Original DOS code
+			x0proj = div16(mul16(x0, s_focalLength), z0) + s_halfWidth;
+			x1proj = div16(mul16(x1, s_focalLength), z1) + s_halfWidth;
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			x0proj = fusedMulDiv(x0, s_focalLength, z0) + s_halfWidth;
+			x1proj = fusedMulDiv(x1, s_focalLength, z1) + s_halfWidth;
+		}
 		s32 x0pixel = round16(x0proj);
 		s32 x1pixel = round16(x1proj) - 1;
 		

@@ -8,6 +8,9 @@ struct EdgePair;
 
 namespace RendererClassic
 {
+	// Settings
+	extern bool s_enableHighPrecision;
+
 	// Resolution
 	extern s32 s_width;
 	extern s32 s_height;

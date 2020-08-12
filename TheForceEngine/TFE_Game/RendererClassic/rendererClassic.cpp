@@ -107,6 +107,9 @@ namespace RendererClassic
 		s_heightInPixels = s_height;
 		s_heightInPixelsBase = s_height;
 
+		// Use improved fixed point math if the resolution is any higher than 320x200.
+		s_enableHighPrecision = (width > 320 || height > 200);
+
 		// HACK: TODO - compute correctly.
 		if (width * 10 / height != 16)
 		{

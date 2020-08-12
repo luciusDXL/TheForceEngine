@@ -3,6 +3,9 @@
 
 namespace RendererClassic
 {
+	// Settings
+	bool s_enableHighPrecision;
+
 	// Resolution
 	s32 s_width = 0;
 	s32 s_height = 0;
