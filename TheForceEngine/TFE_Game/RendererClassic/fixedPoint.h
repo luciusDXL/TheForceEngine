@@ -94,6 +94,17 @@ namespace FixedPoint
 
 		return fixed16_16(value);
 	}
+
+	// computes a * b / c while keeping everything in 64 bits until the end.
+	inline fixed48_16 fusedMulDiv_48_16(fixed16_16 a, fixed16_16 b, fixed16_16 c)
+	{
+		const s64 a64 = s64(a);
+		const s64 b64 = s64(b);
+		const s64 c64 = s64(c);
+		s64 value = (a64 * b64) / c64;
+
+		return fixed48_16(value);
+	}
 	
 	// computes a * b * c while keeping everything in 64 bits until the end.
 	inline fixed16_16 fusedMulMul(fixed16_16 a, fixed16_16 b, fixed16_16 c)
@@ -113,6 +124,12 @@ namespace FixedPoint
 
 	// rounds a 16.16 fixed point number, returns an int: (x + HALF_16) >> 16
 	inline s32 round16(fixed16_16 x)
+	{
+		return s32((x + HALF_16) >> FRAC_BITS);
+	}
+
+	// rounds a 16.16 fixed point number, returns an int: (x + HALF_16) >> 16
+	inline s32 round16(fixed48_16 x)
 	{
 		return s32((x + HALF_16) >> FRAC_BITS);
 	}

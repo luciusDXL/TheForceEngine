@@ -140,11 +140,25 @@ namespace RClassicWall
 		fixed16_16 dz = z1 - z0;
 		// Cull the wall if it is back facing.
 		// y0*dx - x0*dy
-		const fixed16_16 side = mul16(z0, dx) - mul16(x0, dz);
-		if (side < 0)
+		if (!s_enableHighPrecision)
 		{
-			wall->visible = 0;
-			return;
+			// Original DOS code
+			const fixed16_16 side = mul16(z0, dx) - mul16(x0, dz);
+			if (side < 0)
+			{
+				wall->visible = 0;
+				return;
+			}
+		}
+		else
+		{
+			// Improved code that better avoids overflow, as seen in the MAC version.
+			const fixed48_16 side = mul16(fixed48_16(z0), fixed48_16(dx)) - mul16(fixed48_16(x0), fixed48_16(dz));
+			if (side < 0)
+			{
+				wall->visible = 0;
+				return;
+			}
 		}
 
 		fixed16_16 curU = 0;
@@ -331,21 +345,23 @@ namespace RClassicWall
 		//////////////////////////////////////////////////
 		// Project.
 		//////////////////////////////////////////////////
-		fixed16_16 x0proj, x1proj;
+		s32 x0pixel, x1pixel;
 		if (!s_enableHighPrecision)
 		{
 			// Original DOS code
-			x0proj = div16(mul16(x0, s_focalLength), z0) + s_halfWidth;
-			x1proj = div16(mul16(x1, s_focalLength), z1) + s_halfWidth;
+			fixed16_16 x0proj = div16(mul16(x0, s_focalLength), z0) + s_halfWidth;
+			fixed16_16 x1proj = div16(mul16(x1, s_focalLength), z1) + s_halfWidth;
+			x0pixel = round16(x0proj);
+			x1pixel = round16(x1proj) - 1;
 		}
 		else
 		{
 			// Improved code that better avoids overflow, as seen in the MAC version.
-			x0proj = fusedMulDiv(x0, s_focalLength, z0) + s_halfWidth;
-			x1proj = fusedMulDiv(x1, s_focalLength, z1) + s_halfWidth;
+			fixed48_16 x0proj = fusedMulDiv_48_16(x0, s_focalLength, z0) + s_halfWidth;
+			fixed48_16 x1proj = fusedMulDiv_48_16(x1, s_focalLength, z1) + s_halfWidth;
+			x0pixel = round16(x0proj);
+			x1pixel = round16(x1proj) - 1;
 		}
-		s32 x0pixel = round16(x0proj);
-		s32 x1pixel = round16(x1proj) - 1;
 		
 		// Handle near plane clipping by adjusting the walls to avoid holes.
 		if (clipX0_Near != 0 && x0pixel > s_minScreenX)
