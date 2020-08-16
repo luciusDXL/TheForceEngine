@@ -88,6 +88,7 @@ namespace RendererClassic
 	// Flats
 	s32 s_flatCount;
 	fixed16_16* s_rcp_yMinusHalfHeight;
+	fixed12_20* s_rcp_yMinusHalfHeightHQ;
 	s32 s_wallMaxCeilY;
 	s32 s_wallMinFloorY;
 	EdgePair* s_flatEdge;

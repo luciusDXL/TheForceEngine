@@ -13,11 +13,17 @@
 #define ASSERT_ON_OVERFLOW 0
 
 typedef s32 fixed16_16;
+typedef s32 fixed12_20;
 typedef s64 fixed48_16;
+typedef s64 fixed44_20;
+
 #define HALF_16 0x8000
-#define ONE_16 0x10000
+#define ONE_16  0x10000
+#define HALF_20 0x80000
+#define ONE_20  0x100000
+
 #define FRAC_BITS 16ll
-#define SUB_TEXEL_SHIFT 6
+#define FRAC_BITS_20 20ll
 #define FLOAT_SCALE 65536.0f
 #define ANGLE_TO_FIXED_SCALE 4
 
@@ -73,10 +79,30 @@ namespace FixedPoint
 		return (num << FRAC_BITS) / denom;
 	}
 
+	// multiplies 2 fixed point numbers, the result is fixed point.
+	// this variant uses the extended size directly, so no upcasting is required.
+	inline fixed44_20 mul20(fixed44_20 x, fixed44_20 y)
+	{
+		return (x * y) >> FRAC_BITS_20;
+	}
+
+	// divides 2 fixed point numbers, the result is fixed point.
+	// this variant uses the extended size directly, so no upcasting is required.
+	inline fixed44_20 div20(fixed44_20 num, fixed44_20 denom)
+	{
+		return (num << FRAC_BITS_20) / denom;
+	}
+
 	// truncates a 16.16 fixed point number, returns an int: x >> 16
 	inline s32 floor16(fixed48_16 x)
 	{
 		return s32(x >> FRAC_BITS);
+	}
+
+	// truncates a 16.16 fixed point number, returns an int: x >> 16
+	inline s32 floor20(fixed44_20 x)
+	{
+		return s32(x >> FRAC_BITS_20);
 	}
 
 	// computes a * b / c while keeping everything in 64 bits until the end.
@@ -138,6 +164,12 @@ namespace FixedPoint
 	inline fixed16_16 intToFixed16(s32 x)
 	{
 		return fixed16_16(x) << FRAC_BITS;
+	}
+
+	// converts an integer to a fixed point number: x << 16
+	inline fixed44_20 intToFixed20(s32 x)
+	{
+		return fixed44_20(x) << FRAC_BITS_20;
 	}
 
 	inline fixed16_16 floatToFixed16(f32 x)

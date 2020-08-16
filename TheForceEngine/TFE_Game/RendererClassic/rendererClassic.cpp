@@ -148,12 +148,14 @@ namespace RendererClassic
 			s_skyTable[x] = floatToFixed16(512.0f * atanf(f32(x - halfWidth) / f32(halfWidth)) / PI);
 		}
 
-		s_rcp_yMinusHalfHeight = (fixed16_16*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed16_16));
+		s_rcp_yMinusHalfHeight   = (fixed16_16*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed16_16));
+		s_rcp_yMinusHalfHeightHQ = (fixed12_20*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed12_20));
 		s32 halfHeight = s_height >> 1;
 		for (s32 y = 0; y < s_height * 3; y++)
 		{
 			fixed16_16 yMinusHalf = fixed16_16(-s_height + y - halfHeight);
-			s_rcp_yMinusHalfHeight[y] = (yMinusHalf != 0) ? ONE_16 / yMinusHalf : ONE_16;
+			s_rcp_yMinusHalfHeight[y]   = (yMinusHalf != 0) ? ONE_16 / yMinusHalf : ONE_16;
+			s_rcp_yMinusHalfHeightHQ[y] = (yMinusHalf != 0) ? ONE_20 / yMinusHalf : ONE_20;
 		}
 	}
 	
