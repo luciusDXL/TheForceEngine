@@ -15,4 +15,7 @@ namespace RClassicFlat
 
 	void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count);
 	void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count);
+
+	void flat_drawCeiling_HQ(RSector* sector, EdgePair* edges, s32 count);
+	void flat_drawFloor_HQ(RSector* sector, EdgePair* edges, s32 count);
 }

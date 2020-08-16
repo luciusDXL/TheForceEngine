@@ -273,7 +273,10 @@ namespace RClassicSector
 			}
 			else
 			{
-				flat_drawCeiling(s_curSector, flatEdge, newFlatCount);
+				if (!s_enableHighPrecision)
+					flat_drawCeiling(s_curSector, flatEdge, newFlatCount);
+				else
+					flat_drawCeiling_HQ(s_curSector, flatEdge, newFlatCount);
 			}
 			if (s_curSector->flags1 & SEC_FLAGS1_PIT)
 			{
@@ -288,7 +291,10 @@ namespace RClassicSector
 			}
 			else
 			{
-				flat_drawFloor(s_curSector, flatEdge, newFlatCount);
+				if (!s_enableHighPrecision)
+					flat_drawFloor(s_curSector, flatEdge, newFlatCount);
+				else
+					flat_drawFloor_HQ(s_curSector, flatEdge, newFlatCount);
 			}
 		TFE_ZONE_END(secDrawFlats);
 
