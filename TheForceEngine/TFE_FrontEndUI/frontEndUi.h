@@ -24,6 +24,7 @@ enum AppState
 namespace TFE_FrontEndUI
 {
 	void init();
+	void initConsole();
 	void shutdown();
 
 	AppState update();

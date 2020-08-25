@@ -5,6 +5,8 @@
 // Example: TFE_MidiDevice::sendMessage(MID_NOTE_ON + channelId, note, velocity);
 //          TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + channelId, MID_VOLUME_MSB, 100);
 
+#define CHANNEL_MAX_VOLUME 127
+
 // Channel message type
 enum MidiMessageType
 {

@@ -175,6 +175,12 @@ namespace TFE_FrontEndUI
 		return false;
 	}
 
+	void initConsole()
+	{
+		TFE_Console::init();
+		TFE_ProfilerView::init();
+	}
+
 	void init()
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_FrontEndUI::init");
@@ -220,10 +226,7 @@ namespace TFE_FrontEndUI
 		}
 
 		s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
-
-		TFE_Console::init();
-		TFE_ProfilerView::init();
-
+				
 		// Setup menu item callbacks
 		s_menuItemselected[0] = menuItem_Start;
 		s_menuItemselected[1] = menuItem_Manual;

@@ -3,6 +3,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
 #include <TFE_Game/gameHud.h>
+#include <TFE_FrontEndUI/console.h>
 #include <assert.h>
 #include <algorithm>
 
@@ -94,7 +95,9 @@ namespace TFE_Audio
 	static Mutex s_mutex;
 
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData);
-
+	void setSoundVolumeConsole(const std::vector<std::string>& args);
+	void getSoundVolumeConsole(const std::vector<std::string>& args);
+				
 	bool init()
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_AudioSystem::init");
@@ -103,6 +106,9 @@ namespace TFE_Audio
 
 		MUTEX_INITIALIZE(&s_mutex);
 
+		CCMD("setSoundVolume", setSoundVolumeConsole, 1, "Sets the sound volume, range is 0.0 to 1.0");
+		CCMD("getSoundVolume", getSoundVolumeConsole, 0, "Get the current sound volume.");
+		
 		bool res = TFE_AudioDevice::init();
 		res |= TFE_AudioDevice::startOutput(audioCallback, nullptr, 2u, 11025u);
 		return res;
@@ -451,5 +457,23 @@ namespace TFE_Audio
 		MUTEX_UNLOCK(&s_mutex);
 
 		return 0;
+	}
+
+	// Console functions.
+	void setSoundVolumeConsole(const std::vector<std::string>& args)
+	{
+		if (args.size() >= 2)
+		{
+			char* endPtr = nullptr;
+			s_soundFxVolume = (f32)strtod(args[1].c_str(), &endPtr);
+			s_soundFxScale = s_soundFxVolume * c_soundHeadroom;
+		}
+	}
+
+	void getSoundVolumeConsole(const std::vector<std::string>& args)
+	{
+		char res[256];
+		sprintf(res, "Sound Volume: %2.3f", s_soundFxVolume);
+		TFE_Console::addToHistory(res);
 	}
 }

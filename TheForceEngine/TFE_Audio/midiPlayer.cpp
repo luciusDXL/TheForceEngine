@@ -3,6 +3,7 @@
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_System/system.h>
 #include <TFE_System/Threads/thread.h>
+#include <TFE_FrontEndUI/console.h>
 #include <algorithm>
 
 #ifdef _WIN32
@@ -49,6 +50,7 @@ namespace TFE_MidiPlayer
 
 	static MidiRuntime s_runtime;
 	static atomic_bool s_isPlaying;
+	static atomic_bool s_changeVolume;
 	static atomic_u32  s_transition;
 	static f32  s_masterVolume = 0.5f;
 	static Thread* s_thread = nullptr;
@@ -56,8 +58,17 @@ namespace TFE_MidiPlayer
 	static atomic_bool s_runMusicThread;
 	static atomic_bool s_resetThreadLocalTime;
 
+	static u8 s_channelSrcVolume[16] = { 0 };
+
+	static const f32 c_musicVolumeScale = 0.5f;
+
 	TFE_THREADRET midiUpdateFunc(void* userData);
 	void stopAllNotes();
+	void changeVolume();
+
+	// Console Functions
+	void setMusicVolumeConsole(const std::vector<std::string>& args);
+	void getMusicVolumeConsole(const std::vector<std::string>& args);
 
 	bool init()
 	{
@@ -76,6 +87,8 @@ namespace TFE_MidiPlayer
 			s_thread->run();
 		}
 
+		CCMD("setMusicVolume", setMusicVolumeConsole, 1, "Sets the music volume, range is 0.0 to 1.0");
+		CCMD("getMusicVolume", getMusicVolumeConsole, 0, "Get the current music volume where 0 = silent, 1 = maximum.");
 		return res && s_thread;
 	}
 
@@ -105,6 +118,12 @@ namespace TFE_MidiPlayer
 			s_runtime.tracks[i].lastEvent = -1;
 			s_runtime.tracks[i].msPerTick = gmidAsset->tracks[i].msPerTick;
 		}
+
+		for (u32 i = 0; i < 16; i++)
+		{
+			s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
+		}
+		changeVolume();
 
 		s_isPlaying.store(true);
 		s_resetThreadLocalTime.store(true);
@@ -141,6 +160,14 @@ namespace TFE_MidiPlayer
 		s_isPlaying.store(false);
 	}
 
+	void changeVolume()
+	{
+		for (u32 i = 0; i < 16; i++)
+		{
+			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_VOLUME_MSB, u8(s_channelSrcVolume[i] * s_masterVolume));
+		}
+	}
+
 	void stopAllNotes()
 	{
 		for (u32 i = 0; i < 16; i++)
@@ -148,7 +175,7 @@ namespace TFE_MidiPlayer
 			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_ALL_NOTES_OFF);
 		}
 	}
-
+		
 	// Thread Function
 	TFE_THREADRET midiUpdateFunc(void* userData)
 	{
@@ -172,6 +199,11 @@ namespace TFE_MidiPlayer
 				continue;
 			}
 			wasPlaying = true;
+
+			if (s_changeVolume.exchange(false))
+			{
+				changeVolume();
+			}
 
 			// Returns the current value while atomically updating the variable.
 			bool resetLocalTime = s_resetThreadLocalTime.exchange(false);
@@ -227,9 +259,11 @@ namespace TFE_MidiPlayer
 								const u8 type = midiEvt->channel >= 0 ? midiEvt->type + midiEvt->channel : midiEvt->type;
 								// TODO: Track notes on and off so that hanging notes can be handled manually.
 								//       Apparently not all midi devices support MID_ALL_NOTES_OFF.
-								if (midiEvt->type == MID_CONTROL_CHANGE && midiEvt->data[0] == MID_VOLUME_MSB)
+								if ((midiEvt->type&0xf0) == MID_CONTROL_CHANGE && midiEvt->data[0] == MID_VOLUME_MSB)
 								{
-									TFE_MidiDevice::sendMessage(type, midiEvt->data[0], u8(midiEvt->data[1] * s_masterVolume));
+									const s32 channelIndex = midiEvt->type & 0x0f;
+									s_channelSrcVolume[channelIndex] = midiEvt->data[1];
+									TFE_MidiDevice::sendMessage(type, midiEvt->data[0], u8(s_channelSrcVolume[channelIndex] * s_masterVolume));
 								}
 								else
 								{
@@ -298,5 +332,23 @@ namespace TFE_MidiPlayer
 		};
 		
 		return (TFE_THREADRET)0;
+	}
+
+	// Console Functions
+	void setMusicVolumeConsole(const std::vector<std::string>& args)
+	{
+		if (args.size() >= 2)
+		{
+			char* endPtr = nullptr;
+			s_masterVolume = c_musicVolumeScale * (f32)strtod(args[1].c_str(), &endPtr);
+			s_changeVolume.store(true);
+		}
+	}
+
+	void getMusicVolumeConsole(const std::vector<std::string>& args)
+	{
+		char res[256];
+		sprintf(res, "Sound Volume: %2.3f", s_masterVolume / c_musicVolumeScale);
+		TFE_Console::addToHistory(res);
 	}
 }

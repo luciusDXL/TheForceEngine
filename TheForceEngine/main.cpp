@@ -375,6 +375,7 @@ int main(int argc, char* argv[])
 		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
+	TFE_FrontEndUI::initConsole();
 	TFE_Audio::init();
 	TFE_MidiPlayer::init();
 	TFE_Polygon::init();
