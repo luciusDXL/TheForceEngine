@@ -149,7 +149,7 @@ namespace RendererClassic
 		}
 
 		s_rcp_yMinusHalfHeight   = (fixed16_16*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed16_16));
-		s_rcp_yMinusHalfHeightHQ = (fixed12_20*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(fixed12_20));
+		s_rcp_yMinusHalfHeightHQ = (fixed12_20*)realloc(s_rcp_yMinusHalfHeightHQ, 3 * s_height * sizeof(fixed12_20));
 		s32 halfHeight = s_height >> 1;
 		for (s32 y = 0; y < s_height * 3; y++)
 		{
