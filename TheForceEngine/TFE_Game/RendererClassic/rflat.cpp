@@ -606,17 +606,19 @@ namespace RClassicFlat
 					assert(y >= 0 && y < s_height);
 					s_scanlineX0  = left;
 					s_scanlineOut = &s_display[left + yOffset];
+
+					const fixed16_16 worldToTexelScale = fixed16_16(8);
 					fixed16_16 rightClip = intToFixed16(right - s_screenXMid);
 
 					fixed16_16 v0 = mul16(cosScaledRelCeil - mul16(negSinRelCeil, rightClip), yRcp);
-					s_scanlineV0 = (v0 - textureOffsetV) * 8;
-
 					fixed16_16 u0 = mul16(sinScaledRelCeil + mul16(negCosRelCeil, rightClip), yRcp);
-					s_scanlineU0 = (u0 - textureOffsetU) * 8;
 
-					const fixed16_16 worldToTexelScale = fixed16_16(8);
+					s_scanlineV0 = (v0 - textureOffsetV) * worldToTexelScale;
+					s_scanlineU0 = (u0 - textureOffsetU) * worldToTexelScale;
+
 					s_scanline_dVdX =  mul16(negSinRelCeil, yRcp) * worldToTexelScale;
 					s_scanline_dUdX = -mul16(negCosRelCeil, yRcp) * worldToTexelScale;
+
 					s_scanlineLight =  computeLighting(z, 0);
 					
 					if (s_scanlineLight)
@@ -738,6 +740,7 @@ namespace RClassicFlat
 					assert(y >= 0 && y < s_height);
 					s_scanlineX0 = left;
 					s_scanlineOut = &s_display[left + yOffset];
+
 					fixed16_16 rightClip = intToFixed16(right - s_screenXMid);
 					fixed16_16 worldToTexelScale = fixed16_16(8);
 
