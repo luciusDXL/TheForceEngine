@@ -27,6 +27,12 @@ struct TFE_Settings_Graphics
 	Vec2i gameResolution = { 320, 200 };
 };
 
+struct TFE_Settings_Sound
+{
+	f32 soundFxVolume = 1.0f;
+	f32 musicVolume = 1.0f;
+};
+
 struct TFE_Game
 {
 	char game[64] = "Dark Forces";
@@ -49,6 +55,7 @@ namespace TFE_Settings
 	// Get and set settings.
 	TFE_Settings_Window* getWindowSettings();
 	TFE_Settings_Graphics* getGraphicsSettings();
+	TFE_Settings_Sound* getSoundSettings();
 	TFE_Game* getGame();
 	TFE_Settings_Game* getGameSettings(const char* gameName);
 }

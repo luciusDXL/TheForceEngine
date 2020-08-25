@@ -3,6 +3,7 @@
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_System/system.h>
 #include <TFE_System/Threads/thread.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
 #include <algorithm>
 
@@ -89,6 +90,10 @@ namespace TFE_MidiPlayer
 
 		CCMD("setMusicVolume", setMusicVolumeConsole, 1, "Sets the music volume, range is 0.0 to 1.0");
 		CCMD("getMusicVolume", getMusicVolumeConsole, 0, "Get the current music volume where 0 = silent, 1 = maximum.");
+
+		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
+		setVolume(soundSettings->musicVolume);
+
 		return res && s_thread;
 	}
 
@@ -348,6 +353,10 @@ namespace TFE_MidiPlayer
 		s_masterVolume = TFE_Console::getFloatArg(args[1]);
 		s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 		s_changeVolume.store(true);
+
+		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
+		soundSettings->musicVolume = s_masterVolume;
+		TFE_Settings::writeToDisk();
 	}
 
 	void getMusicVolumeConsole(const ConsoleArgList& args)

@@ -2,6 +2,7 @@
 #include "audioDevice.h"
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Game/gameHud.h>
 #include <TFE_FrontEndUI/console.h>
 #include <assert.h>
@@ -106,6 +107,9 @@ namespace TFE_Audio
 
 		CCMD("setSoundVolume", setSoundVolumeConsole, 1, "Sets the sound volume, range is 0.0 to 1.0");
 		CCMD("getSoundVolume", getSoundVolumeConsole, 0, "Get the current sound volume.");
+
+		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
+		setVolume(soundSettings->soundFxVolume);
 		
 		bool res = TFE_AudioDevice::init();
 		res |= TFE_AudioDevice::startOutput(audioCallback, nullptr, 2u, 11025u);
@@ -475,6 +479,10 @@ namespace TFE_Audio
 
 		s_soundFxVolume = TFE_Console::getFloatArg(args[1]);
 		s_soundFxScale = s_soundFxVolume * c_soundHeadroom;
+
+		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
+		soundSettings->soundFxVolume = s_soundFxVolume;
+		TFE_Settings::writeToDisk();
 	}
 
 	void getSoundVolumeConsole(const ConsoleArgList& args)

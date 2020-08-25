@@ -21,6 +21,7 @@ namespace TFE_Settings
 	static char s_settingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
+	static TFE_Settings_Sound s_soundSettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings[Game_Count];
 	static char s_lineBuffer[LINEBUF_LEN];
@@ -30,6 +31,7 @@ namespace TFE_Settings
 	{
 		SECTION_WINDOW = 0,
 		SECTION_GRAPHICS,
+		SECTION_SOUND,
 		SECTION_GAME,
 		SECTION_DARK_FORCES,
 		SECTION_OUTLAWS,
@@ -42,6 +44,7 @@ namespace TFE_Settings
 	{
 		"Window",
 		"Graphics",
+		"Sound",
 		"Game",
 		"Dark_Forces",
 		"Outlaws",
@@ -53,6 +56,7 @@ namespace TFE_Settings
 	// Write
 	void writeWindowSettings(FileStream& settings);
 	void writeGraphicsSettings(FileStream& settings);
+	void writeSoundSettings(FileStream& settings);
 	void writeGameSettings(FileStream& settings);
 	void writePerGameSettings(FileStream& settings);
 
@@ -61,6 +65,7 @@ namespace TFE_Settings
 	void parseIniFile(const char* buffer, size_t len);
 	void parseWindowSettings(const char* key, const char* value);
 	void parseGraphicsSettings(const char* key, const char* value);
+	void parseSoundSettings(const char* key, const char* value);
 	void parseGame(const char* key, const char* value);
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
@@ -155,6 +160,7 @@ namespace TFE_Settings
 		{
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);
+			writeSoundSettings(settings);
 			writeGameSettings(settings);
 			writePerGameSettings(settings);
 			settings.close();
@@ -173,6 +179,11 @@ namespace TFE_Settings
 	TFE_Settings_Graphics* getGraphicsSettings()
 	{
 		return &s_graphicsSettings;
+	}
+
+	TFE_Settings_Sound* getSoundSettings()
+	{
+		return &s_soundSettings;
 	}
 
 	TFE_Game* getGame()
@@ -217,6 +228,12 @@ namespace TFE_Settings
 		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
 	}
 
+	void writeKeyValue_Float(FileStream& file, const char* key, f32 value)
+	{
+		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%0.3f\r\n", key, value);
+		file.writeBuffer(s_lineBuffer, (u32)strlen(s_lineBuffer));
+	}
+
 	void writeKeyValue_Bool(FileStream& file, const char* key, bool value)
 	{
 		snprintf(s_lineBuffer, LINEBUF_LEN, "%s=%s\r\n", key, value ? "true" : "false");
@@ -225,7 +242,7 @@ namespace TFE_Settings
 
 	void writeWindowSettings(FileStream& settings)
 	{
-		writeHeader(settings, "Window");
+		writeHeader(settings, c_sectionNames[SECTION_WINDOW]);
 		writeKeyValue_Int(settings, "x", s_windowSettings.x);
 		writeKeyValue_Int(settings, "y", s_windowSettings.y);
 		writeKeyValue_Int(settings, "width", s_windowSettings.width);
@@ -237,14 +254,21 @@ namespace TFE_Settings
 
 	void writeGraphicsSettings(FileStream& settings)
 	{
-		writeHeader(settings, "Graphics");
+		writeHeader(settings, c_sectionNames[SECTION_GRAPHICS]);
 		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
 		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
 	}
 
+	void writeSoundSettings(FileStream& settings)
+	{
+		writeHeader(settings, c_sectionNames[SECTION_SOUND]);
+		writeKeyValue_Float(settings, "soundFxVolume", s_soundSettings.soundFxVolume);
+		writeKeyValue_Float(settings, "musicVolume", s_soundSettings.musicVolume);
+	}
+
 	void writeGameSettings(FileStream& settings)
 	{
-		writeHeader(settings, "Game");
+		writeHeader(settings, c_sectionNames[SECTION_GAME]);
 		writeKeyValue_String(settings, "game", s_game.game);
 	}
 
@@ -311,6 +335,9 @@ namespace TFE_Settings
 				case SECTION_GRAPHICS:
 					parseGraphicsSettings(tokens[0].c_str(), tokens[1].c_str());
 					break;
+				case SECTION_SOUND:
+					parseSoundSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
 				case SECTION_GAME:
 					parseGame(tokens[0].c_str(), tokens[1].c_str());
 					break;
@@ -331,6 +358,12 @@ namespace TFE_Settings
 	{
 		char* endPtr = nullptr;
 		return strtol(value, &endPtr, 10);
+	}
+
+	f32 parseFloat(const char* value)
+	{
+		char* endPtr = nullptr;
+		return (f32)strtod(value, &endPtr);
 	}
 
 	bool parseBool(const char* value)
@@ -380,6 +413,18 @@ namespace TFE_Settings
 		else if (strcasecmp("gameHeight", key) == 0)
 		{
 			s_graphicsSettings.gameResolution.z = parseInt(value);
+		}
+	}
+
+	void parseSoundSettings(const char* key, const char* value)
+	{
+		if (strcasecmp("soundFxVolume", key) == 0)
+		{
+			s_soundSettings.soundFxVolume = parseFloat(value);
+		}
+		else if (strcasecmp("musicVolume", key) == 0)
+		{
+			s_soundSettings.musicVolume = parseFloat(value);
 		}
 	}
 
