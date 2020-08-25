@@ -48,20 +48,20 @@ namespace TFE_MidiPlayer
 		TRANSITION_COUNT
 	};
 
+	static const f32 c_musicVolumeScale = 0.5f;
 	static MidiRuntime s_runtime;
 	static atomic_bool s_isPlaying;
 	static atomic_bool s_changeVolume;
 	static atomic_u32  s_transition;
-	static f32  s_masterVolume = 0.5f;
+	static f32 s_masterVolume = 1.0f;
+	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 	static Thread* s_thread = nullptr;
 
 	static atomic_bool s_runMusicThread;
 	static atomic_bool s_resetThreadLocalTime;
 
 	static u8 s_channelSrcVolume[16] = { 0 };
-
-	static const f32 c_musicVolumeScale = 0.5f;
-
+		
 	TFE_THREADRET midiUpdateFunc(void* userData);
 	void stopAllNotes();
 	void changeVolume();
@@ -137,6 +137,12 @@ namespace TFE_MidiPlayer
 	void setVolume(f32 volume)
 	{
 		s_masterVolume = volume;
+		s_masterVolumeScaled = volume * c_musicVolumeScale;
+	}
+
+	f32 getVolume()
+	{
+		return s_masterVolume;
 	}
 
 	void pause()
@@ -164,7 +170,7 @@ namespace TFE_MidiPlayer
 	{
 		for (u32 i = 0; i < 16; i++)
 		{
-			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_VOLUME_MSB, u8(s_channelSrcVolume[i] * s_masterVolume));
+			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_VOLUME_MSB, u8(s_channelSrcVolume[i] * s_masterVolumeScaled));
 		}
 	}
 
@@ -263,7 +269,7 @@ namespace TFE_MidiPlayer
 								{
 									const s32 channelIndex = midiEvt->type & 0x0f;
 									s_channelSrcVolume[channelIndex] = midiEvt->data[1];
-									TFE_MidiDevice::sendMessage(type, midiEvt->data[0], u8(s_channelSrcVolume[channelIndex] * s_masterVolume));
+									TFE_MidiDevice::sendMessage(type, midiEvt->data[0], u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled));
 								}
 								else
 								{
@@ -339,14 +345,15 @@ namespace TFE_MidiPlayer
 	{
 		if (args.size() < 2) { return; }
 
-		s_masterVolume = c_musicVolumeScale * TFE_Console::getFloatArg(args[1]);
+		s_masterVolume = TFE_Console::getFloatArg(args[1]);
+		s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 		s_changeVolume.store(true);
 	}
 
 	void getMusicVolumeConsole(const ConsoleArgList& args)
 	{
 		char res[256];
-		sprintf(res, "Sound Volume: %2.3f", s_masterVolume / c_musicVolumeScale);
+		sprintf(res, "Sound Volume: %2.3f", s_masterVolume);
 		TFE_Console::addToHistory(res);
 	}
 }

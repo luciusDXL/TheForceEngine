@@ -57,6 +57,9 @@ namespace TFE_Audio
 	void shutdown();
 	void stopAllSounds();
 
+	void setVolume(f32 volume);
+	f32  getVolume();
+
 	// Update position audio and other audio effects.
 	void update(const Vec3f* listenerPos, const Vec3f* listenerDir);
 

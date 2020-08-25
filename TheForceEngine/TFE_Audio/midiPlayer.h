@@ -10,6 +10,8 @@ namespace TFE_MidiPlayer
 	void playSong(const GMidiAsset* gmidAsset, bool loop);
 
 	void setVolume(f32 volume);
+	f32  getVolume();
+
 	void pause();
 	void resume();
 	void stop();

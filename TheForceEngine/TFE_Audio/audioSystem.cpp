@@ -83,10 +83,8 @@ namespace TFE_Audio
 
 	// Client volume controls, ranging from [0, 1]
 	static f32 s_soundFxVolume = 1.0f;
-	static f32 s_musicVolume = 1.0f;
 	// Internal sound scale based on the client volume and headroom.
 	static f32 s_soundFxScale = s_soundFxVolume * c_soundHeadroom;	// actual volume scale based on client set volume and headroom.
-	static f32 s_musicScale   = s_musicVolume * c_soundHeadroom;	// actual volume scale based on client set volume and headroom.
 
 	static u32 s_sourceCount;
 	static Vec3f s_listener;
@@ -129,6 +127,17 @@ namespace TFE_Audio
 		s_sourceCount = 0u;
 		memset(s_sources, 0, sizeof(SoundSource) * MAX_SOUND_SOURCES);
 		MUTEX_UNLOCK(&s_mutex);
+	}
+
+	void setVolume(f32 volume)
+	{
+		s_soundFxVolume = volume;
+		s_soundFxScale = s_soundFxVolume * c_soundHeadroom;
+	}
+
+	f32 getVolume()
+	{
+		return s_soundFxVolume;
 	}
 
 	// Issue - too many locks, wasted time looping over inactive sources.
