@@ -159,15 +159,13 @@ namespace TFE_View
 	// Enable WIP "classic renderer" - defaults to false while still working on it.
 	static bool s_enableClassic = false;
 
-	void enableClassicRenderer(const std::vector<std::string>& args)
+	void enableClassicRenderer(const ConsoleArgList& args)
 	{
-		if (args.size() < 2 || args[1] == "false" || args[1] == "0")
+		if (args.size() < 2) { return; }
+		s_enableClassic = TFE_Console::getBoolArg(args[1]);
+
+		if (s_enableClassic)
 		{
-			s_enableClassic = false;
-		}
-		else
-		{
-			s_enableClassic = true;
 			RendererClassic::setupLevel(s_width, s_height);
 		}
 	}

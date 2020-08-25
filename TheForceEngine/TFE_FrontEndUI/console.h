@@ -28,6 +28,8 @@ enum CVarFlag
 // Register a command that is not repeated in the output (such as echo).
 #define CCMD_NOREPEAT(name, func, argCount, help) TFE_Console::registerCommand(name, func, argCount, help, false)
 
+typedef std::vector<std::string> ConsoleArgList;
+
 namespace TFE_Console
 {
 	enum CVarType
@@ -71,4 +73,25 @@ namespace TFE_Console
 	void startClose();
 
 	void addToHistory(const char* str);
+
+	inline f32 getFloatArg(const std::string& arg)
+	{
+		char* endPtr = nullptr;
+		return (f32)strtod(arg.c_str(), &endPtr);
+	}
+
+	inline bool getBoolArg(const std::string& arg)
+	{
+		const char* cstr = arg.c_str();
+		if (strcasecmp(cstr, "false") == 0 || strcasecmp(cstr, "0") == 0)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	inline const char* getStringArg(const std::string& arg)
+	{
+		return arg.c_str();
+	}
 }

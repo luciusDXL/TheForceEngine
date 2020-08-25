@@ -95,8 +95,8 @@ namespace TFE_Audio
 	static Mutex s_mutex;
 
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData);
-	void setSoundVolumeConsole(const std::vector<std::string>& args);
-	void getSoundVolumeConsole(const std::vector<std::string>& args);
+	void setSoundVolumeConsole(const ConsoleArgList& args);
+	void getSoundVolumeConsole(const ConsoleArgList& args);
 				
 	bool init()
 	{
@@ -458,19 +458,17 @@ namespace TFE_Audio
 
 		return 0;
 	}
-
+		
 	// Console functions.
-	void setSoundVolumeConsole(const std::vector<std::string>& args)
+	void setSoundVolumeConsole(const ConsoleArgList& args)
 	{
-		if (args.size() >= 2)
-		{
-			char* endPtr = nullptr;
-			s_soundFxVolume = (f32)strtod(args[1].c_str(), &endPtr);
-			s_soundFxScale = s_soundFxVolume * c_soundHeadroom;
-		}
+		if (args.size() < 2) { return; }
+
+		s_soundFxVolume = TFE_Console::getFloatArg(args[1]);
+		s_soundFxScale = s_soundFxVolume * c_soundHeadroom;
 	}
 
-	void getSoundVolumeConsole(const std::vector<std::string>& args)
+	void getSoundVolumeConsole(const ConsoleArgList& args)
 	{
 		char res[256];
 		sprintf(res, "Sound Volume: %2.3f", s_soundFxVolume);

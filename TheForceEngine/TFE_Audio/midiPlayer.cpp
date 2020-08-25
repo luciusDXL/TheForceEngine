@@ -67,8 +67,8 @@ namespace TFE_MidiPlayer
 	void changeVolume();
 
 	// Console Functions
-	void setMusicVolumeConsole(const std::vector<std::string>& args);
-	void getMusicVolumeConsole(const std::vector<std::string>& args);
+	void setMusicVolumeConsole(const ConsoleArgList& args);
+	void getMusicVolumeConsole(const ConsoleArgList& args);
 
 	bool init()
 	{
@@ -335,17 +335,15 @@ namespace TFE_MidiPlayer
 	}
 
 	// Console Functions
-	void setMusicVolumeConsole(const std::vector<std::string>& args)
+	void setMusicVolumeConsole(const ConsoleArgList& args)
 	{
-		if (args.size() >= 2)
-		{
-			char* endPtr = nullptr;
-			s_masterVolume = c_musicVolumeScale * (f32)strtod(args[1].c_str(), &endPtr);
-			s_changeVolume.store(true);
-		}
+		if (args.size() < 2) { return; }
+
+		s_masterVolume = c_musicVolumeScale * TFE_Console::getFloatArg(args[1]);
+		s_changeVolume.store(true);
 	}
 
-	void getMusicVolumeConsole(const std::vector<std::string>& args)
+	void getMusicVolumeConsole(const ConsoleArgList& args)
 	{
 		char res[256];
 		sprintf(res, "Sound Volume: %2.3f", s_masterVolume / c_musicVolumeScale);

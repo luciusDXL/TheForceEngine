@@ -214,17 +214,17 @@ namespace TFE_Console
 		s_cmd.push_back({ name, helpString, func, argCount, repeat });
 	}
 
-	void c_alias(const std::vector<std::string>& args)
+	void c_alias(const ConsoleArgList& args)
 	{
 		s_history.push_back({ c_historyErrorColor, "Stub - to be implemented." });
 	}
 
-	void c_clear(const std::vector<std::string>& args)
+	void c_clear(const ConsoleArgList& args)
 	{
 		s_history.clear();
 	}
 
-	void c_cmdHelp(const std::vector<std::string>& args)
+	void c_cmdHelp(const ConsoleArgList& args)
 	{
 		const size_t count = s_cmd.size();
 		ConsoleCommand* cmd = s_cmd.data();
@@ -243,7 +243,7 @@ namespace TFE_Console
 		s_history.push_back({ c_historyErrorColor, errorMsg });
 	}
 
-	void c_varHelp(const std::vector<std::string>& args)
+	void c_varHelp(const ConsoleArgList& args)
 	{
 		const size_t count = s_var.size();
 		CVar* var = s_var.data();
@@ -262,12 +262,12 @@ namespace TFE_Console
 		s_history.push_back({ c_historyErrorColor, errorMsg });
 	}
 
-	void c_exit(const std::vector<std::string>& args)
+	void c_exit(const ConsoleArgList& args)
 	{
 		startClose();
 	}
 
-	void c_echo(const std::vector<std::string>& args)
+	void c_echo(const ConsoleArgList& args)
 	{
 		if (args.size() > 1 && args[1].length())
 		{
@@ -275,7 +275,7 @@ namespace TFE_Console
 		}
 	}
 
-	void c_list(const std::vector<std::string>& args)
+	void c_list(const ConsoleArgList& args)
 	{
 		const size_t count = s_cmd.size();
 		for (size_t i = 0; i < count; i++)
@@ -284,7 +284,7 @@ namespace TFE_Console
 		}
 	}
 
-	void c_listVar(const std::vector<std::string>& args)
+	void c_listVar(const ConsoleArgList& args)
 	{
 		const size_t count = s_var.size();
 		for (size_t i = 0; i < count; i++)
@@ -293,7 +293,7 @@ namespace TFE_Console
 		}
 	}
 
-	void c_get(const std::vector<std::string>& args)
+	void c_get(const ConsoleArgList& args)
 	{
 		if (args.size() >= 2)
 		{
@@ -302,7 +302,7 @@ namespace TFE_Console
 		}
 	}
 
-	void c_set(const std::vector<std::string>& args)
+	void c_set(const ConsoleArgList& args)
 	{
 		if (args.size() >= 3)
 		{
@@ -310,7 +310,7 @@ namespace TFE_Console
 		}
 	}
 				
-	void execute(const std::vector<std::string>& args, const char* inputText)
+	void execute(const ConsoleArgList& args, const char* inputText)
 	{
 		char errorMsg[4096];
 
@@ -344,7 +344,7 @@ namespace TFE_Console
 		const size_t varCount = s_var.size();
 		CVar* var = s_var.data();
 
-		std::vector<std::string> varArgs;
+		ConsoleArgList varArgs;
 		if (argCount < 1)
 		{
 			varArgs.push_back("get");
