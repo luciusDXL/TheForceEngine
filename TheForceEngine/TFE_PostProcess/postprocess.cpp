@@ -1,11 +1,8 @@
 #include "postprocess.h"
 #include "postprocesseffect.h"
-#include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
-#include <TFE_System/system.h>
 #include <TFE_System/profiler.h>
-#include <TFE_RenderBackend/renderBackend.h>
 #include <vector>
 
 namespace TFE_PostProcess

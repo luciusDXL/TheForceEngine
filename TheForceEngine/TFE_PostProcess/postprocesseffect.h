@@ -4,9 +4,9 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
-#include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_RenderBackend/shader.h>
-#include <TFE_RenderBackend/renderBackend.h>
+
+class TextureGpu;
 
 class PostProcessEffect
 {

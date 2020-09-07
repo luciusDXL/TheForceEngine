@@ -499,7 +499,7 @@ int main(int argc, char* argv[])
 		// Render
 		renderer->begin();
 		// Do stuff
-		bool swap = s_curState != APP_STATE_EDITOR && s_curState != APP_STATE_MENU;
+		bool swap = s_curState != APP_STATE_EDITOR;
 		if (s_curState == APP_STATE_EDITOR)
 		{
 			swap = TFE_Editor::render();
