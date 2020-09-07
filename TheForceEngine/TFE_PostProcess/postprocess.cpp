@@ -1,0 +1,177 @@
+#include "postprocess.h"
+#include "postprocesseffect.h"
+#include <TFE_RenderBackend/shader.h>
+#include <TFE_RenderBackend/vertexBuffer.h>
+#include <TFE_RenderBackend/indexBuffer.h>
+#include <TFE_System/system.h>
+#include <TFE_System/profiler.h>
+#include <TFE_RenderBackend/renderBackend.h>
+#include <vector>
+
+namespace TFE_PostProcess
+{
+	struct PostEffectInstance
+	{
+		PostProcessEffect* effect;
+		TextureGpu* input;
+		RenderTargetHandle output;
+		s32 x;
+		s32 y;
+		s32 width;
+		s32 height;
+	};
+
+	struct EffectVertex
+	{
+		f32 x, y;
+		f32 u, v;
+	};
+	static const AttributeMapping c_effectAttrMapping[] =
+	{
+		{ATTR_POS,   ATYPE_FLOAT, 2, 0, false},
+		{ATTR_UV,    ATYPE_FLOAT, 2, 0, false},
+	};
+	static const u32 c_effectAttrCount = TFE_ARRAYSIZE(c_effectAttrMapping);
+
+	static VertexBuffer s_vertexBuffer;
+	static IndexBuffer s_indexBuffer;
+	static f32 s_screenScale[2];
+	static std::vector<PostEffectInstance> s_effects;
+		
+	////////////////////////////////////////////////
+	// Forward Declarations
+	////////////////////////////////////////////////
+	void updateRenderTargetScale(RenderTargetHandle renderTarget);
+	void setScaleOffset(Shader* shader, s32 variableId, s32 x, s32 y, s32 width, s32 height);
+
+	////////////////////////////////////////////////
+	// Implementation
+	////////////////////////////////////////////////
+	bool init()
+	{
+		// Upload vertex/index buffers
+		const EffectVertex vertices[] =
+		{
+			{0.0f, 0.0f, 0.0f, 1.0f},
+			{1.0f, 0.0f, 1.0f, 1.0f},
+			{1.0f, 1.0f, 1.0f, 0.0f},
+			{0.0f, 1.0f, 0.0f, 0.0f},
+		};
+		const u16 indices[] =
+		{
+			0, 1, 2,
+			0, 2, 3
+		};
+		s_vertexBuffer.create(4, sizeof(EffectVertex), c_effectAttrCount, c_effectAttrMapping, false, (void*)vertices);
+		s_indexBuffer.create(6, sizeof(u16), false, (void*)indices);
+
+		return true;
+	}
+
+	void destroy()
+	{
+		clearEffectStack();
+		s_vertexBuffer.destroy();
+		s_indexBuffer.destroy();
+	}
+
+	void clearEffectStack()
+	{
+		s_effects.clear();
+	}
+
+	void appendEffect(PostProcessEffect* effect, TextureGpu* input, RenderTargetHandle output, s32 x, s32 y, s32 width, s32 height)
+	{
+		// If width or height is 0, then use the default - which is the input dimensions.
+		if (width == 0 && input)
+		{
+			width = input->getWidth();
+		}
+		if (height == 0 && input)
+		{
+			height = input->getHeight();
+		}
+
+		// Add to the effects list.
+		s_effects.push_back({ effect, input, output, x, y, width, height });
+	}
+		
+	void execute()
+	{
+		const size_t count = s_effects.size();
+		if (!count) { return; }
+		TFE_ZONE("Post Process");
+
+		RenderTargetHandle curRenderTarget = nullptr;
+		updateRenderTargetScale(curRenderTarget);
+
+		s_vertexBuffer.bind();
+		s_indexBuffer.bind();
+
+		PostEffectInstance* effectInst = s_effects.data();
+		for (size_t i = 0; i < count; i++, effectInst++)
+		{
+			PostProcessEffect* effect = effectInst->effect;
+			Shader* shader = &effect->m_shader;
+			shader->bind();
+
+			if (curRenderTarget != effectInst->output)
+			{
+				curRenderTarget = effectInst->output;
+				updateRenderTargetScale(curRenderTarget);
+			}
+			setScaleOffset(shader, effect->m_scaleOffsetId, effectInst->x, effectInst->y, effectInst->width, effectInst->height);
+
+			if (effectInst->output)
+				TFE_RenderBackend::bindRenderTarget(effectInst->output);
+			else
+				TFE_RenderBackend::unbindRenderTarget();
+
+			effect->execute(effectInst->input);
+		}
+
+		Shader::unbind();
+		s_vertexBuffer.unbind();
+		s_indexBuffer.unbind();
+		TFE_RenderBackend::unbindRenderTarget();
+	}
+	
+	void drawRectangle()
+	{
+		TFE_RenderBackend::drawIndexedTriangles(2, sizeof(u16));
+	}
+
+	////////////////////////////////////////////////
+	// Internal
+	////////////////////////////////////////////////
+	void updateRenderTargetScale(RenderTargetHandle renderTarget)
+	{
+		DisplayInfo display;
+		TFE_RenderBackend::getDisplayInfo(&display);
+
+		if (renderTarget)
+		{
+			u32 w, h;
+			TFE_RenderBackend::getRenderTargetDim(renderTarget, &w, &h);
+			s_screenScale[0] = 1.0f / f32(w);
+			s_screenScale[1] = 1.0f / f32(h);
+		}
+		else
+		{
+			s_screenScale[0] = 1.0f / f32(display.width);
+			s_screenScale[1] = 1.0f / f32(display.height);
+		}
+	}
+
+	void setScaleOffset(Shader* shader, s32 variableId, s32 x, s32 y, s32 width, s32 height)
+	{
+		const f32 scaleX = 2.0f * f32(width)  * s_screenScale[0];
+		const f32 scaleY = 2.0f * f32(height) * s_screenScale[1];
+		const f32 offsetX = 2.0f * f32(x) * s_screenScale[0] - 1.0f;
+		const f32 offsetY = 2.0f * f32(y) * s_screenScale[1] - 1.0f;
+
+		// Bind Uniforms & Textures.
+		const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
+		shader->setVariable(variableId, SVT_VEC4, scaleOffset);
+	}
+}

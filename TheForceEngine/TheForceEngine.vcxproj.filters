@@ -140,6 +140,9 @@
     <Filter Include="Source\TFE_Game\RendererClassic">
       <UniqueIdentifier>{3b43ebc1-af67-4c34-82cd-5b9a540b2393}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_PostProcess">
+      <UniqueIdentifier>{17a1b5a3-c20e-4777-bd0e-2774b8180e3e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -364,9 +367,6 @@
     <ClInclude Include="TFE_Polygon\polygon.h">
       <Filter>Source\TFE_Polygon</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_RenderBackend\Win32OpenGL\blit.h">
-      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\renderTarget.h">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClInclude>
@@ -549,6 +549,15 @@
     </ClInclude>
     <ClInclude Include="TFE_Game\RendererClassic\robject.h">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\postprocess.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\blit.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\postprocesseffect.h">
+      <Filter>Source\TFE_PostProcess</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -738,9 +747,6 @@
     <ClCompile Include="TFE_Polygon\polygon.cpp">
       <Filter>Source\TFE_Polygon</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\blit.cpp">
-      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\renderTarget.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
@@ -896,6 +902,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Game\RendererClassic\robject.cpp">
       <Filter>Source\TFE_Game\RendererClassic</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\postprocess.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\blit.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

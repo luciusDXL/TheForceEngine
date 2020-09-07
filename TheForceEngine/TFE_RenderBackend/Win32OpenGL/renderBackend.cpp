@@ -4,8 +4,9 @@
 #include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
 #include <TFE_System/profiler.h>
+#include <TFE_PostProcess/blit.h>
+#include <TFE_PostProcess/postprocess.h>
 #include "renderTarget.h"
-#include "blit.h"
 #include <SDL.h>
 #include <GL/glew.h>
 #include <stdio.h>
@@ -35,7 +36,10 @@ namespace TFE_RenderBackend
 	static f32 s_clearColor[4] = { 0.0f };
 	static u32 s_rtWidth, s_rtHeight;
 
+	static Blit* s_postEffectBlit;
+
 	void drawVirtualDisplay();
+	void setupPostEffectChain();
 
 	SDL_Window* createWindow(const WindowState& state)
 	{
@@ -79,17 +83,20 @@ namespace TFE_RenderBackend
 
 		return window;
 	}
-
+		
 	bool init(const WindowState& state)
 	{
 		m_window = createWindow(state);
 		m_windowState = state;
 
-		if (!BlitOpenGL::init())
+		if (!TFE_PostProcess::init())
 		{
 			return false;
 		}
-
+		// TODO: Move effect creation into post effect system.
+		s_postEffectBlit = new Blit();
+		s_postEffectBlit->init();
+		
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(0.0f);
 
@@ -100,7 +107,11 @@ namespace TFE_RenderBackend
 
 	void destroy()
 	{
-		BlitOpenGL::destroy();
+		// TODO: Move effect destruction into post effect system.
+		s_postEffectBlit->destroy();
+		delete s_postEffectBlit;
+
+		TFE_PostProcess::destroy();
 		TFE_Ui::shutdown();
 
 		delete s_virtualDisplay;
@@ -181,6 +192,7 @@ namespace TFE_RenderBackend
 			windowSettings->baseHeight = height;
 		}
 		glViewport(0, 0, width, height);
+		setupPostEffectChain();
 	}
 
 	void enableFullscreen(bool enable)
@@ -220,6 +232,7 @@ namespace TFE_RenderBackend
 		}
 
 		glViewport(0, 0, m_windowState.width, m_windowState.height);
+		setupPostEffectChain();
 	}
 
 	void getDisplayInfo(DisplayInfo* displayInfo)
@@ -244,6 +257,8 @@ namespace TFE_RenderBackend
 		m_displayMode = mode;
 
 		s_virtualDisplay = new TextureGpu();
+		setupPostEffectChain();
+
 		return s_virtualDisplay->create(width, height);
 	}
 
@@ -257,7 +272,7 @@ namespace TFE_RenderBackend
 		TFE_ZONE("Update Virtual Display");
 		s_virtualDisplay->update(buffer, size);
 	}
-
+		
 	void drawVirtualDisplay()
 	{
 		TFE_ZONE("Draw Virtual Display");
@@ -268,28 +283,7 @@ namespace TFE_RenderBackend
 		{
 			glClear(GL_COLOR_BUFFER_BIT);
 		}
-
-		s32 x = 0, y = 0;
-		s32 w = m_windowState.width;
-		s32 h = m_windowState.height;
-		if (m_displayMode == DMODE_4x3 && w >= h)
-		{
-			w = 4 * m_windowState.height / 3;
-			h = m_windowState.height;
-
-			// pillarbox
-			x = (m_windowState.width - w) / 2;
-		}
-		else if (m_displayMode == DMODE_4x3)
-		{
-			h = 3 * m_windowState.width / 4;
-			w = m_windowState.width;
-
-			// letterbox
-			y = (m_windowState.height - h) / 2;
-		}
-
-		BlitOpenGL::blitToScreen(s_virtualDisplay, x, y, w, h);
+		TFE_PostProcess::execute();
 	}
 
 	// GPU commands
@@ -383,5 +377,32 @@ namespace TFE_RenderBackend
 	void drawIndexedTriangles(u32 triCount, u32 indexStride, u32 indexStart)
 	{
 		glDrawElements(GL_TRIANGLES, triCount * 3, indexStride == 4 ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT, (void*)(intptr_t)(indexStart * indexStride));
+	}
+
+	// Setup the Post effect chain based on current settings.
+	// TODO: Move out of render backend since this should be independent of the backend.
+	void setupPostEffectChain()
+	{
+		s32 x = 0, y = 0;
+		s32 w = m_windowState.width;
+		s32 h = m_windowState.height;
+		if (m_displayMode == DMODE_4x3 && w >= h)
+		{
+			w = 4 * m_windowState.height / 3;
+			h = m_windowState.height;
+
+			// pillarbox
+			x = (m_windowState.width - w) / 2;
+		}
+		else if (m_displayMode == DMODE_4x3)
+		{
+			h = 3 * m_windowState.width / 4;
+			w = m_windowState.width;
+
+			// letterbox
+			y = (m_windowState.height - h) / 2;
+		}
+		TFE_PostProcess::clearEffectStack();
+		TFE_PostProcess::appendEffect(s_postEffectBlit, s_virtualDisplay, nullptr, x, y, w, h);
 	}
 }  // namespace

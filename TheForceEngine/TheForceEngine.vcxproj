@@ -312,13 +312,15 @@
     <ClInclude Include="TFE_Polygon\clipper.hpp" />
     <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
     <ClInclude Include="TFE_Polygon\polygon.h" />
+    <ClInclude Include="TFE_PostProcess\blit.h" />
+    <ClInclude Include="TFE_PostProcess\postprocess.h" />
+    <ClInclude Include="TFE_PostProcess\postprocesseffect.h" />
     <ClInclude Include="TFE_RenderBackend\indexBuffer.h" />
     <ClInclude Include="TFE_RenderBackend\renderBackend.h" />
     <ClInclude Include="TFE_RenderBackend\renderState.h" />
     <ClInclude Include="TFE_RenderBackend\shader.h" />
     <ClInclude Include="TFE_RenderBackend\textureGpu.h" />
     <ClInclude Include="TFE_RenderBackend\vertexBuffer.h" />
-    <ClInclude Include="TFE_RenderBackend\Win32OpenGL\blit.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\renderTarget.h" />
     <ClInclude Include="TFE_Renderer\TFE_SoftRenderCPU\renderer_softCPU.h" />
     <ClInclude Include="TFE_Renderer\renderer.h" />
@@ -440,7 +442,8 @@
     <ClCompile Include="TFE_LogicSystem\logicSystem.cpp" />
     <ClCompile Include="TFE_Polygon\clipper.cpp" />
     <ClCompile Include="TFE_Polygon\polygon.cpp" />
-    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\blit.cpp" />
+    <ClCompile Include="TFE_PostProcess\blit.cpp" />
+    <ClCompile Include="TFE_PostProcess\postprocess.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\indexBuffer.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\renderBackend.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\renderState.cpp" />

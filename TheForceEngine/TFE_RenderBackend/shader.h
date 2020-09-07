@@ -31,7 +31,7 @@ public:
 	void destroy();
 
 	void bind();
-	void unbind();
+	static void unbind();
 
 	void bindTextureNameToSlot(const char* texName, s32 slot);
 	s32  getVariableId(const char* name);
