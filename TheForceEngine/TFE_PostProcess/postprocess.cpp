@@ -143,9 +143,6 @@ namespace TFE_PostProcess
 	////////////////////////////////////////////////
 	void updateRenderTargetScale(RenderTargetHandle renderTarget)
 	{
-		DisplayInfo display;
-		TFE_RenderBackend::getDisplayInfo(&display);
-
 		if (renderTarget)
 		{
 			u32 w, h;
@@ -155,6 +152,8 @@ namespace TFE_PostProcess
 		}
 		else
 		{
+			DisplayInfo display;
+			TFE_RenderBackend::getDisplayInfo(&display);
 			s_screenScale[0] = 1.0f / f32(display.width);
 			s_screenScale[1] = 1.0f / f32(display.height);
 		}
