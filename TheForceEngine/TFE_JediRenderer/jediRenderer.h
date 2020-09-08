@@ -12,7 +12,8 @@ enum TFE_SubRenderer
 	TSR_CLASSIC_FIXED = 0,	// The Reverse-Engineered DOS Jedi Renderer, using 16.16 fixed point.
 	TSR_CLASSIC_FLOAT,		// Derived from the Reverse-Engineered Jedi Renderer but using floating point.
 	TSR_CLASSIC_GPU,		// Derived from the Reverse-Engineered Jedi Renderer but using the GPU for low-level rendering.
-	TSR_COUNT
+	TSR_COUNT,
+	TSR_INVALID,			// Invalid sub-renderer.
 };
 
 namespace TFE_JediRenderer
@@ -26,11 +27,15 @@ namespace TFE_JediRenderer
 
 	// Camera parameters: yaw, pitch, position (x, y, z)
 	//                    sectorId containing the camera.
-	//                    ambient offset (0 = default).
-	//                    camera light source.
+	//                    ambient base or offset (default = MAX_LIGHT_LEVEL).
+	//                    camera light source - true if there is a camera based light source, in which case worldAmbient is treated as an offset.
+	//											false if there is no camera light source, worldAmbient is then the base ambient.
 	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId, s32 worldAmbient = 0, bool cameraLightSource = false);
+	// Draw the scene to the passed in display using the colormap for shading.
 	void draw(u8* display, const ColorMap* colormap);
 
+	// Setup the currently loaded level for rendering at the specified resolution.
 	void setupLevel(s32 width, s32 height);
+	// Set the current resolution to render, this may involve regenerating lookup-tables, depending on the sub-renderer.
 	void setResolution(s32 width, s32 height);
 }

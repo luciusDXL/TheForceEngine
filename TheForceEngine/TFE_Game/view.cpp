@@ -165,6 +165,7 @@ namespace TFE_View
 
 		if (s_enableClassic)
 		{
+			TFE_JediRenderer::setSubRenderer(TSR_CLASSIC_FIXED);
 			TFE_JediRenderer::setupLevel(s_width, s_height);
 		}
 	}

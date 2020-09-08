@@ -18,7 +18,7 @@ namespace TFE_JediRenderer
 
 	static bool s_init = false;
 	static MemoryPool s_memPool;
-	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
+	static TFE_SubRenderer s_subRenderer = TSR_INVALID;
 	static TFE_Sectors* s_sectors = nullptr;
 
 	/////////////////////////////////////////////
@@ -37,26 +37,18 @@ namespace TFE_JediRenderer
 	{
 		if (s_init) { return; }
 		s_init = true;
+		// Setup Debug CVars.
 		s_maxWallCount = 0xffff;
 		s_maxDepthCount = 0xffff;
-		CVAR_INT(s_maxWallCount, "d_maxWallCount", 0, "Maximum wall count for a given sector.");
+		CVAR_INT(s_maxWallCount,  "d_maxWallCount",  0, "Maximum wall count for a given sector.");
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", 0, "Maximum adjoin depth count.");
-
+		// Setup performance counters.
 		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
 		TFE_COUNTER(s_maxAdjoinIndex, "Maximum Adjoin Count");
 		TFE_COUNTER(s_sectorIndex,    "Sector Count");
 		TFE_COUNTER(s_flatCount,      "Flat Count");
 		TFE_COUNTER(s_curWallSeg,     "Wall Segment Count");
 		TFE_COUNTER(s_adjoinSegCount, "Adjoin Segment Count");
-
-		if (s_subRenderer == TSR_CLASSIC_FIXED)
-		{
-			s_sectors = new TFE_Sectors_Fixed();
-		}
-		else
-		{
-			//s_sectors = new TFE_Sectors_Float();
-		}
 	}
 
 	void destroy()
@@ -73,9 +65,8 @@ namespace TFE_JediRenderer
 	void setupLevel(s32 width, s32 height)
 	{
 		init();
-		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setResolution(width, height); }
-		else { setResolution_Float(width, height); }
-		
+		setResolution(width, height);
+				
 		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
 		s_sectorId = -1;
 		s_sectors->setMemoryPool(&s_memPool);
@@ -88,9 +79,11 @@ namespace TFE_JediRenderer
 		if (subRenderer != s_subRenderer)
 		{
 			s_subRenderer = subRenderer;
-			// TODO: Apply any required changes, such as re-processing level data.
 
+			// Setup the sub-renderer sector system.
 			delete s_sectors;
+			s_sectors = nullptr;
+
 			if (s_subRenderer == TSR_CLASSIC_FIXED)
 			{
 				s_sectors = new TFE_Sectors_Fixed();
