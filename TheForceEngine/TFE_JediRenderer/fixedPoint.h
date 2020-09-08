@@ -12,20 +12,14 @@
 // releases.
 #define ASSERT_ON_OVERFLOW 0
 
-typedef s32 fixed16_16;
-typedef s32 fixed12_20;
-typedef s64 fixed48_16;
-typedef s64 fixed44_20;
-
 #define HALF_16 0x8000
 #define ONE_16  0x10000
-#define HALF_20 0x80000
-#define ONE_20  0x100000
 
 #define FRAC_BITS 16ll
-#define FRAC_BITS_20 20ll
 #define FLOAT_SCALE 65536.0f
 #define ANGLE_TO_FIXED_SCALE 4
+
+typedef s32 fixed16_16;
 
 namespace FixedPoint
 {
@@ -65,46 +59,6 @@ namespace FixedPoint
 		return s32(x >> FRAC_BITS);
 	}
 
-	// multiplies 2 fixed point numbers, the result is fixed point.
-	// this variant uses the extended size directly, so no upcasting is required.
-	inline fixed48_16 mul16(fixed48_16 x, fixed48_16 y)
-	{
-		return (x * y) >> FRAC_BITS;
-	}
-
-	// divides 2 fixed point numbers, the result is fixed point.
-	// this variant uses the extended size directly, so no upcasting is required.
-	inline fixed48_16 div16(fixed48_16 num, fixed48_16 denom)
-	{
-		return (num << FRAC_BITS) / denom;
-	}
-
-	// multiplies 2 fixed point numbers, the result is fixed point.
-	// this variant uses the extended size directly, so no upcasting is required.
-	inline fixed44_20 mul20(fixed44_20 x, fixed44_20 y)
-	{
-		return (x * y) >> FRAC_BITS_20;
-	}
-
-	// divides 2 fixed point numbers, the result is fixed point.
-	// this variant uses the extended size directly, so no upcasting is required.
-	inline fixed44_20 div20(fixed44_20 num, fixed44_20 denom)
-	{
-		return (num << FRAC_BITS_20) / denom;
-	}
-
-	// truncates a 16.16 fixed point number, returns an int: x >> 16
-	inline s32 floor16(fixed48_16 x)
-	{
-		return s32(x >> FRAC_BITS);
-	}
-
-	// truncates a 16.16 fixed point number, returns an int: x >> 16
-	inline s32 floor20(fixed44_20 x)
-	{
-		return s32(x >> FRAC_BITS_20);
-	}
-
 	// computes a * b / c while keeping everything in 64 bits until the end.
 	inline fixed16_16 fusedMulDiv(fixed16_16 a, fixed16_16 b, fixed16_16 c)
 	{
@@ -119,17 +73,6 @@ namespace FixedPoint
 		#endif
 
 		return fixed16_16(value);
-	}
-
-	// computes a * b / c while keeping everything in 64 bits until the end.
-	inline fixed48_16 fusedMulDiv_48_16(fixed16_16 a, fixed16_16 b, fixed16_16 c)
-	{
-		const s64 a64 = s64(a);
-		const s64 b64 = s64(b);
-		const s64 c64 = s64(c);
-		s64 value = (a64 * b64) / c64;
-
-		return fixed48_16(value);
 	}
 	
 	// computes a * b * c while keeping everything in 64 bits until the end.
@@ -154,22 +97,10 @@ namespace FixedPoint
 		return s32((x + HALF_16) >> FRAC_BITS);
 	}
 
-	// rounds a 16.16 fixed point number, returns an int: (x + HALF_16) >> 16
-	inline s32 round16(fixed48_16 x)
-	{
-		return s32((x + HALF_16) >> FRAC_BITS);
-	}
-
 	// converts an integer to a fixed point number: x << 16
 	inline fixed16_16 intToFixed16(s32 x)
 	{
 		return fixed16_16(x) << FRAC_BITS;
-	}
-
-	// converts an integer to a fixed point number: x << 16
-	inline fixed44_20 intToFixed20(s32 x)
-	{
-		return fixed44_20(x) << FRAC_BITS_20;
 	}
 
 	inline fixed16_16 floatToFixed16(f32 x)

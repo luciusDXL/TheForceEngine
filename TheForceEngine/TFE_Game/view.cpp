@@ -4,8 +4,6 @@
 #include "physics.h"
 #include "modelRendering.h"
 #include "renderCommon.h"
-#include "RendererClassic/rendererClassic.h"
-#include "RendererClassic/fixedPoint.h"
 #include <TFE_Renderer/renderer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
@@ -21,10 +19,11 @@
 #include <TFE_Asset/modelAsset.h>
 #include <TFE_LogicSystem/logicSystem.h>
 #include <TFE_FrontEndUI/console.h>
+
+#include <TFE_JediRenderer/jediRenderer.h>
+
 #include <algorithm>
 #include <assert.h>
-
-using namespace FixedPoint;
 
 namespace TFE_View
 {
@@ -166,7 +165,7 @@ namespace TFE_View
 
 		if (s_enableClassic)
 		{
-			RendererClassic::setupLevel(s_width, s_height);
+			TFE_JediRenderer::setupLevel(s_width, s_height);
 		}
 	}
 
@@ -195,7 +194,7 @@ namespace TFE_View
 			s_lowerHeightMask = new s16[MAX_MASK_HEIGHT];	// 64Kb
 		}
 
-		RendererClassic::changeResolution(w, h);
+		TFE_JediRenderer::setResolution(w, h);
 	}
 		
 	bool init(const LevelData* level, TFE_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
@@ -2088,7 +2087,11 @@ namespace TFE_View
 		TFE_ModelRender::buildClipPlanes(s_pitchOffset);
 
 		f32 sinPitch = sinf(pitch);
-		RendererClassic::setCamera(floatAngleToFixed(yaw), floatAngleToFixed(pitch), floatToFixed16(s_rot[0]), floatToFixed16(s_rot[1]), floatToFixed16(sinPitch), floatToFixed16(cameraPos->x), floatToFixed16(cameraPos->y), floatToFixed16(cameraPos->z), sectorId);
+		s32 ambient = 31;
+		if (lightMode == LIGHT_NORMAL) { ambient = 0; }
+		else if (lightMode != LIGHT_OFF) { ambient = -9; }
+
+		TFE_JediRenderer::setCamera(yaw, pitch, cameraPos->x, cameraPos->y, cameraPos->z, sectorId, ambient, lightMode != LIGHT_OFF);
 	}
 
 	void draw(const Vec3f* cameraPos, s32 sectorId)
@@ -2099,13 +2102,7 @@ namespace TFE_View
 			TFE_ZONE("Draw");
 
 			// For now update all sectors.
-			const u32 sectorCount = (u32)s_level->sectors.size();
-			for (u32 i = 0; i < sectorCount; i++)
-			{
-				RendererClassic::updateSector(i);
-			}
-
-			RendererClassic::draw(s_renderer->getDisplay(), s_colorMap);
+			TFE_JediRenderer::draw(s_renderer->getDisplay(), s_colorMap);
 			return;
 		}
 

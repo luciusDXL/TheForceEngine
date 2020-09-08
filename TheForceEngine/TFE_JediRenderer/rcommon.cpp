@@ -1,17 +1,14 @@
 #include "rcommon.h"
 #include "redgePair.h"
 
-namespace RendererClassic
+namespace TFE_JediRenderer
 {
-	// Settings
-	bool s_enableHighPrecision;
-
 	// Resolution
 	s32 s_width = 0;
 	s32 s_height = 0;
-	fixed16_16 s_halfWidth;
-	fixed16_16 s_halfHeight;
-	fixed16_16 s_halfHeightBase;
+	f32 s_halfWidth;
+	f32 s_halfHeight;
+	f32 s_halfHeightBase;
 	s32 s_heightInPixels;
 	s32 s_heightInPixelsBase;
 	s32 s_minScreenY;
@@ -19,25 +16,25 @@ namespace RendererClassic
 	s32 s_screenXMid;
 
 	// Projection
-	fixed16_16 s_focalLength;
-	fixed16_16 s_focalLenAspect;
-	fixed16_16 s_eyeHeight;
-	fixed16_16* s_depth1d_all = nullptr;
-	fixed16_16* s_depth1d = nullptr;
+	f32 s_focalLength;
+	f32 s_focalLenAspect;
+	f32 s_eyeHeight;
+	f32* s_depth1d_all = nullptr;
+	f32* s_depth1d = nullptr;
 
 	// Camera
-	fixed16_16 s_cameraPosX;
-	fixed16_16 s_cameraPosZ;
-	fixed16_16 s_xCameraTrans;
-	fixed16_16 s_zCameraTrans;
-	fixed16_16 s_cosYaw;
-	fixed16_16 s_sinYaw;
-	fixed16_16 s_negSinYaw;
-	fixed16_16 s_cameraYaw;
-	fixed16_16 s_cameraPitch;
-	fixed16_16 s_skyYawOffset;
-	fixed16_16 s_skyPitchOffset;
-	fixed16_16* s_skyTable;
+	f32 s_cameraPosX;
+	f32 s_cameraPosZ;
+	f32 s_xCameraTrans;
+	f32 s_zCameraTrans;
+	f32 s_cosYaw;
+	f32 s_sinYaw;
+	f32 s_negSinYaw;
+	f32 s_cameraYaw;
+	f32 s_cameraPitch;
+	f32 s_skyYawOffset;
+	f32 s_skyPitchOffset;
+	f32* s_skyTable;
 
 	// Window
 	s32 s_minScreenX;
@@ -48,14 +45,14 @@ namespace RendererClassic
 	s32 s_windowMaxY;
 	s32 s_windowMaxCeil;
 	s32 s_windowMinFloor;
-	fixed16_16 s_windowMinZ;
+	f32 s_windowMinZ;
 
 	// Display
 	u8* s_display;
 
 	// Render
-	s32 s_sectorIndex;
 	RSector* s_prevSector;
+	s32 s_sectorIndex;
 	s32 s_maxAdjoinIndex;
 	s32 s_adjoinIndex;
 	s32 s_maxAdjoinDepth;
@@ -71,26 +68,26 @@ namespace RendererClassic
 	s32* s_windowBot = nullptr;
 	s32* s_windowTopPrev = nullptr;
 	s32* s_windowBotPrev = nullptr;
-	fixed16_16* s_column_Y_Over_X = nullptr;
-	fixed16_16* s_column_X_Over_Y = nullptr;
+	f32* s_column_Y_Over_X = nullptr;
+	f32* s_column_X_Over_Y = nullptr;
 
 	// Segment list.
-	RWallSegment s_wallSegListDst[MAX_SEG];
-	RWallSegment s_wallSegListSrc[MAX_SEG];
-	RWallSegment** s_adjoinSegment;
-
 	s32 s_nextWall;
 	s32 s_curWallSeg;
 	s32 s_adjoinSegCount;
 	s32 s_adjoinDepth;
 	s32 s_drawFrame;
 
+	RWallSegment s_wallSegListDst[MAX_SEG];
+	RWallSegment s_wallSegListSrc[MAX_SEG];
+	RWallSegment** s_adjoinSegment;
+
 	// Flats
 	s32 s_flatCount;
-	fixed16_16* s_rcp_yMinusHalfHeight;
-	fixed12_20* s_rcp_yMinusHalfHeightHQ;
 	s32 s_wallMaxCeilY;
 	s32 s_wallMinFloorY;
+	f32* s_rcp_yMinusHalfHeight;
+
 	EdgePair* s_flatEdge;
 	EdgePair  s_flatEdgeList[MAX_SEG];
 	EdgePair* s_adjoinEdge;

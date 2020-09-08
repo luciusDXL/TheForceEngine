@@ -165,9 +165,8 @@ namespace TFE_PostProcess
 		const f32 scaleY = 2.0f * f32(height) * s_screenScale[1];
 		const f32 offsetX = 2.0f * f32(x) * s_screenScale[0] - 1.0f;
 		const f32 offsetY = 2.0f * f32(y) * s_screenScale[1] - 1.0f;
-
-		// Bind Uniforms & Textures.
 		const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
+
 		shader->setVariable(variableId, SVT_VEC4, scaleOffset);
 	}
 }

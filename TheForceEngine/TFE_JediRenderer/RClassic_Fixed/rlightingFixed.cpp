@@ -1,23 +1,19 @@
-#include "rlighting.h"
-#include "fixedPoint.h"
-#include "rmath.h"
-#include "rcommon.h"
-#include "rlimits.h"
+#include "rlightingFixed.h"
+#include "../fixedPoint.h"
+#include "../rmath.h"
+#include "../rcommon.h"
+#include "../rlimits.h"
 
-using namespace RendererClassic;
 using namespace RMath;
 
-#if ENABLE_HIGH_PRECISION_FIXED_POINT == 0
 #define LIGHT_SCALE 14
 #define LIGHT_ATTEN0 20
 #define LIGHT_ATTEN1 21
-#else
-#define LIGHT_SCALE 18ll
-#define LIGHT_ATTEN0 24ll
-#define LIGHT_ATTEN1 25ll
-#endif
 
-namespace RClassicLighting
+namespace TFE_JediRenderer
+{
+
+namespace RClassic_Fixed
 {
 	const u8* computeLighting(fixed16_16 depth, s32 lightOffset)
 	{
@@ -56,4 +52,6 @@ namespace RClassicLighting
 
 		return &s_colorMap[light << 8];
 	}
-}
+}  // RLightingFixed
+
+}  // TFE_JediRenderer

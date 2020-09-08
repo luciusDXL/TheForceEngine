@@ -1,102 +1,27 @@
-#include "rwall.h"
-#include "rflat.h"
-#include "rlighting.h"
-#include "rsector.h"
-#include "redgePair.h"
-#include "rtexture.h"
-#include "fixedPoint.h"
-#include "rmath.h"
-#include "rcommon.h"
-#include <TFE_Renderer/renderer.h>
-#include <TFE_System/system.h>
-#include <TFE_System/math.h>
 #include <TFE_System/profiler.h>
-#include <TFE_FileSystem/paths.h>
-#include <TFE_Asset/levelAsset.h>
-#include <TFE_Asset/levelObjectsAsset.h>
-#include <TFE_Asset/colormapAsset.h>
+// TODO: Either move level.h or fix it.
 #include <TFE_Game/level.h>
-#include <TFE_Asset/spriteAsset.h>
-#include <TFE_Asset/textureAsset.h>
-#include <TFE_Asset/paletteAsset.h>
-#include <TFE_Asset/colormapAsset.h>
-#include <TFE_Asset/modelAsset.h>
-#include <TFE_LogicSystem/logicSystem.h>
-#include <TFE_FrontEndUI/console.h>
-#include <algorithm>
-#include <assert.h>
 
-using namespace RendererClassic;
-using namespace RClassicWall;
-using namespace RClassicFlat;
-using namespace RClassicEdgePair;
-using namespace RClassicLighting;
-using namespace RClassicTexture;
+#include "rsectorFixed.h"
+#include "rwallFixed.h"
+#include "rflatFixed.h"
+#include "rlightingFixed.h"
+#include "redgePairFixed.h"
+#include "rcommonFixed.h"
+#include "../fixedPoint.h"
+#include "../rmath.h"
+#include "../rcommon.h"
+#include "../rtexture.h"
+
+using namespace TFE_JediRenderer::RClassic_Fixed;
 using namespace FixedPoint;
 using namespace RMath;
 
-namespace RClassicSector
+namespace TFE_JediRenderer
 {
-	// Values saved at a given level of the stack while traversing sectors.
-	// This is 80 bytes in the original DOS code but will be more in The Force Engine
-	// due to 64 bit pointers.
-	struct SectorSaveValues
-	{
-		RSector* curSector;
-		RSector* prevSector;
-		fixed16_16* depth1d;
-		u32     windowX0;
-		u32     windowX1;
-		s32     windowMinY;
-		s32     windowMaxY;
-		s32     windowMaxCeil;
-		s32     windowMinFloor;
-		s32     wallMaxCeilY;
-		s32     wallMinFloorY;
-		u32     windowMinX;
-		u32     windowMaxX;
-		s32*    windowTop;
-		s32*    windowBot;
-		s32*    windowTopPrev;
-		s32*    windowBotPrev;
-		s32     sectorAmbient;
-		s32     scaledAmbient;
-		s32     scaledAmbient2k;
-	};
-	static SectorSaveValues s_sectorStack[MAX_ADJOIN_DEPTH];
-
-	static RSector* s_curSector;
-	static RSector* s_rsectors;
-	static MemoryPool* s_memPool;
-	static u32 s_sectorCount;
-
 	void adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePair* adjoinEdges, s32 adjoinCount);
-	void adjoin_computeWindowBounds(EdgePair* adjoinEdges);
-	void sector_saveValues(s32 index);
-	void sector_restoreValues(s32 index);
-	
-	void sector_setMemoryPool(MemoryPool* memPool)
-	{
-		s_memPool = memPool;
-	}
 
-	void sector_allocate(u32 count)
-	{
-		s_sectorCount = count;
-		s_rsectors = (RSector*)s_memPool->allocate(sizeof(RSector) * count);
-	}
-
-	RSector* sector_get()
-	{
-		return s_rsectors;
-	}
-
-	s32 wallSortX(const void* r0, const void* r1)
-	{
-		return ((const RWallSegment*)r0)->wallX0 - ((const RWallSegment*)r1)->wallX0;
-	}
-
-	void sector_draw(RSector* sector)
+	void TFE_Sectors_Fixed::draw(RSector* sector)
 	{
 		s_curSector = sector;
 		s_sectorIndex++;
@@ -111,12 +36,12 @@ namespace RClassicSector
 		s32* winTopNext = &s_windowTop_all[s_adjoinDepth * s_width];
 		s32* winBotNext = &s_windowBot_all[s_adjoinDepth * s_width];
 
-		s_depth1d = &s_depth1d_all[(s_adjoinDepth - 1) * s_width];
+		s_depth1d_Fixed = &s_depth1d_all_Fixed[(s_adjoinDepth - 1) * s_width];
 
 		s32 startWall = s_curSector->startWall;
 		s32 drawWallCount = s_curSector->drawWallCnt;
 
-		s_sectorAmbient = round16(s_curSector->ambientFixed);
+		s_sectorAmbient = round16(s_curSector->ambient.f16_16);
 		s_scaledAmbient = (s_sectorAmbient >> 1) + (s_sectorAmbient >> 2) + (s_sectorAmbient >> 3);
 
 		s_windowTop = winTop;
@@ -124,8 +49,8 @@ namespace RClassicSector
 		fixed16_16* depthPrev = nullptr;
 		if (s_adjoinDepth > 1)
 		{
-			depthPrev = &s_depth1d_all[(s_adjoinDepth - 2) * s_width];
-			memcpy(&s_depth1d[s_minScreenX], &depthPrev[s_minScreenX], s_width * 4);
+			depthPrev = &s_depth1d_all_Fixed[(s_adjoinDepth - 2) * s_width];
+			memcpy(&s_depth1d_Fixed[s_minScreenX], &depthPrev[s_minScreenX], s_width * 4);
 		}
 
 		s_wallMaxCeilY = s_windowMinY;
@@ -138,8 +63,8 @@ namespace RClassicSector
 				vec2* vtxVS = s_curSector->verticesVS;
 				for (s32 v = 0; v < s_curSector->vertexCount; v++)
 				{
-					vtxVS->x = mul16(vtxWS->x, s_cosYaw) + mul16(vtxWS->z, s_sinYaw) + s_xCameraTrans;
-					vtxVS->z = mul16(vtxWS->x, s_negSinYaw) + mul16(vtxWS->z, s_cosYaw) + s_zCameraTrans;
+					vtxVS->x.f16_16 = mul16(vtxWS->x.f16_16, s_cosYaw_Fixed) + mul16(vtxWS->z.f16_16, s_sinYaw_Fixed) + s_xCameraTrans_Fixed;
+					vtxVS->z.f16_16 = mul16(vtxWS->x.f16_16, s_negSinYaw_Fixed) + mul16(vtxWS->z.f16_16, s_cosYaw_Fixed) + s_zCameraTrans_Fixed;
 					vtxVS++;
 					vtxWS++;
 				}
@@ -159,7 +84,7 @@ namespace RClassicSector
 				s_curSector->prevDrawFrame = s_drawFrame;
 
 				// Setup wall flags not from the original code, still to be replaced.
-				sector_setupWallDrawFlags(s_curSector);
+				setupWallDrawFlags(s_curSector);
 			TFE_ZONE_END(wallProcess);
 		}
 
@@ -273,10 +198,7 @@ namespace RClassicSector
 			}
 			else
 			{
-				if (!s_enableHighPrecision)
-					flat_drawCeiling(s_curSector, flatEdge, newFlatCount);
-				else
-					flat_drawCeiling_HQ(s_curSector, flatEdge, newFlatCount);
+				flat_drawCeiling(s_curSector, flatEdge, newFlatCount);
 			}
 			if (s_curSector->flags1 & SEC_FLAGS1_PIT)
 			{
@@ -291,10 +213,7 @@ namespace RClassicSector
 			}
 			else
 			{
-				if (!s_enableHighPrecision)
-					flat_drawFloor(s_curSector, flatEdge, newFlatCount);
-				else
-					flat_drawFloor_HQ(s_curSector, flatEdge, newFlatCount);
+				flat_drawFloor(s_curSector, flatEdge, newFlatCount);
 			}
 		TFE_ZONE_END(secDrawFlats);
 
@@ -319,7 +238,7 @@ namespace RClassicSector
 				if (s_adjoinDepth < MAX_ADJOIN_DEPTH && s_adjoinDepth < s_maxDepthCount)
 				{
 					s32 index = s_adjoinDepth - 1;
-					sector_saveValues(index);
+					saveValues(index);
 
 					adjoin_computeWindowBounds(adjoinEdges);
 					s_adjoinDepth++;
@@ -346,14 +265,14 @@ namespace RClassicSector
 						}
 					}
 
-					s_windowMinZ = min(curAdjoinSeg->z0, curAdjoinSeg->z1);
-					sector_draw(nextSector);
-
+					s_windowMinZ_Fixed = min(curAdjoinSeg->z0.f16_16, curAdjoinSeg->z1.f16_16);
+					draw(nextSector);
+					
 					if (s_adjoinDepth)
 					{
 						s32 index = s_adjoinDepth - 2;
 						s_adjoinDepth--;
-						sector_restoreValues(index);
+						restoreValues(index);
 					}
 					srcWall->drawFrame = 0;
 					if (srcWall->flags1 & WF1_ADJ_MID_TEX)
@@ -367,14 +286,14 @@ namespace RClassicSector
 
 		if (!(s_curSector->flags1 & SEC_FLAGS1_SUBSECTOR) && depthPrev && s_drawFrame != s_prevSector->prevDrawFrame2)
 		{
-			memcpy(&depthPrev[s_windowMinX], &s_depth1d[s_windowMinX], (s_windowMaxX - s_windowMinX + 1) * sizeof(fixed16_16));
+			memcpy(&depthPrev[s_windowMinX], &s_depth1d_Fixed[s_windowMinX], (s_windowMaxX - s_windowMinX + 1) * sizeof(fixed16_16));
 		}
 
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
 		s_curSector->prevDrawFrame2 = s_drawFrame;
 	}
 		
-	void sector_setupWallDrawFlags(RSector* sector)
+	void TFE_Sectors_Fixed::setupWallDrawFlags(RSector* sector)
 	{
 		RWall* wall = sector->walls;
 		for (s32 w = 0; w < sector->wallCount; w++, wall++)
@@ -382,13 +301,13 @@ namespace RClassicSector
 			if (wall->nextSector)
 			{
 				RSector* wSector = wall->sector;
-				fixed16_16 wFloorHeight = wSector->floorHeight;
-				fixed16_16 wCeilHeight = wSector->ceilingHeight;
+				fixed16_16 wFloorHeight = wSector->floorHeight.f16_16;
+				fixed16_16 wCeilHeight = wSector->ceilingHeight.f16_16;
 
 				RWall* mirror = wall->mirrorWall;
 				RSector* mSector = mirror->sector;
-				fixed16_16 mFloorHeight = mSector->floorHeight;
-				fixed16_16 mCeilHeight = mSector->ceilingHeight;
+				fixed16_16 mFloorHeight = mSector->floorHeight.f16_16;
+				fixed16_16 mCeilHeight = mSector->ceilingHeight.f16_16;
 
 				wall->drawFlags = 0;
 				mirror->drawFlags = 0;
@@ -415,7 +334,7 @@ namespace RClassicSector
 		}
 	}
 
-	void sector_adjustHeights(RSector* sector, fixed16_16 floorOffset, fixed16_16 ceilOffset, fixed16_16 secondHeightOffset)
+	void TFE_Sectors_Fixed::adjustHeights(RSector* sector, fixed16_16 floorOffset, fixed16_16 ceilOffset, fixed16_16 secondHeightOffset)
 	{
 		// Adjust objects.
 		if (sector->objectCount)
@@ -431,9 +350,9 @@ namespace RClassicSector
 			}
 		}
 		// Adjust sector heights.
-		sector->ceilingHeight += ceilOffset;
-		sector->floorHeight += floorOffset;
-		sector->secHeight += secondHeightOffset;
+		sector->ceilingHeight.f16_16 += ceilOffset;
+		sector->floorHeight.f16_16 += floorOffset;
+		sector->secHeight.f16_16 += secondHeightOffset;
 
 		// Update wall data.
 		s32 wallCount = sector->wallCount;
@@ -449,34 +368,34 @@ namespace RClassicSector
 		}
 
 		// Update collision data.
-		fixed16_16 floorHeight = sector->floorHeight;
+		fixed16_16 floorHeight = sector->floorHeight.f16_16;
 		if (sector->flags1 & SEC_FLAGS1_PIT)
 		{
 			floorHeight += 100 * ONE_16;
 		}
-		fixed16_16 ceilHeight = sector->ceilingHeight;
+		fixed16_16 ceilHeight = sector->ceilingHeight.f16_16;
 		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
 			ceilHeight -= 100 * ONE_16;
 		}
-		fixed16_16 secHeight = sector->floorHeight + sector->secHeight;
-		if (sector->secHeight >= 0 && floorHeight > secHeight)
+		fixed16_16 secHeight = sector->floorHeight.f16_16 + sector->secHeight.f16_16;
+		if (sector->secHeight.f16_16 >= 0 && floorHeight > secHeight)
 		{
 			secHeight = floorHeight;
 		}
 
-		sector->colFloorHeight = floorHeight;
-		sector->colCeilHeight = ceilHeight;
-		sector->colSecHeight = secHeight;
-		sector->colMinHeight = ceilHeight;
+		sector->colFloorHeight.f16_16 = floorHeight;
+		sector->colCeilHeight.f16_16 = ceilHeight;
+		sector->colSecHeight.f16_16 = secHeight;
+		sector->colMinHeight.f16_16 = ceilHeight;
 	}
 
-	void sector_computeBounds(RSector* sector)
+	void TFE_Sectors_Fixed::computeBounds(RSector* sector)
 	{
 		RWall* wall = sector->walls;
 		vec2* w0 = wall->w0;
-		fixed16_16 maxX = w0->x;
-		fixed16_16 maxZ = w0->z;
+		fixed16_16 maxX = w0->x.f16_16;
+		fixed16_16 maxZ = w0->z.f16_16;
 		fixed16_16 minX = maxX;
 		fixed16_16 minZ = maxZ;
 
@@ -484,17 +403,17 @@ namespace RClassicSector
 		{
 			w0 = wall->w0;
 
-			minX = min(minX, w0->x);
-			minZ = min(minZ, w0->z);
+			minX = min(minX, w0->x.f16_16);
+			minZ = min(minZ, w0->z.f16_16);
 
-			maxX = max(maxX, w0->x);
-			maxZ = max(maxZ, w0->z);
+			maxX = max(maxX, w0->x.f16_16);
+			maxZ = max(maxZ, w0->z.f16_16);
 		}
 
-		sector->minX = minX;
-		sector->maxX = maxX;
-		sector->minZ = minZ;
-		sector->maxZ = maxZ;
+		sector->minX.f16_16 = minX;
+		sector->maxX.f16_16 = maxX;
+		sector->minZ.f16_16 = minZ;
+		sector->maxZ.f16_16 = maxZ;
 
 		// Setup when needed.
 		//s_minX = minX;
@@ -503,21 +422,7 @@ namespace RClassicSector
 		//s_maxZ = maxZ;
 	}
 
-	void sector_clear(RSector* sector)
-	{
-		sector->vertexCount = 0;
-		sector->wallCount = 0;
-		sector->objectCount = 0;
-		sector->secHeight = 0;
-		sector->id = 0;
-		sector->prevDrawFrame = 0;
-		sector->objectCapacity = 0;
-		sector->verticesWS = nullptr;
-		sector->verticesVS = nullptr;
-		sector->self = sector;
-	}
-
-	void sector_copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
+	void TFE_Sectors_Fixed::copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
 	{
 		out->vertexCount = sector->vtxCount;
 		out->wallCount = sector->wallCount;
@@ -538,8 +443,8 @@ namespace RClassicSector
 				wall->sector = out;
 				wall->drawFrame = 0;
 				wall->drawFlags = WDF_MIDDLE;
-				wall->topTexelHeight = 0;
-				wall->botTexelHeight = 0;
+				wall->topTexelHeight.f16_16 = 0;
+				wall->botTexelHeight.f16_16 = 0;
 
 				wall->w0 = &out->verticesWS[walls[w].i0];
 				wall->w1 = &out->verticesWS[walls[w].i1];
@@ -551,21 +456,13 @@ namespace RClassicSector
 			out->prevDrawFrame2 = 0;
 		}
 
-		sector_update(sector->id);
-	}
-
-	void sector_updateAll()
-	{
-		for (u32 s = 0; s < s_sectorCount; s++)
-		{
-			sector_update(s);
-		}
+		update(sector->id);
 	}
 			
 	// In the future, renderer sectors can be changed directly by INF, but for now just copy from the level data.
 	// TODO: Currently all sector data is updated - get the "dirty" flag to work reliably so only partial data needs to be updated (textures).
 	// TODO: Properly handle switch textures (after reverse-engineering of switch rendering is done).
-	void sector_update(u32 sectorId, u32 updateFlags)
+	void TFE_Sectors_Fixed::update(u32 sectorId, u32 updateFlags)
 	{
 		TFE_ZONE("Sector Update");
 		if (updateFlags == 0) { return; }
@@ -585,27 +482,28 @@ namespace RClassicSector
 		fixed16_16 ceilDelta  = floatToFixed16(8.0f * (sector->ceilAlt - baseHeight->ceilAlt));
 		fixed16_16 floorDelta = floatToFixed16(8.0f * (sector->floorAlt - baseHeight->floorAlt));
 
-		out->ambientFixed  = intToFixed16(sector->ambient);
-		out->floorHeight   = floatToFixed16(sector->floorAlt);
-		out->ceilingHeight = floatToFixed16(sector->ceilAlt);
-		out->secHeight     = floatToFixed16(sector->secAlt);
+		out->ambient.f16_16       = intToFixed16(sector->ambient);
+		out->floorHeight.f16_16   = floatToFixed16(sector->floorAlt);
+		out->ceilingHeight.f16_16 = floatToFixed16(sector->ceilAlt);
+		out->secHeight.f16_16     = floatToFixed16(sector->secAlt);
+		out->floorOffsetX.f16_16  = floatToFixed16(sector->floorTexture.offsetX);
+		out->floorOffsetZ.f16_16  = floatToFixed16(sector->floorTexture.offsetY);
+		out->ceilOffsetX.f16_16   = floatToFixed16(sector->ceilTexture.offsetX);
+		out->ceilOffsetZ.f16_16   = floatToFixed16(sector->ceilTexture.offsetY);
+
 		out->flags1        = sector->flags[0];
 		out->flags2        = sector->flags[1];
 		out->flags3        = sector->flags[2];
 		out->floorTex      = texture_getFrame(textures[sector->floorTexture.texId]);
 		out->ceilTex       = texture_getFrame(textures[sector->ceilTexture.texId]);
-		out->floorOffsetX  = floatToFixed16(sector->floorTexture.offsetX);
-		out->floorOffsetZ  = floatToFixed16(sector->floorTexture.offsetY);
-		out->ceilOffsetX   = floatToFixed16(sector->ceilTexture.offsetX);
-		out->ceilOffsetZ   = floatToFixed16(sector->ceilTexture.offsetY);
-
+		
 		TFE_ZONE_BEGIN(secVtx, "Sector Update Vertices");
 		if (updateFlags & SEC_UPDATE_GEO)
 		{
 			for (s32 v = 0; v < out->vertexCount; v++)
 			{
-				out->verticesWS[v].x = floatToFixed16(vertices[v].x);
-				out->verticesWS[v].z = floatToFixed16(vertices[v].z);
+				out->verticesWS[v].x.f16_16 = floatToFixed16(vertices[v].x);
+				out->verticesWS[v].z.f16_16 = floatToFixed16(vertices[v].z);
 			}
 		}
 		TFE_ZONE_END(secVtx);
@@ -626,26 +524,26 @@ namespace RClassicSector
 			if (updateFlags & SEC_UPDATE_GEO)
 			{
 				const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
-				wall->texelLength = floatToFixed16(8.0f * sqrtf(offset.x*offset.x + offset.z*offset.z));
+				wall->texelLength.f16_16 = floatToFixed16(8.0f * sqrtf(offset.x*offset.x + offset.z*offset.z));
 			}
 
 			// Prime with mid texture height, other heights will be computed as needed.
-			wall->midTexelHeight = midTexelHeight;
+			wall->midTexelHeight.f16_16 = midTexelHeight;
 
 			// Texture Offsets
-			wall->topUOffset = floatToFixed16(8.0f * walls[w].top.offsetX);
-			wall->topVOffset = floatToFixed16(8.0f * walls[w].top.offsetY);
-			wall->midUOffset = floatToFixed16(8.0f * walls[w].mid.offsetX);
-			wall->midVOffset = floatToFixed16(8.0f * walls[w].mid.offsetY);
-			wall->botUOffset = floatToFixed16(8.0f * walls[w].bot.offsetX);
-			wall->botVOffset = floatToFixed16(8.0f * walls[w].bot.offsetY);
-			wall->signUOffset = floatToFixed16(8.0f * walls[w].sign.offsetX);
-			wall->signVOffset = floatToFixed16(8.0f * walls[w].sign.offsetY);
+			wall->topUOffset.f16_16 = floatToFixed16(8.0f * walls[w].top.offsetX);
+			wall->topVOffset.f16_16 = floatToFixed16(8.0f * walls[w].top.offsetY);
+			wall->midUOffset.f16_16 = floatToFixed16(8.0f * walls[w].mid.offsetX);
+			wall->midVOffset.f16_16 = floatToFixed16(8.0f * walls[w].mid.offsetY);
+			wall->botUOffset.f16_16 = floatToFixed16(8.0f * walls[w].bot.offsetX);
+			wall->botVOffset.f16_16 = floatToFixed16(8.0f * walls[w].bot.offsetY);
+			wall->signUOffset.f16_16 = floatToFixed16(8.0f * walls[w].sign.offsetX);
+			wall->signVOffset.f16_16 = floatToFixed16(8.0f * walls[w].sign.offsetY);
 
 			if (walls[w].flags[0] & WF1_TEX_ANCHORED)
 			{
-				wall->midVOffset -= floorDelta;
-				wall->botVOffset -= floorDelta;
+				wall->midVOffset.f16_16 -= floorDelta;
+				wall->botVOffset.f16_16 -= floorDelta;
 				
 				const s32 nextId = walls[w].adjoin;
 				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
@@ -653,20 +551,20 @@ namespace RClassicSector
 				if (nextSrc)
 				{
 					// Handle next sector moving.
-					wall->botVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
+					wall->botVOffset.f16_16 -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
 				}
-				wall->topVOffset = -wall->topVOffset + (wall->topTex ? wall->topTex->height : 0);
+				wall->topVOffset.f16_16 = -wall->topVOffset.f16_16 + (wall->topTex ? wall->topTex->height : 0);
 			}
 			if (walls[w].flags[0] & WF1_SIGN_ANCHORED)
 			{
-				wall->signVOffset -= floorDelta;
+				wall->signVOffset.f16_16 -= floorDelta;
 				const s32 nextId = walls[w].adjoin;
 				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
 				const Sector* nextSrc = (nextId >= 0) ? &level->sectors[nextId] : nullptr;
 				if (nextSrc)
 				{
 					// Handle next sector moving.
-					wall->signVOffset -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
+					wall->signVOffset.f16_16 -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
 				}
 			}
 
@@ -695,8 +593,8 @@ namespace RClassicSector
 			const s32 x0 = adjoinEdges->x0;
 			const s32 x1 = adjoinEdges->x1;
 
-			const fixed16_16 ceil_dYdX = adjoinEdges->dyCeil_dx;
-			fixed16_16 y = adjoinEdges->yCeil0;
+			const fixed16_16 ceil_dYdX = adjoinEdges->dyCeil_dx.f16_16;
+			fixed16_16 y = adjoinEdges->yCeil0.f16_16;
 			for (s32 x = x0; x <= x1; x++, y += ceil_dYdX)
 			{
 				s32 yPixel = round16(y);
@@ -707,8 +605,8 @@ namespace RClassicSector
 					winTopNext[x] = (yPixel <= yBot) ? yPixel : yBot + 1;
 				}
 			}
-			const fixed16_16 floor_dYdX = adjoinEdges->dyFloor_dx;
-			y = adjoinEdges->yFloor0;
+			const fixed16_16 floor_dYdX = adjoinEdges->dyFloor_dx.f16_16;
+			y = adjoinEdges->yFloor0.f16_16;
 			for (s32 x = x0; x <= x1; x++, y += floor_dYdX)
 			{
 				s32 yPixel = round16(y);
@@ -722,7 +620,7 @@ namespace RClassicSector
 		}
 	}
 
-	void adjoin_computeWindowBounds(EdgePair* adjoinEdges)
+	void TFE_Sectors_Fixed::adjoin_computeWindowBounds(EdgePair* adjoinEdges)
 	{
 		s32 yC = adjoinEdges->yPixel_C0;
 		if (yC > s_windowMinY)
@@ -752,13 +650,13 @@ namespace RClassicSector
 		s_windowBotPrev = s_windowBot;
 		s_prevSector = s_curSector;
 	}
-			
-	void sector_saveValues(s32 index)
+
+	void TFE_Sectors_Fixed::saveValues(s32 index)
 	{
 		SectorSaveValues* dst = &s_sectorStack[index];
 		dst->curSector = s_curSector;
 		dst->prevSector = s_prevSector;
-		dst->depth1d = s_depth1d;
+		dst->depth1d.f16_16 = s_depth1d_Fixed;
 		dst->windowX0 = s_windowX0;
 		dst->windowX1 = s_windowX1;
 		dst->windowMinY = s_windowMinY;
@@ -778,12 +676,12 @@ namespace RClassicSector
 		//dst->scaledAmbient2k = s_scaledAmbient2k;
 	}
 
-	void sector_restoreValues(s32 index)
+	void TFE_Sectors_Fixed::restoreValues(s32 index)
 	{
 		const SectorSaveValues* src = &s_sectorStack[index];
 		s_curSector = src->curSector;
 		s_prevSector = src->prevSector;
-		s_depth1d = src->depth1d;
+		s_depth1d_Fixed = src->depth1d.f16_16;
 		s_windowX0 = src->windowX0;
 		s_windowX1 = src->windowX1;
 		s_windowMinY = src->windowMinY;

@@ -4,10 +4,13 @@
 // Dark Forces Derived Renderer - Wall functions
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include "fixedPoint.h"
-#include "rmath.h"
+#include "../fixedPoint.h"
+#include "../rmath.h"
 
-namespace RClassicLighting
+namespace TFE_JediRenderer
 {
-	const u8* computeLighting(fixed16_16 depth, s32 lightOffset);
+	namespace RClassic_Fixed
+	{
+		const u8* computeLighting(fixed16_16 depth, s32 lightOffset);
+	}
 }

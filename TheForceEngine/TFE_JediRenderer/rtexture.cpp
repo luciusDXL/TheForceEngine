@@ -1,7 +1,7 @@
 #include "rtexture.h"
 #include <TFE_System/system.h>
 
-namespace RClassicTexture
+namespace TFE_JediRenderer
 {
 	TextureFrame* texture_getFrame(Texture* texture, u32 baseFrame)
 	{

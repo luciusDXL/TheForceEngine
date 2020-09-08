@@ -1,22 +1,20 @@
 #pragma once
 #include <TFE_System/types.h>
-#include "rwall.h"
 #include "rlimits.h"
+#include "rwall.h"
 
 struct ColorMap;
-struct EdgePair;
 
-namespace RendererClassic
+namespace TFE_JediRenderer
 {
-	// Settings
-	extern bool s_enableHighPrecision;
+	struct EdgePair;
 
 	// Resolution
 	extern s32 s_width;
 	extern s32 s_height;
-	extern fixed16_16 s_halfWidth;
-	extern fixed16_16 s_halfHeight;
-	extern fixed16_16 s_halfHeightBase;
+	extern f32 s_halfWidth;
+	extern f32 s_halfHeight;
+	extern f32 s_halfHeightBase;
 	extern s32 s_heightInPixels;
 	extern s32 s_heightInPixelsBase;
 	extern s32 s_minScreenY;
@@ -24,25 +22,25 @@ namespace RendererClassic
 	extern s32 s_screenXMid;
 
 	// Projection
-	extern fixed16_16  s_focalLength;
-	extern fixed16_16  s_focalLenAspect;
-	extern fixed16_16  s_eyeHeight;
-	extern fixed16_16* s_depth1d_all;
-	extern fixed16_16* s_depth1d;
+	extern f32  s_focalLength;
+	extern f32  s_focalLenAspect;
+	extern f32  s_eyeHeight;
+	extern f32* s_depth1d_all;
+	extern f32* s_depth1d;
 
 	// Camera
-	extern fixed16_16 s_cameraPosX;
-	extern fixed16_16 s_cameraPosZ;
-	extern fixed16_16 s_xCameraTrans;
-	extern fixed16_16 s_zCameraTrans;
-	extern fixed16_16 s_cosYaw;
-	extern fixed16_16 s_sinYaw;
-	extern fixed16_16 s_negSinYaw;
-	extern fixed16_16 s_cameraYaw;
-	extern fixed16_16 s_cameraPitch;
-	extern fixed16_16 s_skyYawOffset;
-	extern fixed16_16 s_skyPitchOffset;
-	extern fixed16_16* s_skyTable;
+	extern f32 s_cameraPosX;
+	extern f32 s_cameraPosZ;
+	extern f32 s_xCameraTrans;
+	extern f32 s_zCameraTrans;
+	extern f32 s_cosYaw;
+	extern f32 s_sinYaw;
+	extern f32 s_negSinYaw;
+	extern f32 s_cameraYaw;
+	extern f32 s_cameraPitch;
+	extern f32 s_skyYawOffset;
+	extern f32 s_skyPitchOffset;
+	extern f32* s_skyTable;
 	
 	// Window
 	extern s32 s_minScreenX;
@@ -53,14 +51,14 @@ namespace RendererClassic
 	extern s32 s_windowMaxY;
 	extern s32 s_windowMaxCeil;
 	extern s32 s_windowMinFloor;
-	extern fixed16_16 s_windowMinZ;
+	extern f32 s_windowMinZ;
 	
 	// Display
 	extern u8* s_display;
 
 	// Render
-	extern s32 s_sectorIndex;
 	extern RSector* s_prevSector;
+	extern s32 s_sectorIndex;
 	extern s32 s_maxAdjoinIndex;
 	extern s32 s_adjoinIndex;
 	extern s32 s_maxAdjoinDepth;
@@ -76,31 +74,31 @@ namespace RendererClassic
 	extern s32* s_windowBot;
 	extern s32* s_windowTopPrev;
 	extern s32* s_windowBotPrev;
-	extern fixed16_16* s_column_Y_Over_X;
-	extern fixed16_16* s_column_X_Over_Y;
+	extern f32* s_column_Y_Over_X;
+	extern f32* s_column_X_Over_Y;
 	
 	// WallSegments
-	extern RWallSegment s_wallSegListDst[MAX_SEG];
-	extern RWallSegment s_wallSegListSrc[MAX_SEG];
-	extern RWallSegment** s_adjoinSegment;
-
 	extern s32 s_nextWall;
 	extern s32 s_curWallSeg;
 	extern s32 s_adjoinSegCount;
 	extern s32 s_adjoinDepth;
 	extern s32 s_drawFrame;
 
+	extern RWallSegment s_wallSegListDst[MAX_SEG];
+	extern RWallSegment s_wallSegListSrc[MAX_SEG];
+	extern RWallSegment** s_adjoinSegment;
+
 	// Flats
 	extern s32 s_flatCount;
-	extern fixed16_16* s_rcp_yMinusHalfHeight;
-	extern fixed12_20* s_rcp_yMinusHalfHeightHQ;
 	extern s32 s_wallMaxCeilY;
 	extern s32 s_wallMinFloorY;
+	extern f32* s_rcp_yMinusHalfHeight;
+
 	extern EdgePair* s_flatEdge;
 	extern EdgePair  s_flatEdgeList[MAX_SEG];
 	extern EdgePair* s_adjoinEdge;
 	extern EdgePair  s_adjoinEdgeList[MAX_ADJOIN_SEG];
-
+	
 	// Lighting
 	extern const u8* s_colorMap;
 	extern const u8* s_lightSourceRamp;
