@@ -12,8 +12,6 @@
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/memoryPool.h>
 
-using namespace FixedPoint;
-
 namespace TFE_JediRenderer
 {
 	static s32 s_sectorId = -1;

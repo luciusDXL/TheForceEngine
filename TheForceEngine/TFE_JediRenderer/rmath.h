@@ -6,39 +6,39 @@
 #include <TFE_System/types.h>
 #include "fixedPoint.h"
 
-// The "decimal" structure is a "32-bit decimal number" that can be either floating point or fixed point.
-// This is here so that structures can be shared between fixed point and floating point based renderers to reduce code
-// duplication.
-struct decimal
+namespace TFE_JediRenderer
 {
-	union
+	// The "decimal" structure is a "32-bit decimal number" that can be either floating point or fixed point.
+	// This is here so that structures can be shared between fixed point and floating point based renderers to reduce code
+	// duplication.
+	struct decimal
 	{
-		fixed16_16 f16_16;
-		f32 f32;
+		union
+		{
+			fixed16_16 f16_16;
+			f32 f32;
+		};
 	};
-};
 
-struct decimalPtr
-{
-	union
+	struct decimalPtr
 	{
-		fixed16_16* f16_16;
-		f32* f32;
+		union
+		{
+			fixed16_16* f16_16;
+			f32* f32;
+		};
 	};
-};
 
-struct vec2
-{
-	decimal x, z;
-};
+	struct vec2
+	{
+		decimal x, z;
+	};
 
-struct vec3
-{
-	decimal x, y, z;
-};
+	struct vec3
+	{
+		decimal x, y, z;
+	};
 
-namespace RMath
-{
 	// Int/Fixed Point
 	inline s32 abs(s32 x)
 	{

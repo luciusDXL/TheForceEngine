@@ -1,7 +1,5 @@
 #include "redgePairFixed.h"
 
-using namespace FixedPoint;
-
 namespace TFE_JediRenderer
 {
 

@@ -24,7 +24,7 @@ static const f32 c_pixelAspect = 320.0f / 200.0f;
 static const f32 c_spriteWorldScale = 1.0f / 65536.0f;
 static const f32 c_worldToTexelScale = 8.0f;
 static const f32 c_texelToWorldScale = 1.0f / c_worldToTexelScale;
-static const f32 c_spriteTexelToWorldScale = c_texelToWorldScale / c_aspect;// / c_pixelAspect;
+static const f32 c_spriteTexelToWorldScale = c_texelToWorldScale / c_aspect;
 
 enum LightMode
 {

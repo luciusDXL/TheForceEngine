@@ -26,8 +26,6 @@ namespace TFE_JediRenderer
 		void wall_drawTop(RWallSegment* wallSegment);
 		void wall_drawTopAndBottom(RWallSegment* wallSegment);
 
-		void wall_drawSolidHQ(RWallSegment* wallSegment);
-
 		void wall_drawSkyTop(RSector* sector);
 		void wall_drawSkyTopNoWall(RSector* sector);
 		void wall_drawSkyBottom(RSector* sector);

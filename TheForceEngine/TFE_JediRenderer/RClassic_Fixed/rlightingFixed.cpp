@@ -4,17 +4,15 @@
 #include "../rcommon.h"
 #include "../rlimits.h"
 
-using namespace RMath;
-
-#define LIGHT_SCALE 14
-#define LIGHT_ATTEN0 20
-#define LIGHT_ATTEN1 21
-
 namespace TFE_JediRenderer
 {
 
 namespace RClassic_Fixed
 {
+	#define LIGHT_SCALE 14
+	#define LIGHT_ATTEN0 20
+	#define LIGHT_ATTEN1 21
+
 	const u8* computeLighting(fixed16_16 depth, s32 lightOffset)
 	{
 		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)

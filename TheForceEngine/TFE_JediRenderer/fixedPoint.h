@@ -12,17 +12,19 @@
 // releases.
 #define ASSERT_ON_OVERFLOW 0
 
-#define HALF_16 0x8000
-#define ONE_16  0x10000
-
-#define FRAC_BITS 16ll
-#define FLOAT_SCALE 65536.0f
-#define ANGLE_TO_FIXED_SCALE 4
-
-typedef s32 fixed16_16;
-
-namespace FixedPoint
+namespace TFE_JediRenderer
 {
+	// Constants
+	#define HALF_16 0x8000
+	#define ONE_16  0x10000
+
+	#define FRAC_BITS 16ll
+	#define FLOAT_SCALE 65536.0f
+	#define ANGLE_TO_FIXED_SCALE 4
+
+	// Fixed point type
+	typedef s32 fixed16_16;
+
 	// multiplies 2 fixed point numbers, the result is fixed point.
 	// 16.16 * 16.16 overflows 32 bit, so the calculation is done in 64 bit and then shifted back to 32 bit.
 	inline fixed16_16 mul16(fixed16_16 x, fixed16_16 y)

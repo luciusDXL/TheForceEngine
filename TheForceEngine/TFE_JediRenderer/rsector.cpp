@@ -2,9 +2,6 @@
 #include "redgePair.h"
 #include "rcommon.h"
 
-using namespace FixedPoint;
-using namespace RMath;
-
 namespace TFE_JediRenderer
 {
 	void TFE_Sectors::setMemoryPool(MemoryPool* memPool)

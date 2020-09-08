@@ -11,9 +11,6 @@
 #include "../rcommon.h"
 #include <assert.h>
 
-using namespace FixedPoint;
-using namespace RMath;
-
 namespace TFE_JediRenderer
 {
 

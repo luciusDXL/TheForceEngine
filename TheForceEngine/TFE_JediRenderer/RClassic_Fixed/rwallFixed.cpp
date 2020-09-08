@@ -12,9 +12,6 @@
 #include "../rmath.h"
 #include "../rcommon.h"
 
-using namespace FixedPoint;
-using namespace RMath;
-
 namespace TFE_JediRenderer
 {
 
@@ -142,7 +139,7 @@ namespace RClassic_Fixed
 			// Compute the parametric intersection of the segment and the left frustum line
 			// where s is in the range of [0.0, 1.0]
 			fixed16_16 s = 0;
-			if (dz != 0 && RMath::abs(dz) > RMath::abs(dx))
+			if (dz != 0 && abs(dz) > abs(dx))
 			{
 				s = div16(xz - z0, dz);
 			}
@@ -183,7 +180,7 @@ namespace RClassic_Fixed
 			// where s is in the range of [0.0, 1.0]
 			// Note we are computing from the right side, i.e. distance from (x1,y1).
 			fixed16_16 s = 0;
-			if (dz != 0 && RMath::abs(dz) > RMath::abs(dx))
+			if (dz != 0 && abs(dz) > abs(dx))
 			{
 				s = div16(xz - z1, dz);
 			}
@@ -365,7 +362,7 @@ namespace RClassic_Fixed
 
 		fixed16_16 slope, den;
 		s32 orient;
-		if (RMath::abs(dx) > RMath::abs(dz))
+		if (abs(dx) > abs(dz))
 		{
 			slope = div16(dz, dx);
 			den = dx;

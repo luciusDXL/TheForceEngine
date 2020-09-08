@@ -3,8 +3,6 @@
 #include "../rcommon.h"
 #include "../fixedPoint.h"
 
-using namespace FixedPoint;
-
 namespace TFE_JediRenderer
 {
 

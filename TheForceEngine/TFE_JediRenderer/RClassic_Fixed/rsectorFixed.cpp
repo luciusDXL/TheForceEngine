@@ -14,8 +14,6 @@
 #include "../rtexture.h"
 
 using namespace TFE_JediRenderer::RClassic_Fixed;
-using namespace FixedPoint;
-using namespace RMath;
 
 namespace TFE_JediRenderer
 {
