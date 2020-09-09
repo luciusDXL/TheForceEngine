@@ -165,7 +165,7 @@ namespace TFE_View
 
 		if (s_enableClassic)
 		{
-			TFE_JediRenderer::setSubRenderer(TSR_CLASSIC_FIXED);
+			TFE_JediRenderer::setSubRenderer((s_width <= 320 && s_height <= 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT);
 			TFE_JediRenderer::setupLevel(s_width, s_height);
 		}
 	}
@@ -195,6 +195,7 @@ namespace TFE_View
 			s_lowerHeightMask = new s16[MAX_MASK_HEIGHT];	// 64Kb
 		}
 
+		TFE_JediRenderer::setSubRenderer((w <= 320 && h <= 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT);
 		TFE_JediRenderer::setResolution(w, h);
 	}
 		

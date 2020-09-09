@@ -305,6 +305,13 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rsectorFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rwallFixed.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\fixedPoint20.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rclassicFloat.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\redgePairFloat.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rflatFloat.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rlightingFloat.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rwallFloat.h" />
     <ClInclude Include="TFE_JediRenderer\rcommon.h" />
     <ClInclude Include="TFE_JediRenderer\redgePair.h" />
     <ClInclude Include="TFE_JediRenderer\rlimits.h" />
@@ -443,6 +450,12 @@
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rsectorFixed.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rwallFixed.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rclassicFloat.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\redgePairFloat.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rflatFloat.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rlightingFloat.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rwallFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\rcommon.cpp" />
     <ClCompile Include="TFE_JediRenderer\rsector.cpp" />
     <ClCompile Include="TFE_JediRenderer\rtexture.cpp" />

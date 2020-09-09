@@ -17,7 +17,7 @@ struct TextureFrame;
 
 namespace TFE_JediRenderer
 {
-	class TFE_Sectors_Fixed : public TFE_Sectors
+	class TFE_Sectors_Float : public TFE_Sectors
 	{
 	public:
 		// Sub-Renderer specific

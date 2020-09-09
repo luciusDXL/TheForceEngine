@@ -15,6 +15,15 @@ namespace TFE_JediRenderer
 		s_rsectors = (RSector*)s_memPool->allocate(sizeof(RSector) * count);
 	}
 
+	void TFE_Sectors::copyFrom(const TFE_Sectors* src)
+	{
+		if (!src) { return; }
+		s_curSector = src->s_curSector;
+		s_rsectors = src->s_rsectors;
+		s_memPool = src->s_memPool;
+		s_sectorCount = src->s_sectorCount;
+	}
+
 	RSector* TFE_Sectors::get()
 	{
 		return s_rsectors;

@@ -80,4 +80,14 @@ namespace TFE_JediRenderer
 	{
 		return min(max(x, a), b);
 	}
+
+	inline s32 roundFloat(f32 x)
+	{
+		return s32(x + 0.5f);
+	}
+
+	inline s32 floorFloat(f32 x)
+	{
+		return (s32)floorf(x);
+	}
 }

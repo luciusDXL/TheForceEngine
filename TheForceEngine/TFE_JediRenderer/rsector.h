@@ -117,8 +117,11 @@ namespace TFE_JediRenderer
 		// Common
 		void setMemoryPool(MemoryPool* memPool);
 		void allocate(u32 count);
+		void copyFrom(const TFE_Sectors* src);
+
 		RSector* get();
 		u32 getCount();
+
 		void clear(RSector* sector);
 		void computeAdjoinWindowBounds(EdgePair* adjoinEdges);
 
@@ -130,7 +133,7 @@ namespace TFE_JediRenderer
 		virtual void copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures) = 0;
 
 		virtual void setupWallDrawFlags(RSector* sector) = 0;
-		virtual void adjustHeights(RSector* sector, fixed16_16 floorOffset, fixed16_16 ceilOffset, fixed16_16 secondHeightOffset) = 0;
+		virtual void adjustHeights(RSector* sector, decimal floorOffset, decimal ceilOffset, decimal secondHeightOffset) = 0;
 		virtual void computeBounds(RSector* sector) = 0;
 
 	protected:
