@@ -168,8 +168,6 @@ namespace RClassic_Float
 		}
 	}
 		
-	// This produces functionally identical results to the original but splits apart the U/V and dUdx/dVdx into seperate variables
-	// to account for C vs ASM differences.
 	void drawScanline()
 	{
 		fixed44_20 V = s_scanlineV0;

@@ -511,6 +511,7 @@ namespace TFE_JediRenderer
 		{
 			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
 			wall->mirror = walls[w].mirror;
+			wall->mirrorWall = wall->nextSector ? &wall->nextSector->walls[wall->mirror] : nullptr;
 			
 			wall->topTex  = texture_getFrame(walls[w].top.texId  >= 0 ? textures[walls[w].top.texId]  : nullptr);
 			wall->midTex  = texture_getFrame(walls[w].mid.texId  >= 0 ? textures[walls[w].mid.texId]  : nullptr);
