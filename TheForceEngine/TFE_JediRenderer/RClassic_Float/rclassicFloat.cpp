@@ -53,11 +53,14 @@ namespace RClassic_Float
 		s_heightInPixels = s_height;
 		s_heightInPixelsBase = s_height;
 
-		// HACK: TODO - compute correctly.
-		if (width * 10 / height != 16)
+		// Assume that 200p and 400p are 16:10 in 4:3
+		// Otherwise we can pure 4:3 (i.e. undo the 16:10 part)
+		s_aspectScale = 1.0f;
+		if (height != 200 && height != 400)
 		{
-			s_focalLenAspect = f32((height / 2) * 8 / 5);
+			s_aspectScale = 1.2f;
 		}
+		s_focalLenAspect *= s_aspectScale;
 
 		s_minScreenX = 0;
 		s_maxScreenX = s_width - 1;

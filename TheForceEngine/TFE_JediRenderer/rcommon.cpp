@@ -18,6 +18,7 @@ namespace TFE_JediRenderer
 	// Projection
 	f32 s_focalLength;
 	f32 s_focalLenAspect;
+	f32 s_aspectScale;
 	f32 s_eyeHeight;
 	f32* s_depth1d_all = nullptr;
 	f32* s_depth1d = nullptr;

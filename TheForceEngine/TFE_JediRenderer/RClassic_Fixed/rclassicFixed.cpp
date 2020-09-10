@@ -68,12 +68,6 @@ namespace RClassic_Fixed
 		s_heightInPixels = s_height;
 		s_heightInPixelsBase = s_height;
 
-		// HACK: TODO - compute correctly.
-		if (width * 10 / height != 16)
-		{
-			s_focalLenAspect_Fixed = intToFixed16((height / 2) * 8 / 5);
-		}
-
 		s_minScreenX = 0;
 		s_maxScreenX = s_width - 1;
 		s_minScreenY = 1;

@@ -24,6 +24,7 @@ namespace TFE_JediRenderer
 	// Projection
 	extern f32  s_focalLength;
 	extern f32  s_focalLenAspect;
+	extern f32  s_aspectScale;
 	extern f32  s_eyeHeight;
 	extern f32* s_depth1d_all;
 	extern f32* s_depth1d;

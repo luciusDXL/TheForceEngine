@@ -487,15 +487,16 @@ namespace RClassic_Float
 					s_scanlineOut = &s_display[left + yOffset];
 
 					const f32 worldToTexelScale = 8.0f;
-					f32 rightClip = f32(right - s_screenXMid);
+					f32 rightClip = f32(right - s_screenXMid) * s_aspectScale;
 					f32 v0 = (cosScaledRelCeil - (negSinRelCeil*rightClip)) * yRcp;
 					f32 u0 = (sinScaledRelCeil + (negCosRelCeil*rightClip)) * yRcp;
 
 					s_scanlineV0 = floatToFixed20((v0 - textureOffsetV) * worldToTexelScale);
 					s_scanlineU0 = floatToFixed20((u0 - textureOffsetU) * worldToTexelScale);
 
-					s_scanline_dVdX =  floatToFixed20(negSinRelCeil * yRcp * worldToTexelScale);
-					s_scanline_dUdX = -floatToFixed20(negCosRelCeil * yRcp * worldToTexelScale);
+					const f32 worldTexelScaleAspect = yRcp * worldToTexelScale * s_aspectScale;
+					s_scanline_dVdX =  floatToFixed20(negSinRelCeil * worldTexelScaleAspect);
+					s_scanline_dUdX = -floatToFixed20(negCosRelCeil * worldTexelScaleAspect);
 					s_scanlineLight =  computeLighting(z, 0);
 					
 					if (s_scanlineLight)
@@ -554,14 +555,15 @@ namespace RClassic_Float
 					s_scanlineOut = &s_display[left + yOffset];
 
 					const f32 worldToTexelScale = 8.0f;
-					f32 rightClip = f32(right - s_screenXMid);
+					f32 rightClip = f32(right - s_screenXMid) * s_aspectScale;
 					f32 v0 = (cosScaledRelFloor - (negSinRelFloor * rightClip)) * yRcp;
 					f32 u0 = (sinScaledRelFloor + (negCosRelFloor * rightClip)) * yRcp;
 					s_scanlineV0 = floatToFixed20((v0 - textureOffsetV) * worldToTexelScale);
 					s_scanlineU0 = floatToFixed20((u0 - textureOffsetU) * worldToTexelScale);
 
-					s_scanline_dVdX =  floatToFixed20(negSinRelFloor * yRcp * worldToTexelScale);
-					s_scanline_dUdX = -floatToFixed20(negCosRelFloor * yRcp * worldToTexelScale);
+					const f32 worldTexelScaleAspect = yRcp * worldToTexelScale * s_aspectScale;
+					s_scanline_dVdX =  floatToFixed20(negSinRelFloor * worldTexelScaleAspect);
+					s_scanline_dUdX = -floatToFixed20(negCosRelFloor * worldTexelScaleAspect);
 					s_scanlineLight = computeLighting(z, 0);
 
 					if (s_scanlineLight)
