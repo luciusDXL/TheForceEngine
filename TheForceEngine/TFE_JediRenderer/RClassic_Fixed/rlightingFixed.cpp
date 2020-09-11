@@ -19,7 +19,7 @@ namespace RClassic_Fixed
 		{
 			return nullptr;
 		}
-		depth = max(depth, fixed16_16(0));
+		depth = max(depth, 0);
 		s32 light = 0;
 
 		// handle camera lightsource
@@ -36,9 +36,7 @@ namespace RClassic_Fixed
 		s32 secAmb = s_sectorAmbient;
 		if (light < secAmb) { light = secAmb; }
 
-		// depthScale = 0.09375 (3/32)
-		// light = max(light - depth * depthScale, secAmb*0.875)
-		s32 depthAtten = s32((depth >> LIGHT_ATTEN0) + (depth >> LIGHT_ATTEN1));		// depth/16 + depth/32
+		s32 depthAtten = s32((depth >> LIGHT_ATTEN0) + (depth >> LIGHT_ATTEN1));		// depth * 3/32
 		light = max(light - depthAtten, s_scaledAmbient);
 
 		if (lightOffset != 0)
