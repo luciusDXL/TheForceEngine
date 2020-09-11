@@ -30,7 +30,9 @@ namespace TFE_JediRenderer
 	void clear1dDepth();
 	void updateSectors();
 	void buildLevelData();
-
+	void console_setSubRenderer(const std::vector<std::string>& args);
+	void console_getSubRenderer(const std::vector<std::string>& args);
+	
 	/////////////////////////////////////////////
 	// Implementation
 	/////////////////////////////////////////////
@@ -43,6 +45,10 @@ namespace TFE_JediRenderer
 		s_maxDepthCount = 0xffff;
 		CVAR_INT(s_maxWallCount,  "d_maxWallCount",  0, "Maximum wall count for a given sector.");
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", 0, "Maximum adjoin depth count.");
+
+		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU");
+		CCMD("rgetSubRenderer", console_getSubRenderer, 0, "Get the current sub-renderer.");
+
 		// Setup performance counters.
 		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
 		TFE_COUNTER(s_maxAdjoinIndex, "Maximum Adjoin Count");
@@ -75,12 +81,49 @@ namespace TFE_JediRenderer
 		buildLevelData();
 	}
 
+	void console_setSubRenderer(const std::vector<std::string>& args)
+	{
+		if (args.size() < 2) { return; }
+		const char* value = args[1].c_str();
+
+		s32 width = s_width, height = s_height;
+		if (strcasecmp(value, "Classic_Fixed") == 0)
+		{
+			setSubRenderer(TSR_CLASSIC_FIXED);
+			setupLevel(width, height);
+		}
+		else if (strcasecmp(value, "Classic_Float") == 0)
+		{
+			setSubRenderer(TSR_CLASSIC_FLOAT);
+			setupLevel(width, height);
+		}
+		else if (strcasecmp(value, "Classic_GPU") == 0)
+		{
+			setSubRenderer(TSR_CLASSIC_GPU);
+			setupLevel(width, height);
+		}
+	}
+
+	void console_getSubRenderer(const std::vector<std::string>& args)
+	{
+		const char* c_subRenderers[]=
+		{
+			"Classic_Fixed",	// TSR_CLASSIC_FIXED
+			"Classic_Float",	// TSR_CLASSIC_FLOAT
+			"Classic_GPU",		// TSR_CLASSIC_GPU
+		};
+		TFE_Console::addToHistory(c_subRenderers[s_subRenderer]);
+	}
+
 	void setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
 	{
 		if (subRenderer != s_subRenderer)
 		{
 			s_subRenderer = subRenderer;
-
+			// Reset the resolution so it is set properly.
+			s_width = 0;
+			s_height = 0;
+			
 			// Setup the sub-renderer sector system.
 			TFE_Sectors* prev = s_sectors;
 			
