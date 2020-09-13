@@ -1,7 +1,7 @@
 #pragma once
-//////////////////////////////////////////////////////////////////////
-// 12.20 Fixed point, designed for inner scanline/column loops only.
-//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+// 44.20 Fixed point (64 bit), designed for inner scanline/column loops only.
+//////////////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <math.h>
 #include <assert.h>
@@ -18,7 +18,7 @@ namespace TFE_JediRenderer
 	#define ONE_20  0x100000
 
 	#define FRAC_BITS_20 20ll
-	#define FLOAT_SCALE_20 1048576.0f
+	#define FLOAT_SCALE_20 1048576.0
 
 	// Fixed point type
 	typedef s64 fixed44_20;
@@ -67,9 +67,11 @@ namespace TFE_JediRenderer
 		return fixed44_20(x) << FRAC_BITS_20;
 	}
 
+	// converts a floating point value to 64-bit fixed point value.
+	// note the conversion to double before scaling to avoid overflow.
 	inline fixed44_20 floatToFixed20(f32 x)
 	{
-		const f64 x64 = f64(x) * f64(FLOAT_SCALE_20);
+		const f64 x64 = f64(x) * FLOAT_SCALE_20;
 		return fixed44_20(x64);
 	}
 }
