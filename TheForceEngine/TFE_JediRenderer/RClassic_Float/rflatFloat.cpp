@@ -170,51 +170,33 @@ namespace RClassic_Float
 		
 	void drawScanline()
 	{
+		const fixed44_20 dVdX = s_scanline_dVdX;
+		const fixed44_20 dUdX = s_scanline_dUdX;
+
 		fixed44_20 V = s_scanlineV0;
 		fixed44_20 U = s_scanlineU0;
-		fixed44_20 dVdX = s_scanline_dVdX;
-		fixed44_20 dUdX = s_scanline_dUdX;
-
-		// Note this produces a distorted mapping if the texture is not 64x64.
-		// This behavior matches the original.
-		u32 texel = (floor20(U) & 63) * 64 + (floor20(V) & 63);
-		texel &= s_ftexDataEnd;
-		U += dUdX;
-		V += dVdX;
-
-		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--, U += dUdX, V += dVdX)
 		{
-			u8 c = s_scanlineLight[s_ftexImage[texel]];
-			texel = (floor20(U) & 63) * 64 + (floor20(V) & 63);
-			texel &= s_ftexDataEnd;
-			U += dUdX;
-			V += dVdX;
-			s_scanlineOut[i] = c;
+			// Note this produces a distorted mapping if the texture is not 64x64.
+			// This behavior matches the original.
+			const u32 texel = ((floor20(U) & 63) * 64 + (floor20(V) & 63)) & s_ftexDataEnd;
+			s_scanlineOut[i] = s_scanlineLight[s_ftexImage[texel]];
 		}
 	}
 
 	void drawScanline_Fullbright()
 	{
+		const fixed44_20 dVdX = s_scanline_dVdX;
+		const fixed44_20 dUdX = s_scanline_dUdX;
+
 		fixed44_20 V = s_scanlineV0;
 		fixed44_20 U = s_scanlineU0;
-		fixed44_20 dVdX = s_scanline_dVdX;
-		fixed44_20 dUdX = s_scanline_dUdX;
-
-		// Note this produces a distorted mapping if the texture is not 64x64.
-		// This behavior matches the original.
-		u32 texel = (floor20(U) & 63) * 64 + (floor20(V) & 63);
-		texel &= s_ftexDataEnd;
-		U += dUdX;
-		V += dVdX;
-
-		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--, U += dUdX, V += dVdX)
 		{
-			u8 c = s_ftexImage[texel];
-			texel = (floor20(U) & 63) * 64 + (floor20(V) & 63);
-			texel &= s_ftexDataEnd;
-			U += dUdX;
-			V += dVdX;
-			s_scanlineOut[i] = c;
+			// Note this produces a distorted mapping if the texture is not 64x64.
+			// This behavior matches the original.
+			const u32 texel = ((floor20(U) & 63) * 64 + (floor20(V) & 63)) & s_ftexDataEnd;
+			s_scanlineOut[i] = s_ftexImage[texel];
 		}
 	}
 
