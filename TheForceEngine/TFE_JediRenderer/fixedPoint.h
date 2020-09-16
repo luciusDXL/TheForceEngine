@@ -18,8 +18,8 @@ namespace TFE_JediRenderer
 	#define HALF_16 0x8000
 	#define ONE_16  0x10000
 
-	#define FRAC_BITS 16ll
-	#define FLOAT_SCALE 65536.0f
+	#define FRAC_BITS_16 16ll
+	#define FLOAT_SCALE_16 65536.0f
 	#define ANGLE_TO_FIXED_SCALE 4
 
 	// Fixed point type
@@ -34,10 +34,10 @@ namespace TFE_JediRenderer
 
 		// Overflow precision test.
 		#if ASSERT_ON_OVERFLOW == 1
-		assert(((x64 * y64) >> FRAC_BITS) == fixed16_16((x64 * y64) >> FRAC_BITS));
+		assert(((x64 * y64) >> FRAC_BITS_16) == fixed16_16((x64 * y64) >> FRAC_BITS_16));
 		#endif
 
-		return fixed16_16((x64 * y64) >> FRAC_BITS);
+		return fixed16_16((x64 * y64) >> FRAC_BITS_16);
 	}
 
 	// divides 2 fixed point numbers, the result is fixed point.
@@ -49,16 +49,16 @@ namespace TFE_JediRenderer
 
 		// Overflow precision test.
 		#if ASSERT_ON_OVERFLOW == 1
-		assert(((num64 << FRAC_BITS) / den64) == fixed16_16((num64 << FRAC_BITS) / den64));
+		assert(((num64 << FRAC_BITS_16) / den64) == fixed16_16((num64 << FRAC_BITS_16) / den64));
 		#endif
 
-		return fixed16_16((num64 << FRAC_BITS) / den64);
+		return fixed16_16((num64 << FRAC_BITS_16) / den64);
 	}
 
 	// truncates a 16.16 fixed point number, returns an int: x >> 16
 	inline s32 floor16(fixed16_16 x)
 	{
-		return s32(x >> FRAC_BITS);
+		return s32(x >> FRAC_BITS_16);
 	}
 
 	// computes a * b / c while keeping everything in 64 bits until the end.
@@ -76,38 +76,22 @@ namespace TFE_JediRenderer
 
 		return fixed16_16(value);
 	}
-	
-	// computes a * b * c while keeping everything in 64 bits until the end.
-	inline fixed16_16 fusedMulMul(fixed16_16 a, fixed16_16 b, fixed16_16 c)
-	{
-		const s64 a64 = s64(a);
-		const s64 b64 = s64(b);
-		const s64 c64 = s64(c);
-		s64 value = (a64 * b64 * c64) >> (FRAC_BITS + FRAC_BITS);
-
-		// Overflow precision test.
-		#if ASSERT_ON_OVERFLOW == 1
-		assert(((a64 * b64 * c64) >> (FRAC_BITS + FRAC_BITS)) == fixed16_16((a64 * b64 * c64) >> (FRAC_BITS + FRAC_BITS)));
-		#endif
-
-		return fixed16_16(value);
-	}
 
 	// rounds a 16.16 fixed point number, returns an int: (x + HALF_16) >> 16
 	inline s32 round16(fixed16_16 x)
 	{
-		return s32((x + HALF_16) >> FRAC_BITS);
+		return s32((x + HALF_16) >> FRAC_BITS_16);
 	}
 
 	// converts an integer to a fixed point number: x << 16
 	inline fixed16_16 intToFixed16(s32 x)
 	{
-		return fixed16_16(x) << FRAC_BITS;
+		return fixed16_16(x) << FRAC_BITS_16;
 	}
 
 	inline fixed16_16 floatToFixed16(f32 x)
 	{
-		return fixed16_16(x * FLOAT_SCALE);
+		return fixed16_16(x * FLOAT_SCALE_16);
 	}
 
 	// Convert a floating point angle from [0, 2pi) to a fixed point value where 0 -> 0 and 2pi -> 16384
