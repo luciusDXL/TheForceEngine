@@ -1,6 +1,5 @@
 #include <TFE_Ui/ui.h>
 
-#include "imGUI/imgui_file_browser.h"
 #include "imGUI/imgui.h"
 #include "imGUI/imgui_impl_sdl.h"
 #include "imGUI/imgui_impl_opengl3.h"
@@ -85,6 +84,25 @@ void render()
 {
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+// TODO: Fill in stubs.
+// see https://github.com/samhocevar/portable-file-dialogs
+FileResult openFileDialog(const char* title, const char* initPath, const char** filters/* = nullptr*/, bool multiSelect/* = false*/)
+{
+	FileResult result;
+	return result;
+}
+
+FileResult directorySelectDialog(const char* title, const char* initPath, bool forceInitPath/* = false*/)
+{
+	FileResult result;
+	return result;
+}
+
+const char* saveFileDialog(const char* title, const char* initPath, const char** filters/* = nullptr*/, bool forceOverwrite/* = false*/)
+{
+	return nullptr;
 }
 
 }

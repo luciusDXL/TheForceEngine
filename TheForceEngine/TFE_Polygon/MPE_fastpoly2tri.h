@@ -2136,9 +2136,12 @@ void MPE_PolyTriangulate(MPEPolyContext* PolyContext)
   {
     MPEPolyTriangle* Triangle = PolyContext->HeadNode->Next->Triangle;
     MPEPolyPoint* Point = PolyContext->HeadNode->Next->Point;
+	MPEPolyTriangle* PrevValid = Triangle;
     while (!MPE_GetConstrainedEdgeCW(Triangle, Point))
     {
       Triangle = MPE_NeighborCCW(Triangle, Point);
+	  if (!Triangle) { Triangle = PrevValid; break; }
+	  PrevValid = Triangle;
     }
     MPE_PolyFinalizeTriangles(PolyContext, Triangle);
   }

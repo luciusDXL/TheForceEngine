@@ -88,6 +88,16 @@ void RenderTarget::clear(const f32* color, f32 depth)
 	glClear(clearFlags);
 }
 
+ void RenderTarget::clearDepth(f32 depth)
+ {
+	 if (m_depthBufferHandle)
+	 {
+		 TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE);
+		 glClearDepth(depth);
+		 glClear(GL_DEPTH_BUFFER_BIT);
+	 }
+ }
+
 void RenderTarget::unbind()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

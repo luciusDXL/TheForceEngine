@@ -1807,12 +1807,9 @@ namespace TFE_View
 		{
 			const TextureFrame* frameBot = getTextureFrame(curSector->floorTexture.texId, 0);
 			const TextureFrame* frameTop = getTextureFrame(curSector->ceilTexture.texId, 0);
-			const bool botPow2 = TFE_Math::isPow2(frameBot->width) && TFE_Math::isPow2(frameBot->height);
-			const bool topPow2 = TFE_Math::isPow2(frameTop->width) && TFE_Math::isPow2(frameTop->height);
-			assert(botPow2 && topPow2);
 
 			const f32 floorOffset[] = { curSector->floorTexture.offsetX, curSector->floorTexture.offsetY };
-			const f32 ceilOffset[] = { curSector->ceilTexture.offsetX, curSector->ceilTexture.offsetY };
+			const f32 ceilOffset[]  = { curSector->ceilTexture.offsetX, curSector->ceilTexture.offsetY };
 			const f32 botPlaneHeight = fabsf(curSector->floorAlt - cameraPos->y);
 			const f32 topPlaneHeight = fabsf(curSector->ceilAlt - cameraPos->y);
 			const s32 lightLevelBase = (s32)curSector->ambient;
@@ -1820,6 +1817,8 @@ namespace TFE_View
 			{
 				const Span* span = &s_span[s];
 				const TextureFrame* frame = span->bot ? frameBot : frameTop;
+				if (!frame) { continue; }
+
 				const f32* texOffsets = span->bot ? floorOffset : ceilOffset;
 				const s32 texWidth = frame->width;
 				const s32 texHeight = frame->height;

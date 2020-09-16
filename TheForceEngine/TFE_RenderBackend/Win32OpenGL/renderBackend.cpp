@@ -323,6 +323,12 @@ namespace TFE_RenderBackend
 		setClearColor(s_clearColor);
 	}
 
+	void clearRenderTargetDepth(RenderTargetHandle handle, f32 clearDepth)
+	{
+		RenderTarget* renderTarget = (RenderTarget*)handle;
+		renderTarget->clearDepth(clearDepth);
+	}
+
 	void unbindRenderTarget()
 	{
 		RenderTarget::unbind();
