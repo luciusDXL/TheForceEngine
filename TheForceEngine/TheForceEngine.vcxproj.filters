@@ -604,6 +604,9 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\fixedPoint20.h">
       <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\rscanline.h">
+      <Filter>Source\TFE_JediRenderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -977,6 +980,9 @@
     </ClCompile>
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rwallFloat.cpp">
       <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\rscanline.cpp">
+      <Filter>Source\TFE_JediRenderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

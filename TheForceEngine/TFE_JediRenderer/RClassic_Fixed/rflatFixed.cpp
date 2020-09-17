@@ -4,6 +4,7 @@
 #include "redgePairFixed.h"
 #include "rclassicFixed.h"
 #include "rcommonFixed.h"
+#include "../rscanline.h"
 #include "../rsector.h"
 #include "../redgePair.h"
 #include "../fixedPoint.h"
@@ -74,100 +75,6 @@ namespace RClassic_Fixed
 			s_flatCount++;
 		}
 	}
-	
-	void clipScanline(s32* left, s32* right, s32 y)
-	{
-		s32 x0 = *left;
-		s32 x1 = *right;
-		if (x0 > s_windowMaxX || x1 < s_windowMinX)
-		{
-			*left = x1 + 1;
-			return;
-		}
-		if (x0 < s_windowMinX) { x0 = s_windowMinX; *left  = x0; }
-		if (x1 > s_windowMaxX) { x1 = s_windowMaxX; *right = x1; }
-
-		// s_windowMaxCeil and s_windowMinFloor overlap and y is inside that overlap.
-		if (y < s_windowMaxCeil && y > s_windowMinFloor)
-		{
-			// Find the left side of the scanline.
- 			s32* top = &s_windowTop[x0];
-			s32* bot = &s_windowBot[x0];
-			while (x0 <= x1)
-			{
-				if (y >= *top && y <= *bot)
-				{
-					break;
-				}
-				x0++;
-				top++;
-				bot++;
-			};
-			*left = x0;
-			if (x0 > x1)
-			{
-				return;
-			}
-
-			// Find the right side of the scanline.
-			top = &s_windowTop[x1];
-			bot = &s_windowBot[x1];
-			while (1)
-			{
-				if ((y >= *top && y <= *bot) || (x0 > x1))
-				{
-					*right = x1;
-					return;
-				}
-				x1--;
-				top--;
-				bot--;
-			};
-		}
-		// y is on the ceiling plane.
-		if (y < s_windowMaxCeil)
-		{
-			s32* top = &s_windowTop[x0];
-			while (*top > y && x1 >= x0)
-			{
-				x0++;
-				top++;
-			}
-			*left = x0;
-			if (x0 <= x1)
-			{
-				s32* top = &s_windowTop[x1];
-				while (*top > y && x1 >= x0)
-				{
-					x1--;
-					top--;
-				}
-				*right = x1;
-			}
-		}
-		// y is on the floor plane.
-		else if (y > s_windowMinFloor)
-		{
-			s32* bot = &s_windowBot[x0];
-			while (*bot < y && x0 <= x1)
-			{
-				x0++;
-				bot++;
-			}
-			*left = x0;
-
-			if (x0 <= x1)
-			{
-				bot = &s_windowBot[x1];
-				while (*bot < y && x1 >= x0)
-				{
-					x1--;
-					bot--;
-				}
-				*right = x1;
-			}
-		}
-	}
 		
 	// This produces functionally identical results to the original but splits apart the U/V and dUdx/dVdx into seperate variables
 	// to account for C vs ASM differences.
@@ -235,220 +142,6 @@ namespace RClassic_Fixed
 		return true;
 	}
 
-	bool flat_buildScanlineCeiling(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, const EdgePair* edges)
-	{
-		// Search for the left edge of the scanline.
-		s32 hasLeft = 0;
-		s32 hasRight = 0;
-		while (i < count && hasLeft == 0)
-		{
-			const EdgePair* edge = &edges[i];
-			if (y < edge->yPixel_C0)	// Y is above the current edge, so start at left = x
-			{
-				left = x;
-				i++;
-				hasLeft = -1;
-				x = edge->x1 + 1;
-			}
-			else if (y >= edge->yPixel_C1)	// Y is inside the current edge, so step to the end (left not set yet).
-			{
-				x = edge->x1 + 1;
-				i++;
-				if (i >= count)
-				{
-					hasLeft = -1;
-					left = x;
-				}
-			}
-			else if (edge->dyCeil_dx.f16_16 > 0)  // find the left intersection.
-			{
-				x = edge->x0;
-				s32 ey = s_columnTop[x];
-				while (x < s_windowMaxX && y > ey)
-				{
-					x++;
-					ey = s_columnTop[x];
-				};
-
-				left = x;
-				x = edge->x1 + 1;
-				hasLeft = -1;
-				i++;
-			}
-			else
-			{
-				left = x;
-				hasLeft = -1;
-			}
-		}  // while (i < count && hasLeft == 0)
-
-		if (i < count)
-		{
-			// Search for the right edge of the scanline.
-			while (i < count && hasRight == 0)
-			{
-				const EdgePair* edge = &edges[i];
-				if (y < edge->yPixel_C0)		// Y is above the current edge, so move on to the next edge.
-				{
-					x = edge->x1 + 1;
-					i++;
-					if (i >= count)
-					{
-						right = x;
-						hasRight = -1;
-					}
-				}
-				else if (y >= edge->yPixel_C1)	// Y is below the current edge so it must be the end.
-				{
-					right = x - 1;
-					x = edge->x1 + 1;
-					i++;
-					hasRight = -1;
-				}
-				else
-				{
-					if (edge->dyCeil_dx.f16_16 >= 0)
-					{
-						hasRight = -1;
-						right = x;
-						break;
-					}
-					else
-					{
-						x = edge->x0;
-						s32 ey = s_columnTop[x];
-						while (x < s_windowMaxX && ey >= y)
-						{
-							x++;
-							ey = s_columnTop[x];
-						}
-						right = x;
-						x = edge->x1 + 1;
-						i++;
-						hasRight = -1;
-						break;
-					}
-				}
-			}
-		}  // if (i < count)
-		else
-		{
-			if (hasLeft == 0) { return false; }
-			right = x;
-		}
-
-		clipScanline(&left, &right, y);
-		s_scanlineWidth = right - left + 1;
-		return true;
-	}
-
-	bool flat_buildScanlineFloor(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, const EdgePair* edges)
-	{
-		// Search for the left edge of the scanline.
-		s32 hasLeft = 0;
-		s32 hasRight = 0;
-		while (i < count && hasLeft == 0)
-		{
-			const EdgePair* edge = &edges[i];
-			if (y >= edge->yPixel_F0)	// Y is above the current edge, so start at left = x
-			{
-				left = x;
-				i++;
-				hasLeft = -1;
-				x = edge->x1 + 1;
-			}
-			else if (y < edge->yPixel_F1)	// Y is inside the current edge, so step to the end (left not set yet).
-			{
-				x = edge->x1 + 1;
-				i++;
-				if (i >= count)
-				{
-					hasLeft = -1;
-					left = x;
-				}
-			}
-			else if (edge->dyFloor_dx.f16_16 < 0)  // find the left intersection.
-			{
-				x = edge->x0;
-				s32 ey = s_columnBot[x];
-				while (x < s_windowMaxX && y < ey)
-				{
-					x++;
-					ey = s_columnBot[x];
-				};
-
-				left = x;
-				x = edge->x1 + 1;
-				hasLeft = -1;
-				i++;
-			}
-			else
-			{
-				left = x;
-				hasLeft = -1;
-			}
-		}  // while (i < count && hasLeft == 0)
-
-		if (i < count)
-		{
-			// Search for the right edge of the scanline.
-			while (i < count && hasRight == 0)
-			{
-				const EdgePair* edge = &edges[i];
-				if (y >= edge->yPixel_F0)		// Y is above the current edge, so move on to the next edge.
-				{
-					x = edge->x1 + 1;
-					i++;
-					if (i >= count)
-					{
-						right = x;
-						hasRight = -1;
-					}
-				}
-				else if (y < edge->yPixel_F1)	// Y is below the current edge so it must be the end.
-				{
-					right = x - 1;
-					x = edge->x1 + 1;
-					i++;
-					hasRight = -1;
-				}
-				else
-				{
-					if (edge->dyFloor_dx.f16_16 <= 0)
-					{
-						hasRight = -1;
-						right = x;
-						break;
-					}
-					else
-					{
-						x = edge->x0;
-						s32 ey = s_columnBot[x];
-						while (x < s_windowMaxX && ey <= y)
-						{
-							x++;
-							ey = s_columnBot[x];
-						}
-						right = x;
-						x = edge->x1 + 1;
-						i++;
-						hasRight = -1;
-						break;
-					}
-				}
-			}
-		}  // if (i < count)
-		else
-		{
-			if (hasLeft == 0) { return false; }
-			right = x;
-		}
-
-		clipScanline(&left, &right, y);
-		s_scanlineWidth = right - left + 1;
-		return true;
-	}
-
 	void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count)
 	{
 		fixed16_16 textureOffsetU = s_cameraPosX_Fixed - sector->ceilOffsetX.f16_16;
@@ -475,7 +168,7 @@ namespace RClassic_Fixed
 			s32 right = 0;
 			for (s32 i = 0; i < count;)
 			{
-				if (!flat_buildScanlineCeiling(i, count, x, y, left, right, edges))
+				if (!flat_buildScanlineCeiling(i, count, x, y, left, right, s_scanlineWidth, edges))
 				{
 					break;
 				}
@@ -544,7 +237,7 @@ namespace RClassic_Fixed
 				s32 winMaxX = s_windowMaxX;
 
 				// Search for the left edge of the scanline.
-				if (!flat_buildScanlineFloor(i, count, x, y, left, right, edges))
+				if (!flat_buildScanlineFloor(i, count, x, y, left, right, s_scanlineWidth, edges))
 				{
 					break;
 				}

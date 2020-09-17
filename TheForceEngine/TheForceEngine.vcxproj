@@ -317,6 +317,7 @@
     <ClInclude Include="TFE_JediRenderer\rlimits.h" />
     <ClInclude Include="TFE_JediRenderer\rmath.h" />
     <ClInclude Include="TFE_JediRenderer\robject.h" />
+    <ClInclude Include="TFE_JediRenderer\rscanline.h" />
     <ClInclude Include="TFE_JediRenderer\rsector.h" />
     <ClInclude Include="TFE_JediRenderer\rtexture.h" />
     <ClInclude Include="TFE_JediRenderer\rwall.h" />
@@ -457,6 +458,7 @@
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rwallFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\rcommon.cpp" />
+    <ClCompile Include="TFE_JediRenderer\rscanline.cpp" />
     <ClCompile Include="TFE_JediRenderer\rsector.cpp" />
     <ClCompile Include="TFE_JediRenderer\rtexture.cpp" />
     <ClCompile Include="TFE_LogicSystem\logicSystem.cpp" />
