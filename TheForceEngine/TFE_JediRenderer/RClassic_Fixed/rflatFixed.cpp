@@ -235,7 +235,7 @@ namespace RClassic_Fixed
 		return true;
 	}
 
-	bool flat_buildScanelineCeiling(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, const EdgePair* edges)
+	bool flat_buildScanlineCeiling(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, const EdgePair* edges)
 	{
 		// Search for the left edge of the scanline.
 		s32 hasLeft = 0;
@@ -342,7 +342,7 @@ namespace RClassic_Fixed
 		return true;
 	}
 
-	bool flat_buildScanelineFloor(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, const EdgePair* edges)
+	bool flat_buildScanlineFloor(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, const EdgePair* edges)
 	{
 		// Search for the left edge of the scanline.
 		s32 hasLeft = 0;
@@ -475,7 +475,7 @@ namespace RClassic_Fixed
 			s32 right = 0;
 			for (s32 i = 0; i < count;)
 			{
-				if (!flat_buildScanelineCeiling(i, count, x, y, left, right, edges))
+				if (!flat_buildScanlineCeiling(i, count, x, y, left, right, edges))
 				{
 					break;
 				}
@@ -544,7 +544,7 @@ namespace RClassic_Fixed
 				s32 winMaxX = s_windowMaxX;
 
 				// Search for the left edge of the scanline.
-				if (!flat_buildScanelineFloor(i, count, x, y, left, right, edges))
+				if (!flat_buildScanlineFloor(i, count, x, y, left, right, edges))
 				{
 					break;
 				}
