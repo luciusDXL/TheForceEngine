@@ -75,8 +75,6 @@ namespace TFE_JediRenderer
 	extern s32* s_windowBot;
 	extern s32* s_windowTopPrev;
 	extern s32* s_windowBotPrev;
-	extern f32* s_column_Y_Over_X;
-	extern f32* s_column_X_Over_Y;
 	
 	// WallSegments
 	extern s32 s_nextWall;

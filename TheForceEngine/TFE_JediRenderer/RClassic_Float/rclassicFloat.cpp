@@ -78,15 +78,10 @@ namespace RClassic_Float
 		s_windowBot_all = (s32*)realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
 		// Build tables
-		s_column_Y_Over_X = (f32*)realloc(s_column_Y_Over_X, s_width * sizeof(f32));
-		s_column_X_Over_Y = (f32*)realloc(s_column_X_Over_Y, s_width * sizeof(f32));
 		s_skyTable = (f32*)realloc(s_skyTable, s_width * sizeof(f32));
 		s32 halfWidth = s_width >> 1;
 		for (s32 x = 0; x < s_width; x++)
 		{
-			s_column_Y_Over_X[x] = (x != halfWidth) ? s_halfWidth / f32(x - halfWidth) : s_halfWidth;
-			s_column_X_Over_Y[x] = f32(x - halfWidth) / s_halfWidth;
-
 			// This result isn't *exactly* the same as the original, but it is accurate to within 1 decimal point (example: -88.821585 vs -88.8125 @ x=63)
 			// The original result is likely from a arc tangent table, which is more approximate. However the end difference is less
 			// than a single pixel at 320x200. The more accurate result will look better at higher resolutions as well. :)

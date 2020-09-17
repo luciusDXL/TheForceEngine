@@ -2007,7 +2007,9 @@ namespace RClassic_Float
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
-			f32 den = s_column_Y_Over_X[x] - wallSegment->slope.f32;
+			const f32 fx = f32(x);
+			const f32 widthOverX = ((fx != s_halfWidth) ? s_halfWidth / (fx - s_halfWidth) : s_halfWidth);
+			f32 den = widthOverX - wallSegment->slope.f32;
 			// Avoid divide by zero.
 			if (den == 0) { den = 1; }
 
@@ -2024,7 +2026,8 @@ namespace RClassic_Float
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			f32 den = s_column_X_Over_Y[x] - wallSegment->slope.f32;
+			const f32 xOverWidth = (f32(x) - s_halfWidth) / s_halfWidth;
+			f32 den = xOverWidth - wallSegment->slope.f32;
 			// Avoid divide by 0.
 			if (den == 0) { den = 1; }
 
