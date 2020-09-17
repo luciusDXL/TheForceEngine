@@ -93,14 +93,6 @@ namespace RClassic_Float
 			// TODO: Extract the original table to use at 320x200?
 			s_skyTable[x] = 512.0f * atanf(f32(x - halfWidth) / f32(halfWidth)) / PI;
 		}
-
-		s_rcp_yMinusHalfHeight = (f32*)realloc(s_rcp_yMinusHalfHeight, 3 * s_height * sizeof(f32));
-		s32 halfHeight = s_height >> 1;
-		for (s32 y = 0; y < s_height * 3; y++)
-		{
-			f32 yMinusHalf = f32(-s_height + y - halfHeight);
-			s_rcp_yMinusHalfHeight[y] = (yMinusHalf != 0) ? 1.0f / yMinusHalf : 1.0f;
-		}
 	}
 }  // RClassic_Float
 

@@ -137,12 +137,14 @@ namespace RClassic_Float
 
 		for (s32 y = s_windowMinY; y <= s_wallMaxCeilY; y++)
 		{
-			s32 x = s_windowMinX;
-			s32 yOffset = y * s_width;
-			s32 yShear = s_heightInPixelsBase - s_heightInPixels;
-			f32 yRcp = s_rcp_yMinusHalfHeight[yShear + y + s_height];
-			f32 z = scaledRelCeil * yRcp;
+			const s32 yOffset = y * s_width;
+			const s32 yShear = s_heightInPixelsBase - s_heightInPixels;
+			// Calculate yRcp directly instead of using a table.
+			const f32 yMinusHalf = f32(yShear + y) - s_halfHeightBase;
+			const f32 yRcp = yMinusHalf != 0.0f ? 1.0f / yMinusHalf : 1.0f;
+			const f32 z = scaledRelCeil * yRcp;
 
+			s32 x = s_windowMinX;
 			s32 left = 0;
 			s32 right = 0;
 			for (s32 i = 0; i < count;)
@@ -202,12 +204,14 @@ namespace RClassic_Float
 
 		for (s32 y = s_wallMinFloorY; y <= s_windowMaxY; y++)
 		{
-			s32 x = s_windowMinX;
-			s32 yOffset = y * s_width;
-			s32 yShear = s_heightInPixelsBase - s_heightInPixels;
-			f32 yRcp = s_rcp_yMinusHalfHeight[yShear + y + s_height];
-			f32 z = scaledRelFloor * yRcp;
+			const s32 yOffset = y * s_width;
+			const s32 yShear = s_heightInPixelsBase - s_heightInPixels;
+			// Calculate yRcp directly instead of using a table.
+			const f32 yMinusHalf = f32(yShear + y) - s_halfHeightBase;
+			const f32 yRcp = (yMinusHalf != 0.0f) ? 1.0f / yMinusHalf : 1.0f;
+			const f32 z = scaledRelFloor * yRcp;
 
+			s32 x = s_windowMinX;
 			s32 left = 0;
 			s32 right = 0;
 			for (s32 i = 0; i < count;)

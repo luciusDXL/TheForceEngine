@@ -93,7 +93,6 @@ namespace TFE_JediRenderer
 	extern s32 s_flatCount;
 	extern s32 s_wallMaxCeilY;
 	extern s32 s_wallMinFloorY;
-	extern f32* s_rcp_yMinusHalfHeight;
 
 	extern EdgePair* s_flatEdge;
 	extern EdgePair  s_flatEdgeList[MAX_SEG];
