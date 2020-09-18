@@ -2,19 +2,19 @@
 // TODO: Fix or move.
 #include <TFE_Game/level.h>
 
-#include "rwallFloat.h"
-#include "rflatFloat.h"
-#include "rlightingFloat.h"
-#include "rsectorFloat.h"
-#include "redgePairFloat.h"
-#include "fixedPoint20.h"
+#include "rwallGPU.h"
+//#include "rflatFloat.h"
+//#include "rlightingFloat.h"
+#include "rsectorGPU.h"
+//#include "redgePairFloat.h"
+//#include "fixedPoint20.h"
 #include "../rmath.h"
 #include "../rcommon.h"
 
 namespace TFE_JediRenderer
 {
 
-namespace RClassic_Float
+namespace RClassic_GPU
 {
 	#define SKY_BASE_HEIGHT 200
 
@@ -27,8 +27,6 @@ namespace RClassic_Float
 	static f32 s_segmentCross;
 	static s32 s_texHeightMask;
 	static s32 s_yPixelCount;
-	static fixed44_20 s_vCoordStep;
-	static fixed44_20 s_vCoordFixed;
 	static const u8* s_columnLight;
 	static u8* s_texImage;
 	static u8* s_columnOut;
@@ -36,10 +34,10 @@ namespace RClassic_Float
 	s32 segmentCrossesLine(f32 ax0, f32 ay0, f32 ax1, f32 ay1, f32 bx0, f32 by0, f32 bx1, f32 by1);
 	f32 solveForZ_Numerator(RWallSegment* wallSegment);
 	f32 solveForZ(RWallSegment* wallSegment, s32 x, f32 numerator, f32* outViewDx=nullptr);
-	void drawColumn_Fullbright();
-	void drawColumn_Lit();
-	void drawColumn_Fullbright_Trans();
-	void drawColumn_Lit_Trans();
+	//void drawColumn_Fullbright();
+	//void drawColumn_Lit();
+	//void drawColumn_Fullbright_Trans();
+	//void drawColumn_Lit_Trans();
 
 	// Column rendering functions that can be chosen at runtime.
 	enum ColumnFuncId
@@ -52,6 +50,7 @@ namespace RClassic_Float
 		COLFUNC_COUNT
 	};
 
+	/*
 	typedef void(*ColumnFunction)();
 	ColumnFunction s_columnFunc[COLFUNC_COUNT] =
 	{
@@ -60,6 +59,7 @@ namespace RClassic_Float
 		drawColumn_Fullbright_Trans,	// COLFUNC_FULLBRIGHT_TRANS
 		drawColumn_Lit_Trans,			// COLFUNC_LIT_TRANS
 	};
+	*/
 
 	f32 frustumIntersect(f32 x0, f32 z0, f32 x1, f32 z1, f32 dx, f32 dz)
 	{
@@ -673,6 +673,7 @@ namespace RClassic_Float
 		return outIndex;
 	}
 
+#if 0
 	TextureFrame* setupSignTexture(RWall* srcWall, f32* signU0, f32* signU1, ColumnFunction* signFullbright, ColumnFunction* signLit, bool hqMode)
 	{
 		TextureFrame* signTex = srcWall->signTex;
@@ -701,7 +702,9 @@ namespace RClassic_Float
 		}
 		return signTex;
 	}
+#endif
 
+#if 0
 	void wall_drawSolid(RWallSegment* wallSegment)
 	{
 		RWall* srcWall = wallSegment->srcWall;
@@ -737,7 +740,7 @@ namespace RClassic_Float
 		if (y0C_pixel > s_windowMaxY && y1C_pixel > s_windowMaxY)
 		{
 			f32 yMax = f32(s_windowMaxY + 1);
-			flat_addEdges(length, x, 0, yMax, 0, yMax);
+			//flat_addEdges(length, x, 0, yMax, 0, yMax);
 
 			for (s32 i = 0; i < length; i++, x++)
 			{
@@ -769,7 +772,7 @@ namespace RClassic_Float
 			y0C += (dYdXtop * clippedXDelta);
 			y0F += (dYdXbot * clippedXDelta);
 		}
-		flat_addEdges(length, wallSegment->wallX0, dYdXbot, y0F, dYdXtop, y0C);
+		//flat_addEdges(length, wallSegment->wallX0, dYdXbot, y0F, dYdXtop, y0C);
 
 		const s32 texWidth = texture ? texture->width : 0;
 		const bool flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) != 0;
@@ -806,7 +809,7 @@ namespace RClassic_Float
 
 				// s_vCoordStep = tex coord "v" step per y pixel step -> dVdY;
 				f32 vCoordStep = wallHeightTexels / wallHeightPixels;
-				s_vCoordStep = floatToFixed20(vCoordStep);
+				//s_vCoordStep = floatToFixed20(vCoordStep);
 
 				// texel offset from the actual fixed point y position and the truncated y position.
 				f32 vPixelOffset = y0F - f32(bot) + 0.5f;
@@ -814,11 +817,11 @@ namespace RClassic_Float
 				// scale the texel offset based on the v coord step.
 				// the result is the sub-texel offset
 				f32 v0 = vCoordStep * vPixelOffset;
-				s_vCoordFixed = floatToFixed20(v0 + srcWall->midVOffset.f32);
+				//s_vCoordFixed = floatToFixed20(v0 + srcWall->midVOffset.f32);
 
 				// Texture image data = imageStart + u * texHeight
 				s_texImage = texture->image + (texelU << texture->logSizeY);
-				s_columnLight = computeLighting(z, srcWall->wallLight);
+				//s_columnLight = computeLighting(z, srcWall->wallLight);
 				// column write output.
 				s_columnOut = &s_display[top * s_width + x];
 
@@ -842,7 +845,7 @@ namespace RClassic_Float
 
 					if (s_yPixelCount > 0)
 					{
-						s_vCoordFixed = floatToFixed20((signYBase - f32(y1) + 0.5f) * vCoordStep);
+						//s_vCoordFixed = floatToFixed20((signYBase - f32(y1) + 0.5f) * vCoordStep);
 						s_columnOut = &s_display[y0*s_width + x];
 						texelU = floorFloat(uCoord - signU0);
 						s_texImage = &signTex->image[texelU << signTex->logSizeY];
@@ -1969,6 +1972,7 @@ namespace RClassic_Float
 			}
 		}
 	}
+#endif
 	
 	// Determines if segment A is disjoint from the line formed by B - i.e. they do not intersect.
 	// Returns 1 if segment A does NOT cross line B or 0 if it does.
@@ -2008,8 +2012,8 @@ namespace RClassic_Float
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
 			const f32 fx = f32(x);
-			const f32 halfWidthOverX = ((fx != s_halfWidth) ? s_halfWidth / (fx - s_halfWidth) : s_halfWidth);
-			f32 den = halfWidthOverX - wallSegment->slope.f32;
+			const f32 widthOverX = ((fx != s_halfWidth) ? s_halfWidth / (fx - s_halfWidth) : s_halfWidth);
+			f32 den = widthOverX - wallSegment->slope.f32;
 			// Avoid divide by zero.
 			if (den == 0) { den = 1; }
 
@@ -2026,8 +2030,8 @@ namespace RClassic_Float
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			const f32 xOverHalfWidth = (f32(x) - s_halfWidth) / s_halfWidth;
-			f32 den = xOverHalfWidth - wallSegment->slope.f32;
+			const f32 xOverWidth = (f32(x) - s_halfWidth) / s_halfWidth;
+			f32 den = xOverWidth - wallSegment->slope.f32;
 			// Avoid divide by 0.
 			if (den == 0) { den = 1; }
 
@@ -2035,7 +2039,8 @@ namespace RClassic_Float
 		}
 		return z;
 	}
-		
+	
+#if 0
 	void drawColumn_Fullbright()
 	{
 		const s32 end = s_yPixelCount - 1;
@@ -2093,6 +2098,7 @@ namespace RClassic_Float
 			if (c) { s_columnOut[offset] = s_columnLight[c]; }
 		}
 	}
+#endif
 
 	void wall_addAdjoinSegment(s32 length, s32 x0, f32 top_dydx, f32 y1, f32 bot_dydx, f32 y0, RWallSegment* wallSegment)
 	{
@@ -2109,9 +2115,9 @@ namespace RClassic_Float
 			{
 				y1End += (top_dydx * lengthFixed);
 			}
-			edgePair_setup(length, x0, top_dydx, y1End, y1, bot_dydx, y0, y0End, s_adjoinEdge);
+			//edgePair_setup(length, x0, top_dydx, y1End, y1, bot_dydx, y0, y0End, s_adjoinEdge);
 
-			s_adjoinEdge++;
+			//s_adjoinEdge++;
 			s_adjoinSegCount++;
 
 			*s_adjoinSegment = wallSegment;
@@ -2203,6 +2209,6 @@ namespace RClassic_Float
 			wall->midTexelHeight.f32 = (midFloorHeight - midSector->ceilingHeight.f32) * 8;
 		}
 	}
-}  // RClassic_Float
+}  // RClassic_GPU
 
 }  // TFE_JediRenderer

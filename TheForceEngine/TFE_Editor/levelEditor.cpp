@@ -2644,7 +2644,7 @@ namespace LevelEditor
 		Vec3f lookDir = { sinf(s_camera.yaw) * cosf(s_camera.pitch), sinf(s_camera.pitch), cosf(s_camera.yaw) * cosf(s_camera.pitch) };
 
 		s_camera.viewMtx = TFE_Math::computeViewMatrix(&lookDir, &upDir);
-		s_camera.projMtx = TFE_Math::computeProjMatrix(c_editorCameraFov, f32(rtWidth) / f32(rtHeight), 0.01f, 1000.0f);
+		s_camera.projMtx = TFE_Math::computeProjMatrix(c_editorCameraFov, f32(rtWidth) / f32(rtHeight), 0.01f, 5000.0f);
 		s_camera.invProj = TFE_Math::computeInvProjMatrix(s_camera.projMtx);
 
 		// Get the current sector (top-down only)

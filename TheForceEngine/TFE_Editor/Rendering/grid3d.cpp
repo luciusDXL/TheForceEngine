@@ -87,7 +87,7 @@ namespace Grid3d
 
 		s_shader.bind();
 		// Bind Uniforms & Textures.
-		const f32 gridOpacitySubGrid[] = { gridOpacity, subGridSize, pixelSize };
+		const f32 gridOpacitySubGrid[] = { gridOpacity*2.0f, subGridSize, pixelSize };
 		s_shader.setVariable(s_svCameraPos, SVT_VEC3, camPos->m);
 		s_shader.setVariable(s_svCameraView, SVT_MAT3x3, (f32*)viewMtx);
 		s_shader.setVariable(s_svCameraProj, SVT_MAT4x4, (f32*)projMtx);

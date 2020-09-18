@@ -607,6 +607,21 @@
     <ClInclude Include="TFE_JediRenderer\rscanline.h">
       <Filter>Source\TFE_JediRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rsectorGPU.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rwallGPU.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders\grid.h">
+      <Filter>Source\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderBackend\Win32OpenGL\glslParser.h">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -983,6 +998,18 @@
     </ClCompile>
     <ClCompile Include="TFE_JediRenderer\rscanline.cpp">
       <Filter>Source\TFE_JediRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rsectorGPU.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rwallGPU.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\glslParser.cpp">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

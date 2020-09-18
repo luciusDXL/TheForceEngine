@@ -226,6 +226,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Shaders\grid.h" />
     <ClInclude Include="TFE_Archive\archive.h" />
     <ClInclude Include="TFE_Archive\gobArchive.h" />
     <ClInclude Include="TFE_Archive\labArchive.h" />
@@ -312,6 +313,9 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rlightingFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rwallFloat.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rsectorGPU.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rwallGPU.h" />
     <ClInclude Include="TFE_JediRenderer\rcommon.h" />
     <ClInclude Include="TFE_JediRenderer\redgePair.h" />
     <ClInclude Include="TFE_JediRenderer\rlimits.h" />
@@ -334,6 +338,7 @@
     <ClInclude Include="TFE_RenderBackend\shader.h" />
     <ClInclude Include="TFE_RenderBackend\textureGpu.h" />
     <ClInclude Include="TFE_RenderBackend\vertexBuffer.h" />
+    <ClInclude Include="TFE_RenderBackend\Win32OpenGL\glslParser.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\renderTarget.h" />
     <ClInclude Include="TFE_Renderer\TFE_SoftRenderCPU\renderer_softCPU.h" />
     <ClInclude Include="TFE_Renderer\renderer.h" />
@@ -457,6 +462,9 @@
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rlightingFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rwallFloat.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rsectorGPU.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rwallGPU.cpp" />
     <ClCompile Include="TFE_JediRenderer\rcommon.cpp" />
     <ClCompile Include="TFE_JediRenderer\rscanline.cpp" />
     <ClCompile Include="TFE_JediRenderer\rsector.cpp" />
@@ -466,6 +474,7 @@
     <ClCompile Include="TFE_Polygon\polygon.cpp" />
     <ClCompile Include="TFE_PostProcess\blit.cpp" />
     <ClCompile Include="TFE_PostProcess\postprocess.cpp" />
+    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\glslParser.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\indexBuffer.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\renderBackend.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\renderState.cpp" />

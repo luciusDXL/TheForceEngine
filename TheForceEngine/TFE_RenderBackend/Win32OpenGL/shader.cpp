@@ -1,3 +1,4 @@
+#include "glslParser.h"
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_System/system.h>
@@ -98,25 +99,14 @@ bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL
 
 bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile)
 {
-	char vtxPath[TFE_MAX_PATH];
-	char frgPath[TFE_MAX_PATH];
-	TFE_Paths::appendPath(PATH_PROGRAM, vertexShaderFile, vtxPath);
-	TFE_Paths::appendPath(PATH_PROGRAM, fragmentShaderFile, frgPath);
+	ShaderGL::s_buffers[0].clear();
+	ShaderGL::s_buffers[1].clear();
 
-	FileStream file;
-	if (!file.open(vtxPath, FileStream::MODE_READ)) { return false; }
-	const u32 vtxSize = (u32)file.getSize();
-	ShaderGL::s_buffers[0].resize(vtxSize+1);
-	file.readBuffer(ShaderGL::s_buffers[0].data(), vtxSize);
-	ShaderGL::s_buffers[0].data()[vtxSize] = 0;
-	file.close();
+	GLSLParser::parseFile(vertexShaderFile, ShaderGL::s_buffers[0]);
+	GLSLParser::parseFile(fragmentShaderFile, ShaderGL::s_buffers[1]);
 
-	if (!file.open(frgPath, FileStream::MODE_READ)) { return false; }
-	const u32 fragSize = (u32)file.getSize();
-	ShaderGL::s_buffers[1].resize(fragSize+1);
-	file.readBuffer(ShaderGL::s_buffers[1].data(), fragSize);
-	ShaderGL::s_buffers[1].data()[fragSize] = 0;
-	file.close();
+	ShaderGL::s_buffers[0].push_back(0);
+	ShaderGL::s_buffers[1].push_back(0);
 
 	return create(ShaderGL::s_buffers[0].data(), ShaderGL::s_buffers[1].data());
 }
