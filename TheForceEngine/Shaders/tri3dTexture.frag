@@ -16,10 +16,7 @@ void main()
 	vec3 outColor = vec3(0.0);
 	float outAlpha = 0.0;
 	drawFloorGridLevels(outColor, outAlpha, 0.5,  Frag_Uv.xy, viewFalloff, Frag_Pos);
-
-	// Tweak to make it easier to read over textures.
-	outAlpha = min(outAlpha*4.0, 1.0);
-	outColor = baseColor + outColor*outAlpha;
+	outColor = baseColor + outColor;
 
     Out_Color = vec4(outColor * Frag_Color.a, Frag_Color.a);
 }

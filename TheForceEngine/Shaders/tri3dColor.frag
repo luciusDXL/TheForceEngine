@@ -12,8 +12,8 @@ void main()
 
 	vec3 outColor = vec3(0.0);
 	float outAlpha = 0.0;
-	drawFloorGridLevels(outColor, outAlpha, 0.5,  Frag_Uv.xy, viewFalloff, Frag_Pos);
-	outColor = mix(Frag_Color.rgb, outColor, outAlpha);
+	drawFloorGridLevels(outColor, outAlpha, 0.5, Frag_Uv.xy, viewFalloff, Frag_Pos);
+	outColor = Frag_Color.rgb + outColor;
 
     Out_Color = vec4(outColor * Frag_Color.a, Frag_Color.a);
 }
