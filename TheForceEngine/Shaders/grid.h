@@ -21,7 +21,6 @@ float computeViewFalloff(vec3 viewPos, vec3 viewUp)
 
 float computeDistanceFalloff(float scale, vec3 inPos)
 {
-	scale = max(scale, 0.001);
 	float dist = min(length(inPos) * scale, 1.0);
 	return sqr(1.0 - dist);
 }
