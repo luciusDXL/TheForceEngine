@@ -12,6 +12,14 @@ float sqr(float x)
 	return x*x;
 }
 
+// Use the screenspace partial derivatives of the viewspace position to compute the normal.
+vec3 computeViewNormal(vec3 pos)
+{
+	vec3 dx = dFdx(pos);
+	vec3 dy = dFdy(pos);
+	return normalize(cross(dx, dy));
+}
+
 float computeViewFalloff(vec3 viewPos, vec3 viewUp)
 {
 	vec3 V = normalize(viewPos);
@@ -42,6 +50,16 @@ float computeGridLineOpacity(vec2 uv, vec2 filterWidth)
 	return min(opacity.x + opacity.y, 1.0);
 }
 
+void computeGrid(vec2 pUV, float falloff, inout vec3 outColor, inout float outAlpha)
+{
+	vec2 fUV = fract(pUV);
+	vec2 filterWidth = computeLineFilter(pUV);
+
+	float alpha = computeGridLineOpacity(fUV, filterWidth) * falloff;
+	outColor = GRID_COLOR * alpha + outColor * (1.0 - alpha);
+	outAlpha = min(alpha + outAlpha * (1.0 - alpha), 1.0);
+}
+
 void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float gridOpacity, vec2 inUv, float viewFalloff, vec3 inPos)
 {
 	float uvScale = 1.0;
@@ -53,15 +71,8 @@ void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float grid
 	for (int i = 0; i < LEVELS; i++)
 	{
 		vec2 pUV = inUv * uvScale;
-		vec2 fUV = fract(pUV);
-
-		// TODO: Instead of using distance, solve the pixels per grid cell and scale based on that.
 		float falloff = computeDistanceFalloff(distScale, inPos) * viewFalloff;
-		vec2 filterWidth = computeLineFilter(pUV);
-
-		float alpha = computeGridLineOpacity(fUV, filterWidth) * falloff;
-		outColor = GRID_COLOR * alpha + outColor * (1.0 - alpha);
-		outAlpha = min(alpha + outAlpha * (1.0 - alpha), 1.0);
+		computeGrid(pUV, falloff, outColor, outAlpha);
 
 		uvScale *= 0.5;
 		distScale *= 0.5;
@@ -69,14 +80,7 @@ void drawFloorGridLevels(inout vec3 baseColor, inout float baseAlpha, float grid
 
 	// Final large scale level with no distance based falloff.
 	vec2 pUV = inUv * GRID_SCALE_MAX;
-	vec2 fUV = fract(pUV);
-
-	float falloff = viewFalloff;
-	vec2 filterWidth = computeLineFilter(pUV);
-
-	float alpha = computeGridLineOpacity(fUV, filterWidth) * falloff;
-	outColor = GRID_COLOR * alpha + outColor * (1.0 - alpha);
-	outAlpha = min(alpha + outAlpha * (1.0 - alpha), 1.0);
+	computeGrid(pUV, viewFalloff, outColor, outAlpha);
 
 	// We have the final grid color and opacity, factor in the gridOpacity from the application.
 	outColor *= gridOpacity;

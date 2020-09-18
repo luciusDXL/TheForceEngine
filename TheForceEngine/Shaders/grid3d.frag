@@ -8,7 +8,6 @@ in vec3 Frag_Pos;
 in vec2 Frag_Dir;
 in vec3 View_Pos;
 in vec3 View_Up;
-in float Plane_Dist;
 out vec4 Out_Color;
 
 void main()
