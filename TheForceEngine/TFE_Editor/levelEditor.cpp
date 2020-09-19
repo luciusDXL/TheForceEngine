@@ -151,6 +151,8 @@ namespace LevelEditor
 		{"DEMO1.GOB", "SECBASE.LEV", "Demo 1", "DEMO1.GOB"},
 		{"DEMO3.GOB", "SECBASE.LEV", "Demo 3", "DEMO3.GOB"},
 	};
+
+	static const f32 c_gridInvisibleHeight = 10000.0f;
 	
 	static EditorView s_editView = EDIT_VIEW_2D;
 	static bool s_showLowerLayers = true;
@@ -201,6 +203,8 @@ namespace LevelEditor
 
 	// Editing
 	static f32 s_gridHeight = 0.0f;
+	static bool s_gridAutoAdjust = false;
+	static bool s_showGridInSector = true;
 	static bool s_drawStarted = false;
 	static Vec3f s_drawPlaneNrm;
 	static Vec3f s_drawPlaneOrg;
@@ -2666,7 +2670,7 @@ namespace LevelEditor
 				if (sector->layer >= layer) { continue; }
 				drawSector3d(sector, &sector->triangles, false, false, true);
 			}
-			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, true, s_showGridInSector ? s_gridHeight : c_gridInvisibleHeight);
 			TFE_RenderBackend::clearRenderTargetDepth(s_view3d, 1.0f);
 		}
 		
@@ -2686,7 +2690,7 @@ namespace LevelEditor
 			if (sector->layer != layer) { continue; }
 			drawSector3d(sector, &sector->triangles);
 		}
-		TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+		TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, true, s_showGridInSector ? s_gridHeight : c_gridInvisibleHeight);
 
 		const f32 width = 3.0f / f32(rtHeight);
 		// Walls
@@ -2740,7 +2744,7 @@ namespace LevelEditor
 				sector = s_levelData->sectors.data() + s_hoveredSector;
 				drawSector3d(sector, &sector->triangles, true, true);
 			}
-			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, true, s_showGridInSector ? s_gridHeight : c_gridInvisibleHeight);
 
 			// Draw outline (no depth buffer).
 			if (s_selectedSector >= 0)
@@ -2770,7 +2774,7 @@ namespace LevelEditor
 				sector = s_levelData->sectors.data() + s_hoveredWallSector;
 				drawWallColor(sector, sector->vertices.data(), sector->walls.data() + s_hoveredWall, color, true, s_hoveredWallPart);
 			}
-			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
+			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, true, s_showGridInSector ? s_gridHeight : c_gridInvisibleHeight);
 
 			// Draw the selected sector before drawing the walls.
 			if (s_selectedWall >= 0 || s_hoveredWall >= 0)
@@ -2811,7 +2815,7 @@ namespace LevelEditor
 					drawScreenQuadOutline(&pos, size, width, 0xffffC080);
 				}
 			}
-			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, false);
+			TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, false, s_showGridInSector ? s_gridHeight : c_gridInvisibleHeight);
 			LineDraw3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, false);
 		}
 
@@ -2915,16 +2919,16 @@ namespace LevelEditor
 				}
 			}
 		}
-		TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, true);
+		TrianglesColor3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, true, s_showGridInSector ? s_gridHeight : c_gridInvisibleHeight);
 		LineDraw3d::draw(&s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx, true, false);
 		
-		if (overSector < 0)
-		{
-			Grid3d::draw(s_gridSize, s_gridHeight, s_subGridSize, s_gridOpacity, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
-		}
-		else
+		if (overSector >= 0 && s_gridAutoAdjust)
 		{
 			s_gridHeight = s_levelData->sectors[overSector].floorAlt;
+		}
+		if (overSector < 0 || s_showGridInSector)
+		{
+			Grid3d::draw(s_gridSize, s_gridHeight, s_subGridSize, s_gridOpacity, pixelSize, &s_camera.pos, &s_camera.viewMtx, &s_camera.projMtx);
 		}
 	}
 
@@ -3551,6 +3555,8 @@ namespace LevelEditor
 		ImGui::LabelText("##GridLabel", "Grid Height");
 		ImGui::SetNextItemWidth(196.0f);
 		ImGui::InputFloat("##GridHeight", &s_gridHeight, 0.0f, 0.0f, "%0.2f", ImGuiInputTextFlags_CharsDecimal);
+		ImGui::Checkbox("Grid Auto Adjust", &s_gridAutoAdjust);
+		ImGui::Checkbox("Show Grid When Camera Is Inside a Sector", &s_showGridInSector);
 	}
 
 	void infoPanelVertex()

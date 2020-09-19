@@ -46,6 +46,7 @@ namespace TrianglesColor3d
 		s32 svCameraPos = -1;
 		s32 svCameraView = -1;
 		s32 svCameraProj = -1;
+		s32 svGridHeight = -1;
 	};
 	static ShaderInfo s_shaderInfo[1 + TRANS_COUNT];
 
@@ -55,7 +56,6 @@ namespace TrianglesColor3d
 	static TriVertex* s_vertices = nullptr;
 	static u32 s_triCount;
 
-	static TextureGpu* s_filterMap;
 	static const TextureGpu* s_curTexture;
 	static Tri3dTrans s_curTrans;
 
@@ -70,6 +70,7 @@ namespace TrianglesColor3d
 		sinfo->svCameraPos = sinfo->shader.getVariableId("CameraPos");
 		sinfo->svCameraView = sinfo->shader.getVariableId("CameraView");
 		sinfo->svCameraProj = sinfo->shader.getVariableId("CameraProj");
+		sinfo->svGridHeight = sinfo->shader.getVariableId("GridHeight");
 		sinfo->shader.bindTextureNameToSlot("filterMap", 0);
 		sinfo->shader.bindTextureNameToSlot("image", 1);
 		if (sinfo->svCameraPos < 0 || sinfo->svCameraView < 0 || sinfo->svCameraProj < 0)
@@ -121,8 +122,6 @@ namespace TrianglesColor3d
 		s_drawCount = 0;
 		s_curTexture = nullptr;
 		s_curTrans = TRANS_NONE;
-
-		s_filterMap = TFE_RenderBackend::createFilterTexture();
 
 		return true;
 	}
@@ -255,7 +254,7 @@ namespace TrianglesColor3d
 		addTexturedTriangles(1, vertices, uv, uv1, &triColor, texture, trans);
 	}
 
-	void draw(const Vec3f* camPos, const Mat3* viewMtx, const Mat4* projMtx, bool depthTest)
+	void draw(const Vec3f* camPos, const Mat3* viewMtx, const Mat4* projMtx, bool depthTest, f32 gridHeight)
 	{
 		if (s_triCount < 1) { return; }
 
@@ -300,7 +299,7 @@ namespace TrianglesColor3d
 			sinfo->shader.setVariable(sinfo->svCameraPos,  SVT_VEC3, camPos->m);
 			sinfo->shader.setVariable(sinfo->svCameraView, SVT_MAT3x3, (f32*)viewMtx);
 			sinfo->shader.setVariable(sinfo->svCameraProj, SVT_MAT4x4, (f32*)projMtx);
-			s_filterMap->bind(0);
+			sinfo->shader.setVariable(sinfo->svGridHeight, SVT_SCALAR, &gridHeight);
 			if (s_drawCalls[i].texture)
 			{
 				s_drawCalls[i].texture->bind(1);

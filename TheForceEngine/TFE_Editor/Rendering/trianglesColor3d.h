@@ -32,5 +32,5 @@ namespace TrianglesColor3d
 	void addTexturedTriangles(u32 count, const Vec3f* vtx, const Vec2f* uv, const Vec2f* uv1, const u32* triColors, const TextureGpu* texture, Tri3dTrans trans=Tri3dTrans::TRANS_NONE);
 	void addTexturedTriangle(const Vec3f* vertices, const Vec2f* uv, const Vec2f* uv1, u32 triColor, const TextureGpu* texture, Tri3dTrans trans=Tri3dTrans::TRANS_NONE);
 
-	void draw(const Vec3f* camPos, const Mat3* viewMtx, const Mat4* projMtx, bool depthTest = true);
+	void draw(const Vec3f* camPos, const Mat3* viewMtx, const Mat4* projMtx, bool depthTest = true, f32 gridHeight = 0.0f);
 }
