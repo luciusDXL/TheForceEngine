@@ -25,8 +25,6 @@ namespace Grid3d
 	static s32 s_svGridOpacity = -1;
 	static s32 s_svGridHeight = -1;
 
-	static TextureGpu* s_filterMap;
-
 	bool init()
 	{
 		if (!s_shader.load("Shaders/grid3d.vert", "Shaders/grid3d.frag"))
@@ -61,8 +59,6 @@ namespace Grid3d
 
 		s_vertexBuffer.create(4, sizeof(Vec3f), c_gridAttrCount, c_gridAttrMapping, false, (void*)vertices);
 		s_indexBuffer.create(6, sizeof(u16), false, (void*)indices);
-
-		s_filterMap = TFE_EditorRender::getFilterMap();
 		
 		return true;
 	}
@@ -93,7 +89,6 @@ namespace Grid3d
 		s_shader.setVariable(s_svCameraProj, SVT_MAT4x4, (f32*)projMtx);
 		s_shader.setVariable(s_svGridOpacity, SVT_VEC3, gridOpacitySubGrid);
 		s_shader.setVariable(s_svGridHeight, SVT_SCALAR, &height);
-		s_filterMap->bind();
 		
 		// Bind vertex/index buffers and setup attributes for BlitVert
 		s_vertexBuffer.bind();

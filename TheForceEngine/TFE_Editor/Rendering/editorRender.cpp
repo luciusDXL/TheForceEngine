@@ -19,12 +19,8 @@
 
 namespace TFE_EditorRender
 {
-	static TextureGpu* s_filterMap = nullptr;
-
 	bool init()
 	{
-		s_filterMap = TFE_RenderBackend::createFilterTexture();
-
 		// 2D
 		LineDraw2d::init();
 		Grid2d::init();
@@ -35,12 +31,11 @@ namespace TFE_EditorRender
 		LineDraw3d::init();
 		TrianglesColor3d::init();
 
-		return s_filterMap != nullptr;
+		return true;
 	}
 
 	void destroy()
 	{
-		// delete s_filterMap;
 		// 2D
 		LineDraw2d::destroy();
 		Grid2d::destroy();
@@ -369,10 +364,5 @@ namespace TFE_EditorRender
 				if (qtex) { qtex++; }
 			}
 		}
-	}
-
-	TextureGpu* getFilterMap()
-	{
-		return s_filterMap;
 	}
 }

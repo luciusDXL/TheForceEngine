@@ -357,13 +357,6 @@ namespace TFE_RenderBackend
 		return texture;
 	}
 
-	TextureGpu* createFilterTexture()
-	{
-		TextureGpu* texture = new TextureGpu();
-		texture->createFilterTex();
-		return texture;
-	}
-
 	void freeTexture(TextureGpu* texture)
 	{
 		delete texture;

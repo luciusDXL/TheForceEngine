@@ -23,6 +23,4 @@ namespace TFE_EditorRender
 
 	void drawModel3d(const EditorSector* sector, const Model* model, const Vec3f* pos, const Mat3* orientation, const u32* pal, u32 alpha);
 	void drawModel3d_Bounds(const Model* model, const Vec3f* pos, const Mat3* orientation, f32 width, u32 color);
-
-	TextureGpu* getFilterMap();
 }
