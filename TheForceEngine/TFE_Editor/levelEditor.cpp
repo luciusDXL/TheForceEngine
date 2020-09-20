@@ -287,6 +287,13 @@ namespace LevelEditor
 	void popupErrorMessage(const char* errorMessage);
 	void showErrorPopup();
 
+	// 2D viewport editing
+	void editWalls2d(Vec2f worldPos);
+	void editVertices2d(Vec2f worldPos);
+	void editEntities2d(Vec2f worldPos);
+	void editEntities2d(Vec2f worldPos);
+	void drawSectors2d(Vec2f worldPos);
+
 	void* loadGpuImage(const char* localPath)
 	{
 		char imagePath[TFE_MAX_PATH];
@@ -485,7 +492,7 @@ namespace LevelEditor
 		}
 		return false;
 	}
-
+		
 	void editWinControls2d(s32 mx, s32 my)
 	{
 		// We want to zoom into the mouse position.
@@ -513,138 +520,10 @@ namespace LevelEditor
 		if (s_editMode != LEDIT_SECTOR) { s_selectedSector = -1; }
 		if (s_editMode != LEDIT_ENTITY) { s_selectedEntity = -1; }
 
-		// Select Wall.
-		if (TFE_Input::mousePressed(MBUTTON_LEFT) && s_levelData && s_editMode == LEDIT_WALL)
-		{
-			s_selectedWallSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
-			s_selectedWall = LevelEditorData::findClosestWall(&s_selectedWallSector, s_layerIndex + s_layerMin, &worldPos, s_zoomVisual * 32.0f);
-			if (!s_moveWall && s_selectedWall >= 0)
-			{
-				s_moveWall = true;
-				// get the plane...
-				s_drawPlaneNrm = { 0.0f, 1.0f, 0.0f };
-				s_drawPlaneOrg = s_cursor3d;
-
-				EditorWall* wall = &s_levelData->sectors[s_selectedWallSector].walls[s_selectedWall];
-				s_drawBaseVtx[0] = s_levelData->sectors[s_selectedWallSector].vertices[wall->i0];
-				s_drawBaseVtx[1] = s_levelData->sectors[s_selectedWallSector].vertices[wall->i1];
-			}
-		}
-		else if (s_levelData && s_editMode == LEDIT_WALL && !s_moveWall)
-		{
-			s_hoveredWallSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
-			s_hoveredWall = LevelEditorData::findClosestWall(&s_hoveredWallSector, s_layerIndex + s_layerMin, &worldPos, s_zoomVisual * 32.0f);
-		}
-		if (s_editMode != LEDIT_WALL)
-		{
-			s_selectedWall = -1;
-			s_selectedWallSector = -1;
-		}
-
-		// Find the closest vertex (if in vertex mode)...
-		// Note this should be optimized.
-		s_hoveredVertex = -1;
-		if (s_editMode == LEDIT_VERTEX && s_levelData)
-		{
-			const s32 sectorCount = (s32)s_levelData->sectors.size();
-			const EditorSector* sector = s_levelData->sectors.data();
-			const f32 maxValidDistSq = s_zoomVisual * s_zoomVisual * 256.0f;
-			f32 minDistSq = maxValidDistSq;
-
-			s32 curVtx = -1, curVtxSector = -1;
-			for (s32 s = 0; s < sectorCount; s++, sector++)
-			{
-				if (sector->layer != s_layerIndex + s_layerMin) { continue; }
-
-				const Vec2f* vtx = sector->vertices.data();
-				const s32 vtxCount = (s32)sector->vertices.size();
-				for (s32 v = 0; v < vtxCount; v++, vtx++)
-				{
-					const Vec2f diff = { vtx->x - worldPos.x, vtx->z - worldPos.z };
-					const f32 distSq = diff.x*diff.x + diff.z*diff.z;
-					if (distSq < minDistSq && distSq < maxValidDistSq)
-					{
-						minDistSq = distSq;
-						curVtx = v;
-						curVtxSector = s;
-					}
-				}
-			}
-
-			if (curVtx >= 0)
-			{
-				if (TFE_Input::mousePressed(MBUTTON_LEFT))
-				{
-					s_selectedVertexSector = curVtxSector;
-					s_selectedVertex = curVtx;
-					s_moveVertex = true;
-					// get the plane...
-					s_drawPlaneNrm = { 0.0f, 1.0f, 0.0f };
-					s_drawPlaneOrg = s_cursor3d;
-				}
-				else if (!s_moveVertex)
-				{
-					s_hoveredVertexSector = curVtxSector;
-					s_hoveredVertex = curVtx;
-				}
-			}
-			else if (TFE_Input::mousePressed(MBUTTON_LEFT))
-			{
-				s_selectedVertexSector = -1;
-				s_selectedVertex = -1;
-			}
-		}
-
-		s_hoveredEntity = -1;
-		if (s_editMode == LEDIT_ENTITY && s_levelData)
-		{
-			s_hoveredEntitySector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
-			if (s_hoveredEntitySector >= 0)
-			{
-				const EditorSector* sector = s_levelData->sectors.data() + s_hoveredEntitySector;
-				const u32 count = (u32)sector->objects.size();
-				const EditorLevelObject* obj = sector->objects.data();
-				for (u32 i = 0; i < count; i++, obj++)
-				{
-					const f32 width = obj->display ? (f32)obj->display->width : 1.0f;
-					const f32 height = obj->display ? (f32)obj->display->height : 1.0f;
-					// Half width
-					f32 w;
-					if (obj->oclass == CLASS_SPIRIT || obj->oclass == CLASS_SAFE || obj->oclass == CLASS_SOUND) { w = 1.0f; }
-					else if (obj->oclass == CLASS_3D && obj->displayModel)
-					{
-						if (worldPos.x >= obj->displayModel->localAabb[0].x + obj->pos.x && worldPos.x < obj->displayModel->localAabb[1].x + obj->pos.x &&
-							worldPos.z >= obj->displayModel->localAabb[0].z + obj->pos.z && worldPos.z < obj->displayModel->localAabb[1].z + obj->pos.z)
-						{
-							s_hoveredEntity = i;
-							break;
-						}
-					}
-					else { w = obj->display ? (f32)obj->display->width * obj->display->scale.x / 16.0f : 1.0f; }
-
-					if (obj->oclass != CLASS_3D)
-					{
-						const f32 x0 = obj->worldCen.x - obj->worldExt.x, x1 = obj->worldCen.x + obj->worldExt.x;
-						const f32 z0 = obj->worldCen.z - obj->worldExt.z, z1 = obj->worldCen.z + obj->worldExt.z;
-						if (worldPos.x >= x0 && worldPos.x < x1 && worldPos.z >= z0 && worldPos.z < z1)
-						{
-							s_hoveredEntity = i;
-							break;
-						}
-					}
-				}
-			}
-			if (TFE_Input::mousePressed(MBUTTON_LEFT))
-			{
-				s_selectedEntity = s_hoveredEntity;
-				s_selectedEntitySector = s_hoveredEntitySector;
-			}
-		}
-
-		if (s_editMode == LEDIT_DRAW)
-		{
-			//handleDraw(s_cursor3d);
-		}
+		editWalls2d(worldPos);
+		editVertices2d(worldPos);
+		editEntities2d(worldPos);
+		drawSectors2d(worldPos);
 
 		s_offsetVis.x = floorf(s_offset.x * 100.0f) * 0.01f;
 		s_offsetVis.z = floorf(s_offset.z * 100.0f) * 0.01f;
@@ -817,13 +696,7 @@ namespace LevelEditor
 		const EditorWall* wall = sector->walls.data() + s_selectedWall;
 		Vec2f* vtx = sector->vertices.data();
 		sector->needsUpdate = true;
-
-		// Get the wall normal.
-		const s32 i0 = wall->i0;
-		const s32 i1 = wall->i1;
-		Vec2f* v0 = &vtx[i0];
-		Vec2f* v1 = &vtx[i1];
-
+				
 		Vec3f hit;
 		if (view2d)
 		{
@@ -836,12 +709,19 @@ namespace LevelEditor
 			if (!rayPlaneHit(s_camera.pos, dir, &hit)) { return; }
 		}
 		
+		// Get the wall normal.
+		const s32 i0 = wall->i0;
+		const s32 i1 = wall->i1;
+		Vec2f* v0 = &vtx[i0];
+		Vec2f* v1 = &vtx[i1];
+		
 		Vec3f normal;
 		normal.x = -(v1->z - v0->z);
 		normal.y =   0.0f;
 		normal.z =   v1->x - v0->x;
 		normal = TFE_Math::normalize(&normal);
 
+		// TODO: This snapping doesn't actually work in 2D - though it is fine in 3D, revisit.
 		Vec3f offset = { hit.x - s_drawPlaneOrg.x, hit.y - s_drawPlaneOrg.y, hit.z - s_drawPlaneOrg.z };
 		f32   dist   = TFE_Math::dot(&offset, &normal);
 		dist = snapToGrid(&s_drawPlaneOrg, &normal, dist, view2d);
@@ -852,7 +732,7 @@ namespace LevelEditor
 		// now compute the movement along the normal direction.
 		*v0 = { s_drawBaseVtx[0].x + normal.x * dist, s_drawBaseVtx[0].z + normal.z * dist };
 		*v1 = { s_drawBaseVtx[1].x + normal.x * dist, s_drawBaseVtx[1].z + normal.z * dist };
-				
+
 		// Next handle any sectors across adjoins that have been moved.
 		const size_t wallCount = sector->walls.size();
 		for (size_t w = 0; w < wallCount; w++)
@@ -4767,5 +4647,159 @@ namespace LevelEditor
 		}
 
 		if (!keepOpen) { s_showError = false; }
+	}
+
+	/////////////////////////////////////////////////////////////////////
+	// 2D Viewport Editing
+	/////////////////////////////////////////////////////////////////////
+	void editWalls2d(Vec2f worldPos)
+	{
+		if (s_editMode != LEDIT_WALL || !s_levelData)
+		{
+			s_selectedWall = -1;
+			s_selectedWallSector = -1;
+			return;
+		}
+
+		// Select Wall.
+		if (TFE_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_selectedWallSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
+			s_selectedWall = LevelEditorData::findClosestWall(&s_selectedWallSector, s_layerIndex + s_layerMin, &worldPos, s_zoomVisual * 32.0f);
+			if (!s_moveWall && s_selectedWall >= 0)
+			{
+				s_moveWall = true;
+				// get the plane...
+				s_drawPlaneNrm = { 0.0f, 1.0f, 0.0f };
+				s_drawPlaneOrg = s_cursor3d;
+
+				EditorWall* wall = &s_levelData->sectors[s_selectedWallSector].walls[s_selectedWall];
+				s_drawBaseVtx[0] = s_levelData->sectors[s_selectedWallSector].vertices[wall->i0];
+				s_drawBaseVtx[1] = s_levelData->sectors[s_selectedWallSector].vertices[wall->i1];
+			}
+		}
+		else if (!s_moveWall)
+		{
+			s_hoveredWallSector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
+			s_hoveredWall = LevelEditorData::findClosestWall(&s_hoveredWallSector, s_layerIndex + s_layerMin, &worldPos, s_zoomVisual * 32.0f);
+		}
+	}
+
+	void editVertices2d(Vec2f worldPos)
+	{
+		// Find the closest vertex (if in vertex mode)...
+		// Note this should be optimized.
+		s_hoveredVertex = -1;
+		if (s_editMode != LEDIT_VERTEX || !s_levelData)
+		{
+			return;
+		}
+
+		const s32 sectorCount = (s32)s_levelData->sectors.size();
+		const EditorSector* sector = s_levelData->sectors.data();
+		const f32 maxValidDistSq = s_zoomVisual * s_zoomVisual * 256.0f;
+		f32 minDistSq = maxValidDistSq;
+
+		s32 curVtx = -1, curVtxSector = -1;
+		for (s32 s = 0; s < sectorCount; s++, sector++)
+		{
+			if (sector->layer != s_layerIndex + s_layerMin) { continue; }
+
+			const Vec2f* vtx = sector->vertices.data();
+			const s32 vtxCount = (s32)sector->vertices.size();
+			for (s32 v = 0; v < vtxCount; v++, vtx++)
+			{
+				const Vec2f diff = { vtx->x - worldPos.x, vtx->z - worldPos.z };
+				const f32 distSq = diff.x*diff.x + diff.z*diff.z;
+				if (distSq < minDistSq && distSq < maxValidDistSq)
+				{
+					minDistSq = distSq;
+					curVtx = v;
+					curVtxSector = s;
+				}
+			}
+		}
+
+		if (curVtx >= 0)
+		{
+			if (TFE_Input::mousePressed(MBUTTON_LEFT))
+			{
+				s_selectedVertexSector = curVtxSector;
+				s_selectedVertex = curVtx;
+				s_moveVertex = true;
+				// get the plane...
+				s_drawPlaneNrm = { 0.0f, 1.0f, 0.0f };
+				s_drawPlaneOrg = s_cursor3d;
+			}
+			else if (!s_moveVertex)
+			{
+				s_hoveredVertexSector = curVtxSector;
+				s_hoveredVertex = curVtx;
+			}
+		}
+		else if (TFE_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_selectedVertexSector = -1;
+			s_selectedVertex = -1;
+		}
+	}
+
+	void editEntities2d(Vec2f worldPos)
+	{
+		s_hoveredEntity = -1;
+		if (s_editMode != LEDIT_ENTITY || !s_levelData)
+		{
+			return;
+		}
+
+		s_hoveredEntitySector = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
+		if (s_hoveredEntitySector >= 0)
+		{
+			const EditorSector* sector = s_levelData->sectors.data() + s_hoveredEntitySector;
+			const u32 count = (u32)sector->objects.size();
+			const EditorLevelObject* obj = sector->objects.data();
+			for (u32 i = 0; i < count; i++, obj++)
+			{
+				const f32 width = obj->display ? (f32)obj->display->width : 1.0f;
+				const f32 height = obj->display ? (f32)obj->display->height : 1.0f;
+				// Half width
+				f32 w;
+				if (obj->oclass == CLASS_SPIRIT || obj->oclass == CLASS_SAFE || obj->oclass == CLASS_SOUND) { w = 1.0f; }
+				else if (obj->oclass == CLASS_3D && obj->displayModel)
+				{
+					if (worldPos.x >= obj->displayModel->localAabb[0].x + obj->pos.x && worldPos.x < obj->displayModel->localAabb[1].x + obj->pos.x &&
+						worldPos.z >= obj->displayModel->localAabb[0].z + obj->pos.z && worldPos.z < obj->displayModel->localAabb[1].z + obj->pos.z)
+					{
+						s_hoveredEntity = i;
+						break;
+					}
+				}
+				else { w = obj->display ? (f32)obj->display->width * obj->display->scale.x / 16.0f : 1.0f; }
+
+				if (obj->oclass != CLASS_3D)
+				{
+					const f32 x0 = obj->worldCen.x - obj->worldExt.x, x1 = obj->worldCen.x + obj->worldExt.x;
+					const f32 z0 = obj->worldCen.z - obj->worldExt.z, z1 = obj->worldCen.z + obj->worldExt.z;
+					if (worldPos.x >= x0 && worldPos.x < x1 && worldPos.z >= z0 && worldPos.z < z1)
+					{
+						s_hoveredEntity = i;
+						break;
+					}
+				}
+			}
+		}
+		if (TFE_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_selectedEntity = s_hoveredEntity;
+			s_selectedEntitySector = s_hoveredEntitySector;
+		}
+	}
+
+	void drawSectors2d(Vec2f worldPos)
+	{
+		if (s_editMode != LEDIT_DRAW || !s_levelData)
+		{
+			return;
+		}
 	}
 }
