@@ -631,43 +631,49 @@ namespace LevelEditor
 			}
 			else
 			{
-				// Next check to see if we can snap to either X or Z while staying on the line.
-				f32 gridScale = s_gridSize / s_subGridSize;
-
-				// test the relative distance of snapX/Z, snapX, snapZ
-				Vec2f posGridSpace = { worldPos.x / gridScale, worldPos.z / gridScale };
-				posGridSpace.x = floorf(posGridSpace.x + 0.5f) * gridScale;
-				posGridSpace.z = floorf(posGridSpace.z + 0.5f) * gridScale;
-
-				const f32 dx = v1.x - v0.x;
-				const f32 dz = v1.z - v0.z;
 				f32 minDistSq = maxDistSq;
 				Vec2f minLinePos;
-				if (fabsf(dx) > 0.005f)
+
+				// Holding Alt will disable grid line snapping.
+				if (!TFE_Input::keyDown(KEY_LALT) && !TFE_Input::keyDown(KEY_RALT))
 				{
-					const f32 s = (posGridSpace.x - v0.x) / dx;
-					const Vec2f snappedPos = { v0.x + s*dx, v0.z + s*dz };
-					const f32 distSq = TFE_Math::distanceSq(&snappedPos, &worldPos);
-					if (distSq < minDistSq)
+					// Next check to see if we can snap to either X or Z while staying on the line.
+					const f32 gridScale = s_gridSize / s_subGridSize;
+
+					// test the relative distance of snapX/Z, snapX, snapZ
+					Vec2f posGridSpace = { worldPos.x / gridScale, worldPos.z / gridScale };
+					posGridSpace.x = floorf(posGridSpace.x + 0.5f) * gridScale;
+					posGridSpace.z = floorf(posGridSpace.z + 0.5f) * gridScale;
+
+					const f32 dx = v1.x - v0.x;
+					const f32 dz = v1.z - v0.z;
+					if (fabsf(dx) > 0.005f)
 					{
-						minDistSq = distSq;
-						minLinePos = snappedPos;
+						const f32 s = (posGridSpace.x - v0.x) / dx;
+						const Vec2f snappedPos = { v0.x + s * dx, v0.z + s * dz };
+						const f32 distSq = TFE_Math::distanceSq(&snappedPos, &worldPos);
+						if (distSq < minDistSq)
+						{
+							minDistSq = distSq;
+							minLinePos = snappedPos;
+						}
 					}
-				}
-				if (fabsf(dz) > 0.005f)
-				{
-					const f32 s = (posGridSpace.z - v0.z) / dz;
-					const Vec2f snappedPos = { v0.x + s*dx, v0.z + s*dz };
-					const f32 distSq = TFE_Math::distanceSq(&snappedPos, &worldPos);
-					if (distSq < minDistSq)
+					if (fabsf(dz) > 0.005f)
 					{
-						minDistSq = distSq;
-						minLinePos = snappedPos;
+						const f32 s = (posGridSpace.z - v0.z) / dz;
+						const Vec2f snappedPos = { v0.x + s * dx, v0.z + s * dz };
+						const f32 distSq = TFE_Math::distanceSq(&snappedPos, &worldPos);
+						if (distSq < minDistSq)
+						{
+							minDistSq = distSq;
+							minLinePos = snappedPos;
+						}
 					}
 				}
 
 				if (minDistSq < maxDistSq)
 				{
+					// Snap to an intersection of the grid and the line.
 					s_cursorSnapped.x = minLinePos.x;
 					s_cursorSnapped.z = minLinePos.z;
 				}
