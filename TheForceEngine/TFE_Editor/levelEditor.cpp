@@ -289,6 +289,9 @@ namespace LevelEditor
 	void popupErrorMessage(const char* errorMessage);
 	void showErrorPopup();
 
+	// General viewport editing
+	void deleteSector(EditorSector* sector);
+
 	// 2D viewport editing
 	void editSector2d(Vec2f worldPos, s32 sectorId);
 	void editWalls2d(Vec2f worldPos);
@@ -640,7 +643,8 @@ namespace LevelEditor
 					// Next check to see if we can snap to either X or Z while staying on the line.
 					const f32 gridScale = s_gridSize / s_subGridSize;
 
-					// test the relative distance of snapX/Z, snapX, snapZ
+					// Test the nearest grid line versus line intersections and see if they are close enough
+					// to snap to.
 					Vec2f posGridSpace = { worldPos.x / gridScale, worldPos.z / gridScale };
 					posGridSpace.x = floorf(posGridSpace.x + 0.5f) * gridScale;
 					posGridSpace.z = floorf(posGridSpace.z + 0.5f) * gridScale;
@@ -686,7 +690,6 @@ namespace LevelEditor
 			}
 			return true;
 		}
-
 		return false;
 	}
 
@@ -4779,6 +4782,10 @@ namespace LevelEditor
 		{
 			s_selectedSector = sectorId;
 		}
+		else if (TFE_Input::keyPressed(KEY_DELETE) && s_selectedSector >= 0)
+		{
+			deleteSector(s_levelData->sectors.data() + s_selectedEntitySector);
+		}
 		else
 		{
 			s_hoveredSector = sectorId;
@@ -4937,6 +4944,15 @@ namespace LevelEditor
 		return true;
 	}
 
+	bool pointInAABB2d(const Vec2f* p, const Vec3f* aabb)
+	{
+		if (p->x < aabb[0].x || p->x > aabb[1].x || p->z < aabb[0].z || p->z > aabb[1].z)
+		{
+			return false;
+		}
+		return true;
+	}
+
 	bool aabbOverlap2d(const Vec3f* aabb0, const Vec3f* aabb1)
 	{
 		return aabb0[0].z < aabb1[1].z && aabb0[1].z > aabb1[0].z && aabb0[0].x < aabb1[1].x && aabb0[1].x > aabb1[0].x;
@@ -5013,9 +5029,52 @@ namespace LevelEditor
 		return editInsertVertex2d(worldPos, sectorId, wallId);
 	}
 
+	void deleteSector(EditorSector* sector)
+	{
+		// Delete sectors.
+		u32 sectorCount = (u32)s_levelData->sectors.size();
+		for (u32 s = sector->id; s < sectorCount; s++)
+		{
+			s_levelData->sectors[s] = s_levelData->sectors[s + 1];
+			s_levelData->sectors[s].id = s;
+		}
+		s_levelData->sectors.resize(s_levelData->sectors.size() - 1);
+		sectorCount--;
+
+		// Adjust adjoin Ids.
+		EditorSector* fixSec = s_levelData->sectors.data();
+		for (u32 s = 0; s < sectorCount; s++, fixSec++)
+		{
+			const u32 wallCount = (u32)fixSec->walls.size();
+			EditorWall* wall = fixSec->walls.data();
+
+			for (u32 w = 0; w < wallCount; w++, wall++)
+			{
+				if (wall->adjoin == s_selectedSector)
+				{
+					wall->adjoin = -1;
+					wall->walk = -1;
+					fixSec->needsUpdate = true;
+				}
+				else if (wall->adjoin > s_selectedSector)
+				{
+					wall->adjoin--;
+					wall->walk = wall->adjoin;
+					fixSec->needsUpdate = true;
+				}
+			}
+		}
+
+		// Clear selection.
+		s_selectedWall = -1;
+		s_selectedSector = -1;
+		LevelEditorData::updateSectors();
+	}
+
 	void insertSector2d()
 	{
 		// First determine the signed area and reverse the vertex/wall order if necessary.
+		// This way sectors can be drawn either clockwise or anticlockwise and achieve the same result.
 		const s32 srcVertexCount = (s32)s_newSector.vertices.size();
 		const f32 signedArea = TFE_Polygon::signedArea((u32)srcVertexCount, s_newSector.vertices.data());
 		if (signedArea < 0.0f)
@@ -5035,12 +5094,88 @@ namespace LevelEditor
 		sector = &s_levelData->sectors.back();
 		const u32 srcWallCount = (u32)sector->walls.size();
 		const s32 srcLayer = sector->layer;
+		// Source shape bounds are expanded slightly to robustly handle cases where only purely horizontal or vertical lines are overlapping.
 		const Vec3f srcAabb[2] =
 		{
 			{ sector->aabb[0].x - 0.1f, sector->aabb[0].y, sector->aabb[0].z - 0.1f },
 			{ sector->aabb[1].x + 0.1f, sector->aabb[1].y, sector->aabb[1].z + 0.1f },
 		};
 
+		// First determine if all vertices are inside of a single sector.
+		const Vec2f* vtx = s_newSector.vertices.data();
+		EditorSector* neighbor = s_levelData->sectors.data();
+		for (s32 s = 0; s < count; s++, neighbor++)
+		{
+			//  Make sure the sector is on the correct layer.
+			if (srcLayer != neighbor->layer) { continue; }
+
+			// See if the AABBs overlap.
+			if (!aabbOverlap2d(srcAabb, neighbor->aabb)) { continue; }
+
+			u32 vSrcInside = 0;
+			for (u32 vSrc = 0; vSrc < srcVertexCount; vSrc++)
+			{
+				// See if the point is inside the sector AABB.
+				if (!pointInAABB2d(&vtx[vSrc], neighbor->aabb)) { break; }
+
+				// Test if the point is inside the sector polygon.
+				if (!Geometry::pointInSector(&vtx[vSrc], (u32)neighbor->vertices.size(), neighbor->vertices.data(), (u32)neighbor->walls.size(), (u8*)neighbor->walls.data(), sizeof(EditorWall)))
+				{
+					break;
+				}
+				vSrcInside++;
+			}
+
+			// Is the new sector or shape completely inside of this sector?
+			if (vSrcInside == srcVertexCount)
+			{
+				// TODO: We should verify that no edges of the new sector intersect edges of the neighbor sector.
+				// TODO: Check if any edges overlap edges with adjoins so they can be connected directly (i.e. making a staircase)
+				// TODO: Check if any edges overlap solid edges in the same sector, if so then this is really splitting the sector in two.
+
+				// For the first pass, keep it simple and assume it is a self contained interior sector.
+				// 1. Add new edges to the neighbor sector going in the *opposite* direction. This is a hole in the "neighbor" sector polygon.
+				// 2. Link up adjoins between the hole and the new sector.
+				std::vector<Vec2f>& srcVtx = s_newSector.vertices;
+				const u32 baseVertexIndex = (u32)neighbor->vertices.size();
+				const u32 baseWallIndex = (u32)neighbor->walls.size();
+				for (s32 v = 0; v < srcVertexCount; v++)
+				{
+					const s32 vRev = srcVertexCount - v - 1;
+					neighbor->vertices.push_back(srcVtx[vRev]);
+
+					EditorWall newWall = sector->walls[vRev];
+					newWall.i0 = baseVertexIndex + ((v > 0) ? (v - 1) : (srcVertexCount - 1));
+					newWall.i1 = baseVertexIndex + v;
+					newWall.adjoin = sector->id;
+					newWall.walk = sector->id;
+					newWall.mirror = vRev;
+
+					sector->walls[v].adjoin = s;
+					sector->walls[v].walk = s;
+					sector->walls[v].mirror = baseWallIndex + srcVertexCount - v - 1;
+
+					neighbor->walls.push_back(newWall);
+				}
+				// Copy outer sector attributes to the sub-sector.
+				sector->ambient = neighbor->ambient;
+				sector->flags[0] = neighbor->flags[0];
+				sector->flags[1] = neighbor->flags[1];
+				sector->flags[2] = neighbor->flags[2];
+				sector->floorAlt = neighbor->floorAlt;
+				sector->ceilAlt  = neighbor->ceilAlt;
+				sector->floorTexture = neighbor->floorTexture;
+				sector->ceilTexture  = neighbor->ceilTexture;
+				// The outer sector needs to be updated since new walls were added.
+				neighbor->needsUpdate = true;
+				
+				// We don't need to check for wall overlaps since this is either a sub-sector or splitting a sector.
+				LevelEditorData::updateSectors();
+				return;
+			}
+		}
+
+		// Then determine if any walls overlap.
 		for (u32 wSrc = 0; wSrc < srcWallCount; wSrc++)
 		{
 			const Vec2f* srcVtx = sector->vertices.data();
@@ -5120,6 +5255,8 @@ namespace LevelEditor
 				overlapSector->needsUpdate = true;
 			}
 		}
+
+		LevelEditorData::updateSectors();
 	}
 
 	void clearNewSector()
