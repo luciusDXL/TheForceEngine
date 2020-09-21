@@ -378,8 +378,8 @@ namespace LevelEditorData
 		for (u32 w = 0; w < (u32)newSector.walls.size(); w++, srcWall++, dstWall++)
 		{
 			setNewTexture(&dstWall->mid, wallTex);
-			setNewTexture(&dstWall->top, nullptr);
-			setNewTexture(&dstWall->bot, nullptr);
+			setNewTexture(&dstWall->top, wallTex);
+			setNewTexture(&dstWall->bot, wallTex);
 			setNewTexture(&dstWall->sign, nullptr);
 
 			dstWall->i0 = srcWall->i0;

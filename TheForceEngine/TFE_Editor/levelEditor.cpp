@@ -239,6 +239,7 @@ namespace LevelEditor
 	static RayHitPart s_hoveredVertexPart;
 
 	static Vec3f s_cursor3d = { 0 };
+	static Vec3f s_cursorSnapped = { 0 };
 	static Vec3f s_rayDir = { 0 };
 	static s32 s_hideFrames = 0;
 	static const Palette256* s_palette;
@@ -594,6 +595,50 @@ namespace LevelEditor
 	bool vec2Equals(const Vec2f& a, const Vec2f& b)
 	{
 		return fabsf(a.x - b.x) < c_vertexMerge && fabsf(a.z - b.z) < c_vertexMerge;
+	}
+
+	// Is the position "near" a wall that it can snap to?
+	bool snapToGeometry(Vec3f* pos, bool view2d)
+	{
+		if (view2d)
+		{
+			Vec2f worldPos = { pos->x, pos->z };
+			s32 sectorId = LevelEditorData::findSector(s_layerIndex + s_layerMin, &worldPos);
+			s32 wallId = LevelEditorData::findClosestWall(&sectorId, s_layerIndex + s_layerMin, &worldPos, s_zoomVisual * 16.0f);
+			if (sectorId < 0 || wallId < 0) { return false; }
+
+			const EditorSector* sector = &s_levelData->sectors[sectorId];
+			const EditorWall* wall = &sector->walls[wallId];
+			const Vec2f* vtx = sector->vertices.data();
+
+			const Vec2f& v0 = vtx[wall->i0];
+			const Vec2f& v1 = vtx[wall->i1];
+
+			Vec2f linePos;
+			Geometry::closestPointOnLineSegment(v0, v1, worldPos, &linePos);
+			f32 maxDistSq = s_zoomVisual * 8.0f;
+			maxDistSq *= maxDistSq;
+			// First check the vertices
+			if (TFE_Math::distanceSq(&v0, &worldPos) < maxDistSq)
+			{
+				s_cursorSnapped.x = v0.x;
+				s_cursorSnapped.z = v0.z;
+			}
+			else if (TFE_Math::distanceSq(&v1, &worldPos) < maxDistSq)
+			{
+				s_cursorSnapped.x = v1.x;
+				s_cursorSnapped.z = v1.z;
+			}
+			else
+			{
+				// Otherwise anywhere on the line.
+				s_cursorSnapped.x = linePos.x;
+				s_cursorSnapped.z = linePos.z;
+			}
+			return true;
+		}
+
+		return false;
 	}
 
 	void snapToGrid(Vec3f* pos, bool view2d)
@@ -1523,6 +1568,7 @@ namespace LevelEditor
 			{
 				drawTargetsAndClientLines2d(s_selectedWallSector, s_selectedWall, 2.0f);
 			}
+						
 			LineDraw2d::drawLines();
 		}
 
@@ -1671,6 +1717,14 @@ namespace LevelEditor
 			const Vec2f* vtx = &s_levelData->sectors[s_selectedVertexSector].vertices[s_selectedVertex];
 			drawVertex(vtx, scale * 1.5f, colorSelected);
 		}
+
+		// Draw the 2d cursor in "Draw Mode"
+		if (s_editMode == LEDIT_DRAW)
+		{
+			Vec2f pos = { s_cursorSnapped.x, s_cursorSnapped.z };
+			drawVertex(&pos, scale * 1.5f, colorSelected);
+		}
+
 		flushTriangles();
 	}
 
@@ -5008,6 +5062,13 @@ namespace LevelEditor
 				dstWall->adjoin = count;
 				dstWall->walk = dstWall->adjoin;
 				dstWall->mirror = wSrc;
+
+				// Snap the vertices together just in case.
+				sector->vertices[srcWall->i0] = overlapSector->vertices[dstWall->i1];
+				sector->vertices[srcWall->i1] = overlapSector->vertices[dstWall->i0];
+
+				sector->needsUpdate = true;
+				overlapSector->needsUpdate = true;
 			}
 		}
 	}
@@ -5031,10 +5092,13 @@ namespace LevelEditor
 			s_newSector.vertices.resize(1);
 		}
 
-		Vec3f cursor = { s_cursor3d.x, s_gridHeight, s_cursor3d.z };
-		snapToGrid(&cursor, true);
+		s_cursorSnapped = { s_cursor3d.x, s_gridHeight, s_cursor3d.z };
+		if (!snapToGeometry(&s_cursorSnapped, true))
+		{
+			snapToGrid(&s_cursorSnapped, true);
+		}
 
-		s_newSector.vertices.back() = { cursor.x, cursor.z };
+		s_newSector.vertices.back() = { s_cursorSnapped.x, s_cursorSnapped.z };
 
 		// If left mouse is pressed, add a new vertex.
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
@@ -5047,7 +5111,7 @@ namespace LevelEditor
 				s_newSector.ambient = 30;
 			}
 
-			s_newSector.vertices.push_back({ cursor.x, cursor.z });
+			s_newSector.vertices.push_back({ s_cursorSnapped.x, s_cursorSnapped.z });
 
 			// Build walls.
 			size_t count = s_newSector.vertices.size();
