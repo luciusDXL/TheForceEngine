@@ -225,6 +225,9 @@ struct EditorSector
 	// Polygon data.
 	SectorTriangles triangles;
 
+	// Bounds
+	Vec3f aabb[2];
+
 	// Update flag
 	bool needsUpdate;
 };
@@ -271,6 +274,9 @@ namespace LevelEditorData
 	// Convert runtime level data to editor format.
 	bool convertLevelDataToEditor(const LevelData* levelData, const Palette256* palette, const InfData* infData, const LevelObjectData* objData);
 
+	// Add a new sector.
+	void addNewSector(const EditorSector& newSector, EditorTexture* floorTex, EditorTexture* ceilTex, EditorTexture* wallTex);
+
 	// Update any sectors that have been flagged. This handles re-triangulation and any other updates needed for rendering.
 	void updateSectors();
 
@@ -292,4 +298,6 @@ namespace LevelEditorData
 
 	s32 findClosestWall(s32* sectorId, s32 layer, const Vec2f* pos, f32 maxDist);
 	bool traceRay(const Ray* ray, RayHitInfoLE* hitInfo);
+
+	void triangulateSector(const EditorSector* sector, SectorTriangles* outTri);
 }

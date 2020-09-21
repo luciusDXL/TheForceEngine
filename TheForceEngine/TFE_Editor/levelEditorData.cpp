@@ -35,7 +35,6 @@ namespace LevelEditorData
 
 	void convertInfToEditor(const InfData* infData);
 	void convertObjectsToEditor(const LevelObjectData* objData);
-	void triangulateSector(const EditorSector* sector, SectorTriangles* outTri);
 	void determineSectorTypes();
 	EditorInfItem* findInfItem(const EditorSector* sector, s32 wall);
 
@@ -331,6 +330,87 @@ namespace LevelEditorData
 		dst->frame   = hasTex ? src->frame   : 0;
 		dst->tex     = hasTex ? getEditorTexture(levelData->textures[src->texId]) : nullptr;
 	}
+
+	void setNewTexture(EditorSectorTexture* dstTex, EditorTexture* srcTex)
+	{
+		dstTex->flag = 0;
+		dstTex->frame = 0;
+		dstTex->offsetX = 0.0f;
+		dstTex->offsetY = 0.0f;
+		dstTex->tex = srcTex;
+	}
+
+	void addNewSector(const EditorSector& newSector, EditorTexture* floorTex, EditorTexture* ceilTex, EditorTexture* wallTex)
+	{
+		const size_t sectorCount = s_editorLevel.sectors.size() + 1;
+		s_editorLevel.sectors.resize(sectorCount);
+
+		EditorSector* dst = s_editorLevel.sectors.data() + (sectorCount - 1);
+
+		dst->id = sectorCount - 1;
+		dst->objects.clear();
+		dst->name[0] = 0;
+
+		dst->ambient = newSector.ambient;
+		// Floor Texture
+		setNewTexture(&dst->floorTexture, floorTex);
+		// Ceiling Texture
+		setNewTexture(&dst->ceilTexture, ceilTex);
+
+		dst->floorAlt = newSector.floorAlt;
+		dst->ceilAlt = newSector.ceilAlt;
+		dst->secAlt = 0.0f;
+		dst->layer = newSector.layer;
+		dst->infType = INF_NONE;
+		dst->flags[0] = 0;
+		dst->flags[1] = 0;
+		dst->flags[2] = 0;
+
+		// Dynamically resizable, self-contained geometry data.
+		dst->walls.resize(newSector.walls.size());
+		dst->vertices.resize(newSector.vertices.size());
+
+		const EditorWall* srcWall = newSector.walls.data();
+		const Vec2f*      srcVtx = newSector.vertices.data();
+		memcpy(dst->vertices.data(), srcVtx, sizeof(Vec2f) * newSector.vertices.size());
+		EditorWall* dstWall = dst->walls.data();
+
+		for (u32 w = 0; w < (u32)newSector.walls.size(); w++, srcWall++, dstWall++)
+		{
+			setNewTexture(&dstWall->mid, wallTex);
+			setNewTexture(&dstWall->top, nullptr);
+			setNewTexture(&dstWall->bot, nullptr);
+			setNewTexture(&dstWall->sign, nullptr);
+
+			dstWall->i0 = srcWall->i0;
+			dstWall->i1 = srcWall->i1;
+			dstWall->adjoin = srcWall->adjoin;
+			dstWall->walk = srcWall->walk;
+			dstWall->mirror = srcWall->mirror;
+			dstWall->light = 0;
+			dstWall->infType = INF_NONE;
+			dstWall->flags[0] = 0;
+			dstWall->flags[1] = 0;
+			dstWall->flags[2] = 0;
+			dstWall->flags[3] = 0;
+		}
+
+		// Compute sector bounds
+		dst->aabb[0] = { srcVtx[0].x, newSector.floorAlt, srcVtx[0].z };
+		dst->aabb[1] = { srcVtx[0].x, newSector.ceilAlt,  srcVtx[0].z };
+		for (u32 v = 1; v < (u32)newSector.vertices.size(); v++)
+		{
+			dst->aabb[0].x = std::min(dst->aabb[0].x, newSector.vertices[v].x);
+			dst->aabb[0].z = std::min(dst->aabb[0].z, newSector.vertices[v].z);
+
+			dst->aabb[1].x = std::max(dst->aabb[1].x, newSector.vertices[v].x);
+			dst->aabb[1].z = std::max(dst->aabb[1].z, newSector.vertices[v].z);
+		}
+
+		// Polygon data.
+		triangulateSector(dst, &dst->triangles);
+		dst->needsUpdate = false;
+	}
 	
 	bool convertLevelDataToEditor(const LevelData* levelData, const Palette256* palette, const InfData* infData, const LevelObjectData* objData)
 	{
@@ -390,6 +470,18 @@ namespace LevelEditorData
 				dstWall->light  = srcWall->light;
 				dstWall->infType = INF_NONE;
 				memcpy(dstWall->flags, srcWall->flags, sizeof(u32) * 4);
+			}
+
+			// Compute sector bounds
+			dst->aabb[0] = { srcVtx[0].x, src->floorAlt, srcVtx[0].z };
+			dst->aabb[1] = { srcVtx[0].x, src->ceilAlt,  srcVtx[0].z };
+			for (u32 v = 1; v < src->vtxCount; v++)
+			{
+				dst->aabb[0].x = std::min(dst->aabb[0].x, srcVtx[v].x);
+				dst->aabb[0].z = std::min(dst->aabb[0].z, srcVtx[v].z);
+
+				dst->aabb[1].x = std::max(dst->aabb[1].x, srcVtx[v].x);
+				dst->aabb[1].z = std::max(dst->aabb[1].z, srcVtx[v].z);
 			}
 
 			// Polygon data.

@@ -288,4 +288,19 @@ namespace TFE_Polygon
 		}
 		return s_outPolys;
 	}
+
+	f32 signedArea(u32 vertexCount, const Vec2f* vertices)
+	{
+		f32 area = 0.0f;
+		u32 vPrev = vertexCount - 1;
+		for (s32 v = 0; v < vertexCount; v++)
+		{
+			const Vec2f& v0 = vertices[vPrev];
+			const Vec2f& v1 = vertices[v];
+			vPrev = v;
+
+			area += (v0.x + v1.x) * (v0.z - v1.z);
+		}
+		return area;
+	}
 }

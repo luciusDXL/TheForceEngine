@@ -24,6 +24,7 @@ namespace TFE_Polygon
 	// Decompose a concave polygon with holes into convex polygons.
 	// A contour is a complete polygon. If it is a hole than the winding should be reversed compared to the outer polygon.
 	Triangle* decomposeComplexPolygon(u32 contourCount, const Polygon* contours, u32* outConvexPolyCount);
+	f32 signedArea(u32 vertexCount, const Vec2f* vertices);
 
 	bool init();
 	void shutdown();
