@@ -78,6 +78,11 @@ namespace FileUtil
 		GetCurrentDirectoryA(512, dir);
 	}
 
+	void setCurrentDirectory(const char* dir)
+	{
+		SetCurrentDirectoryA(dir);
+	}
+
 	void getFilePath(const char* filename, char* path)
 	{
 		s32 lastSlash = -1;
@@ -231,5 +236,49 @@ namespace FileUtil
 		CloseHandle(fileHandle);
 
 		return modTime;
+	}
+
+	void fixupPath(char* path)
+	{
+		const size_t len = strlen(path);
+		for (size_t i = 0; i < len; i++)
+		{
+			if (path[i] == '\\')
+			{
+				path[i] = '/';
+			}
+		}
+	}
+
+	void convertToOSPath(const char* path, char* pathOS)
+	{
+#ifdef _WIN32
+		const size_t len = strlen(path);
+		for (size_t i = 0; i < len; i++)
+		{
+			if (path[i] == '/')
+			{
+				pathOS[i] = '\\';
+			}
+			else
+			{
+				pathOS[i] = path[i];
+			}
+		}
+#else
+		const size_t len = strlen(path);
+		for (size_t i = 0; i < len; i++)
+		{
+			if (path[i] == '\\')
+			{
+				pathOS[i] = '/';
+			}
+			else
+			{
+				pathOS[i] = path[i];
+			}
+		}
+#endif
+		pathOS[len] = 0;
 	}
 }

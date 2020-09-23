@@ -10,7 +10,6 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Ui/ui.h>
 
-#include <TFE_Ui/imGUI/imgui_file_browser.h>
 #include <TFE_Ui/imGUI/imgui.h>
 
 namespace TFE_Editor

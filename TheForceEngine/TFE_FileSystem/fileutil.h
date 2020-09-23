@@ -11,6 +11,7 @@ namespace FileUtil
 	void readDirectory(const char* dir, const char* ext, FileList& fileList);
 	bool makeDirectory(const char* dir);
 	void getCurrentDirectory(char* dir);
+	void setCurrentDirectory(const char* dir);
 
 	void readSubdirectories(const char* dir, FileList& dirList);
 
@@ -24,4 +25,7 @@ namespace FileUtil
 	bool exists(const char* path);
 	bool directoryExits(const char* path);
 	u64  getModifiedTime(const char* path);
+
+	void fixupPath(char* path);
+	void convertToOSPath(const char* path, char* pathOS);
 }

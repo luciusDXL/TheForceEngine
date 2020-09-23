@@ -250,9 +250,6 @@
     <ClInclude Include="TFE_Ui\imGUI\Dirent\dirent.h">
       <Filter>Source\TFE_Ui\imGUI\Dirent</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Ui\imGUI\imgui_file_browser.h">
-      <Filter>Source\TFE_Ui\imGUI</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Archive\lfdArchive.h">
       <Filter>Source\TFE_Archive</Filter>
     </ClInclude>
@@ -622,6 +619,9 @@
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\glslParser.h">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Ui\portable-file-dialogs.h">
+      <Filter>Source\TFE_Ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -692,9 +692,6 @@
     </ClCompile>
     <ClCompile Include="TFE_Editor\perfWindow.cpp">
       <Filter>Source\TFE_Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Ui\imGUI\imgui_file_browser.cpp">
-      <Filter>Source\TFE_Ui\imGUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Archive\lfdArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>

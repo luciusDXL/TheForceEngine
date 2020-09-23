@@ -22,7 +22,6 @@
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
 
-#include <TFE_Ui/imGUI/imgui_file_browser.h>
 #include <TFE_Ui/imGUI/imgui.h>
 
 // Game
@@ -57,7 +56,6 @@ namespace ArchiveViewer
 
 	static TFE_Renderer* s_renderer = nullptr;
 
-	static imgui_addons::ImGuiFileBrowser s_fileDialog;
 	static char s_curArchiveFile[TFE_MAX_PATH] = "";
 	static char s_curArchiveName[TFE_MAX_PATH] = "";
 	static Archive* s_curArchive = nullptr;
@@ -94,7 +92,7 @@ namespace ArchiveViewer
 	static s32 s_uiScale;
 	static char s_levelFile[TFE_MAX_PATH];
 	static const ViewStats* s_viewStats = nullptr;
-		
+
 	f32 scaleUi(s32 x)
 	{
 		return f32(x * s_uiScale / 100);
@@ -149,8 +147,6 @@ namespace ArchiveViewer
 		ImGui::SetWindowPos("LevelViewer", windowPosText);
 		ImGui::SetWindowSize("LevelViewer", ImVec2(scaleUi(665), scaleUi(600)));
 		ImGui::End();
-
-		s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_SOURCE_DATA));
 
 		s_curArchiveFile[0] = 0;
 		s_curArchiveName[0] = 0;
@@ -411,10 +407,11 @@ namespace ArchiveViewer
 			ImGui::End();
 		}
 		
+		bool openArchiveFileDialog = false;
 		ImGui::Begin("ArchiveViewer", isActive);
 		if (ImGui::Button("Open Archive"))
 		{
-			ImGui::OpenPopup("Open File");
+			openArchiveFileDialog = true;
 		}
 		if (s_curArchiveName[0])
 		{
@@ -554,35 +551,39 @@ namespace ArchiveViewer
 			}
 		}
 
-		if (s_fileDialog.showOpenFileDialog("Open File", ImVec2(scaleUi(600), scaleUi(300)), ".gob,.GOB,.lfd,.LFD,.lab,.LAB"))
+		if (openArchiveFileDialog)
 		{
-			strcpy(s_curArchiveFile, s_fileDialog.selected_fn.c_str());
-			FileUtil::getFileNameFromPath(s_curArchiveFile, s_curArchiveName, true);
-
-			char extension[TFE_MAX_PATH];
-			FileUtil::getFileExtension(s_curArchiveName, extension);
-
-			ArchiveType type = ARCHIVE_COUNT;
-			if (strcasecmp(extension, "gob") == 0) { type = ARCHIVE_GOB; }
-			else if (strcasecmp(extension, "lfd") == 0) { type = ARCHIVE_LFD; }
-			else if (strcasecmp(extension, "lab") == 0) { type = ARCHIVE_LAB; }
-			else { assert(0); }
-
-			s_curArchive = Archive::getArchive(type, s_curArchiveName, s_curArchiveFile);
-			s_currentFile = 0;
-			s_showFile = false;
-			s_fileType = TYPE_COUNT;
-
-			TFE_AssetSystem::setCustomArchive(s_curArchive);
-			// All assets need to be unloaded when setting up a custom archive since they may have the same names
-			// as the vanilla assets.
-			unloadAssets();
-			
-			const u32 fileCount = s_curArchive->getFileCount();
-			s_items.resize(fileCount);
-			for (u32 i = 0; i < fileCount; i++)
+			FileResult res = TFE_Ui::openFileDialog("Open Archive", TFE_Paths::getPath(PATH_SOURCE_DATA), { "Gob Archive", "*.gob", "LFD Archive", "*.lfd", "LAB Archive", "*.lab" });
+			if (!res.empty() && !res[0].empty())
 			{
-				s_items[i] = s_curArchive->getFileName(i);
+				strcpy(s_curArchiveFile, res[0].c_str());
+				FileUtil::getFileNameFromPath(s_curArchiveFile, s_curArchiveName, true);
+
+				char extension[TFE_MAX_PATH];
+				FileUtil::getFileExtension(s_curArchiveName, extension);
+
+				ArchiveType type = ARCHIVE_COUNT;
+				if (strcasecmp(extension, "gob") == 0) { type = ARCHIVE_GOB; }
+				else if (strcasecmp(extension, "lfd") == 0) { type = ARCHIVE_LFD; }
+				else if (strcasecmp(extension, "lab") == 0) { type = ARCHIVE_LAB; }
+				else { assert(0); }
+
+				s_curArchive = Archive::getArchive(type, s_curArchiveName, s_curArchiveFile);
+				s_currentFile = 0;
+				s_showFile = false;
+				s_fileType = TYPE_COUNT;
+
+				TFE_AssetSystem::setCustomArchive(s_curArchive);
+				// All assets need to be unloaded when setting up a custom archive since they may have the same names
+				// as the vanilla assets.
+				unloadAssets();
+
+				const u32 fileCount = s_curArchive->getFileCount();
+				s_items.resize(fileCount);
+				for (u32 i = 0; i < fileCount; i++)
+				{
+					s_items[i] = s_curArchive->getFileName(i);
+				}
 			}
 		}
 

@@ -34,6 +34,10 @@ imGUI Markdown
 [https://github.com/juliettef/imgui_markdown](https://github.com/juliettef/imgui_markdown)
 License: ZLIB
 
+Portal File Dialogs
+[https://github.com/samhocevar/portable-file-dialogs](https://github.com/samhocevar/portable-file-dialogs)
+License: [WTFPL](https://github.com/samhocevar/portable-file-dialogs/blob/master/COPYING)
+
 **Geometry**
 fast-poly2tri - v1.0
 Rewrite of the poly2tri library [https://github.com/jhasse/poly2tri](https://github.com/jhasse/poly2tri) by Unspongeful (@unspongeful).

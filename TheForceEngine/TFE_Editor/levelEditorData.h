@@ -276,6 +276,7 @@ namespace LevelEditorData
 
 	// Add a new sector.
 	void addNewSector(const EditorSector& newSector, EditorTexture* floorTex, EditorTexture* ceilTex, EditorTexture* wallTex);
+	void addNewSectorFullCopy(const EditorSector& newSector);
 
 	// Update any sectors that have been flagged. This handles re-triangulation and any other updates needed for rendering.
 	void updateSectors();

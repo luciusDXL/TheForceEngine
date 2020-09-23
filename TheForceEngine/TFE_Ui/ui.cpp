@@ -1,8 +1,11 @@
 #include <TFE_Ui/ui.h>
+#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/fileutil.h>
 
 #include "imGUI/imgui.h"
 #include "imGUI/imgui_impl_sdl.h"
 #include "imGUI/imgui_impl_opengl3.h"
+#include "portable-file-dialogs.h"
 #include "markdown.h"
 #include <SDL.h>
 #include <GL/glew.h>
@@ -45,6 +48,13 @@ bool init(void* window, void* context, s32 uiScale)
 	
 	TFE_Markdown::init(f32(16 * s_uiScale / 100));
 
+	// Initialize file dialogs.
+	if (!pfd::settings::available())
+	{
+		// TODO: Log error
+		return false;
+	}
+	
 	return true;
 }
 
@@ -86,23 +96,54 @@ void render()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-// TODO: Fill in stubs.
-// see https://github.com/samhocevar/portable-file-dialogs
-FileResult openFileDialog(const char* title, const char* initPath, const char** filters/* = nullptr*/, bool multiSelect/* = false*/)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// General TFE tries to keep paths consistently using forward slashes for readability, consistency and
+// generally they work equally well on Linux, Mac and Windows.
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+// *However* some specific APIs (usually of the Win32 variety) require backslashes.
+// So FileUtil::convertToOSPath() must be used with initial paths to convert to the correct slash type.
+// This can be a bit of a waste but I'd rather have consistent paths through most of the application
+// and restrict the ugliness to as small an area as possible.
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+FileResult openFileDialog(const char* title, const char* initPath, std::vector<std::string> const &filters/* = { "All Files", "*" }*/, bool multiSelect/* = false*/)
 {
-	FileResult result;
-	return result;
+	char initPathOS[TFE_MAX_PATH] = "";
+	if (initPath)
+	{
+		FileUtil::convertToOSPath(initPath, initPathOS);
+	}
+
+	return pfd::open_file(title, initPathOS, filters, multiSelect).result();
 }
 
 FileResult directorySelectDialog(const char* title, const char* initPath, bool forceInitPath/* = false*/)
 {
+	char initPathOS[TFE_MAX_PATH] = "";
+	if (initPath)
+	{
+		FileUtil::convertToOSPath(initPath, initPathOS);
+	}
+
 	FileResult result;
+	std::string res = pfd::select_folder(title, initPathOS).result();
+	result.push_back(res);
+
 	return result;
 }
 
-const char* saveFileDialog(const char* title, const char* initPath, const char** filters/* = nullptr*/, bool forceOverwrite/* = false*/)
+FileResult saveFileDialog(const char* title, const char* initPath, std::vector<std::string> filters/* = { "All Files", "*" }*/, bool forceOverwrite/* = false*/)
 {
-	return nullptr;
+	char initPathOS[TFE_MAX_PATH] = "";
+	if (initPath)
+	{
+		FileUtil::convertToOSPath(initPath, initPathOS);
+	}
+
+	FileResult result;
+	std::string res = pfd::save_file(title, initPathOS, filters, !forceOverwrite).result();
+	result.push_back(res);
+
+	return result;
 }
 
 }

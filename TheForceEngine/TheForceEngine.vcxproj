@@ -364,7 +364,6 @@
     <ClInclude Include="TFE_Ui\imGUI\Dirent\dirent.h" />
     <ClInclude Include="TFE_Ui\imGUI\imconfig.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui.h" />
-    <ClInclude Include="TFE_Ui\imGUI\imgui_file_browser.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui_impl_opengl3.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui_impl_sdl.h" />
     <ClInclude Include="TFE_Ui\imGUI\imgui_internal.h" />
@@ -372,6 +371,7 @@
     <ClInclude Include="TFE_Ui\imGUI\imstb_textedit.h" />
     <ClInclude Include="TFE_Ui\imGUI\imstb_truetype.h" />
     <ClInclude Include="TFE_Ui\markdown.h" />
+    <ClInclude Include="TFE_Ui\portable-file-dialogs.h" />
     <ClInclude Include="TFE_Ui\ui.h" />
     <ClInclude Include="TFE_WeaponSystem\weapons.h" />
     <ClInclude Include="TFE_WeaponSystem\weaponSystem.h" />
@@ -503,7 +503,6 @@
     <ClCompile Include="TFE_Ui\imGUI\imgui.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_demo.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_draw.cpp" />
-    <ClCompile Include="TFE_Ui\imGUI\imgui_file_browser.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_impl_opengl3.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_impl_sdl.cpp" />
     <ClCompile Include="TFE_Ui\imGUI\imgui_widgets.cpp" />

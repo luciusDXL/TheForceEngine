@@ -340,6 +340,80 @@ namespace LevelEditorData
 		dstTex->tex = srcTex;
 	}
 
+	// In this case, newSector has the correct textures already assigned.
+	void addNewSectorFullCopy(const EditorSector& newSector)
+	{
+		const size_t sectorCount = s_editorLevel.sectors.size() + 1;
+		s_editorLevel.sectors.resize(sectorCount);
+
+		EditorSector* dst = s_editorLevel.sectors.data() + (sectorCount - 1);
+
+		dst->id = sectorCount - 1;
+		dst->objects.clear();
+		dst->name[0] = 0;
+
+		dst->ambient = newSector.ambient;
+		// Floor Texture
+		dst->floorTexture = newSector.floorTexture;
+		// Ceiling Texture
+		dst->ceilTexture = newSector.ceilTexture;
+
+		dst->floorAlt = newSector.floorAlt;
+		dst->ceilAlt = newSector.ceilAlt;
+		dst->secAlt = newSector.secAlt;
+		dst->layer = newSector.layer;
+		dst->infType = INF_NONE;
+		dst->flags[0] = newSector.flags[0];
+		dst->flags[1] = newSector.flags[1];
+		dst->flags[2] = newSector.flags[2];
+
+		// Dynamically resizable, self-contained geometry data.
+		dst->walls.resize(newSector.walls.size());
+		dst->vertices.resize(newSector.vertices.size());
+
+		const EditorWall* srcWall = newSector.walls.data();
+		const Vec2f*      srcVtx = newSector.vertices.data();
+		memcpy(dst->vertices.data(), srcVtx, sizeof(Vec2f) * newSector.vertices.size());
+		EditorWall* dstWall = dst->walls.data();
+
+		for (u32 w = 0; w < (u32)newSector.walls.size(); w++, srcWall++, dstWall++)
+		{
+			dstWall->mid = newSector.walls[w].mid;
+			dstWall->top = newSector.walls[w].top;
+			dstWall->bot = newSector.walls[w].bot;
+			dstWall->sign = newSector.walls[w].sign;
+
+			dstWall->i0 = srcWall->i0;
+			dstWall->i1 = srcWall->i1;
+			dstWall->adjoin = srcWall->adjoin;
+			dstWall->walk = srcWall->walk;
+			dstWall->mirror = srcWall->mirror;
+			dstWall->light = newSector.walls[w].light;
+			dstWall->infType = newSector.walls[w].infType;
+			dstWall->infItem = newSector.walls[w].infItem;
+			dstWall->flags[0] = newSector.walls[w].flags[0];
+			dstWall->flags[1] = newSector.walls[w].flags[1];
+			dstWall->flags[2] = newSector.walls[w].flags[2];
+			dstWall->flags[3] = 0;
+		}
+
+		// Compute sector bounds
+		dst->aabb[0] = { srcVtx[0].x, newSector.floorAlt, srcVtx[0].z };
+		dst->aabb[1] = { srcVtx[0].x, newSector.ceilAlt,  srcVtx[0].z };
+		for (u32 v = 1; v < (u32)newSector.vertices.size(); v++)
+		{
+			dst->aabb[0].x = std::min(dst->aabb[0].x, newSector.vertices[v].x);
+			dst->aabb[0].z = std::min(dst->aabb[0].z, newSector.vertices[v].z);
+
+			dst->aabb[1].x = std::max(dst->aabb[1].x, newSector.vertices[v].x);
+			dst->aabb[1].z = std::max(dst->aabb[1].z, newSector.vertices[v].z);
+		}
+
+		// Polygon data.
+		triangulateSector(dst, &dst->triangles);
+		dst->needsUpdate = false;
+	}
+
 	void addNewSector(const EditorSector& newSector, EditorTexture* floorTex, EditorTexture* ceilTex, EditorTexture* wallTex)
 	{
 		const size_t sectorCount = s_editorLevel.sectors.size() + 1;

@@ -13,8 +13,6 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_Game/gameLoop.h>
-
-#include <TFE_Ui/imGUI/imgui_file_browser.h>
 #include <TFE_Ui/imGUI/imgui.h>
 
 namespace TFE_FrontEndUI
@@ -131,7 +129,6 @@ namespace TFE_FrontEndUI
 	static ConfigTab s_configTab;
 
 	static bool s_consoleActive = false;
-	static imgui_addons::ImGuiFileBrowser s_fileDialog;
 	static bool s_relativeMode;
 	static bool s_restartGame;
 
@@ -224,8 +221,6 @@ namespace TFE_FrontEndUI
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load title screen button images.");
 		}
-
-		s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
 				
 		// Setup menu item callbacks
 		s_menuItemselected[0] = menuItem_Start;
@@ -634,6 +629,8 @@ namespace TFE_FrontEndUI
 		TFE_Settings_Game* darkForces = TFE_Settings::getGameSettings("Dark Forces");
 		TFE_Settings_Game* outlaws = TFE_Settings::getGameSettings("Outlaws");
 
+		s32 browseWinOpen = -1;
+		
 		//////////////////////////////////////////////////////
 		// Source Game Data
 		//////////////////////////////////////////////////////
@@ -645,14 +642,14 @@ namespace TFE_FrontEndUI
 		ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024); ImGui::SameLine();
 		if (ImGui::Button("Browse##DarkForces"))
 		{
-			ImGui::OpenPopup("Select DARK.EXE or DARK.GOB");
+			browseWinOpen = 0;
 		}
 
 		ImGui::Text("Outlaws:"); ImGui::SameLine(100);
 		ImGui::InputText("##OutlawsSource", outlaws->sourcePath, 1024); ImGui::SameLine();
 		if (ImGui::Button("Browse##Outlaws"))
 		{
-			ImGui::OpenPopup("Select OUTLAWS.EXE or OUTLAWS.LAB");
+			browseWinOpen = 1;
 		}
 		ImGui::Separator();
 
@@ -673,42 +670,58 @@ namespace TFE_FrontEndUI
 		ImGui::Combo("##Current Game", &s_gameIndex, c_games, IM_ARRAYSIZE(c_games));
 
 		// File dialogs...
-		char exePath[TFE_MAX_PATH];
-		char filePath[TFE_MAX_PATH];
-		if (s_fileDialog.showOpenFileDialog("Select DARK.EXE or DARK.GOB", ImVec2(600, 300), ".EXE,.exe,.GOB,.gob"))
+		if (browseWinOpen >= 0)
 		{
-			strcpy(exePath, s_fileDialog.selected_fn.c_str());
-			FileUtil::getFilePath(exePath, filePath);
+			char exePath[TFE_MAX_PATH];
+			char filePath[TFE_MAX_PATH];
+			const char* games[]=
+			{
+				"Select DARK.EXE or DARK.GOB",
+				"Select OUTLAWS.EXE or OUTLAWS.LAB"
+			};
+			const std::vector<std::string> filters[]=
+			{
+				{ "Executable", "*.exe", "GOB Archive", "*.gob" },
+				{ "Executable", "*.exe", "LAB Archive", "*.lab" },
+			};
 
-			// Before accepting this path, verify that some of the required files are here...
-			char testFile[TFE_MAX_PATH];
-			sprintf(testFile, "%sDARK.GOB", filePath);
-			if (FileUtil::exists(testFile))
+			FileResult res = TFE_Ui::openFileDialog(games[browseWinOpen], DEFAULT_PATH, filters[browseWinOpen]);
+			if (!res.empty() && !res[0].empty())
 			{
-				strcpy(darkForces->sourcePath, filePath);
-				TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
-			}
-			else
-			{
-				ImGui::OpenPopup("Invalid Source Data");
-			}
-		}
-		else if (s_fileDialog.showOpenFileDialog("Select OUTLAWS.EXE or OUTLAWS.LAB", ImVec2(600, 300), ".EXE,.exe,.LAB,.lab"))
-		{
-			strcpy(exePath, s_fileDialog.selected_fn.c_str());
-			FileUtil::getFilePath(exePath, filePath);
+				strcpy(exePath, res[0].c_str());
+				FileUtil::getFilePath(exePath, filePath);
+				FileUtil::fixupPath(filePath);
 
-			// Before accepting this path, verify that some of the required files are here...
-			char testFile[TFE_MAX_PATH];
-			sprintf(testFile, "%sOutlaws.lab", filePath);
-			if (FileUtil::exists(testFile))
-			{
-				strcpy(outlaws->sourcePath, filePath);
-				// TFE_Paths::setPath(PATH_SOURCE_DATA, outlaws->sourcePath);
-			}
-			else
-			{
-				ImGui::OpenPopup("Invalid Source Data");
+				if (browseWinOpen == 0)
+				{
+					// Before accepting this path, verify that some of the required files are here...
+					char testFile[TFE_MAX_PATH];
+					sprintf(testFile, "%sDARK.GOB", filePath);
+					if (FileUtil::exists(testFile))
+					{
+						strcpy(darkForces->sourcePath, filePath);
+						TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+					}
+					else
+					{
+						ImGui::OpenPopup("Invalid Source Data");
+					}
+				}
+				else if (browseWinOpen == 0)
+				{
+					// Before accepting this path, verify that some of the required files are here...
+					char testFile[TFE_MAX_PATH];
+					sprintf(testFile, "%sOutlaws.lab", filePath);
+					if (FileUtil::exists(testFile))
+					{
+						strcpy(outlaws->sourcePath, filePath);
+						// TFE_Paths::setPath(PATH_SOURCE_DATA, outlaws->sourcePath);
+					}
+					else
+					{
+						ImGui::OpenPopup("Invalid Source Data");
+					}
+				}
 			}
 		}
 
@@ -971,14 +984,6 @@ namespace TFE_FrontEndUI
 		s_subUI = FEUI_CONFIG;
 		s_configTab = CONFIG_GAME;
 
-		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
-		{
-			s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_SOURCE_DATA));
-		}
-		else
-		{
-			s_fileDialog.setCurrentPath(TFE_Paths::getPath(PATH_PROGRAM));
-		}
 		pickCurrentResolution();
 	}
 

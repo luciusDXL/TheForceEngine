@@ -46,7 +46,6 @@
 #include <TFE_Polygon/polygon.h>
 
 // UI
-#include <TFE_Ui/imGUI/imgui_file_browser.h>
 #include <TFE_Ui/imGUI/imgui.h>
 
 // Game
@@ -302,6 +301,8 @@ namespace LevelEditor
 	bool editInsertVertex2d(Vec2f worldPos);
 	bool editInsertVertex2d(Vec2f worldPos, s32 sectorId, s32 wallId);
 	void clearNewSector();
+
+	void splitSector(EditorSector* sector, Vec2f v0, Vec2f v1, u32 insideVertexCount = 0, const Vec2f* insideVtx = nullptr);
 
 	void* loadGpuImage(const char* localPath)
 	{
@@ -4784,7 +4785,7 @@ namespace LevelEditor
 		}
 		else if (TFE_Input::keyPressed(KEY_DELETE) && s_selectedSector >= 0)
 		{
-			deleteSector(s_levelData->sectors.data() + s_selectedEntitySector);
+			deleteSector(s_levelData->sectors.data() + s_selectedSector);
 		}
 		else
 		{
@@ -5033,7 +5034,7 @@ namespace LevelEditor
 	{
 		// Delete sectors.
 		u32 sectorCount = (u32)s_levelData->sectors.size();
-		for (u32 s = sector->id; s < sectorCount; s++)
+		for (u32 s = sector->id; s < sectorCount - 1; s++)
 		{
 			s_levelData->sectors[s] = s_levelData->sectors[s + 1];
 			s_levelData->sectors[s].id = s;
@@ -5068,6 +5069,319 @@ namespace LevelEditor
 		// Clear selection.
 		s_selectedWall = -1;
 		s_selectedSector = -1;
+		LevelEditorData::updateSectors();
+	}
+
+	bool isPointOnWallOrVertex(const Vec2f* point, const EditorSector* sector, s32* wallId)
+	{
+		const u32 count = (u32)sector->walls.size();
+		const EditorWall* wall = sector->walls.data();
+		const Vec2f* vtx = sector->vertices.data();
+		const f32 eps = 0.01f;
+		const f32 epsSq = eps * eps;
+		for (u32 w = 0; w < count; w++, wall++)
+		{
+			// first check vertex 0.
+			if (TFE_Math::distanceSq(point, &vtx[wall->i0]) < epsSq)
+			{
+				*wallId = w;
+				return true;
+			}
+
+			// then check the line segment.
+			Vec2f closest;
+			Geometry::closestPointOnLineSegment(vtx[wall->i0], vtx[wall->i1], *point, &closest);
+			if (TFE_Math::distanceSq(point, &closest) < epsSq)
+			{
+				*wallId = w;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	s32 splitSide(const Vec2f& v0, const Vec2f& normal, const Vec2f& point)
+	{
+		const Vec2f offset = { point.x - v0.x, point.z - v0.z };
+		return (offset.x*normal.x + offset.z*normal.z) > -0.005f ? 0 : 1;
+	}
+
+	u16 addVertex(const Vec2f& vtx, std::vector<Vec2f>& list)
+	{
+		// Just loop through the vertices for now.
+		const u32 count = (u32)list.size();
+		const Vec2f* vtxList = list.data();
+		for (u32 v = 0; v < count; v++)
+		{
+			f32 dx = fabsf(vtx.x - vtxList[v].x);
+			f32 dz = fabsf(vtx.z - vtxList[v].z);
+			if (dx < 0.01f && dz < 0.01f)
+			{
+				return u16(v);
+			}
+		}
+
+		u16 index = u16(count);
+		list.push_back(vtx);
+		return index;
+	}
+
+	void splitSector(EditorSector* sector, Vec2f v0, Vec2f v1, u32 insideVertexCount, const Vec2f* insideVtx)
+	{
+		EditorSector sec0 = *sector;
+		EditorSector sec1 = *sector;
+		sec0.vertices.clear();
+		sec0.walls.clear();
+		sec0.objects.clear();
+
+		sec1.vertices.clear();
+		sec1.walls.clear();
+		sec1.objects.clear();
+				
+		const u32 wallCount = (u32)sector->walls.size();
+		const Vec2f* vtx = sector->vertices.data();
+
+		s32 splitWallId0 = -1;
+		s32 splitWallId1 = -1;
+
+		// Find out which wall that v0 is attached to.
+		// Then find out if the splitting line is aligned with the wall or going the opposite direction.
+		EditorWall* wall = sector->walls.data();
+		/*
+		for (u32 w = 0; w < wallCount; w++, wall++)
+		{
+			Vec2f it;
+			Geometry::closestPointOnLineSegment(vtx[wall->i0], vtx[wall->i1], v0, &it);
+			if (TFE_Math::distanceSq(&v0, &it) <= 0.01f * 0.01f)
+			{
+				// If it is going the opposite direction, then flip the splitting line (and interior points).
+				//f32 alignment = (v1.x - v0.x)*(vtx[wall->i1].x - it.x) + (v1.z - v0.z)*(vtx[wall->i1].z - it.z);
+				f32 alignment = (v1.x - it.x)*(vtx[wall->i1].z - it.z) - (vtx[wall->i1].x - it.x)*(v1.z - it.z);
+				if (alignment < 0.0f)
+				{
+					std::swap(v0.x, v1.x);
+					std::swap(v0.z, v1.z);
+				}
+				break;
+			}
+		}
+		*/
+
+		// Normal = {-dz, dx}
+		Vec2f normal = { v0.z - v1.z, v1.x - v0.x };
+		normal = TFE_Math::normalize(&normal);
+
+		if (insideVertexCount == 0)
+		{
+			// The most basic version...
+			// Determine which walls are on one side or the other.
+			// Determine which walls need to be split.
+			wall = sector->walls.data();
+			for (u32 w = 0; w < wallCount; w++, wall++)
+			{
+				const Vec2f& w0 = vtx[wall->i0];
+				const Vec2f& w1 = vtx[wall->i1];
+
+				const s32 side0 = splitSide(v0, normal, w0);
+				const s32 side1 = splitSide(v0, normal, w1);
+								
+				if (side0 == 0 && side1 == 0)
+				{
+					// Add to sector 0.
+					EditorWall newWall = sector->walls[w];
+					newWall.i0 = addVertex(w0, sec0.vertices);
+					newWall.i1 = addVertex(w1, sec0.vertices);
+
+					if (newWall.adjoin >= 0)
+					{
+						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].mirror = sec0.walls.size();
+					}
+					sec0.walls.push_back(newWall);
+				}
+				else if (side0 == 1 && side1 == 1)
+				{
+					// Add to sector 1.
+					EditorWall newWall = sector->walls[w];
+					newWall.i0 = addVertex(w0, sec1.vertices);
+					newWall.i1 = addVertex(w1, sec1.vertices);
+
+					if (newWall.adjoin >= 0)
+					{
+						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].mirror = sec1.walls.size();
+						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].adjoin = s_levelData->sectors.size();
+					}
+					sec1.walls.push_back(newWall);
+				}
+				else
+				{
+					// Find the intersection, this point gets added to both sides.
+					f32 s, t;
+					Geometry::lineSegmentIntersect(&w0, &w1, &v0, &v1, &s, &t);
+
+					// Find the intersection, this point gets added to both sides.
+					s = std::max(0.0f, std::min(1.0f, s));
+					const Vec2f it = { w0.x + s*(w1.x - w0.x), w0.z + s*(w1.z - w0.z) };
+
+					s32 splitVtxIdx;
+					f32 dx = fabsf(v0.x - it.x);
+					f32 dz = fabsf(v0.z - it.z);
+					if (dx < 0.01f && dz < 0.01f)
+					{
+						splitVtxIdx = 0;
+					}
+					else
+					{
+						splitVtxIdx = 1;
+					}
+
+					// Add the first vertex to the correct side.
+					EditorWall newWall0 = sector->walls[w];
+					EditorWall newWall1 = sector->walls[w];
+					if (side0 == 0)
+					{
+						newWall0.i0 = addVertex(w0, sec0.vertices);
+						newWall0.i1 = addVertex(it, sec0.vertices);
+
+						newWall1.i0 = addVertex(it, sec1.vertices);
+						newWall1.i1 = addVertex(w1, sec1.vertices);
+
+						if (sector->walls[w].adjoin >= 0)
+						{
+							// we need to split the mirror as well and then match up the adjoins.
+							EditorSector* adjoin = &s_levelData->sectors[sector->walls[w].adjoin];
+							s32 mirror = sector->walls[w].mirror;
+
+							// Split the mirror edge: i0 -> it -> i1
+							// mirror: i0 -> it; mirror + 1: it -> i1
+							s32 adjoinWallCount = (s32)adjoin->walls.size();
+							adjoin->walls.resize(adjoin->walls.size() + 1);
+							for (s32 wA = adjoinWallCount; wA > mirror; wA--)
+							{
+								adjoin->walls[wA] = adjoin->walls[wA - 1];
+							}
+							adjoin->walls[mirror].i1 = addVertex(it, adjoin->vertices);
+							adjoin->walls[mirror + 1].i0 = adjoin->walls[mirror].i1;
+
+							// Setup mirrors.
+							// Which side is which?
+							if (splitSide(v0, normal, adjoin->vertices[adjoin->walls[mirror].i0]) == 0)
+							{
+								adjoin->walls[mirror].mirror = sec0.walls.size();
+								adjoin->walls[mirror].adjoin = sector->id;
+								adjoin->walls[mirror].walk = sector->id;
+								newWall0.mirror = mirror;
+
+								adjoin->walls[mirror + 1].mirror = sec1.walls.size();
+								adjoin->walls[mirror + 1].adjoin = s_levelData->sectors.size();
+								adjoin->walls[mirror + 1].walk = s_levelData->sectors.size();
+								newWall1.mirror = mirror + 1;
+							}
+							else
+							{
+								adjoin->walls[mirror].mirror = sec1.walls.size();
+								adjoin->walls[mirror].adjoin = s_levelData->sectors.size();
+								adjoin->walls[mirror].walk = s_levelData->sectors.size();
+								newWall1.mirror = mirror;
+
+								adjoin->walls[mirror + 1].mirror = sec0.walls.size();
+								adjoin->walls[mirror + 1].adjoin = sector->id;
+								adjoin->walls[mirror + 1].walk = sector->id;
+								newWall0.mirror = mirror + 1;
+							}
+						}
+
+						sec0.walls.push_back(newWall0);
+						sec1.walls.push_back(newWall1);
+
+						// Add the wall from this intersection to the previous point.
+						newWall0.i0 = newWall0.i1;
+						newWall0.i1 = addVertex(splitVtxIdx == 0 ? v1 : v0, sec0.vertices);
+						newWall0.adjoin = s_levelData->sectors.size();
+						newWall0.walk = newWall0.adjoin;
+						newWall0.mirror = -1; // Will be filled out at the end.
+						splitWallId0 = (s32)sec0.walls.size();
+						sec0.walls.push_back(newWall0);
+					}
+					else
+					{
+						newWall0.i0 = addVertex(it, sec0.vertices);
+						newWall0.i1 = addVertex(w1, sec0.vertices);
+
+						newWall1.i0 = addVertex(w0, sec1.vertices);
+						newWall1.i1 = addVertex(it, sec1.vertices);
+
+						if (sector->walls[w].adjoin >= 0)
+						{
+							// we need to split the mirror as well and then match up the adjoins.
+							EditorSector* adjoin = &s_levelData->sectors[sector->walls[w].adjoin];
+							s32 mirror = sector->walls[w].mirror;
+
+							// Split the mirror edge: i0 -> it -> i1
+							// mirror: i0 -> it; mirror + 1: it -> i1
+							s32 adjoinWallCount = (s32)adjoin->walls.size();
+							adjoin->walls.resize(adjoin->walls.size() + 1);
+							for (s32 wA = adjoinWallCount; wA > mirror; wA--)
+							{
+								adjoin->walls[wA] = adjoin->walls[wA - 1];
+							}
+							adjoin->walls[mirror].i1 = addVertex(it, adjoin->vertices);
+							adjoin->walls[mirror + 1].i0 = adjoin->walls[mirror].i1;
+
+							// Setup mirrors.
+							// Which side is which?
+							if (splitSide(v0, normal, adjoin->vertices[adjoin->walls[mirror].i0]) == 0)
+							{
+								adjoin->walls[mirror].mirror = sec0.walls.size();
+								adjoin->walls[mirror].adjoin = sector->id;
+								adjoin->walls[mirror].walk = sector->id;
+								newWall0.mirror = mirror;
+
+								adjoin->walls[mirror + 1].mirror = sec1.walls.size();
+								adjoin->walls[mirror + 1].adjoin = s_levelData->sectors.size();
+								adjoin->walls[mirror + 1].walk = s_levelData->sectors.size();
+								newWall1.mirror = mirror + 1;
+							}
+							else
+							{
+								adjoin->walls[mirror].mirror = sec1.walls.size();
+								adjoin->walls[mirror].adjoin = s_levelData->sectors.size();
+								adjoin->walls[mirror].walk = s_levelData->sectors.size();
+								newWall1.mirror = mirror;
+
+								adjoin->walls[mirror + 1].mirror = sec0.walls.size();
+								adjoin->walls[mirror + 1].adjoin = sector->id;
+								adjoin->walls[mirror + 1].walk = sector->id;
+								newWall0.mirror = mirror + 1;
+							}
+						}
+
+						sec0.walls.push_back(newWall0);
+						sec1.walls.push_back(newWall1);
+
+						// Add the wall from this intersection to the previous point.
+						newWall1.i0 = newWall1.i1;
+						newWall1.i1 = addVertex(splitVtxIdx == 0 ? v1 : v0, sec1.vertices);
+						newWall1.adjoin = sector->id;
+						newWall1.walk = newWall1.adjoin;
+						newWall1.mirror = -1;	// Will be filled out at the end.
+						splitWallId1 = (s32)sec1.walls.size();
+						sec1.walls.push_back(newWall1);
+					}
+				}
+			}
+		}
+		else
+		{
+		}
+
+		if (splitWallId0 >= 0) { sec0.walls[splitWallId0].mirror = splitWallId1; }
+		if (splitWallId1 >= 0) { sec1.walls[splitWallId1].mirror = splitWallId0; }
+
+		*sector = sec0;
+		sector->needsUpdate = true;
+
+		LevelEditorData::addNewSectorFullCopy(sec1);
 		LevelEditorData::updateSectors();
 	}
 
@@ -5113,15 +5427,28 @@ namespace LevelEditor
 			if (!aabbOverlap2d(srcAabb, neighbor->aabb)) { continue; }
 
 			u32 vSrcInside = 0;
+			u32 attachedCount = 0;
+			u32 insideCount = 0;
+			s32 wallAttach[1024];
+			s32 inside[1024];
 			for (u32 vSrc = 0; vSrc < srcVertexCount; vSrc++)
 			{
 				// See if the point is inside the sector AABB.
 				if (!pointInAABB2d(&vtx[vSrc], neighbor->aabb)) { break; }
 
 				// Test if the point is inside the sector polygon.
-				if (!Geometry::pointInSector(&vtx[vSrc], (u32)neighbor->vertices.size(), neighbor->vertices.data(), (u32)neighbor->walls.size(), (u8*)neighbor->walls.data(), sizeof(EditorWall)))
+				s32 wallId;
+				if (isPointOnWallOrVertex(&vtx[vSrc], neighbor, &wallId))
+				{
+					wallAttach[attachedCount++] = vSrc;
+				}
+				else if (!Geometry::pointInSector(&vtx[vSrc], (u32)neighbor->vertices.size(), neighbor->vertices.data(), (u32)neighbor->walls.size(), (u8*)neighbor->walls.data(), sizeof(EditorWall)))
 				{
 					break;
+				}
+				else
+				{
+					inside[insideCount++] = vSrc;
 				}
 				vSrcInside++;
 			}
@@ -5131,43 +5458,122 @@ namespace LevelEditor
 			{
 				// TODO: We should verify that no edges of the new sector intersect edges of the neighbor sector.
 				// TODO: Check if any edges overlap edges with adjoins so they can be connected directly (i.e. making a staircase)
-				// TODO: Check if any edges overlap solid edges in the same sector, if so then this is really splitting the sector in two.
-
-				// For the first pass, keep it simple and assume it is a self contained interior sector.
-				// 1. Add new edges to the neighbor sector going in the *opposite* direction. This is a hole in the "neighbor" sector polygon.
-				// 2. Link up adjoins between the hole and the new sector.
-				std::vector<Vec2f>& srcVtx = s_newSector.vertices;
-				const u32 baseVertexIndex = (u32)neighbor->vertices.size();
-				const u32 baseWallIndex = (u32)neighbor->walls.size();
-				for (s32 v = 0; v < srcVertexCount; v++)
+				if (attachedCount > 1)
 				{
-					const s32 vRev = srcVertexCount - v - 1;
-					neighbor->vertices.push_back(srcVtx[vRev]);
+					// If the new shape is touching the parent sector in at least two places, then what we really want to do is split that sector.
+					// If there are two attachment points only - then we just spit along that edge.
+					// If there are at least two attachment points and some interior points, then the split edges will be between the two attachment points that
+					// surround the interior points and go through those interior points.
+					// If degenerate cases, just pick a single valid case and go with it (the mapper can always use undo if we get this wrong and then better
+					// specify the split.
 
-					EditorWall newWall = sector->walls[vRev];
-					newWall.i0 = baseVertexIndex + ((v > 0) ? (v - 1) : (srcVertexCount - 1));
-					newWall.i1 = baseVertexIndex + v;
-					newWall.adjoin = sector->id;
-					newWall.walk = sector->id;
-					newWall.mirror = vRev;
+					// Split the sector in two along the straight edge.
+					if (attachedCount == 2 && insideCount == 0)
+					{
+						// Copy the vertices.
+						Vec2f v0 = sector->vertices[0];
+						Vec2f v1 = sector->vertices[1];
 
-					sector->walls[v].adjoin = s;
-					sector->walls[v].walk = s;
-					sector->walls[v].mirror = baseWallIndex + srcVertexCount - v - 1;
+						// Delete the new sector.
+						s_levelData->sectors.resize(s_levelData->sectors.size() - 1);
 
-					neighbor->walls.push_back(newWall);
+						// Split the neighbor sector.
+						splitSector(neighbor, v0, v1);
+					}
+					// Split the sector in two with multiple interior adjoins.
+					else if (attachedCount == 2 && insideCount > 0)
+					{
+						// Copy the vertices.
+						Vec2f v0 = sector->vertices[wallAttach[0]];
+						Vec2f v1 = sector->vertices[wallAttach[1]];
+
+						Vec2f insideVtx[128];
+						u32 insideVertexCount = 0;
+						for (u32 v = 0; v < insideCount; v++)
+						{
+							if (inside[v] > wallAttach[0] && inside[v] < wallAttach[1])
+							{
+								insideVtx[insideVertexCount++] = sector->vertices[inside[v]];
+							}
+						}
+
+						// Delete the new sector.
+						s_levelData->sectors.resize(s_levelData->sectors.size() - 1);
+
+						// Split the neighbor sector.
+						splitSector(neighbor, v0, v1, insideVertexCount, insideVtx);
+					}
+					// Split the sector in two along a single edge, but we have to figure out what edge that is...
+					else if (attachedCount > 2 && insideCount == 0)
+					{
+					}
+					// Finally, the most complex case - split the sector in two with multiple interior adjoins, but we have to figure out which attachments/interior edges to use...
+					else if (attachedCount > 2 && insideCount > 0)
+					{
+					}
+					// If we get here then this is not cleanly resolvable, just return.
+					else
+					{
+						// Delete the new sector if it is invalid. This may happen when trying to split a sector but not getting the configuration right.
+						if (sector->vertices.size() < 3)
+						{
+							s_levelData->sectors.resize(s_levelData->sectors.size() - 1);
+						}
+						return;
+					}
 				}
-				// Copy outer sector attributes to the sub-sector.
-				sector->ambient = neighbor->ambient;
-				sector->flags[0] = neighbor->flags[0];
-				sector->flags[1] = neighbor->flags[1];
-				sector->flags[2] = neighbor->flags[2];
-				sector->floorAlt = neighbor->floorAlt;
-				sector->ceilAlt  = neighbor->ceilAlt;
-				sector->floorTexture = neighbor->floorTexture;
-				sector->ceilTexture  = neighbor->ceilTexture;
-				// The outer sector needs to be updated since new walls were added.
-				neighbor->needsUpdate = true;
+				else
+				{
+					// Delete the new sector if it is invalid. This may happen when trying to split a sector but not getting the configuration right.
+					if (sector->vertices.size() < 3)
+					{
+						s_levelData->sectors.resize(s_levelData->sectors.size() - 1);
+						return;
+					}
+
+					// The wall the vertex is sitting on should be split at that vertex. Otherwise there are graphical artifacts.
+					if (attachedCount == 1)
+					{
+						// TODO: Split the wall, see above.
+						// Note that if the attachment is already a vertex, such a split is unnecessary, so check that first.
+					}
+
+					// For the first pass, keep it simple and assume it is a self contained interior sector.
+					// 1. Add new edges to the neighbor sector going in the *opposite* direction. This is a hole in the "neighbor" sector polygon.
+					// 2. Link up adjoins between the hole and the new sector.
+					std::vector<Vec2f>& srcVtx = s_newSector.vertices;
+					const u32 baseVertexIndex = (u32)neighbor->vertices.size();
+					const u32 baseWallIndex = (u32)neighbor->walls.size();
+					for (s32 v = 0; v < srcVertexCount; v++)
+					{
+						const s32 vRev = srcVertexCount - v - 1;
+						neighbor->vertices.push_back(srcVtx[vRev]);
+
+						EditorWall newWall = sector->walls[vRev];
+						newWall.i0 = baseVertexIndex + ((v > 0) ? (v - 1) : (srcVertexCount - 1));
+						newWall.i1 = baseVertexIndex + v;
+						newWall.adjoin = sector->id;
+						newWall.walk = sector->id;
+						newWall.mirror = vRev;
+
+						sector->walls[v].adjoin = s;
+						sector->walls[v].walk = s;
+						sector->walls[v].mirror = baseWallIndex + srcVertexCount - v - 1;
+
+						neighbor->walls.push_back(newWall);
+					}
+					// Copy outer sector attributes to the sub-sector.
+					sector->ambient = neighbor->ambient;
+					sector->flags[0] = neighbor->flags[0];
+					sector->flags[1] = neighbor->flags[1];
+					sector->flags[2] = neighbor->flags[2];
+					sector->floorAlt = neighbor->floorAlt;
+					sector->ceilAlt = neighbor->ceilAlt;
+					sector->floorTexture = neighbor->floorTexture;
+					sector->ceilTexture = neighbor->ceilTexture;
+					// The outer sector needs to be updated since new walls were added.
+					neighbor->needsUpdate = true;
+				}
 				
 				// We don't need to check for wall overlaps since this is either a sub-sector or splitting a sector.
 				LevelEditorData::updateSectors();
@@ -5319,7 +5725,7 @@ namespace LevelEditor
 		}
 		else if (TFE_Input::mousePressed(MBUTTON_RIGHT) || TFE_Input::keyPressed(KEY_RETURN))
 		{
-			if (s_newSector.walls.size() >= 4)
+			if (s_newSector.walls.size() >= 3)
 			{
 				s_newSector.vertices.resize(s_newSector.vertices.size() - 1);
 
