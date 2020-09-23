@@ -15,6 +15,7 @@
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Input/input.h>
 #include <TFE_Asset/levelAsset.h>
@@ -26,6 +27,7 @@
 #include <TFE_InfSystem/infSystem.h>
 #include <TFE_LogicSystem/logicSystem.h>
 #include <TFE_WeaponSystem/weaponSystem.h>
+#include <TFE_Settings/settings.h>
 #include <assert.h>
 #include <vector>
 #include <algorithm>
@@ -267,7 +269,7 @@ namespace TFE_GameLoop
 		TFE_RenderCommon::enableNightVision(false);
 
 		TFE_View::init(level, renderer, w, h, false);
-		renderer->changeResolution(w, h);
+		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->asyncFramebuffer);
 
 		s_eyeHeight = c_standingEyeHeight;
 		s_height = c_standingHeight;
@@ -387,7 +389,7 @@ namespace TFE_GameLoop
 		TFE_RenderCommon::enableNightVision(false);
 			   			   
 		TFE_View::init(level, renderer, w, h, enableViewStats);
-		renderer->changeResolution(w, h);
+		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->asyncFramebuffer);
 
 		s_eyeHeight = c_standingEyeHeight;
 		s_height = c_standingHeight;
@@ -429,14 +431,20 @@ namespace TFE_GameLoop
 	void changeResolution(s32 width, s32 height)
 	{
 		u32 prevWidth, prevHeight;
+		bool curAsync = TFE_Settings::getGraphicsSettings()->asyncFramebuffer;
+		bool prevAsync = TFE_RenderBackend::getFrameBufferAsync();
 		s_renderer->getResolution(&prevWidth, &prevHeight);
-		if (width == prevWidth && height == prevHeight) { return; }
+		if (width == prevWidth && height == prevHeight && curAsync == prevAsync) { return; }
 
-		s_renderer->changeResolution(width, height);
-		TFE_View::changeResolution(width, height);
-		TFE_GameUi::updateUiResolution();
-		TFE_GameHud::init(s_renderer);
-		TFE_WeaponSystem::updateResolution();
+		s_renderer->changeResolution(width, height, curAsync);
+
+		if (width != prevWidth || height != prevHeight)
+		{
+			TFE_View::changeResolution(width, height);
+			TFE_GameUi::updateUiResolution();
+			TFE_GameHud::init(s_renderer);
+			TFE_WeaponSystem::updateResolution();
+		}
 	}
 
 	const ViewStats* getViewStats()

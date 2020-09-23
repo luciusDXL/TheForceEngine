@@ -1,8 +1,10 @@
 #include "../dynamicTexture.h"
+#include <TFE_System/system.h>
 #include <GL/glew.h>
 #include <assert.h>
 
 std::vector<u8> DynamicTexture::s_tempBuffer;
+#define SUPPORT_PBO (GLEW_VERSION_2_1 != 0)
 
 DynamicTexture::~DynamicTexture()
 {
@@ -14,6 +16,7 @@ bool DynamicTexture::create(u32 width, u32 height, u32 bufferCount, DynamicTexFo
 	m_width = width;
 	m_height = height;
 	m_format = format;
+
 	return changeBufferCount(bufferCount);
 }
 
@@ -37,7 +40,7 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 
 	const size_t bufferSize = m_width * m_height * (m_format == DTEX_RGBA8 ? 4 : 1);
 	s_tempBuffer.resize(bufferSize);
-	memset(s_tempBuffer.data(), 0, bufferSize);
+	memset(s_tempBuffer.data(), 0x80, bufferSize);
 
 	m_textures = new TextureGpu*[m_bufferCount];
 	for (u32 i = 0; i < m_bufferCount; i++)
@@ -49,17 +52,57 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 		m_textures[i]->update(s_tempBuffer.data(), bufferSize);
 	}
 
+	if (SUPPORT_PBO)
+	{
+		m_stagingBuffers = new u32[m_bufferCount];
+		glGenBuffers(m_bufferCount, m_stagingBuffers);
+		for (u32 i = 0; i < m_bufferCount; i++)
+		{
+			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_stagingBuffers[i]);
+			glBufferData(GL_PIXEL_UNPACK_BUFFER, bufferSize, nullptr, GL_STREAM_DRAW);
+		}
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+	}
+
 	return m_textures && m_bufferCount;
 }
 
+#if 0
+void checkGlError(u32 line)
+{
+	GLenum err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		TFE_System::logWrite(LOG_ERROR, "RenderBackend", "Dynamic Texture Error: %u, line: %u", err, line);
+	}
+}
+#endif
+
 void DynamicTexture::update(const void* imageData, size_t size)
 {
-	// copy imageData to [m_writeBuffer]
-	m_textures[m_writeBuffer]->update(imageData, size);
-
 	// update buffer indices.
 	m_writeBuffer = (m_writeBuffer + 1) % m_bufferCount;
 	m_readBuffer = (m_readBuffer + 1) % m_bufferCount;
+
+	if (m_bufferCount == 1 || !SUPPORT_PBO)
+	{
+		// copy imageData to [m_writeBuffer]
+		m_textures[m_writeBuffer]->update(imageData, size);
+	}
+	else
+	{
+		// Async copy of data to staging buffer.
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_stagingBuffers[m_writeBuffer]);
+		glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, size, imageData);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+		// Copy of staging data to read buffer.
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_stagingBuffers[m_readBuffer]);
+		glBindTexture(GL_TEXTURE_2D, m_textures[m_readBuffer]->getHandle());
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
 }
 
 void DynamicTexture::freeBuffers()
@@ -69,5 +112,15 @@ void DynamicTexture::freeBuffers()
 		delete m_textures[i];
 	}
 	delete[] m_textures;
+
+	if (SUPPORT_PBO)
+	{
+		if (m_bufferCount)
+		{
+			glDeleteBuffers(m_bufferCount, m_stagingBuffers);
+		}
+		delete[] m_stagingBuffers;
+	}
+
 	m_bufferCount = 0;
 }

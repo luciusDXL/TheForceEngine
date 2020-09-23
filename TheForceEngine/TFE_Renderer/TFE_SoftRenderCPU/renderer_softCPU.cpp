@@ -26,6 +26,7 @@ TFE_SoftRenderCPU::TFE_SoftRenderCPU()
 	m_curPal = *TFE_Palette::getDefault256();
 	m_curColorMap = nullptr;
 	m_clearScreen = true;
+	m_asyncVirtualDisplay = false;
 }
 
 bool TFE_SoftRenderCPU::init()
@@ -60,17 +61,18 @@ void TFE_SoftRenderCPU::enablePalEffects(bool grayScale, bool green)
 	m_enableNightVision = green;
 }
 
-bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height)
+bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height, bool asyncVirtualDisplay)
 {
-	if (width == m_width && height == m_height) { return true; }
+	if (width == m_width && height == m_height && asyncVirtualDisplay == m_asyncVirtualDisplay) { return true; }
 
 	delete[] m_display;
 	delete[] m_display32;
 
 	m_width = width;
 	m_height = height;
+	m_asyncVirtualDisplay = asyncVirtualDisplay;
 
-	if (!TFE_RenderBackend::createVirtualDisplay(m_width, m_height, DMODE_4x3))
+	if (!TFE_RenderBackend::createVirtualDisplay(m_width, m_height, DMODE_4x3, asyncVirtualDisplay))
 	{
 		return false;
 	}

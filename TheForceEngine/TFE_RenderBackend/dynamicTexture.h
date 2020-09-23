@@ -17,7 +17,7 @@ enum DynamicTexFormat
 class DynamicTexture
 {
 public:
-	DynamicTexture() : m_bufferCount(0), m_readBuffer(0), m_writeBuffer(0), m_format(DTEX_RGBA8), m_textures(nullptr) {}
+	DynamicTexture() : m_bufferCount(0), m_readBuffer(0), m_writeBuffer(0), m_format(DTEX_RGBA8), m_textures(nullptr), m_stagingBuffers(nullptr) {}
 	~DynamicTexture();
 
 	bool create(u32 width, u32 height, u32 bufferCount, DynamicTexFormat format = DTEX_RGBA8);
@@ -25,7 +25,6 @@ public:
 	bool changeBufferCount(u32 newBufferCount, bool forceRealloc=false);
 
 	void update(const void* imageData, size_t size);
-	void signalRead();
 
 	inline const TextureGpu* getTexture() const { return m_textures[m_readBuffer]; }
 	inline u32 getWidth() const { return m_width; }
@@ -42,6 +41,7 @@ private:
 	DynamicTexFormat m_format;
 
 	TextureGpu** m_textures;
+	u32* m_stagingBuffers;
 
 	static std::vector<u8> s_tempBuffer;
 };

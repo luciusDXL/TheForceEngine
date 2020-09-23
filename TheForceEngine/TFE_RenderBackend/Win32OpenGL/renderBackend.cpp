@@ -33,6 +33,7 @@ namespace TFE_RenderBackend
 	static void* m_window;
 	static DynamicTexture* s_virtualDisplay = nullptr;
 	static u32 m_virtualWidth, m_virtualHeight;
+	static bool s_asyncFrameBuffer = true;
 	static DisplayMode m_displayMode;
 	static f32 s_clearColor[4] = { 0.0f };
 	static u32 s_rtWidth, s_rtHeight;
@@ -246,7 +247,7 @@ namespace TFE_RenderBackend
 	}
 
 	// virtual display
-	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode)
+	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode, bool asyncFramebuffer)
 	{
 		if (s_virtualDisplay)
 		{
@@ -256,16 +257,22 @@ namespace TFE_RenderBackend
 		m_virtualWidth = width;
 		m_virtualHeight = height;
 		m_displayMode = mode;
+		s_asyncFrameBuffer = asyncFramebuffer;
 
 		s_virtualDisplay = new DynamicTexture();
 		setupPostEffectChain();
 
-		return s_virtualDisplay->create(width, height, 3);
+		return s_virtualDisplay->create(width, height, s_asyncFrameBuffer ? 2 : 1);
 	}
 
 	void* getVirtualDisplayGpuPtr()
 	{
 		return (void*)(intptr_t)s_virtualDisplay->getTexture()->getHandle();
+	}
+
+	bool getFrameBufferAsync()
+	{
+		return s_asyncFrameBuffer;
 	}
 
 	void updateVirtualDisplay(const void* buffer, size_t size)

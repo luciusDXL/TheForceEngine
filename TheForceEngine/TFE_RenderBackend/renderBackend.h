@@ -66,8 +66,9 @@ namespace TFE_RenderBackend
 	void updateSettings();
 
 	// virtual display
-	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode = DMODE_STRETCH);
+	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode = DMODE_STRETCH, bool asyncFramebuffer = true);
 	void updateVirtualDisplay(const void* buffer, size_t size);
+	bool getFrameBufferAsync();
 	void* getVirtualDisplayGpuPtr();
 
 	// core gpu functionality for UI and editor.

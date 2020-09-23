@@ -266,7 +266,7 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 				s_gameUiInitRequired = false;
 			}
 
-			renderer->changeResolution(640, 480);
+			renderer->changeResolution(640, 480, TFE_Settings::getGraphicsSettings()->asyncFramebuffer);
 			TFE_GameUi::updateUiResolution();
 			TFE_Editor::enable(renderer);
 		}
@@ -284,7 +284,7 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 				s_gameUiInitRequired = false;
 			}
 			
-			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z);
+			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->asyncFramebuffer);
 			renderer->enableScreenClear(false);
 			TFE_Input::enableRelativeMode(true);
 			if (TFE_FrontEndUI::restartGame())
@@ -353,7 +353,7 @@ int main(int argc, char* argv[])
 
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
-	if (windowSettings->fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled.");    windowFlags |= WINFLAG_FULLSCREEN; }
+	if (windowSettings->fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled."); windowFlags |= WINFLAG_FULLSCREEN; }
 	if (s_vsync)      { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
 		
 	WindowState windowState =
