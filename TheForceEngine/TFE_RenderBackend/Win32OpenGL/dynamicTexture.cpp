@@ -67,36 +67,25 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 	return m_textures && m_bufferCount;
 }
 
-#if 0
-void checkGlError(u32 line)
-{
-	GLenum err = glGetError();
-	if (err != GL_NO_ERROR)
-	{
-		TFE_System::logWrite(LOG_ERROR, "RenderBackend", "Dynamic Texture Error: %u, line: %u", err, line);
-	}
-}
-#endif
-
 void DynamicTexture::update(const void* imageData, size_t size)
 {
-	// update buffer indices.
+	// Update buffer indices.
 	m_writeBuffer = (m_writeBuffer + 1) % m_bufferCount;
 	m_readBuffer = (m_readBuffer + 1) % m_bufferCount;
 
 	if (m_bufferCount == 1 || !SUPPORT_PBO)
 	{
-		// copy imageData to [m_writeBuffer]
+		// Copy imageData to [m_writeBuffer]
 		m_textures[m_writeBuffer]->update(imageData, size);
 	}
 	else
 	{
-		// Async copy of data to staging buffer.
+		// Async copy from CPU data to staging buffer [writeBuffer].
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_stagingBuffers[m_writeBuffer]);
 		glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, size, imageData);
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-		// Copy of staging data to read buffer.
+		// Copy from staging data to read buffer [readBuffer].
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_stagingBuffers[m_readBuffer]);
 		glBindTexture(GL_TEXTURE_2D, m_textures[m_readBuffer]->getHandle());
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
