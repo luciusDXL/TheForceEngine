@@ -1,6 +1,7 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/dynamicTexture.h>
 #include <TFE_RenderBackend/textureGpu.h>
+#include <TFE_RenderBackend/Win32OpenGL/openGL_Caps.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
@@ -80,6 +81,8 @@ namespace TFE_RenderBackend
 			printf("Failed to initialize GLEW");
 			return false;
 		}
+		OpenGL_Caps::queryCapabilities();
+		TFE_System::logWrite(LOG_MSG, "RenderBackend", "OpenGL Device Tier: %d", OpenGL_Caps::getDeviceTier());
 
 		TFE_Ui::init(window, context, 100);
 

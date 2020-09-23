@@ -1,12 +1,10 @@
 #include "../dynamicTexture.h"
+#include "openGL_Caps.h"
 #include <TFE_System/system.h>
 #include <GL/glew.h>
 #include <assert.h>
 
 std::vector<u8> DynamicTexture::s_tempBuffer;
-// Check for PBO support - it was promoted to a core OpenGL feature as of OpenGL version 2.1
-// but we also check 'GLEW_ARB_pixel_buffer_object' just to be safe.
-#define SUPPORT_PBO (GLEW_ARB_pixel_buffer_object != 0)
 
 DynamicTexture::~DynamicTexture()
 {
@@ -54,7 +52,7 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 		m_textures[i]->update(s_tempBuffer.data(), bufferSize);
 	}
 
-	if (SUPPORT_PBO)
+	if (OpenGL_Caps::supportsPbo())
 	{
 		m_stagingBuffers = new u32[m_bufferCount];
 		glGenBuffers(m_bufferCount, m_stagingBuffers);
@@ -75,7 +73,7 @@ void DynamicTexture::update(const void* imageData, size_t size)
 	m_writeBuffer = (m_writeBuffer + 1) % m_bufferCount;
 	m_readBuffer = (m_readBuffer + 1) % m_bufferCount;
 
-	if (m_bufferCount == 1 || !SUPPORT_PBO)
+	if (m_bufferCount == 1 || !OpenGL_Caps::supportsPbo())
 	{
 		// Copy imageData to [m_writeBuffer]
 		m_textures[m_writeBuffer]->update(imageData, size);
@@ -104,7 +102,7 @@ void DynamicTexture::freeBuffers()
 	}
 	delete[] m_textures;
 
-	if (SUPPORT_PBO)
+	if (OpenGL_Caps::supportsPbo())
 	{
 		if (m_bufferCount)
 		{
