@@ -4,7 +4,9 @@
 #include <assert.h>
 
 std::vector<u8> DynamicTexture::s_tempBuffer;
-#define SUPPORT_PBO (GLEW_VERSION_2_1 != 0)
+// Check for PBO support - it was promoted to a core OpenGL feature as of OpenGL version 2.1
+// but we also check 'GLEW_ARB_pixel_buffer_object' just to be safe.
+#define SUPPORT_PBO (GLEW_ARB_pixel_buffer_object != 0)
 
 DynamicTexture::~DynamicTexture()
 {
@@ -40,7 +42,7 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 
 	const size_t bufferSize = m_width * m_height * (m_format == DTEX_RGBA8 ? 4 : 1);
 	s_tempBuffer.resize(bufferSize);
-	memset(s_tempBuffer.data(), 0x80, bufferSize);
+	memset(s_tempBuffer.data(), 0x00, bufferSize);
 
 	m_textures = new TextureGpu*[m_bufferCount];
 	for (u32 i = 0; i < m_bufferCount; i++)
