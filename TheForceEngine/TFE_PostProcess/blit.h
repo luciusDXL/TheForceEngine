@@ -16,5 +16,5 @@ public:
 
 	// Execute the post process.
 	// input: Input image.
-	void execute(TextureGpu* input) override;
+	void execute(const TextureGpu* input) override;
 };

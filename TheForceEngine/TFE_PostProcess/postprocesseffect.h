@@ -18,7 +18,7 @@ public:
 
 	// Execute the post process.
 	// input: Input image.
-	virtual void execute(TextureGpu* input) = 0;
+	virtual void execute(const TextureGpu* input) = 0;
 
 public:
 	Shader m_shader;

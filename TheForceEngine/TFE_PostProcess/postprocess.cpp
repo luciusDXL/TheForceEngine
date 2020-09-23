@@ -3,14 +3,23 @@
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_System/profiler.h>
+#include <assert.h>
 #include <vector>
 
 namespace TFE_PostProcess
 {
+	enum EffectFlags
+	{
+		EFLAG_NONE = 0,
+		EFLAG_USE_DYNAMIC_INPUT = (1 << 0),
+	};
+
 	struct PostEffectInstance
 	{
 		PostProcessEffect* effect;
-		TextureGpu* input;
+		u32 flags;
+		TextureGpu* inputTex;
+		DynamicTexture* inputDynamic;
 		RenderTargetHandle output;
 		s32 x;
 		s32 y;
@@ -90,9 +99,25 @@ namespace TFE_PostProcess
 		}
 
 		// Add to the effects list.
-		s_effects.push_back({ effect, input, output, x, y, width, height });
+		s_effects.push_back({ effect, EFLAG_NONE, input, nullptr, output, x, y, width, height });
 	}
-		
+
+	void appendEffect(PostProcessEffect* effect, DynamicTexture* input, RenderTargetHandle output, s32 x, s32 y, s32 width, s32 height)
+	{
+		// If width or height is 0, then use the default - which is the input dimensions.
+		if (width == 0 && input)
+		{
+			width = input->getWidth();
+		}
+		if (height == 0 && input)
+		{
+			height = input->getHeight();
+		}
+
+		// Add to the effects list.
+		s_effects.push_back({ effect, EFLAG_USE_DYNAMIC_INPUT, nullptr, input, output, x, y, width, height });
+	}
+
 	void execute()
 	{
 		const size_t count = s_effects.size();
@@ -124,7 +149,16 @@ namespace TFE_PostProcess
 			else
 				TFE_RenderBackend::unbindRenderTarget();
 
-			effect->execute(effectInst->input);
+			if (effectInst->flags & EFLAG_USE_DYNAMIC_INPUT)
+			{
+				assert(effectInst->inputDynamic);
+				effect->execute(effectInst->inputDynamic->getTexture());
+			}
+			else
+			{
+				assert(effectInst->inputTex);
+				effect->execute(effectInst->inputTex);
+			}
 		}
 
 		Shader::unbind();

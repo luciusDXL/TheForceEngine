@@ -622,6 +622,9 @@
     <ClInclude Include="TFE_Ui\portable-file-dialogs.h">
       <Filter>Source\TFE_Ui</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderBackend\dynamicTexture.h">
+      <Filter>Source\TFE_RenderBackend</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1006,6 +1009,9 @@
       <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
     </ClCompile>
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\glslParser.cpp">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\dynamicTexture.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
   </ItemGroup>

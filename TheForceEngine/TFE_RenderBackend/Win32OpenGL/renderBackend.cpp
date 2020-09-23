@@ -1,7 +1,8 @@
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_RenderBackend/dynamicTexture.h>
+#include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Ui/ui.h>
-#include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
 #include <TFE_System/profiler.h>
 #include <TFE_PostProcess/blit.h>
@@ -30,7 +31,7 @@ namespace TFE_RenderBackend
 
 	static WindowState m_windowState;
 	static void* m_window;
-	static TextureGpu* s_virtualDisplay = nullptr;
+	static DynamicTexture* s_virtualDisplay = nullptr;
 	static u32 m_virtualWidth, m_virtualHeight;
 	static DisplayMode m_displayMode;
 	static f32 s_clearColor[4] = { 0.0f };
@@ -256,15 +257,15 @@ namespace TFE_RenderBackend
 		m_virtualHeight = height;
 		m_displayMode = mode;
 
-		s_virtualDisplay = new TextureGpu();
+		s_virtualDisplay = new DynamicTexture();
 		setupPostEffectChain();
 
-		return s_virtualDisplay->create(width, height);
+		return s_virtualDisplay->create(width, height, 3);
 	}
 
 	void* getVirtualDisplayGpuPtr()
 	{
-		return (void*)(intptr_t)s_virtualDisplay->getHandle();
+		return (void*)(intptr_t)s_virtualDisplay->getTexture()->getHandle();
 	}
 
 	void updateVirtualDisplay(const void* buffer, size_t size)
@@ -272,7 +273,7 @@ namespace TFE_RenderBackend
 		TFE_ZONE("Update Virtual Display");
 		s_virtualDisplay->update(buffer, size);
 	}
-		
+
 	void drawVirtualDisplay()
 	{
 		TFE_ZONE("Draw Virtual Display");

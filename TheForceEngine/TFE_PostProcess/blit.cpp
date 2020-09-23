@@ -24,7 +24,7 @@ void Blit::destroy()
 	m_shader.destroy();
 }
 
-void Blit::execute(TextureGpu* input)
+void Blit::execute(const TextureGpu* input)
 {
 	// The vertex and input buffer will already be set at this point.
 	TFE_ZONE("Blit To Screen (CPU)");
