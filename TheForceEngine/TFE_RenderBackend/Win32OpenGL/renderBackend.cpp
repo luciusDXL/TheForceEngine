@@ -314,6 +314,22 @@ namespace TFE_RenderBackend
 		}
 	}
 
+	void setColorCorrection(bool enabled, const ColorCorrection* color/* = nullptr*/)
+	{
+		if (s_postEffectBlit->featureEnabled(BLIT_GPU_COLOR_CORRECTION) != enabled)
+		{
+			if (enabled) { s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CORRECTION); }
+			else { s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CORRECTION); }
+
+			setupPostEffectChain();
+		}
+
+		if (color)
+		{
+			s_postEffectBlit->setColorCorrectionParameters(color);
+		}
+	}
+
 	void drawVirtualDisplay()
 	{
 		TFE_ZONE("Draw Virtual Display");

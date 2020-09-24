@@ -64,7 +64,8 @@ namespace TFE_FrontEndUI
 		{1600,1200},
 		{1856,1392},
 		{1920,1440},
-		{2048,1536}
+		{2048,1536},
+		{2880,2160}
 	};
 
 	static const char* c_resolutions[] =
@@ -82,6 +83,7 @@ namespace TFE_FrontEndUI
 		"1392p (1856x1392)",
 		"1440p (1920x1440)",
 		"1536p (2048x1536)",
+		"2160p (2880x2160)",
 		"Match Window",
 		"Custom",
 	};
@@ -101,6 +103,7 @@ namespace TFE_FrontEndUI
 		"1392p",
 		"1440p",
 		"1536p",
+		"2160p"
 		"Match Window",
 		"Custom",
 	};
@@ -108,7 +111,8 @@ namespace TFE_FrontEndUI
 	static const char* c_renderer[] =
 	{
 		"Classic (Software)",
-		"Classic (Hardware)",
+		// TODO
+		//"Classic (Hardware)",
 	};
 
 	typedef void(*MenuItemSelected)();
@@ -803,7 +807,8 @@ namespace TFE_FrontEndUI
 			}
 		}
 
-		ImGui::Checkbox("Widescreen", &s_widescreen);
+		//ImGui::Checkbox("Widescreen", &s_widescreen);
+		ImGui::TextColored({ 1.0f, 1.0f, 1.0f, 0.33f }, "Widescreen [TODO]");
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////
@@ -826,7 +831,8 @@ namespace TFE_FrontEndUI
 			// Software
 			ImGui::Checkbox("Async Framebuffer", &graphics->asyncFramebuffer);
 			ImGui::Checkbox("GPU Color Conversion", &graphics->gpuColorConvert);
-			ImGui::Checkbox("Perspective Correct 3DO Texturing", &s_perspectiveCorrect);
+			//ImGui::Checkbox("Perspective Correct 3DO Texturing", &s_perspectiveCorrect);
+			ImGui::TextColored({ 1.0f, 1.0f, 1.0f, 0.33f }, "Perspective Correct 3DO Texturing [TODO]");
 
 			if (prevAsync != graphics->asyncFramebuffer || prevColorConvert != graphics->gpuColorConvert)
 			{
@@ -896,31 +902,37 @@ namespace TFE_FrontEndUI
 		//////////////////////////////////////////////////////
 		// Color Correction
 		//////////////////////////////////////////////////////
-		static bool s_cgEnable = true;
-		static f32 s_cgBrightness = 1.0f;
-		static f32 s_cgContrast = 1.0f;
-		static f32 s_cgSaturation = 1.0f;
-		static f32 s_cgGamma = 1.0f;
-
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Color Correction");
 		ImGui::PopFont();
 
-		ImGui::Checkbox("Enable", &s_cgEnable);
-		if (s_cgEnable)
+		ImGui::Checkbox("Enable", &graphics->colorCorrection);
+		if (graphics->colorCorrection)
 		{
 			ImGui::SetNextItemWidth(196);
-			ImGui::SliderFloat("Brightness", &s_cgBrightness, 0.0f, 2.0f);
+			ImGui::SliderFloat("Brightness", &graphics->brightness, 0.0f, 2.0f);
 
 			ImGui::SetNextItemWidth(196);
-			ImGui::SliderFloat("Contrast", &s_cgContrast, 0.0f, 2.0f);
+			ImGui::SliderFloat("Contrast", &graphics->contrast, 0.0f, 2.0f);
 
 			ImGui::SetNextItemWidth(196);
-			ImGui::SliderFloat("Saturation", &s_cgSaturation, 0.0f, 2.0f);
+			ImGui::SliderFloat("Saturation", &graphics->saturation, 0.0f, 2.0f);
 
 			ImGui::SetNextItemWidth(196);
-			ImGui::SliderFloat("Gamma", &s_cgGamma, 0.0f, 2.0f);
+			ImGui::SliderFloat("Gamma", &graphics->gamma, 0.0f, 2.0f);
 		}
+		else
+		{
+			// If color correction is disabled, reset values.
+			graphics->brightness = 1.0f;
+			graphics->contrast   = 1.0f;
+			graphics->saturation = 1.0f;
+			graphics->gamma      = 1.0f;
+		}
+
+		const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
+		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
+
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////
@@ -934,7 +946,8 @@ namespace TFE_FrontEndUI
 		static f32  s_bloomSoftness = 0.5f;
 		static f32  s_bloomIntensity = 0.5f;
 
-		ImGui::Checkbox("Bloom", &s_bloom);
+		//ImGui::Checkbox("Bloom", &s_bloom);
+		ImGui::TextColored({ 1.0f, 1.0f, 1.0f, 0.33f }, "Bloom [TODO]");
 		if (s_bloom)
 		{
 			ImGui::SetNextItemWidth(196);

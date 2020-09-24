@@ -259,6 +259,11 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
 		writeKeyValue_Bool(settings, "asyncFramebuffer", s_graphicsSettings.asyncFramebuffer);
 		writeKeyValue_Bool(settings, "gpuColorConvert", s_graphicsSettings.gpuColorConvert);
+		writeKeyValue_Bool(settings, "colorCorrection", s_graphicsSettings.colorCorrection);
+		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
+		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
+		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
+		writeKeyValue_Float(settings, "gamma", s_graphicsSettings.gamma);
 	}
 
 	void writeSoundSettings(FileStream& settings)
@@ -423,6 +428,26 @@ namespace TFE_Settings
 		else if (strcasecmp("gpuColorConvert", key) == 0)
 		{
 			s_graphicsSettings.gpuColorConvert = parseBool(value);
+		}
+		else if (strcasecmp("colorCorrection", key) == 0)
+		{
+			s_graphicsSettings.colorCorrection = parseBool(value);
+		}
+		else if (strcasecmp("brightness", key) == 0)
+		{
+			s_graphicsSettings.brightness = parseFloat(value);
+		}
+		else if (strcasecmp("contrast", key) == 0)
+		{
+			s_graphicsSettings.contrast = parseFloat(value);
+		}
+		else if (strcasecmp("saturation", key) == 0)
+		{
+			s_graphicsSettings.saturation = parseFloat(value);
+		}
+		else if (strcasecmp("gamma", key) == 0)
+		{
+			s_graphicsSettings.gamma = parseFloat(value);
 		}
 	}
 

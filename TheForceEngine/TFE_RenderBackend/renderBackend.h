@@ -47,6 +47,14 @@ struct DisplayInfo
 	f32 refreshRate;	//0.0 if vsync not enabled.
 };
 
+struct ColorCorrection
+{
+	f32 brightness;
+	f32 contrast;
+	f32 saturation;
+	f32 gamma;
+};
+
 typedef void* RenderTargetHandle;
 class TextureGpu;
 
@@ -69,6 +77,7 @@ namespace TFE_RenderBackend
 	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode = DMODE_STRETCH, bool asyncFramebuffer = true, bool gpuColorConvert = true);
 	void updateVirtualDisplay(const void* buffer, size_t size);
 	void setPalette(const u32* palette);
+	void setColorCorrection(bool enabled, const ColorCorrection* color = nullptr);
 	bool getFrameBufferAsync();
 	bool getGPUColorConvert();
 	void* getVirtualDisplayGpuPtr();

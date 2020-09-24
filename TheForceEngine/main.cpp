@@ -400,6 +400,11 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 
+	// Color correction.
+	const TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+	const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
+	TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
+
 	// Game loop
 	if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 	{
