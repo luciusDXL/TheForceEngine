@@ -472,7 +472,11 @@ int main(int argc, char* argv[])
 		{
 			TFE_FrontEndUI::toggleProfilerView();
 		}
-		if ((TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1))
+		if ((TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1) && TFE_FrontEndUI::isConfigMenuOpen())
+		{
+			s_curState = TFE_FrontEndUI::menuReturn();
+		}
+		else if ((TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1))
 		{
 			TFE_FrontEndUI::enableConfigMenu();
 			TFE_FrontEndUI::setMenuReturnState(s_curState);

@@ -264,9 +264,26 @@ namespace TFE_FrontEndUI
 		pickCurrentResolution();
 	}
 
+	bool isConfigMenuOpen()
+	{
+		return (s_appState == APP_STATE_MENU) && (s_subUI == FEUI_CONFIG);
+	}
+
 	void setMenuReturnState(AppState state)
 	{
 		s_menuRetState = state;
+	}
+
+	AppState menuReturn()
+	{
+		s_restartGame = s_menuRetState == APP_STATE_MENU;
+
+		s_subUI = FEUI_NONE;
+		s_appState = s_menuRetState;
+		TFE_Settings::writeToDisk();
+		TFE_Input::enableRelativeMode(s_relativeMode);
+
+		return s_appState;
 	}
 
 	bool restartGame()
