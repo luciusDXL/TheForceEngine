@@ -258,6 +258,7 @@ namespace TFE_Settings
 		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
 		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
 		writeKeyValue_Bool(settings, "asyncFramebuffer", s_graphicsSettings.asyncFramebuffer);
+		writeKeyValue_Bool(settings, "gpuColorConvert", s_graphicsSettings.gpuColorConvert);
 	}
 
 	void writeSoundSettings(FileStream& settings)
@@ -418,6 +419,10 @@ namespace TFE_Settings
 		else if (strcasecmp("asyncFramebuffer", key) == 0)
 		{
 			s_graphicsSettings.asyncFramebuffer = parseBool(value);
+		}
+		else if (strcasecmp("gpuColorConvert", key) == 0)
+		{
+			s_graphicsSettings.gpuColorConvert = parseBool(value);
 		}
 	}
 

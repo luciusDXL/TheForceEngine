@@ -29,7 +29,7 @@ public:
 	void applyColorEffect() override;
 	void end() override;
 
-	bool changeResolution(u32 width, u32 height, bool asyncVirtualDisplay) override;
+	bool changeResolution(u32 width, u32 height, bool asyncVirtualDisplay, bool gpuColorConversion) override;
 	void getResolution(u32* width, u32* height) override;
 	void enableScreenClear(bool enable) override;
 
@@ -88,6 +88,7 @@ private:
 	u32 m_width;
 	u32 m_height;
 	bool m_asyncVirtualDisplay;
+	bool m_gpuColorConvert;
 	f32 m_rcpHalfWidth;
 	u8* m_display;
 	u32* m_display32;

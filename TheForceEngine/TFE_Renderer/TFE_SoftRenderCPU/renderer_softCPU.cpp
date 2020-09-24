@@ -27,6 +27,7 @@ TFE_SoftRenderCPU::TFE_SoftRenderCPU()
 	m_curColorMap = nullptr;
 	m_clearScreen = true;
 	m_asyncVirtualDisplay = false;
+	m_gpuColorConvert = false;
 }
 
 bool TFE_SoftRenderCPU::init()
@@ -61,9 +62,9 @@ void TFE_SoftRenderCPU::enablePalEffects(bool grayScale, bool green)
 	m_enableNightVision = green;
 }
 
-bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height, bool asyncVirtualDisplay)
+bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height, bool asyncVirtualDisplay, bool gpuColorConvert)
 {
-	if (width == m_width && height == m_height && asyncVirtualDisplay == m_asyncVirtualDisplay) { return true; }
+	if (width == m_width && height == m_height && asyncVirtualDisplay == m_asyncVirtualDisplay && gpuColorConvert == m_gpuColorConvert) { return true; }
 
 	delete[] m_display;
 	delete[] m_display32;
@@ -71,8 +72,9 @@ bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height, bool asyncVirtua
 	m_width = width;
 	m_height = height;
 	m_asyncVirtualDisplay = asyncVirtualDisplay;
+	m_gpuColorConvert = gpuColorConvert;
 
-	if (!TFE_RenderBackend::createVirtualDisplay(m_width, m_height, DMODE_4x3, asyncVirtualDisplay))
+	if (!TFE_RenderBackend::createVirtualDisplay(m_width, m_height, DMODE_4x3, asyncVirtualDisplay, gpuColorConvert))
 	{
 		return false;
 	}
@@ -151,7 +153,9 @@ void TFE_SoftRenderCPU::applyColorEffect()
 
 void TFE_SoftRenderCPU::end()
 {
-	TFE_ZONE_BEGIN(softConv, "8bit to 32bit Conversion");
+	if (!TFE_RenderBackend::getGPUColorConvert())
+	{
+		TFE_ZONE("8bit to 32bit Conversion");
 		// Convert from 8 bit to 32 bit.
 		const u32 pixelCount = m_width * m_height;
 		const u32* pal = m_curPal.colors;
@@ -169,12 +173,20 @@ void TFE_SoftRenderCPU::end()
 				m_display32[p] = pal[m_display[p]];
 			}
 		}
+	}
+	else
+	{
+		TFE_RenderBackend::setPalette(m_enableNightVision ? m_greenScalePal : m_curPal.colors);
+	}
 
-		// TODO: Add spot for overlay so that effects can be applied to the background but not the overlay.
-		// ...
-	TFE_ZONE_END(softConv);
-
-	TFE_RenderBackend::updateVirtualDisplay(m_display32, m_width * m_height * 4u);
+	if (TFE_RenderBackend::getGPUColorConvert())
+	{
+		TFE_RenderBackend::updateVirtualDisplay(m_display, m_width * m_height);
+	}
+	else
+	{
+		TFE_RenderBackend::updateVirtualDisplay(m_display32, m_width * m_height * 4u);
+	}
 	m_frame++;
 }
 
@@ -831,6 +843,8 @@ void TFE_SoftRenderCPU::drawColoredQuad(s32 x0, s32 y0, s32 w, s32 h, u8 color)
 
 void TFE_SoftRenderCPU::setPalette(const Palette256* pal)
 {
+	TFE_RenderBackend::setPalette(nullptr);
+
 	// Copy the palette because colors can be changed on the fly.
 	if (pal)
 	{

@@ -1,6 +1,7 @@
 #include <TFE_RenderBackend/textureGpu.h>
 #include <GL/glew.h>
 #include <vector>
+#include <assert.h>
 
 static std::vector<u8> s_workBuffer;
 
@@ -10,19 +11,31 @@ TextureGpu::~TextureGpu()
 	{
 		glDeleteTextures(1, &m_gpuHandle);
 		m_gpuHandle = 0;
+
+		// Catch GL errors up to this point.
+		glGetError();
 	}
 }
 
-bool TextureGpu::create(u32 width, u32 height)
+bool TextureGpu::create(u32 width, u32 height, u32 channels)
 {
 	m_width = width;
 	m_height = height;
+	m_channels = channels;
 
 	glGenTextures(1, &m_gpuHandle);
 	if (!m_gpuHandle) { return false; }
 
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	if (channels == 1)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+	}
+	else if (channels == 4)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	}
+	assert(glGetError() == GL_NO_ERROR);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -38,6 +51,7 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFi
 {
 	m_width = width;
 	m_height = height;
+	m_channels = 4;
 
 	glGenTextures(1, &m_gpuHandle);
 	if (!m_gpuHandle) { return false; }
@@ -61,12 +75,13 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFi
 
 bool TextureGpu::update(const void* buffer, size_t size)
 {
-	if (size < m_width * m_height * 4) { return false; }
+	if (size < m_width * m_height) { return false; }
 
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, m_channels == 4 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, buffer);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	assert(glGetError() == GL_NO_ERROR);
 	return true;
 }
 

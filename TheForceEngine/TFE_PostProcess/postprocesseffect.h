@@ -39,6 +39,6 @@ public:
 	virtual void setEffectState() = 0;
 
 public:
-	Shader m_shader;
+	Shader* m_shader;
 	s32 m_scaleOffsetId;
 };

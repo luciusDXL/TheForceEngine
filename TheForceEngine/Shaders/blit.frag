@@ -12,7 +12,7 @@ void main()
 #ifdef ENABLE_GPU_COLOR_CONVERSION
 	// read the color index, it will be 0.0 - 255.0/256.0 range which maps to 0 - 255
 	float index = texture(VirtualDisplay, Frag_UV).r;
-	Out_Color.rgb = texture(Palette, vec2(index, 0.5));
+	Out_Color.rgb = texture(Palette, vec2(index, 0.5)).rgb;
 #else
 	Out_Color.rgb = texture(VirtualDisplay, Frag_UV).rgb;
 #endif

@@ -15,10 +15,10 @@ enum MagFilter
 class TextureGpu
 {
 public:
-	TextureGpu() : m_width(0), m_height(0), m_gpuHandle(0) {}
+	TextureGpu() : m_width(0), m_height(0), m_channels(4), m_gpuHandle(0) {}
 	~TextureGpu();
 
-	bool create(u32 width, u32 height);
+	bool create(u32 width, u32 height, u32 channels = 4);
 	bool createWithData(u32 width, u32 height, const void* buffer, MagFilter magFilter = MAG_FILTER_NONE);
 	bool update(const void* buffer, size_t size);
 	void bind(u32 slot = 0) const;
@@ -32,5 +32,6 @@ public:
 private:
 	u32 m_width;
 	u32 m_height;
+	u32 m_channels;
 	u32 m_gpuHandle;
 };

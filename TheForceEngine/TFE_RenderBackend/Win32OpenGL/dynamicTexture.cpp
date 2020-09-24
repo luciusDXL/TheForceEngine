@@ -47,7 +47,7 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 	{
 		m_textures[i] = new TextureGpu();
 		// Create the texture itself.
-		m_textures[i]->create(m_width, m_height);
+		m_textures[i]->create(m_width, m_height, m_format == DTEX_RGBA8 ? 4 : 1);
 		// Clear each buffer to avoid garbage as the buffers are used.
 		m_textures[i]->update(s_tempBuffer.data(), bufferSize);
 	}
@@ -88,7 +88,7 @@ void DynamicTexture::update(const void* imageData, size_t size)
 		// Copy from staging data to read buffer [readBuffer].
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_stagingBuffers[m_readBuffer]);
 		glBindTexture(GL_TEXTURE_2D, m_textures[m_readBuffer]->getHandle());
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, m_format == DTEX_RGBA8 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, 0);
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}

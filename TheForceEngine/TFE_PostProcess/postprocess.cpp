@@ -120,7 +120,7 @@ namespace TFE_PostProcess
 		for (size_t i = 0; i < count; i++, effectInst++)
 		{
 			PostProcessEffect* effect = effectInst->effect;
-			Shader* shader = &effect->m_shader;
+			Shader* shader = effect->m_shader;
 			shader->bind();
 
 			if (curRenderTarget != effectInst->output)

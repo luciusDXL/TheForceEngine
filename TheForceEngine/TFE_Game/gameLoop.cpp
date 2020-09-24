@@ -269,7 +269,7 @@ namespace TFE_GameLoop
 		TFE_RenderCommon::enableNightVision(false);
 
 		TFE_View::init(level, renderer, w, h, false);
-		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->asyncFramebuffer);
+		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 
 		s_eyeHeight = c_standingEyeHeight;
 		s_height = c_standingHeight;
@@ -389,7 +389,7 @@ namespace TFE_GameLoop
 		TFE_RenderCommon::enableNightVision(false);
 			   			   
 		TFE_View::init(level, renderer, w, h, enableViewStats);
-		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->asyncFramebuffer);
+		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 
 		s_eyeHeight = c_standingEyeHeight;
 		s_height = c_standingHeight;
@@ -432,11 +432,13 @@ namespace TFE_GameLoop
 	{
 		u32 prevWidth, prevHeight;
 		bool curAsync = TFE_Settings::getGraphicsSettings()->asyncFramebuffer;
+		bool curColorConvert = TFE_Settings::getGraphicsSettings()->gpuColorConvert;
 		bool prevAsync = TFE_RenderBackend::getFrameBufferAsync();
+		bool prevColorConvert = TFE_RenderBackend::getGPUColorConvert();
 		s_renderer->getResolution(&prevWidth, &prevHeight);
-		if (width == prevWidth && height == prevHeight && curAsync == prevAsync) { return; }
+		if (width == prevWidth && height == prevHeight && curAsync == prevAsync && curColorConvert == prevColorConvert) { return; }
 
-		s_renderer->changeResolution(width, height, curAsync);
+		s_renderer->changeResolution(width, height, curAsync, curColorConvert);
 
 		if (width != prevWidth || height != prevHeight)
 		{

@@ -33,9 +33,10 @@ namespace TFE_RenderBackend
 	static WindowState m_windowState;
 	static void* m_window;
 	static DynamicTexture* s_virtualDisplay = nullptr;
-	static TextureGpu* s_palette = nullptr;
+	static DynamicTexture* s_palette = nullptr;
 	static u32 m_virtualWidth, m_virtualHeight;
 	static bool s_asyncFrameBuffer = true;
+	static bool s_gpuColorConvert = false;
 	static DisplayMode m_displayMode;
 	static f32 s_clearColor[4] = { 0.0f };
 	static u32 s_rtWidth, s_rtHeight;
@@ -102,9 +103,13 @@ namespace TFE_RenderBackend
 		// TODO: Move effect creation into post effect system.
 		s_postEffectBlit = new Blit();
 		s_postEffectBlit->init();
+		s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
 		
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(0.0f);
+
+		s_palette = new DynamicTexture();
+		s_palette->create(256, 1, 2);
 
 		TFE_RenderState::clear();
 
@@ -251,7 +256,7 @@ namespace TFE_RenderBackend
 	}
 
 	// virtual display
-	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode, bool asyncFramebuffer)
+	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode, bool asyncFramebuffer, bool gpuColorConvert)
 	{
 		if (s_virtualDisplay)
 		{
@@ -262,11 +267,21 @@ namespace TFE_RenderBackend
 		m_virtualHeight = height;
 		m_displayMode = mode;
 		s_asyncFrameBuffer = asyncFramebuffer;
+		s_gpuColorConvert = gpuColorConvert;
 
 		s_virtualDisplay = new DynamicTexture();
+		if (gpuColorConvert)
+		{
+			s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
+		}
+		else
+		{
+			s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
+		}
+		
 		setupPostEffectChain();
 
-		return s_virtualDisplay->create(width, height, s_asyncFrameBuffer ? 2 : 1);
+		return s_virtualDisplay->create(width, height, s_asyncFrameBuffer ? 2 : 1, s_gpuColorConvert ? DTEX_R8 : DTEX_RGBA8);
 	}
 
 	void* getVirtualDisplayGpuPtr()
@@ -279,10 +294,24 @@ namespace TFE_RenderBackend
 		return s_asyncFrameBuffer;
 	}
 
+	bool getGPUColorConvert()
+	{
+		return s_gpuColorConvert;
+	}
+
 	void updateVirtualDisplay(const void* buffer, size_t size)
 	{
 		TFE_ZONE("Update Virtual Display");
 		s_virtualDisplay->update(buffer, size);
+	}
+		
+	void setPalette(const u32* palette)
+	{
+		if (palette && getGPUColorConvert())
+		{
+			TFE_ZONE("Update Palette");
+			s_palette->update(palette, 256 * sizeof(u32));
+		}
 	}
 
 	void drawVirtualDisplay()
@@ -418,7 +447,7 @@ namespace TFE_RenderBackend
 		const PostEffectInput blitInputs[]=
 		{
 			{ PTYPE_DYNAMIC_TEX, s_virtualDisplay },
-			{ PTYPE_TEXTURE,     s_palette }
+			{ PTYPE_DYNAMIC_TEX, s_palette }
 		};
 		TFE_PostProcess::appendEffect(s_postEffectBlit, TFE_ARRAYSIZE(blitInputs), blitInputs, nullptr, x, y, w, h);
 	}

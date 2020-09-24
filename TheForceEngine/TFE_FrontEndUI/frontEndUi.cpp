@@ -818,17 +818,17 @@ namespace TFE_FrontEndUI
 		ImGui::Combo("##Renderer", &s_rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
 		if (s_rendererIndex == 0)
 		{
-			static bool s_gpuColorConv = true;
 			static bool s_perspectiveCorrect = false;
 
-			bool prevValue = graphics->asyncFramebuffer;
+			bool prevAsync = graphics->asyncFramebuffer;
+			bool prevColorConvert = graphics->gpuColorConvert;
 
 			// Software
 			ImGui::Checkbox("Async Framebuffer", &graphics->asyncFramebuffer);
-			ImGui::Checkbox("GPU Color Conversion", &s_gpuColorConv);
+			ImGui::Checkbox("GPU Color Conversion", &graphics->gpuColorConvert);
 			ImGui::Checkbox("Perspective Correct 3DO Texturing", &s_perspectiveCorrect);
 
-			if (prevValue != graphics->asyncFramebuffer)
+			if (prevAsync != graphics->asyncFramebuffer || prevColorConvert != graphics->gpuColorConvert)
 			{
 				TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
 			}

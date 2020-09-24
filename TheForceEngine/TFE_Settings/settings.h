@@ -26,6 +26,7 @@ struct TFE_Settings_Graphics
 {
 	Vec2i gameResolution = { 320, 200 };
 	bool  asyncFramebuffer = true;
+	bool  gpuColorConvert = true;
 };
 
 struct TFE_Settings_Sound

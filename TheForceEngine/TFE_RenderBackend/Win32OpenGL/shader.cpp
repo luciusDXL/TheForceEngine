@@ -117,6 +117,7 @@ bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile, 
 		ShaderGL::s_defineString += "\r\n";
 		for (u32 i = 0; i < defineCount; i++)
 		{
+			ShaderGL::s_defineString += "#define ";
 			ShaderGL::s_defineString += defines[i].name;
 			ShaderGL::s_defineString += " ";
 			ShaderGL::s_defineString += defines[i].value;

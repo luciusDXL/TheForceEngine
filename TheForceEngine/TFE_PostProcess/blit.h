@@ -10,7 +10,8 @@ enum BlitFeature
 {
 	BLIT_GPU_COLOR_CONVERSION = (1 << 0),
 
-	BLIT_FEATURE_COUNT = 1
+	BLIT_FEATURE_COUNT = 1,
+	BLIT_FEATURE_COMBO_COUNT = 2,
 };
 
 class Blit : public PostProcessEffect
@@ -30,6 +31,7 @@ public:
 
 private:
 	u32 m_features = 0;
+	Shader m_featureShaders[BLIT_FEATURE_COMBO_COUNT];
 
-	bool buildShader();
+	bool buildShaders();
 };
