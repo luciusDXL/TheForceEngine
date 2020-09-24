@@ -94,6 +94,11 @@ void DynamicTexture::update(const void* imageData, size_t size)
 	}
 }
 
+void DynamicTexture::bind(u32 slot) const
+{
+	getTexture()->bind(slot);
+}
+
 void DynamicTexture::freeBuffers()
 {
 	for (u32 i = 0; i < m_bufferCount; i++)

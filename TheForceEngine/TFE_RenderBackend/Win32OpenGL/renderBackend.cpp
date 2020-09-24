@@ -33,6 +33,7 @@ namespace TFE_RenderBackend
 	static WindowState m_windowState;
 	static void* m_window;
 	static DynamicTexture* s_virtualDisplay = nullptr;
+	static TextureGpu* s_palette = nullptr;
 	static u32 m_virtualWidth, m_virtualHeight;
 	static bool s_asyncFrameBuffer = true;
 	static DisplayMode m_displayMode;
@@ -413,6 +414,12 @@ namespace TFE_RenderBackend
 			y = (m_windowState.height - h) / 2;
 		}
 		TFE_PostProcess::clearEffectStack();
-		TFE_PostProcess::appendEffect(s_postEffectBlit, s_virtualDisplay, nullptr, x, y, w, h);
+
+		const PostEffectInput blitInputs[]=
+		{
+			{ PTYPE_DYNAMIC_TEX, s_virtualDisplay },
+			{ PTYPE_TEXTURE,     s_palette }
+		};
+		TFE_PostProcess::appendEffect(s_postEffectBlit, TFE_ARRAYSIZE(blitInputs), blitInputs, nullptr, x, y, w, h);
 	}
 }  // namespace

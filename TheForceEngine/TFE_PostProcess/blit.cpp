@@ -4,7 +4,24 @@
 
 bool Blit::init()
 {
-	if (!m_shader.load("Shaders/blit.vert", "Shaders/blit.frag"))
+	return buildShader();
+}
+
+void Blit::destroy()
+{
+	m_shader.destroy();
+}
+
+bool Blit::buildShader()
+{
+	ShaderDefine defines[BLIT_FEATURE_COUNT];
+	u32 defineCount = 0;
+	if (m_features & BLIT_GPU_COLOR_CONVERSION)
+	{
+		defines[defineCount++] = {"ENABLE_GPU_COLOR_CONVERSION", "1"};
+	}
+
+	if (!m_shader.load("Shaders/blit.vert", "Shaders/blit.frag", defineCount, defines))
 	{
 		return false;
 	}
@@ -16,27 +33,29 @@ bool Blit::init()
 		return false;
 	}
 
+	if (m_features & BLIT_GPU_COLOR_CONVERSION)
+	{
+		m_shader.bindTextureNameToSlot("Palette", 1);
+	}
+
 	return true;
 }
 
-void Blit::destroy()
+void Blit::setEffectState()
 {
-	m_shader.destroy();
+	TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_BLEND | STATE_DEPTH_TEST);
 }
 
-void Blit::execute(const TextureGpu* input)
+void Blit::enableFeatures(u32 features)
 {
-	// The vertex and input buffer will already be set at this point.
-	TFE_ZONE("Blit To Screen (CPU)");
-		
-	TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_BLEND | STATE_DEPTH_TEST);
+	if (!features) { return; }
+	m_features |= features;
+	buildShader();
+}
 
-	// Bind Uniforms & Textures.
-	input->bind();
-
-	// Draw.
-	TFE_PostProcess::drawRectangle();
-
-	// Cleanup.
-	input->clear();
+void Blit::disableFeatures(u32 features)
+{
+	if (!features) { return; }
+	m_features &= ~features;
+	buildShader();
 }

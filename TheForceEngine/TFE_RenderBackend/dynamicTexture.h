@@ -25,6 +25,7 @@ public:
 	bool changeBufferCount(u32 newBufferCount, bool forceRealloc=false);
 
 	void update(const void* imageData, size_t size);
+	void bind(u32 slot = 0) const;
 
 	inline const TextureGpu* getTexture() const { return m_textures[m_readBuffer]; }
 	inline u32 getWidth() const { return m_width; }

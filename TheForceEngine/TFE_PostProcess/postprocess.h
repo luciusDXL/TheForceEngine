@@ -12,6 +12,7 @@
 #include <TFE_RenderBackend/dynamicTexture.h>
 
 class PostProcessEffect;
+struct PostEffectInput;
 
 namespace TFE_PostProcess
 {
@@ -19,8 +20,7 @@ namespace TFE_PostProcess
 	void destroy();
 
 	void clearEffectStack();
-	void appendEffect(PostProcessEffect* effect, TextureGpu* input, RenderTargetHandle output = nullptr, s32 x = 0, s32 y = 0, s32 width = 0, s32 height = 0);
-	void appendEffect(PostProcessEffect* effect, DynamicTexture* input, RenderTargetHandle output = nullptr, s32 x = 0, s32 y = 0, s32 width = 0, s32 height = 0);
+	void appendEffect(PostProcessEffect* effect, u32 inputCount, const PostEffectInput* inputs, RenderTargetHandle output = nullptr, s32 x = 0, s32 y = 0, s32 width = 0, s32 height = 0);
 
 	void execute();
 

@@ -18,8 +18,8 @@ namespace TFE_PostProcess
 	{
 		PostProcessEffect* effect;
 		u32 flags;
-		TextureGpu* inputTex;
-		DynamicTexture* inputDynamic;
+		u32 inputCount;
+		PostEffectInput* inputs;
 		RenderTargetHandle output;
 		s32 x;
 		s32 y;
@@ -34,8 +34,8 @@ namespace TFE_PostProcess
 	};
 	static const AttributeMapping c_effectAttrMapping[] =
 	{
-		{ATTR_POS,   ATYPE_FLOAT, 2, 0, false},
-		{ATTR_UV,    ATYPE_FLOAT, 2, 0, false},
+		{ATTR_POS, ATYPE_FLOAT, 2, 0, false},
+		{ATTR_UV,  ATYPE_FLOAT, 2, 0, false},
 	};
 	static const u32 c_effectAttrCount = TFE_ARRAYSIZE(c_effectAttrMapping);
 
@@ -86,36 +86,22 @@ namespace TFE_PostProcess
 		s_effects.clear();
 	}
 
-	void appendEffect(PostProcessEffect* effect, TextureGpu* input, RenderTargetHandle output, s32 x, s32 y, s32 width, s32 height)
+	void appendEffect(PostProcessEffect* effect, u32 inputCount, const PostEffectInput* inputs, RenderTargetHandle output, s32 x, s32 y, s32 width, s32 height)
 	{
-		// If width or height is 0, then use the default - which is the input dimensions.
-		if (width == 0 && input)
+		PostEffectInstance instance =
 		{
-			width = input->getWidth();
-		}
-		if (height == 0 && input)
-		{
-			height = input->getHeight();
-		}
+			effect,
+			0,
+			inputCount,
+			nullptr,
+			output,
+			x, y,
+			width, height
+		};
+		instance.inputs = new PostEffectInput[inputCount];
+		memcpy(instance.inputs, inputs, inputCount * sizeof(PostEffectInput));
 
-		// Add to the effects list.
-		s_effects.push_back({ effect, EFLAG_NONE, input, nullptr, output, x, y, width, height });
-	}
-
-	void appendEffect(PostProcessEffect* effect, DynamicTexture* input, RenderTargetHandle output, s32 x, s32 y, s32 width, s32 height)
-	{
-		// If width or height is 0, then use the default - which is the input dimensions.
-		if (width == 0 && input)
-		{
-			width = input->getWidth();
-		}
-		if (height == 0 && input)
-		{
-			height = input->getHeight();
-		}
-
-		// Add to the effects list.
-		s_effects.push_back({ effect, EFLAG_USE_DYNAMIC_INPUT, nullptr, input, output, x, y, width, height });
+		s_effects.push_back(instance);
 	}
 
 	void execute()
@@ -144,20 +130,31 @@ namespace TFE_PostProcess
 			}
 			setScaleOffset(shader, effect->m_scaleOffsetId, effectInst->x, effectInst->y, effectInst->width, effectInst->height);
 
+			// Set effect output.
 			if (effectInst->output)
 				TFE_RenderBackend::bindRenderTarget(effectInst->output);
 			else
 				TFE_RenderBackend::unbindRenderTarget();
 
-			if (effectInst->flags & EFLAG_USE_DYNAMIC_INPUT)
+			// Bind inputs.
+			for (u32 i = 0; i < effectInst->inputCount; i++)
 			{
-				assert(effectInst->inputDynamic);
-				effect->execute(effectInst->inputDynamic->getTexture());
+				if (!effectInst->inputs[i].ptr) { continue; }
+
+				if (effectInst->inputs[i].type == PTYPE_TEXTURE) { effectInst->inputs[i].tex->bind(i); }
+				else if (effectInst->inputs[i].type == PTYPE_DYNAMIC_TEX) { effectInst->inputs[i].dyntex->bind(i); }
 			}
-			else
+
+			// Setup any effect specific state.
+			effect->setEffectState();
+
+			// Draw the rectangle.
+			drawRectangle();
+
+			// Cleanup
+			for (u32 i = 0; i < effectInst->inputCount; i++)
 			{
-				assert(effectInst->inputTex);
-				effect->execute(effectInst->inputTex);
+				TextureGpu::clear(i);
 			}
 		}
 

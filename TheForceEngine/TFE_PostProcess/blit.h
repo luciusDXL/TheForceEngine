@@ -6,6 +6,13 @@
 #include <TFE_System/types.h>
 #include "postprocesseffect.h"
 
+enum BlitFeature
+{
+	BLIT_GPU_COLOR_CONVERSION = (1 << 0),
+
+	BLIT_FEATURE_COUNT = 1
+};
+
 class Blit : public PostProcessEffect
 {
 public:
@@ -15,6 +22,14 @@ public:
 	void destroy() override;
 
 	// Execute the post process.
-	// input: Input image.
-	void execute(const TextureGpu* input) override;
+	void setEffectState() override;
+
+	// Enable various features.
+	void enableFeatures(u32 features);
+	void disableFeatures(u32 features);
+
+private:
+	u32 m_features = 0;
+
+	bool buildShader();
 };

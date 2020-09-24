@@ -7,6 +7,25 @@
 #include <TFE_RenderBackend/shader.h>
 
 class TextureGpu;
+class DynamicTexture;
+
+enum PostEffectInputType
+{
+	PTYPE_TEXTURE = 0,
+	PTYPE_DYNAMIC_TEX,
+	PTYPE_COUNT
+};
+
+struct PostEffectInput
+{
+	PostEffectInputType type;
+	union
+	{
+		void* ptr;				// This void pointer is here so that array initializers work in C++.
+		TextureGpu* tex;		// Standard GPU texture.
+		DynamicTexture* dyntex;	// Dynamic GPU texture.
+	};
+};
 
 class PostProcessEffect
 {
@@ -16,9 +35,8 @@ public:
 	// Free GPU assets.
 	virtual void destroy() = 0;
 
-	// Execute the post process.
-	// input: Input image.
-	virtual void execute(const TextureGpu* input) = 0;
+	// Set the post process render state.
+	virtual void setEffectState() = 0;
 
 public:
 	Shader m_shader;
