@@ -7,6 +7,7 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <GL/glew.h>
 #include <vector>
+#include <string>
 
 namespace ShaderGL
 {
@@ -24,6 +25,7 @@ namespace ShaderGL
 	static const s32 c_glslVersion = 130;
 	static const GLchar* c_glslVersionString = "#version 130\n";
 	static std::vector<char> s_buffers[2];
+	static std::string s_defineString;
 
 	// If you get an error please report on github. You may try different GL context version or GLSL version. See GL<>GLSL version table at the top of this file.
 	bool CheckShader(GLuint handle, const char* desc)
@@ -68,18 +70,18 @@ namespace ShaderGL
 	}
 }
 
-bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL)
+bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL, const char* defineString/* = nullptr*/)
 {
 	// Create shaders
-	const GLchar* vertex_shader_with_version[2] = { ShaderGL::c_glslVersionString, vertexShaderGLSL };
+	const GLchar* vertex_shader_with_version[3] = { ShaderGL::c_glslVersionString, defineString ? defineString : "", vertexShaderGLSL };
 	u32 vertHandle = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertHandle, 2, vertex_shader_with_version, NULL);
+	glShaderSource(vertHandle, 3, vertex_shader_with_version, NULL);
 	glCompileShader(vertHandle);
 	if (!ShaderGL::CheckShader(vertHandle, "vertex shader")) { return false; }
 
-	const GLchar* fragment_shader_with_version[2] = { ShaderGL::c_glslVersionString, fragmentShaderGLSL };
+	const GLchar* fragment_shader_with_version[3] = { ShaderGL::c_glslVersionString, defineString ? defineString : "", fragmentShaderGLSL };
 	u32 fragHandle = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragHandle, 2, fragment_shader_with_version, NULL);
+	glShaderSource(fragHandle, 3, fragment_shader_with_version, NULL);
 	glCompileShader(fragHandle);
 	if (!ShaderGL::CheckShader(fragHandle, "fragment shader")) { return false; }
 
@@ -97,7 +99,7 @@ bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL
 	return m_gpuHandle != 0;
 }
 
-bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile)
+bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile, u32 defineCount/* = 0*/, ShaderDefine* defines/* = nullptr*/)
 {
 	ShaderGL::s_buffers[0].clear();
 	ShaderGL::s_buffers[1].clear();
@@ -108,7 +110,22 @@ bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile)
 	ShaderGL::s_buffers[0].push_back(0);
 	ShaderGL::s_buffers[1].push_back(0);
 
-	return create(ShaderGL::s_buffers[0].data(), ShaderGL::s_buffers[1].data());
+	// Build a string of defines.
+	ShaderGL::s_defineString.clear();
+	if (defineCount)
+	{
+		ShaderGL::s_defineString += "\r\n";
+		for (u32 i = 0; i < defineCount; i++)
+		{
+			ShaderGL::s_defineString += defines[i].name;
+			ShaderGL::s_defineString += " ";
+			ShaderGL::s_defineString += defines[i].value;
+			ShaderGL::s_defineString += "\r\n";
+		}
+		ShaderGL::s_defineString += "\r\n";
+	}
+
+	return create(ShaderGL::s_buffers[0].data(), ShaderGL::s_buffers[1].data(), ShaderGL::s_defineString.c_str());
 }
 
 void Shader::destroy()

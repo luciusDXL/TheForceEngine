@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
+#include <string>
 
 enum ShaderVariableType
 {
@@ -21,13 +22,19 @@ enum ShaderVariableType
 	SVT_COUNT
 };
 
+struct ShaderDefine
+{
+	std::string name;
+	std::string value;
+};
+
 class Shader
 {
 public:
 	Shader() : m_gpuHandle(0) {}
 
-	bool create(const char* vertexShaderCode, const char* fragmentShaderCode);
-	bool load(const char* vertexShader, const char* fragmentShader);
+	bool create(const char* vertexShaderCode, const char* fragmentShaderCode, const char* defineString = nullptr);
+	bool load(const char* vertexShader, const char* fragmentShader, u32 defineCount = 0, ShaderDefine* defines = nullptr);
 	void destroy();
 
 	void bind();
