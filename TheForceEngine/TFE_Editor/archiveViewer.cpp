@@ -190,7 +190,7 @@ namespace ArchiveViewer
 			}
 			else if (trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)
 			{
-				s_renderer->changeResolution(640, 480, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+				s_renderer->changeResolution(640, 480, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
 				s_runLevel = false;
 				s_showUi = true;
 				TFE_Input::enableRelativeMode(false);
@@ -214,6 +214,7 @@ namespace ArchiveViewer
 		}
 
 		s_renderer->setPalette(s_curPal);
+		TFE_RenderBackend::setPalette(s_curPal->colors);
 		if (s_fileType == TYPE_LEV)
 		{
 			s_renderer->drawMapLines(s_layer, s_renderCenter[0] * s_mapZoom + 320.0f, s_renderCenter[1] * s_mapZoom + 240.0f, s_mapZoom);

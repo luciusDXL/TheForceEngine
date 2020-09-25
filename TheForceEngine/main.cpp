@@ -266,7 +266,7 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 				s_gameUiInitRequired = false;
 			}
 
-			renderer->changeResolution(640, 480, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+			renderer->changeResolution(640, 480, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
 			TFE_GameUi::updateUiResolution();
 			TFE_Editor::enable(renderer);
 		}
@@ -301,6 +301,11 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 	};
 
 	s_curState = newState;
+}
+
+bool systemMenuKeyCombo()
+{
+	return (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1);
 }
 
 int main(int argc, char* argv[])
@@ -472,11 +477,11 @@ int main(int argc, char* argv[])
 		{
 			TFE_FrontEndUI::toggleProfilerView();
 		}
-		if ((TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1) && TFE_FrontEndUI::isConfigMenuOpen())
+		if (systemMenuKeyCombo() && TFE_FrontEndUI::isConfigMenuOpen())
 		{
 			s_curState = TFE_FrontEndUI::menuReturn();
 		}
-		else if ((TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1))
+		else if (systemMenuKeyCombo())
 		{
 			TFE_FrontEndUI::enableConfigMenu();
 			TFE_FrontEndUI::setMenuReturnState(s_curState);
@@ -508,7 +513,7 @@ int main(int argc, char* argv[])
 		// Render
 		renderer->begin();
 		// Do stuff
-		bool swap = s_curState != APP_STATE_EDITOR;
+		bool swap = s_curState != APP_STATE_EDITOR && s_curState != APP_STATE_MENU;
 		if (s_curState == APP_STATE_EDITOR)
 		{
 			swap = TFE_Editor::render();
