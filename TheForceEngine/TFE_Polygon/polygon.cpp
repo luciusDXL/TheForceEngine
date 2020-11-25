@@ -291,9 +291,11 @@ namespace TFE_Polygon
 
 	f32 signedArea(u32 vertexCount, const Vec2f* vertices)
 	{
+		if (vertexCount < 1 || !vertices) { return 0.0f; }
+
 		f32 area = 0.0f;
 		u32 vPrev = vertexCount - 1;
-		for (s32 v = 0; v < vertexCount; v++)
+		for (u32 v = 0; v < vertexCount; v++)
 		{
 			const Vec2f& v0 = vertices[vPrev];
 			const Vec2f& v1 = vertices[v];

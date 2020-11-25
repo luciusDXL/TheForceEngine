@@ -5195,7 +5195,7 @@ namespace LevelEditor
 
 					if (newWall.adjoin >= 0)
 					{
-						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].mirror = sec0.walls.size();
+						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].mirror = (s32)sec0.walls.size();
 					}
 					sec0.walls.push_back(newWall);
 				}
@@ -5208,8 +5208,8 @@ namespace LevelEditor
 
 					if (newWall.adjoin >= 0)
 					{
-						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].mirror = sec1.walls.size();
-						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].adjoin = s_levelData->sectors.size();
+						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].mirror = (s32)sec1.walls.size();
+						s_levelData->sectors[newWall.adjoin].walls[sector->walls[w].mirror].adjoin = (s32)s_levelData->sectors.size();
 					}
 					sec1.walls.push_back(newWall);
 				}
@@ -5267,26 +5267,26 @@ namespace LevelEditor
 							// Which side is which?
 							if (splitSide(v0, normal, adjoin->vertices[adjoin->walls[mirror].i0]) == 0)
 							{
-								adjoin->walls[mirror].mirror = sec0.walls.size();
-								adjoin->walls[mirror].adjoin = sector->id;
-								adjoin->walls[mirror].walk = sector->id;
+								adjoin->walls[mirror].mirror = (s32)sec0.walls.size();
+								adjoin->walls[mirror].adjoin = (s32)sector->id;
+								adjoin->walls[mirror].walk = (s32)sector->id;
 								newWall0.mirror = mirror;
 
-								adjoin->walls[mirror + 1].mirror = sec1.walls.size();
-								adjoin->walls[mirror + 1].adjoin = s_levelData->sectors.size();
-								adjoin->walls[mirror + 1].walk = s_levelData->sectors.size();
+								adjoin->walls[mirror + 1].mirror = (s32)sec1.walls.size();
+								adjoin->walls[mirror + 1].adjoin = (s32)s_levelData->sectors.size();
+								adjoin->walls[mirror + 1].walk = (s32)s_levelData->sectors.size();
 								newWall1.mirror = mirror + 1;
 							}
 							else
 							{
-								adjoin->walls[mirror].mirror = sec1.walls.size();
-								adjoin->walls[mirror].adjoin = s_levelData->sectors.size();
-								adjoin->walls[mirror].walk = s_levelData->sectors.size();
+								adjoin->walls[mirror].mirror = (s32)sec1.walls.size();
+								adjoin->walls[mirror].adjoin = (s32)s_levelData->sectors.size();
+								adjoin->walls[mirror].walk = (s32)s_levelData->sectors.size();
 								newWall1.mirror = mirror;
 
-								adjoin->walls[mirror + 1].mirror = sec0.walls.size();
-								adjoin->walls[mirror + 1].adjoin = sector->id;
-								adjoin->walls[mirror + 1].walk = sector->id;
+								adjoin->walls[mirror + 1].mirror = (s32)sec0.walls.size();
+								adjoin->walls[mirror + 1].adjoin = (s32)sector->id;
+								adjoin->walls[mirror + 1].walk = (s32)sector->id;
 								newWall0.mirror = mirror + 1;
 							}
 						}
@@ -5297,7 +5297,7 @@ namespace LevelEditor
 						// Add the wall from this intersection to the previous point.
 						newWall0.i0 = newWall0.i1;
 						newWall0.i1 = addVertex(splitVtxIdx == 0 ? v1 : v0, sec0.vertices);
-						newWall0.adjoin = s_levelData->sectors.size();
+						newWall0.adjoin = (s32)s_levelData->sectors.size();
 						newWall0.walk = newWall0.adjoin;
 						newWall0.mirror = -1; // Will be filled out at the end.
 						splitWallId0 = (s32)sec0.walls.size();
@@ -5332,26 +5332,26 @@ namespace LevelEditor
 							// Which side is which?
 							if (splitSide(v0, normal, adjoin->vertices[adjoin->walls[mirror].i0]) == 0)
 							{
-								adjoin->walls[mirror].mirror = sec0.walls.size();
-								adjoin->walls[mirror].adjoin = sector->id;
-								adjoin->walls[mirror].walk = sector->id;
+								adjoin->walls[mirror].mirror = (s32)sec0.walls.size();
+								adjoin->walls[mirror].adjoin = (s32)sector->id;
+								adjoin->walls[mirror].walk = (s32)sector->id;
 								newWall0.mirror = mirror;
 
-								adjoin->walls[mirror + 1].mirror = sec1.walls.size();
-								adjoin->walls[mirror + 1].adjoin = s_levelData->sectors.size();
-								adjoin->walls[mirror + 1].walk = s_levelData->sectors.size();
+								adjoin->walls[mirror + 1].mirror = (s32)sec1.walls.size();
+								adjoin->walls[mirror + 1].adjoin = (s32)s_levelData->sectors.size();
+								adjoin->walls[mirror + 1].walk = (s32)s_levelData->sectors.size();
 								newWall1.mirror = mirror + 1;
 							}
 							else
 							{
-								adjoin->walls[mirror].mirror = sec1.walls.size();
-								adjoin->walls[mirror].adjoin = s_levelData->sectors.size();
-								adjoin->walls[mirror].walk = s_levelData->sectors.size();
+								adjoin->walls[mirror].mirror = (s32)sec1.walls.size();
+								adjoin->walls[mirror].adjoin = (s32)s_levelData->sectors.size();
+								adjoin->walls[mirror].walk = (s32)s_levelData->sectors.size();
 								newWall1.mirror = mirror;
 
-								adjoin->walls[mirror + 1].mirror = sec0.walls.size();
-								adjoin->walls[mirror + 1].adjoin = sector->id;
-								adjoin->walls[mirror + 1].walk = sector->id;
+								adjoin->walls[mirror + 1].mirror = (s32)sec0.walls.size();
+								adjoin->walls[mirror + 1].adjoin = (s32)sector->id;
+								adjoin->walls[mirror + 1].walk = (s32)sector->id;
 								newWall0.mirror = mirror + 1;
 							}
 						}
@@ -5431,7 +5431,7 @@ namespace LevelEditor
 			u32 insideCount = 0;
 			s32 wallAttach[1024];
 			s32 inside[1024];
-			for (u32 vSrc = 0; vSrc < srcVertexCount; vSrc++)
+			for (s32 vSrc = 0; vSrc < srcVertexCount; vSrc++)
 			{
 				// See if the point is inside the sector AABB.
 				if (!pointInAABB2d(&vtx[vSrc], neighbor->aabb)) { break; }
@@ -5713,8 +5713,8 @@ namespace LevelEditor
 				s_newSector.walls[w].adjoin = -1;
 				s_newSector.walls[w].mirror = -1;
 				s_newSector.walls[w].walk = -1;
-				s_newSector.walls[w].i0 = w;
-				s_newSector.walls[w].i1 = (w + 1) % count;
+				s_newSector.walls[w].i0 = u16(w);
+				s_newSector.walls[w].i1 = u16((w + 1) % count);
 			}
 		}
 		else if (TFE_Input::keyPressed(KEY_ESCAPE))
@@ -5743,7 +5743,7 @@ namespace LevelEditor
 
 		// Triangulate
 		static Polygon contour;
-		contour.vtxCount = s_newSector.vertices.size();
+		contour.vtxCount = (s32)s_newSector.vertices.size();
 		memcpy(contour.vtx, s_newSector.vertices.data(), sizeof(Vec2f) * contour.vtxCount);
 		if (fabsf(contour.vtx[contour.vtxCount - 1].x - contour.vtx[contour.vtxCount - 2].x) < 0.01f && fabsf(contour.vtx[contour.vtxCount - 1].z - contour.vtx[contour.vtxCount - 2].z) < 0.01f)
 		{

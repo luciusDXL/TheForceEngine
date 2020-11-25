@@ -601,7 +601,7 @@ namespace TFE_JediRenderer
 		s32 sectorUnitArea = 0;
 		s32 prevSectorUnitArea = INT_MAX;
 
-		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		for (u32 i = 0; i < s_sectorCount; i++, sector++)
 		{
 			if (y >= sector->ceilingHeight.f16_16 && y <= sector->floorHeight.f16_16)
 			{

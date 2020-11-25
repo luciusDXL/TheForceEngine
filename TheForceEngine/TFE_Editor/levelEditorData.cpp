@@ -348,7 +348,7 @@ namespace LevelEditorData
 
 		EditorSector* dst = s_editorLevel.sectors.data() + (sectorCount - 1);
 
-		dst->id = sectorCount - 1;
+		dst->id = u32(sectorCount - 1);
 		dst->objects.clear();
 		dst->name[0] = 0;
 
@@ -421,7 +421,7 @@ namespace LevelEditorData
 
 		EditorSector* dst = s_editorLevel.sectors.data() + (sectorCount - 1);
 
-		dst->id = sectorCount - 1;
+		dst->id = u32(sectorCount - 1);
 		dst->objects.clear();
 		dst->name[0] = 0;
 
