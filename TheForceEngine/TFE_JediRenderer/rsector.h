@@ -155,6 +155,7 @@ namespace TFE_JediRenderer
 		RSector* s_curSector;
 		RSector* s_rsectors;
 		MemoryPool* s_memPool;
+		SecObject* s_objBuffer[MAX_VIEW_OBJ_COUNT];
 		u32 s_sectorCount;
 	};
 }

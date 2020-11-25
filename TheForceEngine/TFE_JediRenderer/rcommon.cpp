@@ -70,6 +70,9 @@ namespace TFE_JediRenderer
 	s32* s_windowTopPrev = nullptr;
 	s32* s_windowBotPrev = nullptr;
 
+	s32* s_objWindowTop = nullptr;
+	s32* s_objWindowBot = nullptr;
+
 	// Segment list.
 	s32 s_nextWall;
 	s32 s_curWallSeg;

@@ -11,12 +11,17 @@
 #include "../fixedPoint.h"
 #include "../rmath.h"
 #include "../rcommon.h"
+#include "../robject.h"
 #include "../rtexture.h"
 
 using namespace TFE_JediRenderer::RClassic_Fixed;
 
 namespace TFE_JediRenderer
 {
+	s32 cullObjects(RSector* sector, SecObject** buffer);
+	void transformPointByCamera(vec3* worldPoint, vec3* viewPoint);
+	s32 sortObjectsFixed(const void* r0, const void* r1);
+
 	void TFE_Sectors_Fixed::draw(RSector* sector)
 	{
 		s_curSector = sector;
@@ -65,6 +70,24 @@ namespace TFE_JediRenderer
 					vtxWS++;
 				}
 			TFE_ZONE_END(secXform);
+
+			TFE_ZONE_BEGIN(objXform, "Sector Object Transform");
+				SecObject** obj = s_curSector->objectList;
+				for (s32 i = s_curSector->objectCount - 1; i >= 0; i--, obj++)
+				{
+					SecObject* curObj = *obj;
+					while (!curObj)
+					{
+						obj++;
+						curObj = *obj;
+					}
+
+					if (curObj->flags & 4)
+					{
+						transformPointByCamera(&curObj->posWS, &curObj->posVS);
+					}
+				}
+			TFE_ZONE_END(objXform);
 
 			TFE_ZONE_BEGIN(wallProcess, "Sector Wall Process");
 				startWall = s_nextWall;
@@ -285,8 +308,113 @@ namespace TFE_JediRenderer
 			memcpy(&depthPrev[s_windowMinX], &s_depth1d_Fixed[s_windowMinX], (s_windowMaxX - s_windowMinX + 1) * sizeof(fixed16_16));
 		}
 
+		// Objects
+		const s32 objCount = cullObjects(s_curSector, s_objBuffer);
+		if (objCount > 0)
+		{
+			// Which top and bottom edges are we going to use to clip objects?
+			s_objWindowTop = s_windowTop;
+			if (s_windowMinY < s_heightInPixels || s_windowMaxCeil < s_heightInPixels)
+			{
+				if (s_prevSector && s_prevSector->ceilingHeight.f16_16 <= s_curSector->ceilingHeight.f16_16)
+				{
+					s_objWindowTop = s_windowTopPrev;
+				}
+			}
+			s_objWindowBot = s_windowBot;
+			if (s_windowMaxY > s_heightInPixels || s_windowMinFloor > s_heightInPixels)
+			{
+				if (s_prevSector && s_prevSector->floorHeight.f16_16 >= s_curSector->floorHeight.f16_16)
+				{
+					s_objWindowBot = s_windowBotPrev;
+				}
+			}
+
+			// Sort objects in viewspace (generally back to front but there are special cases).
+			qsort(s_objBuffer, objCount, sizeof(SecObject*), sortObjectsFixed);
+
+			// Draw objects in order.
+			for (s32 i = 0; i < objCount; i++)
+			{
+				SecObject* obj = s_objBuffer[i];
+				const s32 type = obj->type;
+				if (type == OBJ_TYPE_SPRITE)
+				{
+					// TODO
+					//s32 dz = s_posZ - obj->posWS.z;
+					//s32 dx = s_posX - obj->posWS.x;
+					//s32 angle = vec2ToAngle(dx, dz);
+
+					//sprite_drawWax(angle, obj);
+				}
+				else if (type == OBJ_TYPE_3D)
+				{
+					// TODO
+					//model_draw(obj, obj->model);
+				}
+				else if (type == OBJ_TYPE_FRAME)
+				{
+					sprite_drawFrame(obj->fme, obj);
+				}
+			}
+		}
+
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
 		s_curSector->prevDrawFrame2 = s_drawFrame;
+	}
+	
+	void transformPointByCamera(vec3* worldPoint, vec3* viewPoint)
+	{
+		viewPoint->x.f16_16 = mul16(worldPoint->x.f16_16, s_cosYaw_Fixed) + mul16(worldPoint->z.f16_16, s_sinYaw_Fixed) + s_xCameraTrans_Fixed;
+		viewPoint->y.f16_16 = worldPoint->y.f16_16 - s_eyeHeight_Fixed;
+		viewPoint->z.f16_16 = mul16(worldPoint->z.f16_16, s_cosYaw_Fixed) + mul16(worldPoint->x.f16_16, s_negSinYaw_Fixed) + s_zCameraTrans_Fixed;
+	}
+
+	s32 sortObjectsFixed(const void* r0, const void* r1)
+	{
+ 		SecObject* obj0 = *((SecObject**)r0);
+		SecObject* obj1 = *((SecObject**)r1);
+
+		// TODO: Handle special cases (see RE source).
+
+		// Default case:
+		return obj1->posVS.z.f16_16 - obj0->posVS.z.f16_16;
+	}
+
+	s32 cullObjects(RSector* sector, SecObject** buffer)
+	{
+		s32 drawCount = 0;
+		SecObject** obj = sector->objectList;
+		s32 count = sector->objectCount;
+
+		for (s32 i = count - 1; i >= 0 && drawCount < MAX_VIEW_OBJ_COUNT; i--, obj++)
+		{
+			// Search for the next allocated object.
+			SecObject* curObj = *obj;
+			while (!curObj)
+			{
+				obj++;
+				curObj = *obj;
+			}
+
+			if (curObj->flags & 4)
+			{
+				const s32 type = curObj->type;
+				if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
+				{
+					if (curObj->posVS.z.f16_16 >= ONE_16)
+					{
+						buffer[drawCount++] = curObj;
+					}
+				}
+				else if (type == OBJ_TYPE_3D)
+				{
+					// TODO - culling for 3D objects is more complex, probably because they are much more expensive to render.
+				}
+			}
+		}
+
+		return drawCount;
 	}
 		
 	void TFE_Sectors_Fixed::setupWallDrawFlags(RSector* sector)

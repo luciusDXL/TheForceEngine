@@ -361,6 +361,7 @@ namespace TFE_JediRenderer
 				{
 					continue;
 				}
+				obj->flags |= 4;
 
 				s_sectors->addObject(sector, obj);
 				frame_setData(obj, (u8*)obj->fme, obj->fme);

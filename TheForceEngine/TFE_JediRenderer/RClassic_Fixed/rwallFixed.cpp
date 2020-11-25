@@ -2235,6 +2235,164 @@ namespace RClassic_Fixed
 			wall->midTexelHeight.f16_16 = (midFloorHeight - midSector->ceilingHeight.f16_16) * 8;
 		}
 	}
+
+	// Refactor this into a sprite specific file.
+	void sprite_drawFrame(WaxFrame* frame, SecObject* obj)
+	{
+		if (!frame) { return; }
+
+		WaxCell* cell = WAX_CellPtr((u8*)frame, frame);
+		s32 flip = frame->flip;
+		fixed16_16 x0 = obj->posVS.x.f16_16 - frame->offsetX;
+		fixed16_16 yOffset = frame->heightWS - frame->offsetY;
+		fixed16_16 y0 = obj->posVS.y.f16_16 - yOffset;
+		fixed16_16 z = obj->posVS.z.f16_16;
+		if (z < ONE_16)
+		{
+			// This should have been culled.
+			return;
+		}
+
+		fixed16_16 rcpZ = div16(ONE_16, z);
+		fixed16_16 projX0 = mul16(mul16(x0, s_focalLength_Fixed), rcpZ) + s_halfWidth_Fixed;
+		fixed16_16 projY0 = mul16(mul16(y0, s_focalLenAspect_Fixed), rcpZ) + s_halfHeight_Fixed;
+
+		s32 x0_pixel = round16(projX0);
+		s32 y0_pixel = round16(projY0);
+		if (x0_pixel > s_windowMaxX || y0_pixel > s_windowMaxY)
+		{
+			return;
+		}
+
+		fixed16_16 x1 = x0 + frame->widthWS;
+		fixed16_16 y1 = y0 + frame->heightWS;
+
+		fixed16_16 projX1 = mul16(mul16(x1, s_focalLength_Fixed), rcpZ) + s_halfWidth_Fixed;
+		fixed16_16 projY1 = mul16(mul16(y1, s_focalLenAspect_Fixed), rcpZ) + s_halfHeight_Fixed;
+
+		s32 x1_pixel = round16(projX1);
+		s32 y1_pixel = round16(projY1);
+		if (x1_pixel < s_windowMinX || y1_pixel < s_windowMinY)
+		{
+			return;
+		}
+
+		s32 length = x1_pixel - x0_pixel + 1;
+		if (length <= 0)
+		{
+			return;
+		}
+
+		fixed16_16 height = projY1 - projY0 + ONE_16;
+		fixed16_16 width = projX1 - projX0 + ONE_16;
+		fixed16_16 uCoordStep = div16(intToFixed16(cell->sizeX), width);
+		s_vCoordStep = div16(intToFixed16(cell->sizeY), height);
+
+		fixed16_16 uCoord = 0;
+		if (x0_pixel < s_windowX0)
+		{
+			s32 dx = s_windowX0 - x0_pixel;
+			uCoord = mul16(uCoordStep, intToFixed16(dx));	// eax
+			x0_pixel = s_windowX0;
+		}
+		if (x1_pixel > s_windowX1)
+		{
+			x1_pixel = s_windowX1;
+		}
+
+		// Compute the lighting for the whole sprite.
+		s_columnLight = computeLighting(z, 0);
+
+		// Figure out the correct column function.
+		ColumnFunction spriteColumnFunc;
+		if (s_columnLight && !(obj->flags & 8))
+		{
+			spriteColumnFunc = s_columnFunc[COLFUNC_LIT_TRANS];
+		}
+		else
+		{
+			spriteColumnFunc = s_columnFunc[COLFUNC_FULLBRIGHT_TRANS];
+		}
+
+		// Draw
+		s32 compressed = cell->compressed;
+		u8* imageData = (u8*)cell + sizeof(WaxCell);
+
+		s32 n;
+		u8* image;
+		if (compressed == 1)
+		{
+			n = -1;
+			image = imageData + (cell->sizeX * sizeof(u32));
+		}
+		else
+		{
+			image = imageData;
+			n = 0;
+		}
+
+		if (x0_pixel > x1_pixel)
+		{
+			return;
+		}
+
+		for (s32 x = x0_pixel; x <= x1_pixel; x++, uCoord += uCoordStep)
+		{
+			if (z < s_depth1d_Fixed[x])
+			{
+				s32 y0 = y0_pixel;
+				s32 top = s_objWindowTop[x];
+				s32 y1 = y1_pixel;
+				if (y0 < top)
+				{
+					y0 = top;
+				}
+				s32 bot = s_objWindowBot[x];
+				if (y1 > bot)
+				{
+					y1 = bot;
+				}
+
+				s_yPixelCount = y1 - y0 + 1;
+				if (s_yPixelCount > 0)
+				{
+					fixed16_16 vOffset = intToFixed16(y1_pixel - y1);
+					s_vCoordFixed = mul16(vOffset, s_vCoordStep);
+					s32 texelU = floor16(uCoord);
+
+					u32* columnOffset = (u32*)((u8*)frame + cell->columnOffset);
+
+					if (compressed)
+					{
+						if (flip)
+						{
+							texelU = cell->sizeX - texelU - 1;
+						}
+
+						s32* colPtr = (s32*)((u8*)cell + columnOffset[texelU]);
+
+						//sprite_decompressColumn(colPtr, s_workBuffer, cell->sizeY);
+						//s_texImage = (u8*)s_workBuffer;
+					}
+					else
+					{
+						if (flip)
+						{
+							texelU = cell->sizeX - texelU - 1;
+						}
+						s_texImage = (u8*)image + columnOffset[texelU];
+					}
+					// column write output.
+					s_columnOut = &s_display[y0 * s_width + x];
+					// for now skip if compressed.
+					if (!compressed)
+					{
+						spriteColumnFunc();
+					}
+				}
+			}
+		}
+	}
 }  // RClassic_Fixed
 
 }  // TFE_JediRenderer

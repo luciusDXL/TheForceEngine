@@ -4,9 +4,11 @@
 // Dark Forces Derived Renderer - Wall functions
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Asset/spriteAsset_Jedi.h>
 #include "../rmath.h"
 #include "../rlimits.h"
 #include "../rwall.h"
+#include "../robject.h"
 
 struct RSector;
 struct EdgePair;
@@ -35,5 +37,8 @@ namespace TFE_JediRenderer
 
 		void wall_setupAdjoinDrawFlags(RWall* wall);
 		void wall_computeTexelHeights(RWall* wall);
+
+		// Sprite code for now because so much is shared.
+		void sprite_drawFrame(WaxFrame* frame, SecObject* obj);
 	}
 }
