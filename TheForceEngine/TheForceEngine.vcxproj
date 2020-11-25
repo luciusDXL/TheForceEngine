@@ -245,6 +245,7 @@
     <ClInclude Include="TFE_Asset\modelAsset.h" />
     <ClInclude Include="TFE_Asset\paletteAsset.h" />
     <ClInclude Include="TFE_Asset\spriteAsset.h" />
+    <ClInclude Include="TFE_Asset\spriteAsset_Jedi.h" />
     <ClInclude Include="TFE_Asset\textureAsset.h" />
     <ClInclude Include="TFE_Asset\vocAsset.h" />
     <ClInclude Include="TFE_Asset\vueAsset.h" />
@@ -403,6 +404,7 @@
     <ClCompile Include="TFE_Asset\modelAsset.cpp" />
     <ClCompile Include="TFE_Asset\paletteAsset.cpp" />
     <ClCompile Include="TFE_Asset\spriteAsset.cpp" />
+    <ClCompile Include="TFE_Asset\spriteAsset_Jedi.cpp" />
     <ClCompile Include="TFE_Asset\textureAsset.cpp" />
     <ClCompile Include="TFE_Asset\vocAsset.cpp" />
     <ClCompile Include="TFE_Asset\vueAsset.cpp" />

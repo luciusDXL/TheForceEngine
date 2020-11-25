@@ -10,4 +10,7 @@ namespace TFE_JediRenderer
 	#define LIGHT_SOURCE_LEVELS	128 // Number of levels in the light source (like the headlamp or weapon fire).
 	#define LIGHT_LEVELS		 32 // Number of light levels, maximum = LIGHT_LEVELS - 1
 	#define MAX_LIGHT_LEVEL (LIGHT_LEVELS-1)
+
+	#define SPRITE_SCALE_FIXED (ONE_16 * 10)
+	#define SPRITE_SCALE_FLOAT 10.0f
 }

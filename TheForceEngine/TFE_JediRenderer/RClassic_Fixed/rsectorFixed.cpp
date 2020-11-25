@@ -417,6 +417,90 @@ namespace TFE_JediRenderer
 		//s_minZ = minZ;
 		//s_maxZ = maxZ;
 	}
+		
+	// Uses the "Winding Number" test for a point in polygon.
+	// The point is considered inside if the winding number is greater than 0.
+	// Note that this is different than DF's "crossing" algorithm.
+	// TODO: Maybe? Replace algorithms.
+	bool TFE_Sectors_Fixed::pointInSectorFixed(RSector* sector, f32 x, f32 z)
+	{
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+		s32 wn = 0;
+
+		const Vec2f point = { x, z };
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			vec2* w1 = wall->w0;
+			vec2* w0 = wall->w1;
+
+			Vec2f p0 = { fixed16ToFloat(w0->x.f16_16), fixed16ToFloat(w0->z.f16_16) };
+			Vec2f p1 = { fixed16ToFloat(w1->x.f16_16), fixed16ToFloat(w1->z.f16_16) };
+
+			if (p0.z <= z)
+			{
+				// Upward crossing, if the point is left of the edge than it intersects.
+				if (p1.z > z && isLeft(p0, p1, point) > 0)
+				{
+					wn++;
+				}
+			}
+			else
+			{
+				// Downward crossing, if point is right of the edge it intersects.
+				if (p1.z <= z && isLeft(p0, p1, point) < 0)
+				{
+					wn--;
+				}
+			}
+		}
+
+		// The point is only outside if the winding number is less than or equal to 0.
+		return wn > 0;
+	}
+
+	// Use the floating point point inside polygon algorithm.
+	RSector* TFE_Sectors_Fixed::which3D(decimal& dx, decimal& dy, decimal& dz)
+	{
+		s32 ix = dx.f16_16;
+		s32 iz = dz.f16_16;
+		f32 x = fixed16ToFloat(ix);
+		f32 z = fixed16ToFloat(iz);
+		fixed16_16 y = dy.f16_16;
+
+		RSector* sector = s_rsectors;
+		RSector* foundSector = nullptr;
+		s32 sectorUnitArea = 0;
+		s32 prevSectorUnitArea = INT_MAX;
+
+		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			if (y >= sector->ceilingHeight.f16_16 && y <= sector->floorHeight.f16_16)
+			{
+				const fixed16_16 sectorMaxX = sector->maxX.f16_16;
+				const fixed16_16 sectorMinX = sector->minX.f16_16;
+				const fixed16_16 sectorMaxZ = sector->maxZ.f16_16;
+				const fixed16_16 sectorMinZ = sector->minZ.f16_16;
+
+				const s32 dxInt = ((sectorMaxX - sectorMinX) >> 16) + 1;
+				const s32 dzInt = ((sectorMaxZ - sectorMinZ) >> 16) + 1;
+				sectorUnitArea = dzInt * dxInt;
+
+				s32 insideBounds = 0;
+				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ && pointInSectorFixed(sector, x, z))
+				{
+					// pick the containing sector with the smallest area.
+					if (sectorUnitArea < prevSectorUnitArea)
+					{
+						prevSectorUnitArea = sectorUnitArea;
+						foundSector = sector;
+					}
+				}
+			}
+		}
+
+		return foundSector;
+	}
 
 	void TFE_Sectors_Fixed::copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
 	{

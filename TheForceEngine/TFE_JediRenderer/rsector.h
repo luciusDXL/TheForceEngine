@@ -136,6 +136,19 @@ namespace TFE_JediRenderer
 		virtual void adjustHeights(RSector* sector, decimal floorOffset, decimal ceilOffset, decimal secondHeightOffset) = 0;
 		virtual void computeBounds(RSector* sector) = 0;
 
+		virtual RSector* which3D(decimal& x, decimal& y, decimal& z) = 0;
+
+		// Tests if a point (p2) is to the left, on or right of an infinite line (p0 -> p1).
+		// Return: >0 p2 is on the left of the line.
+		//         =0 p2 is on the line.
+		//         <0 p2 is on the right of the line.
+		inline f32 isLeft(Vec2f p0, Vec2f p1, Vec2f p2)
+		{
+			return (p1.x - p0.x) * (p2.z - p0.z) - (p2.x - p0.x) * (p1.z - p0.z);
+		}
+
+		void addObject(RSector* sector, SecObject* obj);
+
 	protected:
 		SectorSaveValues s_sectorStack[MAX_ADJOIN_DEPTH];
 

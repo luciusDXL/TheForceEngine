@@ -4,14 +4,13 @@
 // Dark Forces Derived Renderer - Wall functions
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Asset/spriteAsset_Jedi.h>
 #include "rmath.h"
 
 namespace TFE_JediRenderer
 {
 	struct RSector;
 	struct Model;
-	struct Wax;
-	struct WaxFrame;
 
 	enum ObjectType
 	{

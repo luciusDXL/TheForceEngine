@@ -1,5 +1,6 @@
 #include "rsector.h"
 #include "redgePair.h"
+#include "robject.h"
 #include "rcommon.h"
 
 namespace TFE_JediRenderer
@@ -82,5 +83,58 @@ namespace TFE_JediRenderer
 		s_windowTopPrev = s_windowTop;
 		s_windowBotPrev = s_windowBot;
 		s_prevSector = s_curSector;
+	}
+
+	void TFE_Sectors::addObject(RSector* sector, SecObject* obj)
+	{
+		if (sector != obj->sector)
+		{
+			if (obj->sector)
+			{
+				// TODO: Remove from previous sector...
+			}
+			/*
+			if (obj->typeFlags & OTFLAG_PLAYER)	// 128<<24 = (1 << 31) -> Player
+			{
+			}
+			*/
+		}
+		// TODO: Handle player stuff.
+
+		s32 objCount = sector->objectCount;
+		s32 objectCapacity = sector->objectCapacity;
+		if (objCount == objectCapacity)
+		{
+			SecObject** list;
+			if (!objectCapacity)
+			{
+				// allocate 20 / 4 = 5
+				list = (SecObject**)malloc(sizeof(SecObject*) * 5);
+				sector->objectList = list;
+			}
+			else
+			{
+				sector->objectList = (SecObject**)realloc(sector->objectList, sizeof(SecObject*) * (objectCapacity + 5));
+				list = sector->objectList + objectCapacity;
+			}
+			memset(list, 0, sizeof(SecObject*) * 5);
+			sector->objectCapacity += 5;
+		}
+
+		SecObject** list = sector->objectList;
+		if (sector->objectCapacity > 0)
+		{
+			for (s32 i = 0; i < sector->objectCapacity; i++, list++)
+			{
+				if (!(*list))
+				{
+					*list = obj;
+					obj->index = i;
+					sector->objectCount++;
+					obj->sector = sector;
+					break;
+				}
+			}
+		}
 	}
 }  // TFE_JediRenderer

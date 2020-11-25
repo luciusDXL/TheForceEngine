@@ -628,6 +628,9 @@
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\openGL_Caps.h">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Asset\spriteAsset_Jedi.h">
+      <Filter>Source\TFE_Asset</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1019,6 +1022,9 @@
     </ClCompile>
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\openGL_Caps.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Asset\spriteAsset_Jedi.cpp">
+      <Filter>Source\TFE_Asset</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

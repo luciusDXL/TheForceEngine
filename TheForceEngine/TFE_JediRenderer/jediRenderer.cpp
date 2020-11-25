@@ -2,6 +2,7 @@
 #include "fixedPoint.h"
 #include "rcommon.h"
 #include "rsector.h"
+#include "robject.h"
 #include "RClassic_Fixed/rcommonFixed.h"
 #include "RClassic_Fixed/rclassicFixed.h"
 #include "RClassic_Fixed/rsectorFixed.h"
@@ -11,6 +12,8 @@
 
 #include <TFE_System/profiler.h>
 // VVV - this needs to be moved or fixed.
+#include <TFE_Asset/levelObjectsAsset.h>
+#include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Game/level.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/memoryPool.h>
@@ -227,6 +230,43 @@ namespace TFE_JediRenderer
 		}
 	}
 
+	SecObject* allocateObject()
+	{
+		SecObject* obj = (SecObject*)malloc(sizeof(SecObject));
+		obj->yaw = 0;
+		obj->pitch = 0;
+		obj->roll = 0;
+		obj->frame = 0;
+		obj->anim = 0;
+		obj->worldWidth = -1;
+		obj->ptr = nullptr;
+		obj->sector = nullptr;
+		obj->type = 0;
+		obj->typeFlags = 0; // OTFLAG_NONE;
+		obj->worldHeight = -1;
+		obj->flags = 0;
+		obj->self = obj;
+		return obj;
+	}
+
+	void frame_setData(SecObject* obj, u8* basePtr, WaxFrame* data)
+	{
+		obj->type = OBJ_TYPE_FRAME;
+		obj->fme = data;
+		WaxCell* cell = WAX_CellPtr(basePtr, data);
+
+		if (obj->worldWidth == -1)
+		{
+			s32 width = abs(cell->sizeX) << 16;
+			obj->worldWidth = div16(width, SPRITE_SCALE_FIXED);
+		}
+		if (obj->worldHeight == -1)
+		{
+			s32 height = abs(cell->sizeY) << 16;
+			obj->worldHeight = div16(height, SPRITE_SCALE_FIXED);
+		}
+	}
+
 	void buildLevelData()
 	{
 		LevelData* level = TFE_LevelAsset::getLevelData();
@@ -267,6 +307,64 @@ namespace TFE_JediRenderer
 			s_sectors->setupWallDrawFlags(sector);
 			s_sectors->adjustHeights(sector, { 0 }, { 0 }, { 0 });
 			s_sectors->computeBounds(sector);
+		}
+
+		///////////////////////////////////////
+		// Objects
+		///////////////////////////////////////
+		const LevelObjectData* levelObj = TFE_LevelObjects::getLevelObjectData();
+		std::vector<JediFrame*> frames;
+		const u32 frameCount = (u32)levelObj->frames.size();
+		frames.resize(frameCount);
+		for (u32 i = 0; i < frameCount; i++)
+		{
+			frames[i] = TFE_Sprite_Jedi::getFrame(levelObj->frames[i].c_str());
+		}
+		
+		std::vector<JediWax*> waxes;
+		const u32 waxCount = (u32)levelObj->sprites.size();
+		waxes.resize(waxCount);
+		for (u32 i = 0; i < waxCount; i++)
+		{
+			waxes[i] = TFE_Sprite_Jedi::getWax(levelObj->sprites[i].c_str());
+		}
+
+		const LevelObject* srcObj = levelObj->objects.data();
+		const u32 objCount = (u32)levelObj->objects.size();
+		for (u32 i = 0; i < objCount; i++, srcObj++)
+		{
+			// for now only worry about frames.
+			if (srcObj->oclass == CLASS_FRAME)
+			{
+				SecObject* obj = allocateObject();
+
+				if (s_subRenderer == TSR_CLASSIC_FIXED)
+				{
+					obj->posWS.x.f16_16 = s32(srcObj->pos.x * 65536.0f);
+					obj->posWS.y.f16_16 = s32(srcObj->pos.y * 65536.0f);
+					obj->posWS.z.f16_16 = s32(srcObj->pos.z * 65536.0f);
+				}
+				else
+				{
+					obj->posWS.x.f32 = srcObj->pos.x;
+					obj->posWS.y.f32 = srcObj->pos.y;
+					obj->posWS.z.f32 = srcObj->pos.z;
+				}
+				obj->pitch = s16(srcObj->orientation.x / 360.0f * 16484.0f);
+				obj->yaw = s16(srcObj->orientation.y / 360.0f * 16484.0f);
+				obj->roll = s16(srcObj->orientation.z / 360.0f * 16484.0f);
+
+				obj->fme = frames[srcObj->dataOffset]->frame;
+
+				RSector* sector = s_sectors->which3D(obj->posWS.x, obj->posWS.y, obj->posWS.z);
+				if (!sector)
+				{
+					continue;
+				}
+
+				s_sectors->addObject(sector, obj);
+				frame_setData(obj, (u8*)obj->fme, obj->fme);
+			}
 		}
 	}
 }

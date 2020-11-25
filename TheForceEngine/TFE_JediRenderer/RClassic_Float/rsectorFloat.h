@@ -29,10 +29,14 @@ namespace TFE_JediRenderer
 		void adjustHeights(RSector* sector, decimal floorOffset, decimal ceilOffset, decimal secondHeightOffset) override;
 		void computeBounds(RSector* sector) override;
 
+		RSector* which3D(decimal& x, decimal& y, decimal& z) override;
+
 	private:
 		void saveValues(s32 index);
 		void restoreValues(s32 index);
 		void adjoin_computeWindowBounds(EdgePair* adjoinEdges);
 		void adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePair* adjoinEdges, s32 adjoinCount);
+
+		bool pointInSectorFloat(RSector* sector, f32 x, f32 z);
 	};
 }  // TFE_JediRenderer

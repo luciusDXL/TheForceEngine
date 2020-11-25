@@ -410,6 +410,88 @@ namespace TFE_JediRenderer
 		sector->maxZ.f32 = maxZ;
 	}
 
+	// Uses the "Winding Number" test for a point in polygon.
+	// The point is considered inside if the winding number is greater than 0.
+	// Note that this is different than DF's "crossing" algorithm.
+	// TODO: Maybe? Replace algorithms.
+	bool TFE_Sectors_Float::pointInSectorFloat(RSector* sector, f32 x, f32 z)
+	{
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+		s32 wn = 0;
+
+		const Vec2f point = { x, z };
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			vec2* w1 = wall->w0;
+			vec2* w0 = wall->w1;
+
+			Vec2f p0 = { w0->x.f32, w0->z.f32 };
+			Vec2f p1 = { w1->x.f32, w1->z.f32 };
+
+			if (p0.z <= z)
+			{
+				// Upward crossing, if the point is left of the edge than it intersects.
+				if (p1.z > z && isLeft(p0, p1, point) > 0)
+				{
+					wn++;
+				}
+			}
+			else
+			{
+				// Downward crossing, if point is right of the edge it intersects.
+				if (p1.z <= z && isLeft(p0, p1, point) < 0)
+				{
+					wn--;
+				}
+			}
+		}
+
+		// The point is only outside if the winding number is less than or equal to 0.
+		return wn > 0;
+	}
+
+	// Use the floating point point inside polygon algorithm.
+	RSector* TFE_Sectors_Float::which3D(decimal& dx, decimal& dy, decimal& dz)
+	{
+		f32 x = dx.f32;
+		f32 z = dz.f32;
+		f32 y = dy.f32;
+
+		RSector* sector = s_rsectors;
+		RSector* foundSector = nullptr;
+		s32 sectorUnitArea = 0;
+		s32 prevSectorUnitArea = INT_MAX;
+
+		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			if (y >= sector->ceilingHeight.f32 && y <= sector->floorHeight.f32)
+			{
+				const f32 sectorMaxX = sector->maxX.f32;
+				const f32 sectorMinX = sector->minX.f32;
+				const f32 sectorMaxZ = sector->maxZ.f32;
+				const f32 sectorMinZ = sector->minZ.f32;
+
+				const s32 dxInt = (s32)floorf(sectorMaxX - sectorMinX) + 1;
+				const s32 dzInt = (s32)floorf(sectorMaxZ - sectorMinZ) + 1;
+				sectorUnitArea = dzInt * dxInt;
+
+				s32 insideBounds = 0;
+				if (x >= sectorMinX && x <= sectorMaxX && z >= sectorMinZ && z <= sectorMaxZ && pointInSectorFloat(sector, x, z))
+				{
+					// pick the containing sector with the smallest area.
+					if (sectorUnitArea < prevSectorUnitArea)
+					{
+						prevSectorUnitArea = sectorUnitArea;
+						foundSector = sector;
+					}
+				}
+			}
+		}
+
+		return foundSector;
+	}
+
 	void TFE_Sectors_Float::copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
 	{
 		out->vertexCount = sector->vtxCount;

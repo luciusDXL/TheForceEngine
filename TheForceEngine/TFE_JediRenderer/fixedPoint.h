@@ -20,6 +20,7 @@ namespace TFE_JediRenderer
 
 	#define FRAC_BITS_16 16ll
 	#define FLOAT_SCALE_16 65536.0f
+	#define INV_FLOAT_SCALE_16 (1.0f/FLOAT_SCALE_16)
 	#define ANGLE_TO_FIXED_SCALE 4
 
 	// Fixed point type
@@ -92,6 +93,11 @@ namespace TFE_JediRenderer
 	inline fixed16_16 floatToFixed16(f32 x)
 	{
 		return fixed16_16(x * FLOAT_SCALE_16);
+	}
+
+	inline f32 fixed16ToFloat(fixed16_16 x)
+	{
+		return f32(x) * INV_FLOAT_SCALE_16;
 	}
 
 	// Convert a floating point angle from [0, 2pi) to a fixed point value where 0 -> 0 and 2pi -> 16384
