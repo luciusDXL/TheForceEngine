@@ -15,6 +15,7 @@
 #include <TFE_Game/geometry.h>
 #include <TFE_InfSystem/infSystem.h>
 #include <TFE_Audio/audioSystem.h>
+#include <TFE_JediRenderer/jediRenderer.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -287,6 +288,7 @@ namespace TFE_LogicSystem
 				{
 					gameObject->position.y -= 0.2f;
 					gameObject->verticalVel -= 32.0f;
+					gameObject->update = true;
 				}
 			}
 		}
@@ -316,6 +318,7 @@ namespace TFE_LogicSystem
 		obj->gameObj->angles.x += angleChange.x;
 		obj->gameObj->angles.y += angleChange.y;
 		obj->gameObj->angles.z += angleChange.z;
+		obj->gameObj->update = true;
 	}
 		
 	f32 TFE_GetVueLength(s32 objectId, s32 viewIndex)
@@ -448,6 +451,8 @@ namespace TFE_LogicSystem
 			obj->gameObj->position = newPos;
 			// set the new transform.
 			obj->gameObj->vueTransform = &newTransform->rotScale;
+
+			obj->gameObj->update = true;
 		}
 	}
 	
@@ -478,6 +483,7 @@ namespace TFE_LogicSystem
 
 		obj->gameObj->animId = animationId;
 		obj->gameObj->frameIndex = frameIndex;
+		obj->gameObj->update = true;
 	}
 
 	void TFE_SetCollision(s32 objectId, f32 radius, f32 height, u32 collisionFlags)
@@ -505,6 +511,7 @@ namespace TFE_LogicSystem
 		ScriptObject* obj = &s_scriptObjects[objectId];
 
 		obj->gameObj->show = false;
+		obj->gameObj->update = true;
 	}
 
 	Vec3f TFE_BiasTowardsPlayer(Vec3f pos, f32 bias)
@@ -565,6 +572,8 @@ namespace TFE_LogicSystem
 		{
 			obj->model = TFE_Model::get(objectName.c_str());
 		}
+
+		TFE_JediRenderer::addObject(objectName.c_str(), objectId, sectorId);
 
 		(*sectorObjList)[sectorId].list.push_back(objectId);
 		return objectId;

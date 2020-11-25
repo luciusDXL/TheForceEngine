@@ -12,6 +12,7 @@
 
 #include <TFE_System/profiler.h>
 // VVV - this needs to be moved or fixed.
+#include <TFE_Game/gameObject.h>
 #include <TFE_Asset/levelObjectsAsset.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Game/level.h>
@@ -32,6 +33,7 @@ namespace TFE_JediRenderer
 	/////////////////////////////////////////////
 	void clear1dDepth();
 	void updateSectors();
+	void updateGameObjects();
 	void buildLevelData();
 	void console_setSubRenderer(const std::vector<std::string>& args);
 	void console_getSubRenderer(const std::vector<std::string>& args);
@@ -192,7 +194,8 @@ namespace TFE_JediRenderer
 			s_windowBot_all[i] = s_maxScreenY;
 		}
 
-		// For now setup sector data each frame.
+		// For now setup sector and object data each frame.
+		updateGameObjects();
 		updateSectors();
 
 		// Recursively draws sectors and their contents (sprites, 3D objects).
@@ -253,6 +256,7 @@ namespace TFE_JediRenderer
 	{
 		obj->type = OBJ_TYPE_FRAME;
 		obj->fme = data;
+		obj->flags |= 4;
 		WaxCell* cell = WAX_CellPtr(basePtr, data);
 
 		if (obj->worldWidth == -1)
@@ -264,6 +268,109 @@ namespace TFE_JediRenderer
 		{
 			s32 height = abs(cell->sizeY) << 16;
 			obj->worldHeight = div16(height, SPRITE_SCALE_FIXED);
+		}
+	}
+
+	void addObject(const char* assetName, u32 gameObjId, u32 sectorId)
+	{
+		if (!s_init || !assetName || sectorId >= s_sectors->getCount()) { return; }
+
+		GameObject* gameObjects = LevelGameObjects::getGameObjectList()->data();
+		GameObject* gameObj = &gameObjects[gameObjId];
+				
+		if (gameObj->oclass == CLASS_FRAME)
+		{
+			SecObject* obj = allocateObject();
+			obj->gameObjId = gameObjId;
+
+			if (s_subRenderer == TSR_CLASSIC_FIXED)
+			{
+				obj->posWS.x.f16_16 = s32(gameObj->position.x * 65536.0f);
+				obj->posWS.y.f16_16 = s32(gameObj->position.y * 65536.0f);
+				obj->posWS.z.f16_16 = s32(gameObj->position.z * 65536.0f);
+			}
+			else
+			{
+				obj->posWS.x.f32 = gameObj->position.x;
+				obj->posWS.y.f32 = gameObj->position.y;
+				obj->posWS.z.f32 = gameObj->position.z;
+			}
+			obj->pitch = s16(gameObj->angles.x / 360.0f * 16484.0f);
+			obj->yaw = s16(gameObj->angles.y / 360.0f * 16484.0f);
+			obj->roll = s16(gameObj->angles.z / 360.0f * 16484.0f);
+
+			JediFrame* jFrame = TFE_Sprite_Jedi::getFrame(assetName);
+			if (!jFrame)
+			{
+				free(obj);
+				return;
+			}
+			obj->fme = jFrame->frame;
+
+			s_sectors->addObject(&s_sectors->get()[sectorId], obj);
+			frame_setData(obj, (u8*)obj->fme, obj->fme);
+		}
+	}
+
+	void updateGameObjects()
+	{
+		TFE_ZONE("Sector Object Update");
+		RSector* sector = s_sectors->get();
+		const u32 count = s_sectors->getCount();
+		const LevelObjectData* levelObj = TFE_LevelObjects::getLevelObjectData();
+
+		GameObject* gameObjects = LevelGameObjects::getGameObjectList()->data();
+		for (u32 i = 0; i < count; i++, sector++)
+		{
+			SecObject** obj = sector->objectList;
+			for (s32 i = sector->objectCount - 1; i >= 0; i--, obj++)
+			{
+				SecObject* curObj = *obj;
+				while (!curObj)
+				{
+					obj++;
+					curObj = *obj;
+				}
+				GameObject* gameObj = &gameObjects[curObj->gameObjId];
+
+				if (!gameObj->update) { continue; }
+				gameObj->update = false;
+
+				if (!gameObj->show)
+				{
+					// Remove the object from the sector.
+					*obj = nullptr;
+					sector->objectCount--;
+					continue;
+				}
+			
+				if (curObj->type == OBJ_TYPE_SPRITE)
+				{
+					// TODO
+				}
+				else if (curObj->type == OBJ_TYPE_FRAME)
+				{
+					if (s_subRenderer == TSR_CLASSIC_FIXED)
+					{
+						curObj->posWS.x.f16_16 = s32(gameObj->position.x * 65536.0f);
+						curObj->posWS.y.f16_16 = s32(gameObj->position.y * 65536.0f);
+						curObj->posWS.z.f16_16 = s32(gameObj->position.z * 65536.0f);
+					}
+					else
+					{
+						curObj->posWS.x.f32 = gameObj->position.x;
+						curObj->posWS.y.f32 = gameObj->position.y;
+						curObj->posWS.z.f32 = gameObj->position.z;
+					}
+					curObj->pitch = s16(gameObj->angles.x / 360.0f * 16484.0f);
+					curObj->yaw = s16(gameObj->angles.y / 360.0f * 16484.0f);
+					curObj->roll = s16(gameObj->angles.z / 360.0f * 16484.0f);
+				}
+				else if (curObj->type == OBJ_TYPE_3D)
+				{
+					// TODO
+				}
+			}
 		}
 	}
 
@@ -337,6 +444,7 @@ namespace TFE_JediRenderer
 			if (srcObj->oclass == CLASS_FRAME)
 			{
 				SecObject* obj = allocateObject();
+				obj->gameObjId = i;
 
 				if (s_subRenderer == TSR_CLASSIC_FIXED)
 				{

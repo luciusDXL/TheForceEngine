@@ -39,7 +39,7 @@ namespace TFE_JediRenderer
 	{
 		return ((const RWallSegment*)r0)->wallX0 - ((const RWallSegment*)r1)->wallX0;
 	}
-
+		
 	void TFE_Sectors::clear(RSector* sector)
 	{
 		sector->vertexCount = 0;
@@ -85,13 +85,37 @@ namespace TFE_JediRenderer
 		s_prevSector = s_curSector;
 	}
 
+	void TFE_Sectors::removeObject(RSector* sector, SecObject* objToDel)
+	{
+		if (sector != objToDel->sector)
+		{
+			SecObject** obj = sector->objectList;
+			for (s32 i = sector->objectCount - 1; i >= 0; i--, obj++)
+			{
+				SecObject* curObj = *obj;
+				while (!curObj)
+				{
+					obj++;
+					curObj = *obj;
+				}
+
+				if (curObj == objToDel)
+				{
+					*obj = nullptr;
+					sector->objectCount--;
+					return;
+				}
+			}
+		}
+	}
+
 	void TFE_Sectors::addObject(RSector* sector, SecObject* obj)
 	{
 		if (sector != obj->sector)
 		{
 			if (obj->sector)
 			{
-				// TODO: Remove from previous sector...
+				removeObject(sector, obj);
 			}
 			/*
 			if (obj->typeFlags & OTFLAG_PLAYER)	// 128<<24 = (1 << 31) -> Player

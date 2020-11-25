@@ -52,5 +52,8 @@ namespace TFE_JediRenderer
 		s16 yaw;
 		s16 roll;
 		s16 index;	// index in containing sector object list.
+
+		// Temporary (until Jedi Renderer is finished)
+		u32 gameObjId;
 	};
 }

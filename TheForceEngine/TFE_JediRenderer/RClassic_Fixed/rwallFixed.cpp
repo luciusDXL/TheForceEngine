@@ -33,6 +33,7 @@ namespace RClassic_Fixed
 	static const u8* s_columnLight;
 	static u8* s_texImage;
 	static u8* s_columnOut;
+	static u8  s_workBuffer[1024];
 
 	s32 segmentCrossesLine(fixed16_16 ax0, fixed16_16 ay0, fixed16_16 ax1, fixed16_16 ay1, fixed16_16 bx0, fixed16_16 by0, fixed16_16 bx1, fixed16_16 by1);
 	fixed16_16 solveForZ_Numerator(RWallSegment* wallSegment);
@@ -2236,22 +2237,45 @@ namespace RClassic_Fixed
 		}
 	}
 
+	void sprite_decompressColumn(u8* colData, u8* outBuffer, s32 height)
+	{
+		for (s32 y = 0, i = 0; y < height; )
+		{
+			u8 count = *colData;
+			colData++;
+
+			if (count & 0x80)
+			{
+				count &= 0x7f;
+				for (s32 r = 0; r < count; r++, y++)
+				{
+					outBuffer[y] = 0;
+				}
+			}
+			else
+			{
+				for (s32 r = 0; r < count; r++, y++, colData++)
+				{
+					outBuffer[y] = *colData;
+				}
+			}
+		}
+	}
+
 	// Refactor this into a sprite specific file.
 	void sprite_drawFrame(WaxFrame* frame, SecObject* obj)
 	{
 		if (!frame) { return; }
 
-		WaxCell* cell = WAX_CellPtr((u8*)frame, frame);
-		s32 flip = frame->flip;
+		const WaxCell* cell = WAX_CellPtr((u8*)frame, frame);
+		const fixed16_16 z = obj->posVS.z.f16_16;
+		const s32 flip = frame->flip;
+		// Make sure the sprite isn't behind the near plane.
+		if (z < ONE_16) { return; }
+
 		fixed16_16 x0 = obj->posVS.x.f16_16 - frame->offsetX;
 		fixed16_16 yOffset = frame->heightWS - frame->offsetY;
 		fixed16_16 y0 = obj->posVS.y.f16_16 - yOffset;
-		fixed16_16 z = obj->posVS.z.f16_16;
-		if (z < ONE_16)
-		{
-			// This should have been culled.
-			return;
-		}
 
 		fixed16_16 rcpZ = div16(ONE_16, z);
 		fixed16_16 projX0 = mul16(mul16(x0, s_focalLength_Fixed), rcpZ) + s_halfWidth_Fixed;
@@ -2327,8 +2351,8 @@ namespace RClassic_Fixed
 		}
 		else
 		{
-			image = imageData;
 			n = 0;
+			image = imageData;
 		}
 
 		if (x0_pixel > x1_pixel)
@@ -2336,18 +2360,23 @@ namespace RClassic_Fixed
 			return;
 		}
 
+		// This should be set to handle all sizes, repeating is not required.
+		s_texHeightMask = 0xffff;
+
+		const u32* columnOffset = (u32*)((u8*)frame + cell->columnOffset);
 		for (s32 x = x0_pixel; x <= x1_pixel; x++, uCoord += uCoordStep)
 		{
 			if (z < s_depth1d_Fixed[x])
 			{
 				s32 y0 = y0_pixel;
-				s32 top = s_objWindowTop[x];
 				s32 y1 = y1_pixel;
+
+				const s32 top = s_objWindowTop[x];
 				if (y0 < top)
 				{
 					y0 = top;
 				}
-				s32 bot = s_objWindowBot[x];
+				const s32 bot = s_objWindowBot[x];
 				if (y1 > bot)
 				{
 					y1 = bot;
@@ -2358,37 +2387,29 @@ namespace RClassic_Fixed
 				{
 					fixed16_16 vOffset = intToFixed16(y1_pixel - y1);
 					s_vCoordFixed = mul16(vOffset, s_vCoordStep);
+
 					s32 texelU = floor16(uCoord);
-
-					u32* columnOffset = (u32*)((u8*)frame + cell->columnOffset);
-
+					if (flip)
+					{
+						texelU = cell->sizeX - texelU - 1;
+					}
+										
 					if (compressed)
 					{
-						if (flip)
-						{
-							texelU = cell->sizeX - texelU - 1;
-						}
+						u8* colPtr = (u8*)cell + columnOffset[texelU];
 
-						s32* colPtr = (s32*)((u8*)cell + columnOffset[texelU]);
-
-						//sprite_decompressColumn(colPtr, s_workBuffer, cell->sizeY);
-						//s_texImage = (u8*)s_workBuffer;
+						// Decompress the column into "work buffer."
+						sprite_decompressColumn(colPtr, s_workBuffer, cell->sizeY);
+						s_texImage = (u8*)s_workBuffer;
 					}
 					else
 					{
-						if (flip)
-						{
-							texelU = cell->sizeX - texelU - 1;
-						}
 						s_texImage = (u8*)image + columnOffset[texelU];
 					}
-					// column write output.
+					// Output.
 					s_columnOut = &s_display[y0 * s_width + x];
-					// for now skip if compressed.
-					if (!compressed)
-					{
-						spriteColumnFunc();
-					}
+					// Draw the column.
+					spriteColumnFunc();
 				}
 			}
 		}

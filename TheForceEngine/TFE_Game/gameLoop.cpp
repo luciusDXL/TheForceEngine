@@ -1047,6 +1047,7 @@ namespace TFE_GameLoop
 					{
 						obj->verticalVel += c_gravityAccelStep;
 					}
+					obj->update = true;
 				}
 			}
 

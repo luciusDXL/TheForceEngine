@@ -148,6 +148,7 @@ namespace TFE_JediRenderer
 		}
 
 		void addObject(RSector* sector, SecObject* obj);
+		void removeObject(RSector* sector, SecObject* obj);
 
 	protected:
 		SectorSaveValues s_sectorStack[MAX_ADJOIN_DEPTH];

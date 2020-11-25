@@ -53,4 +53,7 @@ namespace TFE_JediRenderer
 	void setupLevel(s32 width, s32 height);
 	// Set the current resolution to render, this may involve regenerating lookup-tables, depending on the sub-renderer.
 	void setResolution(s32 width, s32 height);
+
+	// Temporary?
+	void addObject(const char* assetName, u32 gameObjId, u32 sectorId);
 }

@@ -43,6 +43,7 @@ struct GameObject
 	};
 	bool fullbright;
 	bool show;
+	bool update = false;
 
 	// General
 	u32 objectId;
