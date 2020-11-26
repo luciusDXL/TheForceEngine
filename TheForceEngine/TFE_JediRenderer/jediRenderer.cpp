@@ -271,6 +271,29 @@ namespace TFE_JediRenderer
 		}
 	}
 
+	void wax_setData(SecObject* obj, u8* basePtr, Wax* data)
+	{
+		obj->type = OBJ_TYPE_SPRITE;
+		obj->wax = data;
+		obj->flags |= 4;
+
+		WaxAnim* anim = WAX_AnimPtr(basePtr, data, 0);
+		WaxView* view = WAX_ViewPtr(basePtr, anim, 0);
+		WaxFrame* frame = WAX_FramePtr(basePtr, view, 0);
+		WaxCell* cell = WAX_CellPtr(basePtr, frame);
+
+		if (obj->worldWidth == -1)
+		{
+			s32 width = abs(cell->sizeX) << 16;
+			obj->worldWidth = div16(mul16(data->xScale, width), SPRITE_SCALE_FIXED);
+		}
+		if (obj->worldHeight == -1)
+		{
+			s32 height = abs(cell->sizeY) << 16;
+			obj->worldHeight = div16(mul16(data->yScale, height), SPRITE_SCALE_FIXED);
+		}
+	}
+
 	void addObject(const char* assetName, u32 gameObjId, u32 sectorId)
 	{
 		if (!s_init || !assetName || sectorId >= s_sectors->getCount()) { return; }
@@ -295,9 +318,9 @@ namespace TFE_JediRenderer
 				obj->posWS.y.f32 = gameObj->position.y;
 				obj->posWS.z.f32 = gameObj->position.z;
 			}
-			obj->pitch = s16(gameObj->angles.x / 360.0f * 16484.0f);
-			obj->yaw = s16(gameObj->angles.y / 360.0f * 16484.0f);
-			obj->roll = s16(gameObj->angles.z / 360.0f * 16484.0f);
+			obj->pitch = s16(gameObj->angles.x / 360.0f * 16484.0f) % 16384;
+			obj->yaw   = s16(gameObj->angles.y / 360.0f * 16484.0f) % 16384;
+			obj->roll  = s16(gameObj->angles.z / 360.0f * 16484.0f) % 16384;
 
 			JediFrame* jFrame = TFE_Sprite_Jedi::getFrame(assetName);
 			if (!jFrame)
@@ -344,17 +367,13 @@ namespace TFE_JediRenderer
 					continue;
 				}
 			
-				if (curObj->type == OBJ_TYPE_SPRITE)
-				{
-					// TODO
-				}
-				else if (curObj->type == OBJ_TYPE_FRAME)
+				if (curObj->type == OBJ_TYPE_FRAME || curObj->type == OBJ_TYPE_SPRITE)
 				{
 					if (s_subRenderer == TSR_CLASSIC_FIXED)
 					{
-						curObj->posWS.x.f16_16 = s32(gameObj->position.x * 65536.0f);
-						curObj->posWS.y.f16_16 = s32(gameObj->position.y * 65536.0f);
-						curObj->posWS.z.f16_16 = s32(gameObj->position.z * 65536.0f);
+						curObj->posWS.x.f16_16 = fixed16_16(gameObj->position.x * 65536.0f);
+						curObj->posWS.y.f16_16 = fixed16_16(gameObj->position.y * 65536.0f);
+						curObj->posWS.z.f16_16 = fixed16_16(gameObj->position.z * 65536.0f);
 					}
 					else
 					{
@@ -362,9 +381,12 @@ namespace TFE_JediRenderer
 						curObj->posWS.y.f32 = gameObj->position.y;
 						curObj->posWS.z.f32 = gameObj->position.z;
 					}
-					curObj->pitch = s16(gameObj->angles.x / 360.0f * 16484.0f);
-					curObj->yaw = s16(gameObj->angles.y / 360.0f * 16484.0f);
-					curObj->roll = s16(gameObj->angles.z / 360.0f * 16484.0f);
+					curObj->pitch = s16(gameObj->angles.x / 360.0f * 16484.0f) % 16384;
+					curObj->yaw   = s16(gameObj->angles.y / 360.0f * 16484.0f) % 16384;
+					curObj->roll  = s16(gameObj->angles.z / 360.0f * 16484.0f) % 16384;
+
+					curObj->frame = gameObj->frameIndex;
+					curObj->anim  = gameObj->animId;
 				}
 				else if (curObj->type == OBJ_TYPE_3D)
 				{
@@ -441,7 +463,7 @@ namespace TFE_JediRenderer
 		for (u32 i = 0; i < objCount; i++, srcObj++)
 		{
 			// for now only worry about frames.
-			if (srcObj->oclass == CLASS_FRAME)
+			if (srcObj->oclass == CLASS_FRAME || srcObj->oclass == CLASS_SPRITE)
 			{
 				SecObject* obj = allocateObject();
 				obj->gameObjId = i;
@@ -458,21 +480,27 @@ namespace TFE_JediRenderer
 					obj->posWS.y.f32 = srcObj->pos.y;
 					obj->posWS.z.f32 = srcObj->pos.z;
 				}
-				obj->pitch = s16(srcObj->orientation.x / 360.0f * 16484.0f);
-				obj->yaw = s16(srcObj->orientation.y / 360.0f * 16484.0f);
-				obj->roll = s16(srcObj->orientation.z / 360.0f * 16484.0f);
-
-				obj->fme = frames[srcObj->dataOffset]->frame;
-
+				obj->pitch = s16(srcObj->orientation.x / 360.0f * 16484.0f) % 16384;
+				obj->yaw   = s16(srcObj->orientation.y / 360.0f * 16484.0f) % 16384;
+				obj->roll  = s16(srcObj->orientation.z / 360.0f * 16484.0f) % 16384;
+								
 				RSector* sector = s_sectors->which3D(obj->posWS.x, obj->posWS.y, obj->posWS.z);
 				if (!sector)
 				{
 					continue;
 				}
-				obj->flags |= 4;
 
 				s_sectors->addObject(sector, obj);
-				frame_setData(obj, (u8*)obj->fme, obj->fme);
+				if (srcObj->oclass == CLASS_FRAME)
+				{
+					obj->fme = frames[srcObj->dataOffset]->frame;
+					frame_setData(obj, (u8*)obj->fme, obj->fme);
+				}
+				else
+				{
+					obj->wax = waxes[srcObj->dataOffset]->wax;
+					wax_setData(obj, (u8*)obj->wax, obj->wax);
+				}
 			}
 		}
 	}

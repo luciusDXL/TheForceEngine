@@ -16,6 +16,10 @@
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_LogicSystem/logicSystem.h>
 
+// RendererClassic - start directly changing.
+//#include "RendererClassic/rsector.h"
+//#include "RendererClassic/rwall.h"
+
 #include <assert.h>
 #include <algorithm>
 
@@ -262,6 +266,7 @@ namespace TFE_Level
 			{
 				obj->position.x += move->x;
 				obj->position.z += move->z;
+				obj->update = true;
 			}
 		}
 	}
@@ -295,6 +300,7 @@ namespace TFE_Level
 				obj->position.x =  ca*x + sa*z + center->x;
 				obj->position.z = -sa*x + ca*z + center->z;
 				obj->angles.y += angleDelta * PI / 180.0f;
+				obj->update = true;
 			}
 		}
 	}
@@ -324,6 +330,7 @@ namespace TFE_Level
 			if (obj->position.y >= testHeight || fabsf(obj->position.y - baseHeight) < 0.1f)
 			{
 				obj->position.y = testHeight;
+				obj->update = true;
 			}
 		}
 	}
@@ -348,6 +355,7 @@ namespace TFE_Level
 			if (obj->position.y >= testHeight || fabsf(obj->position.y - baseHeight) < 0.1f)
 			{
 				obj->position.y = testHeight;
+				obj->update = true;
 			}
 		}
 	}
@@ -811,18 +819,22 @@ namespace TFE_Level
 	void setTextureId(s32 sectorId, SectorPart part, WallSubPart subpart, u32 textureId, s32 wallId)
 	{
 		Sector* sector = &s_levelData->sectors[sectorId];
+		//RSector* rsec = &RClassicSector::sector_get()[sectorId];
 		if (part == SP_FLOOR)
 		{
 			sector->floorTexture.texId = textureId;
+			//rsec->floorTex = &s_levelData->textures[textureId]->frames[0];
 		}
 		else if (part == SP_CEILING)
 		{
 			sector->ceilTexture.texId = textureId;
+			//rsec->ceilTex = &s_levelData->textures[textureId]->frames[0];
 		}
 		else if (part == SP_SIGN)
 		{
 			if (wallId < 0) { return; }
 			s_levelData->walls[sector->wallOffset + wallId].sign.texId = textureId;
+			//rsec->walls[wallId].signTex = &s_levelData->textures[textureId]->frames[0];
 		}
 		else if (part == SP_WALL)
 		{
@@ -949,11 +961,32 @@ namespace TFE_Level
 		if (part == SP_FLOOR || part == SP_CEILING)
 		{
 			sector->flags[flagIndex] |= flagBits;
+
+			/*
+			RSector* rsec = &RClassicSector::sector_get()[sectorId];
+			if (flagIndex == 0)
+				rsec->flags1 |= flagBits;
+			else if (flagIndex == 1)
+				rsec->flags2 |= flagBits;
+			else if (flagIndex == 2)
+				rsec->flags3 |= flagBits;
+			*/
 		}
 		else if (part == SP_SIGN || part == SP_WALL)
 		{
 			if (wallId < 0) { return; }
 			s_levelData->walls[sector->wallOffset + wallId].flags[flagIndex] = flagBits;
+
+			/*
+			RSector* rsec = &RClassicSector::sector_get()[sectorId];
+			RWall* wall = &rsec->walls[wallId];
+			if (flagIndex == 0)
+				wall->flags1 |= flagBits;
+			else if (flagIndex == 1)
+				wall->flags2 |= flagBits;
+			else if (flagIndex == 2)
+				wall->flags3 |= flagBits;
+			*/
 		}
 		sector->dirty = true;
 	}
@@ -964,11 +997,32 @@ namespace TFE_Level
 		if (part == SP_FLOOR || part == SP_CEILING)
 		{
 			sector->flags[flagIndex] &= ~flagBits;
+
+			/*
+			RSector* rsec = &RClassicSector::sector_get()[sectorId];
+			if (flagIndex == 0)
+				rsec->flags1 &= ~flagBits;
+			else if (flagIndex == 1)
+				rsec->flags2 &= ~flagBits;
+			else if (flagIndex == 2)
+				rsec->flags3 &= ~flagBits;
+			*/
 		}
 		else if (part == SP_SIGN || part == SP_WALL)
 		{
 			if (wallId < 0) { return; }
 			s_levelData->walls[sector->wallOffset + wallId].flags[flagIndex] &= ~flagBits;
+
+			/*
+			RSector* rsec = &RClassicSector::sector_get()[sectorId];
+			RWall* wall = &rsec->walls[wallId];
+			if (flagIndex == 0)
+				wall->flags1 &= ~flagBits;
+			else if (flagIndex == 1)
+				wall->flags2 &= ~flagBits;
+			else if (flagIndex == 2)
+				wall->flags3 &= ~flagBits;
+			*/
 		}
 		s_levelData->sectors[sectorId].dirty = true;
 	}
@@ -993,6 +1047,9 @@ namespace TFE_Level
 	{
 		s_levelData->sectors[sectorId].ambient = ambient;
 		s_levelData->sectors[sectorId].dirty = true;
+
+		//RSector* rsec = RClassicSector::sector_get();
+		//rsec->ambientFixed = FixedPoint::intToFixed16(ambient);
 	}
 
 	u8 getAmbient(s32 sectorId)
@@ -1004,10 +1061,13 @@ namespace TFE_Level
 	{
 		const size_t count = s_levelData->sectors.size();
 		Sector* sector = s_levelData->sectors.data();
-		for (size_t i = 0; i < count; i++, sector++)
+		//RSector* rsec = RClassicSector::sector_get();
+		for (size_t i = 0; i < count; i++, sector++)//, rsec++)
 		{
 			sector->ambient = sector->flags[2];
 			sector->dirty = true;
+
+			//rsec->ambientFixed = FixedPoint::intToFixed16(rsec->flags2);
 		}
 	}
 
@@ -1026,5 +1086,19 @@ namespace TFE_Level
 
 		sectors[sector1].dirty = true;
 		sectors[sector2].dirty = true;
+
+		// Add direct setting to Classic Renderer
+		/*
+		RSector* rsec = RClassicSector::sector_get();
+		RSector* sec1 = &rsec[sector1];
+		RSector* sec2 = &rsec[sector2];
+		sec1->walls[wall1].mirror = wall2;
+		sec1->walls[wall2].mirror = wall1;
+
+		sec1->walls[wall1].nextSector = &rsec[sector2];
+		sec2->walls[wall2].nextSector = &rsec[sector1];
+		sec1->walls[wall1].mirrorWall = &rsec[sector2].walls[wall2];
+		sec2->walls[wall2].mirrorWall = &rsec[sector1].walls[wall1];
+		*/
 	}
 }

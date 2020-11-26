@@ -77,10 +77,10 @@ struct Wax
 };
 #pragma pack(pop)
 
-#define WAX_AnimPtr(basePtr, jWax, animId) (WaxAnim*)(basePtr + jWax.animOffsets[animId])
-#define WAX_ViewPtr(basePtr, jAnim, viewId) (WaxView*)(basePtr + jAnim->vieOffets[viewId])
-#define WAX_FramePtr(basePtr, jView, frameId) (WaxFrame*)(basePtr + jView->frameOffsets[frameId])
-#define WAX_CellPtr(basePtr, jFrame) (WaxCell*)(basePtr + jFrame->cellOffset)
+#define WAX_AnimPtr(basePtr, jWax, animId) ((jWax)->animOffsets[(animId)] ? (WaxAnim*)((basePtr) + (jWax)->animOffsets[(animId)]) : nullptr)
+#define WAX_ViewPtr(basePtr, jAnim, viewId) ((jAnim)->viewOffsets[(viewId)] ? (WaxView*)((basePtr) + (jAnim)->viewOffsets[(viewId)]) : nullptr)
+#define WAX_FramePtr(basePtr, jView, frameId) ((jView)->frameOffsets[(frameId)] ? (WaxFrame*)((basePtr) + (jView)->frameOffsets[(frameId)]) : nullptr)
+#define WAX_CellPtr(basePtr, jFrame) ((jFrame)->cellOffset ? (WaxCell*)((basePtr) + (jFrame)->cellOffset) : nullptr)
 
 struct JediWax
 {

@@ -2263,11 +2263,11 @@ namespace RClassic_Fixed
 	}
 
 	// Refactor this into a sprite specific file.
-	void sprite_drawFrame(WaxFrame* frame, SecObject* obj)
+	void sprite_drawFrame(u8* basePtr, WaxFrame* frame, SecObject* obj)
 	{
 		if (!frame) { return; }
 
-		const WaxCell* cell = WAX_CellPtr((u8*)frame, frame);
+		const WaxCell* cell = WAX_CellPtr(basePtr, frame);
 		const fixed16_16 z = obj->posVS.z.f16_16;
 		const s32 flip = frame->flip;
 		// Make sure the sprite isn't behind the near plane.
@@ -2316,7 +2316,7 @@ namespace RClassic_Fixed
 		if (x0_pixel < s_windowX0)
 		{
 			s32 dx = s_windowX0 - x0_pixel;
-			uCoord = mul16(uCoordStep, intToFixed16(dx));	// eax
+			uCoord = mul16(uCoordStep, intToFixed16(dx));
 			x0_pixel = s_windowX0;
 		}
 		if (x1_pixel > s_windowX1)
@@ -2363,7 +2363,7 @@ namespace RClassic_Fixed
 		// This should be set to handle all sizes, repeating is not required.
 		s_texHeightMask = 0xffff;
 
-		const u32* columnOffset = (u32*)((u8*)frame + cell->columnOffset);
+		const u32* columnOffset = (u32*)(basePtr + cell->columnOffset);
 		for (s32 x = x0_pixel; x <= x1_pixel; x++, uCoord += uCoordStep)
 		{
 			if (z < s_depth1d_Fixed[x])

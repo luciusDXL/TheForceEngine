@@ -39,6 +39,6 @@ namespace TFE_JediRenderer
 		void wall_computeTexelHeights(RWall* wall);
 
 		// Sprite code for now because so much is shared.
-		void sprite_drawFrame(WaxFrame* frame, SecObject* obj);
+		void sprite_drawFrame(u8* basePtr, WaxFrame* frame, SecObject* obj);
 	}
 }

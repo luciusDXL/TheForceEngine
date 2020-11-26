@@ -74,9 +74,9 @@ namespace TFE_Sprite_Jedi
 		}
 		else
 		{
-			u32* columns = (u32*)(assetPtr + sizeof(JediFrame) + s_buffer.size());
+			u32* columns = (u32*)(asset->basePtr + s_buffer.size());
 			// Local pointer.
-			cell->columnOffset = u32((u8*)columns - (u8*)asset->basePtr);
+			cell->columnOffset = u32((u8*)columns - asset->basePtr);
 			// Calculate column offsets.
 			for (s32 c = 0; c < cell->sizeX; c++)
 			{
@@ -86,6 +86,21 @@ namespace TFE_Sprite_Jedi
 		
 		s_frames[name] = asset;
 		return asset;
+	}
+
+	static std::vector<u32> s_cellOffsets;
+
+	bool isUniqueCell(u32 offset)
+	{
+		const size_t count = s_cellOffsets.size();
+		const u32* offsetList = s_cellOffsets.data();
+		for (u32 i = 0; i < count; i++)
+		{
+			if (offsetList[i] == offset) { return false; }
+		}
+		s_cellOffsets.push_back(offset);
+
+		return true;
 	}
 
 	JediWax* getWax(const char* name)
@@ -103,11 +118,114 @@ namespace TFE_Sprite_Jedi
 		}
 
 		const u8* data = s_buffer.data();
+		const Wax* srcWax = (Wax*)data;
+		
+		// every animation is filled out until the end, so no animations = no wax.
+		if (!srcWax->animOffsets[0])
+		{
+			return nullptr;
+		}
+		s_cellOffsets.clear();
 
-		// First determine the size to allocate...
-		// ...
+		// First determine the size to allocate (note that this will overallocate a bit because cells are shared).
+		u32 sizeToAlloc = sizeof(JediWax) + (u32)s_buffer.size();
+		const s32* animOffset = srcWax->animOffsets;
+		for (s32 animIdx = 0; animIdx < 32 && animOffset[animIdx]; animIdx++)
+		{
+			WaxAnim* anim = (WaxAnim*)(data + animOffset[animIdx]);
+			const s32* viewOffsets = anim->viewOffsets;
+			for (s32 v = 0; v < 32; v++)
+			{
+				const WaxView* view = (WaxView*)(data + viewOffsets[v]);
+				const s32* frameOffset = view->frameOffsets;
+				for (s32 f = 0; f < 32 && frameOffset[f]; f++)
+				{
+					const WaxFrame* frame = (WaxFrame*)(data + frameOffset[f]);
+					const WaxCell* cell = frame->cellOffset ? (WaxCell*)(data + frame->cellOffset) : nullptr;
+					if (cell && cell->compressed == 0 && isUniqueCell(frame->cellOffset))
+					{
+						sizeToAlloc += cell->sizeX * sizeof(u32);
+					}
+				}
+			}
+		}
 
-		return nullptr;
+		// Allocate and copy the data (this is a "copy in place" format... mostly.
+		JediWax* asset = (JediWax*)malloc(sizeToAlloc);
+		asset->basePtr = (u8*)asset + sizeof(JediWax);
+		Wax* dstWax = asset->wax = (Wax*)asset->basePtr;
+		memcpy(dstWax, srcWax, s_buffer.size());
+
+		// Loop through animation list until we reach 32 (maximum count) or a null animation.
+		// This means that animations are contiguous.
+		fixed16_16 scaledWidth, scaledHeight;
+
+		u32 cellOffsetPtr = 0;
+		for (s32 animIdx = 0; animIdx < 32 && animOffset[animIdx]; animIdx++)
+		{
+			WaxAnim* dstAnim = (WaxAnim*)(asset->basePtr + animOffset[animIdx]);
+
+			if (animIdx == 0)
+			{
+				scaledWidth  = div16(SPRITE_SCALE_FIXED, dstAnim->worldWidth);
+				scaledHeight = div16(SPRITE_SCALE_FIXED, dstAnim->worldHeight);
+
+				dstWax->xScale = scaledWidth;
+				dstWax->yScale = scaledHeight;
+			}
+
+			const s32* viewOffsets = dstAnim->viewOffsets;
+			for (s32 v = 0; v < 32; v++)
+			{
+				const WaxView* dstView = (WaxView*)(asset->basePtr + viewOffsets[v]);
+				const s32* frameOffset = dstView->frameOffsets;
+				for (s32 f = 0; f < 32 && frameOffset[f]; f++)
+				{
+					const WaxFrame* srcFrame = (WaxFrame*)(data + frameOffset[f]);
+					WaxFrame* dstFrame = (WaxFrame*)(asset->basePtr + frameOffset[f]);
+
+					// Some frames are shared between animations, so we need to read from the source, unmodified data.
+					dstFrame->offsetX = round16(mul16(dstAnim->worldWidth,  intToFixed16(srcFrame->offsetX)));
+					dstFrame->offsetY = round16(mul16(dstAnim->worldHeight, intToFixed16(srcFrame->offsetY)));
+
+					WaxCell* dstCell = dstFrame->cellOffset ? (WaxCell*)(asset->basePtr + dstFrame->cellOffset) : nullptr;
+					if (dstCell)
+					{
+						dstFrame->widthWS  = div16(intToFixed16(dstCell->sizeX), scaledWidth);
+						dstFrame->heightWS = div16(intToFixed16(dstCell->sizeY), scaledHeight);
+
+						if (dstCell->columnOffset == 0)
+						{
+							if (dstCell->compressed == 1)
+							{
+								// Update the column offset, it starts right after the cell data.
+								dstCell->columnOffset = dstFrame->cellOffset + sizeof(WaxCell);
+							}
+							else
+							{
+								u32* columns = (u32*)(asset->basePtr + s_buffer.size() + cellOffsetPtr);
+								cellOffsetPtr += dstCell->sizeX * sizeof(u32);
+
+								// Local pointer.
+								dstCell->columnOffset = u32((u8*)columns - asset->basePtr);
+								// Calculate column offsets.
+								for (s32 c = 0; c < dstCell->sizeX; c++)
+								{
+									columns[c] = dstCell->sizeY * c;
+								}
+							}
+						}
+
+						dstFrame->offsetX = div16(-intToFixed16(dstFrame->offsetX), SPRITE_SCALE_FIXED);
+						const s32 adjOffsetY = mul16(intToFixed16(dstCell->sizeY), dstAnim->worldHeight) + intToFixed16(dstFrame->offsetY);
+						dstFrame->offsetY = div16(adjOffsetY, SPRITE_SCALE_FIXED);
+					}
+				}
+			}
+		}
+
+		s_sprites[name] = asset;
+		return asset;
 	}
 
 	void freeAll()

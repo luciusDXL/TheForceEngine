@@ -21,6 +21,8 @@ namespace TFE_JediRenderer
 	s32 cullObjects(RSector* sector, SecObject** buffer);
 	void transformPointByCamera(vec3* worldPoint, vec3* viewPoint);
 	s32 sortObjectsFixed(const void* r0, const void* r1);
+	s32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz);
+	void sprite_drawWax(s32 angle, SecObject* obj);
 
 	void TFE_Sectors_Fixed::draw(RSector* sector)
 	{
@@ -340,12 +342,11 @@ namespace TFE_JediRenderer
 				const s32 type = obj->type;
 				if (type == OBJ_TYPE_SPRITE)
 				{
-					// TODO
-					//s32 dz = s_posZ - obj->posWS.z;
-					//s32 dx = s_posX - obj->posWS.x;
-					//s32 angle = vec2ToAngle(dx, dz);
+					fixed16_16 dz = s_cameraPosZ_Fixed - obj->posWS.z.f16_16;
+					fixed16_16 dx = s_cameraPosX_Fixed - obj->posWS.x.f16_16;
+					s32 angle = vec2ToAngle(dx, dz);
 
-					//sprite_drawWax(angle, obj);
+					sprite_drawWax(angle, obj);
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
@@ -354,13 +355,34 @@ namespace TFE_JediRenderer
 				}
 				else if (type == OBJ_TYPE_FRAME)
 				{
-					sprite_drawFrame(obj->fme, obj);
+					sprite_drawFrame((u8*)obj->fme, obj->fme, obj);
 				}
 			}
 		}
 
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
 		s_curSector->prevDrawFrame2 = s_drawFrame;
+	}
+
+	void sprite_drawWax(s32 angle, SecObject* obj)
+	{
+		// Angles range from [0, 16384), divide by 512 to get 32 even buckets.
+		s32 angleDiff = (angle - obj->yaw) >> 9;
+		angleDiff &= 31;	// up to 32 views
+
+		// Get the animation based on the object state.
+		Wax* wax = obj->wax;
+		u8* basePtr = (u8*)obj->wax;
+		WaxAnim* anim = WAX_AnimPtr(basePtr, wax, obj->anim & 0x1f);
+		if (anim)
+		{
+			// Then get the Sequence from the angle difference.
+			WaxView* view = WAX_ViewPtr(basePtr, anim, 31 - angleDiff);
+			// And finall the frame from the current sequence.
+			WaxFrame* frame = WAX_FramePtr(basePtr, view, obj->frame & 0x1f);
+			// Draw the frame.
+			sprite_drawFrame(basePtr, frame, obj);
+		}
 	}
 	
 	void transformPointByCamera(vec3* worldPoint, vec3* viewPoint)
@@ -379,6 +401,35 @@ namespace TFE_JediRenderer
 
 		// Default case:
 		return obj1->posVS.z.f16_16 - obj0->posVS.z.f16_16;
+	}
+
+	#define SIGN(x) ((x)<0?1:0)
+	s32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz)
+	{
+		if (dx == 0 && dz == 0)
+		{
+			return 0;
+		}
+
+		s32 signsDiff = (SIGN(dx) != SIGN(dz)) ? 1 : 0;
+		s32 Z = (dz < 0 ? 2 : 0) + signsDiff;
+		dx = abs(dx);
+		dz = abs(dz);
+		s32 z = Z*2 + ((dx < dz) ? (1 - signsDiff) : 0);
+
+		if (!((z - 1) & 2))
+		{
+			dx ^= (dz^dx);
+		}
+		s32 dXdZ = div16(dx, dz);
+		if (z & 1)
+		{
+			dXdZ = ONE_16 - dXdZ;
+		}
+
+		fixed16_16 zF = intToFixed16(z);
+		s32 angle = (2 * ONE_16 - (zF + dXdZ)) >> 5;
+		return angle & 0x3fff;
 	}
 
 	s32 cullObjects(RSector* sector, SecObject** buffer)
