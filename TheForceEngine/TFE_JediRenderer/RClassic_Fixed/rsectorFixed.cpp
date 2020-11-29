@@ -18,11 +18,133 @@ using namespace TFE_JediRenderer::RClassic_Fixed;
 
 namespace TFE_JediRenderer
 {
-	s32 cullObjects(RSector* sector, SecObject** buffer);
-	void transformPointByCamera(vec3* worldPoint, vec3* viewPoint);
-	s32 sortObjectsFixed(const void* r0, const void* r1);
-	s32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz);
-	void sprite_drawWax(s32 angle, SecObject* obj);
+	namespace
+	{
+		void transformPointByCamera(vec3* worldPoint, vec3* viewPoint)
+		{
+			viewPoint->x.f16_16 = mul16(worldPoint->x.f16_16, s_cosYaw_Fixed) + mul16(worldPoint->z.f16_16, s_sinYaw_Fixed) + s_xCameraTrans_Fixed;
+			viewPoint->y.f16_16 = worldPoint->y.f16_16 - s_eyeHeight_Fixed;
+			viewPoint->z.f16_16 = mul16(worldPoint->z.f16_16, s_cosYaw_Fixed) + mul16(worldPoint->x.f16_16, s_negSinYaw_Fixed) + s_zCameraTrans_Fixed;
+		}
+
+		s32 sortObjectsFixed(const void* r0, const void* r1)
+		{
+			SecObject* obj0 = *((SecObject**)r0);
+			SecObject* obj1 = *((SecObject**)r1);
+
+			// TODO: Handle special cases (see RE source).
+
+			// Default case:
+			return obj1->posVS.z.f16_16 - obj0->posVS.z.f16_16;
+		}
+
+		s32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz)
+		{
+			if (dx == 0 && dz == 0)
+			{
+				return 0;
+			}
+
+			const s32 signsDiff = (signV2A(dx) != signV2A(dz)) ? 1 : 0;
+			// Splits the view into 4 quadrants, 0 - 3:
+			// 1 | 0
+			// -----
+			// 2 | 3
+			const s32 Z = (dz < 0 ? 2 : 0) + signsDiff;
+
+			// Further splits the quadrants into sub-quadrants:
+			// \2|1/
+			// 3\|/0
+			//---*---
+			// 4/|\7
+			// /5|6\
+			//
+			dx = abs(dx);
+			dz = abs(dz);
+			const s32 z = Z * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
+
+			// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
+			if ((z - 1) & 2)
+			{
+				// The original code did the "3 xor" trick to swap dx and dz.
+				std::swap(dx, dz);
+			}
+
+			// next compute |dx| / |dz|, which will be a value from 0.0 to 1.0
+			fixed16_16 dXdZ = div16(dx, dz);
+			if (z & 1)
+			{
+				// invert the ratio in sub-quadrants 1, 3, 5, 7 to maintain the correct direction.
+				dXdZ = ONE_16 - dXdZ;
+			}
+
+			// zF is based on the sub-quadrant, essentially z * 65536
+			// which is a range of 0 to 7.0
+			fixed16_16 zF = intToFixed16(z);
+			// angle = (int(2.0 - (zF + dXdZ)) * 2048) & 16383
+			// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
+			s32 angle = (2 * ONE_16 - (zF + dXdZ)) >> 5;
+			// the final angle will be in the range of 0 - 16383
+			return angle & 0x3fff;
+		}
+
+		s32 cullObjects(RSector* sector, SecObject** buffer)
+		{
+			s32 drawCount = 0;
+			SecObject** obj = sector->objectList;
+			s32 count = sector->objectCount;
+
+			for (s32 i = count - 1; i >= 0 && drawCount < MAX_VIEW_OBJ_COUNT; i--, obj++)
+			{
+				// Search for the next allocated object.
+				SecObject* curObj = *obj;
+				while (!curObj)
+				{
+					obj++;
+					curObj = *obj;
+				}
+
+				if (curObj->flags & 4)
+				{
+					const s32 type = curObj->type;
+					if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
+					{
+						if (curObj->posVS.z.f16_16 >= ONE_16)
+						{
+							buffer[drawCount++] = curObj;
+						}
+					}
+					else if (type == OBJ_TYPE_3D)
+					{
+						// TODO - culling for 3D objects is more complex, probably because they are much more expensive to render.
+					}
+				}
+			}
+
+			return drawCount;
+		}
+
+		void sprite_drawWax(s32 angle, SecObject* obj)
+		{
+			// Angles range from [0, 16384), divide by 512 to get 32 even buckets.
+			s32 angleDiff = (angle - obj->yaw) >> 9;
+			angleDiff &= 31;	// up to 32 views
+
+			// Get the animation based on the object state.
+			Wax* wax = obj->wax;
+			u8* basePtr = (u8*)obj->wax;
+			WaxAnim* anim = WAX_AnimPtr(basePtr, wax, obj->anim & 0x1f);
+			if (anim)
+			{
+				// Then get the Sequence from the angle difference.
+				WaxView* view = WAX_ViewPtr(basePtr, anim, 31 - angleDiff);
+				// And finall the frame from the current sequence.
+				WaxFrame* frame = WAX_FramePtr(basePtr, view, obj->frame & 0x1f);
+				// Draw the frame.
+				sprite_drawFrame(basePtr, frame, obj);
+			}
+		}
+	}
 
 	void TFE_Sectors_Fixed::draw(RSector* sector)
 	{
@@ -363,133 +485,7 @@ namespace TFE_JediRenderer
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
 		s_curSector->prevDrawFrame2 = s_drawFrame;
 	}
-
-	void sprite_drawWax(s32 angle, SecObject* obj)
-	{
-		// Angles range from [0, 16384), divide by 512 to get 32 even buckets.
-		s32 angleDiff = (angle - obj->yaw) >> 9;
-		angleDiff &= 31;	// up to 32 views
-
-		// Get the animation based on the object state.
-		Wax* wax = obj->wax;
-		u8* basePtr = (u8*)obj->wax;
-		WaxAnim* anim = WAX_AnimPtr(basePtr, wax, obj->anim & 0x1f);
-		if (anim)
-		{
-			// Then get the Sequence from the angle difference.
-			WaxView* view = WAX_ViewPtr(basePtr, anim, 31 - angleDiff);
-			// And finall the frame from the current sequence.
-			WaxFrame* frame = WAX_FramePtr(basePtr, view, obj->frame & 0x1f);
-			// Draw the frame.
-			sprite_drawFrame(basePtr, frame, obj);
-		}
-	}
-	
-	void transformPointByCamera(vec3* worldPoint, vec3* viewPoint)
-	{
-		viewPoint->x.f16_16 = mul16(worldPoint->x.f16_16, s_cosYaw_Fixed) + mul16(worldPoint->z.f16_16, s_sinYaw_Fixed) + s_xCameraTrans_Fixed;
-		viewPoint->y.f16_16 = worldPoint->y.f16_16 - s_eyeHeight_Fixed;
-		viewPoint->z.f16_16 = mul16(worldPoint->z.f16_16, s_cosYaw_Fixed) + mul16(worldPoint->x.f16_16, s_negSinYaw_Fixed) + s_zCameraTrans_Fixed;
-	}
-
-	s32 sortObjectsFixed(const void* r0, const void* r1)
-	{
- 		SecObject* obj0 = *((SecObject**)r0);
-		SecObject* obj1 = *((SecObject**)r1);
-
-		// TODO: Handle special cases (see RE source).
-
-		// Default case:
-		return obj1->posVS.z.f16_16 - obj0->posVS.z.f16_16;
-	}
-
-	#define SIGN(x) ((x)<0?1:0)
-	s32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz)
-	{
-		if (dx == 0 && dz == 0)
-		{
-			return 0;
-		}
-
-		const s32 signsDiff = (SIGN(dx) != SIGN(dz)) ? 1 : 0;
-		// Splits the view into 4 quadrants, 0 - 3:
-		// 1 | 0
-		// -----
-		// 2 | 3
-		const s32 Z = (dz < 0 ? 2 : 0) + signsDiff;
-		
-		// Further splits the quadrants into sub-quadrants:
-		// \2|1/
-		// 3\|/0
-		//---*---
-		// 4/|\7
-		// /5|6\
-		//
-		dx = abs(dx);
-		dz = abs(dz);
-		const s32 z = Z*2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
-
-		// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
-		if ((z - 1) & 2)
-		{
-			// The original code did the "3 xor" trick to swap dx and dz.
-			std::swap(dx, dz);
-		}
-
-		// next compute |dx| / |dz|, which will be a value from 0.0 to 1.0
-		fixed16_16 dXdZ = div16(dx, dz);
-		if (z & 1)
-		{
-			// invert the ratio in sub-quadrants 1, 3, 5, 7 to maintain the correct direction.
-			dXdZ = ONE_16 - dXdZ;
-		}
-
-		// zF is based on the sub-quadrant, essentially z * 65536
-		// which is a range of 0 to 7.0
-		fixed16_16 zF = intToFixed16(z);
-		// angle = (int(2.0 - (zF + dXdZ)) * 2048) & 16383
-		// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
-		s32 angle = (2 * ONE_16 - (zF + dXdZ)) >> 5;
-		// the final angle will be in the range of 0 - 16383
-		return angle & 0x3fff;
-	}
-
-	s32 cullObjects(RSector* sector, SecObject** buffer)
-	{
-		s32 drawCount = 0;
-		SecObject** obj = sector->objectList;
-		s32 count = sector->objectCount;
-
-		for (s32 i = count - 1; i >= 0 && drawCount < MAX_VIEW_OBJ_COUNT; i--, obj++)
-		{
-			// Search for the next allocated object.
-			SecObject* curObj = *obj;
-			while (!curObj)
-			{
-				obj++;
-				curObj = *obj;
-			}
-
-			if (curObj->flags & 4)
-			{
-				const s32 type = curObj->type;
-				if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
-				{
-					if (curObj->posVS.z.f16_16 >= ONE_16)
-					{
-						buffer[drawCount++] = curObj;
-					}
-				}
-				else if (type == OBJ_TYPE_3D)
-				{
-					// TODO - culling for 3D objects is more complex, probably because they are much more expensive to render.
-				}
-			}
-		}
-
-		return drawCount;
-	}
-		
+			
 	void TFE_Sectors_Fixed::setupWallDrawFlags(RSector* sector)
 	{
 		RWall* wall = sector->walls;

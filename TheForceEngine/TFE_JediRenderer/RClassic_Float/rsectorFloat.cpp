@@ -9,12 +9,139 @@
 #include "redgePairFloat.h"
 #include "../rmath.h"
 #include "../rcommon.h"
+#include "../robject.h"
 #include "../rtexture.h"
 
 using namespace TFE_JediRenderer::RClassic_Float;
 
 namespace TFE_JediRenderer
 {
+	namespace
+	{
+		void transformPointByCamera(vec3* worldPoint, vec3* viewPoint)
+		{
+			viewPoint->x.f32 = worldPoint->x.f32*s_cosYaw + worldPoint->z.f32*s_sinYaw + s_xCameraTrans;
+			viewPoint->y.f32 = worldPoint->y.f32 - s_eyeHeight;
+			viewPoint->z.f32 = worldPoint->z.f32*s_cosYaw + worldPoint->x.f32*s_negSinYaw + s_zCameraTrans;
+		}
+
+		s32 sortObjectsFloat(const void* r0, const void* r1)
+		{
+			SecObject* obj0 = *((SecObject**)r0);
+			SecObject* obj1 = *((SecObject**)r1);
+
+			// TODO: Handle special cases (see RE source).
+
+			// Default case:
+			return signZero(obj1->posVS.z.f32 - obj0->posVS.z.f32);
+		}
+
+		s32 vec2ToAngle(f32 dx, f32 dz)
+		{
+			if (dx == 0 && dz == 0)
+			{
+				return 0;
+			}
+
+			const s32 signsDiff = (signV2A(dx) != signV2A(dz)) ? 1 : 0;
+			// Splits the view into 4 quadrants, 0 - 3:
+			// 1 | 0
+			// -----
+			// 2 | 3
+			const s32 Z = (dz < 0 ? 2 : 0) + signsDiff;
+
+			// Further splits the quadrants into sub-quadrants:
+			// \2|1/
+			// 3\|/0
+			//---*---
+			// 4/|\7
+			// /5|6\
+			//
+			dx = fabs(dx);
+			dz = fabs(dz);
+			const s32 z = Z * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
+
+			// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
+			if ((z - 1) & 2)
+			{
+				// The original code did the "3 xor" trick to swap dx and dz.
+				std::swap(dx, dz);
+			}
+
+			// next compute |dx| / |dz|, which will be a value from 0.0 to 1.0
+			f32 dXdZ = dx / dz;
+			if (z & 1)
+			{
+				// invert the ratio in sub-quadrants 1, 3, 5, 7 to maintain the correct direction.
+				dXdZ = 1.0f - dXdZ;
+			}
+
+			// zF is based on the sub-quadrant, which has a range of 0 to 7.0
+			f32 zF = f32(z);
+			// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
+			f32 angle = 2.0f - (zF + dXdZ);
+			// the final angle will be in the range of 0 - 16383
+			return s32(angle * 2048.0f) & 0x3fff;
+		}
+
+		s32 cullObjects(RSector* sector, SecObject** buffer)
+		{
+			s32 drawCount = 0;
+			SecObject** obj = sector->objectList;
+			s32 count = sector->objectCount;
+
+			for (s32 i = count - 1; i >= 0 && drawCount < MAX_VIEW_OBJ_COUNT; i--, obj++)
+			{
+				// Search for the next allocated object.
+				SecObject* curObj = *obj;
+				while (!curObj)
+				{
+					obj++;
+					curObj = *obj;
+				}
+
+				if (curObj->flags & 4)
+				{
+					const s32 type = curObj->type;
+					if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
+					{
+						if (curObj->posVS.z.f32 >= 1.0f)
+						{
+							buffer[drawCount++] = curObj;
+						}
+					}
+					else if (type == OBJ_TYPE_3D)
+					{
+						// TODO - culling for 3D objects is more complex, probably because they are much more expensive to render.
+					}
+				}
+			}
+
+			return drawCount;
+		}
+
+		void sprite_drawWax(s32 angle, SecObject* obj)
+		{
+			// Angles range from [0, 16384), divide by 512 to get 32 even buckets.
+			s32 angleDiff = (angle - obj->yaw) >> 9;
+			angleDiff &= 31;	// up to 32 views
+
+			// Get the animation based on the object state.
+			Wax* wax = obj->wax;
+			u8* basePtr = (u8*)obj->wax;
+			WaxAnim* anim = WAX_AnimPtr(basePtr, wax, obj->anim & 0x1f);
+			if (anim)
+			{
+				// Then get the Sequence from the angle difference.
+				WaxView* view = WAX_ViewPtr(basePtr, anim, 31 - angleDiff);
+				// And finall the frame from the current sequence.
+				WaxFrame* frame = WAX_FramePtr(basePtr, view, obj->frame & 0x1f);
+				// Draw the frame.
+				sprite_drawFrame(basePtr, frame, obj);
+			}
+		}
+	}
+
 	void TFE_Sectors_Float::draw(RSector* sector)
 	{
 		s_curSector = sector;
@@ -63,6 +190,24 @@ namespace TFE_JediRenderer
 					vtxWS++;
 				}
 			TFE_ZONE_END(secXform);
+
+			TFE_ZONE_BEGIN(objXform, "Sector Object Transform");
+				SecObject** obj = s_curSector->objectList;
+				for (s32 i = s_curSector->objectCount - 1; i >= 0; i--, obj++)
+				{
+					SecObject* curObj = *obj;
+					while (!curObj)
+					{
+						obj++;
+						curObj = *obj;
+					}
+
+					if (curObj->flags & 4)
+					{
+						transformPointByCamera(&curObj->posWS, &curObj->posVS);
+					}
+				}
+			TFE_ZONE_END(objXform);
 
 			TFE_ZONE_BEGIN(wallProcess, "Sector Wall Process");
 				startWall = s_nextWall;
@@ -281,6 +426,56 @@ namespace TFE_JediRenderer
 		if (!(s_curSector->flags1 & SEC_FLAGS1_SUBSECTOR) && depthPrev && s_drawFrame != s_prevSector->prevDrawFrame2)
 		{
 			memcpy(&depthPrev[s_windowMinX], &s_depth1d[s_windowMinX], (s_windowMaxX - s_windowMinX + 1) * sizeof(f32));
+		}
+
+		// Objects
+		const s32 objCount = cullObjects(s_curSector, s_objBuffer);
+		if (objCount > 0)
+		{
+			// Which top and bottom edges are we going to use to clip objects?
+			s_objWindowTop = s_windowTop;
+			if (s_windowMinY < s_heightInPixels || s_windowMaxCeil < s_heightInPixels)
+			{
+				if (s_prevSector && s_prevSector->ceilingHeight.f16_16 <= s_curSector->ceilingHeight.f16_16)
+				{
+					s_objWindowTop = s_windowTopPrev;
+				}
+			}
+			s_objWindowBot = s_windowBot;
+			if (s_windowMaxY > s_heightInPixels || s_windowMinFloor > s_heightInPixels)
+			{
+				if (s_prevSector && s_prevSector->floorHeight.f16_16 >= s_curSector->floorHeight.f16_16)
+				{
+					s_objWindowBot = s_windowBotPrev;
+				}
+			}
+
+			// Sort objects in viewspace (generally back to front but there are special cases).
+			qsort(s_objBuffer, objCount, sizeof(SecObject*), sortObjectsFloat);
+
+			// Draw objects in order.
+			for (s32 i = 0; i < objCount; i++)
+			{
+				SecObject* obj = s_objBuffer[i];
+				const s32 type = obj->type;
+				if (type == OBJ_TYPE_SPRITE)
+				{
+					f32 dz = s_cameraPosZ - obj->posWS.z.f32;
+					f32 dx = s_cameraPosX - obj->posWS.x.f32;
+					s32 angle = vec2ToAngle(dx, dz);
+
+					sprite_drawWax(angle, obj);
+				}
+				else if (type == OBJ_TYPE_3D)
+				{
+					// TODO
+					//model_draw(obj, obj->model);
+				}
+				else if (type == OBJ_TYPE_FRAME)
+				{
+					sprite_drawFrame((u8*)obj->fme, obj->fme, obj);
+				}
+			}
 		}
 
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;

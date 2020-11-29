@@ -60,6 +60,19 @@ namespace TFE_JediRenderer
 		return min(max(x, a), b);
 	}
 
+	inline s32 sign(s32 x)
+	{
+		return x < 0 ? -1 : 1;
+	}
+
+	inline s32 signZero(s32 x)
+	{
+		if (x == 0) { return 0; }
+		return x < 0 ? -1 : 1;
+	}
+
+	inline s32 signV2A(s32 x) { return (x < 0 ? 1 : 0); }
+
 	// Float
 	inline f32 abs(f32 x)
 	{
@@ -90,4 +103,17 @@ namespace TFE_JediRenderer
 	{
 		return (s32)floorf(x);
 	}
+
+	inline s32 sign(f32 x)
+	{
+		return x < 0.0f ? -1 : 1;
+	}
+
+	inline s32 signZero(f32 x)
+	{
+		if (x == 0.0f) { return 0; }
+		return x < 0.0f ? -1 : 1;
+	}
+
+	inline s32 signV2A(f32 x) { return (x < 0.0f ? 1 : 0); }
 }

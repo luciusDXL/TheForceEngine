@@ -10,6 +10,7 @@
 #include "fixedPoint20.h"
 #include "../rmath.h"
 #include "../rcommon.h"
+#include "../robject.h"
 
 namespace TFE_JediRenderer
 {
@@ -32,6 +33,7 @@ namespace RClassic_Float
 	static const u8* s_columnLight;
 	static u8* s_texImage;
 	static u8* s_columnOut;
+	static u8  s_workBuffer[1024];
 
 	s32 segmentCrossesLine(f32 ax0, f32 ay0, f32 ax1, f32 ay1, f32 bx0, f32 by0, f32 bx1, f32 by1);
 	f32 solveForZ_Numerator(RWallSegment* wallSegment);
@@ -2203,6 +2205,198 @@ namespace RClassic_Float
 			wall->midTexelHeight.f32 = (midFloorHeight - midSector->ceilingHeight.f32) * 8;
 		}
 	}
+
+	// This is the same as the fixed point version
+	// TODO: Refactor.
+	void sprite_decompressColumn(u8* colData, u8* outBuffer, s32 height)
+	{
+		for (s32 y = 0, i = 0; y < height; )
+		{
+			u8 count = *colData;
+			colData++;
+
+			if (count & 0x80)
+			{
+				count &= 0x7f;
+				for (s32 r = 0; r < count; r++, y++)
+				{
+					outBuffer[y] = 0;
+				}
+			}
+			else
+			{
+				for (s32 r = 0; r < count; r++, y++, colData++)
+				{
+					outBuffer[y] = *colData;
+				}
+			}
+		}
+	}
+
+	// Refactor this into a sprite specific file.
+	void sprite_drawFrame(u8* basePtr, WaxFrame* frame, SecObject* obj)
+	{
+		if (!frame) { return; }
+
+		const WaxCell* cell = WAX_CellPtr(basePtr, frame);
+		const f32 z = obj->posVS.z.f32;
+		const s32 flip = frame->flip;
+		// Make sure the sprite isn't behind the near plane.
+		if (z < 1.0f) { return; }
+
+		const f32 widthWS = fixed16ToFloat(frame->widthWS);
+		const f32 heightWS = fixed16ToFloat(frame->heightWS);
+		const f32 fOffsetX = fixed16ToFloat(frame->offsetX);
+		const f32 fOffsetY = fixed16ToFloat(frame->offsetY);
+
+		f32 x0 = obj->posVS.x.f32 - fOffsetX;
+		f32 yOffset = heightWS - fOffsetY;
+		f32 y0 = obj->posVS.y.f32 - yOffset;
+
+		f32 rcpZ = 1.0f / z;
+		f32 projX0 = x0*s_focalLength*rcpZ + s_halfWidth;
+		f32 projY0 = y0*s_focalLenAspect*rcpZ + s_halfHeight;
+
+		s32 x0_pixel = roundFloat(projX0);
+		s32 y0_pixel = roundFloat(projY0);
+		if (x0_pixel > s_windowMaxX || y0_pixel > s_windowMaxY)
+		{
+			return;
+		}
+				
+		f32 x1 = x0 + widthWS;
+		f32 y1 = y0 + heightWS;
+		f32 projX1 = x1 * s_focalLength*rcpZ + s_halfWidth;
+		f32 projY1 = y1 * s_focalLenAspect*rcpZ + s_halfHeight;
+
+		s32 x1_pixel = roundFloat(projX1);
+		s32 y1_pixel = roundFloat(projY1);
+		if (x1_pixel < s_windowMinX || y1_pixel < s_windowMinY)
+		{
+			return;
+		}
+
+		s32 length = x1_pixel - x0_pixel + 1;
+		if (length <= 0)
+		{
+			return;
+		}
+
+		f32 height = projY1 - projY0 + 1.0f;
+		f32 width = projX1 - projX0 + 1.0f;
+		f32 uCoordStep = f32(cell->sizeX) / width;
+		f32 vCoordStep = f32(cell->sizeY) / height;
+
+		s_vCoordStep = floatToFixed20(vCoordStep);
+
+		f32 uCoord = 0;
+		if (x0_pixel < s_windowX0)
+		{
+			s32 dx = s_windowX0 - x0_pixel;
+			uCoord = uCoordStep * f32(dx);
+			x0_pixel = s_windowX0;
+		}
+		if (x1_pixel > s_windowX1)
+		{
+			x1_pixel = s_windowX1;
+		}
+
+		// Compute the lighting for the whole sprite.
+		s_columnLight = computeLighting(z, 0);
+
+		// Figure out the correct column function.
+		ColumnFunction spriteColumnFunc;
+		if (s_columnLight && !(obj->flags & 8))
+		{
+			spriteColumnFunc = s_columnFunc[COLFUNC_LIT_TRANS];
+		}
+		else
+		{
+			spriteColumnFunc = s_columnFunc[COLFUNC_FULLBRIGHT_TRANS];
+		}
+
+		// Draw
+		s32 compressed = cell->compressed;
+		u8* imageData = (u8*)cell + sizeof(WaxCell);
+
+		s32 n;
+		u8* image;
+		if (compressed == 1)
+		{
+			n = -1;
+			image = imageData + (cell->sizeX * sizeof(u32));
+		}
+		else
+		{
+			n = 0;
+			image = imageData;
+		}
+
+		if (x0_pixel > x1_pixel)
+		{
+			return;
+		}
+
+		// This should be set to handle all sizes, repeating is not required.
+		s_texHeightMask = 0xffff;
+
+		s32 lastColumn = INT_MIN;
+		const u32* columnOffset = (u32*)(basePtr + cell->columnOffset);
+		for (s32 x = x0_pixel; x <= x1_pixel; x++, uCoord += uCoordStep)
+		{
+			if (z < s_depth1d[x])
+			{
+				s32 y0 = y0_pixel;
+				s32 y1 = y1_pixel;
+
+				const s32 top = s_objWindowTop[x];
+				if (y0 < top)
+				{
+					y0 = top;
+				}
+				const s32 bot = s_objWindowBot[x];
+				if (y1 > bot)
+				{
+					y1 = bot;
+				}
+
+				s_yPixelCount = y1 - y0 + 1;
+				if (s_yPixelCount > 0)
+				{
+					f32 vOffset = f32(y1_pixel - y1);
+					s_vCoordFixed = floatToFixed20(vOffset*vCoordStep);
+
+					s32 texelU = floorFloat(uCoord);
+					if (flip)
+					{
+						texelU = cell->sizeX - texelU - 1;
+					}
+
+					if (compressed)
+					{
+						u8* colPtr = (u8*)cell + columnOffset[texelU];
+
+						// Decompress the column into "work buffer."
+						if (lastColumn != texelU)
+						{
+							sprite_decompressColumn(colPtr, s_workBuffer, cell->sizeY);
+						}
+						s_texImage = (u8*)s_workBuffer;
+					}
+					else
+					{
+						s_texImage = (u8*)image + columnOffset[texelU];
+					}
+					lastColumn = texelU;
+					// Output.
+					s_columnOut = &s_display[y0 * s_width + x];
+					// Draw the column.
+					spriteColumnFunc();
+				}
+			}
+		}
+	}
+
 }  // RClassic_Float
 
 }  // TFE_JediRenderer
