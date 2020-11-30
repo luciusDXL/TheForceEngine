@@ -145,7 +145,7 @@ namespace TFE_JediRenderer
 			}
 		}
 	}
-
+		
 	void TFE_Sectors_Fixed::draw(RSector* sector)
 	{
 		s_curSector = sector;
@@ -977,5 +977,29 @@ namespace TFE_JediRenderer
 		s_sectorAmbient = src->sectorAmbient;
 		s_scaledAmbient = src->scaledAmbient;
 		//s_scaledAmbient2k = src->scaledAmbient2k;
+	}
+
+	// Switch from float to fixed.
+	void TFE_Sectors_Fixed::subrendererChanged()
+	{
+		RSector* sector = s_rsectors;
+		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			SecObject** obj = sector->objectList;
+			for (s32 i = sector->objectCount - 1; i >= 0; i--, obj++)
+			{
+				SecObject* curObj = *obj;
+				while (!curObj)
+				{
+					obj++;
+					curObj = *obj;
+				}
+
+				// Convert from float to fixed.
+				curObj->posWS.x.f16_16 = floatToFixed16(curObj->posWS.x.f32);
+				curObj->posWS.y.f16_16 = floatToFixed16(curObj->posWS.y.f32);
+				curObj->posWS.z.f16_16 = floatToFixed16(curObj->posWS.z.f32);
+			}
+		}
 	}
 }

@@ -137,6 +137,7 @@ namespace TFE_JediRenderer
 		virtual void computeBounds(RSector* sector) = 0;
 
 		virtual RSector* which3D(decimal& x, decimal& y, decimal& z) = 0;
+		virtual void subrendererChanged() = 0;
 
 		// Tests if a point (p2) is to the left, on or right of an infinite line (p0 -> p1).
 		// Return: >0 p2 is on the left of the line.
@@ -149,7 +150,7 @@ namespace TFE_JediRenderer
 
 		void addObject(RSector* sector, SecObject* obj);
 		void removeObject(RSector* sector, SecObject* obj);
-
+			   
 	protected:
 		SectorSaveValues s_sectorStack[MAX_ADJOIN_DEPTH];
 

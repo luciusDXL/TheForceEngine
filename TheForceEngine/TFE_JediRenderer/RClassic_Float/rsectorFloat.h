@@ -31,6 +31,8 @@ namespace TFE_JediRenderer
 
 		RSector* which3D(decimal& x, decimal& y, decimal& z) override;
 
+		void subrendererChanged() override;
+
 	private:
 		void saveValues(s32 index);
 		void restoreValues(s32 index);

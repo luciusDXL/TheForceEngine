@@ -966,4 +966,28 @@ namespace TFE_JediRenderer
 		s_scaledAmbient = src->scaledAmbient;
 		//s_scaledAmbient2k = src->scaledAmbient2k;
 	}
+
+	// Switch from fixed to float.
+	void TFE_Sectors_Float::subrendererChanged()
+	{
+		RSector* sector = s_rsectors;
+		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			SecObject** obj = sector->objectList;
+			for (s32 i = sector->objectCount - 1; i >= 0; i--, obj++)
+			{
+				SecObject* curObj = *obj;
+				while (!curObj)
+				{
+					obj++;
+					curObj = *obj;
+				}
+
+				// Convert from fixed to float.
+				curObj->posWS.x.f32 = fixed16ToFloat(curObj->posWS.x.f16_16);
+				curObj->posWS.y.f32 = fixed16ToFloat(curObj->posWS.y.f16_16);
+				curObj->posWS.z.f32 = fixed16ToFloat(curObj->posWS.z.f16_16);
+			}
+		}
+	}
 }

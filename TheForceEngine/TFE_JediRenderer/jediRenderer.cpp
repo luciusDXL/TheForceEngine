@@ -141,6 +141,7 @@ namespace TFE_JediRenderer
 				s_sectors = new TFE_Sectors_Float();
 			}
 			s_sectors->copyFrom(prev);
+			s_sectors->subrendererChanged();
 			delete prev;
 		}
 	}
