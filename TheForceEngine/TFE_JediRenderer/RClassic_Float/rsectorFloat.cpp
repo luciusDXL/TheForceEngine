@@ -429,6 +429,7 @@ namespace TFE_JediRenderer
 		}
 
 		// Objects
+		TFE_ZONE_BEGIN(secDrawObjects, "Draw Objects");
 		const s32 objCount = cullObjects(s_curSector, s_objBuffer);
 		if (objCount > 0)
 		{
@@ -436,7 +437,7 @@ namespace TFE_JediRenderer
 			s_objWindowTop = s_windowTop;
 			if (s_windowMinY < s_heightInPixels || s_windowMaxCeil < s_heightInPixels)
 			{
-				if (s_prevSector && s_prevSector->ceilingHeight.f16_16 <= s_curSector->ceilingHeight.f16_16)
+				if (s_prevSector && s_prevSector->ceilingHeight.f32 <= s_curSector->ceilingHeight.f32)
 				{
 					s_objWindowTop = s_windowTopPrev;
 				}
@@ -444,7 +445,7 @@ namespace TFE_JediRenderer
 			s_objWindowBot = s_windowBot;
 			if (s_windowMaxY > s_heightInPixels || s_windowMinFloor > s_heightInPixels)
 			{
-				if (s_prevSector && s_prevSector->floorHeight.f16_16 >= s_curSector->floorHeight.f16_16)
+				if (s_prevSector && s_prevSector->floorHeight.f32 >= s_curSector->floorHeight.f32)
 				{
 					s_objWindowBot = s_windowBotPrev;
 				}
@@ -477,6 +478,7 @@ namespace TFE_JediRenderer
 				}
 			}
 		}
+		TFE_ZONE_END(secDrawObjects);
 
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
 		s_curSector->prevDrawFrame2 = s_drawFrame;

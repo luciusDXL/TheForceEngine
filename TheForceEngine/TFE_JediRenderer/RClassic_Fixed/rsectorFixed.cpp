@@ -433,6 +433,7 @@ namespace TFE_JediRenderer
 		}
 
 		// Objects
+		TFE_ZONE_BEGIN(secDrawObjects, "Draw Objects");
 		const s32 objCount = cullObjects(s_curSector, s_objBuffer);
 		if (objCount > 0)
 		{
@@ -481,6 +482,7 @@ namespace TFE_JediRenderer
 				}
 			}
 		}
+		TFE_ZONE_END(secDrawObjects);
 
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
 		s_curSector->prevDrawFrame2 = s_drawFrame;
