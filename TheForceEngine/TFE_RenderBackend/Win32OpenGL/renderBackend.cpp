@@ -34,10 +34,15 @@ namespace TFE_RenderBackend
 	static void* m_window;
 	static DynamicTexture* s_virtualDisplay = nullptr;
 	static DynamicTexture* s_palette = nullptr;
-	static u32 m_virtualWidth, m_virtualHeight;
+
+	static u32 s_virtualWidth, s_virtualHeight;
+	static u32 s_virtualWidthUi;
+	static u32 s_virtualWidth3d;
+
+	static bool s_widescreen = false;
 	static bool s_asyncFrameBuffer = true;
 	static bool s_gpuColorConvert = false;
-	static DisplayMode m_displayMode;
+	static DisplayMode s_displayMode;
 	static f32 s_clearColor[4] = { 0.0f };
 	static u32 s_rtWidth, s_rtHeight;
 
@@ -263,9 +268,12 @@ namespace TFE_RenderBackend
 			delete s_virtualDisplay;
 		}
 
-		m_virtualWidth = width;
-		m_virtualHeight = height;
-		m_displayMode = mode;
+		s_virtualWidth = width;
+		s_virtualHeight = height;
+		s_virtualWidthUi = width;
+		s_virtualWidth3d = width;
+		s_displayMode = mode;
+		s_widescreen = false;
 		s_asyncFrameBuffer = asyncFramebuffer;
 		s_gpuColorConvert = gpuColorConvert;
 
@@ -284,9 +292,66 @@ namespace TFE_RenderBackend
 		return s_virtualDisplay->create(width, height, s_asyncFrameBuffer ? 2 : 1, s_gpuColorConvert ? DTEX_R8 : DTEX_RGBA8);
 	}
 
+	// New version of the function.
+	bool createVirtualDisplay(const VirtualDisplayInfo& vdispInfo)
+	{
+		if (s_virtualDisplay)
+		{
+			delete s_virtualDisplay;
+		}
+
+		s_virtualWidth = vdispInfo.width;
+		s_virtualHeight = vdispInfo.height;
+		s_virtualWidthUi = vdispInfo.widthUi;
+		s_virtualWidth3d = vdispInfo.width3d;
+		s_displayMode = vdispInfo.mode;
+		s_widescreen = (vdispInfo.flags & VDISP_WIDESCREEN) != 0;
+		s_asyncFrameBuffer = (vdispInfo.flags & VDISP_ASYNC_FRAMEBUFFER) != 0;
+		s_gpuColorConvert = (vdispInfo.flags & VDISP_GPU_COLOR_CONVERT) != 0;
+
+		s_virtualDisplay = new DynamicTexture();
+		if (s_gpuColorConvert)
+		{
+			s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
+		}
+		else
+		{
+			s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
+		}
+
+		setupPostEffectChain();
+
+		return s_virtualDisplay->create(s_virtualWidth, s_virtualHeight, s_asyncFrameBuffer ? 2 : 1, s_gpuColorConvert ? DTEX_R8 : DTEX_RGBA8);
+	}
+
+	u32 getVirtualDisplayStride2D()
+	{
+		return s_virtualWidthUi;
+	}
+
+	u32 getVirtualDisplayStride3D()
+	{
+		return s_virtualWidth3d;
+	}
+
+	u32 getVirtualDisplayOffset2D()
+	{
+		return (s_virtualWidth - s_virtualWidthUi) >> 1;
+	}
+
+	u32 getVirtualDisplayOffset3D()
+	{
+		return (s_virtualWidth - s_virtualWidth3d) >> 1;
+	}
+
 	void* getVirtualDisplayGpuPtr()
 	{
 		return (void*)(intptr_t)s_virtualDisplay->getTexture()->getHandle();
+	}
+
+	bool getWidescreen()
+	{
+		return s_widescreen;
 	}
 
 	bool getFrameBufferAsync()
@@ -335,8 +400,8 @@ namespace TFE_RenderBackend
 		TFE_ZONE("Draw Virtual Display");
 		if (!s_virtualDisplay) { return; }
 
-		// Only clear if (1) s_virtualDisplay == null or (2) m_displayMode != DMODE_STRETCH
-		if (m_displayMode != DMODE_STRETCH)
+		// Only clear if (1) s_virtualDisplay == null or (2) s_displayMode != DMODE_STRETCH
+		if (s_displayMode != DMODE_STRETCH)
 		{
 			glClear(GL_COLOR_BUFFER_BIT);
 		}
@@ -442,7 +507,7 @@ namespace TFE_RenderBackend
 		s32 x = 0, y = 0;
 		s32 w = m_windowState.width;
 		s32 h = m_windowState.height;
-		if (m_displayMode == DMODE_4x3 && w >= h)
+		if (s_displayMode == DMODE_ASPECT_CORRECT && w >= h && !s_widescreen)
 		{
 			w = 4 * m_windowState.height / 3;
 			h = m_windowState.height;
@@ -450,7 +515,7 @@ namespace TFE_RenderBackend
 			// pillarbox
 			x = (m_windowState.width - w) / 2;
 		}
-		else if (m_displayMode == DMODE_4x3)
+		else if (s_displayMode == DMODE_ASPECT_CORRECT && !s_widescreen)
 		{
 			h = 3 * m_windowState.width / 4;
 			w = m_windowState.width;

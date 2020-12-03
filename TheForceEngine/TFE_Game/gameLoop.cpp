@@ -269,7 +269,7 @@ namespace TFE_GameLoop
 		TFE_RenderCommon::enableNightVision(false);
 
 		TFE_View::init(level, renderer, w, h, false);
-		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 
 		s_eyeHeight = c_standingEyeHeight;
 		s_height = c_standingHeight;
@@ -389,7 +389,7 @@ namespace TFE_GameLoop
 		TFE_RenderCommon::enableNightVision(false);
 			   			   
 		TFE_View::init(level, renderer, w, h, enableViewStats);
-		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 
 		s_eyeHeight = c_standingEyeHeight;
 		s_height = c_standingHeight;
@@ -431,16 +431,18 @@ namespace TFE_GameLoop
 	void changeResolution(s32 width, s32 height)
 	{
 		u32 prevWidth, prevHeight;
+		bool curWidescreen = TFE_Settings::getGraphicsSettings()->widescreen;
 		bool curAsync = TFE_Settings::getGraphicsSettings()->asyncFramebuffer;
 		bool curColorConvert = TFE_Settings::getGraphicsSettings()->gpuColorConvert;
+		bool prevWidescreen = TFE_RenderBackend::getWidescreen();
 		bool prevAsync = TFE_RenderBackend::getFrameBufferAsync();
 		bool prevColorConvert = TFE_RenderBackend::getGPUColorConvert();
 		s_renderer->getResolution(&prevWidth, &prevHeight);
-		if (width == prevWidth && height == prevHeight && curAsync == prevAsync && curColorConvert == prevColorConvert) { return; }
+		if (width == prevWidth && height == prevHeight && curAsync == prevAsync && curColorConvert == prevColorConvert && prevWidescreen == curWidescreen) { return; }
 
-		s_renderer->changeResolution(width, height, curAsync, curColorConvert);
+		s_renderer->changeResolution(width, height, curWidescreen, curAsync, curColorConvert);
 
-		if (width != prevWidth || height != prevHeight)
+		if (width != prevWidth || height != prevHeight || prevWidescreen != curWidescreen)
 		{
 			TFE_View::changeResolution(width, height);
 			TFE_GameUi::updateUiResolution();

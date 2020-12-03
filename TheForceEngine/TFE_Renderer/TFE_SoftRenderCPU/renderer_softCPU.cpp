@@ -26,6 +26,7 @@ TFE_SoftRenderCPU::TFE_SoftRenderCPU()
 	m_curPal = *TFE_Palette::getDefault256();
 	m_curColorMap = nullptr;
 	m_clearScreen = true;
+	m_widescreen = false;
 	m_asyncVirtualDisplay = false;
 	m_gpuColorConvert = false;
 }
@@ -33,9 +34,10 @@ TFE_SoftRenderCPU::TFE_SoftRenderCPU()
 bool TFE_SoftRenderCPU::init()
 {
 	m_width = 320;
+	m_widthRequested = 320;
 	m_height = 200;
 
-	if (!TFE_RenderBackend::createVirtualDisplay(m_width, m_height, DMODE_4x3))
+	if (!TFE_RenderBackend::createVirtualDisplay(m_width, m_height, DMODE_ASPECT_CORRECT))
 	{
 		return false;
 	}
@@ -62,22 +64,51 @@ void TFE_SoftRenderCPU::enablePalEffects(bool grayScale, bool green)
 	m_enableNightVision = green;
 }
 
-bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height, bool asyncVirtualDisplay, bool gpuColorConvert)
+bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height, bool widescreen, bool asyncVirtualDisplay, bool gpuColorConvert)
 {
-	if (width == m_width && height == m_height && asyncVirtualDisplay == m_asyncVirtualDisplay && gpuColorConvert == m_gpuColorConvert) { return true; }
+	if (width == m_widthRequested && height == m_height && widescreen == m_widescreen && asyncVirtualDisplay == m_asyncVirtualDisplay && gpuColorConvert == m_gpuColorConvert) { return true; }
+	m_widthRequested = width;
 
 	delete[] m_display;
 	delete[] m_display32;
 
+	u32 widthUi = width;
+	u32 width3d = width;
+	if (widescreen)
+	{
+		// Get the real width based on the height...
+		DisplayInfo info;
+		TFE_RenderBackend::getDisplayInfo(&info);
+
+		width = height * info.width / info.height;
+		width3d = width;
+	}
+
 	m_width = width;
 	m_height = height;
+	m_widescreen = widescreen;
 	m_asyncVirtualDisplay = asyncVirtualDisplay;
 	m_gpuColorConvert = gpuColorConvert;
 
-	if (!TFE_RenderBackend::createVirtualDisplay(m_width, m_height, DMODE_4x3, asyncVirtualDisplay, gpuColorConvert))
+	u32 flags = 0;
+	if (widescreen) { flags |= VDISP_WIDESCREEN; }
+	if (asyncVirtualDisplay) { flags |= VDISP_ASYNC_FRAMEBUFFER; }
+	if (gpuColorConvert) { flags |= VDISP_GPU_COLOR_CONVERT; }
+		
+	const VirtualDisplayInfo info =
+	{
+		DMODE_ASPECT_CORRECT,
+		flags,
+		width,
+		height,
+		widthUi,
+		width3d
+	};
+	if (!TFE_RenderBackend::createVirtualDisplay(info))
 	{
 		return false;
 	}
+
 	m_display = new u8[m_width * m_height];
 	m_display32 = new u32[m_width * m_height];
 	m_rcpHalfWidth = 1.0f / (f32(m_width)*0.5f);

@@ -190,7 +190,7 @@ namespace ArchiveViewer
 			}
 			else if (trans == TRANS_QUIT || trans == TRANS_TO_AGENT_MENU || trans == TRANS_NEXT_LEVEL)
 			{
-				s_renderer->changeResolution(640, 480, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
+				s_renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
 				s_runLevel = false;
 				s_showUi = true;
 				TFE_Input::enableRelativeMode(false);
@@ -397,7 +397,7 @@ namespace ArchiveViewer
 
 				if (TFE_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true))
 				{
-					s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+					s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 					s_runLevel = true;
 					s_showUi = false;
 					TFE_Input::enableRelativeMode(true);
@@ -624,7 +624,7 @@ namespace ArchiveViewer
 
 					if (TFE_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true))
 					{
-						s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+						s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 						s_runLevel = true;
 						s_showUi = false;
 						TFE_Input::enableRelativeMode(true);
@@ -639,7 +639,7 @@ namespace ArchiveViewer
 
 				if (TFE_GameLoop::startLevel(level, start, s_renderer, config->gameResolution.x, config->gameResolution.z, true))
 				{
-					s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+					s_renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 					s_runLevel = true;
 					s_showUi = false;
 					TFE_Input::enableRelativeMode(true);

@@ -45,4 +45,5 @@ private:
 	u32* m_stagingBuffers;
 
 	static std::vector<u8> s_tempBuffer;
+	static u32 s_alignment;
 };

@@ -35,7 +35,7 @@ public:
 	virtual void applyColorEffect() = 0;
 	virtual void end() = 0;
 
-	virtual bool changeResolution(u32 width, u32 height, bool asyncVirtualDisplay, bool gpuColorConversion) = 0;
+	virtual bool changeResolution(u32 width, u32 height, bool widescreen, bool asyncVirtualDisplay, bool gpuColorConversion) = 0;
 	virtual void getResolution(u32* width, u32* height) = 0;
 	virtual void enableScreenClear(bool enable) = 0;
 

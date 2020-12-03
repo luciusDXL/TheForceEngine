@@ -266,7 +266,7 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 				s_gameUiInitRequired = false;
 			}
 
-			renderer->changeResolution(640, 480, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
+			renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
 			TFE_GameUi::updateUiResolution();
 			TFE_Editor::enable(renderer);
 		}
@@ -284,7 +284,7 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 				s_gameUiInitRequired = false;
 			}
 			
-			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 			renderer->enableScreenClear(false);
 			TFE_Input::enableRelativeMode(true);
 			if (TFE_FrontEndUI::restartGame())

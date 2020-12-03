@@ -5,6 +5,25 @@
 #include <assert.h>
 
 std::vector<u8> DynamicTexture::s_tempBuffer;
+// Default OpenGL pixel unpack alignment.
+u32 DynamicTexture::s_alignment = 4;
+
+#ifdef _DEBUG
+	#define CHECK_GL_ERROR checkGlError();
+#else
+	#define CHECK_GL_ERROR
+#endif
+namespace
+{
+	void checkGlError()
+	{
+		GLenum error = glGetError();
+		if (error == GL_NO_ERROR) { return; }
+
+		TFE_System::logWrite(LOG_ERROR, "Dynamic Texture", "GL Error = %x", error);
+		assert(error == GL_NO_ERROR);
+	}
+}
 
 DynamicTexture::~DynamicTexture()
 {
@@ -13,7 +32,7 @@ DynamicTexture::~DynamicTexture()
 
 bool DynamicTexture::create(u32 width, u32 height, u32 bufferCount, DynamicTexFormat format/* = DTEX_RGBA8*/)
 {
-	m_width = width;
+	m_width  = width;
 	m_height = height;
 	m_format = format;
 
@@ -62,6 +81,7 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 			glBufferData(GL_PIXEL_UNPACK_BUFFER, bufferSize, nullptr, GL_STREAM_DRAW);
 		}
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+		CHECK_GL_ERROR
 	}
 
 	return m_textures && m_bufferCount;
@@ -88,9 +108,20 @@ void DynamicTexture::update(const void* imageData, size_t size)
 		// Copy from staging data to read buffer [readBuffer].
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_stagingBuffers[m_readBuffer]);
 		glBindTexture(GL_TEXTURE_2D, m_textures[m_readBuffer]->getHandle());
+
+		// Switch to 1 byte alignment if necessary, but this may be slower than the default 4 byte alignment.
+		u32 alignment = (m_width & 3) ? 1 : 4;
+		if (alignment != s_alignment)
+		{
+			glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
+			s_alignment = alignment;
+		}
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, m_format == DTEX_RGBA8 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, 0);
+
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 		glBindTexture(GL_TEXTURE_2D, 0);
+
+		CHECK_GL_ERROR
 	}
 }
 
