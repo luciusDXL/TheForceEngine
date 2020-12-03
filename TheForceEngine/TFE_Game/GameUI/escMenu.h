@@ -15,6 +15,6 @@ namespace TFE_EscapeMenu
 	void unload();
 	void open(TFE_Renderer* renderer);
 	void close();
-	void draw(TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover, bool nextMission);
+	void draw(TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover, bool nextMission);
 	GameUiResult update(const Vec2i* cursor, bool nextMission, s32* buttonPressed, bool* buttonHover);
 }

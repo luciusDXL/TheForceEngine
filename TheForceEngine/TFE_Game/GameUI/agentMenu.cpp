@@ -25,8 +25,10 @@ namespace TFE_AgentMenu
 	// The plan is to render into a 320x200 buffer and then upscale using the GPU, which will allow all of this scaling code to go away
 	// and produce cleaner looking results. Since all UI can be rendered into the same texture, this should cost very little in terms of
 	// bandwidth.
-	#define SX(x) (((x) * scaleX) >> 8)
+	#define SX(x) (offset + (((x) * scaleX) >> 8))
 	#define SY(y) (((y) * scaleY) >> 8)
+	#define WX(x) (((x) * scaleX) >> 8)
+	#define WY(y) (((y) * scaleY) >> 8)
 
 	///////////////////////////////////////
 	// TODO: Save System
@@ -92,8 +94,8 @@ namespace TFE_AgentMenu
 	static Font* s_sysFont;
 
 	void loadAgents();
-	void drawYesNoDlg(u32 baseFrame, TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover);
-	void drawNewAgentDlg(TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover);
+	void drawYesNoDlg(u32 baseFrame, TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover);
+	void drawNewAgentDlg(TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover);
 
 	void updateNewAgentDlg(s32 x, s32 z, s32* buttonPressed, bool* buttonHover);
 	void updateRemoveAgentDlg(s32 x, s32 z, s32* buttonPressed, bool* buttonHover);
@@ -138,14 +140,14 @@ namespace TFE_AgentMenu
 	{
 	}
 
-	void draw(TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover, bool nextMission)
+	void draw(TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover, bool nextMission)
 	{
 		// Clear part of the background.
 		// TODO: Fade out the game view when existing, so the screen is black when drawing the menu.
-		renderer->drawColoredQuad(0, 0, SX(320), SY(200), 0);
+		renderer->drawColoredQuad(offset, 0, WX(320), WY(200), 0);
 
 		// Draw the menu
-		renderer->blitImage(&s_agentMenu->frames[0], 0, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
+		renderer->blitImage(&s_agentMenu->frames[0], offset, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
 
 		// Draw the buttons
 		for (s32 i = 0; i < 4; i++)
@@ -171,7 +173,7 @@ namespace TFE_AgentMenu
 				if (buttonPressed == i && buttonHover) { index = i * 2 + 1; }
 				else { index = i * 2 + 2; }
 			}
-			renderer->blitImage(&s_agentMenu->frames[index], 0, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
+			renderer->blitImage(&s_agentMenu->frames[index], offset, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
 		}
 
 		// 11 = easy, 12 = medium, 13 = hard
@@ -187,12 +189,12 @@ namespace TFE_AgentMenu
 				if (s_selectedMission == i)
 				{
 					color = 32;
-					renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), SX(118), SY(9), s_lastSelectedAgent ? 13 : 12);
+					renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), WX(118), WY(9), s_lastSelectedAgent ? 13 : 12);
 				}
 
 				renderer->print(TFE_LevelList::getLevelName(i), s_sysFont, SX(textX), SY(textY), scaleX, scaleY, color);
 				s32 diff = s_agent[s_selectedAgent].completeDifficulty[i] + 11;
-				renderer->blitImage(&s_agentMenu->frames[diff], 0, SY(yOffset), scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
+				renderer->blitImage(&s_agentMenu->frames[diff], SX(0), SY(yOffset), scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
 				yOffset += 8;
 				textY += 8;
 			}
@@ -200,7 +202,7 @@ namespace TFE_AgentMenu
 			if (s_selectedMission == s_agent[s_selectedAgent].nextMission)
 			{
 				color = 32;
-				renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), SX(118), SY(9), s_lastSelectedAgent ? 13 : 12);
+				renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), WX(118), WY(9), s_lastSelectedAgent ? 13 : 12);
 			}
 			renderer->print(TFE_LevelList::getLevelName(s_agent[s_selectedAgent].nextMission), s_sysFont, SX(textX), SY(textY), scaleX, scaleY, color);
 		}
@@ -214,7 +216,7 @@ namespace TFE_AgentMenu
 			if (s_selectedAgent == i)
 			{
 				color = 32;
-				renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), SX(118), SY(9), s_lastSelectedAgent ? 12 : 13);
+				renderer->drawColoredQuad(SX(textX - 3), SY(textY - 1), WX(118), WY(9), s_lastSelectedAgent ? 12 : 13);
 			}
 			renderer->print(s_agent[i].name, s_sysFont, SX(textX), SY(textY), scaleX, scaleY, color);
 			textY += 8;
@@ -222,15 +224,15 @@ namespace TFE_AgentMenu
 
 		if (s_newAgentDlg)
 		{
-			drawNewAgentDlg(renderer, scaleX, scaleY, buttonPressed, buttonHover);
+			drawNewAgentDlg(renderer, offset, scaleX, scaleY, buttonPressed, buttonHover);
 		}
 		else if (s_removeAgentDlg)
 		{
-			drawYesNoDlg(0, renderer, scaleX, scaleY, buttonPressed, buttonHover);
+			drawYesNoDlg(0, renderer, offset, scaleX, scaleY, buttonPressed, buttonHover);
 		}
 		else if (s_quitConfirmDlg)
 		{
-			drawYesNoDlg(1, renderer, scaleX, scaleY, buttonPressed, buttonHover);
+			drawYesNoDlg(1, renderer, offset, scaleX, scaleY, buttonPressed, buttonHover);
 		}
 	}
 
@@ -430,30 +432,30 @@ namespace TFE_AgentMenu
 		s_agent[4].selectedMission = 8;
 	}
 		
-	void drawYesNoButtons(u32 indexNo, u32 indexYes, TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover)
+	void drawYesNoButtons(u32 indexNo, u32 indexYes, TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover)
 	{
 		if (buttonPressed == 0 && buttonHover)
 		{
-			renderer->blitImage(&s_agentDlg->frames[indexNo], 0, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
+			renderer->blitImage(&s_agentDlg->frames[indexNo], offset, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
 		}
 		else if (buttonPressed == 1 && buttonHover)
 		{
-			renderer->blitImage(&s_agentDlg->frames[indexYes], 0, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
+			renderer->blitImage(&s_agentDlg->frames[indexYes], offset, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
 		}
 	}
 
-	void drawYesNoDlg(u32 baseFrame, TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover)
+	void drawYesNoDlg(u32 baseFrame, TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover)
 	{
-		renderer->blitImage(&s_agentDlg->frames[baseFrame], 0, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
-		drawYesNoButtons(4, 6, renderer, scaleX, scaleY, buttonPressed, buttonHover);
+		renderer->blitImage(&s_agentDlg->frames[baseFrame], offset, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
+		drawYesNoButtons(4+offset, 6, renderer, offset, scaleX, scaleY, buttonPressed, buttonHover);
 	}
 
-	void drawNewAgentDlg(TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover)
+	void drawNewAgentDlg(TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover)
 	{
 		// Draw the dialog
-		renderer->blitImage(&s_agentDlg->frames[2], 0, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
-		drawEditBox(&s_editBox, s_sysFont, 106, 87, 216, 100, scaleX, scaleY, renderer);
-		drawYesNoButtons(8, 10, renderer, scaleX, scaleY, buttonPressed, buttonHover);
+		renderer->blitImage(&s_agentDlg->frames[2], offset, 0, scaleX, scaleY, 31, TEX_LAYOUT_HORZ);
+		drawEditBox(&s_editBox, s_sysFont, offset, 106, 87, 216, 100, scaleX, scaleY, renderer);
+		drawYesNoButtons(8+offset, 10, renderer, offset, scaleX, scaleY, buttonPressed, buttonHover);
 	}
 
 	/////////////////////////

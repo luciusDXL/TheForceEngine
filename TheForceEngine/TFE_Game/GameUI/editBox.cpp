@@ -95,8 +95,15 @@ namespace TFE_GameUi
 		}
 	}
 				
-	void drawEditBox(EditBox* editBox, Font* font, s32 x0, s32 y0, s32 x1, s32 y1, s32 scaleX, s32 scaleY, TFE_Renderer* renderer)
+	void drawEditBox(EditBox* editBox, Font* font, s32 offset, s32 x0, s32 y0, s32 x1, s32 y1, s32 scaleX, s32 scaleY, TFE_Renderer* renderer)
 	{
+		x0 = (((x0)* scaleX) >> 8);
+		x1 = (((x1)* scaleX) >> 8);
+		y0 = (((y0)* scaleY) >> 8);
+		y1 = (((y1)* scaleY) >> 8);
+		x0 += offset;
+		x1 += offset;
+
 		renderer->drawHorizontalLine(x0, x1, y0, c_editBoxColor);
 		renderer->drawHorizontalLine(x0, x1, y1, c_editBoxHighlight);
 		renderer->drawVerticalLine(y0 + 1, y1 - 1, x0, c_editBoxColor);

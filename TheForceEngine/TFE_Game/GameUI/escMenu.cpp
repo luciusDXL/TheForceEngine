@@ -70,11 +70,11 @@ namespace TFE_EscapeMenu
 		TFE_RenderCommon::enableGrayScale(false);
 	}
 		
-	void draw(TFE_Renderer* renderer, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover, bool nextMission)
+	void draw(TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover, bool nextMission)
 	{
 		renderer->applyColorEffect();
 		// TODO: Figure out the real formula for this - this works for now though.
-		const s32 x0 = ((s_escMenu->frames[0].width >> 2) - s_escMenu->frames[0].offsetX) * scaleX >> 8;
+		const s32 x0 = offset + (((s_escMenu->frames[0].width >> 2) - s_escMenu->frames[0].offsetX) * scaleX >> 8);
 		const s32 y0 = ((s_escMenu->frames[0].height >> 2) - s_escMenu->frames[0].offsetY - 8) * scaleY >> 8;
 
 		// Draw the menu

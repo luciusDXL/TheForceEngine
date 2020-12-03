@@ -92,7 +92,8 @@ namespace TFE_GameUi
 	void updateUiResolution()
 	{
 		u32 width, height;
-		s_renderer->getResolution(&width, &height);
+		width = TFE_RenderBackend::getVirtualDisplayWidth2D();
+		height = TFE_RenderBackend::getVirtualDisplayHeight();
 
 		s_scaleX = 256 * s_uiScale * width / (320 * 256);
 		s_scaleY = 256 * s_uiScale * height / (200 * 256);
@@ -164,7 +165,8 @@ namespace TFE_GameUi
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
 		u32 width, height;
-		s_renderer->getResolution(&width, &height);
+		width  = TFE_RenderBackend::getVirtualDisplayWidth2D();
+		height = TFE_RenderBackend::getVirtualDisplayHeight();
 
 		// Only update the mouse when a menu or dialog is open.
 		if (s_escMenuOpen || s_agentMenuOpen)
@@ -232,18 +234,19 @@ namespace TFE_GameUi
 
 	void draw(Player* player)
 	{
+		s32 offset = TFE_RenderBackend::getVirtualDisplayOffset2D();
 		if (s_agentMenuOpen)
 		{
-			TFE_AgentMenu::draw(s_renderer, s_scaleX, s_scaleY, s_buttonPressed, s_buttonHover, s_nextMission);
+			TFE_AgentMenu::draw(s_renderer, offset, s_scaleX, s_scaleY, s_buttonPressed, s_buttonHover, s_nextMission);
 		}
 		else if (s_escMenuOpen)
 		{
-			TFE_EscapeMenu::draw(s_renderer, s_scaleX, s_scaleY, s_buttonPressed, s_buttonHover, s_nextMission);
+			TFE_EscapeMenu::draw(s_renderer, offset, s_scaleX, s_scaleY, s_buttonPressed, s_buttonHover, s_nextMission);
 		}
 		
 		if (s_drawMouseCursor)
 		{
-			s_renderer->blitImage(&s_cursor->frames[0], s_cursorPos.x, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
+			s_renderer->blitImage(&s_cursor->frames[0], s_cursorPos.x + offset, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
 		}
 	}
 		

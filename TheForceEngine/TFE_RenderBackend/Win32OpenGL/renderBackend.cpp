@@ -324,14 +324,19 @@ namespace TFE_RenderBackend
 		return s_virtualDisplay->create(s_virtualWidth, s_virtualHeight, s_asyncFrameBuffer ? 2 : 1, s_gpuColorConvert ? DTEX_R8 : DTEX_RGBA8);
 	}
 
-	u32 getVirtualDisplayStride2D()
+	u32 getVirtualDisplayWidth2D()
 	{
 		return s_virtualWidthUi;
 	}
 
-	u32 getVirtualDisplayStride3D()
+	u32 getVirtualDisplayWidth3D()
 	{
 		return s_virtualWidth3d;
+	}
+
+	u32 getVirtualDisplayHeight()
+	{
+		return s_virtualHeight;
 	}
 
 	u32 getVirtualDisplayOffset2D()

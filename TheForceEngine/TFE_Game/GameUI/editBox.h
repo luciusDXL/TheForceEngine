@@ -20,5 +20,5 @@ class TFE_Renderer;
 namespace TFE_GameUi
 {
 	void updateEditBox(EditBox* editBox);
-	void drawEditBox(EditBox* editBox, Font* font, s32 x0, s32 y0, s32 x1, s32 y1, s32 scaleX, s32 scaleY, TFE_Renderer* renderer);
+	void drawEditBox(EditBox* editBox, Font* font, s32 offset, s32 x0, s32 y0, s32 x1, s32 y1, s32 scaleX, s32 scaleY, TFE_Renderer* renderer);
 }
