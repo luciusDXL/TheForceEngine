@@ -257,6 +257,7 @@ namespace TFE_Settings
 		writeHeader(settings, c_sectionNames[SECTION_GRAPHICS]);
 		writeKeyValue_Int(settings, "gameWidth", s_graphicsSettings.gameResolution.x);
 		writeKeyValue_Int(settings, "gameHeight", s_graphicsSettings.gameResolution.z);
+		writeKeyValue_Bool(settings, "widescreen", s_graphicsSettings.widescreen);
 		writeKeyValue_Bool(settings, "asyncFramebuffer", s_graphicsSettings.asyncFramebuffer);
 		writeKeyValue_Bool(settings, "gpuColorConvert", s_graphicsSettings.gpuColorConvert);
 		writeKeyValue_Bool(settings, "colorCorrection", s_graphicsSettings.colorCorrection);
@@ -420,6 +421,10 @@ namespace TFE_Settings
 		else if (strcasecmp("gameHeight", key) == 0)
 		{
 			s_graphicsSettings.gameResolution.z = parseInt(value);
+		}
+		else if (strcasecmp("widescreen", key) == 0)
+		{
+			s_graphicsSettings.widescreen = parseBool(value);
 		}
 		else if (strcasecmp("asyncFramebuffer", key) == 0)
 		{

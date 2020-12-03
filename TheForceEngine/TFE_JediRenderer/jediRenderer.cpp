@@ -161,8 +161,9 @@ namespace TFE_JediRenderer
 		
 	void draw(u8* display, const ColorMap* colormap)
 	{
-		// Clear the screen for now so we can get away with only drawing walls.
-		//memset(display, 0, s_width * s_height);
+		// Clear the top pixel row.
+		memset(display, 0, s_width);
+
 		s_display = display;
 		s_colorMap = colormap->colorMap;
 		s_lightSourceRamp = colormap->lightSourceRamp;

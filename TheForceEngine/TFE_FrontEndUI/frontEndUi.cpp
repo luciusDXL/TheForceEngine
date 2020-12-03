@@ -795,7 +795,7 @@ namespace TFE_FrontEndUI
 		// Resolution
 		//////////////////////////////////////////////////////
 		// TODO
-		static bool s_widescreen = false;
+		bool widescreen = graphics->widescreen;
 
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Virtual Resolution");
@@ -803,7 +803,7 @@ namespace TFE_FrontEndUI
 
 		ImGui::LabelText("##ConfigLabel", "Standard Resolution:"); ImGui::SameLine(150);
 		ImGui::SetNextItemWidth(196);
-		ImGui::Combo("##Resolution", &s_resIndex, s_widescreen ? c_resolutionsWide : c_resolutions, IM_ARRAYSIZE(c_resolutions));
+		ImGui::Combo("##Resolution", &s_resIndex, widescreen ? c_resolutionsWide : c_resolutions, IM_ARRAYSIZE(c_resolutions));
 		if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim))
 		{
 		}
@@ -824,8 +824,12 @@ namespace TFE_FrontEndUI
 			}
 		}
 
-		//ImGui::Checkbox("Widescreen", &s_widescreen);
-		ImGui::TextColored({ 1.0f, 1.0f, 1.0f, 0.33f }, "Widescreen [TODO]");
+		ImGui::Checkbox("Widescreen", &widescreen);
+		if (widescreen != graphics->widescreen)
+		{
+			graphics->widescreen = widescreen;
+			TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
+		}
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////

@@ -4,6 +4,7 @@
 #include <TFE_Game/GameUI/gameUi.h>
 #include <TFE_System/system.h>
 #include <TFE_Renderer/renderer.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/textureAsset.h>
 #include <TFE_Asset/fontAsset.h>

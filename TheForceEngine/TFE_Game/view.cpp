@@ -198,7 +198,7 @@ namespace TFE_View
 		TFE_JediRenderer::setSubRenderer((w <= 320 && h <= 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT);
 		TFE_JediRenderer::setResolution(w, h);
 	}
-		
+
 	bool init(const LevelData* level, TFE_Renderer* renderer, s32 w, s32 h, bool enableViewStats)
 	{
 		s_objects = LevelGameObjects::getGameObjectList();

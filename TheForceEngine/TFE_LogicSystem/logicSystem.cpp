@@ -461,7 +461,7 @@ namespace TFE_LogicSystem
 		if (objectId < 0 || objectId >= s_scriptObjects.size()) { return 0.0f; }
 
 		ScriptObject* obj = &s_scriptObjects[objectId];
-		if (obj->gameObj->oclass != CLASS_SPRITE) { return 0.0f; }
+		if (!obj->gameObj || obj->gameObj->oclass != CLASS_SPRITE) { return 0.0f; }
 		return (f32)obj->gameObj->sprite->anim[animationId].frameRate;
 	}
 
@@ -470,7 +470,7 @@ namespace TFE_LogicSystem
 		if (objectId < 0 || objectId >= s_scriptObjects.size()) { return 0; }
 
 		ScriptObject* obj = &s_scriptObjects[objectId];
-		if (obj->gameObj->oclass != CLASS_SPRITE) { return 0; }
+		if (!obj->gameObj || obj->gameObj->oclass != CLASS_SPRITE) { return 0; }
 		return obj->gameObj->sprite->anim[animationId].angles[0].frameCount;
 	}
 
@@ -479,7 +479,7 @@ namespace TFE_LogicSystem
 		if (objectId < 0 || objectId >= s_scriptObjects.size()) { return; }
 
 		ScriptObject* obj = &s_scriptObjects[objectId];
-		if (obj->gameObj->oclass != CLASS_SPRITE) { return; }
+		if (!obj->gameObj || obj->gameObj->oclass != CLASS_SPRITE) { return; }
 
 		obj->gameObj->animId = animationId;
 		obj->gameObj->frameIndex = frameIndex;

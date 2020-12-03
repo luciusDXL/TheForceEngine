@@ -342,7 +342,6 @@ namespace TFE_GameLoop
 
 		TFE_Physics::init(s_level);
 		TFE_Level::startLevel(level, s_levelObjects);
-
 		TFE_InfSystem::setupLevel(TFE_InfAsset::getInfData(), level);
 
 		// for now only overriding the start position is supported.
@@ -388,8 +387,8 @@ namespace TFE_GameLoop
 		s_heightVisual = s_player.pos.y;
 		TFE_RenderCommon::enableNightVision(false);
 			   			   
-		TFE_View::init(level, renderer, w, h, enableViewStats);
 		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+		TFE_View::init(level, renderer, TFE_RenderBackend::getVirtualDisplayWidth3D(), TFE_RenderBackend::getVirtualDisplayHeight(), enableViewStats);
 
 		s_eyeHeight = c_standingEyeHeight;
 		s_height = c_standingHeight;
@@ -441,6 +440,7 @@ namespace TFE_GameLoop
 		if (width == prevWidth && height == prevHeight && curAsync == prevAsync && curColorConvert == prevColorConvert && prevWidescreen == curWidescreen) { return; }
 
 		s_renderer->changeResolution(width, height, curWidescreen, curAsync, curColorConvert);
+		width = TFE_RenderBackend::getVirtualDisplayWidth3D();
 
 		if (width != prevWidth || height != prevHeight || prevWidescreen != curWidescreen)
 		{

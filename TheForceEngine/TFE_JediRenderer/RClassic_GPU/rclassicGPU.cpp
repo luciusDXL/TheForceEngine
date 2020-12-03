@@ -55,12 +55,14 @@ namespace RClassic_GPU
 
 		// Assume that 200p and 400p are 16:10 in 4:3
 		// Otherwise we can pure 4:3 (i.e. undo the 16:10 part)
-		s_aspectScale = 1.0f;
+		s_aspectScaleX = 1.0f;
+		s_aspectScaleY = 1.0f;
 		if (height != 200 && height != 400)
 		{
-			s_aspectScale = 1.2f;
+			s_aspectScaleX = 1.2f;
+			s_aspectScaleY = 1.2f;
 		}
-		s_focalLenAspect *= s_aspectScale;
+		s_focalLenAspect *= s_aspectScaleY;
 
 		s_minScreenX = 0;
 		s_maxScreenX = s_width - 1;
