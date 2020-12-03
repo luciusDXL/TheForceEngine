@@ -2,6 +2,7 @@
 #include "player.h"
 #include <TFE_System/system.h>
 #include <TFE_Renderer/renderer.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/textureAsset.h>
 #include <TFE_Asset/fontAsset.h>
@@ -87,6 +88,7 @@ namespace TFE_GameHud
 	static Vec2i s_hudPosition[HUD_COUNT];
 	static HudAsset s_hudElementAssets[HUD_COUNT];
 	static s32 s_scaleX = 1, s_scaleY = 1;
+	static s32 s_offsetX = 0;
 	static s32 s_uiScale = 256;
 
 	const char* c_msgFont = "GLOWING.FNT";
@@ -130,10 +132,13 @@ namespace TFE_GameHud
 	void init(TFE_Renderer* renderer)
 	{
 		s_renderer = renderer;
-		u32 width, height;
-		s_renderer->getResolution(&width, &height);
+		const u32 width  = TFE_RenderBackend::getVirtualDisplayWidth2D();
+		const u32 vwidth = TFE_RenderBackend::getVirtualDisplayWidth3D();
+		const u32 height = TFE_RenderBackend::getVirtualDisplayHeight();
+
 		s_scaleX = 256 * s_uiScale * width / (320 * 256);
 		s_scaleY = 256 * s_uiScale * height / (200 * 256);
+		s_offsetX = TFE_RenderBackend::getVirtualDisplayOffset2D();
 
 		// Load the HUD textures & set element positions.
 		for (u32 i = 0; i < HUD_COUNT; i++)
@@ -146,7 +151,7 @@ namespace TFE_GameHud
 			{
 				s_hudElementAssets[i].font = TFE_Font::get(c_hudElements[i].name);
 			}
-			s_hudPosition[i].x = getHudXPosition(c_hudElements[i].x, c_hudElements[i].alignHorz, width);
+			s_hudPosition[i].x = getHudXPosition(c_hudElements[i].x, c_hudElements[i].alignHorz, vwidth);
 			s_hudPosition[i].z = getHudYPosition(c_hudElements[i].y, c_hudElements[i].alignVert, height);
 		}
 

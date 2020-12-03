@@ -4,6 +4,7 @@
 #include <TFE_Asset/modelAsset.h>
 #include <TFE_Asset/vocAsset.h>
 #include <TFE_LogicSystem/logicSystem.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_ScriptSystem/scriptSystem.h>
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
@@ -386,10 +387,10 @@ namespace TFE_WeaponSystem
 	void TFE_PlayerSpawnProjectile(s32 x, s32 y, f32 fwdSpeed, f32 upwardSpeed, u32 flags, u32 damage, f32 value0, f32 value1)
 	{
 		// Convert from screen pixel offset to world position.
-		u32 w, h;
-		s_renderer->getResolution(&w, &h);
+		u32 w = TFE_RenderBackend::getVirtualDisplayWidth3D();
+		u32 h = TFE_RenderBackend::getVirtualDisplayHeight();
 
-		Vec3f origin = TFE_RenderCommon::unproject({ x, y }, 1.0f);
+		Vec3f origin = TFE_RenderCommon::unproject({ x + (s32)TFE_RenderBackend::getVirtualDisplayOffset2D(), y }, 1.0f);
 		Vec3f target = TFE_RenderCommon::unproject({ s32(w/2), s32(h/2) }, 1000.0f);
 		Vec3f dir = { target.x - origin.x, target.y - origin.y, target.z - origin.z };
 		dir = TFE_Math::normalize(&dir);
@@ -818,8 +819,9 @@ namespace TFE_WeaponSystem
 		SCRIPT_ENUM_VALUE(ProjectileFlags, PFLAG_TIMED_EXPLOSION);
 		SCRIPT_ENUM_VALUE(ProjectileFlags, PFLAG_EXPLODE_ON_RANGE);
 
-		u32 width, height;
-		s_renderer->getResolution(&width, &height);
+		u32 width = TFE_RenderBackend::getVirtualDisplayWidth2D();
+		u32 height = TFE_RenderBackend::getVirtualDisplayHeight();
+
 		s_screen.width = width;
 		s_screen.height = height;
 		s_screen.scaleX = 256 * width / 320;
@@ -837,8 +839,9 @@ namespace TFE_WeaponSystem
 
 	void updateResolution()
 	{
-		u32 width, height;
-		s_renderer->getResolution(&width, &height);
+		u32 width = TFE_RenderBackend::getVirtualDisplayWidth2D();
+		u32 height = TFE_RenderBackend::getVirtualDisplayHeight();
+
 		s_screen.width = width;
 		s_screen.height = height;
 		s_screen.scaleX = 256 * width / 320;
@@ -967,6 +970,6 @@ namespace TFE_WeaponSystem
 
 		if (TFE_RenderCommon::isNightVisionEnabled()) { ambient = 18; }
 		else if (s_player && s_player->m_shooting) { ambient = 31; }
-		s_renderer->blitImage(frame, s_weapon.x, s_weapon.y + s_weapon.yOffset, s_screen.scaleX, s_screen.scaleY, ambient);
+		s_renderer->blitImage(frame, s_weapon.x + TFE_RenderBackend::getVirtualDisplayOffset2D(), s_weapon.y + s_weapon.yOffset, s_screen.scaleX, s_screen.scaleY, ambient);
 	}
 }

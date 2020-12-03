@@ -249,7 +249,7 @@ namespace TFE_GameUi
 			s_renderer->blitImage(&s_cursor->frames[0], s_cursorPos.x + offset, s_cursorPos.z, s_scaleX, s_scaleY, 31, TEX_LAYOUT_HORZ);
 		}
 	}
-		
+
 	//////////////////////////////////////////////////////////////////
 	// Internal
 	//////////////////////////////////////////////////////////////////
