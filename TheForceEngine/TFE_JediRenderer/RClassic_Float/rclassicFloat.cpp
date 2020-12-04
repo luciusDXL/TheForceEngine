@@ -71,13 +71,13 @@ namespace RClassic_Float
 
 		// Assume that 200p and 400p are 16:10 in 4:3 (rectangular pixels)
 		// Otherwise if widescreen is not enabled, assume this is a pure 4:3 resolution (square pixels)
-		// And if widescreen is enabled, use the resulting screen aspect ratio assuming square pixels.
+		// And if widescreen is enabled, use the resulting screen aspect ratio while keeping the square or rectangular pixels based on the height.
 		s_aspectScaleX = 1.0f;
 		s_aspectScaleY = 1.0f;
 		if (TFE_RenderBackend::getWidescreen())
 		{
-			// The (4/3) factor removes the 4:3 aspect ratio already factored in 's_halfWidth'
-			// The (height/width) factor adjusts for the resolution pixel aspect ratio (assuming square pixels).
+			// The (4/3) or (16/10) factor removes the 4:3 or 16:10 aspect ratio already factored in 's_halfWidth' 
+			// The (height/width) factor adjusts for the resolution pixel aspect ratio.
 			const f32 scaleFactor = (height == 200 || height == 400) ? (16.0f / 10.0f) : (4.0f / 3.0f);
 			s_focalLength = s_halfWidth * scaleFactor * f32(height) / f32(width);
 		}
