@@ -110,17 +110,20 @@ void DynamicTexture::update(const void* imageData, size_t size)
 		glBindTexture(GL_TEXTURE_2D, m_textures[m_readBuffer]->getHandle());
 
 		// Switch to 1 byte alignment if necessary, but this may be slower than the default 4 byte alignment.
+		// Note: if the alignment is not correct, an error will be generated and the texture will not be updated.
 		u32 alignment = (m_width & 3) ? 1 : 4;
 		if (alignment != s_alignment)
 		{
 			glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
 			s_alignment = alignment;
 		}
+
+		// Update the GPU texture from the GPU staging buffer.
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, m_format == DTEX_RGBA8 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, 0);
 
+		// Cleanup.
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 		glBindTexture(GL_TEXTURE_2D, 0);
-
 		CHECK_GL_ERROR
 	}
 }

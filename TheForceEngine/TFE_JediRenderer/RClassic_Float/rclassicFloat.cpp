@@ -103,7 +103,7 @@ namespace RClassic_Float
 			// The original result is likely from a arc tangent table, which is more approximate. However the end difference is less
 			// than a single pixel at 320x200. The more accurate result will look better at higher resolutions as well. :)
 			// TODO: Extract the original table to use at 320x200?
-			s_skyTable[x] = 512.0f * atanf(f32(x - halfWidth) / f32(halfWidth)) / PI;
+			s_skyTable[x] = 512.0f * atanf(f32(x - halfWidth) / s_focalLength) / PI;
 		}
 	}
 }  // RClassic_Float

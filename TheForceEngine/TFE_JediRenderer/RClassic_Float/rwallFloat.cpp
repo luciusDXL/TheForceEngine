@@ -1,4 +1,5 @@
 #include <TFE_System/profiler.h>
+#include <TFE_RenderBackend/renderBackend.h>
 // TODO: Fix or move.
 #include <TFE_Game/level.h>
 
@@ -63,6 +64,27 @@ namespace RClassic_Float
 		drawColumn_Lit_Trans,			// COLFUNC_LIT_TRANS
 	};
 
+	// Computes the intersection of line segment (x0,z0),(x1,z1) with frustum line (fx0, fz0),(fx1, fz1)
+	f32 frustumIntersectParam(f32 x0, f32 z0, f32 x1, f32 z1, f32 fx0, f32 fz0, f32 fx1, f32 fz1)
+	{
+		f32 ax = x1 - x0;		// Segment 'a' - this is the wall segment.
+		f32 az = z1 - z0;
+		f32 bx = fx1 - fx0;		// Segment 'b' - this defines the frustum line.
+		f32 bz = fz1 - fz0;
+		f32 ux = fx0 - x0;		// Segment 'u' = b0 - a0
+		f32 uz = fz0 - z0;
+
+		// s = BxU / BxA
+		f32 param = bx*uz - bz*ux;
+		f32 den   = bx*az - bz*ax;
+		if (fabsf(den) >= FLT_EPSILON)
+		{
+			param /= den;
+		}
+
+		return param;
+	}
+
 	f32 frustumIntersect(f32 x0, f32 z0, f32 x1, f32 z1, f32 dx, f32 dz)
 	{
 		f32 xz;
@@ -75,61 +97,16 @@ namespace RClassic_Float
 		return xz;
 	}
 
-	// Process the wall and produce an RWallSegment for rendering if the wall is potentially visible.
-	void wall_process(RWall* wall)
+	// Returns true if the wall is potentially visible.
+	// Original DOS clipping code converted to floating point.
+	bool wall_clipToFrustum(f32& x0, f32& z0, f32& x1, f32& z1, f32& dx, f32& dz, f32& curU, f32& texelLen, f32& texelLenRem, s32& clipX0_Near, s32& clipX1_Near, f32 left0, f32 right0, f32 left1, f32 right1)
 	{
-		const vec2* p0 = wall->v0;
-		const vec2* p1 = wall->v1;
-
-		// viewspace wall coordinates.
-		f32 x0 = p0->x.f32;
-		f32 x1 = p1->x.f32;
-		f32 z0 = p0->z.f32;
-		f32 z1 = p1->z.f32;
-
-		// x values of frustum lines that pass through (x0,z0) and (x1,z1)
-		f32 left0 = -z0;
-		f32 left1 = -z1;
-		f32 right0 = z0;
-		f32 right1 = z1;
-
-		// Cull the wall if it is completely beyind the camera.
-		if (z0 < 0 && z1 < 0)
-		{
-			wall->visible = 0;
-			return;
-		}
-		// Cull the wall if it is completely outside the view
-		if ((x0 < left0 && x1 < left1) || (x0 > right0 && x1 > right1))
-		{
-			wall->visible = 0;
-			return;
-		}
-
-		f32 dx = x1 - x0;
-		f32 dz = z1 - z0;
-		// Cull the wall if it is back facing.
-		// y0*dx - x0*dy
-		const f32 side = (z0 * dx) - (x0 * dz);
-		if (side < 0)
-		{
-			wall->visible = 0;
-			return;
-		}
-
-		f32 curU = 0;
-		s32 clipLeft = 0;
-		s32 clipRight = 0;
-		s32 clipX1_Near = 0;
-		s32 clipX0_Near = 0;
-
-		f32 texelLen = wall->texelLength.f32;
-		f32 texelLenRem = texelLen;
-
 		//////////////////////////////////////////////
 		// Clip the Wall Segment by the left and right
 		// frustum lines.
 		//////////////////////////////////////////////
+		s32 clipLeft = 0;
+		s32 clipRight = 0;
 
 		// The wall segment extends past the left clip line.
 		if (x0 < left0)
@@ -151,7 +128,7 @@ namespace RClassic_Float
 
 			// Update the x0,y0 coordinate of the segment.
 			x0 = -xz;
-			z0 =  xz;
+			z0 = xz;
 
 			if (s != 0)
 			{
@@ -214,8 +191,7 @@ namespace RClassic_Float
 		//////////////////////////////////////////////////
 		if ((z0 < 0 || z1 < 0) && segmentCrossesLine(0.0f, 0.0f, 0.0f, -s_halfHeight, x0, x0, x1, z1) != 0)
 		{
-			wall->visible = 0;
-			return;
+			return false;
 		}
 		if (z0 < 1.0f && z1 < 1.0f)
 		{
@@ -296,6 +272,232 @@ namespace RClassic_Float
 				dz = z1 - z0;
 			}
 		}
+		return true;
+	}
+
+	// Returns true if the wall is potentially visible.
+	// Widescreen version, which involves a more complex frustum intersection but allows wider FOV.
+	// Original DOS clipping code converted to floating point and then adjusted for widescreen -
+	// Note this changes the wall segment/frustum intersection algorithm since the "exactly 90 degree FOV" simplifications can no longer be made but the near plane
+	// intersection fix-up code is still the same (which fills holes when walls are clipped by the nearplane).
+	bool wall_clipToFrustum_Widescreen(f32& x0, f32& z0, f32& x1, f32& z1, f32& dx, f32& dz, f32& curU, f32& texelLen, f32& texelLenRem, s32& clipX0_Near, s32& clipX1_Near, f32 left0, f32 right0, f32 left1, f32 right1, f32 nearPlaneHalfWidth)
+	{
+		//////////////////////////////////////////////
+		// Clip the Wall Segment by the left and right
+		// frustum lines.
+		//////////////////////////////////////////////
+		s32 clipLeft = 0;
+		s32 clipRight = 0;
+
+		// The wall segment extends past the left clip line.
+		if (x0 < left0)
+		{
+			// Intersect the segment (x0, z0),(x1, z1) with the left frustum line.
+			const f32 s = frustumIntersectParam(x0, z0, x1, z1, left0, z0, left1, z1);
+			x0 += s*(x1 - x0);
+			z0 += s*(z1 - z0);
+
+			if (s != 0)
+			{
+				// length of the clipped portion of the remaining texel length.
+				f32 clipLen = texelLenRem * s;
+				// adjust the U texel offset.
+				curU += clipLen;
+				// adjust the remaining texel length.
+				texelLenRem = texelLen - curU;
+			}
+
+			// We have clipped the segment on the left side.
+			clipLeft = -1;
+			// Update dX and dZ
+			dx = x1 - x0;
+			dz = z1 - z0;
+			// Update the right nearplane X values.
+			right0 = z0 * nearPlaneHalfWidth;
+		}
+		// The wall segment extends past the right clip line.
+		if (x1 > right1)
+		{
+			// Intersect the segment (x0, z0),(x1, z1) with the left frustum line.
+			f32 s = frustumIntersectParam(x0, z0, x1, z1, right0, z0, right1, z1);
+			x1 = x0 + s*(x1 - x0);
+			z1 = z0 + s*(z1 - z0);
+
+			s = 1.0f - s;
+			if (s != 0)
+			{
+				f32 adjLen = texelLen - texelLenRem*s;
+				f32 adjLenMinU = adjLen - curU;
+
+				texelLen = adjLen;
+				texelLenRem = adjLenMinU;
+			}
+
+			// We have clipped the segment on the right side.
+			clipRight = -1;
+			// Update dX and dZ
+			dx = x1 - x0;
+			dz = z1 - z0;
+		}
+
+		//////////////////////////////////////////////////
+		// Clip the Wall Segment by the near plane.
+		//////////////////////////////////////////////////
+		if ((z0 < 0 || z1 < 0) && segmentCrossesLine(0.0f, 0.0f, 0.0f, -s_halfHeight, x0, x0, x1, z1) != 0)
+		{
+			return false;
+		}
+		if (z0 < 1.0f && z1 < 1.0f)
+		{
+			if (clipLeft != 0)
+			{
+				x0 = -nearPlaneHalfWidth;
+				clipX0_Near = -1;
+			}
+			else
+			{
+				x0 /= z0;
+			}
+			if (clipRight != 0)
+			{
+				x1 = nearPlaneHalfWidth;
+				clipX1_Near = -1;
+			}
+			else
+			{
+				x1 /= z1;
+			}
+			dx = x1 - x0;
+			dz = 0;
+			z0 = 1.0f;
+			z1 = 1.0f;
+		}
+		else if (z0 < 1.0f)
+		{
+			if (clipLeft != 0)
+			{
+				if (dz != 0)
+				{
+					f32 left = z0 / dz;
+					x0 += (dx * left);
+
+					dx = x1 - x0;
+					texelLenRem = texelLen - curU;
+				}
+				z0 = 1.0f;
+				clipX0_Near = -1;
+				dz = z1 - 1.0f;
+			}
+			else
+			{
+				// BUG: This is NOT correct but matches the original implementation.
+				// I am leaving it as-is to match the original DOS renderer.
+				// Fortunately hitting this case is VERY rare in practice.
+				x0 /= z0;
+				z0 = 1.0f;
+				dz = z1 - 1.0f;
+				dx -= x0;
+			}
+		}
+		else if (z1 < 1.0f)
+		{
+			if (clipRight != 0)
+			{
+				if (dz != 0)
+				{
+					f32 s = (1.0f - x1) / dz;
+					x1 += (dx * s);
+					texelLen += (texelLenRem * s);
+					texelLenRem = texelLen - curU;
+					dx = x1 - x0;
+				}
+				z1 = 1.0f;
+				dz = 1.0f - z0;
+				clipX1_Near = -1;
+			}
+			else
+			{
+				// BUG: This is NOT correct but matches the original implementation.
+				// I am leaving it as-is to match the original DOS renderer.
+				// Fortunately hitting this case is VERY rare in practice.
+				x1 = x1 / z1;
+				z1 = 1.0f;
+				dx = x1 - x0;
+				dz = z1 - z0;
+			}
+		}
+		return true;
+	}
+
+	// Process the wall and produce an RWallSegment for rendering if the wall is potentially visible.
+	void wall_process(RWall* wall)
+	{
+		const vec2* p0 = wall->v0;
+		const vec2* p1 = wall->v1;
+		const bool widescreen = TFE_RenderBackend::getWidescreen();
+		const f32 nearPlaneHalfLen = widescreen ? (3.0f / 4.0f)*(f32(s_width) / f32(s_height)) : 1.0f;
+
+		// viewspace wall coordinates.
+		f32 x0 = p0->x.f32;
+		f32 x1 = p1->x.f32;
+		f32 z0 = p0->z.f32;
+		f32 z1 = p1->z.f32;
+
+		// TODO: Support widescreen by computing the corrected left and right positions.
+		// x values of frustum lines that pass through (x0,z0) and (x1,z1)
+		f32 left0 = -z0 * nearPlaneHalfLen;
+		f32 left1 = -z1 * nearPlaneHalfLen;
+		f32 right0 = z0 * nearPlaneHalfLen;
+		f32 right1 = z1 * nearPlaneHalfLen;
+
+		// Cull the wall if it is completely beyind the camera.
+		if (z0 < 0 && z1 < 0)
+		{
+			wall->visible = 0;
+			return;
+		}
+		// Cull the wall if it is completely outside the view
+		if ((x0 < left0 && x1 < left1) || (x0 > right0 && x1 > right1))
+		{
+			wall->visible = 0;
+			return;
+		}
+
+		f32 dx = x1 - x0;
+		f32 dz = z1 - z0;
+		// Cull the wall if it is back facing.
+		// y0*dx - x0*dy
+		const f32 side = (z0 * dx) - (x0 * dz);
+		if (side < 0)
+		{
+			wall->visible = 0;
+			return;
+		}
+
+		f32 curU = 0;
+		s32 clipX0_Near = 0;
+		s32 clipX1_Near = 0;
+
+		f32 texelLen = wall->texelLength.f32;
+		f32 texelLenRem = texelLen;
+
+		//////////////////////////////////////////////
+		// Clip the Wall Segment by the left and right
+		// frustum lines.
+		//////////////////////////////////////////////
+		if (widescreen)
+		{
+			if (!wall_clipToFrustum_Widescreen(x0, z0, x1, z1, dx, dz, curU, texelLen, texelLenRem, clipX0_Near, clipX1_Near, left0, right0, left1, right1, nearPlaneHalfLen))
+			{
+				wall->visible = 0;
+				return;
+			}
+		}
+		else if (!wall_clipToFrustum(x0, z0, x1, z1, dx, dz, curU, texelLen, texelLenRem, clipX0_Near, clipX1_Near, left0, right0, left1, right1))
+		{
+			wall->visible = 0;
+			return;
+		}
 		
 		//////////////////////////////////////////////////
 		// Project.
@@ -309,13 +511,13 @@ namespace RClassic_Float
 		// Handle near plane clipping by adjusting the walls to avoid holes.
 		if (clipX0_Near != 0 && x0pixel > s_minScreenX)
 		{
-			x0 = -1.0f;
-			dx = x1 + 1.0f;
+			x0 = -nearPlaneHalfLen;
+			dx = x1 + nearPlaneHalfLen;
 			x0pixel = s_minScreenX;
 		}
 		if (clipX1_Near != 0 && x1pixel < s_maxScreenX)
 		{
-			dx = 1.0f - x0;
+			dx = nearPlaneHalfLen - x0;
 			x1pixel = s_maxScreenX;
 		}
 
