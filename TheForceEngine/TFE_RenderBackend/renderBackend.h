@@ -97,9 +97,6 @@ namespace TFE_RenderBackend
 	void updateSettings();
 
 	// virtual display
-	// This function will be replaced.
-	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode = DMODE_STRETCH, bool asyncFramebuffer = true, bool gpuColorConvert = true);
-	// New version of the function.
 	bool createVirtualDisplay(const VirtualDisplayInfo& vdispInfo);
 	void updateVirtualDisplay(const void* buffer, size_t size);
 	void setPalette(const u32* palette);

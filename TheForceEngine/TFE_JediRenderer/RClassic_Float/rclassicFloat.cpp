@@ -50,7 +50,15 @@ namespace RClassic_Float
 		s_focalLength = s_halfWidth;
 		if (TFE_RenderBackend::getWidescreen())
 		{
-			s_focalLenAspect = (height * 4 / 3) * 0.5f;
+			// 200p and 400p get special handling because they are 16:10 resolutions in 4:3.
+			if (height == 200 || height == 400)
+			{
+				s_focalLenAspect = (height == 200) ? 160.0f : 320.0f;
+			}
+			else
+			{
+				s_focalLenAspect = (height * 4 / 3) * 0.5f;
+			}
 		}
 		else
 		{
@@ -61,19 +69,22 @@ namespace RClassic_Float
 		s_heightInPixels = s_height;
 		s_heightInPixelsBase = s_height;
 
-		// Assume that 200p and 400p are 16:10 in 4:3
-		// Otherwise we can pure 4:3 (i.e. undo the 16:10 part)
+		// Assume that 200p and 400p are 16:10 in 4:3 (rectangular pixels)
+		// Otherwise if widescreen is not enabled, assume this is a pure 4:3 resolution (square pixels)
+		// And if widescreen is enabled, use the resulting screen aspect ratio assuming square pixels.
 		s_aspectScaleX = 1.0f;
 		s_aspectScaleY = 1.0f;
 		if (TFE_RenderBackend::getWidescreen())
 		{
-			s_focalLength = s_halfWidth * (4.0f/3.0f) * f32(height) / f32(width);
-			
-			s_aspectScaleX = 1.2f;
-			s_aspectScaleY = 1.2f;
+			// The (4/3) factor removes the 4:3 aspect ratio already factored in 's_halfWidth'
+			// The (height/width) factor adjusts for the resolution pixel aspect ratio (assuming square pixels).
+			const f32 scaleFactor = (height == 200 || height == 400) ? (16.0f / 10.0f) : (4.0f / 3.0f);
+			s_focalLength = s_halfWidth * scaleFactor * f32(height) / f32(width);
 		}
-		else if (height != 200 && height != 400)
+		if (height != 200 && height != 400)
 		{
+			// Scale factor to account for converting from rectangular pixels to square pixels when computing flat texture coordinates.
+			// Factor = (16/10) / (4/3)
 			s_aspectScaleX = 1.2f;
 			s_aspectScaleY = 1.2f;
 		}

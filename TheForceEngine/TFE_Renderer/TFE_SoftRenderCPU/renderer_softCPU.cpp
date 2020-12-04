@@ -37,7 +37,16 @@ bool TFE_SoftRenderCPU::init()
 	m_widthRequested = 320;
 	m_height = 200;
 
-	if (!TFE_RenderBackend::createVirtualDisplay(m_width, m_height, DMODE_ASPECT_CORRECT))
+	const VirtualDisplayInfo info =
+	{
+		DMODE_ASPECT_CORRECT,
+		VDISP_ASYNC_FRAMEBUFFER | VDISP_GPU_COLOR_CONVERT,
+		320,
+		200,
+		320,
+		320
+	};
+	if (!TFE_RenderBackend::createVirtualDisplay(info))
 	{
 		return false;
 	}
@@ -80,7 +89,15 @@ bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height, bool widescreen,
 		DisplayInfo info;
 		TFE_RenderBackend::getDisplayInfo(&info);
 
-		width = height * info.width / info.height;
+		// 200p and 400p get special handling because they are 16:10 in 4:3 resolutions.
+		if (height == 200 || height == 400)
+		{
+			width = (height * info.width / info.height) * 12 / 10;
+		}
+		else
+		{
+			width = height * info.width / info.height;
+		}
 		width3d = width;
 	}
 
