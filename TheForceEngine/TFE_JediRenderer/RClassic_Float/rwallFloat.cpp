@@ -2010,7 +2010,8 @@ namespace RClassic_Float
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
 			const f32 fx = f32(x);
-			const f32 halfWidthOverX = ((fx != s_halfWidth) ? s_halfWidth / (fx - s_halfWidth) : s_halfWidth);
+			// Scale halfWidthOverX by focal length to account for widescreen.
+			const f32 halfWidthOverX = ((fx != s_halfWidth) ? s_focalLength / (fx - s_halfWidth) : s_focalLength);
 			f32 den = halfWidthOverX - wallSegment->slope.f32;
 			// Avoid divide by zero.
 			if (den == 0) { den = 1; }
@@ -2028,7 +2029,8 @@ namespace RClassic_Float
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			const f32 xOverHalfWidth = (f32(x) - s_halfWidth) / s_halfWidth;
+			// Scale xOverHalfWidth by focal length to account for widescreen.
+			const f32 xOverHalfWidth = (f32(x) - s_halfWidth) / s_focalLength;
 			f32 den = xOverHalfWidth - wallSegment->slope.f32;
 			// Avoid divide by 0.
 			if (den == 0) { den = 1; }
