@@ -435,7 +435,13 @@ namespace RClassic_Float
 		const vec2* p0 = wall->v0;
 		const vec2* p1 = wall->v1;
 		const bool widescreen = TFE_RenderBackend::getWidescreen();
-		const f32 nearPlaneHalfLen = widescreen ? (3.0f / 4.0f)*(f32(s_width) / f32(s_height)) : 1.0f;
+		const f32 aspectScale = (s_height == 200 || s_height == 400) ? (10.0f / 16.0f) : (3.0f / 4.0f);
+		f32 nearPlaneHalfLen = widescreen ? aspectScale * (f32(s_width) / f32(s_height)) : 1.0f;
+		// at low resolution, increase the nearPlaneHalfLen slightly to avoid cutting off the last column.
+		if (widescreen && s_height == 200)
+		{
+			nearPlaneHalfLen += 0.001f;
+		}
 
 		// viewspace wall coordinates.
 		f32 x0 = p0->x.f32;
