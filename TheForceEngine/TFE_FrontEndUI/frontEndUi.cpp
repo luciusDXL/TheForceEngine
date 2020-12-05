@@ -103,7 +103,7 @@ namespace TFE_FrontEndUI
 		"1392p",
 		"1440p",
 		"1536p",
-		"2160p"
+		"2160p",
 		"Match Window",
 		"Custom",
 	};

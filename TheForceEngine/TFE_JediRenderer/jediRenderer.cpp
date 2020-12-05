@@ -492,17 +492,21 @@ namespace TFE_JediRenderer
 					continue;
 				}
 
-				s_sectors->addObject(sector, obj);
 				if (srcObj->oclass == CLASS_FRAME)
 				{
-					obj->fme = frames[srcObj->dataOffset]->frame;
+					obj->fme = frames[srcObj->dataOffset] ? frames[srcObj->dataOffset]->frame : nullptr;
+					if (!obj->fme) { continue; }
+
 					frame_setData(obj, (u8*)obj->fme, obj->fme);
 				}
 				else
 				{
-					obj->wax = waxes[srcObj->dataOffset]->wax;
+					obj->wax = waxes[srcObj->dataOffset] ? waxes[srcObj->dataOffset]->wax : nullptr;
+					if (!obj->wax) { continue; }
+
 					wax_setData(obj, (u8*)obj->wax, obj->wax);
 				}
+				s_sectors->addObject(sector, obj);
 			}
 		}
 	}
