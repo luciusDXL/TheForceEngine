@@ -130,7 +130,7 @@ namespace TFE_Console
 			// Get the default value before loading the serialized value (in case in changes between builds).
 			cvar->defaultInt = *var;
 			// This CVar was serialized, so update it now.
-			if (cvar->type == CVAR_INT)
+			if (cvar->type == CVAR_INT && !(flags & CVFLAG_DO_NOT_SERIALIZE))
 			{
 				*var = cvar->serializedInt;
 			}
@@ -160,7 +160,7 @@ namespace TFE_Console
 			// Get the default value before loading the serialized value (in case in changes between builds).
 			cvar->defaultFlt = *var;
 			// This CVar was serialized, so update it now.
-			if (cvar->type == CVAR_FLOAT)
+			if (cvar->type == CVAR_FLOAT && !(flags & CVFLAG_DO_NOT_SERIALIZE))
 			{
 				*var = cvar->serializedFlt;
 			}
@@ -190,7 +190,7 @@ namespace TFE_Console
 			// Get the default value before loading the serialized value (in case in changes between builds).
 			cvar->defaultBool = *var;
 			// This CVar was serialized, so update it now.
-			if (cvar->type == CVAR_BOOL)
+			if (cvar->type == CVAR_BOOL && !(flags & CVFLAG_DO_NOT_SERIALIZE))
 			{
 				*var = cvar->serializedBool;
 			}
@@ -220,7 +220,7 @@ namespace TFE_Console
 			// Get the default value before loading the serialized value (in case in changes between builds).
 			cvar->defaultString = *var;
 			// This CVar was serialized, so update it now.
-			if (cvar->type == CVAR_STRING)
+			if (cvar->type == CVAR_STRING && !(flags & CVFLAG_DO_NOT_SERIALIZE))
 			{
 				strcpy(var, cvar->serializedString.c_str());
 			}

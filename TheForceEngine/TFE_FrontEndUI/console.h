@@ -16,6 +16,7 @@ enum CVarFlag
 {
 	CVFLAG_NONE = 0,
 	CVFLAG_READ_ONLY = (1 << 0),
+	CVFLAG_DO_NOT_SERIALIZE = (1 << 1),
 };
 
 #define CVAR_INT(var, name, flags, help) TFE_Console::registerCVarInt(name, flags, &##var, help)

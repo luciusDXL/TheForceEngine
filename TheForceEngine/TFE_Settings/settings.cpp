@@ -304,6 +304,10 @@ namespace TFE_Settings
 		for (u32 i = 0; i < count; i++)
 		{
 			const TFE_Console::CVar* cvar = TFE_Console::getCVarByIndex(i);
+			if (cvar->flags & CVFLAG_DO_NOT_SERIALIZE)
+			{
+				continue;
+			}
 
 			switch (cvar->type)
 			{
