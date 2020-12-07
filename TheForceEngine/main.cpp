@@ -55,6 +55,8 @@ static u32  s_monitorWidth = 1280;
 static u32  s_monitorHeight = 720;
 static bool s_gameUiInitRequired = true;
 
+void parseOption(const char* name, const std::vector<const char*>& values, bool longName);
+
 void handleEvent(SDL_Event& Event)
 {
 	TFE_Ui::setUiInput(&Event);
@@ -308,6 +310,49 @@ bool systemMenuKeyCombo()
 	return (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1);
 }
 
+void parseCommandLine(s32 argc, char* argv[])
+{
+	if (argc < 1) { return; }
+
+	const char* curOptionName = nullptr;
+	bool longName = false;
+	std::vector<const char*> values;
+	for (s32 i = 1; i < argc; i++)
+	{
+		const char* opt = argv[i];
+		const size_t len = strlen(opt);
+
+		// Is this an option name or value?
+		const char* optValue = nullptr;
+		if (len && opt[0] == '-')
+		{
+			if (curOptionName)
+			{
+				parseOption(curOptionName, values, longName);
+			}
+			if (len > 2 && opt[0] == '-' && opt[1] == '-')
+			{
+				longName = true;
+				curOptionName = opt + 2;
+			}
+			else
+			{
+				longName = false;
+				curOptionName = opt + 1;
+			}
+			values.clear();
+		}
+		else if (len && opt[0] != '-')
+		{
+			values.push_back(opt);
+		}
+	}
+	if (curOptionName)
+	{
+		parseOption(curOptionName, values, longName);
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	// Paths
@@ -333,6 +378,9 @@ int main(int argc, char* argv[])
 	{
 		return PROGRAM_ERROR;
 	}
+
+	// Override settings with command line options.
+	parseCommandLine(argc, argv);
 
 	// Setup game paths.
 	// Get the current game.
@@ -549,4 +597,68 @@ int main(int argc, char* argv[])
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();
 	return PROGRAM_SUCCESS;
+}
+
+// TODO: Implement the various options.
+void parseOption(const char* name, const std::vector<const char*>& values, bool longName)
+{
+	if (!longName)	// short names use the same style as the originals.
+	{
+		if (name[0] == 'g')		// Directly load a game, skipping the titlescreen.
+		{
+			// -gDARK
+			const char* gameToLoad = &name[1];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Game to load: %s", gameToLoad);
+		}
+		else if (name[0] == 'u')	// Load a custom archive.
+		{
+			// -uDARK.GOB
+			const char* archiveToLoad = &name[1];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Archive to load: %s", archiveToLoad);
+		}
+		else if (name[0] == 'l')	// Directly load a level at medium difficulty.
+		{
+			// -lSECBASE
+			const char* levelToLoad = &name[1];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Level to load: %s", levelToLoad);
+		}
+		else if (name[0] == 'c')	// Skip cutscenes and the title screen.
+		{
+			// -c
+			// disable cutscenes and title.
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Disable cutscenes and title screen.");
+		}
+	}
+	else  // long names use the more traditional style of arguments which allow for multiple values.
+	{
+		if (strcasecmp(name, "game") == 0 && values.size() >= 1)	// Directly load a game, skipping the titlescreen.
+		{
+			// --game DARK
+			const char* gameToLoad = values[0];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Game to load: %s", gameToLoad);
+		}
+		else if (strcasecmp(name, "archive") == 0 && values.size() >= 1)	// Load a custom archive.
+		{
+			// --archive DARK.GOB
+			const char* archiveToLoad = values[0];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Archive to load: %s", archiveToLoad);
+		}
+		else if (strcasecmp(name, "level") == 0 && values.size() >= 1)		// Directly load a level at medium difficulty.
+		{
+			// --level SECBASE
+			const char* levelToLoad = values[0];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Level to load: %s", levelToLoad);
+		}
+		else if (strcasecmp(name, "warp") == 0 && values.size() >= 3)		// Warp to a specific Sector and Location.
+		{
+			// --warp 15 12.7 203.5
+			char* endPtr = nullptr;
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Warp: sectorID: %d, x: %0.2f, z: %0.2f", strtol(values[0], &endPtr, 10), strtof(values[1], &endPtr), strtof(values[2], &endPtr));
+		}
+		else if (strcasecmp(name, "nocutscenes") == 0)		// Skip cutscenes and the title screen.
+		{
+			// --nocutscenes
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Disable cutscenes and title screen.");
+		}
+	}
 }
