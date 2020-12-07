@@ -2459,8 +2459,8 @@ namespace RClassic_Float
 		const f32 fOffsetX = fixed16ToFloat(frame->offsetX);
 		const f32 fOffsetY = fixed16ToFloat(frame->offsetY);
 
-		const f32 x0 = obj->posVS.x.f32 - fOffsetX;
 		const f32 yOffset = heightWS - fOffsetY;
+		const f32 x0 = obj->posVS.x.f32 - fOffsetX;
 		const f32 y0 = obj->posVS.y.f32 - yOffset;
 
 		const f32 rcpZ = 1.0f / z;
@@ -2469,11 +2469,12 @@ namespace RClassic_Float
 
 		s32 x0_pixel = roundFloat(projX0);
 		s32 y0_pixel = roundFloat(projY0);
+		// Cull the sprite if it is completely outside of the view.
 		if (x0_pixel > s_windowMaxX || y0_pixel > s_windowMaxY)
 		{
 			return;
 		}
-				
+
 		const f32 x1 = x0 + widthWS;
 		const f32 y1 = y0 + heightWS;
 		const f32 projX1 = x1 * s_focalLength*rcpZ + s_halfWidth;
@@ -2481,29 +2482,31 @@ namespace RClassic_Float
 
 		s32 x1_pixel = roundFloat(projX1);
 		s32 y1_pixel = roundFloat(projY1);
+		// Cull the sprite if it is completely outside of the view.
 		if (x1_pixel < s_windowMinX || y1_pixel < s_windowMinY)
 		{
 			return;
 		}
 
 		const s32 length = x1_pixel - x0_pixel + 1;
-		if (length <= 0)
+		// Cull zero length sprites.
+		if (length < 1)
 		{
 			return;
 		}
 
+		// Calculate the screen space size and texture coordinate step values.
 		const f32 height = projY1 - projY0 + 1.0f;
-		const f32 width = projX1 - projX0 + 1.0f;
+		const f32 width  = projX1 - projX0 + 1.0f;
 		const f32 uCoordStep = f32(cell->sizeX) / width;
 		const f32 vCoordStep = f32(cell->sizeY) / height;
-
 		s_vCoordStep = floatToFixed20(vCoordStep);
 
-		f32 uCoord = 0;
+		// Clip the x positions to the window and adjust the left texture coordinate.
+		f32 uCoord = 0.0f;
 		if (x0_pixel < s_windowX0)
 		{
-			s32 dx = s_windowX0 - x0_pixel;
-			uCoord = uCoordStep * f32(dx);
+			uCoord = uCoordStep * f32(s_windowX0 - x0_pixel);
 			x0_pixel = s_windowX0;
 		}
 		if (x1_pixel > s_windowX1)
@@ -2511,10 +2514,16 @@ namespace RClassic_Float
 			x1_pixel = s_windowX1;
 		}
 
+		// Cull if the result is backfacing (which shouldn't happen for sprites, but just in case).
+		if (x0_pixel > x1_pixel)
+		{
+			return;
+		}
+
 		// Compute the lighting for the whole sprite.
 		s_columnLight = computeLighting(z, 0);
 
-		// Figure out the correct column function.
+		// Figure out the correct column draw function.
 		ColumnFunction spriteColumnFunc;
 		if (s_columnLight && !(obj->flags & OBJ_FLAG_FULLBRIGHT))
 		{
@@ -2527,48 +2536,24 @@ namespace RClassic_Float
 
 		// Draw
 		const s32 compressed = cell->compressed;
-		u8* imageData = (u8*)cell + sizeof(WaxCell);
-
-		s32 n;
-		u8* image;
-		if (compressed == 1)
-		{
-			n = -1;
-			image = imageData + (cell->sizeX * sizeof(u32));
-		}
-		else
-		{
-			n = 0;
-			image = imageData;
-		}
-
-		if (x0_pixel > x1_pixel)
-		{
-			return;
-		}
+		const u8* imageData = (u8*)cell + sizeof(WaxCell);
+		const u8* image = imageData + ((compressed == 1) ? cell->sizeX * sizeof(u32) : 0);
 
 		// This should be set to handle all sizes, repeating is not required.
 		s_texHeightMask = 0xffff;
 
+		// Loop through each column, decompress if required and then draw the column using the selected column function.
 		s32 lastColumn = INT_MIN;
 		const u32* columnOffset = (u32*)(basePtr + cell->columnOffset);
 		for (s32 x = x0_pixel; x <= x1_pixel; x++, uCoord += uCoordStep)
 		{
 			if (z < s_depth1d[x])
 			{
-				s32 y0 = y0_pixel;
-				s32 y1 = y1_pixel;
-
 				const s32 top = s_objWindowTop[x];
-				if (y0 < top)
-				{
-					y0 = top;
-				}
 				const s32 bot = s_objWindowBot[x];
-				if (y1 > bot)
-				{
-					y1 = bot;
-				}
+
+				const s32 y0 = y0_pixel < top ? top : y0_pixel;
+				const s32 y1 = y1_pixel > bot ? bot : y1_pixel;
 
 				s_yPixelCount = y1 - y0 + 1;
 				if (s_yPixelCount > 0)
@@ -2589,6 +2574,8 @@ namespace RClassic_Float
 						// Decompress the column into "work buffer."
 						if (lastColumn != texelU)
 						{
+							// Unlike the original code, columns are only decompressed if they change texels in order to
+							// perform better at higher resolutions.
 							sprite_decompressColumn(colPtr, s_workBuffer, cell->sizeY);
 						}
 						s_texImage = (u8*)s_workBuffer;
