@@ -3,6 +3,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FrontEndUI/console.h>
 #include <TFE_System/parser.h>
 #include <assert.h>
 #include <vector>
@@ -35,6 +36,7 @@ namespace TFE_Settings
 		SECTION_GAME,
 		SECTION_DARK_FORCES,
 		SECTION_OUTLAWS,
+		SECTION_CVAR,
 		SECTION_COUNT,
 		SECTION_INVALID = SECTION_COUNT,
 		SECTION_GAME_START = SECTION_DARK_FORCES
@@ -48,6 +50,7 @@ namespace TFE_Settings
 		"Game",
 		"Dark_Forces",
 		"Outlaws",
+		"CVar",
 	};
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +62,7 @@ namespace TFE_Settings
 	void writeSoundSettings(FileStream& settings);
 	void writeGameSettings(FileStream& settings);
 	void writePerGameSettings(FileStream& settings);
+	void writeCVars(FileStream& settings);
 
 	// Read
 	bool readFromDisk();
@@ -69,6 +73,7 @@ namespace TFE_Settings
 	void parseGame(const char* key, const char* value);
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
+	void parseCVars(const char* key, const char* value);
 	void checkGameData();
 
 	//////////////////////////////////////////////////////////////////////////////////
@@ -163,6 +168,7 @@ namespace TFE_Settings
 			writeSoundSettings(settings);
 			writeGameSettings(settings);
 			writePerGameSettings(settings);
+			writeCVars(settings);
 			settings.close();
 
 			return true;
@@ -290,6 +296,37 @@ namespace TFE_Settings
 		}
 	}
 
+	void writeCVars(FileStream& settings)
+	{
+		writeHeader(settings, c_sectionNames[SECTION_CVAR]);
+		u32 count = TFE_Console::getCVarCount();
+		char value[256];
+		for (u32 i = 0; i < count; i++)
+		{
+			const TFE_Console::CVar* cvar = TFE_Console::getCVarByIndex(i);
+
+			switch (cvar->type)
+			{
+			case TFE_Console::CVAR_INT:
+				sprintf(value, "int %d", cvar->valueInt ? (*cvar->valueInt) : cvar->serializedInt);
+				break;
+			case TFE_Console::CVAR_FLOAT:
+				sprintf(value, "float %f", cvar->valueFloat ? (*cvar->valueFloat) : cvar->serializedFlt);
+				break;
+			case TFE_Console::CVAR_BOOL:
+				sprintf(value, "bool %s", cvar->valueBool ? ((*cvar->valueBool) ? "true" : "false") : (cvar->serializedBool ? "true" : "false"));
+				break;
+			case TFE_Console::CVAR_STRING:
+				sprintf(value, "string \"%s\"", cvar->stringValue ? cvar->stringValue : cvar->serializedString.c_str());
+				break;
+			default:
+				continue;
+			};
+
+			writeKeyValue_String(settings, cvar->name.c_str(), value);
+		}
+	}
+
 	SectionID parseSectionName(const char* name)
 	{
 		char sectionName[LINEBUF_LEN];
@@ -354,6 +391,9 @@ namespace TFE_Settings
 					break;
 				case SECTION_OUTLAWS:
 					parseOutlawsSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
+				case SECTION_CVAR:
+					parseCVars(tokens[0].c_str(), tokens[1].c_str());
 					break;
 				default:
 					assert(0);
@@ -506,6 +546,36 @@ namespace TFE_Settings
 		{
 			strcpy(s_gameSettings[Game_Outlaws].sourcePath, value);
 			appendSlash(s_gameSettings[Game_Outlaws].sourcePath);
+		}
+	}
+	
+	void parseCVars(const char* key, const char* _value)
+	{
+		// Split the value into <type value>
+		char tmp[256];
+		strcpy(tmp, _value);
+
+		char* type = strtok(tmp, " ");
+		char* value = strtok(nullptr, " ");
+		if (!type || !value) { return; }
+		
+		if (strcasecmp(type, "int") == 0)
+		{
+			TFE_Console::addSerializedCVarInt(key, parseInt(value));
+		}
+		else if (strcasecmp(type, "float") == 0)
+		{
+			TFE_Console::addSerializedCVarFloat(key, parseFloat(value));
+		}
+		else if (strcasecmp(type, "bool") == 0)
+		{
+			TFE_Console::addSerializedCVarBool(key, parseBool(value));
+		}
+		else if (strcasecmp(type, "string") == 0)
+		{
+			value = &value[1];
+			value[strlen(value) - 1] = 0;
+			TFE_Console::addSerializedCVarString(key, value);
 		}
 	}
 }

@@ -45,7 +45,7 @@ namespace TFE_Console
 		std::string name;
 		std::string helpString;
 		CVarType type;
-		u32 flags;
+		u32 flags = 0;
 		u32 maxLen = 0;
 		union
 		{
@@ -53,7 +53,26 @@ namespace TFE_Console
 			f32*  valueFloat;
 			bool* valueBool;
 			char* stringValue;
+			void* valuePtr;
 		};
+
+		// default value (in case CVars are reset).
+		union
+		{
+			s32 defaultInt;
+			f32 defaultFlt;
+			bool defaultBool;
+		};
+		std::string defaultString;
+
+		// serialized value.
+		union
+		{
+			s32 serializedInt;
+			f32 serializedFlt;
+			bool serializedBool;
+		};
+		std::string serializedString;
 	};
 
 	typedef void(*ConsoleFunc)(const std::vector<std::string>& args);
@@ -64,6 +83,11 @@ namespace TFE_Console
 	void registerCVarString(const char* name, u32 flags, char* var, u32 maxLen, const char* helpString);
 	void registerCommand(const char* name, ConsoleFunc func, u32 argCount, const char* helpString, bool repeat = true);
 
+	void addSerializedCVarInt(const char* name, s32 value);
+	void addSerializedCVarFloat(const char* name, f32 value);
+	void addSerializedCVarBool(const char* name, bool value);
+	void addSerializedCVarString(const char* name, const char* value);
+	   
 	bool init();
 	void destroy();
 
@@ -71,8 +95,11 @@ namespace TFE_Console
 	bool isOpen();
 	void startOpen();
 	void startClose();
-
+	   
 	void addToHistory(const char* str);
+
+	u32 getCVarCount();
+	const CVar* getCVarByIndex(u32 index);
 
 	inline f32 getFloatArg(const std::string& arg)
 	{

@@ -48,12 +48,6 @@ namespace TFE_Console
 
 	static std::vector<CVar> s_var;
 	static std::vector<ConsoleCommand> s_cmd;
-
-	// temp.
-	static s32 s_varTest = -1;
-	static f32 s_varTest2 = 0.274f;
-	static bool s_varTestBool = false;
-	static char s_varTestStr[32] = "Test String";
 	
 	void registerDefaultCommands();
 	void setVariable(const char* name, const char* value);
@@ -133,6 +127,15 @@ namespace TFE_Console
 		CVar* cvar = getCVar(name);
 		if (cvar)
 		{
+			// Get the default value before loading the serialized value (in case in changes between builds).
+			cvar->defaultInt = *var;
+			// This CVar was serialized, so update it now.
+			if (cvar->type == CVAR_INT)
+			{
+				*var = cvar->serializedInt;
+			}
+
+			cvar->helpString = helpString;
 			cvar->type = CVAR_INT;
 			cvar->flags = flags;
 			cvar->valueInt = var;
@@ -145,6 +148,7 @@ namespace TFE_Console
 		newCVar.type = CVAR_INT;
 		newCVar.flags = flags;
 		newCVar.valueInt = var;
+		newCVar.defaultInt = *var;
 		s_var.push_back(newCVar);
 	}
 
@@ -153,6 +157,15 @@ namespace TFE_Console
 		CVar* cvar = getCVar(name);
 		if (cvar)
 		{
+			// Get the default value before loading the serialized value (in case in changes between builds).
+			cvar->defaultFlt = *var;
+			// This CVar was serialized, so update it now.
+			if (cvar->type == CVAR_FLOAT)
+			{
+				*var = cvar->serializedFlt;
+			}
+
+			cvar->helpString = helpString;
 			cvar->type = CVAR_FLOAT;
 			cvar->flags = flags;
 			cvar->valueFloat = var;
@@ -165,6 +178,7 @@ namespace TFE_Console
 		newCVar.type = CVAR_FLOAT;
 		newCVar.flags = flags;
 		newCVar.valueFloat = var;
+		newCVar.defaultFlt = *var;
 		s_var.push_back(newCVar);
 	}
 
@@ -173,6 +187,15 @@ namespace TFE_Console
 		CVar* cvar = getCVar(name);
 		if (cvar)
 		{
+			// Get the default value before loading the serialized value (in case in changes between builds).
+			cvar->defaultBool = *var;
+			// This CVar was serialized, so update it now.
+			if (cvar->type == CVAR_BOOL)
+			{
+				*var = cvar->serializedBool;
+			}
+
+			cvar->helpString = helpString;
 			cvar->type = CVAR_BOOL;
 			cvar->flags = flags;
 			cvar->valueBool = var;
@@ -185,6 +208,7 @@ namespace TFE_Console
 		newCVar.type = CVAR_BOOL;
 		newCVar.flags = flags;
 		newCVar.valueBool = var;
+		newCVar.defaultBool = *var;
 		s_var.push_back(newCVar);
 	}
 
@@ -193,6 +217,15 @@ namespace TFE_Console
 		CVar* cvar = getCVar(name);
 		if (cvar)
 		{
+			// Get the default value before loading the serialized value (in case in changes between builds).
+			cvar->defaultString = *var;
+			// This CVar was serialized, so update it now.
+			if (cvar->type == CVAR_STRING)
+			{
+				strcpy(var, cvar->serializedString.c_str());
+			}
+
+			cvar->helpString = helpString;
 			cvar->type = CVAR_STRING;
 			cvar->flags = flags;
 			cvar->stringValue = var;
@@ -206,12 +239,95 @@ namespace TFE_Console
 		newCVar.flags = flags;
 		newCVar.stringValue = var;
 		newCVar.maxLen = maxLen;
+		newCVar.defaultString = *var;
+		s_var.push_back(newCVar);
+	}
+
+	void addSerializedCVarInt(const char* name, s32 value)
+	{
+		CVar* cvar = getCVar(name);
+		assert(!cvar);
+
+		CVar newCVar = {};
+		newCVar.name = name;
+		newCVar.type = CVAR_INT;
+		newCVar.serializedInt = value;
+		newCVar.valuePtr = nullptr;
+		s_var.push_back(newCVar);
+	}
+
+	void addSerializedCVarFloat(const char* name, f32 value)
+	{
+		CVar* cvar = getCVar(name);
+		assert(!cvar);
+
+		CVar newCVar = {};
+		newCVar.name = name;
+		newCVar.type = CVAR_FLOAT;
+		newCVar.serializedFlt = value;
+		newCVar.valuePtr = nullptr;
+		s_var.push_back(newCVar);
+	}
+
+	void addSerializedCVarBool(const char* name, bool value)
+	{
+		CVar* cvar = getCVar(name);
+		assert(!cvar);
+
+		CVar newCVar = {};
+		newCVar.name = name;
+		newCVar.type = CVAR_BOOL;
+		newCVar.serializedBool = value;
+		newCVar.valuePtr = nullptr;
+		s_var.push_back(newCVar);
+	}
+
+	void addSerializedCVarString(const char* name, const char* value)
+	{
+		CVar* cvar = getCVar(name);
+		assert(!cvar);
+
+		CVar newCVar = {};
+		newCVar.name = name;
+		newCVar.type = CVAR_STRING;
+		newCVar.serializedString = value;
+		newCVar.valuePtr = nullptr;
 		s_var.push_back(newCVar);
 	}
 
 	void registerCommand(const char* name, ConsoleFunc func, u32 argCount, const char* helpString, bool repeat)
 	{
 		s_cmd.push_back({ name, helpString, func, argCount, repeat });
+	}
+
+	void c_resetCVars(const ConsoleArgList& args)
+	{
+		const size_t count = s_var.size();
+		CVar* cvar = s_var.data();
+		for (size_t i = 0; i < count; i++, cvar++)
+		{
+			switch (cvar->type)
+			{
+				case CVAR_INT:
+					assert(cvar->valueInt);
+					*cvar->valueInt = cvar->defaultInt;
+					break;
+				case CVAR_FLOAT:
+					assert(cvar->valueFloat);
+					*cvar->valueFloat = cvar->defaultFlt;
+					break;
+				case CVAR_BOOL:
+					assert(cvar->valueBool);
+					*cvar->valueBool = cvar->defaultBool;
+					break;
+				case CVAR_STRING:
+					assert(cvar->stringValue && cvar->defaultString.size() <= cvar->maxLen);
+					strcpy(cvar->stringValue, cvar->defaultString.c_str());
+					break;
+				default:
+					TFE_System::logWrite(LOG_ERROR, "CVar", "CVar %s has an unknown type %d", cvar->name.c_str(), cvar->type);
+			};
+		}
 	}
 
 	void c_alias(const ConsoleArgList& args)
@@ -457,13 +573,13 @@ namespace TFE_Console
 
 			if (ImGui::InputText("##InputField", s_cmdLine, sizeof(s_cmdLine), flags, textEditCallback))
 			{
-				// for now just add to the text list.
+				// Execute the command(s).
 				if (strlen(s_cmdLine))
 				{
 					handleCommand(s_cmdLine);
 				}
 
-				// for now just clear the command when we hit enter.
+				// Clear the command line.
 				s_cmdLine[0] = 0;
 				s_historyIndex = -1;
 				s_historyScroll = 0;
@@ -495,8 +611,20 @@ namespace TFE_Console
 		s_history.push_back({ c_historyLogColor, str });
 	}
 
+	u32 getCVarCount()
+	{
+		return (u32)s_var.size();
+	}
+
+	const CVar* getCVarByIndex(u32 index)
+	{
+		assert(index < s_var.size());
+		return &s_var[index];
+	}
+
 	void registerDefaultCommands()
 	{
+		CCMD("resetVar", c_resetCVars, 0, "Resets all console variables to their default values.");
 		CCMD("alias", c_alias, 0, "Alias a command/shortcut with a console command. Alias with no arguments will list all aliases - alias \"myCommand\" \"cmd arg0 arg1 ...\"");
 		CCMD("clear", c_clear, 0, "Clear the console history.");
 		CCMD("cmdHelp", c_cmdHelp, 1, "Displays help/usage for the specified command - cmdHelp Cmd");
