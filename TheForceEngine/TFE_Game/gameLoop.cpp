@@ -451,17 +451,22 @@ namespace TFE_GameLoop
 		}
 	}
 
-	const ViewStats* getViewStats()
-	{
-		return TFE_View::getViewStats();
-	}
-
 	static s32 s_iterOverride = 0;
 	static const f32 c_pitchLimit = 0.78539816339744830962f;	// +/- 45 degrees.
 	static Vec3f s_cameraPos;
 	static bool s_forceCrouch = false;
 	static bool s_slowToggle = false;
-	
+
+	const ViewStats* getViewStats()
+	{
+		return TFE_View::getViewStats();
+	}
+
+	const Vec3f* getCameraPos()
+	{
+		return &s_cameraPos;
+	}
+			
 	f32 getSpeed(bool* inAir)
 	{
 		f32 floorHeight, ceilHeight, visualFloorHeight;

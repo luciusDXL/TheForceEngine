@@ -4,6 +4,7 @@
 #include <TFE_Renderer/renderer.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FrontEndUI/console.h>
 #include <TFE_Asset/textureAsset.h>
 #include <TFE_Asset/fontAsset.h>
 #include <assert.h>
@@ -90,6 +91,7 @@ namespace TFE_GameHud
 	static s32 s_scaleX = 1, s_scaleY = 1;
 	static s32 s_offsetX = 0;
 	static s32 s_uiScale = 256;
+	static bool s_showPos = false;
 
 	const char* c_msgFont = "GLOWING.FNT";
 	static Font* s_msgFont = nullptr;
@@ -128,9 +130,11 @@ namespace TFE_GameHud
 		// VALIGN_CENTER
 		return (height / 2) + yScaled;
 	}
-
+		
 	void init(TFE_Renderer* renderer)
 	{
+		CVAR_BOOL(s_showPos, "r_showPos", 0, "Show current player position.");
+
 		s_renderer = renderer;
 		const u32 width  = TFE_RenderBackend::getVirtualDisplayWidth2D();
 		const u32 vwidth = TFE_RenderBackend::getVirtualDisplayWidth3D();
@@ -231,6 +235,14 @@ namespace TFE_GameHud
 		{
 			s_renderer->print(s_curMsg, s_msgFont, 6, 6, s_scaleX, s_scaleY);
 			s_msgTime -= (f32)TFE_System::getDeltaTime();
+		}
+		else if (s_showPos)
+		{
+			const Vec3f* camPos = TFE_GameLoop::getCameraPos();
+
+			char posMsg[256];
+			sprintf(posMsg, "%d %0.2f %0.2f  %0.2f %0.2f", player->m_sectorId, camPos->x, camPos->z, player->m_yaw * 180.0f / PI, player->m_pitch * 180.0f / PI);
+			s_renderer->print(posMsg, s_msgFont, 6, 6, s_scaleX, s_scaleY, 0, true);
 		}
 	}
 

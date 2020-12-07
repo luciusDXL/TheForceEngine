@@ -58,7 +58,7 @@ public:
 	virtual void drawSprite(Sprite* sprite, s32 x, s32 y, u32 anim, u8 angle) = 0;
 
 	virtual void blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel = 31, TextureLayout layout = TEX_LAYOUT_VERT) = 0;
-	virtual void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor = 0) = 0;
+	virtual void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor = 0, bool fixedWidth = false) = 0;
 	virtual s32  getStringPixelLength(const char* str, const Font* font) = 0;
 	
 	virtual void drawLine(const Vec2f* v0, const Vec2f* v1, u8 color) = 0;

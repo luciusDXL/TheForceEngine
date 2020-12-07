@@ -37,4 +37,5 @@ namespace TFE_GameLoop
 	void drawModel(const Model* model, const Vec3f* orientation);
 
 	const ViewStats* getViewStats();
+	const Vec3f* getCameraPos();
 }

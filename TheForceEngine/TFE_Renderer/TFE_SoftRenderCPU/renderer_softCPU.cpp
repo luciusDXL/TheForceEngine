@@ -1022,7 +1022,7 @@ void TFE_SoftRenderCPU::blitImage(const TextureFrame* texture, s32 x0, s32 y0, s
 	}
 }
 
-void TFE_SoftRenderCPU::print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor)
+void TFE_SoftRenderCPU::print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor, bool fixedWidth)
 {
 	if (!text || !font) { return; }
 
@@ -1046,7 +1046,7 @@ void TFE_SoftRenderCPU::print(const char* text, const Font* font, s32 x0, s32 y0
 		frame.image = (u8*)image;
 		blitFontGlyph(&frame, xPos, yPos, scaleX, scaleY, overrideColor);
 		
-		x += font->step[index] * scaleX;
+		x += (fixedWidth ? dx : font->step[index] * scaleX);
 	}
 }
 

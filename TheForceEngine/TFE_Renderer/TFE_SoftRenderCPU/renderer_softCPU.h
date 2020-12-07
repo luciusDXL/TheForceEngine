@@ -52,7 +52,7 @@ public:
 	void drawSprite(Sprite* sprite, s32 x, s32 y, u32 anim, u8 angle) override;
 
 	void blitImage(const TextureFrame* texture, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 lightLevel = 31, TextureLayout layout = TEX_LAYOUT_VERT) override;
-	void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor = 0) override;
+	void print(const char* text, const Font* font, s32 x0, s32 y0, s32 scaleX, s32 scaleY, u8 overrideColor = 0, bool fixedWidth = false) override;
 	s32  getStringPixelLength(const char* str, const Font* font) override;
 
 	void drawLine(const Vec2f* v0, const Vec2f* v1, u8 color) override;
