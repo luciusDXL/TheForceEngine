@@ -100,7 +100,7 @@ namespace TFE_JediRenderer
 					curObj = *obj;
 				}
 
-				if (curObj->flags & 4)
+				if (curObj->flags & OBJ_FLAG_RENDERABLE)
 				{
 					const s32 type = curObj->type;
 					if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
@@ -202,7 +202,7 @@ namespace TFE_JediRenderer
 						curObj = *obj;
 					}
 
-					if (curObj->flags & 4)
+					if (curObj->flags & OBJ_FLAG_RENDERABLE)
 					{
 						transformPointByCamera(&curObj->posWS, &curObj->posVS);
 					}
@@ -973,7 +973,7 @@ namespace TFE_JediRenderer
 	void TFE_Sectors_Float::subrendererChanged()
 	{
 		RSector* sector = s_rsectors;
-		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		for (u32 i = 0; i < s_sectorCount; i++, sector++)
 		{
 			SecObject** obj = sector->objectList;
 			for (s32 i = sector->objectCount - 1; i >= 0; i--, obj++)

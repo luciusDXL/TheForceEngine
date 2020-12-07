@@ -2418,7 +2418,7 @@ namespace RClassic_Float
 
 	// This is the same as the fixed point version
 	// TODO: Refactor.
-	void sprite_decompressColumn(u8* colData, u8* outBuffer, s32 height)
+	void sprite_decompressColumn(const u8* colData, u8* outBuffer, s32 height)
 	{
 		for (s32 y = 0, i = 0; y < height; )
 		{
@@ -2454,18 +2454,18 @@ namespace RClassic_Float
 		// Make sure the sprite isn't behind the near plane.
 		if (z < 1.0f) { return; }
 
-		const f32 widthWS = fixed16ToFloat(frame->widthWS);
+		const f32 widthWS  = fixed16ToFloat(frame->widthWS);
 		const f32 heightWS = fixed16ToFloat(frame->heightWS);
 		const f32 fOffsetX = fixed16ToFloat(frame->offsetX);
 		const f32 fOffsetY = fixed16ToFloat(frame->offsetY);
 
-		f32 x0 = obj->posVS.x.f32 - fOffsetX;
-		f32 yOffset = heightWS - fOffsetY;
-		f32 y0 = obj->posVS.y.f32 - yOffset;
+		const f32 x0 = obj->posVS.x.f32 - fOffsetX;
+		const f32 yOffset = heightWS - fOffsetY;
+		const f32 y0 = obj->posVS.y.f32 - yOffset;
 
-		f32 rcpZ = 1.0f / z;
-		f32 projX0 = x0*s_focalLength*rcpZ + s_halfWidth;
-		f32 projY0 = y0*s_focalLenAspect*rcpZ + s_halfHeight;
+		const f32 rcpZ = 1.0f / z;
+		const f32 projX0 = x0*s_focalLength*rcpZ + s_halfWidth;
+		const f32 projY0 = y0*s_focalLenAspect*rcpZ + s_halfHeight;
 
 		s32 x0_pixel = roundFloat(projX0);
 		s32 y0_pixel = roundFloat(projY0);
@@ -2474,10 +2474,10 @@ namespace RClassic_Float
 			return;
 		}
 				
-		f32 x1 = x0 + widthWS;
-		f32 y1 = y0 + heightWS;
-		f32 projX1 = x1 * s_focalLength*rcpZ + s_halfWidth;
-		f32 projY1 = y1 * s_focalLenAspect*rcpZ + s_halfHeight;
+		const f32 x1 = x0 + widthWS;
+		const f32 y1 = y0 + heightWS;
+		const f32 projX1 = x1 * s_focalLength*rcpZ + s_halfWidth;
+		const f32 projY1 = y1 * s_focalLenAspect*rcpZ + s_halfHeight;
 
 		s32 x1_pixel = roundFloat(projX1);
 		s32 y1_pixel = roundFloat(projY1);
@@ -2486,16 +2486,16 @@ namespace RClassic_Float
 			return;
 		}
 
-		s32 length = x1_pixel - x0_pixel + 1;
+		const s32 length = x1_pixel - x0_pixel + 1;
 		if (length <= 0)
 		{
 			return;
 		}
 
-		f32 height = projY1 - projY0 + 1.0f;
-		f32 width = projX1 - projX0 + 1.0f;
-		f32 uCoordStep = f32(cell->sizeX) / width;
-		f32 vCoordStep = f32(cell->sizeY) / height;
+		const f32 height = projY1 - projY0 + 1.0f;
+		const f32 width = projX1 - projX0 + 1.0f;
+		const f32 uCoordStep = f32(cell->sizeX) / width;
+		const f32 vCoordStep = f32(cell->sizeY) / height;
 
 		s_vCoordStep = floatToFixed20(vCoordStep);
 
@@ -2516,7 +2516,7 @@ namespace RClassic_Float
 
 		// Figure out the correct column function.
 		ColumnFunction spriteColumnFunc;
-		if (s_columnLight && !(obj->flags & 8))
+		if (s_columnLight && !(obj->flags & OBJ_FLAG_FULLBRIGHT))
 		{
 			spriteColumnFunc = s_columnFunc[COLFUNC_LIT_TRANS];
 		}
@@ -2526,7 +2526,7 @@ namespace RClassic_Float
 		}
 
 		// Draw
-		s32 compressed = cell->compressed;
+		const s32 compressed = cell->compressed;
 		u8* imageData = (u8*)cell + sizeof(WaxCell);
 
 		s32 n;
@@ -2573,7 +2573,7 @@ namespace RClassic_Float
 				s_yPixelCount = y1 - y0 + 1;
 				if (s_yPixelCount > 0)
 				{
-					f32 vOffset = f32(y1_pixel - y1);
+					const f32 vOffset = f32(y1_pixel - y1);
 					s_vCoordFixed = floatToFixed20(vOffset*vCoordStep);
 
 					s32 texelU = floorFloat(uCoord);
@@ -2584,7 +2584,7 @@ namespace RClassic_Float
 
 					if (compressed)
 					{
-						u8* colPtr = (u8*)cell + columnOffset[texelU];
+						const u8* colPtr = (u8*)cell + columnOffset[texelU];
 
 						// Decompress the column into "work buffer."
 						if (lastColumn != texelU)

@@ -15,8 +15,14 @@ namespace TFE_JediRenderer
 	enum ObjectType
 	{
 		OBJ_TYPE_SPRITE = 1,
-		OBJ_TYPE_3D = 2,
-		OBJ_TYPE_FRAME = 3,
+		OBJ_TYPE_3D     = 2,
+		OBJ_TYPE_FRAME  = 3,
+	};
+
+	enum ObjectFlags
+	{
+		OBJ_FLAG_RENDERABLE = (1 << 2),		// The object is renderable, such as a 3D object, sprite or frame.
+		OBJ_FLAG_FULLBRIGHT = (1 << 3),		// The object should be rendered fullbright (no shading).
 	};
 
 	struct SecObject
@@ -28,8 +34,8 @@ namespace TFE_JediRenderer
 		vec3 posWS;
 		vec3 posVS;
 
-		s32 worldWidth;
-		s32 worldHeight;
+		fixed16_16 worldWidth;
+		fixed16_16 worldHeight;
 		s32 transform[9];
 
 		// Rendering data.
@@ -45,7 +51,7 @@ namespace TFE_JediRenderer
 		s32 anim;
 		RSector* sector;
 
-		// render = 4, fullbright = 8
+		// See ObjectFlags above.
 		s32 flags;
 
 		s16 pitch;

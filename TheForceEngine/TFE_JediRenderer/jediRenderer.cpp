@@ -258,7 +258,7 @@ namespace TFE_JediRenderer
 	{
 		obj->type = OBJ_TYPE_FRAME;
 		obj->fme = data;
-		obj->flags |= 4;
+		obj->flags |= OBJ_FLAG_RENDERABLE;
 		WaxCell* cell = WAX_CellPtr(basePtr, data);
 
 		if (obj->worldWidth == -1)
@@ -277,7 +277,7 @@ namespace TFE_JediRenderer
 	{
 		obj->type = OBJ_TYPE_SPRITE;
 		obj->wax = data;
-		obj->flags |= 4;
+		obj->flags |= OBJ_FLAG_RENDERABLE;
 
 		WaxAnim* anim = WAX_AnimPtr(basePtr, data, 0);
 		WaxView* view = WAX_ViewPtr(basePtr, anim, 0);
@@ -286,12 +286,12 @@ namespace TFE_JediRenderer
 
 		if (obj->worldWidth == -1)
 		{
-			s32 width = abs(cell->sizeX) << 16;
+			const fixed16_16 width = intToFixed16(abs(cell->sizeX));
 			obj->worldWidth = div16(mul16(data->xScale, width), SPRITE_SCALE_FIXED);
 		}
 		if (obj->worldHeight == -1)
 		{
-			s32 height = abs(cell->sizeY) << 16;
+			const fixed16_16 height = intToFixed16(abs(cell->sizeY));
 			obj->worldHeight = div16(mul16(data->yScale, height), SPRITE_SCALE_FIXED);
 		}
 	}
