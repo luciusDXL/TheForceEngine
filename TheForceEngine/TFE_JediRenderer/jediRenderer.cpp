@@ -257,18 +257,18 @@ namespace TFE_JediRenderer
 	void frame_setData(SecObject* obj, u8* basePtr, WaxFrame* data)
 	{
 		obj->type = OBJ_TYPE_FRAME;
-		obj->fme = data;
+		obj->fme  = data;
 		obj->flags |= OBJ_FLAG_RENDERABLE;
 		WaxCell* cell = WAX_CellPtr(basePtr, data);
 
 		if (obj->worldWidth == -1)
 		{
-			s32 width = abs(cell->sizeX) << 16;
+			const fixed16_16 width = intToFixed16(abs(cell->sizeX));
 			obj->worldWidth = div16(width, SPRITE_SCALE_FIXED);
 		}
 		if (obj->worldHeight == -1)
 		{
-			s32 height = abs(cell->sizeY) << 16;
+			const fixed16_16 height = intToFixed16(abs(cell->sizeY));
 			obj->worldHeight = div16(height, SPRITE_SCALE_FIXED);
 		}
 	}
@@ -276,7 +276,7 @@ namespace TFE_JediRenderer
 	void wax_setData(SecObject* obj, u8* basePtr, Wax* data)
 	{
 		obj->type = OBJ_TYPE_SPRITE;
-		obj->wax = data;
+		obj->wax  = data;
 		obj->flags |= OBJ_FLAG_RENDERABLE;
 
 		WaxAnim* anim = WAX_AnimPtr(basePtr, data, 0);
@@ -310,9 +310,9 @@ namespace TFE_JediRenderer
 
 			if (s_subRenderer == TSR_CLASSIC_FIXED)
 			{
-				obj->posWS.x.f16_16 = s32(gameObj->position.x * 65536.0f);
-				obj->posWS.y.f16_16 = s32(gameObj->position.y * 65536.0f);
-				obj->posWS.z.f16_16 = s32(gameObj->position.z * 65536.0f);
+				obj->posWS.x.f16_16 = floatToFixed16(gameObj->position.x);
+				obj->posWS.y.f16_16 = floatToFixed16(gameObj->position.y);
+				obj->posWS.z.f16_16 = floatToFixed16(gameObj->position.z);
 			}
 			else
 			{
@@ -373,9 +373,9 @@ namespace TFE_JediRenderer
 				{
 					if (s_subRenderer == TSR_CLASSIC_FIXED)
 					{
-						curObj->posWS.x.f16_16 = fixed16_16(gameObj->position.x * 65536.0f);
-						curObj->posWS.y.f16_16 = fixed16_16(gameObj->position.y * 65536.0f);
-						curObj->posWS.z.f16_16 = fixed16_16(gameObj->position.z * 65536.0f);
+						curObj->posWS.x.f16_16 = floatToFixed16(gameObj->position.x);
+						curObj->posWS.y.f16_16 = floatToFixed16(gameObj->position.y);
+						curObj->posWS.z.f16_16 = floatToFixed16(gameObj->position.z);
 					}
 					else
 					{
@@ -472,9 +472,9 @@ namespace TFE_JediRenderer
 
 				if (s_subRenderer == TSR_CLASSIC_FIXED)
 				{
-					obj->posWS.x.f16_16 = s32(srcObj->pos.x * 65536.0f);
-					obj->posWS.y.f16_16 = s32(srcObj->pos.y * 65536.0f);
-					obj->posWS.z.f16_16 = s32(srcObj->pos.z * 65536.0f);
+					obj->posWS.x.f16_16 = floatToFixed16(srcObj->pos.x);
+					obj->posWS.y.f16_16 = floatToFixed16(srcObj->pos.y);
+					obj->posWS.z.f16_16 = floatToFixed16(srcObj->pos.z);
 				}
 				else
 				{
