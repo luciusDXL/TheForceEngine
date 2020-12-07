@@ -38,6 +38,7 @@ public:
 	virtual bool changeResolution(u32 width, u32 height, bool widescreen, bool asyncVirtualDisplay, bool gpuColorConversion) = 0;
 	virtual void getResolution(u32* width, u32* height) = 0;
 	virtual void enableScreenClear(bool enable) = 0;
+	virtual void clearScreen() = 0;
 
 	// Temporary.
 	virtual u8*  getDisplay() = 0;

@@ -32,6 +32,7 @@ public:
 	bool changeResolution(u32 width, u32 height, bool widescreen, bool asyncVirtualDisplay, bool gpuColorConversion) override;
 	void getResolution(u32* width, u32* height) override;
 	void enableScreenClear(bool enable) override;
+	void clearScreen() override;
 
 	// Temporary.
 	u8*  getDisplay() override { return m_display; }

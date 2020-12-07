@@ -134,6 +134,7 @@ namespace TFE_AgentMenu
 	void open(TFE_Renderer* renderer)
 	{
 		renderer->setPalette(s_pal);
+		renderer->clearScreen();
 	}
 
 	void close()

@@ -52,6 +52,7 @@ bool TFE_SoftRenderCPU::init()
 	}
 	m_display = new u8[m_width * m_height];
 	m_display32 = new u32[m_width * m_height];
+	memset(m_display, 0, m_width * m_height);
 
 	m_rcpHalfWidth = 1.0f / (f32(m_width)*0.5f);
 
@@ -129,6 +130,8 @@ bool TFE_SoftRenderCPU::changeResolution(u32 width, u32 height, bool widescreen,
 	m_display = new u8[m_width * m_height];
 	m_display32 = new u32[m_width * m_height];
 	m_rcpHalfWidth = 1.0f / (f32(m_width)*0.5f);
+
+	memset(m_display, 0, m_width * m_height);
 	return true;
 }
 
@@ -141,6 +144,13 @@ void TFE_SoftRenderCPU::getResolution(u32* width, u32* height)
 void TFE_SoftRenderCPU::enableScreenClear(bool enable)
 {
 	m_clearScreen = enable;
+}
+
+void TFE_SoftRenderCPU::clearScreen()
+{
+	if (!m_display) { return; }
+	const u32 pixelCount = m_width * m_height;
+	memset(m_display, 0, pixelCount);
 }
 
 void TFE_SoftRenderCPU::begin()
