@@ -306,6 +306,8 @@ namespace TFE_Console
 		CVar* cvar = s_var.data();
 		for (size_t i = 0; i < count; i++, cvar++)
 		{
+			if (!cvar->valuePtr) { continue; }
+
 			switch (cvar->type)
 			{
 				case CVAR_INT:
@@ -405,6 +407,9 @@ namespace TFE_Console
 		const size_t count = s_var.size();
 		for (size_t i = 0; i < count; i++)
 		{
+			// Skip uninitialized CVars.
+			if (!s_var[i].valuePtr) { continue; }
+
 			s_history.push_back({ c_historyDefaultColor, s_var[i].name.c_str() });
 		}
 	}
@@ -639,6 +644,14 @@ namespace TFE_Console
 
 	void setVariableValue(CVar* var, const char* value)
 	{
+		if (!var->valuePtr)
+		{
+			char errorMsg[4096];
+			sprintf(errorMsg, "set - Variable not initialized \"%s\"", var->name.c_str());
+			s_history.push_back({ c_historyErrorColor, errorMsg });
+			return;
+		}
+
 		char* endPtr;
 		char msg[4096];
 		switch (var->type)
@@ -718,6 +731,13 @@ namespace TFE_Console
 		{
 			char errorMsg[4096];
 			sprintf(errorMsg, "get - Unknown variable \"%s\"", name);
+			s_history.push_back({ c_historyErrorColor, errorMsg });
+			return;
+		}
+		if (!var->valuePtr)
+		{
+			char errorMsg[4096];
+			sprintf(errorMsg, "get - Variable not initialized \"%s\"", name);
 			s_history.push_back({ c_historyErrorColor, errorMsg });
 			return;
 		}
