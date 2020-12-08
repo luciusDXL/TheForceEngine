@@ -434,6 +434,9 @@ namespace RClassic_Float
 	{
 		const vec2* p0 = wall->v0;
 		const vec2* p1 = wall->v1;
+
+		// Widescreen adjustments are obviously added to the original code.
+		// TODO: Factor out and only handle when the resolution changes.
 		const bool widescreen = TFE_RenderBackend::getWidescreen();
 		const f32 aspectScale = (s_height == 200 || s_height == 400) ? (10.0f / 16.0f) : (3.0f / 4.0f);
 		f32 nearPlaneHalfLen = widescreen ? aspectScale * (f32(s_width) / f32(s_height)) : 1.0f;
@@ -443,14 +446,14 @@ namespace RClassic_Float
 			nearPlaneHalfLen += 0.001f;
 		}
 
-		// viewspace wall coordinates.
+		// Viewspace wall coordinates.
 		f32 x0 = p0->x.f32;
 		f32 x1 = p1->x.f32;
 		f32 z0 = p0->z.f32;
 		f32 z1 = p1->z.f32;
 
-		// TODO: Support widescreen by computing the corrected left and right positions.
 		// x values of frustum lines that pass through (x0,z0) and (x1,z1)
+		// Note that the 'nearPlaneHalfLen' is 1.0 in the original code and thus omitted (see rwallFixed.cpp).
 		f32 left0 = -z0 * nearPlaneHalfLen;
 		f32 left1 = -z1 * nearPlaneHalfLen;
 		f32 right0 = z0 * nearPlaneHalfLen;
@@ -2219,6 +2222,7 @@ namespace RClassic_Float
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
 			const f32 fx = f32(x);
 			// Scale halfWidthOverX by focal length to account for widescreen.
+			// Note in the original code s_focalLength == s_halfWidth, so in that case the code is functionally equivalent.
 			const f32 halfWidthOverX = ((fx != s_halfWidth) ? s_focalLength / (fx - s_halfWidth) : s_focalLength);
 			f32 den = halfWidthOverX - wallSegment->slope.f32;
 			// Avoid divide by zero.
@@ -2238,6 +2242,7 @@ namespace RClassic_Float
 		{
 			// Directly solve for Z at the current pixel x coordinate.
 			// Scale xOverHalfWidth by focal length to account for widescreen.
+			// Note in the original code s_focalLength == s_halfWidth, so in that case the code is functionally equivalent.
 			const f32 xOverHalfWidth = (f32(x) - s_halfWidth) / s_focalLength;
 			f32 den = xOverHalfWidth - wallSegment->slope.f32;
 			// Avoid divide by 0.
@@ -2247,7 +2252,9 @@ namespace RClassic_Float
 		}
 		return z;
 	}
-		
+	
+	// Column Draw functions all used much higher precision and range fixed point values then the original code.
+	// See rwallFixed.cpp for DOS precision functions.
 	void drawColumn_Fullbright()
 	{
 		const s32 end = s_yPixelCount - 1;
