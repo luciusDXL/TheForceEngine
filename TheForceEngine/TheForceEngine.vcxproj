@@ -243,6 +243,7 @@
     <ClInclude Include="TFE_Asset\levelObjectsAsset.h" />
     <ClInclude Include="TFE_Asset\logicTypes.h" />
     <ClInclude Include="TFE_Asset\modelAsset.h" />
+    <ClInclude Include="TFE_Asset\modelAsset_jedi.h" />
     <ClInclude Include="TFE_Asset\paletteAsset.h" />
     <ClInclude Include="TFE_Asset\spriteAsset.h" />
     <ClInclude Include="TFE_Asset\spriteAsset_Jedi.h" />
@@ -402,6 +403,7 @@
     <ClCompile Include="TFE_Asset\levelList.cpp" />
     <ClCompile Include="TFE_Asset\levelObjectsAsset.cpp" />
     <ClCompile Include="TFE_Asset\modelAsset.cpp" />
+    <ClCompile Include="TFE_Asset\modelAsset_jedi.cpp" />
     <ClCompile Include="TFE_Asset\paletteAsset.cpp" />
     <ClCompile Include="TFE_Asset\spriteAsset.cpp" />
     <ClCompile Include="TFE_Asset\spriteAsset_Jedi.cpp" />

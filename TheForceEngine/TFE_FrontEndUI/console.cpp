@@ -311,19 +311,16 @@ namespace TFE_Console
 			switch (cvar->type)
 			{
 				case CVAR_INT:
-					assert(cvar->valueInt);
 					*cvar->valueInt = cvar->defaultInt;
 					break;
 				case CVAR_FLOAT:
-					assert(cvar->valueFloat);
 					*cvar->valueFloat = cvar->defaultFlt;
 					break;
 				case CVAR_BOOL:
-					assert(cvar->valueBool);
 					*cvar->valueBool = cvar->defaultBool;
 					break;
 				case CVAR_STRING:
-					assert(cvar->stringValue && cvar->defaultString.size() <= cvar->maxLen);
+					assert(cvar->defaultString.size() <= cvar->maxLen);
 					strcpy(cvar->stringValue, cvar->defaultString.c_str());
 					break;
 				default:

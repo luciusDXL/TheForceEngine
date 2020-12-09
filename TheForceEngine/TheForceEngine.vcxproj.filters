@@ -631,6 +631,9 @@
     <ClInclude Include="TFE_Asset\spriteAsset_Jedi.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Asset\modelAsset_jedi.h">
+      <Filter>Source\TFE_Asset</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1024,6 +1027,9 @@
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Asset\spriteAsset_Jedi.cpp">
+      <Filter>Source\TFE_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Asset\modelAsset_jedi.cpp">
       <Filter>Source\TFE_Asset</Filter>
     </ClCompile>
   </ItemGroup>
