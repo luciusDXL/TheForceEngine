@@ -18,10 +18,11 @@ namespace TFE_Settings
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
 	#define LINEBUF_LEN 1024
-	
+		
 	static char s_settingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
+	static TFE_Settings_Hud s_hudSettings = {};
 	static TFE_Settings_Sound s_soundSettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings[Game_Count];
@@ -32,6 +33,7 @@ namespace TFE_Settings
 	{
 		SECTION_WINDOW = 0,
 		SECTION_GRAPHICS,
+		SECTION_HUD,
 		SECTION_SOUND,
 		SECTION_GAME,
 		SECTION_DARK_FORCES,
@@ -46,6 +48,7 @@ namespace TFE_Settings
 	{
 		"Window",
 		"Graphics",
+		"Hud",
 		"Sound",
 		"Game",
 		"Dark_Forces",
@@ -59,6 +62,7 @@ namespace TFE_Settings
 	// Write
 	void writeWindowSettings(FileStream& settings);
 	void writeGraphicsSettings(FileStream& settings);
+	void writeHudSettings(FileStream& settings);
 	void writeSoundSettings(FileStream& settings);
 	void writeGameSettings(FileStream& settings);
 	void writePerGameSettings(FileStream& settings);
@@ -69,6 +73,7 @@ namespace TFE_Settings
 	void parseIniFile(const char* buffer, size_t len);
 	void parseWindowSettings(const char* key, const char* value);
 	void parseGraphicsSettings(const char* key, const char* value);
+	void parseHudSettings(const char* key, const char* value);
 	void parseSoundSettings(const char* key, const char* value);
 	void parseGame(const char* key, const char* value);
 	void parseDark_ForcesSettings(const char* key, const char* value);
@@ -165,6 +170,7 @@ namespace TFE_Settings
 		{
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);
+			writeHudSettings(settings);
 			writeSoundSettings(settings);
 			writeGameSettings(settings);
 			writePerGameSettings(settings);
@@ -185,6 +191,11 @@ namespace TFE_Settings
 	TFE_Settings_Graphics* getGraphicsSettings()
 	{
 		return &s_graphicsSettings;
+	}
+
+	TFE_Settings_Hud* getHudSettings()
+	{
+		return &s_hudSettings;
 	}
 
 	TFE_Settings_Sound* getSoundSettings()
@@ -271,6 +282,16 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
 		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
 		writeKeyValue_Float(settings, "gamma", s_graphicsSettings.gamma);
+	}
+		
+	void writeHudSettings(FileStream& settings)
+	{
+		writeHeader(settings, c_sectionNames[SECTION_HUD]);
+		writeKeyValue_String(settings, "hudScale", c_tfeHudScaleStrings[s_hudSettings.hudScale]);
+		writeKeyValue_String(settings, "hudPos", c_tfeHudPosStrings[s_hudSettings.hudPos]);
+		writeKeyValue_Float(settings, "scale", s_hudSettings.scale);
+		writeKeyValue_Int(settings, "pixelOffsetX", s_hudSettings.pixelOffset[0]);
+		writeKeyValue_Int(settings, "pixelOffsetY", s_hudSettings.pixelOffset[1]);
 	}
 
 	void writeSoundSettings(FileStream& settings)
@@ -383,6 +404,9 @@ namespace TFE_Settings
 					break;
 				case SECTION_GRAPHICS:
 					parseGraphicsSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
+				case SECTION_HUD:
+					parseHudSettings(tokens[0].c_str(), tokens[1].c_str());
 					break;
 				case SECTION_SOUND:
 					parseSoundSettings(tokens[0].c_str(), tokens[1].c_str());
@@ -497,6 +521,44 @@ namespace TFE_Settings
 		else if (strcasecmp("gamma", key) == 0)
 		{
 			s_graphicsSettings.gamma = parseFloat(value);
+		}
+	}
+
+	void parseHudSettings(const char* key, const char* value)
+	{
+		if (strcasecmp("hudScale", key) == 0)
+		{
+			for (size_t i = 0; i < TFE_ARRAYSIZE(c_tfeHudScaleStrings); i++)
+			{
+				if (strcasecmp(value, c_tfeHudScaleStrings[i]) == 0)
+				{
+					s_hudSettings.hudScale = TFE_HudScale(i);
+					break;
+				}
+			}
+		}
+		else if (strcasecmp("hudPos", key) == 0)
+		{
+			for (size_t i = 0; i < TFE_ARRAYSIZE(c_tfeHudPosStrings); i++)
+			{
+				if (strcasecmp(value, c_tfeHudPosStrings[i]) == 0)
+				{
+					s_hudSettings.hudPos = TFE_HudPosition(i);
+					break;
+				}
+			}
+		}
+		else if (strcasecmp("scale", key) == 0)
+		{
+			s_hudSettings.scale = parseFloat(value);
+		}
+		else if (strcasecmp("pixelOffsetX", key) == 0)
+		{
+			s_hudSettings.pixelOffset[0] = parseInt(value);
+		}
+		else if (strcasecmp("pixelOffsetY", key) == 0)
+		{
+			s_hudSettings.pixelOffset[1] = parseInt(value);
 		}
 	}
 

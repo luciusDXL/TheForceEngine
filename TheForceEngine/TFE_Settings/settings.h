@@ -35,6 +35,44 @@ struct TFE_Settings_Graphics
 	f32   gamma = 1.0f;
 };
 
+enum TFE_HudScale
+{
+	TFE_HUDSCALE_PROPORTIONAL = 0,
+	TFE_HUDSCALE_SCALED,
+};
+
+enum TFE_HudPosition
+{
+	TFE_HUDPOS_EDGE = 0,	// Hud elements on the edges of the screen.
+	TFE_HUDPOS_4_3,			// Hud elements locked to 4:3 (even in widescreen).
+};
+
+static const char* c_tfeHudScaleStrings[] =
+{
+	"Proportional",		// TFE_HUDSCALE_PROPORTIONAL
+	"Scaled",			// TFE_HUDSCALE_SCALED
+};
+
+static const char* c_tfeHudPosStrings[] =
+{
+	"Edge",		// TFE_HUDPOS_EDGE
+	"4:3",		// TFE_HUDPOS_4_3
+};
+
+
+struct TFE_Settings_Hud
+{
+	// Determines whether the HUD stays the same size on screen regardless of resolution or if it gets smaller with higher resolution.
+	TFE_HudScale hudScale = TFE_HUDSCALE_PROPORTIONAL;
+	// This setting determines how the left and right corners are calculated, which have an offset of (0,0).
+	TFE_HudPosition hudPos = TFE_HUDPOS_EDGE;
+
+	// Scale of the HUD, ignored if HudScale is TFE_HUDSCALE_PROPORTIONAL.
+	f32 scale = 1.0f;
+	// Pixel offset from the left hud corner, right is (-leftX, leftY)
+	s32 pixelOffset[2] = { 0 };
+};
+
 struct TFE_Settings_Sound
 {
 	f32 soundFxVolume = 1.0f;
@@ -63,6 +101,7 @@ namespace TFE_Settings
 	// Get and set settings.
 	TFE_Settings_Window* getWindowSettings();
 	TFE_Settings_Graphics* getGraphicsSettings();
+	TFE_Settings_Hud* getHudSettings();
 	TFE_Settings_Sound* getSoundSettings();
 	TFE_Game* getGame();
 	TFE_Settings_Game* getGameSettings(const char* gameName);

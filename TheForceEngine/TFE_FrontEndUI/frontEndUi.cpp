@@ -38,6 +38,7 @@ namespace TFE_FrontEndUI
 		CONFIG_ABOUT = 0,
 		CONFIG_GAME,
 		CONFIG_GRAPHICS,
+		CONFIG_HUD,
 		CONFIG_SOUND,
 		CONFIG_COUNT
 	};
@@ -47,6 +48,7 @@ namespace TFE_FrontEndUI
 		"About",
 		"Game Settings",
 		"Graphics",
+		"Hud",
 		"Sound",
 	};
 
@@ -147,6 +149,7 @@ namespace TFE_FrontEndUI
 	void configAbout();
 	void configGame();
 	void configGraphics();
+	void configHud();
 	void configSound();
 	void pickCurrentResolution();
 	void manual();
@@ -503,6 +506,11 @@ namespace TFE_FrontEndUI
 				s_configTab = CONFIG_GRAPHICS;
 				TFE_Settings::writeToDisk();
 			}
+			if (ImGui::Button("Hud", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_HUD;
+				TFE_Settings::writeToDisk();
+			}
 			if (ImGui::Button("Sound", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_SOUND;
@@ -536,7 +544,7 @@ namespace TFE_FrontEndUI
 
 			// adjust the width based on tab.
 			s32 tabWidth = w - 160;
-			if (s_configTab == CONFIG_GRAPHICS)
+			if (s_configTab == CONFIG_GRAPHICS || s_configTab == CONFIG_HUD)
 			{
 				tabWidth = 400;
 			}
@@ -560,6 +568,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_GRAPHICS:
 				configGraphics();
+				break;
+			case CONFIG_HUD:
+				configHud();
 				break;
 			case CONFIG_SOUND:
 				configSound();
@@ -976,6 +987,31 @@ namespace TFE_FrontEndUI
 			ImGui::SetNextItemWidth(196);
 			ImGui::SliderFloat("Intensity", &s_bloomIntensity, 0.0f, 1.0f);
 		}
+	}
+
+	void configHud()
+	{
+		TFE_Settings_Hud* hud = TFE_Settings::getHudSettings();
+		TFE_Settings_Window* window = TFE_Settings::getWindowSettings();
+
+		ImGui::LabelText("##ConfigLabel", "Hud Scale Type:"); ImGui::SameLine(150);
+		ImGui::SetNextItemWidth(196);
+		ImGui::Combo("##HudScaleType", (s32*)&hud->hudScale, c_tfeHudScaleStrings, IM_ARRAYSIZE(c_tfeHudScaleStrings));
+
+		ImGui::LabelText("##ConfigLabel", "Hud Position Type:"); ImGui::SameLine(150);
+		ImGui::SetNextItemWidth(196);
+		ImGui::Combo("##HudPosType", (s32*)&hud->hudPos, c_tfeHudPosStrings, IM_ARRAYSIZE(c_tfeHudPosStrings));
+
+		ImGui::Separator();
+
+		ImGui::SetNextItemWidth(196);
+		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 2.0f, "%.2f");
+
+		ImGui::SetNextItemWidth(196);
+		ImGui::SliderInt("Offset X", &hud->pixelOffset[0], -512, 512);
+
+		ImGui::SetNextItemWidth(196);
+		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512);
 	}
 
 	void configSound()
