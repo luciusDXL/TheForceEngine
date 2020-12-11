@@ -1,6 +1,7 @@
 #include "textureAsset.h"
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>
+#include <TFE_Asset/imageAsset.h>
 #include <TFE_Archive/archive.h>
 #include <assert.h>
 #include <algorithm>
@@ -536,6 +537,91 @@ namespace TFE_Texture
 		for (u32 i = 0; i < 256; i++, pal += 3)
 		{
 			s_tempPal.colors[i] = pal[0] | (pal[1] << 8) | (pal[2] << 16) | (0xff << 24);
+		}
+
+		s_textures[name] = texture;
+		return texture;
+	}
+
+	u8 findClosestPaletteMatch(u8 r, u8 g, u8 b, const u32* colors)
+	{
+		// Slow method.
+		s32 minDistManhattan = INT_MAX;
+		u8 index = 0;
+		for (s32 i = 1; i < 256; i++)
+		{
+			const u8 palR = colors[i] & 0xffu;
+			const u8 palG = (colors[i] >> 8u) & 0xff;
+			const u8 palB = (colors[i] >> 16u) & 0xff;
+
+			const s32 dR = abs(s32(r) - s32(palR));
+			const s32 dG = abs(s32(g) - s32(palG));
+			const s32 dB = abs(s32(b) - s32(palB));
+
+			const s32 distM = dR + dG + dB;
+			if (distM < minDistManhattan)
+			{
+				minDistManhattan = distM;
+				index = i;
+			}
+		}
+
+		return index;
+	}
+
+	Texture* convertImageToTexture_8bit(const char* name, const Image* image, const char* paletteName)
+	{
+		TextureMap::iterator iTex = s_textures.find(name);
+		if (iTex != s_textures.end())
+		{
+			return iTex->second;
+		}
+
+		const Palette256* pal = TFE_Palette::get256(paletteName);
+		if (!pal)
+		{
+			pal = TFE_Palette::getDefault256();
+			if (!pal) { return nullptr; }
+		}
+
+		Texture* texture = new Texture();
+		strcpy(texture->name, name);
+
+		// Allocate memory.
+		texture->memory = new u8[sizeof(TextureFrame) + image->width * image->height];
+		texture->frames = (TextureFrame*)texture->memory;
+		texture->frameCount = 1;
+		texture->frameRate = 0;	// arbitrary.
+		texture->layout = TEX_LAYOUT_HORZ;
+		texture->frames[0].image = texture->memory + sizeof(TextureFrame);
+		u8* imageOut = texture->frames[0].image;
+
+		texture->frames[0].width = image->width;
+		texture->frames[0].height = image->height;
+		texture->frames[0].logSizeY = 0;
+		texture->frames[0].offsetX = 0;
+		texture->frames[0].offsetY = 0;
+		texture->frames[0].opacity = OPACITY_TRANS;
+		texture->frames[0].uvWidth = image->width;
+		texture->frames[0].uvHeight = image->height;
+
+		// For now look for the closest "manhattan" match.
+		s32 pixelCount = image->width * image->height;
+		for (s32 i = 0; i < pixelCount; i++)
+		{
+			u8 srcR = image->data[i] & 0xffu;
+			u8 srcG = (image->data[i] >> 8u) & 0xff;
+			u8 srcB = (image->data[i] >> 16u) & 0xff;
+			u8 srcA = (image->data[i] >> 24u) & 0xff;
+
+			if (srcA < 128u)
+			{
+				imageOut[i] = 0;
+			}
+			else
+			{
+				imageOut[i] = findClosestPaletteMatch(srcR, srcG, srcB, pal->colors);
+			}
 		}
 
 		s_textures[name] = texture;

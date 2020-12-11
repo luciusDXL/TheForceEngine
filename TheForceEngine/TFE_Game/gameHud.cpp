@@ -8,6 +8,7 @@
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Asset/textureAsset.h>
 #include <TFE_Asset/fontAsset.h>
+#include <TFE_Asset/imageAsset.h>
 #include <assert.h>
 #include <vector>
 #include <algorithm>
@@ -30,6 +31,10 @@ namespace TFE_GameHud
 		HUD_LIVES_NUM,
 		HUD_AMMO_NUM,
 		HUD_DT_NUM,
+		HUD_BASE_COUNT,
+		// Optional Elements
+		HUD_STATUS_LEFT_ADDON = HUD_BASE_COUNT,
+		HUD_STATUS_RIGHT_ADDON,
 		HUD_COUNT
 	};
 
@@ -81,11 +86,14 @@ namespace TFE_GameHud
 		{ "STATUSRT.BM", HUD_ELEM_IMAGE, HALIGN_RIGHT, VALIGN_BOTTOM, -60, -40 },	// HUD_STATUS_RIGHT
 		{ "LIGHTON.BM",  HUD_ELEM_IMAGE, HALIGN_RIGHT, VALIGN_BOTTOM, -41, -40 },	// HUD_LIGHT_ON
 		{ "LIGHTOFF.BM", HUD_ELEM_IMAGE, HALIGN_RIGHT, VALIGN_BOTTOM, -41, -40 },	// HUD_LIGHT_OFF
-		{ "ARMNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_LEFT,  VALIGN_BOTTOM,  15, -14 },	// HUD_SHIELD_NUM,
-		{ "HELNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_LEFT,  VALIGN_BOTTOM,  33, -14 },	// HUD_HEALTH_NUM,
-		{ "HELNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_LEFT,  VALIGN_BOTTOM,  52, -14 },	// HUD_LIVES_NUM,
-		{ "AMONUM.FNT",  HUD_ELEM_TEXT,  HALIGN_RIGHT, VALIGN_BOTTOM, -48, -19 },	// HUD_AMMO_NUM,
-		{ "ARMNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_RIGHT, VALIGN_BOTTOM, -35, -28 },	// HUD_DT_NUM,
+		{ "ARMNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_LEFT,  VALIGN_BOTTOM,  15, -14 },	// HUD_SHIELD_NUM
+		{ "HELNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_LEFT,  VALIGN_BOTTOM,  33, -14 },	// HUD_HEALTH_NUM
+		{ "HELNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_LEFT,  VALIGN_BOTTOM,  52, -14 },	// HUD_LIVES_NUM
+		{ "AMONUM.FNT",  HUD_ELEM_TEXT,  HALIGN_RIGHT, VALIGN_BOTTOM, -48, -19 },	// HUD_AMMO_NUM
+		{ "ARMNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_RIGHT, VALIGN_BOTTOM, -35, -28 },	// HUD_DT_NUM
+		// Built-in Mod (TODO: Add proper mod support).
+		{ "HudStatusLeftAddon.png",   HUD_ELEM_IMAGE,  HALIGN_LEFT,  VALIGN_BOTTOM, -11, -40 },	// HUD_STATUS_LEFT_ADDON
+		{ "HudStatusRightAddon.png",  HUD_ELEM_IMAGE,  HALIGN_RIGHT, VALIGN_BOTTOM,  -1, -40 },	// HUD_STATUS_RIGHT_ADDON
 	};
 	static Vec2i s_hudPosition[HUD_COUNT];
 	static HudAsset s_hudElementAssets[HUD_COUNT];
@@ -147,11 +155,24 @@ namespace TFE_GameHud
 		s_offsetX = TFE_RenderBackend::getVirtualDisplayOffset2D();
 
 		// Load the HUD textures & set element positions.
+		char modPath[TFE_MAX_PATH];
+		char imagePath[TFE_MAX_PATH];
 		for (u32 i = 0; i < HUD_COUNT; i++)
 		{
 			if (c_hudElements[i].type == HUD_ELEM_IMAGE)
 			{
-				s_hudElementAssets[i].image = TFE_Texture::get(c_hudElements[i].name);
+				if (i < HUD_BASE_COUNT)
+				{
+					s_hudElementAssets[i].image = TFE_Texture::get(c_hudElements[i].name);
+				}
+				else
+				{
+					// TODO: Proper mod support.
+					sprintf(modPath, "Mods/TFE/AdjustableHud/%s", c_hudElements[i].name);
+
+					TFE_Paths::appendPath(PATH_PROGRAM, modPath, imagePath);
+					s_hudElementAssets[i].image = TFE_Texture::convertImageToTexture_8bit(c_hudElements[i].name, TFE_Image::get(imagePath), "SECBASE.PAL");
+				}
 			}
 			else
 			{
@@ -193,7 +214,7 @@ namespace TFE_GameHud
 			s_hudPosition[i].z = getHudYPosition(scaleY, c_hudElements[i].y, c_hudElements[i].alignVert, height, hudSettings->pixelOffset[1]);
 		}
 	}
-		
+
 	void setMessage(const char* msg)
 	{
 		if (!msg) { return; }
@@ -249,6 +270,13 @@ namespace TFE_GameHud
 		drawElement(HUD_STATUS_LEFT, scaleX, scaleY);
 		drawElement(HUD_STATUS_RIGHT, scaleX, scaleY);
 
+		// Only draw Status Addons if needed.
+		if (hudSettings->pixelOffset[0] > 0 || hudSettings->hudPos == TFE_HUDPOS_4_3)
+		{
+			drawElement(HUD_STATUS_LEFT_ADDON, scaleX, scaleY);
+			drawElement(HUD_STATUS_RIGHT_ADDON, scaleX, scaleY);
+		}
+
 		// Headlamp light.
 		if (player->m_headlampOn)
 			drawElement(HUD_LIGHT_ON, scaleX, scaleY);
@@ -256,7 +284,7 @@ namespace TFE_GameHud
 			drawElement(HUD_LIGHT_OFF, scaleX, scaleY);
 
 		// Text Elements
-		for (u32 e = HUD_SHIELD_NUM; e < HUD_COUNT; e++)
+		for (u32 e = HUD_SHIELD_NUM; e < HUD_BASE_COUNT; e++)
 		{
 			drawElement(HudElement(e), scaleX, scaleY);
 		}
@@ -281,7 +309,7 @@ namespace TFE_GameHud
 	{
 		if (c_hudElements[element].type == HUD_ELEM_IMAGE)
 		{
-			s_renderer->blitImage(&s_hudElementAssets[element].image->frames[0], s_hudPosition[element].x, s_hudPosition[element].z, scaleX, scaleY);
+			s_renderer->blitImage(&s_hudElementAssets[element].image->frames[0], s_hudPosition[element].x, s_hudPosition[element].z, scaleX, scaleY, 31, s_hudElementAssets[element].image->layout);
 		}
 		else
 		{

@@ -54,6 +54,8 @@ struct Texture
 	TextureLayout layout;
 };
 
+struct Image;
+
 namespace TFE_Texture
 {
 	Texture* get(const char* name);
@@ -63,4 +65,6 @@ namespace TFE_Texture
 	Palette256* getPreviousPalette();
 	void free(Texture* texture);
 	void freeAll();
+
+	Texture* convertImageToTexture_8bit(const char* name, const Image* image, const char* paletteName);
 }
