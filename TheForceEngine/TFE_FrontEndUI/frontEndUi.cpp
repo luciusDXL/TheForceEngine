@@ -1005,13 +1005,16 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		ImGui::SetNextItemWidth(196);
-		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 2.0f, "%.2f");
+		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f");
 
 		ImGui::SetNextItemWidth(196);
 		ImGui::SliderInt("Offset X", &hud->pixelOffset[0], -512, 512);
 
 		ImGui::SetNextItemWidth(196);
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512);
+
+		TFE_GameLoop::update(true);
+		TFE_GameLoop::draw();
 	}
 
 	void configSound()

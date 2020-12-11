@@ -1,6 +1,7 @@
 #include "gameLoop.h"
 #include "player.h"
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Renderer/renderer.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_FileSystem/paths.h>
@@ -109,28 +110,29 @@ namespace TFE_GameHud
 	};
 	char s_hudText[5][32];
 
-	void drawElement(HudElement element);
+	void drawElement(HudElement element, s32 scaleX, s32 scaleY);
+	void computeHudPositions(s32 scaleX, s32 scaleY);
 
-	s32 getHudXPosition(s32 x, HudAlignmentHorz align, s32 width)
+	s32 getHudXPosition(s32 scaleX, s32 x, HudAlignmentHorz align, s32 width, s32 xOffset, s32 screenXOffset)
 	{
-		const s32 xScaled = (x * s_scaleX) >> 8;
+		const s32 xScaled = (x * scaleX) >> 8;
 
-		if (align == HALIGN_LEFT) { return xScaled; }
-		else if (align == HALIGN_RIGHT) { return width + xScaled; }
+		if (align == HALIGN_LEFT) { return xScaled + xOffset + screenXOffset; }
+		else if (align == HALIGN_RIGHT) { return width + xScaled - xOffset + screenXOffset; }
 		// HALIGN_CENTER
-		return (width / 2) + xScaled;
+		return (width / 2) + xScaled + screenXOffset;
 	}
 
-	s32 getHudYPosition(s32 y, HudAlignmentVert align, s32 height)
+	s32 getHudYPosition(s32 scaleY, s32 y, HudAlignmentVert align, s32 height, s32 yOffset)
 	{
-		const s32 yScaled = (y * s_scaleY + 255) >> 8;
+		const s32 yScaled = (y * scaleY + 255) >> 8;
 
-		if (align == VALIGN_TOP) { return yScaled; }
-		else if (align == VALIGN_BOTTOM) { return height + yScaled; }
+		if (align == VALIGN_TOP) { return yScaled + yOffset; }
+		else if (align == VALIGN_BOTTOM) { return height + yScaled - yOffset; }
 		// VALIGN_CENTER
 		return (height / 2) + yScaled;
 	}
-		
+				
 	void init(TFE_Renderer* renderer)
 	{
 		CVAR_BOOL(s_showPos, "r_showPos", 0, "Show current player position.");
@@ -155,9 +157,8 @@ namespace TFE_GameHud
 			{
 				s_hudElementAssets[i].font = TFE_Font::get(c_hudElements[i].name);
 			}
-			s_hudPosition[i].x = getHudXPosition(c_hudElements[i].x, c_hudElements[i].alignHorz, vwidth);
-			s_hudPosition[i].z = getHudYPosition(c_hudElements[i].y, c_hudElements[i].alignVert, height);
 		}
+		computeHudPositions(s_scaleX, s_scaleY);
 
 		// Fixup the right side to remove the backed in text.
 		s32 wRight = s_hudElementAssets[HUD_STATUS_RIGHT].image->frames[0].width;
@@ -173,6 +174,24 @@ namespace TFE_GameHud
 		}
 
 		s_msgFont = TFE_Font::get(c_msgFont);
+	}
+
+	void computeHudPositions(s32 scaleX, s32 scaleY)
+	{
+		const u32 width = TFE_RenderBackend::getVirtualDisplayWidth2D();
+		const u32 vwidth = TFE_RenderBackend::getVirtualDisplayWidth3D();
+		const u32 height = TFE_RenderBackend::getVirtualDisplayHeight();
+
+		const TFE_Settings_Hud* hudSettings = TFE_Settings::getHudSettings();
+		const u32 hudWidth = hudSettings->hudPos == TFE_HUDPOS_EDGE ? vwidth : width;
+		const s32 screenOffset = hudSettings->hudPos == TFE_HUDPOS_EDGE ? 0 : TFE_RenderBackend::getVirtualDisplayOffset2D();
+
+		// Load the HUD textures & set element positions.
+		for (u32 i = 0; i < HUD_COUNT; i++)
+		{
+			s_hudPosition[i].x = getHudXPosition(scaleX, c_hudElements[i].x, c_hudElements[i].alignHorz, hudWidth, hudSettings->pixelOffset[0], screenOffset);
+			s_hudPosition[i].z = getHudYPosition(scaleY, c_hudElements[i].y, c_hudElements[i].alignVert, height, hudSettings->pixelOffset[1]);
+		}
 	}
 		
 	void setMessage(const char* msg)
@@ -216,24 +235,35 @@ namespace TFE_GameHud
 
 	void draw(Player* player)
 	{
-		drawElement(HUD_STATUS_LEFT);
-		drawElement(HUD_STATUS_RIGHT);
+		const TFE_Settings_Hud* hudSettings = TFE_Settings::getHudSettings();
+		s32 scaleX = s_scaleX;
+		s32 scaleY = s_scaleY;
+		if (hudSettings->hudScale == TFE_HUDSCALE_SCALED)
+		{
+			scaleX = s32(hudSettings->scale * 256.0f);
+			scaleY = scaleX;
+		}
+
+		computeHudPositions(scaleX, scaleY);
+				
+		drawElement(HUD_STATUS_LEFT, scaleX, scaleY);
+		drawElement(HUD_STATUS_RIGHT, scaleX, scaleY);
 
 		// Headlamp light.
 		if (player->m_headlampOn)
-			drawElement(HUD_LIGHT_ON);
+			drawElement(HUD_LIGHT_ON, scaleX, scaleY);
 		else
-			drawElement(HUD_LIGHT_OFF);
+			drawElement(HUD_LIGHT_OFF, scaleX, scaleY);
 
 		// Text Elements
 		for (u32 e = HUD_SHIELD_NUM; e < HUD_COUNT; e++)
 		{
-			drawElement(HudElement(e));
+			drawElement(HudElement(e), scaleX, scaleY);
 		}
 
 		if (s_msgTime > 0.0f)
 		{
-			s_renderer->print(s_curMsg, s_msgFont, 6, 6, s_scaleX, s_scaleY);
+			s_renderer->print(s_curMsg, s_msgFont, 6, 6, scaleX, scaleY);
 			s_msgTime -= (f32)TFE_System::getDeltaTime();
 		}
 		else if (s_showPos)
@@ -242,20 +272,20 @@ namespace TFE_GameHud
 
 			char posMsg[256];
 			sprintf(posMsg, "%d %0.2f %0.2f  %0.2f %0.2f", player->m_sectorId, camPos->x, camPos->z, player->m_yaw * 180.0f / PI, player->m_pitch * 180.0f / PI);
-			s_renderer->print(posMsg, s_msgFont, 6, 6, s_scaleX, s_scaleY, 0, true);
+			s_renderer->print(posMsg, s_msgFont, 6, 6, scaleX, scaleY, 0, true);
 		}
 	}
 
 
-	void drawElement(HudElement element)
+	void drawElement(HudElement element, s32 scaleX, s32 scaleY)
 	{
 		if (c_hudElements[element].type == HUD_ELEM_IMAGE)
 		{
-			s_renderer->blitImage(&s_hudElementAssets[element].image->frames[0], s_hudPosition[element].x, s_hudPosition[element].z, s_scaleX, s_scaleY);
+			s_renderer->blitImage(&s_hudElementAssets[element].image->frames[0], s_hudPosition[element].x, s_hudPosition[element].z, scaleX, scaleY);
 		}
 		else
 		{
-			s_renderer->print(s_hudText[element-HUD_SHIELD_NUM], s_hudElementAssets[element].font, s_hudPosition[element].x, s_hudPosition[element].z, s_scaleX, s_scaleY);
+			s_renderer->print(s_hudText[element-HUD_SHIELD_NUM], s_hudElementAssets[element].font, s_hudPosition[element].x, s_hudPosition[element].z, scaleX, scaleY);
 		}
 	}
 }
