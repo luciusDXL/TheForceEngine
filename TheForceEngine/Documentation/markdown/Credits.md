@@ -5,6 +5,7 @@ I believe that I have captured all of the individual contributors and dependenci
 luciusDXL (me) - Principle Developer / Project Lead (really only developer for now)
 
 Craig Yates - TFE Logo design. Minimalist title screen design.
+Paweł "Dzierzan" Dzierżanowski - Adjustable Hud mod (built-in).
 Bela Lugosi is cold (and dead) - Thorough testing and very cool test levels that are now used internally to provide regression testing.
 
 ## Libraries / Source Code
