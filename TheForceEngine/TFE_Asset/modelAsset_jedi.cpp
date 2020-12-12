@@ -15,6 +15,111 @@
 
 using namespace TFE_JediRenderer;
 
+// Jedi code for processing models.
+// TODO: Move to the Jedi_ObjectRenderer (once it exists)?
+namespace TFE_Jedi_Object3d
+{
+	void vec3_computeNormalOffset(const vec3* vIn, const vec3* v0, vec3* vOut)
+	{
+		const fixed16_16 dx = vIn->x - v0->x;
+		const fixed16_16 dy = vIn->y - v0->y;
+		const fixed16_16 dz = vIn->z - v0->z;
+		const fixed16_16 xSq = mul16(dx, dx);
+		const fixed16_16 ySq = dy * dy;
+		const fixed16_16 zSq = dz * dz;
+		const fixed16_16 len = fixedSqrt(xSq + ySq + zSq);
+
+		// The Jedi 3D object renderer expect normals in the form of v0 + dir rather than just dir as used today.
+		vOut->x = v0->x;
+		vOut->y = v0->y;
+		vOut->z = v0->z;
+		if (len > 0)
+		{
+			vOut->x += div16(dx, len);
+			vOut->y += div16(dy, len);
+			vOut->z += div16(dz, len);
+		}
+	}
+
+	void object3d_computePolygonNormal(const vec3* v0, const vec3* v1, const vec3* v2, vec3* out)
+	{
+		const fixed16_16 dx10 = v1->x - v0->x;
+		const fixed16_16 dy10 = v1->y - v0->y;
+		const fixed16_16 dz10 = v1->z - v0->z;
+		const fixed16_16 dx20 = v2->x - v0->x;
+		const fixed16_16 dy20 = v2->y - v0->y;
+		const fixed16_16 dz20 = v2->z - v0->z;
+
+		out->x = v0->x + mul16(dz10, dy20) - mul16(dy10, dz20);
+		out->y = v0->y + mul16(dx10, dz20) - mul16(dz10, dx20);
+		out->z = v0->z + mul16(dy10, dx20) - mul16(dx10, dy20);
+		vec3_computeNormalOffset(out, v0, out);
+	}
+
+	void object3d_computeVertexNormals(JediModel* model)
+	{
+		const s32 vertexCount = model->vertexCount;
+		const vec3* vertex = model->vertices;
+
+		model->vertexNormals = (vec3*)malloc(vertexCount * sizeof(vec3));
+		vec3* outNormal = model->vertexNormals;
+
+		// For each vertex, go through each polyon and see if it belongs.
+		// Add polygon normals for each polygon the vertex belongs to.
+		// Note: this is pretty brute force and will not scale well to high polygon models and is part of the reason why loading
+		// Dark Forces levels back in the day took so long...
+		for (s32 v = 0; v < vertexCount; v++, vertex++, outNormal++)
+		{
+			vec3 normal = { 0 };
+			s32 ncount = 0;
+			vec3* cnrm = model->polygonNormals;
+
+			const Polygon* polygon = model->polygons;
+			for (s32 p = 0; p < model->polygonCount; p++, polygon++, cnrm++)
+			{
+				const s32 polyVtxCount = polygon->vertexCount;
+				const s32* indices = polygon->indices;
+				for (s32 i = 0; i < polyVtxCount; i++)
+				{
+					if (v == indices[i])
+					{
+						const vec3* v1 = &model->vertices[indices[i]];
+						normal.x += cnrm->x - v1->x;
+						normal.y += cnrm->y - v1->y;
+						normal.z += cnrm->z - v1->z;
+						ncount++;
+
+						break;
+					}
+				}
+			}
+
+			// The Jedi 3D object renderer expect normals in the form of v0 + dir rather than just dir as used today.
+			outNormal->x = vertex->x;
+			outNormal->y = vertex->y;
+			outNormal->z = vertex->z;
+			if (ncount > 0)
+			{
+				ncount = intToFixed16(ncount);
+				normal.x = div16(normal.x, ncount);
+				normal.y = div16(normal.y, ncount);
+				normal.z = div16(normal.z, ncount);
+
+				const fixed16_16 lenSq = mul16(normal.x, normal.x) + mul16(normal.y, normal.y) + mul16(normal.z, normal.z);
+				const fixed16_16 len = fixedSqrt(lenSq);
+				if (len > 0)
+				{
+					outNormal->x += div16(normal.x, len);
+					outNormal->y += div16(normal.y, len);
+					outNormal->z += div16(normal.z, len);
+				}
+			}
+		}
+	}
+}
+
+using namespace TFE_Jedi_Object3d;
+
 namespace TFE_Model_Jedi
 {
 	typedef std::map<std::string, JediModel*> ModelMap;
@@ -41,10 +146,48 @@ namespace TFE_Model_Jedi
 		}
 
 		JediModel* model = new JediModel;
+
+		////////////////////////////////////////////////////////////////
+		// Load and parse the model.
+		////////////////////////////////////////////////////////////////
 		parseModel(model, name);
 
-		// TODO: Post load processing.
-		// beyond 0x2030b0
+		////////////////////////////////////////////////////////////////
+		// Post process the model.
+		////////////////////////////////////////////////////////////////
+		// Compute culling normals.
+		vec3* cullingNormal = (vec3*)malloc(model->polygonCount * sizeof(vec3));
+		Polygon* polygon = model->polygons;
+		for (s32 i = 0; i < model->polygonCount; i++, polygon++, cullingNormal++)
+		{
+			vec3* v0 = &model->vertices[polygon->indices[0]];
+			vec3* v1 = &model->vertices[polygon->indices[1]];
+			vec3* v2 = &model->vertices[polygon->indices[2]];
+
+			object3d_computePolygonNormal(v1, v2, v0, cullingNormal);
+		}
+
+		// Compute vertex normals if vertex lighting is required.
+		if (model->flags & MFLAG_VERTEX_LIT)
+		{
+			object3d_computeVertexNormals(model);
+		}
+
+		// Compute the radius of the model (from <0,0,0>).
+		vec3* vertex = model->vertices;
+		fixed16_16 maxDist = 0;
+		for (s32 v = 0; v < model->vertexCount; v++, vertex++)
+		{
+			fixed16_16 xSq = vertex->x * vertex->x;
+			fixed16_16 ySq = vertex->y * vertex->y;
+			fixed16_16 distSq = vertex->x*vertex->x + vertex->y*vertex->y + vertex->z*vertex->z;
+			fixed16_16 dist = fixedSqrt(distSq);
+			if (dist > maxDist)
+			{
+				maxDist = dist;
+			}
+		}
+		model->radius = maxDist;
 
 		s_models[name] = model;
 		return model;

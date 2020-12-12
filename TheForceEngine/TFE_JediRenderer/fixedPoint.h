@@ -111,4 +111,11 @@ namespace TFE_JediRenderer
 	{
 		return s32(x >> 4);
 	}
+
+	// I cheat here with the fixedSqrt and just do a regular square root...
+	inline fixed16_16 fixedSqrt(fixed16_16 x)
+	{
+		const f32 fx = fixed16ToFloat(x);
+		return floatToFixed16(sqrtf(fx));
+	}
 }
