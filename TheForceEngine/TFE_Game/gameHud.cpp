@@ -93,7 +93,7 @@ namespace TFE_GameHud
 		{ "ARMNUM.FNT",  HUD_ELEM_TEXT,  HALIGN_RIGHT, VALIGN_BOTTOM, -35, -28 },	// HUD_DT_NUM
 		// Built-in Mod (TODO: Add proper mod support).
 		{ "HudStatusLeftAddon.png",   HUD_ELEM_IMAGE,  HALIGN_LEFT,  VALIGN_BOTTOM, -11, -40 },	// HUD_STATUS_LEFT_ADDON
-		{ "HudStatusRightAddon.png",  HUD_ELEM_IMAGE,  HALIGN_RIGHT, VALIGN_BOTTOM,  -1, -40 },	// HUD_STATUS_RIGHT_ADDON
+		{ "HudStatusRightAddon.png",  HUD_ELEM_IMAGE,  HALIGN_RIGHT, VALIGN_BOTTOM,   0, -40 },	// HUD_STATUS_RIGHT_ADDON
 	};
 	static Vec2i s_hudPosition[HUD_COUNT];
 	static HudAsset s_hudElementAssets[HUD_COUNT];
