@@ -156,7 +156,9 @@ namespace TFE_Model_Jedi
 		// Post process the model.
 		////////////////////////////////////////////////////////////////
 		// Compute culling normals.
-		vec3* cullingNormal = (vec3*)malloc(model->polygonCount * sizeof(vec3));
+		model->polygonNormals = (vec3*)malloc(model->polygonCount * sizeof(vec3));
+
+		vec3* cullingNormal = model->polygonNormals;
 		Polygon* polygon = model->polygons;
 		for (s32 i = 0; i < model->polygonCount; i++, polygon++, cullingNormal++)
 		{
@@ -189,6 +191,8 @@ namespace TFE_Model_Jedi
 		}
 		model->radius = maxDist;
 
+		// TODO (maybe): Cache binary models to disk so they can be
+		// directly loaded, which will reduce load time.
 		s_models[name] = model;
 		return model;
 	}
