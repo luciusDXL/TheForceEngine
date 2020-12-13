@@ -7,11 +7,12 @@
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include "rmath.h"
 
+struct JediModel;
+
 namespace TFE_JediRenderer
 {
 	struct RSector;
-	struct Model;
-
+	
 	enum ObjectType
 	{
 		OBJ_TYPE_SPRITE = 1,
@@ -41,7 +42,7 @@ namespace TFE_JediRenderer
 		// Rendering data.
 		union
 		{
-			Model* model;
+			JediModel* model;
 			Wax*   wax;
 			WaxFrame* fme;
 			void* ptr;

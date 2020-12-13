@@ -15,6 +15,7 @@
 #include <TFE_Game/gameObject.h>
 #include <TFE_Asset/levelObjectsAsset.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
+#include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Game/level.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/memoryPool.h>
@@ -296,6 +297,15 @@ namespace TFE_JediRenderer
 		}
 	}
 
+	void obj3d_setData(SecObject* obj, JediModel* pod)
+	{
+		obj->model = pod;
+		obj->type = OBJ_TYPE_3D;
+		obj->flags |= OBJ_FLAG_RENDERABLE;
+		obj->worldWidth = 0;
+		obj->worldHeight = 0;
+	}
+
 	void addObject(const char* assetName, u32 gameObjId, u32 sectorId)
 	{
 		if (!s_init || !assetName || sectorId >= s_sectors->getCount()) { return; }
@@ -460,12 +470,20 @@ namespace TFE_JediRenderer
 			waxes[i] = TFE_Sprite_Jedi::getWax(levelObj->sprites[i].c_str());
 		}
 
+		std::vector<JediModel*> models;
+		const u32 mdlCount = (u32)levelObj->pods.size();
+		models.resize(mdlCount);
+		for (u32 i = 0; i < mdlCount; i++)
+		{
+			models[i] = TFE_Model_Jedi::get(levelObj->pods[i].c_str());
+		}
+
 		const LevelObject* srcObj = levelObj->objects.data();
 		const u32 objCount = (u32)levelObj->objects.size();
 		for (u32 i = 0; i < objCount; i++, srcObj++)
 		{
 			// for now only worry about frames.
-			if (srcObj->oclass == CLASS_FRAME || srcObj->oclass == CLASS_SPRITE)
+			if (srcObj->oclass == CLASS_FRAME || srcObj->oclass == CLASS_SPRITE || srcObj->oclass == CLASS_3D)
 			{
 				SecObject* obj = allocateObject();
 				obj->gameObjId = i;
@@ -499,12 +517,19 @@ namespace TFE_JediRenderer
 
 					frame_setData(obj, (u8*)obj->fme, obj->fme);
 				}
-				else
+				else if (srcObj->oclass == CLASS_SPRITE)
 				{
 					obj->wax = waxes[srcObj->dataOffset] ? waxes[srcObj->dataOffset]->wax : nullptr;
 					if (!obj->wax) { continue; }
 
 					wax_setData(obj, (u8*)obj->wax, obj->wax);
+				}
+				else if (srcObj->oclass == CLASS_3D)
+				{
+					obj->model = models[srcObj->dataOffset] ? models[srcObj->dataOffset] : nullptr;
+					if (!obj->model) { continue; }
+
+					obj3d_setData(obj, obj->model);
 				}
 				s_sectors->addObject(sector, obj);
 			}

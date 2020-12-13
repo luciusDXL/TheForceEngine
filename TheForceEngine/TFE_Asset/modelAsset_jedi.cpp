@@ -180,10 +180,8 @@ namespace TFE_Model_Jedi
 		fixed16_16 maxDist = 0;
 		for (s32 v = 0; v < model->vertexCount; v++, vertex++)
 		{
-			fixed16_16 xSq = vertex->x * vertex->x;
-			fixed16_16 ySq = vertex->y * vertex->y;
-			fixed16_16 distSq = vertex->x*vertex->x + vertex->y*vertex->y + vertex->z*vertex->z;
-			fixed16_16 dist = fixedSqrt(distSq);
+			const fixed16_16 distSq = vertex->x*vertex->x + vertex->y*vertex->y + vertex->z*vertex->z;
+			const fixed16_16 dist = fixedSqrt(distSq);
 			if (dist > maxDist)
 			{
 				maxDist = dist;
@@ -424,7 +422,7 @@ namespace TFE_Model_Jedi
 			if (!buffer) { return false; }
 
 			s32 triangleCount = 0, quadCount = 0;
-			if (sscanf(buffer, "TRIANGLES %d", &triangleCount) != 1)
+			if (sscanf(buffer, "TRIANGLES %d", &triangleCount) == 1)
 			{
 				s32 polygonCount = model->polygonCount;
 				for (s32 p = 0; p < triangleCount; p++, model->polygonCount++)
@@ -487,7 +485,7 @@ namespace TFE_Model_Jedi
 					}
 				}
 			}
-			else if (sscanf(buffer, "QUADS %d", &quadCount) != 1)
+			else if (sscanf(buffer, "QUADS %d", &quadCount) == 1)
 			{
 				s32 polygonCount = model->polygonCount;
 				for (s32 p = 0; p < quadCount; p++, model->polygonCount++)
