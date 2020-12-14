@@ -143,7 +143,37 @@ namespace TFE_JediRenderer
 					}
 					else if (type == OBJ_TYPE_3D)
 					{
-						// TODO - culling for 3D objects is more complex, probably because they are much more expensive to render.
+						const f32 radius = fixed16ToFloat(curObj->model->radius);
+						const f32 zMax = curObj->posVS.z.f32 + radius;
+						// Near plane
+						if (zMax < 1.0f) { continue; }
+
+						// Left plane
+						const f32 xMax = curObj->posVS.x.f32 + radius;
+						if (xMax < -zMax) { continue; }
+
+						// Right plane
+						const f32 xMin = curObj->posVS.x.f32 - radius;
+						if (xMin > zMax) { continue; }
+
+						// The object straddles the near plane, so add it and move on.
+						const f32 zMin = curObj->posVS.z.f32 - radius;
+						if (zMin < FLT_EPSILON)
+						{
+							buffer[drawCount++] = curObj;
+							continue;
+						}
+
+						// Cull against the current "window."
+						const f32 rcpZ = 1.0f / curObj->posVS.z.f32;
+						const s32 x0 = roundFloat((xMin*s_focalLength)*rcpZ) + s_screenXMid;
+						if (x0 > s_windowMaxX) { continue; }
+
+						const s32 x1 = roundFloat((xMax*s_focalLength)*rcpZ) + s_screenXMid;
+						if (x1 < s_windowMinX) { continue; }
+
+						// Finally add the object to render.
+						buffer[drawCount++] = curObj;
 					}
 				}
 			}
