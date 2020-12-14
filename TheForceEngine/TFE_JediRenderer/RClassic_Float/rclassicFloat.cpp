@@ -59,10 +59,19 @@ namespace RClassic_Float
 			{
 				s_focalLenAspect = (height * 4 / 3) * 0.5f;
 			}
+
+			const f32 aspectScale = (s_height == 200 || s_height == 400) ? (10.0f / 16.0f) : (3.0f / 4.0f);
+			s_nearPlaneHalfLen = aspectScale * (f32(s_width) / f32(s_height));
+			// at low resolution, increase the nearPlaneHalfLen slightly to avoid cutting off the last column.
+			if (s_height == 200)
+			{
+				s_nearPlaneHalfLen += 0.001f;
+			}
 		}
 		else
 		{
 			s_focalLenAspect = s_focalLength;
+			s_nearPlaneHalfLen = 1.0f;
 		}
 		s_screenXMid = s_width >> 1;
 

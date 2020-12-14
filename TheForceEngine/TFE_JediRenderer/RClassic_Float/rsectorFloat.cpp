@@ -1,4 +1,5 @@
 #include <TFE_System/profiler.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 // TODO: Either move level.h or fix it.
 #include <TFE_Game/level.h>
@@ -150,11 +151,11 @@ namespace TFE_JediRenderer
 
 						// Left plane
 						const f32 xMax = curObj->posVS.x.f32 + radius;
-						if (xMax < -zMax) { continue; }
+						if (xMax < -zMax * s_nearPlaneHalfLen) { continue; }
 
 						// Right plane
 						const f32 xMin = curObj->posVS.x.f32 - radius;
-						if (xMin > zMax) { continue; }
+						if (xMin > zMax * s_nearPlaneHalfLen) { continue; }
 
 						// The object straddles the near plane, so add it and move on.
 						const f32 zMin = curObj->posVS.z.f32 - radius;

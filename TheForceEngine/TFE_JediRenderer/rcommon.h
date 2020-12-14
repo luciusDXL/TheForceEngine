@@ -42,6 +42,7 @@ namespace TFE_JediRenderer
 	extern f32 s_cameraPitch;
 	extern f32 s_skyYawOffset;
 	extern f32 s_skyPitchOffset;
+	extern f32 s_nearPlaneHalfLen;
 	extern f32* s_skyTable;
 	
 	// Window

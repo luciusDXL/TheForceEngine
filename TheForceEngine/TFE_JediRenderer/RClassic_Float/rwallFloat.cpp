@@ -435,17 +435,6 @@ namespace RClassic_Float
 		const vec2* p0 = wall->v0;
 		const vec2* p1 = wall->v1;
 
-		// Widescreen adjustments are obviously added to the original code.
-		// TODO: Factor out and only handle when the resolution changes.
-		const bool widescreen = TFE_RenderBackend::getWidescreen();
-		const f32 aspectScale = (s_height == 200 || s_height == 400) ? (10.0f / 16.0f) : (3.0f / 4.0f);
-		f32 nearPlaneHalfLen = widescreen ? aspectScale * (f32(s_width) / f32(s_height)) : 1.0f;
-		// at low resolution, increase the nearPlaneHalfLen slightly to avoid cutting off the last column.
-		if (widescreen && s_height == 200)
-		{
-			nearPlaneHalfLen += 0.001f;
-		}
-
 		// Viewspace wall coordinates.
 		f32 x0 = p0->x.f32;
 		f32 x1 = p1->x.f32;
@@ -454,10 +443,10 @@ namespace RClassic_Float
 
 		// x values of frustum lines that pass through (x0,z0) and (x1,z1)
 		// Note that the 'nearPlaneHalfLen' is 1.0 in the original code and thus omitted (see rwallFixed.cpp).
-		f32 left0 = -z0 * nearPlaneHalfLen;
-		f32 left1 = -z1 * nearPlaneHalfLen;
-		f32 right0 = z0 * nearPlaneHalfLen;
-		f32 right1 = z1 * nearPlaneHalfLen;
+		f32 left0 = -z0 * s_nearPlaneHalfLen;
+		f32 left1 = -z1 * s_nearPlaneHalfLen;
+		f32 right0 = z0 * s_nearPlaneHalfLen;
+		f32 right1 = z1 * s_nearPlaneHalfLen;
 
 		// Cull the wall if it is completely beyind the camera.
 		if (z0 < 0 && z1 < 0)
@@ -494,9 +483,9 @@ namespace RClassic_Float
 		// Clip the Wall Segment by the left and right
 		// frustum lines.
 		//////////////////////////////////////////////
-		if (widescreen)
+		if (s_nearPlaneHalfLen != 1.0f)
 		{
-			if (!wall_clipToFrustum_Widescreen(x0, z0, x1, z1, dx, dz, curU, texelLen, texelLenRem, clipX0_Near, clipX1_Near, left0, right0, left1, right1, nearPlaneHalfLen))
+			if (!wall_clipToFrustum_Widescreen(x0, z0, x1, z1, dx, dz, curU, texelLen, texelLenRem, clipX0_Near, clipX1_Near, left0, right0, left1, right1, s_nearPlaneHalfLen))
 			{
 				wall->visible = 0;
 				return;
@@ -520,13 +509,13 @@ namespace RClassic_Float
 		// Handle near plane clipping by adjusting the walls to avoid holes.
 		if (clipX0_Near != 0 && x0pixel > s_minScreenX)
 		{
-			x0 = -nearPlaneHalfLen;
-			dx = x1 + nearPlaneHalfLen;
+			x0 = -s_nearPlaneHalfLen;
+			dx = x1 + s_nearPlaneHalfLen;
 			x0pixel = s_minScreenX;
 		}
 		if (clipX1_Near != 0 && x1pixel < s_maxScreenX)
 		{
-			dx = nearPlaneHalfLen - x0;
+			dx = s_nearPlaneHalfLen - x0;
 			x1pixel = s_maxScreenX;
 		}
 
