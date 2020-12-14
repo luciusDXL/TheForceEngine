@@ -313,7 +313,7 @@ namespace TFE_JediRenderer
 		GameObject* gameObjects = LevelGameObjects::getGameObjectList()->data();
 		GameObject* gameObj = &gameObjects[gameObjId];
 				
-		if (gameObj->oclass == CLASS_FRAME)
+		if (gameObj->oclass == CLASS_FRAME || gameObj->oclass == CLASS_SPRITE || gameObj->oclass == CLASS_3D)
 		{
 			SecObject* obj = allocateObject();
 			obj->gameObjId = gameObjId;
@@ -334,13 +334,36 @@ namespace TFE_JediRenderer
 			obj->yaw   = s16(gameObj->angles.y / 360.0f * 16484.0f) % 16384;
 			obj->roll  = s16(gameObj->angles.z / 360.0f * 16484.0f) % 16384;
 
-			JediFrame* jFrame = TFE_Sprite_Jedi::getFrame(assetName);
-			if (!jFrame)
+			if (gameObj->oclass == CLASS_FRAME)
 			{
-				free(obj);
-				return;
+				JediFrame* jFrame = TFE_Sprite_Jedi::getFrame(assetName);
+				if (!jFrame)
+				{
+					free(obj);
+					return;
+				}
+				obj->fme = jFrame->frame;
 			}
-			obj->fme = jFrame->frame;
+			else if (gameObj->oclass == CLASS_SPRITE)
+			{
+				JediWax* jWax = TFE_Sprite_Jedi::getWax(assetName);
+				if (!jWax)
+				{
+					free(obj);
+					return;
+				}
+				obj->wax = jWax->wax;
+			}
+			else if (gameObj->oclass == CLASS_3D)
+			{
+				JediModel* jModel = TFE_Model_Jedi::get(assetName);
+				if (!jModel)
+				{
+					free(obj);
+					return;
+				}
+				obj->model = jModel;
+			}
 
 			s_sectors->addObject(&s_sectors->get()[sectorId], obj);
 			frame_setData(obj, (u8*)obj->fme, obj->fme);

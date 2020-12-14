@@ -223,7 +223,7 @@ namespace TFE_Model_Jedi
 		if (s_buffer.empty()) { return false; }
 		const size_t len = s_buffer.size();
 
-		model->special = 0;
+		model->isBridge = 0;
 		model->vertexCount = 0;
 		model->vertices = 0;
 		model->polygonCount = 0;
@@ -236,13 +236,13 @@ namespace TFE_Model_Jedi
 		model->radius = 0;
 
 		// Check to see if the name has an underscore.
-		// If so, set the "special" field.
+		// If so, set the "isBridge" field.
 		const size_t nameLen = strlen(name);
 		for (size_t i = 0; i < nameLen; i++)
 		{
 			if (name[i] == '_')
 			{
-				model->special = 1;
+				model->isBridge = 1;
 				break;
 			}
 		}

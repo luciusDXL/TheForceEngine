@@ -1,4 +1,5 @@
 #include <TFE_System/profiler.h>
+#include <TFE_Asset/modelAsset_jedi.h>
 // TODO: Either move level.h or fix it.
 #include <TFE_Game/level.h>
 
@@ -30,7 +31,37 @@ namespace TFE_JediRenderer
 			SecObject* obj0 = *((SecObject**)r0);
 			SecObject* obj1 = *((SecObject**)r1);
 
-			// TODO: Handle special cases (see RE source).
+			if (obj0->type == OBJ_TYPE_3D && obj1->type == OBJ_TYPE_3D)
+			{
+				// Both objects are 3D.
+				const f32 distSq0 = dotFloat(obj0->posVS, obj0->posVS);
+				const f32 distSq1 = dotFloat(obj1->posVS, obj1->posVS);
+				const f32 dist0 = sqrtf(distSq0);
+				const f32 dist1 = sqrtf(distSq1);
+
+				if (obj0->model->isBridge && obj1->model->isBridge)
+				{
+					return signZero(dist1 - dist0);
+				}
+				else if (obj0->model->isBridge == 1)
+				{
+					return -1;
+				}
+				else if (obj1->model->isBridge == 1)
+				{
+					return 1;
+				}
+
+				return signZero(dist1 - dist0);
+			}
+			else if (obj0->type == OBJ_TYPE_3D && obj0->model->isBridge)
+			{
+				return -1;
+			}
+			else if (obj1->type == OBJ_TYPE_3D && obj1->model->isBridge)
+			{
+				return 1;
+			}
 
 			// Default case:
 			return signZero(obj1->posVS.z.f32 - obj0->posVS.z.f32);

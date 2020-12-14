@@ -73,6 +73,8 @@ namespace TFE_JediRenderer
 
 	inline s32 signV2A(s32 x) { return (x < 0 ? 1 : 0); }
 
+	inline fixed16_16 dotFixed(vec3 v0, vec3 v1) { return mul16(v0.x.f16_16, v1.x.f16_16) + mul16(v0.y.f16_16, v1.y.f16_16) + mul16(v0.z.f16_16, v1.z.f16_16); }
+
 	// Float
 	inline f32 abs(f32 x)
 	{
@@ -116,4 +118,6 @@ namespace TFE_JediRenderer
 	}
 
 	inline s32 signV2A(f32 x) { return (x < 0.0f ? 1 : 0); }
+
+	inline f32 dotFloat(vec3 v0, vec3 v1) { return v0.x.f32*v1.x.f32 + v0.y.f32*v1.y.f32 + v0.z.f32*v1.z.f32; }
 }

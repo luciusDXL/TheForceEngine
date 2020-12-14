@@ -53,7 +53,7 @@ struct Polygon
 
 struct JediModel
 {
-	s32 special;	// special model with an underscore in the name.
+	s32 isBridge;		// this 3D object is a 3D "bridge" which gets special sorting. All 3D objects with '_' in their name get this flag.
 	s32 vertexCount;
 	vec3* vertices;
 	s32 polygonCount;
