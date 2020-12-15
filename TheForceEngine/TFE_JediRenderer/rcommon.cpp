@@ -26,6 +26,7 @@ namespace TFE_JediRenderer
 
 	// Camera
 	f32 s_cameraPosX;
+	f32 s_cameraPosY;
 	f32 s_cameraPosZ;
 	f32 s_xCameraTrans;
 	f32 s_zCameraTrans;
@@ -38,6 +39,7 @@ namespace TFE_JediRenderer
 	f32 s_skyPitchOffset;
 	f32 s_nearPlaneHalfLen = 1.0f;
 	f32* s_skyTable;
+	f32 s_cameraMtx[9] = { 0 };
 
 	// Window
 	s32 s_minScreenX;

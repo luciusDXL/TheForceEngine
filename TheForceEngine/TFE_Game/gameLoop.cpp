@@ -429,17 +429,17 @@ namespace TFE_GameLoop
 
 	void changeResolution(s32 width, s32 height)
 	{
-		u32 prevWidth, prevHeight;
+		u32 prevWidth=0, prevHeight=0;
 		bool curWidescreen = TFE_Settings::getGraphicsSettings()->widescreen;
 		bool curAsync = TFE_Settings::getGraphicsSettings()->asyncFramebuffer;
 		bool curColorConvert = TFE_Settings::getGraphicsSettings()->gpuColorConvert;
 		bool prevWidescreen = TFE_RenderBackend::getWidescreen();
 		bool prevAsync = TFE_RenderBackend::getFrameBufferAsync();
 		bool prevColorConvert = TFE_RenderBackend::getGPUColorConvert();
-		s_renderer->getResolution(&prevWidth, &prevHeight);
+		if (s_renderer) { s_renderer->getResolution(&prevWidth, &prevHeight); }
 		if (width == prevWidth && height == prevHeight && curAsync == prevAsync && curColorConvert == prevColorConvert && prevWidescreen == curWidescreen) { return; }
 
-		s_renderer->changeResolution(width, height, curWidescreen, curAsync, curColorConvert);
+		if (s_renderer) { s_renderer->changeResolution(width, height, curWidescreen, curAsync, curColorConvert); }
 		width = TFE_RenderBackend::getVirtualDisplayWidth3D();
 
 		if (width != prevWidth || height != prevHeight || prevWidescreen != curWidescreen)

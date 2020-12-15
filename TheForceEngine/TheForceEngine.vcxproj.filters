@@ -634,6 +634,12 @@
     <ClInclude Include="TFE_Asset\modelAsset_jedi.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3dFloat.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1031,6 +1037,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Asset\modelAsset_jedi.cpp">
       <Filter>Source\TFE_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3dFloat.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

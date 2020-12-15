@@ -32,6 +32,7 @@ namespace TFE_JediRenderer
 
 	// Camera
 	extern f32 s_cameraPosX;
+	extern f32 s_cameraPosY;
 	extern f32 s_cameraPosZ;
 	extern f32 s_xCameraTrans;
 	extern f32 s_zCameraTrans;
@@ -44,6 +45,7 @@ namespace TFE_JediRenderer
 	extern f32 s_skyPitchOffset;
 	extern f32 s_nearPlaneHalfLen;
 	extern f32* s_skyTable;
+	extern f32 s_cameraMtx[9];
 	
 	// Window
 	extern s32 s_minScreenX;

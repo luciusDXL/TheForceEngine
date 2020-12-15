@@ -8,6 +8,7 @@
 #include "rflatFixed.h"
 #include "rlightingFixed.h"
 #include "redgePairFixed.h"
+#include "robj3dFixed.h"
 #include "rcommonFixed.h"
 #include "../fixedPoint.h"
 #include "../rmath.h"
@@ -534,8 +535,7 @@ namespace TFE_JediRenderer
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
-					// TODO
-					//model_draw(obj, obj->model);
+					model_draw(obj, obj->model);
 				}
 				else if (type == OBJ_TYPE_FRAME)
 				{

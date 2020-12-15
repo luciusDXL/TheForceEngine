@@ -38,7 +38,7 @@ namespace TFE_JediRenderer
 	void buildLevelData();
 	void console_setSubRenderer(const std::vector<std::string>& args);
 	void console_getSubRenderer(const std::vector<std::string>& args);
-	
+
 	/////////////////////////////////////////////
 	// Implementation
 	/////////////////////////////////////////////
@@ -49,7 +49,7 @@ namespace TFE_JediRenderer
 		// Setup Debug CVars.
 		s_maxWallCount = 0xffff;
 		s_maxDepthCount = 0xffff;
-		CVAR_INT(s_maxWallCount,  "d_maxWallCount",  CVFLAG_DO_NOT_SERIALIZE, "Maximum wall count for a given sector.");
+		CVAR_INT(s_maxWallCount, "d_maxWallCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum wall count for a given sector.");
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum adjoin depth count.");
 
 		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU");
@@ -58,9 +58,9 @@ namespace TFE_JediRenderer
 		// Setup performance counters.
 		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
 		TFE_COUNTER(s_maxAdjoinIndex, "Maximum Adjoin Count");
-		TFE_COUNTER(s_sectorIndex,    "Sector Count");
-		TFE_COUNTER(s_flatCount,      "Flat Count");
-		TFE_COUNTER(s_curWallSeg,     "Wall Segment Count");
+		TFE_COUNTER(s_sectorIndex, "Sector Count");
+		TFE_COUNTER(s_flatCount, "Flat Count");
+		TFE_COUNTER(s_curWallSeg, "Wall Segment Count");
 		TFE_COUNTER(s_adjoinSegCount, "Adjoin Segment Count");
 	}
 
@@ -79,11 +79,11 @@ namespace TFE_JediRenderer
 	{
 		init();
 		setResolution(width, height);
-				
+
 		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
 		s_sectorId = -1;
 		s_sectors->setMemoryPool(&s_memPool);
-		
+
 		buildLevelData();
 	}
 
@@ -112,7 +112,7 @@ namespace TFE_JediRenderer
 
 	void console_getSubRenderer(const std::vector<std::string>& args)
 	{
-		const char* c_subRenderers[]=
+		const char* c_subRenderers[] =
 		{
 			"Classic_Fixed",	// TSR_CLASSIC_FIXED
 			"Classic_Float",	// TSR_CLASSIC_FLOAT
@@ -129,10 +129,10 @@ namespace TFE_JediRenderer
 			// Reset the resolution so it is set properly.
 			s_width = 0;
 			s_height = 0;
-			
+
 			// Setup the sub-renderer sector system.
 			TFE_Sectors* prev = s_sectors;
-			
+
 			if (s_subRenderer == TSR_CLASSIC_FIXED)
 			{
 				s_sectors = new TFE_Sectors_Fixed();
@@ -146,7 +146,7 @@ namespace TFE_JediRenderer
 			delete prev;
 		}
 	}
-		
+
 	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId, s32 worldAmbient, bool cameraLightSource)
 	{
 		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setCamera(yaw, pitch, x, y, z, sectorId); }
@@ -159,7 +159,7 @@ namespace TFE_JediRenderer
 
 		s_drawFrame++;
 	}
-		
+
 	void draw(u8* display, const ColorMap* colormap)
 	{
 		// Clear the top pixel row.
@@ -174,10 +174,10 @@ namespace TFE_JediRenderer
 		s_windowMaxX = s_maxScreenX;
 		s_windowMinY = 1;
 		s_windowMaxY = s_height - 1;
-		s_windowMaxCeil  = s_minScreenY;
+		s_windowMaxCeil = s_minScreenY;
 		s_windowMinFloor = s_maxScreenY;
-		s_flatCount  = 0;
-		s_nextWall   = 0;
+		s_flatCount = 0;
+		s_nextWall = 0;
 		s_curWallSeg = 0;
 
 		s_prevSector = nullptr;
@@ -185,7 +185,7 @@ namespace TFE_JediRenderer
 		s_maxAdjoinIndex = 0;
 		s_adjoinSegCount = 1;
 		s_adjoinIndex = 0;
-		
+
 		s_adjoinDepth = 1;
 		s_maxAdjoinDepth = 1;
 
@@ -258,7 +258,7 @@ namespace TFE_JediRenderer
 	void frame_setData(SecObject* obj, u8* basePtr, WaxFrame* data)
 	{
 		obj->type = OBJ_TYPE_FRAME;
-		obj->fme  = data;
+		obj->fme = data;
 		obj->flags |= OBJ_FLAG_RENDERABLE;
 		WaxCell* cell = WAX_CellPtr(basePtr, data);
 
@@ -277,7 +277,7 @@ namespace TFE_JediRenderer
 	void wax_setData(SecObject* obj, u8* basePtr, Wax* data)
 	{
 		obj->type = OBJ_TYPE_SPRITE;
-		obj->wax  = data;
+		obj->wax = data;
 		obj->flags |= OBJ_FLAG_RENDERABLE;
 
 		WaxAnim* anim = WAX_AnimPtr(basePtr, data, 0);
@@ -304,6 +304,56 @@ namespace TFE_JediRenderer
 		obj->flags |= OBJ_FLAG_RENDERABLE;
 		obj->worldWidth = 0;
 		obj->worldHeight = 0;
+	}
+
+	void obj3d_computeTransform(SecObject* obj)
+	{
+		// TODO: Avoid computing both fixed point and floating point object transforms, it is wasteful.
+		// It will work for now though.
+
+		// Fixed point
+		{
+			fixed16_16 sinYaw, cosYaw;
+			fixed16_16 sinPch, cosPch;
+			fixed16_16 sinRol, cosRol;
+			sinCosFixed(obj->yaw,   sinYaw, cosYaw);
+			sinCosFixed(obj->pitch, sinPch, cosPch);
+			sinCosFixed(obj->roll,  sinRol, cosRol);
+
+			obj->transform[0] = mul16(cosYaw, cosRol);
+			obj->transform[1] = mul16(cosPch, sinRol) + mul16(mul16(sinPch, sinYaw), cosPch);
+			obj->transform[2] = mul16(sinPch, sinRol) - mul16(mul16(cosPch, sinYaw), cosRol);
+
+			obj->transform[3] = -mul16(cosYaw, sinRol);
+			obj->transform[4] = mul16(cosPch, cosRol) - mul16(mul16(sinPch, sinYaw), sinRol);
+			obj->transform[5] = mul16(sinPch, cosRol) + mul16(mul16(cosPch, sinYaw), sinRol);
+
+			obj->transform[6] = sinYaw;
+			obj->transform[7] = -mul16(sinPch,cosYaw);
+			obj->transform[8] = mul16(cosPch,cosYaw);
+		}
+
+		// Floating point (more accurate).
+		{
+			f32 sinYaw, cosYaw;
+			f32 sinPch, cosPch;
+			f32 sinRol, cosRol;
+			sinCosFlt(obj->yaw, sinYaw, cosYaw);
+			sinCosFlt(obj->pitch, sinPch, cosPch);
+			sinCosFlt(obj->roll, sinRol, cosRol);
+
+			obj->transformFlt[0] = cosYaw*cosRol;
+			obj->transformFlt[1] = cosPch*sinRol + sinPch*sinYaw*cosPch;
+			obj->transformFlt[2] = sinPch*sinRol - cosPch*sinYaw*cosRol;
+
+			obj->transformFlt[3] = -cosYaw*sinRol;
+			obj->transformFlt[4] = cosPch*cosRol - sinPch*sinYaw*sinRol;
+			obj->transformFlt[5] = sinPch*cosRol + cosPch*sinYaw*sinRol;
+
+			obj->transformFlt[6] = sinYaw;
+			obj->transformFlt[7] = -sinPch*cosYaw;
+			obj->transformFlt[8] = cosPch*cosYaw;
+		}
 	}
 
 	void addObject(const char* assetName, u32 gameObjId, u32 sectorId)
@@ -363,6 +413,7 @@ namespace TFE_JediRenderer
 					return;
 				}
 				obj->model = jModel;
+				obj3d_computeTransform(obj);
 			}
 
 			s_sectors->addObject(&s_sectors->get()[sectorId], obj);
@@ -551,8 +602,9 @@ namespace TFE_JediRenderer
 				{
 					obj->model = models[srcObj->dataOffset] ? models[srcObj->dataOffset] : nullptr;
 					if (!obj->model) { continue; }
-
+										
 					obj3d_setData(obj, obj->model);
+					obj3d_computeTransform(obj);
 				}
 				s_sectors->addObject(sector, obj);
 			}

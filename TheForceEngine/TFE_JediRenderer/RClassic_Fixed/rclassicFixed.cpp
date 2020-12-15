@@ -35,8 +35,15 @@ namespace RClassic_Fixed
 		s_eyeHeight_Fixed = yFixed;
 
 		s_cameraPosX_Fixed = xFixed;
+		s_cameraPosY_Fixed = yFixed;
 		s_cameraPosZ_Fixed = zFixed;
 
+		s_cameraMtx_Fixed[0] = s_cosYaw_Fixed;
+		s_cameraMtx_Fixed[2] = s_negSinYaw_Fixed;
+		s_cameraMtx_Fixed[4] = ONE_16;
+		s_cameraMtx_Fixed[6] = s_sinYaw_Fixed;
+		s_cameraMtx_Fixed[8] = s_cosYaw_Fixed;
+		
 		const fixed16_16 pitchOffset = mul16(sinPitch, s_focalLenAspect_Fixed);
 		s_halfHeight_Fixed = s_halfHeightBase_Fixed + pitchOffset;
 		s_heightInPixels = s_heightInPixelsBase + floor16(pitchOffset);

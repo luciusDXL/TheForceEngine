@@ -23,7 +23,14 @@ namespace RClassic_Float
 		s_eyeHeight = y;
 
 		s_cameraPosX = x;
+		s_cameraPosY = y;
 		s_cameraPosZ = z;
+
+		s_cameraMtx[0] = s_cosYaw;
+		s_cameraMtx[2] = s_negSinYaw;
+		s_cameraMtx[4] = 1.0f;
+		s_cameraMtx[6] = s_sinYaw;
+		s_cameraMtx[8] = s_cosYaw;
 
 		const f32 pitchOffset = sinf(pitch) * s_focalLenAspect;
 		s_halfHeight = s_halfHeightBase + pitchOffset;

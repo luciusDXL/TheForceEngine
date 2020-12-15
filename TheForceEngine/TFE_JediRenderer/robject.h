@@ -38,6 +38,8 @@ namespace TFE_JediRenderer
 		fixed16_16 worldWidth;
 		fixed16_16 worldHeight;
 		s32 transform[9];
+		// Cached floating point transform (not used by Fixed Point sub-renderer).
+		f32 transformFlt[9];
 
 		// Rendering data.
 		union

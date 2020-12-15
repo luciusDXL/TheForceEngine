@@ -20,6 +20,7 @@ namespace RClassic_Fixed
 
 	// Camera
 	fixed16_16 s_cameraPosX_Fixed;
+	fixed16_16 s_cameraPosY_Fixed;
 	fixed16_16 s_cameraPosZ_Fixed;
 	fixed16_16 s_xCameraTrans_Fixed;
 	fixed16_16 s_zCameraTrans_Fixed;
@@ -31,6 +32,7 @@ namespace RClassic_Fixed
 	fixed16_16 s_skyYawOffset_Fixed;
 	fixed16_16 s_skyPitchOffset_Fixed;
 	fixed16_16* s_skyTable_Fixed;
+	fixed16_16 s_cameraMtx_Fixed[9] = { 0 };
 
 	// Window
 	fixed16_16 s_windowMinZ_Fixed;

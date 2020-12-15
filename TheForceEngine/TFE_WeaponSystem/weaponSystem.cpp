@@ -194,7 +194,7 @@ namespace TFE_WeaponSystem
 		s_projPoolCount = 0;
 		s_projCount = 0;
 		s_effectCount = 0;
-		s_memoryPool->clear();
+		if (s_memoryPool) { s_memoryPool->clear(); }
 	}
 
 	bool registerWeapon(Weapon weapon, s32 id)
@@ -849,9 +849,12 @@ namespace TFE_WeaponSystem
 
 		s32 active = s_activeWeapon;
 
-		clearWeapons();
-		registerWeapons();
-		switchToWeapon((Weapon)active);
+		if (s_memoryPool)
+		{
+			clearWeapons();
+			registerWeapons();
+			switchToWeapon((Weapon)active);
+		}
 	}
 		
 	void switchToWeapon(Weapon weapon)

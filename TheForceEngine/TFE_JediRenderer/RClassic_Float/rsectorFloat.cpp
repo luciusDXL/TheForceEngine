@@ -9,6 +9,7 @@
 #include "rflatFloat.h"
 #include "rlightingFloat.h"
 #include "redgePairFloat.h"
+#include "robj3dFloat.h"
 #include "../rmath.h"
 #include "../rcommon.h"
 #include "../robject.h"
@@ -531,8 +532,7 @@ namespace TFE_JediRenderer
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
-					// TODO
-					//model_draw(obj, obj->model);
+					model_draw(obj, obj->model);
 				}
 				else if (type == OBJ_TYPE_FRAME)
 				{

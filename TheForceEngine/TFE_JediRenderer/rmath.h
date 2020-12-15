@@ -39,6 +39,26 @@ namespace TFE_JediRenderer
 		decimal x, y, z;
 	};
 
+	struct vec2_fixed
+	{
+		fixed16_16 x, z;
+	};
+
+	struct vec3_fixed
+	{
+		fixed16_16 x, y, z;
+	};
+
+	struct vec2_float
+	{
+		f32 x, z;
+	};
+
+	struct vec3_float
+	{
+		f32 x, y, z;
+	};
+
 	// Int/Fixed Point
 	inline s32 abs(s32 x)
 	{
@@ -74,6 +94,18 @@ namespace TFE_JediRenderer
 	inline s32 signV2A(s32 x) { return (x < 0 ? 1 : 0); }
 
 	inline fixed16_16 dotFixed(vec3 v0, vec3 v1) { return mul16(v0.x.f16_16, v1.x.f16_16) + mul16(v0.y.f16_16, v1.y.f16_16) + mul16(v0.z.f16_16, v1.z.f16_16); }
+
+	// Convert from integer angle to fixed point sin/cos.
+	inline void sinCosFixed(s32 angle, fixed16_16& sinValue, fixed16_16& cosValue)
+	{
+		// Cheat and use floating point sin/cos functions...
+		const f32 scale = -2.0f * PI / 16484.0f;
+		const f32 s = sinf(scale * f32(angle));
+		const f32 c = cosf(scale * f32(angle));
+
+		sinValue = floatToFixed16(s);
+		cosValue = floatToFixed16(c);
+	}
 
 	// Float
 	inline f32 abs(f32 x)
@@ -120,4 +152,12 @@ namespace TFE_JediRenderer
 	inline s32 signV2A(f32 x) { return (x < 0.0f ? 1 : 0); }
 
 	inline f32 dotFloat(vec3 v0, vec3 v1) { return v0.x.f32*v1.x.f32 + v0.y.f32*v1.y.f32 + v0.z.f32*v1.z.f32; }
+
+	// Convert from integer angle to floating point sin/cos.
+	inline void sinCosFlt(s32 angle, f32& sinValue, f32& cosValue)
+	{
+		const f32 scale = -2.0f * PI / 16484.0f;
+		sinValue = sinf(scale * f32(angle));
+		cosValue = cosf(scale * f32(angle));
+	}
 }

@@ -348,16 +348,16 @@ namespace TFE_Model_Jedi
 				if (!buffer) { return false; }
 
 				char textureName[256];
-				if (sscanf(buffer, "TEXTURE %s", textureName) != 1)
+				if (sscanf(buffer, " TEXTURE: %s ", textureName) != 1)
 				{
 					// Error.
 					return false;
 				}
 
 				*texture = nullptr;
-				if (strcasecmp(name, "<NoTexture>"))
+				if (strcasecmp(textureName, "<NoTexture>"))
 				{
-					*texture = TFE_Texture::get(name);
+					*texture = TFE_Texture::get(textureName);
 					if (!(*texture))
 					{
 						*texture = TFE_Texture::get("default.bm");
@@ -626,7 +626,7 @@ namespace TFE_Model_Jedi
 						if (!buffer) { return false; }
 
 						s32 num, a, b, c, d;
-						if (sscanf(buffer, "%d: %d %d %d %d", &num, &a, &b, &c, &d) != 4)
+						if (sscanf(buffer, "%d: %d %d %d %d", &num, &a, &b, &c, &d) != 5)
 						{
 							// Error.
 							return false;

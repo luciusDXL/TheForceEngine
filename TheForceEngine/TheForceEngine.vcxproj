@@ -306,6 +306,7 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\redgePairFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rflatFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rsectorFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rwallFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\fixedPoint20.h" />
@@ -313,6 +314,7 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\redgePairFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rflatFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rlightingFloat.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3dFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rwallFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.h" />
@@ -460,12 +462,14 @@
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\redgePairFixed.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rflatFixed.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rsectorFixed.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rwallFixed.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rclassicFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\redgePairFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rflatFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rlightingFloat.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3dFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rwallFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.cpp" />
