@@ -524,6 +524,8 @@ namespace TFE_JediRenderer
 				const s32 type = obj->type;
 				if (type == OBJ_TYPE_SPRITE)
 				{
+					TFE_ZONE("Draw WAX");
+
 					f32 dz = s_cameraPosZ - obj->posWS.z.f32;
 					f32 dx = s_cameraPosX - obj->posWS.x.f32;
 					s32 angle = vec2ToAngle(dx, dz);
@@ -532,10 +534,14 @@ namespace TFE_JediRenderer
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
+					TFE_ZONE("Draw 3DO");
+
 					model_draw(obj, obj->model);
 				}
 				else if (type == OBJ_TYPE_FRAME)
 				{
+					TFE_ZONE("Draw Frame");
+
 					sprite_drawFrame((u8*)obj->fme, obj->fme, obj);
 				}
 			}
