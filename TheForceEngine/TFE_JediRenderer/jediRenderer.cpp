@@ -305,55 +305,13 @@ namespace TFE_JediRenderer
 		obj->worldWidth = 0;
 		obj->worldHeight = 0;
 	}
-
+		
 	void obj3d_computeTransform(SecObject* obj)
 	{
 		// TODO: Avoid computing both fixed point and floating point object transforms, it is wasteful.
 		// It will work for now though.
-
-		// Fixed point
-		{
-			fixed16_16 sinYaw, cosYaw;
-			fixed16_16 sinPch, cosPch;
-			fixed16_16 sinRol, cosRol;
-			sinCosFixed(obj->yaw,   sinYaw, cosYaw);
-			sinCosFixed(obj->pitch, sinPch, cosPch);
-			sinCosFixed(obj->roll,  sinRol, cosRol);
-
-			obj->transform[0] = mul16(cosYaw, cosRol);
-			obj->transform[1] = mul16(cosPch, sinRol) + mul16(mul16(sinPch, sinYaw), cosPch);
-			obj->transform[2] = mul16(sinPch, sinRol) - mul16(mul16(cosPch, sinYaw), cosRol);
-
-			obj->transform[3] = -mul16(cosYaw, sinRol);
-			obj->transform[4] = mul16(cosPch, cosRol) - mul16(mul16(sinPch, sinYaw), sinRol);
-			obj->transform[5] = mul16(sinPch, cosRol) + mul16(mul16(cosPch, sinYaw), sinRol);
-
-			obj->transform[6] = sinYaw;
-			obj->transform[7] = -mul16(sinPch,cosYaw);
-			obj->transform[8] = mul16(cosPch,cosYaw);
-		}
-
-		// Floating point (more accurate).
-		{
-			f32 sinYaw, cosYaw;
-			f32 sinPch, cosPch;
-			f32 sinRol, cosRol;
-			sinCosFlt(obj->yaw, sinYaw, cosYaw);
-			sinCosFlt(obj->pitch, sinPch, cosPch);
-			sinCosFlt(obj->roll, sinRol, cosRol);
-
-			obj->transformFlt[0] = cosYaw*cosRol;
-			obj->transformFlt[1] = cosPch*sinRol + sinPch*sinYaw*cosPch;
-			obj->transformFlt[2] = sinPch*sinRol - cosPch*sinYaw*cosRol;
-
-			obj->transformFlt[3] = -cosYaw*sinRol;
-			obj->transformFlt[4] = cosPch*cosRol - sinPch*sinYaw*sinRol;
-			obj->transformFlt[5] = sinPch*cosRol + cosPch*sinYaw*sinRol;
-
-			obj->transformFlt[6] = sinYaw;
-			obj->transformFlt[7] = -sinPch*cosYaw;
-			obj->transformFlt[8] = cosPch*cosYaw;
-		}
+		computeTransformFromAngles_Fixed(obj->yaw, obj->pitch, obj->roll, obj->transform);
+		computeTransformFromAngles_Float(obj->yaw, obj->pitch, obj->roll, obj->transformFlt);
 	}
 
 	void addObject(const char* assetName, u32 gameObjId, u32 sectorId)

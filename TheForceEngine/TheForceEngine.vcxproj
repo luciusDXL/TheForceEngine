@@ -476,6 +476,7 @@
     <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rsectorGPU.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rwallGPU.cpp" />
     <ClCompile Include="TFE_JediRenderer\rcommon.cpp" />
+    <ClCompile Include="TFE_JediRenderer\rmath.cpp" />
     <ClCompile Include="TFE_JediRenderer\rscanline.cpp" />
     <ClCompile Include="TFE_JediRenderer\rsector.cpp" />
     <ClCompile Include="TFE_JediRenderer\rtexture.cpp" />

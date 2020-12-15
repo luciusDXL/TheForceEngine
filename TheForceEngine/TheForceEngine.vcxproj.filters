@@ -1044,6 +1044,9 @@
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3dFloat.cpp">
       <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\rmath.cpp">
+      <Filter>Source\TFE_JediRenderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">

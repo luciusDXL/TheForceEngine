@@ -107,6 +107,8 @@ namespace TFE_JediRenderer
 		cosValue = floatToFixed16(c);
 	}
 
+	void computeTransformFromAngles_Fixed(s16 yaw, s16 pitch, s16 roll, fixed16_16* transform);
+
 	// Float
 	inline f32 abs(f32 x)
 	{
@@ -160,4 +162,6 @@ namespace TFE_JediRenderer
 		sinValue = sinf(scale * f32(angle));
 		cosValue = cosf(scale * f32(angle));
 	}
+
+	void computeTransformFromAngles_Float(s16 yaw, s16 pitch, s16 roll, f32* transform);
 }
