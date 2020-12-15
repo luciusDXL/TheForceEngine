@@ -1,4 +1,5 @@
 #include <TFE_System/profiler.h>
+#include <TFE_RenderBackend/renderBackend.h>
 // TODO: Fix or move.
 #include <TFE_Game/level.h>
 
@@ -51,10 +52,12 @@ namespace RClassic_Float
 		}
 	}
 
-	void model_drawVertices(s32 vertexCount, vec3_float* vertices, u8 color)
+	void model_drawVertices(s32 vertexCount, vec3_float* vertices, u8 color, s32 size)
 	{
 		// cannot draw if the color is transparent.
 		if (color == 0) { return; }
+		const s32 halfSize = (size > 1) ? (size >> 1) : 0;
+		const s32 area = size * size;
 
 		// Loop through the vertices and draw them as pixels.
 		vec3_float* vertex = vertices;
@@ -76,7 +79,12 @@ namespace RClassic_Float
 				continue;
 			}
 
-			s_display[pixel_y*s_width + pixel_x] = color;
+			for (s32 i = 0; i < area; i++)
+			{
+				const s32 x = clamp(pixel_x - halfSize + (i % size), s_minScreenX, s_maxScreenX);
+				const s32 y = clamp(pixel_y - halfSize + (i / size), s_windowMinY, s_windowMaxY);
+				s_display[y*s_width + x] = color;
+			}
 		}
 	}
 
@@ -104,8 +112,12 @@ namespace RClassic_Float
 		// DEBUG: Draw all models as points.
 		//if (model->flags & MFLAG_DRAW_VERTICES)
 		{
+			// Scale the points based on the resolution ratio.
+			u32 height = TFE_RenderBackend::getVirtualDisplayHeight();
+			s32 scale = (s32)max(1, height / 200);
+
 			// If the MFLAG_DRAW_VERTICES flag is set, draw all vertices as points. 
-			model_drawVertices(model->vertexCount, s_verticesVS, model->polygons[0].color);
+			model_drawVertices(model->vertexCount, s_verticesVS, model->polygons[0].color, scale);
 			return;
 		}
 
