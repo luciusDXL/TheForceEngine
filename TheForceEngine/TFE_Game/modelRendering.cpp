@@ -105,7 +105,7 @@ namespace TFE_ModelRender
 		s_XClip[1] = s_width - 1;
 		s_YClipUpper = nullptr;
 		s_YClipLower = nullptr;
-		s_renderer->setHLineClip(s_XClip[0], s_XClip[1], s_YClipUpper, s_YClipLower);
+		if (s_renderer) { s_renderer->setHLineClip(s_XClip[0], s_XClip[1], s_YClipUpper, s_YClipLower); }
 
 		buildClipPlanes((s32)s_heightScale);
 	}

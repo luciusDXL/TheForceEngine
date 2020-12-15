@@ -306,12 +306,14 @@ namespace TFE_JediRenderer
 		obj->worldHeight = 0;
 	}
 		
-	void obj3d_computeTransform(SecObject* obj)
+	void obj3d_computeTransform_Fixed(SecObject* obj, s16 yaw, s16 pitch, s16 roll)
 	{
-		// TODO: Avoid computing both fixed point and floating point object transforms, it is wasteful.
-		// It will work for now though.
-		computeTransformFromAngles_Fixed(obj->yaw, obj->pitch, obj->roll, obj->transform);
-		computeTransformFromAngles_Float(obj->yaw, obj->pitch, obj->roll, obj->transformFlt);
+		computeTransformFromAngles_Fixed(yaw, pitch, roll, obj->transform);
+	}
+
+	void obj3d_computeTransform_Float(SecObject* obj, f32 yaw, f32 pitch, f32 roll)
+	{
+		computeTransformFromAngles_Float(yaw, pitch, roll, obj->transformFlt);
 	}
 
 	void addObject(const char* assetName, u32 gameObjId, u32 sectorId)
@@ -371,7 +373,14 @@ namespace TFE_JediRenderer
 					return;
 				}
 				obj->model = jModel;
-				obj3d_computeTransform(obj);
+				if (s_subRenderer == TSR_CLASSIC_FIXED)
+				{
+					obj3d_computeTransform_Fixed(obj, obj->yaw, obj->pitch, obj->roll);
+				}
+				else
+				{
+					obj3d_computeTransform_Float(obj, gameObj->angles.y, gameObj->angles.x, gameObj->angles.z);
+				}
 			}
 
 			s_sectors->addObject(&s_sectors->get()[sectorId], obj);
@@ -411,7 +420,7 @@ namespace TFE_JediRenderer
 					continue;
 				}
 			
-				if (curObj->type == OBJ_TYPE_FRAME || curObj->type == OBJ_TYPE_SPRITE)
+				if (curObj->type == OBJ_TYPE_FRAME || curObj->type == OBJ_TYPE_SPRITE || curObj->type == OBJ_TYPE_3D)
 				{
 					if (s_subRenderer == TSR_CLASSIC_FIXED)
 					{
@@ -432,9 +441,17 @@ namespace TFE_JediRenderer
 					curObj->frame = gameObj->frameIndex;
 					curObj->anim  = gameObj->animId;
 				}
-				else if (curObj->type == OBJ_TYPE_3D)
+
+				if (curObj->type == OBJ_TYPE_3D)
 				{
-					// TODO
+					if (s_subRenderer == TSR_CLASSIC_FIXED)
+					{
+						obj3d_computeTransform_Fixed(curObj, curObj->yaw, curObj->pitch, curObj->roll);
+					}
+					else
+					{
+						obj3d_computeTransform_Float(curObj, gameObj->angles.y, gameObj->angles.x, gameObj->angles.z);
+					}
 				}
 			}
 		}
@@ -562,7 +579,14 @@ namespace TFE_JediRenderer
 					if (!obj->model) { continue; }
 										
 					obj3d_setData(obj, obj->model);
-					obj3d_computeTransform(obj);
+					if (s_subRenderer == TSR_CLASSIC_FIXED)
+					{
+						obj3d_computeTransform_Fixed(obj, obj->yaw, obj->pitch, obj->roll);
+					}
+					else
+					{
+						obj3d_computeTransform_Float(obj, srcObj->orientation.y, srcObj->orientation.x, srcObj->orientation.z);
+					}
 				}
 				s_sectors->addObject(sector, obj);
 			}

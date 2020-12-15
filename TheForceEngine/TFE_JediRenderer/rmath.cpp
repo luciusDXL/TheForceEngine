@@ -36,7 +36,7 @@ namespace TFE_JediRenderer
 	/////////////////////////////////////////////
 	// Floating point
 	/////////////////////////////////////////////
-	void computeTransformFromAngles_Float(s16 yaw, s16 pitch, s16 roll, f32* transform)
+	void computeTransformFromAngles_Float(f32 yaw, f32 pitch, f32 roll, f32* transform)
 	{
 		f32 sinYaw, cosYaw;
 		f32 sinPch, cosPch;

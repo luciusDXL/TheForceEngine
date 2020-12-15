@@ -155,13 +155,12 @@ namespace TFE_JediRenderer
 
 	inline f32 dotFloat(vec3 v0, vec3 v1) { return v0.x.f32*v1.x.f32 + v0.y.f32*v1.y.f32 + v0.z.f32*v1.z.f32; }
 
-	// Convert from integer angle to floating point sin/cos.
-	inline void sinCosFlt(s32 angle, f32& sinValue, f32& cosValue)
+	inline void sinCosFlt(f32 angle, f32& sinValue, f32& cosValue)
 	{
-		const f32 scale = -2.0f * PI / 16484.0f;
-		sinValue = sinf(scale * f32(angle));
-		cosValue = cosf(scale * f32(angle));
+		const f32 scale = -PI / 180.0f;
+		sinValue = sinf(scale * angle);
+		cosValue = cosf(scale * angle);
 	}
 
-	void computeTransformFromAngles_Float(s16 yaw, s16 pitch, s16 roll, f32* transform);
+	void computeTransformFromAngles_Float(f32 yaw, f32 pitch, f32 roll, f32* transform);
 }
