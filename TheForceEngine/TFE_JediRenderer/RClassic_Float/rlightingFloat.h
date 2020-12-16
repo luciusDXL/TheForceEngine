@@ -11,6 +11,14 @@ namespace TFE_JediRenderer
 {
 	namespace RClassic_Float
 	{
+		struct CameraLight
+		{
+			vec3_float lightWS;
+			vec3_float lightVS;
+			f32 brightness;
+		};
+		extern CameraLight s_cameraLight[];
+
 		const u8* computeLighting(f32 depth, s32 lightOffset);
 	}
 }

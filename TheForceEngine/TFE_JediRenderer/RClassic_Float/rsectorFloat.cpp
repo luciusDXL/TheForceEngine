@@ -21,13 +21,6 @@ namespace TFE_JediRenderer
 {
 	namespace
 	{
-		void transformPointByCamera(vec3* worldPoint, vec3* viewPoint)
-		{
-			viewPoint->x.f32 = worldPoint->x.f32*s_cosYaw + worldPoint->z.f32*s_sinYaw + s_xCameraTrans;
-			viewPoint->y.f32 = worldPoint->y.f32 - s_eyeHeight;
-			viewPoint->z.f32 = worldPoint->z.f32*s_cosYaw + worldPoint->x.f32*s_negSinYaw + s_zCameraTrans;
-		}
-
 		s32 sortObjectsFloat(const void* r0, const void* r1)
 		{
 			SecObject* obj0 = *((SecObject**)r0);
@@ -227,6 +220,7 @@ namespace TFE_JediRenderer
 
 		s_sectorAmbient = roundFloat(s_curSector->ambient.f32);
 		s_scaledAmbient = (s_sectorAmbient >> 1) + (s_sectorAmbient >> 2) + (s_sectorAmbient >> 3);
+		s_sectorAmbientFraction = s_sectorAmbient << 11;	// fraction of ambient compared to max.
 
 		s_windowTop = winTop;
 		s_windowBot = winBot;
@@ -267,7 +261,7 @@ namespace TFE_JediRenderer
 
 					if (curObj->flags & OBJ_FLAG_RENDERABLE)
 					{
-						transformPointByCamera(&curObj->posWS, &curObj->posVS);
+						transformPointByCameraFloat(&curObj->posWS, &curObj->posVS);
 					}
 				}
 			TFE_ZONE_END(objXform);
@@ -1009,7 +1003,7 @@ namespace TFE_JediRenderer
 		dst->windowBotPrev = s_windowBotPrev;
 		dst->sectorAmbient = s_sectorAmbient;
 		dst->scaledAmbient = s_scaledAmbient;
-		//dst->scaledAmbient2k = s_scaledAmbient2k;
+		dst->sectorAmbientFraction = s_sectorAmbientFraction;
 	}
 
 	void TFE_Sectors_Float::restoreValues(s32 index)
@@ -1034,7 +1028,7 @@ namespace TFE_JediRenderer
 		s_windowBotPrev = src->windowBotPrev;
 		s_sectorAmbient = src->sectorAmbient;
 		s_scaledAmbient = src->scaledAmbient;
-		//s_scaledAmbient2k = src->scaledAmbient2k;
+		s_sectorAmbientFraction = src->sectorAmbientFraction;
 	}
 
 	// Switch from fixed to float.

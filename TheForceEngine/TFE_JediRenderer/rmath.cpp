@@ -5,6 +5,8 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "rmath.h"
+#include "RClassic_Fixed/rcommonFixed.h"
+#include "rcommon.h"
 
 namespace TFE_JediRenderer
 {
@@ -33,6 +35,39 @@ namespace TFE_JediRenderer
 		transform[8] = mul16(cosPch, cosYaw);
 	}
 
+	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut)
+	{
+		s32 distSq = mul16(vIn->x, vIn->x) + mul16(vIn->y, vIn->y) + mul16(vIn->z, vIn->z);
+		s32 dist = fixedSqrt(distSq);
+
+		if (dist > 0)
+		{
+			vOut->x = div16(vIn->x, dist);
+			vOut->y = div16(vIn->y, dist);
+			vOut->z = div16(vIn->z, dist);
+		}
+		else
+		{
+			vOut->x = 0;
+			vOut->y = 0;
+			vOut->z = 0;
+		}
+	}
+
+	void transformPointByCamera(vec3_fixed* worldPoint, vec3_fixed* viewPoint)
+	{
+		viewPoint->x = mul16(worldPoint->x, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->z, RClassic_Fixed::s_sinYaw_Fixed) + RClassic_Fixed::s_xCameraTrans_Fixed;
+		viewPoint->y = worldPoint->y - RClassic_Fixed::s_eyeHeight_Fixed;
+		viewPoint->z = mul16(worldPoint->z, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->x, RClassic_Fixed::s_negSinYaw_Fixed) + RClassic_Fixed::s_zCameraTrans_Fixed;
+	}
+
+	void transformPointByCameraFixed(vec3* worldPoint, vec3* viewPoint)
+	{
+		viewPoint->x.f16_16 = mul16(worldPoint->x.f16_16, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->z.f16_16, RClassic_Fixed::s_sinYaw_Fixed) + RClassic_Fixed::s_xCameraTrans_Fixed;
+		viewPoint->y.f16_16 = worldPoint->y.f16_16 - RClassic_Fixed::s_eyeHeight_Fixed;
+		viewPoint->z.f16_16 = mul16(worldPoint->z.f16_16, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->x.f16_16, RClassic_Fixed::s_negSinYaw_Fixed) + RClassic_Fixed::s_zCameraTrans_Fixed;
+	}
+
 	/////////////////////////////////////////////
 	// Floating point
 	/////////////////////////////////////////////
@@ -56,5 +91,39 @@ namespace TFE_JediRenderer
 		transform[6] = sinYaw;
 		transform[7] = -sinPch * cosYaw;
 		transform[8] = cosPch * cosYaw;
+	}
+
+	void normalizeVec3(vec3_float* vIn, vec3_float* vOut)
+	{
+		f32 distSq = vIn->x*vIn->x + vIn->y*vIn->y + vIn->z*vIn->z;
+		f32 dist = sqrtf(distSq);
+
+		if (dist > FLT_EPSILON)
+		{
+			f32 scale = 1.0f / dist;
+			vOut->x = vIn->x * scale;
+			vOut->y = vIn->y * scale;
+			vOut->z = vIn->z * scale;
+		}
+		else
+		{
+			vOut->x = 0;
+			vOut->y = 0;
+			vOut->z = 0;
+		}
+	}
+
+	void transformPointByCamera(vec3_float* worldPoint, vec3_float* viewPoint)
+	{
+		viewPoint->x = worldPoint->x*s_cosYaw + worldPoint->z*s_sinYaw + s_xCameraTrans;
+		viewPoint->y = worldPoint->y - s_eyeHeight;
+		viewPoint->z = worldPoint->z*s_cosYaw + worldPoint->x*s_negSinYaw + s_zCameraTrans;
+	}
+
+	void transformPointByCameraFloat(vec3* worldPoint, vec3* viewPoint)
+	{
+		viewPoint->x.f32 = worldPoint->x.f32*s_cosYaw + worldPoint->z.f32*s_sinYaw + s_xCameraTrans;
+		viewPoint->y.f32 = worldPoint->y.f32 - s_eyeHeight;
+		viewPoint->z.f32 = worldPoint->z.f32*s_cosYaw + worldPoint->x.f32*s_negSinYaw + s_zCameraTrans;
 	}
 }

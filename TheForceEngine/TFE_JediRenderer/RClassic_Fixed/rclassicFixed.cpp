@@ -1,5 +1,7 @@
 #include <TFE_Asset/levelAsset.h>
 #include "rcommonFixed.h"
+#include "rlightingFixed.h"
+#include "../rmath.h"
 #include "../rcommon.h"
 #include "../fixedPoint.h"
 
@@ -48,6 +50,26 @@ namespace RClassic_Fixed
 		s_halfHeight_Fixed = s_halfHeightBase_Fixed + pitchOffset;
 		s_heightInPixels = s_heightInPixelsBase + floor16(pitchOffset);
 		computeSkyOffsets();
+
+		vec3_fixed worldPoint = { 0, 0, 0 };
+		vec3_fixed viewPoint;
+		transformPointByCamera(&worldPoint, &viewPoint);
+
+		// Setup the camera lights
+		for (s32 i = 0; i < s_lightCount; i++)
+		{
+			vec3_fixed* srcDir = &s_cameraLight[i].lightWS;
+			vec3_fixed* dstDir = &s_cameraLight[i].lightVS;
+
+			vec3_fixed dst;
+			transformPointByCamera(srcDir, &dst);
+
+			dstDir->x = viewPoint.x - dst.x;
+			dstDir->y = viewPoint.y - dst.y;
+			dstDir->z = viewPoint.z - dst.z;
+
+			normalizeVec3(dstDir, dstDir);
+		}
 	}
 
 	void computeSkyOffsets()

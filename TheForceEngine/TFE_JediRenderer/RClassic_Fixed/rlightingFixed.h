@@ -11,6 +11,14 @@ namespace TFE_JediRenderer
 {
 	namespace RClassic_Fixed
 	{
+		struct CameraLight
+		{
+			vec3_fixed lightWS;
+			vec3_fixed lightVS;
+			fixed16_16 brightness;
+		};
+		extern CameraLight s_cameraLight[];
+
 		const u8* computeLighting(fixed16_16 depth, s32 lightOffset);
 	}
 }

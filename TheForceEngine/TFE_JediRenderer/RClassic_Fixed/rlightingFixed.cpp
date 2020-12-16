@@ -13,6 +13,13 @@ namespace RClassic_Fixed
 	#define LIGHT_ATTEN0 20
 	#define LIGHT_ATTEN1 21
 
+	CameraLight s_cameraLight[] =
+	{
+		{ {0, 0, ONE_16}, {0, 0, 0}, ONE_16 },
+		{ {0, ONE_16, 0}, {0, 0, 0}, ONE_16 },
+		{ {ONE_16, 0, 0}, {0, 0, 0}, ONE_16 },
+	};
+
 	const u8* computeLighting(fixed16_16 depth, s32 lightOffset)
 	{
 		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)

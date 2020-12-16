@@ -106,7 +106,7 @@ namespace TFE_JediRenderer
 		s32*    windowBotPrev;
 		s32     sectorAmbient;
 		s32     scaledAmbient;
-		s32     scaledAmbient2k;
+		s32     sectorAmbientFraction;
 	};
 
 	struct EdgePair;

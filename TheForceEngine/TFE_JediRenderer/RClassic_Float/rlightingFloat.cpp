@@ -14,6 +14,13 @@ namespace RClassic_Float
 	// A bias to mitigate the difference between fixed point and floating point lighting.
 	#define LIGHT_BIAS 0.0f
 
+	CameraLight s_cameraLight[] =
+	{
+		{ {0, 0, 1.0f}, {0, 0, 0}, 1.0f },
+		{ {0, 1.0f, 0}, {0, 0, 0}, 1.0f },
+		{ {1.0f, 0, 0}, {0, 0, 0}, 1.0f },
+	};
+
 	const u8* computeLighting(f32 depth, s32 lightOffset)
 	{
 		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)

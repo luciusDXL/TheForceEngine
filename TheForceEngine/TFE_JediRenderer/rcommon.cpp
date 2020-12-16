@@ -105,6 +105,8 @@ namespace TFE_JediRenderer
 	s32 s_scaledAmbient;
 	s32 s_cameraLightSource;
 	s32 s_worldAmbient;
+	s32 s_sectorAmbientFraction;
+	s32 s_lightCount = 3;
 
 	// Debug
 	s32 s_maxWallCount;

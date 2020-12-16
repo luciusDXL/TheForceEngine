@@ -1,6 +1,7 @@
 #include <TFE_Asset/levelAsset.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include "../rcommon.h"
+#include "rlightingFloat.h"
 #include "../fixedPoint.h"
 
 namespace TFE_JediRenderer
@@ -36,6 +37,26 @@ namespace RClassic_Float
 		s_halfHeight = s_halfHeightBase + pitchOffset;
 		s_heightInPixels = s_heightInPixelsBase + floorFloat(pitchOffset);
 		computeSkyOffsets();
+
+		vec3_float worldPoint = { 0, 0, 0 };
+		vec3_float viewPoint;
+		transformPointByCamera(&worldPoint, &viewPoint);
+
+		// Setup the camera lights
+		for (s32 i = 0; i < s_lightCount; i++)
+		{
+			vec3_float* srcDir = &s_cameraLight[i].lightWS;
+			vec3_float* dstDir = &s_cameraLight[i].lightVS;
+
+			vec3_float dst;
+			transformPointByCamera(srcDir, &dst);
+
+			dstDir->x = viewPoint.x - dst.x;
+			dstDir->y = viewPoint.y - dst.y;
+			dstDir->z = viewPoint.z - dst.z;
+
+			normalizeVec3(dstDir, dstDir);
+		}
 	}
 
 	void computeSkyOffsets()

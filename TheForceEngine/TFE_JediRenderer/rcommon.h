@@ -111,6 +111,8 @@ namespace TFE_JediRenderer
 	extern s32 s_scaledAmbient;
 	extern s32 s_cameraLightSource;
 	extern s32 s_worldAmbient;
+	extern s32 s_sectorAmbientFraction;
+	extern s32 s_lightCount;	// Number of directional lights that affect 3D objects.
 
 	// Debug
 	extern s32 s_maxWallCount;

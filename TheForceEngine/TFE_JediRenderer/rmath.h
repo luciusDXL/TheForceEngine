@@ -95,6 +95,8 @@ namespace TFE_JediRenderer
 
 	inline fixed16_16 dotFixed(vec3 v0, vec3 v1) { return mul16(v0.x.f16_16, v1.x.f16_16) + mul16(v0.y.f16_16, v1.y.f16_16) + mul16(v0.z.f16_16, v1.z.f16_16); }
 
+	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
+
 	// Convert from integer angle to fixed point sin/cos.
 	inline void sinCosFixed(s32 angle, fixed16_16& sinValue, fixed16_16& cosValue)
 	{
@@ -108,6 +110,8 @@ namespace TFE_JediRenderer
 	}
 
 	void computeTransformFromAngles_Fixed(s16 yaw, s16 pitch, s16 roll, fixed16_16* transform);
+	void transformPointByCamera(vec3_fixed* worldPoint, vec3_fixed* viewPoint);
+	void transformPointByCameraFixed(vec3* worldPoint, vec3* viewPoint);
 
 	// Float
 	inline f32 abs(f32 x)
@@ -155,6 +159,8 @@ namespace TFE_JediRenderer
 
 	inline f32 dotFloat(vec3 v0, vec3 v1) { return v0.x.f32*v1.x.f32 + v0.y.f32*v1.y.f32 + v0.z.f32*v1.z.f32; }
 
+	void normalizeVec3(vec3_float* vIn, vec3_float* vOut);
+
 	inline void sinCosFlt(f32 angle, f32& sinValue, f32& cosValue)
 	{
 		const f32 scale = -PI / 180.0f;
@@ -163,4 +169,6 @@ namespace TFE_JediRenderer
 	}
 
 	void computeTransformFromAngles_Float(f32 yaw, f32 pitch, f32 roll, f32* transform);
+	void transformPointByCamera(vec3_float* worldPoint, vec3_float* viewPoint);
+	void transformPointByCameraFloat(vec3* worldPoint, vec3* viewPoint);
 }
