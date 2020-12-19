@@ -29,6 +29,8 @@ namespace RClassic_Fixed
 	fixed16_16 s_negSinYaw_Fixed;
 	fixed16_16 s_cameraYaw_Fixed;
 	fixed16_16 s_cameraPitch_Fixed;
+	fixed16_16 s_yPlaneTop;
+	fixed16_16 s_yPlaneBot;
 	fixed16_16 s_skyYawOffset_Fixed;
 	fixed16_16 s_skyPitchOffset_Fixed;
 	fixed16_16* s_skyTable_Fixed;

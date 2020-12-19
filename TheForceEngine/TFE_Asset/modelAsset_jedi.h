@@ -11,12 +11,12 @@
 
 struct Texture;
 
-enum PolygonShading
+enum PolygonShadingFlags
 {
 	PSHADE_FLAT = 0,
 	PSHADE_GOURAUD = 1,
 	PSHADE_TEXTURE = 2,
-	PSHADE_GOURAUD_TEXTURE = 3,
+	PSHADE_GOURAUD_TEXTURE = PSHADE_GOURAUD | PSHADE_TEXTURE,
 	PSHADE_PLANE = 4,
 };
 
@@ -47,7 +47,7 @@ struct Polygon
 	s32 vertexCount;
 	s32* indices;
 	vec2* uv;
-	s32 p20;
+	s32 zAve;
 	s32 p24;
 };
 
