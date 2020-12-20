@@ -1099,10 +1099,12 @@ namespace RClassic_Fixed
 
 		for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX && s_columnX <= s_maxScreenX; s_columnX++)
 		{
-			fixed16_16 edgeAveZ0 = (s_edgeBot_Z0 + s_edgeTop_Z0) >> 1;
+			//fixed16_16 edgeAveZ0 = (s_edgeBot_Z0 + s_edgeTop_Z0) >> 1;
+			// This produces more accurate results, look into the difference (it might be a difference between gouraud and textured).
+			fixed16_16 edgeAveZ0 = min(s_edgeBot_Z0, s_edgeTop_Z0);
 			fixed16_16 z = s_depth1d_Fixed[s_columnX];
 
-			// Is edge vertex 0 occluded by walls? Is edge vertex 0 outside of the vertical area?
+			// Is ave edge Z occluded by walls? Is edge vertex 0 outside of the vertical area?
 			if (edgeAveZ0 < z && s_edgeTopY0_Pixel <= s_windowMaxY && s_edgeBotY0_Pixel >= s_windowMinY)
 			{
 				s32 winTop = s_objWindowTop[s_columnX];
@@ -1131,7 +1133,7 @@ namespace RClassic_Fixed
 					{
 						s_col_I0 = mul16(yOffset, s_col_dIdY) + s_edgeBot_I0;
 					}
-					s_dither = ((s_columnX & 1) ^ (y0_Bot & 1)) + 1;
+					s_dither = ((s_columnX & 1) ^ (y0_Bot & 1)) - 1;
 					model_drawColumnColor();
 				}
 			}
@@ -1150,8 +1152,6 @@ namespace RClassic_Fixed
 				s_edgeTop_Y0 += s_edgeTop_dYdX;
 				s_edgeTopY0_Pixel = round16(s_edgeTop_Y0);
 				s_edgeTop_Z0 += s_edgeTop_dZdX;
-				// Bug?
-				s_edgeBot_Z0 += s_edgeBot_dZdX;
 			}
 			if (foundEdge == 0)
 			{
@@ -1166,11 +1166,9 @@ namespace RClassic_Fixed
 					if (s_edgeBot_I0 < 0) { s_edgeBot_I0 = 0; }
 					if (s_edgeBot_I0 > VSHADE_MAX_INTENSITY) { s_edgeBot_I0 = VSHADE_MAX_INTENSITY; }
 
-					s_edgeBotY0 += s_edgeBot_dYdX;	// edx
-					s_edgeBotY0_Pixel = round16(s_edgeBotY0);	// eax
-
-					// Z should probably be adjusted here instead of in the other case above... (This is probably a bug)
-					// This should be here: s_edgeBot_Z0 += s_edgeBot_dZdX;
+					s_edgeBotY0 += s_edgeBot_dYdX;
+					s_edgeBotY0_Pixel = round16(s_edgeBotY0);
+					s_edgeBot_Z0 += s_edgeBot_dZdX;
 				}
 			}
 		}
