@@ -19,17 +19,26 @@ namespace RClassic_Fixed
 	#define VSHADE_MAX_INTENSITY (31 * ONE_16)
 	#define POLY_MAX_VTX_COUNT 32
 
-	// Viewspace vectors.
+	enum
+	{
+		POLYGON_FRONT_FACING = 0,
+		POLYGON_BACK_FACING,
+	};
+
+	// Vertex attributes transformed to viewspace.
 	static vec3_fixed s_verticesVS[MAX_VERTEX_COUNT_3DO];
 	static vec3_fixed s_vertexNormalsVS[MAX_VERTEX_COUNT_3DO];
-	static vec3_fixed s_polygonNormalsVS[MAX_POLYGON_COUNT_3DO];
-	// Projected coordinates.
-	static vec3_fixed s_verticesProj[POLY_MAX_VTX_COUNT];
-	// Lighting
+	// Vertex Lighting.
 	static fixed16_16 s_vertexIntensity[MAX_VERTEX_COUNT_3DO];
-	// List of visible polygons
+	// Polygon normals in viewspace (used for culling).
+	static vec3_fixed s_polygonNormalsVS[MAX_POLYGON_COUNT_3DO];
+
+	// List of potentially visible polygons (after backface culling).
 	static Polygon* s_visPolygons[MAX_POLYGON_COUNT_3DO];
-	// List of polygon vertex values
+
+	// Per-polygon projected coordinates.
+	static vec3_fixed s_verticesProj[POLY_MAX_VTX_COUNT];
+	// Per-polygon vertex values
 	static vec3_fixed s_polygonVertices[POLY_MAX_VTX_COUNT];
 	static vec2_fixed s_polygonUv[POLY_MAX_VTX_COUNT];
 	static fixed16_16 s_polygonIntensity[POLY_MAX_VTX_COUNT];
@@ -37,8 +46,8 @@ namespace RClassic_Fixed
 	/////////////////////////////////////////////
 	// Clipping
 	/////////////////////////////////////////////
-	static fixed16_16 s_clipIntensityBuffer[32];	// a buffer to hold clipped/final intensities
-	static vec3_fixed s_clipPosBuffer[32];			// a buffer to hold clipped/final positions
+	static fixed16_16 s_clipIntensityBuffer[POLY_MAX_VTX_COUNT];	// a buffer to hold clipped/final intensities
+	static vec3_fixed s_clipPosBuffer[POLY_MAX_VTX_COUNT];			// a buffer to hold clipped/final positions
 
 	static fixed16_16   s_clipY0;
 	static fixed16_16   s_clipY1;
@@ -136,7 +145,7 @@ namespace RClassic_Fixed
 		}
 	}
 
-	fixed16_16 model_dotProduct(vec3_fixed* pos, vec3_fixed* normal, vec3_fixed* dir)
+	fixed16_16 model_dotProduct(const vec3_fixed* pos, const vec3_fixed* normal, const vec3_fixed* dir)
 	{
 		fixed16_16 nx = normal->x - pos->x;
 		fixed16_16 ny = normal->y - pos->y;
@@ -153,15 +162,15 @@ namespace RClassic_Fixed
 		return ndx + ndy + ndz;
 	}
 
-	fixed16_16 dot(vec3_fixed* v0, vec3_fixed* v1)
+	fixed16_16 dot(const vec3_fixed* v0, const vec3_fixed* v1)
 	{
 		return mul16(v0->x, v1->x) + mul16(v0->y, v1->y) + mul16(v0->z, v1->z);
 	}
 
-	void model_shadeVertices(s32 vertexCount, fixed16_16* outShading, vec3_fixed* vertices, vec3_fixed* normals)
+	void model_shadeVertices(s32 vertexCount, fixed16_16* outShading, const vec3_fixed* vertices, const vec3_fixed* normals)
 	{
-		vec3_fixed* normal = normals;
-		vec3_fixed* vertex = vertices;
+		const vec3_fixed* normal = normals;
+		const vec3_fixed* vertex = vertices;
 		for (s32 i = 0; i < vertexCount; i++, normal++, vertex++, outShading++)
 		{
 			fixed16_16 intensity = 0;
@@ -202,24 +211,13 @@ namespace RClassic_Fixed
 			*outShading = intensity;
 		}
 	}
-
-	enum
+		
+	s32 getPolygonFacing(const vec3_fixed* normal, const vec3_fixed* pos)
 	{
-		POLYGON_FRONT_FACING = 0,
-		POLYGON_BACK_FACING,
-	};
-
-	s32 getPolygonFacing(vec3_fixed* normal, vec3_fixed* pos)
-	{
-		vec3_fixed offset;
-		offset.x = -pos->x;
-		offset.y = -pos->y;
-		offset.z = -pos->z;
-
-		fixed16_16 d = dot(normal, &offset);
-		return d < 0 ? POLYGON_BACK_FACING : POLYGON_FRONT_FACING;
+		const vec3_fixed offset = { -pos->x, -pos->y, -pos->z };
+		return dot(normal, &offset) < 0 ? POLYGON_BACK_FACING : POLYGON_FRONT_FACING;
 	}
-
+	
 	s32 polygonSort(const void* r0, const void* r1)
 	{
 		Polygon* p0 = *((Polygon**)r0);
@@ -227,13 +225,13 @@ namespace RClassic_Fixed
 		return p1->zAve - p0->zAve;
 	}
 
-	void model_drawVertices(s32 vertexCount, vec3_fixed* vertices, u8 color)
+	void model_drawVertices(s32 vertexCount, const vec3_fixed* vertices, u8 color)
 	{
 		// cannot draw if the color is transparent.
 		if (color == 0) { return; }
 
 		// Loop through the vertices and draw them as pixels.
-		vec3_fixed* vertex = vertices;
+		const vec3_fixed* vertex = vertices;
 		for (s32 v = 0; v < vertexCount; v++, vertex++)
 		{
 			fixed16_16 z = vertex->z;
@@ -504,7 +502,7 @@ namespace RClassic_Fixed
 		}
 		s32 srcVertexCount = model_swapClipBuffers(outVertexCount);
 		outVertexCount = 0;
-				
+
 		///////////////////////////////////////////////////
 		// Left Clip Plane
 		///////////////////////////////////////////////////
@@ -526,6 +524,7 @@ namespace RClassic_Fixed
 			{
 				s_clipPosOut[outVertexCount] = *s_clipPos0;
 				s_clipIntensityOut[outVertexCount] = *s_clipIntensity0;
+				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
 				outVertexCount++;
 			}
 
@@ -578,6 +577,7 @@ namespace RClassic_Fixed
 				s_clipPosOut[outVertexCount].x = s_clipIntersectX;
 				s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);
 				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
+				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
 
 				fixed16_16 i0 = *s_clipIntensity0;
 				fixed16_16 i1 = *s_clipIntensity1;
@@ -619,6 +619,7 @@ namespace RClassic_Fixed
 			{
 				s_clipPosOut[outVertexCount] = *s_clipPos0;
 				s_clipIntensityOut[outVertexCount] = *s_clipIntensity0;
+				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
 				outVertexCount++;
 			}
 
@@ -672,6 +673,7 @@ namespace RClassic_Fixed
 				s_clipPosOut[outVertexCount].x = s_clipIntersectX;
 				s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);	// edx
 				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
+				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
 
 				fixed16_16 i0 = *s_clipIntensity0;
 				fixed16_16 i1 = *s_clipIntensity1;
@@ -688,16 +690,7 @@ namespace RClassic_Fixed
 		{
 			return 0;
 		}
-
-		// DEBUG: -- Only clip against the near plane.
-		if (pos != s_clipPosOut)
-		{
-			memcpy(pos, s_clipPosOut, outVertexCount * sizeof(vec3_fixed));
-			memcpy(intensity, s_clipIntensityOut, outVertexCount * sizeof(fixed16_16));
-		}
-		return outVertexCount;
-		// DEBUG END
-
+				
 		srcVertexCount = model_swapClipBuffers(outVertexCount);
 		outVertexCount = 0;
 

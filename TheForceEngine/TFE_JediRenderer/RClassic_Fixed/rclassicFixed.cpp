@@ -14,6 +14,8 @@ namespace RClassic_Fixed
 
 	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId)
 	{
+		// TODO: Remap input pitch to match Dark Forces limits, it should range from -1.5315f, 1.5315f (scale 1.95)
+
 		// Convert camera parameters to fixed point.
 		const fixed16_16 yawFixed = floatAngleToFixed(yaw);
 		const fixed16_16 pchFixed = floatAngleToFixed(pitch);
@@ -50,8 +52,8 @@ namespace RClassic_Fixed
 		s_halfHeight_Fixed = s_halfHeightBase_Fixed + pitchOffset;
 		s_heightInPixels = s_heightInPixelsBase + floor16(pitchOffset);
 		computeSkyOffsets();
-				
-		fixed16_16 yMaxFixed = (s_heightInPixels - 2) << 16;	// should be 198
+
+		fixed16_16 yMaxFixed = (s_heightInPixelsBase - 2) << 16;	// should be 198
 		s_yPlaneBot =  div16((yMaxFixed >> 1) - pitchOffset, s_focalLength_Fixed);
 		s_yPlaneTop = -div16((yMaxFixed >> 1) + pitchOffset, s_focalLength_Fixed);
 
