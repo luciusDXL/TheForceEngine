@@ -180,7 +180,7 @@ namespace TFE_Model_Jedi
 		fixed16_16 maxDist = 0;
 		for (s32 v = 0; v < model->vertexCount; v++, vertex++)
 		{
-			const fixed16_16 distSq = vertex->x*vertex->x + vertex->y*vertex->y + vertex->z*vertex->z;
+			const fixed16_16 distSq = mul16(vertex->x,vertex->x) + mul16(vertex->y,vertex->y) + mul16(vertex->z,vertex->z);
 			const fixed16_16 dist = fixedSqrt(distSq);
 			if (dist > maxDist)
 			{
