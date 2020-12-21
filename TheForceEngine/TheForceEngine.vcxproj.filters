@@ -640,6 +640,9 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3dFloat.h">
       <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderBackend\Win32OpenGL\screenCapture.h">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1046,6 +1049,9 @@
     </ClCompile>
     <ClCompile Include="TFE_JediRenderer\rmath.cpp">
       <Filter>Source\TFE_JediRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\screenCapture.cpp">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

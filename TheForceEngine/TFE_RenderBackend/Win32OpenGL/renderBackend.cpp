@@ -9,6 +9,7 @@
 #include <TFE_PostProcess/blit.h>
 #include <TFE_PostProcess/postprocess.h>
 #include "renderTarget.h"
+#include "screenCapture.h"
 #include <SDL.h>
 #include <GL/glew.h>
 #include <stdio.h>
@@ -28,12 +29,12 @@ namespace TFE_RenderBackend
 	// Screenshot stuff... needs to be refactored.
 	static char s_screenshotPath[TFE_MAX_PATH];
 	static bool s_screenshotQueued = false;
-	static u32* s_screenshotBuffer = nullptr;
 
 	static WindowState m_windowState;
 	static void* m_window;
 	static DynamicTexture* s_virtualDisplay = nullptr;
 	static DynamicTexture* s_palette = nullptr;
+	static ScreenCapture*  s_screenCapture = nullptr;
 
 	static u32 s_virtualWidth, s_virtualHeight;
 	static u32 s_virtualWidthUi;
@@ -116,6 +117,9 @@ namespace TFE_RenderBackend
 		s_palette = new DynamicTexture();
 		s_palette->create(256, 1, 2);
 
+		s_screenCapture = new ScreenCapture();
+		s_screenCapture->create(m_windowState.width, m_windowState.height, 4);
+
 		TFE_RenderState::clear();
 
 		return m_window != nullptr;
@@ -123,6 +127,8 @@ namespace TFE_RenderBackend
 
 	void destroy()
 	{
+		delete s_screenCapture;
+
 		// TODO: Move effect destruction into post effect system.
 		s_postEffectBlit->destroy();
 		delete s_postEffectBlit;
@@ -166,15 +172,11 @@ namespace TFE_RenderBackend
 		if (s_screenshotQueued)
 		{
 			s_screenshotQueued = false;
-			s_screenshotBuffer = (u32*)realloc(s_screenshotBuffer, m_windowState.width * m_windowState.height * 4u);
-
-			glReadBuffer(GL_BACK);
-			glReadPixels(0, 0, m_windowState.width, m_windowState.height, GL_RGBA, GL_UNSIGNED_BYTE, s_screenshotBuffer);
-
-			TFE_Image::writeImage(s_screenshotPath, m_windowState.width, m_windowState.height, s_screenshotBuffer);
+			s_screenCapture->captureFrame(s_screenshotPath);
 		}
+		s_screenCapture->update();
 	}
-		
+
 	void queueScreenshot(const char* screenshotPath)
 	{
 		strcpy(s_screenshotPath, screenshotPath);
@@ -209,6 +211,8 @@ namespace TFE_RenderBackend
 		}
 		glViewport(0, 0, width, height);
 		setupPostEffectChain();
+
+		s_screenCapture->resize(width, height);
 	}
 
 	void enableFullscreen(bool enable)
@@ -249,6 +253,7 @@ namespace TFE_RenderBackend
 
 		glViewport(0, 0, m_windowState.width, m_windowState.height);
 		setupPostEffectChain();
+		s_screenCapture->resize(m_windowState.width, m_windowState.height);
 	}
 
 	void getDisplayInfo(DisplayInfo* displayInfo)
