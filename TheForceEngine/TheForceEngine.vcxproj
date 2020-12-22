@@ -235,6 +235,7 @@
     <ClInclude Include="TFE_Asset\colormapAsset.h" />
     <ClInclude Include="TFE_Asset\fontAsset.h" />
     <ClInclude Include="TFE_Asset\gameMessages.h" />
+    <ClInclude Include="TFE_Asset\gifWriter.h" />
     <ClInclude Include="TFE_Asset\gmidAsset.h" />
     <ClInclude Include="TFE_Asset\imageAsset.h" />
     <ClInclude Include="TFE_Asset\infAsset.h" />
@@ -244,6 +245,7 @@
     <ClInclude Include="TFE_Asset\logicTypes.h" />
     <ClInclude Include="TFE_Asset\modelAsset.h" />
     <ClInclude Include="TFE_Asset\modelAsset_jedi.h" />
+    <ClInclude Include="TFE_Asset\msf_gif.h" />
     <ClInclude Include="TFE_Asset\paletteAsset.h" />
     <ClInclude Include="TFE_Asset\spriteAsset.h" />
     <ClInclude Include="TFE_Asset\spriteAsset_Jedi.h" />
@@ -399,6 +401,7 @@
     <ClCompile Include="TFE_Asset\colormapAsset.cpp" />
     <ClCompile Include="TFE_Asset\fontAsset.cpp" />
     <ClCompile Include="TFE_Asset\gameMessages.cpp" />
+    <ClCompile Include="TFE_Asset\gifWriter.cpp" />
     <ClCompile Include="TFE_Asset\gmidAsset.cpp" />
     <ClCompile Include="TFE_Asset\imageAsset.cpp" />
     <ClCompile Include="TFE_Asset\infAsset.cpp" />

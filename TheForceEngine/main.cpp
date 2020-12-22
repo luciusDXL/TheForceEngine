@@ -140,6 +140,29 @@ void handleEvent(SDL_Event& Event)
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
 				}
+				else if (code == KeyboardCode::KEY_F5 && (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)))
+				{
+					static u64 _gifIndex = 0;
+					static bool _recording = false;
+
+					if (!_recording)
+					{
+						char screenshotDir[TFE_MAX_PATH];
+						TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
+
+						char gifPath[TFE_MAX_PATH];
+						sprintf(gifPath, "%stfe_gif_%s_%llu.gif", screenshotDir, s_screenshotTime, _gifIndex);
+						_gifIndex++;
+
+						TFE_RenderBackend::startGifRecording(gifPath);
+						_recording = true;
+					}
+					else
+					{
+						TFE_RenderBackend::stopGifRecording();
+						_recording = false;
+					}
+				}
 			}
 		} break;
 		case SDL_TEXTINPUT:

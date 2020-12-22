@@ -643,6 +643,12 @@
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\screenCapture.h">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Asset\gifWriter.h">
+      <Filter>Source\TFE_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Asset\msf_gif.h">
+      <Filter>Source\TFE_Asset</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1052,6 +1058,9 @@
     </ClCompile>
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\screenCapture.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Asset\gifWriter.cpp">
+      <Filter>Source\TFE_Asset</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

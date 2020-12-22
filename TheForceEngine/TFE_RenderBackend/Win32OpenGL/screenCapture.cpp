@@ -1,7 +1,9 @@
 #include "screenCapture.h"
 #include "openGL_Caps.h"
+#include "../renderBackend.h"
 #include <TFE_System/system.h>
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
+#include <TFE_Asset/gifWriter.h>
 #include <GL/glew.h>
 #include <assert.h>
 
@@ -12,6 +14,7 @@
 #endif
 #define CAPTURE_FRAME_DELAY 3
 #define FLUSH_READ_COUNT 1
+#define RECORD_FLUSH_COUNT 1
 
 namespace
 {
@@ -91,6 +94,36 @@ bool ScreenCapture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* = 
 
 void ScreenCapture::update(bool flush)
 {
+	// Automatically capture frames when recording.
+	if (m_recordingStarted)
+	{
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		f64 recordingTime = 0.0;
+		if (displayInfo.refreshRate)
+		{
+			recordingTime = f64(m_frame - m_recordingFrameStart) / f64(displayInfo.refreshRate);
+		}
+		else if (m_recordingTimeStart == 0.0f)
+		{
+			m_recordingTimeStart = TFE_System::getTime();
+			recordingTime = 0.0f;
+		}
+		else
+		{
+			recordingTime = f32(TFE_System::getTime() - m_recordingTimeStart);
+		}
+
+		f64 recordingFrame = floor(recordingTime * m_recordingFramerate);
+		if (m_recordingFrameLast != recordingFrame)
+		{
+			captureFrame("");
+			m_recordingFrameLast = recordingFrame;
+		}
+	}
+
+	// Handle capture
 	m_frame++;
 	if (!m_captureCount) { return; }
 	
@@ -123,7 +156,13 @@ void ScreenCapture::update(bool flush)
 		m_captureCount--;
 	}
 
-	if (m_readCount >= FLUSH_READ_COUNT || flush)
+	// Handle write to disk or adding a frame to the recording.
+	if (m_recordingStarted && (m_readCount >= RECORD_FLUSH_COUNT || flush))
+	{
+		// Save the images.
+		recordImages();
+	}
+	else if (!m_recordingStarted && (m_readCount >= FLUSH_READ_COUNT || flush))
 	{
 		writeFramesToDisk();
 	}
@@ -148,14 +187,45 @@ void ScreenCapture::captureFrame(const char* outputPath)
 	m_writeBuffer = (m_writeBuffer + 1) % m_bufferCount;
 }
 
+void ScreenCapture::beginRecording(const char* path)
+{
+	m_recordingStarted = true;
+	m_recordingFrame = 0;
+	m_recordingFrameStart = m_frame;
+	m_recordingTimeStart = 0.0;
+	m_recordingFrameLast = -1.0;
+
+	TFE_GIF::startGif(path, m_width, m_height, (u32)m_recordingFramerate);
+}
+
+void ScreenCapture::endRecording()
+{
+	update(true);
+	m_recordingStarted = false;
+
+	TFE_GIF::write();
+}
+
 void ScreenCapture::writeFramesToDisk()
 {
 	if (!m_readCount) { return; }
 
 	for (u32 i = 0; i < m_readCount; i++)
 	{
-		u32 index = m_readIndex[i];
+		const u32 index = m_readIndex[i];
 		TFE_Image::writeImage(m_captures[index].outputPath.c_str(), m_width, m_height, (u32*)m_captures[index].imageData.data());
+	}
+	m_readCount = 0;
+}
+
+void ScreenCapture::recordImages()
+{
+	if (!m_readCount) { return; }
+
+	for (u32 i = 0; i < m_readCount; i++)
+	{
+		const u32 index = m_readIndex[i];
+		TFE_GIF::addFrame(m_captures[index].imageData.data());
 	}
 	m_readCount = 0;
 }

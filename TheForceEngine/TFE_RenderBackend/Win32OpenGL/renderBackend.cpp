@@ -182,6 +182,16 @@ namespace TFE_RenderBackend
 		strcpy(s_screenshotPath, screenshotPath);
 		s_screenshotQueued = true;
 	}
+		
+	void startGifRecording(const char* path)
+	{
+		s_screenCapture->beginRecording(path);
+	}
+
+	void stopGifRecording()
+	{
+		s_screenCapture->endRecording();
+	}
 
 	void updateSettings()
 	{
