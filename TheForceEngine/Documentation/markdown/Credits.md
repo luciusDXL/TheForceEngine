@@ -27,10 +27,6 @@ imGUI
 [https://github.com/ocornut/imgui](https://github.com/ocornut/imgui)
 License: MIT
 
-imGUI File Dialog, modified to fit The Force Engine use case.
-[https://github.com/gallickgunner/ImGui-Addons](https://github.com/gallickgunner/ImGui-Addons)
-License: MIT
-
 imGUI Markdown
 [https://github.com/juliettef/imgui_markdown](https://github.com/juliettef/imgui_markdown)
 License: ZLIB
@@ -66,3 +62,6 @@ License: Custom
 [https://www.angelcode.com/angelscript/](https://www.angelcode.com/angelscript/)
 License: ZLIB
 
+**Other**
+https://github.com/notnullnotvoid/msf_gif
+License: MIT
