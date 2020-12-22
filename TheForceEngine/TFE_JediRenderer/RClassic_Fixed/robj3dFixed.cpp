@@ -25,21 +25,28 @@ namespace RClassic_Fixed
 		POLYGON_BACK_FACING,
 	};
 
+	/////////////////////////////////////////////
+	// Vertex Processing
+	/////////////////////////////////////////////
 	// Vertex attributes transformed to viewspace.
 	static vec3_fixed s_verticesVS[MAX_VERTEX_COUNT_3DO];
 	static vec3_fixed s_vertexNormalsVS[MAX_VERTEX_COUNT_3DO];
 	// Vertex Lighting.
 	static fixed16_16 s_vertexIntensity[MAX_VERTEX_COUNT_3DO];
+
+	/////////////////////////////////////////////
+	// Polygon Processing
+	/////////////////////////////////////////////
 	// Polygon normals in viewspace (used for culling).
 	static vec3_fixed s_polygonNormalsVS[MAX_POLYGON_COUNT_3DO];
-
 	// List of potentially visible polygons (after backface culling).
 	static Polygon* s_visPolygons[MAX_POLYGON_COUNT_3DO];
 
-	// Per-polygon projected coordinates.
-	static vec3_fixed s_verticesProj[POLY_MAX_VTX_COUNT];
-	// Per-polygon vertex values
-	static vec3_fixed s_polygonVertices[POLY_MAX_VTX_COUNT];
+	/////////////////////////////////////////////
+	// Per-Polygon Setup
+	/////////////////////////////////////////////
+	static vec3_fixed s_polygonVerticesVS[POLY_MAX_VTX_COUNT];
+	static vec3_fixed s_polygonVerticesProj[POLY_MAX_VTX_COUNT];
 	static vec2_fixed s_polygonUv[POLY_MAX_VTX_COUNT];
 	static fixed16_16 s_polygonIntensity[POLY_MAX_VTX_COUNT];
 
@@ -48,44 +55,50 @@ namespace RClassic_Fixed
 	/////////////////////////////////////////////
 	static fixed16_16 s_clipIntensityBuffer[POLY_MAX_VTX_COUNT];	// a buffer to hold clipped/final intensities
 	static vec3_fixed s_clipPosBuffer[POLY_MAX_VTX_COUNT];			// a buffer to hold clipped/final positions
+	static vec2_fixed s_clipUvBuffer[POLY_MAX_VTX_COUNT];			// a buffer to hold clipped/final texture coordinates
 
-	static fixed16_16   s_clipY0;
-	static fixed16_16   s_clipY1;
-	static fixed16_16   s_clipParam0;
-	static fixed16_16   s_clipParam1;
-	static fixed16_16   s_clipIntersectY;
-	static fixed16_16   s_clipIntersectZ;
-	static vec3_fixed*  s_clipTempPos;
-	static fixed16_16   s_clipPlanePos0;
-	static fixed16_16   s_clipPlanePos1;
-	static fixed16_16*  s_clipTempIntensity;
-	static fixed16_16*  s_clipIntensitySrc;
-	static fixed16_16*  s_clipIntensity0;
-	static fixed16_16*  s_clipIntensity1;
-	static fixed16_16   s_clipParam;
-	static fixed16_16   s_clipIntersectX;
-	static vec3_fixed*  s_clipPos0;
-	static vec3_fixed*  s_clipPos1;
-	static vec3_fixed*  s_clipPosSrc;
-	static vec3_fixed*  s_clipPosOut;
-	static fixed16_16*  s_clipIntensityOut;
+	static fixed16_16  s_clipY0;
+	static fixed16_16  s_clipY1;
+	static fixed16_16  s_clipParam0;
+	static fixed16_16  s_clipParam1;
+	static fixed16_16  s_clipIntersectY;
+	static fixed16_16  s_clipIntersectZ;
+	static vec3_fixed* s_clipTempPos;
+	static fixed16_16  s_clipPlanePos0;
+	static fixed16_16  s_clipPlanePos1;
+	static fixed16_16* s_clipTempIntensity;
+	static fixed16_16* s_clipIntensitySrc;
+	static fixed16_16* s_clipIntensity0;
+	static fixed16_16* s_clipIntensity1;
+	static fixed16_16  s_clipParam;
+	static fixed16_16  s_clipIntersectX;
+	static vec3_fixed* s_clipPos0;
+	static vec3_fixed* s_clipPos1;
+	static vec3_fixed* s_clipPosSrc;
+	static vec3_fixed* s_clipPosOut;
+	static fixed16_16* s_clipIntensityOut;
 
 	////////////////////////////////////////////////
 	// Polygon Drawing
 	////////////////////////////////////////////////
-	static u8    s_polyColorIndex;
-	static s32   s_dither;
-	static s32   s_polyVertexCount;
-	static const u8* s_polyColorMap;
+	// Polygon
+	static u8  s_polyColorIndex;
+	static s32 s_polyVertexCount;
+	static s32 s_polyMaxXIndex;
+	static fixed16_16* s_polyIntensity;
+	static vec3_fixed* s_polyProjVtx;
+	static const u8*   s_polyColorMap;
 
-	static s32   s_columnX;
-	static s32   s_polyMaxXIndex;
-
-	static s32   s_columnHeight;
-	static u8*   s_pcolumnOut;
-
+	// Column
+	static s32 s_columnX;
+	static s32 s_columnHeight;
+	static s32 s_dither;
+	static u8* s_pcolumnOut;
+		
 	static fixed16_16  s_col_I0;
 	static fixed16_16  s_col_dIdY;
+
+	// Polygon Edges
 	static fixed16_16  s_ditherOffset;
 	static fixed16_16  s_edgeBot_Z0;
 	static fixed16_16  s_edgeBot_dZdX;
@@ -93,8 +106,6 @@ namespace RClassic_Fixed
 	static fixed16_16  s_edgeBot_I0;
 	static fixed16_16  s_edgeBot_dYdX;
 	static fixed16_16  s_edgeBotY0;
-	static fixed16_16* s_polyIntensity;
-	static vec3_fixed* s_polyProjVtx;
 	static fixed16_16  s_edgeTop_dIdX;
 	static fixed16_16  s_edgeTop_dYdX;
 	static fixed16_16  s_edgeTop_Z0;
@@ -355,7 +366,7 @@ namespace RClassic_Fixed
 			// Copy polygon vertices.
 			for (s32 v = 0; v < vertexCount; v++)
 			{
-				s_polygonVertices[v] = s_verticesVS[polygon->indices[v]];
+				s_polygonVerticesVS[v] = s_verticesVS[polygon->indices[v]];
 			}
 
 			// Copy uvs if required.
@@ -379,11 +390,11 @@ namespace RClassic_Fixed
 			// Handle shading modes...
 			if (shading == PSHADE_GOURAUD)
 			{
-				s32 vertexCount = model_clipPolygonGouraud(s_polygonVertices, s_polygonIntensity, polygon->vertexCount);
+				s32 vertexCount = model_clipPolygonGouraud(s_polygonVerticesVS, s_polygonIntensity, polygon->vertexCount);
 				if (vertexCount < 3) { continue; }
 
-				model_projectVertices(s_polygonVertices, vertexCount, s_verticesProj);
-				model_drawColorPolygon(s_verticesProj, s_polygonIntensity, vertexCount, polygon->color);
+				model_projectVertices(s_polygonVerticesVS, vertexCount, s_polygonVerticesProj);
+				model_drawColorPolygon(s_polygonVerticesProj, s_polygonIntensity, vertexCount, polygon->color);
 			}
 		}
 	}
