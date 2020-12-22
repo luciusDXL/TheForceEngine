@@ -171,6 +171,7 @@ void ScreenCapture::freeBuffers()
 		delete[] m_stagingBuffers;
 	}
 	delete[] m_readIndex;
+	m_readIndex = nullptr;
 
 	m_bufferCount = 0;
 }
