@@ -105,7 +105,7 @@ namespace RClassic_Fixed
 	static fixed16_16  s_edgeBot_dIdX;
 	static fixed16_16  s_edgeBot_I0;
 	static fixed16_16  s_edgeBot_dYdX;
-	static fixed16_16  s_edgeBotY0;
+	static fixed16_16  s_edgeBot_Y0;
 	static fixed16_16  s_edgeTop_dIdX;
 	static fixed16_16  s_edgeTop_dYdX;
 	static fixed16_16  s_edgeTop_Z0;
@@ -192,14 +192,19 @@ namespace RClassic_Fixed
 			else
 			{
 				fixed16_16 lightIntensity = intensity;
+
+				// Lighting
 				for (s32 i = 0; i < s_lightCount; i++)
 				{
-					vec3_fixed dir;
-					CameraLight* light = &s_cameraLight[i];
-					dir.x = vertex->x + light->lightVS.x;
-					dir.y = vertex->y + light->lightVS.y;
-					dir.z = vertex->z + light->lightVS.z;
-					fixed16_16 I = model_dotProduct(vertex, normal, &dir);
+					const CameraLight* light = &s_cameraLight[i];
+					const vec3_fixed dir =
+					{
+						vertex->x + light->lightVS.x,
+						vertex->y + light->lightVS.y,
+						vertex->z + light->lightVS.z
+					};
+
+					const fixed16_16 I = model_dotProduct(vertex, normal, &dir);
 					if (I > 0)
 					{
 						s32 source = light->brightness;
@@ -208,14 +213,15 @@ namespace RClassic_Fixed
 					}
 				}
 				intensity += mul16(lightIntensity, s_sectorAmbientFraction);
-				s32 z = max(0, vertex->z);
+
+				// Distance falloff
+				const s32 z = max(0, vertex->z);
 				if (/*s_worldAtten < 31 || */s_cameraLightSource != 0)
 				{
 					// TODO
 				}
 
-				s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
-
+				const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
 				intensity = max(intToFixed16(s_sectorAmbient), intensity) - falloff;
 				intensity = clamp(intensity, s_scaledAmbient, VSHADE_MAX_INTENSITY);
 			}
@@ -484,8 +490,8 @@ namespace RClassic_Fixed
 			// Finally clip the edge against the near plane, generating a new vertex.
 			if (s_clipPos0->z < ONE_16 || s_clipPos1->z < ONE_16)
 			{
-				fixed16_16 z0 = s_clipPos0->z;
-				fixed16_16 z1 = s_clipPos1->z;
+				const fixed16_16 z0 = s_clipPos0->z;
+				const fixed16_16 z1 = s_clipPos1->z;
 
 				// Parametric clip coordinate.
 				s_clipParam = div16(ONE_16 - z0, z1 - z0);
@@ -494,8 +500,8 @@ namespace RClassic_Fixed
 				s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);
 				s_clipPosOut[outVertexCount].x = s_clipPos0->x + mul16(s_clipParam, s_clipPos1->x - s_clipPos0->x);
 
-				fixed16_16 i0 = *s_clipIntensity0;
-				fixed16_16 i1 = *s_clipIntensity1;
+				const fixed16_16 i0 = *s_clipIntensity0;
+				const fixed16_16 i1 = *s_clipIntensity1;
 				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
 
 				outVertexCount++;
@@ -552,13 +558,13 @@ namespace RClassic_Fixed
 			// Clip the edge.
 			if (s_clipPos0->x < s_clipPlanePos0 || s_clipPos1->x < s_clipPlanePos1)
 			{
-				fixed16_16 x0 = s_clipPos0->x;
-				fixed16_16 x1 = s_clipPos1->x;
-				fixed16_16 z0 = s_clipPos0->z;
-				fixed16_16 z1 = s_clipPos1->z;
+				const fixed16_16 x0 = s_clipPos0->x;
+				const fixed16_16 x1 = s_clipPos1->x;
+				const fixed16_16 z0 = s_clipPos0->z;
+				const fixed16_16 z1 = s_clipPos1->z;
 
-				fixed16_16 dx = s_clipPos1->x - s_clipPos0->x;
-				fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
+				const fixed16_16 dx = s_clipPos1->x - s_clipPos0->x;
+				const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
 
 				s_clipParam0 = mul16(x0, z1) - mul16(x1, z0);
 				s_clipParam1 = -dz - dx;
@@ -590,8 +596,8 @@ namespace RClassic_Fixed
 				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
 
-				fixed16_16 i0 = *s_clipIntensity0;
-				fixed16_16 i1 = *s_clipIntensity1;
+				const fixed16_16 i0 = *s_clipIntensity0;
+				const fixed16_16 i1 = *s_clipIntensity1;
 				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
 
 				outVertexCount++;
@@ -648,13 +654,13 @@ namespace RClassic_Fixed
 			// Clip the edge.
 			if (s_clipPos0->x > s_clipPlanePos0 || s_clipPos1->x > s_clipPlanePos1)
 			{
-				fixed16_16 x0 = s_clipPos0->x;
-				fixed16_16 x1 = s_clipPos1->x;
-				fixed16_16 z0 = s_clipPos0->z;
-				fixed16_16 z1 = s_clipPos1->z;
+				const fixed16_16 x0 = s_clipPos0->x;
+				const fixed16_16 x1 = s_clipPos1->x;
+				const fixed16_16 z0 = s_clipPos0->z;
+				const fixed16_16 z1 = s_clipPos1->z;
 
-				fixed16_16 dx = s_clipPos1->x - s_clipPos0->x;
-				fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
+				const fixed16_16 dx = s_clipPos1->x - s_clipPos0->x;
+				const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
 
 				s_clipParam0 = mul16(x0, z1) - mul16(x1, z0);
 				s_clipParam1 = dz - dx;
@@ -686,8 +692,8 @@ namespace RClassic_Fixed
 				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
 
-				fixed16_16 i0 = *s_clipIntensity0;
-				fixed16_16 i1 = *s_clipIntensity1;
+				const fixed16_16 i0 = *s_clipIntensity0;
+				const fixed16_16 i1 = *s_clipIntensity1;
 				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
 
 				outVertexCount++;
@@ -747,8 +753,8 @@ namespace RClassic_Fixed
 			{
 				s_clipParam0 = mul16(s_clipPos0->y, s_clipPos1->z) - mul16(s_clipPos1->y, s_clipPos0->z);
 
-				fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
-				fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
+				const fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
+				const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
 				s_clipParam1 = mul16(s_yPlaneTop, dz) - dy;
 
 				s_clipIntersectZ = s_clipParam0;
@@ -757,8 +763,8 @@ namespace RClassic_Fixed
 					s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
 				}
 				s_clipIntersectY = mul16(s_yPlaneTop, s_clipIntersectZ);
-				fixed16_16 aDz = abs(s_clipPos1->z - s_clipPos0->z);
-				fixed16_16 aDy = abs(s_clipPos1->y - s_clipPos0->y);
+				const fixed16_16 aDz = abs(s_clipPos1->z - s_clipPos0->z);
+				const fixed16_16 aDy = abs(s_clipPos1->y - s_clipPos0->y);
 
 				fixed16_16 p, p0, p1;
 				if (aDz > aDy)
@@ -779,8 +785,8 @@ namespace RClassic_Fixed
 				s_clipPosOut[outVertexCount].y = s_clipIntersectY;
 				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 
-				fixed16_16 i0 = *s_clipIntensity0;
-				fixed16_16 i1 = *s_clipIntensity1;
+				const fixed16_16 i0 = *s_clipIntensity0;
+				const fixed16_16 i1 = *s_clipIntensity1;
 				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
 
 				outVertexCount++;
@@ -839,8 +845,8 @@ namespace RClassic_Fixed
 			{
 				s_clipParam0 = mul16(s_clipPos0->y, s_clipPos1->z) - mul16(s_clipPos1->y, s_clipPos0->z);
 
-				fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
-				fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
+				const fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
+				const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
 				s_clipParam1 = mul16(s_yPlaneBot, dz) - dy;
 
 				s_clipIntersectZ = s_clipParam0;
@@ -849,8 +855,8 @@ namespace RClassic_Fixed
 					s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
 				}
 				s_clipIntersectY = mul16(s_yPlaneBot, s_clipIntersectZ);
-				fixed16_16 aDz = abs(s_clipPos1->z - s_clipPos0->z);
-				fixed16_16 aDy = abs(s_clipPos1->y - s_clipPos0->y);
+				const fixed16_16 aDz = abs(s_clipPos1->z - s_clipPos0->z);
+				const fixed16_16 aDy = abs(s_clipPos1->y - s_clipPos0->y);
 
 				fixed16_16 p, p0, p1;
 				if (aDz > aDy)
@@ -871,8 +877,8 @@ namespace RClassic_Fixed
 				s_clipPosOut[outVertexCount].y = s_clipIntersectY;
 				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 
-				fixed16_16 i0 = *s_clipIntensity0;
-				fixed16_16 i1 = *s_clipIntensity1;
+				const fixed16_16 i0 = *s_clipIntensity0;
+				const fixed16_16 i1 = *s_clipIntensity1;
 				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
 
 				outVertexCount++;
@@ -897,8 +903,9 @@ namespace RClassic_Fixed
 
 	void model_drawColumnColor()
 	{
-		fixed16_16 intensity = s_col_I0;
 		const u8* colorMap = s_polyColorMap;
+
+		fixed16_16 intensity = s_col_I0;
 		u8* colorOut = s_pcolumnOut;
 		u8  colorIndex = s_polyColorIndex;
 		s32 count = s_columnHeight;
@@ -911,7 +918,7 @@ namespace RClassic_Fixed
 			s32 pixelIntensity = floor16(intensity);
 			if (dither)
 			{
-				fixed16_16 iOffset = intensity - s_ditherOffset;
+				const fixed16_16 iOffset = intensity - s_ditherOffset;
 				if (iOffset >= 0)
 				{
 					pixelIntensity = floor16(iOffset);
@@ -954,22 +961,19 @@ namespace RClassic_Fixed
 			{
 				s_edgeTopLength = dx;
 
-				fixed16_16 step = div16(ONE_16, intToFixed16(dx));
+				const fixed16_16 step = div16(ONE_16, intToFixed16(dx));
 				s_edgeTopY0_Pixel = cur->y;
 				s_edgeTop_Y0 = intToFixed16(cur->y);
 
-				fixed16_16 dy = intToFixed16(next->y - cur->y);
+				const fixed16_16 dy = intToFixed16(next->y - cur->y);
 				s_edgeTop_dYdX = mul16(dy, step);
 				
-				fixed16_16 dz = next->z - cur->z;
+				const fixed16_16 dz = next->z - cur->z;
 				s_edgeTop_dZdX = mul16(dz, step);
 				s_edgeTop_Z0 = cur->z;
+				s_edgeTop_I0 = clamp(s_polyIntensity[curIndex], 0, VSHADE_MAX_INTENSITY);
 
-				s_edgeTop_I0 = s_polyIntensity[curIndex];
-				if (s_edgeTop_I0 <= 0) { s_edgeTop_I0 = 0; }
-				if (s_edgeTop_I0 > VSHADE_MAX_INTENSITY) { s_edgeTop_I0 = VSHADE_MAX_INTENSITY; }
-
-				fixed16_16 dI = s_polyIntensity[nextIndex] - s_edgeTop_I0;
+				const fixed16_16 dI = s_polyIntensity[nextIndex] - s_edgeTop_I0;
 				s_edgeTop_dIdX = mul16(dI, step);
 				s_edgeTopIndex = nextIndex;
 				return 0;
@@ -989,7 +993,7 @@ namespace RClassic_Fixed
 
 	s32 model_findPrevEdge(s32 minXIndex)
 	{
-		s32 len = s_edgeBotLength;
+		const s32 len = s_edgeBotLength;
 		s32 curIndex = minXIndex;
 		if (minXIndex == s_polyMaxXIndex)
 		{
@@ -1015,22 +1019,19 @@ namespace RClassic_Fixed
 			{
 				s_edgeBotLength = dx;
 
-				fixed16_16 step = div16(ONE_16, intToFixed16(dx));
+				const fixed16_16 step = div16(ONE_16, intToFixed16(dx));
 				s_edgeBotY0_Pixel = cur->y;
-				s_edgeBotY0 = intToFixed16(cur->y);
+				s_edgeBot_Y0 = intToFixed16(cur->y);
 
-				s32 dy = prev->y - cur->y;
+				const s32 dy = prev->y - cur->y;
 				s_edgeBot_dYdX = mul16(intToFixed16(dy), step);
 				
-				fixed16_16 dz = prev->z - cur->z;
+				const fixed16_16 dz = prev->z - cur->z;
 				s_edgeBot_dZdX = div16(dz, intToFixed16(dx));
 				s_edgeBot_Z0 = cur->z;
+				s_edgeBot_I0 = clamp(s_polyIntensity[curIndex], 0, VSHADE_MAX_INTENSITY);
 
-				s_edgeBot_I0 = s_polyIntensity[curIndex];
-				if (s_edgeBot_I0 < 0) { s_edgeBot_I0 = 0; }
-				if (s_edgeBot_I0 > VSHADE_MAX_INTENSITY) { s_edgeBot_I0 = VSHADE_MAX_INTENSITY; }
-
-				fixed16_16 dI = s_polyIntensity[prevIndex] - s_edgeBot_I0;
+				const fixed16_16 dI = s_polyIntensity[prevIndex] - s_edgeBot_I0;
 				s_edgeBot_dIdX = mul16(dI, step);
 				s_edgeBotIndex = prevIndex;
 
@@ -1061,17 +1062,14 @@ namespace RClassic_Fixed
 
 		s32 yMax = xMax;
 		s32 yMin = xMin;
-		if (vertexCount <= 0)
-		{
-			return;
-		}
+		if (vertexCount <= 0) { return; }
 
 		// Compute the 2D bounding box of the polygon.
 		// Track the extreme vertex indices in X.
 		s32 minXIndex;
 		for (s32 i = 0; i < s_polyVertexCount; i++, projVertex++)
 		{
-			s32 x = projVertex->x;
+			const s32 x = projVertex->x;
 			if (x < xMin)
 			{
 				xMin = x;
@@ -1082,68 +1080,60 @@ namespace RClassic_Fixed
 				xMax = x;
 				s_polyMaxXIndex = i;
 			}
-			s32 y = projVertex->y;
-			if (y < yMin)
-			{
-				yMin = y;
-			}
-			if (y > yMax)
-			{
-				yMax = y;
-			}
+
+			const s32 y = projVertex->y;
+			if (y < yMin) { yMin = y; }
+			if (y > yMax) { yMax = y; }
 		}
 
 		// If the polygon is too small or off screen, skip it.
-		if (xMin >= xMax || yMin > s_windowMaxY || yMax < s_windowMinY)
-		{
-			return;
-		}
+		if (xMin >= xMax || yMin > s_windowMaxY || yMax < s_windowMinY) { return; }
 
 		s_polyColorMap = s_colorMap;
 		s_polyColorIndex = color;
 		s_ditherOffset = HALF_16;
 		s_columnX = xMin;
-		if (model_findNextEdge(minXIndex, xMin) != 0 || model_findPrevEdge(minXIndex) != 0)
-		{
-			return;
-		}
+		if (model_findNextEdge(minXIndex, xMin) != 0 || model_findPrevEdge(minXIndex) != 0) { return; }
 
 		for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX && s_columnX <= s_maxScreenX; s_columnX++)
 		{
 			//fixed16_16 edgeAveZ0 = (s_edgeBot_Z0 + s_edgeTop_Z0) >> 1;
 			// This produces more accurate results, look into the difference (it might be a difference between gouraud and textured).
-			fixed16_16 edgeAveZ0 = min(s_edgeBot_Z0, s_edgeTop_Z0);
-			fixed16_16 z = s_depth1d_Fixed[s_columnX];
+			const fixed16_16 edgeMinZ = min(s_edgeBot_Z0, s_edgeTop_Z0);
+			const fixed16_16 z = s_depth1d_Fixed[s_columnX];
 
 			// Is ave edge Z occluded by walls? Is edge vertex 0 outside of the vertical area?
-			if (edgeAveZ0 < z && s_edgeTopY0_Pixel <= s_windowMaxY && s_edgeBotY0_Pixel >= s_windowMinY)
+			if (edgeMinZ < z && s_edgeTopY0_Pixel <= s_windowMaxY && s_edgeBotY0_Pixel >= s_windowMinY)
 			{
-				s32 winTop = s_objWindowTop[s_columnX];
+				const s32 winTop = s_objWindowTop[s_columnX];
+				const s32 winBot = s_objWindowBot[s_columnX];
 				s32 y0_Top = s_edgeTopY0_Pixel;
 				s32 y0_Bot = s_edgeBotY0_Pixel;
+				fixed16_16 yOffset = 0;
+
 				if (y0_Top < winTop)
 				{
 					y0_Top = winTop;
 				}
-
-				s32 winBot = s_objWindowBot[s_columnX];
-				fixed16_16 yOffset = 0;
 				if (y0_Bot > winBot)
 				{
 					yOffset = intToFixed16(y0_Bot - winBot);
 					y0_Bot = winBot;
 				}
+
 				s_columnHeight = y0_Bot - y0_Top + 1;
 				if (s_columnHeight > 0)
 				{
+					const fixed16_16 height = intToFixed16(s_edgeBotY0_Pixel - s_edgeTopY0_Pixel + 1);
+
 					s_pcolumnOut = &s_display[y0_Top*s_width + s_columnX];
-					fixed16_16 height = intToFixed16(s_edgeBotY0_Pixel - s_edgeTopY0_Pixel + 1);
 					s_col_dIdY = div16(s_edgeTop_I0 - s_edgeBot_I0, height);
 					s_col_I0 = s_edgeBot_I0;
 					if (yOffset)
 					{
 						s_col_I0 = mul16(yOffset, s_col_dIdY) + s_edgeBot_I0;
 					}
+
 					s_dither = ((s_columnX & 1) ^ (y0_Bot & 1)) - 1;
 					model_drawColumnColor();
 				}
@@ -1156,13 +1146,11 @@ namespace RClassic_Fixed
 			}
 			else
 			{
-				s_edgeTop_I0 += s_edgeTop_dIdX;
-				if (s_edgeTop_I0 < 0) { s_edgeTop_I0 = 0; }
-				if (s_edgeTop_I0 > VSHADE_MAX_INTENSITY) { s_edgeTop_I0 = VSHADE_MAX_INTENSITY; }
+				s_edgeTop_I0 = clamp(s_edgeTop_I0 + s_edgeTop_dIdX, 0, VSHADE_MAX_INTENSITY);
 
 				s_edgeTop_Y0 += s_edgeTop_dYdX;
-				s_edgeTopY0_Pixel = round16(s_edgeTop_Y0);
 				s_edgeTop_Z0 += s_edgeTop_dZdX;
+				s_edgeTopY0_Pixel = round16(s_edgeTop_Y0);
 			}
 			if (foundEdge == 0)
 			{
@@ -1173,13 +1161,11 @@ namespace RClassic_Fixed
 				}
 				else
 				{
-					s_edgeBot_I0 += s_edgeBot_dIdX;
-					if (s_edgeBot_I0 < 0) { s_edgeBot_I0 = 0; }
-					if (s_edgeBot_I0 > VSHADE_MAX_INTENSITY) { s_edgeBot_I0 = VSHADE_MAX_INTENSITY; }
+					s_edgeBot_I0 = clamp(s_edgeBot_I0 + s_edgeBot_dIdX, 0, VSHADE_MAX_INTENSITY);
 
-					s_edgeBotY0 += s_edgeBot_dYdX;
-					s_edgeBotY0_Pixel = round16(s_edgeBotY0);
+					s_edgeBot_Y0 += s_edgeBot_dYdX;
 					s_edgeBot_Z0 += s_edgeBot_dZdX;
+					s_edgeBotY0_Pixel = round16(s_edgeBot_Y0);
 				}
 			}
 		}
