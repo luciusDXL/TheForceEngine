@@ -11,6 +11,7 @@
 	#define CHECK_GL_ERROR
 #endif
 #define CAPTURE_FRAME_DELAY 3
+#define FLUSH_READ_COUNT 1
 
 namespace
 {
@@ -64,7 +65,7 @@ bool ScreenCapture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* = 
 		for (u32 i = 0; i < m_bufferCount; i++)
 		{
 			glBindBuffer(GL_PIXEL_PACK_BUFFER, m_stagingBuffers[i]);
-			glBufferData(GL_PIXEL_PACK_BUFFER, bufferSize, nullptr, GL_STREAM_DRAW);
+			glBufferData(GL_PIXEL_PACK_BUFFER, bufferSize, nullptr, GL_STREAM_READ);
 		}
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 		CHECK_GL_ERROR
@@ -81,6 +82,10 @@ bool ScreenCapture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* = 
 		m_captures[i].imageData.resize(bufferSize);
 	}
 
+	delete[] m_readIndex;
+	m_readIndex = new u32[m_bufferCount];
+	m_readCount = 0;
+
 	return m_bufferCount;
 }
 
@@ -96,7 +101,7 @@ void ScreenCapture::update(bool flush)
 		glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, m_captures[m_captureHead].imageData.data());
 		popHead = true;
 	}
-	else if (flush || m_frame > m_captures[m_captureHead].frame + CAPTURE_FRAME_DELAY)
+	else if (flush || m_frame > (m_captures[m_captureHead].frame + CAPTURE_FRAME_DELAY))
 	{
 		// Copy from staging data to read buffer [readBuffer].
 		glBindBuffer(GL_PIXEL_PACK_BUFFER, m_stagingBuffers[m_captures[m_captureHead].bufferIndex]);
@@ -113,9 +118,14 @@ void ScreenCapture::update(bool flush)
 
 	if (popHead)
 	{
-		writeFramesToDisk();
+		m_readIndex[m_readCount++] = m_captureHead;
 		m_captureHead = (m_captureHead + 1) % m_bufferCount;
 		m_captureCount--;
+	}
+
+	if (m_readCount >= FLUSH_READ_COUNT || flush)
+	{
+		writeFramesToDisk();
 	}
 }
 
@@ -140,9 +150,14 @@ void ScreenCapture::captureFrame(const char* outputPath)
 
 void ScreenCapture::writeFramesToDisk()
 {
-	if (!m_captureCount) { return; }
+	if (!m_readCount) { return; }
 
-	TFE_Image::writeImage(m_captures[m_captureHead].outputPath.c_str(), m_width, m_height, (u32*)m_captures[m_captureHead].imageData.data());
+	for (u32 i = 0; i < m_readCount; i++)
+	{
+		u32 index = m_readIndex[i];
+		TFE_Image::writeImage(m_captures[index].outputPath.c_str(), m_width, m_height, (u32*)m_captures[index].imageData.data());
+	}
+	m_readCount = 0;
 }
 
 void ScreenCapture::freeBuffers()
@@ -155,6 +170,7 @@ void ScreenCapture::freeBuffers()
 		}
 		delete[] m_stagingBuffers;
 	}
+	delete[] m_readIndex;
 
 	m_bufferCount = 0;
 }

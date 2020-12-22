@@ -33,6 +33,10 @@ private:
 	u32 m_bufferCount;
 	u32 m_captureHead;
 	u32 m_captureCount;
+
+	u32* m_readIndex;
+	u32 m_readCount;
+
 	u32 m_writeBuffer;
 	s32 m_frame;
 	u32 m_width;

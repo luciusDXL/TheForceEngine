@@ -54,6 +54,7 @@ static u32  s_displayHeight = s_baseWindowHeight;
 static u32  s_monitorWidth = 1280;
 static u32  s_monitorHeight = 720;
 static bool s_gameUiInitRequired = true;
+static char s_screenshotTime[TFE_MAX_PATH];
 
 void parseOption(const char* name, const std::vector<const char*>& values, bool longName);
 
@@ -126,21 +127,16 @@ void handleEvent(SDL_Event& Event)
 					windowSettings->fullscreen = !windowSettings->fullscreen;
 					TFE_RenderBackend::enableFullscreen(windowSettings->fullscreen);
 				}
-				else if (code == KeyboardCode::KEY_PRINTSCREEN)
+				else if (code == KeyboardCode::KEY_PRINTSCREEN || code == KeyboardCode::KEY_F8)
 				{
+					static u64 _screenshotIndex = 0;
+
 					char screenshotDir[TFE_MAX_PATH];
 					TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
-
-					if (!FileUtil::directoryExits(screenshotDir))
-					{
-						FileUtil::makeDirectory(screenshotDir);
-					}
-
-					__time64_t ltime;
-					_time64(&ltime);
-
+										
 					char screenshotPath[TFE_MAX_PATH];
-					sprintf(screenshotPath, "%stfe_screenshot_%llx.png", screenshotDir, ltime);
+					sprintf(screenshotPath, "%stfe_screenshot_%s_%u.jpg", screenshotDir, s_screenshotTime, _screenshotIndex);
+					_screenshotIndex++;
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
 				}
@@ -353,6 +349,32 @@ void parseCommandLine(s32 argc, char* argv[])
 	}
 }
 
+void generateScreenshotTime()
+{
+	__time64_t time;
+	_time64(&time);
+	strcpy(s_screenshotTime, _ctime64(&time));
+
+	// Replace ':' with '_'
+	size_t len = strlen(s_screenshotTime);
+	for (size_t i = 0; i < len; i++)
+	{
+		if (s_screenshotTime[i] == ':')
+		{
+			s_screenshotTime[i] = '_';
+		}
+		else if (s_screenshotTime[i] == ' ')
+		{
+			s_screenshotTime[i] = '-';
+		}
+		if (s_screenshotTime[i] == '\n')
+		{
+			s_screenshotTime[i] = 0;
+			break;
+		}
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	// Paths
@@ -393,6 +415,16 @@ int main(int argc, char* argv[])
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM_DATA));
 	TFE_System::logWrite(LOG_MSG, "Paths", "User Documents: \"%s\"", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
 	TFE_System::logWrite(LOG_MSG, "Paths", "Source Data: \"%s\"",    TFE_Paths::getPath(PATH_SOURCE_DATA));
+
+	// Create a screenshot directory
+	char screenshotDir[TFE_MAX_PATH];
+	TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
+	if (!FileUtil::directoryExits(screenshotDir))
+	{
+		FileUtil::makeDirectory(screenshotDir);
+	}
+
+	generateScreenshotTime();
 
 	// Initialize SDL
 	if (!sdlInit())
