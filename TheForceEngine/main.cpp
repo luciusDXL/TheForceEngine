@@ -140,7 +140,7 @@ void handleEvent(SDL_Event& Event)
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
 				}
-				else if (code == KeyboardCode::KEY_F5 && (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)))
+				else if (code == KeyboardCode::KEY_F2 && (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)))
 				{
 					static u64 _gifIndex = 0;
 					static bool _recording = false;

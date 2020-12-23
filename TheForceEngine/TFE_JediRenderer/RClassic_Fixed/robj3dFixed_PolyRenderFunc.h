@@ -336,12 +336,10 @@ void model_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 co
 
 	for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX && s_columnX <= s_maxScreenX; s_columnX++)
 	{
-		//fixed16_16 edgeAveZ0 = (s_edgeBot_Z0 + s_edgeTop_Z0) >> 1;
-		// This produces more accurate results, look into the difference (it might be a difference between gouraud and textured).
 		const fixed16_16 edgeMinZ = min(s_edgeBot_Z0, s_edgeTop_Z0);
 		const fixed16_16 z = s_depth1d_Fixed[s_columnX];
 
-		// Is ave edge Z occluded by walls? Is edge vertex 0 outside of the vertical area?
+		// Is ave edge Z occluded by walls? Is column outside of the vertical area?
 		if (edgeMinZ < z && s_edgeTopY0_Pixel <= s_windowMaxY && s_edgeBotY0_Pixel >= s_windowMinY)
 		{
 			const s32 winTop = s_objWindowTop[s_columnX];
@@ -368,7 +366,6 @@ void model_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 co
 			if (s_columnHeight > 0)
 			{
 				const fixed16_16 height = intToFixed16(s_edgeBotY0_Pixel - s_edgeTopY0_Pixel + 1);
-
 				s_pcolumnOut = &s_display[y0_Top*s_width + s_columnX];
 
 				#if defined(POLY_INTENSITY)
