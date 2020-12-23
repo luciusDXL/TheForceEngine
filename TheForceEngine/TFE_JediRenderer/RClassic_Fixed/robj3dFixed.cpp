@@ -70,6 +70,10 @@ namespace RClassic_Fixed
 	static fixed16_16* s_clipIntensitySrc;
 	static fixed16_16* s_clipIntensity0;
 	static fixed16_16* s_clipIntensity1;
+	static vec2_fixed* s_clipTempUv;
+	static vec2_fixed* s_clipUvSrc;
+	static vec2_fixed* s_clipUv0;
+	static vec2_fixed* s_clipUv1;
 	static fixed16_16  s_clipParam;
 	static fixed16_16  s_clipIntersectX;
 	static vec3_fixed* s_clipPos0;
@@ -77,6 +81,7 @@ namespace RClassic_Fixed
 	static vec3_fixed* s_clipPosSrc;
 	static vec3_fixed* s_clipPosOut;
 	static fixed16_16* s_clipIntensityOut;
+	static vec2_fixed* s_clipUvOut;
 
 	////////////////////////////////////////////////
 	// Polygon Drawing
@@ -119,11 +124,15 @@ namespace RClassic_Fixed
 	static s32 s_edgeTopIndex;
 	static s32 s_edgeTopLength;
 	static s32 s_edgeBotLength;
+		
+	void model_projectVertices(vec3_fixed* pos, s32 count, vec3_fixed* out);
+	void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color);
 
 	s32 model_clipPolygonGouraud(vec3_fixed* pos, s32* intensity, s32 count);
-	void model_projectVertices(vec3_fixed* pos, s32 count, vec3_fixed* out);
-	void model_drawColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color);
-		
+	s32 model_clipPolygonUv(vec3_fixed* pos, vec2_fixed* uv, s32 count);
+	s32 model_clipPolygonUvGouraud(vec3_fixed* pos, vec2_fixed* uv, s32* intensity, s32 count);
+	s32 model_clipPolygon(vec3_fixed* pos, s32 count);
+
 	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx)
 	{
 		outVec->x = mul16(inVec->x, mtx[0]) + mul16(inVec->y, mtx[3]) + mul16(inVec->z, mtx[6]);
@@ -378,29 +387,51 @@ namespace RClassic_Fixed
 			// Copy uvs if required.
 			if (shading & PSHADE_TEXTURE)
 			{
+				const vec2_fixed* uv = (vec2_fixed*)polygon->uv;
 				for (s32 v = 0; v < vertexCount; v++)
 				{
-					s_polygonUv[v] = ((vec2_fixed*)polygon->uv)[v];
+					s_polygonUv[v] = uv[v];
 				}
 			}
 
 			// Copy intensities if required.
 			if (shading & PSHADE_GOURAUD)
 			{
+				const s32* indices = polygon->indices;
 				for (s32 v = 0; v < vertexCount; v++)
 				{
-					s_polygonIntensity[v] = s_vertexIntensity[polygon->indices[v]];
+					s_polygonIntensity[v] = s_vertexIntensity[indices[v]];
 				}
 			}
+
+			// Handle clipping
+			s32 polyVertexCount = 0;
+			if (shading == PSHADE_GOURAUD)
+			{
+				polyVertexCount = model_clipPolygonGouraud(s_polygonVerticesVS, s_polygonIntensity, polygon->vertexCount);
+			}
+			else if (shading == PSHADE_TEXTURE)
+			{
+				polyVertexCount = model_clipPolygonUv(s_polygonVerticesVS, s_polygonUv, polygon->vertexCount);
+			}
+			else if (shading == PSHADE_GOURAUD_TEXTURE)
+			{
+				polyVertexCount = model_clipPolygonUvGouraud(s_polygonVerticesVS, s_polygonUv, s_polygonIntensity, polygon->vertexCount);
+			}
+			else
+			{
+				polyVertexCount = model_clipPolygon(s_polygonVerticesVS, polygon->vertexCount);
+			}
+			// Cull the polygon if not enough vertices survive clipping.
+			if (polyVertexCount < 3) { continue; }
+
+			// Project the resulting vertices.
+			model_projectVertices(s_polygonVerticesVS, polyVertexCount, s_polygonVerticesProj);
 
 			// Handle shading modes...
 			if (shading == PSHADE_GOURAUD)
 			{
-				s32 vertexCount = model_clipPolygonGouraud(s_polygonVerticesVS, s_polygonIntensity, polygon->vertexCount);
-				if (vertexCount < 3) { continue; }
-
-				model_projectVertices(s_polygonVerticesVS, vertexCount, s_polygonVerticesProj);
-				model_drawColorPolygon(s_polygonVerticesProj, s_polygonIntensity, vertexCount, polygon->color);
+				model_drawShadedColorPolygon(s_polygonVerticesProj, s_polygonIntensity, polyVertexCount, polygon->color);
 			}
 		}
 	}
@@ -414,493 +445,7 @@ namespace RClassic_Fixed
 			out->z = pos->z;
 		}
 	}
-
-	s32 model_swapClipBuffers(s32 outVertexCount)
-	{
-		// Swap src position and output position.
-		s_clipTempPos = s_clipPosSrc;
-		s_clipPosSrc = s_clipPosOut;
-		s_clipPosOut = s_clipTempPos;
-
-		// Swap src intensity and output intensity.
-		s_clipTempIntensity = s_clipIntensitySrc;
-		s_clipIntensitySrc = s_clipIntensityOut;
-		s_clipIntensityOut = s_clipIntensitySrc;
-
-		s32 srcVertexCount = outVertexCount;
-		s32 end = srcVertexCount - 1;
-
-		// Left clip plane.
-		s_clipPos0 = &s_clipPosSrc[end];
-		s_clipPos1 = s_clipPosSrc;
-		s_clipIntensity0 = &s_clipIntensitySrc[end];
-		s_clipIntensity1 = s_clipIntensitySrc;
-
-		return srcVertexCount;
-	}
-
-	s32 model_clipPolygonGouraud(vec3_fixed* pos, s32* intensity, s32 count)
-	{
-		s32 outVertexCount = 0;
-		s32 end = count - 1;
-		s_clipIntensitySrc = intensity;
-		s_clipPosSrc = pos;
-
-		// Clip against the near plane.
-		s_clipPosOut = s_clipPosBuffer;
-		s_clipPos0 = &pos[count - 1];
-		s_clipPos1 = pos;
-
-		s_clipIntensityOut = s_clipIntensityBuffer;
-		s_clipIntensity0 = &intensity[count - 1];
-		s_clipIntensity1 = intensity;
-
-		///////////////////////////////////////////////////
-		// Near Clip Plane
-		///////////////////////////////////////////////////
-		for (s32 i = 0; i < count; i++)
-		{
-			if (s_clipPos0->z < ONE_16 && s_clipPos1->z < ONE_16)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-				continue;
-			}
-
-			// Add vertex 0 if it is on or in front of the near plane.
-			if (s_clipPos0->z >= ONE_16)
-			{
-				s_clipPosOut[outVertexCount] = *s_clipPos0;
-				s_clipIntensityOut[outVertexCount] = *s_clipIntensity0;
-				outVertexCount++;
-			}
-
-			// If either position is exactly on the near plane continue.
-			if (s_clipPos0->z == ONE_16 || s_clipPos1->z == ONE_16)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-				continue;
-			}
-
-			// Finally clip the edge against the near plane, generating a new vertex.
-			if (s_clipPos0->z < ONE_16 || s_clipPos1->z < ONE_16)
-			{
-				const fixed16_16 z0 = s_clipPos0->z;
-				const fixed16_16 z1 = s_clipPos1->z;
-
-				// Parametric clip coordinate.
-				s_clipParam = div16(ONE_16 - z0, z1 - z0);
-				// new vertex Z coordinate should be exactly 1.0
-				s_clipPosOut[outVertexCount].z = ONE_16;
-				s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);
-				s_clipPosOut[outVertexCount].x = s_clipPos0->x + mul16(s_clipParam, s_clipPos1->x - s_clipPos0->x);
-
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-
-				outVertexCount++;
-			}
-
-			s_clipPos0 = s_clipPos1;
-			s_clipIntensity0 = s_clipIntensity1;
-			s_clipPos1++;
-			s_clipIntensity1++;
-		}
-		// Return if the polygon is clipping away.
-		if (outVertexCount < 3)
-		{
-			return 0;
-		}
-		s32 srcVertexCount = model_swapClipBuffers(outVertexCount);
-		outVertexCount = 0;
-
-		///////////////////////////////////////////////////
-		// Left Clip Plane
-		///////////////////////////////////////////////////
-		for (s32 i = 0; i < srcVertexCount; i++)
-		{
-			s_clipPlanePos0 = -s_clipPos0->z;
-			s_clipPlanePos1 = -s_clipPos1->z;
-			if (s_clipPos0->x < s_clipPlanePos0 && s_clipPos1->x < s_clipPlanePos1)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-				continue;
-			}
-
-			// Add vertex 0 if it is inside the plane.
-			if (s_clipPos0->x >= s_clipPlanePos0)
-			{
-				s_clipPosOut[outVertexCount] = *s_clipPos0;
-				s_clipIntensityOut[outVertexCount] = *s_clipIntensity0;
-				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
-				outVertexCount++;
-			}
-
-			// Skip clipping if either vertex is touching the plane.
-			if (s_clipPos0->x == s_clipPlanePos0 || s_clipPos1->x == s_clipPlanePos1)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-				continue;
-			}
-
-			// Clip the edge.
-			if (s_clipPos0->x < s_clipPlanePos0 || s_clipPos1->x < s_clipPlanePos1)
-			{
-				const fixed16_16 x0 = s_clipPos0->x;
-				const fixed16_16 x1 = s_clipPos1->x;
-				const fixed16_16 z0 = s_clipPos0->z;
-				const fixed16_16 z1 = s_clipPos1->z;
-
-				const fixed16_16 dx = s_clipPos1->x - s_clipPos0->x;
-				const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
-
-				s_clipParam0 = mul16(x0, z1) - mul16(x1, z0);
-				s_clipParam1 = -dz - dx;
-
-				s_clipIntersectZ = s_clipParam0;
-				if (s_clipParam1 != 0)
-				{
-					s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
-				}
-				s_clipIntersectX = -s_clipIntersectZ;
-
-				fixed16_16 p, p0, p1;
-				if (abs(dz) > abs(dx))
-				{
-					p1 = s_clipPos1->z;
-					p0 = s_clipPos0->z;
-					p = s_clipIntersectZ;
-				}
-				else
-				{
-					p1 = s_clipPos1->x;
-					p0 = s_clipPos0->x;
-					p = s_clipIntersectX;
-				}
-				s_clipParam = div16(p - p0, p1 - p0);
-
-				s_clipPosOut[outVertexCount].x = s_clipIntersectX;
-				s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);
-				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
-				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
-
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-
-				outVertexCount++;
-			}
-			s_clipPos0 = s_clipPos1;
-			s_clipIntensity0 = s_clipIntensity1;
-			s_clipPos1++;
-			s_clipIntensity1++;
-		}
-		if (outVertexCount < 3)
-		{
-			return 0;
-		}
-		srcVertexCount = model_swapClipBuffers(outVertexCount);
-		outVertexCount = 0;
-
-		///////////////////////////////////////////////////
-		// Right Clip Plane
-		///////////////////////////////////////////////////
-		for (s32 i = 0; i < srcVertexCount; i++)
-		{
-			s_clipPlanePos0 = s_clipPos0->z;
-			s_clipPlanePos1 = s_clipPos1->z;
-			if (s_clipPos0->x > s_clipPlanePos0 && s_clipPos1->x > s_clipPlanePos1)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-
-				continue;
-			}
-
-			// Add vertex 0 if it is inside the plane.
-			if (s_clipPos0->x <= s_clipPlanePos0)
-			{
-				s_clipPosOut[outVertexCount] = *s_clipPos0;
-				s_clipIntensityOut[outVertexCount] = *s_clipIntensity0;
-				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
-				outVertexCount++;
-			}
-
-			// Skip clipping if either vertex is touching the plane.
-			if (s_clipPos0->x == s_clipPlanePos0 || s_clipPos1->x == s_clipPlanePos1)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-
-				continue;
-			}
-
-			// Clip the edge.
-			if (s_clipPos0->x > s_clipPlanePos0 || s_clipPos1->x > s_clipPlanePos1)
-			{
-				const fixed16_16 x0 = s_clipPos0->x;
-				const fixed16_16 x1 = s_clipPos1->x;
-				const fixed16_16 z0 = s_clipPos0->z;
-				const fixed16_16 z1 = s_clipPos1->z;
-
-				const fixed16_16 dx = s_clipPos1->x - s_clipPos0->x;
-				const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
-
-				s_clipParam0 = mul16(x0, z1) - mul16(x1, z0);
-				s_clipParam1 = dz - dx;
-
-				s_clipIntersectZ = s_clipParam0;
-				if (s_clipParam1 != 0)
-				{
-					s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
-				}
-				s_clipIntersectX = s_clipIntersectZ;
-
-				fixed16_16 p, p0, p1;
-				if (abs(dz) > abs(dx))
-				{
-					p1 = s_clipPos1->z;
-					p0 = s_clipPos0->z;
-					p = s_clipIntersectZ;
-				}
-				else
-				{
-					p1 = s_clipPos1->x;
-					p0 = s_clipPos0->x;
-					p = s_clipIntersectX;
-				}
-				s_clipParam = div16(p - p0, p1 - p0);
-
-				s_clipPosOut[outVertexCount].x = s_clipIntersectX;
-				s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);	// edx
-				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
-				assert(s_clipPosOut[outVertexCount].z >= ONE_16);
-
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-
-				outVertexCount++;
-			}
-			s_clipPos0 = s_clipPos1;
-			s_clipIntensity0 = s_clipIntensity1;
-			s_clipPos1++;
-			s_clipIntensity1++;
-		}
-		if (outVertexCount < 3)
-		{
-			return 0;
-		}
-				
-		srcVertexCount = model_swapClipBuffers(outVertexCount);
-		outVertexCount = 0;
-
-		///////////////////////////////////////////////////
-		// Top Clip Plane
-		///////////////////////////////////////////////////
-		for (s32 i = 0; i < srcVertexCount; i++)
-		{
-			s_clipY0 = mul16(s_yPlaneTop, s_clipPos0->z);
-			s_clipY1 = mul16(s_yPlaneTop, s_clipPos1->z);
-
-			// If the edge is completely behind the plane, then continue.
-			if (s_clipPos0->y < s_clipY0 && s_clipPos1->y < s_clipY1)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-
-				continue;
-			}
-			// Add vertex 0 if it is inside the plane.
-			if (s_clipPos0->y > s_clipY0)
-			{
-				s_clipPosOut[outVertexCount] = *s_clipPos0;
-				s_clipIntensityOut[outVertexCount] = *s_clipIntensity0;
-				outVertexCount++;
-			}
-
-			// Skip clipping if either vertex is touching the plane.
-			if (s_clipPos0->y == s_clipY0 || s_clipPos1->y == s_clipY1)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-
-				continue;
-			}
-
-			// Clip the edge.
-			if (s_clipPos0->y < s_clipY0 || s_clipPos1->y < s_clipY1)
-			{
-				s_clipParam0 = mul16(s_clipPos0->y, s_clipPos1->z) - mul16(s_clipPos1->y, s_clipPos0->z);
-
-				const fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
-				const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
-				s_clipParam1 = mul16(s_yPlaneTop, dz) - dy;
-
-				s_clipIntersectZ = s_clipParam0;
-				if (s_clipParam1 != 0)
-				{
-					s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
-				}
-				s_clipIntersectY = mul16(s_yPlaneTop, s_clipIntersectZ);
-				const fixed16_16 aDz = abs(s_clipPos1->z - s_clipPos0->z);
-				const fixed16_16 aDy = abs(s_clipPos1->y - s_clipPos0->y);
-
-				fixed16_16 p, p0, p1;
-				if (aDz > aDy)
-				{
-					p1 = s_clipPos1->z;
-					p0 = s_clipPos0->z;
-					p = s_clipIntersectZ;
-				}
-				else
-				{
-					p1 = s_clipPos1->y;
-					p0 = s_clipPos0->y;
-					p = s_clipIntersectY;
-				}
-				s_clipParam = div16(p - p0, p1 - p0);
-
-				s_clipPosOut[outVertexCount].x = s_clipPos0->x + mul16(s_clipParam, s_clipPos1->x - s_clipPos0->x);
-				s_clipPosOut[outVertexCount].y = s_clipIntersectY;
-				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
-
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-
-				outVertexCount++;
-			}
-			s_clipPos0 = s_clipPos1;
-			s_clipIntensity0 = s_clipIntensity1;
-			s_clipPos1++;
-			s_clipIntensity1++;
-		}
-
-		if (outVertexCount < 3)
-		{
-			return 0;
-		}
-		srcVertexCount = model_swapClipBuffers(outVertexCount);
-		outVertexCount = 0;
-
-		///////////////////////////////////////////////////
-		// Bottom Clip Plane
-		///////////////////////////////////////////////////
-		for (s32 i = 0; i < srcVertexCount; i++)
-		{
-			s_clipY0 = mul16(s_yPlaneBot, s_clipPos0->z);
-			s_clipY1 = mul16(s_yPlaneBot, s_clipPos1->z);
-
-			// If the edge is completely behind the plane, then continue.
-			if (s_clipPos0->y > s_clipY0 && s_clipPos1->y > s_clipY1)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-				continue;
-			}
-
-			// Add vertex 0 if it is inside the plane.
-			if (s_clipPos0->y < s_clipY0)
-			{
-				s_clipPosOut[outVertexCount] = *s_clipPos0;
-				s_clipIntensityOut[outVertexCount] = *s_clipIntensity0;
-				outVertexCount++;
-			}
-
-			// Skip clipping if either vertex is touching the plane.
-			if (s_clipPos0->y == s_clipY0 || s_clipPos1->y == s_clipY1)
-			{
-				s_clipPos0 = s_clipPos1;
-				s_clipIntensity0 = s_clipIntensity1;
-				s_clipPos1++;
-				s_clipIntensity1++;
-				continue;
-			}
-
-			// Clip the edge.
-			if (s_clipPos0->y > s_clipY0 || s_clipPos1->y > s_clipY1)
-			{
-				s_clipParam0 = mul16(s_clipPos0->y, s_clipPos1->z) - mul16(s_clipPos1->y, s_clipPos0->z);
-
-				const fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
-				const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
-				s_clipParam1 = mul16(s_yPlaneBot, dz) - dy;
-
-				s_clipIntersectZ = s_clipParam0;
-				if (s_clipParam1 != 0)
-				{
-					s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
-				}
-				s_clipIntersectY = mul16(s_yPlaneBot, s_clipIntersectZ);
-				const fixed16_16 aDz = abs(s_clipPos1->z - s_clipPos0->z);
-				const fixed16_16 aDy = abs(s_clipPos1->y - s_clipPos0->y);
-
-				fixed16_16 p, p0, p1;
-				if (aDz > aDy)
-				{
-					p1 = s_clipPos1->z;
-					p0 = s_clipPos0->z;
-					p = s_clipIntersectZ;
-				}
-				else
-				{
-					p1 = s_clipPos1->y;
-					p0 = s_clipPos0->y;
-					p = s_clipIntersectY;
-				}
-				s_clipParam = div16(p - p0, p1 - p0);
-
-				s_clipPosOut[outVertexCount].x = s_clipPos0->x + mul16(s_clipParam, s_clipPos1->x - s_clipPos0->x);
-				s_clipPosOut[outVertexCount].y = s_clipIntersectY;
-				s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
-
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-
-				outVertexCount++;
-			}
-			s_clipPos0 = s_clipPos1;
-			s_clipIntensity0 = s_clipIntensity1;
-			s_clipPos1++;
-			s_clipIntensity1++;
-		}
-		if (outVertexCount < 3)
-		{
-			return 0;
-		}
-
-		if (pos != s_clipPosOut)
-		{
-			memcpy(pos, s_clipPosOut, outVertexCount * sizeof(vec3_fixed));
-			memcpy(intensity, s_clipIntensityOut, outVertexCount * sizeof(fixed16_16));
-		}
-		return outVertexCount;
-	}
-
+		
 	void model_drawColumnColor()
 	{
 		const u8* colorMap = s_polyColorMap;
@@ -1051,7 +596,7 @@ namespace RClassic_Fixed
 		return -1;
 	}
 
-	void model_drawColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color)
+	void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color)
 	{
 		vec3_fixed* projVertex = projVertices;
 		s32 xMax = INT_MIN;
@@ -1170,5 +715,32 @@ namespace RClassic_Fixed
 			}
 		}
 	}
+
+	////////////////////////////////////////////////
+	// Instantiate Clip Routines.
+	// This abuses C-Macros to build 4 versions of
+	// the clipping functions based on the defines.
+	//
+	// This avoids duplicating a lot of the code 4
+	// times and is probably pretty similar to what
+	// the original developers did at the time.
+	//
+	// This is similar to modern shader variants.
+	////////////////////////////////////////////////
+	// Position only
+	#include "robj3dFixed_ClipFunc.h"
+
+	// Position, Intensity
+	#define CLIP_INTENSITY
+	#include "robj3dFixed_ClipFunc.h"
+
+	// Position, UV
+	#define CLIP_UV
+	#undef CLIP_INTENSITY
+	#include "robj3dFixed_ClipFunc.h"
+
+	// Position, UV, Intensity
+	#define CLIP_INTENSITY
+	#include "robj3dFixed_ClipFunc.h"
 
 }}  // TFE_JediRenderer

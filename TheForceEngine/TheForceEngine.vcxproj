@@ -309,6 +309,7 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rflatFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed_ClipFunc.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rsectorFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rwallFixed.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\fixedPoint20.h" />
