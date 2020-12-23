@@ -63,6 +63,40 @@ s32 model_swapClipBuffers(s32 outVertexCount)
 #endif
 
 #if defined(CLIP_INTENSITY) && !defined(CLIP_UV)
+void computeIntersectionI(s32 outVertexCount)
+#elif !defined(CLIP_INTENSITY) && defined(CLIP_UV)
+void computeIntersectionT(s32 outVertexCount)
+#elif defined(CLIP_INTENSITY) && defined(CLIP_UV)
+void computeIntersectionTI(s32 outVertexCount)
+#else
+void computeIntersection(s32 outVertexCount)
+#endif
+{
+	#if defined(CLIP_INTENSITY)
+		const fixed16_16 i0 = *s_clipIntensity0;
+		const fixed16_16 i1 = *s_clipIntensity1;
+		s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
+	#endif
+	#if defined(CLIP_UV)
+		const vec2_fixed uv0 = *s_clipUv0;
+		const vec2_fixed uv1 = *s_clipUv1;
+		s_clipUvOut[outVertexCount].x = uv0.x + mul16(s_clipParam, uv1.x - uv0.x);
+		s_clipUvOut[outVertexCount].z = uv0.z + mul16(s_clipParam, uv1.z - uv0.z);
+	#endif
+}
+
+#undef COMPUTE_CLIP_INTERSECTION
+#if defined(CLIP_INTENSITY) && !defined(CLIP_UV)
+#define COMPUTE_CLIP_INTERSECTION computeIntersectionI
+#elif !defined(CLIP_INTENSITY) && defined(CLIP_UV)
+#define COMPUTE_CLIP_INTERSECTION computeIntersectionT
+#elif defined(CLIP_INTENSITY) && defined(CLIP_UV)
+#define COMPUTE_CLIP_INTERSECTION computeIntersectionTI
+#else
+#define COMPUTE_CLIP_INTERSECTION computeIntersection
+#endif
+
+#if defined(CLIP_INTENSITY) && !defined(CLIP_UV)
 s32 model_clipPolygonGouraud(vec3_fixed* pos, s32* intensity, s32 count)
 #elif !defined(CLIP_INTENSITY) && defined(CLIP_UV)
 s32 model_clipPolygonUv(vec3_fixed* pos, vec2_fixed* uv, s32 count)
@@ -169,18 +203,7 @@ s32 model_clipPolygon(vec3_fixed* pos, s32 count)
 			s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);
 			s_clipPosOut[outVertexCount].x = s_clipPos0->x + mul16(s_clipParam, s_clipPos1->x - s_clipPos0->x);
 
-			#if defined(CLIP_INTENSITY)
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-			#endif
-			#if defined(CLIP_UV)
-				const vec2_fixed uv0 = *s_clipUv0;
-				const vec2_fixed uv1 = *s_clipUv1;
-				s_clipUvOut[outVertexCount].x = uv0.x + mul16(s_clipParam, uv1.x - uv0.x);
-				s_clipUvOut[outVertexCount].z = uv0.z + mul16(s_clipParam, uv1.z - uv0.z);
-			#endif
-
+			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
 		}
 
@@ -300,20 +323,8 @@ s32 model_clipPolygon(vec3_fixed* pos, s32 count)
 			s_clipPosOut[outVertexCount].x = s_clipIntersectX;
 			s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);
 			s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
-			assert(s_clipPosOut[outVertexCount].z >= ONE_16);
 
-			#if defined(CLIP_INTENSITY)
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-			#endif
-			#if defined(CLIP_UV)
-				const vec2_fixed uv0 = *s_clipUv0;
-				const vec2_fixed uv1 = *s_clipUv1;
-				s_clipUvOut[outVertexCount].x = uv0.x + mul16(s_clipParam, uv1.x - uv0.x);
-				s_clipUvOut[outVertexCount].z = uv0.z + mul16(s_clipParam, uv1.z - uv0.z);
-			#endif
-
+			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
 		}
 		s_clipPos0 = s_clipPos1;
@@ -431,20 +442,8 @@ s32 model_clipPolygon(vec3_fixed* pos, s32 count)
 			s_clipPosOut[outVertexCount].x = s_clipIntersectX;
 			s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);	// edx
 			s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
-			assert(s_clipPosOut[outVertexCount].z >= ONE_16);
 
-			#if defined(CLIP_INTENSITY)
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-			#endif
-			#if defined(CLIP_UV)
-				const vec2_fixed uv0 = *s_clipUv0;
-				const vec2_fixed uv1 = *s_clipUv1;
-				s_clipUvOut[outVertexCount].x = uv0.x + mul16(s_clipParam, uv1.x - uv0.x);
-				s_clipUvOut[outVertexCount].z = uv0.z + mul16(s_clipParam, uv1.z - uv0.z);
-			#endif
-
+			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
 		}
 		s_clipPos0 = s_clipPos1;
@@ -562,18 +561,7 @@ s32 model_clipPolygon(vec3_fixed* pos, s32 count)
 			s_clipPosOut[outVertexCount].y = s_clipIntersectY;
 			s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 
-			#if defined(CLIP_INTENSITY)
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-			#endif
-			#if defined(CLIP_UV)
-				const vec2_fixed uv0 = *s_clipUv0;
-				const vec2_fixed uv1 = *s_clipUv1;
-				s_clipUvOut[outVertexCount].x = uv0.x + mul16(s_clipParam, uv1.x - uv0.x);
-				s_clipUvOut[outVertexCount].z = uv0.z + mul16(s_clipParam, uv1.z - uv0.z);
-			#endif
-
+			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
 		}
 		s_clipPos0 = s_clipPos1;
@@ -692,18 +680,7 @@ s32 model_clipPolygon(vec3_fixed* pos, s32 count)
 			s_clipPosOut[outVertexCount].y = s_clipIntersectY;
 			s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 
-			#if defined(CLIP_INTENSITY)
-				const fixed16_16 i0 = *s_clipIntensity0;
-				const fixed16_16 i1 = *s_clipIntensity1;
-				s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
-			#endif
-			#if defined(CLIP_UV)
-				const vec2_fixed uv0 = *s_clipUv0;
-				const vec2_fixed uv1 = *s_clipUv1;
-				s_clipUvOut[outVertexCount].x = uv0.x + mul16(s_clipParam, uv1.x - uv0.x);
-				s_clipUvOut[outVertexCount].z = uv0.z + mul16(s_clipParam, uv1.z - uv0.z);
-			#endif
-
+			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
 		}
 		s_clipPos0 = s_clipPos1;
