@@ -48,7 +48,7 @@ private:
 	bool m_recordingStarted;
 	u32  m_recordingFrame;
 
-	f32 m_recordingFramerate = 30.0;
+	f32 m_recordingFramerate = 15.0;
 	s32 m_recordingFrameStart = 0;
 	f64 m_recordingTimeStart = 0.0;
 	f64 m_recordingFrameLast = 0.0;
