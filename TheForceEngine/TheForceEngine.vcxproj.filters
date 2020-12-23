@@ -652,6 +652,9 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed_ClipFunc.h">
       <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed_PolyRenderFunc.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

@@ -21,13 +21,13 @@ s32 model_swapClipBuffers(s32 outVertexCount)
 	#if defined(CLIP_INTENSITY)
 	s_clipTempIntensity = s_clipIntensitySrc;
 	s_clipIntensitySrc = s_clipIntensityOut;
-	s_clipIntensityOut = s_clipIntensitySrc;
+	s_clipIntensityOut = s_clipTempIntensity;
 	#endif
 
 	#if defined(CLIP_UV)
 	s_clipTempUv = s_clipUvSrc;
 	s_clipUvSrc = s_clipUvOut;
-	s_clipUvOut = s_clipUvSrc;
+	s_clipUvOut = s_clipTempUv;
 	#endif
 
 	s32 srcVertexCount = outVertexCount;

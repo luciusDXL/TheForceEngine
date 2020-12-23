@@ -26,6 +26,11 @@ namespace RClassic_Fixed
 	};
 
 	/////////////////////////////////////////////
+	// Settings
+	/////////////////////////////////////////////
+	s32 s_enableFlatShading = 1;	// Set to 0 to disable flat shading.
+
+	/////////////////////////////////////////////
 	// Vertex Processing
 	/////////////////////////////////////////////
 	// Vertex attributes transformed to viewspace.
@@ -91,8 +96,10 @@ namespace RClassic_Fixed
 	static s32 s_polyVertexCount;
 	static s32 s_polyMaxXIndex;
 	static fixed16_16* s_polyIntensity;
+	static vec2_fixed* s_polyUv;
 	static vec3_fixed* s_polyProjVtx;
 	static const u8*   s_polyColorMap;
+	static Texture*    s_polyTexture;
 
 	// Column
 	static s32 s_columnX;
@@ -102,6 +109,8 @@ namespace RClassic_Fixed
 		
 	static fixed16_16  s_col_I0;
 	static fixed16_16  s_col_dIdY;
+	static vec2_fixed  s_col_Uv0;
+	static vec2_fixed  s_col_dUVdY;
 
 	// Polygon Edges
 	static fixed16_16  s_ditherOffset;
@@ -109,9 +118,13 @@ namespace RClassic_Fixed
 	static fixed16_16  s_edgeBot_dZdX;
 	static fixed16_16  s_edgeBot_dIdX;
 	static fixed16_16  s_edgeBot_I0;
+	static vec2_fixed  s_edgeBot_dUVdX;
+	static vec2_fixed  s_edgeBot_Uv0;
 	static fixed16_16  s_edgeBot_dYdX;
 	static fixed16_16  s_edgeBot_Y0;
 	static fixed16_16  s_edgeTop_dIdX;
+	static vec2_fixed  s_edgeTop_dUVdX;
+	static vec2_fixed  s_edgeTop_Uv0;
 	static fixed16_16  s_edgeTop_dYdX;
 	static fixed16_16  s_edgeTop_Z0;
 	static fixed16_16  s_edgeTop_Y0;
@@ -127,11 +140,18 @@ namespace RClassic_Fixed
 		
 	void model_projectVertices(vec3_fixed* pos, s32 count, vec3_fixed* out);
 	void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color);
+	u8 model_computePolygonColor(vec3_fixed* normal, u8 color, fixed16_16 z);
+	u8 model_computePolygonLightLevel(vec3_fixed* normal, fixed16_16 z);
 
 	s32 model_clipPolygonGouraud(vec3_fixed* pos, s32* intensity, s32 count);
 	s32 model_clipPolygonUv(vec3_fixed* pos, vec2_fixed* uv, s32 count);
 	s32 model_clipPolygonUvGouraud(vec3_fixed* pos, vec2_fixed* uv, s32* intensity, s32 count);
 	s32 model_clipPolygon(vec3_fixed* pos, s32 count);
+
+	void model_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 color);
+	void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color);
+	void model_drawFlatTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, s32 vertexCount, Texture* texture, u8 color);
+	void model_drawShadedTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, fixed16_16* intensity, s32 vertexCount, Texture* texture);
 
 	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx)
 	{
@@ -369,8 +389,8 @@ namespace RClassic_Fixed
 			polygon = *visPolygon;
 			
 			//const s32 shading = polygon->shading;
-			// DEBUG: Force everything to be gouraud for now.
-			const s32 shading = PSHADE_GOURAUD;
+			// DEBUG: Force PSHADE_PLANE to PSHADE_FLAT until implemented.
+			const s32 shading = (polygon->shading == PSHADE_PLANE) ? PSHADE_FLAT : polygon->shading;
 
 			const s32 vertexCount = polygon->vertexCount;
 			if (vertexCount <= 0)
@@ -433,6 +453,28 @@ namespace RClassic_Fixed
 			{
 				model_drawShadedColorPolygon(s_polygonVerticesProj, s_polygonIntensity, polyVertexCount, polygon->color);
 			}
+			else if (shading == PSHADE_FLAT)
+			{
+				u8 color = polygon->color;
+				if (s_enableFlatShading)
+				{
+					color = model_computePolygonColor(&s_polygonNormalsVS[polygon->index], color, polygon->zAve);
+				}
+				model_drawFlatColorPolygon(s_polygonVerticesProj, polyVertexCount, color);
+			}
+			else if (shading == PSHADE_GOURAUD_TEXTURE)
+			{
+				model_drawShadedTexturePolygon(s_polygonVerticesProj, s_polygonUv, s_polygonIntensity, polyVertexCount, polygon->texture);
+			}
+			else if (shading == PSHADE_TEXTURE)
+			{
+				u8 lightLevel = 0;
+				if (s_enableFlatShading)
+				{
+					lightLevel = model_computePolygonLightLevel(&s_polygonNormalsVS[polygon->index], polygon->zAve);
+				}
+				model_drawFlatTexturePolygon(s_polygonVerticesProj, s_polygonUv, polyVertexCount, polygon->texture, lightLevel);
+			}
 		}
 	}
 
@@ -445,275 +487,74 @@ namespace RClassic_Fixed
 			out->z = pos->z;
 		}
 	}
+
+	u8 model_computePolygonColor(vec3_fixed* normal, u8 color, fixed16_16 z)
+	{
+		if (s_sectorAmbient >= 31) { return color; }
+		s32 lightLevel = 0;
 		
-	void model_drawColumnColor()
-	{
-		const u8* colorMap = s_polyColorMap;
-
-		fixed16_16 intensity = s_col_I0;
-		u8* colorOut = s_pcolumnOut;
-		u8  colorIndex = s_polyColorIndex;
-		s32 count = s_columnHeight;
-		s32 dither = s_dither;
-
-		s32 end = s_columnHeight - 1;
-		s32 offset = end * s_width;
-		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		fixed16_16 lighting = 0;
+		for (s32 i = 0; i < s_lightCount; i++)
 		{
-			s32 pixelIntensity = floor16(intensity);
-			if (dither)
-			{
-				const fixed16_16 iOffset = intensity - s_ditherOffset;
-				if (iOffset >= 0)
-				{
-					pixelIntensity = floor16(iOffset);
-				}
-			}
-			s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
+			const CameraLight* light = &s_cameraLight[i];
+			const s32 L = dot(normal, &light->lightVS);
 
-			intensity += s_col_dIdY;
-			dither = !dither;
+			if (L > 0)
+			{
+				const fixed16_16 brightness = mul16(light->brightness, VSHADE_MAX_INTENSITY);
+				lighting += mul16(L, brightness);
+			}
 		}
+		lightLevel += floor16(mul16(lighting, s_sectorAmbientFraction));
+		if (lightLevel >= 31) { return color; }
+
+		if (/*s_worldAtten < 31 || */s_cameraLightSource != 0)
+		{
+			// TODO
+		}
+
+		z = max(z, 0);
+		const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
+		lightLevel = max(lightLevel, s_sectorAmbient);
+		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
+
+		if (lightLevel >= 31) { return color; }
+		if (lightLevel <= 0) { return s_polyColorMap[color]; }
+
+		return s_polyColorMap[lightLevel*256 + color];
 	}
 
-	s32 model_findNextEdge(s32 xMinIndex, s32 xMin)
+	u8 model_computePolygonLightLevel(vec3_fixed* normal, fixed16_16 z)
 	{
-		s32 prevScanlineLen = s_edgeTopLength;
-		s32 curIndex = xMinIndex;
+		if (s_sectorAmbient >= 31) { return 31; }
+		s32 lightLevel = 0;
 
-		// The min and max indices should not match, otherwise it is an error.
-		if (xMinIndex == s_polyMaxXIndex)
+		fixed16_16 lighting = 0;
+		for (s32 i = 0; i < s_lightCount; i++)
 		{
-			s_edgeTopLength = prevScanlineLen;
-			return -1;
-		}
+			const CameraLight* light = &s_cameraLight[i];
+			const s32 L = dot(normal, &light->lightVS);
 
-		while (1)
-		{
-			s32 nextIndex = curIndex + 1;
-			if (nextIndex >= s_polyVertexCount) { nextIndex = 0; }
-			else if (nextIndex < 0) { nextIndex = s_polyVertexCount - 1; }
-
-			vec3_fixed* cur = &s_polyProjVtx[curIndex];
-			vec3_fixed* next = &s_polyProjVtx[nextIndex];
-			s32 dx = next->x - cur->x;
-			if (next->x == s_maxScreenX)
+			if (L > 0)
 			{
-				dx++;
-			}
-
-			if (dx > 0)
-			{
-				s_edgeTopLength = dx;
-
-				const fixed16_16 step = div16(ONE_16, intToFixed16(dx));
-				s_edgeTopY0_Pixel = cur->y;
-				s_edgeTop_Y0 = intToFixed16(cur->y);
-
-				const fixed16_16 dy = intToFixed16(next->y - cur->y);
-				s_edgeTop_dYdX = mul16(dy, step);
-				
-				const fixed16_16 dz = next->z - cur->z;
-				s_edgeTop_dZdX = mul16(dz, step);
-				s_edgeTop_Z0 = cur->z;
-				s_edgeTop_I0 = clamp(s_polyIntensity[curIndex], 0, VSHADE_MAX_INTENSITY);
-
-				const fixed16_16 dI = s_polyIntensity[nextIndex] - s_edgeTop_I0;
-				s_edgeTop_dIdX = mul16(dI, step);
-				s_edgeTopIndex = nextIndex;
-				return 0;
-			}
-			else if (nextIndex == s_polyMaxXIndex)
-			{
-				s_edgeTopLength = prevScanlineLen;
-				return -1;
-			}
-			curIndex = nextIndex;
-		}
-
-		// This shouldn't be reached, but just in case.
-		s_edgeTopLength = prevScanlineLen;
-		return -1;
-	}
-
-	s32 model_findPrevEdge(s32 minXIndex)
-	{
-		const s32 len = s_edgeBotLength;
-		s32 curIndex = minXIndex;
-		if (minXIndex == s_polyMaxXIndex)
-		{
-			s_edgeBotLength = len;
-			return -1;
-		}
-
-		while (1)
-		{
-			s32 prevIndex = curIndex - 1;
-			if (prevIndex >= s_polyVertexCount) { prevIndex = 0; }
-			else if (prevIndex < 0) { prevIndex = s_polyVertexCount - 1; }
-
-			vec3_fixed* cur  = &s_polyProjVtx[curIndex];
-			vec3_fixed* prev = &s_polyProjVtx[prevIndex];
-			s32 dx = prev->x - cur->x;
-			if (s_maxScreenX == prev->x)
-			{
-				dx++;
-			}
-
-			if (dx > 0)
-			{
-				s_edgeBotLength = dx;
-
-				const fixed16_16 step = div16(ONE_16, intToFixed16(dx));
-				s_edgeBotY0_Pixel = cur->y;
-				s_edgeBot_Y0 = intToFixed16(cur->y);
-
-				const s32 dy = prev->y - cur->y;
-				s_edgeBot_dYdX = mul16(intToFixed16(dy), step);
-				
-				const fixed16_16 dz = prev->z - cur->z;
-				s_edgeBot_dZdX = div16(dz, intToFixed16(dx));
-				s_edgeBot_Z0 = cur->z;
-				s_edgeBot_I0 = clamp(s_polyIntensity[curIndex], 0, VSHADE_MAX_INTENSITY);
-
-				const fixed16_16 dI = s_polyIntensity[prevIndex] - s_edgeBot_I0;
-				s_edgeBot_dIdX = mul16(dI, step);
-				s_edgeBotIndex = prevIndex;
-
-				return 0;
-			}
-			else
-			{
-				curIndex = prevIndex;
-				if (prevIndex == s_polyMaxXIndex)
-				{
-					s_edgeBotLength = len;
-					return -1;
-				}
+				const fixed16_16 brightness = mul16(light->brightness, VSHADE_MAX_INTENSITY);
+				lighting += mul16(L, brightness);
 			}
 		}
-		s_edgeBotLength = len;
-		return -1;
-	}
+		lightLevel += floor16(mul16(lighting, s_sectorAmbientFraction));
+		if (lightLevel >= 31) { return 31; }
 
-	void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color)
-	{
-		vec3_fixed* projVertex = projVertices;
-		s32 xMax = INT_MIN;
-		s32 xMin = INT_MAX;
-		s_polyProjVtx     = projVertices;
-		s_polyIntensity   = intensity;
-		s_polyVertexCount = vertexCount;
-
-		s32 yMax = xMax;
-		s32 yMin = xMin;
-		if (vertexCount <= 0) { return; }
-
-		// Compute the 2D bounding box of the polygon.
-		// Track the extreme vertex indices in X.
-		s32 minXIndex;
-		for (s32 i = 0; i < s_polyVertexCount; i++, projVertex++)
+		if (/*s_worldAtten < 31 || */s_cameraLightSource != 0)
 		{
-			const s32 x = projVertex->x;
-			if (x < xMin)
-			{
-				xMin = x;
-				minXIndex = i;
-			}
-			if (x > xMax)
-			{
-				xMax = x;
-				s_polyMaxXIndex = i;
-			}
-
-			const s32 y = projVertex->y;
-			if (y < yMin) { yMin = y; }
-			if (y > yMax) { yMax = y; }
+			// TODO
 		}
 
-		// If the polygon is too small or off screen, skip it.
-		if (xMin >= xMax || yMin > s_windowMaxY || yMax < s_windowMinY) { return; }
+		z = max(z, 0);
+		const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
+		lightLevel = max(lightLevel, s_sectorAmbient);
+		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
 
-		s_polyColorMap = s_colorMap;
-		s_polyColorIndex = color;
-		s_ditherOffset = HALF_16;
-		s_columnX = xMin;
-		if (model_findNextEdge(minXIndex, xMin) != 0 || model_findPrevEdge(minXIndex) != 0) { return; }
-
-		for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX && s_columnX <= s_maxScreenX; s_columnX++)
-		{
-			//fixed16_16 edgeAveZ0 = (s_edgeBot_Z0 + s_edgeTop_Z0) >> 1;
-			// This produces more accurate results, look into the difference (it might be a difference between gouraud and textured).
-			const fixed16_16 edgeMinZ = min(s_edgeBot_Z0, s_edgeTop_Z0);
-			const fixed16_16 z = s_depth1d_Fixed[s_columnX];
-
-			// Is ave edge Z occluded by walls? Is edge vertex 0 outside of the vertical area?
-			if (edgeMinZ < z && s_edgeTopY0_Pixel <= s_windowMaxY && s_edgeBotY0_Pixel >= s_windowMinY)
-			{
-				const s32 winTop = s_objWindowTop[s_columnX];
-				const s32 winBot = s_objWindowBot[s_columnX];
-				s32 y0_Top = s_edgeTopY0_Pixel;
-				s32 y0_Bot = s_edgeBotY0_Pixel;
-				fixed16_16 yOffset = 0;
-
-				if (y0_Top < winTop)
-				{
-					y0_Top = winTop;
-				}
-				if (y0_Bot > winBot)
-				{
-					yOffset = intToFixed16(y0_Bot - winBot);
-					y0_Bot = winBot;
-				}
-
-				s_columnHeight = y0_Bot - y0_Top + 1;
-				if (s_columnHeight > 0)
-				{
-					const fixed16_16 height = intToFixed16(s_edgeBotY0_Pixel - s_edgeTopY0_Pixel + 1);
-
-					s_pcolumnOut = &s_display[y0_Top*s_width + s_columnX];
-					s_col_dIdY = div16(s_edgeTop_I0 - s_edgeBot_I0, height);
-					s_col_I0 = s_edgeBot_I0;
-					if (yOffset)
-					{
-						s_col_I0 = mul16(yOffset, s_col_dIdY) + s_edgeBot_I0;
-					}
-
-					s_dither = ((s_columnX & 1) ^ (y0_Bot & 1)) - 1;
-					model_drawColumnColor();
-				}
-			}
-
-			s_edgeTopLength--;
-			if (s_edgeTopLength <= 0)
-			{
-				foundEdge = model_findNextEdge(s_edgeTopIndex, s_columnX);
-			}
-			else
-			{
-				s_edgeTop_I0 = clamp(s_edgeTop_I0 + s_edgeTop_dIdX, 0, VSHADE_MAX_INTENSITY);
-
-				s_edgeTop_Y0 += s_edgeTop_dYdX;
-				s_edgeTop_Z0 += s_edgeTop_dZdX;
-				s_edgeTopY0_Pixel = round16(s_edgeTop_Y0);
-			}
-			if (foundEdge == 0)
-			{
-				s_edgeBotLength--;
-				if (s_edgeBotLength <= 0)
-				{
-					foundEdge = model_findPrevEdge(s_edgeBotIndex);
-				}
-				else
-				{
-					s_edgeBot_I0 = clamp(s_edgeBot_I0 + s_edgeBot_dIdX, 0, VSHADE_MAX_INTENSITY);
-
-					s_edgeBot_Y0 += s_edgeBot_dYdX;
-					s_edgeBot_Z0 += s_edgeBot_dZdX;
-					s_edgeBotY0_Pixel = round16(s_edgeBot_Y0);
-				}
-			}
-		}
+		return clamp(lightLevel, 0, 31);
 	}
 
 	////////////////////////////////////////////////
@@ -742,5 +583,33 @@ namespace RClassic_Fixed
 	// Position, UV, Intensity
 	#define CLIP_INTENSITY
 	#include "robj3dFixed_ClipFunc.h"
+
+
+	////////////////////////////////////////////////
+	// Instantiate Polygon Draw Routines.
+	// This abuses C-Macros to build 4 versions of
+	// the drawing functions based on the defines.
+	//
+	// This avoids duplicating a lot of the code 4
+	// times and is probably pretty similar to what
+	// the original developers did at the time.
+	//
+	// This is similar to modern shader variants.
+	////////////////////////////////////////////////
+	// Flat color
+	#include "robj3dFixed_PolyRenderFunc.h"
+
+	// Shaded
+	#define POLY_INTENSITY
+	#include "robj3dFixed_PolyRenderFunc.h"
+
+	// Flat Texture
+	#define POLY_UV
+	#undef POLY_INTENSITY
+	#include "robj3dFixed_PolyRenderFunc.h"
+
+	// Shaded Texture
+	#define POLY_INTENSITY
+	#include "robj3dFixed_PolyRenderFunc.h"
 
 }}  // TFE_JediRenderer
