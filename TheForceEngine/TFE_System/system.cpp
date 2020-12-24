@@ -10,6 +10,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include "Shellapi.h"
+#include <synchapi.h>
 #undef min
 #undef max
 #endif
@@ -152,4 +153,11 @@ namespace TFE_System
 #endif
 		return false;
 	}
+
+#ifdef _WIN32
+	void sleep(u32 sleepDeltaMS)
+	{
+		Sleep(sleepDeltaMS);
+	}
+#endif
 }

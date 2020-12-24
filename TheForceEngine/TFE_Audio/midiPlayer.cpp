@@ -14,16 +14,6 @@
 #undef max
 #endif
 
-namespace OS
-{
-#ifdef _WIN32
-	void sleep(u32 sleepDeltaMS)
-	{
-		Sleep(sleepDeltaMS);
-	}
-#endif
-}
-
 namespace TFE_MidiPlayer
 {
 	struct MidiRuntimeTrack
@@ -206,7 +196,7 @@ namespace TFE_MidiPlayer
 					loopStart = -1;
 				}
 				runThread = s_runMusicThread.load();
-				if (runThread) { OS::sleep(16); }
+				if (runThread) { TFE_System::sleep(16); }
 				continue;
 			}
 			wasPlaying = true;
@@ -339,7 +329,7 @@ namespace TFE_MidiPlayer
 			}
 			runThread = s_runMusicThread.load();
 			// Give other threads a chance to run...
-			//if (runThread) { OS::sleep(0); }
+			//if (runThread) { TFE_System::sleep(0); }
 		};
 		
 		return (TFE_THREADRET)0;

@@ -46,6 +46,7 @@ namespace TFE_System
 
 	// System
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion);
+	void sleep(u32 sleepDeltaMS);
 
 	const char* getVersionString();
 }
