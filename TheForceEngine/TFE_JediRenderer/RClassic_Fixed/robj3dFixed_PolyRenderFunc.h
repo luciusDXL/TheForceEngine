@@ -16,7 +16,7 @@ s32 model_findNextEdge(s32 xMinIndex, s32 xMin)
 	s32 curIndex = xMinIndex;
 
 	// The min and max indices should not match, otherwise it is an error.
-	if (xMinIndex == s_polyMaxXIndex)
+	if (xMinIndex == s_polyMaxIndex)
 	{
 		s_edgeTopLength = prevScanlineLen;
 		return -1;
@@ -67,7 +67,7 @@ s32 model_findNextEdge(s32 xMinIndex, s32 xMin)
 			s_edgeTopIndex = nextIndex;
 			return 0;
 		}
-		else if (nextIndex == s_polyMaxXIndex)
+		else if (nextIndex == s_polyMaxIndex)
 		{
 			s_edgeTopLength = prevScanlineLen;
 			return -1;
@@ -92,7 +92,7 @@ s32 model_findPrevEdge(s32 minXIndex)
 {
 	const s32 len = s_edgeBotLength;
 	s32 curIndex = minXIndex;
-	if (minXIndex == s_polyMaxXIndex)
+	if (minXIndex == s_polyMaxIndex)
 	{
 		s_edgeBotLength = len;
 		return -1;
@@ -147,7 +147,7 @@ s32 model_findPrevEdge(s32 minXIndex)
 		else
 		{
 			curIndex = prevIndex;
-			if (prevIndex == s_polyMaxXIndex)
+			if (prevIndex == s_polyMaxIndex)
 			{
 				s_edgeBotLength = len;
 				return -1;
@@ -312,7 +312,7 @@ void model_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 co
 		if (x > xMax)
 		{
 			xMax = x;
-			s_polyMaxXIndex = i;
+			s_polyMaxIndex = i;
 		}
 
 		const s32 y = projVertex->y;

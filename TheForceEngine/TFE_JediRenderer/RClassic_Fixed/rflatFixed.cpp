@@ -34,7 +34,7 @@ namespace RClassic_Fixed
 	static s32 s_ftexWidthMask;
 	static s32 s_ftexHeightMask;
 	static s32 s_ftexHeightLog2;
-	
+		
 	void flat_addEdges(s32 length, s32 x0, fixed16_16 dyFloor_dx, fixed16_16 yFloor, fixed16_16 dyCeil_dx, fixed16_16 yCeil)
 	{
 		if (s_flatCount < MAX_SEG && length > 0)
@@ -75,7 +75,7 @@ namespace RClassic_Fixed
 			s_flatCount++;
 		}
 	}
-		
+				
 	// This produces functionally identical results to the original but splits apart the U/V and dUdx/dVdx into seperate variables
 	// to account for C vs ASM differences.
 	void drawScanline()
@@ -128,6 +128,58 @@ namespace RClassic_Fixed
 		}
 	}
 
+	void drawScanline_Trans()
+	{
+		fixed16_16 V = s_scanlineV0;
+		fixed16_16 U = s_scanlineU0;
+		fixed16_16 dVdX = s_scanline_dVdX;
+		fixed16_16 dUdX = s_scanline_dUdX;
+
+		// Note this produces a distorted mapping if the texture is not 64x64.
+		// This behavior matches the original.
+		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+		texel &= s_ftexDataEnd;
+		U += dUdX;
+		V += dVdX;
+
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		{
+			u8 baseColor = s_ftexImage[texel];
+			u8 c = s_scanlineLight[baseColor];
+			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+			texel &= s_ftexDataEnd;
+			U += dUdX;
+			V += dVdX;
+
+			if (baseColor) { s_scanlineOut[i] = c; }
+		}
+	}
+
+	void drawScanline_Fullbright_Trans()
+	{
+		fixed16_16 V = s_scanlineV0;
+		fixed16_16 U = s_scanlineU0;
+		fixed16_16 dVdX = s_scanline_dVdX;
+		fixed16_16 dUdX = s_scanline_dUdX;
+
+		// Note this produces a distorted mapping if the texture is not 64x64.
+		// This behavior matches the original.
+		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+		texel &= s_ftexDataEnd;
+		U += dUdX;
+		V += dVdX;
+
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		{
+			u8 c = s_ftexImage[texel];
+			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+			texel &= s_ftexDataEnd;
+			U += dUdX;
+			V += dVdX;
+			if (c) { s_scanlineOut[i] = c; }
+		}
+	}
+			   
 	bool flat_setTexture(TextureFrame* tex)
 	{
 		if (!tex) { return false; }
@@ -273,6 +325,77 @@ namespace RClassic_Fixed
 			} // while (i < count)
 		}
 	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Polygon Scanline rendering using the same algorithms as flats.
+	//////////////////////////////////////////////////////////////////////
+	typedef void(*ScanlineFunction)();
+	static const ScanlineFunction c_scanlineDrawFunc[] =
+	{
+		drawScanline,
+		drawScanline_Fullbright,
+		drawScanline_Trans,
+		drawScanline_Fullbright_Trans
+	};
+
+	static fixed16_16 s_poly_offsetX;
+	static fixed16_16 s_poly_offsetZ;
+
+	static fixed16_16 s_poly_scaledHOffset;
+	static fixed16_16 s_poly_sinYawHOffset;
+	static fixed16_16 s_poly_cosYawHOffset;
+
+	static fixed16_16 s_poly_cosYawScaledHOffset;
+	static fixed16_16 s_poly_sinYawScaledHOffset;
+		
+	void flat_preparePolygon(fixed16_16 heightOffset, fixed16_16 offsetX, fixed16_16 offsetZ, Texture* texture)
+	{
+		s_poly_offsetX = s_cameraPosX_Fixed - offsetX;
+		s_poly_offsetZ = offsetZ - s_cameraPosZ_Fixed;
+
+		s_poly_scaledHOffset = mul16(heightOffset, s_focalLenAspect_Fixed);
+		s_poly_sinYawHOffset = mul16(s_sinYaw_Fixed, heightOffset);
+		s_poly_cosYawHOffset = mul16(s_cosYaw_Fixed, heightOffset);
+
+		s_poly_cosYawScaledHOffset = mul16(s_cosYaw_Fixed, s_poly_scaledHOffset);
+		s_poly_sinYawScaledHOffset = mul16(s_sinYaw_Fixed, s_poly_scaledHOffset);
+
+		s_ftexWidthMask  = texture->frames[0].width - 1;
+		s_ftexHeightMask = texture->frames[0].height - 1;
+		s_ftexHeightLog2 = texture->frames[0].logSizeY;
+		s_ftexImage      = texture->frames[0].image;
+		s_ftexDataEnd    = texture->frames[0].width * texture->frames[0].height - 1;
+	}
+
+	void flat_drawPolygonScanline(s32 x0, s32 x1, s32 y, bool trans)
+	{
+		x0 = max(x0, s_windowMinX);
+		x1 = min(x1, s_windowMaxX);
+		clipScanline(&x0, &x1, y);
+
+		s_scanlineWidth = x1 - x0 + 1;
+		if (s_scanlineWidth <= 0) { return; }
+
+		s_scanlineX0  = x0;
+		s_scanlineOut = &s_display[y * s_width + x0];
+
+		const s32 yShear = s_heightInPixelsBase - s_heightInPixels;
+		const fixed16_16 yRcp = s_rcp_yMinusHalfHeight_Fixed[yShear + y + s_height];
+		const fixed16_16 z = mul16(s_poly_scaledHOffset, yRcp);
+		const fixed16_16 right = intToFixed16(x1 - 1 - s_screenXMid);
+
+		const fixed16_16 u0 = s_poly_sinYawScaledHOffset - mul16(s_poly_cosYawHOffset, right);
+		const fixed16_16 v0 = s_poly_cosYawScaledHOffset + mul16(s_poly_sinYawHOffset, right);
+		s_scanlineU0 = (mul16(u0, yRcp) - s_poly_offsetX) * 8;
+		s_scanlineV0 = (mul16(v0, yRcp) - s_poly_offsetZ) * 8;
+		s_scanline_dVdX = -mul16(s_poly_sinYawHOffset, yRcp) * 8;
+		s_scanline_dUdX =  mul16(s_poly_cosYawHOffset, yRcp) * 8;
+
+		s_scanlineLight = computeLighting(z, 0);
+		const s32 index = (!s_scanlineLight) + trans*2;
+		c_scanlineDrawFunc[index]();
+	}
+
 }  // RFlatFixed
 
 }  // TFE_JediRenderer

@@ -4,12 +4,14 @@
 
 #include "robj3dFixed.h"
 #include "rsectorFixed.h"
+#include "rflatFixed.h"
 #include "rcommonFixed.h"
 #include "rlightingFixed.h"
 #include "../fixedPoint.h"
 #include "../rmath.h"
 #include "../rcommon.h"
 #include "../robject.h"
+#include "../rscanline.h"
 
 namespace TFE_JediRenderer
 {
@@ -94,7 +96,7 @@ namespace RClassic_Fixed
 	// Polygon
 	static u8  s_polyColorIndex;
 	static s32 s_polyVertexCount;
-	static s32 s_polyMaxXIndex;
+	static s32 s_polyMaxIndex;
 	static fixed16_16* s_polyIntensity;
 	static vec2_fixed* s_polyUv;
 	static vec3_fixed* s_polyProjVtx;
@@ -103,6 +105,7 @@ namespace RClassic_Fixed
 
 	// Column
 	static s32 s_columnX;
+	static s32 s_rowY;
 	static s32 s_columnHeight;
 	static s32 s_dither;
 	static u8* s_pcolumnOut;
@@ -114,6 +117,7 @@ namespace RClassic_Fixed
 
 	// Polygon Edges
 	static fixed16_16  s_ditherOffset;
+	// Bottom Edge
 	static fixed16_16  s_edgeBot_Z0;
 	static fixed16_16  s_edgeBot_dZdX;
 	static fixed16_16  s_edgeBot_dIdX;
@@ -122,6 +126,7 @@ namespace RClassic_Fixed
 	static vec2_fixed  s_edgeBot_Uv0;
 	static fixed16_16  s_edgeBot_dYdX;
 	static fixed16_16  s_edgeBot_Y0;
+	// Top Edge
 	static fixed16_16  s_edgeTop_dIdX;
 	static vec2_fixed  s_edgeTop_dUVdX;
 	static vec2_fixed  s_edgeTop_Uv0;
@@ -130,16 +135,31 @@ namespace RClassic_Fixed
 	static fixed16_16  s_edgeTop_Y0;
 	static fixed16_16  s_edgeTop_dZdX;
 	static fixed16_16  s_edgeTop_I0;
-
+	// Left Edge
+	static fixed16_16  s_edgeLeft_X0;
+	static fixed16_16  s_edgeLeft_Z0;
+	static fixed16_16  s_edgeLeft_dXdY;
+	static fixed16_16  s_edgeLeft_dZmdY;
+	// Right Edge
+	static fixed16_16  s_edgeRight_X0;
+	static fixed16_16  s_edgeRight_Z0;
+	static fixed16_16  s_edgeRight_dXdY;
+	static fixed16_16  s_edgeRight_dZmdY;
+	// Edge Pixels & Indices
 	static s32 s_edgeBotY0_Pixel;
 	static s32 s_edgeTopY0_Pixel;
+	static s32 s_edgeLeft_X0_Pixel;
+	static s32 s_edgeRight_X0_Pixel;
 	static s32 s_edgeBotIndex;
 	static s32 s_edgeTopIndex;
+	static s32 s_edgeLeftIndex;
+	static s32 s_edgeRightIndex;
 	static s32 s_edgeTopLength;
 	static s32 s_edgeBotLength;
-		
+	static s32 s_edgeLeftLength;
+	static s32 s_edgeRightLength;
+
 	void model_projectVertices(vec3_fixed* pos, s32 count, vec3_fixed* out);
-	void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color);
 	u8 model_computePolygonColor(vec3_fixed* normal, u8 color, fixed16_16 z);
 	u8 model_computePolygonLightLevel(vec3_fixed* normal, fixed16_16 z);
 
@@ -152,6 +172,7 @@ namespace RClassic_Fixed
 	void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color);
 	void model_drawFlatTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, s32 vertexCount, Texture* texture, u8 color);
 	void model_drawShadedTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, fixed16_16* intensity, s32 vertexCount, Texture* texture);
+	void model_drawPlaneTexturePolygon(vec3_fixed* projVertices, s32 vertexCount, Texture* texture, fixed16_16 planeY, fixed16_16 ceilOffsetX, fixed16_16 ceilOffsetZ, fixed16_16 floorOffsetX, fixed16_16 floorOffsetZ);
 
 	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx)
 	{
@@ -388,10 +409,7 @@ namespace RClassic_Fixed
 		{
 			polygon = *visPolygon;
 			
-			//const s32 shading = polygon->shading;
-			// DEBUG: Force PSHADE_PLANE to PSHADE_FLAT until implemented.
-			const s32 shading = (polygon->shading == PSHADE_PLANE) ? PSHADE_FLAT : polygon->shading;
-
+			const s32 shading = polygon->shading;
 			const s32 vertexCount = polygon->vertexCount;
 			if (vertexCount <= 0)
 			{
@@ -474,6 +492,12 @@ namespace RClassic_Fixed
 					lightLevel = model_computePolygonLightLevel(&s_polygonNormalsVS[polygon->index], polygon->zAve);
 				}
 				model_drawFlatTexturePolygon(s_polygonVerticesProj, s_polygonUv, polyVertexCount, polygon->texture, lightLevel);
+			}
+			else if (shading == PSHADE_PLANE)
+			{
+				const RSector* sector = obj->sector;
+				const fixed16_16 planeY = model->vertices[polygon->indices[0]].y + obj->posWS.y.f16_16;
+				model_drawPlaneTexturePolygon(s_polygonVerticesProj, polyVertexCount, polygon->texture, planeY, sector->ceilOffsetX.f16_16, sector->ceilOffsetZ.f16_16, sector->floorOffsetX.f16_16, sector->floorOffsetZ.f16_16);
 			}
 		}
 	}
@@ -611,5 +635,211 @@ namespace RClassic_Fixed
 	// Shaded Texture
 	#define POLY_INTENSITY
 	#include "robj3dFixed_PolyRenderFunc.h"
+
+	////////////////////////////////////////////
+	// Polygon Draw Routine for Shading = PLANE
+	// and support functions.
+	////////////////////////////////////////////
+	s32 model_findRightEdge(s32 minIndex)
+	{
+		s32 len = s_edgeRightLength;
+		if (minIndex == s_polyMaxIndex)
+		{
+			s_edgeRightLength = len;
+			return -1;
+		}
+
+		s32 curIndex = minIndex;
+		while (1)
+		{
+			s32 nextIndex = curIndex + 1;
+			if (nextIndex >= s_polyVertexCount) { nextIndex = 0; }
+			else if (nextIndex < 0) { nextIndex = s_polyVertexCount - 1; }
+
+			const vec3_fixed* cur = &s_polyProjVtx[curIndex];
+			const vec3_fixed* next = &s_polyProjVtx[nextIndex];
+			const s32 y0 = cur->y;
+			const s32 y1 = next->y;
+
+			s32 dy = y1 - y0;
+			if (y1 == s_maxScreenY) { dy++; }
+
+			if (dy > 0)
+			{
+				const s32 x0 = cur->x;
+				const s32 x1 = next->x;
+				const fixed16_16 dX = intToFixed16(x1 - x0);
+				const fixed16_16 dY = intToFixed16(dy);
+				const fixed16_16 dXdY = div16(dX, dY);
+
+				s_edgeRight_X0_Pixel = x0;
+				s_edgeRight_X0 = intToFixed16(x0);
+				s_edgeRightLength = dy;
+
+				s_edgeRight_dXdY = dXdY;
+				s_edgeRight_Z0 = cur->z;
+
+				s_edgeRight_dZmdY = mul16(next->z - cur->z, dY);
+				s_edgeRightIndex = nextIndex;
+				return 0;
+			}
+			else
+			{
+				curIndex = nextIndex;
+				if (nextIndex == s_polyMaxIndex)
+				{
+					break;
+				}
+			}
+		}
+
+		s_edgeRightLength = len;
+		return -1;
+	}
+
+	s32 model_findLeftEdge(s32 minIndex)
+	{
+		s32 len = s_edgeLeftLength;
+		if (minIndex == s_polyMaxIndex)
+		{
+			s_edgeLeftLength = len;
+			return -1;
+		}
+
+		s32 curIndex = minIndex;
+		while (1)
+		{
+			s32 prevIndex = curIndex - 1;
+			if (prevIndex >= s_polyVertexCount) { prevIndex = 0; }
+			else if (prevIndex < 0) { prevIndex = s_polyVertexCount - 1; }
+
+			const vec3_fixed* cur = &s_polyProjVtx[curIndex];
+			const vec3_fixed* prev = &s_polyProjVtx[prevIndex];
+			const s32 y0 = cur->y;
+			const s32 y1 = prev->y;
+
+			s32 dy = y1 - y0;
+			if (y1 == s_maxScreenY) { dy++; }
+
+			if (dy > 0)
+			{
+				const s32 x0 = cur->x;
+				const s32 x1 = prev->x;
+				const fixed16_16 dX = intToFixed16(x1 - x0);
+				const fixed16_16 dY = intToFixed16(dy);
+				const fixed16_16 dXdY = div16(dX, dY);
+
+				s_edgeLeft_X0_Pixel = x0;
+				s_edgeLeft_X0 = intToFixed16(x0);
+				s_edgeLeftLength = dy;
+
+				s_edgeLeft_dXdY = dXdY;
+				s_edgeLeft_Z0 = cur->z;
+
+				s_edgeLeft_dZmdY = mul16(prev->z - cur->z, dY);
+				s_edgeLeftIndex = prevIndex;
+				return 0;
+			}
+			else
+			{
+				curIndex = prevIndex;
+				if (prevIndex == s_polyMaxIndex)
+				{
+					break;
+				}
+			}
+		}
+
+		s_edgeLeftLength = len;
+		return -1;
+	}
+
+	void model_drawPlaneTexturePolygon(vec3_fixed* projVertices, s32 vertexCount, Texture* texture, fixed16_16 planeY, fixed16_16 ceilOffsetX, fixed16_16 ceilOffsetZ, fixed16_16 floorOffsetX, fixed16_16 floorOffsetZ)
+	{
+		if (vertexCount <= 0) { return; }
+
+		s32 yMin = INT_MAX;
+		s32 yMax = INT_MIN;
+		s32 minIndex;
+
+		s_polyProjVtx = projVertices;
+		s_polyVertexCount = vertexCount;
+		
+		vec3_fixed* vertex = projVertices;
+		for (s32 i = 0; i < s_polyVertexCount; i++, vertex++)
+		{
+			if (vertex->y < yMin)
+			{
+				yMin = vertex->y;
+				minIndex = i;
+			}
+			if (vertex->y > yMax)
+			{
+				yMax = vertex->y;
+				s_polyMaxIndex = i;
+			}
+		}
+		if (yMin >= yMax || yMin > s_windowMaxY || yMax < s_windowMinY)
+		{
+			return;
+		}
+
+		bool trans = texture->frames[0].opacity == OPACITY_TRANS;
+		s_rowY = yMin;
+
+		if (model_findLeftEdge(minIndex) != 0 || model_findRightEdge(minIndex) != 0)
+		{
+			return;
+		}
+
+		fixed16_16 heightOffset = planeY - s_eyeHeight_Fixed;
+		// TODO: Figure out why s_heightInPixels has the wrong sign here.
+		if (yMax <= -s_heightInPixels)
+		{
+			flat_preparePolygon(heightOffset, ceilOffsetX, ceilOffsetZ, texture);
+		}
+		else
+		{
+			flat_preparePolygon(heightOffset, floorOffsetX, floorOffsetZ, texture);
+		}
+
+		s32 edgeFound = 0;
+		for (; edgeFound == 0 && s_rowY <= s_maxScreenY; s_rowY++)
+		{
+			if (s_rowY >= s_windowMinY && s_windowMaxY != 0 && s_edgeLeft_X0_Pixel <= s_windowMaxX && s_edgeRight_X0_Pixel >= s_windowMinX)
+			{
+				flat_drawPolygonScanline(s_edgeLeft_X0_Pixel, s_edgeRight_X0_Pixel, s_rowY, trans);
+			}
+
+			s_edgeLeftLength--;
+			if (s_edgeLeftLength <= 0)
+			{
+				if (model_findLeftEdge(s_edgeLeftIndex) != 0) { return; }
+			}
+			else
+			{
+				s_edgeLeft_X0 += s_edgeLeft_dXdY;
+				s_edgeLeft_Z0 += s_edgeLeft_dZmdY;
+				s_edgeLeft_X0_Pixel = round16(s_edgeLeft_X0);
+
+				// Right Z0 increment in the wrong place again.
+				// TODO: Figure out the consequences of this bug.
+				//s_edgeRight_Z0 += s_edgeRight_dZmdY;
+			}
+			s_edgeRightLength--;
+			if (s_edgeRightLength <= 0)
+			{
+				if (model_findRightEdge(s_edgeRightIndex) != 0) { return; }
+			}
+			else
+			{
+				s_edgeRight_X0 += s_edgeRight_dXdY;
+				s_edgeRight_X0_Pixel = round16(s_edgeRight_X0);
+
+				// This is the proper place for this.
+				s_edgeRight_Z0 += s_edgeRight_dZmdY;
+			}
+		}
+	}
 
 }}  // TFE_JediRenderer

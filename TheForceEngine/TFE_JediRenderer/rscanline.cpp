@@ -4,8 +4,6 @@
 
 namespace TFE_JediRenderer
 {
-	void clipScanline(s32* left, s32* right, s32 y);
-
 	bool flat_buildScanlineCeiling(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, s32& scanlineLength, const EdgePair* edges)
 	{
 		// Search for the left edge of the scanline.
