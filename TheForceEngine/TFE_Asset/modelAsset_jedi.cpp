@@ -600,7 +600,7 @@ namespace TFE_Model_Jedi
 						if (!buffer) { return false; }
 
 						s32 num, a, b, c;
-						if (sscanf(buffer, "%d: %d %d %d", &num, &a, &b, &c) != 3)
+						if (sscanf(buffer, "%d: %d %d %d", &num, &a, &b, &c) != 4)
 						{
 							// Error.
 							return false;
