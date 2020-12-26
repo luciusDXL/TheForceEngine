@@ -160,19 +160,10 @@ namespace RClassic_Fixed
 	static s32 s_edgeRightLength;
 
 	void model_projectVertices(vec3_fixed* pos, s32 count, vec3_fixed* out);
-	u8 model_computePolygonColor(vec3_fixed* normal, u8 color, fixed16_16 z);
-	u8 model_computePolygonLightLevel(vec3_fixed* normal, fixed16_16 z);
-
-	s32 model_clipPolygonGouraud(vec3_fixed* pos, s32* intensity, s32 count);
-	s32 model_clipPolygonUv(vec3_fixed* pos, vec2_fixed* uv, s32 count);
-	s32 model_clipPolygonUvGouraud(vec3_fixed* pos, vec2_fixed* uv, s32* intensity, s32 count);
-	s32 model_clipPolygon(vec3_fixed* pos, s32 count);
-
-	void model_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 color);
-	void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color);
-	void model_drawFlatTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, s32 vertexCount, Texture* texture, u8 color);
-	void model_drawShadedTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, fixed16_16* intensity, s32 vertexCount, Texture* texture);
-	void model_drawPlaneTexturePolygon(vec3_fixed* projVertices, s32 vertexCount, Texture* texture, fixed16_16 planeY, fixed16_16 ceilOffsetX, fixed16_16 ceilOffsetZ, fixed16_16 floorOffsetX, fixed16_16 floorOffsetZ);
+	s32 model_backfaceCull(JediModel* model);
+	void setupPolygon(Polygon* polygon);
+	s32  clipPolygon(Polygon* polygon);
+	void drawPolygon(Polygon* polygon, s32 polyVertexCount, SecObject* obj, JediModel* model);
 
 	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx)
 	{
@@ -283,13 +274,8 @@ namespace RClassic_Fixed
 			*outShading = intensity;
 		}
 	}
-		
-	s32 getPolygonFacing(const vec3_fixed* normal, const vec3_fixed* pos)
-	{
-		const vec3_fixed offset = { -pos->x, -pos->y, -pos->z };
-		return dot(normal, &offset) < 0 ? POLYGON_BACK_FACING : POLYGON_FRONT_FACING;
-	}
 	
+		
 	s32 polygonSort(const void* r0, const void* r1)
 	{
 		Polygon* p0 = *((Polygon**)r0);
@@ -325,12 +311,9 @@ namespace RClassic_Fixed
 			s_display[pixel_y*s_width + pixel_x] = color;
 		}
 	}
-
-	void model_draw(SecObject* obj, JediModel* model)
+		
+	void model_transformAndLight(SecObject* obj, JediModel* model)
 	{
-		//s_cameraMtx_Fixed
-		RSector* sector = obj->sector;
-
 		vec3_fixed offsetWS;
 		offsetWS.x = obj->posWS.x.f16_16 - s_cameraPosX_Fixed;
 		offsetWS.y = obj->posWS.y.f16_16 - s_cameraPosY_Fixed;
@@ -347,6 +330,25 @@ namespace RClassic_Fixed
 		// Transform model vertices into view space.
 		model_transformVertices(model->vertexCount, (vec3_fixed*)model->vertices, xform, &offsetVS, s_verticesVS);
 
+		// No need for polygon normals or lighting if MFLAG_DRAW_VERTICES is set.
+		if (model->flags & MFLAG_DRAW_VERTICES) { return; }
+
+		// Polygon normals (used for backface culling)
+		model_transformVertices(model->polygonCount, (vec3_fixed*)model->polygonNormals, xform, &offsetVS, s_polygonNormalsVS);
+
+		// Lighting
+		if (model->flags & MFLAG_VERTEX_LIT)
+		{
+			model_transformVertices(model->vertexCount, (vec3_fixed*)model->vertexNormals, xform, &offsetVS, s_vertexNormalsVS);
+			model_shadeVertices(model->vertexCount, s_vertexIntensity, s_verticesVS, s_vertexNormalsVS);
+		}
+	}
+		
+	void model_draw(SecObject* obj, JediModel* model)
+	{
+		// Handle transforms and vertex lighting.
+		model_transformAndLight(obj, model);
+
 		// Draw vertices and return if the flag is set.
 		if (model->flags & MFLAG_DRAW_VERTICES)
 		{
@@ -355,53 +357,8 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		// Polygon normals (used for backface culling)
-		model_transformVertices(model->polygonCount, (vec3_fixed*)model->polygonNormals, xform, &offsetVS, s_polygonNormalsVS);
-
-		vec3_fixed* polygonNormal = s_polygonNormalsVS;
-		s32 polygonCount = model->polygonCount;
-		Polygon* polygon = model->polygons;
-		for (s32 i = 0; i < polygonCount; i++, polygonNormal++, polygon++)
-		{
-			vec3_fixed* vertex = &s_verticesVS[polygon->indices[1]];
-			polygonNormal->x -= vertex->x;
-			polygonNormal->y -= vertex->y;
-			polygonNormal->z -= vertex->z;
-		}
-
-		// Lighting
-		if (model->flags & MFLAG_VERTEX_LIT)
-		{
-			model_transformVertices(model->vertexCount, (vec3_fixed*)model->vertexNormals, xform, &offsetVS, s_vertexNormalsVS);
-			model_shadeVertices(model->vertexCount, s_vertexIntensity, s_verticesVS, s_vertexNormalsVS);
-		}
-
 		// Cull backfacing polygons. The results are stored as "visPolygons"
-		Polygon** visPolygon = s_visPolygons;
-		s32 visPolygonCount = 0;
-
-		polygon = model->polygons;
-		polygonNormal = s_polygonNormalsVS;
-		for (s32 i = 0; i < model->polygonCount; i++, polygon++, polygonNormal++)
-		{
-			vec3_fixed* pos = &s_verticesVS[polygon->indices[1]];
-			s32 facing = getPolygonFacing(polygonNormal, pos);
-			if (facing == POLYGON_BACK_FACING) { continue; }
-
-			visPolygonCount++;
-			s32 vertexCount = polygon->vertexCount;
-			s32 zAve = 0;
-
-			s32* indices = polygon->indices;
-			for (s32 v = 0; v < vertexCount; v++)
-			{
-				zAve += s_verticesVS[indices[v]].z;
-			}
-
-			polygon->zAve = div16(zAve, intToFixed16(vertexCount));
-			*visPolygon = polygon;
-			visPolygon++;
-		}
+		s32 visPolygonCount = model_backfaceCull(model);
 		// Nothing to render.
 		if (visPolygonCount < 1) { return; }
 
@@ -409,101 +366,23 @@ namespace RClassic_Fixed
 		qsort(s_visPolygons, visPolygonCount, sizeof(Polygon*), polygonSort);
 
 		// Draw polygons
-		visPolygon = s_visPolygons;
+		Polygon** visPolygon = s_visPolygons;
 		for (s32 i = 0; i < visPolygonCount; i++, visPolygon++)
 		{
-			polygon = *visPolygon;
-			
-			const s32 shading = polygon->shading;
-			const s32 vertexCount = polygon->vertexCount;
-			if (vertexCount <= 0)
-			{
-				continue;
-			}
+			Polygon* polygon = *visPolygon;
+			if (polygon->vertexCount <= 0) { continue; }
 
-			// Copy polygon vertices.
-			for (s32 v = 0; v < vertexCount; v++)
-			{
-				s_polygonVerticesVS[v] = s_verticesVS[polygon->indices[v]];
-			}
+			setupPolygon(polygon);
 
-			// Copy uvs if required.
-			if (shading & PSHADE_TEXTURE)
-			{
-				const vec2_fixed* uv = (vec2_fixed*)polygon->uv;
-				for (s32 v = 0; v < vertexCount; v++)
-				{
-					s_polygonUv[v] = uv[v];
-				}
-			}
-
-			// Copy intensities if required.
-			if (shading & PSHADE_GOURAUD)
-			{
-				const s32* indices = polygon->indices;
-				for (s32 v = 0; v < vertexCount; v++)
-				{
-					s_polygonIntensity[v] = s_vertexIntensity[indices[v]];
-				}
-			}
-
-			// Handle clipping
-			s32 polyVertexCount = 0;
-			if (shading == PSHADE_GOURAUD)
-			{
-				polyVertexCount = model_clipPolygonGouraud(s_polygonVerticesVS, s_polygonIntensity, polygon->vertexCount);
-			}
-			else if (shading == PSHADE_TEXTURE)
-			{
-				polyVertexCount = model_clipPolygonUv(s_polygonVerticesVS, s_polygonUv, polygon->vertexCount);
-			}
-			else if (shading == PSHADE_GOURAUD_TEXTURE)
-			{
-				polyVertexCount = model_clipPolygonUvGouraud(s_polygonVerticesVS, s_polygonUv, s_polygonIntensity, polygon->vertexCount);
-			}
-			else
-			{
-				polyVertexCount = model_clipPolygon(s_polygonVerticesVS, polygon->vertexCount);
-			}
+			s32 polyVertexCount = clipPolygon(polygon);
 			// Cull the polygon if not enough vertices survive clipping.
 			if (polyVertexCount < 3) { continue; }
 
 			// Project the resulting vertices.
 			model_projectVertices(s_polygonVerticesVS, polyVertexCount, s_polygonVerticesProj);
 
-			// Handle shading modes...
-			if (shading == PSHADE_GOURAUD)
-			{
-				model_drawShadedColorPolygon(s_polygonVerticesProj, s_polygonIntensity, polyVertexCount, polygon->color);
-			}
-			else if (shading == PSHADE_FLAT)
-			{
-				u8 color = polygon->color;
-				if (s_enableFlatShading)
-				{
-					color = model_computePolygonColor(&s_polygonNormalsVS[polygon->index], color, polygon->zAve);
-				}
-				model_drawFlatColorPolygon(s_polygonVerticesProj, polyVertexCount, color);
-			}
-			else if (shading == PSHADE_GOURAUD_TEXTURE)
-			{
-				model_drawShadedTexturePolygon(s_polygonVerticesProj, s_polygonUv, s_polygonIntensity, polyVertexCount, polygon->texture);
-			}
-			else if (shading == PSHADE_TEXTURE)
-			{
-				u8 lightLevel = 0;
-				if (s_enableFlatShading)
-				{
-					lightLevel = model_computePolygonLightLevel(&s_polygonNormalsVS[polygon->index], polygon->zAve);
-				}
-				model_drawFlatTexturePolygon(s_polygonVerticesProj, s_polygonUv, polyVertexCount, polygon->texture, lightLevel);
-			}
-			else if (shading == PSHADE_PLANE)
-			{
-				const RSector* sector = obj->sector;
-				const fixed16_16 planeY = model->vertices[polygon->indices[0]].y + obj->posWS.y.f16_16;
-				model_drawPlaneTexturePolygon(s_polygonVerticesProj, polyVertexCount, polygon->texture, planeY, sector->ceilOffsetX.f16_16, sector->ceilOffsetZ.f16_16, sector->floorOffsetX.f16_16, sector->floorOffsetZ.f16_16);
-			}
+			// Draw polygon based on its shading mode.
+			drawPolygon(polygon, polyVertexCount, obj, model);
 		}
 	}
 
@@ -595,7 +474,11 @@ namespace RClassic_Fixed
 
 		return clamp(lightLevel, 0, 31);
 	}
-
+		
+	//////////////////////////////////////////
+	// Polygon
+	//////////////////////////////////////////
+	
 	////////////////////////////////////////////////
 	// Instantiate Clip Routines.
 	// This abuses C-Macros to build 4 versions of
@@ -853,6 +736,150 @@ namespace RClassic_Fixed
 
 				// This is the proper place for this.
 				s_edgeRight_Z0 += s_edgeRight_dZmdY;
+			}
+		}
+	}
+
+	s32 getPolygonFacing(const vec3_fixed* normal, const vec3_fixed* pos)
+	{
+		const vec3_fixed offset = { -pos->x, -pos->y, -pos->z };
+		return dot(normal, &offset) < 0 ? POLYGON_BACK_FACING : POLYGON_FRONT_FACING;
+	}
+
+	s32 model_backfaceCull(JediModel* model)
+	{
+		vec3_fixed* polygonNormal = s_polygonNormalsVS;
+		s32 polygonCount = model->polygonCount;
+		Polygon* polygon = model->polygons;
+		for (s32 i = 0; i < polygonCount; i++, polygonNormal++, polygon++)
+		{
+			vec3_fixed* vertex = &s_verticesVS[polygon->indices[1]];
+			polygonNormal->x -= vertex->x;
+			polygonNormal->y -= vertex->y;
+			polygonNormal->z -= vertex->z;
+		}
+
+		Polygon** visPolygon = s_visPolygons;
+		s32 visPolygonCount = 0;
+
+		polygon = model->polygons;
+		polygonNormal = s_polygonNormalsVS;
+		for (s32 i = 0; i < model->polygonCount; i++, polygon++, polygonNormal++)
+		{
+			vec3_fixed* pos = &s_verticesVS[polygon->indices[1]];
+			s32 facing = getPolygonFacing(polygonNormal, pos);
+			if (facing == POLYGON_BACK_FACING) { continue; }
+
+			visPolygonCount++;
+			s32 vertexCount = polygon->vertexCount;
+			s32 zAve = 0;
+
+			s32* indices = polygon->indices;
+			for (s32 v = 0; v < vertexCount; v++)
+			{
+				zAve += s_verticesVS[indices[v]].z;
+			}
+
+			polygon->zAve = div16(zAve, intToFixed16(vertexCount));
+			*visPolygon = polygon;
+			visPolygon++;
+		}
+
+		return visPolygonCount;
+	}
+
+	void setupPolygon(Polygon* polygon)
+	{
+		// Copy polygon vertices.
+		for (s32 v = 0; v < polygon->vertexCount; v++)
+		{
+			s_polygonVerticesVS[v] = s_verticesVS[polygon->indices[v]];
+		}
+
+		// Copy uvs if required.
+		if (polygon->shading & PSHADE_TEXTURE)
+		{
+			const vec2_fixed* uv = (vec2_fixed*)polygon->uv;
+			for (s32 v = 0; v < polygon->vertexCount; v++)
+			{
+				s_polygonUv[v] = uv[v];
+			}
+		}
+
+		// Copy intensities if required.
+		if (polygon->shading & PSHADE_GOURAUD)
+		{
+			const s32* indices = polygon->indices;
+			for (s32 v = 0; v < polygon->vertexCount; v++)
+			{
+				s_polygonIntensity[v] = s_vertexIntensity[indices[v]];
+			}
+		}
+	}
+
+	s32 clipPolygon(Polygon* polygon)
+	{
+		s32 polyVertexCount = 0;
+		if (polygon->shading == PSHADE_GOURAUD)
+		{
+			polyVertexCount = model_clipPolygonGouraud(s_polygonVerticesVS, s_polygonIntensity, polygon->vertexCount);
+		}
+		else if (polygon->shading == PSHADE_TEXTURE)
+		{
+			polyVertexCount = model_clipPolygonUv(s_polygonVerticesVS, s_polygonUv, polygon->vertexCount);
+		}
+		else if (polygon->shading == PSHADE_GOURAUD_TEXTURE)
+		{
+			polyVertexCount = model_clipPolygonUvGouraud(s_polygonVerticesVS, s_polygonUv, s_polygonIntensity, polygon->vertexCount);
+		}
+		else
+		{
+			polyVertexCount = model_clipPolygon(s_polygonVerticesVS, polygon->vertexCount);
+		}
+
+		return polyVertexCount;
+	}
+
+	void drawPolygon(Polygon* polygon, s32 polyVertexCount, SecObject* obj, JediModel* model)
+	{
+		switch (polygon->shading)
+		{
+			case PSHADE_FLAT:
+			{
+				u8 color = polygon->color;
+				if (s_enableFlatShading)
+				{
+					color = model_computePolygonColor(&s_polygonNormalsVS[polygon->index], color, polygon->zAve);
+				}
+				model_drawFlatColorPolygon(s_polygonVerticesProj, polyVertexCount, color);
+			} break;
+			case PSHADE_GOURAUD:
+			{
+				model_drawShadedColorPolygon(s_polygonVerticesProj, s_polygonIntensity, polyVertexCount, polygon->color);
+			} break;
+			case PSHADE_TEXTURE:
+			{
+				u8 lightLevel = 0;
+				if (s_enableFlatShading)
+				{
+					lightLevel = model_computePolygonLightLevel(&s_polygonNormalsVS[polygon->index], polygon->zAve);
+				}
+				model_drawFlatTexturePolygon(s_polygonVerticesProj, s_polygonUv, polyVertexCount, polygon->texture, lightLevel);
+			} break;
+			case PSHADE_GOURAUD_TEXTURE:
+			{
+				model_drawShadedTexturePolygon(s_polygonVerticesProj, s_polygonUv, s_polygonIntensity, polyVertexCount, polygon->texture);
+			} break;
+			case PSHADE_PLANE:
+			{
+				const RSector* sector = obj->sector;
+				const fixed16_16 planeY = model->vertices[polygon->indices[0]].y + obj->posWS.y.f16_16;
+				model_drawPlaneTexturePolygon(s_polygonVerticesProj, polyVertexCount, polygon->texture, planeY, sector->ceilOffsetX.f16_16, sector->ceilOffsetZ.f16_16, sector->floorOffsetX.f16_16, sector->floorOffsetZ.f16_16);
+			} break;
+			default:
+			{
+				TFE_System::logWrite(LOG_ERROR, "Object3D Render Fixed", "Invalid shading mode: %d", polygon->shading);
+				assert(0);
 			}
 		}
 	}
