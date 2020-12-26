@@ -13,7 +13,6 @@
 #include "../../rmath.h"
 #include "../../rcommon.h"
 #include "../../robject.h"
-#include "../../rscanline.h"
 
 namespace TFE_JediRenderer
 {
