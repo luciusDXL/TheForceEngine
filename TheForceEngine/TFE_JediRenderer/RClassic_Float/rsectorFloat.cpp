@@ -530,7 +530,7 @@ namespace TFE_JediRenderer
 				{
 					TFE_ZONE("Draw 3DO");
 
-					model_draw(obj, obj->model);
+					robj3d_draw(obj, obj->model);
 				}
 				else if (type == OBJ_TYPE_FRAME)
 				{

@@ -3,13 +3,13 @@
 //////////////////////////////////////////////////////////////////////
 
 #if defined(POLY_INTENSITY) && !defined(POLY_UV)
-s32 model_findNextEdgeI(s32 xMinIndex, s32 xMin)
+s32 robj3d_findNextEdgeI(s32 xMinIndex, s32 xMin)
 #elif !defined(POLY_INTENSITY) && defined(POLY_UV)
-s32 model_findNextEdgeT(s32 xMinIndex, s32 xMin)
+s32 robj3d_findNextEdgeT(s32 xMinIndex, s32 xMin)
 #elif defined(POLY_INTENSITY) && defined(POLY_UV)
-s32 model_findNextEdgeTI(s32 xMinIndex, s32 xMin)
+s32 robj3d_findNextEdgeTI(s32 xMinIndex, s32 xMin)
 #else
-s32 model_findNextEdge(s32 xMinIndex, s32 xMin)
+s32 robj3d_findNextEdge(s32 xMinIndex, s32 xMin)
 #endif
 {
 	s32 prevScanlineLen = s_edgeTopLength;
@@ -81,13 +81,13 @@ s32 model_findNextEdge(s32 xMinIndex, s32 xMin)
 }
 
 #if defined(POLY_INTENSITY) && !defined(POLY_UV)
-s32 model_findPrevEdgeI(s32 minXIndex)
+s32 robj3d_findPrevEdgeI(s32 minXIndex)
 #elif !defined(POLY_INTENSITY) && defined(POLY_UV)
-s32 model_findPrevEdgeT(s32 minXIndex)
+s32 robj3d_findPrevEdgeT(s32 minXIndex)
 #elif defined(POLY_INTENSITY) && defined(POLY_UV)
-s32 model_findPrevEdgeTI(s32 minXIndex)
+s32 robj3d_findPrevEdgeTI(s32 minXIndex)
 #else
-s32 model_findPrevEdge(s32 minXIndex)
+s32 robj3d_findPrevEdge(s32 minXIndex)
 #endif
 {
 	const s32 len = s_edgeBotLength;
@@ -159,7 +159,7 @@ s32 model_findPrevEdge(s32 minXIndex)
 }
 
 #if !defined(POLY_INTENSITY) && !defined(POLY_UV)
-void model_drawColumnFlatColor()
+void robj3d_drawColumnFlatColor()
 {
 	s32 end = s_columnHeight - 1;
 	s32 offset = end * s_width;
@@ -171,7 +171,7 @@ void model_drawColumnFlatColor()
 #endif
 
 #if defined(POLY_INTENSITY) && !defined(POLY_UV)
-void model_drawColumnShadedColor()
+void robj3d_drawColumnShadedColor()
 {
 	const u8* colorMap = s_polyColorMap;
 
@@ -201,7 +201,7 @@ void model_drawColumnShadedColor()
 #endif
 
 #if !defined(POLY_INTENSITY) && defined(POLY_UV)
-void model_drawColumnFlatTexture()
+void robj3d_drawColumnFlatTexture()
 {
 	const u8* colorMap = &s_polyColorMap[s_polyColorIndex * 256];
 	const u8* textureData = s_polyTexture->frames[0].image;
@@ -224,7 +224,7 @@ void model_drawColumnFlatTexture()
 #endif
 
 #if defined(POLY_INTENSITY) && defined(POLY_UV)
-void model_drawColumnShadedTexture()
+void robj3d_drawColumnShadedTexture()
 {
 	const u8* colorMap = s_polyColorMap;
 	const u8* textureData = s_polyTexture->frames[0].image;
@@ -253,31 +253,31 @@ void model_drawColumnShadedTexture()
 #undef FIND_PREV_EDGE
 #undef DRAW_COLUMN
 #if defined(POLY_INTENSITY) && !defined(POLY_UV)
-#define FIND_NEXT_EDGE model_findNextEdgeI
-#define FIND_PREV_EDGE model_findPrevEdgeI
-#define DRAW_COLUMN model_drawColumnShadedColor
+#define FIND_NEXT_EDGE robj3d_findNextEdgeI
+#define FIND_PREV_EDGE robj3d_findPrevEdgeI
+#define DRAW_COLUMN robj3d_drawColumnShadedColor
 #elif !defined(POLY_INTENSITY) && defined(POLY_UV)
-#define FIND_NEXT_EDGE model_findNextEdgeT
-#define FIND_PREV_EDGE model_findPrevEdgeT
-#define DRAW_COLUMN model_drawColumnFlatTexture
+#define FIND_NEXT_EDGE robj3d_findNextEdgeT
+#define FIND_PREV_EDGE robj3d_findPrevEdgeT
+#define DRAW_COLUMN robj3d_drawColumnFlatTexture
 #elif defined(POLY_INTENSITY) && defined(POLY_UV)
-#define FIND_NEXT_EDGE model_findNextEdgeTI
-#define FIND_PREV_EDGE model_findPrevEdgeTI
-#define DRAW_COLUMN model_drawColumnShadedTexture
+#define FIND_NEXT_EDGE robj3d_findNextEdgeTI
+#define FIND_PREV_EDGE robj3d_findPrevEdgeTI
+#define DRAW_COLUMN robj3d_drawColumnShadedTexture
 #else
-#define FIND_NEXT_EDGE model_findNextEdge
-#define FIND_PREV_EDGE model_findPrevEdge
-#define DRAW_COLUMN model_drawColumnFlatColor
+#define FIND_NEXT_EDGE robj3d_findNextEdge
+#define FIND_PREV_EDGE robj3d_findPrevEdge
+#define DRAW_COLUMN robj3d_drawColumnFlatColor
 #endif
 
 #if defined(POLY_INTENSITY) && !defined(POLY_UV)
-void model_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color)
+void robj3d_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color)
 #elif !defined(POLY_INTENSITY) && defined(POLY_UV)
-void model_drawFlatTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, s32 vertexCount, Texture* texture, u8 color)
+void robj3d_drawFlatTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, s32 vertexCount, Texture* texture, u8 color)
 #elif defined(POLY_INTENSITY) && defined(POLY_UV)
-void model_drawShadedTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, fixed16_16* intensity, s32 vertexCount, Texture* texture)
+void robj3d_drawShadedTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, fixed16_16* intensity, s32 vertexCount, Texture* texture)
 #else
-void model_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 color)
+void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 color)
 #endif
 {
 	vec3_fixed* projVertex = projVertices;

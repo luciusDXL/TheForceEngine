@@ -3,13 +3,13 @@
 //////////////////////////////////////////////////////////////////////
 
 #if defined(CLIP_INTENSITY) && !defined(CLIP_UV)
-s32 model_swapClipBuffersI(s32 outVertexCount)
+s32 robj3d_swapClipBuffersI(s32 outVertexCount)
 #elif !defined(CLIP_INTENSITY) && defined(CLIP_UV)
-s32 model_swapClipBuffersT(s32 outVertexCount)
+s32 robj3d_swapClipBuffersT(s32 outVertexCount)
 #elif defined(CLIP_INTENSITY) && defined(CLIP_UV)
-s32 model_swapClipBuffersTI(s32 outVertexCount)
+s32 robj3d_swapClipBuffersTI(s32 outVertexCount)
 #else
-s32 model_swapClipBuffers(s32 outVertexCount)
+s32 robj3d_swapClipBuffers(s32 outVertexCount)
 #endif
 {
 	// Swap src position and output position.
@@ -53,13 +53,13 @@ s32 model_swapClipBuffers(s32 outVertexCount)
 #undef SWAP_CLIP_BUFFERS
 
 #if defined(CLIP_INTENSITY) && !defined(CLIP_UV)
-	#define SWAP_CLIP_BUFFERS model_swapClipBuffersI
+	#define SWAP_CLIP_BUFFERS robj3d_swapClipBuffersI
 #elif !defined(CLIP_INTENSITY) && defined(CLIP_UV)
-	#define SWAP_CLIP_BUFFERS model_swapClipBuffersT
+	#define SWAP_CLIP_BUFFERS robj3d_swapClipBuffersT
 #elif defined(CLIP_INTENSITY) && defined(CLIP_UV)
-	#define SWAP_CLIP_BUFFERS model_swapClipBuffersTI
+	#define SWAP_CLIP_BUFFERS robj3d_swapClipBuffersTI
 #else
-	#define SWAP_CLIP_BUFFERS model_swapClipBuffers
+	#define SWAP_CLIP_BUFFERS robj3d_swapClipBuffers
 #endif
 
 #if defined(CLIP_INTENSITY) && !defined(CLIP_UV)
@@ -97,13 +97,13 @@ void computeIntersection(s32 outVertexCount)
 #endif
 
 #if defined(CLIP_INTENSITY) && !defined(CLIP_UV)
-s32 model_clipPolygonGouraud(vec3_fixed* pos, s32* intensity, s32 count)
+s32 robj3d_clipPolygonGouraud(vec3_fixed* pos, s32* intensity, s32 count)
 #elif !defined(CLIP_INTENSITY) && defined(CLIP_UV)
-s32 model_clipPolygonUv(vec3_fixed* pos, vec2_fixed* uv, s32 count)
+s32 robj3d_clipPolygonUv(vec3_fixed* pos, vec2_fixed* uv, s32 count)
 #elif defined(CLIP_INTENSITY) && defined(CLIP_UV)
-s32 model_clipPolygonUvGouraud(vec3_fixed* pos, vec2_fixed* uv, s32* intensity, s32 count)
+s32 robj3d_clipPolygonUvGouraud(vec3_fixed* pos, vec2_fixed* uv, s32* intensity, s32 count)
 #else
-s32 model_clipPolygon(vec3_fixed* pos, s32 count)
+s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 #endif
 {
 	s32 outVertexCount = 0;

@@ -152,6 +152,9 @@
     <Filter Include="Source\TFE_JediRenderer\RClassic_Fixed">
       <UniqueIdentifier>{67dc1bc3-8fdf-4b20-8c04-013ded47a58b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed">
+      <UniqueIdentifier>{b3c8a678-078c-436f-b641-632d3e264fe3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -634,9 +637,6 @@
     <ClInclude Include="TFE_Asset\modelAsset_jedi.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3dFloat.h">
       <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
     </ClInclude>
@@ -649,11 +649,29 @@
     <ClInclude Include="TFE_Asset\msf_gif.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed_ClipFunc.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed_PolyRenderFunc.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_ClipFunc.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Clipping.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonDraw.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonSetup.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolyRenderFunc.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_TransformAndLighting.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Culling.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1053,9 +1071,6 @@
     <ClCompile Include="TFE_Asset\modelAsset_jedi.cpp">
       <Filter>Source\TFE_Asset</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3dFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3dFloat.cpp">
       <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
     </ClCompile>
@@ -1067,6 +1082,24 @@
     </ClCompile>
     <ClCompile Include="TFE_Asset\gifWriter.cpp">
       <Filter>Source\TFE_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Clipping.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonDraw.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonSetup.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_TransformAndLighting.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Culling.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

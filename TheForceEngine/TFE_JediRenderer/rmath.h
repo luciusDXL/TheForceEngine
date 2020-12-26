@@ -95,6 +95,11 @@ namespace TFE_JediRenderer
 
 	inline fixed16_16 dotFixed(vec3 v0, vec3 v1) { return mul16(v0.x.f16_16, v1.x.f16_16) + mul16(v0.y.f16_16, v1.y.f16_16) + mul16(v0.z.f16_16, v1.z.f16_16); }
 
+	inline fixed16_16 dot(const vec3_fixed* v0, const vec3_fixed* v1)
+	{
+		return mul16(v0->x, v1->x) + mul16(v0->y, v1->y) + mul16(v0->z, v1->z);
+	}
+
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
 
 	// Convert from integer angle to fixed point sin/cos.

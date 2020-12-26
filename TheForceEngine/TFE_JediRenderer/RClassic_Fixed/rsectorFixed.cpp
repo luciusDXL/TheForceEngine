@@ -8,8 +8,8 @@
 #include "rflatFixed.h"
 #include "rlightingFixed.h"
 #include "redgePairFixed.h"
-#include "robj3dFixed.h"
 #include "rcommonFixed.h"
+#include "robj3d_fixed/robj3dFixed.h"
 #include "../fixedPoint.h"
 #include "../rmath.h"
 #include "../rcommon.h"
@@ -533,7 +533,7 @@ namespace TFE_JediRenderer
 				{
 					TFE_ZONE("Draw 3DO");
 
-					model_draw(obj, obj->model);
+					robj3d_draw(obj, obj->model);
 				}
 				else if (type == OBJ_TYPE_FRAME)
 				{

@@ -39,7 +39,7 @@ namespace RClassic_Float
 		mtxOut[8] = mtx0[2]*mtx1[2] + mtx0[5]*mtx1[5] + mtx0[8]*mtx1[8];
 	}
 
-	void model_transformVertices(s32 vertexCount, vec3_fixed* vtxIn, f32* xform, vec3_float* offset, vec3_float* vtxOut)
+	void robj3d_transformVertices(s32 vertexCount, vec3_fixed* vtxIn, f32* xform, vec3_float* offset, vec3_float* vtxOut)
 	{
 		for (s32 v = 0; v < vertexCount; v++, vtxOut++, vtxIn++)
 		{
@@ -52,7 +52,7 @@ namespace RClassic_Float
 		}
 	}
 
-	void model_drawVertices(s32 vertexCount, vec3_float* vertices, u8 color, s32 size)
+	void robj3d_drawVertices(s32 vertexCount, vec3_float* vertices, u8 color, s32 size)
 	{
 		// cannot draw if the color is transparent.
 		if (color == 0) { return; }
@@ -88,7 +88,7 @@ namespace RClassic_Float
 		}
 	}
 
-	void model_draw(SecObject* obj, JediModel* model)
+	void robj3d_draw(SecObject* obj, JediModel* model)
 	{
 		//s_cameraMtx_Fixed
 		RSector* sector = obj->sector;
@@ -107,7 +107,7 @@ namespace RClassic_Float
 		mulMatrix3x3(s_cameraMtx, obj->transformFlt, xform);
 
 		// Transform model vertices into view space.
-		model_transformVertices(model->vertexCount, (vec3_fixed*)model->vertices, xform, &offsetVS, s_verticesVS);
+		robj3d_transformVertices(model->vertexCount, (vec3_fixed*)model->vertices, xform, &offsetVS, s_verticesVS);
 
 		// DEBUG: Draw all models as points.
 		//if (model->flags & MFLAG_DRAW_VERTICES)
@@ -117,7 +117,7 @@ namespace RClassic_Float
 			s32 scale = (s32)max(1, height / 200);
 
 			// If the MFLAG_DRAW_VERTICES flag is set, draw all vertices as points. 
-			model_drawVertices(model->vertexCount, s_verticesVS, model->polygons[0].color, scale);
+			robj3d_drawVertices(model->vertexCount, s_verticesVS, model->polygons[0].color, scale);
 			return;
 		}
 
