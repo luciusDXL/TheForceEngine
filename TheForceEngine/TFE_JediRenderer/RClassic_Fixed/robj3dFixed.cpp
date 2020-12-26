@@ -265,10 +265,15 @@ namespace RClassic_Fixed
 				intensity += mul16(lightIntensity, s_sectorAmbientFraction);
 
 				// Distance falloff
-				const s32 z = max(0, vertex->z);
+				const fixed16_16 z = max(0, vertex->z);
 				if (/*s_worldAtten < 31 || */s_cameraLightSource != 0)
 				{
-					// TODO
+					const s32 depthScaled = min(s32(z >> 14), 127);
+					const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
+					if (cameraSource > 0)
+					{
+						intensity += intToFixed16(cameraSource);
+					}
 				}
 
 				const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
@@ -534,7 +539,12 @@ namespace RClassic_Fixed
 
 		if (/*s_worldAtten < 31 || */s_cameraLightSource != 0)
 		{
-			// TODO
+			const s32 depthScaled = min(s32(z >> 14), 127);
+			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
+			if (cameraSource > 0)
+			{
+				lightLevel += cameraSource;
+			}
 		}
 
 		z = max(z, 0);
@@ -570,7 +580,12 @@ namespace RClassic_Fixed
 
 		if (/*s_worldAtten < 31 || */s_cameraLightSource != 0)
 		{
-			// TODO
+			const s32 depthScaled = min(s32(z >> 14), 127);
+			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
+			if (cameraSource > 0)
+			{
+				lightLevel += cameraSource;
+			}
 		}
 
 		z = max(z, 0);
