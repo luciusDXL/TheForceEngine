@@ -214,6 +214,8 @@ void robj3d_drawColumnFlatTexture()
 	const u8* colorMap = &s_polyColorMap[s_polyColorIndex * 256];
 	const u8* textureData = s_polyTexture->frames[0].image;
 	const s32 texHeight = s_polyTexture->frames[0].height;
+	const s32 texWidthMask = s_polyTexture->frames[0].width - 1;
+	const s32 texHeightMask = texHeight - 1;
 
 	fixed16_16 U = s_col_Uv0.x;
 	fixed16_16 V = s_col_Uv0.z;
@@ -222,7 +224,7 @@ void robj3d_drawColumnFlatTexture()
 	s32 offset = end * s_width;
 	for (s32 i = end; i >= 0; i--, offset -= s_width)
 	{
-		const u8 colorIndex = textureData[floor16(U)*texHeight + floor16(V)];
+		const u8 colorIndex = textureData[(floor16(U)&texWidthMask)*texHeight + (floor16(V)&texHeightMask)];
 		s_pcolumnOut[offset] = colorMap[colorIndex];
 
 		U += s_col_dUVdY.x;
@@ -237,6 +239,8 @@ void robj3d_drawColumnShadedTexture()
 	const u8* colorMap = s_polyColorMap;
 	const u8* textureData = s_polyTexture->frames[0].image;
 	const s32 texHeight = s_polyTexture->frames[0].height;
+	const s32 texWidthMask = s_polyTexture->frames[0].width - 1;
+	const s32 texHeightMask = texHeight - 1;
 
 	fixed16_16 U = s_col_Uv0.x;
 	fixed16_16 V = s_col_Uv0.z;
@@ -246,7 +250,7 @@ void robj3d_drawColumnShadedTexture()
 	s32 offset = end * s_width;
 	for (s32 i = end; i >= 0; i--, offset -= s_width)
 	{
-		const u8 colorIndex = textureData[floor16(U)*texHeight + floor16(V)];
+		const u8 colorIndex = textureData[(floor16(U)&texWidthMask)*texHeight + (floor16(V)&texHeightMask)];
 		const s32 pixelIntensity = floor16(I);
 		s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
 
