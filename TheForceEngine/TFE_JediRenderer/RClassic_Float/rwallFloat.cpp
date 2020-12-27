@@ -89,7 +89,7 @@ namespace RClassic_Float
 	{
 		f32 xz;
 		xz = (x0 * z1) - (z0 * x1);
-		f32 dyx = dz - dx;
+		f32 dyx = dz*s_nearPlaneHalfLen - dx;
 		if (dyx != 0.0f)
 		{
 			xz /= dyx;
@@ -98,7 +98,7 @@ namespace RClassic_Float
 	}
 
 	// Returns true if the wall is potentially visible.
-	// Original DOS clipping code converted to floating point.
+	// Original DOS clipping code converted to floating point with small additions to support widescreen.
 	bool wall_clipToFrustum(f32& x0, f32& z0, f32& x1, f32& z1, f32& dx, f32& dz, f32& curU, f32& texelLen, f32& texelLenRem, s32& clipX0_Near, s32& clipX1_Near, f32 left0, f32 right0, f32 left1, f32 right1)
 	{
 		//////////////////////////////////////////////
@@ -123,11 +123,11 @@ namespace RClassic_Float
 			}
 			else if (dx != 0)
 			{
-				s = (-xz - x0) / dx;
+				s = (-xz*s_nearPlaneHalfLen - x0) / dx;
 			}
 
 			// Update the x0,y0 coordinate of the segment.
-			x0 = -xz;
+			x0 = -xz * s_nearPlaneHalfLen;
 			z0 = xz;
 
 			if (s != 0)
@@ -164,11 +164,11 @@ namespace RClassic_Float
 			}
 			else if (dx != 0)
 			{
-				s = (xz - x1) / dx;
+				s = (xz*s_nearPlaneHalfLen - x1) / dx;
 			}
 
 			// Update the x1,y1 coordinate of the segment.
-			x1 = xz;
+			x1 = xz * s_nearPlaneHalfLen;
 			z1 = xz;
 			if (s != 0)
 			{
@@ -207,160 +207,6 @@ namespace RClassic_Float
 			if (clipRight != 0)
 			{
 				x1 = 1.0f;
-				clipX1_Near = -1;
-			}
-			else
-			{
-				x1 /= z1;
-			}
-			dx = x1 - x0;
-			dz = 0;
-			z0 = 1.0f;
-			z1 = 1.0f;
-		}
-		else if (z0 < 1.0f)
-		{
-			if (clipLeft != 0)
-			{
-				if (dz != 0)
-				{
-					f32 left = z0 / dz;
-					x0 += (dx * left);
-
-					dx = x1 - x0;
-					texelLenRem = texelLen - curU;
-				}
-				z0 = 1.0f;
-				clipX0_Near = -1;
-				dz = z1 - 1.0f;
-			}
-			else
-			{
-				// BUG: This is NOT correct but matches the original implementation.
-				// I am leaving it as-is to match the original DOS renderer.
-				// Fortunately hitting this case is VERY rare in practice.
-				x0 /= z0;
-				z0 = 1.0f;
-				dz = z1 - 1.0f;
-				dx -= x0;
-			}
-		}
-		else if (z1 < 1.0f)
-		{
-			if (clipRight != 0)
-			{
-				if (dz != 0)
-				{
-					f32 s = (1.0f - x1) / dz;
-					x1 += (dx * s);
-					texelLen += (texelLenRem * s);
-					texelLenRem = texelLen - curU;
-					dx = x1 - x0;
-				}
-				z1 = 1.0f;
-				dz = 1.0f - z0;
-				clipX1_Near = -1;
-			}
-			else
-			{
-				// BUG: This is NOT correct but matches the original implementation.
-				// I am leaving it as-is to match the original DOS renderer.
-				// Fortunately hitting this case is VERY rare in practice.
-				x1 = x1 / z1;
-				z1 = 1.0f;
-				dx = x1 - x0;
-				dz = z1 - z0;
-			}
-		}
-		return true;
-	}
-
-	// Returns true if the wall is potentially visible.
-	// Widescreen version, which involves a more complex frustum intersection but allows wider FOV.
-	// Original DOS clipping code converted to floating point and then adjusted for widescreen -
-	// Note this changes the wall segment/frustum intersection algorithm since the "exactly 90 degree FOV" simplifications can no longer be made but the near plane
-	// intersection fix-up code is still the same (which fills holes when walls are clipped by the nearplane).
-	bool wall_clipToFrustum_Widescreen(f32& x0, f32& z0, f32& x1, f32& z1, f32& dx, f32& dz, f32& curU, f32& texelLen, f32& texelLenRem, s32& clipX0_Near, s32& clipX1_Near, f32 left0, f32 right0, f32 left1, f32 right1, f32 nearPlaneHalfWidth)
-	{
-		//////////////////////////////////////////////
-		// Clip the Wall Segment by the left and right
-		// frustum lines.
-		//////////////////////////////////////////////
-		s32 clipLeft = 0;
-		s32 clipRight = 0;
-
-		// The wall segment extends past the left clip line.
-		if (x0 < left0)
-		{
-			// Intersect the segment (x0, z0),(x1, z1) with the left frustum line.
-			const f32 s = frustumIntersectParam(x0, z0, x1, z1, left0, z0, left1, z1);
-			x0 += s*(x1 - x0);
-			z0 += s*(z1 - z0);
-
-			if (s != 0)
-			{
-				// length of the clipped portion of the remaining texel length.
-				f32 clipLen = texelLenRem * s;
-				// adjust the U texel offset.
-				curU += clipLen;
-				// adjust the remaining texel length.
-				texelLenRem = texelLen - curU;
-			}
-
-			// We have clipped the segment on the left side.
-			clipLeft = -1;
-			// Update dX and dZ
-			dx = x1 - x0;
-			dz = z1 - z0;
-			// Update the right nearplane X values.
-			right0 = z0 * nearPlaneHalfWidth;
-		}
-		// The wall segment extends past the right clip line.
-		if (x1 > right1)
-		{
-			// Intersect the segment (x0, z0),(x1, z1) with the left frustum line.
-			f32 s = frustumIntersectParam(x0, z0, x1, z1, right0, z0, right1, z1);
-			x1 = x0 + s*(x1 - x0);
-			z1 = z0 + s*(z1 - z0);
-
-			s = 1.0f - s;
-			if (s != 0)
-			{
-				f32 adjLen = texelLen - texelLenRem*s;
-				f32 adjLenMinU = adjLen - curU;
-
-				texelLen = adjLen;
-				texelLenRem = adjLenMinU;
-			}
-
-			// We have clipped the segment on the right side.
-			clipRight = -1;
-			// Update dX and dZ
-			dx = x1 - x0;
-			dz = z1 - z0;
-		}
-
-		//////////////////////////////////////////////////
-		// Clip the Wall Segment by the near plane.
-		//////////////////////////////////////////////////
-		if ((z0 < 0 || z1 < 0) && segmentCrossesLine(0.0f, 0.0f, 0.0f, -s_halfHeight, x0, x0, x1, z1) != 0)
-		{
-			return false;
-		}
-		if (z0 < 1.0f && z1 < 1.0f)
-		{
-			if (clipLeft != 0)
-			{
-				x0 = -nearPlaneHalfWidth;
-				clipX0_Near = -1;
-			}
-			else
-			{
-				x0 /= z0;
-			}
-			if (clipRight != 0)
-			{
-				x1 = nearPlaneHalfWidth;
 				clipX1_Near = -1;
 			}
 			else
@@ -483,15 +329,7 @@ namespace RClassic_Float
 		// Clip the Wall Segment by the left and right
 		// frustum lines.
 		//////////////////////////////////////////////
-		if (s_nearPlaneHalfLen != 1.0f)
-		{
-			if (!wall_clipToFrustum_Widescreen(x0, z0, x1, z1, dx, dz, curU, texelLen, texelLenRem, clipX0_Near, clipX1_Near, left0, right0, left1, right1, s_nearPlaneHalfLen))
-			{
-				wall->visible = 0;
-				return;
-			}
-		}
-		else if (!wall_clipToFrustum(x0, z0, x1, z1, dx, dz, curU, texelLen, texelLenRem, clipX0_Near, clipX1_Near, left0, right0, left1, right1))
+		if (!wall_clipToFrustum(x0, z0, x1, z1, dx, dz, curU, texelLen, texelLenRem, clipX0_Near, clipX1_Near, left0, right0, left1, right1))
 		{
 			wall->visible = 0;
 			return;

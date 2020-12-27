@@ -234,8 +234,8 @@ s32 robj3d_clipPolygon(vec3_float* pos, s32 count)
 	///////////////////////////////////////////////////
 	for (s32 i = 0; i < srcVertexCount; i++)
 	{
-		s_clipPlanePos0 = -s_clipPos0->z;
-		s_clipPlanePos1 = -s_clipPos1->z;
+		s_clipPlanePos0 = -s_clipPos0->z * s_nearPlaneHalfLen;
+		s_clipPlanePos1 = -s_clipPos1->z * s_nearPlaneHalfLen;
 		if (s_clipPos0->x < s_clipPlanePos0 && s_clipPos1->x < s_clipPlanePos1)
 		{
 			s_clipPos0 = s_clipPos1;
@@ -299,14 +299,14 @@ s32 robj3d_clipPolygon(vec3_float* pos, s32 count)
 			const f32 dz = s_clipPos1->z - s_clipPos0->z;
 
 			s_clipParam0 = (x0*z1) - (x1*z0);
-			s_clipParam1 = -dz - dx;
+			s_clipParam1 = -dz*s_nearPlaneHalfLen - dx;
 
 			s_clipIntersectZ = s_clipParam0;
 			if (s_clipParam1 != 0)
 			{
 				s_clipIntersectZ = s_clipParam0 / s_clipParam1;
 			}
-			s_clipIntersectX = -s_clipIntersectZ;
+			s_clipIntersectX = -s_clipIntersectZ * s_nearPlaneHalfLen;
 
 			f32 p, p0, p1;
 			if (fabsf(dz) > fabsf(dx))
@@ -355,8 +355,8 @@ s32 robj3d_clipPolygon(vec3_float* pos, s32 count)
 	///////////////////////////////////////////////////
 	for (s32 i = 0; i < srcVertexCount; i++)
 	{
-		s_clipPlanePos0 = s_clipPos0->z;
-		s_clipPlanePos1 = s_clipPos1->z;
+		s_clipPlanePos0 = s_clipPos0->z * s_nearPlaneHalfLen;
+		s_clipPlanePos1 = s_clipPos1->z * s_nearPlaneHalfLen;
 		if (s_clipPos0->x > s_clipPlanePos0 && s_clipPos1->x > s_clipPlanePos1)
 		{
 			s_clipPos0 = s_clipPos1;
@@ -420,14 +420,14 @@ s32 robj3d_clipPolygon(vec3_float* pos, s32 count)
 			const f32 dz = s_clipPos1->z - s_clipPos0->z;
 
 			s_clipParam0 = (x0*z1) - (x1*z0);
-			s_clipParam1 = dz - dx;
+			s_clipParam1 = s_nearPlaneHalfLen*dz - dx;
 
 			s_clipIntersectZ = s_clipParam0;
 			if (s_clipParam1 != 0)
 			{
 				s_clipIntersectZ = s_clipParam0 / s_clipParam1;
 			}
-			s_clipIntersectX = s_clipIntersectZ;
+			s_clipIntersectX = s_nearPlaneHalfLen * s_clipIntersectZ;
 
 			f32 p, p0, p1;
 			if (fabsf(dz) > fabsf(dx))
@@ -471,7 +471,6 @@ s32 robj3d_clipPolygon(vec3_float* pos, s32 count)
 
 	srcVertexCount = SWAP_CLIP_BUFFERS(outVertexCount);
 	outVertexCount = 0;
-
 	///////////////////////////////////////////////////
 	// Top Clip Plane
 	///////////////////////////////////////////////////
