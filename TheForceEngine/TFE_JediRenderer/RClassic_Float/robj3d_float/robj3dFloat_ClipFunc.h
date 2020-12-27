@@ -73,15 +73,15 @@ void computeIntersection(s32 outVertexCount)
 #endif
 {
 	#if defined(CLIP_INTENSITY)
-		const fixed16_16 i0 = *s_clipIntensity0;
-		const fixed16_16 i1 = *s_clipIntensity1;
-		s_clipIntensityOut[outVertexCount] = i0 + mul16(s_clipParam, i1 - i0);
+		const f32 i0 = *s_clipIntensity0;
+		const f32 i1 = *s_clipIntensity1;
+		s_clipIntensityOut[outVertexCount] = i0 + s_clipParam*(i1 - i0);
 	#endif
 	#if defined(CLIP_UV)
-		const vec2_fixed uv0 = *s_clipUv0;
-		const vec2_fixed uv1 = *s_clipUv1;
-		s_clipUvOut[outVertexCount].x = uv0.x + mul16(s_clipParam, uv1.x - uv0.x);
-		s_clipUvOut[outVertexCount].z = uv0.z + mul16(s_clipParam, uv1.z - uv0.z);
+		const vec2_float uv0 = *s_clipUv0;
+		const vec2_float uv1 = *s_clipUv1;
+		s_clipUvOut[outVertexCount].x = uv0.x + s_clipParam*(uv1.x - uv0.x);
+		s_clipUvOut[outVertexCount].z = uv0.z + s_clipParam*(uv1.z - uv0.z);
 	#endif
 }
 
@@ -97,13 +97,13 @@ void computeIntersection(s32 outVertexCount)
 #endif
 
 #if defined(CLIP_INTENSITY) && !defined(CLIP_UV)
-s32 robj3d_clipPolygonGouraud(vec3_fixed* pos, s32* intensity, s32 count)
+s32 robj3d_clipPolygonGouraud(vec3_float* pos, f32* intensity, s32 count)
 #elif !defined(CLIP_INTENSITY) && defined(CLIP_UV)
-s32 robj3d_clipPolygonUv(vec3_fixed* pos, vec2_fixed* uv, s32 count)
+s32 robj3d_clipPolygonUv(vec3_float* pos, vec2_float* uv, s32 count)
 #elif defined(CLIP_INTENSITY) && defined(CLIP_UV)
-s32 robj3d_clipPolygonUvGouraud(vec3_fixed* pos, vec2_fixed* uv, s32* intensity, s32 count)
+s32 robj3d_clipPolygonUvGouraud(vec3_float* pos, vec2_float* uv, f32* intensity, s32 count)
 #else
-s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
+s32 robj3d_clipPolygon(vec3_float* pos, s32 count)
 #endif
 {
 	s32 outVertexCount = 0;
@@ -140,7 +140,7 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 	///////////////////////////////////////////////////
 	for (s32 i = 0; i < count; i++)
 	{
-		if (s_clipPos0->z < ONE_16 && s_clipPos1->z < ONE_16)
+		if (s_clipPos0->z < 1.0f && s_clipPos1->z < 1.0f)
 		{
 			s_clipPos0 = s_clipPos1;
 			s_clipPos1++;
@@ -158,7 +158,7 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 		}
 
 		// Add vertex 0 if it is on or in front of the near plane.
-		if (s_clipPos0->z >= ONE_16)
+		if (s_clipPos0->z >= 1.0f)
 		{
 			s_clipPosOut[outVertexCount] = *s_clipPos0;
 
@@ -170,10 +170,11 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 			#endif
 
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 
 		// If either position is exactly on the near plane continue.
-		if (s_clipPos0->z == ONE_16 || s_clipPos1->z == ONE_16)
+		if (s_clipPos0->z == 1.0f || s_clipPos1->z == 1.0f)
 		{
 			s_clipPos0 = s_clipPos1;
 			s_clipPos1++;
@@ -191,20 +192,21 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 		}
 
 		// Finally clip the edge against the near plane, generating a new vertex.
-		if (s_clipPos0->z < ONE_16 || s_clipPos1->z < ONE_16)
+		if (s_clipPos0->z < 1.0f || s_clipPos1->z < 1.0f)
 		{
-			const fixed16_16 z0 = s_clipPos0->z;
-			const fixed16_16 z1 = s_clipPos1->z;
+			const f32 z0 = s_clipPos0->z;
+			const f32 z1 = s_clipPos1->z;
 
 			// Parametric clip coordinate.
-			s_clipParam = div16(ONE_16 - z0, z1 - z0);
+			s_clipParam = (1.0f - z0) / (z1 - z0);
 			// new vertex Z coordinate should be exactly 1.0
-			s_clipPosOut[outVertexCount].z = ONE_16;
-			s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);
-			s_clipPosOut[outVertexCount].x = s_clipPos0->x + mul16(s_clipParam, s_clipPos1->x - s_clipPos0->x);
+			s_clipPosOut[outVertexCount].z = 1.0f;
+			s_clipPosOut[outVertexCount].y = s_clipPos0->y + s_clipParam*(s_clipPos1->y - s_clipPos0->y);
+			s_clipPosOut[outVertexCount].x = s_clipPos0->x + s_clipParam*(s_clipPos1->x - s_clipPos0->x);
 
 			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 
 		s_clipPos0 = s_clipPos1;
@@ -264,6 +266,7 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 			#endif
 
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 
 		// Skip clipping if either vertex is touching the plane.
@@ -287,26 +290,26 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 		// Clip the edge.
 		if (s_clipPos0->x < s_clipPlanePos0 || s_clipPos1->x < s_clipPlanePos1)
 		{
-			const fixed16_16 x0 = s_clipPos0->x;
-			const fixed16_16 x1 = s_clipPos1->x;
-			const fixed16_16 z0 = s_clipPos0->z;
-			const fixed16_16 z1 = s_clipPos1->z;
+			const f32 x0 = s_clipPos0->x;
+			const f32 x1 = s_clipPos1->x;
+			const f32 z0 = s_clipPos0->z;
+			const f32 z1 = s_clipPos1->z;
 
-			const fixed16_16 dx = s_clipPos1->x - s_clipPos0->x;
-			const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
+			const f32 dx = s_clipPos1->x - s_clipPos0->x;
+			const f32 dz = s_clipPos1->z - s_clipPos0->z;
 
-			s_clipParam0 = mul16(x0, z1) - mul16(x1, z0);
+			s_clipParam0 = (x0*z1) - (x1*z0);
 			s_clipParam1 = -dz - dx;
 
 			s_clipIntersectZ = s_clipParam0;
 			if (s_clipParam1 != 0)
 			{
-				s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
+				s_clipIntersectZ = s_clipParam0 / s_clipParam1;
 			}
 			s_clipIntersectX = -s_clipIntersectZ;
 
-			fixed16_16 p, p0, p1;
-			if (abs(dz) > abs(dx))
+			f32 p, p0, p1;
+			if (fabsf(dz) > fabsf(dx))
 			{
 				p1 = s_clipPos1->z;
 				p0 = s_clipPos0->z;
@@ -318,14 +321,15 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 				p0 = s_clipPos0->x;
 				p = s_clipIntersectX;
 			}
-			s_clipParam = div16(p - p0, p1 - p0);
+			s_clipParam = (p - p0) / (p1 - p0);
 
 			s_clipPosOut[outVertexCount].x = s_clipIntersectX;
-			s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);
+			s_clipPosOut[outVertexCount].y = s_clipPos0->y + s_clipParam*(s_clipPos1->y - s_clipPos0->y);
 			s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
-
+			
 			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 		s_clipPos0 = s_clipPos1;
 		s_clipPos1++;
@@ -383,6 +387,7 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 			#endif
 
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 
 		// Skip clipping if either vertex is touching the plane.
@@ -406,26 +411,26 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 		// Clip the edge.
 		if (s_clipPos0->x > s_clipPlanePos0 || s_clipPos1->x > s_clipPlanePos1)
 		{
-			const fixed16_16 x0 = s_clipPos0->x;
-			const fixed16_16 x1 = s_clipPos1->x;
-			const fixed16_16 z0 = s_clipPos0->z;
-			const fixed16_16 z1 = s_clipPos1->z;
+			const f32 x0 = s_clipPos0->x;
+			const f32 x1 = s_clipPos1->x;
+			const f32 z0 = s_clipPos0->z;
+			const f32 z1 = s_clipPos1->z;
 
-			const fixed16_16 dx = s_clipPos1->x - s_clipPos0->x;
-			const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
+			const f32 dx = s_clipPos1->x - s_clipPos0->x;
+			const f32 dz = s_clipPos1->z - s_clipPos0->z;
 
-			s_clipParam0 = mul16(x0, z1) - mul16(x1, z0);
+			s_clipParam0 = (x0*z1) - (x1*z0);
 			s_clipParam1 = dz - dx;
 
 			s_clipIntersectZ = s_clipParam0;
 			if (s_clipParam1 != 0)
 			{
-				s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
+				s_clipIntersectZ = s_clipParam0 / s_clipParam1;
 			}
 			s_clipIntersectX = s_clipIntersectZ;
 
-			fixed16_16 p, p0, p1;
-			if (abs(dz) > abs(dx))
+			f32 p, p0, p1;
+			if (fabsf(dz) > fabsf(dx))
 			{
 				p1 = s_clipPos1->z;
 				p0 = s_clipPos0->z;
@@ -437,14 +442,15 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 				p0 = s_clipPos0->x;
 				p = s_clipIntersectX;
 			}
-			s_clipParam = div16(p - p0, p1 - p0);
+			s_clipParam = (p - p0) / (p1 - p0);
 
 			s_clipPosOut[outVertexCount].x = s_clipIntersectX;
-			s_clipPosOut[outVertexCount].y = s_clipPos0->y + mul16(s_clipParam, s_clipPos1->y - s_clipPos0->y);	// edx
+			s_clipPosOut[outVertexCount].y = s_clipPos0->y + s_clipParam*(s_clipPos1->y - s_clipPos0->y);
 			s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 
 			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 		s_clipPos0 = s_clipPos1;
 		s_clipPos1++;
@@ -471,9 +477,9 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 	///////////////////////////////////////////////////
 	for (s32 i = 0; i < srcVertexCount; i++)
 	{
-		s_clipY0 = mul16(s_yPlaneTop_Fixed, s_clipPos0->z);
-		s_clipY1 = mul16(s_yPlaneTop_Fixed, s_clipPos1->z);
-
+		s_clipY0 = s_yPlaneTop * s_clipPos0->z;
+		s_clipY1 = s_yPlaneTop * s_clipPos1->z;
+		
 		// If the edge is completely behind the plane, then continue.
 		if (s_clipPos0->y < s_clipY0 && s_clipPos1->y < s_clipY1)
 		{
@@ -504,6 +510,7 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 			#endif
 
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 
 		// Skip clipping if either vertex is touching the plane.
@@ -527,22 +534,22 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 		// Clip the edge.
 		if (s_clipPos0->y < s_clipY0 || s_clipPos1->y < s_clipY1)
 		{
-			s_clipParam0 = mul16(s_clipPos0->y, s_clipPos1->z) - mul16(s_clipPos1->y, s_clipPos0->z);
+			s_clipParam0 = (s_clipPos0->y*s_clipPos1->z) - (s_clipPos1->y*s_clipPos0->z);
 
-			const fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
-			const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
-			s_clipParam1 = mul16(s_yPlaneTop_Fixed, dz) - dy;
+			const f32 dy = s_clipPos1->y - s_clipPos0->y;
+			const f32 dz = s_clipPos1->z - s_clipPos0->z;
+			s_clipParam1 = s_yPlaneTop*dz - dy;
 
 			s_clipIntersectZ = s_clipParam0;
 			if (s_clipParam1 != 0)
 			{
-				s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
+				s_clipIntersectZ = s_clipParam0 / s_clipParam1;
 			}
-			s_clipIntersectY = mul16(s_yPlaneTop_Fixed, s_clipIntersectZ);
-			const fixed16_16 aDz = abs(s_clipPos1->z - s_clipPos0->z);
-			const fixed16_16 aDy = abs(s_clipPos1->y - s_clipPos0->y);
+			s_clipIntersectY = s_yPlaneTop * s_clipIntersectZ;
+			const f32 aDz = fabsf(s_clipPos1->z - s_clipPos0->z);
+			const f32 aDy = fabsf(s_clipPos1->y - s_clipPos0->y);
 
-			fixed16_16 p, p0, p1;
+			f32 p, p0, p1;
 			if (aDz > aDy)
 			{
 				p1 = s_clipPos1->z;
@@ -555,14 +562,15 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 				p0 = s_clipPos0->y;
 				p = s_clipIntersectY;
 			}
-			s_clipParam = div16(p - p0, p1 - p0);
+			s_clipParam = (p - p0) / (p1 - p0);
 
-			s_clipPosOut[outVertexCount].x = s_clipPos0->x + mul16(s_clipParam, s_clipPos1->x - s_clipPos0->x);
+			s_clipPosOut[outVertexCount].x = s_clipPos0->x + s_clipParam*(s_clipPos1->x - s_clipPos0->x);
 			s_clipPosOut[outVertexCount].y = s_clipIntersectY;
 			s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 
 			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 		s_clipPos0 = s_clipPos1;
 		s_clipPos1++;
@@ -589,8 +597,8 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 	///////////////////////////////////////////////////
 	for (s32 i = 0; i < srcVertexCount; i++)
 	{
-		s_clipY0 = mul16(s_yPlaneBot_Fixed, s_clipPos0->z);
-		s_clipY1 = mul16(s_yPlaneBot_Fixed, s_clipPos1->z);
+		s_clipY0 = s_yPlaneBot * s_clipPos0->z;
+		s_clipY1 = s_yPlaneBot * s_clipPos1->z;
 
 		// If the edge is completely behind the plane, then continue.
 		if (s_clipPos0->y > s_clipY0 && s_clipPos1->y > s_clipY1)
@@ -623,6 +631,7 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 			#endif
 
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 
 		// Skip clipping if either vertex is touching the plane.
@@ -646,22 +655,22 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 		// Clip the edge.
 		if (s_clipPos0->y > s_clipY0 || s_clipPos1->y > s_clipY1)
 		{
-			s_clipParam0 = mul16(s_clipPos0->y, s_clipPos1->z) - mul16(s_clipPos1->y, s_clipPos0->z);
+			s_clipParam0 = (s_clipPos0->y*s_clipPos1->z) - (s_clipPos1->y*s_clipPos0->z);
 
-			const fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
-			const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
-			s_clipParam1 = mul16(s_yPlaneBot_Fixed, dz) - dy;
+			const f32 dy = s_clipPos1->y - s_clipPos0->y;
+			const f32 dz = s_clipPos1->z - s_clipPos0->z;
+			s_clipParam1 = s_yPlaneBot*dz - dy;
 
 			s_clipIntersectZ = s_clipParam0;
 			if (s_clipParam1 != 0)
 			{
-				s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
+				s_clipIntersectZ = s_clipParam0 / s_clipParam1;
 			}
-			s_clipIntersectY = mul16(s_yPlaneBot_Fixed, s_clipIntersectZ);
-			const fixed16_16 aDz = abs(s_clipPos1->z - s_clipPos0->z);
-			const fixed16_16 aDy = abs(s_clipPos1->y - s_clipPos0->y);
+			s_clipIntersectY = s_yPlaneBot*s_clipIntersectZ;
+			const f32 aDz = fabsf(s_clipPos1->z - s_clipPos0->z);
+			const f32 aDy = fabsf(s_clipPos1->y - s_clipPos0->y);
 
-			fixed16_16 p, p0, p1;
+			f32 p, p0, p1;
 			if (aDz > aDy)
 			{
 				p1 = s_clipPos1->z;
@@ -674,14 +683,15 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 				p0 = s_clipPos0->y;
 				p = s_clipIntersectY;
 			}
-			s_clipParam = div16(p - p0, p1 - p0);
+			s_clipParam = (p - p0) / (p1 - p0);
 
-			s_clipPosOut[outVertexCount].x = s_clipPos0->x + mul16(s_clipParam, s_clipPos1->x - s_clipPos0->x);
+			s_clipPosOut[outVertexCount].x = s_clipPos0->x + s_clipParam*(s_clipPos1->x - s_clipPos0->x);
 			s_clipPosOut[outVertexCount].y = s_clipIntersectY;
 			s_clipPosOut[outVertexCount].z = s_clipIntersectZ;
 
 			COMPUTE_CLIP_INTERSECTION(outVertexCount);
 			outVertexCount++;
+			assert(outVertexCount <= POLY_MAX_VTX_COUNT);
 		}
 		s_clipPos0 = s_clipPos1;
 		s_clipPos1++;
@@ -702,12 +712,12 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 
 	if (pos != s_clipPosOut)
 	{
-		memcpy(pos, s_clipPosOut, outVertexCount * sizeof(vec3_fixed));
+		memcpy(pos, s_clipPosOut, outVertexCount * sizeof(vec3_float));
 		#if defined(CLIP_INTENSITY)
-			memcpy(intensity, s_clipIntensityOut, outVertexCount * sizeof(fixed16_16));
+			memcpy(intensity, s_clipIntensityOut, outVertexCount * sizeof(f32));
 		#endif
 		#if defined(CLIP_UV)
-			memcpy(uv, s_clipUvOut, outVertexCount * sizeof(vec2_fixed));
+			memcpy(uv, s_clipUvOut, outVertexCount * sizeof(vec2_float));
 		#endif
 	}
 	return outVertexCount;

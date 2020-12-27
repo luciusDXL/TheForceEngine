@@ -28,10 +28,14 @@ s32 robj3d_findNextEdge(s32 xMinIndex, s32 xMin)
 		if (nextIndex >= s_polyVertexCount) { nextIndex = 0; }
 		else if (nextIndex < 0) { nextIndex = s_polyVertexCount - 1; }
 
-		vec3_fixed* cur = &s_polyProjVtx[curIndex];
-		vec3_fixed* next = &s_polyProjVtx[nextIndex];
-		s32 dx = next->x - cur->x;
-		if (next->x == s_maxScreenX)
+		vec3_float* cur = &s_polyProjVtx[curIndex];
+		vec3_float* next = &s_polyProjVtx[nextIndex];
+		const s32 x0 = s32(cur->x + 0.5f);
+		const s32 x1 = s32(next->x + 0.5f);
+		const s32 y0 = s32(cur->y + 0.5f);
+		const s32 y1 = s32(next->y + 0.5f);
+		s32 dx = x1 - x0;
+		if (x1 == s_maxScreenX)
 		{
 			dx++;
 		}
@@ -40,28 +44,28 @@ s32 robj3d_findNextEdge(s32 xMinIndex, s32 xMin)
 		{
 			s_edgeTopLength = dx;
 
-			const fixed16_16 step = div16(ONE_16, intToFixed16(dx));
-			s_edgeTopY0_Pixel = cur->y;
-			s_edgeTop_Y0 = intToFixed16(cur->y);
+			const f32 step = 1.0f / f32(dx);
+			s_edgeTopY0_Pixel = y0;
+			s_edgeTop_Y0 = f32(y0);
 
-			const fixed16_16 dy = intToFixed16(next->y - cur->y);
-			s_edgeTop_dYdX = mul16(dy, step);
+			const f32 dy = f32(y1 - y0);
+			s_edgeTop_dYdX = dy * step;
 
-			const fixed16_16 dz = next->z - cur->z;
-			s_edgeTop_dZdX = mul16(dz, step);
+			const f32 dz = next->z - cur->z;
+			s_edgeTop_dZdX = dz * step;
 			s_edgeTop_Z0 = cur->z;
 
 			#if defined(POLY_INTENSITY)
-				s_edgeTop_I0 = clamp(s_polyIntensity[curIndex], 0, VSHADE_MAX_INTENSITY);
-				const fixed16_16 dI = s_polyIntensity[nextIndex] - s_edgeTop_I0;
-				s_edgeTop_dIdX = mul16(dI, step);
+				s_edgeTop_I0 = clamp(s_polyIntensity[curIndex], 0.0f, (f32)VSHADE_MAX_INTENSITY);
+				const f32 dI = s_polyIntensity[nextIndex] - s_edgeTop_I0;
+				s_edgeTop_dIdX = dI * step;
 			#endif
 			#if defined(POLY_UV)
 				s_edgeTop_Uv0 = s_polyUv[curIndex];
-				const fixed16_16 dU = s_polyUv[nextIndex].x - s_edgeTop_Uv0.x;
-				const fixed16_16 dV = s_polyUv[nextIndex].z - s_edgeTop_Uv0.z;
-				s_edgeTop_dUVdX.x = mul16(dU, step);
-				s_edgeTop_dUVdX.z = mul16(dV, step);
+				const f32 dU = s_polyUv[nextIndex].x - s_edgeTop_Uv0.x;
+				const f32 dV = s_polyUv[nextIndex].z - s_edgeTop_Uv0.z;
+				s_edgeTop_dUVdX.x = dU * step;
+				s_edgeTop_dUVdX.z = dV * step;
 			#endif
 
 			s_edgeTopIndex = nextIndex;
@@ -104,10 +108,14 @@ s32 robj3d_findPrevEdge(s32 minXIndex)
 		if (prevIndex >= s_polyVertexCount) { prevIndex = 0; }
 		else if (prevIndex < 0) { prevIndex = s_polyVertexCount - 1; }
 
-		vec3_fixed* cur = &s_polyProjVtx[curIndex];
-		vec3_fixed* prev = &s_polyProjVtx[prevIndex];
-		s32 dx = prev->x - cur->x;
-		if (s_maxScreenX == prev->x)
+		vec3_float* cur = &s_polyProjVtx[curIndex];
+		vec3_float* prev = &s_polyProjVtx[prevIndex];
+		const s32 x0 = s32(cur->x + 0.5f);
+		const s32 x1 = s32(prev->x + 0.5f);
+		const s32 y0 = s32(cur->y + 0.5f);
+		const s32 y1 = s32(prev->y + 0.5f);
+		s32 dx = x1 - x0;
+		if (s_maxScreenX == x1)
 		{
 			dx++;
 		}
@@ -116,28 +124,28 @@ s32 robj3d_findPrevEdge(s32 minXIndex)
 		{
 			s_edgeBotLength = dx;
 
-			const fixed16_16 step = div16(ONE_16, intToFixed16(dx));
-			s_edgeBotY0_Pixel = cur->y;
-			s_edgeBot_Y0 = intToFixed16(cur->y);
+			const f32 step = 1.0f / f32(dx);
+			s_edgeBotY0_Pixel = y0;
+			s_edgeBot_Y0 = f32(y0);
 
-			const s32 dy = prev->y - cur->y;
-			s_edgeBot_dYdX = mul16(intToFixed16(dy), step);
+			const s32 dy = y1 - y0;
+			s_edgeBot_dYdX = f32(dy) * step;
 
-			const fixed16_16 dz = prev->z - cur->z;
-			s_edgeBot_dZdX = div16(dz, intToFixed16(dx));
+			const f32 dz = prev->z - cur->z;
+			s_edgeBot_dZdX = dz / f32(dx);
 			s_edgeBot_Z0 = cur->z;
 						
 			#if defined(POLY_INTENSITY)
-			s_edgeBot_I0 = clamp(s_polyIntensity[curIndex], 0, VSHADE_MAX_INTENSITY);
-			const fixed16_16 dI = s_polyIntensity[prevIndex] - s_edgeBot_I0;
-			s_edgeBot_dIdX = mul16(dI, step);
+			s_edgeBot_I0 = clamp(s_polyIntensity[curIndex], 0.0f, (f32)VSHADE_MAX_INTENSITY);
+			const f32 dI = s_polyIntensity[prevIndex] - s_edgeBot_I0;
+			s_edgeBot_dIdX = dI * step;
 			#endif
 			#if defined(POLY_UV)
 			s_edgeBot_Uv0 = s_polyUv[curIndex];
-			const fixed16_16 dU = s_polyUv[prevIndex].x - s_edgeBot_Uv0.x;
-			const fixed16_16 dV = s_polyUv[prevIndex].z - s_edgeBot_Uv0.z;
-			s_edgeBot_dUVdX.x = mul16(dU, step);
-			s_edgeBot_dUVdX.z = mul16(dV, step);
+			const f32 dU = s_polyUv[prevIndex].x - s_edgeBot_Uv0.x;
+			const f32 dV = s_polyUv[prevIndex].z - s_edgeBot_Uv0.z;
+			s_edgeBot_dUVdX.x = dU*step;
+			s_edgeBot_dUVdX.z = dV*step;
 			#endif
 
 			s_edgeBotIndex = prevIndex;
@@ -271,13 +279,13 @@ void robj3d_drawColumnShadedTexture()
 #endif
 
 #if defined(POLY_INTENSITY) && !defined(POLY_UV)
-void robj3d_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color)
+void robj3d_drawShadedColorPolygon(vec3_float* projVertices, f32* intensity, s32 vertexCount, u8 color)
 #elif !defined(POLY_INTENSITY) && defined(POLY_UV)
-void robj3d_drawFlatTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, s32 vertexCount, Texture* texture, u8 color)
+void robj3d_drawFlatTexturePolygon(vec3_float* projVertices, vec2_float* uv, s32 vertexCount, Texture* texture, u8 color)
 #elif defined(POLY_INTENSITY) && defined(POLY_UV)
-void robj3d_drawShadedTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, fixed16_16* intensity, s32 vertexCount, Texture* texture)
+void robj3d_drawShadedTexturePolygon(vec3_float* projVertices, vec2_float* uv, f32* intensity, s32 vertexCount, Texture* texture)
 #else
-void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 color)
+void robj3d_drawFlatColorPolygon(vec3_float* projVertices, s32 vertexCount, u8 color)
 #endif
 {
 	s32 xMax = INT_MIN;
@@ -300,10 +308,10 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 	// Compute the 2D bounding box of the polygon.
 	// Track the extreme vertex indices in X.
 	s32 minXIndex;
-	vec3_fixed* projVertex = projVertices;
+	vec3_float* projVertex = projVertices;
 	for (s32 i = 0; i < s_polyVertexCount; i++, projVertex++)
 	{
-		const s32 x = projVertex->x;
+		const s32 x = s32(projVertex->x + 0.5f);
 		if (x < xMin)
 		{
 			xMin = x;
@@ -315,7 +323,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 			s_polyMaxIndex = i;
 		}
 
-		const s32 y = projVertex->y;
+		const s32 y = s32(projVertex->y + 0.5f);
 		if (y < yMin) { yMin = y; }
 		if (y > yMax) { yMax = y; }
 	}
@@ -336,8 +344,8 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 
 	for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX && s_columnX <= s_maxScreenX; s_columnX++)
 	{
-		const fixed16_16 edgeMinZ = min(s_edgeBot_Z0, s_edgeTop_Z0);
-		const fixed16_16 z = s_depth1d_Fixed[s_columnX];
+		const f32 edgeMinZ = min(s_edgeBot_Z0, s_edgeTop_Z0);
+		const f32 z = s_depth1d[s_columnX];
 
 		// Is ave edge Z occluded by walls? Is column outside of the vertical area?
 		if (edgeMinZ < z && s_edgeTopY0_Pixel <= s_windowMaxY && s_edgeBotY0_Pixel >= s_windowMinY)
@@ -347,7 +355,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 			s32 y0_Top = s_edgeTopY0_Pixel;
 			s32 y0_Bot = s_edgeBotY0_Pixel;
 			#if defined(POLY_INTENSITY) || defined(POLY_UV)
-				fixed16_16 yOffset = 0;
+				f32 yOffset = 0;
 			#endif
 
 			if (y0_Top < winTop)
@@ -357,7 +365,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 			if (y0_Bot > winBot)
 			{
 				#if defined(POLY_INTENSITY) || defined(POLY_UV)
-					yOffset = intToFixed16(y0_Bot - winBot);
+					yOffset = f32(y0_Bot - winBot);
 				#endif
 				y0_Bot = winBot;
 			}
@@ -365,28 +373,35 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 			s_columnHeight = y0_Bot - y0_Top + 1;
 			if (s_columnHeight > 0)
 			{
-				const fixed16_16 height = intToFixed16(s_edgeBotY0_Pixel - s_edgeTopY0_Pixel + 1);
+				const f32 height = f32(s_edgeBotY0_Pixel - s_edgeTopY0_Pixel + 1);
 				s_pcolumnOut = &s_display[y0_Top*s_width + s_columnX];
 
 				#if defined(POLY_INTENSITY)
-					s_col_dIdY = div16(s_edgeTop_I0 - s_edgeBot_I0, height);
-					s_col_I0 = s_edgeBot_I0;
+					f32 col_dIdY = (s_edgeTop_I0 - s_edgeBot_I0) / height;
+					f32 col_I0 = s_edgeBot_I0;
 					if (yOffset)
 					{
-						s_col_I0 += mul16(yOffset, s_col_dIdY);
+						col_I0 += (yOffset * s_col_dIdY);
 					}
+					s_col_dIdY = floatToFixed16(col_dIdY);
+					s_col_I0 = floatToFixed16(col_I0);
 					s_dither = ((s_columnX & 1) ^ (y0_Bot & 1)) - 1;
 				#endif
 
 				#if defined(POLY_UV)
-					s_col_dUVdY.x = div16(s_edgeTop_Uv0.x - s_edgeBot_Uv0.x, height);
-					s_col_dUVdY.z = div16(s_edgeTop_Uv0.z - s_edgeBot_Uv0.z, height);
-					s_col_Uv0 = s_edgeBot_Uv0;
-					if (yOffset)
+					vec2_float dUVdY;
+					dUVdY.x = (s_edgeTop_Uv0.x - s_edgeBot_Uv0.x) / height;
+					dUVdY.z = (s_edgeTop_Uv0.z - s_edgeBot_Uv0.z) / height;
+					vec2_float col_Uv0 = s_edgeBot_Uv0;
+					if (yOffset != 0.0f)
 					{
-						s_col_Uv0.x += mul16(yOffset, s_col_dUVdY.x);
-						s_col_Uv0.z += mul16(yOffset, s_col_dUVdY.z);
+						col_Uv0.x += (yOffset * dUVdY.x);
+						col_Uv0.z += (yOffset * dUVdY.z);
 					}
+					s_col_Uv0.x = floatToFixed16(col_Uv0.x);
+					s_col_Uv0.z = floatToFixed16(col_Uv0.z);
+					s_col_dUVdY.x = floatToFixed16(dUVdY.x);
+					s_col_dUVdY.z = floatToFixed16(dUVdY.z);
 				#endif
 
 				DRAW_COLUMN();
@@ -401,7 +416,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 		else
 		{
 			#if defined(POLY_INTENSITY)
-				s_edgeTop_I0 = clamp(s_edgeTop_I0 + s_edgeTop_dIdX, 0, VSHADE_MAX_INTENSITY);
+				s_edgeTop_I0 = clamp(s_edgeTop_I0 + s_edgeTop_dIdX, 0.0f, (f32)VSHADE_MAX_INTENSITY);
 			#endif
 			#if defined(POLY_UV)
 				s_edgeTop_Uv0.x += s_edgeTop_dUVdX.x;
@@ -410,7 +425,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 
 			s_edgeTop_Y0 += s_edgeTop_dYdX;
 			s_edgeTop_Z0 += s_edgeTop_dZdX;
-			s_edgeTopY0_Pixel = round16(s_edgeTop_Y0);
+			s_edgeTopY0_Pixel = roundFloat(s_edgeTop_Y0);
 		}
 		if (foundEdge == 0)
 		{
@@ -422,7 +437,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 			else
 			{
 				#if defined(POLY_INTENSITY)
-				s_edgeBot_I0 = clamp(s_edgeBot_I0 + s_edgeBot_dIdX, 0, VSHADE_MAX_INTENSITY);
+				s_edgeBot_I0 = clamp(s_edgeBot_I0 + s_edgeBot_dIdX, 0.0f, (f32)VSHADE_MAX_INTENSITY);
 				#endif
 				#if defined(POLY_UV)
 					s_edgeBot_Uv0.x += s_edgeBot_dUVdX.x;
@@ -431,7 +446,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 
 				s_edgeBot_Y0 += s_edgeBot_dYdX;
 				s_edgeBot_Z0 += s_edgeBot_dZdX;
-				s_edgeBotY0_Pixel = round16(s_edgeBot_Y0);
+				s_edgeBotY0_Pixel = roundFloat(s_edgeBot_Y0);
 			}
 		}
 	}

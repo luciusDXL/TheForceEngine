@@ -9,7 +9,7 @@
 #include "rflatFloat.h"
 #include "rlightingFloat.h"
 #include "redgePairFloat.h"
-#include "robj3dFloat.h"
+#include "robj3d_float/robj3dFloat.h"
 #include "../rmath.h"
 #include "../rcommon.h"
 #include "../robject.h"

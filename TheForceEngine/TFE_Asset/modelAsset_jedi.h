@@ -47,7 +47,7 @@ struct Polygon
 	s32 vertexCount;
 	s32* indices;
 	vec2* uv;
-	s32 zAve;
+	union { s32 zAve; f32 zAvef; };
 	s32 p24;
 };
 

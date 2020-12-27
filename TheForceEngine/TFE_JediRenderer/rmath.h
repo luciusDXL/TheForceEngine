@@ -164,6 +164,11 @@ namespace TFE_JediRenderer
 
 	inline f32 dotFloat(vec3 v0, vec3 v1) { return v0.x.f32*v1.x.f32 + v0.y.f32*v1.y.f32 + v0.z.f32*v1.z.f32; }
 
+	inline f32 dot(const vec3_float* v0, const vec3_float* v1)
+	{
+		return v0->x*v1->x + v0->y*v1->y + v0->z*v1->z;
+	}
+
 	void normalizeVec3(vec3_float* vIn, vec3_float* vOut);
 
 	inline void sinCosFlt(f32 angle, f32& sinValue, f32& cosValue)

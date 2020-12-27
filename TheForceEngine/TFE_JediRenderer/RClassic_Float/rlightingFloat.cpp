@@ -9,8 +9,8 @@ namespace TFE_JediRenderer
 namespace RClassic_Float
 {
 	#define LIGHT_SCALE_FLOAT 4.0f
-	// TODO: Figure out why this needs to be 2/32 to match the fixed point version (which is 3/32)
-	#define LIGHT_ATTEN (2.0f / 32.0f)
+	// (z>>20) + (z>>21)
+	#define LIGHT_ATTEN (3.0f/32.0f)
 	// A bias to mitigate the difference between fixed point and floating point lighting.
 	#define LIGHT_BIAS 0.0f
 

@@ -107,6 +107,42 @@ namespace RClassic_Float
 		}
 	}
 
+	void drawScanline_Trans()
+	{
+		const fixed44_20 dVdX = s_scanline_dVdX;
+		const fixed44_20 dUdX = s_scanline_dUdX;
+
+		fixed44_20 V = s_scanlineV0;
+		fixed44_20 U = s_scanlineU0;
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--, U += dUdX, V += dVdX)
+		{
+			// Note this produces a distorted mapping if the texture is not 64x64.
+			// This behavior matches the original.
+			const u32 texel = ((floor20(U) & 63) * 64 + (floor20(V) & 63)) & s_ftexDataEnd;
+			const u8 base = s_ftexImage[texel];
+
+			if (base) { s_scanlineOut[i] = s_scanlineLight[base]; }
+		}
+	}
+
+	void drawScanline_Fullbright_Trans()
+	{
+		const fixed44_20 dVdX = s_scanline_dVdX;
+		const fixed44_20 dUdX = s_scanline_dUdX;
+
+		fixed44_20 V = s_scanlineV0;
+		fixed44_20 U = s_scanlineU0;
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--, U += dUdX, V += dVdX)
+		{
+			// Note this produces a distorted mapping if the texture is not 64x64.
+			// This behavior matches the original.
+			const u32 texel = ((floor20(U) & 63) * 64 + (floor20(V) & 63)) & s_ftexDataEnd;
+			const u8 base = s_ftexImage[texel];
+
+			if (base) { s_scanlineOut[i] = base; }
+		}
+	}
+
 	bool flat_setTexture(TextureFrame* tex)
 	{
 		if (!tex) { return false; }
@@ -254,6 +290,79 @@ namespace RClassic_Float
 				}
 			} // while (i < count)
 		}
+	}
+
+	//////////////////////////////////////////////////////////////////////
+	// Polygon Scanline rendering using the same algorithms as flats.
+	//////////////////////////////////////////////////////////////////////
+	typedef void(*ScanlineFunction)();
+	static const ScanlineFunction c_scanlineDrawFunc[] =
+	{
+		drawScanline,
+		drawScanline_Fullbright,
+		drawScanline_Trans,
+		drawScanline_Fullbright_Trans
+	};
+
+	static f32 s_poly_offsetX;
+	static f32 s_poly_offsetZ;
+
+	static f32 s_poly_scaledHOffset;
+	static f32 s_poly_sinYawHOffset;
+	static f32 s_poly_cosYawHOffset;
+
+	static f32 s_poly_cosYawScaledHOffset;
+	static f32 s_poly_sinYawScaledHOffset;
+
+	void flat_preparePolygon(f32 heightOffset, f32 offsetX, f32 offsetZ, Texture* texture)
+	{
+		s_poly_offsetX = s_cameraPosX - offsetX;
+		s_poly_offsetZ = offsetZ - s_cameraPosZ;
+
+		s_poly_scaledHOffset = heightOffset * s_focalLenAspect;
+		s_poly_sinYawHOffset = s_sinYaw * heightOffset;
+		s_poly_cosYawHOffset = s_cosYaw * heightOffset;
+
+		s_poly_cosYawScaledHOffset = s_cosYaw * s_poly_scaledHOffset;
+		s_poly_sinYawScaledHOffset = s_sinYaw * s_poly_scaledHOffset;
+
+		s_ftexWidthMask = texture->frames[0].width - 1;
+		s_ftexHeightMask = texture->frames[0].height - 1;
+		s_ftexHeightLog2 = texture->frames[0].logSizeY;
+		s_ftexImage = texture->frames[0].image;
+		s_ftexDataEnd = texture->frames[0].width * texture->frames[0].height - 1;
+	}
+
+	void flat_drawPolygonScanline(s32 x0, s32 x1, s32 y, bool trans)
+	{
+		x0 = max(x0, s_windowMinX);
+		x1 = min(x1, s_windowMaxX);
+		clipScanline(&x0, &x1, y);
+
+		s_scanlineWidth = x1 - x0 + 1;
+		if (s_scanlineWidth <= 0) { return; }
+
+		s_scanlineX0 = x0;
+		s_scanlineOut = &s_display[y*s_width + x0];
+
+		const s32 yShear = s_heightInPixelsBase - s_heightInPixels;
+		const f32 yMinusHalf = f32(yShear + y) - s_halfHeightBase;
+		const f32 yRcp = yMinusHalf != 0.0f ? 1.0f / yMinusHalf : 1.0f;
+		const f32 z = s_poly_scaledHOffset * yRcp;
+		const f32 right = f32(x1 - 1 - s_screenXMid) * s_aspectScaleX;
+
+		const f32 u0 = s_poly_sinYawScaledHOffset - (s_poly_cosYawHOffset*right);
+		const f32 v0 = s_poly_cosYawScaledHOffset + (s_poly_sinYawHOffset*right);
+		s_scanlineU0 = floatToFixed20((u0*yRcp - s_poly_offsetX) * 8);
+		s_scanlineV0 = floatToFixed20((v0*yRcp - s_poly_offsetZ) * 8);
+
+		const f32 worldTexelScaleAspect = yRcp * 8.0f * s_aspectScaleY;
+		s_scanline_dVdX = -floatToFixed20(s_poly_sinYawHOffset * worldTexelScaleAspect);
+		s_scanline_dUdX = floatToFixed20(s_poly_cosYawHOffset * worldTexelScaleAspect);
+
+		s_scanlineLight = computeLighting(z, 0);
+		const s32 index = (!s_scanlineLight) + trans * 2;
+		c_scanlineDrawFunc[index]();
 	}
 }  // RClassic_Float
 

@@ -32,8 +32,8 @@ namespace TFE_JediRenderer
 		extern fixed16_16 s_negSinYaw_Fixed;
 		extern fixed16_16 s_cameraYaw_Fixed;
 		extern fixed16_16 s_cameraPitch_Fixed;
-		extern fixed16_16 s_yPlaneTop;
-		extern fixed16_16 s_yPlaneBot;
+		extern fixed16_16 s_yPlaneTop_Fixed;
+		extern fixed16_16 s_yPlaneBot_Fixed;
 		extern fixed16_16 s_skyYawOffset_Fixed;
 		extern fixed16_16 s_skyPitchOffset_Fixed;
 		extern fixed16_16* s_skyTable_Fixed;

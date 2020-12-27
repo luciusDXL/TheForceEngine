@@ -38,6 +38,10 @@ namespace RClassic_Float
 		s_heightInPixels = s_heightInPixelsBase + floorFloat(pitchOffset);
 		computeSkyOffsets();
 
+		const f32 yMaxFixed = f32(s_heightInPixelsBase - 2);
+		s_yPlaneBot =  ((yMaxFixed * 0.5f) - pitchOffset) / s_focalLenAspect;
+		s_yPlaneTop = -((yMaxFixed * 0.5f) + pitchOffset) / s_focalLenAspect;
+
 		vec3_float worldPoint = { 0, 0, 0 };
 		vec3_float viewPoint;
 		transformPointByCamera(&worldPoint, &viewPoint);

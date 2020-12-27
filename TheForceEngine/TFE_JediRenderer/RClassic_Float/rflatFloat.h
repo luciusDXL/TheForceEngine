@@ -17,5 +17,9 @@ namespace TFE_JediRenderer
 
 		void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count);
 		void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count);
+
+		// Set Parameters for 3D object rendering.
+		void flat_preparePolygon(f32 heightOffset, f32 offsetX, f32 offsetZ, Texture* texture);
+		void flat_drawPolygonScanline(s32 x0, s32 x1, s32 y, bool trans);
 	}
 }

@@ -54,8 +54,8 @@ namespace RClassic_Fixed
 		computeSkyOffsets();
 
 		fixed16_16 yMaxFixed = (s_heightInPixelsBase - 2) << 16;	// should be 198
-		s_yPlaneBot =  div16((yMaxFixed >> 1) - pitchOffset, s_focalLength_Fixed);
-		s_yPlaneTop = -div16((yMaxFixed >> 1) + pitchOffset, s_focalLength_Fixed);
+		s_yPlaneBot_Fixed =  div16((yMaxFixed >> 1) - pitchOffset, s_focalLength_Fixed);
+		s_yPlaneTop_Fixed = -div16((yMaxFixed >> 1) + pitchOffset, s_focalLength_Fixed);
 
 		vec3_fixed worldPoint = { 0, 0, 0 };
 		vec3_fixed viewPoint;

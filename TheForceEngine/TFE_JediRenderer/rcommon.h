@@ -41,6 +41,8 @@ namespace TFE_JediRenderer
 	extern f32 s_negSinYaw;
 	extern f32 s_cameraYaw;
 	extern f32 s_cameraPitch;
+	extern f32 s_yPlaneTop;
+	extern f32 s_yPlaneBot;
 	extern f32 s_skyYawOffset;
 	extern f32 s_skyPitchOffset;
 	extern f32 s_nearPlaneHalfLen;
