@@ -356,11 +356,13 @@ namespace TFE_RenderBackend
 
 	u32 getVirtualDisplayOffset2D()
 	{
+		if (s_virtualWidth <= s_virtualWidthUi) { return 0; }
 		return (s_virtualWidth - s_virtualWidthUi) >> 1;
 	}
 
 	u32 getVirtualDisplayOffset3D()
 	{
+		if (s_virtualWidth <= s_virtualWidth3d) { return 0; }
 		return (s_virtualWidth - s_virtualWidth3d) >> 1;
 	}
 

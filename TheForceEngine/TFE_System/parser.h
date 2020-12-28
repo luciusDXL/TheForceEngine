@@ -28,7 +28,7 @@ public:
 	void addCommentString(const char* comment);
 
 	// Read the next non-comment/whitespace line.
-	const char* readLine(size_t& bufferPos);
+	const char* readLine(size_t& bufferPos, bool skipLeadingWhitespace = false);
 	// Split a line into tokens using space, comma or equals as separators.
 	// Note strings with spaces still work, they need to be closed in quotes, which are removed upon tokenizing.
 	void tokenizeLine(const char* line, TokenList& tokens);

@@ -250,13 +250,12 @@ namespace TFE_Model_Jedi
 		TFE_Parser parser;
 		size_t bufferPos = 0;
 		parser.init(s_buffer.data(), len);
-		parser.addCommentString("//");
+		const char* fileBuffer = s_buffer.data();
 		parser.addCommentString("#");
-		parser.enableBlockComments();
 
 		// For now just do what the original code does.
 		// TODO: Make this more robust.
-		const char* buffer = parser.readLine(bufferPos);
+		const char* buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
 
 		f32 version;
@@ -271,7 +270,7 @@ namespace TFE_Model_Jedi
 			return false;
 		}
 
-		buffer = parser.readLine(bufferPos);
+		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
 		char name3do[32];
 		if (sscanf(buffer, "3DONAME %s", name3do) != 1)
@@ -280,7 +279,7 @@ namespace TFE_Model_Jedi
 			return false;
 		}
 
-		buffer = parser.readLine(bufferPos);
+		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
 		s32 objectCount;
 		if (sscanf(buffer, "OBJECTS %d", &objectCount) != 1)
@@ -289,7 +288,7 @@ namespace TFE_Model_Jedi
 			return false;
 		}
 
-		buffer = parser.readLine(bufferPos);
+		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
 		s32 vertexCount;
 		if (sscanf(buffer, "VERTICES %d", &vertexCount) != 1)
@@ -304,7 +303,7 @@ namespace TFE_Model_Jedi
 		}
 		model->vertices = (vec3*)malloc(vertexCount * sizeof(vec3));
 
-		buffer = parser.readLine(bufferPos);
+		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
 		s32 polygonCount;
 		if (sscanf(buffer, "POLYGONS %d", &polygonCount) != 1)
@@ -319,7 +318,7 @@ namespace TFE_Model_Jedi
 		}
 		model->polygons = (Polygon*)malloc(polygonCount * sizeof(Polygon));
 
-		buffer = parser.readLine(bufferPos);
+		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
 		char palette[32];
 		if (sscanf(buffer, "PALETTE %s", palette) != 1)
@@ -328,7 +327,7 @@ namespace TFE_Model_Jedi
 			return false;
 		}
 
-		buffer = parser.readLine(bufferPos);
+		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
 		s32 textureCount;
 		if (sscanf(buffer, "TEXTURES %d", &textureCount) != 1)
@@ -344,7 +343,7 @@ namespace TFE_Model_Jedi
 			Texture** texture = model->textures;
 			for (s32 i = 0; i < textureCount; i++, texture++)
 			{
-				buffer = parser.readLine(bufferPos);
+				buffer = parser.readLine(bufferPos, true);
 				if (!buffer) { return false; }
 
 				char textureName[256];
@@ -366,19 +365,24 @@ namespace TFE_Model_Jedi
 			}
 		}
 
+		bool nextLine = true;
 		for (s32 i = 0; i < objectCount; i++)
 		{
-			buffer = parser.readLine(bufferPos);
-			if (!buffer) { return false; }
+			if (nextLine)
+			{
+				buffer = parser.readLine(bufferPos, true);
+				if (!buffer) { return false; }
+			}
+			nextLine = true;
 
 			char objName[32];
 			if (sscanf(buffer, "OBJECT %s", objName) != 1)
 			{
-				// Error.
-				return false;
+				// Some of the models have fewer object entries than objectCount (bad data, "fixed" by the code).
+				break;
 			}
 
-			buffer = parser.readLine(bufferPos);
+			buffer = parser.readLine(bufferPos, true);
 			if (!buffer) { return false; }
 			s32 textureId;
 			if (sscanf(buffer, "TEXTURE %d", &textureId) != 1)
@@ -392,7 +396,7 @@ namespace TFE_Model_Jedi
 				texture = model->textures[textureId];
 			}
 
-			buffer = parser.readLine(bufferPos);
+			buffer = parser.readLine(bufferPos, true);
 			if (!buffer) { return false; }
 			if (sscanf(buffer, "VERTICES %d", &vertexCount) != 1)
 			{
@@ -402,15 +406,15 @@ namespace TFE_Model_Jedi
 			s32 vertexOffset = model->vertexCount;
 			for (s32 v = 0; v < vertexCount; v++)
 			{
-				buffer = parser.readLine(bufferPos);
+				buffer = parser.readLine(bufferPos, true);
 				if (!buffer) { return false; }
 
 				s32 index;
 				f32 x, y, z;
 				if (sscanf(buffer, "%d: %f %f %f", &index, &x, &y, &z) != 4)
 				{
-					// Error.
-					return false;
+					nextLine = false;
+					break;
 				}
 				model->vertices[model->vertexCount].x = floatToFixed16(x);
 				model->vertices[model->vertexCount].y = floatToFixed16(y);
@@ -418,8 +422,12 @@ namespace TFE_Model_Jedi
 				model->vertexCount++;
 			}
 
-			buffer = parser.readLine(bufferPos);
-			if (!buffer) { return false; }
+			if (nextLine)
+			{
+				buffer = parser.readLine(bufferPos, true);
+				if (!buffer) { return false; }
+			}
+			nextLine = true;
 
 			s32 triangleCount = 0, quadCount = 0;
 			s32 basePolygonCount = model->polygonCount;
@@ -428,15 +436,15 @@ namespace TFE_Model_Jedi
 				s32 polygonCount = model->polygonCount;
 				for (s32 p = 0; p < triangleCount; p++, model->polygonCount++)
 				{
-					buffer = parser.readLine(bufferPos);
+					buffer = parser.readLine(bufferPos, true);
 					if (!buffer) { return false; }
 
 					s32 num, a, b, c, color;
 					char shading[32];
 					if (sscanf(buffer, " %d: %d %d %d %d %s ", &num, &a, &b, &c, &color, shading) != 6)
 					{
-						// Error.
-						return false;
+						nextLine = false;
+						break;
 					}
 					a += vertexOffset;
 					b += vertexOffset;
@@ -491,15 +499,15 @@ namespace TFE_Model_Jedi
 				s32 polygonCount = model->polygonCount;
 				for (s32 p = 0; p < quadCount; p++, model->polygonCount++)
 				{
-					buffer = parser.readLine(bufferPos);
+					buffer = parser.readLine(bufferPos, true);
 					if (!buffer) { return false; }
 
 					s32 num, a, b, c, d, color;
 					char shading[32];
 					if (sscanf(buffer, "%d: %d %d %d %d %d %s", &num, &a, &b, &c, &d, &color, shading) != 7)
 					{
-						// Error.
-						return false;
+						nextLine = false;
+						break;
 					}
 					a += vertexOffset;
 					b += vertexOffset;
@@ -559,25 +567,33 @@ namespace TFE_Model_Jedi
 
 			if (texture)
 			{
-				buffer = parser.readLine(bufferPos);
-				if (!buffer) { return false; }
-				if (sscanf(buffer, "TEXTURE VERTICES %d", &vertexCount) != 1)
+				if (nextLine)
+				{
+					buffer = parser.readLine(bufferPos, true);
+					if (!buffer) { return false; }
+				}
+				nextLine = true;
+
+				s32 texVertexCount;
+				if (sscanf(buffer, "TEXTURE VERTICES %d", &texVertexCount) != 1)
 				{
 					// Error.
 					return false;
 				}
 
-				for (s32 v = 0; v < vertexCount; v++)
+				nextLine = true;
+				for (s32 v = 0; v < texVertexCount; v++)
 				{
-					buffer = parser.readLine(bufferPos);
+					buffer = parser.readLine(bufferPos, true);
 					if (!buffer) { return false; }
 
 					s32 num;
 					f32 x, y;
 					if (sscanf(buffer, "%d: %f %f", &num, &x, &y) != 3)
 					{
-						// Error.
-						return false;
+						// Handle buggy input data.
+						nextLine = false;
+						break;
 					}
 					// clamp texture coordinate range.
 					if (x < 0.0f) { x = 0.0f; }
@@ -589,21 +605,26 @@ namespace TFE_Model_Jedi
 					s_tmpVtx[v].y = floatToFixed16(y);
 				}
 
-				buffer = parser.readLine(bufferPos);
-				if (!buffer) { return false; }
+				if (nextLine)
+				{
+					buffer = parser.readLine(bufferPos, true);
+					if (!buffer) { return false; }
+				}
+				nextLine = true;
+
 				if (sscanf(buffer, "TEXTURE TRIANGLES %d", &triangleCount) == 1)
 				{
 					Polygon* polygon = &model->polygons[basePolygonCount];
 					for (s32 p = 0; p < triangleCount; p++, polygon++)
 					{
-						buffer = parser.readLine(bufferPos);
+						buffer = parser.readLine(bufferPos, true);
 						if (!buffer) { return false; }
 
 						s32 num, a, b, c;
 						if (sscanf(buffer, "%d: %d %d %d", &num, &a, &b, &c) != 4)
 						{
-							// Error.
-							return false;
+							nextLine = false;
+							break;
 						}
 
 						polygon->uv   = (vec2*)malloc(sizeof(vec2) * 3);
@@ -623,14 +644,14 @@ namespace TFE_Model_Jedi
 					Polygon* polygon = &model->polygons[basePolygonCount];
 					for (s32 p = 0; p < quadCount; p++, polygon++)
 					{
-						buffer = parser.readLine(bufferPos);
+						buffer = parser.readLine(bufferPos, true);
 						if (!buffer) { return false; }
 
 						s32 num, a, b, c, d;
 						if (sscanf(buffer, "%d: %d %d %d %d", &num, &a, &b, &c, &d) != 5)
 						{
-							// Error.
-							return false;
+							nextLine = false;
+							break;
 						}
 						polygon->uv = (vec2*)malloc(sizeof(vec2) * 4);
 						s32 texWidth = intToFixed16(texture->frames[0].uvWidth);

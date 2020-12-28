@@ -51,12 +51,13 @@ void TFE_Parser::addCommentString(const char* comment)
 }
 
 // Read the next non-comment/whitespace line.
-const char* TFE_Parser::readLine(size_t& bufferPos)
+const char* TFE_Parser::readLine(size_t& bufferPos, bool skipLeadingWhitespace)
 {
 	if (bufferPos >= m_bufferLen || m_bufferLen < 1) { return nullptr; }
 
 	// Keep reading lines until either one has real content or we reach the end of the buffer.
 	bool lineHasContent = false;
+	s32 skip = -1;
 	while (!lineHasContent && bufferPos < m_bufferLen)
 	{
 		s_line[0] = 0;
@@ -112,15 +113,22 @@ const char* TFE_Parser::readLine(size_t& bufferPos)
 
 		// check to see if the line has any content.
 		lineHasContent = false;
+		skip = -1;
 		for (size_t i = 0; i < linePos; i++)
 		{
 			// Content is any non-white space character.
 			if (!isWhitespace(s_line[i]))
 			{
+				if (skip < 0) { skip = i; }
 				lineHasContent = true;
 				break;
 			}
 		}
+	}
+
+	if (lineHasContent && skipLeadingWhitespace && skip > 0)
+	{
+		return &s_line[skip];
 	}
 
 	return s_line[0]!=0 ? s_line : nullptr;
