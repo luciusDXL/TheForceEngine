@@ -261,12 +261,14 @@ namespace TFE_Model_Jedi
 		f32 version;
 		if (sscanf(buffer, "3DO %f", &version) != 1)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no valid name.", name);
+			assert(0);
 			return false;
 		}
 		if (version < 1.2f)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has inavlid version", name);
+			assert(0);
 			return false;
 		}
 
@@ -275,7 +277,8 @@ namespace TFE_Model_Jedi
 		char name3do[32];
 		if (sscanf(buffer, "3DONAME %s", name3do) != 1)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no valid 3DONAME.", name);
+			assert(0);
 			return false;
 		}
 
@@ -284,7 +287,8 @@ namespace TFE_Model_Jedi
 		s32 objectCount;
 		if (sscanf(buffer, "OBJECTS %d", &objectCount) != 1)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no objects.", name);
+			assert(0);
 			return false;
 		}
 
@@ -293,12 +297,14 @@ namespace TFE_Model_Jedi
 		s32 vertexCount;
 		if (sscanf(buffer, "VERTICES %d", &vertexCount) != 1)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no vertices.", name);
+			assert(0);
 			return false;
 		}
 		if (vertexCount > MAX_VERTEX_COUNT_3DO)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has too many vertices: %d / %d.", name, vertexCount, MAX_VERTEX_COUNT_3DO);
+			assert(0);
 			return false;
 		}
 		model->vertices = (vec3*)malloc(vertexCount * sizeof(vec3));
@@ -308,12 +314,14 @@ namespace TFE_Model_Jedi
 		s32 polygonCount;
 		if (sscanf(buffer, "POLYGONS %d", &polygonCount) != 1)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no polygons.", name);
+			assert(0);
 			return false;
 		}
 		if (polygonCount > MAX_POLYGON_COUNT_3DO)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has too many polygons: %d / %d.", name, polygonCount, MAX_POLYGON_COUNT_3DO);
+			assert(0);
 			return false;
 		}
 		model->polygons = (Polygon*)malloc(polygonCount * sizeof(Polygon));
@@ -323,7 +331,8 @@ namespace TFE_Model_Jedi
 		char palette[32];
 		if (sscanf(buffer, "PALETTE %s", palette) != 1)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no PALETTE.", name);
+			assert(0);
 			return false;
 		}
 
@@ -332,7 +341,8 @@ namespace TFE_Model_Jedi
 		s32 textureCount;
 		if (sscanf(buffer, "TEXTURES %d", &textureCount) != 1)
 		{
-			// Error.
+			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has no valid TEXTURES entry.", name);
+			assert(0);
 			return false;
 		}
 
@@ -349,7 +359,8 @@ namespace TFE_Model_Jedi
 				char textureName[256];
 				if (sscanf(buffer, " TEXTURE: %s ", textureName) != 1)
 				{
-					// Error.
+					TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' unable to parse TEXTURE: entry.", name);
+					assert(0);
 					return false;
 				}
 
@@ -379,6 +390,7 @@ namespace TFE_Model_Jedi
 			if (sscanf(buffer, "OBJECT %s", objName) != 1)
 			{
 				// Some of the models have fewer object entries than objectCount (bad data, "fixed" by the code).
+				TFE_System::logWrite(LOG_WARNING, "Object3D_Load", "'%s' has too few objects, continuing anyway.", name);
 				break;
 			}
 
@@ -387,7 +399,8 @@ namespace TFE_Model_Jedi
 			s32 textureId;
 			if (sscanf(buffer, "TEXTURE %d", &textureId) != 1)
 			{
-				// Error.
+				TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' unable to parse TEXTURE ID.", name);
+				assert(0);
 				return false;
 			}
 			Texture* texture = nullptr;
@@ -400,7 +413,8 @@ namespace TFE_Model_Jedi
 			if (!buffer) { return false; }
 			if (sscanf(buffer, "VERTICES %d", &vertexCount) != 1)
 			{
-				// Error.
+				TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' unable to parse object VERTICES entry.", name);
+				assert(0);
 				return false;
 			}
 			s32 vertexOffset = model->vertexCount;
@@ -491,6 +505,7 @@ namespace TFE_Model_Jedi
 					{
 						// ERROR!
 						TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "Invalid polygon shading: %s", shading);
+						assert(0);
 					}
 				}
 			}
@@ -556,12 +571,14 @@ namespace TFE_Model_Jedi
 					{
 						// ERROR!
 						TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "Invalid polygon shading: %s", shading);
+						assert(0);
 					}
 				}
 			}
 			else  // No polygons
 			{
-				// Error.
+				TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' object %s has no polygons.", name, objName);
+				assert(0);
 				return false;
 			}
 
@@ -577,7 +594,8 @@ namespace TFE_Model_Jedi
 				s32 texVertexCount;
 				if (sscanf(buffer, "TEXTURE VERTICES %d", &texVertexCount) != 1)
 				{
-					// Error.
+					TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' unable to parse TEXTURE VERTICES.", name);
+					assert(0);
 					return false;
 				}
 
