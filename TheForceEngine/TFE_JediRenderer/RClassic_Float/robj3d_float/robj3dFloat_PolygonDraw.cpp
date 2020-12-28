@@ -1,4 +1,6 @@
 #include <TFE_System/profiler.h>
+#include <TFE_Settings/settings.h>
+#include <TFE_RenderBackend/renderBackend.h>
 // TODO: Fix or move.
 #include <TFE_Game/level.h>
 
@@ -8,6 +10,7 @@
 #include "../rsectorFloat.h"
 #include "../rflatFloat.h"
 #include "../rlightingFloat.h"
+#include "../fixedPoint20.h"
 #include "../../fixedPoint.h"
 #include "../../rmath.h"
 #include "../../rcommon.h"
@@ -18,9 +21,17 @@ namespace TFE_JediRenderer
 
 namespace RClassic_Float
 {
+	struct vec2_fixed20
+	{
+		fixed44_20 x, z;
+	};
+
 	////////////////////////////////////////////////
 	// Polygon Drawing
 	////////////////////////////////////////////////
+	bool s_perspectiveCorrect = false;
+	s32 s_affineCorrectionLen = 32;
+
 	// Polygon
 	static u8  s_polyColorIndex;
 	static s32 s_polyVertexCount;
@@ -38,13 +49,15 @@ namespace RClassic_Float
 	static s32 s_dither;
 	static u8* s_pcolumnOut;
 		
-	static fixed16_16  s_col_I0;
-	static fixed16_16  s_col_dIdY;
-	static vec2_fixed  s_col_Uv0;
-	static vec2_fixed  s_col_dUVdY;
+	static fixed44_20   s_col_I0;
+	static fixed44_20   s_col_dIdY;
+	static fixed44_20   s_col_rZ0;
+	static fixed44_20   s_col_dZdY;
+	static vec2_fixed20 s_col_Uv0;
+	static vec2_fixed20 s_col_dUVdY;
 
 	// Polygon Edges
-	static fixed16_16  s_ditherOffset;
+	static fixed44_20  s_ditherOffset;
 	// Bottom Edge
 	static f32  s_edgeBot_Z0;
 	static f32  s_edgeBot_dZdX;
@@ -398,7 +411,7 @@ namespace RClassic_Float
 			}
 		}
 	}
-
+		
 	void robj3d_drawPolygon(Polygon* polygon, s32 polyVertexCount, SecObject* obj, JediModel* model)
 	{
 		switch (polygon->shading)

@@ -1,4 +1,5 @@
 #include <TFE_System/profiler.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_RenderBackend/renderBackend.h>
 
 #include "robj3dFloat.h"
@@ -17,7 +18,8 @@ namespace TFE_JediRenderer
 
 namespace RClassic_Float
 {
-	void robj3d_projectVertices(vec3_float* pos, s32 count, vec3_float* out);
+	void robj3d_projectVertices(vec3_float* pos, s32 count, vec3_float* out, bool perspCorrect);
+	void robj3d_prepareUv(vec2_float* uv, s32 count, vec3_float* proj);
 	void robj3d_drawVertices(s32 vertexCount, const vec3_float* vertices, u8 color, s32 size);
 	s32 polygonSort(const void* r0, const void* r1);
 
@@ -43,6 +45,11 @@ namespace RClassic_Float
 		// Nothing to render.
 		if (visPolygonCount < 1) { return; }
 
+		// Setup perspective correct information.
+		const u32 height = TFE_RenderBackend::getVirtualDisplayHeight();
+		s_perspectiveCorrect = TFE_Settings::getGraphicsSettings()->perspectiveCorrectTexturing;
+		s_affineCorrectionLen = max(8, previousPowerOf2(height >> 5));
+
 		// Sort polygons from back to front.
 		qsort(s_visPolygons, visPolygonCount, sizeof(Polygon*), polygonSort);
 
@@ -60,7 +67,11 @@ namespace RClassic_Float
 			if (polyVertexCount < 3) { continue; }
 
 			// Project the resulting vertices.
-			robj3d_projectVertices(s_polygonVerticesVS, polyVertexCount, s_polygonVerticesProj);
+			robj3d_projectVertices(s_polygonVerticesVS, polyVertexCount, s_polygonVerticesProj, s_perspectiveCorrect);
+			if (s_perspectiveCorrect && (polygon->shading&PSHADE_TEXTURE))
+			{
+				robj3d_prepareUv(s_polygonUv, polyVertexCount, s_polygonVerticesProj);
+			}
 
 			// Draw polygon based on its shading mode.
 			robj3d_drawPolygon(polygon, polyVertexCount, obj, model);
@@ -104,13 +115,24 @@ namespace RClassic_Float
 		}
 	}
 
-	void robj3d_projectVertices(vec3_float* pos, s32 count, vec3_float* out)
+	void robj3d_projectVertices(vec3_float* pos, s32 count, vec3_float* out, bool perspCorrect)
 	{
 		for (s32 i = 0; i < count; i++, pos++, out++)
 		{
-			out->x = floorf((pos->x*s_focalLength)/pos->z + s_halfWidth);
-			out->y = floorf((pos->y*s_focalLenAspect)/pos->z + s_halfHeight);
-			out->z = pos->z;
+			const f32 rcpZ = 1.0f / pos->z;
+
+			out->x = floorf((pos->x*s_focalLength)*rcpZ + s_halfWidth);
+			out->y = floorf((pos->y*s_focalLenAspect)*rcpZ + s_halfHeight);
+			out->z = perspCorrect ? rcpZ : pos->z;
+		}
+	}
+
+	void robj3d_prepareUv(vec2_float* uv, s32 count, vec3_float* proj)
+	{
+		for (s32 i = 0; i < count; i++, uv++, proj++)
+		{
+			uv->x *= proj->z;
+			uv->z *= proj->z;
 		}
 	}
 

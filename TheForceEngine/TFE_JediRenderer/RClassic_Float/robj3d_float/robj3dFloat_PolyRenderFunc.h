@@ -183,7 +183,7 @@ void robj3d_drawColumnShadedColor()
 {
 	const u8* colorMap = s_polyColorMap;
 
-	fixed16_16 intensity = s_col_I0;
+	fixed44_20 intensity = s_col_I0;
 	u8  colorIndex = s_polyColorIndex;
 	s32 dither = s_dither;
 
@@ -191,13 +191,13 @@ void robj3d_drawColumnShadedColor()
 	s32 offset = end * s_width;
 	for (s32 i = end; i >= 0; i--, offset -= s_width)
 	{
-		s32 pixelIntensity = floor16(intensity);
+		s32 pixelIntensity = floor20(intensity);
 		if (dither)
 		{
-			const fixed16_16 iOffset = intensity - s_ditherOffset;
+			const fixed44_20 iOffset = intensity - s_ditherOffset;
 			if (iOffset >= 0)
 			{
-				pixelIntensity = floor16(iOffset);
+				pixelIntensity = floor20(iOffset);
 			}
 		}
 		s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
@@ -217,18 +217,76 @@ void robj3d_drawColumnFlatTexture()
 	const s32 texWidthMask = s_polyTexture->frames[0].width - 1;
 	const s32 texHeightMask = texHeight - 1;
 
-	fixed16_16 U = s_col_Uv0.x;
-	fixed16_16 V = s_col_Uv0.z;
+	fixed44_20 U = s_col_Uv0.x;
+	fixed44_20 V = s_col_Uv0.z;
+	fixed44_20 Z = s_col_rZ0;
 	
 	s32 end = s_columnHeight - 1;
 	s32 offset = end * s_width;
-	for (s32 i = end; i >= 0; i--, offset -= s_width)
-	{
-		const u8 colorIndex = textureData[(floor16(U)&texWidthMask)*texHeight + (floor16(V)&texHeightMask)];
-		s_pcolumnOut[offset] = colorMap[colorIndex];
 
-		U += s_col_dUVdY.x;
-		V += s_col_dUVdY.z;
+	const s32 N = s_affineCorrectionLen;
+	if (s_perspectiveCorrect)
+	{
+		// Correct every 'N' pixels
+		s32 len = s_columnHeight;
+		s32 affineSpan = min(N, len);
+
+		const fixed44_20 z0 = div20(ONE_20, Z);
+		fixed44_20 S0 = mul20(U, z0);
+		fixed44_20 T0 = mul20(V, z0);
+
+		Z += s_col_dZdY * affineSpan;
+		U += s_col_dUVdY.x*affineSpan;
+		V += s_col_dUVdY.z*affineSpan;
+		const fixed44_20 z1 = div20(ONE_20, Z);
+
+		fixed44_20 S1 = mul20(U, z1);
+		fixed44_20 T1 = mul20(V, z1);
+		fixed44_20 S = S0, T = T0;
+		fixed44_20 dSdY = (S1 - S0) / affineSpan;
+		fixed44_20 dTdY = (T1 - T0) / affineSpan;
+
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		{
+			if (affineSpan <= 0)
+			{
+				affineSpan = min(N, len);
+
+				Z += s_col_dZdY * affineSpan;
+				U += s_col_dUVdY.x*affineSpan;
+				V += s_col_dUVdY.z*affineSpan;
+
+				S0 = S1;
+				T0 = T1;
+
+				const fixed44_20 z = div20(ONE_20, Z);
+				S1 = mul20(U, z);
+				T1 = mul20(V, z);
+
+				S = S0; T = T0;
+				dSdY = (S1 - S0) / affineSpan;
+				dTdY = (T1 - T0) / affineSpan;
+			}
+			
+			const u8 colorIndex = textureData[(floor20(S)&texWidthMask)*texHeight + (floor20(T)&texHeightMask)];
+			s_pcolumnOut[offset] = colorMap[colorIndex];
+
+			S += dSdY;
+			T += dTdY;
+			affineSpan--;
+			len--;
+		}
+	}
+	else
+	{
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		{
+			const u8 colorIndex = textureData[(floor20(U)&texWidthMask)*texHeight + (floor20(V)&texHeightMask)];
+			s_pcolumnOut[offset] = colorMap[colorIndex];
+
+			U += s_col_dUVdY.x;
+			V += s_col_dUVdY.z;
+		}
 	}
 }
 #endif
@@ -242,21 +300,80 @@ void robj3d_drawColumnShadedTexture()
 	const s32 texWidthMask = s_polyTexture->frames[0].width - 1;
 	const s32 texHeightMask = texHeight - 1;
 
-	fixed16_16 U = s_col_Uv0.x;
-	fixed16_16 V = s_col_Uv0.z;
-	fixed16_16 I = s_col_I0;
+	fixed44_20 U = s_col_Uv0.x;
+	fixed44_20 V = s_col_Uv0.z;
+	fixed44_20 I = s_col_I0;
+	fixed44_20 Z = s_col_rZ0;
 
 	s32 end = s_columnHeight - 1;
 	s32 offset = end * s_width;
-	for (s32 i = end; i >= 0; i--, offset -= s_width)
+	const s32 N = s_affineCorrectionLen;
+	if (s_perspectiveCorrect)
 	{
-		const u8 colorIndex = textureData[(floor16(U)&texWidthMask)*texHeight + (floor16(V)&texHeightMask)];
-		const s32 pixelIntensity = floor16(I);
-		s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
+		// Correct every 'N' pixels
+		s32 len = s_columnHeight;
+		s32 affineSpan = min(N, len);
 
-		I += s_col_dIdY;
-		U += s_col_dUVdY.x;
-		V += s_col_dUVdY.z;
+		const fixed44_20 z0 = div20(ONE_20, Z);
+		fixed44_20 S0 = mul20(U, z0);
+		fixed44_20 T0 = mul20(V, z0);
+
+		Z += s_col_dZdY * affineSpan;
+		U += s_col_dUVdY.x*affineSpan;
+		V += s_col_dUVdY.z*affineSpan;
+		const fixed44_20 z1 = div20(ONE_20, Z);
+
+		fixed44_20 S1 = mul20(U, z1);
+		fixed44_20 T1 = mul20(V, z1);
+		fixed44_20 S = S0, T = T0;
+		fixed44_20 dSdY = (S1 - S0) / affineSpan;
+		fixed44_20 dTdY = (T1 - T0) / affineSpan;
+
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		{
+			if (affineSpan <= 0)
+			{
+				affineSpan = min(N, len);
+
+				Z += s_col_dZdY * affineSpan;
+				U += s_col_dUVdY.x*affineSpan;
+				V += s_col_dUVdY.z*affineSpan;
+
+				S0 = S1;
+				T0 = T1;
+
+				const fixed44_20 z = div20(ONE_20, Z);
+				S1 = mul20(U, z);
+				T1 = mul20(V, z);
+
+				S = S0; T = T0;
+				dSdY = (S1 - S0) / affineSpan;
+				dTdY = (T1 - T0) / affineSpan;
+			}
+
+			const u8 colorIndex = textureData[(floor20(S)&texWidthMask)*texHeight + (floor20(T)&texHeightMask)];
+			const s32 pixelIntensity = floor20(I);
+			s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
+
+			I += s_col_dIdY;
+			S += dSdY;
+			T += dTdY;
+			affineSpan--;
+			len--;
+		}
+	}
+	else
+	{
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		{
+			const u8 colorIndex = textureData[(floor20(U)&texWidthMask)*texHeight + (floor20(V)&texHeightMask)];
+			const s32 pixelIntensity = floor20(I);
+			s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
+
+			I += s_col_dIdY;
+			U += s_col_dUVdY.x;
+			V += s_col_dUVdY.z;
+		}
 	}
 }
 #endif
@@ -340,7 +457,7 @@ void robj3d_drawFlatColorPolygon(vec3_float* projVertices, s32 vertexCount, u8 c
 		s_polyColorIndex = color;
 	#endif
 	#if defined(POLY_INTENSITY) && !defined(POLY_UV)
-		s_ditherOffset = HALF_16;
+		s_ditherOffset = HALF_20;
 	#endif
 	s_columnX = xMin;
 
@@ -348,7 +465,7 @@ void robj3d_drawFlatColorPolygon(vec3_float* projVertices, s32 vertexCount, u8 c
 
 	for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX && s_columnX <= s_maxScreenX; s_columnX++)
 	{
-		const f32 edgeMinZ = min(s_edgeBot_Z0, s_edgeTop_Z0);
+		const f32 edgeMinZ = s_perspectiveCorrect ? 1.0f / max(s_edgeBot_Z0, s_edgeTop_Z0) : min(s_edgeBot_Z0, s_edgeTop_Z0);
 		const f32 z = s_depth1d[s_columnX];
 
 		// Is ave edge Z occluded by walls? Is column outside of the vertical area?
@@ -387,8 +504,8 @@ void robj3d_drawFlatColorPolygon(vec3_float* projVertices, s32 vertexCount, u8 c
 					{
 						col_I0 += (yOffset * s_col_dIdY);
 					}
-					s_col_dIdY = floatToFixed16(col_dIdY);
-					s_col_I0 = floatToFixed16(col_I0);
+					s_col_dIdY = floatToFixed20(col_dIdY);
+					s_col_I0 = floatToFixed20(col_I0);
 					s_dither = ((s_columnX & 1) ^ (y0_Bot & 1)) - 1;
 				#endif
 
@@ -402,10 +519,22 @@ void robj3d_drawFlatColorPolygon(vec3_float* projVertices, s32 vertexCount, u8 c
 						col_Uv0.x += (yOffset * dUVdY.x);
 						col_Uv0.z += (yOffset * dUVdY.z);
 					}
-					s_col_Uv0.x = floatToFixed16(col_Uv0.x);
-					s_col_Uv0.z = floatToFixed16(col_Uv0.z);
-					s_col_dUVdY.x = floatToFixed16(dUVdY.x);
-					s_col_dUVdY.z = floatToFixed16(dUVdY.z);
+					s_col_Uv0.x = floatToFixed20(col_Uv0.x);
+					s_col_Uv0.z = floatToFixed20(col_Uv0.z);
+					s_col_dUVdY.x = floatToFixed20(dUVdY.x);
+					s_col_dUVdY.z = floatToFixed20(dUVdY.z);
+				
+					if (s_perspectiveCorrect)
+					{
+						f32 col_rZ0 = s_edgeBot_Z0;
+						f32 col_dZdY = (s_edgeTop_Z0 - s_edgeBot_Z0) / height;
+						if (yOffset != 0.0f)
+						{
+							col_rZ0 += (yOffset * col_dZdY);
+						}
+						s_col_dZdY = floatToFixed20(col_dZdY);
+						s_col_rZ0 = floatToFixed20(col_rZ0);
+					}
 				#endif
 
 				DRAW_COLUMN();

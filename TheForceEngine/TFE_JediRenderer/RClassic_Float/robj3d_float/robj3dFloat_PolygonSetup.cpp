@@ -1,4 +1,5 @@
 #include <TFE_System/profiler.h>
+#include <TFE_Settings/settings.h>
 
 #include "robj3dFloat_PolygonSetup.h"
 #include "robj3dFloat_TransformAndLighting.h"

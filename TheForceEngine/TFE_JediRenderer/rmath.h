@@ -43,7 +43,7 @@ namespace TFE_JediRenderer
 	{
 		fixed16_16 x, z;
 	};
-
+		
 	struct vec3_fixed
 	{
 		fixed16_16 x, y, z;
@@ -181,4 +181,17 @@ namespace TFE_JediRenderer
 	void computeTransformFromAngles_Float(f32 yaw, f32 pitch, f32 roll, f32* transform);
 	void transformPointByCamera(vec3_float* worldPoint, vec3_float* viewPoint);
 	void transformPointByCameraFloat(vec3* worldPoint, vec3* viewPoint);
+
+
+	inline u32 previousPowerOf2(u32 x)
+	{
+		if (x == 0) { return 0; }
+
+		x |= (x >> 1);
+		x |= (x >> 2);
+		x |= (x >> 4);
+		x |= (x >> 8);
+		x |= (x >> 16);
+		return x - (x >> 1);
+	}
 }

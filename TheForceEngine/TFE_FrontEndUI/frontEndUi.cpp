@@ -863,8 +863,7 @@ namespace TFE_FrontEndUI
 			// Software
 			ImGui::Checkbox("Async Framebuffer", &graphics->asyncFramebuffer);
 			ImGui::Checkbox("GPU Color Conversion", &graphics->gpuColorConvert);
-			//ImGui::Checkbox("Perspective Correct 3DO Texturing", &s_perspectiveCorrect);
-			ImGui::TextColored({ 1.0f, 1.0f, 1.0f, 0.33f }, "Perspective Correct 3DO Texturing [TODO]");
+			ImGui::Checkbox("Perspective Correct 3DO Texturing", &graphics->perspectiveCorrectTexturing);
 
 			if (prevAsync != graphics->asyncFramebuffer || prevColorConvert != graphics->gpuColorConvert)
 			{
