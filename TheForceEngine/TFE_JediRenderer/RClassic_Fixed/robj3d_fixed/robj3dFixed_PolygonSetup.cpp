@@ -28,9 +28,20 @@ namespace RClassic_Fixed
 		if (polygon->shading & PSHADE_TEXTURE)
 		{
 			const vec2_fixed* uv = (vec2_fixed*)polygon->uv;
-			for (s32 v = 0; v < polygon->vertexCount; v++)
+			const vec2_fixed zero = { 0 };
+			if (uv)
 			{
-				s_polygonUv[v] = uv[v];
+				for (s32 v = 0; v < polygon->vertexCount; v++)
+				{
+					s_polygonUv[v] = uv[v];
+				}
+			}
+			else
+			{
+				for (s32 v = 0; v < polygon->vertexCount; v++)
+				{
+					s_polygonUv[v] = zero;
+				}
 			}
 		}
 

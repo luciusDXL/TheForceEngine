@@ -28,10 +28,21 @@ namespace RClassic_Float
 		if (polygon->shading & PSHADE_TEXTURE)
 		{
 			const vec2_fixed* uv = (vec2_fixed*)polygon->uv;
-			for (s32 v = 0; v < polygon->vertexCount; v++)
+			if (uv)
 			{
-				s_polygonUv[v].x = uv ? fixed16ToFloat(uv[v].x) : 0.0f;
-				s_polygonUv[v].z = uv ? fixed16ToFloat(uv[v].z) : 0.0f;
+				for (s32 v = 0; v < polygon->vertexCount; v++)
+				{
+					s_polygonUv[v].x = fixed16ToFloat(uv[v].x);
+					s_polygonUv[v].z = fixed16ToFloat(uv[v].z);
+				}
+			}
+			else
+			{
+				vec2_float zero = { 0 };
+				for (s32 v = 0; v < polygon->vertexCount; v++)
+				{
+					s_polygonUv[v] = zero;
+				}
 			}
 		}
 

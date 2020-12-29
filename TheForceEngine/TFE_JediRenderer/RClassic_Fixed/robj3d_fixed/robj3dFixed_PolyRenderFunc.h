@@ -192,7 +192,7 @@ void robj3d_drawColumnShadedColor()
 				pixelIntensity = floor16(iOffset);
 			}
 		}
-		s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
+		s_pcolumnOut[offset] = colorMap[(pixelIntensity&31)*256 + colorIndex];
 
 		intensity += s_col_dIdY;
 		dither = !dither;
@@ -243,7 +243,7 @@ void robj3d_drawColumnShadedTexture()
 	for (s32 i = end; i >= 0; i--, offset -= s_width)
 	{
 		const u8 colorIndex = textureData[(floor16(U)&texWidthMask)*texHeight + (floor16(V)&texHeightMask)];
-		const s32 pixelIntensity = floor16(I);
+		const s32 pixelIntensity = floor16(I)&31;
 		s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
 
 		I += s_col_dIdY;
