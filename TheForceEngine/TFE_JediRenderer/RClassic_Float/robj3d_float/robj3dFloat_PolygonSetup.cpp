@@ -30,8 +30,8 @@ namespace RClassic_Float
 			const vec2_fixed* uv = (vec2_fixed*)polygon->uv;
 			for (s32 v = 0; v < polygon->vertexCount; v++)
 			{
-				s_polygonUv[v].x = fixed16ToFloat(uv[v].x);
-				s_polygonUv[v].z = fixed16ToFloat(uv[v].z);
+				s_polygonUv[v].x = uv ? fixed16ToFloat(uv[v].x) : 0.0f;
+				s_polygonUv[v].z = uv ? fixed16ToFloat(uv[v].z) : 0.0f;
 			}
 		}
 

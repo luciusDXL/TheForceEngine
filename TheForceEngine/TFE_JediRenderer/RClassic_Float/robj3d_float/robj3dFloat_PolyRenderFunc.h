@@ -200,7 +200,7 @@ void robj3d_drawColumnShadedColor()
 				pixelIntensity = floor20(iOffset);
 			}
 		}
-		s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
+		s_pcolumnOut[offset] = colorMap[(pixelIntensity&31)*256 + colorIndex];
 
 		intensity += s_col_dIdY;
 		dither = !dither;
@@ -248,7 +248,7 @@ void robj3d_drawColumnFlatTexture()
 
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
-			if (affineSpan <= 0)
+			if (affineSpan <= 0 && len)
 			{
 				affineSpan = min(N, len);
 
@@ -331,7 +331,7 @@ void robj3d_drawColumnShadedTexture()
 
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
-			if (affineSpan <= 0)
+			if (affineSpan <= 0 && len)
 			{
 				affineSpan = min(N, len);
 
@@ -352,7 +352,7 @@ void robj3d_drawColumnShadedTexture()
 			}
 
 			const u8 colorIndex = textureData[(floor20(S)&texWidthMask)*texHeight + (floor20(T)&texHeightMask)];
-			const s32 pixelIntensity = floor20(I);
+			const s32 pixelIntensity = floor20(I)&31;
 			s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
 
 			I += s_col_dIdY;
@@ -367,7 +367,7 @@ void robj3d_drawColumnShadedTexture()
 		for (s32 i = end; i >= 0; i--, offset -= s_width)
 		{
 			const u8 colorIndex = textureData[(floor20(U)&texWidthMask)*texHeight + (floor20(V)&texHeightMask)];
-			const s32 pixelIntensity = floor20(I);
+			const s32 pixelIntensity = floor20(I)&31;
 			s_pcolumnOut[offset] = colorMap[pixelIntensity*256 + colorIndex];
 
 			I += s_col_dIdY;
