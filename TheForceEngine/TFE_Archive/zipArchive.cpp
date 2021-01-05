@@ -53,18 +53,17 @@ bool ZipArchive::open(const char *archivePath)
 		m_entries[i].length = (size_t)zip_entry_size(zip);
 		zip_entry_close(zip);
 	}
-	m_fileHandle = zip;
+	zip_close(zip);
+
+	strcpy(m_archivePath, archivePath);
+	m_fileHandle = nullptr;
 
 	return true;
 }
 
 void ZipArchive::close()
 {
-	if (m_fileHandle)
-	{
-		zip_close((struct zip_t*)m_fileHandle);
-	}
-	m_fileHandle = nullptr;
+	closeFile();
 
 	delete[] m_entries;
 	m_entries = nullptr;
@@ -75,6 +74,10 @@ void ZipArchive::close()
 bool ZipArchive::openFile(const char *file)
 {
 	m_curFile = getFileIndex(file);
+	if (m_curFile != INVALID_FILE)
+	{
+		m_fileHandle = zip_open(m_archivePath, 0, 'r');
+	}
 	return m_curFile != INVALID_FILE;
 }
 
@@ -82,6 +85,7 @@ bool ZipArchive::openFile(u32 index)
 {
 	if (index <= (u32)m_entryCount)
 	{
+		m_fileHandle = zip_open(m_archivePath, 0, 'r');
 		m_curFile = index;
 		return true;
 	}
@@ -92,6 +96,11 @@ bool ZipArchive::openFile(u32 index)
 
 void ZipArchive::closeFile()
 {
+	if (m_fileHandle)
+	{
+		zip_close((struct zip_t*)m_fileHandle);
+		m_fileHandle = nullptr;
+	}
 	m_curFile = INVALID_FILE;
 }
 
