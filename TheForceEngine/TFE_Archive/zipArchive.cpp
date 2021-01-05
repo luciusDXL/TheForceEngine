@@ -34,7 +34,7 @@ bool ZipArchive::open(const char *archivePath)
 	if (m_entryCount <= 0)
 	{
 		TFE_System::logWrite(LOG_ERROR, "zipArchive", "Zip Archive '%s' is empty.", archivePath);
-		zip_entry_close(zip);
+		zip_close(zip);
 		return false;
 	}
 	m_entries = new ZipEntry[m_entryCount];
@@ -77,27 +77,44 @@ bool ZipArchive::openFile(const char *file)
 	if (m_curFile != INVALID_FILE)
 	{
 		m_fileHandle = zip_open(m_archivePath, 0, 'r');
+		if (zip_entry_openbyindex((struct zip_t*)m_fileHandle, m_curFile) != 0)
+		{
+			TFE_System::logWrite(LOG_ERROR, "zipArchive", "Cannot open file '%s' from archive '%s'", file, m_archivePath);
+			m_curFile = INVALID_FILE;
+			zip_close((struct zip_t*)m_fileHandle);
+			m_fileHandle = nullptr;
+		}
 	}
 	return m_curFile != INVALID_FILE;
 }
 
 bool ZipArchive::openFile(u32 index)
 {
+	m_curFile = INVALID_FILE;
 	if (index <= (u32)m_entryCount)
 	{
+		// Open the system file.
 		m_fileHandle = zip_open(m_archivePath, 0, 'r');
+		// Open the file entry itself.
 		m_curFile = index;
-		return true;
+		if (zip_entry_openbyindex((struct zip_t*)m_fileHandle, index) != 0)
+		{
+			TFE_System::logWrite(LOG_ERROR, "zipArchive", "Cannot open file '%s' from archive '%s'", m_entries[index].name.c_str(), m_archivePath);
+			m_curFile = INVALID_FILE;
+			zip_close((struct zip_t*)m_fileHandle);
+			m_fileHandle = nullptr;
+		}
 	}
-
-	m_curFile = INVALID_FILE;
-	return false;
+	return m_curFile != INVALID_FILE;
 }
 
 void ZipArchive::closeFile()
 {
 	if (m_fileHandle)
 	{
+		// Close the file entry.
+		zip_entry_close((struct zip_t*)m_fileHandle);
+		// Close the system file.
 		zip_close((struct zip_t*)m_fileHandle);
 		m_fileHandle = nullptr;
 	}
@@ -138,10 +155,6 @@ bool ZipArchive::readFile(void *data, size_t size)
 	if (size == 0) { size = m_entries[m_curFile].length; }
 
 	const size_t sizeToRead = std::min(size, m_entries[m_curFile].length);
-	if (zip_entry_openbyindex((struct zip_t*)m_fileHandle, m_curFile) != 0)
-	{
-		return false;
-	}
 	return zip_entry_noallocread((struct zip_t*)m_fileHandle, data, size) > 0;
 }
 
