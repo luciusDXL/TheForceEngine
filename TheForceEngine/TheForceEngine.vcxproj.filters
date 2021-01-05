@@ -158,6 +158,9 @@
     <Filter Include="Source\TFE_JediRenderer\RClassic_Float\robj3d_float">
       <UniqueIdentifier>{ce79367c-67c1-4b10-a6a3-1f434c2c5842}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Archive\zip">
+      <UniqueIdentifier>{f069b311-4842-4982-aa48-6848b3f3fa66}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -697,6 +700,15 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.h">
       <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Archive\zip\miniz.h">
+      <Filter>Source\TFE_Archive\zip</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Archive\zip\zip.h">
+      <Filter>Source\TFE_Archive\zip</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Archive\zipArchive.h">
+      <Filter>Source\TFE_Archive</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1139,6 +1151,12 @@
     </ClCompile>
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.cpp">
       <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Archive\zip\zip.c">
+      <Filter>Source\TFE_Archive\zip</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Archive\zipArchive.cpp">
+      <Filter>Source\TFE_Archive</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

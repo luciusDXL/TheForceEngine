@@ -63,5 +63,8 @@ License: Custom
 License: ZLIB
 
 **Other**
+https://github.com/kuba--/zip
+License: Unlicense
+
 https://github.com/notnullnotvoid/msf_gif
 License: MIT

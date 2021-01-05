@@ -197,6 +197,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;WIN32_OPENGL;__WINDOWS_MM__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -231,6 +232,9 @@
     <ClInclude Include="TFE_Archive\gobArchive.h" />
     <ClInclude Include="TFE_Archive\labArchive.h" />
     <ClInclude Include="TFE_Archive\lfdArchive.h" />
+    <ClInclude Include="TFE_Archive\zipArchive.h" />
+    <ClInclude Include="TFE_Archive\zip\miniz.h" />
+    <ClInclude Include="TFE_Archive\zip\zip.h" />
     <ClInclude Include="TFE_Asset\assetSystem.h" />
     <ClInclude Include="TFE_Asset\colormapAsset.h" />
     <ClInclude Include="TFE_Asset\fontAsset.h" />
@@ -411,6 +415,8 @@
     <ClCompile Include="TFE_Archive\gobArchive.cpp" />
     <ClCompile Include="TFE_Archive\labArchive.cpp" />
     <ClCompile Include="TFE_Archive\lfdArchive.cpp" />
+    <ClCompile Include="TFE_Archive\zipArchive.cpp" />
+    <ClCompile Include="TFE_Archive\zip\zip.c" />
     <ClCompile Include="TFE_Asset\assetSystem.cpp" />
     <ClCompile Include="TFE_Asset\colormapAsset.cpp" />
     <ClCompile Include="TFE_Asset\fontAsset.cpp" />

@@ -2,6 +2,7 @@
 #include "gobArchive.h"
 #include "lfdArchive.h"
 #include "labArchive.h"
+#include "zipArchive.h"
 #include <TFE_FileSystem/fileutil.h>
 #include <assert.h>
 #include <string>
@@ -18,6 +19,7 @@ static const char* c_archiveExt[ARCHIVE_COUNT]=
 	"GOB", // ARCHIVE_GOB
 	"LFD", // ARCHIVE_LFD
 	"LAB", // ARCHIVE_LAB
+	"ZIP", // ARCHIVE_ZIP
 };
 
 ArchiveType Archive::getArchiveTypeFromName(const char* path)
@@ -61,6 +63,11 @@ Archive* Archive::getArchive(ArchiveType type, const char* name, const char* pat
 		case ARCHIVE_LAB:
 		{
 			archive = new LabArchive();
+		}
+		break;
+		case ARCHIVE_ZIP:
+		{
+			archive = new ZipArchive();
 		}
 		break;
 		default:
@@ -132,6 +139,11 @@ Archive* Archive::createCustomArchive(ArchiveType type, const char* path)
 	case ARCHIVE_LAB:
 	{
 		archive = new LabArchive();
+	}
+	break;
+	case ARCHIVE_ZIP:
+	{
+		archive = new ZipArchive();
 	}
 	break;
 	default:
