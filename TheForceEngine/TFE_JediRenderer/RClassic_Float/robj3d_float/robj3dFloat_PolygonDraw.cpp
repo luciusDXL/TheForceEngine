@@ -21,6 +21,10 @@ namespace TFE_JediRenderer
 
 namespace RClassic_Float
 {
+	// Uncomment to use floating point division and interpolation for Z values
+	// when using perpsective correct texturing.
+	#define USE_FLOAT_Z_DIV
+	
 	struct vec2_fixed20
 	{
 		fixed44_20 x, z;
@@ -51,8 +55,13 @@ namespace RClassic_Float
 		
 	static fixed44_20   s_col_I0;
 	static fixed44_20   s_col_dIdY;
-	static fixed44_20   s_col_rZ0;
-	static fixed44_20   s_col_dZdY;
+#if defined(USE_FLOAT_Z_DIV)
+	static f32 s_col_rZ0;
+	static f32 s_col_dZdY;
+#else
+	static fixed44_20 s_col_rZ0;
+	static fixed44_20 s_col_dZdY;
+#endif
 	static vec2_fixed20 s_col_Uv0;
 	static vec2_fixed20 s_col_dUVdY;
 

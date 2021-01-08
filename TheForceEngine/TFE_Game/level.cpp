@@ -112,7 +112,15 @@ namespace TFE_Level
 				GameObject* secobject = &(*s_objects)[i];
 				// Get the position and sector.
 				Vec3f pos = object[i].pos;
+
 				s32 sectorId = TFE_Physics::findSector(&pos);
+				// Skip objects that are not in sectors.
+				if (sectorId < 0) { continue; }
+				if (sectorId >= s32(sectorCount))
+				{
+					TFE_System::logWrite(LOG_ERROR, "Level", "Sector ID for object is invalid: %d.", sectorId);
+					continue;
+				}
 
 				secobject->objectId = i;
 				secobject->oclass = oclass;
@@ -138,14 +146,7 @@ namespace TFE_Level
 				secobject->frameIndex = 0;
 
 				if (oclass != CLASS_SPRITE && oclass != CLASS_FRAME && oclass != CLASS_3D && oclass != CLASS_SOUND) { continue; }
-				// Skip objects that are not in sectors.
-				if (sectorId < 0) { continue; }
-				if (sectorId >= s32(sectorCount))
-				{
-					TFE_System::logWrite(LOG_ERROR, "Level", "Sector ID for object is invalid: %d.", sectorId);
-					continue;
-				}
-
+				
 				std::vector<u32>& list = (*s_sectorObjects)[sectorId].list;
 				list.push_back(i);
 				

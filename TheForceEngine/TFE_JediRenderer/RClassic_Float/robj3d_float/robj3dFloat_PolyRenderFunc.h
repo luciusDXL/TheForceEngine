@@ -219,7 +219,11 @@ void robj3d_drawColumnFlatTexture()
 
 	fixed44_20 U = s_col_Uv0.x;
 	fixed44_20 V = s_col_Uv0.z;
+#if defined(USE_FLOAT_Z_DIV)
+	f32 Z = s_col_rZ0;
+#else
 	fixed44_20 Z = s_col_rZ0;
+#endif
 	
 	s32 end = s_columnHeight - 1;
 	s32 offset = end * s_width;
@@ -231,17 +235,29 @@ void robj3d_drawColumnFlatTexture()
 		s32 len = s_columnHeight;
 		s32 affineSpan = min(N, len);
 
+	#if defined(USE_FLOAT_Z_DIV)
+		const f32 z0 = 1.0f / Z;
+		fixed44_20 S0 = fixed44_20(U * z0);
+		fixed44_20 T0 = fixed44_20(V * z0);
+	#else
 		const fixed44_20 z0 = div20(ONE_20, Z);
 		fixed44_20 S0 = mul20(U, z0);
 		fixed44_20 T0 = mul20(V, z0);
+	#endif
 
 		Z += s_col_dZdY * affineSpan;
 		U += s_col_dUVdY.x*affineSpan;
 		V += s_col_dUVdY.z*affineSpan;
-		const fixed44_20 z1 = div20(ONE_20, Z);
 
+	#if defined(USE_FLOAT_Z_DIV)
+		const f32 z1 = 1.0f / Z;
+		fixed44_20 S1 = fixed44_20(U * z1);
+		fixed44_20 T1 = fixed44_20(V * z1);
+	#else
+		const fixed44_20 z1 = div20(ONE_20, Z);
 		fixed44_20 S1 = mul20(U, z1);
 		fixed44_20 T1 = mul20(V, z1);
+	#endif
 		fixed44_20 S = S0, T = T0;
 		fixed44_20 dSdY = (S1 - S0) / affineSpan;
 		fixed44_20 dTdY = (T1 - T0) / affineSpan;
@@ -259,9 +275,15 @@ void robj3d_drawColumnFlatTexture()
 				S0 = S1;
 				T0 = T1;
 
+			#if defined(USE_FLOAT_Z_DIV)
+				const f32 z = 1.0f / Z;
+				S1 = fixed44_20(U * z);
+				T1 = fixed44_20(V * z);
+			#else
 				const fixed44_20 z = div20(ONE_20, Z);
 				S1 = mul20(U, z);
 				T1 = mul20(V, z);
+			#endif
 
 				S = S0; T = T0;
 				dSdY = (S1 - S0) / affineSpan;
@@ -303,7 +325,11 @@ void robj3d_drawColumnShadedTexture()
 	fixed44_20 U = s_col_Uv0.x;
 	fixed44_20 V = s_col_Uv0.z;
 	fixed44_20 I = s_col_I0;
+#if defined(USE_FLOAT_Z_DIV)
+	f32 Z = s_col_rZ0;
+#else
 	fixed44_20 Z = s_col_rZ0;
+#endif
 
 	s32 end = s_columnHeight - 1;
 	s32 offset = end * s_width;
@@ -314,17 +340,29 @@ void robj3d_drawColumnShadedTexture()
 		s32 len = s_columnHeight;
 		s32 affineSpan = min(N, len);
 
+	#if defined(USE_FLOAT_Z_DIV)
+		const f32 z0 = 1.0f / Z;
+		fixed44_20 S0 = fixed44_20(U * z0);
+		fixed44_20 T0 = fixed44_20(V * z0);
+	#else
 		const fixed44_20 z0 = div20(ONE_20, Z);
 		fixed44_20 S0 = mul20(U, z0);
 		fixed44_20 T0 = mul20(V, z0);
+	#endif
 
 		Z += s_col_dZdY * affineSpan;
 		U += s_col_dUVdY.x*affineSpan;
 		V += s_col_dUVdY.z*affineSpan;
-		const fixed44_20 z1 = div20(ONE_20, Z);
 
+	#if defined(USE_FLOAT_Z_DIV)
+		const f32 z1 = 1.0f / Z;
+		fixed44_20 S1 = fixed44_20(U * z1);
+		fixed44_20 T1 = fixed44_20(V * z1);
+	#else
+		const fixed44_20 z1 = div20(ONE_20, Z);
 		fixed44_20 S1 = mul20(U, z1);
 		fixed44_20 T1 = mul20(V, z1);
+	#endif
 		fixed44_20 S = S0, T = T0;
 		fixed44_20 dSdY = (S1 - S0) / affineSpan;
 		fixed44_20 dTdY = (T1 - T0) / affineSpan;
@@ -342,9 +380,15 @@ void robj3d_drawColumnShadedTexture()
 				S0 = S1;
 				T0 = T1;
 
+			#if defined(USE_FLOAT_Z_DIV)
+				const f32 z = 1.0f / Z;
+				S1 = fixed44_20(U * z);
+				T1 = fixed44_20(V * z);
+			#else
 				const fixed44_20 z = div20(ONE_20, Z);
 				S1 = mul20(U, z);
 				T1 = mul20(V, z);
+			#endif
 
 				S = S0; T = T0;
 				dSdY = (S1 - S0) / affineSpan;
@@ -532,8 +576,13 @@ void robj3d_drawFlatColorPolygon(vec3_float* projVertices, s32 vertexCount, u8 c
 						{
 							col_rZ0 += (yOffset * col_dZdY);
 						}
+					#if defined(USE_FLOAT_Z_DIV)
+						s_col_dZdY = col_dZdY;
+						s_col_rZ0 = col_rZ0;
+					#else
 						s_col_dZdY = floatToFixed20(col_dZdY);
 						s_col_rZ0 = floatToFixed20(col_rZ0);
+					#endif
 					}
 				#endif
 
