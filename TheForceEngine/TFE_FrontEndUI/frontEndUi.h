@@ -44,4 +44,5 @@ namespace TFE_FrontEndUI
 	void logToConsole(const char* str);
 
 	void toggleProfilerView();
+	void toggleInfDebugger();
 }

@@ -12,10 +12,17 @@
 class Player;
 struct MultiRayHitInfo;
 
+typedef void(*OutputListenerFunc)(u32 itemIndex, const char* msg);
+
 namespace TFE_InfSystem
 {
+	struct ItemState;
+
 	bool init();
 	void shutdown();
+
+	// A callback that listens to debug messages.
+	void setListenCallback(OutputListenerFunc listener);
 
 	void setupLevel(InfData* infData, LevelData* levelData);
 	void tick();
@@ -31,4 +38,13 @@ namespace TFE_InfSystem
 	void advanceCompleteElevator();
 	void advanceBossElevator();
 	void advanceMohcElevator();
+
+	s32 getItemCount();
+
+	ItemState* getItemState(s32 index);
+	InfItem*   getItem(s32 index);
+
+	void getItemName(s32 index, char* name);
+	const char* getItemClass(s32 index);
+	const char* getItemSubClass(s32 index);
 }

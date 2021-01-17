@@ -50,7 +50,7 @@ namespace TFE_JediRenderer
 	void draw(u8* display, const ColorMap* colormap);
 
 	// Setup the currently loaded level for rendering at the specified resolution.
-	void setupLevel(s32 width, s32 height);
+	void setupLevel(s32 width, s32 height, bool enableExperiment = false);
 	// Set the current resolution to render, this may involve regenerating lookup-tables, depending on the sub-renderer.
 	void setResolution(s32 width, s32 height);
 

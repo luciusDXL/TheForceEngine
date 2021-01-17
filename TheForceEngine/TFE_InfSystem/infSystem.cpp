@@ -1,4 +1,5 @@
 #include "infSystem.h"
+#include "infItem.h"
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_System/math.h>
@@ -40,45 +41,7 @@ namespace TFE_InfSystem
 
 	static u32 s_funcQueueCount = 0;
 	static FuncQueue s_funcQueue[MAX_FUNC_IN_FLIGHT];
-
-	enum InfState
-	{
-		INF_STATE_MOVING = 0,	// Moving to the next stop.
-		INF_STATE_WAITING,		// Waiting for a timer to tick down before continuing.
-		INF_STATE_HOLDING,		// Holding or waiting to be triggered.
-		INF_STATE_TERMINATED,	// Done, nothing more to do here.
-		INF_STATE_ACTIVATED,	// Already activated but not terminated (trigger).
-		INT_STATE_COUNT
-	};
-
-	enum NudgeType
-	{
-		NUDGE_NONE = 0,
-		NUDGE_SET,
-		NUDGE_TOGGLE,
-	};
-
-	// Runtime state for each INF item.
-	struct ItemSlaveState
-	{
-		f32 initState[2];
-		f32 curValue;
-	};
-
-	struct ItemState
-	{
-		InfState state;
-		f32 initState[2];	// initial floor height, ceiling height, etc.
-		f32 curValue;		// current value.
-		// Value state for slaves.
-		ItemSlaveState* slaveState;
-		SoundSource* moveSound;
-
-		s32 curStop;
-		s32 nextStop;
-		f32 delay;
-	};
-
+	
 	struct SectorLineId
 	{
 		u32 wallId;	// sector wall
@@ -104,6 +67,7 @@ namespace TFE_InfSystem
 	static u32 s_stateCount;
 
 	static bool s_useVertexCache;
+	static OutputListenerFunc s_listener = nullptr;
 
 	Sector* getSlaveSector(const InfClassData* classData, u32 index);
 	void executeFunctions(u32 funcCount, InfFunction* func, u32 evt = 0);
@@ -167,6 +131,21 @@ namespace TFE_InfSystem
 		switch (type)
 		{
 		case INF_MSG_M_TRIGGER:
+
+			if (s_listener)
+			{
+				char msg[256];
+				if (argCount > 0)
+				{
+					sprintf(msg, "m_trigger(%u); event = %u", arg[0].iValue, evt);
+				}
+				else
+				{
+					sprintf(msg, "m_trigger(); event = %u", evt);
+				}
+				s_listener(item ? itemId : 0xffffffff, msg);
+			}
+
 			for (u32 c = 0; c < classCount; c++)
 			{
 				InfClassData* classData = &item->classData[c];
@@ -209,6 +188,13 @@ namespace TFE_InfSystem
 		case INF_MSG_GOTO_STOP:
 			if (argCount >= 1 && arg)
 			{
+				if (s_listener)
+				{
+					char msg[256];
+					sprintf(msg, "goto_stop(%u)", arg[0].iValue);
+					s_listener(item ? itemId : 0xffffffff, msg);
+				}
+
 				for (u32 c = 0; c < classCount; c++)
 				{
 					InfClassData* classData = &item->classData[c];
@@ -233,6 +219,11 @@ namespace TFE_InfSystem
 		case INF_MSG_NEXT_STOP:
 			for (u32 c = 0; c < classCount; c++)
 			{
+				if (s_listener)
+				{
+					s_listener(item ? itemId : 0xffffffff, "next_stop()");
+				}
+
 				InfClassData* classData = &item->classData[c];
 				// If the class has been turned off, then skip.
 				if (!classData->var.master) { continue; }
@@ -251,6 +242,11 @@ namespace TFE_InfSystem
 			}
 			break;
 		case INF_MSG_PREV_STOP:
+			if (s_listener)
+			{
+				s_listener(item ? itemId : 0xffffffff, "prev_stop()");
+			}
+
 			for (u32 c = 0; c < classCount; c++)
 			{
 				InfClassData* classData = &item->classData[c];
@@ -271,6 +267,20 @@ namespace TFE_InfSystem
 			}
 			break;
 		case INF_MSG_MASTER_ON:
+			if (s_listener)
+			{
+				char msg[256];
+				if (argCount > 0)
+				{
+					sprintf(msg, "master_on(%u); event = %u", arg[0].iValue, evt);
+				}
+				else
+				{
+					sprintf(msg, "master_on(); event = %u", evt);
+				}
+				s_listener(item ? itemId : 0xffffffff, msg);
+			}
+
 			for (u32 c = 0; c < classCount; c++)
 			{
 				InfClassData* classData = &item->classData[c];
@@ -283,6 +293,20 @@ namespace TFE_InfSystem
 			}
 			break;
 		case INF_MSG_MASTER_OFF:
+			if (s_listener)
+			{
+				char msg[256];
+				if (argCount > 0)
+				{
+					sprintf(msg, "master_off(%u); event = %u", arg[0].iValue, evt);
+				}
+				else
+				{
+					sprintf(msg, "master_off(); event = %u", evt);
+				}
+				s_listener(item ? itemId : 0xffffffff, msg);
+			}
+
 			for (u32 c = 0; c < classCount; c++)
 			{
 				InfClassData* classData = &item->classData[c];
@@ -307,6 +331,13 @@ namespace TFE_InfSystem
 				const s32 flagIdx = arg[0].iValue - 1;
 				const s32 bits = arg[1].iValue;
 
+				if (s_listener)
+				{
+					char msg[256];
+					sprintf(msg, "clear_bits(%d, %d)", flagIdx, bits);
+					s_listener(item ? itemId : 0xffffffff, msg);
+				}
+
 				if (wallId < 0xffffu)
 				{
 					TFE_Level::clearFlagBits(sectorId, SP_WALL, flagIdx, bits, wallId);
@@ -327,6 +358,13 @@ namespace TFE_InfSystem
 			{
 				const s32 flagIdx = arg[0].iValue - 1;
 				const s32 bits = arg[1].iValue;
+
+				if (s_listener)
+				{
+					char msg[256];
+					sprintf(msg, "set_bits(%d, %d)", flagIdx, bits);
+					s_listener(item ? itemId : 0xffffffff, msg);
+				}
 
 				if (wallId < 0xffffu)
 				{
@@ -349,6 +387,13 @@ namespace TFE_InfSystem
 				const s32 goalId = argCount >= 1 ? arg[0].iValue : 0;
 				// TODO: Update player goals with goalId.
 
+				if (s_listener)
+				{
+					char msg[256];
+					sprintf(msg, "complete(%u); event %d", goalId, evt);
+					s_listener(item ? itemId : 0xffffffff, msg);
+				}
+
 				// Move the recipient elevator to its next stop.
 				for (u32 c = 0; c < classCount; c++)
 				{
@@ -370,6 +415,11 @@ namespace TFE_InfSystem
 			}
 			break;
 		case INF_MSG_DONE:
+			if (s_listener)
+			{
+				s_listener(item ? itemId : 0xffffffff, "done()");
+			}
+
 			for (u32 c = 0; c < classCount; c++)
 			{
 				InfClassData* classData = &item->classData[c];
@@ -387,14 +437,31 @@ namespace TFE_InfSystem
 			}
 			break;
 		case INF_MSG_WAKEUP:
+			if (s_listener)
+			{
+				s_listener(item ? itemId : 0xffffffff, "wakeup()");
+			}
+
 			TFE_Level::wakeUp(sectorId);
 			break;
 		case INF_MSG_LIGHTS:
+			if (s_listener)
+			{
+				s_listener(item ? itemId : 0xffffffff, "lights()");
+			}
+
 			TFE_Level::turnOnTheLights();
 			break;
 		case INF_MSG_ADJOIN:
 			if (argCount >= 4 && arg)
 			{
+				if (s_listener)
+				{
+					char msg[256];
+					sprintf(msg, "adjoin(%d, %d, %d, %d)", arg[0].iValue, arg[1].iValue, arg[2].iValue, arg[3].iValue);
+					s_listener(item ? itemId : 0xffffffff, "lights()");
+				}
+
 				TFE_Level::changeAdjoin(arg[0].iValue, arg[1].iValue, arg[2].iValue, arg[3].iValue);
 			}
 			else
@@ -403,11 +470,25 @@ namespace TFE_InfSystem
 			}
 			break;
 		case INF_MSG_PAGE:
+			if (s_listener)
+			{
+				char msg[256];
+				sprintf(msg, "page(%d)", arg[0].iValue);
+				s_listener(item ? itemId : 0xffffffff, "lights()");
+			}
+
 			TFE_Audio::playOneShot(SOUND_2D, 1.0f, MONO_SEPERATION, TFE_VocAsset::getFromIndex(arg[0].iValue), false);
 			break;
 		case INF_MSG_TEXT:
 			if (argCount >= 1 && arg)
 			{
+				if (s_listener)
+				{
+					char msg[256];
+					sprintf(msg, "text(%d)", arg[0].iValue);
+					s_listener(item ? itemId : 0xffffffff, "lights()");
+				}
+
 				TFE_GameHud::setMessage(TFE_GameMessages::getMessage(arg[0].iValue));
 			}
 			else
@@ -418,6 +499,13 @@ namespace TFE_InfSystem
 		case INF_MSG_TEXTURE:
 			if (argCount >= 2 && arg)
 			{
+				if (s_listener)
+				{
+					char msg[256];
+					sprintf(msg, "texture(%d, %d)", arg[0].iValue, arg[1].iValue);
+					s_listener(item ? itemId : 0xffffffff, "lights()");
+				}
+
 				const SectorPart part = arg[0].iValue == 0 ? SP_FLOOR : SP_CEILING;
 				const u32 donorTexId = TFE_Level::getTextureId(arg[1].iValue, part, WSP_NONE);
 				if (sectorId < 0xffffu)
@@ -662,7 +750,7 @@ namespace TFE_InfSystem
 		};
 	}
 		
-	void executeStopMove(const InfClassData* classData, ItemState* curState, Sector* sector, s32 wallId)
+	void executeStopMove(u32 itemId, const InfClassData* classData, ItemState* curState, Sector* sector, s32 wallId)
 	{
 		const InfStop* stop0 = &classData->stop[curState->curStop];
 		const InfStop* stop1 = &classData->stop[curState->nextStop];
@@ -736,25 +824,37 @@ namespace TFE_InfSystem
 			curState->nextStop = (curState->curStop + 1) % classData->stopCount;
 			curState->delay = 0.0f;
 
+			char msg[256];
+
 			if (value1Type == INF_STOP1_HOLD)
 			{
 				curState->state = INF_STATE_HOLDING;
+
+				if (s_listener) { sprintf(msg, "stop %d reached, next %d, state is \"holding\".", curState->curStop, curState->nextStop); }
 			}
 			else if (value1Type == INF_STOP1_TERMINATE)
 			{
 				curState->state = INF_STATE_TERMINATED;
+
+				if (s_listener) { sprintf(msg, "stop %d reached, state is \"terminated\".", curState->curStop); }
 			}
 			else if (value1Type == INF_STOP1_COMPLETE)
 			{
 				curState->state = INF_STATE_TERMINATED;
 				TFE_GameHud::setMessage("Level Complete");
 				TFE_GameUi::toggleNextMission(true);
+
+				if (s_listener) { sprintf(msg, "stop %d reached, state is \"complete\".", curState->curStop); }
 			}
 			else if (value1Type == INF_STOP1_TIME)
 			{
 				curState->state = INF_STATE_WAITING;
 				curState->delay = std::max(stop1->time, c_minInfDelay);
+
+				if (s_listener) { sprintf(msg, "stop %d reached, next %d, state is \"delay\" : %0.3f.", curState->curStop, curState->nextStop, curState->delay); }
 			}
+
+			if (s_listener) { s_listener(itemId, msg); }
 
 			// Only execute functions if the elevator has not been terminated.
 			const u32 funcCount = stop1->code >> 8u;
@@ -804,6 +904,48 @@ namespace TFE_InfSystem
 		{
 			TFE_Audio::playOneShot(SOUND_3D, 1.0f, MONO_SEPERATION, TFE_VocAsset::getFromIndex(classData->var.sound[2]), false, &sector->center, false);
 		}
+	}
+
+	s32 getItemCount()
+	{
+		return s_infData ? s_infData->itemCount : 0;
+	}
+
+	ItemState* getItemState(s32 index)
+	{
+		return &s_infState[index];
+	}
+
+	InfItem* getItem(s32 index)
+	{
+		return &s_infData->item[index];
+	}
+
+	void getItemName(s32 index, char* name)
+	{
+		Sector* sectors = s_levelData->sectors.data();
+		u32 id = s_infData->item[index].id;
+		u32 secId = id & 0xffff;
+		u32 wallId = id >> 16;
+
+		if (wallId == 0xffff)
+		{
+			sprintf(name, "%s", sectors[secId].name);
+		}
+		else
+		{
+			sprintf(name, "%s(%d)", sectors[secId].name, wallId);
+		}
+	}
+
+	const char* getItemClass(s32 index)
+	{
+		return TFE_InfAsset::getClassName(s_infData->item[index].classData[0].iclass);
+	}
+
+	const char* getItemSubClass(s32 index)
+	{
+		return TFE_InfAsset::getSubclassName(s_infData->item[index].classData[0].iclass, s_infData->item[index].classData[0].isubclass);
 	}
 
 	void prepareForFirstStop(const InfClassData* classData, Sector* sector)
@@ -930,6 +1072,11 @@ namespace TFE_InfSystem
 			}
 		} break;
 		}
+	}
+
+	void setListenCallback(OutputListenerFunc listener)
+	{
+		s_listener = listener;
 	}
 
 	void setupLevel(InfData* infData, LevelData* levelData)
@@ -1686,7 +1833,7 @@ namespace TFE_InfSystem
 						// Otherwise update the elevator state
 						if (curState->state == INF_STATE_MOVING)
 						{
-							executeStopMove(classData, curState, sector, wallId < 0xffff ? wallId : -1);
+							executeStopMove(i, classData, curState, sector, wallId < 0xffff ? wallId : -1);
 						}
 						else if (curState->state == INF_STATE_WAITING)
 						{
@@ -1695,6 +1842,13 @@ namespace TFE_InfSystem
 							{
 								curState->delay = 0.0f;
 								curState->state = INF_STATE_MOVING;
+
+								if (s_listener)
+								{
+									char msg[256];
+									sprintf(msg, "start moving");
+									s_listener(i, msg);
+								}
 							}
 						}
 

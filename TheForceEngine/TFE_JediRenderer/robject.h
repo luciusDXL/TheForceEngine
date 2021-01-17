@@ -8,6 +8,7 @@
 #include "rmath.h"
 
 struct JediModel;
+struct VoxelModel;
 
 namespace TFE_JediRenderer
 {
@@ -18,6 +19,7 @@ namespace TFE_JediRenderer
 		OBJ_TYPE_SPRITE = 1,
 		OBJ_TYPE_3D     = 2,
 		OBJ_TYPE_FRAME  = 3,
+		OBJ_TYPE_VOXEL  = 4,
 	};
 
 	enum ObjectFlags
@@ -47,6 +49,7 @@ namespace TFE_JediRenderer
 			JediModel* model;
 			Wax*   wax;
 			WaxFrame* fme;
+			VoxelModel* voxel;
 			void* ptr;
 		};
 

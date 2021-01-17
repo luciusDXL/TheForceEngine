@@ -2928,7 +2928,7 @@ bool ImGui::InputScalar(const char* label, ImGuiDataType data_type, void* data_p
 
     if (step != NULL)
     {
-        const float button_size = GetFrameHeight();
+        const float button_size = (flags & ImGuiInputTextFlags_NoStepButtons) ? 0 : GetFrameHeight();
 
         BeginGroup(); // The only purpose of the group here is to allow the caller to query item data e.g. IsItemActive()
         PushID(label);
@@ -2938,22 +2938,25 @@ bool ImGui::InputScalar(const char* label, ImGuiDataType data_type, void* data_p
 
         // Step buttons
         const ImVec2 backup_frame_padding = style.FramePadding;
-        style.FramePadding.x = style.FramePadding.y;
-        ImGuiButtonFlags button_flags = ImGuiButtonFlags_Repeat | ImGuiButtonFlags_DontClosePopups;
-        if (flags & ImGuiInputTextFlags_ReadOnly)
-            button_flags |= ImGuiButtonFlags_Disabled;
-        SameLine(0, style.ItemInnerSpacing.x);
-        if (ButtonEx("-", ImVec2(button_size, button_size), button_flags))
-        {
-            DataTypeApplyOp(data_type, '-', data_ptr, data_ptr, g.IO.KeyCtrl && step_fast ? step_fast : step);
-            value_changed = true;
-        }
-        SameLine(0, style.ItemInnerSpacing.x);
-        if (ButtonEx("+", ImVec2(button_size, button_size), button_flags))
-        {
-            DataTypeApplyOp(data_type, '+', data_ptr, data_ptr, g.IO.KeyCtrl && step_fast ? step_fast : step);
-            value_changed = true;
-        }
+		if (!(flags & ImGuiInputTextFlags_NoStepButtons))
+		{
+			style.FramePadding.x = style.FramePadding.y;
+			ImGuiButtonFlags button_flags = ImGuiButtonFlags_Repeat | ImGuiButtonFlags_DontClosePopups;
+			if (flags & ImGuiInputTextFlags_ReadOnly)
+				button_flags |= ImGuiButtonFlags_Disabled;
+			SameLine(0, style.ItemInnerSpacing.x);
+			if (ButtonEx("-", ImVec2(button_size, button_size), button_flags))
+			{
+				DataTypeApplyOp(data_type, '-', data_ptr, data_ptr, g.IO.KeyCtrl && step_fast ? step_fast : step);
+				value_changed = true;
+			}
+			SameLine(0, style.ItemInnerSpacing.x);
+			if (ButtonEx("+", ImVec2(button_size, button_size), button_flags))
+			{
+				DataTypeApplyOp(data_type, '+', data_ptr, data_ptr, g.IO.KeyCtrl && step_fast ? step_fast : step);
+				value_changed = true;
+			}
+		}
 
         const char* label_end = FindRenderedTextEnd(label);
         if (label != label_end)

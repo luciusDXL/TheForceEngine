@@ -161,6 +161,9 @@
     <Filter Include="Source\TFE_Archive\zip">
       <UniqueIdentifier>{f069b311-4842-4982-aa48-6848b3f3fa66}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_JediRenderer\RClassic_Float\robjVoxel_float">
+      <UniqueIdentifier>{49454335-d17c-4f49-bbfe-54081d883aa3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -709,6 +712,18 @@
     <ClInclude Include="TFE_Archive\zipArchive.h">
       <Filter>Source\TFE_Archive</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robjVoxel_float\robjVoxelFloat.h">
+      <Filter>Source\TFE_JediRenderer\RClassic_Float\robjVoxel_float</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Asset\voxelAsset.h">
+      <Filter>Source\TFE_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_FrontEndUI\infDebugger.h">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_InfSystem\infItem.h">
+      <Filter>Source\TFE_InfSystem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1157,6 +1172,15 @@
     </ClCompile>
     <ClCompile Include="TFE_Archive\zipArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robjVoxel_float\robjVoxelFloat.cpp">
+      <Filter>Source\TFE_JediRenderer\RClassic_Float\robjVoxel_float</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Asset\voxelAsset.cpp">
+      <Filter>Source\TFE_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_FrontEndUI\infDebugger.cpp">
+      <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

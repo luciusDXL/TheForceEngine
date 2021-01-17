@@ -3,6 +3,7 @@
 #include "rcommon.h"
 #include "rsector.h"
 #include "robject.h"
+#include "RClassic_Float/robjVoxel_float/robjVoxelFloat.h"
 #include "RClassic_Fixed/rcommonFixed.h"
 #include "RClassic_Fixed/rclassicFixed.h"
 #include "RClassic_Fixed/rsectorFixed.h"
@@ -16,9 +17,13 @@
 #include <TFE_Asset/levelObjectsAsset.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_Asset/voxelAsset.h>
 #include <TFE_Game/level.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/memoryPool.h>
+#include <TFE_FileSystem/paths.h>
+// Experimental only.
+#include <TFE_FileSystem/filestream.h>
 
 namespace TFE_JediRenderer
 {
@@ -28,6 +33,7 @@ namespace TFE_JediRenderer
 	static MemoryPool s_memPool;
 	static TFE_SubRenderer s_subRenderer = TSR_INVALID;
 	static TFE_Sectors* s_sectors = nullptr;
+	static Vec3f s_cameraPos = { 0 };
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -38,6 +44,13 @@ namespace TFE_JediRenderer
 	void buildLevelData();
 	void console_setSubRenderer(const std::vector<std::string>& args);
 	void console_getSubRenderer(const std::vector<std::string>& args);
+	void console_addVoxel(const std::vector<std::string>& args);
+	void console_saveVoxels(const std::vector<std::string>& args);
+	void console_loadVoxels(const std::vector<std::string>& args);
+	void console_clearVoxels(const std::vector<std::string>& args);
+
+	SecObject* allocateObject();
+	void obj3d_computeTransform_Float(SecObject* obj, f32 yaw, f32 pitch, f32 roll);
 
 	/////////////////////////////////////////////
 	// Implementation
@@ -49,11 +62,16 @@ namespace TFE_JediRenderer
 		// Setup Debug CVars.
 		s_maxWallCount = 0xffff;
 		s_maxDepthCount = 0xffff;
+		s_frame = 0;
 		CVAR_INT(s_maxWallCount, "d_maxWallCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum wall count for a given sector.");
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum adjoin depth count.");
 
 		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU");
 		CCMD("rgetSubRenderer", console_getSubRenderer, 0, "Get the current sub-renderer.");
+		CCMD("raddVoxel", console_addVoxel, 1, "Add a voxel model to the current player position - raddVoxel \"voxelFile\" [base](floor or ceil) [offset] [up](y or z)");
+		CCMD("rsaveVoxels", console_saveVoxels, 1, "Saves voxels currently setup in the level.");
+		CCMD("rloadVoxels", console_loadVoxels, 1, "Loads voxel placements from disk.");
+		CCMD("rclearVoxels", console_clearVoxels, 0, "Remove voxels.");
 
 		// Setup performance counters.
 		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
@@ -62,6 +80,8 @@ namespace TFE_JediRenderer
 		TFE_COUNTER(s_flatCount, "Flat Count");
 		TFE_COUNTER(s_curWallSeg, "Wall Segment Count");
 		TFE_COUNTER(s_adjoinSegCount, "Adjoin Segment Count");
+
+		RClassic_Float::robjVoxel_init();
 	}
 
 	void destroy()
@@ -75,16 +95,24 @@ namespace TFE_JediRenderer
 		else { RClassic_Float::setResolution(width, height); }
 	}
 
-	void setupLevel(s32 width, s32 height)
+	void setupLevel(s32 width, s32 height, bool enableExperiment)
 	{
 		init();
 		setResolution(width, height);
-
+				
 		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
 		s_sectorId = -1;
 		s_sectors->setMemoryPool(&s_memPool);
 
 		buildLevelData();
+
+		if (enableExperiment)
+		{
+			StringList argList;
+			argList.push_back("rloadVoxels");
+			argList.push_back("secbase.vob");
+			console_loadVoxels(argList);
+		}
 	}
 
 	void console_setSubRenderer(const std::vector<std::string>& args)
@@ -119,6 +147,235 @@ namespace TFE_JediRenderer
 			"Classic_GPU",		// TSR_CLASSIC_GPU
 		};
 		TFE_Console::addToHistory(c_subRenderers[s_subRenderer]);
+	}
+
+	bool isNumeric(char ch)
+	{
+		if (ch == '.' || ch == '-') { return true; }
+		if (ch >= '0' && ch <= '9') { return true; }
+		return false;
+	}
+
+	struct VoxelObject
+	{
+		std::string file;
+		u8 offsetFromFloor;
+		u8 yUp;
+		Vec2f pos;
+		f32 offset;
+		s32 sectorId;
+		// unused - put here for forward compatibility.
+		f32 scale;
+		f32 angles[3];
+	};
+	std::vector<VoxelObject> s_voxelObjects;
+
+	void console_saveVoxels(const std::vector<std::string>& args)
+	{
+		const u32 count = (u32)s_voxelObjects.size();
+
+		if (args.size() < 2 || count < 1) { return; }
+		const char* voxelFile = args[1].c_str();
+
+		char localPath[TFE_MAX_PATH];
+		char filePath[TFE_MAX_PATH];
+		sprintf(localPath, "Mods/%s", voxelFile);
+		TFE_Paths::appendPath(PATH_PROGRAM, localPath, filePath);
+
+		FileStream file;
+		if (file.open(filePath, FileStream::MODE_WRITE))
+		{
+			const VoxelObject* objects = s_voxelObjects.data();
+			file.write(&count);
+			for (u32 i = 0; i < count; i++)
+			{
+				u32 fileLen = (u32)objects[i].file.length();
+				file.write(&fileLen);
+				file.writeBuffer(objects[i].file.c_str(), fileLen);
+
+				file.write(&objects[i].offsetFromFloor);
+				file.write(&objects[i].yUp);
+				file.write(objects[i].pos.m, 2);
+				file.write(&objects[i].offset);
+				file.write(&objects[i].sectorId);
+				file.write(&objects[i].scale);
+				file.write(objects[i].angles, 3);
+			}
+			file.close();
+		}
+	}
+
+	void console_clearVoxels(const std::vector<std::string>& args)
+	{
+		s_voxelObjects.clear();
+
+		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
+		s_sectorId = -1;
+		s_sectors->setMemoryPool(&s_memPool);
+
+		buildLevelData();
+	}
+
+	void console_loadVoxels(const std::vector<std::string>& args)
+	{
+		if (args.size() < 2) { return; }
+		if (!s_voxelObjects.empty())
+		{
+			// Clear the level first.
+			s_voxelObjects.clear();
+			
+			s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
+			s_sectorId = -1;
+			s_sectors->setMemoryPool(&s_memPool);
+
+			buildLevelData();
+		}
+
+		const char* voxelFile = args[1].c_str();
+
+		char localPath[TFE_MAX_PATH];
+		char filePath[TFE_MAX_PATH];
+		sprintf(localPath, "Mods/%s", voxelFile);
+		TFE_Paths::appendPath(PATH_PROGRAM, localPath, filePath);
+
+		FileStream file;
+		if (file.open(filePath, FileStream::MODE_READ))
+		{
+			u32 count = 0;
+			file.read(&count);
+			s_voxelObjects.resize(count);
+			VoxelObject* objects = s_voxelObjects.data();
+
+			// Load the object data.
+			for (u32 i = 0; i < count; i++)
+			{
+				u32 fileLen;
+				char voxelFile[TFE_MAX_PATH];
+				file.read(&fileLen);
+				file.readBuffer(voxelFile, fileLen);
+				voxelFile[fileLen] = 0;
+				objects[i].file = voxelFile;
+
+				file.read(&objects[i].offsetFromFloor);
+				file.read(&objects[i].yUp);
+				file.read(objects[i].pos.m, 2);
+				file.read(&objects[i].offset);
+				file.read(&objects[i].sectorId);
+				file.read(&objects[i].scale);
+				file.read(objects[i].angles, 3);
+			}
+			file.close();
+
+			// Then add the objects themselves.
+			for (u32 i = 0; i < count; i++)
+			{
+				VoxelModel* voxel = TFE_VoxelModel::get(objects[i].file.c_str(), objects[i].yUp);
+				if (!voxel)
+				{
+					char tmp[TFE_MAX_PATH];
+					sprintf(tmp, "Cannot find or load \"%s\"", objects[i].file.c_str());
+					TFE_Console::addToHistory(tmp);
+					continue;
+				}
+
+				if (objects[i].sectorId < 0 || objects[i].sectorId >= s_sectors->getCount())
+				{
+					continue;
+				}
+
+				RSector* sector = &s_sectors->get()[objects[i].sectorId];
+
+				// TODO: This will leak memory, fix when this comes out of experimental.
+				SecObject* obj = allocateObject();
+				obj->self = obj;
+				obj->type = OBJ_TYPE_VOXEL;
+				obj->typeFlags = 0;
+
+				obj->posWS.x.f32 = objects[i].pos.x;
+				obj->posWS.z.f32 = objects[i].pos.z;
+				obj->posWS.y.f32 = objects[i].offsetFromFloor ? (sector->floorHeight.f32 + objects[i].offset) : (sector->ceilingHeight.f32 + objects[i].offset + f32(voxel->height)*0.1f);
+				obj3d_computeTransform_Float(obj, 0.0f, 0.0f, 0.0f);
+
+				obj->voxel = voxel;
+
+				obj->frame = 0;
+				obj->anim = 0;
+				obj->sector = sector;
+				obj->flags = OBJ_FLAG_RENDERABLE;
+
+				obj->yaw = 0;
+				obj->pitch = 0;
+				obj->roll = 0;
+
+				obj->gameObjId = 0xffffffff;
+				s_sectors->addObject(sector, obj);
+			}
+		}
+	}
+
+	void console_addVoxel(const std::vector<std::string>& args)
+	{
+		if (args.size() < 2) { return; }
+		const char* voxelFile = args[1].c_str();
+
+		bool offsetFromFloor = true;
+		bool yUp = true;
+		f32 offset = 0.0f;
+		char* endPtr = nullptr;
+		for (size_t i = 2; i < args.size(); i++)
+		{
+			if (args[i] == "ceil")
+			{
+				offsetFromFloor = false;
+			}
+			else if (args[i] == "z")
+			{
+				yUp = false;
+			}
+			else if (isNumeric(args[i].c_str()[0]))
+			{
+				offset = strtof(args[i].c_str(), &endPtr);
+			}
+		}
+
+		VoxelModel* voxel = TFE_VoxelModel::get(voxelFile, yUp);
+		if (!voxel)
+		{
+			char tmp[TFE_MAX_PATH];
+			sprintf(tmp, "Cannot find or load \"%s\"", voxelFile);
+			TFE_Console::addToHistory(tmp);
+			return;
+		}
+
+		// Add to the list so it can be serialized later.
+		s_voxelObjects.push_back({ voxelFile, offsetFromFloor, yUp, {s_cameraPos.x, s_cameraPos.z}, offset, s_sectorId, 1.0f, 0.0f, 0.0f, 0.0f });
+
+		RSector* sector = &s_sectors->get()[s_sectorId];
+
+		// TODO: This will leak memory, fix when this comes out of experimental.
+		SecObject* obj = allocateObject();
+		obj->self = obj;
+		obj->type = OBJ_TYPE_VOXEL;
+		obj->typeFlags = 0;
+
+		obj->posWS.x.f32 = s_cameraPos.x;
+		obj->posWS.z.f32 = s_cameraPos.z;
+		obj->posWS.y.f32 = offsetFromFloor ? (sector->floorHeight.f32 + offset) : (sector->ceilingHeight.f32 + offset + f32(voxel->height)*0.1f);
+		obj3d_computeTransform_Float(obj, 0.0f, 0.0f, 0.0f);
+
+		obj->voxel = voxel;
+
+		obj->frame = 0;
+		obj->anim = 0;
+		obj->sector = sector;
+		obj->flags = OBJ_FLAG_RENDERABLE;
+
+		obj->yaw = 0;
+		obj->pitch = 0;
+		obj->roll = 0;
+
+		obj->gameObjId = 0xffffffff;
+		s_sectors->addObject(sector, obj);
 	}
 
 	void setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
@@ -156,6 +413,7 @@ namespace TFE_JediRenderer
 		s_cameraLightSource = 0;
 		s_worldAmbient = worldAmbient;
 		s_cameraLightSource = cameraLightSource ? -1 : 0;
+		s_cameraPos = { x, y, z };
 
 		s_drawFrame++;
 	}
@@ -207,6 +465,8 @@ namespace TFE_JediRenderer
 			RSector* sector = s_sectors->get() + s_sectorId;
 			s_sectors->draw(sector);
 		}
+
+		s_frame++;
 	}
 
 	/////////////////////////////////////////////
@@ -407,20 +667,22 @@ namespace TFE_JediRenderer
 					obj++;
 					curObj = *obj;
 				}
-				GameObject* gameObj = &gameObjects[curObj->gameObjId];
-
-				if (!gameObj->update) { continue; }
-				gameObj->update = false;
-
-				if (!gameObj->show)
+				GameObject* gameObj = curObj->gameObjId < 0xffffffff ? &gameObjects[curObj->gameObjId] : nullptr;
+				if (gameObj)
 				{
-					// Remove the object from the sector.
-					*obj = nullptr;
-					sector->objectCount--;
-					continue;
+					if (!gameObj->update) { continue; }
+					gameObj->update = false;
+
+					if (!gameObj->show)
+					{
+						// Remove the object from the sector.
+						*obj = nullptr;
+						sector->objectCount--;
+						continue;
+					}
 				}
 			
-				if (curObj->type == OBJ_TYPE_FRAME || curObj->type == OBJ_TYPE_SPRITE || curObj->type == OBJ_TYPE_3D)
+				if (gameObj && (curObj->type == OBJ_TYPE_FRAME || curObj->type == OBJ_TYPE_SPRITE || curObj->type == OBJ_TYPE_3D || curObj->type == OBJ_TYPE_VOXEL))
 				{
 					if (s_subRenderer == TSR_CLASSIC_FIXED)
 					{
@@ -442,7 +704,7 @@ namespace TFE_JediRenderer
 					curObj->anim  = gameObj->animId;
 				}
 
-				if (curObj->type == OBJ_TYPE_3D)
+				if (gameObj && (curObj->type == OBJ_TYPE_3D || curObj->type == OBJ_TYPE_VOXEL))
 				{
 					if (s_subRenderer == TSR_CLASSIC_FIXED)
 					{
@@ -529,6 +791,7 @@ namespace TFE_JediRenderer
 
 		const LevelObject* srcObj = levelObj->objects.data();
 		const u32 objCount = (u32)levelObj->objects.size();
+		GameObject* gameObjects = LevelGameObjects::getGameObjectList()->data();
 		for (u32 i = 0; i < objCount; i++, srcObj++)
 		{
 			// for now only worry about frames.
@@ -536,6 +799,7 @@ namespace TFE_JediRenderer
 			{
 				SecObject* obj = allocateObject();
 				obj->gameObjId = i;
+				gameObjects[i].update = true;
 
 				if (s_subRenderer == TSR_CLASSIC_FIXED)
 				{
@@ -591,5 +855,39 @@ namespace TFE_JediRenderer
 				s_sectors->addObject(sector, obj);
 			}
 		}
+
+	#if 0
+		// Test
+		VoxelModel* testVoxel = TFE_VoxelModel::get("test");
+		if (testVoxel)
+		{
+			SecObject* obj = allocateObject();
+			obj->gameObjId = 0xffffffff;
+
+			RSector* sector = &s_sectors->get()[173];
+			if (!sector)
+			{
+				return;
+			}
+
+			obj->posWS.x.f32 = 220.0f;
+			obj->posWS.y.f32 = sector->floorHeight.f32;
+			obj->posWS.z.f32 = 260.0f;
+
+			obj->pitch = 0;
+			obj->yaw = 0;
+			obj->roll = 0;
+
+			obj->voxel = testVoxel;
+			obj->type = OBJ_TYPE_VOXEL;
+			obj->typeFlags = 0;
+			obj->anim = 0;
+			obj->frame = 0;
+			obj->flags = OBJ_FLAG_RENDERABLE;
+			obj3d_computeTransform_Float(obj, srcObj->orientation.y, srcObj->orientation.x, srcObj->orientation.z);
+
+			s_sectors->addObject(sector, obj);
+		}
+	#endif
 	}
 }

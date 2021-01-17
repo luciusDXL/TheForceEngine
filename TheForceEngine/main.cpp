@@ -576,7 +576,11 @@ int main(int argc, char* argv[])
 		{
 			TFE_FrontEndUI::toggleConsole();
 		}
-		if (TFE_Input::keyPressed(KEY_F10))
+		if (TFE_Input::keyPressed(KEY_F10) && TFE_Input::keyDown(KEY_LALT))
+		{
+			TFE_FrontEndUI::toggleInfDebugger();
+		}
+		else if (TFE_Input::keyPressed(KEY_F10))
 		{
 			TFE_FrontEndUI::toggleProfilerView();
 		}

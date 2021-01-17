@@ -255,6 +255,7 @@
     <ClInclude Include="TFE_Asset\spriteAsset_Jedi.h" />
     <ClInclude Include="TFE_Asset\textureAsset.h" />
     <ClInclude Include="TFE_Asset\vocAsset.h" />
+    <ClInclude Include="TFE_Asset\voxelAsset.h" />
     <ClInclude Include="TFE_Asset\vueAsset.h" />
     <ClInclude Include="TFE_Audio\audioDevice.h" />
     <ClInclude Include="TFE_Audio\audioSystem.h" />
@@ -283,6 +284,7 @@
     <ClInclude Include="TFE_FileSystem\stream.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
+    <ClInclude Include="TFE_FrontEndUI\infDebugger.h" />
     <ClInclude Include="TFE_FrontEndUI\profilerView.h" />
     <ClInclude Include="TFE_Game\gameConstants.h" />
     <ClInclude Include="TFE_Game\gameControlMapping.h" />
@@ -302,6 +304,7 @@
     <ClInclude Include="TFE_Game\player.h" />
     <ClInclude Include="TFE_Game\renderCommon.h" />
     <ClInclude Include="TFE_Game\view.h" />
+    <ClInclude Include="TFE_InfSystem\infItem.h" />
     <ClInclude Include="TFE_InfSystem\infSystem.h" />
     <ClInclude Include="TFE_Input\input.h" />
     <ClInclude Include="TFE_Input\inputEnum.h" />
@@ -335,6 +338,7 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolygonSetup.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolyRenderFunc.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.h" />
+    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robjVoxel_float\robjVoxelFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_Float\rwallFloat.h" />
     <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.h" />
@@ -435,6 +439,7 @@
     <ClCompile Include="TFE_Asset\spriteAsset_Jedi.cpp" />
     <ClCompile Include="TFE_Asset\textureAsset.cpp" />
     <ClCompile Include="TFE_Asset\vocAsset.cpp" />
+    <ClCompile Include="TFE_Asset\voxelAsset.cpp" />
     <ClCompile Include="TFE_Asset\vueAsset.cpp" />
     <ClCompile Include="TFE_Audio\audioDevice.cpp" />
     <ClCompile Include="TFE_Audio\audioSystem.cpp" />
@@ -461,6 +466,7 @@
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
+    <ClCompile Include="TFE_FrontEndUI\infDebugger.cpp" />
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp" />
     <ClCompile Include="TFE_Game\gameControlMapping.cpp" />
     <ClCompile Include="TFE_Game\gameHud.cpp" />
@@ -504,6 +510,7 @@
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolygonDraw.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolygonSetup.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.cpp" />
+    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robjVoxel_float\robjVoxelFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_Float\rwallFloat.cpp" />
     <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.cpp" />

@@ -1,6 +1,7 @@
 #include <TFE_System/profiler.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_Asset/voxelAsset.h>
 // TODO: Either move level.h or fix it.
 #include <TFE_Game/level.h>
 
@@ -10,6 +11,7 @@
 #include "rlightingFloat.h"
 #include "redgePairFloat.h"
 #include "robj3d_float/robj3dFloat.h"
+#include "robjVoxel_float/robjVoxelFloat.h"
 #include "../rmath.h"
 #include "../rcommon.h"
 #include "../robject.h"
@@ -132,6 +134,13 @@ namespace TFE_JediRenderer
 					if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
 					{
 						if (curObj->posVS.z.f32 >= 1.0f)
+						{
+							buffer[drawCount++] = curObj;
+						}
+					}
+					else if (type == OBJ_TYPE_VOXEL)
+					{
+						if (curObj->posVS.z.f32 >= 1.0f - curObj->voxel->radius)
 						{
 							buffer[drawCount++] = curObj;
 						}
@@ -537,6 +546,12 @@ namespace TFE_JediRenderer
 					TFE_ZONE("Draw Frame");
 
 					sprite_drawFrame((u8*)obj->fme, obj->fme, obj);
+				}
+				else if (type == OBJ_TYPE_VOXEL)
+				{
+					TFE_ZONE("Draw Voxel");
+
+					robjVoxel_draw(obj, obj->voxel);
 				}
 			}
 		}

@@ -1,6 +1,7 @@
 #include "frontEndUi.h"
 #include "console.h"
 #include "profilerView.h"
+#include "infDebugger.h"
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -183,6 +184,7 @@ namespace TFE_FrontEndUI
 	{
 		TFE_Console::init();
 		TFE_ProfilerView::init();
+		TFE_InfDebugger::init();
 	}
 
 	void init()
@@ -246,6 +248,7 @@ namespace TFE_FrontEndUI
 		delete[] s_creditsDisplayStr;
 		TFE_Console::destroy();
 		TFE_ProfilerView::destroy();
+		TFE_InfDebugger::destroy();
 	}
 
 	AppState update()
@@ -329,6 +332,23 @@ namespace TFE_FrontEndUI
 		TFE_ProfilerView::enable(!isEnabled);
 	}
 
+	void toggleInfDebugger()
+	{
+		bool enable = !TFE_InfDebugger::isEnabled();
+
+		if (enable)
+		{
+			s_relativeMode = TFE_Input::relativeModeEnabled();
+			TFE_Input::enableRelativeMode(false);
+		}
+		else
+		{
+			TFE_Input::enableRelativeMode(s_relativeMode);
+		}
+
+		TFE_InfDebugger::enable(enable);
+	}
+
 	void showNoGameDataUI()
 	{
 		char settingsPath[TFE_MAX_PATH];
@@ -370,6 +390,10 @@ namespace TFE_FrontEndUI
 		if (TFE_ProfilerView::isEnabled())
 		{
 			TFE_ProfilerView::update();
+		}
+		if (TFE_InfDebugger::isEnabled())
+		{
+			TFE_InfDebugger::update();
 		}
 		if (noGameData)
 		{
@@ -427,7 +451,7 @@ namespace TFE_FrontEndUI
 
 			// Main Menu
 			ImGui::PushFont(s_menuFont);
-
+			
 			bool active = true;
 			s32 menuHeight = (textHeight + 24) * 7 + 4;
 			ImGui::SetNextWindowPos(ImVec2(f32((w - textWidth - 24) / 2), f32(h - menuHeight - topOffset)));
@@ -444,6 +468,17 @@ namespace TFE_FrontEndUI
 				}
 			}
 
+			ImGui::End();
+
+			ImVec2 expSize = s_menuFont->CalcTextSizeA(32, FLT_MAX, 0.0f, "Experimental Build");
+			ImGui::SetNextWindowPos(ImVec2(f32((w - expSize.x) / 2), f32(h - menuHeight - topOffset - 64.0f)));
+			expSize.x += 16.0f;
+			expSize.y += 16.0f;
+			ImGui::SetNextWindowSize(expSize);
+			bool expActive = true;
+			ImGui::Begin("##Experimental", &expActive, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
+			ImGui::TextColored(ImVec4(1.0f, 0.5, 0.5, 1.0f), "Experimental Build");
 			ImGui::End();
 			ImGui::PopFont();
 		}

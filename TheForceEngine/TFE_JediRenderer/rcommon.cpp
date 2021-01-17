@@ -113,4 +113,5 @@ namespace TFE_JediRenderer
 	// Debug
 	s32 s_maxWallCount;
 	s32 s_maxDepthCount;
+	s32 s_frame;
 }

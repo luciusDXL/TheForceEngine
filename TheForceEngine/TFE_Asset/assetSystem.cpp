@@ -39,8 +39,14 @@ namespace TFE_AssetSystem
 		Archive* archive = Archive::getArchive(type, defaultArchive, gobPath);
 		if (!archive)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Archive", "Cannot open source archive file \"%s\"", gobPath);
-			return nullptr;
+			// Try the local mods directory.
+			TFE_Paths::appendPath(PATH_PROGRAM, defaultArchive, gobPath);
+			archive = Archive::getArchive(type, defaultArchive, gobPath);
+			if (!archive)
+			{
+				TFE_System::logWrite(LOG_ERROR, "Archive", "Cannot open source archive file \"%s\"", gobPath);
+				return nullptr;
+			}
 		}
 
 		if (!archive->openFile(filename))

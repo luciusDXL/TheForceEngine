@@ -57,7 +57,7 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 	m_readBuffer  = 0;
 	m_writeBuffer = m_bufferCount - 1;
 
-	const size_t bufferSize = m_width * m_height * (m_format == DTEX_RGBA8 ? 4 : 1);
+	const size_t bufferSize = 4 + m_width * m_height * (m_format == DTEX_RGBA8 ? 4 : 1);
 	s_tempBuffer.resize(bufferSize);
 	memset(s_tempBuffer.data(), 0x00, bufferSize);
 

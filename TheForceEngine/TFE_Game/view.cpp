@@ -170,6 +170,13 @@ namespace TFE_View
 		}
 	}
 
+	void enableExperiment(const ConsoleArgList& args)
+	{
+		s_enableClassic = true;
+		TFE_JediRenderer::setSubRenderer((s_width <= 320 && s_height <= 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT);
+		TFE_JediRenderer::setupLevel(s_width, s_height, true);
+	}
+
 	void changeResolution(s32 w, s32 h)
 	{
 		s_width = w;
@@ -205,6 +212,7 @@ namespace TFE_View
 		s_sectorObjects = LevelGameObjects::getSectorObjectList();
 
 		CCMD("enableClassic", enableClassicRenderer, 0, "Enable classic renderer - enableClassic true/false");
+		CCMD("enableExperiment", enableExperiment, 0, "Enable experiment.");
 
 		if (!level)
 		{
