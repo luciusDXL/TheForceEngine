@@ -75,7 +75,7 @@ namespace TFE_JediRenderer
 			// 1 | 0
 			// -----
 			// 2 | 3
-			const s32 Z = (dz < 0 ? 2 : 0) + signsDiff;
+			const s32 quadrant = (dz < 0 ? 2 : 0) + signsDiff;
 
 			// Further splits the quadrants into sub-quadrants:
 			// \2|1/
@@ -86,10 +86,10 @@ namespace TFE_JediRenderer
 			//
 			dx = abs(dx);
 			dz = abs(dz);
-			const s32 z = Z * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
+			const s32 subquadrant = quadrant * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
 
 			// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
-			if ((z - 1) & 2)
+			if ((subquadrant - 1) & 2)
 			{
 				// The original code did the "3 xor" trick to swap dx and dz.
 				std::swap(dx, dz);
@@ -97,18 +97,18 @@ namespace TFE_JediRenderer
 
 			// next compute |dx| / |dz|, which will be a value from 0.0 to 1.0
 			fixed16_16 dXdZ = div16(dx, dz);
-			if (z & 1)
+			if (subquadrant & 1)
 			{
 				// invert the ratio in sub-quadrants 1, 3, 5, 7 to maintain the correct direction.
 				dXdZ = ONE_16 - dXdZ;
 			}
 
-			// zF is based on the sub-quadrant, essentially z * 65536
-			// which is a range of 0 to 7.0
-			fixed16_16 zF = intToFixed16(z);
+			// subquadrantF is based on the sub-quadrant, essentially fixed16(subquadrant)
+			// which has a range of 0 to 7.0 (see above).
+			const fixed16_16 subquadrantF = intToFixed16(subquadrant);
 			// angle = (int(2.0 - (zF + dXdZ)) * 2048) & 16383
 			// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
-			s32 angle = (2 * ONE_16 - (zF + dXdZ)) >> 5;
+			const s32 angle = (2 * ONE_16 - (subquadrantF + dXdZ)) >> 5;
 			// the final angle will be in the range of 0 - 16383
 			return angle & 0x3fff;
 		}
