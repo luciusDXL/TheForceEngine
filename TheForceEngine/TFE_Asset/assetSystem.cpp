@@ -47,6 +47,15 @@ namespace TFE_AssetSystem
 				TFE_System::logWrite(LOG_ERROR, "Archive", "Cannot open source archive file \"%s\"", gobPath);
 				return nullptr;
 			}
+
+			if (strcasecmp(archive->getPath(), gobPath))
+			{
+				TFE_System::logWrite(LOG_ERROR, "Archive", "Archive path \"%s\" does not match path \"%s\"", archive->getPath(), gobPath);
+			}
+			else if (archive->getFileCount() == 0)
+			{
+				TFE_System::logWrite(LOG_ERROR, "Archive", "Archive \"%s\" has no files!", archive->getPath());
+			}
 		}
 
 		if (!archive->openFile(filename))

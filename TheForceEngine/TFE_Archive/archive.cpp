@@ -3,6 +3,7 @@
 #include "lfdArchive.h"
 #include "labArchive.h"
 #include "zipArchive.h"
+#include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <assert.h>
 #include <string>
@@ -46,6 +47,14 @@ Archive* Archive::getArchive(ArchiveType type, const char* name, const char* pat
 	{
 		return nullptr;
 	}
+	// For some reason FileUtil::exists() sometimes returns incorrect values on at least one computer.
+	FileStream fileTest;
+	if (!fileTest.open(path, FileStream::MODE_READ))
+	{
+		TFE_System::logWrite(LOG_WARNING, "FileSystem", "FileExists on '%s' returned true but the file does not actually exist.", path);
+		return nullptr;
+	}
+	fileTest.close();
 
 	Archive* archive = nullptr;
 	switch (type)

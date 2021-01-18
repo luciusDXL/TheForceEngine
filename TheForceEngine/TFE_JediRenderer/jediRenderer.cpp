@@ -218,9 +218,15 @@ namespace TFE_JediRenderer
 
 	void console_loadVoxels(const std::vector<std::string>& args)
 	{
-		if (args.size() < 2) { return; }
+		if (args.size() < 2)
+		{
+			TFE_System::logWrite(LOG_ERROR, "VoxelExperiment", "Load voxel patch - no file specified.");
+			return;
+		}
 		if (!s_voxelObjects.empty())
 		{
+			TFE_System::logWrite(LOG_MSG, "VoxelExperiment", "Clearing the existing voxels.");
+
 			// Clear the level first.
 			s_voxelObjects.clear();
 			
@@ -239,7 +245,11 @@ namespace TFE_JediRenderer
 		TFE_Paths::appendPath(PATH_PROGRAM, localPath, filePath);
 
 		FileStream file;
-		if (file.open(filePath, FileStream::MODE_READ))
+		if (!file.open(filePath, FileStream::MODE_READ))
+		{
+			TFE_System::logWrite(LOG_ERROR, "VoxelExperiment", "Cannot load voxel level patch - file: \"%s\", path: \"%s\"", voxelFile, filePath);
+		}
+		else
 		{
 			u32 count = 0;
 			file.read(&count);

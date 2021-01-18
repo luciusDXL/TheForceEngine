@@ -282,6 +282,8 @@ namespace TFE_VoxelModel
 		////////////////////////////////////////////////////////////////
 		if (s_tempColumnBuffers.empty() || !model->width || !model->height || !model->depth)
 		{
+			TFE_System::logWrite(LOG_ERROR, "VoxelAsset", "Voxel asset '%s' has no column data.", name);
+
 			free(model);
 			return nullptr;
 		}
@@ -440,7 +442,11 @@ namespace TFE_VoxelModel
 
 	bool loadMagicaVoxelModel(VoxelModel* model, const char* name)
 	{
-		if (s_buffer.empty()) { return false; }
+		if (s_buffer.empty())
+		{
+			TFE_System::logWrite(LOG_ERROR, "VoxelAsset", "The file '%s' is empty.", name);
+			return false;
+		}
 		s_model = model;
 		const size_t len = s_buffer.size();
 

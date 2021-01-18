@@ -19,6 +19,8 @@ bool ZipArchive::create(const char *archivePath)
 
 bool ZipArchive::open(const char *archivePath)
 {
+	strcpy(m_archivePath, archivePath);
+	m_fileHandle = nullptr;
 	m_curFile = INVALID_FILE;
 	m_entryCount = 0;
 
@@ -37,8 +39,8 @@ bool ZipArchive::open(const char *archivePath)
 		zip_close(zip);
 		return false;
 	}
-	m_entries = new ZipEntry[m_entryCount];
 
+	m_entries = new ZipEntry[m_entryCount];
 	for (s32 i = 0; i < m_entryCount; i++)
 	{
 		if (zip_entry_openbyindex(zip, i) != 0)
@@ -54,10 +56,6 @@ bool ZipArchive::open(const char *archivePath)
 		zip_entry_close(zip);
 	}
 	zip_close(zip);
-
-	strcpy(m_archivePath, archivePath);
-	m_fileHandle = nullptr;
-
 	return true;
 }
 
@@ -85,6 +83,10 @@ bool ZipArchive::openFile(const char *file)
 			m_fileHandle = nullptr;
 		}
 	}
+	else
+	{
+		TFE_System::logWrite(LOG_ERROR, "zipArchive", "Cannot find file '%s' from archive '%s'", file, m_archivePath);
+	}
 	return m_curFile != INVALID_FILE;
 }
 
@@ -104,6 +106,10 @@ bool ZipArchive::openFile(u32 index)
 			zip_close((struct zip_t*)m_fileHandle);
 			m_fileHandle = nullptr;
 		}
+	}
+	else
+	{
+		TFE_System::logWrite(LOG_ERROR, "zipArchive", "Cannot find file from index '%d' from archive '%s'", index, m_archivePath);
 	}
 	return m_curFile != INVALID_FILE;
 }
