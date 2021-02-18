@@ -31,9 +31,13 @@ namespace InfAllocator
 	// TODO: Replace the original DOS implementation with one a bit more modern memory friendly, this is basically the original DF code
 	// verbatim with minor messaging to work in 32 or 64 bit.
 	// This is just to get things working initially.
-	static const size_t c_invalidPtr = (~size_t(0));
+
+	// Note that the invalid pointer value is chosen such that
+	// InvalidPointer + sizeof(AllocHeader) = 0 = null
+	// This is hardcoded in DF, here I calculate it based off of size_t so that it works for both 32-bit and 64-bit code.
+	static const size_t c_invalidPtr = (~size_t(0)) - sizeof(AllocHeader) + 1;
 	#define ALLOC_INVALID_PTR ((AllocHeader*)c_invalidPtr)
-		
+
 	// Create and free an allocator.
 	Allocator* allocator_create(s32 allocSize)
 	{
