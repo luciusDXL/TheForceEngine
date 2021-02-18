@@ -62,12 +62,12 @@ namespace TFE_EscapeMenu
 	{
 		renderer->setPalette(s_pal);
 		renderer->setColorMap(s_cmap);
-		TFE_RenderCommon::enableGrayScale(true);
+		//TFE_RenderCommon::enableGrayScale(true);
 	}
 
 	void close()
 	{
-		TFE_RenderCommon::enableGrayScale(false);
+		//TFE_RenderCommon::enableGrayScale(false);
 	}
 		
 	void draw(TFE_Renderer* renderer, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover, bool nextMission)

@@ -7,7 +7,6 @@
 
 #include <TFE_System/types.h>
 #include <TFE_Asset/levelAsset.h>
-#include <TFE_Game/view.h>
 
 namespace TFE_EscapeMenu
 {

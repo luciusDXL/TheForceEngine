@@ -8,7 +8,6 @@
 #include <TFE_System/types.h>
 #include <TFE_Asset/levelAsset.h>
 #include "gameState.h"
-#include "view.h"
 
 // Control bindings.
 enum GameControlType

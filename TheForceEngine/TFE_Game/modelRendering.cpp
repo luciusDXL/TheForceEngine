@@ -1,5 +1,4 @@
 #include "modelRendering.h"
-#include "renderCommon.h"
 #include <TFE_Asset/textureAsset.h>
 #include <TFE_Asset/levelAsset.h>
 #include <TFE_System/math.h>

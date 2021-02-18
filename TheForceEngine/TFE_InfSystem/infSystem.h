@@ -9,26 +9,43 @@
 #include <vector>
 #include <string>
 
-class Player;
-struct MultiRayHitInfo;
+struct RWall;
+struct RSector;
+struct SecObject;
+
+enum InfMessageType
+{
+	IMSG_FREE = 1,		// Internal Only - delete the InfTrigger or InfElevator.
+	IMSG_TRIGGER = 7,
+	IMSG_NEXT_STOP = 8,
+	IMSG_PREV_STOP = 9,
+	IMSG_GOTO_STOP = 11,
+	IMSG_REVERSE_MOVE = 12,
+	IMSG_DONE = 21,
+	IMSG_WAKEUP = 25,
+	IMSG_MASTER_ON = 29,
+	IMSG_MASTER_OFF = 30,
+	IMSG_SET_BITS = 31,
+	IMSG_CLEAR_BITS = 32,
+	IMSG_COMPLETE = 33,
+	IMSG_LIGHTS = 34,
+};
 
 namespace TFE_InfSystem
 {
 	bool init();
 	void shutdown();
 
-	void setupLevel(InfData* infData, LevelData* levelData);
-	void tick();
+	// For now load the INF data directly.
+	// Move back to the asset system later.
+	void loadINF(const char* levelName);
 
-	void activate(const Vec3f* pos, const MultiRayHitInfo* hitInfo, s32 curSectorId, u32 keys);
-	void explosion(const Vec3f* pos, s32 curSectorId, f32 radius);
-	// Returns true if the player should continue falling.
-	bool firePlayerEvent(u32 evt, s32 sectorId, Player* player);
-	bool firePlayerEvent(u32 evt, s32 sectorId, s32 wallId);
-	// player shoots a wall.
-	void shootWall(const Vec3f* hitPoint, s32 hitSectorId, s32 hitWallId);
+	// Per elevator frame update.
+	void elevatorUpdate();
+	// Per frame animated texture update (this may be moved later).
+	void animatedTextureUpdate();
 
-	void advanceCompleteElevator();
-	void advanceBossElevator();
-	void advanceMohcElevator();
+	// Send messages so that entities and the player can interact with the INF system.
+	void inf_wallSendMessage(RWall* wall, s32 entity, u32 evt, InfMessageType msgType);
+	void inf_sectorSendMessage(RSector* sector, SecObject* obj, u32 evt, InfMessageType msgType);
 }

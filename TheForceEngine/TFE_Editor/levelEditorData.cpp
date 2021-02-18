@@ -14,7 +14,6 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Game/geometry.h>
-#include <TFE_Game/renderCommon.h>
 #include <TFE_System/math.h>
 #include <TFE_System/memoryPool.h>
 // Triangulation
@@ -180,8 +179,8 @@ namespace LevelEditorData
 					tex->height  = sprite->frames[0].height;
 					strcpy(tex->name, dataFile);
 
-					tex->scale.x = f32(sprite->anim[0].worldWidth)  * c_spriteWorldScale;
-					tex->scale.z = f32(sprite->anim[0].worldHeight) * c_spriteWorldScale;
+					//tex->scale.x = f32(sprite->anim[0].worldWidth)  * c_spriteWorldScale;
+					//tex->scale.z = f32(sprite->anim[0].worldHeight) * c_spriteWorldScale;
 					tex->rect[0] = (f32)sprite->frames[0].rect[0];
 					tex->rect[1] = (f32)sprite->frames[0].rect[1];
 					tex->rect[2] = (f32)sprite->frames[0].rect[2];
@@ -1621,9 +1620,9 @@ namespace LevelEditorData
 					}
 					else if (dstObj.display)
 					{
-						w = dstObj.display->scale.x * fabsf(dstObj.display->rect[0] - dstObj.display->rect[2]) * c_spriteTexelToWorldScale;
-						h = dstObj.display->scale.z * fabsf(dstObj.display->rect[1] - dstObj.display->rect[3]) * c_spriteTexelToWorldScale;
-						y0 += dstObj.display->scale.z * fabsf(dstObj.display->rect[1]) * c_spriteTexelToWorldScale;
+						//w = dstObj.display->scale.x * fabsf(dstObj.display->rect[0] - dstObj.display->rect[2]) * c_spriteTexelToWorldScale;
+						//h = dstObj.display->scale.z * fabsf(dstObj.display->rect[1] - dstObj.display->rect[3]) * c_spriteTexelToWorldScale;
+						//y0 += dstObj.display->scale.z * fabsf(dstObj.display->rect[1]) * c_spriteTexelToWorldScale;
 					}
 
 					// AABB

@@ -61,6 +61,10 @@
 
 using TrianglesColor3d::Tri3dTrans;
 
+#define CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
+#define CONV_5bitTo8bit(x) (((x)<<3) | ((x)>>2))
+#define PACK_RGB_666_888(r6, g6, b6) CONV_6bitTo8bit(r6) | (CONV_6bitTo8bit(g6)<<8) | (CONV_6bitTo8bit(b6)<<16) | (0xff << 24)
+
 namespace LevelEditor
 {
 	#define TEXTURES_GOB_START_TEX 41
@@ -109,6 +113,11 @@ namespace LevelEditor
 		char levelName[64];
 		char gobPath[TFE_MAX_PATH];
 	};
+
+	static const f32 c_worldToTexelScale = 8.0f;
+	static const f32 c_texelToWorldScale = 1.0f / c_worldToTexelScale;
+	static const f32 c_aspect = 4.0f / 3.0f;
+	static const f32 c_spriteTexelToWorldScale = c_texelToWorldScale / c_aspect;
 
 	static s32 s_gridIndex = 5;
 	static f32 c_gridSizeMap[] =

@@ -17,6 +17,9 @@ namespace TFE_GameHud
 {
 	#define MSG_SCREEN_TIME 5.0f
 	#define MAX_MSG_LEN 1024
+	#define CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
+	#define CONV_5bitTo8bit(x) (((x)<<3) | ((x)>>2))
+	#define PACK_RGB_666_888(r6, g6, b6) CONV_6bitTo8bit(r6) | (CONV_6bitTo8bit(g6)<<8) | (CONV_6bitTo8bit(b6)<<16) | (0xff << 24)
 	
 	enum HudElement
 	{

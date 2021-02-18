@@ -1,10 +1,9 @@
 #include "gameLoop.h"
-#include "modelRendering.h"
-#include "renderCommon.h"
 #include "player.h"
 #include "physics.h"
-#include "view.h"
 #include "gameHud.h"
+#include <TFE_JediRenderer/jediRenderer.h>
+#include <TFE_Renderer/renderer.h>
 #include <TFE_Game/GameUI/gameUi.h>
 #include <TFE_Game/gameConstants.h>
 #include <TFE_Game/geometry.h>
@@ -93,9 +92,10 @@ namespace TFE_GameLoop
 	void updateObjects();
 	void updateSoundObjects(const Vec3f* listenerPos);
 
-	void startRenderer(TFE_Renderer* renderer, s32 w, s32 h)
+	void changeRendererResolution(s32 width, s32 height)
 	{
-		TFE_View::init(nullptr, renderer, w, h, false);
+		TFE_JediRenderer::setSubRenderer((width <= 320 && height <= 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT);
+		TFE_JediRenderer::setResolution(width, height);
 	}
 
 	enum SystemAction
@@ -266,9 +266,8 @@ namespace TFE_GameLoop
 		s_player.m_nightVisionOn = false;
 		s_player.m_keys = 0;
 		s_heightVisual = s_player.pos.y;
-		TFE_RenderCommon::enableNightVision(false);
+		//TFE_RenderCommon::enableNightVision(false);
 
-		TFE_View::init(level, renderer, w, h, false);
 		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 
 		s_eyeHeight = c_standingEyeHeight;
@@ -385,10 +384,9 @@ namespace TFE_GameLoop
 		s_player.m_nightVisionOn = false;
 		s_player.m_keys = 0;
 		s_heightVisual = s_player.pos.y;
-		TFE_RenderCommon::enableNightVision(false);
+		//TFE_RenderCommon::enableNightVision(false);
 			   			   
 		renderer->changeResolution(w, h, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
-		TFE_View::init(level, renderer, TFE_RenderBackend::getVirtualDisplayWidth3D(), TFE_RenderBackend::getVirtualDisplayHeight(), enableViewStats);
 
 		s_eyeHeight = c_standingEyeHeight;
 		s_height = c_standingHeight;
@@ -444,7 +442,7 @@ namespace TFE_GameLoop
 
 		if (width != prevWidth || height != prevHeight || prevWidescreen != curWidescreen)
 		{
-			TFE_View::changeResolution(width, height);
+			changeRendererResolution(width, height);
 			TFE_GameUi::updateUiResolution();
 			TFE_GameHud::init(s_renderer);
 			TFE_WeaponSystem::updateResolution();
@@ -456,11 +454,6 @@ namespace TFE_GameLoop
 	static Vec3f s_cameraPos;
 	static bool s_forceCrouch = false;
 	static bool s_slowToggle = false;
-
-	const ViewStats* getViewStats()
-	{
-		return TFE_View::getViewStats();
-	}
 
 	const Vec3f* getCameraPos()
 	{
@@ -605,6 +598,13 @@ namespace TFE_GameLoop
 			TFE_GameUi::openEscMenu();
 		}
 
+		enum LightMode
+		{
+			LIGHT_OFF = 0,
+			LIGHT_BRIGHT,
+			LIGHT_NORMAL
+		};
+
 		LightMode mode = LIGHT_OFF;
 		if (shouldDrawGame)
 		{
@@ -614,7 +614,10 @@ namespace TFE_GameLoop
 			// Otherwise it will be updated after the player input and physics.
 			if (!shouldUpdateGame)
 			{
-				TFE_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
+				s32 ambient = 31;
+				if (mode == LIGHT_NORMAL) { ambient = 0; }
+				else if (mode != LIGHT_OFF) { ambient = -9; }
+				TFE_JediRenderer::setCamera(s_player.m_yaw, s_player.m_pitch, s_cameraPos.x, s_cameraPos.y, s_cameraPos.z, s_player.m_sectorId, ambient, mode != LIGHT_OFF);
 			}
 		}
 		if (!shouldUpdateGame)
@@ -944,7 +947,7 @@ namespace TFE_GameLoop
 		if (getAction(ACTION_NIGHTVISION))
 		{
 			s_player.m_nightVisionOn = !s_player.m_nightVisionOn;
-			TFE_RenderCommon::enableNightVision(s_player.m_nightVisionOn);
+			//TFE_RenderCommon::enableNightVision(s_player.m_nightVisionOn);
 		}
 		else if (getAction(ACTION_HEADLAMP))
 		{
@@ -963,7 +966,11 @@ namespace TFE_GameLoop
 		if (s_motionTime > 1.0f) { s_motionTime -= 1.0f; }
 		s_cameraPos.y += cosf(s_motionTime * 2.0f * PI) * s_motion * 0.5f;
 						
-		TFE_View::update(&s_cameraPos, s_player.m_yaw, s_player.m_pitch, s_player.m_sectorId, mode);
+		s32 ambient = 31;
+		if (mode == LIGHT_NORMAL) { ambient = 0; }
+		else if (mode != LIGHT_OFF) { ambient = -9; }
+		TFE_JediRenderer::setCamera(s_player.m_yaw, s_player.m_pitch, s_cameraPos.x, s_cameraPos.y, s_cameraPos.z, s_player.m_sectorId, ambient, mode != LIGHT_OFF);
+
 		TFE_GameHud::update(&s_player);
 		TFE_LogicSystem::update();
 		TFE_WeaponSystem::update(s_motion, &s_player);
@@ -992,7 +999,7 @@ namespace TFE_GameLoop
 	{
 		if (TFE_GameUi::shouldDrawGame())
 		{
-			TFE_View::draw(&s_cameraPos, s_player.m_sectorId);
+			TFE_JediRenderer::draw(s_renderer->getDisplay(), s_renderer->getColorMap());
 			TFE_WeaponSystem::draw(&s_player, &s_cameraPos, s_player.m_headlampOn ? 31 : s_level->sectors[s_player.m_sectorId].ambient);
 			TFE_GameHud::draw(&s_player);
 		}
@@ -1007,7 +1014,7 @@ namespace TFE_GameLoop
 		Vec3f cameraPos = { model->center.x, -model->center.y, model->center.z - model->radius*1.5f };
 		f32 cameraRot[] = { 1.0f, 0.0f };
 
-		TFE_ModelRender::draw(model, orientation, &modelPos, nullptr, &cameraPos, cameraRot, 0);
+		//TFE_ModelRender::draw(model, orientation, &modelPos, nullptr, &cameraPos, cameraRot, 0);
 	}
 
 	//////////////////////////////////////////////

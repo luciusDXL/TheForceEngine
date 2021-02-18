@@ -304,19 +304,10 @@
     <ClInclude Include="TFE_Game\geometry.h">
       <Filter>Source\TFE_Game</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Game\modelRendering.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Game\physics.h">
       <Filter>Source\TFE_Game</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Game\player.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\renderCommon.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\view.h">
       <Filter>Source\TFE_Game</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Game\gameLoop.h">
@@ -709,6 +700,12 @@
     <ClInclude Include="TFE_Archive\zipArchive.h">
       <Filter>Source\TFE_Archive</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_InfSystem\message.h">
+      <Filter>Source\TFE_InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_InfSystem\allocator.h">
+      <Filter>Source\TFE_InfSystem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -819,19 +816,10 @@
     <ClCompile Include="TFE_Game\geometry.cpp">
       <Filter>Source\TFE_Game</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Game\modelRendering.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Game\physics.cpp">
       <Filter>Source\TFE_Game</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Game\player.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\renderCommon.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\view.cpp">
       <Filter>Source\TFE_Game</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Game\gameLoop.cpp">
@@ -1157,6 +1145,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Archive\zipArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_InfSystem\message.cpp">
+      <Filter>Source\TFE_InfSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_InfSystem\allocator.cpp">
+      <Filter>Source\TFE_InfSystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

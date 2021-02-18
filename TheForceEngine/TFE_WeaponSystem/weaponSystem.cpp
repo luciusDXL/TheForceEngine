@@ -25,10 +25,6 @@
 #include <assert.h>
 #include <algorithm>
 
-// TEMP
-#include <TFE_Game/modelRendering.h>
-#include <TFE_Game/renderCommon.h>
-
 using namespace TFE_GameConstants;
 
 namespace TFE_WeaponSystem

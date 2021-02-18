@@ -91,7 +91,7 @@ namespace ArchiveViewer
 
 	static s32 s_uiScale;
 	static char s_levelFile[TFE_MAX_PATH];
-	static const ViewStats* s_viewStats = nullptr;
+	//static const ViewStats* s_viewStats = nullptr;
 
 	f32 scaleUi(s32 x)
 	{
@@ -173,7 +173,7 @@ namespace ArchiveViewer
 
 			GameTransition trans = TFE_GameLoop::update(false);
 			TFE_GameLoop::draw();
-			s_viewStats = TFE_GameLoop::getViewStats();
+			//s_viewStats = TFE_GameLoop::getViewStats();
 
 			if (trans == TRANS_NEXT_LEVEL && s_curLevel >= 0 && s_curLevel + 1 < (s32)s_levelCount)
 			{
@@ -203,11 +203,11 @@ namespace ArchiveViewer
 			else
 			{
 				const LevelData* level = TFE_LevelAsset::getLevelData();
-				s_layer = level->sectors[s_viewStats->sectorId].layer;
-				s_mapPos = { s_viewStats->pos.x, s_viewStats->pos.z };
+				s_layer = 0;// level->sectors[s_viewStats->sectorId].layer;
+				s_mapPos = {};// { s_viewStats->pos.x, s_viewStats->pos.z };
 
 				s_renderer->clearMapMarkers();
-				s_renderer->addMapMarker(s_layer, s_viewStats->pos.x, s_viewStats->pos.z, 19);
+				//s_renderer->addMapMarker(s_layer, s_viewStats->pos.x, s_viewStats->pos.z, 19);
 			}
 
 			return true;
@@ -258,7 +258,7 @@ namespace ArchiveViewer
 		{
 			static Vec3f orientation = { 0, 0, 0 };
 			orientation.y -= 45.0f*(f32)TFE_System::getDeltaTime();
-			TFE_GameLoop::drawModel(s_curModel, &orientation);
+			//TFE_GameLoop::drawModel(s_curModel, &orientation);
 		}
 
 		return false;
@@ -327,31 +327,32 @@ namespace ArchiveViewer
 		// Do not show the editor while running the level.
 		if (s_runLevel)
 		{
-			if (s_viewStats && s_showUi)
+			//if (s_viewStats && s_showUi)
+			if (s_showUi)
 			{
 				LevelData* level = TFE_LevelAsset::getLevelData();
 
 				static bool viewStatsActive = true;
 				ImGui::Begin("ViewStats", &viewStatsActive);
 					ImGui::Text("Level Name \"%s\"", s_items[s_currentFile]);
-					ImGui::Text("SectorId %d", s_viewStats->sectorId);
-					if (s_viewStats->sectorId >= 0 && level->sectors[s_viewStats->sectorId].name[0])
-					{
-						ImGui::Text("Sector \"%s\"", level->sectors[s_viewStats->sectorId].name);
-					}
-					ImGui::Text("Pos (%2.2f, %2.2f)", s_viewStats->pos.x, s_viewStats->pos.z);
-					ImGui::Text("Height %2.2f", s_viewStats->pos.y);
-					ImGui::Text("Angles (%2.2f, %2.2f)pi", s_viewStats->yaw/PI, s_viewStats->pitch/PI);
+					ImGui::Text("SectorId %d", 0);// s_viewStats->sectorId);
+					//if (s_viewStats->sectorId >= 0 && level->sectors[s_viewStats->sectorId].name[0])
+					//{
+					//	ImGui::Text("Sector \"%s\"", level->sectors[s_viewStats->sectorId].name);
+					//}
+					//ImGui::Text("Pos (%2.2f, %2.2f)", s_viewStats->pos.x, s_viewStats->pos.z);
+					//ImGui::Text("Height %2.2f", s_viewStats->pos.y);
+					//ImGui::Text("Angles (%2.2f, %2.2f)pi", s_viewStats->yaw/PI, s_viewStats->pitch/PI);
 					ImGui::Separator();
-					ImGui::Text("Iteration Count %d", s_viewStats->iterCount);
-					ImGui::Text("Traversal Depth %d", s_viewStats->maxTraversalDepth);
+					//ImGui::Text("Iteration Count %d", s_viewStats->iterCount);
+					//ImGui::Text("Traversal Depth %d", s_viewStats->maxTraversalDepth);
 					ImGui::Text("Segs");
-					ImGui::Text("  Full  %d", s_viewStats->segWallRendered);
-					ImGui::Text("  Lower %d", s_viewStats->segLowerRendered);
-					ImGui::Text("  Upper %d", s_viewStats->segUpperRendered);
+					//ImGui::Text("  Full  %d", s_viewStats->segWallRendered);
+					//ImGui::Text("  Lower %d", s_viewStats->segLowerRendered);
+					//ImGui::Text("  Upper %d", s_viewStats->segUpperRendered);
 					ImGui::Text("Flats");
-					ImGui::Text("  Floor   %d", s_viewStats->floorPolyRendered);
-					ImGui::Text("  Ceiling %d", s_viewStats->ceilPolyRendered);
+					//ImGui::Text("  Floor   %d", s_viewStats->floorPolyRendered);
+					//ImGui::Text("  Ceiling %d", s_viewStats->ceilPolyRendered);
 				ImGui::End();
 			}
 			return;
@@ -507,7 +508,7 @@ namespace ArchiveViewer
 				{
 					s_fileType = TYPE_3D;
 					s_curModel = TFE_Model::get(s_items[s_currentFile]);
-					TFE_GameLoop::startRenderer(s_renderer, 640, 480);
+					//TFE_GameLoop::startRenderer(s_renderer, 640, 480);
 				}
 				else if (strcasecmp(extension, "VOC") == 0 || strcasecmp(extension, "VOIC") == 0)
 				{

@@ -8,7 +8,6 @@
 #include <TFE_System/types.h>
 #include <TFE_Asset/levelAsset.h>
 #include "gameState.h"
-#include "view.h"
 
 class TFE_Renderer;
 struct Model;
@@ -33,9 +32,5 @@ namespace TFE_GameLoop
 	GameTransition update(bool consoleOpen, GameState curState = GAME_LEVEL, GameOverlay curOverlay = OVERLAY_NONE);
 	void draw();
 
-	void startRenderer(TFE_Renderer* renderer, s32 w, s32 h);
-	void drawModel(const Model* model, const Vec3f* orientation);
-
-	const ViewStats* getViewStats();
 	const Vec3f* getCameraPos();
 }
