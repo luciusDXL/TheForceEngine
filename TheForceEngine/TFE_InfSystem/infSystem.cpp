@@ -4,222 +4,45 @@
 #include <TFE_System/memoryPool.h>
 #include <TFE_System/math.h>
 #include <TFE_Game/gameConstants.h>
+// Move out shared code.
+#include <TFE_JediRenderer/jediRenderer.h>
 #include <TFE_JediRenderer/rmath.h>
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <algorithm>
+#include <TFE_JediRenderer/robject.h>
+#include <TFE_JediRenderer/rsector.h>
+#include "infTypesInternal.h"
 
 using namespace TFE_GameConstants;
 using namespace TFE_JediRenderer;
+using namespace InfAllocator;
 struct TextureData;
 
 namespace TFE_InfSystem
 {
-	typedef void(*InfLinkTask)();
-	typedef void(*InfFreeFunc)();
-	struct InfLink;
+	// INF delta time in ticks.
+	static s32 s_curTime;
+	static s32 s_deltaTime;
+	static Allocator* s_infElevators;
 
-	enum InfElevatorType
-	{
-		IELEV_MOVE_CEILING = 0,
-		IELEV_MOVE_FLOOR = 1,
-		IELEV_MOVE_OFFSET = 2,
-		IELEV_MOVE_WALL = 3,
-		IELEV_ROTATE_WALL = 4,
-		IELEV_SCROLL_WALL = 5,
-		IELEV_SCROLL_FLOOR = 6,
-		IELEV_SCROLL_CEILING = 7,
-		IELEV_CHANGE_LIGHT = 8,
-		IELEV_MOVE_FC = 9,
-		IELEV_CHANGE_WALL_LIGHT = 10,
-	};
-
-	enum TriggerCmd
-	{
-		TCMD_DONE = 7,
-		TCMD_NEXT_STOP = 8,
-		TCMD_PREV_STOP = 9,
-		TCMD_GOTO_STOP = 11,
-		TCMD_MASTER_ON = 29,
-		TCMD_MASTER_OFF = 30,
-		TCMD_SET_BITS = 31,
-		TCMD_CLEAR_BITS = 32,
-		TCMD_COMPLETE = 33,
-		TCMD_LIGHTS = 34
-	};
-
-	enum ElevMoveType
-	{
-		MOVE_STOPPED = -1,
-		MOVE_FLOOR = 0,
-		MOVE_CEIL = 1,
-	};
-
-	enum InfDelay
-	{
-		// IDELAY_SECONDS >= 0
-		IDELAY_HOLD = -1,
-		IDELAY_TERMINATE = -2,
-		IDELAY_COMPLETE = -3,
-	};
-
-	enum TriggerType
-	{
-		ITRIGGER_STANDARD = 0,
-		ITRIGGER_SECTOR = 1,
-		ITRIGGER_SWITCH1 = 2,
-		ITRIGGER_TOGGLE = 3,
-		ITRIGGER_SINGLE = 4,
-	};
-
-	enum InfEventMask
-	{
-		INF_EVENT_CROSS_LINE_FRONT = (1u << 0u),
-		INF_EVENT_CROSS_LINE_BACK = (1u << 1u),
-		INF_EVENT_ENTER_SECTOR = (1u << 2u),
-		INF_EVENT_LEAVE_SECTOR = (1u << 3u),
-		INF_EVENT_NUDGE_FRONT = (1u << 4u),	// front of line or inside sector.
-		INF_EVENT_NUDGE_BACK = (1u << 5u),	// back of line or outside sector.
-		INF_EVENT_EXPLOSION = (1u << 6u),
-		INF_EVENT_UNKNOWN = (1u << 7u),	// skipped slot or unused event?
-		INF_EVENT_SHOOT_LINE = (1u << 8u),	// Shoot or punch line.
-		INF_EVENT_LAND = (1u << 9u),	// Land on floor
-		INF_EVENT_ANY = INF_EVENT_CROSS_LINE_FRONT | INF_EVENT_CROSS_LINE_BACK | INF_EVENT_ENTER_SECTOR | INF_EVENT_LEAVE_SECTOR | INF_EVENT_NUDGE_FRONT | INF_EVENT_NUDGE_BACK | INF_EVENT_EXPLOSION | INF_EVENT_SHOOT_LINE | INF_EVENT_LAND
-	};
-
-	enum KeyItem
-	{
-		KEY_RED = 23,
-		KEY_YELLOW = 24,
-		KEY_BLUE = 25,
-	};
-
-	struct AnimatedTexture
-	{
-		s32 count;
-		s32 index;
-		s32 delay;
-		s32 nextTime;
-		TextureData** frameList;
-		TextureData** basePtr;
-		TextureData* curFrame;
-		u8* baseData;
-	};
-
-	struct TriggerTarget
-	{
-		RSector* sector;
-		RWall*   wall;
-		u32     flags;
-	};
-
-	struct InfTrigger
-	{
-		TriggerType type;
-		InfLink* link;
-		AnimatedTexture* animTex;
-		Allocator* targets;
-		TriggerCmd cmd;
-		u32 event;
-		s32 arg0;
-		s32 arg1;
-		
-		s32 u20;
-		s32 u24;
-		s32 u28;
-		s32 u2c;
-
-		u32 u30;
-		s32 u34;
-		s32 master;
-		TextureData* tex;
-		s32 soundId;
-		s32 state;
-		s32* u48;
-		s32 textId;
-	};
-
-	struct InfMessage
-	{
-		RSector* sector;
-		RWall* wall;
-		InfMessageType msgType;
-		u32 event;
-		s32 arg1;
-		s32 arg2;
-	};
-
-	struct Slave
-	{
-		Sector* sector;
-		s32 value;
-	};
-
-	struct AdjoinCmd
-	{
-		RWall* wall0;
-		RWall* wall1;
-		RSector* sector0;
-		RSector* sector1;
-	};
-
-	struct Stop
-	{
-		s32 value;
-		// -1 = HOLD, -2 = TERMINATE, -3 = COMPLETE, else TICKS (see InfDelay)
-		s32 delay;				// INF ticks (145.5/sec)
-		Allocator* messages;
-		Allocator* adjoinCmds;
-		s32 pageId;
-		TextureData* floorTex;
-		TextureData* ceilTex;
-	};
-
-	struct InfElevator
-	{
-		InfElevator* self;
-		InfElevatorType type;
-		s32 moveType;
-		Sector* sector;
-		s32 key;
-		s32 fixedStep;
-		u32 nextTime;
-		s32 u1c;
-		Allocator* stops;
-		Allocator* slaves;
-		Stop* nextStop;
-		s32  speed;
-		s32* value;
-		s32 iValue;
-		vec2_fixed dirOrCenter;
-		s32 flags;
-		s32 sound0;
-		s32 sound1;
-		s32 sound2;
-		s32 soundSource1;
-		s32 u54;
-		s32 updateFlags;
-	};
-
-	struct InfLink
-	{
-		s32 type;
-		InfLinkTask* task;
-		union
-		{
-			InfElevator* elev;
-			InfTrigger* trigger;
-			void* target;
-		};
-		u32 eventMask;
-		u32 entityMask;
-		Allocator* parent;
-		InfFreeFunc freeFunc;
-	};
+	static s32 s_infMsgArg1;
+	static s32 s_infMsgArg2;
+	static u32 s_infMsgEvent;
+	static void* s_infMsgTarget;
+	static void* s_infMsgEntity;
 	
-	
+	void deleteElevator(InfElevator* elev);
+	s32 updateElevator(InfElevator* elev);
+	void elevHandleStopDelay(InfElevator* elev);
+	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
+	void inf_adjustTextureWallOffsets_Floor(RSector* sector, s32 floorDelta);
+	void inf_adjustTextureMirrorOffsets_Floor(RSector* sector, s32 floorDelta);
+
+	// TODO: Move these to the right place in the renderer or shared location.
+	s32 sector_getMaxObjectHeight(RSector* sector);
+	void sector_adjustHeights(RSector* sector, s32 floorDelta, s32 ceilDelta, s32 secHeightDelta);
+
+	/////////////////////////////////////////////////////
+	// API
+	/////////////////////////////////////////////////////
 	bool init()
 	{
 		return false;
@@ -236,12 +59,237 @@ namespace TFE_InfSystem
 	}
 
 	// Per frame update.
-	void elevatorUpdate()
+	void update_elevators()
 	{
+		InfElevator* elev = (InfElevator*)allocator_getHead(s_infElevators);
+		while (elev)
+		{
+			s32 elevDeleted = 0;
+			s32 dt = 0;
+			if (elev->updateFlags & ELEV_MASTER_ON)
+			{
+				if (elev->nextTime < s_curTime)
+				{
+					// If not already moving, get started.
+					if (!(elev->updateFlags & ELEV_MOVING) && !elevDeleted)
+					{
+						RSector* sector = elev->sector;
+
+						// Figure out the source position for the sound effect.
+						s32 y = sector->secHeight.f16_16 + sector->floorHeight.f16_16;
+						s32 x, z;
+						if (elev->type != IELEV_ROTATE_WALL)
+						{
+							// First vertex position.
+							vec2_fixed* vtx = (vec2_fixed*)sector->verticesWS;
+							x = vtx->x;
+							z = vtx->z;
+						}
+						else
+						{
+							// Rotation center.
+							x = elev->dirOrCenter.x;
+							z = elev->dirOrCenter.z;
+						}
+
+						// Play the startup sound effect if the elevator is not already at the next stop.
+						s32* value = elev->value;
+						Stop* nextStop = elev->nextStop;
+						// Play the initial sound as the elevator starts moving.
+						if (*elev->value != elev->nextStop->value)
+						{
+							playSound3D_oneshot(elev->sound0, x, y, z);
+						}
+
+						// Update the next time, so this will move on the next update.
+						elev->nextTime = s_curTime;
+
+						// Flag the elevator as moving.
+						elev->updateFlags |= ELEV_MOVING;
+					}
+
+					if ((elev->updateFlags & ELEV_MOVING))
+					{
+						RSector* sector = elev->sector;
+
+						// Get the sound effect position.
+						s32 y = sector->floorHeight.f16_16 + sector->secHeight.f16_16;
+						s32 x, z;
+						if (elev->type != IELEV_ROTATE_WALL)
+						{
+							vec2_fixed* vtx = (vec2_fixed*)sector->verticesWS;
+							x = vtx->x;
+							z = vtx->z;
+						}
+						else
+						{
+							x = elev->dirOrCenter.x;
+							z = elev->dirOrCenter.z;
+						}
+
+						// Start up the sound effect, track it since it is looping.
+						elev->soundSource1 = playSound3D_looping(elev->soundSource1, elev->sound1, x, y, z);
+					}
+
+					// if reachedStop = 0, elevator has not reached the next stop.
+					s32 reachedStop = updateElevator(elev);
+					if (reachedStop)
+					{
+						elevHandleStopDelay(elev);
+
+						Stop* nextStop = elev->nextStop;
+						if (elev->updateFlags & ELEV_MOVING_REVERSE)
+						{
+							// TODO
+						}
+						else
+						{
+							s32 delay = nextStop->delay;
+							if (delay == IDELAY_HOLD)
+							{
+								elev->moveType = MOVE_STOPPED;
+							}
+							else if (delay == IDELAY_COMPLETE || delay == IDELAY_TERMINATE)
+							{
+								// delete the elevator, we're done here.
+								deleteElevator(elev);
+								elevDeleted = 1;
+								if (delay == IDELAY_COMPLETE)
+								{
+									// TODO: Two additional functions handle the "complete" element
+								}
+							}
+							else  // Timed
+							{
+								elev->nextTime = s_curTime + nextStop->delay;
+							}
+						}
+
+						// Process stop messages if the elevator has not been deleted.
+						if (!elevDeleted)
+						{
+							// Messages
+							Allocator* msgList = nextStop->messages;
+							if (msgList)
+							{
+								InfMessage* msg = (InfMessage*)allocator_getHead(msgList);
+								while (msg)
+								{
+									s_infMsgArg1 = msg->arg1;
+									s_infMsgArg2 = msg->arg2;
+									RWall* wall = msg->wall;
+									if (wall)
+									{
+										inf_wallSendMessage(wall, 0, msg->event, msg->msgType);
+									}
+									else  // sector
+									{
+										RSector* sector = msg->sector;
+										if (msg->sector)
+										{
+											Allocator* infLink = sector->infLink;
+											if (infLink)
+											{
+												InfLink* link = (InfLink*)allocator_getHead(infLink);
+												if (link)
+												{
+													if (link->task && (msg->event <= 0 || (link->eventMask & msg->event)))
+													{
+														allocator_addRef(msgList);
+
+														s_infMsgTarget = link->target;
+														s_infMsgEntity = 0;
+														s_infMsgArg1 = msg->arg1;
+														s_infMsgArg2 = msg->arg2;
+														s_infMsgEvent = msg->event;
+														inf_sendSectorMessageInternal(sector, msg->msgType);
+
+														link->task(msg->msgType);
+
+														allocator_release(msgList);
+													}
+													else
+													{
+														// TODO
+													}
+												}
+											}
+											else  // (inkLink)
+											{
+												// TODO
+											}
+										}
+										else  // (msg->sector)
+										{
+											// TODO
+										}
+									}
+									msg = (InfMessage*)allocator_getNext(msgList);
+								} // while (msg)
+							} // (messages)
+
+							// Adjoin Commands.
+							Allocator* adjoinCmds = nextStop->adjoinCmds;
+							if (adjoinCmds)
+							{
+								AdjoinCmd* cmd = (AdjoinCmd*)allocator_getHead(adjoinCmds);
+								while (cmd)
+								{
+									RWall* wall0 = cmd->wall0;
+									RWall* wall1 = cmd->wall1;
+									RSector* sector0 = cmd->sector0;
+									RSector* sector1 = cmd->sector1;
+
+									wall0->nextSector = sector1;
+									wall0->mirrorWall = wall1;
+
+									wall1->nextSector = sector0;
+									wall1->mirrorWall = wall0;
+
+									sector_setupWallDrawFlags(sector0);
+									sector_setupWallDrawFlags(sector1);
+
+									cmd = (AdjoinCmd*)allocator_GetNext(adjoinCmds);
+								}
+							}
+
+							// Floor texture change.
+							TextureData* floorTex = nextStop->floorTex;
+							if (floorTex)
+							{
+								RSector* sector = elev->sector;
+								sector->floorTex = &floorTex;
+							}
+
+							// Ceiling texture change.
+							TextureData* ceilTex = nextStop->ceilTex;
+							if (ceilTex)
+							{
+								RSector* sector = elev->sector;
+								sector->ceilTex = &ceilTex;
+							}
+
+							// Page (special 2D sound effect that plays, such as voice overs).
+							s32 pageId = nextStop->pageId;
+							if (pageId)
+							{
+								playSound2D(pageId);
+							}
+
+							// Advance to the next stop.
+							elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
+						} // (!elevDeleted)
+					}
+				} // (elev->nextTime < s_curTime)
+			} // (elev->updateFlags & 2)
+
+			// Next elevator.
+			elev = (InfElevator*)allocator_getNext(s_infElevators);
+		} // while (elev)
 	}
 
 	// Per frame animated texture update (this may be moved later).
-	void animatedTextureUpdate()
+	void update_animatedTextures()
 	{
 	}
 
@@ -251,6 +299,311 @@ namespace TFE_InfSystem
 	}
 
 	void inf_sectorSendMessage(RSector* sector, SecObject* obj, u32 evt, InfMessageType msgType)
+	{
+	}
+
+	/////////////////////////////////////////////////////
+	// Internal
+	/////////////////////////////////////////////////////
+	// Include update functions
+	#include "infElevatorUpdateFunc.h"
+
+	// Update an elevator.
+	// Returns -1 if the elevator has reached the next stop, else 0.
+	s32 updateElevator(InfElevator* elev)
+	{
+		s32* value = elev->value;
+		Stop* nextStop = elev->nextStop;
+
+		s32 v0 = *value;
+		s32 v1 = v0;
+		s32 hasStop = -1;
+		if (nextStop)
+		{
+			v1 = nextStop->value;
+			hasStop = 0;
+		}
+
+		// The elevator has reached the next stop.
+		if (v1 == v0 && nextStop)
+		{
+			return -1;
+		}
+
+		s32 type = elev->type;
+		InfUpdateFunc updateFunc = nullptr;
+		switch (type)
+		{
+			case IELEV_MOVE_CEILING:
+			case IELEV_MOVE_FLOOR:
+			case IELEV_MOVE_OFFSET:
+			case IELEV_MOVE_FC:
+				updateFunc = infUpdate_moveHeights;
+				break;
+			case IELEV_MOVE_WALL:
+				updateFunc = infUpdate_moveWall;
+				break;
+			case IELEV_ROTATE_WALL:
+				updateFunc = infUpdate_rotateWall;
+				break;
+			case IELEV_SCROLL_WALL:
+				updateFunc = infUpdate_scrollWall;
+				break;
+			case IELEV_SCROLL_FLOOR:
+			case IELEV_SCROLL_CEILING:
+				updateFunc = infUpdate_scrollFlat;
+				break;
+			case IELEV_CHANGE_LIGHT:
+				updateFunc = infUpdate_changeAmbient;
+				break;
+			case IELEV_CHANGE_WALL_LIGHT:
+				updateFunc = infUpdate_changeWallLight;
+				break;
+		}
+
+		s32 frameDelta = 0;
+		if (!nextStop)
+		{
+			// If there are no stops, then the elevator keeps going forever...
+			// Useful for scrolling textures, constantly spinning gears, etc.
+			frameDelta = mul16(elev->speed, s_deltaTime);
+		}
+		else
+		{
+			s32 delta = v1 - v0;
+			frameDelta = delta;
+			if (elev->speed)
+			{
+				if (!elev->fixedStep)
+				{
+					s32 change = mul16(elev->speed, s_deltaTime);
+					if (delta > change)
+					{
+						frameDelta = change;
+					}
+					else if (delta < -change)
+					{
+						frameDelta = -change;
+					}
+					else
+					{
+						frameDelta = delta;
+					}
+				}
+				else
+				{
+					// This is a little strange, this could lead to framerate based speeds...
+					frameDelta = elev->speed;
+				}
+			}
+		}
+
+		s32 newValue;
+		if (updateFunc)
+		{
+			newValue = updateFunc(elev, frameDelta);
+		}
+		else
+		{
+			// If there is no update function, just increment the value based and move on.
+			*elev->value += frameDelta;
+			newValue = *elev->value;
+		}
+
+		// Returns -1 if the elevator has reached the next stop.
+		if (v1 == newValue && elev->nextStop)
+		{
+			return -1;
+		}
+		// Otherwise return 0.
+		return 0;
+	}
+
+	void elevHandleStopDelay(InfElevator* elev)
+	{
+		Stop* nextStop = elev->nextStop;
+		if ((elev->updateFlags & ELEV_MOVING) && nextStop->delay)
+		{
+			RSector* sector = elev->sector;
+
+			// Get the position to play the stop sound.
+			s32 y = sector->floorHeight.f16_16 + sector->secHeight.f16_16;
+			s32 x, z;
+			if (elev->type != IELEV_ROTATE_WALL)
+			{
+				vec2_fixed* vtx = (vec2_fixed*)sector->verticesWS;
+				x = vtx->x;
+				z = vtx->z;
+			}
+			else
+			{
+				x = elev->dirOrCenter.x;
+				z = elev->dirOrCenter.y;
+			}
+
+			// Stop the looping middle sound and then play the stop sound.
+			stopSound(elev->soundSource1);
+			playSound3D_oneshot(elev->sound2, x, y, z);
+			elev->soundSource1 = 0;
+		}
+		// If there is a delay, then the elevator is not moving.
+		if (nextStop->delay)
+		{
+			elev->updateFlags &= ~ELEV_MOVING;
+		}
+		else
+		{
+			// 1e1418:
+			elev->updateFlags |= ELEV_MOVING;
+		}
+	}
+
+	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop)
+	{
+		Stop* stop = nullptr;
+		// advance to a future stop
+		if (relativeStop > 0)
+		{
+			for (; relativeStop > 0; relativeStop--)
+			{
+				stop = (Stop*)allocator_getNext(stops);
+				// Loop around.
+				if (!stop)
+				{
+					stop = (Stop*)allocator_getHead(stops);
+				}
+			}
+		}
+		// advance to a previous stop
+		else if (relativeStop < 0)
+		{
+			relativeStop = -relativeStop;
+			for (; relativeStop > 0; relativeStop--)
+			{
+				stop = (Stop*)allocator_getPrev(stops);
+				// Loop around.
+				if (!stop)
+				{
+					stop = (Stop*)allocator_getTail(stops);
+				}
+			}
+		}
+		// relativeStop == 0
+		else if (absoluteStop >= 0)
+		{
+			// Loop from head instead of the current stop.
+			stop = (Stop*)allocator_getHead(stops);
+			for (; absoluteStop > 0; absoluteStop--)
+			{
+				stop = (Stop*)allocator_getNext(stops);
+				if (!stop)
+				{
+					stop = (Stop*)allocator_getHead(stops);
+				}
+			}
+		}
+		// relativeStop == 0 && absoluteStop < 0 -- this basically will send us to the last stop.
+		else
+		{
+			stop = (Stop*)allocator_getTail_noIterUpdate(stops);
+		}
+
+		return stop;
+	}
+
+	void inf_adjustTextureWallOffsets_Floor(RSector* sector, s32 floorDelta)
+	{
+	#if 0	// This should be moved to the sector implementation
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+		for (s32 i = 0; i < wallCount; i++, wall++)
+		{
+			s32 textureOffset = floorDelta << 3;
+			if (wall->flags1 & WF1_TEX_ANCHORED)
+			{
+				if (wall->nextSector)
+				{
+					wall->botVOffset -= textureOffset;
+				}
+				else
+				{
+					wall->midVOffset -= textureOffset;
+				}
+			}
+			if (wall->flags1 & WF1_SIGN_ANCHORED)
+			{
+				wall->signVOffset -= textureOffset;
+			}
+		}
+	#endif
+	}
+
+	void inf_adjustTextureMirrorOffsets_Floor(RSector* sector, s32 floorDelta)
+	{
+	#if 0	// This should be moved to the sector implementation
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+		for (s32 i = 0; i < wallCount; i++, wall++)
+		{
+			RWall* mirror = wall->mirrorWall;
+			if (mirror)
+			{
+				s32 textureOffset = -floorDelta * 8;
+				if (mirror->flags1 & WF1_TEX_ANCHORED)
+				{
+					if (mirror->nextSector)
+					{
+						mirror->botVOffset -= textureOffset;
+					}
+					else
+					{
+						mirror->midVOffset -= textureOffset;
+					}
+				}
+				if (mirror->flags1 & WF1_SIGN_ANCHORED)
+				{
+					mirror->signVOffset -= textureOffset;
+				}
+			}
+		}
+	#endif
+	}
+
+	void deleteElevator(InfElevator* elev)
+	{
+		if (elev->slaves)
+		{
+			allocator_free(elev->slaves);
+		}
+		// Free the stops.
+		if (elev->stops)
+		{
+			Stop* stop = (Stop*)allocator_getHead(elev->stops);
+			while (stop)
+			{
+				if (stop->messages)
+				{
+					allocator_free(stop->messages);
+				}
+				if (stop->adjoinCmds)
+				{
+					allocator_free(stop->adjoinCmds);
+				}
+				stop = (Stop*)allocator_getNext(elev->stops);
+			}
+			allocator_free(elev->stops);
+		}
+		sector_deleteElevatorLink(elev->sector, elev);
+		allocator_deleteItem(s_infElevators, elev);
+	}
+
+	// TODO: Figure out where to handle these...
+	s32 sector_getMaxObjectHeight(RSector* sector)
+	{
+		return 0;
+	}
+
+	void sector_adjustHeights(RSector* sector, s32 floorDelta, s32 ceilDelta, s32 secHeightDelta)
 	{
 	}
 }

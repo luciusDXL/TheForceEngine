@@ -300,7 +300,10 @@
     <ClInclude Include="TFE_Game\physics.h" />
     <ClInclude Include="TFE_Game\player.h" />
     <ClInclude Include="TFE_InfSystem\allocator.h" />
+    <ClInclude Include="TFE_InfSystem\infElevatorUpdateFunc.h" />
+    <ClInclude Include="TFE_InfSystem\infMessageType.h" />
     <ClInclude Include="TFE_InfSystem\infSystem.h" />
+    <ClInclude Include="TFE_InfSystem\infTypesInternal.h" />
     <ClInclude Include="TFE_InfSystem\message.h" />
     <ClInclude Include="TFE_Input\input.h" />
     <ClInclude Include="TFE_Input\inputEnum.h" />

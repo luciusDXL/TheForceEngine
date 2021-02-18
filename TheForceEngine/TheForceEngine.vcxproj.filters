@@ -706,6 +706,15 @@
     <ClInclude Include="TFE_InfSystem\allocator.h">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_InfSystem\infElevatorUpdateFunc.h">
+      <Filter>Source\TFE_InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_InfSystem\infTypesInternal.h">
+      <Filter>Source\TFE_InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_InfSystem\infMessageType.h">
+      <Filter>Source\TFE_InfSystem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
