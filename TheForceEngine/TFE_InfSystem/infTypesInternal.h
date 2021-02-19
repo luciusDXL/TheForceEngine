@@ -16,7 +16,7 @@ using namespace TFE_JediRenderer;
 
 namespace TFE_InfSystem
 {
-	typedef void(*InfLinkTask)(s32);
+	typedef void(*InfLinkMsgFunc)(InfMessageType);
 	typedef void(*InfFreeFunc)();
 	struct InfLink;
 
@@ -100,6 +100,14 @@ namespace TFE_InfSystem
 		KEY_RED = 23,
 		KEY_YELLOW = 24,
 		KEY_BLUE = 25,
+	};
+
+	enum ObjectTypeFlags
+	{
+		OTFLAG_NONE = 0,
+		// ... Unknown.
+		OTFLAG_PLAYER = (1u << 31u),
+		OTFLAG_UNSIGNED = 0xffffffff,
 	};
 
 	struct AnimatedTexture
@@ -212,7 +220,7 @@ namespace TFE_InfSystem
 	struct InfLink
 	{
 		s32 type;
-		InfLinkTask task;
+		InfLinkMsgFunc msgFunc;
 		union
 		{
 			InfElevator* elev;

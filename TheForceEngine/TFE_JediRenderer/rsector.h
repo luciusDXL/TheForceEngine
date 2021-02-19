@@ -13,6 +13,7 @@ struct TextureFrame;
 struct Sector;
 struct SectorWall;
 struct Texture;
+struct Allocator;
 
 namespace TFE_JediRenderer
 {
@@ -26,7 +27,7 @@ namespace TFE_JediRenderer
 
 	struct RWall;
 	struct SecObject;
-
+	
 	struct RSector
 	{
 		RSector* self;
@@ -51,6 +52,9 @@ namespace TFE_JediRenderer
 		decimal colCeilHeight;
 		decimal colSecHeight;
 		decimal colMinHeight;
+
+		// INF
+		Allocator* infLink;
 
 		// Textures
 		TextureFrame* floorTex;

@@ -9,6 +9,7 @@
 #include <TFE_JediRenderer/rmath.h>
 #include <TFE_JediRenderer/robject.h>
 #include <TFE_JediRenderer/rsector.h>
+#include <TFE_JediRenderer/rwall.h>
 #include "infTypesInternal.h"
 
 using namespace TFE_GameConstants;
@@ -18,6 +19,14 @@ struct TextureData;
 
 namespace TFE_InfSystem
 {
+	// Inventory stuff to be moved to gameplay.
+	static s32 s_invRedKey = 0;
+	static s32 s_invYellowKey = 0;
+	static s32 s_invBlueKey = 0;
+
+	// System -- TODO
+	static s32 s_needKeySoundId = 0;	// TODO
+	
 	// INF delta time in ticks.
 	static s32 s_curTime;
 	static s32 s_deltaTime;
@@ -31,6 +40,9 @@ namespace TFE_InfSystem
 
 	static RSector* s_sectors;
 	static u32 s_sectorCount;
+
+	void infElevatorMsgFunc(InfMessageType msgType);
+	void infTriggerMsgFunc(InfMessageType msgType);
 	
 	void deleteElevator(InfElevator* elev);
 	s32 updateElevator(InfElevator* elev);
@@ -45,8 +57,17 @@ namespace TFE_InfSystem
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
 	
 	// TODO: Move these to the right place in the renderer or shared location.
-	s32 sector_getMaxObjectHeight(RSector* sector);
-	void sector_adjustHeights(RSector* sector, s32 floorDelta, s32 ceilDelta, s32 secHeightDelta);
+	s32 sector_getMaxObjectHeight(RSector* sector) { return 0; }
+	void sector_adjustHeights(RSector* sector, s32 floorDelta, s32 ceilDelta, s32 secHeightDelta) {}
+	void sector_setupWallDrawFlags(RSector* sector) {}
+	void sector_deleteElevatorLink(RSector* sector, InfElevator* elev) {}
+
+	// TODO: System functions, to be connected later.
+	void sendTextMessage(s32 msgId) {}
+	void playSound2D(s32 soundId) {}
+	void playSound3D_oneshot(s32 soundId, vec3_fixed pos) {}
+	s32  playSound3D_looping(s32 sourceId, s32 soundId, vec3_fixed pos) { return 0; }
+	void stopSound(s32 sourceId) {}
 
 	/////////////////////////////////////////////////////
 	// API
@@ -212,11 +233,9 @@ namespace TFE_InfSystem
 
 		s32 v0 = *value;
 		s32 v1 = v0;
-		s32 hasStop = -1;
 		if (nextStop)
 		{
 			v1 = nextStop->value;
-			hasStop = 0;
 		}
 
 		// The elevator has reached the next stop.
@@ -314,6 +333,147 @@ namespace TFE_InfSystem
 		return 0;
 	}
 
+	void infElevatorMessageInternal(InfMessageType msgType)
+	{
+		u32 event = s_infMsgEvent;
+		InfElevator* elev = (InfElevator*)s_infMsgTarget;
+		SecObject* entity = (SecObject*)s_infMsgEntity;
+		RSector* sector = elev->sector;
+		s32 arg1 = s_infMsgArg1;
+
+		// TODO: Determine which flag bit 11 is.
+		if (entity && (entity->typeFlags&FLAG(11)))
+		{
+			if (sector->flags1 & SEC_FLAGS1_NO_SMART_OBJ)
+			{
+				return;
+			}
+			// TODO: Figure out what elev->flags: flag bit 3 is.
+			else if (!(sector->flags1 & SEC_FLAGS1_SMART_OBJ) && !(elev->flags & FLAG(3)))
+			{
+				return;
+			}
+		}
+
+		// Master On message.
+		if (msgType == IMSG_MASTER_ON)
+		{
+			// Turn master on.
+			elev->updateFlags |= ELEV_MASTER_ON;
+			return;
+		}
+
+		// For other messages, make sure the correct key is held.
+		// TODO: Event flag bit 31.
+		if (event != FLAG(31))
+		{
+			// Non-player entities cannot use this because it requires a key.
+			if (entity && (entity->typeFlags & FLAG(11)) && elev->key != 0)
+			{
+				return;
+			}
+
+			// Does the player have the key?
+			s32 key = elev->key;
+			if (key == KEY_RED && !s_invRedKey)
+			{
+				// "You need the red key."
+				sendTextMessage(6);
+				playSound2D(s_needKeySoundId);
+				return;
+			}
+			else if (key == KEY_YELLOW && !s_invYellowKey)
+			{
+				// "You need the yellow key."
+				sendTextMessage(7);
+				playSound2D(s_needKeySoundId);
+				return;
+			}
+			else if (key == KEY_BLUE && !s_invBlueKey)
+			{
+				// "You need the blue key."
+				sendTextMessage(8);
+				playSound2D(s_needKeySoundId);
+				return;
+			}
+		}
+
+		// Other messages.
+		switch (msgType)
+		{
+			case IMSG_TRIGGER:
+			{
+			} break;
+			case IMSG_NEXT_STOP:
+			{
+			} break;
+			case IMSG_PREV_STOP:
+			{
+			} break;
+			case IMSG_GOTO_STOP:
+			{
+			} break;
+			case IMSG_REVERSE_MOVE:
+			{
+				RSector* sector = elev->sector;
+				if (!(sector->flags1 & SEC_FLAGS1_CRUSHING))
+				{
+					if (elev->moveType <= MOVE_FLOOR)
+					{
+						// This will go to the previous stop.
+						elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
+						elev->updateFlags |= ELEV_MOVING_REVERSE;
+					}
+					else  // MOVE_CEIL
+					{
+						// This will get the last stop.
+						elev->nextStop = inf_advanceStops(elev->stops, -1, 0);
+						elev->updateFlags |= ELEV_MOVING_REVERSE;
+					}
+					elev->nextTime = 0;
+				}
+			} break;
+			case IMSG_MASTER_OFF:
+			{
+				// Disable the elevator.
+				elev->updateFlags &= ~ELEV_MASTER_ON;
+
+				// Handle the case when the elevator is moving and needs to stop.
+				if (elev->updateFlags & ELEV_MOVING)
+				{
+					// Get the sound position.
+					vec3_fixed pos = inf_getElevSoundPos(elev);
+
+					// Stop the looping sound and then play the stopping sound.
+					stopSound(elev->soundSource1);
+					elev->soundSource1 = 0;
+					// Play the stop one shot.
+					playSound3D_oneshot(elev->sound2, pos);
+
+					// Remove the "moving" flag.
+					elev->updateFlags &= ~ELEV_MOVING;
+				}
+			} break;
+			case IMSG_COMPLETE:
+			{
+			} break;
+		}
+	}
+		
+	void infElevatorMsgFunc(InfMessageType msgType)
+	{
+		if (msgType == IMSG_FREE)
+		{
+			deleteElevator((InfElevator*)s_infMsgTarget);
+			return;
+		}
+		infElevatorMessageInternal(msgType);
+	}
+
+	void infTriggerMsgFunc(InfMessageType msgType)
+	{
+	}
+
 	void elevHandleStopDelay(InfElevator* elev)
 	{
 		Stop* nextStop = elev->nextStop;
@@ -324,8 +484,9 @@ namespace TFE_InfSystem
 
 			// Stop the looping middle sound and then play the stop sound.
 			stopSound(elev->soundSource1);
-			playSound3D_oneshot(elev->sound2, pos.x, pos.y, pos.z);
 			elev->soundSource1 = 0;
+			// Play the stop one shot.
+			playSound3D_oneshot(elev->sound2, pos);
 		}
 		// If there is a delay, then the elevator is not moving.
 		if (nextStop->delay)
@@ -334,7 +495,6 @@ namespace TFE_InfSystem
 		}
 		else
 		{
-			// 1e1418:
 			elev->updateFlags |= ELEV_MOVING;
 		}
 	}
@@ -505,6 +665,11 @@ namespace TFE_InfSystem
 		}
 	}
 
+	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType)
+	{
+		// TODO
+	}
+
 	void inf_stopHandleMessages(Stop* stop)
 	{
 		Allocator* msgList = stop->messages;
@@ -529,7 +694,7 @@ namespace TFE_InfSystem
 					InfLink* link = (InfLink*)allocator_getHead(infLink);
 					while (link)
 					{
-						if (link->task && (msg->event <= 0 || (link->eventMask & msg->event)))
+						if (link->msgFunc && (msg->event <= 0 || (link->eventMask & msg->event)))
 						{
 							allocator_addRef(msgList);
 
@@ -540,7 +705,7 @@ namespace TFE_InfSystem
 							s_infMsgEvent = msg->event;
 							inf_sendSectorMessageInternal(sector, msg->msgType);
 
-							link->task(msg->msgType);
+							link->msgFunc(msg->msgType);
 							allocator_release(msgList);
 						}
 						
@@ -600,15 +765,5 @@ namespace TFE_InfSystem
 		}
 
 		return pos;
-	}
-
-	// TODO: Figure out where to handle these...
-	s32 sector_getMaxObjectHeight(RSector* sector)
-	{
-		return 0;
-	}
-
-	void sector_adjustHeights(RSector* sector, s32 floorDelta, s32 ceilDelta, s32 secHeightDelta)
-	{
 	}
 }
