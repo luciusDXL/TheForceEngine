@@ -319,26 +319,12 @@ namespace TFE_InfSystem
 		Stop* nextStop = elev->nextStop;
 		if ((elev->updateFlags & ELEV_MOVING) && nextStop->delay)
 		{
-			RSector* sector = elev->sector;
-
 			// Get the position to play the stop sound.
-			s32 y = sector->floorHeight.f16_16 + sector->secHeight.f16_16;
-			s32 x, z;
-			if (elev->type != IELEV_ROTATE_WALL)
-			{
-				vec2_fixed* vtx = (vec2_fixed*)sector->verticesWS;
-				x = vtx->x;
-				z = vtx->z;
-			}
-			else
-			{
-				x = elev->dirOrCenter.x;
-				z = elev->dirOrCenter.y;
-			}
+			vec3_fixed pos = inf_getElevSoundPos(elev);
 
 			// Stop the looping middle sound and then play the stop sound.
 			stopSound(elev->soundSource1);
-			playSound3D_oneshot(elev->sound2, x, y, z);
+			playSound3D_oneshot(elev->sound2, pos.x, pos.y, pos.z);
 			elev->soundSource1 = 0;
 		}
 		// If there is a delay, then the elevator is not moving.
