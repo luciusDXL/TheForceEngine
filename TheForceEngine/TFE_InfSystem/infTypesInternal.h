@@ -87,7 +87,27 @@ namespace TFE_InfSystem
 		INF_EVENT_UNKNOWN = (1u << 7u),		// skipped slot or unused event?
 		INF_EVENT_SHOOT_LINE = (1u << 8u),	// Shoot or punch line.
 		INF_EVENT_LAND = (1u << 9u),		// Land on floor
-		INF_EVENT_ANY = INF_EVENT_CROSS_LINE_FRONT | INF_EVENT_CROSS_LINE_BACK | INF_EVENT_ENTER_SECTOR | INF_EVENT_LEAVE_SECTOR | INF_EVENT_NUDGE_FRONT | INF_EVENT_NUDGE_BACK | INF_EVENT_EXPLOSION | INF_EVENT_SHOOT_LINE | INF_EVENT_LAND
+		INF_EVENT_10 = (1u << 10u),			// Unknown event
+		INF_EVENT_11 = (1u << 11u),			// Unknown Event
+		INF_EVENT_31 = (1u << 31u),			// Unknown Event
+		INF_EVENT_ANY = 0xffffffff
+	};
+
+	enum InfEntityMask
+	{
+		INF_ENTITY_ENEMY = (1 << 0),
+		INF_ENTITY_WEAPON = (1 << 3),
+		INF_ENTITY_11     = (1 << 11),
+		INF_ENTITY_PLAYER = (1 << 31),
+		INF_ENTITY_ANY = 0xffffffffu
+	};
+
+	enum InfElevatorFlags
+	{
+		INF_EFLAG_MOVE_FLOOR = (1 << 0),	// Move on floor.
+		INF_EFLAG_MOVE_SECHT = (1 << 1),	// Move on second height.
+		INF_EFLAG_MOVE_CEIL  = (1 << 2),	// Move on ceiling (head has to be close enough?)
+		INF_EFLAG_DOOR       = (1 << 3),	// This is a door auto-created from the sector flag.
 	};
 
 	enum KeyItem

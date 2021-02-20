@@ -488,8 +488,7 @@ namespace TFE_InfSystem
 			{
 				return;
 			}
-			// TODO: Figure out what elev->flags: flag bit 3 is.
-			else if (!(sector->flags1 & SEC_FLAGS1_SMART_OBJ) && !(elev->flags & FLAG(3)))
+			else if (!(sector->flags1 & SEC_FLAGS1_SMART_OBJ) && !(elev->flags & INF_EFLAG_DOOR))
 			{
 				return;
 			}
@@ -504,8 +503,7 @@ namespace TFE_InfSystem
 		}
 
 		// For other messages, make sure the correct key is held.
-		// TODO: Event flag bit 31.
-		if (event != FLAG(31))
+		if (event != INF_EVENT_31)
 		{
 			// Non-player entities cannot use this because it requires a key.
 			if (entity && (entity->typeFlags & FLAG(11)) && elev->key != 0)
@@ -616,7 +614,7 @@ namespace TFE_InfSystem
 				}
 
 				// Handle the explosion event.
-				if (event == 0x40)
+				if (event == INF_EVENT_EXPLOSION)
 				{
 					RSector* sector = elev->sector;
 					RWall* wall = sector->walls;
@@ -1329,8 +1327,8 @@ namespace TFE_InfSystem
 
 				link = (InfLink*)allocator_newItem(sector->infLink);
 				link->type = LTYPE_TRIGGER;
-				link->entityMask = 0x80000000;
-				link->eventMask = 0xffffffff;
+				link->entityMask = INF_ENTITY_PLAYER;
+				link->eventMask = INF_EVENT_ANY;
 				link->trigger = trigger;
 				link->msgFunc = infTriggerMsgFunc;
 				link->parent = sector->infLink;
@@ -1347,8 +1345,8 @@ namespace TFE_InfSystem
 				}
 				InfLink* link = (InfLink*)allocator_newItem(wall->infLink);
 				link->type = LTYPE_TRIGGER;
-				link->entityMask = 0x80000000;
-				link->eventMask = 0xffffffff;
+				link->entityMask = INF_ENTITY_PLAYER;
+				link->eventMask = INF_EVENT_ANY;
 				link->msgFunc = infTriggerMsgFunc;
 				link->trigger = trigger;
 				link->parent = wall->infLink;
