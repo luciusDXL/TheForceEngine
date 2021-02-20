@@ -23,6 +23,8 @@ namespace TFE_InfSystem
 	static s32 s_invRedKey = 0;
 	static s32 s_invYellowKey = 0;
 	static s32 s_invBlueKey = 0;
+	// The size of the goals array is arbitrary, I don't know the largest possible size yet.
+	static s32 s_goals[16] = { 0 };
 
 	// System -- TODO
 	static s32 s_needKeySoundId = 0;	// TODO
@@ -140,7 +142,7 @@ namespace TFE_InfSystem
 					}
 					else
 					{
-						s32 delay = nextStop->delay;
+						u32 delay = nextStop->delay;
 						if (delay == IDELAY_HOLD)
 						{
 							elev->trigMove = TRIGMOVE_HOLD;
@@ -488,12 +490,78 @@ namespace TFE_InfSystem
 			} break;
 			case IMSG_NEXT_STOP:
 			{
+				// This will not fire if the elevator is in the HOLD or delay state.
+				// This is because nextStop should already be set in that case, so firing it again
+				// will cause the elevator to skip a stop.
+				if (elev->nextTime <= s_curTime)
+				{
+					elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
+				}
+				// Play the start sound and update the flags / next update time.
+				if (!(elev->updateFlags & ELEV_MOVING))
+				{
+					if (*elev->value != elev->nextStop->value)
+					{
+						vec3_fixed pos = inf_getElevSoundPos(elev);
+						playSound3D_oneshot(elev->sound0, x, y, z);
+					}
+					elev->nextTime = s_curTime;
+					elev->updateFlags |= ELEV_MOVING;
+				}
 			} break;
 			case IMSG_PREV_STOP:
 			{
+				// If the elevator is in the HOLD state (i.e. the next time is in the future), go ahead and move back an additional time.
+				// Why? Since nextStop is the next stop, this sets nextStop to the *current* stop.
+				if (elev->nextTime > s_curTime)
+				{
+					// What this does is move the nextStop back to the "current" stop, so when calling inf_advanceStops() a second time we don't wind up 
+					// back where we started.
+					elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
+				}
+				// Back to the previous stop (see the note above on why this can happen twice).
+				elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
+				// Play the start sound and update the flags / next update time.
+				if (!(elev->updateFlags & ELEV_MOVING))
+				{
+					if (*elev->value != elev->nextStop->value)
+					{
+						vec3_fixed pos = inf_getElevSoundPos(elev);
+						playSound3D_oneshot(elev->sound0, pos);
+					}
+					elev->updateFlags |= ELEV_MOVING;
+					elev->nextTime = s_curTime;
+				}
 			} break;
 			case IMSG_GOTO_STOP:
 			{
+				Stop* stop = inf_advanceStops(elev->stops, arg1, 0);
+				if (stop->value != *elev->value)
+				{
+					elev->nextStop = stop;
+					vec3_fixed pos = inf_getElevSoundPos(elev);
+
+					// In this case the original code will play the start sound if the elevator isn't moving
+					// and then get it moving...
+					if (!(elev->updateFlags & ELEV_MOVING))
+					{
+						playSound3D_oneshot(elev->sound0, pos);
+						elev->updateFlags |= ELEV_MOVING;
+						elev->nextTime = s_curTime;
+					}
+					// ... and then stop which - which always happens because updateFlags is or will be set to moving
+					// and then stops the looping sound if it is playing and then play the stop sound.
+					// So in some cases you will get the start sound and the stop sound and then the start sound again slightly later.
+					// This seems like buggy behavior... but I'm going to leave it alone for now.
+					if (elev->updateFlags & ELEV_MOVING)
+					{
+						stopSound(elev->soundSource1);
+						elev->soundSource1 = 0;
+
+						playSound3D_oneshot(elev->sound2, pos);
+						elev->updateFlags &= ~ELEV_MOVING;
+					}
+				}
 			} break;
 			case IMSG_REVERSE_MOVE:
 			{
@@ -538,6 +606,24 @@ namespace TFE_InfSystem
 			} break;
 			case IMSG_COMPLETE:
 			{
+				// Fill in the goal specified by 'arg1'
+				s_goals[arg1] = 0xffffffff;
+				// Move the elevator to the stop specified by 'arg1' if it is NOT holding.
+				if (elev->nextTime < s_curTime)
+				{
+					elev->nextStop = inf_advanceStops(elev->stops, arg1, 0);
+				}
+				// Play the sound effect, update the flags, update the next update time if NOT moving.
+				if (!(elev->updateFlags & ELEV_MOVING))
+				{
+					if (*elev->value != elev->nextStop->value)
+					{
+						vec3_fixed pos = inf_getElevSoundPos(elev);
+						playSound3D_oneshot(elev->sound0, pos);
+					}
+					elev->nextTime = s_curTime;
+					elev->updateFlags |= ELEV_MOVING;
+				}
 			} break;
 		}
 	}

@@ -68,10 +68,10 @@ namespace TFE_InfSystem
 
 	enum InfDelay
 	{
-		// IDELAY_SECONDS >= 0
-		IDELAY_HOLD = -1,
-		IDELAY_TERMINATE = -2,
-		IDELAY_COMPLETE = -3,
+		// IDELAY_SECONDS < IDELAY_COMPLETE
+		IDELAY_HOLD = 0xffffffff,
+		IDELAY_TERMINATE = 0xfffffffe,
+		IDELAY_COMPLETE = 0xfffffffd,
 	};
 
 	enum TriggerType
@@ -117,7 +117,7 @@ namespace TFE_InfSystem
 	{
 		s32 count;
 		s32 index;
-		s32 delay;
+		u32 delay;
 		s32 nextTime;
 		TextureData** frameList;
 		TextureData** basePtr;
@@ -185,8 +185,7 @@ namespace TFE_InfSystem
 	struct Stop
 	{
 		s32 value;
-		// -1 = HOLD, -2 = TERMINATE, -3 = COMPLETE, else TICKS (see InfDelay)
-		s32 delay;				// INF ticks (145.5/sec)
+		u32 delay;				// INF ticks (145.5/sec)
 		Allocator* messages;
 		Allocator* adjoinCmds;
 		s32 pageId;
