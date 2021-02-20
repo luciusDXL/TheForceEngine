@@ -31,6 +31,12 @@ namespace TFE_InfSystem
 	void update_animatedTextures();
 
 	// Send messages so that entities and the player can interact with the INF system.
+	// If msgType = IMSG_SET/CLEAR_BITS the msg is processed directly for this wall OR
+	// this iterates through the valid links and calls their msgFunc.
 	void inf_wallSendMessage(TFE_JediRenderer::RWall* wall, s32 entity, u32 evt, InfMessageType msgType);
+
+	// Send messages so that entities and the player can interact with the INF system.
+	// If msgType = IMSG_SET/CLEAR_BITS, IMSG_MASTER_ON/OFF, IMSG_WAKEUP it is processed directly for this sector AND
+	// this iterates through the valid links and calls their msgFunc.
 	void inf_sectorSendMessage(TFE_JediRenderer::RSector* sector, TFE_JediRenderer::SecObject* obj, u32 evt, InfMessageType msgType);
 }

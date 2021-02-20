@@ -241,6 +241,8 @@ namespace TFE_InfSystem
 	}
 
 	// Send messages so that entities and the player can interact with the INF system.
+	// If msgType = IMSG_SET/CLEAR_BITS the msg is processed directly for this wall OR
+	// this iterates through the valid links and calls their msgFunc.
 	void inf_wallSendMessage(RWall* wall, s32 entity, u32 evt, InfMessageType msgType)
 	{
 		if (msgType == IMSG_SET_BITS)
@@ -333,6 +335,9 @@ namespace TFE_InfSystem
 		}
 	}
 
+	// Send messages so that entities and the player can interact with the INF system.
+	// If msgType = IMSG_SET/CLEAR_BITS, IMSG_MASTER_ON/OFF, IMSG_WAKEUP it is processed directly for this sector AND
+	// this iterates through the valid links and calls their msgFunc.
 	void inf_sectorSendMessage(RSector* sector, SecObject* obj, u32 evt, InfMessageType msgType)
 	{
 		inf_sendSectorMessageInternal(sector, msgType);
@@ -464,13 +469,8 @@ namespace TFE_InfSystem
 			newValue = *elev->value;
 		}
 
-		// Returns -1 if the elevator has reached the next stop.
-		if (v1 == newValue && elev->nextStop)
-		{
-			return -1;
-		}
-		// Otherwise return 0.
-		return 0;
+		// Returns -1 if the elevator has reached the next stop, otherwise returns 0.
+		return (v1 == newValue && elev->nextStop) ? -1 : 0;
 	}
 
 	void infElevatorMessageInternal(InfMessageType msgType)
