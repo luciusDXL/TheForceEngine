@@ -143,7 +143,7 @@ namespace TFE_InfSystem
 						s32 delay = nextStop->delay;
 						if (delay == IDELAY_HOLD)
 						{
-							elev->moveType = MOVE_STOPPED;
+							elev->trigMove = TRIGMOVE_HOLD;
 						}
 						else if (delay == IDELAY_COMPLETE || delay == IDELAY_TERMINATE)
 						{
@@ -403,6 +403,88 @@ namespace TFE_InfSystem
 		{
 			case IMSG_TRIGGER:
 			{
+				switch (elev->trigMove)
+				{
+					case TRIGMOVE_CONT:
+					{
+						if (!(elev->updateFlags & ELEV_MOVING))
+						{
+							// Get the sound location.
+							vec3_fixed pos = inf_getElevSoundPos(elev);
+
+							// If the elevator is not already at the next stop, play the start sound.
+							if (*elev->value != elev->nextStop->value)
+							{
+								playSound3D_oneshot(elev->sound0, pos);
+							}
+
+							// Update the next time so the elevator will move on the next update.
+							elev->nextTime = s_curTime;
+							elev->updateFlags |= ELEV_MOVING;
+						}
+					} break;
+					case TRIGMOVE_LAST:
+					{
+						// Goto the last stop.
+						elev->nextStop = inf_advanceStops(elev->stops, -1, 0);
+						if (*elev->value != elev->nextStop->value)
+						{
+							// Get the sound location.
+							vec3_fixed pos = inf_getElevSoundPos(elev);
+							playSound3D_oneshot(elev->sound0, pos);
+						}
+						// Update the next time so the elevator will move on the next update.
+						elev->nextTime = s_curTime;
+						elev->updateFlags |= ELEV_MOVING;
+					} break;
+					case TRIGMOVE_PREV:
+					{
+						if (elev->nextTime < s_curTime)
+						{
+							elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
+						}
+						elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
+						if (!(elev->updateFlags & ELEV_MOVING))
+						{
+							if (*elev->value != elev->nextStop->value)
+							{
+								vec3_fixed pos = inf_getElevSoundPos(elev);
+								playSound3D_oneshot(elev->sound0, pos);
+							}
+							elev->nextTime = s_curTime;
+							elev->updateFlags |= ELEV_MOVING;
+						}
+					} break;
+					case TRIGMOVE_NEXT:
+					default:
+					{
+						if (elev->nextTime < s_curTime)
+						{
+							elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
+						}
+						if (!(elev->updateFlags & ELEV_MOVING))
+						{
+							if (*elev->value != elev->nextStop->value)
+							{
+								vec3_fixed pos = inf_getElevSoundPos(elev);
+								playSound3D_oneshot(elev->sound0, pos);
+							}
+							elev->nextTime = s_curTime;
+							elev->updateFlags |= ELEV_MOVING;
+						}
+					}
+				}
+
+				// Handle the explosion event.
+				if (event == 0x40)
+				{
+					RSector* sector = elev->sector;
+					RWall* wall = sector->walls;
+					for (s32 i = 0; i < i < sector->wallCount; i++, wall++)
+					{
+						wall->flags1 &= ~(WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP);
+					}
+				}
 			} break;
 			case IMSG_NEXT_STOP:
 			{
@@ -418,13 +500,13 @@ namespace TFE_InfSystem
 				RSector* sector = elev->sector;
 				if (!(sector->flags1 & SEC_FLAGS1_CRUSHING))
 				{
-					if (elev->moveType <= MOVE_FLOOR)
+					if (elev->trigMove <= TRIGMOVE_CONT)
 					{
 						// This will go to the previous stop.
 						elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
 						elev->updateFlags |= ELEV_MOVING_REVERSE;
 					}
-					else  // MOVE_CEIL
+					else  // TRIGMOVE_LAST or TRIGMOVE_NEXT or TRIGMOVE_PREV
 					{
 						// This will get the last stop.
 						elev->nextStop = inf_advanceStops(elev->stops, -1, 0);

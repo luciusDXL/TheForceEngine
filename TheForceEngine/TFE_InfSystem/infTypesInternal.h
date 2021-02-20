@@ -49,11 +49,14 @@ namespace TFE_InfSystem
 		TCMD_LIGHTS = 34
 	};
 
-	enum ElevMoveType
+	// How an elevator moves if triggered.
+	enum ElevTrigMove
 	{
-		MOVE_STOPPED = -1,
-		MOVE_FLOOR = 0,
-		MOVE_CEIL = 1,
+		TRIGMOVE_HOLD = -1,	// The elevator is holding, so the trigger message has no effect.
+		TRIGMOVE_CONT = 0,	// Continue to the next stop if NOT already moving.
+		TRIGMOVE_LAST = 1,	// Set next (target) stop to the last stop whether moving or not.
+		TRIGMOVE_NEXT = 2,	// Set next (target) stop to the next stop if NOT waiting for a timed delay.
+		TRIGMOVE_PREV = 3,	// Set next (target) stop to the prev stop if waiting for a timed delay or goes back 2 stops if NOT waiting for a timed delay.
 	};
 
 	enum ElevUpdateFlags
@@ -195,7 +198,7 @@ namespace TFE_InfSystem
 	{
 		InfElevator* self;
 		InfElevatorType type;
-		s32 moveType;
+		ElevTrigMove trigMove;
 		RSector* sector;
 		s32 key;
 		s32 fixedStep;
