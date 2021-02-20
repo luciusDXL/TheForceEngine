@@ -17,7 +17,7 @@ using namespace TFE_JediRenderer;
 namespace TFE_InfSystem
 {
 	typedef void(*InfLinkMsgFunc)(InfMessageType);
-	typedef void(*InfFreeFunc)();
+	typedef void(*InfFreeFunc)(void*);
 	struct InfLink;
 
 	enum InfElevatorType
@@ -72,6 +72,12 @@ namespace TFE_InfSystem
 		IDELAY_HOLD = 0xffffffff,
 		IDELAY_TERMINATE = 0xfffffffe,
 		IDELAY_COMPLETE = 0xfffffffd,
+	};
+
+	enum LinkType
+	{
+		LTYPE_SECTOR = 0,
+		LTYPE_TRIGGER = 1
 	};
 
 	enum TriggerType
@@ -129,7 +135,7 @@ namespace TFE_InfSystem
 	{
 		RSector* sector;
 		RWall*   wall;
-		u32     flags;
+		u32      eventMask;
 	};
 
 	struct InfTrigger

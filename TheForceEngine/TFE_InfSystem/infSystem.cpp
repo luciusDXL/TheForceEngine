@@ -15,10 +15,36 @@
 using namespace TFE_GameConstants;
 using namespace TFE_JediRenderer;
 using namespace InfAllocator;
-struct TextureData;
+
+// Move to Jedi Renderer.
+struct TextureData
+{
+	s16 width;		// if = 1 then multiple BM in the file
+	s16 height;		// EXCEPT if SizeY also = 1, in which case
+					// it is a 1x1 BM
+	s16 uvWidth;	// portion of texture actually used
+	s16 uvHeight;	// portion of texture actually used
+
+	s32 dataSize;	// Data size for compressed BM
+					// excluding header and columns starts table
+					// If not compressed, DataSize is unused
+
+	u8 logSizeY;	// logSizeY = log2(SizeY)
+					// logSizeY = 0 for weapons
+	u8 pad1[3];
+	u8* image;		// 0x10
+	s32 u14;		// 0x14
+
+	// 4 bytes
+	u8 flags;
+	u8 compressed; // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
+	u8 pad3[2];
+};
 
 namespace TFE_InfSystem
 {
+	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
+
 	// Inventory stuff to be moved to gameplay.
 	static s32 s_invRedKey = 0;
 	static s32 s_invYellowKey = 0;
@@ -28,10 +54,12 @@ namespace TFE_InfSystem
 
 	// System -- TODO
 	static s32 s_needKeySoundId = 0;	// TODO
+	static s32 s_switchDefaultSndId = 0;	// TODO
 	
 	// INF delta time in ticks.
 	static s32 s_curTime;
 	static s32 s_deltaTime;
+	static s32 s_triggerCount = 0;
 	static Allocator* s_infElevators;
 
 	static s32 s_infMsgArg1;
@@ -637,9 +665,146 @@ namespace TFE_InfSystem
 		}
 		infElevatorMessageInternal(msgType);
 	}
-
+		
 	void infTriggerMsgFunc(InfMessageType msgType)
 	{
+		InfTrigger* trigger = (InfTrigger*)s_infMsgTarget;
+		switch (msgType)
+		{
+			case IMSG_FREE:
+			{
+				InfLink* link = trigger->link;
+				allocator_deleteItem(link->parent, link);
+				allocator_free(trigger->targets);
+
+				// TODO: what is trigger->u48?
+				if (trigger->u48)
+				{
+					free(trigger->u48);
+				}
+				free(trigger);
+
+				s_triggerCount--;
+
+				// In the original code, it this was the last trigger the "task" would be deallocated.
+				// For TFE, this is just a callback so that is no longer necessary.
+			} break;
+			case IMSG_TRIGGER:
+			{
+				if (trigger->master)
+				{
+					// Play trigger sound.
+					playSound2D(trigger->soundId);
+
+					// Trigger targets (clients).
+					TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
+					u32 event = s_infMsgEvent;
+					while (target)
+					{
+						if (target->eventMask & event)
+						{
+							s_infMsgArg1 = trigger->arg0;
+							s_infMsgArg2 = trigger->arg1;
+
+							if (target->wall)
+							{
+								inf_wallSendMessage(target->wall, 0, trigger->event, InfMessageType(trigger->cmd));
+							}
+							else if (target->sector)
+							{
+								inf_sectorSendMessage(target->sector, nullptr, trigger->event, InfMessageType(trigger->cmd));
+							}
+							else
+							{
+								// TODO
+								// runTask(s_curTask, trigger->cmd);
+							}
+						}
+						target = (TriggerTarget*)allocator_getNext(trigger->targets);
+					}
+				}
+
+				// Send "TEXT" message.
+				if (trigger->textId)
+				{
+					sendTextMessage(trigger->textId);
+				}
+
+				// Update the trigger state (including switch textures).
+				TriggerType type = trigger->type;
+				switch (type)
+				{
+					case ITRIGGER_TOGGLE:
+					{
+						AnimatedTexture* animTex = trigger->animTex;
+						if (animTex)
+						{
+							trigger->state++;
+							if (trigger->state >= animTex->count)
+							{
+								trigger->state = 0;
+							}
+
+							s32 state = trigger->state;
+							trigger->tex = animTex->frameList[state];
+						}
+					} break;
+					case ITRIGGER_SINGLE:
+					{
+						AnimatedTexture* animTex = trigger->animTex;
+						if (animTex)
+						{
+							if (animTex->count)
+							{
+								trigger->state = 1;
+							}
+							s32 state = trigger->state;
+							trigger->tex = animTex->frameList[state];
+							// Single can only be triggered once.
+							trigger->master = 0;
+						}
+					} break;
+					case ITRIGGER_SWITCH1:
+					{
+						AnimatedTexture* animTex = trigger->animTex;
+						if (animTex)
+						{
+							if (animTex->count)
+							{
+								trigger->state = 1;
+							}
+							s32 state = trigger->state;
+							trigger->tex = animTex->frameList[state];
+						}
+						// Switch1 can only be triggered once until it recieves the "DONE" message.
+						trigger->master = 0;
+					} break;
+				}
+			} break;  // case IMSG_TRIGGER
+			case IMSG_MASTER_OFF:
+			{
+				trigger->master = 0;
+			} break;
+			case IMSG_DONE:
+			{
+				if (trigger->type == ITRIGGER_SWITCH1)
+				{
+					AnimatedTexture* animTex = trigger->animTex;
+					// If the trigger is still in its original state, nothing to do.
+					if (animTex)
+					{
+						trigger->state = 0;
+						trigger->tex = animTex->frameList[0];
+					}
+					// reactive the trigger.
+					trigger->master = -1;
+				}
+			} break;
+			case IMSG_MASTER_ON:
+			{
+				trigger->master = -1;
+			} break;
+		}
 	}
 
 	void elevHandleStopDelay(InfElevator* elev)
@@ -933,5 +1098,99 @@ namespace TFE_InfSystem
 		}
 
 		return pos;
+	}
+
+	///////////////////////////////////////////
+	// Trigger creation and setup
+	///////////////////////////////////////////
+	void inf_triggerFreeFunc(void* data)
+	{
+		// TODO
+	}
+
+	// Creates a trigger and adds a link to the sector or wall where it is located.
+	// For example, if a player "nudges" a wall, then all of the wall's links will be
+	// cycled through, calling the "msgFunc" on each to determine what happens, which than
+	// sends the message to the appropriate "InfTrigger" or "InfElevator"
+	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj)
+	{
+		// TODO: Change to the zone allocator.
+		InfTrigger* trigger = (InfTrigger*)malloc(sizeof(InfTrigger));
+		s_triggerCount++;
+
+		InfLink* link = nullptr;
+		trigger->soundId = 0;
+		trigger->targets = allocator_create(sizeof(TriggerTarget));
+
+		switch (type)
+		{
+			case ITRIGGER_STANDARD:
+			{
+				// TODO
+			} break;
+			case ITRIGGER_SECTOR:
+			{
+				RSector* sector = obj.sector;
+				if (!sector->infLink)
+				{
+					sector->infLink = allocator_create(sizeof(InfLink));
+				}
+
+				link = (InfLink*)allocator_newItem(sector->infLink);
+				link->type = LTYPE_TRIGGER;
+				link->entityMask = 0x80000000;
+				link->eventMask = 0xffffffff;
+				link->trigger = trigger;
+				link->msgFunc = infTriggerMsgFunc;
+				link->parent = sector->infLink;
+			} break;
+			case ITRIGGER_SWITCH1:
+			case ITRIGGER_TOGGLE:
+			case ITRIGGER_SINGLE:
+			{
+				RWall* wall = obj.wall;
+				trigger->soundId = s_switchDefaultSndId;
+				if (!wall->infLink)
+				{
+					wall->infLink = allocator_create(sizeof(InfLink));
+				}
+				InfLink* link = (InfLink*)allocator_newItem(wall->infLink);
+				link->type = LTYPE_TRIGGER;
+				link->entityMask = 0x80000000;
+				link->eventMask = 0xffffffff;
+				link->msgFunc = infTriggerMsgFunc;
+				link->trigger = trigger;
+				link->parent = wall->infLink;
+				trigger->animTex = nullptr;
+
+				// Handle trigger sign texture.
+				// TODO: Update wall textures to use pointer to pointer and deference as needed to make animated textures work.
+				TextureData** signTex = (TextureData**)wall->signTex;
+				if (signTex && (*signTex)->uvWidth == -2)
+				{
+					// In this case, image points to the AnimatedTexture rather than the actual image.
+					AnimatedTexture* animTex = (AnimatedTexture*)(*signTex)->image;
+					trigger->animTex = animTex;
+					trigger->tex = animTex->frameList[0];
+					wall->signTex = &trigger->tex;
+					// Removes "cross line" events
+					link->eventMask &= ~(INF_EVENT_CROSS_LINE_FRONT | INF_EVENT_CROSS_LINE_BACK);
+				}
+			} break;
+		}
+		trigger->cmd = TCMD_DONE;
+		trigger->event = 0;
+		trigger->arg1 = 0;
+		trigger->u30 = 0xffffffff;
+		trigger->u34 = 21;
+		trigger->master = 0xffffffff;
+		trigger->state = 0;
+		trigger->u48 = nullptr;
+		trigger->textId = 0;
+		trigger->link = link;
+		trigger->type = type;
+		link->freeFunc = inf_triggerFreeFunc;
+
+		return trigger;
 	}
 }
