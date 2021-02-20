@@ -35,20 +35,6 @@ namespace TFE_InfSystem
 		IELEV_CHANGE_WALL_LIGHT = 10,
 	};
 
-	enum TriggerCmd
-	{
-		TCMD_DONE = 7,
-		TCMD_NEXT_STOP = 8,
-		TCMD_PREV_STOP = 9,
-		TCMD_GOTO_STOP = 11,
-		TCMD_MASTER_ON = 29,
-		TCMD_MASTER_OFF = 30,
-		TCMD_SET_BITS = 31,
-		TCMD_CLEAR_BITS = 32,
-		TCMD_COMPLETE = 33,
-		TCMD_LIGHTS = 34
-	};
-
 	// How an elevator moves if triggered.
 	enum ElevTrigMove
 	{
@@ -144,7 +130,7 @@ namespace TFE_InfSystem
 		InfLink* link;
 		AnimatedTexture* animTex;
 		Allocator* targets;
-		TriggerCmd cmd;
+		InfMessageType cmd;
 		u32 event;
 		s32 arg0;
 		s32 arg1;
@@ -227,17 +213,17 @@ namespace TFE_InfSystem
 
 	struct InfLink
 	{
-		s32 type;
-		InfLinkMsgFunc msgFunc;
+		LinkType type;				// Sector or Trigger
+		InfLinkMsgFunc msgFunc;		// Either the Elevator or Trigger msg func.
 		union
 		{
-			InfElevator* elev;
+			InfElevator* elev;		// The actual INF item.
 			InfTrigger* trigger;
 			void* target;
 		};
-		u32 eventMask;
-		u32 entityMask;
-		Allocator* parent;
-		InfFreeFunc freeFunc;
+		u32 eventMask;				// The event mask which helps determine if a link can be activated.
+		u32 entityMask;				// The entity mask (as above).
+		Allocator* parent;			// The parent list of links.
+		InfFreeFunc freeFunc;		// The function to use to free the link.
 	};
 }

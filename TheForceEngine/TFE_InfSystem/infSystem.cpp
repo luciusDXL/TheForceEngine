@@ -80,6 +80,7 @@ namespace TFE_InfSystem
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
 	void inf_adjustTextureWallOffsets_Floor(RSector* sector, s32 floorDelta);
 	void inf_adjustTextureMirrorOffsets_Floor(RSector* sector, s32 floorDelta);
+	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType);
 
 	void inf_stopAdjoinCommands(Stop* stop);
 	void inf_stopHandleMessages(Stop* stop);
@@ -242,10 +243,119 @@ namespace TFE_InfSystem
 	// Send messages so that entities and the player can interact with the INF system.
 	void inf_wallSendMessage(RWall* wall, s32 entity, u32 evt, InfMessageType msgType)
 	{
+		if (msgType == IMSG_SET_BITS)
+		{
+			s32 flagsIndex = s_infMsgArg1;
+			u32 bits = s_infMsgArg2;
+			if (flagsIndex == 1)
+			{
+				wall->flags1 |= bits;
+
+				// If there is a mirror, also set some of the bits there.
+				RWall* mirror = wall->mirrorWall;
+				if (mirror)
+				{
+					const u32 allowedMirrorFlags = (WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP | WF1_DAMAGE_WALL | WF1_SHOW_AS_LEDGE_ON_MAP | WF1_SHOW_AS_DOOR_ON_MAP);
+					mirror->flags1 |= (bits & allowedMirrorFlags);
+				}
+			}
+			else if (flagsIndex == 2)
+			{
+				wall->flags2 |= bits;
+			}
+			// It looks like if mirror is set for flags2, it also sets them for 3...
+			else if (flagsIndex == 3)
+			{
+				wall->flags3 |= bits;
+
+				// If there is a mirror, also set some of the bits there.
+				RWall* mirror = wall->mirrorWall;
+				if (mirror)
+				{
+					mirror->flags3 |= (bits & 0x0f);
+				}
+			}
+		}
+		else if (msgType == IMSG_CLEAR_BITS)
+		{
+			s32 flagsIndex = s_infMsgArg1;
+			u32 bits = s_infMsgArg2;
+			if (flagsIndex == 1)
+			{
+				wall->flags1 &= ~bits;
+
+				// If there is a mirror, also clear some of the bits there.
+				RWall* mirror = wall->mirrorWall;
+				if (mirror)
+				{
+					const u32 allowedMirrorFlags = WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP | WF1_DAMAGE_WALL | WF1_SHOW_AS_LEDGE_ON_MAP | WF1_SHOW_AS_DOOR_ON_MAP;
+					mirror->flags1 &= ~(bits & allowedMirrorFlags);
+				}
+			}
+			else if (flagsIndex == 2)
+			{
+				wall->flags2 &= ~bits;
+			}
+			else if (flagsIndex == 3)
+			{
+				wall->flags3 &= ~bits;
+
+				// If there is a mirror, also set some of the bits there.
+				RWall* mirror = wall->mirrorWall;
+				if (mirror)
+				{
+					mirror->flags3 &= ~(bits & 0x0f);
+				}
+			}
+		}
+		else
+		{
+			Allocator* infLink = wall->infLink;
+			if (infLink)
+			{
+				InfLink* link = (InfLink*)allocator_getHead(infLink);
+				while (link)
+				{
+					// Fire off the link task if the event and entity match the requirements.
+					if ((evt == 0 || (link->eventMask & evt)) && (entity == 0 || (link->entityMask & entity)) && link->msgFunc)
+					{
+						s_infMsgEntity = (void*)entity;
+						s_infMsgTarget = link->target;
+						s_infMsgEvent = evt;
+
+						allocator_addRef(infLink);
+						link->msgFunc(msgType);
+						allocator_release(infLink);
+					}
+					link = (InfLink*)allocator_getNext(infLink);
+				}
+			}
+		}
 	}
 
 	void inf_sectorSendMessage(RSector* sector, SecObject* obj, u32 evt, InfMessageType msgType)
 	{
+		inf_sendSectorMessageInternal(sector, msgType);
+
+		Allocator* infLink = sector->infLink;
+		if (infLink)
+		{
+			InfLink* link = (InfLink*)allocator_getHead(infLink);
+			while (link)
+			{
+				if ((evt == 0 || (link->eventMask & evt)) && (!obj || (link->entityMask & obj->typeFlags)) && link->msgFunc)
+				{
+					s_infMsgEntity = obj;
+					s_infMsgTarget = link->target;
+					s_infMsgEvent = evt;
+
+					allocator_addRef(infLink);
+					link->msgFunc(msgType);
+					allocator_release(infLink);
+				}
+				link = (InfLink*)allocator_getNext(infLink);
+			}
+		}
 	}
 
 	/////////////////////////////////////////////////////
@@ -531,7 +641,7 @@ namespace TFE_InfSystem
 					if (*elev->value != elev->nextStop->value)
 					{
 						vec3_fixed pos = inf_getElevSoundPos(elev);
-						playSound3D_oneshot(elev->sound0, x, y, z);
+						playSound3D_oneshot(elev->sound0, pos);
 					}
 					elev->nextTime = s_curTime;
 					elev->updateFlags |= ELEV_MOVING;
@@ -998,9 +1108,90 @@ namespace TFE_InfSystem
 		}
 	}
 
-	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType)
+	void inf_sendObjMessage(SecObject* obj, s32 a, s32 msgType)
 	{
 		// TODO
+	}
+
+	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType)
+	{
+		switch (msgType)
+		{
+			case IMSG_WAKEUP:
+			{
+				s32 objCount = sector->objectCount;
+				SecObject** objList = sector->objectList;
+
+				for (s32 i = 0; i < objCount; objList++)
+				{
+					SecObject* obj = *objList;
+					if (obj)
+					{
+						if (obj->typeFlags & 0x40)
+						{
+							inf_sendObjMessage(obj, 0, IMSG_WAKEUP);
+						}
+						i++;
+					}
+				}
+			}
+			// IMSG_WAKEUP drops through to IMSG_MASTER_ON/IMSG_MASTER_OFF
+			case IMSG_MASTER_ON:
+			case IMSG_MASTER_OFF:
+			{
+				s32 objCount = sector->objectCount;
+				SecObject** objList = sector->objectList;
+
+				for (s32 i = 0; i < objCount; objList++)
+				{
+					SecObject* obj = *objList;
+					if (obj)
+					{
+						if (obj->typeFlags & 0x400)
+						{
+							inf_sendObjMessage(obj, 0, msgType);
+						}
+						i++;
+					}
+				}
+			} break;
+			case IMSG_SET_BITS:
+			{
+				s32 flagsIndex = s_infMsgArg1;
+				u32 bits = s_infMsgArg2;
+
+				if (flagsIndex == 1)
+				{
+					sector->flags1 |= bits;
+				}
+				else if (flagsIndex == 2)
+				{
+					sector->flags2 |= bits;
+				}
+				else if (flagsIndex == 3)
+				{
+					sector->flags3 |= bits;
+				}
+			} break;
+			case IMSG_CLEAR_BITS:
+			{
+				s32 flagsIndex = s_infMsgArg1;
+				u32 bits = s_infMsgArg2;
+
+				if (flagsIndex == 1)
+				{
+					sector->flags1 &= ~bits;
+				}
+				else if (flagsIndex == 2)
+				{
+					sector->flags2 &= ~bits;
+				}
+				else if (flagsIndex == 3)
+				{
+					sector->flags3 &= ~bits;
+				}
+			} break;
+		};
 	}
 
 	void inf_stopHandleMessages(Stop* stop)
@@ -1178,7 +1369,7 @@ namespace TFE_InfSystem
 				}
 			} break;
 		}
-		trigger->cmd = TCMD_DONE;
+		trigger->cmd = IMSG_DONE;
 		trigger->event = 0;
 		trigger->arg1 = 0;
 		trigger->u30 = 0xffffffff;
