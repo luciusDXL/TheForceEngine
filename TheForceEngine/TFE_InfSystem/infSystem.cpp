@@ -57,7 +57,7 @@ namespace TFE_InfSystem
 	static s32 s_switchDefaultSndId = 0;	// TODO
 	
 	// INF delta time in ticks.
-	static s32 s_curTime;
+	static u32 s_curTime;
 	static s32 s_deltaTime;
 	static s32 s_triggerCount = 0;
 	static Allocator* s_infElevators;
@@ -243,7 +243,7 @@ namespace TFE_InfSystem
 	// Send messages so that entities and the player can interact with the INF system.
 	// If msgType = IMSG_SET/CLEAR_BITS the msg is processed directly for this wall OR
 	// this iterates through the valid links and calls their msgFunc.
-	void inf_wallSendMessage(RWall* wall, s32 entity, u32 evt, InfMessageType msgType)
+	void inf_wallSendMessage(RWall* wall, u32 entity, u32 evt, InfMessageType msgType)
 	{
 		if (msgType == IMSG_SET_BITS)
 		{
@@ -618,7 +618,7 @@ namespace TFE_InfSystem
 				{
 					RSector* sector = elev->sector;
 					RWall* wall = sector->walls;
-					for (s32 i = 0; i < i < sector->wallCount; i++, wall++)
+					for (s32 i = 0; i < sector->wallCount; i++, wall++)
 					{
 						wall->flags1 &= ~(WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP);
 					}
@@ -1221,7 +1221,7 @@ namespace TFE_InfSystem
 							allocator_addRef(msgList);
 
 							s_infMsgTarget = link->target;
-							s_infMsgEntity = 0;
+							s_infMsgEntity = nullptr;
 							s_infMsgArg1 = msg->arg1;
 							s_infMsgArg2 = msg->arg2;
 							s_infMsgEvent = msg->event;
@@ -1256,7 +1256,7 @@ namespace TFE_InfSystem
 	void inf_handleMsgLights()
 	{
 		RSector* sector = s_sectors;
-		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		for (u32 i = 0; i < s_sectorCount; i++, sector++)
 		{
 			fixed16_16 newAmbient = intToFixed16(sector->flags3);
 			// Store the old value in flags3 so the lights can be toggled.

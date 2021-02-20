@@ -75,6 +75,9 @@ namespace TFE_JediRenderer
 		// Wall length (fixed point).
 		decimal length;
 
+		// INF
+		Allocator* infLink;
+
 		// Update Frame
 		s32 drawFrame;
 
