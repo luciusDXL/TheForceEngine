@@ -102,6 +102,10 @@ namespace TFE_InfSystem
 	s32  playSound3D_looping(s32 sourceId, s32 soundId, vec3_fixed pos) { return 0; }
 	void stopSound(s32 sourceId) {}
 
+	// TODO: Game side functions
+	void game_levelComplete() {}
+	void createLevelEndTask() {}
+
 	/////////////////////////////////////////////////////
 	// API
 	/////////////////////////////////////////////////////
@@ -185,7 +189,8 @@ namespace TFE_InfSystem
 							elevDeleted = 1;
 							if (delay == IDELAY_COMPLETE)
 							{
-								// TODO: Two additional functions handle the "complete" element
+								game_levelComplete();
+								createLevelEndTask();
 							}
 						}
 						else  // Timed
