@@ -44,6 +44,7 @@ struct TextureData
 namespace TFE_InfSystem
 {
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
+	static const s32 c_ticksPerSec = 145;
 
 	// Inventory stuff to be moved to gameplay.
 	static s32 s_invRedKey = 0;
@@ -57,8 +58,8 @@ namespace TFE_InfSystem
 	static s32 s_switchDefaultSndId = 0;	// TODO
 	
 	// INF delta time in ticks.
-	static u32 s_curTime;
-	static s32 s_deltaTime;
+	static u32 s_curTick;			// current time in "ticks"
+	static fixed16_16 s_deltaTime;	// current delta time in seconds.
 	static s32 s_triggerCount = 0;
 	static Allocator* s_infElevators;
 
@@ -75,6 +76,7 @@ namespace TFE_InfSystem
 	void infTriggerMsgFunc(InfMessageType msgType);
 	
 	void deleteElevator(InfElevator* elev);
+	void deleteTrigger(InfTrigger* trigger);
 	s32 updateElevator(InfElevator* elev);
 	void elevHandleStopDelay(InfElevator* elev);
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
@@ -125,7 +127,7 @@ namespace TFE_InfSystem
 		while (elev)
 		{
 			s32 elevDeleted = 0;
-			if ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTime < s_curTime)
+			if ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
 			{
 				// If not already moving, get started.
 				if (elev->updateFlags & ELEV_MOVING)
@@ -134,7 +136,6 @@ namespace TFE_InfSystem
 					vec3_fixed sndPos = inf_getElevSoundPos(elev);
 
 					// Play the startup sound effect if the elevator is not already at the next stop.
-					s32* value = elev->value;
 					Stop* nextStop = elev->nextStop;
 					// Play the initial sound as the elevator starts moving.
 					if (*elev->value != elev->nextStop->value)
@@ -143,7 +144,7 @@ namespace TFE_InfSystem
 					}
 
 					// Update the next time, so this will move on the next update.
-					elev->nextTime = s_curTime;
+					elev->nextTick = s_curTick;
 
 					// Flag the elevator as moving.
 					elev->updateFlags |= ELEV_MOVING;
@@ -167,7 +168,8 @@ namespace TFE_InfSystem
 					Stop* nextStop = elev->nextStop;
 					if (elev->updateFlags & ELEV_MOVING_REVERSE)
 					{
-						// TODO
+						elev->nextTick = s_curTick + c_ticksPerSec;		// this will pause the elevator for one second.
+						elev->updateFlags &= ~ELEV_MOVING_REVERSE;		// remove the reverse flag.
 					}
 					else
 					{
@@ -188,7 +190,7 @@ namespace TFE_InfSystem
 						}
 						else  // Timed
 						{
-							elev->nextTime = s_curTime + nextStop->delay;
+							elev->nextTick = s_curTick + nextStop->delay;
 						}
 					}
 
@@ -228,7 +230,7 @@ namespace TFE_InfSystem
 						elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
 					} // (!elevDeleted)
 				}
-			} // ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTime < s_curTime)
+			} // ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
 
 			// Next elevator.
 			elev = (InfElevator*)allocator_getNext(s_infElevators);
@@ -373,11 +375,11 @@ namespace TFE_InfSystem
 	// Returns -1 if the elevator has reached the next stop, else 0.
 	s32 updateElevator(InfElevator* elev)
 	{
-		s32* value = elev->value;
+		fixed16_16* value = elev->value;
 		Stop* nextStop = elev->nextStop;
 
-		s32 v0 = *value;
-		s32 v1 = v0;
+		fixed16_16 v0 = *value;
+		fixed16_16 v1 = v0;
 		if (nextStop)
 		{
 			v1 = nextStop->value;
@@ -389,7 +391,7 @@ namespace TFE_InfSystem
 			return -1;
 		}
 
-		s32 type = elev->type;
+		InfElevatorType type = elev->type;
 		InfUpdateFunc updateFunc = nullptr;
 		switch (type)
 		{
@@ -420,7 +422,7 @@ namespace TFE_InfSystem
 				break;
 		}
 
-		s32 frameDelta = 0;
+		fixed16_16 frameDelta = 0;
 		if (!nextStop)
 		{
 			// If there are no stops, then the elevator keeps going forever...
@@ -429,13 +431,13 @@ namespace TFE_InfSystem
 		}
 		else
 		{
-			s32 delta = v1 - v0;
+			fixed16_16 delta = v1 - v0;
 			frameDelta = delta;
 			if (elev->speed)
 			{
 				if (!elev->fixedStep)
 				{
-					s32 change = mul16(elev->speed, s_deltaTime);
+					fixed16_16 change = mul16(elev->speed, s_deltaTime);
 					if (delta > change)
 					{
 						frameDelta = change;
@@ -457,7 +459,7 @@ namespace TFE_InfSystem
 			}
 		}
 
-		s32 newValue;
+		fixed16_16 newValue;
 		if (updateFunc)
 		{
 			newValue = updateFunc(elev, frameDelta);
@@ -547,17 +549,16 @@ namespace TFE_InfSystem
 					{
 						if (!(elev->updateFlags & ELEV_MOVING))
 						{
-							// Get the sound location.
-							vec3_fixed pos = inf_getElevSoundPos(elev);
-
 							// If the elevator is not already at the next stop, play the start sound.
 							if (*elev->value != elev->nextStop->value)
 							{
+								// Get the sound location.
+								vec3_fixed pos = inf_getElevSoundPos(elev);
 								playSound3D_oneshot(elev->sound0, pos);
 							}
 
 							// Update the next time so the elevator will move on the next update.
-							elev->nextTime = s_curTime;
+							elev->nextTick = s_curTick;
 							elev->updateFlags |= ELEV_MOVING;
 						}
 					} break;
@@ -572,12 +573,12 @@ namespace TFE_InfSystem
 							playSound3D_oneshot(elev->sound0, pos);
 						}
 						// Update the next time so the elevator will move on the next update.
-						elev->nextTime = s_curTime;
+						elev->nextTick = s_curTick;
 						elev->updateFlags |= ELEV_MOVING;
 					} break;
 					case TRIGMOVE_PREV:
 					{
-						if (elev->nextTime < s_curTime)
+						if (elev->nextTick < s_curTick)
 						{
 							elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
 						}
@@ -589,14 +590,14 @@ namespace TFE_InfSystem
 								vec3_fixed pos = inf_getElevSoundPos(elev);
 								playSound3D_oneshot(elev->sound0, pos);
 							}
-							elev->nextTime = s_curTime;
+							elev->nextTick = s_curTick;
 							elev->updateFlags |= ELEV_MOVING;
 						}
 					} break;
 					case TRIGMOVE_NEXT:
 					default:
 					{
-						if (elev->nextTime < s_curTime)
+						if (elev->nextTick < s_curTick)
 						{
 							elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
 						}
@@ -607,7 +608,7 @@ namespace TFE_InfSystem
 								vec3_fixed pos = inf_getElevSoundPos(elev);
 								playSound3D_oneshot(elev->sound0, pos);
 							}
-							elev->nextTime = s_curTime;
+							elev->nextTick = s_curTick;
 							elev->updateFlags |= ELEV_MOVING;
 						}
 					}
@@ -629,7 +630,7 @@ namespace TFE_InfSystem
 				// This will not fire if the elevator is in the HOLD or delay state.
 				// This is because nextStop should already be set in that case, so firing it again
 				// will cause the elevator to skip a stop.
-				if (elev->nextTime <= s_curTime)
+				if (elev->nextTick <= s_curTick)
 				{
 					elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
 				}
@@ -641,7 +642,7 @@ namespace TFE_InfSystem
 						vec3_fixed pos = inf_getElevSoundPos(elev);
 						playSound3D_oneshot(elev->sound0, pos);
 					}
-					elev->nextTime = s_curTime;
+					elev->nextTick = s_curTick;
 					elev->updateFlags |= ELEV_MOVING;
 				}
 			} break;
@@ -649,7 +650,7 @@ namespace TFE_InfSystem
 			{
 				// If the elevator is in the HOLD state (i.e. the next time is in the future), go ahead and move back an additional time.
 				// Why? Since nextStop is the next stop, this sets nextStop to the *current* stop.
-				if (elev->nextTime > s_curTime)
+				if (elev->nextTick > s_curTick)
 				{
 					// What this does is move the nextStop back to the "current" stop, so when calling inf_advanceStops() a second time we don't wind up 
 					// back where we started.
@@ -666,7 +667,7 @@ namespace TFE_InfSystem
 						playSound3D_oneshot(elev->sound0, pos);
 					}
 					elev->updateFlags |= ELEV_MOVING;
-					elev->nextTime = s_curTime;
+					elev->nextTick = s_curTick;
 				}
 			} break;
 			case IMSG_GOTO_STOP:
@@ -683,7 +684,7 @@ namespace TFE_InfSystem
 					{
 						playSound3D_oneshot(elev->sound0, pos);
 						elev->updateFlags |= ELEV_MOVING;
-						elev->nextTime = s_curTime;
+						elev->nextTick = s_curTick;
 					}
 					// ... and then stop which - which always happens because updateFlags is or will be set to moving
 					// and then stops the looping sound if it is playing and then play the stop sound.
@@ -716,7 +717,7 @@ namespace TFE_InfSystem
 						elev->nextStop = inf_advanceStops(elev->stops, -1, 0);
 						elev->updateFlags |= ELEV_MOVING_REVERSE;
 					}
-					elev->nextTime = 0;
+					elev->nextTick = 0;
 				}
 			} break;
 			case IMSG_MASTER_OFF:
@@ -745,7 +746,7 @@ namespace TFE_InfSystem
 				// Fill in the goal specified by 'arg1'
 				s_goals[arg1] = 0xffffffff;
 				// Move the elevator to the stop specified by 'arg1' if it is NOT holding.
-				if (elev->nextTime < s_curTime)
+				if (elev->nextTick < s_curTick)
 				{
 					elev->nextStop = inf_advanceStops(elev->stops, arg1, 0);
 				}
@@ -757,13 +758,13 @@ namespace TFE_InfSystem
 						vec3_fixed pos = inf_getElevSoundPos(elev);
 						playSound3D_oneshot(elev->sound0, pos);
 					}
-					elev->nextTime = s_curTime;
+					elev->nextTick = s_curTick;
 					elev->updateFlags |= ELEV_MOVING;
 				}
 			} break;
 		}
 	}
-		
+
 	void infElevatorMsgFunc(InfMessageType msgType)
 	{
 		if (msgType == IMSG_FREE)
@@ -781,19 +782,7 @@ namespace TFE_InfSystem
 		{
 			case IMSG_FREE:
 			{
-				InfLink* link = trigger->link;
-				allocator_deleteItem(link->parent, link);
-				allocator_free(trigger->targets);
-
-				// TODO: what is trigger->u48?
-				if (trigger->u48)
-				{
-					free(trigger->u48);
-				}
-				free(trigger);
-
-				s_triggerCount--;
-
+				deleteTrigger(trigger);
 				// In the original code, it this was the last trigger the "task" would be deallocated.
 				// For TFE, this is just a callback so that is no longer necessary.
 			} break;
@@ -822,10 +811,9 @@ namespace TFE_InfSystem
 							{
 								inf_sectorSendMessage(target->sector, nullptr, trigger->event, InfMessageType(trigger->cmd));
 							}
-							else
+							else  // the target is a trigger, recursively call the msg func.
 							{
-								// TODO
-								// runTask(s_curTask, trigger->cmd);
+								infTriggerMsgFunc(trigger->cmd);
 							}
 						}
 						target = (TriggerTarget*)allocator_getNext(trigger->targets);
@@ -1079,6 +1067,22 @@ namespace TFE_InfSystem
 		allocator_deleteItem(s_infElevators, elev);
 	}
 
+	void deleteTrigger(InfTrigger* trigger)
+	{
+		InfLink* link = trigger->link;
+		allocator_deleteItem(link->parent, link);
+		allocator_free(trigger->targets);
+
+		// TODO: what is trigger->u48?
+		if (trigger->u48)
+		{
+			free(trigger->u48);
+		}
+		free(trigger);
+
+		s_triggerCount--;
+	}
+
 	void inf_stopAdjoinCommands(Stop* stop)
 	{
 		Allocator* adjoinCmds = stop->adjoinCmds;
@@ -1313,9 +1317,20 @@ namespace TFE_InfSystem
 
 		switch (type)
 		{
-			case ITRIGGER_STANDARD:
+			case ITRIGGER_WALL:
 			{
-				// TODO
+				RWall* wall = obj.wall;
+				if (!wall->infLink)
+				{
+					wall->infLink = allocator_create(sizeof(InfLink));
+				}
+				link = (InfLink*)allocator_newItem(wall->infLink);
+				link->type = LTYPE_TRIGGER;
+				link->entityMask = INF_ENTITY_PLAYER;
+				link->eventMask = INF_EVENT_ANY;
+				link->trigger = trigger;
+				link->msgFunc = infTriggerMsgFunc;
+				link->parent = wall->infLink;
 			} break;
 			case ITRIGGER_SECTOR:
 			{
@@ -1324,7 +1339,6 @@ namespace TFE_InfSystem
 				{
 					sector->infLink = allocator_create(sizeof(InfLink));
 				}
-
 				link = (InfLink*)allocator_newItem(sector->infLink);
 				link->type = LTYPE_TRIGGER;
 				link->entityMask = INF_ENTITY_PLAYER;

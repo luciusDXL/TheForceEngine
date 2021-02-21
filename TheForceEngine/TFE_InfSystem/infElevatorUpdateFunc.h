@@ -2,14 +2,14 @@
 //////////////////////////////////////////////////////////////////////
 // Elevator update functions.
 //////////////////////////////////////////////////////////////////////
-typedef s32(*InfUpdateFunc)(InfElevator* elev, s32 delta);
+typedef fixed16_16(*InfUpdateFunc)(InfElevator* elev, fixed16_16 delta);
 
-s32 infUpdate_moveHeights(InfElevator* elev, s32 delta)
+fixed16_16 infUpdate_moveHeights(InfElevator* elev, fixed16_16 delta)
 {
 	RSector* sector = elev->sector;
-	s32 secHeightDelta = 0;
-	s32 ceilDelta = 0;
-	s32 floorDelta = 0;
+	fixed16_16 secHeightDelta = 0;
+	fixed16_16 ceilDelta = 0;
+	fixed16_16 floorDelta = 0;
 
 	switch (elev->type)
 	{
@@ -28,16 +28,15 @@ s32 infUpdate_moveHeights(InfElevator* elev, s32 delta)
 		break;
 	}
 
-	s32 maxObjHeight = sector_getMaxObjectHeight(sector);
+	fixed16_16 maxObjHeight = sector_getMaxObjectHeight(sector);
 	if (maxObjHeight)
 	{
-		secHeightDelta;
 		maxObjHeight += 0x4000;	// maxObjHeight + 0.25
 		if (secHeightDelta)
 		{
-			s32 height = sector->floorHeight.f16_16 + sector->secHeight.f16_16;
-			s32 maxObjHeightAbove = 0;
-			s32 maxObjectHeightBelow = 0;
+			fixed16_16 height = sector->floorHeight.f16_16 + sector->secHeight.f16_16;
+			fixed16_16 maxObjHeightAbove = 0;
+			fixed16_16 maxObjectHeightBelow = 0;
 			s32 objCount = sector->objectCount;
 			SecObject** objList = sector->objectList;
 			for (; objCount > 0; objList++)
@@ -49,7 +48,7 @@ s32 infUpdate_moveHeights(InfElevator* elev, s32 delta)
 				}
 
 				objCount--;
-				s32 objHeight = obj->worldHeight + ONE_16;
+				fixed16_16 objHeight = obj->worldHeight + ONE_16;
 				// Object is below the second height
 				if (obj->posWS.y.f16_16 > height)
 				{
@@ -71,9 +70,9 @@ s32 infUpdate_moveHeights(InfElevator* elev, s32 delta)
 			// The new second height after adjustment (only second height so far).
 			height += secHeightDelta;
 			// Difference between the base floor height and the adjusted second height.
-			s32 floorDelta = sector->floorHeight.f16_16 - (height + ONE_16);
+			fixed16_16 floorDelta = sector->floorHeight.f16_16 - (height + ONE_16);
 			// Difference betwen the adjusted second height and the ceiling.
-			s32 ceilDelta = height - sector->ceilingHeight.f16_16;
+			fixed16_16 ceilDelta = height - sector->ceilingHeight.f16_16;
 			if (floorDelta < maxObjectHeightBelow || ceilDelta < maxObjHeightAbove)
 			{
 				// If there are objects in the way, set the next stop as the previous.
@@ -85,17 +84,17 @@ s32 infUpdate_moveHeights(InfElevator* elev, s32 delta)
 		}
 		else
 		{
-			s32 floorHeight = sector->floorHeight.f16_16 + floorDelta;
-			s32 ceilHeight = sector->ceilingHeight.f16_16 + ceilDelta;
-			s32 height = floorHeight - ceilHeight;
+			fixed16_16 floorHeight = sector->floorHeight.f16_16 + floorDelta;
+			fixed16_16 ceilHeight = sector->ceilingHeight.f16_16 + ceilDelta;
+			fixed16_16 height = floorHeight - ceilHeight;
 			if (height < maxObjHeight)
 			{
 				// Not sure why it needs to check again...
-				s32 maxObjHeight = sector_getMaxObjectHeight(sector);
-				s32 spaceNeeded = maxObjHeight + 0x4000;	// maxObjHeight + 0.25
+				fixed16_16 maxObjHeight = sector_getMaxObjectHeight(sector);
+				fixed16_16 spaceNeeded = maxObjHeight + 0x4000;	// maxObjHeight + 0.25
 				floorHeight = sector->floorHeight.f16_16 + floorDelta;
 				ceilHeight = sector->ceilingHeight.f16_16 + ceilDelta;
-				s32 spaceAvail = floorHeight - ceilHeight;
+				fixed16_16 spaceAvail = floorHeight - ceilHeight;
 
 				// If the height between floor and ceiling is too small for the tallest object AND
 				// If the floor is moving up or the ceiling is moving down and this is NOT a crushing sector.
@@ -133,31 +132,31 @@ s32 infUpdate_moveHeights(InfElevator* elev, s32 delta)
 	return *elev->value;
 }
 
-s32 infUpdate_moveWall(InfElevator* elev, s32 delta)
+fixed16_16 infUpdate_moveWall(InfElevator* elev, fixed16_16 delta)
 {
 	// TODO
 	return 0;
 }
 
-s32 infUpdate_rotateWall(InfElevator* elev, s32 delta)
+fixed16_16 infUpdate_rotateWall(InfElevator* elev, fixed16_16 delta)
 {
 	// TODO
 	return 0;
 }
 
-s32 infUpdate_scrollWall(InfElevator* elev, s32 delta)
+fixed16_16 infUpdate_scrollWall(InfElevator* elev, fixed16_16 delta)
 {
 	// TODO
 	return 0;
 }
 
-s32 infUpdate_scrollFlat(InfElevator* elev, s32 delta)
+fixed16_16 infUpdate_scrollFlat(InfElevator* elev, fixed16_16 delta)
 {
 	// TODO
 	return 0;
 }
 
-s32 infUpdate_changeAmbient(InfElevator* elev, s32 delta)
+fixed16_16 infUpdate_changeAmbient(InfElevator* elev, fixed16_16 delta)
 {
 	RSector* sector = elev->sector;
 	sector->ambient.f16_16 += delta;
@@ -171,7 +170,7 @@ s32 infUpdate_changeAmbient(InfElevator* elev, s32 delta)
 	return sector->ambient.f16_16;
 }
 
-s32 infUpdate_changeWallLight(InfElevator* elev, s32 delta)
+fixed16_16 infUpdate_changeWallLight(InfElevator* elev, fixed16_16 delta)
 {
 	// TODO
 	return 0;

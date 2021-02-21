@@ -68,7 +68,7 @@ namespace TFE_InfSystem
 
 	enum TriggerType
 	{
-		ITRIGGER_STANDARD = 0,
+		ITRIGGER_WALL = 0,
 		ITRIGGER_SECTOR = 1,
 		ITRIGGER_SWITCH1 = 2,
 		ITRIGGER_TOGGLE = 3,
@@ -130,7 +130,7 @@ namespace TFE_InfSystem
 		s32 count;
 		s32 index;
 		u32 delay;
-		s32 nextTime;
+		s32 nextTick;
 		TextureData** frameList;
 		TextureData** basePtr;
 		TextureData* curFrame;
@@ -197,7 +197,7 @@ namespace TFE_InfSystem
 	struct Stop
 	{
 		s32 value;
-		u32 delay;				// INF ticks (145.5/sec)
+		u32 delay;				// delay in 'ticks' (145 ticks / second)
 		Allocator* messages;
 		Allocator* adjoinCmds;
 		s32 pageId;
@@ -213,14 +213,14 @@ namespace TFE_InfSystem
 		RSector* sector;
 		s32 key;
 		s32 fixedStep;
-		u32 nextTime;
+		u32 nextTick;
 		s32 u1c;
 		Allocator* stops;
 		Allocator* slaves;
 		Stop* nextStop;
-		s32  speed;
-		s32* value;
-		s32 iValue;
+		fixed16_16 speed;
+		fixed16_16* value;
+		fixed16_16 iValue;
 		vec2_fixed dirOrCenter;
 		s32 flags;
 		s32 sound0;
