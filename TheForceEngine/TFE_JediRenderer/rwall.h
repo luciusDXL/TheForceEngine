@@ -7,6 +7,7 @@
 #include "rmath.h"
 
 struct TextureFrame;
+struct Allocator;
 
 namespace TFE_JediRenderer
 {
@@ -28,6 +29,7 @@ namespace TFE_JediRenderer
 
 	struct RWall
 	{
+		s32 id;
 		s32 visible;
 		RSector* sector;
 		RSector* nextSector;

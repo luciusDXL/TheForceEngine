@@ -71,8 +71,11 @@ namespace TFE_InfSystem
 	static void* s_infMsgTarget;
 	static void* s_infMsgEntity;
 
+	// Pull from data...
 	static RSector* s_sectors;
 	static u32 s_sectorCount;
+	static SecObject* s_playerObject;
+	static u32 s_playerSecMoved = 0;
 
 	void infElevatorMsgFunc(InfMessageType msgType);
 	void infTriggerMsgFunc(InfMessageType msgType);
@@ -96,6 +99,7 @@ namespace TFE_InfSystem
 	void sector_adjustHeights(RSector* sector, s32 floorDelta, s32 ceilDelta, s32 secHeightDelta) {}
 	void sector_setupWallDrawFlags(RSector* sector) {}
 	void sector_deleteElevatorLink(RSector* sector, InfElevator* elev) {}
+	u32 sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags);
 
 	// TODO: System functions, to be connected later.
 	void sendTextMessage(s32 msgId) {}
@@ -1536,8 +1540,23 @@ namespace TFE_InfSystem
 
 	fixed16_16 infUpdate_moveWall(InfElevator* elev, fixed16_16 delta)
 	{
-		// TODO
-		return 0;
+		// First attempt to move walls in the sector.
+		if (!sector_moveWalls(elev->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags))
+		{
+			return elev->iValue;
+		}
+
+		// If successful move its slaves.
+		Slave* child = (Slave*)allocator_getHead(elev->slaves);
+		while (child)
+		{
+			sector_moveWalls(child->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags);
+			child = (Slave*)allocator_getNext(elev->slaves);
+		}
+
+		// Finally update the elevator value.
+		elev->iValue += delta;
+		return elev->iValue;
 	}
 
 	fixed16_16 infUpdate_rotateWall(InfElevator* elev, fixed16_16 delta)
@@ -1578,4 +1597,207 @@ namespace TFE_InfSystem
 		return 0;
 	}
 
+	////////////////////////////////////////////////////
+	// Sector stuff (move me)
+	////////////////////////////////////////////////////
+	// returns 0 if the object does NOT overlap, otherwise non-zero.
+	// objSide: 0 = no overlap, -1/+1 front or behind.
+	u32 sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide)
+	{
+		s32 halfWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 1;
+		s32 quarterWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 2;
+		s32 threeQuartWidth = halfWidth + quarterWidth;
+		*objSide = 0;
+
+		RSector* next = wall->nextSector;
+		if (next)
+		{
+			RSector* sector = wall->sector;
+			if (obj->posWS.y.f16_16 <= sector->floorHeight.f16_16)
+			{
+				fixed16_16 objTop = obj->posWS.y.f16_16 - obj->worldHeight;
+				if (objTop > sector->ceilingHeight.f16_16)
+				{
+					return 0;
+				}
+			}
+		}
+
+		vec2* w0 = wall->w0;
+		fixed16_16 x0 = w0->x.f16_16;
+		fixed16_16 dirX = wall->wallDirZ.f16_16;
+		fixed16_16 z0 = w0->z.f16_16;
+		fixed16_16 dirZ = wall->wallDirX.f16_16;
+		fixed16_16 len = wall->length.f16_16;
+		fixed16_16 dx = obj->posWS.x.f16_16 - x0;
+		fixed16_16 dz = obj->posWS.z.f16_16 - z0;
+
+		fixed16_16 proj = mul16(dx, dirZ) + mul16(dz, dirX);
+		fixed16_16 maxS = threeQuartWidth * 2 + len;	// 1.5 * width + length
+		fixed16_16 s = threeQuartWidth + proj;
+		if (s <= maxS)
+		{
+			s32 diff = mul16(dx, dirX) - mul16(dz, dirZ);
+			s32 side = (diff >= 0) ? 1 : -1;
+
+			*objSide = side;
+			if (side < 0)
+			{
+				diff = -diff;
+			}
+			if (diff <= threeQuartWidth)
+			{
+				return 0xffffffff;
+			}
+		}
+		return 0;
+	}
+
+	static fixed16_16 s_dist;
+
+	fixed16_16 sector_computeDirAndLength(fixed16_16 dx, fixed16_16 dz, fixed16_16* dirX, fixed16_16* dirZ)
+	{
+		// The original code reduce the values by half, did the sqaure root and than multiplied by 2 (which the sqrt table adjusted for the scale).
+		// TFE just calls the sqrt function directly.
+		fixed16_16 dxSq = mul16(dx, dx);
+		fixed16_16 dzSq = mul16(dz, dz);
+		s_dist = TFE_JediRenderer::fixedSqrt(dxSq + dzSq);
+		
+		if (s_dist)
+		{
+			*dirX = div16(dx, s_dist);
+			*dirZ = div16(dz, s_dist);
+		}
+		else
+		{
+			*dirZ = 0;
+			*dirX = 0;
+		}
+		return s_dist;
+	}
+
+	void sector_computeWallDirAndLength(RWall* wall)
+	{
+		vec2* w0 = wall->w0;
+		vec2* w1 = wall->w1;
+		fixed16_16 dx = w1->x.f16_16 - w0->x.f16_16;
+		fixed16_16 dz = w1->z.f16_16 - w0->z.f16_16;
+		wall->length.f16_16 = sector_computeDirAndLength(dx, dz, &wall->wallDirX.f16_16, &wall->wallDirZ.f16_16);
+		wall->angle = TFE_JediRenderer::vec2ToAngle(dx, dz);
+	}
+
+	void sector_moveWallVertex(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
+	{
+		// Offset vertex 0.
+		wall->w0->x.f16_16 += offsetX;
+		wall->w0->z.f16_16 += offsetZ;
+		// Update the wall direction and length.
+		sector_computeWallDirAndLength(wall);
+
+		// Set the appriate game value if the player is inside the sector.
+		RSector* sector = wall->sector;
+		if (sector->flags1 & SEC_FLAGS1_PLAYER)
+		{
+			s_playerSecMoved = 0xffffffff;
+		}
+
+		// Update the previous wall, since it would have changed as well.
+		RWall* nextWall = nullptr;
+		if (wall->id == 0)
+		{
+			s32 last = sector->wallCount - 1;
+			nextWall = &sector->walls[last];
+		}
+		else
+		{
+			nextWall = wall - 1;
+		}
+		// Compute the wall direction and length of the previous wall.
+		sector_computeWallDirAndLength(nextWall);
+	}
+
+	// returns 0 if the wall is free to move, else non-zero.
+	u32 sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
+	{
+		s32 objSide0;
+		// Test the initial position, the code assumes there is no collision at this point.
+		sector_objOverlapsWall(wall, s_playerObject, &objSide0);
+
+		vec2* w0 = wall->w0;
+		fixed16_16 z0 = w0->z.f16_16;
+		fixed16_16 x0 = w0->x.f16_16;
+		w0->x.f16_16 += offsetX;
+		w0->z.f16_16 += offsetZ;
+
+		s32 objSide1;
+		// Then move the wall and test the new position.
+		s32 col = sector_objOverlapsWall(wall, s_playerObject, &objSide1);
+
+		// Restore the wall.
+		w0->x.f16_16 = x0;
+		w0->z.f16_16 = z0;
+
+		if (!col)
+		{
+			if (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1)
+			{
+				return 0;
+			}
+		}
+		return 0xffffffff;
+	}
+
+	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ)
+	{
+		// TODO
+	}
+
+	void sector_computeBounds(RSector* sector)
+	{
+		// TODO
+	}
+
+	u32 sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
+	{
+		fixed16_16 offsetX = mul16(delta, dirX);
+		fixed16_16 offsetZ = mul16(delta, dirZ);
+
+		u32 sectorBlocked = 0;
+		s32 wallCount = sector->wallCount;
+		RWall* wall = sector->walls;
+		for (u32 i = 0; i < wallCount && !sectorBlocked; i++, wall++)
+		{
+			if (wall->flags1 & WF1_WALL_MORPHS)
+			{
+				sectorBlocked |= sector_canWallMove(wall, offsetX, offsetZ);
+
+				RWall* mirror = wall->mirrorWall;
+				if (wall->mirrorWall && (mirror->flags1 & WF1_WALL_MORPHS))
+				{
+					sectorBlocked |= sector_canWallMove(mirror, offsetX, offsetZ);
+				}
+			}
+		}
+
+		if (!sectorBlocked)
+		{
+			wall = sector->walls;
+			for (u32 i = 0; i < wallCount; i++, wall++)
+			{
+				if (wall->flags1 & WF1_WALL_MORPHS)
+				{
+					sector_moveWallVertex(wall, offsetX, offsetZ);
+					RWall* mirror = wall->mirrorWall;
+					if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
+					{
+						sector_moveWallVertex(mirror, offsetX, offsetZ);
+					}
+				}
+			}
+			sector_moveObjects(sector, flags, offsetX, offsetZ);
+			sector_computeBounds(sector);
+		}
+
+		return !sectorBlocked ? 0xffffffff : 0;
+	}
 }

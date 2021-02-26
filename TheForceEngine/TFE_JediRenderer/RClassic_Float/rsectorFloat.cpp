@@ -19,6 +19,55 @@ using namespace TFE_JediRenderer::RClassic_Float;
 
 namespace TFE_JediRenderer
 {
+	// TODO: Move to math
+	s32 vec2ToAngle(f32 dx, f32 dz)
+	{
+		if (dx == 0 && dz == 0)
+		{
+			return 0;
+		}
+
+		const s32 signsDiff = (signV2A(dx) != signV2A(dz)) ? 1 : 0;
+		// Splits the view into 4 quadrants, 0 - 3:
+		// 1 | 0
+		// -----
+		// 2 | 3
+		const s32 quadrant = (dz < 0 ? 2 : 0) + signsDiff;
+
+		// Further splits the quadrants into sub-quadrants:
+		// \2|1/
+		// 3\|/0
+		//---*---
+		// 4/|\7
+		// /5|6\
+			//
+		dx = fabs(dx);
+		dz = fabs(dz);
+		const s32 subquadrant = quadrant * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
+
+		// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
+		if ((subquadrant - 1) & 2)
+		{
+			// The original code did the "3 xor" trick to swap dx and dz.
+			std::swap(dx, dz);
+		}
+
+		// next compute |dx| / |dz|, which will be a value from 0.0 to 1.0
+		f32 dXdZ = dx / dz;
+		if (subquadrant & 1)
+		{
+			// invert the ratio in sub-quadrants 1, 3, 5, 7 to maintain the correct direction.
+			dXdZ = 1.0f - dXdZ;
+		}
+
+		// subquadrantF is float(subquadrant), which has a range of 0 to 7.0
+		const f32 subquadrantF = f32(subquadrant);
+		// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
+		const f32 angle = 2.0f - (subquadrantF + dXdZ);
+		// the final angle will be in the range of 0 - 16383
+		return s32(angle * 2048.0f) & 0x3fff;
+	}
+
 	namespace
 	{
 		s32 sortObjectsFloat(const void* r0, const void* r1)
@@ -60,54 +109,6 @@ namespace TFE_JediRenderer
 
 			// Default case:
 			return signZero(obj1->posVS.z.f32 - obj0->posVS.z.f32);
-		}
-
-		s32 vec2ToAngle(f32 dx, f32 dz)
-		{
-			if (dx == 0 && dz == 0)
-			{
-				return 0;
-			}
-
-			const s32 signsDiff = (signV2A(dx) != signV2A(dz)) ? 1 : 0;
-			// Splits the view into 4 quadrants, 0 - 3:
-			// 1 | 0
-			// -----
-			// 2 | 3
-			const s32 quadrant = (dz < 0 ? 2 : 0) + signsDiff;
-
-			// Further splits the quadrants into sub-quadrants:
-			// \2|1/
-			// 3\|/0
-			//---*---
-			// 4/|\7
-			// /5|6\
-			//
-			dx = fabs(dx);
-			dz = fabs(dz);
-			const s32 subquadrant = quadrant * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
-
-			// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
-			if ((subquadrant - 1) & 2)
-			{
-				// The original code did the "3 xor" trick to swap dx and dz.
-				std::swap(dx, dz);
-			}
-
-			// next compute |dx| / |dz|, which will be a value from 0.0 to 1.0
-			f32 dXdZ = dx / dz;
-			if (subquadrant & 1)
-			{
-				// invert the ratio in sub-quadrants 1, 3, 5, 7 to maintain the correct direction.
-				dXdZ = 1.0f - dXdZ;
-			}
-
-			// subquadrantF is float(subquadrant), which has a range of 0 to 7.0
-			const f32 subquadrantF = f32(subquadrant);
-			// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
-			const f32 angle = 2.0f - (subquadrantF + dXdZ);
-			// the final angle will be in the range of 0 - 16383
-			return s32(angle * 2048.0f) & 0x3fff;
 		}
 
 		s32 cullObjects(RSector* sector, SecObject** buffer)

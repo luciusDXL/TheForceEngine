@@ -21,6 +21,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Asset/colormapAsset.h>
+#include "fixedPoint.h"
 
 enum TFE_SubRenderer
 {
@@ -54,6 +55,9 @@ namespace TFE_JediRenderer
 	// Set the current resolution to render, this may involve regenerating lookup-tables, depending on the sub-renderer.
 	void setResolution(s32 width, s32 height);
 
-	// Temporary?
+	// Temporary
 	void addObject(const char* assetName, u32 gameObjId, u32 sectorId);
+	// Move to math
+	s32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz);
+	s32 vec2ToAngle(f32 dx, f32 dz);
 }

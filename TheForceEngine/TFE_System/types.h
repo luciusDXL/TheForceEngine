@@ -107,6 +107,7 @@ struct Mat4
 #define TFE_ARRAYSIZE(arr) (sizeof(arr)/sizeof(*arr))         // Size of a static C-style array. Don't use on pointers!
 
 #define FLAG(bit) (1u << u32(bit))
+#define SIGN_BIT(x) ((x)<0?1:0)
 
 // Move to math
 #define PI 3.14159265358979323846f
