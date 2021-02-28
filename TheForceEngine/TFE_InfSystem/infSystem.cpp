@@ -1574,8 +1574,40 @@ namespace TFE_InfSystem
 
 	fixed16_16 infUpdate_scrollFlat(InfElevator* elev, fixed16_16 delta)
 	{
-		// TODO
-		return 0;
+		elev->iValue += delta;
+		fixed16_16 deltaX = mul16(delta, elev->dirOrCenter.x);
+		fixed16_16 deltaZ = mul16(delta, elev->dirOrCenter.z);
+
+		RSector* sector = elev->sector;
+		if (elev->type == IELEV_SCROLL_FLOOR)
+		{
+			sector->floorOffsetX.f16_16 += deltaX;
+			sector->floorOffsetZ.f16_16 += deltaZ;
+		}
+		else if (elev->type == IELEV_SCROLL_CEILING)
+		{
+			sector->ceilOffsetX.f16_16 += deltaX;
+			sector->ceilOffsetZ.f16_16 += deltaZ;
+		}
+
+		Slave* child = (Slave*)allocator_getHead(elev->slaves);
+		while (child)
+		{
+			sector = child->sector;
+			if (elev->type == IELEV_SCROLL_FLOOR)
+			{
+				sector->floorOffsetX.f16_16 += deltaX;
+				sector->floorOffsetZ.f16_16 += deltaZ;
+			}
+			else if (elev->type == IELEV_SCROLL_CEILING)
+			{
+				sector->ceilOffsetX.f16_16 += deltaX;
+				sector->ceilOffsetZ.f16_16 += deltaZ;
+			}
+			child = (Slave*)allocator_getNext(elev->slaves);
+		}
+
+		return elev->iValue;
 	}
 
 	fixed16_16 infUpdate_changeAmbient(InfElevator* elev, fixed16_16 delta)
