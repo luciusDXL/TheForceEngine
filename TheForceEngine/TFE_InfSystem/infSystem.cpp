@@ -100,6 +100,7 @@ namespace TFE_InfSystem
 	void sector_setupWallDrawFlags(RSector* sector) {}
 	void sector_deleteElevatorLink(RSector* sector, InfElevator* elev) {}
 	u32 sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags);
+	void sector_changeWallLight(RSector* sector, s32 delta);
 
 	// TODO: System functions, to be connected later.
 	void sendTextMessage(s32 msgId) {}
@@ -1590,11 +1591,19 @@ namespace TFE_InfSystem
 		}
 		return sector->ambient.f16_16;
 	}
-
+		
 	fixed16_16 infUpdate_changeWallLight(InfElevator* elev, fixed16_16 delta)
 	{
-		// TODO
-		return 0;
+		elev->iValue += delta;
+		sector_changeWallLight(elev->sector, delta);
+
+		Slave* child = (Slave*)allocator_getHead(elev->slaves);
+		while (child)
+		{
+			sector_changeWallLight(child->sector, delta);
+			child = (Slave*)allocator_getNext(elev->slaves);
+		}
+		return elev->iValue;
 	}
 
 	////////////////////////////////////////////////////
@@ -1694,7 +1703,7 @@ namespace TFE_InfSystem
 		// Update the wall direction and length.
 		sector_computeWallDirAndLength(wall);
 
-		// Set the appriate game value if the player is inside the sector.
+		// Set the appropriate game value if the player is inside the sector.
 		RSector* sector = wall->sector;
 		if (sector->flags1 & SEC_FLAGS1_PLAYER)
 		{
@@ -1750,11 +1759,15 @@ namespace TFE_InfSystem
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
 		// TODO
+		// As far as I can tell, no objects are actually affected in-game by this.
+		// So I'm going to leave this empty for now and look deeper into it later once I have 
+		// more information.
 	}
 
 	void sector_computeBounds(RSector* sector)
 	{
-		// TODO
+		// TODO - Factor out so this code is available by both the INF system and Jedi Renderer.
+		// Same code as: void TFE_Sectors_Fixed::computeBounds(RSector* sector)
 	}
 
 	u32 sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
@@ -1799,5 +1812,18 @@ namespace TFE_InfSystem
 		}
 
 		return !sectorBlocked ? 0xffffffff : 0;
+	}
+
+	void sector_changeWallLight(RSector* sector, s32 delta)
+	{
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+		for (s32 i = 0; i < wallCount; i++, wall++)
+		{
+			if (wall->flags1 & WF1_CHANGE_WALL_LIGHT)
+			{
+				wall->wallLight += delta;
+			}
+		}
 	}
 }
