@@ -100,7 +100,8 @@ namespace TFE_InfSystem
 	void sector_setupWallDrawFlags(RSector* sector) {}
 	void sector_deleteElevatorLink(RSector* sector, InfElevator* elev) {}
 	u32 sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags);
-	void sector_changeWallLight(RSector* sector, s32 delta);
+	void sector_changeWallLight(RSector* sector, fixed16_16 delta);
+	void sector_scrollWalls(RSector* sector, fixed16_16 offsetX, fixed16_16 offsetZ);
 
 	// TODO: System functions, to be connected later.
 	void sendTextMessage(s32 msgId) {}
@@ -1568,8 +1569,18 @@ namespace TFE_InfSystem
 
 	fixed16_16 infUpdate_scrollWall(InfElevator* elev, fixed16_16 delta)
 	{
-		// TODO
-		return 0;
+		elev->iValue += delta;
+		fixed16_16 deltaX = mul16(delta, elev->dirOrCenter.x);
+		fixed16_16 deltaZ = mul16(delta, elev->dirOrCenter.z);
+		sector_scrollWalls(elev->sector, deltaX, deltaZ);
+
+		Slave* child = (Slave*)allocator_getHead(elev->slaves);
+		while (child)
+		{
+			sector_scrollWalls(child->sector, deltaX, deltaZ);
+			child = (Slave*)allocator_getNext(elev->slaves);
+		}
+		return elev->iValue;
 	}
 
 	fixed16_16 infUpdate_scrollFlat(InfElevator* elev, fixed16_16 delta)
@@ -1846,7 +1857,7 @@ namespace TFE_InfSystem
 		return !sectorBlocked ? 0xffffffff : 0;
 	}
 
-	void sector_changeWallLight(RSector* sector, s32 delta)
+	void sector_changeWallLight(RSector* sector, fixed16_16 delta)
 	{
 		RWall* wall = sector->walls;
 		s32 wallCount = sector->wallCount;
@@ -1855,6 +1866,40 @@ namespace TFE_InfSystem
 			if (wall->flags1 & WF1_CHANGE_WALL_LIGHT)
 			{
 				wall->wallLight += delta;
+			}
+		}
+	}
+
+	void sector_scrollWalls(RSector* sector, fixed16_16 offsetX, fixed16_16 offsetZ)
+	{
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+
+		const u32 scrollFlags = WF1_SCROLL_SIGN_TEX | WF1_SCROLL_BOT_TEX | WF1_SCROLL_MID_TEX | WF1_SCROLL_TOP_TEX;
+		for (s32 i = 0; i < wallCount; i++, wall++)
+		{
+			if (wall->flags1 & scrollFlags)
+			{
+				if (wall->flags1 & WF1_SCROLL_TOP_TEX)
+				{
+					wall->topUOffset.f16_16 += offsetX;
+					wall->topVOffset.f16_16 += offsetZ;
+				}
+				if (wall->flags1 & WF1_SCROLL_MID_TEX)
+				{
+					wall->midUOffset.f16_16 += offsetX;
+					wall->midVOffset.f16_16 += offsetZ;
+				}
+				if (wall->flags1 & WF1_SCROLL_BOT_TEX)
+				{
+					wall->botUOffset.f16_16 += offsetX;
+					wall->botVOffset.f16_16 += offsetZ;
+				}
+				if (wall->flags1 & WF1_SCROLL_SIGN_TEX)
+				{
+					wall->signUOffset.f16_16 += offsetX;
+					wall->signVOffset.f16_16 += offsetZ;
+				}
 			}
 		}
 	}
