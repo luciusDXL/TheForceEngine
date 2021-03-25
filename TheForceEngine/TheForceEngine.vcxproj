@@ -237,6 +237,7 @@
     <ClInclude Include="TFE_Archive\zip\zip.h" />
     <ClInclude Include="TFE_Asset\assetSystem.h" />
     <ClInclude Include="TFE_Asset\colormapAsset.h" />
+    <ClInclude Include="TFE_Asset\dfKeywords.h" />
     <ClInclude Include="TFE_Asset\fontAsset.h" />
     <ClInclude Include="TFE_Asset\gameMessages.h" />
     <ClInclude Include="TFE_Asset\gifWriter.h" />
@@ -351,6 +352,13 @@
     <ClInclude Include="TFE_JediRenderer\rsector.h" />
     <ClInclude Include="TFE_JediRenderer\rtexture.h" />
     <ClInclude Include="TFE_JediRenderer\rwall.h" />
+    <ClInclude Include="TFE_Level\core_math.h" />
+    <ClInclude Include="TFE_Level\fixedPoint.h" />
+    <ClInclude Include="TFE_Level\level.h" />
+    <ClInclude Include="TFE_Level\robject.h" />
+    <ClInclude Include="TFE_Level\rsector.h" />
+    <ClInclude Include="TFE_Level\rtexture.h" />
+    <ClInclude Include="TFE_Level\rwall.h" />
     <ClInclude Include="TFE_LogicSystem\logicSystem.h" />
     <ClInclude Include="TFE_Polygon\clipper.hpp" />
     <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
@@ -421,6 +429,7 @@
     <ClCompile Include="TFE_Archive\zip\zip.c" />
     <ClCompile Include="TFE_Asset\assetSystem.cpp" />
     <ClCompile Include="TFE_Asset\colormapAsset.cpp" />
+    <ClCompile Include="TFE_Asset\dfKeywords.cpp" />
     <ClCompile Include="TFE_Asset\fontAsset.cpp" />
     <ClCompile Include="TFE_Asset\gameMessages.cpp" />
     <ClCompile Include="TFE_Asset\gifWriter.cpp" />
@@ -515,6 +524,11 @@
     <ClCompile Include="TFE_JediRenderer\rscanline.cpp" />
     <ClCompile Include="TFE_JediRenderer\rsector.cpp" />
     <ClCompile Include="TFE_JediRenderer\rtexture.cpp" />
+    <ClCompile Include="TFE_Level\core_math.cpp" />
+    <ClCompile Include="TFE_Level\level.cpp" />
+    <ClCompile Include="TFE_Level\rsector.cpp" />
+    <ClCompile Include="TFE_Level\rtexture.cpp" />
+    <ClCompile Include="TFE_Level\rwall.cpp" />
     <ClCompile Include="TFE_LogicSystem\logicSystem.cpp" />
     <ClCompile Include="TFE_Polygon\clipper.cpp" />
     <ClCompile Include="TFE_Polygon\polygon.cpp" />

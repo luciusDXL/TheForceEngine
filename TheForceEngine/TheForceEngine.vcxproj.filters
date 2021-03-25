@@ -161,6 +161,12 @@
     <Filter Include="Source\TFE_Archive\zip">
       <UniqueIdentifier>{f069b311-4842-4982-aa48-6848b3f3fa66}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Collision">
+      <UniqueIdentifier>{a95df4bd-a7b6-468e-b173-6ff5924e1611}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Level">
+      <UniqueIdentifier>{f01ea6ec-1b8c-41e5-ab68-e7a5c6690cfd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -715,6 +721,30 @@
     <ClInclude Include="TFE_InfSystem\infMessageType.h">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Level\fixedPoint.h">
+      <Filter>Source\TFE_Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Level\robject.h">
+      <Filter>Source\TFE_Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Level\rsector.h">
+      <Filter>Source\TFE_Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Level\rtexture.h">
+      <Filter>Source\TFE_Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Level\rwall.h">
+      <Filter>Source\TFE_Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Level\core_math.h">
+      <Filter>Source\TFE_Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Level\level.h">
+      <Filter>Source\TFE_Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Asset\dfKeywords.h">
+      <Filter>Source\TFE_Asset</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1160,6 +1190,24 @@
     </ClCompile>
     <ClCompile Include="TFE_InfSystem\allocator.cpp">
       <Filter>Source\TFE_InfSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Level\rsector.cpp">
+      <Filter>Source\TFE_Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Level\rtexture.cpp">
+      <Filter>Source\TFE_Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Level\core_math.cpp">
+      <Filter>Source\TFE_Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Level\level.cpp">
+      <Filter>Source\TFE_Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Level\rwall.cpp">
+      <Filter>Source\TFE_Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Asset\dfKeywords.cpp">
+      <Filter>Source\TFE_Asset</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

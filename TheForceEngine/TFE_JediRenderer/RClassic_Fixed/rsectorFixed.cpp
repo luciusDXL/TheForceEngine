@@ -314,7 +314,6 @@ namespace TFE_JediRenderer
 			RWall* srcWall = wallSegment->srcWall;
 			RSector* nextSector = srcWall->nextSector;
 
-			// This will always be true for now.
 			if (!nextSector)
 			{
 				wall_drawSolid(wallSegment);
@@ -566,8 +565,8 @@ namespace TFE_JediRenderer
 				fixed16_16 mFloorHeight = mSector->floorHeight.f16_16;
 				fixed16_16 mCeilHeight = mSector->ceilingHeight.f16_16;
 
-				wall->drawFlags = 0;
-				mirror->drawFlags = 0;
+				wall->drawFlags = WDF_MIDDLE;
+				mirror->drawFlags = WDF_MIDDLE;
 
 				if (wCeilHeight < mCeilHeight)
 				{

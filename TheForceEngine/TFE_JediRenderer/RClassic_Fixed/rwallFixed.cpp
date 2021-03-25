@@ -2189,13 +2189,13 @@ namespace RClassic_Fixed
 	{
 		if (wall->nextSector)
 		{
-			if (wall->drawFlags & 1)
+			if (wall->drawFlags & WDF_TOP)
 			{
 				RSector* next = wall->nextSector;
 				RSector* cur = wall->sector;
 				wall->topTexelHeight.f16_16 = (next->ceilingHeight.f16_16 - cur->ceilingHeight.f16_16) * 8;
 			}
-			if (wall->drawFlags & 2)
+			if (wall->drawFlags & WDF_BOT)
 			{
 				RSector* cur = wall->sector;
 				RSector* next = wall->nextSector;
@@ -2203,19 +2203,19 @@ namespace RClassic_Fixed
 			}
 			if (wall->midTex)
 			{
-				if (!(wall->drawFlags & 2) && !(wall->drawFlags & 1))
+				if (!(wall->drawFlags & WDF_BOT) && !(wall->drawFlags & WDF_TOP))
 				{
 					RSector* midSector = wall->sector;
 					fixed16_16 midFloorHeight = wall->sector->floorHeight.f16_16;
 					wall->midTexelHeight.f16_16 = (midFloorHeight - midSector->ceilingHeight.f16_16) * 8;
 				}
-				else if (!(wall->drawFlags & 2))
+				else if (!(wall->drawFlags & WDF_BOT))
 				{
 					RSector* midSector = wall->nextSector;
 					fixed16_16 midFloorHeight = wall->sector->floorHeight.f16_16;
 					wall->midTexelHeight.f16_16 = (midFloorHeight - midSector->ceilingHeight.f16_16) * 8;
 				}
-				else if (!(wall->drawFlags & 1))
+				else if (!(wall->drawFlags & WDF_TOP))
 				{
 					RSector* midSector = wall->sector;
 					fixed16_16 midFloorHeight = wall->nextSector->floorHeight.f16_16;

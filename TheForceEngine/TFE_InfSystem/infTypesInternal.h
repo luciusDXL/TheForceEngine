@@ -1,18 +1,14 @@
 #pragma once
 #include <TFE_System/types.h>
-#include <TFE_JediRenderer/rmath.h>	// TODO: Move this out so it is cleanly accessible by the renderer and INF system.
+#include <TFE_Level/rsector.h>
+#include <TFE_Level/rwall.h>
+#include <TFE_Level/robject.h>
 #include "infMessageType.h"
 
 struct TextureData;
 struct Allocator;
 
-namespace TFE_JediRenderer
-{
-	struct RWall;
-	struct RSector;
-	struct SecObject;
-}
-using namespace TFE_JediRenderer;
+using namespace TFE_Level;
 
 namespace TFE_InfSystem
 {
@@ -20,6 +16,7 @@ namespace TFE_InfSystem
 	typedef void(*InfFreeFunc)(void*);
 	struct InfLink;
 
+	// Core elevator types.
 	enum InfElevatorType
 	{
 		IELEV_MOVE_CEILING = 0,
@@ -33,6 +30,29 @@ namespace TFE_InfSystem
 		IELEV_CHANGE_LIGHT = 8,
 		IELEV_MOVE_FC = 9,
 		IELEV_CHANGE_WALL_LIGHT = 10,
+	};
+
+	// "Special" elevators are "high level" elevators that map to the core
+	// 11 types (see InfElevatorType) but have special settings and/or
+	// automatically add stops to make commonly used patterns easier to setup.
+	enum InfSpecialElevator
+	{
+		IELEV_SP_BASIC = 0,
+		IELEV_SP_BASIC_AUTO,
+		// Both of these are unimplemented in the final game.
+		IELEV_SP_UNIMPLEMENTED,
+		IELEV_SP_MID,
+		// Back to implemented types.
+		IELEV_SP_INV = 4,
+		IELEV_SP_DOOR,
+		IELEV_SP_DOOR_INV,
+		IELEV_SP_DOOR_MID,
+		IELEV_SP_MORPH_SPIN1,
+		IELEV_SP_MORPH_SPIN2,
+		IELEV_SP_MORPH_MOVE1,
+		IELEV_SP_MORPH_MOVE2,
+		IELEV_SP_EXPLOSIVE_WALL,
+		IELEV_SP_COUNT
 	};
 
 	// How an elevator moves if triggered.
@@ -63,7 +83,8 @@ namespace TFE_InfSystem
 	enum LinkType
 	{
 		LTYPE_SECTOR = 0,
-		LTYPE_TRIGGER = 1
+		LTYPE_TRIGGER = 1,
+		LTYPE_TELEPORT = 2,
 	};
 
 	enum TriggerType
@@ -117,14 +138,12 @@ namespace TFE_InfSystem
 		KEY_BLUE = 25,
 	};
 
-	enum ObjectTypeFlags
+	enum TeleportType
 	{
-		OTFLAG_NONE = 0,
-		// ... Unknown.
-		OTFLAG_PLAYER = (1u << 31u),
-		OTFLAG_UNSIGNED = 0xffffffff,
+		TELEPORT_BASIC = 0,
+		TELEPORT_CHUTE = 1
 	};
-
+		
 	struct AnimatedTexture
 	{
 		s32 count;
@@ -135,6 +154,16 @@ namespace TFE_InfSystem
 		TextureData** basePtr;
 		TextureData* curFrame;
 		u8* baseData;
+	};
+
+	struct Teleport
+	{
+		RSector* sector;
+		RSector* target;
+		TeleportType type;
+
+		vec3_fixed dstPosition;
+		angle14_16  dstAngle[3];
 	};
 
 	struct TriggerTarget
@@ -167,7 +196,7 @@ namespace TFE_InfSystem
 		s32 soundId;
 		s32 state;
 		s32* u48;
-		s32 textId;
+		u32 textId;
 	};
 
 	struct InfMessage
@@ -196,7 +225,7 @@ namespace TFE_InfSystem
 
 	struct Stop
 	{
-		s32 value;
+		fixed16_16 value;
 		u32 delay;				// delay in 'ticks' (145 ticks / second)
 		Allocator* messages;
 		Allocator* adjoinCmds;
@@ -211,7 +240,7 @@ namespace TFE_InfSystem
 		InfElevatorType type;
 		ElevTrigMove trigMove;
 		RSector* sector;
-		s32 key;
+		u32 key;
 		s32 fixedStep;
 		u32 nextTick;
 		s32 u1c;
@@ -222,7 +251,7 @@ namespace TFE_InfSystem
 		fixed16_16* value;
 		fixed16_16 iValue;
 		vec2_fixed dirOrCenter;
-		s32 flags;
+		u32 flags;
 		s32 sound0;
 		s32 sound1;
 		s32 sound2;
