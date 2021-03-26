@@ -8,7 +8,10 @@
 #include <TFE_System/system.h>
 
 #include <TFE_InfSystem/infSystem.h>
+#include <TFE_InfSystem/infTypesInternal.h>
 #include <TFE_InfSystem/message.h>
+
+using namespace TFE_InfSystem;
 
 namespace TFE_Level
 {
@@ -297,13 +300,13 @@ namespace TFE_Level
 			// Create a door if needed.
 			if (sector->flags1 & SEC_FLAGS1_DOOR)
 			{
-				//InfElevator* elev = inf_allocateSpecialElevator(sector, IELEV_SP_DOOR);
-				//elev->flags |= INF_EFLAG_DOOR;
+				InfElevator* elev = inf_allocateSpecialElevator(sector, IELEV_SP_DOOR);
+				elev->flags |= INF_EFLAG_DOOR;
 			}
 			// Create an exploding wall if needed.
 			if (sector->flags1 & SEC_FLAGS1_EXP_WALL)
 			{
-				//inf_allocateSpecialElevator(sector, IELEV_SP_EXPLOSIVE_WALL);
+				inf_allocateSpecialElevator(sector, IELEV_SP_EXPLOSIVE_WALL);
 			}
 			// Add secrets.
 			if (sector->flags1 & SEC_FLAGS1_SECRET)

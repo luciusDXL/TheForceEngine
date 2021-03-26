@@ -13,6 +13,45 @@ struct SecObject;
 
 namespace TFE_InfSystem
 {
+	// Core elevator types.
+	enum InfElevatorType
+	{
+		IELEV_MOVE_CEILING = 0,
+		IELEV_MOVE_FLOOR = 1,
+		IELEV_MOVE_OFFSET = 2,
+		IELEV_MOVE_WALL = 3,
+		IELEV_ROTATE_WALL = 4,
+		IELEV_SCROLL_WALL = 5,
+		IELEV_SCROLL_FLOOR = 6,
+		IELEV_SCROLL_CEILING = 7,
+		IELEV_CHANGE_LIGHT = 8,
+		IELEV_MOVE_FC = 9,
+		IELEV_CHANGE_WALL_LIGHT = 10,
+	};
+
+	// "Special" elevators are "high level" elevators that map to the core
+	// 11 types (see InfElevatorType) but have special settings and/or
+	// automatically add stops to make commonly used patterns easier to setup.
+	enum InfSpecialElevator
+	{
+		IELEV_SP_BASIC = 0,
+		IELEV_SP_BASIC_AUTO,
+		// Both of these are unimplemented in the final game.
+		IELEV_SP_UNIMPLEMENTED,
+		IELEV_SP_MID,
+		// Back to implemented types.
+		IELEV_SP_INV = 4,
+		IELEV_SP_DOOR,
+		IELEV_SP_DOOR_INV,
+		IELEV_SP_DOOR_MID,
+		IELEV_SP_MORPH_SPIN1,
+		IELEV_SP_MORPH_SPIN2,
+		IELEV_SP_MORPH_MOVE1,
+		IELEV_SP_MORPH_MOVE2,
+		IELEV_SP_EXPLOSIVE_WALL,
+		IELEV_SP_COUNT
+	};
+
 	bool init();
 	void shutdown();
 
@@ -34,4 +73,10 @@ namespace TFE_InfSystem
 	// If msgType = IMSG_SET/CLEAR_BITS, IMSG_MASTER_ON/OFF, IMSG_WAKEUP it is processed directly for this sector AND
 	// this iterates through the valid links and calls their msgFunc.
 	void inf_sectorSendMessage(RSector* sector, SecObject* obj, u32 evt, InfMessageType msgType);
+
+	// Used when loading levels.
+	struct InfElevator;
+
+	InfElevator* inf_allocateSpecialElevator(RSector* sector, InfSpecialElevator type);
+	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);
 }
