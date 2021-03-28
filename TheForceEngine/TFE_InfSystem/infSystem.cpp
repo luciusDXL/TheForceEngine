@@ -1682,11 +1682,12 @@ namespace TFE_InfSystem
 				case KW_LEVEL:
 				{
 					// This is very incomplete and needs to be fixed.
+					// This doesn't actually work correctly in the base game though, so its lower priority.
 					line = parser.readLine(bufferPos);
 					if (strstr(line, "SEQ"))
 					{
 						char itemName[256];
-						s32 r = sscanf(line, " %s %s %s %s %s %s %s", itemName, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArgExtra, s_infArgExtra);
+						s32 argCount = sscanf(line, " %s %s %s %s %s %s %s", itemName, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArgExtra, s_infArgExtra);
 						KEYWORD levelItem = getKeywordIndex(itemName);
 						if (levelItem == KW_AMB_SOUND)
 						{
@@ -2358,7 +2359,7 @@ namespace TFE_InfSystem
 					}
 				}
 			} break;
-			case IMSG_REVERSE_MOVE:
+			case IMSG_REV_MOVE:
 			{
 				RSector* sector = elev->sector;
 				if (!(sector->flags1 & SEC_FLAGS1_CRUSHING))

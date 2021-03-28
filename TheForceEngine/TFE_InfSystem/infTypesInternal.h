@@ -28,75 +28,75 @@ namespace TFE_InfSystem
 
 	enum ElevUpdateFlags
 	{
-		ELEV_MOVING = (1 << 0),			// elevator should be moving.
-		ELEV_MASTER_ON = (1 << 1),		// master on
-		ELEV_MOVING_REVERSE = (1 << 2),	// the elevator is moving in reverse.
+		ELEV_MOVING         = FLAG_BIT(0),	// elevator should be moving.
+		ELEV_MASTER_ON      = FLAG_BIT(1),	// master on
+		ELEV_MOVING_REVERSE = FLAG_BIT(2),	// the elevator is moving in reverse.
 	};
 
 	enum InfDelay
 	{
 		// IDELAY_SECONDS < IDELAY_COMPLETE
-		IDELAY_HOLD = 0xffffffff,
+		IDELAY_HOLD      = 0xffffffff,
 		IDELAY_TERMINATE = 0xfffffffe,
-		IDELAY_COMPLETE = 0xfffffffd,
+		IDELAY_COMPLETE  = 0xfffffffd,
 	};
 
 	enum LinkType
 	{
 		LTYPE_SECTOR = 0,
-		LTYPE_TRIGGER = 1,
-		LTYPE_TELEPORT = 2,
+		LTYPE_TRIGGER,
+		LTYPE_TELEPORT,
 	};
 
 	enum TriggerType
 	{
 		ITRIGGER_WALL = 0,
-		ITRIGGER_SECTOR = 1,
-		ITRIGGER_SWITCH1 = 2,
-		ITRIGGER_TOGGLE = 3,
-		ITRIGGER_SINGLE = 4,
+		ITRIGGER_SECTOR,
+		ITRIGGER_SWITCH1,
+		ITRIGGER_TOGGLE,
+		ITRIGGER_SINGLE
 	};
 
 	enum InfEventMask
 	{
-		INF_EVENT_CROSS_LINE_FRONT = (1u << 0u),
-		INF_EVENT_CROSS_LINE_BACK = (1u << 1u),
-		INF_EVENT_ENTER_SECTOR = (1u << 2u),
-		INF_EVENT_LEAVE_SECTOR = (1u << 3u),
-		INF_EVENT_NUDGE_FRONT = (1u << 4u),	// front of line or inside sector.
-		INF_EVENT_NUDGE_BACK = (1u << 5u),	// back of line or outside sector.
-		INF_EVENT_EXPLOSION = (1u << 6u),
-		INF_EVENT_UNKNOWN = (1u << 7u),		// skipped slot or unused event?
-		INF_EVENT_SHOOT_LINE = (1u << 8u),	// Shoot or punch line.
-		INF_EVENT_LAND = (1u << 9u),		// Land on floor
-		INF_EVENT_10 = (1u << 10u),			// Unknown event
-		INF_EVENT_11 = (1u << 11u),			// Unknown Event
-		INF_EVENT_31 = (1u << 31u),			// Unknown Event
+		INF_EVENT_CROSS_LINE_FRONT = FLAG_BIT(0),
+		INF_EVENT_CROSS_LINE_BACK  = FLAG_BIT(1),
+		INF_EVENT_ENTER_SECTOR     = FLAG_BIT(2),
+		INF_EVENT_LEAVE_SECTOR     = FLAG_BIT(3),
+		INF_EVENT_NUDGE_FRONT      = FLAG_BIT(4),	// front of line or inside sector.
+		INF_EVENT_NUDGE_BACK       = FLAG_BIT(5),	// back of line or outside sector.
+		INF_EVENT_EXPLOSION        = FLAG_BIT(6),
+		INF_EVENT_UNKNOWN          = FLAG_BIT(7),	// skipped slot or unused event?
+		INF_EVENT_SHOOT_LINE       = FLAG_BIT(8),	// Shoot or punch line.
+		INF_EVENT_LAND             = FLAG_BIT(9),	// Land on floor
+		INF_EVENT_10               = FLAG_BIT(10),	// Unknown event
+		INF_EVENT_11               = FLAG_BIT(11),	// Unknown Event
+		INF_EVENT_31               = FLAG_BIT(31),	// Unknown Event
 		INF_EVENT_ANY = 0xffffffff
 	};
 
 	enum InfEntityMask
 	{
-		INF_ENTITY_ENEMY = (1 << 0),
-		INF_ENTITY_WEAPON = (1 << 3),
-		INF_ENTITY_11     = (1 << 11),
-		INF_ENTITY_PLAYER = (1 << 31),
+		INF_ENTITY_ENEMY  = FLAG_BIT(0),
+		INF_ENTITY_WEAPON = FLAG_BIT(3),
+		INF_ENTITY_11     = FLAG_BIT(11),
+		INF_ENTITY_PLAYER = FLAG_BIT(31),
 		INF_ENTITY_ANY = 0xffffffffu
 	};
 
 	enum InfElevatorFlags
 	{
-		INF_EFLAG_MOVE_FLOOR = (1 << 0),	// Move on floor.
-		INF_EFLAG_MOVE_SECHT = (1 << 1),	// Move on second height.
-		INF_EFLAG_MOVE_CEIL  = (1 << 2),	// Move on ceiling (head has to be close enough?)
-		INF_EFLAG_DOOR       = (1 << 3),	// This is a door auto-created from the sector flag.
+		INF_EFLAG_MOVE_FLOOR = FLAG_BIT(0),	// Move on floor.
+		INF_EFLAG_MOVE_SECHT = FLAG_BIT(1),	// Move on second height.
+		INF_EFLAG_MOVE_CEIL  = FLAG_BIT(2),	// Move on ceiling (head has to be close enough?)
+		INF_EFLAG_DOOR       = FLAG_BIT(3),	// This is a door auto-created from the sector flag.
 	};
 
 	enum KeyItem
 	{
-		KEY_RED = 23,
+		KEY_RED    = 23,
 		KEY_YELLOW = 24,
-		KEY_BLUE = 25,
+		KEY_BLUE   = 25,
 	};
 
 	enum TeleportType
