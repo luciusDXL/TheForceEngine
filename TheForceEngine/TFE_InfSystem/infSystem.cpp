@@ -78,8 +78,6 @@ namespace TFE_InfSystem
 	s32 updateElevator(InfElevator* elev);
 	void elevHandleStopDelay(InfElevator* elev);
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
-	void inf_adjustTextureWallOffsets_Floor(RSector* sector, s32 floorDelta);
-	void inf_adjustTextureMirrorOffsets_Floor(RSector* sector, s32 floorDelta);
 	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType);
 
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj);
@@ -2653,64 +2651,6 @@ namespace TFE_InfSystem
 		return stop;
 	}
 
-	void inf_adjustTextureWallOffsets_Floor(RSector* sector, s32 floorDelta)
-	{
-	#if 0	// This should be moved to the sector implementation
-		RWall* wall = sector->walls;
-		s32 wallCount = sector->wallCount;
-		for (s32 i = 0; i < wallCount; i++, wall++)
-		{
-			s32 textureOffset = floorDelta << 3;
-			if (wall->flags1 & WF1_TEX_ANCHORED)
-			{
-				if (wall->nextSector)
-				{
-					wall->botVOffset -= textureOffset;
-				}
-				else
-				{
-					wall->midVOffset -= textureOffset;
-				}
-			}
-			if (wall->flags1 & WF1_SIGN_ANCHORED)
-			{
-				wall->signVOffset -= textureOffset;
-			}
-		}
-	#endif
-	}
-
-	void inf_adjustTextureMirrorOffsets_Floor(RSector* sector, s32 floorDelta)
-	{
-	#if 0	// This should be moved to the sector implementation
-		RWall* wall = sector->walls;
-		s32 wallCount = sector->wallCount;
-		for (s32 i = 0; i < wallCount; i++, wall++)
-		{
-			RWall* mirror = wall->mirrorWall;
-			if (mirror)
-			{
-				s32 textureOffset = -floorDelta * 8;
-				if (mirror->flags1 & WF1_TEX_ANCHORED)
-				{
-					if (mirror->nextSector)
-					{
-						mirror->botVOffset -= textureOffset;
-					}
-					else
-					{
-						mirror->midVOffset -= textureOffset;
-					}
-				}
-				if (mirror->flags1 & WF1_SIGN_ANCHORED)
-				{
-					mirror->signVOffset -= textureOffset;
-				}
-			}
-		}
-	#endif
-	}
-
 	void inf_deleteSectorElevatorLink(RSector* sector, InfElevator* elev)
 	{
 		InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
@@ -3200,8 +3140,8 @@ namespace TFE_InfSystem
 
 		if (floorDelta)
 		{
-			inf_adjustTextureWallOffsets_Floor(sector, floorDelta);
-			inf_adjustTextureMirrorOffsets_Floor(sector, floorDelta);
+			sector_adjustTextureWallOffsets_Floor(sector, floorDelta);
+			sector_adjustTextureMirrorOffsets_Floor(sector, floorDelta);
 		}
 		sector_adjustHeights(sector, floorDelta, ceilDelta, secHeightDelta);
 
@@ -3211,8 +3151,8 @@ namespace TFE_InfSystem
 		{
 			if (floorDelta)
 			{
-				inf_adjustTextureWallOffsets_Floor(child->sector, floorDelta);
-				inf_adjustTextureMirrorOffsets_Floor(child->sector, floorDelta);
+				sector_adjustTextureWallOffsets_Floor(child->sector, floorDelta);
+				sector_adjustTextureMirrorOffsets_Floor(child->sector, floorDelta);
 			}
 			sector_adjustHeights(child->sector, floorDelta, ceilDelta, secHeightDelta);
 			child = (Slave*)allocator_getNext(elev->slaves);

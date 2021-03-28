@@ -314,6 +314,64 @@ namespace TFE_Level
 		}
 	}
 
+	void sector_adjustTextureWallOffsets_Floor(RSector* sector, s32 floorDelta)
+	{
+		sector->dirtyFlags |= SDF_WALL_OFFSETS;
+
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+		for (s32 i = 0; i < wallCount; i++, wall++)
+		{
+			s32 textureOffset = floorDelta << 3;
+			if (wall->flags1 & WF1_TEX_ANCHORED)
+			{
+				if (wall->nextSector)
+				{
+					wall->botOffset.z -= textureOffset;
+				}
+				else
+				{
+					wall->midOffset.z -= textureOffset;
+				}
+			}
+			if (wall->flags1 & WF1_SIGN_ANCHORED)
+			{
+				wall->signOffset.z -= textureOffset;
+			}
+		}
+	}
+
+	void sector_adjustTextureMirrorOffsets_Floor(RSector* sector, s32 floorDelta)
+	{
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+		for (s32 i = 0; i < wallCount; i++, wall++)
+		{
+			RWall* mirror = wall->mirrorWall;
+			if (mirror)
+			{
+				mirror->sector->dirtyFlags |= SDF_WALL_OFFSETS;
+
+				s32 textureOffset = -floorDelta * 8;
+				if (mirror->flags1 & WF1_TEX_ANCHORED)
+				{
+					if (mirror->nextSector)
+					{
+						mirror->botOffset.z -= textureOffset;
+					}
+					else
+					{
+						mirror->midOffset.z -= textureOffset;
+					}
+				}
+				if (mirror->flags1 & WF1_SIGN_ANCHORED)
+				{
+					mirror->signOffset.z -= textureOffset;
+				}
+			}
+		}
+	}
+
 	//////////////////////////////////////////////////////////
 	// Internal
 	//////////////////////////////////////////////////////////
@@ -448,5 +506,4 @@ namespace TFE_Level
 		// So I'm going to leave this empty for now and look deeper into it later once I have 
 		// more information.
 	}
-
 } // namespace TFE_Level
