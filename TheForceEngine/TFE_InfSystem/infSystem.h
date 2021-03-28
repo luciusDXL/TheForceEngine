@@ -61,8 +61,8 @@ namespace TFE_InfSystem
 
 	// Per elevator frame update.
 	void update_elevators();
-	// Per frame animated texture update (this may be moved later).
-	void update_animatedTextures();
+	// Per frame teleport update.
+	void update_teleports();
 
 	// Send messages so that entities and the player can interact with the INF system.
 	// If msgType = IMSG_SET/CLEAR_BITS the msg is processed directly for this wall OR

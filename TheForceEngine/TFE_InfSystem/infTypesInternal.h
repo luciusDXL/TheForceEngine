@@ -229,6 +229,7 @@ namespace TFE_InfSystem
 		{
 			InfElevator* elev;		// The actual INF item.
 			InfTrigger* trigger;
+			Teleport* teleport;
 			void* target;
 		};
 		u32 eventMask;				// The event mask which helps determine if a link can be activated.

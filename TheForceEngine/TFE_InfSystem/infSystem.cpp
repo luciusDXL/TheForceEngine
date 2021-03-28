@@ -61,6 +61,7 @@ namespace TFE_InfSystem
 	static u32 s_infMsgEvent;
 	static void* s_infMsgTarget;
 	static void* s_infMsgEntity;
+	static bool s_teleportUpdateActive = false;
 
 	// Pull from data...
 	static RSector* s_sectors;
@@ -703,7 +704,7 @@ namespace TFE_InfSystem
 		link->type = LTYPE_TELEPORT;
 		link->entityMask = 0xffffffff;
 		link->eventMask = INF_EVENT_ENTER_SECTOR;
-		link->target = teleport;
+		link->teleport = teleport;
 		link->msgFunc = infTeleportMsgFunc;
 		link->parent = sector->infLink;
 
@@ -1897,10 +1898,19 @@ namespace TFE_InfSystem
 			elev = (InfElevator*)allocator_getNext(s_infElevators);
 		} // while (elev)
 	}
-
-	// Per frame animated texture update (this may be moved later).
-	void update_animatedTextures()
+	
+	// Per frame teleport update.
+	void update_teleports()
 	{
+		// Only update when activated (which happens if an object enters a teleport sector.
+		if (!s_teleportUpdateActive)
+		{
+			return;
+		}
+		s_teleportUpdateActive = false;
+
+		// Update
+
 	}
 
 	// Send messages so that entities and the player can interact with the INF system.
@@ -2561,10 +2571,14 @@ namespace TFE_InfSystem
 			} break;
 		}
 	}
-
+		
+	// In the DOS code, the teleport task function has two functions -
+	// One to "activate" itself to run during the next update and one
+	// to actually update all teleports. For TFE this is split into two
+	// functions - one to enable the update and then the update itself.
 	void infTeleportMsgFunc(InfMessageType msgType)
 	{
-		// TODO
+		s_teleportUpdateActive = true;
 	}
 
 	void elevHandleStopDelay(InfElevator* elev)
@@ -3031,9 +3045,8 @@ namespace TFE_InfSystem
 				trigger->animTex = nullptr;
 
 				// Handle trigger sign texture.
-				// TODO: Update wall textures to use pointer to pointer and deference as needed to make animated textures work.
-				TextureData** signTex = (TextureData**)wall->signTex;
-				if (signTex && (*signTex)->uvWidth == -2)
+				TextureData** signTex = wall->signTex;
+				if (signTex && (*signTex)->uvWidth == BM_ANIMATED_TEXTURE)
 				{
 					// In this case, image points to the AnimatedTexture rather than the actual image.
 					AnimatedTexture* animTex = (AnimatedTexture*)(*signTex)->image;

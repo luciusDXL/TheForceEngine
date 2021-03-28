@@ -162,4 +162,30 @@ namespace TFE_Level
 			tex->image = (u8*)anim;
 		}
 	}
+
+	// Per frame animated texture update.
+	void update_animatedTextures(u32 curTick)
+	{
+		AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(s_textureAnimAlloc);
+		while (animTex)
+		{
+			if (animTex->nextTime < curTick)
+			{
+				if (animTex->nextTime == 0)
+				{
+					animTex->nextTime = curTick;
+				}
+
+				animTex->frame++;
+				if (animTex->frame >= animTex->count)
+				{
+					animTex->frame = 0;
+				}
+
+				*animTex->texPtr = animTex->frameList[animTex->frame];
+				animTex->nextTime += animTex->delay;
+			}
+			animTex = (AnimatedTexture*)allocator_getNext(s_textureAnimAlloc);
+		}
+	}
 }

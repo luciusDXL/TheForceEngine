@@ -68,4 +68,7 @@ namespace TFE_Level
 
 	TextureData* bitmap_load(const char* filepath);
 	void bitmap_setupAnimatedTexture(TextureData** texture);
+
+	// Per frame animated texture update.
+	void update_animatedTextures(u32 curTick);
 }
