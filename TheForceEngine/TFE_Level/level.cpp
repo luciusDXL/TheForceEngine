@@ -151,13 +151,11 @@ namespace TFE_Level
 			{
 				tex = bitmap_load(textureName, 1);
 			}
-			else if (!tex)
-			{
-				TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Could not open '%s', using 'default.bm' instead.", textureName);
-			}
 
 			if (!tex)
 			{
+				TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Could not open '%s', using 'default.bm' instead.", textureName);
+
 				tex = bitmap_load("default.bm", 1);
 				if (!tex)
 				{

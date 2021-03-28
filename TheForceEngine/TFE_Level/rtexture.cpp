@@ -182,7 +182,7 @@ namespace TFE_Level
 		anim->frameList = (TextureData**)malloc(sizeof(TextureData**) * anim->count);
 
 		TextureData** texPtrs = anim->frameList;
-		for (s32 i = 0; i < anim->count; i++, texPtrs++, textureOffsets++)	// i = eax = [ebp-0x14]
+		for (s32 i = 0; i < anim->count; i++, texPtrs++, textureOffsets++)
 		{
 			u32 offset = *textureOffsets;
 			TextureData* frame = (TextureData*)(tex->image + 2 + offset);
