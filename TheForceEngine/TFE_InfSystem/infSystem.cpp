@@ -93,6 +93,7 @@ namespace TFE_InfSystem
 	
 	// TODO: Move these to the right place in the renderer or shared location.
 	s32 sector_getMaxObjectHeight(RSector* sector) { return 0; }
+	// Note: When integrating add: sector->dirtyFlags |= SDF_HEIGHTS;
 	void sector_adjustHeights(RSector* sector, s32 floorDelta, s32 ceilDelta, s32 secHeightDelta) {}
 	void sector_setupWallDrawFlags(RSector* sector) {}
 	void sector_deleteElevatorLink(RSector* sector, InfElevator* elev) {}
@@ -1920,6 +1921,8 @@ namespace TFE_InfSystem
 	{
 		if (msgType == IMSG_SET_BITS)
 		{
+			wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
+
 			s32 flagsIndex = s_infMsgArg1;
 			u32 bits = s_infMsgArg2;
 			if (flagsIndex == 1)
@@ -1953,6 +1956,8 @@ namespace TFE_InfSystem
 		}
 		else if (msgType == IMSG_CLEAR_BITS)
 		{
+			wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
+
 			s32 flagsIndex = s_infMsgArg1;
 			u32 bits = s_infMsgArg2;
 			if (flagsIndex == 1)
@@ -2292,6 +2297,7 @@ namespace TFE_InfSystem
 					{
 						wall->flags1 &= ~(WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP);
 					}
+					wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
 				}
 			} break;
 			case IMSG_NEXT_STOP:
@@ -2852,6 +2858,8 @@ namespace TFE_InfSystem
 				{
 					sector->flags3 |= bits;
 				}
+
+				sector->dirtyFlags |= SDF_SECTOR_FLAGS;
 			} break;
 			case IMSG_CLEAR_BITS:
 			{
@@ -2870,6 +2878,8 @@ namespace TFE_InfSystem
 				{
 					sector->flags3 &= ~bits;
 				}
+
+				sector->dirtyFlags |= SDF_SECTOR_FLAGS;
 			} break;
 		};
 	}
@@ -2944,6 +2954,7 @@ namespace TFE_InfSystem
 			// Store the old value in flags3 so the lights can be toggled.
 			sector->flags3 = floor16(sector->ambient);
 			sector->ambient = newAmbient;
+			sector->dirtyFlags |= SDF_SECTOR_LIGHT;
 		}
 	}
 
@@ -3229,6 +3240,8 @@ namespace TFE_InfSystem
 
 	fixed16_16 infUpdate_rotateWall(InfElevator* elev, fixed16_16 delta)
 	{
+		RSector* sector = elev->sector;
+		sector->dirtyFlags |= SDF_VERTICES;
 		// TODO
 		return 0;
 	}
@@ -3256,6 +3269,7 @@ namespace TFE_InfSystem
 		fixed16_16 deltaZ = mul16(delta, elev->dirOrCenter.z);
 
 		RSector* sector = elev->sector;
+		sector->dirtyFlags |= SDF_FLAT_OFFSETS;
 		if (elev->type == IELEV_SCROLL_FLOOR)
 		{
 			sector->floorOffset.x += deltaX;
@@ -3271,6 +3285,7 @@ namespace TFE_InfSystem
 		while (child)
 		{
 			sector = child->sector;
+			sector->dirtyFlags |= SDF_FLAT_OFFSETS;
 			if (elev->type == IELEV_SCROLL_FLOOR)
 			{
 				sector->floorOffset.x += deltaX;
@@ -3291,11 +3306,13 @@ namespace TFE_InfSystem
 	{
 		RSector* sector = elev->sector;
 		sector->ambient += delta;
+		sector->dirtyFlags |= SDF_SECTOR_LIGHT;
 
 		Slave* child = (Slave*)allocator_getHead(elev->slaves);
 		while (child)
 		{
 			child->sector->ambient += delta;
+			child->sector->dirtyFlags |= SDF_SECTOR_LIGHT;
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
 		return sector->ambient;
@@ -3475,6 +3492,8 @@ namespace TFE_InfSystem
 
 	u32 sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
 	{
+		sector->dirtyFlags |= SDF_VERTICES;
+
 		fixed16_16 offsetX = mul16(delta, dirX);
 		fixed16_16 offsetZ = mul16(delta, dirZ);
 
@@ -3519,6 +3538,8 @@ namespace TFE_InfSystem
 
 	void sector_changeWallLight(RSector* sector, fixed16_16 delta)
 	{
+		sector->dirtyFlags |= SDF_WALL_LIGHT;
+
 		RWall* wall = sector->walls;
 		s32 wallCount = sector->wallCount;
 		for (s32 i = 0; i < wallCount; i++, wall++)
@@ -3534,6 +3555,7 @@ namespace TFE_InfSystem
 	{
 		RWall* wall = sector->walls;
 		s32 wallCount = sector->wallCount;
+		sector->dirtyFlags |= SDF_WALL_OFFSETS;
 
 		const u32 scrollFlags = WF1_SCROLL_SIGN_TEX | WF1_SCROLL_BOT_TEX | WF1_SCROLL_MID_TEX | WF1_SCROLL_TOP_TEX;
 		for (s32 i = 0; i < wallCount; i++, wall++)

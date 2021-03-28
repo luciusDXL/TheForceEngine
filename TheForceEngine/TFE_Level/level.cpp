@@ -473,6 +473,8 @@ namespace TFE_Level
 			sector_setupWallDrawFlags(sector);
 			sector_adjustHeights(sector, 0, 0, 0);
 			sector_computeBounds(sector);
+			// TFE: Added to support non-fixed-point rendering.
+			sector->dirtyFlags = SDF_ALL;
 		}
 
 		return true;

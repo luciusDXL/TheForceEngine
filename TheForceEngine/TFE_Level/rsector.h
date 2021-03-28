@@ -38,7 +38,29 @@ enum SectorFlags1
 	SEC_FLAGS1_PLAYER        = FLAG_BIT(18),
 	SEC_FLAGS1_SECRET        = FLAG_BIT(19),
 };
-	
+
+// Added for TFE to support floating point and GPU sub-renderers.
+// Floating point or GPU based sector data should be cached and only parts updated based
+// on these flags.
+enum SectorDirtyFlags
+{
+	SDF_NONE = 0,
+	// Texture Offsets
+	SDF_WALL_OFFSETS = FLAG_BIT(0),
+	SDF_FLAT_OFFSETS = FLAG_BIT(1),
+	// Geometry
+	SDF_VERTICES     = FLAG_BIT(2),
+	SDF_HEIGHTS      = FLAG_BIT(3),
+	// Flags
+	SDF_WALL_FLAGS   = FLAG_BIT(4),
+	SDF_SECTOR_FLAGS = FLAG_BIT(5),
+	// Lighting
+	SDF_WALL_LIGHT   = FLAG_BIT(6),
+	SDF_SECTOR_LIGHT = FLAG_BIT(7),
+	// Everything.
+	SDF_ALL = 0xffffffff
+};
+
 struct RSector
 {
 	RSector* self;
@@ -99,6 +121,9 @@ struct RSector
 	// Bounds
 	vec2_fixed boundsMin;
 	vec2_fixed boundsMax;
+
+	// Added for TFE, to support floating point and GPU sub-renderers.
+	u32 dirtyFlags;
 };
 
 namespace TFE_Level
