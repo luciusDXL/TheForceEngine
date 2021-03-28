@@ -149,7 +149,7 @@ namespace TFE_Level
 			TextureData* tex = nullptr;
 			if (strcasecmp(textureName, "<NoTexture>"))
 			{
-				tex = bitmap_load(textureName);
+				tex = bitmap_load(textureName, 1);
 			}
 			else if (!tex)
 			{
@@ -158,7 +158,7 @@ namespace TFE_Level
 
 			if (!tex)
 			{
-				tex = bitmap_load("default.bm");
+				tex = bitmap_load("default.bm", 1);
 				if (!tex)
 				{
 					TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "'default.bm' is not a valid BM file!");

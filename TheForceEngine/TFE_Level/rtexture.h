@@ -36,7 +36,7 @@ struct TextureData
 					// logSizeY = 0 for weapons
 	u8  pad1[3];
 	u8* image;		// 0x10
-	s32 u14;		// 0x14
+	u32* columns;	// 0x14
 
 	// 4 bytes
 	u8 flags;
@@ -66,7 +66,7 @@ namespace TFE_Level
 {
 	void bitmap_createAnimatedTextureAllocator();
 
-	TextureData* bitmap_load(const char* filepath);
+	TextureData* bitmap_load(const char* filepath, u32 decompress);
 	void bitmap_setupAnimatedTexture(TextureData** texture);
 
 	// Per frame animated texture update.

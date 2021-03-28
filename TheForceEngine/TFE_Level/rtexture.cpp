@@ -18,6 +18,9 @@ namespace TFE_Level
 	static std::vector<u8> s_buffer;
 	static Allocator* s_textureAnimAlloc;
 
+	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount);
+	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount);
+
 	u8 readByte(const u8*& data)
 	{
 		u8 res = *data;
@@ -44,7 +47,7 @@ namespace TFE_Level
 		s_textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
 	}
 
-	TextureData* bitmap_load(const char* filepath)
+	TextureData* bitmap_load(const char* filepath, u32 decompress)
 	{
 		TextureData* texture = (TextureData*)malloc(sizeof(TextureData));
 
@@ -85,14 +88,60 @@ namespace TFE_Level
 
 		if (texture->compressed)
 		{
-			// TODO
+			s32 inSize = readInt(data);
+			// values are ignored.
+			data += 12;
+
+			if (decompress & 1)
+			{
+				texture->dataSize = texture->width * texture->height;
+				texture->image = (u8*)malloc(texture->dataSize);
+
+				const u8* inBuffer = data;
+				data += inSize;
+
+				const u32* columns = (u32*)data;
+				data += sizeof(u32) * texture->width;
+
+				if (texture->compressed == 1)
+				{
+					u8* dst = texture->image;
+					for (s32 i = 0; i < texture->width; i++, dst += texture->height)
+					{
+						const u8* src = &inBuffer[columns[i]];
+						decompressColumn_Type1(src, dst, texture->height);
+					}
+				}
+				else if (texture->compressed == 2)
+				{
+					u8* dst = texture->image;
+					for (s32 i = 0; i < texture->width; i++, dst += texture->height)
+					{
+						const u8* src = &inBuffer[columns[i]];
+						decompressColumn_Type2(src, dst, texture->height);
+					}
+				}
+				texture->compressed = 0;
+				texture->columns = nullptr;
+			}
+			else
+			{
+				texture->dataSize = inSize;
+				texture->image = (u8*)malloc(texture->dataSize);
+				memcpy(texture->image, data, texture->dataSize);
+				data += texture->dataSize;
+
+				texture->columns = (u32*)malloc(texture->width * sizeof(u32));
+				memcpy(texture->columns, data, texture->width * sizeof(u32));
+				data += texture->width * sizeof(u32);
+			}
 		}
 		else
 		{
 			texture->dataSize = texture->width * texture->height;
 			// Datasize, ignored.
 			data += 4;
-			texture->u14 = 0;
+			texture->columns = nullptr;
 
 			// Padding, ignored.
 			data += 12;
@@ -101,11 +150,6 @@ namespace TFE_Level
 			texture->image = (u8*)malloc(texture->dataSize);
 			memcpy(texture->image, data, texture->dataSize);
 			data += texture->dataSize;
-		}
-
-		if (texture->compressed)
-		{
-			// TODO
 		}
 
 		return texture;
@@ -186,6 +230,68 @@ namespace TFE_Level
 				animTex->nextTime += animTex->delay;
 			}
 			animTex = (AnimatedTexture*)allocator_getNext(s_textureAnimAlloc);
+		}
+	}
+		
+	// Type 1: RLE with runs of solid colors. Costs 2 bytes per solid-color run.
+	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount)
+	{
+		while (pixelCount)
+		{
+			const u8 value = *src;
+			src++;
+
+			if (value & 0x80)
+			{
+				const u8 color = *src;
+				src++;
+
+				const u32 count = value & 0x7f;
+				// store packed at dst
+				for (u32 i = 0; i < count; i++, dst++)
+				{
+					*dst = color;
+				}
+				pixelCount -= count;
+			}
+			else
+			{
+				const u32 count = value;
+				// store packed at dst
+				for (u32 i = 0; i < count; i++, dst++, src++)
+				{
+					*dst = *src;
+				}
+				pixelCount -= count;
+			}
+		}
+	}
+
+	// Type 2: RLE with runs of transparent texels (useful for sprites). Costs 1 byte per transparent run.
+	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount)
+	{
+		while (pixelCount)
+		{
+			const u8 value = *src;
+			src++;
+
+			if (value & 0x80)
+			{
+				const u32 count = value & 0x7f;
+				// store 0 at dst
+				memset(dst, 0, count);
+				pixelCount -= count;
+			}
+			else
+			{
+				const u32 count = value;
+				// store packed at dst
+				for (u32 i = 0; i < count; i++, dst++, src++)
+				{
+					*dst = *src;
+				}
+				pixelCount -= count;
+			}
 		}
 	}
 }
