@@ -66,9 +66,7 @@ namespace TFE_InfSystem
 	// Pull from data...
 	static RSector* s_sectors;
 	static u32 s_sectorCount;
-	static SecObject* s_playerObject;
-	static u32 s_playerSecMoved = 0;
-
+		
 	static std::vector<char> s_buffer;
 
 	void infElevatorMsgFunc(InfMessageType msgType);
@@ -90,17 +88,7 @@ namespace TFE_InfSystem
 	void inf_stopHandleMessages(Stop* stop);
 	void inf_handleMsgLights();
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
-	
-	// TODO: Move these to the right place in the renderer or shared location.
-	s32 sector_getMaxObjectHeight(RSector* sector) { return 0; }
-	// Note: When integrating add: sector->dirtyFlags |= SDF_HEIGHTS;
-	void sector_adjustHeights(RSector* sector, s32 floorDelta, s32 ceilDelta, s32 secHeightDelta) {}
-	void sector_setupWallDrawFlags(RSector* sector) {}
-	void sector_deleteElevatorLink(RSector* sector, InfElevator* elev) {}
-	u32  sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags);
-	void sector_changeWallLight(RSector* sector, fixed16_16 delta);
-	void sector_scrollWalls(RSector* sector, fixed16_16 offsetX, fixed16_16 offsetZ);
-
+		
 	// TODO: System functions, to be connected later.
 	void sendTextMessage(s32 msgId) {}
 	void playSound2D(s32 soundId) {}
@@ -2723,6 +2711,21 @@ namespace TFE_InfSystem
 	#endif
 	}
 
+	void inf_deleteSectorElevatorLink(RSector* sector, InfElevator* elev)
+	{
+		InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+		while (link)
+		{
+			if (elev == link->elev)
+			{
+				allocator_deleteItem(sector->infLink, link);
+				return;
+			}
+
+			link = (InfLink*)allocator_getNext(sector->infLink);
+		}
+	}
+
 	void deleteElevator(InfElevator* elev)
 	{
 		if (elev->slaves)
@@ -2747,10 +2750,10 @@ namespace TFE_InfSystem
 			}
 			allocator_free(elev->stops);
 		}
-		sector_deleteElevatorLink(elev->sector, elev);
+		inf_deleteSectorElevatorLink(elev->sector, elev);
 		allocator_deleteItem(s_infElevators, elev);
 	}
-
+		
 	void deleteTrigger(InfTrigger* trigger)
 	{
 		InfLink* link = trigger->link;
@@ -3330,259 +3333,5 @@ namespace TFE_InfSystem
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
 		return elev->iValue;
-	}
-
-	////////////////////////////////////////////////////
-	// Sector stuff (move me)
-	////////////////////////////////////////////////////
-	// returns 0 if the object does NOT overlap, otherwise non-zero.
-	// objSide: 0 = no overlap, -1/+1 front or behind.
-	u32 sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide)
-	{
-		s32 halfWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 1;
-		s32 quarterWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 2;
-		s32 threeQuartWidth = halfWidth + quarterWidth;
-		*objSide = 0;
-
-		RSector* next = wall->nextSector;
-		if (next)
-		{
-			RSector* sector = wall->sector;
-			if (obj->posWS.y <= sector->floorHeight)
-			{
-				fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
-				if (objTop > sector->ceilingHeight)
-				{
-					return 0;
-				}
-			}
-		}
-
-		vec2_fixed* w0 = wall->w0;
-		fixed16_16 x0 = w0->x;
-		fixed16_16 z0 = w0->z;
-		fixed16_16 dirX = wall->wallDir.z;
-		fixed16_16 dirZ = wall->wallDir.x;
-		fixed16_16 len = wall->length;
-		fixed16_16 dx = obj->posWS.x - x0;
-		fixed16_16 dz = obj->posWS.z - z0;
-
-		fixed16_16 proj = mul16(dx, dirZ) + mul16(dz, dirX);
-		fixed16_16 maxS = threeQuartWidth * 2 + len;	// 1.5 * width + length
-		fixed16_16 s = threeQuartWidth + proj;
-		if (s <= maxS)
-		{
-			s32 diff = mul16(dx, dirX) - mul16(dz, dirZ);
-			s32 side = (diff >= 0) ? 1 : -1;
-
-			*objSide = side;
-			if (side < 0)
-			{
-				diff = -diff;
-			}
-			if (diff <= threeQuartWidth)
-			{
-				return 0xffffffff;
-			}
-		}
-		return 0;
-	}
-
-	static fixed16_16 s_dist;
-
-	fixed16_16 sector_computeDirAndLength(fixed16_16 dx, fixed16_16 dz, fixed16_16* dirX, fixed16_16* dirZ)
-	{
-		// The original code reduce the values by half, did the sqaure root and than multiplied by 2 (which the sqrt table adjusted for the scale).
-		// TFE just calls the sqrt function directly.
-		fixed16_16 dxSq = mul16(dx, dx);
-		fixed16_16 dzSq = mul16(dz, dz);
-		s_dist = fixedSqrt(dxSq + dzSq);
-		
-		if (s_dist)
-		{
-			*dirX = div16(dx, s_dist);
-			*dirZ = div16(dz, s_dist);
-		}
-		else
-		{
-			*dirZ = 0;
-			*dirX = 0;
-		}
-		return s_dist;
-	}
-
-	void sector_computeWallDirAndLength(RWall* wall)
-	{
-		vec2_fixed* w0 = wall->w0;
-		vec2_fixed* w1 = wall->w1;
-		fixed16_16 dx = w1->x - w0->x;
-		fixed16_16 dz = w1->z - w0->z;
-		wall->length = sector_computeDirAndLength(dx, dz, &wall->wallDir.x, &wall->wallDir.z);
-		wall->angle = vec2ToAngle(dx, dz);
-	}
-
-	void sector_moveWallVertex(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
-	{
-		// Offset vertex 0.
-		wall->w0->x += offsetX;
-		wall->w0->z += offsetZ;
-		// Update the wall direction and length.
-		sector_computeWallDirAndLength(wall);
-
-		// Set the appropriate game value if the player is inside the sector.
-		RSector* sector = wall->sector;
-		if (sector->flags1 & SEC_FLAGS1_PLAYER)
-		{
-			s_playerSecMoved = 0xffffffff;
-		}
-
-		// Update the previous wall, since it would have changed as well.
-		RWall* nextWall = nullptr;
-		if (wall->id == 0)
-		{
-			s32 last = sector->wallCount - 1;
-			nextWall = &sector->walls[last];
-		}
-		else
-		{
-			nextWall = wall - 1;
-		}
-		// Compute the wall direction and length of the previous wall.
-		sector_computeWallDirAndLength(nextWall);
-	}
-
-	// returns 0 if the wall is free to move, else non-zero.
-	u32 sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
-	{
-		s32 objSide0;
-		// Test the initial position, the code assumes there is no collision at this point.
-		sector_objOverlapsWall(wall, s_playerObject, &objSide0);
-
-		vec2_fixed* w0 = wall->w0;
-		fixed16_16 z0 = w0->z;
-		fixed16_16 x0 = w0->x;
-		w0->x += offsetX;
-		w0->z += offsetZ;
-
-		s32 objSide1;
-		// Then move the wall and test the new position.
-		s32 col = sector_objOverlapsWall(wall, s_playerObject, &objSide1);
-
-		// Restore the wall.
-		w0->x = x0;
-		w0->z = z0;
-
-		if (!col)
-		{
-			if (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1)
-			{
-				return 0;
-			}
-		}
-		return 0xffffffff;
-	}
-
-	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ)
-	{
-		// TODO
-		// As far as I can tell, no objects are actually affected in-game by this.
-		// So I'm going to leave this empty for now and look deeper into it later once I have 
-		// more information.
-	}
-
-	u32 sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
-	{
-		sector->dirtyFlags |= SDF_VERTICES;
-
-		fixed16_16 offsetX = mul16(delta, dirX);
-		fixed16_16 offsetZ = mul16(delta, dirZ);
-
-		u32 sectorBlocked = 0;
-		s32 wallCount = sector->wallCount;
-		RWall* wall = sector->walls;
-		for (s32 i = 0; i < wallCount && !sectorBlocked; i++, wall++)
-		{
-			if (wall->flags1 & WF1_WALL_MORPHS)
-			{
-				sectorBlocked |= sector_canWallMove(wall, offsetX, offsetZ);
-
-				RWall* mirror = wall->mirrorWall;
-				if (wall->mirrorWall && (mirror->flags1 & WF1_WALL_MORPHS))
-				{
-					sectorBlocked |= sector_canWallMove(mirror, offsetX, offsetZ);
-				}
-			}
-		}
-
-		if (!sectorBlocked)
-		{
-			wall = sector->walls;
-			for (s32 i = 0; i < wallCount; i++, wall++)
-			{
-				if (wall->flags1 & WF1_WALL_MORPHS)
-				{
-					sector_moveWallVertex(wall, offsetX, offsetZ);
-					RWall* mirror = wall->mirrorWall;
-					if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
-					{
-						sector_moveWallVertex(mirror, offsetX, offsetZ);
-					}
-				}
-			}
-			sector_moveObjects(sector, flags, offsetX, offsetZ);
-			sector_computeBounds(sector);
-		}
-
-		return !sectorBlocked ? 0xffffffff : 0;
-	}
-
-	void sector_changeWallLight(RSector* sector, fixed16_16 delta)
-	{
-		sector->dirtyFlags |= SDF_WALL_LIGHT;
-
-		RWall* wall = sector->walls;
-		s32 wallCount = sector->wallCount;
-		for (s32 i = 0; i < wallCount; i++, wall++)
-		{
-			if (wall->flags1 & WF1_CHANGE_WALL_LIGHT)
-			{
-				wall->wallLight += delta;
-			}
-		}
-	}
-
-	void sector_scrollWalls(RSector* sector, fixed16_16 offsetX, fixed16_16 offsetZ)
-	{
-		RWall* wall = sector->walls;
-		s32 wallCount = sector->wallCount;
-		sector->dirtyFlags |= SDF_WALL_OFFSETS;
-
-		const u32 scrollFlags = WF1_SCROLL_SIGN_TEX | WF1_SCROLL_BOT_TEX | WF1_SCROLL_MID_TEX | WF1_SCROLL_TOP_TEX;
-		for (s32 i = 0; i < wallCount; i++, wall++)
-		{
-			if (wall->flags1 & scrollFlags)
-			{
-				if (wall->flags1 & WF1_SCROLL_TOP_TEX)
-				{
-					wall->topOffset.x += offsetX;
-					wall->topOffset.z += offsetZ;
-				}
-				if (wall->flags1 & WF1_SCROLL_MID_TEX)
-				{
-					wall->midOffset.x += offsetX;
-					wall->midOffset.z += offsetZ;
-				}
-				if (wall->flags1 & WF1_SCROLL_BOT_TEX)
-				{
-					wall->botOffset.x += offsetX;
-					wall->botOffset.z += offsetZ;
-				}
-				if (wall->flags1 & WF1_SCROLL_SIGN_TEX)
-				{
-					wall->signOffset.x += offsetX;
-					wall->signOffset.z += offsetZ;
-				}
-			}
-		}
 	}
 }

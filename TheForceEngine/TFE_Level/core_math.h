@@ -91,6 +91,8 @@ namespace TFE_CoreMath
 		return fixedSqrt((mul16(dx, dx)>>2) + (mul16(dz, dz)>>2)) << 1;
 	}
 
+	fixed16_16 computeDirAndLength(fixed16_16 dx, fixed16_16 dz, fixed16_16* dirX, fixed16_16* dirZ);
+
 	void computeTransformFromAngles_Fixed(angle14_32 yaw, angle14_32 pitch, angle14_32 roll, fixed16_16* transform);
 
 	// Returns an DF angle, where 360 degrees = 16384 angular units (~45.5 units / degree).

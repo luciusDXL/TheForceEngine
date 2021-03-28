@@ -102,6 +102,24 @@ namespace TFE_CoreMath
 		return angle & 0x3fff;
 	}
 
+	fixed16_16 computeDirAndLength(fixed16_16 dx, fixed16_16 dz, fixed16_16* dirX, fixed16_16* dirZ)
+	{
+		fixed16_16 dist = vec2Length(dx, dz);
+
+		if (dist)
+		{
+			*dirX = div16(dx, dist);
+			*dirZ = div16(dz, dist);
+		}
+		else
+		{
+			*dirZ = 0;
+			*dirX = 0;
+		}
+
+		return dist;
+	}
+
 	/////////////////////////////////////////////
 	// Floating point
 	/////////////////////////////////////////////

@@ -132,4 +132,9 @@ namespace TFE_Level
 	void sector_setupWallDrawFlags(RSector* sector);
 	void sector_adjustHeights(RSector* sector, fixed16_16 floorOffset, fixed16_16 ceilOffset, fixed16_16 secondHeightOffset);
 	void sector_computeBounds(RSector* sector);
+
+	fixed16_16 sector_getMaxObjectHeight(RSector* sector);
+	u32  sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags);
+	void sector_changeWallLight(RSector* sector, fixed16_16 delta);
+	void sector_scrollWalls(RSector* sector, fixed16_16 offsetX, fixed16_16 offsetZ);
 }
