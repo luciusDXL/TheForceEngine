@@ -138,6 +138,6 @@ namespace TFE_Level
 	void sector_changeWallLight(RSector* sector, fixed16_16 delta);
 	void sector_scrollWalls(RSector* sector, fixed16_16 offsetX, fixed16_16 offsetZ);
 
-	void sector_adjustTextureWallOffsets_Floor(RSector* sector, s32 floorDelta);
-	void sector_adjustTextureMirrorOffsets_Floor(RSector* sector, s32 floorDelta);
+	void sector_adjustTextureWallOffsets_Floor(RSector* sector, fixed16_16 floorDelta);
+	void sector_adjustTextureMirrorOffsets_Floor(RSector* sector, fixed16_16 floorDelta);
 }

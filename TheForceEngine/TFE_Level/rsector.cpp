@@ -314,7 +314,7 @@ namespace TFE_Level
 		}
 	}
 
-	void sector_adjustTextureWallOffsets_Floor(RSector* sector, s32 floorDelta)
+	void sector_adjustTextureWallOffsets_Floor(RSector* sector, fixed16_16 floorDelta)
 	{
 		sector->dirtyFlags |= SDF_WALL_OFFSETS;
 
@@ -322,7 +322,7 @@ namespace TFE_Level
 		s32 wallCount = sector->wallCount;
 		for (s32 i = 0; i < wallCount; i++, wall++)
 		{
-			s32 textureOffset = floorDelta << 3;
+			fixed16_16 textureOffset = floorDelta * 8;
 			if (wall->flags1 & WF1_TEX_ANCHORED)
 			{
 				if (wall->nextSector)
@@ -341,7 +341,7 @@ namespace TFE_Level
 		}
 	}
 
-	void sector_adjustTextureMirrorOffsets_Floor(RSector* sector, s32 floorDelta)
+	void sector_adjustTextureMirrorOffsets_Floor(RSector* sector, fixed16_16 floorDelta)
 	{
 		RWall* wall = sector->walls;
 		s32 wallCount = sector->wallCount;
@@ -352,7 +352,7 @@ namespace TFE_Level
 			{
 				mirror->sector->dirtyFlags |= SDF_WALL_OFFSETS;
 
-				s32 textureOffset = -floorDelta * 8;
+				fixed16_16 textureOffset = -floorDelta * 8;
 				if (mirror->flags1 & WF1_TEX_ANCHORED)
 				{
 					if (mirror->nextSector)
@@ -419,9 +419,9 @@ namespace TFE_Level
 	// objSide: 0 = no overlap, -1/+1 front or behind.
 	u32 sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide)
 	{
-		s32 halfWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 1;
-		s32 quarterWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 2;
-		s32 threeQuartWidth = halfWidth + quarterWidth;
+		fixed16_16 halfWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 1;
+		fixed16_16 quarterWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 2;
+		fixed16_16 threeQuartWidth = halfWidth + quarterWidth;
 		*objSide = 0;
 
 		RSector* next = wall->nextSector;
