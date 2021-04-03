@@ -87,18 +87,6 @@ namespace TFE_InfSystem
 		TELEPORT_BASIC = 0,
 		TELEPORT_CHUTE = 1
 	};
-		
-	struct AnimatedTexture
-	{
-		s32 count;
-		s32 index;
-		u32 delay;
-		s32 nextTick;
-		TextureData** frameList;
-		TextureData** basePtr;
-		TextureData* curFrame;
-		u8* baseData;
-	};
 
 	struct Teleport
 	{
