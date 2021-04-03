@@ -138,7 +138,7 @@ namespace TFE_InfSystem
 		InfLink* link = (InfLink*)allocator_newItem(infLinks);
 		link->type = LTYPE_SECTOR;
 		link->entityMask = INF_ENTITY_PLAYER;
-		link->eventMask = 0;
+		link->eventMask = INF_EVENT_NONE;
 		link->freeFunc = nullptr;
 		link->elev = elev;
 		link->parent = infLinks;
@@ -1313,7 +1313,7 @@ namespace TFE_InfSystem
 					}
 					else
 					{
-						trigger->link->eventMask = strToInt(s_infArg0);
+						trigger->link->eventMask = strToUInt(s_infArg0);
 					}
 				} break;
 				case KW_ENTITY_MASK:
@@ -1486,7 +1486,7 @@ namespace TFE_InfSystem
 					TriggerTarget* target = inf_addTriggerTarget(trigger, targetSector, targetWall, INF_EVENT_ANY);
 					if (argCount > 2)
 					{
-						target->eventMask = strToInt(s_infArg1);
+						target->eventMask = strToUInt(s_infArg1);
 					}
 				} break;
 				case KW_EVENT_MASK:
@@ -1497,7 +1497,7 @@ namespace TFE_InfSystem
 					}
 					else
 					{
-						trigger->link->eventMask = strToInt(s_infArg0);
+						trigger->link->eventMask = strToUInt(s_infArg0);
 					}
 				} break;
 				case KW_MASTER:
