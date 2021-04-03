@@ -33,6 +33,7 @@ enum InfElevatorType
 	IELEV_CHANGE_LIGHT,
 	IELEV_MOVE_FC,
 	IELEV_CHANGE_WALL_LIGHT,
+	IELEV_COUNT,
 };
 
 // "Special" elevators are "high level" elevators that map to the core

@@ -689,7 +689,7 @@ namespace TFE_InfSystem
 
 		InfLink* link = (InfLink*)allocator_newItem(sector->infLink);
 		link->type = LTYPE_TELEPORT;
-		link->entityMask = 0xffffffff;
+		link->entityMask = INF_ENTITY_ANY;
 		link->eventMask = INF_EVENT_ENTER_SECTOR;
 		link->teleport = teleport;
 		link->msgFunc = infTeleportMsgFunc;
@@ -1245,7 +1245,7 @@ namespace TFE_InfSystem
 					RWall* targetWall;
 					RSector* targetSector;
 					inf_getMessageTarget(s_infArg0, &targetSector, &targetWall);
-					TriggerTarget* target = inf_addTriggerTarget(trigger, targetSector, targetWall, 0xffffffff);
+					TriggerTarget* target = inf_addTriggerTarget(trigger, targetSector, targetWall, INF_EVENT_ANY);
 					if (argCount > 2)
 					{
 						target->eventMask = strToUInt(s_infArg1);
@@ -1483,7 +1483,7 @@ namespace TFE_InfSystem
 					RSector* targetSector;
 					inf_getMessageTarget(s_infArg0, &targetSector, &targetWall);
 
-					TriggerTarget* target = inf_addTriggerTarget(trigger, targetSector, targetWall, 0xffffffff);
+					TriggerTarget* target = inf_addTriggerTarget(trigger, targetSector, targetWall, INF_EVENT_ANY);
 					if (argCount > 2)
 					{
 						target->eventMask = strToInt(s_infArg1);
@@ -3012,18 +3012,18 @@ namespace TFE_InfSystem
 				}
 			} break;
 		}
-		trigger->cmd = IMSG_DONE;
-		trigger->event = 0;
-		trigger->arg1 = 0;
-		trigger->u30 = 0xffffffff;
-		trigger->u34 = 21;
+		trigger->cmd    = IMSG_DONE;
+		trigger->event  = 0;
+		trigger->arg1   = 0;
+		trigger->u30    = 0xffffffff;
+		trigger->u34    = 21;
 		trigger->master = 0xffffffff;
-		trigger->state = 0;
-		trigger->u48 = nullptr;
+		trigger->state  = 0;
+		trigger->u48    = nullptr;
 		trigger->textId = 0;
-		trigger->link = link;
-		trigger->type = type;
-		link->freeFunc = inf_triggerFreeFunc;
+		trigger->link   = link;
+		trigger->type   = type;
+		link->freeFunc  = inf_triggerFreeFunc;
 
 		return trigger;
 	}
