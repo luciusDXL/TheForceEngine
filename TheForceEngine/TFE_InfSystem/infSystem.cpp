@@ -1275,7 +1275,7 @@ namespace TFE_InfSystem
 						break;
 					case KW_GOTO_STOP:
 						trigger->cmd = IMSG_GOTO_STOP;
-						trigger->arg0 = strToInt(s_infArg1);
+						trigger->arg0 = strToUInt(s_infArg1);
 						break;
 					case KW_MASTER_ON:
 						trigger->cmd = IMSG_MASTER_ON;
@@ -1285,17 +1285,17 @@ namespace TFE_InfSystem
 						break;
 					case KW_SET_BITS:
 						trigger->cmd = IMSG_SET_BITS;
-						trigger->arg0 = strToInt(s_infArg1);
-						trigger->arg1 = strToInt(s_infArg2);
+						trigger->arg0 = strToUInt(s_infArg1);
+						trigger->arg1 = strToUInt(s_infArg2);
 						break;
 					case KW_CLEAR_BITS:
 						trigger->cmd = IMSG_CLEAR_BITS;
-						trigger->arg0 = strToInt(s_infArg1);
-						trigger->arg1 = strToInt(s_infArg2);
+						trigger->arg0 = strToUInt(s_infArg1);
+						trigger->arg1 = strToUInt(s_infArg2);
 						break;
 					case KW_COMPLETE:
 						trigger->cmd = IMSG_COMPLETE;
-						trigger->arg0 = strToInt(s_infArg1);
+						trigger->arg0 = strToUInt(s_infArg1);
 						break;
 					case KW_LIGHTS:
 						trigger->cmd = IMSG_LIGHTS;
