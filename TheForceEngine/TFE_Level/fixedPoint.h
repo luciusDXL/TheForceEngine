@@ -112,6 +112,13 @@ namespace TFE_CoreMath
 		return fixed16_16(16384.0f * angle / (2.0f*PI));
 	}
 
+	// Convert a floating point angle from [0, 2pi) to a fixed point value where 0 -> 0 and 2pi -> 16384
+	// This isn't really the same as fixed16_16 but matches the original source.
+	inline fixed16_16 floatDegreesToFixed(f32 angle)
+	{
+		return fixed16_16(16384.0f * angle / 360.0f);
+	}
+
 	inline s32 fixed16to12(fixed16_16 x)
 	{
 		return s32(x >> 4);

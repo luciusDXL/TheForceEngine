@@ -47,15 +47,13 @@ namespace TFE_Sprite_Jedi
 
 		// This is a "load in place" format in the original code.
 		// We are going to allocate new memory and copy the data.
-		u8* assetPtr = (u8*)malloc(s_buffer.size() + columnSize + sizeof(JediFrame));
+		u8* assetPtr = (u8*)malloc(s_buffer.size() + columnSize);
 		JediFrame* asset = (JediFrame*)assetPtr;
 		
-		asset->basePtr = assetPtr + sizeof(JediFrame);
-		asset->frame = (WaxFrame*)asset->basePtr;
-		memcpy(asset->basePtr, data, s_buffer.size());
+		memcpy(asset, data, s_buffer.size());
 
-		WaxFrame* frame = asset->frame;
-		WaxCell* cell = WAX_CellPtr(asset->basePtr, frame);
+		WaxFrame* frame = asset;
+		WaxCell* cell = WAX_CellPtr(asset, frame);
 
 		// After load, the frame data has to be fixed up before rendering.
 		// frame sizes remain in fixed point.
@@ -74,9 +72,9 @@ namespace TFE_Sprite_Jedi
 		}
 		else
 		{
-			u32* columns = (u32*)(asset->basePtr + s_buffer.size());
+			u32* columns = (u32*)((u8*)asset + s_buffer.size());
 			// Local pointer.
-			cell->columnOffset = u32((u8*)columns - asset->basePtr);
+			cell->columnOffset = u32((u8*)columns - (u8*)asset);
 			// Calculate column offsets.
 			for (s32 c = 0; c < cell->sizeX; c++)
 			{
@@ -152,8 +150,7 @@ namespace TFE_Sprite_Jedi
 
 		// Allocate and copy the data (this is a "copy in place" format... mostly.
 		JediWax* asset = (JediWax*)malloc(sizeToAlloc);
-		asset->basePtr = (u8*)asset + sizeof(JediWax);
-		Wax* dstWax = asset->wax = (Wax*)asset->basePtr;
+		Wax* dstWax = asset;
 		memcpy(dstWax, srcWax, s_buffer.size());
 
 		// Loop through animation list until we reach 32 (maximum count) or a null animation.
@@ -163,7 +160,7 @@ namespace TFE_Sprite_Jedi
 		u32 cellOffsetPtr = 0;
 		for (s32 animIdx = 0; animIdx < 32 && animOffset[animIdx]; animIdx++)
 		{
-			WaxAnim* dstAnim = (WaxAnim*)(asset->basePtr + animOffset[animIdx]);
+			WaxAnim* dstAnim = (WaxAnim*)((u8*)asset + animOffset[animIdx]);
 
 			if (animIdx == 0)
 			{
@@ -177,18 +174,18 @@ namespace TFE_Sprite_Jedi
 			const s32* viewOffsets = dstAnim->viewOffsets;
 			for (s32 v = 0; v < 32; v++)
 			{
-				const WaxView* dstView = (WaxView*)(asset->basePtr + viewOffsets[v]);
+				const WaxView* dstView = (WaxView*)((u8*)asset + viewOffsets[v]);
 				const s32* frameOffset = dstView->frameOffsets;
 				for (s32 f = 0; f < 32 && frameOffset[f]; f++)
 				{
 					const WaxFrame* srcFrame = (WaxFrame*)(data + frameOffset[f]);
-					WaxFrame* dstFrame = (WaxFrame*)(asset->basePtr + frameOffset[f]);
+					WaxFrame* dstFrame = (WaxFrame*)((u8*)asset + frameOffset[f]);
 
 					// Some frames are shared between animations, so we need to read from the source, unmodified data.
 					dstFrame->offsetX = round16(mul16(dstAnim->worldWidth,  intToFixed16(srcFrame->offsetX)));
 					dstFrame->offsetY = round16(mul16(dstAnim->worldHeight, intToFixed16(srcFrame->offsetY)));
 
-					WaxCell* dstCell = dstFrame->cellOffset ? (WaxCell*)(asset->basePtr + dstFrame->cellOffset) : nullptr;
+					WaxCell* dstCell = dstFrame->cellOffset ? (WaxCell*)((u8*)asset + dstFrame->cellOffset) : nullptr;
 					if (dstCell)
 					{
 						dstFrame->widthWS  = div16(intToFixed16(dstCell->sizeX), scaledWidth);
@@ -203,11 +200,11 @@ namespace TFE_Sprite_Jedi
 							}
 							else
 							{
-								u32* columns = (u32*)(asset->basePtr + s_buffer.size() + cellOffsetPtr);
+								u32* columns = (u32*)((u8*)asset + s_buffer.size() + cellOffsetPtr);
 								cellOffsetPtr += dstCell->sizeX * sizeof(u32);
 
 								// Local pointer.
-								dstCell->columnOffset = u32((u8*)columns - asset->basePtr);
+								dstCell->columnOffset = u32((u8*)columns - (u8*)asset);
 								// Calculate column offsets.
 								for (s32 c = 0; c < dstCell->sizeX; c++)
 								{

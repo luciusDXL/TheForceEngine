@@ -12,6 +12,7 @@ namespace TFE_Level
 {
 	void initMission();
 	bool loadGeometry(const char* levelName);
+	bool loadObjects(const char* levelName);
 
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;

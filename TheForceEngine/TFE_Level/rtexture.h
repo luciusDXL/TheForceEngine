@@ -28,15 +28,16 @@ struct TextureData
 	s16 uvWidth;	// portion of texture actually used
 	s16 uvHeight;	// portion of texture actually used
 
-	s32 dataSize;	// Data size for compressed BM
+	u32 dataSize;	// Data size for compressed BM
 					// excluding header and columns starts table
 					// If not compressed, DataSize is unused
 
 	u8 logSizeY;	// logSizeY = log2(SizeY)
 					// logSizeY = 0 for weapons
 	u8  pad1[3];
-	u8* image;		// 0x10
-	u32* columns;	// 0x14
+
+	u8* image;		// Image data.
+	u32* columns;	// columns will be NULL except when compressed.
 
 	// 4 bytes
 	u8 flags;

@@ -3,6 +3,9 @@
 #include "rtexture.h"
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
+#include <TFE_Asset/dfKeywords.h>
+#include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
@@ -39,9 +42,16 @@ namespace TFE_Level
 	static RSector* s_sectors = nullptr;
 	static std::vector<char> s_buffer;
 
-	static char s_readBuffer[256];
+	static JediModel** s_pods;
+	static JediWax** s_sprites;
+	static JediFrame** s_frames;
+	static s32* s_soundIds;
 
+	static char s_readBuffer[256];
 	static const char* c_defaultGob = "DARK.GOB";
+
+	s32 getDifficulty();
+	s32 object_parseSeq(SecObject* obj);
 
 	void initMission()
 	{
@@ -476,5 +486,212 @@ namespace TFE_Level
 		}
 
 		return true;
+	}
+
+	static s32 s_podCount = 0;
+	static s32 s_spriteCount = 0;
+	static s32 s_fmeCount = 0;
+	static s32 s_soundCount = 0;
+	static s32 s_objectCount = 0;
+			
+	bool loadObjects(const char* levelName)
+	{
+		s32 difficulty = 1 + getDifficulty();
+
+		char levelPath[TFE_MAX_PATH];
+		strcpy(levelPath, levelName);
+		strcat(levelPath, ".O");
+
+		char gobPath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(PATH_SOURCE_DATA, c_defaultGob, gobPath);
+		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, levelName, s_buffer))
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level '%s', path '%s'.", levelName, gobPath);
+			return false;
+		}
+
+		TFE_Parser parser;
+		size_t bufferPos = 0;
+		parser.init(s_buffer.data(), s_buffer.size());
+		parser.enableBlockComments();
+		parser.addCommentString("//");
+
+		// Only use the parser "read line" functionality and otherwise read in the same was as the DOS code.
+		const char* line;
+
+		line = parser.readLine(bufferPos);
+		s32 versionMajor, versionMinor;
+		if (sscanf(line, "O %d.%d", &versionMajor, &versionMinor) != 2)
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot parse version for Object file '%s'.", levelName);
+			return false;
+		}
+
+		line = parser.readLine(bufferPos);
+		if (sscanf(line, "PODS %d", &s_podCount) == 1)
+		{
+			for (s32 p = 0; p < s_podCount; p++)
+			{
+				line = parser.readLine(bufferPos);
+
+				char podName[32];
+				if (sscanf(line, "POD: %s", podName) == 1)
+				{
+					s_pods[p] = TFE_Model_Jedi::get(podName);
+					if (!s_pods[p])
+					{
+						s_pods[p] = TFE_Model_Jedi::get("default.3do");
+					}
+				}
+			}
+		}
+
+		line = parser.readLine(bufferPos);
+		if (sscanf(line, "SPRS %d", &s_spriteCount) == 1)
+		{
+			for (s32 s = 0; s < s_spriteCount; s++)
+			{
+				line = parser.readLine(bufferPos);
+
+				char name[32];	// [ebp-0x54]
+				if (sscanf(line, "SPR: %s", name) == 1)
+				{
+					s_sprites[s] = TFE_Sprite_Jedi::getWax(name);
+				}
+				if (!s_sprites[s])
+				{
+					s_sprites[s] = TFE_Sprite_Jedi::getWax("default.wax");
+				}
+			}
+		}
+
+		line = parser.readLine(bufferPos);
+		if (sscanf(line, "FMES %d", &s_fmeCount) == 1)
+		{
+			for (s32 f = 0; f < s_fmeCount; f++)
+			{
+				line = parser.readLine(bufferPos);
+
+				char name[32];
+				if (sscanf(line, "FME: %s", name) == 1)
+				{
+					s_frames[f] = TFE_Sprite_Jedi::getFrame(name);
+				}
+				if (!s_frames[f])
+				{
+					s_frames[f] = TFE_Sprite_Jedi::getFrame("default.fme");
+				}
+			}
+		}
+
+		line = parser.readLine(bufferPos);
+		if (sscanf(line, "SOUNDS %d", &s_soundCount) == 1)
+		{
+			for (s32 s = 0; s < s_soundCount; s++)
+			{
+				line = parser.readLine(bufferPos);
+
+				char name[32];
+				if (sscanf(line, "SOUND: %s", name) == 1)
+				{
+					// TODO
+					s_soundIds[s] = 0;// sound_Load(name);
+				}
+			}
+		}
+
+		line = parser.readLine(bufferPos);
+		if (sscanf(line, "OBJECTS %d", &s_objectCount) == 1)
+		{
+			s32 valid = -1;
+			s32 count = s_objectCount;
+
+			for (s32 i = 0; i < count && valid != 0; i++)
+			{
+				line = parser.readLine(bufferPos);
+
+				s32 data, diff;
+				f32 x, y, z, pch, yaw, rol;
+				char objClass[32];
+
+				s32 n;
+				if (sscanf(line, "CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &diff) > 5)
+				{
+					if (TFE_CoreMath::abs(diff) >= difficulty)
+					{
+						continue;
+					}
+
+					SecObject* obj = allocateObject();
+					obj->posWS.x = floatToFixed16(x);
+					obj->posWS.y = floatToFixed16(y);
+					obj->posWS.z = floatToFixed16(z);
+
+					obj->pitch = floatDegreesToFixed(pch);
+					obj->yaw = floatDegreesToFixed(yaw);
+					obj->roll = floatDegreesToFixed(rol);
+
+					RSector* sector = sector_which3D(obj->posWS.x, obj->posWS.y, obj->posWS.z);
+					if (!sector)
+					{
+						// TODO: freeObject(obj);
+						continue;
+					}
+
+					KEYWORD classType = getKeywordIndex(objClass);
+					switch (classType)
+					{
+						case KW_3D:
+						{
+							sector_addObject(sector, obj);
+							obj3d_setData(obj, s_pods[s_dataIndex]);
+							obj3d_computeTransform(obj);
+						} break;
+						case KW_SPRITE:
+						{
+							sector_addObject(sector, obj);
+							sprite_setData(obj, s_sprites[s_dataIndex]);
+						} break;
+						case KW_FRAME:
+						{
+							sector_addObject(sector, obj);
+							frame_setData(obj, s_frames[s_dataIndex]);
+						} break;
+						case KW_SPIRIT:
+						{
+							// TODO
+						} break;
+						case KW_SOUND:
+						{
+							// TODO
+						} break;
+						case KW_SAFE:
+						{
+							// TODO
+						} break;
+					}
+
+					s32 seqRead = object_parseSeq(obj);
+					if (obj->typeFlags & OTFLAG_PLAYER)	// player
+					{
+						// TODO
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
+	s32 getDifficulty()
+	{
+		// return s_agentData[s_agentId].difficulty;
+		return 0;
+	}
+
+	s32 object_parseSeq(SecObject* obj)
+	{
+		// TODO
+		return -1;
 	}
 }

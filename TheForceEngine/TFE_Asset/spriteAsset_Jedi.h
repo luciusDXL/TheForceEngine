@@ -77,22 +77,13 @@ struct Wax
 };
 #pragma pack(pop)
 
-#define WAX_AnimPtr(basePtr, jWax, animId) ((jWax)->animOffsets[(animId)] ? (WaxAnim*)((basePtr) + (jWax)->animOffsets[(animId)]) : nullptr)
-#define WAX_ViewPtr(basePtr, jAnim, viewId) ((jAnim)->viewOffsets[(viewId)] ? (WaxView*)((basePtr) + (jAnim)->viewOffsets[(viewId)]) : nullptr)
-#define WAX_FramePtr(basePtr, jView, frameId) ((jView)->frameOffsets[(frameId)] ? (WaxFrame*)((basePtr) + (jView)->frameOffsets[(frameId)]) : nullptr)
-#define WAX_CellPtr(basePtr, jFrame) ((jFrame)->cellOffset ? (WaxCell*)((basePtr) + (jFrame)->cellOffset) : nullptr)
+#define WAX_AnimPtr(waxPtr, animId) ((waxPtr)->animOffsets[(animId)] ? (WaxAnim*)((u8*)(waxPtr) + (waxPtr)->animOffsets[(animId)]) : nullptr)
+#define WAX_ViewPtr(waxPtr, jAnim, viewId) ((jAnim)->viewOffsets[(viewId)] ? (WaxView*)((u8*)(waxPtr) + (jAnim)->viewOffsets[(viewId)]) : nullptr)
+#define WAX_FramePtr(waxPtr, jView, frameId) ((jView)->frameOffsets[(frameId)] ? (WaxFrame*)((u8*)(waxPtr) + (jView)->frameOffsets[(frameId)]) : nullptr)
+#define WAX_CellPtr(waxPtr, jFrame) ((jFrame)->cellOffset ? (WaxCell*)((u8*)(waxPtr) + (jFrame)->cellOffset) : nullptr)
 
-struct JediWax
-{
-	u8* basePtr;
-	Wax* wax;
-};
-
-struct JediFrame
-{
-	u8* basePtr;
-	WaxFrame* frame;
-};
+typedef Wax JediWax;
+typedef WaxFrame JediFrame;
 
 namespace TFE_Sprite_Jedi
 {

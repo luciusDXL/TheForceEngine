@@ -34,6 +34,8 @@ enum ObjectTypeFlags
 	OTFLAG_UNSIGNED = 0xffffffff,
 };
 
+#define SPRITE_SCALE_FIXED (ONE_16 * 10)
+
 struct SecObject
 {
 	SecObject* self;
@@ -73,3 +75,18 @@ struct SecObject
 	// index in containing sector object list.
 	s16 index;
 };
+
+namespace TFE_Level
+{
+	SecObject* allocateObject();
+
+	// 3D objects
+	void obj3d_setData(SecObject* obj, JediModel* pod);
+	void obj3d_computeTransform(SecObject* obj);
+
+	// Sprites
+	void sprite_setData(SecObject* obj, JediWax* data);
+
+	// Frames
+	void frame_setData(SecObject* obj, WaxFrame* data);
+}

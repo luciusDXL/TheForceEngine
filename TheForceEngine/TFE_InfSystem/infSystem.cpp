@@ -1778,7 +1778,7 @@ namespace TFE_InfSystem
 			if ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
 			{
 				// If not already moving, get started.
-				if (elev->updateFlags & ELEV_MOVING)
+				if (!(elev->updateFlags & ELEV_MOVING) && !elevDeleted)
 				{
 					// Figure out the source position for the sound effect.
 					vec3_fixed sndPos = inf_getElevSoundPos(elev);
@@ -1983,7 +1983,7 @@ namespace TFE_InfSystem
 				while (link)
 				{
 					// Fire off the link task if the event and entity match the requirements.
-					if ((evt == 0 || (link->eventMask & evt)) && (entity == 0 || (link->entityMask & entity->typeFlags)) && link->msgFunc)
+					if ((evt == 0 || (link->eventMask & evt)) && (entity == nullptr || (link->entityMask & entity->typeFlags)) && link->msgFunc)
 					{
 						s_infMsgEntity = entity;
 						s_infMsgTarget = link->target;
@@ -2002,7 +2002,7 @@ namespace TFE_InfSystem
 	// Send messages so that entities and the player can interact with the INF system.
 	// If msgType = IMSG_SET/CLEAR_BITS, IMSG_MASTER_ON/OFF, IMSG_WAKEUP it is processed directly for this sector AND
 	// this iterates through the valid links and calls their msgFunc.
-	void inf_sectorSendMessage(RSector* sector, SecObject* obj, u32 evt, InfMessageType msgType)
+	void inf_sectorSendMessage(RSector* sector, SecObject* entity, u32 evt, InfMessageType msgType)
 	{
 		inf_sendSectorMessageInternal(sector, msgType);
 
@@ -2012,9 +2012,9 @@ namespace TFE_InfSystem
 			InfLink* link = (InfLink*)allocator_getHead(infLink);
 			while (link)
 			{
-				if ((evt == 0 || (link->eventMask & evt)) && (!obj || (link->entityMask & obj->typeFlags)) && link->msgFunc)
+				if ((evt == 0 || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->typeFlags)) && link->msgFunc)
 				{
-					s_infMsgEntity = obj;
+					s_infMsgEntity = entity;
 					s_infMsgTarget = link->target;
 					s_infMsgEvent = evt;
 

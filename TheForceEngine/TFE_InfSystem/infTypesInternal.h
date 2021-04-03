@@ -3,7 +3,7 @@
 #include <TFE_Level/rsector.h>
 #include <TFE_Level/rwall.h>
 #include <TFE_Level/robject.h>
-#include "infMessageType.h"
+#include "infPublicTypes.h"
 
 struct TextureData;
 struct Allocator;
@@ -56,25 +56,7 @@ namespace TFE_InfSystem
 		ITRIGGER_TOGGLE,
 		ITRIGGER_SINGLE
 	};
-
-	enum InfEventMask
-	{
-		INF_EVENT_CROSS_LINE_FRONT = FLAG_BIT(0),
-		INF_EVENT_CROSS_LINE_BACK  = FLAG_BIT(1),
-		INF_EVENT_ENTER_SECTOR     = FLAG_BIT(2),
-		INF_EVENT_LEAVE_SECTOR     = FLAG_BIT(3),
-		INF_EVENT_NUDGE_FRONT      = FLAG_BIT(4),	// front of line or inside sector.
-		INF_EVENT_NUDGE_BACK       = FLAG_BIT(5),	// back of line or outside sector.
-		INF_EVENT_EXPLOSION        = FLAG_BIT(6),
-		INF_EVENT_UNKNOWN          = FLAG_BIT(7),	// skipped slot or unused event?
-		INF_EVENT_SHOOT_LINE       = FLAG_BIT(8),	// Shoot or punch line.
-		INF_EVENT_LAND             = FLAG_BIT(9),	// Land on floor
-		INF_EVENT_10               = FLAG_BIT(10),	// Unknown event
-		INF_EVENT_11               = FLAG_BIT(11),	// Unknown Event
-		INF_EVENT_31               = FLAG_BIT(31),	// Unknown Event
-		INF_EVENT_ANY = 0xffffffff
-	};
-
+		
 	enum InfEntityMask
 	{
 		INF_ENTITY_ENEMY  = FLAG_BIT(0),

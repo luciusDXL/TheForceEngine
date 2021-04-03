@@ -718,9 +718,6 @@
     <ClInclude Include="TFE_InfSystem\infTypesInternal.h">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_InfSystem\infMessageType.h">
-      <Filter>Source\TFE_InfSystem</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Level\fixedPoint.h">
       <Filter>Source\TFE_Level</Filter>
     </ClInclude>
@@ -744,6 +741,9 @@
     </ClInclude>
     <ClInclude Include="TFE_Asset\dfKeywords.h">
       <Filter>Source\TFE_Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_InfSystem\infPublicTypes.h">
+      <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1208,6 +1208,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Asset\dfKeywords.cpp">
       <Filter>Source\TFE_Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Level\robject.cpp">
+      <Filter>Source\TFE_Level</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

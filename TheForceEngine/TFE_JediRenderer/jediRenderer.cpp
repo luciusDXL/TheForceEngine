@@ -274,16 +274,16 @@ namespace TFE_JediRenderer
 		}
 	}
 
-	void wax_setData(SecObject* obj, u8* basePtr, Wax* data)
+	void wax_setData(SecObject* obj, Wax* data)
 	{
 		obj->type = OBJ_TYPE_SPRITE;
 		obj->wax = data;
 		obj->flags |= OBJ_FLAG_RENDERABLE;
 
-		WaxAnim* anim = WAX_AnimPtr(basePtr, data, 0);
-		WaxView* view = WAX_ViewPtr(basePtr, anim, 0);
-		WaxFrame* frame = WAX_FramePtr(basePtr, view, 0);
-		WaxCell* cell = WAX_CellPtr(basePtr, frame);
+		WaxAnim* anim = WAX_AnimPtr(data, 0);
+		WaxView* view = WAX_ViewPtr(data, anim, 0);
+		WaxFrame* frame = WAX_FramePtr(data, view, 0);
+		WaxCell* cell = WAX_CellPtr(data, frame);
 
 		if (obj->worldWidth == -1)
 		{

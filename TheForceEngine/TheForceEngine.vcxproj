@@ -302,7 +302,7 @@
     <ClInclude Include="TFE_Game\player.h" />
     <ClInclude Include="TFE_InfSystem\allocator.h" />
     <ClInclude Include="TFE_InfSystem\infElevatorUpdateFunc.h" />
-    <ClInclude Include="TFE_InfSystem\infMessageType.h" />
+    <ClInclude Include="TFE_InfSystem\infPublicTypes.h" />
     <ClInclude Include="TFE_InfSystem\infSystem.h" />
     <ClInclude Include="TFE_InfSystem\infTypesInternal.h" />
     <ClInclude Include="TFE_InfSystem\message.h" />
@@ -526,6 +526,7 @@
     <ClCompile Include="TFE_JediRenderer\rtexture.cpp" />
     <ClCompile Include="TFE_Level\core_math.cpp" />
     <ClCompile Include="TFE_Level\level.cpp" />
+    <ClCompile Include="TFE_Level\robject.cpp" />
     <ClCompile Include="TFE_Level\rsector.cpp" />
     <ClCompile Include="TFE_Level\rtexture.cpp" />
     <ClCompile Include="TFE_Level\rwall.cpp" />

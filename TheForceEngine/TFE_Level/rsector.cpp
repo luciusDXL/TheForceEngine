@@ -1,6 +1,7 @@
 #include "rsector.h"
 #include "rwall.h"
 #include "robject.h"
+#include "level.h"
 
 namespace TFE_Level
 {
@@ -16,6 +17,8 @@ namespace TFE_Level
 	u32  sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide);
 	u32  sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ);
+
+	f32 isLeft(Vec2f p0, Vec2f p1, Vec2f p2);
 	
 	/////////////////////////////////////////////////
 	// API Implementation
@@ -372,6 +375,97 @@ namespace TFE_Level
 		}
 	}
 
+	void sector_addObject(RSector* sector, SecObject* obj)
+	{
+		// TODO
+		if (sector != obj->sector)
+		{
+
+		}
+	}
+	
+	// Use the floating point point inside polygon algorithm.
+	RSector* sector_which3D(fixed16_16 dx, fixed16_16 dy, fixed16_16 dz)
+	{
+		fixed16_16 ix = dx;
+		fixed16_16 iz = dz;
+		fixed16_16 y = dy;
+		
+		RSector* sector = s_sectors;
+		RSector* foundSector = nullptr;
+		s32 sectorUnitArea = 0;
+		s32 prevSectorUnitArea = INT_MAX;
+
+		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			if (y >= sector->ceilingHeight && y <= sector->floorHeight)
+			{
+				const fixed16_16 sectorMaxX = sector->boundsMax.x;
+				const fixed16_16 sectorMinX = sector->boundsMin.x;
+				const fixed16_16 sectorMaxZ = sector->boundsMax.z;
+				const fixed16_16 sectorMinZ = sector->boundsMin.z;
+
+				const s32 dxInt = floor16(sectorMaxX - sectorMinX) + 1;
+				const s32 dzInt = floor16(sectorMaxZ - sectorMinZ) + 1;
+				sectorUnitArea = dzInt * dxInt;
+				
+				s32 insideBounds = 0;
+				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ && sector_pointInside(sector, ix, iz))
+				{
+					// pick the containing sector with the smallest area.
+					if (sectorUnitArea < prevSectorUnitArea)
+					{
+						prevSectorUnitArea = sectorUnitArea;
+						foundSector = sector;
+					}
+				}
+			}
+		}
+
+		return foundSector;
+	}
+
+	// Uses the "Winding Number" test for a point in polygon.
+	// The point is considered inside if the winding number is greater than 0.
+	// Note that this is different than DF's "crossing" algorithm.
+	// TODO: Maybe? Replace algorithms.
+	bool sector_pointInside(RSector* sector, fixed16_16 x, fixed16_16 z)
+	{
+		RWall* wall = sector->walls;
+		s32 wallCount = sector->wallCount;
+		s32 wn = 0;
+
+		const Vec2f point = { fixed16ToFloat(x), fixed16ToFloat(z) };
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			vec2_fixed* w1 = wall->w0;
+			vec2_fixed* w0 = wall->w1;
+
+			Vec2f p0 = { fixed16ToFloat(w0->x), fixed16ToFloat(w0->z) };
+			Vec2f p1 = { fixed16ToFloat(w1->x), fixed16ToFloat(w1->z) };
+
+			if (p0.z <= z)
+			{
+				// Upward crossing, if the point is left of the edge than it intersects.
+				if (p1.z > z && isLeft(p0, p1, point) > 0)
+				{
+					wn++;
+				}
+			}
+			else
+			{
+				// Downward crossing, if point is right of the edge it intersects.
+				if (p1.z <= z && isLeft(p0, p1, point) < 0)
+				{
+					wn--;
+				}
+			}
+		}
+
+		// The point is only outside if the winding number is less than or equal to 0.
+		return wn > 0;
+	}
+
 	//////////////////////////////////////////////////////////
 	// Internal
 	//////////////////////////////////////////////////////////
@@ -505,5 +599,14 @@ namespace TFE_Level
 		// As far as I can tell, no objects are actually affected in-game by this.
 		// So I'm going to leave this empty for now and look deeper into it later once I have 
 		// more information.
+	}
+		
+	// Tests if a point (p2) is to the left, on or right of an infinite line (p0 -> p1).
+	// Return: >0 p2 is on the left of the line.
+	//         =0 p2 is on the line.
+	//         <0 p2 is on the right of the line.
+	f32 isLeft(Vec2f p0, Vec2f p1, Vec2f p2)
+	{
+		return (p1.x - p0.x) * (p2.z - p0.z) - (p2.x - p0.x) * (p1.z - p0.z);
 	}
 } // namespace TFE_Level

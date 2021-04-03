@@ -188,16 +188,15 @@ namespace TFE_JediRenderer
 
 			// Get the animation based on the object state.
 			Wax* wax = obj->wax;
-			u8* basePtr = (u8*)obj->wax;
-			WaxAnim* anim = WAX_AnimPtr(basePtr, wax, obj->anim & 0x1f);
+			WaxAnim* anim = WAX_AnimPtr(wax, obj->anim & 0x1f);
 			if (anim)
 			{
 				// Then get the Sequence from the angle difference.
-				WaxView* view = WAX_ViewPtr(basePtr, anim, 31 - angleDiff);
+				WaxView* view = WAX_ViewPtr(wax, anim, 31 - angleDiff);
 				// And finall the frame from the current sequence.
-				WaxFrame* frame = WAX_FramePtr(basePtr, view, obj->frame & 0x1f);
+				WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 0x1f);
 				// Draw the frame.
-				sprite_drawFrame(basePtr, frame, obj);
+				sprite_drawFrame((u8*)wax, frame, obj);
 			}
 		}
 	}
