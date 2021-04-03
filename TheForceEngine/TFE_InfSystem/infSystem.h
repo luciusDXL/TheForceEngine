@@ -1,7 +1,9 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
 // INF System
-// Classic Dark Forces (DOS) Jedi derived INF system.
+// Classic Dark Forces (DOS) Jedi derived INF system. The INF System
+// is a "script-like" system that controls level interactivity,
+// level animation, and tracks completion.
 //
 // Copyright note:
 // While the project as a whole is licensed under GPL-2.0, some of the
