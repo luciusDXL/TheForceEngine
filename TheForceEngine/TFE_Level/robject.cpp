@@ -16,8 +16,8 @@ namespace TFE_Level
 		obj->worldWidth = -1;
 		obj->ptr = nullptr;
 		obj->sector = nullptr;
-		obj->type = 0;
-		obj->typeFlags = 0; // OTFLAG_NONE;
+		obj->type = OBJ_TYPE_NONE;
+		obj->entityFlags = ETFLAG_NONE;
 		obj->worldHeight = -1;
 		obj->flags = 0;
 		obj->self = obj;

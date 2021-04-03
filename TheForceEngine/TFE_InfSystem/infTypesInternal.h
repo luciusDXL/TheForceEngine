@@ -59,10 +59,10 @@ namespace TFE_InfSystem
 		
 	enum InfEntityMask
 	{
-		INF_ENTITY_ENEMY  = FLAG_BIT(0),
-		INF_ENTITY_WEAPON = FLAG_BIT(3),
-		INF_ENTITY_11     = FLAG_BIT(11),
-		INF_ENTITY_PLAYER = FLAG_BIT(31),
+		INF_ENTITY_ENEMY     = FLAG_BIT(0),
+		INF_ENTITY_WEAPON    = FLAG_BIT(3),
+		INF_ENTITY_SMART_OBJ = FLAG_BIT(11),
+		INF_ENTITY_PLAYER    = FLAG_BIT(31),
 		INF_ENTITY_ANY = 0xffffffffu
 	};
 
@@ -76,6 +76,7 @@ namespace TFE_InfSystem
 
 	enum KeyItem
 	{
+		KEY_NONE   = 0,
 		KEY_RED    = 23,
 		KEY_YELLOW = 24,
 		KEY_BLUE   = 25,
@@ -183,7 +184,7 @@ namespace TFE_InfSystem
 		InfElevatorType type;
 		ElevTrigMove trigMove;
 		RSector* sector;
-		u32 key;
+		KeyItem key;
 		s32 fixedStep;
 		u32 nextTick;
 		s32 u1c;

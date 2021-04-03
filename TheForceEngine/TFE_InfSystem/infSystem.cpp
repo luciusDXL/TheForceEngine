@@ -163,7 +163,7 @@ namespace TFE_InfSystem
 	{
 		Stop* stop = (Stop*)allocator_newItem(stops);
 		stop->value = 0;
-		stop->delay = 582;	// 4 seconds.
+		stop->delay = TICKS(4);	// 4 seconds.
 		stop->messages = 0;
 		stop->adjoinCmds = 0;
 		stop->pageId = 0;
@@ -235,7 +235,7 @@ namespace TFE_InfSystem
 	{
 		InfElevator* elev = (InfElevator*)allocator_newItem(s_infElevators);
 		elev->trigMove = TRIGMOVE_HOLD;
-		elev->key = 0;
+		elev->key = KEY_NONE;
 		elev->fixedStep = 0;
 		elev->u1c = -1;
 		elev->stops = nullptr;
@@ -355,7 +355,7 @@ namespace TFE_InfSystem
 
 				elev->trigMove = TRIGMOVE_CONT;
 				elev->speed = FIXED(8);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
 			} break;
 			case IELEV_SP_BASIC_AUTO:
@@ -392,7 +392,7 @@ namespace TFE_InfSystem
 				elev->speed = FIXED(8);
 				elev->trigMove = TRIGMOVE_CONT;
 				stop1->delay = IDELAY_HOLD;
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
 			} break;
 			case IELEV_SP_UNIMPLEMENTED:
@@ -406,7 +406,7 @@ namespace TFE_InfSystem
 
 				elev->trigMove = TRIGMOVE_CONT;
 				elev->speed = FIXED(8);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
 			} break;
 			case IELEV_SP_DOOR:
@@ -427,7 +427,7 @@ namespace TFE_InfSystem
 				elev->sound0 = s_doorSound;
 
 				elev->speed = FIXED(30);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
 			} break;
 			case IELEV_SP_DOOR_INV:
@@ -443,7 +443,7 @@ namespace TFE_InfSystem
 
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = FIXED(15);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
 			} break;
 			case IELEV_SP_DOOR_MID:
@@ -465,7 +465,7 @@ namespace TFE_InfSystem
 
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = FIXED(15);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
 
 				// Lower Part
@@ -481,21 +481,21 @@ namespace TFE_InfSystem
 
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = FIXED(15);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
 			} break;
 			case IELEV_SP_MORPH_SPIN1:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_ROTATE_WALL);
 				link = allocateLink(sector->infLink, elev);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
 			} break;
 			case IELEV_SP_MORPH_SPIN2:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_ROTATE_WALL);
 				link = allocateLink(sector->infLink, elev);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
 				// This makes the player move with the sector.
 				elev->flags = INF_EFLAG_MOVE_FLOOR | INF_EFLAG_MOVE_SECHT | INF_EFLAG_MOVE_CEIL;
@@ -504,14 +504,14 @@ namespace TFE_InfSystem
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_WALL);
 				link = allocateLink(sector->infLink, elev);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
 			} break;
 			case IELEV_SP_MORPH_MOVE2:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_WALL);
 				link = allocateLink(sector->infLink, elev);
-				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_11;
+				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
 				// This makes the player move with the sector.
 				elev->flags = INF_EFLAG_MOVE_FLOOR | INF_EFLAG_MOVE_SECHT | INF_EFLAG_MOVE_CEIL;
@@ -560,7 +560,7 @@ namespace TFE_InfSystem
 		}
 		Stop* stop = (Stop*)allocator_newItem(stops);
 		stop->value = value;
-		stop->delay = 582;	// default delay = 4 seconds.
+		stop->delay = TICKS(4);	// default delay = 4 seconds.
 		stop->messages = nullptr;
 		stop->adjoinCmds = 0;
 		stop->pageId = 0;	// no page sound by default.
@@ -2015,7 +2015,7 @@ namespace TFE_InfSystem
 		while (link)
 		{
 			// Fire off the link task if the event and entity match the requirements.
-			if ((evt == INF_EVENT_NONE || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->typeFlags)) && link->msgFunc)
+			if ((evt == INF_EVENT_NONE || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->entityFlags)) && link->msgFunc)
 			{
 				s_infMsgEntity = entity;
 				s_infMsgTarget = link->target;
@@ -2141,8 +2141,7 @@ namespace TFE_InfSystem
 		RSector* sector = elev->sector;
 		u32 arg1 = s_infMsgArg1;
 
-		// TODO: Determine which flag bit 11 is.
-		if (entity && (entity->typeFlags&FLAG_BIT(11)))
+		if (entity && (entity->entityFlags&ETFLAG_SMART_OBJ))
 		{
 			if (sector->flags1 & SEC_FLAGS1_NO_SMART_OBJ)
 			{
@@ -2166,13 +2165,13 @@ namespace TFE_InfSystem
 		if (event != INF_EVENT_31)
 		{
 			// Non-player entities cannot use this because it requires a key.
-			if (entity && (entity->typeFlags & FLAG_BIT(11)) && elev->key != 0)
+			if (entity && (entity->entityFlags & ETFLAG_SMART_OBJ) && elev->key != KEY_NONE)
 			{
 				return;
 			}
 
 			// Does the player have the key?
-			u32 key = elev->key;
+			KeyItem key = elev->key;
 			if (key == KEY_RED && !s_invRedKey)
 			{
 				// "You need the red key."
@@ -2754,7 +2753,7 @@ namespace TFE_InfSystem
 					SecObject* obj = *objList;
 					if (obj)
 					{
-						if (obj->typeFlags & 0x40)
+						if (obj->entityFlags & ETFLAG_CAN_WAKE)
 						{
 							inf_sendObjMessage(obj, 0, IMSG_WAKEUP);
 						}
@@ -2774,7 +2773,7 @@ namespace TFE_InfSystem
 					SecObject* obj = *objList;
 					if (obj)
 					{
-						if (obj->typeFlags & 0x400)
+						if (obj->entityFlags & ETFLAG_CAN_DISABLE)
 						{
 							inf_sendObjMessage(obj, 0, msgType);
 						}

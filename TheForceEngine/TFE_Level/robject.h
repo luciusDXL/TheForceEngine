@@ -15,6 +15,7 @@ struct RSector;
 	
 enum ObjectType
 {
+	OBJ_TYPE_NONE   = 0,
 	OBJ_TYPE_SPRITE = 1,
 	OBJ_TYPE_3D     = 2,
 	OBJ_TYPE_FRAME  = 3,
@@ -26,21 +27,23 @@ enum ObjectFlags
 	OBJ_FLAG_FULLBRIGHT = (1 << 3),		// The object should be rendered fullbright (no shading).
 };
 
-enum ObjectTypeFlags
+enum EntityTypeFlags
 {
-	OTFLAG_NONE = 0,
-	// ... Unknown.
-	OTFLAG_PLAYER = (1u << 31u),
-	OTFLAG_UNSIGNED = 0xffffffff,
+	ETFLAG_CAN_WAKE    = FLAG_BIT(6),	// An inactive object or animation waiting to be "woken up" - such as Vues waiting to play.
+	ETFLAG_CAN_DISABLE = FLAG_BIT(10),	// An object that can be enabled or disabled by INF.
+	ETFLAG_SMART_OBJ   = FLAG_BIT(11),	// An object that can manipulate the level, such as opening doors.
+	ETFLAG_PLAYER      = FLAG_BIT(31),	// This is the player object.
+
+	ETFLAG_NONE = 0,
 };
 
-#define SPRITE_SCALE_FIXED (ONE_16 * 10)
+#define SPRITE_SCALE_FIXED FIXED(10)
 
 struct SecObject
 {
 	SecObject* self;
-	s32  type;
-	u32  typeFlags;
+	ObjectType type;
+	u32 entityFlags;    // see EntityTypeFlags above.
 
 	// Position
 	vec3_fixed posWS;

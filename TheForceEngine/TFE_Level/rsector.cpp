@@ -96,7 +96,7 @@ namespace TFE_Level
 				if (obj->posWS.y == sector->floorHeight)
 				{
 					obj->posWS.y += floorOffset;
-					if (obj->typeFlags & OTFLAG_PLAYER)
+					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
 						s_playerHeight += floorOffset;
 					}
@@ -105,7 +105,7 @@ namespace TFE_Level
 				if (obj->posWS.y == sector->ceilingHeight)
 				{
 					obj->posWS.y += ceilOffset;
-					if (obj->typeFlags & OTFLAG_PLAYER)
+					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
 						// Why not ceilingOffset?
 						s_playerHeight += floorOffset;
@@ -116,7 +116,7 @@ namespace TFE_Level
 				if (obj->posWS.y == secHeight)
 				{
 					obj->posWS.y += secondHeightOffset;
-					if (obj->typeFlags & OTFLAG_PLAYER)
+					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
 						// Why not secHeightOffset?
 						s_playerHeight += floorOffset;

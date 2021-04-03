@@ -672,7 +672,7 @@ namespace TFE_Level
 					}
 
 					s32 seqRead = object_parseSeq(obj);
-					if (obj->typeFlags & OTFLAG_PLAYER)	// player
+					if (obj->entityFlags & ETFLAG_PLAYER)	// player
 					{
 						// TODO
 					}
