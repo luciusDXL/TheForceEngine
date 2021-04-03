@@ -56,8 +56,8 @@ namespace TFE_InfSystem
 	static Allocator* s_infElevators;
 	static Allocator* s_infTeleports;
 
-	static s32 s_infMsgArg1;
-	static s32 s_infMsgArg2;
+	static u32 s_infMsgArg1;
+	static u32 s_infMsgArg2;
 	static u32 s_infMsgEvent;
 	static void* s_infMsgTarget;
 	static void* s_infMsgEntity;
@@ -1040,7 +1040,7 @@ namespace TFE_InfSystem
 					msg->wall = targetWall;
 
 					msg->msgType = IMSG_TRIGGER;
-					msg->event = 0;
+					msg->event = INF_EVENT_NONE;
 					if (argCount >= 5)
 					{
 						msg->event = strToUInt(s_infArg3);
@@ -1060,8 +1060,8 @@ namespace TFE_InfSystem
 							break;
 						case KW_GOTO_STOP:
 							msg->msgType = IMSG_GOTO_STOP;
-							msg->arg1 = strToInt(s_infArg3);
-							msg->event = 0;
+							msg->arg1 = strToUInt(s_infArg3);
+							msg->event = INF_EVENT_NONE;
 							break;
 						case KW_MASTER_ON:
 							msg->msgType = IMSG_MASTER_ON;
@@ -1074,20 +1074,20 @@ namespace TFE_InfSystem
 							break;
 						case KW_SET_BITS:
 							msg->msgType = IMSG_SET_BITS;
-							msg->arg1 = strToInt(s_infArg3);
-							msg->arg2 = strToInt(s_infArg4);
-							msg->event = 0;
+							msg->arg1 = strToUInt(s_infArg3);
+							msg->arg2 = strToUInt(s_infArg4);
+							msg->event = INF_EVENT_NONE;
 							break;
 						case KW_CLEAR_BITS:
 							msg->msgType = IMSG_CLEAR_BITS;
-							msg->arg1 = strToInt(s_infArg3);
-							msg->arg2 = strToInt(s_infArg4);
-							msg->event = 0;
+							msg->arg1 = strToUInt(s_infArg3);
+							msg->arg2 = strToUInt(s_infArg4);
+							msg->event = INF_EVENT_NONE;
 							break;
 						case KW_COMPLETE:
 							msg->msgType = IMSG_COMPLETE;
-							msg->arg1 = strToInt(s_infArg3);
-							msg->event = 0;
+							msg->arg1 = strToUInt(s_infArg3);
+							msg->event = INF_EVENT_NONE;
 							break;
 						case KW_LIGHTS:
 							msg->msgType = IMSG_LIGHTS;
@@ -1909,7 +1909,7 @@ namespace TFE_InfSystem
 		{
 			wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
 
-			s32 flagsIndex = s_infMsgArg1;
+			u32 flagsIndex = s_infMsgArg1;
 			u32 bits = s_infMsgArg2;
 			if (flagsIndex == 1)
 			{
@@ -1944,7 +1944,7 @@ namespace TFE_InfSystem
 		{
 			wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
 
-			s32 flagsIndex = s_infMsgArg1;
+			u32 flagsIndex = s_infMsgArg1;
 			u32 bits = s_infMsgArg2;
 			if (flagsIndex == 1)
 			{
@@ -2141,7 +2141,7 @@ namespace TFE_InfSystem
 		InfElevator* elev = (InfElevator*)s_infMsgTarget;
 		SecObject* entity = (SecObject*)s_infMsgEntity;
 		RSector* sector = elev->sector;
-		s32 arg1 = s_infMsgArg1;
+		u32 arg1 = s_infMsgArg1;
 
 		// TODO: Determine which flag bit 11 is.
 		if (entity && (entity->typeFlags&FLAG_BIT(11)))
@@ -2786,7 +2786,7 @@ namespace TFE_InfSystem
 			} break;
 			case IMSG_SET_BITS:
 			{
-				s32 flagsIndex = s_infMsgArg1;
+				u32 flagsIndex = s_infMsgArg1;
 				u32 bits = s_infMsgArg2;
 
 				if (flagsIndex == 1)
@@ -2806,7 +2806,7 @@ namespace TFE_InfSystem
 			} break;
 			case IMSG_CLEAR_BITS:
 			{
-				s32 flagsIndex = s_infMsgArg1;
+				u32 flagsIndex = s_infMsgArg1;
 				u32 bits = s_infMsgArg2;
 
 				if (flagsIndex == 1)

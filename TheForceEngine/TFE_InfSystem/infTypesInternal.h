@@ -124,8 +124,8 @@ namespace TFE_InfSystem
 		Allocator* targets;
 		InfMessageType cmd;
 		u32 event;
-		s32 arg0;
-		s32 arg1;
+		u32 arg0;
+		u32 arg1;
 
 		s32 u20;
 		s32 u24;
@@ -148,8 +148,8 @@ namespace TFE_InfSystem
 		RWall* wall;
 		InfMessageType msgType;
 		u32 event;
-		s32 arg1;
-		s32 arg2;
+		u32 arg1;
+		u32 arg2;
 	};
 
 	struct Slave
