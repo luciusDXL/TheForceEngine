@@ -79,6 +79,9 @@ namespace TFE_InfSystem
 	void elevHandleStopDelay(InfElevator* elev);
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
 	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType);
+	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, InfMessageType msgType);
+	void inf_setWallBits(RWall* wall);
+	void inf_clearWallBits(RWall* wall);
 
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj);
 
@@ -1899,7 +1902,7 @@ namespace TFE_InfSystem
 		// Update
 
 	}
-
+		   			   
 	// Send messages so that entities and the player can interact with the INF system.
 	// If msgType = IMSG_SET/CLEAR_BITS the msg is processed directly for this wall OR
 	// this iterates through the valid links and calls their msgFunc.
@@ -1907,95 +1910,15 @@ namespace TFE_InfSystem
 	{
 		if (msgType == IMSG_SET_BITS)
 		{
-			wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
-
-			u32 flagsIndex = s_infMsgArg1;
-			u32 bits = s_infMsgArg2;
-			if (flagsIndex == 1)
-			{
-				wall->flags1 |= bits;
-
-				// If there is a mirror, also set some of the bits there.
-				RWall* mirror = wall->mirrorWall;
-				if (mirror)
-				{
-					const u32 allowedMirrorFlags = (WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP | WF1_DAMAGE_WALL | WF1_SHOW_AS_LEDGE_ON_MAP | WF1_SHOW_AS_DOOR_ON_MAP);
-					mirror->flags1 |= (bits & allowedMirrorFlags);
-				}
-			}
-			else if (flagsIndex == 2)
-			{
-				wall->flags2 |= bits;
-			}
-			// It looks like if mirror is set for flags2, it also sets them for 3...
-			else if (flagsIndex == 3)
-			{
-				wall->flags3 |= bits;
-
-				// If there is a mirror, also set some of the bits there.
-				RWall* mirror = wall->mirrorWall;
-				if (mirror)
-				{
-					mirror->flags3 |= (bits & 0x0f);
-				}
-			}
+			inf_setWallBits(wall);
 		}
 		else if (msgType == IMSG_CLEAR_BITS)
 		{
-			wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
-
-			u32 flagsIndex = s_infMsgArg1;
-			u32 bits = s_infMsgArg2;
-			if (flagsIndex == 1)
-			{
-				wall->flags1 &= ~bits;
-
-				// If there is a mirror, also clear some of the bits there.
-				RWall* mirror = wall->mirrorWall;
-				if (mirror)
-				{
-					const u32 allowedMirrorFlags = WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP | WF1_DAMAGE_WALL | WF1_SHOW_AS_LEDGE_ON_MAP | WF1_SHOW_AS_DOOR_ON_MAP;
-					mirror->flags1 &= ~(bits & allowedMirrorFlags);
-				}
-			}
-			else if (flagsIndex == 2)
-			{
-				wall->flags2 &= ~bits;
-			}
-			else if (flagsIndex == 3)
-			{
-				wall->flags3 &= ~bits;
-
-				// If there is a mirror, also set some of the bits there.
-				RWall* mirror = wall->mirrorWall;
-				if (mirror)
-				{
-					mirror->flags3 &= ~(bits & 0x0f);
-				}
-			}
+			inf_clearWallBits(wall);
 		}
 		else
 		{
-			Allocator* infLink = wall->infLink;
-			if (infLink)
-			{
-				InfLink* link = (InfLink*)allocator_getHead(infLink);
-				while (link)
-				{
-					// Fire off the link task if the event and entity match the requirements.
-					if ((evt == 0 || (link->eventMask & evt)) && (entity == nullptr || (link->entityMask & entity->typeFlags)) && link->msgFunc)
-					{
-						s_infMsgEntity = entity;
-						s_infMsgTarget = link->target;
-						s_infMsgEvent = evt;
-
-						allocator_addRef(infLink);
-						link->msgFunc(msgType);
-						allocator_release(infLink);
-					}
-					link = (InfLink*)allocator_getNext(infLink);
-				}
-			}
+			inf_sendLinkMessages(wall->infLink, entity, evt, msgType);
 		}
 	}
 
@@ -2005,31 +1928,106 @@ namespace TFE_InfSystem
 	void inf_sectorSendMessage(RSector* sector, SecObject* entity, u32 evt, InfMessageType msgType)
 	{
 		inf_sendSectorMessageInternal(sector, msgType);
-
-		Allocator* infLink = sector->infLink;
-		if (infLink)
-		{
-			InfLink* link = (InfLink*)allocator_getHead(infLink);
-			while (link)
-			{
-				if ((evt == 0 || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->typeFlags)) && link->msgFunc)
-				{
-					s_infMsgEntity = entity;
-					s_infMsgTarget = link->target;
-					s_infMsgEvent = evt;
-
-					allocator_addRef(infLink);
-					link->msgFunc(msgType);
-					allocator_release(infLink);
-				}
-				link = (InfLink*)allocator_getNext(infLink);
-			}
-		}
+		inf_sendLinkMessages(sector->infLink, entity, evt, msgType);
 	}
 
 	/////////////////////////////////////////////////////
 	// Internal
 	/////////////////////////////////////////////////////
+	void inf_setWallBits(RWall* wall)
+	{
+		wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
+
+		u32 flagsIndex = s_infMsgArg1;
+		u32 bits = s_infMsgArg2;
+		if (flagsIndex == 1)
+		{
+			wall->flags1 |= bits;
+
+			// If there is a mirror, also set some of the bits there.
+			RWall* mirror = wall->mirrorWall;
+			if (mirror)
+			{
+				const u32 allowedMirrorFlags = (WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP | WF1_DAMAGE_WALL | WF1_SHOW_AS_LEDGE_ON_MAP | WF1_SHOW_AS_DOOR_ON_MAP);
+				mirror->flags1 |= (bits & allowedMirrorFlags);
+			}
+		}
+		else if (flagsIndex == 2)
+		{
+			wall->flags2 |= bits;
+		}
+		// It looks like if mirror is set for flags2, it also sets them for 3...
+		else if (flagsIndex == 3)
+		{
+			wall->flags3 |= bits;
+
+			// If there is a mirror, also set some of the bits there.
+			RWall* mirror = wall->mirrorWall;
+			if (mirror)
+			{
+				mirror->flags3 |= (bits & 0x0f);
+			}
+		}
+	}
+
+	void inf_clearWallBits(RWall* wall)
+	{
+		wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
+
+		u32 flagsIndex = s_infMsgArg1;
+		u32 bits = s_infMsgArg2;
+		if (flagsIndex == 1)
+		{
+			wall->flags1 &= ~bits;
+
+			// If there is a mirror, also clear some of the bits there.
+			RWall* mirror = wall->mirrorWall;
+			if (mirror)
+			{
+				const u32 allowedMirrorFlags = WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP | WF1_DAMAGE_WALL | WF1_SHOW_AS_LEDGE_ON_MAP | WF1_SHOW_AS_DOOR_ON_MAP;
+				mirror->flags1 &= ~(bits & allowedMirrorFlags);
+			}
+		}
+		else if (flagsIndex == 2)
+		{
+			wall->flags2 &= ~bits;
+		}
+		else if (flagsIndex == 3)
+		{
+			wall->flags3 &= ~bits;
+
+			// If there is a mirror, also set some of the bits there.
+			RWall* mirror = wall->mirrorWall;
+			if (mirror)
+			{
+				mirror->flags3 &= ~(bits & 0x0f);
+			}
+		}
+	}
+
+	// Send messages for each link in the infLink list.
+	// This is the same code for walls and sectors.
+	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, InfMessageType msgType)
+	{
+		if (!infLink) { return; }
+
+		InfLink* link = (InfLink*)allocator_getHead(infLink);
+		while (link)
+		{
+			// Fire off the link task if the event and entity match the requirements.
+			if ((evt == INF_EVENT_NONE || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->typeFlags)) && link->msgFunc)
+			{
+				s_infMsgEntity = entity;
+				s_infMsgTarget = link->target;
+				s_infMsgEvent = evt;
+
+				allocator_addRef(infLink);
+				link->msgFunc(msgType);
+				allocator_release(infLink);
+			}
+			link = (InfLink*)allocator_getNext(infLink);
+		}
+	}
 	
 	// Update an elevator.
 	// Returns -1 if the elevator has reached the next stop, else 0.
