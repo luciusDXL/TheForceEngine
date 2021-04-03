@@ -2070,6 +2070,184 @@ namespace TFE_InfSystem
 		return (v1 == newValue && elev->nextStop) ? -1 : 0;
 	}
 
+	void inf_elevHandleTriggerMsg(InfElevator* elev, u32 evt)
+	{
+		switch (elev->trigMove)
+		{
+			case TRIGMOVE_CONT:
+			{
+				if (!(elev->updateFlags & ELEV_MOVING))
+				{
+					// If the elevator is not already at the next stop, play the start sound.
+					if (*elev->value != elev->nextStop->value)
+					{
+						// Get the sound location.
+						vec3_fixed pos = inf_getElevSoundPos(elev);
+						playSound3D_oneshot(elev->sound0, pos);
+					}
+
+					// Update the next time so the elevator will move on the next update.
+					elev->nextTick = s_curTick;
+					elev->updateFlags |= ELEV_MOVING;
+				}
+			} break;
+			case TRIGMOVE_LAST:
+			{
+				// Goto the last stop.
+				elev->nextStop = inf_advanceStops(elev->stops, -1, 0);
+				if (*elev->value != elev->nextStop->value)
+				{
+					// Get the sound location.
+					vec3_fixed pos = inf_getElevSoundPos(elev);
+					playSound3D_oneshot(elev->sound0, pos);
+				}
+				// Update the next time so the elevator will move on the next update.
+				elev->nextTick = s_curTick;
+				elev->updateFlags |= ELEV_MOVING;
+			} break;
+			case TRIGMOVE_PREV:
+			{
+				if (elev->nextTick < s_curTick)
+				{
+					elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
+				}
+				elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
+				if (!(elev->updateFlags & ELEV_MOVING))
+				{
+					if (*elev->value != elev->nextStop->value)
+					{
+						vec3_fixed pos = inf_getElevSoundPos(elev);
+						playSound3D_oneshot(elev->sound0, pos);
+					}
+					elev->nextTick = s_curTick;
+					elev->updateFlags |= ELEV_MOVING;
+				}
+			} break;
+			case TRIGMOVE_NEXT:
+			default:
+			{
+				if (elev->nextTick < s_curTick)
+				{
+					elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
+				}
+				if (!(elev->updateFlags & ELEV_MOVING))
+				{
+					if (*elev->value != elev->nextStop->value)
+					{
+						vec3_fixed pos = inf_getElevSoundPos(elev);
+						playSound3D_oneshot(elev->sound0, pos);
+					}
+					elev->nextTick = s_curTick;
+					elev->updateFlags |= ELEV_MOVING;
+				}
+			}
+		}
+
+		// Handle the explosion event.
+		if (evt == INF_EVENT_EXPLOSION)
+		{
+			RSector* sector = elev->sector;
+			RWall* wall = sector->walls;
+			for (s32 i = 0; i < sector->wallCount; i++, wall++)
+			{
+				wall->flags1 &= ~(WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP);
+			}
+			wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
+		}
+	}
+
+	void inf_triggerHandleTriggerMsg(InfTrigger* trigger)
+	{
+		if (trigger->master)
+		{
+			// Play trigger sound.
+			playSound2D(trigger->soundId);
+
+			// Trigger targets (clients).
+			TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
+			u32 event = s_infMsgEvent;
+			while (target)
+			{
+				if (target->eventMask & event)
+				{
+					s_infMsgArg1 = trigger->arg0;
+					s_infMsgArg2 = trigger->arg1;
+
+					if (target->wall)
+					{
+						inf_wallSendMessage(target->wall, nullptr, trigger->event, InfMessageType(trigger->cmd));
+					}
+					else if (target->sector)
+					{
+						inf_sectorSendMessage(target->sector, nullptr, trigger->event, InfMessageType(trigger->cmd));
+					}
+					else  // the target is a trigger, recursively call the msg func.
+					{
+						infTriggerMsgFunc(trigger->cmd);
+					}
+				}
+				target = (TriggerTarget*)allocator_getNext(trigger->targets);
+			}
+		}
+
+		// Send "TEXT" message.
+		if (trigger->textId)
+		{
+			sendTextMessage(trigger->textId);
+		}
+
+		// Update the trigger state (including switch textures).
+		TriggerType type = trigger->type;
+		switch (type)
+		{
+			case ITRIGGER_TOGGLE:
+			{
+				AnimatedTexture* animTex = trigger->animTex;
+				if (animTex)
+				{
+					trigger->state++;
+					if (trigger->state >= animTex->count)
+					{
+						trigger->state = 0;
+					}
+
+					s32 state = trigger->state;
+					trigger->tex = animTex->frameList[state];
+				}
+			} break;
+			case ITRIGGER_SINGLE:
+			{
+				AnimatedTexture* animTex = trigger->animTex;
+				if (animTex)
+				{
+					if (animTex->count)
+					{
+						trigger->state = 1;
+					}
+					s32 state = trigger->state;
+					trigger->tex = animTex->frameList[state];
+					// Single can only be triggered once.
+					trigger->master = 0;
+				}
+			} break;
+			case ITRIGGER_SWITCH1:
+			{
+				AnimatedTexture* animTex = trigger->animTex;
+				if (animTex)
+				{
+					if (animTex->count)
+					{
+						trigger->state = 1;
+					}
+					s32 state = trigger->state;
+					trigger->tex = animTex->frameList[state];
+				}
+				// Switch1 can only be triggered once until it recieves the "DONE" message.
+				trigger->master = 0;
+			} break;
+		}
+	}
+
 	void infElevatorMessageInternal(InfMessageType msgType)
 	{
 		u32 event = s_infMsgEvent;
@@ -2137,88 +2315,7 @@ namespace TFE_InfSystem
 		{
 			case IMSG_TRIGGER:
 			{
-				switch (elev->trigMove)
-				{
-					case TRIGMOVE_CONT:
-					{
-						if (!(elev->updateFlags & ELEV_MOVING))
-						{
-							// If the elevator is not already at the next stop, play the start sound.
-							if (*elev->value != elev->nextStop->value)
-							{
-								// Get the sound location.
-								vec3_fixed pos = inf_getElevSoundPos(elev);
-								playSound3D_oneshot(elev->sound0, pos);
-							}
-
-							// Update the next time so the elevator will move on the next update.
-							elev->nextTick = s_curTick;
-							elev->updateFlags |= ELEV_MOVING;
-						}
-					} break;
-					case TRIGMOVE_LAST:
-					{
-						// Goto the last stop.
-						elev->nextStop = inf_advanceStops(elev->stops, -1, 0);
-						if (*elev->value != elev->nextStop->value)
-						{
-							// Get the sound location.
-							vec3_fixed pos = inf_getElevSoundPos(elev);
-							playSound3D_oneshot(elev->sound0, pos);
-						}
-						// Update the next time so the elevator will move on the next update.
-						elev->nextTick = s_curTick;
-						elev->updateFlags |= ELEV_MOVING;
-					} break;
-					case TRIGMOVE_PREV:
-					{
-						if (elev->nextTick < s_curTick)
-						{
-							elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
-						}
-						elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
-						if (!(elev->updateFlags & ELEV_MOVING))
-						{
-							if (*elev->value != elev->nextStop->value)
-							{
-								vec3_fixed pos = inf_getElevSoundPos(elev);
-								playSound3D_oneshot(elev->sound0, pos);
-							}
-							elev->nextTick = s_curTick;
-							elev->updateFlags |= ELEV_MOVING;
-						}
-					} break;
-					case TRIGMOVE_NEXT:
-					default:
-					{
-						if (elev->nextTick < s_curTick)
-						{
-							elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
-						}
-						if (!(elev->updateFlags & ELEV_MOVING))
-						{
-							if (*elev->value != elev->nextStop->value)
-							{
-								vec3_fixed pos = inf_getElevSoundPos(elev);
-								playSound3D_oneshot(elev->sound0, pos);
-							}
-							elev->nextTick = s_curTick;
-							elev->updateFlags |= ELEV_MOVING;
-						}
-					}
-				}
-
-				// Handle the explosion event.
-				if (event == INF_EVENT_EXPLOSION)
-				{
-					RSector* sector = elev->sector;
-					RWall* wall = sector->walls;
-					for (s32 i = 0; i < sector->wallCount; i++, wall++)
-					{
-						wall->flags1 &= ~(WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP);
-					}
-					wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
-				}
+				inf_elevHandleTriggerMsg(elev, event);
 			} break;
 			case IMSG_NEXT_STOP:
 			{
@@ -2383,95 +2480,8 @@ namespace TFE_InfSystem
 			} break;
 			case IMSG_TRIGGER:
 			{
-				if (trigger->master)
-				{
-					// Play trigger sound.
-					playSound2D(trigger->soundId);
-
-					// Trigger targets (clients).
-					TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
-					u32 event = s_infMsgEvent;
-					while (target)
-					{
-						if (target->eventMask & event)
-						{
-							s_infMsgArg1 = trigger->arg0;
-							s_infMsgArg2 = trigger->arg1;
-
-							if (target->wall)
-							{
-								inf_wallSendMessage(target->wall, nullptr, trigger->event, InfMessageType(trigger->cmd));
-							}
-							else if (target->sector)
-							{
-								inf_sectorSendMessage(target->sector, nullptr, trigger->event, InfMessageType(trigger->cmd));
-							}
-							else  // the target is a trigger, recursively call the msg func.
-							{
-								infTriggerMsgFunc(trigger->cmd);
-							}
-						}
-						target = (TriggerTarget*)allocator_getNext(trigger->targets);
-					}
-				}
-
-				// Send "TEXT" message.
-				if (trigger->textId)
-				{
-					sendTextMessage(trigger->textId);
-				}
-
-				// Update the trigger state (including switch textures).
-				TriggerType type = trigger->type;
-				switch (type)
-				{
-					case ITRIGGER_TOGGLE:
-					{
-						AnimatedTexture* animTex = trigger->animTex;
-						if (animTex)
-						{
-							trigger->state++;
-							if (trigger->state >= animTex->count)
-							{
-								trigger->state = 0;
-							}
-
-							s32 state = trigger->state;
-							trigger->tex = animTex->frameList[state];
-						}
-					} break;
-					case ITRIGGER_SINGLE:
-					{
-						AnimatedTexture* animTex = trigger->animTex;
-						if (animTex)
-						{
-							if (animTex->count)
-							{
-								trigger->state = 1;
-							}
-							s32 state = trigger->state;
-							trigger->tex = animTex->frameList[state];
-							// Single can only be triggered once.
-							trigger->master = 0;
-						}
-					} break;
-					case ITRIGGER_SWITCH1:
-					{
-						AnimatedTexture* animTex = trigger->animTex;
-						if (animTex)
-						{
-							if (animTex->count)
-							{
-								trigger->state = 1;
-							}
-							s32 state = trigger->state;
-							trigger->tex = animTex->frameList[state];
-						}
-						// Switch1 can only be triggered once until it recieves the "DONE" message.
-						trigger->master = 0;
-					} break;
-				}
-			} break;  // case IMSG_TRIGGER
+				inf_triggerHandleTriggerMsg(trigger);
+			} break;
 			case IMSG_MASTER_OFF:
 			{
 				trigger->master = 0;
