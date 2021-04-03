@@ -80,6 +80,8 @@ namespace TFE_InfSystem
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
 	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType);
 	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, InfMessageType msgType);
+	bool inf_parseElevatorCommand(s32 argCount, KEYWORD action, Allocator* linkAlloc, bool seqEnd, InfElevator*& elev, s32& initStopIndex, InfLink*& link);
+	void inf_parseMessage(InfMessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, InfMessageType defType);
 	void inf_setWallBits(RWall* wall);
 	void inf_clearWallBits(RWall* wall);
 
@@ -719,7 +721,7 @@ namespace TFE_InfSystem
 		teleport->dstAngle[1] = yaw;
 		teleport->dstAngle[2] = roll;
 	}
-
+	
 	// Return true if "SEQEND" found.
 	bool parseElevator(TFE_Parser& parser, size_t& bufferPos, const char* itemName)
 	{
@@ -852,361 +854,7 @@ namespace TFE_InfSystem
 			s32 argCount = sscanf(line, " %s %s %s %s %s %s %s", id, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArg4, s_infArgExtra);
 			KEYWORD action = getKeywordIndex(id);
 
-			char* endPtr;
-			switch (action)
-			{
-				case KW_START:
-				{
-					initStopIndex = strToInt(s_infArg0);
-				} break;
-				case KW_STOP:
-				{
-					fixed16_16 stopValue;
-					// Calculate the stop value.
-					// Relative
-					if (s_infArg0[0] == '@')
-					{
-						f32 value = strtof(&s_infArg0[1], &endPtr);
-						stopValue = floatToFixed16(value);
-
-						if (elev->type == IELEV_MOVE_CEILING || elev->type == IELEV_MOVE_FLOOR || elev->type == IELEV_MOVE_FC)
-						{
-							RSector* sector = elev->sector;
-							stopValue = sector->floorHeight - stopValue;
-						}
-						else if (elev->type == IELEV_ROTATE_WALL)
-						{
-							// This is a bug (in the original code):
-							// This will always evaluate to 0 because strtof('@') = 0
-							value = strtof(s_infArg0, &endPtr);
-							stopValue = s32(value * 16383.0f / 360.0f);
-							stopValue = floatToFixed16(f32(stopValue));
-						}
-					}
-					// Standard numeric value.
-					else if ((s_infArg0[0] >= '0' && s_infArg0[0] <= '9') || s_infArg0[0] == '-')
-					{
-						f32 value = strtof(s_infArg0, &endPtr);
-						stopValue = floatToFixed16(value);
-
-						if (elev->type == IELEV_MOVE_CEILING || elev->type == IELEV_MOVE_FLOOR || elev->type == IELEV_MOVE_FC)
-						{
-							// Elevators that move the floor and/or ceiling need to be converted from +Y up to -Y up.
-							stopValue = -stopValue;
-						}
-						else if (elev->type == IELEV_ROTATE_WALL)
-						{
-							// Rotation stop values need to be converted to angles.
-							value = strtof(s_infArg0, &endPtr);
-							stopValue = s32(value * 16383.0f / 360.0f);
-							stopValue = floatToFixed16(f32(stopValue));
-						}
-					}
-					// Match another sector.
-					else
-					{
-						msgAddr = Message::getAddress(s_infArg0);
-						RSector* sector = msgAddr->sector;
-						stopValue = sector->floorHeight;
-					}
-
-					Stop* stop = inf_addStop(elev, stopValue);
-					if (argCount < 3)
-					{
-						continue;
-					}
-
-					// Delay is optional, if not specified each elevator has its own default.
-					u32 delay = 0;
-					// Numeric
-					if ((s_infArg1[0] >= '0' && s_infArg1[0] <= '9') || s_infArg1[0] == '-')
-					{
-						f32 value = strtof(s_infArg1, &endPtr);
-						// Convert from seconds to ticks.
-						delay = u32(SECONDS_TO_TICKS * value);
-					}
-					else if (strcasecmp(s_infArg1, "HOLD") == 0)
-					{
-						delay = IDELAY_HOLD;
-					}
-					else if (strcasecmp(s_infArg1, "TERMINATE") == 0)
-					{
-						delay = IDELAY_TERMINATE;
-					}
-					else if (strcasecmp(s_infArg1, "COMPLETE") == 0)
-					{
-						delay = IDELAY_COMPLETE;
-					}
-
-					inf_setStopDelay(stop, delay);
-				} break;
-				case KW_SPEED:
-				{
-					if (elev->type == IELEV_ROTATE_WALL)
-					{
-						f32 value = strtof(s_infArg0, &endPtr);
-						// 360 degrees is split into 16384 angular units.
-						// Speed is in angular units.
-						s32 speed = s32(value * 16383.0f / 360.0f);
-						// Then speed is converted to a fixed point value, essentially 14.16 fixed point.
-						elev->speed = intToFixed16(speed & 0xffff);
-					}
-					else
-					{
-						f32 value = strtof(s_infArg0, &endPtr);
-						elev->speed = floatToFixed16(value);
-					}
-				} break;
-				case KW_MASTER:
-				{
-					// KW_MASTER (this seems to always turn master off)
-					elev->updateFlags &= ~ELEV_MASTER_ON;
-				} break;
-				case KW_ANGLE:
-				{
-					f32 value = strtof(s_infArg0, &endPtr);
-					s32 angle = s32(value * 16383.0f / 360.0f);
-					inf_setDirFromAngle(elev, angle);
-				} break;
-				case KW_ADJOIN:
-				{
-					s32 stopId = strToInt(s_infArg0);
-					Stop* stop = inf_getStopByIndex(elev, stopId);
-					if (stop)
-					{
-						if (!stop->adjoinCmds)
-						{
-							stop->adjoinCmds = allocator_create(sizeof(AdjoinCmd));
-						}
-						AdjoinCmd* adjoinCmd = (AdjoinCmd*)allocator_newItem(stop->adjoinCmds);
-						MessageAddress* msgAddr0 = Message::getAddress(s_infArg1);
-						MessageAddress* msgAddr1 = Message::getAddress(s_infArg3);
-						RSector* sector0 = msgAddr0->sector;
-						RSector* sector1 = msgAddr1->sector;
-
-						s32 wallIndex0 = strToInt(s_infArg2);
-						s32 wallIndex1 = strToInt(s_infArg4);
-
-						adjoinCmd->wall0 = &sector0->walls[wallIndex0];
-						adjoinCmd->wall1 = &sector1->walls[wallIndex1];
-						adjoinCmd->sector0 = sector0;
-						adjoinCmd->sector1 = sector1;
-					}
-				} break;
-				case KW_TEXTURE:
-				{
-					s32 stopId = strToInt(s_infArg0);
-					Stop* stop = inf_getStopByIndex(elev, stopId);
-					if (stop)
-					{
-						msgAddr = Message::getAddress(s_infArg2);
-						RSector* sector = msgAddr->sector;
-						if (s_infArg1[0] == 'C' || s_infArg1[0] == 'c')
-						{
-							stop->ceilTex = *sector->ceilTex;
-						}
-						else
-						{
-							stop->floorTex = *sector->floorTex;
-						}
-					}
-				} break;
-				case KW_SLAVE:
-				{
-					MessageAddress* msgAddr = Message::getAddress(s_infArg0);
-					s32 slaveValue = 0;
-					if (argCount > 2)
-					{
-						f32 value = strtof(s_infArg1, &endPtr);
-						slaveValue = floatToFixed16(value);
-					}
-					inf_addSlave(elev, slaveValue, msgAddr->sector);
-				} break;
-				case KW_MESSAGE:
-				{
-					s32 stopId = strToInt(s_infArg0);
-					Stop* stop = inf_getStopByIndex(elev, stopId);
-					if (!stop)
-					{
-						continue;
-					}
-					if (!stop->messages)
-					{
-						stop->messages = allocator_create(sizeof(InfMessage));
-					}
-
-					InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
-					RSector* targetSector;
-					RWall* targetWall;
-					inf_getMessageTarget(s_infArg1, &targetSector, &targetWall);
-					msg->sector = targetSector;
-					msg->wall = targetWall;
-
-					msg->msgType = IMSG_TRIGGER;
-					msg->event = INF_EVENT_NONE;
-					if (argCount >= 5)
-					{
-						msg->event = strToUInt(s_infArg3);
-					}
-
-					if (argCount > 3)
-					{
-						const KEYWORD msgId = getKeywordIndex(s_infArg2);
-
-						switch (msgId)
-						{
-						case KW_NEXT_STOP:
-							msg->msgType = IMSG_NEXT_STOP;
-							break;
-						case KW_PREV_STOP:
-							msg->msgType = IMSG_PREV_STOP;
-							break;
-						case KW_GOTO_STOP:
-							msg->msgType = IMSG_GOTO_STOP;
-							msg->arg1 = strToUInt(s_infArg3);
-							msg->event = INF_EVENT_NONE;
-							break;
-						case KW_MASTER_ON:
-							msg->msgType = IMSG_MASTER_ON;
-							break;
-						case KW_MASTER_OFF:
-							msg->msgType = IMSG_MASTER_OFF;
-							break;
-						case KW_DONE:
-							msg->msgType = IMSG_DONE;
-							break;
-						case KW_SET_BITS:
-							msg->msgType = IMSG_SET_BITS;
-							msg->arg1 = strToUInt(s_infArg3);
-							msg->arg2 = strToUInt(s_infArg4);
-							msg->event = INF_EVENT_NONE;
-							break;
-						case KW_CLEAR_BITS:
-							msg->msgType = IMSG_CLEAR_BITS;
-							msg->arg1 = strToUInt(s_infArg3);
-							msg->arg2 = strToUInt(s_infArg4);
-							msg->event = INF_EVENT_NONE;
-							break;
-						case KW_COMPLETE:
-							msg->msgType = IMSG_COMPLETE;
-							msg->arg1 = strToUInt(s_infArg3);
-							msg->event = INF_EVENT_NONE;
-							break;
-						case KW_LIGHTS:
-							msg->msgType = IMSG_LIGHTS;
-							break;
-						case KW_WAKEUP:
-							msg->msgType = IMSG_WAKEUP;
-							break;
-						}
-					}
-				} break;
-				case KW_EVENT_MASK:
-				{
-					if (s_infArg0[0] == '*')
-					{
-						link->eventMask = INF_EVENT_ANY;	// everything
-					}
-					else
-					{
-						link->eventMask = strToUInt(s_infArg0);	// specified
-					}
-				} break;
-				case KW_ENTITY_MASK:
-				case KW_OBJECT_MASK:
-				{
-					// Entity_mask and Object_mask are buggy for elevators...
-					if (s_infArg0[0] == '*')
-					{
-						// This looks like a bug, this should be eventMask but is entityMask in the code...
-						link->entityMask = INF_ENTITY_ANY;
-					}
-					else
-					{
-						link->eventMask = strToUInt(s_infArg0);
-					}
-				} break;
-				case KW_CENTER:
-				{
-					f32 centerX = strtof(s_infArg0, &endPtr);
-					f32 centerZ = strtof(s_infArg1, &endPtr);
-					elev->dirOrCenter.x = floatToFixed16(centerX);
-					elev->dirOrCenter.z = floatToFixed16(centerZ);
-				} break;
-				case KW_KEY:
-				{
-					KEYWORD key = getKeywordIndex(s_infArg0);
-					if (key == KW_RED)
-					{
-						elev->key = KEY_RED;
-					}
-					else if (key == KW_YELLOW)
-					{
-						elev->key = KEY_YELLOW;
-					}
-					else if (key == KW_BLUE)
-					{
-						elev->key = KEY_BLUE;
-					}
-				} break;
-				// This entry is required for special cases, like IELEV_SP_DOOR_MID, where multiple elevators are created at once.
-				// This way, we can modify the first created elevator as well as the last.
-				// It allows allows us to modify previous classes... but this isn't recommended.
-				case KW_ADDON:
-				{
-					s32 index = strToInt(s_infArg0);
-					link = (InfLink*)allocator_getByIndex(linkAlloc, index);
-					elev = link->elev;
-				} break;
-				case KW_FLAGS:
-				{
-					elev->flags = strToUInt(s_infArg0);
-				} break;
-				case KW_SOUND:
-				{
-					s32 soundId = 0;
-					if (s_infArg1[0] >= '0' && s_infArg1[0] <= '9')
-					{
-						// Any numeric value means "no sound."
-						soundId = 0;
-					}
-					else
-					{
-						soundId = sound_Load(s_infArg1);
-					}
-
-					// Determine which elevator sound to assign soundId to.
-					s32 soundIdx = strToInt(s_infArg0);
-					if (soundIdx == 1)
-					{
-						elev->sound0 = soundId;
-					}
-					else if (soundIdx == 2)
-					{
-						elev->sound1 = soundId;
-					}
-					else if (soundIdx == 3)
-					{
-						elev->sound2 = soundId;
-					}
-				} break;
-				case KW_PAGE:
-				{
-					s32 soundId = sound_Load(s_infArg1);
-					setSoundEffectVolume(soundId, 127);
-
-					s32 index = strToInt(s_infArg0);
-					Stop* stop = inf_getStopByIndex(elev, index);
-					stop->pageId = soundId;
-				} break;
-				case KW_SEQEND:
-				{
-					// The sequence for this item has completed (no more classes).
-					// Finish the current class by setting up the initial stop.
-					inf_gotoInitialStop(elev, initStopIndex);
-					seqEnd = true;
-				} break;
-			}
+			seqEnd = inf_parseElevatorCommand(argCount, action, linkAlloc, seqEnd, elev, initStopIndex, link);
 		} // while (!seqEnd)
 
 		return seqEnd;
@@ -1267,46 +915,7 @@ namespace TFE_InfSystem
 				} break;
 				case KW_MESSAGE:
 				{
-					KEYWORD msgId = getKeywordIndex(s_infArg0);
-					switch (msgId)
-					{
-					case KW_NEXT_STOP:
-						trigger->cmd = IMSG_NEXT_STOP;
-						break;
-					case KW_PREV_STOP:
-						trigger->cmd = IMSG_PREV_STOP;
-						break;
-					case KW_GOTO_STOP:
-						trigger->cmd = IMSG_GOTO_STOP;
-						trigger->arg0 = strToUInt(s_infArg1);
-						break;
-					case KW_MASTER_ON:
-						trigger->cmd = IMSG_MASTER_ON;
-						break;
-					case KW_MASTER_OFF:
-						trigger->cmd = IMSG_MASTER_OFF;
-						break;
-					case KW_SET_BITS:
-						trigger->cmd = IMSG_SET_BITS;
-						trigger->arg0 = strToUInt(s_infArg1);
-						trigger->arg1 = strToUInt(s_infArg2);
-						break;
-					case KW_CLEAR_BITS:
-						trigger->cmd = IMSG_CLEAR_BITS;
-						trigger->arg0 = strToUInt(s_infArg1);
-						trigger->arg1 = strToUInt(s_infArg2);
-						break;
-					case KW_COMPLETE:
-						trigger->cmd = IMSG_COMPLETE;
-						trigger->arg0 = strToUInt(s_infArg1);
-						break;
-					case KW_LIGHTS:
-						trigger->cmd = IMSG_LIGHTS;
-						break;
-					case KW_DONE:
-					default:
-						trigger->cmd = IMSG_DONE;
-					};
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, IMSG_DONE);
 				} break;
 				case KW_EVENT_MASK:
 				{
@@ -1542,46 +1151,7 @@ namespace TFE_InfSystem
 				} break;
 				case KW_MESSAGE:
 				{
-					KEYWORD msgId = getKeywordIndex(s_infArg0);
-					switch (msgId)
-					{
-						case KW_NEXT_STOP:
-							trigger->cmd = IMSG_NEXT_STOP;
-							break;
-						case KW_PREV_STOP:
-							trigger->cmd = IMSG_PREV_STOP;
-							break;
-						case KW_GOTO_STOP:
-							trigger->cmd = IMSG_GOTO_STOP;
-							trigger->arg0 = strToUInt(s_infArg1);
-							break;
-						case KW_MASTER_ON:
-							trigger->cmd = IMSG_MASTER_ON;
-							break;
-						case KW_MASTER_OFF:
-							trigger->cmd = IMSG_MASTER_OFF;
-							break;
-						case KW_SET_BITS:
-							trigger->cmd = IMSG_SET_BITS;
-							trigger->arg0 = strToUInt(s_infArg1);
-							trigger->arg1 = strToUInt(s_infArg2);
-							break;
-						case KW_CLEAR_BITS:
-							trigger->cmd = IMSG_CLEAR_BITS;
-							trigger->arg0 = strToUInt(s_infArg1);
-							trigger->arg1 = strToUInt(s_infArg2);
-							break;
-						case KW_COMPLETE:
-							trigger->cmd = IMSG_COMPLETE;
-							trigger->arg0 = strToUInt(s_infArg1);
-							break;
-						case KW_LIGHTS:
-							trigger->cmd = IMSG_LIGHTS;
-							break;
-						case KW_DONE:
-						default:
-							trigger->cmd = IMSG_DONE;
-					}  // switch (msgId)
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, IMSG_DONE);
 				} break;
 			}  // switch (itemId)
 		}  // while (!seqEnd)
@@ -1934,6 +1504,373 @@ namespace TFE_InfSystem
 	/////////////////////////////////////////////////////
 	// Internal
 	/////////////////////////////////////////////////////
+	void inf_parseMessage(InfMessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, InfMessageType defType)
+	{
+		const KEYWORD msgId = getKeywordIndex(infArg0);
+
+		switch (msgId)
+		{
+			case KW_NEXT_STOP:
+				*type = IMSG_NEXT_STOP;
+				break;
+			case KW_PREV_STOP:
+				*type = IMSG_PREV_STOP;
+				break;
+			case KW_GOTO_STOP:
+				*type = IMSG_GOTO_STOP;
+				*arg1 = strToUInt(infArg1);
+				if (evt) { *evt = INF_EVENT_NONE; }
+				break;
+			case KW_MASTER_ON:
+				*type = IMSG_MASTER_ON;
+				break;
+			case KW_MASTER_OFF:
+				*type = IMSG_MASTER_OFF;
+				break;
+			case KW_DONE:
+				*type = IMSG_DONE;
+				break;
+			case KW_SET_BITS:
+				*type = IMSG_SET_BITS;
+				*arg1 = strToUInt(infArg1);
+				*arg2 = strToUInt(infArg2);
+				if (evt) { *evt = INF_EVENT_NONE; }
+				break;
+			case KW_CLEAR_BITS:
+				*type = IMSG_CLEAR_BITS;
+				*arg1 = strToUInt(infArg1);
+				*arg2 = strToUInt(infArg2);
+				if (evt) { *evt = INF_EVENT_NONE; }
+				break;
+			case KW_COMPLETE:
+				*type = IMSG_COMPLETE;
+				*arg1 = strToUInt(infArg1);
+				if (evt) { *evt = INF_EVENT_NONE; }
+				break;
+			case KW_LIGHTS:
+				*type = IMSG_LIGHTS;
+				break;
+			case KW_WAKEUP:
+				*type = IMSG_WAKEUP;
+				break;
+			default:
+				*type = defType;
+		}
+	}
+
+	bool inf_parseElevatorCommand(s32 argCount, KEYWORD action, Allocator* linkAlloc, bool seqEnd, InfElevator*& elev, s32& initStopIndex, InfLink*& link)
+	{
+		char* endPtr;
+		MessageAddress* msgAddr;
+
+		switch (action)
+		{
+			case KW_START:
+			{
+				initStopIndex = strToInt(s_infArg0);
+			} break;
+			case KW_STOP:
+			{
+				fixed16_16 stopValue;
+				// Calculate the stop value.
+				if (s_infArg0[0] == '@')  // Relative Value
+				{
+					f32 value = strtof(&s_infArg0[1], &endPtr);
+					stopValue = floatToFixed16(value);
+
+					if (elev->type == IELEV_MOVE_CEILING || elev->type == IELEV_MOVE_FLOOR || elev->type == IELEV_MOVE_FC)
+					{
+						RSector* sector = elev->sector;
+						stopValue = sector->floorHeight - stopValue;
+					}
+					else if (elev->type == IELEV_ROTATE_WALL)
+					{
+						// This is a bug (in the original code):
+						// This will always evaluate to 0 because strtof('@') = 0
+						value = strtof(s_infArg0, &endPtr);
+						stopValue = s32(value * 16383.0f / 360.0f);
+						stopValue = floatToFixed16(f32(stopValue));
+					}
+				}
+				else if ((s_infArg0[0] >= '0' && s_infArg0[0] <= '9') || s_infArg0[0] == '-')  // Numeric Value
+				{
+					f32 value = strtof(s_infArg0, &endPtr);
+					stopValue = floatToFixed16(value);
+
+					if (elev->type == IELEV_MOVE_CEILING || elev->type == IELEV_MOVE_FLOOR || elev->type == IELEV_MOVE_FC)
+					{
+						// Elevators that move the floor and/or ceiling need to be converted from +Y up to -Y up.
+						stopValue = -stopValue;
+					}
+					else if (elev->type == IELEV_ROTATE_WALL)
+					{
+						// Rotation stop values need to be converted to angles.
+						value = strtof(s_infArg0, &endPtr);
+						stopValue = s32(value * 16383.0f / 360.0f);
+						stopValue = floatToFixed16(f32(stopValue));
+					}
+				}
+				else  // Value from named sector.
+				{
+					msgAddr = Message::getAddress(s_infArg0);
+					RSector* sector = msgAddr->sector;
+					stopValue = sector->floorHeight;
+				}
+
+				Stop* stop = inf_addStop(elev, stopValue);
+				if (argCount < 3)
+				{
+					return seqEnd;
+				}
+
+				// Delay is optional, if not specified each elevator has its own default.
+				u32 delay = 0;
+				// Numeric
+				if ((s_infArg1[0] >= '0' && s_infArg1[0] <= '9') || s_infArg1[0] == '-')
+				{
+					f32 value = strtof(s_infArg1, &endPtr);
+					// Convert from seconds to ticks.
+					delay = u32(SECONDS_TO_TICKS * value);
+				}
+				else if (strcasecmp(s_infArg1, "HOLD") == 0)
+				{
+					delay = IDELAY_HOLD;
+				}
+				else if (strcasecmp(s_infArg1, "TERMINATE") == 0)
+				{
+					delay = IDELAY_TERMINATE;
+				}
+				else if (strcasecmp(s_infArg1, "COMPLETE") == 0)
+				{
+					delay = IDELAY_COMPLETE;
+				}
+
+				inf_setStopDelay(stop, delay);
+			} break;
+			case KW_SPEED:
+			{
+				if (elev->type == IELEV_ROTATE_WALL)
+				{
+					f32 value = strtof(s_infArg0, &endPtr);
+					// 360 degrees is split into 16384 angular units.
+					// Speed is in angular units.
+					s32 speed = s32(value * 16383.0f / 360.0f);
+					// Then speed is converted to a fixed point value, essentially 14.16 fixed point.
+					elev->speed = intToFixed16(speed & 0xffff);
+				}
+				else
+				{
+					f32 value = strtof(s_infArg0, &endPtr);
+					elev->speed = floatToFixed16(value);
+				}
+			} break;
+			case KW_MASTER:
+			{
+				// KW_MASTER (this seems to always turn master off)
+				elev->updateFlags &= ~ELEV_MASTER_ON;
+			} break;
+			case KW_ANGLE:
+			{
+				f32 value = strtof(s_infArg0, &endPtr);
+				s32 angle = s32(value * 16383.0f / 360.0f);
+				inf_setDirFromAngle(elev, angle);
+			} break;
+			case KW_ADJOIN:
+			{
+				s32 stopId = strToInt(s_infArg0);
+				Stop* stop = inf_getStopByIndex(elev, stopId);
+				if (stop)
+				{
+					if (!stop->adjoinCmds)
+					{
+						stop->adjoinCmds = allocator_create(sizeof(AdjoinCmd));
+					}
+					AdjoinCmd* adjoinCmd = (AdjoinCmd*)allocator_newItem(stop->adjoinCmds);
+					MessageAddress* msgAddr0 = Message::getAddress(s_infArg1);
+					MessageAddress* msgAddr1 = Message::getAddress(s_infArg3);
+					RSector* sector0 = msgAddr0->sector;
+					RSector* sector1 = msgAddr1->sector;
+
+					s32 wallIndex0 = strToInt(s_infArg2);
+					s32 wallIndex1 = strToInt(s_infArg4);
+
+					adjoinCmd->wall0 = &sector0->walls[wallIndex0];
+					adjoinCmd->wall1 = &sector1->walls[wallIndex1];
+					adjoinCmd->sector0 = sector0;
+					adjoinCmd->sector1 = sector1;
+				}
+			} break;
+			case KW_TEXTURE:
+			{
+				s32 stopId = strToInt(s_infArg0);
+				Stop* stop = inf_getStopByIndex(elev, stopId);
+				if (stop)
+				{
+					msgAddr = Message::getAddress(s_infArg2);
+					RSector* sector = msgAddr->sector;
+					if (s_infArg1[0] == 'C' || s_infArg1[0] == 'c')
+					{
+						stop->ceilTex = *sector->ceilTex;
+					}
+					else
+					{
+						stop->floorTex = *sector->floorTex;
+					}
+				}
+			} break;
+			case KW_SLAVE:
+			{
+				MessageAddress* msgAddr = Message::getAddress(s_infArg0);
+				s32 slaveValue = 0;
+				if (argCount > 2)
+				{
+					f32 value = strtof(s_infArg1, &endPtr);
+					slaveValue = floatToFixed16(value);
+				}
+				inf_addSlave(elev, slaveValue, msgAddr->sector);
+			} break;
+			case KW_MESSAGE:
+			{
+				s32 stopId = strToInt(s_infArg0);
+				Stop* stop = inf_getStopByIndex(elev, stopId);
+				if (!stop)
+				{
+					return seqEnd;
+				}
+				if (!stop->messages)
+				{
+					stop->messages = allocator_create(sizeof(InfMessage));
+				}
+
+				InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
+				RSector* targetSector;
+				RWall* targetWall;
+				inf_getMessageTarget(s_infArg1, &targetSector, &targetWall);
+				msg->sector = targetSector;
+				msg->wall = targetWall;
+
+				msg->msgType = IMSG_TRIGGER;
+				msg->event = INF_EVENT_NONE;
+				if (argCount >= 5)
+				{
+					msg->event = strToUInt(s_infArg3);
+				}
+
+				if (argCount > 3)
+				{
+					inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, IMSG_TRIGGER);
+				}
+			} break;
+			case KW_EVENT_MASK:
+			{
+				if (s_infArg0[0] == '*')
+				{
+					link->eventMask = INF_EVENT_ANY;	// everything
+				}
+				else
+				{
+					link->eventMask = strToUInt(s_infArg0);	// specified
+				}
+			} break;
+			case KW_ENTITY_MASK:
+			case KW_OBJECT_MASK:
+			{
+				// Entity_mask and Object_mask are buggy for elevators...
+				if (s_infArg0[0] == '*')
+				{
+					// This looks like a bug, this should be eventMask but is entityMask in the code...
+					link->entityMask = INF_ENTITY_ANY;
+				}
+				else
+				{
+					link->eventMask = strToUInt(s_infArg0);
+				}
+			} break;
+			case KW_CENTER:
+			{
+				f32 centerX = strtof(s_infArg0, &endPtr);
+				f32 centerZ = strtof(s_infArg1, &endPtr);
+				elev->dirOrCenter.x = floatToFixed16(centerX);
+				elev->dirOrCenter.z = floatToFixed16(centerZ);
+			} break;
+			case KW_KEY:
+			{
+				KEYWORD key = getKeywordIndex(s_infArg0);
+				if (key == KW_RED)
+				{
+					elev->key = KEY_RED;
+				}
+				else if (key == KW_YELLOW)
+				{
+					elev->key = KEY_YELLOW;
+				}
+				else if (key == KW_BLUE)
+				{
+					elev->key = KEY_BLUE;
+				}
+			} break;
+			// This entry is required for special cases, like IELEV_SP_DOOR_MID, where multiple elevators are created at once.
+			// This way, we can modify the first created elevator as well as the last.
+			// It allows allows us to modify previous classes... but this isn't recommended.
+			case KW_ADDON:
+			{
+				s32 index = strToInt(s_infArg0);
+				link = (InfLink*)allocator_getByIndex(linkAlloc, index);
+				elev = link->elev;
+			} break;
+			case KW_FLAGS:
+			{
+				elev->flags = strToUInt(s_infArg0);
+			} break;
+			case KW_SOUND:
+			{
+				s32 soundId = 0;
+				if (s_infArg1[0] >= '0' && s_infArg1[0] <= '9')
+				{
+					// Any numeric value means "no sound."
+					soundId = 0;
+				}
+				else
+				{
+					soundId = sound_Load(s_infArg1);
+				}
+
+				// Determine which elevator sound to assign soundId to.
+				s32 soundIdx = strToInt(s_infArg0);
+				if (soundIdx == 1)
+				{
+					elev->sound0 = soundId;
+				}
+				else if (soundIdx == 2)
+				{
+					elev->sound1 = soundId;
+				}
+				else if (soundIdx == 3)
+				{
+					elev->sound2 = soundId;
+				}
+			} break;
+			case KW_PAGE:
+			{
+				s32 soundId = sound_Load(s_infArg1);
+				setSoundEffectVolume(soundId, 127);
+
+				s32 index = strToInt(s_infArg0);
+				Stop* stop = inf_getStopByIndex(elev, index);
+				stop->pageId = soundId;
+			} break;
+			case KW_SEQEND:
+			{
+				// The sequence for this item has completed (no more classes).
+				// Finish the current class by setting up the initial stop.
+				inf_gotoInitialStop(elev, initStopIndex);
+				seqEnd = true;
+			} break;
+		}
+
+		return seqEnd;
+	}
+
 	void inf_setWallBits(RWall* wall)
 	{
 		wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
