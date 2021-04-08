@@ -6,6 +6,7 @@
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
+#include <TFE_Asset/vocAsset.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
@@ -553,7 +554,7 @@ namespace TFE_Level
 			{
 				line = parser.readLine(bufferPos);
 
-				char name[32];	// [ebp-0x54]
+				char name[32];
 				if (sscanf(line, "SPR: %s", name) == 1)
 				{
 					s_sprites[s] = TFE_Sprite_Jedi::getWax(name);
@@ -594,8 +595,14 @@ namespace TFE_Level
 				char name[32];
 				if (sscanf(line, "SOUND: %s", name) == 1)
 				{
-					// TODO
-					s_soundIds[s] = 0;// sound_Load(name);
+					// The DOS code uses indices for sounds but TFE just returns the buffers for now.
+					s32 index = 0;
+					if (TFE_VocAsset::get(name))
+					{
+						// index = 0 = no sound.
+						index = TFE_VocAsset::getIndex(name) + 1;
+					}
+					s_soundIds[s] = index;
 				}
 			}
 		}
@@ -610,11 +617,10 @@ namespace TFE_Level
 			{
 				line = parser.readLine(bufferPos);
 
-				s32 data, diff;
+				s32 data = 0, diff = 0;
 				f32 x, y, z, pch, yaw, rol;
 				char objClass[32];
 
-				s32 n;
 				if (sscanf(line, "CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &diff) > 5)
 				{
 					if (TFE_CoreMath::abs(diff) >= difficulty)
@@ -622,21 +628,25 @@ namespace TFE_Level
 						continue;
 					}
 
-					SecObject* obj = allocateObject();
-					obj->posWS.x = floatToFixed16(x);
-					obj->posWS.y = floatToFixed16(y);
-					obj->posWS.z = floatToFixed16(z);
+					vec3_fixed posWS;
+					posWS.x = floatToFixed16(x);
+					posWS.y = floatToFixed16(y);
+					posWS.z = floatToFixed16(z);
 
-					obj->pitch = floatDegreesToFixed(pch);
-					obj->yaw = floatDegreesToFixed(yaw);
-					obj->roll = floatDegreesToFixed(rol);
-
-					RSector* sector = sector_which3D(obj->posWS.x, obj->posWS.y, obj->posWS.z);
+					// The DOS code allocated the object, tried to find the sector it is in and than frees the object
+					// if it doesn't fit.
+					// Instead TFE just reads the values and only allocates the object if it has a valid sector.
+					RSector* sector = sector_which3D(posWS.x, posWS.y, posWS.z);
 					if (!sector)
 					{
-						// TODO: freeObject(obj);
 						continue;
 					}
+
+					SecObject* obj = allocateObject();
+					obj->posWS = posWS;
+					obj->pitch = floatDegreesToFixed(pch);
+					obj->yaw   = floatDegreesToFixed(yaw);
+					obj->roll  = floatDegreesToFixed(rol);
 
 					KEYWORD classType = getKeywordIndex(objClass);
 					switch (classType)

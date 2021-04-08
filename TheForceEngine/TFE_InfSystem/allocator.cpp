@@ -73,29 +73,29 @@ namespace InfAllocator
 	}
 
 	// Allocate and free individual items.
-	void* allocator_newItem(Allocator* arr)
+	void* allocator_newItem(Allocator* alloc)
 	{
-		if (!arr) { return nullptr; }
+		if (!alloc) { return nullptr; }
 
-		AllocHeader* alloc = (AllocHeader*)malloc(arr->size);
-		alloc->next = ALLOC_INVALID_PTR;
-		alloc->prev = arr->tail;
+		AllocHeader* header = (AllocHeader*)malloc(alloc->size);
+		header->next = ALLOC_INVALID_PTR;
+		header->prev = alloc->tail;
 
-		if (arr->tail != ALLOC_INVALID_PTR)
+		if (alloc->tail != ALLOC_INVALID_PTR)
 		{
-			arr->tail->next = alloc;
+			alloc->tail->next = header;
 		}
-		arr->tail = alloc;
+		alloc->tail = header;
 
-		if (arr->head == ALLOC_INVALID_PTR)
+		if (alloc->head == ALLOC_INVALID_PTR)
 		{
-			arr->head = alloc;
+			alloc->head = header;
 		}
 
-		return ((u8*)alloc + sizeof(AllocHeader));
+		return ((u8*)header + sizeof(AllocHeader));
 	}
 
-	void  allocator_deleteItem(Allocator* alloc, void* item)
+	void allocator_deleteItem(Allocator* alloc, void* item)
 	{
 		if (!alloc) { return; }
 
@@ -215,6 +215,6 @@ namespace InfAllocator
 
 	s32 allocator_getRefCount(Allocator* alloc)
 	{
-		return alloc->refCount;
+		return alloc ? alloc->refCount : 0;
 	}
 }

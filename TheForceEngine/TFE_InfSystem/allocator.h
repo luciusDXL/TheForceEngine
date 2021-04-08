@@ -17,7 +17,7 @@ namespace InfAllocator
 	void allocator_free(Allocator* alloc);
 
 	// Allocate and free individual items.
-	void* allocator_newItem(Allocator* arr);
+	void* allocator_newItem(Allocator* alloc);
 	void  allocator_deleteItem(Allocator* alloc, void* item);
 
 	// Random access.

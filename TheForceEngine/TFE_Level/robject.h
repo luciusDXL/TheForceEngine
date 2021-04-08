@@ -82,6 +82,7 @@ struct SecObject
 namespace TFE_Level
 {
 	SecObject* allocateObject();
+	void freeObject(SecObject* obj);
 
 	// 3D objects
 	void obj3d_setData(SecObject* obj, JediModel* pod);

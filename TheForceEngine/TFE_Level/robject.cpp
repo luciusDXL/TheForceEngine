@@ -24,6 +24,11 @@ namespace TFE_Level
 		return obj;
 	}
 
+	void freeObject(SecObject* obj)
+	{
+		free(obj);
+	}
+
 	void obj3d_setData(SecObject* obj, JediModel* pod)
 	{
 		obj->model = pod;
