@@ -40,4 +40,5 @@ namespace TFE_DarkForces
 	};
 
 	ItemId getPickupItemId(const char* keyword);
+	Pickup* obj_createPickup(SecObject* obj, ItemId id);
 }  // namespace TFE_DarkForces
