@@ -60,4 +60,6 @@ namespace TFE_DarkForces
 
 	extern PlayerInfo s_playerInfo;
 	extern fixed16_16 s_energy;
+
+	extern SecObject* s_playerObject;
 }  // namespace TFE_DarkForces

@@ -2,6 +2,9 @@
 #include "rwall.h"
 #include "robject.h"
 #include "level.h"
+#include <TFE_DarkForces/player.h>
+
+using namespace TFE_DarkForces;
 
 namespace TFE_Level
 {
@@ -9,7 +12,6 @@ namespace TFE_Level
 	// Where should this be stored?
 	static fixed16_16 s_playerHeight;
 	static u32 s_playerSecMoved = 0;
-	static SecObject* s_playerObject;
 
 	// Internal Forward Declarations
 	void sector_computeWallDirAndLength(RWall* wall);
