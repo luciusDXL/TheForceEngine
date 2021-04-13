@@ -10,6 +10,7 @@
 #include <TFE_System/memoryPool.h>
 #include <TFE_System/math.h>
 #include <TFE_Level/rtexture.h>
+#include <TFE_DarkForces/player.h>
 //#include <TFE_Game/gameConstants.h>
 #include "infTypesInternal.h"
 // Include update functions
@@ -17,6 +18,7 @@
 
 //using namespace TFE_GameConstants;
 using namespace TFE_Level;
+using namespace TFE_DarkForces;
 using namespace InfAllocator;
 
 namespace TFE_InfSystem
@@ -38,10 +40,6 @@ namespace TFE_InfSystem
 	static s32 s_moveFloorSound2 = 0;
 	static s32 s_doorSound = 0;
 
-	// Inventory stuff to be moved to gameplay.
-	static s32 s_invRedKey = 0;
-	static s32 s_invYellowKey = 0;
-	static s32 s_invBlueKey = 0;
 	// The size of the goals array is arbitrary, I don't know the largest possible size yet.
 	static s32 s_goals[16] = { 0 };
 
@@ -2287,21 +2285,21 @@ namespace TFE_InfSystem
 
 			// Does the player have the key?
 			KeyItem key = elev->key;
-			if (key == KEY_RED && !s_invRedKey)
+			if (key == KEY_RED && !s_playerInfo.itemRedKey)
 			{
 				// "You need the red key."
 				sendTextMessage(6);
 				playSound2D(s_needKeySoundId);
 				return;
 			}
-			else if (key == KEY_YELLOW && !s_invYellowKey)
+			else if (key == KEY_YELLOW && !s_playerInfo.itemYellowKey)
 			{
 				// "You need the yellow key."
 				sendTextMessage(7);
 				playSound2D(s_needKeySoundId);
 				return;
 			}
-			else if (key == KEY_BLUE && !s_invBlueKey)
+			else if (key == KEY_BLUE && !s_playerInfo.itemBlueKey)
 			{
 				// "You need the blue key."
 				sendTextMessage(8);
