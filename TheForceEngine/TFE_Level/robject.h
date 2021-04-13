@@ -23,13 +23,20 @@ enum ObjectType
 
 enum ObjectFlags
 {
-	OBJ_FLAG_RENDERABLE = (1 << 2),		// The object is renderable, such as a 3D object, sprite or frame.
-	OBJ_FLAG_FULLBRIGHT = (1 << 3),		// The object should be rendered fullbright (no shading).
+	OBJ_FLAG_NONE = 0,
+	OBJ_FLAG_ENEMY           = FLAG_BIT(0),  // Enemy Unit
+	OJB_FLAG_BIT_1           = FLAG_BIT(1),  // Unknown
+	OBJ_FLAG_NEEDS_TRANSFORM = FLAG_BIT(2),  // Object needs to be transformed and rendered.
+	OBJ_FLAG_FULLBRIGHT      = FLAG_BIT(3),  // Rendered as fullbright (not lit).
+	OBJ_FLAG_HAS_COLLISION   = FLAG_BIT(4),  // Object is solid (has collision).
+	OBJ_FLAG_BIT_5           = FLAG_BIT(5),  // Unknown
+	OBJ_FLAG_BIT_6           = FLAG_BIT(6),  // Unknown
 };
 
 enum EntityTypeFlags
 {
 	ETFLAG_CAN_WAKE    = FLAG_BIT(6),	// An inactive object or animation waiting to be "woken up" - such as Vues waiting to play.
+	ETFLAG_PICKUP      = FLAG_BIT(7),	// An item pickup.
 	ETFLAG_CAN_DISABLE = FLAG_BIT(10),	// An object that can be enabled or disabled by INF.
 	ETFLAG_SMART_OBJ   = FLAG_BIT(11),	// An object that can manipulate the level, such as opening doors.
 	ETFLAG_PLAYER      = FLAG_BIT(31),	// This is the player object.

@@ -167,6 +167,9 @@
     <Filter Include="Source\TFE_Level">
       <UniqueIdentifier>{f01ea6ec-1b8c-41e5-ab68-e7a5c6690cfd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_DarkForces">
+      <UniqueIdentifier>{59add6c8-e836-4893-8f69-97d12c01fcbc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -745,6 +748,15 @@
     <ClInclude Include="TFE_InfSystem\infPublicTypes.h">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\pickup.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\itemId.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\player.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1211,6 +1223,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Level\robject.cpp">
       <Filter>Source\TFE_Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\pickup.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\player.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

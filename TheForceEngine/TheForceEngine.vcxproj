@@ -264,6 +264,9 @@
     <ClInclude Include="TFE_Audio\midiPlayer.h" />
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
+    <ClInclude Include="TFE_DarkForces\itemId.h" />
+    <ClInclude Include="TFE_DarkForces\pickup.h" />
+    <ClInclude Include="TFE_DarkForces\player.h" />
     <ClInclude Include="TFE_Editor\archiveViewer.h" />
     <ClInclude Include="TFE_Editor\editor.h" />
     <ClInclude Include="TFE_Editor\Help\helpWindow.h" />
@@ -453,6 +456,8 @@
     <ClCompile Include="TFE_Audio\midiPlayer.cpp" />
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
+    <ClCompile Include="TFE_DarkForces\pickup.cpp" />
+    <ClCompile Include="TFE_DarkForces\player.cpp" />
     <ClCompile Include="TFE_Editor\archiveViewer.cpp" />
     <ClCompile Include="TFE_Editor\editor.cpp" />
     <ClCompile Include="TFE_Editor\Help\helpWindow.cpp" />

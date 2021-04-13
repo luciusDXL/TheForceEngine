@@ -56,7 +56,7 @@ namespace TFE_Level
 	{
 		obj->wax = data;
 		obj->type = OBJ_TYPE_SPRITE;
-		obj->flags |= OBJ_FLAG_RENDERABLE;
+		obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 
 		WaxAnim* anim = WAX_AnimPtr(data, 0);
 		WaxView* view = WAX_ViewPtr(data, anim, 0);
@@ -79,7 +79,7 @@ namespace TFE_Level
 	{
 		obj->fme = data;
 		obj->type = OBJ_TYPE_FRAME;
-		obj->flags |= OBJ_FLAG_RENDERABLE;
+		obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 		WaxCell* cell = WAX_CellPtr(data, data);
 
 		if (obj->worldWidth == -1)
