@@ -264,9 +264,12 @@
     <ClInclude Include="TFE_Audio\midiPlayer.h" />
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
+    <ClInclude Include="TFE_DarkForces\animLogic.h" />
     <ClInclude Include="TFE_DarkForces\itemId.h" />
+    <ClInclude Include="TFE_DarkForces\logic.h" />
     <ClInclude Include="TFE_DarkForces\pickup.h" />
     <ClInclude Include="TFE_DarkForces\player.h" />
+    <ClInclude Include="TFE_DarkForces\time.h" />
     <ClInclude Include="TFE_Editor\archiveViewer.h" />
     <ClInclude Include="TFE_Editor\editor.h" />
     <ClInclude Include="TFE_Editor\Help\helpWindow.h" />
@@ -303,7 +306,6 @@
     <ClInclude Include="TFE_Game\level.h" />
     <ClInclude Include="TFE_Game\physics.h" />
     <ClInclude Include="TFE_Game\player.h" />
-    <ClInclude Include="TFE_InfSystem\allocator.h" />
     <ClInclude Include="TFE_InfSystem\infElevatorUpdateFunc.h" />
     <ClInclude Include="TFE_InfSystem\infPublicTypes.h" />
     <ClInclude Include="TFE_InfSystem\infSystem.h" />
@@ -363,6 +365,7 @@
     <ClInclude Include="TFE_Level\rtexture.h" />
     <ClInclude Include="TFE_Level\rwall.h" />
     <ClInclude Include="TFE_LogicSystem\logicSystem.h" />
+    <ClInclude Include="TFE_Memory\allocator.h" />
     <ClInclude Include="TFE_Polygon\clipper.hpp" />
     <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
     <ClInclude Include="TFE_Polygon\polygon.h" />
@@ -456,8 +459,11 @@
     <ClCompile Include="TFE_Audio\midiPlayer.cpp" />
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
+    <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
+    <ClCompile Include="TFE_DarkForces\logic.cpp" />
     <ClCompile Include="TFE_DarkForces\pickup.cpp" />
     <ClCompile Include="TFE_DarkForces\player.cpp" />
+    <ClCompile Include="TFE_DarkForces\time.cpp" />
     <ClCompile Include="TFE_Editor\archiveViewer.cpp" />
     <ClCompile Include="TFE_Editor\editor.cpp" />
     <ClCompile Include="TFE_Editor\Help\helpWindow.cpp" />
@@ -491,7 +497,6 @@
     <ClCompile Include="TFE_Game\level.cpp" />
     <ClCompile Include="TFE_Game\physics.cpp" />
     <ClCompile Include="TFE_Game\player.cpp" />
-    <ClCompile Include="TFE_InfSystem\allocator.cpp" />
     <ClCompile Include="TFE_InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_InfSystem\message.cpp" />
     <ClCompile Include="TFE_Input\input.cpp" />
@@ -536,6 +541,7 @@
     <ClCompile Include="TFE_Level\rtexture.cpp" />
     <ClCompile Include="TFE_Level\rwall.cpp" />
     <ClCompile Include="TFE_LogicSystem\logicSystem.cpp" />
+    <ClCompile Include="TFE_Memory\allocator.cpp" />
     <ClCompile Include="TFE_Polygon\clipper.cpp" />
     <ClCompile Include="TFE_Polygon\polygon.cpp" />
     <ClCompile Include="TFE_PostProcess\blit.cpp" />

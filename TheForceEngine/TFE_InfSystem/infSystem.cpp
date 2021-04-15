@@ -1,16 +1,18 @@
 #include "infSystem.h"
-#include "allocator.h"
 #include "message.h"
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_Memory/allocator.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_System/math.h>
 #include <TFE_Level/rtexture.h>
+// TODO: This will make adding Outlaws harder, fix the abstraction.
 #include <TFE_DarkForces/player.h>
+#include <TFE_DarkForces/time.h>
 //#include <TFE_Game/gameConstants.h>
 #include "infTypesInternal.h"
 // Include update functions
@@ -19,13 +21,11 @@
 //using namespace TFE_GameConstants;
 using namespace TFE_Level;
 using namespace TFE_DarkForces;
-using namespace InfAllocator;
+using namespace TFE_Memory;
 
 namespace TFE_InfSystem
 {
 	#define MAX_INF_ITEMS 512
-	// This is a little strange, there are 145 ticks per second but when converting on load, 145.5 is used to round up.
-	#define SECONDS_TO_TICKS 145.5f
 
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
 	static const s32 c_ticksPerSec = 145;
@@ -48,8 +48,6 @@ namespace TFE_InfSystem
 	static s32 s_switchDefaultSndId = 0;	// TODO
 	
 	// INF delta time in ticks.
-	static u32 s_curTick;			// current time in "ticks"
-	static fixed16_16 s_deltaTime;	// current delta time in seconds.
 	static s32 s_triggerCount = 0;
 	static Allocator* s_infElevators;
 	static Allocator* s_infTeleports;
@@ -1622,13 +1620,13 @@ namespace TFE_InfSystem
 				}
 
 				// Delay is optional, if not specified each elevator has its own default.
-				u32 delay = 0;
+				Tick delay = 0;
 				// Numeric
 				if ((s_infArg1[0] >= '0' && s_infArg1[0] <= '9') || s_infArg1[0] == '-')
 				{
 					f32 value = strtof(s_infArg1, &endPtr);
 					// Convert from seconds to ticks.
-					delay = u32(SECONDS_TO_TICKS * value);
+					delay = Tick(SECONDS_TO_TICKS * value);
 				}
 				else if (strcasecmp(s_infArg1, "HOLD") == 0)
 				{

@@ -3,6 +3,8 @@
 
 namespace TFE_DarkForces
 {
+	Task* s_pickupTask;
+
 	ItemId getPickupItemId(const char* keyword)
 	{
 		const KEYWORD kw = getKeywordIndex(keyword);
@@ -59,11 +61,15 @@ namespace TFE_DarkForces
 		return id;
 	}
 
-	Pickup* obj_createPickup(SecObject* obj, ItemId id)
+	void logic_pickupFunc()
+	{
+		// TODO
+	}
+
+	Logic* obj_createPickup(SecObject* obj, ItemId id)
 	{
 		Pickup* pickup = (Pickup*)malloc(sizeof(Pickup));
-		// TODO once Logic code is integrated.
-		//obj_addLogic(obj, (Logic*)pickup, s_pickupTask, logic_pickupFunc);
+		obj_addLogic(obj, (Logic*)pickup, s_pickupTask, logic_pickupFunc);
 
 		obj->entityFlags |= ETFLAG_PICKUP;
 
@@ -443,7 +449,7 @@ namespace TFE_DarkForces
 				pickup->type = ITYPE_SPECIAL;
 			} break;
 		}
-		return pickup;
+		return (Logic*)pickup;
 	}
 
 }  // TFE_DarkForces

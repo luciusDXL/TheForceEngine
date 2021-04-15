@@ -170,6 +170,9 @@
     <Filter Include="Source\TFE_DarkForces">
       <UniqueIdentifier>{59add6c8-e836-4893-8f69-97d12c01fcbc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Memory">
+      <UniqueIdentifier>{934faa67-d3c0-48db-9212-681043f4bf1b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -712,9 +715,6 @@
     <ClInclude Include="TFE_InfSystem\message.h">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_InfSystem\allocator.h">
-      <Filter>Source\TFE_InfSystem</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_InfSystem\infElevatorUpdateFunc.h">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
@@ -755,6 +755,18 @@
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
     <ClInclude Include="TFE_DarkForces\player.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\animLogic.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\logic.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Memory\allocator.h">
+      <Filter>Source\TFE_Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\time.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1200,9 +1212,6 @@
     <ClCompile Include="TFE_InfSystem\message.cpp">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_InfSystem\allocator.cpp">
-      <Filter>Source\TFE_InfSystem</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Level\rsector.cpp">
       <Filter>Source\TFE_Level</Filter>
     </ClCompile>
@@ -1228,6 +1237,18 @@
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\player.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\animLogic.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\logic.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Memory\allocator.cpp">
+      <Filter>Source\TFE_Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\time.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>

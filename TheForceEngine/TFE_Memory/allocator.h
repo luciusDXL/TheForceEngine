@@ -1,8 +1,6 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
 // Allocator API as found in the Jedi Engine
-// So far this is used by the INF related systems but may be moved in
-// the future if it is also used by Logics or other systems.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <vector>
@@ -10,7 +8,7 @@
 
 struct Allocator;
 
-namespace InfAllocator
+namespace TFE_Memory
 {
 	// Create and free an allocator.
 	Allocator* allocator_create(s32 allocSize);

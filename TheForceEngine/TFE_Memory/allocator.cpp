@@ -25,7 +25,7 @@ struct Allocator
 	s32* u1c;
 };
 
-namespace InfAllocator
+namespace TFE_Memory
 {
 	// TODO: Use the "zone" allocator (memoryPool) for INF instead of allocating from the HEAP.
 	// TODO: Replace the original DOS implementation with one a bit more modern memory friendly, this is basically the original DF code

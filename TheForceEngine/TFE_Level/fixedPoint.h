@@ -30,10 +30,7 @@ namespace TFE_CoreMath
 
 	// Simple way of setting readable fixed point constants.
 	#define FIXED(x) ((x) << FRAC_BITS_16)
-	// Simple way of setting readable tick constants.
-	// This is the same as x * 145.5f
-	#define TICKS(x) ((x)*145 + ((x)>>1))
-
+	
 	// multiplies 2 fixed point numbers, the result is fixed point.
 	// 16.16 * 16.16 overflows 32 bit, so the calculation is done in 64 bit and then shifted back to 32 bit.
 	inline fixed16_16 mul16(fixed16_16 x, fixed16_16 y)

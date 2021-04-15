@@ -74,6 +74,7 @@ struct SecObject
 	s32 frame;
 	s32 anim;
 	RSector* sector;
+	void* logic;
 
 	// See ObjectFlags above.
 	u32 flags;

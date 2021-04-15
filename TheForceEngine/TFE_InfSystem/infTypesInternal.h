@@ -158,7 +158,7 @@ namespace TFE_InfSystem
 	struct Stop
 	{
 		fixed16_16 value;
-		u32 delay;				// delay in 'ticks' (145 ticks / second)
+		Tick delay;				// delay in 'ticks' (145 ticks / second)
 		Allocator* messages;
 		Allocator* adjoinCmds;
 		s32 pageId;
@@ -174,7 +174,7 @@ namespace TFE_InfSystem
 		RSector* sector;
 		KeyItem key;
 		s32 fixedStep;
-		u32 nextTick;
+		Tick nextTick;
 		s32 u1c;
 		Allocator* stops;
 		Allocator* slaves;

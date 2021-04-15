@@ -1,5 +1,5 @@
 #include "message.h"
-#include "allocator.h"
+#include <TFE_Memory/allocator.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
 #include <assert.h>
@@ -8,7 +8,7 @@
 #include <assert.h>
 #include <algorithm>
 
-using namespace InfAllocator;
+using namespace TFE_Memory;
 
 namespace Message
 {

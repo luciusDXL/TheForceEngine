@@ -10,27 +10,24 @@
 #include <TFE_Level/rsector.h>
 #include <TFE_Level/robject.h>
 #include "logic.h"
-#include "itemId.h"
+#include "time.h"
 
 namespace TFE_DarkForces
 {
+	struct Logic;
 	struct Task;
 
-	// Note that the Pickup struct mirrors the first 24 bytes of Logic {}
-	struct Pickup
+	struct SpriteAnimLogic
 	{
 		Logic logic;
 
-		ItemId id;
-		s32 index;
-		ItemType type;
-		s32* item;
-		s32* value;
-		s32 amount;
-		s32 msgId[2];
-		s32 maxAmount;
+		s32 firstFrame;
+		s32 lastFrame;
+		s32 loopCount;
+		Tick delay;
+		Tick nextTick;
+		s32 u2c;
 	};
 
-	ItemId getPickupItemId(const char* keyword);
-	Logic* obj_createPickup(SecObject* obj, ItemId id);
+	Logic* obj_setSpriteAnim(SecObject* obj);
 }  // namespace TFE_DarkForces
