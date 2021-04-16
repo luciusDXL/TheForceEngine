@@ -3,7 +3,6 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_DarkForces/time.h>
 
 using namespace TFE_Memory;
 using namespace TFE_DarkForces;
@@ -197,29 +196,29 @@ namespace TFE_Level
 		if (frameRate)
 		{
 			anim->delay = time_frameRateToDelay(frameRate);	// Delay is in "ticks."
-			anim->nextTime = 0;
+			anim->nextTick = 0;
 			*texture = anim->frameList[0];
 		}
 		else
 		{
 			// Hold indefinitely.
-			anim->nextTime = 0xffffffff;
+			anim->nextTick = 0xffffffff;
 			// The "image" is really the animation.
 			tex->image = (u8*)anim;
 		}
 	}
 
 	// Per frame animated texture update.
-	void update_animatedTextures(u32 curTick)
+	void update_animatedTextures()
 	{
 		AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(s_textureAnimAlloc);
 		while (animTex)
 		{
-			if (animTex->nextTime < curTick)
+			if (animTex->nextTick < s_curTick)
 			{
-				if (animTex->nextTime == 0)
+				if (animTex->nextTick == 0)
 				{
-					animTex->nextTime = curTick;
+					animTex->nextTick = s_curTick;
 				}
 
 				animTex->frame++;
@@ -229,7 +228,7 @@ namespace TFE_Level
 				}
 
 				*animTex->texPtr = animTex->frameList[animTex->frame];
-				animTex->nextTime += animTex->delay;
+				animTex->nextTick += animTex->delay;
 			}
 			animTex = (AnimatedTexture*)allocator_getNext(s_textureAnimAlloc);
 		}

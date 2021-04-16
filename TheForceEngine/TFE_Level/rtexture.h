@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Memory/allocator.h>
+#include <TFE_DarkForces/time.h>
 
 struct BM_Header
 {
@@ -50,8 +51,8 @@ struct AnimatedTexture
 {
 	s32 count;					// the number of things to iterate through.
 	s32 frame;					// the current iteration index.
-	s32 delay;					// the delay between iterations, in ticks.
-	u32 nextTime;				// the next time this iterates.
+	Tick delay;					// the delay between iterations, in ticks.
+	Tick nextTick;				// the next time this iterates.
 	TextureData** frameList;	// the list of things to cycle through.
 	TextureData** texPtr;		// iterates through a list every N seconds/ticks.
 	TextureData* baseFrame;		// 
@@ -71,5 +72,5 @@ namespace TFE_Level
 	void bitmap_setupAnimatedTexture(TextureData** texture);
 
 	// Per frame animated texture update.
-	void update_animatedTextures(u32 curTick);
+	void update_animatedTextures();
 }
