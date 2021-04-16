@@ -158,7 +158,7 @@ namespace TFE_InfSystem
 	struct Stop
 	{
 		fixed16_16 value;
-		Tick delay;				// delay in 'ticks' (145 ticks / second)
+		Tick delay;				// delay in 'ticks' (see TICKS_PER_SECOND in TFE_DarkForces/time.h)
 		Allocator* messages;
 		Allocator* adjoinCmds;
 		s32 pageId;

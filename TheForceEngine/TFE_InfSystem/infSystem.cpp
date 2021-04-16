@@ -28,7 +28,6 @@ namespace TFE_InfSystem
 	#define MAX_INF_ITEMS 512
 
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
-	static const s32 c_ticksPerSec = 145;
 	static const char* c_defaultGob = "DARK.GOB";
 
 	// These need to be filled out somewhere.
@@ -1385,7 +1384,7 @@ namespace TFE_InfSystem
 					Stop* nextStop = elev->nextStop;
 					if (elev->updateFlags & ELEV_MOVING_REVERSE)
 					{
-						elev->nextTick = s_curTick + c_ticksPerSec;		// this will pause the elevator for one second.
+						elev->nextTick = s_curTick + TICKS_PER_SECOND;	// this will pause the elevator for one second.
 						elev->updateFlags &= ~ELEV_MOVING_REVERSE;		// remove the reverse flag.
 					}
 					else
@@ -1626,7 +1625,7 @@ namespace TFE_InfSystem
 				{
 					f32 value = strtof(s_infArg1, &endPtr);
 					// Convert from seconds to ticks.
-					delay = Tick(SECONDS_TO_TICKS * value);
+					delay = Tick(SECONDS_TO_TICKS_ROUNDED * value);
 				}
 				else if (strcasecmp(s_infArg1, "HOLD") == 0)
 				{

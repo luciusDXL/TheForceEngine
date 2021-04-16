@@ -3,8 +3,9 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_DarkForces/time.h>
 
-using namespace InfAllocator;
+using namespace TFE_Memory;
 
 namespace TFE_Level
 {
@@ -194,7 +195,7 @@ namespace TFE_Level
 
 		if (frameRate)
 		{
-			anim->delay = s32(145.5f / f32(frameRate));	// Delay is in "ticks."
+			anim->delay = Tick(SECONDS_TO_TICKS_ROUNDED / f32(frameRate));	// Delay is in "ticks."
 			anim->nextTime = 0;
 			*texture = anim->frameList[0];
 		}
