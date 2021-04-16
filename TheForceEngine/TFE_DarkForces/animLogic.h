@@ -14,7 +14,6 @@
 
 namespace TFE_DarkForces
 {
-	struct Logic;
 	struct Task;
 
 	struct SpriteAnimLogic

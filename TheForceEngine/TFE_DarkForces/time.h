@@ -23,10 +23,20 @@ namespace TFE_DarkForces
 	#define SECONDS_TO_TICKS_ROUNDED (SECONDS_TO_TICKS_EXACT + 0.5f)
 
 	// Simple way of setting readable tick constants.
-	// This is the same as x * 145.5f
+	// This is the integer equivalent to x * SECONDS_TO_TICKS_ROUNDED
 	#define TICKS(x) ((x)*TICKS_PER_SECOND + ((x)>>1))
 
+	// The maximum delta time = 64 seconds.
+	// I'm not sure why it is so high, but the original value in the DF code is 0x400000 = 64 * ONE_16
+	#define MAX_DELTA_TIME FIXED(64)
+
+	// Current game-time in "ticks"
 	extern Tick s_curTick;
+	// Previous frame time in "ticks" - used when calculating s_deltaTime.
+	extern Tick s_prevTick;
+	// Delta-time since the last frame in "seconds" - though it is derived from the delta in ticks, so the smallest non-zero
+	// delta is 1.0 / 145.0, i.e. s_deltaTime = (s_curTick - s_prevTick) / 145.0
+	// This is used for movement, physics, elevator value changes based on speed, and similar situations.
 	extern fixed16_16 s_deltaTime;
 
 	// Convert from frames per second (fps) to Ticks.
