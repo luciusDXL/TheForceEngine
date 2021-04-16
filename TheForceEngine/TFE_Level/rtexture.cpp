@@ -6,6 +6,7 @@
 #include <TFE_DarkForces/time.h>
 
 using namespace TFE_Memory;
+using namespace TFE_DarkForces;
 
 namespace TFE_Level
 {
@@ -195,7 +196,7 @@ namespace TFE_Level
 
 		if (frameRate)
 		{
-			anim->delay = Tick(SECONDS_TO_TICKS_ROUNDED / f32(frameRate));	// Delay is in "ticks."
+			anim->delay = time_frameRateToDelay(frameRate);	// Delay is in "ticks."
 			anim->nextTime = 0;
 			*texture = anim->frameList[0];
 		}

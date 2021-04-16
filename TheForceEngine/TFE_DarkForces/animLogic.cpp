@@ -34,7 +34,7 @@ namespace TFE_DarkForces
 		anim->lastFrame = waxAnim->frameCount - 1;
 		anim->loopCount = 0;
 		anim->u2c = 0;
-		anim->delay = Tick(SECONDS_TO_TICKS_ROUNDED / f32(waxAnim->frameRate));
+		anim->delay = time_frameRateToDelay(waxAnim->frameRate);
 		anim->nextTick = s_curTick + anim->delay;
 
 		obj->frame = 0;

@@ -28,4 +28,7 @@ namespace TFE_DarkForces
 
 	extern Tick s_curTick;
 	extern fixed16_16 s_deltaTime;
+
+	// Convert from frames per second (fps) to Ticks.
+	Tick time_frameRateToDelay(u32 frameRate);
 }  // namespace TFE_DarkForces
