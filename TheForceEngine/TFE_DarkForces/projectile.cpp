@@ -1,4 +1,5 @@
 #include "projectile.h"
+#include "animLogic.h"
 #include <TFE_Level/robject.h>
 #include <TFE_Memory/allocator.h>
 
@@ -171,8 +172,7 @@ namespace TFE_DarkForces
 				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
 				projObj->worldWidth = 0;
 				// Setup the looping wax animation.
-				// TODO
-				// obj_setAnim(projObj, nullptr);
+				obj_setSpriteAnim(projObj);
 
 				projLogic->type = PROJ_PLASMA;
 				projLogic->updateFunc = stdProjectileUpdateFunc;
@@ -200,8 +200,7 @@ namespace TFE_DarkForces
 					sprite_setData(obj, s_mortarProj);
 				}
 				// Setup the looping wax animation.
-				// TODO
-				// obj_setAnim(projObj, nullptr);
+				obj_setSpriteAnim(projObj);
 
 				projLogic->type = PROJ_MORTAR;
 				projLogic->updateFunc = mortarUpdateFunc;
@@ -261,8 +260,7 @@ namespace TFE_DarkForces
 				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
 				projObj->worldWidth = 0;
 				// Setup the looping wax animation.
-				// TODO
-				// obj_setAnim(projObj, nullptr);
+				obj_setSpriteAnim(projObj);
 
 				projLogic->type = PROJ_CANNON;
 				projLogic->updateFunc = stdProjectileUpdateFunc;
@@ -288,8 +286,7 @@ namespace TFE_DarkForces
 					sprite_setData(obj, s_missileProj);
 				}
 				// Setup the looping wax animation.
-				// TODO
-				// obj_setAnim(projObj, nullptr);
+				obj_setSpriteAnim(projObj);
 
 				projLogic->type = PROJ_MISSILE;
 				projLogic->updateFunc = stdProjectileUpdateFunc;
@@ -380,7 +377,7 @@ namespace TFE_DarkForces
 
 		// Note this gives a skewed Y direction. It should really be: velY / vec3Length(velX, velY, velZ)
 		// It also means the projectile cannot travel straight up or down.
-		s32 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
+		fixed16_16 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
 		if (horzSpeed)
 		{
 			logic->dir.y = div16(logic->vel.y, horzSpeed);
