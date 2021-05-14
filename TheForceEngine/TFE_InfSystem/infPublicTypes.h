@@ -10,6 +10,7 @@ enum InfMessageType
 	IMSG_GOTO_STOP  = 11,
 	IMSG_REV_MOVE   = 12,
 	IMSG_DONE       = 21,
+	IMSG_DAMAGE     = 22,
 	IMSG_WAKEUP     = 25,
 	IMSG_MASTER_ON  = 29,
 	IMSG_MASTER_OFF = 30,

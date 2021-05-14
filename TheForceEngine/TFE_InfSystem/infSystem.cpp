@@ -2676,7 +2676,7 @@ namespace TFE_InfSystem
 		}
 	}
 
-	void inf_sendObjMessage(SecObject* obj, s32 a, s32 msgType)
+	void inf_sendObjMessage(SecObject* obj, InfMessageType msgType, s32 arg)
 	{
 		// TODO
 	}
@@ -2697,7 +2697,7 @@ namespace TFE_InfSystem
 					{
 						if (obj->entityFlags & ETFLAG_CAN_WAKE)
 						{
-							inf_sendObjMessage(obj, 0, IMSG_WAKEUP);
+							inf_sendObjMessage(obj, IMSG_WAKEUP, 0);
 						}
 						i++;
 					}
@@ -2717,7 +2717,7 @@ namespace TFE_InfSystem
 					{
 						if (obj->entityFlags & ETFLAG_CAN_DISABLE)
 						{
-							inf_sendObjMessage(obj, 0, msgType);
+							inf_sendObjMessage(obj, msgType, 0);
 						}
 						i++;
 					}

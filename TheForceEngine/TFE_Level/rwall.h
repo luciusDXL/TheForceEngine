@@ -22,32 +22,32 @@ enum WallDrawFlags
 
 enum WallFlags1
 {
-	WF1_ADJ_MID_TEX = (1 << 0),	// the mid texture is rendered even with adjoin (maskwall)
-	WF1_ILLUM_SIGN = (1 << 1),  // render a sign.
-	WF1_FLIP_HORIZ = (1 << 2),	// flip texture horizontally.
-	WF1_CHANGE_WALL_LIGHT = (1 << 3),	// elevator can change wall light
-	WF1_TEX_ANCHORED = (1 << 4),
-	WF1_WALL_MORPHS = (1 << 5),
-	WF1_SCROLL_TOP_TEX = (1 << 6),	// elevator can scroll various textures
-	WF1_SCROLL_MID_TEX = (1 << 7),
-	WF1_SCROLL_BOT_TEX = (1 << 8),
-	WF1_SCROLL_SIGN_TEX = (1 << 9),
-	WF1_HIDE_ON_MAP = (1 << 10),
-	WF1_SHOW_NORMAL_ON_MAP = (1 << 11),
-	WF1_SIGN_ANCHORED = (1 << 12),
-	WF1_DAMAGE_WALL = (1 << 13),	// wall damages player
-	WF1_SHOW_AS_LEDGE_ON_MAP = (1 << 14),
-	WF1_SHOW_AS_DOOR_ON_MAP = (1 << 15),
+	WF1_ADJ_MID_TEX          = FLAG_BIT(0),	// the mid texture is rendered even with adjoin (maskwall)
+	WF1_ILLUM_SIGN           = FLAG_BIT(1), // render a sign.
+	WF1_FLIP_HORIZ           = FLAG_BIT(2),	// flip texture horizontally.
+	WF1_CHANGE_WALL_LIGHT    = FLAG_BIT(3),	// elevator can change wall light
+	WF1_TEX_ANCHORED         = FLAG_BIT(4),
+	WF1_WALL_MORPHS          = FLAG_BIT(5),
+	WF1_SCROLL_TOP_TEX       = FLAG_BIT(6),	// elevator can scroll various textures
+	WF1_SCROLL_MID_TEX       = FLAG_BIT(7),
+	WF1_SCROLL_BOT_TEX       = FLAG_BIT(8),
+	WF1_SCROLL_SIGN_TEX      = FLAG_BIT(9),
+	WF1_HIDE_ON_MAP          = FLAG_BIT(10),
+	WF1_SHOW_NORMAL_ON_MAP   = FLAG_BIT(11),
+	WF1_SIGN_ANCHORED        = FLAG_BIT(12),
+	WF1_DAMAGE_WALL          = FLAG_BIT(13), // wall damages player
+	WF1_SHOW_AS_LEDGE_ON_MAP = FLAG_BIT(14),
+	WF1_SHOW_AS_DOOR_ON_MAP  = FLAG_BIT(15),
 };
 
 // WallFlags2 used internally.
 
 enum WallFlags3
 {
-	WF3_ALWAYS_WALK = (1 << 0),
-	WF3_SOLID_WALL = (1 << 1),
-	WF3_PLAYER_WALK_ONLY = (1 << 2),	// players can walk through but not enemies.
-	WF3_CANNOT_FIRE_THROUGH = (1 << 3),	// cannot fire through the wall.
+	WF3_ALWAYS_WALK         = FLAG_BIT(0),
+	WF3_SOLID_WALL          = FLAG_BIT(1),
+	WF3_PLAYER_WALK_ONLY    = FLAG_BIT(2),	// players can walk through but not enemies.
+	WF3_CANNOT_FIRE_THROUGH = FLAG_BIT(3),	// cannot fire through the wall.
 };
 
 struct RWall

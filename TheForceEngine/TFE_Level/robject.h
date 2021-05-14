@@ -29,14 +29,19 @@ enum ObjectFlags
 	OBJ_FLAG_NEEDS_TRANSFORM = FLAG_BIT(2),  // Object needs to be transformed and rendered.
 	OBJ_FLAG_FULLBRIGHT      = FLAG_BIT(3),  // Rendered as fullbright (not lit).
 	OBJ_FLAG_HAS_COLLISION   = FLAG_BIT(4),  // Object is solid (has collision).
-	OBJ_FLAG_BIT_5           = FLAG_BIT(5),  // Unknown
+	OBJ_FLAG_BOSS            = FLAG_BIT(5),  // Boss enemy.
 	OBJ_FLAG_BIT_6           = FLAG_BIT(6),  // Unknown
 };
 
 enum EntityTypeFlags
 {
+	ETFLAG_AI_ACTOR    = FLAG_BIT(0),	// AI Actor - moves and acts on its own.
+	ETFLAG_HAS_GRAVITY = FLAG_BIT(1),	// This entity is effected by gravity.
+	ETFLAG_FLYING      = FLAG_BIT(2),	// This entity is flying (can change Y height).
+	ETFLAG_PROXIMITY   = FLAG_BIT(3),	// Proximity activation.
 	ETFLAG_CAN_WAKE    = FLAG_BIT(6),	// An inactive object or animation waiting to be "woken up" - such as Vues waiting to play.
 	ETFLAG_PICKUP      = FLAG_BIT(7),	// An item pickup.
+	ETFLAG_SCENERY     = FLAG_BIT(8),	// Set for scenery - is this really collision?
 	ETFLAG_CAN_DISABLE = FLAG_BIT(10),	// An object that can be enabled or disabled by INF.
 	ETFLAG_SMART_OBJ   = FLAG_BIT(11),	// An object that can manipulate the level, such as opening doors.
 	ETFLAG_PLAYER      = FLAG_BIT(31),	// This is the player object.
