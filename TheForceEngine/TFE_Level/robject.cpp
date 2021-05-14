@@ -17,7 +17,8 @@ namespace TFE_Level
 		obj->ptr = nullptr;
 		obj->sector = nullptr;
 		obj->logic = nullptr;
-		obj->type = OBJ_TYPE_NONE;
+		obj->projectileLogic = nullptr;
+		obj->type = OBJ_TYPE_SPIRIT;
 		obj->entityFlags = ETFLAG_NONE;
 		obj->worldHeight = -1;
 		obj->flags = 0;
@@ -51,6 +52,20 @@ namespace TFE_Level
 		angle14_32 roll = floor16(obj->roll >> 16);
 
 		computeTransform3x3(obj->transform, yaw, pitch, roll);
+	}
+
+	void setupObj_Spirit(SecObject* obj)
+	{
+		obj->ptr = nullptr;
+		obj->type = OBJ_TYPE_SPIRIT;
+		if (obj->worldWidth == -1)
+		{
+			obj->worldWidth = 0;
+		}
+		if (obj->worldHeight == -1)
+		{
+			obj->worldHeight = 0;
+		}
 	}
 
 	void sprite_setData(SecObject* obj, JediWax* data)

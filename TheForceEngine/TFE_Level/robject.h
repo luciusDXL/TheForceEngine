@@ -15,7 +15,7 @@ struct RSector;
 	
 enum ObjectType
 {
-	OBJ_TYPE_NONE   = 0,
+	OBJ_TYPE_SPIRIT = 0,
 	OBJ_TYPE_SPRITE = 1,
 	OBJ_TYPE_3D     = 2,
 	OBJ_TYPE_FRAME  = 3,
@@ -56,6 +56,7 @@ struct SecObject
 	SecObject* self;
 	ObjectType type;
 	u32 entityFlags;    // see EntityTypeFlags above.
+	void* projectileLogic;	// projectile logic.
 
 	// Position
 	vec3_fixed posWS;
@@ -96,6 +97,9 @@ namespace TFE_Level
 {
 	SecObject* allocateObject();
 	void freeObject(SecObject* obj);
+
+	// Spirits
+	void setupObj_Spirit(SecObject* obj);
 
 	// 3D objects
 	void obj3d_setData(SecObject* obj, JediModel* pod);

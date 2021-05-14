@@ -265,10 +265,12 @@
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
+    <ClInclude Include="TFE_DarkForces\hitEffect.h" />
     <ClInclude Include="TFE_DarkForces\itemId.h" />
     <ClInclude Include="TFE_DarkForces\logic.h" />
     <ClInclude Include="TFE_DarkForces\pickup.h" />
     <ClInclude Include="TFE_DarkForces\player.h" />
+    <ClInclude Include="TFE_DarkForces\projectile.h" />
     <ClInclude Include="TFE_DarkForces\time.h" />
     <ClInclude Include="TFE_Editor\archiveViewer.h" />
     <ClInclude Include="TFE_Editor\editor.h" />
@@ -460,9 +462,11 @@
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
+    <ClCompile Include="TFE_DarkForces\hitEffect.cpp" />
     <ClCompile Include="TFE_DarkForces\logic.cpp" />
     <ClCompile Include="TFE_DarkForces\pickup.cpp" />
     <ClCompile Include="TFE_DarkForces\player.cpp" />
+    <ClCompile Include="TFE_DarkForces\projectile.cpp" />
     <ClCompile Include="TFE_DarkForces\time.cpp" />
     <ClCompile Include="TFE_Editor\archiveViewer.cpp" />
     <ClCompile Include="TFE_Editor\editor.cpp" />
