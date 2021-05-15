@@ -44,6 +44,10 @@ namespace TFE_Collision
 	RSector* collision_tryMove(RSector* sector, fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1);
 	RSector* collision_moveObj(SecObject* obj, fixed16_16 dx, fixed16_16 dz);
 	RWall* collision_pathWallCollision(RSector* sector);
+	RWall* collision_wallCollisionFromPath(RSector* sector, fixed16_16 srcX, fixed16_16 srcZ, fixed16_16 dstX, fixed16_16 dstZ);
 
 	SecObject* collision_getObjectCollision(RSector* sector, CollisionInterval* interval, SecObject* prevObj);
+
+	// Variables
+	extern fixed16_16 s_colObjOverlap;
 }

@@ -120,4 +120,6 @@ namespace TFE_Level
 	void wall_setupAdjoinDrawFlags(RWall* wall);
 	void wall_computeTexelHeights(RWall* wall);
 	fixed16_16 wall_computeDirectionVector(RWall* wall);
+
+	void wall_getOpeningHeightRange(RWall* wall, fixed16_16* topRes, fixed16_16* botRes);
 }

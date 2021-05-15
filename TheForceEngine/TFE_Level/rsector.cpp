@@ -595,6 +595,54 @@ namespace TFE_Level
 		return 0xffffffff;
 	}
 
+	void sector_getFloorAndCeilHeight(RSector* sector, fixed16_16* floorHeight, fixed16_16* ceilHeight)
+	{
+		*floorHeight = sector->floorHeight;
+		*ceilHeight = sector->ceilingHeight;
+
+		if (sector->flags1 & SEC_FLAGS1_PIT)
+		{
+			*floorHeight += FIXED(100);
+		}
+		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
+		{
+			*ceilHeight -= FIXED(100);
+		}
+	}
+
+	void sector_getObjFloorAndCeilHeight(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight)
+	{
+		fixed16_16 secHeight = sector->secHeight;
+		fixed16_16 bottom = y - FIXED(2);
+		if (secHeight < 0)
+		{
+			fixed16_16 height = sector->floorHeight + sector->secHeight;
+			if (bottom <= height)
+			{
+				*floorHeight = height;
+				*ceilHeight = sector->ceilingHeight;
+			}
+			else
+			{
+				*floorHeight = sector->floorHeight;
+				*ceilHeight = height;
+			}
+		}
+		else // secHeight >= 0
+		{
+			*floorHeight = sector->floorHeight + sector->secHeight;
+			*ceilHeight = sector->ceilingHeight;
+		}
+		if (sector->flags1 & SEC_FLAGS1_PIT)
+		{
+			*floorHeight += FIXED(100);	// +100.0
+		}
+		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
+		{
+			*ceilHeight -= FIXED(100);	// -100.0
+		}
+	}
+
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
 		// TODO

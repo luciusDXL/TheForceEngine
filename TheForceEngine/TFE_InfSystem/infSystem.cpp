@@ -55,8 +55,9 @@ namespace TFE_InfSystem
 	static u32 s_infMsgArg2;
 	static u32 s_infMsgEvent;
 	static void* s_infMsgTarget;
-	static void* s_infMsgEntity;
 	static bool s_teleportUpdateActive = false;
+
+	void* s_infMsgEntity;
 
 	// Pull from data...
 	static RSector* s_sectors;
@@ -1484,6 +1485,73 @@ namespace TFE_InfSystem
 		else
 		{
 			inf_sendLinkMessages(wall->infLink, entity, evt, msgType);
+		}
+	}
+		
+	// Sends a message to a wall at a specific position (parametric along wall + height).
+	// This is used so that switches are only activated if directly hit.
+	void inf_wallSendMessageAtPos(RWall* hitWall, SecObject* obj, u32 evt, fixed16_16 paramPos, fixed16_16 yPos)
+	{
+		if (hitWall->signTex)
+		{
+			fixed16_16 baseHeight;
+			fixed16_16 uOffset;
+			switch (hitWall->drawFlags)
+			{
+				case WDF_MIDDLE:
+				{
+					baseHeight = hitWall->sector->floorHeight;
+					uOffset = hitWall->midOffset.x;
+				} break;
+				case WDF_TOP:
+				{
+					baseHeight = hitWall->nextSector->ceilingHeight;
+					uOffset = hitWall->topOffset.x;	// esi
+				} break;
+				case WDF_BOT:
+				case WDF_TOP_AND_BOT:
+				{
+					baseHeight = hitWall->sector->floorHeight;
+					uOffset = hitWall->botOffset.x;
+				} break;
+			}
+
+			if (yPos)
+			{
+				fixed16_16 base = baseHeight + (hitWall->signOffset.z >> 3);
+				// base + 0.5
+				fixed16_16 y0 = base + HALF_16;
+				// base - texHeight/8 - 0.5
+				fixed16_16 y1 = base - ((*hitWall->signTex)->height << 13) - HALF_16;
+				if (y0 < yPos || y1 > yPos)
+				{
+					return;
+				}
+			}
+
+			if (paramPos)
+			{
+				fixed16_16 base = -(uOffset >> 3) + (hitWall->signOffset.x >> 3);
+				fixed16_16 left = base - HALF_16;
+				fixed16_16 right = base + ((*hitWall->signTex)->width << 13) + HALF_16;
+				if (paramPos < left || paramPos > right)
+				{
+					return;
+				}
+			}
+		}
+
+		inf_wallSendMessage(hitWall, obj, evt, IMSG_TRIGGER);
+	}
+
+	void inf_wallAndMirrorSendMessageAtPos(RWall* hitWall, SecObject* obj, u32 evt, fixed16_16 paramPos, fixed16_16 yPos)
+	{
+		inf_wallSendMessageAtPos(hitWall, obj, evt, paramPos, yPos);
+		if (hitWall->mirrorWall)
+		{
+			// evt*2 is the next event. This is obviously incorrect for shooting the wall, but the land event shouldn't be used for a line
+			// so it doesn't seem to be an issue...
+			inf_wallSendMessageAtPos(hitWall->mirrorWall, obj, evt * 2, paramPos, yPos);	// eax, edx, ebx, ecx, stack.
 		}
 	}
 

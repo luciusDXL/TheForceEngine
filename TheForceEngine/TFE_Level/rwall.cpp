@@ -116,4 +116,40 @@ namespace TFE_Level
 		}
 		return lenFixed;
 	}
+
+	void wall_getOpeningHeightRange(RWall* wall, fixed16_16* topRes, fixed16_16* botRes)
+	{
+		fixed16_16 curCeilHeight;
+		fixed16_16 curFloorHeight;
+		RSector* curSector = wall->sector;
+		RSector* nextSector = wall->nextSector;
+		sector_getFloorAndCeilHeight(curSector, &curFloorHeight, &curCeilHeight);
+
+		fixed16_16 nextCeilHeight;
+		fixed16_16 nextFloorHeight;
+		sector_getFloorAndCeilHeight(nextSector, &nextFloorHeight, &nextCeilHeight);
+
+		if (nextSector)  // <- This check is too late...
+		{
+			// There is an upper wall since the current ceiling is higher than the next.
+			fixed16_16 top = curCeilHeight;
+			if (curCeilHeight <= nextCeilHeight)
+			{
+				top = nextCeilHeight;
+			}
+			*topRes = top;
+
+			fixed16_16 bot = curFloorHeight;
+			if (curFloorHeight >= nextFloorHeight)
+			{
+				bot = nextFloorHeight;
+			}
+			*botRes = bot;
+		}
+		else
+		{
+			*topRes = FIXED(9999);
+			*botRes = -FIXED(9999);
+		}
+	}
 } // namespace TFE_Level

@@ -22,4 +22,6 @@ namespace TFE_DarkForces
 		HEFFECT_REPEATER_EXP = 10,  // repeater
 		HEFFECT_LARGE_EXP    = 11,  // large explosion such as land mine.
 	};
+
+	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* u6c);
 }  // namespace TFE_DarkForces

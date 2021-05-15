@@ -145,4 +145,7 @@ namespace TFE_Level
 
 	RSector* sector_which3D(fixed16_16 dx, fixed16_16 dy, fixed16_16 dz);
 	bool sector_pointInside(RSector* sector, fixed16_16 x, fixed16_16 z);
+
+	void sector_getFloorAndCeilHeight(RSector* sector, fixed16_16* floorHeight, fixed16_16* ceilHeight);
+	void sector_getObjFloorAndCeilHeight(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight);
 }

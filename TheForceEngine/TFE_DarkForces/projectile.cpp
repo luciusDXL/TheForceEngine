@@ -1,16 +1,26 @@
 #include "projectile.h"
 #include "animLogic.h"
 #include <TFE_Collision/collision.h>
+#include <TFE_InfSystem/infSystem.h>
 #include <TFE_Level/robject.h>
+#include <TFE_Level/rwall.h>
 #include <TFE_Memory/allocator.h>
 
+using namespace TFE_InfSystem;
 using namespace TFE_Memory;
 using namespace TFE_Level;
+using namespace TFE_Collision;
 
 namespace TFE_DarkForces
 {
+	//////////////////////////////////////////////////////////////
+	// Structures and Constants
+	//////////////////////////////////////////////////////////////
 	static const Tick c_mortarGravityAccel = FIXED(120);	// 120.0 units / s^2
 
+	//////////////////////////////////////////////////////////////
+	// Internal State
+	//////////////////////////////////////////////////////////////
 	static Allocator* s_projectiles;
 	static Task* s_projectileTask;
 
@@ -26,6 +36,27 @@ namespace TFE_DarkForces
 	static u32 s_plasmaCameraSnd;
 	static u32 s_missileLoopingSnd;
 
+	static RSector*   s_projStartSector[16];
+	static RSector*   s_projPath[16];
+	static s32        s_projIter;
+	static fixed16_16 s_projNextPosX;
+	static fixed16_16 s_projNextPosY;
+	static fixed16_16 s_projNextPosZ;
+	static s32        s_hitWater;
+	static RWall*     s_hitWall;
+	static u32        s_hitWallFlag;
+	static RSector*   s_projSector;
+
+	// Projectile specific collisions
+	static RSector*   s_colObjSector;
+	static SecObject* s_colHitObj;
+	static fixed16_16 s_colObjAdjX;
+	static fixed16_16 s_colObjAdjY;
+	static fixed16_16 s_colObjAdjZ;
+
+	//////////////////////////////////////////////////////////////
+	// Forward Declarations
+	//////////////////////////////////////////////////////////////
 	void projectileLogicFunc();
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
 	u32 proj_move(ProjectileLogic* logic);
@@ -35,6 +66,9 @@ namespace TFE_DarkForces
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType mortarUpdateFunc(ProjectileLogic* logic);
 
+	//////////////////////////////////////////////////////////////
+	// API Implementation
+	//////////////////////////////////////////////////////////////
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj)
 	{
 		ProjectileLogic* projLogic = (ProjectileLogic*)allocator_newItem(s_projectiles);
@@ -347,7 +381,10 @@ namespace TFE_DarkForces
 	{
 		// TODO
 	}
-		
+
+	//////////////////////////////////////////////////////////////
+	// Internal Implementation
+	//////////////////////////////////////////////////////////////
 	// The "standard" update function - projectiles travel in a straight line with a fixed velocity.
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic)
 	{
@@ -372,7 +409,7 @@ namespace TFE_DarkForces
 	{
 		const fixed16_16 dt = s_deltaTime;
 		// The projectile arcs due to gravity, accel = 120.0 units / s^2
-		logic->vel.y += mul16(c_mortarGravityAccel, dt);	// edx
+		logic->vel.y += mul16(c_mortarGravityAccel, dt);
 
 		logic->delta.x = mul16(logic->vel.x, dt);
 		logic->delta.y = mul16(logic->vel.y, dt);
@@ -397,19 +434,326 @@ namespace TFE_DarkForces
 	// Returns 0 if it moved without hitting anything.
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic)
 	{
-		// TODO
+		SecObject* obj = logic->obj;
+		u32 envHit = proj_move(logic);
+		u32 objHit = proj_getHitObj(logic);
+		if (objHit)
+		{
+			obj->posWS.y = s_colObjAdjY;
+			fixed16_16 dz = s_colObjAdjZ - obj->posWS.z;
+			fixed16_16 dx = s_colObjAdjX - obj->posWS.x;
+			RSector* newSector = collision_moveObj(obj, dx, dz);
+
+			if (logic->u78 == -1)
+			{
+				// TODO
+			}
+
+			if (logic->type == PROJ_PUNCH)
+			{
+				spawnHitEffect(logic->hitEffectId, obj->sector, s_colObjAdjX, s_colObjAdjY, s_colObjAdjZ, logic->u6c);
+			}
+			s_hitWallFlag = 2;
+			if (s_colHitObj->entityFlags & ETFLAG_PROXIMITY)
+			{
+				// TODO
+			}
+			if (logic->dmg)
+			{
+				s_infMsgEntity = logic;
+				inf_sendObjMessage(s_colHitObj, IMSG_DAMAGE, 0);
+			}
+
+			if (s_hitWallFlag > 4)
+			{
+				return PHIT_SOLID;
+			}
+
+			if (s_hitWallFlag <= 1)	// s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW
+			{
+				return PHIT_SKY;
+			}
+			else if (s_hitWallFlag <= 3 || s_hitWallFlag > 4)  // !(s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
+			{
+				return PHIT_SOLID;
+			}
+			else if (s_hitWallFlag == 4)
+			{
+				// TODO - I don't think this code will ever be hit.
+			}
+		}
+		else if (envHit)
+		{
+			obj->posWS.y = s_projNextPosY;
+			fixed16_16 dz = s_projNextPosZ - obj->posWS.z;
+			fixed16_16 dx = s_projNextPosX - obj->posWS.x;
+			RSector* newSector = collision_moveObj(obj, dx, dz);
+
+			if (s_hitWall)
+			{
+				s_hitWallFlag = (s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) ? 1 : 2;
+
+				vec2_fixed* w0 = s_hitWall->w0;
+				fixed16_16 paramPos = vec2Length(s_projNextPosX - w0->x, s_projNextPosZ - w0->z);
+				inf_wallAndMirrorSendMessageAtPos(s_hitWall, logic->obj, INF_EVENT_SHOOT_LINE, paramPos, s_projNextPosY);
+
+				if (s_hitWallFlag <= 1)	// s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW
+				{
+					return PHIT_SKY;
+				}
+				else if (s_hitWallFlag <= 3 || s_hitWallFlag > 4)  // !(s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
+				{
+					return PHIT_SOLID;
+				}
+				else if (s_hitWallFlag == 4)
+				{
+					// TODO - I don't think this code will ever be hit.
+				}
+			}
+			if (s_hitWater == 0)
+			{
+				return PHIT_SOLID;
+			}
+			return PHIT_WATER;
+		}
+
+		// Hit nothing.
+		obj->posWS.y += logic->delta.y;
+		collision_moveObj(obj, logic->delta.x, logic->delta.z);
 		return PHIT_NONE;
 	}
 
 	u32 proj_move(ProjectileLogic* logic)
 	{
-		// TODO
-		return 0;
-	}
+		SecObject* obj = logic->obj;
+		RSector* sector = obj->sector;
 
+		s_hitWall = nullptr;
+		s_hitWater = 0;
+		s_projSector = sector;
+		s_projStartSector[0] = sector;
+		s_projIter = 1;
+		s_projNextPosX = obj->posWS.x + logic->delta.x;
+		s_projNextPosY = obj->posWS.y + logic->delta.y;
+		s_projNextPosZ = obj->posWS.z + logic->delta.z;
+
+		fixed16_16 y0CeilHeight;
+		fixed16_16 y0FloorHeight;
+		bool hitFloor = false, hitCeil = false;
+
+		RWall* wall = collision_wallCollisionFromPath(s_projSector, obj->posWS.x, obj->posWS.z, s_projNextPosX, s_projNextPosZ);
+		while (wall)
+		{
+			fixed16_16 bot, top;
+			if (wall->nextSector && !(wall->flags3 & WF3_CANNOT_FIRE_THROUGH))
+			{
+				// Determine the opening in the wall.
+				wall_getOpeningHeightRange(wall, &top, &bot);
+
+				// The check if the projectile trivially passes through.
+				fixed16_16 y0 = s_projNextPosY;
+				fixed16_16 y1 = logic->type == PROJ_THERMAL_DET ? s_projNextPosY - obj->worldHeight : s_projNextPosY;
+				if (obj->posWS.y <= bot && obj->posWS.y >= top && y0 <= bot && y1 >= top)
+				{
+					s_projIter++;
+					s_projSector = wall->nextSector;
+					s_projPath[s_projIter] = s_projSector;
+					wall = collision_pathWallCollision(s_projSector);
+					continue;
+				}
+			}
+			else
+			{
+				// There is no opening in the wall.
+				bot = -FIXED(100);
+				top =  FIXED(100);
+			}
+
+			collision_getHitPoint(&s_projNextPosX, &s_projNextPosZ);
+			fixed16_16 len = vec2Length(s_projNextPosX - obj->posWS.x, s_projNextPosZ - obj->posWS.z);
+			fixed16_16 yDelta = mul16(len, logic->dir.y);
+
+			fixed16_16 y0 = obj->posWS.y;
+			fixed16_16 y1 = obj->posWS.y + yDelta;
+			sector_getObjFloorAndCeilHeight(s_projSector, y0, &y0FloorHeight, &y0CeilHeight);
+			// In the case of water, the real floor height is the actual floor.
+			if (s_projSector->secHeight > 0)
+			{
+				y0FloorHeight = s_projSector->floorHeight;
+			}
+
+			fixed16_16 nextY = y1;
+			if (y1 > y0FloorHeight)
+			{
+				nextY = y0FloorHeight;
+			}
+			else if (y1 < y0CeilHeight)
+			{
+				nextY = y0CeilHeight;
+			}
+
+			fixed16_16 nY0 = nextY;
+			fixed16_16 nY1 = logic->type == PROJ_THERMAL_DET ? nextY - obj->worldHeight : nextY;
+			if (nY0 <= bot && nY1 >= top)
+			{
+				if (y1 >= y0FloorHeight)
+				{
+					hitFloor = true;
+					break;
+				}
+				if (y1 <= y0CeilHeight)
+				{
+					hitCeil = true;
+					break;
+				}
+			}
+			else  // Wall Hit!
+			{
+				fixed16_16 offset = ONE_16 + HALF_16;
+				fixed16_16 offsetX = mul16(offset, logic->dir.x);
+				fixed16_16 offsetZ = mul16(offset, logic->dir.z);
+
+				s_projNextPosY = nextY;
+				s_projNextPosX -= offsetX;
+				s_projNextPosZ -= offsetZ;
+
+				logic->delta.x = s_projNextPosX - obj->posWS.x;
+				logic->delta.y = s_projNextPosY - obj->posWS.y;
+				logic->delta.z = s_projNextPosZ - obj->posWS.z;
+
+				if (logic->u78 == -1)
+				{
+					// TODO
+				}
+				if (s_projSector->flags1 & SEC_FLAGS1_MAG_SEAL)
+				{
+					// TODO
+				}
+
+				// Wall Hit!
+				s_hitWall = wall;
+				return 0xffffffff;
+			}
+
+			s_projIter++;
+			s_projSector = wall->nextSector;
+			s_projPath[s_projIter] = s_projSector;
+			wall = collision_pathWallCollision(s_projSector);
+		}
+
+		if (!hitFloor && !hitCeil)
+		{
+			sector_getObjFloorAndCeilHeight(s_projSector, obj->posWS.y, &y0FloorHeight, &y0CeilHeight);
+			if (s_projSector->secHeight > 0)
+			{
+				y0FloorHeight = s_projSector->floorHeight;
+			}
+
+			if (s_projNextPosY > y0FloorHeight)
+			{
+				hitFloor = true;
+			}
+			else if (s_projNextPosY < y0CeilHeight)
+			{
+				hitCeil = true;
+			}
+			else  // Nothing Hit!
+			{
+				// Projectile doesn't hit anything.
+				return 0;
+			}
+		}
+
+		if (hitFloor)
+		{
+			SecObject* obj = logic->obj;
+			// fraction of the path where the path hits the floor.
+			fixed16_16 u = div16(y0FloorHeight - obj->posWS.y, logic->delta.y);
+			s_projNextPosX = obj->posWS.x + mul16(logic->delta.x, u);
+			s_projNextPosY = y0FloorHeight;
+			s_projNextPosZ = obj->posWS.z + mul16(logic->delta.z, u);
+
+			if (s_projSector->secHeight > 0)  // Hit water.
+			{
+				s_hitWater = 0xffffffff;
+				return 0xffffffff;
+			}
+		}
+		else if (hitCeil)
+		{
+			SecObject* obj = logic->obj;
+			// fraction of the path where the path hits the floor.
+			s32 u = div16(y0CeilHeight - obj->posWS.y, logic->delta.y);
+
+			s_projNextPosX = obj->posWS.x + mul16(logic->delta.x, u);
+			s_projNextPosY = y0CeilHeight;
+			s_projNextPosZ = obj->posWS.z + mul16(logic->delta.z, u);
+		}
+
+		if (logic->type == PROJ_THERMAL_DET)
+		{
+			// TODO
+		}
+		if (logic->u78 == -1)	//Mine
+		{
+			// TODO
+			return 0;
+		}
+		if (s_projSector->flags1 & SEC_FLAGS1_MAG_SEAL)
+		{
+			// TODO
+		}
+
+		// Hit floor or ceiling.
+		return 0xffffffff;
+	}
+		
 	u32 proj_getHitObj(ProjectileLogic* logic)
 	{
-		// TODO
+		SecObject* obj = logic->obj;
+		if (!logic->speed)
+		{
+			return 0;
+		}
+
+		fixed16_16 move = mul16(logic->speed, s_deltaTime);
+		CollisionInterval interval =
+		{
+			obj->posWS.x,
+			s_projNextPosX,
+			obj->posWS.y,
+			s_projNextPosY,
+			obj->posWS.z,
+			s_projNextPosZ,
+			move,
+			logic->dir.x,
+			logic->dir.z
+		};
+
+		SecObject* hitObj = nullptr;
+		while (!hitObj && s_projIter > 0)
+		{
+			s_projIter--;
+			hitObj = collision_getObjectCollision(s_projStartSector[s_projIter], &interval, logic->prevColObj);
+		}
+		if (hitObj)
+		{
+			s_colHitObj = hitObj;
+			s_colObjAdjX = obj->posWS.x + mul16(logic->dir.x, s_colObjOverlap);
+			s_colObjAdjY = obj->posWS.y + mul16(logic->dir.y, s_colObjOverlap);
+			s_colObjAdjZ = obj->posWS.z + mul16(logic->dir.z, s_colObjOverlap);
+			s_colObjSector = collision_tryMove(obj->sector, obj->posWS.x, obj->posWS.z, s_colObjAdjX, s_colObjAdjZ);
+
+			if (s_colObjSector)
+			{
+				s_colObjAdjY = min(max(s_colObjAdjY, s_colObjSector->ceilingHeight), s_colObjSector->floorHeight);
+				if (logic->type == PROJ_CONCUSSION)
+				{
+					logic->hitEffectId = HEFFECT_CONCUSSION;
+				}
+				return 0xffffffff;
+			}
+		}
 		return 0;
 	}
 

@@ -71,17 +71,12 @@ namespace TFE_Collision
 	static fixed16_16 s_col_wallZ0;
 
 	// Object Collision
-	static fixed16_16 s_colObjAdjX;
-	static fixed16_16 s_colObjAdjY;
-	static fixed16_16 s_colObjAdjZ;
-	
 	static fixed16_16 s_colObjOffsetX;
 	static fixed16_16 s_colObjOffsetZ;
 	static fixed16_16 s_colObjDirX;
 	static fixed16_16 s_colObjDirZ;
 	static fixed16_16 s_colObjMinY;
 	static fixed16_16 s_colObjMaxY;
-	static fixed16_16 s_colObjOverlap;
 	static fixed16_16 s_colObjX0;
 	static fixed16_16 s_colObjX1;
 	static fixed16_16 s_colObjY0;
@@ -92,13 +87,13 @@ namespace TFE_Collision
 
 	static vec2_fixed s_colWallV0;
 
-	static RSector*    s_colObjSector;
-	static SecObject*  s_colHitObj;
 	static SecObject*  s_colObjPrev;
 	static SecObject** s_colObjList;
 	static CollisionInterval* s_colObjInterval;
 	
 	static s32 s_colObjCount;
+
+	fixed16_16 s_colObjOverlap;
 	
 	////////////////////////////////////////////////////////
 	// Forward Declarations
@@ -282,6 +277,24 @@ namespace TFE_Collision
 			curSector = nextSector;
 		}
 		return curSector;
+	}
+
+	RWall* collision_wallCollisionFromPath(RSector* sector, fixed16_16 srcX, fixed16_16 srcZ, fixed16_16 dstX, fixed16_16 dstZ)
+	{
+		fixed16_16 dx = dstX - srcX;
+		fixed16_16 dz = dstZ - srcZ;
+		if (dx == 0 && dz == 0)
+		{
+			return nullptr;
+		}
+
+		s_col_path.x0 = srcX;
+		s_col_path.x1 = dstX;
+		s_col_path.z1 = dstZ;
+		s_col_path.z0 = srcZ;
+		s_collisionFrameWall++;
+
+		return collision_pathWallCollision(sector);
 	}
 
 	RSector* collision_moveObj(SecObject* obj, fixed16_16 dx, fixed16_16 dz)
