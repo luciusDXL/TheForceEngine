@@ -1,5 +1,6 @@
 #include "projectile.h"
 #include "animLogic.h"
+#include <TFE_Collision/collision.h>
 #include <TFE_Level/robject.h>
 #include <TFE_Memory/allocator.h>
 
@@ -26,6 +27,10 @@ namespace TFE_DarkForces
 	static u32 s_missileLoopingSnd;
 
 	void projectileLogicFunc();
+	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
+	u32 proj_move(ProjectileLogic* logic);
+	u32 proj_getHitObj(ProjectileLogic* logic);
+
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType mortarUpdateFunc(ProjectileLogic* logic);
@@ -352,9 +357,7 @@ namespace TFE_DarkForces
 		logic->delta.y = mul16(logic->vel.y, dt);
 		logic->delta.z = mul16(logic->vel.z, dt);
 
-		// TODO: integrate proj_handleMovement()
-		return PHIT_NONE;
-		//return proj_handleMovement(logic);
+		return proj_handleMovement(logic);
 	}
 
 	// Landmines do not move at all (well normally...)
@@ -387,9 +390,27 @@ namespace TFE_DarkForces
 			logic->dir.y = 0;
 		}
 
-		// TODO: integrate proj_handleMovement()
+		return proj_handleMovement(logic);
+	}
+		
+	// Handle projectile movement.
+	// Returns 0 if it moved without hitting anything.
+	ProjectileHitType proj_handleMovement(ProjectileLogic* logic)
+	{
+		// TODO
 		return PHIT_NONE;
-		//return proj_handleMovement(logic);
+	}
+
+	u32 proj_move(ProjectileLogic* logic)
+	{
+		// TODO
+		return 0;
+	}
+
+	u32 proj_getHitObj(ProjectileLogic* logic)
+	{
+		// TODO
+		return 0;
 	}
 
 }  // TFE_DarkForces

@@ -98,6 +98,16 @@ namespace TFE_CoreMath
 	// Returns an DF angle, where 360 degrees = 16384 angular units (~45.5 units / degree).
 	angle14_32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz);
 
+	// This is an approximate distance between points.
+	// It is basically manhattan distance - smallest component / 2
+	// dist = |dx| + |dz| - min(|dx|, |dz|)/2
+	fixed16_16 distApprox(fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1)
+	{
+		fixed16_16 dx = abs(x1 - x0);
+		fixed16_16 dz = abs(z1 - z0);
+		return dx + dz - (min(dx, dz) >> 1);
+	}
+
 	// Float
 	inline f32 abs(f32 x)
 	{

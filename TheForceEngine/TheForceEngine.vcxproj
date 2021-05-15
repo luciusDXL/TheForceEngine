@@ -264,6 +264,7 @@
     <ClInclude Include="TFE_Audio\midiPlayer.h" />
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
+    <ClInclude Include="TFE_Collision\collision.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
     <ClInclude Include="TFE_DarkForces\hitEffect.h" />
     <ClInclude Include="TFE_DarkForces\itemId.h" />
@@ -461,6 +462,7 @@
     <ClCompile Include="TFE_Audio\midiPlayer.cpp" />
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
+    <ClCompile Include="TFE_Collision\collision.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\hitEffect.cpp" />
     <ClCompile Include="TFE_DarkForces\logic.cpp" />
