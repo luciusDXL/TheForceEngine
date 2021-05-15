@@ -42,7 +42,7 @@ namespace TFE_DarkForces
 	static fixed16_16 s_projNextPosX;
 	static fixed16_16 s_projNextPosY;
 	static fixed16_16 s_projNextPosZ;
-	static s32        s_hitWater;
+	static u32        s_hitWater;
 	static RWall*     s_hitWall;
 	static u32        s_hitWallFlag;
 	static RSector*   s_projSector;
