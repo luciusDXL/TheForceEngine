@@ -16,7 +16,7 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Structures and Constants
 	//////////////////////////////////////////////////////////////
-	static const Tick c_mortarGravityAccel = FIXED(120);	// 120.0 units / s^2
+	static const Tick c_projectileGravityAccel = FIXED(120);	// 120.0 units / s^2
 
 	//////////////////////////////////////////////////////////////
 	// Internal State
@@ -64,7 +64,7 @@ namespace TFE_DarkForces
 
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
-	ProjectileHitType mortarUpdateFunc(ProjectileLogic* logic);
+	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic);
 
 	//////////////////////////////////////////////////////////////
 	// API Implementation
@@ -242,7 +242,7 @@ namespace TFE_DarkForces
 				obj_setSpriteAnim(projObj);
 
 				projLogic->type = PROJ_MORTAR;
-				projLogic->updateFunc = mortarUpdateFunc;
+				projLogic->updateFunc = arcingProjectileUpdateFunc;
 				projLogic->dmg = 0;	// Damage is set to 0 for some reason.
 				projLogic->falloffAmt = 0;		// No falloff
 				projLogic->dmgFalloffDelta = 0;
@@ -405,11 +405,11 @@ namespace TFE_DarkForces
 	}
 		
 	// Mortars fly in an arc.
-	ProjectileHitType mortarUpdateFunc(ProjectileLogic* logic)
+	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic)
 	{
 		const fixed16_16 dt = s_deltaTime;
 		// The projectile arcs due to gravity, accel = 120.0 units / s^2
-		logic->vel.y += mul16(c_mortarGravityAccel, dt);
+		logic->vel.y += mul16(c_projectileGravityAccel, dt);
 
 		logic->delta.x = mul16(logic->vel.x, dt);
 		logic->delta.y = mul16(logic->vel.y, dt);

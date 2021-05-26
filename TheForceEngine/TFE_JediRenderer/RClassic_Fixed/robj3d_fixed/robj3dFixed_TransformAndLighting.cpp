@@ -109,8 +109,8 @@ namespace RClassic_Fixed
 					const fixed16_16 I = robj3d_dotProduct(vertex, normal, &dir);
 					if (I > 0)
 					{
-						s32 source = light->brightness;
-						s32 sourceIntensity = mul16(VSHADE_MAX_INTENSITY, source);
+						fixed16_16 source = light->brightness;
+						fixed16_16 sourceIntensity = mul16(VSHADE_MAX_INTENSITY, source);
 						lightIntensity += mul16(I, sourceIntensity);
 					}
 				}
