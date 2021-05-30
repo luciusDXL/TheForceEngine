@@ -33,20 +33,20 @@ namespace TFE_InfSystem
 	static const char* c_defaultGob = "DARK.GOB";
 
 	// These need to be filled out somewhere.
-	static SoundSourceID s_moveCeilSound0 = 0;
-	static SoundSourceID s_moveCeilSound1 = 0;
-	static SoundSourceID s_moveCeilSound2 = 0;
-	static SoundSourceID s_moveFloorSound0 = 0;
-	static SoundSourceID s_moveFloorSound1 = 0;
-	static SoundSourceID s_moveFloorSound2 = 0;
-	static SoundSourceID s_doorSound = 0;
+	static SoundSourceID s_moveCeilSound0 = NULL_SOUND;
+	static SoundSourceID s_moveCeilSound1 = NULL_SOUND;
+	static SoundSourceID s_moveCeilSound2 = NULL_SOUND;
+	static SoundSourceID s_moveFloorSound0 = NULL_SOUND;
+	static SoundSourceID s_moveFloorSound1 = NULL_SOUND;
+	static SoundSourceID s_moveFloorSound2 = NULL_SOUND;
+	static SoundSourceID s_doorSound = NULL_SOUND;
 
 	// The size of the goals array is arbitrary, I don't know the largest possible size yet.
 	static s32 s_goals[16] = { 0 };
 
 	// System -- TODO
-	static SoundSourceID s_needKeySoundId = 0;	// TODO
-	static SoundSourceID s_switchDefaultSndId = 0;	// TODO
+	static SoundSourceID s_needKeySoundId = NULL_SOUND;	// TODO
+	static SoundSourceID s_switchDefaultSndId = NULL_SOUND;	// TODO
 	
 	// INF delta time in ticks.
 	static s32 s_triggerCount = 0;
@@ -240,15 +240,15 @@ namespace TFE_InfSystem
 		elev->dirOrCenter.x = 0;
 		elev->dirOrCenter.z = 0;
 		elev->flags = 0;
-		elev->loopingSoundID = 0;
+		elev->loopingSoundID = NULL_SOUND;
 
 		elev->type = type;
 		elev->self = elev;
 		elev->sector = sector;
 		elev->updateFlags = ELEV_MASTER_ON;
-		elev->sound0 = 0;
-		elev->sound1 = 0;
-		elev->sound2 = 0;
+		elev->sound0 = NULL_SOUND;
+		elev->sound1 = NULL_SOUND;
+		elev->sound2 = NULL_SOUND;
 
 		if (type > IELEV_CHANGE_WALL_LIGHT)
 		{
@@ -416,8 +416,8 @@ namespace TFE_InfSystem
 				stop1->value = sector->ceilingHeight;
 
 				elev->trigMove = TRIGMOVE_LAST;
-				elev->sound1 = 0;
-				elev->sound2 = 0;
+				elev->sound1 = NULL_SOUND;
+				elev->sound2 = NULL_SOUND;
 				elev->sound0 = s_doorSound;
 
 				elev->speed = FIXED(30);
@@ -526,9 +526,9 @@ namespace TFE_InfSystem
 
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = 0;
-				elev->sound0 = 0;
-				elev->sound1 = 0;
-				elev->sound2 = 0;
+				elev->sound0 = NULL_SOUND;
+				elev->sound1 = NULL_SOUND;
+				elev->sound2 = NULL_SOUND;
 
 				link->entityMask = INF_ENTITY_ANY;
 				link->eventMask = INF_EVENT_EXPLOSION;
@@ -557,7 +557,7 @@ namespace TFE_InfSystem
 		stop->delay = TICKS(4);	// default delay = 4 seconds.
 		stop->messages = nullptr;
 		stop->adjoinCmds = 0;
-		stop->pageId = 0;	// no page sound by default.
+		stop->pageId = NULL_SOUND;	// no page sound by default.
 		stop->floorTex = 0;
 		stop->ceilTex = 0;
 
@@ -1133,7 +1133,7 @@ namespace TFE_InfSystem
 				} break;
 				case KW_SOUND:
 				{
-					SoundSourceID soundSourceId = 0;
+					SoundSourceID soundSourceId = NULL_SOUND;
 					// Not ascii
 					if (s_infArg0[0] < '0' || s_infArg0[0] > '9')
 					{
@@ -1887,7 +1887,7 @@ namespace TFE_InfSystem
 				if (s_infArg1[0] >= '0' && s_infArg1[0] <= '9')
 				{
 					// Any numeric value means "no sound."
-					soundSourceId = 0;
+					soundSourceId = NULL_SOUND;
 				}
 				else
 				{
@@ -2444,7 +2444,7 @@ namespace TFE_InfSystem
 					if (elev->updateFlags & ELEV_MOVING)
 					{
 						stopSound(elev->loopingSoundID);
-						elev->loopingSoundID = 0;
+						elev->loopingSoundID = NULL_SOUND;
 
 						playSound3D_oneshot(elev->sound2, pos);
 						elev->updateFlags &= ~ELEV_MOVING;
@@ -2484,7 +2484,7 @@ namespace TFE_InfSystem
 
 					// Stop the looping sound and then play the stopping sound.
 					stopSound(elev->loopingSoundID);
-					elev->loopingSoundID = 0;
+					elev->loopingSoundID = NULL_SOUND;
 					// Play the stop one shot.
 					playSound3D_oneshot(elev->sound2, pos);
 
@@ -2586,7 +2586,7 @@ namespace TFE_InfSystem
 
 			// Stop the looping middle sound and then play the stop sound.
 			stopSound(elev->loopingSoundID);
-			elev->loopingSoundID = 0;
+			elev->loopingSoundID = NULL_SOUND;
 			// Play the stop one shot.
 			playSound3D_oneshot(elev->sound2, pos);
 		}
@@ -2947,7 +2947,7 @@ namespace TFE_InfSystem
 		s_triggerCount++;
 
 		InfLink* link = nullptr;
-		trigger->soundId = 0;
+		trigger->soundId = NULL_SOUND;
 		trigger->targets = allocator_create(sizeof(TriggerTarget));
 
 		switch (type)

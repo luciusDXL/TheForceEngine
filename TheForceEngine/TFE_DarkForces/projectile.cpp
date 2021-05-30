@@ -38,12 +38,12 @@ namespace TFE_DarkForces
 	static WaxFrame*  s_landmineFrame;
 	static WaxFrame*  s_thermalDetProj;
 
-	static SoundSourceID s_stdProjCameraSnd;
-	static SoundSourceID s_stdProjReflectSnd;
-	static SoundSourceID s_thermalDetReflectSnd;
-	static SoundSourceID s_plasmaCameraSnd;
-	static SoundSourceID s_plasmaReflectSnd;
-	static SoundSourceID s_missileLoopingSnd;
+	static SoundSourceID s_stdProjCameraSnd     = NULL_SOUND;
+	static SoundSourceID s_stdProjReflectSnd    = NULL_SOUND;
+	static SoundSourceID s_thermalDetReflectSnd = NULL_SOUND;
+	static SoundSourceID s_plasmaCameraSnd      = NULL_SOUND;
+	static SoundSourceID s_plasmaReflectSnd     = NULL_SOUND;
+	static SoundSourceID s_missileLoopingSnd    = NULL_SOUND;
 
 	static RSector*   s_projStartSector[16];
 	static RSector*   s_projPath[16];
@@ -89,18 +89,18 @@ namespace TFE_DarkForces
 
 		projLogic->prevColObj = nullptr;
 		projLogic->u6c = nullptr;
-		projLogic->reflVariation = 0;
-		projLogic->cameraPassSnd = 0;
-		projLogic->flightSndSource = 0;
-		projLogic->flightSndId = 0;
-		projLogic->reflectSnd = 0;
+		projLogic->reflVariation   = 0;
+		projLogic->cameraPassSnd   = NULL_SOUND;
+		projLogic->flightSndSource = NULL_SOUND;
+		projLogic->flightSndId     = NULL_SOUND;
+		projLogic->reflectSnd      = NULL_SOUND;
 		projLogic->flags = PROJFLAG_CAMERA_PASS_SOUND;
 		// 'obj' gets deleted after this function is called so this is likely a bug.
 		projLogic->prevObj = obj;
-		projLogic->vel.x = 0;
-		projLogic->vel.y = 0;
-		projLogic->vel.z = 0;
-		projLogic->minDmg = 0;
+		projLogic->vel.x   = 0;
+		projLogic->vel.y   = 0;
+		projLogic->vel.z   = 0;
+		projLogic->minDmg  = 0;
 
 		obj_addLogic(projObj, (Logic*)projLogic, s_projectileTask, projectileLogicFunc);
 		
