@@ -1173,7 +1173,7 @@ namespace TFE_DarkForces
 				s_colObjAdjY = min(max(s_colObjAdjY, s_colObjSector->ceilingHeight), s_colObjSector->floorHeight);
 				if (logic->type == PROJ_CONCUSSION)
 				{
-					logic->hitEffectId = HEFFECT_CONCUSSION;
+					logic->hitEffectId = HEFFECT_CONCUSSION2;
 				}
 				return 0xffffffff;
 			}
