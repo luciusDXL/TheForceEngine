@@ -681,7 +681,19 @@ namespace TFE_DarkForces
 
 		proj_setYawPitch(logic, sinPitch, cosPitch, sinYaw, cosYaw);
 	}
-		
+
+	// Originally this code was inlined in the final DOS code, but I am splitting it out to reduce redundant code.
+	// This code adds some variation to the final yaw and pitch of a projectile after reflection if
+	// logic->reflVariation is non-zero.
+	void handleReflectVariation(ProjectileLogic* logic, SecObject* obj)
+	{
+		if (!logic->reflVariation) { return; }
+
+		// Random variation between [-logic->reflVariation, logic->reflVariation]
+		obj->yaw   += random(2 * logic->reflVariation) - logic->reflVariation;
+		obj->pitch += random(2 * logic->reflVariation) - logic->reflVariation;
+	}
+
 	// Handle projectile movement.
 	// Returns 0 if it moved without hitting anything.
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic)
@@ -703,23 +715,14 @@ namespace TFE_DarkForces
 				// getAngleDifference() will always return 4096, then we add yaw + 4096 = yaw + 8192 = 180 degrees.
 				// This could have been accomplished with: obj->yaw = (obj->yaw + 8192) & 16383
 				obj->yaw = (getAngleDifference(obj->yaw, offsetYaw) + offsetYaw) & 16383;
-
-				if (logic->reflVariation)
-				{
-					// Random variation between [-logic->reflVariation, logic->reflVariation]
-					angle14_32 variation = random(2 * logic->reflVariation) - logic->reflVariation;
-					obj->yaw += variation;
-
-					variation = random(2 * logic->reflVariation) - logic->reflVariation;
-					obj->pitch += variation;
-				}
+				handleReflectVariation(logic, obj);
 
 				logic->prevColObj = nullptr;
 				logic->u6c = nullptr;
 				proj_setTransform(logic, obj->pitch, obj->yaw);
 				playSound3D_oneshot(logic->reflectSnd, obj->posWS);
 
-				logic->flags |= 1;
+				logic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
 				logic->delta.x = mul16(HALF_16, logic->dir.x);
 				logic->delta.z = mul16(HALF_16, logic->dir.z);
 				collision_moveObj(obj, logic->delta.x, logic->delta.z);
@@ -744,13 +747,7 @@ namespace TFE_DarkForces
 				vec2_fixed* w0 = s_hitWall->w0;
 				fixed16_16 len = vec2Length(s_projNextPosX - w0->x, s_projNextPosZ - w0->z);
 				inf_wallAndMirrorSendMessageAtPos(s_hitWall, obj, INF_EVENT_SHOOT_LINE, len, s_projNextPosY);
-
-				if (s_hitWallFlag == 1)
-				{
-					return PHIT_SKY;
-				}
-				// !SEC_FLAGS1_NOWALL_DRAW
-				return PHIT_SOLID;
+				return (s_hitWallFlag == 1) ? PHIT_SKY : PHIT_SOLID;
 			}
 
 			if (logic->type == PROJ_PUNCH)
@@ -766,11 +763,6 @@ namespace TFE_DarkForces
 			{
 				s_infMsgEntity = logic;
 				inf_sendObjMessage(s_colHitObj, IMSG_DAMAGE, 0);
-			}
-
-			if (s_hitWallFlag > 4)
-			{
-				return PHIT_SOLID;
 			}
 
 			if (s_hitWallFlag <= 1)	// s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW
@@ -933,16 +925,7 @@ namespace TFE_DarkForces
 					logic->speed = mul16(logic->speed, logic->horzBounciness);
 					obj->pitch = (getAngleDifference(obj->pitch, 0) & 16383);
 					obj->yaw = (getAngleDifference(obj->yaw, wall->angle) + wall->angle) & 16383;
-
-					if (logic->reflVariation)
-					{
-						// Random variation between [-logic->reflVariation, logic->reflVariation]
-						s32 variation = random(2 * logic->reflVariation) - logic->reflVariation;
-						obj->yaw += variation;
-
-						variation = random(2 * logic->reflVariation) - logic->reflVariation;
-						obj->pitch += variation;
-					}
+					handleReflectVariation(logic, obj);
 
 					logic->prevColObj = nullptr;
 					logic->u6c = nullptr;
@@ -976,16 +959,8 @@ namespace TFE_DarkForces
 
 						SecObject* obj = logic->obj;
 						obj->yaw = (getAngleDifference(obj->yaw, wall->angle) + wall->angle) & 16383;
+						handleReflectVariation(logic, obj);
 
-						if (logic->reflVariation)
-						{
-							// Random variation between [-logic->reflVariation, logic->reflVariation]
-							s32 variation = random(2 * logic->reflVariation) - logic->reflVariation;
-							obj->yaw += variation;	// edi
-
-							variation = random(2 * logic->reflVariation) - logic->reflVariation;
-							obj->pitch += variation;
-						}
 						logic->prevColObj = nullptr;
 						logic->u6c = nullptr;
 						proj_setTransform(logic, obj->pitch, obj->yaw);
@@ -1097,16 +1072,7 @@ namespace TFE_DarkForces
 				spawnHitEffect(logic->reflectEffectId, s_projSector, s_projNextPosX, s_projNextPosY, s_projNextPosZ, logic->u6c);
 				// Hit the floor or ceiling simply negates the pitch to reflect.
 				obj->pitch = -obj->pitch;
-
-				if (logic->reflVariation)
-				{
-					// Random variation between [-logic->reflVariation, logic->reflVariation]
-					s32 variation = random(2 * logic->reflVariation) - logic->reflVariation;
-					obj->yaw += variation;
-
-					variation = random(2 * logic->reflVariation) - logic->reflVariation;
-					obj->pitch += variation;
-				}
+				handleReflectVariation(logic, obj);
 
 				logic->prevColObj = nullptr;
 				logic->u6c = nullptr;
@@ -1137,18 +1103,18 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 
-		fixed16_16 move = mul16(logic->speed, s_deltaTime);
+		const fixed16_16 move = mul16(logic->speed, s_deltaTime);
 		CollisionInterval interval =
 		{
-			obj->posWS.x,
-			s_projNextPosX,
-			obj->posWS.y,
-			s_projNextPosY,
-			obj->posWS.z,
-			s_projNextPosZ,
-			move,
-			logic->dir.x,
-			logic->dir.z
+			obj->posWS.x,   // x0
+			s_projNextPosX,	// x1
+			obj->posWS.y,	// y0
+			s_projNextPosY,	// y1
+			obj->posWS.z,	// z0
+			s_projNextPosZ,	// z1
+			move,           // move during timestep
+			logic->dir.x,	// dirX
+			logic->dir.z	// dirZ
 		};
 
 		SecObject* hitObj = nullptr;
