@@ -16,9 +16,9 @@ namespace TFE_CoreMath
 		fixed16_16 sinYaw, cosYaw;
 		fixed16_16 sinPch, cosPch;
 		fixed16_16 sinRol, cosRol;
-		sinCosFixed(yaw, sinYaw, cosYaw);
-		sinCosFixed(pitch, sinPch, cosPch);
-		sinCosFixed(roll, sinRol, cosRol);
+		sinCosFixed(yaw, &sinYaw, &cosYaw);
+		sinCosFixed(pitch, &sinPch, &cosPch);
+		sinCosFixed(roll, &sinRol, &cosRol);
 
 		transform[0] = mul16(cosYaw, cosRol);
 		transform[1] = mul16(cosPch, sinRol) + mul16(mul16(sinPch, sinYaw), cosPch);

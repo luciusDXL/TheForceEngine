@@ -95,8 +95,7 @@ namespace TFE_DarkForces
 		projLogic->flightSndId     = NULL_SOUND;
 		projLogic->reflectSnd      = NULL_SOUND;
 		projLogic->flags = PROJFLAG_CAMERA_PASS_SOUND;
-		// 'obj' gets deleted after this function is called so this is likely a bug.
-		projLogic->prevObj = obj;
+		projLogic->prevObj = obj;  // 'obj' gets deleted after this function is called so this is likely a bug.
 		projLogic->vel.x   = 0;
 		projLogic->vel.y   = 0;
 		projLogic->vel.z   = 0;
@@ -575,8 +574,8 @@ namespace TFE_DarkForces
 	// The "standard" update function - projectiles travel in a straight line with a fixed velocity.
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic)
 	{
-		// Calculate how much the bolt moves this timeslice.
-		fixed16_16 dt = s_deltaTime;
+		// Calculate how much the projectile moves this timeslice.
+		const fixed16_16 dt = s_deltaTime;
 		logic->delta.x = mul16(logic->vel.x, dt);
 		logic->delta.y = mul16(logic->vel.y, dt);
 		logic->delta.z = mul16(logic->vel.z, dt);
@@ -584,7 +583,7 @@ namespace TFE_DarkForces
 		return proj_handleMovement(logic);
 	}
 
-	// Landmines do not move at all (well normally...)
+	// Landmines do not move but can fall if off of the ground.
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic)
 	{
 		SecObject* obj = logic->obj;
@@ -602,20 +601,22 @@ namespace TFE_DarkForces
 		return PHIT_NONE;
 	}
 		
-	// Mortars fly in an arc.
+	// Projectiles, such as Thermal Detonators and Mortars fly in an arc.
+	// This is done by giving them an initial velocity and then modifying that velocity
+	// over time based on gravity.
 	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic)
 	{
 		const fixed16_16 dt = s_deltaTime;
 		// The projectile arcs due to gravity, accel = 120.0 units / s^2
 		logic->vel.y += mul16(c_projectileGravityAccel, dt);
-
+		// Get the frame delta from the velocity and delta time.
 		logic->delta.x = mul16(logic->vel.x, dt);
 		logic->delta.y = mul16(logic->vel.y, dt);
 		logic->delta.z = mul16(logic->vel.z, dt);
 
 		// Note this gives a skewed Y direction. It should really be: velY / vec3Length(velX, velY, velZ)
 		// It also means the projectile cannot travel straight up or down.
-		fixed16_16 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
+		const fixed16_16 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
 		if (horzSpeed)
 		{
 			logic->dir.y = div16(logic->vel.y, horzSpeed);
@@ -669,15 +670,14 @@ namespace TFE_DarkForces
 	void proj_setTransform(ProjectileLogic* logic, angle14_32 pitch, angle14_32 yaw)
 	{
 		SecObject* obj = logic->obj;
-		obj->roll = 0;
+		obj->roll  = 0;
 		obj->pitch = pitch;
-		obj->yaw = yaw;
+		obj->yaw   = yaw;
 
 		fixed16_16 cosYaw, sinYaw;
-		sinCosFixed(yaw, sinYaw, cosYaw);
-
 		fixed16_16 cosPitch, sinPitch;
-		sinCosFixed(pitch, sinPitch, cosPitch);
+		sinCosFixed(yaw,   &sinYaw,   &cosYaw);
+		sinCosFixed(pitch, &sinPitch, &cosPitch);
 
 		proj_setYawPitch(logic, sinPitch, cosPitch, sinYaw, cosYaw);
 	}

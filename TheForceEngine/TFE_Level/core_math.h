@@ -72,7 +72,7 @@ namespace TFE_CoreMath
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
 
 	// Convert from integer angle to fixed point sin/cos.
-	inline void sinCosFixed(angle14_32 angle, fixed16_16& sinValue, fixed16_16& cosValue)
+	inline void sinCosFixed(angle14_32 angle, fixed16_16* sinValue, fixed16_16* cosValue)
 	{
 		// Cheat and use floating point sin/cos functions...
 		// TODO: Use the original table-based calculation? -- This probably isn't necessary.
@@ -80,8 +80,8 @@ namespace TFE_CoreMath
 		const f32 s = sinf(scale * f32(angle));
 		const f32 c = cosf(scale * f32(angle));
 
-		sinValue = floatToFixed16(s);
-		cosValue = floatToFixed16(c);
+		*sinValue = floatToFixed16(s);
+		*cosValue = floatToFixed16(c);
 	}
 
 	fixed16_16 vec2Length(fixed16_16 dx, fixed16_16 dz)

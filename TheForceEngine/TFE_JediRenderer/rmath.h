@@ -103,15 +103,15 @@ namespace TFE_JediRenderer
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
 
 	// Convert from integer angle to fixed point sin/cos.
-	inline void sinCosFixed(s32 angle, fixed16_16& sinValue, fixed16_16& cosValue)
+	inline void sinCosFixed(s32 angle, fixed16_16* sinValue, fixed16_16* cosValue)
 	{
 		// Cheat and use floating point sin/cos functions...
 		const f32 scale = -2.0f * PI / 16484.0f;
 		const f32 s = sinf(scale * f32(angle));
 		const f32 c = cosf(scale * f32(angle));
 
-		sinValue = floatToFixed16(s);
-		cosValue = floatToFixed16(c);
+		*sinValue = floatToFixed16(s);
+		*cosValue = floatToFixed16(c);
 	}
 
 	void computeTransformFromAngles_Fixed(s16 yaw, s16 pitch, s16 roll, fixed16_16* transform);

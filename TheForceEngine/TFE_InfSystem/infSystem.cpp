@@ -66,6 +66,13 @@ namespace TFE_InfSystem
 	static u32 s_sectorCount;
 		
 	static std::vector<char> s_buffer;
+	// Loading
+	static char s_infArg0[256];
+	static char s_infArg1[256];
+	static char s_infArg2[256];
+	static char s_infArg3[256];
+	static char s_infArg4[256];
+	static char s_infArgExtra[256];
 
 	void infElevatorMsgFunc(InfMessageType msgType);
 	void infTriggerMsgFunc(InfMessageType msgType);
@@ -92,14 +99,6 @@ namespace TFE_InfSystem
 		
 	// TODO: System functions, to be connected later.
 	void sendTextMessage(s32 msgId) {}
-	
-	// Loading
-	static char s_infArg0[256];
-	static char s_infArg1[256];
-	static char s_infArg2[256];
-	static char s_infArg3[256];
-	static char s_infArg4[256];
-	static char s_infArgExtra[256];
 
 	// TODO: Game side functions
 	void game_levelComplete() {}
@@ -286,7 +285,7 @@ namespace TFE_InfSystem
 			elev->speed = FIXED(15);
 			elev->trigMove = TRIGMOVE_CONT;
 			elev->value = &elev->iValue;
-			sinCosFixed(0, elev->dirOrCenter.x, elev->dirOrCenter.z);
+			sinCosFixed(0, &elev->dirOrCenter.x, &elev->dirOrCenter.z);
 			elev->sound0 = s_moveCeilSound0;
 			elev->sound1 = s_moveCeilSound1;
 			elev->sound2 = s_moveCeilSound2;
@@ -309,14 +308,14 @@ namespace TFE_InfSystem
 			elev->value = &elev->iValue;
 			elev->trigMove = TRIGMOVE_CONT;
 			elev->flags = INF_EFLAG_MOVE_FLOOR | INF_EFLAG_MOVE_SECHT;
-			sinCosFixed(0, elev->dirOrCenter.x, elev->dirOrCenter.z);
+			sinCosFixed(0, &elev->dirOrCenter.x, &elev->dirOrCenter.z);
 			break;
 		case IELEV_SCROLL_CEILING:
 			elev->speed = FIXED(4);
 			elev->value = &elev->iValue;
 			elev->trigMove = TRIGMOVE_CONT;
 			elev->flags = INF_EFLAG_MOVE_CEIL;
-			sinCosFixed(0, elev->dirOrCenter.x, elev->dirOrCenter.z);
+			sinCosFixed(0, &elev->dirOrCenter.x, &elev->dirOrCenter.z);
 			break;
 		case IELEV_CHANGE_LIGHT:
 			elev->speed = FIXED(32);
@@ -657,7 +656,7 @@ namespace TFE_InfSystem
 
 	void inf_setDirFromAngle(InfElevator* elev, angle14_32 angle)
 	{
-		sinCosFixed(angle, elev->dirOrCenter.x, elev->dirOrCenter.z);
+		sinCosFixed(angle, &elev->dirOrCenter.x, &elev->dirOrCenter.z);
 	}
 
 	TriggerTarget* inf_addTriggerTarget(InfTrigger* trigger, RSector* targetSector, RWall* targetWall, u32 eventMask)
