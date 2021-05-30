@@ -30,11 +30,11 @@ namespace TFE_DarkForces
 		PROJ_CONCUSSION,
 		PROJ_CANNON,
 		PROJ_MISSILE,
-		PROJ_13,
-		PROJ_14,
-		PROJ_15,
+		PROJ_TURRET_BOLT,
+		PROJ_REMOTE_BOLT,
+		PROJ_EXP_BARREL,
 		PROJ_16,
-		PROJ_17,
+		PROJ_PROBE_PROJ,
 		PROJ_18,
 		PROJ_COUNT
 	};
@@ -47,14 +47,15 @@ namespace TFE_DarkForces
 		PHIT_OUT_OF_RANGE = 5,
 		PHIT_WATER        = 6,
 	};
-
-	struct ProjectileLogic;
-	typedef ProjectileHitType(*ProjectileFunc)(ProjectileLogic*);
-
+		
 	enum ProjectileFlags
 	{
 		PROJFLAG_CAMERA_PASS_SOUND = FLAG_BIT(0),
+		PROJFLAG_EXPLODE           = FLAG_BIT(1),
 	};
+
+	struct ProjectileLogic;
+	typedef ProjectileHitType(*ProjectileFunc)(ProjectileLogic*);
 
 	struct ProjectileLogic
 	{
@@ -78,21 +79,21 @@ namespace TFE_DarkForces
 		vec3_fixed vel;         // Projectile velocity in units / second.
 		fixed16_16 speed;       // Projectile speed in units / second.
 		vec3_fixed dir;         // Projectile facing direction.
-		s32 u5c;
-		s32 u60;
+		fixed16_16 horzBounciness;
+		fixed16_16 vertBounciness;
 		SecObject* prevColObj;
 		SecObject* prevObj;
 		SecObject* u6c;
 		u32 duration;           // How long the projectile continues to move before going out of range (and being destroyed).
 		s32 u74;
-		s32 u78;
-		s32 u7c;
+		s32 bounceCnt;
+		s32 reflVariation;
 		u32 flightSndId;        // Looping sound instance played while the projectile moves.
 		u32 flightSndSource;    // Source looping sound.
 		u32 cameraPassSnd;      // Sound effect played when the projectile passes near the camera.
-		s32 u8c;
+		s32 reflectSnd;
 		ProjectileFunc updateFunc;// Projectile update function, this determines how the projectile moves.
-		s32 u94;
+		HitEffectID reflectEffectId;
 		HitEffectID hitEffectId;  // The effect to play when the projectile hits a solid surface.
 		u32 flags;
 		s32 ua0;

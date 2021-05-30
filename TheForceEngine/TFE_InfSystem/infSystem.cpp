@@ -4,6 +4,7 @@
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_JediSound/soundSystem.h>
 #include <TFE_Memory/allocator.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
@@ -22,6 +23,7 @@
 using namespace TFE_Level;
 using namespace TFE_DarkForces;
 using namespace TFE_Memory;
+using namespace TFE_JediSound;
 
 namespace TFE_InfSystem
 {
@@ -90,13 +92,7 @@ namespace TFE_InfSystem
 		
 	// TODO: System functions, to be connected later.
 	void sendTextMessage(s32 msgId) {}
-	void playSound2D(s32 soundId) {}
-	void playSound3D_oneshot(s32 soundId, vec3_fixed pos) {}
-	s32  playSound3D_looping(s32 sourceId, s32 soundId, vec3_fixed pos) { return 0; }
-	void stopSound(s32 sourceId) {}
-	s32  sound_Load(const char* sound) { return 0; }
-	void setSoundEffectVolume(s32 soundId, s32 volume) {}
-
+	
 	// Loading
 	static char s_infArg0[256];
 	static char s_infArg1[256];

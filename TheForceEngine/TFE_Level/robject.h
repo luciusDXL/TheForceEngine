@@ -44,6 +44,7 @@ enum EntityTypeFlags
 	ETFLAG_SCENERY     = FLAG_BIT(8),	// Set for scenery - is this really collision?
 	ETFLAG_CAN_DISABLE = FLAG_BIT(10),	// An object that can be enabled or disabled by INF.
 	ETFLAG_SMART_OBJ   = FLAG_BIT(11),	// An object that can manipulate the level, such as opening doors.
+	ETFLAG_BIT_16      = FLAG_BIT(16),	// TODO: What is this flag?
 	ETFLAG_PLAYER      = FLAG_BIT(31),	// This is the player object.
 
 	ETFLAG_NONE = 0,

@@ -13,14 +13,18 @@ namespace TFE_DarkForces
 {
 	enum HitEffectID
 	{
-		HEFFECT_NONE         = -1,  // no hit effect
-		HEFFECT_SMALL_EXP    = 0,   // used by most weapons
-		HEFFECT_PLASMA_EXP   = 2,   // plasma
-		HEFFECT_CONCUSSION   = 5,   // concussion
-		HEFFECT_MISSILE_EXP  = 6,   // missile
-		HEFFECT_CANNON_EXP   = 9,   // cannon
-		HEFFECT_REPEATER_EXP = 10,  // repeater
+		HEFFECT_NONE        = -1,   // no visible effect.
+		HEFFECT_SMALL_EXP    = 0,   // small "puff" - blaster weapons.
+		HEFFECT_THERMDET_EXP = 1,   // thermal detonator explosion.
+		HEFFECT_PLASMA_EXP   = 2,   // plasma "puff".
+		HEFFECT_CONCUSSION   = 4,   // concussion - first stage.
+		HEFFECT_CONCUSSION2  = 5,   // concussion - second stage.
+		HEFFECT_MISSILE_EXP  = 6,   // missile explosion.
+		HEFFECT_CANNON_EXP   = 9,   // cannon "puff".
+		HEFFECT_REPEATER_EXP = 10,  // repeater "puff".
 		HEFFECT_LARGE_EXP    = 11,  // large explosion such as land mine.
+		HEFFECT_EXP_BARREL   = 12,  // exploding barrel.
+		HEFFECT_SPLASH       = 14,  // water splash
 	};
 
 	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* u6c);

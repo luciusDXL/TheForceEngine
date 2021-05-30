@@ -120,6 +120,24 @@ namespace TFE_CoreMath
 		return dist;
 	}
 
+	angle14_32 getAngleDifference(angle14_32 angle0, angle14_32 angle1)
+	{
+		angle0 &= 16383;
+		angle1 &= 16383;
+
+		angle14_32 dAngle = angle1 - angle0;
+		if (abs(dAngle) <= 8191)
+		{
+			return dAngle;
+		}
+		if (dAngle >= 0)
+		{
+			return dAngle - 16383;
+		}
+		// dAngle < 0
+		return dAngle + 16384;
+	}
+
 	/////////////////////////////////////////////
 	// Floating point
 	/////////////////////////////////////////////

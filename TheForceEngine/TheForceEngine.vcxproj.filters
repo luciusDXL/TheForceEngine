@@ -173,6 +173,9 @@
     <Filter Include="Source\TFE_Memory">
       <UniqueIdentifier>{934faa67-d3c0-48db-9212-681043f4bf1b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_JediSound">
+      <UniqueIdentifier>{c643a23a-05c5-404b-bd67-ec6c5495c6b1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -778,6 +781,12 @@
     <ClInclude Include="TFE_Collision\collision.h">
       <Filter>Source\TFE_Collision</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\random.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediSound\soundSystem.h">
+      <Filter>Source\TFE_JediSound</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1268,6 +1277,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Collision\collision.cpp">
       <Filter>Source\TFE_Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\random.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediSound\soundSystem.cpp">
+      <Filter>Source\TFE_JediSound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

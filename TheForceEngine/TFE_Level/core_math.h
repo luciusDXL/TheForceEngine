@@ -108,6 +108,8 @@ namespace TFE_CoreMath
 		return dx + dz - (min(dx, dz) >> 1);
 	}
 
+	angle14_32 getAngleDifference(angle14_32 angle0, angle14_32 angle1);
+
 	// Float
 	inline f32 abs(f32 x)
 	{

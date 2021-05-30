@@ -16,7 +16,6 @@ namespace TFE_DarkForces
 		s32 u18;
 		s32 u1c;
 	};
-
 	static Allocator* s_hitEffects;
 
 	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* u6c)

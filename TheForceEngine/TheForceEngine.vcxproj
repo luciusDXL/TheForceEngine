@@ -272,6 +272,7 @@
     <ClInclude Include="TFE_DarkForces\pickup.h" />
     <ClInclude Include="TFE_DarkForces\player.h" />
     <ClInclude Include="TFE_DarkForces\projectile.h" />
+    <ClInclude Include="TFE_DarkForces\random.h" />
     <ClInclude Include="TFE_DarkForces\time.h" />
     <ClInclude Include="TFE_Editor\archiveViewer.h" />
     <ClInclude Include="TFE_Editor\editor.h" />
@@ -360,6 +361,7 @@
     <ClInclude Include="TFE_JediRenderer\rsector.h" />
     <ClInclude Include="TFE_JediRenderer\rtexture.h" />
     <ClInclude Include="TFE_JediRenderer\rwall.h" />
+    <ClInclude Include="TFE_JediSound\soundSystem.h" />
     <ClInclude Include="TFE_Level\core_math.h" />
     <ClInclude Include="TFE_Level\fixedPoint.h" />
     <ClInclude Include="TFE_Level\level.h" />
@@ -469,6 +471,7 @@
     <ClCompile Include="TFE_DarkForces\pickup.cpp" />
     <ClCompile Include="TFE_DarkForces\player.cpp" />
     <ClCompile Include="TFE_DarkForces\projectile.cpp" />
+    <ClCompile Include="TFE_DarkForces\random.cpp" />
     <ClCompile Include="TFE_DarkForces\time.cpp" />
     <ClCompile Include="TFE_Editor\archiveViewer.cpp" />
     <ClCompile Include="TFE_Editor\editor.cpp" />
@@ -540,6 +543,7 @@
     <ClCompile Include="TFE_JediRenderer\rscanline.cpp" />
     <ClCompile Include="TFE_JediRenderer\rsector.cpp" />
     <ClCompile Include="TFE_JediRenderer\rtexture.cpp" />
+    <ClCompile Include="TFE_JediSound\soundSystem.cpp" />
     <ClCompile Include="TFE_Level\core_math.cpp" />
     <ClCompile Include="TFE_Level\level.cpp" />
     <ClCompile Include="TFE_Level\robject.cpp" />
