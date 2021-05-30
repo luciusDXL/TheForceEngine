@@ -7,6 +7,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Asset/dfKeywords.h>
+#include <TFE_JediSound/soundSystem.h>
 #include <TFE_Level/rsector.h>
 #include <TFE_Level/robject.h>
 #include "logic.h"
@@ -84,17 +85,17 @@ namespace TFE_DarkForces
 		SecObject* prevColObj;
 		SecObject* prevObj;
 		SecObject* u6c;
-		u32 duration;           // How long the projectile continues to move before going out of range (and being destroyed).
+		u32 duration;                     // How long the projectile continues to move before going out of range (and being destroyed).
 		s32 u74;
 		s32 bounceCnt;
 		s32 reflVariation;
-		u32 flightSndId;        // Looping sound instance played while the projectile moves.
-		u32 flightSndSource;    // Source looping sound.
-		u32 cameraPassSnd;      // Sound effect played when the projectile passes near the camera.
-		s32 reflectSnd;
-		ProjectileFunc updateFunc;// Projectile update function, this determines how the projectile moves.
+		SoundEffectID flightSndId;        // Looping sound instance played while the projectile moves.
+		SoundSourceID flightSndSource;    // Source looping sound.
+		SoundSourceID cameraPassSnd;      // Sound effect played when the projectile passes near the camera.
+		SoundSourceID reflectSnd;
+		ProjectileFunc updateFunc;        // Projectile update function, this determines how the projectile moves.
 		HitEffectID reflectEffectId;
-		HitEffectID hitEffectId;  // The effect to play when the projectile hits a solid surface.
+		HitEffectID hitEffectId;          // The effect to play when the projectile hits a solid surface.
 		u32 flags;
 		s32 ua0;
 		s32 ua4;

@@ -2,32 +2,35 @@
 
 namespace TFE_JediSound
 {
-	void playSound2D(s32 soundId)
+	void playSound2D(SoundSourceID soundId)
 	{
 		// STUB
 	}
 
-	void playSound3D_oneshot(s32 soundId, TFE_CoreMath::vec3_fixed pos)
+	void playSound3D_oneshot(SoundSourceID soundId, TFE_CoreMath::vec3_fixed pos)
 	{
 		// STUB
 	}
 
-	s32 playSound3D_looping(s32 sourceId, s32 soundId, TFE_CoreMath::vec3_fixed pos)
+	SoundEffectID playSound3D_looping(SoundSourceID sourceId, SoundEffectID soundId, TFE_CoreMath::vec3_fixed pos)
 	{
 		// STUB
-		return 0;
+		return SoundEffectID(0);
 	}
 
-	void stopSound(s32 sourceId)
+	void stopSound(SoundEffectID sourceId)
 	{
+		// STUB
 	}
 
-	s32 sound_Load(const char* sound)
+	SoundSourceID sound_Load(const char* sound)
 	{
-		return 0;
+		// STUB
+		return SoundSourceID(0);
 	}
 
-	void setSoundEffectVolume(s32 soundId, s32 volume)
+	void setSoundSourceVolume(SoundSourceID soundId, s32 volume)
 	{
+		// STUB
 	}
 }  // TFE_JediSound

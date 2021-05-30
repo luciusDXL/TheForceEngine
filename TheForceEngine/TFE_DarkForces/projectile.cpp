@@ -2,7 +2,6 @@
 #include "animLogic.h"
 #include "random.h"
 #include <TFE_Collision/collision.h>
-#include <TFE_JediSound/soundSystem.h>
 #include <TFE_InfSystem/infSystem.h>
 #include <TFE_Level/robject.h>
 #include <TFE_Level/rwall.h>
@@ -39,12 +38,12 @@ namespace TFE_DarkForces
 	static WaxFrame*  s_landmineFrame;
 	static WaxFrame*  s_thermalDetProj;
 
-	static u32 s_stdProjCameraSnd;
-	static u32 s_stdProjReflectSnd;
-	static u32 s_thermalDetReflectSnd;
-	static u32 s_plasmaCameraSnd;
-	static u32 s_plasmaReflectSnd;
-	static u32 s_missileLoopingSnd;
+	static SoundSourceID s_stdProjCameraSnd;
+	static SoundSourceID s_stdProjReflectSnd;
+	static SoundSourceID s_thermalDetReflectSnd;
+	static SoundSourceID s_plasmaCameraSnd;
+	static SoundSourceID s_plasmaReflectSnd;
+	static SoundSourceID s_missileLoopingSnd;
 
 	static RSector*   s_projStartSector[16];
 	static RSector*   s_projPath[16];
@@ -52,7 +51,7 @@ namespace TFE_DarkForces
 	static fixed16_16 s_projNextPosX;
 	static fixed16_16 s_projNextPosY;
 	static fixed16_16 s_projNextPosZ;
-	static u32        s_hitWater;
+	static JBool      s_hitWater;
 	static RWall*     s_hitWall;
 	static u32        s_hitWallFlag;
 	static RSector*   s_projSector;
@@ -69,8 +68,8 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	void projectileLogicFunc();
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
-	u32 proj_move(ProjectileLogic* logic);
-	u32 proj_getHitObj(ProjectileLogic* logic);
+	JBool proj_move(ProjectileLogic* logic);
+	JBool proj_getHitObj(ProjectileLogic* logic);
 
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
@@ -688,8 +687,8 @@ namespace TFE_DarkForces
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic)
 	{
 		SecObject* obj = logic->obj;
-		u32 envHit = proj_move(logic);
-		u32 objHit = proj_getHitObj(logic);
+		JBool envHit = proj_move(logic);
+		JBool objHit = proj_getHitObj(logic);
 		if (objHit)
 		{
 			obj->posWS.y = s_colObjAdjY;
@@ -815,11 +814,7 @@ namespace TFE_DarkForces
 					// TODO - I don't think this code will ever be hit.
 				}
 			}
-			if (s_hitWater == 0)
-			{
-				return PHIT_SOLID;
-			}
-			return PHIT_WATER;
+			return s_hitWater ? PHIT_WATER : PHIT_SOLID;
 		}
 
 		// Hit nothing.
@@ -828,13 +823,14 @@ namespace TFE_DarkForces
 		return PHIT_NONE;
 	}
 
-	u32 proj_move(ProjectileLogic* logic)
+	// Return JTRUE if something was hit during movement.
+	JBool proj_move(ProjectileLogic* logic)
 	{
 		SecObject* obj = logic->obj;
 		RSector* sector = obj->sector;
 
 		s_hitWall = nullptr;
-		s_hitWater = 0;
+		s_hitWater = JFALSE;
 		s_projSector = sector;
 		s_projStartSector[0] = sector;
 		s_projIter = 1;
@@ -932,7 +928,7 @@ namespace TFE_DarkForces
 					{
 						s_hitWall = wall;
 						s_hitWallFlag = 1;
-						return 0xffffffff;
+						return JTRUE;
 					}
 					logic->speed = mul16(logic->speed, logic->horzBounciness);
 					obj->pitch = (getAngleDifference(obj->pitch, 0) & 16383);
@@ -962,18 +958,18 @@ namespace TFE_DarkForces
 					logic->delta.y = 0;
 					logic->delta.z = 0;
 
-					return 0;
+					return JFALSE;
 				}
-				if (s_projSector->flags1 & SEC_FLAGS1_MAG_SEAL)
+				else if (s_projSector->flags1 & SEC_FLAGS1_MAG_SEAL)
 				{
 					if (s_projNextPosY < s_projSector->ceilingHeight)
 					{
 						s_hitWall = wall;
 						s_hitWallFlag = 1;
-						return 0xffffffff;
+						return JTRUE;
 					}
 					s32 count = logic->bounceCnt;
-					logic->bounceCnt -= 1;
+					logic->bounceCnt--;
 					if (count)
 					{
 						spawnHitEffect(logic->reflectEffectId, s_projSector, s_projNextPosX, s_projNextPosY, s_projNextPosZ, logic->u6c);
@@ -1004,13 +1000,13 @@ namespace TFE_DarkForces
 						logic->delta.x = 0;
 						logic->delta.y = 0;
 						logic->delta.z = 0;
-						return 0;
+						return JFALSE;
 					}
 				}
 
 				// Wall Hit!
 				s_hitWall = wall;
-				return 0xffffffff;
+				return JTRUE;
 			}
 
 			s_projIter++;
@@ -1038,7 +1034,7 @@ namespace TFE_DarkForces
 			else  // Nothing Hit!
 			{
 				// Projectile doesn't hit anything.
-				return 0;
+				return JFALSE;
 			}
 		}
 
@@ -1053,8 +1049,8 @@ namespace TFE_DarkForces
 
 			if (s_projSector->secHeight > 0)  // Hit water.
 			{
-				s_hitWater = 0xffffffff;
-				return 0xffffffff;
+				s_hitWater = JTRUE;
+				return JTRUE;
 			}
 		}
 		else if (hitCeil)
@@ -1090,7 +1086,7 @@ namespace TFE_DarkForces
 			logic->delta.x = 0;
 			logic->delta.y = 0;
 			logic->delta.z = 0;
-			return 0;
+			return JFALSE;
 		}
 		else if (s_projSector->flags1 & SEC_FLAGS1_MAG_SEAL)
 		{
@@ -1124,20 +1120,21 @@ namespace TFE_DarkForces
 				logic->delta.x = 0;
 				logic->delta.y = 0;
 				logic->delta.z = 0;
-				return 0;
+				return JFALSE;
 			}
 		}
 
 		// Hit floor or ceiling.
-		return 0xffffffff;
+		return JTRUE;
 	}
-		
-	u32 proj_getHitObj(ProjectileLogic* logic)
+	
+	// return JTRUE if an object is hit.
+	JBool proj_getHitObj(ProjectileLogic* logic)
 	{
 		SecObject* obj = logic->obj;
 		if (!logic->speed)
 		{
-			return 0;
+			return JFALSE;
 		}
 
 		fixed16_16 move = mul16(logic->speed, s_deltaTime);
@@ -1175,10 +1172,10 @@ namespace TFE_DarkForces
 				{
 					logic->hitEffectId = HEFFECT_CONCUSSION2;
 				}
-				return 0xffffffff;
+				return JTRUE;
 			}
 		}
-		return 0;
+		return JFALSE;
 	}
 
 }  // TFE_DarkForces

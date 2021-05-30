@@ -9,12 +9,27 @@
 #include <TFE_System/types.h>
 #include <TFE_Level/core_math.h>
 
+// Sound Effect ID
+typedef s32 SoundEffectID;
+// Sound Source Data ID
+typedef s32 SoundSourceID;
+
 namespace TFE_JediSound
 {
-	void playSound2D(s32 soundId);
-	void playSound3D_oneshot(s32 soundId, TFE_CoreMath::vec3_fixed pos);
-	s32  playSound3D_looping(s32 sourceId, s32 soundId, TFE_CoreMath::vec3_fixed pos);
-	void stopSound(s32 sourceId);
-	s32  sound_Load(const char* sound);
-	void setSoundEffectVolume(s32 soundId, s32 volume);
+	// Play a one-shot 2D sound effect from a Sound Source.
+	void playSound2D(SoundSourceID soundId);
+	// Play a one-shot 3D sound effect from a Sound Source at 'pos'.
+	void playSound3D_oneshot(SoundSourceID soundId, TFE_CoreMath::vec3_fixed pos);
+	// Play a looping 3D sound effect from a Sound Source (sourceID) at 'pos'.
+	// Pass in the previous sound effect ID to keep using it and it returns the new sound effect ID (if it changes).
+	// Note this function should be called whenever 'pos' needs to be updated, if the sound is moving.
+	SoundEffectID playSound3D_looping(SoundSourceID sourceId, SoundEffectID soundId, TFE_CoreMath::vec3_fixed pos);
+
+	// Stop a sound effect that is currently playing.
+	void stopSound(SoundEffectID sourceId);
+
+	// Load a sound source from disk.
+	SoundSourceID sound_Load(const char* sound);
+	// Change the sound effect volume, range: [0, 127]
+	void setSoundSourceVolume(SoundSourceID soundId, s32 volume);
 }  // namespace TFE_DarkForces

@@ -125,7 +125,7 @@ namespace TFE_InfSystem
 		s32 u34;
 		s32 master;
 		TextureData* tex;
-		s32 soundId;
+		SoundSourceID soundId;
 		s32 state;
 		s32* u48;
 		u32 textId;
@@ -161,7 +161,7 @@ namespace TFE_InfSystem
 		Tick delay;				// delay in 'ticks' (see TICKS_PER_SECOND in TFE_DarkForces/time.h)
 		Allocator* messages;
 		Allocator* adjoinCmds;
-		s32 pageId;
+		SoundSourceID pageId;
 		TextureData* floorTex;
 		TextureData* ceilTex;
 	};
@@ -184,10 +184,10 @@ namespace TFE_InfSystem
 		fixed16_16 iValue;
 		vec2_fixed dirOrCenter;
 		u32 flags;
-		s32 sound0;
-		s32 sound1;
-		s32 sound2;
-		s32 soundSource1;
+		SoundSourceID sound0;
+		SoundSourceID sound1;
+		SoundSourceID sound2;
+		SoundEffectID loopingSoundID;
 		s32 u54;
 		s32 updateFlags;
 	};

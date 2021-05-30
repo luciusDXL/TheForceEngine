@@ -93,6 +93,14 @@ struct Mat4
 	};
 };
 
+// Jedi "Bool" type.
+typedef u32 JBool;
+enum
+{
+	JTRUE = 0xffffffff,
+	JFALSE = 0,
+};
+
 #ifdef _WIN32
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp

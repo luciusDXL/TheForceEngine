@@ -33,20 +33,20 @@ namespace TFE_InfSystem
 	static const char* c_defaultGob = "DARK.GOB";
 
 	// These need to be filled out somewhere.
-	static s32 s_moveCeilSound0 = 0;
-	static s32 s_moveCeilSound1 = 0;
-	static s32 s_moveCeilSound2 = 0;
-	static s32 s_moveFloorSound0 = 0;
-	static s32 s_moveFloorSound1 = 0;
-	static s32 s_moveFloorSound2 = 0;
-	static s32 s_doorSound = 0;
+	static SoundSourceID s_moveCeilSound0 = 0;
+	static SoundSourceID s_moveCeilSound1 = 0;
+	static SoundSourceID s_moveCeilSound2 = 0;
+	static SoundSourceID s_moveFloorSound0 = 0;
+	static SoundSourceID s_moveFloorSound1 = 0;
+	static SoundSourceID s_moveFloorSound2 = 0;
+	static SoundSourceID s_doorSound = 0;
 
 	// The size of the goals array is arbitrary, I don't know the largest possible size yet.
 	static s32 s_goals[16] = { 0 };
 
 	// System -- TODO
-	static s32 s_needKeySoundId = 0;	// TODO
-	static s32 s_switchDefaultSndId = 0;	// TODO
+	static SoundSourceID s_needKeySoundId = 0;	// TODO
+	static SoundSourceID s_switchDefaultSndId = 0;	// TODO
 	
 	// INF delta time in ticks.
 	static s32 s_triggerCount = 0;
@@ -73,7 +73,7 @@ namespace TFE_InfSystem
 	
 	void deleteElevator(InfElevator* elev);
 	void deleteTrigger(InfTrigger* trigger);
-	s32 updateElevator(InfElevator* elev);
+	JBool updateElevator(InfElevator* elev);
 	void elevHandleStopDelay(InfElevator* elev);
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
 	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType);
@@ -240,7 +240,7 @@ namespace TFE_InfSystem
 		elev->dirOrCenter.x = 0;
 		elev->dirOrCenter.z = 0;
 		elev->flags = 0;
-		elev->soundSource1 = 0;
+		elev->loopingSoundID = 0;
 
 		elev->type = type;
 		elev->self = elev;
@@ -1133,13 +1133,13 @@ namespace TFE_InfSystem
 				} break;
 				case KW_SOUND:
 				{
-					s32 soundId = 0;
+					SoundSourceID soundSourceId = 0;
 					// Not ascii
 					if (s_infArg0[0] < '0' || s_infArg0[0] > '9')
 					{
-						soundId = sound_Load(s_infArg0);
+						soundSourceId = sound_Load(s_infArg0);
 					}
-					trigger->soundId = soundId;
+					trigger->soundId = soundSourceId;
 				} break;
 				case KW_MESSAGE:
 				{
@@ -1369,11 +1369,11 @@ namespace TFE_InfSystem
 					vec3_fixed sndPos = inf_getElevSoundPos(elev);
 
 					// Start up the sound effect, track it since it is looping.
-					elev->soundSource1 = playSound3D_looping(elev->soundSource1, elev->sound1, sndPos);
+					elev->loopingSoundID = playSound3D_looping(elev->sound1, elev->loopingSoundID, sndPos);
 				}
 
-				// if reachedStop = 0, elevator has not reached the next stop.
-				s32 reachedStop = updateElevator(elev);
+				// if reachedStop = JFALSE, elevator has not reached the next stop.
+				JBool reachedStop = updateElevator(elev);
 				if (reachedStop)
 				{
 					elevHandleStopDelay(elev);
@@ -1434,7 +1434,7 @@ namespace TFE_InfSystem
 						}
 
 						// Page (special 2D sound effect that plays, such as voice overs).
-						s32 pageId = nextStop->pageId;
+						SoundSourceID pageId = nextStop->pageId;
 						if (pageId)
 						{
 							playSound2D(pageId);
@@ -1883,40 +1883,40 @@ namespace TFE_InfSystem
 			} break;
 			case KW_SOUND:
 			{
-				s32 soundId = 0;
+				SoundSourceID soundSourceId = 0;
 				if (s_infArg1[0] >= '0' && s_infArg1[0] <= '9')
 				{
 					// Any numeric value means "no sound."
-					soundId = 0;
+					soundSourceId = 0;
 				}
 				else
 				{
-					soundId = sound_Load(s_infArg1);
+					soundSourceId = sound_Load(s_infArg1);
 				}
 
 				// Determine which elevator sound to assign soundId to.
 				s32 soundIdx = strToInt(s_infArg0);
 				if (soundIdx == 1)
 				{
-					elev->sound0 = soundId;
+					elev->sound0 = soundSourceId;
 				}
 				else if (soundIdx == 2)
 				{
-					elev->sound1 = soundId;
+					elev->sound1 = soundSourceId;
 				}
 				else if (soundIdx == 3)
 				{
-					elev->sound2 = soundId;
+					elev->sound2 = soundSourceId;
 				}
 			} break;
 			case KW_PAGE:
 			{
-				s32 soundId = sound_Load(s_infArg1);
-				setSoundEffectVolume(soundId, 127);
+				SoundSourceID soundSourceId = sound_Load(s_infArg1);
+				setSoundSourceVolume(soundSourceId, 127);
 
 				s32 index = strToInt(s_infArg0);
 				Stop* stop = inf_getStopByIndex(elev, index);
-				stop->pageId = soundId;
+				stop->pageId = soundSourceId;
 			} break;
 			case KW_SEQEND:
 			{
@@ -2026,8 +2026,8 @@ namespace TFE_InfSystem
 	}
 	
 	// Update an elevator.
-	// Returns -1 if the elevator has reached the next stop, else 0.
-	s32 updateElevator(InfElevator* elev)
+	// Returns JTRUE if the elevator has reached the next stop, else JFALSE.
+	JBool updateElevator(InfElevator* elev)
 	{
 		fixed16_16* value = elev->value;
 		Stop* nextStop = elev->nextStop;
@@ -2042,7 +2042,7 @@ namespace TFE_InfSystem
 		// The elevator has reached the next stop.
 		if (v1 == v0 && nextStop)
 		{
-			return -1;
+			return JTRUE;
 		}
 
 		InfElevatorType type = elev->type;
@@ -2126,7 +2126,7 @@ namespace TFE_InfSystem
 		}
 
 		// Returns -1 if the elevator has reached the next stop, otherwise returns 0.
-		return (v1 == newValue && elev->nextStop) ? -1 : 0;
+		return (v1 == newValue && elev->nextStop) ? JTRUE : JFALSE;
 	}
 
 	void inf_elevHandleTriggerMsg(InfElevator* elev, u32 evt)
@@ -2443,8 +2443,8 @@ namespace TFE_InfSystem
 					// This seems like buggy behavior... but I'm going to leave it alone for now.
 					if (elev->updateFlags & ELEV_MOVING)
 					{
-						stopSound(elev->soundSource1);
-						elev->soundSource1 = 0;
+						stopSound(elev->loopingSoundID);
+						elev->loopingSoundID = 0;
 
 						playSound3D_oneshot(elev->sound2, pos);
 						elev->updateFlags &= ~ELEV_MOVING;
@@ -2483,8 +2483,8 @@ namespace TFE_InfSystem
 					vec3_fixed pos = inf_getElevSoundPos(elev);
 
 					// Stop the looping sound and then play the stopping sound.
-					stopSound(elev->soundSource1);
-					elev->soundSource1 = 0;
+					stopSound(elev->loopingSoundID);
+					elev->loopingSoundID = 0;
 					// Play the stop one shot.
 					playSound3D_oneshot(elev->sound2, pos);
 
@@ -2585,8 +2585,8 @@ namespace TFE_InfSystem
 			vec3_fixed pos = inf_getElevSoundPos(elev);
 
 			// Stop the looping middle sound and then play the stop sound.
-			stopSound(elev->soundSource1);
-			elev->soundSource1 = 0;
+			stopSound(elev->loopingSoundID);
+			elev->loopingSoundID = 0;
 			// Play the stop one shot.
 			playSound3D_oneshot(elev->sound2, pos);
 		}
