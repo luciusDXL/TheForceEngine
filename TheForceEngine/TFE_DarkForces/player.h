@@ -60,6 +60,10 @@ namespace TFE_DarkForces
 
 	extern PlayerInfo s_playerInfo;
 	extern fixed16_16 s_energy;
+	// Eye parameters
+	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.
+	extern angle14_32 s_pitch, s_yaw, s_roll;
 
 	extern SecObject* s_playerObject;
+	extern SecObject* s_playerEye;
 }  // namespace TFE_DarkForces

@@ -24,6 +24,7 @@ namespace TFE_Memory
 	// Iteration
 	void* allocator_getHead(Allocator* alloc);
 	void* allocator_getTail(Allocator* alloc);
+	void* allocator_getHead_noIterUpdate(Allocator* alloc);
 	void* allocator_getTail_noIterUpdate(Allocator* alloc);
 	void* allocator_getNext(Allocator* alloc);
 	void* allocator_getPrev(Allocator* alloc);

@@ -344,6 +344,116 @@ namespace TFE_Collision
 		return internal_getObjectCollision();
 	}
 
+	// Determines if an object with the correct entityFlag(s) is in range (radius) of (x,y,z) in sector and is not skipObj.
+	// Note only objects with a clear line-of-sight are accepted.
+	JBool collision_isAnyObjectInRange(RSector* sector, fixed16_16 radius, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* skipObj, u32 entityFlags)
+	{
+		fixed16_16 x0 = x - radius;
+		fixed16_16 y0 = y - radius;
+		fixed16_16 z0 = z - radius;
+
+		fixed16_16 x1 = x + radius;
+		fixed16_16 y1 = y + radius;
+		fixed16_16 z1 = z + radius;
+
+		fixed16_16 y2 = y - FIXED(2);
+		RSector* curSector = s_sectors;
+
+		for (u32 i = 0; i < s_sectorCount; i++, curSector++)
+		{
+			///////////////////////////////////////////////
+			// These tests should only happen once I think,
+			// unless x0, x1, z0, z1 change over time.
+			///////////////////////////////////////////////
+			if (x0 > sector->boundsMax.x || x1 < sector->boundsMin.x || z0 > sector->boundsMax.z || z1 < sector->boundsMin.z)
+			{
+				continue;
+			}
+
+			s32 floorHeight, ceilHeight;
+			if (sector->secHeight < 0) 
+			{
+				// TODO
+			}
+			else
+			{
+				floorHeight = sector->floorHeight + sector->secHeight;
+				ceilHeight  = sector->ceilingHeight;
+			}
+			// Note: second heights above pits will be buggy in this case.
+			if (sector->flags1 & SEC_FLAGS1_PIT)
+			{
+				floorHeight += FIXED(100);
+			}
+			if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
+			{
+				ceilHeight -= FIXED(100);
+			}
+			if (floorHeight < y0 || ceilHeight > y1)
+			{
+				continue;
+			}
+			/////////////////////////////////////////////
+			// End of checks to pull out of the loop.
+			/////////////////////////////////////////////
+
+			s32 objCount = curSector->objectCount;
+			SecObject** objList = curSector->objectList;
+			for (s32 objIndex = 0; objIndex < objCount; objIndex++, objList++)
+			{
+				SecObject* obj = *objList;
+				if (obj)
+				{
+					if (skipObj && skipObj == obj) { continue; }
+
+					if (obj->entityFlags & entityFlags)
+					{
+						if (obj->posWS.x < x0 || obj->posWS.x > x1 || obj->posWS.z < z0 || obj->posWS.z > z1 || obj->posWS.y < y0 || obj->posWS.y > y1)
+						{
+							continue;
+						}
+						RWall* hitWall = nullptr;
+						fixed16_16 dx = obj->posWS.x - x;
+						fixed16_16 dz = obj->posWS.z - z;
+						if (dx || dz)
+						{
+							s_col_path.x0 = x;
+							s_col_path.z0 = z;
+							s_col_path.x1 = obj->posWS.x;
+							s_col_path.z1 = obj->posWS.z;
+							s_collisionFrameWall++;
+							hitWall = collision_pathWallCollision(sector);
+						}
+
+						RSector* nextSector = sector;
+						// If the trace hit a wall, keep traversing from sector to sector as long as
+						// 1) the wall is an adjoin (i.e. has a "nextSector")
+						// 2) there is a gap to fit through.
+						while (hitWall && nextSector && nextSector != obj->sector)
+						{
+							nextSector = hitWall->nextSector;
+							if (nextSector)
+							{
+								if (nextSector->floorHeight - nextSector->ceilingHeight < 0)
+								{
+									break;
+								}
+								hitWall = collision_pathWallCollision(nextSector);
+							}
+						}
+						// Finally if the end of the trace is inside of the same sector as the source,
+						// we have a clear path.
+						if (nextSector == obj->sector)
+						{
+							return JTRUE;
+						}
+					}
+				}
+			}
+		}
+		return JFALSE;
+	}
+
 	////////////////////////////////////////////////////////
 	// Internal
 	////////////////////////////////////////////////////////

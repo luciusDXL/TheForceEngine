@@ -26,4 +26,5 @@ namespace TFE_DarkForces
 	};
 
 	void obj_addLogic(SecObject* obj, Logic* logic, Task* logicTask, LogicFunc func);
+	void deleteLogicAndObject(Logic* logic);
 }  // namespace TFE_DarkForces

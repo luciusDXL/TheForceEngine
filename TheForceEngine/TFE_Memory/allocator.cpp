@@ -148,6 +148,12 @@ namespace TFE_Memory
 		return (u8*)alloc->iter + sizeof(AllocHeader);
 	}
 
+	void* allocator_getHead_noIterUpdate(Allocator* alloc)
+	{
+		if (!alloc) { return nullptr; }
+		return (u8*)alloc->head + sizeof(AllocHeader);
+	}
+
 	void* allocator_getTail(Allocator* alloc)
 	{
 		if (!alloc) { return nullptr; }

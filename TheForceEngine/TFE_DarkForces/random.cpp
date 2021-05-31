@@ -17,7 +17,7 @@ namespace TFE_DarkForces
 			// And then modifies the top.
 			// This is only applied if s_seed is not cleanly divisible by 2.
 			s_seed = (s_seed >> 1) ^ 0xa3000000;
-			return;
+			return s_seed;
 		}
 		s_seed = (s_seed >> 1);
 		return s_seed;

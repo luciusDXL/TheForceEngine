@@ -385,6 +385,11 @@ namespace TFE_Level
 
 		}
 	}
+
+	void sector_removeObject(SecObject* obj)
+	{
+		// TODO
+	}
 	
 	// Use the floating point point inside polygon algorithm.
 	RSector* sector_which3D(fixed16_16 dx, fixed16_16 dy, fixed16_16 dz)

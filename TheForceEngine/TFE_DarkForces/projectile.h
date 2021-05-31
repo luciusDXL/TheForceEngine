@@ -101,5 +101,9 @@ namespace TFE_DarkForces
 		s32 ua4;
 	};
 
+	// Create a new projectile.
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj);
+
+	// Logic update function, handles the update of all projectiles.
+	void projectileLogicFunc();
 }  // namespace TFE_DarkForces

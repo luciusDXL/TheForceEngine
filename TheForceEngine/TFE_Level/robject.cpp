@@ -1,8 +1,13 @@
 #include "robject.h"
 #include "level.h"
+#include <TFE_Memory/allocator.h>
+
+using namespace TFE_Memory;
 
 namespace TFE_Level
 {
+	static JBool s_freeObjLock = JFALSE;
+
 	void computeTransform3x3(fixed16_16* transform, angle14_32 yaw, angle14_32 pitch, angle14_32 roll);
 
 	SecObject* allocateObject()
@@ -28,7 +33,21 @@ namespace TFE_Level
 
 	void freeObject(SecObject* obj)
 	{
+		s_freeObjLock = JTRUE;
+		// Free Logics
+		void* head = allocator_getHead((Allocator*)obj->logic);
+		while (head)
+		{
+			// TODO - free all logics.
+			head = allocator_getNext((Allocator*)obj->logic);
+		}
+
+		allocator_free((Allocator*)obj->logic);
+		sector_removeObject(obj);
+		obj->self = (SecObject*)0xffffffff;
 		free(obj);
+
+		s_freeObjLock = JFALSE;
 	}
 
 	void obj3d_setData(SecObject* obj, JediModel* pod)

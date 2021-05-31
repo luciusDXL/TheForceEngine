@@ -111,4 +111,6 @@ namespace TFE_Level
 
 	// Frames
 	void frame_setData(SecObject* obj, WaxFrame* data);
+
+	extern JBool s_freeObjLock;
 }

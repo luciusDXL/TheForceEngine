@@ -47,6 +47,7 @@ namespace TFE_Collision
 	RWall* collision_wallCollisionFromPath(RSector* sector, fixed16_16 srcX, fixed16_16 srcZ, fixed16_16 dstX, fixed16_16 dstZ);
 
 	SecObject* collision_getObjectCollision(RSector* sector, CollisionInterval* interval, SecObject* prevObj);
+	JBool collision_isAnyObjectInRange(RSector* sector, fixed16_16 radius, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* skipObj, u32 entityFlags);
 
 	// Variables
 	extern fixed16_16 s_colObjOverlap;

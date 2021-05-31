@@ -1,6 +1,7 @@
 #include "projectile.h"
 #include "animLogic.h"
 #include "random.h"
+#include "player.h"
 #include <TFE_Collision/collision.h>
 #include <TFE_InfSystem/infSystem.h>
 #include <TFE_Level/robject.h>
@@ -44,6 +45,7 @@ namespace TFE_DarkForces
 	static SoundSourceID s_plasmaCameraSnd      = NULL_SOUND;
 	static SoundSourceID s_plasmaReflectSnd     = NULL_SOUND;
 	static SoundSourceID s_missileLoopingSnd    = NULL_SOUND;
+	static SoundSourceID s_landMineTriggerSnd   = NULL_SOUND;
 
 	static RSector*   s_projStartSector[16];
 	static RSector*   s_projPath[16];
@@ -70,6 +72,7 @@ namespace TFE_DarkForces
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
 	JBool proj_move(ProjectileLogic* logic);
 	JBool proj_getHitObj(ProjectileLogic* logic);
+	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType);
 
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
@@ -565,7 +568,125 @@ namespace TFE_DarkForces
 
 	void projectileLogicFunc()
 	{
-		// TODO
+		ProjectileLogic* logic = (ProjectileLogic*)allocator_getHead(s_projectiles);
+		while (logic)
+		{
+			SecObject* obj = logic->obj;
+			ProjectileHitType projHitType = PHIT_NONE;
+			Tick curTick = s_curTick;
+
+			// The projectile is still active.
+			if (curTick < logic->duration)
+			{
+				// Handle damage falloff.
+				if (logic->falloffAmt && curTick > logic->nextFalloffTick)
+				{
+					logic->dmg -= logic->falloffAmt;
+					if (logic->dmg < logic->minDmg)
+					{
+						logic->nextFalloffTick = 0xffffffff;	// This basically sets the falloff to "infinity" so it never enters this block again.
+						logic->dmg = logic->minDmg;
+					}
+					else
+					{
+						logic->nextFalloffTick += logic->dmgFalloffDelta;
+					}
+				}
+			}
+			else  // The projectile has reached the end of its life.
+			{
+				const ProjectileType type = logic->type;
+				// Note that proximity landmines that have reached end of life don't explode right away, but instead check for valid object proximity.
+				if (type == PROJ_LAND_MINE_PLACED)	// Pre-placed landmines.
+				{
+					const fixed16_16 approxDist = distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
+					const fixed16_16 landMineRadius = FIXED(20);
+					if (approxDist <= landMineRadius)
+					{
+						if (s_playerObject->posWS.y >= obj->posWS.y - landMineRadius && s_playerObject->posWS.y <= obj->posWS.y + landMineRadius &&
+							collision_isAnyObjectInRange(obj->sector, landMineRadius, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj, ETFLAG_PLAYER))
+						{
+							logic->type = PROJ_LAND_MINE;
+							logic->duration = s_curTick + 87;  // The landmine will explode in 0.6 seconds.
+							playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
+						}
+					}
+					else
+					{
+						// subtracts ~dist/64 ticks from the current time.
+						// which ensures it will check here again next tick, but it was going to do that anyway...
+						logic->duration = s_curTick - floor16(mul16(approxDist / 64, 9545318));	// 9545318 = 145.65
+					}
+				}
+				else if (type == PROJ_LAND_MINE_PROX)	// Player placed proximity landmine (secondary fire).
+				{
+					const fixed16_16 landMineRadius = FIXED(15);
+					if (collision_isAnyObjectInRange(obj->sector, landMineRadius, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj, ETFLAG_PLAYER | ETFLAG_AI_ACTOR))
+					{
+						logic->type = PROJ_LAND_MINE;
+						logic->duration = s_curTick + TICKS_PER_SECOND;	// The landmine will explode in 1 second.
+						playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
+					}
+				}
+				else
+				{
+					projHitType = PHIT_OUT_OF_RANGE;
+				}
+			}
+
+			if (projHitType == PHIT_NONE)
+			{
+				RSector* sector = obj->sector;
+			#if 0  // TODO: finish
+				InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+				s32 linkType = link->type;
+				if (link && linkType == LTYPE_SECTOR)
+				{
+					InfElevator* elev = link->elev;
+					fixed16_16 secHeight = sector->floorHeight + sector->secHeight;
+					if ((obj->posWS.y == sector->floorHeight && (elev->flags&INF_EFLAG_MOVE_FLOOR)) ||
+						(obj->posWS.y == secHeight && (elev->flags&INF_EFLAG_MOVE_SECHT)))
+					{
+						// TODO
+					}
+				}
+			#endif
+				if (logic->updateFunc)
+				{
+					projHitType = logic->updateFunc(logic);
+				}
+			}
+
+			// Play a looping sound as the projectile travels, this updates its position if already playing.
+			if (logic->flightSndSource)
+			{
+				logic->flightSndId = playSound3D_looping(logic->flightSndSource, logic->flightSndId, obj->posWS);
+			}
+			// Play a sound as the object passes near the camera.
+			if (logic->cameraPassSnd && (logic->flags & PROJFLAG_CAMERA_PASS_SOUND))
+			{
+				fixed16_16 dy = TFE_CoreMath::abs(obj->posWS.y - s_eyePos.y);
+				fixed16_16 approxDist = dy + distApprox(s_eyePos.x, s_eyePos.z, obj->posWS.x, obj->posWS.z);
+				const fixed16_16 camSoundRange = FIXED(15);
+				if (approxDist < camSoundRange)
+				{
+					playSound3D_oneshot(logic->cameraPassSnd, obj->posWS);
+					logic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
+				}
+			}
+			else if (logic->cameraPassSnd && logic->flightSndId)
+			{
+				stopSound(logic->flightSndId);
+				logic->flightSndId = NULL_SOUND;
+			}
+			// Finally handle the hit itself (this includes going out of range).
+			if (projHitType != PHIT_NONE)
+			{
+				handleProjectileHit(logic, projHitType);
+			}
+
+			logic = (ProjectileLogic*)allocator_getNext(s_projectiles);
+		}
 	}
 
 	//////////////////////////////////////////////////////////////
@@ -1141,6 +1262,78 @@ namespace TFE_DarkForces
 				return JTRUE;
 			}
 		}
+		return JFALSE;
+	}
+		
+	// Returns JTRUE if the hit was properly handled, otherwise returns JFALSE.
+	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType)
+	{
+		SecObject* obj  = logic->obj;
+		RSector* sector = obj->sector;
+		switch (hitType)
+		{
+			case PHIT_SKY:
+			{
+				stopSound(logic->flightSndId);
+
+				// Delete the projectile itself.
+				allocator_addRef(s_projectiles);
+					deleteLogicAndObject((Logic*)logic);
+				allocator_release(s_projectiles);
+
+				allocator_deleteItem(s_projectiles, logic);
+				return JTRUE;
+			} break;
+			case PHIT_SOLID:
+			{
+				// Stop the projectiles in-flight sound.
+				stopSound(logic->flightSndId);
+
+				// Spawn the projectile hit effect.
+				if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (logic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
+				{
+					spawnHitEffect(logic->hitEffectId, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, logic->u6c);
+				}
+
+				// Delete the projectile itself.
+				allocator_addRef(s_projectiles);
+					deleteLogicAndObject((Logic*)logic);
+				allocator_release(s_projectiles);
+				allocator_deleteItem(s_projectiles, logic);
+				return JTRUE;
+			} break;
+			case PHIT_OUT_OF_RANGE:
+			{
+				stopSound(logic->flightSndId);
+				if (logic->flags & PROJFLAG_EXPLODE)
+				{
+					if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (logic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
+					{
+						spawnHitEffect(logic->hitEffectId, sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, logic->u6c);
+					}
+				}
+
+				// Delete the projectile itself.
+				allocator_addRef(s_projectiles);
+					deleteLogicAndObject((Logic*)logic);
+				allocator_release(s_projectiles);
+				allocator_deleteItem(s_projectiles, logic);
+				return JTRUE;
+			} break;
+			case PHIT_WATER:
+			{
+				stopSound(logic->flightSndId);
+				spawnHitEffect(HEFFECT_SPLASH, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, logic->u6c);
+
+				// Delete the projectile itself.
+				allocator_addRef(s_projectiles);
+					deleteLogicAndObject((Logic*)logic);
+				allocator_release(s_projectiles);
+				allocator_deleteItem(s_projectiles, logic);
+				return JTRUE;
+			} break;
+		}
+
 		return JFALSE;
 	}
 
