@@ -11,6 +11,7 @@ enum InfMessageType
 	IMSG_REV_MOVE   = 12,
 	IMSG_DONE       = 21,
 	IMSG_DAMAGE     = 22,
+	IMSG_EXPLOSION  = 23,
 	IMSG_WAKEUP     = 25,
 	IMSG_MASTER_ON  = 29,
 	IMSG_MASTER_OFF = 30,

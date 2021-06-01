@@ -21,6 +21,7 @@ namespace TFE_Collision
 
 	static const fixed16_16 c_skyHeight = FIXED(100);
 	static const fixed16_16 c_maxCollisionDist = FIXED(9999);
+	static const fixed16_16 c_minTraversableOpening = HALF_16;
 
 	enum IntersectionResult
 	{
@@ -70,6 +71,8 @@ namespace TFE_Collision
 	static fixed16_16 s_col_wallX1;
 	static fixed16_16 s_col_wallZ0;
 
+	static JBool s_collision_wallHit = JFALSE;
+
 	// Object Collision
 	static fixed16_16 s_colObjOffsetX;
 	static fixed16_16 s_colObjOffsetZ;
@@ -92,7 +95,6 @@ namespace TFE_Collision
 	static CollisionInterval* s_colObjInterval;
 	
 	static s32 s_colObjCount;
-
 	fixed16_16 s_colObjOverlap;
 	
 	////////////////////////////////////////////////////////
@@ -101,6 +103,7 @@ namespace TFE_Collision
 	IntersectionResult pathIntersectsWall(ColPath* path, RWall* wall);
 	vec2_fixed* computeIntersectPos();
 	SecObject* internal_getObjectCollision();
+	JBool collision_canHitObject(RSector* startSector, RSector* endSector, fixed16_16 x0, fixed16_16 y0, fixed16_16 z0, fixed16_16 x1, fixed16_16 y1, fixed16_16 z1, u32 exclWallFlags3);
 		
 	////////////////////////////////////////////////////////
 	// API Implementation
@@ -383,11 +386,11 @@ namespace TFE_Collision
 			// Note: second heights above pits will be buggy in this case.
 			if (sector->flags1 & SEC_FLAGS1_PIT)
 			{
-				floorHeight += FIXED(100);
+				floorHeight += c_skyHeight;
 			}
 			if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
 			{
-				ceilHeight -= FIXED(100);
+				ceilHeight -= c_skyHeight;
 			}
 			if (floorHeight < y0 || ceilHeight > y1)
 			{
@@ -452,6 +455,184 @@ namespace TFE_Collision
 			}
 		}
 		return JFALSE;
+	}
+		
+	// Call the effectFunc() for each object within 'range' of point (x,y,z). This will only be called for objects in range and that have a valid collision path.
+	// Note the collision path is 3D (XYZ), in that it takes into account collision based on height.
+	void collision_effectObjectsInRange3D(RSector* startSector, fixed16_16 range, fixed16_16 x, fixed16_16 y, fixed16_16 z, void(*effectFunc)(SecObject*), SecObject* excludeObj, u32 entityFlags)
+	{
+		const fixed16_16 x0 = x - range;
+		const fixed16_16 y0 = y - range;
+		const fixed16_16 z0 = z - range;
+
+		const fixed16_16 x1 = x + range;
+		const fixed16_16 y1 = y + range;
+		const fixed16_16 z1 = z + range;
+
+		const fixed16_16 secHeightThreshold = y - FIXED(2);
+		RSector* sector = s_sectors;
+		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			// Checks the start sector, should be pulled out of the loop.
+			if (x0 > startSector->boundsMax.x || x1 < startSector->boundsMin.x || z0 > startSector->boundsMax.z || z1 < startSector->boundsMin.z)
+			{
+				continue;
+			}
+
+			fixed16_16 floor, ceil;
+			fixed16_16 secHeight = startSector->secHeight;
+			fixed16_16 adjSecHeight = startSector->floorHeight + secHeight;
+			if (secHeight < 0 && adjSecHeight < secHeightThreshold)
+			{
+				floor = startSector->floorHeight;
+				ceil = adjSecHeight;
+			}
+			else
+			{
+				floor = adjSecHeight;
+				ceil = startSector->ceilingHeight;
+			}
+
+			if (startSector->flags1 & SEC_FLAGS1_PIT)
+			{
+				floor += c_skyHeight;
+			}
+			if (startSector->flags1 & SEC_FLAGS1_EXTERIOR)
+			{
+				ceil -= c_skyHeight;
+			}
+
+			if (y0 > floor || y1 < ceil)
+			{
+				continue;
+			}
+			// End of start sector check.
+
+			SecObject** objList = sector->objectList;
+			for (s32 objIndex = 0, objListIndex = 0; objIndex < sector->objectCount && objListIndex < sector->objectCapacity; objListIndex++, objList++)
+			{
+				SecObject* obj = *objList;
+				if (!obj) { continue; }
+				objIndex++;
+
+				if (excludeObj && excludeObj == obj) { continue; }
+				if (!(obj->entityFlags & entityFlags)) { continue; }
+				if (obj->posWS.x < x0 || obj->posWS.x > x1 || obj->posWS.z < z0 || obj->posWS.z > z1 || obj->posWS.y < y0 || obj->posWS.y > y1)
+				{
+					continue;
+				}
+
+				JBool canHit = collision_canHitObject(startSector, obj->sector, x, y, z, obj->posWS.x, obj->posWS.y, obj->posWS.z, WF3_CANNOT_FIRE_THROUGH);
+				if (!canHit)
+				{
+					canHit = collision_canHitObject(startSector, obj->sector, x, y, z, obj->posWS.x, obj->posWS.y - obj->worldHeight, obj->posWS.z, WF3_CANNOT_FIRE_THROUGH);
+				}
+				// Finally the object can be hit, so call the effect function.
+				if (canHit)
+				{
+					effectFunc(obj);
+				}
+			}  // Object Loop.
+		}  // Sector loop.
+	}
+
+	// Call the effectFunc() for each object within 'range' of point (x,y,z). This will only be called for objects in range and that have a valid collision path.
+	// Note the collision path is 2D (XZ) but cannot pass through sectors with a gap smaller than 0.5 units.
+	void collision_effectObjectsInRangeXZ(RSector* startSector, fixed16_16 range, fixed16_16 x, fixed16_16 y, fixed16_16 z, void(*effectFunc)(SecObject*), SecObject* excludeObj, u32 entityFlags)
+	{
+		const fixed16_16 x0 = x - range;
+		const fixed16_16 y0 = y - range;
+		const fixed16_16 z0 = z - range;
+
+		const fixed16_16 x1 = x + range;
+		const fixed16_16 y1 = y + range;
+		const fixed16_16 z1 = z + range;
+
+		const fixed16_16 secHeightThreshold = y - FIXED(2);
+		RSector* sector = s_sectors;
+		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			// Checks the start sector, should be pulled out of the loop.
+			if (x0 > startSector->boundsMax.x || x1 < startSector->boundsMin.x || z0 > startSector->boundsMax.z || z1 < startSector->boundsMin.z)
+			{
+				continue;
+			}
+			fixed16_16 floor, ceil;
+			fixed16_16 secHeight = startSector->secHeight;
+			fixed16_16 adjSecHeight = startSector->floorHeight + secHeight;
+			if (secHeight < 0 && adjSecHeight < secHeightThreshold)
+			{
+				floor = startSector->floorHeight;
+				ceil = adjSecHeight;
+			}
+			else
+			{
+				floor = adjSecHeight;
+				ceil = startSector->ceilingHeight;
+			}
+			if (startSector->flags1 & SEC_FLAGS1_PIT)
+			{
+				floor += c_skyHeight;
+			}
+			if (startSector->flags1 & SEC_FLAGS1_EXTERIOR)
+			{
+				ceil -= c_skyHeight;
+			}
+			if (y0 > floor || y1 < ceil)
+			{
+				continue;
+			}
+			// End of start sector check.
+
+			SecObject** objList = sector->objectList;
+			for (s32 objIndex = 0, objListIndex = 0; objIndex < sector->objectCount && objListIndex < sector->objectCapacity; objListIndex++, objList++)
+			{
+				SecObject* obj = *objList;
+				if (!obj) { continue; }
+
+				objIndex++;
+				if (excludeObj && excludeObj == obj) { continue; }
+				if (!(obj->entityFlags & entityFlags)) { continue; }
+				if (obj->posWS.x < x0 || obj->posWS.x > x1 || obj->posWS.z < z0 || obj->posWS.z > z1 || obj->posWS.y < y0 || obj->posWS.y > y1)
+				{
+					continue;
+				}
+
+				fixed16_16 dx = obj->posWS.x - x;
+				fixed16_16 dz = obj->posWS.z - z;
+				RWall* hitWall = nullptr;
+				if (dx || dz)
+				{
+					s_col_path.x0 = x;
+					s_col_path.z0 = z;
+					s_col_path.x1 = obj->posWS.x;
+					s_col_path.z1 = obj->posWS.z;
+					s_collisionFrameWall++;
+					hitWall = collision_pathWallCollision(startSector);
+				}
+
+				RSector* nextSector = startSector;
+				while (hitWall && nextSector && nextSector != obj->sector)
+				{
+					nextSector = hitWall->nextSector;
+					if (nextSector)
+					{
+						const fixed16_16 height = nextSector->floorHeight - nextSector->ceilingHeight;
+						if (height < c_minTraversableOpening)
+						{
+							break;
+						}
+						hitWall = collision_pathWallCollision(nextSector);
+					}
+				}
+
+				// If there is a clear path from the source position to the object in range, call the specified function.
+				if (nextSector == obj->sector)
+				{
+					effectFunc(obj);
+				}
+			}  // Object Loop.
+		}  // Sector Loop.
 	}
 
 	////////////////////////////////////////////////////////
@@ -617,5 +798,51 @@ namespace TFE_Collision
 			}
 		}
 		return nullptr;
+	}
+
+	// Treat walls with flags3 that includes 'exclWallFlags3' as solid.
+	JBool collision_canHitObject(RSector* startSector, RSector* endSector, fixed16_16 x0, fixed16_16 y0, fixed16_16 z0, fixed16_16 x1, fixed16_16 y1, fixed16_16 z1, u32 exclWallFlags3)
+	{
+		s_collision_wallHit = JFALSE;
+		fixed16_16 approxDist = distApprox(x0, z0, x1, z1);
+		fixed16_16 dy = y1 - y0;
+		fixed16_16 yStep = div16(dy, approxDist);
+
+		RSector* sector = startSector;
+		RWall* hitWall = nullptr;
+
+		// If there is no horizontal movement, there is no possible wall collision.
+		if (x1 - x0 != 0 || z1 - z0 != 0)
+		{
+			// 204c5a: -- dxORz != 0
+			s_col_path.x0 = x0;
+			s_col_path.z0 = z0;
+			s_col_path.x1 = x1;	// ebx
+			s_col_path.z1 = z1;
+			s_collisionFrameWall++;	// ecx
+			hitWall = collision_pathWallCollision(sector);	// eax -> eax
+		}
+		while (hitWall)
+		{
+			RSector* nextSector = hitWall->nextSector;
+			if (!nextSector)
+			{
+				s_collision_wallHit = JTRUE;
+				return JFALSE;
+			}
+			if (hitWall->flags3 & exclWallFlags3)
+			{
+				return JFALSE;
+			}
+			fixed16_16 yHit = y0 + mul16(s_col_hitDist, yStep);
+			RSector* hitSector = hitWall->sector;
+			if (yHit < hitSector->ceilingHeight || yHit < nextSector->ceilingHeight || yHit > hitSector->floorHeight || yHit > nextSector->floorHeight)
+			{
+				return JFALSE;
+			}
+			sector = nextSector;
+			hitWall = collision_pathWallCollision(nextSector);
+		}
+		return (sector == endSector) ? JTRUE : JFALSE;
 	}
 }

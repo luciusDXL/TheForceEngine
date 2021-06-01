@@ -53,8 +53,8 @@ namespace TFE_InfSystem
 	static Allocator* s_infElevators;
 	static Allocator* s_infTeleports;
 
-	static u32 s_infMsgArg1;
-	static u32 s_infMsgArg2;
+	u32 s_infMsgArg1;
+	u32 s_infMsgArg2;
 	static u32 s_infMsgEvent;
 	static void* s_infMsgTarget;
 	static bool s_teleportUpdateActive = false;
@@ -2739,7 +2739,7 @@ namespace TFE_InfSystem
 		}
 	}
 
-	void inf_sendObjMessage(SecObject* obj, InfMessageType msgType, s32 arg)
+	void inf_sendObjMessage(SecObject* obj, InfMessageType msgType, void(*func)(void*))
 	{
 		// TODO
 	}
@@ -2760,7 +2760,7 @@ namespace TFE_InfSystem
 					{
 						if (obj->entityFlags & ETFLAG_CAN_WAKE)
 						{
-							inf_sendObjMessage(obj, IMSG_WAKEUP, 0);
+							inf_sendObjMessage(obj, IMSG_WAKEUP, nullptr);
 						}
 						i++;
 					}
@@ -2780,7 +2780,7 @@ namespace TFE_InfSystem
 					{
 						if (obj->entityFlags & ETFLAG_CAN_DISABLE)
 						{
-							inf_sendObjMessage(obj, msgType, 0);
+							inf_sendObjMessage(obj, msgType, nullptr);
 						}
 						i++;
 					}

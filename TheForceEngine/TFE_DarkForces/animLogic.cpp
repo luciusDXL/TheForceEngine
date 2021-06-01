@@ -33,7 +33,7 @@ namespace TFE_DarkForces
 		anim->firstFrame = 0;
 		anim->lastFrame = waxAnim->frameCount - 1;
 		anim->loopCount = 0;
-		anim->u2c = 0;
+		anim->completeFunc = nullptr;
 		anim->delay = time_frameRateToDelay(waxAnim->frameRate);
 		anim->nextTick = s_curTick + anim->delay;
 
@@ -41,6 +41,29 @@ namespace TFE_DarkForces
 		obj->anim = 0;
 
 		return (Logic*)anim;
+	}
+
+	void setAnimCompleteFunc(SpriteAnimLogic* logic, SpriteCompleteFunc func)
+	{
+		logic->completeFunc = func;
+	}
+
+	void setupAnimationFromLogic(SpriteAnimLogic* logic, s32 animIndex, u32 firstFrame, u32 lastFrame, u32 loopCount)
+	{
+		SecObject* obj = logic->logic.obj;
+		obj->anim = animIndex;
+		Wax* wax = obj->wax;
+		obj->frame = firstFrame;
+		logic->firstFrame = firstFrame;
+		WaxAnim* anim = WAX_AnimPtr(wax, animIndex);
+		s32 animLastFrame = anim->frameCount - 1;
+		if (lastFrame >= lastFrame)
+		{
+			lastFrame = animLastFrame;
+		}
+		logic->lastFrame = lastFrame;
+		logic->delay = u32(145.5f / float(anim->frameRate));
+		logic->loopCount = loopCount;
 	}
 
 }  // TFE_DarkForces

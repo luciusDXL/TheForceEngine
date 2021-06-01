@@ -49,6 +49,9 @@ namespace TFE_Collision
 	SecObject* collision_getObjectCollision(RSector* sector, CollisionInterval* interval, SecObject* prevObj);
 	JBool collision_isAnyObjectInRange(RSector* sector, fixed16_16 radius, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* skipObj, u32 entityFlags);
 
+	void collision_effectObjectsInRange3D(RSector* startSector, fixed16_16 range, fixed16_16 x, fixed16_16 y, fixed16_16 z, void(*effectFunc)(SecObject*), SecObject* excludeObj, u32 entityFlags);
+	void collision_effectObjectsInRangeXZ(RSector* startSector, fixed16_16 range, fixed16_16 x, fixed16_16 y, fixed16_16 z, void(*effectFunc)(SecObject*), SecObject* excludeObj, u32 entityFlags);
+
 	// Variables
 	extern fixed16_16 s_colObjOverlap;
 }

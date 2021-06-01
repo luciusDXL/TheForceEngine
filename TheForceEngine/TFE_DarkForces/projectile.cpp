@@ -299,7 +299,7 @@ namespace TFE_DarkForces
 				{
 					frame_setData(obj, s_landmineWpnFrame);
 				}
-				projObj->entityFlags |= ETFLAG_BIT_16;	// TODO: setup flag.
+				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
 				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
 
 				projLogic->type = PROJ_LAND_MINE;
@@ -324,7 +324,7 @@ namespace TFE_DarkForces
 				{
 					frame_setData(obj, s_landmineWpnFrame);
 				}
-				projObj->entityFlags |= ETFLAG_BIT_16;	// TODO: setup flag.
+				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
 				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
 
 				projLogic->type = PROJ_LAND_MINE_PROX;
@@ -689,6 +689,15 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void triggerLandMine(ProjectileLogic* logic, Tick delay)
+	{
+		logic->type = PROJ_LAND_MINE;
+		logic->duration = s_curTick + delay;
+
+		SecObject* obj = logic->obj;
+		playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
+	}
+
 	//////////////////////////////////////////////////////////////
 	// Internal Implementation
 	//////////////////////////////////////////////////////////////
@@ -883,7 +892,7 @@ namespace TFE_DarkForces
 			if (logic->dmg)
 			{
 				s_infMsgEntity = logic;
-				inf_sendObjMessage(s_colHitObj, IMSG_DAMAGE, 0);
+				inf_sendObjMessage(s_colHitObj, IMSG_DAMAGE, nullptr);
 			}
 
 			if (s_hitWallFlag <= 1)	// s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW

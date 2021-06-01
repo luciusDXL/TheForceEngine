@@ -31,6 +31,8 @@ namespace TFE_Level
 	bool loadGeometry(const char* levelName);
 	bool loadObjects(const char* levelName);
 
+	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector);
+
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;
 }

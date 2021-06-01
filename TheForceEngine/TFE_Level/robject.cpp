@@ -44,7 +44,6 @@ namespace TFE_Level
 
 		allocator_free((Allocator*)obj->logic);
 		sector_removeObject(obj);
-		obj->self = (SecObject*)0xffffffff;
 		free(obj);
 
 		s_freeObjLock = JFALSE;

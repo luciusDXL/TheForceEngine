@@ -693,6 +693,14 @@ namespace TFE_Level
 		return true;
 	}
 
+	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector)
+	{
+		obj->posWS.x = x;
+		obj->posWS.y = y;
+		obj->posWS.z = z;
+		sector_addObject(sector, obj);
+	}
+
 	s32 getDifficulty()
 	{
 		// return s_agentData[s_agentId].difficulty;

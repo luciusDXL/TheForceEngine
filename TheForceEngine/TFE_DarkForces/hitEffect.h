@@ -25,7 +25,16 @@ namespace TFE_DarkForces
 		HEFFECT_LARGE_EXP    = 11,  // large explosion such as land mine.
 		HEFFECT_EXP_BARREL   = 12,  // exploding barrel.
 		HEFFECT_SPLASH       = 14,  // water splash
+		HEFFECT_COUNT,
 	};
 
-	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* u6c);
+	// Spawn a new hit effect at location (x,y,z) in 'sector'.
+	// The ExcludeObj field is used to avoid effecting a specific object during wakeup or explosions.
+	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* excludeObj);
+
+	// Logic update function, handles the update of all projectiles.
+	void hitEffectLogicFunc();
+
+	// Called when a specific type of hit effect has finished animating.
+	void hitEffectFinished();
 }  // namespace TFE_DarkForces

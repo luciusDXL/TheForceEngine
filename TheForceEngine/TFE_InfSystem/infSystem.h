@@ -68,7 +68,7 @@ namespace TFE_InfSystem
 	void inf_sectorSendMessage(RSector* sector, SecObject* entity, u32 evt, InfMessageType msgType);
 
 	// Send a message to a specific object.
-	void inf_sendObjMessage(SecObject* obj, InfMessageType msgType, s32 arg);
+	void inf_sendObjMessage(SecObject* obj, InfMessageType msgType, void(*func)(void*));
 	
 	// ** Loadtime API **
 	// These functions are used at load-time to setup special elevators based on sector flags or load
@@ -85,4 +85,6 @@ namespace TFE_InfSystem
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);
 
 	extern void* s_infMsgEntity;
+	extern u32 s_infMsgArg1;
+	extern u32 s_infMsgArg2;
 }

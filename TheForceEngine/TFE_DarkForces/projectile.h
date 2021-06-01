@@ -106,4 +106,7 @@ namespace TFE_DarkForces
 
 	// Logic update function, handles the update of all projectiles.
 	void projectileLogicFunc();
+
+	// Trigger a landmine.
+	void triggerLandMine(ProjectileLogic* logic, Tick delay);
 }  // namespace TFE_DarkForces

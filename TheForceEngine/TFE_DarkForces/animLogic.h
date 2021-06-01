@@ -12,6 +12,8 @@
 #include "logic.h"
 #include "time.h"
 
+typedef void(*SpriteCompleteFunc)();
+
 namespace TFE_DarkForces
 {
 	struct Task;
@@ -25,8 +27,10 @@ namespace TFE_DarkForces
 		s32 loopCount;
 		Tick delay;
 		Tick nextTick;
-		s32 u2c;
+		SpriteCompleteFunc completeFunc;
 	};
 
 	Logic* obj_setSpriteAnim(SecObject* obj);
+	void setAnimCompleteFunc(SpriteAnimLogic* logic, SpriteCompleteFunc func);
+	void setupAnimationFromLogic(SpriteAnimLogic* logic, s32 animIndex, u32 firstFrame, u32 lastFrame, u32 loopCount);
 }  // namespace TFE_DarkForces
