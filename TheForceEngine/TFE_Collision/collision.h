@@ -38,6 +38,8 @@ struct CollisionInterval
 	fixed16_16 dirZ;
 };
 
+typedef void(*CollisionEffectFunc)(SecObject*);
+
 namespace TFE_Collision
 {
 	void collision_getHitPoint(fixed16_16* x, fixed16_16* z);
@@ -47,10 +49,10 @@ namespace TFE_Collision
 	RWall* collision_wallCollisionFromPath(RSector* sector, fixed16_16 srcX, fixed16_16 srcZ, fixed16_16 dstX, fixed16_16 dstZ);
 
 	SecObject* collision_getObjectCollision(RSector* sector, CollisionInterval* interval, SecObject* prevObj);
-	JBool collision_isAnyObjectInRange(RSector* sector, fixed16_16 radius, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* skipObj, u32 entityFlags);
+	JBool collision_isAnyObjectInRange(RSector* sector, fixed16_16 radius, vec3_fixed origin, SecObject* skipObj, u32 entityFlags);
 
-	void collision_effectObjectsInRange3D(RSector* startSector, fixed16_16 range, fixed16_16 x, fixed16_16 y, fixed16_16 z, void(*effectFunc)(SecObject*), SecObject* excludeObj, u32 entityFlags);
-	void collision_effectObjectsInRangeXZ(RSector* startSector, fixed16_16 range, fixed16_16 x, fixed16_16 y, fixed16_16 z, void(*effectFunc)(SecObject*), SecObject* excludeObj, u32 entityFlags);
+	void collision_effectObjectsInRange3D(RSector* startSector, fixed16_16 range, vec3_fixed origin, CollisionEffectFunc effectFunc, SecObject* excludeObj, u32 entityFlags);
+	void collision_effectObjectsInRangeXZ(RSector* startSector, fixed16_16 range, vec3_fixed origin, CollisionEffectFunc effectFunc, SecObject* excludeObj, u32 entityFlags);
 
 	// Variables
 	extern fixed16_16 s_colObjOverlap;

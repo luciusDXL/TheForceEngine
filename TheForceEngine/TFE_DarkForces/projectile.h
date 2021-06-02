@@ -84,7 +84,7 @@ namespace TFE_DarkForces
 		fixed16_16 vertBounciness;
 		SecObject* prevColObj;
 		SecObject* prevObj;
-		SecObject* u6c;
+		SecObject* excludeObj;
 		u32 duration;                     // How long the projectile continues to move before going out of range (and being destroyed).
 		s32 u74;
 		s32 bounceCnt;

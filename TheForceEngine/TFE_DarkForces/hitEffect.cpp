@@ -51,16 +51,16 @@ namespace TFE_DarkForces
 	void hitEffectWakeupFunc(SecObject* obj);
 	void hitEffectExplodeFunc(SecObject* obj);
 	
-	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* excludeObj)
+	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, vec3_fixed pos, SecObject* excludeObj)
 	{
 		if (hitEffectId != HEFFECT_NONE)
 		{
 			HitEffect* effect = (HitEffect*)allocator_newItem(s_hitEffects);
 			effect->type = hitEffectId;
 			effect->sector = sector;
-			effect->x = x;
-			effect->y = y;
-			effect->z = z;
+			effect->x = pos.x;
+			effect->y = pos.y;
+			effect->z = pos.z;
 			effect->excludeObj = excludeObj;
 		}
 	}
@@ -141,13 +141,14 @@ namespace TFE_DarkForces
 				s_explodePos.x = x;
 				s_explodePos.y = y;
 				s_explodePos.z = z;
-				collision_effectObjectsInRange3D(sector, s_curEffectData->explosiveRange, x, y, z, hitEffectExplodeFunc, effect->excludeObj,
+				collision_effectObjectsInRange3D(sector, s_curEffectData->explosiveRange, s_explodePos, hitEffectExplodeFunc, effect->excludeObj,
 					ETFLAG_AI_ACTOR | ETFLAG_SCENERY | ETFLAG_LANDMINE | ETFLAG_LANDMINE_WPN | ETFLAG_PLAYER);
 			}
 			if (s_curEffectData->wakeupRange)
 			{
 				// Wakes up all objects with a valid collision path to (x,y,z) that are within s_curEffectData->wakeupRange units.
-				collision_effectObjectsInRangeXZ(sector, s_curEffectData->wakeupRange, x, y, z, hitEffectWakeupFunc, effect->excludeObj, ETFLAG_AI_ACTOR);
+				vec3_fixed hitPos = { x, y, z };
+				collision_effectObjectsInRangeXZ(sector, s_curEffectData->wakeupRange, hitPos, hitEffectWakeupFunc, effect->excludeObj, ETFLAG_AI_ACTOR);
 			}
 			allocator_deleteItem(s_hitEffects, effect);
 			// Since the current item is deleted, "head" is the next item in the list.

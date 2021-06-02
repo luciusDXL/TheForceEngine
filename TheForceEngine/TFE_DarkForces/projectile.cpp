@@ -91,7 +91,7 @@ namespace TFE_DarkForces
 		projObj->projectileLogic = projLogic;
 
 		projLogic->prevColObj = nullptr;
-		projLogic->u6c = nullptr;
+		projLogic->excludeObj = nullptr;
 		projLogic->reflVariation   = 0;
 		projLogic->cameraPassSnd   = NULL_SOUND;
 		projLogic->flightSndSource = NULL_SOUND;
@@ -604,7 +604,7 @@ namespace TFE_DarkForces
 					if (approxDist <= landMineRadius)
 					{
 						if (s_playerObject->posWS.y >= obj->posWS.y - landMineRadius && s_playerObject->posWS.y <= obj->posWS.y + landMineRadius &&
-							collision_isAnyObjectInRange(obj->sector, landMineRadius, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj, ETFLAG_PLAYER))
+							collision_isAnyObjectInRange(obj->sector, landMineRadius, obj->posWS, obj, ETFLAG_PLAYER))
 						{
 							logic->type = PROJ_LAND_MINE;
 							logic->duration = s_curTick + 87;  // The landmine will explode in 0.6 seconds.
@@ -621,7 +621,7 @@ namespace TFE_DarkForces
 				else if (type == PROJ_LAND_MINE_PROX)	// Player placed proximity landmine (secondary fire).
 				{
 					const fixed16_16 landMineRadius = FIXED(15);
-					if (collision_isAnyObjectInRange(obj->sector, landMineRadius, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj, ETFLAG_PLAYER | ETFLAG_AI_ACTOR))
+					if (collision_isAnyObjectInRange(obj->sector, landMineRadius, obj->posWS, obj, ETFLAG_PLAYER | ETFLAG_AI_ACTOR))
 					{
 						logic->type = PROJ_LAND_MINE;
 						logic->duration = s_curTick + TICKS_PER_SECOND;	// The landmine will explode in 1 second.
@@ -848,7 +848,7 @@ namespace TFE_DarkForces
 				handleReflectVariation(logic, obj);
 
 				logic->prevColObj = nullptr;
-				logic->u6c = nullptr;
+				logic->excludeObj = nullptr;
 				proj_setTransform(logic, obj->pitch, obj->yaw);
 				playSound3D_oneshot(logic->reflectSnd, obj->posWS);
 
@@ -882,7 +882,8 @@ namespace TFE_DarkForces
 
 			if (logic->type == PROJ_PUNCH)
 			{
-				spawnHitEffect(logic->hitEffectId, obj->sector, s_colObjAdjX, s_colObjAdjY, s_colObjAdjZ, logic->u6c);
+				vec3_fixed effectPos = { s_colObjAdjX, s_colObjAdjY, s_colObjAdjZ };
+				spawnHitEffect(logic->hitEffectId, obj->sector, effectPos, logic->excludeObj);
 			}
 			s_hitWallFlag = 2;
 			if (s_colHitObj->entityFlags & ETFLAG_PROXIMITY)
@@ -1058,7 +1059,7 @@ namespace TFE_DarkForces
 					handleReflectVariation(logic, obj);
 
 					logic->prevColObj = nullptr;
-					logic->u6c = nullptr;
+					logic->excludeObj = nullptr;
 					proj_setTransform(logic, obj->pitch, obj->yaw);
 					playSound3D_oneshot(logic->reflectSnd, obj->posWS);
 
@@ -1085,14 +1086,15 @@ namespace TFE_DarkForces
 					logic->bounceCnt--;
 					if (count)
 					{
-						spawnHitEffect(logic->reflectEffectId, s_projSector, s_projNextPosX, s_projNextPosY, s_projNextPosZ, logic->u6c);
+						vec3_fixed effectPos = { s_projNextPosX, s_projNextPosY, s_projNextPosZ };
+						spawnHitEffect(logic->reflectEffectId, s_projSector, effectPos, logic->excludeObj);
 
 						SecObject* obj = logic->obj;
 						obj->yaw = (getAngleDifference(obj->yaw, wall->angle) + wall->angle) & 16383;
 						handleReflectVariation(logic, obj);
 
 						logic->prevColObj = nullptr;
-						logic->u6c = nullptr;
+						logic->excludeObj = nullptr;
 						proj_setTransform(logic, obj->pitch, obj->yaw);
 
 						playSound3D_oneshot(logic->reflectSnd, obj->posWS);
@@ -1199,13 +1201,14 @@ namespace TFE_DarkForces
 			logic->bounceCnt--;
 			if (count > 0)
 			{
-				spawnHitEffect(logic->reflectEffectId, s_projSector, s_projNextPosX, s_projNextPosY, s_projNextPosZ, logic->u6c);
+				vec3_fixed effectPos = { s_projNextPosX, s_projNextPosY, s_projNextPosZ };
+				spawnHitEffect(logic->reflectEffectId, s_projSector, effectPos, logic->excludeObj);
 				// Hit the floor or ceiling simply negates the pitch to reflect.
 				obj->pitch = -obj->pitch;
 				handleReflectVariation(logic, obj);
 
 				logic->prevColObj = nullptr;
-				logic->u6c = nullptr;
+				logic->excludeObj = nullptr;
 				proj_setTransform(logic, obj->pitch, obj->yaw);
 				playSound3D_oneshot(logic->reflectSnd, obj->posWS);
 
@@ -1301,7 +1304,7 @@ namespace TFE_DarkForces
 				// Spawn the projectile hit effect.
 				if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (logic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
 				{
-					spawnHitEffect(logic->hitEffectId, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, logic->u6c);
+					spawnHitEffect(logic->hitEffectId, obj->sector, obj->posWS, logic->excludeObj);
 				}
 
 				// Delete the projectile itself.
@@ -1318,7 +1321,7 @@ namespace TFE_DarkForces
 				{
 					if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (logic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
 					{
-						spawnHitEffect(logic->hitEffectId, sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, logic->u6c);
+						spawnHitEffect(logic->hitEffectId, sector, obj->posWS, logic->excludeObj);
 					}
 				}
 
@@ -1332,7 +1335,7 @@ namespace TFE_DarkForces
 			case PHIT_WATER:
 			{
 				stopSound(logic->flightSndId);
-				spawnHitEffect(HEFFECT_SPLASH, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, logic->u6c);
+				spawnHitEffect(HEFFECT_SPLASH, obj->sector, obj->posWS, logic->excludeObj);
 
 				// Delete the projectile itself.
 				allocator_addRef(s_projectiles);

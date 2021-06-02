@@ -30,7 +30,7 @@ namespace TFE_DarkForces
 
 	// Spawn a new hit effect at location (x,y,z) in 'sector'.
 	// The ExcludeObj field is used to avoid effecting a specific object during wakeup or explosions.
-	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* excludeObj);
+	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, vec3_fixed pos, SecObject* excludeObj);
 
 	// Logic update function, handles the update of all projectiles.
 	void hitEffectLogicFunc();
