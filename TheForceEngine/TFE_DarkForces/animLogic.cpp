@@ -51,19 +51,20 @@ namespace TFE_DarkForces
 	void setupAnimationFromLogic(SpriteAnimLogic* logic, s32 animIndex, u32 firstFrame, u32 lastFrame, u32 loopCount)
 	{
 		SecObject* obj = logic->logic.obj;
-		obj->anim = animIndex;
-		Wax* wax = obj->wax;
+		obj->anim  = animIndex;
 		obj->frame = firstFrame;
-		logic->firstFrame = firstFrame;
-		WaxAnim* anim = WAX_AnimPtr(wax, animIndex);
-		s32 animLastFrame = anim->frameCount - 1;
-		if (lastFrame >= lastFrame)
+	
+		const WaxAnim* anim = WAX_AnimPtr(obj->wax, animIndex);
+		const s32 animLastFrame = anim->frameCount - 1;
+		if (lastFrame >= animLastFrame)
 		{
 			lastFrame = animLastFrame;
 		}
-		logic->lastFrame = lastFrame;
-		logic->delay = u32(145.5f / float(anim->frameRate));
-		logic->loopCount = loopCount;
+
+		logic->firstFrame = firstFrame;
+		logic->lastFrame  = lastFrame;
+		logic->delay      = time_frameRateToDelay(anim->frameRate);
+		logic->loopCount  = loopCount;
 	}
 
 }  // TFE_DarkForces

@@ -92,7 +92,7 @@ namespace TFE_DarkForces
 		SoundEffectID flightSndId;        // Looping sound instance played while the projectile moves.
 		SoundSourceID flightSndSource;    // Source looping sound.
 		SoundSourceID cameraPassSnd;      // Sound effect played when the projectile passes near the camera.
-		SoundSourceID reflectSnd;
+		SoundSourceID reflectSnd;         // Sound effect played when the projectile is reflected off of the floor, ceiling or wall.
 		ProjectileFunc updateFunc;        // Projectile update function, this determines how the projectile moves.
 		HitEffectID reflectEffectId;
 		HitEffectID hitEffectId;          // The effect to play when the projectile hits a solid surface.

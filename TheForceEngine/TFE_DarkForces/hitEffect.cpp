@@ -65,14 +65,13 @@ namespace TFE_DarkForces
 		}
 	}
 
-	////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////
 	// RE Note:
 	// The task update function has been split into two:
-	// the main function (taskID = 0) and the count
-	// decrement (taskID = 20).
-	// This is because TFE doesn't use coroutine-like task
-	// functions since they don't have any practical benefit.
-	////////////////////////////////////////////////////////////////
+	// the main function (taskID = 0) and the count decrement (taskID = 20).
+	// This is because TFE doesn't use coroutine-like task functions
+	// since they don't have any practical benefit.
+	////////////////////////////////////////////////////////////////////////
 	void hitEffectLogicFunc()
 	{
 		HitEffect* effect = (HitEffect*)allocator_getHead(s_hitEffects);
