@@ -2755,7 +2755,7 @@ namespace TFE_InfSystem
 		return JFALSE;
 	}
 
-	void getMovingElevatorVelocity(InfElevator* elev, vec3_fixed* vel, fixed16_16* speed)
+	void inf_getMovingElevatorVelocity(InfElevator* elev, vec3_fixed* vel, fixed16_16* speed)
 	{
 		vel->x = 0;
 		vel->y = 0;

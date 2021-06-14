@@ -92,7 +92,7 @@ namespace TFE_DarkForces
 		ProjectileLogic* projLogic = (ProjectileLogic*)allocator_newItem(s_projectiles);
 		SecObject* projObj = allocateObject();
 
-		projObj->entityFlags |= ETFLAG_PROXIMITY;
+		projObj->entityFlags |= ETFLAG_PROJECTILE;
 		projObj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 		projObj->projectileLogic = projLogic;
 
@@ -886,9 +886,20 @@ namespace TFE_DarkForces
 				spawnHitEffect(logic->hitEffectId, obj->sector, effectPos, logic->excludeObj);
 			}
 			s_hitWallFlag = 2;
-			if (s_colHitObj->entityFlags & ETFLAG_PROXIMITY)
+			if (s_colHitObj->entityFlags & ETFLAG_PROJECTILE)
 			{
-				// TODO
+				s_hitWallFlag = 0;
+				Logic** objLogicPtr = (Logic**)allocator_getHead((Allocator*)s_colHitObj->logic);
+				if (objLogicPtr)
+				{
+					ProjectileLogic* objLogic = (ProjectileLogic*)*objLogicPtr;
+					// PROJ_16 can be shot which will cause it to immediately stop (explode?)
+					if (logic->type != objLogic->type && objLogic->type == PROJ_16)
+					{
+						s_hitWallFlag = 2;
+						objLogic->duration = 0;
+					}
+				}
 			}
 			if (logic->dmg)
 			{
