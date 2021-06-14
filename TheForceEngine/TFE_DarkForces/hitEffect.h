@@ -25,6 +25,7 @@ namespace TFE_DarkForces
 		HEFFECT_LARGE_EXP    = 11,  // large explosion such as land mine.
 		HEFFECT_EXP_BARREL   = 12,  // exploding barrel.
 		HEFFECT_SPLASH       = 14,  // water splash
+		HEFFECT_18           = 17,  // ???
 		HEFFECT_COUNT,
 	};
 

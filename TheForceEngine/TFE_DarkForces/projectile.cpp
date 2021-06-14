@@ -47,6 +47,7 @@ namespace TFE_DarkForces
 	static Wax*       s_cannonProj;
 	static Wax*       s_probeProj;
 	static Wax*       s_homingMissileProj;
+	static Wax*       s_proj18_wax;
 	static WaxFrame*  s_landmineWpnFrame;
 	static WaxFrame*  s_landmineFrame;
 	static WaxFrame*  s_thermalDetProj;
@@ -58,6 +59,7 @@ namespace TFE_DarkForces
 	static SoundSourceID s_plasmaReflectSnd     = NULL_SOUND;
 	static SoundSourceID s_missileLoopingSnd    = NULL_SOUND;
 	static SoundSourceID s_landMineTriggerSnd   = NULL_SOUND;
+	static SoundSourceID s_proj18CameraSnd      = NULL_SOUND;
 	static SoundSourceID s_homingMissile_flightSnd = NULL_SOUND;
 
 	static RSector*   s_projStartSector[16];
@@ -229,7 +231,7 @@ namespace TFE_DarkForces
 			{
 				if (s_repeaterProj)
 				{
-					frame_setData(obj, s_repeaterProj);
+					frame_setData(projObj, s_repeaterProj);
 				}
 				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
 				projObj->worldWidth = 0;
@@ -258,7 +260,7 @@ namespace TFE_DarkForces
 			{
 				if (s_plasmaProj)
 				{
-					sprite_setData(obj, s_plasmaProj);
+					sprite_setData(projObj, s_plasmaProj);
 				}
 				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
 				projObj->worldWidth = 0;
@@ -289,7 +291,7 @@ namespace TFE_DarkForces
 			{
 				if (s_mortarProj)
 				{
-					sprite_setData(obj, s_mortarProj);
+					sprite_setData(projObj, s_mortarProj);
 				}
 				// Setup the looping wax animation.
 				obj_setSpriteAnim(projObj);
@@ -312,7 +314,7 @@ namespace TFE_DarkForces
 			{
 				if (s_landmineWpnFrame)
 				{
-					frame_setData(obj, s_landmineWpnFrame);
+					frame_setData(projObj, s_landmineWpnFrame);
 				}
 				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
 				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
@@ -337,7 +339,7 @@ namespace TFE_DarkForces
 			{
 				if (s_landmineWpnFrame)
 				{
-					frame_setData(obj, s_landmineWpnFrame);
+					frame_setData(projObj, s_landmineWpnFrame);
 				}
 				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
 				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
@@ -403,7 +405,7 @@ namespace TFE_DarkForces
 			{
 				if (s_cannonProj)
 				{
-					sprite_setData(obj, s_cannonProj);
+					sprite_setData(projObj, s_cannonProj);
 				}
 				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
 				projObj->worldWidth = 0;
@@ -432,7 +434,7 @@ namespace TFE_DarkForces
 			{
 				if (s_missileProj)
 				{
-					sprite_setData(obj, s_missileProj);
+					sprite_setData(projObj, s_missileProj);
 				}
 				// Setup the looping wax animation.
 				obj_setSpriteAnim(projObj);
@@ -535,7 +537,7 @@ namespace TFE_DarkForces
 			{
 				if (s_homingMissileProj)
 				{
-					sprite_setData(obj, s_homingMissileProj);
+					sprite_setData(projObj, s_homingMissileProj);
 				}
 				obj_setSpriteAnim(projObj);
 				projObj->flags |= OBJ_FLAG_ENEMY;
@@ -564,7 +566,7 @@ namespace TFE_DarkForces
 			{
 				if (s_probeProj)
 				{
-					sprite_setData(obj, s_probeProj);
+					sprite_setData(projObj, s_probeProj);
 				}
 				// 1f3398:
 				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
@@ -594,7 +596,28 @@ namespace TFE_DarkForces
 			} break;
 			case PROJ_18:
 			{
-				// TODO
+				if (s_proj18_wax)
+				{
+					sprite_setData(projObj, s_proj18_wax);
+				}
+				// Setup the looping wax animation.
+				obj_setSpriteAnim(projObj);
+				projObj->worldWidth = 0;
+
+				projLogic->type = PROJ_18;
+				projLogic->updateFunc = stdProjectileUpdateFunc;
+				projLogic->dmg = 0;
+				projLogic->falloffAmt = 0;
+
+				projLogic->u30 = ONE_16;
+				projLogic->speed = FIXED(90);
+				projLogic->horzBounciness = 58982;	// 0.9
+				projLogic->vertBounciness = 58982;
+				projLogic->bounceCnt = 0;
+				projLogic->reflectEffectId = HEFFECT_NONE;
+				projLogic->hitEffectId = HEFFECT_18;
+				projLogic->duration = s_curTick + 1456;
+				projLogic->cameraPassSnd = s_proj18CameraSnd;
 			} break;
 		}
 
