@@ -69,6 +69,12 @@ namespace TFE_InfSystem
 
 	// Send a message to a specific object.
 	void inf_sendObjMessage(SecObject* obj, InfMessageType msgType, void(*func)(void*));
+
+	// Returns JTRUE if the object is sitting on a moving floor or second height.
+	JBool inf_isOnMovingFloor(SecObject* obj, InfElevator* elev, RSector* sector);
+
+	// Get the moving elevator velocity.
+	void inf_getMovingElevatorVelocity(InfElevator* elev, vec3_fixed* vel, fixed16_16* speed);
 	
 	// ** Loadtime API **
 	// These functions are used at load-time to setup special elevators based on sector flags or load

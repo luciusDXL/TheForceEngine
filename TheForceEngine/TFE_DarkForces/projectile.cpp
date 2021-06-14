@@ -19,7 +19,13 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Structures and Constants
 	//////////////////////////////////////////////////////////////
-	static const Tick c_projectileGravityAccel = FIXED(120);	// 120.0 units / s^2
+	enum ProjectileConstants
+	{
+		PROJ_GRAVITY_ACCEL         = FIXED(120), // Gravity acceleration = 120.0 units / s^2
+		PL_LANDMINE_TRIGGER_RADIUS = FIXED(20),	 // Pre-placed landmine trigger radius.
+		WP_LANDMINE_TRIGGER_RADIUS = FIXED(15),	 // Player Weapon landmine trigger radius.
+		CAMERA_SOUND_RANGE         = FIXED(15),  // At this distance, the projectile plays its "near camera" sound.
+	};
 
 	//////////////////////////////////////////////////////////////
 	// Internal State
@@ -565,7 +571,7 @@ namespace TFE_DarkForces
 
 		return (Logic*)projLogic;
 	}
-
+		
 	void projectileLogicFunc()
 	{
 		ProjectileLogic* logic = (ProjectileLogic*)allocator_getHead(s_projectiles);
@@ -600,11 +606,10 @@ namespace TFE_DarkForces
 				if (type == PROJ_LAND_MINE_PLACED)	// Pre-placed landmines.
 				{
 					const fixed16_16 approxDist = distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
-					const fixed16_16 landMineRadius = FIXED(20);
-					if (approxDist <= landMineRadius)
+					if (approxDist <= PL_LANDMINE_TRIGGER_RADIUS)
 					{
-						if (s_playerObject->posWS.y >= obj->posWS.y - landMineRadius && s_playerObject->posWS.y <= obj->posWS.y + landMineRadius &&
-							collision_isAnyObjectInRange(obj->sector, landMineRadius, obj->posWS, obj, ETFLAG_PLAYER))
+						if (s_playerObject->posWS.y >= obj->posWS.y - PL_LANDMINE_TRIGGER_RADIUS && s_playerObject->posWS.y <= obj->posWS.y + PL_LANDMINE_TRIGGER_RADIUS &&
+							collision_isAnyObjectInRange(obj->sector, PL_LANDMINE_TRIGGER_RADIUS, obj->posWS, obj, ETFLAG_PLAYER))
 						{
 							logic->type = PROJ_LAND_MINE;
 							logic->duration = s_curTick + 87;  // The landmine will explode in 0.6 seconds.
@@ -620,8 +625,7 @@ namespace TFE_DarkForces
 				}
 				else if (type == PROJ_LAND_MINE_PROX)	// Player placed proximity landmine (secondary fire).
 				{
-					const fixed16_16 landMineRadius = FIXED(15);
-					if (collision_isAnyObjectInRange(obj->sector, landMineRadius, obj->posWS, obj, ETFLAG_PLAYER | ETFLAG_AI_ACTOR))
+					if (collision_isAnyObjectInRange(obj->sector, WP_LANDMINE_TRIGGER_RADIUS, obj->posWS, obj, ETFLAG_PLAYER | ETFLAG_AI_ACTOR))
 					{
 						logic->type = PROJ_LAND_MINE;
 						logic->duration = s_curTick + TICKS_PER_SECOND;	// The landmine will explode in 1 second.
@@ -637,20 +641,17 @@ namespace TFE_DarkForces
 			if (projHitType == PHIT_NONE)
 			{
 				RSector* sector = obj->sector;
-			#if 0  // TODO: finish
 				InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
-				s32 linkType = link->type;
-				if (link && linkType == LTYPE_SECTOR)
+				LinkType linkType = link->type;
+				if (link && linkType == LTYPE_SECTOR && inf_isOnMovingFloor(obj, link->elev, sector))
 				{
-					InfElevator* elev = link->elev;
-					fixed16_16 secHeight = sector->floorHeight + sector->secHeight;
-					if ((obj->posWS.y == sector->floorHeight && (elev->flags&INF_EFLAG_MOVE_FLOOR)) ||
-						(obj->posWS.y == secHeight && (elev->flags&INF_EFLAG_MOVE_SECHT)))
-					{
-						// TODO
-					}
+					fixed16_16 res;
+					vec3_fixed vel;
+					inf_getMovingElevatorVelocity(link->elev, &vel, &res);
+					logic->vel.y = vel.y;
+					logic->vel.x += vel.x;
+					logic->vel.z += vel.z;
 				}
-			#endif
 				if (logic->updateFunc)
 				{
 					projHitType = logic->updateFunc(logic);
@@ -667,8 +668,7 @@ namespace TFE_DarkForces
 			{
 				fixed16_16 dy = TFE_CoreMath::abs(obj->posWS.y - s_eyePos.y);
 				fixed16_16 approxDist = dy + distApprox(s_eyePos.x, s_eyePos.z, obj->posWS.x, obj->posWS.z);
-				const fixed16_16 camSoundRange = FIXED(15);
-				if (approxDist < camSoundRange)
+				if (approxDist < CAMERA_SOUND_RANGE)
 				{
 					playSound3D_oneshot(logic->cameraPassSnd, obj->posWS);
 					logic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
@@ -724,7 +724,7 @@ namespace TFE_DarkForces
 		if (obj->posWS.y < floorHeight)
 		{
 			const fixed16_16 dt = s_deltaTime;
-			logic->vel.y  += mul16(c_projectileGravityAccel, dt);
+			logic->vel.y  += mul16(PROJ_GRAVITY_ACCEL, dt);
 			logic->delta.y = mul16(logic->vel.y, dt);
 			return proj_handleMovement(logic);
 		}
@@ -738,7 +738,7 @@ namespace TFE_DarkForces
 	{
 		const fixed16_16 dt = s_deltaTime;
 		// The projectile arcs due to gravity, accel = 120.0 units / s^2
-		logic->vel.y += mul16(c_projectileGravityAccel, dt);
+		logic->vel.y += mul16(PROJ_GRAVITY_ACCEL, dt);
 		// Get the frame delta from the velocity and delta time.
 		logic->delta.x = mul16(logic->vel.x, dt);
 		logic->delta.y = mul16(logic->vel.y, dt);

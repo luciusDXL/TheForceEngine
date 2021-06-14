@@ -2744,6 +2744,42 @@ namespace TFE_InfSystem
 		// TODO
 	}
 
+	// Returns JTRUE if the object is sitting on a moving floor or second height.
+	JBool inf_isOnMovingFloor(SecObject* obj, InfElevator* elev, RSector* sector)
+	{
+		const fixed16_16 secHeight = sector->floorHeight + sector->secHeight;
+		if ((obj->posWS.y == sector->floorHeight && (elev->flags&INF_EFLAG_MOVE_FLOOR)) || (obj->posWS.y == secHeight && (elev->flags&INF_EFLAG_MOVE_SECHT)))
+		{
+			return JTRUE;
+		}
+		return JFALSE;
+	}
+
+	void getMovingElevatorVelocity(InfElevator* elev, vec3_fixed* vel, fixed16_16* speed)
+	{
+		vel->x = 0;
+		vel->y = 0;
+		vel->z = 0;
+		*speed = 0;
+
+		if (elev->updateFlags & ELEV_MOVING)
+		{
+			fixed16_16 toNext = 1;
+			if (elev->nextStop)
+			{
+				toNext = elev->nextStop->value - *elev->value;
+			}
+			if (!toNext) { return; }
+
+			fixed16_16 speed = (toNext > 0) ? elev->speed : -elev->speed;
+			if (elev->type == IELEV_MOVE_WALL || elev->type == IELEV_SCROLL_FLOOR || elev->type == IELEV_SCROLL_CEILING)
+			{
+				vel->x = mul16(speed, elev->dirOrCenter.x);
+				vel->z = mul16(speed, elev->dirOrCenter.z);
+			}
+		}
+	}
+
 	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType)
 	{
 		switch (msgType)

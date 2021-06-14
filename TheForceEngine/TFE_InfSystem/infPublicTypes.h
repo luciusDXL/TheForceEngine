@@ -79,3 +79,38 @@ enum InfEventMask
 	INF_EVENT_NONE = 0,
 	INF_EVENT_ANY = 0xffffffff
 };
+
+enum LinkType
+{
+	LTYPE_SECTOR = 0,
+	LTYPE_TRIGGER,
+	LTYPE_TELEPORT,
+};
+
+struct Allocator;
+namespace TFE_InfSystem
+{
+	typedef void(*InfLinkMsgFunc)(InfMessageType);
+	typedef void(*InfFreeFunc)(void*);
+
+	struct InfElevator;
+	struct InfTrigger;
+	struct Teleport;
+
+	struct InfLink
+	{
+		LinkType type;				// Sector or Trigger
+		InfLinkMsgFunc msgFunc;		// Either the Elevator or Trigger msg func.
+		union
+		{
+			InfElevator* elev;		// The actual INF item.
+			InfTrigger* trigger;
+			Teleport* teleport;
+			void* target;
+		};
+		u32 eventMask;				// The event mask which helps determine if a link can be activated.
+		u32 entityMask;				// The entity mask (as above).
+		Allocator* parent;			// The parent list of links.
+		InfFreeFunc freeFunc;		// The function to use to free the link.
+	};
+}

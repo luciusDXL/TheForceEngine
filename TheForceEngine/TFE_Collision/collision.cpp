@@ -127,7 +127,7 @@ namespace TFE_Collision
 				continue;
 			}
 
-			// returns -1 if s_col_path intersects wall, else returns 0
+			// returns INTERSECT if s_col_path intersects wall, else returns NO_INTERSECT
 			IntersectionResult intersect = pathIntersectsWall(&s_col_path, wall);
 			if (intersect == INTERSECT)
 			{

@@ -12,8 +12,6 @@ using namespace TFE_Level;
 
 namespace TFE_InfSystem
 {
-	typedef void(*InfLinkMsgFunc)(InfMessageType);
-	typedef void(*InfFreeFunc)(void*);
 	struct InfLink;
 	
 	// How an elevator moves if triggered.
@@ -40,14 +38,7 @@ namespace TFE_InfSystem
 		IDELAY_TERMINATE = 0xfffffffe,
 		IDELAY_COMPLETE  = 0xfffffffd,
 	};
-
-	enum LinkType
-	{
-		LTYPE_SECTOR = 0,
-		LTYPE_TRIGGER,
-		LTYPE_TELEPORT,
-	};
-
+		
 	enum TriggerType
 	{
 		ITRIGGER_WALL = 0,
@@ -190,22 +181,5 @@ namespace TFE_InfSystem
 		SoundEffectID loopingSoundID;
 		s32 u54;
 		s32 updateFlags;
-	};
-
-	struct InfLink
-	{
-		LinkType type;				// Sector or Trigger
-		InfLinkMsgFunc msgFunc;		// Either the Elevator or Trigger msg func.
-		union
-		{
-			InfElevator* elev;		// The actual INF item.
-			InfTrigger* trigger;
-			Teleport* teleport;
-			void* target;
-		};
-		u32 eventMask;				// The event mask which helps determine if a link can be activated.
-		u32 entityMask;				// The entity mask (as above).
-		Allocator* parent;			// The parent list of links.
-		InfFreeFunc freeFunc;		// The function to use to free the link.
 	};
 }
