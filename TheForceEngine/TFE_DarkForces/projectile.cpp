@@ -25,6 +25,11 @@ namespace TFE_DarkForces
 		PL_LANDMINE_TRIGGER_RADIUS = FIXED(20),	 // Pre-placed landmine trigger radius.
 		WP_LANDMINE_TRIGGER_RADIUS = FIXED(15),	 // Player Weapon landmine trigger radius.
 		CAMERA_SOUND_RANGE         = FIXED(15),  // At this distance, the projectile plays its "near camera" sound.
+		HOMING_MISSILE_EXPLODE_RNG = FIXED(8),	 // The approximate distance when a homing missile might explode early.
+		MAX_HOMING_ANGULAR_VEL     = 9102,       // Maximum angle change per second: ~200 degrees / second.
+		HOMING_ANGULAR_ACCEL       = 1820,       // Rate at which homing speed increases in angular units / second: ~40 degrees / second.
+		HOMING_PITCH_ZERO_MIN      = 2047,       // Range of pitch angles that are mapped to zero degrees.
+		HOMING_PITCH_ZERO_MAX      = 14335,      // Range of pitch angles that are mapped to zero degrees.
 	};
 
 	//////////////////////////////////////////////////////////////
@@ -41,6 +46,7 @@ namespace TFE_DarkForces
 	static Wax*       s_missileProj;
 	static Wax*       s_cannonProj;
 	static Wax*       s_probeProj;
+	static Wax*       s_homingMissileProj;
 	static WaxFrame*  s_landmineWpnFrame;
 	static WaxFrame*  s_landmineFrame;
 	static WaxFrame*  s_thermalDetProj;
@@ -52,6 +58,7 @@ namespace TFE_DarkForces
 	static SoundSourceID s_plasmaReflectSnd     = NULL_SOUND;
 	static SoundSourceID s_missileLoopingSnd    = NULL_SOUND;
 	static SoundSourceID s_landMineTriggerSnd   = NULL_SOUND;
+	static SoundSourceID s_homingMissile_flightSnd = NULL_SOUND;
 
 	static RSector*   s_projStartSector[16];
 	static RSector*   s_projPath[16];
@@ -78,11 +85,13 @@ namespace TFE_DarkForces
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
 	JBool proj_move(ProjectileLogic* logic);
 	JBool proj_getHitObj(ProjectileLogic* logic);
+	void  proj_setTransform(ProjectileLogic* logic, angle14_32 pitch, angle14_32 yaw);
 	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType);
-
+	
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic);
+	ProjectileHitType homingMissileProjectileUpdateFunc(ProjectileLogic* logic);
 
 	//////////////////////////////////////////////////////////////
 	// API Implementation
@@ -522,9 +531,34 @@ namespace TFE_DarkForces
 				projLogic->hitEffectId = HEFFECT_EXP_BARREL;
 				projLogic->duration = s_curTick;
 			} break;
-			case PROJ_16:
+			case PROJ_HOMING_MISSILE:
 			{
-				// TODO
+				if (s_homingMissileProj)
+				{
+					sprite_setData(obj, s_homingMissileProj);
+				}
+				obj_setSpriteAnim(projObj);
+				projObj->flags |= OBJ_FLAG_ENEMY;
+
+				projLogic->flags |= PROJFLAG_EXPLODE;
+				projLogic->type = PROJ_HOMING_MISSILE;
+				projLogic->updateFunc = homingMissileProjectileUpdateFunc;
+				projLogic->dmg = 0;
+				projLogic->minDmg = ONE_16;
+				projLogic->falloffAmt = 0;
+				projLogic->dmgFalloffDelta = ONE_16;
+
+				projLogic->u30 = ONE_16;
+				projLogic->speed = FIXED(58);
+				projLogic->horzBounciness = 58982;	// 0.9
+				projLogic->vertBounciness = 58982;
+				projLogic->bounceCnt = 0;
+				projLogic->homingAngleSpd = 455;	// Starting homing rate = 10 degrees / second
+				projLogic->reflectEffectId = HEFFECT_NONE;
+				projLogic->flightSndSource = s_homingMissile_flightSnd;
+				projLogic->hitEffectId = HEFFECT_MISSILE_EXP;
+				projLogic->duration = s_curTick + 1456;
+				projLogic->reflectSnd = 0;
 			} break;
 			case PROJ_PROBE_PROJ:
 			{
@@ -759,6 +793,85 @@ namespace TFE_DarkForces
 		return proj_handleMovement(logic);
 	}
 
+	ProjectileHitType homingMissileProjectileUpdateFunc(ProjectileLogic* logic)
+	{
+		SecObject* missileObj = logic->obj;
+		SecObject* targetObj  = s_playerObject;
+		fixed16_16 dt = s_deltaTime;
+
+		angle14_32 homingAngleSpd = logic->homingAngleSpd & 0xffff;
+		// Target near the head/upper chest.
+		fixed16_16 yTarget = targetObj->posWS.y - targetObj->worldHeight + ONE_16;
+		angle14_32 homingAngleDelta = mul16(homingAngleSpd, dt);
+
+		// Calculate the horizontal turn amount (change in yaw).
+		fixed16_16 dx = targetObj->posWS.x - missileObj->posWS.x;
+		fixed16_16 dz = targetObj->posWS.z - missileObj->posWS.z;
+		angle14_32 hAngle = vec2ToAngle(dx, dz);
+		angle14_32 hAngleDiff = getAngleDifference(missileObj->yaw, hAngle);
+		if (hAngleDiff > homingAngleDelta)
+		{
+			hAngleDiff = homingAngleDelta;
+		}
+		else if (hAngleDiff < -homingAngleDelta)
+		{
+			hAngleDiff = -homingAngleDelta;
+		}
+		// Turn toward the target (yaw).
+		missileObj->yaw += hAngleDiff;
+
+		// Calculate the vertical turn amount (change in pitch).
+		fixed16_16 cosYaw, sinYaw;
+		sinCosFixed(missileObj->yaw, &sinYaw, &cosYaw);
+
+		fixed16_16 hDir = mul16(sinYaw, dx) + mul16(cosYaw, dz);
+		fixed16_16 dy = missileObj->posWS.y - yTarget;
+		angle14_32 vAngle = vec2ToAngle(dy, hDir);
+		if (vAngle > HOMING_PITCH_ZERO_MIN && vAngle < HOMING_PITCH_ZERO_MAX)
+		{
+			vAngle = 0;
+		}
+		angle14_32 vAngleDiff = getAngleDifference(missileObj->pitch, homingAngleDelta);
+		if (vAngleDiff > homingAngleDelta)
+		{
+			vAngleDiff = homingAngleDelta;
+		}
+		else if (vAngleDiff < -homingAngleDelta)
+		{
+			vAngleDiff = -homingAngleDelta;
+		}
+		// Turn toward the target (pitch).
+		missileObj->pitch += vAngleDiff;
+
+		// The missile will continue homing at a faster rate, up until the maximum.
+		if (logic->homingAngleSpd < MAX_HOMING_ANGULAR_VEL)
+		{
+			logic->homingAngleSpd += mul16(HOMING_ANGULAR_ACCEL, dt);
+		}
+
+		// Set the projectile transform based on the new yaw and pitch.
+		proj_setTransform(logic, missileObj->pitch, missileObj->yaw);
+
+		// Finally calculate the per-frame movement from the velocity computed in proj_setTransform().
+		logic->delta.x = mul16(logic->vel.x, dt);
+		logic->delta.y = mul16(logic->vel.y, dt);
+		logic->delta.z = mul16(logic->vel.z, dt);
+
+		// Then apply movement and handle the 'explode early' special case.
+		ProjectileHitType hitType = proj_handleMovement(logic);
+		if (hitType == PHIT_NONE)
+		{
+			// There is a chance that the missile will explode early, once it gets within a certain range.
+			fixed16_16 approxDist = distApprox(missileObj->posWS.x, missileObj->posWS.z, targetObj->posWS.x, targetObj->posWS.z);
+			if (approxDist < HOMING_MISSILE_EXPLODE_RNG && (s_curTick & 1))
+			{
+				hitType = PHIT_SOLID;
+			}
+		}
+		return hitType;
+	}
+
+
 	void proj_computeTransform3D(SecObject* obj, fixed16_16 sinPitch, fixed16_16 cosPitch, fixed16_16 sinYaw, fixed16_16 cosYaw, fixed16_16 dt)
 	{
 		fixed16_16* transform = obj->transform;
@@ -893,8 +1006,8 @@ namespace TFE_DarkForces
 				if (objLogicPtr)
 				{
 					ProjectileLogic* objLogic = (ProjectileLogic*)*objLogicPtr;
-					// PROJ_16 can be shot which will cause it to immediately stop (explode?)
-					if (logic->type != objLogic->type && objLogic->type == PROJ_16)
+					// PROJ_HOMING_MISSILE can be shot which will cause it to immediately explode.
+					if (logic->type != objLogic->type && objLogic->type == PROJ_HOMING_MISSILE)
 					{
 						s_hitWallFlag = 2;
 						objLogic->duration = 0;

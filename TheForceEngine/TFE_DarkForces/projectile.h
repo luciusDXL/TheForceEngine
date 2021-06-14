@@ -34,7 +34,7 @@ namespace TFE_DarkForces
 		PROJ_TURRET_BOLT,
 		PROJ_REMOTE_BOLT,
 		PROJ_EXP_BARREL,
-		PROJ_16,
+		PROJ_HOMING_MISSILE,
 		PROJ_PROBE_PROJ,
 		PROJ_18,
 		PROJ_COUNT
@@ -85,8 +85,8 @@ namespace TFE_DarkForces
 		SecObject* prevColObj;
 		SecObject* prevObj;
 		SecObject* excludeObj;
-		u32 duration;                     // How long the projectile continues to move before going out of range (and being destroyed).
-		s32 u74;
+		Tick duration;                    // How long the projectile continues to move before going out of range (and being destroyed).
+		angle14_32 homingAngleSpd;		  // How quickly a homing projectile lines up in angle units / second.
 		s32 bounceCnt;
 		s32 reflVariation;
 		SoundEffectID flightSndId;        // Looping sound instance played while the projectile moves.
