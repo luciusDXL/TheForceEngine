@@ -746,16 +746,7 @@ namespace TFE_DarkForces
 			logic = (ProjectileLogic*)allocator_getNext(s_projectiles);
 		}
 	}
-
-	// This function never actually gets called because the Projectile system handles the cleanup.
-	void projectileLogicCleanupFunc(Logic* logic)
-	{
-		allocator_addRef(s_projectiles);
-		deleteLogicAndObject(logic);
-		allocator_deleteItem(s_projectiles, logic);
-		// Bug: allocator_release() is never called
-	}
-
+		
 	void triggerLandMine(ProjectileLogic* logic, Tick delay)
 	{
 		logic->type = PROJ_LAND_MINE;
@@ -768,6 +759,15 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Internal Implementation
 	//////////////////////////////////////////////////////////////
+	// This function never actually gets called because the Projectile system handles the cleanup.
+	void projectileLogicCleanupFunc(Logic* logic)
+	{
+		allocator_addRef(s_projectiles);
+		deleteLogicAndObject(logic);
+		allocator_deleteItem(s_projectiles, logic);
+		// Bug: allocator_release() is never called
+	}
+
 	// The "standard" update function - projectiles travel in a straight line with a fixed velocity.
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic)
 	{
