@@ -61,6 +61,11 @@ enum SectorDirtyFlags
 	SDF_ALL = 0xffffffff
 };
 
+enum SectorConstants
+{
+	SEC_SKY_HEIGHT = FIXED(100),
+};
+
 struct RSector
 {
 	RSector* self;

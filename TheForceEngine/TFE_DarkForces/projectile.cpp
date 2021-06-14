@@ -84,10 +84,10 @@ namespace TFE_DarkForces
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////
 	void projectileLogicFunc();
+	void proj_setTransform(ProjectileLogic* logic, angle14_32 pitch, angle14_32 yaw);
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
 	JBool proj_move(ProjectileLogic* logic);
 	JBool proj_getHitObj(ProjectileLogic* logic);
-	void  proj_setTransform(ProjectileLogic* logic, angle14_32 pitch, angle14_32 yaw);
 	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType);
 	
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic);
@@ -801,17 +801,9 @@ namespace TFE_DarkForces
 		logic->delta.y = mul16(logic->vel.y, dt);
 		logic->delta.z = mul16(logic->vel.z, dt);
 
-		// Note this gives a skewed Y direction. It should really be: velY / vec3Length(velX, velY, velZ)
-		// It also means the projectile cannot travel straight up or down.
+		// Arcing projectiles cannot move straight up or down.
 		const fixed16_16 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
-		if (horzSpeed)
-		{
-			logic->dir.y = div16(logic->vel.y, horzSpeed);
-		}
-		else
-		{
-			logic->dir.y = 0;
-		}
+		logic->dir.y = (horzSpeed) ? div16(logic->vel.y, horzSpeed) : 0;
 
 		return proj_handleMovement(logic);
 	}
@@ -919,12 +911,9 @@ namespace TFE_DarkForces
 		logic->vel.z = mul16(mul16(cosYaw, logic->speed), cosPitch);
 		logic->vel.y = -mul16(sinPitch, logic->speed);
 
-		logic->dir.y = 0;
-		fixed16_16 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
-		if (horzSpeed)
-		{
-			logic->dir.y = div16(logic->vel.y, horzSpeed);
-		}
+		// Projectiles cannot point straight up or down.
+		const fixed16_16 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
+		logic->dir.y = (horzSpeed) ? div16(logic->vel.y, horzSpeed) : 0;
 
 		SecObject* obj = logic->obj;
 		if (obj->type == OBJ_TYPE_3D)
@@ -976,7 +965,7 @@ namespace TFE_DarkForces
 
 			if (logic->bounceCnt == -1)
 			{
-				logic->speed = mul16(logic->speed, logic->horzBounciness);	// eax
+				logic->speed = mul16(logic->speed, logic->horzBounciness);
 				angle14_32 offsetYaw = obj->yaw + 4096;
 				// getAngleDifference() will always return 4096, then we add yaw + 4096 = yaw + 8192 = 180 degrees.
 				// This could have been accomplished with: obj->yaw = (obj->yaw + 8192) & 16383
@@ -1029,7 +1018,7 @@ namespace TFE_DarkForces
 				if (objLogicPtr)
 				{
 					ProjectileLogic* objLogic = (ProjectileLogic*)*objLogicPtr;
-					// PROJ_HOMING_MISSILE can be shot which will cause it to immediately explode.
+					// PROJ_HOMING_MISSILE can be destroyed by shooting it with a different type of projectile.
 					if (logic->type != objLogic->type && objLogic->type == PROJ_HOMING_MISSILE)
 					{
 						s_hitWallFlag = 2;
@@ -1130,8 +1119,8 @@ namespace TFE_DarkForces
 			else
 			{
 				// There is no opening in the wall.
-				bot = -FIXED(100);
-				top =  FIXED(100);
+				bot = -SEC_SKY_HEIGHT;
+				top =  SEC_SKY_HEIGHT;
 			}
 
 			collision_getHitPoint(&s_projNextPosX, &s_projNextPosZ);

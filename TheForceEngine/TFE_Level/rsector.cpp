@@ -148,12 +148,12 @@ namespace TFE_Level
 		fixed16_16 floorHeight = sector->floorHeight;
 		if (sector->flags1 & SEC_FLAGS1_PIT)
 		{
-			floorHeight += FIXED(100);
+			floorHeight += SEC_SKY_HEIGHT;
 		}
 		fixed16_16 ceilHeight = sector->ceilingHeight;
 		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
-			ceilHeight -= FIXED(100);
+			ceilHeight -= SEC_SKY_HEIGHT;
 		}
 		fixed16_16 secHeight = sector->floorHeight + sector->secHeight;
 		if (sector->secHeight >= 0 && floorHeight > secHeight)
@@ -607,11 +607,11 @@ namespace TFE_Level
 
 		if (sector->flags1 & SEC_FLAGS1_PIT)
 		{
-			*floorHeight += FIXED(100);
+			*floorHeight += SEC_SKY_HEIGHT;
 		}
 		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
-			*ceilHeight -= FIXED(100);
+			*ceilHeight -= SEC_SKY_HEIGHT;
 		}
 	}
 
@@ -640,11 +640,11 @@ namespace TFE_Level
 		}
 		if (sector->flags1 & SEC_FLAGS1_PIT)
 		{
-			*floorHeight += FIXED(100);	// +100.0
+			*floorHeight += SEC_SKY_HEIGHT;
 		}
 		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
-			*ceilHeight -= FIXED(100);	// -100.0
+			*ceilHeight -= SEC_SKY_HEIGHT;
 		}
 	}
 

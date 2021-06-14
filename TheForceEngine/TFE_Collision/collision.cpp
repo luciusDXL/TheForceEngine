@@ -19,7 +19,6 @@ namespace TFE_Collision
 		fixed16_16 z1;
 	};
 
-	static const fixed16_16 c_skyHeight = FIXED(100);
 	static const fixed16_16 c_maxCollisionDist = FIXED(9999);
 	static const fixed16_16 c_minTraversableOpening = HALF_16;
 
@@ -195,11 +194,11 @@ namespace TFE_Collision
 		}
 		if (curSector->flags1 & SEC_FLAGS1_PIT)
 		{
-			floorHeight += c_skyHeight;
+			floorHeight += SEC_SKY_HEIGHT;
 		}
 		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
-			ceilHeight -= c_skyHeight;
+			ceilHeight -= SEC_SKY_HEIGHT;
 		}
 		s_col_ceilingHeight = ceilHeight;
 		s_col_floorHeight   = floorHeight;
@@ -256,11 +255,11 @@ namespace TFE_Collision
 
 				if (nextSector->flags1 & SEC_FLAGS1_PIT)
 				{
-					floorHeight += c_skyHeight;
+					floorHeight += SEC_SKY_HEIGHT;
 				}
 				if (nextSector->flags1 & SEC_FLAGS1_EXTERIOR)
 				{
-					ceilHeight -= c_skyHeight;
+					ceilHeight -= SEC_SKY_HEIGHT;
 				}
 
 				if (ceilHeight <= s_col_ceilingHeight)
@@ -389,11 +388,11 @@ namespace TFE_Collision
 			// Note: second heights above pits will be buggy in this case.
 			if (sector->flags1 & SEC_FLAGS1_PIT)
 			{
-				floorHeight += c_skyHeight;
+				floorHeight += SEC_SKY_HEIGHT;
 			}
 			if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
 			{
-				ceilHeight -= c_skyHeight;
+				ceilHeight -= SEC_SKY_HEIGHT;
 			}
 			if (floorHeight < y0 || ceilHeight > y1)
 			{
@@ -498,11 +497,11 @@ namespace TFE_Collision
 
 			if (startSector->flags1 & SEC_FLAGS1_PIT)
 			{
-				floor += c_skyHeight;
+				floor += SEC_SKY_HEIGHT;
 			}
 			if (startSector->flags1 & SEC_FLAGS1_EXTERIOR)
 			{
-				ceil -= c_skyHeight;
+				ceil -= SEC_SKY_HEIGHT;
 			}
 
 			if (y0 > floor || y1 < ceil)
@@ -575,11 +574,11 @@ namespace TFE_Collision
 			}
 			if (startSector->flags1 & SEC_FLAGS1_PIT)
 			{
-				floor += c_skyHeight;
+				floor += SEC_SKY_HEIGHT;
 			}
 			if (startSector->flags1 & SEC_FLAGS1_EXTERIOR)
 			{
-				ceil -= c_skyHeight;
+				ceil -= SEC_SKY_HEIGHT;
 			}
 			if (y0 > floor || y1 < ceil)
 			{
