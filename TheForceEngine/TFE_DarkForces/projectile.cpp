@@ -747,9 +747,13 @@ namespace TFE_DarkForces
 		}
 	}
 
+	// This function never actually gets called because the Projectile system handles the cleanup.
 	void projectileLogicCleanupFunc(Logic* logic)
 	{
-		// TODO
+		allocator_addRef(s_projectiles);
+		deleteLogicAndObject(logic);
+		allocator_deleteItem(s_projectiles, logic);
+		// Bug: allocator_release() is never called
 	}
 
 	void triggerLandMine(ProjectileLogic* logic, Tick delay)
