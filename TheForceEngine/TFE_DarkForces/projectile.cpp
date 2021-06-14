@@ -915,10 +915,7 @@ namespace TFE_DarkForces
 			{
 				return PHIT_SOLID;
 			}
-			else if (s_hitWallFlag == 4)
-			{
-				// TODO - I don't think this code will ever be hit.
-			}
+			assert(s_hitWallFlag != 4);	// This shouldn't be true, but there is code in the original exe even though the flag should never be set to this value.
 		}
 		else if (envHit)
 		{
@@ -943,10 +940,7 @@ namespace TFE_DarkForces
 				{
 					return PHIT_SOLID;
 				}
-				else if (s_hitWallFlag == 4)
-				{
-					// TODO - I don't think this code will ever be hit.
-				}
+				assert(s_hitWallFlag != 4);	// This shouldn't be true, but there is code in the original exe even though the flag should never be set to this value.
 			}
 			return s_hitWater ? PHIT_WATER : PHIT_SOLID;
 		}
