@@ -179,6 +179,7 @@ namespace TFE_DarkForces
 		// Since 'or' sets the zero flag and a non-zero literal value is used, this conditional should *never* hit.
 		if (!flags)
 		{
+			assert(0);
 			return;
 		}
 

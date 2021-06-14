@@ -65,7 +65,7 @@ namespace TFE_DarkForces
 		SecObject* obj;
 		Logic** parent;
 		Task* task;
-		LogicFunc func;
+		LogicCleanupFunc cleanupFunc;
 
 		ProjectileType type;
 		// Damage & Damage falloff.

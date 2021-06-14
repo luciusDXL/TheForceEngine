@@ -7,7 +7,7 @@ using namespace TFE_Level;
 
 namespace TFE_DarkForces
 {
-	void obj_addLogic(SecObject* obj, Logic* logic, Task* logicTask, LogicFunc func)
+	void obj_addLogic(SecObject* obj, Logic* logic, Task* logicTask, LogicCleanupFunc cleanupFunc)
 	{
 		if (!obj->logic)
 		{
@@ -19,7 +19,7 @@ namespace TFE_DarkForces
 		logic->obj = obj;
 		logic->parent = logicItem;
 		logic->task = logicTask;
-		logic->func = func;
+		logic->cleanupFunc = cleanupFunc;
 	}
 
 	void deleteLogicAndObject(Logic* logic)

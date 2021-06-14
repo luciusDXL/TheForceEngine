@@ -9,11 +9,11 @@
 #include <TFE_Level/rsector.h>
 #include <TFE_Level/robject.h>
 
-typedef void(*LogicFunc)();
-
 namespace TFE_DarkForces
 {
 	struct Task;
+	struct Logic;
+	typedef void(*LogicCleanupFunc)(Logic*);
 
 	struct Logic
 	{
@@ -22,9 +22,9 @@ namespace TFE_DarkForces
 		SecObject* obj;
 		Logic** parent;
 		Task* task;
-		LogicFunc func;
+		LogicCleanupFunc cleanupFunc;
 	};
-
-	void obj_addLogic(SecObject* obj, Logic* logic, Task* logicTask, LogicFunc func);
+	
+	void obj_addLogic(SecObject* obj, Logic* logic, Task* logicTask, LogicCleanupFunc cleanupFunc);
 	void deleteLogicAndObject(Logic* logic);
 }  // namespace TFE_DarkForces

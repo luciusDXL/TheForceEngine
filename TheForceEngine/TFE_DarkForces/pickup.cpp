@@ -61,7 +61,7 @@ namespace TFE_DarkForces
 		return id;
 	}
 
-	void logic_pickupFunc()
+	void logic_pickupCleanupFunc(Logic* logic)
 	{
 		// TODO
 	}
@@ -69,7 +69,7 @@ namespace TFE_DarkForces
 	Logic* obj_createPickup(SecObject* obj, ItemId id)
 	{
 		Pickup* pickup = (Pickup*)malloc(sizeof(Pickup));
-		obj_addLogic(obj, (Logic*)pickup, s_pickupTask, logic_pickupFunc);
+		obj_addLogic(obj, (Logic*)pickup, s_pickupTask, logic_pickupCleanupFunc);
 
 		obj->entityFlags |= ETFLAG_PICKUP;
 

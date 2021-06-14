@@ -84,6 +84,7 @@ namespace TFE_DarkForces
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////
 	void projectileLogicFunc();
+	void projectileLogicCleanupFunc(Logic* logic);
 	void proj_setTransform(ProjectileLogic* logic, angle14_32 pitch, angle14_32 yaw);
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
 	JBool proj_move(ProjectileLogic* logic);
@@ -121,7 +122,7 @@ namespace TFE_DarkForces
 		projLogic->vel.z   = 0;
 		projLogic->minDmg  = 0;
 
-		obj_addLogic(projObj, (Logic*)projLogic, s_projectileTask, projectileLogicFunc);
+		obj_addLogic(projObj, (Logic*)projLogic, s_projectileTask, projectileLogicCleanupFunc);
 		
 		switch (type)
 		{
@@ -744,6 +745,11 @@ namespace TFE_DarkForces
 
 			logic = (ProjectileLogic*)allocator_getNext(s_projectiles);
 		}
+	}
+
+	void projectileLogicCleanupFunc(Logic* logic)
+	{
+		// TODO
 	}
 
 	void triggerLandMine(ProjectileLogic* logic, Tick delay)

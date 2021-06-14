@@ -8,9 +8,17 @@ namespace TFE_DarkForces
 	Allocator* s_spriteAnimList = nullptr;
 	Task* s_spriteAnimTask = nullptr;
 	
-	void spriteAnimLogicFunc()
+	void spriteAnimLogicCleanupFunc(Logic* logic)
 	{
-		// TODO
+		SpriteAnimLogic* animLogic = (SpriteAnimLogic*)logic;
+		// The original code would loop and yield while not in the main task.
+		// For TFE, that should be unnecessary.
+		deleteLogicAndObject(logic);
+		if (animLogic->completeFunc)
+		{
+			animLogic->completeFunc();
+		}
+		allocator_deleteItem(s_spriteAnimList, logic);
 	}
 
 	Logic* obj_setSpriteAnim(SecObject* obj)
@@ -28,7 +36,7 @@ namespace TFE_DarkForces
 		SpriteAnimLogic* anim = (SpriteAnimLogic*)allocator_newItem(s_spriteAnimList);
 		const WaxAnim* waxAnim = WAX_AnimPtr(obj->wax, 0);
 
-		obj_addLogic(obj, (Logic*)anim, s_spriteAnimTask, spriteAnimLogicFunc);
+		obj_addLogic(obj, (Logic*)anim, s_spriteAnimTask, spriteAnimLogicCleanupFunc);
 
 		anim->firstFrame = 0;
 		anim->lastFrame = waxAnim->frameCount - 1;
