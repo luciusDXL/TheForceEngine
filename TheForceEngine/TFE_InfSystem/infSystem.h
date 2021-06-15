@@ -91,6 +91,7 @@ namespace TFE_InfSystem
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);
 
 	extern void* s_infMsgEntity;
+	extern void* s_infMsgTarget;
 	extern u32 s_infMsgArg1;
 	extern u32 s_infMsgArg2;
 }

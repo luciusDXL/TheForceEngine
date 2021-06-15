@@ -1,7 +1,10 @@
 #include "animLogic.h"
 #include "time.h"
 #include <TFE_Memory/allocator.h>
+#include <TFE_InfSystem/infSystem.h>
+
 using namespace TFE_Memory;
+using namespace TFE_InfSystem;
 
 namespace TFE_DarkForces
 {
@@ -19,6 +22,48 @@ namespace TFE_DarkForces
 			animLogic->completeFunc();
 		}
 		allocator_deleteItem(s_spriteAnimList, logic);
+	}
+
+	// Logic update function, handles the update of all sprite animations.
+	void spriteAnimLogicFunc()
+	{
+		SpriteAnimLogic* anim = (SpriteAnimLogic*)allocator_getHead(s_spriteAnimList);
+		while (anim)
+		{
+			if (anim->nextTick < s_curTick)
+			{
+				SecObject* obj = anim->logic.obj;
+				obj->frame++;
+				anim->nextTick += anim->delay;
+
+				if (obj->frame > anim->lastFrame)
+				{
+					anim->loopCount--;
+					if (anim->loopCount == 0)
+					{
+						deleteLogicAndObject((Logic*)anim);
+						if (anim->completeFunc)
+						{
+							anim->completeFunc();
+						}
+						allocator_deleteItem(s_spriteAnimList, obj);
+					}
+					else
+					{
+						obj->frame = anim->firstFrame;
+					}
+				}
+			}
+			anim = (SpriteAnimLogic*)allocator_getNext(s_spriteAnimList);
+		}
+	}
+
+	// Split out "task function" to delete an animation.
+	// Was called with taskID = 1
+	void spriteAnimDelete()
+	{
+		deleteLogicAndObject((Logic*)s_infMsgTarget);
+		allocator_deleteItem(s_spriteAnimList, s_infMsgTarget);
 	}
 
 	Logic* obj_setSpriteAnim(SecObject* obj)

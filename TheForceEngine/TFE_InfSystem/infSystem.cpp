@@ -55,8 +55,8 @@ namespace TFE_InfSystem
 
 	u32 s_infMsgArg1;
 	u32 s_infMsgArg2;
+	void* s_infMsgTarget;
 	static u32 s_infMsgEvent;
-	static void* s_infMsgTarget;
 	static bool s_teleportUpdateActive = false;
 
 	void* s_infMsgEntity;

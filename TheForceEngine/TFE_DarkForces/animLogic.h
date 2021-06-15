@@ -16,8 +16,6 @@ typedef void(*SpriteCompleteFunc)();
 
 namespace TFE_DarkForces
 {
-	struct Task;
-
 	struct SpriteAnimLogic
 	{
 		Logic logic;
@@ -33,4 +31,10 @@ namespace TFE_DarkForces
 	Logic* obj_setSpriteAnim(SecObject* obj);
 	void setAnimCompleteFunc(SpriteAnimLogic* logic, SpriteCompleteFunc func);
 	void setupAnimationFromLogic(SpriteAnimLogic* logic, s32 animIndex, u32 firstFrame, u32 lastFrame, u32 loopCount);
+
+	// Logic update function, handles the update of all sprite animations.
+	void spriteAnimLogicFunc();
+	// Split out "task function" to delete an animation.
+	// Was called with taskID = 1
+	void spriteAnimDelete();
 }  // namespace TFE_DarkForces
