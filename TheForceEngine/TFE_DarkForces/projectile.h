@@ -58,15 +58,10 @@ namespace TFE_DarkForces
 	struct ProjectileLogic;
 	typedef ProjectileHitType(*ProjectileFunc)(ProjectileLogic*);
 
+	// This is a type of "Logic" and can be safety cast to Logic {}.
 	struct ProjectileLogic
 	{
-		RSector* sector;
-		s32 u04;
-		SecObject* obj;
-		Logic** parent;
-		Task* task;
-		LogicCleanupFunc cleanupFunc;
-
+		Logic logic;            // Logic header.
 		ProjectileType type;
 		// Damage & Damage falloff.
 		fixed16_16 dmg;         // Base damage
@@ -105,7 +100,7 @@ namespace TFE_DarkForces
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj);
 
 	// Logic update function, handles the update of all projectiles.
-	void projectileLogicFunc();
+	void projectileLogicFunc(s32 id);
 
 	// Trigger a landmine.
 	void triggerLandMine(ProjectileLogic* logic, Tick delay);

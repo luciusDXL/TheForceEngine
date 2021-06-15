@@ -9,7 +9,6 @@ using namespace TFE_InfSystem;
 namespace TFE_DarkForces
 {
 	Allocator* s_spriteAnimList = nullptr;
-	Task* s_spriteAnimTask = nullptr;
 	
 	void spriteAnimLogicCleanupFunc(Logic* logic)
 	{
@@ -25,7 +24,7 @@ namespace TFE_DarkForces
 	}
 
 	// Logic update function, handles the update of all sprite animations.
-	void spriteAnimLogicFunc()
+	void spriteAnimLogicFunc(s32 id)
 	{
 		SpriteAnimLogic* anim = (SpriteAnimLogic*)allocator_getHead(s_spriteAnimList);
 		while (anim)
@@ -73,6 +72,7 @@ namespace TFE_DarkForces
 			return nullptr;
 		}
 
+		// Create an allocator if one is not already setup.
 		if (!s_spriteAnimList)
 		{
 			s_spriteAnimList = allocator_create(sizeof(SpriteAnimLogic));
@@ -81,7 +81,7 @@ namespace TFE_DarkForces
 		SpriteAnimLogic* anim = (SpriteAnimLogic*)allocator_newItem(s_spriteAnimList);
 		const WaxAnim* waxAnim = WAX_AnimPtr(obj->wax, 0);
 
-		obj_addLogic(obj, (Logic*)anim, s_spriteAnimTask, spriteAnimLogicCleanupFunc);
+		obj_addLogic(obj, (Logic*)anim, spriteAnimLogicFunc, spriteAnimLogicCleanupFunc);
 
 		anim->firstFrame = 0;
 		anim->lastFrame = waxAnim->frameCount - 1;
@@ -101,9 +101,9 @@ namespace TFE_DarkForces
 		logic->completeFunc = func;
 	}
 
-	void setupAnimationFromLogic(SpriteAnimLogic* logic, s32 animIndex, u32 firstFrame, u32 lastFrame, u32 loopCount)
+	void setupAnimationFromLogic(SpriteAnimLogic* animLogic, s32 animIndex, u32 firstFrame, u32 lastFrame, u32 loopCount)
 	{
-		SecObject* obj = logic->logic.obj;
+		SecObject* obj = animLogic->logic.obj;
 		obj->anim  = animIndex;
 		obj->frame = firstFrame;
 	
@@ -114,10 +114,10 @@ namespace TFE_DarkForces
 			lastFrame = animLastFrame;
 		}
 
-		logic->firstFrame = firstFrame;
-		logic->lastFrame  = lastFrame;
-		logic->delay      = time_frameRateToDelay(anim->frameRate);
-		logic->loopCount  = loopCount;
+		animLogic->firstFrame = firstFrame;
+		animLogic->lastFrame  = lastFrame;
+		animLogic->delay      = time_frameRateToDelay(anim->frameRate);
+		animLogic->loopCount  = loopCount;
 	}
 
 }  // TFE_DarkForces

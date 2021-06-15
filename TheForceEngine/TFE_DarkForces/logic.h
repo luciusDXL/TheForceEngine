@@ -11,8 +11,8 @@
 
 namespace TFE_DarkForces
 {
-	struct Task;
 	struct Logic;
+	typedef void(*LogicTaskFunc)(s32 id);
 	typedef void(*LogicCleanupFunc)(Logic*);
 
 	struct Logic
@@ -21,10 +21,10 @@ namespace TFE_DarkForces
 		s32 u04;
 		SecObject* obj;
 		Logic** parent;
-		Task* task;
+		LogicTaskFunc taskFunc;
 		LogicCleanupFunc cleanupFunc;
 	};
 	
-	void obj_addLogic(SecObject* obj, Logic* logic, Task* logicTask, LogicCleanupFunc cleanupFunc);
+	void obj_addLogic(SecObject* obj, Logic* logic, LogicTaskFunc taskFunc, LogicCleanupFunc cleanupFunc);
 	void deleteLogicAndObject(Logic* logic);
 }  // namespace TFE_DarkForces

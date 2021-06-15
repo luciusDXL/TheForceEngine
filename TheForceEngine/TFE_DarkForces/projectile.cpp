@@ -36,7 +36,6 @@ namespace TFE_DarkForces
 	// Internal State
 	//////////////////////////////////////////////////////////////
 	static Allocator* s_projectiles;
-	static Task* s_projectileTask;
 
 	static JediModel* s_boltModel;
 	static JediModel* s_greenBoltModel;
@@ -83,7 +82,6 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////
-	void projectileLogicFunc();
 	void projectileLogicCleanupFunc(Logic* logic);
 	void proj_setTransform(ProjectileLogic* logic, angle14_32 pitch, angle14_32 yaw);
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
@@ -122,7 +120,7 @@ namespace TFE_DarkForces
 		projLogic->vel.z   = 0;
 		projLogic->minDmg  = 0;
 
-		obj_addLogic(projObj, (Logic*)projLogic, s_projectileTask, projectileLogicCleanupFunc);
+		obj_addLogic(projObj, (Logic*)projLogic, projectileLogicFunc, projectileLogicCleanupFunc);
 		
 		switch (type)
 		{
@@ -630,36 +628,36 @@ namespace TFE_DarkForces
 		return (Logic*)projLogic;
 	}
 		
-	void projectileLogicFunc()
+	void projectileLogicFunc(s32 id)
 	{
-		ProjectileLogic* logic = (ProjectileLogic*)allocator_getHead(s_projectiles);
-		while (logic)
+		ProjectileLogic* projLogic = (ProjectileLogic*)allocator_getHead(s_projectiles);
+		while (projLogic)
 		{
-			SecObject* obj = logic->obj;
+			SecObject* obj = projLogic->logic.obj;
 			ProjectileHitType projHitType = PHIT_NONE;
 			Tick curTick = s_curTick;
 
 			// The projectile is still active.
-			if (curTick < logic->duration)
+			if (curTick < projLogic->duration)
 			{
 				// Handle damage falloff.
-				if (logic->falloffAmt && curTick > logic->nextFalloffTick)
+				if (projLogic->falloffAmt && curTick > projLogic->nextFalloffTick)
 				{
-					logic->dmg -= logic->falloffAmt;
-					if (logic->dmg < logic->minDmg)
+					projLogic->dmg -= projLogic->falloffAmt;
+					if (projLogic->dmg < projLogic->minDmg)
 					{
-						logic->nextFalloffTick = 0xffffffff;	// This basically sets the falloff to "infinity" so it never enters this block again.
-						logic->dmg = logic->minDmg;
+						projLogic->nextFalloffTick = 0xffffffff;	// This basically sets the falloff to "infinity" so it never enters this block again.
+						projLogic->dmg = projLogic->minDmg;
 					}
 					else
 					{
-						logic->nextFalloffTick += logic->dmgFalloffDelta;
+						projLogic->nextFalloffTick += projLogic->dmgFalloffDelta;
 					}
 				}
 			}
 			else  // The projectile has reached the end of its life.
 			{
-				const ProjectileType type = logic->type;
+				const ProjectileType type = projLogic->type;
 				// Note that proximity landmines that have reached end of life don't explode right away, but instead check for valid object proximity.
 				if (type == PROJ_LAND_MINE_PLACED)	// Pre-placed landmines.
 				{
@@ -669,8 +667,8 @@ namespace TFE_DarkForces
 						if (s_playerObject->posWS.y >= obj->posWS.y - PL_LANDMINE_TRIGGER_RADIUS && s_playerObject->posWS.y <= obj->posWS.y + PL_LANDMINE_TRIGGER_RADIUS &&
 							collision_isAnyObjectInRange(obj->sector, PL_LANDMINE_TRIGGER_RADIUS, obj->posWS, obj, ETFLAG_PLAYER))
 						{
-							logic->type = PROJ_LAND_MINE;
-							logic->duration = s_curTick + 87;  // The landmine will explode in 0.6 seconds.
+							projLogic->type = PROJ_LAND_MINE;
+							projLogic->duration = s_curTick + 87;  // The landmine will explode in 0.6 seconds.
 							playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
 						}
 					}
@@ -678,15 +676,15 @@ namespace TFE_DarkForces
 					{
 						// subtracts ~dist/64 ticks from the current time.
 						// which ensures it will check here again next tick, but it was going to do that anyway...
-						logic->duration = s_curTick - floor16(mul16(approxDist / 64, 9545318));	// 9545318 = 145.65
+						projLogic->duration = s_curTick - floor16(mul16(approxDist / 64, 9545318));	// 9545318 = 145.65
 					}
 				}
 				else if (type == PROJ_LAND_MINE_PROX)	// Player placed proximity landmine (secondary fire).
 				{
 					if (collision_isAnyObjectInRange(obj->sector, WP_LANDMINE_TRIGGER_RADIUS, obj->posWS, obj, ETFLAG_PLAYER | ETFLAG_AI_ACTOR))
 					{
-						logic->type = PROJ_LAND_MINE;
-						logic->duration = s_curTick + TICKS_PER_SECOND;	// The landmine will explode in 1 second.
+						projLogic->type = PROJ_LAND_MINE;
+						projLogic->duration = s_curTick + TICKS_PER_SECOND;	// The landmine will explode in 1 second.
 						playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
 					}
 				}
@@ -706,53 +704,53 @@ namespace TFE_DarkForces
 					fixed16_16 res;
 					vec3_fixed vel;
 					inf_getMovingElevatorVelocity(link->elev, &vel, &res);
-					logic->vel.y = vel.y;
-					logic->vel.x += vel.x;
-					logic->vel.z += vel.z;
+					projLogic->vel.y = vel.y;
+					projLogic->vel.x += vel.x;
+					projLogic->vel.z += vel.z;
 				}
-				if (logic->updateFunc)
+				if (projLogic->updateFunc)
 				{
-					projHitType = logic->updateFunc(logic);
+					projHitType = projLogic->updateFunc(projLogic);
 				}
 			}
 
 			// Play a looping sound as the projectile travels, this updates its position if already playing.
-			if (logic->flightSndSource)
+			if (projLogic->flightSndSource)
 			{
-				logic->flightSndId = playSound3D_looping(logic->flightSndSource, logic->flightSndId, obj->posWS);
+				projLogic->flightSndId = playSound3D_looping(projLogic->flightSndSource, projLogic->flightSndId, obj->posWS);
 			}
 			// Play a sound as the object passes near the camera.
-			if (logic->cameraPassSnd && (logic->flags & PROJFLAG_CAMERA_PASS_SOUND))
+			if (projLogic->cameraPassSnd && (projLogic->flags & PROJFLAG_CAMERA_PASS_SOUND))
 			{
 				fixed16_16 dy = TFE_CoreMath::abs(obj->posWS.y - s_eyePos.y);
 				fixed16_16 approxDist = dy + distApprox(s_eyePos.x, s_eyePos.z, obj->posWS.x, obj->posWS.z);
 				if (approxDist < CAMERA_SOUND_RANGE)
 				{
-					playSound3D_oneshot(logic->cameraPassSnd, obj->posWS);
-					logic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
+					playSound3D_oneshot(projLogic->cameraPassSnd, obj->posWS);
+					projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 				}
 			}
-			else if (logic->cameraPassSnd && logic->flightSndId)
+			else if (projLogic->cameraPassSnd && projLogic->flightSndId)
 			{
-				stopSound(logic->flightSndId);
-				logic->flightSndId = NULL_SOUND;
+				stopSound(projLogic->flightSndId);
+				projLogic->flightSndId = NULL_SOUND;
 			}
 			// Finally handle the hit itself (this includes going out of range).
 			if (projHitType != PHIT_NONE)
 			{
-				handleProjectileHit(logic, projHitType);
+				handleProjectileHit(projLogic, projHitType);
 			}
 
-			logic = (ProjectileLogic*)allocator_getNext(s_projectiles);
+			projLogic = (ProjectileLogic*)allocator_getNext(s_projectiles);
 		}
 	}
 		
-	void triggerLandMine(ProjectileLogic* logic, Tick delay)
+	void triggerLandMine(ProjectileLogic* projLogic, Tick delay)
 	{
-		logic->type = PROJ_LAND_MINE;
-		logic->duration = s_curTick + delay;
+		projLogic->type = PROJ_LAND_MINE;
+		projLogic->duration = s_curTick + delay;
 
-		SecObject* obj = logic->obj;
+		SecObject* obj = projLogic->logic.obj;
 		playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
 	}
 
@@ -769,21 +767,21 @@ namespace TFE_DarkForces
 	}
 
 	// The "standard" update function - projectiles travel in a straight line with a fixed velocity.
-	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic)
+	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* projLogic)
 	{
 		// Calculate how much the projectile moves this timeslice.
 		const fixed16_16 dt = s_deltaTime;
-		logic->delta.x = mul16(logic->vel.x, dt);
-		logic->delta.y = mul16(logic->vel.y, dt);
-		logic->delta.z = mul16(logic->vel.z, dt);
+		projLogic->delta.x = mul16(projLogic->vel.x, dt);
+		projLogic->delta.y = mul16(projLogic->vel.y, dt);
+		projLogic->delta.z = mul16(projLogic->vel.z, dt);
 
-		return proj_handleMovement(logic);
+		return proj_handleMovement(projLogic);
 	}
 
 	// Landmines do not move but can fall if off of the ground.
-	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic)
+	ProjectileHitType landMineUpdateFunc(ProjectileLogic* projLogic)
 	{
-		SecObject* obj = logic->obj;
+		SecObject* obj = projLogic->logic.obj;
 		fixed16_16 ceilHeight, floorHeight;
 		sector_getObjFloorAndCeilHeight(obj->sector, obj->posWS.y, &floorHeight, &ceilHeight);
 
@@ -791,9 +789,9 @@ namespace TFE_DarkForces
 		if (obj->posWS.y < floorHeight)
 		{
 			const fixed16_16 dt = s_deltaTime;
-			logic->vel.y  += mul16(PROJ_GRAVITY_ACCEL, dt);
-			logic->delta.y = mul16(logic->vel.y, dt);
-			return proj_handleMovement(logic);
+			projLogic->vel.y  += mul16(PROJ_GRAVITY_ACCEL, dt);
+			projLogic->delta.y = mul16(projLogic->vel.y, dt);
+			return proj_handleMovement(projLogic);
 		}
 		return PHIT_NONE;
 	}
@@ -801,30 +799,30 @@ namespace TFE_DarkForces
 	// Projectiles, such as Thermal Detonators and Mortars fly in an arc.
 	// This is done by giving them an initial velocity and then modifying that velocity
 	// over time based on gravity.
-	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic)
+	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* projLogic)
 	{
 		const fixed16_16 dt = s_deltaTime;
 		// The projectile arcs due to gravity, accel = 120.0 units / s^2
-		logic->vel.y += mul16(PROJ_GRAVITY_ACCEL, dt);
+		projLogic->vel.y += mul16(PROJ_GRAVITY_ACCEL, dt);
 		// Get the frame delta from the velocity and delta time.
-		logic->delta.x = mul16(logic->vel.x, dt);
-		logic->delta.y = mul16(logic->vel.y, dt);
-		logic->delta.z = mul16(logic->vel.z, dt);
+		projLogic->delta.x = mul16(projLogic->vel.x, dt);
+		projLogic->delta.y = mul16(projLogic->vel.y, dt);
+		projLogic->delta.z = mul16(projLogic->vel.z, dt);
 
 		// Arcing projectiles cannot move straight up or down.
-		const fixed16_16 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
-		logic->dir.y = (horzSpeed) ? div16(logic->vel.y, horzSpeed) : 0;
+		const fixed16_16 horzSpeed = vec2Length(projLogic->vel.x, projLogic->vel.z);
+		projLogic->dir.y = (horzSpeed) ? div16(projLogic->vel.y, horzSpeed) : 0;
 
-		return proj_handleMovement(logic);
+		return proj_handleMovement(projLogic);
 	}
 
-	ProjectileHitType homingMissileProjectileUpdateFunc(ProjectileLogic* logic)
+	ProjectileHitType homingMissileProjectileUpdateFunc(ProjectileLogic* projLogic)
 	{
-		SecObject* missileObj = logic->obj;
+		SecObject* missileObj = projLogic->logic.obj;
 		SecObject* targetObj  = s_playerObject;
 		fixed16_16 dt = s_deltaTime;
 
-		angle14_32 homingAngleSpd = logic->homingAngleSpd & 0xffff;
+		angle14_32 homingAngleSpd = projLogic->homingAngleSpd & 0xffff;
 		// Target near the head/upper chest.
 		fixed16_16 yTarget = targetObj->posWS.y - targetObj->worldHeight + ONE_16;
 		angle14_32 homingAngleDelta = mul16(homingAngleSpd, dt);
@@ -869,21 +867,21 @@ namespace TFE_DarkForces
 		missileObj->pitch += vAngleDiff;
 
 		// The missile will continue homing at a faster rate, up until the maximum.
-		if (logic->homingAngleSpd < MAX_HOMING_ANGULAR_VEL)
+		if (projLogic->homingAngleSpd < MAX_HOMING_ANGULAR_VEL)
 		{
-			logic->homingAngleSpd += mul16(HOMING_ANGULAR_ACCEL, dt);
+			projLogic->homingAngleSpd += mul16(HOMING_ANGULAR_ACCEL, dt);
 		}
 
 		// Set the projectile transform based on the new yaw and pitch.
-		proj_setTransform(logic, missileObj->pitch, missileObj->yaw);
+		proj_setTransform(projLogic, missileObj->pitch, missileObj->yaw);
 
 		// Finally calculate the per-frame movement from the velocity computed in proj_setTransform().
-		logic->delta.x = mul16(logic->vel.x, dt);
-		logic->delta.y = mul16(logic->vel.y, dt);
-		logic->delta.z = mul16(logic->vel.z, dt);
+		projLogic->delta.x = mul16(projLogic->vel.x, dt);
+		projLogic->delta.y = mul16(projLogic->vel.y, dt);
+		projLogic->delta.z = mul16(projLogic->vel.z, dt);
 
 		// Then apply movement and handle the 'explode early' special case.
-		ProjectileHitType hitType = proj_handleMovement(logic);
+		ProjectileHitType hitType = proj_handleMovement(projLogic);
 		if (hitType == PHIT_NONE)
 		{
 			// There is a chance that the missile will explode early, once it gets within a certain range.
@@ -913,28 +911,28 @@ namespace TFE_DarkForces
 		transform[8] = mul16(mul16(cosPitch, cosYaw), dt);
 	}
 
-	void proj_setYawPitch(ProjectileLogic* logic, fixed16_16 sinPitch, fixed16_16 cosPitch, fixed16_16 sinYaw, fixed16_16 cosYaw)
+	void proj_setYawPitch(ProjectileLogic* projLogic, fixed16_16 sinPitch, fixed16_16 cosPitch, fixed16_16 sinYaw, fixed16_16 cosYaw)
 	{
-		logic->dir.x = sinYaw;
-		logic->dir.z = cosYaw;
-		logic->vel.x = mul16(mul16(sinYaw, logic->speed), cosPitch);
-		logic->vel.z = mul16(mul16(cosYaw, logic->speed), cosPitch);
-		logic->vel.y = -mul16(sinPitch, logic->speed);
+		projLogic->dir.x = sinYaw;
+		projLogic->dir.z = cosYaw;
+		projLogic->vel.x = mul16(mul16(sinYaw, projLogic->speed), cosPitch);
+		projLogic->vel.z = mul16(mul16(cosYaw, projLogic->speed), cosPitch);
+		projLogic->vel.y = -mul16(sinPitch, projLogic->speed);
 
 		// Projectiles cannot point straight up or down.
-		const fixed16_16 horzSpeed = vec2Length(logic->vel.x, logic->vel.z);
-		logic->dir.y = (horzSpeed) ? div16(logic->vel.y, horzSpeed) : 0;
+		const fixed16_16 horzSpeed = vec2Length(projLogic->vel.x, projLogic->vel.z);
+		projLogic->dir.y = (horzSpeed) ? div16(projLogic->vel.y, horzSpeed) : 0;
 
-		SecObject* obj = logic->obj;
+		SecObject* obj = projLogic->logic.obj;
 		if (obj->type == OBJ_TYPE_3D)
 		{
 			proj_computeTransform3D(obj, sinPitch, cosPitch, sinYaw, cosYaw, s_deltaTime);
 		}
 	}
 
-	void proj_setTransform(ProjectileLogic* logic, angle14_32 pitch, angle14_32 yaw)
+	void proj_setTransform(ProjectileLogic* projLogic, angle14_32 pitch, angle14_32 yaw)
 	{
-		SecObject* obj = logic->obj;
+		SecObject* obj = projLogic->logic.obj;
 		obj->roll  = 0;
 		obj->pitch = pitch;
 		obj->yaw   = yaw;
@@ -944,28 +942,28 @@ namespace TFE_DarkForces
 		sinCosFixed(yaw,   &sinYaw,   &cosYaw);
 		sinCosFixed(pitch, &sinPitch, &cosPitch);
 
-		proj_setYawPitch(logic, sinPitch, cosPitch, sinYaw, cosYaw);
+		proj_setYawPitch(projLogic, sinPitch, cosPitch, sinYaw, cosYaw);
 	}
 
 	// Originally this code was inlined in the final DOS code, but I am splitting it out to reduce redundant code.
 	// This code adds some variation to the final yaw and pitch of a projectile after reflection if
-	// logic->reflVariation is non-zero.
-	void handleReflectVariation(ProjectileLogic* logic, SecObject* obj)
+	// projLogic->reflVariation is non-zero.
+	void handleReflectVariation(ProjectileLogic* projLogic, SecObject* obj)
 	{
-		if (!logic->reflVariation) { return; }
+		if (!projLogic->reflVariation) { return; }
 
-		// Random variation between [-logic->reflVariation, logic->reflVariation]
-		obj->yaw   += random(2 * logic->reflVariation) - logic->reflVariation;
-		obj->pitch += random(2 * logic->reflVariation) - logic->reflVariation;
+		// Random variation between [-projLogic->reflVariation, projLogic->reflVariation]
+		obj->yaw   += random(2 * projLogic->reflVariation) - projLogic->reflVariation;
+		obj->pitch += random(2 * projLogic->reflVariation) - projLogic->reflVariation;
 	}
 
 	// Handle projectile movement.
 	// Returns 0 if it moved without hitting anything.
-	ProjectileHitType proj_handleMovement(ProjectileLogic* logic)
+	ProjectileHitType proj_handleMovement(ProjectileLogic* projLogic)
 	{
-		SecObject* obj = logic->obj;
-		JBool envHit = proj_move(logic);
-		JBool objHit = proj_getHitObj(logic);
+		SecObject* obj = projLogic->logic.obj;
+		JBool envHit = proj_move(projLogic);
+		JBool objHit = proj_getHitObj(projLogic);
 		if (objHit)
 		{
 			obj->posWS.y = s_colObjAdjY;
@@ -973,28 +971,28 @@ namespace TFE_DarkForces
 			fixed16_16 dx = s_colObjAdjX - obj->posWS.x;
 			RSector* newSector = collision_moveObj(obj, dx, dz);
 
-			if (logic->bounceCnt == -1)
+			if (projLogic->bounceCnt == -1)
 			{
-				logic->speed = mul16(logic->speed, logic->horzBounciness);
+				projLogic->speed = mul16(projLogic->speed, projLogic->horzBounciness);
 				angle14_32 offsetYaw = obj->yaw + 4096;
 				// getAngleDifference() will always return 4096, then we add yaw + 4096 = yaw + 8192 = 180 degrees.
 				// This could have been accomplished with: obj->yaw = (obj->yaw + 8192) & 16383
 				obj->yaw = (getAngleDifference(obj->yaw, offsetYaw) + offsetYaw) & 16383;
-				handleReflectVariation(logic, obj);
+				handleReflectVariation(projLogic, obj);
 
-				logic->prevColObj = nullptr;
-				logic->excludeObj = nullptr;
-				proj_setTransform(logic, obj->pitch, obj->yaw);
-				playSound3D_oneshot(logic->reflectSnd, obj->posWS);
+				projLogic->prevColObj = nullptr;
+				projLogic->excludeObj = nullptr;
+				proj_setTransform(projLogic, obj->pitch, obj->yaw);
+				playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
 
-				logic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
-				logic->delta.x = mul16(HALF_16, logic->dir.x);
-				logic->delta.z = mul16(HALF_16, logic->dir.z);
-				collision_moveObj(obj, logic->delta.x, logic->delta.z);
+				projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
+				projLogic->delta.x = mul16(HALF_16, projLogic->dir.x);
+				projLogic->delta.z = mul16(HALF_16, projLogic->dir.z);
+				collision_moveObj(obj, projLogic->delta.x, projLogic->delta.z);
 
-				logic->delta.x = 0;
-				logic->delta.y = 0;
-				logic->delta.z = 0;
+				projLogic->delta.x = 0;
+				projLogic->delta.y = 0;
+				projLogic->delta.z = 0;
 
 				if (!envHit)
 				{
@@ -1015,10 +1013,10 @@ namespace TFE_DarkForces
 				return (s_hitWallFlag == 1) ? PHIT_SKY : PHIT_SOLID;
 			}
 
-			if (logic->type == PROJ_PUNCH)
+			if (projLogic->type == PROJ_PUNCH)
 			{
 				vec3_fixed effectPos = { s_colObjAdjX, s_colObjAdjY, s_colObjAdjZ };
-				spawnHitEffect(logic->hitEffectId, obj->sector, effectPos, logic->excludeObj);
+				spawnHitEffect(projLogic->hitEffectId, obj->sector, effectPos, projLogic->excludeObj);
 			}
 			s_hitWallFlag = 2;
 			if (s_colHitObj->entityFlags & ETFLAG_PROJECTILE)
@@ -1029,16 +1027,16 @@ namespace TFE_DarkForces
 				{
 					ProjectileLogic* objLogic = (ProjectileLogic*)*objLogicPtr;
 					// PROJ_HOMING_MISSILE can be destroyed by shooting it with a different type of projectile.
-					if (logic->type != objLogic->type && objLogic->type == PROJ_HOMING_MISSILE)
+					if (projLogic->type != objLogic->type && objLogic->type == PROJ_HOMING_MISSILE)
 					{
 						s_hitWallFlag = 2;
 						objLogic->duration = 0;
 					}
 				}
 			}
-			if (logic->dmg)
+			if (projLogic->dmg)
 			{
-				s_infMsgEntity = logic;
+				s_infMsgEntity = projLogic;
 				inf_sendObjMessage(s_colHitObj, IMSG_DAMAGE, nullptr);
 			}
 
@@ -1065,7 +1063,7 @@ namespace TFE_DarkForces
 
 				vec2_fixed* w0 = s_hitWall->w0;
 				fixed16_16 paramPos = vec2Length(s_projNextPosX - w0->x, s_projNextPosZ - w0->z);
-				inf_wallAndMirrorSendMessageAtPos(s_hitWall, logic->obj, INF_EVENT_SHOOT_LINE, paramPos, s_projNextPosY);
+				inf_wallAndMirrorSendMessageAtPos(s_hitWall, projLogic->logic.obj, INF_EVENT_SHOOT_LINE, paramPos, s_projNextPosY);
 
 				if (s_hitWallFlag <= 1)	// s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW
 				{
@@ -1081,15 +1079,15 @@ namespace TFE_DarkForces
 		}
 
 		// Hit nothing.
-		obj->posWS.y += logic->delta.y;
-		collision_moveObj(obj, logic->delta.x, logic->delta.z);
+		obj->posWS.y += projLogic->delta.y;
+		collision_moveObj(obj, projLogic->delta.x, projLogic->delta.z);
 		return PHIT_NONE;
 	}
 
 	// Return JTRUE if something was hit during movement.
-	JBool proj_move(ProjectileLogic* logic)
+	JBool proj_move(ProjectileLogic* projLogic)
 	{
-		SecObject* obj = logic->obj;
+		SecObject* obj = projLogic->logic.obj;
 		RSector* sector = obj->sector;
 
 		s_hitWall = nullptr;
@@ -1097,9 +1095,9 @@ namespace TFE_DarkForces
 		s_projSector = sector;
 		s_projStartSector[0] = sector;
 		s_projIter = 1;
-		s_projNextPosX = obj->posWS.x + logic->delta.x;
-		s_projNextPosY = obj->posWS.y + logic->delta.y;
-		s_projNextPosZ = obj->posWS.z + logic->delta.z;
+		s_projNextPosX = obj->posWS.x + projLogic->delta.x;
+		s_projNextPosY = obj->posWS.y + projLogic->delta.y;
+		s_projNextPosZ = obj->posWS.z + projLogic->delta.z;
 
 		fixed16_16 y0CeilHeight;
 		fixed16_16 y0FloorHeight;
@@ -1116,7 +1114,7 @@ namespace TFE_DarkForces
 
 				// The check if the projectile trivially passes through.
 				fixed16_16 y0 = s_projNextPosY;
-				fixed16_16 y1 = logic->type == PROJ_THERMAL_DET ? s_projNextPosY - obj->worldHeight : s_projNextPosY;
+				fixed16_16 y1 = projLogic->type == PROJ_THERMAL_DET ? s_projNextPosY - obj->worldHeight : s_projNextPosY;
 				if (obj->posWS.y <= bot && obj->posWS.y >= top && y0 <= bot && y1 >= top)
 				{
 					s_projIter++;
@@ -1135,7 +1133,7 @@ namespace TFE_DarkForces
 
 			collision_getHitPoint(&s_projNextPosX, &s_projNextPosZ);
 			fixed16_16 len = vec2Length(s_projNextPosX - obj->posWS.x, s_projNextPosZ - obj->posWS.z);
-			fixed16_16 yDelta = mul16(len, logic->dir.y);
+			fixed16_16 yDelta = mul16(len, projLogic->dir.y);
 
 			fixed16_16 y0 = obj->posWS.y;
 			fixed16_16 y1 = obj->posWS.y + yDelta;
@@ -1157,7 +1155,7 @@ namespace TFE_DarkForces
 			}
 
 			fixed16_16 nY0 = nextY;
-			fixed16_16 nY1 = logic->type == PROJ_THERMAL_DET ? nextY - obj->worldHeight : nextY;
+			fixed16_16 nY1 = projLogic->type == PROJ_THERMAL_DET ? nextY - obj->worldHeight : nextY;
 			if (nY0 <= bot && nY1 >= top)
 			{
 				if (y1 >= y0FloorHeight)
@@ -1174,18 +1172,18 @@ namespace TFE_DarkForces
 			else  // Wall Hit!
 			{
 				fixed16_16 offset = ONE_16 + HALF_16;
-				fixed16_16 offsetX = mul16(offset, logic->dir.x);
-				fixed16_16 offsetZ = mul16(offset, logic->dir.z);
+				fixed16_16 offsetX = mul16(offset, projLogic->dir.x);
+				fixed16_16 offsetZ = mul16(offset, projLogic->dir.z);
 
 				s_projNextPosY = nextY;
 				s_projNextPosX -= offsetX;
 				s_projNextPosZ -= offsetZ;
 
-				logic->delta.x = s_projNextPosX - obj->posWS.x;
-				logic->delta.y = s_projNextPosY - obj->posWS.y;
-				logic->delta.z = s_projNextPosZ - obj->posWS.z;
+				projLogic->delta.x = s_projNextPosX - obj->posWS.x;
+				projLogic->delta.y = s_projNextPosY - obj->posWS.y;
+				projLogic->delta.z = s_projNextPosZ - obj->posWS.z;
 
-				if (logic->bounceCnt == -1)
+				if (projLogic->bounceCnt == -1)
 				{
 					if (s_projNextPosY < s_projSector->ceilingHeight)
 					{
@@ -1193,24 +1191,24 @@ namespace TFE_DarkForces
 						s_hitWallFlag = 1;
 						return JTRUE;
 					}
-					logic->speed = mul16(logic->speed, logic->horzBounciness);
+					projLogic->speed = mul16(projLogic->speed, projLogic->horzBounciness);
 					obj->pitch = (getAngleDifference(obj->pitch, 0) & 16383);
 					obj->yaw = (getAngleDifference(obj->yaw, wall->angle) + wall->angle) & 16383;
-					handleReflectVariation(logic, obj);
+					handleReflectVariation(projLogic, obj);
 
-					logic->prevColObj = nullptr;
-					logic->excludeObj = nullptr;
-					proj_setTransform(logic, obj->pitch, obj->yaw);
-					playSound3D_oneshot(logic->reflectSnd, obj->posWS);
+					projLogic->prevColObj = nullptr;
+					projLogic->excludeObj = nullptr;
+					proj_setTransform(projLogic, obj->pitch, obj->yaw);
+					playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
 
-					logic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
+					projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
 					obj->posWS.y = s_projNextPosY;
-					collision_moveObj(obj, logic->delta.x, logic->delta.z);
+					collision_moveObj(obj, projLogic->delta.x, projLogic->delta.z);
 					s_projSector = obj->sector;
 
-					logic->delta.x = 0;
-					logic->delta.y = 0;
-					logic->delta.z = 0;
+					projLogic->delta.x = 0;
+					projLogic->delta.y = 0;
+					projLogic->delta.z = 0;
 
 					return JFALSE;
 				}
@@ -1222,31 +1220,30 @@ namespace TFE_DarkForces
 						s_hitWallFlag = 1;
 						return JTRUE;
 					}
-					s32 count = logic->bounceCnt;
-					logic->bounceCnt--;
+					s32 count = projLogic->bounceCnt;
+					projLogic->bounceCnt--;
 					if (count)
 					{
 						vec3_fixed effectPos = { s_projNextPosX, s_projNextPosY, s_projNextPosZ };
-						spawnHitEffect(logic->reflectEffectId, s_projSector, effectPos, logic->excludeObj);
+						spawnHitEffect(projLogic->reflectEffectId, s_projSector, effectPos, projLogic->excludeObj);
 
-						SecObject* obj = logic->obj;
+						SecObject* obj = projLogic->logic.obj;
 						obj->yaw = (getAngleDifference(obj->yaw, wall->angle) + wall->angle) & 16383;
-						handleReflectVariation(logic, obj);
+						handleReflectVariation(projLogic, obj);
 
-						logic->prevColObj = nullptr;
-						logic->excludeObj = nullptr;
-						proj_setTransform(logic, obj->pitch, obj->yaw);
+						projLogic->prevColObj = nullptr;
+						projLogic->excludeObj = nullptr;
+						proj_setTransform(projLogic, obj->pitch, obj->yaw);
+						playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
 
-						playSound3D_oneshot(logic->reflectSnd, obj->posWS);
-
-						logic->flags |= 1;
+						projLogic->flags |= 1;
 						obj->posWS.y = s_projNextPosY;
-						collision_moveObj(obj, logic->delta.x, logic->delta.z);
+						collision_moveObj(obj, projLogic->delta.x, projLogic->delta.z);
 						s_projSector = obj->sector;
 
-						logic->delta.x = 0;
-						logic->delta.y = 0;
-						logic->delta.z = 0;
+						projLogic->delta.x = 0;
+						projLogic->delta.y = 0;
+						projLogic->delta.z = 0;
 						return JFALSE;
 					}
 				}
@@ -1287,12 +1284,12 @@ namespace TFE_DarkForces
 
 		if (hitFloor)
 		{
-			SecObject* obj = logic->obj;
+			SecObject* obj = projLogic->logic.obj;
 			// fraction of the path where the path hits the floor.
-			fixed16_16 u = div16(y0FloorHeight - obj->posWS.y, logic->delta.y);
-			s_projNextPosX = obj->posWS.x + mul16(logic->delta.x, u);
+			fixed16_16 u = div16(y0FloorHeight - obj->posWS.y, projLogic->delta.y);
+			s_projNextPosX = obj->posWS.x + mul16(projLogic->delta.x, u);
 			s_projNextPosY = y0FloorHeight;
-			s_projNextPosZ = obj->posWS.z + mul16(logic->delta.z, u);
+			s_projNextPosZ = obj->posWS.z + mul16(projLogic->delta.z, u);
 
 			if (s_projSector->secHeight > 0)  // Hit water.
 			{
@@ -1302,63 +1299,63 @@ namespace TFE_DarkForces
 		}
 		else if (hitCeil)
 		{
-			SecObject* obj = logic->obj;
+			SecObject* obj = projLogic->logic.obj;
 			// fraction of the path where the path hits the floor.
-			fixed16_16 u = div16(y0CeilHeight - obj->posWS.y, logic->delta.y);
-			s_projNextPosX = obj->posWS.x + mul16(logic->delta.x, u);
+			fixed16_16 u = div16(y0CeilHeight - obj->posWS.y, projLogic->delta.y);
+			s_projNextPosX = obj->posWS.x + mul16(projLogic->delta.x, u);
 			s_projNextPosY = y0CeilHeight;
-			s_projNextPosZ = obj->posWS.z + mul16(logic->delta.z, u);
+			s_projNextPosZ = obj->posWS.z + mul16(projLogic->delta.z, u);
 		}
 
 		// If the thermal detonator is hitting the ground at a fast enough speed, play the reflect sound.
-		if (logic->type == PROJ_THERMAL_DET && TFE_CoreMath::abs(logic->speed) > FIXED(7))
+		if (projLogic->type == PROJ_THERMAL_DET && TFE_CoreMath::abs(projLogic->speed) > FIXED(7))
 		{
-			playSound3D_oneshot(logic->reflectSnd, obj->posWS);
+			playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
 		}
 
-		if (logic->bounceCnt == -1)
+		if (projLogic->bounceCnt == -1)
 		{
 			obj->pitch = -obj->pitch;
-			logic->prevColObj = nullptr;
-			logic->prevObj = nullptr;
+			projLogic->prevColObj = nullptr;
+			projLogic->prevObj = nullptr;
 
 			// Some projectiles can bounce when hitting the floor or ceiling.
-			logic->speed = mul16(logic->speed, logic->vertBounciness);
-			proj_setTransform(logic, obj->pitch, obj->yaw);
+			projLogic->speed = mul16(projLogic->speed, projLogic->vertBounciness);
+			proj_setTransform(projLogic, obj->pitch, obj->yaw);
 
 			obj->posWS.y = s_projNextPosY;
-			collision_moveObj(obj, logic->delta.x, logic->delta.z);
+			collision_moveObj(obj, projLogic->delta.x, projLogic->delta.z);
 			s_projSector = obj->sector;	// eax
 
-			logic->delta.x = 0;
-			logic->delta.y = 0;
-			logic->delta.z = 0;
+			projLogic->delta.x = 0;
+			projLogic->delta.y = 0;
+			projLogic->delta.z = 0;
 			return JFALSE;
 		}
 		else if (s_projSector->flags1 & SEC_FLAGS1_MAG_SEAL)
 		{
-			s32 count = logic->bounceCnt;
-			logic->bounceCnt--;
+			s32 count = projLogic->bounceCnt;
+			projLogic->bounceCnt--;
 			if (count > 0)
 			{
 				vec3_fixed effectPos = { s_projNextPosX, s_projNextPosY, s_projNextPosZ };
-				spawnHitEffect(logic->reflectEffectId, s_projSector, effectPos, logic->excludeObj);
+				spawnHitEffect(projLogic->reflectEffectId, s_projSector, effectPos, projLogic->excludeObj);
 				// Hit the floor or ceiling simply negates the pitch to reflect.
 				obj->pitch = -obj->pitch;
-				handleReflectVariation(logic, obj);
+				handleReflectVariation(projLogic, obj);
 
-				logic->prevColObj = nullptr;
-				logic->excludeObj = nullptr;
-				proj_setTransform(logic, obj->pitch, obj->yaw);
-				playSound3D_oneshot(logic->reflectSnd, obj->posWS);
+				projLogic->prevColObj = nullptr;
+				projLogic->excludeObj = nullptr;
+				proj_setTransform(projLogic, obj->pitch, obj->yaw);
+				playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
 
 				obj->posWS.y = s_projNextPosY;
-				collision_moveObj(obj, logic->delta.x, logic->delta.z);
+				collision_moveObj(obj, projLogic->delta.x, projLogic->delta.z);
 				s_projSector = obj->sector;
 
-				logic->delta.x = 0;
-				logic->delta.y = 0;
-				logic->delta.z = 0;
+				projLogic->delta.x = 0;
+				projLogic->delta.y = 0;
+				projLogic->delta.z = 0;
 				return JFALSE;
 			}
 		}
@@ -1368,15 +1365,15 @@ namespace TFE_DarkForces
 	}
 	
 	// return JTRUE if an object is hit.
-	JBool proj_getHitObj(ProjectileLogic* logic)
+	JBool proj_getHitObj(ProjectileLogic* projLogic)
 	{
-		SecObject* obj = logic->obj;
-		if (!logic->speed)
+		SecObject* obj = projLogic->logic.obj;
+		if (!projLogic->speed)
 		{
 			return JFALSE;
 		}
 
-		const fixed16_16 move = mul16(logic->speed, s_deltaTime);
+		const fixed16_16 move = mul16(projLogic->speed, s_deltaTime);
 		CollisionInterval interval =
 		{
 			obj->posWS.x,   // x0
@@ -1386,30 +1383,30 @@ namespace TFE_DarkForces
 			obj->posWS.z,	// z0
 			s_projNextPosZ,	// z1
 			move,           // move during timestep
-			logic->dir.x,	// dirX
-			logic->dir.z	// dirZ
+			projLogic->dir.x,	// dirX
+			projLogic->dir.z	// dirZ
 		};
 
 		SecObject* hitObj = nullptr;
 		while (!hitObj && s_projIter > 0)
 		{
 			s_projIter--;
-			hitObj = collision_getObjectCollision(s_projStartSector[s_projIter], &interval, logic->prevColObj);
+			hitObj = collision_getObjectCollision(s_projStartSector[s_projIter], &interval, projLogic->prevColObj);
 		}
 		if (hitObj)
 		{
 			s_colHitObj = hitObj;
-			s_colObjAdjX = obj->posWS.x + mul16(logic->dir.x, s_colObjOverlap);
-			s_colObjAdjY = obj->posWS.y + mul16(logic->dir.y, s_colObjOverlap);
-			s_colObjAdjZ = obj->posWS.z + mul16(logic->dir.z, s_colObjOverlap);
+			s_colObjAdjX = obj->posWS.x + mul16(projLogic->dir.x, s_colObjOverlap);
+			s_colObjAdjY = obj->posWS.y + mul16(projLogic->dir.y, s_colObjOverlap);
+			s_colObjAdjZ = obj->posWS.z + mul16(projLogic->dir.z, s_colObjOverlap);
 			s_colObjSector = collision_tryMove(obj->sector, obj->posWS.x, obj->posWS.z, s_colObjAdjX, s_colObjAdjZ);
 
 			if (s_colObjSector)
 			{
 				s_colObjAdjY = min(max(s_colObjAdjY, s_colObjSector->ceilingHeight), s_colObjSector->floorHeight);
-				if (logic->type == PROJ_CONCUSSION)
+				if (projLogic->type == PROJ_CONCUSSION)
 				{
-					logic->hitEffectId = HEFFECT_CONCUSSION2;
+					projLogic->hitEffectId = HEFFECT_CONCUSSION2;
 				}
 				return JTRUE;
 			}
@@ -1418,70 +1415,70 @@ namespace TFE_DarkForces
 	}
 		
 	// Returns JTRUE if the hit was properly handled, otherwise returns JFALSE.
-	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType)
+	JBool handleProjectileHit(ProjectileLogic* projLogic, ProjectileHitType hitType)
 	{
-		SecObject* obj  = logic->obj;
+		SecObject* obj  = projLogic->logic.obj;
 		RSector* sector = obj->sector;
 		switch (hitType)
 		{
 			case PHIT_SKY:
 			{
-				stopSound(logic->flightSndId);
+				stopSound(projLogic->flightSndId);
 
 				// Delete the projectile itself.
 				allocator_addRef(s_projectiles);
-					deleteLogicAndObject((Logic*)logic);
+					deleteLogicAndObject((Logic*)projLogic);
 				allocator_release(s_projectiles);
 
-				allocator_deleteItem(s_projectiles, logic);
+				allocator_deleteItem(s_projectiles, projLogic);
 				return JTRUE;
 			} break;
 			case PHIT_SOLID:
 			{
 				// Stop the projectiles in-flight sound.
-				stopSound(logic->flightSndId);
+				stopSound(projLogic->flightSndId);
 
 				// Spawn the projectile hit effect.
-				if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (logic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
+				if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (projLogic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
 				{
-					spawnHitEffect(logic->hitEffectId, obj->sector, obj->posWS, logic->excludeObj);
+					spawnHitEffect(projLogic->hitEffectId, obj->sector, obj->posWS, projLogic->excludeObj);
 				}
 
 				// Delete the projectile itself.
 				allocator_addRef(s_projectiles);
-					deleteLogicAndObject((Logic*)logic);
+					deleteLogicAndObject((Logic*)projLogic);
 				allocator_release(s_projectiles);
-				allocator_deleteItem(s_projectiles, logic);
+				allocator_deleteItem(s_projectiles, projLogic);
 				return JTRUE;
 			} break;
 			case PHIT_OUT_OF_RANGE:
 			{
-				stopSound(logic->flightSndId);
-				if (logic->flags & PROJFLAG_EXPLODE)
+				stopSound(projLogic->flightSndId);
+				if (projLogic->flags & PROJFLAG_EXPLODE)
 				{
-					if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (logic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
+					if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (projLogic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
 					{
-						spawnHitEffect(logic->hitEffectId, sector, obj->posWS, logic->excludeObj);
+						spawnHitEffect(projLogic->hitEffectId, sector, obj->posWS, projLogic->excludeObj);
 					}
 				}
 
 				// Delete the projectile itself.
 				allocator_addRef(s_projectiles);
-					deleteLogicAndObject((Logic*)logic);
+					deleteLogicAndObject((Logic*)projLogic);
 				allocator_release(s_projectiles);
-				allocator_deleteItem(s_projectiles, logic);
+				allocator_deleteItem(s_projectiles, projLogic);
 				return JTRUE;
 			} break;
 			case PHIT_WATER:
 			{
-				stopSound(logic->flightSndId);
-				spawnHitEffect(HEFFECT_SPLASH, obj->sector, obj->posWS, logic->excludeObj);
+				stopSound(projLogic->flightSndId);
+				spawnHitEffect(HEFFECT_SPLASH, obj->sector, obj->posWS, projLogic->excludeObj);
 
 				// Delete the projectile itself.
 				allocator_addRef(s_projectiles);
-					deleteLogicAndObject((Logic*)logic);
+					deleteLogicAndObject((Logic*)projLogic);
 				allocator_release(s_projectiles);
-				allocator_deleteItem(s_projectiles, logic);
+				allocator_deleteItem(s_projectiles, projLogic);
 				return JTRUE;
 			} break;
 		}

@@ -72,7 +72,7 @@ namespace TFE_DarkForces
 	// This is because TFE doesn't use coroutine-like task functions
 	// since they don't have any practical benefit.
 	////////////////////////////////////////////////////////////////////////
-	void hitEffectLogicFunc()
+	void hitEffectLogicFunc(s32 id)
 	{
 		HitEffect* effect = (HitEffect*)allocator_getHead(s_hitEffects);
 		while (effect)

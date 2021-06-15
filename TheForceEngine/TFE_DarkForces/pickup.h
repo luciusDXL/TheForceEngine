@@ -14,13 +14,10 @@
 
 namespace TFE_DarkForces
 {
-	struct Task;
-
-	// Note that the Pickup struct mirrors the first 24 bytes of Logic {}
+	// This is a type of "Logic" and can be safety cast to Logic {}.
 	struct Pickup
 	{
-		Logic logic;
-
+		Logic logic;		// Logic header.
 		ItemId id;
 		s32 index;
 		ItemType type;

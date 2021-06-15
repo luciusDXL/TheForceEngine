@@ -34,7 +34,7 @@ namespace TFE_DarkForces
 	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, vec3_fixed pos, SecObject* excludeObj);
 
 	// Logic update function, handles the update of all projectiles.
-	void hitEffectLogicFunc();
+	void hitEffectLogicFunc(s32 id);
 
 	// Called when a specific type of hit effect has finished animating.
 	void hitEffectFinished();
