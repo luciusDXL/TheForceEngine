@@ -102,7 +102,7 @@ namespace TFE_InfSystem
 		InfLink* link;
 		AnimatedTexture* animTex;
 		Allocator* targets;
-		InfMessageType cmd;
+		MessageType cmd;
 		u32 event;
 		u32 arg0;
 		u32 arg1;
@@ -126,7 +126,7 @@ namespace TFE_InfSystem
 	{
 		RSector* sector;
 		RWall* wall;
-		InfMessageType msgType;
+		MessageType msgType;
 		u32 event;
 		u32 arg1;
 		u32 arg2;

@@ -3,6 +3,7 @@
 #include "projectile.h"
 #include <TFE_Collision/collision.h>
 #include <TFE_InfSystem/infSystem.h>
+#include <TFE_InfSystem/message.h>
 #include <TFE_Level/level.h>
 #include <TFE_Level/robject.h>
 #include <TFE_Memory/allocator.h>
@@ -12,6 +13,7 @@ using namespace TFE_Collision;
 using namespace TFE_InfSystem;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
+using namespace TFE_Message;
 using namespace TFE_Memory;
 
 namespace TFE_DarkForces
@@ -37,8 +39,11 @@ namespace TFE_DarkForces
 		SoundSourceID soundEffect;
 	};
 
-	#define MAX_SPEC_EFFECT_COUNT 5
-	#define EXPLOSION_TRIGGER_DIST FIXED(10)
+	enum HitEffectConstants
+	{
+		MAX_SPEC_EFFECT_COUNT = 5,
+		EXPLOSION_TRIGGER_DIST = FIXED(10),
+	};
 
 	static Wax* s_concussion2;
 	static SoundSourceID s_concussionExplodeSnd;
@@ -170,7 +175,7 @@ namespace TFE_DarkForces
 
 	void hitEffectWakeupFunc(SecObject* obj)
 	{
-		inf_sendObjMessage(obj, IMSG_WAKEUP, hitEffectMsgFunc);
+		message_sendToObj(obj, MSG_WAKEUP, hitEffectMsgFunc);
 	}
 
 	void hitEffectExplodeFunc(SecObject* obj)
@@ -228,7 +233,7 @@ namespace TFE_DarkForces
 			fixed16_16 force = s_curEffectData->force;
 			fixed16_16 attenForce = mul16(div16(leftOverRadius, radius), force);
 			s_infMsgArg2 = attenForce;
-			inf_sendObjMessage(obj, IMSG_EXPLOSION, hitEffectMsgFunc);
+			message_sendToObj(obj, MSG_EXPLOSION, hitEffectMsgFunc);
 		}
 	}
 }  // TFE_DarkForces

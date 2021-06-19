@@ -37,7 +37,7 @@ namespace TFE_DarkForces
 	void setupAnimationFromLogic(SpriteAnimLogic* logic, s32 animIndex, u32 firstFrame, u32 lastFrame, u32 loopCount);
 
 	// Logic update function, handles the update of all sprite animations.
-	void spriteAnimLogicFunc();
+	void spriteAnimLogicFunc(s32 id);
 	// Split out "task function" to delete an animation.
 	// Was called with taskID = 1
 	void spriteAnimDelete();

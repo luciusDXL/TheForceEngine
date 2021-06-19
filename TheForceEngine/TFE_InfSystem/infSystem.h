@@ -48,7 +48,7 @@ namespace TFE_InfSystem
 	// entity:  entity involved (such as the player) or nullptr.
 	// evt:     event(s) (see InfEventMask  in "infPublicTypes.h" such as INF_EVENT_CROSS_LINE_FRONT).
 	// msgType: message type (such as IMSG_TRIGGER).
-	void inf_wallSendMessage(RWall* wall, SecObject* entity, u32 evt, InfMessageType msgType);
+	void inf_wallSendMessage(RWall* wall, SecObject* entity, u32 evt, MessageType msgType);
 
 	// Send a message to a specific wall or line at a specific location on the wall. This is used for projectiles hitting switches.
 	// This always sends the "IMSG_TRIGGER" message.
@@ -59,16 +59,6 @@ namespace TFE_InfSystem
 	// yPos:     the y position.
 	void inf_wallSendMessageAtPos(RWall* wall, SecObject* entity, u32 evt, TFE_CoreMath::fixed16_16 paramPos, TFE_CoreMath::fixed16_16 yPos);
 	void inf_wallAndMirrorSendMessageAtPos(RWall* wall, SecObject* entity, u32 evt, TFE_CoreMath::fixed16_16 paramPos, TFE_CoreMath::fixed16_16 yPos);
-
-	// Send a message to a sector, such as entering, leaving, or "nudging".
-	// sector:  message target.
-	// entity:  entity involved (such as the player) or nullptr.
-	// evt:     event(s) (see InfEventMask in "infPublicTypes.h" such as INF_EVENT_ENTER_SECTOR).
-	// msgType: message type (such as IMSG_TRIGGER).
-	void inf_sectorSendMessage(RSector* sector, SecObject* entity, u32 evt, InfMessageType msgType);
-
-	// Send a message to a specific object.
-	void inf_sendObjMessage(SecObject* obj, InfMessageType msgType, void(*func)(void*));
 
 	// Returns JTRUE if the object is sitting on a moving floor or second height.
 	JBool inf_isOnMovingFloor(SecObject* obj, InfElevator* elev, RSector* sector);
@@ -89,6 +79,8 @@ namespace TFE_InfSystem
 
 	InfElevator* inf_allocateSpecialElevator(RSector* sector, InfSpecialElevator type);
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);
+	void inf_sendSectorMessage(RSector* sector, MessageType msgType);
+	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, MessageType msgType);
 
 	extern void* s_infMsgEntity;
 	extern void* s_infMsgTarget;

@@ -4,6 +4,7 @@
 #include "player.h"
 #include <TFE_Collision/collision.h>
 #include <TFE_InfSystem/infSystem.h>
+#include <TFE_InfSystem/message.h>
 #include <TFE_Level/robject.h>
 #include <TFE_Level/rwall.h>
 #include <TFE_Memory/allocator.h>
@@ -11,6 +12,7 @@
 using namespace TFE_InfSystem;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
+using namespace TFE_Message;
 using namespace TFE_Memory;
 using namespace TFE_Collision;
 
@@ -1037,7 +1039,7 @@ namespace TFE_DarkForces
 			if (projLogic->dmg)
 			{
 				s_infMsgEntity = projLogic;
-				inf_sendObjMessage(s_colHitObj, IMSG_DAMAGE, nullptr);
+				message_sendToObj(s_colHitObj, MSG_DAMAGE, nullptr);
 			}
 
 			if (s_hitWallFlag <= 1)	// s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW

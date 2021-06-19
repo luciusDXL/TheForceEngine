@@ -21,6 +21,7 @@
 
 //using namespace TFE_GameConstants;
 using namespace TFE_Level;
+using namespace TFE_Message;
 using namespace TFE_DarkForces;
 using namespace TFE_Memory;
 using namespace TFE_JediSound;
@@ -74,19 +75,17 @@ namespace TFE_InfSystem
 	static char s_infArg4[256];
 	static char s_infArgExtra[256];
 
-	void infElevatorMsgFunc(InfMessageType msgType);
-	void infTriggerMsgFunc(InfMessageType msgType);
-	void infTeleportMsgFunc(InfMessageType msgType);
+	void infElevatorMsgFunc(MessageType msgType);
+	void infTriggerMsgFunc(MessageType msgType);
+	void infTeleportMsgFunc(MessageType msgType);
 	
 	void deleteElevator(InfElevator* elev);
 	void deleteTrigger(InfTrigger* trigger);
 	JBool updateElevator(InfElevator* elev);
 	void elevHandleStopDelay(InfElevator* elev);
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
-	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType);
-	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, InfMessageType msgType);
 	bool inf_parseElevatorCommand(s32 argCount, KEYWORD action, Allocator* linkAlloc, bool seqEnd, InfElevator*& elev, s32& initStopIndex, InfLink*& link);
-	void inf_parseMessage(InfMessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, InfMessageType defType);
+	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, MessageType defType);
 	void inf_setWallBits(RWall* wall);
 	void inf_clearWallBits(RWall* wall);
 
@@ -602,7 +601,7 @@ namespace TFE_InfSystem
 			wallIndex = strToInt(parenOpen);
 		}
 
-		MessageAddress* msgAddr = Message::getAddress(arg);
+		MessageAddress* msgAddr = message_getAddress(arg);
 		if (msgAddr)
 		{
 			msgSector = msgAddr->sector;
@@ -718,7 +717,7 @@ namespace TFE_InfSystem
 	{
 		const char* line;
 
-		MessageAddress* msgAddr = Message::getAddress(itemName);
+		MessageAddress* msgAddr = message_getAddress(itemName);
 		RSector* sector = msgAddr->sector;
 		KEYWORD itemSubclass = getKeywordIndex(s_infArg1);
 
@@ -854,7 +853,7 @@ namespace TFE_InfSystem
 	// Return true if "SEQEND" found.
 	bool parseSectorTrigger(TFE_Parser& parser, size_t& bufferPos, s32 argCount, const char* itemName)
 	{
-		MessageAddress* msgAddr = Message::getAddress(itemName);
+		MessageAddress* msgAddr = message_getAddress(itemName);
 		RSector* sector = msgAddr->sector;
 
 		// The original code is a bit strange here.
@@ -906,7 +905,7 @@ namespace TFE_InfSystem
 				} break;
 				case KW_MESSAGE:
 				{
-					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, IMSG_DONE);
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_DONE);
 				} break;
 				case KW_EVENT_MASK:
 				{
@@ -949,7 +948,7 @@ namespace TFE_InfSystem
 	// Return true if "SEQEND" found.
 	bool parseTeleport(TFE_Parser& parser, size_t& bufferPos, const char* itemName)
 	{
-		MessageAddress* msgAddr = Message::getAddress(itemName);
+		MessageAddress* msgAddr = message_getAddress(itemName);
 		RSector* sector = msgAddr->sector;
 
 		KEYWORD type = getKeywordIndex(s_infArg1);
@@ -981,7 +980,7 @@ namespace TFE_InfSystem
 
 			if (kw == KW_TARGET)
 			{
-				msgAddr = Message::getAddress(s_infArg0);
+				msgAddr = message_getAddress(s_infArg0);
 				inf_setTeleportTarget(teleport, msgAddr->sector);
 			}
 			else if (kw == KW_MOVE)
@@ -1014,7 +1013,7 @@ namespace TFE_InfSystem
 	{
 		KEYWORD typeId = getKeywordIndex(s_infArg0);
 
-		MessageAddress* msgAddr = Message::getAddress(name);
+		MessageAddress* msgAddr = message_getAddress(name);
 		RSector* sector = msgAddr->sector;
 		RWall* wall = &sector->walls[num];
 
@@ -1142,7 +1141,7 @@ namespace TFE_InfSystem
 				} break;
 				case KW_MESSAGE:
 				{
-					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, IMSG_DONE);
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_DONE);
 				} break;
 			}  // switch (itemId)
 		}  // while (!seqEnd)
@@ -1465,15 +1464,15 @@ namespace TFE_InfSystem
 	}
 		   			   
 	// Send messages so that entities and the player can interact with the INF system.
-	// If msgType = IMSG_SET/CLEAR_BITS the msg is processed directly for this wall OR
+	// If msgType = MSG_SET/CLEAR_BITS the msg is processed directly for this wall OR
 	// this iterates through the valid links and calls their msgFunc.
-	void inf_wallSendMessage(RWall* wall, SecObject* entity, u32 evt, InfMessageType msgType)
+	void inf_wallSendMessage(RWall* wall, SecObject* entity, u32 evt, MessageType msgType)
 	{
-		if (msgType == IMSG_SET_BITS)
+		if (msgType == MSG_SET_BITS)
 		{
 			inf_setWallBits(wall);
 		}
-		else if (msgType == IMSG_CLEAR_BITS)
+		else if (msgType == MSG_CLEAR_BITS)
 		{
 			inf_clearWallBits(wall);
 		}
@@ -1536,7 +1535,7 @@ namespace TFE_InfSystem
 			}
 		}
 
-		inf_wallSendMessage(hitWall, obj, evt, IMSG_TRIGGER);
+		inf_wallSendMessage(hitWall, obj, evt, MSG_TRIGGER);
 	}
 
 	void inf_wallAndMirrorSendMessageAtPos(RWall* hitWall, SecObject* obj, u32 evt, fixed16_16 paramPos, fixed16_16 yPos)
@@ -1550,66 +1549,57 @@ namespace TFE_InfSystem
 		}
 	}
 
-	// Send messages so that entities and the player can interact with the INF system.
-	// If msgType = IMSG_SET/CLEAR_BITS, IMSG_MASTER_ON/OFF, IMSG_WAKEUP it is processed directly for this sector AND
-	// this iterates through the valid links and calls their msgFunc.
-	void inf_sectorSendMessage(RSector* sector, SecObject* entity, u32 evt, InfMessageType msgType)
-	{
-		inf_sendSectorMessageInternal(sector, msgType);
-		inf_sendLinkMessages(sector->infLink, entity, evt, msgType);
-	}
-
 	/////////////////////////////////////////////////////
 	// Internal
 	/////////////////////////////////////////////////////
-	void inf_parseMessage(InfMessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, InfMessageType defType)
+	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, MessageType defType)
 	{
 		const KEYWORD msgId = getKeywordIndex(infArg0);
 
 		switch (msgId)
 		{
 			case KW_NEXT_STOP:
-				*type = IMSG_NEXT_STOP;
+				*type = MSG_NEXT_STOP;
 				break;
 			case KW_PREV_STOP:
-				*type = IMSG_PREV_STOP;
+				*type = MSG_PREV_STOP;
 				break;
 			case KW_GOTO_STOP:
-				*type = IMSG_GOTO_STOP;
+				*type = MSG_GOTO_STOP;
 				*arg1 = strToUInt(infArg1);
 				if (evt) { *evt = INF_EVENT_NONE; }
 				break;
 			case KW_MASTER_ON:
-				*type = IMSG_MASTER_ON;
+				*type = MSG_MASTER_ON;
 				break;
 			case KW_MASTER_OFF:
-				*type = IMSG_MASTER_OFF;
+				*type = MSG_MASTER_OFF;
 				break;
 			case KW_DONE:
-				*type = IMSG_DONE;
+				*type = MSG_DONE;
 				break;
 			case KW_SET_BITS:
-				*type = IMSG_SET_BITS;
+				*type = MSG_SET_BITS;
 				*arg1 = strToUInt(infArg1);
 				*arg2 = strToUInt(infArg2);
 				if (evt) { *evt = INF_EVENT_NONE; }
 				break;
 			case KW_CLEAR_BITS:
-				*type = IMSG_CLEAR_BITS;
+				*type = MSG_CLEAR_BITS;
 				*arg1 = strToUInt(infArg1);
 				*arg2 = strToUInt(infArg2);
 				if (evt) { *evt = INF_EVENT_NONE; }
 				break;
 			case KW_COMPLETE:
-				*type = IMSG_COMPLETE;
+				*type = MSG_COMPLETE;
 				*arg1 = strToUInt(infArg1);
 				if (evt) { *evt = INF_EVENT_NONE; }
 				break;
 			case KW_LIGHTS:
-				*type = IMSG_LIGHTS;
+				*type = MSG_LIGHTS;
 				break;
 			case KW_WAKEUP:
-				*type = IMSG_WAKEUP;
+				*type = MSG_WAKEUP;
 				break;
 			default:
 				*type = defType;
@@ -1670,7 +1660,7 @@ namespace TFE_InfSystem
 				}
 				else  // Value from named sector.
 				{
-					msgAddr = Message::getAddress(s_infArg0);
+					msgAddr = message_getAddress(s_infArg0);
 					RSector* sector = msgAddr->sector;
 					stopValue = sector->floorHeight;
 				}
@@ -1744,8 +1734,8 @@ namespace TFE_InfSystem
 						stop->adjoinCmds = allocator_create(sizeof(AdjoinCmd));
 					}
 					AdjoinCmd* adjoinCmd = (AdjoinCmd*)allocator_newItem(stop->adjoinCmds);
-					MessageAddress* msgAddr0 = Message::getAddress(s_infArg1);
-					MessageAddress* msgAddr1 = Message::getAddress(s_infArg3);
+					MessageAddress* msgAddr0 = message_getAddress(s_infArg1);
+					MessageAddress* msgAddr1 = message_getAddress(s_infArg3);
 					RSector* sector0 = msgAddr0->sector;
 					RSector* sector1 = msgAddr1->sector;
 
@@ -1764,7 +1754,7 @@ namespace TFE_InfSystem
 				Stop* stop = inf_getStopByIndex(elev, stopId);
 				if (stop)
 				{
-					msgAddr = Message::getAddress(s_infArg2);
+					msgAddr = message_getAddress(s_infArg2);
 					RSector* sector = msgAddr->sector;
 					if (s_infArg1[0] == 'C' || s_infArg1[0] == 'c')
 					{
@@ -1778,7 +1768,7 @@ namespace TFE_InfSystem
 			} break;
 			case KW_SLAVE:
 			{
-				MessageAddress* msgAddr = Message::getAddress(s_infArg0);
+				MessageAddress* msgAddr = message_getAddress(s_infArg0);
 				s32 slaveValue = 0;
 				if (argCount > 2)
 				{
@@ -1807,7 +1797,7 @@ namespace TFE_InfSystem
 				msg->sector = targetSector;
 				msg->wall = targetWall;
 
-				msg->msgType = IMSG_TRIGGER;
+				msg->msgType = MSG_TRIGGER;
 				msg->event = INF_EVENT_NONE;
 				if (argCount >= 5)
 				{
@@ -1816,7 +1806,7 @@ namespace TFE_InfSystem
 
 				if (argCount > 3)
 				{
-					inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, IMSG_TRIGGER);
+					inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, MSG_TRIGGER);
 				}
 			} break;
 			case KW_EVENT_MASK:
@@ -2002,7 +1992,7 @@ namespace TFE_InfSystem
 
 	// Send messages for each link in the infLink list.
 	// This is the same code for walls and sectors.
-	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, InfMessageType msgType)
+	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, MessageType msgType)
 	{
 		if (!infLink) { return; }
 
@@ -2233,11 +2223,11 @@ namespace TFE_InfSystem
 
 					if (target->wall)
 					{
-						inf_wallSendMessage(target->wall, nullptr, trigger->event, InfMessageType(trigger->cmd));
+						inf_wallSendMessage(target->wall, nullptr, trigger->event, MessageType(trigger->cmd));
 					}
 					else if (target->sector)
 					{
-						inf_sectorSendMessage(target->sector, nullptr, trigger->event, InfMessageType(trigger->cmd));
+						message_sendToSector(target->sector, nullptr, trigger->event, MessageType(trigger->cmd));
 					}
 					else  // the target is a trigger, recursively call the msg func.
 					{
@@ -2306,7 +2296,7 @@ namespace TFE_InfSystem
 		}
 	}
 
-	void infElevatorMessageInternal(InfMessageType msgType)
+	void infElevatorMessageInternal(MessageType msgType)
 	{
 		u32 event = s_infMsgEvent;
 		InfElevator* elev = (InfElevator*)s_infMsgTarget;
@@ -2327,7 +2317,7 @@ namespace TFE_InfSystem
 		}
 
 		// Master On message.
-		if (msgType == IMSG_MASTER_ON)
+		if (msgType == MSG_MASTER_ON)
 		{
 			// Turn master on.
 			elev->updateFlags |= ELEV_MASTER_ON;
@@ -2371,11 +2361,11 @@ namespace TFE_InfSystem
 		// Other messages.
 		switch (msgType)
 		{
-			case IMSG_TRIGGER:
+			case MSG_TRIGGER:
 			{
 				inf_elevHandleTriggerMsg(elev, event);
 			} break;
-			case IMSG_NEXT_STOP:
+			case MSG_NEXT_STOP:
 			{
 				// This will not fire if the elevator is in the HOLD or delay state.
 				// This is because nextStop should already be set in that case, so firing it again
@@ -2396,7 +2386,7 @@ namespace TFE_InfSystem
 					elev->updateFlags |= ELEV_MOVING;
 				}
 			} break;
-			case IMSG_PREV_STOP:
+			case MSG_PREV_STOP:
 			{
 				// If the elevator is in the HOLD state (i.e. the next time is in the future), go ahead and move back an additional time.
 				// Why? Since nextStop is the next stop, this sets nextStop to the *current* stop.
@@ -2420,7 +2410,7 @@ namespace TFE_InfSystem
 					elev->nextTick = s_curTick;
 				}
 			} break;
-			case IMSG_GOTO_STOP:
+			case MSG_GOTO_STOP:
 			{
 				Stop* stop = inf_advanceStops(elev->stops, arg1, 0);
 				if (stop->value != *elev->value)
@@ -2450,7 +2440,7 @@ namespace TFE_InfSystem
 					}
 				}
 			} break;
-			case IMSG_REV_MOVE:
+			case MSG_REV_MOVE:
 			{
 				RSector* sector = elev->sector;
 				if (!(sector->flags1 & SEC_FLAGS1_CRUSHING))
@@ -2470,7 +2460,7 @@ namespace TFE_InfSystem
 					elev->nextTick = 0;
 				}
 			} break;
-			case IMSG_MASTER_OFF:
+			case MSG_MASTER_OFF:
 			{
 				// Disable the elevator.
 				elev->updateFlags &= ~ELEV_MASTER_ON;
@@ -2491,7 +2481,7 @@ namespace TFE_InfSystem
 					elev->updateFlags &= ~ELEV_MOVING;
 				}
 			} break;
-			case IMSG_COMPLETE:
+			case MSG_COMPLETE:
 			{
 				// Fill in the goal specified by 'arg1'
 				s_goals[arg1] = 0xffffffff;
@@ -2515,9 +2505,9 @@ namespace TFE_InfSystem
 		}
 	}
 
-	void infElevatorMsgFunc(InfMessageType msgType)
+	void infElevatorMsgFunc(MessageType msgType)
 	{
-		if (msgType == IMSG_FREE)
+		if (msgType == MSG_FREE)
 		{
 			deleteElevator((InfElevator*)s_infMsgTarget);
 			return;
@@ -2525,26 +2515,26 @@ namespace TFE_InfSystem
 		infElevatorMessageInternal(msgType);
 	}
 		
-	void infTriggerMsgFunc(InfMessageType msgType)
+	void infTriggerMsgFunc(MessageType msgType)
 	{
 		InfTrigger* trigger = (InfTrigger*)s_infMsgTarget;
 		switch (msgType)
 		{
-			case IMSG_FREE:
+			case MSG_FREE:
 			{
 				deleteTrigger(trigger);
 				// In the original code, it this was the last trigger the "task" would be deallocated.
 				// For TFE, this is just a callback so that is no longer necessary.
 			} break;
-			case IMSG_TRIGGER:
+			case MSG_TRIGGER:
 			{
 				inf_triggerHandleTriggerMsg(trigger);
 			} break;
-			case IMSG_MASTER_OFF:
+			case MSG_MASTER_OFF:
 			{
 				trigger->master = 0;
 			} break;
-			case IMSG_DONE:
+			case MSG_DONE:
 			{
 				if (trigger->type == ITRIGGER_SWITCH1)
 				{
@@ -2559,7 +2549,7 @@ namespace TFE_InfSystem
 					trigger->master = -1;
 				}
 			} break;
-			case IMSG_MASTER_ON:
+			case MSG_MASTER_ON:
 			{
 				trigger->master = -1;
 			} break;
@@ -2570,7 +2560,7 @@ namespace TFE_InfSystem
 	// One to "activate" itself to run during the next update and one
 	// to actually update all teleports. For TFE this is split into two
 	// functions - one to enable the update and then the update itself.
-	void infTeleportMsgFunc(InfMessageType msgType)
+	void infTeleportMsgFunc(MessageType msgType)
 	{
 		s_teleportUpdateActive = true;
 	}
@@ -2739,11 +2729,6 @@ namespace TFE_InfSystem
 		}
 	}
 
-	void inf_sendObjMessage(SecObject* obj, InfMessageType msgType, void(*func)(void*))
-	{
-		// TODO
-	}
-
 	// Returns JTRUE if the object is sitting on a moving floor or second height.
 	JBool inf_isOnMovingFloor(SecObject* obj, InfElevator* elev, RSector* sector)
 	{
@@ -2780,11 +2765,11 @@ namespace TFE_InfSystem
 		}
 	}
 
-	void inf_sendSectorMessageInternal(RSector* sector, InfMessageType msgType)
+	void inf_sendSectorMessage(RSector* sector, MessageType msgType)
 	{
 		switch (msgType)
 		{
-			case IMSG_WAKEUP:
+			case MSG_WAKEUP:
 			{
 				s32 objCount = sector->objectCount;
 				SecObject** objList = sector->objectList;
@@ -2796,15 +2781,15 @@ namespace TFE_InfSystem
 					{
 						if (obj->entityFlags & ETFLAG_CAN_WAKE)
 						{
-							inf_sendObjMessage(obj, IMSG_WAKEUP, nullptr);
+							message_sendToObj(obj, MSG_WAKEUP, nullptr);
 						}
 						i++;
 					}
 				}
 			}
-			// IMSG_WAKEUP drops through to IMSG_MASTER_ON/IMSG_MASTER_OFF
-			case IMSG_MASTER_ON:
-			case IMSG_MASTER_OFF:
+			// MSG_WAKEUP drops through to MSG_MASTER_ON/MSG_MASTER_OFF
+			case MSG_MASTER_ON:
+			case MSG_MASTER_OFF:
 			{
 				s32 objCount = sector->objectCount;
 				SecObject** objList = sector->objectList;
@@ -2816,13 +2801,13 @@ namespace TFE_InfSystem
 					{
 						if (obj->entityFlags & ETFLAG_CAN_DISABLE)
 						{
-							inf_sendObjMessage(obj, msgType, nullptr);
+							message_sendToObj(obj, msgType, nullptr);
 						}
 						i++;
 					}
 				}
 			} break;
-			case IMSG_SET_BITS:
+			case MSG_SET_BITS:
 			{
 				u32 flagsIndex = s_infMsgArg1;
 				u32 bits = s_infMsgArg2;
@@ -2842,7 +2827,7 @@ namespace TFE_InfSystem
 
 				sector->dirtyFlags |= SDF_SECTOR_FLAGS;
 			} break;
-			case IMSG_CLEAR_BITS:
+			case MSG_CLEAR_BITS:
 			{
 				u32 flagsIndex = s_infMsgArg1;
 				u32 bits = s_infMsgArg2;
@@ -2898,7 +2883,7 @@ namespace TFE_InfSystem
 							s_infMsgArg1 = msg->arg1;
 							s_infMsgArg2 = msg->arg2;
 							s_infMsgEvent = msg->event;
-							inf_sendSectorMessageInternal(sector, msg->msgType);
+							inf_sendSectorMessage(sector, msg->msgType);
 
 							link->msgFunc(msg->msgType);
 							allocator_release(msgList);
@@ -2909,14 +2894,14 @@ namespace TFE_InfSystem
 				}
 				else  // infLink
 				{
-					inf_sectorSendMessage(sector, nullptr, msg->event, msg->msgType);
+					message_sendToSector(sector, nullptr, msg->event, msg->msgType);
 				}
 			}
 			else  // world
 			{
 				// In the original game, this will call a specific function based on the type
-				// But the only type is IMSG_LIGHTS
-				if (msg->msgType == IMSG_LIGHTS)
+				// But the only type is MSG_LIGHTS
+				if (msg->msgType == MSG_LIGHTS)
 				{
 					inf_handleMsgLights();
 				}
@@ -3050,7 +3035,7 @@ namespace TFE_InfSystem
 				}
 			} break;
 		}
-		trigger->cmd    = IMSG_DONE;
+		trigger->cmd    = MSG_DONE;
 		trigger->event  = 0;
 		trigger->arg1   = 0;
 		trigger->u30    = 0xffffffff;

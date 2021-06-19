@@ -16,6 +16,7 @@
 #include <TFE_InfSystem/message.h>
 
 using namespace TFE_InfSystem;
+using namespace TFE_Message;
 
 namespace TFE_Level
 {
@@ -211,7 +212,7 @@ namespace TFE_Level
 			if (sscanf(line, "NAME %s", name) == 1)
 			{
 				// Add the sector "address" for later use by the INF system.
-				Message::addAddress(name, 0, 0, sector);
+				message_addAddress(name, 0, 0, sector);
 
 				// Track special elevators.
 				if (!strcasecmp(name, "complete"))
