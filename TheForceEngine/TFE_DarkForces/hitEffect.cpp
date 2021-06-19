@@ -2,7 +2,6 @@
 #include "animLogic.h"
 #include "projectile.h"
 #include <TFE_Collision/collision.h>
-#include <TFE_InfSystem/infSystem.h>
 #include <TFE_InfSystem/message.h>
 #include <TFE_Level/level.h>
 #include <TFE_Level/robject.h>
@@ -10,7 +9,6 @@
 #include <TFE_JediSound/soundSystem.h>
 
 using namespace TFE_Collision;
-using namespace TFE_InfSystem;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
 using namespace TFE_Message;
@@ -221,18 +219,18 @@ namespace TFE_DarkForces
 				setupAnimationFromLogic(logic, 0/*animIndex*/, 0/*firstFrame*/, 0xffffffff/*lastFrame*/, 1/*loopCount*/);
 				playSound3D_oneshot(s_concussionExplodeSnd, newObj->posWS);
 
-				s_infMsgArg1 = s_curEffectData->damage;
+				s_msgArg1 = s_curEffectData->damage;
 			}
 			else
 			{
 				fixed16_16 damage = s_curEffectData->damage;
 				fixed16_16 attenDmg = mul16(div16(leftOverRadius, radius), damage);
-				s_infMsgArg1 = attenDmg;
+				s_msgArg1 = attenDmg;
 			}
 
 			fixed16_16 force = s_curEffectData->force;
 			fixed16_16 attenForce = mul16(div16(leftOverRadius, radius), force);
-			s_infMsgArg2 = attenForce;
+			s_msgArg2 = attenForce;
 			message_sendToObj(obj, MSG_EXPLOSION, hitEffectMsgFunc);
 		}
 	}

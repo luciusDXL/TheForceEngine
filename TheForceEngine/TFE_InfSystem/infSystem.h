@@ -81,9 +81,4 @@ namespace TFE_InfSystem
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);
 	void inf_sendSectorMessage(RSector* sector, MessageType msgType);
 	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, MessageType msgType);
-
-	extern void* s_infMsgEntity;
-	extern void* s_infMsgTarget;
-	extern u32 s_infMsgArg1;
-	extern u32 s_infMsgArg2;
 }

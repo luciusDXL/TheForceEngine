@@ -1038,7 +1038,7 @@ namespace TFE_DarkForces
 			}
 			if (projLogic->dmg)
 			{
-				s_infMsgEntity = projLogic;
+				s_msgEntity = projLogic;
 				message_sendToObj(s_colHitObj, MSG_DAMAGE, nullptr);
 			}
 

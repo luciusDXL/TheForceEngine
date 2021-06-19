@@ -51,4 +51,11 @@ namespace TFE_Message
 
 	void message_sendToObj(SecObject* obj, MessageType msgType, MessageFunc func);
 	void message_sendToSector(RSector* sector, SecObject* entity, u32 evt, MessageType msgType);
+
+	// Optional message values.
+	extern void* s_msgEntity;
+	extern void* s_msgTarget;
+	extern u32 s_msgArg1;
+	extern u32 s_msgArg2;
+	extern u32 s_msgEvent;
 }

@@ -15,6 +15,11 @@ using namespace TFE_InfSystem;
 namespace TFE_Message
 {
 	Allocator* s_messageAddr = nullptr;
+	void* s_msgEntity;
+	void* s_msgTarget;
+	u32 s_msgArg1;
+	u32 s_msgArg2;
+	u32 s_msgEvent;
 
 	void message_free()
 	{

@@ -53,14 +53,7 @@ namespace TFE_InfSystem
 	static s32 s_triggerCount = 0;
 	static Allocator* s_infElevators;
 	static Allocator* s_infTeleports;
-
-	u32 s_infMsgArg1;
-	u32 s_infMsgArg2;
-	void* s_infMsgTarget;
-	static u32 s_infMsgEvent;
 	static bool s_teleportUpdateActive = false;
-
-	void* s_infMsgEntity;
 
 	// Pull from data...
 	static RSector* s_sectors;
@@ -1923,8 +1916,8 @@ namespace TFE_InfSystem
 	{
 		wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
 
-		u32 flagsIndex = s_infMsgArg1;
-		u32 bits = s_infMsgArg2;
+		u32 flagsIndex = s_msgArg1;
+		u32 bits = s_msgArg2;
 		if (flagsIndex == 1)
 		{
 			wall->flags1 |= bits;
@@ -1959,8 +1952,8 @@ namespace TFE_InfSystem
 	{
 		wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
 
-		u32 flagsIndex = s_infMsgArg1;
-		u32 bits = s_infMsgArg2;
+		u32 flagsIndex = s_msgArg1;
+		u32 bits = s_msgArg2;
 		if (flagsIndex == 1)
 		{
 			wall->flags1 &= ~bits;
@@ -2002,9 +1995,9 @@ namespace TFE_InfSystem
 			// Fire off the link task if the event and entity match the requirements.
 			if ((evt == INF_EVENT_NONE || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->entityFlags)) && link->msgFunc)
 			{
-				s_infMsgEntity = entity;
-				s_infMsgTarget = link->target;
-				s_infMsgEvent = evt;
+				s_msgEntity = entity;
+				s_msgTarget = link->target;
+				s_msgEvent = evt;
 
 				allocator_addRef(infLink);
 				link->msgFunc(msgType);
@@ -2213,13 +2206,13 @@ namespace TFE_InfSystem
 
 			// Trigger targets (clients).
 			TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
-			u32 event = s_infMsgEvent;
+			u32 event = s_msgEvent;
 			while (target)
 			{
 				if (target->eventMask & event)
 				{
-					s_infMsgArg1 = trigger->arg0;
-					s_infMsgArg2 = trigger->arg1;
+					s_msgArg1 = trigger->arg0;
+					s_msgArg2 = trigger->arg1;
 
 					if (target->wall)
 					{
@@ -2298,11 +2291,11 @@ namespace TFE_InfSystem
 
 	void infElevatorMessageInternal(MessageType msgType)
 	{
-		u32 event = s_infMsgEvent;
-		InfElevator* elev = (InfElevator*)s_infMsgTarget;
-		SecObject* entity = (SecObject*)s_infMsgEntity;
+		u32 event = s_msgEvent;
+		InfElevator* elev = (InfElevator*)s_msgTarget;
+		SecObject* entity = (SecObject*)s_msgEntity;
 		RSector* sector = elev->sector;
-		u32 arg1 = s_infMsgArg1;
+		u32 arg1 = s_msgArg1;
 
 		if (entity && (entity->entityFlags&ETFLAG_SMART_OBJ))
 		{
@@ -2509,7 +2502,7 @@ namespace TFE_InfSystem
 	{
 		if (msgType == MSG_FREE)
 		{
-			deleteElevator((InfElevator*)s_infMsgTarget);
+			deleteElevator((InfElevator*)s_msgTarget);
 			return;
 		}
 		infElevatorMessageInternal(msgType);
@@ -2517,7 +2510,7 @@ namespace TFE_InfSystem
 		
 	void infTriggerMsgFunc(MessageType msgType)
 	{
-		InfTrigger* trigger = (InfTrigger*)s_infMsgTarget;
+		InfTrigger* trigger = (InfTrigger*)s_msgTarget;
 		switch (msgType)
 		{
 			case MSG_FREE:
@@ -2809,8 +2802,8 @@ namespace TFE_InfSystem
 			} break;
 			case MSG_SET_BITS:
 			{
-				u32 flagsIndex = s_infMsgArg1;
-				u32 bits = s_infMsgArg2;
+				u32 flagsIndex = s_msgArg1;
+				u32 bits = s_msgArg2;
 
 				if (flagsIndex == 1)
 				{
@@ -2829,8 +2822,8 @@ namespace TFE_InfSystem
 			} break;
 			case MSG_CLEAR_BITS:
 			{
-				u32 flagsIndex = s_infMsgArg1;
-				u32 bits = s_infMsgArg2;
+				u32 flagsIndex = s_msgArg1;
+				u32 bits = s_msgArg2;
 
 				if (flagsIndex == 1)
 				{
@@ -2858,8 +2851,8 @@ namespace TFE_InfSystem
 		InfMessage* msg = (InfMessage*)allocator_getHead(msgList);
 		while (msg)
 		{
-			s_infMsgArg1 = msg->arg1;
-			s_infMsgArg2 = msg->arg2;
+			s_msgArg1 = msg->arg1;
+			s_msgArg2 = msg->arg2;
 			RWall* wall = msg->wall;
 			if (wall)
 			{
@@ -2878,11 +2871,11 @@ namespace TFE_InfSystem
 						{
 							allocator_addRef(msgList);
 
-							s_infMsgTarget = link->target;
-							s_infMsgEntity = nullptr;
-							s_infMsgArg1 = msg->arg1;
-							s_infMsgArg2 = msg->arg2;
-							s_infMsgEvent = msg->event;
+							s_msgTarget = link->target;
+							s_msgEntity = nullptr;
+							s_msgArg1 = msg->arg1;
+							s_msgArg2 = msg->arg2;
+							s_msgEvent = msg->event;
 							inf_sendSectorMessage(sector, msg->msgType);
 
 							link->msgFunc(msg->msgType);

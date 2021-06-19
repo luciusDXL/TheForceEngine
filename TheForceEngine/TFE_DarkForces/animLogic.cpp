@@ -1,10 +1,10 @@
 #include "animLogic.h"
 #include "time.h"
 #include <TFE_Memory/allocator.h>
-#include <TFE_InfSystem/infSystem.h>
+#include <TFE_InfSystem/message.h>
 
 using namespace TFE_Memory;
-using namespace TFE_InfSystem;
+using namespace TFE_Message;
 
 namespace TFE_DarkForces
 {
@@ -61,8 +61,8 @@ namespace TFE_DarkForces
 	// Was called with taskID = 1
 	void spriteAnimDelete()
 	{
-		deleteLogicAndObject((Logic*)s_infMsgTarget);
-		allocator_deleteItem(s_spriteAnimList, s_infMsgTarget);
+		deleteLogicAndObject((Logic*)s_msgTarget);
+		allocator_deleteItem(s_spriteAnimList, s_msgTarget);
 	}
 
 	Logic* obj_setSpriteAnim(SecObject* obj)
