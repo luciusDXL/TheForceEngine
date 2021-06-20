@@ -787,6 +787,9 @@
     <ClInclude Include="TFE_JediSound\soundSystem.h">
       <Filter>Source\TFE_JediSound</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\hud.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1283,6 +1286,9 @@
     </ClCompile>
     <ClCompile Include="TFE_JediSound\soundSystem.cpp">
       <Filter>Source\TFE_JediSound</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\hud.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

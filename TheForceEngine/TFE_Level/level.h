@@ -35,4 +35,5 @@ namespace TFE_Level
 
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;
+	extern RSector* s_completeSector;
 }

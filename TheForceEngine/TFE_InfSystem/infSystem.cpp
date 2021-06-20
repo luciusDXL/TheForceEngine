@@ -3,6 +3,7 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Asset/dfKeywords.h>
+#include <TFE_DarkForces/hud.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_JediSound/soundSystem.h>
 #include <TFE_Memory/allocator.h>
@@ -88,9 +89,6 @@ namespace TFE_InfSystem
 	void inf_stopHandleMessages(Stop* stop);
 	void inf_handleMsgLights();
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
-		
-	// TODO: System functions, to be connected later.
-	void sendTextMessage(s32 msgId) {}
 
 	// TODO: Game side functions
 	void game_levelComplete() {}
@@ -2234,7 +2232,7 @@ namespace TFE_InfSystem
 		// Send "TEXT" message.
 		if (trigger->textId)
 		{
-			sendTextMessage(trigger->textId);
+			hud_sendTextMessage(trigger->textId);
 		}
 
 		// Update the trigger state (including switch textures).
@@ -2331,21 +2329,21 @@ namespace TFE_InfSystem
 			if (key == KEY_RED && !s_playerInfo.itemRedKey)
 			{
 				// "You need the red key."
-				sendTextMessage(6);
+				hud_sendTextMessage(6);
 				playSound2D(s_needKeySoundId);
 				return;
 			}
 			else if (key == KEY_YELLOW && !s_playerInfo.itemYellowKey)
 			{
 				// "You need the yellow key."
-				sendTextMessage(7);
+				hud_sendTextMessage(7);
 				playSound2D(s_needKeySoundId);
 				return;
 			}
 			else if (key == KEY_BLUE && !s_playerInfo.itemBlueKey)
 			{
 				// "You need the blue key."
-				sendTextMessage(8);
+				hud_sendTextMessage(8);
 				playSound2D(s_needKeySoundId);
 				return;
 			}

@@ -33,24 +33,24 @@ namespace TFE_Level
 	static s32 s_textureCount;
 
 	static TextureData** s_textures;
-	static RSector* s_completeSector;
 	static RSector* s_bossSector;
 	static RSector* s_mohcSector;
 
 	static fixed16_16 s_parallax0;
 	static fixed16_16 s_parallax1;
-
-	static u32 s_sectorCount = 0;
-	static RSector* s_sectors = nullptr;
-	static std::vector<char> s_buffer;
-
+		
 	static JediModel** s_pods;
 	static JediWax** s_sprites;
 	static JediFrame** s_frames;
 	static s32* s_soundIds;
 
 	static char s_readBuffer[256];
+	static std::vector<char> s_buffer;
 	static const char* c_defaultGob = "DARK.GOB";
+	
+	u32 s_sectorCount = 0;
+	RSector* s_completeSector = nullptr;
+	RSector* s_sectors = nullptr;
 
 	s32 getDifficulty();
 	s32 object_parseSeq(SecObject* obj);

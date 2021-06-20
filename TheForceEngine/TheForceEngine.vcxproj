@@ -267,6 +267,7 @@
     <ClInclude Include="TFE_Collision\collision.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
     <ClInclude Include="TFE_DarkForces\hitEffect.h" />
+    <ClInclude Include="TFE_DarkForces\hud.h" />
     <ClInclude Include="TFE_DarkForces\itemId.h" />
     <ClInclude Include="TFE_DarkForces\logic.h" />
     <ClInclude Include="TFE_DarkForces\pickup.h" />
@@ -467,6 +468,7 @@
     <ClCompile Include="TFE_Collision\collision.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\hitEffect.cpp" />
+    <ClCompile Include="TFE_DarkForces\hud.cpp" />
     <ClCompile Include="TFE_DarkForces\logic.cpp" />
     <ClCompile Include="TFE_DarkForces\pickup.cpp" />
     <ClCompile Include="TFE_DarkForces\player.cpp" />

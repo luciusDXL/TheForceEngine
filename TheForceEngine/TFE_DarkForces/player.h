@@ -15,35 +15,35 @@ namespace TFE_DarkForces
 	{
 		// Items
 		//   Weapons
-		s32 itemRifle;
-		s32 itemAutogun;
-		s32 itemMortar;
-		s32 itemFusion;
-		s32 itemConcussion;
-		s32 itemCannon;
+		JBool itemRifle;
+		JBool itemAutogun;
+		JBool itemMortar;
+		JBool itemFusion;
+		JBool itemConcussion;
+		JBool itemCannon;
 		//   Keys
-		s32 itemRedKey;
-		s32 itemYellowKey;
-		s32 itemBlueKey;
-		s32 itemGoggles;
-		s32 itemCleats;
-		s32 itemMask;
+		JBool itemRedKey;
+		JBool itemYellowKey;
+		JBool itemBlueKey;
+		JBool itemGoggles;
+		JBool itemCleats;
+		JBool itemMask;
 		//   Inventory
-		s32 itemPlans;
-		s32 itemPhrik;
-		s32 itemDatatape;
-		s32 itemUnkown;
-		s32 itemNava;
-		s32 itemDtWeapon;
-		s32 itemCode1;
-		s32 itemCode2;
-		s32 itemCode3;
-		s32 itemCode4;
-		s32 itemCode5;
-		s32 itemCode6;
-		s32 itemCode7;
-		s32 itemCode8;
-		s32 itemCode9;
+		JBool itemPlans;
+		JBool itemPhrik;
+		JBool itemDatatape;
+		JBool itemUnkown;
+		JBool itemNava;
+		JBool itemDtWeapon;
+		JBool itemCode1;
+		JBool itemCode2;
+		JBool itemCode3;
+		JBool itemCode4;
+		JBool itemCode5;
+		JBool itemCode6;
+		JBool itemCode7;
+		JBool itemCode8;
+		JBool itemCode9;
 		//   Ammo
 		s32 ammoEnergy;
 		s32 ammoPower;
@@ -56,10 +56,22 @@ namespace TFE_DarkForces
 		s32 stateUnknown;
 		s32 shields;
 		s32 health;
+		s32 showHit;
+		//   Weapon
+		s32 currentWeapon;
 	};
 
 	extern PlayerInfo s_playerInfo;
 	extern fixed16_16 s_energy;
+	extern s32 s_lifeCount;
+	extern JBool s_invincibility;
+	extern JBool s_wearingCleats;
+	extern JBool s_hasPlans;
+	extern JBool s_hasPhrik;
+	extern JBool s_hasNava;
+	extern JBool s_hasDatatape;
+	extern JBool s_hasDtWeapon;
+	extern JBool s_hasStolenInventory;
 	// Eye parameters
 	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.
 	extern angle14_32 s_pitch, s_yaw, s_roll;
