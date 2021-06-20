@@ -59,12 +59,12 @@ namespace TFE_DarkForces
 	enum ItemType
 	{
 		ITYPE_NONE     = 0,		
-		ITYPE_INV_ITEM = 1, // Non-usable Inventory Items
-		ITYPE_WEAPON   = 2, // Weapons
-		ITYPE_AMMO     = 4, // Pickups that refill ammo, health, shields, etc.
-		ITYPE_KEY_ITEM = 8, // Keys and usable inventory items.
-		ITYPE_UNKNOWN = 16, // Unknown type, not set at load-time.
-		ITYPE_POWERUP = 32, // Powerups & Extra lives.
-		ITYPE_SPECIAL = 64, // Special - only a single item fits in this type (ITEM_PILE).
+		ITYPE_OBJECTIVE= 1,  // Mission objective item.
+		ITYPE_WEAPON   = 2,  // Weapons
+		ITYPE_AMMO     = 4,  // Pickups that refill ammo, health, shields, etc.
+		ITYPE_KEY_ITEM = 8,  // Keys and usable inventory items.
+		ITYPE_INV_ITEM = 16, // Non-usable Inventory Items
+		ITYPE_POWERUP  = 32, // Powerups & Extra lives.
+		ITYPE_SPECIAL  = 64, // Special - only a single item fits in this type (ITEM_PILE).
 	};
 }  // TFE_DarkForces

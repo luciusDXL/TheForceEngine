@@ -90,7 +90,7 @@ namespace TFE_DarkForces
 			// MISSION ITEMS
 			case ITEM_PLANS:
 			{
-				pickup->type = ITYPE_INV_ITEM;
+				pickup->type = ITYPE_OBJECTIVE;
 				pickup->item = &s_playerInfo.itemPlans;
 				pickup->msgId[0] = 400;
 
@@ -98,7 +98,7 @@ namespace TFE_DarkForces
 			} break;
 			case ITEM_PHRIK:
 			{
-				pickup->type = ITYPE_INV_ITEM;
+				pickup->type = ITYPE_OBJECTIVE;
 				pickup->item = &s_playerInfo.itemPhrik;
 				pickup->msgId[0] = 401;
 
@@ -106,7 +106,7 @@ namespace TFE_DarkForces
 			} break;
 			case ITEM_NAVA:
 			{
-				pickup->type = ITYPE_INV_ITEM;
+				pickup->type = ITYPE_OBJECTIVE;
 				pickup->item = &s_playerInfo.itemNava;
 				pickup->msgId[0] = 402;
 
@@ -114,7 +114,7 @@ namespace TFE_DarkForces
 			} break;
 			case ITEM_DT_WEAPON:
 			{
-				pickup->type = ITYPE_INV_ITEM;
+				pickup->type = ITYPE_OBJECTIVE;
 				pickup->item = &s_playerInfo.itemDtWeapon;
 				pickup->msgId[0] = 405;
 
@@ -122,7 +122,7 @@ namespace TFE_DarkForces
 			} break;
 			case ITEM_DATATAPE:
 			{
-				pickup->type = ITYPE_INV_ITEM;
+				pickup->type = ITYPE_OBJECTIVE;
 				pickup->item = &s_playerInfo.itemDatatape;
 				pickup->msgId[0] = 406;
 
