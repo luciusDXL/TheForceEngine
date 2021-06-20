@@ -14,6 +14,7 @@ namespace TFE_DarkForces
 	JBool s_hasDatatape   = JFALSE;
 	JBool s_hasDtWeapon   = JFALSE;
 	JBool s_hasStolenInventory = JFALSE;
+	JBool s_goals[16] = { 0 };
 
 	SecObject* s_playerObject = nullptr;
 	SecObject* s_playerEye = nullptr;

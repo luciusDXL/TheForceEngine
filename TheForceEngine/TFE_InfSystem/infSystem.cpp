@@ -42,10 +42,7 @@ namespace TFE_InfSystem
 	static SoundSourceID s_moveFloorSound1 = NULL_SOUND;
 	static SoundSourceID s_moveFloorSound2 = NULL_SOUND;
 	static SoundSourceID s_doorSound = NULL_SOUND;
-
-	// The size of the goals array is arbitrary, I don't know the largest possible size yet.
-	static s32 s_goals[16] = { 0 };
-
+		
 	// System -- TODO
 	static SoundSourceID s_needKeySoundId = NULL_SOUND;	// TODO
 	static SoundSourceID s_switchDefaultSndId = NULL_SOUND;	// TODO
@@ -885,7 +882,7 @@ namespace TFE_InfSystem
 				} break;
 				case KW_MASTER:
 				{
-					trigger->master = 0;
+					trigger->master = JFALSE;
 				} break;
 				case KW_TEXT:
 				{
@@ -1095,7 +1092,7 @@ namespace TFE_InfSystem
 				} break;
 				case KW_MASTER:
 				{
-					trigger->master = 0;
+					trigger->master = JFALSE;
 				} break;
 				case KW_TEXT:
 				{
@@ -2105,7 +2102,7 @@ namespace TFE_InfSystem
 			newValue = *elev->value;
 		}
 
-		// Returns -1 if the elevator has reached the next stop, otherwise returns 0.
+		// Returns JTRUE if the elevator has reached the next stop, otherwise returns JFALSE.
 		return (v1 == newValue && elev->nextStop) ? JTRUE : JFALSE;
 	}
 
@@ -2195,7 +2192,7 @@ namespace TFE_InfSystem
 		}
 	}
 
-	void inf_triggerHandleTriggerMsg(InfTrigger* trigger)
+	void inf_handleTriggerMsg(InfTrigger* trigger)
 	{
 		if (trigger->master)
 		{
@@ -2214,11 +2211,11 @@ namespace TFE_InfSystem
 
 					if (target->wall)
 					{
-						inf_wallSendMessage(target->wall, nullptr, trigger->event, MessageType(trigger->cmd));
+						inf_wallSendMessage(target->wall, nullptr, trigger->event, trigger->cmd);
 					}
 					else if (target->sector)
 					{
-						message_sendToSector(target->sector, nullptr, trigger->event, MessageType(trigger->cmd));
+						message_sendToSector(target->sector, nullptr, trigger->event, trigger->cmd);
 					}
 					else  // the target is a trigger, recursively call the msg func.
 					{
@@ -2266,7 +2263,7 @@ namespace TFE_InfSystem
 					s32 state = trigger->state;
 					trigger->tex = animTex->frameList[state];
 					// Single can only be triggered once.
-					trigger->master = 0;
+					trigger->master = JFALSE;
 				}
 			} break;
 			case ITRIGGER_SWITCH1:
@@ -2282,7 +2279,7 @@ namespace TFE_InfSystem
 					trigger->tex = animTex->frameList[state];
 				}
 				// Switch1 can only be triggered once until it recieves the "DONE" message.
-				trigger->master = 0;
+				trigger->master = JFALSE;
 			} break;
 		}
 	}
@@ -2475,7 +2472,7 @@ namespace TFE_InfSystem
 			case MSG_COMPLETE:
 			{
 				// Fill in the goal specified by 'arg1'
-				s_goals[arg1] = 0xffffffff;
+				s_goals[arg1] = JTRUE;
 				// Move the elevator to the stop specified by 'arg1' if it is NOT holding.
 				if (elev->nextTick < s_curTick)
 				{
@@ -2519,30 +2516,29 @@ namespace TFE_InfSystem
 			} break;
 			case MSG_TRIGGER:
 			{
-				inf_triggerHandleTriggerMsg(trigger);
+				inf_handleTriggerMsg(trigger);
 			} break;
 			case MSG_MASTER_OFF:
 			{
-				trigger->master = 0;
+				trigger->master = JFALSE;
 			} break;
 			case MSG_DONE:
 			{
 				if (trigger->type == ITRIGGER_SWITCH1)
 				{
 					AnimatedTexture* animTex = trigger->animTex;
-					// If the trigger is still in its original state, nothing to do.
 					if (animTex)
 					{
 						trigger->state = 0;
 						trigger->tex = animTex->frameList[0];
 					}
 					// reactive the trigger.
-					trigger->master = -1;
+					trigger->master = JTRUE;
 				}
 			} break;
 			case MSG_MASTER_ON:
 			{
-				trigger->master = -1;
+				trigger->master = JTRUE;
 			} break;
 		}
 	}
@@ -2731,12 +2727,12 @@ namespace TFE_InfSystem
 		return JFALSE;
 	}
 
-	void inf_getMovingElevatorVelocity(InfElevator* elev, vec3_fixed* vel, fixed16_16* speed)
+	void inf_getMovingElevatorVelocity(InfElevator* elev, vec3_fixed* vel, fixed16_16* _speed)
 	{
 		vel->x = 0;
 		vel->y = 0;
 		vel->z = 0;
-		*speed = 0;
+		*_speed = 0;
 
 		if (elev->updateFlags & ELEV_MOVING)
 		{
@@ -3029,9 +3025,9 @@ namespace TFE_InfSystem
 		trigger->cmd    = MSG_DONE;
 		trigger->event  = 0;
 		trigger->arg1   = 0;
-		trigger->u30    = 0xffffffff;
+		trigger->u30    = JTRUE;
 		trigger->u34    = 21;
-		trigger->master = 0xffffffff;
+		trigger->master = JTRUE;
 		trigger->state  = 0;
 		trigger->u48    = nullptr;
 		trigger->textId = 0;

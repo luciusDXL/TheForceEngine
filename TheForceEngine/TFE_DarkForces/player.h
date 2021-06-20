@@ -72,6 +72,7 @@ namespace TFE_DarkForces
 	extern JBool s_hasDatatape;
 	extern JBool s_hasDtWeapon;
 	extern JBool s_hasStolenInventory;
+	extern JBool s_goals[];
 	// Eye parameters
 	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.
 	extern angle14_32 s_pitch, s_yaw, s_roll;

@@ -261,7 +261,7 @@ namespace TFE_DarkForces
 
 			if (s_completeSector)
 			{
-				message_sendToSector(s_completeSector, 0, 0, MSG_TRIGGER);
+				message_sendToSector(s_completeSector, nullptr, 0, MSG_TRIGGER);
 			}
 		}
 

@@ -112,9 +112,9 @@ namespace TFE_InfSystem
 		s32 u28;
 		s32 u2c;
 
-		u32 u30;
+		JBool u30;
 		s32 u34;
-		s32 master;
+		JBool master;
 		TextureData* tex;
 		SoundSourceID soundId;
 		s32 state;
