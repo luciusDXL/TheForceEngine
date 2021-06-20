@@ -228,7 +228,7 @@ namespace TFE_DarkForces
 					if (s_playerInfo.health < 100 || s_playerInfo.shields < 200)
 					{
 						pickupRevive();
-						// This fixes a bug in pickupRevive().
+						// The function sets shields to 100, so set it to the proper value here.
 						s_playerInfo.shields = 200;
 					}
 					else
@@ -681,6 +681,16 @@ namespace TFE_DarkForces
 		return (Logic*)pickup;
 	}
 
+	void pickupRevive()
+	{
+		// pickupRevive() is called when the player respawns, which is why it sets 100 for shields here.
+		// In the case of picking up the item, the value is then set to 200 after the function call.
+		s_playerInfo.shields = 100;
+		s_playerInfo.health = 100;
+		s_playerInfo.showHit = 0;
+		s_pickupFlags = 0;
+	}
+
 	//////////////////////////////////////////////////////////////
 	// Internal Implementation
 	//////////////////////////////////////////////////////////////
@@ -725,15 +735,7 @@ namespace TFE_DarkForces
 		s_superchargeTask = createTask(superchargeTaskFunc);
 		*/
 	}
-
-	void pickupRevive()
-	{
-		s_playerInfo.shields = 100;	// This is a bug in the original code, it is fixed after the function call...
-		s_playerInfo.health = 100;
-		s_playerInfo.showHit = 0;
-		s_pickupFlags = 0;
-	}
-				
+						
 	void pickupInventory()
 	{
 		// Get the size of the PlayerInfo structure up to but not including s_playerInfo.stateUnknown.
