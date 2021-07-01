@@ -365,6 +365,7 @@
     <ClInclude Include="TFE_JediRenderer\rwall.h" />
     <ClInclude Include="TFE_JediSound\soundSystem.h" />
     <ClInclude Include="TFE_JediTask\task.h" />
+    <ClInclude Include="TFE_JediTask\taskMacros.h" />
     <ClInclude Include="TFE_Level\core_math.h" />
     <ClInclude Include="TFE_Level\fixedPoint.h" />
     <ClInclude Include="TFE_Level\level.h" />

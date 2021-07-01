@@ -799,6 +799,9 @@
     <ClInclude Include="TFE_Memory\chunkedArray.h">
       <Filter>Source\TFE_Memory</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_JediTask\taskMacros.h">
+      <Filter>Source\TFE_JediTask</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

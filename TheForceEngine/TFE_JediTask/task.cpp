@@ -37,12 +37,7 @@ namespace TFE_Task
 	Task* s_frameTasks[MAX_ACTIVE_TASKS];
 	s32 s_frameTaskCount = 0;
 	s32 s_frameTaskIndex = 0;
-
-	s32 ctxGetState();
-	void ctxAllocate(u32 size);
-	void* ctxGet();
-	void end();
-
+	
 	Task* createTask(TaskFunc func)
 	{
 		if (!s_tasks)
@@ -146,42 +141,54 @@ namespace TFE_Task
 		assert(task->func);
 		task->func(id);
 	}
-
-	void addCurTaskToActive()
+		
+	void addTaskToActive(Task* task)
 	{
-		if (s_curTask->activeIndex < 0)
+		if (task->activeIndex < 0)
 		{
-			s_curTask->activeIndex = s_activeCount;
-			s_activeTasks[s_activeCount++] = s_curTask;
+			task->activeIndex = s_activeCount;
+			s_activeTasks[s_activeCount++] = task;
 		}
 	}
 
-	void loop(TickSigned delay)
+	void task_makeActive(Task* task)
 	{
-		s_curTask->delay = delay < 0 ? delay : intToFixed16(delay) / TICKS_PER_SECOND;
+		addTaskToActive(task);
+		task->delay = 0;
+	}
+
+	void itask_loop(s32 id)
+	{
+		// if -1 is passed in, then we break out of the loop and end the task.
+		if (id < 0)
+		{
+			itask_end(id);
+			return;
+		}
+		s_curTask->delay = 0;
 		s_curContext->state = 0;
 
 		// If we need to loop and this task isn't in the active list, it will need to get added or it will never get called again...
-		addCurTaskToActive();
+		addTaskToActive(s_curTask);
 		// Run the next task.
-		runNextTask(0);
+		runNextTask(id);
 	}
 
-	void end()
+	void itask_end(s32 id)
 	{
 		freeTask(s_curTask);
-		runNextTask(0);
+		runNextTask(id);
 	}
 
-	void yield(TickSigned delay, s32 state)
+	void itask_yield(TickSigned delay, s32 state, s32 id)
 	{
 		s_curTask->delay = delay < 0 ? delay : intToFixed16(delay) / TICKS_PER_SECOND;
 		s_curContext->state = state;
 
 		// If we need to loop and this task isn't in the active list, it will need to get added or it will never get called again...
-		addCurTaskToActive();
+		addTaskToActive(s_curTask);
 		// Run the next task.
-		runNextTask(0);
+		runNextTask(id);
 	}
 		
 	void runTasks(fixed16_16 dt)
@@ -233,38 +240,5 @@ namespace TFE_Task
 	void* ctxGet()
 	{
 		return s_curContext->ctx;
-	}
-
-	void testFunc(s32 id)
-	{
-		// First define the local context structure.
-		struct LocalContext
-		{
-			s32 i;
-		};
-
-		// Then use TASK_BEGIN_CTX instead of TASK_BEGIN to allocate.
-		task_begin_ctx;
-
-		// some code ...
-		task_yield(4664);
-		id += 3;
-
-		for (taskCtx->i = 0; taskCtx->i < 4; taskCtx->i++)
-		{
-			task_yield(87);
-			id *= 2;
-			task_yield(87);
-			id -= taskCtx->i;
-		}
-
-		task_end;
-	}
-
-	void test()
-	{
-		Task* testTask = createTask(testFunc);
-		runTask(testTask, 3);
-		freeTask(testTask);
 	}
 }
