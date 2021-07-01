@@ -3,17 +3,14 @@
 namespace TFE_DarkForces
 {
 	PlayerInfo s_playerInfo = { 0 };
+	GoalItems s_goalItems   = { 0 };
 	fixed16_16 s_energy = 2 * ONE_16;
 	s32 s_lifeCount;
 
 	JBool s_invincibility = JFALSE;
 	JBool s_wearingCleats = JFALSE;
-	JBool s_hasPlans      = JFALSE;
-	JBool s_hasPhrik      = JFALSE;
-	JBool s_hasNava       = JFALSE;
-	JBool s_hasDatatape   = JFALSE;
-	JBool s_hasDtWeapon   = JFALSE;
-	JBool s_hasStolenInventory = JFALSE;
+	JBool s_superCharge   = JFALSE;
+	JBool s_superChargeHud= JFALSE;
 	JBool s_goals[16] = { 0 };
 
 	SecObject* s_playerObject = nullptr;

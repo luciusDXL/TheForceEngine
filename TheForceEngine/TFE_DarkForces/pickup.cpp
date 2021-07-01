@@ -186,23 +186,23 @@ namespace TFE_DarkForces
 			{
 				case ITEM_PLANS:
 				{
-					s_hasPlans = JTRUE;
+					s_goalItems.plans = JTRUE;
 				} break;
 				case ITEM_PHRIK:
 				{
-					s_hasPhrik = JTRUE;
+					s_goalItems.phrik = JTRUE;
 				} break;
 				case ITEM_NAVA:
 				{
-					s_hasNava = JTRUE;
+					s_goalItems.nava = JTRUE;
 				} break;
 				case ITEM_DT_WEAPON:
 				{
-					s_hasDatatape = JTRUE;
+					s_goalItems.dtWeapon = JTRUE;
 				} break;
 				case ITEM_DATATAPE:
 				{
-					s_hasDtWeapon = JTRUE;
+					s_goalItems.datatape = JTRUE;
 				} break;
 			}
 		}
@@ -257,7 +257,7 @@ namespace TFE_DarkForces
 		{
 			hud_sendTextMessage(312);
 			pickupInventory();
-			s_hasStolenInventory = JTRUE;
+			s_goalItems.stolenInv = JTRUE;
 
 			if (s_completeSector)
 			{
@@ -707,6 +707,56 @@ namespace TFE_DarkForces
 		}
 		return newValue;
 	}
+
+	void wait(u32 ticks)
+	{
+		// TODO: Task wait function - waits for taskID == 0 && delay in 'ticks' to elapse.
+	}
+
+	static SoundSourceID s_invCountdownSound = 0;
+	static SoundSourceID s_superchargeCountdownSound = 0;
+	
+	void invincibilityTaskFunc()
+	{
+		wait(6554);	// ~45 seconds.
+
+		for (s32 i = 4; i >= 0; i--)
+		{
+			playSound2D(s_invCountdownSound);
+			s_playerInfo.shields = 200;
+			wait(87);	// 0.6 seconds.
+
+			s_playerInfo.shields = 0xffffffff;
+			wait(87);	// 0.6 seconds.
+		}
+		s_playerInfo.shields = 200;
+		s_invincibility = 0;
+		// s_invTask = nullptr;
+	}
+
+	void superchargeTaskFunc()
+	{
+		s_superChargeHud = JTRUE;
+		s_superCharge = JTRUE;
+
+		// This causes the task to be suspended for 45 seconds - which is the time the supercharge is active
+		// without the running out warning.
+		wait(6554);	// ~45 seconds.
+
+		for (s32 i = 4; i >= 0; i--)
+		{
+			playSound2D(s_superchargeCountdownSound);
+			s_superChargeHud = JFALSE;
+			wait(87);	// 0.6 seconds.
+
+			s_superChargeHud = JTRUE;
+			wait(87);	// 0.6 seconds.
+		}
+		s_superCharge = JFALSE;
+		s_superChargeHud = JFALSE;
+		// s_superchargeTask = nullptr;
+		// func_1ed368();
+	}
 		
 	void pickupInvincibility()
 	{
@@ -753,22 +803,20 @@ namespace TFE_DarkForces
 		}
 
 		// Clear out the nava card item since it is one of the current objectives.
-		s_playerInfo.itemNava = 0;
-		/* TODO
-		if (s_2824d8 != s_2824d4)
+		s_playerInfo.itemNava = JFALSE;
+		if (s_playerInfo.index1 != s_playerInfo.index0)
 		{
 			if (s_282acc)
 			{
-				s_msgArg1 = s_2824d8;
-				runTask(s_282acc, 2);
-				s_2824d8 = max(s_2824d4, s_2824d8);
+				s_msgArg1 = s_playerInfo.index1;
+				// runTask(s_282acc, 2);
+				s_playerInfo.index1 = max(s_playerInfo.index0, s_playerInfo.index1);
 			}
 			else
 			{
-				s_2824dc = s_2824d8;
+				s_playerInfo.index2 = s_playerInfo.index1;
 			}
 		}
-		*/
 
 		// Free saved inventory.
 		free(s_playerInvSaved);

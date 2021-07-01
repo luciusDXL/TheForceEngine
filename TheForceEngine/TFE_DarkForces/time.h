@@ -10,6 +10,7 @@
 #include <TFE_Level/robject.h>
 
 typedef u32 Tick;
+typedef s32 TickSigned;
 
 namespace TFE_DarkForces
 {

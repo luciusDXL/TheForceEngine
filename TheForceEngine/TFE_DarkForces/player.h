@@ -59,19 +59,31 @@ namespace TFE_DarkForces
 		s32 showHit;
 		//   Weapon
 		s32 currentWeapon;
+		//   Other
+		s32 index0;
+		s32 index1;
+		s32 index2;
+	};
+
+	struct GoalItems
+	{
+		JBool plans;	// Death Star plans
+		JBool phrik;	// Phrik metal sample
+		JBool nava;		// Nava card in Nar Shadaa
+		JBool nava2;	// Nava card in Jaba's ship.
+		JBool datatape;	// Datatapes from Imperial City.
+		JBool dtWeapon;	// Dark Trooper Weapon
+		JBool stolenInv;// Stolen inventory
 	};
 
 	extern PlayerInfo s_playerInfo;
+	extern GoalItems s_goalItems;
 	extern fixed16_16 s_energy;
 	extern s32 s_lifeCount;
 	extern JBool s_invincibility;
 	extern JBool s_wearingCleats;
-	extern JBool s_hasPlans;
-	extern JBool s_hasPhrik;
-	extern JBool s_hasNava;
-	extern JBool s_hasDatatape;
-	extern JBool s_hasDtWeapon;
-	extern JBool s_hasStolenInventory;
+	extern JBool s_superCharge;
+	extern JBool s_superChargeHud;
 	extern JBool s_goals[];
 	// Eye parameters
 	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.

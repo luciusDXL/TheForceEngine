@@ -176,6 +176,9 @@
     <Filter Include="Source\TFE_JediSound">
       <UniqueIdentifier>{c643a23a-05c5-404b-bd67-ec6c5495c6b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_JediTask">
+      <UniqueIdentifier>{4477739f-b976-4111-af64-ad4146f94f88}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -790,6 +793,12 @@
     <ClInclude Include="TFE_DarkForces\hud.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_JediTask\task.h">
+      <Filter>Source\TFE_JediTask</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Memory\chunkedArray.h">
+      <Filter>Source\TFE_Memory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1289,6 +1298,12 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\hud.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediTask\task.cpp">
+      <Filter>Source\TFE_JediTask</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Memory\chunkedArray.cpp">
+      <Filter>Source\TFE_Memory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

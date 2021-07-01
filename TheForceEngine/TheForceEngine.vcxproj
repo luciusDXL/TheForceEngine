@@ -144,6 +144,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;WIN32_OPENGL;__WINDOWS_MM__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -363,6 +364,7 @@
     <ClInclude Include="TFE_JediRenderer\rtexture.h" />
     <ClInclude Include="TFE_JediRenderer\rwall.h" />
     <ClInclude Include="TFE_JediSound\soundSystem.h" />
+    <ClInclude Include="TFE_JediTask\task.h" />
     <ClInclude Include="TFE_Level\core_math.h" />
     <ClInclude Include="TFE_Level\fixedPoint.h" />
     <ClInclude Include="TFE_Level\level.h" />
@@ -372,6 +374,7 @@
     <ClInclude Include="TFE_Level\rwall.h" />
     <ClInclude Include="TFE_LogicSystem\logicSystem.h" />
     <ClInclude Include="TFE_Memory\allocator.h" />
+    <ClInclude Include="TFE_Memory\chunkedArray.h" />
     <ClInclude Include="TFE_Polygon\clipper.hpp" />
     <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
     <ClInclude Include="TFE_Polygon\polygon.h" />
@@ -546,6 +549,7 @@
     <ClCompile Include="TFE_JediRenderer\rsector.cpp" />
     <ClCompile Include="TFE_JediRenderer\rtexture.cpp" />
     <ClCompile Include="TFE_JediSound\soundSystem.cpp" />
+    <ClCompile Include="TFE_JediTask\task.cpp" />
     <ClCompile Include="TFE_Level\core_math.cpp" />
     <ClCompile Include="TFE_Level\level.cpp" />
     <ClCompile Include="TFE_Level\robject.cpp" />
@@ -554,6 +558,7 @@
     <ClCompile Include="TFE_Level\rwall.cpp" />
     <ClCompile Include="TFE_LogicSystem\logicSystem.cpp" />
     <ClCompile Include="TFE_Memory\allocator.cpp" />
+    <ClCompile Include="TFE_Memory\chunkedArray.cpp" />
     <ClCompile Include="TFE_Polygon\clipper.cpp" />
     <ClCompile Include="TFE_Polygon\polygon.cpp" />
     <ClCompile Include="TFE_PostProcess\blit.cpp" />
