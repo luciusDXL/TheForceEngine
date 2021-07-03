@@ -99,9 +99,6 @@ namespace TFE_DarkForces
 	// Create a new projectile.
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj);
 
-	// Logic update function, handles the update of all projectiles.
-	void projectileLogicFunc(s32 id);
-
 	// Trigger a landmine.
 	void triggerLandMine(ProjectileLogic* logic, Tick delay);
 }  // namespace TFE_DarkForces

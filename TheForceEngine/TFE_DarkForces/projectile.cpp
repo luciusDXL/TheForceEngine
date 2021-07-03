@@ -5,16 +5,18 @@
 #include <TFE_Collision/collision.h>
 #include <TFE_InfSystem/infSystem.h>
 #include <TFE_InfSystem/message.h>
+#include <TFE_JediTask/task.h>
 #include <TFE_Level/robject.h>
 #include <TFE_Level/rwall.h>
 #include <TFE_Memory/allocator.h>
 
+using namespace TFE_Collision;
 using namespace TFE_InfSystem;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
-using namespace TFE_Message;
 using namespace TFE_Memory;
-using namespace TFE_Collision;
+using namespace TFE_Message;
+using namespace TFE_Task;
 
 namespace TFE_DarkForces
 {
@@ -65,6 +67,7 @@ namespace TFE_DarkForces
 
 	static RSector*   s_projStartSector[16];
 	static RSector*   s_projPath[16];
+	static RSector*   s_projSector;
 	static s32        s_projIter;
 	static fixed16_16 s_projNextPosX;
 	static fixed16_16 s_projNextPosY;
@@ -72,14 +75,16 @@ namespace TFE_DarkForces
 	static JBool      s_hitWater;
 	static RWall*     s_hitWall;
 	static u32        s_hitWallFlag;
-	static RSector*   s_projSector;
-
+	
 	// Projectile specific collisions
 	static RSector*   s_colObjSector;
 	static SecObject* s_colHitObj;
 	static fixed16_16 s_colObjAdjX;
 	static fixed16_16 s_colObjAdjY;
 	static fixed16_16 s_colObjAdjZ;
+
+	// Task
+	static Task* s_projectileTask = nullptr;
 
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
@@ -122,7 +127,7 @@ namespace TFE_DarkForces
 		projLogic->vel.z   = 0;
 		projLogic->minDmg  = 0;
 
-		obj_addLogic(projObj, (Logic*)projLogic, projectileLogicFunc, projectileLogicCleanupFunc);
+		obj_addLogic(projObj, (Logic*)projLogic, s_projectileTask, projectileLogicCleanupFunc);
 		
 		switch (type)
 		{
@@ -626,6 +631,7 @@ namespace TFE_DarkForces
 		projObj->posWS.y = y;
 		projObj->posWS.z = z;
 		sector_addObject(sector, projObj);
+		task_makeActive(s_projectileTask);
 
 		return (Logic*)projLogic;
 	}

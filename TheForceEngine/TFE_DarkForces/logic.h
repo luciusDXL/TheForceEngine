@@ -8,6 +8,7 @@
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Level/rsector.h>
 #include <TFE_Level/robject.h>
+#include <TFE_JediTask/task.h>
 
 namespace TFE_DarkForces
 {
@@ -21,10 +22,10 @@ namespace TFE_DarkForces
 		s32 u04;
 		SecObject* obj;
 		Logic** parent;
-		LogicTaskFunc taskFunc;
+		Task* task;
 		LogicCleanupFunc cleanupFunc;
 	};
 	
-	void obj_addLogic(SecObject* obj, Logic* logic, LogicTaskFunc taskFunc, LogicCleanupFunc cleanupFunc);
+	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc);
 	void deleteLogicAndObject(Logic* logic);
 }  // namespace TFE_DarkForces

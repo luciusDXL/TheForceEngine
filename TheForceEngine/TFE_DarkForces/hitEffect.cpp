@@ -7,12 +7,14 @@
 #include <TFE_Level/robject.h>
 #include <TFE_Memory/allocator.h>
 #include <TFE_JediSound/soundSystem.h>
+#include <TFE_JediTask/task.h>
 
 using namespace TFE_Collision;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
 using namespace TFE_Message;
 using namespace TFE_Memory;
+using namespace TFE_Task;
 
 namespace TFE_DarkForces
 {
@@ -48,8 +50,9 @@ namespace TFE_DarkForces
 	static EffectData s_effectData[HEFFECT_COUNT];
 	static Allocator* s_hitEffects;
 	static EffectData* s_curEffectData = nullptr;
-	static s32 s_specialEffectCnt = 0;
 	static vec3_fixed s_explodePos;
+
+	static Task* s_hitEffectTask = nullptr;
 
 	void hitEffectWakeupFunc(SecObject* obj);
 	void hitEffectExplodeFunc(SecObject* obj);
@@ -65,102 +68,120 @@ namespace TFE_DarkForces
 			effect->y = pos.y;
 			effect->z = pos.z;
 			effect->excludeObj = excludeObj;
+
+			// Make the hit effect task active since there is at least one effect to process.
+			task_makeActive(s_hitEffectTask);
 		}
 	}
 
 	////////////////////////////////////////////////////////////////////////
-	// RE Note:
-	// The task update function has been split into two:
-	// the main function (taskID = 0) and the count decrement (taskID = 20).
-	// This is because TFE doesn't use coroutine-like task functions
-	// since they don't have any practical benefit.
+	// Hit effect logic function.
+	// This handles all effects currently queued up.
 	////////////////////////////////////////////////////////////////////////
 	void hitEffectLogicFunc(s32 id)
 	{
-		HitEffect* effect = (HitEffect*)allocator_getHead(s_hitEffects);
-		while (effect)
+		struct LocalContext
 		{
-			RSector* sector = effect->sector;
-			fixed16_16 x = effect->x;
-			fixed16_16 y = effect->y;
-			fixed16_16 z = effect->z;
+			s32 count;
+		};
+		task_begin_ctx;
+		taskCtx->count = 0;
+		while (1)
+		{
+			// The task sleeps until there are effects to process.
+			task_yield(TASK_SLEEP);
 
-			EffectData* data = &s_effectData[effect->type];
-			s_curEffectData = data;
-
-			if (data->spriteData)
+			// When it is woken up, either it will be directly called with id = 20 after an animation is complete or
+			// is called during the update because there are effects to process.
+			if (id == 20)
 			{
-				JBool createEffectObj = JTRUE;
-				if (effect->type == HEFFECT_PLASMA_EXP || effect->type == HEFFECT_CANNON_EXP)
+				taskCtx->count--;
+			}
+			else if (id == 0)
+			{
+				// There are no yields in this block, so using purely local variables is safe.
+				HitEffect* effect = (HitEffect*)allocator_getHead(s_hitEffects);
+				while (effect)
 				{
-					if (s_specialEffectCnt >= MAX_SPEC_EFFECT_COUNT)
+					RSector* sector = effect->sector;
+					fixed16_16 x = effect->x;
+					fixed16_16 y = effect->y;
+					fixed16_16 z = effect->z;
+
+					EffectData* data = &s_effectData[effect->type];
+					s_curEffectData = data;
+
+					if (data->spriteData)
 					{
-						createEffectObj = false;
+						JBool createEffectObj = JTRUE;
+						if (effect->type == HEFFECT_PLASMA_EXP || effect->type == HEFFECT_CANNON_EXP)
+						{
+							if (taskCtx->count >= MAX_SPEC_EFFECT_COUNT)
+							{
+								createEffectObj = false;
+							}
+							else
+							{
+								taskCtx->count++;
+							}
+						}
+
+						// Avoid creating a new effect object if there are too many.
+						if (createEffectObj)
+						{
+							SecObject* obj = allocateObject();
+							// If effect is Concussion, adjust y so it sits on the floor.
+							if (effect->type == HEFFECT_CONCUSSION || effect->type == HEFFECT_CONCUSSION2)
+							{
+								fixed16_16 dummy;
+								sector_getObjFloorAndCeilHeight(sector, y, &y, &dummy);
+							}
+
+							setObjPos_AddToSector(obj, x, y, z, sector);
+							if (effect->type != HEFFECT_SPLASH)
+							{
+								obj->flags |= OBJ_FLAG_FULLBRIGHT;
+							}
+							sprite_setData(obj, s_curEffectData->spriteData);
+							SpriteAnimLogic* animLogic = (SpriteAnimLogic*)obj_setSpriteAnim(obj);
+
+							// Setup to call this task when animation is finished.
+							if (effect->type == HEFFECT_PLASMA_EXP || effect->type == HEFFECT_CANNON_EXP)
+							{
+								setAnimCompleteTask(animLogic, s_hitEffectTask);
+							}
+
+							setupAnimationFromLogic(animLogic, 0/*animIndex*/, 0/*firstFrame*/, 0xffffffff/*lastFrame*/, 1/*loopCount*/);
+							obj->worldWidth = 0;
+						}
 					}
-					else
+					if (s_curEffectData->soundEffect)
 					{
-						s_specialEffectCnt++;
+						vec3_fixed soundPos = { x,y,z };
+						playSound3D_oneshot(s_curEffectData->soundEffect, soundPos);
 					}
-				}
 
-				// Avoid creating a new effect object if there are too many.
-				if (createEffectObj)
-				{
-					SecObject* obj = allocateObject();
-					// If effect is Concussion, adjust y so it sits on the floor.
-					if (effect->type == HEFFECT_CONCUSSION || effect->type == HEFFECT_CONCUSSION2)
+					if (s_curEffectData->explosiveRange)
 					{
-						s32 dummy;
-						sector_getObjFloorAndCeilHeight(sector, y, &y, &dummy);
+						s_explodePos.x = x;
+						s_explodePos.y = y;
+						s_explodePos.z = z;
+						collision_effectObjectsInRange3D(sector, s_curEffectData->explosiveRange, s_explodePos, hitEffectExplodeFunc, effect->excludeObj,
+							ETFLAG_AI_ACTOR | ETFLAG_SCENERY | ETFLAG_LANDMINE | ETFLAG_LANDMINE_WPN | ETFLAG_PLAYER);
 					}
-
-					setObjPos_AddToSector(obj, x, y, z, sector);
-					if (effect->type != HEFFECT_SPLASH)
+					if (s_curEffectData->wakeupRange)
 					{
-						obj->flags |= OBJ_FLAG_FULLBRIGHT;
+						// Wakes up all objects with a valid collision path to (x,y,z) that are within s_curEffectData->wakeupRange units.
+						vec3_fixed hitPos = { x, y, z };
+						collision_effectObjectsInRangeXZ(sector, s_curEffectData->wakeupRange, hitPos, hitEffectWakeupFunc, effect->excludeObj, ETFLAG_AI_ACTOR);
 					}
-					sprite_setData(obj, s_curEffectData->spriteData);
-					SpriteAnimLogic* animLogic = (SpriteAnimLogic*)obj_setSpriteAnim(obj);
-
-					// Setup to call this task when animation is finished.
-					if (effect->type == HEFFECT_PLASMA_EXP || effect->type == HEFFECT_CANNON_EXP)
-					{
-						setAnimCompleteFunc(animLogic, hitEffectFinished);
-					}
-
-					setupAnimationFromLogic(animLogic, 0/*animIndex*/, 0/*firstFrame*/, 0xffffffff/*lastFrame*/, 1/*loopCount*/);
-					obj->worldWidth = 0;
-				}
-			}
-			if (s_curEffectData->soundEffect)
-			{
-				vec3_fixed soundPos = { x,y,z };
-				playSound3D_oneshot(s_curEffectData->soundEffect, soundPos);
-			}
-
-			if (s_curEffectData->explosiveRange)
-			{
-				s_explodePos.x = x;
-				s_explodePos.y = y;
-				s_explodePos.z = z;
-				collision_effectObjectsInRange3D(sector, s_curEffectData->explosiveRange, s_explodePos, hitEffectExplodeFunc, effect->excludeObj,
-					ETFLAG_AI_ACTOR | ETFLAG_SCENERY | ETFLAG_LANDMINE | ETFLAG_LANDMINE_WPN | ETFLAG_PLAYER);
-			}
-			if (s_curEffectData->wakeupRange)
-			{
-				// Wakes up all objects with a valid collision path to (x,y,z) that are within s_curEffectData->wakeupRange units.
-				vec3_fixed hitPos = { x, y, z };
-				collision_effectObjectsInRangeXZ(sector, s_curEffectData->wakeupRange, hitPos, hitEffectWakeupFunc, effect->excludeObj, ETFLAG_AI_ACTOR);
-			}
-			allocator_deleteItem(s_hitEffects, effect);
-			// Since the current item is deleted, "head" is the next item in the list.
-			effect = (HitEffect*)allocator_getHead(s_hitEffects);
-		}  // while (effect)
-	}
-
-	void hitEffectFinished()
-	{
-		s_specialEffectCnt--;
+					allocator_deleteItem(s_hitEffects, effect);
+					// Since the current item is deleted, "head" is the next item in the list.
+					effect = (HitEffect*)allocator_getHead(s_hitEffects);
+				}  // while (effect)
+			}  // if (id == 0)
+		}  // while (1)
+		task_end;
 	}
 		
 	///////////////////////////////////////

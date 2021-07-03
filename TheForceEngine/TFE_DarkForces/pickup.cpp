@@ -4,10 +4,12 @@
 #include <TFE_InfSystem/message.h>
 #include <TFE_Level/level.h>
 #include <TFE_JediSound/soundSystem.h>
+#include <TFE_JediTask/task.h>
 
 using namespace TFE_Message;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
+using namespace TFE_Task;
 
 namespace TFE_DarkForces
 {
@@ -21,10 +23,16 @@ namespace TFE_DarkForces
 	SoundSourceID s_powerupPickupSnd;
 	SoundSourceID s_invItemPickupSnd;
 	SoundSourceID s_wpnPickupSnd;
-
+	SoundSourceID s_invCountdownSound = 0;
+	SoundSourceID s_superchargeCountdownSound = 0;
+	
 	u32 s_pickupFlags = 0;
 	// Pointer to memory where player inventory is saved.
 	u32* s_playerInvSaved = nullptr;
+	Task* s_pickupTask = nullptr;
+	Task* s_uTask = nullptr;	// unkown task, was s_282acc
+	Task* s_superchargeTask = nullptr;
+	Task* s_invTask = nullptr;
 
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
@@ -104,201 +112,218 @@ namespace TFE_DarkForces
 	// The object "picking up" the item is stored in Message::s_msgEntity
 	void pickupLogicFunc(s32 id)
 	{
-		Pickup* pickup = (Pickup*)s_msgTarget;
+		struct LocalContext
+		{
+			SecObject* pickupObj;
+			SecObject* entity;
+			Pickup* pickup;
+			JBool pickedUpItem;
+		};
+		task_begin_ctx;
+		while (1)
+		{
+			// Sleep until called.
+			task_yield(TASK_SLEEP);
 
-		if (id == PICKUP_DELETE)
-		{
-			pickup_cleanupFunc((Logic*)pickup);
-		}
-		else if (id != PICKUP_ACQUIRE)
-		{
-			return;
-		}
-
-		SecObject* entity = (SecObject*)s_msgEntity;
-		// Only the player can pickup an item.
-		if (!(entity->entityFlags & ETFLAG_PLAYER))
-		{
-			return;
-		}
-				
-		JBool pickedUpItem = s_pickupFlags ? JFALSE : JTRUE;
-		// Handle pickup based on type.
-		if (pickup->type == ITYPE_WEAPON)
-		{
-			s32 maxAmount = pickup->maxAmount;
-			if (!(*pickup->item) || *pickup->value < maxAmount)
+			if (id == PICKUP_DELETE)
 			{
-				*pickup->value = pickup_addToValue(*pickup->value, pickup->amount, maxAmount);
-				if (*pickup->item)
+				pickup_cleanupFunc((Logic*)s_msgTarget);
+			}
+			else if (id == PICKUP_ACQUIRE)
+			{
+				taskCtx->pickup = (Pickup*)s_msgTarget;
+				taskCtx->entity = (SecObject*)s_msgEntity;
+				// Only the player can pickup an item.
+				if (!(taskCtx->entity->entityFlags & ETFLAG_PLAYER))
 				{
-					hud_sendTextMessage(pickup->msgId[1]);
+					continue;
+				}
+
+				taskCtx->pickedUpItem = s_pickupFlags ? JFALSE : JTRUE;
+				// Handle pickup based on type.
+				if (taskCtx->pickup->type == ITYPE_WEAPON)
+				{
+					s32 maxAmount = taskCtx->pickup->maxAmount;
+					if (!(*taskCtx->pickup->item) || *taskCtx->pickup->value < maxAmount)
+					{
+						*taskCtx->pickup->value = pickup_addToValue(*taskCtx->pickup->value, taskCtx->pickup->amount, maxAmount);
+						if (*taskCtx->pickup->item)
+						{
+							hud_sendTextMessage(taskCtx->pickup->msgId[1]);
+						}
+						else
+						{
+							*taskCtx->pickup->item = JTRUE;
+							hud_sendTextMessage(taskCtx->pickup->msgId[0]);
+							s_playerInfo.currentWeapon = taskCtx->pickup->index;
+						}
+					}
+					else
+					{
+						taskCtx->pickedUpItem = JFALSE;
+					}
+				}
+				else if (taskCtx->pickup->type == ITYPE_AMMO)
+				{
+					// Shield powerups cannot be picked up while invincibility is enabled even if shields are at less than maximum.
+					if (taskCtx->pickup->id == ITEM_SHIELD && s_invincibility)
+					{
+						taskCtx->pickedUpItem = JFALSE;
+					}
+					s32 curValue = *taskCtx->pickup->value;
+					if (taskCtx->pickedUpItem && curValue < taskCtx->pickup->maxAmount)
+					{
+						*taskCtx->pickup->value = pickup_addToValue(*taskCtx->pickup->value, taskCtx->pickup->amount, taskCtx->pickup->maxAmount);
+						hud_sendTextMessage(taskCtx->pickup->msgId[0]);
+					}
+				}
+				else if (taskCtx->pickup->type == ITYPE_KEY_ITEM)
+				{
+					*taskCtx->pickup->item = JTRUE;
+					hud_sendTextMessage(taskCtx->pickup->msgId[0]);
+					if (taskCtx->pickup->value)
+					{
+						*taskCtx->pickup->value = pickup_addToValue(*taskCtx->pickup->value, taskCtx->pickup->amount, taskCtx->pickup->maxAmount);
+					}
+					if (taskCtx->pickup->id == ITEM_CLEATS && s_wearingCleats == 0)
+					{
+						s_wearingCleats = JTRUE;
+					}
+				}
+				else if (taskCtx->pickup->type == ITYPE_OBJECTIVE)
+				{
+					*taskCtx->pickup->item = JTRUE;
+					hud_sendTextMessage(taskCtx->pickup->msgId[0]);
+					if (s_completeSector)
+					{
+						message_sendToSector(s_completeSector, nullptr, 0, MSG_TRIGGER);
+					}
+
+					switch (taskCtx->pickup->id)
+					{
+						case ITEM_PLANS:
+						{
+							s_goalItems.plans = JTRUE;
+						} break;
+						case ITEM_PHRIK:
+						{
+							s_goalItems.phrik = JTRUE;
+						} break;
+						case ITEM_NAVA:
+						{
+							s_goalItems.nava = JTRUE;
+						} break;
+						case ITEM_DT_WEAPON:
+						{
+							s_goalItems.dtWeapon = JTRUE;
+						} break;
+						case ITEM_DATATAPE:
+						{
+							s_goalItems.datatape = JTRUE;
+						} break;
+					}
+				}
+				else if (taskCtx->pickup->type == ITYPE_INV_ITEM)
+				{
+					*taskCtx->pickup->item = 0xffffffff;
+					hud_sendTextMessage(taskCtx->pickup->msgId[0]);
+				}
+				else if (taskCtx->pickup->type == ITYPE_POWERUP)
+				{
+					switch (taskCtx->pickup->id)
+					{
+						case ITEM_INVINCIBLE:
+						{
+							pickupInvincibility();
+						} break;
+						case ITEM_SUPERCHARGE:
+						{
+							pickupSupercharge();
+						} break;
+						case ITEM_REVIVE:
+						{
+							if (s_playerInfo.health < 100 || s_playerInfo.shields < 200)
+							{
+								pickupRevive();
+								// The function sets shields to 100, so set it to the proper value here.
+								s_playerInfo.shields = 200;
+							}
+							else
+							{
+								taskCtx->pickedUpItem = JFALSE;
+							}
+						} break;
+						case ITEM_LIFE:
+						{
+							if (s_lifeCount < 9)
+							{
+								s_lifeCount++;
+							}
+							else
+							{
+								taskCtx->pickedUpItem = 0;
+							}
+						} break;
+					}
+					if (taskCtx->pickedUpItem)
+					{
+						hud_sendTextMessage(taskCtx->pickup->msgId[0]);
+					}
+				}
+				else if (taskCtx->pickup->type == ITYPE_SPECIAL)
+				{
+					hud_sendTextMessage(312);
+					pickupInventory();
+					s_goalItems.stolenInv = JTRUE;
+
+					if (s_completeSector)
+					{
+						message_sendToSector(s_completeSector, nullptr, 0, MSG_TRIGGER);
+					}
+				}
+
+				// Finish
+				if (!taskCtx->pickedUpItem)
+				{
+					continue;
+				}
+				// Set the world width to 0 so the object cannot be picked up even if it isn't fully deleted.
+				taskCtx->pickupObj = taskCtx->pickup->logic.obj;
+				taskCtx->pickupObj->worldWidth = 0;
+
+				// Play pickup sound.
+				if (taskCtx->pickup->type == ITYPE_KEY_ITEM || taskCtx->pickup->type == ITYPE_POWERUP)
+				{
+					playSound2D(s_powerupPickupSnd);
+				}
+				else if (taskCtx->pickup->type == ITYPE_OBJECTIVE || taskCtx->pickup->type == ITYPE_SPECIAL)
+				{
+					playSound2D(s_invItemPickupSnd);
 				}
 				else
 				{
-					*pickup->item = JTRUE;
-					hud_sendTextMessage(pickup->msgId[0]);
-					s_playerInfo.currentWeapon = pickup->index;
+					playSound2D(s_wpnPickupSnd);
+				}
+
+				// Initialize effect
+				s_flashEffect = FIXED(15);
+				task_makeActive(s_pickupTask);
+
+				// Delete the pickup next frame...
+				{
+					task_yield(0);
+					// Remove the item.
+					pickup_cleanupFunc((Logic*)taskCtx->pickup);
 				}
 			}
-			else
-			{
-				pickedUpItem = JFALSE;
-			}
-		}
-		else if (pickup->type == ITYPE_AMMO)
-		{
-			// Shield powerups cannot be picked up while invincibility is enabled even if shields are at less than maximum.
-			if (pickup->id == ITEM_SHIELD && s_invincibility)
-			{
-				pickedUpItem = JFALSE;
-			}
-			s32 curValue = *pickup->value;
-			if (pickedUpItem && curValue < pickup->maxAmount)
-			{
-				*pickup->value = pickup_addToValue(*pickup->value, pickup->amount, pickup->maxAmount);
-				hud_sendTextMessage(pickup->msgId[0]);
-			}
-		}
-		else if (pickup->type == ITYPE_KEY_ITEM)
-		{
-			*pickup->item = JTRUE;
-			hud_sendTextMessage(pickup->msgId[0]);
-			if (pickup->value)
-			{
-				*pickup->value = pickup_addToValue(*pickup->value, pickup->amount, pickup->maxAmount);
-			}
-			if (pickup->id == ITEM_CLEATS && s_wearingCleats == 0)
-			{
-				s_wearingCleats = JTRUE;
-			}
-		}
-		else if (pickup->type == ITYPE_OBJECTIVE)
-		{
-			*pickup->item = JTRUE;
-			hud_sendTextMessage(pickup->msgId[0]);
-			if (s_completeSector)
-			{
-				message_sendToSector(s_completeSector, nullptr, 0, MSG_TRIGGER);
-			}
-
-			switch (pickup->id)
-			{
-				case ITEM_PLANS:
-				{
-					s_goalItems.plans = JTRUE;
-				} break;
-				case ITEM_PHRIK:
-				{
-					s_goalItems.phrik = JTRUE;
-				} break;
-				case ITEM_NAVA:
-				{
-					s_goalItems.nava = JTRUE;
-				} break;
-				case ITEM_DT_WEAPON:
-				{
-					s_goalItems.dtWeapon = JTRUE;
-				} break;
-				case ITEM_DATATAPE:
-				{
-					s_goalItems.datatape = JTRUE;
-				} break;
-			}
-		}
-		else if (pickup->type == ITYPE_INV_ITEM)
-		{
-			*pickup->item = 0xffffffff;
-			hud_sendTextMessage(pickup->msgId[0]);
-		}
-		else if (pickup->type == ITYPE_POWERUP)
-		{
-			switch (pickup->id)
-			{
-				case ITEM_INVINCIBLE:
-				{
-					pickupInvincibility();
-				} break;
-				case ITEM_SUPERCHARGE:
-				{
-					pickupSupercharge();
-				} break;
-				case ITEM_REVIVE:
-				{
-					if (s_playerInfo.health < 100 || s_playerInfo.shields < 200)
-					{
-						pickupRevive();
-						// The function sets shields to 100, so set it to the proper value here.
-						s_playerInfo.shields = 200;
-					}
-					else
-					{
-						pickedUpItem = JFALSE;
-					}
-				} break;
-				case ITEM_LIFE:
-				{
-					if (s_lifeCount < 9)
-					{
-						s_lifeCount++;
-					}
-					else
-					{
-						pickedUpItem = 0;
-					}
-				} break;
-			}
-			if (pickedUpItem)
-			{
-				hud_sendTextMessage(pickup->msgId[0]);
-			}
-		}
-		else if (pickup->type == ITYPE_SPECIAL)
-		{
-			hud_sendTextMessage(312);
-			pickupInventory();
-			s_goalItems.stolenInv = JTRUE;
-
-			if (s_completeSector)
-			{
-				message_sendToSector(s_completeSector, nullptr, 0, MSG_TRIGGER);
-			}
-		}
-
-		// Finish
-		if (!pickedUpItem)
-		{
-			return;
-		}
-		// Set the world width to 0 so the object cannot be picked up even if it isn't fully deleted.
-		SecObject* pickupObj  = pickup->logic.obj;
-		pickupObj->worldWidth = 0;
-				
-		// Play pickup sound.
-		if (pickup->type == ITYPE_KEY_ITEM || pickup->type == ITYPE_POWERUP)
-		{
-			playSound2D(s_powerupPickupSnd);
-		}
-		else if (pickup->type == ITYPE_OBJECTIVE || pickup->type == ITYPE_SPECIAL)
-		{
-			playSound2D(s_invItemPickupSnd);
-		}
-		else
-		{
-			playSound2D(s_wpnPickupSnd);
-		}
-
-		// Initialize effect
-		s_flashEffect = FIXED(15);
-
-		// Remove the item.
-		pickup_cleanupFunc((Logic*)pickup);
+		}  // while (1)
+		task_end;
 	}
 
 	Logic* obj_createPickup(SecObject* obj, ItemId id)
 	{
 		Pickup* pickup = (Pickup*)malloc(sizeof(Pickup));
-		obj_addLogic(obj, (Logic*)pickup, pickupLogicFunc, pickup_cleanupFunc);
+		obj_addLogic(obj, (Logic*)pickup, s_pickupTask, pickup_cleanupFunc);
 
 		obj->entityFlags |= ETFLAG_PICKUP;
 
@@ -708,54 +733,52 @@ namespace TFE_DarkForces
 		return newValue;
 	}
 
-	void wait(u32 ticks)
+	void invincibilityTaskFunc(s32 id)
 	{
-		// TODO: Task wait function - waits for taskID == 0 && delay in 'ticks' to elapse.
-	}
-
-	static SoundSourceID s_invCountdownSound = 0;
-	static SoundSourceID s_superchargeCountdownSound = 0;
-	
-	void invincibilityTaskFunc()
-	{
-		wait(6554);	// ~45 seconds.
+		task_begin;
+		task_waitWhileIdNotZero(6554);	// ~45 seconds.
 
 		for (s32 i = 4; i >= 0; i--)
 		{
 			playSound2D(s_invCountdownSound);
 			s_playerInfo.shields = 200;
-			wait(87);	// 0.6 seconds.
+			task_waitWhileIdNotZero(87);	// 0.6 seconds.
 
 			s_playerInfo.shields = 0xffffffff;
-			wait(87);	// 0.6 seconds.
+			task_waitWhileIdNotZero(87);	// 0.6 seconds.
 		}
 		s_playerInfo.shields = 200;
 		s_invincibility = 0;
-		// s_invTask = nullptr;
+		s_invTask = nullptr;
+
+		task_end;
 	}
 
-	void superchargeTaskFunc()
+	void superchargeTaskFunc(s32 id)
 	{
+		task_begin;
+
 		s_superChargeHud = JTRUE;
 		s_superCharge = JTRUE;
 
 		// This causes the task to be suspended for 45 seconds - which is the time the supercharge is active
 		// without the running out warning.
-		wait(6554);	// ~45 seconds.
+		task_waitWhileIdNotZero(6554);	// ~45 seconds.
 
 		for (s32 i = 4; i >= 0; i--)
 		{
 			playSound2D(s_superchargeCountdownSound);
 			s_superChargeHud = JFALSE;
-			wait(87);	// 0.6 seconds.
+			task_waitWhileIdNotZero(87);	// 0.6 seconds.
 
 			s_superChargeHud = JTRUE;
-			wait(87);	// 0.6 seconds.
+			task_waitWhileIdNotZero(87);	// 0.6 seconds.
 		}
 		s_superCharge = JFALSE;
 		s_superChargeHud = JFALSE;
-		// s_superchargeTask = nullptr;
-		// func_1ed368();
+		s_superchargeTask = nullptr;
+
+		task_end;
 	}
 		
 	void pickupInvincibility()
@@ -763,29 +786,23 @@ namespace TFE_DarkForces
 		s_invincibility = JTRUE;
 		s_playerInfo.shields = JTRUE;	// This seems like a bug...
 		// Free old invincibility task and create a new invincibility task.
-		// TODO:
-		/*
-		if (s_invTask)	// ecx
+		if (s_invTask)
 		{
 			freeTask(s_invTask);
 		}
 		s_invTask = createTask(invincibilityTaskFunc);
-		*/
 	}
 
 	void pickupSupercharge()
 	{
 		// Free old supercharge task and create a new supercharge task.
-		// TODO:
-		/*
-		if (s_superchargeTask)	// ecx
+		if (s_superchargeTask)
 		{
 			freeTask(s_superchargeTask);
 		}
 		s_superchargeTask = createTask(superchargeTaskFunc);
-		*/
 	}
-						
+
 	void pickupInventory()
 	{
 		// Get the size of the PlayerInfo structure up to but not including s_playerInfo.stateUnknown.
@@ -806,10 +823,10 @@ namespace TFE_DarkForces
 		s_playerInfo.itemNava = JFALSE;
 		if (s_playerInfo.index1 != s_playerInfo.index0)
 		{
-			if (s_282acc)
+			if (s_uTask)
 			{
 				s_msgArg1 = s_playerInfo.index1;
-				// runTask(s_282acc, 2);
+				runTask(s_uTask, 2);
 				s_playerInfo.index1 = max(s_playerInfo.index0, s_playerInfo.index1);
 			}
 			else

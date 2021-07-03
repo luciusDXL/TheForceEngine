@@ -35,7 +35,4 @@ namespace TFE_DarkForces
 
 	// Logic update function, handles the update of all projectiles.
 	void hitEffectLogicFunc(s32 id);
-
-	// Called when a specific type of hit effect has finished animating.
-	void hitEffectFinished();
 }  // namespace TFE_DarkForces

@@ -28,6 +28,12 @@
 
 #define taskCtx ((LocalContext*)ctxGet())
 
+#define task_waitWhileIdNotZero(ticks) \
+	do \
+	{ \
+		task_yield(ticks); \
+	} while (id != 0)
+
 namespace TFE_Task
 {
 	//////////////////////////////////////////
