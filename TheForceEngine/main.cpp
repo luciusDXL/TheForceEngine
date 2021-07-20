@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <TFE_System/types.h>
 #include <TFE_System/profiler.h>
+#include <TFE_Game/igame.h>
 //#include <TFE_ScriptSystem/scriptSystem.h>
 #include <TFE_InfSystem/infSystem.h>
 //#include <TFE_Editor/editor.h>
@@ -14,6 +15,7 @@
 // #include <TFE_Renderer/renderer.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
+#include <TFE_JediTask/task.h>
 #include <TFE_Asset/paletteAsset.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
@@ -52,6 +54,7 @@ static u32  s_monitorWidth = 1280;
 static u32  s_monitorHeight = 720;
 static bool s_gameUiInitRequired = true;
 static char s_screenshotTime[TFE_MAX_PATH];
+static TFE::IGame* s_curGame = nullptr;
 
 void parseOption(const char* name, const std::vector<const char*>& values, bool longName);
 
@@ -296,19 +299,44 @@ void setAppState(AppState newState)
 	case APP_STATE_GAME:
 		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 		{
-			if (s_gameUiInitRequired)
+			TFE_Game* gameInfo = TFE_Settings::getGame();
+			if (!s_curGame || gameInfo->id != s_curGame->id)
 			{
-				// TFE_GameUi::init(renderer);
-				s_gameUiInitRequired = false;
-			}
-			
-			//renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
-			//renderer->enableScreenClear(false);
-			TFE_Input::enableRelativeMode(true);
-			if (TFE_FrontEndUI::restartGame())
-			{
-				// TFE_GameMain::init(renderer);
-				// TFE_GameUi::updateUiResolution();
+				if (s_curGame)
+				{
+					TFE::freeGame(s_curGame);
+					s_curGame = nullptr;
+				}
+				s_curGame = TFE::createGame(gameInfo->id);
+				if (!s_curGame)
+				{
+					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
+					newState = APP_STATE_CANNOT_RUN;
+				}
+				else if (!s_curGame->runGame())
+				{
+					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
+					TFE::freeGame(s_curGame);
+					s_curGame = nullptr;
+					newState = APP_STATE_CANNOT_RUN;
+				}
+				else
+				{
+					if (s_gameUiInitRequired)
+					{
+						// TFE_GameUi::init(renderer);
+						s_gameUiInitRequired = false;
+					}
+
+					//renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+					//renderer->enableScreenClear(false);
+					TFE_Input::enableRelativeMode(true);
+					if (TFE_FrontEndUI::restartGame())
+					{
+						// TFE_GameMain::init(renderer);
+						// TFE_GameUi::updateUiResolution();
+					}
+				}
 			}
 		}
 		else
@@ -605,23 +633,21 @@ int main(int argc, char* argv[])
 		}
 		else if (s_curState == APP_STATE_GAME)
 		{
-			// This will be:
-			/* TFE_TaskSystem::runTasks();
-			   if (TFE_TaskSystem::systemExitRequested())
-			   {
-			     s_loop = false;
-			   }
-			   Task System would have these as part of the API:
-			   void postSystemExitRequest();
-			   bool systemExitRequested();
-
-			   TFE_GameMain::loop() is going away.
-			*/
-
-			/*if (TFE_GameMain::loop(isConsoleOpen) == TRANS_QUIT)
+			if (!s_curGame)
 			{
-				s_loop = false;
-			}*/
+				s_curState = APP_STATE_MENU;
+			}
+			else
+			{
+				s_curGame->loopGame();
+				TFE_TaskSystem::runTasks();
+			}
+			if (TFE_TaskSystem::systemExitRequested())
+			{
+				TFE::freeGame(s_curGame);
+				s_curGame = nullptr;
+			    s_loop = false;
+			}
 		}
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
 

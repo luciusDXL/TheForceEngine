@@ -1,15 +1,15 @@
 #pragma once
 #include <TFE_System/types.h>
 
+enum GameID
+{
+	Game_Dark_Forces = 0,
+	Game_Outlaws,
+	Game_Count
+};
+
 namespace TFE_Settings
 {
-	enum Games
-	{
-		Game_Dark_Forces = 0,
-		Game_Outlaws,
-		Game_Count
-	};
-
 	static const char* c_gameName[] =
 	{
 		"Dark Forces",

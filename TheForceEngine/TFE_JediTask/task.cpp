@@ -32,7 +32,7 @@ struct Task
 	s32 activeIndex;
 };
 
-namespace TFE_Task
+namespace TFE_TaskSystem
 {
 	enum
 	{
@@ -231,6 +231,18 @@ namespace TFE_Task
 	void runTasks()
 	{
 		// TODO
+	}
+
+	// Methods to request system exit.
+	void postSystemExitRequest()
+	{
+		// TODO
+	}
+
+	bool systemExitRequested()
+	{
+		// TODO
+		return false;
 	}
 
 	s32 ctxGetState()

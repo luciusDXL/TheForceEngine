@@ -26,7 +26,7 @@ enum TaskDelay
 
 ////////////////////////////////////////////////////////////////////////
 // Task System API
-namespace TFE_Task
+namespace TFE_TaskSystem
 {
 	Task* createTask(TaskFunc func);
 	Task* pushTask(TaskFunc func);
@@ -44,6 +44,10 @@ namespace TFE_Task
 	// Another option is to run the game and rendering loop in its own
 	// thread and then blit the results in the main thread.
 	void runTasks();
+
+	// Methods to request system exit.
+	void postSystemExitRequest();
+	bool systemExitRequested();
 }
 ////////////////////////////////////////////////////////////////////////
 // Task Function API:

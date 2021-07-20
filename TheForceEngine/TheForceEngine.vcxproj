@@ -261,6 +261,7 @@
     <ClInclude Include="TFE_Audio\RtMidi.h" />
     <ClInclude Include="TFE_Collision\collision.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
+    <ClInclude Include="TFE_DarkForces\darkForcesMain.h" />
     <ClInclude Include="TFE_DarkForces\hitEffect.h" />
     <ClInclude Include="TFE_DarkForces\hud.h" />
     <ClInclude Include="TFE_DarkForces\itemId.h" />
@@ -277,6 +278,7 @@
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
     <ClInclude Include="TFE_FrontEndUI\profilerView.h" />
+    <ClInclude Include="TFE_Game\igame.h" />
     <ClInclude Include="TFE_InfSystem\infElevatorUpdateFunc.h" />
     <ClInclude Include="TFE_InfSystem\infPublicTypes.h" />
     <ClInclude Include="TFE_InfSystem\infSystem.h" />
@@ -318,6 +320,7 @@
     <ClInclude Include="TFE_Level\rwall.h" />
     <ClInclude Include="TFE_Memory\allocator.h" />
     <ClInclude Include="TFE_Memory\chunkedArray.h" />
+    <ClInclude Include="TFE_Outlaws\outlawsMain.h" />
     <ClInclude Include="TFE_Polygon\clipper.hpp" />
     <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
     <ClInclude Include="TFE_Polygon\polygon.h" />
@@ -400,6 +403,7 @@
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
     <ClCompile Include="TFE_Collision\collision.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
+    <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp" />
     <ClCompile Include="TFE_DarkForces\hitEffect.cpp" />
     <ClCompile Include="TFE_DarkForces\hud.cpp" />
     <ClCompile Include="TFE_DarkForces\logic.cpp" />
@@ -414,6 +418,7 @@
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp" />
+    <ClCompile Include="TFE_Game\igame.cpp" />
     <ClCompile Include="TFE_InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_InfSystem\message.cpp" />
     <ClCompile Include="TFE_Input\input.cpp" />
@@ -444,6 +449,7 @@
     <ClCompile Include="TFE_Level\rwall.cpp" />
     <ClCompile Include="TFE_Memory\allocator.cpp" />
     <ClCompile Include="TFE_Memory\chunkedArray.cpp" />
+    <ClCompile Include="TFE_Outlaws\outlawsMain.cpp" />
     <ClCompile Include="TFE_Polygon\clipper.cpp" />
     <ClCompile Include="TFE_Polygon\polygon.cpp" />
     <ClCompile Include="TFE_PostProcess\blit.cpp" />

@@ -30,7 +30,7 @@
 		task_yield(ticks); \
 	} while (id != 0)
 
-namespace TFE_Task
+namespace TFE_TaskSystem
 {
 	//////////////////////////////////////////
 	// Internal functions used by macros.

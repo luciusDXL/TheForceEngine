@@ -584,6 +584,16 @@ namespace TFE_Settings
 		if (strcasecmp("game", key) == 0)
 		{
 			strcpy(s_game.game, value);
+			// Get the game ID.
+			s_game.id = Game_Count;
+			for (u32 i = 0; i < Game_Count; i++)
+			{
+				if (strcasecmp(s_game.game, c_gameName[i]) == 0)
+				{
+					s_game.id = GameID(i);
+					break;
+				}
+			}
 		}
 	}
 

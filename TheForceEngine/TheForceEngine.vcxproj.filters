@@ -128,6 +128,12 @@
     <Filter Include="Source\TFE_JediTask">
       <UniqueIdentifier>{4477739f-b976-4111-af64-ad4146f94f88}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Game">
+      <UniqueIdentifier>{833b07fb-6af1-4f55-b2a2-ca9a56aee03b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Outlaws">
+      <UniqueIdentifier>{ad3c9beb-2663-4fe9-8986-12bdbfa4f258}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -553,6 +559,15 @@
     <ClInclude Include="TFE_JediRenderer\rwallRender.h">
       <Filter>Source\TFE_JediRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Game\igame.h">
+      <Filter>Source\TFE_Game</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\darkForcesMain.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Outlaws\outlawsMain.h">
+      <Filter>Source\TFE_Outlaws</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -884,6 +899,15 @@
     </ClCompile>
     <ClCompile Include="TFE_JediRenderer\rsectorRender.cpp">
       <Filter>Source\TFE_JediRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\igame.cpp">
+      <Filter>Source\TFE_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Outlaws\outlawsMain.cpp">
+      <Filter>Source\TFE_Outlaws</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -10,6 +10,7 @@
 
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
+#include "gameSourceData.h"
 
 struct TFE_Settings_Window
 {
@@ -83,6 +84,7 @@ struct TFE_Settings_Sound
 struct TFE_Game
 {
 	char game[64] = "Dark Forces";
+	GameID id;
 };
 
 struct TFE_Settings_Game
