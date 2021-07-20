@@ -20,6 +20,11 @@ struct BM_Header
 	u8  pad[12];
 };
 
+enum OpacityFlags
+{
+	OPACITY_TRANS = FLAG_BIT(3),
+};
+
 // was BM_SubHeader
 struct TextureData
 {

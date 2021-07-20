@@ -1,6 +1,6 @@
 #pragma once
 #include <TFE_System/types.h>
-#include "../rwall.h"
+#include "../rwallRender.h"
 #include "../rlimits.h"
 
 namespace TFE_JediRenderer

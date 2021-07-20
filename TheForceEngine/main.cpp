@@ -2,19 +2,16 @@
 #include <SDL.h>
 #include <TFE_System/types.h>
 #include <TFE_System/profiler.h>
-#include <TFE_ScriptSystem/scriptSystem.h>
+//#include <TFE_ScriptSystem/scriptSystem.h>
 #include <TFE_InfSystem/infSystem.h>
-#include <TFE_Editor/editor.h>
+//#include <TFE_Editor/editor.h>
 #include <TFE_FileSystem/fileutil.h>
-#include <TFE_Game/level.h>
-#include <TFE_Game/gameMain.h>
-#include <TFE_Game/GameUI/gameUi.h>
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Polygon/polygon.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Input/input.h>
-#include <TFE_Renderer/renderer.h>
+// #include <TFE_Renderer/renderer.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_Asset/paletteAsset.h>
@@ -265,13 +262,13 @@ bool sdlInit()
 
 static AppState s_curState = APP_STATE_UNINIT;
 
-void setAppState(AppState newState, TFE_Renderer* renderer)
+void setAppState(AppState newState)
 {
 	const TFE_Settings_Graphics* config = TFE_Settings::getGraphicsSettings();
 
 	if (newState != APP_STATE_EDITOR)
 	{
-		TFE_Editor::disable();
+		//TFE_Editor::disable();
 	}
 
 	switch (newState)
@@ -283,35 +280,35 @@ void setAppState(AppState newState, TFE_Renderer* renderer)
 		{
 			if (s_gameUiInitRequired)
 			{
-				TFE_GameUi::init(renderer);
+				// TFE_GameUi::init(renderer);
 				s_gameUiInitRequired = false;
 			}
 
-			renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
-			TFE_GameUi::updateUiResolution();
-			TFE_Editor::enable(renderer);
+			//renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
+			// TFE_GameUi::updateUiResolution();
+			//TFE_Editor::enable(renderer);
 		}
 		else
 		{
 			newState = APP_STATE_NO_GAME_DATA;
 		}
 		break;
-	case APP_STATE_DARK_FORCES:
+	case APP_STATE_GAME:
 		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 		{
 			if (s_gameUiInitRequired)
 			{
-				TFE_GameUi::init(renderer);
+				// TFE_GameUi::init(renderer);
 				s_gameUiInitRequired = false;
 			}
 			
-			renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
-			renderer->enableScreenClear(false);
+			//renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
+			//renderer->enableScreenClear(false);
 			TFE_Input::enableRelativeMode(true);
 			if (TFE_FrontEndUI::restartGame())
 			{
-				TFE_GameMain::init(renderer);
-				TFE_GameUi::updateUiResolution();
+				// TFE_GameMain::init(renderer);
+				// TFE_GameUi::updateUiResolution();
 			}
 		}
 		else
@@ -488,13 +485,12 @@ int main(int argc, char* argv[])
 	TFE_MidiPlayer::init();
 	TFE_Polygon::init();
 	TFE_Image::init();
-	TFE_ScriptSystem::init();
+	// TFE_ScriptSystem::init();
 	TFE_InfSystem::init();
-	TFE_Level::init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
 			
-	TFE_Renderer* renderer = TFE_Renderer::create(TFE_RENDERER_SOFTWARE_CPU);
+	/*TFE_Renderer* renderer = TFE_Renderer::create(TFE_RENDERER_SOFTWARE_CPU);
 	if (!renderer)
 	{
 		TFE_System::logWrite(LOG_CRITICAL, "Renderer", "Cannot create software renderer.");
@@ -507,6 +503,7 @@ int main(int argc, char* argv[])
 		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
+	*/
 
 	// Color correction.
 	const TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
@@ -516,7 +513,7 @@ int main(int argc, char* argv[])
 	// Game loop
 	if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 	{
-		TFE_GameUi::init(renderer);
+		// TFE_GameUi::init(renderer);
 		s_gameUiInitRequired = false;
 	}
 	else
@@ -540,7 +537,7 @@ int main(int argc, char* argv[])
 		}
 		if (TFE_FrontEndUI::shouldClearScreen())
 		{
-			renderer->enableScreenClear(true);
+			//renderer->enableScreenClear(true);
 		}
 
 		// System events
@@ -562,7 +559,7 @@ int main(int argc, char* argv[])
 		}
 		else if (appState != s_curState)
 		{
-			setAppState(appState, renderer);
+			setAppState(appState);
 		}
 
 		TFE_Ui::begin();
@@ -593,35 +590,50 @@ int main(int argc, char* argv[])
 		TFE_System::update();
 		if (showPerf)
 		{
-			TFE_Editor::showPerf(frame);
+			//TFE_Editor::showPerf(frame);
 		}
 
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
 		if (s_curState == APP_STATE_EDITOR)
 		{
+			/*
 			if (TFE_Editor::update(isConsoleOpen))
 			{
 				TFE_FrontEndUI::setAppState(APP_STATE_MENU);
 			}
+			*/
 		}
-		else if (s_curState == APP_STATE_DARK_FORCES)
+		else if (s_curState == APP_STATE_GAME)
 		{
-			if (TFE_GameMain::loop(isConsoleOpen) == TRANS_QUIT)
+			// This will be:
+			/* TFE_TaskSystem::runTasks();
+			   if (TFE_TaskSystem::systemExitRequested())
+			   {
+			     s_loop = false;
+			   }
+			   Task System would have these as part of the API:
+			   void postSystemExitRequest();
+			   bool systemExitRequested();
+
+			   TFE_GameMain::loop() is going away.
+			*/
+
+			/*if (TFE_GameMain::loop(isConsoleOpen) == TRANS_QUIT)
 			{
 				s_loop = false;
-			}
+			}*/
 		}
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
 
 		// Render
-		renderer->begin();
+		//renderer->begin();
 		// Do stuff
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
 		if (s_curState == APP_STATE_EDITOR)
 		{
-			swap = TFE_Editor::render();
+			//swap = TFE_Editor::render();
 		}
-		renderer->end();
+		//renderer->end();
 
 		// Blit the frame to the window and draw UI.
 		TFE_RenderBackend::swap(swap);
@@ -639,13 +651,12 @@ int main(int argc, char* argv[])
 	TFE_MidiPlayer::destroy();
 	TFE_Polygon::shutdown();
 	TFE_Image::shutdown();
-	TFE_Level::shutdown();
 	TFE_InfSystem::shutdown();
-	TFE_ScriptSystem::shutdown();
+	// TFE_ScriptSystem::shutdown();
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();
 	TFE_Settings::shutdown();
-	TFE_Renderer::destroy(renderer);
+	//TFE_Renderer::destroy(renderer);
 	TFE_RenderBackend::destroy();
 	SDL_Quit();
 		

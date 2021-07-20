@@ -1,6 +1,7 @@
 #include <TFE_System/profiler.h>
-// TODO: Fix or move.
-#include <TFE_Game/level.h>
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
+#include <TFE_Level/rtexture.h>
 
 #include "rwallFixed.h"
 #include "rflatFixed.h"
@@ -8,8 +9,6 @@
 #include "rsectorFixed.h"
 #include "redgePairFixed.h"
 #include "rcommonFixed.h"
-#include "../fixedPoint.h"
-#include "../rmath.h"
 #include "../rcommon.h"
 
 namespace TFE_JediRenderer
@@ -78,14 +77,14 @@ namespace RClassic_Fixed
 	// Process the wall and produce an RWallSegment for rendering if the wall is potentially visible.
 	void wall_process(RWall* wall)
 	{
-		const vec2* p0 = wall->v0;
-		const vec2* p1 = wall->v1;
+		const vec2_fixed* p0 = wall->v0;
+		const vec2_fixed* p1 = wall->v1;
 
 		// viewspace wall coordinates.
-		fixed16_16 x0 = p0->x.f16_16;
-		fixed16_16 x1 = p1->x.f16_16;
-		fixed16_16 z0 = p0->z.f16_16;
-		fixed16_16 z1 = p1->z.f16_16;
+		fixed16_16 x0 = p0->x;
+		fixed16_16 x1 = p1->x;
+		fixed16_16 z0 = p0->z;
+		fixed16_16 z1 = p1->z;
 
 		// x values of frustum lines that pass through (x0,z0) and (x1,z1)
 		fixed16_16 left0 = -z0;
@@ -123,7 +122,7 @@ namespace RClassic_Fixed
 		s32 clipX1_Near = 0;
 		s32 clipX0_Near = 0;
 
-		fixed16_16 texelLen = wall->texelLength.f16_16;
+		fixed16_16 texelLen = wall->texelLength;
 		fixed16_16 texelLenRem = texelLen;
 
 		//////////////////////////////////////////////
@@ -140,7 +139,7 @@ namespace RClassic_Fixed
 			// Compute the parametric intersection of the segment and the left frustum line
 			// where s is in the range of [0.0, 1.0]
 			fixed16_16 s = 0;
-			if (dz != 0 && abs(dz) > abs(dx))
+			if (dz != 0 && TFE_CoreMath::abs(dz) > TFE_CoreMath::abs(dx))
 			{
 				s = div16(xz - z0, dz);
 			}
@@ -181,7 +180,7 @@ namespace RClassic_Fixed
 			// where s is in the range of [0.0, 1.0]
 			// Note we are computing from the right side, i.e. distance from (x1,y1).
 			fixed16_16 s = 0;
-			if (dz != 0 && abs(dz) > abs(dx))
+			if (dz != 0 && TFE_CoreMath::abs(dz) > TFE_CoreMath::abs(dx))
 			{
 				s = div16(xz - z1, dz);
 			}
@@ -354,16 +353,16 @@ namespace RClassic_Fixed
 		wallSeg->srcWall = wall;
 		wallSeg->wallX0_raw = x0pixel;
 		wallSeg->wallX1_raw = x1pixel;
-		wallSeg->z0.f16_16 = z0;
-		wallSeg->z1.f16_16 = z1;
-		wallSeg->uCoord0.f16_16 = curU;
+		wallSeg->z0 = z0;
+		wallSeg->z1 = z1;
+		wallSeg->uCoord0 = curU;
 		wallSeg->wallX0 = x0pixel;
 		wallSeg->wallX1 = x1pixel;
-		wallSeg->x0View.f16_16 = x0;
+		wallSeg->x0View = x0;
 
 		fixed16_16 slope, den;
 		s32 orient;
-		if (abs(dx) > abs(dz))
+		if (TFE_CoreMath::abs(dx) > TFE_CoreMath::abs(dz))
 		{
 			slope = div16(dz, dx);
 			den = dx;
@@ -376,8 +375,8 @@ namespace RClassic_Fixed
 			orient = WORIENT_DX_DZ;
 		}
 
-		wallSeg->slope.f16_16 = slope;
-		wallSeg->uScale.f16_16 = div16(texelLenRem, den);
+		wallSeg->slope = slope;
+		wallSeg->uScale = div16(texelLenRem, den);
 		wallSeg->orient = orient;
 		/*if (x0pixel == x1pixel)
 		{
@@ -412,7 +411,7 @@ namespace RClassic_Fixed
 			// TODO : fix this 
 			bool processed = (s_drawFrame == srcWall->drawFrame);
 			//bool processed = false;
-			bool insideWindow = ((srcSeg->z0.f16_16 >= s_windowMinZ_Fixed || srcSeg->z1.f16_16 >= s_windowMinZ_Fixed) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX);
+			bool insideWindow = ((srcSeg->z0 >= s_windowMinZ_Fixed || srcSeg->z1 >= s_windowMinZ_Fixed) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX);
 			if (!processed && insideWindow)
 			{
 				// Copy the source segment into "newSeg" so it can be modified.
@@ -434,15 +433,15 @@ namespace RClassic_Fixed
 					RWall* outSrcWall = sortedSeg->srcWall;
 					RWall* newSrcWall = newSeg->srcWall;
 
-					vec2* outV0 = outSrcWall->v0;
-					vec2* outV1 = outSrcWall->v1;
-					vec2* newV0 = newSrcWall->v0;
-					vec2* newV1 = newSrcWall->v1;
+					vec2_fixed* outV0 = outSrcWall->v0;
+					vec2_fixed* outV1 = outSrcWall->v1;
+					vec2_fixed* newV0 = newSrcWall->v0;
+					vec2_fixed* newV1 = newSrcWall->v1;
 
-					fixed16_16 newMinZ = min(newV0->z.f16_16, newV1->z.f16_16);
-					fixed16_16 newMaxZ = max(newV0->z.f16_16, newV1->z.f16_16);
-					fixed16_16 outMinZ = min(outV0->z.f16_16, outV1->z.f16_16);
-					fixed16_16 outMaxZ = max(outV0->z.f16_16, outV1->z.f16_16);
+					fixed16_16 newMinZ = min(newV0->z, newV1->z);
+					fixed16_16 newMaxZ = max(newV0->z, newV1->z);
+					fixed16_16 outMinZ = min(outV0->z, outV1->z);
+					fixed16_16 outMaxZ = max(outV0->z, outV1->z);
 					s32 side;
 
 					if (newSeg->wallX0 <= sortedSeg->wallX0 && newSeg->wallX1 >= sortedSeg->wallX1)
@@ -450,15 +449,15 @@ namespace RClassic_Fixed
 						if (newMaxZ < outMinZ || newMinZ > outMaxZ)
 						{
 							// This is a clear case, the 'newSeg' is clearly in front of or behind the current 'sortedSeg'
-							side = (newV0->z.f16_16 < outV0->z.f16_16) ? FRONT : BACK;
+							side = (newV0->z < outV0->z) ? FRONT : BACK;
 						}
-						else if (newV0->z.f16_16 < outV0->z.f16_16)
+						else if (newV0->z < outV0->z)
 						{
 							side = FRONT;
-							if ((segmentCrossesLine(outV0->x.f16_16, outV0->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) != 0 ||		// (outV0, 0) does NOT cross (newV0, newV1)
-								 segmentCrossesLine(outV1->x.f16_16, outV1->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) != 0) &&	// (outV1, 0) does NOT cross (newV0, newV1)
-								(segmentCrossesLine(newV0->x.f16_16, newV0->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) == 0 ||		// (newV0, 0) crosses (outV0, outV1)
-								 segmentCrossesLine(newV1->x.f16_16, newV1->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) == 0))		// (newV1, 0) crosses (outV0, outV1)
+							if ((segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0 ||		// (outV0, 0) does NOT cross (newV0, newV1)
+								 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0) &&	// (outV1, 0) does NOT cross (newV0, newV1)
+								(segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||		// (newV0, 0) crosses (outV0, outV1)
+								 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0))		// (newV1, 0) crosses (outV0, outV1)
 							{
 								side = BACK;
 							}
@@ -466,10 +465,10 @@ namespace RClassic_Fixed
 						else  // newV0->z >= outV0->z
 						{
 							side = BACK;
-							if ((segmentCrossesLine(newV0->x.f16_16, newV0->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) != 0 ||		// (newV0, 0) does NOT cross (outV0, outV1)
-								 segmentCrossesLine(newV1->x.f16_16, newV1->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) != 0) &&	// (newV1, 0) does NOT cross (outV0, outV1)
-								(segmentCrossesLine(outV0->x.f16_16, outV0->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) == 0 ||		// (outV0, 0) crosses (newV0, newV1)
-								 segmentCrossesLine(outV1->x.f16_16, outV1->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) == 0))		// (outV1, 0) crosses (newV0, newV1)
+							if ((segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) != 0 ||		// (newV0, 0) does NOT cross (outV0, outV1)
+								 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) != 0) &&	// (newV1, 0) does NOT cross (outV0, outV1)
+								(segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) == 0 ||		// (outV0, 0) crosses (newV0, newV1)
+								 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) == 0))		// (outV1, 0) crosses (newV0, newV1)
 							{
 								side = FRONT;
 							}
@@ -537,15 +536,15 @@ namespace RClassic_Fixed
 						{
 							if (newMaxZ < outMinZ || newMinZ > outMaxZ)
 							{
-								side = (newV0->z.f16_16 < outV0->z.f16_16) ? FRONT : BACK;
+								side = (newV0->z < outV0->z) ? FRONT : BACK;
 							}
-							else if (newV0->z.f16_16 < outV0->z.f16_16)
+							else if (newV0->z < outV0->z)
 							{
 								side = FRONT;
-								if ((segmentCrossesLine(outV0->x.f16_16, outV0->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) != 0 ||
-									 segmentCrossesLine(outV1->x.f16_16, outV1->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) != 0) &&
-									(segmentCrossesLine(newV0->x.f16_16, newV0->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) == 0 ||
-									 segmentCrossesLine(newV1->x.f16_16, newV1->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) == 0))
+								if ((segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0 ||
+									 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0) &&
+									(segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||
+									 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0))
 								{
 									side = BACK;
 								}
@@ -553,10 +552,10 @@ namespace RClassic_Fixed
 							else  // (newV0->z >= outV0->z)
 							{
 								side = BACK;
-								if ((segmentCrossesLine(newV0->x.f16_16, newV0->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) != 0 ||
-									 segmentCrossesLine(newV1->x.f16_16, newV1->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) != 0) &&
-									(segmentCrossesLine(outV0->x.f16_16, outV0->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) == 0 ||
-									 segmentCrossesLine(outV1->x.f16_16, outV1->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) == 0))
+								if ((segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) != 0 ||
+									 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) != 0) &&
+									(segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) == 0 ||
+									 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) == 0))
 								{
 									side = FRONT;
 								}
@@ -603,7 +602,7 @@ namespace RClassic_Fixed
 						{
 							if (newMinZ > outMaxZ)
 							{
-								if (newV1->z.f16_16 >= outV0->z.f16_16)
+								if (newV1->z >= outV0->z)
 								{
 									newSeg->wallX1 = sortedSeg->wallX0 - 1;
 								}
@@ -612,8 +611,8 @@ namespace RClassic_Fixed
 									sortedSeg->wallX0 = newSeg->wallX1 + 1;
 								}
 							}
-							else if (segmentCrossesLine(newV1->x.f16_16, newV1->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) == 0 ||
-								     segmentCrossesLine(outV0->x.f16_16, outV0->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) != 0)
+							else if (segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||
+								     segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0)
 							{
 								newSeg->wallX1 = sortedSeg->wallX0 - 1;
 							}
@@ -625,7 +624,7 @@ namespace RClassic_Fixed
 						}
 						else if (newMaxZ < outMinZ || newMinZ > outMaxZ)
 						{
-							if (newV0->z.f16_16 >= outV1->z.f16_16)
+							if (newV0->z >= outV1->z)
 							{
 								newSeg->wallX0 = sortedSeg->wallX1 + 1;
 							}
@@ -634,8 +633,8 @@ namespace RClassic_Fixed
 								sortedSeg->wallX1 = newSeg->wallX0 - 1;
 							}
 						}
-						else if (segmentCrossesLine(newV0->x.f16_16, newV0->z.f16_16, 0, 0, outV0->x.f16_16, outV0->z.f16_16, outV1->x.f16_16, outV1->z.f16_16) == 0 ||
-							     segmentCrossesLine(outV1->x.f16_16, outV1->z.f16_16, 0, 0, newV0->x.f16_16, newV0->z.f16_16, newV1->x.f16_16, newV1->z.f16_16) != 0)
+						else if (segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||
+							     segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0)
 						{
 							newSeg->wallX0 = sortedSeg->wallX1 + 1;
 						}
@@ -681,22 +680,22 @@ namespace RClassic_Fixed
 		return outIndex;
 	}
 
-	TextureFrame* setupSignTexture(RWall* srcWall, fixed16_16* signU0, fixed16_16* signU1, ColumnFunction* signFullbright, ColumnFunction* signLit, bool hqMode)
+	TextureData* setupSignTexture(RWall* srcWall, fixed16_16* signU0, fixed16_16* signU1, ColumnFunction* signFullbright, ColumnFunction* signLit, bool hqMode)
 	{
-		TextureFrame* signTex = srcWall->signTex;
+		TextureData* signTex = *srcWall->signTex;
 		*signU0 = 0; *signU1 = 0;
 		*signFullbright = nullptr; *signLit = nullptr;
 		if (signTex)
 		{
 			// Compute the U texel range, the overlay is only drawn within this range.
-			*signU0 = srcWall->signUOffset.f16_16;
+			*signU0 = srcWall->signOffset.x;
 			*signU1 = *signU0 + intToFixed16(signTex->width);
 
 			// Determine the column functions based on texture opacity and flags.
 			// In the original DOS code, the sign column functions are different but only because they do not apply the texture height mask
 			// per pixel. I decided to keep it simple, removing the extra binary AND per pixel is not worth adding 4 extra functions that are
 			// mostly redundant.
-			if (signTex->opacity == OPACITY_TRANS)
+			if (signTex->flags == OPACITY_TRANS)
 			{
 				*signFullbright = s_columnFunc[COLFUNC_FULLBRIGHT_TRANS];
 				*signLit = s_columnFunc[(srcWall->flags1 & WF1_ILLUM_SIGN) ? COLFUNC_FULLBRIGHT_TRANS : COLFUNC_LIT_TRANS];
@@ -714,17 +713,17 @@ namespace RClassic_Fixed
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
-		TextureFrame* texture = srcWall->midTex;
+		TextureData* texture = *srcWall->midTex;
 		if (!texture) { return; }
 
-		fixed16_16 ceilingHeight = sector->ceilingHeight.f16_16;
-		fixed16_16 floorHeight = sector->floorHeight.f16_16;
+		fixed16_16 ceilingHeight = sector->ceilingHeight;
+		fixed16_16 floorHeight = sector->floorHeight;
 
 		fixed16_16 ceilEyeRel  = ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 floorEyeRel = floorHeight   - s_eyeHeight_Fixed;
 
-		fixed16_16 z0 = wallSegment->z0.f16_16;
-		fixed16_16 z1 = wallSegment->z1.f16_16;
+		fixed16_16 z0 = wallSegment->z0;
+		fixed16_16 z1 = wallSegment->z1;
 
 		fixed16_16 y0C, y0F, y1C, y1F;
 		y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
@@ -761,7 +760,7 @@ namespace RClassic_Fixed
 
 		fixed16_16 signU0 = 0, signU1 = 0;
 		ColumnFunction signFullbright = nullptr, signLit = nullptr;
-		TextureFrame* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
+		TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
 
 		fixed16_16 wallDeltaX = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 		fixed16_16 dYdXtop = 0, dYdXbot = 0;
@@ -797,8 +796,8 @@ namespace RClassic_Fixed
 			fixed16_16 z = solveForZ(wallSegment, x, numerator, &dxView);
 			s_depth1d_Fixed[x] = z;
 
-			fixed16_16 uScale = wallSegment->uScale.f16_16;
-			fixed16_16 uCoord0 = wallSegment->uCoord0.f16_16 + srcWall->midUOffset.f16_16;
+			fixed16_16 uScale = wallSegment->uScale;
+			fixed16_16 uCoord0 = wallSegment->uCoord0 + srcWall->midOffset.x;
 			fixed16_16 uCoord = uCoord0 + ((wallSegment->orient == WORIENT_DZ_DX) ? mul16(dxView, uScale) : mul16(z - z0, uScale));
 
 			if (s_yPixelCount > 0)
@@ -810,7 +809,7 @@ namespace RClassic_Fixed
 
 				// Calculate the vertical texture coordinate start and increment.
 				fixed16_16 wallHeightPixels = y0F - y0C + ONE_16;
-				fixed16_16 wallHeightTexels = srcWall->midTexelHeight.f16_16;
+				fixed16_16 wallHeightTexels = srcWall->midTexelHeight;
 
 				// s_vCoordStep = tex coord "v" step per y pixel step -> dVdY;
 				s_vCoordStep = div16(wallHeightTexels, wallHeightPixels);
@@ -821,7 +820,7 @@ namespace RClassic_Fixed
 				// scale the texel offset based on the v coord step.
 				// the result is the sub-texel offset
 				fixed16_16 v0 = mul16(s_vCoordStep, vPixelOffset);
-				s_vCoordFixed = v0 + srcWall->midVOffset.f16_16;
+				s_vCoordFixed = v0 + srcWall->midOffset.z;
 
 				// Texture image data = imageStart + u * texHeight
 				s_texImage = texture->image + (texelU << texture->logSizeY);
@@ -842,7 +841,7 @@ namespace RClassic_Fixed
 				// Handle the "sign texture" - a wall overlay.
 				if (signTex && uCoord >= signU0 && uCoord <= signU1)
 				{
-					fixed16_16 signYBase = y0F + div16(srcWall->signVOffset.f16_16, s_vCoordStep);
+					fixed16_16 signYBase = y0F + div16(srcWall->signOffset.z, s_vCoordStep);
 					s32 y0 = max(floor16(signYBase - div16(intToFixed16(signTex->height), s_vCoordStep) + ONE_16 + HALF_16), top);
 					s32 y1 = min(floor16(signYBase + HALF_16), bot);
 					s_yPixelCount = y1 - y0 + 1;
@@ -876,20 +875,20 @@ namespace RClassic_Fixed
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
-		TextureFrame* texture = srcWall->midTex;
+		TextureData* texture = *srcWall->midTex;
 
-		fixed16_16 z0 = wallSegment->z0.f16_16;
-		fixed16_16 yC0 = edge->yCeil0.f16_16;
-		fixed16_16 yF0 = edge->yFloor0.f16_16;
-		fixed16_16 uScale = wallSegment->uScale.f16_16;
-		fixed16_16 uCoord0 = wallSegment->uCoord0.f16_16 + srcWall->midUOffset.f16_16;
+		fixed16_16 z0 = wallSegment->z0;
+		fixed16_16 yC0 = edge->yCeil0;
+		fixed16_16 yF0 = edge->yFloor0;
+		fixed16_16 uScale = wallSegment->uScale;
+		fixed16_16 uCoord0 = wallSegment->uCoord0 + srcWall->midOffset.x;
 		s32 lengthInPixels = edge->lengthInPixels;
 
 		s_texHeightMask = texture->height - 1;
 		s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
 
-		fixed16_16 ceil_dYdX = edge->dyCeil_dx.f16_16;
-		fixed16_16 floor_dYdX = edge->dyFloor_dx.f16_16;
+		fixed16_16 ceil_dYdX = edge->dyCeil_dx;
+		fixed16_16 floor_dYdX = edge->dyFloor_dx;
 		fixed16_16 num = solveForZ_Numerator(wallSegment);
 
 		for (s32 i = 0, x = edge->x0; i < lengthInPixels; i++, x++)
@@ -915,8 +914,8 @@ namespace RClassic_Fixed
 				}
 
 				s_texImage = &texture->image[texelU << texture->logSizeY];
-				s_vCoordStep  = div16(srcWall->midTexelHeight.f16_16, yF0 - yC0 + ONE_16);
-				s_vCoordFixed = mul16(yF0 - intToFixed16(yF_pixel) + HALF_16, s_vCoordStep) + srcWall->midVOffset.f16_16;
+				s_vCoordStep  = div16(srcWall->midTexelHeight, yF0 - yC0 + ONE_16);
+				s_vCoordFixed = mul16(yF0 - intToFixed16(yF_pixel) + HALF_16, s_vCoordStep) + srcWall->midOffset.z;
 
 				s_columnOut = &s_display[yC_pixel*s_width + x];
 				s_depth1d_Fixed[x] = z;
@@ -943,8 +942,8 @@ namespace RClassic_Fixed
 		RSector* sector = srcWall->sector;
 		RSector* nextSector = srcWall->nextSector;
 
-		fixed16_16 z0 = wallSegment->z0.f16_16;
-		fixed16_16 z1 = wallSegment->z1.f16_16;
+		fixed16_16 z0 = wallSegment->z0;
+		fixed16_16 z1 = wallSegment->z1;
 		u32 flags1 = sector->flags1;
 		u32 nextFlags1 = nextSector->flags1;
 
@@ -955,7 +954,7 @@ namespace RClassic_Fixed
 		}
 		else
 		{
-			fixed16_16 ceilRel = sector->ceilingHeight.f16_16 - s_eyeHeight_Fixed;
+			fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
 			cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 			cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
 		}
@@ -985,7 +984,7 @@ namespace RClassic_Fixed
 		}
 		else
 		{
-			fixed16_16 floorRel = sector->floorHeight.f16_16 - s_eyeHeight_Fixed;
+			fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
 			fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 			fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
 		}
@@ -1031,8 +1030,8 @@ namespace RClassic_Fixed
 		}
 
 		flat_addEdges(length, x, dydxFloor, y1, dydxCeil, y0);
-		fixed16_16 nextFloor = nextSector->floorHeight.f16_16;
-		fixed16_16 nextCeil  = nextSector->ceilingHeight.f16_16;
+		fixed16_16 nextFloor = nextSector->floorHeight;
+		fixed16_16 nextCeil  = nextSector->ceilingHeight;
 		// There is an opening in this wall to the next sector.
 		if (nextFloor > nextCeil)
 		{
@@ -1061,10 +1060,10 @@ namespace RClassic_Fixed
 		RWall* wall = wallSegment->srcWall;
 		RSector* sector = wall->sector;
 		RSector* nextSector = wall->nextSector;
-		TextureFrame* tex = wall->botTex;
+		TextureData* tex = *wall->botTex;
 
-		fixed16_16 z0 = wallSegment->z0.f16_16;
-		fixed16_16 z1 = wallSegment->z1.f16_16;
+		fixed16_16 z0 = wallSegment->z0;
+		fixed16_16 z1 = wallSegment->z1;
 
 		fixed16_16 cProj0, cProj1;
 		if ((sector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
@@ -1074,7 +1073,7 @@ namespace RClassic_Fixed
 		}
 		else
 		{
-			fixed16_16 ceilRel = sector->ceilingHeight.f16_16 - s_eyeHeight_Fixed;
+			fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
 			cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 			cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
 		}
@@ -1099,7 +1098,7 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		fixed16_16 floorRel = sector->floorHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 fProj0, fProj1;
 		fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 		fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
@@ -1125,7 +1124,7 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		fixed16_16 floorRelNext = nextSector->floorHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 floorRelNext = nextSector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 fNextProj0, fNextProj1;
 		fNextProj0 = div16(mul16(floorRelNext, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 		fNextProj1 = div16(mul16(floorRelNext, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
@@ -1160,7 +1159,7 @@ namespace RClassic_Fixed
 
 		s32 yTop0 = round16(fNextProj0);
 		s32 yTop1 = round16(fNextProj1);
-		if ((yTop0 > s_windowMinY || yTop1 > s_windowMinY) && sector->ceilingHeight.f16_16 < nextSector->floorHeight.f16_16)
+		if ((yTop0 > s_windowMinY || yTop1 > s_windowMinY) && sector->ceilingHeight < nextSector->floorHeight)
 		{
 			wall_addAdjoinSegment(length, wallSegment->wallX0, floorNext_dYdX, fNextProj0, ceil_dYdX, cProj0, wallSegment);
 		}
@@ -1180,7 +1179,7 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		fixed16_16 u0 = wallSegment->uCoord0.f16_16;
+		fixed16_16 u0 = wallSegment->uCoord0;
 		fixed16_16 num = solveForZ_Numerator(wallSegment);
 		s_texHeightMask = tex->height - 1;
 		s32 flipHorz = (wall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
@@ -1188,7 +1187,7 @@ namespace RClassic_Fixed
 
 		fixed16_16 signU0 = 0, signU1 = 0;
 		ColumnFunction signFullbright = nullptr, signLit = nullptr;
-		TextureFrame* signTex = setupSignTexture(wall, &signU0, &signU1, &signFullbright, &signLit, false);
+		TextureData* signTex = setupSignTexture(wall, &signU0, &signU1, &signFullbright, &signLit, false);
 
 		if (length > 0)
 		{
@@ -1219,12 +1218,12 @@ namespace RClassic_Fixed
 				fixed16_16 uCoord;
 				if (wallSegment->orient == WORIENT_DZ_DX)
 				{
-					uCoord = u0 + mul16(dxView, wallSegment->uScale.f16_16) + wall->botUOffset.f16_16;
+					uCoord = u0 + mul16(dxView, wallSegment->uScale) + wall->botOffset.x;
 				}
 				else
 				{
 					fixed16_16 dz = z - z0;
-					uCoord = u0 + mul16(dz, wallSegment->uScale.f16_16) + wall->botUOffset.f16_16;
+					uCoord = u0 + mul16(dz, wallSegment->uScale) + wall->botOffset.x;
 				}
 				s_depth1d_Fixed[x] = z;
 				if (s_yPixelCount > 0)
@@ -1236,9 +1235,9 @@ namespace RClassic_Fixed
 						texelU = widthMask - texelU;
 					}
 
-					s_vCoordStep = div16(wall->botTexelHeight.f16_16, yBot - yTop + ONE_16);
+					s_vCoordStep = div16(wall->botTexelHeight, yBot - yTop + ONE_16);
 					fixed16_16 v0 = mul16(yBot - intToFixed16(yBot_pixel) + HALF_16, s_vCoordStep);
-					s_vCoordFixed = v0 + wall->botVOffset.f16_16;
+					s_vCoordFixed = v0 + wall->botOffset.z;
 					s_texImage = &tex->image[texelU << tex->logSizeY];
 					s_columnOut = &s_display[yTop_pixel * s_width + x];
 					s_columnLight = computeLighting(z, wall->wallLight);
@@ -1254,7 +1253,7 @@ namespace RClassic_Fixed
 					// Handle the "sign texture" - a wall overlay.
 					if (signTex && uCoord >= signU0 && uCoord <= signU1)
 					{
-						fixed16_16 signYBase = yBot + div16(wall->signVOffset.f16_16, s_vCoordStep);
+						fixed16_16 signYBase = yBot + div16(wall->signOffset.z, s_vCoordStep);
 						s32 y0 = max(floor16(signYBase - div16(intToFixed16(signTex->height), s_vCoordStep) + ONE_16 + HALF_16), yTop_pixel);
 						s32 y1 = min(floor16(signYBase + HALF_16), yBot_pixel);
 						s_yPixelCount = y1 - y0 + 1;
@@ -1289,15 +1288,15 @@ namespace RClassic_Fixed
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
 		RSector* next = srcWall->nextSector;
-		TextureFrame* texture = srcWall->topTex;
-		fixed16_16 z0 = wallSegment->z0.f16_16;
-		fixed16_16 z1 = wallSegment->z1.f16_16;
+		TextureData* texture = *srcWall->topTex;
+		fixed16_16 z0 = wallSegment->z0;
+		fixed16_16 z1 = wallSegment->z1;
 		fixed16_16 num = solveForZ_Numerator(wallSegment);
 				
 		s32 x0 = wallSegment->wallX0;
 		s32 lengthInPixels = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 
-		fixed16_16 ceilRel = sector->ceilingHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 yC0, yC1;
 		yC0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 		yC1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
@@ -1327,7 +1326,7 @@ namespace RClassic_Fixed
 		}
 		else
 		{
-			fixed16_16 floorRel = sector->floorHeight.f16_16 - s_eyeHeight_Fixed;
+			fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
 			yF0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 			yF1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
 		}
@@ -1346,7 +1345,7 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		fixed16_16 next_ceilRel = next->ceilingHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 next_ceilRel = next->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 next_yC0, next_yC1;
 		next_yC0 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 		next_yC1 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
@@ -1372,7 +1371,7 @@ namespace RClassic_Fixed
 		flat_addEdges(lengthInPixels, x0, floor_dYdX, yF0, ceil_dYdX, yC0);
 		s32 next_yC0_pixel = round16(next_yC0);
 		s32 next_yC1_pixel = round16(next_yC1);
-		if ((next_yC0_pixel < s_windowMaxY || next_yC1_pixel < s_windowMaxY) && (sector->floorHeight.f16_16 > next->ceilingHeight.f16_16))
+		if ((next_yC0_pixel < s_windowMaxY || next_yC1_pixel < s_windowMaxY) && (sector->floorHeight > next->ceilingHeight))
 		{
 			wall_addAdjoinSegment(lengthInPixels, x0, floor_dYdX, yF0, next_ceil_dYdX, next_yC0, wallSegment);
 		}
@@ -1396,13 +1395,13 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		fixed16_16 uCoord0 = wallSegment->uCoord0.f16_16;
+		fixed16_16 uCoord0 = wallSegment->uCoord0;
 		s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
 		s32 illumSign = (srcWall->flags1 & WF1_ILLUM_SIGN) ? -1 : 0;
 
 		fixed16_16 signU0 = 0, signU1 = 0;
 		ColumnFunction signFullbright = nullptr, signLit = nullptr;
-		TextureFrame* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
+		TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
 
 		for (s32 i = 0, x = x0; i < lengthInPixels; i++, x++)
 		{
@@ -1428,8 +1427,8 @@ namespace RClassic_Fixed
 			fixed16_16 dxView;
 			fixed16_16 z = solveForZ(wallSegment, x, num, &dxView);
 
-			fixed16_16 uScale = wallSegment->uScale.f16_16;
-			fixed16_16 uCoord0 = wallSegment->uCoord0.f16_16 + srcWall->topUOffset.f16_16;
+			fixed16_16 uScale = wallSegment->uScale;
+			fixed16_16 uCoord0 = wallSegment->uCoord0 + srcWall->topOffset.x;
 			fixed16_16 uCoord = uCoord0 + ((wallSegment->orient == WORIENT_DZ_DX) ? mul16(dxView, uScale) : mul16(z - z0, uScale));
 
 			s_depth1d_Fixed[x] = z;
@@ -1443,8 +1442,8 @@ namespace RClassic_Fixed
 				}
 				assert(texelU >= 0 && texelU <= widthMask);
 
-				s_vCoordStep = div16(srcWall->topTexelHeight.f16_16, next_yC0 - yC0 + ONE_16);
-				s_vCoordFixed = srcWall->topVOffset.f16_16 + mul16(next_yC0 - intToFixed16(next_yC0_pixel) + HALF_16, s_vCoordStep);
+				s_vCoordStep = div16(srcWall->topTexelHeight, next_yC0 - yC0 + ONE_16);
+				s_vCoordFixed = srcWall->topOffset.z + mul16(next_yC0 - intToFixed16(next_yC0_pixel) + HALF_16, s_vCoordStep);
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 
 				s_columnOut = &s_display[yC0_pixel * s_width + x];
@@ -1461,7 +1460,7 @@ namespace RClassic_Fixed
 				// Handle the "sign texture" - a wall overlay.
 				if (signTex && uCoord >= signU0 && uCoord <= signU1)
 				{
-					fixed16_16 signYBase = next_yC0 + div16(srcWall->signVOffset.f16_16, s_vCoordStep);
+					fixed16_16 signYBase = next_yC0 + div16(srcWall->signOffset.z, s_vCoordStep);
 					s32 y0 = max(floor16(signYBase - div16(intToFixed16(signTex->height), s_vCoordStep) + ONE_16 + HALF_16), yC0_pixel);
 					s32 y1 = min(floor16(signYBase + HALF_16), next_yC0_pixel);
 					s_yPixelCount = y1 - y0 + 1;
@@ -1496,15 +1495,15 @@ namespace RClassic_Fixed
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
-		TextureFrame* topTex = srcWall->topTex;
-		fixed16_16 z0 = wallSegment->z0.f16_16;
-		fixed16_16 z1 = wallSegment->z1.f16_16;
+		TextureData* topTex = *srcWall->topTex;
+		fixed16_16 z0 = wallSegment->z0;
+		fixed16_16 z1 = wallSegment->z1;
 		s32 x0 = wallSegment->wallX0;
 		fixed16_16 xOffset   = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
 		s32 length    =  wallSegment->wallX1 - wallSegment->wallX0 + 1;
 		fixed16_16 lengthRaw = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 
-		fixed16_16 ceilRel = sector->ceilingHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 cProj0, cProj1;
 		cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 		cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
@@ -1527,7 +1526,7 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		fixed16_16 floorRel = sector->floorHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 fProj0, fProj1;
 		fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 		fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
@@ -1551,7 +1550,7 @@ namespace RClassic_Fixed
 		}
 
 		RSector* nextSector = srcWall->nextSector;
-		fixed16_16 next_ceilRel = nextSector->ceilingHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 next_ceilRel = nextSector->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 next_cProj0, next_cProj1;
 		next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 		next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
@@ -1576,7 +1575,7 @@ namespace RClassic_Fixed
 		s32 cn1_pixel = round16(next_cProj1);
 		if (cn0_pixel >= s_windowMinY || cn1_pixel >= s_windowMinY)
 		{
-			fixed16_16 u0 = wallSegment->uCoord0.f16_16;
+			fixed16_16 u0 = wallSegment->uCoord0;
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 			s_texHeightMask = topTex->height - 1;
 			s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
@@ -1604,12 +1603,12 @@ namespace RClassic_Fixed
 				fixed16_16 u;
 				if (wallSegment->orient == WORIENT_DZ_DX)
 				{
-					u = u0 + mul16(dxView, wallSegment->uScale.f16_16) + srcWall->topUOffset.f16_16;
+					u = u0 + mul16(dxView, wallSegment->uScale) + srcWall->topOffset.x;
 				}
 				else
 				{
 					fixed16_16 dz = z - z0;
-					u = u0 + mul16(dz, wallSegment->uScale.f16_16) + srcWall->topUOffset.f16_16;
+					u = u0 + mul16(dz, wallSegment->uScale) + srcWall->topOffset.x;
 				}
 				s_depth1d_Fixed[x] = z;
 				if (s_yPixelCount > 0)
@@ -1620,9 +1619,9 @@ namespace RClassic_Fixed
 					{
 						texelU = widthMask - texelU;
 					}
-					s_vCoordStep = div16(srcWall->topTexelHeight.f16_16, yC1 - yC0 + ONE_16);
+					s_vCoordStep = div16(srcWall->topTexelHeight, yC1 - yC0 + ONE_16);
 					fixed16_16 yOffset = yC1 - intToFixed16(yC1_pixel) + HALF_16;
-					s_vCoordFixed = mul16(yOffset, s_vCoordStep) + srcWall->topVOffset.f16_16;
+					s_vCoordFixed = mul16(yOffset, s_vCoordStep) + srcWall->topOffset.z;
 					s_texImage = &topTex->image[texelU << topTex->logSizeY];
 					s_columnOut = &s_display[yC0_pixel * s_width + x];
 					s_columnLight = computeLighting(z, srcWall->wallLight);
@@ -1645,7 +1644,7 @@ namespace RClassic_Fixed
 			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMinY - 1; }
 		}
 
-		fixed16_16 next_floorRel = nextSector->floorHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 next_floorRel = nextSector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 next_fProj0, next_fProj1;
 		next_fProj0 = div16(mul16(next_floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
 		next_fProj1 = div16(mul16(next_floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
@@ -1665,13 +1664,13 @@ namespace RClassic_Fixed
 
 		fixed16_16 yF0 = next_fProj0;
 		fixed16_16 yF1 = fProj0;
-		TextureFrame* botTex = srcWall->botTex;
+		TextureData* botTex = *srcWall->botTex;
 		f0_pixel = round16(next_fProj0);
 		f1_pixel = round16(next_fProj1);
 
 		if (f0_pixel <= s_windowMaxY || f1_pixel <= s_windowMaxY)
 		{
-			fixed16_16 u0 = wallSegment->uCoord0.f16_16;
+			fixed16_16 u0 = wallSegment->uCoord0;
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 
 			s_texHeightMask = botTex->height - 1;
@@ -1680,7 +1679,7 @@ namespace RClassic_Fixed
 
 			fixed16_16 signU0 = 0, signU1 = 0;
 			ColumnFunction signFullbright = nullptr, signLit = nullptr;
-			TextureFrame* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
+			TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
 
 			if (length > 0)
 			{
@@ -1707,12 +1706,12 @@ namespace RClassic_Fixed
 					fixed16_16 uCoord;
 					if (wallSegment->orient == WORIENT_DZ_DX)
 					{
-						uCoord = u0 + mul16(dxView, wallSegment->uScale.f16_16) + srcWall->botUOffset.f16_16;
+						uCoord = u0 + mul16(dxView, wallSegment->uScale) + srcWall->botOffset.x;
 					}
 					else
 					{
 						fixed16_16 dz = z - z0;
-						uCoord = u0 + mul16(dz, wallSegment->uScale.f16_16) + srcWall->botUOffset.f16_16;
+						uCoord = u0 + mul16(dz, wallSegment->uScale) + srcWall->botOffset.x;
 					}
 					s_depth1d_Fixed[x] = z;
 					if (s_yPixelCount > 0)
@@ -1723,8 +1722,8 @@ namespace RClassic_Fixed
 						{
 							texelU = widthMask - texelU;
 						}
-						s_vCoordStep = div16(srcWall->botTexelHeight.f16_16, yF1 - yF0 + ONE_16);
-						s_vCoordFixed = srcWall->botVOffset.f16_16 + mul16(yF1 - intToFixed16(yF1_pixel) + HALF_16, s_vCoordStep);
+						s_vCoordStep = div16(srcWall->botTexelHeight, yF1 - yF0 + ONE_16);
+						s_vCoordFixed = srcWall->botOffset.z + mul16(yF1 - intToFixed16(yF1_pixel) + HALF_16, s_vCoordStep);
 						s_texImage = &botTex->image[texelU << botTex->logSizeY];
 						s_columnOut = &s_display[yF0_pixel * s_width + x];
 						s_columnLight = computeLighting(z, srcWall->wallLight);
@@ -1741,7 +1740,7 @@ namespace RClassic_Fixed
 						// Handle the "sign texture" - a wall overlay.
 						if (signTex && uCoord >= signU0 && uCoord <= signU1)
 						{
-							fixed16_16 signYBase = yF1 + div16(srcWall->signVOffset.f16_16, s_vCoordStep);
+							fixed16_16 signYBase = yF1 + div16(srcWall->signOffset.z, s_vCoordStep);
 							s32 y0 = max(floor16(signYBase - div16(intToFixed16(signTex->height), s_vCoordStep) + ONE_16 + HALF_16), yF0_pixel);
 							s32 y1 = min(floor16(signYBase + HALF_16), yF1_pixel);
 							s_yPixelCount = y1 - y0 + 1;
@@ -1778,7 +1777,7 @@ namespace RClassic_Fixed
 		s32 next_f1_pixel = round16(next_fProj1);
 		s32 next_c0_pixel = round16(next_cProj0);
 		s32 next_c1_pixel = round16(next_cProj1);
-		if ((next_f0_pixel <= s_windowMinY && next_f1_pixel <= s_windowMinY) || (next_c0_pixel >= s_windowMaxY && next_c1_pixel >= s_windowMaxY) || (nextSector->floorHeight.f16_16 <= nextSector->ceilingHeight.f16_16))
+		if ((next_f0_pixel <= s_windowMinY && next_f1_pixel <= s_windowMinY) || (next_c0_pixel >= s_windowMaxY && next_c1_pixel >= s_windowMaxY) || (nextSector->floorHeight <= nextSector->ceilingHeight))
 		{
 			// srcWall->y1 = -1;
 			return;
@@ -1795,7 +1794,7 @@ namespace RClassic_Fixed
 		if (s_wallMaxCeilY < s_windowMinY) { return; }
 		TFE_ZONE("Draw Sky");
 
-		TextureFrame* texture = sector->ceilTex;
+		TextureData* texture = *sector->ceilTex;
 		fixed16_16 heightScale;
 		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
 		// However with higher resolutions this must be scaled to look the same.
@@ -1822,14 +1821,14 @@ namespace RClassic_Fixed
 			{
 				if (s_height == SKY_BASE_HEIGHT)
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->ceilOffsetZ.f16_16;
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->ceilOffset.z;
 				}
 				else
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->ceilOffsetZ.f16_16;
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->ceilOffset.z;
 				}
 
-				s32 texelU = ( floor16(sector->ceilOffsetX.f16_16 - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) ) & texWidthMask;
+				s32 texelU = ( floor16(sector->ceilOffset.x - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) ) & texWidthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 				s_columnOut = &s_display[y0*s_width + x];
 				drawColumn_Fullbright();
@@ -1840,7 +1839,7 @@ namespace RClassic_Fixed
 	void wall_drawSkyTopNoWall(RSector* sector)
 	{
 		TFE_ZONE("Draw Sky");
-		const TextureFrame* texture = sector->ceilTex;
+		const TextureData* texture = *sector->ceilTex;
 
 		fixed16_16 heightScale;
 		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
@@ -1867,15 +1866,15 @@ namespace RClassic_Fixed
 			{
 				if (s_height == SKY_BASE_HEIGHT)
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->ceilOffsetZ.f16_16;
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->ceilOffset.z;
 				}
 				else
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->ceilOffsetZ.f16_16;
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->ceilOffset.z;
 				}
 
 				s32 widthMask = texture->width - 1;
-				s32 texelU = floor16(sector->ceilOffsetX.f16_16 - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & widthMask;
+				s32 texelU = floor16(sector->ceilOffset.x - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & widthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 				s_columnOut = &s_display[y0*s_width + x];
 
@@ -1891,7 +1890,7 @@ namespace RClassic_Fixed
 		if (s_wallMinFloorY > s_windowMaxY) { return; }
 		TFE_ZONE("Draw Sky");
 
-		TextureFrame* texture = sector->floorTex;
+		TextureData* texture = *sector->floorTex;
 		fixed16_16 heightScale;
 		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
 		// However with higher resolutions this must be scaled to look the same.
@@ -1918,14 +1917,14 @@ namespace RClassic_Fixed
 			{
 				if (s_height == SKY_BASE_HEIGHT)
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->floorOffsetZ.f16_16;
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->floorOffset.z;
 				}
 				else
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->floorOffsetZ.f16_16;
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->floorOffset.z;
 				}
 
-				s32 texelU = floor16(sector->floorOffsetX.f16_16 - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & texWidthMask;
+				s32 texelU = floor16(sector->floorOffset.x - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & texWidthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 				s_columnOut = &s_display[y0*s_width + x];
 				drawColumn_Fullbright();
@@ -1936,7 +1935,7 @@ namespace RClassic_Fixed
 	void wall_drawSkyBottomNoWall(RSector* sector)
 	{
 		TFE_ZONE("Draw Sky");
-		const TextureFrame* texture = sector->floorTex;
+		const TextureData* texture = *sector->floorTex;
 
 		fixed16_16 heightScale;
 		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
@@ -1963,15 +1962,15 @@ namespace RClassic_Fixed
 			{
 				if (s_height == SKY_BASE_HEIGHT)
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->floorOffsetZ.f16_16;
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->floorOffset.z;
 				}
 				else
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->floorOffsetZ.f16_16;
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->floorOffset.z;
 				}
 
 				s32 widthMask = texture->width - 1;
-				s32 texelU = floor16(sector->floorOffsetX.f16_16 - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & widthMask;
+				s32 texelU = floor16(sector->floorOffset.x - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & widthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 				s_columnOut = &s_display[y0*s_width + x];
 
@@ -2006,16 +2005,16 @@ namespace RClassic_Fixed
 	// When solving for Z, part of the computation can be done once per wall.
 	fixed16_16 solveForZ_Numerator(RWallSegment* wallSegment)
 	{
-		const fixed16_16 z0 = wallSegment->z0.f16_16;
+		const fixed16_16 z0 = wallSegment->z0;
 
 		fixed16_16 numerator;
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
-			numerator = z0 - mul16(wallSegment->slope.f16_16, wallSegment->x0View.f16_16);
+			numerator = z0 - mul16(wallSegment->slope, wallSegment->x0View);
 		}
 		else  // WORIENT_DX_DZ
 		{
-			numerator = wallSegment->x0View.f16_16 - mul16(wallSegment->slope.f16_16, z0);
+			numerator = wallSegment->x0View - mul16(wallSegment->slope, z0);
 		}
 
 		return numerator;
@@ -2028,24 +2027,24 @@ namespace RClassic_Fixed
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
-			fixed16_16 den = s_column_Y_Over_X_Fixed[x] - wallSegment->slope.f16_16;
+			fixed16_16 den = s_column_Y_Over_X_Fixed[x] - wallSegment->slope;
 			// Avoid divide by zero.
 			if (den == 0) { den = 1; }
 
 			fixed16_16 xView = div16(numerator, den);
 			// Use the saved x0View to get dx in viewspace.
-			fixed16_16 dxView = xView - wallSegment->x0View.f16_16;
+			fixed16_16 dxView = xView - wallSegment->x0View;
 			// avoid recalculating for u coordinate computation.
 			if (outViewDx) { *outViewDx = dxView; }
 			// Once we have dx in viewspace, we multiply by the slope (dZ/dX) in order to get dz.
-			fixed16_16 dz = mul16(dxView, wallSegment->slope.f16_16);
+			fixed16_16 dz = mul16(dxView, wallSegment->slope);
 			// Then add z0 to get z(x) that is perspective correct.
-			z = wallSegment->z0.f16_16 + dz;
+			z = wallSegment->z0 + dz;
 		}
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			fixed16_16 den = s_column_X_Over_Y_Fixed[x] - wallSegment->slope.f16_16;
+			fixed16_16 den = s_column_X_Over_Y_Fixed[x] - wallSegment->slope;
 			// Avoid divide by 0.
 			if (den == 0) { den = 1; }
 
@@ -2158,11 +2157,11 @@ namespace RClassic_Fixed
 		{
 			RSector* sector = wall->sector;
 			RWall* mirror = wall->mirrorWall;
-			fixed16_16 wFloorHeight = sector->floorHeight.f16_16;
-			fixed16_16 wCeilHeight = sector->ceilingHeight.f16_16;
+			fixed16_16 wFloorHeight = sector->floorHeight;
+			fixed16_16 wCeilHeight = sector->ceilingHeight;
 			RSector* nextSector = mirror->sector;
-			fixed16_16 mFloorHeight = nextSector->floorHeight.f16_16;
-			fixed16_16 mCeilHeight = nextSector->ceilingHeight.f16_16;
+			fixed16_16 mFloorHeight = nextSector->floorHeight;
+			fixed16_16 mCeilHeight = nextSector->ceilingHeight;
 			wall->drawFlags = 0;
 			mirror->drawFlags = 0;
 
@@ -2193,47 +2192,47 @@ namespace RClassic_Fixed
 			{
 				RSector* next = wall->nextSector;
 				RSector* cur = wall->sector;
-				wall->topTexelHeight.f16_16 = (next->ceilingHeight.f16_16 - cur->ceilingHeight.f16_16) * 8;
+				wall->topTexelHeight = (next->ceilingHeight - cur->ceilingHeight) * 8;
 			}
 			if (wall->drawFlags & WDF_BOT)
 			{
 				RSector* cur = wall->sector;
 				RSector* next = wall->nextSector;
-				wall->botTexelHeight.f16_16 = (cur->floorHeight.f16_16 - next->floorHeight.f16_16) * 8;
+				wall->botTexelHeight = (cur->floorHeight - next->floorHeight) * 8;
 			}
 			if (wall->midTex)
 			{
 				if (!(wall->drawFlags & WDF_BOT) && !(wall->drawFlags & WDF_TOP))
 				{
 					RSector* midSector = wall->sector;
-					fixed16_16 midFloorHeight = wall->sector->floorHeight.f16_16;
-					wall->midTexelHeight.f16_16 = (midFloorHeight - midSector->ceilingHeight.f16_16) * 8;
+					fixed16_16 midFloorHeight = wall->sector->floorHeight;
+					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
 				}
 				else if (!(wall->drawFlags & WDF_BOT))
 				{
 					RSector* midSector = wall->nextSector;
-					fixed16_16 midFloorHeight = wall->sector->floorHeight.f16_16;
-					wall->midTexelHeight.f16_16 = (midFloorHeight - midSector->ceilingHeight.f16_16) * 8;
+					fixed16_16 midFloorHeight = wall->sector->floorHeight;
+					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
 				}
 				else if (!(wall->drawFlags & WDF_TOP))
 				{
 					RSector* midSector = wall->sector;
-					fixed16_16 midFloorHeight = wall->nextSector->floorHeight.f16_16;
-					wall->midTexelHeight.f16_16 = (midFloorHeight - midSector->ceilingHeight.f16_16) * 8;
+					fixed16_16 midFloorHeight = wall->nextSector->floorHeight;
+					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
 				}
 				else
 				{
 					RSector* midSector = wall->nextSector;
-					fixed16_16 midFloorHeight = wall->nextSector->floorHeight.f16_16;
-					wall->midTexelHeight.f16_16 = (midFloorHeight - midSector->ceilingHeight.f16_16) * 8;
+					fixed16_16 midFloorHeight = wall->nextSector->floorHeight;
+					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
 				}
 			}
 		}
 		else
 		{
 			RSector* midSector = wall->sector;
-			fixed16_16 midFloorHeight = midSector->floorHeight.f16_16;
-			wall->midTexelHeight.f16_16 = (midFloorHeight - midSector->ceilingHeight.f16_16) * 8;
+			fixed16_16 midFloorHeight = midSector->floorHeight;
+			wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
 		}
 	}
 
@@ -2268,14 +2267,14 @@ namespace RClassic_Fixed
 		if (!frame) { return; }
 
 		const WaxCell* cell = WAX_CellPtr(basePtr, frame);
-		const fixed16_16 z = obj->posVS.z.f16_16;
+		const fixed16_16 z = obj->posVS.z;
 		const s32 flip = frame->flip;
 		// Make sure the sprite isn't behind the near plane.
 		if (z < ONE_16) { return; }
 
-		const fixed16_16 x0 = obj->posVS.x.f16_16 - frame->offsetX;
+		const fixed16_16 x0 = obj->posVS.x - frame->offsetX;
 		const fixed16_16 yOffset = frame->heightWS - frame->offsetY;
-		const fixed16_16 y0 = obj->posVS.y.f16_16 - yOffset;
+		const fixed16_16 y0 = obj->posVS.y - yOffset;
 
 		const fixed16_16 rcpZ = div16(ONE_16, z);
 		const fixed16_16 projX0 = mul16(mul16(x0, s_focalLength_Fixed), rcpZ) + s_halfWidth_Fixed;

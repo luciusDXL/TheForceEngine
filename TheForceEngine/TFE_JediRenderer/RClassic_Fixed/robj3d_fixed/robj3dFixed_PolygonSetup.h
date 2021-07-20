@@ -5,9 +5,12 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Asset/modelAsset_Jedi.h>
-#include "../../rmath.h"
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 
 #define POLY_MAX_VTX_COUNT 32
+
+using namespace TFE_CoreMath;
 
 namespace TFE_JediRenderer
 {

@@ -29,7 +29,7 @@ namespace TFE_JediRenderer
 					left = x;
 				}
 			}
-			else if (edge->dyCeil_dx.f16_16 > 0)  // find the left intersection.
+			else if (edge->dyCeil_dx > 0)  // find the left intersection.
 			{
 				x = edge->x0;
 				s32 ey = s_columnTop[x];
@@ -76,7 +76,7 @@ namespace TFE_JediRenderer
 				}
 				else
 				{
-					if (edge->dyCeil_dx.f16_16 >= 0)
+					if (edge->dyCeil_dx >= 0)
 					{
 						hasRight = -1;
 						right = x;
@@ -136,7 +136,7 @@ namespace TFE_JediRenderer
 					left = x;
 				}
 			}
-			else if (edge->dyFloor_dx.f16_16 < 0)  // find the left intersection.
+			else if (edge->dyFloor_dx < 0)  // find the left intersection.
 			{
 				x = edge->x0;
 				s32 ey = s_columnBot[x];
@@ -183,7 +183,7 @@ namespace TFE_JediRenderer
 				}
 				else
 				{
-					if (edge->dyFloor_dx.f16_16 <= 0)
+					if (edge->dyFloor_dx <= 0)
 					{
 						hasRight = -1;
 						right = x;

@@ -1,14 +1,13 @@
-#include <TFE_Asset/textureAsset.h>
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/rtexture.h>
 #include "rflatFixed.h"
 #include "rlightingFixed.h"
 #include "redgePairFixed.h"
 #include "rclassicFixed.h"
 #include "rcommonFixed.h"
 #include "../rscanline.h"
-#include "../rsector.h"
+#include "../rsectorRender.h"
 #include "../redgePair.h"
-#include "../fixedPoint.h"
-#include "../rmath.h"
 #include "../rcommon.h"
 #include <assert.h>
 
@@ -180,7 +179,7 @@ namespace RClassic_Fixed
 		}
 	}
 			   
-	bool flat_setTexture(TextureFrame* tex)
+	bool flat_setTexture(TextureData* tex)
 	{
 		if (!tex) { return false; }
 
@@ -196,17 +195,17 @@ namespace RClassic_Fixed
 
 	void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count)
 	{
-		fixed16_16 textureOffsetU = s_cameraPosX_Fixed - sector->ceilOffsetX.f16_16;
-		fixed16_16 textureOffsetV = sector->ceilOffsetZ.f16_16 - s_cameraPosZ_Fixed;
+		fixed16_16 textureOffsetU = s_cameraPosX_Fixed - sector->ceilOffset.x;
+		fixed16_16 textureOffsetV = sector->ceilOffset.z - s_cameraPosZ_Fixed;
 
-		fixed16_16 relCeil          =  sector->ceilingHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 relCeil          =  sector->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 scaledRelCeil    =  mul16(relCeil, s_focalLenAspect_Fixed);
 		fixed16_16 cosScaledRelCeil =  mul16(scaledRelCeil, s_cosYaw_Fixed);
 		fixed16_16 negSinRelCeil    = -mul16(relCeil, s_sinYaw_Fixed);
 		fixed16_16 sinScaledRelCeil =  mul16(scaledRelCeil, s_sinYaw_Fixed);
 		fixed16_16 negCosRelCeil    = -mul16(relCeil, s_cosYaw_Fixed);
 
-		if (!flat_setTexture(sector->ceilTex)) { return; }
+		if (!flat_setTexture(*sector->ceilTex)) { return; }
 
 		for (s32 y = s_windowMinY; y <= s_wallMaxCeilY; y++)
 		{
@@ -261,10 +260,10 @@ namespace RClassic_Fixed
 		
 	void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count)
 	{
-		fixed16_16 textureOffsetU = s_cameraPosX_Fixed - sector->floorOffsetX.f16_16;
-		fixed16_16 textureOffsetV = sector->floorOffsetZ.f16_16 - s_cameraPosZ_Fixed;
+		fixed16_16 textureOffsetU = s_cameraPosX_Fixed - sector->floorOffset.x;
+		fixed16_16 textureOffsetV = sector->floorOffset.z - s_cameraPosZ_Fixed;
 
-		fixed16_16 relFloor       = sector->floorHeight.f16_16 - s_eyeHeight_Fixed;
+		fixed16_16 relFloor       = sector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 scaledRelFloor = mul16(relFloor, s_focalLenAspect_Fixed);
 
 		fixed16_16 cosScaledRelFloor = mul16(scaledRelFloor, s_cosYaw_Fixed);
@@ -272,7 +271,7 @@ namespace RClassic_Fixed
 		fixed16_16 sinScaledRelFloor = mul16(scaledRelFloor, s_sinYaw_Fixed);
 		fixed16_16 negCosRelFloor    =-mul16(relFloor, s_cosYaw_Fixed);
 
-		if (!flat_setTexture(sector->floorTex)) { return; }
+		if (!flat_setTexture(*sector->floorTex)) { return; }
 
 		for (s32 y = s_wallMinFloorY; y <= s_windowMaxY; y++)
 		{
@@ -348,7 +347,7 @@ namespace RClassic_Fixed
 	static fixed16_16 s_poly_cosYawScaledHOffset;
 	static fixed16_16 s_poly_sinYawScaledHOffset;
 		
-	void flat_preparePolygon(fixed16_16 heightOffset, fixed16_16 offsetX, fixed16_16 offsetZ, Texture* texture)
+	void flat_preparePolygon(fixed16_16 heightOffset, fixed16_16 offsetX, fixed16_16 offsetZ, TextureData* texture)
 	{
 		s_poly_offsetX = s_cameraPosX_Fixed - offsetX;
 		s_poly_offsetZ = offsetZ - s_cameraPosZ_Fixed;
@@ -360,11 +359,11 @@ namespace RClassic_Fixed
 		s_poly_cosYawScaledHOffset = mul16(s_cosYaw_Fixed, s_poly_scaledHOffset);
 		s_poly_sinYawScaledHOffset = mul16(s_sinYaw_Fixed, s_poly_scaledHOffset);
 
-		s_ftexWidthMask  = texture->frames[0].width - 1;
-		s_ftexHeightMask = texture->frames[0].height - 1;
-		s_ftexHeightLog2 = texture->frames[0].logSizeY;
-		s_ftexImage      = texture->frames[0].image;
-		s_ftexDataEnd    = texture->frames[0].width * texture->frames[0].height - 1;
+		s_ftexWidthMask  = texture->width - 1;
+		s_ftexHeightMask = texture->height - 1;
+		s_ftexHeightLog2 = texture->logSizeY;
+		s_ftexImage      = texture->image;
+		s_ftexDataEnd    = texture->width * texture->height - 1;
 	}
 
 	void flat_drawPolygonScanline(s32 x0, s32 x1, s32 y, bool trans)

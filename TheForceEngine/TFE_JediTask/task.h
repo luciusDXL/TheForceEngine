@@ -20,7 +20,7 @@ struct Task;
 
 enum TaskDelay
 {
-	TASK_SLEEP = -1,
+	TASK_SLEEP = 0xffffffff,
 	TASK_NO_DELAY = 0,
 };
 
@@ -30,16 +30,20 @@ namespace TFE_Task
 {
 	Task* createTask(TaskFunc func);
 	Task* pushTask(TaskFunc func);
-	void  popTask();
+	void  runTask(Task* task, s32 id);
 
 	void  freeTask(Task* task);
 	void  freeAllTasks();
 
-	void  runTask(Task* task, u32 id);
 	void  task_makeActive(Task* task);
 	
 	// Call once per frame to run the tasks.
-	void runTasks(fixed16_16 dt);
+	// The core idea is to split the original recursive tasks into
+	// an iterative loop that can be called into every frame.
+	// This interacts better with modern systems, such as Windows.
+	// Another option is to run the game and rendering loop in its own
+	// thread and then blit the results in the main thread.
+	void runTasks();
 }
 ////////////////////////////////////////////////////////////////////////
 // Task Function API:

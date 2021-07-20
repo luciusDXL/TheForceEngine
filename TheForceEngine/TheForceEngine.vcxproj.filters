@@ -35,20 +35,11 @@
     <Filter Include="Source\TFE_FileSystem">
       <UniqueIdentifier>{6c511967-59a2-46a6-89ea-83c258bbab1d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_Renderer">
-      <UniqueIdentifier>{5e2ddf97-f9fe-4a81-bcf9-551cb94251b7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_Renderer\TFE_SoftRenderCPU">
-      <UniqueIdentifier>{74bb86b0-f06c-4583-b7a8-5dccd1fce465}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_Settings">
       <UniqueIdentifier>{ef6de83e-9331-4ec3-a8e7-1af08d047a9d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_Archive">
       <UniqueIdentifier>{7f0b8e84-1b30-41dc-8dd1-3af94a588ff1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_Editor">
-      <UniqueIdentifier>{f94316a4-c755-422d-9653-514822ae5e1a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_Ui\imGUI\Dirent">
       <UniqueIdentifier>{50e6eea5-e12a-4e74-87f9-de96ae5de258}</UniqueIdentifier>
@@ -56,38 +47,14 @@
     <Filter Include="Source\TFE_Asset">
       <UniqueIdentifier>{67ef4364-5919-42c0-887c-cc3818121db5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_Game">
-      <UniqueIdentifier>{0a664b9e-5f55-4f7b-955c-711546e09a03}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_ScriptSystem">
-      <UniqueIdentifier>{2dd51e17-513d-4c42-9e08-99285a96d717}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Scripts">
       <UniqueIdentifier>{cc3599c1-ef7d-4bd9-baff-43ab40a8f149}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Scripts\Logics">
       <UniqueIdentifier>{cd30f449-83c9-4d78-9f4d-c69636059cbb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_ScriptSystem\add_on">
-      <UniqueIdentifier>{73c1ef01-cf47-4e2f-9b48-a8fda28105f2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_ScriptSystem\add_on\scriptstdstring">
-      <UniqueIdentifier>{afad1863-7fab-4f39-8af1-9124c21cc8d7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_ScriptSystem\add_on\scriptbuilder">
-      <UniqueIdentifier>{2ab57aca-2b04-4e0e-8b10-7806e83f385d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_ScriptSystem\add_on\scriptarray">
-      <UniqueIdentifier>{dc246ae5-231b-47e2-bff2-b6c3cd306013}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_LogicSystem">
-      <UniqueIdentifier>{7f16273c-1780-47fa-b722-ca88daa62553}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Scripts\Weapons">
       <UniqueIdentifier>{02c72b97-39bf-4d84-afc1-2ae96b72fff2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_WeaponSystem">
-      <UniqueIdentifier>{e559bdb1-a166-4b7b-b7f6-56b56630f4bc}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_InfSystem">
       <UniqueIdentifier>{33f9fd16-37b7-46c6-a812-f1fe68aabcb9}</UniqueIdentifier>
@@ -104,12 +71,6 @@
     <Filter Include="Source\Shaders">
       <UniqueIdentifier>{611fa99b-a25f-4491-96c8-c9b3bc0bc331}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_Editor\Rendering">
-      <UniqueIdentifier>{7c36ac8c-b077-418a-a7b9-5355961093d4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_Editor\Help">
-      <UniqueIdentifier>{359d6537-4a20-4279-aad7-423dc2254889}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Documentation">
       <UniqueIdentifier>{1cacf2da-5cbb-4ac8-8571-01d106636e3c}</UniqueIdentifier>
     </Filter>
@@ -124,9 +85,6 @@
     </Filter>
     <Filter Include="Source\TFE_FrontEndUI">
       <UniqueIdentifier>{a8504c90-e13a-4a84-b3dc-faa166cfaabf}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_Game\GameUI">
-      <UniqueIdentifier>{b1b96865-8280-4732-98ed-98963f450bd9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_System\Threads">
       <UniqueIdentifier>{f874d79b-66c7-41e5-a393-96ab92bea739}</UniqueIdentifier>
@@ -143,20 +101,11 @@
     <Filter Include="Source\TFE_JediRenderer">
       <UniqueIdentifier>{b09f4a8e-9bcf-4136-bac7-d14c1edac29d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_JediRenderer\RClassic_GPU">
-      <UniqueIdentifier>{908c367e-92dc-4ed4-90b4-1da23721b51e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_JediRenderer\RClassic_Float">
-      <UniqueIdentifier>{eabeec0c-30ed-4f6d-9923-a286a91f29e5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_JediRenderer\RClassic_Fixed">
       <UniqueIdentifier>{67dc1bc3-8fdf-4b20-8c04-013ded47a58b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed">
       <UniqueIdentifier>{b3c8a678-078c-436f-b641-632d3e264fe3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_JediRenderer\RClassic_Float\robj3d_float">
-      <UniqueIdentifier>{ce79367c-67c1-4b10-a6a3-1f434c2c5842}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_Archive\zip">
       <UniqueIdentifier>{f069b311-4842-4982-aa48-6848b3f3fa66}</UniqueIdentifier>
@@ -250,12 +199,6 @@
     <ClInclude Include="TFE_FileSystem\stream.h">
       <Filter>Source\TFE_FileSystem</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Renderer\renderer.h">
-      <Filter>Source\TFE_Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Renderer\TFE_SoftRenderCPU\renderer_softCPU.h">
-      <Filter>Source\TFE_Renderer\TFE_SoftRenderCPU</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_FileSystem\paths.h">
       <Filter>Source\TFE_FileSystem</Filter>
     </ClInclude>
@@ -268,20 +211,11 @@
     <ClInclude Include="TFE_Archive\gobArchive.h">
       <Filter>Source\TFE_Archive</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\editor.h">
-      <Filter>Source\TFE_Editor</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\perfWindow.h">
-      <Filter>Source\TFE_Editor</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Ui\imGUI\Dirent\dirent.h">
       <Filter>Source\TFE_Ui\imGUI\Dirent</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Archive\lfdArchive.h">
       <Filter>Source\TFE_Archive</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\archiveViewer.h">
-      <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
     <ClInclude Include="TFE_System\parser.h">
       <Filter>Source\TFE_System</Filter>
@@ -292,13 +226,7 @@
     <ClInclude Include="TFE_Asset\textureAsset.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Asset\levelAsset.h">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Asset\fontAsset.h">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Asset\spriteAsset.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Asset\colormapAsset.h">
@@ -310,54 +238,6 @@
     <ClInclude Include="TFE_Asset\assetSystem.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Asset\levelObjectsAsset.h">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Asset\logicTypes.h">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Asset\modelAsset.h">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\geometry.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\physics.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\player.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\gameLoop.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\gameHud.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ScriptSystem\scriptSystem.h">
-      <Filter>Source\TFE_ScriptSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring.h">
-      <Filter>Source\TFE_ScriptSystem\add_on\scriptstdstring</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptbuilder\scriptbuilder.h">
-      <Filter>Source\TFE_ScriptSystem\add_on\scriptbuilder</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptarray\scriptarray.h">
-      <Filter>Source\TFE_ScriptSystem\add_on\scriptarray</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_LogicSystem\logicSystem.h">
-      <Filter>Source\TFE_LogicSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\gameObject.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_WeaponSystem\weaponSystem.h">
-      <Filter>Source\TFE_WeaponSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_WeaponSystem\weapons.h">
-      <Filter>Source\TFE_WeaponSystem</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Asset\gameMessages.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
@@ -367,17 +247,8 @@
     <ClInclude Include="TFE_InfSystem\infSystem.h">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Asset\infAsset.h">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_System\memoryPool.h">
       <Filter>Source\TFE_System</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\level.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\levelEditor.h">
-      <Filter>Source\TFE_Editor</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Asset\imageAsset.h">
       <Filter>Source\TFE_Asset</Filter>
@@ -409,44 +280,11 @@
     <ClInclude Include="TFE_RenderBackend\renderState.h">
       <Filter>Source\TFE_RenderBackend</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\Rendering\lineDraw2d.h">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_RenderBackend\textureGpu.h">
       <Filter>Source\TFE_RenderBackend</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Editor\Rendering\grid2d.h">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\Rendering\trianglesColor2d.h">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\Rendering\trianglesTextured2d.h">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\Rendering\grid3d.h">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\Rendering\lineDraw3d.h">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\Rendering\trianglesColor3d.h">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\Rendering\editorRender.h">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Ui\markdown.h">
       <Filter>Source\TFE_Ui</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\Help\helpWindow.h">
-      <Filter>Source\TFE_Editor\Help</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Editor\levelEditorData.h">
-      <Filter>Source\TFE_Editor</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\gameConstants.h">
-      <Filter>Source\TFE_Game</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Archive\labArchive.h">
       <Filter>Source\TFE_Archive</Filter>
@@ -468,21 +306,6 @@
     </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\gameMain.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\GameUI\editBox.h">
-      <Filter>Source\TFE_Game\GameUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\GameUI\gameUi.h">
-      <Filter>Source\TFE_Game\GameUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\GameUI\escMenu.h">
-      <Filter>Source\TFE_Game\GameUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Game\GameUI\agentMenu.h">
-      <Filter>Source\TFE_Game\GameUI</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Audio\midiDevice.h">
       <Filter>Source\TFE_Audio</Filter>
@@ -517,9 +340,6 @@
     <ClInclude Include="TFE_System\Threads\Win32\threadWin32.h">
       <Filter>Source\TFE_System\Threads\Win32</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Game\gameState.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\console.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
@@ -535,9 +355,6 @@
     <ClInclude Include="TFE_FrontEndUI\profilerView.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Game\gameControlMapping.h">
-      <Filter>Source\TFE_Game</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_PostProcess\postprocess.h">
       <Filter>Source\TFE_PostProcess</Filter>
     </ClInclude>
@@ -547,28 +364,13 @@
     <ClInclude Include="TFE_PostProcess\postprocesseffect.h">
       <Filter>Source\TFE_PostProcess</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\fixedPoint.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_JediRenderer\jediRenderer.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rmath.h">
       <Filter>Source\TFE_JediRenderer</Filter>
     </ClInclude>
     <ClInclude Include="TFE_JediRenderer\rcommon.h">
       <Filter>Source\TFE_JediRenderer</Filter>
     </ClInclude>
     <ClInclude Include="TFE_JediRenderer\redgePair.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\robject.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rsector.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rwall.h">
       <Filter>Source\TFE_JediRenderer</Filter>
     </ClInclude>
     <ClInclude Include="TFE_JediRenderer\rlimits.h">
@@ -595,41 +397,8 @@
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.h">
       <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rtexture.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rclassicFloat.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\redgePairFloat.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rflatFloat.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rlightingFloat.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\rwallFloat.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\fixedPoint20.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_JediRenderer\rscanline.h">
       <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rsectorGPU.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_GPU\rwallGPU.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
     </ClInclude>
     <ClInclude Include="Shaders\grid.h">
       <Filter>Source\Shaders</Filter>
@@ -684,30 +453,6 @@
     </ClInclude>
     <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Culling.h">
       <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_ClipFunc.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_Clipping.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_Culling.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolygonDraw.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolygonSetup.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolyRenderFunc.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Archive\zip\miniz.h">
       <Filter>Source\TFE_Archive\zip</Filter>
@@ -802,6 +547,12 @@
     <ClInclude Include="TFE_JediTask\taskMacros.h">
       <Filter>Source\TFE_JediTask</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\rsectorRender.h">
+      <Filter>Source\TFE_JediRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_JediRenderer\rwallRender.h">
+      <Filter>Source\TFE_JediRenderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -849,12 +600,6 @@
     <ClCompile Include="TFE_FileSystem\fileutil.cpp">
       <Filter>Source\TFE_FileSystem</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Renderer\renderer.cpp">
-      <Filter>Source\TFE_Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Renderer\TFE_SoftRenderCPU\renderer_softCPU.cpp">
-      <Filter>Source\TFE_Renderer\TFE_SoftRenderCPU</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_FileSystem\paths.cpp">
       <Filter>Source\TFE_FileSystem</Filter>
     </ClCompile>
@@ -867,17 +612,8 @@
     <ClCompile Include="TFE_Archive\archive.cpp">
       <Filter>Source\TFE_Archive</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\editor.cpp">
-      <Filter>Source\TFE_Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\perfWindow.cpp">
-      <Filter>Source\TFE_Editor</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Archive\lfdArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\archiveViewer.cpp">
-      <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_System\parser.cpp">
       <Filter>Source\TFE_System</Filter>
@@ -888,13 +624,7 @@
     <ClCompile Include="TFE_Asset\textureAsset.cpp">
       <Filter>Source\TFE_Asset</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Asset\levelAsset.cpp">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Asset\fontAsset.cpp">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Asset\spriteAsset.cpp">
       <Filter>Source\TFE_Asset</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Asset\colormapAsset.cpp">
@@ -902,51 +632,6 @@
     </ClCompile>
     <ClCompile Include="TFE_Asset\assetSystem.cpp">
       <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Asset\levelObjectsAsset.cpp">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Asset\modelAsset.cpp">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\geometry.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\physics.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\player.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\gameLoop.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\gameHud.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ScriptSystem\scriptSystem.cpp">
-      <Filter>Source\TFE_ScriptSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring.cpp">
-      <Filter>Source\TFE_ScriptSystem\add_on\scriptstdstring</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptstdstring\scriptstdstring_utils.cpp">
-      <Filter>Source\TFE_ScriptSystem\add_on\scriptstdstring</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptbuilder\scriptbuilder.cpp">
-      <Filter>Source\TFE_ScriptSystem\add_on\scriptbuilder</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_ScriptSystem\AngelScript\sdk\add_on\scriptarray\scriptarray.cpp">
-      <Filter>Source\TFE_ScriptSystem\add_on\scriptarray</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_LogicSystem\logicSystem.cpp">
-      <Filter>Source\TFE_LogicSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_WeaponSystem\weaponSystem.cpp">
-      <Filter>Source\TFE_WeaponSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\gameObject.cpp">
-      <Filter>Source\TFE_Game</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Asset\gameMessages.cpp">
       <Filter>Source\TFE_Asset</Filter>
@@ -957,17 +642,8 @@
     <ClCompile Include="TFE_InfSystem\infSystem.cpp">
       <Filter>Source\TFE_InfSystem</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Asset\infAsset.cpp">
-      <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_System\memoryPool.cpp">
       <Filter>Source\TFE_System</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\level.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\levelEditor.cpp">
-      <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Asset\imageAsset.cpp">
       <Filter>Source\TFE_Asset</Filter>
@@ -996,44 +672,14 @@
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\renderState.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\Rendering\lineDraw2d.cpp">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\textureGpu.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\Rendering\grid2d.cpp">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\Rendering\trianglesColor2d.cpp">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\Rendering\trianglesTextured2d.cpp">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="TFE_System\math.cpp">
       <Filter>Source\TFE_System</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Editor\Rendering\grid3d.cpp">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\Rendering\lineDraw3d.cpp">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\Rendering\trianglesColor3d.cpp">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\Rendering\editorRender.cpp">
-      <Filter>Source\TFE_Editor\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Ui\markdown.cpp">
       <Filter>Source\TFE_Ui</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\Help\helpWindow.cpp">
-      <Filter>Source\TFE_Editor\Help</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Editor\levelEditorData.cpp">
-      <Filter>Source\TFE_Editor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Archive\labArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>
@@ -1055,21 +701,6 @@
     </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\gameMain.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\GameUI\editBox.cpp">
-      <Filter>Source\TFE_Game\GameUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\GameUI\gameUi.cpp">
-      <Filter>Source\TFE_Game\GameUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\GameUI\escMenu.cpp">
-      <Filter>Source\TFE_Game\GameUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Game\GameUI\agentMenu.cpp">
-      <Filter>Source\TFE_Game\GameUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Audio\midiDevice.cpp">
       <Filter>Source\TFE_Audio</Filter>
@@ -1104,9 +735,6 @@
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Game\gameControlMapping.cpp">
-      <Filter>Source\TFE_Game</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_PostProcess\postprocess.cpp">
       <Filter>Source\TFE_PostProcess</Filter>
     </ClCompile>
@@ -1117,9 +745,6 @@
       <Filter>Source\TFE_JediRenderer</Filter>
     </ClCompile>
     <ClCompile Include="TFE_JediRenderer\rcommon.cpp">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\rsector.cpp">
       <Filter>Source\TFE_JediRenderer</Filter>
     </ClCompile>
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rclassicFixed.cpp">
@@ -1143,38 +768,8 @@
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.cpp">
       <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\rtexture.cpp">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rclassicFloat.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\redgePairFloat.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rflatFloat.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rlightingFloat.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rsectorFloat.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\rwallFloat.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_JediRenderer\rscanline.cpp">
       <Filter>Source\TFE_JediRenderer</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rclassicGPU.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rsectorGPU.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_GPU\rwallGPU.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_GPU</Filter>
     </ClCompile>
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\glslParser.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
@@ -1190,9 +785,6 @@
     </ClCompile>
     <ClCompile Include="TFE_Asset\modelAsset_jedi.cpp">
       <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\rmath.cpp">
-      <Filter>Source\TFE_JediRenderer</Filter>
     </ClCompile>
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\screenCapture.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
@@ -1217,24 +809,6 @@
     </ClCompile>
     <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Culling.cpp">
       <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_Clipping.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_Culling.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolygonDraw.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_PolygonSetup.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Float\robj3d_float</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Archive\zip\zip.c">
       <Filter>Source\TFE_Archive\zip</Filter>
@@ -1307,6 +881,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Memory\chunkedArray.cpp">
       <Filter>Source\TFE_Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_JediRenderer\rsectorRender.cpp">
+      <Filter>Source\TFE_JediRenderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

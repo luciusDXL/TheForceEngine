@@ -1,6 +1,6 @@
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 #include "rlightingFixed.h"
-#include "../fixedPoint.h"
-#include "../rmath.h"
 #include "../rcommon.h"
 #include "../rlimits.h"
 

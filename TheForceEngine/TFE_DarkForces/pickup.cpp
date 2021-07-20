@@ -735,10 +735,14 @@ namespace TFE_DarkForces
 
 	void invincibilityTaskFunc(s32 id)
 	{
-		task_begin;
+		struct LocalContext
+		{
+			s32 i;
+		};
+		task_begin_ctx;
 		task_waitWhileIdNotZero(6554);	// ~45 seconds.
 
-		for (s32 i = 4; i >= 0; i--)
+		for (taskCtx->i = 4; taskCtx->i >= 0; taskCtx->i--)
 		{
 			playSound2D(s_invCountdownSound);
 			s_playerInfo.shields = 200;
@@ -756,7 +760,11 @@ namespace TFE_DarkForces
 
 	void superchargeTaskFunc(s32 id)
 	{
-		task_begin;
+		struct LocalContext
+		{
+			s32 i;
+		};
+		task_begin_ctx;
 
 		s_superChargeHud = JTRUE;
 		s_superCharge = JTRUE;
@@ -765,7 +773,7 @@ namespace TFE_DarkForces
 		// without the running out warning.
 		task_waitWhileIdNotZero(6554);	// ~45 seconds.
 
-		for (s32 i = 4; i >= 0; i--)
+		for (taskCtx->i = 4; taskCtx->i >= 0; taskCtx->i--)
 		{
 			playSound2D(s_superchargeCountdownSound);
 			s_superChargeHud = JFALSE;

@@ -694,6 +694,12 @@ namespace TFE_Level
 		return true;
 	}
 
+	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1)
+	{
+		*parallax0 = s_parallax0;
+		*parallax1 = s_parallax1;
+	}
+
 	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector)
 	{
 		obj->posWS.x = x;

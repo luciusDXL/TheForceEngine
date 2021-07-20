@@ -4,8 +4,9 @@
 // Dark Forces Derived Renderer - Wall functions
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 #include "../redgePair.h"
-#include "../rmath.h"
 
 namespace TFE_JediRenderer
 {

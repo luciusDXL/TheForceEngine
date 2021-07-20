@@ -1,10 +1,10 @@
 #include <TFE_System/profiler.h>
+#include <TFE_Level/robject.h>
+#include <TFE_Level/core_math.h>
 #include "robj3dFixed_TransformAndLighting.h"
 #include "../rcommonFixed.h"
 #include "../rlightingFixed.h"
-#include "../../fixedPoint.h"
 #include "../../rcommon.h"
-#include "../../robject.h"
 
 namespace TFE_JediRenderer
 {
@@ -139,9 +139,9 @@ namespace RClassic_Fixed
 	void robj3d_transformAndLight(SecObject* obj, JediModel* model)
 	{
 		vec3_fixed offsetWS;
-		offsetWS.x = obj->posWS.x.f16_16 - s_cameraPosX_Fixed;
-		offsetWS.y = obj->posWS.y.f16_16 - s_cameraPosY_Fixed;
-		offsetWS.z = obj->posWS.z.f16_16 - s_cameraPosZ_Fixed;
+		offsetWS.x = obj->posWS.x - s_cameraPosX_Fixed;
+		offsetWS.y = obj->posWS.y - s_cameraPosY_Fixed;
+		offsetWS.z = obj->posWS.z - s_cameraPosZ_Fixed;
 
 		// Calculate the view space object camera offset.
 		vec3_fixed offsetVS;

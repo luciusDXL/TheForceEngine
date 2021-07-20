@@ -10,7 +10,6 @@
 using namespace TFE_CoreMath;
 
 struct JediModel;
-
 struct RSector;
 	
 enum ObjectType

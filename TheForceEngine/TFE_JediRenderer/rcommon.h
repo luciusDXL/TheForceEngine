@@ -1,7 +1,7 @@
 #pragma once
 #include <TFE_System/types.h>
 #include "rlimits.h"
-#include "rwall.h"
+#include "rwallRender.h"
 
 struct ColorMap;
 
@@ -91,11 +91,7 @@ namespace TFE_JediRenderer
 	extern s32 s_adjoinSegCount;
 	extern s32 s_adjoinDepth;
 	extern s32 s_drawFrame;
-
-	extern RWallSegment s_wallSegListDst[MAX_SEG];
-	extern RWallSegment s_wallSegListSrc[MAX_SEG];
-	extern RWallSegment** s_adjoinSegment;
-
+		
 	// Flats
 	extern s32 s_flatCount;
 	extern s32 s_wallMaxCeilY;

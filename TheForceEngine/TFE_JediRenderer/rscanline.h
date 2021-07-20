@@ -5,7 +5,8 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "redgePair.h"
-#include "rmath.h"
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 
 namespace TFE_JediRenderer
 {

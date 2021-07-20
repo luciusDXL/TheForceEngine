@@ -61,10 +61,7 @@ namespace TFE_DarkForces
 							if (taskCtx->anim->loopCount == 0)
 							{
 								// Only delete from the main task.
-								while (id != 0)
-								{
-									task_yield(TASK_NO_DELAY);
-								}
+								task_waitWhileIdNotZero(TASK_NO_DELAY);
 
 								// Finally delete the logic and call the complete function.
 								deleteLogicAndObject((Logic*)taskCtx->anim);

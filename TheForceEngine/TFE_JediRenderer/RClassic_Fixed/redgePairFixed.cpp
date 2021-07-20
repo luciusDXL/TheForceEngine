@@ -1,3 +1,4 @@
+#include <TFE_Level/fixedPoint.h>
 #include "redgePairFixed.h"
 
 namespace TFE_JediRenderer
@@ -12,9 +13,9 @@ namespace RClassic_Fixed
 		const s32 yC0 = round16(yCeil);
 		const s32 yC1 = round16(yCeil1);
 
-		edgePair->yCeil0.f16_16 = yCeil;
-		edgePair->yCeil1.f16_16 = yCeil1;
-		edgePair->dyCeil_dx.f16_16 = dyCeil_dx;
+		edgePair->yCeil0 = yCeil;
+		edgePair->yCeil1 = yCeil1;
+		edgePair->dyCeil_dx = dyCeil_dx;
 		if (yC0 < yC1)
 		{
 			edgePair->yPixel_C0 = yC0;
@@ -26,9 +27,9 @@ namespace RClassic_Fixed
 			edgePair->yPixel_C1 = yC0;
 		}
 
-		edgePair->yFloor0.f16_16 = yFloor;
-		edgePair->yFloor1.f16_16 = yFloor1;
-		edgePair->dyFloor_dx.f16_16 = dyFloor_dx;
+		edgePair->yFloor0 = yFloor;
+		edgePair->yFloor1 = yFloor1;
+		edgePair->dyFloor_dx = dyFloor_dx;
 		if (yF0 > yF1)
 		{
 			edgePair->yPixel_F0 = yF0;

@@ -32,7 +32,7 @@ namespace TFE_CoreMath
 		transform[7] = -mul16(sinPch, cosYaw);
 		transform[8] = mul16(cosPch, cosYaw);
 	}
-
+		
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut)
 	{
 		s32 distSq = mul16(vIn->x, vIn->x) + mul16(vIn->y, vIn->y) + mul16(vIn->z, vIn->z);

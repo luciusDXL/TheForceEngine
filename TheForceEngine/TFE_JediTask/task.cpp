@@ -1,21 +1,34 @@
 #include "task.h"
 #include <TFE_Memory/chunkedArray.h>
+#include <TFE_DarkForces/time.h>
+#include <stdarg.h>
+#include <tuple>
 #include <vector>
 
+using namespace TFE_DarkForces;
 using namespace TFE_Memory;
 
 struct TaskContext
 {
 	s32 state;
+	TaskFunc func;
 	u8* ctx;
 	u32 ctxSize;
 };
 
 struct Task
 {
-	TaskFunc func;
+	Task* prevMain;
+	Task* nextMain;
+	Task* prevSec;
+	Task* nextSec;
+	Task* retTask;			// Task to return to once this one is completed or paused.
+	
+	// Used in place of stack memory.
 	TaskContext context;
-	fixed16_16 delay;		// delay before the next call.
+
+	// Timing.
+	Tick nextTick;
 	s32 activeIndex;
 };
 
@@ -37,61 +50,71 @@ namespace TFE_Task
 	Task* s_frameTasks[MAX_ACTIVE_TASKS];
 	s32 s_frameTaskCount = 0;
 	s32 s_frameTaskIndex = 0;
+
+	Task  s_rootTask;
+	Task* s_taskIter;
+
+	void setNextTask(Task* task, s32 id);
+
+	void createRootTask()
+	{
+		s_tasks = createChunkedArray(sizeof(Task), TASK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS);
+
+		s_rootTask = { 0 };
+		s_rootTask.prevMain = &s_rootTask;
+		s_rootTask.nextMain = &s_rootTask;
+		s_rootTask.nextTick = TASK_SLEEP;
+
+		s_taskIter = &s_rootTask;
+		s_curTask  = &s_rootTask;
+	}
 	
 	Task* createTask(TaskFunc func)
 	{
-		if (!s_tasks)
-		{
-			s_tasks = createChunkedArray(sizeof(Task), TASK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS);
-		}
-
 		Task* newTask = (Task*)allocFromChunkedArray(s_tasks);
 		assert(newTask);
 
-		newTask->activeIndex = -1;
-		newTask->delay = 0;
-		newTask->func = func;
-		memset(&newTask->context, 0, sizeof(newTask->context));
+		newTask->nextMain = s_curTask->prevSec;
+		newTask->prevMain = nullptr;
+		newTask->nextSec  = s_curTask;
+		newTask->prevSec  = nullptr;
+		newTask->retTask  = nullptr;
+		if (s_curTask->prevSec)
+		{
+			s_curTask->prevSec->prevMain = newTask;
+		}
+		s_curTask->prevSec = newTask;
 
-		newTask->context.ctxSize = 0;
-		newTask->context.ctx = nullptr;
-
+		newTask->nextTick = 0;
+		
+		newTask->context = { 0 };
+		newTask->context.func = func;
 		return newTask;
 	}
 
 	Task* pushTask(TaskFunc func)
 	{
-		Task* newTask = createTask(func);
-		newTask->activeIndex = s_activeCount;
-		s_activeTasks[s_activeCount++] = newTask;
+		Task* newTask = (Task*)allocFromChunkedArray(s_tasks);
+		assert(newTask);
 
+		// Insert the task after 's_taskIter'
+		newTask->nextMain = s_taskIter->nextMain;
+		newTask->prevMain = s_taskIter;
+		s_taskIter->nextMain = newTask;
+
+		newTask->prevSec = nullptr;
+		newTask->nextSec = nullptr;
+		newTask->retTask = nullptr;
+
+		newTask->context = { 0 };
+		newTask->context.func = func;
+		
 		return newTask;
-	}
-
-	void popTask()
-	{
-		s_activeCount--;
 	}
 
 	void freeTask(Task* task)
 	{
-		// Remove from the task from the active list, the function is finished.
-		if (task->activeIndex)
-		{
-			if (task->activeIndex == s_activeCount - 1)
-			{
-				s_activeCount--;
-			}
-			else
-			{
-				s_activeTasks[task->activeIndex] = nullptr;
-			}
-		}
-		// Cleanup the active list if possible.
-		while (s_activeCount && !s_activeTasks[s_activeCount - 1])
-		{
-			s_activeCount--;
-		}
+		// TODO
 
 		// Free any memory allocated for the local context.
 		free(task->context.ctx);
@@ -109,7 +132,6 @@ namespace TFE_Task
 		}
 
 		freeChunkedArray(s_tasks);
-		memset(s_activeTasks, 0, sizeof(Task*) * s_activeCount);
 
 		s_curTask = nullptr;
 		s_tasks = nullptr;
@@ -117,29 +139,19 @@ namespace TFE_Task
 		s_activeCount = 0;
 	}
 
-	void runNextTask(u32 id)
-	{
-		s_curTask = nullptr;
-		s_curContext = nullptr;
-		if (s_frameTaskIndex >= s_frameTaskCount)
-		{
-			return;
-		}
-
-		s32 index = s_frameTaskIndex;
-		s_frameTaskIndex++;
-
-		runTask(s_frameTasks[index], id);
-	}
-
-	void runTask(Task* task, u32 id)
+	// Run a task and then return to the curren task.
+	void runTask(Task* task, s32 id)
 	{
 		if (!task) { return; }
-		s_curTask = task;
-		s_curContext = &task->context;
+		
+		task->retTask = s_curTask;
+		setNextTask(task, id);
+	}
 
-		assert(task->func);
-		task->func(id);
+	void setNextTask(Task* task, s32 id)
+	{
+		// Assign the task + id as the next to run.
+		// TODO
 	}
 		
 	void addTaskToActive(Task* task)
@@ -153,69 +165,72 @@ namespace TFE_Task
 
 	void task_makeActive(Task* task)
 	{
-		addTaskToActive(task);
-		task->delay = 0;
-	}
-
-	void itask_loop(s32 id)
-	{
-		// if -1 is passed in, then we break out of the loop and end the task.
-		if (id < 0)
-		{
-			itask_end(id);
-			return;
-		}
-		s_curTask->delay = 0;
-		s_curContext->state = 0;
-
-		// If we need to loop and this task isn't in the active list, it will need to get added or it will never get called again...
-		addTaskToActive(s_curTask);
-		// Run the next task.
-		runNextTask(id);
+		task->nextTick = 0;
 	}
 
 	void itask_end(s32 id)
 	{
 		freeTask(s_curTask);
-		runNextTask(id);
+		// What to do here?
 	}
 
-	void itask_yield(TickSigned delay, s32 state, s32 id)
+	void itask_yield(Tick delay, s32 state, s32 id)
 	{
-		s_curTask->delay = delay < 0 ? delay : intToFixed16(delay) / TICKS_PER_SECOND;
+		// Copy the state so we know where to return.
 		s_curContext->state = state;
 
-		// If we need to loop and this task isn't in the active list, it will need to get added or it will never get called again...
-		addTaskToActive(s_curTask);
-		// Run the next task.
-		runNextTask(id);
-	}
-		
-	void runTasks(fixed16_16 dt)
-	{
-		s_frameTaskCount = 0;
-		s_frameTaskIndex = 0;
-
-		for (s32 i = 0; i < s_activeCount; i++)
+		// If there is a return task, then take it next.
+		if (s_curTask->retTask)
 		{
-			if (!s_activeTasks[i]) { continue; }
-			
-			Task* task = s_activeTasks[i];
-			// Update the task delay if greater than 0.
-			if (task->delay > 0)
-			{
-				task->delay = max(0, task->delay - dt);
-			}
-			// If the delay is not 0, then skip it.
-			if (task->delay != 0)
-			{
-				continue;
-			}
-			// Otherwise add to the list to call this frame...
-			s_frameTasks[s_frameTaskCount++] = task;
+			// Clear out the return task once it is executed.
+			Task* retTask = s_curTask->retTask;
+			s_curTask->retTask = nullptr;
+
+			// Add the task to be run next.
+			setNextTask(retTask, 0);
+			return;
 		}
 
-		runNextTask(0);
+		// Update the current tick based on the delay.
+		s_curTask->nextTick = (delay < TASK_SLEEP) ? s_curTick + delay : delay;
+		
+		// Find the next task to run.
+		Task* task = s_curTask;
+		while (1)
+		{
+			if (task->nextMain)
+			{
+				task = task->nextMain;
+				while (task->prevSec)
+				{
+					task = task->prevSec;
+				}
+				if (task->nextTick <= s_curTick)
+				{
+					setNextTask(task, 0);
+					return;
+				}
+			}
+			else if (task->nextSec)
+			{
+				task = task->nextSec;
+				if (task->nextTick <= s_curTick)
+				{
+					setNextTask(task, 0);
+					return;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+		
+	// Called once per frame to run all of the tasks.
+	void runTasks()
+	{
+		// TODO
 	}
 
 	s32 ctxGetState()
@@ -240,5 +255,92 @@ namespace TFE_Task
 	void* ctxGet()
 	{
 		return s_curContext->ctx;
+	}
+
+	////////////////////////////////////////////////////////////
+	// Test adding the ability to call sub-functions with
+	// the ability to yield
+	////////////////////////////////////////////////////////////
+	enum { TASK_MAX_CALLSTACK = 4, MAX_TASK_ARG = 16 };
+	typedef union
+	{
+		s32 iValue;
+		f32 fValue;
+	} TaskArg;
+	typedef void(*TaskCall)(u32, TaskArg*);
+	struct Call
+	{
+		u32 state;
+		u32 argCount;
+		TaskArg args[MAX_TASK_ARG];
+		TaskCall call;
+	};
+	struct Context2
+	{
+		u32 state;
+		u32 callstackCount;
+		Call callstack[TASK_MAX_CALLSTACK];
+	};
+	static Context2* s_context2;
+
+	void itask_call(TaskCall func, u32 state, s32 argCount, ...)
+	{
+		s32 csCount = s_context2->callstackCount;
+		s_context2->callstackCount++;
+
+		s_context2->callstack[csCount].call = func;
+		s_context2->callstack[csCount].argCount = 0;
+		s_context2->callstack[csCount].state = 0;
+		if (csCount)
+		{
+			s32 prevIndex = csCount - 1;
+			s_context2->callstack[prevIndex].state = state;
+		}
+		else
+		{
+			s_context2->state = state;
+		}
+
+		va_list valist;
+		va_start(valist, argCount);
+		s_context2->callstack[csCount].argCount = argCount;
+		for (s32 i = 0; i < argCount; i++)
+		{
+			va_arg(valist, TaskArg);
+		}
+		va_end(valist);
+
+		func(argCount, s_context2->callstack[csCount].args);
+	}
+
+// C++ macro magic to get this to be reliable.
+#define NUMARGS(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
+
+#define task_call(func, ...) \
+	do { \
+	itask_call(func, __LINE__, NUMARGS(__VA_ARGS__), __VA_ARGS__);	\
+	if (s_context2->callstackCount) return;  \
+	case __LINE__:; \
+	} while (0)
+
+	void taskCallTest(u32 argCount, TaskArg* args)
+	{
+		// Extract arguments.
+		assert(argCount == 3);
+		s32 x = args[0].iValue;
+		s32 y = args[1].iValue;
+		s32 z = args[2].iValue;
+
+		// Continue as normal.
+	}
+
+	void testFunc(s32 id)
+	{
+		task_begin;
+
+		task_call(taskCallTest);
+		task_call(taskCallTest, 0, 1, 2);
+
+		task_end;
 	}
 }

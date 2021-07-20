@@ -4,7 +4,10 @@
 // Dark Forces Derived Renderer - Wall functions
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include "rmath.h"
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
+
+using namespace TFE_CoreMath;
 
 namespace TFE_JediRenderer
 {
@@ -14,17 +17,17 @@ namespace TFE_JediRenderer
 	struct EdgePair
 	{
 		// Ceiling
-		decimal yCeil0;
-		decimal yCeil1;
-		decimal dyCeil_dx;
+		fixed16_16 yCeil0;
+		fixed16_16 yCeil1;
+		fixed16_16 dyCeil_dx;
 
 		s32 yPixel_C0;
 		s32 yPixel_C1;
 
 		// Floor
-		decimal yFloor0;
-		decimal yFloor1;
-		decimal dyFloor_dx;
+		fixed16_16 yFloor0;
+		fixed16_16 yFloor1;
+		fixed16_16 dyFloor_dx;
 
 		s32 yPixel_F0;
 		s32 yPixel_F1;

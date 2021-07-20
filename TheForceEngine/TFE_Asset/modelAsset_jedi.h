@@ -9,7 +9,7 @@
 #define MAX_VERTEX_COUNT_3DO 500
 #define MAX_POLYGON_COUNT_3DO 400
 
-struct Texture;
+struct TextureData;
 
 enum PolygonShadingFlags
 {
@@ -43,7 +43,7 @@ struct Polygon
 	s32 shading;
 	s32 p08;
 	s32 color;
-	Texture* texture;
+	TextureData* texture;
 	s32 vertexCount;
 	s32* indices;
 	vec2* uv;
@@ -62,7 +62,7 @@ struct JediModel
 	vec3* polygonNormals;
 	s32 flags;
 	s32 textureCount;
-	Texture** textures;
+	TextureData** textures;
 	s32 radius;
 };
 

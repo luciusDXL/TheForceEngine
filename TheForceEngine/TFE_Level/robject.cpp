@@ -6,7 +6,7 @@ using namespace TFE_Memory;
 
 namespace TFE_Level
 {
-	static JBool s_freeObjLock = JFALSE;
+	JBool s_freeObjLock = JFALSE;
 
 	void computeTransform3x3(fixed16_16* transform, angle14_32 yaw, angle14_32 pitch, angle14_32 roll);
 

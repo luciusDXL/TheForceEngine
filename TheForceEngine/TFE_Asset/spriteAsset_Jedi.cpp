@@ -2,8 +2,9 @@
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_Level/core_math.h>
+#include <TFE_Level/robject.h>
 // TODO: dependency on JediRenderer, this should be refactored...
-#include <TFE_JediRenderer/fixedPoint.h>
 #include <TFE_JediRenderer/rlimits.h>
 //
 #include <assert.h>
@@ -13,6 +14,7 @@
 #include <map>
 
 using namespace TFE_JediRenderer;
+using namespace TFE_CoreMath;
 
 namespace TFE_Sprite_Jedi
 {

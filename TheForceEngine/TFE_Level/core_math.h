@@ -84,7 +84,7 @@ namespace TFE_CoreMath
 		*cosValue = floatToFixed16(c);
 	}
 
-	fixed16_16 vec2Length(fixed16_16 dx, fixed16_16 dz)
+	inline fixed16_16 vec2Length(fixed16_16 dx, fixed16_16 dz)
 	{
 		// Trade precision to avoid overflow.
 		// The same as: 2 * sqrt( (dx/2)^2 + (dz/2)^2 ) = 2 * sqrt( (dx^2)/4 + (dz^2)/4 )
@@ -101,7 +101,7 @@ namespace TFE_CoreMath
 	// This is an approximate distance between points.
 	// It is basically manhattan distance - smallest component / 2
 	// dist = |dx| + |dz| - min(|dx|, |dz|)/2
-	fixed16_16 distApprox(fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1)
+	inline fixed16_16 distApprox(fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1)
 	{
 		fixed16_16 dx = abs(x1 - x0);
 		fixed16_16 dz = abs(z1 - z0);

@@ -1,25 +1,34 @@
 #include <TFE_System/profiler.h>
 #include <TFE_Asset/modelAsset_jedi.h>
-// TODO: Either move level.h or fix it.
-#include <TFE_Game/level.h>
+#include <TFE_Level/rsector.h>
+#include <TFE_Level/robject.h>
+#include <TFE_Level/rtexture.h>
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 
+#include "rclassicFixed.h"
 #include "rsectorFixed.h"
-#include "rwallFixed.h"
 #include "rflatFixed.h"
 #include "rlightingFixed.h"
 #include "redgePairFixed.h"
 #include "rcommonFixed.h"
 #include "robj3d_fixed/robj3dFixed.h"
-#include "../fixedPoint.h"
-#include "../rmath.h"
 #include "../rcommon.h"
-#include "../robject.h"
-#include "../rtexture.h"
 
 using namespace TFE_JediRenderer::RClassic_Fixed;
+using namespace TFE_Level;
 
 namespace TFE_JediRenderer
 {
+	RClassic_Fixed::RWallSegment s_wallSegListDst[MAX_SEG];
+	RClassic_Fixed::RWallSegment s_wallSegListSrc[MAX_SEG];
+	RClassic_Fixed::RWallSegment** s_adjoinSegment;
+
+	s32 wallSortX(const void* r0, const void* r1)
+	{
+		return ((const RWallSegment*)r0)->wallX0 - ((const RWallSegment*)r1)->wallX0;
+	}
+
 	// TODO: Move to math
 	s32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz)
 	{
@@ -42,8 +51,8 @@ namespace TFE_JediRenderer
 		// 4/|\7
 		// /5|6\
 			//
-		dx = abs(dx);
-		dz = abs(dz);
+		dx = TFE_CoreMath::abs(dx);
+		dz = TFE_CoreMath::abs(dz);
 		const s32 subquadrant = quadrant * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
 
 		// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
@@ -111,7 +120,7 @@ namespace TFE_JediRenderer
 			}
 
 			// Default case:
-			return obj1->posVS.z.f16_16 - obj0->posVS.z.f16_16;
+			return obj1->posVS.z - obj0->posVS.z;
 		}
 				
 		s32 cullObjects(RSector* sector, SecObject** buffer)
@@ -130,12 +139,12 @@ namespace TFE_JediRenderer
 					curObj = *obj;
 				}
 
-				if (curObj->flags & OBJ_FLAG_RENDERABLE)
+				if (curObj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
 				{
 					const s32 type = curObj->type;
 					if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
 					{
-						if (curObj->posVS.z.f16_16 >= ONE_16)
+						if (curObj->posVS.z >= ONE_16)
 						{
 							buffer[drawCount++] = curObj;
 						}
@@ -143,20 +152,20 @@ namespace TFE_JediRenderer
 					else if (type == OBJ_TYPE_3D)
 					{
 						const fixed16_16 radius = curObj->model->radius;
-						const fixed16_16 zMax = curObj->posVS.z.f16_16 + radius;
+						const fixed16_16 zMax = curObj->posVS.z + radius;
 						// Near plane
 						if (zMax < ONE_16) { continue; }
 
 						// Left plane
-						const fixed16_16 xMax = curObj->posVS.x.f16_16 + radius;
+						const fixed16_16 xMax = curObj->posVS.x + radius;
 						if (xMax < -zMax) { continue; }
 
 						// Right plane
-						const fixed16_16 xMin = curObj->posVS.x.f16_16 - radius;
+						const fixed16_16 xMin = curObj->posVS.x - radius;
 						if (xMin > zMax) { continue; }
 
 						// The object straddles the near plane, so add it and move on.
-						const fixed16_16 zMin = curObj->posVS.z.f16_16 - radius;
+						const fixed16_16 zMin = curObj->posVS.z - radius;
 						if (zMin <= 0)
 						{
 							buffer[drawCount++] = curObj;
@@ -164,7 +173,7 @@ namespace TFE_JediRenderer
 						}
 
 						// Cull against the current "window."
-						const fixed16_16 z = curObj->posVS.z.f16_16;
+						const fixed16_16 z = curObj->posVS.z;
 						const s32 x0 = round16(div16(mul16(xMin, s_focalLength_Fixed), z)) + s_screenXMid;
 						if (x0 > s_windowMaxX) { continue; }
 
@@ -200,7 +209,7 @@ namespace TFE_JediRenderer
 			}
 		}
 	}
-		
+				
 	void TFE_Sectors_Fixed::draw(RSector* sector)
 	{
 		s_curSector = sector;
@@ -221,7 +230,7 @@ namespace TFE_JediRenderer
 		s32 startWall = s_curSector->startWall;
 		s32 drawWallCount = s_curSector->drawWallCnt;
 
-		s_sectorAmbient = round16(s_curSector->ambient.f16_16);
+		s_sectorAmbient = round16(s_curSector->ambient);
 		s_scaledAmbient = (s_sectorAmbient >> 1) + (s_sectorAmbient >> 2) + (s_sectorAmbient >> 3);
 		s_sectorAmbientFraction = s_sectorAmbient << 11;	// fraction of ambient compared to max.
 
@@ -240,12 +249,12 @@ namespace TFE_JediRenderer
 		if (s_drawFrame != s_curSector->prevDrawFrame)
 		{
 			TFE_ZONE_BEGIN(secXform, "Sector Vertex Transform");
-				vec2* vtxWS = s_curSector->verticesWS;
-				vec2* vtxVS = s_curSector->verticesVS;
+				vec2_fixed* vtxWS = s_curSector->verticesWS;
+				vec2_fixed* vtxVS = s_curSector->verticesVS;
 				for (s32 v = 0; v < s_curSector->vertexCount; v++)
 				{
-					vtxVS->x.f16_16 = mul16(vtxWS->x.f16_16, s_cosYaw_Fixed) + mul16(vtxWS->z.f16_16, s_sinYaw_Fixed) + s_xCameraTrans_Fixed;
-					vtxVS->z.f16_16 = mul16(vtxWS->x.f16_16, s_negSinYaw_Fixed) + mul16(vtxWS->z.f16_16, s_cosYaw_Fixed) + s_zCameraTrans_Fixed;
+					vtxVS->x = mul16(vtxWS->x, s_cosYaw_Fixed) + mul16(vtxWS->z, s_sinYaw_Fixed) + s_xCameraTrans_Fixed;
+					vtxVS->z = mul16(vtxWS->x, s_negSinYaw_Fixed) + mul16(vtxWS->z, s_cosYaw_Fixed) + s_zCameraTrans_Fixed;
 					vtxVS++;
 					vtxWS++;
 				}
@@ -262,9 +271,9 @@ namespace TFE_JediRenderer
 						curObj = *obj;
 					}
 
-					if (curObj->flags & OBJ_FLAG_RENDERABLE)
+					if (curObj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
 					{
-						transformPointByCameraFixed(&curObj->posWS, &curObj->posVS);
+						transformPointByCamera(&curObj->posWS, &curObj->posVS);
 					}
 				}
 			TFE_ZONE_END(objXform);
@@ -281,9 +290,6 @@ namespace TFE_JediRenderer
 				s_curSector->startWall = startWall;
 				s_curSector->drawWallCnt = drawWallCount;
 				s_curSector->prevDrawFrame = s_drawFrame;
-
-				// Setup wall flags not from the original code, still to be replaced.
-				setupWallDrawFlags(s_curSector);
 			TFE_ZONE_END(wallProcess);
 		}
 
@@ -463,7 +469,7 @@ namespace TFE_JediRenderer
 						}
 					}
 
-					s_windowMinZ_Fixed = min(curAdjoinSeg->z0.f16_16, curAdjoinSeg->z1.f16_16);
+					s_windowMinZ_Fixed = min(curAdjoinSeg->z0, curAdjoinSeg->z1);
 					draw(nextSector);
 					
 					if (s_adjoinDepth)
@@ -496,7 +502,7 @@ namespace TFE_JediRenderer
 			s_objWindowTop = s_windowTop;
 			if (s_windowMinY < s_heightInPixels || s_windowMaxCeil < s_heightInPixels)
 			{
-				if (s_prevSector && s_prevSector->ceilingHeight.f16_16 <= s_curSector->ceilingHeight.f16_16)
+				if (s_prevSector && s_prevSector->ceilingHeight <= s_curSector->ceilingHeight)
 				{
 					s_objWindowTop = s_windowTopPrev;
 				}
@@ -504,7 +510,7 @@ namespace TFE_JediRenderer
 			s_objWindowBot = s_windowBot;
 			if (s_windowMaxY > s_heightInPixels || s_windowMinFloor > s_heightInPixels)
 			{
-				if (s_prevSector && s_prevSector->floorHeight.f16_16 >= s_curSector->floorHeight.f16_16)
+				if (s_prevSector && s_prevSector->floorHeight >= s_curSector->floorHeight)
 				{
 					s_objWindowBot = s_windowBotPrev;
 				}
@@ -522,8 +528,8 @@ namespace TFE_JediRenderer
 				{
 					TFE_ZONE("Draw WAX");
 
-					fixed16_16 dz = s_cameraPosZ_Fixed - obj->posWS.z.f16_16;
-					fixed16_16 dx = s_cameraPosX_Fixed - obj->posWS.x.f16_16;
+					fixed16_16 dz = s_cameraPosZ_Fixed - obj->posWS.z;
+					fixed16_16 dx = s_cameraPosX_Fixed - obj->posWS.x;
 					s32 angle = vec2ToAngle(dx, dz);
 
 					sprite_drawWax(angle, obj);
@@ -547,375 +553,6 @@ namespace TFE_JediRenderer
 		s_curSector->flags1 |= SEC_FLAGS1_RENDERED;
 		s_curSector->prevDrawFrame2 = s_drawFrame;
 	}
-			
-	void TFE_Sectors_Fixed::setupWallDrawFlags(RSector* sector)
-	{
-		RWall* wall = sector->walls;
-		for (s32 w = 0; w < sector->wallCount; w++, wall++)
-		{
-			if (wall->nextSector)
-			{
-				RSector* wSector = wall->sector;
-				fixed16_16 wFloorHeight = wSector->floorHeight.f16_16;
-				fixed16_16 wCeilHeight = wSector->ceilingHeight.f16_16;
-
-				RWall* mirror = wall->mirrorWall;
-				RSector* mSector = mirror->sector;
-				fixed16_16 mFloorHeight = mSector->floorHeight.f16_16;
-				fixed16_16 mCeilHeight = mSector->ceilingHeight.f16_16;
-
-				wall->drawFlags = WDF_MIDDLE;
-				mirror->drawFlags = WDF_MIDDLE;
-
-				if (wCeilHeight < mCeilHeight)
-				{
-					wall->drawFlags |= WDF_TOP;
-				}
-				if (wFloorHeight > mFloorHeight)
-				{
-					wall->drawFlags |= WDF_BOT;
-				}
-				if (mCeilHeight < wCeilHeight)
-				{
-					mirror->drawFlags |= WDF_TOP;
-				}
-				if (mFloorHeight > wFloorHeight)
-				{
-					mirror->drawFlags |= WDF_BOT;
-				}
-				wall_computeTexelHeights(wall->mirrorWall);
-			}
-			wall_computeTexelHeights(wall);
-		}
-	}
-
-	void TFE_Sectors_Fixed::adjustHeights(RSector* sector, decimal floorOffset, decimal ceilOffset, decimal secondHeightOffset)
-	{
-		// Adjust objects.
-		if (sector->objectCount)
-		{
-			fixed16_16 heightOffset = secondHeightOffset.f16_16 + floorOffset.f16_16;
-			for (s32 i = 0; i < sector->objectCapacity; i++)
-			{
-				SecObject* obj = sector->objectList[i];
-				if (obj)
-				{
-					// TODO: Adjust sector objects.
-				}
-			}
-		}
-		// Adjust sector heights.
-		sector->ceilingHeight.f16_16 += ceilOffset.f16_16;
-		sector->floorHeight.f16_16 += floorOffset.f16_16;
-		sector->secHeight.f16_16 += secondHeightOffset.f16_16;
-
-		// Update wall data.
-		s32 wallCount = sector->wallCount;
-		RWall* wall = sector->walls;
-		for (s32 w = 0; w < wallCount; w++, wall++)
-		{
-			if (wall->nextSector)
-			{
-				wall_setupAdjoinDrawFlags(wall);
-				wall_computeTexelHeights(wall->mirrorWall);
-			}
-			wall_computeTexelHeights(wall);
-		}
-
-		// Update collision data.
-		fixed16_16 floorHeight = sector->floorHeight.f16_16;
-		if (sector->flags1 & SEC_FLAGS1_PIT)
-		{
-			floorHeight += 100 * ONE_16;
-		}
-		fixed16_16 ceilHeight = sector->ceilingHeight.f16_16;
-		if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
-		{
-			ceilHeight -= 100 * ONE_16;
-		}
-		fixed16_16 secHeight = sector->floorHeight.f16_16 + sector->secHeight.f16_16;
-		if (sector->secHeight.f16_16 >= 0 && floorHeight > secHeight)
-		{
-			secHeight = floorHeight;
-		}
-
-		sector->colFloorHeight.f16_16 = floorHeight;
-		sector->colCeilHeight.f16_16 = ceilHeight;
-		sector->colSecHeight.f16_16 = secHeight;
-		sector->colMinHeight.f16_16 = ceilHeight;
-	}
-
-	void TFE_Sectors_Fixed::computeBounds(RSector* sector)
-	{
-		RWall* wall = sector->walls;
-		vec2* w0 = wall->w0;
-		fixed16_16 maxX = w0->x.f16_16;
-		fixed16_16 maxZ = w0->z.f16_16;
-		fixed16_16 minX = maxX;
-		fixed16_16 minZ = maxZ;
-
-		for (s32 i = 1; i < sector->wallCount; i++, wall++)
-		{
-			w0 = wall->w0;
-
-			minX = min(minX, w0->x.f16_16);
-			minZ = min(minZ, w0->z.f16_16);
-
-			maxX = max(maxX, w0->x.f16_16);
-			maxZ = max(maxZ, w0->z.f16_16);
-		}
-
-		sector->minX.f16_16 = minX;
-		sector->maxX.f16_16 = maxX;
-		sector->minZ.f16_16 = minZ;
-		sector->maxZ.f16_16 = maxZ;
-
-		// Setup when needed.
-		//s_minX = minX;
-		//s_maxX = maxX;
-		//s_minZ = minZ;
-		//s_maxZ = maxZ;
-	}
-		
-	// Uses the "Winding Number" test for a point in polygon.
-	// The point is considered inside if the winding number is greater than 0.
-	// Note that this is different than DF's "crossing" algorithm.
-	// TODO: Maybe? Replace algorithms.
-	bool TFE_Sectors_Fixed::pointInSectorFixed(RSector* sector, f32 x, f32 z)
-	{
-		RWall* wall = sector->walls;
-		s32 wallCount = sector->wallCount;
-		s32 wn = 0;
-
-		const Vec2f point = { x, z };
-		for (s32 w = 0; w < wallCount; w++, wall++)
-		{
-			vec2* w1 = wall->w0;
-			vec2* w0 = wall->w1;
-
-			Vec2f p0 = { fixed16ToFloat(w0->x.f16_16), fixed16ToFloat(w0->z.f16_16) };
-			Vec2f p1 = { fixed16ToFloat(w1->x.f16_16), fixed16ToFloat(w1->z.f16_16) };
-
-			if (p0.z <= z)
-			{
-				// Upward crossing, if the point is left of the edge than it intersects.
-				if (p1.z > z && isLeft(p0, p1, point) > 0)
-				{
-					wn++;
-				}
-			}
-			else
-			{
-				// Downward crossing, if point is right of the edge it intersects.
-				if (p1.z <= z && isLeft(p0, p1, point) < 0)
-				{
-					wn--;
-				}
-			}
-		}
-
-		// The point is only outside if the winding number is less than or equal to 0.
-		return wn > 0;
-	}
-
-	// Use the floating point point inside polygon algorithm.
-	RSector* TFE_Sectors_Fixed::which3D(decimal& dx, decimal& dy, decimal& dz)
-	{
-		s32 ix = dx.f16_16;
-		s32 iz = dz.f16_16;
-		f32 x = fixed16ToFloat(ix);
-		f32 z = fixed16ToFloat(iz);
-		fixed16_16 y = dy.f16_16;
-
-		RSector* sector = s_rsectors;
-		RSector* foundSector = nullptr;
-		s32 sectorUnitArea = 0;
-		s32 prevSectorUnitArea = INT_MAX;
-
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
-		{
-			if (y >= sector->ceilingHeight.f16_16 && y <= sector->floorHeight.f16_16)
-			{
-				const fixed16_16 sectorMaxX = sector->maxX.f16_16;
-				const fixed16_16 sectorMinX = sector->minX.f16_16;
-				const fixed16_16 sectorMaxZ = sector->maxZ.f16_16;
-				const fixed16_16 sectorMinZ = sector->minZ.f16_16;
-
-				const s32 dxInt = ((sectorMaxX - sectorMinX) >> 16) + 1;
-				const s32 dzInt = ((sectorMaxZ - sectorMinZ) >> 16) + 1;
-				sectorUnitArea = dzInt * dxInt;
-
-				s32 insideBounds = 0;
-				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ && pointInSectorFixed(sector, x, z))
-				{
-					// pick the containing sector with the smallest area.
-					if (sectorUnitArea < prevSectorUnitArea)
-					{
-						prevSectorUnitArea = sectorUnitArea;
-						foundSector = sector;
-					}
-				}
-			}
-		}
-
-		return foundSector;
-	}
-
-	void TFE_Sectors_Fixed::copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures)
-	{
-		out->vertexCount = sector->vtxCount;
-		out->wallCount = sector->wallCount;
-
-		// Initial setup.
-		if (!out->verticesWS)
-		{
-			out->verticesWS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
-			out->verticesVS = (vec2*)s_memPool->allocate(sizeof(vec2) * out->vertexCount);
-			out->walls = (RWall*)s_memPool->allocate(sizeof(RWall) * out->wallCount);
-
-			out->startWall = 0;
-			out->drawWallCnt = 0;
-
-			RWall* wall = out->walls;
-			for (s32 w = 0; w < out->wallCount; w++, wall++)
-			{
-				wall->sector = out;
-				wall->drawFrame = 0;
-				wall->drawFlags = WDF_MIDDLE;
-				wall->topTexelHeight.f16_16 = 0;
-				wall->botTexelHeight.f16_16 = 0;
-
-				wall->w0 = &out->verticesWS[walls[w].i0];
-				wall->w1 = &out->verticesWS[walls[w].i1];
-				wall->v0 = &out->verticesVS[walls[w].i0];
-				wall->v1 = &out->verticesVS[walls[w].i1];
-			}
-
-			out->prevDrawFrame = 0;
-			out->prevDrawFrame2 = 0;
-		}
-
-		update(sector->id);
-	}
-			
-	// In the future, renderer sectors can be changed directly by INF, but for now just copy from the level data.
-	// TODO: Currently all sector data is updated - get the "dirty" flag to work reliably so only partial data needs to be updated (textures).
-	// TODO: Properly handle switch textures (after reverse-engineering of switch rendering is done).
-	void TFE_Sectors_Fixed::update(u32 sectorId, u32 updateFlags)
-	{
-		TFE_ZONE("Sector Update");
-		if (updateFlags == 0) { return; }
-
-		LevelData* level = TFE_LevelAsset::getLevelData();
-		Texture** textures = level->textures.data();
-
-		Sector* sector = &level->sectors[sectorId];
-		SectorWall* walls = level->walls.data() + sector->wallOffset;
-		Vec2f* vertices = level->vertices.data() + sector->vtxOffset;
-
-		RSector* out = &s_rsectors[sectorId];
-		out->vertexCount = sector->vtxCount;
-		out->wallCount = sector->wallCount;
-
-		const SectorBaseHeight* baseHeight = TFE_Level::getBaseSectorHeight(sectorId);
-		fixed16_16 ceilDelta  = floatToFixed16(8.0f * (sector->ceilAlt - baseHeight->ceilAlt));
-		fixed16_16 floorDelta = floatToFixed16(8.0f * (sector->floorAlt - baseHeight->floorAlt));
-
-		out->ambient.f16_16       = intToFixed16(sector->ambient);
-		out->floorHeight.f16_16   = floatToFixed16(sector->floorAlt);
-		out->ceilingHeight.f16_16 = floatToFixed16(sector->ceilAlt);
-		out->secHeight.f16_16     = floatToFixed16(sector->secAlt);
-		out->floorOffsetX.f16_16  = floatToFixed16(sector->floorTexture.offsetX);
-		out->floorOffsetZ.f16_16  = floatToFixed16(sector->floorTexture.offsetY);
-		out->ceilOffsetX.f16_16   = floatToFixed16(sector->ceilTexture.offsetX);
-		out->ceilOffsetZ.f16_16   = floatToFixed16(sector->ceilTexture.offsetY);
-
-		out->flags1        = sector->flags[0];
-		out->flags2        = sector->flags[1];
-		out->flags3        = sector->flags[2];
-		out->floorTex      = texture_getFrame(textures[sector->floorTexture.texId]);
-		out->ceilTex       = texture_getFrame(textures[sector->ceilTexture.texId]);
-		
-		TFE_ZONE_BEGIN(secVtx, "Sector Update Vertices");
-		if (updateFlags & SEC_UPDATE_GEO)
-		{
-			for (s32 v = 0; v < out->vertexCount; v++)
-			{
-				out->verticesWS[v].x.f16_16 = floatToFixed16(vertices[v].x);
-				out->verticesWS[v].z.f16_16 = floatToFixed16(vertices[v].z);
-			}
-		}
-		TFE_ZONE_END(secVtx);
-		
-		TFE_ZONE_BEGIN(secWall, "Sector Update Walls");
-		RWall* wall = out->walls;
-		const fixed16_16 midTexelHeight = mul16(intToFixed16(8), floatToFixed16(sector->floorAlt - sector->ceilAlt));
-		for (s32 w = 0; w < out->wallCount; w++, wall++)
-		{
-			wall->nextSector = (walls[w].adjoin >= 0) ? &s_rsectors[walls[w].adjoin] : nullptr;
-			wall->mirror = walls[w].mirror;
-			wall->mirrorWall = wall->nextSector ? &wall->nextSector->walls[wall->mirror] : nullptr;
-			
-			wall->topTex  = texture_getFrame(walls[w].top.texId  >= 0 ? textures[walls[w].top.texId]  : nullptr);
-			wall->midTex  = texture_getFrame(walls[w].mid.texId  >= 0 ? textures[walls[w].mid.texId]  : nullptr);
-			wall->botTex  = texture_getFrame(walls[w].bot.texId  >= 0 ? textures[walls[w].bot.texId]  : nullptr);
-			wall->signTex = texture_getFrame(walls[w].sign.texId >= 0 ? textures[walls[w].sign.texId] : nullptr, walls[w].sign.frame);
-
-			if (updateFlags & SEC_UPDATE_GEO)
-			{
-				const Vec2f offset = { vertices[walls[w].i1].x - vertices[walls[w].i0].x, vertices[walls[w].i1].z - vertices[walls[w].i0].z };
-				wall->texelLength.f16_16 = floatToFixed16(8.0f * sqrtf(offset.x*offset.x + offset.z*offset.z));
-			}
-
-			// Prime with mid texture height, other heights will be computed as needed.
-			wall->midTexelHeight.f16_16 = midTexelHeight;
-
-			// Texture Offsets
-			wall->topUOffset.f16_16 = floatToFixed16(8.0f * walls[w].top.offsetX);
-			wall->topVOffset.f16_16 = floatToFixed16(8.0f * walls[w].top.offsetY);
-			wall->midUOffset.f16_16 = floatToFixed16(8.0f * walls[w].mid.offsetX);
-			wall->midVOffset.f16_16 = floatToFixed16(8.0f * walls[w].mid.offsetY);
-			wall->botUOffset.f16_16 = floatToFixed16(8.0f * walls[w].bot.offsetX);
-			wall->botVOffset.f16_16 = floatToFixed16(8.0f * walls[w].bot.offsetY);
-			wall->signUOffset.f16_16 = floatToFixed16(8.0f * walls[w].sign.offsetX);
-			wall->signVOffset.f16_16 = floatToFixed16(8.0f * walls[w].sign.offsetY);
-
-			if (walls[w].flags[0] & WF1_TEX_ANCHORED)
-			{
-				wall->midVOffset.f16_16 -= floorDelta;
-				wall->botVOffset.f16_16 -= floorDelta;
-				
-				const s32 nextId = walls[w].adjoin;
-				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
-				const Sector* nextSrc = (nextId >= 0) ? &level->sectors[nextId] : nullptr;
-				if (nextSrc)
-				{
-					// Handle next sector moving.
-					wall->botVOffset.f16_16 -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
-				}
-				wall->topVOffset.f16_16 = -wall->topVOffset.f16_16 + (wall->topTex ? wall->topTex->height : 0);
-			}
-			if (walls[w].flags[0] & WF1_SIGN_ANCHORED)
-			{
-				wall->signVOffset.f16_16 -= floorDelta;
-				const s32 nextId = walls[w].adjoin;
-				const SectorBaseHeight* baseHeightNext = (nextId >= 0) ? TFE_Level::getBaseSectorHeight(nextId) : nullptr;
-				const Sector* nextSrc = (nextId >= 0) ? &level->sectors[nextId] : nullptr;
-				if (nextSrc)
-				{
-					// Handle next sector moving.
-					wall->signVOffset.f16_16 -= floatToFixed16(8.0f * (baseHeightNext->floorAlt - nextSrc->floorAlt));
-				}
-			}
-
-			wall->flags1 = walls[w].flags[0];
-			wall->flags2 = walls[w].flags[1];
-			wall->flags3 = walls[w].flags[2];
-
-			wall->wallLight = walls[w].light;
-		}
-		TFE_ZONE_END(secWall);
-	}
 		
 	void TFE_Sectors_Fixed::adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePair* adjoinEdges, s32 adjoinCount)
 	{
@@ -933,8 +570,8 @@ namespace TFE_JediRenderer
 			const s32 x0 = adjoinEdges->x0;
 			const s32 x1 = adjoinEdges->x1;
 
-			const fixed16_16 ceil_dYdX = adjoinEdges->dyCeil_dx.f16_16;
-			fixed16_16 y = adjoinEdges->yCeil0.f16_16;
+			const fixed16_16 ceil_dYdX = adjoinEdges->dyCeil_dx;
+			fixed16_16 y = adjoinEdges->yCeil0;
 			for (s32 x = x0; x <= x1; x++, y += ceil_dYdX)
 			{
 				s32 yPixel = round16(y);
@@ -945,8 +582,8 @@ namespace TFE_JediRenderer
 					winTopNext[x] = (yPixel <= yBot) ? yPixel : yBot + 1;
 				}
 			}
-			const fixed16_16 floor_dYdX = adjoinEdges->dyFloor_dx.f16_16;
-			y = adjoinEdges->yFloor0.f16_16;
+			const fixed16_16 floor_dYdX = adjoinEdges->dyFloor_dx;
+			y = adjoinEdges->yFloor0;
 			for (s32 x = x0; x <= x1; x++, y += floor_dYdX)
 			{
 				s32 yPixel = round16(y);
@@ -996,7 +633,7 @@ namespace TFE_JediRenderer
 		SectorSaveValues* dst = &s_sectorStack[index];
 		dst->curSector = s_curSector;
 		dst->prevSector = s_prevSector;
-		dst->depth1d.f16_16 = s_depth1d_Fixed;
+		dst->depth1d = s_depth1d_Fixed;
 		dst->windowX0 = s_windowX0;
 		dst->windowX1 = s_windowX1;
 		dst->windowMinY = s_windowMinY;
@@ -1021,7 +658,7 @@ namespace TFE_JediRenderer
 		const SectorSaveValues* src = &s_sectorStack[index];
 		s_curSector = src->curSector;
 		s_prevSector = src->prevSector;
-		s_depth1d_Fixed = src->depth1d.f16_16;
+		s_depth1d_Fixed = (fixed16_16*)src->depth1d;
 		s_windowX0 = src->windowX0;
 		s_windowX1 = src->windowX1;
 		s_windowMinY = src->windowMinY;
@@ -1044,24 +681,5 @@ namespace TFE_JediRenderer
 	// Switch from float to fixed.
 	void TFE_Sectors_Fixed::subrendererChanged()
 	{
-		RSector* sector = s_rsectors;
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
-		{
-			SecObject** obj = sector->objectList;
-			for (s32 i = sector->objectCount - 1; i >= 0; i--, obj++)
-			{
-				SecObject* curObj = *obj;
-				while (!curObj)
-				{
-					obj++;
-					curObj = *obj;
-				}
-
-				// Convert from float to fixed.
-				curObj->posWS.x.f16_16 = floatToFixed16(curObj->posWS.x.f32);
-				curObj->posWS.y.f16_16 = floatToFixed16(curObj->posWS.y.f32);
-				curObj->posWS.z.f16_16 = floatToFixed16(curObj->posWS.z.f32);
-			}
-		}
 	}
 }

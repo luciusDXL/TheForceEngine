@@ -12,7 +12,6 @@
 #include <TFE_Input/input.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
-#include <TFE_Game/gameLoop.h>
 #include <TFE_Ui/imGUI/imgui.h>
 
 namespace TFE_FrontEndUI
@@ -536,7 +535,8 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 
 				// End the current game.
-				TFE_GameLoop::endLevel();
+				// TODO
+				// TFE_GameLoop::endLevel();
 			}
 			ImGui::PopFont();
 
@@ -829,9 +829,10 @@ namespace TFE_FrontEndUI
 			graphics->gameResolution = c_resolutionDim[s_resIndex];
 			if (s_menuRetState != APP_STATE_MENU)
 			{
-				TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
-				TFE_GameLoop::update(true);
-				TFE_GameLoop::draw();
+				// TODO
+				//TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
+				//TFE_GameLoop::update(true);
+				//TFE_GameLoop::draw();
 			}
 		}
 
@@ -839,7 +840,8 @@ namespace TFE_FrontEndUI
 		if (widescreen != graphics->widescreen)
 		{
 			graphics->widescreen = widescreen;
-			TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
+			// TODO
+			// TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
 		}
 		ImGui::Separator();
 
@@ -867,7 +869,8 @@ namespace TFE_FrontEndUI
 
 			if (prevAsync != graphics->asyncFramebuffer || prevColorConvert != graphics->gpuColorConvert)
 			{
-				TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
+				// TODO
+				// TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
 			}
 		}
 		else if (s_rendererIndex == 1)
@@ -1012,8 +1015,9 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(196);
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512);
 
-		TFE_GameLoop::update(true);
-		TFE_GameLoop::draw();
+		// TODO
+		// TFE_GameLoop::update(true);
+		// TFE_GameLoop::draw();
 	}
 
 	void configSound()
@@ -1044,7 +1048,7 @@ namespace TFE_FrontEndUI
 	////////////////////////////////////////////////////////////////
 	void menuItem_Start()
 	{
-		s_appState = APP_STATE_DARK_FORCES;
+		s_appState = APP_STATE_GAME;
 	}
 
 	void menuItem_Manual()

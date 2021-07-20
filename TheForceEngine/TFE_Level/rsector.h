@@ -5,7 +5,6 @@
 #include <TFE_System/types.h>
 #include <TFE_System/memoryPool.h>
 #include "core_math.h"
-#include "fixedPoint.h"
 
 using namespace TFE_CoreMath;
 

@@ -5,19 +5,36 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
-#include "../rmath.h"
+#include <TFE_Level/robject.h>
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 #include "../rlimits.h"
-#include "../rwall.h"
-#include "../robject.h"
+#include "../rwallRender.h"
 
 struct RSector;
 struct EdgePair;
-struct TextureFrame;
 
 namespace TFE_JediRenderer
 {
 	namespace RClassic_Fixed
 	{
+		struct RWallSegment
+		{
+			RWall* srcWall;		// Source wall
+			s32 wallX0_raw;		// Projected wall X coordinates before adjoin/wall clipping.
+			s32 wallX1_raw;
+			fixed16_16 z0;		// Depth
+			fixed16_16 z1;
+			fixed16_16 uCoord0;	// Texture U coordinate offset based on clipping.
+			fixed16_16 x0View;	// Viewspace vertex 0 X coordinate.
+			s32 wallX0;			// Clipped projected X Coordinates.
+			s32 wallX1;
+			u8  orient;			// Wall orientation (WORIENT_DZ_DX or WORIENT_DX_DZ)
+			u8  pad8[3];
+			fixed16_16 slope;	// Wall slope
+			fixed16_16 uScale;	// dUdX or dUdZ based on wall orientation.
+		};
+
 		void wall_process(RWall* wall);
 		s32  wall_mergeSort(RWallSegment* segOutList, s32 availSpace, s32 start, s32 count);
 

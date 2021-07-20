@@ -1,5 +1,5 @@
 #include "rcommonFixed.h"
-#include "../fixedPoint.h"
+#include <TFE_Level/fixedPoint.h>
 
 namespace TFE_JediRenderer
 {

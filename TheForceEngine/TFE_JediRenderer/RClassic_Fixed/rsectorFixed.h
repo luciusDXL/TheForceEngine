@@ -4,16 +4,13 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_System/memoryPool.h>
-#include "../rsector.h"
-#include "../rmath.h"
-
-struct Sector;
-struct SectorWall;
-struct Texture;
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
+#include "rwallFixed.h"
+#include "../rsectorRender.h"
 
 struct RWall;
 struct SecObject;
-struct TextureFrame;
 
 namespace TFE_JediRenderer
 {
@@ -21,16 +18,7 @@ namespace TFE_JediRenderer
 	{
 	public:
 		// Sub-Renderer specific
-		void update(u32 sectorId, u32 updateFlags = SEC_UPDATE_ALL) override;
 		void draw(RSector* sector) override;
-		void copy(RSector* out, const Sector* sector, const SectorWall* walls, const Vec2f* vertices, Texture** textures) override;
-
-		void setupWallDrawFlags(RSector* sector) override;
-		void adjustHeights(RSector* sector, decimal floorOffset, decimal ceilOffset, decimal secondHeightOffset) override;
-		void computeBounds(RSector* sector) override;
-
-		RSector* which3D(decimal& x, decimal& y, decimal& z) override;
-
 		void subrendererChanged() override;
 
 	private:
@@ -38,7 +26,9 @@ namespace TFE_JediRenderer
 		void restoreValues(s32 index);
 		void adjoin_computeWindowBounds(EdgePair* adjoinEdges);
 		void adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePair* adjoinEdges, s32 adjoinCount);
-
-		bool pointInSectorFixed(RSector* sector, f32 x, f32 z);
 	};
+
+	extern RClassic_Fixed::RWallSegment s_wallSegListDst[MAX_SEG];
+	extern RClassic_Fixed::RWallSegment s_wallSegListSrc[MAX_SEG];
+	extern RClassic_Fixed::RWallSegment** s_adjoinSegment;
 }  // TFE_JediRenderer

@@ -86,10 +86,6 @@ namespace TFE_JediRenderer
 	s32 s_adjoinDepth;
 	s32 s_drawFrame;
 
-	RWallSegment s_wallSegListDst[MAX_SEG];
-	RWallSegment s_wallSegListSrc[MAX_SEG];
-	RWallSegment** s_adjoinSegment;
-
 	// Flats
 	s32 s_flatCount;
 	s32 s_wallMaxCeilY;

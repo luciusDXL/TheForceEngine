@@ -1,4 +1,7 @@
 #include <TFE_System/profiler.h>
+#include <TFE_Level/robject.h>
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 
 #include "robj3dFixed.h"
 #include "robj3dFixed_TransformAndLighting.h"
@@ -7,10 +10,7 @@
 #include "robj3dFixed_Clipping.h"
 #include "robj3dFixed_PolygonDraw.h"
 #include "../rcommonFixed.h"
-#include "../../fixedPoint.h"
-#include "../../rmath.h"
 #include "../../rcommon.h"
-#include "../../robject.h"
 
 namespace TFE_JediRenderer
 {

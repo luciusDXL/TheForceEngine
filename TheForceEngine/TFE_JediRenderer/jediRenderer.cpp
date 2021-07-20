@@ -1,22 +1,18 @@
 #include "jediRenderer.h"
-#include "fixedPoint.h"
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/robject.h>
 #include "rcommon.h"
-#include "rsector.h"
-#include "robject.h"
+#include "rsectorRender.h"
 #include "RClassic_Fixed/rcommonFixed.h"
 #include "RClassic_Fixed/rclassicFixed.h"
 #include "RClassic_Fixed/rsectorFixed.h"
 
-#include "RClassic_Float/rclassicFloat.h"
-#include "RClassic_Float/rsectorFloat.h"
+//#include "RClassic_Float/rclassicFloat.h"
+//#include "RClassic_Float/rsectorFloat.h"
 
 #include <TFE_System/profiler.h>
-// VVV - this needs to be moved or fixed.
-#include <TFE_Game/gameObject.h>
-#include <TFE_Asset/levelObjectsAsset.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Asset/modelAsset_jedi.h>
-#include <TFE_Game/level.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/memoryPool.h>
 
@@ -33,9 +29,6 @@ namespace TFE_JediRenderer
 	// Forward Declarations
 	/////////////////////////////////////////////
 	void clear1dDepth();
-	void updateSectors();
-	void updateGameObjects();
-	void buildLevelData();
 	void console_setSubRenderer(const std::vector<std::string>& args);
 	void console_getSubRenderer(const std::vector<std::string>& args);
 
@@ -72,7 +65,7 @@ namespace TFE_JediRenderer
 	void setResolution(s32 width, s32 height)
 	{
 		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setResolution(width, height); }
-		else { RClassic_Float::setResolution(width, height); }
+		//else { RClassic_Float::setResolution(width, height); }
 	}
 
 	void setupLevel(s32 width, s32 height)
@@ -83,8 +76,6 @@ namespace TFE_JediRenderer
 		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
 		s_sectorId = -1;
 		s_sectors->setMemoryPool(&s_memPool);
-
-		buildLevelData();
 	}
 
 	void console_setSubRenderer(const std::vector<std::string>& args)
@@ -123,6 +114,10 @@ namespace TFE_JediRenderer
 
 	void setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
 	{
+		// HACK:
+		// Force sub-renderer to fixed for now until the refactoring is complete.
+		subRenderer = TSR_CLASSIC_FIXED;
+
 		if (subRenderer != s_subRenderer)
 		{
 			s_subRenderer = subRenderer;
@@ -137,11 +132,10 @@ namespace TFE_JediRenderer
 			{
 				s_sectors = new TFE_Sectors_Fixed();
 			}
-			else
+			/*else
 			{
 				s_sectors = new TFE_Sectors_Float();
-			}
-			s_sectors->copyFrom(prev);
+			}*/
 			s_sectors->subrendererChanged();
 			delete prev;
 		}
@@ -150,7 +144,7 @@ namespace TFE_JediRenderer
 	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId, s32 worldAmbient, bool cameraLightSource)
 	{
 		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setCamera(yaw, pitch, x, y, z, sectorId); }
-		else { RClassic_Float::setCamera(yaw, pitch, x, y, z, sectorId); }
+		// else { RClassic_Float::setCamera(yaw, pitch, x, y, z, sectorId); }
 
 		s_sectorId = sectorId;
 		s_cameraLightSource = 0;
@@ -197,10 +191,6 @@ namespace TFE_JediRenderer
 			s_windowBot_all[i] = s_maxScreenY;
 		}
 
-		// For now setup sector and object data each frame.
-		updateGameObjects();
-		updateSectors();
-
 		// Recursively draws sectors and their contents (sprites, 3D objects).
 		{
 			TFE_ZONE("Sector Draw");
@@ -223,373 +213,6 @@ namespace TFE_JediRenderer
 		{
 			memset(s_depth1d_all, 0, s_width * sizeof(f32));
 			s_windowMinZ = 0.0f;
-		}
-	}
-
-	// TODO: Do one time at load and then update directly from INF.
-	void updateSectors()
-	{
-		const u32 count = s_sectors->getCount();
-		for (u32 i = 0; i < count; i++)
-		{
-			s_sectors->update(i);
-		}
-	}
-
-	SecObject* allocateObject()
-	{
-		SecObject* obj = (SecObject*)malloc(sizeof(SecObject));
-		obj->yaw = 0;
-		obj->pitch = 0;
-		obj->roll = 0;
-		obj->frame = 0;
-		obj->anim = 0;
-		obj->worldWidth = -1;
-		obj->ptr = nullptr;
-		obj->sector = nullptr;
-		obj->type = 0;
-		obj->typeFlags = 0; // OTFLAG_NONE;
-		obj->worldHeight = -1;
-		obj->flags = 0;
-		obj->self = obj;
-		return obj;
-	}
-
-	void frame_setData(SecObject* obj, u8* basePtr, WaxFrame* data)
-	{
-		obj->type = OBJ_TYPE_FRAME;
-		obj->fme = data;
-		obj->flags |= OBJ_FLAG_RENDERABLE;
-		WaxCell* cell = WAX_CellPtr(basePtr, data);
-
-		if (obj->worldWidth == -1)
-		{
-			const fixed16_16 width = intToFixed16(abs(cell->sizeX));
-			obj->worldWidth = div16(width, SPRITE_SCALE_FIXED);
-		}
-		if (obj->worldHeight == -1)
-		{
-			const fixed16_16 height = intToFixed16(abs(cell->sizeY));
-			obj->worldHeight = div16(height, SPRITE_SCALE_FIXED);
-		}
-	}
-
-	void wax_setData(SecObject* obj, Wax* data)
-	{
-		obj->type = OBJ_TYPE_SPRITE;
-		obj->wax = data;
-		obj->flags |= OBJ_FLAG_RENDERABLE;
-
-		WaxAnim* anim = WAX_AnimPtr(data, 0);
-		WaxView* view = WAX_ViewPtr(data, anim, 0);
-		WaxFrame* frame = WAX_FramePtr(data, view, 0);
-		WaxCell* cell = WAX_CellPtr(data, frame);
-
-		if (obj->worldWidth == -1)
-		{
-			const fixed16_16 width = intToFixed16(abs(cell->sizeX));
-			obj->worldWidth = div16(mul16(data->xScale, width), SPRITE_SCALE_FIXED);
-		}
-		if (obj->worldHeight == -1)
-		{
-			const fixed16_16 height = intToFixed16(abs(cell->sizeY));
-			obj->worldHeight = div16(mul16(data->yScale, height), SPRITE_SCALE_FIXED);
-		}
-	}
-
-	void obj3d_setData(SecObject* obj, JediModel* pod)
-	{
-		obj->model = pod;
-		obj->type = OBJ_TYPE_3D;
-		obj->flags |= OBJ_FLAG_RENDERABLE;
-		obj->worldWidth = 0;
-		obj->worldHeight = 0;
-	}
-		
-	void obj3d_computeTransform_Fixed(SecObject* obj, s16 yaw, s16 pitch, s16 roll)
-	{
-		computeTransformFromAngles_Fixed(yaw, pitch, roll, obj->transform);
-	}
-
-	void obj3d_computeTransform_Float(SecObject* obj, f32 yaw, f32 pitch, f32 roll)
-	{
-		computeTransformFromAngles_Float(yaw, pitch, roll, obj->transformFlt);
-	}
-
-	void addObject(const char* assetName, u32 gameObjId, u32 sectorId)
-	{
-		if (!s_init || !assetName || sectorId >= s_sectors->getCount()) { return; }
-
-		GameObject* gameObjects = LevelGameObjects::getGameObjectList()->data();
-		GameObject* gameObj = &gameObjects[gameObjId];
-				
-		if (gameObj->oclass == CLASS_FRAME || gameObj->oclass == CLASS_SPRITE || gameObj->oclass == CLASS_3D)
-		{
-			SecObject* obj = allocateObject();
-			obj->gameObjId = gameObjId;
-
-			if (s_subRenderer == TSR_CLASSIC_FIXED)
-			{
-				obj->posWS.x.f16_16 = floatToFixed16(gameObj->position.x);
-				obj->posWS.y.f16_16 = floatToFixed16(gameObj->position.y);
-				obj->posWS.z.f16_16 = floatToFixed16(gameObj->position.z);
-			}
-			else
-			{
-				obj->posWS.x.f32 = gameObj->position.x;
-				obj->posWS.y.f32 = gameObj->position.y;
-				obj->posWS.z.f32 = gameObj->position.z;
-			}
-			obj->pitch = s16(gameObj->angles.x / 360.0f * 16484.0f) % 16384;
-			obj->yaw   = s16(gameObj->angles.y / 360.0f * 16484.0f) % 16384;
-			obj->roll  = s16(gameObj->angles.z / 360.0f * 16484.0f) % 16384;
-
-			if (gameObj->oclass == CLASS_FRAME)
-			{
-				JediFrame* jFrame = TFE_Sprite_Jedi::getFrame(assetName);
-				if (!jFrame)
-				{
-					free(obj);
-					return;
-				}
-				obj->fme = jFrame->frame;
-			}
-			else if (gameObj->oclass == CLASS_SPRITE)
-			{
-				JediWax* jWax = TFE_Sprite_Jedi::getWax(assetName);
-				if (!jWax)
-				{
-					free(obj);
-					return;
-				}
-				obj->wax = jWax->wax;
-			}
-			else if (gameObj->oclass == CLASS_3D)
-			{
-				JediModel* jModel = TFE_Model_Jedi::get(assetName);
-				if (!jModel)
-				{
-					free(obj);
-					return;
-				}
-				obj->model = jModel;
-				if (s_subRenderer == TSR_CLASSIC_FIXED)
-				{
-					obj3d_computeTransform_Fixed(obj, obj->yaw, obj->pitch, obj->roll);
-				}
-				else
-				{
-					obj3d_computeTransform_Float(obj, gameObj->angles.y, gameObj->angles.x, gameObj->angles.z);
-				}
-			}
-
-			s_sectors->addObject(&s_sectors->get()[sectorId], obj);
-			frame_setData(obj, (u8*)obj->fme, obj->fme);
-		}
-	}
-
-	void updateGameObjects()
-	{
-		TFE_ZONE("Sector Object Update");
-		RSector* sector = s_sectors->get();
-		const u32 count = s_sectors->getCount();
-		const LevelObjectData* levelObj = TFE_LevelObjects::getLevelObjectData();
-
-		GameObject* gameObjects = LevelGameObjects::getGameObjectList()->data();
-		for (u32 i = 0; i < count; i++, sector++)
-		{
-			SecObject** obj = sector->objectList;
-			for (s32 i = sector->objectCount - 1; i >= 0; i--, obj++)
-			{
-				SecObject* curObj = *obj;
-				while (!curObj)
-				{
-					obj++;
-					curObj = *obj;
-				}
-				GameObject* gameObj = &gameObjects[curObj->gameObjId];
-
-				if (!gameObj->update) { continue; }
-				gameObj->update = false;
-
-				if (!gameObj->show)
-				{
-					// Remove the object from the sector.
-					*obj = nullptr;
-					sector->objectCount--;
-					continue;
-				}
-			
-				if (curObj->type == OBJ_TYPE_FRAME || curObj->type == OBJ_TYPE_SPRITE || curObj->type == OBJ_TYPE_3D)
-				{
-					if (s_subRenderer == TSR_CLASSIC_FIXED)
-					{
-						curObj->posWS.x.f16_16 = floatToFixed16(gameObj->position.x);
-						curObj->posWS.y.f16_16 = floatToFixed16(gameObj->position.y);
-						curObj->posWS.z.f16_16 = floatToFixed16(gameObj->position.z);
-					}
-					else
-					{
-						curObj->posWS.x.f32 = gameObj->position.x;
-						curObj->posWS.y.f32 = gameObj->position.y;
-						curObj->posWS.z.f32 = gameObj->position.z;
-					}
-					curObj->pitch = s16(gameObj->angles.x / 360.0f * 16484.0f) % 16384;
-					curObj->yaw   = s16(gameObj->angles.y / 360.0f * 16484.0f) % 16384;
-					curObj->roll  = s16(gameObj->angles.z / 360.0f * 16484.0f) % 16384;
-
-					curObj->frame = gameObj->frameIndex;
-					curObj->anim  = gameObj->animId;
-				}
-
-				if (curObj->type == OBJ_TYPE_3D)
-				{
-					if (s_subRenderer == TSR_CLASSIC_FIXED)
-					{
-						obj3d_computeTransform_Fixed(curObj, curObj->yaw, curObj->pitch, curObj->roll);
-					}
-					else
-					{
-						obj3d_computeTransform_Float(curObj, gameObj->angles.y, gameObj->angles.x, gameObj->angles.z);
-					}
-				}
-			}
-		}
-	}
-
-	void buildLevelData()
-	{
-		LevelData* level = TFE_LevelAsset::getLevelData();
-		u32 count = (u32)level->sectors.size();
-		s_sectors->allocate(count);
-
-		RSector* sectors = s_sectors->get();
-		memset(sectors, 0, sizeof(RSector) * level->sectors.size());
-		Texture** textures = level->textures.data();
-		for (u32 i = 0; i < count; i++)
-		{
-			Sector* sector = &level->sectors[i];
-			SectorWall* walls = level->walls.data() + sector->wallOffset;
-			Vec2f* vertices = level->vertices.data() + sector->vtxOffset;
-
-			s_sectors->copy(&sectors[i], sector, walls, vertices, textures);
-		}
-
-		///////////////////////////////////////
-		// Process sectors after load
-		///////////////////////////////////////
-		RSector* sector = s_sectors->get();
-		for (u32 i = 0; i < count; i++, sector++)
-		{
-			RWall* wall = sector->walls;
-			for (s32 w = 0; w < sector->wallCount; w++, wall++)
-			{
-				RSector* nextSector = wall->nextSector;
-				if (nextSector)
-				{
-					RWall* mirror = &nextSector->walls[wall->mirror];
-					wall->mirrorWall = mirror;
-					// Both sides of a mirror should have the same lower flags3 (such as walkability).
-					wall->flags3 |= (mirror->flags3 & 0x0f);
-					mirror->flags3 |= (wall->flags3 & 0x0f);
-				}
-			}
-			s_sectors->setupWallDrawFlags(sector);
-			s_sectors->adjustHeights(sector, { 0 }, { 0 }, { 0 });
-			s_sectors->computeBounds(sector);
-		}
-
-		///////////////////////////////////////
-		// Objects
-		///////////////////////////////////////
-		const LevelObjectData* levelObj = TFE_LevelObjects::getLevelObjectData();
-		std::vector<JediFrame*> frames;
-		const u32 frameCount = (u32)levelObj->frames.size();
-		frames.resize(frameCount);
-		for (u32 i = 0; i < frameCount; i++)
-		{
-			frames[i] = TFE_Sprite_Jedi::getFrame(levelObj->frames[i].c_str());
-		}
-		
-		std::vector<JediWax*> waxes;
-		const u32 waxCount = (u32)levelObj->sprites.size();
-		waxes.resize(waxCount);
-		for (u32 i = 0; i < waxCount; i++)
-		{
-			waxes[i] = TFE_Sprite_Jedi::getWax(levelObj->sprites[i].c_str());
-		}
-
-		std::vector<JediModel*> models;
-		const u32 mdlCount = (u32)levelObj->pods.size();
-		models.resize(mdlCount);
-		for (u32 i = 0; i < mdlCount; i++)
-		{
-			models[i] = TFE_Model_Jedi::get(levelObj->pods[i].c_str());
-		}
-
-		const LevelObject* srcObj = levelObj->objects.data();
-		const u32 objCount = (u32)levelObj->objects.size();
-		for (u32 i = 0; i < objCount; i++, srcObj++)
-		{
-			// for now only worry about frames.
-			if (srcObj->oclass == CLASS_FRAME || srcObj->oclass == CLASS_SPRITE || srcObj->oclass == CLASS_3D)
-			{
-				SecObject* obj = allocateObject();
-				obj->gameObjId = i;
-
-				if (s_subRenderer == TSR_CLASSIC_FIXED)
-				{
-					obj->posWS.x.f16_16 = floatToFixed16(srcObj->pos.x);
-					obj->posWS.y.f16_16 = floatToFixed16(srcObj->pos.y);
-					obj->posWS.z.f16_16 = floatToFixed16(srcObj->pos.z);
-				}
-				else
-				{
-					obj->posWS.x.f32 = srcObj->pos.x;
-					obj->posWS.y.f32 = srcObj->pos.y;
-					obj->posWS.z.f32 = srcObj->pos.z;
-				}
-				obj->pitch = s16(srcObj->orientation.x / 360.0f * 16484.0f) % 16384;
-				obj->yaw   = s16(srcObj->orientation.y / 360.0f * 16484.0f) % 16384;
-				obj->roll  = s16(srcObj->orientation.z / 360.0f * 16484.0f) % 16384;
-								
-				RSector* sector = s_sectors->which3D(obj->posWS.x, obj->posWS.y, obj->posWS.z);
-				if (!sector)
-				{
-					continue;
-				}
-
-				if (srcObj->oclass == CLASS_FRAME)
-				{
-					obj->fme = frames[srcObj->dataOffset] ? frames[srcObj->dataOffset]->frame : nullptr;
-					if (!obj->fme) { continue; }
-
-					frame_setData(obj, (u8*)obj->fme, obj->fme);
-				}
-				else if (srcObj->oclass == CLASS_SPRITE)
-				{
-					obj->wax = waxes[srcObj->dataOffset] ? waxes[srcObj->dataOffset]->wax : nullptr;
-					if (!obj->wax) { continue; }
-
-					wax_setData(obj, (u8*)obj->wax, obj->wax);
-				}
-				else if (srcObj->oclass == CLASS_3D)
-				{
-					obj->model = models[srcObj->dataOffset] ? models[srcObj->dataOffset] : nullptr;
-					if (!obj->model) { continue; }
-										
-					obj3d_setData(obj, obj->model);
-					if (s_subRenderer == TSR_CLASSIC_FIXED)
-					{
-						obj3d_computeTransform_Fixed(obj, obj->yaw, obj->pitch, obj->roll);
-					}
-					else
-					{
-						obj3d_computeTransform_Float(obj, srcObj->orientation.y, srcObj->orientation.x, srcObj->orientation.z);
-					}
-				}
-				s_sectors->addObject(sector, obj);
-			}
 		}
 	}
 }

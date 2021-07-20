@@ -5,10 +5,13 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Asset/modelAsset_Jedi.h>
-#include "../../rmath.h"
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 struct SecObject;
 
 #define VSHADE_MAX_INTENSITY (31 * ONE_16)
+
+using namespace TFE_CoreMath;
 
 namespace TFE_JediRenderer
 {

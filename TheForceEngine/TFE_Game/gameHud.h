@@ -6,7 +6,6 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
-#include <TFE_Asset/levelAsset.h>
 
 class TFE_Renderer;
 class Player;

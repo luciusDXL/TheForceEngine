@@ -204,9 +204,9 @@ void robj3d_drawColumnShadedColor()
 void robj3d_drawColumnFlatTexture()
 {
 	const u8* colorMap = &s_polyColorMap[s_polyColorIndex * 256];
-	const u8* textureData = s_polyTexture->frames[0].image;
-	const s32 texHeight = s_polyTexture->frames[0].height;
-	const s32 texWidthMask = s_polyTexture->frames[0].width - 1;
+	const u8* textureData = s_polyTexture->image;
+	const s32 texHeight = s_polyTexture->height;
+	const s32 texWidthMask = s_polyTexture->width - 1;
 	const s32 texHeightMask = texHeight - 1;
 
 	fixed16_16 U = s_col_Uv0.x;
@@ -229,9 +229,9 @@ void robj3d_drawColumnFlatTexture()
 void robj3d_drawColumnShadedTexture()
 {
 	const u8* colorMap = s_polyColorMap;
-	const u8* textureData = s_polyTexture->frames[0].image;
-	const s32 texHeight = s_polyTexture->frames[0].height;
-	const s32 texWidthMask = s_polyTexture->frames[0].width - 1;
+	const u8* textureData = s_polyTexture->image;
+	const s32 texHeight = s_polyTexture->height;
+	const s32 texWidthMask = s_polyTexture->width - 1;
 	const s32 texHeightMask = texHeight - 1;
 
 	fixed16_16 U = s_col_Uv0.x;
@@ -277,9 +277,9 @@ void robj3d_drawColumnShadedTexture()
 #if defined(POLY_INTENSITY) && !defined(POLY_UV)
 void robj3d_drawShadedColorPolygon(vec3_fixed* projVertices, fixed16_16* intensity, s32 vertexCount, u8 color)
 #elif !defined(POLY_INTENSITY) && defined(POLY_UV)
-void robj3d_drawFlatTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, s32 vertexCount, Texture* texture, u8 color)
+void robj3d_drawFlatTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, s32 vertexCount, TextureData* texture, u8 color)
 #elif defined(POLY_INTENSITY) && defined(POLY_UV)
-void robj3d_drawShadedTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, fixed16_16* intensity, s32 vertexCount, Texture* texture)
+void robj3d_drawShadedTexturePolygon(vec3_fixed* projVertices, vec2_fixed* uv, fixed16_16* intensity, s32 vertexCount, TextureData* texture)
 #else
 void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 color)
 #endif

@@ -1,6 +1,8 @@
 #include <TFE_System/profiler.h>
-// TODO: Fix or move.
-#include <TFE_Game/level.h>
+#include <TFE_Level/robject.h>
+#include <TFE_Level/rtexture.h>
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 
 #include "robj3dFixed_TransformAndLighting.h"
 #include "robj3dFixed_PolygonSetup.h"
@@ -9,10 +11,7 @@
 #include "../rflatFixed.h"
 #include "../rcommonFixed.h"
 #include "../rlightingFixed.h"
-#include "../../fixedPoint.h"
-#include "../../rmath.h"
 #include "../../rcommon.h"
-#include "../../robject.h"
 
 namespace TFE_JediRenderer
 {
@@ -30,7 +29,7 @@ namespace RClassic_Fixed
 	static vec2_fixed* s_polyUv;
 	static vec3_fixed* s_polyProjVtx;
 	static const u8*   s_polyColorMap;
-	static Texture*    s_polyTexture;
+	static TextureData* s_polyTexture;
 
 	// Column
 	static s32 s_columnX;
@@ -312,7 +311,7 @@ namespace RClassic_Fixed
 		return -1;
 	}
 
-	void robj3d_drawPlaneTexturePolygon(vec3_fixed* projVertices, s32 vertexCount, Texture* texture, fixed16_16 planeY, fixed16_16 ceilOffsetX, fixed16_16 ceilOffsetZ, fixed16_16 floorOffsetX, fixed16_16 floorOffsetZ)
+	void robj3d_drawPlaneTexturePolygon(vec3_fixed* projVertices, s32 vertexCount, TextureData* texture, fixed16_16 planeY, fixed16_16 ceilOffsetX, fixed16_16 ceilOffsetZ, fixed16_16 floorOffsetX, fixed16_16 floorOffsetZ)
 	{
 		if (vertexCount <= 0) { return; }
 
@@ -342,7 +341,7 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		bool trans = texture->frames[0].opacity == OPACITY_TRANS;
+		bool trans = (texture->flags & OPACITY_TRANS) != 0;
 		s_rowY = yMin;
 
 		if (robj3d_findLeftEdge(minIndex) != 0 || robj3d_findRightEdge(minIndex) != 0)
@@ -433,8 +432,8 @@ namespace RClassic_Fixed
 			case PSHADE_PLANE:
 			{
 				const RSector* sector = obj->sector;
-				const fixed16_16 planeY = model->vertices[polygon->indices[0]].y + obj->posWS.y.f16_16;
-				robj3d_drawPlaneTexturePolygon(s_polygonVerticesProj, polyVertexCount, polygon->texture, planeY, sector->ceilOffsetX.f16_16, sector->ceilOffsetZ.f16_16, sector->floorOffsetX.f16_16, sector->floorOffsetZ.f16_16);
+				const fixed16_16 planeY = model->vertices[polygon->indices[0]].y + obj->posWS.y;
+				robj3d_drawPlaneTexturePolygon(s_polygonVerticesProj, polyVertexCount, polygon->texture, planeY, sector->ceilOffset.x, sector->ceilOffset.z, sector->floorOffset.x, sector->floorOffset.z);
 			} break;
 			default:
 			{

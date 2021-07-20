@@ -11,10 +11,6 @@
 	{	\
 	case 0:
 
-#define task_loop \
-	} \
-	itask_loop(id);
-
 #define task_end \
 	} \
 	itask_end(id);
@@ -42,7 +38,6 @@ namespace TFE_Task
 	s32 ctxGetState();
 	void ctxAllocate(u32 size);
 	void* ctxGet();
-	void itask_yield(TickSigned delay, s32 state, s32 id);
-	void itask_loop(s32 id);
+	void itask_yield(Tick delay, s32 state, s32 id);
 	void itask_end(s32 id);
 }

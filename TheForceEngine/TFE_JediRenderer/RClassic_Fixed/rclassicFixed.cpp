@@ -1,9 +1,9 @@
-#include <TFE_Asset/levelAsset.h>
+#include <TFE_Level/level.h>
+#include <TFE_Level/fixedPoint.h>
+#include <TFE_Level/core_math.h>
 #include "rcommonFixed.h"
 #include "rlightingFixed.h"
-#include "../rmath.h"
 #include "../rcommon.h"
-#include "../fixedPoint.h"
 
 namespace TFE_JediRenderer
 {
@@ -11,6 +11,13 @@ namespace TFE_JediRenderer
 namespace RClassic_Fixed
 {
 	void computeSkyOffsets();
+
+	void transformPointByCamera(vec3_fixed* worldPoint, vec3_fixed* viewPoint)
+	{
+		viewPoint->x = mul16(worldPoint->x, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->z, RClassic_Fixed::s_sinYaw_Fixed) + RClassic_Fixed::s_xCameraTrans_Fixed;
+		viewPoint->y = worldPoint->y - RClassic_Fixed::s_eyeHeight_Fixed;
+		viewPoint->z = mul16(worldPoint->z, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->x, RClassic_Fixed::s_negSinYaw_Fixed) + RClassic_Fixed::s_zCameraTrans_Fixed;
+	}
 
 	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId)
 	{
@@ -80,11 +87,12 @@ namespace RClassic_Fixed
 
 	void computeSkyOffsets()
 	{
-		const LevelData* level = TFE_LevelAsset::getLevelData();
+		fixed16_16 parallax[2];
+		TFE_Level::getSkyParallax(&parallax[0], &parallax[1]);
 
 		// angles range from -16384 to 16383; multiply by 4 to convert to [-1, 1) range.
-		s_skyYawOffset_Fixed = mul16(s_cameraYaw_Fixed   * ANGLE_TO_FIXED_SCALE, intToFixed16((s32)level->parallax[0]));
-		s_skyPitchOffset_Fixed = -mul16(s_cameraPitch_Fixed * ANGLE_TO_FIXED_SCALE, intToFixed16((s32)level->parallax[1]));
+		s_skyYawOffset_Fixed = mul16(s_cameraYaw_Fixed * ANGLE_TO_FIXED_SCALE, parallax[0]);
+		s_skyPitchOffset_Fixed = -mul16(s_cameraPitch_Fixed * ANGLE_TO_FIXED_SCALE, parallax[1]);
 	}
 
 	void setResolution(s32 width, s32 height)

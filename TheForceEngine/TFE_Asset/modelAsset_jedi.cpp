@@ -1,12 +1,12 @@
 #include "modelAsset_jedi.h"
-#include "textureAsset.h"
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_System/parser.h>
 
+#include <TFE_Level/core_math.h>
+#include <TFE_Level/rtexture.h>
 // TODO: dependency on JediRenderer, this should be refactored...
-#include <TFE_JediRenderer/fixedPoint.h>
 #include <TFE_JediRenderer/rlimits.h>
 
 #include <assert.h>
@@ -14,6 +14,7 @@
 #include <algorithm>
 
 using namespace TFE_JediRenderer;
+using namespace TFE_CoreMath;
 
 // Jedi code for processing models.
 // TODO: Move to the Jedi_ObjectRenderer (once it exists)?
@@ -352,8 +353,8 @@ namespace TFE_Model_Jedi
 		// Load textures.
 		if (textureCount)
 		{
-			model->textures = (Texture**)malloc(textureCount * sizeof(Texture*));
-			Texture** texture = model->textures;
+			model->textures = (TextureData**)malloc(textureCount * sizeof(TextureData*));
+			TextureData** texture = model->textures;
 			for (s32 i = 0; i < textureCount; i++, texture++)
 			{
 				buffer = parser.readLine(bufferPos, true);
@@ -370,10 +371,10 @@ namespace TFE_Model_Jedi
 				*texture = nullptr;
 				if (strcasecmp(textureName, "<NoTexture>"))
 				{
-					*texture = TFE_Texture::get(textureName);
+					*texture = (TextureData*)TFE_Level::bitmap_load(textureName, 1);
 					if (!(*texture))
 					{
-						*texture = TFE_Texture::get("default.bm");
+						*texture = (TextureData*)TFE_Level::bitmap_load("default.bm", 1);
 					}
 				}
 			}
@@ -406,7 +407,7 @@ namespace TFE_Model_Jedi
 				assert(0);
 				return false;
 			}
-			Texture* texture = nullptr;
+			TextureData* texture = nullptr;
 			if (textureId != -1)
 			{
 				texture = model->textures[textureId];
@@ -649,8 +650,8 @@ namespace TFE_Model_Jedi
 						}
 
 						polygon->uv   = (vec2*)malloc(sizeof(vec2) * 3);
-						s32 texWidth  = intToFixed16(texture->frames[0].uvWidth);
-						s32 texHeight = intToFixed16(texture->frames[0].uvHeight);
+						fixed16_16 texWidth  = intToFixed16(texture->uvWidth);
+						fixed16_16 texHeight = intToFixed16(texture->uvHeight);
 
 						polygon->uv[0].x = mul16(s_tmpVtx[a].x, texWidth);
 						polygon->uv[0].y = mul16(s_tmpVtx[a].y, texHeight);
@@ -675,8 +676,8 @@ namespace TFE_Model_Jedi
 							break;
 						}
 						polygon->uv = (vec2*)malloc(sizeof(vec2) * 4);
-						s32 texWidth = intToFixed16(texture->frames[0].uvWidth);
-						s32 texHeight = intToFixed16(texture->frames[0].uvHeight);
+						fixed16_16 texWidth = intToFixed16(texture->uvWidth);
+						fixed16_16 texHeight = intToFixed16(texture->uvHeight);
 
 						polygon->uv[0].x = mul16(s_tmpVtx[a].x, texWidth);
 						polygon->uv[0].y = mul16(s_tmpVtx[a].y, texHeight);
