@@ -1,5 +1,12 @@
 #pragma once
 #include <TFE_FileSystem/stream.h>
+#include <TFE_FileSystem/paths.h>
+
+////////////////////////////////////////////////////
+// TODO: FileStream directly accesses arhive data.
+////////////////////////////////////////////////////
+
+class Archive;
 
 class FileStream : public Stream
 {
@@ -18,6 +25,7 @@ public:
 
 	bool exists(const char* filename);
 	bool open(const char* filename, FileMode mode);
+	bool open(const FilePath* filePath, FileMode mode);
 	void close();
 	
 	//derived functions.
@@ -71,5 +79,6 @@ private:
 
 private:
 	FILE*    m_file;
+	Archive* m_archive;
 	FileMode m_mode;
 };

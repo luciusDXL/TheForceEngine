@@ -42,19 +42,19 @@ private:
 	typedef struct
 	{
 		char GOB_MAGIC[4];
-		long MASTERX;	//offset to GOX_Index_t
+		long MASTERX;	// offset to GOB_Index_t
 	} GOB_Header_t;
 
 	typedef struct
 	{
-		long IX;		//offset to the start of the file.
-		long LEN;		//length of the file.
-		char NAME[13];	//file name.
+		long IX;		// offset to the start of the file.
+		long LEN;		// length of the file.
+		char NAME[13];	// file name.
 	} GOB_Entry_t;
 
 	typedef struct
 	{
-		long MASTERN;	//num files
+		long MASTERN;	// num files
 		GOB_Entry_t *entries;
 	} GOB_Index_t;
 

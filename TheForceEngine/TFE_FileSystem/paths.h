@@ -15,6 +15,15 @@ enum TFE_PathType
 // Use an extended MAX_PATH, the Windows value is actually too small for some valid paths.
 #define TFE_MAX_PATH 1024
 
+class Archive;
+
+struct FilePath
+{
+	Archive* archive;			// will be null if this is a raw file.
+	u32 index;					// file index into an archive or INVALID_FILE.
+	char path[TFE_MAX_PATH];	// this will be empty if this is an archive file.
+};
+
 namespace TFE_Paths
 {
 	// Paths, such as the source data or mods.
@@ -29,4 +38,8 @@ namespace TFE_Paths
 	const char* getPath(TFE_PathType pathType);
 	bool hasPath(TFE_PathType pathType);
 	void appendPath(TFE_PathType pathType, const char* filename, char* path, size_t bufferLen = TFE_MAX_PATH);
+
+	void addLocalSearchPath(const char* localSearchPath);
+	void addLocalArchive(Archive* archive);
+	bool getFilePath(const char* fileName, FilePath* path);
 }

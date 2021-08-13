@@ -231,7 +231,7 @@ namespace TFE_Texture
 				texture->frames[f].logSizeY = frame->logSizeY;
 
 				// I'm not sure yet what the other flags do, but 8 refers to a transparent texture as seen in the DOS code.
-				texture->frames[f].opacity = (frame->flags&8) ? OPACITY_TRANS : OPACITY_NORMAL;
+				texture->frames[f].opacity = (frame->flags&8) ? TEX_OPACITY_TRANS : TEX_OPACITY_NORMAL;
 
 				texture->frames[f].uvWidth = frame->idemX;
 				texture->frames[f].uvHeight = frame->idemY;
@@ -256,7 +256,7 @@ namespace TFE_Texture
 			texture->frames[0].offsetY = 0;
 
 			// I'm not sure yet what the other flags do, but 8 refers to a transparent texture as seen in the DOS code.
-			texture->frames[0].opacity = (header->flags & 8) ? OPACITY_TRANS : OPACITY_NORMAL;
+			texture->frames[0].opacity = (header->flags & 8) ? TEX_OPACITY_TRANS : TEX_OPACITY_NORMAL;
 
 			texture->frames[0].uvWidth = header->idemX;
 			texture->frames[0].uvHeight = header->idemY;
@@ -295,7 +295,7 @@ namespace TFE_Texture
 		frame->width    = header.sizeX;
 		frame->height   = header.sizeY;
 		frame->logSizeY = 0;
-		frame->opacity  = OPACITY_TRANS;
+		frame->opacity  = TEX_OPACITY_TRANS;
 		frame->uvWidth  = header.sizeX;
 		frame->uvHeight = header.sizeY;
 		frame->image    = *imageDst;
@@ -498,7 +498,7 @@ namespace TFE_Texture
 		texture->frames[0].logSizeY = 0;
 		texture->frames[0].offsetX = 0;
 		texture->frames[0].offsetY = 0;
-		texture->frames[0].opacity = OPACITY_NORMAL;
+		texture->frames[0].opacity = TEX_OPACITY_NORMAL;
 		texture->frames[0].uvWidth = width;
 		texture->frames[0].uvHeight = height;
 		
@@ -601,7 +601,7 @@ namespace TFE_Texture
 		texture->frames[0].logSizeY = 0;
 		texture->frames[0].offsetX = 0;
 		texture->frames[0].offsetY = 0;
-		texture->frames[0].opacity = OPACITY_TRANS;
+		texture->frames[0].opacity = TEX_OPACITY_TRANS;
 		texture->frames[0].uvWidth = image->width;
 		texture->frames[0].uvHeight = image->height;
 

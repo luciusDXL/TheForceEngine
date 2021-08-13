@@ -9,12 +9,12 @@
 #include <TFE_System/types.h>
 #include "paletteAsset.h"
 
-enum Opacity
+enum TextureOpacity
 {
-	OPACITY_NORMAL = 0,
-	OPACITY_TRANS,
-	OPACITY_WEAPON,
-	OPACITY_COUNT
+	TEX_OPACITY_NORMAL = 0,
+	TEX_OPACITY_TRANS,
+	TEX_OPACITY_WEAPON,
+	TEX_OPACITY_COUNT
 };
 
 enum TextureLayout
@@ -37,7 +37,7 @@ struct TextureFrame
 	u8 logSizeY;
 	u8 pad[3];
 
-	Opacity opacity;
+	TextureOpacity opacity;
 	u8* image;
 };
 

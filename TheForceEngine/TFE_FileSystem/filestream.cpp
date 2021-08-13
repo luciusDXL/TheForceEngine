@@ -1,5 +1,6 @@
 #pragma once
 #include "filestream.h"
+#include <TFE_Archive/archive.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -33,7 +34,24 @@ bool FileStream::open(const char* filename, FileMode mode)
 	m_file = fopen(filename, modeStrings[mode]);
 	m_mode = mode;
 
-	return m_file != NULL;
+	return m_file != nullptr;
+}
+
+bool FileStream::open(const FilePath* filePath, FileMode mode)
+{
+	if (filePath->archive)
+	{
+		if (filePath->index < 0) { return false; }
+		m_mode = mode;
+		m_file = nullptr;
+		m_archive = filePath->archive;
+
+		return filePath->archive->openFile(filePath->index);
+	}
+	else
+	{
+		return open(filePath->path, mode);
+	}
 }
 
 void FileStream::close()
@@ -46,9 +64,14 @@ void FileStream::close()
 		}
 
 		fclose(m_file);
-		m_file = NULL;
-		m_mode = MODE_INVALID;
+		m_file = nullptr;
 	}
+	else if (m_archive)
+	{
+		m_archive->closeFile();
+		m_archive = nullptr;
+	}
+	m_mode = MODE_INVALID;
 }
 
 //derived from Stream
@@ -59,27 +82,44 @@ void FileStream::seek(u32 offset, Origin origin/*=ORIGIN_START*/)
 	{
 		fseek(m_file, offset, forigin[origin]);
 	}
+	else if (m_archive)
+	{
+		// TODO: implement seek functionality.
+	}
 }
 
 size_t FileStream::getLoc()
 {
-	if (!m_file)
+	if (!m_file && !m_archive)
 	{
 		return 0;
 	}
-	return ftell(m_file);
+	if (m_file)
+	{
+		return ftell(m_file);
+	}
+	// TODO: implement.
+	return 0;
 }
 
 size_t FileStream::getSize()
 {
-	if (!m_file)
+	if (!m_file && !m_archive)
 	{
 		return 0;
 	}
 
-	seek(0, FileStream::ORIGIN_END);
-	size_t filesize = getLoc();
-	seek(0, FileStream::ORIGIN_START);
+	size_t filesize = 0;
+	if (m_file)
+	{
+		seek(0, FileStream::ORIGIN_END);
+		filesize = getLoc();
+		seek(0, FileStream::ORIGIN_START);
+	}
+	else
+	{
+		filesize = m_archive->getFileLength();
+	}
 
 	return filesize;
 }
