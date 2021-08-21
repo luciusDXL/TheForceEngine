@@ -13,7 +13,6 @@
 namespace TFE_DarkForces
 {
 	struct Logic;
-	typedef void(*LogicTaskFunc)(s32 id);
 	typedef void(*LogicCleanupFunc)(Logic*);
 
 	struct Logic

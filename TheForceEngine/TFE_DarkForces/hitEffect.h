@@ -9,6 +9,11 @@
 #include <TFE_Level/rsector.h>
 #include <TFE_Level/robject.h>
 
+enum HitEffectLogicId
+{
+	HEFFECT_ANIM_COMPLETE = 20,
+};
+
 namespace TFE_DarkForces
 {
 	enum HitEffectID

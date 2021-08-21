@@ -212,7 +212,7 @@ namespace RClassic_Fixed
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_heightInPixelsBase - s_heightInPixels;
-			fixed16_16 yRcp = s_rcp_yMinusHalfHeight_Fixed[yShear + y + s_height];
+			fixed16_16 yRcp = s_rcpY[yShear + y + s_height*2];
 			fixed16_16 z = mul16(scaledRelCeil, yRcp);
 
 			s32 left = 0;
@@ -278,7 +278,7 @@ namespace RClassic_Fixed
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_heightInPixelsBase - s_heightInPixels;
-			fixed16_16 yRcp = s_rcp_yMinusHalfHeight_Fixed[yShear + y + s_height];
+			fixed16_16 yRcp = s_rcpY[yShear + y + s_height*2];
 			fixed16_16 z = mul16(scaledRelFloor, yRcp);
 
 			s32 left = 0;
@@ -379,7 +379,7 @@ namespace RClassic_Fixed
 		s_scanlineOut = &s_display[y * s_width + x0];
 
 		const s32 yShear = s_heightInPixelsBase - s_heightInPixels;
-		const fixed16_16 yRcp = s_rcp_yMinusHalfHeight_Fixed[yShear + y + s_height];
+		const fixed16_16 yRcp = s_rcpY[yShear + y + s_height*2];
 		const fixed16_16 z = mul16(s_poly_scaledHOffset, yRcp);
 		const fixed16_16 right = intToFixed16(x1 - 1 - s_screenXMid);
 

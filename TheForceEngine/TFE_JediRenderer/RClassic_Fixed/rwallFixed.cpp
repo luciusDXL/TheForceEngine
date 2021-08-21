@@ -2027,7 +2027,7 @@ namespace RClassic_Fixed
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
-			fixed16_16 den = s_column_Y_Over_X_Fixed[x] - wallSegment->slope;
+			fixed16_16 den = s_column_Z_Over_X[x] - wallSegment->slope;
 			// Avoid divide by zero.
 			if (den == 0) { den = 1; }
 
@@ -2044,7 +2044,7 @@ namespace RClassic_Fixed
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			fixed16_16 den = s_column_X_Over_Y_Fixed[x] - wallSegment->slope;
+			fixed16_16 den = s_column_X_Over_Z[x] - wallSegment->slope;
 			// Avoid divide by 0.
 			if (den == 0) { den = 1; }
 

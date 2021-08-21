@@ -3,9 +3,21 @@
 // Dark Forces Item IDs.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_JediSound/soundSystem.h>
+#include <TFE_Asset/spriteAsset_Jedi.h>
 
 namespace TFE_DarkForces
 {
+	struct ItemData
+	{
+		union
+		{
+			Wax* wax;
+			WaxFrame* frame;
+		};
+		JBool isWax;
+	};
+
 	enum ItemId
 	{
 		ITEM_PLANS = 0,			// 0x00
@@ -67,4 +79,11 @@ namespace TFE_DarkForces
 		ITYPE_POWERUP  = 32, // Powerups & Extra lives.
 		ITYPE_SPECIAL  = 64, // Special - only a single item fits in this type (ITEM_PILE).
 	};
+
+	extern SoundSourceID s_powerupPickupSnd;
+	extern SoundSourceID s_invItemPickupSnd;
+	extern SoundSourceID s_wpnPickupSnd;
+	extern ItemData s_itemData[ITEM_COUNT];
+
+	void loadItemData();
 }  // TFE_DarkForces

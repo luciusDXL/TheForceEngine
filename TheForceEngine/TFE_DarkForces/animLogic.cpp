@@ -37,7 +37,7 @@ namespace TFE_DarkForces
 		task_begin_ctx;
 		while (id != -1)
 		{
-			if (id == 1)    // id = 1 is passed in when the logic needs to be deleted.
+			if (id == ANIM_DELETE)
 			{
 				deleteLogicAndObject((Logic*)s_msgTarget);
 				allocator_deleteItem(s_spriteAnimList, s_msgTarget);
@@ -81,7 +81,7 @@ namespace TFE_DarkForces
 				}
 			}
 			// There must be a yield in an endless while() loop.
-			// If there are no more animated logics, then make the task go to sleep (pass in -1 into yield).
+			// If there are no more animated logics, then make the task go to sleep.
 			task_yield(taskCtx->count ? TASK_NO_DELAY : TASK_SLEEP);
 		}
 		// Once we break out of the while loop, the task gets removed.

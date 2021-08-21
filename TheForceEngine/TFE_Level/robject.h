@@ -41,6 +41,7 @@ enum EntityTypeFlags
 	ETFLAG_CAN_WAKE       = FLAG_BIT(6),	// An inactive object or animation waiting to be "woken up" - such as Vues waiting to play.
 	ETFLAG_PICKUP         = FLAG_BIT(7),	// An item pickup.
 	ETFLAG_SCENERY        = FLAG_BIT(8),	// Set for scenery - is this really collision?
+	ETFLAG_512			  = FLAG_BIT(9),	// Unknown
 	ETFLAG_CAN_DISABLE    = FLAG_BIT(10),	// An object that can be enabled or disabled by INF.
 	ETFLAG_SMART_OBJ      = FLAG_BIT(11),	// An object that can manipulate the level, such as opening doors.
 	ETFLAG_LANDMINE       = FLAG_BIT(13),	// Specifically set if a pre-placed landmine.

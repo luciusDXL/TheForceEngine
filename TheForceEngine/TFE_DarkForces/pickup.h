@@ -10,7 +10,7 @@
 #include <TFE_Level/rsector.h>
 #include <TFE_Level/robject.h>
 #include "logic.h"
-#include "itemId.h"
+#include "item.h"
 
 enum PickupLogicId
 {
@@ -40,5 +40,5 @@ namespace TFE_DarkForces
 	// Logic update function, called when pickups are handled.
 	void pickupLogicFunc(s32 id);
 	// Called when the player respawns.
-	void pickupRevive();
+	void playerRevive();
 }  // namespace TFE_DarkForces

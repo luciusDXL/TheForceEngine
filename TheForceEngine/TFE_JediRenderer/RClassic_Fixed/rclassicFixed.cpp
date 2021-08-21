@@ -1,6 +1,7 @@
 #include <TFE_Level/level.h>
 #include <TFE_Level/fixedPoint.h>
 #include <TFE_Level/core_math.h>
+#include <TFE_Level/rtexture.h>
 #include "rcommonFixed.h"
 #include "rlightingFixed.h"
 #include "../rcommon.h"
@@ -127,14 +128,14 @@ namespace RClassic_Fixed
 		s_windowBot_all = (s32*)realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
 		// Build tables
-		s_column_Y_Over_X_Fixed = (fixed16_16*)realloc(s_column_Y_Over_X_Fixed, s_width * sizeof(fixed16_16));
-		s_column_X_Over_Y_Fixed = (fixed16_16*)realloc(s_column_X_Over_Y_Fixed, s_width * sizeof(fixed16_16));
+		s_column_Z_Over_X = (fixed16_16*)realloc(s_column_Z_Over_X, s_width * sizeof(fixed16_16));
+		s_column_X_Over_Z = (fixed16_16*)realloc(s_column_X_Over_Z, s_width * sizeof(fixed16_16));
 		s_skyTable_Fixed = (fixed16_16*)realloc(s_skyTable_Fixed, s_width * sizeof(fixed16_16));
 		s32 halfWidth = s_width >> 1;
 		for (s32 x = 0; x < s_width; x++)
 		{
-			s_column_Y_Over_X_Fixed[x] = (x != halfWidth) ? div16(s_halfWidth_Fixed, intToFixed16(x - halfWidth)) : s_halfWidth_Fixed;
-			s_column_X_Over_Y_Fixed[x] = div16(intToFixed16(x - halfWidth), s_halfWidth_Fixed);
+			s_column_Z_Over_X[x] = (x != halfWidth) ? div16(s_halfWidth_Fixed, intToFixed16(x - halfWidth)) : s_halfWidth_Fixed;
+			s_column_X_Over_Z[x] = div16(intToFixed16(x - halfWidth), s_halfWidth_Fixed);
 
 			// This result isn't *exactly* the same as the original, but it is accurate to within 1 decimal point (example: -88.821585 vs -88.8125 @ x=63)
 			// The original result is likely from a arc tangent table, which is more approximate. However the end difference is less
@@ -143,12 +144,54 @@ namespace RClassic_Fixed
 			s_skyTable_Fixed[x] = floatToFixed16(512.0f * atanf(f32(x - halfWidth) / f32(halfWidth)) / PI);
 		}
 
-		s_rcp_yMinusHalfHeight_Fixed = (fixed16_16*)realloc(s_rcp_yMinusHalfHeight_Fixed, 3 * s_height * sizeof(fixed16_16));
-		s32 halfHeight = s_height >> 1;
-		for (s32 y = 0; y < s_height * 3; y++)
+		s_rcpY = (fixed16_16*)realloc(s_rcpY, 4 * s_height * sizeof(fixed16_16));
+		s32 yMid = s_height / 2;
+		s32 startY = -2 * s_height;
+		s32 endY = 2 * s_height;
+		for (s32 y = startY; y < endY; y++)
 		{
-			fixed16_16 yMinusHalf = fixed16_16(-s_height + y - halfHeight);
-			s_rcp_yMinusHalfHeight_Fixed[y] = (yMinusHalf != 0) ? ONE_16 / yMinusHalf : ONE_16;
+			s_rcpY[y + startY] = (y != yMid) ? div16(ONE_16, (y - yMid)) : ONE_16;
+		}
+	}
+
+	// 2D
+	void textureBlitColumn(const u8* image, u8* outBuffer, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = end * s_width;
+		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		{
+			outBuffer[offset] = image[i];
+		}
+	}
+
+	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0)
+	{
+		s32 x1 = x0 + texture->width - 1;
+		s32 y1 = y0 + texture->height - 1;
+
+		if (x0 < 0)
+		{
+			x0 = 0;
+		}
+		if (y0 < 0)
+		{
+			y0 = 0;
+		}
+		if (x1 > s_width - 1)
+		{
+			x1 = s_width - 1;
+		}
+		if (y1 > s_height - 1)
+		{
+			y1 = s_height - 1;
+		}
+		s32 yPixelCount = y1 - y0 + 1;
+
+		const u8* buffer = texture->image;
+		for (s32 x = x0; x <= x1; x++, buffer += texture->height)
+		{
+			textureBlitColumn(buffer, s_display + y0*s_width + x, yPixelCount);
 		}
 	}
 }  // RClassic_Fixed

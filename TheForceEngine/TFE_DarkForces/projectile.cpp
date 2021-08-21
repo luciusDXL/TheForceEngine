@@ -104,6 +104,7 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// API Implementation
 	//////////////////////////////////////////////////////////////
+	// TODO: Move projectile data to an external file to avoid hardcoding it for TFE.
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj)
 	{
 		ProjectileLogic* projLogic = (ProjectileLogic*)allocator_newItem(s_projectiles);

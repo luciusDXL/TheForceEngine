@@ -20,9 +20,6 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Internal State
 	//////////////////////////////////////////////////////////////
-	SoundSourceID s_powerupPickupSnd;
-	SoundSourceID s_invItemPickupSnd;
-	SoundSourceID s_wpnPickupSnd;
 	SoundSourceID s_invCountdownSound = 0;
 	SoundSourceID s_superchargeCountdownSound = 0;
 	
@@ -40,12 +37,12 @@ namespace TFE_DarkForces
 	s32 pickup_addToValue(s32 curValue, s32 amountToAdd, s32 maxAmount);
 	void pickupInvincibility();
 	void pickupSupercharge();
-	void pickupRevive();
 	void pickupInventory();
 
 	//////////////////////////////////////////////////////////////
 	// API Implementation
 	//////////////////////////////////////////////////////////////
+	// TODO: Move keyword to pickup mapping to a datafile to avoid hardcoding.
 	ItemId getPickupItemId(const char* keyword)
 	{
 		const KEYWORD kw = getKeywordIndex(keyword);
@@ -225,7 +222,7 @@ namespace TFE_DarkForces
 				}
 				else if (taskCtx->pickup->type == ITYPE_INV_ITEM)
 				{
-					*taskCtx->pickup->item = 0xffffffff;
+					*taskCtx->pickup->item = JTRUE;
 					hud_sendTextMessage(taskCtx->pickup->msgId[0]);
 				}
 				else if (taskCtx->pickup->type == ITYPE_POWERUP)
@@ -244,7 +241,7 @@ namespace TFE_DarkForces
 						{
 							if (s_playerInfo.health < 100 || s_playerInfo.shields < 200)
 							{
-								pickupRevive();
+								playerRevive();
 								// The function sets shields to 100, so set it to the proper value here.
 								s_playerInfo.shields = 200;
 							}
@@ -320,6 +317,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
+	// TODO: Move pickup data to an external data file to avoid hardcoding.
 	Logic* obj_createPickup(SecObject* obj, ItemId id)
 	{
 		Pickup* pickup = (Pickup*)malloc(sizeof(Pickup));
@@ -706,9 +704,9 @@ namespace TFE_DarkForces
 		return (Logic*)pickup;
 	}
 
-	void pickupRevive()
+	void playerRevive()
 	{
-		// pickupRevive() is called when the player respawns, which is why it sets 100 for shields here.
+		// playerRevive() is called when the player respawns, which is why it sets 100 for shields here.
 		// In the case of picking up the item, the value is then set to 200 after the function call.
 		s_playerInfo.shields = 100;
 		s_playerInfo.health = 100;

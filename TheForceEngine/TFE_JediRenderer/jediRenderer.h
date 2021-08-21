@@ -22,6 +22,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Asset/colormapAsset.h>
 #include <TFE_Level/core_math.h>
+#include <TFE_Level/rtexture.h>
 
 enum TFE_SubRenderer
 {
@@ -54,4 +55,7 @@ namespace TFE_JediRenderer
 	void setupLevel(s32 width, s32 height);
 	// Set the current resolution to render, this may involve regenerating lookup-tables, depending on the sub-renderer.
 	void setResolution(s32 width, s32 height);
+
+	// 2D
+	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
 }

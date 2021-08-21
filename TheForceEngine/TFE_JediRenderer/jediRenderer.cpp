@@ -68,6 +68,12 @@ namespace TFE_JediRenderer
 		//else { RClassic_Float::setResolution(width, height); }
 	}
 
+	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0)
+	{
+		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::blitTextureToScreen(texture, x0, y0); }
+		//else { RClassic_Float::setResolution(width, height); }
+	}
+	
 	void setupLevel(s32 width, s32 height)
 	{
 		init();

@@ -1,10 +1,9 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
-// Dark Forces Pickup - 
-// Items that can be picked up such as ammo, keys, extra lives,
-// and weapons.
+// Dark Forces Animation Logic-
+// Handles cyclic "fire and forget" sprite animations.
+// This includes animated sprite objects, explosions, and hit effects.
 //////////////////////////////////////////////////////////////////////
-
 #include <TFE_System/types.h>
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Level/rsector.h>
@@ -12,7 +11,10 @@
 #include "logic.h"
 #include "time.h"
 
-typedef void(*SpriteCompleteFunc)();
+enum AnimLogicId
+{
+	ANIM_DELETE = 1,
+};
 
 namespace TFE_DarkForces
 {

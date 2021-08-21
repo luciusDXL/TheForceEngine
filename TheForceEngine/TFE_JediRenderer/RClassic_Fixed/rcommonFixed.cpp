@@ -40,11 +40,11 @@ namespace RClassic_Fixed
 	fixed16_16 s_windowMinZ_Fixed;
 
 	// Column Heights
-	fixed16_16* s_column_Y_Over_X_Fixed;
-	fixed16_16* s_column_X_Over_Y_Fixed;
+	fixed16_16* s_column_Z_Over_X;
+	fixed16_16* s_column_X_Over_Z;
 
 	// Flats
-	fixed16_16* s_rcp_yMinusHalfHeight_Fixed;
+	fixed16_16* s_rcpY;
 }  // RClassic_Fixed
 
 }  // TFE_JediRenderer

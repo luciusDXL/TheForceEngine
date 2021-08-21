@@ -87,7 +87,7 @@ namespace TFE_RenderBackend
 		if (err != GLEW_OK)
 		{
 			printf("Failed to initialize GLEW");
-			return false;
+			return nullptr;
 		}
 		OpenGL_Caps::queryCapabilities();
 		TFE_System::logWrite(LOG_MSG, "RenderBackend", "OpenGL Device Tier: %d", OpenGL_Caps::getDeviceTier());

@@ -43,10 +43,10 @@ namespace TFE_JediRenderer
 		extern fixed16_16 s_windowMinZ_Fixed;
 
 		// Column Heights
-		extern fixed16_16* s_column_Y_Over_X_Fixed;
-		extern fixed16_16* s_column_X_Over_Y_Fixed;
+		extern fixed16_16* s_column_Z_Over_X;
+		extern fixed16_16* s_column_X_Over_Z;
 
 		// Flats
-		extern fixed16_16* s_rcp_yMinusHalfHeight_Fixed;
+		extern fixed16_16* s_rcpY;
 	}  // RClassic_Fixed
 }  // TFE_JediRenderer

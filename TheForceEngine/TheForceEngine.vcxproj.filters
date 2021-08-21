@@ -134,6 +134,9 @@
     <Filter Include="Source\TFE_Outlaws">
       <UniqueIdentifier>{ad3c9beb-2663-4fe9-8986-12bdbfa4f258}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_DarkForces\GameUI">
+      <UniqueIdentifier>{915e9d07-f5d3-4c9f-921e-aa66442f11ea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -508,9 +511,6 @@
     <ClInclude Include="TFE_DarkForces\pickup.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\itemId.h">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\player.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
@@ -567,6 +567,21 @@
     </ClInclude>
     <ClInclude Include="TFE_Outlaws\outlawsMain.h">
       <Filter>Source\TFE_Outlaws</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\GameUI\agentMenu.h">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\GameUI\editBox.h">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\GameUI\escMenu.h">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\GameUI\gameUi.h">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\item.h">
+      <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -908,6 +923,21 @@
     </ClCompile>
     <ClCompile Include="TFE_Outlaws\outlawsMain.cpp">
       <Filter>Source\TFE_Outlaws</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\GameUI\agentMenu.cpp">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\GameUI\editBox.cpp">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\GameUI\escMenu.cpp">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\GameUI\gameUi.cpp">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\item.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

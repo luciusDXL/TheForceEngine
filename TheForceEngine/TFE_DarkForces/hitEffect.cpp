@@ -73,7 +73,7 @@ namespace TFE_DarkForces
 			task_makeActive(s_hitEffectTask);
 		}
 	}
-
+		
 	////////////////////////////////////////////////////////////////////////
 	// Hit effect logic function.
 	// This handles all effects currently queued up.
@@ -93,7 +93,7 @@ namespace TFE_DarkForces
 
 			// When it is woken up, either it will be directly called with id = 20 after an animation is complete or
 			// is called during the update because there are effects to process.
-			if (id == 20)
+			if (id == HEFFECT_ANIM_COMPLETE)
 			{
 				taskCtx->count--;
 			}

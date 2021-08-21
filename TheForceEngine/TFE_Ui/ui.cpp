@@ -113,7 +113,7 @@ FileResult openFileDialog(const char* title, const char* initPath, std::vector<s
 		FileUtil::convertToOSPath(initPath, initPathOS);
 	}
 
-	return pfd::open_file(title, initPathOS, filters, multiSelect).result();
+	return pfd::open_file(title, initPathOS, filters, multiSelect ? pfd::opt::multiselect : pfd::opt::none).result();
 }
 
 FileResult directorySelectDialog(const char* title, const char* initPath, bool forceInitPath/* = false*/)
@@ -140,7 +140,7 @@ FileResult saveFileDialog(const char* title, const char* initPath, std::vector<s
 	}
 
 	FileResult result;
-	std::string res = pfd::save_file(title, initPathOS, filters, !forceOverwrite).result();
+	std::string res = pfd::save_file(title, initPathOS, filters, forceOverwrite ? pfd::opt::force_overwrite : pfd::opt::none).result();
 	result.push_back(res);
 
 	return result;
