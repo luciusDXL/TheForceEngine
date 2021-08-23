@@ -2,36 +2,33 @@
 #include <TFE_DarkForces/darkForcesMain.h>
 #include <TFE_Outlaws/outlawsMain.h>
 
-namespace TFE
+IGame* createGame(GameID id)
 {
-	IGame* createGame(GameID id)
+	IGame* game = nullptr;
+	switch (id)
 	{
-		IGame* game = nullptr;
-		switch (id)
+		case Game_Dark_Forces:
 		{
-			case Game_Dark_Forces:
-			{
-				game = new DarkForces();
-			} break;
-			case Game_Outlaws:
-			{
-				game = new Outlaws();
-			} break;
-		}
-		if (game)
+			game = new TFE_DarkForces::DarkForces();
+		} break;
+		case Game_Outlaws:
 		{
-			game->id = id;
-		}
-
-		return game;
+			game = new TFE_Outlaws::Outlaws();
+		} break;
+	}
+	if (game)
+	{
+		game->id = id;
 	}
 
-	void freeGame(IGame* game)
+	return game;
+}
+
+void freeGame(IGame* game)
+{
+	if (game)
 	{
-		if (game)
-		{
-			game->exitGame();
-			delete game;
-		}
+		game->exitGame();
+		delete game;
 	}
 }

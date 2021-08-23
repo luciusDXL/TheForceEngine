@@ -54,7 +54,7 @@ static u32  s_monitorWidth = 1280;
 static u32  s_monitorHeight = 720;
 static bool s_gameUiInitRequired = true;
 static char s_screenshotTime[TFE_MAX_PATH];
-static TFE::IGame* s_curGame = nullptr;
+static IGame* s_curGame = nullptr;
 
 void parseOption(const char* name, const std::vector<const char*>& values, bool longName);
 
@@ -304,19 +304,19 @@ void setAppState(AppState newState)
 			{
 				if (s_curGame)
 				{
-					TFE::freeGame(s_curGame);
+					freeGame(s_curGame);
 					s_curGame = nullptr;
 				}
-				s_curGame = TFE::createGame(gameInfo->id);
+				s_curGame = createGame(gameInfo->id);
 				if (!s_curGame)
 				{
 					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
 					newState = APP_STATE_CANNOT_RUN;
 				}
-				else if (!s_curGame->runGame())
+				else if (!s_curGame->runGame(0, nullptr))
 				{
 					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
-					TFE::freeGame(s_curGame);
+					freeGame(s_curGame);
 					s_curGame = nullptr;
 					newState = APP_STATE_CANNOT_RUN;
 				}
@@ -644,7 +644,7 @@ int main(int argc, char* argv[])
 			}
 			if (TFE_TaskSystem::systemExitRequested())
 			{
-				TFE::freeGame(s_curGame);
+				freeGame(s_curGame);
 				s_curGame = nullptr;
 			    s_loop = false;
 			}

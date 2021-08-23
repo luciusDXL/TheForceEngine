@@ -6,11 +6,12 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_Game/igame.h>
 
-namespace TFE
+namespace TFE_DarkForces
 {
 	struct DarkForces : IGame
 	{
-		bool runGame() override;
+		bool runGame(s32 argCount, const char* argv[]) override;
 		void exitGame() override;
+		void loopGame() override;
 	};
 }

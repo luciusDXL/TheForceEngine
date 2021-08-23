@@ -6,17 +6,14 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_Settings/gameSourceData.h>
 
-namespace TFE
+struct IGame
 {
-	struct IGame
-	{
-		virtual bool runGame() = 0;
-		virtual void exitGame() = 0;
-		virtual void loopGame() {};
+	virtual bool runGame(s32 argCount, const char* argv[]) = 0;
+	virtual void exitGame() = 0;
+	virtual void loopGame() {};
 
-		GameID id;
-	};
+	GameID id;
+};
 
-	IGame* createGame(GameID id);
-	void   freeGame(IGame* game);
-}
+IGame* createGame(GameID id);
+void   freeGame(IGame* game);

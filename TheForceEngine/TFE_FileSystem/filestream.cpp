@@ -74,6 +74,22 @@ void FileStream::close()
 	m_mode = MODE_INVALID;
 }
 
+u32 FileStream::readContents(const char* filePath, void** output)
+{
+	assert(output);
+
+	u32 size = 0;
+	FileStream file;
+	if (file.open(filePath, MODE_READ))
+	{
+		size = file.getSize();
+		*output = realloc(*output, size + 1);
+		file.readBuffer(*output, size);
+		file.close();
+	}
+	return size;
+}
+
 //derived from Stream
 void FileStream::seek(u32 offset, Origin origin/*=ORIGIN_START*/)
 {

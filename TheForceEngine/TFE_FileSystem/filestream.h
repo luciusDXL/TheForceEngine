@@ -27,6 +27,8 @@ public:
 	bool open(const char* filename, FileMode mode);
 	bool open(const FilePath* filePath, FileMode mode);
 	void close();
+
+	static u32 readContents(const char* filePath, void** output);
 	
 	//derived functions.
 	void seek(u32 offset, Origin origin=ORIGIN_START) override;

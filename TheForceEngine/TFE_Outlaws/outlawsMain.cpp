@@ -1,8 +1,8 @@
 #include "outlawsMain.h"
 
-namespace TFE
+namespace TFE_Outlaws
 {
-	bool Outlaws::runGame()
+	bool Outlaws::runGame(s32 argCount, const char* argv[])
 	{
 		// STUB
 		return false;

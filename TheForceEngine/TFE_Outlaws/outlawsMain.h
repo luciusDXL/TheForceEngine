@@ -6,11 +6,11 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_Game/igame.h>
 
-namespace TFE
+namespace TFE_Outlaws
 {
 	struct Outlaws : IGame
 	{
-		bool runGame() override;
+		bool runGame(s32 argCount, const char* argv[]) override;
 		void exitGame() override;
 	};
 }
