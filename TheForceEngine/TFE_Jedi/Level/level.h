@@ -7,7 +7,7 @@
 //
 // Copyright note:
 // While the project as a whole is licensed under GPL-2.0, some of the
-// code under TFE_Level/ was derived from reverse-engineered
+// code under TFE_Jedi/Level/ was derived from reverse-engineered
 // code from "Dark Forces" (DOS) which is copyrighted by LucasArts.
 //
 // I consider the reverse-engineering to be "Fair Use" - a means of 
@@ -25,7 +25,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include "rsector.h"
 
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	void initMission();
 	bool loadGeometry(const char* levelName);

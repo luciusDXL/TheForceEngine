@@ -8,8 +8,6 @@
 struct TextureData;
 struct Allocator;
 
-using namespace TFE_Level;
-
 namespace TFE_Jedi
 {
 	struct InfLink;

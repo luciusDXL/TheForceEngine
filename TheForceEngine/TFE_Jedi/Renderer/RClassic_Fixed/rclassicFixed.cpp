@@ -163,7 +163,7 @@ namespace RClassic_Fixed
 	void computeSkyOffsets()
 	{
 		fixed16_16 parallax[2];
-		TFE_Level::getSkyParallax(&parallax[0], &parallax[1]);
+		TFE_Jedi::getSkyParallax(&parallax[0], &parallax[1]);
 
 		// angles range from -16384 to 16383; multiply by 4 to convert to [-1, 1) range.
 		s_skyYawOffset_Fixed = mul16(s_cameraYaw_Fixed * ANGLE_TO_FIXED_SCALE, parallax[0]);
@@ -288,7 +288,7 @@ namespace RClassic_Fixed
 	void computeSkyTable()
 	{
 		fixed16_16 parallax0, parallax1;
-		TFE_Level::getSkyParallax(&parallax0, &parallax1);
+		TFE_Jedi::getSkyParallax(&parallax0, &parallax1);
 
 		s32 xMid = s_screenXMid;
 		s_skyTable_Fixed[0] = 0;
@@ -332,7 +332,7 @@ namespace RClassic_Fixed
 	void setupInitCameraAndLights()
 	{
 		buildProjectionTables(160, 100, 320, 198);
-		TFE_Level::setSkyParallax(FIXED(1024), FIXED(1024));
+		TFE_Jedi::setSkyParallax(FIXED(1024), FIXED(1024));
 		computeSkyTable();
 
 		setIdentityMatrix(s_cameraMtx_Fixed);

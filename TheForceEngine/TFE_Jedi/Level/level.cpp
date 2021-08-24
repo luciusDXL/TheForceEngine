@@ -15,9 +15,7 @@
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/InfSystem/message.h>
 
-using namespace TFE_Jedi;
-
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	enum
 	{

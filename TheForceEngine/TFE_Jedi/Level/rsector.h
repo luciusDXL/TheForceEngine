@@ -130,7 +130,7 @@ struct RSector
 	u32 dirtyFlags;
 };
 
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	void sector_clear(RSector* sector);
 	void sector_setupWallDrawFlags(RSector* sector);

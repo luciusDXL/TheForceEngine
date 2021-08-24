@@ -21,7 +21,6 @@
 #include "infElevatorUpdateFunc.h"
 
 //using namespace TFE_GameConstants;
-using namespace TFE_Level;
 using namespace TFE_Jedi;
 using namespace TFE_DarkForces;
 using namespace TFE_Memory;

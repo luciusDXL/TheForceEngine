@@ -6,7 +6,7 @@
 
 using namespace TFE_DarkForces;
 
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	// TODO: Game Variables referenced by internal sector functions.
 	// Where should this be stored?
@@ -664,4 +664,4 @@ namespace TFE_Level
 	{
 		return (p1.x - p0.x) * (p2.z - p0.z) - (p2.x - p0.x) * (p1.z - p0.z);
 	}
-} // namespace TFE_Level
+} // namespace TFE_Jedi

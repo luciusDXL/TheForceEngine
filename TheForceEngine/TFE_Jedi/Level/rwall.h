@@ -115,7 +115,7 @@ struct RWall
 	angle14_32 angle;
 };
 
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	void wall_setupAdjoinDrawFlags(RWall* wall);
 	void wall_computeTexelHeights(RWall* wall);

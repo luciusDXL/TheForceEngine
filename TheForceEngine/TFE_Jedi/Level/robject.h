@@ -95,7 +95,7 @@ struct SecObject
 	s16 index;
 };
 
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	SecObject* allocateObject();
 	void freeObject(SecObject* obj);

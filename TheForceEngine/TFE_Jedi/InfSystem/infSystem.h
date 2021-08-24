@@ -7,7 +7,7 @@
 //
 // Copyright note:
 // While the project as a whole is licensed under GPL-2.0, some of the
-// code under TFE_InfSystem/ was derived from reverse-engineered
+// code under TFE_Jedi/InfSystem/ was derived from reverse-engineered
 // code from "Dark Forces" (DOS) which is copyrighted by LucasArts.
 //
 // I consider the reverse-engineering to be "Fair Use" - a means of 

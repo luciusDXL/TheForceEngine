@@ -4,7 +4,7 @@
 
 using namespace TFE_Memory;
 
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	JBool s_freeObjLock = JFALSE;
 
@@ -152,4 +152,4 @@ namespace TFE_Level
 		transform[7] = -mul16(sinPch, cosYaw);
 		transform[8] = mul16(cosPch, cosYaw);
 	}
-} // namespace TFE_Level
+} // namespace TFE_Jedi

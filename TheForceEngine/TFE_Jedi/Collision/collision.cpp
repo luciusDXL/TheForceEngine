@@ -4,8 +4,6 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Math/core_math.h>
 
-using namespace TFE_Level;
-
 namespace TFE_Jedi
 {
 	////////////////////////////////////////////////////////

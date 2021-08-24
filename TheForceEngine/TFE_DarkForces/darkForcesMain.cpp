@@ -4,8 +4,8 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
-#include <TFE_JediTask/task.h>
-#include <TFE_JediRenderer/jediRenderer.h>
+#include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <assert.h>
 
 namespace TFE_DarkForces
@@ -222,7 +222,7 @@ namespace TFE_DarkForces
 
 		if (TFE_Paths::getFilePath("wait.bm", &filePath))
 		{
-			s_loadScreen = TFE_Level::bitmap_load(&filePath, 0);
+			s_loadScreen = TFE_Jedi::bitmap_load(&filePath, 0);
 		}
 		if (TFE_Paths::getFilePath("wait.pal", &filePath))
 		{

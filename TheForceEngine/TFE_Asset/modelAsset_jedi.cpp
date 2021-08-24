@@ -375,12 +375,12 @@ namespace TFE_Model_Jedi
 				{
 					if (TFE_Paths::getFilePath(textureName, &filePath))
 					{
-						*texture = (TextureData*)TFE_Level::bitmap_load(&filePath, 1);
+						*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
 					}
 					if (!(*texture))
 					{
 						TFE_Paths::getFilePath("default.bm", &filePath);
-						*texture = (TextureData*)TFE_Level::bitmap_load(&filePath, 1);
+						*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
 					}
 				}
 			}

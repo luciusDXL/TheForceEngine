@@ -70,7 +70,7 @@ enum
 	BM_ANIMATED_TEXTURE = -2,
 };
 
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	void bitmap_createAnimatedTextureAllocator();
 

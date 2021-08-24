@@ -1,7 +1,7 @@
 #include "rwall.h"
 #include "rsector.h"
 
-namespace TFE_Level
+namespace TFE_Jedi
 {
 	void wall_setupAdjoinDrawFlags(RWall* wall)
 	{
@@ -152,4 +152,4 @@ namespace TFE_Level
 			*botRes = -FIXED(9999);
 		}
 	}
-} // namespace TFE_Level
+} // namespace TFE_Jedi

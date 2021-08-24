@@ -16,7 +16,7 @@
 #include "../rcommon.h"
 
 using namespace TFE_JediRenderer::RClassic_Fixed;
-using namespace TFE_Level;
+using namespace TFE_Jedi;
 
 namespace TFE_JediRenderer
 {
