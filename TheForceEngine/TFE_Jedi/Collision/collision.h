@@ -40,7 +40,7 @@ struct CollisionInterval
 
 typedef void(*CollisionEffectFunc)(SecObject*);
 
-namespace TFE_Collision
+namespace TFE_Jedi
 {
 	void collision_getHitPoint(fixed16_16* x, fixed16_16* z);
 	RSector* collision_tryMove(RSector* sector, fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1);

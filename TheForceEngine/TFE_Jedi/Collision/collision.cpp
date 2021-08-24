@@ -6,7 +6,7 @@
 
 using namespace TFE_Level;
 
-namespace TFE_Collision
+namespace TFE_Jedi
 {
 	////////////////////////////////////////////////////////
 	// Structures and Constants

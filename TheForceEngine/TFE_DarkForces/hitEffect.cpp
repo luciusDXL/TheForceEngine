@@ -9,7 +9,7 @@
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
 
-using namespace TFE_Collision;
+using namespace TFE_Jedi;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
 using namespace TFE_Message;

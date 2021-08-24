@@ -10,7 +10,7 @@
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Memory/allocator.h>
 
-using namespace TFE_Collision;
+using namespace TFE_Jedi;
 using namespace TFE_InfSystem;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
