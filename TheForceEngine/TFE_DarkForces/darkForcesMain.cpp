@@ -1,5 +1,6 @@
 #include "darkForcesMain.h"
 #include "gameMessage.h"
+#include "hud.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -200,7 +201,7 @@ namespace TFE_DarkForces
 	void gameStartup()
 	{
 		//hud_loadGraphics();
-		//loadGameMessages();
+		hud_loadGameMessages();
 		//loadMapNumFont();
 		//loadElevatorSounds();
 		//loadAgentSounds();

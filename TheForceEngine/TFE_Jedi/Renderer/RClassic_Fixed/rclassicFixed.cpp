@@ -204,10 +204,10 @@ namespace RClassic_Fixed
 		s_oneOverHalfWidth = div16(ONE_16, halfWidthFixed);
 	}
 
-	void setWidthFraction(fixed16_16 widthFract)	// eax
+	void setWidthFraction(fixed16_16 widthFract)
 	{
 		s_screenWidthFract = widthFract;
-		s_oneOverWidthFract = div16(ONE_16, widthFract);	// eax
+		s_oneOverWidthFract = div16(ONE_16, widthFract);
 	}
 
 	void buildRcpYTable()
@@ -235,7 +235,7 @@ namespace RClassic_Fixed
 		setupProjectionParameters(intToFixed16(halfWidth), xc, yc);
 
 		s32 widthFract = div16(intToFixed16(w), FIXED(320));
-		setWidthFraction(widthFract);	// eax
+		setWidthFraction(widthFract);
 
 		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_windowMaxYFixed, 0, s_windowMinYFixed);
 		memset(s_windowTop_all, s_minScreenY, 320);

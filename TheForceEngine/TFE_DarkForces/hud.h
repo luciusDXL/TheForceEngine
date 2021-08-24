@@ -12,6 +12,7 @@ using namespace TFE_Jedi;
 namespace TFE_DarkForces
 {
 	void hud_sendTextMessage(s32 msgId);
+	void hud_loadGameMessages();
 
 	extern fixed16_16 s_flashEffect;
 }  // namespace TFE_DarkForces
