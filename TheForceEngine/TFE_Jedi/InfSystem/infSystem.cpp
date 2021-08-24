@@ -427,7 +427,7 @@ namespace TFE_Jedi
 			} break;
 			case IELEV_SP_DOOR_MID:
 			{
-				fixed16_16 halfHeight = TFE_CoreMath::abs(sector->ceilingHeight - sector->floorHeight) >> 1;
+				fixed16_16 halfHeight = TFE_Jedi::abs(sector->ceilingHeight - sector->floorHeight) >> 1;
 				fixed16_16 middle = sector->floorHeight - halfHeight;
 
 				// Upper Part

@@ -139,7 +139,7 @@ namespace RClassic_Fixed
 			// Compute the parametric intersection of the segment and the left frustum line
 			// where s is in the range of [0.0, 1.0]
 			fixed16_16 s = 0;
-			if (dz != 0 && TFE_CoreMath::abs(dz) > TFE_CoreMath::abs(dx))
+			if (dz != 0 && TFE_Jedi::abs(dz) > TFE_Jedi::abs(dx))
 			{
 				s = div16(xz - z0, dz);
 			}
@@ -180,7 +180,7 @@ namespace RClassic_Fixed
 			// where s is in the range of [0.0, 1.0]
 			// Note we are computing from the right side, i.e. distance from (x1,y1).
 			fixed16_16 s = 0;
-			if (dz != 0 && TFE_CoreMath::abs(dz) > TFE_CoreMath::abs(dx))
+			if (dz != 0 && TFE_Jedi::abs(dz) > TFE_Jedi::abs(dx))
 			{
 				s = div16(xz - z1, dz);
 			}
@@ -362,7 +362,7 @@ namespace RClassic_Fixed
 
 		fixed16_16 slope, den;
 		s32 orient;
-		if (TFE_CoreMath::abs(dx) > TFE_CoreMath::abs(dz))
+		if (TFE_Jedi::abs(dx) > TFE_Jedi::abs(dz))
 		{
 			slope = div16(dz, dx);
 			den = dx;

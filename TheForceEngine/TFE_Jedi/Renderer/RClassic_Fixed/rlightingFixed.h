@@ -7,7 +7,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 
-using namespace TFE_CoreMath;
+using namespace TFE_Jedi;
 
 namespace TFE_JediRenderer
 {

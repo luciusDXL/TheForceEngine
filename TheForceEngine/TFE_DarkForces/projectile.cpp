@@ -728,7 +728,7 @@ namespace TFE_DarkForces
 			// Play a sound as the object passes near the camera.
 			if (projLogic->cameraPassSnd && (projLogic->flags & PROJFLAG_CAMERA_PASS_SOUND))
 			{
-				fixed16_16 dy = TFE_CoreMath::abs(obj->posWS.y - s_eyePos.y);
+				fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_eyePos.y);
 				fixed16_16 approxDist = dy + distApprox(s_eyePos.x, s_eyePos.z, obj->posWS.x, obj->posWS.z);
 				if (approxDist < CAMERA_SOUND_RANGE)
 				{
@@ -1314,7 +1314,7 @@ namespace TFE_DarkForces
 		}
 
 		// If the thermal detonator is hitting the ground at a fast enough speed, play the reflect sound.
-		if (projLogic->type == PROJ_THERMAL_DET && TFE_CoreMath::abs(projLogic->speed) > FIXED(7))
+		if (projLogic->type == PROJ_THERMAL_DET && TFE_Jedi::abs(projLogic->speed) > FIXED(7))
 		{
 			playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
 		}

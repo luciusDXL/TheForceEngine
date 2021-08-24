@@ -7,12 +7,12 @@ namespace TFE_JediSound
 		// STUB
 	}
 
-	void playSound3D_oneshot(SoundSourceID soundId, TFE_CoreMath::vec3_fixed pos)
+	void playSound3D_oneshot(SoundSourceID soundId, TFE_Jedi::vec3_fixed pos)
 	{
 		// STUB
 	}
 
-	SoundEffectID playSound3D_looping(SoundSourceID sourceId, SoundEffectID soundId, TFE_CoreMath::vec3_fixed pos)
+	SoundEffectID playSound3D_looping(SoundSourceID sourceId, SoundEffectID soundId, TFE_Jedi::vec3_fixed pos)
 	{
 		// STUB
 		return SoundEffectID(0);

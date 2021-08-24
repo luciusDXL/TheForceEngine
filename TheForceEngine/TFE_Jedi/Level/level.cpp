@@ -626,7 +626,7 @@ namespace TFE_Jedi
 
 				if (sscanf(line, "CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &diff) > 5)
 				{
-					if (TFE_CoreMath::abs(diff) >= difficulty)
+					if (TFE_Jedi::abs(diff) >= difficulty)
 					{
 						continue;
 					}

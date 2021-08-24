@@ -12,7 +12,7 @@
 // releases.
 #define ASSERT_ON_OVERFLOW 0
 
-namespace TFE_CoreMath
+namespace TFE_Jedi
 {
 	// Constants
 	#define HALF_16 0x8000

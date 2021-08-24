@@ -51,8 +51,8 @@ namespace TFE_JediRenderer
 		// 4/|\7
 		// /5|6\
 			//
-		dx = TFE_CoreMath::abs(dx);
-		dz = TFE_CoreMath::abs(dz);
+		dx = TFE_Jedi::abs(dx);
+		dz = TFE_Jedi::abs(dz);
 		const s32 subquadrant = quadrant * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
 
 		// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.

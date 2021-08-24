@@ -6,7 +6,7 @@
 #include <TFE_System/types.h>
 #include "fixedPoint.h"
 
-namespace TFE_CoreMath
+namespace TFE_Jedi
 {
 	struct vec2_fixed
 	{

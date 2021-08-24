@@ -6,7 +6,7 @@
 #include <TFE_System/types.h>
 #include "core_math.h"
 
-namespace TFE_CoreMath
+namespace TFE_Jedi
 {
 	/////////////////////////////////////////////
 	// Fixed point

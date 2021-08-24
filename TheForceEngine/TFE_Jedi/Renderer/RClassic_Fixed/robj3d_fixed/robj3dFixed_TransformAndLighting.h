@@ -11,7 +11,7 @@ struct SecObject;
 
 #define VSHADE_MAX_INTENSITY (31 * ONE_16)
 
-using namespace TFE_CoreMath;
+using namespace TFE_Jedi;
 
 namespace TFE_JediRenderer
 {

@@ -205,7 +205,7 @@ namespace TFE_DarkForces
 			return;
 		}
 
-		fixed16_16 dy = TFE_CoreMath::abs(s_explodePos.y - obj->posWS.y);
+		fixed16_16 dy = TFE_Jedi::abs(s_explodePos.y - obj->posWS.y);
 		fixed16_16 approxDist = dy + distApprox(obj->posWS.x, obj->posWS.z, s_explodePos.x, s_explodePos.z);
 		// This triggers when an explosive is hit with an explosion.
 		if ((obj->entityFlags & ETFLAG_LANDMINE) || (obj->entityFlags & ETFLAG_LANDMINE_WPN))

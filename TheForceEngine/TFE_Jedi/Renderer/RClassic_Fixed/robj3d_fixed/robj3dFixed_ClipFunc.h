@@ -306,7 +306,7 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 			s_clipIntersectX = -s_clipIntersectZ;
 
 			fixed16_16 p, p0, p1;
-			if (TFE_CoreMath::abs(dz) > TFE_CoreMath::abs(dx))
+			if (TFE_Jedi::abs(dz) > TFE_Jedi::abs(dx))
 			{
 				p1 = s_clipPos1->z;
 				p0 = s_clipPos0->z;
@@ -425,7 +425,7 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 			s_clipIntersectX = s_clipIntersectZ;
 
 			fixed16_16 p, p0, p1;
-			if (TFE_CoreMath::abs(dz) > TFE_CoreMath::abs(dx))
+			if (TFE_Jedi::abs(dz) > TFE_Jedi::abs(dx))
 			{
 				p1 = s_clipPos1->z;
 				p0 = s_clipPos0->z;
@@ -539,8 +539,8 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 				s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
 			}
 			s_clipIntersectY = mul16(s_yPlaneTop_Fixed, s_clipIntersectZ);
-			const fixed16_16 aDz = TFE_CoreMath::abs(s_clipPos1->z - s_clipPos0->z);
-			const fixed16_16 aDy = TFE_CoreMath::abs(s_clipPos1->y - s_clipPos0->y);
+			const fixed16_16 aDz = TFE_Jedi::abs(s_clipPos1->z - s_clipPos0->z);
+			const fixed16_16 aDy = TFE_Jedi::abs(s_clipPos1->y - s_clipPos0->y);
 
 			fixed16_16 p, p0, p1;
 			if (aDz > aDy)
@@ -658,8 +658,8 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 				s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
 			}
 			s_clipIntersectY = mul16(s_yPlaneBot_Fixed, s_clipIntersectZ);
-			const fixed16_16 aDz = TFE_CoreMath::abs(s_clipPos1->z - s_clipPos0->z);
-			const fixed16_16 aDy = TFE_CoreMath::abs(s_clipPos1->y - s_clipPos0->y);
+			const fixed16_16 aDz = TFE_Jedi::abs(s_clipPos1->z - s_clipPos0->z);
+			const fixed16_16 aDy = TFE_Jedi::abs(s_clipPos1->y - s_clipPos0->y);
 
 			fixed16_16 p, p0, p1;
 			if (aDz > aDy)

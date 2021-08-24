@@ -6,7 +6,7 @@
 #include <TFE_System/memoryPool.h>
 #include <TFE_Jedi/Math/core_math.h>
 
-using namespace TFE_CoreMath;
+using namespace TFE_Jedi;
 
 struct Allocator;
 struct TextureData;

@@ -776,7 +776,7 @@ namespace TFE_Jedi
 					s_colObjOffsetX = obj->posWS.x - s_colObjX0;
 					s_colObjOffsetZ = obj->posWS.z - s_colObjZ0;
 					s_colWallV0.x = mul16(s_colObjOffsetX, s_colObjDirZ) - mul16(s_colObjOffsetZ, s_colObjDirX);
-					if (TFE_CoreMath::abs(s_colWallV0.x) > obj->worldWidth) { continue; }
+					if (TFE_Jedi::abs(s_colWallV0.x) > obj->worldWidth) { continue; }
 					s_colWallV0.z = mul16(s_colObjOffsetX, s_colObjDirX) + mul16(s_colObjOffsetZ, s_colObjDirZ);
 
 					fixed16_16 pathRadius = s_colObjMove + obj->worldWidth;
