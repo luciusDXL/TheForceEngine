@@ -10,7 +10,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include "../../rlimits.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	namespace RClassic_Fixed
 	{

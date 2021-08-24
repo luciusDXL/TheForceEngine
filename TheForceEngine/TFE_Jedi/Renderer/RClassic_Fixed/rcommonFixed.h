@@ -3,7 +3,7 @@
 #include "../rwallRender.h"
 #include "../rlimits.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	struct EdgePair;
 
@@ -53,4 +53,4 @@ namespace TFE_JediRenderer
 		// Flats
 		extern fixed16_16* s_rcpY;
 	}  // RClassic_Fixed
-}  // TFE_JediRenderer
+}  // TFE_Jedi

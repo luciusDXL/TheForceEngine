@@ -13,7 +13,6 @@
 #include <string>
 #include <map>
 
-using namespace TFE_JediRenderer;
 using namespace TFE_Jedi;
 
 namespace TFE_Sprite_Jedi

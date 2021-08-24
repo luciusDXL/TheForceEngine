@@ -10,9 +10,7 @@
 struct RSector;
 struct EdgePair;
 
-using namespace TFE_Jedi;
-
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	namespace RClassic_Fixed
 	{

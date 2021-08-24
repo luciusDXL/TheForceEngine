@@ -12,7 +12,7 @@
 struct RWall;
 struct SecObject;
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	class TFE_Sectors_Fixed : public TFE_Sectors
 	{
@@ -31,4 +31,4 @@ namespace TFE_JediRenderer
 	extern RClassic_Fixed::RWallSegment s_wallSegListDst[MAX_SEG];
 	extern RClassic_Fixed::RWallSegment s_wallSegListSrc[MAX_SEG];
 	extern RClassic_Fixed::RWallSegment** s_adjoinSegment;
-}  // TFE_JediRenderer
+}  // TFE_Jedi

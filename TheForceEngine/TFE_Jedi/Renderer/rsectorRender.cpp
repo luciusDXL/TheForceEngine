@@ -3,7 +3,7 @@
 #include <TFE_Jedi/Level/robject.h>
 #include "rcommon.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	void TFE_Sectors::setMemoryPool(MemoryPool* memPool)
 	{
@@ -79,4 +79,4 @@ namespace TFE_JediRenderer
 		s_windowBotPrev = s_windowBot;
 		s_prevSector = s_curSector;
 	}
-}  // TFE_JediRenderer
+}  // TFE_Jedi

@@ -1,7 +1,7 @@
 #pragma once
 #include <TFE_System/types.h>
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	#define MAX_SEG				384 // Maximum number of wall segments visible in the frame.
 	#define MAX_ADJOIN_SEG		128 // Maximum number of adjoin segements visible in the frame.

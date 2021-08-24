@@ -6,7 +6,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	namespace RClassic_Fixed
 	{

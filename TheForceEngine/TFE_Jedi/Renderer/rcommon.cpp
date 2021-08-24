@@ -1,7 +1,7 @@
 #include "rcommon.h"
 #include "redgePair.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	// Resolution
 	s32 s_width = 0;

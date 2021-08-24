@@ -9,7 +9,7 @@
 struct TextureFrame;
 struct Allocator;
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	enum WallOrient
 	{

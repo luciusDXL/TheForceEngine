@@ -10,9 +10,7 @@
 
 #define POLY_MAX_VTX_COUNT 32
 
-using namespace TFE_Jedi;
-
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	namespace RClassic_Fixed
 	{

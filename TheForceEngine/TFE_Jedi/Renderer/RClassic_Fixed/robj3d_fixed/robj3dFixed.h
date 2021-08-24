@@ -8,7 +8,7 @@
 struct JediModel;
 struct SecObject;
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	namespace RClassic_Fixed
 	{

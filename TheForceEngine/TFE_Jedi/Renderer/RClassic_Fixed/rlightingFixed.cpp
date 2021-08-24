@@ -4,7 +4,7 @@
 #include "../rcommon.h"
 #include "../rlimits.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 
 namespace RClassic_Fixed
@@ -57,4 +57,4 @@ namespace RClassic_Fixed
 	}
 }  // RLightingFixed
 
-}  // TFE_JediRenderer
+}  // TFE_Jedi

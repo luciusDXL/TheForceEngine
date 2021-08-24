@@ -3,7 +3,7 @@
 
 struct ColorMap;
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	struct EdgePair;
 
@@ -16,4 +16,4 @@ namespace TFE_JediRenderer
 		void transformPointByCamera(vec3_fixed* worldPoint, vec3_fixed* viewPoint);
 		void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
 	}  // RClassic_Fixed
-}  // TFE_JediRenderer
+}  // TFE_Jedi

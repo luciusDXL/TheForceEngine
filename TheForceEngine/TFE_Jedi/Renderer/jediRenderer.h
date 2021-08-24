@@ -33,10 +33,10 @@ enum TFE_SubRenderer
 	TSR_INVALID,			// Invalid sub-renderer.
 };
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
-	void init();
-	void destroy();
+	void renderer_init();
+	void renderer_destroy();
 	void setupInitCameraAndLights();
 
 	// Set the current sub-renderer.

@@ -6,7 +6,7 @@
 #include "robj3dFixed_TransformAndLighting.h"
 #include "../rcommonFixed.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 
 namespace RClassic_Fixed
@@ -56,4 +56,4 @@ namespace RClassic_Fixed
 		}
 	}
 
-}}  // TFE_JediRenderer
+}}  // TFE_Jedi

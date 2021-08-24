@@ -1,7 +1,7 @@
 #include "rcommonFixed.h"
 #include <TFE_Jedi/Math/fixedPoint.h>
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 
 namespace RClassic_Fixed
@@ -51,4 +51,4 @@ namespace RClassic_Fixed
 	fixed16_16* s_rcpY;
 }  // RClassic_Fixed
 
-}  // TFE_JediRenderer
+}  // TFE_Jedi

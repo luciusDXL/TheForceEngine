@@ -15,10 +15,9 @@
 #include "robj3d_fixed/robj3dFixed.h"
 #include "../rcommon.h"
 
-using namespace TFE_JediRenderer::RClassic_Fixed;
-using namespace TFE_Jedi;
+using namespace TFE_Jedi::RClassic_Fixed;
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	RClassic_Fixed::RWallSegment s_wallSegListDst[MAX_SEG];
 	RClassic_Fixed::RWallSegment s_wallSegListSrc[MAX_SEG];
@@ -27,57 +26,6 @@ namespace TFE_JediRenderer
 	s32 wallSortX(const void* r0, const void* r1)
 	{
 		return ((const RWallSegment*)r0)->wallX0 - ((const RWallSegment*)r1)->wallX0;
-	}
-
-	// TODO: Move to math
-	s32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz)
-	{
-		if (dx == 0 && dz == 0)
-		{
-			return 0;
-		}
-
-		const s32 signsDiff = (signV2A(dx) != signV2A(dz)) ? 1 : 0;
-		// Splits the view into 4 quadrants, 0 - 3:
-		// 1 | 0
-		// -----
-		// 2 | 3
-		const s32 quadrant = (dz < 0 ? 2 : 0) + signsDiff;
-
-		// Further splits the quadrants into sub-quadrants:
-		// \2|1/
-		// 3\|/0
-		//---*---
-		// 4/|\7
-		// /5|6\
-			//
-		dx = TFE_Jedi::abs(dx);
-		dz = TFE_Jedi::abs(dz);
-		const s32 subquadrant = quadrant * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
-
-		// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
-		if ((subquadrant - 1) & 2)
-		{
-			// The original code did the "3 xor" trick to swap dx and dz.
-			std::swap(dx, dz);
-		}
-
-		// next compute |dx| / |dz|, which will be a value from 0.0 to 1.0
-		fixed16_16 dXdZ = div16(dx, dz);
-		if (subquadrant & 1)
-		{
-			// invert the ratio in sub-quadrants 1, 3, 5, 7 to maintain the correct direction.
-			dXdZ = ONE_16 - dXdZ;
-		}
-
-		// subquadrantF is based on the sub-quadrant, essentially fixed16(subquadrant)
-		// which has a range of 0 to 7.0 (see above).
-		const fixed16_16 subquadrantF = intToFixed16(subquadrant);
-		// angle = (int(2.0 - (zF + dXdZ)) * 2048) & 16383
-		// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
-		const s32 angle = (2 * ONE_16 - (subquadrantF + dXdZ)) >> 5;
-		// the final angle will be in the range of 0 - 16383
-		return angle & 0x3fff;
 	}
 
 	namespace

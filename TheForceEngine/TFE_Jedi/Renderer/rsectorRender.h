@@ -12,7 +12,7 @@ struct TextureFrame;
 struct RWall;
 struct SecObject;
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	enum SectorUpdateFlags
 	{

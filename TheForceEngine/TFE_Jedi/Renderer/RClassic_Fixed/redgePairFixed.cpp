@@ -1,7 +1,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include "redgePairFixed.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 
 namespace RClassic_Fixed
@@ -47,4 +47,4 @@ namespace RClassic_Fixed
 	}
 }  // REdgePair_Fixed
 
-}  // TFE_JediRenderer
+}  // TFE_Jedi

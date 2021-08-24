@@ -7,9 +7,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 
-using namespace TFE_Jedi;
-
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	// A pair of edges along a single surface.
 	// This can represent either the top and bottom of walls for flat rendering or

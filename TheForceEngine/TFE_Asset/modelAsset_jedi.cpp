@@ -13,7 +13,6 @@
 #include <map>
 #include <algorithm>
 
-using namespace TFE_JediRenderer;
 using namespace TFE_Jedi;
 
 // Jedi code for processing models.

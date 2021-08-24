@@ -59,7 +59,7 @@ namespace TFE_DarkForces
 		loadLocalMessages();
 		openGobFiles();
 		TFE_Jedi::setTaskDefaults();
-		TFE_JediRenderer::setupInitCameraAndLights();
+		TFE_Jedi::setupInitCameraAndLights();
 		gameStartup();
 
 		return true;

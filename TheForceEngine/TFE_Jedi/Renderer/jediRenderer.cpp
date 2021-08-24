@@ -16,7 +16,7 @@
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/memoryPool.h>
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	static s32 s_sectorId = -1;
 
@@ -35,7 +35,7 @@ namespace TFE_JediRenderer
 	/////////////////////////////////////////////
 	// Implementation
 	/////////////////////////////////////////////
-	void init()
+	void renderer_init()
 	{
 		if (s_init) { return; }
 		s_init = true;
@@ -57,7 +57,7 @@ namespace TFE_JediRenderer
 		TFE_COUNTER(s_adjoinSegCount, "Adjoin Segment Count");
 	}
 
-	void destroy()
+	void renderer_destroy()
 	{
 		delete s_sectors;
 	}
@@ -81,7 +81,7 @@ namespace TFE_JediRenderer
 	
 	void setupLevel(s32 width, s32 height)
 	{
-		init();
+		renderer_init();
 		setResolution(width, height);
 
 		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");

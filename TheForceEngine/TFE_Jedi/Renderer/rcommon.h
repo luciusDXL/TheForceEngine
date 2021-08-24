@@ -5,7 +5,7 @@
 
 struct ColorMap;
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	struct EdgePair;
 

@@ -8,7 +8,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include "../redgePair.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	namespace RClassic_Fixed
 	{

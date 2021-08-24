@@ -10,7 +10,7 @@
 struct JediModel;
 struct RSector;
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 	enum ObjectType
 	{

@@ -11,7 +11,7 @@
 #include "rcommonFixed.h"
 #include "../rcommon.h"
 
-namespace TFE_JediRenderer
+namespace TFE_Jedi
 {
 
 namespace RClassic_Fixed
@@ -2415,4 +2415,4 @@ namespace RClassic_Fixed
 	}
 }  // RClassic_Fixed
 
-}  // TFE_JediRenderer
+}  // TFE_Jedi
