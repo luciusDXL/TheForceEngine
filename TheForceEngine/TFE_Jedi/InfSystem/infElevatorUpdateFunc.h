@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////
 // Elevator update function forward declarations.
 //////////////////////////////////////////////////////////////////////
-namespace TFE_InfSystem
+namespace TFE_Jedi
 {
 	typedef fixed16_16(*InfUpdateFunc)(InfElevator* elev, fixed16_16 delta);
 	fixed16_16 infUpdate_moveHeights(InfElevator* elev, fixed16_16 delta);

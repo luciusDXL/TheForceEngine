@@ -26,19 +26,19 @@ struct RWall;
 struct RSector;
 struct SecObject;
 
-namespace TFE_InfSystem
+namespace TFE_Jedi
 {
-	bool init();
-	void shutdown();
+	bool inf_init();
+	void inf_shutdown();
 	
 	// ** Per-frame update functions **
 	// These get called (potentially) every frame and update the current INF state or
 	// state of objects interacting with the system.
 
 	// Per elevator frame update.
-	void update_elevators();
+	void inf_updateElevators();
 	// Per frame teleport update.
-	void update_teleports();
+	void inf_updateTeleports();
 	
 	// ** Runtime API **
 	// Messages are the way entities and the player interact with the INF system during gameplay.

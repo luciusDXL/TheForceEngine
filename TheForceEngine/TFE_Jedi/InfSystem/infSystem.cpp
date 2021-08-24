@@ -27,7 +27,7 @@ using namespace TFE_DarkForces;
 using namespace TFE_Memory;
 using namespace TFE_JediSound;
 
-namespace TFE_InfSystem
+namespace TFE_Jedi
 {
 	#define MAX_INF_ITEMS 512
 
@@ -94,12 +94,12 @@ namespace TFE_InfSystem
 	/////////////////////////////////////////////////////
 	// API
 	/////////////////////////////////////////////////////
-	bool init()
+	bool inf_init()
 	{
 		return false;
 	}
 
-	void shutdown()
+	void inf_shutdown()
 	{
 	}
 
@@ -1320,7 +1320,7 @@ namespace TFE_InfSystem
 	}
 			
 	// Per frame update.
-	void update_elevators()
+	void inf_updateElevators()
 	{
 		InfElevator* elev = (InfElevator*)allocator_getHead(s_infElevators);
 		while (elev)
@@ -1438,7 +1438,7 @@ namespace TFE_InfSystem
 	}
 	
 	// Per frame teleport update.
-	void update_teleports()
+	void inf_updateTeleports()
 	{
 		// Only update when activated (which happens if an object enters a teleport sector.
 		if (!s_teleportUpdateActive)

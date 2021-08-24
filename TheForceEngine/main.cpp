@@ -514,7 +514,7 @@ int main(int argc, char* argv[])
 	TFE_Polygon::init();
 	TFE_Image::init();
 	// TFE_ScriptSystem::init();
-	TFE_InfSystem::init();
+	TFE_Jedi::inf_init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
 			
@@ -677,7 +677,7 @@ int main(int argc, char* argv[])
 	TFE_MidiPlayer::destroy();
 	TFE_Polygon::shutdown();
 	TFE_Image::shutdown();
-	TFE_InfSystem::shutdown();
+	TFE_Jedi::inf_shutdown();
 	// TFE_ScriptSystem::shutdown();
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();

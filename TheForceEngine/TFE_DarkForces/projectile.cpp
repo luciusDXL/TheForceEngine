@@ -11,7 +11,6 @@
 #include <TFE_Memory/allocator.h>
 
 using namespace TFE_Jedi;
-using namespace TFE_InfSystem;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
 using namespace TFE_Memory;

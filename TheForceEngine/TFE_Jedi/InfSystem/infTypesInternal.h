@@ -10,7 +10,7 @@ struct Allocator;
 
 using namespace TFE_Level;
 
-namespace TFE_InfSystem
+namespace TFE_Jedi
 {
 	struct InfLink;
 	

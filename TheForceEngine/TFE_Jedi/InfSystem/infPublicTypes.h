@@ -69,7 +69,7 @@ enum LinkType
 };
 
 struct Allocator;
-namespace TFE_InfSystem
+namespace TFE_Jedi
 {
 	typedef void(*InfLinkMsgFunc)(MessageType);
 	typedef void(*InfFreeFunc)(void*);

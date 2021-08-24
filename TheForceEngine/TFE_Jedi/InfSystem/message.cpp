@@ -10,7 +10,6 @@
 #include <algorithm>
 
 using namespace TFE_Memory;
-using namespace TFE_InfSystem;
 
 namespace TFE_Jedi
 {
