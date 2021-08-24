@@ -19,9 +19,9 @@ class Archive;
 
 struct FilePath
 {
-	Archive* archive;			// will be null if this is a raw file.
+	Archive* archive;			// archive pointer.
 	u32 index;					// file index into an archive or INVALID_FILE.
-	char path[TFE_MAX_PATH];	// this will be empty if this is an archive file.
+	char path[TFE_MAX_PATH];	// path string.
 };
 
 namespace TFE_Paths
@@ -39,7 +39,11 @@ namespace TFE_Paths
 	bool hasPath(TFE_PathType pathType);
 	void appendPath(TFE_PathType pathType, const char* filename, char* path, size_t bufferLen = TFE_MAX_PATH);
 
+	void clearSearchPaths();
+	void clearLocalArchives();
+
 	void addLocalSearchPath(const char* localSearchPath);
+	void addAbsoluteSearchPath(const char* absoluteSearchPath);
 	void addLocalArchive(Archive* archive);
 	bool getFilePath(const char* fileName, FilePath* path);
 }

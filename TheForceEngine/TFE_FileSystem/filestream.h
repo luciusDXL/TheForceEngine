@@ -29,6 +29,9 @@ public:
 	void close();
 
 	static u32 readContents(const char* filePath, void** output);
+	static u32 readContents(const char* filePath, void* output, size_t size);
+	static u32 readContents(const FilePath* filePath, void** output);
+	static u32 readContents(const FilePath* filePath, void* output, size_t size);
 	
 	//derived functions.
 	void seek(u32 offset, Origin origin=ORIGIN_START) override;

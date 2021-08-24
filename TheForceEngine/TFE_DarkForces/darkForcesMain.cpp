@@ -2,6 +2,8 @@
 #include "gameMessage.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_Archive/archive.h>
+#include <assert.h>
 
 namespace TFE_DarkForces
 {
@@ -45,13 +47,11 @@ namespace TFE_DarkForces
 	bool DarkForces::runGame(s32 argCount, const char* argv[])
 	{
 		printGameInfo();
+		buildSearchPaths();
 		processCommandLineArgs(argCount, argv);
 		loadLocalMessages();
-		buildSearchPaths();
 		openGobFiles();
-
-
-		
+				
 		return true;
 	}
 
@@ -64,6 +64,11 @@ namespace TFE_DarkForces
 			free(msg->text);
 			msg->text = nullptr;
 		}
+		gameMessage_freeBuffer();
+
+		// Clear paths and archives.
+		TFE_Paths::clearSearchPaths();
+		TFE_Paths::clearLocalArchives();
 	}
 
 	void DarkForces::loopGame()
@@ -80,7 +85,7 @@ namespace TFE_DarkForces
 	}
 
 	// Note: not all command line arguments have been brought over from the DOS version.
-	// Many no longer make sense and in some cases will also be available (such as screenshots).
+	// Many no longer make sense and in some cases will always be available (such as screenshots).
 	void processCommandLineArgs(s32 argCount, const char* argv[])
 	{
 		for (s32 i = 0; i < argCount; i++)
@@ -115,8 +120,15 @@ namespace TFE_DarkForces
 
 	void loadCustomGob(const char* gobName)
 	{
-		// TODO
-		// Add custom GOB to list of archives.
+		FilePath archivePath;
+		if (TFE_Paths::getFilePath(gobName, &archivePath))
+		{
+			Archive* archive = Archive::getArchive(ARCHIVE_GOB, gobName, archivePath.path);
+			if (archive)
+			{
+				TFE_Paths::addLocalArchive(archive);
+			}
+		}
 	}
 
 	s32 loadLocalMessages()
@@ -126,24 +138,52 @@ namespace TFE_DarkForces
 			return 1;
 		}
 
-		char path[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_SOURCE_DATA, "local.msg", path);
-		return parseMessageFile(&s_localMessages, path, 0);
+		FilePath path;
+		TFE_Paths::getFilePath("local.msg", &path);
+		return parseMessageFile(&s_localMessages, &path, 0);
 	}
 
 	void buildSearchPaths()
 	{
-		// Add PATH_SOURCE_DATA
-		// Add PATH_SOURCE_DATA/LFD
-		// Add GOBS to list of archives.
+		TFE_Paths::addLocalSearchPath("");
+		TFE_Paths::addLocalSearchPath("LFD/");
+		// Dark Forces also adds C:/ and C:/LFD but TFE won't be doing that for obvious reasons...
+		
+		// Add some extra directories, if they exist.
+		// Obviously these were not in the original code.
+		TFE_Paths::addLocalSearchPath("Mods/");
+
+		// Add Mods/ paths to the program data directory and local executable directory.
+		// Note only directories that exist are actually added.
+		const char* programData = TFE_Paths::getPath(PATH_PROGRAM_DATA);
+		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+		char path[TFE_MAX_PATH];
+		
+		sprintf(path, "%sMods/", programData);
+		TFE_Paths::addAbsoluteSearchPath(path);
+
+		sprintf(path, "%sMods/", programDir);
+		TFE_Paths::addAbsoluteSearchPath(path);
 	}
 
 	void openGobFiles()
 	{
-		for (s32 i = 0; i < 4; i++)
+		for (s32 i = 0; i < TFE_ARRAYSIZE(c_gobFileNames); i++)
 		{
-			// getFilePath(c_gobFileNames[i], path);
-			// add GOB
+			FilePath archivePath;
+			if (TFE_Paths::getFilePath(c_gobFileNames[i], &archivePath))
+			{
+				assert(archivePath.path[0] != 0);
+				Archive* archive = Archive::getArchive(ARCHIVE_GOB, c_gobFileNames[i], archivePath.path);
+				if (archive)
+				{
+					TFE_Paths::addLocalArchive(archive);
+				}
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
+			}
 		}
 	}
 }

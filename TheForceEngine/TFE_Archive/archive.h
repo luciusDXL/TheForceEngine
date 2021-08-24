@@ -50,6 +50,8 @@ public:
 
 	virtual size_t getFileLength() = 0;
 	virtual bool readFile(void *data, size_t size) = 0;
+	virtual bool seekFile(s32 offset, s32 origin = SEEK_SET) = 0;
+	virtual size_t getLocInFile() = 0;
 
 	// Directory
 	virtual u32 getFileCount() = 0;
@@ -64,4 +66,6 @@ protected:
 	ArchiveType m_type;
 	char m_name[TFE_MAX_PATH];
 	char m_archivePath[TFE_MAX_PATH];
+
+	s32 m_fileOffset;
 };

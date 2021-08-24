@@ -11,7 +11,8 @@ static char s_workBufferChar[32768];	//32k buffer.
 
 FileStream::FileStream() : Stream()
 {
-	m_file = NULL;
+	m_file = nullptr;
+	m_archive = nullptr;
 	m_mode = MODE_INVALID;
 }
 
@@ -41,6 +42,9 @@ bool FileStream::open(const FilePath* filePath, FileMode mode)
 {
 	if (filePath->archive)
 	{
+		// Note: this currently only supports reading.
+		assert(mode == FileStream::MODE_READ);
+
 		if (filePath->index < 0) { return false; }
 		m_mode = mode;
 		m_file = nullptr;
@@ -82,12 +86,61 @@ u32 FileStream::readContents(const char* filePath, void** output)
 	FileStream file;
 	if (file.open(filePath, MODE_READ))
 	{
-		size = file.getSize();
+		size = (u32)file.getSize();
 		*output = realloc(*output, size + 1);
 		file.readBuffer(*output, size);
 		file.close();
 	}
 	return size;
+}
+
+u32 FileStream::readContents(const char* filePath, void* output, size_t size)
+{
+	assert(output);
+
+	FileStream file;
+	if (file.open(filePath, MODE_READ))
+	{
+		size_t fileSize = file.getSize();
+		size = size <= fileSize ? size : fileSize;
+		file.readBuffer(output, (u32)size);
+		file.close();
+
+		return u32(size);
+	}
+	return 0;
+}
+
+u32 FileStream::readContents(const FilePath* filePath, void** output)
+{
+	assert(output);
+
+	u32 size = 0;
+	FileStream file;
+	if (file.open(filePath, MODE_READ))
+	{
+		size = (u32)file.getSize();
+		*output = realloc(*output, size + 1);
+		file.readBuffer(*output, size);
+		file.close();
+	}
+	return size;
+}
+
+// It is assumed that output has already been allocated.
+u32 FileStream::readContents(const FilePath* filePath, void* output, size_t size)
+{
+	FileStream file;
+	if (file.open(filePath, MODE_READ))
+	{
+		size_t fileSize = file.getSize();
+		size = size <= fileSize ? size : fileSize;
+		file.readBuffer(output, (u32)size);
+		file.close();
+
+		return u32(size);
+	}
+	return 0;
 }
 
 //derived from Stream
@@ -100,7 +153,7 @@ void FileStream::seek(u32 offset, Origin origin/*=ORIGIN_START*/)
 	}
 	else if (m_archive)
 	{
-		// TODO: implement seek functionality.
+		m_archive->seekFile(offset, forigin[origin]);
 	}
 }
 
@@ -114,8 +167,7 @@ size_t FileStream::getLoc()
 	{
 		return ftell(m_file);
 	}
-	// TODO: implement.
-	return 0;
+	return m_archive->getLocInFile();
 }
 
 size_t FileStream::getSize()
@@ -142,19 +194,29 @@ size_t FileStream::getSize()
 
 bool FileStream::isOpen() const
 {
-	return m_file!=NULL;
+	return m_file!=nullptr || m_archive!=nullptr;
 }
 
 void FileStream::readBuffer(void* ptr, u32 size, u32 count)
 {
 	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
-	fread(ptr, size, count, m_file);
+	if (m_file)
+	{
+		fread(ptr, size, count, m_file);
+	}
+	else if (m_archive)
+	{
+		m_archive->readFile(ptr, size * count);
+	}
 }
 
 void FileStream::writeBuffer(const void* ptr, u32 size, u32 count)
 {
 	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
-	fwrite(ptr, size, count, m_file);
+	if (m_file)
+	{
+		fwrite(ptr, size, count, m_file);
+	}
 }
 
 void FileStream::writeString(const char* fmt, ...)
@@ -162,19 +224,24 @@ void FileStream::writeString(const char* fmt, ...)
 	static char tmpStr[4096];
 	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
 
-	va_list arg;
-	va_start(arg, fmt);
-	vsprintf(tmpStr, fmt, arg);
-	va_end(arg);
+	if (m_file)
+	{
+		va_list arg;
+		va_start(arg, fmt);
+		vsprintf(tmpStr, fmt, arg);
+		va_end(arg);
 
-	const size_t len = strlen(tmpStr);
-	fwrite(tmpStr, len, 1, m_file);
+		const size_t len = strlen(tmpStr);
+		fwrite(tmpStr, len, 1, m_file);
+	}
 }
 
 void FileStream::flush()
 {
-	assert(m_file);
-	fflush(m_file);
+	if (m_file)
+	{
+		fflush(m_file);
+	}
 }
 
 //internal
@@ -184,13 +251,13 @@ void FileStream::readType<std::string>(std::string* ptr, u32 count)
 	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
 	assert(count <= 256);
 	//first read the length.
-	fread(s_workBufferU32, sizeof(u32), count, m_file);
+	readBuffer(s_workBufferU32, sizeof(u32), count);
 
 	//then read the string data.
 	for (u32 s=0; s<count; s++)
 	{
 		assert(s_workBufferU32[s] <= 32768);
-		fread(s_workBufferChar, 1, s_workBufferU32[s], m_file);
+		readBuffer(s_workBufferChar, 1, s_workBufferU32[s]);
 		s_workBufferChar[ s_workBufferU32[s] ] = 0;
 
 		ptr[s] = s_workBufferChar;
@@ -201,13 +268,14 @@ template <typename T>
 void FileStream::readType(T* ptr, u32 count)
 {
 	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
-	fread(ptr, sizeof(T), count, m_file);
+	readBuffer(ptr, sizeof(T), count);
 }
 
 template <>	//template specialization for the string type since it has to be handled differently.
 void FileStream::writeType<std::string>(const std::string* ptr, u32 count)
 {
 	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
+	assert(m_file);	// TODO: Add Archive support.
 	assert(count <= 256);
 	//first read the length.
 	for (u32 s=0; s<count; s++)
@@ -227,5 +295,6 @@ template <typename T>
 void FileStream::writeType(const T* ptr, u32 count)
 {
 	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
+	assert(m_file);	// TODO: Add Archive support.
 	fwrite(ptr, sizeof(T), count, m_file);
 }

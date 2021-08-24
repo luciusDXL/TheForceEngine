@@ -31,6 +31,8 @@ public:
 
 	size_t getFileLength() override;
 	bool readFile(void *data, size_t size) override;
+	bool seekFile(s32 offset, s32 origin = SEEK_SET) override;
+	size_t getLocInFile() override;
 
 	// Directory
 	u32 getFileCount() override;

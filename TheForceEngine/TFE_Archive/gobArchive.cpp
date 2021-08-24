@@ -12,6 +12,7 @@ bool GobArchive::create(const char *archivePath)
 {
 	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_WRITE);
 	m_curFile = -1;
+	m_fileOffset = 0;
 	if (!m_archiveOpen) { return false; }
 
 	memset(&m_header, 0, sizeof(GOB_Header_t));
@@ -67,6 +68,7 @@ bool GobArchive::openFile(const char *file)
 
 	m_file.open(m_archivePath, FileStream::MODE_READ);
 	m_curFile = -1;
+	m_fileOffset = 0;
 
 	//search for this file.
 	for (s32 i = 0; i < m_fileList.MASTERN; i++)
@@ -83,6 +85,10 @@ bool GobArchive::openFile(const char *file)
 		m_file.close();
 		TFE_System::logWrite(LOG_ERROR, "GOB", "Failed to load \"%s\" from \"%s\"", file, m_archivePath);
 	}
+	else
+	{
+		m_file.seek(m_fileList.entries[m_curFile].IX);
+	}
 	return m_curFile > -1 ? true : false;
 }
 
@@ -91,7 +97,9 @@ bool GobArchive::openFile(u32 index)
 	if (index >= getFileCount()) { return false; }
 
 	m_curFile = s32(index);
+	m_fileOffset = 0;
 	m_file.open(m_archivePath, FileStream::MODE_READ);
+	m_file.seek(m_fileList.entries[m_curFile].IX);
 	return true;
 }
 
@@ -104,7 +112,6 @@ void GobArchive::closeFile()
 u32 GobArchive::getFileIndex(const char* file)
 {
 	if (!m_archiveOpen) { return INVALID_FILE; }
-	m_curFile = -1;
 
 	//search for this file.
 	for (s32 i = 0; i < m_fileList.MASTERN; i++)
@@ -151,9 +158,45 @@ bool GobArchive::readFile(void *data, size_t size)
 	if (size == 0) { size = m_fileList.entries[m_curFile].LEN; }
 	const size_t sizeToRead = std::min(size, (size_t)m_fileList.entries[m_curFile].LEN);
 
-	m_file.seek(m_fileList.entries[m_curFile].IX);
 	m_file.readBuffer(data, (u32)sizeToRead);
+	m_fileOffset += (s32)sizeToRead;
 	return true;
+}
+
+bool GobArchive::seekFile(s32 offset, s32 origin)
+{
+	if (m_curFile < 0) { return false; }
+	size_t size = m_fileList.entries[m_curFile].LEN;
+
+	switch (origin)
+	{
+		case SEEK_SET:
+		{
+			m_fileOffset = offset;
+		} break;
+		case SEEK_CUR:
+		{
+			m_fileOffset += offset;
+		} break;
+		case SEEK_END:
+		{
+			m_fileOffset = (s32)size - offset;
+		} break;
+	}
+	assert(m_fileOffset <= size && m_fileOffset >= 0);
+	if (m_fileOffset > size || m_fileOffset < 0)
+	{
+		m_fileOffset = 0;
+		return false;
+	}
+
+	m_file.seek(m_fileList.entries[m_curFile].IX + m_fileOffset);
+	return true;
+}
+
+size_t GobArchive::getLocInFile()
+{
+	return m_fileOffset;
 }
 
 // Directory

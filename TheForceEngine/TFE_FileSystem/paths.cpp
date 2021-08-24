@@ -109,17 +109,76 @@ namespace TFE_Paths
 		snprintf(path, bufferLen, "%s%s", getPath(pathType), filename);
 	}
 
+	void fixupPath(char* fullPath)
+	{
+		size_t len = strlen(fullPath);
+		// Fix-up slashes.
+		for (size_t i = 0; i < len; i++)
+		{
+			if (fullPath[i] == '\\')
+			{
+				fullPath[i] = '/';
+			}
+		}
+		// Make sure it ends with a slash.
+		if (fullPath[len - 1] != '/')
+		{
+			fullPath[len] = '/';
+			fullPath[len + 1] = 0;
+		}
+	}
+
+	void addSearchPath(const char* fullPath)
+	{
+		if (FileUtil::directoryExits(fullPath))
+		{
+			const size_t count = s_searchPaths.size();
+			const std::string* path = s_searchPaths.data();
+			for (size_t i = 0; i < count; i++, path++)
+			{
+				// If the path already exists, then don't add it again.
+				if (!strcasecmp(path->c_str(), fullPath))
+				{
+					return;
+				}
+			}
+
+			s_searchPaths.push_back(fullPath);
+		}
+	}
+
 	void clearSearchPaths()
 	{
-		s_localArchives.clear();
 		s_searchPaths.clear();
+	}
+
+	void clearLocalArchives()
+	{
+		const size_t count = s_localArchives.size();
+		Archive** archive = s_localArchives.data();
+		for (size_t i = 0; i < count; i++)
+		{
+			Archive::freeArchive(archive[i]);
+		}
+		s_localArchives.clear();
 	}
 
 	void addLocalSearchPath(const char* localSearchPath)
 	{
 		char fullPath[TFE_MAX_PATH];
 		snprintf(fullPath, TFE_MAX_PATH, "%s%s", getPath(PATH_SOURCE_DATA), localSearchPath);
-		s_searchPaths.push_back(fullPath);
+		fixupPath(fullPath);
+
+		addSearchPath(fullPath);
+	}
+
+	void addAbsoluteSearchPath(const char* absoluteSearchPath)
+	{
+		char fullPath[TFE_MAX_PATH];
+		strcpy(fullPath, absoluteSearchPath);
+		fixupPath(fullPath);
+
+		addSearchPath(fullPath);
 	}
 
 	void addLocalArchive(Archive* archive)
@@ -127,8 +186,6 @@ namespace TFE_Paths
 		s_localArchives.push_back(archive);
 	}
 
-	// This is the slow first-pass version.
-	// I want to make sure the functionality is correct before delving into optimizations.
 	bool getFilePath(const char* fileName, FilePath* outPath)
 	{
 		outPath->archive = nullptr;

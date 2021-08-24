@@ -7,8 +7,24 @@
 #include <algorithm>
 #include <map>
 
+namespace
+{
+	const size_t c_blockShift = 8;	// 256 bytes.
+	const size_t c_blockSize = 1 << c_blockShift;
+
+	size_t roundBufferSize(size_t size)
+	{
+		size = (size + c_blockSize - 1) >> c_blockShift;
+		return size << c_blockShift;
+	}
+}
+
 ZipArchive::~ZipArchive()
 {
+	free(m_tempBuffer);
+	m_tempBuffer = nullptr;
+	m_tempBufferSize = 0;
+
 	close();
 }
 
@@ -21,6 +37,9 @@ bool ZipArchive::open(const char *archivePath)
 {
 	m_curFile = INVALID_FILE;
 	m_entryCount = 0;
+	m_fileOffset = 0;
+	m_tempBuffer = nullptr;
+	m_tempBufferSize = 0;
 
 	struct zip_t* zip = zip_open(archivePath, 0, 'r');
 	if (!zip)
@@ -74,6 +93,7 @@ void ZipArchive::close()
 bool ZipArchive::openFile(const char *file)
 {
 	m_curFile = getFileIndex(file);
+	m_fileOffset = 0;
 	if (m_curFile != INVALID_FILE)
 	{
 		m_fileHandle = zip_open(m_archivePath, 0, 'r');
@@ -85,12 +105,22 @@ bool ZipArchive::openFile(const char *file)
 			m_fileHandle = nullptr;
 		}
 	}
+
+	// Make sure our temp buffer is large enough to hold the entry.
+	if (m_curFile != INVALID_FILE && m_tempBufferSize < m_entries[m_curFile].length)
+	{
+		m_tempBufferSize = roundBufferSize(m_entries[m_curFile].length);
+		m_tempBuffer = (u8*)realloc(m_tempBuffer, m_tempBufferSize);
+	}
+	m_entryRead = false;
+
 	return m_curFile != INVALID_FILE;
 }
 
 bool ZipArchive::openFile(u32 index)
 {
 	m_curFile = INVALID_FILE;
+	m_fileOffset = 0;
 	if (index <= (u32)m_entryCount)
 	{
 		// Open the system file.
@@ -105,6 +135,15 @@ bool ZipArchive::openFile(u32 index)
 			m_fileHandle = nullptr;
 		}
 	}
+
+	// Make sure our temp buffer is large enough to hold the entry.
+	if (m_curFile != INVALID_FILE && m_tempBufferSize < m_entries[m_curFile].length)
+	{
+		m_tempBufferSize = roundBufferSize(m_entries[m_curFile].length);
+		m_tempBuffer = (u8*)realloc(m_tempBuffer, m_tempBufferSize);
+	}
+	m_entryRead = false;
+
 	return m_curFile != INVALID_FILE;
 }
 
@@ -155,7 +194,64 @@ bool ZipArchive::readFile(void *data, size_t size)
 	if (size == 0) { size = m_entries[m_curFile].length; }
 
 	const size_t sizeToRead = std::min(size, m_entries[m_curFile].length);
-	return zip_entry_noallocread((struct zip_t*)m_fileHandle, data, size) > 0;
+	// The fast path is to just read the entire entry into the provided memory, avoiding the extra memcopy.
+	// This is only done if we are reading the entire file and there is no offset.
+	if (m_fileOffset == 0 && sizeToRead == m_entries[m_curFile].length)
+	{
+		m_fileOffset += (s32)sizeToRead;
+		return zip_entry_noallocread((struct zip_t*)m_fileHandle, data, sizeToRead) > 0;
+	}
+
+	// Otherwise go through the slower path - a one time decompression and read, followed
+	// by memcopying the data into the output as needed.
+	if (!m_entryRead)
+	{
+		// Read the whole entry into temporary memory.
+		assert(m_tempBufferSize >= m_entries[m_curFile].length);
+		if (!zip_entry_noallocread((struct zip_t*)m_fileHandle, m_tempBuffer, m_entries[m_curFile].length))
+		{
+			return false;
+		}
+		m_entryRead = true;
+	}
+	// Then copy the section we want into the output.
+	memcpy(data, m_tempBuffer + m_fileOffset, sizeToRead);
+	m_fileOffset += (s32)sizeToRead;
+	return true;
+}
+
+bool ZipArchive::seekFile(s32 offset, s32 origin)
+{
+	if (m_curFile < 0) { return false; }
+	size_t size = m_entries[m_curFile].length;
+
+	switch (origin)
+	{
+		case SEEK_SET:
+		{
+			m_fileOffset = offset;
+		} break;
+		case SEEK_CUR:
+		{
+			m_fileOffset += offset;
+		} break;
+		case SEEK_END:
+		{
+			m_fileOffset = (s32)size - offset;
+		} break;
+	}
+	assert(m_fileOffset <= size && m_fileOffset >= 0);
+	if (m_fileOffset > size || m_fileOffset < 0)
+	{
+		m_fileOffset = 0;
+		return false;
+	}
+	return true;
+}
+
+size_t ZipArchive::getLocInFile()
+{
+	return m_fileOffset;
 }
 
 // Directory

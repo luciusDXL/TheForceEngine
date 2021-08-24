@@ -24,6 +24,8 @@ public:
 
 	size_t getFileLength() override;
 	bool readFile(void *data, size_t size) override;
+	bool seekFile(s32 offset, s32 origin = SEEK_SET) override;
+	size_t getLocInFile() override;
 
 	// Directory
 	u32 getFileCount() override;
@@ -45,4 +47,8 @@ private:
 	u32 m_curFile;
 	ZipEntry* m_entries;
 	void* m_fileHandle;
+
+	u8* m_tempBuffer = nullptr;
+	size_t m_tempBufferSize = 0;
+	bool m_entryRead;
 };

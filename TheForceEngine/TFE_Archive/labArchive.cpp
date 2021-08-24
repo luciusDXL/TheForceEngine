@@ -18,6 +18,7 @@ bool LabArchive::open(const char *archivePath)
 {
 	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_READ);
 	m_curFile = -1;
+	m_fileOffset = 0;
 	if (!m_archiveOpen) { return false; }
 
 	// Read the directory.
@@ -52,6 +53,7 @@ bool LabArchive::openFile(const char *file)
 
 	m_file.open(m_archivePath, FileStream::MODE_READ);
 	m_curFile = -1;
+	m_fileOffset = 0;
 
 	//search for this file.
 	for (u32 i = 0; i < m_header.fileCount; i++)
@@ -68,6 +70,10 @@ bool LabArchive::openFile(const char *file)
 		m_file.close();
 		TFE_System::logWrite(LOG_ERROR, "GOB", "Failed to load \"%s\" from \"%s\"", file, m_archivePath);
 	}
+	else
+	{
+		m_file.seek(m_entries[m_curFile].dataOffset);
+	}
 	return m_curFile > -1 ? true : false;
 }
 
@@ -76,7 +82,9 @@ bool LabArchive::openFile(u32 index)
 	if (index >= getFileCount()) { return false; }
 
 	m_curFile = s32(index);
+	m_fileOffset = 0;
 	m_file.open(m_archivePath, FileStream::MODE_READ);
+	m_file.seek(m_entries[m_curFile].dataOffset);
 	return true;
 }
 
@@ -136,9 +144,45 @@ bool LabArchive::readFile(void *data, size_t size)
 	if (size == 0) { size = m_entries[m_curFile].len; }
 	const size_t sizeToRead = std::min(size, (size_t)m_entries[m_curFile].len);
 
-	m_file.seek(m_entries[m_curFile].dataOffset);
 	m_file.readBuffer(data, (u32)sizeToRead);
+	m_fileOffset += (s32)sizeToRead;
 	return true;
+}
+
+bool LabArchive::seekFile(s32 offset, s32 origin)
+{
+	if (m_curFile < 0) { return false; }
+	size_t size = m_entries[m_curFile].len;
+
+	switch (origin)
+	{
+		case SEEK_SET:
+		{
+			m_fileOffset = offset;
+		} break;
+		case SEEK_CUR:
+		{
+			m_fileOffset += offset;
+		} break;
+		case SEEK_END:
+		{
+			m_fileOffset = (s32)size - offset;
+		} break;
+	}
+	assert(m_fileOffset <= size && m_fileOffset >= 0);
+	if (m_fileOffset > size || m_fileOffset < 0)
+	{
+		m_fileOffset = 0;
+		return false;
+	}
+
+	m_file.seek(m_entries[m_curFile].dataOffset + m_fileOffset);
+	return true;
+}
+
+size_t LabArchive::getLocInFile()
+{
+	return m_fileOffset;
 }
 
 // Directory
