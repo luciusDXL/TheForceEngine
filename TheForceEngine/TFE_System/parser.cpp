@@ -119,7 +119,7 @@ const char* TFE_Parser::readLine(size_t& bufferPos, bool skipLeadingWhitespace)
 			// Content is any non-white space character.
 			if (!isWhitespace(s_line[i]))
 			{
-				if (skip < 0) { skip = i; }
+				if (skip < 0) { skip = s32(i); }
 				lineHasContent = true;
 				break;
 			}

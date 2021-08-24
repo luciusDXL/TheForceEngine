@@ -110,7 +110,7 @@ namespace RClassic_Fixed
 		}
 	}
 
-	void setCameraWorldPos(s32 x, s32 z, s32 eyeHeight)
+	void setCameraWorldPos(fixed16_16 x, fixed16_16 z, fixed16_16 eyeHeight)
 	{
 		s_worldX = x;
 		s_worldZ = z;
@@ -121,7 +121,7 @@ namespace RClassic_Fixed
 	{
 		s_cameraPosX_Fixed = camX;
 		s_cameraPosZ_Fixed = camZ;
-		s_eyeHeight = camY;
+		s_eyeHeight_Fixed = camY;
 
 		s_sector = sector;
 
@@ -133,7 +133,7 @@ namespace RClassic_Fixed
 
 		sinCosFixed(-yaw, &s_sinYaw_Fixed, &s_cosYaw_Fixed);
 
-		s_negSinYaw = -s_sinYaw;
+		s_negSinYaw_Fixed = -s_sinYaw_Fixed;
 		if (s_maxPitch != s_cameraPitch_Fixed)
 		{
 			// TODO: This is actually pitch; s_halfWidthFixed should be focalLength
@@ -144,20 +144,20 @@ namespace RClassic_Fixed
 			s_screenYMid = s_screenYMidBase + floor16(rHalfWidth);
 
 			// yMax*0.5 / halfWidth; ~pixel Aspect
-			s_yPlaneBot = ((s_viewHeightFixed >> 1) - rHalfWidth) / s_halfWidth_Fixed;
-			s_yPlaneTop = -((s_viewHeightFixed >> 1) + rHalfWidth) / s_halfWidth_Fixed;
+			s_yPlaneBot_Fixed =  div16((s_viewHeightFixed >> 1) - rHalfWidth, s_halfWidth_Fixed);
+			s_yPlaneTop_Fixed = -div16((s_viewHeightFixed >> 1) + rHalfWidth, s_halfWidth_Fixed);
 		}
 
-		s_zCameraTrans = mul16(s_zOffset, s_cosYaw) + mul16(s_xOffset, s_negSinYaw);
-		s_xCameraTrans = mul16(s_xOffset, s_cosYaw) + mul16(s_zOffset, s_sinYaw);
-		setCameraWorldPos(s_cameraPosX_Fixed, s_cameraPosZ_Fixed, s_eyeHeight);
+		s_zCameraTrans_Fixed = mul16(s_zOffset, s_cosYaw_Fixed) + mul16(s_xOffset, s_negSinYaw_Fixed);
+		s_xCameraTrans_Fixed = mul16(s_xOffset, s_cosYaw_Fixed) + mul16(s_zOffset, s_sinYaw_Fixed);
+		setCameraWorldPos(s_cameraPosX_Fixed, s_cameraPosZ_Fixed, s_eyeHeight_Fixed);
 		s_worldYaw = s_cameraYaw_Fixed;
 
 		// Camera Transform:
-		s_cameraMtx_Fixed[0] = s_cosYaw;
-		s_cameraMtx_Fixed[2] = s_negSinYaw;
-		s_cameraMtx_Fixed[6] = s_sinYaw;
-		s_cameraMtx_Fixed[8] = s_cosYaw;
+		s_cameraMtx_Fixed[0] = s_cosYaw_Fixed;
+		s_cameraMtx_Fixed[2] = s_negSinYaw_Fixed;
+		s_cameraMtx_Fixed[6] = s_sinYaw_Fixed;
+		s_cameraMtx_Fixed[8] = s_cosYaw_Fixed;
 	}
 
 	void computeSkyOffsets()
@@ -265,16 +265,16 @@ namespace RClassic_Fixed
 		s32 xMid = s_screenXMid;
 		for (s32 i = 0, x = 0; x < 320; x++, i++)
 		{
-			s32 xPos = intToFixed16(x - xMid);
-			s_column_Z_Over_X[i] = (xMid != x) ? div16(s_halfWidth, xPos) : s_halfWidth;
+			fixed16_16 xPos = intToFixed16(x - xMid);
+			s_column_Z_Over_X[i] = (xMid != x) ? div16(s_halfWidth_Fixed, xPos) : s_halfWidth_Fixed;
 		}
 
 		for (s32 i = 0, x = 0; x < 320; i++, x++)
 		{
 			if (x != xMid)
 			{
-				s32 xPos = intToFixed16(x - xMid);
-				s_column_X_Over_Z[i] = div16(xPos, s_halfWidth);
+				fixed16_16 xPos = intToFixed16(x - xMid);
+				s_column_X_Over_Z[i] = div16(xPos, s_halfWidth_Fixed);
 			}
 			else
 			{
