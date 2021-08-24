@@ -32,7 +32,7 @@ struct Task
 	s32 activeIndex;
 };
 
-namespace TFE_TaskSystem
+namespace TFE_Jedi
 {
 	enum
 	{

@@ -640,9 +640,9 @@ int main(int argc, char* argv[])
 			else
 			{
 				s_curGame->loopGame();
-				TFE_TaskSystem::runTasks();
+				TFE_Jedi::runTasks();
 			}
-			if (TFE_TaskSystem::systemExitRequested())
+			if (TFE_Jedi::systemExitRequested())
 			{
 				freeGame(s_curGame);
 				s_curGame = nullptr;

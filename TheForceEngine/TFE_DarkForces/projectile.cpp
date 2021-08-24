@@ -12,7 +12,6 @@
 
 using namespace TFE_Jedi;
 using namespace TFE_Memory;
-using namespace TFE_TaskSystem;
 
 namespace TFE_DarkForces
 {

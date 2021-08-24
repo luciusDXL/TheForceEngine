@@ -58,7 +58,7 @@ namespace TFE_DarkForces
 		processCommandLineArgs(argCount, argv);
 		loadLocalMessages();
 		openGobFiles();
-		TFE_TaskSystem::setTaskDefaults();
+		TFE_Jedi::setTaskDefaults();
 		TFE_JediRenderer::setupInitCameraAndLights();
 		gameStartup();
 

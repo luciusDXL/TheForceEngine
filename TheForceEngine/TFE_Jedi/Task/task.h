@@ -26,7 +26,7 @@ enum TaskDelay
 
 ////////////////////////////////////////////////////////////////////////
 // Task System API
-namespace TFE_TaskSystem
+namespace TFE_Jedi
 {
 	Task* createTask(TaskFunc func);
 	Task* pushTask(TaskFunc func);
