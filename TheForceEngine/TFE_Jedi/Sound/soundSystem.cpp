@@ -1,18 +1,18 @@
 #include "soundSystem.h"
 
-namespace TFE_JediSound
+namespace TFE_Jedi
 {
 	void playSound2D(SoundSourceID soundId)
 	{
 		// STUB
 	}
 
-	void playSound3D_oneshot(SoundSourceID soundId, TFE_Jedi::vec3_fixed pos)
+	void playSound3D_oneshot(SoundSourceID soundId, vec3_fixed pos)
 	{
 		// STUB
 	}
 
-	SoundEffectID playSound3D_looping(SoundSourceID sourceId, SoundEffectID soundId, TFE_Jedi::vec3_fixed pos)
+	SoundEffectID playSound3D_looping(SoundSourceID sourceId, SoundEffectID soundId, vec3_fixed pos)
 	{
 		// STUB
 		return SoundEffectID(0);

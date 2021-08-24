@@ -24,7 +24,6 @@
 using namespace TFE_Jedi;
 using namespace TFE_DarkForces;
 using namespace TFE_Memory;
-using namespace TFE_JediSound;
 
 namespace TFE_Jedi
 {

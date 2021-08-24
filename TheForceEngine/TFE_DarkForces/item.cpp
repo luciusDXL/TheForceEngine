@@ -1,7 +1,7 @@
 #include "item.h"
 #include <TFE_FileSystem/paths.h>
 
-using namespace TFE_JediSound;
+using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
