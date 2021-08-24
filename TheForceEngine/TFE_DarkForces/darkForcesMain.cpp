@@ -2,7 +2,10 @@
 #include "gameMessage.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_JediTask/task.h>
+#include <TFE_JediRenderer/jediRenderer.h>
 #include <assert.h>
 
 namespace TFE_DarkForces
@@ -24,8 +27,11 @@ namespace TFE_DarkForces
 	static JBool s_cutscenesEnabled = JTRUE;
 	static JBool s_localMsgLoaded = JFALSE;
 	static JBool s_useJediPath = JFALSE;
+	static JBool s_hudModeStd = JTRUE;
 	static const char* s_launchLevelName = nullptr;
 	static GameMessages s_localMessages = { 0 };
+	static u8 s_loadingScreenPal[768];
+	static TextureData* s_loadScreen = nullptr;
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -37,6 +43,7 @@ namespace TFE_DarkForces
 	s32  loadLocalMessages();
 	void buildSearchPaths();
 	void openGobFiles();
+	void gameStartup();
 
 	/////////////////////////////////////////////
 	// API
@@ -51,13 +58,16 @@ namespace TFE_DarkForces
 		processCommandLineArgs(argCount, argv);
 		loadLocalMessages();
 		openGobFiles();
-				
+		TFE_TaskSystem::setTaskDefaults();
+		TFE_JediRenderer::setupInitCameraAndLights();
+		gameStartup();
+
 		return true;
 	}
 
 	void DarkForces::exitGame()
 	{
-		s32 count = s_localMessages.count;
+		const s32 count = s_localMessages.count;
 		GameMessage* msg = s_localMessages.msgList;
 		for (s32 i = 0; i < count; i++, msg++)
 		{
@@ -185,5 +195,41 @@ namespace TFE_DarkForces
 				TFE_System::logWrite(LOG_ERROR, "Dark Forces Main", "Cannot find required game data - '%s'.", c_gobFileNames[i]);
 			}
 		}
+	}
+		
+	void gameStartup()
+	{
+		//hud_loadGraphics();
+		//loadGameMessages();
+		//loadMapNumFont();
+		//loadElevatorSounds();
+		//loadAgentSounds();
+		//loadItemData();
+		//initPlayer();
+		//loadDefaultSwitchSound();
+		//allocatePhysicsActorList();
+		//loadCutsceneList();
+		//loadProjectiles();
+		//loadHitEffects();
+		//weaponStartup();
+
+		FilePath filePath;
+		TFE_Paths::getFilePath("swfont1.fnt", &filePath);
+		//s_swFont1 = font_load(&filePath);
+
+		//setVisionEffect(0);
+		//setupHeadlamp(s_actionEnableFlatShading, s_headlampActive);
+
+		if (TFE_Paths::getFilePath("wait.bm", &filePath))
+		{
+			s_loadScreen = TFE_Level::bitmap_load(&filePath, 0);
+		}
+		if (TFE_Paths::getFilePath("wait.pal", &filePath))
+		{
+			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
+		}
+		//enableAutomount(s_config.wpnAutoMount);
+		//s_screenShotSndSrc = sound_Load("scrshot.voc");
+		//setSoundEffectVolume(s_screenShotSndSrc, 127);
 	}
 }

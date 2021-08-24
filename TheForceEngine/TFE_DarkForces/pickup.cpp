@@ -1,10 +1,10 @@
 #include "pickup.h"
 #include "player.h"
 #include "hud.h"
-#include <TFE_InfSystem/message.h>
-#include <TFE_Level/level.h>
-#include <TFE_JediSound/soundSystem.h>
-#include <TFE_JediTask/task.h>
+#include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_Jedi/Task/task.h>
 
 using namespace TFE_Message;
 using namespace TFE_JediSound;

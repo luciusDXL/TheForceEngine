@@ -2,12 +2,12 @@
 #include "animLogic.h"
 #include "random.h"
 #include "player.h"
-#include <TFE_Collision/collision.h>
-#include <TFE_InfSystem/infSystem.h>
-#include <TFE_InfSystem/message.h>
-#include <TFE_JediTask/task.h>
-#include <TFE_Level/robject.h>
-#include <TFE_Level/rwall.h>
+#include <TFE_Jedi/Collision/collision.h>
+#include <TFE_Jedi/InfSystem/infSystem.h>
+#include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Memory/allocator.h>
 
 using namespace TFE_Collision;

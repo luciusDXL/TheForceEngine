@@ -1,7 +1,7 @@
 #include "animLogic.h"
 #include "time.h"
 #include <TFE_Memory/allocator.h>
-#include <TFE_InfSystem/message.h>
+#include <TFE_Jedi/InfSystem/message.h>
 
 using namespace TFE_Memory;
 using namespace TFE_Message;

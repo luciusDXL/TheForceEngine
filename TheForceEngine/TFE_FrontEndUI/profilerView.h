@@ -8,7 +8,6 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
-#include <TFE_Renderer/renderer.h>
 #include <string>
 #include <vector>
 

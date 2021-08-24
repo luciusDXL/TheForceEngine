@@ -4,10 +4,10 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_System/parser.h>
 
-#include <TFE_Level/core_math.h>
-#include <TFE_Level/rtexture.h>
+#include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Level/rtexture.h>
 // TODO: dependency on JediRenderer, this should be refactored...
-#include <TFE_JediRenderer/rlimits.h>
+#include <TFE_Jedi/Renderer/rlimits.h>
 
 #include <assert.h>
 #include <map>
@@ -353,6 +353,8 @@ namespace TFE_Model_Jedi
 		// Load textures.
 		if (textureCount)
 		{
+			FilePath filePath;
+
 			model->textures = (TextureData**)malloc(textureCount * sizeof(TextureData*));
 			TextureData** texture = model->textures;
 			for (s32 i = 0; i < textureCount; i++, texture++)
@@ -371,10 +373,14 @@ namespace TFE_Model_Jedi
 				*texture = nullptr;
 				if (strcasecmp(textureName, "<NoTexture>"))
 				{
-					*texture = (TextureData*)TFE_Level::bitmap_load(textureName, 1);
+					if (TFE_Paths::getFilePath(textureName, &filePath))
+					{
+						*texture = (TextureData*)TFE_Level::bitmap_load(&filePath, 1);
+					}
 					if (!(*texture))
 					{
-						*texture = (TextureData*)TFE_Level::bitmap_load("default.bm", 1);
+						TFE_Paths::getFilePath("default.bm", &filePath);
+						*texture = (TextureData*)TFE_Level::bitmap_load(&filePath, 1);
 					}
 				}
 			}

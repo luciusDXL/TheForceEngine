@@ -56,9 +56,6 @@
     <Filter Include="Source\Scripts\Weapons">
       <UniqueIdentifier>{02c72b97-39bf-4d84-afc1-2ae96b72fff2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_InfSystem">
-      <UniqueIdentifier>{33f9fd16-37b7-46c6-a812-f1fe68aabcb9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_Polygon">
       <UniqueIdentifier>{7bc61a74-1f16-4dba-aa19-98a7412735fa}</UniqueIdentifier>
     </Filter>
@@ -98,35 +95,14 @@
     <Filter Include="Source\TFE_PostProcess">
       <UniqueIdentifier>{17a1b5a3-c20e-4777-bd0e-2774b8180e3e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_JediRenderer">
-      <UniqueIdentifier>{b09f4a8e-9bcf-4136-bac7-d14c1edac29d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_JediRenderer\RClassic_Fixed">
-      <UniqueIdentifier>{67dc1bc3-8fdf-4b20-8c04-013ded47a58b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed">
-      <UniqueIdentifier>{b3c8a678-078c-436f-b641-632d3e264fe3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_Archive\zip">
       <UniqueIdentifier>{f069b311-4842-4982-aa48-6848b3f3fa66}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_Collision">
-      <UniqueIdentifier>{a95df4bd-a7b6-468e-b173-6ff5924e1611}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_Level">
-      <UniqueIdentifier>{f01ea6ec-1b8c-41e5-ab68-e7a5c6690cfd}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_DarkForces">
       <UniqueIdentifier>{59add6c8-e836-4893-8f69-97d12c01fcbc}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_Memory">
       <UniqueIdentifier>{934faa67-d3c0-48db-9212-681043f4bf1b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_JediSound">
-      <UniqueIdentifier>{c643a23a-05c5-404b-bd67-ec6c5495c6b1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_JediTask">
-      <UniqueIdentifier>{4477739f-b976-4111-af64-ad4146f94f88}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_Game">
       <UniqueIdentifier>{833b07fb-6af1-4f55-b2a2-ca9a56aee03b}</UniqueIdentifier>
@@ -136,6 +112,36 @@
     </Filter>
     <Filter Include="Source\TFE_DarkForces\GameUI">
       <UniqueIdentifier>{915e9d07-f5d3-4c9f-921e-aa66442f11ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi">
+      <UniqueIdentifier>{f5937e3e-fed1-4876-bae7-1e0578e3de0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\Collision">
+      <UniqueIdentifier>{732515d2-aff1-4399-a2e4-19299665eb08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\InfSystem">
+      <UniqueIdentifier>{55055ea9-0b37-49d1-86ec-823f1fe62351}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\Level">
+      <UniqueIdentifier>{c103d822-6d5f-4a6c-8513-e8cfcd461d20}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\Renderer">
+      <UniqueIdentifier>{28396230-168e-4dfb-9e75-f0e7aa9f3d63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\Sound">
+      <UniqueIdentifier>{807a91b5-ef62-4fb4-bdc1-957cee1770c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\Task">
+      <UniqueIdentifier>{75fe1c00-b9f2-4e8c-a62c-4a59f897f467}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\Renderer\RClassic_Fixed">
+      <UniqueIdentifier>{4c7454d0-1c75-4990-aed8-52268026f405}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed">
+      <UniqueIdentifier>{5c344721-d0d6-4f07-ad96-10e919aff08f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Jedi\Math">
+      <UniqueIdentifier>{6fcba03c-28ba-43ab-992f-f5a306cd2f6a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -252,9 +258,6 @@
     </ClInclude>
     <ClInclude Include="TFE_Asset\levelList.h">
       <Filter>Source\TFE_Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_InfSystem\infSystem.h">
-      <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
     <ClInclude Include="TFE_System\memoryPool.h">
       <Filter>Source\TFE_System</Filter>
@@ -373,42 +376,6 @@
     <ClInclude Include="TFE_PostProcess\postprocesseffect.h">
       <Filter>Source\TFE_PostProcess</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\jediRenderer.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rcommon.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\redgePair.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rlimits.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rclassicFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rcommonFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\redgePairFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rflatFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rsectorFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rwallFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rscanline.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
     <ClInclude Include="Shaders\grid.h">
       <Filter>Source\Shaders</Filter>
     </ClInclude>
@@ -439,30 +406,6 @@
     <ClInclude Include="TFE_Asset\msf_gif.h">
       <Filter>Source\TFE_Asset</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_ClipFunc.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Clipping.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonDraw.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonSetup.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolyRenderFunc.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_TransformAndLighting.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Culling.h">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Archive\zip\miniz.h">
       <Filter>Source\TFE_Archive\zip</Filter>
     </ClInclude>
@@ -472,41 +415,8 @@
     <ClInclude Include="TFE_Archive\zipArchive.h">
       <Filter>Source\TFE_Archive</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_InfSystem\message.h">
-      <Filter>Source\TFE_InfSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_InfSystem\infElevatorUpdateFunc.h">
-      <Filter>Source\TFE_InfSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_InfSystem\infTypesInternal.h">
-      <Filter>Source\TFE_InfSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Level\fixedPoint.h">
-      <Filter>Source\TFE_Level</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Level\robject.h">
-      <Filter>Source\TFE_Level</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Level\rsector.h">
-      <Filter>Source\TFE_Level</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Level\rtexture.h">
-      <Filter>Source\TFE_Level</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Level\rwall.h">
-      <Filter>Source\TFE_Level</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Level\core_math.h">
-      <Filter>Source\TFE_Level</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Level\level.h">
-      <Filter>Source\TFE_Level</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Asset\dfKeywords.h">
       <Filter>Source\TFE_Asset</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_InfSystem\infPublicTypes.h">
-      <Filter>Source\TFE_InfSystem</Filter>
     </ClInclude>
     <ClInclude Include="TFE_DarkForces\pickup.h">
       <Filter>Source\TFE_DarkForces</Filter>
@@ -532,32 +442,14 @@
     <ClInclude Include="TFE_DarkForces\hitEffect.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Collision\collision.h">
-      <Filter>Source\TFE_Collision</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\random.h">
       <Filter>Source\TFE_DarkForces</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediSound\soundSystem.h">
-      <Filter>Source\TFE_JediSound</Filter>
     </ClInclude>
     <ClInclude Include="TFE_DarkForces\hud.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_JediTask\task.h">
-      <Filter>Source\TFE_JediTask</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Memory\chunkedArray.h">
       <Filter>Source\TFE_Memory</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediTask\taskMacros.h">
-      <Filter>Source\TFE_JediTask</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rsectorRender.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_JediRenderer\rwallRender.h">
-      <Filter>Source\TFE_JediRenderer</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Game\igame.h">
       <Filter>Source\TFE_Game</Filter>
@@ -585,6 +477,126 @@
     </ClInclude>
     <ClInclude Include="TFE_DarkForces\gameMessage.h">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\config.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Collision\collision.h">
+      <Filter>Source\TFE_Jedi\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\InfSystem\infElevatorUpdateFunc.h">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\InfSystem\infPublicTypes.h">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\InfSystem\infSystem.h">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\InfSystem\infTypesInternal.h">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\InfSystem\message.h">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\level.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\robject.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\rsector.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\rtexture.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\rwall.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Sound\soundSystem.h">
+      <Filter>Source\TFE_Jedi\Sound</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\jediRenderer.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\rcommon.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\redgePair.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\rlimits.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\robjectRender.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\rscanline.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\rsectorRender.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\rwallRender.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixed.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rcommonFixed.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\redgePairFixed.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rflatFixed.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rlightingFixed.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rsectorFixed.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rwallFixed.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_ClipFunc.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Clipping.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Culling.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonDraw.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonSetup.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolyRenderFunc.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_TransformAndLighting.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Task\task.h">
+      <Filter>Source\TFE_Jedi\Task</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Task\taskMacros.h">
+      <Filter>Source\TFE_Jedi\Task</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Math\fixedPoint.h">
+      <Filter>Source\TFE_Jedi\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Math\core_math.h">
+      <Filter>Source\TFE_Jedi\Math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -671,9 +683,6 @@
     </ClCompile>
     <ClCompile Include="TFE_Asset\levelList.cpp">
       <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_InfSystem\infSystem.cpp">
-      <Filter>Source\TFE_InfSystem</Filter>
     </ClCompile>
     <ClCompile Include="TFE_System\memoryPool.cpp">
       <Filter>Source\TFE_System</Filter>
@@ -774,36 +783,6 @@
     <ClCompile Include="TFE_PostProcess\blit.cpp">
       <Filter>Source\TFE_PostProcess</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\jediRenderer.cpp">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\rcommon.cpp">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rclassicFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rcommonFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\redgePairFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rflatFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rsectorFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rwallFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\rlightingFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\rscanline.cpp">
-      <Filter>Source\TFE_JediRenderer</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\glslParser.cpp">
       <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
@@ -825,53 +804,14 @@
     <ClCompile Include="TFE_Asset\gifWriter.cpp">
       <Filter>Source\TFE_Asset</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Clipping.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonDraw.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonSetup.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_TransformAndLighting.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Culling.cpp">
-      <Filter>Source\TFE_JediRenderer\RClassic_Fixed\robj3d_fixed</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Archive\zip\zip.c">
       <Filter>Source\TFE_Archive\zip</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Archive\zipArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_InfSystem\message.cpp">
-      <Filter>Source\TFE_InfSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Level\rsector.cpp">
-      <Filter>Source\TFE_Level</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Level\rtexture.cpp">
-      <Filter>Source\TFE_Level</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Level\core_math.cpp">
-      <Filter>Source\TFE_Level</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Level\level.cpp">
-      <Filter>Source\TFE_Level</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Level\rwall.cpp">
-      <Filter>Source\TFE_Level</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Asset\dfKeywords.cpp">
       <Filter>Source\TFE_Asset</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Level\robject.cpp">
-      <Filter>Source\TFE_Level</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\pickup.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
@@ -897,26 +837,14 @@
     <ClCompile Include="TFE_DarkForces\hitEffect.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Collision\collision.cpp">
-      <Filter>Source\TFE_Collision</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_DarkForces\random.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediSound\soundSystem.cpp">
-      <Filter>Source\TFE_JediSound</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\hud.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_JediTask\task.cpp">
-      <Filter>Source\TFE_JediTask</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Memory\chunkedArray.cpp">
       <Filter>Source\TFE_Memory</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_JediRenderer\rsectorRender.cpp">
-      <Filter>Source\TFE_JediRenderer</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Game\igame.cpp">
       <Filter>Source\TFE_Game</Filter>
@@ -944,6 +872,93 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\gameMessage.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\config.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Collision\collision.cpp">
+      <Filter>Source\TFE_Jedi\Collision</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\InfSystem\infSystem.cpp">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\InfSystem\message.cpp">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\level.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\robject.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\rsector.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\rtexture.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\rwall.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Sound\soundSystem.cpp">
+      <Filter>Source\TFE_Jedi\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\jediRenderer.cpp">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\rcommon.cpp">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\rscanline.cpp">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\rsectorRender.cpp">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixed.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rcommonFixed.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\redgePairFixed.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rflatFixed.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rlightingFixed.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rsectorFixed.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rwallFixed.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Clipping.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_Culling.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonDraw.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_PolygonSetup.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_TransformAndLighting.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Task\task.cpp">
+      <Filter>Source\TFE_Jedi\Task</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Math\core_math.cpp">
+      <Filter>Source\TFE_Jedi\Math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

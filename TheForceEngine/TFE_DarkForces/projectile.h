@@ -7,9 +7,9 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Asset/dfKeywords.h>
-#include <TFE_JediSound/soundSystem.h>
-#include <TFE_Level/rsector.h>
-#include <TFE_Level/robject.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_Jedi/Level/rsector.h>
+#include <TFE_Jedi/Level/robject.h>
 #include "logic.h"
 #include "hitEffect.h"
 #include "time.h"

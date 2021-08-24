@@ -2,10 +2,10 @@
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Archive/archive.h>
-#include <TFE_Level/core_math.h>
-#include <TFE_Level/robject.h>
+#include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Level/robject.h>
 // TODO: dependency on JediRenderer, this should be refactored...
-#include <TFE_JediRenderer/rlimits.h>
+#include <TFE_Jedi/Renderer/rlimits.h>
 //
 #include <assert.h>
 #include <algorithm>

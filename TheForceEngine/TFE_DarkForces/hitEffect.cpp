@@ -1,13 +1,13 @@
 #include "hitEffect.h"
 #include "animLogic.h"
 #include "projectile.h"
-#include <TFE_Collision/collision.h>
-#include <TFE_InfSystem/message.h>
-#include <TFE_Level/level.h>
-#include <TFE_Level/robject.h>
+#include <TFE_Jedi/Collision/collision.h>
+#include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/robject.h>
 #include <TFE_Memory/allocator.h>
-#include <TFE_JediSound/soundSystem.h>
-#include <TFE_JediTask/task.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_Jedi/Task/task.h>
 
 using namespace TFE_Collision;
 using namespace TFE_JediSound;

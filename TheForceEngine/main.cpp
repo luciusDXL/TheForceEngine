@@ -4,7 +4,7 @@
 #include <TFE_System/profiler.h>
 #include <TFE_Game/igame.h>
 //#include <TFE_ScriptSystem/scriptSystem.h>
-#include <TFE_InfSystem/infSystem.h>
+#include <TFE_Jedi/InfSystem/infSystem.h>
 //#include <TFE_Editor/editor.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_Audio/audioSystem.h>
@@ -15,7 +15,7 @@
 // #include <TFE_Renderer/renderer.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
-#include <TFE_JediTask/task.h>
+#include <TFE_Jedi/Task/task.h>
 #include <TFE_Asset/paletteAsset.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>

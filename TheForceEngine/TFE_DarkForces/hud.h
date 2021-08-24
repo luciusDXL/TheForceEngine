@@ -5,7 +5,7 @@
 // gameplay.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_Level/core_math.h>
+#include <TFE_Jedi/Math/core_math.h>
 
 using namespace TFE_CoreMath;
 

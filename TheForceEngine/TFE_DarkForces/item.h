@@ -3,7 +3,7 @@
 // Dark Forces Item IDs.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_JediSound/soundSystem.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 
 namespace TFE_DarkForces
