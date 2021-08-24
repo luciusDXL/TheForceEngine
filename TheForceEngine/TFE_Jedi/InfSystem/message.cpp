@@ -12,7 +12,7 @@
 using namespace TFE_Memory;
 using namespace TFE_InfSystem;
 
-namespace TFE_Message
+namespace TFE_Jedi
 {
 	Allocator* s_messageAddr = nullptr;
 	void* s_msgEntity;

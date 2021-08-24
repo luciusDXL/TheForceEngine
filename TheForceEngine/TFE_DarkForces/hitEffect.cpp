@@ -12,7 +12,6 @@
 using namespace TFE_Jedi;
 using namespace TFE_JediSound;
 using namespace TFE_Level;
-using namespace TFE_Message;
 using namespace TFE_Memory;
 using namespace TFE_TaskSystem;
 

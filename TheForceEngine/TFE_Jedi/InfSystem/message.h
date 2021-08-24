@@ -40,7 +40,7 @@ struct MessageAddress
 	RSector* sector;
 };
 
-namespace TFE_Message
+namespace TFE_Jedi
 {
 	// Add and retrieve addresses, this way named sectors can be accessed without looping through the entire set.
 	void message_addAddress(const char* name, s32 param0, s32 param1, RSector* sector);

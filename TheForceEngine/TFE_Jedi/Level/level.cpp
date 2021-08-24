@@ -16,7 +16,7 @@
 #include <TFE_Jedi/InfSystem/message.h>
 
 using namespace TFE_InfSystem;
-using namespace TFE_Message;
+using namespace TFE_Jedi;
 
 namespace TFE_Level
 {
