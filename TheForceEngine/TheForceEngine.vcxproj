@@ -293,7 +293,9 @@
     <ClInclude Include="TFE_Jedi\InfSystem\infTypesInternal.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\message.h" />
     <ClInclude Include="TFE_Jedi\Level\level.h" />
+    <ClInclude Include="TFE_Jedi\Level\rfont.h" />
     <ClInclude Include="TFE_Jedi\Level\robject.h" />
+    <ClInclude Include="TFE_Jedi\Level\roffscreenBuffer.h" />
     <ClInclude Include="TFE_Jedi\Level\rsector.h" />
     <ClInclude Include="TFE_Jedi\Level\rtexture.h" />
     <ClInclude Include="TFE_Jedi\Level\rwall.h" />
@@ -437,7 +439,9 @@
     <ClCompile Include="TFE_Jedi\InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\message.cpp" />
     <ClCompile Include="TFE_Jedi\Level\level.cpp" />
+    <ClCompile Include="TFE_Jedi\Level\rfont.cpp" />
     <ClCompile Include="TFE_Jedi\Level\robject.cpp" />
+    <ClCompile Include="TFE_Jedi\Level\roffscreenBuffer.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rsector.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rtexture.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rwall.cpp" />

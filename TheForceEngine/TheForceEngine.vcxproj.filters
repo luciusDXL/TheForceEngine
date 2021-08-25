@@ -598,6 +598,12 @@
     <ClInclude Include="TFE_Jedi\Math\core_math.h">
       <Filter>Source\TFE_Jedi\Math</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\rfont.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\roffscreenBuffer.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -959,6 +965,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Math\core_math.cpp">
       <Filter>Source\TFE_Jedi\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\rfont.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\roffscreenBuffer.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -5,6 +5,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <assert.h>
@@ -33,6 +34,7 @@ namespace TFE_DarkForces
 	static GameMessages s_localMessages = { 0 };
 	static u8 s_loadingScreenPal[768];
 	static TextureData* s_loadScreen = nullptr;
+	static Font* s_swFont1 = nullptr;
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -200,7 +202,7 @@ namespace TFE_DarkForces
 		
 	void gameStartup()
 	{
-		//hud_loadGraphics();
+		hud_loadGraphics();
 		hud_loadGameMessages();
 		//loadMapNumFont();
 		//loadElevatorSounds();
@@ -216,7 +218,7 @@ namespace TFE_DarkForces
 
 		FilePath filePath;
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);
-		//s_swFont1 = font_load(&filePath);
+		s_swFont1 = font_load(&filePath);
 
 		//setVisionEffect(0);
 		//setupHeadlamp(s_actionEnableFlatShading, s_headlampActive);
