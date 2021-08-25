@@ -42,4 +42,6 @@ namespace TFE_DarkForces
 	void pickupLogicFunc(s32 id);
 	// Called when the player respawns.
 	void playerRevive();
+
+	extern Task* s_superchargeTask;
 }  // namespace TFE_DarkForces

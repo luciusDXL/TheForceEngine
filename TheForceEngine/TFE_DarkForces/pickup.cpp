@@ -1,6 +1,7 @@
 #include "pickup.h"
 #include "player.h"
 #include "hud.h"
+#include "weapon.h"
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
@@ -17,8 +18,6 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Internal State
 	//////////////////////////////////////////////////////////////
-	SoundSourceID s_superchargeCountdownSound = 0;
-	
 	u32 s_pickupFlags = 0;
 	// Pointer to memory where player inventory is saved.
 	u32* s_playerInvSaved = nullptr;

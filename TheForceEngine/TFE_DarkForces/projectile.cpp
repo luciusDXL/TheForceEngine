@@ -646,7 +646,7 @@ namespace TFE_DarkForces
 				projLogic->vertBounciness = 58982;
 				projLogic->bounceCnt = 0;
 				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->hitEffectId = HEFFECT_18;
+				projLogic->hitEffectId = HEFFECT_EXP_25;
 				projLogic->duration = s_curTick + 1456;
 				projLogic->cameraPassSnd = s_bobaBallCameraSnd;
 			} break;

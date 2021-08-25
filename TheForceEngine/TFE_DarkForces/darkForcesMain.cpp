@@ -5,6 +5,7 @@
 #include "item.h"
 #include "player.h"
 #include "projectile.h"
+#include "weapon.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -235,7 +236,7 @@ namespace TFE_DarkForces
 		loadCutsceneList();
 		proj_startup();
 		hitEffect_startup();
-		//weaponStartup();
+		weapon_startup();
 
 		FilePath filePath;
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);

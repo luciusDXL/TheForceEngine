@@ -277,6 +277,7 @@
     <ClInclude Include="TFE_DarkForces\projectile.h" />
     <ClInclude Include="TFE_DarkForces\random.h" />
     <ClInclude Include="TFE_DarkForces\time.h" />
+    <ClInclude Include="TFE_DarkForces\weapon.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
     <ClInclude Include="TFE_FileSystem\paths.h" />
@@ -430,6 +431,7 @@
     <ClCompile Include="TFE_DarkForces\projectile.cpp" />
     <ClCompile Include="TFE_DarkForces\random.cpp" />
     <ClCompile Include="TFE_DarkForces\time.cpp" />
+    <ClCompile Include="TFE_DarkForces\weapon.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
