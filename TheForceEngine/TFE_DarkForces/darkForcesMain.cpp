@@ -1,5 +1,6 @@
 #include "darkForcesMain.h"
 #include "actor.h"
+#include "agent.h"
 #include "gameMessage.h"
 #include "hud.h"
 #include "item.h"
@@ -37,12 +38,15 @@ namespace TFE_DarkForces
 	static JBool s_useJediPath = JFALSE;
 	static JBool s_hudModeStd = JTRUE;
 	static const char* s_launchLevelName = nullptr;
-	static GameMessages s_localMessages = { 0 };
+	static GameMessages s_localMessages;
+	static GameMessages s_hotKeyMessages;
 	static u8 s_loadingScreenPal[768];
 	static TextureData* s_loadScreen = nullptr;
+	static TextureData* s_diskErrorImg = nullptr;
 	static Font* s_swFont1 = nullptr;
 	static Font* s_mapNumFont = nullptr;
 	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
+	static void* s_briefingList;	// STUBBED - to be replaced by the real structure.
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -55,6 +59,7 @@ namespace TFE_DarkForces
 	void buildSearchPaths();
 	void openGobFiles();
 	void gameStartup();
+	void loadAgentAndLevelData();
 
 	/////////////////////////////////////////////
 	// API
@@ -72,7 +77,7 @@ namespace TFE_DarkForces
 		TFE_Jedi::setTaskDefaults();
 		TFE_Jedi::setupInitCameraAndLights();
 		gameStartup();
-		// loadAgentAndLevelData();
+		loadAgentAndLevelData();
 
 		return true;
 	}
@@ -259,5 +264,36 @@ namespace TFE_DarkForces
 		weapon_enableAutomount(JFALSE);	// TODO: This should come from the config file, with things like key bindings, etc.
 		s_screenShotSndSrc = sound_Load("scrshot.voc");
 		setSoundSourceVolume(s_screenShotSndSrc, 127);
+	}
+
+	void* loadBriefingList(const char* fileName)
+	{
+		// STUB
+		// TODO in the following releases.
+		return nullptr;
+	}
+		
+	void loadAgentAndLevelData()
+	{
+		agent_loadData();
+		if (!agent_loadLevelList("jedi.lvl"))
+		{
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load level list.");
+		}
+		s_briefingList = loadBriefingList("briefing.lst");
+
+		FilePath filePath;
+		if (TFE_Paths::getFilePath("hotkeys.msg", &filePath))
+		{
+			parseMessageFile(&s_hotKeyMessages, &filePath, 1);
+		}
+		if (TFE_Paths::getFilePath("diskerr.bm", &filePath))
+		{
+			s_diskErrorImg = bitmap_load(&filePath, 0);
+		}
+		if (!s_diskErrorImg)
+		{
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load diskerr image.");
+		}
 	}
 }

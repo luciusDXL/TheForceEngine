@@ -188,7 +188,7 @@ size_t ZipArchive::getFileLength()
 	return m_entries[m_curFile].length;
 }
 
-bool ZipArchive::readFile(void *data, size_t size)
+size_t ZipArchive::readFile(void *data, size_t size)
 {
 	if (m_curFile == INVALID_FILE) { return false; }
 	if (size == 0) { size = m_entries[m_curFile].length; }
@@ -199,7 +199,7 @@ bool ZipArchive::readFile(void *data, size_t size)
 	if (m_fileOffset == 0 && sizeToRead == m_entries[m_curFile].length)
 	{
 		m_fileOffset += (s32)sizeToRead;
-		return zip_entry_noallocread((struct zip_t*)m_fileHandle, data, sizeToRead) > 0;
+		return zip_entry_noallocread((struct zip_t*)m_fileHandle, data, sizeToRead);
 	}
 
 	// Otherwise go through the slower path - a one time decompression and read, followed
@@ -217,7 +217,7 @@ bool ZipArchive::readFile(void *data, size_t size)
 	// Then copy the section we want into the output.
 	memcpy(data, m_tempBuffer + m_fileOffset, sizeToRead);
 	m_fileOffset += (s32)sizeToRead;
-	return true;
+	return sizeToRead;
 }
 
 bool ZipArchive::seekFile(s32 offset, s32 origin)

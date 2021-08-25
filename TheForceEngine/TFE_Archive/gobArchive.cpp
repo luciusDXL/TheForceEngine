@@ -152,15 +152,15 @@ size_t GobArchive::getFileLength()
 	return getFileLength(m_curFile);
 }
 
-bool GobArchive::readFile(void *data, size_t size)
+size_t GobArchive::readFile(void *data, size_t size)
 {
 	if (m_curFile < 0) { return false; }
 	if (size == 0) { size = m_fileList.entries[m_curFile].LEN; }
 	const size_t sizeToRead = std::min(size, (size_t)m_fileList.entries[m_curFile].LEN);
 
-	m_file.readBuffer(data, (u32)sizeToRead);
+	u32 bytesRead = m_file.readBuffer(data, (u32)sizeToRead);
 	m_fileOffset += (s32)sizeToRead;
-	return true;
+	return bytesRead;
 }
 
 bool GobArchive::seekFile(s32 offset, s32 origin)

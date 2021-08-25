@@ -34,7 +34,7 @@ public:
 	static u32 readContents(const FilePath* filePath, void* output, size_t size);
 	
 	//derived functions.
-	void seek(u32 offset, Origin origin=ORIGIN_START) override;
+	bool seek(u32 offset, Origin origin=ORIGIN_START) override;
 	size_t getLoc() override;
 	size_t getSize() override;
 	bool   isOpen()  const;
@@ -52,7 +52,7 @@ public:
 	void read(f32* ptr, u32 count=1) override { readType(ptr, count); }
 	void read(f64* ptr, u32 count=1) override { readType(ptr, count); }
 	void read(std::string* ptr, u32 count=1) override { readType(ptr, count); }
-	void readBuffer(void* ptr, u32 size, u32 count=1) override;
+	u32  readBuffer(void* ptr, u32 size, u32 count=1) override;
 
 	void write(const s8*  ptr, u32 count=1)  override { writeType(ptr, count); }
 	void write(const u8*  ptr, u32 count=1)  override { writeType(ptr, count); }

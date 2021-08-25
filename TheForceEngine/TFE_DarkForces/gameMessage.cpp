@@ -1,4 +1,5 @@
 #include "gameMessage.h"
+#include "util.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
@@ -11,16 +12,6 @@ namespace TFE_DarkForces
 	{
 		free(s_buffer);
 		s_buffer = nullptr;
-	}
-
-	char* copyAndAllocateString(const char* start, const char* end)
-	{
-		s32 count = s32(end - start);
-		char* outString = (char*)malloc(count + 1);
-		memcpy(outString, start, count);
-		outString[count] = 0;
-
-		return outString;
 	}
 
 	// FileStream and TFE_Parser are used to read the file and parse out lines.

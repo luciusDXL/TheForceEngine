@@ -144,17 +144,18 @@ u32 FileStream::readContents(const FilePath* filePath, void* output, size_t size
 }
 
 //derived from Stream
-void FileStream::seek(u32 offset, Origin origin/*=ORIGIN_START*/)
+bool FileStream::seek(u32 offset, Origin origin/*=ORIGIN_START*/)
 {
 	const s32 forigin[] = { SEEK_SET, SEEK_END, SEEK_CUR };
 	if (m_file)
 	{
-		fseek(m_file, offset, forigin[origin]);
+		return fseek(m_file, offset, forigin[origin]) == 0;
 	}
 	else if (m_archive)
 	{
-		m_archive->seekFile(offset, forigin[origin]);
+		return m_archive->seekFile(offset, forigin[origin]);
 	}
+	return false;
 }
 
 size_t FileStream::getLoc()
@@ -197,17 +198,19 @@ bool FileStream::isOpen() const
 	return m_file!=nullptr || m_archive!=nullptr;
 }
 
-void FileStream::readBuffer(void* ptr, u32 size, u32 count)
+u32 FileStream::readBuffer(void* ptr, u32 size, u32 count)
 {
 	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
 	if (m_file)
 	{
-		fread(ptr, size, count, m_file);
+		// fread() returns the number of *elements* read, but we want the number of bytes read.
+		return (u32)fread(ptr, size, count, m_file) * size;
 	}
 	else if (m_archive)
 	{
-		m_archive->readFile(ptr, size * count);
+		return (u32)m_archive->readFile(ptr, size * count);
 	}
+	return 0;
 }
 
 void FileStream::writeBuffer(const void* ptr, u32 size, u32 count)

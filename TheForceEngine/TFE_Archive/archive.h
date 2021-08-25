@@ -49,7 +49,7 @@ public:
 	virtual u32  getFileIndex(const char* file) = 0;
 
 	virtual size_t getFileLength() = 0;
-	virtual bool readFile(void *data, size_t size) = 0;
+	virtual size_t readFile(void *data, size_t size) = 0;
 	virtual bool seekFile(s32 offset, s32 origin = SEEK_SET) = 0;
 	virtual size_t getLocInFile() = 0;
 

@@ -17,7 +17,7 @@ public:
 	Stream()  {};
 	~Stream() {};
 
-	virtual void seek(u32 offset, Origin origin=ORIGIN_START)=0;
+	virtual bool seek(u32 offset, Origin origin=ORIGIN_START)=0;
 	virtual size_t getLoc()=0;
 	virtual size_t getSize()=0;
 
@@ -32,7 +32,7 @@ public:
 	virtual void read(f32* ptr, u32 count=1)=0;
 	virtual void read(f64* ptr, u32 count=1)=0;
 	virtual void read(std::string* ptr, u32 count=1)=0;
-	virtual void readBuffer(void* ptr, u32 size, u32 count=1)=0;
+	virtual u32  readBuffer(void* ptr, u32 size, u32 count=1)=0;
 
 	virtual void write(const s8*  ptr, u32 count=1)=0;
 	virtual void write(const u8*  ptr, u32 count=1)=0;

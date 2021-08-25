@@ -138,15 +138,15 @@ size_t LabArchive::getFileLength()
 	return getFileLength(m_curFile);
 }
 
-bool LabArchive::readFile(void *data, size_t size)
+size_t LabArchive::readFile(void *data, size_t size)
 {
 	if (m_curFile < 0) { return false; }
 	if (size == 0) { size = m_entries[m_curFile].len; }
 	const size_t sizeToRead = std::min(size, (size_t)m_entries[m_curFile].len);
 
-	m_file.readBuffer(data, (u32)sizeToRead);
+	size_t bytesRead = m_file.readBuffer(data, (u32)sizeToRead);
 	m_fileOffset += (s32)sizeToRead;
-	return true;
+	return bytesRead;
 }
 
 bool LabArchive::seekFile(s32 offset, s32 origin)
