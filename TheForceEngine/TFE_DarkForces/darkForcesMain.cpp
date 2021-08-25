@@ -60,6 +60,7 @@ namespace TFE_DarkForces
 	void openGobFiles();
 	void gameStartup();
 	void loadAgentAndLevelData();
+	void cutscenes_startup(s32 id);
 
 	/////////////////////////////////////////////
 	// API
@@ -78,6 +79,7 @@ namespace TFE_DarkForces
 		TFE_Jedi::setupInitCameraAndLights();
 		gameStartup();
 		loadAgentAndLevelData();
+		cutscenes_startup(10);
 
 		return true;
 	}
@@ -98,8 +100,61 @@ namespace TFE_DarkForces
 		TFE_Paths::clearLocalArchives();
 	}
 
+	/* The basic structure of the Dark Forces main loop is as follows:
+	while (1)  // <- This will be replaced by the function call from the main TFE loop.
+	{
+		// TFE: This becomes a game state in TFE - where runAgentMenu() gets an update function - it can't loop forever.
+		s32 levelIndex = runAgentMenu();  <- this loops internally until complete and returns the level to load.
+		updateAgentSavedData();	// handle any agent changes.
+
+		// Invalid level index just maps back to the runAgentMenu().
+		if (levelIndex <= 0) { continue; }  // <- This becomes a return in TFE, back off and try again.
+
+		// Then we go through the list of cutscenes, looking for the first instance that matches our desired level.
+		s32 levelDataIndex;	// <- this is the index into the cutscene list.
+		setLevelByIndex(levelIndex);
+		
+		// The inner most loop - this cycles through the cutscene entries, each of which lists the game mode.
+		// TFE: Again this becomes a game state, where each iteration through this loop is from a single function call into loopGame().
+		while (!s_invalidLevelIndex && !s_abortLevel)
+		{
+			GameMode mode = s_agentLevelData[levelDataIndex].nextGameMode;
+			switch (mode)
+			{
+				case GMODE_ERROR:
+					// Error out.
+				break;
+				case GMODE_CUTSCENE:
+					// TFE: Cutscene playback becomes a state.
+					// Play the cutscene
+					levelDataIndex++;	// <- next loop, this goes to the next cutscene or instruction.
+				break;
+				case GMODE_BRIEFING:
+					// TFE: Briefing becomes a state.
+					// Handle the mission briefing.
+					levelDataIndex++;	// <- next loop, this goes to the next cutscene or instruction.
+				break;
+				case GMODE_MISSION:
+					// TFE: In Mission becomes a state, but here the Task System will take up the slack (which will act very similarly to the original game).
+					// Create the loadMission task, which will then create the main task, etc.
+					// Start the level music.
+					// Read saved game data for this agent and this level.
+					// Launch the level load task.
+					// After returning from the level load task, stop the music.
+					// If not complete set abortLevel to true (which breaks out of this inner loop) otherwise
+
+					// Save the game state and level completion info to disk.
+					levelDataIndex++;	// <- next loop, this goes to the next cutscene or instruction.
+					levelIndex++;
+					setNextLevelByIndex(levelIndex);	// <- prepares the next level for when we get to it after the cutscenes and briefing.
+				break;
+			}
+		}  // Inner Loop
+	}  // Outer Loop
+	*/
 	void DarkForces::loopGame()
 	{
+
 	}
 
 	/////////////////////////////////////////////
@@ -271,6 +326,12 @@ namespace TFE_DarkForces
 		// STUB
 		// TODO in the following releases.
 		return nullptr;
+	}
+
+	void cutscenes_startup(s32 id)
+	{
+		// STUB
+		// TODO in the following releases.
 	}
 		
 	void loadAgentAndLevelData()

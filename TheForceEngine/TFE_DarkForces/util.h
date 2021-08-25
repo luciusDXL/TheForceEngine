@@ -10,4 +10,6 @@ namespace TFE_DarkForces
 {
 	char* copyAndAllocateString(const char* start, const char* end);
 	char* copyAndAllocateString(const char* str);
+
+	char* strCopyAndZero(char* dst, const char* src, s32 bufferSize);
 }  // TFE_DarkForces

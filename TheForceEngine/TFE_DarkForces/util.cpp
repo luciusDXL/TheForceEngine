@@ -21,4 +21,26 @@ namespace TFE_DarkForces
 
 		return outString;
 	}
+
+	char* strCopyAndZero(char* dst, const char* src, s32 bufferSize)
+	{
+		char* dstPtr = dst;
+		while (bufferSize > 0)
+		{
+			char ch = *src;
+			if (ch == 0) { break; }
+			bufferSize--;
+			*dst = ch;
+
+			src++;
+			dst++;
+		}
+		while (bufferSize)
+		{
+			bufferSize--;
+			*dst = 0;
+			dst++;
+		}
+		return dstPtr;
+	}
 }  // TFE_DarkForces

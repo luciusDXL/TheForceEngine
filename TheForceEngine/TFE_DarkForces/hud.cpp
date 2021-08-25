@@ -1,6 +1,7 @@
 #include "hud.h"
 #include "time.h"
 #include "gameMessage.h"
+#include "util.h"
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Level/rfont.h>
@@ -36,7 +37,14 @@ namespace TFE_DarkForces
 
 	static JBool s_screenDirtyLeft[4]  = { 0 };
 	static JBool s_screenDirtyRight[4] = { 0 };
+	static JBool s_basePaletteCopyMode = JFALSE;
+	static JBool s_updateHudColors = JFALSE;
 
+	static u8 s_basePalette[256 * 3];
+	static u8 s_tempBuffer[256 * 3];
+	static s32 s_hudColorCount = 8;
+	static s32 s_hudPaletteIndex = 24;
+	
 	static TextureData* s_hudStatusL  = nullptr;
 	static TextureData* s_hudStatusR  = nullptr;
 	static TextureData* s_hudLightOn  = nullptr;
@@ -57,9 +65,9 @@ namespace TFE_DarkForces
 	// Forward Declarations
 	///////////////////////////////////////////
 	GameMessage* hud_getMessage(GameMessages* messages, s32 msgId);
-	char* strCopyAndZero(char* dst, const char* src, s32 bufferSize);
 	TextureData* hud_loadTexture(const char* texFile);
 	Font* hud_loadFont(const char* fontFile);
+	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode);
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -135,6 +143,18 @@ namespace TFE_DarkForces
 			offscreenBuffer_drawTexture(s_cachedHudRight, s_hudStatusR, 0, 0);
 		}
 	}
+		
+	void hud_updateBasePalette(u8* srcBuffer, s32 offset, s32 count)
+	{
+		u8* dstBuffer = s_tempBuffer + offset * 3;
+		memcpy(dstBuffer, srcBuffer, count * 3);
+		copyIntoPalette(s_basePalette + (offset * 3), srcBuffer, count, s_basePaletteCopyMode);
+
+		s_hudPaletteIndex = offset;
+		s_hudColorCount = count;
+		s_updateHudColors = JTRUE;
+	}
+
 
 	///////////////////////////////////////////
 	// Internal Implementation
@@ -176,26 +196,9 @@ namespace TFE_DarkForces
 		}
 		return nullptr;
 	}
-
-	char* strCopyAndZero(char* dst, const char* src, s32 bufferSize)
+		
+	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode)
 	{
-		char* dstPtr = dst;
-		while (bufferSize > 0)
-		{
-			char ch = *src;
-			if (ch == 0) { break; }
-			bufferSize--;
-			*dst = ch;
-
-			src++;
-			dst++;
-		}
-		while (bufferSize)
-		{
-			bufferSize--;
-			*dst = 0;
-			dst++;
-		}
-		return dstPtr;
+		memcpy(dst, src, count * 3);
 	}
 }  // TFE_DarkForces
