@@ -36,7 +36,7 @@ namespace TFE_DarkForces
 		PROJ_EXP_BARREL,
 		PROJ_HOMING_MISSILE,
 		PROJ_PROBE_PROJ,
-		PROJ_18,
+		PROJ_BOBAFET_BALL,
 		PROJ_COUNT
 	};
 
@@ -95,6 +95,9 @@ namespace TFE_DarkForces
 		s32 ua0;
 		s32 ua4;
 	};
+
+	// Startup the projectile system.
+	void proj_startup();
 
 	// Create a new projectile.
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj);

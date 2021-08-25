@@ -4,6 +4,7 @@
 #include "hud.h"
 #include "item.h"
 #include "player.h"
+#include "projectile.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -213,6 +214,12 @@ namespace TFE_DarkForces
 			s_mapNumFont = font_load(&filePath);
 		}
 	}
+
+	void loadCutsceneList()
+	{
+		// STUBBED
+		// This will be handled when cutscenes are integrated.
+	}
 		
 	void gameStartup()
 	{
@@ -225,8 +232,8 @@ namespace TFE_DarkForces
 		player_init();
 		inf_loadDefaultSwitchSound();
 		actor_allocatePhysicsActorList();
-		//loadCutsceneList();
-		//loadProjectiles();
+		loadCutsceneList();
+		proj_startup();
 		//loadHitEffects();
 		//weaponStartup();
 

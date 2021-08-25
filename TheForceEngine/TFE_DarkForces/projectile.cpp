@@ -2,6 +2,8 @@
 #include "animLogic.h"
 #include "random.h"
 #include "player.h"
+#include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/InfSystem/message.h>
@@ -45,20 +47,20 @@ namespace TFE_DarkForces
 	static Wax*       s_cannonProj;
 	static Wax*       s_probeProj;
 	static Wax*       s_homingMissileProj;
-	static Wax*       s_proj18_wax;
+	static Wax*       s_bobafetBall;
 	static WaxFrame*  s_landmineWpnFrame;
 	static WaxFrame*  s_landmineFrame;
 	static WaxFrame*  s_thermalDetProj;
 
-	static SoundSourceID s_stdProjCameraSnd     = NULL_SOUND;
-	static SoundSourceID s_stdProjReflectSnd    = NULL_SOUND;
-	static SoundSourceID s_thermalDetReflectSnd = NULL_SOUND;
-	static SoundSourceID s_plasmaCameraSnd      = NULL_SOUND;
-	static SoundSourceID s_plasmaReflectSnd     = NULL_SOUND;
-	static SoundSourceID s_missileLoopingSnd    = NULL_SOUND;
-	static SoundSourceID s_landMineTriggerSnd   = NULL_SOUND;
-	static SoundSourceID s_proj18CameraSnd      = NULL_SOUND;
-	static SoundSourceID s_homingMissile_flightSnd = NULL_SOUND;
+	static SoundSourceID s_stdProjCameraSnd       = NULL_SOUND;
+	static SoundSourceID s_stdProjReflectSnd      = NULL_SOUND;
+	static SoundSourceID s_thermalDetReflectSnd   = NULL_SOUND;
+	static SoundSourceID s_plasmaCameraSnd        = NULL_SOUND;
+	static SoundSourceID s_plasmaReflectSnd       = NULL_SOUND;
+	static SoundSourceID s_missileLoopingSnd      = NULL_SOUND;
+	static SoundSourceID s_landMineTriggerSnd     = NULL_SOUND;
+	static SoundSourceID s_bobaBallCameraSnd      = NULL_SOUND;
+	static SoundSourceID s_homingMissileFlightSnd = NULL_SOUND;
 
 	static RSector*   s_projStartSector[16];
 	static RSector*   s_projPath[16];
@@ -99,6 +101,33 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// API Implementation
 	//////////////////////////////////////////////////////////////
+	void proj_startup()
+	{
+		s_boltModel         = TFE_Model_Jedi::get("wrbolt.3do");
+		s_thermalDetProj    = TFE_Sprite_Jedi::getFrame("wdet.fme");
+		s_repeaterProj      = TFE_Sprite_Jedi::getFrame("bullet.fme");
+		s_plasmaProj        = TFE_Sprite_Jedi::getWax("wemiss.wax");
+		s_mortarProj        = TFE_Sprite_Jedi::getWax("wshell.wax");
+		s_landmineWpnFrame  = TFE_Sprite_Jedi::getFrame("wmine.fme");
+		s_cannonProj        = TFE_Sprite_Jedi::getWax("wplasma.wax");
+		s_missileProj       = TFE_Sprite_Jedi::getWax("wmsl.wax");
+		s_landmineFrame     = TFE_Sprite_Jedi::getFrame("wlmine.fme");
+		s_greenBoltModel    = TFE_Model_Jedi::get("wgbolt.3do");
+		s_probeProj         = TFE_Sprite_Jedi::getWax("widball.wax");
+		s_homingMissileProj = TFE_Sprite_Jedi::getWax("wdt3msl.wax");
+		s_bobafetBall       = TFE_Sprite_Jedi::getWax("bobaball.wax");
+
+		s_stdProjReflectSnd      = sound_Load("boltref1.voc");
+		s_thermalDetReflectSnd   = sound_Load("thermal1.voc");
+		s_plasmaReflectSnd       = sound_Load("bigrefl1.voc");
+		s_stdProjCameraSnd       = sound_Load("lasrby.voc");
+		s_plasmaCameraSnd        = sound_Load("emisby.voc");
+		s_missileLoopingSnd      = sound_Load("rocket-1.voc");
+		s_homingMissileFlightSnd = sound_Load("tracker.voc");
+		s_bobaBallCameraSnd      = sound_Load("fireball.voc");
+		s_landMineTriggerSnd     = sound_Load("beep-10.voc");
+	}
+
 	// TODO: Move projectile data to an external file to avoid hardcoding it for TFE.
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj)
 	{
@@ -559,7 +588,7 @@ namespace TFE_DarkForces
 				projLogic->bounceCnt = 0;
 				projLogic->homingAngleSpd = 455;	// Starting homing rate = 10 degrees / second
 				projLogic->reflectEffectId = HEFFECT_NONE;
-				projLogic->flightSndSource = s_homingMissile_flightSnd;
+				projLogic->flightSndSource = s_homingMissileFlightSnd;
 				projLogic->hitEffectId = HEFFECT_MISSILE_EXP;
 				projLogic->duration = s_curTick + 1456;
 				projLogic->reflectSnd = 0;
@@ -596,17 +625,17 @@ namespace TFE_DarkForces
 				projLogic->cameraPassSnd = s_plasmaCameraSnd;
 				projLogic->reflectSnd = s_plasmaReflectSnd;
 			} break;
-			case PROJ_18:
+			case PROJ_BOBAFET_BALL:
 			{
-				if (s_proj18_wax)
+				if (s_bobafetBall)
 				{
-					sprite_setData(projObj, s_proj18_wax);
+					sprite_setData(projObj, s_bobafetBall);
 				}
 				// Setup the looping wax animation.
 				obj_setSpriteAnim(projObj);
 				projObj->worldWidth = 0;
 
-				projLogic->type = PROJ_18;
+				projLogic->type = PROJ_BOBAFET_BALL;
 				projLogic->updateFunc = stdProjectileUpdateFunc;
 				projLogic->dmg = 0;
 				projLogic->falloffAmt = 0;
@@ -619,7 +648,7 @@ namespace TFE_DarkForces
 				projLogic->reflectEffectId = HEFFECT_NONE;
 				projLogic->hitEffectId = HEFFECT_18;
 				projLogic->duration = s_curTick + 1456;
-				projLogic->cameraPassSnd = s_proj18CameraSnd;
+				projLogic->cameraPassSnd = s_bobaBallCameraSnd;
 			} break;
 		}
 
