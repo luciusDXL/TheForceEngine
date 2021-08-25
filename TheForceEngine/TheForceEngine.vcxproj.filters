@@ -604,6 +604,9 @@
     <ClInclude Include="TFE_Jedi\Level\roffscreenBuffer.h">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\actor.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -971,6 +974,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Level\roffscreenBuffer.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\actor.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

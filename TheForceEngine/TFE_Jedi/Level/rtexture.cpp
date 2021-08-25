@@ -58,7 +58,7 @@ namespace TFE_Jedi
 		}
 		size_t size = file.getSize();
 		s_buffer.resize(size);
-		file.readBuffer(s_buffer.data(), size);
+		file.readBuffer(s_buffer.data(), (u32)size);
 		file.close();
 
 		TextureData* texture = (TextureData*)malloc(sizeof(TextureData));

@@ -8,16 +8,6 @@
 
 namespace TFE_DarkForces
 {
-	struct ItemData
-	{
-		union
-		{
-			Wax* wax;
-			WaxFrame* frame;
-		};
-		JBool isWax;
-	};
-
 	enum ItemId
 	{
 		ITEM_PLANS = 0,			// 0x00
@@ -80,10 +70,20 @@ namespace TFE_DarkForces
 		ITYPE_SPECIAL  = 64, // Special - only a single item fits in this type (ITEM_PILE).
 	};
 
+	struct ItemData
+	{
+		union
+		{
+			Wax* wax;
+			WaxFrame* frame;
+		};
+		JBool isWax;
+	};
+
 	extern SoundSourceID s_powerupPickupSnd;
 	extern SoundSourceID s_invItemPickupSnd;
 	extern SoundSourceID s_wpnPickupSnd;
-	extern ItemData s_itemData[ITEM_COUNT];
+	extern ItemData      s_itemData[ITEM_COUNT];
 
-	void loadItemData();
+	void item_loadData();
 }  // TFE_DarkForces

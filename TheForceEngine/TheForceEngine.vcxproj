@@ -259,6 +259,7 @@
     <ClInclude Include="TFE_Audio\midiPlayer.h" />
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
+    <ClInclude Include="TFE_DarkForces\actor.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
     <ClInclude Include="TFE_DarkForces\config.h" />
     <ClInclude Include="TFE_DarkForces\darkForcesMain.h" />
@@ -410,6 +411,7 @@
     <ClCompile Include="TFE_Audio\midiPlayer.cpp" />
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
+    <ClCompile Include="TFE_DarkForces\actor.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\config.cpp" />
     <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp" />

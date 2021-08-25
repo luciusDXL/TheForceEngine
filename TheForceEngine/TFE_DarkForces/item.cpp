@@ -5,6 +5,9 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
+	///////////////////////////////////////////
+	// Constants
+	///////////////////////////////////////////
 	// TODO: Move into data file for TFE, rather than hardcoding here.
 	static const char* c_itemResoure[ITEM_COUNT] =
 	{
@@ -55,16 +58,22 @@ namespace TFE_DarkForces
 		"IPILE.FME",    // ITEM_PILE
 	};
 
+	///////////////////////////////////////////
+	// Shared State
+	///////////////////////////////////////////
 	SoundSourceID s_powerupPickupSnd;
 	SoundSourceID s_invItemPickupSnd;
 	SoundSourceID s_wpnPickupSnd;
-	ItemData s_itemData[ITEM_COUNT];
+	ItemData      s_itemData[ITEM_COUNT];
 	
-	void loadItemData()
+	///////////////////////////////////////////
+	// API Implementation
+	///////////////////////////////////////////
+	void item_loadData()
 	{
 		s_powerupPickupSnd = sound_Load("bonus.voc");
 		s_invItemPickupSnd = sound_Load("complete.voc");
-		s_wpnPickupSnd = sound_Load("key.voc");
+		s_wpnPickupSnd     = sound_Load("key.voc");
 
 		for (s32 i = 0; i < ITEM_COUNT; i++)
 		{
