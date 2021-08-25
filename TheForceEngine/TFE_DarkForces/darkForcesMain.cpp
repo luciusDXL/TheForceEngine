@@ -234,7 +234,7 @@ namespace TFE_DarkForces
 		actor_allocatePhysicsActorList();
 		loadCutsceneList();
 		proj_startup();
-		//loadHitEffects();
+		hitEffect_startup();
 		//weaponStartup();
 
 		FilePath filePath;
