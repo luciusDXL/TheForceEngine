@@ -77,6 +77,10 @@ namespace TFE_Jedi
 	// Move back to the asset system later.
 	bool loadINF(const char* levelName);
 
+	// Sounds
+	void inf_loadSounds();
+	void inf_loadDefaultSwitchSound();
+
 	InfElevator* inf_allocateSpecialElevator(RSector* sector, InfSpecialElevator type);
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);
 	void inf_sendSectorMessage(RSector* sector, MessageType msgType);

@@ -6,6 +6,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Jedi/Level/rfont.h>
+#include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <assert.h>
@@ -35,6 +36,7 @@ namespace TFE_DarkForces
 	static u8 s_loadingScreenPal[768];
 	static TextureData* s_loadScreen = nullptr;
 	static Font* s_swFont1 = nullptr;
+	static Font* s_mapNumFont = nullptr;
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -200,16 +202,25 @@ namespace TFE_DarkForces
 		}
 	}
 		
+	void loadMapNumFont()
+	{
+		FilePath filePath;
+		if (TFE_Paths::getFilePath("map-nums.fnt", &filePath))
+		{
+			s_mapNumFont = font_load(&filePath);
+		}
+	}
+		
 	void gameStartup()
 	{
 		hud_loadGraphics();
 		hud_loadGameMessages();
-		//loadMapNumFont();
-		//loadElevatorSounds();
+		loadMapNumFont();
+		inf_loadSounds();
 		//loadAgentSounds();
 		//loadItemData();
 		//initPlayer();
-		//loadDefaultSwitchSound();
+		inf_loadDefaultSwitchSound();
 		//allocatePhysicsActorList();
 		//loadCutsceneList();
 		//loadProjectiles();

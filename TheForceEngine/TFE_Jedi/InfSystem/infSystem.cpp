@@ -1316,6 +1316,24 @@ namespace TFE_Jedi
 
 		return true;
 	}
+
+	// Sounds
+	void inf_loadSounds()
+	{
+		s_moveCeilSound0  = sound_Load("door2-1.voc");
+		s_moveCeilSound1  = sound_Load("door2-2.voc");
+		s_moveCeilSound2  = sound_Load("door2-3.voc");
+		s_moveFloorSound0 = sound_Load("elev2-1.voc");
+		s_moveFloorSound1 = sound_Load("elev2-2.voc");
+		s_moveFloorSound2 = sound_Load("elev2-3.voc");
+		s_doorSound       = sound_Load("door.voc");
+		s_needKeySoundId  = sound_Load("locked-1.voc");
+	}
+
+	void inf_loadDefaultSwitchSound()
+	{
+		s_switchDefaultSndId = sound_Load("switch3.voc");
+	}
 			
 	// Per frame update.
 	void inf_updateElevators()
