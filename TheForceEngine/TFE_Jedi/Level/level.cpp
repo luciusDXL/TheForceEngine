@@ -1,12 +1,12 @@
 #include "level.h"
 #include "rwall.h"
 #include "rtexture.h"
-#include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Asset/vocAsset.h>
+#include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
@@ -43,7 +43,6 @@ namespace TFE_Jedi
 
 	static char s_readBuffer[256];
 	static std::vector<char> s_buffer;
-	static const char* c_defaultGob = "DARK.GOB";
 	
 	u32 s_sectorCount = 0;
 	RSector* s_completeSector = nullptr;
@@ -69,13 +68,22 @@ namespace TFE_Jedi
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".LEV");
 
-		char gobPath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_SOURCE_DATA, c_defaultGob, gobPath);
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, levelName, s_buffer))
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(levelPath, &filePath))
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level '%s', path '%s'.", levelName, gobPath);
+			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot find level geometry '%s'.", levelName);
 			return false;
 		}
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level geometry '%s'.", levelName);
+			return false;
+		}
+		size_t len = file.getSize();
+		s_buffer.resize(len);
+		file.readBuffer(s_buffer.data(), u32(len));
+		file.close();
 
 		TFE_Parser parser;
 		size_t bufferPos = 0;
@@ -144,7 +152,6 @@ namespace TFE_Jedi
 
 		// Load Textures.
 		TextureData** texture = s_textures;
-		FilePath filePath;
 		for (s32 i = 0; i < s_textureCount; i++, texture++)
 		{
 			line = parser.readLine(bufferPos);
@@ -506,13 +513,22 @@ namespace TFE_Jedi
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".O");
 
-		char gobPath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_SOURCE_DATA, c_defaultGob, gobPath);
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, levelName, s_buffer))
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(levelPath, &filePath))
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level '%s', path '%s'.", levelName, gobPath);
+			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot find level objects '%s'.", levelName);
 			return false;
 		}
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level objects '%s'.", levelName);
+			return false;
+		}
+		size_t len = file.getSize();
+		s_buffer.resize(len);
+		file.readBuffer(s_buffer.data(), u32(len));
+		file.close();
 
 		TFE_Parser parser;
 		size_t bufferPos = 0;

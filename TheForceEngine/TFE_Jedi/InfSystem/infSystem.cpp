@@ -1,8 +1,8 @@
 #include "infSystem.h"
 #include "message.h"
-#include <TFE_Archive/archive.h>
-#include <TFE_Asset/assetSystem.h>
 #include <TFE_Asset/dfKeywords.h>
+#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/paths.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
@@ -30,7 +30,6 @@ namespace TFE_Jedi
 	#define MAX_INF_ITEMS 512
 
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
-	static const char* c_defaultGob = "DARK.GOB";
 
 	// These need to be filled out somewhere.
 	static SoundSourceID s_moveCeilSound0 = NULL_SOUND;
@@ -1143,13 +1142,22 @@ namespace TFE_Jedi
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".INF");
 
-		char gobPath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_SOURCE_DATA, c_defaultGob, gobPath);
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, levelName, s_buffer))
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(levelPath, &filePath))
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot open level INF '%s', path '%s'.", levelName, gobPath);
+			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot find level INF '%s'.", levelPath);
 			return false;
 		}
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot open level INF '%s'.", levelPath);
+			return false;
+		}
+		size_t len = file.getSize();
+		s_buffer.resize(len);
+		file.readBuffer(s_buffer.data(), u32(len));
+		file.close();
 
 		TFE_Parser parser;
 		size_t bufferPos = 0;
