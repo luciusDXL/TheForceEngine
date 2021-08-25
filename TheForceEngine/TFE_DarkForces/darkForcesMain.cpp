@@ -3,6 +3,7 @@
 #include "gameMessage.h"
 #include "hud.h"
 #include "item.h"
+#include "player.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -221,7 +222,7 @@ namespace TFE_DarkForces
 		inf_loadSounds();
 		actor_loadSounds();
 		item_loadData();
-		//initPlayer();
+		player_init();
 		inf_loadDefaultSwitchSound();
 		//allocatePhysicsActorList();
 		//loadCutsceneList();

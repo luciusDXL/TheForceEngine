@@ -17,7 +17,6 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Internal State
 	//////////////////////////////////////////////////////////////
-	SoundSourceID s_invCountdownSound = 0;
 	SoundSourceID s_superchargeCountdownSound = 0;
 	
 	u32 s_pickupFlags = 0;
@@ -31,7 +30,6 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////
-	s32 pickup_addToValue(s32 curValue, s32 amountToAdd, s32 maxAmount);
 	void pickupInvincibility();
 	void pickupSupercharge();
 	void pickupInventory();
@@ -149,7 +147,7 @@ namespace TFE_DarkForces
 						{
 							*taskCtx->pickup->item = JTRUE;
 							hud_sendTextMessage(taskCtx->pickup->msgId[0]);
-							s_playerInfo.currentWeapon = taskCtx->pickup->index;
+							s_playerInfo.selectedWeapon = taskCtx->pickup->index;
 						}
 					}
 					else
@@ -707,13 +705,10 @@ namespace TFE_DarkForces
 		// In the case of picking up the item, the value is then set to 200 after the function call.
 		s_playerInfo.shields = 100;
 		s_playerInfo.health = 100;
-		s_playerInfo.showHit = 0;
+		s_playerInfo.healthFract = 0;
 		s_pickupFlags = 0;
 	}
 
-	//////////////////////////////////////////////////////////////
-	// Internal Implementation
-	//////////////////////////////////////////////////////////////
 	s32 pickup_addToValue(s32 curValue, s32 amountToAdd, s32 maxAmount)
 	{
 		s32 newValue = curValue + amountToAdd;
@@ -727,6 +722,10 @@ namespace TFE_DarkForces
 		}
 		return newValue;
 	}
+
+	//////////////////////////////////////////////////////////////
+	// Internal Implementation
+	//////////////////////////////////////////////////////////////
 
 	void invincibilityTaskFunc(s32 id)
 	{
@@ -824,17 +823,17 @@ namespace TFE_DarkForces
 
 		// Clear out the nava card item since it is one of the current objectives.
 		s_playerInfo.itemNava = JFALSE;
-		if (s_playerInfo.index1 != s_playerInfo.index0)
+		if (s_playerInfo.maxWeapon != s_playerInfo.curWeapon)
 		{
 			if (s_uTask)
 			{
-				s_msgArg1 = s_playerInfo.index1;
+				s_msgArg1 = s_playerInfo.maxWeapon;
 				runTask(s_uTask, 2);
-				s_playerInfo.index1 = max(s_playerInfo.index0, s_playerInfo.index1);
+				s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
 			}
 			else
 			{
-				s_playerInfo.index2 = s_playerInfo.index1;
+				s_playerInfo.index2 = s_playerInfo.maxWeapon;
 			}
 		}
 

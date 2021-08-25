@@ -8,6 +8,7 @@
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
 
 namespace TFE_DarkForces
 {
@@ -56,12 +57,11 @@ namespace TFE_DarkForces
 		s32 stateUnknown;
 		s32 shields;
 		s32 health;
-		s32 showHit;
+		s32 healthFract;
 		//   Weapon
-		s32 currentWeapon;
-		//   Other
-		s32 index0;
-		s32 index1;
+		s32 selectedWeapon;
+		s32 curWeapon;
+		s32 maxWeapon;
 		s32 index2;
 	};
 
@@ -91,4 +91,22 @@ namespace TFE_DarkForces
 
 	extern SecObject* s_playerObject;
 	extern SecObject* s_playerEye;
+
+	// Sounds
+	extern SoundSourceID s_landSplashSound;
+	extern SoundSourceID s_landSolidSound;
+	extern SoundSourceID s_gasDamageSoundSource;
+	extern SoundSourceID s_maskSoundSource1;
+	extern SoundSourceID s_maskSoundSource2;
+	extern SoundSourceID s_invCountdownSound;
+	extern SoundSourceID s_jumpSoundSource;
+	extern SoundSourceID s_nightVisionActiveSoundSource;
+	extern SoundSourceID s_nightVisionDeactiveSoundSource;
+	extern SoundSourceID s_playerDeathSoundSource;
+	extern SoundSourceID s_crushSoundSource;
+	extern SoundSourceID s_playerHealthHitSoundSource;
+	extern SoundSourceID s_kyleScreamSoundSource;
+	extern SoundSourceID s_playerShieldHitSoundSource;
+
+	void player_init();
 }  // namespace TFE_DarkForces
