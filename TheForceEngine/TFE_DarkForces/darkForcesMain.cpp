@@ -42,6 +42,7 @@ namespace TFE_DarkForces
 	static TextureData* s_loadScreen = nullptr;
 	static Font* s_swFont1 = nullptr;
 	static Font* s_mapNumFont = nullptr;
+	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -71,6 +72,7 @@ namespace TFE_DarkForces
 		TFE_Jedi::setTaskDefaults();
 		TFE_Jedi::setupInitCameraAndLights();
 		gameStartup();
+		// loadAgentAndLevelData();
 
 		return true;
 	}
@@ -242,8 +244,8 @@ namespace TFE_DarkForces
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);
 		s_swFont1 = font_load(&filePath);
 
-		//setVisionEffect(0);
-		//setupHeadlamp(s_actionEnableFlatShading, s_headlampActive);
+		renderer_setVisionEffect(0);
+		renderer_setupCameraLight(JFALSE, JFALSE);
 
 		if (TFE_Paths::getFilePath("wait.bm", &filePath))
 		{
@@ -253,8 +255,9 @@ namespace TFE_DarkForces
 		{
 			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
 		}
-		//enableAutomount(s_config.wpnAutoMount);
-		//s_screenShotSndSrc = sound_Load("scrshot.voc");
-		//setSoundEffectVolume(s_screenShotSndSrc, 127);
+
+		weapon_enableAutomount(JFALSE);	// TODO: This should come from the config file, with things like key bindings, etc.
+		s_screenShotSndSrc = sound_Load("scrshot.voc");
+		setSoundSourceVolume(s_screenShotSndSrc, 127);
 	}
 }

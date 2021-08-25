@@ -37,6 +37,11 @@ namespace RClassic_Fixed
 	
 	void computeSkyOffsets();
 
+	void setVisionEffect(s32 effect)
+	{
+		s_visionEffect = effect;
+	}
+
 	void transformPointByCamera(vec3_fixed* worldPoint, vec3_fixed* viewPoint)
 	{
 		viewPoint->x = mul16(worldPoint->x, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->z, RClassic_Fixed::s_sinYaw_Fixed) + RClassic_Fixed::s_xCameraTrans_Fixed;

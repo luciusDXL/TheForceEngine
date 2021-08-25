@@ -57,6 +57,9 @@ namespace TFE_Jedi
 	// Set the current resolution to render, this may involve regenerating lookup-tables, depending on the sub-renderer.
 	void setResolution(s32 width, s32 height);
 
+	void renderer_setVisionEffect(s32 effect);
+	void renderer_setupCameraLight(JBool flatShading, JBool headlamp);
+
 	// 2D
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
 }

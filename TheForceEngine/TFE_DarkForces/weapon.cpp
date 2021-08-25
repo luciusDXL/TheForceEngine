@@ -338,6 +338,11 @@ namespace TFE_DarkForces
 		s_curPlayerWeapon = &s_playerWeaponList[WPN_PISTOL];
 	}
 
+	void weapon_enableAutomount(JBool enable)
+	{
+		s_weaponAutoMount2 = enable;
+	}
+
 	///////////////////////////////////////////
 	// Internal Implementation
 	///////////////////////////////////////////

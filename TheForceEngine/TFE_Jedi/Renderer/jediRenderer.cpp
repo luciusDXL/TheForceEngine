@@ -123,6 +123,11 @@ namespace TFE_Jedi
 		TFE_Console::addToHistory(c_subRenderers[s_subRenderer]);
 	}
 
+	void renderer_setVisionEffect(s32 effect)
+	{
+		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setVisionEffect(effect); }
+	}
+
 	void setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
 	{
 		// HACK:
@@ -163,6 +168,12 @@ namespace TFE_Jedi
 		s_cameraLightSource = cameraLightSource ? -1 : 0;
 
 		s_drawFrame++;
+	}
+
+	void renderer_setupCameraLight(JBool flatShading, JBool headlamp)
+	{
+		s_enableFlatShading = flatShading;
+		s_cameraLightSource = headlamp;
 	}
 
 	void draw(u8* display, const ColorMap* colormap)
