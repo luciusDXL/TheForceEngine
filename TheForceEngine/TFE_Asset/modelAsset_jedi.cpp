@@ -1,7 +1,8 @@
 #include "modelAsset_jedi.h"
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>
-#include <TFE_Archive/archive.h>
+#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
 
 #include <TFE_Jedi/Math/core_math.h>
@@ -125,7 +126,6 @@ namespace TFE_Model_Jedi
 	typedef std::map<std::string, JediModel*> ModelMap;
 	static ModelMap s_models;
 	static std::vector<char> s_buffer;
-	static const char* c_defaultGob = "DARK.GOB";
 
 	static vec2 s_tmpVtx[MAX_VERTEX_COUNT_3DO];
 
@@ -139,11 +139,21 @@ namespace TFE_Model_Jedi
 			return iModel->second;
 		}
 
-		// It doesn't exist yet, try to load the font.
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, name, s_buffer))
+		// It doesn't exist yet, try to load the model.
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(name, &filePath))
 		{
 			return nullptr;
 		}
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			return nullptr;
+		}
+		size_t len = file.getSize();
+		s_buffer.resize(len);
+		file.readBuffer(s_buffer.data(), u32(len));
+		file.close();
 
 		JediModel* model = new JediModel;
 

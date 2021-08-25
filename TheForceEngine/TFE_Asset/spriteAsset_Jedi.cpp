@@ -1,7 +1,8 @@
 #include "spriteAsset_Jedi.h"
 #include <TFE_System/system.h>
+#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/assetSystem.h>
-#include <TFE_Archive/archive.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/robject.h>
 // TODO: dependency on JediRenderer, this should be refactored...
@@ -23,7 +24,6 @@ namespace TFE_Sprite_Jedi
 	static FrameMap  s_frames;
 	static SpriteMap s_sprites;
 	static std::vector<u8> s_buffer;
-	static const char* c_defaultGob = "SPRITES.GOB";
 		
 	JediFrame* getFrame(const char* name)
 	{
@@ -34,10 +34,20 @@ namespace TFE_Sprite_Jedi
 		}
 
 		// It doesn't exist yet, try to load the frame.
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, name, s_buffer))
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(name, &filePath))
 		{
 			return nullptr;
 		}
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			return nullptr;
+		}
+		size_t len = file.getSize();
+		s_buffer.resize(len);
+		file.readBuffer(s_buffer.data(), u32(len));
+		file.close();
 
 		const u8* data = s_buffer.data();
 
@@ -111,10 +121,20 @@ namespace TFE_Sprite_Jedi
 		}
 
 		// It doesn't exist yet, try to load the frame.
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, name, s_buffer))
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(name, &filePath))
 		{
 			return nullptr;
 		}
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			return nullptr;
+		}
+		size_t len = file.getSize();
+		s_buffer.resize(len);
+		file.readBuffer(s_buffer.data(), u32(len));
+		file.close();
 
 		const u8* data = s_buffer.data();
 		const Wax* srcWax = (Wax*)data;
