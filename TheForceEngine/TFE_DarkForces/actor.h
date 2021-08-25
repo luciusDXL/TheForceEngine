@@ -8,4 +8,5 @@
 namespace TFE_DarkForces
 {
 	void actor_loadSounds();
+	void actor_allocatePhysicsActorList();
 }  // namespace TFE_DarkForces

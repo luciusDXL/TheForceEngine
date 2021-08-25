@@ -1,7 +1,9 @@
 #include "actor.h"
 #include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_Memory/list.h>
 
 using namespace TFE_Jedi;
+using namespace TFE_Memory;
 
 namespace TFE_DarkForces
 {
@@ -57,6 +59,7 @@ namespace TFE_DarkForces
 	static SoundSourceID s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
 	static SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];
 	static SoundSourceID s_agentSndSrc[AGENTSND_COUNT];
+	static List* s_physicsActors;
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -108,5 +111,10 @@ namespace TFE_DarkForces
 		s_agentSndSrc[AGENTSND_TINY_EXPLOSION]  = sound_Load("ex-tiny1.voc");
 
 		setSoundSourceVolume(s_agentSndSrc[AGENTSND_REMOTE_2], 40);
+	}
+
+	void actor_allocatePhysicsActorList()
+	{
+		s_physicsActors = list_allocate(sizeof(void*), 80);
 	}
 }  // namespace TFE_DarkForces

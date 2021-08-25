@@ -224,7 +224,7 @@ namespace TFE_DarkForces
 		item_loadData();
 		player_init();
 		inf_loadDefaultSwitchSound();
-		//allocatePhysicsActorList();
+		actor_allocatePhysicsActorList();
 		//loadCutsceneList();
 		//loadProjectiles();
 		//loadHitEffects();
