@@ -1,4 +1,5 @@
 #include "darkForcesMain.h"
+#include "actor.h"
 #include "gameMessage.h"
 #include "hud.h"
 #include <TFE_System/system.h>
@@ -217,7 +218,7 @@ namespace TFE_DarkForces
 		hud_loadGameMessages();
 		loadMapNumFont();
 		inf_loadSounds();
-		//loadAgentSounds();
+		actor_loadSounds();
 		//loadItemData();
 		//initPlayer();
 		inf_loadDefaultSwitchSound();
