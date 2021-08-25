@@ -100,7 +100,7 @@ namespace TFE_DarkForces
 		TFE_Paths::clearLocalArchives();
 	}
 
-	/* The basic structure of the Dark Forces main loop is as follows:
+	/**********The basic structure of the Dark Forces main loop is as follows:***************
 	while (1)  // <- This will be replaced by the function call from the main TFE loop.
 	{
 		// TFE: This becomes a game state in TFE - where runAgentMenu() gets an update function - it can't loop forever.
@@ -112,6 +112,15 @@ namespace TFE_DarkForces
 
 		// Then we go through the list of cutscenes, looking for the first instance that matches our desired level.
 		s32 levelDataIndex;	// <- this is the index into the cutscene list.
+		for (s32 i = 0; ; i++)
+		{
+			if (cutsceneData[i].levelIndex >= 0 && s_agentLevelData[n].levelIndex == levelIndex)
+			{
+				levelDataIndex = i;
+				break;
+			}
+		}
+		// Then do some init setup for the next level ahead of time; the actual loading will happen after the cutscenes and mission briefing.
 		setLevelByIndex(levelIndex);
 		
 		// The inner most loop - this cycles through the cutscene entries, each of which lists the game mode.
@@ -151,7 +160,7 @@ namespace TFE_DarkForces
 			}
 		}  // Inner Loop
 	}  // Outer Loop
-	*/
+	****************************************************/
 	void DarkForces::loopGame()
 	{
 
