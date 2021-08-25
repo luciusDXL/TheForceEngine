@@ -151,9 +151,6 @@
     <ClInclude Include="Resource.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="stdafx.h">
-      <Filter>Source</Filter>
-    </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Source</Filter>
     </ClInclude>
@@ -622,9 +619,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="glew\src\glew.c">
