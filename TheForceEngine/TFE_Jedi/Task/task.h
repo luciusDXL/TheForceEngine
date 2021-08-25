@@ -46,6 +46,8 @@ namespace TFE_Jedi
 	void runTasks();
 	void setTaskDefaults();
 
+	s32 task_getCount();
+
 	// Methods to request system exit.
 	void postSystemExitRequest();
 	bool systemExitRequested();

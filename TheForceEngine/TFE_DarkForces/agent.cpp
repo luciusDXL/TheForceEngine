@@ -40,7 +40,7 @@ namespace TFE_DarkForces
 	};
 #pragma pack(pop)
 
-	static AgentData s_agentData[AGENT_COUNT];
+	static AgentData s_agentData[MAX_AGENT_COUNT];
 	static s32 s_maxLevelIndex;
 	static char** s_levelDisplayNames;
 	static char** s_levelGamePaths;

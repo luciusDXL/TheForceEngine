@@ -239,6 +239,11 @@ namespace TFE_Jedi
 		s_taskIter = &s_rootTask;
 	}
 
+	s32 task_getCount()
+	{
+		return 0;
+	}
+
 	// Methods to request system exit.
 	void postSystemExitRequest()
 	{

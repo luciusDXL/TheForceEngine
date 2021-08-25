@@ -15,6 +15,7 @@
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_Jedi/Task/task.h>
 #include <assert.h>
 
 namespace TFE_DarkForces
@@ -29,6 +30,51 @@ namespace TFE_DarkForces
 		"TEXTURES.GOB",
 		"SPRITES.GOB",
 	};
+	   
+	enum GameState
+	{
+		GSTATE_STARTUP_CUTSCENES = 0,
+		GSTATE_AGENT_MENU,
+		GSTATE_CUTSCENE,
+		GSTATE_BRIEFING,
+		GSTATE_MISSION,
+		GSTATE_COUNT
+	};
+
+	enum GameMode
+	{
+		GMODE_ERROR = -1,
+		GMODE_CUTSCENE = 0,
+		GMODE_BRIEFING = 1,
+		GMODE_MISSION = 2,
+	};
+
+	struct CutsceneData
+	{
+		s32 levelIndex;
+		GameMode nextGameMode;
+		s32 cutscene;
+	};
+		
+	// For this release, cutscenes and mission briefings are not supported - so just hack together the cutscene list.
+	// This is normally read from disk and controls the flow between missions.
+	static CutsceneData s_cutsceneData[] =
+	{
+		{1,  GMODE_MISSION, 0},
+		{2,  GMODE_MISSION, 0},
+		{3,  GMODE_MISSION, 0},
+		{4,  GMODE_MISSION, 0},
+		{5,  GMODE_MISSION, 0},
+		{6,  GMODE_MISSION, 0},
+		{7,  GMODE_MISSION, 0},
+		{8,  GMODE_MISSION, 0},
+		{9,  GMODE_MISSION, 0},
+		{10, GMODE_MISSION, 0},
+		{11, GMODE_MISSION, 0},
+		{12, GMODE_MISSION, 0},
+		{13, GMODE_MISSION, 0},
+		{14, GMODE_MISSION, 0}
+	};
 
 	/////////////////////////////////////////////
 	// Internal State
@@ -37,6 +83,7 @@ namespace TFE_DarkForces
 	static JBool s_localMsgLoaded = JFALSE;
 	static JBool s_useJediPath = JFALSE;
 	static JBool s_hudModeStd = JTRUE;
+	static JBool s_invalidLevelIndex;
 	static const char* s_launchLevelName = nullptr;
 	static GameMessages s_localMessages;
 	static GameMessages s_hotKeyMessages;
@@ -48,6 +95,11 @@ namespace TFE_DarkForces
 	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
 	static void* s_briefingList;	// STUBBED - to be replaced by the real structure.
 
+	static GameState s_state = GSTATE_STARTUP_CUTSCENES;
+	static s32 s_levelIndex;
+	static s32 s_cutsceneIndex;
+	static JBool s_abortLevel;
+		
 	/////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////
@@ -61,6 +113,7 @@ namespace TFE_DarkForces
 	void gameStartup();
 	void loadAgentAndLevelData();
 	void cutscenes_startup(s32 id);
+	void startNextMode();
 
 	/////////////////////////////////////////////
 	// API
@@ -79,8 +132,7 @@ namespace TFE_DarkForces
 		TFE_Jedi::setupInitCameraAndLights();
 		gameStartup();
 		loadAgentAndLevelData();
-		cutscenes_startup(10);
-
+		
 		return true;
 	}
 
@@ -163,13 +215,125 @@ namespace TFE_DarkForces
 	****************************************************/
 	void DarkForces::loopGame()
 	{
+		switch (s_state)
+		{
+			case GSTATE_STARTUP_CUTSCENES:
+			{
+				cutscenes_startup(10);
+				s_invalidLevelIndex = JFALSE;
+			} break;
+			case GSTATE_AGENT_MENU:
+			{
+				//if (!agentMenu_update(&s_levelIndex))
+				{
+					//agent_updateSavedData();
+				
+					s_invalidLevelIndex = JTRUE;
+					for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
+					{
+						if (s_cutsceneData[i].levelIndex >= 0 && s_cutsceneData[i].levelIndex == s_levelIndex)
+						{
+							s_cutsceneIndex = i;
+							s_invalidLevelIndex = JFALSE;
+							break;
+						}
+					}
 
+					s_abortLevel = JFALSE;
+					//setNextLevelByIndex(s_levelIndex);
+					startNextMode();
+				}
+			} break;
+			case GSTATE_CUTSCENE:
+			{
+				// STUB
+				startNextMode();
+			} break;
+			case GSTATE_BRIEFING:
+			{
+				// STUB
+				startNextMode();
+			} break;
+			case GSTATE_MISSION:
+			{
+				// At this point the mission has already been launched.
+				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
+				if (!task_getCount())
+				{
+					// We have returned from the mission tasks.
+					// disableLevelMusic();
+
+					//if (!s_levelComplete)
+					//{
+					//	s_abortLevel = JTRUE;
+					//}
+					//else
+					//{
+					//	s_cutsceneIndex++;
+					//	s32 completedLevelIndex = level_getIndex();
+					//	u8 diff = level_getDifficulty();
+
+						// Save the level completion, inventory and other stats into the agent data and then save to disk.
+					//	agent_saveLevelCompletion(diff, completedLevelIndex);
+					//	agent_updateSavedData();
+					//	agent_saveInventory(s_agentId, completedLevelIndex + 1);
+					//	setNextLevelByIndex(completedLevelIndex + 1);
+					//}
+
+					startNextMode();
+				}
+			} break;
+		}
+	}
+
+	void startNextMode()
+	{
+		if (s_invalidLevelIndex || s_abortLevel)
+		{
+			s_state = GSTATE_AGENT_MENU;
+			return;
+		}
+
+		GameMode mode = s_cutsceneData[s_cutsceneIndex].nextGameMode;
+		switch (mode)
+		{
+			case GMODE_ERROR:
+			{
+				// STUB
+				// Error Handling.
+			} break;
+			case GMODE_CUTSCENE:
+			{
+				// STUB
+				// cutscenes_startup(s_cutsceneData[s_cutsceneIndex].cutscene);
+				// This will also change s_state -> GSTATE_CUTSCENE
+			} break;
+			case GMODE_BRIEFING:
+			{
+				// STUB
+				// This will also change s_state -> GSTATE_BRIEFING
+			}  break;
+			case GMODE_MISSION:
+			{
+				// s_loadMissionTask = pushTask(loadMission);
+
+				// disableLevelMusic();
+				// s32 levelIndex = getLevelIndex();
+				// startLevelMusic(levelIndex);
+
+				// s_levelComplete = JFALSE;
+				// readSavedDataForLevel(s_agentId, levelIndex);
+
+				// launchCurrentTask();
+
+				s_state = GSTATE_MISSION;
+			}
+		}
 	}
 
 	/////////////////////////////////////////////
 	// Internal Implementation
 	/////////////////////////////////////////////
-
 	void printGameInfo()
 	{
 		TFE_System::logWrite(LOG_MSG, "Game", "Dark Forces Version: %d.%d (Build %d)", 1, 0, 1);
@@ -341,6 +505,8 @@ namespace TFE_DarkForces
 	{
 		// STUB
 		// TODO in the following releases.
+
+		s_state = GSTATE_AGENT_MENU;
 	}
 		
 	void loadAgentAndLevelData()
