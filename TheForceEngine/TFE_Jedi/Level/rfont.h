@@ -4,7 +4,7 @@
 // Dark Forces Derived Renderer - Wall functions
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_Memory/allocator.h>
+#include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_DarkForces/time.h>
 

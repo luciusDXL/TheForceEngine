@@ -1,9 +1,8 @@
 #include "animLogic.h"
 #include "time.h"
-#include <TFE_Memory/allocator.h>
+#include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/InfSystem/message.h>
 
-using namespace TFE_Memory;
 using namespace TFE_Jedi;
 
 namespace TFE_DarkForces

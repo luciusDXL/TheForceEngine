@@ -1,11 +1,5 @@
 #include "allocator.h"
 #include <TFE_System/system.h>
-#include <TFE_System/memoryPool.h>
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <algorithm>
 
 struct AllocHeader
 {
@@ -25,13 +19,8 @@ struct Allocator
 	s32* u1c;
 };
 
-namespace TFE_Memory
+namespace TFE_Jedi
 {
-	// TODO: Use the "zone" allocator (memoryPool) for INF instead of allocating from the HEAP.
-	// TODO: Replace the original DOS implementation with one a bit more modern memory friendly, this is basically the original DF code
-	// verbatim with minor messaging to work in 32 or 64 bit.
-	// This is just to get things working initially.
-
 	// Note that the invalid pointer value is chosen such that
 	// InvalidPointer + sizeof(AllocHeader) = 0 = null
 	// This is hardcoded in DF, here I calculate it based off of size_t so that it works for both 32-bit and 64-bit code.

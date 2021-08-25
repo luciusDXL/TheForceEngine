@@ -1,5 +1,5 @@
 #include "message.h"
-#include <TFE_Memory/allocator.h>
+#include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -8,8 +8,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <algorithm>
-
-using namespace TFE_Memory;
 
 namespace TFE_Jedi
 {

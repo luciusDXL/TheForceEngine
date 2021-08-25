@@ -1,8 +1,6 @@
 #include "robject.h"
 #include "level.h"
-#include <TFE_Memory/allocator.h>
-
-using namespace TFE_Memory;
+#include <TFE_Jedi/Memory/allocator.h>
 
 namespace TFE_Jedi
 {

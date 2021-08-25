@@ -143,6 +143,9 @@
     <Filter Include="Source\TFE_Jedi\Math">
       <UniqueIdentifier>{6fcba03c-28ba-43ab-992f-f5a306cd2f6a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Jedi\Memory">
+      <UniqueIdentifier>{10c17c68-b042-45f9-907c-f3419e286e13}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -427,9 +430,6 @@
     <ClInclude Include="TFE_DarkForces\logic.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Memory\allocator.h">
-      <Filter>Source\TFE_Memory</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\time.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
@@ -604,9 +604,6 @@
     <ClInclude Include="TFE_DarkForces\actor.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Memory\list.h">
-      <Filter>Source\TFE_Memory</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\weapon.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
@@ -615,6 +612,12 @@
     </ClInclude>
     <ClInclude Include="TFE_DarkForces\util.h">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Memory\list.h">
+      <Filter>Source\TFE_Jedi\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Memory\allocator.h">
+      <Filter>Source\TFE_Jedi\Memory</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -840,9 +843,6 @@
     <ClCompile Include="TFE_DarkForces\logic.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Memory\allocator.cpp">
-      <Filter>Source\TFE_Memory</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_DarkForces\time.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
@@ -984,9 +984,6 @@
     <ClCompile Include="TFE_DarkForces\actor.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Memory\list.cpp">
-      <Filter>Source\TFE_Memory</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_DarkForces\weapon.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
@@ -995,6 +992,12 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\util.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Memory\allocator.cpp">
+      <Filter>Source\TFE_Jedi\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Memory\list.cpp">
+      <Filter>Source\TFE_Jedi\Memory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

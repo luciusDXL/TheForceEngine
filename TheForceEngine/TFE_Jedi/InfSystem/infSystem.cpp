@@ -6,7 +6,7 @@
 #include <TFE_DarkForces/hud.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
-#include <TFE_Memory/allocator.h>
+#include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
@@ -23,7 +23,6 @@
 //using namespace TFE_GameConstants;
 using namespace TFE_Jedi;
 using namespace TFE_DarkForces;
-using namespace TFE_Memory;
 
 namespace TFE_Jedi
 {

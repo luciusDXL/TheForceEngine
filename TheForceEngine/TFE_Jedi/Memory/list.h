@@ -17,7 +17,7 @@ struct List
 	s32 capacity;
 };
 
-namespace TFE_Memory
+namespace TFE_Jedi
 {
 	u8* list_getNext(List* list);
 	u8* list_getHead(List* list);

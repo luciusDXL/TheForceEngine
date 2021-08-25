@@ -1,8 +1,7 @@
 #include "logic.h"
 #include <TFE_Jedi/Level/robject.h>
-#include <TFE_Memory/allocator.h>
+#include <TFE_Jedi/Memory/allocator.h>
 
-using namespace TFE_Memory;
 using namespace TFE_Jedi;
 
 namespace TFE_DarkForces

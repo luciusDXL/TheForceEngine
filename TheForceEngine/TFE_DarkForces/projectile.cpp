@@ -10,10 +10,9 @@
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rwall.h>
-#include <TFE_Memory/allocator.h>
+#include <TFE_Jedi/Memory/allocator.h>
 
 using namespace TFE_Jedi;
-using namespace TFE_Memory;
 
 namespace TFE_DarkForces
 {

@@ -5,7 +5,6 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 
-using namespace TFE_Memory;
 using namespace TFE_DarkForces;
 
 namespace TFE_Jedi

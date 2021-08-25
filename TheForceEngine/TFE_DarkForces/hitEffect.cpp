@@ -5,12 +5,11 @@
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/robject.h>
-#include <TFE_Memory/allocator.h>
+#include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
 
 using namespace TFE_Jedi;
-using namespace TFE_Memory;
 
 namespace TFE_DarkForces
 {

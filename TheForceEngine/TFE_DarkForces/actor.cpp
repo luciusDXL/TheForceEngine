@@ -1,9 +1,8 @@
 #include "actor.h"
 #include <TFE_Jedi/Sound/soundSystem.h>
-#include <TFE_Memory/list.h>
+#include <TFE_Jedi/Memory/list.h>
 
 using namespace TFE_Jedi;
-using namespace TFE_Memory;
 
 namespace TFE_DarkForces
 {

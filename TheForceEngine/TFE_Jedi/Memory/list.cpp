@@ -1,6 +1,6 @@
 #include "list.h"
 
-namespace TFE_Memory
+namespace TFE_Jedi
 {
 	void initializeList(List* list);
 
