@@ -24,7 +24,7 @@ namespace TFE_Font
 	};
 	#pragma pack(pop)
 
-	typedef std::map<std::string, Font*> FontMap;
+	typedef std::map<std::string, FontTFE*> FontMap;
 	static FontMap s_fonts;
 	static std::vector<u8> s_buffer;
 	static const char* c_defaultGob = "DARK.GOB";
@@ -37,7 +37,7 @@ namespace TFE_Font
 		float v[2];
 	};
 
-	Font* get(const char* name)
+	FontTFE* get(const char* name)
 	{
 		FontMap::iterator iFont = s_fonts.find(name);
 		if (iFont != s_fonts.end())
@@ -52,7 +52,7 @@ namespace TFE_Font
 		}
 
 		// Create the font.
-		Font* font = new Font;
+		FontTFE* font = new FontTFE;
 		const FNT_Header* header = (FNT_Header*)s_buffer.data();
 		font->startChar = header->First;
 		font->endChar = header->Last;
@@ -104,7 +104,7 @@ namespace TFE_Font
 	};
 #pragma pack(pop)
 
-	Font* getFromFont(const char* name, const char* archivePath)
+	FontTFE* getFromFont(const char* name, const char* archivePath)
 	{
 		FontMap::iterator iFont = s_fonts.find(name);
 		if (iFont != s_fonts.end())
@@ -119,8 +119,8 @@ namespace TFE_Font
 		}
 
 		// Create the font.
-		Font* font = new Font;
-		memset(font, 0, sizeof(Font));
+		FontTFE* font = new FontTFE;
+		memset(font, 0, sizeof(FontTFE));
 		FontHeader* header = (FontHeader*)s_buffer.data();
 		
 		font->startChar = (u8)header->first;
@@ -177,7 +177,7 @@ namespace TFE_Font
 		FontMap::iterator iFont = s_fonts.begin();
 		for (; iFont != s_fonts.end(); ++iFont)
 		{
-			Font* font = iFont->second;
+			FontTFE* font = iFont->second;
 			delete []font->imageData;
 			delete font;
 		}
@@ -388,7 +388,7 @@ namespace TFE_Font
 		BINtoU8(0,0,0,0,0,0,1,0), BINtoU8(0,0,0,0,0,0,0,0), BINtoU8(0,0,0,1,0,0,0,0), BINtoU8(0,0,0,1,0,0,0,0), BINtoU8(0,0,0,1,0,0,0,0), 0x00, 0x2,
 	};
 
-	Font* createSystemFont6x8()
+	FontTFE* createSystemFont6x8()
 	{
 		const char* name = "SystemFont";
 		FontMap::iterator iFont = s_fonts.find(name);
@@ -398,8 +398,8 @@ namespace TFE_Font
 		}
 
 		// Create the font.
-		Font* font = new Font;
-		memset(font, 0, sizeof(Font));
+		FontTFE* font = new FontTFE;
+		memset(font, 0, sizeof(FontTFE));
 
 		font->startChar = c_sysStart;
 		font->endChar   = c_sysEnd;

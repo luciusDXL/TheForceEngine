@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 
-struct Font
+struct FontTFE
 {
 	u8 startChar;
 	u8 endChar;
@@ -27,9 +27,9 @@ struct Font
 
 namespace TFE_Font
 {
-	Font* get(const char* name);
-	Font* getFromFont(const char* name, const char* archivePath);
+	FontTFE* get(const char* name);
+	FontTFE* getFromFont(const char* name, const char* archivePath);
 	// create the embedded system font
-	Font* createSystemFont6x8();
+	FontTFE* createSystemFont6x8();
 	void freeAll();
 }

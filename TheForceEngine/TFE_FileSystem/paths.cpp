@@ -186,6 +186,11 @@ namespace TFE_Paths
 		s_localArchives.push_back(archive);
 	}
 
+	void removeLastArchive()
+	{
+		s_localArchives.pop_back();
+	}
+
 	bool getFilePath(const char* fileName, FilePath* outPath)
 	{
 		outPath->archive = nullptr;

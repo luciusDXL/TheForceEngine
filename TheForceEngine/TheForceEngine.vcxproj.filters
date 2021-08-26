@@ -460,15 +460,6 @@
     <ClInclude Include="TFE_DarkForces\GameUI\agentMenu.h">
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\GameUI\editBox.h">
-      <Filter>Source\TFE_DarkForces\GameUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_DarkForces\GameUI\escMenu.h">
-      <Filter>Source\TFE_DarkForces\GameUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_DarkForces\GameUI\gameUi.h">
-      <Filter>Source\TFE_DarkForces\GameUI</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\item.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
@@ -618,6 +609,15 @@
     </ClInclude>
     <ClInclude Include="TFE_Jedi\Memory\allocator.h">
       <Filter>Source\TFE_Jedi\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\GameUI\editBox.h">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\GameUI\delt.h">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\GameUI\uiDraw.h">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -873,15 +873,6 @@
     <ClCompile Include="TFE_DarkForces\GameUI\agentMenu.cpp">
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_DarkForces\GameUI\editBox.cpp">
-      <Filter>Source\TFE_DarkForces\GameUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_DarkForces\GameUI\escMenu.cpp">
-      <Filter>Source\TFE_DarkForces\GameUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_DarkForces\GameUI\gameUi.cpp">
-      <Filter>Source\TFE_DarkForces\GameUI</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_DarkForces\item.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
@@ -998,6 +989,15 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Memory\list.cpp">
       <Filter>Source\TFE_Jedi\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\GameUI\editBox.cpp">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\GameUI\delt.cpp">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\GameUI\uiDraw.cpp">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

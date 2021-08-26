@@ -8,44 +8,19 @@
 
 namespace TFE_DarkForces
 {
-	enum AgentConstants
-	{
-		MAX_LEVEL_COUNT = 14,
-		MAX_AGENT_COUNT = 14,
-	};
-
-#pragma pack(push)
-#pragma pack(1)
-	struct AgentData
-	{
-		char name[32];
-		s32 u20;
-		s32 u24;
-		u8 difficulty;
-		u8 completed[MAX_LEVEL_COUNT];
-	};
-	struct LevelSaveData
-	{
-		AgentData agentData;
-
-		// Inventory
-		// 32 items * 14 levels = 448 values
-		u8 inv[448];
-
-		// Ammo (includes health, shields, energy)
-		// 10 items * 14 levels = 140 values (each 4 bytes).
-		s32 ammo[140];
-
-		s32 pad;
-	};
-#pragma pack(pop)
-
-	static AgentData s_agentData[MAX_AGENT_COUNT];
-	static s32 s_maxLevelIndex;
-	static char** s_levelDisplayNames;
-	static char** s_levelGamePaths;
-	static char** s_levelSrcPaths;
+	///////////////////////////////////////////
+	// Shared State
+	///////////////////////////////////////////
+	AgentData s_agentData[MAX_AGENT_COUNT];
+	s32 s_maxLevelIndex;
+	s32 s_agentId = 0;
+	char** s_levelDisplayNames;
+	char** s_levelGamePaths;
+	char** s_levelSrcPaths;
 		
+	///////////////////////////////////////////
+	// API Implementation
+	///////////////////////////////////////////
 	s32 agent_loadData()
 	{
 		FileStream file;

@@ -45,5 +45,6 @@ namespace TFE_Paths
 	void addLocalSearchPath(const char* localSearchPath);
 	void addAbsoluteSearchPath(const char* absoluteSearchPath);
 	void addLocalArchive(Archive* archive);
+	void removeLastArchive();
 	bool getFilePath(const char* fileName, FilePath* path);
 }

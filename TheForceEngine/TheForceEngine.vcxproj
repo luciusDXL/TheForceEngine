@@ -266,9 +266,9 @@
     <ClInclude Include="TFE_DarkForces\darkForcesMain.h" />
     <ClInclude Include="TFE_DarkForces\gameMessage.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\agentMenu.h" />
+    <ClInclude Include="TFE_DarkForces\GameUI\delt.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\editBox.h" />
-    <ClInclude Include="TFE_DarkForces\GameUI\escMenu.h" />
-    <ClInclude Include="TFE_DarkForces\GameUI\gameUi.h" />
+    <ClInclude Include="TFE_DarkForces\GameUI\uiDraw.h" />
     <ClInclude Include="TFE_DarkForces\hitEffect.h" />
     <ClInclude Include="TFE_DarkForces\hud.h" />
     <ClInclude Include="TFE_DarkForces\item.h" />
@@ -421,9 +421,9 @@
     <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp" />
     <ClCompile Include="TFE_DarkForces\gameMessage.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\agentMenu.cpp" />
+    <ClCompile Include="TFE_DarkForces\GameUI\delt.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\editBox.cpp" />
-    <ClCompile Include="TFE_DarkForces\GameUI\escMenu.cpp" />
-    <ClCompile Include="TFE_DarkForces\GameUI\gameUi.cpp" />
+    <ClCompile Include="TFE_DarkForces\GameUI\uiDraw.cpp" />
     <ClCompile Include="TFE_DarkForces\hitEffect.cpp" />
     <ClCompile Include="TFE_DarkForces\hud.cpp" />
     <ClCompile Include="TFE_DarkForces\item.cpp" />

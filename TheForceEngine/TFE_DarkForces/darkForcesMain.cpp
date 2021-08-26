@@ -7,6 +7,7 @@
 #include "player.h"
 #include "projectile.h"
 #include "weapon.h"
+#include "GameUI/agentMenu.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -224,7 +225,7 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_AGENT_MENU:
 			{
-				//if (!agentMenu_update(&s_levelIndex))
+				if (!agentMenu_update(&s_levelIndex))
 				{
 					//agent_updateSavedData();
 				
