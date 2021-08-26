@@ -227,7 +227,7 @@ namespace TFE_DarkForces
 			{
 				if (!agentMenu_update(&s_levelIndex))
 				{
-					//agent_updateSavedData();
+					agent_updateAgentSavedData();
 				
 					s_invalidLevelIndex = JTRUE;
 					for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
@@ -241,7 +241,7 @@ namespace TFE_DarkForces
 					}
 
 					s_abortLevel = JFALSE;
-					//setNextLevelByIndex(s_levelIndex);
+					agent_setNextLevelByIndex(s_levelIndex);
 					startNextMode();
 				}
 			} break;
@@ -278,7 +278,7 @@ namespace TFE_DarkForces
 					//	agent_saveLevelCompletion(diff, completedLevelIndex);
 					//	agent_updateSavedData();
 					//	agent_saveInventory(s_agentId, completedLevelIndex + 1);
-					//	setNextLevelByIndex(completedLevelIndex + 1);
+					//	agent_setNextLevelByIndex(completedLevelIndex + 1);
 					//}
 
 					startNextMode();

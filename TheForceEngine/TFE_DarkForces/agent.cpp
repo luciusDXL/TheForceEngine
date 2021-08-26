@@ -13,6 +13,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	AgentData s_agentData[MAX_AGENT_COUNT];
 	s32 s_maxLevelIndex;
+	s32 s_levelIndex = -1;	// This is actually s_levelIndex2 in the RE code.
 	s32 s_agentId = 0;
 	char** s_levelDisplayNames;
 	char** s_levelGamePaths;
@@ -30,9 +31,6 @@ namespace TFE_DarkForces
 			return 0;
 		}
 
-		assert(sizeof(AgentData) == 55);
-		assert(sizeof(LevelSaveData) == 1067);
-
 		s32 agentReadCount = 0;
 		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
@@ -46,6 +44,42 @@ namespace TFE_DarkForces
 
 		file.close();
 		return agentReadCount;
+	}
+	
+	s32 agent_getLevelIndex()
+	{
+		return s_levelIndex;
+	}
+
+	void agent_setNextLevelByIndex(s32 index)
+	{
+		if (index <= s_maxLevelIndex)
+		{
+			s_levelIndex = index;
+			s_agentData[s_agentId].selectedMission = index;
+		}
+	}
+
+	void agent_updateAgentSavedData()
+	{
+		FileStream file;
+		if (!openDarkPilotConfig(&file))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
+			return;
+		}
+
+		for (s32 i = 0; i < 14; i++)	// i = [ebp-0x08]
+		{
+			LevelSaveData saveData;
+			agent_readConfigData(&file, i, &saveData);
+
+			// Copy Agent data into saved data.
+			memcpy(&saveData, &s_agentData[i], sizeof(AgentData));
+			agent_writeAgentConfigData(&file, i, &saveData);
+		}
+
+		file.close();
 	}
 		
 	JBool agent_loadLevelList(const char* fileName)
@@ -116,6 +150,17 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
+	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, const LevelSaveData* saveData)
+	{
+		s32 fileOffset = agentId*sizeof(LevelSaveData) + 5;
+		if (!file->seek(fileOffset))
+		{
+			return JFALSE;
+		}
+		file->writeBuffer(saveData, sizeof(LevelSaveData));
+		return JTRUE;
+	}
+		
 	// This function differs slightly from Dark Forces in the following ways:
 	// 1. First it tries to open the CFG file from PATH_PROGRAM_DATA/DarkPilot.cfg
 	// 2. If (1) fails, it will then attempt to copy the file from PATH_SOURCE/DarkPilot.cfg to PATH_PROGRAM_DATA/DarkPilot.cfg
@@ -140,7 +185,7 @@ namespace TFE_DarkForces
 			}
 		}
 		// Then try opening the file.
-		if (!file->open(programDataPath, FileStream::MODE_READ))
+		if (!file->open(programDataPath, FileStream::MODE_READWRITE))
 		{
 			return JFALSE;
 		}
