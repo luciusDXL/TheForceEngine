@@ -553,7 +553,7 @@ int main(int argc, char* argv[])
 	bool showPerf = false;
 	bool relativeMode = false;
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
-	while (s_loop)
+	while (s_loop && !TFE_System::quitMessagePosted())
 	{
 		TFE_FRAME_BEGIN();
 
@@ -669,6 +669,12 @@ int main(int argc, char* argv[])
 		frame++;
 
 		TFE_FRAME_END();
+	}
+
+	if (s_curGame)
+	{
+		freeGame(s_curGame);
+		s_curGame = nullptr;
 	}
 
 	// Cleanup

@@ -93,11 +93,13 @@ void Archive::freeArchive(Archive* archive)
 	ArchiveMap::iterator iArchive = s_archives[type].find(archive->m_name);
 	if (iArchive != s_archives[archive->m_type].end())
 	{
+		Archive* foundArchive = iArchive->second;
+		assert(foundArchive == archive);
+		foundArchive->close();
+		delete foundArchive;
+
 		s_archives[type].erase(iArchive);
 	}
-
-	archive->close();
-	delete archive;
 }
 
 void Archive::freeAllArchives()

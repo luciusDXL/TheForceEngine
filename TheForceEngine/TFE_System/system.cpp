@@ -27,6 +27,7 @@ namespace TFE_System
 
 	static bool s_synced = false;
 	static bool s_resetStartTime = false;
+	static bool s_quitMessagePosted = false;
 
 	static char s_versionString[64];
 
@@ -160,4 +161,14 @@ namespace TFE_System
 		Sleep(sleepDeltaMS);
 	}
 #endif
+
+	void postQuitMessage()
+	{
+		s_quitMessagePosted = true;
+	}
+
+	bool quitMessagePosted()
+	{
+		return s_quitMessagePosted;
+	}
 }

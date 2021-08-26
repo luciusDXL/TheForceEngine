@@ -3,12 +3,14 @@
 #include "delt.h"
 #include "uiDraw.h"
 #include <TFE_DarkForces/agent.h>
+#include <TFE_DarkForces/util.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_System/system.h>
 
 using namespace TFE_Jedi;
 
@@ -63,7 +65,6 @@ namespace TFE_DarkForces
 	static JBool s_newAgentDlg = JFALSE;
 	static JBool s_removeAgentDlg = JFALSE;
 	static JBool s_quitConfirmDlg = JFALSE;
-	static JBool s_quiteGame = JFALSE;
 	static JBool s_missionBegin = JFALSE;
 	static EditBox s_editBox = {};
 
@@ -90,19 +91,17 @@ namespace TFE_DarkForces
 	void agentMenu_update();
 	void agentMenu_draw();
 
-	void drawYesNoDlg(u32 baseFrame, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover);
-	void drawNewAgentDlg(s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover);
+	void drawYesNoDlg(s32 baseFrame);
+	void drawNewAgentDlg();
 
-	void updateNewAgentDlg(s32 x, s32 z, s32* buttonPressed, bool* buttonHover);
-	void updateRemoveAgentDlg(s32 x, s32 z, s32* buttonPressed, bool* buttonHover);
-	bool updateQuitConfirmDlg(s32 x, s32 z, s32* buttonPressed, bool* buttonHover);
-
-	JBool loadPaletteFromPltt(const char* name, u8* palette);
+	void updateNewAgentDlg();
+	void updateRemoveAgentDlg();
+	JBool updateQuitConfirmDlg();
 
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
-	bool agentMenu_update(s32* levelIndex)
+	JBool agentMenu_update(s32* levelIndex)
 	{
 		if (!s_loaded)
 		{
@@ -123,7 +122,7 @@ namespace TFE_DarkForces
 		agentMenu_blit();
 
 		*levelIndex = s_selectedMission + 1;
-		return !s_missionBegin;
+		return ~s_missionBegin;
 	}
 	
 	///////////////////////////////////////////
@@ -133,18 +132,21 @@ namespace TFE_DarkForces
 	{
 		if (s_newAgentDlg)
 		{
-			//updateNewAgentDlg();
+			updateNewAgentDlg();
+			return;
 		}
 		else if (s_removeAgentDlg)
 		{
-			//updateRemoveAgentDlg();
+			updateRemoveAgentDlg();
+			return;
 		}
 		else if (s_quitConfirmDlg)
 		{
-			//if (updateQuitConfirmDlg())
-			//{
-				//s_quiteGame = JTRUE;
-			//}
+			if (updateQuitConfirmDlg())
+			{
+				TFE_System::postQuitMessage();
+			}
+			return;
 		}
 
 		const s32 x = s_cursorPos.x;
@@ -362,15 +364,15 @@ namespace TFE_DarkForces
 
 		if (s_newAgentDlg)
 		{
-			//drawNewAgentDlg(offset, scaleX, scaleY, buttonPressed, buttonHover);
+			drawNewAgentDlg();
 		}
 		else if (s_removeAgentDlg)
 		{
-			//drawYesNoDlg(0, offset, scaleX, scaleY, buttonPressed, buttonHover);
+			drawYesNoDlg(0);
 		}
 		else if (s_quitConfirmDlg)
 		{
-			//drawYesNoDlg(1, offset, scaleX, scaleY, buttonPressed, buttonHover);
+			drawYesNoDlg(1);
 		}
 	}
 
@@ -475,7 +477,6 @@ namespace TFE_DarkForces
 			s_selectedMission = 0;
 		}
 
-		s_quiteGame = JFALSE;
 		s_missionBegin = JFALSE;
 	}
 		
@@ -487,25 +488,250 @@ namespace TFE_DarkForces
 		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
 	}
 
+	void agentMenu_createNewAgent()
+	{
+		if (s_agentCount < MAX_AGENT_COUNT)
+		{
+			memset(&s_agentData[s_agentCount], 0, sizeof(AgentData));
+			strCopyAndZero(s_agentData[s_agentCount].name, s_newAgentName, 32);
+			s_agentData[s_agentCount].difficulty = 1;
+			s_agentData[s_agentCount].nextMission = 1;
+			s_agentData[s_agentCount].selectedMission = 1;
+			s_agentId = s_agentCount;
+			s_agentCount++;
+		}
+	}
+
+	void agentMenu_removeAgent(s32 index)
+	{
+		if (s_agentCount < 1)
+		{
+			return;
+		}
+
+		for (s32 i = index; i < (s32)s_agentCount; i++)
+		{
+			s_agentData[i] = s_agentData[i + 1];
+		}
+		s_agentCount--;
+		memset(&s_agentData[s_agentCount], 0, sizeof(AgentData));
+		
+		s_agentId = s_agentCount > 0 ? 0 : -1;
+		s_selectedMission = s_agentCount > 0 ? s_agentData[0].selectedMission : -1;
+	}
+
 	// UI routines.
-	void drawYesNoDlg(u32 baseFrame, s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover)
+	void drawYesNoButtons(u32 indexNo, u32 indexYes)
 	{
+		if (s_buttonPressed == 0 && s_buttonHover)
+		{
+			blitDeltaFrame(&s_agentDlgFrames[indexNo], 0, 0, s_framebuffer);
+		}
+		else if (s_buttonPressed == 1 && s_buttonHover)
+		{
+			blitDeltaFrame(&s_agentDlgFrames[indexYes], 0, 0, s_framebuffer);
+		}
 	}
 
-	void drawNewAgentDlg(s32 offset, s32 scaleX, s32 scaleY, s32 buttonPressed, bool buttonHover)
+	void drawYesNoDlg(s32 baseFrame)
 	{
+		blitDeltaFrame(&s_agentDlgFrames[baseFrame], 0, 0, s_framebuffer);
+		drawYesNoButtons(4, 6);
 	}
 
-	void updateNewAgentDlg(s32 x, s32 z, s32* buttonPressed, bool* buttonHover)
+	void drawNewAgentDlg()
 	{
+		blitDeltaFrame(&s_agentDlgFrames[2], 0, 0, s_framebuffer);
+		drawEditBox(&s_editBox, 106, 87, 216, 100, s_framebuffer);
+		drawYesNoButtons(8, 10);
 	}
 
-	void updateRemoveAgentDlg(s32 x, s32 z, s32* buttonPressed, bool* buttonHover)
+	void updateNewAgentDlg()
 	{
+		updateEditBox(&s_editBox);
+
+		if (TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_KP_ENTER))
+		{
+			agentMenu_createNewAgent();
+			s_newAgentDlg = JFALSE;
+			return;
+		}
+		else if (TFE_Input::keyPressed(KEY_ESCAPE))
+		{
+			s_newAgentDlg = JFALSE;
+			return;
+		}
+
+		if (TFE_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_buttonPressed = -1;
+			for (u32 i = 0; i < NEW_AGENT_COUNT; i++)
+			{
+				if (s_cursorPos.x >= c_newAgentButtons[i].x && s_cursorPos.x < c_newAgentButtons[i].x + c_newAgentButtonDim.x &&
+					s_cursorPos.z >= c_newAgentButtons[i].z && s_cursorPos.z < c_newAgentButtons[i].z + c_newAgentButtonDim.z)
+				{
+					s_buttonPressed = s32(i);
+					s_buttonHover = true;
+					break;
+				}
+			}
+		}
+		else if (TFE_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
+		{
+			// Verify that the mouse is still over the button.
+			if (s_cursorPos.x >= c_newAgentButtons[s_buttonPressed].x && s_cursorPos.x < c_newAgentButtons[s_buttonPressed].x + c_newAgentButtonDim.x &&
+				s_cursorPos.z >= c_newAgentButtons[s_buttonPressed].z && s_cursorPos.z < c_newAgentButtons[s_buttonPressed].z + c_newAgentButtonDim.z)
+			{
+				s_buttonHover = true;
+			}
+			else
+			{
+				s_buttonHover = false;
+			}
+		}
+		else
+		{
+			// Activate button 's_escButtonPressed'
+			if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
+			{
+				if (s_buttonPressed == NEW_AGENT_YES)
+				{
+					agentMenu_createNewAgent();
+				}
+				s_newAgentDlg = JFALSE;
+			}
+			// Reset.
+			s_buttonPressed = -1;
+			s_buttonHover = false;
+		}
 	}
 
-	bool updateQuitConfirmDlg(s32 x, s32 z, s32* buttonPressed, bool* buttonHover)
+	void updateRemoveAgentDlg()
 	{
-		return false;
+		if (TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_KP_ENTER) || TFE_Input::keyPressed(KEY_ESCAPE))
+		{
+			s_removeAgentDlg = false;
+			return;
+		}
+
+		if (TFE_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_buttonPressed = -1;
+			for (u32 i = 0; i < NEW_AGENT_COUNT; i++)
+			{
+				if (s_cursorPos.x >= c_newAgentButtons[i].x && s_cursorPos.x < c_newAgentButtons[i].x + c_newAgentButtonDim.x &&
+					s_cursorPos.z >= c_newAgentButtons[i].z && s_cursorPos.z < c_newAgentButtons[i].z + c_newAgentButtonDim.z)
+				{
+					s_buttonPressed = s32(i);
+					s_buttonHover = true;
+					break;
+				}
+			}
+		}
+		else if (TFE_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
+		{
+			// Verify that the mouse is still over the button.
+			if (s_cursorPos.x >= c_newAgentButtons[s_buttonPressed].x && s_cursorPos.x < c_newAgentButtons[s_buttonPressed].x + c_newAgentButtonDim.x &&
+				s_cursorPos.z >= c_newAgentButtons[s_buttonPressed].z && s_cursorPos.z < c_newAgentButtons[s_buttonPressed].z + c_newAgentButtonDim.z)
+			{
+				s_buttonHover = true;
+			}
+			else
+			{
+				s_buttonHover = false;
+			}
+		}
+		else
+		{
+			if (TFE_Input::keyPressed(KEY_Y))
+			{
+				agentMenu_removeAgent(s_agentId);
+				s_removeAgentDlg = false;
+			}
+			else if (TFE_Input::keyPressed(KEY_N))
+			{
+				s_removeAgentDlg = false;
+			}
+			else if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
+			{
+				if (s_buttonPressed == NEW_AGENT_YES)
+				{
+					agentMenu_removeAgent(s_agentId);
+				}
+				s_removeAgentDlg = false;
+			}
+			// Reset.
+			s_buttonPressed = -1;
+			s_buttonHover = false;
+		}
+	}
+
+	JBool updateQuitConfirmDlg()
+	{
+		JBool quit = JFALSE;
+		if (TFE_Input::keyPressed(KEY_ESCAPE))
+		{
+			s_quitConfirmDlg = JFALSE;
+			return JFALSE;
+		}
+		else if (TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_KP_ENTER))
+		{
+			s_quitConfirmDlg = JFALSE;
+			return JTRUE;
+		}
+
+		if (TFE_Input::mousePressed(MBUTTON_LEFT))
+		{
+			s_buttonPressed = -1;
+			for (u32 i = 0; i < NEW_AGENT_COUNT; i++)
+			{
+				if (s_cursorPos.x >= c_newAgentButtons[i].x && s_cursorPos.x < c_newAgentButtons[i].x + c_newAgentButtonDim.x &&
+					s_cursorPos.z >= c_newAgentButtons[i].z && s_cursorPos.z < c_newAgentButtons[i].z + c_newAgentButtonDim.z)
+				{
+					s_buttonPressed = s32(i);
+					s_buttonHover = JTRUE;
+					break;
+				}
+			}
+		}
+		else if (TFE_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
+		{
+			// Verify that the mouse is still over the button.
+			if (s_cursorPos.x >= c_newAgentButtons[s_buttonPressed].x && s_cursorPos.x < c_newAgentButtons[s_buttonPressed].x + c_newAgentButtonDim.x &&
+				s_cursorPos.z >= c_newAgentButtons[s_buttonPressed].z && s_cursorPos.z < c_newAgentButtons[s_buttonPressed].z + c_newAgentButtonDim.z)
+			{
+				s_buttonHover = JTRUE;
+			}
+			else
+			{
+				s_buttonHover = JFALSE;
+			}
+		}
+		else
+		{
+			// Activate button 's_escButtonPressed'
+			if (TFE_Input::keyPressed(KEY_Y))
+			{
+				quit = JTRUE;
+				s_quitConfirmDlg = JFALSE;
+			}
+			else if (TFE_Input::keyPressed(KEY_N))
+			{
+				s_quitConfirmDlg = JFALSE;
+			}
+			else if (s_buttonPressed >= NEW_AGENT_NO && s_buttonHover)
+			{
+				if (s_buttonPressed == NEW_AGENT_YES)
+				{
+					quit = JTRUE;
+				}
+				s_quitConfirmDlg = JFALSE;
+			}
+			// Reset.
+			s_buttonPressed = -1;
+			s_buttonHover = false;
+		}
+
+		return quit;
 	}
 }

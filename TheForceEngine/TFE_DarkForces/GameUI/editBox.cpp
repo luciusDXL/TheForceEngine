@@ -1,4 +1,5 @@
 #include "editBox.h"
+#include "uiDraw.h"
 #include <TFE_System/system.h>
 #include <TFE_Input/input.h>
 
@@ -92,24 +93,21 @@ namespace TFE_DarkForces
 		}
 	}
 				
-	void drawEditBox(EditBox* editBox, Font* font, s32 offset, s32 x0, s32 y0, s32 x1, s32 y1)
+	void drawEditBox(EditBox* editBox, s32 x0, s32 y0, s32 x1, s32 y1, u8* framebuffer)
 	{
-		x0 += offset;
-		x1 += offset;
-
-		// renderer->drawHorizontalLine(x0, x1, y0, c_editBoxColor);
-		// renderer->drawHorizontalLine(x0, x1, y1, c_editBoxHighlight);
-		// renderer->drawVerticalLine(y0 + 1, y1 - 1, x0, c_editBoxColor);
-		// renderer->drawVerticalLine(y0 + 1, y1 - 1, x1, c_editBoxColor);
-		// renderer->drawColoredQuad(x0 + 1, y0 + 1, x1 - x0 - 1, y1 - y0 - 1, c_editBoxBackground);
-		// renderer->print(editBox->inputField, font, x0 + 4, y0 + 4, c_editBoxText);
+		drawHorizontalLine(x0, x1, y0, c_editBoxColor, framebuffer);
+		drawHorizontalLine(x0, x1, y1, c_editBoxHighlight, framebuffer);
+		drawVerticalLine(y0 + 1, y1 - 1, x0, c_editBoxColor, framebuffer);
+		drawVerticalLine(y0 + 1, y1 - 1, x1, c_editBoxColor, framebuffer);
+		drawColoredQuad(x0 + 1, y0 + 1, x1 - x0 - 1, y1 - y0 - 1, c_editBoxBackground, framebuffer);
+		print(editBox->inputField, x0 + 4, y0 + 4, c_editBoxText, framebuffer);
 		if ((s_editCursorFlicker >> 4) & 1)
 		{
 			char textToCursor[64];
 			strcpy(textToCursor, editBox->inputField);
 			textToCursor[editBox->cursor] = 0;
-			// s32 drawPos = renderer->getStringPixelLength(textToCursor, font);
-			// renderer->drawHorizontalLine(x0 + 4 + drawPos, x0 + 8 + drawPos, y1 - 2, c_cursorColor);
+			s32 drawPos = getStringPixelLength(textToCursor);
+			drawHorizontalLine(x0 + 4 + drawPos, x0 + 8 + drawPos, y1 - 2, c_cursorColor, framebuffer);
 		}
 		s_editCursorFlicker++;
 	}

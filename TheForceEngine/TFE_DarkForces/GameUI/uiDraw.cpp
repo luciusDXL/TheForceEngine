@@ -48,6 +48,25 @@ namespace TFE_DarkForces
 		}
 	}
 
+	s32 getStringPixelLength(const char* str)
+	{
+		if (!str || !s_font) { return 0; }
+		const s32 len = (s32)strlen(str);
+		if (len < 1) { return 0; }
+
+		s32 pixelLen = 0;
+		s32 dx = s_font->maxWidth;
+		for (s32 i = 0; i < len; i++, str++)
+		{
+			const char c = *str;
+			if (c < s_font->startChar || c > s_font->endChar) { pixelLen += dx;  continue; }
+
+			const s32 index = s32(c) - s_font->startChar;
+			pixelLen += s_font->step[index];
+		}
+		return pixelLen;
+	}
+
 	void drawColoredQuad(s32 x0, s32 y0, s32 w, s32 h, u8 color, u8* framebuffer)
 	{
 		u8* output = &framebuffer[y0 * 320];
@@ -83,6 +102,39 @@ namespace TFE_DarkForces
 		{
 			memset(&output[x0], color, width);
 			output += 320;
+		}
+	}
+
+	void drawHorizontalLine(s32 x0, s32 x1, s32 y0, u8 color, u8* framebuffer)
+	{
+		// Skip if out of bounds.
+		if (x0 >= 320 || x1 < 0 || y0 < 0 || y0 >= 200)
+		{
+			return;
+		}
+
+		if (x0 < 0) { x0 = 0; }
+		if (x1 >= 320) { x1 = 319; }
+
+		s32 width = x1 - x0 + 1;
+		memset(&framebuffer[y0*320 + x0], color, width);
+	}
+
+	void drawVerticalLine(s32 y0, s32 y1, s32 x0, u8 color, u8* framebuffer)
+	{
+		// Skip if out of bounds.
+		if (x0 >= 320 || x0 < 0 || y1 < 0 || y0 >= 200)
+		{
+			return;
+		}
+
+		if (y0 < 0) { y0 = 0; }
+		if (y1 >= 320) { y1 = 319; }
+
+		u8* output = &framebuffer[y0 * 320 + x0];
+		for (s32 y = y0; y <= y1; y++, output += 320)
+		{
+			*output = color;
 		}
 	}
 }

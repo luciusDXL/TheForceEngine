@@ -15,5 +15,5 @@ struct EditBox
 namespace TFE_DarkForces
 {
 	void updateEditBox(EditBox* editBox);
-	void drawEditBox(EditBox* editBox, Font* font, s32 offset, s32 x0, s32 y0, s32 x1, s32 y1);
+	void drawEditBox(EditBox* editBox, s32 x0, s32 y0, s32 x1, s32 y1, u8* framebuffer);
 }
