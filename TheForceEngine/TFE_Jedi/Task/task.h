@@ -15,7 +15,6 @@
 #include <TFE_DarkForces/time.h>
 #include "taskMacros.h"
 
-typedef void(*TaskFunc)(s32 id);
 struct Task;
 
 enum TaskDelay
@@ -43,8 +42,8 @@ namespace TFE_Jedi
 	// This interacts better with modern systems, such as Windows.
 	// Another option is to run the game and rendering loop in its own
 	// thread and then blit the results in the main thread.
-	void runTasks();
-	void setTaskDefaults();
+	void task_run();
+	void task_setDefaults();
 
 	s32 task_getCount();
 }

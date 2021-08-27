@@ -130,7 +130,7 @@ namespace TFE_DarkForces
 		processCommandLineArgs(argCount, argv);
 		loadLocalMessages();
 		openGobFiles();
-		TFE_Jedi::setTaskDefaults();
+		TFE_Jedi::task_setDefaults();
 		TFE_Jedi::setupInitCameraAndLights();
 		gameStartup();
 		loadAgentAndLevelData();
@@ -152,6 +152,7 @@ namespace TFE_DarkForces
 		// Clear paths and archives.
 		TFE_Paths::clearSearchPaths();
 		TFE_Paths::clearLocalArchives();
+		freeAllTasks();
 	}
 
 	/**********The basic structure of the Dark Forces main loop is as follows:***************

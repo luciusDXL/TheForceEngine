@@ -10,7 +10,7 @@ struct ChunkedArray;
 
 namespace TFE_Memory
 {
-	ChunkedArray* createChunkedArray(u32 elemSize, u32 chunkSize, u32 initChunkCount);
+	ChunkedArray* createChunkedArray(u32 elemSize, u32 elemPerChunk, u32 initChunkCount);
 	void freeChunkedArray(ChunkedArray* arr);
 
 	void* allocFromChunkedArray(ChunkedArray* arr);

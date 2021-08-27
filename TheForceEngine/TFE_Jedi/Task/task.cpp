@@ -8,12 +8,26 @@
 using namespace TFE_DarkForces;
 using namespace TFE_Memory;
 
+enum TaskConstants
+{
+	TASK_MAX_LEVELS = 16,	// Maximum number of recursion levels.
+	TASK_INIT_LEVEL = -1,
+};
+
+// TODO: Revisit allocation strategy. It might make sense to allocate from a single stack pool, and give each task a piece of that.
+// Then when the task is finished, it returns the block of memory to the pool.
 struct TaskContext
 {
-	s32 state;
-	TaskFunc func;
-	u8* ctx;
-	u32 ctxSize;
+	s32 state[TASK_MAX_LEVELS];
+	TaskFunc callstack[TASK_MAX_LEVELS];
+
+	u8* stackMem;		// starts out null, can point to the block if ever needed.
+	u32 stackOffset;	// where in the stack we are.
+
+	u8* stackPtr[TASK_MAX_LEVELS];
+	u32 stackSize[TASK_MAX_LEVELS];
+
+	s32 level;
 };
 
 struct Task
@@ -37,31 +51,29 @@ namespace TFE_Jedi
 {
 	enum
 	{
-		MAX_ACTIVE_TASKS = 1024,
 		TASK_CHUNK_SIZE = 256,
 		TASK_PREALLOCATED_CHUNKS = 1,
+
+		TASK_STACK_SIZE = 64 * 1024,	// 64KB of stack memory.
+		TASK_STACK_CHUNK_SIZE = 128,	// 8MB of memory for 128 tasks with stack memory.
 	};
 
 	ChunkedArray* s_tasks = nullptr;
-	Task* s_activeTasks[MAX_ACTIVE_TASKS];
-
-	Task* s_curTask = nullptr;
-	Task* s_resumeTask = nullptr;
-	s32 s_currentId;
-
-	TaskContext* s_curContext = nullptr;
-	s32 s_activeCount = 0;
-
-	Task* s_frameTasks[MAX_ACTIVE_TASKS];
-	s32 s_frameTaskCount = 0;
-	s32 s_frameTaskIndex = 0;
+	ChunkedArray* s_stackBlocks = nullptr;
+	s32 s_taskCount = 0;
 
 	Task  s_rootTask;
-	Task* s_taskIter;
+	Task* s_taskIter   = nullptr;
+	Task* s_curTask    = nullptr;
+	Task* s_resumeTask = nullptr;
+	s32   s_currentId  = -1;
 
+	TaskContext* s_curContext = nullptr;
+		
 	void createRootTask()
 	{
 		s_tasks = createChunkedArray(sizeof(Task), TASK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS);
+		s_stackBlocks = createChunkedArray(TASK_STACK_SIZE, TASK_STACK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS);
 
 		s_rootTask = { 0 };
 		s_rootTask.prevMain = &s_rootTask;
@@ -70,6 +82,7 @@ namespace TFE_Jedi
 
 		s_taskIter = &s_rootTask;
 		s_curTask  = &s_rootTask;
+		s_taskCount = 0;
 	}
 	
 	Task* createTask(TaskFunc func)
@@ -82,6 +95,7 @@ namespace TFE_Jedi
 		Task* newTask = (Task*)allocFromChunkedArray(s_tasks);
 		assert(newTask);
 
+		s_taskCount++;
 		newTask->nextMain = s_curTask->prevSec;
 		newTask->prevMain = nullptr;
 		newTask->nextSec  = s_curTask;
@@ -96,7 +110,8 @@ namespace TFE_Jedi
 		newTask->nextTick = 0;
 		
 		newTask->context = { 0 };
-		newTask->context.func = func;
+		newTask->context.callstack[0] = func;
+		newTask->context.level = TASK_INIT_LEVEL;
 		return newTask;
 	}
 
@@ -110,6 +125,7 @@ namespace TFE_Jedi
 		Task* newTask = (Task*)allocFromChunkedArray(s_tasks);
 		assert(newTask);
 
+		s_taskCount++;
 		// Insert the task after 's_taskIter'
 		newTask->nextMain = s_taskIter->nextMain;
 		newTask->prevMain = s_taskIter;
@@ -121,7 +137,8 @@ namespace TFE_Jedi
 		newTask->framebreak = framebreak;
 
 		newTask->context = { 0 };
-		newTask->context.func = func;
+		newTask->context.callstack[0] = func;
+		newTask->context.level = TASK_INIT_LEVEL;
 		newTask->nextTick = s_curTick;
 		
 		return newTask;
@@ -129,29 +146,23 @@ namespace TFE_Jedi
 
 	void freeTask(Task* task)
 	{
-		// TODO
-
+		s_taskCount--;
 		// Free any memory allocated for the local context.
-		free(task->context.ctx);
+		freeToChunkedArray(s_stackBlocks, task->context.stackMem);
 		// Finally free the task itself from the chunked array.
 		freeToChunkedArray(s_tasks, task);
 	}
 
 	void freeAllTasks()
 	{
-		const u32 taskCount = chunkedArraySize(s_tasks);
-		for (u32 i = 0; i < taskCount; i++)
-		{
-			Task* task = (Task*)chunkedArrayGet(s_tasks, i);
-			free(task->context.ctx);
-		}
-
 		freeChunkedArray(s_tasks);
+		freeChunkedArray(s_stackBlocks);
 
 		s_curTask = nullptr;
 		s_tasks = nullptr;
+		s_stackBlocks = nullptr;
 		s_curContext = nullptr;
-		s_activeCount = 0;
+		s_taskCount = 0;
 	}
 
 	// Run a task and then return to the curren task.
@@ -169,17 +180,29 @@ namespace TFE_Jedi
 		task->nextTick = 0;
 	}
 
-	void itask_end(s32 id)
+	void ctxReturn()
 	{
-		freeTask(s_curTask);
-		s_curTask = nullptr;
-		// What to do here?
+		s32 level = s_curContext->level;
+		s_curContext->level--;
+
+		if (level == 0)
+		{
+			freeTask(s_curTask);
+			s_curTask = nullptr;
+		}
+		else if (s_curContext->stackPtr[level])
+		{
+			// Return the stack memory allocated for this level.
+			s_curContext->stackOffset -= s_curContext->stackSize[level];
+			s_curContext->stackPtr[level] = nullptr;
+			s_curContext->stackSize[level] = 0;
+		}
 	}
 
 	void itask_yield(Tick delay, s32 state)
 	{
 		// Copy the state so we know where to return.
-		s_curContext->state = state;
+		s_curContext->state[s_curContext->level] = state;
 
 		// If there is a return task, then take it next.
 		if (s_curTask->retTask)
@@ -233,9 +256,9 @@ namespace TFE_Jedi
 	}
 		
 	// Called once per frame to run all of the tasks.
-	void runTasks()
+	void task_run()
 	{
-		if (!task_getCount())
+		if (!s_taskCount)
 		{
 			return;
 		}
@@ -244,7 +267,7 @@ namespace TFE_Jedi
 		Task* task = s_resumeTask ? s_resumeTask : s_curTask;
 		s_curTask = nullptr;
 		
-		while (!s_curTask || !s_curTask->context.func)
+		while (!s_curTask || !s_curTask->context.callstack[0])
 		{
 			if (task->nextMain)
 			{
@@ -258,7 +281,7 @@ namespace TFE_Jedi
 		}
 		s_currentId = 0;
 
-		// Do another until enough time has passed.
+		// Do nothing until enough time has passed.
 		if (s_curTask->nextTick > s_curTick)
 		{
 			return;
@@ -276,7 +299,8 @@ namespace TFE_Jedi
 			if (s_curTask->nextTick <= s_curTick)
 			{
 				s_curContext = &s_curTask->context;
-				s_curTask->context.func(s_currentId);
+				s32 level = max(0, s_curContext->level);
+				s_curContext->callstack[level](s_currentId);
 			}
 
 			if (framebreak)
@@ -286,7 +310,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void setTaskDefaults()
+	void task_setDefaults()
 	{
 		s_curTask  = &s_rootTask;
 		s_taskIter = &s_rootTask;
@@ -294,117 +318,51 @@ namespace TFE_Jedi
 
 	s32 task_getCount()
 	{
-		return chunkedArraySize(s_tasks);
+		return s_taskCount;
 	}
 
 	s32 ctxGetState()
 	{
-		return s_curContext->state;
+		return s_curContext->state[s_curContext->level];
 	}
 
 	void ctxAllocate(u32 size)
 	{
 		if (!size) { return; }
-		if (s_curContext->ctxSize)
+		if (!s_curContext->stackMem)
 		{
-			assert(s_curContext->ctx);
-			return;
+			s_curContext->stackMem = (u8*)allocFromChunkedArray(s_stackBlocks);
+			memset(s_curContext->stackSize, 0, sizeof(u32) * TASK_MAX_LEVELS);
+			s_curContext->stackOffset = 0;
 		}
 
-		s_curContext->ctxSize = size;
-		s_curContext->ctx = (u8*)malloc(size);
-		memset(s_curContext->ctx, 0, size);
+		s32 level = s_curContext->level;
+		if (!s_curContext->stackPtr[level])
+		{
+			s_curContext->stackPtr[level] = s_curContext->stackMem + s_curContext->stackOffset;
+			s_curContext->stackSize[level] = size;
+			s_curContext->stackOffset += size;
+
+			// Clear out the memory.
+			memset(s_curContext->stackPtr[level], 0, size);
+		}
 	}
 
 	void* ctxGet()
 	{
-		return s_curContext->ctx;
+		return s_curContext->stackPtr[s_curContext->level];
 	}
 
-	////////////////////////////////////////////////////////////
-	// Test adding the ability to call sub-functions with
-	// the ability to yield
-	////////////////////////////////////////////////////////////
-	enum { TASK_MAX_CALLSTACK = 4, MAX_TASK_ARG = 16 };
-	typedef union
+	void ctxBegin()
 	{
-		s32 iValue;
-		f32 fValue;
-	} TaskArg;
-	typedef void(*TaskCall)(u32, TaskArg*);
-	struct Call
-	{
-		u32 state;
-		u32 argCount;
-		TaskArg args[MAX_TASK_ARG];
-		TaskCall call;
-	};
-	struct Context2
-	{
-		u32 state;
-		u32 callstackCount;
-		Call callstack[TASK_MAX_CALLSTACK];
-	};
-	static Context2* s_context2;
-
-	void itask_call(TaskCall func, u32 state, s32 argCount, ...)
-	{
-		s32 csCount = s_context2->callstackCount;
-		s_context2->callstackCount++;
-
-		s_context2->callstack[csCount].call = func;
-		s_context2->callstack[csCount].argCount = 0;
-		s_context2->callstack[csCount].state = 0;
-		if (csCount)
-		{
-			s32 prevIndex = csCount - 1;
-			s_context2->callstack[prevIndex].state = state;
-		}
-		else
-		{
-			s_context2->state = state;
-		}
-
-		va_list valist;
-		va_start(valist, argCount);
-		s_context2->callstack[csCount].argCount = argCount;
-		for (s32 i = 0; i < argCount; i++)
-		{
-			va_arg(valist, TaskArg);
-		}
-		va_end(valist);
-
-		func(argCount, s_context2->callstack[csCount].args);
+		s_curContext->level++;
 	}
 
-// C++ macro magic to get this to be reliable.
-#define NUMARGS(...) std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value
-
-#define task_call(func, ...) \
-	do { \
-	itask_call(func, __LINE__, NUMARGS(__VA_ARGS__), __VA_ARGS__);	\
-	if (s_context2->callstackCount) return;  \
-	case __LINE__:; \
-	} while (0)
-
-	void taskCallTest(u32 argCount, TaskArg* args)
+	void ctxCall(TaskFunc func, s32 id)
 	{
-		// Extract arguments.
-		assert(argCount == 3);
-		s32 x = args[0].iValue;
-		s32 y = args[1].iValue;
-		s32 z = args[2].iValue;
-
-		// Continue as normal.
-	}
-
-	void testFunc(s32 id)
-	{
-		task_begin;
-
-		task_call(taskCallTest);
-		task_call(taskCallTest, 0, 1, 2);
-
-		task_end;
+		assert(s_curContext->level + 1 < TASK_MAX_LEVELS);
+		s_curContext->callstack[s_curContext->level + 1] = func;
+		s_curContext->state[s_curContext->level + 1] = 0;
+		func(id);
 	}
 }

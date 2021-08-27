@@ -1,11 +1,13 @@
 #pragma once
 
 #define task_begin	\
+	ctxBegin();	\
 	switch (ctxGetState()) \
 	{	\
 	case 0:
 
 #define task_begin_ctx	\
+	ctxBegin();	\
 	ctxAllocate(sizeof(LocalContext));	\
 	switch (ctxGetState()) \
 	{	\
@@ -13,7 +15,7 @@
 
 #define task_end \
 	} \
-	itask_end(id);
+	ctxReturn();
 
 #define task_yield(delay) \
 	do { \
@@ -21,6 +23,9 @@
 	return;	\
 	case __LINE__:; \
 	} while (0)
+
+#define task_callTaskFunc(func)	\
+	ctxCall(func, id)
 
 #define taskCtx ((LocalContext*)ctxGet())
 
@@ -32,12 +37,16 @@
 
 namespace TFE_Jedi
 {
+	typedef void(*TaskFunc)(s32 id);
+
 	//////////////////////////////////////////
 	// Internal functions used by macros.
 	//////////////////////////////////////////
 	s32 ctxGetState();
 	void ctxAllocate(u32 size);
 	void* ctxGet();
+	void ctxBegin();
+	void ctxCall(TaskFunc func, s32 id);
+	void ctxReturn();
 	void itask_yield(Tick delay, s32 state);
-	void itask_end(s32 id);
 }

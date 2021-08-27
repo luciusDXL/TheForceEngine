@@ -12,8 +12,8 @@
 
 struct ChunkedArray
 {
-	u32 elemSize;	// size of an element.
-	u32 chunkSize;	// number of elements.
+	u32 elemSize;		// size of an element.
+	u32 elemPerChunk;	// number of elements.
 
 	u32 elemCount;	// number of elements.
 	u32 chunkCount;	// capacity.
@@ -33,7 +33,7 @@ namespace TFE_Memory
 	};
 	void addFreeSlot(ChunkedArray* arr, u8* ptr);
 
-	ChunkedArray* createChunkedArray(u32 elemSize, u32 chunkSize, u32 initChunkCount)
+	ChunkedArray* createChunkedArray(u32 elemSize, u32 elemPerChunk, u32 initChunkCount)
 	{
 		ChunkedArray* arr = (ChunkedArray*)malloc(sizeof(ChunkedArray));
 		memset(arr, 0, sizeof(ChunkedArray));
@@ -41,7 +41,7 @@ namespace TFE_Memory
 		arr->elemSize = elemSize;
 		arr->elemCount = 0;
 				
-		arr->chunkSize = chunkSize;
+		arr->elemPerChunk = elemPerChunk;
 		arr->chunkCount = initChunkCount;
 		arr->chunks = (u8**)realloc(arr->chunks, sizeof(u8*) * initChunkCount);
 		
@@ -49,7 +49,7 @@ namespace TFE_Memory
 		arr->freeSlotCapacity = 0;
 		arr->freeSlots = nullptr;
 
-		const u32 chunkAllocSize = chunkSize * elemSize;
+		const u32 chunkAllocSize = elemPerChunk * elemSize;
 		for (u32 i = 0; i < initChunkCount; i++)
 		{
 			arr->chunks[i] = (u8*)malloc(chunkAllocSize);
@@ -67,6 +67,7 @@ namespace TFE_Memory
 			free(arr->chunks[i]);
 		}
 		free(arr->chunks);
+		free(arr->freeSlots);
 		free(arr);
 	}
 
@@ -77,15 +78,16 @@ namespace TFE_Memory
 			arr->freeSlotCount--;
 			return arr->freeSlots[arr->freeSlotCount];
 		}
+		s32 elementIndex = arr->elemCount;
 		arr->elemCount++;
 
-		const u32 newChunkIndex = arr->elemCount / arr->chunkSize;
+		const u32 newChunkIndex = elementIndex / arr->elemPerChunk;
 		const u32 newChunkCount = newChunkIndex + 1;
 		if (newChunkCount > arr->chunkCount)
 		{
 			arr->chunks = (u8**)realloc(arr->chunks, sizeof(u8*) * newChunkCount);
 
-			const u32 chunkAllocSize = arr->chunkSize * arr->elemSize;
+			const u32 chunkAllocSize = arr->elemPerChunk * arr->elemSize;
 			for (u32 i = arr->chunkCount; i < newChunkCount; i++)
 			{
 				arr->chunks[i] = (u8*)malloc(chunkAllocSize);
@@ -93,10 +95,8 @@ namespace TFE_Memory
 			arr->chunkCount = newChunkCount;
 		}
 
-		const u32 index = arr->elemCount - newChunkIndex * arr->chunkSize;
-		u8* chunkPtr = arr->chunks[newChunkIndex];
-
-		return chunkPtr + index * arr->elemSize;
+		const u32 index = elementIndex - newChunkIndex*arr->elemPerChunk;
+		return arr->chunks[newChunkIndex] + index*arr->elemSize;
 	}
 		
 	void freeToChunkedArray(ChunkedArray* arr, void* ptr)
@@ -110,10 +110,10 @@ namespace TFE_Memory
 		{
 			if (ptr >= arr->chunks[i])
 			{
-				assert(ptr < arr->chunks[i] + arr->chunkSize * arr->elemSize);
+				assert(ptr < arr->chunks[i] + arr->elemPerChunk * arr->elemSize);
 				// Then find the index.
 				u32 index = u32((u8*)ptr - arr->chunks[i]) / arr->elemSize;
-				assert(index < arr->chunkSize);
+				assert(index < arr->elemPerChunk);
 				break;
 			}
 		}
@@ -123,16 +123,14 @@ namespace TFE_Memory
 	u32 chunkedArraySize(ChunkedArray* arr)
 	{
 		if (!arr) { return 0; }
-		return arr->elemCount - arr->freeSlotCount;
+		return arr->elemCount;
 	}
 
 	void* chunkedArrayGet(ChunkedArray* arr, u32 index)
 	{
-		u32 chunkId = index / arr->chunkSize;
-		u32 elemId = index - chunkId * arr->chunkSize;
-
-		u8* chunkPtr = arr->chunks[chunkId];
-		return chunkPtr + elemId * arr->elemSize;
+		u32 chunkId = index / arr->elemPerChunk;
+		u32 elemId = index - chunkId*arr->elemPerChunk;
+		return arr->chunks[chunkId] + elemId*arr->elemSize;
 	}
 
 	void addFreeSlot(ChunkedArray* arr, u8* ptr)

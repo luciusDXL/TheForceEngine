@@ -640,7 +640,7 @@ int main(int argc, char* argv[])
 			else
 			{
 				s_curGame->loopGame();
-				TFE_Jedi::runTasks();
+				TFE_Jedi::task_run();
 			}
 		}
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
