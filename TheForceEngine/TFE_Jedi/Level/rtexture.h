@@ -72,11 +72,8 @@ enum
 
 namespace TFE_Jedi
 {
-	void bitmap_createAnimatedTextureAllocator();
+	void bitmap_setupAnimationTask();
 
 	TextureData* bitmap_load(FilePath* filepath, u32 decompress);
 	void bitmap_setupAnimatedTexture(TextureData** texture);
-
-	// Per frame animated texture update.
-	void update_animatedTextures();
 }

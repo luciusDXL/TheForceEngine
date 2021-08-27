@@ -37,4 +37,6 @@ namespace TFE_DarkForces
 	// Setup the animation logic instance given the WAX animation index, first and last frames (inclusive) and loop count.
 	// Note that loopCount = 0 means that the animation loops forever.
 	void setupAnimationFromLogic(SpriteAnimLogic* logic, s32 animIndex, u32 firstFrame, u32 lastFrame, u32 loopCount);
+
+	void setSpriteAnimation(Task* spriteAnimTask, Allocator* spriteAnimAlloc);
 }  // namespace TFE_DarkForces

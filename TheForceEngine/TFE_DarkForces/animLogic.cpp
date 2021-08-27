@@ -9,6 +9,12 @@ namespace TFE_DarkForces
 {
 	Allocator* s_spriteAnimList = nullptr;
 	Task* s_spriteAnimTask = nullptr;
+
+	void setSpriteAnimation(Task* spriteAnimTask, Allocator* spriteAnimAlloc)
+	{
+		s_spriteAnimTask = spriteAnimTask;
+		s_spriteAnimList = spriteAnimAlloc;
+	}
 	
 	void spriteAnimLogicCleanupFunc(Logic* logic)
 	{

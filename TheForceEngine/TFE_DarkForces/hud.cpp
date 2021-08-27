@@ -56,6 +56,16 @@ namespace TFE_DarkForces
 	static OffScreenBuffer* s_cachedHudLeft = nullptr;
 	static OffScreenBuffer* s_cachedHudRight = nullptr;
 
+	static s32 s_rightHudVertTarget;
+	static s32 s_rightHudVertAnim;
+	static s32 s_rightHudShow;
+	static s32 s_rightHudMove;
+	static s32 s_leftHudVertTarget;
+	static s32 s_leftHudVertAnim;
+	static s32 s_leftHudShow;
+	static s32 s_leftHudMove;
+	static JBool s_forceHudPaletteUpdate = JFALSE;
+
 	///////////////////////////////////////////
 	// Shared State
 	///////////////////////////////////////////
@@ -154,7 +164,50 @@ namespace TFE_DarkForces
 		s_hudColorCount = count;
 		s_updateHudColors = JTRUE;
 	}
+		
+	void hud_initAnimation()
+	{
+		s_rightHudMove = 4;
+		s_leftHudMove = 4;
+		s_forceHudPaletteUpdate = JTRUE;
+		s_rightHudShow = 4;
+		s_leftHudShow = 4;
+	}
+		
+	void hud_setupToggleAnim1(JBool enable)
+	{
+		if (enable)
+		{
+			s_leftHudVertTarget = 0;
+			s_rightHudVertTarget = 0;
 
+			s_leftHudVertAnim = 0;
+			s_rightHudVertAnim = 0;
+
+			s_leftHudShow = 4;
+			s_rightHudShow = 4;
+
+			s_leftHudMove = 4;
+			s_rightHudMove = 4;
+		}
+		else
+		{
+			s_leftHudVertTarget = 0;
+			s_rightHudVertTarget = 0;
+
+			s_leftHudShow = 4;
+			s_rightHudShow = 4;
+
+			s_leftHudMove = 4;
+			s_rightHudMove = 4;
+		}
+	}
+
+	void hud_startup()
+	{
+		hud_initAnimation();
+		hud_setupToggleAnim1(JTRUE);
+	}
 
 	///////////////////////////////////////////
 	// Internal Implementation

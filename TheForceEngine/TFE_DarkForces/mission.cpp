@@ -1,5 +1,7 @@
 #include "mission.h"
 #include "agent.h"
+#include "animLogic.h"
+#include "hud.h"
 #include "player.h"
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -236,11 +238,11 @@ namespace TFE_DarkForces
 
 	void mission_setupTasks()
 	{
-		// setSpriteAnimation(nullptr, nullptr);
-		// setupTextureAnimationTask();
+		setSpriteAnimation(nullptr, nullptr);
+		bitmap_setupAnimationTask();
 		// resetFrameData();
-		// initHud();
-		// clearHudMessage();
+		hud_startup();
+		hud_clearMessage();
 		// computeScaledScreenBounds();
 		// clearWeaponFireRate();
 		// createPlayerWeaponTask();

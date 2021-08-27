@@ -16,5 +16,10 @@ namespace TFE_DarkForces
 
 	void hud_loadGameMessages();
 	void hud_loadGraphics();
+
+	void hud_startup();
+	void hud_initAnimation();
+	void hud_setupToggleAnim1(JBool enable);
+
 	extern fixed16_16 s_flashEffect;
 }  // namespace TFE_DarkForces

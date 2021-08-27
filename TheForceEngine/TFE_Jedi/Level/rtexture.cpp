@@ -4,6 +4,7 @@
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Jedi/Task/task.h>
 
 using namespace TFE_DarkForces;
 
@@ -15,12 +16,13 @@ namespace TFE_Jedi
 		DF_ANIM_ID = 2,
 	};
 
-	static const char* c_defaultGob = "TEXTURES.GOB";
 	static std::vector<u8> s_buffer;
-	static Allocator* s_textureAnimAlloc;
+	static Allocator* s_textureAnimAlloc = nullptr;
+	static Task* s_textureAnimTask = nullptr;
 
 	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount);
 	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount);
+	void textureAnimationTaskFunc(s32 id);
 
 	u8 readByte(const u8*& data)
 	{
@@ -43,9 +45,10 @@ namespace TFE_Jedi
 		return res;
 	}
 
-	void bitmap_createAnimatedTextureAllocator()
+	void bitmap_setupAnimationTask()
 	{
-		s_textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
+		s_textureAnimTask = createTask(textureAnimationTaskFunc);
+		s_textureAnimAlloc = allocator_create(32);
 	}
 
 	TextureData* bitmap_load(FilePath* filepath, u32 decompress)
@@ -208,31 +211,40 @@ namespace TFE_Jedi
 			tex->image = (u8*)anim;
 		}
 	}
-
+		
 	// Per frame animated texture update.
-	void update_animatedTextures()
+	void textureAnimationTaskFunc(s32 id)
 	{
-		AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(s_textureAnimAlloc);
-		while (animTex)
+		task_begin;
+		while (id != -1)
 		{
-			if (animTex->nextTick < s_curTick)
+			// No persistent state is required.
 			{
-				if (animTex->nextTick == 0)
+				AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(s_textureAnimAlloc);
+				while (animTex)
 				{
-					animTex->nextTick = s_curTick;
-				}
+					if (animTex->nextTick < s_curTick)
+					{
+						if (animTex->nextTick == 0)
+						{
+							animTex->nextTick = s_curTick;
+						}
 
-				animTex->frame++;
-				if (animTex->frame >= animTex->count)
-				{
-					animTex->frame = 0;
-				}
+						animTex->frame++;
+						if (animTex->frame >= animTex->count)
+						{
+							animTex->frame = 0;
+						}
 
-				*animTex->texPtr = animTex->frameList[animTex->frame];
-				animTex->nextTick += animTex->delay;
+						*animTex->texPtr = animTex->frameList[animTex->frame];
+						animTex->nextTick += animTex->delay;
+					}
+					animTex = (AnimatedTexture*)allocator_getNext(s_textureAnimAlloc);
+				}
 			}
-			animTex = (AnimatedTexture*)allocator_getNext(s_textureAnimAlloc);
+			task_yield(TASK_NO_DELAY);
 		}
+		task_end;
 	}
 		
 	// Type 1: RLE with runs of solid colors. Costs 2 bytes per solid-color run.

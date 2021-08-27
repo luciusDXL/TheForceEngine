@@ -51,11 +51,6 @@ namespace TFE_Jedi
 	s32 getDifficulty();
 	s32 object_parseSeq(SecObject* obj);
 
-	void initMission()
-	{
-		bitmap_createAnimatedTextureAllocator();
-	}
-	
 	// level_loadGeometry() in the DOS code.
 	bool loadGeometry(const char* levelName)
 	{
