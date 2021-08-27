@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
+#include "time.h"
 
 namespace TFE_DarkForces
 {
@@ -16,6 +17,7 @@ namespace TFE_DarkForces
 	{
 		// Items
 		//   Weapons
+		JBool itemPistol;
 		JBool itemRifle;
 		JBool itemAutogun;
 		JBool itemMortar;
@@ -88,6 +90,7 @@ namespace TFE_DarkForces
 	// Eye parameters
 	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.
 	extern angle14_32 s_pitch, s_yaw, s_roll;
+	extern Tick s_playerTick;
 
 	extern SecObject* s_playerObject;
 	extern SecObject* s_playerEye;
@@ -109,4 +112,5 @@ namespace TFE_DarkForces
 	extern SoundSourceID s_playerShieldHitSoundSource;
 
 	void player_init();
+	void player_readInfo(u8* inv, s32* ammo);
 }  // namespace TFE_DarkForces

@@ -4,8 +4,10 @@
 #include "gameMessage.h"
 #include "hud.h"
 #include "item.h"
+#include "mission.h"
 #include "player.h"
 #include "projectile.h"
+#include "time.h"
 #include "weapon.h"
 #include "GameUI/agentMenu.h"
 #include <TFE_System/system.h>
@@ -76,7 +78,7 @@ namespace TFE_DarkForces
 		{13, GMODE_MISSION, 0},
 		{14, GMODE_MISSION, 0}
 	};
-
+	
 	/////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////
@@ -84,17 +86,16 @@ namespace TFE_DarkForces
 	static JBool s_localMsgLoaded = JFALSE;
 	static JBool s_useJediPath = JFALSE;
 	static JBool s_hudModeStd = JTRUE;
-	static JBool s_invalidLevelIndex;
 	static const char* s_launchLevelName = nullptr;
 	static GameMessages s_localMessages;
 	static GameMessages s_hotKeyMessages;
-	static u8 s_loadingScreenPal[768];
-	static TextureData* s_loadScreen = nullptr;
 	static TextureData* s_diskErrorImg = nullptr;
 	static Font* s_swFont1 = nullptr;
 	static Font* s_mapNumFont = nullptr;
 	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
 	static void* s_briefingList;	// STUBBED - to be replaced by the real structure.
+
+	static Task* s_loadMissionTask = nullptr;
 
 	static GameState s_state = GSTATE_STARTUP_CUTSCENES;
 	static s32 s_levelIndex;
@@ -216,6 +217,8 @@ namespace TFE_DarkForces
 	****************************************************/
 	void DarkForces::loopGame()
 	{
+		updateTime();
+
 		switch (s_state)
 		{
 			case GSTATE_STARTUP_CUTSCENES:
@@ -261,6 +264,9 @@ namespace TFE_DarkForces
 				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
 				if (!task_getCount())
 				{
+					// Temp:
+					s_abortLevel = JTRUE;
+
 					// We have returned from the mission tasks.
 					// disableLevelMusic();
 
@@ -316,17 +322,18 @@ namespace TFE_DarkForces
 			}  break;
 			case GMODE_MISSION:
 			{
-				// s_loadMissionTask = pushTask(loadMission);
+				s_loadMissionTask = pushTask(mission_startTaskFunc, JTRUE);
 
 				// disableLevelMusic();
-				// s32 levelIndex = getLevelIndex();
+				s32 levelIndex = agent_getLevelIndex();
 				// startLevelMusic(levelIndex);
 
-				// s_levelComplete = JFALSE;
-				// readSavedDataForLevel(s_agentId, levelIndex);
+				agent_setLevelComplete(JFALSE);
+				agent_readSavedDataForLevel(s_agentId, levelIndex);
 
-				// launchCurrentTask();
-
+				// The load mission task should begin immediately once the Task System updates,
+				// so launchCurrentTask() is not required here.
+				// In the original, the task system would simply loop here.
 				s_state = GSTATE_MISSION;
 			}
 		}

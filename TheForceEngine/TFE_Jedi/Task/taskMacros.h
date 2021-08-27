@@ -17,7 +17,7 @@
 
 #define task_yield(delay) \
 	do { \
-	itask_yield(delay, __LINE__, id);	\
+	itask_yield(delay, __LINE__);	\
 	return;	\
 	case __LINE__:; \
 	} while (0)
@@ -38,6 +38,6 @@ namespace TFE_Jedi
 	s32 ctxGetState();
 	void ctxAllocate(u32 size);
 	void* ctxGet();
-	void itask_yield(Tick delay, s32 state, s32 id);
+	void itask_yield(Tick delay, s32 state);
 	void itask_end(s32 id);
 }

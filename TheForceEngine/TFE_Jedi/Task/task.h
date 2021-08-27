@@ -29,7 +29,7 @@ enum TaskDelay
 namespace TFE_Jedi
 {
 	Task* createTask(TaskFunc func);
-	Task* pushTask(TaskFunc func);
+	Task* pushTask(TaskFunc func, JBool framebreak = JFALSE);
 	void  runTask(Task* task, s32 id);
 
 	void  freeTask(Task* task);
@@ -47,10 +47,6 @@ namespace TFE_Jedi
 	void setTaskDefaults();
 
 	s32 task_getCount();
-
-	// Methods to request system exit.
-	void postSystemExitRequest();
-	bool systemExitRequested();
 }
 ////////////////////////////////////////////////////////////////////////
 // Task Function API:

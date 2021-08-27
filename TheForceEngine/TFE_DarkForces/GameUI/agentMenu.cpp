@@ -111,6 +111,7 @@ namespace TFE_DarkForces
 		if (!s_displayInit)
 		{
 			agentMenu_startupDisplay();
+			s_missionBegin = JFALSE;
 			s_displayInit = JTRUE;
 		}
 
@@ -120,6 +121,12 @@ namespace TFE_DarkForces
 		agentMenu_draw();
 		
 		agentMenu_blit();
+
+		// Reset for next time.
+		if (s_missionBegin)
+		{
+			s_displayInit = JFALSE;
+		}
 
 		*levelIndex = s_selectedMission + 1;
 		return ~s_missionBegin;

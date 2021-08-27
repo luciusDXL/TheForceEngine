@@ -34,6 +34,8 @@ namespace TFE_DarkForces
 
 	void weapon_startup();
 	void weapon_enableAutomount(JBool enable);
+	void weapon_setNext(s32 wpnIndex);
+	void weapon_setFireRate();
 
 	extern SoundSourceID s_superchargeCountdownSound;
 }  // namespace TFE_DarkForces

@@ -48,6 +48,13 @@ namespace TFE_DarkForces
 	static s32 s_curWeapon;
 	static s32 s_nextWeapon;
 	static s32 s_lastWeapon;
+	static s32 s_canFireWeaponSec;
+	static s32 s_canFireWeaponPrim;
+
+	static Tick s_weaponDelayPrimary;
+	static Tick s_weaponDelaySeconary;
+	static s32* s_canFirePrimPtr;
+	static s32* s_canFireSecPtr;
 
 	static SoundSourceID s_punchSwingSndSrc;
 	static SoundSourceID s_pistolSndSrc;
@@ -81,6 +88,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	TextureData* loadWeaponTexture(const char* texName);
 	void weapon_loadTextures();
+	void weapon_setFireRateInternal(WeaponFireMode mode, Tick delay, s32* canFire);
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -343,9 +351,120 @@ namespace TFE_DarkForces
 		s_weaponAutoMount2 = enable;
 	}
 
+	void weapon_setNext(s32 wpnIndex)
+	{
+		PlayerWeapon* prevWeapon = s_curPlayerWeapon;
+		s_curWeapon = wpnIndex;
+
+		s_prevWeapon = wpnIndex;
+		PlayerWeapon* nextWeapon = &s_playerWeaponList[wpnIndex];
+		s_playerInfo.curWeapon = wpnIndex;
+
+		if (wpnIndex == WPN_THERMAL_DET && !(*nextWeapon->ammo))
+		{
+			nextWeapon->frame = 3;
+		}
+		else if (wpnIndex == WPN_MINE && !(*nextWeapon->ammo))
+		{
+			nextWeapon->frame = 2;
+		}
+		else
+		{
+			nextWeapon->frame = 0;
+		}
+
+		s_curPlayerWeapon = nextWeapon;
+		weapon_setFireRate();
+
+		PlayerWeapon* weapon = s_curPlayerWeapon;
+		weapon->rollOffset  = prevWeapon->rollOffset;
+		weapon->pchOffset   = prevWeapon->pchOffset;
+		weapon->xWaveOffset = prevWeapon->xWaveOffset;
+		weapon->yWaveOffset = prevWeapon->yWaveOffset;
+		weapon->xOffset     = prevWeapon->xOffset;
+		weapon->yOffset     = prevWeapon->yOffset;
+	}
+
+	void weapon_setFireRate()
+	{
+		s_canFireWeaponPrim = 1;
+		s_canFireWeaponSec = 1;
+
+		// Clear both fire modes.
+		weapon_setFireRateInternal(WFIRE_PRIMARY,   0, nullptr);
+		weapon_setFireRateInternal(WFIRE_SECONDARY, 0, nullptr);
+
+		switch (s_prevWeapon)
+		{
+			case WPN_PISTOL:
+			{
+				Tick fireDelay = s_superCharge ? 35 : 71;
+				weapon_setFireRateInternal(WFIRE_PRIMARY, fireDelay, &s_canFireWeaponPrim);
+			} break;
+			case WPN_RIFLE:
+			{
+				Tick fireDelay = s_superCharge ? 10 : 21;
+				weapon_setFireRateInternal(WFIRE_PRIMARY, fireDelay, &s_canFireWeaponPrim);
+			} break;
+			case WPN_THERMAL_DET:
+			case WPN_MINE:
+			{
+				weapon_setFireRateInternal(WFIRE_PRIMARY, 1, &s_canFireWeaponPrim);
+			} break;
+			case WPN_REPEATER:
+			{
+				Tick fireDelay = s_superCharge ? 14 : 30;
+				weapon_setFireRateInternal(WFIRE_PRIMARY, fireDelay, &s_canFireWeaponPrim);
+
+				fireDelay = s_superCharge ? 18 : 37;
+				weapon_setFireRateInternal(WFIRE_SECONDARY, fireDelay, &s_canFireWeaponSec);
+			} break;
+			case WPN_FUSION:
+			{
+				Tick fireDelay = s_superCharge ? 17 : 35;
+				weapon_setFireRateInternal(WFIRE_PRIMARY, fireDelay, &s_canFireWeaponPrim);
+
+				fireDelay = s_superCharge ? 33 : 68;
+				weapon_setFireRateInternal(WFIRE_SECONDARY, fireDelay, &s_canFireWeaponSec);
+			} break;
+			case WPN_MORTAR:
+			{
+				Tick fireDelay = s_superCharge ? 50 : 100;
+				weapon_setFireRateInternal(WFIRE_PRIMARY, fireDelay, &s_canFireWeaponPrim);
+			} break;
+			case WPN_CONCUSSION:
+			{
+				Tick fireDelay = s_superCharge ? 57 : 115;
+				weapon_setFireRateInternal(WFIRE_PRIMARY, fireDelay, &s_canFireWeaponPrim);
+			} break;
+			case WPN_CANNON:
+			{
+				Tick fireDelay = s_superCharge ? 17 : 35;
+				weapon_setFireRateInternal(WFIRE_PRIMARY, fireDelay, &s_canFireWeaponPrim);
+
+				fireDelay = s_superCharge ? 86 : 87;
+				weapon_setFireRateInternal(WFIRE_SECONDARY, fireDelay, &s_canFireWeaponSec);
+			} break;
+		}
+	}
+		
 	///////////////////////////////////////////
 	// Internal Implementation
 	///////////////////////////////////////////
+	void weapon_setFireRateInternal(WeaponFireMode mode, Tick delay, s32* canFire)
+	{
+		if (mode == WFIRE_PRIMARY)
+		{
+			s_weaponDelayPrimary = delay;
+			s_canFirePrimPtr = canFire;
+		}
+		else
+		{
+			s_weaponDelaySeconary = delay;
+			s_canFireSecPtr = canFire;
+		}
+	}
+
 	void weapon_loadTextures()
 	{
 		if (!s_weaponTexturesLoaded)

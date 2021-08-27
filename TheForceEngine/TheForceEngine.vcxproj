@@ -273,6 +273,7 @@
     <ClInclude Include="TFE_DarkForces\hud.h" />
     <ClInclude Include="TFE_DarkForces\item.h" />
     <ClInclude Include="TFE_DarkForces\logic.h" />
+    <ClInclude Include="TFE_DarkForces\mission.h" />
     <ClInclude Include="TFE_DarkForces\pickup.h" />
     <ClInclude Include="TFE_DarkForces\player.h" />
     <ClInclude Include="TFE_DarkForces\projectile.h" />
@@ -428,6 +429,7 @@
     <ClCompile Include="TFE_DarkForces\hud.cpp" />
     <ClCompile Include="TFE_DarkForces\item.cpp" />
     <ClCompile Include="TFE_DarkForces\logic.cpp" />
+    <ClCompile Include="TFE_DarkForces\mission.cpp" />
     <ClCompile Include="TFE_DarkForces\pickup.cpp" />
     <ClCompile Include="TFE_DarkForces\player.cpp" />
     <ClCompile Include="TFE_DarkForces\projectile.cpp" />

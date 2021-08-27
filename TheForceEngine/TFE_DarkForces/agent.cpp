@@ -1,5 +1,6 @@
 #include "agent.h"
 #include "util.h"
+#include "player.h"
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
@@ -12,6 +13,8 @@ namespace TFE_DarkForces
 	// Shared State
 	///////////////////////////////////////////
 	AgentData s_agentData[MAX_AGENT_COUNT];
+	JBool s_levelComplete = JFALSE;
+	JBool s_invalidLevelIndex;
 	s32 s_maxLevelIndex;
 	s32 s_levelIndex = -1;	// This is actually s_levelIndex2 in the RE code.
 	s32 s_agentId = 0;
@@ -49,6 +52,16 @@ namespace TFE_DarkForces
 	s32 agent_getLevelIndex()
 	{
 		return s_levelIndex;
+	}
+
+	void  agent_setLevelComplete(JBool complete)
+	{
+		s_levelComplete = complete;
+	}
+
+	JBool agent_getLevelComplete()
+	{
+		return s_levelComplete;
 	}
 
 	void agent_setNextLevelByIndex(s32 index)
@@ -159,6 +172,23 @@ namespace TFE_DarkForces
 		}
 		file->writeBuffer(saveData, sizeof(LevelSaveData));
 		return JTRUE;
+	}
+
+	void agent_readSavedDataForLevel(s32 agentId, s32 levelIndex)
+	{
+		FileStream file;
+		if (!openDarkPilotConfig(&file))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
+			return;
+		}
+		LevelSaveData levelData;
+		agent_readConfigData(&file, agentId, &levelData);
+		file.close();
+
+		s32* ammo = &levelData.ammo[(levelIndex - 1) * 10];
+		u8* inv = &levelData.inv[(levelIndex - 1) * 32];
+		player_readInfo(inv, ammo);
 	}
 		
 	// This function differs slightly from Dark Forces in the following ways:

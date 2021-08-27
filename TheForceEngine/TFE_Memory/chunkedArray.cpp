@@ -77,7 +77,6 @@ namespace TFE_Memory
 			arr->freeSlotCount--;
 			return arr->freeSlots[arr->freeSlotCount];
 		}
-
 		arr->elemCount++;
 
 		const u32 newChunkIndex = arr->elemCount / arr->chunkSize;
@@ -123,7 +122,8 @@ namespace TFE_Memory
 
 	u32 chunkedArraySize(ChunkedArray* arr)
 	{
-		return arr->elemCount;
+		if (!arr) { return 0; }
+		return arr->elemCount - arr->freeSlotCount;
 	}
 
 	void* chunkedArrayGet(ChunkedArray* arr, u32 index)
@@ -142,6 +142,7 @@ namespace TFE_Memory
 			arr->freeSlotCapacity += FREE_SLOT_STEP;
 			arr->freeSlots = (u8**)realloc(arr->freeSlots, sizeof(u8*) * arr->freeSlotCapacity);
 		}
-		arr->freeSlots[arr->freeSlotCount++] = ptr;
+		arr->freeSlots[arr->freeSlotCount] = ptr;
+		arr->freeSlotCount++;
 	}
 }

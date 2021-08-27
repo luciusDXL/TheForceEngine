@@ -46,14 +46,20 @@ namespace TFE_DarkForces
 
 	JBool agent_readConfigData(FileStream* file, s32 agentId, LevelSaveData* saveData);
 	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, const LevelSaveData* saveData);
+	void  agent_readSavedDataForLevel(s32 agentId, s32 levelIndex);
 
 	JBool openDarkPilotConfig(FileStream* file);
 	void  agent_setNextLevelByIndex(s32 index);
 	s32   agent_getLevelIndex();
 
+	void  agent_setLevelComplete(JBool complete);
+	JBool agent_getLevelComplete();
+
 	extern AgentData s_agentData[MAX_AGENT_COUNT];
 	extern s32 s_maxLevelIndex;
 	extern s32 s_agentId;
+	extern JBool s_invalidLevelIndex;
+	extern JBool s_levelComplete;
 	extern char** s_levelDisplayNames;
 	extern char** s_levelGamePaths;
 	extern char** s_levelSrcPaths;

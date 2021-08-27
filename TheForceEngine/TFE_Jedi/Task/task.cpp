@@ -23,6 +23,7 @@ struct Task
 	Task* prevSec;
 	Task* nextSec;
 	Task* retTask;			// Task to return to once this one is completed or paused.
+	JBool framebreak;		// JTRUE if the task loop should end after this task.
 	
 	// Used in place of stack memory.
 	TaskContext context;
@@ -43,7 +44,11 @@ namespace TFE_Jedi
 
 	ChunkedArray* s_tasks = nullptr;
 	Task* s_activeTasks[MAX_ACTIVE_TASKS];
+
 	Task* s_curTask = nullptr;
+	Task* s_resumeTask = nullptr;
+	s32 s_currentId;
+
 	TaskContext* s_curContext = nullptr;
 	s32 s_activeCount = 0;
 
@@ -53,8 +58,6 @@ namespace TFE_Jedi
 
 	Task  s_rootTask;
 	Task* s_taskIter;
-
-	void setNextTask(Task* task, s32 id);
 
 	void createRootTask()
 	{
@@ -71,6 +74,11 @@ namespace TFE_Jedi
 	
 	Task* createTask(TaskFunc func)
 	{
+		if (!s_tasks)
+		{
+			createRootTask();
+		}
+
 		Task* newTask = (Task*)allocFromChunkedArray(s_tasks);
 		assert(newTask);
 
@@ -92,8 +100,13 @@ namespace TFE_Jedi
 		return newTask;
 	}
 
-	Task* pushTask(TaskFunc func)
+	Task* pushTask(TaskFunc func, JBool framebreak)
 	{
+		if (!s_tasks)
+		{
+			createRootTask();
+		}
+
 		Task* newTask = (Task*)allocFromChunkedArray(s_tasks);
 		assert(newTask);
 
@@ -105,9 +118,11 @@ namespace TFE_Jedi
 		newTask->prevSec = nullptr;
 		newTask->nextSec = nullptr;
 		newTask->retTask = nullptr;
+		newTask->framebreak = framebreak;
 
 		newTask->context = { 0 };
 		newTask->context.func = func;
+		newTask->nextTick = s_curTick;
 		
 		return newTask;
 	}
@@ -145,22 +160,8 @@ namespace TFE_Jedi
 		if (!task) { return; }
 		
 		task->retTask = s_curTask;
-		setNextTask(task, id);
-	}
-
-	void setNextTask(Task* task, s32 id)
-	{
-		// Assign the task + id as the next to run.
-		// TODO
-	}
-		
-	void addTaskToActive(Task* task)
-	{
-		if (task->activeIndex < 0)
-		{
-			task->activeIndex = s_activeCount;
-			s_activeTasks[s_activeCount++] = task;
-		}
+		s_currentId = id;
+		s_curTask = task;
 	}
 
 	void task_makeActive(Task* task)
@@ -171,10 +172,11 @@ namespace TFE_Jedi
 	void itask_end(s32 id)
 	{
 		freeTask(s_curTask);
+		s_curTask = nullptr;
 		// What to do here?
 	}
 
-	void itask_yield(Tick delay, s32 state, s32 id)
+	void itask_yield(Tick delay, s32 state)
 	{
 		// Copy the state so we know where to return.
 		s_curContext->state = state;
@@ -186,8 +188,9 @@ namespace TFE_Jedi
 			Task* retTask = s_curTask->retTask;
 			s_curTask->retTask = nullptr;
 
-			// Add the task to be run next.
-			setNextTask(retTask, 0);
+			// Set the next task.
+			s_currentId = 0;
+			s_curTask = retTask;
 			return;
 		}
 
@@ -205,9 +208,10 @@ namespace TFE_Jedi
 				{
 					task = task->prevSec;
 				}
-				if (task->nextTick <= s_curTick)
+				if (task->nextTick <= s_curTick || task->framebreak)
 				{
-					setNextTask(task, 0);
+					s_currentId = 0;
+					s_curTask = task;
 					return;
 				}
 			}
@@ -216,7 +220,8 @@ namespace TFE_Jedi
 				task = task->nextSec;
 				if (task->nextTick <= s_curTick)
 				{
-					setNextTask(task, 0);
+					s_currentId = 0;
+					s_curTask = task;
 					return;
 				}
 			}
@@ -230,7 +235,55 @@ namespace TFE_Jedi
 	// Called once per frame to run all of the tasks.
 	void runTasks()
 	{
-		// TODO
+		if (!task_getCount())
+		{
+			return;
+		}
+
+		// Find the next task to run.
+		Task* task = s_resumeTask ? s_resumeTask : s_curTask;
+		s_curTask = nullptr;
+		
+		while (!s_curTask || !s_curTask->context.func)
+		{
+			if (task->nextMain)
+			{
+				s_curTask = task->nextMain;
+			}
+			else if (task->nextSec)
+			{
+				s_curTask = task->nextSec;
+			}
+			task = s_curTask;
+		}
+		s_currentId = 0;
+
+		// Do another until enough time has passed.
+		if (s_curTask->nextTick > s_curTick)
+		{
+			return;
+		}
+
+		while (s_curTask)
+		{
+			JBool framebreak = s_curTask->framebreak;
+			if (framebreak)
+			{
+				s_resumeTask = s_curTask;
+			}
+
+			// This should only be true when hitting the "framebreak" task which is sleeping.
+			if (s_curTask->nextTick <= s_curTick)
+			{
+				s_curContext = &s_curTask->context;
+				s_curTask->context.func(s_currentId);
+			}
+
+			if (framebreak)
+			{
+				break;
+			}
+		}
 	}
 
 	void setTaskDefaults()
@@ -241,19 +294,7 @@ namespace TFE_Jedi
 
 	s32 task_getCount()
 	{
-		return 0;
-	}
-
-	// Methods to request system exit.
-	void postSystemExitRequest()
-	{
-		// TODO
-	}
-
-	bool systemExitRequested()
-	{
-		// TODO
-		return false;
+		return chunkedArraySize(s_tasks);
 	}
 
 	s32 ctxGetState()

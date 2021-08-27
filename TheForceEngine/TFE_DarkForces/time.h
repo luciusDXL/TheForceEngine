@@ -42,4 +42,5 @@ namespace TFE_DarkForces
 
 	// Convert from frames per second (fps) to Ticks.
 	Tick time_frameRateToDelay(u32 frameRate);
+	void updateTime();
 }  // namespace TFE_DarkForces

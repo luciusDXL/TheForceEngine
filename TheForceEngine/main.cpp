@@ -642,12 +642,6 @@ int main(int argc, char* argv[])
 				s_curGame->loopGame();
 				TFE_Jedi::runTasks();
 			}
-			if (TFE_Jedi::systemExitRequested())
-			{
-				freeGame(s_curGame);
-				s_curGame = nullptr;
-			    s_loop = false;
-			}
 		}
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
 
