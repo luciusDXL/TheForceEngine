@@ -49,11 +49,12 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	void mission_mainTaskFunc(s32 id);
 	void setPalette(u8* pal);
-	void textureBlitColumn(u8* image, u8* outBuffer, s32 yPixelCount);
+	void textureBlitColumnOpaque(u8* image, u8* outBuffer, s32 yPixelCount);
+	void textureBlitColumnTrans(u8* image, u8* outBuffer, s32 yPixelCount);
 	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output);
 	void blitLoadingScreen();
 	void displayLoadingScreen();
-	void setupLevelTasks();
+	void mission_setupTasks();
 	JBool loadLevel(const char* levelName);
 
 	/////////////////////////////////////////////
@@ -69,7 +70,7 @@ namespace TFE_DarkForces
 			pushTask(mission_mainTaskFunc);
 
 			s_missionMode = MISSION_MODE_LOAD_START;
-			setupLevelTasks();
+			mission_setupTasks();
 			displayLoadingScreen();
 
 			const char* levelName = agent_getLevelName();
@@ -136,6 +137,8 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// Internal Implementation
 	/////////////////////////////////////////////
+	// Convert the palette to 32 bit color and then send to the render backend.
+	// This is functionally similar to loading the palette into VGA registers.
 	void setPalette(u8* pal)
 	{
 		// Update the palette.
@@ -149,14 +152,23 @@ namespace TFE_DarkForces
 		TFE_RenderBackend::setPalette(palette);
 	}
 
-	void textureBlitColumn(u8* image, u8* outBuffer, s32 yPixelCount)
+	void textureBlitColumnOpaque(u8* image, u8* outBuffer, s32 yPixelCount)
 	{
 		s32 end = yPixelCount - 1;
-
 		s32 offset = 0;
 		for (s32 i = end; i >= 0; i--, offset += 320)
 		{
 			outBuffer[offset] = image[i];
+		}
+	}
+
+	void textureBlitColumnTrans(u8* image, u8* outBuffer, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		for (s32 i = end; i >= 0; i--, offset += 320)
+		{
+			if (image[i]) { outBuffer[offset] = image[i]; }
 		}
 	}
 
@@ -193,9 +205,19 @@ namespace TFE_DarkForces
 		if (yPixelCount <= 0) { return; }
 
 		u8* buffer = texture->image + texture->height*srcX + srcY;
-		for (s32 col = x0; col <= x1; col++, buffer += texture->height)
+		if (texture->flags & OPACITY_TRANS)
 		{
-			textureBlitColumn(buffer, output + y0 * 320 + col, yPixelCount);
+			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
+			{
+				textureBlitColumnTrans(buffer, output + y0*320 + col, yPixelCount);
+			}
+		}
+		else
+		{
+			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
+			{
+				textureBlitColumnOpaque(buffer, output + y0*320 + col, yPixelCount);
+			}
 		}
 	}
 
@@ -212,10 +234,35 @@ namespace TFE_DarkForces
 		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
 	}
 
-	void setupLevelTasks()
+	void mission_setupTasks()
 	{
+		// setSpriteAnimation(nullptr, nullptr);
+		// setupTextureAnimationTask();
+		// resetFrameData();
+		// initHud();
+		// clearHudMessage();
+		// computeScaledScreenBounds();
+		// clearWeaponFireRate();
+		// createPlayerWeaponTask();
+		// createProjectileTask();
+		// createPlayerController();
+		// createInfElevatorTask();
+		// clearPlayerEye();
+		// createPickupTask();
+		// createTeleportTask();
+		// createTriggerTask();
+		// createActorTask();
+		// createHitEffectTask();
+		// createIMuseTask();
+		// clearLevelData();
+		// clearUpdateTask();
+		// s_drawAutomap = JFALSE;
+		// s_levelEndTask = nullptr;
+		// s_cheatString[0] = 0;
+		// s_cheatCharIndex = 0;
+		// s_cheatInputCount = 0;
 	}
-
+	   
 	JBool loadLevel(const char* levelName)
 	{
 		return JFALSE;
