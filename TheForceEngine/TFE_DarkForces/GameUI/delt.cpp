@@ -117,6 +117,7 @@ namespace TFE_DarkForces
 
 		// Then read out the data.
 		loadDeltIntoFrame(outFrame, buffer, size);
+		return JTRUE;
 	}
 
 	void blitDeltaFrame(DeltFrame* frame, s32 x0, s32 y0, u8* framebuffer)

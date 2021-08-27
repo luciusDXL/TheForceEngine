@@ -1,8 +1,10 @@
 #include "mission.h"
 #include "agent.h"
 #include "animLogic.h"
+#include "automap.h"
 #include "hud.h"
 #include "player.h"
+#include "weapon.h"
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_RenderBackend/renderBackend.h>
 
@@ -243,9 +245,9 @@ namespace TFE_DarkForces
 		// resetFrameData();
 		hud_startup();
 		hud_clearMessage();
-		// computeScaledScreenBounds();
-		// clearWeaponFireRate();
-		// createPlayerWeaponTask();
+		automap_computeScreenBounds();
+		weapon_clearFireRate();
+		weapon_createPlayerWeaponTask();
 		// createProjectileTask();
 		// createPlayerController();
 		// createInfElevatorTask();

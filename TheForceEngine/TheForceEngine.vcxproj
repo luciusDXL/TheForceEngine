@@ -262,6 +262,7 @@
     <ClInclude Include="TFE_DarkForces\actor.h" />
     <ClInclude Include="TFE_DarkForces\agent.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
+    <ClInclude Include="TFE_DarkForces\automap.h" />
     <ClInclude Include="TFE_DarkForces\config.h" />
     <ClInclude Include="TFE_DarkForces\darkForcesMain.h" />
     <ClInclude Include="TFE_DarkForces\gameMessage.h" />
@@ -281,6 +282,7 @@
     <ClInclude Include="TFE_DarkForces\time.h" />
     <ClInclude Include="TFE_DarkForces\util.h" />
     <ClInclude Include="TFE_DarkForces\weapon.h" />
+    <ClInclude Include="TFE_DarkForces\weaponFireFunc.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
     <ClInclude Include="TFE_FileSystem\paths.h" />
@@ -418,6 +420,7 @@
     <ClCompile Include="TFE_DarkForces\actor.cpp" />
     <ClCompile Include="TFE_DarkForces\agent.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
+    <ClCompile Include="TFE_DarkForces\automap.cpp" />
     <ClCompile Include="TFE_DarkForces\config.cpp" />
     <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp" />
     <ClCompile Include="TFE_DarkForces\gameMessage.cpp" />
@@ -437,6 +440,7 @@
     <ClCompile Include="TFE_DarkForces\time.cpp" />
     <ClCompile Include="TFE_DarkForces\util.cpp" />
     <ClCompile Include="TFE_DarkForces\weapon.cpp" />
+    <ClCompile Include="TFE_DarkForces\weaponFireFunc.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\paths.cpp" />

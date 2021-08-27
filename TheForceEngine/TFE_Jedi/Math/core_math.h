@@ -49,6 +49,13 @@ namespace TFE_Jedi
 		return min(max(x, a), b);
 	}
 
+	inline void swap(s32& a, s32& b)
+	{
+		s32 tmp = a;
+		a = b;
+		b = tmp;
+	}
+
 	inline s32 sign(s32 x)
 	{
 		return x < 0 ? -1 : 1;

@@ -33,6 +33,14 @@ enum TFE_SubRenderer
 	TSR_INVALID,			// Invalid sub-renderer.
 };
 
+struct ScreenRect
+{
+	s32 left;
+	s32 top;
+	s32 right;
+	s32 bot;
+};
+
 namespace TFE_Jedi
 {
 	void renderer_init();
@@ -62,4 +70,6 @@ namespace TFE_Jedi
 
 	// 2D
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
+
+	extern ScreenRect s_screenRect;
 }

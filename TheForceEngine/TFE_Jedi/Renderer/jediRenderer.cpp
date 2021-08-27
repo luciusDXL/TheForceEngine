@@ -24,6 +24,7 @@ namespace TFE_Jedi
 	static MemoryPool s_memPool;
 	static TFE_SubRenderer s_subRenderer = TSR_INVALID;
 	static TFE_Sectors* s_sectors = nullptr;
+	ScreenRect s_screenRect = { 0, 1, 319, 198 };
 
 	/////////////////////////////////////////////
 	// Forward Declarations

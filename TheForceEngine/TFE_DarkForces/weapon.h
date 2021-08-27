@@ -32,10 +32,22 @@ namespace TFE_DarkForces
 		WFIRE_SECONDARY,
 	};
 
+	enum WeaponTaskId
+	{
+		WTID_FREE_TASK = -1,
+		WTID_SWITCH_WEAPON = 2,
+		WTID_START_FIRING = 4,
+		WTID_STOP_FIRING = 5,
+		WTID_HOLSTER = 6,
+		WTID_COUNT
+	};
+
 	void weapon_startup();
 	void weapon_enableAutomount(JBool enable);
 	void weapon_setNext(s32 wpnIndex);
 	void weapon_setFireRate();
+	void weapon_clearFireRate();
+	void weapon_createPlayerWeaponTask();
 
 	extern SoundSourceID s_superchargeCountdownSound;
 }  // namespace TFE_DarkForces

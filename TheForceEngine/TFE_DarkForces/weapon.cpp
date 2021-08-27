@@ -1,8 +1,10 @@
 #include "weapon.h"
 #include "player.h"
 #include "pickup.h"
+#include "weaponFireFunc.h"
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/InfSystem/message.h>
 
 namespace TFE_DarkForces
 {
@@ -30,15 +32,18 @@ namespace TFE_DarkForces
 		fixed16_16 wakeupRange;
 		s32 variation;
 	};
-
+		
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
 	static JBool s_weaponTexturesLoaded = JFALSE;
 	static JBool s_isShooting = JFALSE;
 	static JBool s_secondaryFire = JFALSE;
+	static JBool s_weaponOffAnim = JFALSE;
+	static JBool s_switchWeapons = JFALSE;
 	static JBool s_weaponAutoMount2 = JFALSE;
 
+	static Task* s_playerWeaponTask = nullptr;
 	static TextureData* s_rhand1 = nullptr;
 	static TextureData* s_gasmaskTexture = nullptr;
 	static PlayerWeapon s_playerWeaponList[WPN_COUNT];
@@ -50,6 +55,7 @@ namespace TFE_DarkForces
 	static s32 s_lastWeapon;
 	static s32 s_canFireWeaponSec;
 	static s32 s_canFireWeaponPrim;
+	static u32 s_fireFrame = 0;
 
 	static Tick s_weaponDelayPrimary;
 	static Tick s_weaponDelaySeconary;
@@ -78,6 +84,8 @@ namespace TFE_DarkForces
 	static SoundSourceID s_missile1SndSrc;
 	static SoundSourceID s_weaponChangeSnd;
 
+	static SoundEffectID s_repeaterFireSndID = 0;
+
 	///////////////////////////////////////////
 	// Shared State
 	///////////////////////////////////////////
@@ -89,6 +97,21 @@ namespace TFE_DarkForces
 	TextureData* loadWeaponTexture(const char* texName);
 	void weapon_loadTextures();
 	void weapon_setFireRateInternal(WeaponFireMode mode, Tick delay, s32* canFire);
+	void weapon_playerWeaponTaskFunc(s32 id);
+
+	static WeaponFireFunc s_weaponFireFunc[WPN_COUNT] =
+	{
+		weaponFire_fist,			// WPN_FIST
+		weaponFire_pistol,			// WPN_PISTOL
+		weaponFire_rifle,			// WPN_RIFLE
+		weaponFire_thermalDetonator,// WPN_THERMAL_DET
+		weaponFire_repeater,		// WPN_REPEATER
+		weaponFire_fusion,			// WPN_FUSION
+		weaponFire_mortar,			// WPN_MORTAR
+		weaponFire_mine,			// WPN_MINE
+		weaponFire_concussion,		// WPN_CONCUSSION
+		weaponShoot_cannon			// WPN_CANNON
+	};
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -447,6 +470,21 @@ namespace TFE_DarkForces
 			} break;
 		}
 	}
+
+	void weapon_clearFireRate()
+	{
+		s_weaponDelayPrimary = 0;
+		s_weaponDelaySeconary = 0;
+	}
+	
+	void weapon_createPlayerWeaponTask()
+	{
+		s_playerWeaponTask = createTask(weapon_playerWeaponTaskFunc);
+
+		s_superCharge = JFALSE;
+		s_superChargeHud = JFALSE;
+		s_superchargeTask = nullptr;
+	}
 		
 	///////////////////////////////////////////
 	// Internal Implementation
@@ -534,5 +572,175 @@ namespace TFE_DarkForces
 			TFE_System::logWrite(LOG_ERROR, "Weapon", "Weapon_Startup: %s NOT FOUND.", texName);
 		}
 		return nullptr;
+	}
+
+	void weapon_handleState()
+	{
+		// STUB
+	}
+
+	void weapon_handleOffAnimation()
+	{
+		// STUB
+	}
+
+	void weapon_handleOnAnimation()
+	{
+		// STUB
+	}
+
+	void weapon_prepareToFire()
+	{
+		PlayerWeapon* weapon = s_curPlayerWeapon;
+		if (s_prevWeapon == WPN_REPEATER)
+		{
+			if (s_repeaterFireSndID)
+			{
+				stopSound(s_repeaterFireSndID);
+				s_repeaterFireSndID = 0;
+			}
+			weapon->frame = 0;
+		}
+		else if (s_prevWeapon == WPN_CANNON)
+		{
+			if (!s_secondaryFire)
+			{
+				weapon->frame = 0;
+			}
+		}
+	}
+
+	void weapon_playerWeaponTaskFunc(s32 id)
+	{
+		struct LocalContext
+		{
+			JBool secondaryFire;
+		};
+		task_begin_ctx;
+		while (1)
+		{
+			// If the weapon task is called with a non-zero id, handle it here.
+			switch (id)
+			{
+				case WTID_FREE_TASK:
+				{
+					freeTask(s_playerWeaponTask);
+					s_playerWeaponTask = nullptr;
+					return;
+				} break;
+				case WTID_SWITCH_WEAPON:
+				{
+					task_makeActive(s_playerWeaponTask);
+					s_nextWeapon = s_msgArg1;
+					task_makeActive(s_playerWeaponTask);
+					task_yield(TASK_NO_DELAY);
+					weapon_handleState();
+
+					if (s_nextWeapon == -1)
+					{
+						swap(s_curWeapon, s_lastWeapon);
+					}
+					else
+					{
+						s32 lastWeapon = s_curWeapon;
+						s_curWeapon = s_nextWeapon;
+						s_lastWeapon = lastWeapon;
+					}
+					s_playerInfo.curWeapon = s_prevWeapon;
+
+					if (!s_weaponOffAnim)
+					{
+						// For TFE: Look into "child tasks"
+						weapon_handleOffAnimation();
+					}
+					weapon_setNext(s_curWeapon);
+					//handleWeaponOnAnimation();
+				} break;
+				case WTID_START_FIRING:
+				{
+					taskCtx->secondaryFire = s_msgArg1;
+					task_makeActive(s_playerWeaponTask);
+					task_makeActive(s_playerWeaponTask);
+					task_yield(TASK_NO_DELAY);
+
+					weapon_handleState();
+					s_isShooting = JTRUE;
+					s_secondaryFire = taskCtx->secondaryFire ? JTRUE : JFALSE;
+					if (s_weaponOffAnim)
+					{
+						weapon_handleOnAnimation();
+					}
+					s_curPlayerWeapon->flags &= ~2;
+
+					weapon_prepareToFire();
+					weapon_setFireRate();
+				} break;
+				case WTID_STOP_FIRING:
+				{
+					// TODO
+				} break;
+				case WTID_HOLSTER:
+				{
+					// TODO
+				} break;
+			}
+
+			// Handle shooting.
+			while (s_isShooting)
+			{
+				s_switchWeapons = JFALSE;
+				s_fireFrame++;
+
+				while (id != 0)
+				{
+					task_makeActive(s_playerWeaponTask);
+					task_yield(TASK_NO_DELAY);
+					weapon_handleState();
+				}
+
+				if (s_secondaryFire && s_canFireWeaponSec)
+				{
+					// Fire the weapon.
+					s_weaponFireFunc[s_prevWeapon]();
+				}
+				else if (s_canFireWeaponPrim)
+				{
+					// Fire the weapon.
+					s_weaponFireFunc[s_prevWeapon]();
+				}
+				else  // 1ecba2:
+				{
+					task_makeActive(s_playerWeaponTask);
+					task_yield(TASK_NO_DELAY);
+					weapon_handleState();
+				}
+
+				if (s_switchWeapons)
+				{
+					if (s_nextWeapon == -1)
+					{
+						swap(s_curWeapon, s_lastWeapon);
+					}
+					else
+					{
+						s_lastWeapon = s_curWeapon;
+						s_curWeapon = s_nextWeapon;
+					}
+					s_playerInfo.curWeapon = s_prevWeapon;
+
+					if (!s_weaponOffAnim)
+					{
+						weapon_handleOffAnimation();
+					}
+
+					weapon_setNext(s_curWeapon);
+					weapon_handleOnAnimation();
+				}
+			}
+
+			// Go to sleep until needed.
+			task_yield(TASK_SLEEP);
+		}
+		task_end;
 	}
 }  // namespace TFE_DarkForces
