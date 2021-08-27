@@ -2,14 +2,14 @@
 
 #define task_begin	\
 	ctxBegin();	\
-	switch (ctxGetState()) \
+	switch (ctxGetIP()) \
 	{	\
 	case 0:
 
 #define task_begin_ctx	\
 	ctxBegin();	\
 	ctxAllocate(sizeof(LocalContext));	\
-	switch (ctxGetState()) \
+	switch (ctxGetIP()) \
 	{	\
 	case 0:
 
@@ -42,11 +42,11 @@ namespace TFE_Jedi
 	//////////////////////////////////////////
 	// Internal functions used by macros.
 	//////////////////////////////////////////
-	s32 ctxGetState();
+	s32 ctxGetIP();
 	void ctxAllocate(u32 size);
 	void* ctxGet();
 	void ctxBegin();
 	void ctxCall(TaskFunc func, s32 id);
 	void ctxReturn();
-	void itask_yield(Tick delay, s32 state);
+	void itask_yield(Tick delay, s32 ip);
 }

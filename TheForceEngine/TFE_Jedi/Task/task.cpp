@@ -14,12 +14,10 @@ enum TaskConstants
 	TASK_INIT_LEVEL = -1,
 };
 
-// TODO: Revisit allocation strategy. It might make sense to allocate from a single stack pool, and give each task a piece of that.
-// Then when the task is finished, it returns the block of memory to the pool.
 struct TaskContext
 {
-	s32 state[TASK_MAX_LEVELS];
-	TaskFunc callstack[TASK_MAX_LEVELS];
+	s32 ip[TASK_MAX_LEVELS];				// Current instruction pointer (IP) for each level of recursion.
+	TaskFunc callstack[TASK_MAX_LEVELS];	// Funcion pointer for each level of recursion.
 
 	u8* stackMem;		// starts out null, can point to the block if ever needed.
 	u32 stackOffset;	// where in the stack we are.
@@ -199,10 +197,10 @@ namespace TFE_Jedi
 		}
 	}
 
-	void itask_yield(Tick delay, s32 state)
+	void itask_yield(Tick delay, s32 ip)
 	{
-		// Copy the state so we know where to return.
-		s_curContext->state[s_curContext->level] = state;
+		// Copy the ip so we know where to return.
+		s_curContext->ip[s_curContext->level] = ip;
 
 		// If there is a return task, then take it next.
 		if (s_curTask->retTask)
@@ -321,9 +319,9 @@ namespace TFE_Jedi
 		return s_taskCount;
 	}
 
-	s32 ctxGetState()
+	s32 ctxGetIP()
 	{
-		return s_curContext->state[s_curContext->level];
+		return s_curContext->ip[s_curContext->level];
 	}
 
 	void ctxAllocate(u32 size)
@@ -362,7 +360,7 @@ namespace TFE_Jedi
 	{
 		assert(s_curContext->level + 1 < TASK_MAX_LEVELS);
 		s_curContext->callstack[s_curContext->level + 1] = func;
-		s_curContext->state[s_curContext->level + 1] = 0;
+		s_curContext->ip[s_curContext->level + 1] = 0;
 		func(id);
 	}
 }
