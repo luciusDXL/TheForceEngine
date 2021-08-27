@@ -44,100 +44,45 @@ namespace TFE_DarkForces
 	static JBool s_exitLevel = JFALSE;
 	static GameMissionMode s_missionMode = MISSION_MODE_MAIN;
 
+	/////////////////////////////////////////////
+	// Forward Declarations
+	/////////////////////////////////////////////
 	void mission_mainTaskFunc(s32 id);
+	void setPalette(u8* pal);
+	void textureBlitColumn(u8* image, u8* outBuffer, s32 yPixelCount);
+	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output);
+	void blitLoadingScreen();
+	void displayLoadingScreen();
+	void setupLevelTasks();
+	JBool loadLevel(const char* levelName);
 
-	void setPalette(u8* pal)
-	{
-		// Update the palette.
-		u32 palette[256];
-		u32* outColor = palette;
-		u8* srcColor = pal;
-		for (s32 i = 0; i < 256; i++, outColor++, srcColor += 3)
-		{
-			*outColor = CONV_6bitTo8bit(srcColor[0]) | (CONV_6bitTo8bit(srcColor[1]) << 8u) | (CONV_6bitTo8bit(srcColor[2]) << 16u) | (0xffu << 24u);
-		}
-		TFE_RenderBackend::setPalette(palette);
-	}
-
-	void textureBlitColumn(u8* image, u8* outBuffer, s32 yPixelCount)
-	{
-		s32 end = yPixelCount - 1;
-
-		s32 offset = 0;
-		for (s32 i = end; i >= 0; i--, offset += 320)
-		{
-			outBuffer[offset] = image[i];
-		}
-	}
-
-	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output)
-	{
-		s32 x1 = x0 + texture->width - 1;
-		s32 y1 = y0 + texture->height - 1;
-
-		// Cull if outside of the draw rect.
-		if (x1 < rect->x0 || y1 < rect->y0 || x0 > rect->x1 || y0 > rect->y1) { return; }
-		
-		s32 srcX = 0, srcY = 0;
-		if (y0 < rect->y0)
-		{
-			y0 = rect->y0;
-		}
-		if (y1 > rect->y1)
-		{
-			srcY = y1 - rect->y1;
-			y1 = rect->y1;
-		}
-
-		if (x0 < rect->x0)
-		{
-			x0 = rect->x0;
-		}
-		if (x1 > rect->x1)
-		{
-			srcX = x1 - rect->x1;
-			x1 = rect->x1;
-		}
-
-		s32 yPixelCount = y1 - y0 + 1;
-		if (yPixelCount <= 0) { return; }
-
-		u8* buffer = texture->image + texture->height*srcX + srcY;
-		for (s32 col = x0; col <= x1; col++, buffer += texture->height)
-		{
-			textureBlitColumn(buffer, output + y0*320 + col, yPixelCount);
-		}
-	}
-
-	void blitLoadingScreen()
-	{
-		if (!s_loadScreen) { return; }
-		blitTextureToScreen(s_loadScreen, &s_videoDrawRect, 0/*x0*/, 0/*y0*/, s_framebuffer);
-	}
-
-	void displayLoadingScreen()
-	{
-		blitLoadingScreen();
-		setPalette(s_loadingScreenPal);
-		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
-	}
-
+	/////////////////////////////////////////////
+	// API Implementation
+	/////////////////////////////////////////////
 	void mission_startTaskFunc(s32 id)
 	{
 		task_begin;
-		while (1)
 		{
 			s_invalidLevelIndex = JFALSE;
 			s_levelComplete = JFALSE;
 			s_exitLevel = JFALSE;
 			pushTask(mission_mainTaskFunc);
-			
+
 			s_missionMode = MISSION_MODE_LOAD_START;
+			setupLevelTasks();
 			displayLoadingScreen();
 
-			// Sleep until we are done with the main task.
-			task_yield(TASK_SLEEP);
+			const char* levelName = agent_getLevelName();
+			if (loadLevel(levelName))
+			{
+			}
 		}
+		// Sleep until we are done with the main task.
+		task_yield(TASK_SLEEP);
+
+		// Cleanup - shut down all tasks.
+		// TODO
+
 		// End the task.
 		task_end;
 	}
@@ -187,4 +132,93 @@ namespace TFE_DarkForces
 		}
 		task_end;
 	}
+
+	/////////////////////////////////////////////
+	// Internal Implementation
+	/////////////////////////////////////////////
+	void setPalette(u8* pal)
+	{
+		// Update the palette.
+		u32 palette[256];
+		u32* outColor = palette;
+		u8* srcColor = pal;
+		for (s32 i = 0; i < 256; i++, outColor++, srcColor += 3)
+		{
+			*outColor = CONV_6bitTo8bit(srcColor[0]) | (CONV_6bitTo8bit(srcColor[1]) << 8u) | (CONV_6bitTo8bit(srcColor[2]) << 16u) | (0xffu << 24u);
+		}
+		TFE_RenderBackend::setPalette(palette);
+	}
+
+	void textureBlitColumn(u8* image, u8* outBuffer, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+
+		s32 offset = 0;
+		for (s32 i = end; i >= 0; i--, offset += 320)
+		{
+			outBuffer[offset] = image[i];
+		}
+	}
+
+	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output)
+	{
+		s32 x1 = x0 + texture->width - 1;
+		s32 y1 = y0 + texture->height - 1;
+
+		// Cull if outside of the draw rect.
+		if (x1 < rect->x0 || y1 < rect->y0 || x0 > rect->x1 || y0 > rect->y1) { return; }
+
+		s32 srcX = 0, srcY = 0;
+		if (y0 < rect->y0)
+		{
+			y0 = rect->y0;
+		}
+		if (y1 > rect->y1)
+		{
+			srcY = y1 - rect->y1;
+			y1 = rect->y1;
+		}
+
+		if (x0 < rect->x0)
+		{
+			x0 = rect->x0;
+		}
+		if (x1 > rect->x1)
+		{
+			srcX = x1 - rect->x1;
+			x1 = rect->x1;
+		}
+
+		s32 yPixelCount = y1 - y0 + 1;
+		if (yPixelCount <= 0) { return; }
+
+		u8* buffer = texture->image + texture->height*srcX + srcY;
+		for (s32 col = x0; col <= x1; col++, buffer += texture->height)
+		{
+			textureBlitColumn(buffer, output + y0 * 320 + col, yPixelCount);
+		}
+	}
+
+	void blitLoadingScreen()
+	{
+		if (!s_loadScreen) { return; }
+		blitTextureToScreen(s_loadScreen, &s_videoDrawRect, 0/*x0*/, 0/*y0*/, s_framebuffer);
+	}
+
+	void displayLoadingScreen()
+	{
+		blitLoadingScreen();
+		setPalette(s_loadingScreenPal);
+		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
+	}
+
+	void setupLevelTasks()
+	{
+	}
+
+	JBool loadLevel(const char* levelName)
+	{
+		return JFALSE;
+	}
+
 }  // TFE_DarkForces

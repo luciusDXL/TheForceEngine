@@ -51,6 +51,7 @@ namespace TFE_DarkForces
 	JBool openDarkPilotConfig(FileStream* file);
 	void  agent_setNextLevelByIndex(s32 index);
 	s32   agent_getLevelIndex();
+	const char* agent_getLevelName();
 
 	void  agent_setLevelComplete(JBool complete);
 	JBool agent_getLevelComplete();
