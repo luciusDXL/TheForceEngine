@@ -789,7 +789,7 @@ namespace TFE_DarkForces
 		// Free old invincibility task and create a new invincibility task.
 		if (s_invTask)
 		{
-			freeTask(s_invTask);
+			task_free(s_invTask);
 		}
 		s_invTask = createTask(invincibilityTaskFunc);
 	}
@@ -799,7 +799,7 @@ namespace TFE_DarkForces
 		// Free old supercharge task and create a new supercharge task.
 		if (s_superchargeTask)
 		{
-			freeTask(s_superchargeTask);
+			task_free(s_superchargeTask);
 		}
 		s_superchargeTask = createTask(superchargeTaskFunc);
 	}

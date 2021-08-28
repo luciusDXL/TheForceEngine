@@ -32,7 +32,18 @@ namespace TFE_DarkForces
 		fixed16_16 wakeupRange;
 		s32 variation;
 	};
-		
+
+	struct WeaponAnimState
+	{
+		s32 frame;
+		s32 startOffsetX;
+		s32 startOffsetY;
+		s32 xSpeed;
+		s32 ySpeed;
+		s32 frameCount;
+		u32 ticksPerFrame;
+	};
+			
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
@@ -42,6 +53,7 @@ namespace TFE_DarkForces
 	static JBool s_weaponOffAnim = JFALSE;
 	static JBool s_switchWeapons = JFALSE;
 	static JBool s_weaponAutoMount2 = JFALSE;
+	static WeaponAnimState s_weaponAnimState;
 
 	static Task* s_playerWeaponTask = nullptr;
 	static TextureData* s_rhand1 = nullptr;
@@ -574,19 +586,170 @@ namespace TFE_DarkForces
 		return nullptr;
 	}
 
-	void weapon_handleState()
+	void weapon_setShooting(u32 secondaryFire)
 	{
-		// STUB
+		s_isShooting = JTRUE;
+		s_secondaryFire = secondaryFire ? JTRUE : JFALSE;
+
+		if (s_weaponOffAnim)
+		{
+			// TODO
+		}
+
+		PlayerWeapon* weapon = s_curPlayerWeapon;
+		weapon->flags &= ~2;
+		s32 wpnIndex = s_prevWeapon;
+
+		if (wpnIndex == 4)
+		{
+			// TODO
+		}
+		else if (wpnIndex == 9)
+		{
+			// TODO
+		}
+
+		weapon_setFireRate();
 	}
 
-	void weapon_handleOffAnimation()
+	void weapon_handleState(s32 id)
 	{
-		// STUB
+		task_begin;
+		while (1)
+		{
+			// TODO
+
+			task_yield(TASK_NO_DELAY);
+		}
+		task_end;
+	}
+		
+	// This task function handles animating a weapon on or off screen, based on the inputs.
+	void weapon_animateOnOrOffscreen(s32 id)
+	{
+		struct LocalContext
+		{
+			PlayerWeapon* weapon;
+			Tick startTick;
+		};
+		task_begin_ctx;
+
+		taskCtx->weapon = s_curPlayerWeapon;
+		taskCtx->weapon->xOffset = s_weaponAnimState.startOffsetX;
+		taskCtx->weapon->yOffset = s_weaponAnimState.startOffsetY;
+		task_makeActive(s_playerWeaponTask);
+
+		task_yield(TASK_NO_DELAY);
+		task_callTaskFunc(weapon_handleState);
+
+		taskCtx->weapon->frame = s_weaponAnimState.frame;
+		while (s_weaponAnimState.frameCount)
+		{
+			taskCtx->startTick = s_curTick;
+			// We may get calls to the weapon task while animating, so handle them as we get them.
+			do
+			{
+				task_yield((id != 0) ? TASK_NO_DELAY : s_weaponAnimState.ticksPerFrame);
+
+				if (id == WTID_STOP_FIRING)
+				{
+					// TODO
+				}
+				else if (id == WTID_START_FIRING)
+				{
+					weapon_setShooting(s_msgArg1/*secondaryFire*/);
+				}
+				else if (id == WTID_SWITCH_WEAPON)
+				{
+					s_switchWeapons = JTRUE;
+					s_nextWeapon = s_msgArg1;
+				}
+			} while (id != 0);
+
+			// Calculate the number of elapsed frames.
+			Tick elapsed = s_curTick - taskCtx->startTick;
+			if (elapsed <= s_weaponAnimState.ticksPerFrame + 1 || s_weaponAnimState.frameCount < 2)
+			{
+				taskCtx->weapon->xOffset += s_weaponAnimState.xSpeed;
+				taskCtx->weapon->yOffset += s_weaponAnimState.ySpeed;
+				s_weaponAnimState.frameCount--;
+			}
+			else
+			{
+				s32 elapsedFrames = min(s_weaponAnimState.frameCount, elapsed / s_weaponAnimState.ticksPerFrame);
+				taskCtx->weapon->xOffset += s_weaponAnimState.xSpeed * elapsedFrames;
+				taskCtx->weapon->yOffset += s_weaponAnimState.ySpeed * elapsedFrames;
+				s_weaponAnimState.frameCount -= elapsedFrames;
+			}
+		}
+
+		task_end;
 	}
 
-	void weapon_handleOnAnimation()
+	void weapon_handleOffAnimation(s32 id)
 	{
-		// STUB
+		task_begin;
+		// s_prevWeapon is the weapon we are switching away from.
+		PlayerWeapon* weapon = s_curPlayerWeapon;
+
+		if (s_prevWeapon == WPN_REPEATER)
+		{
+			if (s_repeaterFireSndID)
+			{
+				stopSound(s_repeaterFireSndID);
+				s_repeaterFireSndID = 0;
+			}
+			s_curPlayerWeapon->frame = 0;
+		}
+		else if (s_prevWeapon == WPN_CANNON && !s_secondaryFire)
+		{
+			s_curPlayerWeapon->frame = 0;
+		}
+
+		s_weaponAnimState =
+		{
+			s_curPlayerWeapon->frame,	// frame
+			0, 0,						// startOffsetX, startOffsetY
+			3, 4,						// xSpeed, ySpeed
+			10, s_superCharge ? 1u : 2u	// frameCount, ticksPerFrame
+		};
+		task_callTaskFunc(weapon_animateOnOrOffscreen);
+
+		s_weaponOffAnim = JTRUE;
+		task_end;
+	}
+
+	void weapon_handleOnAnimation(s32 id)
+	{
+		task_begin;
+
+		s_weaponOffAnim = JFALSE;
+		if (s_curWeapon != WPN_FIST && s_curWeapon != WPN_THERMAL_DET && s_curWeapon != WPN_MINE)
+		{
+			playSound2D(s_weaponChangeSnd);
+		}
+				
+		if (s_prevWeapon == WPN_THERMAL_DET)
+		{
+			// TODO
+		}
+		else if (s_prevWeapon == WPN_MINE)
+		{
+			// TODO
+		}
+
+		// s_prevWeapon is the weapon we are switching away from.
+		s_weaponAnimState =
+		{
+			s_curPlayerWeapon->frame,	// frame
+			14, 40,						// startOffsetX, startOffsetY
+			-3, -4,						// xSpeed, ySpeed
+			10, s_superCharge ? 1u : 2u	// frameCount, ticksPerFrame
+		};
+		task_callTaskFunc(weapon_animateOnOrOffscreen);
+
+		s_weaponOffAnim = JTRUE;
+		task_end;
 	}
 
 	void weapon_prepareToFire()
@@ -624,7 +787,7 @@ namespace TFE_DarkForces
 			{
 				case WTID_FREE_TASK:
 				{
-					freeTask(s_playerWeaponTask);
+					task_free(s_playerWeaponTask);
 					s_playerWeaponTask = nullptr;
 					return;
 				} break;
@@ -634,7 +797,7 @@ namespace TFE_DarkForces
 					s_nextWeapon = s_msgArg1;
 					task_makeActive(s_playerWeaponTask);
 					task_yield(TASK_NO_DELAY);
-					weapon_handleState();
+					task_callTaskFunc(weapon_handleState);
 
 					if (s_nextWeapon == -1)
 					{
@@ -650,11 +813,10 @@ namespace TFE_DarkForces
 
 					if (!s_weaponOffAnim)
 					{
-						// For TFE: Look into "child tasks"
-						weapon_handleOffAnimation();
+						task_callTaskFunc(weapon_handleOffAnimation);
 					}
 					weapon_setNext(s_curWeapon);
-					//handleWeaponOnAnimation();
+					task_callTaskFunc(weapon_handleOnAnimation);
 				} break;
 				case WTID_START_FIRING:
 				{
@@ -663,12 +825,12 @@ namespace TFE_DarkForces
 					task_makeActive(s_playerWeaponTask);
 					task_yield(TASK_NO_DELAY);
 
-					weapon_handleState();
+					task_callTaskFunc(weapon_handleState);
 					s_isShooting = JTRUE;
 					s_secondaryFire = taskCtx->secondaryFire ? JTRUE : JFALSE;
 					if (s_weaponOffAnim)
 					{
-						weapon_handleOnAnimation();
+						task_callTaskFunc(weapon_handleOnAnimation);
 					}
 					s_curPlayerWeapon->flags &= ~2;
 
@@ -695,24 +857,19 @@ namespace TFE_DarkForces
 				{
 					task_makeActive(s_playerWeaponTask);
 					task_yield(TASK_NO_DELAY);
-					weapon_handleState();
+					task_callTaskFunc(weapon_handleState);
 				}
 
-				if (s_secondaryFire && s_canFireWeaponSec)
+				if ((s_secondaryFire && s_canFireWeaponSec) || s_canFireWeaponPrim)
 				{
 					// Fire the weapon.
 					s_weaponFireFunc[s_prevWeapon]();
 				}
-				else if (s_canFireWeaponPrim)
-				{
-					// Fire the weapon.
-					s_weaponFireFunc[s_prevWeapon]();
-				}
-				else  // 1ecba2:
+				else
 				{
 					task_makeActive(s_playerWeaponTask);
 					task_yield(TASK_NO_DELAY);
-					weapon_handleState();
+					task_callTaskFunc(weapon_handleState);
 				}
 
 				if (s_switchWeapons)
@@ -728,13 +885,14 @@ namespace TFE_DarkForces
 					}
 					s_playerInfo.curWeapon = s_prevWeapon;
 
+					// Move the next weapon off screen, if it is not already off.
+					// Then move the next one on screen.
 					if (!s_weaponOffAnim)
 					{
-						weapon_handleOffAnimation();
+						task_callTaskFunc(weapon_handleOffAnimation);
 					}
-
 					weapon_setNext(s_curWeapon);
-					weapon_handleOnAnimation();
+					task_callTaskFunc(weapon_handleOnAnimation);
 				}
 			}
 

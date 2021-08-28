@@ -31,8 +31,8 @@ namespace TFE_Jedi
 	Task* pushTask(TaskFunc func, JBool framebreak = JFALSE);
 	void  runTask(Task* task, s32 id);
 
-	void  freeTask(Task* task);
-	void  freeAllTasks();
+	void  task_free(Task* task);
+	void  task_freeAll();
 
 	void  task_makeActive(Task* task);
 	

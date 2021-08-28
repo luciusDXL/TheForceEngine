@@ -99,6 +99,7 @@ namespace TFE_Jedi
 		newTask->nextSec  = s_curTask;
 		newTask->prevSec  = nullptr;
 		newTask->retTask  = nullptr;
+		newTask->framebreak = JFALSE;
 		if (s_curTask->prevSec)
 		{
 			s_curTask->prevSec->prevMain = newTask;
@@ -142,7 +143,7 @@ namespace TFE_Jedi
 		return newTask;
 	}
 
-	void freeTask(Task* task)
+	void task_free(Task* task)
 	{
 		s_taskCount--;
 		// Free any memory allocated for the local context.
@@ -151,7 +152,7 @@ namespace TFE_Jedi
 		freeToChunkedArray(s_tasks, task);
 	}
 
-	void freeAllTasks()
+	void task_freeAll()
 	{
 		freeChunkedArray(s_tasks);
 		freeChunkedArray(s_stackBlocks);
@@ -185,7 +186,7 @@ namespace TFE_Jedi
 
 		if (level == 0)
 		{
-			freeTask(s_curTask);
+			task_free(s_curTask);
 			s_curTask = nullptr;
 		}
 		else if (s_curContext->stackPtr[level])
@@ -201,6 +202,7 @@ namespace TFE_Jedi
 	{
 		// Copy the ip so we know where to return.
 		s_curContext->ip[s_curContext->level] = ip;
+		s_curContext->level--;
 
 		// If there is a return task, then take it next.
 		if (s_curTask->retTask)
@@ -239,7 +241,7 @@ namespace TFE_Jedi
 			else if (task->nextSec)
 			{
 				task = task->nextSec;
-				if (task->nextTick <= s_curTick)
+				if (task->nextTick <= s_curTick || task->framebreak)
 				{
 					s_currentId = 0;
 					s_curTask = task;
@@ -278,12 +280,6 @@ namespace TFE_Jedi
 			task = s_curTask;
 		}
 		s_currentId = 0;
-
-		// Do nothing until enough time has passed.
-		if (s_curTask->nextTick > s_curTick)
-		{
-			return;
-		}
 
 		while (s_curTask)
 		{
