@@ -12,6 +12,7 @@
 #include <TFE_System/memoryPool.h>
 #include <TFE_System/math.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Task/task.h>
 // TODO: This will make adding Outlaws harder, fix the abstraction.
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/time.h>
@@ -45,8 +46,9 @@ namespace TFE_Jedi
 	
 	// INF delta time in ticks.
 	static s32 s_triggerCount = 0;
-	static Allocator* s_infElevators;
-	static Allocator* s_infTeleports;
+	static Allocator* s_infElevators = nullptr;
+	static Allocator* s_infTeleports = nullptr;
+	static Task* s_infElevTask = nullptr;
 	static bool s_teleportUpdateActive = false;
 
 	// Pull from data...
@@ -61,6 +63,8 @@ namespace TFE_Jedi
 	static char s_infArg3[256];
 	static char s_infArg4[256];
 	static char s_infArgExtra[256];
+
+	void inf_elevatorTaskFunc(s32 id);
 
 	void infElevatorMsgFunc(MessageType msgType);
 	void infTriggerMsgFunc(MessageType msgType);
@@ -110,6 +114,12 @@ namespace TFE_Jedi
 	{
 		char* endPtr;
 		return strtoul(str, &endPtr, 10);
+	}
+
+	void inf_createElevatorTask()
+	{
+		s_infElevators = allocator_create(sizeof(InfElevator));
+		s_infElevTask = createTask(inf_elevatorTaskFunc);
 	}
 
 	InfLink* allocateLink(Allocator* infLinks, InfElevator* elev)
@@ -1343,121 +1353,136 @@ namespace TFE_Jedi
 	}
 			
 	// Per frame update.
-	void inf_updateElevators()
+	void inf_elevatorTaskFunc(s32 id)
 	{
-		InfElevator* elev = (InfElevator*)allocator_getHead(s_infElevators);
-		while (elev)
+		task_begin;
+
+		while (id != -1)
 		{
-			s32 elevDeleted = 0;
-			if ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
+			if (id != 0)	// General elevator message, just pass it along.
 			{
-				// If not already moving, get started.
-				if (!(elev->updateFlags & ELEV_MOVING) && !elevDeleted)
+				infElevatorMsgFunc(MessageType(id));
+			}
+			else  // id == 0
+			{
+				InfElevator* elev = (InfElevator*)allocator_getHead(s_infElevators);
+				while (elev)
 				{
-					// Figure out the source position for the sound effect.
-					vec3_fixed sndPos = inf_getElevSoundPos(elev);
-
-					// Play the startup sound effect if the elevator is not already at the next stop.
-					Stop* nextStop = elev->nextStop;
-					// Play the initial sound as the elevator starts moving.
-					if (*elev->value != elev->nextStop->value)
+					s32 elevDeleted = 0;
+					if ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
 					{
-						playSound3D_oneshot(elev->sound0, sndPos);
-					}
-
-					// Update the next time, so this will move on the next update.
-					elev->nextTick = s_curTick;
-
-					// Flag the elevator as moving.
-					elev->updateFlags |= ELEV_MOVING;
-				}
-				// If the elevator is moving, then play the looping sound.
-				if (elev->updateFlags & ELEV_MOVING)
-				{
-					// Figure out the source position for the sound effect.
-					vec3_fixed sndPos = inf_getElevSoundPos(elev);
-
-					// Start up the sound effect, track it since it is looping.
-					elev->loopingSoundID = playSound3D_looping(elev->sound1, elev->loopingSoundID, sndPos);
-				}
-
-				// if reachedStop = JFALSE, elevator has not reached the next stop.
-				JBool reachedStop = updateElevator(elev);
-				if (reachedStop)
-				{
-					elevHandleStopDelay(elev);
-
-					Stop* nextStop = elev->nextStop;
-					if (elev->updateFlags & ELEV_MOVING_REVERSE)
-					{
-						elev->nextTick = s_curTick + TICKS_PER_SECOND;	// this will pause the elevator for one second.
-						elev->updateFlags &= ~ELEV_MOVING_REVERSE;		// remove the reverse flag.
-					}
-					else
-					{
-						u32 delay = nextStop->delay;
-						if (delay == IDELAY_HOLD)
+						// If not already moving, get started.
+						if (!(elev->updateFlags & ELEV_MOVING) && !elevDeleted)
 						{
-							elev->trigMove = TRIGMOVE_HOLD;
-						}
-						else if (delay == IDELAY_COMPLETE || delay == IDELAY_TERMINATE)
-						{
-							// delete the elevator, we're done here.
-							deleteElevator(elev);
-							elevDeleted = 1;
-							if (delay == IDELAY_COMPLETE)
+							// Figure out the source position for the sound effect.
+							vec3_fixed sndPos = inf_getElevSoundPos(elev);
+
+							// Play the startup sound effect if the elevator is not already at the next stop.
+							Stop* nextStop = elev->nextStop;
+							// Play the initial sound as the elevator starts moving.
+							if (*elev->value != elev->nextStop->value)
 							{
-								game_levelComplete();
-								createLevelEndTask();
+								playSound3D_oneshot(elev->sound0, sndPos);
 							}
+
+							// Update the next time, so this will move on the next update.
+							elev->nextTick = s_curTick;
+
+							// Flag the elevator as moving.
+							elev->updateFlags |= ELEV_MOVING;
 						}
-						else  // Timed
+						// If the elevator is moving, then play the looping sound.
+						if (elev->updateFlags & ELEV_MOVING)
 						{
-							elev->nextTick = s_curTick + nextStop->delay;
+							// Figure out the source position for the sound effect.
+							vec3_fixed sndPos = inf_getElevSoundPos(elev);
+
+							// Start up the sound effect, track it since it is looping.
+							elev->loopingSoundID = playSound3D_looping(elev->sound1, elev->loopingSoundID, sndPos);
 						}
-					}
 
-					// Process stop messages if the elevator has not been deleted.
-					if (!elevDeleted)
-					{
-						// Messages
-						inf_stopHandleMessages(nextStop);
-
-						// Adjoin Commands.
-						inf_stopAdjoinCommands(nextStop);
-
-						// Floor texture change.
-						TextureData* floorTex = nextStop->floorTex;
-						if (floorTex)
+						// if reachedStop = JFALSE, elevator has not reached the next stop.
+						JBool reachedStop = updateElevator(elev);
+						if (reachedStop)
 						{
-							RSector* sector = elev->sector;
-							sector->floorTex = &floorTex;
+							elevHandleStopDelay(elev);
+
+							Stop* nextStop = elev->nextStop;
+							if (elev->updateFlags & ELEV_MOVING_REVERSE)
+							{
+								elev->nextTick = s_curTick + TICKS_PER_SECOND;	// this will pause the elevator for one second.
+								elev->updateFlags &= ~ELEV_MOVING_REVERSE;		// remove the reverse flag.
+							}
+							else
+							{
+								u32 delay = nextStop->delay;
+								if (delay == IDELAY_HOLD)
+								{
+									elev->trigMove = TRIGMOVE_HOLD;
+								}
+								else if (delay == IDELAY_COMPLETE || delay == IDELAY_TERMINATE)
+								{
+									// delete the elevator, we're done here.
+									deleteElevator(elev);
+									elevDeleted = 1;
+									if (delay == IDELAY_COMPLETE)
+									{
+										game_levelComplete();
+										createLevelEndTask();
+									}
+								}
+								else  // Timed
+								{
+									elev->nextTick = s_curTick + nextStop->delay;
+								}
+							}
+
+							// Process stop messages if the elevator has not been deleted.
+							if (!elevDeleted)
+							{
+								// Messages
+								inf_stopHandleMessages(nextStop);
+
+								// Adjoin Commands.
+								inf_stopAdjoinCommands(nextStop);
+
+								// Floor texture change.
+								TextureData* floorTex = nextStop->floorTex;
+								if (floorTex)
+								{
+									RSector* sector = elev->sector;
+									sector->floorTex = &floorTex;
+								}
+
+								// Ceiling texture change.
+								TextureData* ceilTex = nextStop->ceilTex;
+								if (ceilTex)
+								{
+									RSector* sector = elev->sector;
+									sector->ceilTex = &ceilTex;
+								}
+
+								// Page (special 2D sound effect that plays, such as voice overs).
+								SoundSourceID pageId = nextStop->pageId;
+								if (pageId)
+								{
+									playSound2D(pageId);
+								}
+
+								// Advance to the next stop.
+								elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
+							} // (!elevDeleted)
 						}
+					} // ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
 
-						// Ceiling texture change.
-						TextureData* ceilTex = nextStop->ceilTex;
-						if (ceilTex)
-						{
-							RSector* sector = elev->sector;
-							sector->ceilTex = &ceilTex;
-						}
+					// Next elevator.
+					elev = (InfElevator*)allocator_getNext(s_infElevators);
+				} // while (elev)
+			}  // id == 0 (main elevator update loop)
+			task_yield(TASK_NO_DELAY);
+		}  // while (id != -1)
 
-						// Page (special 2D sound effect that plays, such as voice overs).
-						SoundSourceID pageId = nextStop->pageId;
-						if (pageId)
-						{
-							playSound2D(pageId);
-						}
-
-						// Advance to the next stop.
-						elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
-					} // (!elevDeleted)
-				}
-			} // ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
-
-			// Next elevator.
-			elev = (InfElevator*)allocator_getNext(s_infElevators);
-		} // while (elev)
+		task_end;
 	}
 	
 	// Per frame teleport update.

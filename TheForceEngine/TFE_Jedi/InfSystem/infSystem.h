@@ -30,15 +30,7 @@ namespace TFE_Jedi
 {
 	bool inf_init();
 	void inf_shutdown();
-	
-	// ** Per-frame update functions **
-	// These get called (potentially) every frame and update the current INF state or
-	// state of objects interacting with the system.
-
-	// Per elevator frame update.
-	void inf_updateElevators();
-	// Per frame teleport update.
-	void inf_updateTeleports();
+	void inf_createElevatorTask();
 	
 	// ** Runtime API **
 	// Messages are the way entities and the player interact with the INF system during gameplay.

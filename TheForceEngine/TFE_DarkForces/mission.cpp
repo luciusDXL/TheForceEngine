@@ -7,6 +7,7 @@
 #include "projectile.h"
 #include "weapon.h"
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_RenderBackend/renderBackend.h>
 
 using namespace TFE_Jedi;
@@ -251,7 +252,7 @@ namespace TFE_DarkForces
 		weapon_createPlayerWeaponTask();
 		projectile_createTask();
 		// player_createController();  // <- this is finished but cannot be enable yet (until the player can be loaded).
-		// createInfElevatorTask();
+		inf_createElevatorTask();
 		// clearPlayerEye();
 		// createPickupTask();
 		// createTeleportTask();
