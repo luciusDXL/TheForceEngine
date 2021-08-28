@@ -265,22 +265,24 @@ namespace TFE_Jedi
 
 		// Find the next task to run.
 		Task* task = s_resumeTask ? s_resumeTask : s_curTask;
-		s_curTask = nullptr;
-		
-		while (!s_curTask || !s_curTask->context.callstack[0])
+		do
 		{
 			if (task->nextMain)
 			{
-				s_curTask = task->nextMain;
+				task = task->nextMain;
 			}
 			else if (task->nextSec)
 			{
-				s_curTask = task->nextSec;
+				task = task->nextSec;
 			}
-			task = s_curTask;
-		}
+		} while (!task || !task->context.callstack[0]);	// loop as long as task is null or the task has no valid callstack (i.e. the root).
+		s_curTask = task;
 		s_currentId = 0;
 
+		// Keep processing tasks until the "framebreak" task is hit.
+		// Once the framebreak task completes (if it is not sleeping), then break out of the loop - processing will resume
+		// on the next task on the next frame.
+		// Note: the original code just loop here forever, but we break it up between frames to play nice with modern operating systems.
 		while (s_curTask)
 		{
 			JBool framebreak = s_curTask->framebreak;
@@ -289,7 +291,7 @@ namespace TFE_Jedi
 				s_resumeTask = s_curTask;
 			}
 
-			// This should only be true when hitting the "framebreak" task which is sleeping.
+			// This should only be false when hitting the "framebreak" task which is sleeping.
 			if (s_curTask->nextTick <= s_curTick)
 			{
 				s_curContext = &s_curTask->context;
