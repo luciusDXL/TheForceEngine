@@ -478,7 +478,7 @@ namespace TFE_DarkForces
 		inf_loadDefaultSwitchSound();
 		actor_allocatePhysicsActorList();
 		loadCutsceneList();
-		proj_startup();
+		projectile_startup();
 		hitEffect_startup();
 		weapon_startup();
 

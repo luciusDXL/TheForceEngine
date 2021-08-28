@@ -97,7 +97,8 @@ namespace TFE_DarkForces
 	};
 
 	// Startup the projectile system.
-	void proj_startup();
+	void projectile_startup();
+	void projectile_createTask();
 
 	// Create a new projectile.
 	Logic* createProjectile(ProjectileType type, RSector* sector, fixed16_16 x, fixed16_16 y, fixed16_16 z, SecObject* obj);

@@ -4,6 +4,7 @@
 #include "automap.h"
 #include "hud.h"
 #include "player.h"
+#include "projectile.h"
 #include "weapon.h"
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -248,7 +249,7 @@ namespace TFE_DarkForces
 		automap_computeScreenBounds();
 		weapon_clearFireRate();
 		weapon_createPlayerWeaponTask();
-		// createProjectileTask();
+		projectile_createTask();
 		// createPlayerController();
 		// createInfElevatorTask();
 		// clearPlayerEye();
