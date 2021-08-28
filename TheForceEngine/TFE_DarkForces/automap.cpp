@@ -12,7 +12,9 @@ namespace TFE_DarkForces
 	static fixed16_16 s_scrRightScaled;
 	static fixed16_16 s_scrTopScaled;
 	static fixed16_16 s_scrBotScaled;
-	static JBool s_pdaActive = JFALSE;
+
+	JBool s_pdaActive = JFALSE;
+	JBool s_drawAutomap = JFALSE;
 
 	// _computeScreenBounds() and computeScaledScreenBounds() in the original source:
 	// computeScaledScreenBounds() calls _computeScreenBounds() - so merged here.

@@ -11,7 +11,10 @@ struct ChunkedArray;
 namespace TFE_Memory
 {
 	ChunkedArray* createChunkedArray(u32 elemSize, u32 elemPerChunk, u32 initChunkCount);
+	// Free everything.
 	void freeChunkedArray(ChunkedArray* arr);
+	// Empty the array but do not free the memory.
+	void chunkedArrayClear(ChunkedArray* arr);
 
 	void* allocFromChunkedArray(ChunkedArray* arr);
 	void freeToChunkedArray(ChunkedArray* arr, void* ptr);

@@ -52,6 +52,7 @@ namespace TFE_DarkForces
 
 	void hitEffectWakeupFunc(SecObject* obj);
 	void hitEffectExplodeFunc(SecObject* obj);
+	void hitEffectTaskFunc(s32 id);
 
 	void hitEffect_startup()
 	{
@@ -257,12 +258,18 @@ namespace TFE_DarkForces
 			task_makeActive(s_hitEffectTask);
 		}
 	}
+
+	void hitEffect_createTask()
+	{
+		s_hitEffects = allocator_create(sizeof(HitEffect));
+		s_hitEffectTask = createTask(hitEffectTaskFunc);
+	}
 		
 	////////////////////////////////////////////////////////////////////////
 	// Hit effect logic function.
 	// This handles all effects currently queued up.
 	////////////////////////////////////////////////////////////////////////
-	void hitEffectLogicFunc(s32 id)
+	void hitEffectTaskFunc(s32 id)
 	{
 		struct LocalContext
 		{

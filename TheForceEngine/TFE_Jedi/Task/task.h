@@ -33,6 +33,7 @@ namespace TFE_Jedi
 
 	void  task_free(Task* task);
 	void  task_freeAll();
+	void  task_shutdown();
 
 	void  task_makeActive(Task* task);
 	void  task_setNextTick(Task* task, Tick tick);

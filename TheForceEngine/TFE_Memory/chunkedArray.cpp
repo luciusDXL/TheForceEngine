@@ -120,6 +120,16 @@ namespace TFE_Memory
 #endif
 	}
 
+	void chunkedArrayClear(ChunkedArray* arr)
+	{
+		arr->elemCount = 0;
+		arr->freeSlotCount = 0;
+		for (s32 i = 0; i < arr->chunkCount; i++)
+		{
+			memset(arr->chunks[i], 0, arr->elemPerChunk * arr->elemSize);
+		}
+	}
+
 	u32 chunkedArraySize(ChunkedArray* arr)
 	{
 		if (!arr) { return 0; }

@@ -32,6 +32,10 @@ namespace TFE_Jedi
 	static TextureData** s_textures;
 	static RSector* s_bossSector;
 	static RSector* s_mohcSector;
+	static RSector* s_controlSector;
+
+	static Allocator* s_soundEmitters;
+	static Allocator* s_safeLoc;
 
 	static fixed16_16 s_parallax0;
 	static fixed16_16 s_parallax1;
@@ -40,6 +44,8 @@ namespace TFE_Jedi
 	static JediWax** s_sprites;
 	static JediFrame** s_frames;
 	static s32* s_soundIds;
+
+	static Task* s_soundEmitterTask;
 
 	static char s_readBuffer[256];
 	static std::vector<char> s_buffer;
@@ -50,6 +56,19 @@ namespace TFE_Jedi
 
 	s32 getDifficulty();
 	s32 object_parseSeq(SecObject* obj);
+
+	void level_clearData()
+	{
+		s_soundEmitters    = nullptr;
+		s_soundEmitterTask = nullptr;
+		s_safeLoc          = nullptr;
+		s_completeSector   = nullptr;
+		s_bossSector       = nullptr;
+		s_mohcSector       = nullptr;
+
+		s_controlSector = (RSector*)malloc(sizeof(RSector));
+		sector_clear(s_controlSector);
+	}
 
 	// level_loadGeometry() in the DOS code.
 	bool loadGeometry(const char* levelName)

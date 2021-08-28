@@ -1,13 +1,16 @@
 #include "mission.h"
+#include "actor.h"
 #include "agent.h"
 #include "animLogic.h"
 #include "automap.h"
 #include "hud.h"
+#include "updateLogic.h"
 #include "pickup.h"
 #include "player.h"
 #include "projectile.h"
 #include "weapon.h"
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_RenderBackend/renderBackend.h>
 
@@ -50,6 +53,10 @@ namespace TFE_DarkForces
 	static u8 s_framebuffer[320 * 200];
 	static JBool s_exitLevel = JFALSE;
 	static GameMissionMode s_missionMode = MISSION_MODE_MAIN;
+	static Task* s_levelEndTask = nullptr;
+	static char s_cheatString[32] = { 0 };
+	static s32  s_cheatCharIndex = 0;
+	static s32  s_cheatInputCount = 0;
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -89,7 +96,7 @@ namespace TFE_DarkForces
 		task_yield(TASK_SLEEP);
 
 		// Cleanup - shut down all tasks.
-		// TODO
+		task_freeAll();
 
 		// End the task.
 		task_end;
@@ -245,7 +252,7 @@ namespace TFE_DarkForces
 	{
 		setSpriteAnimation(nullptr, nullptr);
 		bitmap_setupAnimationTask();
-		// resetFrameData();
+		// resetFrameData();		// TODO
 		hud_startup();
 		hud_clearMessage();
 		automap_computeScreenBounds();
@@ -258,16 +265,21 @@ namespace TFE_DarkForces
 		pickup_createTask();
 		inf_createTeleportTask();
 		inf_createTriggerTask();
-		// createActorTask();
-		// createHitEffectTask();
-		// createIMuseTask();
-		// clearLevelData();
-		// clearUpdateTask();
-		// s_drawAutomap = JFALSE;
-		// s_levelEndTask = nullptr;
-		// s_cheatString[0] = 0;
-		// s_cheatCharIndex = 0;
-		// s_cheatInputCount = 0;
+		actor_createTask();
+		hitEffect_createTask();
+		// createIMuseTask();  <- this will wait until a later release.
+		level_clearData();
+		updateLogic_clearTask();
+		s_drawAutomap = JFALSE;
+		s_levelEndTask = nullptr;
+		s_cheatString[0] = 0;
+		s_cheatCharIndex = 0;
+		s_cheatInputCount = 0;
+
+		for (s32 i = 9; i >= 0; i--)
+		{
+			s_goals[i] = JFALSE;
+		}
 	}
 	   
 	JBool loadLevel(const char* levelName)

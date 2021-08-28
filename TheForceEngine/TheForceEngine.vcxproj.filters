@@ -628,6 +628,9 @@
     <ClInclude Include="TFE_DarkForces\weaponFireFunc.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\updateLogic.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1015,6 +1018,9 @@
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\weaponFireFunc.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\updateLogic.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>

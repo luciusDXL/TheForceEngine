@@ -1,11 +1,40 @@
 #include "actor.h"
+#include "logic.h"
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
+#include <TFE_Jedi/Memory/allocator.h>
 
 using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
+	struct Actor;
+	struct ActorHeader;
+
+	///////////////////////////////////////////
+	// Structs
+	///////////////////////////////////////////
+	enum ActorConst
+	{
+		ACTOR_MAX_GAME_OBJ = 6
+	};
+
+	// Logic for 'actors' -
+	// an Actor is something with animated 'actions' that can move around in the world.
+	// 0x6c = 108
+	struct ActorLogic
+	{
+		Logic logic;
+
+		ActorHeader* gameObj[ACTOR_MAX_GAME_OBJ];
+		Actor* actor;
+		s32* animTable;
+		Tick delay;
+		Tick nextTick;
+		SoundSourceID alertSndSrc;
+		u32 flags;
+	};
+
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
@@ -59,6 +88,16 @@ namespace TFE_DarkForces
 	static SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];
 	static SoundSourceID s_agentSndSrc[AGENTSND_COUNT];
 	static List* s_physicsActors;
+		
+	static Allocator* s_actorLogics = nullptr;
+	static Task* s_actorTask = nullptr;
+	static Task* s_actorPhysicsTask = nullptr;
+
+	///////////////////////////////////////////
+	// Forward Declarations
+	///////////////////////////////////////////
+	void actorLogicTaskFunc(s32 id);
+	void actorPhysicsTaskFunc(s32 id);
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -115,5 +154,34 @@ namespace TFE_DarkForces
 	void actor_allocatePhysicsActorList()
 	{
 		s_physicsActors = list_allocate(sizeof(void*), 80);
+	}
+		
+	void actor_createTask()
+	{
+		s_actorLogics = allocator_create(sizeof(ActorLogic));
+		s_actorTask = createTask(actorLogicTaskFunc);
+		s_actorPhysicsTask = createTask(actorPhysicsTaskFunc);
+	}
+
+	void actorLogicTaskFunc(s32 id)
+	{
+		task_begin;
+		while (id != -1)
+		{
+			// TODO
+			task_yield(TASK_NO_DELAY);
+		}
+		task_end;
+	}
+
+	void actorPhysicsTaskFunc(s32 id)
+	{
+		task_begin;
+		while (id != -1)
+		{
+			// TODO
+			task_yield(TASK_NO_DELAY);
+		}
+		task_end;
 	}
 }  // namespace TFE_DarkForces

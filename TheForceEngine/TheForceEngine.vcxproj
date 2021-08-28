@@ -280,6 +280,7 @@
     <ClInclude Include="TFE_DarkForces\projectile.h" />
     <ClInclude Include="TFE_DarkForces\random.h" />
     <ClInclude Include="TFE_DarkForces\time.h" />
+    <ClInclude Include="TFE_DarkForces\updateLogic.h" />
     <ClInclude Include="TFE_DarkForces\util.h" />
     <ClInclude Include="TFE_DarkForces\weapon.h" />
     <ClInclude Include="TFE_DarkForces\weaponFireFunc.h" />
@@ -438,6 +439,7 @@
     <ClCompile Include="TFE_DarkForces\projectile.cpp" />
     <ClCompile Include="TFE_DarkForces\random.cpp" />
     <ClCompile Include="TFE_DarkForces\time.cpp" />
+    <ClCompile Include="TFE_DarkForces\updateLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\util.cpp" />
     <ClCompile Include="TFE_DarkForces\weapon.cpp" />
     <ClCompile Include="TFE_DarkForces\weaponFireFunc.cpp" />

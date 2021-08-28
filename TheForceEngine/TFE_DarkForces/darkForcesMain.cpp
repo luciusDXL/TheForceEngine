@@ -152,7 +152,7 @@ namespace TFE_DarkForces
 		// Clear paths and archives.
 		TFE_Paths::clearSearchPaths();
 		TFE_Paths::clearLocalArchives();
-		task_freeAll();
+		task_shutdown();
 	}
 
 	/**********The basic structure of the Dark Forces main loop is as follows:***************

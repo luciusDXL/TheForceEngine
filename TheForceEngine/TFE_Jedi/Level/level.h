@@ -43,6 +43,8 @@ namespace TFE_Jedi
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1);
 	void setSkyParallax(fixed16_16 parallax0, fixed16_16 parallax1);
 
+	void level_clearData();
+
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;
 	extern RSector* s_completeSector;

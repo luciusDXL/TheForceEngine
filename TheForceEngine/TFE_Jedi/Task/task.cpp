@@ -154,6 +154,16 @@ namespace TFE_Jedi
 
 	void task_freeAll()
 	{
+		chunkedArrayClear(s_tasks);
+		chunkedArrayClear(s_stackBlocks);
+
+		s_curTask = nullptr;
+		s_curContext = nullptr;
+		s_taskCount = 0;
+	}
+
+	void task_shutdown()
+	{
 		freeChunkedArray(s_tasks);
 		freeChunkedArray(s_stackBlocks);
 
