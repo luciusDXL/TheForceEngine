@@ -31,6 +31,8 @@ namespace TFE_Jedi
 	bool inf_init();
 	void inf_shutdown();
 	void inf_createElevatorTask();
+	void inf_createTeleportTask();
+	void inf_createTriggerTask();
 	
 	// ** Runtime API **
 	// Messages are the way entities and the player interact with the INF system during gameplay.

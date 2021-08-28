@@ -49,7 +49,8 @@ namespace TFE_Jedi
 	static Allocator* s_infElevators = nullptr;
 	static Allocator* s_infTeleports = nullptr;
 	static Task* s_infElevTask = nullptr;
-	static bool s_teleportUpdateActive = false;
+	static Task* s_infTriggerTask = nullptr;
+	static Task* s_teleportTask = nullptr;
 
 	// Pull from data...
 	static RSector* s_sectors;
@@ -63,12 +64,15 @@ namespace TFE_Jedi
 	static char s_infArg3[256];
 	static char s_infArg4[256];
 	static char s_infArgExtra[256];
+	static Stop* s_nextStop;
 
 	void inf_elevatorTaskFunc(s32 id);
+	void inf_telelporterTaskFunc(s32 id);
+	void inf_triggerTaskFunc(s32 id);
 
 	void infElevatorMsgFunc(MessageType msgType);
 	void infTriggerMsgFunc(MessageType msgType);
-	void infTeleportMsgFunc(MessageType msgType);
+	void inf_handleTriggerMsg(InfTrigger* trigger);
 	
 	void deleteElevator(InfElevator* elev);
 	void deleteTrigger(InfTrigger* trigger);
@@ -83,7 +87,7 @@ namespace TFE_Jedi
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj);
 
 	void inf_stopAdjoinCommands(Stop* stop);
-	void inf_stopHandleMessages(Stop* stop);
+	void inf_stopHandleMessages(s32 id);
 	void inf_handleMsgLights();
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
 
@@ -122,6 +126,19 @@ namespace TFE_Jedi
 		s_infElevTask = createTask(inf_elevatorTaskFunc);
 	}
 
+	void inf_createTeleportTask()
+	{
+		s_teleportTask = createTask(inf_telelporterTaskFunc);
+		task_setNextTick(s_teleportTask, TASK_SLEEP);
+		s_infTeleports = allocator_create(sizeof(Teleport));
+	}
+
+	void inf_createTriggerTask()
+	{
+		s_infTriggerTask = createTask(inf_triggerTaskFunc);
+		s_triggerCount = 0;
+	}
+
 	InfLink* allocateLink(Allocator* infLinks, InfElevator* elev)
 	{
 		InfLink* link = (InfLink*)allocator_newItem(infLinks);
@@ -131,7 +148,7 @@ namespace TFE_Jedi
 		link->freeFunc = nullptr;
 		link->elev = elev;
 		link->parent = infLinks;
-		link->msgFunc = infElevatorMsgFunc;
+		link->task = s_infElevTask;
 
 		return link;
 	}
@@ -681,7 +698,7 @@ namespace TFE_Jedi
 		link->entityMask = INF_ENTITY_ANY;
 		link->eventMask = INF_EVENT_ENTER_SECTOR;
 		link->teleport = teleport;
-		link->msgFunc = infTeleportMsgFunc;
+		link->task = s_teleportTask;
 		link->parent = sector->infLink;
 
 		return teleport;
@@ -1441,7 +1458,8 @@ namespace TFE_Jedi
 							if (!elevDeleted)
 							{
 								// Messages
-								inf_stopHandleMessages(nextStop);
+								s_nextStop = nextStop;
+								task_callTaskFunc(inf_stopHandleMessages);
 
 								// Adjoin Commands.
 								inf_stopAdjoinCommands(nextStop);
@@ -1485,18 +1503,146 @@ namespace TFE_Jedi
 		task_end;
 	}
 	
-	// Per frame teleport update.
-	void inf_updateTeleports()
+	void inf_telelporterTaskFunc(s32 id)
 	{
-		// Only update when activated (which happens if an object enters a teleport sector.
-		if (!s_teleportUpdateActive)
+		struct LocalContext
 		{
-			return;
+			Tick delay;
+		};
+		task_begin_ctx;
+
+		while (id != -1)
+		{
+			taskCtx->delay = TASK_SLEEP;
+
+			if (id != 0)
+			{
+				MessageType msgType = MessageType(id);
+				if (msgType == MSG_TRIGGER && s_msgEvent == INF_EVENT_ENTER_SECTOR)
+				{
+					task_makeActive(s_teleportTask);
+					taskCtx->delay = TASK_NO_DELAY;
+				}
+				else
+				{
+					// TODO
+				}
+			}
+			else
+			{
+				Teleport* teleport = (Teleport*)allocator_getHead(s_infTeleports);
+				while (teleport)
+				{
+					RSector* sector = teleport->sector;
+					s32 objCount = sector->objectCount;
+					SecObject** objList = sector->objectList;
+
+					for (s32 i = 0; i < objCount; objList++)
+					{
+						SecObject* obj = *objList;
+						if (obj)
+						{
+							i++;
+							taskCtx->delay = TASK_NO_DELAY;
+							TeleportType type = teleport->type;
+							if (type <= TELEPORT_BASIC)
+							{
+								// So dstPosition is actually an absolute position.
+								obj->posWS = teleport->dstPosition;
+								obj->pitch = teleport->dstAngle[0];
+								obj->yaw   = teleport->dstAngle[1];
+								obj->roll  = teleport->dstAngle[2];
+								sector_addObject(teleport->target, obj);
+							}
+							else if (type == TELEPORT_CHUTE)
+							{
+								sector = teleport->sector;
+								fixed16_16 floorThreshold = sector->floorHeight - HALF_16;
+								// if the object is lower than 0.5 units above the floor.
+								if (floorThreshold < obj->posWS.y)
+								{
+									sector_addObject(teleport->target, obj);
+								}
+							}
+
+							if (obj->entityFlags & ETFLAG_PLAYER)
+							{
+								// automap_setLayer(obj->sector->layer);
+							}
+						}  // if (obj)
+					}  // for (s32 i = 0; i < objCount; objList++)
+					teleport = (Teleport*)allocator_getNext(s_infTeleports);
+				}  // while (teleport)
+			}
+
+			task_yield(taskCtx->delay);
+		}  // while (id != -1)
+		task_end;
+	}
+
+	void inf_triggerTaskFunc(s32 id)
+	{
+		task_begin;
+		// Wait until explicitly called.
+		task_yield(TASK_SLEEP);
+
+		while (id != -1)
+		{
+			// Local variables do not need to be persistant.
+			{
+				MessageType msgType = MessageType(id);
+				InfTrigger* trigger = (InfTrigger*)s_msgTarget;
+
+				switch (msgType)
+				{
+					case MSG_FREE:
+					{
+						InfLink* link = trigger->link;
+						allocator_deleteItem(link->parent, link);
+						allocator_free(trigger->targets);
+
+						free(trigger);
+						s_triggerCount--;
+
+						if (s_triggerCount == 0)
+						{
+							task_free(s_infTriggerTask);
+							return;
+						}
+					} break;
+					case MSG_TRIGGER:
+					{
+						inf_handleTriggerMsg(trigger);
+					} break;
+					case MSG_MASTER_OFF:
+					{
+						trigger->master = JFALSE;
+					} break;
+					case MSG_MASTER_ON:
+					{
+						trigger->master = JTRUE;
+					} break;
+					case MSG_DONE:
+					{
+						if (trigger->type == ITRIGGER_SWITCH1)
+						{
+							AnimatedTexture* animTex = trigger->animTex;
+							// If the trigger is still in its original state, nothing to do.
+							if (animTex)
+							{
+								trigger->state = 0;
+								trigger->tex = animTex->frameList[0];
+							}
+							trigger->master = JTRUE;
+						}
+					} break;
+				}
+			}
+
+			task_yield(TASK_SLEEP);
 		}
-		s_teleportUpdateActive = false;
 
-		// Update
-
+		task_end;
 	}
 		   			   
 	// Send messages so that entities and the player can interact with the INF system.
@@ -2036,14 +2182,24 @@ namespace TFE_Jedi
 		while (link)
 		{
 			// Fire off the link task if the event and entity match the requirements.
-			if ((evt == INF_EVENT_NONE || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->entityFlags)) && link->msgFunc)
+			if ((evt == INF_EVENT_NONE || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->entityFlags)) && link->task)
 			{
 				s_msgEntity = entity;
 				s_msgTarget = link->target;
 				s_msgEvent = evt;
 
 				allocator_addRef(infLink);
-				link->msgFunc(msgType);
+				runTask(link->task, msgType);
+
+				// Drain pending tasks before moving on.
+				/* TODO
+				while (s_taskId)
+				{
+					func_1c7a02(s_curTask);
+					yieldTask(0);
+				}
+				*/
+
 				allocator_release(infLink);
 			}
 			link = (InfLink*)allocator_getNext(infLink);
@@ -2590,15 +2746,6 @@ namespace TFE_Jedi
 			} break;
 		}
 	}
-		
-	// In the DOS code, the teleport task function has two functions -
-	// One to "activate" itself to run during the next update and one
-	// to actually update all teleports. For TFE this is split into two
-	// functions - one to enable the update and then the update itself.
-	void infTeleportMsgFunc(MessageType msgType)
-	{
-		s_teleportUpdateActive = true;
-	}
 
 	void elevHandleStopDelay(InfElevator* elev)
 	{
@@ -2885,65 +3032,81 @@ namespace TFE_Jedi
 		};
 	}
 
-	void inf_stopHandleMessages(Stop* stop)
+	void inf_stopHandleMessages(s32 id)
 	{
-		Allocator* msgList = stop->messages;
-		if (!msgList) { return; }
-
-		InfMessage* msg = (InfMessage*)allocator_getHead(msgList);
-		while (msg)
+		struct LocalContext
 		{
-			s_msgArg1 = msg->arg1;
-			s_msgArg2 = msg->arg2;
-			RWall* wall = msg->wall;
-			if (wall)
+			Allocator* msgList;
+			Allocator* infLink;
+			InfMessage* msg;
+			RSector* sector;
+			RWall* wall;
+			InfLink* link;
+		};
+		task_begin_ctx;
+
+		taskCtx->msgList = s_nextStop->messages;
+		taskCtx->msg = (InfMessage*)allocator_getHead(taskCtx->msgList);
+		while (taskCtx->msg)
+		{
+			s_msgArg1 = taskCtx->msg->arg1;
+			s_msgArg2 = taskCtx->msg->arg2;
+			taskCtx->wall = taskCtx->msg->wall;
+			if (taskCtx->wall)
 			{
-				inf_wallSendMessage(wall, nullptr, msg->event, msg->msgType);
+				inf_wallSendMessage(taskCtx->wall, nullptr, taskCtx->msg->event, taskCtx->msg->msgType);
 			}
-			else if (msg->sector)
+			else if (taskCtx->msg->sector)
 			{
-				RSector* sector = msg->sector;
-				Allocator* infLink = sector->infLink;
-				if (infLink)
+				taskCtx->sector = taskCtx->msg->sector;
+				taskCtx->infLink = taskCtx->sector->infLink;
+				if (taskCtx->infLink)
 				{
-					InfLink* link = (InfLink*)allocator_getHead(infLink);
-					while (link)
+					taskCtx->link = (InfLink*)allocator_getHead(taskCtx->infLink);
+					while (taskCtx->link)
 					{
-						if (link->msgFunc && (msg->event <= 0 || (link->eventMask & msg->event)))
+						if (taskCtx->link->task && (taskCtx->msg->event <= 0 || (taskCtx->link->eventMask & taskCtx->msg->event)))
 						{
-							allocator_addRef(msgList);
+							allocator_addRef(taskCtx->msgList);
 
-							s_msgTarget = link->target;
+							s_msgTarget = taskCtx->link->target;
 							s_msgEntity = nullptr;
-							s_msgArg1 = msg->arg1;
-							s_msgArg2 = msg->arg2;
-							s_msgEvent = msg->event;
-							inf_sendSectorMessage(sector, msg->msgType);
+							s_msgArg1 = taskCtx->msg->arg1;
+							s_msgArg2 = taskCtx->msg->arg2;
+							s_msgEvent = taskCtx->msg->event;
+							inf_sendSectorMessage(taskCtx->sector, taskCtx->msg->msgType);
+							runTask(taskCtx->link->task, taskCtx->msg->msgType);
 
-							link->msgFunc(msg->msgType);
-							allocator_release(msgList);
+							if (id != 0)
+							{
+								infElevatorMessageInternal(MessageType(id));
+								task_yield(TASK_NO_DELAY);
+							}
+							allocator_release(taskCtx->msgList);
 						}
 						
-						link = (InfLink*)allocator_getNext(infLink);
+						taskCtx->link = (InfLink*)allocator_getNext(taskCtx->infLink);
 					}
 				}
 				else  // infLink
 				{
-					message_sendToSector(sector, nullptr, msg->event, msg->msgType);
+					message_sendToSector(taskCtx->sector, nullptr, taskCtx->msg->event, taskCtx->msg->msgType);
 				}
 			}
 			else  // world
 			{
 				// In the original game, this will call a specific function based on the type
 				// But the only type is MSG_LIGHTS
-				if (msg->msgType == MSG_LIGHTS)
+				if (taskCtx->msg->msgType == MSG_LIGHTS)
 				{
 					inf_handleMsgLights();
 				}
 			}
 
-			msg = (InfMessage*)allocator_getNext(msgList);
+			taskCtx->msg = (InfMessage*)allocator_getNext(taskCtx->msgList);
 		} // while (msg)
+
+		task_end;
 	}
 		
 	void inf_handleMsgLights()
@@ -3019,7 +3182,7 @@ namespace TFE_Jedi
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
 				link->trigger = trigger;
-				link->msgFunc = infTriggerMsgFunc;
+				link->task = s_infTriggerTask;
 				link->parent = wall->infLink;
 			} break;
 			case ITRIGGER_SECTOR:
@@ -3034,7 +3197,7 @@ namespace TFE_Jedi
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
 				link->trigger = trigger;
-				link->msgFunc = infTriggerMsgFunc;
+				link->task = s_infTriggerTask;
 				link->parent = sector->infLink;
 			} break;
 			case ITRIGGER_SWITCH1:
@@ -3051,7 +3214,7 @@ namespace TFE_Jedi
 				link->type = LTYPE_TRIGGER;
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
-				link->msgFunc = infTriggerMsgFunc;
+				link->task = s_infTriggerTask;
 				link->trigger = trigger;
 				link->parent = wall->infLink;
 				trigger->animTex = nullptr;

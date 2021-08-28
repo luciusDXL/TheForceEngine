@@ -256,8 +256,8 @@ namespace TFE_DarkForces
 		inf_createElevatorTask();
 		player_clearEyeObject();
 		pickup_createTask();
-		// createTeleportTask();
-		// createTriggerTask();
+		inf_createTeleportTask();
+		inf_createTriggerTask();
 		// createActorTask();
 		// createHitEffectTask();
 		// createIMuseTask();

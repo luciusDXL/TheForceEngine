@@ -1,6 +1,7 @@
 #pragma once
 #include <TFE_System/types.h>
 #include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Jedi/Task/task.h>
 
 // Core elevator types.
 enum InfElevatorType
@@ -71,7 +72,6 @@ enum LinkType
 struct Allocator;
 namespace TFE_Jedi
 {
-	typedef void(*InfLinkMsgFunc)(MessageType);
 	typedef void(*InfFreeFunc)(void*);
 
 	struct InfElevator;
@@ -81,7 +81,7 @@ namespace TFE_Jedi
 	struct InfLink
 	{
 		LinkType type;				// Sector or Trigger
-		InfLinkMsgFunc msgFunc;		// Either the Elevator or Trigger msg func.
+		Task* task;					// Either the Elevator or Trigger msg func.
 		union
 		{
 			InfElevator* elev;		// The actual INF item.
