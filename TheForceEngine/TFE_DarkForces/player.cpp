@@ -288,6 +288,11 @@ namespace TFE_DarkForces
 			s_levelAtten = 30;
 		}
 	}
+
+	void player_clearEyeObject()
+	{
+		s_playerEye = nullptr;
+	}
 		
 	void playerControlTaskFunc(s32 id)
 	{

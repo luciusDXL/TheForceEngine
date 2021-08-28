@@ -29,6 +29,7 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////
+	void pickTaskFunc(s32 id);
 	void pickupInvincibility();
 	void pickupSupercharge();
 	void pickupInventory();
@@ -98,10 +99,15 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(logic);
 		free(logic);
 	}
+
+	void pickup_createTask()
+	{
+		s_pickupTask = createTask(pickTaskFunc);
+	}
 			
 	// The current pickup being processed is stored in Message::s_msgTarget
 	// The object "picking up" the item is stored in Message::s_msgEntity
-	void pickupLogicFunc(s32 id)
+	void pickTaskFunc(s32 id)
 	{
 		struct LocalContext
 		{
@@ -111,7 +117,7 @@ namespace TFE_DarkForces
 			JBool pickedUpItem;
 		};
 		task_begin_ctx;
-		while (1)
+		while (id != -1)
 		{
 			// Sleep until called.
 			task_yield(TASK_SLEEP);
@@ -302,12 +308,12 @@ namespace TFE_DarkForces
 
 				// Delete the pickup next frame...
 				{
-					task_yield(0);
+					task_yield(TASK_NO_DELAY);
 					// Remove the item.
 					pickup_cleanupFunc((Logic*)taskCtx->pickup);
 				}
-			}
-		}  // while (1)
+			}  // if (id == PICKUP_ACQUIRE)
+		}  // while (id != -1)
 		task_end;
 	}
 

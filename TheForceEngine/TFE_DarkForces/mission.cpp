@@ -3,6 +3,7 @@
 #include "animLogic.h"
 #include "automap.h"
 #include "hud.h"
+#include "pickup.h"
 #include "player.h"
 #include "projectile.h"
 #include "weapon.h"
@@ -253,8 +254,8 @@ namespace TFE_DarkForces
 		projectile_createTask();
 		// player_createController();  // <- this is finished but cannot be enable yet (until the player can be loaded).
 		inf_createElevatorTask();
-		// clearPlayerEye();
-		// createPickupTask();
+		player_clearEyeObject();
+		pickup_createTask();
 		// createTeleportTask();
 		// createTriggerTask();
 		// createActorTask();

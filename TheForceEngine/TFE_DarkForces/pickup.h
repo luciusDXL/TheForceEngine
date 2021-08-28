@@ -39,10 +39,10 @@ namespace TFE_DarkForces
 	s32 pickup_addToValue(s32 curValue, s32 amountToAdd, s32 maxAmount);
 
 	// Logic update function, called when pickups are handled.
-	void pickupLogicFunc(s32 id);
+	void pickup_createTask();
 	// Called when the player respawns.
 	void playerRevive();
-
+	
 	extern u32 s_pickupFlags;
 	extern Task* s_superchargeTask;
 	extern Task* s_invincibilityTask;
