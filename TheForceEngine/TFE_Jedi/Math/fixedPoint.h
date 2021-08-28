@@ -19,6 +19,7 @@ namespace TFE_Jedi
 	#define ONE_16  0x10000
 
 	#define FRAC_BITS_16 16ll
+	#define FRAC_MASK_16 ((1 << FRAC_BITS_16) - 1)
 	#define FLOAT_SCALE_16 65536.0f
 	#define INV_FLOAT_SCALE_16 (1.0f/FLOAT_SCALE_16)
 	#define ANGLE_TO_FIXED_SCALE 4
@@ -65,6 +66,11 @@ namespace TFE_Jedi
 	inline s32 floor16(fixed16_16 x)
 	{
 		return s32(x >> FRAC_BITS_16);
+	}
+
+	inline fixed16_16 fract16(fixed16_16 x)
+	{
+		return x & FRAC_MASK_16;
 	}
 
 	// computes a * b / c while keeping everything in 64 bits until the end.

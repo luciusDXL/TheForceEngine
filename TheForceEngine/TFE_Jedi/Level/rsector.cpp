@@ -2,6 +2,7 @@
 #include "rwall.h"
 #include "robject.h"
 #include "level.h"
+#include <TFE_System/system.h>
 #include <TFE_DarkForces/player.h>
 
 using namespace TFE_DarkForces;
@@ -417,10 +418,10 @@ namespace TFE_Jedi
 				sectorUnitArea = dzInt * dxInt;
 				
 				s32 insideBounds = 0;
-				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ && sector_pointInside(sector, ix, iz))
+				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ)// && sector_pointInside(sector, ix, iz))
 				{
 					// pick the containing sector with the smallest area.
-					if (sectorUnitArea < prevSectorUnitArea)
+					if (sectorUnitArea < prevSectorUnitArea && sector_pointInsideDF(sector, ix, iz))
 					{
 						prevSectorUnitArea = sectorUnitArea;
 						foundSector = sector;
@@ -430,6 +431,163 @@ namespace TFE_Jedi
 		}
 
 		return foundSector;
+	}
+
+	enum PointSegSide
+	{
+		PS_INSIDE = -1,
+		PS_ON_LINE = 0,
+		PS_OUTSIDE = 1
+	};
+
+	PointSegSide lineSegmentSide(fixed16_16 x1, fixed16_16 z1, fixed16_16 x0, fixed16_16 z0, fixed16_16 x, fixed16_16 z)
+	{
+		fixed16_16 dx = x0 - x1;
+		fixed16_16 dz = z0 - z1;
+		if (dx == 0)
+		{
+			if (dz > 0)
+			{
+				if (z < z1 || z > z0 || x > x0) { return PS_INSIDE; }
+			}
+			else
+			{
+				if (z < z0 || z > z1 || x > x0) { return PS_INSIDE; }
+			}
+			return (x == x0) ? PS_ON_LINE : PS_OUTSIDE;
+		}
+		else if (dz == 0)
+		{
+			if (z != z0)
+			{
+				// I believe this should be -1 or +1 depending on if z is less than or greater than z0.
+				// Otherwise flat lines always give the same answer.
+				return PS_INSIDE;
+			}
+			if (dx > 0)
+			{
+				return (x > x0) ? PS_INSIDE : (x < x1) ? PS_OUTSIDE : PS_ON_LINE;
+			}
+			return (x > x1) ? PS_INSIDE : (x < x0) ? PS_OUTSIDE : PS_ON_LINE;
+		}
+		else if (dx > 0)
+		{
+			if (x > x0) { return PS_INSIDE; }
+
+			x -= x1;
+			if (dz > 0)
+			{
+				if (z < z1 || z > z0) { return PS_INSIDE; }
+				z -= z1;
+			}
+			else
+			{
+				if (z < z0 || z > z1) { return PS_INSIDE; }
+				dz = -dz;
+				z1 -= z;
+				z = z1;
+			}
+		}
+		else // dx <= 0
+		{
+			if (x > x1) { return PS_INSIDE; }
+
+			x -= x0;
+			dx = -dx;
+			if (dz > 0)
+			{
+				if (z < z1 || z > z0) { return PS_INSIDE; }
+				z0 -= z;
+				z = z0;
+			}
+			else  // dz <= 0
+			{
+				if (z < z0 || z > z1) { return PS_INSIDE; }
+				dz = -dz;
+				z -= z0;
+			}
+		}
+		fixed16_16 zDx = mul16(z, dx);
+		fixed16_16 xDz = mul16(x, dz);
+		if (xDz == zDx)
+		{
+			return PS_ON_LINE;
+		}
+		return (xDz > zDx) ? PS_INSIDE : PS_OUTSIDE;
+	}
+
+	// The original DF algorithm.
+	JBool sector_pointInsideDF(RSector* sector, fixed16_16 x, fixed16_16 z)
+	{
+		const fixed16_16 xFrac = fract16(x);
+		const fixed16_16 zFrac = fract16(z);
+		const s32 xInt = floor16(x);
+		const s32 zInt = floor16(z);
+		const s32 wallCount = sector->wallCount;
+
+		RWall* wall = sector->walls;
+		RWall* last = &sector->walls[wallCount - 1];
+		vec2_fixed* w1 = last->w1;
+		vec2_fixed* w0 = last->w0;
+		fixed16_16 dzLast = w1->z - w0->z;
+		s32 crossings = 0;
+
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			w0 = wall->w0;
+			w1 = wall->w1;
+
+			fixed16_16 x0 = w0->x;
+			fixed16_16 x1 = w1->x;
+			fixed16_16 z0 = w0->z;
+			fixed16_16 z1 = w1->z;
+			fixed16_16 dz = z1 - z0;
+
+			if (dz != 0)
+			{
+				if (z == z0 && x == x0)
+				{
+					TFE_System::logWrite(LOG_ERROR, "Sector", "Sector_Which3D: Object at (%d.%d, %d.%d) lies on a vertex of Sector #%d", xInt, xFrac, zInt, zFrac, sector->id);
+					return JFALSE;
+				}
+				else if (x != x0)
+				{
+					if (x < x0)
+					{
+						fixed16_16 dzSignMatches = dz ^ dzLast;	// dzSignMatches >= 0 if dz and dz0 have the same sign.
+						if (dzSignMatches >= 0 || dzLast == 0)  // the signs match OR dz or dz0 are positive OR dz0 EQUALS 0.
+						{
+							crossings++;
+						}
+					}
+					dzLast = dz;
+				}
+				else  // z != z0
+				{
+					if (z != z1)
+					{
+						PointSegSide side = lineSegmentSide(x1, z1, x0, z0, x, z);
+						if (side == PS_OUTSIDE)
+						{
+							crossings++;
+						}
+						else if (side == PS_ON_LINE)
+						{
+							TFE_System::logWrite(LOG_ERROR, "Sector", "Sector_Which3D: Object at (%d.%d, %d.%d) lies on wall of Sector #%d", xInt, xFrac, zInt, zFrac, sector->id);
+							return JFALSE;
+						}
+					}
+					dzLast = dz;
+				}
+			}
+			else if (lineSegmentSide(x1, z1, x0, z0, x, z) == PS_ON_LINE)
+			{
+				TFE_System::logWrite(LOG_ERROR, "Sector", "Sector_Which3D: Object at (%d.%d, %d.%d) lies on wall of Sector #%d", xInt, xFrac, zInt, zFrac, sector->id);
+				return JFALSE;
+			}
+		}
+
+		return (crossings & 1) ? JFALSE : JTRUE;
 	}
 
 	// Uses the "Winding Number" test for a point in polygon.

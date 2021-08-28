@@ -60,10 +60,9 @@ namespace TFE_Jedi
 	RSector* s_completeSector = nullptr;
 	RSector* s_sectors = nullptr;
 
-	s32 getDifficulty();
 	s32 object_parseSeq(SecObject* obj);
 	JBool level_loadGeometry(const char* levelName);
-	JBool level_loadObjects(const char* levelName);
+	JBool level_loadObjects(const char* levelName, u8 difficulty);
 	JBool level_loadGoals(const char* levelName);
 
 	void level_clearData()
@@ -79,7 +78,7 @@ namespace TFE_Jedi
 		sector_clear(s_controlSector);
 	}
 
-	JBool level_load(const char* levelName)
+	JBool level_load(const char* levelName, u8 difficulty)
 	{
 		JBool loaded = JFALSE;
 		if (!levelName) { return JFALSE; }
@@ -88,7 +87,7 @@ namespace TFE_Jedi
 		{
 			return JFALSE;
 		}
-		level_loadObjects(levelName);
+		level_loadObjects(levelName, difficulty);
 		inf_load(levelName);
 		level_loadGoals(levelName);
 
@@ -539,10 +538,8 @@ namespace TFE_Jedi
 		return true;
 	}
 					
-	JBool level_loadObjects(const char* levelName)
+	JBool level_loadObjects(const char* levelName, u8 difficulty)
 	{
-		s32 difficulty = 1 + getDifficulty();
-
 		char levelPath[TFE_MAX_PATH];
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".O");
@@ -583,14 +580,16 @@ namespace TFE_Jedi
 		}
 
 		line = parser.readLine(bufferPos);
+		line = parser.readLine(bufferPos);
 		if (sscanf(line, "PODS %d", &s_podCount) == 1)
 		{
+			s_pods = (JediModel**)malloc(sizeof(JediModel*)*s_podCount);
 			for (s32 p = 0; p < s_podCount; p++)
 			{
 				line = parser.readLine(bufferPos);
 
 				char podName[32];
-				if (sscanf(line, "POD: %s", podName) == 1)
+				if (sscanf(line, " POD: %s", podName) == 1)
 				{
 					s_pods[p] = TFE_Model_Jedi::get(podName);
 					if (!s_pods[p])
@@ -604,12 +603,13 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "SPRS %d", &s_spriteCount) == 1)
 		{
+			s_sprites = (JediWax**)malloc(sizeof(JediWax*)*s_spriteCount);
 			for (s32 s = 0; s < s_spriteCount; s++)
 			{
 				line = parser.readLine(bufferPos);
 
 				char name[32];
-				if (sscanf(line, "SPR: %s", name) == 1)
+				if (sscanf(line, " SPR: %s", name) == 1)
 				{
 					s_sprites[s] = TFE_Sprite_Jedi::getWax(name);
 				}
@@ -623,12 +623,13 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "FMES %d", &s_fmeCount) == 1)
 		{
+			s_frames = (JediFrame**)malloc(sizeof(JediFrame*)*s_fmeCount);
 			for (s32 f = 0; f < s_fmeCount; f++)
 			{
 				line = parser.readLine(bufferPos);
 
 				char name[32];
-				if (sscanf(line, "FME: %s", name) == 1)
+				if (sscanf(line, " FME: %s", name) == 1)
 				{
 					s_frames[f] = TFE_Sprite_Jedi::getFrame(name);
 				}
@@ -664,10 +665,10 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "OBJECTS %d", &s_objectCount) == 1)
 		{
-			s32 valid = -1;
+			JBool valid = JTRUE;
 			s32 count = s_objectCount;
 
-			for (s32 i = 0; i < count && valid != 0; i++)
+			for (s32 i = 0; i < count && valid; i++)
 			{
 				line = parser.readLine(bufferPos);
 
@@ -675,7 +676,7 @@ namespace TFE_Jedi
 				f32 x, y, z, pch, yaw, rol;
 				char objClass[32];
 
-				if (sscanf(line, "CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &diff) > 5)
+				if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &diff) > 5)
 				{
 					if (TFE_Jedi::abs(diff) >= difficulty)
 					{
@@ -771,12 +772,6 @@ namespace TFE_Jedi
 		obj->posWS.y = y;
 		obj->posWS.z = z;
 		sector_addObject(sector, obj);
-	}
-
-	s32 getDifficulty()
-	{
-		// return s_agentData[s_agentId].difficulty;
-		return 0;
 	}
 
 	s32 object_parseSeq(SecObject* obj)

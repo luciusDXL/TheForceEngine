@@ -36,7 +36,7 @@ struct Safe
 
 namespace TFE_Jedi
 {
-	JBool level_load(const char* levelName);
+	JBool level_load(const char* levelName, u8 difficulty);
 	void  level_clearData();
 
 	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector);

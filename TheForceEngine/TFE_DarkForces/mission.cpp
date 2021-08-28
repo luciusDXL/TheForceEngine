@@ -87,7 +87,7 @@ namespace TFE_DarkForces
 			displayLoadingScreen();
 
 			const char* levelName = agent_getLevelName();
-			if (level_load(levelName))
+			if (level_load(levelName, s_agentData[s_agentId].difficulty + 1))
 			{
 			}
 		}
