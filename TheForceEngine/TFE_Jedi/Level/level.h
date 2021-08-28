@@ -25,9 +25,17 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include "rsector.h"
 
+struct Safe
+{
+	RSector* sector;
+	fixed16_16 x;
+	fixed16_16 z;
+	s16 yaw;
+	s16 pad;
+};
+
 namespace TFE_Jedi
 {
-	void initMission();
 	bool loadGeometry(const char* levelName);
 	bool loadObjects(const char* levelName);
 

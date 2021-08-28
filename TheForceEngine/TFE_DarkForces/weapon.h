@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_Jedi/Task/task.h>
 
 namespace TFE_DarkForces
 {
@@ -50,4 +51,5 @@ namespace TFE_DarkForces
 	void weapon_createPlayerWeaponTask();
 
 	extern SoundSourceID s_superchargeCountdownSound;
+	extern Task* s_playerWeaponTask;
 }  // namespace TFE_DarkForces

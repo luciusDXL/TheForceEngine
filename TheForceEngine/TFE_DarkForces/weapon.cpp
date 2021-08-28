@@ -55,7 +55,6 @@ namespace TFE_DarkForces
 	static JBool s_weaponAutoMount2 = JFALSE;
 	static WeaponAnimState s_weaponAnimState;
 
-	static Task* s_playerWeaponTask = nullptr;
 	static TextureData* s_rhand1 = nullptr;
 	static TextureData* s_gasmaskTexture = nullptr;
 	static PlayerWeapon s_playerWeaponList[WPN_COUNT];
@@ -102,6 +101,7 @@ namespace TFE_DarkForces
 	// Shared State
 	///////////////////////////////////////////
 	SoundSourceID s_superchargeCountdownSound;
+	Task* s_playerWeaponTask = nullptr;
 
 	///////////////////////////////////////////
 	// Forward Declarations

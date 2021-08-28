@@ -179,6 +179,11 @@ namespace TFE_Jedi
 		task->nextTick = 0;
 	}
 
+	void task_setNextTick(Task* task, Tick tick)
+	{
+		task->nextTick = tick;
+	}
+
 	void ctxReturn()
 	{
 		s32 level = s_curContext->level;

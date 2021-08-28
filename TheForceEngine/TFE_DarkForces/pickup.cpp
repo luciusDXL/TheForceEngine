@@ -20,11 +20,11 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	u32 s_pickupFlags = 0;
 	// Pointer to memory where player inventory is saved.
-	u32* s_playerInvSaved = nullptr;
 	Task* s_pickupTask = nullptr;
-	Task* s_uTask = nullptr;	// unkown task, was s_282acc
 	Task* s_superchargeTask = nullptr;
-	Task* s_invTask = nullptr;
+	Task* s_invincibilityTask = nullptr;
+	Task* s_gasmaskTask = nullptr;
+	Task* s_gasSectorTask = nullptr;
 
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
@@ -746,7 +746,7 @@ namespace TFE_DarkForces
 		}
 		s_playerInfo.shields = 200;
 		s_invincibility = 0;
-		s_invTask = nullptr;
+		s_invincibilityTask = nullptr;
 
 		task_end;
 	}
@@ -787,11 +787,11 @@ namespace TFE_DarkForces
 		s_invincibility = JTRUE;
 		s_playerInfo.shields = JTRUE;	// This seems like a bug...
 		// Free old invincibility task and create a new invincibility task.
-		if (s_invTask)
+		if (s_invincibilityTask)
 		{
-			task_free(s_invTask);
+			task_free(s_invincibilityTask);
 		}
-		s_invTask = createTask(invincibilityTaskFunc);
+		s_invincibilityTask = createTask(invincibilityTaskFunc);
 	}
 
 	void pickupSupercharge()
@@ -824,10 +824,10 @@ namespace TFE_DarkForces
 		s_playerInfo.itemNava = JFALSE;
 		if (s_playerInfo.maxWeapon != s_playerInfo.curWeapon)
 		{
-			if (s_uTask)
+			if (s_playerWeaponTask)
 			{
 				s_msgArg1 = s_playerInfo.maxWeapon;
-				runTask(s_uTask, 2);
+				runTask(s_playerWeaponTask, WTID_SWITCH_WEAPON);
 				s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
 			}
 			else

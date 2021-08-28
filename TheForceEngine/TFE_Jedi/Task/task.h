@@ -35,6 +35,7 @@ namespace TFE_Jedi
 	void  task_freeAll();
 
 	void  task_makeActive(Task* task);
+	void  task_setNextTick(Task* task, Tick tick);
 	
 	// Call once per frame to run the tasks.
 	// The core idea is to split the original recursive tasks into

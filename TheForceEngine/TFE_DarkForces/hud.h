@@ -22,4 +22,6 @@ namespace TFE_DarkForces
 	void hud_setupToggleAnim1(JBool enable);
 
 	extern fixed16_16 s_flashEffect;
+	extern fixed16_16 s_healthDamageFx;
+	extern fixed16_16 s_shieldDamageFx;
 }  // namespace TFE_DarkForces

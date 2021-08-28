@@ -70,6 +70,8 @@ namespace TFE_DarkForces
 	// Shared State
 	///////////////////////////////////////////
 	fixed16_16 s_flashEffect = 0;
+	fixed16_16 s_healthDamageFx = 0;
+	fixed16_16 s_shieldDamageFx = 0;
 
 	///////////////////////////////////////////
 	// Forward Declarations

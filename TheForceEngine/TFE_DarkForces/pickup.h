@@ -43,5 +43,9 @@ namespace TFE_DarkForces
 	// Called when the player respawns.
 	void playerRevive();
 
+	extern u32 s_pickupFlags;
 	extern Task* s_superchargeTask;
+	extern Task* s_invincibilityTask;
+	extern Task* s_gasmaskTask;
+	extern Task* s_gasSectorTask;
 }  // namespace TFE_DarkForces
