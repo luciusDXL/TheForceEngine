@@ -36,15 +36,13 @@ struct Safe
 
 namespace TFE_Jedi
 {
-	bool loadGeometry(const char* levelName);
-	bool loadObjects(const char* levelName);
+	JBool level_load(const char* levelName);
+	void  level_clearData();
 
 	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector);
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1);
 	void setSkyParallax(fixed16_16 parallax0, fixed16_16 parallax1);
-
-	void level_clearData();
-
+		
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;
 	extern RSector* s_completeSector;

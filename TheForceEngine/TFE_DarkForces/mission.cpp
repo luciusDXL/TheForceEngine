@@ -69,8 +69,7 @@ namespace TFE_DarkForces
 	void blitLoadingScreen();
 	void displayLoadingScreen();
 	void mission_setupTasks();
-	JBool loadLevel(const char* levelName);
-
+	
 	/////////////////////////////////////////////
 	// API Implementation
 	/////////////////////////////////////////////
@@ -88,7 +87,7 @@ namespace TFE_DarkForces
 			displayLoadingScreen();
 
 			const char* levelName = agent_getLevelName();
-			if (loadLevel(levelName))
+			if (level_load(levelName))
 			{
 			}
 		}
@@ -280,11 +279,6 @@ namespace TFE_DarkForces
 		{
 			s_goals[i] = JFALSE;
 		}
-	}
-	   
-	JBool loadLevel(const char* levelName)
-	{
-		return JFALSE;
 	}
 
 }  // TFE_DarkForces

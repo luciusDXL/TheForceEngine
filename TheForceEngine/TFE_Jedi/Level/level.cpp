@@ -29,6 +29,12 @@ namespace TFE_Jedi
 	static s32 s_secretCount;
 	static s32 s_textureCount;
 
+	static s32 s_podCount = 0;
+	static s32 s_spriteCount = 0;
+	static s32 s_fmeCount = 0;
+	static s32 s_soundCount = 0;
+	static s32 s_objectCount = 0;
+
 	static TextureData** s_textures;
 	static RSector* s_bossSector;
 	static RSector* s_mohcSector;
@@ -56,6 +62,9 @@ namespace TFE_Jedi
 
 	s32 getDifficulty();
 	s32 object_parseSeq(SecObject* obj);
+	JBool level_loadGeometry(const char* levelName);
+	JBool level_loadObjects(const char* levelName);
+	JBool level_loadGoals(const char* levelName);
 
 	void level_clearData()
 	{
@@ -70,8 +79,23 @@ namespace TFE_Jedi
 		sector_clear(s_controlSector);
 	}
 
-	// level_loadGeometry() in the DOS code.
-	bool loadGeometry(const char* levelName)
+	JBool level_load(const char* levelName)
+	{
+		JBool loaded = JFALSE;
+		if (!levelName) { return JFALSE; }
+
+		if (!level_loadGeometry(levelName))
+		{
+			return JFALSE;
+		}
+		level_loadObjects(levelName);
+		inf_load(levelName);
+		level_loadGoals(levelName);
+
+		return JTRUE;
+	}
+
+	JBool level_loadGeometry(const char* levelName)
 	{
 		s_secretCount = 0;
 		s_dataIndex = 0;
@@ -103,6 +127,7 @@ namespace TFE_Jedi
 		size_t bufferPos = 0;
 		parser.init(s_buffer.data(), s_buffer.size());
 		parser.enableBlockComments();
+		parser.addCommentString("#");
 		parser.addCommentString("//");
 
 		// Only use the parser "read line" functionality and otherwise read in the same was as the DOS code.
@@ -170,7 +195,7 @@ namespace TFE_Jedi
 		{
 			line = parser.readLine(bufferPos);
 			char textureName[256];
-			if (sscanf(line, "TEXTURE: %s", textureName) != 1)
+			if (sscanf(line, " TEXTURE: %s", textureName) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
 				return false;
@@ -255,7 +280,7 @@ namespace TFE_Jedi
 			// Lighting
 			line = parser.readLine(bufferPos);
 			s32 ambient;
-			if (sscanf(line, "AMBIENT %d", &ambient) != 1)
+			if (sscanf(line, " AMBIENT %d", &ambient) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector ambient.");
 				return false;
@@ -266,7 +291,7 @@ namespace TFE_Jedi
 			line = parser.readLine(bufferPos);
 			s32 index, tmp;
 			f32 offsetX, offsetZ;
-			if (sscanf(line, "FLOOR TEXTURE %d %f %f %d", &index, &offsetX, &offsetZ, &tmp) != 4)
+			if (sscanf(line, " FLOOR TEXTURE %d %f %f %d", &index, &offsetX, &offsetZ, &tmp) != 4)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read floor texture.");
 				return false;
@@ -283,7 +308,7 @@ namespace TFE_Jedi
 			// Floor Altitude
 			line = parser.readLine(bufferPos);
 			f32 alt;
-			if (sscanf(line, "FLOOR ALTITUDE %f", &alt) != 1)
+			if (sscanf(line, " FLOOR ALTITUDE %f", &alt) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read floor altitude.");
 				return false;
@@ -292,7 +317,7 @@ namespace TFE_Jedi
 
 			// Ceiling Texture & Offset
 			line = parser.readLine(bufferPos);
-			if (sscanf(line, "CEILING TEXTURE %d %f %f %d", &index, &offsetX, &offsetZ, &tmp) != 4)
+			if (sscanf(line, " CEILING TEXTURE %d %f %f %d", &index, &offsetX, &offsetZ, &tmp) != 4)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read ceiling texture.");
 				return false;
@@ -307,7 +332,7 @@ namespace TFE_Jedi
 
 			// Ceiling Altitude
 			line = parser.readLine(bufferPos);
-			if (sscanf(line, "CEILING ALTITUDE %f", &alt) != 1)
+			if (sscanf(line, " CEILING ALTITUDE %f", &alt) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read ceiling altitude.");
 				return false;
@@ -316,7 +341,7 @@ namespace TFE_Jedi
 
 			// Second Altitude
 			line = parser.readLine(bufferPos);
-			if (sscanf(line, "SECOND ALTITUDE %f", &alt) != 1)
+			if (sscanf(line, " SECOND ALTITUDE %f", &alt) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read second altitude.");
 				return false;
@@ -325,7 +350,7 @@ namespace TFE_Jedi
 
 			// Sector flags
 			line = parser.readLine(bufferPos);
-			if (sscanf(line, "FLAGS %d %d %d", &sector->flags1, &sector->flags2, &sector->flags3) != 3)
+			if (sscanf(line, " FLAGS %d %d %d", &sector->flags1, &sector->flags2, &sector->flags3) != 3)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector flags.");
 				return false;
@@ -349,7 +374,7 @@ namespace TFE_Jedi
 
 			// Layer
 			line = parser.readLine(bufferPos);
-			if (sscanf(line, "LAYER %d", &sector->layer) != 1)
+			if (sscanf(line, " LAYER %d", &sector->layer) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector layer.");
 				return false;
@@ -360,7 +385,7 @@ namespace TFE_Jedi
 			// Vertices
 			line = parser.readLine(bufferPos);
 			s32 vertexCount;
-			if (sscanf(line, "VERTICES %d", &vertexCount) != 1)
+			if (sscanf(line, " VERTICES %d", &vertexCount) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector vertices.");
 				return false;
@@ -375,7 +400,7 @@ namespace TFE_Jedi
 				line = parser.readLine(bufferPos);
 
 				f32 x, z;
-				sscanf(line, "X: %f Z: %f", &x, &z);
+				sscanf(line, " X: %f Z: %f", &x, &z);
 				sector->verticesWS[v].x = floatToFixed16(x);
 				sector->verticesWS[v].z = floatToFixed16(z);
 			}
@@ -383,7 +408,7 @@ namespace TFE_Jedi
 			// Walls
 			line = parser.readLine(bufferPos);
 			s32 wallCount;
-			if (sscanf(line, "WALLS %d", &wallCount) != 1)
+			if (sscanf(line, " WALLS %d", &wallCount) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector walls.");
 				return false;
@@ -401,7 +426,8 @@ namespace TFE_Jedi
 				f32 topOffsetZ, topOffsetX;
 				f32 midOffsetZ, midOffsetX;
 
-				if (sscanf(line, "WALL LEFT: %d RIGHT: %d MID: %d %f %f %d TOP: %d %f %f %d BOT: %d %f %f %d SIGN: %d %f %f ADJOIN: %d MIRROR: %d WALK: %d FLAGS: %d %d %d LIGHT: %d",
+				line = parser.readLine(bufferPos);
+				if (sscanf(line, " WALL LEFT: %d RIGHT: %d MID: %d %f %f %d TOP: %d %f %f %d BOT: %d %f %f %d SIGN: %d %f %f ADJOIN: %d MIRROR: %d WALK: %d FLAGS: %d %d %d LIGHT: %d",
 					&left, &right, &midTex, &midOffsetX, &midOffsetZ, &unused, &topTex, &topOffsetX, &topOffsetZ, &unused, &botTex, &botOffsetX, &botOffsetZ, &unused,
 					&signTex, &signOffsetX, &signOffsetZ, &adjoin, &mirror, &walk, &flags1, &flags2, &flags3, &light) != 24)
 				{
@@ -512,14 +538,8 @@ namespace TFE_Jedi
 
 		return true;
 	}
-
-	static s32 s_podCount = 0;
-	static s32 s_spriteCount = 0;
-	static s32 s_fmeCount = 0;
-	static s32 s_soundCount = 0;
-	static s32 s_objectCount = 0;
-			
-	bool loadObjects(const char* levelName)
+					
+	JBool level_loadObjects(const char* levelName)
 	{
 		s32 difficulty = 1 + getDifficulty();
 
@@ -549,6 +569,7 @@ namespace TFE_Jedi
 		parser.init(s_buffer.data(), s_buffer.size());
 		parser.enableBlockComments();
 		parser.addCommentString("//");
+		parser.addCommentString("#");
 
 		// Only use the parser "read line" functionality and otherwise read in the same was as the DOS code.
 		const char* line;
@@ -724,6 +745,12 @@ namespace TFE_Jedi
 		}
 
 		return true;
+	}
+
+	JBool level_loadGoals(const char* levelName)
+	{
+		// TODO
+		return JTRUE;
 	}
 
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1)

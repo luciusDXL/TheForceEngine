@@ -69,7 +69,7 @@ namespace TFE_Jedi
 
 	// For now load the INF data directly.
 	// Move back to the asset system later.
-	bool loadINF(const char* levelName);
+	JBool inf_load(const char* levelName);
 
 	// Sounds
 	void inf_loadSounds();

@@ -354,7 +354,7 @@ namespace TFE_Jedi
 			case IELEV_SP_BASIC:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_FLOOR);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 
 				elev->trigMove = TRIGMOVE_CONT;
 				elev->speed = FIXED(8);
@@ -364,7 +364,7 @@ namespace TFE_Jedi
 			case IELEV_SP_BASIC_AUTO:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_FLOOR);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 
 				fixed16_16 maxFloor = -FIXED(9999);
 				fixed16_16 minFloor = FIXED(9999);
@@ -405,7 +405,7 @@ namespace TFE_Jedi
 			case IELEV_SP_INV:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_CEILING);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 
 				elev->trigMove = TRIGMOVE_CONT;
 				elev->speed = FIXED(8);
@@ -415,7 +415,7 @@ namespace TFE_Jedi
 			case IELEV_SP_DOOR:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_CEILING);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 
 				Stop* stop0 = allocateStop(elev);
 				stop0->value = sector->floorHeight;
@@ -436,7 +436,7 @@ namespace TFE_Jedi
 			case IELEV_SP_DOOR_INV:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_FLOOR);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 
 				Stop* stop0 = allocateStop(elev);
 				Stop* stop1 = allocateStop(elev);
@@ -456,7 +456,7 @@ namespace TFE_Jedi
 
 				// Upper Part
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_CEILING);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 
 				Stop* stop0 = allocateStop(elev);
 				stop0->value = middle;
@@ -473,7 +473,7 @@ namespace TFE_Jedi
 
 				// Lower Part
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_FLOOR);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 
 				stop0 = allocateStop(elev);
 				stop0->value = middle;
@@ -490,14 +490,14 @@ namespace TFE_Jedi
 			case IELEV_SP_MORPH_SPIN1:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_ROTATE_WALL);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
 			} break;
 			case IELEV_SP_MORPH_SPIN2:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_ROTATE_WALL);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
 				// This makes the player move with the sector.
@@ -506,14 +506,14 @@ namespace TFE_Jedi
 			case IELEV_SP_MORPH_MOVE1:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_WALL);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
 			} break;
 			case IELEV_SP_MORPH_MOVE2:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_WALL);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
 				// This makes the player move with the sector.
@@ -522,7 +522,7 @@ namespace TFE_Jedi
 			case IELEV_SP_EXPLOSIVE_WALL:
 			{
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_CEILING);
-				link = allocateLink(sector->infLink, elev);
+				link = inf_addElevatorToSector(elev, sector);
 
 				Stop* stop0 = allocateStop(elev);
 				Stop* stop1 = allocateStop(elev);
@@ -1162,7 +1162,7 @@ namespace TFE_Jedi
 
 	// For now load the INF data directly.
 	// Move back to asset later.
-	bool loadINF(const char* levelName)
+	JBool inf_load(const char* levelName)
 	{
 		char levelPath[TFE_MAX_PATH];
 		strcpy(levelPath, levelName);
