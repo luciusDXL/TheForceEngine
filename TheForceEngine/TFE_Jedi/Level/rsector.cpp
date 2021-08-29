@@ -440,7 +440,7 @@ namespace TFE_Jedi
 		PS_OUTSIDE = 1
 	};
 
-	PointSegSide lineSegmentSide(fixed16_16 x1, fixed16_16 z1, fixed16_16 x0, fixed16_16 z0, fixed16_16 x, fixed16_16 z)
+	PointSegSide lineSegmentSide(fixed16_16 x, fixed16_16 z, fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1)
 	{
 		fixed16_16 dx = x0 - x1;
 		fixed16_16 dz = z0 - z1;
@@ -554,7 +554,7 @@ namespace TFE_Jedi
 				{
 					if (z != z1)
 					{
-						PointSegSide side = lineSegmentSide(x1, z1, x0, z0, x, z);
+						PointSegSide side = lineSegmentSide(x, z, x0, z0, x1, z1);
 						if (side == PS_OUTSIDE)
 						{
 							crossings++;
@@ -580,7 +580,7 @@ namespace TFE_Jedi
 					dzLast = dz;
 				}
 			}
-			else if (lineSegmentSide(x1, z1, x0, z0, x, z) == PS_ON_LINE)
+			else if (lineSegmentSide(x, z, x0, z0, x1, z1) == PS_ON_LINE)
 			{
 				TFE_System::logWrite(LOG_ERROR, "Sector", "Sector_Which3D: Object at (%d.%d, %d.%d) lies on wall of Sector #%d", xInt, xFrac, zInt, zFrac, sector->id);
 				return JTRUE;

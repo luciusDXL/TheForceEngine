@@ -668,7 +668,7 @@ namespace TFE_Jedi
 			JBool valid = JTRUE;
 			s32 count = s_objectCount;
 
-			for (s32 i = 0; i < count && valid;)
+			for (s32 objIndex = 0; objIndex < count && valid;)
 			{
 				line = parser.readLine(bufferPos);
 				if (!line)
@@ -676,14 +676,13 @@ namespace TFE_Jedi
 					break;
 				}
 
-				s32 data = 0, diff = 0;
+				s32 data = 0, objDiff = 0;
 				f32 x, y, z, pch, yaw, rol;
 				char objClass[32];
-
-				if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &diff) > 5)
+				if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &objDiff) > 5)
 				{
-					i++;
-					if (TFE_Jedi::abs(diff) >= difficulty)
+					objIndex++;
+					if (TFE_Jedi::abs(objDiff) >= difficulty)
 					{
 						continue;
 					}
