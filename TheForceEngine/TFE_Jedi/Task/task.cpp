@@ -221,28 +221,8 @@ namespace TFE_Jedi
 		}
 	}
 
-	void itask_yield(Tick delay, s32 ip)
+	void selectNextTask()
 	{
-		// Copy the ip so we know where to return.
-		s_curContext->ip[s_curContext->level] = ip;
-		s_curContext->level--;
-
-		// If there is a return task, then take it next.
-		if (s_curTask->retTask)
-		{
-			// Clear out the return task once it is executed.
-			Task* retTask = s_curTask->retTask;
-			s_curTask->retTask = nullptr;
-
-			// Set the next task.
-			s_currentId = 0;
-			s_curTask = retTask;
-			return;
-		}
-
-		// Update the current tick based on the delay.
-		s_curTask->nextTick = (delay < TASK_SLEEP) ? s_curTick + delay : delay;
-		
 		// Find the next task to run.
 		Task* task = s_curTask;
 		while (1)
@@ -276,6 +256,32 @@ namespace TFE_Jedi
 				break;
 			}
 		}
+	}
+
+	void itask_yield(Tick delay, s32 ip)
+	{
+		// Copy the ip so we know where to return.
+		s_curContext->ip[s_curContext->level] = ip;
+		s_curContext->level--;
+
+		// If there is a return task, then take it next.
+		if (s_curTask->retTask)
+		{
+			// Clear out the return task once it is executed.
+			Task* retTask = s_curTask->retTask;
+			s_curTask->retTask = nullptr;
+
+			// Set the next task.
+			s_currentId = 0;
+			s_curTask = retTask;
+			return;
+		}
+
+		// Update the current tick based on the delay.
+		s_curTask->nextTick = (delay < TASK_SLEEP) ? s_curTick + delay : delay;
+		
+		// Find the next task to run.
+		selectNextTask();
 	}
 		
 	// Called once per frame to run all of the tasks.
@@ -320,6 +326,10 @@ namespace TFE_Jedi
 				s_curContext = &s_curTask->context;
 				s32 level = max(0, s_curContext->level);
 				s_curContext->callstack[level](s_currentId);
+			}
+			else if (!framebreak)
+			{
+				selectNextTask();
 			}
 
 			if (framebreak)

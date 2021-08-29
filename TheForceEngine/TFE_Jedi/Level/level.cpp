@@ -130,6 +130,7 @@ namespace TFE_Jedi
 		parser.enableBlockComments();
 		parser.addCommentString("#");
 		parser.addCommentString("//");
+		parser.convertToUpperCase(true);
 
 		// Only use the parser "read line" functionality and otherwise read in the same was as the DOS code.
 		const char* line;
@@ -258,7 +259,7 @@ namespace TFE_Jedi
 			line = parser.readLine(bufferPos);
 			// Sectors missing a name are valid but do not get "addresses" - and thus cannot be
 			// used by the INF system (except in the case of doors and exploding walls, see the flags section below).
-			if (sscanf(line, "NAME %s", name) == 1)
+			if (sscanf(line, " NAME %s", name) == 1)
 			{
 				// Add the sector "address" for later use by the INF system.
 				message_addAddress(name, 0, 0, sector);
@@ -569,10 +570,10 @@ namespace TFE_Jedi
 		parser.enableBlockComments();
 		parser.addCommentString("//");
 		parser.addCommentString("#");
+		parser.convertToUpperCase(true);
 
 		// Only use the parser "read line" functionality and otherwise read in the same was as the DOS code.
 		const char* line;
-
 		line = parser.readLine(bufferPos);
 		s32 versionMajor, versionMinor;
 		if (sscanf(line, "O %d.%d", &versionMajor, &versionMinor) != 2)

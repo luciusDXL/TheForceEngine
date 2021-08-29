@@ -27,6 +27,9 @@ public:
 	// Add a string representing a comment, such as ";" "#" "//"
 	void addCommentString(const char* comment);
 
+	// Convert resulting strings to upper case, defaults to false.
+	void convertToUpperCase(bool enable);
+
 	// Read the next non-comment/whitespace line.
 	const char* readLine(size_t& bufferPos, bool skipLeadingWhitespace = false);
 	// Split a line into tokens using space, comma or equals as separators.
@@ -40,4 +43,5 @@ private:
 	bool m_enableBlockComments;
 	bool m_blockComment;
 	bool m_enableColorSeperator;
+	bool m_convertToUppercase;
 };

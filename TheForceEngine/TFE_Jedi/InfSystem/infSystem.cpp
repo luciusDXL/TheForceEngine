@@ -185,23 +185,16 @@ namespace TFE_Jedi
 
 	void inf_gotoInitialStop(InfElevator* elev, s32 stopIndex)
 	{
-		if (!elev)
-		{
-			return;
-		}
-
+		if (!elev) { return; }
 		Stop* stop = (Stop*)allocator_getByIndex(elev->stops, stopIndex);
-		if (!stop)
-		{
-			return;
-		}
+		if (!stop) { return; }
 
 		elev->nextStop = stop;
-		s32 speed = elev->speed;
+		fixed16_16 speed = elev->speed;
 		elev->speed = 0;
 
-		s32 dt = s_deltaTime;
-		s32 fixedStep = elev->fixedStep;
+		fixed16_16 dt = s_deltaTime;
+		fixed16_16 fixedStep = elev->fixedStep;
 		elev->fixedStep = 0;
 		if (!s_deltaTime)
 		{
@@ -211,13 +204,15 @@ namespace TFE_Jedi
 
 		elev->fixedStep = fixedStep;
 		elev->speed = speed;
+
 		Stop* next = elev->nextStop;
-		u32 delay = next->delay;
+		Tick delay = next->delay;
 		
 		if (delay == IDELAY_TERMINATE)
 		{
 			deleteElevator(elev);
 			elev = nullptr;
+			return;
 		}
 		else if (delay == IDELAY_HOLD)
 		{
@@ -560,13 +555,15 @@ namespace TFE_Jedi
 			stops = elev->stops;
 		}
 		Stop* stop = (Stop*)allocator_newItem(stops);
+		memset(stop, 0, sizeof(Stop));
+
 		stop->value = value;
 		stop->delay = TICKS(4);	// default delay = 4 seconds.
 		stop->messages = nullptr;
-		stop->adjoinCmds = 0;
+		stop->adjoinCmds = nullptr;
 		stop->pageId = NULL_SOUND;	// no page sound by default.
-		stop->floorTex = 0;
-		stop->ceilTex = 0;
+		stop->floorTex = nullptr;
+		stop->ceilTex = nullptr;
 
 		return stop;
 	}
@@ -852,6 +849,10 @@ namespace TFE_Jedi
 			char id[256];
 			s32 argCount = sscanf(line, " %s %s %s %s %s %s %s", id, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArg4, s_infArgExtra);
 			KEYWORD action = getKeywordIndex(id);
+			if (action == KW_UNKNOWN)
+			{
+				TFE_System::logWrite(LOG_WARNING, "INF", "Unknown elevator command - '%s'.", id);
+			}
 
 			seqEnd = inf_parseElevatorCommand(argCount, action, linkAlloc, seqEnd, elev, initStopIndex, link);
 		} // while (!seqEnd)
@@ -887,6 +888,7 @@ namespace TFE_Jedi
 			char id[256];
 			argCount = sscanf(line, " %s %s %s %s %s", id, s_infArg0, s_infArg1, s_infArg2, s_infArg3);
 			KEYWORD itemId = getKeywordIndex(id);
+			assert(itemId != KW_UNKNOWN);
 
 			switch (itemId)
 			{
@@ -1021,6 +1023,7 @@ namespace TFE_Jedi
 	bool parseLineTrigger(TFE_Parser& parser, size_t& bufferPos, s32 argCount, const char* name, s32 num)
 	{
 		KEYWORD typeId = getKeywordIndex(s_infArg0);
+		assert(typeId != KW_UNKNOWN);
 
 		MessageAddress* msgAddr = message_getAddress(name);
 		RSector* sector = msgAddr->sector;
@@ -1031,6 +1034,7 @@ namespace TFE_Jedi
 		if (argCount > 2)
 		{
 			KEYWORD subTypeId = getKeywordIndex(s_infArg1);
+			assert(subTypeId != KW_UNKNOWN);
 							
 			switch (subTypeId)
 			{
@@ -1073,7 +1077,7 @@ namespace TFE_Jedi
 		while (!seqEnd)
 		{
 			line = parser.readLine(bufferPos);
-			if (!strstr(line, "CLASS"))
+			if (strstr(line, "CLASS"))
 			{
 				break;
 			}
@@ -1081,6 +1085,10 @@ namespace TFE_Jedi
 			char id[256];
 			argCount = sscanf(line, " %s %s %s %s %s", id, s_infArg0, s_infArg1, s_infArg2, s_infArg3);
 			KEYWORD itemId = getKeywordIndex(id);
+			if (itemId == KW_UNKNOWN)
+			{
+				TFE_System::logWrite(LOG_WARNING, "INF", "Unknown trigger parameter - '%s'.", id);
+			}
 
 			switch (itemId)
 			{
@@ -1138,7 +1146,7 @@ namespace TFE_Jedi
 				{
 					trigger->event = strToUInt(s_infArg0);
 				} break;
-				case KW_SOUND:
+				case KW_SOUND_COLON:
 				{
 					SoundSourceID soundSourceId = NULL_SOUND;
 					// Not ascii
@@ -1170,13 +1178,13 @@ namespace TFE_Jedi
 		if (!TFE_Paths::getFilePath(levelPath, &filePath))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot find level INF '%s'.", levelPath);
-			return false;
+			return JFALSE;
 		}
 		FileStream file;
 		if (!file.open(&filePath, FileStream::MODE_READ))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot open level INF '%s'.", levelPath);
-			return false;
+			return JFALSE;
 		}
 		size_t len = file.getSize();
 		s_buffer.resize(len);
@@ -1188,6 +1196,7 @@ namespace TFE_Jedi
 		parser.init(s_buffer.data(), s_buffer.size());
 		parser.enableBlockComments();
 		parser.addCommentString("//");
+		parser.convertToUpperCase(true);
 
 		const char* line;
 		line = parser.readLine(bufferPos);
@@ -1195,12 +1204,12 @@ namespace TFE_Jedi
 		if (sscanf(line, "INF %f", &version) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot read INF version.");
-			return false;
+			return JFALSE;
 		}
 		if (version != 1.0f)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Incorrect INF version %f, should be 1.0.", version);
-			return false;
+			return JFALSE;
 		}
 
 		// Keep looping until ITEMS is found.
@@ -1211,7 +1220,7 @@ namespace TFE_Jedi
 			if (!line)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot find ITEMS in INF: '%s'.", levelName);
-				return false;
+				return JFALSE;
 			}
 
 			if (sscanf(line, "ITEMS %d", &itemCount) == 1)
@@ -1227,8 +1236,8 @@ namespace TFE_Jedi
 			line = parser.readLine(bufferPos);
 			if (!line)
 			{
-				TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Hit the end of INF '%s' before parsing all items: %d/%d", levelName, i, itemCount);
-				return false;
+				TFE_System::logWrite(LOG_WARNING, "level_loadINF", "Hit the end of INF '%s' before parsing all items: %d/%d", levelName, i, itemCount);
+				return JTRUE;
 			}
 
 			char item[256], name[256];
@@ -1239,9 +1248,8 @@ namespace TFE_Jedi
 				if (!line)
 				{
 					TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Hit the end of INF '%s' before parsing all items: %d/%d", levelName, i, itemCount);
-					return false;
+					return JTRUE;
 				}
-
 				continue;
 			}
 
@@ -1292,6 +1300,8 @@ namespace TFE_Jedi
 						char id[256];
 						s32 argCount = sscanf(line, " %s %s %s %s %s %s %s", id, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArg4, s_infArgExtra);
 						KEYWORD itemClass = getKeywordIndex(s_infArg0);
+						assert(itemClass != KW_UNKNOWN);
+
 						if (itemClass == KW_ELEVATOR)
 						{
 							if (parseElevator(parser, bufferPos, name))
@@ -1346,7 +1356,7 @@ namespace TFE_Jedi
 			}
 		}  // for (s32 i = 0; i < itemCount; i++)
 
-		return true;
+		return JTRUE;
 	}
 
 	// Sounds
@@ -2021,7 +2031,7 @@ namespace TFE_Jedi
 				elev->dirOrCenter.x = floatToFixed16(centerX);
 				elev->dirOrCenter.z = floatToFixed16(centerZ);
 			} break;
-			case KW_KEY:
+			case KW_KEY_COLON:
 			{
 				KEYWORD key = getKeywordIndex(s_infArg0);
 				if (key == KW_RED)
@@ -2050,7 +2060,7 @@ namespace TFE_Jedi
 			{
 				elev->flags = strToUInt(s_infArg0);
 			} break;
-			case KW_SOUND:
+			case KW_SOUND_COLON:
 			{
 				SoundSourceID soundSourceId = 0;
 				if (s_infArg1[0] >= '0' && s_infArg1[0] <= '9')
@@ -3207,7 +3217,7 @@ namespace TFE_Jedi
 				{
 					wall->infLink = allocator_create(sizeof(InfLink));
 				}
-				InfLink* link = (InfLink*)allocator_newItem(wall->infLink);
+				link = (InfLink*)allocator_newItem(wall->infLink);
 				link->type = LTYPE_TRIGGER;
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;

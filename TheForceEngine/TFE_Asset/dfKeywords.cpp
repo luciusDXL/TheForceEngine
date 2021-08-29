@@ -149,7 +149,7 @@ static const char* c_keywords[] =
 	"WELDER",
 	"SCENERY",
 	"ANIM",
-	"KEY",
+	"KEY:",
 	"GENERATOR",
 	"TRUE",
 	"FALSE",

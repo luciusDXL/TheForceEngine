@@ -23,7 +23,7 @@ namespace
 	}
 }
 
-TFE_Parser::TFE_Parser() : m_buffer(nullptr), m_bufferLen(0u), m_enableBlockComments(false), m_blockComment(false), m_enableColorSeperator(false) {}
+TFE_Parser::TFE_Parser() : m_buffer(nullptr), m_bufferLen(0u), m_enableBlockComments(false), m_blockComment(false), m_enableColorSeperator(false), m_convertToUppercase(false) {}
 TFE_Parser::~TFE_Parser() {}
 
 void TFE_Parser::init(const char* buffer, size_t len)
@@ -48,6 +48,12 @@ void TFE_Parser::enableColonSeperator()
 void TFE_Parser::addCommentString(const char* comment)
 {
 	m_commentStrings.push_back(comment);
+}
+
+// Convert resulting strings to upper case, defaults to false.
+void TFE_Parser::convertToUpperCase(bool enable)
+{
+	m_convertToUppercase = enable;
 }
 
 // Read the next non-comment/whitespace line.
@@ -105,7 +111,14 @@ const char* TFE_Parser::readLine(size_t& bufferPos, bool skipLeadingWhitespace)
 				// if not in a comment, go ahead and add to the line.
 				if (!inComment)
 				{
-					s_line[linePos++] = m_buffer[i];
+					if (m_convertToUppercase)
+					{
+						s_line[linePos++] = toupper(m_buffer[i]);
+					}
+					else
+					{
+						s_line[linePos++] = m_buffer[i];
+					}
 				}
 			}
 		}
