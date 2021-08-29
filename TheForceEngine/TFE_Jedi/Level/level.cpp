@@ -15,6 +15,9 @@
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/InfSystem/message.h>
 
+// TODO: Fix game dependency?
+#include <TFE_DarkForces/logic.h>
+
 namespace TFE_Jedi
 {
 	enum
@@ -60,7 +63,6 @@ namespace TFE_Jedi
 	RSector* s_completeSector = nullptr;
 	RSector* s_sectors = nullptr;
 
-	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos);
 	JBool level_loadGeometry(const char* levelName);
 	JBool level_loadObjects(const char* levelName, u8 difficulty);
 	JBool level_loadGoals(const char* levelName);
@@ -758,7 +760,7 @@ namespace TFE_Jedi
 
 					if (obj)
 					{
-						JBool seqRead = object_parseSeq(obj, &parser, &bufferPos);
+						JBool seqRead = TFE_DarkForces::object_parseSeq(obj, &parser, &bufferPos);
 						if (obj->entityFlags & ETFLAG_PLAYER)
 						{
 							if (!s_safeLoc)
@@ -804,17 +806,5 @@ namespace TFE_Jedi
 		obj->posWS.y = y;
 		obj->posWS.z = z;
 		sector_addObject(sector, obj);
-	}
-
-	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos)
-	{
-		const char* line = parser->readLine(*bufferPos);
-		if (!line || !strstr(line, "SEQ"))
-		{
-			return JFALSE;
-		}
-
-
-		return JTRUE;
 	}
 }

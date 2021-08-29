@@ -7,7 +7,37 @@
 
 namespace TFE_DarkForces
 {
+	enum PlayerConstants
+	{
+		PLAYER_HEIGHT                  = 0x5cccc,	  // 5.8 units
+		PLAYER_WIDTH                   = 0x1cccc,	  // 1.8 units
+		PLAYER_PICKUP_ADJ              = 0x18000,	  // 1.5 units
+		PLAYER_SIZE_SMALL              = 0x4ccc,	  // 0.3 units
+		PLAYER_STEP                    = 0x38000,	  // 3.5 units
+		PLAYER_INF_STEP                = FIXED(9999),
+		PLAYER_HEADWAVE_VERT_SPD       = 0xc000,	  // 0.75   units/sec.
+		PLAYER_HEADWAVE_VERT_WATER_SPD = 0x3000,	  // 0.1875 units/sec.
+		PLAYER_DMG_FLOOR_LOW           = FIXED(5),	  // Low  damage floors apply  5 dmg/sec.
+		PLAYER_DMG_FLOOR_HIGH          = FIXED(10),	  // High damage floors apply 10 dmg/sec.
+		PLAYER_DMG_WALL				   = FIXED(20),	  // Damage walls apply 20 dmg/sec.
+		PLAYER_FALL_SCREAM_VEL         = FIXED(60),	  // Fall speed when the player starts screaming.
+		PLAYER_FALL_SCREAM_MINHEIGHT   = FIXED(55),   // The player needs to be at least 55 units from the ground before screaming.
+		PLAYER_FALL_HIT_SND_HEIGHT     = 0x4000,	  // 0.25 units, fall height for player to make a sound when hitting the ground.
+		PLAYER_LAND_VEL_CHANGE		   = FIXED(60),	  // Point wear landing velocity to head change velocity changes slope.
+		PLAYER_LAND_VEL_MAX            = FIXED(1000), // Maximum head change landing velocity.
+	};
+
+	struct PlayerLogic
+	{
+		Logic logic;
+
+		vec2_fixed dir;
+		vec3_fixed move;
+		fixed16_16 stepHeight;
+	};
+
 	PlayerInfo s_playerInfo = { 0 };
+	PlayerLogic s_playerLogic = { 0 };
 	GoalItems s_goalItems   = { 0 };
 	fixed16_16 s_energy = 2 * ONE_16;
 	s32 s_lifeCount;
@@ -19,13 +49,16 @@ namespace TFE_DarkForces
 	JBool s_headlampActive = JFALSE;
 	JBool s_superCharge   = JFALSE;
 	JBool s_superChargeHud= JFALSE;
+	JBool s_playerSecMoved = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
 	JBool s_goals[16] = { 0 };
 
+	RSector* s_playerSector = nullptr;
 	SecObject* s_playerObject = nullptr;
 	SecObject* s_playerEye = nullptr;
 	vec3_fixed s_eyePos = { 0 };	// s_camX, s_camY, s_camZ in the DOS code.
 	angle14_32 s_pitch = 0, s_yaw = 0, s_roll = 0;
+	u32 s_playerEyeFlags = 4;
 	Tick s_playerTick;
 	Tick s_prevPlayerTick;
 	Tick s_nextShieldDmgTick;
@@ -51,8 +84,9 @@ namespace TFE_DarkForces
 
 	// Player Controller
 	static fixed16_16 s_externalYawSpd;
-	static fixed16_16 s_playerPitch;
-	static fixed16_16 s_playerRoll;
+	static angle14_32 s_playerYaw;
+	static angle14_32 s_playerPitch;
+	static angle14_32 s_playerRoll;
 	static fixed16_16 s_forwardSpd;
 	static fixed16_16 s_strafeSpd;
 	static fixed16_16 s_maxMoveDist;
@@ -68,6 +102,7 @@ namespace TFE_DarkForces
 	static fixed16_16 s_externalVelZ;
 	static fixed16_16 s_playerCrouchSpd;
 	static fixed16_16 s_playerSpeed;
+	fixed16_16 s_playerHeight;
 	// Speed Modifiers
 	static s32 s_playerRun = 0;
 	static s32 s_jumpScale = 0;
@@ -91,6 +126,7 @@ namespace TFE_DarkForces
 	static SoundEffectID s_kyleScreamSoundId = 0;
 	// Position and orientation.
 	static vec3_fixed s_playerPos;
+	static fixed16_16 s_playerYPos;
 	static fixed16_16 s_playerObjHeight;
 	static angle14_32 s_playerObjPitch;
 	static angle14_32 s_playerObjYaw;
@@ -293,6 +329,62 @@ namespace TFE_DarkForces
 	{
 		s_playerEye = nullptr;
 	}
+
+	void playerLogicCleanupFunc(Logic* logic)
+	{
+		// TODO
+	}
+
+	void player_setupObject(SecObject* obj)
+	{
+		s_playerObject = obj;
+		obj_addLogic(obj, (Logic*)&s_playerLogic, s_playerTask, playerLogicCleanupFunc);
+
+		s_playerObject->entityFlags|= ETFLAG_PLAYER;
+		s_playerObject->flags      |= OBJ_FLAG_HAS_COLLISION;
+		s_playerObject->worldHeight = PLAYER_HEIGHT;
+		s_playerObject->worldWidth  = PLAYER_WIDTH;
+
+		s_playerYaw   = s_playerObject->yaw;
+		s_playerPitch = 0;
+		s_playerRoll  = 0;
+
+		s_playerYPos = s_playerObject->posWS.y;
+		s_playerLogic.stepHeight = PLAYER_STEP;
+		task_makeActive(s_playerTask);
+
+		weapon_setNext(s_playerInfo.curWeapon);
+		s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
+
+		s_playerSecMoved = JFALSE;
+		s_playerSector = obj->sector;
+	}
+
+	void player_setupEyeObject(SecObject* obj)
+	{
+		if (s_playerEye)
+		{
+			s_playerEye->flags &= ~2;
+			s_playerEye->flags |= s_playerEyeFlags;
+		}
+		s_playerEye = obj;
+		// setupCamera();
+
+		s_playerEye->flags |= 2;
+		s_playerEyeFlags = s_playerEye->flags & 4;
+		s_playerEye->flags &= ~4;
+
+		// s_camX = s_playerEye->posWS.x;
+		// s_camY = s_playerEye->posWS.y;
+		// s_camZ = s_playerEye->posWS.z;
+
+		s_pitch = s_playerEye->pitch;
+		s_yaw   = s_playerEye->yaw;
+		s_roll  = s_playerEye->roll;
+
+		// setCameraOffset(0, 0, 0);
+		// setCameraAngleOffset(0, 0, 0);
+	}
 		
 	void playerControlTaskFunc(s32 id)
 	{
@@ -302,10 +394,10 @@ namespace TFE_DarkForces
 		s_playerPos.y = s_playerObject->posWS.y;
 		s_playerPos.z = s_playerObject->posWS.z;
 		s_playerObjHeight = s_playerObject->worldHeight;
-		s_playerObjPitch = s_playerObject->pitch;
-		s_playerObjYaw = s_playerObject->yaw;
+		s_playerObjPitch  = s_playerObject->pitch;
+		s_playerObjYaw    = s_playerObject->yaw;
 		s_playerObjSector = s_playerObject->sector;
-		s_prevPlayerTick = s_curTick;
+		s_prevPlayerTick  = s_curTick;
 
 		while (id != -1)
 		{

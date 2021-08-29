@@ -9,11 +9,6 @@ using namespace TFE_DarkForces;
 
 namespace TFE_Jedi
 {
-	// TODO: Game Variables referenced by internal sector functions.
-	// Where should this be stored?
-	static fixed16_16 s_playerHeight;
-	static u32 s_playerSecMoved = 0;
-
 	// Internal Forward Declarations
 	void sector_computeWallDirAndLength(RWall* wall);
 	void sector_moveWallVertex(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
@@ -656,7 +651,7 @@ namespace TFE_Jedi
 		RSector* sector = wall->sector;
 		if (sector->flags1 & SEC_FLAGS1_PLAYER)
 		{
-			s_playerSecMoved = 0xffffffff;
+			s_playerSecMoved = JTRUE;
 		}
 
 		// Update the previous wall, since it would have changed as well.

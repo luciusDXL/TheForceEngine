@@ -89,9 +89,11 @@ namespace TFE_DarkForces
 	extern JBool s_headlampActive;
 	extern JBool s_superCharge;
 	extern JBool s_superChargeHud;
+	extern JBool s_playerSecMoved;
 	extern JBool s_goals[];
 	extern u32* s_playerInvSaved;
 	// Eye parameters
+	extern fixed16_16 s_playerHeight;
 	extern vec3_fixed s_eyePos;	// s_camX, s_camY, s_camZ in the DOS code.
 	extern angle14_32 s_pitch, s_yaw, s_roll;
 	extern Tick s_playerTick;
@@ -119,4 +121,6 @@ namespace TFE_DarkForces
 	void player_readInfo(u8* inv, s32* ammo);
 	void player_clearEyeObject();
 	void player_createController();
+	void player_setupObject(SecObject* obj);
+	void player_setupEyeObject(SecObject* obj);
 }  // namespace TFE_DarkForces

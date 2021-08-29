@@ -258,7 +258,7 @@ namespace TFE_DarkForces
 		weapon_clearFireRate();
 		weapon_createPlayerWeaponTask();
 		projectile_createTask();
-		// player_createController();  // <- this is finished but cannot be enable yet (until the player can be loaded).
+		player_createController();
 		inf_createElevatorTask();
 		player_clearEyeObject();
 		pickup_createTask();

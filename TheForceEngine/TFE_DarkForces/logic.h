@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_System/parser.h>
 
 namespace TFE_DarkForces
 {
@@ -27,4 +28,5 @@ namespace TFE_DarkForces
 	
 	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc);
 	void deleteLogicAndObject(Logic* logic);
+	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos);
 }  // namespace TFE_DarkForces
