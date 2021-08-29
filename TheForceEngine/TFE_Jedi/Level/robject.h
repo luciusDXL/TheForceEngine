@@ -101,7 +101,7 @@ namespace TFE_Jedi
 	void freeObject(SecObject* obj);
 
 	// Spirits
-	void setupObj_Spirit(SecObject* obj);
+	void spirit_setData(SecObject* obj);
 
 	// 3D objects
 	void obj3d_setData(SecObject* obj, JediModel* pod);

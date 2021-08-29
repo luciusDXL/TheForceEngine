@@ -60,7 +60,7 @@ namespace TFE_Jedi
 	RSector* s_completeSector = nullptr;
 	RSector* s_sectors = nullptr;
 
-	s32 object_parseSeq(SecObject* obj);
+	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos);
 	JBool level_loadGeometry(const char* levelName);
 	JBool level_loadObjects(const char* levelName, u8 difficulty);
 	JBool level_loadGoals(const char* levelName);
@@ -668,9 +668,13 @@ namespace TFE_Jedi
 			JBool valid = JTRUE;
 			s32 count = s_objectCount;
 
-			for (s32 i = 0; i < count && valid; i++)
+			for (s32 i = 0; i < count && valid;)
 			{
 				line = parser.readLine(bufferPos);
+				if (!line)
+				{
+					break;
+				}
 
 				s32 data = 0, diff = 0;
 				f32 x, y, z, pch, yaw, rol;
@@ -678,6 +682,7 @@ namespace TFE_Jedi
 
 				if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &diff) > 5)
 				{
+					i++;
 					if (TFE_Jedi::abs(diff) >= difficulty)
 					{
 						continue;
@@ -724,28 +729,56 @@ namespace TFE_Jedi
 						} break;
 						case KW_SPIRIT:
 						{
-							// TODO
+							sector_addObject(sector, obj);
+							spirit_setData(obj);
 						} break;
 						case KW_SOUND:
 						{
 							// TODO
+							// addSoundObject(s_soundIds[s_dataIndex], obj->posWS.x, obj->posWS.y, obj->posWS.z);
+							freeObject(obj);
+							obj = nullptr;
 						} break;
 						case KW_SAFE:
 						{
-							// TODO
+							if (!s_safeLoc)
+							{
+								s_safeLoc = allocator_create(sizeof(Safe));
+							}
+							Safe* safe = (Safe*)allocator_newItem(s_safeLoc);
+							safe->sector = sector;
+							safe->x = obj->posWS.x;
+							safe->z = obj->posWS.z;
+							safe->yaw = obj->yaw;
+							sector->flags1 |= SEC_FLAGS1_SAFESECTOR;
+
+							freeObject(obj);
+							obj = nullptr;
 						} break;
 					}
 
-					s32 seqRead = object_parseSeq(obj);
-					if (obj->entityFlags & ETFLAG_PLAYER)	// player
+					if (obj)
 					{
-						// TODO
+						JBool seqRead = object_parseSeq(obj, &parser, &bufferPos);
+						if (obj->entityFlags & ETFLAG_PLAYER)
+						{
+							if (!s_safeLoc)
+							{
+								s_safeLoc = allocator_create(sizeof(Safe));
+							}
+							Safe* safe = (Safe*)allocator_newItem(s_safeLoc);
+							safe->sector = obj->sector;
+							safe->x = obj->posWS.x;
+							safe->z = obj->posWS.z;
+							safe->yaw = obj->yaw;
+							sector->flags1 |= SEC_FLAGS1_SAFESECTOR;
+						}
 					}
 				}
 			}
 		}
 
-		return true;
+		return JTRUE;
 	}
 
 	JBool level_loadGoals(const char* levelName)
@@ -774,9 +807,15 @@ namespace TFE_Jedi
 		sector_addObject(sector, obj);
 	}
 
-	s32 object_parseSeq(SecObject* obj)
+	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos)
 	{
-		// TODO
-		return -1;
+		const char* line = parser->readLine(*bufferPos);
+		if (!line || !strstr(line, "SEQ"))
+		{
+			return JFALSE;
+		}
+
+
+		return JTRUE;
 	}
 }

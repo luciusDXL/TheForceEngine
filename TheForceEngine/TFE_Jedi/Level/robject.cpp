@@ -70,7 +70,7 @@ namespace TFE_Jedi
 		computeTransform3x3(obj->transform, yaw, pitch, roll);
 	}
 
-	void setupObj_Spirit(SecObject* obj)
+	void spirit_setData(SecObject* obj)
 	{
 		obj->ptr = nullptr;
 		obj->type = OBJ_TYPE_SPIRIT;

@@ -166,7 +166,7 @@ namespace TFE_DarkForces
 		{
 			case PROJ_PUNCH:
 			{
-				setupObj_Spirit(projObj);
+				spirit_setData(projObj);
 
 				projLogic->type = PROJ_PUNCH;
 				projLogic->updateFunc = stdProjectileUpdateFunc;
@@ -424,7 +424,7 @@ namespace TFE_DarkForces
 			} break;
 			case PROJ_CONCUSSION:
 			{
-				setupObj_Spirit(projObj);
+				spirit_setData(projObj);
 				projLogic->type = PROJ_CONCUSSION;
 				projLogic->updateFunc = stdProjectileUpdateFunc;
 				projLogic->dmg = 0;
@@ -554,7 +554,7 @@ namespace TFE_DarkForces
 			} break;
 			case PROJ_EXP_BARREL:
 			{
-				setupObj_Spirit(projObj);
+				spirit_setData(projObj);
 
 				projLogic->type = PROJ_EXP_BARREL;
 				projLogic->updateFunc = stdProjectileUpdateFunc;

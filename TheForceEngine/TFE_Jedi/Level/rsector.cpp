@@ -418,7 +418,7 @@ namespace TFE_Jedi
 				sectorUnitArea = dzInt * dxInt;
 				
 				s32 insideBounds = 0;
-				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ)// && sector_pointInside(sector, ix, iz))
+				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ)
 				{
 					// pick the containing sector with the smallest area.
 					if (sectorUnitArea < prevSectorUnitArea && sector_pointInsideDF(sector, ix, iz))
@@ -548,7 +548,24 @@ namespace TFE_Jedi
 				if (z == z0 && x == x0)
 				{
 					TFE_System::logWrite(LOG_ERROR, "Sector", "Sector_Which3D: Object at (%d.%d, %d.%d) lies on a vertex of Sector #%d", xInt, xFrac, zInt, zFrac, sector->id);
-					return JFALSE;
+					return JTRUE;
+				}
+				else if (z != z0)
+				{
+					if (z != z1)
+					{
+						PointSegSide side = lineSegmentSide(x1, z1, x0, z0, x, z);
+						if (side == PS_OUTSIDE)
+						{
+							crossings++;
+						}
+						else if (side == PS_ON_LINE)
+						{
+							TFE_System::logWrite(LOG_ERROR, "Sector", "Sector_Which3D: Object at (%d.%d, %d.%d) lies on wall of Sector #%d", xInt, xFrac, zInt, zFrac, sector->id);
+							return JTRUE;
+						}
+					}
+					dzLast = dz;
 				}
 				else if (x != x0)
 				{
@@ -562,32 +579,15 @@ namespace TFE_Jedi
 					}
 					dzLast = dz;
 				}
-				else  // z != z0
-				{
-					if (z != z1)
-					{
-						PointSegSide side = lineSegmentSide(x1, z1, x0, z0, x, z);
-						if (side == PS_OUTSIDE)
-						{
-							crossings++;
-						}
-						else if (side == PS_ON_LINE)
-						{
-							TFE_System::logWrite(LOG_ERROR, "Sector", "Sector_Which3D: Object at (%d.%d, %d.%d) lies on wall of Sector #%d", xInt, xFrac, zInt, zFrac, sector->id);
-							return JFALSE;
-						}
-					}
-					dzLast = dz;
-				}
 			}
 			else if (lineSegmentSide(x1, z1, x0, z0, x, z) == PS_ON_LINE)
 			{
 				TFE_System::logWrite(LOG_ERROR, "Sector", "Sector_Which3D: Object at (%d.%d, %d.%d) lies on wall of Sector #%d", xInt, xFrac, zInt, zFrac, sector->id);
-				return JFALSE;
+				return JTRUE;
 			}
 		}
 
-		return (crossings & 1) ? JFALSE : JTRUE;
+		return (crossings & 1) ? JTRUE : JFALSE;
 	}
 
 	// Uses the "Winding Number" test for a point in polygon.
