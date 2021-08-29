@@ -51,7 +51,7 @@ static const char* c_keywords[] =
 	"ENTITY_MASK:",
 	"OBJECT_MASK:",
 	"CENTER:",
-	"KEY:",
+	"KEY",
 	"ADDON:",
 	"FLAGS:",
 	"SOUND:",

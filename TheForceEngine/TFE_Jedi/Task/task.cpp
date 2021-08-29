@@ -35,6 +35,7 @@ struct Task
 	Task* prevSec;
 	Task* nextSec;
 	Task* retTask;			// Task to return to once this one is completed or paused.
+	void* userData;
 	JBool framebreak;		// JTRUE if the task loop should end after this task.
 	
 	// Used in place of stack memory.
@@ -99,6 +100,7 @@ namespace TFE_Jedi
 		newTask->nextSec  = s_curTask;
 		newTask->prevSec  = nullptr;
 		newTask->retTask  = nullptr;
+		newTask->userData = nullptr;
 		newTask->framebreak = JFALSE;
 		if (s_curTask->prevSec)
 		{
@@ -133,6 +135,7 @@ namespace TFE_Jedi
 		newTask->prevSec = nullptr;
 		newTask->nextSec = nullptr;
 		newTask->retTask = nullptr;
+		newTask->userData = nullptr;
 		newTask->framebreak = framebreak;
 
 		newTask->context = { 0 };
@@ -173,7 +176,7 @@ namespace TFE_Jedi
 		s_curContext = nullptr;
 		s_taskCount = 0;
 	}
-
+	
 	// Run a task and then return to the curren task.
 	void runTask(Task* task, s32 id)
 	{
@@ -192,6 +195,11 @@ namespace TFE_Jedi
 	void task_setNextTick(Task* task, Tick tick)
 	{
 		task->nextTick = tick;
+	}
+
+	void task_setUserData(Task* task, void* data)
+	{
+		task->userData = data;
 	}
 
 	void ctxReturn()

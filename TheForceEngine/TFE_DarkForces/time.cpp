@@ -13,6 +13,16 @@ namespace TFE_DarkForces
 		return Tick(SECONDS_TO_TICKS_ROUNDED / f32(frameRate));
 	}
 
+	Tick time_frameRateToDelay(s32 frameRate)
+	{
+		return Tick(SECONDS_TO_TICKS_ROUNDED / f32(frameRate));
+	}
+
+	Tick time_frameRateToDelay(f32 frameRate)
+	{
+		return Tick(SECONDS_TO_TICKS_ROUNDED / frameRate);
+	}
+
 	void updateTime()
 	{
 		s_timeAccum += TFE_System::getDeltaTime() * 145.6521;

@@ -282,6 +282,7 @@
     <ClInclude Include="TFE_DarkForces\time.h" />
     <ClInclude Include="TFE_DarkForces\updateLogic.h" />
     <ClInclude Include="TFE_DarkForces\util.h" />
+    <ClInclude Include="TFE_DarkForces\vueLogic.h" />
     <ClInclude Include="TFE_DarkForces\weapon.h" />
     <ClInclude Include="TFE_DarkForces\weaponFireFunc.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
@@ -441,6 +442,7 @@
     <ClCompile Include="TFE_DarkForces\time.cpp" />
     <ClCompile Include="TFE_DarkForces\updateLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\util.cpp" />
+    <ClCompile Include="TFE_DarkForces\vueLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\weapon.cpp" />
     <ClCompile Include="TFE_DarkForces\weaponFireFunc.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />

@@ -49,7 +49,7 @@ namespace TFE_DarkForces
 		file.open(&filePath, FileStream::MODE_READ);
 		size_t size = file.getSize();
 		u8* buffer = getTempBuffer(size);
-		file.readBuffer(buffer, size);
+		file.readBuffer(buffer, (u32)size);
 		file.close();
 
 		s32 first = (s32)buffer[0];
@@ -80,7 +80,7 @@ namespace TFE_DarkForces
 		file.open(&filePath, FileStream::MODE_READ);
 		size_t size = file.getSize();
 		u8* buffer = getTempBuffer(size);
-		file.readBuffer(buffer, size);
+		file.readBuffer(buffer, (u32)size);
 		file.close();
 
 		const s16 frameCount = *((s16*)buffer);
@@ -112,11 +112,11 @@ namespace TFE_DarkForces
 		file.open(&filePath, FileStream::MODE_READ);
 		size_t size = file.getSize();
 		u8* buffer = getTempBuffer(size);
-		file.readBuffer(buffer, size);
+		file.readBuffer(buffer, (u32)size);
 		file.close();
 
 		// Then read out the data.
-		loadDeltIntoFrame(outFrame, buffer, size);
+		loadDeltIntoFrame(outFrame, buffer, (u32)size);
 		return JTRUE;
 	}
 

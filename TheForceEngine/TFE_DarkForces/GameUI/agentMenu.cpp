@@ -330,7 +330,7 @@ namespace TFE_DarkForces
 		u8 color = 47;
 		if (s_agentId >= 0 && s_agentCount > 0)
 		{
-			for (u32 i = 0; i < s_agentData[s_agentId].nextMission - 1; i++)
+			for (s32 i = 0; i < s_agentData[s_agentId].nextMission - 1; i++)
 			{
 				color = 47;
 				if (s_selectedMission == i)
@@ -357,7 +357,7 @@ namespace TFE_DarkForces
 		// Draw agents.
 		textX = 28;
 		textY = 36;
-		for (u32 i = 0; i < s_agentCount; i++)
+		for (s32 i = 0; i < s_agentCount; i++)
 		{
 			color = 47;
 			if (s_agentId == i)

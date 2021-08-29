@@ -136,6 +136,7 @@ namespace TFE_Jedi
 	}
 
 	angle14_32 getAngleDifference(angle14_32 angle0, angle14_32 angle1);
+	void mulMatrix3x3(fixed16_16* mtx0, fixed16_16* mtx1, fixed16_16* mtxOut);
 
 	// Float
 	inline f32 abs(f32 x)

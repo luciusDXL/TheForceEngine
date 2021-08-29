@@ -3,6 +3,7 @@
 #include "player.h"
 #include "updateLogic.h"
 #include "animLogic.h"
+#include "vueLogic.h"
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -91,38 +92,45 @@ namespace TFE_DarkForces
 		while (1)
 		{
 			line = parser->readLine(*bufferPos);
+			if (!line) { return JFALSE; }
+
 			s_objSeqArgCount = sscanf(line, " %s %s %s %s %s %s", s_objSeqArg0, s_objSeqArg1, s_objSeqArg2, s_objSeqArg3, s_objSeqArg4, s_objSeqArg5);
 			KEYWORD key = getKeywordIndex(s_objSeqArg0);
 			if (key == KW_TYPE || key == KW_LOGIC)
 			{
 				KEYWORD logicId = getKeywordIndex(s_objSeqArg1);
-				if (logicId == KW_PLAYER)
+				if (logicId == KW_PLAYER)  // Player Logic.
 				{
 					player_setupObject(obj);
 					setupFunc = nullptr;
 				}
-				else if (logicId == KW_ANIM)
+				else if (logicId == KW_ANIM)	// Animated Sprites Logic.
 				{
 					newLogic = obj_setSpriteAnim(obj);
 				}
-				else if (logicId == KW_UPDATE)
+				else if (logicId == KW_UPDATE)	// "Update" logic is usually used for rotating 3D objects, like the Death Star.
 				{
 					newLogic = obj_setUpdate(obj, &setupFunc);
 				}
-				else if (logicId >= KW_TROOP && logicId <= KW_BARREL)
+				else if (logicId >= KW_TROOP && logicId <= KW_BARREL)	// Enemies and explosives barrels.
 				{
+					// TODO - come back to this once the level is running
 				}
-				else if (logicId == KW_LAND_MINE)
+				else if (logicId == KW_LAND_MINE)	// Pre-placed land mines.
 				{
+					// TODO - come back to this once the level is running
 				}
-				else if (logicId == KW_KEY)
+				else if (logicId == KW_KEY)         // Vue animation logic.
 				{
+					newLogic = obj_createVueLogic(obj, &setupFunc);
 				}
-				else if (logicId == KW_GENERATOR)
+				else if (logicId == KW_GENERATOR)	// Enemy generator, used for in-level enemy spawning.
 				{
+					// TODO - come back to this once the AI is fully integrated.
 				}
 				else if (logicId == KW_DISPATCH)
 				{
+					// TODO - come back to this once the level is running
 				}
 				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
 				{
