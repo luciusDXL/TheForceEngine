@@ -42,6 +42,8 @@ namespace TFE_Jedi
 	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector);
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1);
 	void setSkyParallax(fixed16_16 parallax0, fixed16_16 parallax1);
+
+	Safe* level_getSafeFromSector(RSector* sector);
 		
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;

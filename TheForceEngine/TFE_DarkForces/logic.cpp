@@ -1,6 +1,7 @@
 #include "logic.h"
 #include "pickup.h"
 #include "player.h"
+#include "animLogic.h"
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -103,6 +104,7 @@ namespace TFE_DarkForces
 				}
 				else if (logicId == KW_ANIM)
 				{
+					newLogic = obj_setSpriteAnim(obj);
 				}
 				else if (logicId == KW_UPDATE)
 				{

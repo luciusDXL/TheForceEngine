@@ -197,7 +197,8 @@ namespace TFE_Sprite_Jedi
 			{
 				const WaxView* dstView = (WaxView*)((u8*)asset + viewOffsets[v]);
 				const s32* frameOffset = dstView->frameOffsets;
-				for (s32 f = 0; f < 32 && frameOffset[f]; f++)
+				s32 frameCount = 0;
+				for (s32 f = 0; f < 32 && frameOffset[f]; f++, frameCount++)
 				{
 					const WaxFrame* srcFrame = (WaxFrame*)(data + frameOffset[f]);
 					WaxFrame* dstFrame = (WaxFrame*)((u8*)asset + frameOffset[f]);
@@ -238,6 +239,10 @@ namespace TFE_Sprite_Jedi
 						const s32 adjOffsetY = mul16(intToFixed16(dstCell->sizeY), dstAnim->worldHeight) + intToFixed16(dstFrame->offsetY);
 						dstFrame->offsetY = div16(adjOffsetY, SPRITE_SCALE_FIXED);
 					}
+				}
+				if (v == 0)
+				{
+					dstAnim->frameCount = frameCount;
 				}
 			}
 		}

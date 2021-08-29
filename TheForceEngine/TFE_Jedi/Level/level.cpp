@@ -782,6 +782,23 @@ namespace TFE_Jedi
 		return JTRUE;
 	}
 
+	Safe* level_getSafeFromSector(RSector* sector)
+	{
+		Safe* safe = (Safe*)allocator_getHead(s_safeLoc);
+		while (safe)
+		{
+			if (safe->sector == sector)
+			{
+				return safe;
+			}
+			else
+			{
+				safe = (Safe*)allocator_getNext(s_safeLoc);
+			}
+		}
+		return nullptr;
+	}
+
 	JBool level_loadGoals(const char* levelName)
 	{
 		// TODO

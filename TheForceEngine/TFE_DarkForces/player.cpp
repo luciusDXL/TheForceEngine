@@ -360,6 +360,7 @@ namespace TFE_DarkForces
 		s_playerSector = obj->sector;
 	}
 
+	// TODO: Finish camera setup.
 	void player_setupEyeObject(SecObject* obj)
 	{
 		if (s_playerEye)
@@ -389,7 +390,7 @@ namespace TFE_DarkForces
 	void playerControlTaskFunc(s32 id)
 	{
 		task_begin;
-		// s_curSafe = getSafeFromSector(s_playerObject->sector);
+		s_curSafe = level_getSafeFromSector(s_playerObject->sector);
 		s_playerPos.x = s_playerObject->posWS.x;
 		s_playerPos.y = s_playerObject->posWS.y;
 		s_playerPos.z = s_playerObject->posWS.z;
