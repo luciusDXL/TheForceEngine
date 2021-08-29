@@ -41,6 +41,7 @@ namespace TFE_DarkForces
 	GoalItems s_goalItems   = { 0 };
 	fixed16_16 s_energy = 2 * ONE_16;
 	s32 s_lifeCount;
+	fixed16_16 s_gravityAccel;
 
 	JBool s_invincibility = JFALSE;
 	JBool s_wearingCleats = JFALSE;
@@ -92,7 +93,6 @@ namespace TFE_DarkForces
 	static fixed16_16 s_maxMoveDist;
 	static fixed16_16 s_playerStopAccel;
 	static fixed16_16 s_minEyeDistFromFloor;
-	static fixed16_16 s_gravityAccel;
 	static fixed16_16 s_postLandVel;
 	static fixed16_16 s_playerVelX;
 	static fixed16_16 s_playerUpVel;

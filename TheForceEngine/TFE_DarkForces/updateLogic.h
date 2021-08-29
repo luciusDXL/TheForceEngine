@@ -14,4 +14,5 @@
 namespace TFE_DarkForces
 {
 	void updateLogic_clearTask();
+	Logic* obj_setUpdate(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

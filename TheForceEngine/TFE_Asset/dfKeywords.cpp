@@ -26,7 +26,7 @@ static const char* c_keywords[] =
 	"VUE_APPEND:",
 	"EYE:",
 	"BOSS:",
-	"UPDATE:",
+	"UPDATE",
 	"EYE_D_XYZ:",
 	"EYE_D_PYR:",
 	"SYNC:",

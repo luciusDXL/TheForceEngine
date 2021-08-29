@@ -4,6 +4,8 @@
 #include "level.h"
 #include <TFE_System/system.h>
 #include <TFE_DarkForces/player.h>
+#include <TFE_Jedi/InfSystem/infSystem.h>
+#include <TFE_Jedi/InfSystem/message.h>
 
 using namespace TFE_DarkForces;
 
@@ -375,16 +377,80 @@ namespace TFE_Jedi
 
 	void sector_addObject(RSector* sector, SecObject* obj)
 	{
-		// TODO
 		if (sector != obj->sector)
 		{
+			// Remove the object from its current sector (if it has one).
+			if (obj->sector)
+			{
+				sector_removeObject(obj);
+			}
+			
+			// TODO: Sending this message is skipped for the player if 'pickupFlags' is set to a specific value, I need to look into this more.
+			// Send a message to the INF system that the object entered the sector.
+			message_sendToSector(sector, obj, INF_EVENT_ENTER_SECTOR, MSG_TRIGGER);
 
+			// The sector containing the player has a special flag.
+			if (obj->entityFlags & ETFLAG_PLAYER)
+			{
+				sector->flags1 |= SEC_FLAGS1_PLAYER;
+			}
+
+			// Grow the object list if necessary.
+			s32 objCount = sector->objectCount;
+			s32 objectCapacity = sector->objectCapacity;
+			if (objCount == objectCapacity)
+			{
+				SecObject** list;
+				if (!objectCapacity)
+				{
+					list = (SecObject**)malloc(sizeof(SecObject*) * 5);
+					sector->objectList = list;
+				}
+				else
+				{
+					sector->objectList = (SecObject**)realloc(sector->objectList, sizeof(SecObject*) * (objectCapacity + 5));
+					list = sector->objectList + objectCapacity;
+				}
+				memset(list, 0, sizeof(SecObject*) * 5);
+				sector->objectCapacity += 5;
+			}
+
+			// Then add the object to the first free slot.
+			// Note that this scheme is optimized for deletion rather than addition.
+			SecObject** list = sector->objectList;
+			for (s32 i = 0; i < sector->objectCapacity; i++, list++)
+			{
+				if (!(*list))
+				{
+					*list = obj;
+					obj->index = i;
+					obj->sector = sector;
+					sector->objectCount++;
+					break;
+				}
+			}
 		}
 	}
 
 	void sector_removeObject(SecObject* obj)
 	{
-		// TODO
+		if (!obj || !obj->sector) { return; }
+
+		RSector* sector = obj->sector;
+		obj->sector = nullptr;
+
+		// Remove the object from the object list.
+		SecObject** objList = sector->objectList;
+		objList[obj->index] = nullptr;
+		sector->objectCount--;
+
+		// Handle the player leaving.
+		// TODO: The original had additional flags to look into.
+		if (obj->entityFlags & ETFLAG_PLAYER)
+		{
+			message_sendToSector(sector, obj, INF_EVENT_LEAVE_SECTOR, MSG_TRIGGER);
+			sector->flags1 &= ~SEC_FLAGS1_PLAYER;
+		}
 	}
 	
 	// Use the floating point point inside polygon algorithm.

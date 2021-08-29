@@ -43,4 +43,15 @@ namespace TFE_DarkForces
 		}
 		return dstPtr;
 	}
+
+	s32 strToInt(const char* param)
+	{
+		char* endPtr = nullptr;
+		return strtol(param, &endPtr, 10);
+	}
+
+	u32 strToUInt(const char* param)
+	{
+		return (u32)strToInt(param);
+	}
 }  // TFE_DarkForces

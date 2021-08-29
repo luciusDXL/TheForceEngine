@@ -15,6 +15,7 @@ namespace TFE_DarkForces
 {
 	struct Logic;
 	typedef void(*LogicCleanupFunc)(Logic*);
+	typedef JBool(*LogicSetupFunc)(Logic*, KEYWORD);
 
 	struct Logic
 	{
@@ -29,4 +30,13 @@ namespace TFE_DarkForces
 	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc);
 	void deleteLogicAndObject(Logic* logic);
 	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos);
+
+	// Shared variables used for loading.
+	extern char s_objSeqArg0[];
+	extern char s_objSeqArg1[];
+	extern char s_objSeqArg2[];
+	extern char s_objSeqArg3[];
+	extern char s_objSeqArg4[];
+	extern char s_objSeqArg5[];
+	extern s32  s_objSeqArgCount;
 }  // namespace TFE_DarkForces

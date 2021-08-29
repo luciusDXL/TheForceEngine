@@ -1,6 +1,7 @@
 #include "logic.h"
 #include "pickup.h"
 #include "player.h"
+#include "updateLogic.h"
 #include "animLogic.h"
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
@@ -9,15 +10,13 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
-	typedef u32(*LogicSetupFunc)(Logic*, KEYWORD);
-
-	static char s_objSeqArg0[256];
-	static char s_objSeqArg1[256];
-	static char s_objSeqArg2[256];
-	static char s_objSeqArg3[256];
-	static char s_objSeqArg4[256];
-	static char s_objSeqArg5[256];
-	static s32  s_objSeqArgCount;
+	char s_objSeqArg0[256];
+	char s_objSeqArg1[256];
+	char s_objSeqArg2[256];
+	char s_objSeqArg3[256];
+	char s_objSeqArg4[256];
+	char s_objSeqArg5[256];
+	s32  s_objSeqArgCount;
 
 	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc)
 	{
@@ -108,6 +107,7 @@ namespace TFE_DarkForces
 				}
 				else if (logicId == KW_UPDATE)
 				{
+					newLogic = obj_setUpdate(obj, &setupFunc);
 				}
 				else if (logicId >= KW_TROOP && logicId <= KW_BARREL)
 				{

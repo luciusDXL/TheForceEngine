@@ -82,6 +82,7 @@ namespace TFE_DarkForces
 	extern GoalItems s_goalItems;
 	extern fixed16_16 s_energy;
 	extern s32 s_lifeCount;
+	extern fixed16_16 s_gravityAccel;
 	extern JBool s_invincibility;
 	extern JBool s_wearingCleats;
 	extern JBool s_wearingGasmask;
