@@ -316,7 +316,7 @@ namespace TFE_DarkForces
 		const char* levelName = agent_getLevelName();
 		if (!strcasecmp(levelName, "japship"))
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 		}
 		else if (!strcasecmp(levelName, "gromas"))
 		{
@@ -332,7 +332,7 @@ namespace TFE_DarkForces
 
 	void playerLogicCleanupFunc(Logic* logic)
 	{
-		// TODO
+		// TODO(Core Game Loop Release)
 	}
 
 	void player_setupObject(SecObject* obj)
@@ -360,7 +360,7 @@ namespace TFE_DarkForces
 		s_playerSector = obj->sector;
 	}
 
-	// TODO: Finish camera setup.
+	// TODO(Core Game Loop Release): Finish camera setup.
 	void player_setupEyeObject(SecObject* obj)
 	{
 		if (s_playerEye)
@@ -408,15 +408,15 @@ namespace TFE_DarkForces
 				// handlePlayerPhysics();
 				// handlePlayerActions();
 				// handlePlayerScreenFx();
-				// TODO
+				// TODO(Core Game Loop Release)
 			}
 			else if (id == 22)
 			{
-				// TODO
+				// TODO(Core Game Loop Release)
 			}
 			else if (id == 23)
 			{
-				// TODO
+				// TODO(Core Game Loop Release)
 			}
 
 			s_prevPlayerTick = s_playerTick;

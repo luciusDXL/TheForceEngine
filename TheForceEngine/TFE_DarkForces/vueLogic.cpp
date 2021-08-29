@@ -77,7 +77,7 @@ namespace TFE_DarkForces
 	{
 		if (!strcasecmp(transformName, "camera"))
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 		}
 
 		// Matrix 0
@@ -298,7 +298,7 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	// TODO: Stubbed out the minimum.
+	// TODO(Core Game Loop Release): Stubbed out the minimum.
 	void vueLogicTaskFunc(s32 id)
 	{
 		task_begin;
@@ -314,7 +314,7 @@ namespace TFE_DarkForces
 
 	void vueLogicCleanupFunc(Logic *logic)
 	{
-		// TODO
+		// TODO(Core Game Loop Release)
 	}
 
 }  // TFE_DarkForces

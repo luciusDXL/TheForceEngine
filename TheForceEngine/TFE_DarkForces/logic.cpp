@@ -114,11 +114,11 @@ namespace TFE_DarkForces
 				}
 				else if (logicId >= KW_TROOP && logicId <= KW_BARREL)	// Enemies and explosives barrels.
 				{
-					// TODO - come back to this once the level is running
+					// TODO(Core Game Loop Release) - come back to this once the level is running
 				}
 				else if (logicId == KW_LAND_MINE)	// Pre-placed land mines.
 				{
-					// TODO - come back to this once the level is running
+					// TODO(Core Game Loop Release) - come back to this once the level is running
 				}
 				else if (logicId == KW_KEY)         // Vue animation logic.
 				{
@@ -126,11 +126,11 @@ namespace TFE_DarkForces
 				}
 				else if (logicId == KW_GENERATOR)	// Enemy generator, used for in-level enemy spawning.
 				{
-					// TODO - come back to this once the AI is fully integrated.
+					// TODO(Core Game Loop Release) - come back to this once the AI is fully integrated.
 				}
 				else if (logicId == KW_DISPATCH)
 				{
-					// TODO - come back to this once the level is running
+					// TODO(Core Game Loop Release) - come back to this once the level is running
 				}
 				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
 				{

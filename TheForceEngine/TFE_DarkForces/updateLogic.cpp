@@ -227,6 +227,6 @@ namespace TFE_DarkForces
 
 	void updateLogicCleanupFunc(Logic* logic)
 	{
-		// TODO
+		// TODO(Core Game Loop Release)
 	}
 }  // namespace TFE_DarkForces

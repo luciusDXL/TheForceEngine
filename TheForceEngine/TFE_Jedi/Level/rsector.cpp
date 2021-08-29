@@ -385,7 +385,7 @@ namespace TFE_Jedi
 				sector_removeObject(obj);
 			}
 			
-			// TODO: Sending this message is skipped for the player if 'pickupFlags' is set to a specific value, I need to look into this more.
+			// TODO(Core Game Loop Release): Sending this message is skipped for the player if 'pickupFlags' is set to a specific value, I need to look into this more.
 			// Send a message to the INF system that the object entered the sector.
 			message_sendToSector(sector, obj, INF_EVENT_ENTER_SECTOR, MSG_TRIGGER);
 
@@ -445,7 +445,7 @@ namespace TFE_Jedi
 		sector->objectCount--;
 
 		// Handle the player leaving.
-		// TODO: The original had additional flags to look into.
+		// TODO(Core Game Loop Release): The original had additional flags to look into.
 		if (obj->entityFlags & ETFLAG_PLAYER)
 		{
 			message_sendToSector(sector, obj, INF_EVENT_LEAVE_SECTOR, MSG_TRIGGER);
@@ -654,7 +654,6 @@ namespace TFE_Jedi
 	// Uses the "Winding Number" test for a point in polygon.
 	// The point is considered inside if the winding number is greater than 0.
 	// Note that this is different than DF's "crossing" algorithm.
-	// TODO: Maybe? Replace algorithms.
 	bool sector_pointInside(RSector* sector, fixed16_16 x, fixed16_16 z)
 	{
 		RWall* wall = sector->walls;
@@ -869,7 +868,7 @@ namespace TFE_Jedi
 
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
-		// TODO
+		// TODO(Core Game Loop Release)
 		// As far as I can tell, no objects are actually affected in-game by this.
 		// So I'm going to leave this empty for now and look deeper into it later once I have 
 		// more information.

@@ -735,7 +735,7 @@ namespace TFE_Jedi
 						} break;
 						case KW_SOUND:
 						{
-							// TODO
+							// TODO(Core Game Loop Release)
 							// addSoundObject(s_soundIds[s_dataIndex], obj->posWS.x, obj->posWS.y, obj->posWS.z);
 							freeObject(obj);
 							obj = nullptr;
@@ -801,7 +801,7 @@ namespace TFE_Jedi
 
 	JBool level_loadGoals(const char* levelName)
 	{
-		// TODO
+		// TODO(Core Game Loop Release)
 		return JTRUE;
 	}
 

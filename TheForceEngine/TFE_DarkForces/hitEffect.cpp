@@ -380,7 +380,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////
 	void hitEffectMsgFunc(void* logic)
 	{
-		// TODO
+		// TODO(Core Game Loop Release)
 	}
 
 	void hitEffectWakeupFunc(SecObject* obj)

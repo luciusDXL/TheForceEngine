@@ -593,7 +593,7 @@ namespace TFE_DarkForces
 
 		if (s_weaponOffAnim)
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 		}
 
 		PlayerWeapon* weapon = s_curPlayerWeapon;
@@ -602,11 +602,11 @@ namespace TFE_DarkForces
 
 		if (wpnIndex == 4)
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 		}
 		else if (wpnIndex == 9)
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 		}
 
 		weapon_setFireRate();
@@ -617,7 +617,7 @@ namespace TFE_DarkForces
 		task_begin;
 		while (1)
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 
 			task_yield(TASK_NO_DELAY);
 		}
@@ -653,7 +653,7 @@ namespace TFE_DarkForces
 
 				if (id == WTID_STOP_FIRING)
 				{
-					// TODO
+					// TODO(Core Game Loop Release)
 				}
 				else if (id == WTID_START_FIRING)
 				{
@@ -731,11 +731,11 @@ namespace TFE_DarkForces
 				
 		if (s_prevWeapon == WPN_THERMAL_DET)
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 		}
 		else if (s_prevWeapon == WPN_MINE)
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 		}
 
 		// s_prevWeapon is the weapon we are switching away from.
@@ -839,11 +839,11 @@ namespace TFE_DarkForces
 				} break;
 				case WTID_STOP_FIRING:
 				{
-					// TODO
+					// TODO(Core Game Loop Release)
 				} break;
 				case WTID_HOLSTER:
 				{
-					// TODO
+					// TODO(Core Game Loop Release)
 				} break;
 			}
 

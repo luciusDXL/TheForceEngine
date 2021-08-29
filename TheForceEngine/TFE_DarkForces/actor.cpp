@@ -168,7 +168,7 @@ namespace TFE_DarkForces
 		task_begin;
 		while (id != -1)
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 			task_yield(TASK_NO_DELAY);
 		}
 		task_end;
@@ -179,7 +179,7 @@ namespace TFE_DarkForces
 		task_begin;
 		while (id != -1)
 		{
-			// TODO
+			// TODO(Core Game Loop Release)
 			task_yield(TASK_NO_DELAY);
 		}
 		task_end;

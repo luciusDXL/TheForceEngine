@@ -36,7 +36,7 @@ namespace TFE_Jedi
 		void* head = allocator_getHead((Allocator*)obj->logic);
 		while (head)
 		{
-			// TODO - free all logics.
+			// TODO(Core Game Loop Release) - free all logics.
 			head = allocator_getNext((Allocator*)obj->logic);
 		}
 

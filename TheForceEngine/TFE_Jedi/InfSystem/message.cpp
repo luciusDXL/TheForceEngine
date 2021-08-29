@@ -58,7 +58,7 @@ namespace TFE_Jedi
 
 	void message_sendToObj(SecObject* obj, MessageType msgType, MessageFunc func)
 	{
-		// TODO: was inf_sendObjMessage
+		// TODO(Core Game Loop Release): was inf_sendObjMessage
 	}
 
 	// Send messages so that entities and the player can interact with the INF system.

@@ -39,10 +39,8 @@ namespace TFE_Jedi
 	static SoundSourceID s_moveFloorSound1 = NULL_SOUND;
 	static SoundSourceID s_moveFloorSound2 = NULL_SOUND;
 	static SoundSourceID s_doorSound = NULL_SOUND;
-		
-	// System -- TODO
-	static SoundSourceID s_needKeySoundId = NULL_SOUND;	// TODO
-	static SoundSourceID s_switchDefaultSndId = NULL_SOUND;	// TODO
+	static SoundSourceID s_needKeySoundId = NULL_SOUND;
+	static SoundSourceID s_switchDefaultSndId = NULL_SOUND;
 	
 	// INF delta time in ticks.
 	static s32 s_triggerCount = 0;
@@ -544,7 +542,7 @@ namespace TFE_Jedi
 			} break;
 		};
 
-		// TODO:
+		// TODO(Core Game Loop Release):
 		// link->freeFunc = inf_elevFreeFunc;
 		if (elev)
 		{
@@ -1262,15 +1260,15 @@ namespace TFE_Jedi
 						KEYWORD levelItem = getKeywordIndex(itemName);
 						if (levelItem == KW_AMB_SOUND)
 						{
-							// TODO
+							// TODO(Core Game Loop Release)
 						}
 						else if (levelItem == KW_SEQEND)
 						{
-							// TODO
+							// TODO(Core Game Loop Release)
 						}
 						else
 						{
-							// TODO
+							// TODO(Core Game Loop Release)
 						}
 					}
 				} break;
@@ -1525,7 +1523,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					// TODO
+					// TODO(Core Game Loop Release)
 				}
 			}
 			else
@@ -2874,7 +2872,7 @@ namespace TFE_Jedi
 		allocator_deleteItem(link->parent, link);
 		allocator_free(trigger->targets);
 
-		// TODO: what is trigger->u48?
+		// TODO(Core Game Loop Release): what is trigger->u48?
 		if (trigger->u48)
 		{
 			free(trigger->u48);
@@ -3151,7 +3149,7 @@ namespace TFE_Jedi
 	///////////////////////////////////////////
 	void inf_triggerFreeFunc(void* data)
 	{
-		// TODO
+		// TODO(Core Game Loop Release)
 	}
 
 	// Creates a trigger and adds a link to the sector or wall where it is located.
@@ -3160,7 +3158,6 @@ namespace TFE_Jedi
 	// sends the message to the appropriate "InfTrigger" or "InfElevator"
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj)
 	{
-		// TODO: Change to the zone allocator.
 		InfTrigger* trigger = (InfTrigger*)malloc(sizeof(InfTrigger));
 		s_triggerCount++;
 
@@ -3406,7 +3403,7 @@ namespace TFE_Jedi
 	{
 		RSector* sector = elev->sector;
 		sector->dirtyFlags |= SDF_VERTICES;
-		// TODO
+		// TODO(Core Game Loop Release)
 		return 0;
 	}
 

@@ -251,7 +251,7 @@ namespace TFE_DarkForces
 	{
 		setSpriteAnimation(nullptr, nullptr);
 		bitmap_setupAnimationTask();
-		// resetFrameData();		// TODO
+		// resetFrameData();		// TODO(Core Game Loop Release)
 		hud_startup();
 		hud_clearMessage();
 		automap_computeScreenBounds();
