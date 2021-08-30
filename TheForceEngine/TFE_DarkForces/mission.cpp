@@ -21,6 +21,8 @@ using namespace TFE_Jedi;
 namespace TFE_DarkForces
 {
 	#define CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
+	// Show the loading screen for at least 1 second.
+	#define MIN_LOAD_TIME 145
 
 	struct DrawRect
 	{
@@ -111,6 +113,9 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// API Implementation
 	/////////////////////////////////////////////
+	static Tick s_loadingScreenStart;
+	static Tick s_loadingScreenDelta;
+
 	void mission_startTaskFunc(s32 id)
 	{
 		task_begin;
@@ -118,42 +123,55 @@ namespace TFE_DarkForces
 			s_invalidLevelIndex = JFALSE;
 			s_levelComplete = JFALSE;
 			s_exitLevel = JFALSE;
-			s_mainTask = pushTask(mission_mainTaskFunc);
-
+			
 			s_missionMode = MISSION_MODE_LOAD_START;
 			mission_setupTasks();
 			displayLoadingScreen();
 
-			const char* levelName = agent_getLevelName();
-			if (level_load(levelName, s_agentData[s_agentId].difficulty + 1))
+			// Add a yield here, so the loading screen is shown immediately.
+			task_yield(TASK_NO_DELAY);
+			s_loadingScreenStart = s_curTick;
 			{
-				setScreenBrightness(ONE_16);
-				setScreenFxLevels(0, 0, 0);
-				setLuminanceMask(0, 0, 0);
-
-				char colorMapName[TFE_MAX_PATH];
-				strcpy(colorMapName, levelName);
-				strcat(colorMapName, ".CMP");
-				s_levelColorMap = nullptr;
-
-				FilePath filePath;
-				if (TFE_Paths::getFilePath(colorMapName, &filePath))
+				const char* levelName = agent_getLevelName();
+				if (level_load(levelName, s_agentData[s_agentId].difficulty + 1))
 				{
-					s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
-				}
-				else if (TFE_Paths::getFilePath("DEFAULT.CMP", &filePath))
-				{
-					TFE_System::logWrite(LOG_WARNING, "mission_startTaskFunc", "USING DEFAULT.CMP");
-					s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
-				}
+					setScreenBrightness(ONE_16);
+					setScreenFxLevels(0, 0, 0);
+					setLuminanceMask(0, 0, 0);
 
-				setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
-				automap_updateMapData(MAP_NORMAL);
-				setSkyParallax(s_parallax0, s_parallax1);
-				// initSoundEffects();  <- TODO: Handle later
-				s_missionMode = MISSION_MODE_MAIN;
-				s_gamePaused = JFALSE;
+					char colorMapName[TFE_MAX_PATH];
+					strcpy(colorMapName, levelName);
+					strcat(colorMapName, ".CMP");
+					s_levelColorMap = nullptr;
+
+					FilePath filePath;
+					if (TFE_Paths::getFilePath(colorMapName, &filePath))
+					{
+						s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+					}
+					else if (TFE_Paths::getFilePath("DEFAULT.CMP", &filePath))
+					{
+						TFE_System::logWrite(LOG_WARNING, "mission_startTaskFunc", "USING DEFAULT.CMP");
+						s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+					}
+
+					setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
+					automap_updateMapData(MAP_NORMAL);
+					setSkyParallax(s_parallax0, s_parallax1);
+					// initSoundEffects();  <- TODO: Handle later
+					s_missionMode = MISSION_MODE_MAIN;
+					s_gamePaused = JFALSE;
+				}
 			}
+			// Add a yield here, to get the delta time.
+			task_yield(TASK_NO_DELAY);
+			s_loadingScreenDelta = s_curTick - s_loadingScreenStart;
+			// Make sure the loading screen is displayed for at least 3 seconds.
+			if (s_loadingScreenDelta < MIN_LOAD_TIME)
+			{
+				task_yield(MIN_LOAD_TIME - s_loadingScreenDelta);
+			}
+			s_mainTask = pushTask(mission_mainTaskFunc);
 		}
 		// Sleep until we are done with the main task.
 		task_yield(TASK_SLEEP);
@@ -182,6 +200,7 @@ namespace TFE_DarkForces
 			}
 			// Handle delta time.
 			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(145));
+			s_deltaTime = min(s_deltaTime, FIXED(64));
 			s_prevTick = s_curTick;
 			s_playerTick = s_curTick;
 
@@ -219,6 +238,7 @@ namespace TFE_DarkForces
 
 			// vgaSwapBuffers() in the DOS code.
 			setPalette(s_loadingScreenPal);
+			memset(s_framebuffer, 0, 320 * 200);
 			TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
 
 			// Pump tasks and look for any with a different ID.
@@ -341,7 +361,13 @@ namespace TFE_DarkForces
 	void displayLoadingScreen()
 	{
 		blitLoadingScreen();
+
+		// Update twice to make sure the loading screen is visible.
+		// The virtual display is buffered, meaning there is a frame of latency.
+		// This hackery basically removes that latency so the image is properly displayed immediately.
 		setPalette(s_loadingScreenPal);
+		setPalette(s_loadingScreenPal);
+		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
 		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
 	}
 
