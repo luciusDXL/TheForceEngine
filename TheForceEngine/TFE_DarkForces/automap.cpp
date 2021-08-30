@@ -13,6 +13,13 @@ namespace TFE_DarkForces
 	static fixed16_16 s_scrTopScaled;
 	static fixed16_16 s_scrBotScaled;
 
+	static fixed16_16 s_mapXCenterInPixels = 159;
+	static fixed16_16 s_mapZCenterInPixels = 99;
+	static fixed16_16 s_mapX0;
+	static fixed16_16 s_mapX1;
+	static fixed16_16 s_mapZ0;
+	static fixed16_16 s_mapZ1;
+
 	JBool s_pdaActive = JFALSE;
 	JBool s_drawAutomap = JFALSE;
 
@@ -43,5 +50,13 @@ namespace TFE_DarkForces
 	void automap_updateMapData(MapUpdateID id)
 	{
 		// TODO(Core Game Loop Release)
+	}
+
+	void automap_draw()
+	{
+		s_pdaActive = JFALSE;
+		s_mapXCenterInPixels = 159;
+		s_mapZCenterInPixels = 99;
+		// automap_drawSectors();
 	}
 }  // namespace TFE_DarkForces
