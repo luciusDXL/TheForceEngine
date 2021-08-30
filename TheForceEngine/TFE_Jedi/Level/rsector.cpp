@@ -452,6 +452,17 @@ namespace TFE_Jedi
 			sector->flags1 &= ~SEC_FLAGS1_PLAYER;
 		}
 	}
+
+	void sector_changeGlobalLightLevel()
+	{
+		RSector* sector = s_sectors;
+		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			fixed16_16 newLightLevel = intToFixed16(sector->flags3);
+			sector->flags3 = floor16(sector->ambient);
+			sector->ambient = newLightLevel;
+		}
+	}
 	
 	// Use the floating point point inside polygon algorithm.
 	RSector* sector_which3D(fixed16_16 dx, fixed16_16 dy, fixed16_16 dz)

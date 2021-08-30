@@ -154,4 +154,6 @@ namespace TFE_Jedi
 
 	void sector_getFloorAndCeilHeight(RSector* sector, fixed16_16* floorHeight, fixed16_16* ceilHeight);
 	void sector_getObjFloorAndCeilHeight(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight);
+
+	void sector_changeGlobalLightLevel();
 }

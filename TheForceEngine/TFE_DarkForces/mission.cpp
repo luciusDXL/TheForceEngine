@@ -83,6 +83,8 @@ namespace TFE_DarkForces
 	static JBool s_exitLevel = JFALSE;
 	static GameMissionMode s_missionMode = MISSION_MODE_MAIN;
 	static Task* s_levelEndTask = nullptr;
+	static Task* s_mainTask = nullptr;
+	static Task* s_missionLoadTask = nullptr;
 	static char s_cheatString[32] = { 0 };
 	static s32  s_cheatCharIndex = 0;
 	static s32  s_cheatInputCount = 0;
@@ -104,6 +106,7 @@ namespace TFE_DarkForces
 	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);
 	void setLuminanceMask(JBool r, JBool g, JBool b);
 	void setCurrentColorMap(u8* colorMap, u8* lightRamp);
+	void mainTask_handleCall(s32 id);
 			
 	/////////////////////////////////////////////
 	// API Implementation
@@ -115,7 +118,7 @@ namespace TFE_DarkForces
 			s_invalidLevelIndex = JFALSE;
 			s_levelComplete = JFALSE;
 			s_exitLevel = JFALSE;
-			pushTask(mission_mainTaskFunc);
+			s_mainTask = pushTask(mission_mainTaskFunc);
 
 			s_missionMode = MISSION_MODE_LOAD_START;
 			mission_setupTasks();
@@ -162,10 +165,15 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
+	void mission_setLoadMissionTask(Task* task)
+	{
+		s_missionLoadTask = task;
+	}
+
 	void mission_mainTaskFunc(s32 id)
 	{
 		task_begin;
-		while (1)
+		while (id != -1)
 		{
 			// This means it is time to abort, we are done with this level.
 			if (s_curTick >= 0 && (s_exitLevel || id < 0))
@@ -200,18 +208,45 @@ namespace TFE_DarkForces
 				} break;
 			}
 
+			// handleGeneralInput();
+			// handlePaletteFx();
+			if (s_drawAutomap)
+			{
+				// automap_draw();
+			}
+			// hud_drawAndUpdate();
+			// hud_drawHudText();
+
+			// vgaSwapBuffers() in the DOS code.
 			setPalette(s_loadingScreenPal);
 			TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
 
-			task_yield(TASK_NO_DELAY);
+			// Pump tasks and look for any with a different ID.
+			do
+			{
+				task_yield(TASK_NO_DELAY);
+				if (id != -1 && id != 0)
+				{
+					mainTask_handleCall(id);
+				}
+			} while (id != -1 && id != 0);
 		}
+
+		s_mainTask = nullptr;
+		task_makeActive(s_missionLoadTask);
 		task_end;
 	}
 
 	/////////////////////////////////////////////
 	// Internal Implementation
 	/////////////////////////////////////////////
-
+	void mainTask_handleCall(s32 id)
+	{
+		if (id == 0x22)	// This message is sent when the power generator is enabled in Talay.
+		{
+			sector_changeGlobalLightLevel();
+		}
+	}
 	
 	// Convert the palette to 32 bit color and then send to the render backend.
 	// This is functionally similar to loading the palette into VGA registers.

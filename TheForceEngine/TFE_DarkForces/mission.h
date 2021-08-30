@@ -13,6 +13,7 @@
 namespace TFE_DarkForces
 {
 	void mission_startTaskFunc(s32 id);
+	void mission_setLoadMissionTask(Task* task);
 
 	extern TextureData* s_loadScreen;
 	extern u8 s_loadingScreenPal[];
