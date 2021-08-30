@@ -48,4 +48,6 @@ namespace TFE_Jedi
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;
 	extern RSector* s_completeSector;
+	extern fixed16_16 s_parallax0;
+	extern fixed16_16 s_parallax1;
 }

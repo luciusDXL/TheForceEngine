@@ -45,10 +45,7 @@ namespace TFE_Jedi
 
 	static Allocator* s_soundEmitters;
 	static Allocator* s_safeLoc;
-
-	static fixed16_16 s_parallax0;
-	static fixed16_16 s_parallax1;
-		
+				
 	static JediModel** s_pods;
 	static JediWax** s_sprites;
 	static JediFrame** s_frames;
@@ -62,6 +59,9 @@ namespace TFE_Jedi
 	u32 s_sectorCount = 0;
 	RSector* s_completeSector = nullptr;
 	RSector* s_sectors = nullptr;
+
+	fixed16_16 s_parallax0;
+	fixed16_16 s_parallax1;
 
 	JBool level_loadGeometry(const char* levelName);
 	JBool level_loadObjects(const char* levelName, u8 difficulty);
@@ -85,10 +85,7 @@ namespace TFE_Jedi
 		JBool loaded = JFALSE;
 		if (!levelName) { return JFALSE; }
 
-		if (!level_loadGeometry(levelName))
-		{
-			return JFALSE;
-		}
+		if (!level_loadGeometry(levelName)) { return JFALSE; }
 		level_loadObjects(levelName, difficulty);
 		inf_load(levelName);
 		level_loadGoals(levelName);

@@ -12,7 +12,9 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
+#include <TFE_Jedi/Renderer/rlimits.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_System/system.h>
 
 using namespace TFE_Jedi;
 
@@ -44,9 +46,36 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// Shared State
 	/////////////////////////////////////////////
+	JBool s_gamePaused = JTRUE;
+
 	TextureData* s_loadScreen = nullptr;
 	u8 s_loadingScreenPal[768];
 
+	// Move these to color?
+	JBool s_palModified = JTRUE;
+	JBool s_canChangePal = JTRUE;
+	JBool s_screenFxEnabled = JTRUE;
+	JBool s_screenBrightnessEnabled = JTRUE;
+	JBool s_luminanceMask[3] = { JFALSE, JFALSE, JFALSE };
+	JBool s_updateHudColors = JFALSE;
+
+	JBool s_screenBrightnessChanged = JFALSE;
+	JBool s_screenFxChanged = JFALSE;
+	JBool s_lumMaskChanged = JFALSE;
+
+	s32 s_flashFxLevel = 0;
+	s32 s_healthFxLevel = 0;
+	s32 s_shieldFxLevel = 0;
+	s32 s_screenBrightness = ONE_16;
+
+	u8* s_colormap;
+	u8* s_lightSourceRamp;
+
+	// Loading
+	u8* s_levelColorMap = nullptr;
+	u8* s_levelColorMapBasePtr = nullptr;
+	u8 s_levelLightRamp[LIGHT_SOURCE_LEVELS];
+	
 	/////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////
@@ -69,7 +98,13 @@ namespace TFE_DarkForces
 	void blitLoadingScreen();
 	void displayLoadingScreen();
 	void mission_setupTasks();
-	
+	u8*  color_loadMap(FilePath* path, u8* lightRamp, u8** basePtr);
+
+	void setScreenBrightness(fixed16_16 brightness);
+	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);
+	void setLuminanceMask(JBool r, JBool g, JBool b);
+	void setCurrentColorMap(u8* colorMap, u8* lightRamp);
+			
 	/////////////////////////////////////////////
 	// API Implementation
 	/////////////////////////////////////////////
@@ -89,6 +124,32 @@ namespace TFE_DarkForces
 			const char* levelName = agent_getLevelName();
 			if (level_load(levelName, s_agentData[s_agentId].difficulty + 1))
 			{
+				setScreenBrightness(ONE_16);
+				setScreenFxLevels(0, 0, 0);
+				setLuminanceMask(0, 0, 0);
+
+				char colorMapName[TFE_MAX_PATH];
+				strcpy(colorMapName, levelName);
+				strcat(colorMapName, ".CMP");
+				s_levelColorMap = nullptr;
+
+				FilePath filePath;
+				if (TFE_Paths::getFilePath(colorMapName, &filePath))
+				{
+					s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+				}
+				else if (TFE_Paths::getFilePath("DEFAULT.CMP", &filePath))
+				{
+					TFE_System::logWrite(LOG_WARNING, "mission_startTaskFunc", "USING DEFAULT.CMP");
+					s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+				}
+
+				setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
+				automap_updateMapData(MAP_NORMAL);
+				setSkyParallax(s_parallax0, s_parallax1);
+				// initSoundEffects();  <- TODO: Handle later
+				s_missionMode = MISSION_MODE_MAIN;
+				s_gamePaused = JFALSE;
 			}
 		}
 		// Sleep until we are done with the main task.
@@ -150,6 +211,8 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// Internal Implementation
 	/////////////////////////////////////////////
+
+	
 	// Convert the palette to 32 bit color and then send to the render backend.
 	// This is functionally similar to loading the palette into VGA registers.
 	void setPalette(u8* pal)
@@ -279,6 +342,70 @@ namespace TFE_DarkForces
 		{
 			s_goals[i] = JFALSE;
 		}
+	}
+		
+	void setScreenBrightness(fixed16_16 brightness)
+	{
+		if (brightness != s_screenBrightness)
+		{
+			s_screenBrightness = brightness;
+			s_screenBrightnessChanged = JTRUE;
+		}
+	}
+
+	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx)
+	{
+		if (healthFx != s_healthFxLevel || shieldFx != s_shieldFxLevel || flashFx != s_flashFxLevel)
+		{
+			s_healthFxLevel = healthFx;
+			s_shieldFxLevel = shieldFx;
+			s_flashFxLevel = flashFx;
+			s_screenFxChanged = JTRUE;
+		}
+	}
+
+	void setLuminanceMask(JBool r, JBool g, JBool b)
+	{
+		if (r != s_luminanceMask[0] || g != s_luminanceMask[1] || b != s_luminanceMask[2])
+		{
+			s_luminanceMask[0] = r;
+			s_luminanceMask[1] = g;
+			s_luminanceMask[2] = b;
+			s_lumMaskChanged = JTRUE;
+		}
+	}
+
+	void setCurrentColorMap(u8* colorMap, u8* lightRamp)
+	{
+		s_colormap = colorMap;
+		s_lightSourceRamp = lightRamp;
+	}
+
+	// Move to the appropriate place.
+	u8* color_loadMap(FilePath* path, u8* lightRamp, u8** basePtr)
+	{
+		FileStream file;
+		if (!file.open(path, FileStream::MODE_READ))
+		{
+			TFE_System::logWrite(LOG_ERROR, "color_loadMap", "Error loading color map.");
+			return nullptr;
+		}
+
+		// Allocate 256 colors * 32 light levels + 256, where the last 256 is so that the address can be rounded to the next 256 byte boundary.
+		u8* colorMapBase = (u8*)malloc(8448);
+		u8* colorMap = colorMapBase;
+		*basePtr = colorMapBase;
+		if (size_t(colorMap) & 0xffu)
+		{
+			// colorMap2 is rounded to the next 256 bytes.
+			colorMap = colorMapBase + 256 - (size_t(colorMap) & 0xff);
+		}
+		// 256 colors * 32 light levels = 8192
+		file.readBuffer(colorMap, 8192);
+		file.readBuffer(lightRamp, LIGHT_SOURCE_LEVELS);
+		file.close();
+
+		return colorMap;
 	}
 
 }  // TFE_DarkForces

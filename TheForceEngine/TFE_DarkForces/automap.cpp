@@ -39,4 +39,9 @@ namespace TFE_DarkForces
 			s_scrBotScaled = -div16(botEdge, s_screenScale);
 		}
 	}
+
+	void automap_updateMapData(MapUpdateID id)
+	{
+		// TODO(Core Game Loop Release)
+	}
 }  // namespace TFE_DarkForces
