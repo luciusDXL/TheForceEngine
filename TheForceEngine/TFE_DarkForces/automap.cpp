@@ -23,6 +23,21 @@ namespace TFE_DarkForces
 		WCOLOR_DOOR       = 19,
 	};
 
+	enum MapObjectColor
+	{
+		MOBJCOLOR_DEFAULT  = 19,
+		MOBJCOLOR_PROJ     = 6,
+		MOBJCOLOR_512      = 48,
+		MOBJCOLOR_LANDMINE = 1,
+		MOBJCOLOR_PICKUP   = 152,
+		MOBJCOLOR_SCENERY  = 21,
+	};
+
+	enum MapConstants
+	{
+		MOBJSPRITE_DRAW_LEN = FIXED(2)
+	};
+
 	static fixed16_16 s_screenScale = 0xc000;	// 0.75
 	static fixed16_16 s_scrLeftScaled;
 	static fixed16_16 s_scrRightScaled;
@@ -483,35 +498,34 @@ namespace TFE_DarkForces
 			}
 		}
 	}
-
+		
 	void automap_drawObject(SecObject* obj)
 	{
-		u8 color = 19;
+		u8 color = MOBJCOLOR_DEFAULT;
 		if (obj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
 		{
-			// Pick the object color, the default is 19 (see above).
 			if (obj->entityFlags & ETFLAG_PROJECTILE)
 			{
-				color = 6;
+				color = MOBJCOLOR_PROJ;
 			}
 			else if (obj->entityFlags & ETFLAG_512)
 			{
-				color = 48;
+				color = MOBJCOLOR_512;
 			}
 			else if (obj->entityFlags & ETFLAG_LANDMINE)
 			{
-				color = 1;
+				color = MOBJCOLOR_LANDMINE;
 			}
 			else if (obj->entityFlags & ETFLAG_PICKUP)
 			{
-				color = 152;
+				color = MOBJCOLOR_PICKUP;
 			}
 			else if (obj->entityFlags & ETFLAG_SCENERY)
 			{
-				color = 21;
+				color = MOBJCOLOR_SCENERY;
 			}
 
-			s32 type = obj->type & 0xffff;
+			ObjectType type = obj->type;
 			if (type == OBJ_TYPE_3D || type == OBJ_TYPE_FRAME)
 			{
 				if (obj->worldWidth)
@@ -525,7 +539,7 @@ namespace TFE_DarkForces
 			}
 			else if (type == OBJ_TYPE_SPRITE)
 			{
-				automap_drawPointWithDirection(obj->posWS.x, obj->posWS.z, obj->yaw, FIXED(2), color);
+				automap_drawPointWithDirection(obj->posWS.x, obj->posWS.z, obj->yaw, MOBJSPRITE_DRAW_LEN, color);
 			}
 		}
 	}

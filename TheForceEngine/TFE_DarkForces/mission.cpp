@@ -175,11 +175,12 @@ namespace TFE_DarkForces
 			// Add a yield here, to get the delta time.
 			task_yield(TASK_NO_DELAY);
 			s_loadingScreenDelta = s_curTick - s_loadingScreenStart;
-			// Make sure the loading screen is displayed for at least 3 seconds.
+			// Make sure the loading screen is displayed for at least 1 second.
 			if (s_loadingScreenDelta < MIN_LOAD_TIME)
 			{
 				task_yield(MIN_LOAD_TIME - s_loadingScreenDelta);
 			}
+			// This is pushed near the beginning in the DOS code but was moved to the end so I can add yields() inbetween.
 			s_mainTask = pushTask(mission_mainTaskFunc);
 		}
 		// Sleep until we are done with the main task.
