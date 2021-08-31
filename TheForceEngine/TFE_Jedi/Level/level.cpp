@@ -26,8 +26,8 @@ namespace TFE_Jedi
 		DF_LEVEL_VERSION_MINOR = 1
 	};
 
-	static s32 s_minLayer;
-	static s32 s_maxLayer;
+	s32 s_minLayer;
+	s32 s_maxLayer;
 	static s32 s_dataIndex;
 	static s32 s_secretCount;
 	static s32 s_textureCount;

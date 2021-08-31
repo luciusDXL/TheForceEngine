@@ -84,8 +84,9 @@ namespace TFE_Jedi
 		// Cheat and use floating point sin/cos functions...
 		// TODO: Use the original table-based calculation? -- This probably isn't necessary.
 		const f32 scale = -2.0f * PI / 16484.0f;
-		const f32 s = sinf(scale * f32(angle));
-		const f32 c = cosf(scale * f32(angle));
+		// TODO: Is this correct?
+		const f32 s = -sinf(scale * f32(angle));
+		const f32 c =  cosf(scale * f32(angle));
 
 		*sinValue = floatToFixed16(s);
 		*cosValue = floatToFixed16(c);
@@ -97,7 +98,7 @@ namespace TFE_Jedi
 		// Cheat and use floating point sin/cos functions...
 		// TODO: Use the original table-based calculation? -- This probably isn't necessary.
 		const f32 scale = -2.0f * PI / 16484.0f;
-		const f32 s = sinf(scale * f32(angle));
+		const f32 s = -sinf(scale * f32(angle));
 		return floatToFixed16(s);
 	}
 

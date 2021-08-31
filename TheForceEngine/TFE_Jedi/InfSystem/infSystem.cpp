@@ -3502,4 +3502,28 @@ namespace TFE_Jedi
 		}
 		return elev->iValue;
 	}
+
+	JBool sector_isDoor(RSector* sector)
+	{
+		if (!sector) { return JFALSE; }
+
+		if (sector->flags1 & SEC_FLAGS1_DOOR)
+		{
+			return JTRUE;
+		}
+		else
+		{
+			InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+			if (link && link->type == LTYPE_SECTOR)
+			{
+				InfElevator* elev = link->elev;
+				InfElevatorType type = elev->type;
+				if (type == IELEV_MOVE_CEILING || type == IELEV_MOVE_FLOOR || type == IELEV_MOVE_WALL || type == IELEV_ROTATE_WALL || type == IELEV_MOVE_FC)
+				{
+					return JTRUE;
+				}
+			}
+		}
+		return JFALSE;
+	}
 }

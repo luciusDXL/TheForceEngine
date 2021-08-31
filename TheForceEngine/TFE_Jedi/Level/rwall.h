@@ -53,6 +53,7 @@ enum WallFlags3
 struct RWall
 {
 	s32 id;
+	JBool seen;
 	s32 visible;
 	RSector* sector;
 	RSector* nextSector;

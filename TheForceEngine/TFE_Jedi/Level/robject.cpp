@@ -117,7 +117,7 @@ namespace TFE_Jedi
 		if (obj->worldWidth == -1)
 		{
 			const fixed16_16 width = intToFixed16(TFE_Jedi::abs(cell->sizeX));
-			obj->worldWidth = div16(width, SPRITE_SCALE_FIXED);
+			obj->worldWidth = div16(width >> 1, SPRITE_SCALE_FIXED);
 		}
 		if (obj->worldHeight == -1)
 		{

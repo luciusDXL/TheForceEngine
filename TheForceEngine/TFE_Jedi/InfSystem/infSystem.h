@@ -79,4 +79,6 @@ namespace TFE_Jedi
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);
 	void inf_sendSectorMessage(RSector* sector, MessageType msgType);
 	void inf_sendLinkMessages(Allocator* infLink, SecObject* entity, u32 evt, MessageType msgType);
+
+	JBool sector_isDoor(RSector* sector);
 }

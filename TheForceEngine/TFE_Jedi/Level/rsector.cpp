@@ -876,7 +876,7 @@ namespace TFE_Jedi
 			*ceilHeight -= SEC_SKY_HEIGHT;
 		}
 	}
-
+		
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
 		// TODO(Core Game Loop Release)

@@ -102,6 +102,12 @@ namespace TFE_DarkForces
 	extern SecObject* s_playerObject;
 	extern SecObject* s_playerEye;
 
+	// Speed Modifiers
+	extern s32 s_playerRun;
+	extern s32 s_jumpScale;
+	extern s32 s_playerSlow;
+	extern s32 s_waterSpeed;
+
 	// Sounds
 	extern SoundSourceID s_landSplashSound;
 	extern SoundSourceID s_landSolidSound;

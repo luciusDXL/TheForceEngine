@@ -52,6 +52,7 @@ namespace TFE_DarkForces
 
 	TextureData* s_loadScreen = nullptr;
 	u8 s_loadingScreenPal[768];
+	u8 s_levelPalette[768];
 
 	// Move these to color?
 	JBool s_palModified = JTRUE;
@@ -139,12 +140,20 @@ namespace TFE_DarkForces
 					setScreenFxLevels(0, 0, 0);
 					setLuminanceMask(0, 0, 0);
 
+					char palName[TFE_MAX_PATH];
+					strcpy(palName, levelName);
+					strcat(palName, ".PAL");
+					FilePath filePath;
+					if (TFE_Paths::getFilePath(palName, &filePath))
+					{
+						FileStream::readContents(&filePath, s_levelPalette, 768);
+					}
+
 					char colorMapName[TFE_MAX_PATH];
 					strcpy(colorMapName, levelName);
 					strcat(colorMapName, ".CMP");
 					s_levelColorMap = nullptr;
 
-					FilePath filePath;
 					if (TFE_Paths::getFilePath(colorMapName, &filePath))
 					{
 						s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
@@ -156,7 +165,7 @@ namespace TFE_DarkForces
 					}
 
 					setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
-					automap_updateMapData(MAP_NORMAL);
+					automap_updateMapData(MAP_CENTER_PLAYER);
 					setSkyParallax(s_parallax0, s_parallax1);
 					// initSoundEffects();  <- TODO: Handle later
 					s_missionMode = MISSION_MODE_MAIN;
@@ -226,19 +235,19 @@ namespace TFE_DarkForces
 					// vgaClearPalette();
 				} break;
 			}
+			memset(s_framebuffer, 0, 320 * 200);
 
 			// handleGeneralInput();
 			// handlePaletteFx();
 			if (s_drawAutomap)
 			{
-				// automap_draw();
+				automap_draw(s_framebuffer);
 			}
 			// hud_drawAndUpdate();
 			// hud_drawHudText();
 
 			// vgaSwapBuffers() in the DOS code.
-			setPalette(s_loadingScreenPal);
-			memset(s_framebuffer, 0, 320 * 200);
+			setPalette(s_levelPalette);
 			TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
 
 			// Pump tasks and look for any with a different ID.
@@ -393,7 +402,7 @@ namespace TFE_DarkForces
 		// createIMuseTask();  <- this will wait until a later release.
 		level_clearData();
 		updateLogic_clearTask();
-		s_drawAutomap = JFALSE;
+		//s_drawAutomap = JFALSE;
 		s_levelEndTask = nullptr;
 		s_cheatString[0] = 0;
 		s_cheatCharIndex = 0;

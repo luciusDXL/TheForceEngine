@@ -35,7 +35,7 @@ namespace TFE_Jedi
 		s32 zDir = (dz > 0) ? 1 : -1;
 
 		if (xDir < 0) { dz = -dz; }
-		if (zDir < 0) { dx = -dx; }
+		if (zDir > 0) { dx = -dx; }
 
 		// Place the first point.
 		framebuffer[z0*320 + x0] = color;

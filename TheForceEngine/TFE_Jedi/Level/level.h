@@ -50,4 +50,7 @@ namespace TFE_Jedi
 	extern RSector* s_completeSector;
 	extern fixed16_16 s_parallax0;
 	extern fixed16_16 s_parallax1;
+
+	extern s32 s_minLayer;
+	extern s32 s_maxLayer;
 }

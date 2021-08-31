@@ -104,10 +104,10 @@ namespace TFE_DarkForces
 	static fixed16_16 s_playerSpeed;
 	fixed16_16 s_playerHeight;
 	// Speed Modifiers
-	static s32 s_playerRun = 0;
-	static s32 s_jumpScale = 0;
-	static s32 s_playerSlow = 0;
-	static s32 s_waterSpeed = 0;
+	s32 s_playerRun = 0;
+	s32 s_jumpScale = 0;
+	s32 s_playerSlow = 0;
+	s32 s_waterSpeed = 0;
 	// Misc
 	static s32 s_weaponLight = 0;
 	static s32 s_levelAtten = 0;
@@ -375,9 +375,9 @@ namespace TFE_DarkForces
 		s_playerEyeFlags = s_playerEye->flags & 4;
 		s_playerEye->flags &= ~4;
 
-		// s_camX = s_playerEye->posWS.x;
-		// s_camY = s_playerEye->posWS.y;
-		// s_camZ = s_playerEye->posWS.z;
+		s_eyePos.x = s_playerEye->posWS.x;
+		s_eyePos.y = s_playerEye->posWS.y;
+		s_eyePos.z = s_playerEye->posWS.z;
 
 		s_pitch = s_playerEye->pitch;
 		s_yaw   = s_playerEye->yaw;
