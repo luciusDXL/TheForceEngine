@@ -637,6 +637,9 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\screenDraw.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Math\cosTable.h">
+      <Filter>Source\TFE_Jedi\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1034,6 +1037,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\screenDraw.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Math\cosTable.cpp">
+      <Filter>Source\TFE_Jedi\Math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

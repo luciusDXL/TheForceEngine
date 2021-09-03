@@ -124,7 +124,7 @@ namespace TFE_DarkForces
 			s_invalidLevelIndex = JFALSE;
 			s_levelComplete = JFALSE;
 			s_exitLevel = JFALSE;
-			
+									
 			s_missionMode = MISSION_MODE_LOAD_START;
 			mission_setupTasks();
 			displayLoadingScreen();
@@ -197,7 +197,7 @@ namespace TFE_DarkForces
 	{
 		s_missionLoadTask = task;
 	}
-
+		
 	void mission_mainTaskFunc(s32 id)
 	{
 		task_begin;
@@ -209,8 +209,8 @@ namespace TFE_DarkForces
 				break;
 			}
 			// Handle delta time.
-			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(145));
-			s_deltaTime = min(s_deltaTime, FIXED(64));
+			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
+			s_deltaTime = min(s_deltaTime, MAX_DELTA_TIME);
 			s_prevTick = s_curTick;
 			s_playerTick = s_curTick;
 

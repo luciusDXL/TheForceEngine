@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include "fixedPoint.h"
+#include "cosTable.h"
 
 namespace TFE_Jedi
 {
@@ -78,38 +79,83 @@ namespace TFE_Jedi
 
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
 
-	// Convert from integer angle to fixed point sin/cos.
 	inline void sinCosFixed(angle14_32 angle, fixed16_16* sinValue, fixed16_16* cosValue)
 	{
-		// Cheat and use floating point sin/cos functions...
-		// TODO: Use the original table-based calculation? -- This probably isn't necessary.
-		const f32 scale = -2.0f * PI / 16484.0f;
-		// TODO: Is this correct?
-		const f32 s = -sinf(scale * f32(angle));
-		const f32 c =  cosf(scale * f32(angle));
-
-		*sinValue = floatToFixed16(s);
-		*cosValue = floatToFixed16(c);
+		angle &= 0x3fff;	// & 16383
+		if (!(angle & 0x1000))
+		{
+			if (!(angle & 0x2000))	// Quadrant 1
+			{
+				assert(angle < 4096);
+				*sinValue = s_cosTable[4096 - angle];
+				*cosValue = s_cosTable[angle];
+			}
+			else  // Quadrant 3
+			{
+				assert(angle >= 8192 && angle < 12288);
+				*sinValue = -s_cosTable[12288 - angle];
+				*cosValue = -s_cosTable[angle - 8192];
+			}
+		}
+		else
+		{
+			if (!(angle & 0x2000))  // Quadrant 2
+			{
+				assert(angle >= 4096 && angle < 8192);
+				*sinValue =  s_cosTable[angle - 4096];
+				*cosValue = -s_cosTable[8192 - angle];
+			}
+			else  // Quadrant 4
+			{
+				assert(angle >= 12288 && angle < 16384);
+				*sinValue = -s_cosTable[angle - 12288];
+				*cosValue =  s_cosTable[16384 - angle];
+			}
+		}
 	}
 
-	// Convert from integer angle to fixed point sin/cos.
 	inline fixed16_16 sinFixed(angle14_32 angle)
 	{
-		// Cheat and use floating point sin/cos functions...
-		// TODO: Use the original table-based calculation? -- This probably isn't necessary.
-		const f32 scale = -2.0f * PI / 16484.0f;
-		const f32 s = -sinf(scale * f32(angle));
-		return floatToFixed16(s);
+		angle &= 0x3fff;	// & 16383
+		if (!(angle & 0x1000))
+		{
+			if (!(angle & 0x2000))	// Quadrant 1
+			{
+				return s_cosTable[4096 - angle];
+			}
+			else  // Quadrant 3
+			{
+				return -s_cosTable[12288 - angle];
+			}
+		}
+		if (!(angle & 0x2000))  // Quadrant 2
+		{
+			return s_cosTable[angle - 4096];
+		}
+		// Quadrant 4
+		return -s_cosTable[angle - 12288];
 	}
 
-	// Convert from integer angle to fixed point sin/cos.
 	inline fixed16_16 cosFixed(angle14_32 angle)
 	{
-		// Cheat and use floating point sin/cos functions...
-		// TODO: Use the original table-based calculation? -- This probably isn't necessary.
-		const f32 scale = -2.0f * PI / 16484.0f;
-		const f32 c = cosf(scale * f32(angle));
-		return floatToFixed16(c);
+		angle &= 0x3fff;	// & 16383
+		if (!(angle & 0x1000))
+		{
+			if (!(angle & 0x2000))	// Quadrant 1
+			{
+				return s_cosTable[angle];			// cos(angle)
+			}
+			else  // Quadrant 3
+			{
+				return -s_cosTable[angle - 8192];
+			}
+		}
+		if (!(angle & 0x2000))  // Quadrant 2
+		{
+			return -s_cosTable[8192 - angle];
+		}
+		// Quadrant 4
+		return s_cosTable[16384 - angle];
 	}
 
 	inline fixed16_16 vec2Length(fixed16_16 dx, fixed16_16 dz)

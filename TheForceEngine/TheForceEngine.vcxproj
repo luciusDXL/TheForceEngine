@@ -309,6 +309,7 @@
     <ClInclude Include="TFE_Jedi\Level\rtexture.h" />
     <ClInclude Include="TFE_Jedi\Level\rwall.h" />
     <ClInclude Include="TFE_Jedi\Math\core_math.h" />
+    <ClInclude Include="TFE_Jedi\Math\cosTable.h" />
     <ClInclude Include="TFE_Jedi\Math\fixedPoint.h" />
     <ClInclude Include="TFE_Jedi\Memory\allocator.h" />
     <ClInclude Include="TFE_Jedi\Memory\list.h" />
@@ -465,6 +466,7 @@
     <ClCompile Include="TFE_Jedi\Level\rtexture.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rwall.cpp" />
     <ClCompile Include="TFE_Jedi\Math\core_math.cpp" />
+    <ClCompile Include="TFE_Jedi\Math\cosTable.cpp" />
     <ClCompile Include="TFE_Jedi\Memory\allocator.cpp" />
     <ClCompile Include="TFE_Jedi\Memory\list.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\jediRenderer.cpp" />
