@@ -53,6 +53,8 @@ namespace TFE_DarkForces
 	TextureData* s_loadScreen = nullptr;
 	u8 s_loadingScreenPal[768];
 	u8 s_levelPalette[768];
+	u8 s_basePalette[768];
+	u8 s_framePalette[768];
 
 	// Move these to color?
 	JBool s_palModified = JTRUE;
@@ -110,6 +112,12 @@ namespace TFE_DarkForces
 	void setLuminanceMask(JBool r, JBool g, JBool b);
 	void setCurrentColorMap(u8* colorMap, u8* lightRamp);
 	void mainTask_handleCall(s32 id);
+
+	// Palette Filters and Effects
+	void handlePaletteFx();
+	void applyLuminanceFilter(u8* pal, JBool lumRedMask, JBool lumGreenMask, JBool lumBlueMask);
+	void applyScreenFxToPalette(u8* pal, s32 healthFxLevel, s32 shieldFxLevel, s32 flashFxLevel);
+	void applyScreenBrightness(u8* pal, s32 brightness);
 			
 	/////////////////////////////////////////////
 	// API Implementation
@@ -147,6 +155,9 @@ namespace TFE_DarkForces
 					if (TFE_Paths::getFilePath(palName, &filePath))
 					{
 						FileStream::readContents(&filePath, s_levelPalette, 768);
+						// The "base palette" is adjusted by the hud colors, which is why it is a copy.
+						memcpy(s_basePalette, s_levelPalette, 768);
+						s_palModified = JTRUE;
 					}
 
 					char colorMapName[TFE_MAX_PATH];
@@ -239,7 +250,7 @@ namespace TFE_DarkForces
 			memset(s_framebuffer, 0, 320 * 200);
 
 			// handleGeneralInput();
-			// handlePaletteFx();
+			handlePaletteFx();
 			if (s_drawAutomap)
 			{
 				automap_draw(s_framebuffer);
@@ -248,7 +259,6 @@ namespace TFE_DarkForces
 			// hud_drawHudText();
 
 			// vgaSwapBuffers() in the DOS code.
-			setPalette(s_levelPalette);
 			TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
 
 			// Pump tasks and look for any with a different ID.
@@ -445,6 +455,106 @@ namespace TFE_DarkForces
 			s_lumMaskChanged = JTRUE;
 		}
 	}
+		
+	void handlePaletteFx()
+	{
+		JBool useFramePal   = JFALSE;
+		JBool updateBasePal = JFALSE;
+		JBool copiedPalette = JFALSE;
+
+		if (!s_canChangePal) { return; }
+		if (!s_lumMaskChanged && !s_screenFxChanged && !s_screenBrightnessChanged && !s_updateHudColors && !s_palModified) { return; }
+
+		if (s_luminanceMask[0] || s_luminanceMask[1] || s_luminanceMask[2])
+		{
+			if (!copiedPalette)
+			{
+				memcpy(s_framePalette, s_basePalette, 768);
+				copiedPalette = JTRUE;
+			}
+			applyLuminanceFilter(s_framePalette, s_luminanceMask[0], s_luminanceMask[1], s_luminanceMask[2]);
+			s_palModified = JTRUE;
+			useFramePal = JTRUE;
+		}
+		else if (s_palModified)
+		{
+			updateBasePal = JTRUE;
+		}
+
+		s_lumMaskChanged = JFALSE;
+		if (s_screenFxEnabled)
+		{
+			if (s_healthFxLevel || s_shieldFxLevel || s_flashFxLevel)
+			{
+				if (!copiedPalette)
+				{
+					memcpy(s_framePalette, s_basePalette, 768);
+					copiedPalette = JTRUE;
+				}
+				applyScreenFxToPalette(s_framePalette, s_healthFxLevel, s_shieldFxLevel, s_flashFxLevel);
+				useFramePal = JTRUE;
+				s_palModified = JTRUE;
+			}
+			else if (s_palModified)
+			{
+				updateBasePal = JTRUE;
+			}
+			s_screenFxChanged = JFALSE;
+		}
+
+		if (s_screenBrightnessEnabled)
+		{
+			if (s_screenBrightness < ONE_16)
+			{
+				if (!copiedPalette)
+				{
+					memcpy(s_framePalette, s_basePalette, 768);
+					copiedPalette = JTRUE;
+				}
+				applyScreenBrightness(s_framePalette, s_screenBrightness);
+				s_palModified = JTRUE;
+				useFramePal = JTRUE;
+			}
+			else if (s_palModified)
+			{
+				updateBasePal = JTRUE;
+			}
+			s_screenBrightnessChanged = JFALSE;
+		}
+
+		if (useFramePal)
+		{
+			// Convert the palette to true color and send to the render backend.
+			setPalette(s_framePalette);
+			s_updateHudColors = JFALSE;
+		}
+		else
+		{
+			if (updateBasePal)
+			{
+				copiedPalette = JFALSE;
+				setPalette(s_basePalette);
+				s_updateHudColors = JFALSE;
+			}
+			else if (s_updateHudColors)
+			{
+				// Update the HUD shield color indices.
+				// For TFE, just upload the full palette, the original DOS code
+				// only updated the VGA registers for the changed HUD colors.
+				setPalette(s_basePalette);
+				s_updateHudColors = JFALSE;
+			}
+		}
+
+		// TFE uses a dynamic multi-buffered texture for the palette. This doesn't work well when trying to set it only once.
+		// For this reason, it is easier to just set the palette every frame regardless of change.
+	#if 0
+		if (!s_luminanceMask[0] && !s_luminanceMask[1] && !s_luminanceMask[2] && !s_healthFxLevel && !s_shieldFxLevel && !s_flashFxLevel && s_screenBrightness == ONE_16)
+		{
+			s_palModified = JFALSE;
+		}
+	#endif
+	}
 
 	void setCurrentColorMap(u8* colorMap, u8* lightRamp)
 	{
@@ -477,6 +587,90 @@ namespace TFE_DarkForces
 		file.close();
 
 		return colorMap;
+	}
+
+	////////////////////////////////////////////
+	// Palette Filters and Effects
+	////////////////////////////////////////////
+	void applyLuminanceFilter(u8* pal, JBool lumRedMask, JBool lumGreenMask, JBool lumBlueMask)
+	{
+		u8* end = &pal[768];
+		for (; pal < end; pal += 3)
+		{
+			// Compute the approximate luminance (red/4 + green/2 + blue/4)
+			u32 L = (pal[0] >> 2) + (pal[1] >> 1) + (pal[2] >> 2);
+			// Then assign the luminance to the requested channels.
+			pal[0] = lumRedMask ? L : 0;
+			pal[1] = lumGreenMask ? L : 0;
+			pal[2] = lumBlueMask ? L : 0;
+		}
+	}
+
+	void applyScreenFxToPalette(u8* pal, s32 healthFxLevel, s32 shieldFxLevel, s32 flashFxLevel)
+	{
+		s32 intensity;
+		s32 filterIndex;
+		s32 clrIndex0, clrIndex1;
+		if (healthFxLevel)
+		{
+			intensity = 63 - (healthFxLevel & 63);
+			filterIndex = 0;
+			clrIndex0 = 1;
+			clrIndex1 = 2;
+		}
+		else if (shieldFxLevel)
+		{
+			intensity = 63 - (shieldFxLevel & 63);
+			filterIndex = 1;
+			clrIndex0 = 0;
+			clrIndex1 = 2;
+		}
+		else
+		{
+			intensity = 63 - (flashFxLevel & 63);
+			filterIndex = 2;
+			clrIndex0 = 0;
+			clrIndex1 = 1;
+		}
+
+		u8* c0 = &pal[clrIndex0];
+		u8* c1 = &pal[clrIndex1];
+		u8* filterColor = &pal[filterIndex];
+
+		for (s32 i = 0; i < 256; i++)
+		{
+			// Essentially: 63 - abs(63 - color) * (1 - flashLevel)
+			// Note that when flashLevel = 0: 63 - 63 + color = color
+			//                flashLevel = 1: 63 = pure blue.
+			*filterColor = 63 - (TFE_Jedi::abs((63 - (*filterColor)) * intensity) >> 6);
+
+			// Color channel = color * (1 - flashLevel)
+			*c0 = TFE_Jedi::abs((*c0) * intensity) >> 6;
+			*c1 = TFE_Jedi::abs((*c1) * intensity) >> 6;
+
+			filterColor += 3;
+			c0 += 3;
+			c1 += 3;
+		}
+	}
+
+	void applyScreenBrightness(u8* pal, s32 brightness)
+	{
+		u8* end = &pal[768];
+		for (s32 i = 0; i < 256; i++, pal += 3)
+		{
+			fixed16_16 color = intToFixed16(pal[0]);
+			color = mul16(color, brightness) + HALF_16;
+			pal[0] = floor16(color);
+
+			color = intToFixed16(pal[1]);
+			color = mul16(color, brightness) + HALF_16;
+			pal[1] = floor16(color);
+
+			color = intToFixed16(pal[2]);
+			color = mul16(color, brightness) + HALF_16;
+			pal[2] = floor16(color);
+		}
 	}
 
 }  // TFE_DarkForces
