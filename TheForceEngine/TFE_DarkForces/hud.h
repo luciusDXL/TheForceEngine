@@ -22,6 +22,7 @@ namespace TFE_DarkForces
 	void hud_setupToggleAnim1(JBool enable);
 
 	void hud_drawMessage(u8* framebuffer);
+	void hud_drawAndUpdate(u8* framebuffer);
 
 	extern fixed16_16 s_flashEffect;
 	extern fixed16_16 s_healthDamageFx;

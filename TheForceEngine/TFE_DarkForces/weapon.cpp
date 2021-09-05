@@ -11,28 +11,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Structure Definitions
 	///////////////////////////////////////////
-	struct PlayerWeapon
-	{
-		s32 frameCount;
-		TextureData* frames[8];
-		s32 frame;
-		s32 xPos[8];
-		s32 yPos[8];
-		u32 flags;
-		s32 rollOffset;
-		s32 pchOffset;
-		s32 xWaveOffset;
-		s32 yWaveOffset;
-		s32 xOffset;
-		s32 yOffset;
-		s32* ammo;
-		s32* secondaryAmmo;
-		s32 u8c;
-		s32 u90;
-		fixed16_16 wakeupRange;
-		s32 variation;
-	};
-
 	struct WeaponAnimState
 	{
 		s32 frame;
@@ -58,8 +36,7 @@ namespace TFE_DarkForces
 	static TextureData* s_rhand1 = nullptr;
 	static TextureData* s_gasmaskTexture = nullptr;
 	static PlayerWeapon s_playerWeaponList[WPN_COUNT];
-	static PlayerWeapon* s_curPlayerWeapon = nullptr;
-
+	
 	static s32 s_prevWeapon;
 	static s32 s_curWeapon;
 	static s32 s_nextWeapon;
@@ -100,6 +77,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Shared State
 	///////////////////////////////////////////
+	PlayerWeapon* s_curPlayerWeapon = nullptr;
 	SoundSourceID s_superchargeCountdownSound;
 	Task* s_playerWeaponTask = nullptr;
 

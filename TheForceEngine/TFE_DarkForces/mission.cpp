@@ -238,7 +238,7 @@ namespace TFE_DarkForces
 			{
 				automap_draw(s_framebuffer);
 			}
-			// hud_drawAndUpdate();
+			hud_drawAndUpdate(s_framebuffer);
 			hud_drawMessage(s_framebuffer);
 
 			// vgaSwapBuffers() in the DOS code.

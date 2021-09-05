@@ -70,6 +70,7 @@ namespace TFE_Jedi
 
 	// 2D
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
+	void clear3DView(u8* framebuffer);
 
 	extern ScreenRect s_screenRect;
 }

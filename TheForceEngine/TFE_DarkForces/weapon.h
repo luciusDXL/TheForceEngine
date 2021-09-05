@@ -4,11 +4,34 @@
 // Player information and object data.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
 
 namespace TFE_DarkForces
 {
+	struct PlayerWeapon
+	{
+		s32 frameCount;
+		TextureData* frames[8];
+		s32 frame;
+		s32 xPos[8];
+		s32 yPos[8];
+		u32 flags;
+		s32 rollOffset;
+		s32 pchOffset;
+		s32 xWaveOffset;
+		s32 yWaveOffset;
+		s32 xOffset;
+		s32 yOffset;
+		s32* ammo;
+		s32* secondaryAmmo;
+		s32 u8c;
+		s32 u90;
+		fixed16_16 wakeupRange;
+		s32 variation;
+	};
+
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
@@ -50,6 +73,7 @@ namespace TFE_DarkForces
 	void weapon_clearFireRate();
 	void weapon_createPlayerWeaponTask();
 
+	extern PlayerWeapon* s_curPlayerWeapon;
 	extern SoundSourceID s_superchargeCountdownSound;
 	extern Task* s_playerWeaponTask;
 }  // namespace TFE_DarkForces

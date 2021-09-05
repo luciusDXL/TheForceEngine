@@ -460,6 +460,11 @@ namespace RClassic_Fixed
 			textureBlitColumn(buffer, s_display + y0*s_width + x, yPixelCount);
 		}
 	}
+
+	void clear3DView(u8* framebuffer)
+	{
+		memset(framebuffer, 0, s_width * s_height);
+	}
 }  // RClassic_Fixed
 
 }  // TFE_Jedi

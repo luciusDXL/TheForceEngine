@@ -4,8 +4,8 @@
 namespace TFE_Jedi
 {
 	// Resolution
-	s32 s_width = 0;
-	s32 s_height = 0;
+	s32 s_width = 320;
+	s32 s_height = 200;
 	f32 s_halfWidth;
 	f32 s_halfHeight;
 	f32 s_halfHeightBase;

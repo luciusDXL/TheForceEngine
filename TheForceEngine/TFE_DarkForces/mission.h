@@ -26,4 +26,6 @@ namespace TFE_DarkForces
 	extern GameMissionMode s_missionMode;
 	extern TextureData* s_loadScreen;
 	extern u8 s_loadingScreenPal[];
+	extern u8 s_levelPalette[];
+	extern u8 s_basePalette[];
 }  // namespace TFE_DarkForces

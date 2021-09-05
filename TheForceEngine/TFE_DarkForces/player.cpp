@@ -386,6 +386,11 @@ namespace TFE_DarkForces
 		// setCameraOffset(0, 0, 0);
 		// setCameraAngleOffset(0, 0, 0);
 	}
+
+	s32 player_getLifeCount()
+	{
+		return s_lifeCount;
+	}
 		
 	void playerControlTaskFunc(s32 id)
 	{

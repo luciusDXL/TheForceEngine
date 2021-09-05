@@ -5,8 +5,10 @@
 #include "mission.h"
 #include "util.h"
 #include "player.h"
+#include "weapon.h"
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -29,6 +31,11 @@ namespace TFE_DarkForces
 		HUD_MSG_SHORT_DUR =  436,	// 3 seconds
 	};
 
+	static const s32 c_hudVertAnimTable[] =
+	{
+		160, 170, 185, 200,
+	};
+
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
@@ -44,8 +51,9 @@ namespace TFE_DarkForces
 	static JBool s_basePaletteCopyMode = JFALSE;
 	static JBool s_updateHudColors = JFALSE;
 
-	static u8 s_basePalette[256 * 3];
 	static u8 s_tempBuffer[256 * 3];
+	static u8 s_hudPalette[HUD_COLORS_COUNT * 3];
+	static u8 s_hudWorkPalette[HUD_COLORS_COUNT * 3];
 	static s32 s_hudColorCount = 8;
 	static s32 s_hudPaletteIndex = 24;
 	
@@ -70,7 +78,17 @@ namespace TFE_DarkForces
 	static s32 s_leftHudMove;
 	static JBool s_forceHudPaletteUpdate = JFALSE;
 
+	static s32 s_prevEnergy = 0;
+	static s32 s_prevLifeCount = 0;
+	static s32 s_prevShields = 0;
+	static s32 s_prevHealth = 0;
+	static s32 s_prevPrimaryAmmo = 0;
+	static s32 s_prevSecondaryAmmo = 0;
+	static JBool s_prevSuperchageHud = JFALSE;
+	static JBool s_prevHeadlampActive = JFALSE;
+
 	static DrawRect s_hudTextDrawRect = { 0, 0, 319, 199 };
+	static ScreenRect s_hudTextScreenRect = { 0, 0, 319, 199 };
 
 	///////////////////////////////////////////
 	// Shared State
@@ -92,6 +110,8 @@ namespace TFE_DarkForces
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode);
 	void getCameraXZ(fixed16_16* x, fixed16_16* z);
 	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, char* msg, u8* framebuffer);
+	void hud_drawString(OffScreenBuffer* elem, Font* font, s32 x0, s32 y0, const char* str);
+	void hud_drawElementToScreen(OffScreenBuffer* elem, ScreenRect* rect, s32 x0, s32 y0, u8* framebuffer);
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -248,11 +268,228 @@ namespace TFE_DarkForces
 			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
 		}
 	}
+		
+	void hud_drawAndUpdate(u8* framebuffer)
+	{
+		// Clear the 3D view while the HUD positions are being animated.
+		if (s_rightHudMove || s_leftHudMove)
+		{
+			if (s_rightHudMove)
+			{
+				s_rightHudMove--;
+			}
+			if (s_leftHudMove)
+			{
+				s_leftHudMove--;
+			}
+			clear3DView(framebuffer);
+		}
+
+		if (s_leftHudShow || s_rightHudShow)
+		{
+			fixed16_16 energy = TFE_Jedi::abs(s_energy * 100);
+			s32 percent = round16(energy >> 1);
+			if (s_prevEnergy != percent)  // True when energy ticks down.
+			{
+				s_prevEnergy = percent;
+				const s32 offset = 3 * 3 + 1;	// offset 3 color indices + 1 because we are only changing the green color.
+				// I think this should be < 5, since there are 5 pips.
+				for (s32 clrIndex = 0; clrIndex <= 5; clrIndex++)
+				{
+					if (percent > 20)
+					{
+						s_hudWorkPalette[3 * clrIndex + offset] = 58;
+						percent -= 20;
+					}
+					else
+					{
+						// Color value between [8, 58], where 8 @ 0% and 58 @ 20%
+						s_hudWorkPalette[3 * clrIndex + offset] = 8 + ((percent * 5) >> 1);
+						percent = 0;
+					}
+				}
+			}
+			s32 lifeCount = player_getLifeCount() % 10;
+			if (s_prevLifeCount != lifeCount)
+			{
+				s_prevLifeCount = lifeCount;
+
+				char lifeCountStr[8];
+				sprintf(lifeCountStr, "%1d", lifeCount);
+				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 52, 26, lifeCountStr);
+
+				s_rightHudShow = 4;
+			}
+			if (s_prevHeadlampActive != s_headlampActive)
+			{
+				s_prevHeadlampActive = s_headlampActive;
+				if (s_headlampActive)
+				{
+					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOn, 19, 0);
+				}
+				else
+				{
+					offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
+				}
+				s_rightHudShow = 4;
+			}
+			if (s_playerInfo.shields != s_prevShields)
+			{
+				char shieldStr[8];
+
+				if (s_playerInfo.shields == -1)
+				{
+					s_hudWorkPalette[0] = 55;
+					s_hudWorkPalette[1] = 55;
+					s_hudWorkPalette[3] = 55;
+					s_hudWorkPalette[4] = 55;
+
+					strcpy(shieldStr, "200");
+				}
+				else
+				{
+					s_hudWorkPalette[0] = 0;
+					s32 upperShields;
+					if (s_playerInfo.shields > 100)
+					{
+						upperShields = s_playerInfo.shields;
+					}
+					else
+					{
+						upperShields = 100;
+					}
+					upperShields -= 100;
+					u8 upperColor = 8 + (upperShields >> 1);
+					s_hudWorkPalette[1] = upperColor;
+
+					s_hudWorkPalette[3] = 0;
+					s32 lowerShields;
+					if (s_playerInfo.shields < 100)
+					{
+						lowerShields = s_playerInfo.shields;
+					}
+					else
+					{
+						lowerShields = 100;
+					}
+					s_hudWorkPalette[4] = 8 + (lowerShields >> 1);
+					sprintf(shieldStr, "%03d", s_playerInfo.shields);
+				}
+				s_prevShields = s_playerInfo.shields;
+				hud_drawString(s_cachedHudLeft, s_hudShieldFont, 15, 26, shieldStr);
+			}
+			if (s_playerInfo.health != s_prevHealth)
+			{
+				s32 health = min(100, s_playerInfo.health);
+				// 6: color 2, red channel, 7 = green channel
+				s_hudWorkPalette[6] = 8 + (health >> 1);
+				s_hudWorkPalette[7] = health * 63 / 400;
+				s_prevHealth = s_playerInfo.health;
+
+				char healthStr[32];
+				sprintf(healthStr, "%03d", s_playerInfo.health);
+				hud_drawString(s_cachedHudLeft, s_hudHealthFont, 33, 26, healthStr);
+
+				s_leftHudShow = 4;
+			}
+
+			if (s_forceHudPaletteUpdate || memcmp(s_hudPalette, s_hudWorkPalette, HUD_COLORS_COUNT * 3) != 0)
+			{
+				// Copy work palette into hud palette.
+				memcpy(s_hudPalette, s_hudWorkPalette, HUD_COLORS_COUNT * 3);
+				// Copy hud palette into the base palette, this will update next time render_setPalette() is called.
+				hud_updateBasePalette(s_hudPalette, HUD_COLORS_START, HUD_COLORS_COUNT);
+				// Copy the final 8 HUD colors to the loaded palette.
+				memcpy(s_levelPalette + HUD_COLORS_START * 3, s_hudPalette, HUD_COLORS_COUNT * 3);
+
+				s_forceHudPaletteUpdate = JFALSE;
+			}
+
+			s32 ammo0 = -1;
+			s32 ammo1 = -1;
+			PlayerWeapon* weapon = s_curPlayerWeapon;
+			if (weapon)
+			{
+				if (weapon->ammo)
+				{
+					ammo0 = *weapon->ammo;
+				}
+				if (weapon->secondaryAmmo)
+				{
+					ammo1 = *weapon->secondaryAmmo;
+				}
+			}
+						
+			if (ammo0 != s_prevPrimaryAmmo || ammo1 != s_prevSecondaryAmmo || s_superChargeHud != s_prevSuperchageHud)
+			{
+				char str[32];
+				if (ammo0 < 0)
+				{
+					strcpy(str, ":::");
+				}
+				else
+				{
+					sprintf(str, "%03d", ammo0);
+				}
+				hud_drawString(s_cachedHudRight, s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, 12, 21, str);
+
+				if (ammo1 < 0)
+				{
+					strcpy(str, "::");
+				}
+				else
+				{
+					sprintf(str, "%02d", ammo1);
+				}
+				hud_drawString(s_cachedHudRight, s_hudShieldFont, 25, 12, str);
+
+				s_rightHudShow = 4;
+				s_prevPrimaryAmmo = ammo0;
+				s_prevSecondaryAmmo = ammo1;
+				s_prevSuperchageHud = s_superChargeHud;
+			}
+
+			if (s_rightHudShow || s_screenRect.bot >= 160)
+			{
+				if (s_rightHudVertAnim > s_rightHudVertTarget)
+				{
+					s_rightHudVertAnim--;
+				}
+				else if (s_rightHudVertAnim < s_rightHudVertTarget)
+				{
+					s_rightHudVertAnim++;
+					s_rightHudMove = 4;
+				}
+				else if (s_rightHudShow)
+				{
+					s_rightHudShow--;
+				}
+			}
+			if (s_leftHudShow || s_screenRect.bot >= 160)
+			{
+				if (s_leftHudVertAnim > s_leftHudVertTarget)
+				{
+					s_leftHudVertAnim--;
+					s_leftHudMove = 4;
+				}
+				else if (s_leftHudVertAnim < s_leftHudVertTarget)
+				{
+					s_leftHudVertAnim++;
+					s_leftHudMove = 4;
+				}
+				else if (s_leftHudShow)
+				{
+					s_leftHudShow--;
+				}
+			}
+		}
+		hud_drawElementToScreen(s_cachedHudRight, &s_hudTextScreenRect, 260, c_hudVertAnimTable[s_rightHudVertAnim], framebuffer);
+		hud_drawElementToScreen(s_cachedHudLeft,  &s_hudTextScreenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim],  framebuffer);
+	}
 
 	///////////////////////////////////////////
 	// Internal Implementation
 	///////////////////////////////////////////
-		
 	TextureData* hud_loadTexture(const char* texFile)
 	{
 		FilePath filePath;
@@ -336,6 +573,98 @@ namespace TFE_DarkForces
 			}
 			msg++;
 			c = *msg;
+		}
+	}
+
+	void hud_drawString(OffScreenBuffer* elem, Font* font, s32 x0, s32 y0, const char* str)
+	{
+		if (!font) { return; }
+
+		s32 x = x0;
+		s32 y = y0;
+		for (char c = *str; c != 0; )
+		{
+			if (c == '\n')
+			{
+				y += font->height + font->vertSpacing;
+				x = x0;
+			}
+			else
+			{
+				if (c == ' ')
+				{
+					x += font->width;
+				}
+				else if (c >= font->minChar && c <= font->maxChar)
+				{
+					s32 charIndex = c - font->minChar;
+					s32 offset = charIndex * 28;
+
+					TextureData* glyph = &font->glyphs[charIndex];
+					offscreenBuffer_drawTexture(elem, glyph, x, y);
+					x += glyph->width + font->horzSpacing;
+				}
+			}
+			str++;
+			c = *str;
+		}
+	}
+
+	void hud_drawElementToScreen(OffScreenBuffer* elem, ScreenRect* rect, s32 x0, s32 y0, u8* framebuffer)
+	{
+		s32 x1 = x0 + elem->width - 1;
+		u8* image = elem->image;
+		s32 y1 = y0 + elem->height - 1;
+		if (x0 > rect->right || x1 < rect->left || y0 > rect->bot || y1 < rect->top)
+		{
+			return;
+		}
+		if (y0 < rect->top)
+		{
+			image += (rect->top - y0) * elem->width;
+			y0 = rect->top;
+		}
+		if (y1 > rect->bot)
+		{
+			y1 = rect->bot;
+		}
+		if (x0 < rect->left)
+		{
+			image += rect->left - x0;
+			x0 = rect->left;
+		}
+		if (x1 > rect->right)
+		{
+			x1 = rect->right;
+		}
+		s32 yOffset = y0 * 320;
+		if (elem->flags & OBF_TRANS)
+		{
+			for (s32 x = x0; x <= x1; x++)
+			{
+				u8* output = framebuffer + x + yOffset;
+				u8* imageSrc = image + x - x0;
+				for (s32 y = y0; y <= y1; y++, output += 320, imageSrc += elem->width)
+				{
+					u8 color = *imageSrc;
+					if (color)
+					{
+						*output = color;
+					}
+				}
+			}
+		}
+		else
+		{
+			for (s32 x = x0; x <= x1; x++)
+			{
+				u8* output = framebuffer + x + yOffset;
+				u8* imageSrc = image + x - x0;
+				for (s32 y = y0; y <= y1; y++, output += 320, imageSrc += elem->width)
+				{
+					*output = *imageSrc;
+				}
+			}
 		}
 	}
 }  // TFE_DarkForces

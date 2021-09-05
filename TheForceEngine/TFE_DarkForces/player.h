@@ -130,4 +130,5 @@ namespace TFE_DarkForces
 	void player_createController();
 	void player_setupObject(SecObject* obj);
 	void player_setupEyeObject(SecObject* obj);
+	s32  player_getLifeCount();
 }  // namespace TFE_DarkForces

@@ -15,6 +15,7 @@ namespace TFE_Jedi
 		void setResolution(s32 width, s32 height);
 		void transformPointByCamera(vec3_fixed* worldPoint, vec3_fixed* viewPoint);
 		void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
+		void clear3DView(u8* framebuffer);
 		void setVisionEffect(s32 effect);
 	}  // RClassic_Fixed
 }  // TFE_Jedi
