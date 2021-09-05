@@ -505,9 +505,37 @@ namespace TFE_DarkForces
 		return colorMap;
 	}
 
+	void disableHeadlamp()
+	{
+		hud_sendTextMessage(12);
+		s_headlampActive = JFALSE;
+		hud_setupToggleAnim1(JTRUE);
+	}
+
+	void enableHeadlamp()
+	{
+		if (s_energy)
+		{
+			s_headlampActive = JTRUE;
+			hud_sendTextMessage(13);
+			hud_setupToggleAnim1(JTRUE);
+		}
+	}
+
 	void handleGeneralInput()
 	{
 		// For now just deal with a few controls.
+		if (TFE_Input::keyPressed(KEY_F5))
+		{
+			if (s_headlampActive)
+			{
+				disableHeadlamp();
+			}
+			else
+			{
+				enableHeadlamp();
+			}
+		}
 		if (TFE_Input::keyPressed(KEY_F7))
 		{
 			hud_setupToggleAnim1(JFALSE);

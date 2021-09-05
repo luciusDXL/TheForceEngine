@@ -239,8 +239,19 @@ namespace TFE_DarkForces
 
 	void hud_startup()
 	{
+		// Reset cached values.
+		s_prevEnergy = 0;
+		s_prevLifeCount = 0;
+		s_prevShields = 0;
+		s_prevHealth = 0;
+		s_prevPrimaryAmmo = 0;
+		s_prevSecondaryAmmo = 0;
+		s_prevSuperchageHud = JFALSE;
+		s_prevHeadlampActive = JFALSE;
+
 		hud_initAnimation();
 		hud_setupToggleAnim1(JTRUE);
+		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
 	}
 		
 	void hud_drawMessage(u8* framebuffer)
