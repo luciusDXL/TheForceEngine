@@ -47,12 +47,7 @@ namespace TFE_DarkForces
 	static JBool s_automapAutoCenter = JTRUE;
 	static fixed16_16 s_mapXCenterInPixels = 159;
 	static fixed16_16 s_mapZCenterInPixels = 99;
-	static fixed16_16 s_mapX0;
-	static fixed16_16 s_mapX1;
-	static fixed16_16 s_mapZ0;
-	static fixed16_16 s_mapZ1;
-	static s32 s_mapLayer;
-
+	
 	static s32 s_mapTop;
 	static s32 s_mapLeft;
 	static s32 s_mapRight;
@@ -66,6 +61,11 @@ namespace TFE_DarkForces
 	
 	JBool s_pdaActive = JFALSE;
 	JBool s_drawAutomap = JFALSE;
+	fixed16_16 s_mapX0;
+	fixed16_16 s_mapX1;
+	fixed16_16 s_mapZ0;
+	fixed16_16 s_mapZ1;
+	s32 s_mapLayer;
 
 	void automap_projectPosition(fixed16_16* x, fixed16_16* z);
 	void automap_drawPointWithRadius(fixed16_16 x, fixed16_16 z, fixed16_16 r, u8 color);

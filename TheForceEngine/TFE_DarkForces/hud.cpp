@@ -1,9 +1,13 @@
 #include "hud.h"
 #include "time.h"
+#include "automap.h"
 #include "gameMessage.h"
+#include "mission.h"
 #include "util.h"
+#include "player.h"
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
+#include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
@@ -33,7 +37,7 @@ namespace TFE_DarkForces
 	static char s_hudMessage[80];
 	static s32 s_hudCurrentMsgId = 0;
 	static s32 s_hudMsgPriority = HUD_LOWEST_PRIORITY;
-	static Tick s_hudMsgExpireTime;
+	static Tick s_hudMsgExpireTick;
 
 	static JBool s_screenDirtyLeft[4]  = { 0 };
 	static JBool s_screenDirtyRight[4] = { 0 };
@@ -66,12 +70,18 @@ namespace TFE_DarkForces
 	static s32 s_leftHudMove;
 	static JBool s_forceHudPaletteUpdate = JFALSE;
 
+	static DrawRect s_hudTextDrawRect = { 0, 0, 319, 199 };
+
 	///////////////////////////////////////////
 	// Shared State
 	///////////////////////////////////////////
 	fixed16_16 s_flashEffect = 0;
 	fixed16_16 s_healthDamageFx = 0;
 	fixed16_16 s_shieldDamageFx = 0;
+
+	s32 s_secretsFound = 0;
+	s32 s_secretsPercent = 0;
+	JBool s_showData = JFALSE;
 
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -80,6 +90,8 @@ namespace TFE_DarkForces
 	TextureData* hud_loadTexture(const char* texFile);
 	Font* hud_loadFont(const char* fontFile);
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode);
+	void getCameraXZ(fixed16_16* x, fixed16_16* z);
+	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, char* msg, u8* framebuffer);
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -97,7 +109,7 @@ namespace TFE_DarkForces
 		if (!msgText[0]) { return; }
 		strCopyAndZero(s_hudMessage, msgText, 80);
 
-		s_hudMsgExpireTime = s_curTick + ((msg->priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
+		s_hudMsgExpireTick = s_curTick + ((msg->priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
 		s_hudCurrentMsgId  = msgId;
 		s_hudMsgPriority   = msg->priority;
 	}
@@ -210,6 +222,32 @@ namespace TFE_DarkForces
 		hud_initAnimation();
 		hud_setupToggleAnim1(JTRUE);
 	}
+		
+	void hud_drawMessage(u8* framebuffer)
+	{
+		if (s_missionMode == MISSION_MODE_MAIN && s_hudMessage[0])
+		{
+			displayHudMessage(s_hudFont, &s_hudTextDrawRect, 4, 10, s_hudMessage, framebuffer);
+			if (s_curTick > s_hudMsgExpireTick)
+			{
+				s_hudMessage[0]   = 0;
+				s_hudCurrentMsgId = 0;
+				s_hudMsgPriority  = HUD_LOWEST_PRIORITY;
+			}
+			// s_screenDirtyLeft[s_curFrameBufferIdx] = JTRUE;
+		}
+
+		if (s_showData)
+		{
+			fixed16_16 x, z;
+			getCameraXZ(&x, &z);
+
+			char dataStr[32];
+			sprintf(dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
+			displayHudMessage(s_hudFont, &s_hudTextDrawRect, 164, 10, dataStr, framebuffer);
+			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
+		}
+	}
 
 	///////////////////////////////////////////
 	// Internal Implementation
@@ -255,5 +293,49 @@ namespace TFE_DarkForces
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode)
 	{
 		memcpy(dst, src, count * 3);
+	}
+
+	void getCameraXZ(fixed16_16* x, fixed16_16* z)
+	{
+		if (s_drawAutomap)
+		{
+			*x = s_mapX0;
+			*z = s_mapZ0;
+		}
+		else
+		{
+			*x = s_eyePos.x;
+			*z = s_eyePos.z;
+		}
+	}
+
+	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, char* msg, u8* framebuffer)
+	{
+		if (!font || !rect || !framebuffer) { return; }
+
+		s32 xi = x;
+		s32 x0 = x;
+		for (char c = *msg; c != 0;)
+		{
+			if (c == '\n')
+			{
+				xi = x0;
+				y += font->height + font->vertSpacing;
+			}
+			else if (c == ' ')
+			{
+				xi += font->width;
+			}
+			else if (c >= font->minChar && c <= font->maxChar)
+			{
+				s32 charIndex = c - font->minChar;
+				TextureData* glyph = &font->glyphs[charIndex];
+				blitTextureToScreen(glyph, rect, xi, y, framebuffer);
+
+				xi += font->horzSpacing + glyph->width;
+			}
+			msg++;
+			c = *msg;
+		}
 	}
 }  // TFE_DarkForces

@@ -21,7 +21,12 @@ namespace TFE_DarkForces
 	void hud_initAnimation();
 	void hud_setupToggleAnim1(JBool enable);
 
+	void hud_drawMessage(u8* framebuffer);
+
 	extern fixed16_16 s_flashEffect;
 	extern fixed16_16 s_healthDamageFx;
 	extern fixed16_16 s_shieldDamageFx;
+	extern s32 s_secretsFound;
+	extern s32 s_secretsPercent;
+	extern JBool s_showData;
 }  // namespace TFE_DarkForces

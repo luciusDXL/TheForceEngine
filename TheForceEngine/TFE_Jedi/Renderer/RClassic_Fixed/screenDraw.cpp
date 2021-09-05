@@ -191,4 +191,73 @@ namespace TFE_Jedi
 		return JFALSE;
 	}
 
+	void textureBlitColumnOpaque(u8* image, u8* outBuffer, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		for (s32 i = end; i >= 0; i--, offset += 320)
+		{
+			outBuffer[offset] = image[i];
+		}
+	}
+
+	void textureBlitColumnTrans(u8* image, u8* outBuffer, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		for (s32 i = end; i >= 0; i--, offset += 320)
+		{
+			if (image[i]) { outBuffer[offset] = image[i]; }
+		}
+	}
+
+	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output)
+	{
+		s32 x1 = x0 + texture->width - 1;
+		s32 y1 = y0 + texture->height - 1;
+
+		// Cull if outside of the draw rect.
+		if (x1 < rect->x0 || y1 < rect->y0 || x0 > rect->x1 || y0 > rect->y1) { return; }
+
+		s32 srcX = 0, srcY = 0;
+		if (y0 < rect->y0)
+		{
+			y0 = rect->y0;
+		}
+		if (y1 > rect->y1)
+		{
+			srcY = y1 - rect->y1;
+			y1 = rect->y1;
+		}
+
+		if (x0 < rect->x0)
+		{
+			x0 = rect->x0;
+		}
+		if (x1 > rect->x1)
+		{
+			srcX = x1 - rect->x1;
+			x1 = rect->x1;
+		}
+
+		s32 yPixelCount = y1 - y0 + 1;
+		if (yPixelCount <= 0) { return; }
+
+		u8* buffer = texture->image + texture->height*srcX + srcY;
+		if (texture->flags & OPACITY_TRANS)
+		{
+			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
+			{
+				textureBlitColumnTrans(buffer, output + y0 * 320 + col, yPixelCount);
+			}
+		}
+		else
+		{
+			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
+			{
+				textureBlitColumnOpaque(buffer, output + y0 * 320 + col, yPixelCount);
+			}
+		}
+	}
+
 }  // TFE_Jedi

@@ -13,6 +13,7 @@
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
+#include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 
@@ -24,31 +25,17 @@ namespace TFE_DarkForces
 	// Show the loading screen for at least 1 second.
 	#define MIN_LOAD_TIME 145
 
-	struct DrawRect
-	{
-		s32 x0;
-		s32 y0;
-		s32 x1;
-		s32 y1;
-	};
 	static DrawRect s_videoDrawRect =
 	{
 		0, 0,
 		319, 199
 	};
-
-	enum GameMissionMode
-	{
-		MISSION_MODE_LOADING    = 0,	// causes the loading screen to be displayed.
-		MISSION_MODE_MAIN       = 1,	// the main in-game experience.
-		MISSION_MODE_UNKNOWN    = 2,	// unknown - not set (as far as I can tell).
-		MISSION_MODE_LOAD_START = 3,	// set right as loading starts.
-	};
-
+	
 	/////////////////////////////////////////////
 	// Shared State
 	/////////////////////////////////////////////
 	JBool s_gamePaused = JTRUE;
+	GameMissionMode s_missionMode = MISSION_MODE_MAIN;
 
 	TextureData* s_loadScreen = nullptr;
 	u8 s_loadingScreenPal[768];
@@ -86,7 +73,6 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	static u8 s_framebuffer[320 * 200];
 	static JBool s_exitLevel = JFALSE;
-	static GameMissionMode s_missionMode = MISSION_MODE_MAIN;
 	static Task* s_levelEndTask = nullptr;
 	static Task* s_mainTask = nullptr;
 	static Task* s_missionLoadTask = nullptr;
@@ -99,9 +85,6 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	void mission_mainTaskFunc(s32 id);
 	void setPalette(u8* pal);
-	void textureBlitColumnOpaque(u8* image, u8* outBuffer, s32 yPixelCount);
-	void textureBlitColumnTrans(u8* image, u8* outBuffer, s32 yPixelCount);
-	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output);
 	void blitLoadingScreen();
 	void displayLoadingScreen();
 	void mission_setupTasks();
@@ -256,7 +239,7 @@ namespace TFE_DarkForces
 				automap_draw(s_framebuffer);
 			}
 			// hud_drawAndUpdate();
-			// hud_drawHudText();
+			hud_drawMessage(s_framebuffer);
 
 			// vgaSwapBuffers() in the DOS code.
 			TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
@@ -302,76 +285,7 @@ namespace TFE_DarkForces
 		}
 		TFE_RenderBackend::setPalette(palette);
 	}
-
-	void textureBlitColumnOpaque(u8* image, u8* outBuffer, s32 yPixelCount)
-	{
-		s32 end = yPixelCount - 1;
-		s32 offset = 0;
-		for (s32 i = end; i >= 0; i--, offset += 320)
-		{
-			outBuffer[offset] = image[i];
-		}
-	}
-
-	void textureBlitColumnTrans(u8* image, u8* outBuffer, s32 yPixelCount)
-	{
-		s32 end = yPixelCount - 1;
-		s32 offset = 0;
-		for (s32 i = end; i >= 0; i--, offset += 320)
-		{
-			if (image[i]) { outBuffer[offset] = image[i]; }
-		}
-	}
-
-	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output)
-	{
-		s32 x1 = x0 + texture->width - 1;
-		s32 y1 = y0 + texture->height - 1;
-
-		// Cull if outside of the draw rect.
-		if (x1 < rect->x0 || y1 < rect->y0 || x0 > rect->x1 || y0 > rect->y1) { return; }
-
-		s32 srcX = 0, srcY = 0;
-		if (y0 < rect->y0)
-		{
-			y0 = rect->y0;
-		}
-		if (y1 > rect->y1)
-		{
-			srcY = y1 - rect->y1;
-			y1 = rect->y1;
-		}
-
-		if (x0 < rect->x0)
-		{
-			x0 = rect->x0;
-		}
-		if (x1 > rect->x1)
-		{
-			srcX = x1 - rect->x1;
-			x1 = rect->x1;
-		}
-
-		s32 yPixelCount = y1 - y0 + 1;
-		if (yPixelCount <= 0) { return; }
-
-		u8* buffer = texture->image + texture->height*srcX + srcY;
-		if (texture->flags & OPACITY_TRANS)
-		{
-			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
-			{
-				textureBlitColumnTrans(buffer, output + y0*320 + col, yPixelCount);
-			}
-		}
-		else
-		{
-			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
-			{
-				textureBlitColumnOpaque(buffer, output + y0*320 + col, yPixelCount);
-			}
-		}
-	}
-
+				
 	void blitLoadingScreen()
 	{
 		if (!s_loadScreen) { return; }

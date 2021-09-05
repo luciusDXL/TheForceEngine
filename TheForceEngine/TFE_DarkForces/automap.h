@@ -4,6 +4,7 @@
 // Automap functionality
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Jedi/Math/core_math.h>
 
 namespace TFE_DarkForces
 {
@@ -32,4 +33,9 @@ namespace TFE_DarkForces
 
 	extern JBool s_pdaActive;
 	extern JBool s_drawAutomap;
+	extern TFE_Jedi::fixed16_16 s_mapX0;
+	extern TFE_Jedi::fixed16_16 s_mapX1;
+	extern TFE_Jedi::fixed16_16 s_mapZ0;
+	extern TFE_Jedi::fixed16_16 s_mapZ1;
+	extern s32 s_mapLayer;
 }  // namespace TFE_DarkForces
