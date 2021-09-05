@@ -134,6 +134,8 @@ namespace TFE_DarkForces
 		TFE_Jedi::setupInitCameraAndLights();
 		gameStartup();
 		loadAgentAndLevelData();
+
+		renderer_init();
 		
 		return true;
 	}

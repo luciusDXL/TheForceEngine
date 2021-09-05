@@ -38,6 +38,7 @@ namespace TFE_DarkForces
 	// Shared State
 	/////////////////////////////////////////////
 	JBool s_gamePaused = JTRUE;
+	JBool s_canTeleport = JFALSE;
 	GameMissionMode s_missionMode = MISSION_MODE_MAIN;
 
 	TextureData* s_loadScreen = nullptr;
@@ -57,7 +58,7 @@ namespace TFE_DarkForces
 	JBool s_screenBrightnessChanged = JFALSE;
 	JBool s_screenFxChanged = JFALSE;
 	JBool s_lumMaskChanged = JFALSE;
-
+	
 	s32 s_flashFxLevel = 0;
 	s32 s_healthFxLevel = 0;
 	s32 s_shieldFxLevel = 0;
@@ -541,6 +542,20 @@ namespace TFE_DarkForces
 		if (TFE_Input::keyPressed(KEY_F7))
 		{
 			hud_setupToggleAnim1(JFALSE);
+		}
+		if (TFE_Input::keyPressed(KEY_TAB))
+		{
+			s_drawAutomap = ~s_drawAutomap;
+			if (s_drawAutomap)
+			{
+				automap_updateMapData(MAP_ENABLE_AUTOCENTER);
+				automap_updateMapData(MAP_CENTER_PLAYER);
+				s_canTeleport = JTRUE;
+			}
+			else
+			{
+				s_canTeleport = JFALSE;
+			}
 		}
 	}
 
