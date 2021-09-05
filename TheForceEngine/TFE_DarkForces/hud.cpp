@@ -226,8 +226,8 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			s_leftHudVertTarget = 0;
-			s_rightHudVertTarget = 0;
+			s_leftHudVertTarget = s_leftHudVertAnim == 0 ? 3 : 0;
+			s_rightHudVertTarget = s_rightHudVertAnim == 0 ? 3 : 0;
 
 			s_leftHudShow = 4;
 			s_rightHudShow = 4;

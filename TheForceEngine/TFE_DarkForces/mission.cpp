@@ -16,6 +16,7 @@
 #include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
+#include <TFE_Input/input.h>
 
 using namespace TFE_Jedi;
 
@@ -95,6 +96,7 @@ namespace TFE_DarkForces
 	void setLuminanceMask(JBool r, JBool g, JBool b);
 	void setCurrentColorMap(u8* colorMap, u8* lightRamp);
 	void mainTask_handleCall(s32 id);
+	void handleGeneralInput();
 
 	// Palette Filters and Effects
 	void handlePaletteFx();
@@ -232,7 +234,7 @@ namespace TFE_DarkForces
 			}
 			memset(s_framebuffer, 0, 320 * 200);
 
-			// handleGeneralInput();
+			handleGeneralInput();
 			handlePaletteFx();
 			if (s_drawAutomap)
 			{
@@ -501,6 +503,15 @@ namespace TFE_DarkForces
 		file.close();
 
 		return colorMap;
+	}
+
+	void handleGeneralInput()
+	{
+		// For now just deal with a few controls.
+		if (TFE_Input::keyPressed(KEY_F7))
+		{
+			hud_setupToggleAnim1(JFALSE);
+		}
 	}
 
 	////////////////////////////////////////////
