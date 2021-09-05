@@ -107,7 +107,7 @@ namespace RClassic_Fixed
 		lightLevel += floor16(mul16(lighting, s_sectorAmbientFraction));
 		if (lightLevel >= 31) { return color; }
 
-		if (/*s_worldAtten < 31 || */s_cameraLightSource != 0)
+		if (s_worldAmbient < 31 || s_cameraLightSource != 0)
 		{
 			const s32 depthScaled = min(s32(z >> 14), 127);
 			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
@@ -148,7 +148,7 @@ namespace RClassic_Fixed
 		lightLevel += floor16(mul16(lighting, s_sectorAmbientFraction));
 		if (lightLevel >= 31) { return 31; }
 
-		if (/*s_worldAtten < 31 || */s_cameraLightSource != 0)
+		if (s_worldAmbient < 31 || s_cameraLightSource != 0)
 		{
 			const s32 depthScaled = min(s32(z >> 14), 127);
 			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);

@@ -4,6 +4,8 @@
 #include "pickup.h"
 #include "weapon.h"
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
 
 namespace TFE_DarkForces
 {
@@ -41,6 +43,7 @@ namespace TFE_DarkForces
 	GoalItems s_goalItems   = { 0 };
 	fixed16_16 s_energy = 2 * ONE_16;
 	s32 s_lifeCount;
+	s32 s_playerLight = 0;
 	fixed16_16 s_gravityAccel;
 
 	JBool s_invincibility = JFALSE;
@@ -64,6 +67,11 @@ namespace TFE_DarkForces
 	Tick s_prevPlayerTick;
 	Tick s_nextShieldDmgTick;
 	Task* s_playerTask = nullptr;
+
+	vec3_fixed s_camOffset = { 0 };
+	angle14_32 s_camOffsetPitch = 0;
+	angle14_32 s_camOffsetYaw = 0;
+	angle14_32 s_camOffsetRoll = 0;
 
 	JBool s_itemUnknown1;	// 0x282428
 	JBool s_itemUnknown2;	// 0x28242c
@@ -133,6 +141,9 @@ namespace TFE_DarkForces
 	static RSector* s_playerObjSector;
 		   
 	void playerControlTaskFunc(s32 id);
+	void setPlayerLight(s32 atten);
+	void setCameraOffset(fixed16_16 offsetX, fixed16_16 offsetY, fixed16_16 offsetZ);
+	void setCameraAngleOffset(angle14_32 offsetPitch, angle14_32 offsetYaw, angle14_32 offsetRoll);
 
 	void player_init()
 	{
@@ -369,7 +380,7 @@ namespace TFE_DarkForces
 			s_playerEye->flags |= s_playerEyeFlags;
 		}
 		s_playerEye = obj;
-		// setupCamera();
+		player_setupCamera();
 
 		s_playerEye->flags |= 2;
 		s_playerEyeFlags = s_playerEye->flags & 4;
@@ -383,13 +394,45 @@ namespace TFE_DarkForces
 		s_yaw   = s_playerEye->yaw;
 		s_roll  = s_playerEye->roll;
 
-		// setCameraOffset(0, 0, 0);
-		// setCameraAngleOffset(0, 0, 0);
+		setCameraOffset(0, 0, 0);
+		setCameraAngleOffset(0, 0, 0);
 	}
 
 	s32 player_getLifeCount()
 	{
 		return s_lifeCount;
+	}
+			
+	void setCameraOffset(fixed16_16 offsetX, fixed16_16 offsetY, fixed16_16 offsetZ)
+	{
+		s_camOffset = { offsetX, offsetY, offsetZ };
+	}
+
+	void setCameraAngleOffset(angle14_32 offsetPitch, angle14_32 offsetYaw, angle14_32 offsetRoll)
+	{
+		s_camOffsetPitch = offsetPitch;
+		s_camOffsetYaw = offsetYaw;
+		s_camOffsetRoll = offsetRoll;
+	}
+
+	void player_setupCamera()
+	{
+		if (s_playerEye)
+		{
+			s_eyePos.x = s_playerEye->posWS.x + s_camOffset.x;
+			s_eyePos.y = s_playerEye->posWS.y - (s_playerEye->worldHeight + s_camOffset.y);
+			s_eyePos.z = s_playerEye->posWS.z + s_camOffset.z;
+
+			s_pitch = s_playerEye->pitch + s_camOffsetPitch;
+			s_yaw   = s_playerEye->yaw   + s_camOffsetYaw;
+			s_roll  = s_playerEye->roll  + s_camOffsetRoll;
+
+			if (s_playerEye->sector)
+			{
+				RClassic_Fixed::computeCameraTransform(s_playerEye->sector, s_pitch, s_yaw, s_eyePos.x, s_eyePos.y, s_eyePos.z);
+			}
+			renderer_setWorldAmbient(s_playerLight);
+		}
 	}
 		
 	void playerControlTaskFunc(s32 id)
@@ -428,5 +471,10 @@ namespace TFE_DarkForces
 			task_yield(TASK_NO_DELAY);
 		}
 		task_end;
+	}
+
+	void setPlayerLight(s32 atten)
+	{
+		s_playerLight = atten;
 	}
 }  // TFE_DarkForces

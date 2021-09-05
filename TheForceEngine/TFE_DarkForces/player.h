@@ -82,6 +82,7 @@ namespace TFE_DarkForces
 	extern GoalItems s_goalItems;
 	extern fixed16_16 s_energy;
 	extern s32 s_lifeCount;
+	extern s32 s_playerLight;
 	extern fixed16_16 s_gravityAccel;
 	extern JBool s_invincibility;
 	extern JBool s_wearingCleats;
@@ -131,4 +132,5 @@ namespace TFE_DarkForces
 	void player_setupObject(SecObject* obj);
 	void player_setupEyeObject(SecObject* obj);
 	s32  player_getLifeCount();
+	void player_setupCamera();
 }  // namespace TFE_DarkForces

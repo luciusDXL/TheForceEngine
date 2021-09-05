@@ -67,6 +67,7 @@ namespace TFE_Jedi
 
 	void renderer_setVisionEffect(s32 effect);
 	void renderer_setupCameraLight(JBool flatShading, JBool headlamp);
+	void renderer_setWorldAmbient(s32 value);
 
 	// 2D
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);

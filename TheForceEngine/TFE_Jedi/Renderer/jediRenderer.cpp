@@ -22,7 +22,7 @@ namespace TFE_Jedi
 
 	static bool s_init = false;
 	static MemoryPool s_memPool;
-	static TFE_SubRenderer s_subRenderer = TSR_INVALID;
+	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
 	static TFE_Sectors* s_sectors = nullptr;
 	ScreenRect s_screenRect = { 0, 1, 319, 198 };
 
@@ -174,6 +174,11 @@ namespace TFE_Jedi
 		s_cameraLightSource = cameraLightSource ? -1 : 0;
 
 		s_drawFrame++;
+	}
+
+	void renderer_setWorldAmbient(s32 value)
+	{
+		s_worldAmbient = MAX_LIGHT_LEVEL - value;
 	}
 
 	void renderer_setupCameraLight(JBool flatShading, JBool headlamp)

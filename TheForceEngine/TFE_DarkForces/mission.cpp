@@ -13,7 +13,9 @@
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
+#include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_Input/input.h>
@@ -97,6 +99,8 @@ namespace TFE_DarkForces
 	void setCurrentColorMap(u8* colorMap, u8* lightRamp);
 	void mainTask_handleCall(s32 id);
 	void handleGeneralInput();
+
+	void updateScreensize();
 
 	// Palette Filters and Effects
 	void handlePaletteFx();
@@ -210,7 +214,7 @@ namespace TFE_DarkForces
 			s_prevTick = s_curTick;
 			s_playerTick = s_curTick;
 
-			// setupCamera();
+			player_setupCamera();
 
 			switch (s_missionMode)
 			{
@@ -220,7 +224,7 @@ namespace TFE_DarkForces
 				} break;
 				case MISSION_MODE_MAIN:
 				{
-					// updateScreensize();
+					updateScreensize();
 					// drawWorld();
 				} break;
 				// These modes never seem to get called.
@@ -232,8 +236,6 @@ namespace TFE_DarkForces
 					// vgaClearPalette();
 				} break;
 			}
-			memset(s_framebuffer, 0, 320 * 200);
-
 			handleGeneralInput();
 			handlePaletteFx();
 			if (s_drawAutomap)
@@ -540,6 +542,11 @@ namespace TFE_DarkForces
 		{
 			hud_setupToggleAnim1(JFALSE);
 		}
+	}
+
+	void updateScreensize()
+	{
+		// STUB: Not needed until screensizes are supported.
 	}
 
 	////////////////////////////////////////////

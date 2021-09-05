@@ -5,6 +5,8 @@
 #include "rcommonFixed.h"
 #include "rlightingFixed.h"
 #include "rflatFixed.h"
+#include "../redgePair.h"
+#include "rsectorFixed.h"
 #include "../rcommon.h"
 
 namespace TFE_Jedi
@@ -141,8 +143,6 @@ namespace RClassic_Fixed
 		s_negSinYaw_Fixed = -s_sinYaw_Fixed;
 		if (s_maxPitch != s_cameraPitch_Fixed)
 		{
-			// TODO: This is actually pitch; s_halfWidthFixed should be focalLength
-			// So s_maxPitch must be the pitch.
 			fixed16_16 sinPitch   = sinFixed(s_cameraPitch_Fixed);
 			fixed16_16 rHalfWidth = mul16(sinPitch, s_halfWidth_Fixed);
 			s_projOffsetY = s_projOffsetYBase + rHalfWidth;
@@ -242,15 +242,19 @@ namespace RClassic_Fixed
 		s32 widthFract = div16(intToFixed16(w), FIXED(320));
 		setWidthFraction(widthFract);
 
-		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_windowMaxYFixed, 0, s_windowMinYFixed);
-		memset(s_windowTop_all, s_minScreenY, 320);
-		memset(s_windowBot_all, s_maxScreenY, 320);
+		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
+		s_flatEdge = flatEdge;
 
+		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_windowMaxYFixed, 0, s_windowMinYFixed);
+		
 		s_columnTop = (s32*)realloc(s_columnTop, s_width * sizeof(s32));
 		s_columnBot = (s32*)realloc(s_columnBot, s_width * sizeof(s32));
 		s_depth1d_all_Fixed = (fixed16_16*)realloc(s_depth1d_all_Fixed, s_width * sizeof(fixed16_16) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowTop_all = (s32*)realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowBot_all = (s32*)realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
+
+		memset(s_windowTop_all, s_minScreenY, 320);
+		memset(s_windowBot_all, s_maxScreenY, 320);
 
 		// Build tables
 		s_column_Z_Over_X = (fixed16_16*)realloc(s_column_Z_Over_X, s_width * sizeof(fixed16_16));
@@ -287,6 +291,7 @@ namespace RClassic_Fixed
 			}
 		}
 
+		s_rcpY = (fixed16_16*)realloc(s_rcpY, 4 * s_height * sizeof(fixed16_16));
 		buildRcpYTable();
 	}
 
@@ -336,6 +341,9 @@ namespace RClassic_Fixed
 
 	void setupInitCameraAndLights()
 	{
+		s_width  = 320;
+		s_height = 200;
+
 		buildProjectionTables(160, 100, 320, 198);
 		TFE_Jedi::setSkyParallax(FIXED(1024), FIXED(1024));
 		computeSkyTable();
