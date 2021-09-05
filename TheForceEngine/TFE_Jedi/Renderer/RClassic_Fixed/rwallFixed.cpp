@@ -682,6 +682,8 @@ namespace RClassic_Fixed
 
 	TextureData* setupSignTexture(RWall* srcWall, fixed16_16* signU0, fixed16_16* signU1, ColumnFunction* signFullbright, ColumnFunction* signLit, bool hqMode)
 	{
+		if (!srcWall->signTex) { return nullptr; }
+
 		TextureData* signTex = *srcWall->signTex;
 		*signU0 = 0; *signU1 = 0;
 		*signFullbright = nullptr; *signLit = nullptr;
@@ -726,10 +728,10 @@ namespace RClassic_Fixed
 		fixed16_16 z1 = wallSegment->z1;
 
 		fixed16_16 y0C, y0F, y1C, y1F;
-		y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
-		y0F = div16(mul16(floorEyeRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		y1F = div16(mul16(floorEyeRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		y0F = div16(mul16(floorEyeRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		y1F = div16(mul16(floorEyeRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		s32 y0C_pixel = round16(y0C);
 		s32 y1C_pixel = round16(y1C);
@@ -955,8 +957,8 @@ namespace RClassic_Fixed
 		else
 		{
 			fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
-			cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-			cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+			cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+			cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 		}
 
 		s32 c0pixel = round16(cProj0);
@@ -985,8 +987,8 @@ namespace RClassic_Fixed
 		else
 		{
 			fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
-			fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-			fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+			fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+			fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 		}
 
 		s32 f0pixel = round16(fProj0);
@@ -1074,8 +1076,8 @@ namespace RClassic_Fixed
 		else
 		{
 			fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
-			cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-			cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+			cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+			cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 		}
 
 		s32 cy0 = round16(cProj0);
@@ -1100,8 +1102,8 @@ namespace RClassic_Fixed
 
 		fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 fProj0, fProj1;
-		fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		s32 fy0 = round16(fProj0);
 		s32 fy1 = round16(fProj1);
@@ -1126,8 +1128,8 @@ namespace RClassic_Fixed
 
 		fixed16_16 floorRelNext = nextSector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 fNextProj0, fNextProj1;
-		fNextProj0 = div16(mul16(floorRelNext, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		fNextProj1 = div16(mul16(floorRelNext, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		fNextProj0 = div16(mul16(floorRelNext, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		fNextProj1 = div16(mul16(floorRelNext, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		s32 xOffset = wallSegment->wallX0 - wallSegment->wallX0_raw;
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
@@ -1298,8 +1300,8 @@ namespace RClassic_Fixed
 
 		fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 yC0, yC1;
-		yC0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		yC1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		yC0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		yC1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		s32 yC0_pixel = round16(yC0);
 		s32 yC1_pixel = round16(yC1);
@@ -1327,8 +1329,8 @@ namespace RClassic_Fixed
 		else
 		{
 			fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
-			yF0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-			yF1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+			yF0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+			yF1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 		}
 		s32 yF0_pixel = round16(yF0);
 		s32 yF1_pixel = round16(yF1);
@@ -1347,8 +1349,8 @@ namespace RClassic_Fixed
 
 		fixed16_16 next_ceilRel = next->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 next_yC0, next_yC1;
-		next_yC0 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		next_yC1 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		next_yC0 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		next_yC1 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		fixed16_16 xOffset = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
 		fixed16_16 length = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
@@ -1505,8 +1507,8 @@ namespace RClassic_Fixed
 
 		fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 cProj0, cProj1;
-		cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		s32 c0_pixel = round16(cProj0);
 		s32 c1_pixel = round16(cProj1);
@@ -1528,8 +1530,8 @@ namespace RClassic_Fixed
 
 		fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 fProj0, fProj1;
-		fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		s32 f0_pixel = round16(fProj0);
 		s32 f1_pixel = round16(fProj1);
@@ -1552,8 +1554,8 @@ namespace RClassic_Fixed
 		RSector* nextSector = srcWall->nextSector;
 		fixed16_16 next_ceilRel = nextSector->ceilingHeight - s_eyeHeight_Fixed;
 		fixed16_16 next_cProj0, next_cProj1;
-		next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		fixed16_16 ceil_dYdX = 0;
 		fixed16_16 next_ceil_dYdX = 0;
@@ -1646,8 +1648,8 @@ namespace RClassic_Fixed
 
 		fixed16_16 next_floorRel = nextSector->floorHeight - s_eyeHeight_Fixed;
 		fixed16_16 next_fProj0, next_fProj1;
-		next_fProj0 = div16(mul16(next_floorRel, s_focalLenAspect_Fixed), z0) + s_halfHeight_Fixed;
-		next_fProj1 = div16(mul16(next_floorRel, s_focalLenAspect_Fixed), z1) + s_halfHeight_Fixed;
+		next_fProj0 = div16(mul16(next_floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
+		next_fProj1 = div16(mul16(next_floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
 
 		fixed16_16 next_floor_dYdX = 0;
 		fixed16_16 floor_dYdX = 0;
@@ -2290,8 +2292,8 @@ namespace RClassic_Fixed
 		const fixed16_16 x1 = x0 + frame->widthWS;
 		const fixed16_16 y1 = y0 + frame->heightWS;
 
-		const fixed16_16 projX1 = mul16(mul16(x1, s_focalLength_Fixed), rcpZ) + s_halfWidth_Fixed;
-		const fixed16_16 projY1 = mul16(mul16(y1, s_focalLenAspect_Fixed), rcpZ) + s_halfHeight_Fixed;
+		const fixed16_16 projX1 = mul16(mul16(x1, s_focalLength_Fixed), rcpZ) + s_projOffsetX;
+		const fixed16_16 projY1 = mul16(mul16(y1, s_focalLenAspect_Fixed), rcpZ) + s_projOffsetY;
 
 		s32 x1_pixel = round16(projX1);
 		s32 y1_pixel = round16(projY1);

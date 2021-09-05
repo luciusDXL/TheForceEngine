@@ -51,6 +51,7 @@ namespace RClassic_Fixed
 		viewPoint->z = mul16(worldPoint->z, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->x, RClassic_Fixed::s_negSinYaw_Fixed) + RClassic_Fixed::s_zCameraTrans_Fixed;
 	}
 
+#if 0
 	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId)
 	{
 		// TODO: Remap input pitch to match Dark Forces limits, it should range from -1.5315f, 1.5315f (scale 1.95)
@@ -116,6 +117,7 @@ namespace RClassic_Fixed
 			normalizeVec3(dstDir, dstDir);
 		}
 	}
+#endif
 
 	void setCameraWorldPos(fixed16_16 x, fixed16_16 z, fixed16_16 eyeHeight)
 	{
@@ -137,7 +139,6 @@ namespace RClassic_Fixed
 
 		s_xOffset = -camX;
 		s_zOffset = -camZ;
-
 		sinCosFixed(-yaw, &s_sinYaw_Fixed, &s_cosYaw_Fixed);
 
 		s_negSinYaw_Fixed = -s_sinYaw_Fixed;
@@ -207,6 +208,10 @@ namespace RClassic_Fixed
 		s_projOffsetYBase = s_projOffsetY;
 
 		s_oneOverHalfWidth = div16(ONE_16, halfWidthFixed);
+
+		// TFE
+		s_focalLength_Fixed = s_halfWidth_Fixed;
+		s_focalLenAspect_Fixed = s_halfWidth_Fixed;
 	}
 
 	void setWidthFraction(fixed16_16 widthFract)

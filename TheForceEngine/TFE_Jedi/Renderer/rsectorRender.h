@@ -53,15 +53,6 @@ namespace TFE_Jedi
 	class TFE_Sectors
 	{
 	public:
-		// Common
-		void setMemoryPool(MemoryPool* memPool);
-		void allocate(u32 count);
-		void copyFrom(const TFE_Sectors* src);
-
-		RSector* get();
-		u32 getCount();
-
-		void clear(RSector* sector);
 		void computeAdjoinWindowBounds(EdgePair* adjoinEdges);
 
 		// Sub-Renderer specific
@@ -81,9 +72,7 @@ namespace TFE_Jedi
 		SectorSaveValues s_sectorStack[MAX_ADJOIN_DEPTH];
 
 		RSector* s_curSector;
-		RSector* s_rsectors;
 		MemoryPool* s_memPool;
 		SecObject* s_objBuffer[MAX_VIEW_OBJ_COUNT];
-		u32 s_sectorCount;
 	};
 }

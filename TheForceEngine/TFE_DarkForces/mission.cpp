@@ -198,7 +198,7 @@ namespace TFE_DarkForces
 	{
 		s_missionLoadTask = task;
 	}
-		
+
 	void mission_mainTaskFunc(s32 id)
 	{
 		task_begin;
@@ -226,7 +226,7 @@ namespace TFE_DarkForces
 				case MISSION_MODE_MAIN:
 				{
 					updateScreensize();
-					// drawWorld();
+					drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
 				} break;
 				// These modes never seem to get called.
 				case MISSION_MODE_UNKNOWN:

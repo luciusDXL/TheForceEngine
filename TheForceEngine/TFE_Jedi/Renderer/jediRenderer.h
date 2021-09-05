@@ -56,9 +56,9 @@ namespace TFE_Jedi
 	//                    ambient base or offset (default = MAX_LIGHT_LEVEL).
 	//                    camera light source - true if there is a camera based light source, in which case worldAmbient is treated as an offset.
 	//											false if there is no camera light source, worldAmbient is then the base ambient.
-	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId, s32 worldAmbient = 0, bool cameraLightSource = false);
+	//void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId, s32 worldAmbient = 0, bool cameraLightSource = false);
 	// Draw the scene to the passed in display using the colormap for shading.
-	void draw(u8* display, const ColorMap* colormap);
+	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp);
 
 	// Setup the currently loaded level for rendering at the specified resolution.
 	void setupLevel(s32 width, s32 height);

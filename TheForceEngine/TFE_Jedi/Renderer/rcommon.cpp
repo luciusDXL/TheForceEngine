@@ -84,7 +84,7 @@ namespace TFE_Jedi
 	s32 s_curWallSeg;
 	s32 s_adjoinSegCount;
 	s32 s_adjoinDepth;
-	s32 s_drawFrame;
+	s32 s_drawFrame = 0;
 
 	// Flats
 	s32 s_flatCount;

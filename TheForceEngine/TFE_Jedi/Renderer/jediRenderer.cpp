@@ -1,6 +1,7 @@
 #include "jediRenderer.h"
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Level/level.h>
 #include "rcommon.h"
 #include "rsectorRender.h"
 #include "RClassic_Fixed/rcommonFixed.h"
@@ -23,8 +24,9 @@ namespace TFE_Jedi
 	static bool s_init = false;
 	static MemoryPool s_memPool;
 	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
-	static TFE_Sectors* s_sectors = nullptr;
 	ScreenRect s_screenRect = { 0, 1, 319, 198 };
+
+	TFE_Sectors* s_sectorRenderer = nullptr;
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -56,11 +58,12 @@ namespace TFE_Jedi
 		TFE_COUNTER(s_flatCount, "Flat Count");
 		TFE_COUNTER(s_curWallSeg, "Wall Segment Count");
 		TFE_COUNTER(s_adjoinSegCount, "Adjoin Segment Count");
+
+		s_sectorRenderer = new TFE_Sectors_Fixed();
 	}
 
 	void renderer_destroy()
 	{
-		delete s_sectors;
 	}
 
 	void setupInitCameraAndLights()
@@ -92,7 +95,6 @@ namespace TFE_Jedi
 
 		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
 		s_sectorId = -1;
-		s_sectors->setMemoryPool(&s_memPool);
 	}
 
 	void console_setSubRenderer(const std::vector<std::string>& args)
@@ -143,26 +145,10 @@ namespace TFE_Jedi
 		if (subRenderer != s_subRenderer)
 		{
 			s_subRenderer = subRenderer;
-			// Reset the resolution so it is set properly.
-			s_width = 0;
-			s_height = 0;
-
-			// Setup the sub-renderer sector system.
-			TFE_Sectors* prev = s_sectors;
-
-			if (s_subRenderer == TSR_CLASSIC_FIXED)
-			{
-				s_sectors = new TFE_Sectors_Fixed();
-			}
-			/*else
-			{
-				s_sectors = new TFE_Sectors_Float();
-			}*/
-			s_sectors->subrendererChanged();
-			delete prev;
 		}
 	}
 
+#if 0
 	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId, s32 worldAmbient, bool cameraLightSource)
 	{
 		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setCamera(yaw, pitch, x, y, z, sectorId); }
@@ -175,6 +161,7 @@ namespace TFE_Jedi
 
 		s_drawFrame++;
 	}
+#endif
 
 	void renderer_setWorldAmbient(s32 value)
 	{
@@ -187,14 +174,15 @@ namespace TFE_Jedi
 		s_cameraLightSource = headlamp;
 	}
 
-	void draw(u8* display, const ColorMap* colormap)
+	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp)
 	{
 		// Clear the top pixel row.
 		memset(display, 0, s_width);
 
+		s_drawFrame++;
 		s_display = display;
-		s_colorMap = colormap->colorMap;
-		s_lightSourceRamp = colormap->lightSourceRamp;
+		s_colorMap = colormap;
+		s_lightSourceRamp = lightSourceRamp;
 		clear1dDepth();
 
 		s_windowMinX = s_minScreenX;
@@ -227,8 +215,7 @@ namespace TFE_Jedi
 		// Recursively draws sectors and their contents (sprites, 3D objects).
 		{
 			TFE_ZONE("Sector Draw");
-			RSector* sector = s_sectors->get() + s_sectorId;
-			s_sectors->draw(sector);
+			s_sectorRenderer->draw(sector);
 		}
 	}
 

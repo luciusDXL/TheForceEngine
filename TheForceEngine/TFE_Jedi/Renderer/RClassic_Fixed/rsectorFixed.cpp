@@ -201,7 +201,7 @@ namespace TFE_Jedi
 				vec2_fixed* vtxVS = s_curSector->verticesVS;
 				for (s32 v = 0; v < s_curSector->vertexCount; v++)
 				{
-					vtxVS->x = mul16(vtxWS->x, s_cosYaw_Fixed) + mul16(vtxWS->z, s_sinYaw_Fixed) + s_xCameraTrans_Fixed;
+					vtxVS->x = mul16(vtxWS->x, s_cosYaw_Fixed)    + mul16(vtxWS->z, s_sinYaw_Fixed) + s_xCameraTrans_Fixed;
 					vtxVS->z = mul16(vtxWS->x, s_negSinYaw_Fixed) + mul16(vtxWS->z, s_cosYaw_Fixed) + s_zCameraTrans_Fixed;
 					vtxVS++;
 					vtxWS++;

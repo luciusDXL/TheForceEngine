@@ -5,50 +5,6 @@
 
 namespace TFE_Jedi
 {
-	void TFE_Sectors::setMemoryPool(MemoryPool* memPool)
-	{
-		s_memPool = memPool;
-	}
-
-	void TFE_Sectors::allocate(u32 count)
-	{
-		s_sectorCount = count;
-		s_rsectors = (RSector*)s_memPool->allocate(sizeof(RSector) * count);
-	}
-
-	void TFE_Sectors::copyFrom(const TFE_Sectors* src)
-	{
-		if (!src) { return; }
-		s_curSector = src->s_curSector;
-		s_rsectors = src->s_rsectors;
-		s_memPool = src->s_memPool;
-		s_sectorCount = src->s_sectorCount;
-	}
-
-	RSector* TFE_Sectors::get()
-	{
-		return s_rsectors;
-	}
-
-	u32 TFE_Sectors::getCount()
-	{
-		return s_sectorCount;
-	}
-				
-	void TFE_Sectors::clear(RSector* sector)
-	{
-		sector->vertexCount = 0;
-		sector->wallCount = 0;
-		sector->objectCount = 0;
-		sector->secHeight = 0;
-		sector->id = 0;
-		sector->prevDrawFrame = 0;
-		sector->objectCapacity = 0;
-		sector->verticesWS = nullptr;
-		sector->verticesVS = nullptr;
-		sector->self = sector;
-	}
-
 	void TFE_Sectors::computeAdjoinWindowBounds(EdgePair* adjoinEdges)
 	{
 		s32 yC = adjoinEdges->yPixel_C0;

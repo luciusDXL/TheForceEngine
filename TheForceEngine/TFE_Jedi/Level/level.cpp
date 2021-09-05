@@ -240,6 +240,7 @@ namespace TFE_Jedi
 		}
 
 		s_sectors = (RSector*)malloc(sizeof(RSector) * s_sectorCount);
+		memset(s_sectors, 0, sizeof(RSector) * s_sectorCount);
 		for (u32 i = 0; i < s_sectorCount; i++)
 		{
 			RSector* sector = &s_sectors[i];

@@ -76,7 +76,7 @@ namespace RClassic_Fixed
 			if (z <= ONE_16) { continue; }
 
 			const s32 pixel_x = round16(div16(mul16(vertex->x, s_focalLength_Fixed), z) + s_projOffsetX);
-			const s32 pixel_y = round16(div16(mul16(vertex->y, s_focalLenAspect_Fixed), z) + s_halfHeight_Fixed);
+			const s32 pixel_y = round16(div16(mul16(vertex->y, s_focalLenAspect_Fixed), z) + s_projOffsetY);
 
 			// If the X position is out of view, skip the vertex.
 			if (pixel_x < s_minScreenX || pixel_x > s_maxScreenX)
@@ -98,7 +98,7 @@ namespace RClassic_Fixed
 		for (s32 i = 0; i < count; i++, pos++, out++)
 		{
 			out->x = round16(div16(mul16(pos->x, s_focalLength_Fixed), pos->z) + s_projOffsetX);
-			out->y = round16(div16(mul16(pos->y, s_focalLenAspect_Fixed), pos->z) + s_halfHeight_Fixed);
+			out->y = round16(div16(mul16(pos->y, s_focalLenAspect_Fixed), pos->z) + s_projOffsetY);
 			out->z = pos->z;
 		}
 	}
