@@ -271,32 +271,32 @@ namespace TFE_DarkForces
 
 		// Initialize values.
 		s_postLandVel = 0;
-		s_playerRun = 0;
-		s_jumpScale = 0;
-		s_playerSlow = 0;
-		s_waterSpeed = 0;
+		s_playerRun   = 0;
+		s_jumpScale   = 0;
+		s_playerSlow  = 0;
+		s_waterSpeed  = 0;
 
-		s_playerVelX = 0;
-		s_playerUpVel = 0;
+		s_playerVelX   = 0;
+		s_playerUpVel  = 0;
 		s_playerUpVel2 = 0;
-		s_playerVelZ = 0;
+		s_playerVelZ   = 0;
 		s_externalVelX = 0;
 		s_externalVelZ = 0;
 		s_playerCrouchSpd = 0;
-		s_playerSpeed = 0;
+		s_playerSpeed  = 0;
 
-		s_weaponLight = 0;
-		s_levelAtten = 0;
+		s_weaponLight    = 0;
+		s_levelAtten     = 0;
 		s_prevPlayerTick = 0;
 		s_headwaveVerticalOffset = 0;
 
-		s_playerUse = JFALSE;
-		s_playerActionUse = JFALSE;
-		s_weaponFiring = JFALSE;
-		s_weaponFiringSec = JFALSE;
+		s_playerUse         = JFALSE;
+		s_playerActionUse   = JFALSE;
+		s_weaponFiring      = JFALSE;
+		s_weaponFiringSec   = JFALSE;
 		s_playerPrimaryFire = JFALSE;
-		s_playerSecFire = JFALSE;
-		s_playerJumping = JFALSE;
+		s_playerSecFire     = JFALSE;
+		s_playerJumping     = JFALSE;
 
 		s_crushSoundId = 0;
 		s_kyleScreamSoundId = 0;
@@ -305,10 +305,10 @@ namespace TFE_DarkForces
 		// The player will always start a level with at least 3 lives.
 		s_lifeCount = max(3, s_lifeCount);
 
-		s_playerInvSaved = nullptr;
+		s_playerInvSaved    = nullptr;
 		s_invincibilityTask = nullptr;
-		s_gasmaskTask = nullptr;
-		s_gasSectorTask = nullptr;
+		s_gasmaskTask       = nullptr;
+		s_gasSectorTask     = nullptr;
 		s_nextShieldDmgTick = 0;
 		s_invincibility = 0;
 

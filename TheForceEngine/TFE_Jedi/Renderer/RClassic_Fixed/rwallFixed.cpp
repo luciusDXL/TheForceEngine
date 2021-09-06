@@ -826,7 +826,7 @@ namespace RClassic_Fixed
 
 				// Texture image data = imageStart + u * texHeight
 				s_texImage = texture->image + (texelU << texture->logSizeY);
-				s_columnLight = computeLighting(z, srcWall->wallLight);
+				s_columnLight = computeLighting(z, floor16(srcWall->wallLight));
 				// column write output.
 				s_columnOut = &s_display[top * s_width + x];
 
@@ -921,7 +921,7 @@ namespace RClassic_Fixed
 
 				s_columnOut = &s_display[yC_pixel*s_width + x];
 				s_depth1d_Fixed[x] = z;
-				s_columnLight = computeLighting(z, srcWall->wallLight);
+				s_columnLight = computeLighting(z, floor16(srcWall->wallLight));
 
 				if (s_columnLight)
 				{
@@ -1242,7 +1242,7 @@ namespace RClassic_Fixed
 					s_vCoordFixed = v0 + wall->botOffset.z;
 					s_texImage = &tex->image[texelU << tex->logSizeY];
 					s_columnOut = &s_display[yTop_pixel * s_width + x];
-					s_columnLight = computeLighting(z, wall->wallLight);
+					s_columnLight = computeLighting(z, floor16(wall->wallLight));
 					if (s_columnLight)
 					{
 						drawColumn_Lit();
@@ -1449,7 +1449,7 @@ namespace RClassic_Fixed
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 
 				s_columnOut = &s_display[yC0_pixel * s_width + x];
-				s_columnLight = computeLighting(z, srcWall->wallLight);
+				s_columnLight = computeLighting(z, floor16(srcWall->wallLight));
 				if (s_columnLight)
 				{
 					drawColumn_Lit();
@@ -1626,7 +1626,7 @@ namespace RClassic_Fixed
 					s_vCoordFixed = mul16(yOffset, s_vCoordStep) + srcWall->topOffset.z;
 					s_texImage = &topTex->image[texelU << topTex->logSizeY];
 					s_columnOut = &s_display[yC0_pixel * s_width + x];
-					s_columnLight = computeLighting(z, srcWall->wallLight);
+					s_columnLight = computeLighting(z, floor16(srcWall->wallLight));
 
 					if (s_columnLight)
 					{
@@ -1728,7 +1728,7 @@ namespace RClassic_Fixed
 						s_vCoordFixed = srcWall->botOffset.z + mul16(yF1 - intToFixed16(yF1_pixel) + HALF_16, s_vCoordStep);
 						s_texImage = &botTex->image[texelU << botTex->logSizeY];
 						s_columnOut = &s_display[yF0_pixel * s_width + x];
-						s_columnLight = computeLighting(z, srcWall->wallLight);
+						s_columnLight = computeLighting(z, floor16(srcWall->wallLight));
 
 						if (s_columnLight)
 						{
