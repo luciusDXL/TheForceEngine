@@ -781,7 +781,7 @@ namespace TFE_DarkForces
 		s_weaponAnimState =
 		{
 			s_curPlayerWeapon->frame,	// frame
-			0, 0,						// startOffsetX, startOffsetY
+			s_curPlayerWeapon->xOffset, s_curPlayerWeapon->yOffset,
 			3, 4,						// xSpeed, ySpeed
 			10, s_superCharge ? 1u : 2u	// frameCount, ticksPerFrame
 		};
@@ -794,7 +794,6 @@ namespace TFE_DarkForces
 	void weapon_handleOnAnimation(s32 id)
 	{
 		task_begin;
-
 		s_weaponOffAnim = JFALSE;
 		if (s_curWeapon != WPN_FIST && s_curWeapon != WPN_THERMAL_DET && s_curWeapon != WPN_MINE)
 		{
@@ -811,10 +810,9 @@ namespace TFE_DarkForces
 		}
 
 		// s_prevWeapon is the weapon we are switching away from.
-		s_curPlayerWeapon->frame = 0;
 		s_weaponAnimState =
 		{
-			s_curPlayerWeapon->frame,	// frame
+			0,							// frame
 			14, 40,						// startOffsetX, startOffsetY
 			-3, -4,						// xSpeed, ySpeed
 			10, s_superCharge ? 1u : 2u	// frameCount, ticksPerFrame
