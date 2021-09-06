@@ -31,8 +31,13 @@ namespace TFE_DarkForces
 	void automap_updateMapData(MapUpdateID id);
 	void automap_draw(u8* framebuffer);
 
+	s32  automap_getLayer();
+	void automap_disableTeleport();
+	void automap_enableTeleport();
+
 	extern JBool s_pdaActive;
 	extern JBool s_drawAutomap;
+	extern JBool s_automapCanTeleport;
 	extern TFE_Jedi::fixed16_16 s_mapX0;
 	extern TFE_Jedi::fixed16_16 s_mapX1;
 	extern TFE_Jedi::fixed16_16 s_mapZ0;

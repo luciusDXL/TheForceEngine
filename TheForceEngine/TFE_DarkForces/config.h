@@ -33,6 +33,7 @@ namespace TFE_DarkForces
 		// Automap
 		IA_MAP_ZOOM_IN,
 		IA_MAP_ZOOM_OUT,
+		IA_MAP_ENABLE_SCROLL,
 		IA_MAP_SCROLL_UP,
 		IA_MAP_SCROLL_DN,
 		IA_MAP_SCROLL_LT,
@@ -89,9 +90,10 @@ namespace TFE_DarkForces
 
 	enum ActionState
 	{
-		STATE_UP = 0,
-		STATE_DOWN,
-		STATE_PRESSED,
+		STATE_UP      = 0,
+		STATE_DOWN    = 1,
+		STATE_PRESSED = 2,
+		STATE_ACTIVE  = STATE_DOWN | STATE_PRESSED
 	};
 
 	struct InputBinding

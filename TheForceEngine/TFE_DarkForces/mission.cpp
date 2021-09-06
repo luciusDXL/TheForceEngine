@@ -40,7 +40,7 @@ namespace TFE_DarkForces
 	// Shared State
 	/////////////////////////////////////////////
 	JBool s_gamePaused = JTRUE;
-	JBool s_canTeleport = JFALSE;
+	JBool s_canTeleport = JTRUE;
 	GameMissionMode s_missionMode = MISSION_MODE_MAIN;
 
 	TextureData* s_loadScreen = nullptr;
@@ -755,6 +755,69 @@ namespace TFE_DarkForces
 			else
 			{
 				s_canTeleport = JFALSE;
+			}
+		}
+
+		// In the DOS code, the game would just loop here - checking to see if paused has been pressed and then continue.
+		// Obviously that won't work for TFE, so the game paused variable is set and the game will have to handle it.
+		if (getActionState(IA_PAUSE) == STATE_PRESSED)
+		{
+			s_gamePaused = ~s_gamePaused;
+		}
+
+		if (s_drawAutomap)
+		{
+			if (getActionState(IA_MAP_ENABLE_SCROLL))
+			{
+				automap_disableTeleport();
+			}
+			else
+			{
+				automap_enableTeleport();
+			}
+
+			if (getActionState(IA_MAP_ZOOM_IN))
+			{
+				automap_updateMapData(MAP_ZOOM_IN);
+			}
+			else if (getActionState(IA_MAP_ZOOM_OUT))
+			{
+				automap_updateMapData(MAP_ZOOM_OUT);
+			}
+
+			if (getActionState(IA_MAP_LAYER_UP) == STATE_PRESSED)
+			{
+				automap_updateMapData(MAP_LAYER_UP);
+
+				s32 msgId = min(automap_getLayer() + 609, 618);
+				hud_sendTextMessage(msgId);
+			}
+			else if (getActionState(IA_MAP_LAYER_DN) == STATE_PRESSED)
+			{
+				automap_updateMapData(MAP_LAYER_DOWN);
+
+				s32 msgId = min(automap_getLayer() + 609, 618);
+				hud_sendTextMessage(msgId);
+			}
+
+			if (!s_automapCanTeleport)
+			{
+				if (getActionState(IA_MAP_SCROLL_UP))
+				{
+					automap_updateMapData(MAP_MOVE1_UP);
+				}
+				if (getActionState(IA_MAP_SCROLL_DN))
+				{
+					automap_updateMapData(MAP_MOVE1_DN);
+				}
+				if (getActionState(IA_MAP_SCROLL_LT))
+				{
+					automap_updateMapData(MAP_MOVE1_LEFT);
+				}
+				if (getActionState(IA_MAP_SCROLL_RT))
+				{
+					automap_updateMapData(MAP_MOVE1_RIGHT);
+				}
 			}
 		}
 

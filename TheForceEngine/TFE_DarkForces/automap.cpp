@@ -54,13 +54,14 @@ namespace TFE_DarkForces
 	static s32 s_mapBot;
 	static s32 s_mapShowSectorMode = 0;
 	static JBool s_mapShowAllLayers = JFALSE;
-
+	
 	static s32 s_mapPrevPlayerX;
 	static s32 s_mapPrevPlayerZ;
 	static u8* s_mapFramebuffer;
 	
 	JBool s_pdaActive = JFALSE;
 	JBool s_drawAutomap = JFALSE;
+	JBool s_automapCanTeleport = JFALSE;
 	fixed16_16 s_mapX0;
 	fixed16_16 s_mapX1;
 	fixed16_16 s_mapZ0;
@@ -242,6 +243,17 @@ namespace TFE_DarkForces
 			} break;
 		}
 	}
+				
+	void automap_disableTeleport()
+	{
+		s_automapCanTeleport = JFALSE;
+		automap_updateMapData(MAP_DISABLE_AUTOCENTER);  // This splits out map position 0 and 1.
+	}
+
+	void automap_enableTeleport()
+	{
+		s_automapCanTeleport = JTRUE;
+	}
 
 	void automap_draw(u8* framebuffer)
 	{
@@ -252,9 +264,14 @@ namespace TFE_DarkForces
 		automap_drawSectors();
 	}
 
+	s32 automap_getLayer()
+	{
+		return s_mapLayer;
+	}
+
 	void automap_drawSectors()
 	{
-		if (!s_automapAutoCenter || !s_pdaActive)
+		if (s_automapAutoCenter || s_pdaActive)
 		{
 			s_mapX0 = s_eyePos.x;
 			s_mapX1 = s_mapX0;
