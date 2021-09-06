@@ -593,18 +593,20 @@ int main(int argc, char* argv[])
 		TFE_Ui::begin();
 						
 		// Update
-		if (TFE_Input::keyPressed(KEY_F9))
-		{
-			showPerf = !showPerf;
-		}
 		if (TFE_Input::keyPressed(KEY_GRAVE))
 		{
 			TFE_FrontEndUI::toggleConsole();
+		}
+	#if 0  // Disable system debug keys for now and reassign later.
+		if (TFE_Input::keyPressed(KEY_F9))
+		{
+			showPerf = !showPerf;
 		}
 		if (TFE_Input::keyPressed(KEY_F10))
 		{
 			TFE_FrontEndUI::toggleProfilerView();
 		}
+	#endif
 		if (systemMenuKeyCombo() && TFE_FrontEndUI::isConfigMenuOpen())
 		{
 			s_curState = TFE_FrontEndUI::menuReturn();

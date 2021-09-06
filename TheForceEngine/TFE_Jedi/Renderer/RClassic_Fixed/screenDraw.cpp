@@ -252,11 +252,11 @@ namespace TFE_Jedi
 
 		if (x0 < rect->x0)
 		{
+			srcX = x0 - rect->x0;
 			x0 = rect->x0;
 		}
 		if (x1 > rect->x1)
 		{
-			srcX = x1 - rect->x1;
 			x1 = rect->x1;
 		}
 
@@ -301,11 +301,11 @@ namespace TFE_Jedi
 
 		if (x0 < rect->x0)
 		{
+			srcX = x0 - rect->x0;
 			x0 = rect->x0;
 		}
 		if (x1 > rect->x1)
 		{
-			srcX = x1 - rect->x1;
 			x1 = rect->x1;
 		}
 
