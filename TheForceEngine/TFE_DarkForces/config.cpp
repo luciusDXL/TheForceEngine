@@ -35,32 +35,32 @@ namespace TFE_DarkForces
 		{ IA_MAP_LAYER_DN, ITYPE_KEYBOARD, KEY_LEFTBRACKET },
 
 		// Player Controls
-		// IA_FORWARD,
-		// IA_BACKWARD,
-		// IA_STRAFE_LT,
-		// IA_STRAFE_RT,
-		// IA_TURN_LT,
-		// IA_TURN_RT,
-		// IA_LOOK_UP,
-		// IA_LOOK_DN,
-		// IA_CENTER_VIEW,
-		// IA_RUN,
-		// IA_SLOW,
-		// IA_CROUCH,
-		// IA_JUMP,
-		// IA_USE,
-		// IA_WEAPON_1,
-		// IA_WEAPON_2,
-		// IA_WEAPON_3,
-		// IA_WEAPON_4,
-		// IA_WEAPON_5,
-		// IA_WEAPON_6,
-		// IA_WEAPON_7,
-		// IA_WEAPON_8,
-		// IA_WEAPON_9,
-		// IA_WEAPON_10,
-		// IA_PRIMARY_FIRE,
-		// IA_SECONDARY_FIRE,
+		{ IA_FORWARD,        ITYPE_KEYBOARD, KEY_W },
+		{ IA_BACKWARD,       ITYPE_KEYBOARD, KEY_S },
+		{ IA_STRAFE_LT,      ITYPE_KEYBOARD, KEY_A },
+		{ IA_STRAFE_RT,      ITYPE_KEYBOARD, KEY_D },
+		{ IA_TURN_LT,        ITYPE_KEYBOARD, KEY_LEFT },
+		{ IA_TURN_RT,        ITYPE_KEYBOARD, KEY_RIGHT },
+		{ IA_LOOK_UP,        ITYPE_KEYBOARD, KEY_PAGEUP },
+		{ IA_LOOK_DN,        ITYPE_KEYBOARD, KEY_PAGEDOWN },
+		{ IA_CENTER_VIEW,    ITYPE_KEYBOARD, KEY_C },
+		{ IA_RUN,            ITYPE_KEYBOARD, KEY_LSHIFT },
+		{ IA_SLOW,           ITYPE_KEYBOARD, KEY_CAPSLOCK },
+		{ IA_CROUCH,         ITYPE_KEYBOARD, KEY_LCTRL },
+		{ IA_JUMP,           ITYPE_KEYBOARD, KEY_SPACE },
+		{ IA_USE,            ITYPE_KEYBOARD, KEY_E },
+		{ IA_WEAPON_1,       ITYPE_KEYBOARD, KEY_1 },
+		{ IA_WEAPON_2,       ITYPE_KEYBOARD, KEY_2 },
+		{ IA_WEAPON_3,       ITYPE_KEYBOARD, KEY_3 },
+		{ IA_WEAPON_4,       ITYPE_KEYBOARD, KEY_4 },
+		{ IA_WEAPON_5,       ITYPE_KEYBOARD, KEY_5 },
+		{ IA_WEAPON_6,       ITYPE_KEYBOARD, KEY_6 },
+		{ IA_WEAPON_7,       ITYPE_KEYBOARD, KEY_7 },
+		{ IA_WEAPON_8,       ITYPE_KEYBOARD, KEY_8 },
+		{ IA_WEAPON_9,       ITYPE_KEYBOARD, KEY_9 },
+		{ IA_WEAPON_10,      ITYPE_KEYBOARD, KEY_0 },
+		{ IA_PRIMARY_FIRE,   ITYPE_MOUSE, MBUTTON_LEFT },
+		{ IA_SECONDARY_FIRE, ITYPE_MOUSE, MBUTTON_RIGHT },
 	};
 
 	static InputBinding s_defaultControllerBinds[] =
@@ -90,6 +90,8 @@ namespace TFE_DarkForces
 	{
 		JTRUE,	// headwave
 		JFALSE,	// wpnAutoMount
+		JFALSE, // mouseTurnEnabled
+		JTRUE,  // mouseLookEnabled
 	};
 
 	void addDefaultControlBinds();

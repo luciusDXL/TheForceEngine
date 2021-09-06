@@ -1,6 +1,7 @@
 #include "player.h"
 #include "automap.h"
 #include "agent.h"
+#include "config.h"
 #include "hud.h"
 #include "pickup.h"
 #include "weapon.h"
@@ -28,6 +29,15 @@ namespace TFE_DarkForces
 		PLAYER_FALL_HIT_SND_HEIGHT     = 0x4000,	  // 0.25 units, fall height for player to make a sound when hitting the ground.
 		PLAYER_LAND_VEL_CHANGE		   = FIXED(60),	  // Point wear landing velocity to head change velocity changes slope.
 		PLAYER_LAND_VEL_MAX            = FIXED(1000), // Maximum head change landing velocity.
+
+		PLAYER_FORWARD_SPEED           = FIXED(256),  // Forward speed in units/sec.
+		PLAYER_STRAFE_SPEED            = FIXED(192),  // Strafe speed in units/sec.
+		PLAYER_CROUCH_SPEED            = 747108,      // 11.4 units/sec
+		PLAYER_MOUSE_TURN_SPD          = 8,           // Mouse position delta to turn speed multiplier.
+		PLAYER_KB_TURN_SPD             = 3413,        // Keyboard turn speed in angles/sec.
+		PLAYER_JUMP_IMPULSE            = -2850816,    // Jump vertical impuse: -43.5 units/sec.
+
+		PITCH_LIMIT = 2047,
 	};
 
 	struct PlayerLogic
@@ -45,6 +55,7 @@ namespace TFE_DarkForces
 	fixed16_16 s_energy = 2 * ONE_16;
 	s32 s_lifeCount;
 	s32 s_playerLight = 0;
+	u32 s_moveAvail = 0xffffffff;
 	fixed16_16 s_gravityAccel;
 
 	JBool s_invincibility = JFALSE;
@@ -501,12 +512,170 @@ namespace TFE_DarkForces
 
 	void handlePlayerMoveControls()
 	{
-		// TODO(Core Game Loop Release)
+		s_externalYawSpd = 0;
+		s_forwardSpd = 0;
+		s_strafeSpd  = 0;
+		s_playerRun  = 0;
+		s_jumpScale  = 0;
+		s_playerSlow = 0;
+		
+		if (s_pickupFlags)
+		{
+			return;
+		}
+
+		s_playerCrouchSpd = s_playerStopAccel;
+				
+		s32 mdx, mdy;
+		TFE_Input::getMouseMove(&mdx, &mdy);
+		// Yaw change
+		if (s_config.mouseTurnEnabled || s_config.mouseLookEnabled)
+		{
+			s_playerYaw += mdx * PLAYER_MOUSE_TURN_SPD;
+			s_playerYaw &= 0x3fff;
+		}
+		// Pitch change
+		if (s_config.mouseLookEnabled)
+		{
+			s_playerPitch = clamp(s_playerPitch - mdy*PLAYER_MOUSE_TURN_SPD, -PITCH_LIMIT, PITCH_LIMIT);
+		}
+				
+		// Controls
+		if (getActionState(IA_FORWARD))
+		{
+			fixed16_16 speed = mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
+			s_forwardSpd = max(speed, s_forwardSpd);
+		}
+		else if (getActionState(IA_BACKWARD))
+		{
+			fixed16_16 speed = -mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
+			s_forwardSpd = min(speed, s_forwardSpd);
+		}
+
+		if (getActionState(IA_RUN))
+		{
+			s_playerRun |= 1;
+		}
+		else if (getActionState(IA_SLOW))
+		{
+			s_playerSlow |= 1;
+		}
+
+		s32 crouch = getActionState(IA_CROUCH) ? 1 : 0;
+		if (s_moveAvail & crouch)
+		{
+			fixed16_16 speed = PLAYER_CROUCH_SPEED;
+			speed <<= s_playerRun;			// this will be '1' if running.
+			speed >>= s_playerSlow;			// this will be '1' if moving slowly.
+			s_playerCrouchSpd = speed;
+		}
+
+		JBool wasJumping = s_playerJumping;
+		s_playerJumping = JFALSE;
+		if (getActionState(IA_JUMP))
+		{
+			if (!s_moveAvail || wasJumping)
+			{
+				s_playerJumping = wasJumping;
+			}
+			else
+			{
+				playSound2D(s_jumpSoundSource);
+
+				fixed16_16 speed = PLAYER_JUMP_IMPULSE << s_jumpScale;
+				s_playerJumping = JTRUE;
+				s_playerUpVel  = speed;
+				s_playerUpVel2 = speed;
+			}
+		}
+
+		//////////////////////////////////////////
+		// Pitch and Roll controls.
+		//////////////////////////////////////////
+		if (getActionState(IA_TURN_LT))
+		{
+			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
+			fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
+			dYaw <<= s_playerRun;		// double for "run"
+			dYaw >>= s_playerSlow;		// half for "slow"
+
+			s_playerYaw -= dYaw;
+			s_playerYaw &= 0x3fff;
+		}
+		else if (getActionState(IA_TURN_RT))
+		{
+			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
+			fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
+			dYaw <<= s_playerRun;		// double for "run"
+			dYaw >>= s_playerSlow;		// half for "slow"
+
+			s_playerYaw += dYaw;
+			s_playerYaw &= 0x3fff;
+		}
+
+		if (getActionState(IA_LOOK_UP))
+		{
+			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
+			fixed16_16 dPitch = mul16(turnSpeed, s_deltaTime);
+			dPitch <<= s_playerRun;		// double for "run"
+			dPitch >>= s_playerSlow;	// half for "slow"
+			s_playerPitch = clamp(s_playerPitch + dPitch, -PITCH_LIMIT, PITCH_LIMIT);
+		}
+		else if (getActionState(IA_LOOK_DN))
+		{
+			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
+			fixed16_16 dPitch = mul16(turnSpeed, s_deltaTime);
+			dPitch <<= s_playerRun;		// double for "run"
+			dPitch >>= s_playerSlow;	// half for "slow"
+			s_playerPitch = clamp(s_playerPitch - dPitch, -PITCH_LIMIT, PITCH_LIMIT);
+		}
+
+		if (getActionState(IA_CENTER_VIEW))
+		{
+			s_playerPitch = 0;
+			s_playerRoll  = 0;
+		}
+
+		if (getActionState(IA_STRAFE_RT))
+		{
+			fixed16_16 speed = mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
+			s_strafeSpd = max(speed, s_strafeSpd);
+		}
+		else if (getActionState(IA_STRAFE_LT))
+		{
+			fixed16_16 speed = -mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
+			s_strafeSpd = max(speed, s_strafeSpd);
+		}
+
+		if (getActionState(IA_USE))
+		{
+			s_playerUse = JTRUE;
+		}
+
+		if (getActionState(IA_PRIMARY_FIRE))
+		{
+			s_playerPrimaryFire = JTRUE;
+		}
+		else if (getActionState(IA_SECONDARY_FIRE))
+		{
+			s_playerSecFire = JTRUE;
+		}
 	}
 
 	void handlePlayerPhysics()
 	{
 		// TODO(Core Game Loop Release)
+		SecObject* player = s_playerObject;
+		player->yaw = s_playerYaw & 0x3fff;
+		player->pitch = s_playerPitch;
+		if (s_externalYawSpd)
+		{
+			s_externalYawSpd = mul16(s_externalYawSpd, s_deltaTime);
+			fixed16_16 speed = s_externalYawSpd << s_playerRun;
+			speed >>= s_playerSlow;
+			player->yaw += speed;
+		}
+		sinCosFixed(player->yaw, &s_playerLogic.dir.x, &s_playerLogic.dir.z);
 
 		// TODO(Core Game Loop Release): Insert into the correct location within this function.
 		{

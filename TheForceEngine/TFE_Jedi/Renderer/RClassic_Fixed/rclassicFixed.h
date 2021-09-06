@@ -18,5 +18,6 @@ namespace TFE_Jedi
 		void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
 		void clear3DView(u8* framebuffer);
 		void setVisionEffect(s32 effect);
+		void computeSkyOffsets();
 	}  // RClassic_Fixed
 }  // TFE_Jedi

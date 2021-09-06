@@ -37,8 +37,6 @@ namespace RClassic_Fixed
 	static u32 s_pixelMask;
 	static RSector* s_sector;
 	
-	void computeSkyOffsets();
-
 	void setVisionEffect(s32 effect)
 	{
 		s_visionEffect = effect;
@@ -172,7 +170,7 @@ namespace RClassic_Fixed
 		TFE_Jedi::getSkyParallax(&parallax[0], &parallax[1]);
 
 		// angles range from -16384 to 16383; multiply by 4 to convert to [-1, 1) range.
-		s_skyYawOffset_Fixed = mul16(s_cameraYaw_Fixed * ANGLE_TO_FIXED_SCALE, parallax[0]);
+		s_skyYawOffset_Fixed   = -mul16(s_cameraYaw_Fixed   * ANGLE_TO_FIXED_SCALE, parallax[0]);
 		s_skyPitchOffset_Fixed = -mul16(s_cameraPitch_Fixed * ANGLE_TO_FIXED_SCALE, parallax[1]);
 	}
 		

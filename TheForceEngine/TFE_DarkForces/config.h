@@ -121,6 +121,8 @@ namespace TFE_DarkForces
 	{
 		JBool headwave;
 		JBool wpnAutoMount;
+		JBool mouseTurnEnabled;
+		JBool mouseLookEnabled;
 	};
 
 	void configStartup();

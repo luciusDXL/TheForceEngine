@@ -180,6 +180,8 @@ namespace TFE_Jedi
 		memset(display, 0, s_width);
 
 		s_drawFrame++;
+		RClassic_Fixed::computeSkyOffsets();
+
 		s_display = display;
 		s_colorMap = colormap;
 		s_lightSourceRamp = lightSourceRamp;
