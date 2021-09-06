@@ -507,9 +507,15 @@ namespace TFE_DarkForces
 			SecObject** objIter = sector->objectList;
 			for (s32 i = 0; i < sector->objectCount; objIter++)
 			{
-				if (objIter)
+				SecObject* obj = *objIter;
+				while (!obj)
 				{
-					automap_drawObject(*objIter);
+					objIter++;
+					obj = *objIter;
+				}
+				if (obj)
+				{
+					automap_drawObject(obj);
 					i++;
 				}
 			}
