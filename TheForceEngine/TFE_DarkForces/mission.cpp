@@ -773,120 +773,6 @@ namespace TFE_DarkForces
 	{
 		task_begin;
 
-		handleBufferedInput();
-
-		// For now just deal with a few controls.
-		if (getActionState(IA_PDA_TOGGLE) == STATE_PRESSED)
-		{
-			// STUB: Bring up PDA.
-		}
-		if (getActionState(IA_NIGHT_VISION_TOG) == STATE_PRESSED && s_playerInfo.itemGoggles)
-		{
-			if (s_nightvisionActive)
-			{
-				disableNightvision();
-			}
-			else
-			{
-				enableNightVision();
-			}
-		}
-		if (getActionState(IA_CLEATS_TOGGLE) == STATE_PRESSED && s_playerInfo.itemCleats)
-		{
-			if (s_wearingCleats)
-			{
-				disableCleats();
-			}
-			else
-			{
-				enableCleats();
-			}
-		}
-		if (getActionState(IA_GAS_MASK_TOGGLE) == STATE_PRESSED && s_playerInfo.itemMask)
-		{
-			if (s_wearingGasmask)
-			{
-				disableMask();
-			}
-			else
-			{
-				enableMask();
-			}
-		}
-		if (getActionState(IA_HEAD_LAMP_TOGGLE) == STATE_PRESSED)
-		{
-			if (s_headlampActive)
-			{
-				disableHeadlamp();
-			}
-			else
-			{
-				enableHeadlamp();
-			}
-		}
-		renderer_setupCameraLight(JFALSE, s_headlampActive);
-
-		if (getActionState(IA_HEADWAVE_TOGGLE) == STATE_PRESSED)
-		{
-			s_config.headwave = ~s_config.headwave;
-			if (s_config.headwave)
-			{
-				hud_sendTextMessage(14);
-			}
-			else
-			{
-				hud_sendTextMessage(15);
-			}
-		}
-
-		if (getActionState(IA_HUD_TOGGLE) == STATE_PRESSED)
-		{
-			hud_setupToggleAnim1(JFALSE);
-		}
-
-		if (getActionState(IA_HOLSTER_WEAPON) == STATE_PRESSED)
-		{
-			task_callTaskFunc(weapon_holster);
-		}
-
-		if (getActionState(IA_AUTOMOUNT_TOGGLE) == STATE_PRESSED)
-		{
-			s_config.wpnAutoMount = ~s_config.wpnAutoMount;
-			weapon_enableAutomount(s_config.wpnAutoMount);
-			if (!s_config.wpnAutoMount)
-			{
-				hud_sendTextMessage(23);
-			}
-			else
-			{
-				hud_sendTextMessage(24);
-			}
-		}
-
-		if (getActionState(IA_CYCLEWPN_PREV) == STATE_PRESSED)
-		{
-			task_callTaskFuncWithId(player_cycleWeapons, -1);
-		}
-		else if (getActionState(IA_CYCLEWPN_NEXT) == STATE_PRESSED)
-		{
-			task_callTaskFuncWithId(player_cycleWeapons, 1);
-		}
-
-		if (getActionState(IA_AUTOMAP) == STATE_PRESSED)
-		{
-			s_drawAutomap = ~s_drawAutomap;
-			if (s_drawAutomap)
-			{
-				automap_updateMapData(MAP_ENABLE_AUTOCENTER);
-				automap_updateMapData(MAP_CENTER_PLAYER);
-				s_canTeleport = JTRUE;
-			}
-			else
-			{
-				s_canTeleport = JFALSE;
-			}
-		}
-
 		// In the DOS code, the game would just loop here - checking to see if paused has been pressed and then continue.
 		// Obviously that won't work for TFE, so the game paused variable is set and the game will have to handle it.
 		if (getActionState(IA_PAUSE) == STATE_PRESSED)
@@ -894,62 +780,178 @@ namespace TFE_DarkForces
 			s_gamePaused = ~s_gamePaused;
 		}
 
-		if (s_drawAutomap)
+		if (!s_gamePaused)
 		{
-			if (getActionState(IA_MAP_ENABLE_SCROLL))
-			{
-				automap_disableTeleport();
-			}
-			else
-			{
-				automap_enableTeleport();
-			}
+			handleBufferedInput();
 
-			if (getActionState(IA_MAP_ZOOM_IN))
+			// For now just deal with a few controls.
+			if (getActionState(IA_PDA_TOGGLE) == STATE_PRESSED)
 			{
-				automap_updateMapData(MAP_ZOOM_IN);
+				// STUB: Bring up PDA.
 			}
-			else if (getActionState(IA_MAP_ZOOM_OUT))
+			if (getActionState(IA_NIGHT_VISION_TOG) == STATE_PRESSED && s_playerInfo.itemGoggles)
 			{
-				automap_updateMapData(MAP_ZOOM_OUT);
-			}
-
-			if (getActionState(IA_MAP_LAYER_UP) == STATE_PRESSED)
-			{
-				automap_updateMapData(MAP_LAYER_UP);
-
-				s32 msgId = min(automap_getLayer() + 609, 618);
-				hud_sendTextMessage(msgId);
-			}
-			else if (getActionState(IA_MAP_LAYER_DN) == STATE_PRESSED)
-			{
-				automap_updateMapData(MAP_LAYER_DOWN);
-
-				s32 msgId = min(automap_getLayer() + 609, 618);
-				hud_sendTextMessage(msgId);
-			}
-
-			if (!s_automapCanTeleport)
-			{
-				if (getActionState(IA_MAP_SCROLL_UP))
+				if (s_nightvisionActive)
 				{
-					automap_updateMapData(MAP_MOVE1_UP);
+					disableNightvision();
 				}
-				if (getActionState(IA_MAP_SCROLL_DN))
+				else
 				{
-					automap_updateMapData(MAP_MOVE1_DN);
+					enableNightVision();
 				}
-				if (getActionState(IA_MAP_SCROLL_LT))
+			}
+			if (getActionState(IA_CLEATS_TOGGLE) == STATE_PRESSED && s_playerInfo.itemCleats)
+			{
+				if (s_wearingCleats)
 				{
-					automap_updateMapData(MAP_MOVE1_LEFT);
+					disableCleats();
 				}
-				if (getActionState(IA_MAP_SCROLL_RT))
+				else
 				{
-					automap_updateMapData(MAP_MOVE1_RIGHT);
+					enableCleats();
+				}
+			}
+			if (getActionState(IA_GAS_MASK_TOGGLE) == STATE_PRESSED && s_playerInfo.itemMask)
+			{
+				if (s_wearingGasmask)
+				{
+					disableMask();
+				}
+				else
+				{
+					enableMask();
+				}
+			}
+			if (getActionState(IA_HEAD_LAMP_TOGGLE) == STATE_PRESSED)
+			{
+				if (s_headlampActive)
+				{
+					disableHeadlamp();
+				}
+				else
+				{
+					enableHeadlamp();
+				}
+			}
+			renderer_setupCameraLight(JFALSE, s_headlampActive);
+
+			if (getActionState(IA_HEADWAVE_TOGGLE) == STATE_PRESSED)
+			{
+				s_config.headwave = ~s_config.headwave;
+				if (s_config.headwave)
+				{
+					hud_sendTextMessage(14);
+				}
+				else
+				{
+					hud_sendTextMessage(15);
+				}
+			}
+
+			if (getActionState(IA_HUD_TOGGLE) == STATE_PRESSED)
+			{
+				hud_setupToggleAnim1(JFALSE);
+			}
+
+			if (getActionState(IA_HOLSTER_WEAPON) == STATE_PRESSED)
+			{
+				task_callTaskFunc(weapon_holster);
+			}
+
+			if (getActionState(IA_AUTOMOUNT_TOGGLE) == STATE_PRESSED)
+			{
+				s_config.wpnAutoMount = ~s_config.wpnAutoMount;
+				weapon_enableAutomount(s_config.wpnAutoMount);
+				if (!s_config.wpnAutoMount)
+				{
+					hud_sendTextMessage(23);
+				}
+				else
+				{
+					hud_sendTextMessage(24);
+				}
+			}
+
+			if (getActionState(IA_CYCLEWPN_PREV) == STATE_PRESSED)
+			{
+				task_callTaskFuncWithId(player_cycleWeapons, -1);
+			}
+			else if (getActionState(IA_CYCLEWPN_NEXT) == STATE_PRESSED)
+			{
+				task_callTaskFuncWithId(player_cycleWeapons, 1);
+			}
+
+			if (getActionState(IA_AUTOMAP) == STATE_PRESSED)
+			{
+				s_drawAutomap = ~s_drawAutomap;
+				if (s_drawAutomap)
+				{
+					automap_updateMapData(MAP_ENABLE_AUTOCENTER);
+					automap_updateMapData(MAP_CENTER_PLAYER);
+					s_canTeleport = JTRUE;
+				}
+				else
+				{
+					s_canTeleport = JFALSE;
+				}
+			}
+
+			if (s_drawAutomap)
+			{
+				if (getActionState(IA_MAP_ENABLE_SCROLL))
+				{
+					automap_disableTeleport();
+				}
+				else
+				{
+					automap_enableTeleport();
+				}
+
+				if (getActionState(IA_MAP_ZOOM_IN))
+				{
+					automap_updateMapData(MAP_ZOOM_IN);
+				}
+				else if (getActionState(IA_MAP_ZOOM_OUT))
+				{
+					automap_updateMapData(MAP_ZOOM_OUT);
+				}
+
+				if (getActionState(IA_MAP_LAYER_UP) == STATE_PRESSED)
+				{
+					automap_updateMapData(MAP_LAYER_UP);
+
+					s32 msgId = min(automap_getLayer() + 609, 618);
+					hud_sendTextMessage(msgId);
+				}
+				else if (getActionState(IA_MAP_LAYER_DN) == STATE_PRESSED)
+				{
+					automap_updateMapData(MAP_LAYER_DOWN);
+
+					s32 msgId = min(automap_getLayer() + 609, 618);
+					hud_sendTextMessage(msgId);
+				}
+
+				if (!s_automapCanTeleport)
+				{
+					if (getActionState(IA_MAP_SCROLL_UP))
+					{
+						automap_updateMapData(MAP_MOVE1_UP);
+					}
+					if (getActionState(IA_MAP_SCROLL_DN))
+					{
+						automap_updateMapData(MAP_MOVE1_DN);
+					}
+					if (getActionState(IA_MAP_SCROLL_LT))
+					{
+						automap_updateMapData(MAP_MOVE1_LEFT);
+					}
+					if (getActionState(IA_MAP_SCROLL_RT))
+					{
+						automap_updateMapData(MAP_MOVE1_RIGHT);
+					}
 				}
 			}
 		}
-
 		task_end;
 	}
 
