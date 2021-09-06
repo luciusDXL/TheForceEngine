@@ -3,6 +3,7 @@
 #include "agent.h"
 #include "animLogic.h"
 #include "automap.h"
+#include "cheats.h"
 #include "config.h"
 #include "hud.h"
 #include "updateLogic.h"
@@ -82,10 +83,7 @@ namespace TFE_DarkForces
 	static Task* s_levelEndTask = nullptr;
 	static Task* s_mainTask = nullptr;
 	static Task* s_missionLoadTask = nullptr;
-	static char s_cheatString[32] = { 0 };
-	static s32  s_cheatCharIndex = 0;
-	static s32  s_cheatInputCount = 0;
-
+	
 	static s32 s_visionFxCountdown = 0;
 	static s32 s_visionFxEndCountdown = 0;
 
@@ -361,7 +359,7 @@ namespace TFE_DarkForces
 		// createIMuseTask();  <- this will wait until a later release.
 		level_clearData();
 		updateLogic_clearTask();
-		//s_drawAutomap = JFALSE;
+		s_drawAutomap = JFALSE;
 		s_levelEndTask = nullptr;
 		s_cheatString[0] = 0;
 		s_cheatCharIndex = 0;
@@ -641,10 +639,141 @@ namespace TFE_DarkForces
 			s_gasmaskTask = createTask("gasmask", gasmaskTaskFunc);
 		}
 	}
+		
+	void handleBufferedInput()
+	{
+		const char* bufferedText = TFE_Input::getBufferedText();
+		const size_t bufferedLen = strlen(bufferedText);
+		for (size_t i = 0; i < bufferedLen; i++)
+		{
+			char c = toupper(bufferedText[i]);
+			if (s_cheatInputCount < 2 && c == 'L')
+			{
+				s_cheatInputCount = 1;
+			}
+			else if (s_cheatInputCount == 1)
+			{
+				if (c == 'A')
+				{
+					s_cheatInputCount = 2;
+					s_cheatCharIndex = 0;
+					s_cheatString[0] = 0;
+				}
+				else
+				{
+					s_cheatInputCount = 0;
+				}
+			}
+			else if (s_cheatInputCount >= 2)
+			{
+				s32 index = s_cheatCharIndex;
+				s_cheatCharIndex++;
+
+				s_cheatString[index] = c;
+				s_cheatString[s_cheatCharIndex] = 0;
+
+				CheatID cheatID = cheat_getID();
+				if (cheatID == CHEAT_NONE)
+				{
+					continue;
+				}
+
+				switch (cheatID)
+				{
+					case CHEAT_LACDS:
+					{
+						automap_updateMapData(MAP_INCR_SECTOR_MODE);
+					} break;
+					case CHEAT_LANTFH:
+					{
+						automap_updateMapData(MAP_TELEPORT);
+						cheat_teleport();
+					} break;
+					case CHEAT_LAPOGO:
+					{
+					} break;
+					case CHEAT_LARANDY:
+					{
+					} break;
+					case CHEAT_LAIMLAME:
+					{
+					} break;
+					case CHEAT_LAPOSTAL:
+					{
+					} break;
+					case CHEAT_LADATA:
+					{
+					} break;
+					case CHEAT_LABUG:
+					{
+					} break;
+					case CHEAT_LAREDLITE:
+					{
+					} break;
+					case CHEAT_LASECBASE:
+					{
+					} break;
+					case CHEAT_LATALAY:
+					{
+					} break;
+					case CHEAT_LASEWERS:
+					{
+					} break;
+					case CHEAT_LATESTBASE:
+					{
+					} break;
+					case CHEAT_LAGROMAS:
+					{
+					} break;
+					case CHEAT_LADTENTION:
+					{
+					} break;
+					case CHEAT_LARAMSHAD:
+					{
+					} break;
+					case CHEAT_LAROBOTICS:
+					{
+					} break;
+					case CHEAT_LANARSHADA:
+					{
+					} break;
+					case CHEAT_LAJABSHIP:
+					{
+					} break;
+					case CHEAT_LAIMPCITY:
+					{
+					} break;
+					case CHEAT_LAFUELSTAT:
+					{
+					} break;
+					case CHEAT_LAEXECUTOR:
+					{
+					} break;
+					case CHEAT_LAARC:
+					{
+					} break;
+					case CHEAT_LASKIP:
+					{
+					} break;
+					case CHEAT_LABRADY:
+					{
+					} break;
+					case CHEAT_LAUNLOCK:
+					{
+					} break;
+					case CHEAT_LAMAXOUT:
+					{
+					} break;
+				}
+			}
+		}
+	}
 
 	void handleGeneralInput(s32 id)
 	{
 		task_begin;
+
+		handleBufferedInput();
 
 		// For now just deal with a few controls.
 		if (getActionState(IA_PDA_TOGGLE) == STATE_PRESSED)

@@ -640,6 +640,9 @@
     <ClInclude Include="TFE_Jedi\Math\cosTable.h">
       <Filter>Source\TFE_Jedi\Math</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\cheats.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1040,6 +1043,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Math\cosTable.cpp">
       <Filter>Source\TFE_Jedi\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\cheats.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

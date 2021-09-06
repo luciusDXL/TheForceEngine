@@ -464,7 +464,6 @@ namespace TFE_Jedi
 		}
 	}
 	
-	// Use the floating point point inside polygon algorithm.
 	RSector* sector_which3D(fixed16_16 dx, fixed16_16 dy, fixed16_16 dz)
 	{
 		fixed16_16 ix = dx;
@@ -489,6 +488,45 @@ namespace TFE_Jedi
 				const s32 dzInt = floor16(sectorMaxZ - sectorMinZ) + 1;
 				sectorUnitArea = dzInt * dxInt;
 				
+				s32 insideBounds = 0;
+				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ)
+				{
+					// pick the containing sector with the smallest area.
+					if (sectorUnitArea < prevSectorUnitArea && sector_pointInsideDF(sector, ix, iz))
+					{
+						prevSectorUnitArea = sectorUnitArea;
+						foundSector = sector;
+					}
+				}
+			}
+		}
+
+		return foundSector;
+	}
+
+	RSector* sector_which3D_Map(fixed16_16 dx, fixed16_16 dz, s32 layer)
+	{
+		fixed16_16 ix = dx;
+		fixed16_16 iz = dz;
+
+		RSector* sector = s_sectors;
+		RSector* foundSector = nullptr;
+		s32 sectorUnitArea = 0;
+		s32 prevSectorUnitArea = INT_MAX;
+
+		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		{
+			if (sector->layer == layer)
+			{
+				const fixed16_16 sectorMaxX = sector->boundsMax.x;
+				const fixed16_16 sectorMinX = sector->boundsMin.x;
+				const fixed16_16 sectorMaxZ = sector->boundsMax.z;
+				const fixed16_16 sectorMinZ = sector->boundsMin.z;
+
+				const s32 dxInt = floor16(sectorMaxX - sectorMinX) + 1;
+				const s32 dzInt = floor16(sectorMaxZ - sectorMinZ) + 1;
+				sectorUnitArea = dzInt * dxInt;
+
 				s32 insideBounds = 0;
 				if (ix >= sectorMinX && ix <= sectorMaxX && iz >= sectorMinZ && iz <= sectorMaxZ)
 				{

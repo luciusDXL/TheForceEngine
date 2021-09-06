@@ -1,4 +1,5 @@
 #include "player.h"
+#include "automap.h"
 #include "agent.h"
 #include "hud.h"
 #include "pickup.h"
@@ -413,6 +414,22 @@ namespace TFE_DarkForces
 		s_camOffsetPitch = offsetPitch;
 		s_camOffsetYaw = offsetYaw;
 		s_camOffsetRoll = offsetRoll;
+	}
+
+	void cheat_teleport()
+	{
+		RSector* sector = sector_which3D_Map(s_mapX0, s_mapZ0, s_mapLayer);
+		if (sector)
+		{
+			s_playerEye->posWS.x = s_mapX0;
+			s_playerEye->posWS.z = s_mapZ0;
+			s_playerEye->posWS.y = sector->floorHeight;
+			sector_addObject(sector, s_playerEye);
+			s_playerSector = sector;
+
+			player_setupEyeObject(s_playerEye);
+			player_setupCamera();
+		}
 	}
 
 	void player_setupCamera()

@@ -263,6 +263,7 @@
     <ClInclude Include="TFE_DarkForces\agent.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
     <ClInclude Include="TFE_DarkForces\automap.h" />
+    <ClInclude Include="TFE_DarkForces\cheats.h" />
     <ClInclude Include="TFE_DarkForces\config.h" />
     <ClInclude Include="TFE_DarkForces\darkForcesMain.h" />
     <ClInclude Include="TFE_DarkForces\gameMessage.h" />
@@ -425,6 +426,7 @@
     <ClCompile Include="TFE_DarkForces\agent.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\automap.cpp" />
+    <ClCompile Include="TFE_DarkForces\cheats.cpp" />
     <ClCompile Include="TFE_DarkForces\config.cpp" />
     <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp" />
     <ClCompile Include="TFE_DarkForces\gameMessage.cpp" />

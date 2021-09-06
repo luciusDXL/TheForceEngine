@@ -133,4 +133,6 @@ namespace TFE_DarkForces
 	void player_setupEyeObject(SecObject* obj);
 	s32  player_getLifeCount();
 	void player_setupCamera();
+
+	void cheat_teleport();
 }  // namespace TFE_DarkForces
