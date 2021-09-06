@@ -178,7 +178,14 @@ namespace TFE_Jedi
 		s32 startWall = s_curSector->startWall;
 		s32 drawWallCount = s_curSector->drawWallCnt;
 
-		s_sectorAmbient = round16(s_curSector->ambient);
+		if (s_flatLighting)
+		{
+			s_sectorAmbient = s_flatAmbient;
+		}
+		else
+		{
+			s_sectorAmbient = round16(s_curSector->ambient);
+		}
 		s_scaledAmbient = (s_sectorAmbient >> 1) + (s_sectorAmbient >> 2) + (s_sectorAmbient >> 3);
 		s_sectorAmbientFraction = s_sectorAmbient << 11;	// fraction of ambient compared to max.
 

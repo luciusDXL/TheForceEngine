@@ -105,6 +105,7 @@ namespace TFE_Jedi
 	// Lighting
 	extern const u8* s_colorMap;
 	extern const u8* s_lightSourceRamp;
+	extern s32 s_flatAmbient;
 	extern s32 s_sectorAmbient;
 	extern s32 s_scaledAmbient;
 	extern s32 s_cameraLightSource;
@@ -112,6 +113,8 @@ namespace TFE_Jedi
 	extern s32 s_worldAmbient;
 	extern s32 s_sectorAmbientFraction;
 	extern s32 s_lightCount;	// Number of directional lights that affect 3D objects.
+
+	extern JBool s_flatLighting;
 
 	// Debug
 	extern s32 s_maxWallCount;

@@ -6,6 +6,7 @@
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
 
 using namespace TFE_Jedi;
 
@@ -731,6 +732,29 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Internal Implementation
 	//////////////////////////////////////////////////////////////
+	void gasmaskTaskFunc(s32 id)
+	{
+		struct LocalContext
+		{
+			SoundEffectID soundId;
+		};
+		task_begin_ctx;
+
+		while (1)
+		{
+			task_yield(291);	// ~2 seconds.
+
+			taskCtx->soundId = playSound2D(s_maskSoundSource1);
+			sound_pitchShift(taskCtx->soundId, -16);
+
+			task_yield(291);	// ~2 seconds.
+
+			taskCtx->soundId = playSound2D(s_maskSoundSource2);
+			sound_pitchShift(taskCtx->soundId, 16);
+		}
+
+		task_end;
+	}
 
 	void invincibilityTaskFunc(s32 id)
 	{

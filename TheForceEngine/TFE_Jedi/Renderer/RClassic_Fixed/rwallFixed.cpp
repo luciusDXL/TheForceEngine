@@ -2330,7 +2330,7 @@ namespace RClassic_Fixed
 
 		// Figure out the correct column function.
 		ColumnFunction spriteColumnFunc;
-		if (s_columnLight && !(obj->flags & OBJ_FLAG_FULLBRIGHT))
+		if (s_columnLight && !(obj->flags & OBJ_FLAG_FULLBRIGHT) && !s_flatLighting)
 		{
 			spriteColumnFunc = s_columnFunc[COLFUNC_LIT_TRANS];
 		}

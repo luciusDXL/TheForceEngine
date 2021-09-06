@@ -2,9 +2,10 @@
 
 namespace TFE_Jedi
 {
-	void playSound2D(SoundSourceID soundId)
+	SoundEffectID playSound2D(SoundSourceID soundId)
 	{
 		// STUB
+		return SoundEffectID(0);
 	}
 
 	void playSound3D_oneshot(SoundSourceID soundId, vec3_fixed pos)
@@ -27,6 +28,11 @@ namespace TFE_Jedi
 	{
 		// STUB
 		return SoundSourceID(0);
+	}
+
+	void sound_pitchShift(SoundEffectID soundId, s32 shift)
+	{
+		// STUB
 	}
 
 	void setSoundSourceVolume(SoundSourceID soundId, s32 volume)

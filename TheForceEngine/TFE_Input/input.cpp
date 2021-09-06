@@ -190,6 +190,31 @@ namespace TFE_Input
 		return s_keyPressed[key] != 0;
 	}
 
+	bool keyModDown(KeyModifier keyMod)
+	{
+		switch (keyMod)
+		{
+			case KEYMOD_NONE:
+			{
+				return true;
+			} break;
+			case KEYMOD_ALT:
+			{
+				return keyDown(KEY_LALT) || keyDown(KEY_RALT);
+			} break;
+			case KEYMOD_CTRL:
+			{
+				return keyDown(KEY_LCTRL) || keyDown(KEY_RCTRL);
+			} break;
+			case KEYMOD_SHIFT:
+			{
+				return keyDown(KEY_LSHIFT) || keyDown(KEY_RSHIFT);
+			} break;
+		}
+		assert(0);	// Invalid keymod.
+		return false;
+	}
+
 	bool mouseDown(MouseButton button)
 	{
 		return s_mouseDown[button] != 0;

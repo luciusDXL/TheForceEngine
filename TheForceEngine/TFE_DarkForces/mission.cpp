@@ -3,6 +3,7 @@
 #include "agent.h"
 #include "animLogic.h"
 #include "automap.h"
+#include "config.h"
 #include "hud.h"
 #include "updateLogic.h"
 #include "pickup.h"
@@ -14,6 +15,7 @@
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_Jedi/Renderer/rcommon.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -83,6 +85,9 @@ namespace TFE_DarkForces
 	static char s_cheatString[32] = { 0 };
 	static s32  s_cheatCharIndex = 0;
 	static s32  s_cheatInputCount = 0;
+
+	static s32 s_visionFxCountdown = 0;
+	static s32 s_visionFxEndCountdown = 0;
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -198,6 +203,31 @@ namespace TFE_DarkForces
 	{
 		s_missionLoadTask = task;
 	}
+		
+	// In DOS, this was part of drawWorld() - 
+	// for TFE I split it out to limit the amount of game code in the renderer.
+	void handleVisionFx()
+	{
+		// Countdown to enable the night vision effect.
+		if (s_visionFxCountdown != 0)
+		{
+			s_visionFxCountdown--;
+			if (s_visionFxCountdown == 0)
+			{
+				setLuminanceMask(JFALSE, JTRUE, JFALSE);
+			}
+		}
+
+		// Countdown to disable the night vision effect.
+		if (s_visionFxEndCountdown != 0)
+		{
+			s_visionFxEndCountdown--;
+			if (s_visionFxEndCountdown == 0)
+			{
+				setLuminanceMask(JFALSE, JFALSE, JFALSE);
+			}
+		}
+	}
 
 	void mission_mainTaskFunc(s32 id)
 	{
@@ -227,6 +257,7 @@ namespace TFE_DarkForces
 				{
 					updateScreensize();
 					drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
+					handleVisionFx();
 				} break;
 				// These modes never seem to get called.
 				case MISSION_MODE_UNKNOWN:
@@ -525,10 +556,134 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void beginNightVision(s32 ambient)
+	{
+		s_flatAmbient = ambient;
+		s_flatLighting = JTRUE;
+		s_visionFxCountdown = 2;
+	}
+
+	void disableNightvision()
+	{
+		s_flatLighting = JFALSE;
+		s_nightvisionActive = JFALSE;
+		s_visionFxEndCountdown = 3;
+	}
+
+	void enableNightVision()
+	{
+		if (!s_playerInfo.itemGoggles) { return; }
+
+		if (!s_energy)
+		{
+			hud_sendTextMessage(11);
+			playSound2D(s_nightVisionDeactiveSoundSource);
+			s_nightvisionActive = JFALSE;
+			return;
+		}
+
+		s_nightvisionActive = JTRUE;
+		beginNightVision(16);
+		hud_sendTextMessage(10);
+		playSound2D(s_nightVisionActiveSoundSource);
+	}
+
+	void disableCleats()
+	{
+		if (s_wearingCleats)
+		{
+			s_wearingCleats = JFALSE;
+			hud_sendTextMessage(21);
+		}
+	}
+
+	void enableCleats()
+	{
+		s_wearingCleats = JTRUE;
+		hud_sendTextMessage(22);
+	}
+
+	void disableMask()
+	{
+		if (!s_wearingGasmask)
+		{
+			return;
+		}
+
+		hud_sendTextMessage(19);
+		s_wearingGasmask = JFALSE;
+		if (s_gasmaskTask)
+		{
+			task_free(s_gasmaskTask);
+			s_gasmaskTask = nullptr;
+		}
+	}
+
+	void enableMask()
+	{
+		if (!s_playerInfo.itemMask) { return; }
+
+		if (!s_energy)
+		{
+			hud_sendTextMessage(11);
+			s_wearingGasmask = JFALSE;
+			if (s_gasmaskTask)
+			{
+				task_free(s_gasmaskTask);
+				s_gasmaskTask = nullptr;
+			}
+			return;
+		}
+
+		s_wearingGasmask = JTRUE;
+		hud_sendTextMessage(20);
+		if (!s_gasmaskTask)
+		{
+			s_gasmaskTask = createTask(gasmaskTaskFunc);
+		}
+	}
+
 	void handleGeneralInput()
 	{
 		// For now just deal with a few controls.
-		if (TFE_Input::keyPressed(KEY_F5))
+		if (getActionState(IA_PDA_TOGGLE) == STATE_PRESSED)
+		{
+			// STUB: Bring up PDA.
+		}
+		if (getActionState(IA_NIGHT_VISION_TOG) == STATE_PRESSED && s_playerInfo.itemGoggles)
+		{
+			if (s_nightvisionActive)
+			{
+				disableNightvision();
+			}
+			else
+			{
+				enableNightVision();
+			}
+		}
+		if (getActionState(IA_CLEATS_TOGGLE) == STATE_PRESSED && s_playerInfo.itemCleats)
+		{
+			if (s_wearingCleats)
+			{
+				disableCleats();
+			}
+			else
+			{
+				enableCleats();
+			}
+		}
+		if (getActionState(IA_GAS_MASK_TOGGLE) == STATE_PRESSED && s_playerInfo.itemMask)
+		{
+			if (s_wearingGasmask)
+			{
+				disableMask();
+			}
+			else
+			{
+				enableMask();
+			}
+		}
+		if (getActionState(IA_HEAD_LAMP_TOGGLE) == STATE_PRESSED)
 		{
 			if (s_headlampActive)
 			{
@@ -539,11 +694,13 @@ namespace TFE_DarkForces
 				enableHeadlamp();
 			}
 		}
-		if (TFE_Input::keyPressed(KEY_F7))
+		renderer_setupCameraLight(JFALSE, s_headlampActive);
+
+		if (getActionState(IA_HUD_TOGGLE) == STATE_PRESSED)
 		{
 			hud_setupToggleAnim1(JFALSE);
 		}
-		if (TFE_Input::keyPressed(KEY_TAB))
+		if (getActionState(IA_AUTOMAP) == STATE_PRESSED)
 		{
 			s_drawAutomap = ~s_drawAutomap;
 			if (s_drawAutomap)

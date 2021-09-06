@@ -99,6 +99,7 @@ namespace TFE_Jedi
 	// Lighting
 	const u8* s_colorMap;
 	const u8* s_lightSourceRamp;
+	s32 s_flatAmbient = 0;
 	s32 s_sectorAmbient;
 	s32 s_scaledAmbient;
 	s32 s_cameraLightSource;
@@ -106,6 +107,7 @@ namespace TFE_Jedi
 	s32 s_worldAmbient;
 	s32 s_sectorAmbientFraction;
 	s32 s_lightCount = 3;
+	JBool s_flatLighting = JFALSE;
 
 	// Debug
 	s32 s_maxWallCount;

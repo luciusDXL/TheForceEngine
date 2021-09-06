@@ -476,7 +476,7 @@ namespace RClassic_Fixed
 
 	void clear3DView(u8* framebuffer)
 	{
-		memset(framebuffer, 0, s_width * s_height);
+		memset(framebuffer, 0, s_width);
 	}
 }  // RClassic_Fixed
 

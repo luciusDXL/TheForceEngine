@@ -467,6 +467,33 @@ namespace TFE_DarkForces
 				// TODO(Core Game Loop Release)
 			}
 
+			// TODO: Insert into the correct function
+			{
+				SecObject* player = s_playerObject;
+				if (player->flags & 2)
+				{
+					// This code is incorrect but it doesn't actually matter...
+					// roll is always 0.
+					setCameraAngleOffset(0, s_playerRoll, 0);
+
+					s32 headlamp = 0;
+					if (s_headlampActive)
+					{
+						s32 energy = min(ONE_16, s_energy);
+						headlamp = floor16(mul16(energy, FIXED(64)));
+						headlamp = min(31, headlamp);
+					}
+					s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
+					//s_baseAtten = atten;
+					if (s_nightvisionActive)
+					{
+						atten = 0;
+					}
+					setPlayerLight(atten);
+				}
+			}
+			///////////////////////////////////////////
+
 			s_prevPlayerTick = s_playerTick;
 			task_yield(TASK_NO_DELAY);
 		}

@@ -37,6 +37,7 @@ namespace TFE_DarkForces
 	ItemId getPickupItemId(const char* keyword);
 	Logic* obj_createPickup(SecObject* obj, ItemId id);
 	s32 pickup_addToValue(s32 curValue, s32 amountToAdd, s32 maxAmount);
+	void gasmaskTaskFunc(s32 id);
 
 	// Logic update function, called when pickups are handled.
 	void pickup_createTask();

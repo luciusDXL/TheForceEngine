@@ -19,7 +19,7 @@ typedef s32 SoundSourceID;
 namespace TFE_Jedi
 {
 	// Play a one-shot 2D sound effect from a Sound Source.
-	void playSound2D(SoundSourceID soundId);
+	SoundEffectID playSound2D(SoundSourceID soundId);
 	// Play a one-shot 3D sound effect from a Sound Source at 'pos'.
 	void playSound3D_oneshot(SoundSourceID soundId, vec3_fixed pos);
 	// Play a looping 3D sound effect from a Sound Source (sourceID) at 'pos'.
@@ -34,4 +34,6 @@ namespace TFE_Jedi
 	SoundSourceID sound_Load(const char* sound);
 	// Change the sound source base volume, range: [0, 127]
 	void setSoundSourceVolume(SoundSourceID soundId, s32 volume);
+
+	void sound_pitchShift(SoundEffectID soundId, s32 shift);
 }  // namespace TFE_Jedi

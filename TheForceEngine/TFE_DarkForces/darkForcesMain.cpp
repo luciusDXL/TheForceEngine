@@ -1,6 +1,7 @@
 #include "darkForcesMain.h"
 #include "actor.h"
 #include "agent.h"
+#include "config.h"
 #include "gameMessage.h"
 #include "hud.h"
 #include "item.h"
@@ -136,6 +137,7 @@ namespace TFE_DarkForces
 		loadAgentAndLevelData();
 
 		renderer_init();
+		configStartup();
 		
 		return true;
 	}
@@ -155,6 +157,8 @@ namespace TFE_DarkForces
 		TFE_Paths::clearSearchPaths();
 		TFE_Paths::clearLocalArchives();
 		task_shutdown();
+
+		configShutdown();
 	}
 
 	/**********The basic structure of the Dark Forces main loop is as follows:***************
@@ -265,7 +269,12 @@ namespace TFE_DarkForces
 			{
 				// At this point the mission has already been launched.
 				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
-				if (!task_getCount())
+				if (task_getCount())
+				{
+					// Added for TFE:
+					config_updateInput();
+				}
+				else
 				{
 					// Temp:
 					s_abortLevel = JTRUE;

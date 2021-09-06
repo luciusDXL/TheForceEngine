@@ -300,3 +300,11 @@ enum KeyboardCode
 	KEY_LAST = 286,
 	KEY_COUNT = 512 // not a key, just marks the number of scancodes for array bounds
 };
+
+enum KeyModifier
+{
+	KEYMOD_NONE = 0,
+	KEYMOD_ALT,
+	KEYMOD_CTRL,
+	KEYMOD_SHIFT,
+};

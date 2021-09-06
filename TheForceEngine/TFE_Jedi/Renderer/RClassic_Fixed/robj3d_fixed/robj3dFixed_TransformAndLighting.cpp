@@ -103,7 +103,7 @@ namespace RClassic_Fixed
 
 				// Distance falloff
 				const fixed16_16 z = max(0, vertex->z);
-				if (s_worldAmbient < 31 || s_cameraLightSource != 0)
+				if (s_worldAmbient < 31 || s_cameraLightSource)
 				{
 					const s32 depthScaled = min(s32(z >> 14), 127);
 					const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
