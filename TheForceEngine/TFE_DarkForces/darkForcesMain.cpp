@@ -334,7 +334,7 @@ namespace TFE_DarkForces
 			}  break;
 			case GMODE_MISSION:
 			{
-				s_loadMissionTask = pushTask(mission_startTaskFunc, JTRUE);
+				s_loadMissionTask = pushTask("start mission", mission_startTaskFunc, JTRUE);
 				mission_setLoadMissionTask(s_loadMissionTask);
 
 				// disableLevelMusic();

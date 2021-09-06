@@ -13,9 +13,9 @@
 #include <TFE_System/types.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_DarkForces/time.h>
-#include "taskMacros.h"
 
 struct Task;
+#include "taskMacros.h"
 
 enum TaskDelay
 {
@@ -27,9 +27,8 @@ enum TaskDelay
 // Task System API
 namespace TFE_Jedi
 {
-	Task* createTask(TaskFunc func);
-	Task* pushTask(TaskFunc func, JBool framebreak = JFALSE);
-	void  runTask(Task* task, s32 id);
+	Task* createTask(const char* name, TaskFunc func, TaskFunc localRunFunc = nullptr);
+	Task* pushTask(const char* name, TaskFunc func, JBool framebreak = JFALSE, TaskFunc localRunFunc = nullptr);
 
 	void  task_free(Task* task);
 	void  task_freeAll();
@@ -38,6 +37,8 @@ namespace TFE_Jedi
 	void  task_makeActive(Task* task);
 	void  task_setNextTick(Task* task, Tick tick);
 	void  task_setUserData(Task* task, void* data);
+
+	void  task_runLocal(Task* task, s32 id);
 	
 	// Call once per frame to run the tasks.
 	// The core idea is to split the original recursive tasks into

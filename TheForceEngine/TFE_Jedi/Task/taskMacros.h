@@ -18,14 +18,23 @@
 	ctxReturn();
 
 #define task_yield(delay) \
-	do { \
-	itask_yield(delay, __LINE__);	\
+	do { itask_yield(delay, __LINE__);	\
 	return;	\
 	case __LINE__:; \
 	} while (0)
 
+#define task_runAndReturn(task, id) \
+	itask_run(task, id)
+	
 #define task_callTaskFunc(func)	\
-	ctxCall(func, id)
+	do { if (ctxCall(func, id, __LINE__)) { return; } \
+	case __LINE__:; \
+	} while (0)
+
+#define task_callTaskFuncWithId(func, newId)	\
+	do { if (ctxCall(func, newId, __LINE__)) { return; } \
+	case __LINE__:; \
+	} while (0)
 
 #define taskCtx ((LocalContext*)ctxGet())
 
@@ -46,7 +55,8 @@ namespace TFE_Jedi
 	void ctxAllocate(u32 size);
 	void* ctxGet();
 	void ctxBegin();
-	void ctxCall(TaskFunc func, s32 id);
+	bool ctxCall(TaskFunc func, s32 id, s32 ip);
 	void ctxReturn();
 	void itask_yield(Tick delay, s32 ip);
+	void itask_run(Task* task, s32 id);
 }

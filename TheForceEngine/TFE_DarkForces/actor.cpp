@@ -159,8 +159,8 @@ namespace TFE_DarkForces
 	void actor_createTask()
 	{
 		s_actorLogics = allocator_create(sizeof(ActorLogic));
-		s_actorTask = createTask(actorLogicTaskFunc);
-		s_actorPhysicsTask = createTask(actorPhysicsTaskFunc);
+		s_actorTask = createTask("actor", actorLogicTaskFunc);
+		s_actorPhysicsTask = createTask("physics", actorPhysicsTaskFunc);
 	}
 
 	void actorLogicTaskFunc(s32 id)

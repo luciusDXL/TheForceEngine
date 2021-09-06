@@ -228,7 +228,7 @@ namespace TFE_DarkForces
 		
 	void player_createController()
 	{
-		s_playerTask = pushTask(playerControlTaskFunc);
+		s_playerTask = pushTask("player control", playerControlTaskFunc);
 		task_setNextTick(s_playerTask, TASK_SLEEP);
 
 		// Clear out inventory items that the player shouldn't start a level with, such as objectives and keys
@@ -402,7 +402,7 @@ namespace TFE_DarkForces
 	{
 		return s_lifeCount;
 	}
-			
+					
 	void setCameraOffset(fixed16_16 offsetX, fixed16_16 offsetY, fixed16_16 offsetZ)
 	{
 		s_camOffset = { offsetX, offsetY, offsetZ };
@@ -499,7 +499,7 @@ namespace TFE_DarkForces
 		}
 		task_end;
 	}
-
+	
 	void setPlayerLight(s32 atten)
 	{
 		s_playerLight = atten;

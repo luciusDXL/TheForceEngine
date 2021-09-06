@@ -63,7 +63,7 @@ namespace TFE_DarkForces
 
 		obj->entityFlags |= ETFLAG_CAN_WAKE;
 
-		Task* task = createTask(vueLogicTaskFunc);
+		Task* task = createTask("vueLogic", vueLogicTaskFunc);
 		vueLogic->task = task;
 		task_setUserData(task, vueLogic);
 

@@ -33,7 +33,7 @@ namespace TFE_DarkForces
 	void pickTaskFunc(s32 id);
 	void pickupInvincibility();
 	void pickupSupercharge();
-	void pickupInventory();
+	void pickupInventory(s32 id);
 
 	//////////////////////////////////////////////////////////////
 	// API Implementation
@@ -103,7 +103,7 @@ namespace TFE_DarkForces
 
 	void pickup_createTask()
 	{
-		s_pickupTask = createTask(pickTaskFunc);
+		s_pickupTask = createTask("pickups", pickTaskFunc);
 	}
 			
 	// The current pickup being processed is stored in Message::s_msgTarget
@@ -271,7 +271,7 @@ namespace TFE_DarkForces
 				else if (taskCtx->pickup->type == ITYPE_SPECIAL)
 				{
 					hud_sendTextMessage(312);
-					pickupInventory();
+					task_callTaskFunc(pickupInventory);
 					s_goalItems.stolenInv = JTRUE;
 
 					if (s_completeSector)
@@ -821,7 +821,7 @@ namespace TFE_DarkForces
 		{
 			task_free(s_invincibilityTask);
 		}
-		s_invincibilityTask = createTask(invincibilityTaskFunc);
+		s_invincibilityTask = createTask("invincibility", invincibilityTaskFunc);
 	}
 
 	void pickupSupercharge()
@@ -831,52 +831,59 @@ namespace TFE_DarkForces
 		{
 			task_free(s_superchargeTask);
 		}
-		s_superchargeTask = createTask(superchargeTaskFunc);
+		s_superchargeTask = createTask("supercharge", superchargeTaskFunc);
 	}
 
-	void pickupInventory()
+	void pickupInventory(s32 id)
 	{
+		struct LocalContext
+		{
+			size_t size;
+			u32* dst;
+			u32* src;
+		};
+		task_begin;
 		// Get the size of the PlayerInfo structure up to but not including s_playerInfo.stateUnknown.
-		size_t size = (size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo;
-		if (!s_playerInvSaved)
+		taskCtx->size = (size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo;
+		if (s_playerInvSaved)
 		{
-			return;
-		}
-		// Copy the saved player info and add it to the current player info.
-		u32* dst = (u32*)&s_playerInfo;
-		u32* src = s_playerInvSaved;
-		for (s32 sizeCopied = 0; sizeCopied < size; sizeCopied += 4, src++, dst++)
-		{
-			(*dst) += (*src);
-		}
-
-		// Clear out the nava card item since it is one of the current objectives.
-		s_playerInfo.itemNava = JFALSE;
-		if (s_playerInfo.maxWeapon != s_playerInfo.curWeapon)
-		{
-			if (s_playerWeaponTask)
+			// Copy the saved player info and add it to the current player info.
+			taskCtx->dst = (u32*)&s_playerInfo;
+			taskCtx->src = s_playerInvSaved;
+			for (s32 sizeCopied = 0; sizeCopied < taskCtx->size; sizeCopied += 4, taskCtx->src++, taskCtx->dst++)
 			{
-				s_msgArg1 = s_playerInfo.maxWeapon;
-				runTask(s_playerWeaponTask, WTID_SWITCH_WEAPON);
-				s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
+				(*taskCtx->dst) += (*taskCtx->src);
 			}
-			else
-			{
-				s_playerInfo.index2 = s_playerInfo.maxWeapon;
-			}
-		}
 
-		// Free saved inventory.
-		free(s_playerInvSaved);
-		s_playerInvSaved = nullptr;
-		// Clamp ammo values.
-		s_playerInfo.ammoEnergy    = pickup_addToValue(s_playerInfo.ammoEnergy,    0, 500);
-		s_playerInfo.ammoPower     = pickup_addToValue(s_playerInfo.ammoPower,     0, 500);
-		s_playerInfo.ammoPlasma    = pickup_addToValue(s_playerInfo.ammoPlasma,    0, 400);
-		s_playerInfo.ammoDetonator = pickup_addToValue(s_playerInfo.ammoDetonator, 0,  50);
-		s_playerInfo.ammoShell     = pickup_addToValue(s_playerInfo.ammoShell,     0,  50);
-		s_playerInfo.ammoMine      = pickup_addToValue(s_playerInfo.ammoMine,      0,  30);
-		s_playerInfo.ammoMissile   = pickup_addToValue(s_playerInfo.ammoMissile,   0,  20);
+			// Clear out the nava card item since it is one of the current objectives.
+			s_playerInfo.itemNava = JFALSE;
+			if (s_playerInfo.maxWeapon != s_playerInfo.curWeapon)
+			{
+				if (s_playerWeaponTask)
+				{
+					s_msgArg1 = s_playerInfo.maxWeapon;
+					task_runAndReturn(s_playerWeaponTask, WTID_SWITCH_WEAPON);
+					s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
+				}
+				else
+				{
+					s_playerInfo.index2 = s_playerInfo.maxWeapon;
+				}
+			}
+
+			// Free saved inventory.
+			free(s_playerInvSaved);
+			s_playerInvSaved = nullptr;
+			// Clamp ammo values.
+			s_playerInfo.ammoEnergy    = pickup_addToValue(s_playerInfo.ammoEnergy,    0, 500);
+			s_playerInfo.ammoPower     = pickup_addToValue(s_playerInfo.ammoPower,     0, 500);
+			s_playerInfo.ammoPlasma    = pickup_addToValue(s_playerInfo.ammoPlasma,    0, 400);
+			s_playerInfo.ammoDetonator = pickup_addToValue(s_playerInfo.ammoDetonator, 0,  50);
+			s_playerInfo.ammoShell     = pickup_addToValue(s_playerInfo.ammoShell,     0,  50);
+			s_playerInfo.ammoMine      = pickup_addToValue(s_playerInfo.ammoMine,      0,  30);
+			s_playerInfo.ammoMissile   = pickup_addToValue(s_playerInfo.ammoMissile,   0,  20);
+		}
+		task_end;
 	}
 
 }  // TFE_DarkForces

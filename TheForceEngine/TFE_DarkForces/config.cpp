@@ -83,16 +83,21 @@ namespace TFE_DarkForces
 		{ IA_CYCLEWPN_NEXT, ITYPE_CONTROLLER, CONTROLLER_BUTTON_RIGHTSHOULDER },
 	};
 
-	static InputConfig s_config = { 0 };
+	static InputConfig s_inputConfig = { 0 };
 	static ActionState s_actions[IA_COUNT];
+	GameConfig s_config =
+	{
+		JTRUE,	// headwave
+		JFALSE,	// wpnAutoMount
+	};
 
 	void addDefaultControlBinds();
 
 	void configStartup()
 	{
-		s_config.bindCount = 0;
-		s_config.bindCapacity = IA_COUNT * 2;
-		s_config.binds = (InputBinding*)malloc(sizeof(InputBinding)*s_config.bindCapacity);
+		s_inputConfig.bindCount = 0;
+		s_inputConfig.bindCapacity = IA_COUNT * 2;
+		s_inputConfig.binds = (InputBinding*)malloc(sizeof(InputBinding)*s_inputConfig.bindCapacity);
 
 		memset(s_actions, 0, sizeof(ActionState) * IA_COUNT);
 		addDefaultControlBinds();
@@ -100,24 +105,24 @@ namespace TFE_DarkForces
 
 	void configShutdown()
 	{
-		free(s_config.binds);
-		s_config.bindCount = 0;
-		s_config.bindCapacity = 0;
-		s_config.binds = nullptr;
+		free(s_inputConfig.binds);
+		s_inputConfig.bindCount = 0;
+		s_inputConfig.bindCapacity = 0;
+		s_inputConfig.binds = nullptr;
 	}
 
 	void addInputBinding(InputBinding* binding)
 	{
-		u32 index = s_config.bindCount;
-		s_config.bindCount++;
+		u32 index = s_inputConfig.bindCount;
+		s_inputConfig.bindCount++;
 
-		if (s_config.bindCount > s_config.bindCapacity)
+		if (s_inputConfig.bindCount > s_inputConfig.bindCapacity)
 		{
-			s_config.bindCapacity += IA_COUNT;
-			s_config.binds = (InputBinding*)realloc(s_config.binds, sizeof(InputBinding)*s_config.bindCapacity);
+			s_inputConfig.bindCapacity += IA_COUNT;
+			s_inputConfig.binds = (InputBinding*)realloc(s_inputConfig.binds, sizeof(InputBinding)*s_inputConfig.bindCapacity);
 		}
 
-		s_config.binds[index] = *binding;
+		s_inputConfig.binds[index] = *binding;
 	}
 		
 	void addDefaultControlBinds()
@@ -139,9 +144,9 @@ namespace TFE_DarkForces
 			s_actions[i] = STATE_UP;
 		}
 
-		for (u32 i = 0; i < s_config.bindCount; i++)
+		for (u32 i = 0; i < s_inputConfig.bindCount; i++)
 		{
-			InputBinding* bind = &s_config.binds[i];
+			InputBinding* bind = &s_inputConfig.binds[i];
 			switch (bind->type)
 			{
 				case ITYPE_KEYBOARD:

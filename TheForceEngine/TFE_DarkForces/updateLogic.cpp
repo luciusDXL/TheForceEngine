@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 		}
 		if (!s_logicUpdateTask)
 		{
-			s_logicUpdateTask = pushTask(updateLogicTaskFunc);
+			s_logicUpdateTask = pushTask("update logic", updateLogicTaskFunc);
 		}
 		if (setupFunc)
 		{

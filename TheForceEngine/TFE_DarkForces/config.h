@@ -115,10 +115,18 @@ namespace TFE_DarkForces
 		InputBinding* binds;
 	};
 
+	struct GameConfig
+	{
+		JBool headwave;
+		JBool wpnAutoMount;
+	};
+
 	void configStartup();
 	void configShutdown();
 		
 	void addInputBinding(InputBinding* binding);
 	ActionState getActionState(InputAction action);
 	void config_updateInput();
+
+	extern GameConfig s_config;
 }  // TFE_DarkForces

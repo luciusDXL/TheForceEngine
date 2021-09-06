@@ -262,7 +262,7 @@ namespace TFE_DarkForces
 	void hitEffect_createTask()
 	{
 		s_hitEffects = allocator_create(sizeof(HitEffect));
-		s_hitEffectTask = createTask(hitEffectTaskFunc);
+		s_hitEffectTask = createTask("hitEffects", hitEffectTaskFunc);
 	}
 		
 	////////////////////////////////////////////////////////////////////////

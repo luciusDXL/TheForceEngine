@@ -89,6 +89,10 @@ namespace TFE_Jedi
 	void inf_handleMsgLights();
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
 
+	void inf_teleporterTaskLocal(s32 id);
+	void inf_elevatorTaskLocal(s32 id);
+	void inf_triggerTaskLocal(s32 id);
+
 	// TODO: Game side functions
 	void game_levelComplete() {}
 	void createLevelEndTask() {}
@@ -121,19 +125,19 @@ namespace TFE_Jedi
 	void inf_createElevatorTask()
 	{
 		s_infElevators = allocator_create(sizeof(InfElevator));
-		s_infElevTask = createTask(inf_elevatorTaskFunc);
+		s_infElevTask = createTask("elevator", inf_elevatorTaskFunc, inf_elevatorTaskLocal);
 	}
 
 	void inf_createTeleportTask()
 	{
-		s_teleportTask = createTask(inf_telelporterTaskFunc);
+		s_teleportTask = createTask("teleporter", inf_telelporterTaskFunc, inf_teleporterTaskLocal);
 		task_setNextTick(s_teleportTask, TASK_SLEEP);
 		s_infTeleports = allocator_create(sizeof(Teleport));
 	}
 
 	void inf_createTriggerTask()
 	{
-		s_infTriggerTask = createTask(inf_triggerTaskFunc);
+		s_infTriggerTask = createTask("trigger", inf_triggerTaskFunc, inf_triggerTaskLocal);
 		s_triggerCount = 0;
 	}
 
@@ -1376,11 +1380,23 @@ namespace TFE_Jedi
 	{
 		s_switchDefaultSndId = sound_Load("switch3.voc");
 	}
+
+	void inf_elevatorTaskLocal(s32 id)
+	{
+		infElevatorMsgFunc(MessageType(id));
+	}
 			
 	// Per frame update.
 	void inf_elevatorTaskFunc(s32 id)
 	{
-		task_begin;
+		struct LocalContext
+		{
+			InfElevator* elev;
+			Stop* nextStop;
+			s32 elevDeleted;
+
+		};
+		task_begin_ctx;
 
 		while (id != -1)
 		{
@@ -1390,66 +1406,65 @@ namespace TFE_Jedi
 			}
 			else  // id == 0
 			{
-				InfElevator* elev = (InfElevator*)allocator_getHead(s_infElevators);
-				while (elev)
+				taskCtx->elev = (InfElevator*)allocator_getHead(s_infElevators);
+				while (taskCtx->elev)
 				{
-					s32 elevDeleted = 0;
-					if ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
+					taskCtx->elevDeleted = 0;
+					if ((taskCtx->elev->updateFlags & ELEV_MASTER_ON) && taskCtx->elev->nextTick < s_curTick)
 					{
 						// If not already moving, get started.
-						if (!(elev->updateFlags & ELEV_MOVING) && !elevDeleted)
+						if (!(taskCtx->elev->updateFlags & ELEV_MOVING) && !taskCtx->elevDeleted)
 						{
 							// Figure out the source position for the sound effect.
-							vec3_fixed sndPos = inf_getElevSoundPos(elev);
+							vec3_fixed sndPos = inf_getElevSoundPos(taskCtx->elev);
 
 							// Play the startup sound effect if the elevator is not already at the next stop.
-							Stop* nextStop = elev->nextStop;
+							Stop* nextStop = taskCtx->elev->nextStop;
 							// Play the initial sound as the elevator starts moving.
-							if (*elev->value != elev->nextStop->value)
+							if (*taskCtx->elev->value != taskCtx->elev->nextStop->value)
 							{
-								playSound3D_oneshot(elev->sound0, sndPos);
+								playSound3D_oneshot(taskCtx->elev->sound0, sndPos);
 							}
 
 							// Update the next time, so this will move on the next update.
-							elev->nextTick = s_curTick;
+							taskCtx->elev->nextTick = s_curTick;
 
 							// Flag the elevator as moving.
-							elev->updateFlags |= ELEV_MOVING;
+							taskCtx->elev->updateFlags |= ELEV_MOVING;
 						}
 						// If the elevator is moving, then play the looping sound.
-						if (elev->updateFlags & ELEV_MOVING)
+						if (taskCtx->elev->updateFlags & ELEV_MOVING)
 						{
 							// Figure out the source position for the sound effect.
-							vec3_fixed sndPos = inf_getElevSoundPos(elev);
+							vec3_fixed sndPos = inf_getElevSoundPos(taskCtx->elev);
 
 							// Start up the sound effect, track it since it is looping.
-							elev->loopingSoundID = playSound3D_looping(elev->sound1, elev->loopingSoundID, sndPos);
+							taskCtx->elev->loopingSoundID = playSound3D_looping(taskCtx->elev->sound1, taskCtx->elev->loopingSoundID, sndPos);
 						}
 
 						// if reachedStop = JFALSE, elevator has not reached the next stop.
-						JBool reachedStop = updateElevator(elev);
-						if (reachedStop)
+						if (updateElevator(taskCtx->elev))
 						{
-							elevHandleStopDelay(elev);
+							elevHandleStopDelay(taskCtx->elev);
 
-							Stop* nextStop = elev->nextStop;
-							if (elev->updateFlags & ELEV_MOVING_REVERSE)
+							taskCtx->nextStop = taskCtx->elev->nextStop;
+							if (taskCtx->elev->updateFlags & ELEV_MOVING_REVERSE)
 							{
-								elev->nextTick = s_curTick + TICKS_PER_SECOND;	// this will pause the elevator for one second.
-								elev->updateFlags &= ~ELEV_MOVING_REVERSE;		// remove the reverse flag.
+								taskCtx->elev->nextTick = s_curTick + TICKS_PER_SECOND;	// this will pause the elevator for one second.
+								taskCtx->elev->updateFlags &= ~ELEV_MOVING_REVERSE;		// remove the reverse flag.
 							}
 							else
 							{
-								u32 delay = nextStop->delay;
+								u32 delay = taskCtx->nextStop->delay;
 								if (delay == IDELAY_HOLD)
 								{
-									elev->trigMove = TRIGMOVE_HOLD;
+									taskCtx->elev->trigMove = TRIGMOVE_HOLD;
 								}
 								else if (delay == IDELAY_COMPLETE || delay == IDELAY_TERMINATE)
 								{
 									// delete the elevator, we're done here.
-									deleteElevator(elev);
-									elevDeleted = 1;
+									deleteElevator(taskCtx->elev);
+									taskCtx->elevDeleted = 1;
 									if (delay == IDELAY_COMPLETE)
 									{
 										game_levelComplete();
@@ -1458,57 +1473,72 @@ namespace TFE_Jedi
 								}
 								else  // Timed
 								{
-									elev->nextTick = s_curTick + nextStop->delay;
+									taskCtx->elev->nextTick = s_curTick + taskCtx->nextStop->delay;
 								}
 							}
 
 							// Process stop messages if the elevator has not been deleted.
-							if (!elevDeleted)
+							if (!taskCtx->elevDeleted)
 							{
 								// Messages
-								s_nextStop = nextStop;
+								s_nextStop = taskCtx->nextStop;
 								task_callTaskFunc(inf_stopHandleMessages);
 
-								// Adjoin Commands.
-								inf_stopAdjoinCommands(nextStop);
-
-								// Floor texture change.
-								TextureData* floorTex = nextStop->floorTex;
-								if (floorTex)
 								{
-									RSector* sector = elev->sector;
-									sector->floorTex = &floorTex;
-								}
+									// Adjoin Commands.
+									inf_stopAdjoinCommands(taskCtx->nextStop);
 
-								// Ceiling texture change.
-								TextureData* ceilTex = nextStop->ceilTex;
-								if (ceilTex)
-								{
-									RSector* sector = elev->sector;
-									sector->ceilTex = &ceilTex;
-								}
+									// Floor texture change.
+									TextureData* floorTex = taskCtx->nextStop->floorTex;
+									if (floorTex)
+									{
+										RSector* sector = taskCtx->elev->sector;
+										sector->floorTex = &floorTex;
+									}
 
-								// Page (special 2D sound effect that plays, such as voice overs).
-								SoundSourceID pageId = nextStop->pageId;
-								if (pageId)
-								{
-									playSound2D(pageId);
-								}
+									// Ceiling texture change.
+									TextureData* ceilTex = taskCtx->nextStop->ceilTex;
+									if (ceilTex)
+									{
+										RSector* sector = taskCtx->elev->sector;
+										sector->ceilTex = &ceilTex;
+									}
 
-								// Advance to the next stop.
-								elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
+									// Page (special 2D sound effect that plays, such as voice overs).
+									SoundSourceID pageId = taskCtx->nextStop->pageId;
+									if (pageId)
+									{
+										playSound2D(pageId);
+									}
+
+									// Advance to the next stop.
+									taskCtx->elev->nextStop = inf_advanceStops(taskCtx->elev->stops, 0, 1);
+								}
 							} // (!elevDeleted)
 						}
 					} // ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
 
 					// Next elevator.
-					elev = (InfElevator*)allocator_getNext(s_infElevators);
+					taskCtx->elev = (InfElevator*)allocator_getNext(s_infElevators);
 				} // while (elev)
 			}  // id == 0 (main elevator update loop)
 			task_yield(TASK_NO_DELAY);
 		}  // while (id != -1)
 
 		task_end;
+	}
+		
+	void inf_teleporterTaskLocal(s32 id)
+	{
+		MessageType msgType = MessageType(id);
+		if (msgType == MSG_TRIGGER && s_msgEvent == INF_EVENT_ENTER_SECTOR)
+		{
+			task_makeActive(s_teleportTask);
+		}
+		else
+		{
+			// TODO(Core Game Loop Release)
+		}
 	}
 	
 	void inf_telelporterTaskFunc(s32 id)
@@ -1525,16 +1555,8 @@ namespace TFE_Jedi
 
 			if (id != 0)
 			{
-				MessageType msgType = MessageType(id);
-				if (msgType == MSG_TRIGGER && s_msgEvent == INF_EVENT_ENTER_SECTOR)
-				{
-					task_makeActive(s_teleportTask);
-					taskCtx->delay = TASK_NO_DELAY;
-				}
-				else
-				{
-					// TODO(Core Game Loop Release)
-				}
+				inf_teleporterTaskLocal(id);
+				taskCtx->delay = TASK_NO_DELAY;
 			}
 			else
 			{
@@ -1588,6 +1610,57 @@ namespace TFE_Jedi
 		task_end;
 	}
 
+	void inf_triggerTaskLocal(s32 id)
+	{
+		MessageType msgType = MessageType(id);
+		InfTrigger* trigger = (InfTrigger*)s_msgTarget;
+
+		switch (msgType)
+		{
+			case MSG_FREE:
+			{
+				InfLink* link = trigger->link;
+				allocator_deleteItem(link->parent, link);
+				allocator_free(trigger->targets);
+
+				free(trigger);
+				s_triggerCount--;
+
+				if (s_triggerCount == 0)
+				{
+					task_free(s_infTriggerTask);
+					return;
+				}
+			} break;
+			case MSG_TRIGGER:
+			{
+				inf_handleTriggerMsg(trigger);
+			} break;
+			case MSG_MASTER_OFF:
+			{
+				trigger->master = JFALSE;
+			} break;
+			case MSG_MASTER_ON:
+			{
+				trigger->master = JTRUE;
+			} break;
+			case MSG_DONE:
+			{
+				if (trigger->type == ITRIGGER_SWITCH1)
+				{
+					AnimatedTexture* animTex = trigger->animTex;
+					// If the trigger is still in its original state, nothing to do.
+					if (animTex)
+					{
+						trigger->state = 0;
+						trigger->tex = animTex->frameList[0];
+					}
+					trigger->master = JTRUE;
+				}
+			} break;
+		}
+	}
+
 	void inf_triggerTaskFunc(s32 id)
 	{
 		task_begin;
@@ -1596,57 +1669,7 @@ namespace TFE_Jedi
 
 		while (id != -1)
 		{
-			// Local variables do not need to be persistant.
-			{
-				MessageType msgType = MessageType(id);
-				InfTrigger* trigger = (InfTrigger*)s_msgTarget;
-
-				switch (msgType)
-				{
-					case MSG_FREE:
-					{
-						InfLink* link = trigger->link;
-						allocator_deleteItem(link->parent, link);
-						allocator_free(trigger->targets);
-
-						free(trigger);
-						s_triggerCount--;
-
-						if (s_triggerCount == 0)
-						{
-							task_free(s_infTriggerTask);
-							return;
-						}
-					} break;
-					case MSG_TRIGGER:
-					{
-						inf_handleTriggerMsg(trigger);
-					} break;
-					case MSG_MASTER_OFF:
-					{
-						trigger->master = JFALSE;
-					} break;
-					case MSG_MASTER_ON:
-					{
-						trigger->master = JTRUE;
-					} break;
-					case MSG_DONE:
-					{
-						if (trigger->type == ITRIGGER_SWITCH1)
-						{
-							AnimatedTexture* animTex = trigger->animTex;
-							// If the trigger is still in its original state, nothing to do.
-							if (animTex)
-							{
-								trigger->state = 0;
-								trigger->tex = animTex->frameList[0];
-							}
-							trigger->master = JTRUE;
-						}
-					} break;
-				}
-			}
-
+			inf_triggerTaskLocal(id);
 			task_yield(TASK_SLEEP);
 		}
 
@@ -2197,7 +2220,7 @@ namespace TFE_Jedi
 				s_msgEvent = evt;
 
 				allocator_addRef(infLink);
-				runTask(link->task, msgType);
+				task_runLocal(link->task, msgType);
 
 				// Drain pending tasks before moving on.
 				/* TODO
@@ -3083,7 +3106,7 @@ namespace TFE_Jedi
 							s_msgArg2 = taskCtx->msg->arg2;
 							s_msgEvent = taskCtx->msg->event;
 							inf_sendSectorMessage(taskCtx->sector, taskCtx->msg->msgType);
-							runTask(taskCtx->link->task, taskCtx->msg->msgType);
+							task_runAndReturn(taskCtx->link->task, taskCtx->msg->msgType);
 
 							if (id != 0)
 							{

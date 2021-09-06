@@ -364,6 +364,104 @@ namespace TFE_DarkForces
 		s_weaponAutoMount2 = enable;
 	}
 
+	void player_cycleWeapons(s32 change)
+	{
+		struct LocalContext
+		{
+			s32 dir;
+			s32 nextWeapon;
+			JBool hasWeapon;
+		};
+		task_begin_ctx;
+
+		taskCtx->dir = (change < 0) ? -1 : 1;
+		taskCtx->nextWeapon = s_curWeapon + change;
+		taskCtx->hasWeapon = JFALSE;
+		while (!taskCtx->hasWeapon)
+		{
+			if (taskCtx->nextWeapon < 0)
+			{
+				taskCtx->nextWeapon = WPN_COUNT - 1;
+			}
+			else if (taskCtx->nextWeapon == WPN_COUNT)
+			{
+				taskCtx->nextWeapon = WPN_FIST;
+			}
+
+			switch (taskCtx->nextWeapon)
+			{
+				case WPN_FIST:
+				{
+					taskCtx->hasWeapon = JTRUE;
+				} break;
+				case WPN_PISTOL:
+				{
+					if (!s_playerInfo.itemPistol) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+				case WPN_RIFLE:
+				{
+					if (!s_playerInfo.itemRifle) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+				case WPN_THERMAL_DET:
+				{
+					// TODO(Core Game Loop Release): Check this.
+					if (!s_playerInfo.ammoDetonator) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+				case WPN_REPEATER:
+				{
+					if (!s_playerInfo.itemAutogun) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+				case WPN_FUSION:
+				{
+					if (!s_playerInfo.itemFusion) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+				case WPN_MORTAR:
+				{
+					if (!s_playerInfo.itemMortar) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+				case WPN_MINE:
+				{
+					// TODO(Core Game Loop Release): Check this.
+					if (!s_playerInfo.ammoMine) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+				case WPN_CONCUSSION:
+				{
+					if (!s_playerInfo.itemConcussion) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+				case WPN_CANNON:
+				{
+					if (!s_playerInfo.itemCannon) { taskCtx->nextWeapon += taskCtx->dir; }
+					else { taskCtx->hasWeapon = JTRUE; }
+				} break;
+			}
+		}
+
+		if (taskCtx->nextWeapon != s_playerInfo.curWeapon && s_playerWeaponTask)
+		{
+			s_msgArg1 = taskCtx->nextWeapon;
+			task_runAndReturn(s_playerWeaponTask, WTID_SWITCH_WEAPON);
+
+			if (s_playerInfo.curWeapon > s_playerInfo.maxWeapon)
+			{
+				s_playerInfo.maxWeapon = s_playerInfo.curWeapon;
+			}
+		}
+		else
+		{
+			s_playerInfo.index2 = taskCtx->nextWeapon;
+		}
+
+		task_end;
+	}
+
 	void weapon_setNext(s32 wpnIndex)
 	{
 		PlayerWeapon* prevWeapon = s_curPlayerWeapon;
@@ -469,7 +567,7 @@ namespace TFE_DarkForces
 	
 	void weapon_createPlayerWeaponTask()
 	{
-		s_playerWeaponTask = createTask(weapon_playerWeaponTaskFunc);
+		s_playerWeaponTask = createTask("player weapon", weapon_playerWeaponTaskFunc);
 
 		s_superCharge = JFALSE;
 		s_superChargeHud = JFALSE;
@@ -593,12 +691,7 @@ namespace TFE_DarkForces
 	void weapon_handleState(s32 id)
 	{
 		task_begin;
-		while (1)
-		{
-			// TODO(Core Game Loop Release)
-
-			task_yield(TASK_NO_DELAY);
-		}
+		// TODO(Core Game Loop Release)
 		task_end;
 	}
 		
@@ -646,6 +739,7 @@ namespace TFE_DarkForces
 
 			// Calculate the number of elapsed frames.
 			Tick elapsed = s_curTick - taskCtx->startTick;
+			PlayerWeapon* weapon = taskCtx->weapon;
 			if (elapsed <= s_weaponAnimState.ticksPerFrame + 1 || s_weaponAnimState.frameCount < 2)
 			{
 				taskCtx->weapon->xOffset += s_weaponAnimState.xSpeed;
@@ -668,8 +762,6 @@ namespace TFE_DarkForces
 	{
 		task_begin;
 		// s_prevWeapon is the weapon we are switching away from.
-		PlayerWeapon* weapon = s_curPlayerWeapon;
-
 		if (s_prevWeapon == WPN_REPEATER)
 		{
 			if (s_repeaterFireSndID)
@@ -692,8 +784,8 @@ namespace TFE_DarkForces
 			10, s_superCharge ? 1u : 2u	// frameCount, ticksPerFrame
 		};
 		task_callTaskFunc(weapon_animateOnOrOffscreen);
-
 		s_weaponOffAnim = JTRUE;
+
 		task_end;
 	}
 
@@ -730,6 +822,16 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
+	void weapon_holster(s32 id)
+	{
+		task_begin;
+		if (s_playerWeaponTask)
+		{
+			task_runAndReturn(s_playerWeaponTask, WTID_HOLSTER);
+		}
+		task_end;
+	}
+
 	void weapon_prepareToFire()
 	{
 		PlayerWeapon* weapon = s_curPlayerWeapon;
@@ -761,68 +863,65 @@ namespace TFE_DarkForces
 		while (1)
 		{
 			// If the weapon task is called with a non-zero id, handle it here.
-			switch (id)
+			if (id == WTID_FREE_TASK)
 			{
-				case WTID_FREE_TASK:
-				{
-					task_free(s_playerWeaponTask);
-					s_playerWeaponTask = nullptr;
-					return;
-				} break;
-				case WTID_SWITCH_WEAPON:
-				{
-					task_makeActive(s_playerWeaponTask);
-					s_nextWeapon = s_msgArg1;
-					task_makeActive(s_playerWeaponTask);
-					task_yield(TASK_NO_DELAY);
-					task_callTaskFunc(weapon_handleState);
+				task_free(s_playerWeaponTask);
+				s_playerWeaponTask = nullptr;
+				return;
+			}
+			else if (id == WTID_SWITCH_WEAPON)
+			{
+				task_makeActive(s_playerWeaponTask);
+				s_nextWeapon = s_msgArg1;
+				task_makeActive(s_playerWeaponTask);
+				task_yield(TASK_NO_DELAY);
+				task_callTaskFunc(weapon_handleState);
 
-					if (s_nextWeapon == -1)
-					{
-						swap(s_curWeapon, s_lastWeapon);
-					}
-					else
-					{
-						s32 lastWeapon = s_curWeapon;
-						s_curWeapon = s_nextWeapon;
-						s_lastWeapon = lastWeapon;
-					}
-					s_playerInfo.curWeapon = s_prevWeapon;
+				if (s_nextWeapon == -1)
+				{
+					swap(s_curWeapon, s_lastWeapon);
+				}
+				else
+				{
+					s32 lastWeapon = s_curWeapon;
+					s_curWeapon = s_nextWeapon;
+					s_lastWeapon = lastWeapon;
+				}
+				s_playerInfo.curWeapon = s_prevWeapon;
 
-					if (!s_weaponOffAnim)
-					{
-						task_callTaskFunc(weapon_handleOffAnimation);
-					}
-					weapon_setNext(s_curWeapon);
+				if (!s_weaponOffAnim)
+				{
+					task_callTaskFunc(weapon_handleOffAnimation);
+				}
+				weapon_setNext(s_curWeapon);
+				task_callTaskFunc(weapon_handleOnAnimation);
+			}
+			else if (id == WTID_START_FIRING)
+			{
+				taskCtx->secondaryFire = s_msgArg1;
+				task_makeActive(s_playerWeaponTask);
+				task_makeActive(s_playerWeaponTask);
+				task_yield(TASK_NO_DELAY);
+
+				task_callTaskFunc(weapon_handleState);
+				s_isShooting = JTRUE;
+				s_secondaryFire = taskCtx->secondaryFire ? JTRUE : JFALSE;
+				if (s_weaponOffAnim)
+				{
 					task_callTaskFunc(weapon_handleOnAnimation);
-				} break;
-				case WTID_START_FIRING:
-				{
-					taskCtx->secondaryFire = s_msgArg1;
-					task_makeActive(s_playerWeaponTask);
-					task_makeActive(s_playerWeaponTask);
-					task_yield(TASK_NO_DELAY);
+				}
+				s_curPlayerWeapon->flags &= ~2;
 
-					task_callTaskFunc(weapon_handleState);
-					s_isShooting = JTRUE;
-					s_secondaryFire = taskCtx->secondaryFire ? JTRUE : JFALSE;
-					if (s_weaponOffAnim)
-					{
-						task_callTaskFunc(weapon_handleOnAnimation);
-					}
-					s_curPlayerWeapon->flags &= ~2;
-
-					weapon_prepareToFire();
-					weapon_setFireRate();
-				} break;
-				case WTID_STOP_FIRING:
-				{
-					// TODO(Core Game Loop Release)
-				} break;
-				case WTID_HOLSTER:
-				{
-					// TODO(Core Game Loop Release)
-				} break;
+				weapon_prepareToFire();
+				weapon_setFireRate();
+			}
+			else if (id == WTID_STOP_FIRING)
+			{
+				// TODO(Core Game Loop Release)
+			}
+			else if (id == WTID_HOLSTER)
+			{
+				// TODO(Core Game Loop Release)
 			}
 
 			// Handle shooting.

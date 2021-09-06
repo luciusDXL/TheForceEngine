@@ -104,7 +104,7 @@ namespace TFE_DarkForces
 	void setLuminanceMask(JBool r, JBool g, JBool b);
 	void setCurrentColorMap(u8* colorMap, u8* lightRamp);
 	void mainTask_handleCall(s32 id);
-	void handleGeneralInput();
+	void handleGeneralInput(s32 id);
 
 	void updateScreensize();
 
@@ -187,7 +187,7 @@ namespace TFE_DarkForces
 				task_yield(MIN_LOAD_TIME - s_loadingScreenDelta);
 			}
 			// This is pushed near the beginning in the DOS code but was moved to the end so I can add yields() inbetween.
-			s_mainTask = pushTask(mission_mainTaskFunc);
+			s_mainTask = pushTask("main task", mission_mainTaskFunc);
 		}
 		// Sleep until we are done with the main task.
 		task_yield(TASK_SLEEP);
@@ -247,28 +247,26 @@ namespace TFE_DarkForces
 
 			player_setupCamera();
 
-			switch (s_missionMode)
+			if (s_missionMode == MISSION_MODE_LOADING)
 			{
-				case MISSION_MODE_LOADING:
-				{
-					blitLoadingScreen();
-				} break;
-				case MISSION_MODE_MAIN:
-				{
-					updateScreensize();
-					drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
-					handleVisionFx();
-				} break;
-				// These modes never seem to get called.
-				case MISSION_MODE_UNKNOWN:
-				{
-				} break;
-				case MISSION_MODE_LOAD_START:
-				{
-					// vgaClearPalette();
-				} break;
+				blitLoadingScreen();
 			}
-			handleGeneralInput();
+			else if (s_missionMode == MISSION_MODE_MAIN)
+			{
+				updateScreensize();
+				drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
+				handleVisionFx();
+			}
+			else if (s_missionMode == MISSION_MODE_UNKNOWN)
+			{
+				// STUB
+			}
+			else if (s_missionMode == MISSION_MODE_LOAD_START)
+			{
+				// vgaClearPalette();
+			}
+
+			task_callTaskFunc(handleGeneralInput);
 			handlePaletteFx();
 			if (s_drawAutomap)
 			{
@@ -567,6 +565,7 @@ namespace TFE_DarkForces
 	{
 		s_flatLighting = JFALSE;
 		s_nightvisionActive = JFALSE;
+		hud_sendTextMessage(9);
 		s_visionFxEndCountdown = 3;
 	}
 
@@ -639,12 +638,14 @@ namespace TFE_DarkForces
 		hud_sendTextMessage(20);
 		if (!s_gasmaskTask)
 		{
-			s_gasmaskTask = createTask(gasmaskTaskFunc);
+			s_gasmaskTask = createTask("gasmask", gasmaskTaskFunc);
 		}
 	}
 
-	void handleGeneralInput()
+	void handleGeneralInput(s32 id)
 	{
+		task_begin;
+
 		// For now just deal with a few controls.
 		if (getActionState(IA_PDA_TOGGLE) == STATE_PRESSED)
 		{
@@ -696,10 +697,52 @@ namespace TFE_DarkForces
 		}
 		renderer_setupCameraLight(JFALSE, s_headlampActive);
 
+		if (getActionState(IA_HEADWAVE_TOGGLE) == STATE_PRESSED)
+		{
+			s_config.headwave = ~s_config.headwave;
+			if (s_config.headwave)
+			{
+				hud_sendTextMessage(14);
+			}
+			else
+			{
+				hud_sendTextMessage(15);
+			}
+		}
+
 		if (getActionState(IA_HUD_TOGGLE) == STATE_PRESSED)
 		{
 			hud_setupToggleAnim1(JFALSE);
 		}
+
+		if (getActionState(IA_HOLSTER_WEAPON) == STATE_PRESSED)
+		{
+			task_callTaskFunc(weapon_holster);
+		}
+
+		if (getActionState(IA_AUTOMOUNT_TOGGLE) == STATE_PRESSED)
+		{
+			s_config.wpnAutoMount = ~s_config.wpnAutoMount;
+			weapon_enableAutomount(s_config.wpnAutoMount);
+			if (!s_config.wpnAutoMount)
+			{
+				hud_sendTextMessage(23);
+			}
+			else
+			{
+				hud_sendTextMessage(24);
+			}
+		}
+
+		if (getActionState(IA_CYCLEWPN_PREV) == STATE_PRESSED)
+		{
+			task_callTaskFuncWithId(player_cycleWeapons, -1);
+		}
+		else if (getActionState(IA_CYCLEWPN_NEXT) == STATE_PRESSED)
+		{
+			task_callTaskFuncWithId(player_cycleWeapons, 1);
+		}
+
 		if (getActionState(IA_AUTOMAP) == STATE_PRESSED)
 		{
 			s_drawAutomap = ~s_drawAutomap;
@@ -714,6 +757,8 @@ namespace TFE_DarkForces
 				s_canTeleport = JFALSE;
 			}
 		}
+
+		task_end;
 	}
 
 	void updateScreensize()

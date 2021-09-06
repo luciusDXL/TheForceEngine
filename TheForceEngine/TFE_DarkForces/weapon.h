@@ -72,6 +72,8 @@ namespace TFE_DarkForces
 	void weapon_setFireRate();
 	void weapon_clearFireRate();
 	void weapon_createPlayerWeaponTask();
+	void weapon_holster(s32 id);
+	void player_cycleWeapons(s32 change);
 
 	extern PlayerWeapon* s_curPlayerWeapon;
 	extern SoundSourceID s_superchargeCountdownSound;

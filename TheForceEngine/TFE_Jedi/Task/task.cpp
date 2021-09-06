@@ -1,6 +1,7 @@
 #include "task.h"
 #include <TFE_Memory/chunkedArray.h>
 #include <TFE_DarkForces/time.h>
+#include <TFE_System/system.h>
 #include <stdarg.h>
 #include <tuple>
 #include <vector>
@@ -24,12 +25,18 @@ struct TaskContext
 
 	u8* stackPtr[TASK_MAX_LEVELS];
 	u32 stackSize[TASK_MAX_LEVELS];
+	u8  delayedCall[TASK_MAX_LEVELS];
 
 	s32 level;
+	s32 callLevel;
 };
 
 struct Task
 {
+#ifdef _DEBUG
+	char name[32];
+#endif
+
 	Task* prevMain;
 	Task* nextMain;
 	Task* prevSec;
@@ -40,6 +47,7 @@ struct Task
 	
 	// Used in place of stack memory.
 	TaskContext context;
+	TaskFunc localRunFunc;
 
 	// Timing.
 	Tick nextTick;
@@ -62,13 +70,13 @@ namespace TFE_Jedi
 	s32 s_taskCount = 0;
 
 	Task  s_rootTask;
-	Task* s_taskIter   = nullptr;
-	Task* s_curTask    = nullptr;
+	Task* s_taskIter = nullptr;
+	Task* s_curTask = nullptr;
 	Task* s_resumeTask = nullptr;
-	s32   s_currentId  = -1;
+	s32   s_currentId = -1;
 
 	TaskContext* s_curContext = nullptr;
-		
+
 	void createRootTask()
 	{
 		s_tasks = createChunkedArray(sizeof(Task), TASK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS);
@@ -80,11 +88,11 @@ namespace TFE_Jedi
 		s_rootTask.nextTick = TASK_SLEEP;
 
 		s_taskIter = &s_rootTask;
-		s_curTask  = &s_rootTask;
+		s_curTask = &s_rootTask;
 		s_taskCount = 0;
 	}
-	
-	Task* createTask(TaskFunc func)
+
+	Task* createTask(const char* name, TaskFunc func, TaskFunc localRunFunc)
 	{
 		if (!s_tasks)
 		{
@@ -95,11 +103,14 @@ namespace TFE_Jedi
 		assert(newTask);
 
 		s_taskCount++;
+#ifdef _DEBUG
+		strcpy(newTask->name, name);
+#endif
 		newTask->nextMain = s_curTask->prevSec;
 		newTask->prevMain = nullptr;
-		newTask->nextSec  = s_curTask;
-		newTask->prevSec  = nullptr;
-		newTask->retTask  = nullptr;
+		newTask->nextSec = s_curTask;
+		newTask->prevSec = nullptr;
+		newTask->retTask = nullptr;
 		newTask->userData = nullptr;
 		newTask->framebreak = JFALSE;
 		if (s_curTask->prevSec)
@@ -109,14 +120,15 @@ namespace TFE_Jedi
 		s_curTask->prevSec = newTask;
 
 		newTask->nextTick = 0;
-		
+
 		newTask->context = { 0 };
 		newTask->context.callstack[0] = func;
+		newTask->localRunFunc = localRunFunc;
 		newTask->context.level = TASK_INIT_LEVEL;
 		return newTask;
 	}
 
-	Task* pushTask(TaskFunc func, JBool framebreak)
+	Task* pushTask(const char* name, TaskFunc func, JBool framebreak, TaskFunc localRunFunc)
 	{
 		if (!s_tasks)
 		{
@@ -128,6 +140,9 @@ namespace TFE_Jedi
 
 		s_taskCount++;
 		// Insert the task after 's_taskIter'
+#ifdef _DEBUG
+		strcpy(newTask->name, name);
+#endif
 		newTask->nextMain = s_taskIter->nextMain;
 		newTask->prevMain = s_taskIter;
 		s_taskIter->nextMain = newTask;
@@ -140,9 +155,10 @@ namespace TFE_Jedi
 
 		newTask->context = { 0 };
 		newTask->context.callstack[0] = func;
+		newTask->localRunFunc = localRunFunc;
 		newTask->context.level = TASK_INIT_LEVEL;
 		newTask->nextTick = s_curTick;
-		
+
 		return newTask;
 	}
 
@@ -176,16 +192,6 @@ namespace TFE_Jedi
 		s_curContext = nullptr;
 		s_taskCount = 0;
 	}
-	
-	// Run a task and then return to the curren task.
-	void runTask(Task* task, s32 id)
-	{
-		if (!task) { return; }
-		
-		task->retTask = s_curTask;
-		s_currentId = id;
-		s_curTask = task;
-	}
 
 	void task_makeActive(Task* task)
 	{
@@ -202,17 +208,39 @@ namespace TFE_Jedi
 		task->userData = data;
 	}
 
+	void task_runLocal(Task* task, s32 id)
+	{
+		if (task->localRunFunc)
+		{
+			task->localRunFunc(id);
+		}
+	}
+
 	void ctxReturn()
 	{
-		s32 level = s_curContext->level;
-		s_curContext->level--;
+		s32 level = 0;
+		if (s_curContext)
+		{
+			level = s_curContext->level;
+			if (level <= 0 || !s_curContext->delayedCall[level-1])
+			{
+				s_curContext->level--;
+			}
+			else
+			{
+				// We need to reduce by 2 levels since a delayed call does not immediately return to the calling function.
+				s_curContext->level -= 2;
+			}
 
-		if (level == 0)
+			if (s_curContext->callLevel > 0) { s_curContext->callLevel--; }
+		}
+
+		if (level == 0 && s_curTask)
 		{
 			task_free(s_curTask);
 			s_curTask = nullptr;
 		}
-		else if (s_curContext->stackPtr[level])
+		else if (s_curContext && s_curContext->stackPtr[level])
 		{
 			// Return the stack memory allocated for this level.
 			s_curContext->stackOffset -= s_curContext->stackSize[level];
@@ -258,6 +286,19 @@ namespace TFE_Jedi
 		}
 	}
 
+	void itask_run(Task* task, s32 id)
+	{
+		task->retTask = s_curTask;
+		s_currentId = id;
+		s_curTask = task;
+
+		// When a task is run directly, it is called in-place since control needs to be handed over immediately.
+		// When yield is called, control will pass back to the calling task.
+		s_curContext = &s_curTask->context;
+		s32 level = max(0, s_curContext->level);
+		s_curContext->callstack[level](s_currentId);
+	}
+
 	void itask_yield(Tick delay, s32 ip)
 	{
 		// Copy the ip so we know where to return.
@@ -274,6 +315,7 @@ namespace TFE_Jedi
 			// Set the next task.
 			s_currentId = 0;
 			s_curTask = retTask;
+			s_curContext = &s_curTask->context;
 			return;
 		}
 
@@ -282,6 +324,7 @@ namespace TFE_Jedi
 		
 		// Find the next task to run.
 		selectNextTask();
+		assert(s_curTask);
 	}
 		
 	// Called once per frame to run all of the tasks.
@@ -324,7 +367,7 @@ namespace TFE_Jedi
 			if (s_curTask->nextTick <= s_curTick)
 			{
 				s_curContext = &s_curTask->context;
-				s32 level = max(0, s_curContext->level);
+				s32 level = max(0, s_curContext->level + 1);
 				s_curContext->callstack[level](s_currentId);
 			}
 			else if (!framebreak)
@@ -387,11 +430,32 @@ namespace TFE_Jedi
 		s_curContext->level++;
 	}
 
-	void ctxCall(TaskFunc func, s32 id)
+	// Direct calls from a task are a bit complicated, especially when those calls can yield.
+	// This task needs to track the current IP at the calling level so it can be resumed when the new function returns.
+	// In addition, we must detect when the return is delayed - due to a yield in the called function - 
+	// so that the recursion level is properly handled on delayed return.
+	bool ctxCall(TaskFunc func, s32 id, s32 ip)
 	{
 		assert(s_curContext->level + 1 < TASK_MAX_LEVELS);
+		TaskContext* startContext = s_curContext;
+		if (s_curContext->level == 0)
+		{
+			s_curContext->callLevel = 0;
+		}
+		s32 startLevel = s_curContext->level;
+		s32 startCallLevel = s_curContext->callLevel;
+		startContext->delayedCall[startLevel] = 0;
+		s_curContext->callLevel++;
+
+		s_curContext->ip[s_curContext->level] = ip;
 		s_curContext->callstack[s_curContext->level + 1] = func;
 		s_curContext->ip[s_curContext->level + 1] = 0;
 		func(id);
+
+		if (startCallLevel != startContext->callLevel)
+		{
+			startContext->delayedCall[startLevel] = 1;
+		}
+		return startCallLevel != startContext->callLevel;
 	}
 }

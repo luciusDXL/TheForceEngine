@@ -24,7 +24,7 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(logic);
 		if (animLogic->completeTask)
 		{
-			runTask(animLogic->completeTask, 20);
+			// task_runAndReturn(animLogic->completeTask, 20);
 		}
 		allocator_deleteItem(s_spriteAnimList, logic);
 	}
@@ -71,7 +71,7 @@ namespace TFE_DarkForces
 								deleteLogicAndObject((Logic*)taskCtx->anim);
 								if (taskCtx->anim->completeTask)
 								{
-									runTask(taskCtx->anim->completeTask, 20);
+									task_runAndReturn(taskCtx->anim->completeTask, 20);
 								}
 								allocator_deleteItem(s_spriteAnimList, taskCtx->obj);
 							}
@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 		// Create an allocator if one is not already setup.
 		if (!s_spriteAnimTask)
 		{
-			s_spriteAnimTask = pushTask(spriteAnimLogicFunc);
+			s_spriteAnimTask = pushTask("sprite animation", spriteAnimLogicFunc);
 		}
 		if (!s_spriteAnimList)
 		{
