@@ -311,7 +311,7 @@ namespace RClassic_Fixed
 		{
 			s32 xPos = x - xMid;
 			// This is atanf(float(x) / 160.0f) / (2pi)
-			f32 angleFractF = atanf(f32(x) / 160.0f) * 2607.595f;
+			f32 angleFractF = atanf(f32(xPos) / 160.0f) * 2607.595f;
 			fixed16_16 angleFract = fixed16_16(angleFractF) << 2;
 
 			// This intentionally overflows when x = 0 and becomes 0...
