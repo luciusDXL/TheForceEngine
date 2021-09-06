@@ -811,6 +811,7 @@ namespace TFE_DarkForces
 		}
 
 		// s_prevWeapon is the weapon we are switching away from.
+		s_curPlayerWeapon->frame = 0;
 		s_weaponAnimState =
 		{
 			s_curPlayerWeapon->frame,	// frame
@@ -819,8 +820,6 @@ namespace TFE_DarkForces
 			10, s_superCharge ? 1u : 2u	// frameCount, ticksPerFrame
 		};
 		task_callTaskFunc(weapon_animateOnOrOffscreen);
-
-		s_weaponOffAnim = JTRUE;
 		task_end;
 	}
 

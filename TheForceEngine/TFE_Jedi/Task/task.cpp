@@ -374,7 +374,13 @@ namespace TFE_Jedi
 			{
 				s_curContext = &s_curTask->context;
 				s32 level = max(0, s_curContext->level + 1);
-				s_curContext->callstack[level](s_currentId);
+				TaskFunc runFunc = s_curContext->callstack[level];
+				assert(runFunc);
+
+				if (runFunc)
+				{
+					runFunc(s_currentId);
+				}
 			}
 			else if (!framebreak)
 			{
