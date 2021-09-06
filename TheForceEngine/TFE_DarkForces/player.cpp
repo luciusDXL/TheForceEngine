@@ -146,6 +146,11 @@ namespace TFE_DarkForces
 	void setCameraOffset(fixed16_16 offsetX, fixed16_16 offsetY, fixed16_16 offsetZ);
 	void setCameraAngleOffset(angle14_32 offsetPitch, angle14_32 offsetYaw, angle14_32 offsetRoll);
 
+	void handlePlayerMoveControls();
+	void handlePlayerPhysics();
+	void handlePlayerActions();
+	void handlePlayerScreenFx();
+
 	void player_init()
 	{
 		s_landSplashSound                = sound_Load("swim-in.voc");
@@ -469,11 +474,10 @@ namespace TFE_DarkForces
 		{
 			if (id == 0)
 			{
-				// handlePlayerMoveControls();
-				// handlePlayerPhysics();
-				// handlePlayerActions();
-				// handlePlayerScreenFx();
-				// TODO(Core Game Loop Release)
+				handlePlayerMoveControls();
+				handlePlayerPhysics();
+				handlePlayerActions();
+				handlePlayerScreenFx();
 			}
 			else if (id == 22)
 			{
@@ -483,34 +487,7 @@ namespace TFE_DarkForces
 			{
 				// TODO(Core Game Loop Release)
 			}
-
-			// TODO: Insert into the correct function
-			{
-				SecObject* player = s_playerObject;
-				if (player->flags & 2)
-				{
-					// This code is incorrect but it doesn't actually matter...
-					// roll is always 0.
-					setCameraAngleOffset(0, s_playerRoll, 0);
-
-					s32 headlamp = 0;
-					if (s_headlampActive)
-					{
-						s32 energy = min(ONE_16, s_energy);
-						headlamp = floor16(mul16(energy, FIXED(64)));
-						headlamp = min(31, headlamp);
-					}
-					s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
-					//s_baseAtten = atten;
-					if (s_nightvisionActive)
-					{
-						atten = 0;
-					}
-					setPlayerLight(atten);
-				}
-			}
-			///////////////////////////////////////////
-
+						
 			s_prevPlayerTick = s_playerTick;
 			task_yield(TASK_NO_DELAY);
 		}
@@ -520,5 +497,52 @@ namespace TFE_DarkForces
 	void setPlayerLight(s32 atten)
 	{
 		s_playerLight = atten;
+	}
+
+	void handlePlayerMoveControls()
+	{
+		// TODO(Core Game Loop Release)
+	}
+
+	void handlePlayerPhysics()
+	{
+		// TODO(Core Game Loop Release)
+
+		// TODO(Core Game Loop Release): Insert into the correct location within this function.
+		{
+			SecObject* player = s_playerObject;
+			if (player->flags & 2)
+			{
+				// This code is incorrect but it doesn't actually matter...
+				// roll is always 0.
+				setCameraAngleOffset(0, s_playerRoll, 0);
+
+				s32 headlamp = 0;
+				if (s_headlampActive)
+				{
+					s32 energy = min(ONE_16, s_energy);
+					headlamp = floor16(mul16(energy, FIXED(64)));
+					headlamp = min(31, headlamp);
+				}
+				s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
+				//s_baseAtten = atten;
+				if (s_nightvisionActive)
+				{
+					atten = 0;
+				}
+				setPlayerLight(atten);
+			}
+		}
+		///////////////////////////////////////////
+	}
+
+	void handlePlayerActions()
+	{
+		// TODO(Core Game Loop Release)
+	}
+
+	void handlePlayerScreenFx()
+	{
+		// TODO(Core Game Loop Release)
 	}
 }  // TFE_DarkForces
