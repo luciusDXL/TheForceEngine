@@ -296,7 +296,13 @@ namespace TFE_Jedi
 		// When yield is called, control will pass back to the calling task.
 		s_curContext = &s_curTask->context;
 		s32 level = max(0, s_curContext->level);
-		s_curContext->callstack[level](s_currentId);
+		TaskFunc runFunc = s_curContext->callstack[level];
+
+		assert(runFunc);
+		if (runFunc)
+		{
+			runFunc(s_currentId);
+		}
 	}
 
 	void itask_yield(Tick delay, s32 ip)

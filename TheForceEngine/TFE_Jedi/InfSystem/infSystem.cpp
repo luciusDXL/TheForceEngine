@@ -3106,16 +3106,16 @@ namespace TFE_Jedi
 							s_msgArg2 = taskCtx->msg->arg2;
 							s_msgEvent = taskCtx->msg->event;
 							inf_sendSectorMessage(taskCtx->sector, taskCtx->msg->msgType);
-							task_runAndReturn(taskCtx->link->task, taskCtx->msg->msgType);
+							task_runLocal(taskCtx->link->task, taskCtx->msg->msgType);
 
 							if (id != 0)
 							{
 								infElevatorMessageInternal(MessageType(id));
 								task_yield(TASK_NO_DELAY);
 							}
+
 							allocator_release(taskCtx->msgList);
 						}
-						
 						taskCtx->link = (InfLink*)allocator_getNext(taskCtx->infLink);
 					}
 				}

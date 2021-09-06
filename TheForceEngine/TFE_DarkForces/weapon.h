@@ -8,6 +8,11 @@
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
 
+namespace TFE_Jedi
+{
+	struct DrawRect;
+}
+
 namespace TFE_DarkForces
 {
 	struct PlayerWeapon
@@ -73,6 +78,7 @@ namespace TFE_DarkForces
 	void weapon_clearFireRate();
 	void weapon_createPlayerWeaponTask();
 	void weapon_holster(s32 id);
+	void weapon_draw(u8* display, DrawRect* rect);
 	void player_cycleWeapons(s32 change);
 
 	extern PlayerWeapon* s_curPlayerWeapon;

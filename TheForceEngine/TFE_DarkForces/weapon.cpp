@@ -5,6 +5,8 @@
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Jedi/Renderer/RClassic_Fixed/rlightingFixed.h>
+#include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
 
 namespace TFE_DarkForces
 {
@@ -977,5 +979,74 @@ namespace TFE_DarkForces
 			task_yield(TASK_SLEEP);
 		}
 		task_end;
+	}
+
+	// In DOS, this was part of drawWorld() - 
+	// for TFE I split it out to limit the amount of game code in the renderer.
+	void weapon_draw(u8* display, DrawRect* rect)
+	{
+		const fixed16_16 weaponLightingZDist  = FIXED(6);
+		const fixed16_16 gasmaskLightingZDist = FIXED(2);
+
+		PlayerWeapon* weapon = s_curPlayerWeapon;
+		if (weapon && !s_weaponOffAnim)
+		{
+			s32 x = weapon->xPos[weapon->frame];
+			s32 y = weapon->yPos[weapon->frame];
+			if (weapon->flags & 1)
+			{
+				x += weapon->rollOffset;
+				y += weapon->pchOffset;
+			}
+			if (weapon->flags & 2)
+			{
+				x += weapon->xWaveOffset;
+				y += weapon->yWaveOffset;
+			}
+			if (weapon->flags & 4)
+			{
+				x += weapon->xOffset;
+				y += weapon->yOffset;
+			}
+
+		#if 0  // Low Detail
+			if (s_screenWidthFract < ONE_16)
+			{
+				y += 8;
+			}
+		#endif
+						
+			const u8* atten = RClassic_Fixed::computeLighting(weaponLightingZDist, 0);
+			TextureData* tex = weapon->frames[weapon->frame];
+			if (atten)
+			{
+				blitTextureToScreenLit(tex, rect, x, y, atten, display);
+			}
+			else
+			{
+				blitTextureToScreen(tex, rect, x, y, display);
+			}
+		}
+
+		if (s_wearingGasmask)
+		{
+			s32 x = 105;
+			s32 y = 141;
+			if (weapon)
+			{
+				x -= (weapon->xWaveOffset >> 3);
+				y += (weapon->yWaveOffset >> 2);
+			}
+			const u8* atten = RClassic_Fixed::computeLighting(gasmaskLightingZDist, 0);
+			TextureData* tex = s_gasmaskTexture;
+			if (atten)
+			{
+				blitTextureToScreenLit(tex, rect, x, y, atten, display);
+			}
+			else
+			{
+				blitTextureToScreen(tex, rect, x, y, display);
+			}
+		}
 	}
 }  // namespace TFE_DarkForces

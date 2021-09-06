@@ -201,7 +201,7 @@ namespace TFE_DarkForces
 	{
 		s_missionLoadTask = task;
 	}
-		
+			
 	// In DOS, this was part of drawWorld() - 
 	// for TFE I split it out to limit the amount of game code in the renderer.
 	void handleVisionFx()
@@ -253,6 +253,7 @@ namespace TFE_DarkForces
 			{
 				updateScreensize();
 				drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
+				weapon_draw(s_framebuffer, &s_videoDrawRect);
 				handleVisionFx();
 			}
 			else if (s_missionMode == MISSION_MODE_UNKNOWN)
