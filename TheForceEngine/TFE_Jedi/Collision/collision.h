@@ -67,4 +67,5 @@ namespace TFE_Jedi
 
 	// Variables
 	extern fixed16_16 s_colObjOverlap;
+	extern s32 s_collisionFrameWall;
 }

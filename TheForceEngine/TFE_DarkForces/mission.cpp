@@ -565,12 +565,17 @@ namespace TFE_DarkForces
 		s_visionFxCountdown = 2;
 	}
 
-	void disableNightvision()
+	void disableNightvisionInternal()
 	{
 		s_flatLighting = JFALSE;
+		s_visionFxEndCountdown = 3;
+	}
+
+	void disableNightvision()
+	{
+		disableNightvisionInternal();
 		s_nightvisionActive = JFALSE;
 		hud_sendTextMessage(9);
-		s_visionFxEndCountdown = 3;
 	}
 
 	void enableNightVision()

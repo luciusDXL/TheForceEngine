@@ -6,6 +6,7 @@
 #include "mission.h"
 #include "pickup.h"
 #include "weapon.h"
+#include <TFE_System/system.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 // Internal types need to be included in this case.
@@ -29,7 +30,7 @@ namespace TFE_DarkForces
 		PLAYER_DMG_FLOOR_LOW           = FIXED(5),	  // Low  damage floors apply  5 dmg/sec.
 		PLAYER_DMG_FLOOR_HIGH          = FIXED(10),	  // High damage floors apply 10 dmg/sec.
 		PLAYER_DMG_WALL				   = FIXED(20),	  // Damage walls apply 20 dmg/sec.
-		PLAYER_CRUSHING_DMG            = FIXED(10),   // The player suffers 10 dmg/sec. from crushing damage.
+		PLAYER_DMG_CRUSHING            = FIXED(10),   // The player suffers 10 dmg/sec. from crushing damage.
 		PLAYER_FALL_SCREAM_VEL         = FIXED(60),	  // Fall speed when the player starts screaming.
 		PLAYER_FALL_SCREAM_MINHEIGHT   = FIXED(55),   // The player needs to be at least 55 units from the ground before screaming.
 		PLAYER_FALL_HIT_SND_HEIGHT     = 0x4000,	  // 0.25 units, fall height for player to make a sound when hitting the ground.
@@ -43,7 +44,16 @@ namespace TFE_DarkForces
 		PLAYER_KB_TURN_SPD             = 3413,        // Keyboard turn speed in angles/sec.
 		PLAYER_JUMP_IMPULSE            = -2850816,    // Jump vertical impuse: -43.5 units/sec.
 
+		PLAYER_MAX_MOVE_DIST           = FIXED(32),
+		PLAYER_STOP_ACCEL              = -540672,	  // -8.25
+		PLAYER_MIN_EYE_DIST_FLOOR      = FIXED(2),
+		PLAYER_GRAVITY_ACCEL           = FIXED(150),
+
 		PITCH_LIMIT = 2047,
+
+		HEADLAMP_ENERGY_CONSUMPTION = 0x111,    // fraction of energy consumed per second = ~0.004
+		GASMASK_ENERGY_CONSUMPTION  = 0x444,    // fraction of energy consumed per second = ~0.0167
+		GOGGLES_ENERGY_CONSUMPTION  = 0x444,    // fraction of energy consumed per second = ~0.0167
 	};
 
 	// Lower = Less sliding/stops faster,
@@ -331,10 +341,10 @@ namespace TFE_DarkForces
 		s_strafeSpd = 0;
 
 		// Set constants.
-		s_maxMoveDist         = FIXED(32);	// 32.00
-		s_playerStopAccel     = -540672;	// -8.25
-		s_minEyeDistFromFloor = FIXED(2);	//  2.00
-		s_gravityAccel        = FIXED(150);	// 150.0
+		s_maxMoveDist         = PLAYER_MAX_MOVE_DIST;
+		s_playerStopAccel     = PLAYER_STOP_ACCEL;
+		s_minEyeDistFromFloor = PLAYER_MIN_EYE_DIST_FLOOR;
+		s_gravityAccel        = PLAYER_GRAVITY_ACCEL;
 
 		// Initialize values.
 		s_postLandVel = 0;
@@ -1857,7 +1867,7 @@ namespace TFE_DarkForces
 		eyeHeight = min(PLAYER_HEIGHT, eyeHeight);
 
 		RSector* sector = player->sector;
-		fixed16_16 minEyeDistFromFloor = (s_smallModeEnabled) ? PLAYER_SIZE_SMALL : s_minEyeDistFromFloor;	// s_minEyeDistFromFloor = 2.0
+		fixed16_16 minEyeDistFromFloor = (s_smallModeEnabled) ? PLAYER_SIZE_SMALL : s_minEyeDistFromFloor;
 		secHeight = sector->secHeight;
 		// The base min distance from the floor is (0) for solid floors and (depth + 0.25) for liquids.
 		fixed16_16 minDistToFloor = (sector->secHeight >= 0) ? secHeight + 0x4000 : 0;
@@ -1890,7 +1900,7 @@ namespace TFE_DarkForces
 				s_crushSoundId = playSound2D(s_crushSoundSource);
 			}
 			// Crushing damage is 10 damage/second
-			fixed16_16 crushingDmg = mul16(PLAYER_CRUSHING_DMG, s_deltaTime);
+			fixed16_16 crushingDmg = mul16(PLAYER_DMG_CRUSHING, s_deltaTime);
 			player_applyDamage(0, crushingDmg, JFALSE);
 			player->worldHeight = minDistToFloor;
 			playerHandleCollisionFunc(player->sector, collision_handleCrushing, nullptr);
@@ -2157,10 +2167,276 @@ namespace TFE_DarkForces
 			}
 		}
 	}
-		
+
+	static s32 s_prevCollisionFrameWall;
+
+	void handlePlayerUseAction()
+	{
+		SecObject* player = s_playerObject;
+		RSector* sector = player->sector;
+
+		// Trigger the sector the player is standing in.
+		message_sendToSector(sector, s_playerObject, INF_EVENT_NUDGE_FRONT, MSG_TRIGGER);
+
+		// Then cast a ray and see if the wall in front of the player is close enough to trigger.
+		fixed16_16 x0 = player->posWS.x;
+		fixed16_16 z0 = player->posWS.z;
+		fixed16_16 x1 = x0 + mul16(FIXED(4), s_playerLogic.dir.x);
+		fixed16_16 z1 = z0 + mul16(FIXED(4), s_playerLogic.dir.z);
+		RWall* wall = collision_wallCollisionFromPath(sector, x0, z0, x1, z1);
+		if (wall)
+		{
+			RSector* nextSector = wall->nextSector;
+			fixed16_16 eyeHeight = player->posWS.y - player->worldHeight;
+			if (nextSector)
+			{
+				s_prevCollisionFrameWall = s_collisionFrameWall;
+				fixed16_16 x, z;
+				collision_getHitPoint(&x, &z);
+
+				// Nudge the wall.
+				vec2_fixed* w0 = wall->w0;
+				fixed16_16 distFromW0 = vec2Length(w0->x - x, w0->z - z);
+				inf_wallAndMirrorSendMessageAtPos(wall, s_playerObject, INF_EVENT_NUDGE_FRONT, distFromW0, eyeHeight);
+				// Nudge the next sector from the outside.
+				message_sendToSector(nextSector, s_playerObject, INF_EVENT_NUDGE_BACK, MSG_TRIGGER);
+				// Set the sector collision frame to avoid infinite loops.
+				nextSector->collisionFrame = s_collisionFrameWall;
+
+				// The eye ray can go through the opening.
+				if (eyeHeight > nextSector->ceilingHeight && eyeHeight < nextSector->floorHeight)
+				{
+					// Loop as the ray goes from sector to sector.
+					do
+					{
+						wall = collision_pathWallCollision(nextSector);
+						if (wall)
+						{
+							// Trigger the next wall.
+							collision_getHitPoint(&x, &z);
+							distFromW0 = vec2Length(w0->x - x, w0->z - z);
+							inf_wallAndMirrorSendMessageAtPos(wall, s_playerObject, INF_EVENT_NUDGE_FRONT, distFromW0, eyeHeight);
+
+							nextSector = wall->nextSector;
+							if (nextSector)
+							{
+								if (s_collisionFrameWall != nextSector->collisionFrame)
+								{
+									// Nudge the next sector from the outside.
+									message_sendToSector(nextSector, s_playerObject, INF_EVENT_NUDGE_BACK, MSG_TRIGGER);
+									nextSector->collisionFrame = s_collisionFrameWall;
+								}
+								// Make sure the eye ray fits in the opening.
+								if (eyeHeight < nextSector->ceilingHeight || eyeHeight > nextSector->floorHeight)
+								{
+									break;
+								}
+							}
+						}
+					} while (wall && nextSector);
+				}
+				if (s_collisionFrameWall != s_prevCollisionFrameWall)
+				{
+					TFE_System::logWrite(LOG_ERROR, "Player Use", "MARK HAS UNEXPECTEDLY CHANGED.");
+				}
+			}
+			else
+			{
+				fixed16_16 x, z;
+				collision_getHitPoint(&x, &z);
+
+				vec2_fixed* w0 = wall->w0;
+				s32 distFromW0 = vec2Length(w0->x - x, w0->z - z);
+				inf_wallAndMirrorSendMessageAtPos(wall, s_playerObject, INF_EVENT_NUDGE_FRONT, distFromW0, eyeHeight);
+			}
+		}
+	}
+				
 	void handlePlayerActions()
 	{
-		// TODO(Core Game Loop Release)
+		if (s_energy)
+		{
+			if (s_headlampActive)
+			{
+				fixed16_16 energyDelta = mul16(HEADLAMP_ENERGY_CONSUMPTION, s_deltaTime);
+				s_energy -= energyDelta;
+			}
+			if (s_wearingGasmask)
+			{
+				fixed16_16 energyDelta = mul16(GASMASK_ENERGY_CONSUMPTION, s_deltaTime);
+				s_energy -= energyDelta;
+			}
+			if (s_nightvisionActive)
+			{
+				fixed16_16 energyDelta = mul16(GOGGLES_ENERGY_CONSUMPTION, s_deltaTime);
+				s_energy -= energyDelta;
+			}
+			if (s_energy <= 0)
+			{
+				if (s_nightvisionActive)
+				{
+					s_nightvisionActive = JFALSE;
+					disableNightvisionInternal();
+					hud_sendTextMessage(9);
+				}
+				if (s_headlampActive)
+				{
+					hud_sendTextMessage(12);
+					s_headlampActive = JFALSE;
+				}
+				if (s_wearingGasmask)
+				{
+					hud_sendTextMessage(19);
+					s_wearingGasmask = JFALSE;
+					if (s_gasmaskTask)
+					{
+						task_free(s_gasmaskTask);
+						s_gasmaskTask = nullptr;
+					}
+				}
+				s_energy = 0;
+			}
+		}
+		if (s_playerUse)
+		{
+			s_playerUse = JFALSE;
+			if (!s_playerActionUse)
+			{
+				handlePlayerUseAction();
+				s_playerActionUse = JTRUE;
+			}
+		}
+		else
+		{
+			s_playerActionUse = JFALSE;
+		}
+
+		if (s_playerPrimaryFire)
+		{
+			s_playerPrimaryFire = JFALSE;
+			if (!s_weaponFiring && s_playerWeaponTask)
+			{
+				s_weaponFiring = JTRUE;
+				// This causes the weapon to fire.
+				s_msgArg1 = WFIRETYPE_PRIMARY;
+				task_runAndReturn(s_playerWeaponTask, WTID_START_FIRING);
+			}
+		}
+		// This happens when the player *stops* firing.
+		else if (s_weaponFiring && s_playerWeaponTask)
+		{
+			s_weaponFiring = JFALSE;
+			if (!s_weaponFiringSec)
+			{
+				// Spin down.
+				task_runAndReturn(s_playerWeaponTask, WTID_STOP_FIRING);
+			}
+			else
+			{
+				// Start secondary fire.
+				s_msgArg1 = WFIRETYPE_SECONDARY;
+				task_runAndReturn(s_playerWeaponTask, WTID_START_FIRING);
+			}
+		}
+
+		if (s_playerSecFire)
+		{
+			s_playerSecFire = JFALSE;
+			if (!s_weaponFiringSec && s_playerWeaponTask)
+			{
+				s_weaponFiringSec = JTRUE;
+				s_msgArg1 = WFIRETYPE_SECONDARY;
+				task_runAndReturn(s_playerWeaponTask, WTID_START_FIRING);
+			}
+		}
+		// This happens when the player *stops* firing.
+		else if (s_weaponFiringSec && s_playerWeaponTask) 
+		{
+			s_weaponFiringSec = JFALSE;
+			if (!s_weaponFiring)
+			{
+				// Spin down
+				task_runAndReturn(s_playerWeaponTask, WTID_STOP_FIRING);
+			}
+			else
+			{
+				// Start primary fire.
+				s_msgArg1 = WFIRETYPE_PRIMARY;
+				task_runAndReturn(s_playerWeaponTask, WTID_START_FIRING);
+			}
+		}
+
+		if (!s_pickupFlags)
+		{
+			s_playerInfo.selectedWeapon = -1;
+
+			// Weapon select.
+			if (getActionState(IA_WEAPON_1) == STATE_PRESSED)
+			{
+				s_playerInfo.selectedWeapon = WPN_FIST;
+			}
+			if (getActionState(IA_WEAPON_2) == STATE_PRESSED && s_playerInfo.itemPistol)
+			{
+				s_playerInfo.selectedWeapon = WPN_PISTOL;
+			}
+			if (getActionState(IA_WEAPON_3) == STATE_PRESSED && s_playerInfo.itemRifle)
+			{
+				s_playerInfo.selectedWeapon = WPN_RIFLE;
+			}
+			if (getActionState(IA_WEAPON_4) == STATE_PRESSED)
+			{
+				s_playerInfo.selectedWeapon = WPN_THERMAL_DET;
+			}
+			if (getActionState(IA_WEAPON_5) == STATE_PRESSED && s_playerInfo.itemAutogun)
+			{
+				s_playerInfo.selectedWeapon = WPN_REPEATER;
+			}
+			if (getActionState(IA_WEAPON_6) == STATE_PRESSED && s_playerInfo.itemFusion)
+			{
+				s_playerInfo.selectedWeapon = WPN_FUSION;
+			}
+			if (getActionState(IA_WEAPON_7) == STATE_PRESSED)
+			{
+				s_playerInfo.selectedWeapon = WPN_MINE;
+			}
+			if (getActionState(IA_WEAPON_8) == STATE_PRESSED && s_playerInfo.itemMortar)
+			{
+				s_playerInfo.selectedWeapon = WPN_MORTAR;
+			}
+			if (getActionState(IA_WEAPON_9) == STATE_PRESSED && s_playerInfo.itemConcussion)
+			{
+				s_playerInfo.selectedWeapon = WPN_CONCUSSION;
+			}
+			if (getActionState(IA_WEAPON_10) == STATE_PRESSED && s_playerInfo.itemCannon)
+			{
+				s_playerInfo.selectedWeapon = WPN_CANNON;
+			}
+
+			s32 selectedWpn = s_playerInfo.selectedWeapon;
+			if (selectedWpn != -1)
+			{
+				s32 curWeapon = s_playerInfo.curWeapon;
+				if (selectedWpn != curWeapon)
+				{
+					if (s_playerWeaponTask)
+					{
+						// Change weapon
+						s_msgArg1 = selectedWpn;
+						task_runAndReturn(s_playerWeaponTask, WTID_SWITCH_WEAPON);
+
+						if (s_playerInfo.curWeapon > s_playerInfo.maxWeapon)
+						{
+							s_playerInfo.maxWeapon = s_playerInfo.curWeapon;
+						}
+					}
+					else
+					{
+						s_playerInfo.index2 = selectedWpn;
+					}
+				}
+				s_playerInfo.selectedWeapon = -1;
+			}
+		}
 	}
 		
 	void handlePlayerScreenFx()

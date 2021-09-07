@@ -29,7 +29,7 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////////
 	// Internal State
 	////////////////////////////////////////////////////////
-	static s32 s_collisionFrameWall;
+	s32 s_collisionFrameWall;
 	static ColPath s_col_path;
 
 	static fixed16_16 s_col_hitX;

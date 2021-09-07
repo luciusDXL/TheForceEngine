@@ -71,6 +71,12 @@ namespace TFE_DarkForces
 		WTID_COUNT
 	};
 
+	enum WeaponFireType
+	{
+		WFIRETYPE_PRIMARY = JFALSE,		// Primary fire.
+		WFIRETYPE_SECONDARY = JTRUE,	// Secondary fire.
+	};
+
 	void weapon_startup();
 	void weapon_enableAutomount(JBool enable);
 	void weapon_setNext(s32 wpnIndex);

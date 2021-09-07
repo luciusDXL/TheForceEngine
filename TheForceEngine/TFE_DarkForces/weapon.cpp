@@ -970,6 +970,9 @@ namespace TFE_DarkForces
 					weapon_setNext(s_curWeapon);
 					task_callTaskFunc(weapon_handleOnAnimation);
 				}
+
+				// TODO(): This was added - but should be removed if the firing function handles it.
+				task_yield(TASK_NO_DELAY);
 			}
 
 			// Go to sleep until needed.

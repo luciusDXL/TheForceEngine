@@ -2647,6 +2647,7 @@ namespace TFE_Jedi
 				}
 			} break;
 			case MSG_GOTO_STOP:
+			if (elev->stops)
 			{
 				Stop* stop = inf_advanceStops(elev->stops, arg1, 0);
 				if (stop->value != *elev->value)
