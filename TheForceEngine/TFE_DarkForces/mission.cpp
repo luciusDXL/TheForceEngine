@@ -186,6 +186,11 @@ namespace TFE_DarkForces
 			}
 			// This is pushed near the beginning in the DOS code but was moved to the end so I can add yields() inbetween.
 			s_mainTask = pushTask("main task", mission_mainTaskFunc);
+
+			// This was moved here due to the forced wait time - otherwise time passes for the player that is not visible on screen.
+			task_makeActive(s_playerTask);
+			s_prevTick   = s_curTick;
+			s_playerTick = s_curTick;
 		}
 		// Sleep until we are done with the main task.
 		task_yield(TASK_SLEEP);

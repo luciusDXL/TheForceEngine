@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_Jedi/Task/task.h>
 #include "time.h"
 
 namespace TFE_DarkForces
@@ -108,6 +109,8 @@ namespace TFE_DarkForces
 	extern s32 s_jumpScale;
 	extern s32 s_playerSlow;
 	extern s32 s_waterSpeed;
+
+	extern Task* s_playerTask;
 
 	// Sounds
 	extern SoundSourceID s_landSplashSound;

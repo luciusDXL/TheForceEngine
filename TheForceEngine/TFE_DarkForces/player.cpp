@@ -430,7 +430,7 @@ namespace TFE_DarkForces
 
 		s_playerYPos = s_playerObject->posWS.y;
 		s_playerLogic.stepHeight = PLAYER_STEP;
-		task_makeActive(s_playerTask);
+		//task_makeActive(s_playerTask);
 
 		weapon_setNext(s_playerInfo.curWeapon);
 		s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
