@@ -439,7 +439,6 @@ namespace TFE_DarkForces
 		s_playerSector = obj->sector;
 	}
 
-	// TODO(Core Game Loop Release): Finish camera setup.
 	void player_setupEyeObject(SecObject* obj)
 	{
 		if (s_playerEye)
