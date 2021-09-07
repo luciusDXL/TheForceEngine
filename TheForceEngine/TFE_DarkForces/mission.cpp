@@ -387,7 +387,7 @@ namespace TFE_DarkForces
 		{
 			s_healthFxLevel = healthFx;
 			s_shieldFxLevel = shieldFx;
-			s_flashFxLevel = flashFx;
+			s_flashFxLevel  = flashFx;
 			s_screenFxChanged = JTRUE;
 		}
 	}
@@ -692,6 +692,7 @@ namespace TFE_DarkForces
 					} break;
 					case CHEAT_LAPOGO:
 					{
+						cheat_enableNoheightCheck();
 					} break;
 					case CHEAT_LARANDY:
 					{
@@ -707,6 +708,7 @@ namespace TFE_DarkForces
 					} break;
 					case CHEAT_LABUG:
 					{
+						cheat_bugMode();
 					} break;
 					case CHEAT_LAREDLITE:
 					{

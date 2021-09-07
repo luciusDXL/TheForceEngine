@@ -135,4 +135,6 @@ namespace TFE_DarkForces
 	void player_setupCamera();
 
 	void cheat_teleport();
+	void cheat_enableNoheightCheck();
+	void cheat_bugMode();
 }  // namespace TFE_DarkForces

@@ -21,6 +21,7 @@ enum MessageType
 	MSG_DONE       = 21,
 	MSG_DAMAGE     = 22,
 	MSG_EXPLOSION  = 23,
+	MSG_PICKUP     = 24,
 	MSG_WAKEUP     = 25,
 	MSG_MASTER_ON  = 29,
 	MSG_MASTER_OFF = 30,

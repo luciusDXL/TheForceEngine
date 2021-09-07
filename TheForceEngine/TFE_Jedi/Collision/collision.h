@@ -38,6 +38,17 @@ struct CollisionInterval
 	fixed16_16 dirZ;
 };
 
+struct ColObject
+{
+	union
+	{
+		SecObject* obj;
+		RSector* sector;
+		RWall* wall;
+		void* ptr;
+	};
+};
+
 typedef void(*CollisionEffectFunc)(SecObject*);
 
 namespace TFE_Jedi

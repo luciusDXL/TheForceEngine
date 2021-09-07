@@ -269,6 +269,11 @@ namespace TFE_DarkForces
 		return s_mapLayer;
 	}
 
+	void automap_setLayer(s32 layer)
+	{
+		s_mapLayer = layer;
+	}
+
 	void automap_drawSectors()
 	{
 		if (s_automapAutoCenter || s_pdaActive)

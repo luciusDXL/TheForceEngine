@@ -32,6 +32,7 @@ namespace TFE_DarkForces
 	void automap_draw(u8* framebuffer);
 
 	s32  automap_getLayer();
+	void automap_setLayer(s32 layer);
 	void automap_disableTeleport();
 	void automap_enableTeleport();
 

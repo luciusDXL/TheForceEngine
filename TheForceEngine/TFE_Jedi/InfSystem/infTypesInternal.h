@@ -6,12 +6,13 @@
 #include "infPublicTypes.h"
 
 struct TextureData;
+struct AnimatedTexture;
 struct Allocator;
 
 namespace TFE_Jedi
 {
 	struct InfLink;
-	
+		
 	// How an elevator moves if triggered.
 	enum ElevTrigMove
 	{

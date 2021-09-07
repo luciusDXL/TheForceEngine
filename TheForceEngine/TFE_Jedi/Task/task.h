@@ -29,6 +29,7 @@ namespace TFE_Jedi
 {
 	Task* createTask(const char* name, TaskFunc func, TaskFunc localRunFunc = nullptr);
 	Task* pushTask(const char* name, TaskFunc func, JBool framebreak = JFALSE, TaskFunc localRunFunc = nullptr);
+	Task* task_getCurrent();
 
 	void  task_free(Task* task);
 	void  task_freeAll();

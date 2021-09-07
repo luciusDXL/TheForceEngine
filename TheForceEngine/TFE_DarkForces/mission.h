@@ -23,6 +23,8 @@ namespace TFE_DarkForces
 	void mission_startTaskFunc(s32 id);
 	void mission_setLoadMissionTask(Task* task);
 
+	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);
+
 	extern GameMissionMode s_missionMode;
 	extern TextureData* s_loadScreen;
 	extern u8 s_loadingScreenPal[];

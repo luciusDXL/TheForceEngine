@@ -162,6 +162,11 @@ namespace TFE_Jedi
 		return newTask;
 	}
 
+	Task* task_getCurrent()
+	{
+		return s_curTask;
+	}
+
 	void task_free(Task* task)
 	{
 		s_taskCount--;

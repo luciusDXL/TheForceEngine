@@ -53,6 +53,7 @@ namespace TFE_Jedi
 	// yPos:     the y position.
 	void inf_wallSendMessageAtPos(RWall* wall, SecObject* entity, u32 evt, TFE_Jedi::fixed16_16 paramPos, TFE_Jedi::fixed16_16 yPos);
 	void inf_wallAndMirrorSendMessageAtPos(RWall* wall, SecObject* entity, u32 evt, TFE_Jedi::fixed16_16 paramPos, TFE_Jedi::fixed16_16 yPos);
+	void inf_triggerWallEvent(RWall* wall, SecObject* obj, u32 event);
 
 	// Returns JTRUE if the object is sitting on a moving floor or second height.
 	JBool inf_isOnMovingFloor(SecObject* obj, InfElevator* elev, RSector* sector);

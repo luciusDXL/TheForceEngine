@@ -3,6 +3,9 @@
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
+#include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Level/robject.h>
+#include <TFE_DarkForces/logic.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,7 +61,25 @@ namespace TFE_Jedi
 
 	void message_sendToObj(SecObject* obj, MessageType msgType, MessageFunc func)
 	{
-		// TODO(Core Game Loop Release): was inf_sendObjMessage
+		TFE_DarkForces::Logic** logicList = (TFE_DarkForces::Logic**)allocator_getHead((Allocator*)obj->logic);
+		while (logicList)
+		{
+			TFE_DarkForces::Logic* logic = *logicList;
+			s_msgTarget = logic;
+			{
+				if (logic->task == task_getCurrent() && func)
+				{
+					//s_taskId = msgType;
+					func(logic);
+					//s_taskId = 0;
+				}
+				else
+				{
+					task_runLocal(logic->task, msgType);
+				}
+			}
+			logicList = (TFE_DarkForces::Logic**)allocator_getNext((Allocator*)obj->logic);
+		}
 	}
 
 	// Send messages so that entities and the player can interact with the INF system.

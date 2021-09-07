@@ -1762,6 +1762,19 @@ namespace TFE_Jedi
 		}
 	}
 
+	void inf_triggerWallEvent(RWall* wall, SecObject* obj, u32 event)
+	{
+		inf_wallSendMessage(wall, obj, event, MSG_TRIGGER);
+
+		RWall* mirror = wall->mirrorWall;
+		if (mirror)
+		{
+			// Opposite event.
+			u32 backsideEvent = event * 2;
+			inf_wallSendMessage(mirror, obj, backsideEvent, MSG_TRIGGER);
+		}
+	}
+
 	/////////////////////////////////////////////////////
 	// Internal
 	/////////////////////////////////////////////////////
