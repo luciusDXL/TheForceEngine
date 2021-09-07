@@ -699,7 +699,7 @@ namespace TFE_DarkForces
 		else if (getActionState(IA_STRAFE_LT))
 		{
 			fixed16_16 speed = -mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
-			s_strafeSpd = max(speed, s_strafeSpd);
+			s_strafeSpd = min(speed, s_strafeSpd);
 		}
 
 		if (getActionState(IA_USE))
@@ -1005,7 +1005,7 @@ namespace TFE_DarkForces
 
 		if (passability == PASS_ALWAYS_WALK || (s_colCurBot >= s_colBottom && s_colCurTop <= s_colTop && TFE_Jedi::abs(s_colCurBot - s_colCurTop) >= s_colHeight && s_colCurFloor <= s_colY1))
 		{
-			s_collidedObj = nullptr;// col_findObjectCollision(sector);
+			s_collidedObj = col_findObjectCollision(sector);
 			if (s_collidedObj)
 			{
 				return JFALSE;
@@ -1262,7 +1262,7 @@ namespace TFE_DarkForces
 		fixed16_16 x1 = x0 + s_playerLogic.move.x;
 		fixed16_16 z1 = z0 + s_playerLogic.move.z;
 		RSector* nextSector = player->sector;
-		RWall* wall = collision_wallCollisionFromPath(player->sector, x0, z1, x1, z1);
+		RWall* wall = collision_wallCollisionFromPath(player->sector, x0, z0, x1, z1);
 		while (wall)
 		{
 			RSector* adjoinSector = wall->nextSector;
@@ -1583,7 +1583,7 @@ namespace TFE_DarkForces
 
 			// Determine if a collision response is required.
 			collided = JTRUE;
-			if (prevResponseStep != s_colResponseStep)
+			if (prevResponseStep == s_colResponseStep)
 			{
 				break;
 			}
@@ -1620,7 +1620,6 @@ namespace TFE_DarkForces
 			// If this fails, the system will treat it as if the player didn't move (see below).
 			// However, it should succeed since the original collision detection did.
 			moved = playerMove();
-
 			if (moved)
 			{
 				s_colWidth += PLAYER_PICKUP_ADJ;	// s_colWidth + 1.5
