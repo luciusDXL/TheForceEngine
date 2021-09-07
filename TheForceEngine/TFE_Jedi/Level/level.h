@@ -53,4 +53,5 @@ namespace TFE_Jedi
 
 	extern s32 s_minLayer;
 	extern s32 s_maxLayer;
+	extern s32 s_secretCount;
 }

@@ -133,6 +133,7 @@ namespace TFE_DarkForces
 	void player_setupEyeObject(SecObject* obj);
 	s32  player_getLifeCount();
 	void player_setupCamera();
+	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound);
 
 	void cheat_teleport();
 	void cheat_enableNoheightCheck();

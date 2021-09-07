@@ -123,6 +123,7 @@ namespace TFE_DarkForces
 		JBool wpnAutoMount;
 		JBool mouseTurnEnabled;
 		JBool mouseLookEnabled;
+		JBool superShield;
 	};
 
 	void configStartup();

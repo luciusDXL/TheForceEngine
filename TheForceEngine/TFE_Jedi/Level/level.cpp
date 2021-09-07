@@ -28,8 +28,8 @@ namespace TFE_Jedi
 
 	s32 s_minLayer;
 	s32 s_maxLayer;
+	s32 s_secretCount;
 	static s32 s_dataIndex;
-	static s32 s_secretCount;
 	static s32 s_textureCount;
 
 	static s32 s_podCount = 0;

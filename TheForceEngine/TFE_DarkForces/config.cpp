@@ -92,6 +92,7 @@ namespace TFE_DarkForces
 		JFALSE,	// wpnAutoMount
 		JFALSE, // mouseTurnEnabled
 		JTRUE,  // mouseLookEnabled
+		JFALSE, // superShield
 	};
 
 	void addDefaultControlBinds();

@@ -296,7 +296,8 @@ namespace TFE_DarkForces
 			clear3DView(framebuffer);
 		}
 
-		if (s_leftHudShow || s_rightHudShow)
+		// Go ahead and just update the HUD every frame, there are already checks to see if each item changed.
+		//if (s_leftHudShow || s_rightHudShow)
 		{
 			fixed16_16 energy = TFE_Jedi::abs(s_energy * 100);
 			s32 percent = round16(energy >> 1);
