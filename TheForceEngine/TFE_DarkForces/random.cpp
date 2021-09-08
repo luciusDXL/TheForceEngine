@@ -24,7 +24,7 @@ namespace TFE_DarkForces
 
 	// Generate a random value as: 
 	// 1) random_next() or 
-	// 2) fixed16_16(value) * random_next()
+	// 2) fixed16_16(value) * fract(random_next())
 	s32 random(s32 value)
 	{
 		s32 newValue = random_next();

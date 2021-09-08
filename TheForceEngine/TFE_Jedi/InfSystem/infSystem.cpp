@@ -27,7 +27,11 @@ using namespace TFE_DarkForces;
 
 namespace TFE_Jedi
 {
-	#define MAX_INF_ITEMS 512
+	enum InfConstants
+	{
+		MAX_INF_ITEMS = 512,
+		DELAY_SLEEP = 0xffffffff,
+	};
 
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
 
@@ -220,7 +224,7 @@ namespace TFE_Jedi
 		}
 		else if (delay == IDELAY_HOLD)
 		{
-			elev->nextTick = IDELAY_HOLD;
+			elev->nextTick = DELAY_SLEEP;
 		}
 		else
 		{
@@ -1459,6 +1463,7 @@ namespace TFE_Jedi
 								if (delay == IDELAY_HOLD)
 								{
 									taskCtx->elev->trigMove = TRIGMOVE_HOLD;
+									taskCtx->elev->nextTick = DELAY_SLEEP;
 								}
 								else if (delay == IDELAY_COMPLETE || delay == IDELAY_TERMINATE)
 								{
