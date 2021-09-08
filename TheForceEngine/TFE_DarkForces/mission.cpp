@@ -885,11 +885,11 @@ namespace TFE_DarkForces
 				}
 			}
 
-			if (getActionState(IA_CYCLEWPN_PREV) == STATE_PRESSED)
+			if (getActionState(IA_CYCLEWPN_PREV))
 			{
 				player_cycleWeapons(-1);
 			}
-			else if (getActionState(IA_CYCLEWPN_NEXT) == STATE_PRESSED)
+			else if (getActionState(IA_CYCLEWPN_NEXT))
 			{
 				player_cycleWeapons(1);
 			}

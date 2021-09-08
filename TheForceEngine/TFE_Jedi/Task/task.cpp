@@ -297,16 +297,27 @@ namespace TFE_Jedi
 		s_currentId = id;
 		s_curTask = task;
 
+		s_curContext = &s_curTask->context;
+		// Save the current recursion level.
+		s32 prevLevel = s_curContext->level;
+
 		// When a task is run directly, it is called in-place since control needs to be handed over immediately.
 		// When yield is called, control will pass back to the calling task.
-		s_curContext = &s_curTask->context;
+		// Call from the base level, we are starting again.
+		s_curContext->level = -1;
+		s_curContext->ip[0] = 0;
 		s32 level = max(0, s_curContext->level);
 		TaskFunc runFunc = s_curContext->callstack[level];
-
 		assert(runFunc);
 		if (runFunc)
 		{
 			runFunc(s_currentId);
+		}
+
+		// Restore the previous level.
+		if (prevLevel != task->context.level)
+		{
+			task->context.level = prevLevel;
 		}
 	}
 

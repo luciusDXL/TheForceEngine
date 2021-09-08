@@ -82,6 +82,7 @@ namespace TFE_DarkForces
 	enum InputType
 	{
 		ITYPE_KEYBOARD = 0,
+		ITYPE_KB_BUFFERED,
 		ITYPE_MOUSE,
 		ITYPE_CONTROLLER,
 		ITYPE_CONTROLLER_AXIS,

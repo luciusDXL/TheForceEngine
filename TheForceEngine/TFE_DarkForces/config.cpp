@@ -15,8 +15,8 @@ namespace TFE_DarkForces
 		{ IA_HUD_TOGGLE,       ITYPE_KEYBOARD, KEY_F7 },
 		{ IA_HOLSTER_WEAPON,   ITYPE_KEYBOARD, KEY_F8 },
 		{ IA_AUTOMOUNT_TOGGLE, ITYPE_KEYBOARD, KEY_F8, KEYMOD_ALT },
-		{ IA_CYCLEWPN_PREV,    ITYPE_KEYBOARD, KEY_F9 },
-		{ IA_CYCLEWPN_NEXT,    ITYPE_KEYBOARD, KEY_F10 },
+		{ IA_CYCLEWPN_PREV,    ITYPE_KB_BUFFERED, KEY_F9 },
+		{ IA_CYCLEWPN_NEXT,    ITYPE_KB_BUFFERED, KEY_F10 },
 		{ IA_WPN_PREV,         ITYPE_KEYBOARD, KEY_BACKSPACE },
 		{ IA_PAUSE,            ITYPE_KEYBOARD, KEY_PAUSE },
 		{ IA_AUTOMAP,          ITYPE_KEYBOARD, KEY_TAB },
@@ -164,6 +164,16 @@ namespace TFE_DarkForces
 						else if (TFE_Input::keyDown(bind->keyCode) && s_actions[bind->action] != STATE_PRESSED)
 						{
 							s_actions[bind->action] = STATE_DOWN;
+						}
+					}
+				} break;
+				case ITYPE_KB_BUFFERED:
+				{
+					if (TFE_Input::keyModDown(bind->keyMod))
+					{
+						if (TFE_Input::bufferedKeyDown(bind->keyCode))
+						{
+							s_actions[bind->action] = STATE_PRESSED;
 						}
 					}
 				} break;
