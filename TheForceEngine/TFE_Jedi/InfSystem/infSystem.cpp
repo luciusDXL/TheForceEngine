@@ -193,7 +193,11 @@ namespace TFE_Jedi
 
 	void inf_gotoInitialStop(InfElevator* elev, s32 stopIndex)
 	{
-		if (!elev) { return; }
+		if (!elev || !elev->stops)
+		{
+			if (elev) { elev->nextTick = s_curTick; }
+			return;
+		}
 		Stop* stop = (Stop*)allocator_getByIndex(elev->stops, stopIndex);
 		if (!stop) { return; }
 
@@ -1425,7 +1429,7 @@ namespace TFE_Jedi
 							// Play the startup sound effect if the elevator is not already at the next stop.
 							Stop* nextStop = taskCtx->elev->nextStop;
 							// Play the initial sound as the elevator starts moving.
-							if (*taskCtx->elev->value != taskCtx->elev->nextStop->value)
+							if (nextStop && *taskCtx->elev->value != nextStop->value)
 							{
 								playSound3D_oneshot(taskCtx->elev->sound0, sndPos);
 							}
@@ -2368,7 +2372,7 @@ namespace TFE_Jedi
 				if (!(elev->updateFlags & ELEV_MOVING))
 				{
 					// If the elevator is not already at the next stop, play the start sound.
-					if (*elev->value != elev->nextStop->value)
+					if (elev->nextStop && *elev->value != elev->nextStop->value)
 					{
 						// Get the sound location.
 						vec3_fixed pos = inf_getElevSoundPos(elev);
@@ -2384,7 +2388,7 @@ namespace TFE_Jedi
 			{
 				// Goto the last stop.
 				elev->nextStop = inf_advanceStops(elev->stops, -1, 0);
-				if (*elev->value != elev->nextStop->value)
+				if (elev->nextStop && *elev->value != elev->nextStop->value)
 				{
 					// Get the sound location.
 					vec3_fixed pos = inf_getElevSoundPos(elev);
@@ -2403,7 +2407,7 @@ namespace TFE_Jedi
 				elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
 				if (!(elev->updateFlags & ELEV_MOVING))
 				{
-					if (*elev->value != elev->nextStop->value)
+					if (elev->nextStop && *elev->value != elev->nextStop->value)
 					{
 						vec3_fixed pos = inf_getElevSoundPos(elev);
 						playSound3D_oneshot(elev->sound0, pos);
@@ -2421,7 +2425,7 @@ namespace TFE_Jedi
 				}
 				if (!(elev->updateFlags & ELEV_MOVING))
 				{
-					if (*elev->value != elev->nextStop->value)
+					if (elev->nextStop && *elev->value != elev->nextStop->value)
 					{
 						vec3_fixed pos = inf_getElevSoundPos(elev);
 						playSound3D_oneshot(elev->sound0, pos);
