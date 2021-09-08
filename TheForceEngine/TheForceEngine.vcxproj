@@ -278,6 +278,8 @@
     <ClInclude Include="TFE_DarkForces\mission.h" />
     <ClInclude Include="TFE_DarkForces\pickup.h" />
     <ClInclude Include="TFE_DarkForces\player.h" />
+    <ClInclude Include="TFE_DarkForces\playerCollision.h" />
+    <ClInclude Include="TFE_DarkForces\playerLogic.h" />
     <ClInclude Include="TFE_DarkForces\projectile.h" />
     <ClInclude Include="TFE_DarkForces\random.h" />
     <ClInclude Include="TFE_DarkForces\time.h" />
@@ -441,6 +443,7 @@
     <ClCompile Include="TFE_DarkForces\mission.cpp" />
     <ClCompile Include="TFE_DarkForces\pickup.cpp" />
     <ClCompile Include="TFE_DarkForces\player.cpp" />
+    <ClCompile Include="TFE_DarkForces\playerCollision.cpp" />
     <ClCompile Include="TFE_DarkForces\projectile.cpp" />
     <ClCompile Include="TFE_DarkForces\random.cpp" />
     <ClCompile Include="TFE_DarkForces\time.cpp" />
