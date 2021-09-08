@@ -133,12 +133,11 @@ namespace TFE_DarkForces
 		openGobFiles();
 		TFE_Jedi::task_setDefaults();
 		TFE_Jedi::setupInitCameraAndLights();
+		configStartup();
 		gameStartup();
 		loadAgentAndLevelData();
 
 		renderer_init();
-		configStartup();
-		
 		return true;
 	}
 
@@ -510,7 +509,7 @@ namespace TFE_DarkForces
 			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
 		}
 
-		weapon_enableAutomount(JFALSE);	// TODO: This should come from the config file, with things like key bindings, etc.
+		weapon_enableAutomount(s_config.wpnAutoMount);
 		s_screenShotSndSrc = sound_Load("scrshot.voc");
 		setSoundSourceVolume(s_screenShotSndSrc, 127);
 	}

@@ -1,6 +1,7 @@
 #include "robject.h"
 #include "level.h"
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_DarkForces/logic.h>
 
 namespace TFE_Jedi
 {
@@ -36,7 +37,12 @@ namespace TFE_Jedi
 		void* head = allocator_getHead((Allocator*)obj->logic);
 		while (head)
 		{
-			// TODO(Core Game Loop Release) - free all logics.
+			TFE_DarkForces::Logic* logic = *((TFE_DarkForces::Logic**)head);
+			if (logic->cleanupFunc)
+			{
+				logic->cleanupFunc(logic);
+			}
+			
 			head = allocator_getNext((Allocator*)obj->logic);
 		}
 

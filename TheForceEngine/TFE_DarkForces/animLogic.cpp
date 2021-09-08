@@ -19,14 +19,15 @@ namespace TFE_DarkForces
 	void spriteAnimLogicCleanupFunc(Logic* logic)
 	{
 		SpriteAnimLogic* animLogic = (SpriteAnimLogic*)logic;
+		Task* completeTask = animLogic->completeTask;
 		// The original code would loop and yield while not in the main task.
 		// For TFE, that should be unnecessary.
 		deleteLogicAndObject(logic);
-		if (animLogic->completeTask)
-		{
-			task_runAndReturn(animLogic->completeTask, 20);
-		}
 		allocator_deleteItem(s_spriteAnimList, logic);
+		if (completeTask)
+		{
+			task_runAndReturn(completeTask, 20);
+		}
 	}
 
 	// Logic update function, handles the update of all sprite animations.

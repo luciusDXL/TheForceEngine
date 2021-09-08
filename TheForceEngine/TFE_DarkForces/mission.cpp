@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 	void setLuminanceMask(JBool r, JBool g, JBool b);
 	void setCurrentColorMap(u8* colorMap, u8* lightRamp);
 	void mainTask_handleCall(s32 id);
-	void handleGeneralInput(s32 id);
+	void handleGeneralInput();
 
 	void updateScreensize();
 
@@ -270,7 +270,7 @@ namespace TFE_DarkForces
 				// vgaClearPalette();
 			}
 
-			task_callTaskFunc(handleGeneralInput);
+			handleGeneralInput();
 			handlePaletteFx();
 			if (s_drawAutomap)
 			{
@@ -782,10 +782,8 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void handleGeneralInput(s32 id)
+	void handleGeneralInput()
 	{
-		task_begin;
-
 		// In the DOS code, the game would just loop here - checking to see if paused has been pressed and then continue.
 		// Obviously that won't work for TFE, so the game paused variable is set and the game will have to handle it.
 		if (getActionState(IA_PAUSE) == STATE_PRESSED)
@@ -965,7 +963,6 @@ namespace TFE_DarkForces
 				}
 			}
 		}
-		task_end;
 	}
 
 	void updateScreensize()
