@@ -18,6 +18,9 @@
 
 namespace TFE_DarkForces
 {
+	///////////////////////////////////////////
+	// Constants
+	///////////////////////////////////////////
 	enum PlayerConstants
 	{
 		PLAYER_HEIGHT                  = 0x5cccc,	  // 5.8 units
@@ -90,7 +93,68 @@ namespace TFE_DarkForces
 		1, 2, 3, 4, 5, 6, 7, 8, 9,
 		10, 11, 12, 13, 14, 15, 16
 	};
+
+	///////////////////////////////////////////
+	// Internal State
+	///////////////////////////////////////////
+	// Player Controller
+	static fixed16_16 s_externalYawSpd;
+	static angle14_32 s_playerYaw;
+	static angle14_32 s_playerPitch;
+	static angle14_32 s_playerRoll;
+	static fixed16_16 s_forwardSpd;
+	static fixed16_16 s_strafeSpd;
+	static fixed16_16 s_maxMoveDist;
+	static fixed16_16 s_playerStopAccel;
+	static fixed16_16 s_minEyeDistFromFloor;
+	static fixed16_16 s_postLandVel;
+	static fixed16_16 s_landUpVel = 0;
+	static fixed16_16 s_playerVelX;
+	static fixed16_16 s_playerUpVel;
+	static fixed16_16 s_playerUpVel2;
+	static fixed16_16 s_playerVelZ;
+	static fixed16_16 s_externalVelX;
+	static fixed16_16 s_externalVelZ;
+	static fixed16_16 s_playerCrouchSpd;
+	static fixed16_16 s_playerSpeed;
+	static fixed16_16 s_prevDistFromFloor = 0;
+	static fixed16_16 s_wpnSin = 0;
+	static fixed16_16 s_wpnCos = 0;
+	static fixed16_16 s_moveDirX;
+	static fixed16_16 s_moveDirZ;
+	static fixed16_16 s_dist;
+	static fixed16_16 s_distScale;
+	// Misc
+	static s32 s_weaponLight = 0;
+	static s32 s_levelAtten = 0;
+	static s32 s_headwaveVerticalOffset;
+	static Safe* s_curSafe = nullptr;
+	// Actions
+	static JBool s_playerUse = JFALSE;
+	static JBool s_playerActionUse = JFALSE;
+	static JBool s_weaponFiring = JFALSE;
+	static JBool s_weaponFiringSec = JFALSE;
+	static JBool s_playerPrimaryFire = JFALSE;
+	static JBool s_playerSecFire = JFALSE;
+	static JBool s_playerJumping = JFALSE;
+	static JBool s_playerInWater = JFALSE;
+	static JBool s_limitStepHeight = JTRUE;
+	static JBool s_smallModeEnabled = JFALSE;
+	// Currently playing sound effects.
+	static SoundEffectID s_crushSoundId = 0;
+	static SoundEffectID s_kyleScreamSoundId = 0;
+	// Position and orientation.
+	static vec3_fixed s_playerPos;
+	static fixed16_16 s_playerYPos;
+	static fixed16_16 s_playerObjHeight;
+	static angle14_32 s_playerObjPitch;
+	static angle14_32 s_playerObjYaw;
+	static RSector* s_playerObjSector;
+	static RWall* s_playerSlideWall;
 	
+	///////////////////////////////////////////
+	// Shared State
+	///////////////////////////////////////////
 	PlayerInfo s_playerInfo = { 0 };
 	PlayerLogic s_playerLogic = { 0 };
 	GoalItems s_goalItems   = { 0 };
@@ -147,63 +211,16 @@ namespace TFE_DarkForces
 	SoundSourceID s_kyleScreamSoundSource;
 	SoundSourceID s_playerShieldHitSoundSource;
 
-	// Player Controller
-	static fixed16_16 s_externalYawSpd;
-	static angle14_32 s_playerYaw;
-	static angle14_32 s_playerPitch;
-	static angle14_32 s_playerRoll;
-	static fixed16_16 s_forwardSpd;
-	static fixed16_16 s_strafeSpd;
-	static fixed16_16 s_maxMoveDist;
-	static fixed16_16 s_playerStopAccel;
-	static fixed16_16 s_minEyeDistFromFloor;
-	static fixed16_16 s_postLandVel;
-	static fixed16_16 s_landUpVel = 0;
-	static fixed16_16 s_playerVelX;
-	static fixed16_16 s_playerUpVel;
-	static fixed16_16 s_playerUpVel2;
-	static fixed16_16 s_playerVelZ;
-	static fixed16_16 s_externalVelX;
-	static fixed16_16 s_externalVelZ;
-	static fixed16_16 s_playerCrouchSpd;
-	static fixed16_16 s_playerSpeed;
-	static fixed16_16 s_prevDistFromFloor = 0;
-	static fixed16_16 s_wpnSin = 0;
-	static fixed16_16 s_wpnCos = 0;
 	fixed16_16 s_playerHeight;
 	// Speed Modifiers
 	s32 s_playerRun = 0;
 	s32 s_jumpScale = 0;
 	s32 s_playerSlow = 0;
 	s32 s_onMovingSurface = 0;
-	// Misc
-	static s32 s_weaponLight = 0;
-	static s32 s_levelAtten = 0;
-	static s32 s_headwaveVerticalOffset;
-	static Safe* s_curSafe = nullptr;
-	// Actions
-	static JBool s_playerUse = JFALSE;
-	static JBool s_playerActionUse = JFALSE;
-	static JBool s_weaponFiring = JFALSE;
-	static JBool s_weaponFiringSec = JFALSE;
-	static JBool s_playerPrimaryFire = JFALSE;
-	static JBool s_playerSecFire = JFALSE;
-	static JBool s_playerJumping = JFALSE;
-	static JBool s_playerInWater = JFALSE;
-	static JBool s_limitStepHeight = JTRUE;
-	static JBool s_smallModeEnabled = JFALSE;
-	// Currently playing sound effects.
-	static SoundEffectID s_crushSoundId = 0;
-	static SoundEffectID s_kyleScreamSoundId = 0;
-	// Position and orientation.
-	static vec3_fixed s_playerPos;
-	static fixed16_16 s_playerYPos;
-	static fixed16_16 s_playerObjHeight;
-	static angle14_32 s_playerObjPitch;
-	static angle14_32 s_playerObjYaw;
-	static RSector* s_playerObjSector;
-	static RWall* s_playerSlideWall;
-		   
+			   
+	///////////////////////////////////////////
+	// Forward Declarations
+	///////////////////////////////////////////
 	void playerControlTaskFunc(s32 id);
 	void setPlayerLight(s32 atten);
 	void setCameraOffset(fixed16_16 offsetX, fixed16_16 offsetY, fixed16_16 offsetZ);
@@ -215,6 +232,9 @@ namespace TFE_DarkForces
 	void handlePlayerActions();
 	void handlePlayerScreenFx();
 		
+	///////////////////////////////////////////
+	// API Implentation
+	///////////////////////////////////////////
 	void player_init()
 	{
 		s_landSplashSound                = sound_Load("swim-in.voc");
@@ -571,6 +591,9 @@ namespace TFE_DarkForces
 		task_end;
 	}
 	
+	///////////////////////////////////////////
+	// Internal Implentation
+	///////////////////////////////////////////
 	void setPlayerLight(s32 atten)
 	{
 		s_playerLight = atten;
@@ -744,12 +767,7 @@ namespace TFE_DarkForces
 		spd >>= s_onMovingSurface;	// slows down the player movement on a moving surface.
 		return spd;
 	}
-
-	static fixed16_16 s_moveDirX;
-	static fixed16_16 s_moveDirZ;
-	static fixed16_16 s_dist;
-	static fixed16_16 s_distScale;
-
+		
 	void computeDirectionFromAngle(angle14_32 yaw, fixed16_16* xDir, fixed16_16* zDir)
 	{
 		sinCosFixed(yaw, xDir, zDir);
@@ -820,7 +838,7 @@ namespace TFE_DarkForces
 		{
 			Tick dt = s_playerTick - s_prevPlayerTick;
 			// Exponential friction, this is the same as vel * friction^dt
-			for (s32 i = 0; i < dt; i++)
+			for (Tick i = 0; i < dt; i++)
 			{
 				s_playerVelX = mul16(friction, s_playerVelX);
 				s_playerVelZ = mul16(friction, s_playerVelZ);
@@ -1002,7 +1020,7 @@ namespace TFE_DarkForces
 		{
 			fixed16_16 friction = FRICTION_DEFAULT;
 			Tick dt = s_playerTick - s_prevPlayerTick;
-			for (s32 i = 0; i < dt; i++)
+			for (Tick i = 0; i < dt; i++)
 			{
 				s_externalVelX = mul16(s_externalVelX, friction);
 				s_externalVelZ = mul16(s_externalVelZ, friction);
@@ -1105,7 +1123,6 @@ namespace TFE_DarkForces
 			// Handle player land event - this both plays a sound effect and sends an INF message.
 			if (s_prevDistFromFloor)
 			{
-				u32 sound;
 				if (s_nextSector->secHeight - 1 >= 0)
 				{
 					// Second height is below ground, so this is liquid.
