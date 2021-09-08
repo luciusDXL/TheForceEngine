@@ -262,7 +262,7 @@ namespace RClassic_Fixed
 		// Build tables
 		s_column_Z_Over_X = (fixed16_16*)realloc(s_column_Z_Over_X, s_width * sizeof(fixed16_16));
 		s_column_X_Over_Z = (fixed16_16*)realloc(s_column_X_Over_Z, s_width * sizeof(fixed16_16));
-		s_skyTable_Fixed = (fixed16_16*)realloc(s_skyTable_Fixed, s_width * sizeof(fixed16_16));
+		s_skyTable_Fixed = (fixed16_16*)realloc(s_skyTable_Fixed, (s_width + 1) * sizeof(fixed16_16));
 
 		// Here we assume a 90 degree field of view, this forms a frustum (not drawn to scale):
 		//     W = width of plane in pixels
@@ -407,7 +407,7 @@ namespace RClassic_Fixed
 		// Build tables
 		s_column_Z_Over_X = (fixed16_16*)realloc(s_column_Z_Over_X, s_width * sizeof(fixed16_16));
 		s_column_X_Over_Z = (fixed16_16*)realloc(s_column_X_Over_Z, s_width * sizeof(fixed16_16));
-		s_skyTable_Fixed = (fixed16_16*)realloc(s_skyTable_Fixed, s_width * sizeof(fixed16_16));
+		s_skyTable_Fixed = (fixed16_16*)realloc(s_skyTable_Fixed, (s_width + 1) * sizeof(fixed16_16));
 		s32 halfWidth = s_width >> 1;
 		for (s32 x = 0; x < s_width; x++)
 		{

@@ -98,9 +98,9 @@ namespace TFE_Jedi
 	extern s32 s_wallMinFloorY;
 
 	extern EdgePair* s_flatEdge;
-	extern EdgePair  s_flatEdgeList[MAX_SEG];
+	extern EdgePair  s_flatEdgeList[];
 	extern EdgePair* s_adjoinEdge;
-	extern EdgePair  s_adjoinEdgeList[MAX_ADJOIN_SEG];
+	extern EdgePair  s_adjoinEdgeList[];
 	
 	// Lighting
 	extern const u8* s_colorMap;

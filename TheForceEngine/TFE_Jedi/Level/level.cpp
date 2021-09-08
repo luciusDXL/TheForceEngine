@@ -359,7 +359,7 @@ namespace TFE_Jedi
 			if (sector->flags1 & SEC_FLAGS1_DOOR)
 			{
 				InfElevator* elev = inf_allocateSpecialElevator(sector, IELEV_SP_DOOR);
-				elev->flags |= INF_EFLAG_DOOR;
+				if (elev) { elev->flags |= INF_EFLAG_DOOR; }
 			}
 			// Create an exploding wall if needed.
 			if (sector->flags1 & SEC_FLAGS1_EXP_WALL)

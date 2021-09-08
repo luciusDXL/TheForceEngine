@@ -227,6 +227,7 @@ namespace TFE_Jedi
 		if (s_curContext)
 		{
 			level = s_curContext->level;
+			assert(s_curContext->level >= 0 && s_curContext->level < TASK_MAX_LEVELS);
 			if (level <= 0 || !s_curContext->delayedCall[level-1])
 			{
 				s_curContext->level--;
@@ -236,6 +237,7 @@ namespace TFE_Jedi
 				// We need to reduce by 2 levels since a delayed call does not immediately return to the calling function.
 				s_curContext->level -= 2;
 			}
+			assert(s_curContext->level >= -1 && s_curContext->level < TASK_MAX_LEVELS);
 
 			if (s_curContext->callLevel > 0) { s_curContext->callLevel--; }
 		}
@@ -249,6 +251,7 @@ namespace TFE_Jedi
 		{
 			// Return the stack memory allocated for this level.
 			s_curContext->stackOffset -= s_curContext->stackSize[level];
+			assert(s_curContext->stackOffset >= 0 && s_curContext->stackOffset < TASK_STACK_SIZE);
 			s_curContext->stackPtr[level] = nullptr;
 			s_curContext->stackSize[level] = 0;
 		}
@@ -324,6 +327,7 @@ namespace TFE_Jedi
 	void itask_yield(Tick delay, s32 ip)
 	{
 		// Copy the ip so we know where to return.
+		assert(s_curContext->level >= 0 && s_curContext->level < TASK_MAX_LEVELS);
 		s_curContext->ip[s_curContext->level] = ip;
 		s_curContext->level--;
 
@@ -423,6 +427,7 @@ namespace TFE_Jedi
 
 	s32 ctxGetIP()
 	{
+		assert(s_curContext->level >= 0 && s_curContext->level < TASK_MAX_LEVELS);
 		return s_curContext->ip[s_curContext->level];
 	}
 
@@ -442,6 +447,7 @@ namespace TFE_Jedi
 			s_curContext->stackPtr[level] = s_curContext->stackMem + s_curContext->stackOffset;
 			s_curContext->stackSize[level] = size;
 			s_curContext->stackOffset += size;
+			assert(s_curContext->stackOffset >= 0 && s_curContext->stackOffset < TASK_STACK_SIZE);
 
 			// Clear out the memory.
 			memset(s_curContext->stackPtr[level], 0, size);
@@ -464,7 +470,7 @@ namespace TFE_Jedi
 	// so that the recursion level is properly handled on delayed return.
 	bool ctxCall(TaskFunc func, s32 id, s32 ip)
 	{
-		assert(s_curContext->level + 1 < TASK_MAX_LEVELS);
+		assert(s_curContext->level >= 0 && s_curContext->level + 1 < TASK_MAX_LEVELS);
 		TaskContext* startContext = s_curContext;
 		if (s_curContext->level == 0)
 		{
