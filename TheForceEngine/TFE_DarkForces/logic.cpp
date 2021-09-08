@@ -115,8 +115,7 @@ namespace TFE_DarkForces
 				else if (logicId >= KW_TROOP && logicId <= KW_BARREL)	// Enemies and explosives barrels.
 				{
 					// TODO(Core Game Loop Release) - come back to this once the level is running
-					// Turn off enemy collision for now, until this is setup correctly.
-					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
+					obj->flags |= OBJ_FLAG_HAS_COLLISION;
 				}
 				else if (logicId == KW_LAND_MINE)	// Pre-placed land mines.
 				{

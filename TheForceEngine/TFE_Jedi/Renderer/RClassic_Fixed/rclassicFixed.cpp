@@ -205,6 +205,9 @@ namespace RClassic_Fixed
 		s_projOffsetY = intToFixed16(yc);
 		s_projOffsetYBase = s_projOffsetY;
 
+		s_windowX0 = s_minScreenX;
+		s_windowX1 = s_maxScreenX;
+
 		s_oneOverHalfWidth = div16(ONE_16, halfWidthFixed);
 
 		// TFE

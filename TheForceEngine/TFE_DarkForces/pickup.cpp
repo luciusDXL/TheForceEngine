@@ -99,7 +99,6 @@ namespace TFE_DarkForces
 	void pickup_cleanupFunc(Logic* logic)
 	{
 		deleteLogicAndObject(logic);
-		free(logic);
 	}
 
 	void pickup_createTask()
@@ -214,38 +213,38 @@ namespace TFE_DarkForces
 		{
 			switch (pickup->id)
 			{
-			case ITEM_INVINCIBLE:
-			{
-				pickupInvincibility();
-			} break;
-			case ITEM_SUPERCHARGE:
-			{
-				pickupSupercharge();
-			} break;
-			case ITEM_REVIVE:
-			{
-				if (s_playerInfo.health < 100 || s_playerInfo.shields < 200)
+				case ITEM_INVINCIBLE:
 				{
-					playerRevive();
-					// The function sets shields to 100, so set it to the proper value here.
-					s_playerInfo.shields = 200;
-				}
-				else
+					pickupInvincibility();
+				} break;
+				case ITEM_SUPERCHARGE:
 				{
-					pickedUpItem = JFALSE;
-				}
-			} break;
-			case ITEM_LIFE:
-			{
-				if (s_lifeCount < 9)
+					pickupSupercharge();
+				} break;
+				case ITEM_REVIVE:
 				{
-					s_lifeCount++;
-				}
-				else
+					if (s_playerInfo.health < 100 || s_playerInfo.shields < 200)
+					{
+						playerRevive();
+						// The function sets shields to 100, so set it to the proper value here.
+						s_playerInfo.shields = 200;
+					}
+					else
+					{
+						pickedUpItem = JFALSE;
+					}
+				} break;
+				case ITEM_LIFE:
 				{
-					pickedUpItem = 0;
-				}
-			} break;
+					if (s_lifeCount < 9)
+					{
+						s_lifeCount++;
+					}
+					else
+					{
+						pickedUpItem = 0;
+					}
+				} break;
 			}
 			if (pickedUpItem)
 			{
@@ -322,7 +321,10 @@ namespace TFE_DarkForces
 		{
 			// Sleep until called.
 			task_yield(TASK_SLEEP);
-			freeItems();
+			if (id == 0)
+			{
+				freeItems();
+			}
 
 			if (id == PICKUP_DELETE)
 			{

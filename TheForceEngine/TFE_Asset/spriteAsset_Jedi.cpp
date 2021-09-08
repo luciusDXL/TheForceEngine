@@ -188,8 +188,8 @@ namespace TFE_Sprite_Jedi
 				scaledWidth  = div16(SPRITE_SCALE_FIXED, dstAnim->worldWidth);
 				scaledHeight = div16(SPRITE_SCALE_FIXED, dstAnim->worldHeight);
 
-				dstWax->xScale = scaledWidth;
-				dstWax->yScale = scaledHeight;
+				dstWax->xScale = dstAnim->worldWidth;
+				dstWax->yScale = dstAnim->worldHeight;
 			}
 
 			const s32* viewOffsets = dstAnim->viewOffsets;
