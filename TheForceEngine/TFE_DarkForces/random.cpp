@@ -2,38 +2,43 @@
 
 namespace TFE_DarkForces
 {
-	u32 s_seed;
+	// TODO(Core Game Loop Release): Figure out what this value is at program start up. The value here is from when the program was already running.
+	// This should cause the random numbers to match up between TFE and DOS.
+	static u32 s_seed = 0xf444bb3b;
 
-	// This divides s_seed by 2 - 
-	// If it is odd, then it applies a xor to the top 8 bits:
-	// b:     10100011
-	// 0x7a = 01111010
-	// 0xd9 = 11011001
-	u32 random_next()
+	s32 random_next()
 	{
+		// Shift the seed by 1 (divide by two), and
+		// xor the top 8 bits with b10100011 (163) if the starting seed is odd.
+		// This has the effect of increasing the size of the seed if it gets too small due to the shifts, and increasing "randomness"
 		if (s_seed & 1)
 		{
-			// This leaves the lower 24 bits alone.
-			// And then modifies the top.
-			// This is only applied if s_seed is not cleanly divisible by 2.
 			s_seed = (s_seed >> 1) ^ 0xa3000000;
-			return s_seed;
 		}
-		s_seed = (s_seed >> 1);
-		return s_seed;
+		else
+		{
+			s_seed = (s_seed >> 1);
+		}
+		return s32(s_seed);
 	}
 
 	// Generate a random value as: 
 	// 1) random_next() or 
 	// 2) fixed16_16(value) * random_next()
-	s32 random(u32 value)
+	s32 random(s32 value)
 	{
-		u32 newValue = random_next();
-		if (newValue > value)
+		s32 newValue = random_next();
+		if (newValue > value || newValue < 0)
 		{
-			fixed16_16 fractNew = fixed16_16(newValue & 0xffff);
-			newValue = mul16(fixed16_16(value), fractNew);
+			// Note the value is cast to fixed16_16 but is not actually converted.
+			// This means that if the incoming value is not fixed point, the result will also not be fixed point.
+			newValue = mul16(fixed16_16(value), fract16(newValue));
 		}
-		return s32(newValue);
+		return newValue;
+	}
+
+	void random_seed(u32 seed)
+	{
+		s_seed = seed;
 	}
 }  // TFE_DarkForces

@@ -12,8 +12,8 @@
 
 namespace TFE_DarkForces
 {
-	// Generate a random value as: fixed16_16(value) * { random between 0.0 and 1.0 }
-	s32 random(u32 value);
+	// Generate a random value between [0, value]
+	s32 random(s32 value);
 
-	extern u32 s_seed;
+	void random_seed(u32 seed);
 }  // namespace TFE_DarkForces
