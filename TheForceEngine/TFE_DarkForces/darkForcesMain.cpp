@@ -132,6 +132,7 @@ namespace TFE_DarkForces
 		loadLocalMessages();
 		openGobFiles();
 		TFE_Jedi::task_setDefaults();
+		TFE_Jedi::task_setMinStepInterval(1.0 / TIMER_FREQ);
 		TFE_Jedi::setupInitCameraAndLights();
 		configStartup();
 		gameStartup();

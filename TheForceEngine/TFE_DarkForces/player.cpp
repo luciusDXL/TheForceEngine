@@ -616,7 +616,7 @@ namespace TFE_DarkForces
 		s_playerCrouchSpd = s_playerStopAccel;
 				
 		s32 mdx, mdy;
-		TFE_Input::getMouseMove(&mdx, &mdy);
+		TFE_Input::getAccumulatedMouseMove(&mdx, &mdy);
 		// Yaw change
 		if (s_config.mouseTurnEnabled || s_config.mouseLookEnabled)
 		{

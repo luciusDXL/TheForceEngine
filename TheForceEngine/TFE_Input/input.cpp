@@ -28,6 +28,7 @@ namespace TFE_Input
 	
 	s32 s_mouseWheel[2] = { 0 };
 	s32 s_mouseMove[2] = { 0 };
+	s32 s_mouseMoveAccum[2] = { 0 };
 	s32 s_mousePos[2] = { 0 };
 
 	bool s_relativeMode = false;
@@ -116,6 +117,8 @@ namespace TFE_Input
 	{
 		s_mouseMove[0] = x;
 		s_mouseMove[1] = y;
+		s_mouseMoveAccum[0] += x;
+		s_mouseMoveAccum[1] += y;
 	}
 
 	void setMousePos(s32 x, s32 y)
@@ -160,6 +163,23 @@ namespace TFE_Input
 
 		*x = s_mouseMove[0];
 		*y = s_mouseMove[1];
+	}
+		
+	void getAccumulatedMouseMove(s32* x, s32* y)
+	{
+		assert(x && y);
+
+		*x = s_mouseMoveAccum[0];
+		*y = s_mouseMoveAccum[1];
+
+		s_mouseMoveAccum[0] = 0;
+		s_mouseMoveAccum[1] = 0;
+	}
+
+	void clearAccumulatedMouseMove()
+	{
+		s_mouseMoveAccum[0] = 0;
+		s_mouseMoveAccum[1] = 0;
 	}
 
 	void getMousePos(s32* x, s32* y)

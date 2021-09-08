@@ -191,6 +191,7 @@ namespace TFE_DarkForces
 			task_makeActive(s_playerTask);
 			s_prevTick   = s_curTick;
 			s_playerTick = s_curTick;
+			TFE_Input::clearAccumulatedMouseMove();
 		}
 		// Sleep until we are done with the main task.
 		task_yield(TASK_SLEEP);

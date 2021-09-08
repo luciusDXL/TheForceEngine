@@ -49,6 +49,7 @@ namespace TFE_Jedi
 	// thread and then blit the results in the main thread.
 	void task_run();
 	void task_setDefaults();
+	void task_setMinStepInterval(f64 minIntervalInSec);
 
 	s32 task_getCount();
 }

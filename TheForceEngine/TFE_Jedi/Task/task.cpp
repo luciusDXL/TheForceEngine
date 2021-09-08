@@ -77,6 +77,9 @@ namespace TFE_Jedi
 
 	TaskContext* s_curContext = nullptr;
 
+	static f64 s_prevTime = 0.0;
+	static f64 s_minIntervalInSec = 0.0;
+
 	void selectNextTask();
 
 	void createRootTask()
@@ -384,6 +387,12 @@ namespace TFE_Jedi
 		assert(s_curTask);
 	}
 		
+	void task_setMinStepInterval(f64 minIntervalInSec)
+	{
+		s_prevTime = TFE_System::getTime();
+		s_minIntervalInSec = minIntervalInSec;
+	}
+		
 	// Called once per frame to run all of the tasks.
 	void task_run()
 	{
@@ -391,6 +400,15 @@ namespace TFE_Jedi
 		{
 			return;
 		}
+
+		// Limit the update rate by the minimum interval.
+		// Dark Forces uses discrete 'ticks' to track time and the game behavior is very odd with 0 tick frames.
+		const f64 time = TFE_System::getTime();
+		if (time - s_prevTime < s_minIntervalInSec)
+		{
+			return;
+		}
+		s_prevTime = time;
 
 		// Find the next task to run.
 		Task* task = s_resumeTask ? s_resumeTask : s_curTask;

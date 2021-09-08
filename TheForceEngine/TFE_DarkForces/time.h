@@ -14,6 +14,9 @@ typedef s32 TickSigned;
 
 namespace TFE_DarkForces
 {
+	// The actual timer frequency used by the DOS code.
+	#define TIMER_FREQ 145.6521
+
 	// Integer number of ticks per second.
 	#define TICKS_PER_SECOND 145
 

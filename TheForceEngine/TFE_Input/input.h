@@ -44,6 +44,7 @@ namespace TFE_Input
 	// Get
 	f32 getAxis(Axis axis);
 	void getMouseMove(s32* x, s32* y);
+	void getAccumulatedMouseMove(s32* x, s32* y);
 	void getMousePos(s32* x, s32* y);
 	void getMouseWheel(s32* dx, s32* dy);
 	bool buttonDown(Button button);
@@ -54,6 +55,7 @@ namespace TFE_Input
 	bool mouseDown(MouseButton button);
 	bool mousePressed(MouseButton button);
 	bool relativeModeEnabled();
+	void clearAccumulatedMouseMove();
 	// Buffered Input
 	const char* getBufferedText();
 	bool bufferedKeyDown(KeyboardCode key);

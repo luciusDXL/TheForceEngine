@@ -25,7 +25,7 @@ namespace TFE_DarkForces
 
 	void updateTime()
 	{
-		s_timeAccum += TFE_System::getDeltaTime() * 145.6521;
+		s_timeAccum += TFE_System::getDeltaTime() * TIMER_FREQ;
 		s_curTick = Tick(s_timeAccum);
 	}
 }  // TFE_DarkForces
