@@ -868,7 +868,7 @@ namespace TFE_DarkForces
 
 			if (getActionState(IA_HOLSTER_WEAPON) == STATE_PRESSED)
 			{
-				task_callTaskFunc(weapon_holster);
+				weapon_holster();
 			}
 
 			if (getActionState(IA_AUTOMOUNT_TOGGLE) == STATE_PRESSED)
@@ -887,11 +887,11 @@ namespace TFE_DarkForces
 
 			if (getActionState(IA_CYCLEWPN_PREV) == STATE_PRESSED)
 			{
-				task_callTaskFuncWithId(player_cycleWeapons, -1);
+				player_cycleWeapons(-1);
 			}
 			else if (getActionState(IA_CYCLEWPN_NEXT) == STATE_PRESSED)
 			{
-				task_callTaskFuncWithId(player_cycleWeapons, 1);
+				player_cycleWeapons(1);
 			}
 
 			if (getActionState(IA_AUTOMAP) == STATE_PRESSED)

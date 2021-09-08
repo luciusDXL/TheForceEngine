@@ -33,7 +33,7 @@ namespace TFE_DarkForces
 	void pickTaskFunc(s32 id);
 	void pickupInvincibility();
 	void pickupSupercharge();
-	void pickupInventory(s32 id);
+	void pickupInventory();
 	void pickupItem(s32 id);
 
 	//////////////////////////////////////////////////////////////
@@ -255,8 +255,7 @@ namespace TFE_DarkForces
 		else if (pickup->type == ITYPE_SPECIAL)
 		{
 			hud_sendTextMessage(312);
-			// TODO(Core Game Loop Release)
-			// task_callTaskFunc(pickupInventory);
+			pickupInventory();
 			s_goalItems.stolenInv = JTRUE;
 
 			if (s_completeSector)
@@ -853,25 +852,18 @@ namespace TFE_DarkForces
 		s_superchargeTask = createTask("supercharge", superchargeTaskFunc);
 	}
 
-	void pickupInventory(s32 id)
+	void pickupInventory()
 	{
-		struct LocalContext
-		{
-			size_t size;
-			u32* dst;
-			u32* src;
-		};
-		task_begin;
 		// Get the size of the PlayerInfo structure up to but not including s_playerInfo.stateUnknown.
-		taskCtx->size = (size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo;
+		size_t size = (size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo;
 		if (s_playerInvSaved)
 		{
 			// Copy the saved player info and add it to the current player info.
-			taskCtx->dst = (u32*)&s_playerInfo;
-			taskCtx->src = s_playerInvSaved;
-			for (s32 sizeCopied = 0; sizeCopied < taskCtx->size; sizeCopied += 4, taskCtx->src++, taskCtx->dst++)
+			u32* dst = (u32*)&s_playerInfo;
+			u32* src = s_playerInvSaved;
+			for (s32 sizeCopied = 0; sizeCopied < size; sizeCopied += 4, src++, dst++)
 			{
-				(*taskCtx->dst) += (*taskCtx->src);
+				(*dst) += (*src);
 			}
 
 			// Clear out the nava card item since it is one of the current objectives.
@@ -902,7 +894,6 @@ namespace TFE_DarkForces
 			s_playerInfo.ammoMine      = pickup_addToValue(s_playerInfo.ammoMine,      0,  30);
 			s_playerInfo.ammoMissile   = pickup_addToValue(s_playerInfo.ammoMissile,   0,  20);
 		}
-		task_end;
 	}
 
 }  // TFE_DarkForces

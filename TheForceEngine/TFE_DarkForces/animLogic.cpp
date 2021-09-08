@@ -24,7 +24,7 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(logic);
 		if (animLogic->completeTask)
 		{
-			// task_runAndReturn(animLogic->completeTask, 20);
+			task_runAndReturn(animLogic->completeTask, 20);
 		}
 		allocator_deleteItem(s_spriteAnimList, logic);
 	}

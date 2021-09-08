@@ -368,87 +368,79 @@ namespace TFE_DarkForces
 
 	void player_cycleWeapons(s32 change)
 	{
-		struct LocalContext
+		s32 dir = (change < 0) ? -1 : 1;
+		s32 nextWeapon = s_curWeapon + change;
+		JBool hasWeapon = JFALSE;
+		while (!hasWeapon)
 		{
-			s32 dir;
-			s32 nextWeapon;
-			JBool hasWeapon;
-		};
-		task_begin_ctx;
-
-		taskCtx->dir = (change < 0) ? -1 : 1;
-		taskCtx->nextWeapon = s_curWeapon + change;
-		taskCtx->hasWeapon = JFALSE;
-		while (!taskCtx->hasWeapon)
-		{
-			if (taskCtx->nextWeapon < 0)
+			if (nextWeapon < 0)
 			{
-				taskCtx->nextWeapon = WPN_COUNT - 1;
+				nextWeapon = WPN_COUNT - 1;
 			}
-			else if (taskCtx->nextWeapon == WPN_COUNT)
+			else if (nextWeapon == WPN_COUNT)
 			{
-				taskCtx->nextWeapon = WPN_FIST;
+				nextWeapon = WPN_FIST;
 			}
 
-			switch (taskCtx->nextWeapon)
+			switch (nextWeapon)
 			{
 				case WPN_FIST:
 				{
-					taskCtx->hasWeapon = JTRUE;
+					hasWeapon = JTRUE;
 				} break;
 				case WPN_PISTOL:
 				{
-					if (!s_playerInfo.itemPistol) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.itemPistol) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 				case WPN_RIFLE:
 				{
-					if (!s_playerInfo.itemRifle) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.itemRifle) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 				case WPN_THERMAL_DET:
 				{
 					// TODO(Core Game Loop Release): Check this.
-					if (!s_playerInfo.ammoDetonator) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.ammoDetonator) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 				case WPN_REPEATER:
 				{
-					if (!s_playerInfo.itemAutogun) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.itemAutogun) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 				case WPN_FUSION:
 				{
-					if (!s_playerInfo.itemFusion) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.itemFusion) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 				case WPN_MORTAR:
 				{
-					if (!s_playerInfo.itemMortar) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.itemMortar) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 				case WPN_MINE:
 				{
 					// TODO(Core Game Loop Release): Check this.
-					if (!s_playerInfo.ammoMine) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.ammoMine) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 				case WPN_CONCUSSION:
 				{
-					if (!s_playerInfo.itemConcussion) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.itemConcussion) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 				case WPN_CANNON:
 				{
-					if (!s_playerInfo.itemCannon) { taskCtx->nextWeapon += taskCtx->dir; }
-					else { taskCtx->hasWeapon = JTRUE; }
+					if (!s_playerInfo.itemCannon) { nextWeapon += dir; }
+					else { hasWeapon = JTRUE; }
 				} break;
 			}
 		}
 
-		if (taskCtx->nextWeapon != s_playerInfo.curWeapon && s_playerWeaponTask)
+		if (nextWeapon != s_playerInfo.curWeapon && s_playerWeaponTask)
 		{
-			s_msgArg1 = taskCtx->nextWeapon;
+			s_msgArg1 = nextWeapon;
 			task_runAndReturn(s_playerWeaponTask, WTID_SWITCH_WEAPON);
 
 			if (s_playerInfo.curWeapon > s_playerInfo.maxWeapon)
@@ -458,10 +450,8 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			s_playerInfo.index2 = taskCtx->nextWeapon;
+			s_playerInfo.index2 = nextWeapon;
 		}
-
-		task_end;
 	}
 
 	void weapon_setNext(s32 wpnIndex)
@@ -821,14 +811,12 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weapon_holster(s32 id)
+	void weapon_holster()
 	{
-		task_begin;
 		if (s_playerWeaponTask)
 		{
 			task_runAndReturn(s_playerWeaponTask, WTID_HOLSTER);
 		}
-		task_end;
 	}
 
 	void weapon_prepareToFire()

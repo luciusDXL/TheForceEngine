@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 	void weapon_setFireRate();
 	void weapon_clearFireRate();
 	void weapon_createPlayerWeaponTask();
-	void weapon_holster(s32 id);
+	void weapon_holster();
 	void weapon_draw(u8* display, DrawRect* rect);
 	void player_cycleWeapons(s32 change);
 
