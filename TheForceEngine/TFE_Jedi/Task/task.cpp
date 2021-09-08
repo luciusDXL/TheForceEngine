@@ -77,6 +77,8 @@ namespace TFE_Jedi
 
 	TaskContext* s_curContext = nullptr;
 
+	void selectNextTask();
+
 	void createRootTask()
 	{
 		s_tasks = createChunkedArray(sizeof(Task), TASK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS);
@@ -170,6 +172,35 @@ namespace TFE_Jedi
 	void task_free(Task* task)
 	{
 		s_taskCount--;
+		for (s32 i = 0; i < s_taskCount; i++)
+		{
+			Task* itask = (Task*)chunkedArrayGet(s_tasks, i);
+			if (itask != task)
+			{
+				if (itask->prevMain == task)
+				{
+					itask->prevMain = task->prevMain;
+				}
+				if (itask->nextMain == task)
+				{
+					itask->nextMain = task->nextMain;
+				}
+				if (itask->prevSec == task)
+				{
+					itask->prevSec = task->prevSec;
+				}
+				if (itask->nextSec == task)
+				{
+					itask->nextSec = task->nextSec;
+				}
+			}
+		}
+
+		if (task == s_curTask)
+		{
+			selectNextTask();
+		}
+
 		// Free any memory allocated for the local context.
 		freeToChunkedArray(s_stackBlocks, task->context.stackMem);
 		// Finally free the task itself from the chunked array.
@@ -181,9 +212,9 @@ namespace TFE_Jedi
 		chunkedArrayClear(s_tasks);
 		chunkedArrayClear(s_stackBlocks);
 
-		s_curTask = nullptr;
+		s_curTask    = nullptr;
 		s_curContext = nullptr;
-		s_taskCount = 0;
+		s_taskCount  = 0;
 	}
 
 	void task_shutdown()
@@ -191,11 +222,11 @@ namespace TFE_Jedi
 		freeChunkedArray(s_tasks);
 		freeChunkedArray(s_stackBlocks);
 
-		s_curTask = nullptr;
-		s_tasks = nullptr;
+		s_curTask     = nullptr;
+		s_tasks       = nullptr;
 		s_stackBlocks = nullptr;
-		s_curContext = nullptr;
-		s_taskCount = 0;
+		s_curContext  = nullptr;
+		s_taskCount   = 0;
 	}
 
 	void task_makeActive(Task* task)

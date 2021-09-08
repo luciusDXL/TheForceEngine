@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 				if (obj)
 				{
 					objCount--;
-					if (!(obj->entityFlags & ETFLAG_PICKUP) && obj->worldWidth && (s_colSrcPosX != obj->posWS.x || s_colSrcPosZ != obj->posWS.z))
+					if ((obj->flags & OBJ_FLAG_HAS_COLLISION) && !(obj->entityFlags & ETFLAG_PICKUP) && obj->worldWidth && (s_colSrcPosX != obj->posWS.x || s_colSrcPosZ != obj->posWS.z))
 					{
 						// Check the seperation of the object and destination position.
 						// If they are seperated by more than their combined widths on the X or Z axis, then there is no collision.

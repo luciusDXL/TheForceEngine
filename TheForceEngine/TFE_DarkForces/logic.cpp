@@ -115,10 +115,14 @@ namespace TFE_DarkForces
 				else if (logicId >= KW_TROOP && logicId <= KW_BARREL)	// Enemies and explosives barrels.
 				{
 					// TODO(Core Game Loop Release) - come back to this once the level is running
+					// Turn off enemy collision for now, until this is setup correctly.
+					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 				}
 				else if (logicId == KW_LAND_MINE)	// Pre-placed land mines.
 				{
 					// TODO(Core Game Loop Release) - come back to this once the level is running
+					// Turn off mine collision for now, until this is setup correctly.
+					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 				}
 				else if (logicId == KW_KEY)         // Vue animation logic.
 				{
@@ -127,10 +131,14 @@ namespace TFE_DarkForces
 				else if (logicId == KW_GENERATOR)	// Enemy generator, used for in-level enemy spawning.
 				{
 					// TODO(Core Game Loop Release) - come back to this once the AI is fully integrated.
+					// Turn off generator collision for now, until this is setup correctly.
+					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 				}
 				else if (logicId == KW_DISPATCH)
 				{
 					// TODO(Core Game Loop Release) - come back to this once the level is running
+					// Turn off dispatch collision for now, until this is setup correctly.
+					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 				}
 				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
 				{
@@ -141,6 +149,11 @@ namespace TFE_DarkForces
 					ItemId itemId = getPickupItemId(s_objSeqArg2);
 					obj_createPickup(obj, itemId);
 					setupFunc = nullptr;
+				}
+				else  // Scenery
+				{
+					// TODO(Core Game Loop Release) - figure out why scenery isn't being setup correctly.
+					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 				}
 			}
 			else if (key == KW_SEQEND)
