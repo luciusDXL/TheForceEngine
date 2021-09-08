@@ -348,7 +348,7 @@ namespace TFE_DarkForces
 							RSector* next = wall->nextSector;
 							fixed16_16 nextFloor = (next->secHeight >= 0) ? next->colSecHeight : next->floorHeight;
 							// Check to see if the object fits between the next sector floor and ceiling.
-							if ((wall->flags3 & (WF3_ALWAYS_WALK | WF3_SOLID_WALL)) != WF3_SOLID_WALL)
+							if ((wall->flags3 & (WF3_ALWAYS_WALK | WF3_SOLID_WALL)) != WF3_ALWAYS_WALK)
 							{
 								if (s_colBottom > nextFloor)
 								{
