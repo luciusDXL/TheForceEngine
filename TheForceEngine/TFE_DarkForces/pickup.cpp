@@ -157,6 +157,10 @@ namespace TFE_DarkForces
 				*pickup->value = pickup_addToValue(*pickup->value, pickup->amount, pickup->maxAmount);
 				hud_sendTextMessage(pickup->msgId[0]);
 			}
+			else
+			{
+				pickedUpItem = JFALSE;
+			}
 		}
 		else if (pickup->type == ITYPE_KEY_ITEM)
 		{
@@ -182,26 +186,26 @@ namespace TFE_DarkForces
 
 			switch (pickup->id)
 			{
-			case ITEM_PLANS:
-			{
-				s_goalItems.plans = JTRUE;
-			} break;
-			case ITEM_PHRIK:
-			{
-				s_goalItems.phrik = JTRUE;
-			} break;
-			case ITEM_NAVA:
-			{
-				s_goalItems.nava = JTRUE;
-			} break;
-			case ITEM_DT_WEAPON:
-			{
-				s_goalItems.dtWeapon = JTRUE;
-			} break;
-			case ITEM_DATATAPE:
-			{
-				s_goalItems.datatape = JTRUE;
-			} break;
+				case ITEM_PLANS:
+				{
+					s_goalItems.plans = JTRUE;
+				} break;
+				case ITEM_PHRIK:
+				{
+					s_goalItems.phrik = JTRUE;
+				} break;
+				case ITEM_NAVA:
+				{
+					s_goalItems.nava = JTRUE;
+				} break;
+				case ITEM_DT_WEAPON:
+				{
+					s_goalItems.dtWeapon = JTRUE;
+				} break;
+				case ITEM_DATATAPE:
+				{
+					s_goalItems.datatape = JTRUE;
+				} break;
 			}
 		}
 		else if (pickup->type == ITYPE_INV_ITEM)
