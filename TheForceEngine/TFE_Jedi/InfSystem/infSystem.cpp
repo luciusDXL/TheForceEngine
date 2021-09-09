@@ -7,6 +7,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Level/level.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
@@ -53,11 +54,7 @@ namespace TFE_Jedi
 	static Task* s_infElevTask = nullptr;
 	static Task* s_infTriggerTask = nullptr;
 	static Task* s_teleportTask = nullptr;
-
-	// Pull from data...
-	static RSector* s_sectors;
-	static u32 s_sectorCount;
-		
+	
 	static std::vector<char> s_buffer;
 	// Loading
 	static char s_infArg0[256];
