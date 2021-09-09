@@ -3286,7 +3286,7 @@ namespace TFE_Jedi
 				}
 			} break;
 		}
-		trigger->cmd    = MSG_DONE;
+		trigger->cmd = MSG_TRIGGER;
 		trigger->event  = 0;
 		trigger->arg1   = 0;
 		trigger->u30    = JTRUE;
