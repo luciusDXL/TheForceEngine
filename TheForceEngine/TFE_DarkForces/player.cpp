@@ -11,6 +11,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
+#include <TFE_Jedi/Renderer/rlimits.h>
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
@@ -1417,9 +1418,9 @@ namespace TFE_DarkForces
 			s32 headlamp = 0;
 			if (s_headlampActive)
 			{
-				s32 energy = min(ONE_16, s_energy);
+				fixed16_16 energy = min(ONE_16, s_energy);
 				headlamp = floor16(mul16(energy, FIXED(64)));
-				headlamp = min(31, headlamp);
+				headlamp = 2*MAX_LIGHT_LEVEL - min(MAX_LIGHT_LEVEL, headlamp);
 			}
 			s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
 			//s_baseAtten = atten;

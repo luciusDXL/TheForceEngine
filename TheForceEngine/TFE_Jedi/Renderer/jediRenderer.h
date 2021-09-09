@@ -20,7 +20,6 @@
 // permission of the original copyright holders (LucasArts).
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
-#include <TFE_Asset/colormapAsset.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/rtexture.h>
 
