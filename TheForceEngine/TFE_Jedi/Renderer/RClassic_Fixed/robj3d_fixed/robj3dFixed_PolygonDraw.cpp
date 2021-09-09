@@ -90,6 +90,8 @@ namespace RClassic_Fixed
 	u8 robj3d_computePolygonColor(vec3_fixed* normal, u8 color, fixed16_16 z)
 	{
 		if (s_sectorAmbient >= 31) { return color; }
+		s_polyColorMap = s_colorMap;
+
 		s32 lightLevel = 0;
 		
 		fixed16_16 lighting = 0;

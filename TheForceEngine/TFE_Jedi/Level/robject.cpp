@@ -57,6 +57,7 @@ namespace TFE_Jedi
 	{
 		obj->model = pod;
 		obj->type = OBJ_TYPE_3D;
+		obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 		if (obj->worldWidth == -1)	// the initial value.
 		{
 			obj->worldWidth = 0;
@@ -69,9 +70,9 @@ namespace TFE_Jedi
 		
 	void obj3d_computeTransform(SecObject* obj)
 	{
-		angle14_32 yaw = floor16(obj->yaw);
-		angle14_32 pitch = floor16(obj->pitch >> 16);
-		angle14_32 roll = floor16(obj->roll >> 16);
+		angle14_32 yaw   = obj->yaw;
+		angle14_32 pitch = obj->pitch;
+		angle14_32 roll  = obj->roll;
 
 		computeTransform3x3(obj->transform, yaw, pitch, roll);
 	}
@@ -140,9 +141,9 @@ namespace TFE_Jedi
 		fixed16_16 sinPch, cosPch;
 		fixed16_16 sinRol, cosRol;
 
-		sinCosFixed(yaw, &sinYaw, &cosYaw);
+		sinCosFixed(yaw,   &sinYaw, &cosYaw);
 		sinCosFixed(pitch, &sinPch, &cosPch);
-		sinCosFixed(roll, &sinRol, &cosRol);
+		sinCosFixed(roll,  &sinRol, &cosRol);
 
 		transform[0] = mul16(cosYaw, cosRol);
 		transform[1] = mul16(cosPch, sinRol) + mul16(mul16(sinPch, sinYaw), cosPch);
@@ -152,8 +153,8 @@ namespace TFE_Jedi
 		transform[4] = mul16(cosPch, cosRol) - mul16(mul16(sinPch, sinYaw), sinRol);
 		transform[5] = mul16(sinPch, cosRol) + mul16(mul16(cosPch, sinYaw), sinRol);
 
-		transform[6] = sinYaw;
+		transform[6] =  sinYaw;
 		transform[7] = -mul16(sinPch, cosYaw);
-		transform[8] = mul16(cosPch, cosYaw);
+		transform[8] =  mul16(cosPch, cosYaw);
 	}
 } // namespace TFE_Jedi

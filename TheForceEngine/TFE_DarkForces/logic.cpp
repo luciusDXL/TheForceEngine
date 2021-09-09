@@ -70,6 +70,10 @@ namespace TFE_DarkForces
 		else if (key == KW_RADIUS)
 		{
 			obj->worldWidth = floatToFixed16(strtof(s_objSeqArg1, &endPtr));
+			if (obj->worldWidth > 0)
+			{
+				obj->flags |= OBJ_FLAG_HAS_COLLISION;
+			}
 		}
 		else  // Invalid key.
 		{
@@ -149,7 +153,7 @@ namespace TFE_DarkForces
 					obj_createPickup(obj, itemId);
 					setupFunc = nullptr;
 				}
-				else  // Scenery
+				else  // Scenery / Mousebot
 				{
 					// TODO(Core Game Loop Release) - figure out why scenery isn't being setup correctly.
 					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;

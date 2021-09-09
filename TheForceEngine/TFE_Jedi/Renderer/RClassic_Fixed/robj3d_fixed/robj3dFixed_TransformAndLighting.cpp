@@ -125,7 +125,7 @@ namespace RClassic_Fixed
 	{
 		vec3_fixed offsetWS;
 		offsetWS.x = obj->posWS.x - s_cameraPosX_Fixed;
-		offsetWS.y = obj->posWS.y - s_cameraPosY_Fixed;
+		offsetWS.y = obj->posWS.y - s_eyeHeight_Fixed;
 		offsetWS.z = obj->posWS.z - s_cameraPosZ_Fixed;
 
 		// Calculate the view space object camera offset.

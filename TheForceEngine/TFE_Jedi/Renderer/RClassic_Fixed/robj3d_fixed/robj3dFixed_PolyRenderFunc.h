@@ -327,6 +327,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 	// If the polygon is too small or off screen, skip it.
 	if (xMin >= xMax || yMin > s_windowMaxY || yMax < s_windowMinY) { return; }
 
+	assert(s_colorMap);
 	s_polyColorMap = s_colorMap;
 	#if !(defined(POLY_INTENSITY) && defined(POLY_UV))
 		s_polyColorIndex = color;

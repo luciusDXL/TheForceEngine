@@ -97,8 +97,8 @@ namespace TFE_Jedi
 	EdgePair  s_adjoinEdgeList[MAX_ADJOIN_SEG];
 
 	// Lighting
-	const u8* s_colorMap;
-	const u8* s_lightSourceRamp;
+	const u8* s_colorMap = nullptr;
+	const u8* s_lightSourceRamp = nullptr;
 	s32 s_flatAmbient = 0;
 	s32 s_sectorAmbient;
 	s32 s_scaledAmbient;
