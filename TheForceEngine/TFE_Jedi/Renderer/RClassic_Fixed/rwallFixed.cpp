@@ -697,7 +697,7 @@ namespace RClassic_Fixed
 			// In the original DOS code, the sign column functions are different but only because they do not apply the texture height mask
 			// per pixel. I decided to keep it simple, removing the extra binary AND per pixel is not worth adding 4 extra functions that are
 			// mostly redundant.
-			if (signTex->flags == OPACITY_TRANS)
+			if (signTex->flags & OPACITY_TRANS)
 			{
 				*signFullbright = s_columnFunc[COLFUNC_FULLBRIGHT_TRANS];
 				*signLit = s_columnFunc[(srcWall->flags1 & WF1_ILLUM_SIGN) ? COLFUNC_FULLBRIGHT_TRANS : COLFUNC_LIT_TRANS];

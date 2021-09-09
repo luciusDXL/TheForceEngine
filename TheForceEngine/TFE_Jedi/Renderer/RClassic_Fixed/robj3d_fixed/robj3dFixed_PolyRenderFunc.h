@@ -368,7 +368,9 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 			}
 
 			s_columnHeight = y0_Bot - y0_Top + 1;
-			if (s_columnHeight > 0)
+			// TODO: Figure out why I have to add: s_columnX >= s_windowMinX && s_columnX <= s_windowMaxX
+			// I must have missed a step elsewhere.
+			if (s_columnHeight > 0 && s_columnX >= s_windowMinX && s_columnX <= s_windowMaxX)
 			{
 				const fixed16_16 height = intToFixed16(s_edgeBotY0_Pixel - s_edgeTopY0_Pixel + 1);
 				s_pcolumnOut = &s_display[y0_Top*s_width + s_columnX];

@@ -70,11 +70,7 @@ namespace TFE_Jedi
 		
 	void obj3d_computeTransform(SecObject* obj)
 	{
-		angle14_32 yaw   = obj->yaw;
-		angle14_32 pitch = obj->pitch;
-		angle14_32 roll  = obj->roll;
-
-		computeTransform3x3(obj->transform, yaw, pitch, roll);
+		computeTransform3x3(obj->transform, -obj->yaw, obj->pitch, obj->roll);
 	}
 
 	void spirit_setData(SecObject* obj)
