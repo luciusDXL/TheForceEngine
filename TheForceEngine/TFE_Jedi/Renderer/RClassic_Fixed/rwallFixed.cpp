@@ -870,7 +870,7 @@ namespace RClassic_Fixed
 			y0F += dYdXbot;
 		}
 
-		//srcWall->y1 = -1;
+		srcWall->seen = JTRUE;
 	}
 
 	void wall_drawTransparent(RWallSegment* wallSegment, EdgePair* edge)
@@ -1096,7 +1096,7 @@ namespace RClassic_Fixed
 				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
 				s_columnTop[x] = s_windowMaxY;
 			}
-			//wall->y1 = -1;
+			wall->seen = JTRUE;
 			return;
 		}
 
@@ -1122,7 +1122,7 @@ namespace RClassic_Fixed
 				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
 				s_columnBot[x] = s_windowMinY;
 			}
-			//wall->y1 = -1;
+			wall->seen = JTRUE;
 			return;
 		}
 
@@ -1177,7 +1177,7 @@ namespace RClassic_Fixed
 				s_columnBot[x] = bot;
 				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
 			}
-			//wall->y1 = -1;
+			wall->seen = JTRUE;
 			return;
 		}
 
@@ -1282,7 +1282,7 @@ namespace RClassic_Fixed
 				yC += ceil_dYdX;
 			}
 		}
-		//wall->y1 = -1;
+		wall->seen = JTRUE;
 	}
 
 	void wall_drawTop(RWallSegment* wallSegment)
@@ -1317,7 +1317,7 @@ namespace RClassic_Fixed
 			{
 				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
 			}
-			//srcWall->y1 = -1;
+			srcWall->seen = JTRUE;
 			return;
 		}
 
@@ -1343,7 +1343,7 @@ namespace RClassic_Fixed
 			{
 				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
 			}
-			//srcWall->y1 = -1;
+			srcWall->seen = JTRUE;
 			return;
 		}
 
@@ -1393,7 +1393,7 @@ namespace RClassic_Fixed
 				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
 				yF0 += floor_dYdX;
 			}
-			//srcWall->y1 = -1;
+			srcWall->seen = JTRUE;
 			return;
 		}
 
@@ -1490,7 +1490,7 @@ namespace RClassic_Fixed
 			yF0 += floor_dYdX;
 		}
 		
-		//srcWall->y1 = -1;
+		srcWall->seen = JTRUE;
 	}
 
 	void wall_drawTopAndBottom(RWallSegment* wallSegment)
@@ -1524,7 +1524,7 @@ namespace RClassic_Fixed
 			{
 				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
 			}
-			// srcWall->y1 = -1;
+			srcWall->seen = JTRUE;
 			return;
 		}
 
@@ -1547,7 +1547,7 @@ namespace RClassic_Fixed
 			{
 				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
 			}
-			// srcWall->y1 = -1;
+			srcWall->seen = JTRUE;
 			return;
 		}
 
@@ -1781,12 +1781,12 @@ namespace RClassic_Fixed
 		s32 next_c1_pixel = round16(next_cProj1);
 		if ((next_f0_pixel <= s_windowMinY && next_f1_pixel <= s_windowMinY) || (next_c0_pixel >= s_windowMaxY && next_c1_pixel >= s_windowMaxY) || (nextSector->floorHeight <= nextSector->ceilingHeight))
 		{
-			// srcWall->y1 = -1;
+			srcWall->seen = JTRUE;
 			return;
 		}
 
 		wall_addAdjoinSegment(length, x0, next_floor_dYdX, next_fProj0 - ONE_16, next_ceil_dYdX, next_cProj0 + ONE_16, wallSegment);
-		//srcWall->y1 = -1;
+		srcWall->seen = JTRUE;
 	}
 
 	// Parts of the code inside 's_height == SKY_BASE_HEIGHT' are based on the original DOS exe.

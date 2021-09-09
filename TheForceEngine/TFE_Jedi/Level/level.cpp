@@ -439,6 +439,7 @@ namespace TFE_Jedi
 				wall->id = w;
 				wall->sector = sector;
 				wall->mirrorWall = nullptr;
+				wall->seen = JFALSE;
 				wall->flags1 = flags1;
 				wall->flags2 = flags2;
 				wall->flags3 = flags3;
