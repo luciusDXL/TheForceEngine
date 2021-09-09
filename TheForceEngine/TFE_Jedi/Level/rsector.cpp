@@ -4,8 +4,11 @@
 #include "level.h"
 #include <TFE_System/system.h>
 #include <TFE_DarkForces/player.h>
+#include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/InfSystem/message.h>
+// TODO: Find a better way to handle this.
+#include <TFE_Jedi/InfSystem/infTypesInternal.h>
 
 using namespace TFE_DarkForces;
 
@@ -740,6 +743,262 @@ namespace TFE_Jedi
 		return wn > 0;
 	}
 
+	JBool sector_rotatingWallCollidesWithPlayer(RWall* wall, fixed16_16 cosAngle, fixed16_16 sinAngle, fixed16_16 centerX, fixed16_16 centerZ)
+	{
+		fixed16_16 objSide0;
+		SecObject* player = s_playerObject;
+		JBool overlap0 = sector_objOverlapsWall(wall, player, &objSide0);
+
+		fixed16_16 localX = wall->worldPos0.x - centerX;
+		fixed16_16 localZ = wall->worldPos0.z - centerZ;
+
+		fixed16_16 dirZ = wall->wallDir.z;
+		fixed16_16 dirX = wall->wallDir.x;
+		fixed16_16 prevX = wall->w0->x;
+		fixed16_16 prevZ = wall->w0->z;
+
+		wall->w0->x = mul16(localX, cosAngle) - mul16(localZ, sinAngle) + centerX;
+		wall->w0->z = mul16(localX, sinAngle) + mul16(localZ, cosAngle) + centerZ;
+
+		vec2_fixed* w0 = wall->w0;
+		vec2_fixed* w1 = wall->w1;
+		fixed16_16 dx = w1->x - w0->x;
+		fixed16_16 dz = w1->z - w0->z;
+		computeDirAndLength(dx, dz, &wall->wallDir.x, &wall->wallDir.z);
+
+		s32 objSide1;
+		JBool overlap1 = sector_objOverlapsWall(wall, player, &objSide1);
+
+		// Restore
+		wall->wallDir.x = dirX;
+		wall->wallDir.z = dirZ;
+		wall->w0->x = prevX;
+		wall->w0->z = prevZ;
+
+		// Test the results.
+		JBool canRotateWalls = JFALSE;
+		if (!overlap1)	// no overlap.
+		{
+			if (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1)
+			{
+				return JFALSE;
+			}
+		}
+		return JTRUE;
+	}
+
+	// Returns JTRUE if the walls can rotate.
+	JBool sector_canRotateWalls(RSector* sector, angle14_32 angle, fixed16_16 centerX, fixed16_16 centerZ)
+	{
+		fixed16_16 cosAngle, sinAngle;
+		sinCosFixed(angle, &sinAngle, &cosAngle);
+
+		// Loop through the walls and determine if the player is in the sector of any affected wall.
+		s32 wallCount = sector->wallCount;
+		RWall* wall = sector->walls;
+		JBool playerCollides = JFALSE;
+		for (s32 i = 0; i < sector->wallCount; i++, wall++)
+		{
+			if (wall->flags1 & WF1_WALL_MORPHS)
+			{
+				if (wall->sector->flags1 & SEC_FLAGS1_PLAYER)
+				{
+					playerCollides = JTRUE;
+					break;
+				}
+				RWall* mirror = wall->mirrorWall;
+				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
+				{
+					if (mirror->sector->flags1 & SEC_FLAGS1_PLAYER)
+					{
+						playerCollides = JTRUE;
+						break;
+					}
+				}
+			}
+		}
+
+		if (playerCollides)	// really this says that the player *might* collide and then gets definite here.
+		{
+			playerCollides = JFALSE;
+			wallCount = sector->wallCount;
+			wall = sector->walls;
+
+			for (s32 i = 0; i < wallCount; i++, wall++)
+			{
+				if (wall->flags1 & WF1_WALL_MORPHS)
+				{
+					playerCollides |= sector_rotatingWallCollidesWithPlayer(wall, cosAngle, sinAngle, centerX, centerZ);
+					RWall* mirror = wall->mirrorWall;
+					if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
+					{
+						playerCollides |= sector_rotatingWallCollidesWithPlayer(mirror, cosAngle, sinAngle, centerX, centerZ);
+					}
+				}
+			}
+		}
+		return playerCollides ? JFALSE : JTRUE;
+	}
+
+	void sector_rotateWall(RWall* wall, fixed16_16 cosAngle, fixed16_16 sinAngle, fixed16_16 centerX, fixed16_16 centerZ)
+	{
+		fixed16_16 x0 = wall->worldPos0.x - centerX;
+		fixed16_16 z0 = wall->worldPos0.z - centerZ;
+		wall->w0->x = mul16(x0, cosAngle) - mul16(z0, sinAngle) + centerX;
+		wall->w0->z = mul16(x0, sinAngle) + mul16(z0, cosAngle) + centerZ;
+
+		vec2_fixed* w1 = wall->w1;
+		vec2_fixed* w0 = wall->w0;
+		fixed16_16 dx = w1->x - w0->x;
+		fixed16_16 dz = w1->z - w0->z;
+		wall->length = computeDirAndLength(dx, dz, &wall->wallDir.x, &wall->wallDir.z);
+		wall->angle = vec2ToAngle(dx, dz);
+
+		RSector* sector = wall->sector;
+		if (sector->flags1 & SEC_FLAGS1_PLAYER)
+		{
+			s_playerSecMoved = JTRUE;
+		}
+
+		RWall* prevWall;
+		if (wall->id == 0)
+		{
+			prevWall = wall + (sector->wallCount - 1);
+		}
+		else
+		{
+			prevWall = wall - 1;
+		}
+
+		w0 = prevWall->w0;
+		w1 = prevWall->w1;
+		dx = w1->x - w0->x;
+		dz = w1->z - w0->z;
+		prevWall->length = computeDirAndLength(dx, dz, &prevWall->wallDir.x, &prevWall->wallDir.z);
+		prevWall->angle = vec2ToAngle(dx, dz);
+
+		sector = prevWall->sector;
+		if (sector->flags1 & SEC_FLAGS1_PLAYER)
+		{
+			s_playerSecMoved = JTRUE;
+		}
+	}
+
+	void sector_rotateWalls(RSector* sector, fixed16_16 centerX, fixed16_16 centerZ, angle14_32 angle)
+	{
+		s32 cosAngle, sinAngle;
+		sinCosFixed(angle, &sinAngle, &cosAngle);
+
+		s32 wallCount = sector->wallCount;
+		RWall* wall = sector->walls;
+		for (s32 i = 0; i < wallCount; i++, wall++)
+		{
+			if (wall->flags1 & WF1_WALL_MORPHS)
+			{
+				sector_rotateWall(wall, cosAngle, sinAngle, centerX, centerZ);
+
+				RWall* mirror = wall->mirrorWall;
+				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
+				{
+					sector_rotateWall(mirror, cosAngle, sinAngle, centerX, centerZ);
+				}
+			}
+		}
+		sector_computeBounds(sector);
+	}
+
+	void sector_rotateObj(SecObject* obj, angle14_32 deltaAngle, fixed16_16 cosdAngle, fixed16_16 sindAngle, fixed16_16 centerX, fixed16_16 centerZ)
+	{
+		if (obj->flags & OBJ_FLAG_HAS_COLLISION)
+		{
+			if (obj->entityFlags & ETFLAG_PLAYER)
+			{
+				s_playerYaw -= deltaAngle;
+			}
+			else
+			{
+				obj->yaw -= deltaAngle;
+			}
+
+			fixed16_16 relX = obj->posWS.x - centerX;
+			fixed16_16 relZ = obj->posWS.z - centerZ;
+
+			fixed16_16 offsetY = 0;
+			fixed16_16 offsetX = mul16(relX, cosdAngle) - mul16(relZ, sindAngle) + centerX - obj->posWS.x;
+			fixed16_16 yPos = FIXED(9999);
+			fixed16_16 offsetZ = mul16(relX, sindAngle) + mul16(relZ, cosdAngle) + centerZ - obj->posWS.z;
+			fixed16_16 height = obj->worldHeight + HALF_16;
+
+			CollisionInfo info =
+			{
+				obj,
+				offsetX, offsetY, offsetZ,
+				0, yPos, height,
+				0, 0, 0,	// to be filled in later.
+				obj->worldWidth,
+			};
+			handleCollision(&info);
+
+			// Collision reponse with a single iteration.
+			if (info.responseStep && info.wall)
+			{
+				handleCollisionResponseSimple(info.responseDir.x, info.responseDir.z, &info.offsetX, &info.offsetZ);
+				handleCollision(&info);
+			}
+
+			RSector* finalSector = sector_which3D(obj->posWS.x, obj->posWS.y, obj->posWS.z);
+			if (finalSector)
+			{
+				// Adds the object to the new sector and removes it from the previous.
+				sector_addObject(finalSector, obj);
+			}
+			if (obj->type == OBJ_TYPE_3D)
+			{
+				obj3d_computeTransform(obj);
+			}
+		}
+	}
+
+	void sector_rotateObjects(RSector* sector, angle14_32 deltaAngle, fixed16_16 centerX, fixed16_16 centerZ, u32 flags)
+	{
+		fixed16_16 cosdAngle, sindAngle;
+		sinCosFixed(deltaAngle, &sindAngle, &cosdAngle);
+		JBool moveCeil = JFALSE;
+		JBool moveSecHgt = JFALSE;
+		JBool moveFloor = JFALSE;
+		if (flags & INF_EFLAG_MOVE_FLOOR)
+		{
+			moveFloor = JTRUE;
+		}
+		if (flags & INF_EFLAG_MOVE_SECHT)
+		{
+			moveSecHgt = JTRUE;
+		}
+		if (flags & INF_EFLAG_MOVE_CEIL)
+		{
+			moveCeil = JTRUE;
+		}
+
+		SecObject** objList = sector->objectList;
+		s32 objCount = sector->objectCount;
+		for (s32 i = 0; i < objCount; i++, objList++)
+		{
+			SecObject* obj = nullptr;
+			while (!obj)
+			{
+				obj = *objList;
+				objList++;
+			}
+			// The first 3 conditionals can be collapsed since the resulting values are the same.
+			if ((moveFloor && obj->posWS.y == sector->floorHeight) ||
+				(moveSecHgt && sector->secHeight && sector->floorHeight + sector->secHeight == obj->posWS.y) ||
+				(moveCeil && sector->ceilingHeight == obj->posWS.y))
+			{
+				sector_rotateObj(obj, deltaAngle, cosdAngle, sindAngle, centerX, centerZ);
+			}
+		}
+	}
+
 	//////////////////////////////////////////////////////////
 	// Internal
 	//////////////////////////////////////////////////////////
@@ -785,7 +1044,7 @@ namespace TFE_Jedi
 
 	// returns 0 if the object does NOT overlap, otherwise non-zero.
 	// objSide: 0 = no overlap, -1/+1 front or behind.
-	u32 sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide)
+	JBool sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide)
 	{
 		fixed16_16 halfWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 1;
 		fixed16_16 quarterWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 2;
@@ -830,14 +1089,14 @@ namespace TFE_Jedi
 			}
 			if (diff <= threeQuartWidth)
 			{
-				return 0xffffffff;
+				return JTRUE;
 			}
 		}
-		return 0;
+		return JFALSE;
 	}
 
 	// returns 0 if the wall is free to move, else non-zero.
-	u32 sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
+	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
 		s32 objSide0;
 		// Test the initial position, the code assumes there is no collision at this point.
@@ -851,7 +1110,7 @@ namespace TFE_Jedi
 
 		s32 objSide1;
 		// Then move the wall and test the new position.
-		s32 col = sector_objOverlapsWall(wall, s_playerObject, &objSide1);
+		JBool col = sector_objOverlapsWall(wall, s_playerObject, &objSide1);
 
 		// Restore the wall.
 		w0->x = x0;
@@ -861,10 +1120,10 @@ namespace TFE_Jedi
 		{
 			if (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1)
 			{
-				return 0;
+				return JFALSE;
 			}
 		}
-		return 0xffffffff;
+		return JTRUE;
 	}
 
 	void sector_getFloorAndCeilHeight(RSector* sector, fixed16_16* floorHeight, fixed16_16* ceilHeight)

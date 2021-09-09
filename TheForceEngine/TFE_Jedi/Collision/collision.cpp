@@ -3,6 +3,41 @@
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/InfSystem/infSystem.h>
+// Merge player collision into collision
+#include <TFE_DarkForces/playerCollision.h>
+using namespace TFE_DarkForces;
+
+// These will be moved over from player collision.
+namespace TFE_DarkForces
+{
+	extern SecObject* s_collidedObj;
+	extern ColObject s_colObject;
+	extern ColObject s_colObj1;
+	extern RWall* s_colWallCollided;
+	extern fixed16_16 s_colSrcPosX;
+	extern fixed16_16 s_colSrcPosY;
+	extern fixed16_16 s_colSrcPosZ;
+	extern fixed16_16 s_colHeight;
+	extern fixed16_16 s_colDoubleRadius;
+	extern fixed16_16 s_colHeightBase;
+	extern fixed16_16 s_colMaxBaseHeight;
+	extern fixed16_16 s_colMinBaseHeight;
+	extern fixed16_16 s_colBottom;
+	extern fixed16_16 s_colTop;
+	extern fixed16_16 s_colY1;
+	extern fixed16_16 s_colBaseFloorHeight;
+	extern fixed16_16 s_colBaseCeilHeight;
+	extern fixed16_16 s_colFloorHeight;
+	extern fixed16_16 s_colCeilHeight;
+	extern fixed16_16 s_colCurFloor;
+	extern fixed16_16 s_colCurCeil;
+	extern fixed16_16 s_colCurTop;
+	extern angle14_32 s_colResponseAngle;
+	extern vec2_fixed s_colResponsePos;
+	extern vec2_fixed s_colWallV0;
+	extern s32 s_collisionFrameSector;
+}
 
 namespace TFE_Jedi
 {
@@ -633,6 +668,196 @@ namespace TFE_Jedi
 				}
 			}  // Object Loop.
 		}  // Sector Loop.
+	}
+		
+	static RSector*   s_hcolSector;
+	static vec3_fixed s_hcolDstPos;
+	static vec3_fixed s_hcolSrcPos;
+	static SecObject* s_hcolObj;
+
+	void handleCollisionResponseSimple(fixed16_16 dirX, fixed16_16 dirZ, fixed16_16* moveX, fixed16_16* moveZ)
+	{
+		fixed16_16 proj = mul16(*moveX, dirX) + mul16(*moveZ, dirZ);
+		*moveX = mul16(proj, dirZ);
+		*moveZ = mul16(proj, dirZ);
+	}
+
+	// Returns JTRUE if there is no collision.
+	JBool handleCollision(CollisionInfo* colInfo)
+	{
+		SecObject* obj = colInfo->obj;
+		RWall* colWall = nullptr;
+		s32 b = 0;
+		SecObject* colObj = nullptr;
+		s_hcolSector = obj->sector;
+		RSector* curSector = s_hcolSector;
+		s_hcolSrcPos.x = obj->posWS.x;
+		s_hcolSrcPos.y = obj->posWS.y;
+		s_hcolSrcPos.z = obj->posWS.z;
+
+		s_hcolObj = obj;
+		s_hcolDstPos.x = s_hcolSrcPos.x + colInfo->offsetX;
+		s_hcolDstPos.y = s_hcolSrcPos.y + colInfo->offsetY;
+		s_hcolDstPos.z = s_hcolSrcPos.z + colInfo->offsetZ;
+
+		fixed16_16 top = s_hcolSrcPos.y - colInfo->height;
+		fixed16_16 bot = s_hcolSrcPos.y - colInfo->botOffset;
+
+		colInfo->responseStep = JFALSE;
+		fixed16_16 yMax = (colInfo->flags & 1) ? (s_hcolSrcPos.y + FIXED(9999)) : (s_hcolSrcPos.y + colInfo->yPos);
+		colInfo->flags &= ~1;
+
+		// Cross walls until the collision path hits something solid.
+		// Build a list of crossed walls in order to send INF events later.
+		// Note the number is based on the stack allocations, i.e. the next used offset is 0x80 and the size is 4 per element.
+		RWall* wallCrossList[32];
+		RWall* wall = collision_wallCollisionFromPath(curSector, s_hcolSrcPos.x, s_hcolSrcPos.z, s_hcolDstPos.x, s_hcolDstPos.z);
+		s32 wallCrossCount = 0;
+		while (wall)
+		{
+			RSector* next = wall->nextSector;
+			if (next && !(wall->flags3 & WF3_SOLID_WALL))
+			{
+				if ((s_hcolObj->entityFlags & ETFLAG_AI_ACTOR) && (wall->flags3 & WF3_PLAYER_WALK_ONLY))
+				{
+					break;
+				}
+
+				fixed16_16 ceilHeight, floorHeight;
+				sector_getObjFloorAndCeilHeight(next, s_hcolSrcPos.y, &floorHeight, &ceilHeight);
+				
+				if (floorHeight < bot || floorHeight > yMax || ceilHeight > top)
+				{
+					break;
+				}
+
+				wallCrossList[wallCrossCount++] = wall;
+				wall = collision_pathWallCollision(next);
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		// Collision above hit a solid wall.
+		if (wall)
+		{
+			colInfo->responseStep = JTRUE;
+			colInfo->responseDir.x = wall->wallDir.x;
+			colInfo->responseDir.z = wall->wallDir.z;
+
+			vec2_fixed* w0 = wall->w0;
+			colInfo->responsePos.x = w0->x;
+			colInfo->responsePos.z = w0->z;
+			colInfo->responseAngle = wall->angle;
+
+			s_hcolDstPos.x = s_hcolSrcPos.x;
+			s_hcolDstPos.z = s_hcolSrcPos.z;
+
+			curSector = s_hcolSector;
+			colWall = wall;
+		}
+		else if (colInfo->width)
+		{
+			s_colDstPosX = s_hcolDstPos.x;
+			s_colDstPosY = s_hcolDstPos.y;
+			s_colDstPosZ = s_hcolDstPos.z;
+			s_colWidth = colInfo->width;
+
+			s_colSrcPosX = s_hcolSrcPos.x;
+			s_colSrcPosY = s_hcolSrcPos.y;
+			s_colSrcPosZ = s_hcolSrcPos.z;
+
+			s_colHeightBase = s_hcolObj->worldHeight;
+			s_colBottom = bot;
+			s_colTop = top;
+			s_colY1 = yMax;
+
+			s_colWall0 = wall;
+			s_colObj1.wall = wall;
+			s_colHeight = colInfo->height;
+			if (s_hcolObj->entityFlags & ETFLAG_PLAYER)
+			{
+				s_colObject.obj = s_hcolObj;
+			}
+			else
+			{
+				s_colObject.wall = wall;
+			}
+
+			if (!col_computeCollisionResponse(curSector))
+			{
+				colWall = s_colWall0;
+				colObj = s_collidedObj;
+				// Rewind the destination position to the start.
+				s_hcolDstPos.x = s_hcolSrcPos.x;
+				s_hcolDstPos.z = s_hcolSrcPos.z;
+				colInfo->responseStep  = s_colResponseStep;
+				colInfo->responseDir.x = s_colResponseDir.x;
+				colInfo->responseDir.z = s_colResponseDir.z;
+				colInfo->responsePos.x = s_colResponsePos.x;
+				colInfo->responsePos.z = s_colResponsePos.z;
+				colInfo->responseAngle = s_colResponseAngle;
+
+				curSector = s_hcolSector;
+			}
+		}
+
+		if (curSector != s_hcolSector)
+		{
+			sector_addObject(curSector, s_hcolObj);
+		}
+
+		// Update the object XZ position.
+		s_hcolObj->posWS.x = s_hcolDstPos.x;
+		s_hcolObj->posWS.z = s_hcolDstPos.z;
+
+		// Determine the floor and ceiling height for the current sector based on the object position.
+		fixed16_16 floorHeight, ceilHeight;
+		sector_getObjFloorAndCeilHeight(s_hcolObj->sector, s_hcolSrcPos.y, &floorHeight, &ceilHeight);
+
+		// Clip the y position to the floor and ceiling heights.
+		top = s_hcolDstPos.y - colInfo->height;
+		if (top <= ceilHeight)	// is the top clipped by the ceiling?
+		{
+			// The object collides with the ceiling.
+			s_hcolDstPos.y = ceilHeight + colInfo->height;
+		}
+		else if (s_hcolDstPos.y <= floorHeight)
+		{
+			// The object collides with the floor.
+			s_hcolDstPos.y = floorHeight;
+		}
+
+		// These values are probably filled in at 2346a6, 23474f, and/or 23487f - which need to be figured out first.
+		colInfo->wall = colWall;
+		colInfo->u24 = b;
+		colInfo->obj = colObj;
+		// Update the collision info y position.
+		colInfo->yPos = s_hcolDstPos.y;
+		s32 r;	// eax
+		if (colWall || b || colObj)
+		{
+			return JFALSE;
+		}
+
+		// Go through all passable walls the object crossed and send cross line events.
+		for (; wallCrossCount; wallCrossCount--)
+		{
+			RWall* wall = wallCrossList[wallCrossCount - 1];
+			inf_triggerWallEvent(wall, s_hcolObj, INF_EVENT_CROSS_LINE_FRONT);
+
+			// Note: This is actually a bug... since inf_triggerWallEvent() automatically calls the event*2 on the backside
+			// This not only causes that to be called twice but calls INF_EVENT_ENTER_SECTOR on wall.
+			// This doesn't seem to hurt things but I doubt it was actually intended and lead to odd behaviors.
+			// This should not be called here (but it is in the original Dark Forces code).
+			if (wall->mirrorWall)
+			{
+				inf_triggerWallEvent(wall->mirrorWall, s_hcolObj, INF_EVENT_CROSS_LINE_BACK);
+			}
+		}
+		return JTRUE;
 	}
 
 	////////////////////////////////////////////////////////

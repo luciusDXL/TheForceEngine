@@ -100,7 +100,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Player Controller
 	static fixed16_16 s_externalYawSpd;
-	static angle14_32 s_playerYaw;
 	static angle14_32 s_playerPitch;
 	static angle14_32 s_playerRoll;
 	static fixed16_16 s_forwardSpd;
@@ -193,6 +192,7 @@ namespace TFE_DarkForces
 	angle14_32 s_camOffsetPitch = 0;
 	angle14_32 s_camOffsetYaw = 0;
 	angle14_32 s_camOffsetRoll = 0;
+	angle14_32 s_playerYaw;
 
 	JBool s_itemUnknown1;	// 0x282428
 	JBool s_itemUnknown2;	// 0x28242c
@@ -1804,7 +1804,7 @@ namespace TFE_DarkForces
 		if (s_shieldDamageFx)
 		{
 			s32 effectIndex = min(15, s_shieldDamageFx >> 16);
-			healthFx = c_shieldDmgToFx[effectIndex];
+			shieldFx = c_shieldDmgToFx[effectIndex];
 			s_shieldDamageFx = max(0, s_shieldDamageFx - ONE_16);
 		}
 		else

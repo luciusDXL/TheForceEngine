@@ -3456,8 +3456,47 @@ namespace TFE_Jedi
 	{
 		RSector* sector = elev->sector;
 		sector->dirtyFlags |= SDF_VERTICES;
-		// TODO(Core Game Loop Release)
-		return 0;
+
+		fixed16_16 deltaRounded = (delta > 0) ? fixed16_16((delta + HALF_16) & 0xffff0000) : -fixed16_16((HALF_16 - delta) & 0xffff0000);
+		fixed16_16 angle = elev->iValue + delta;
+		fixed16_16 centerX = elev->dirOrCenter.x;
+		fixed16_16 centerZ = elev->dirOrCenter.z;
+		angle14_32 angleInt = floor16(angle);
+		JBool canRotate = sector_canRotateWalls(sector, angleInt, centerX, centerZ);
+		if (!canRotate)
+		{
+			return elev->iValue;
+		}
+
+		Slave* child = (Slave*)allocator_getHead(elev->slaves);
+		while (child)
+		{
+			// The value in slave can be used as an angular offset.
+			s32 childAngle = fract16(child->value) + angleInt;
+			sector = child->sector;
+			if (!sector_canRotateWalls(child->sector, childAngle, centerX, centerZ))
+			{
+				return elev->iValue;
+			}
+			child = (Slave*)allocator_getNext(elev->slaves);
+		}
+
+		sector_rotateWalls(elev->sector, centerX, centerZ, angleInt);
+
+		angle14_32 deltaInt = floor16(deltaRounded);
+		sector_rotateObjects(elev->sector, deltaInt, centerX, centerZ, elev->flags);
+
+		child = (Slave*)allocator_getHead(elev->slaves);
+		while (child)
+		{
+			s32 childAngle = (angle >> 16) + (child->value & 0xffff);
+			sector_rotateWalls(child->sector, centerX, centerZ, childAngle);
+			sector_rotateObjects(child->sector, deltaInt, centerX, centerZ, elev->flags);
+
+			child = (Slave*)allocator_getNext(elev->slaves);
+		}
+		elev->iValue = angle;
+		return elev->iValue;
 	}
 
 	fixed16_16 infUpdate_scrollWall(InfElevator* elev, fixed16_16 delta)

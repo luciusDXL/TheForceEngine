@@ -31,32 +31,36 @@ namespace TFE_DarkForces
 	static CollisionProxFunc s_objCollisionProxFunc;
 
 	static PlayerLogic* s_curPlayerLogic;
-	static SecObject* s_collidedObj;
-	static ColObject s_colObject;
-	static ColObject s_colObj1;
-	static RWall* s_colWallCollided;
-	static fixed16_16 s_colSrcPosX;
-	static fixed16_16 s_colSrcPosY;
-	static fixed16_16 s_colSrcPosZ;
-	static fixed16_16 s_colHeight;
-	static fixed16_16 s_colDoubleRadius;
-	static fixed16_16 s_colHeightBase;
-	static fixed16_16 s_colMaxBaseHeight;
-	static fixed16_16 s_colMinBaseHeight;
-	static fixed16_16 s_colBottom;
-	static fixed16_16 s_colTop;
-	static fixed16_16 s_colY1;
-	static fixed16_16 s_colBaseFloorHeight;
-	static fixed16_16 s_colBaseCeilHeight;
-	static fixed16_16 s_colFloorHeight;
-	static fixed16_16 s_colCeilHeight;
-	static fixed16_16 s_colCurFloor;
-	static fixed16_16 s_colCurCeil;
-	static fixed16_16 s_colCurTop;
-	static angle14_32 s_colResponseAngle;
-	static vec2_fixed s_colResponsePos;
-	static vec2_fixed s_colWallV0;
-	static s32 s_collisionFrameSector;
+
+	///////////////////////////////////////////
+	// TODO: Move to collision
+	///////////////////////////////////////////
+	SecObject* s_collidedObj;
+	ColObject s_colObject;
+	ColObject s_colObj1;
+	RWall* s_colWallCollided;
+	fixed16_16 s_colSrcPosX;
+	fixed16_16 s_colSrcPosY;
+	fixed16_16 s_colSrcPosZ;
+	fixed16_16 s_colHeight;
+	fixed16_16 s_colDoubleRadius;
+	fixed16_16 s_colHeightBase;
+	fixed16_16 s_colMaxBaseHeight;
+	fixed16_16 s_colMinBaseHeight;
+	fixed16_16 s_colBottom;
+	fixed16_16 s_colTop;
+	fixed16_16 s_colY1;
+	fixed16_16 s_colBaseFloorHeight;
+	fixed16_16 s_colBaseCeilHeight;
+	fixed16_16 s_colFloorHeight;
+	fixed16_16 s_colCeilHeight;
+	fixed16_16 s_colCurFloor;
+	fixed16_16 s_colCurCeil;
+	fixed16_16 s_colCurTop;
+	angle14_32 s_colResponseAngle;
+	vec2_fixed s_colResponsePos;
+	vec2_fixed s_colWallV0;
+	s32 s_collisionFrameSector;
 
 	///////////////////////////////////////////
 	// Shared State
@@ -429,14 +433,7 @@ namespace TFE_DarkForces
 		}
 		return JTRUE;
 	}
-
-	void handleCollisionResponseSimple(fixed16_16 dirX, fixed16_16 dirZ, fixed16_16* moveX, fixed16_16* moveZ)
-	{
-		fixed16_16 proj = mul16(*moveX, dirX) + mul16(*moveZ, dirZ);
-		*moveX = mul16(proj, dirZ);
-		*moveZ = mul16(proj, dirZ);
-	}
-
+		
 	void handleCollisionResponse(fixed16_16 dirX, fixed16_16 dirZ, fixed16_16 posX, fixed16_16 posZ)
 	{
 		SecObject* obj = s_curPlayerLogic->logic.obj;

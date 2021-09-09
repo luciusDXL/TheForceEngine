@@ -38,6 +38,28 @@ struct CollisionInterval
 	fixed16_16 dirZ;
 };
 
+struct CollisionInfo
+{
+	SecObject* obj;
+	fixed16_16 offsetX;
+	fixed16_16 offsetY;
+	fixed16_16 offsetZ;
+	fixed16_16 botOffset;
+	fixed16_16 yPos;
+	fixed16_16 height;
+
+	RWall* wall;
+	s32 u24;
+	SecObject* obj2;
+
+	fixed16_16 width;
+	u32 flags;
+	JBool responseStep;
+	vec2_fixed responseDir;
+	vec2_fixed responsePos;
+	angle14_32 responseAngle;
+};
+
 struct ColObject
 {
 	union
@@ -64,6 +86,9 @@ namespace TFE_Jedi
 
 	void collision_effectObjectsInRange3D(RSector* startSector, fixed16_16 range, vec3_fixed origin, CollisionEffectFunc effectFunc, SecObject* excludeObj, u32 entityFlags);
 	void collision_effectObjectsInRangeXZ(RSector* startSector, fixed16_16 range, vec3_fixed origin, CollisionEffectFunc effectFunc, SecObject* excludeObj, u32 entityFlags);
+
+	JBool handleCollision(CollisionInfo* colInfo);
+	void handleCollisionResponseSimple(fixed16_16 dirX, fixed16_16 dirZ, fixed16_16* moveX, fixed16_16* moveZ);
 
 	// Variables
 	extern fixed16_16 s_colObjOverlap;
