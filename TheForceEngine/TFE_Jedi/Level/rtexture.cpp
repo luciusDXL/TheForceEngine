@@ -186,15 +186,17 @@ namespace TFE_Jedi
 		anim->baseData = tex->image;
 		anim->frameList = (TextureData**)malloc(sizeof(TextureData**) * anim->count);
 
-		TextureData** texPtrs = anim->frameList;
-		for (s32 i = 0; i < anim->count; i++, texPtrs++, textureOffsets++)
+		for (s32 i = 0; i < anim->count; i++, textureOffsets++)
 		{
 			u32 offset = *textureOffsets;
 			TextureData* frame = (TextureData*)(tex->image + 2 + offset);
-			*texPtrs = frame;
+			anim->frameList[i] = frame;
+
+			// Offset to account for differences in pointer size.
+			size_t pointerOffset = 2 * (sizeof(size_t) - sizeof(s32));
 
 			// Skip past the header directly to the pixel data.
-			frame->image = (u8*)frame + sizeof(TextureData);
+			frame->image = (u8*)frame + sizeof(TextureData) - pointerOffset;
 		}
 
 		if (frameRate)

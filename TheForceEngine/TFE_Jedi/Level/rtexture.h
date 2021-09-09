@@ -27,6 +27,8 @@ enum OpacityFlags
 };
 
 // was BM_SubHeader
+#pragma pack(push)
+#pragma pack(1)
 struct TextureData
 {
 	s16 width;		// if = 1 then multiple BM in the file
@@ -51,6 +53,7 @@ struct TextureData
 	u8 compressed; // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
 	u8 pad3[2];
 };
+#pragma pack(pop)
 
 // Animated texture object.
 struct AnimatedTexture
