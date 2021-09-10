@@ -334,6 +334,11 @@ namespace TFE_Audio
 		{
 			return nullptr;
 		}
+		if (!(s_sources[slot].flags & SND_FLAG_ACTIVE))
+		{
+			return nullptr;
+		}
+
 		return &s_sources[slot];
 	}
 
@@ -344,22 +349,27 @@ namespace TFE_Audio
 			return;
 		}
 		
-		source->flags |= SND_FLAG_PLAYING;
-		if (looping) { source->flags |= SND_FLAG_LOOPING; }
-		source->sampleIndex = 0u;
+		MUTEX_LOCK(&s_mutex);
+			source->flags |= SND_FLAG_PLAYING;
+			if (looping) { source->flags |= SND_FLAG_LOOPING; }
+			source->sampleIndex = 0u;
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	void stopSource(SoundSource* source)
 	{
-		source->flags &= ~SND_FLAG_PLAYING;
+		MUTEX_LOCK(&s_mutex);
+			source->flags &= ~SND_FLAG_PLAYING;
+		MUTEX_UNLOCK(&s_mutex);
 	}
-
+	
 	void freeSource(SoundSource* source)
 	{
 		if (!source) { return; }
-
-		stopSource(source);
-		source->flags &= ~SND_FLAG_ACTIVE;
+		MUTEX_LOCK(&s_mutex);
+			source->flags &= ~SND_FLAG_PLAYING;
+			source->flags &= ~SND_FLAG_ACTIVE;
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	void setSourceVolume(SoundSource* source, f32 volume)
@@ -381,8 +391,8 @@ namespace TFE_Audio
 	void setSourceBuffer(SoundSource* source, const SoundBuffer* buffer)
 	{
 		MUTEX_LOCK(&s_mutex);
-		source->sampleIndex = 0u;
-		source->buffer = buffer;
+			source->sampleIndex = 0u;
+			source->buffer = buffer;
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
@@ -478,11 +488,6 @@ namespace TFE_Audio
 						snd->flags &= ~SND_FLAG_PLAYING;
 						snd->flags |= SND_FLAG_FINISHED;
 						snd->sampleIndex = 0u;
-						// If this is a one shot, flag for later removal.
-						if (snd->flags&SND_FLAG_ONE_SHOT)
-						{
-							snd->flags &= ~SND_FLAG_ACTIVE;
-						}
 					}
 				}
 			}

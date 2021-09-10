@@ -274,7 +274,7 @@ namespace RClassic_Fixed
 
 		if (!flat_setTexture(*sector->floorTex)) { return; }
 
-		for (s32 y = s_wallMinFloorY; y <= s_windowMaxY; y++)
+		for (s32 y = max(s_wallMinFloorY, s_windowMinY); y <= s_windowMaxY; y++)
 		{
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;

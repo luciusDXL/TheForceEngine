@@ -174,7 +174,6 @@ namespace TFE_Jedi
 
 	void task_free(Task* task)
 	{
-		s_taskCount--;
 		for (s32 i = 0; i < s_taskCount; i++)
 		{
 			Task* itask = (Task*)chunkedArrayGet(s_tasks, i);
@@ -198,16 +197,17 @@ namespace TFE_Jedi
 				}
 			}
 		}
+		
+		// Free any memory allocated for the local context.
+		freeToChunkedArray(s_stackBlocks, task->context.stackMem);
+		// Finally free the task itself from the chunked array.
+		freeToChunkedArray(s_tasks, task);
+		s_taskCount--;
 
 		if (task == s_curTask)
 		{
 			selectNextTask();
 		}
-
-		// Free any memory allocated for the local context.
-		freeToChunkedArray(s_stackBlocks, task->context.stackMem);
-		// Finally free the task itself from the chunked array.
-		freeToChunkedArray(s_tasks, task);
 	}
 
 	void task_freeAll()
@@ -279,7 +279,6 @@ namespace TFE_Jedi
 		if (level == 0 && s_curTask)
 		{
 			task_free(s_curTask);
-			s_curTask = nullptr;
 		}
 		else if (s_curContext && s_curContext->stackPtr[level])
 		{
@@ -325,6 +324,11 @@ namespace TFE_Jedi
 			{
 				break;
 			}
+		}
+
+		if (!s_curTask && s_taskCount)
+		{
+			s_curTask = (Task*)chunkedArrayGet(s_tasks, 0);
 		}
 	}
 
