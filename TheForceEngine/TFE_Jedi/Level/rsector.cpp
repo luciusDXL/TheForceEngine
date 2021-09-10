@@ -983,11 +983,11 @@ namespace TFE_Jedi
 		s32 objCount = sector->objectCount;
 		for (s32 i = 0; i < objCount; i++, objList++)
 		{
-			SecObject* obj = nullptr;
+			SecObject* obj = *objList;
 			while (!obj)
 			{
-				obj = *objList;
 				objList++;
+				obj = *objList;
 			}
 			// The first 3 conditionals can be collapsed since the resulting values are the same.
 			if ((moveFloor && obj->posWS.y == sector->floorHeight) ||

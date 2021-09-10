@@ -408,6 +408,7 @@ namespace TFE_Audio
 			if (s_sources[s].flags&SND_FLAG_FINISHED)
 			{
 				s_sources[s].flags &= ~SND_FLAG_FINISHED;
+				s_sources[s].flags &= ~SND_FLAG_ACTIVE;
 				if (s_sources[s].finishedCallback)
 				{
 					s_sources[s].finishedCallback(s_sources[s].finishedUserData, s_sources[s].finishedArg);

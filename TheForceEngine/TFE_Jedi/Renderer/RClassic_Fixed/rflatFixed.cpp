@@ -207,7 +207,7 @@ namespace RClassic_Fixed
 
 		if (!flat_setTexture(*sector->ceilTex)) { return; }
 
-		for (s32 y = s_windowMinY; y <= s_wallMaxCeilY; y++)
+		for (s32 y = s_windowMinY; y <= s_wallMaxCeilY && y < s_windowMaxY; y++)
 		{
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
