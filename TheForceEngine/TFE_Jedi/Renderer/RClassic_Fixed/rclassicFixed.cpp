@@ -131,7 +131,7 @@ namespace RClassic_Fixed
 
 		s_cameraYaw_Fixed = yaw;
 		s_cameraPitch_Fixed = pitch;
-		const fixed16_16 pitchOffsetScale = FIXED(225);	// half_height * 2.25
+		const fixed16_16 pitchOffsetScale = FIXED(226);	// half_width / sin(360*2047/16384)
 
 		s_xOffset = -camX;
 		s_zOffset = -camZ;
