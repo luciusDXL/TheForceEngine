@@ -3,6 +3,7 @@
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_System/parser.h>
+#include <TFE_FileSystem/filestream.h>
 #include <assert.h>
 #include <map>
 #include <algorithm>
@@ -14,7 +15,6 @@ namespace TFE_GmidAsset
 	typedef std::map<std::string, GMidiAsset*> GMidMap;
 	static GMidMap s_gmidAssets;
 	static std::vector<u8> s_buffer;
-	static const char* c_defaultGob = "SOUNDS.GOB";
 
 	bool parseGMidi(GMidiAsset* midi);
 
@@ -26,11 +26,21 @@ namespace TFE_GmidAsset
 			return iGMid->second;
 		}
 
-		// It doesn't exist yet, try to load the midi file.
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, name, s_buffer))
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(name, &filePath))
 		{
 			return nullptr;
 		}
+
+		FileStream gmidAsset;
+		if (!gmidAsset.open(&filePath, FileStream::MODE_READ))
+		{
+			return nullptr;
+		}
+		size_t size = gmidAsset.getSize();
+		s_buffer.resize(size + 1);
+		gmidAsset.readBuffer(s_buffer.data(), size);
+		gmidAsset.close();
 
 		GMidiAsset* midi = new GMidiAsset;
 		if (!parseGMidi(midi))

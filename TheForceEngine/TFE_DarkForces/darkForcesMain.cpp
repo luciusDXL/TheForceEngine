@@ -14,6 +14,8 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Audio/midiPlayer.h>
+#include <TFE_Asset/gmidAsset.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -96,6 +98,10 @@ namespace TFE_DarkForces
 	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
 	static void* s_briefingList;	// STUBBED - to be replaced by the real structure.
 
+	static const GMidiAsset* s_levelStalk;
+	static const GMidiAsset* s_levelFight;
+	static const GMidiAsset* s_levelBoss;
+
 	static Task* s_loadMissionTask = nullptr;
 
 	static GameState s_state = GSTATE_STARTUP_CUTSCENES;
@@ -117,6 +123,8 @@ namespace TFE_DarkForces
 	void loadAgentAndLevelData();
 	void cutscenes_startup(s32 id);
 	void startNextMode();
+	void disableLevelMusic();
+	void startLevelMusic(s32 levelIndex);
 
 	/////////////////////////////////////////////
 	// API
@@ -280,7 +288,7 @@ namespace TFE_DarkForces
 					s_abortLevel = JTRUE;
 
 					// We have returned from the mission tasks.
-					// disableLevelMusic();
+					disableLevelMusic();
 
 					//if (!s_levelComplete)
 					//{
@@ -303,6 +311,26 @@ namespace TFE_DarkForces
 				}
 			} break;
 		}
+	}
+	
+	void disableLevelMusic()
+	{
+		TFE_MidiPlayer::stop();
+	}
+
+	void startLevelMusic(s32 levelIndex)
+	{
+		char stalkTrackName[64];
+		char fightTrackName[64];
+		char bossTrackName[64];
+		sprintf(stalkTrackName, "STALK-%02d.GMD", levelIndex);
+		sprintf(fightTrackName, "FIGHT-%02d.GMD", levelIndex);
+		sprintf(bossTrackName, "BOSS-%02d.GMD", levelIndex);
+
+		s_levelStalk = TFE_GmidAsset::get(stalkTrackName);
+		s_levelFight = TFE_GmidAsset::get(fightTrackName);
+		s_levelBoss = TFE_GmidAsset::get(bossTrackName);
+		TFE_MidiPlayer::playSong(s_levelStalk, true);
 	}
 
 	void startNextMode()
@@ -337,9 +365,9 @@ namespace TFE_DarkForces
 				s_loadMissionTask = pushTask("start mission", mission_startTaskFunc, JTRUE);
 				mission_setLoadMissionTask(s_loadMissionTask);
 
-				// disableLevelMusic();
+				disableLevelMusic();
 				s32 levelIndex = agent_getLevelIndex();
-				// startLevelMusic(levelIndex);
+				startLevelMusic(levelIndex);
 
 				agent_setLevelComplete(JFALSE);
 				agent_readSavedDataForLevel(s_agentId, levelIndex);
