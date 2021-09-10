@@ -716,6 +716,7 @@ namespace TFE_DarkForces
 					} break;
 					case CHEAT_LADATA:
 					{
+						hud_toggleDataDisplay();
 					} break;
 					case CHEAT_LABUG:
 					{

@@ -237,6 +237,11 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void hud_toggleDataDisplay()
+	{
+		s_showData = ~s_showData;
+	}
+
 	void hud_startup()
 	{
 		// Reset cached values.
@@ -273,7 +278,7 @@ namespace TFE_DarkForces
 			fixed16_16 x, z;
 			getCameraXZ(&x, &z);
 
-			char dataStr[32];
+			char dataStr[64];
 			sprintf(dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
 			displayHudMessage(s_hudFont, &s_hudTextDrawRect, 164, 10, dataStr, framebuffer);
 			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
