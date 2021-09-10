@@ -56,6 +56,7 @@ struct SoundSource
 	f32 seperation;		//stereo seperation.
 	u32 sampleIndex;
 	u32 flags;
+	s32 slot;
 
 	// Sound data.
 	const SoundBuffer* buffer;
@@ -95,7 +96,7 @@ namespace TFE_Audio
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData);
 	void setSoundVolumeConsole(const ConsoleArgList& args);
 	void getSoundVolumeConsole(const ConsoleArgList& args);
-				
+
 	bool init()
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_AudioSystem::init");
@@ -109,7 +110,13 @@ namespace TFE_Audio
 
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		setVolume(soundSettings->soundFxVolume);
-		
+
+		memset(s_sources, 0, sizeof(SoundSource) * MAX_SOUND_SOURCES);
+		for (s32 i = 0; i < MAX_SOUND_SOURCES; i++)
+		{
+			s_sources[i].slot = i;
+		}
+
 		bool res = TFE_AudioDevice::init();
 		res |= TFE_AudioDevice::startOutput(audioCallback, nullptr, 2u, 11025u);
 		return res;
@@ -129,6 +136,10 @@ namespace TFE_Audio
 		MUTEX_LOCK(&s_mutex);
 		s_sourceCount = 0u;
 		memset(s_sources, 0, sizeof(SoundSource) * MAX_SOUND_SOURCES);
+		for (s32 i = 0; i < MAX_SOUND_SOURCES; i++)
+		{
+			s_sources[i].slot = i;
+		}
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
@@ -263,7 +274,7 @@ namespace TFE_Audio
 	}
 
 	// Sound source that the client holds onto.
-	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos)
+	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos, bool copyPosition)
 	{
 		if (!buffer) { return nullptr; }
 
@@ -293,7 +304,15 @@ namespace TFE_Audio
 			newSource->baseVolume = volume;
 			newSource->buffer = buffer;
 			newSource->sampleIndex = 0u;
-			newSource->pos = pos;
+			if (copyPosition)
+			{
+				newSource->localPos = *pos;
+				newSource->pos = &newSource->localPos;
+			}
+			else
+			{
+				newSource->pos = pos;
+			}
 			newSource->seperation = stereoSeperation;
 			newSource->finishedCallback = nullptr;
 			newSource->finishedUserData = nullptr;
@@ -301,6 +320,21 @@ namespace TFE_Audio
 		MUTEX_UNLOCK(&s_mutex);
 
 		return newSource;
+	}
+
+	s32 getSourceSlot(SoundSource* source)
+	{
+		if (!source) { return -1; }
+		return source->slot;
+	}
+
+	SoundSource* getSourceFromSlot(s32 slot)
+	{
+		if (slot < 0 || slot >= MAX_SOUND_SOURCES)
+		{
+			return nullptr;
+		}
+		return &s_sources[slot];
 	}
 
 	void playSource(SoundSource* source, bool looping)
@@ -322,6 +356,8 @@ namespace TFE_Audio
 
 	void freeSource(SoundSource* source)
 	{
+		if (!source) { return; }
+
 		stopSource(source);
 		source->flags &= ~SND_FLAG_ACTIVE;
 	}
@@ -334,6 +370,11 @@ namespace TFE_Audio
 	void setSourceStereoSeperation(SoundSource* source, f32 stereoSeperation)
 	{
 		source->seperation = std::max(0.0f, std::min(stereoSeperation, 1.0f));
+	}
+
+	void setSourcePosition(SoundSource* source, const Vec3f* pos)
+	{
+		source->localPos = *pos;
 	}
 
 	// This will restart the sound and change the buffer.

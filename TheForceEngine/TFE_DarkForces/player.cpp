@@ -16,6 +16,7 @@
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
+#include <TFE_Audio/audioSystem.h>
 
 namespace TFE_DarkForces
 {
@@ -727,8 +728,16 @@ namespace TFE_DarkForces
 			}
 			renderer_setWorldAmbient(s_playerLight);
 		}
+
+		// This is temporary until the full Jedi Sound system is reverse-engineered.
+		vec2_fixed dir;
+		sinCosFixed(s_yaw, &dir.x, &dir.z);
+
+		Vec3f listenerPos = { fixed16ToFloat(s_eyePos.x), fixed16ToFloat(s_eyePos.y), fixed16ToFloat(s_eyePos.z) };
+		Vec3f listenerDir = { fixed16ToFloat(dir.x), 0, fixed16ToFloat(dir.z) };
+		TFE_Audio::update(&listenerPos, &listenerDir);
 	}
-		
+
 	void playerControlTaskFunc(s32 id)
 	{
 		task_begin;

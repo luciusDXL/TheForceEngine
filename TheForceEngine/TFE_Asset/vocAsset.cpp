@@ -4,6 +4,8 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_System/parser.h>
 #include <TFE_Audio/audioSystem.h>
+#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/paths.h>
 #include <assert.h>
 #include <map>
 #include <algorithm>
@@ -18,6 +20,27 @@ namespace TFE_VocAsset
 	static const char* c_defaultGob = "SOUNDS.GOB";
 
 	bool parseVoc(SoundBuffer* voc);
+
+	bool loadSoundFile(const char* name)
+	{
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(name, &filePath))
+		{
+			return false;
+		}
+
+		FileStream vocAsset;
+		if (!vocAsset.open(&filePath, FileStream::MODE_READ))
+		{
+			return false;
+		}
+		size_t size = vocAsset.getSize();
+		s_buffer.resize(size + 1);
+		vocAsset.readBuffer(s_buffer.data(), size);
+		vocAsset.close();
+
+		return true;
+	}
 	
 	SoundBuffer* get(const char* name)
 	{
@@ -27,12 +50,11 @@ namespace TFE_VocAsset
 			return iVoc->second;
 		}
 
-		// It doesn't exist yet, try to load the font.
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, name, s_buffer))
+		if (!loadSoundFile(name))
 		{
 			return nullptr;
 		}
-
+				
 		SoundBuffer* voc = new SoundBuffer;
 		if (!parseVoc(voc))
 		{
@@ -68,7 +90,7 @@ namespace TFE_VocAsset
 		}
 
 		// It doesn't exist yet, try to load the font.
-		if (!TFE_AssetSystem::readAssetFromArchive(c_defaultGob, ARCHIVE_GOB, name, s_buffer))
+		if (!loadSoundFile(name))
 		{
 			return -1;
 		}
@@ -88,7 +110,7 @@ namespace TFE_VocAsset
 
 	SoundBuffer* getFromIndex(s32 index)
 	{
-		if (index < 0) { return nullptr; }
+		if (index < 0 || index >= s_vocAssetList.size()) { return nullptr; }
 		return s_vocAssetList[index];
 	}
 

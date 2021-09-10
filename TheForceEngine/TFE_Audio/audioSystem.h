@@ -69,7 +69,7 @@ namespace TFE_Audio
 					 SoundFinishedCallback finishedCallback = nullptr, void* cbUserData = nullptr, s32 cbArg = 0);
 
 	// Sound source that the client holds onto.
-	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos = nullptr);
+	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos = nullptr, bool copyPosition = false);
 	void playSource(SoundSource* source, bool looping = false);
 	void stopSource(SoundSource* source);
 	void freeSource(SoundSource* source);
@@ -77,7 +77,10 @@ namespace TFE_Audio
 	void setSourceStereoSeperation(SoundSource* source, f32 stereoSeperation);
 	// This will restart the sound and change the buffer.
 	void setSourceBuffer(SoundSource* source, const SoundBuffer* buffer);
+	void setSourcePosition(SoundSource* source, const Vec3f* pos);
 
 	bool isSourcePlaying(SoundSource* source);
 	f32  getSourceVolume(SoundSource* source);
+	s32  getSourceSlot(SoundSource* source);
+	SoundSource* getSourceFromSlot(s32 slot);
 }
