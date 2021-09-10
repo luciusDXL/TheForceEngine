@@ -32,7 +32,6 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	void pickTaskFunc(s32 id);
 	void pickupInvincibility();
-	void pickupSupercharge();
 	void pickupInventory();
 	void pickupItem(s32 id);
 

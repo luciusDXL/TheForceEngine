@@ -43,6 +43,7 @@ namespace TFE_DarkForces
 	void pickup_createTask();
 	// Called when the player respawns.
 	void playerRevive();
+	void pickupSupercharge();
 	
 	extern u32 s_pickupFlags;
 	extern Task* s_superchargeTask;

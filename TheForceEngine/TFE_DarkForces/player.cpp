@@ -509,6 +509,141 @@ namespace TFE_DarkForces
 		s_camOffsetRoll = offsetRoll;
 	}
 
+	void giveAllWeaponsAndHealth()
+	{
+		s_playerInfo.health = 100;
+		s_playerInfo.healthFract = 0;
+		s_pickupFlags = 0;
+		s_playerInfo.shields = 200;
+
+		s_playerInfo.itemPistol = JTRUE;
+		s_playerInfo.itemRifle = JTRUE;
+		// s_282428 = JTRUE;
+		s_playerInfo.itemAutogun = JTRUE;
+		s_playerInfo.itemMortar = JTRUE;
+		s_playerInfo.itemFusion = JTRUE;
+		// s_28242c = JTRUE;
+		s_playerInfo.itemConcussion = JTRUE;
+		s_playerInfo.itemCannon = JTRUE;
+		s_playerInfo.itemGoggles = JTRUE;
+		s_playerInfo.itemCleats = JTRUE;
+		s_playerInfo.itemMask = JTRUE;
+
+		s_playerInfo.ammoEnergy = 500;
+		s_playerInfo.ammoPower = 500;
+		s_playerInfo.ammoDetonator = 50;
+		s_playerInfo.ammoShell = 50;
+		s_playerInfo.ammoPlasma = 400;
+		s_playerInfo.ammoMine = 30;
+		s_playerInfo.ammoMissile = 20;
+
+		s_energy = FIXED(2);
+		weapon_fixupAnim();
+	}
+
+	void giveHealthAndFullAmmo()
+	{
+		s_playerInfo.health = 100;
+		s_playerInfo.healthFract = 0;
+		s_pickupFlags = 0;
+		s_playerInfo.shields = 200;
+		s_playerInfo.ammoEnergy = 500;
+
+		if (s_playerInfo.itemAutogun || s_playerInfo.itemFusion || s_playerInfo.itemConcussion)
+		{
+			s_playerInfo.ammoPower = 500;
+		}
+		if (s_playerInfo.itemCannon)
+		{
+			s_playerInfo.ammoPlasma = 400;
+		}
+		s_playerInfo.ammoDetonator = 50;
+		if (s_playerInfo.itemMortar)
+		{
+			s_playerInfo.ammoShell = 50;
+		}
+		s_playerInfo.ammoMine = 30;
+		if (s_playerInfo.itemCannon)
+		{
+			s_playerInfo.ammoMissile = 20;
+		}
+		s_energy = FIXED(2);
+		weapon_fixupAnim();
+	}
+
+	void giveAllInventoryAndHealth()
+	{
+		s_playerInfo.health = 100;
+		s_playerInfo.healthFract = 0;
+		s_pickupFlags = 0;
+		s_playerInfo.shields = 200;
+		s_playerInfo.itemPistol = JTRUE;
+		s_playerInfo.itemRifle = JTRUE;
+		// s_282428 = JTRUE;
+		s_playerInfo.itemAutogun = JTRUE;
+		s_playerInfo.itemMortar = JTRUE;
+		s_playerInfo.itemFusion = JTRUE;
+		// s_28242c = JTRUE;
+		s_playerInfo.itemConcussion = JTRUE;
+		s_playerInfo.itemCannon = JTRUE;
+		s_playerInfo.itemRedKey = JTRUE;
+		s_playerInfo.itemYellowKey = JTRUE;
+		s_playerInfo.itemBlueKey = JTRUE;
+		s_playerInfo.itemGoggles = JTRUE;
+		s_playerInfo.itemCleats = JTRUE;
+		s_playerInfo.itemMask = JTRUE;
+		s_playerInfo.itemPlans = JTRUE;
+		s_playerInfo.itemPhrik = JTRUE;
+		s_playerInfo.itemNava = JTRUE;
+		s_playerInfo.itemDatatape = JTRUE;
+		s_playerInfo.itemUnkown = JTRUE;
+		s_playerInfo.itemDtWeapon = JTRUE;
+		s_playerInfo.itemCode1 = JTRUE;
+		s_playerInfo.itemCode2 = JTRUE;
+		s_playerInfo.itemCode3 = JTRUE;
+		s_playerInfo.itemCode4 = JTRUE;
+		s_playerInfo.itemCode5 = JTRUE;
+		s_playerInfo.itemCode6 = JTRUE;
+		s_playerInfo.itemCode7 = JTRUE;
+		s_playerInfo.itemCode8 = JTRUE;
+		s_playerInfo.itemCode9 = JTRUE;
+		s_playerInfo.ammoEnergy = 500;
+		s_playerInfo.ammoPower = 500;
+		s_playerInfo.ammoDetonator = 50;
+		s_playerInfo.ammoShell = 50;
+		s_playerInfo.ammoMissile = 20;
+		s_playerInfo.ammoPlasma = 400;
+		s_playerInfo.ammoMine = 30;
+		s_energy = FIXED(2);
+
+		weapon_fixupAnim();
+	}
+
+	void giveKeys()
+	{
+		s_playerInfo.itemRedKey = JTRUE;
+		s_playerInfo.itemYellowKey = JTRUE;
+		s_playerInfo.itemBlueKey = JTRUE;
+		s_playerInfo.itemGoggles = JTRUE;
+		s_playerInfo.itemCleats = JTRUE;
+		s_playerInfo.itemMask = JTRUE;
+		s_playerInfo.itemPlans = JTRUE;
+		s_playerInfo.itemPhrik = JTRUE;
+		s_playerInfo.itemNava = JTRUE;
+		s_playerInfo.itemDatatape = JTRUE;
+		s_playerInfo.itemUnkown = JTRUE;
+		s_playerInfo.itemDtWeapon = JTRUE;
+		s_playerInfo.itemCode1 = JTRUE;
+		s_playerInfo.itemCode2 = JTRUE;
+		s_playerInfo.itemCode3 = JTRUE;
+		s_playerInfo.itemCode4 = JTRUE;
+		s_playerInfo.itemCode5 = JTRUE;
+		s_playerInfo.itemCode6 = JTRUE;
+		s_playerInfo.itemCode7 = JTRUE;
+		s_playerInfo.itemCode8 = JTRUE;
+		s_playerInfo.itemCode9 = JTRUE;
+	}
+
 	void cheat_teleport()
 	{
 		RSector* sector = sector_which3D_Map(s_mapX0, s_mapZ0, s_mapLayer);
@@ -535,6 +670,43 @@ namespace TFE_DarkForces
 	{
 		s_smallModeEnabled = ~s_smallModeEnabled;
 		hud_sendTextMessage(705);
+	}
+
+	void cheat_postal()
+	{
+		giveAllWeaponsAndHealth();
+		hud_sendTextMessage(703);
+	}
+
+	void cheat_fullAmmo()
+	{
+		giveHealthAndFullAmmo();
+		hud_sendTextMessage(708);
+	}
+
+	void cheat_unlock()
+	{
+		giveKeys();
+		hud_sendTextMessage(709);
+	}
+
+	void cheat_maxout()
+	{
+		giveAllInventoryAndHealth();
+		hud_sendTextMessage(710);
+	}
+
+	void cheat_godMode()
+	{
+		if (!s_invincibility)
+		{
+			s_invincibility = JTRUE;
+		}
+		else
+		{
+			s_invincibility = JFALSE;
+		}
+		hud_sendTextMessage(702);
 	}
 
 	void player_setupCamera()

@@ -707,12 +707,16 @@ namespace TFE_DarkForces
 					} break;
 					case CHEAT_LARANDY:
 					{
+						pickupSupercharge();
+						hud_sendTextMessage(701);
 					} break;
 					case CHEAT_LAIMLAME:
 					{
+						cheat_godMode();
 					} break;
 					case CHEAT_LAPOSTAL:
 					{
+						cheat_postal();
 					} break;
 					case CHEAT_LADATA:
 					{
@@ -772,12 +776,15 @@ namespace TFE_DarkForces
 					} break;
 					case CHEAT_LABRADY:
 					{
+						cheat_fullAmmo();
 					} break;
 					case CHEAT_LAUNLOCK:
 					{
+						cheat_unlock();
 					} break;
 					case CHEAT_LAMAXOUT:
 					{
+						cheat_maxout();
 					} break;
 				}
 			}

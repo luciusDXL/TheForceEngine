@@ -565,6 +565,21 @@ namespace TFE_DarkForces
 		s_superChargeHud = JFALSE;
 		s_superchargeTask = nullptr;
 	}
+
+	void weapon_fixupAnim()
+	{
+		PlayerWeapon* weapon = s_curPlayerWeapon;
+		s32 ammo = *weapon->ammo;
+
+		if (s_prevWeapon == WPN_THERMAL_DET && !ammo)
+		{
+			weapon->frame = 3;
+		}
+		else if (s_prevWeapon == WPN_MINE && !ammo)
+		{
+			weapon->frame = 2;
+		}
+	}
 		
 	///////////////////////////////////////////
 	// Internal Implementation
