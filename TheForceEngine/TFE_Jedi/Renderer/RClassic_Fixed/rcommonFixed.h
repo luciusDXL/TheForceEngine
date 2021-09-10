@@ -45,6 +45,9 @@ namespace TFE_Jedi
 	
 		// Window
 		extern fixed16_16 s_windowMinZ_Fixed;
+		extern fixed16_16 s_windowMinYFixed;
+		extern fixed16_16 s_windowMaxYFixed;
+		extern s32 s_screenWidth;
 
 		// Column Heights
 		extern fixed16_16* s_column_Z_Over_X;

@@ -157,7 +157,14 @@ namespace TFE_Jedi
 			}
 		}
 	}
-				
+
+	void TFE_Sectors_Fixed::prepare()
+	{
+		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
+		s_flatEdge = flatEdge;
+		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_windowMaxYFixed, 0, s_windowMinYFixed);
+	}
+
 	void TFE_Sectors_Fixed::draw(RSector* sector)
 	{
 		s_curSector = sector;

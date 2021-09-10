@@ -50,7 +50,7 @@ struct CollisionInfo
 
 	RWall* wall;
 	s32 u24;
-	SecObject* obj2;
+	SecObject* collidedObj;
 
 	fixed16_16 width;
 	u32 flags;

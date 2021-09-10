@@ -42,6 +42,9 @@ namespace RClassic_Fixed
 
 	// Window
 	fixed16_16 s_windowMinZ_Fixed;
+	fixed16_16 s_windowMinYFixed;
+	fixed16_16 s_windowMaxYFixed;
+	s32 s_screenWidth;
 
 	// Column Heights
 	fixed16_16* s_column_Z_Over_X;

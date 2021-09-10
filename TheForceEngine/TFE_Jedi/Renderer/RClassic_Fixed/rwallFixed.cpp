@@ -1088,7 +1088,7 @@ namespace RClassic_Fixed
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - x + 1;
 
-			flat_addEdges(length, x, 0, s_windowMaxY + 1, 0, s_windowMaxY + 1);
+			flat_addEdges(length, x, 0, intToFixed16(s_windowMaxY + 1), 0, intToFixed16(s_windowMaxY + 1));
 
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)

@@ -11,7 +11,7 @@
 
 namespace TFE_Jedi
 {
-
+	
 namespace RClassic_Fixed
 {
 	static JBool s_fullDetail = JTRUE;
@@ -19,8 +19,6 @@ namespace RClassic_Fixed
 	static fixed16_16 s_viewHeightFixed;
 	static fixed16_16 s_minScreenX_Fixed;
 	static fixed16_16 s_maxScreenX_Fixed;
-	static fixed16_16 s_windowMinYFixed;
-	static fixed16_16 s_windowMaxYFixed;
 	static fixed16_16 s_screenWidthFract;
 	static fixed16_16 s_oneOverWidthFract;
 	static fixed16_16 s_worldX;
@@ -30,7 +28,6 @@ namespace RClassic_Fixed
 	static fixed16_16 s_zOffset;
 	static angle14_32 s_worldYaw;
 	static angle14_32 s_maxPitch = 8192;
-	static s32 s_screenWidth;
 	static s32 s_screenHeight;
 	static s32 s_pixelCount;
 	static s32 s_visionEffect;
@@ -123,7 +120,7 @@ namespace RClassic_Fixed
 		s_worldZ = z;
 		s_worldY = eyeHeight;
 	}
-			
+
 	void computeCameraTransform(RSector* sector, angle14_32 pitch, angle14_32 yaw, fixed16_16 camX, fixed16_16 camY, fixed16_16 camZ)
 	{
 		s_cameraPosX_Fixed = camX;
@@ -134,6 +131,7 @@ namespace RClassic_Fixed
 
 		s_cameraYaw_Fixed = yaw;
 		s_cameraPitch_Fixed = pitch;
+		const fixed16_16 pitchOffsetScale = FIXED(225);	// half_height * 2.25
 
 		s_xOffset = -camX;
 		s_zOffset = -camZ;
@@ -142,14 +140,14 @@ namespace RClassic_Fixed
 		s_negSinYaw_Fixed = -s_sinYaw_Fixed;
 		if (s_maxPitch != s_cameraPitch_Fixed)
 		{
-			fixed16_16 sinPitch   = sinFixed(s_cameraPitch_Fixed);
-			fixed16_16 rHalfWidth = mul16(sinPitch, s_halfWidth_Fixed);
-			s_projOffsetY = s_projOffsetYBase + rHalfWidth;
-			s_screenYMid = s_screenYMidBase + floor16(rHalfWidth);
+			fixed16_16 sinPitch = sinFixed(s_cameraPitch_Fixed);
+			fixed16_16 pitchOffset = mul16(sinPitch, pitchOffsetScale);
+			s_projOffsetY = s_projOffsetYBase + pitchOffset;
+			s_screenYMid  = s_screenYMidBase + floor16(pitchOffset);
 
 			// yMax*0.5 / halfWidth; ~pixel Aspect
-			s_yPlaneBot_Fixed =  div16((s_viewHeightFixed >> 1) - rHalfWidth, s_halfWidth_Fixed);
-			s_yPlaneTop_Fixed = -div16((s_viewHeightFixed >> 1) + rHalfWidth, s_halfWidth_Fixed);
+			s_yPlaneBot_Fixed =  div16((s_viewHeightFixed >> 1) - pitchOffset, s_halfWidth_Fixed);
+			s_yPlaneTop_Fixed = -div16((s_viewHeightFixed >> 1) + pitchOffset, s_halfWidth_Fixed);
 		}
 
 		s_zCameraTrans_Fixed = mul16(s_zOffset, s_cosYaw_Fixed) + mul16(s_xOffset, s_negSinYaw_Fixed);
@@ -250,7 +248,6 @@ namespace RClassic_Fixed
 
 		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
 		s_flatEdge = flatEdge;
-
 		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_windowMaxYFixed, 0, s_windowMinYFixed);
 		
 		s_columnTop = (s32*)realloc(s_columnTop, s_width * sizeof(s32));

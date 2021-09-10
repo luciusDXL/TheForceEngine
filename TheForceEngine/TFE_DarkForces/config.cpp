@@ -89,7 +89,7 @@ namespace TFE_DarkForces
 	GameConfig s_config =
 	{
 		JTRUE,	// headwave
-		JFALSE,	// wpnAutoMount
+		JTRUE,	// wpnAutoMount
 		JFALSE, // mouseTurnEnabled
 		JTRUE,  // mouseLookEnabled
 		JFALSE, // superShield

@@ -47,6 +47,8 @@ namespace TFE_DarkForces
 		PLAYER_CROUCH_SPEED            = 747108,      // 11.4 units/sec
 		PLAYER_MOUSE_TURN_SPD          = 8,           // Mouse position delta to turn speed multiplier.
 		PLAYER_KB_TURN_SPD             = 3413,        // Keyboard turn speed in angles/sec.
+		PLAYER_CONTROLLER_TURN_SPD     = 3413*3,	  // Controller turn speed in angles/sec.
+		PLAYER_CONTROLLER_PITCH_SPD    = 3413*2,	  // Controller turn speed in angles/sec.
 		PLAYER_JUMP_IMPULSE            = -2850816,    // Jump vertical impuse: -43.5 units/sec.
 
 		PLAYER_MAX_MOVE_DIST           = FIXED(32),
@@ -572,10 +574,13 @@ namespace TFE_DarkForces
 		{
 			if (id == 0)
 			{
-				handlePlayerMoveControls();
-				handlePlayerPhysics();
-				handlePlayerActions();
-				handlePlayerScreenFx();
+				if (!s_gamePaused)
+				{
+					handlePlayerMoveControls();
+					handlePlayerPhysics();
+					handlePlayerActions();
+					handlePlayerScreenFx();
+				}
 			}
 			else if (id == 22)
 			{
@@ -604,18 +609,18 @@ namespace TFE_DarkForces
 	{
 		s_externalYawSpd = 0;
 		s_forwardSpd = 0;
-		s_strafeSpd  = 0;
-		s_playerRun  = 0;
-		s_jumpScale  = 0;
+		s_strafeSpd = 0;
+		s_playerRun = 0;
+		s_jumpScale = 0;
 		s_playerSlow = 0;
-		
+
 		if (s_pickupFlags)
 		{
 			return;
 		}
 
 		s_playerCrouchSpd = s_playerStopAccel;
-				
+
 		s32 mdx, mdy;
 		TFE_Input::getAccumulatedMouseMove(&mdx, &mdy);
 		// Yaw change
@@ -627,9 +632,9 @@ namespace TFE_DarkForces
 		// Pitch change
 		if (s_config.mouseLookEnabled)
 		{
-			s_playerPitch = clamp(s_playerPitch - mdy*PLAYER_MOUSE_TURN_SPD, -PITCH_LIMIT, PITCH_LIMIT);
+			s_playerPitch = clamp(s_playerPitch - mdy * PLAYER_MOUSE_TURN_SPD, -PITCH_LIMIT, PITCH_LIMIT);
 		}
-				
+
 		// Controls
 		if (getActionState(IA_FORWARD))
 		{
@@ -640,6 +645,18 @@ namespace TFE_DarkForces
 		{
 			fixed16_16 speed = -mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
 			s_forwardSpd = min(speed, s_forwardSpd);
+		}
+		else if (TFE_Input::getAxis(AXIS_LEFT_Y))
+		{
+			fixed16_16 speed = mul16(mul16(PLAYER_FORWARD_SPEED, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_LEFT_Y)));
+			if (speed < 0)
+			{
+				s_forwardSpd = min(speed, s_forwardSpd);
+			}
+			else
+			{
+				s_forwardSpd = max(speed, s_forwardSpd);
+			}
 		}
 
 		if (getActionState(IA_RUN))
@@ -702,6 +719,12 @@ namespace TFE_DarkForces
 			s_playerYaw += dYaw;
 			s_playerYaw &= 0x3fff;
 		}
+		else if (TFE_Input::getAxis(AXIS_RIGHT_X))
+		{
+			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_TURN_SPD, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_RIGHT_X)));
+			s_playerYaw += turnSpeed;
+			s_playerYaw &= 0x3fff;
+		}
 
 		if (getActionState(IA_LOOK_UP))
 		{
@@ -719,6 +742,11 @@ namespace TFE_DarkForces
 			dPitch >>= s_playerSlow;	// half for "slow"
 			s_playerPitch = clamp(s_playerPitch - dPitch, -PITCH_LIMIT, PITCH_LIMIT);
 		}
+		else if (TFE_Input::getAxis(AXIS_RIGHT_Y))
+		{
+			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_PITCH_SPD, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_RIGHT_Y)));
+			s_playerPitch = clamp(s_playerPitch + turnSpeed, -PITCH_LIMIT, PITCH_LIMIT);
+		}
 
 		if (getActionState(IA_CENTER_VIEW))
 		{
@@ -735,6 +763,18 @@ namespace TFE_DarkForces
 		{
 			fixed16_16 speed = -mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
 			s_strafeSpd = min(speed, s_strafeSpd);
+		}
+		else if (TFE_Input::getAxis(AXIS_LEFT_X))
+		{
+			fixed16_16 speed = mul16(mul16(PLAYER_STRAFE_SPEED, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_LEFT_X)));
+			if (speed < 0)
+			{
+				s_strafeSpd = min(speed, s_strafeSpd);
+			}
+			else
+			{
+				s_strafeSpd = max(speed, s_strafeSpd);
+			}
 		}
 
 		if (getActionState(IA_USE))

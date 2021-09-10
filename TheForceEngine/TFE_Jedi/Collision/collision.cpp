@@ -733,6 +733,7 @@ namespace TFE_Jedi
 
 				wallCrossList[wallCrossCount++] = wall;
 				wall = collision_pathWallCollision(next);
+				curSector = next;
 			}
 			else
 			{
@@ -833,7 +834,7 @@ namespace TFE_Jedi
 		// These values are probably filled in at 2346a6, 23474f, and/or 23487f - which need to be figured out first.
 		colInfo->wall = colWall;
 		colInfo->u24 = b;
-		colInfo->obj = colObj;
+		colInfo->collidedObj = colObj;
 		// Update the collision info y position.
 		colInfo->yPos = s_hcolDstPos.y;
 		s32 r;	// eax

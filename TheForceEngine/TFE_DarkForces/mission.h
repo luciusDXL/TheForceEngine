@@ -26,6 +26,7 @@ namespace TFE_DarkForces
 	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);
 	void disableNightvisionInternal();
 
+	extern JBool s_gamePaused;
 	extern GameMissionMode s_missionMode;
 	extern TextureData* s_loadScreen;
 	extern u8 s_loadingScreenPal[];

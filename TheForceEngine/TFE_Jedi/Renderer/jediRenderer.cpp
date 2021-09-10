@@ -213,10 +213,11 @@ namespace TFE_Jedi
 			s_windowTop_all[i] = s_minScreenY;
 			s_windowBot_all[i] = s_maxScreenY;
 		}
-
+				
 		// Recursively draws sectors and their contents (sprites, 3D objects).
 		{
 			TFE_ZONE("Sector Draw");
+			s_sectorRenderer->prepare();
 			s_sectorRenderer->draw(sector);
 		}
 	}
