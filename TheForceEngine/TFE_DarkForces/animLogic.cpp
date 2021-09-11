@@ -69,12 +69,14 @@ namespace TFE_DarkForces
 								task_waitWhileIdNotZero(TASK_NO_DELAY);
 
 								// Finally delete the logic and call the complete function.
-								deleteLogicAndObject((Logic*)taskCtx->anim);
-								if (taskCtx->anim->completeTask)
+								Task* completeTask = taskCtx->anim->completeTask;
+
+								deleteLogicAndObject((Logic*)taskCtx->anim);	// This just deletes the Logic from the list
+								if (completeTask)
 								{
-									task_runAndReturn(taskCtx->anim->completeTask, 20);
+									task_runAndReturn(completeTask, 20);
 								}
-								allocator_deleteItem(s_spriteAnimList, taskCtx->obj);
+								allocator_deleteItem(s_spriteAnimList, taskCtx->anim); // This deletes the logic itself.
 							}
 							else
 							{

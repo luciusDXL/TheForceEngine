@@ -52,6 +52,13 @@ namespace TFE_Jedi
 		}
 	}
 
+	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx)
+	{
+		outVec->x = mul16(inVec->x, mtx[0]) + mul16(inVec->y, mtx[3]) + mul16(inVec->z, mtx[6]);
+		outVec->y = mul16(inVec->x, mtx[1]) + mul16(inVec->y, mtx[4]) + mul16(inVec->z, mtx[7]);
+		outVec->z = mul16(inVec->x, mtx[2]) + mul16(inVec->y, mtx[5]) + mul16(inVec->z, mtx[8]);
+	}
+
 	angle14_32 vec2ToAngle(fixed16_16 dx, fixed16_16 dz)
 	{
 		if (dx == 0 && dz == 0)

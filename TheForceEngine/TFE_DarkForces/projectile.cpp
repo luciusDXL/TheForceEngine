@@ -88,11 +88,9 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	void projectileLogicCleanupFunc(Logic* logic);
 	void proj_setTransform(ProjectileLogic* logic, angle14_32 pitch, angle14_32 yaw);
-	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
 	JBool proj_move(ProjectileLogic* logic);
 	JBool proj_getHitObj(ProjectileLogic* logic);
-	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType);
-	
+		
 	ProjectileHitType stdProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic);
@@ -763,8 +761,7 @@ namespace TFE_DarkForces
 				{
 					RSector* sector = obj->sector;
 					InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
-					LinkType linkType = link->type;
-					if (link && linkType == LTYPE_SECTOR && inf_isOnMovingFloor(obj, link->elev, sector))
+					if (link && link->type == LTYPE_SECTOR && inf_isOnMovingFloor(obj, link->elev, sector))
 					{
 						fixed16_16 res;
 						vec3_fixed vel;

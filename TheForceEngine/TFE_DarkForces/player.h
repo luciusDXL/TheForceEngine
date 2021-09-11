@@ -84,6 +84,8 @@ namespace TFE_DarkForces
 	extern fixed16_16 s_energy;
 	extern s32 s_lifeCount;
 	extern s32 s_playerLight;
+	extern s32 s_headwaveVerticalOffset;
+	extern s32 s_weaponLight;
 	extern fixed16_16 s_gravityAccel;
 	extern JBool s_invincibility;
 	extern JBool s_wearingCleats;

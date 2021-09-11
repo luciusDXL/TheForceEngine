@@ -30,14 +30,7 @@ namespace RClassic_Fixed
 	/////////////////////////////////////////////
 	// Polygon normals in viewspace (used for culling).
 	vec3_fixed s_polygonNormalsVS[MAX_POLYGON_COUNT_3DO];
-
-	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx)
-	{
-		outVec->x = mul16(inVec->x, mtx[0]) + mul16(inVec->y, mtx[3]) + mul16(inVec->z, mtx[6]);
-		outVec->y = mul16(inVec->x, mtx[1]) + mul16(inVec->y, mtx[4]) + mul16(inVec->z, mtx[7]);
-		outVec->z = mul16(inVec->x, mtx[2]) + mul16(inVec->y, mtx[5]) + mul16(inVec->z, mtx[8]);
-	}
-	
+			
 	void robj3d_transformVertices(s32 vertexCount, vec3_fixed* vtxIn, s32* xform, vec3_fixed* offset, vec3_fixed* vtxOut)
 	{
 		for (s32 v = 0; v < vertexCount; v++, vtxOut++, vtxIn++)

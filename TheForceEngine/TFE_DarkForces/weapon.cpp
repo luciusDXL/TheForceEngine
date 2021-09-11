@@ -43,38 +43,39 @@ namespace TFE_DarkForces
 	static s32 s_curWeapon;
 	static s32 s_nextWeapon;
 	static s32 s_lastWeapon;
-	static s32 s_canFireWeaponSec;
-	static s32 s_canFireWeaponPrim;
-	static u32 s_fireFrame = 0;
-
+	
 	static Tick s_weaponDelayPrimary;
 	static Tick s_weaponDelaySeconary;
 	static s32* s_canFirePrimPtr;
 	static s32* s_canFireSecPtr;
 
-	static SoundSourceID s_punchSwingSndSrc;
-	static SoundSourceID s_pistolSndSrc;
-	static SoundSourceID s_pistolEmptySndSrc;
-	static SoundSourceID s_rifleSndSrc;
-	static SoundSourceID s_rifleEmptySndSrc;
-	static SoundSourceID s_fusion1SndSrc;
-	static SoundSourceID s_fusion2SndSrc;
-	static SoundSourceID s_repeaterSndSrc;
-	static SoundSourceID s_repeater1SndSrc;
-	static SoundSourceID s_repeaterEmptySndSrc;
-	static SoundSourceID s_mortarFireSndSrc;
-	static SoundSourceID s_mortarFireSndSrc2;
-	static SoundSourceID s_mortarEmptySndSrc;
-	static SoundSourceID s_mineSndSrc;
-	static SoundSourceID s_concussion6SndSrc;
-	static SoundSourceID s_concussion5SndSrc;
-	static SoundSourceID s_concussion1SndSrc;
-	static SoundSourceID s_plasma4SndSrc;
-	static SoundSourceID s_plasmaEmptySndSrc;
-	static SoundSourceID s_missile1SndSrc;
-	static SoundSourceID s_weaponChangeSnd;
+	s32 s_canFireWeaponSec;
+	s32 s_canFireWeaponPrim;
+	u32 s_fireFrame = 0;
 
-	static SoundEffectID s_repeaterFireSndID = 0;
+	SoundSourceID s_punchSwingSndSrc;
+	SoundSourceID s_pistolSndSrc;
+	SoundSourceID s_pistolEmptySndSrc;
+	SoundSourceID s_rifleSndSrc;
+	SoundSourceID s_rifleEmptySndSrc;
+	SoundSourceID s_fusion1SndSrc;
+	SoundSourceID s_fusion2SndSrc;
+	SoundSourceID s_repeaterSndSrc;
+	SoundSourceID s_repeater1SndSrc;
+	SoundSourceID s_repeaterEmptySndSrc;
+	SoundSourceID s_mortarFireSndSrc;
+	SoundSourceID s_mortarFireSndSrc2;
+	SoundSourceID s_mortarEmptySndSrc;
+	SoundSourceID s_mineSndSrc;
+	SoundSourceID s_concussion6SndSrc;
+	SoundSourceID s_concussion5SndSrc;
+	SoundSourceID s_concussion1SndSrc;
+	SoundSourceID s_plasma4SndSrc;
+	SoundSourceID s_plasmaEmptySndSrc;
+	SoundSourceID s_missile1SndSrc;
+	SoundSourceID s_weaponChangeSnd;
+
+	SoundEffectID s_repeaterFireSndID = 0;
 
 	///////////////////////////////////////////
 	// Shared State
@@ -753,7 +754,9 @@ namespace TFE_DarkForces
 
 				if (id == WTID_STOP_FIRING)
 				{
-					// TODO(Core Game Loop Release)
+					s_isShooting = JFALSE;
+					weapon_prepareToFire();
+					s_curPlayerWeapon->flags |= 2;
 				}
 				else if (id == WTID_START_FIRING)
 				{
@@ -941,7 +944,9 @@ namespace TFE_DarkForces
 			}
 			else if (id == WTID_STOP_FIRING)
 			{
-				// TODO(Core Game Loop Release)
+				s_isShooting = JFALSE;
+				weapon_prepareToFire();
+				s_curPlayerWeapon->flags |= 2;
 			}
 			else if (id == WTID_HOLSTER)
 			{
@@ -964,7 +969,7 @@ namespace TFE_DarkForces
 				if ((s_secondaryFire && s_canFireWeaponSec) || s_canFireWeaponPrim)
 				{
 					// Fire the weapon.
-					s_weaponFireFunc[s_prevWeapon]();
+					task_callTaskFunc(s_weaponFireFunc[s_prevWeapon]);
 				}
 				else
 				{

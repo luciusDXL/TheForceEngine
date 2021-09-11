@@ -78,6 +78,7 @@ namespace TFE_Jedi
 	}
 
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
+	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx);
 
 	inline void sinCosFixed(angle14_32 angle, fixed16_16* sinValue, fixed16_16* cosValue)
 	{

@@ -355,6 +355,8 @@ namespace TFE_Jedi
 		
 	SecObject* collision_getObjectCollision(RSector* sector, CollisionInterval* interval, SecObject* prevObj)
 	{
+		if (!sector) { return nullptr; }
+
 		//s_infCurSector = sector;
 		s_colObjPrev = prevObj;
 

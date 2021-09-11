@@ -105,4 +105,9 @@ namespace TFE_DarkForces
 
 	// Trigger a landmine.
 	void triggerLandMine(ProjectileLogic* logic, Tick delay);
+
+	void proj_setYawPitch(ProjectileLogic* projLogic, fixed16_16 sinPitch, fixed16_16 cosPitch, fixed16_16 sinYaw, fixed16_16 cosYaw);
+	void proj_setTransform(ProjectileLogic* projLogic, angle14_32 pitch, angle14_32 yaw);
+	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
+	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType);
 }  // namespace TFE_DarkForces

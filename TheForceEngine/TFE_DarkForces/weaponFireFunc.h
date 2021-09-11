@@ -7,16 +7,16 @@
 
 namespace TFE_DarkForces
 {
-	typedef void(*WeaponFireFunc)();
+	typedef void(*WeaponFireFunc)(s32 id);
 
-	void weaponFire_fist();
-	void weaponFire_pistol();
-	void weaponFire_rifle();
-	void weaponFire_thermalDetonator();
-	void weaponFire_repeater();
-	void weaponFire_fusion();
-	void weaponFire_mortar();
-	void weaponFire_mine();
-	void weaponFire_concussion();
-	void weaponShoot_cannon();
+	void weaponFire_fist(s32 id);
+	void weaponFire_pistol(s32 id);
+	void weaponFire_rifle(s32 id);
+	void weaponFire_thermalDetonator(s32 id);
+	void weaponFire_repeater(s32 id);
+	void weaponFire_fusion(s32 id);
+	void weaponFire_mortar(s32 id);
+	void weaponFire_mine(s32 id);
+	void weaponFire_concussion(s32 id);
+	void weaponShoot_cannon(s32 id);
 }  // namespace TFE_DarkForces

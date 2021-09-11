@@ -128,9 +128,7 @@ namespace TFE_DarkForces
 	static fixed16_16 s_dist;
 	static fixed16_16 s_distScale;
 	// Misc
-	static s32 s_weaponLight = 0;
 	static s32 s_levelAtten = 0;
-	static s32 s_headwaveVerticalOffset;
 	static Safe* s_curSafe = nullptr;
 	// Actions
 	static JBool s_playerUse = JFALSE;
@@ -164,7 +162,9 @@ namespace TFE_DarkForces
 	fixed16_16 s_energy = 2 * ONE_16;
 	s32 s_lifeCount;
 	s32 s_playerLight = 0;
+	s32 s_headwaveVerticalOffset;
 	u32 s_moveAvail = 0xffffffff;
+	s32 s_weaponLight = 0;
 	fixed16_16 s_gravityAccel;
 
 	JBool s_invincibility = JFALSE;
