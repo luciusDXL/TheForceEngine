@@ -90,6 +90,8 @@ namespace TFE_DarkForces
 	void weapon_loadTextures();
 	void weapon_setFireRateInternal(WeaponFireMode mode, Tick delay, s32* canFire);
 	void weapon_playerWeaponTaskFunc(s32 id);
+	void weapon_handleOnAnimation(s32 id);
+	void weapon_prepareToFire();
 
 	static WeaponFireFunc s_weaponFireFunc[WPN_COUNT] =
 	{
@@ -698,7 +700,27 @@ namespace TFE_DarkForces
 	void weapon_handleState(s32 id)
 	{
 		task_begin;
-		// TODO(Core Game Loop Release)
+		if (id == WTID_STOP_FIRING)
+		{
+			s_isShooting = JFALSE;
+			weapon_prepareToFire();
+			s_curPlayerWeapon->flags |= 2;
+		}
+		else if (id == WTID_START_FIRING)
+		{
+			s_secondaryFire = s_msgArg1 ? JTRUE : JFALSE;
+			s_isShooting = JTRUE;
+			if (s_weaponOffAnim)
+			{
+				task_callTaskFunc(weapon_handleOnAnimation);
+			}
+			s_curPlayerWeapon->flags &= ~2;
+		}
+		else if (id == WTID_SWITCH_WEAPON)
+		{
+			s_switchWeapons = JTRUE;
+			s_nextWeapon = s_msgArg1;
+		}
 		task_end;
 	}
 		

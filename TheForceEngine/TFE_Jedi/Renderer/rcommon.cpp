@@ -1,6 +1,8 @@
 #include "rcommon.h"
 #include "redgePair.h"
 
+struct SecObject;
+
 namespace TFE_Jedi
 {
 	// Resolution
@@ -112,4 +114,7 @@ namespace TFE_Jedi
 	// Debug
 	s32 s_maxWallCount;
 	s32 s_maxDepthCount;
+
+	s32 s_drawnSpriteCount;
+	SecObject* s_drawnSprites[MAX_DRAWN_SPRITE_STORE];
 }

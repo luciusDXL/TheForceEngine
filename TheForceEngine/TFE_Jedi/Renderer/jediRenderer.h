@@ -73,4 +73,6 @@ namespace TFE_Jedi
 	void clear3DView(u8* framebuffer);
 
 	extern ScreenRect s_screenRect;
+	extern s32 s_drawnSpriteCount;
+	extern SecObject* s_drawnSprites[];
 }

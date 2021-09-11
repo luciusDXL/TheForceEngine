@@ -10,6 +10,7 @@
 #include "redgePairFixed.h"
 #include "rcommonFixed.h"
 #include "../rcommon.h"
+#include "../jediRenderer.h"
 
 namespace TFE_Jedi
 {
@@ -2273,6 +2274,7 @@ namespace RClassic_Fixed
 		const s32 flip = frame->flip;
 		// Make sure the sprite isn't behind the near plane.
 		if (z < ONE_16) { return; }
+		JBool drawn = JFALSE;
 
 		const fixed16_16 x0 = obj->posVS.x - frame->offsetX;
 		const fixed16_16 yOffset = frame->heightWS - frame->offsetY;
@@ -2411,8 +2413,14 @@ namespace RClassic_Fixed
 					s_columnOut = &s_display[y0 * s_width + x];
 					// Draw the column.
 					spriteColumnFunc();
+					drawn = JTRUE;
 				}
 			}
+		}
+
+		if (drawn && s_drawnSpriteCount < MAX_DRAWN_SPRITE_STORE)
+		{
+			s_drawnSprites[s_drawnSpriteCount++] = obj;
 		}
 	}
 }  // RClassic_Fixed

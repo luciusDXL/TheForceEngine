@@ -25,7 +25,7 @@ namespace TFE_Jedi
 	static MemoryPool s_memPool;
 	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
 	ScreenRect s_screenRect = { 0, 1, 319, 198 };
-
+	
 	TFE_Sectors* s_sectorRenderer = nullptr;
 
 	/////////////////////////////////////////////
@@ -196,6 +196,7 @@ namespace TFE_Jedi
 		s_flatCount = 0;
 		s_nextWall = 0;
 		s_curWallSeg = 0;
+		s_drawnSpriteCount = 0;
 
 		s_prevSector = nullptr;
 		s_sectorIndex = 0;

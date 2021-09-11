@@ -624,6 +624,7 @@ int main(int argc, char* argv[])
 		}
 
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
+		bool endInputFrame = true;
 		if (s_curState == APP_STATE_EDITOR)
 		{
 			/*
@@ -642,7 +643,7 @@ int main(int argc, char* argv[])
 			else
 			{
 				s_curGame->loopGame();
-				TFE_Jedi::task_run();
+				endInputFrame = TFE_Jedi::task_run() != 0;
 			}
 		}
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
@@ -661,7 +662,10 @@ int main(int argc, char* argv[])
 		TFE_RenderBackend::swap(swap);
 
 		// Clear transitory input state.
-		TFE_Input::endFrame();
+		if (endInputFrame)
+		{
+			TFE_Input::endFrame();
+		}
 		frame++;
 
 		TFE_FRAME_END();

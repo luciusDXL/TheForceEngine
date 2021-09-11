@@ -398,11 +398,12 @@ namespace TFE_Jedi
 	}
 		
 	// Called once per frame to run all of the tasks.
-	void task_run()
+	// Returns JFALSE if it cannot be run due to the time interval.
+	JBool task_run()
 	{
 		if (!s_taskCount)
 		{
-			return;
+			return JTRUE;
 		}
 
 		// Limit the update rate by the minimum interval.
@@ -410,7 +411,7 @@ namespace TFE_Jedi
 		const f64 time = TFE_System::getTime();
 		if (time - s_prevTime < s_minIntervalInSec)
 		{
-			return;
+			return JFALSE;
 		}
 		s_prevTime = time;
 
@@ -465,6 +466,7 @@ namespace TFE_Jedi
 				break;
 			}
 		}
+		return JTRUE;
 	}
 
 	void task_setDefaults()

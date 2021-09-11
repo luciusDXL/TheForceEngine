@@ -47,7 +47,8 @@ namespace TFE_Jedi
 	// This interacts better with modern systems, such as Windows.
 	// Another option is to run the game and rendering loop in its own
 	// thread and then blit the results in the main thread.
-	void task_run();
+	// Returns false if tasks cannot be run due to the time interval.
+	JBool task_run();
 	void task_setDefaults();
 	void task_setMinStepInterval(f64 minIntervalInSec);
 
