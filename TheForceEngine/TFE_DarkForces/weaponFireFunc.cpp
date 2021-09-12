@@ -113,7 +113,7 @@ namespace TFE_DarkForces
 			rotateVectorM3x3(&inVec, &outVec, mtx);
 
 			fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
-			fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
+			fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
 			fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
 
 			JBool targetFound = computeAutoaim(xPos, yPos, zPos, s_playerObject->pitch, s_playerObject->yaw, s_curPlayerWeapon->variation & 0xffff);
@@ -155,7 +155,7 @@ namespace TFE_DarkForces
 				}
 
 				ProjectileLogic* projLogic;
-				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
+				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
 				projLogic = (ProjectileLogic*)createProjectile(PROJ_PISTOL_BOLT, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 				projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 				projLogic->prevColObj = s_playerObject;

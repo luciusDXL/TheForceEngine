@@ -122,6 +122,14 @@ namespace TFE_DarkForces
 	{
 		task_begin;
 		{
+			// Make sure the loading screen is displayed for at least 1 second.
+			displayLoadingScreen();
+			task_yield(MIN_LOAD_TIME);
+
+			s_prevTick = s_curTick;
+			s_playerTick = s_curTick;
+			s_mainTask = pushTask("main task", mission_mainTaskFunc);
+
 			s_invalidLevelIndex = JFALSE;
 			s_levelComplete = JFALSE;
 			s_exitLevel = JFALSE;
@@ -174,23 +182,9 @@ namespace TFE_DarkForces
 					// initSoundEffects();  <- TODO: Handle later
 					s_missionMode = MISSION_MODE_MAIN;
 					s_gamePaused = JFALSE;
+					hud_startup();
 				}
 			}
-			// Add a yield here, to get the delta time.
-			task_yield(TASK_NO_DELAY);
-			s_loadingScreenDelta = s_curTick - s_loadingScreenStart;
-			// Make sure the loading screen is displayed for at least 1 second.
-			if (s_loadingScreenDelta < MIN_LOAD_TIME)
-			{
-				task_yield(MIN_LOAD_TIME - s_loadingScreenDelta);
-			}
-			// This is pushed near the beginning in the DOS code but was moved to the end so I can add yields() inbetween.
-			s_mainTask = pushTask("main task", mission_mainTaskFunc);
-
-			// This was moved here due to the forced wait time - otherwise time passes for the player that is not visible on screen.
-			task_makeActive(s_playerTask);
-			s_prevTick   = s_curTick;
-			s_playerTick = s_curTick;
 			TFE_Input::clearAccumulatedMouseMove();
 		}
 		// Sleep until we are done with the main task.

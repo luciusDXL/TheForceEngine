@@ -457,8 +457,7 @@ namespace TFE_DarkForces
 		s_playerYPos = s_playerObject->posWS.y;
 		s_playerLogic.stepHeight = PLAYER_STEP;
 
-		// Moved to mission_startTaskFunc(), after the main task is pushed.
-		//task_makeActive(s_playerTask);
+		task_makeActive(s_playerTask);
 
 		weapon_setNext(s_playerInfo.curWeapon);
 		s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
@@ -749,6 +748,7 @@ namespace TFE_DarkForces
 		s_playerObjPitch  = s_playerObject->pitch;
 		s_playerObjYaw    = s_playerObject->yaw;
 		s_playerObjSector = s_playerObject->sector;
+		s_playerTick = s_curTick;
 		s_prevPlayerTick  = s_curTick;
 
 		while (id != -1)
