@@ -9,6 +9,8 @@
 using namespace TFE_DarkForces;
 using namespace TFE_Memory;
 
+// #define TASK_DEBUG 1
+
 enum TaskConstants
 {
 	TASK_MAX_LEVELS = 16,	// Maximum number of recursion levels.
@@ -30,6 +32,12 @@ struct TaskContext
 	s32 level;
 	s32 callLevel;
 };
+
+#ifdef TASK_DEBUG
+#define TASK_MSG(...) TFE_System::logWrite(LOG_MSG, "TASK", __VA_ARGS__)
+#else
+#define TASK_MSG(...)
+#endif
 
 struct Task
 {
@@ -72,7 +80,6 @@ namespace TFE_Jedi
 	Task  s_rootTask;
 	Task* s_taskIter = nullptr;
 	Task* s_curTask = nullptr;
-	Task* s_resumeTask = nullptr;
 	s32   s_currentId = -1;
 
 	TaskContext* s_curContext = nullptr;
@@ -257,6 +264,8 @@ namespace TFE_Jedi
 
 	void ctxReturn()
 	{
+		TASK_MSG("Return from function, task: '%s'.", s_curTask->name);
+
 		s32 level = 0;
 		if (s_curContext)
 		{
@@ -334,32 +343,23 @@ namespace TFE_Jedi
 
 	void itask_run(Task* task, s32 id)
 	{
+		Task* retTask = s_curTask;
+
 		task->retTask = s_curTask;
 		s_currentId = id;
 		s_curTask = task;
 
+		TASK_MSG("Run task '%s' with id: '%d'.", task->name, s_currentId);
 		s_curContext = &s_curTask->context;
-		// Save the current recursion level.
-		s32 prevLevel = s_curContext->level;
-
-		// When a task is run directly, it is called in-place since control needs to be handed over immediately.
-		// When yield is called, control will pass back to the calling task.
-		// Call from the base level, we are starting again.
-		s_curContext->level = -1;
-		s_curContext->ip[0] = 0;
-		s32 level = max(0, s_curContext->level);
+		s32 level = max(0, s_curContext->level + 1);
 		TaskFunc runFunc = s_curContext->callstack[level];
 		assert(runFunc);
 		if (runFunc)
 		{
 			runFunc(s_currentId);
 		}
-
-		// Restore the previous level.
-		if (prevLevel != task->context.level)
-		{
-			task->context.level = prevLevel;
-		}
+		assert(retTask == s_curTask);
+		TASK_MSG("Return to task '%s'.", s_curTask->name);
 	}
 
 	void itask_yield(Tick delay, s32 ip)
@@ -368,6 +368,8 @@ namespace TFE_Jedi
 		assert(s_curContext->level >= 0 && s_curContext->level < TASK_MAX_LEVELS);
 		s_curContext->ip[s_curContext->level] = ip;
 		s_curContext->level--;
+
+		TASK_MSG("Task yield: '%s' for %u ticks", s_curTask->name, delay);
 
 		// If there is a return task, then take it next.
 		if (s_curTask->retTask)
@@ -380,6 +382,8 @@ namespace TFE_Jedi
 			s_currentId = 0;
 			s_curTask = retTask;
 			s_curContext = &s_curTask->context;
+
+			TASK_MSG("Return Task: '%s'", s_curTask->name);
 			return;
 		}
 
@@ -389,6 +393,7 @@ namespace TFE_Jedi
 		// Find the next task to run.
 		selectNextTask();
 		assert(s_curTask);
+		TASK_MSG("Task Selected: '%s'", s_curTask->name);
 	}
 		
 	void task_setMinStepInterval(f64 minIntervalInSec)
@@ -416,18 +421,7 @@ namespace TFE_Jedi
 		s_prevTime = time;
 
 		// Find the next task to run.
-		Task* task = s_resumeTask ? s_resumeTask : s_curTask;
-		do
-		{
-			if (task->nextMain)
-			{
-				task = task->nextMain;
-			}
-			else if (task->nextSec)
-			{
-				task = task->nextSec;
-			}
-		} while (!task || !task->context.callstack[0]);	// loop as long as task is null or the task has no valid callstack (i.e. the root).
+		Task* task = s_curTask;
 		s_curTask = task;
 		s_currentId = 0;
 
@@ -437,11 +431,8 @@ namespace TFE_Jedi
 		// Note: the original code just loop here forever, but we break it up between frames to play nice with modern operating systems.
 		while (s_curTask)
 		{
+			TASK_MSG("Current Task: '%s'.", s_curTask->name);
 			JBool framebreak = s_curTask->framebreak;
-			if (framebreak)
-			{
-				s_resumeTask = s_curTask;
-			}
 
 			// This should only be false when hitting the "framebreak" task which is sleeping.
 			if (s_curTask->nextTick <= s_curTick)
@@ -456,7 +447,7 @@ namespace TFE_Jedi
 					runFunc(s_currentId);
 				}
 			}
-			else if (!framebreak)
+			else
 			{
 				selectNextTask();
 			}
@@ -523,8 +514,10 @@ namespace TFE_Jedi
 	// This task needs to track the current IP at the calling level so it can be resumed when the new function returns.
 	// In addition, we must detect when the return is delayed - due to a yield in the called function - 
 	// so that the recursion level is properly handled on delayed return.
-	bool ctxCall(TaskFunc func, s32 id, s32 ip)
+	bool ctxCall(TaskFunc func, s32 id, s32 ip, const char* funcName)
 	{
+		TASK_MSG("Call Function: '%s', %d.", funcName, id);
+
 		assert(s_curContext->level >= 0 && s_curContext->level + 1 < TASK_MAX_LEVELS);
 		TaskContext* startContext = s_curContext;
 		if (s_curContext->level == 0)

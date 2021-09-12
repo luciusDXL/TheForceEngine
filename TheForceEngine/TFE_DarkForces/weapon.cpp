@@ -730,20 +730,18 @@ namespace TFE_DarkForces
 	{
 		struct LocalContext
 		{
-			PlayerWeapon* weapon;
 			Tick startTick;
 		};
 		task_begin_ctx;
 
-		taskCtx->weapon = s_curPlayerWeapon;
-		taskCtx->weapon->xOffset = s_weaponAnimState.startOffsetX;
-		taskCtx->weapon->yOffset = s_weaponAnimState.startOffsetY;
+		s_curPlayerWeapon->xOffset = s_weaponAnimState.startOffsetX;
+		s_curPlayerWeapon->yOffset = s_weaponAnimState.startOffsetY;
 		task_makeActive(s_playerWeaponTask);
 
 		task_yield(TASK_NO_DELAY);
 		task_callTaskFunc(weapon_handleState);
 
-		taskCtx->weapon->frame = s_weaponAnimState.frame;
+		s_curPlayerWeapon->frame = s_weaponAnimState.frame;
 		while (s_weaponAnimState.frameCount)
 		{
 			taskCtx->startTick = s_curTick;
@@ -771,18 +769,17 @@ namespace TFE_DarkForces
 
 			// Calculate the number of elapsed frames.
 			Tick elapsed = s_curTick - taskCtx->startTick;
-			PlayerWeapon* weapon = taskCtx->weapon;
 			if (elapsed <= s_weaponAnimState.ticksPerFrame + 1 || s_weaponAnimState.frameCount < 2)
 			{
-				taskCtx->weapon->xOffset += s_weaponAnimState.xSpeed;
-				taskCtx->weapon->yOffset += s_weaponAnimState.ySpeed;
+				s_curPlayerWeapon->xOffset += s_weaponAnimState.xSpeed;
+				s_curPlayerWeapon->yOffset += s_weaponAnimState.ySpeed;
 				s_weaponAnimState.frameCount--;
 			}
 			else
 			{
 				s32 elapsedFrames = min(s_weaponAnimState.frameCount, elapsed / s_weaponAnimState.ticksPerFrame);
-				taskCtx->weapon->xOffset += s_weaponAnimState.xSpeed * elapsedFrames;
-				taskCtx->weapon->yOffset += s_weaponAnimState.ySpeed * elapsedFrames;
+				s_curPlayerWeapon->xOffset += s_weaponAnimState.xSpeed * elapsedFrames;
+				s_curPlayerWeapon->yOffset += s_weaponAnimState.ySpeed * elapsedFrames;
 				s_weaponAnimState.frameCount -= elapsedFrames;
 			}
 		}
@@ -1000,9 +997,6 @@ namespace TFE_DarkForces
 					weapon_setNext(s_curWeapon);
 					task_callTaskFunc(weapon_handleOnAnimation);
 				}
-
-				// TODO(): This was added - but should be removed if the firing function handles it.
-				task_yield(TASK_NO_DELAY);
 			}
 
 			// Go to sleep until needed.

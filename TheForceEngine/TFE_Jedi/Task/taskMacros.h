@@ -1,5 +1,11 @@
 #pragma once
 
+#ifndef __FUNCTION__
+	#ifndef _WIN32   //*NIX
+		#define __FUNCTION__   __func__ 
+	#endif
+#endif
+
 #define task_begin	\
 	ctxBegin();	\
 	switch (ctxGetIP()) \
@@ -27,12 +33,12 @@
 	itask_run(task, id)
 	
 #define task_callTaskFunc(func)	\
-	do { if (ctxCall(func, id, __LINE__)) { return; } \
+	do { if (ctxCall(func, id, __LINE__, __FUNCTION__)) { return; } \
 	case __LINE__:; \
 	} while (0)
 
 #define task_callTaskFuncWithId(func, newId)	\
-	do { if (ctxCall(func, newId, __LINE__)) { return; } \
+	do { if (ctxCall(func, newId, __LINE__, __FUNCTION__)) { return; } \
 	case __LINE__:; \
 	} while (0)
 
@@ -43,6 +49,9 @@
 	{ \
 		task_yield(ticks); \
 	} while (id != 0)
+
+#define task_localBlockBegin {
+#define task_localBlockEnd }
 
 namespace TFE_Jedi
 {
@@ -55,7 +64,7 @@ namespace TFE_Jedi
 	void ctxAllocate(u32 size);
 	void* ctxGet();
 	void ctxBegin();
-	bool ctxCall(TaskFunc func, s32 id, s32 ip);
+	bool ctxCall(TaskFunc func, s32 id, s32 ip, const char* funcName);
 	void ctxReturn();
 	void itask_yield(Tick delay, s32 ip);
 	void itask_run(Task* task, s32 id);
