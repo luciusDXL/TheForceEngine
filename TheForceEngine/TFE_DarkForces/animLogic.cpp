@@ -144,7 +144,7 @@ namespace TFE_DarkForces
 	
 		const WaxAnim* anim = WAX_AnimPtr(obj->wax, animIndex);
 		const s32 animLastFrame = anim->frameCount - 1;
-		if ((s32)lastFrame >= animLastFrame)
+		if (lastFrame >= animLastFrame)
 		{
 			lastFrame = animLastFrame;
 		}
