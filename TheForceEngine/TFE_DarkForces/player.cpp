@@ -1694,47 +1694,47 @@ namespace TFE_DarkForces
 					s_shieldDamageFx = FIXED(17);
 				}
 			}
-			if (healthDmg)
+		}
+		if (healthDmg)
+		{
+			health -= healthDmg;
+			if (health < ONE_16)
 			{
-				health -= healthDmg;
-				if (health < ONE_16)
+				s_playerInfo.healthFract = 0;
+				// We could just set the health to 0 here...
+				s_playerInfo.health = pickup_addToValue(0, 0, 100);
+				if (playHitSound)
 				{
-					s_playerInfo.healthFract = 0;
-					// We could just set the health to 0 here...
-					s_playerInfo.health = pickup_addToValue(0, 0, 100);
-					if (playHitSound)
-					{
-						playSound2D(s_playerDeathSoundSource);
-					}
-					if (s_gasSectorTask)
-					{
-						task_free(s_gasSectorTask);
-					}
-					health = 0;
-					s_gasSectorTask = nullptr;
-					if (!s_wearingGasmask)
-					{
-						// TODO
-					}
-					s_pickupFlags = 0xffffffff;
-					s_reviveTick = s_curTick + 436;
+					playSound2D(s_playerDeathSoundSource);
 				}
-				else
+				if (s_gasSectorTask)
 				{
-					if (playHitSound && s_curTick > s_nextPainSndTick)
-					{
-						playSound2D(s_playerHealthHitSoundSource);
-						s_nextPainSndTick = s_curTick + 0x48;
-					}
-					health = max(0, health);
-					s32 healthInt = floor16(health);
-					s32 healthFrac = fract16(health);
-					s_playerInfo.health = healthInt;
-					s_playerInfo.healthFract = healthFrac;
+					task_free(s_gasSectorTask);
 				}
-				s_healthDamageFx += TFE_Jedi::abs(healthDmg) >> 1;
-				s_healthDamageFx = max(ONE_16, min(FIXED(17), s_healthDamageFx));
+				health = 0;
+				s_gasSectorTask = nullptr;
+				if (!s_wearingGasmask)
+				{
+					// TODO
+				}
+				s_pickupFlags = 0xffffffff;
+				s_reviveTick = s_curTick + 436;
 			}
+			else
+			{
+				if (playHitSound && s_curTick > s_nextPainSndTick)
+				{
+					playSound2D(s_playerHealthHitSoundSource);
+					s_nextPainSndTick = s_curTick + 0x48;
+				}
+				health = max(0, health);
+				s32 healthInt = floor16(health);
+				s32 healthFrac = fract16(health);
+				s_playerInfo.health = healthInt;
+				s_playerInfo.healthFract = healthFrac;
+			}
+			s_healthDamageFx += TFE_Jedi::abs(healthDmg) >> 1;
+			s_healthDamageFx = max(ONE_16, min(FIXED(17), s_healthDamageFx));
 		}
 	}
 
