@@ -187,7 +187,7 @@ void handleEvent(SDL_Event& Event)
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
 				{ TFE_Input::setAxis(AXIS_LEFT_TRIGGER, f32(Event.caxis.value) / 32768.0f); }
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
-				{ TFE_Input::setAxis(AXIS_RIGHT_TRIGGER, -f32(Event.caxis.value) / 32768.0f); }
+				{ TFE_Input::setAxis(AXIS_RIGHT_TRIGGER, f32(Event.caxis.value) / 32768.0f); }
 			}
 			else
 			{

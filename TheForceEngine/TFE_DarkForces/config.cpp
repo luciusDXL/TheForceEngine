@@ -192,6 +192,13 @@ namespace TFE_DarkForces
 						s_actions[bind->action] = STATE_DOWN;
 					}
 				} break;
+				case ITYPE_CONTROLLER_AXIS:
+				{
+					if (TFE_Input::getAxis(bind->axis) > 0.5f)
+					{
+						s_actions[bind->action] = STATE_DOWN;
+					}
+				} break;
 			}
 		}
 	}

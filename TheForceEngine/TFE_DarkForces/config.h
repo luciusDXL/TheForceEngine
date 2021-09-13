@@ -106,6 +106,7 @@ namespace TFE_DarkForces
 			KeyboardCode keyCode;
 			MouseButton  mouseBtn;
 			Button       ctrlBtn;
+			Axis         axis;
 		};
 		KeyModifier keyMod = KEYMOD_NONE;
 	};
