@@ -419,10 +419,6 @@ namespace TFE_Jedi
 			return JFALSE;
 		}
 		s_prevTime = time;
-
-		// Find the next task to run.
-		Task* task = s_curTask;
-		s_curTask = task;
 		s_currentId = 0;
 
 		// Keep processing tasks until the "framebreak" task is hit.

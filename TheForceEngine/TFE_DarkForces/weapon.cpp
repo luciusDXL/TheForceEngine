@@ -562,7 +562,10 @@ namespace TFE_DarkForces
 	
 	void weapon_createPlayerWeaponTask()
 	{
-		s_playerWeaponTask = createTask("player weapon", weapon_playerWeaponTaskFunc);
+		//s_playerWeaponTask = createTask("player weapon", weapon_playerWeaponTaskFunc);
+		// TODO: In the original code, createTask() was called - but then the firing is a frame behind.
+		// Making it a "pushTask" instead makes it happen before the main task, which is what we want.
+		s_playerWeaponTask = pushTask("player weapon", weapon_playerWeaponTaskFunc);
 
 		s_superCharge = JFALSE;
 		s_superChargeHud = JFALSE;
