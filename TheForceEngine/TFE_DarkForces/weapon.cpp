@@ -843,7 +843,7 @@ namespace TFE_DarkForces
 		s_weaponAnimState =
 		{
 			0,							// frame
-			14, 40,						// startOffsetX, startOffsetY
+			30, 40,						// startOffsetX, startOffsetY: was 14, 40
 			-3, -4,						// xSpeed, ySpeed
 			10, s_superCharge ? 1u : 2u	// frameCount, ticksPerFrame
 		};
