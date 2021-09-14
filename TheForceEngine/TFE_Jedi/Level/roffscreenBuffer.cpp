@@ -1,5 +1,6 @@
 #include "roffscreenBuffer.h"
 #include <TFE_System/system.h>
+#include <TFE_Game/igame.h>
 
 namespace TFE_Jedi
 {
@@ -7,14 +8,14 @@ namespace TFE_Jedi
 
 	OffScreenBuffer* createOffScreenBuffer(s32 width, s32 height, u32 flags)
 	{
-		OffScreenBuffer* buffer = (OffScreenBuffer*)malloc(sizeof(OffScreenBuffer));
+		OffScreenBuffer* buffer = (OffScreenBuffer*)game_alloc(sizeof(OffScreenBuffer));
 		s32 size = width * height;
 
 		buffer->width  = width;
 		buffer->height = height;
 		buffer->flags  = flags;
 		buffer->size   = size;
-		buffer->image  = (u8*)malloc(size);
+		buffer->image  = (u8*)game_alloc(size);
 
 		return buffer;
 	}

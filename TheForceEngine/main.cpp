@@ -517,6 +517,7 @@ int main(int argc, char* argv[])
 	TFE_Jedi::inf_init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
+	game_init();
 			
 	/*TFE_Renderer* renderer = TFE_Renderer::create(TFE_RENDERER_SOFTWARE_CPU);
 	if (!renderer)
@@ -676,6 +677,7 @@ int main(int argc, char* argv[])
 		freeGame(s_curGame);
 		s_curGame = nullptr;
 	}
+	game_destroy();
 
 	// Cleanup
 	TFE_FrontEndUI::shutdown();

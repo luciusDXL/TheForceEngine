@@ -152,13 +152,10 @@ namespace TFE_DarkForces
 
 	void DarkForces::exitGame()
 	{
-		const s32 count = s_localMessages.count;
-		GameMessage* msg = s_localMessages.msgList;
-		for (s32 i = 0; i < count; i++, msg++)
-		{
-			free(msg->text);
-			msg->text = nullptr;
-		}
+		s_localMessages.count = 0;
+		s_localMessages.msgList = nullptr;
+		s_hotKeyMessages.count = 0;
+		s_hotKeyMessages.msgList = nullptr;
 		gameMessage_freeBuffer();
 
 		// Clear paths and archives.

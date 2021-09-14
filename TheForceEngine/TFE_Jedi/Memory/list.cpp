@@ -1,4 +1,5 @@
 #include "list.h"
+#include <TFE_Game/igame.h>
 
 namespace TFE_Jedi
 {
@@ -72,7 +73,7 @@ namespace TFE_Jedi
 	{
 		elemSize++;
 		s32 size = elemSize * capacity + sizeof(List);
-		List* list = (List*)malloc(size);
+		List* list = (List*)game_alloc(size);
 		u8* end = (u8*)list + size;
 		list->end = end - elemSize;
 		list->self = list;

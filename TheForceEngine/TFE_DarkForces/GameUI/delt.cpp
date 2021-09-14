@@ -1,4 +1,5 @@
 #include "delt.h"
+#include <TFE_Game/igame.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 
@@ -32,7 +33,7 @@ namespace TFE_DarkForces
 		if (size > s_bufferSize)
 		{
 			s_bufferSize = size + 256;
-			s_buffer = (u8*)realloc(s_buffer, s_bufferSize);
+			s_buffer = (u8*)game_realloc(s_buffer, s_bufferSize);
 		}
 		return s_buffer;
 	}
@@ -86,7 +87,7 @@ namespace TFE_DarkForces
 		const s16 frameCount = *((s16*)buffer);
 		const u8* frames = buffer + 2;
 
-		*outFrames = (DeltFrame*)malloc(sizeof(DeltFrame) * frameCount);
+		*outFrames = (DeltFrame*)game_alloc(sizeof(DeltFrame) * frameCount);
 		DeltFrame* outFramePtr = *outFrames;
 
 		for (s32 i = 0; i < frameCount; i++)
@@ -184,7 +185,7 @@ namespace TFE_DarkForces
 		
 		frame->offsetX = header.offsetX;
 		frame->offsetY = header.offsetY;
-		frame->texture.image = (u8*)malloc(frame->texture.dataSize);
+		frame->texture.image = (u8*)game_alloc(frame->texture.dataSize);
 		memset(frame->texture.image, 0, frame->texture.dataSize);
 
 		const u8* data = buffer + sizeof(DeltHeader);

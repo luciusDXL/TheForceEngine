@@ -1,5 +1,6 @@
 #include "gameMessage.h"
 #include "util.h"
+#include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
@@ -10,7 +11,7 @@ namespace TFE_DarkForces
 
 	void gameMessage_freeBuffer()
 	{
-		free(s_buffer);
+		game_free(s_buffer);
 		s_buffer = nullptr;
 	}
 
@@ -18,11 +19,15 @@ namespace TFE_DarkForces
 	// However all other processing matches the original DOS version.
 	s32 parseMessageFile(GameMessages* messages, const FilePath* path, s32 mode)
 	{
-		u32 size = FileStream::readContents(path, (void**)&s_buffer);
-		if (!size || !s_buffer)
-		{
-			return 0;
-		}
+		FileStream file;
+		if (!file.open(path, FileStream::MODE_READ)) { return 0; }
+
+		size_t size = file.getSize();
+		s_buffer = (char*)game_realloc(s_buffer, size);
+		if (!s_buffer) { return 0; }
+
+		file.readBuffer(s_buffer, (u32)size);
+		file.close();
 
 		TFE_Parser parser;
 		parser.addCommentString("#");
@@ -49,7 +54,7 @@ namespace TFE_DarkForces
 		}
 
 		messages->count = msgCount;
-		messages->msgList = (GameMessage*)malloc(msgCount * sizeof(GameMessage));
+		messages->msgList = (GameMessage*)game_alloc(msgCount * sizeof(GameMessage));
 		GameMessage* msg = messages->msgList;
 		for (s32 i = 0; i < msgCount; i++, msg++)
 		{

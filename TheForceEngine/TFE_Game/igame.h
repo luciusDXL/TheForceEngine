@@ -5,6 +5,18 @@
 // This holds one or more players, handles input updates, etc.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_Settings/gameSourceData.h>
+#include <TFE_Memory/memoryRegion.h>
+
+extern MemoryRegion* s_gameRegion;
+extern MemoryRegion* s_levelRegion;
+
+#define game_alloc(size) TFE_Memory::region_alloc(s_gameRegion, size)
+#define game_realloc(ptr, size) TFE_Memory::region_realloc(s_gameRegion, ptr, size)
+#define game_free(ptr) TFE_Memory::region_free(s_gameRegion, ptr)
+
+#define level_alloc(size) TFE_Memory::region_alloc(s_levelRegion, size)
+#define level_realloc(ptr, size) TFE_Memory::region_realloc(s_levelRegion, ptr, size)
+#define level_free(ptr) TFE_Memory::region_free(s_levelRegion, ptr)
 
 struct IGame
 {
@@ -17,3 +29,6 @@ struct IGame
 
 IGame* createGame(GameID id);
 void   freeGame(IGame* game);
+
+void game_init();
+void game_destroy();

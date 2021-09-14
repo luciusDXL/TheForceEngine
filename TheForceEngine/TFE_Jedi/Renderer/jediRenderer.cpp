@@ -64,6 +64,7 @@ namespace TFE_Jedi
 
 	void renderer_destroy()
 	{
+		delete s_sectorRenderer;
 	}
 
 	void setupInitCameraAndLights()

@@ -344,6 +344,7 @@
     <ClInclude Include="TFE_Jedi\Task\task.h" />
     <ClInclude Include="TFE_Jedi\Task\taskMacros.h" />
     <ClInclude Include="TFE_Memory\chunkedArray.h" />
+    <ClInclude Include="TFE_Memory\memoryRegion.h" />
     <ClInclude Include="TFE_Outlaws\outlawsMain.h" />
     <ClInclude Include="TFE_Polygon\clipper.hpp" />
     <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
@@ -495,6 +496,7 @@
     <ClCompile Include="TFE_Jedi\Sound\soundSystem.cpp" />
     <ClCompile Include="TFE_Jedi\Task\task.cpp" />
     <ClCompile Include="TFE_Memory\chunkedArray.cpp" />
+    <ClCompile Include="TFE_Memory\memoryRegion.cpp" />
     <ClCompile Include="TFE_Outlaws\outlawsMain.cpp" />
     <ClCompile Include="TFE_Polygon\clipper.cpp" />
     <ClCompile Include="TFE_Polygon\polygon.cpp" />

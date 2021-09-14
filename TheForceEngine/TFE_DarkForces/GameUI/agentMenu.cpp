@@ -77,8 +77,7 @@ namespace TFE_DarkForces
 	static DeltFrame  s_cursor;
 	static u32 s_agentMenuCount;
 	static u32 s_agentDlgCount;
-	static Font* s_sysFoint;
-
+	
 	static char s_newAgentName[32];
 
 	///////////////////////////////////////////

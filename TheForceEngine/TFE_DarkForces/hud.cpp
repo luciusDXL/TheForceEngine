@@ -148,6 +148,9 @@ namespace TFE_DarkForces
 
 	void hud_loadGameMessages()
 	{
+		s_hudMessages.count = 0;
+		s_hudMessages.msgList = nullptr;
+
 		FilePath filePath;
 		if (TFE_Paths::getFilePath("text.msg", &filePath))
 		{
