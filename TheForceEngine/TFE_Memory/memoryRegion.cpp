@@ -89,7 +89,7 @@ namespace TFE_Memory
 			assert(block->sizeFree <= region->blockSize);
 			u8* mem = (u8*)block + sizeof(MemoryBlock);
 			RegionAllocHeader* prev = nullptr;
-			for (s32 a = 0; a < block->count; a++)
+			for (u32 a = 0; a < block->count; a++)
 			{
 				RegionAllocHeader* header = (RegionAllocHeader*)mem;
 				assert(header->free == 0 || header->free == 1);
@@ -184,7 +184,7 @@ namespace TFE_Memory
 
 			// Cleanup the free list.
 			removeHeaderFromFreelist(block, header);
-			header->size = split0;
+			header->size = u32(split0);
 
 			// Create a new free block.
 			next->size = u32(split1);
@@ -221,7 +221,7 @@ namespace TFE_Memory
 			}
 
 			// Try to allocate from the closest matching bin.
-			s32 bin = getBinFromSize(size);
+			s32 bin = getBinFromSize((u32)size);
 			for (s32 b = bin; b < ALLOC_BIN_COUNT; b++)
 			{
 				AllocHeaderFree* header = block->freeListBins[b];
@@ -230,7 +230,7 @@ namespace TFE_Memory
 					if (header->size >= size)
 					{
 						VERIFY_MEMORY();
-						void* mem = allocFromHeader(block, (RegionAllocHeader*)header, size);
+						void* mem = allocFromHeader(block, (RegionAllocHeader*)header, (u32)size);
 						VERIFY_MEMORY();
 						return mem;
 					}
@@ -307,7 +307,7 @@ namespace TFE_Memory
 
 						// Reset the header.
 						header->free = 0;
-						header->size = split0;
+						header->size = u32(split0);
 
 						// Create a new free block.
 						next->size = u32(split1);
