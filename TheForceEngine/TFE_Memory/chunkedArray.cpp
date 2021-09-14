@@ -8,7 +8,9 @@
 #include <algorithm>
 
 // Uncomment the following line to verify memory on free.
-// #define _VERIFY_CHUNKED_ARR_FREE 1
+#ifdef _DEBUG
+#define _VERIFY_CHUNKED_ARR_FREE 1
+#endif
 
 struct ChunkedArray
 {
@@ -96,16 +98,16 @@ namespace TFE_Memory
 		}
 
 		const u32 index = elementIndex - newChunkIndex*arr->elemPerChunk;
+		assert(index < arr->elemPerChunk);
 		return arr->chunks[newChunkIndex] + index*arr->elemSize;
 	}
 		
 	void freeToChunkedArray(ChunkedArray* arr, void* ptr)
 	{
 		if (!arr || !ptr) { return; }
-		addFreeSlot(arr, (u8*)ptr);
-
+		
 #ifdef _VERIFY_CHUNKED_ARR_FREE
-		// First search for the containing chunk.
+		// First verify that the memory is contained within the chunked array.
 		for (s32 i = arr->chunkCount - 1; i >= 0; i--)
 		{
 			if (ptr >= arr->chunks[i])
@@ -117,14 +119,21 @@ namespace TFE_Memory
 				break;
 			}
 		}
+		// Then verify that it hasn't already been freed.
+		for (u32 i = 0; i < arr->freeSlotCount; i++)
+		{
+			assert(arr->freeSlots[i] != ptr);
+		}
 #endif
+
+		addFreeSlot(arr, (u8*)ptr);
 	}
 
 	void chunkedArrayClear(ChunkedArray* arr)
 	{
 		arr->elemCount = 0;
 		arr->freeSlotCount = 0;
-		for (s32 i = 0; i < arr->chunkCount; i++)
+		for (u32 i = 0; i < arr->chunkCount; i++)
 		{
 			memset(arr->chunks[i], 0, arr->elemPerChunk * arr->elemSize);
 		}
@@ -140,6 +149,7 @@ namespace TFE_Memory
 	{
 		u32 chunkId = index / arr->elemPerChunk;
 		u32 elemId = index - chunkId*arr->elemPerChunk;
+		assert(chunkId < arr->chunkCount);
 		return arr->chunks[chunkId] + elemId*arr->elemSize;
 	}
 
