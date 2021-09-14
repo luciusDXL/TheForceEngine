@@ -21,6 +21,20 @@ namespace TFE_Math
 		return (x > 0) && (x & (x - 1)) == 0;
 	}
 
+	inline u32 nextPow2(u32 x)
+	{
+		if (x == 0) { return 0; }
+
+		x--;
+		x |= x >> 1;
+		x |= x >> 2;
+		x |= x >> 4;
+		x |= x >> 8;
+		x |= x >> 16;
+		x++;
+		return x;
+	}
+
 	inline f32 fract(f32 x)
 	{
 		return x - floorf(x);

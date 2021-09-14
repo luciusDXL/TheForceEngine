@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <TFE_System/types.h>
 #include <TFE_System/profiler.h>
+#include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
 //#include <TFE_ScriptSystem/scriptSystem.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -518,21 +519,9 @@ int main(int argc, char* argv[])
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
 	game_init();
-			
-	/*TFE_Renderer* renderer = TFE_Renderer::create(TFE_RENDERER_SOFTWARE_CPU);
-	if (!renderer)
-	{
-		TFE_System::logWrite(LOG_CRITICAL, "Renderer", "Cannot create software renderer.");
-		TFE_System::logClose();
-		return PROGRAM_ERROR;
-	}
-	if (!renderer->init())
-	{
-		TFE_System::logWrite(LOG_CRITICAL, "Renderer", "Cannot initialize software renderer.");
-		TFE_System::logClose();
-		return PROGRAM_ERROR;
-	}
-	*/
+
+	// Uncomment to test memory region allocator.
+	// TFE_Memory::region_test();
 
 	// Color correction.
 	const TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();

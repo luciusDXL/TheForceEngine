@@ -48,7 +48,7 @@ namespace TFE_Jedi
 	void bitmap_setupAnimationTask()
 	{
 		s_textureAnimTask = createTask("texture animation", textureAnimationTaskFunc);
-		s_textureAnimAlloc = allocator_create(32);
+		s_textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
 	}
 
 	TextureData* bitmap_load(FilePath* filepath, u32 decompress)
