@@ -1715,7 +1715,7 @@ namespace TFE_DarkForces
 				s_gasSectorTask = nullptr;
 				if (!s_wearingGasmask)
 				{
-					// TODO
+					s_gasSectorTask = createTask("gas sector", gasSectorTaskFunc);
 				}
 				s_pickupFlags = 0xffffffff;
 				s_reviveTick = s_curTick + 436;
