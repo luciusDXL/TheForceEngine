@@ -65,6 +65,8 @@ namespace TFE_Jedi
 			return;
 		}
 
+		assert(x0 >= 0 && x1 < buffer->width  && x0 <= x1);
+		assert(y0 >= 0 && y1 < buffer->height && y0 <= y1);
 		if (tex->flags & OPACITY_TRANS)
 		{
 			if (tex->compressed)

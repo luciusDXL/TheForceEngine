@@ -1,5 +1,6 @@
 #include "allocator.h"
 #include <TFE_System/system.h>
+#include <TFE_Game/igame.h>
 
 struct AllocHeader
 {
@@ -30,7 +31,7 @@ namespace TFE_Jedi
 	// Create and free an allocator.
 	Allocator* allocator_create(s32 allocSize)
 	{
-		Allocator* res = (Allocator*)malloc(sizeof(Allocator));
+		Allocator* res = (Allocator*)level_alloc(sizeof(Allocator));
 		res->self = res;
 
 		// the original code used special bit patterns to represent invalid pointers.
@@ -58,7 +59,7 @@ namespace TFE_Jedi
 		}
 
 		alloc->self = (Allocator*)ALLOC_INVALID_PTR;
-		free(alloc);
+		level_free(alloc);
 	}
 
 	// Allocate and free individual items.
@@ -66,7 +67,7 @@ namespace TFE_Jedi
 	{
 		if (!alloc) { return nullptr; }
 
-		AllocHeader* header = (AllocHeader*)malloc(alloc->size);
+		AllocHeader* header = (AllocHeader*)level_alloc(alloc->size);
 		header->next = ALLOC_INVALID_PTR;
 		header->prev = alloc->tail;
 
@@ -107,7 +108,7 @@ namespace TFE_Jedi
 			alloc->iterPrev = header->next;
 		}
 
-		free(header);
+		level_free(header);
 	}
 
 	// Random access.

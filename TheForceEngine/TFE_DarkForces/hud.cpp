@@ -503,6 +503,7 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+		assert(s_rightHudVertAnim >= 0 && s_rightHudVertAnim < 4);
 		hud_drawElementToScreen(s_cachedHudRight, &s_hudTextScreenRect, 260, c_hudVertAnimTable[s_rightHudVertAnim], framebuffer);
 		hud_drawElementToScreen(s_cachedHudLeft,  &s_hudTextScreenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim],  framebuffer);
 	}

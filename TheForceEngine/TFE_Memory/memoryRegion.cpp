@@ -40,7 +40,7 @@ namespace TFE_Memory
 		ALIGNMENT = 8,
 	};
 
-	void freeSlot(AllocHeader* alloc, AllocHeader* prev, AllocHeader* next, MemoryBlock* block);
+	void freeSlot(AllocHeader* alloc, AllocHeader* next, MemoryBlock* block);
 	size_t alloc_align(size_t baseSize);
 
 	bool allocateNewBlock(MemoryRegion* region)
@@ -74,6 +74,8 @@ namespace TFE_Memory
 		MemoryBlock* block = region->memBlocks[blockIndex];
 		block->sizeFree = u32(region->blockSize);
 		block->count = 1;
+		block->pad[0] = 0xdeadbeef;
+		block->pad[1] = 0xbee0deaf;
 
 		AllocHeader* header = (AllocHeader*)((u8*)block + sizeof(MemoryBlock));
 		header->free = 1;
@@ -259,60 +261,38 @@ namespace TFE_Memory
 			MemoryBlock* block = region->memBlocks[i];
 			if (ptr >= block)
 			{
-				AllocHeader* prevHeader = nullptr;
-				AllocHeader* nextHeader = nullptr;
-
-				u32 count = block->count;
 				u8* regPtr = (u8*)block + sizeof(MemoryBlock);
-				for (u32 allocIdx = 0; allocIdx < count; allocIdx++)
+
+				AllocHeader* header = (AllocHeader*)((u8*)ptr - sizeof(AllocHeader));
+				AllocHeader* nextHeader = (AllocHeader*)((u8*)header + header->size);
+				if ((u8*)nextHeader >= (u8*)block + region->blockSize)
 				{
-					AllocHeader* header = (AllocHeader*)regPtr;
-					if (ptr == (u8*)header + sizeof(AllocHeader))
-					{
-						assert(!header->free);
-						if (header->free)
-						{
-							TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Attempted to double free pointer %x in region '%s'.", ptr, region->name);
-							return;
-						}
-						nextHeader = (allocIdx < count - 1) ? (AllocHeader*)(regPtr + header->size) : nullptr;
-						freeSlot(header, prevHeader, nextHeader, block);
-						return;
-					}
-					prevHeader = header;
-					regPtr += header->size;
+					nextHeader = nullptr;
 				}
-				TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Attempted to free pointer %x which is not part of region '%s'.", ptr, region->name);
-				break;
+
+				assert(!header->free);
+				if (header->free)
+				{
+					TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Attempted to double free pointer %x in region '%s'.", ptr, region->name);
+					return;
+				}
+
+				freeSlot(header, nextHeader, block);
+				return;
 			}
 		}
 	}
 
-	void freeSlot(AllocHeader* alloc, AllocHeader* prev, AllocHeader* next, MemoryBlock* block)
+	void freeSlot(AllocHeader* alloc, AllocHeader* next, MemoryBlock* block)
 	{
 		block->sizeFree += alloc->size;
 
-		// Merge all 3 allocations.
-		if (prev && prev->free && next && next->free)
-		{
-			prev->size += alloc->size + next->size;
-			block->count -= 2;
-		}
-		else if (prev && prev->free)  // Then try merging the previous and current.
-		{
-			prev->size += alloc->size;
-			block->count--;
-		}
-		else if (next && next->free)  // Then try merging the current and next.
+		if (next && next->free)  // Then try merging the current and next.
 		{
 			alloc->size += next->size;
-			alloc->free = 1;
 			block->count--;
 		}
-		else
-		{
-			alloc->free = 1;
-		}
+		alloc->free = 1;
 	}
 
 	size_t alloc_align(size_t baseSize)

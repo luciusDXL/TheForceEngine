@@ -34,16 +34,16 @@ namespace TFE_Jedi
 	{
 		s_freeObjLock = JTRUE;
 		// Free Logics
-		void* head = allocator_getHead((Allocator*)obj->logic);
+		TFE_DarkForces::Logic** head = (TFE_DarkForces::Logic**)allocator_getHead((Allocator*)obj->logic);
 		while (head)
 		{
-			TFE_DarkForces::Logic* logic = *((TFE_DarkForces::Logic**)head);
+			TFE_DarkForces::Logic* logic = *head;
 			if (logic->cleanupFunc)
 			{
 				logic->cleanupFunc(logic);
 			}
 			
-			head = allocator_getNext((Allocator*)obj->logic);
+			head = (TFE_DarkForces::Logic**)allocator_getNext((Allocator*)obj->logic);
 		}
 
 		allocator_free((Allocator*)obj->logic);

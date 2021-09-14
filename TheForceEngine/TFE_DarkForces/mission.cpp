@@ -11,6 +11,7 @@
 #include "player.h"
 #include "projectile.h"
 #include "weapon.h"
+#include <TFE_Game/igame.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -520,7 +521,7 @@ namespace TFE_DarkForces
 		}
 
 		// Allocate 256 colors * 32 light levels + 256, where the last 256 is so that the address can be rounded to the next 256 byte boundary.
-		u8* colorMapBase = (u8*)malloc(8448);
+		u8* colorMapBase = (u8*)level_alloc(8576);
 		u8* colorMap = colorMapBase;
 		*basePtr = colorMapBase;
 		if (size_t(colorMap) & 0xffu)
