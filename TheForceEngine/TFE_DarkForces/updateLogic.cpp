@@ -227,6 +227,21 @@ namespace TFE_DarkForces
 
 	void updateLogicCleanupFunc(Logic* logic)
 	{
-		// TODO(Core Game Loop Release)
+		if (!s_freeObjLock)
+		{
+			SecObject* obj = logic->obj;
+			Logic** parent = logic->parent;
+			Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)obj->logic);
+			if (parent == head)
+			{
+				allocator_deleteItem((Allocator*)obj->logic, parent);
+				freeObject(obj);
+			}
+			else
+			{
+				allocator_deleteItem((Allocator*)obj->logic, parent);
+			}
+		}
+		allocator_deleteItem(s_logicUpdateList, logic);
 	}
 }  // namespace TFE_DarkForces
