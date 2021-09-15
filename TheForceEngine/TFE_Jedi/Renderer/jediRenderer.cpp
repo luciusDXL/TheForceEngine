@@ -72,11 +72,13 @@ namespace TFE_Jedi
 		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setupInitCameraAndLights(); }
 	}
 
+#if 0
 	void setResolution(s32 width, s32 height)
 	{
 		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setResolution(width, height); }
 		//else { RClassic_Float::setResolution(width, height); }
 	}
+#endif
 
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0)
 	{
@@ -88,15 +90,6 @@ namespace TFE_Jedi
 	{
 		RClassic_Fixed::clear3DView(framebuffer);
 	}
-	
-	void setupLevel(s32 width, s32 height)
-	{
-		renderer_init();
-		setResolution(width, height);
-
-		s_memPool.init(32 * 1024 * 1024, "Classic Renderer - Software");
-		s_sectorId = -1;
-	}
 
 	void console_setSubRenderer(const std::vector<std::string>& args)
 	{
@@ -107,17 +100,17 @@ namespace TFE_Jedi
 		if (strcasecmp(value, "Classic_Fixed") == 0)
 		{
 			setSubRenderer(TSR_CLASSIC_FIXED);
-			setupLevel(width, height);
+			// setupLevel(width, height);
 		}
 		else if (strcasecmp(value, "Classic_Float") == 0)
 		{
 			setSubRenderer(TSR_CLASSIC_FLOAT);
-			setupLevel(width, height);
+			// setupLevel(width, height);
 		}
 		else if (strcasecmp(value, "Classic_GPU") == 0)
 		{
 			setSubRenderer(TSR_CLASSIC_GPU);
-			setupLevel(width, height);
+			// setupLevel(width, height);
 		}
 	}
 

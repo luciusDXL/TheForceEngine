@@ -165,7 +165,7 @@ namespace TFE_DarkForces
 		if (size > s_workBufferSize)
 		{
 			s_workBufferSize = size + 1024;
-			s_workBuffer = (char*)realloc(s_workBuffer, s_workBufferSize);
+			s_workBuffer = (char*)game_realloc(s_workBuffer, s_workBufferSize);
 		}
 		assert(s_workBuffer);
 		return s_workBuffer;

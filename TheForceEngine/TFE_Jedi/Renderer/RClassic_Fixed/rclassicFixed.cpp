@@ -2,6 +2,7 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Game/igame.h>
 #include "rcommonFixed.h"
 #include "rlightingFixed.h"
 #include "rflatFixed.h"
@@ -250,19 +251,19 @@ namespace RClassic_Fixed
 		s_flatEdge = flatEdge;
 		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_windowMaxYFixed, 0, s_windowMinYFixed);
 		
-		s_columnTop = (s32*)realloc(s_columnTop, s_width * sizeof(s32));
-		s_columnBot = (s32*)realloc(s_columnBot, s_width * sizeof(s32));
-		s_depth1d_all_Fixed = (fixed16_16*)realloc(s_depth1d_all_Fixed, s_width * sizeof(fixed16_16) * (MAX_ADJOIN_DEPTH + 1));
-		s_windowTop_all = (s32*)realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
-		s_windowBot_all = (s32*)realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
+		s_columnTop = (s32*)game_realloc(s_columnTop, s_width * sizeof(s32));
+		s_columnBot = (s32*)game_realloc(s_columnBot, s_width * sizeof(s32));
+		s_depth1d_all_Fixed = (fixed16_16*)game_realloc(s_depth1d_all_Fixed, s_width * sizeof(fixed16_16) * (MAX_ADJOIN_DEPTH + 1));
+		s_windowTop_all = (s32*)game_realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
+		s_windowBot_all = (s32*)game_realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
 		memset(s_windowTop_all, s_minScreenY, 320);
 		memset(s_windowBot_all, s_maxScreenY, 320);
 
 		// Build tables
-		s_column_Z_Over_X = (fixed16_16*)realloc(s_column_Z_Over_X, s_width * sizeof(fixed16_16));
-		s_column_X_Over_Z = (fixed16_16*)realloc(s_column_X_Over_Z, s_width * sizeof(fixed16_16));
-		s_skyTable_Fixed = (fixed16_16*)realloc(s_skyTable_Fixed, (s_width + 1) * sizeof(fixed16_16));
+		s_column_Z_Over_X = (fixed16_16*)game_realloc(s_column_Z_Over_X, s_width * sizeof(fixed16_16));
+		s_column_X_Over_Z = (fixed16_16*)game_realloc(s_column_X_Over_Z, s_width * sizeof(fixed16_16));
+		s_skyTable_Fixed = (fixed16_16*)game_realloc(s_skyTable_Fixed, (s_width + 1) * sizeof(fixed16_16));
 
 		// Here we assume a 90 degree field of view, this forms a frustum (not drawn to scale):
 		//     W = width of plane in pixels
@@ -294,7 +295,7 @@ namespace RClassic_Fixed
 			}
 		}
 
-		s_rcpY = (fixed16_16*)realloc(s_rcpY, 4 * s_height * sizeof(fixed16_16));
+		s_rcpY = (fixed16_16*)game_realloc(s_rcpY, 4 * s_height * sizeof(fixed16_16));
 		buildRcpYTable();
 	}
 
@@ -373,6 +374,7 @@ namespace RClassic_Fixed
 		s_visionEffect = 0;
 	}
 
+#if 0
 	void setResolution(s32 width, s32 height)
 	{
 		if (width == s_width && height == s_height) { return; }
@@ -430,6 +432,7 @@ namespace RClassic_Fixed
 			s_rcpY[y + startY] = (y != yMid) ? div16(ONE_16, (y - yMid)) : ONE_16;
 		}
 	}
+#endif
 
 	// 2D
 	void textureBlitColumn(const u8* image, u8* outBuffer, s32 yPixelCount)

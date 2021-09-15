@@ -575,7 +575,7 @@ namespace TFE_DarkForces
 	void weapon_fixupAnim()
 	{
 		PlayerWeapon* weapon = s_curPlayerWeapon;
-		s32 ammo = *weapon->ammo;
+		s32 ammo = weapon->ammo ? *weapon->ammo : 0;
 
 		if (s_prevWeapon == WPN_THERMAL_DET && !ammo)
 		{

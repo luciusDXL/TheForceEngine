@@ -1,5 +1,6 @@
 #include "infSystem.h"
 #include "message.h"
+#include <TFE_Game/igame.h>
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
@@ -1629,7 +1630,7 @@ namespace TFE_Jedi
 				allocator_deleteItem(link->parent, link);
 				allocator_free(trigger->targets);
 
-				free(trigger);
+				level_free(trigger);
 				s_triggerCount--;
 
 				if (s_triggerCount == 0)
@@ -2928,10 +2929,10 @@ namespace TFE_Jedi
 		// TODO(Core Game Loop Release): what is trigger->u48?
 		if (trigger->u48)
 		{
-			free(trigger->u48);
+			level_free(trigger->u48);
 		}
-		free(trigger);
-
+		level_free(trigger);
+		
 		s_triggerCount--;
 	}
 
@@ -3211,7 +3212,7 @@ namespace TFE_Jedi
 	// sends the message to the appropriate "InfTrigger" or "InfElevator"
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj)
 	{
-		InfTrigger* trigger = (InfTrigger*)malloc(sizeof(InfTrigger));
+		InfTrigger* trigger = (InfTrigger*)level_alloc(sizeof(InfTrigger));
 		s_triggerCount++;
 
 		InfLink* link = nullptr;

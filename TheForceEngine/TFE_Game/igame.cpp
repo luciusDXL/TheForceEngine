@@ -1,14 +1,21 @@
 #include "igame.h"
 #include <TFE_DarkForces/darkForcesMain.h>
 #include <TFE_Outlaws/outlawsMain.h>
+
+enum GameConstants
+{
+	GAME_MEMORY_BASE  = 2 * 1024 * 1024, // 2 MB
+	LEVEL_MEMORY_BASE = 8 * 1024 * 1024, // 8 MB
+};
+
 using namespace TFE_Memory;
 MemoryRegion* s_gameRegion = nullptr;
 MemoryRegion* s_levelRegion = nullptr;
 
 void game_init()
 {
-	s_gameRegion  = region_create("game",  32 * 1024 * 1024);	// 32 MB initial region for "permanent" game allocations.
-	s_levelRegion = region_create("level", 32 * 1024 * 1024);	// 32 MB initial region for "per-level" game allocations.
+	s_gameRegion  = region_create("game",  GAME_MEMORY_BASE);	// Region for "permanent" game allocations.
+	s_levelRegion = region_create("level", LEVEL_MEMORY_BASE);	// Region for "per-level" game allocations.
 }
 
 void game_destroy()

@@ -59,10 +59,12 @@ namespace TFE_Jedi
 	// Draw the scene to the passed in display using the colormap for shading.
 	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp);
 
+#if 0
 	// Setup the currently loaded level for rendering at the specified resolution.
 	void setupLevel(s32 width, s32 height);
 	// Set the current resolution to render, this may involve regenerating lookup-tables, depending on the sub-renderer.
 	void setResolution(s32 width, s32 height);
+#endif
 
 	void renderer_setVisionEffect(s32 effect);
 	void renderer_setupCameraLight(JBool flatShading, JBool headlamp);
