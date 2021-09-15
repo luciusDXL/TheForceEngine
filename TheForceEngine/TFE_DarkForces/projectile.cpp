@@ -332,6 +332,7 @@ namespace TFE_DarkForces
 				}
 				// Setup the looping wax animation.
 				obj_setSpriteAnim(projObj);
+				projObj->worldWidth = 0;
 
 				projLogic->type = PROJ_MORTAR;
 				projLogic->updateFunc = arcingProjectileUpdateFunc;
@@ -345,6 +346,7 @@ namespace TFE_DarkForces
 				projLogic->vertBounciness = 39321;	// 0.6
 				projLogic->bounceCnt = 0;
 				projLogic->reflectEffectId = HEFFECT_NONE;
+				projLogic->hitEffectId = HEFFECT_MORTAR_EXP;
 				projLogic->duration = s_curTick + 582;	// ~4 seconds -> ~440 units
 			} break;
 			case PROJ_LAND_MINE:

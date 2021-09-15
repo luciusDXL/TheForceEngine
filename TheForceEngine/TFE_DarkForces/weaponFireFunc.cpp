@@ -18,7 +18,10 @@ namespace TFE_DarkForces
 	static SoundEffectID s_punchSwingSndId = 0;
 	static SoundEffectID s_pistolSndId = 0;
 	static SoundEffectID s_rifleSndId = 0;
+	static SoundEffectID s_mortarFireSndID = 0;
+	static SoundEffectID s_mortarFireSndID2 = 0;
 	static SoundEffectID s_outOfAmmoSndId = 0;
+	static SoundEffectID s_mortarOutofAmmoSndId = 0;
 	static fixed16_16 s_autoAimDirX;
 	static fixed16_16 s_autoAimDirZ;
 	static fixed16_16 s_wpnPitchSin;
@@ -78,6 +81,13 @@ namespace TFE_DarkForces
 		{ 1, 40,  3,  7 },
 		{ 0,  0,  7, 14 },
 	};
+	static const WeaponAnimFrame c_mortarAnim[4] =
+	{
+		{ 1, 36,  29, 58 },
+		{ 2, 36,   7, 14 },
+		{ 3, 36,   7, 14 },
+		{ 0,  0,   7, 14 },
+	};
 
 	extern void weapon_handleState(s32 id);
 	void weapon_computeMatrix(fixed16_16* mtx, angle14_32 pitch, angle14_32 yaw);
@@ -113,36 +123,36 @@ namespace TFE_DarkForces
 			collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 		}
 
+		task_localBlockBegin;
+		fixed16_16 mtx[9];
+		weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
+
+		fixed16_16 xOffset = -114688;	// -1.75
+		angle14_32 yawOffset = -910;
+		for (s32 i = 0; i < 3; i++, xOffset += 0x1c000, yawOffset += 910)
 		{
-			fixed16_16 mtx[9];
-			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
+			ProjectileLogic* proj = (ProjectileLogic*)createProjectile(ProjectileType::PROJ_PUNCH, s_playerObject->sector, s_playerObject->posWS.x, s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset, s_playerObject->posWS.z, s_playerObject);
 
-			fixed16_16 xOffset = -114688;	// -1.75
-			angle14_32 yawOffset = -910;
-			for (s32 i = 0; i < 3; i++, xOffset += 0x1c000, yawOffset += 910)
+			s_weaponFirePitch = s_playerObject->pitch + 0x638;
+			s_weaponFireYaw   = s_playerObject->yaw + yawOffset;
+			proj_setTransform(proj, s_weaponFirePitch, s_weaponFireYaw);
+
+			proj->hitEffectId = HEFFECT_PUNCH;
+			proj->prevColObj = s_playerObject;
+			proj->excludeObj = s_playerObject;
+
+			vec3_fixed inVec =
 			{
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(ProjectileType::PROJ_PUNCH, s_playerObject->sector, s_playerObject->posWS.x, s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset, s_playerObject->posWS.z, s_playerObject);
+				xOffset, // -1.75, 0.0, +1.75
+				0x18000, // 1.5
+				0x60000  // 6.0
+			};
+			rotateVectorM3x3(&inVec, &proj->delta, mtx);
 
-				s_weaponFirePitch = s_playerObject->pitch + 0x638;
-				s_weaponFireYaw   = s_playerObject->yaw + yawOffset;
-				proj_setTransform(proj, s_weaponFirePitch, s_weaponFireYaw);
-
-				proj->hitEffectId = HEFFECT_PUNCH;
-				proj->prevColObj = s_playerObject;
-				proj->excludeObj = s_playerObject;
-
-				vec3_fixed inVec =
-				{
-					xOffset, // -1.75, 0.0, +1.75
-					0x18000, // 1.5
-					0x60000  // 6.0
-				};
-				rotateVectorM3x3(&inVec, &proj->delta, mtx);
-
-				ProjectileHitType hitType = proj_handleMovement(proj);
-				handleProjectileHit(proj, hitType);
-			}
+			ProjectileHitType hitType = proj_handleMovement(proj);
+			handleProjectileHit(proj, hitType);
 		}
+		task_localBlockEnd;
 
 		// Animation.
 		for (taskCtx->iFrame = 1; taskCtx->iFrame < TFE_ARRAYSIZE(c_punchAnim); taskCtx->iFrame++)
@@ -542,8 +552,178 @@ namespace TFE_DarkForces
 
 	void weaponFire_mortar(s32 id)
 	{
-		task_begin;
-		// STUB
+		struct LocalContext
+		{
+			Tick delay;
+			s32  iFrame;
+		};
+		task_begin_ctx;
+
+		if (*s_curPlayerWeapon->ammo)
+		{
+			task_localBlockBegin;
+			if (s_mortarFireSndID)
+			{
+				stopSound(s_mortarFireSndID);
+			}
+			s_mortarFireSndID = playSound2D(s_mortarFireSndSrc);
+
+			if (s_curPlayerWeapon->wakeupRange)
+			{
+				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+			}
+
+			fixed16_16 mtx[9];
+			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
+
+			s32 canFire = s_canFireWeaponPrim;
+			s_canFireWeaponPrim = 0;
+
+			s32 wpnVariation = s_curPlayerWeapon->variation & 0xffff;
+			s32 variation;
+			if (canFire > 1)
+			{
+				variation = random(wpnVariation * 2) - wpnVariation + 0x333;
+				s_weaponFirePitch = s_playerObject->pitch + (variation >> 2);
+			}
+			else
+			{
+				variation = random(wpnVariation * 2) - wpnVariation + 0x333;
+				s_weaponFirePitch = s_playerObject->pitch + variation;
+			}
+
+			variation = random(wpnVariation * 2) - wpnVariation;
+			s_weaponFireYaw = s_playerObject->yaw + variation;
+
+			vec3_fixed inVec =
+			{
+				0xb333,	 // 0.7
+				0x1b333, // 1.7
+				0x20000  // 2.0
+			};
+			vec3_fixed outVec;
+			rotateVectorM3x3(&inVec, &outVec, mtx);
+
+			fixed16_16 mtx2[9];
+			if (canFire > 1)
+			{
+				weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
+			}
+
+			// Spawn projectiles.
+			fixed16_16 fire = intToFixed16(canFire);
+			while (canFire)
+			{
+				if (*s_curPlayerWeapon->ammo == 0)
+				{
+					break;
+				}
+				fire -= ONE_16;
+				canFire--;
+				s32 superChargeFrame = s_superCharge ? 0 : 1;
+				// This is always true if super charge is *not* active otherwise
+				// it is true every other frame.
+				if (superChargeFrame | (s_fireFrame & 1))
+				{
+					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoShell, -1, 50);
+				}
+
+				ProjectileLogic* projLogic;
+				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				projLogic = (ProjectileLogic*)createProjectile(PROJ_MORTAR, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
+				projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
+				projLogic->prevColObj = s_playerObject;
+				proj_setTransform(projLogic, s_weaponFirePitch, s_weaponFireYaw);
+				
+				if (canFire)
+				{
+					vec3_fixed worldUp = { 0 };
+					if (canFire > 1)
+					{
+						// TODO: This doesn't seem to be hit in the base game.
+						assert(0);
+					}
+
+					Tick v0 = (s_superCharge) ?  7 : 14;
+					Tick v1 = (s_superCharge) ? 29 : 58;
+					Tick v2 = (s_superCharge) ?  7 : 14;
+					Tick v3 = (s_superCharge) ?  7 : 14;
+					worldUp.z = intToFixed16(s32(float(v0 + v1 + v2 + v3) * 0.75f));
+					
+					vec3_fixed outVec2;
+					rotateVectorM3x3(&worldUp, &outVec2, mtx2);
+					// First try using the outVec value computed above.
+					projLogic->delta = outVec;
+
+					ProjectileHitType hitType = proj_handleMovement(projLogic);
+					if (!handleProjectileHit(projLogic, hitType))
+					{
+						// If that fails, then try the new value.
+						projLogic->delta = outVec2;
+						hitType = proj_handleMovement(projLogic);
+						fire = handleProjectileHit(projLogic, hitType);
+					}
+				}
+				else
+				{
+					projLogic->delta = outVec;
+					ProjectileHitType hitType = proj_handleMovement(projLogic);
+					handleProjectileHit(projLogic, hitType);
+				}
+			}
+			task_localBlockEnd;
+
+			// Animation.
+			for (taskCtx->iFrame = 0; taskCtx->iFrame < TFE_ARRAYSIZE(c_mortarAnim); taskCtx->iFrame++)
+			{
+				if (taskCtx->iFrame == 1)
+				{
+					if (s_mortarFireSndID2)
+					{
+						stopSound(s_mortarFireSndID2);
+					}
+					s_mortarFireSndID2 = playSound2D(s_mortarFireSndSrc2);
+				}
+
+				s_curPlayerWeapon->frame = c_mortarAnim[taskCtx->iFrame].waxFrame;
+				s_weaponLight = c_mortarAnim[taskCtx->iFrame].weaponLight;
+				taskCtx->delay = (s_superCharge) ? c_mortarAnim[taskCtx->iFrame].delaySupercharge : c_mortarAnim[taskCtx->iFrame].delayNormal;
+
+				do
+				{
+					task_yield(taskCtx->delay);
+					task_callTaskFunc(weapon_handleState);
+				} while (id != 0);
+			}
+
+			s_canFireWeaponPrim = 1;
+			s_canFireWeaponSec = 1;
+		}
+		else  // Out of Ammo
+		{
+			if (s_mortarOutofAmmoSndId)
+			{
+				stopSound(s_mortarOutofAmmoSndId);
+			}
+			s_mortarOutofAmmoSndId = playSound2D(s_mortarEmptySndSrc);
+
+			taskCtx->delay = (s_superCharge) ? 3 : 7;
+			s_curPlayerWeapon->frame = 0;
+			do
+			{
+				task_yield(taskCtx->delay);
+				task_callTaskFunc(weapon_handleState);
+			} while (id != 0);
+
+			s_canFireWeaponPrim = 0;
+			s_canFireWeaponSec = 0;
+			// if (s_weaponAutoMount2)
+			// {
+				// func_1ece78();
+			// }
+		}
+
 		task_end;
 	}
 
