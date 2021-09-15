@@ -15,6 +15,7 @@ namespace TFE_DarkForces
 		MAX_AUTOAIM_DIST = FIXED(9999),
 	};
 
+	static SoundEffectID s_punchSwingSndId = 0;
 	static SoundEffectID s_pistolSndId = 0;
 	static SoundEffectID s_rifleSndId = 0;
 	static SoundEffectID s_outOfAmmoSndId = 0;
@@ -59,6 +60,13 @@ namespace TFE_DarkForces
 		Tick delaySupercharge;
 		Tick delayNormal;
 	};
+	static const WeaponAnimFrame c_punchAnim[4] =
+	{
+		{ 1,  0,   5, 10 },
+		{ 2,  0,  10, 21 },
+		{ 3,  0,  10, 21 },
+		{ 0,  0,  10, 21 },
+	};
 	static const WeaponAnimFrame c_pistolAnim[3] =
 	{
 		{ 1, 40,  7, 14 },
@@ -77,8 +85,81 @@ namespace TFE_DarkForces
 
 	void weaponFire_fist(s32 id)
 	{
-		task_begin;
-		// STUB
+		struct LocalContext
+		{
+			Tick delay;
+			s32  iFrame;
+		};
+		task_begin_ctx;
+
+		taskCtx->delay = (s_superCharge) ? c_punchAnim[0].delaySupercharge : c_punchAnim[0].delayNormal;
+		s_curPlayerWeapon->frame = c_punchAnim[0].waxFrame;
+		s_weaponLight = c_punchAnim[0].weaponLight;
+		do
+		{
+			task_yield(taskCtx->delay);
+			task_callTaskFunc(weapon_handleState);
+		} while (id != 0);
+
+		if (s_punchSwingSndId)
+		{
+			stopSound(s_punchSwingSndId);
+		}
+		s_punchSwingSndId = playSound2D(s_punchSwingSndSrc);
+
+		if (s_curPlayerWeapon->wakeupRange)
+		{
+			vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
+			collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+		}
+
+		{
+			fixed16_16 mtx[9];
+			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
+
+			fixed16_16 xOffset = -114688;	// -1.75
+			angle14_32 yawOffset = -910;
+			for (s32 i = 0; i < 3; i++, xOffset += 0x1c000, yawOffset += 910)
+			{
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(ProjectileType::PROJ_PUNCH, s_playerObject->sector, s_playerObject->posWS.x, s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset, s_playerObject->posWS.z, s_playerObject);
+
+				s_weaponFirePitch = s_playerObject->pitch + 0x638;
+				s_weaponFireYaw   = s_playerObject->yaw + yawOffset;
+				proj_setTransform(proj, s_weaponFirePitch, s_weaponFireYaw);
+
+				proj->hitEffectId = HEFFECT_PUNCH;
+				proj->prevColObj = s_playerObject;
+				proj->excludeObj = s_playerObject;
+
+				vec3_fixed inVec =
+				{
+					xOffset, // -1.75, 0.0, +1.75
+					0x18000, // 1.5
+					0x60000  // 6.0
+				};
+				rotateVectorM3x3(&inVec, &proj->delta, mtx);
+
+				ProjectileHitType hitType = proj_handleMovement(proj);
+				handleProjectileHit(proj, hitType);
+			}
+		}
+
+		// Animation.
+		for (taskCtx->iFrame = 1; taskCtx->iFrame < TFE_ARRAYSIZE(c_punchAnim); taskCtx->iFrame++)
+		{
+			s_curPlayerWeapon->frame = c_punchAnim[taskCtx->iFrame].waxFrame;
+			s_weaponLight = c_punchAnim[taskCtx->iFrame].weaponLight;
+			taskCtx->delay = (s_superCharge) ? c_punchAnim[taskCtx->iFrame].delaySupercharge : c_punchAnim[taskCtx->iFrame].delayNormal;
+
+			do
+			{
+				task_yield(taskCtx->delay);
+				task_callTaskFunc(weapon_handleState);
+			} while (id != 0);
+		}
+		s_canFireWeaponPrim = 1;
+		s_canFireWeaponSec = 1;
+
 		task_end;
 	}
 
