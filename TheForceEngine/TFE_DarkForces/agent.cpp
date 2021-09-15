@@ -1,6 +1,7 @@
 #include "agent.h"
 #include "util.h"
 #include "player.h"
+#include <TFE_Game/igame.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
@@ -108,7 +109,17 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 		char* buffer = nullptr;
-		u32 len = FileStream::readContents(&filePath, (void**)&buffer);
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			return JFALSE;
+		}
+		u32 len = file.getSize();
+		buffer = (char*)game_alloc(len+1);
+		file.readBuffer(buffer, len);
+		file.close();
+		buffer[len] = 0;
+
 		TFE_Parser parser;
 		parser.init(buffer, len);
 		parser.addCommentString("#");
@@ -118,7 +129,7 @@ namespace TFE_DarkForces
 		s32 count;
 		if (sscanf(line, "LEVELS %d", &count) < 1)
 		{
-			free(buffer);
+			game_free(buffer);
 			return JFALSE;
 		}
 		else
@@ -126,9 +137,9 @@ namespace TFE_DarkForces
 			s_maxLevelIndex = count;
 			if (count)
 			{
-				s_levelDisplayNames = (char**)malloc(count * sizeof(char*));
-				s_levelGamePaths    = (char**)malloc(count * sizeof(char*));
-				s_levelSrcPaths     = (char**)malloc(count * sizeof(char*));
+				s_levelDisplayNames = (char**)game_alloc(count * sizeof(char*));
+				s_levelGamePaths    = (char**)game_alloc(count * sizeof(char*));
+				s_levelSrcPaths     = (char**)game_alloc(count * sizeof(char*));
 			}
 		}
 
@@ -147,7 +158,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		free(buffer);
+		game_free(buffer);
 		return JTRUE;
 	}
 

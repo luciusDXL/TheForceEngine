@@ -1,5 +1,6 @@
 #include "vueLogic.h"
 #include "time.h"
+#include <TFE_Game/igame.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_System/system.h>
@@ -53,7 +54,7 @@ namespace TFE_DarkForces
 
 	Logic* obj_createVueLogic(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		VueLogic* vueLogic = (VueLogic*)malloc(sizeof(VueLogic));
+		VueLogic* vueLogic = (VueLogic*)level_alloc(sizeof(VueLogic));
 
 		vueLogic->logic.obj = obj;
 		vueLogic->frames = nullptr;

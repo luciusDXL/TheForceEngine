@@ -1,11 +1,12 @@
 #include "util.h"
+#include <TFE_Game/igame.h>
 
 namespace TFE_DarkForces
 {
 	char* copyAndAllocateString(const char* start, const char* end)
 	{
 		s32 count = s32(end - start);
-		char* outString = (char*)malloc(count + 1);
+		char* outString = (char*)game_alloc(count + 1);
 		memcpy(outString, start, count);
 		outString[count] = 0;
 
@@ -15,7 +16,7 @@ namespace TFE_DarkForces
 	char* copyAndAllocateString(const char* str)
 	{
 		size_t count = strlen(str);
-		char* outString = (char*)malloc(count + 1);
+		char* outString = (char*)game_alloc(count + 1);
 		memcpy(outString, str, count);
 		outString[count] = 0;
 

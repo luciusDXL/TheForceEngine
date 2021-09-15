@@ -11,6 +11,7 @@
 #include "time.h"
 #include "weapon.h"
 #include "GameUI/agentMenu.h"
+#include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -23,6 +24,8 @@
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Task/task.h>
 #include <assert.h>
+
+using namespace TFE_Memory;
 
 namespace TFE_DarkForces
 {
@@ -134,6 +137,8 @@ namespace TFE_DarkForces
 	// This part loads and sets up the game.
 	bool DarkForces::runGame(s32 argCount, const char* argv[])
 	{
+		bitmap_setAllocator(s_gameRegion);
+
 		printGameInfo();
 		buildSearchPaths();
 		processCommandLineArgs(argCount, argv);
@@ -305,6 +310,9 @@ namespace TFE_DarkForces
 					//}
 
 					startNextMode();
+
+					region_clear(s_levelRegion);
+					bitmap_setAllocator(s_gameRegion);
 				}
 			} break;
 		}
@@ -359,6 +367,8 @@ namespace TFE_DarkForces
 			}  break;
 			case GMODE_MISSION:
 			{
+				bitmap_setAllocator(s_levelRegion);
+
 				s_loadMissionTask = pushTask("start mission", mission_startTaskFunc, JTRUE);
 				mission_setLoadMissionTask(s_loadMissionTask);
 

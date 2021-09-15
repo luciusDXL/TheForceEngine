@@ -1,5 +1,6 @@
 #include "robject.h"
 #include "level.h"
+#include <TFE_Game/igame.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_DarkForces/logic.h>
 
@@ -11,7 +12,7 @@ namespace TFE_Jedi
 
 	SecObject* allocateObject()
 	{
-		SecObject* obj = (SecObject*)malloc(sizeof(SecObject));
+		SecObject* obj = (SecObject*)level_alloc(sizeof(SecObject));
 		obj->yaw = 0;
 		obj->pitch = 0;
 		obj->roll = 0;
@@ -48,7 +49,7 @@ namespace TFE_Jedi
 
 		allocator_free((Allocator*)obj->logic);
 		sector_removeObject(obj);
-		free(obj);
+		level_free(obj);
 
 		s_freeObjLock = JFALSE;
 	}

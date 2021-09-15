@@ -1,5 +1,6 @@
 #include "rfont.h"
 #include "rtexture.h"
+#include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
 
@@ -38,7 +39,7 @@ namespace TFE_Jedi
 			return nullptr;
 		}
 
-		Font* font = (Font*)malloc(sizeof(Font));
+		Font* font = (Font*)game_alloc(sizeof(Font));
 		file.read(&font->vertSpacing);
 		file.read(&font->horzSpacing);
 		file.read(&font->width);
@@ -51,7 +52,7 @@ namespace TFE_Jedi
 		file.readBuffer(buffer, 22);
 
 		s32 glyphCount = s32(font->maxChar) - s32(font->minChar) + 1;
-		font->glyphs = (TextureData*)malloc(sizeof(TextureData) * glyphCount);
+		font->glyphs = (TextureData*)game_alloc(sizeof(TextureData) * glyphCount);
 		memset(font->glyphs, 0, sizeof(TextureData) * glyphCount);
 
 		TextureData* glyph = font->glyphs;
@@ -61,7 +62,7 @@ namespace TFE_Jedi
 			file.read(&width);
 
 			s32 pixelCount = width * font->vertSpacing;
-			glyph->image = (u8*)malloc(pixelCount);
+			glyph->image = (u8*)game_alloc(pixelCount);
 			file.readBuffer(glyph->image, pixelCount);
 
 			glyph->width = width;

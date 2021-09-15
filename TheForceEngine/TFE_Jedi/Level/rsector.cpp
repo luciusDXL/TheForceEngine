@@ -2,6 +2,7 @@
 #include "rwall.h"
 #include "robject.h"
 #include "level.h"
+#include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_Jedi/Collision/collision.h>
@@ -406,12 +407,12 @@ namespace TFE_Jedi
 				SecObject** list;
 				if (!objectCapacity)
 				{
-					list = (SecObject**)malloc(sizeof(SecObject*) * 5);
+					list = (SecObject**)level_alloc(sizeof(SecObject*) * 5);
 					sector->objectList = list;
 				}
 				else
 				{
-					sector->objectList = (SecObject**)realloc(sector->objectList, sizeof(SecObject*) * (objectCapacity + 5));
+					sector->objectList = (SecObject**)level_realloc(sector->objectList, sizeof(SecObject*) * (objectCapacity + 5));
 					list = sector->objectList + objectCapacity;
 				}
 				memset(list, 0, sizeof(SecObject*) * 5);

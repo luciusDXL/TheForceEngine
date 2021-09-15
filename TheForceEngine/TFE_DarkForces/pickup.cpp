@@ -2,6 +2,7 @@
 #include "player.h"
 #include "hud.h"
 #include "weapon.h"
+#include <TFE_Game/igame.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
@@ -344,7 +345,7 @@ namespace TFE_DarkForces
 	// TODO: Move pickup data to an external data file to avoid hardcoding.
 	Logic* obj_createPickup(SecObject* obj, ItemId id)
 	{
-		Pickup* pickup = (Pickup*)malloc(sizeof(Pickup));
+		Pickup* pickup = (Pickup*)level_alloc(sizeof(Pickup));
 		obj_addLogic(obj, (Logic*)pickup, s_pickupTask, pickup_cleanupFunc);
 
 		obj->entityFlags |= ETFLAG_PICKUP;
@@ -888,7 +889,7 @@ namespace TFE_DarkForces
 			}
 
 			// Free saved inventory.
-			free(s_playerInvSaved);
+			level_free(s_playerInvSaved);
 			s_playerInvSaved = nullptr;
 			// Clamp ammo values.
 			s_playerInfo.ammoEnergy    = pickup_addToValue(s_playerInfo.ammoEnergy,    0, 500);

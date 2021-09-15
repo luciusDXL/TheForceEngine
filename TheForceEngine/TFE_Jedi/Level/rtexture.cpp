@@ -1,4 +1,5 @@
 #include "rtexture.h"
+#include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Asset/assetSystem.h>
@@ -7,6 +8,7 @@
 #include <TFE_Jedi/Task/task.h>
 
 using namespace TFE_DarkForces;
+using namespace TFE_Memory;
 
 namespace TFE_Jedi
 {
@@ -19,6 +21,7 @@ namespace TFE_Jedi
 	static std::vector<u8> s_buffer;
 	static Allocator* s_textureAnimAlloc = nullptr;
 	static Task* s_textureAnimTask = nullptr;
+	static MemoryRegion* s_memoryRegion = nullptr;
 
 	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount);
 	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount);
@@ -51,6 +54,11 @@ namespace TFE_Jedi
 		s_textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
 	}
 
+	void bitmap_setAllocator(MemoryRegion* allocator)
+	{
+		s_memoryRegion = allocator;
+	}
+
 	TextureData* bitmap_load(FilePath* filepath, u32 decompress)
 	{
 		FileStream file;
@@ -63,7 +71,7 @@ namespace TFE_Jedi
 		file.readBuffer(s_buffer.data(), (u32)size);
 		file.close();
 
-		TextureData* texture = (TextureData*)malloc(sizeof(TextureData));
+		TextureData* texture = (TextureData*)region_alloc(s_memoryRegion, sizeof(TextureData));
 		const u8* data = s_buffer.data();
 		const u8* fheader = data;
 		data += 3;
@@ -100,7 +108,7 @@ namespace TFE_Jedi
 			if (decompress & 1)
 			{
 				texture->dataSize = texture->width * texture->height;
-				texture->image = (u8*)malloc(texture->dataSize);
+				texture->image = (u8*)region_alloc(s_memoryRegion, texture->dataSize);
 
 				const u8* inBuffer = data;
 				data += inSize;
@@ -132,11 +140,11 @@ namespace TFE_Jedi
 			else
 			{
 				texture->dataSize = inSize;
-				texture->image = (u8*)malloc(texture->dataSize);
+				texture->image = (u8*)region_alloc(s_memoryRegion, texture->dataSize);
 				memcpy(texture->image, data, texture->dataSize);
 				data += texture->dataSize;
 
-				texture->columns = (u32*)malloc(texture->width * sizeof(u32));
+				texture->columns = (u32*)region_alloc(s_memoryRegion, texture->width * sizeof(u32));
 				memcpy(texture->columns, data, texture->width * sizeof(u32));
 				data += texture->width * sizeof(u32);
 			}
@@ -152,7 +160,7 @@ namespace TFE_Jedi
 			data += 12;
 
 			// Allocate and read the BM image.
-			texture->image = (u8*)malloc(texture->dataSize);
+			texture->image = (u8*)region_alloc(s_memoryRegion, texture->dataSize);
 			memcpy(texture->image, data, texture->dataSize);
 			data += texture->dataSize;
 		}
@@ -184,7 +192,7 @@ namespace TFE_Jedi
 		anim->texPtr = texture;			// pointer to the texture pointer, allowing us to update that pointer later.
 		anim->baseFrame = tex;
 		anim->baseData = tex->image;
-		anim->frameList = (TextureData**)malloc(sizeof(TextureData**) * anim->count);
+		anim->frameList = (TextureData**)level_alloc(sizeof(TextureData**) * anim->count);
 
 		for (s32 i = 0; i < anim->count; i++, textureOffsets++)
 		{

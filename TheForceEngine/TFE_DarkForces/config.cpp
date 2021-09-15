@@ -1,4 +1,5 @@
 #include "config.h"
+#include <TFE_Game/igame.h>
 
 namespace TFE_DarkForces
 {
@@ -101,7 +102,7 @@ namespace TFE_DarkForces
 	{
 		s_inputConfig.bindCount = 0;
 		s_inputConfig.bindCapacity = IA_COUNT * 2;
-		s_inputConfig.binds = (InputBinding*)malloc(sizeof(InputBinding)*s_inputConfig.bindCapacity);
+		s_inputConfig.binds = (InputBinding*)game_alloc(sizeof(InputBinding)*s_inputConfig.bindCapacity);
 
 		memset(s_actions, 0, sizeof(ActionState) * IA_COUNT);
 		addDefaultControlBinds();
@@ -109,7 +110,7 @@ namespace TFE_DarkForces
 
 	void configShutdown()
 	{
-		free(s_inputConfig.binds);
+		game_free(s_inputConfig.binds);
 		s_inputConfig.bindCount = 0;
 		s_inputConfig.bindCapacity = 0;
 		s_inputConfig.binds = nullptr;
@@ -123,7 +124,7 @@ namespace TFE_DarkForces
 		if (s_inputConfig.bindCount > s_inputConfig.bindCapacity)
 		{
 			s_inputConfig.bindCapacity += IA_COUNT;
-			s_inputConfig.binds = (InputBinding*)realloc(s_inputConfig.binds, sizeof(InputBinding)*s_inputConfig.bindCapacity);
+			s_inputConfig.binds = (InputBinding*)game_realloc(s_inputConfig.binds, sizeof(InputBinding)*s_inputConfig.bindCapacity);
 		}
 
 		s_inputConfig.binds[index] = *binding;

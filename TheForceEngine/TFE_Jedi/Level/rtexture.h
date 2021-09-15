@@ -73,10 +73,13 @@ enum
 	BM_ANIMATED_TEXTURE = -2,
 };
 
+struct MemoryRegion;
+
 namespace TFE_Jedi
 {
 	void bitmap_setupAnimationTask();
 
+	void bitmap_setAllocator(MemoryRegion* allocator);
 	TextureData* bitmap_load(FilePath* filepath, u32 decompress);
 	void bitmap_setupAnimatedTexture(TextureData** texture);
 }

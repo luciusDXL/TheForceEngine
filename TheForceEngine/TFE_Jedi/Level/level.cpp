@@ -1,6 +1,7 @@
 #include "level.h"
 #include "rwall.h"
 #include "rtexture.h"
+#include <TFE_Game/igame.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Asset/modelAsset_jedi.h>
@@ -76,7 +77,7 @@ namespace TFE_Jedi
 		s_bossSector       = nullptr;
 		s_mohcSector       = nullptr;
 
-		s_controlSector = (RSector*)malloc(sizeof(RSector));
+		s_controlSector = (RSector*)level_alloc(sizeof(RSector));
 		sector_clear(s_controlSector);
 	}
 
@@ -186,7 +187,7 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture count.");
 			return false;
 		}
-		s_textures = (TextureData**)malloc(s_textureCount * sizeof(TextureData**));
+		s_textures = (TextureData**)level_alloc(s_textureCount * sizeof(TextureData**));
 
 		// Load Textures.
 		TextureData** texture = s_textures;
@@ -239,7 +240,7 @@ namespace TFE_Jedi
 			return false;
 		}
 
-		s_sectors = (RSector*)malloc(sizeof(RSector) * s_sectorCount);
+		s_sectors = (RSector*)level_alloc(sizeof(RSector) * s_sectorCount);
 		memset(s_sectors, 0, sizeof(RSector) * s_sectorCount);
 		for (u32 i = 0; i < s_sectorCount; i++)
 		{
@@ -391,8 +392,8 @@ namespace TFE_Jedi
 				return false;
 			}
 			const size_t vtxSize = vertexCount * sizeof(vec2_fixed);
-			sector->verticesWS = (vec2_fixed*)malloc(vtxSize);
-			sector->verticesVS = (vec2_fixed*)malloc(vtxSize);
+			sector->verticesWS = (vec2_fixed*)level_alloc(vtxSize);
+			sector->verticesVS = (vec2_fixed*)level_alloc(vtxSize);
 			sector->vertexCount = vertexCount;
 
 			for (s32 v = 0; v < vertexCount; v++)
@@ -413,7 +414,7 @@ namespace TFE_Jedi
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector walls.");
 				return false;
 			}
-			sector->walls = (RWall*)malloc(wallCount * sizeof(RWall));
+			sector->walls = (RWall*)level_alloc(wallCount * sizeof(RWall));
 			sector->wallCount = wallCount;
 
 			for (s32 w = 0; w < wallCount; w++)
@@ -585,7 +586,7 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "PODS %d", &s_podCount) == 1)
 		{
-			s_pods = (JediModel**)malloc(sizeof(JediModel*)*s_podCount);
+			s_pods = (JediModel**)level_alloc(sizeof(JediModel*)*s_podCount);
 			for (s32 p = 0; p < s_podCount; p++)
 			{
 				line = parser.readLine(bufferPos);
@@ -605,7 +606,7 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "SPRS %d", &s_spriteCount) == 1)
 		{
-			s_sprites = (JediWax**)malloc(sizeof(JediWax*)*s_spriteCount);
+			s_sprites = (JediWax**)level_alloc(sizeof(JediWax*)*s_spriteCount);
 			for (s32 s = 0; s < s_spriteCount; s++)
 			{
 				line = parser.readLine(bufferPos);
@@ -625,7 +626,7 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "FMES %d", &s_fmeCount) == 1)
 		{
-			s_frames = (JediFrame**)malloc(sizeof(JediFrame*)*s_fmeCount);
+			s_frames = (JediFrame**)level_alloc(sizeof(JediFrame*)*s_fmeCount);
 			for (s32 f = 0; f < s_fmeCount; f++)
 			{
 				line = parser.readLine(bufferPos);
