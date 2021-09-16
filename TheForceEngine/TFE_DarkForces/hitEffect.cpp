@@ -348,6 +348,12 @@ namespace TFE_DarkForces
 						s_explodePos.z = z;
 						collision_effectObjectsInRange3D(sector, s_curEffectData->explosiveRange, s_explodePos, hitEffectExplodeFunc, effect->excludeObj,
 							ETFLAG_AI_ACTOR | ETFLAG_SCENERY | ETFLAG_LANDMINE | ETFLAG_LANDMINE_WPN | ETFLAG_PLAYER);
+
+						if (s_curEffectData->type != HEFFECT_PUNCH)
+						{
+							fixed16_16 range = s_curEffectData->explosiveRange;
+							inf_handleExplosion(sector, x, z, range >> 3);
+						}
 					}
 					if (s_curEffectData->wakeupRange)
 					{

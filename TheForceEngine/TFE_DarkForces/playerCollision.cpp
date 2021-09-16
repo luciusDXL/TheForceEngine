@@ -27,9 +27,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
-	static CollisionObjFunc s_objCollisionFunc;
-	static CollisionProxFunc s_objCollisionProxFunc;
-
 	static PlayerLogic* s_curPlayerLogic;
 
 	///////////////////////////////////////////
@@ -61,6 +58,9 @@ namespace TFE_DarkForces
 	vec2_fixed s_colResponsePos;
 	vec2_fixed s_colWallV0;
 	s32 s_collisionFrameSector;
+
+	CollisionObjFunc s_objCollisionFunc;
+	CollisionProxFunc s_objCollisionProxFunc;
 
 	///////////////////////////////////////////
 	// Shared State

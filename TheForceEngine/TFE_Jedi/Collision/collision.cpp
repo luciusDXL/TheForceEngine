@@ -37,6 +37,9 @@ namespace TFE_DarkForces
 	extern vec2_fixed s_colResponsePos;
 	extern vec2_fixed s_colWallV0;
 	extern s32 s_collisionFrameSector;
+
+	extern CollisionObjFunc s_objCollisionFunc;
+	extern CollisionProxFunc s_objCollisionProxFunc;
 }
 
 namespace TFE_Jedi
@@ -839,7 +842,6 @@ namespace TFE_Jedi
 		colInfo->collidedObj = colObj;
 		// Update the collision info y position.
 		colInfo->yPos = s_hcolDstPos.y;
-		s32 r;	// eax
 		if (colWall || b || colObj)
 		{
 			return JFALSE;
@@ -1071,5 +1073,26 @@ namespace TFE_Jedi
 			hitWall = collision_pathWallCollision(nextSector);
 		}
 		return (sector == endSector) ? JTRUE : JFALSE;
+	}
+
+	JBool collision_propogateExplosion(RSector* sector)
+	{
+		message_sendToSector(sector, nullptr, INF_EVENT_EXPLOSION, MSG_TRIGGER);
+		return JTRUE;
+	}
+
+	JBool inf_handleExplosion(RSector* sector, fixed16_16 x, fixed16_16 z, fixed16_16 range)
+	{
+		message_sendToSector(sector, nullptr, INF_EVENT_EXPLOSION, MSG_TRIGGER);
+
+		s_colDstPosX = x;
+		s_colDstPosZ = z;
+		s_colWidth = range;
+		s_objCollisionFunc = collision_propogateExplosion;
+		s_objCollisionProxFunc = nullptr;
+		s_colDoubleRadius = range * 2;
+		s_collisionFrameSector += 2;
+
+		return handleCollisionFunc(sector);
 	}
 }

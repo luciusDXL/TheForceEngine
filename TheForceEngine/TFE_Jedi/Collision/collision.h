@@ -90,6 +90,8 @@ namespace TFE_Jedi
 	JBool handleCollision(CollisionInfo* colInfo);
 	void handleCollisionResponseSimple(fixed16_16 dirX, fixed16_16 dirZ, fixed16_16* moveX, fixed16_16* moveZ);
 
+	JBool inf_handleExplosion(RSector* sector, fixed16_16 x, fixed16_16 z, fixed16_16 range);
+
 	// Variables
 	extern fixed16_16 s_colObjOverlap;
 	extern s32 s_collisionFrameWall;

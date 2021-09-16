@@ -2443,7 +2443,7 @@ namespace TFE_Jedi
 			{
 				wall->flags1 &= ~(WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP);
 			}
-			wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
+			sector->dirtyFlags |= SDF_WALL_FLAGS;
 		}
 	}
 
@@ -3083,7 +3083,7 @@ namespace TFE_Jedi
 			} break;
 		};
 	}
-
+		
 	void inf_stopHandleMessages(s32 id)
 	{
 		struct LocalContext
