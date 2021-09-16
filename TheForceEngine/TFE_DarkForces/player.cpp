@@ -1,6 +1,7 @@
 #include "player.h"
 #include "playerLogic.h"
 #include "playerCollision.h"
+#include "projectile.h"
 #include "automap.h"
 #include "agent.h"
 #include "config.h"
@@ -226,6 +227,7 @@ namespace TFE_DarkForces
 	// Forward Declarations
 	///////////////////////////////////////////
 	void playerControlTaskFunc(s32 id);
+	void playerControlMsgFunc(s32 msg);
 	void setPlayerLight(s32 atten);
 	void setCameraOffset(fixed16_16 offsetX, fixed16_16 offsetY, fixed16_16 offsetZ);
 	void setCameraAngleOffset(angle14_32 offsetPitch, angle14_32 offsetYaw, angle14_32 offsetRoll);
@@ -322,7 +324,7 @@ namespace TFE_DarkForces
 		
 	void player_createController()
 	{
-		s_playerTask = pushTask("player control", playerControlTaskFunc);
+		s_playerTask = pushTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
 		task_setNextTick(s_playerTask, TASK_SLEEP);
 
 		// Clear out inventory items that the player shouldn't start a level with, such as objectives and keys
@@ -735,6 +737,88 @@ namespace TFE_DarkForces
 		Vec3f listenerPos = { fixed16ToFloat(s_eyePos.x), fixed16ToFloat(s_eyePos.y), fixed16ToFloat(s_eyePos.z) };
 		Vec3f listenerDir = { fixed16ToFloat(dir.x), 0, fixed16ToFloat(dir.z) };
 		TFE_Audio::update(&listenerPos, &listenerDir);
+	}
+
+	void computeDamagePushVelocity(ProjectileLogic* proj, vec3_fixed* vel)
+	{
+		fixed16_16 push = mul16(proj->projForce, proj->speed);
+		vel->x = mul16(push, proj->dir.x);
+		vel->z = mul16(push, proj->dir.z);
+
+		if (proj->dir.y < 0)
+		{
+			vel->y = mul16(push, proj->dir.y) * 2;
+		}
+		vel->y = 0;
+	}
+
+	void computeExplosionPushDir(vec3_fixed* pos, vec3_fixed* pushDir)
+	{
+		vec3_fixed delta = { pos->x - s_explodePos.x, pos->y - s_explodePos.y, pos->z - s_explodePos.z };
+
+		fixed16_16 dirZ, dirX;
+		fixed16_16 len = computeDirAndLength(delta.x, delta.z, &dirX, &dirZ);
+
+		fixed16_16 dirY;
+		computeDirAndLength(len, delta.y, &dirY, &pushDir->y);
+		pushDir->x = mul16(dirY, dirX);
+		pushDir->z = mul16(dirY, dirZ);
+	}
+
+	void playerControlMsgFunc(s32 msg)
+	{
+		fixed16_16 shieldDmg;
+		JBool playHitSound;
+
+		if (msg == MSG_DAMAGE)
+		{
+			ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
+			vec3_fixed pushVel;
+			computeDamagePushVelocity(proj, &pushVel);
+
+			s_playerVelX   += pushVel.x;
+			s_playerUpVel2 += pushVel.y;
+			s_playerVelZ   += pushVel.z;
+
+			if (s_invincibility || s_config.superShield)
+			{
+				// TODO
+			}
+			else
+			{
+				playHitSound = JTRUE;
+				shieldDmg = proj->dmg;
+			}
+		}
+		else if (msg == MSG_EXPLOSION)
+		{
+			vec3_fixed pos = { s_playerObject->posWS.x, s_playerObject->posWS.y - s_playerObject->worldHeight, s_playerObject->posWS.z };
+			vec3_fixed pushDir;
+			computeExplosionPushDir(&pos, &pushDir);
+
+			fixed16_16 force = s_msgArg2;
+			s_playerVelX   += mul16(force, pushDir.x);
+			s_playerUpVel2 += mul16(force, pushDir.y);
+			s_playerVelZ   += mul16(force, pushDir.z);
+
+			if (s_invincibility || s_config.superShield)
+			{
+				return;
+			}
+
+			if (s_curEffectData->type == HEFFECT_SMALL_EXP)
+			{
+				playHitSound = JTRUE;
+				shieldDmg = s_msgArg1 >> 1;
+			}
+			else
+			{
+				playHitSound = JTRUE;
+				shieldDmg = s_msgArg1;
+			}
+		}
+
+		player_applyDamage(0, shieldDmg, playHitSound);
 	}
 
 	void playerControlTaskFunc(s32 id)

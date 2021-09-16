@@ -28,27 +28,27 @@ namespace TFE_DarkForces
 	// Internal State
 	///////////////////////////////////////////
 	static JBool s_weaponTexturesLoaded = JFALSE;
-	static JBool s_isShooting = JFALSE;
-	static JBool s_secondaryFire = JFALSE;
-	static JBool s_weaponOffAnim = JFALSE;
 	static JBool s_switchWeapons = JFALSE;
-	static JBool s_weaponAutoMount2 = JFALSE;
 	static WeaponAnimState s_weaponAnimState;
 
 	static TextureData* s_rhand1 = nullptr;
 	static TextureData* s_gasmaskTexture = nullptr;
 	static PlayerWeapon s_playerWeaponList[WPN_COUNT];
-	
-	static s32 s_prevWeapon;
-	static s32 s_curWeapon;
-	static s32 s_nextWeapon;
-	static s32 s_lastWeapon;
-	
+			
 	static Tick s_weaponDelayPrimary;
 	static Tick s_weaponDelaySeconary;
 	static s32* s_canFirePrimPtr;
 	static s32* s_canFireSecPtr;
 
+	s32 s_prevWeapon;
+	s32 s_curWeapon;
+	s32 s_nextWeapon;
+	s32 s_lastWeapon;
+
+	JBool s_weaponAutoMount2 = JFALSE;
+	JBool s_secondaryFire = JFALSE;
+	JBool s_weaponOffAnim = JFALSE;
+	JBool s_isShooting = JFALSE;
 	s32 s_canFireWeaponSec;
 	s32 s_canFireWeaponPrim;
 	u32 s_fireFrame = 0;
@@ -727,6 +727,51 @@ namespace TFE_DarkForces
 		}
 		task_end;
 	}
+
+	void weapon_stopFiring()
+	{
+		s_isShooting = JFALSE;
+		if (s_prevWeapon == WPN_REPEATER)
+		{
+			if (s_repeaterFireSndID)
+			{
+				stopSound(s_repeaterFireSndID);
+				s_repeaterFireSndID = 0;
+			}
+			s_curPlayerWeapon->frame = 0;
+		}
+		else if (s_prevWeapon == WPN_CANNON)
+		{
+			if (s_secondaryFire)
+			{
+				s_curPlayerWeapon->frame = 0;
+			}
+		}
+		PlayerWeapon* weapon = s_curPlayerWeapon;
+		weapon->flags |= 2;
+	}
+
+	void weapon_handleState2(s32 id)
+	{
+		task_begin;
+		task_makeActive(s_playerWeaponTask);
+		task_yield(TASK_NO_DELAY);
+
+		if (id == WTID_STOP_FIRING)
+		{
+			weapon_stopFiring();
+		}
+		else if (id == WTID_START_FIRING)
+		{
+			weapon_setShooting(s_msgArg1);
+		}
+		else if (id == WTID_SWITCH_WEAPON)
+		{
+			s_switchWeapons = JTRUE;
+			s_nextWeapon = s_msgArg1;
+		}
+		task_end;
+	}
 		
 	// This task function handles animating a weapon on or off screen, based on the inputs.
 	void weapon_animateOnOrOffscreen(s32 id)
@@ -755,9 +800,7 @@ namespace TFE_DarkForces
 
 				if (id == WTID_STOP_FIRING)
 				{
-					s_isShooting = JFALSE;
-					weapon_prepareToFire();
-					s_curPlayerWeapon->flags |= 2;
+					weapon_stopFiring();
 				}
 				else if (id == WTID_START_FIRING)
 				{

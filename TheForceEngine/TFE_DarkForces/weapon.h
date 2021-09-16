@@ -86,6 +86,7 @@ namespace TFE_DarkForces
 	void weapon_holster();
 	void weapon_draw(u8* display, DrawRect* rect);
 	void weapon_fixupAnim();
+	void weapon_stopFiring();
 	void player_cycleWeapons(s32 change);
 
 	extern PlayerWeapon* s_curPlayerWeapon;

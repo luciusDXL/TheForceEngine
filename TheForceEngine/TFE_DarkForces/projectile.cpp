@@ -170,7 +170,7 @@ namespace TFE_DarkForces
 				projLogic->updateFunc = stdProjectileUpdateFunc;
 				projLogic->dmg = FIXED(6);
 				projLogic->falloffAmt = 0;
-				projLogic->u30 = 1310;	// ~9
+				projLogic->projForce = 1310;
 				projLogic->speed = FIXED(230);
 				projLogic->horzBounciness = 0;
 				projLogic->vertBounciness = 0;
@@ -195,7 +195,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = ONE_16;
 				projLogic->dmgFalloffDelta = 14;
 
-				projLogic->u30 = 655;	// ~4.5 seconds
+				projLogic->projForce = 655;
 				projLogic->speed = FIXED(250);
 				projLogic->horzBounciness = ONE_16;
 				projLogic->vertBounciness = ONE_16;
@@ -224,7 +224,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 52428;	// 0.8 damage
 				projLogic->dmgFalloffDelta = 14;
 
-				projLogic->u30 = 655;	// ~4.5 seconds?
+				projLogic->projForce = 655;
 				projLogic->speed = FIXED(250);
 				projLogic->horzBounciness = ONE_16;
 				projLogic->vertBounciness = ONE_16;
@@ -244,6 +244,7 @@ namespace TFE_DarkForces
 					frame_setData(projObj, s_thermalDetProj);
 				}
 				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
+				projObj->worldWidth = 0;
 
 				projLogic->flags |= PROJFLAG_EXPLODE;
 				projLogic->type = PROJ_THERMAL_DET;
@@ -253,7 +254,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;
 				projLogic->dmgFalloffDelta = 0;
 
-				projLogic->u30 = 6553;	// ~45.2 seconds?
+				projLogic->projForce = 6553;
 				projLogic->speed = FIXED(80);
 				projLogic->horzBounciness = 29491;	// 0.45
 				projLogic->vertBounciness = 58327;  // 0.89
@@ -261,7 +262,7 @@ namespace TFE_DarkForces
 				projLogic->reflectEffectId = HEFFECT_NONE;
 				projLogic->hitEffectId = HEFFECT_THERMDET_EXP;
 				projLogic->duration = s_curTick + 436;	// ~3 seconds
-				projLogic->cameraPassSnd = s_stdProjCameraSnd;
+				projLogic->cameraPassSnd = NULL_SOUND;
 				projLogic->reflectSnd = s_thermalDetReflectSnd;
 			} break;
 			case PROJ_REPEATER:
@@ -280,7 +281,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 19660;	// 0.3 damage
 				projLogic->dmgFalloffDelta = 19660;	// 135 seconds, this probably should have been 0.3 seconds, or 43
 
-				projLogic->u30 = 1966;	// ~13.5 seconds?
+				projLogic->projForce = 1966;
 				projLogic->speed = FIXED(270);
 				projLogic->horzBounciness = 0;
 				projLogic->vertBounciness = 0;
@@ -311,7 +312,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 39321;		// 0.6 damage
 				projLogic->dmgFalloffDelta = 29;	// 0.2 seconds
 
-				projLogic->u30 = 3276;	// ~22.6 seconds?
+				projLogic->projForce = 3276;
 				projLogic->speed = FIXED(100);
 				projLogic->horzBounciness = 58982;	// 0.9
 				projLogic->vertBounciness = 58982;
@@ -340,7 +341,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;		// No falloff
 				projLogic->dmgFalloffDelta = 0;
 
-				projLogic->u30 = 13107;	// 0.2
+				projLogic->projForce = 13107;
 				projLogic->speed = FIXED(110);
 				projLogic->horzBounciness = 26214;	// 0.4
 				projLogic->vertBounciness = 39321;	// 0.6
@@ -364,7 +365,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;
 				projLogic->dmgFalloffDelta = 0;
 
-				projLogic->u30 = 13107;
+				projLogic->projForce = 13107;
 				projLogic->speed = 0;
 				projLogic->horzBounciness = 0;
 				projLogic->vertBounciness = 0;
@@ -389,7 +390,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;
 				projLogic->dmgFalloffDelta = 0;
 
-				projLogic->u30 = 13107;
+				projLogic->projForce = 13107;
 				projLogic->speed = 0;
 				projLogic->horzBounciness = 0;
 				projLogic->vertBounciness = 0;
@@ -412,7 +413,7 @@ namespace TFE_DarkForces
 				projLogic->updateFunc = landMineUpdateFunc;
 				projLogic->dmg = 0;
 				projLogic->falloffAmt = 0;
-				projLogic->u30 = 13107;
+				projLogic->projForce = 13107;
 				projLogic->speed = 0;
 				projLogic->horzBounciness = 0;
 				projLogic->vertBounciness = 0;
@@ -431,7 +432,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;
 				projLogic->dmgFalloffDelta = 0;
 
-				projLogic->u30 = 3932;	// ~0.6 seconds?
+				projLogic->projForce = 3932;
 				projLogic->speed = FIXED(190);
 				projLogic->horzBounciness = 58982;	// 0.9
 				projLogic->vertBounciness = 58982;
@@ -457,7 +458,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;		// No falloff
 				projLogic->dmgFalloffDelta = 0;
 
-				projLogic->u30 = 4032;	// ~27.8 seconds?
+				projLogic->projForce = 4032;
 				projLogic->speed = FIXED(100);
 				projLogic->horzBounciness = 58982;	// 0.9
 				projLogic->vertBounciness = 58982;
@@ -484,7 +485,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;		// No falloff
 				projLogic->dmgFalloffDelta = 0;
 
-				projLogic->u30 = ONE_16;
+				projLogic->projForce = ONE_16;
 				projLogic->speed = FIXED(74);
 				projLogic->horzBounciness = 58982;	// 0.9
 				projLogic->vertBounciness = 58982;
@@ -510,7 +511,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = ONE_16;
 				projLogic->dmgFalloffDelta = 14;
 
-				projLogic->u30 = 1966;	// ~13.55 seconds?
+				projLogic->projForce = 1966;
 				projLogic->speed = FIXED(300);
 				projLogic->horzBounciness = ONE_16;
 				projLogic->vertBounciness = ONE_16;
@@ -539,7 +540,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = ONE_16;
 				projLogic->dmgFalloffDelta = 14;
 
-				projLogic->u30 = 655;	// ~4.5 seconds?
+				projLogic->projForce = 655;
 				projLogic->speed = FIXED(300);
 				projLogic->horzBounciness = ONE_16;
 				projLogic->vertBounciness = ONE_16;
@@ -562,7 +563,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;
 				projLogic->dmgFalloffDelta = 0;
 
-				projLogic->u30 = 0;
+				projLogic->projForce = 0;
 				projLogic->speed = 0;
 				projLogic->horzBounciness = 0;
 				projLogic->vertBounciness = 0;
@@ -589,7 +590,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = 0;
 				projLogic->dmgFalloffDelta = ONE_16;
 
-				projLogic->u30 = ONE_16;
+				projLogic->projForce = ONE_16;
 				projLogic->speed = FIXED(58);
 				projLogic->horzBounciness = 58982;	// 0.9
 				projLogic->vertBounciness = 58982;
@@ -620,7 +621,7 @@ namespace TFE_DarkForces
 				projLogic->falloffAmt = ONE_16;		// 1.0 damage
 				projLogic->dmgFalloffDelta = 14;
 
-				projLogic->u30 = 2621;	// ~18.08 seconds?
+				projLogic->projForce = 2621;
 				projLogic->speed = FIXED(100);
 				projLogic->horzBounciness = 58982;	// 0.9
 				projLogic->vertBounciness = 58982;
@@ -648,7 +649,7 @@ namespace TFE_DarkForces
 				projLogic->dmg = 0;
 				projLogic->falloffAmt = 0;
 
-				projLogic->u30 = ONE_16;
+				projLogic->projForce = ONE_16;
 				projLogic->speed = FIXED(90);
 				projLogic->horzBounciness = 58982;	// 0.9
 				projLogic->vertBounciness = 58982;

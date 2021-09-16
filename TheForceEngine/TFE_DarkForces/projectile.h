@@ -70,7 +70,7 @@ namespace TFE_DarkForces
 		Tick dmgFalloffDelta;   // Ticks between falloff changes.
 		fixed16_16 minDmg;      // Minimum damage
 
-		s32 u30;
+		fixed16_16 projForce;	// How much of the projectile speed translates into force on hit.
 		vec3_fixed delta;       // Movement amount in the current timeslice in units.
 		vec3_fixed vel;         // Projectile velocity in units / second.
 		fixed16_16 speed;       // Projectile speed in units / second.

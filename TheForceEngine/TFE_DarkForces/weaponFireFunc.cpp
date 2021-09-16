@@ -52,9 +52,18 @@ namespace TFE_DarkForces
 	extern SoundSourceID s_weaponChangeSnd;
 	extern SoundEffectID s_repeaterFireSndID;
 
+	extern JBool s_weaponAutoMount2;
+	extern JBool s_secondaryFire;
+	extern JBool s_weaponOffAnim;
+	extern JBool s_isShooting;
 	extern s32 s_canFireWeaponSec;
 	extern s32 s_canFireWeaponPrim;
 	extern u32 s_fireFrame;
+
+	extern s32 s_prevWeapon;
+	extern s32 s_curWeapon;
+	extern s32 s_nextWeapon;
+	extern s32 s_lastWeapon;
 
 	struct WeaponAnimFrame
 	{
@@ -88,8 +97,19 @@ namespace TFE_DarkForces
 		{ 3, 36,   7, 14 },
 		{ 0,  0,   7, 14 },
 	};
+	static const WeaponAnimFrame c_thermalDetAnim[5] =
+	{
+		{ 1, 0, 11, 11 },
+		{ 2, 0, 58, 58 },
+		{ 1, 0, 29, 29 },
+		{ 0, 0, 29, 29 },
+		{ 3, 0, 29, 29 },
+	};
 
 	extern void weapon_handleState(s32 id);
+	extern void weapon_handleState2(s32 id);
+	extern void weapon_handleOffAnimation(s32 id);
+	extern void weapon_handleOnAnimation(s32 id);
 	void weapon_computeMatrix(fixed16_16* mtx, angle14_32 pitch, angle14_32 yaw);
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation);
 
@@ -531,8 +551,153 @@ namespace TFE_DarkForces
 
 	void weaponFire_thermalDetonator(s32 id)
 	{
-		task_begin;
-		// STUB
+		struct LocalContext
+		{
+			Tick delay;
+			Tick startTick;
+			s32  iFrame;
+		};
+		task_begin_ctx;
+
+		if (*s_curPlayerWeapon->ammo)
+		{
+			s_canFireWeaponPrim = 0;
+			s_canFireWeaponSec = 0;
+			*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoDetonator, -1, 50);
+
+			// Weapon Frame 0.
+			s_curPlayerWeapon->frame = c_thermalDetAnim[0].waxFrame;
+			do
+			{
+				task_yield(c_thermalDetAnim[0].delayNormal);
+				task_callTaskFunc(weapon_handleState);
+			} while (id != 0);
+
+			s_curPlayerWeapon->xOffset = 100;
+			s_curPlayerWeapon->yOffset = 100;
+			taskCtx->startTick = s_curTick;
+			task_callTaskFunc(weapon_handleState2);
+
+			// Wait until the player is no longer "shooting"
+			// This holds the thermal detonator in place.
+			while (s_isShooting)
+			{
+				task_yield(TASK_NO_DELAY);
+				task_callTaskFunc(weapon_handleState);
+			};
+
+			task_localBlockBegin;
+			task_callTaskFunc(weapon_handleState2);
+			fixed16_16 dt = intToFixed16(s_curTick - taskCtx->startTick);
+
+			if (s_curPlayerWeapon->wakeupRange)
+			{
+				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+			}
+
+			fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+			ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_THERMAL_DET, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
+			proj->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
+			proj->prevColObj = s_playerObject;
+
+			// Calculate projectile speed and duration.
+			if (s_secondaryFire)
+			{
+				dt = max(dt, FIXED(23));
+			}
+			else
+			{
+				proj->duration = 0xffffffff;
+				proj->bounceCnt = 0;
+				dt = max(dt, FIXED(58));
+			}
+			dt = min(dt, FIXED(116));
+			proj->speed = mul16(div16(dt, FIXED(116)), FIXED(100));
+
+			// Calculate projectile transform.
+			s32 baseVariation = s_curPlayerWeapon->variation & 0xffff;
+			s32 pitchVariation = random(baseVariation * 2) - baseVariation;
+			s_weaponFirePitch = (s_playerObject->pitch >> 1) + 0x638 + pitchVariation;
+
+			s32 yawVariation = random(baseVariation * 2) - baseVariation;
+			s_weaponFireYaw = s_playerObject->yaw + yawVariation;
+
+			proj_setTransform(proj, s_weaponFirePitch, s_weaponFireYaw);
+
+			// Calculate initial projectile delta and handle up close collision.
+			fixed16_16 mtx[9];
+			weapon_computeMatrix(mtx, -(s_playerObject->pitch + 0x638), -s_playerObject->yaw);
+
+			vec3_fixed inVec = { FIXED(2), FIXED(2), FIXED(2) };
+			rotateVectorM3x3(&inVec, &proj->delta, mtx);
+
+			ProjectileHitType hitType = proj_handleMovement(proj);
+			handleProjectileHit(proj, hitType);
+			task_localBlockEnd;
+
+			// Handle animation
+			s_curPlayerWeapon->xOffset = 0;
+			s_curPlayerWeapon->yOffset = 0;
+
+			// The initial frame is the same regardless of ammo.
+			s_curPlayerWeapon->frame = c_thermalDetAnim[1].waxFrame;
+			s_weaponLight = c_thermalDetAnim[1].weaponLight;
+			taskCtx->delay = c_thermalDetAnim[1].delayNormal;
+			do
+			{
+				task_yield(taskCtx->delay);
+				task_callTaskFunc(weapon_handleState);
+			} while (id != 0);
+
+			if (*s_curPlayerWeapon->ammo)
+			{
+				for (taskCtx->iFrame = 2; taskCtx->iFrame <= 3; taskCtx->iFrame++)
+				{
+					s_curPlayerWeapon->frame = c_thermalDetAnim[taskCtx->iFrame].waxFrame;
+					s_weaponLight = c_thermalDetAnim[taskCtx->iFrame].weaponLight;
+					taskCtx->delay = c_thermalDetAnim[taskCtx->iFrame].delayNormal;
+					do
+					{
+						task_yield(taskCtx->delay);
+						task_callTaskFunc(weapon_handleState);
+					} while (id != 0);
+				}
+			}
+			else
+			{
+				s_curPlayerWeapon->frame = c_thermalDetAnim[4].waxFrame;
+				s_weaponLight = c_thermalDetAnim[4].weaponLight;
+				taskCtx->delay = c_thermalDetAnim[4].delayNormal;
+				do
+				{
+					task_yield(taskCtx->delay);
+					task_callTaskFunc(weapon_handleState);
+				} while (id != 0);
+			}
+
+			s_canFireWeaponPrim = 1;
+			s_canFireWeaponSec = 1;
+		}
+		else  // Out of Ammo
+		{
+			if (s_weaponAutoMount2)
+			{
+				//func_1ece78();
+				//return;
+			}
+			
+			s_lastWeapon = s_curWeapon;
+			s_curWeapon = WPN_FIST;
+			s_playerInfo.curWeapon = s_prevWeapon;
+			if (s_weaponOffAnim)
+			{
+				task_callTaskFunc(weapon_handleOffAnimation);
+			}
+			weapon_setNext(s_curWeapon);
+			task_callTaskFunc(weapon_handleOnAnimation);
+		}
+
 		task_end;
 	}
 

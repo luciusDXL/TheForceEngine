@@ -22,18 +22,7 @@ namespace TFE_DarkForces
 		fixed16_16 z;
 		SecObject* excludeObj;
 	};
-
-	struct EffectData
-	{
-		HitEffectID type;
-		Wax* spriteData;
-		fixed16_16 force;
-		fixed16_16 damage;
-		fixed16_16 explosiveRange;
-		fixed16_16 wakeupRange;
-		SoundSourceID soundEffect;
-	};
-
+		
 	enum HitEffectConstants
 	{
 		MAX_SPEC_EFFECT_COUNT = 5,
@@ -45,10 +34,10 @@ namespace TFE_DarkForces
 	static SoundSourceID s_concussionExplodeSnd;
 	static EffectData s_effectData[HEFFECT_COUNT];
 	static Allocator* s_hitEffects;
-	static EffectData* s_curEffectData = nullptr;
-	static vec3_fixed s_explodePos;
-
 	static Task* s_hitEffectTask = nullptr;
+
+	vec3_fixed s_explodePos;
+	EffectData* s_curEffectData = nullptr;
 
 	void hitEffectWakeupFunc(SecObject* obj);
 	void hitEffectExplodeFunc(SecObject* obj);

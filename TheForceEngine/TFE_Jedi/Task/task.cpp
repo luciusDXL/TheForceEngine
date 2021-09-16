@@ -358,7 +358,12 @@ namespace TFE_Jedi
 		{
 			runFunc(s_currentId);
 		}
-		assert(retTask == s_curTask);
+		if (retTask != s_curTask)
+		{
+			TFE_System::logWrite(LOG_WARNING, "Task", "Correction required upon returning for task_runAndReturn.");
+			s_curTask = retTask;
+			s_curContext = &s_curTask->context;
+		}
 		TASK_MSG("Return to task '%s'.", s_curTask->name);
 	}
 
