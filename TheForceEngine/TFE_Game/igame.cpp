@@ -23,7 +23,7 @@ void game_destroy()
 	region_destroy(s_gameRegion);
 	region_destroy(s_levelRegion);
 
-	s_gameRegion = nullptr;
+	s_gameRegion  = nullptr;
 	s_levelRegion = nullptr;
 }
 

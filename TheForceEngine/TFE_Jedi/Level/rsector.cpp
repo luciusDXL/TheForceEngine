@@ -460,7 +460,7 @@ namespace TFE_Jedi
 	void sector_changeGlobalLightLevel()
 	{
 		RSector* sector = s_sectors;
-		for (s32 i = 0; i < s_sectorCount; i++, sector++)
+		for (u32 i = 0; i < s_sectorCount; i++, sector++)
 		{
 			fixed16_16 newLightLevel = intToFixed16(sector->flags3);
 			sector->flags3 = floor16(sector->ambient);

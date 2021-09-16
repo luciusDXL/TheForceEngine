@@ -23,6 +23,9 @@ enum
 	ALIGNMENT = 8,
 	ALLOC_BIN_COUNT = 6,
 	ALLOC_BIN_LAST = 5,
+	// No more then 256 blocks, and no more than 16MB per block for a total of 4GB.
+	MAX_BLOCK_COUNT = 256,
+	MAX_BLOCK_SIZE  = 16 * 1024 * 1024,
 };
 
 struct RegionAllocHeader
@@ -72,8 +75,16 @@ struct MemoryRegion
 	size_t maxBlocks;
 };
 
+static_assert(sizeof(RegionAllocHeader) == 16, "RegionAllocHeader is the wrong size.");
+static_assert(sizeof(AllocHeaderFree) == 24, "AllocHeaderFree is the wrong size.");
+
 namespace TFE_Memory
 {
+	// These constants assume no more then 256 blocks, and no more than 16MB per block for a total of 4GB.
+	// See MAX_BLOCK_COUNT and MAX_BLOCK_SIZE above.
+	static const u32 c_relativeBlockShift = 24u;
+	static const u32 c_relativeOffsetMask = (1u << c_relativeBlockShift) - 1u;
+
 	void freeSlot(RegionAllocHeader* alloc, RegionAllocHeader* next, MemoryBlock* block);
 	size_t alloc_align(size_t baseSize);
 	s32  getBinFromSize(u32 size);
@@ -118,6 +129,11 @@ namespace TFE_Memory
 	{
 		assert(name);
 		if (!name || !blockSize) { return nullptr; }
+		if (blockSize > MAX_BLOCK_SIZE)
+		{
+			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "The block size for region '%s' of %u is too large, the maximum is %u.", name, blockSize, MAX_BLOCK_SIZE);
+			return nullptr;
+		}
 
 		MemoryRegion* region = (MemoryRegion*)malloc(sizeof(MemoryRegion));
 		if (!region)
@@ -372,6 +388,44 @@ namespace TFE_Memory
 			}
 		}
 	}
+		
+	RelativePointer region_getRelativePointer(MemoryRegion* region, void* ptr)
+	{
+		// With 8 byte alignment, it is impossible to have a valid relative pointer that references the highest possible byte, so
+		// it is safe to use that as the invalid marker even though it is technically in range.
+		RelativePointer rp = INVALID_RELATIVE_POINTER;
+		if (!ptr || !region) { return rp; }
+		
+		for (s32 i = (s32)region->blockCount - 1; i >= 0; i--)
+		{
+			MemoryBlock* block = region->memBlocks[i];
+			if (ptr >= block)
+			{
+				rp = RelativePointer((u8*)ptr - (u8*)block - sizeof(MemoryBlock));
+				rp |= (i << c_relativeBlockShift);
+				break;
+			}
+		}
+		return rp;
+	}
+
+	void* region_getRealPointer(MemoryRegion* region, RelativePointer ptr)
+	{
+		if (ptr == INVALID_RELATIVE_POINTER)
+		{
+			return nullptr;
+		}
+
+		const u32 blockIndex = ptr >> c_relativeBlockShift;
+		assert(blockIndex < region->blockCount);
+		if (blockIndex >= region->blockCount)
+		{
+			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Relative pointer for region '%s' has an invalid block index: %u.", region->name, blockIndex);
+			return nullptr;
+		}
+		MemoryBlock* block = region->memBlocks[blockIndex];
+		return (u8*)block + (ptr & c_relativeOffsetMask) + sizeof(MemoryBlock);
+	}
 
 	void freeSlot(RegionAllocHeader* alloc, RegionAllocHeader* next, MemoryBlock* block)
 	{
@@ -472,8 +526,11 @@ namespace TFE_Memory
 
 	bool allocateNewBlock(MemoryRegion* region)
 	{
-		assert(sizeof(RegionAllocHeader) == 16);
-		assert(sizeof(AllocHeaderFree) == 24);
+		if (region->blockCount >= MAX_BLOCK_COUNT)
+		{
+			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Too many blocks allocated for region '%s' - the maximum is %u.", region->name, MAX_BLOCK_COUNT);
+			return false;
+		}
 
 		if (!region->memBlocks)
 		{

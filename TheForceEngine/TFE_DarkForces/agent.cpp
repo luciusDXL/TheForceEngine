@@ -114,7 +114,7 @@ namespace TFE_DarkForces
 		{
 			return JFALSE;
 		}
-		u32 len = file.getSize();
+		u32 len = (u32)file.getSize();
 		buffer = (char*)game_alloc(len+1);
 		file.readBuffer(buffer, len);
 		file.close();

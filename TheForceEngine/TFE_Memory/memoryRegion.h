@@ -8,6 +8,9 @@
 #include <string>
 
 struct MemoryRegion;
+typedef u32 RelativePointer;
+
+#define INVALID_RELATIVE_POINTER 0xffffffffu
 
 namespace TFE_Memory
 {
@@ -18,6 +21,9 @@ namespace TFE_Memory
 	void* region_alloc(MemoryRegion* region, size_t size);
 	void* region_realloc(MemoryRegion* region, void* ptr, size_t size);
 	void  region_free(MemoryRegion* region, void* ptr);
+
+	RelativePointer region_getRelativePointer(MemoryRegion* region, void* ptr);
+	void* region_getRealPointer(MemoryRegion* region, RelativePointer ptr);
 
 	void region_test();
 }

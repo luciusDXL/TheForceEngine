@@ -27,9 +27,6 @@ namespace TFE_Jedi
 		DF_LEVEL_VERSION_MINOR = 1
 	};
 
-	s32 s_minLayer;
-	s32 s_maxLayer;
-	s32 s_secretCount;
 	static s32 s_dataIndex;
 	static s32 s_textureCount;
 
@@ -57,6 +54,9 @@ namespace TFE_Jedi
 	static char s_readBuffer[256];
 	static std::vector<char> s_buffer;
 	
+	s32 s_minLayer;
+	s32 s_maxLayer;
+	s32 s_secretCount;
 	u32 s_sectorCount = 0;
 	RSector* s_completeSector = nullptr;
 	RSector* s_sectors = nullptr;
