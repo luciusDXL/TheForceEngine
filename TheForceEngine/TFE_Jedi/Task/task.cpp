@@ -2,6 +2,7 @@
 #include <TFE_Memory/chunkedArray.h>
 #include <TFE_DarkForces/time.h>
 #include <TFE_System/system.h>
+#include <TFE_Game/igame.h>
 #include <stdarg.h>
 #include <tuple>
 #include <vector>
@@ -69,8 +70,8 @@ namespace TFE_Jedi
 		TASK_CHUNK_SIZE = 256,
 		TASK_PREALLOCATED_CHUNKS = 1,
 
-		TASK_STACK_SIZE = 64 * 1024,	// 64KB of stack memory.
-		TASK_STACK_CHUNK_SIZE = 128,	// 8MB of memory for 128 tasks with stack memory.
+		TASK_STACK_SIZE = 32 * 1024,	// 32KB of stack memory.
+		TASK_STACK_CHUNK_SIZE = 64,		// 2MB of memory for 64 tasks with stack memory.
 	};
 
 	ChunkedArray* s_tasks = nullptr;
@@ -91,8 +92,8 @@ namespace TFE_Jedi
 
 	void createRootTask()
 	{
-		s_tasks = createChunkedArray(sizeof(Task), TASK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS);
-		s_stackBlocks = createChunkedArray(TASK_STACK_SIZE, TASK_STACK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS);
+		s_tasks = createChunkedArray(sizeof(Task), TASK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS, s_gameRegion);
+		s_stackBlocks = createChunkedArray(TASK_STACK_SIZE, TASK_STACK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS, s_gameRegion);
 
 		s_rootTask = { 0 };
 		s_rootTask.prevMain = &s_rootTask;

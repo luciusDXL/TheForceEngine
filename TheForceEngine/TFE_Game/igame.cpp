@@ -4,7 +4,7 @@
 
 enum GameConstants
 {
-	GAME_MEMORY_BASE  = 2 * 1024 * 1024, // 2 MB
+	GAME_MEMORY_BASE  = 8 * 1024 * 1024, // 8 MB
 	LEVEL_MEMORY_BASE = 8 * 1024 * 1024, // 8 MB
 };
 

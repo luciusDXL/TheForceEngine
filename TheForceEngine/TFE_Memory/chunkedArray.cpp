@@ -1,6 +1,6 @@
 #include "chunkedArray.h"
 #include <TFE_System/system.h>
-#include <TFE_System/memoryPool.h>
+#include <TFE_Memory/memoryRegion.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +25,7 @@ struct ChunkedArray
 
 	u8** chunks;
 	u8** freeSlots;
+	MemoryRegion* region;
 };
 
 namespace TFE_Memory
@@ -35,17 +36,18 @@ namespace TFE_Memory
 	};
 	void addFreeSlot(ChunkedArray* arr, u8* ptr);
 
-	ChunkedArray* createChunkedArray(u32 elemSize, u32 elemPerChunk, u32 initChunkCount)
+	ChunkedArray* createChunkedArray(u32 elemSize, u32 elemPerChunk, u32 initChunkCount, MemoryRegion* region)
 	{
-		ChunkedArray* arr = (ChunkedArray*)malloc(sizeof(ChunkedArray));
+		ChunkedArray* arr = (ChunkedArray*)region_alloc(region, sizeof(ChunkedArray));
 		memset(arr, 0, sizeof(ChunkedArray));
-
+		
+		arr->region = region;
 		arr->elemSize = elemSize;
 		arr->elemCount = 0;
 				
 		arr->elemPerChunk = elemPerChunk;
 		arr->chunkCount = initChunkCount;
-		arr->chunks = (u8**)realloc(arr->chunks, sizeof(u8*) * initChunkCount);
+		arr->chunks = (u8**)region_realloc(region, arr->chunks, sizeof(u8*) * initChunkCount);
 		
 		arr->freeSlotCount = 0;
 		arr->freeSlotCapacity = 0;
@@ -54,7 +56,7 @@ namespace TFE_Memory
 		const u32 chunkAllocSize = elemPerChunk * elemSize;
 		for (u32 i = 0; i < initChunkCount; i++)
 		{
-			arr->chunks[i] = (u8*)malloc(chunkAllocSize);
+			arr->chunks[i] = (u8*)region_alloc(region, chunkAllocSize);
 		}
 
 		return arr;
@@ -66,11 +68,11 @@ namespace TFE_Memory
 
 		for (u32 i = 0; i < arr->chunkCount; i++)
 		{
-			free(arr->chunks[i]);
+			region_free(arr->region, arr->chunks[i]);
 		}
-		free(arr->chunks);
-		free(arr->freeSlots);
-		free(arr);
+		region_free(arr->region, arr->chunks);
+		region_free(arr->region, arr->freeSlots);
+		region_free(arr->region, arr);
 	}
 
 	void* allocFromChunkedArray(ChunkedArray* arr)
@@ -87,12 +89,12 @@ namespace TFE_Memory
 		const u32 newChunkCount = newChunkIndex + 1;
 		if (newChunkCount > arr->chunkCount)
 		{
-			arr->chunks = (u8**)realloc(arr->chunks, sizeof(u8*) * newChunkCount);
+			arr->chunks = (u8**)region_realloc(arr->region, arr->chunks, sizeof(u8*) * newChunkCount);
 
 			const u32 chunkAllocSize = arr->elemPerChunk * arr->elemSize;
 			for (u32 i = arr->chunkCount; i < newChunkCount; i++)
 			{
-				arr->chunks[i] = (u8*)malloc(chunkAllocSize);
+				arr->chunks[i] = (u8*)region_alloc(arr->region, chunkAllocSize);
 			}
 			arr->chunkCount = newChunkCount;
 		}
@@ -158,7 +160,7 @@ namespace TFE_Memory
 		if (arr->freeSlotCount + 1 >= arr->freeSlotCapacity)
 		{
 			arr->freeSlotCapacity += FREE_SLOT_STEP;
-			arr->freeSlots = (u8**)realloc(arr->freeSlots, sizeof(u8*) * arr->freeSlotCapacity);
+			arr->freeSlots = (u8**)region_realloc(arr->region, arr->freeSlots, sizeof(u8*) * arr->freeSlotCapacity);
 		}
 		arr->freeSlots[arr->freeSlotCount] = ptr;
 		arr->freeSlotCount++;
