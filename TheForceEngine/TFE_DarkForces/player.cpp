@@ -767,8 +767,8 @@ namespace TFE_DarkForces
 
 	void playerControlMsgFunc(s32 msg)
 	{
-		fixed16_16 shieldDmg;
-		JBool playHitSound;
+		fixed16_16 shieldDmg = 0;
+		JBool playHitSound = JFALSE;
 
 		if (msg == MSG_DAMAGE)
 		{
@@ -783,6 +783,9 @@ namespace TFE_DarkForces
 			if (s_invincibility || s_config.superShield)
 			{
 				// TODO
+
+				// Return because no damage is applied.
+				return;
 			}
 			else
 			{
@@ -803,17 +806,17 @@ namespace TFE_DarkForces
 
 			if (s_invincibility || s_config.superShield)
 			{
+				// Return because no damage is applied.
 				return;
 			}
 
+			playHitSound = JTRUE;
 			if (s_curEffectData->type == HEFFECT_SMALL_EXP)
 			{
-				playHitSound = JTRUE;
 				shieldDmg = s_msgArg1 >> 1;
 			}
 			else
 			{
-				playHitSound = JTRUE;
 				shieldDmg = s_msgArg1;
 			}
 		}
