@@ -4,6 +4,7 @@
 // memory which can be quickly cleared.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_FileSystem/filestream.h>
 #include <vector>
 #include <string>
 
@@ -24,6 +25,10 @@ namespace TFE_Memory
 
 	RelativePointer region_getRelativePointer(MemoryRegion* region, void* ptr);
 	void* region_getRealPointer(MemoryRegion* region, RelativePointer ptr);
+
+	// TODO: Support writing to and restoring from streams in memory.
+	bool region_serializeToDisk(MemoryRegion* region, FileStream* file);
+	MemoryRegion* region_restoreFromDisk(FileStream* file);
 
 	void region_test();
 }

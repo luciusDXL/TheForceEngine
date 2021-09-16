@@ -27,6 +27,7 @@ enum
 	MAX_BLOCK_COUNT = 256,
 	MAX_BLOCK_SIZE  = 16 * 1024 * 1024,
 	RELATIVE_NON_NULL_BIT = 1u,
+	SHARED_HEADER_SIZE = 8,	// 8 bytes are shared between RegionAllocHeader{} and AllocHeaderFree{}
 };
 
 struct RegionAllocHeader
@@ -431,6 +432,117 @@ namespace TFE_Memory
 		}
 		MemoryBlock* block = region->memBlocks[blockIndex];
 		return (u8*)block + (ptr & c_relativeOffsetMask) + sizeof(MemoryBlock);
+	}
+
+	bool region_serializeToDisk(MemoryRegion* region, FileStream* file)
+	{
+		if (!region || !file || !file->isOpen())
+		{
+			return false;
+		}
+
+		file->writeBuffer(region->name, 32);
+		file->write(&region->blockArrCapacity);
+		file->write(&region->blockCount);
+		file->write(&region->blockSize);
+		file->write(&region->maxBlocks);
+
+		for (s32 b = 0; b < region->blockCount; b++)
+		{
+			MemoryBlock* block = region->memBlocks[b];
+			file->write(&block->count);
+			file->write(&block->sizeFree);
+			for (s32 bin = 0; bin < ALLOC_BIN_COUNT; bin++)
+			{
+				RelativePointer ptr = region_getRelativePointer(region, block->freeListBins[bin]);
+				file->write(&ptr);
+			}
+
+			u8* memPtr = (u8*)block + sizeof(MemoryBlock);
+			for (u32 al = 0; al < block->count; al++)
+			{
+				RegionAllocHeader* header = (RegionAllocHeader*)memPtr;
+				if (header->free)
+				{
+					AllocHeaderFree* freeHeader = (AllocHeaderFree*)memPtr;
+					file->writeBuffer(freeHeader, SHARED_HEADER_SIZE);
+
+					RelativePointer binNext = region_getRelativePointer(region, freeHeader->binNext);
+					RelativePointer binPrev = region_getRelativePointer(region, freeHeader->binPrev);
+					file->write(&binNext);
+					file->write(&binPrev);
+				}
+				else
+				{
+					file->writeBuffer(header, header->size);
+				}
+
+				memPtr += header->size;
+			}
+		}
+
+		return true;
+	}
+
+	MemoryRegion* region_restoreFromDisk(FileStream* file)
+	{
+		if (!file || !file->isOpen())
+		{
+			return nullptr;
+		}
+		MemoryRegion* region = (MemoryRegion*)malloc(sizeof(MemoryRegion));
+		if (!region)
+		{
+			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Failed to allocate region.");
+			return nullptr;
+		}
+
+		file->readBuffer(region->name, 32);
+		file->read(&region->blockArrCapacity);
+		file->read(&region->blockCount);
+		file->read(&region->blockSize);
+		file->read(&region->maxBlocks);
+		region->memBlocks = (MemoryBlock**)malloc(sizeof(MemoryBlock*)*region->blockArrCapacity);
+
+		for (s32 b = 0; b < region->blockCount; b++)
+		{
+			region->memBlocks[b] = (MemoryBlock*)malloc(sizeof(MemoryBlock) + region->blockSize);
+			MemoryBlock* block = region->memBlocks[b];
+			file->read(&block->count);
+			file->read(&block->sizeFree);
+			for (s32 bin = 0; bin < ALLOC_BIN_COUNT; bin++)
+			{
+				RelativePointer ptr;
+				file->read(&ptr);
+				block->freeListBins[bin] = (AllocHeaderFree*)region_getRealPointer(region, ptr);
+			}
+
+			u8* memPtr = (u8*)block + sizeof(MemoryBlock);
+			for (u32 al = 0; al < block->count; al++)
+			{
+				RegionAllocHeader* header = (RegionAllocHeader*)memPtr;
+				file->readBuffer(header, SHARED_HEADER_SIZE);
+
+				if (header->free)
+				{
+					AllocHeaderFree* freeHeader = (AllocHeaderFree*)memPtr;
+					RelativePointer binNext, binPrev;
+					file->read(&binNext);
+					file->read(&binPrev);
+
+					freeHeader->binNext = (AllocHeaderFree*)region_getRealPointer(region, binNext);
+					freeHeader->binPrev = (AllocHeaderFree*)region_getRealPointer(region, binPrev);
+				}
+				else
+				{
+					file->readBuffer((u8*)header + SHARED_HEADER_SIZE, header->size - SHARED_HEADER_SIZE);
+				}
+
+				memPtr += header->size;
+			}
+		}
+
+		return region;
 	}
 
 	void freeSlot(RegionAllocHeader* alloc, RegionAllocHeader* next, MemoryBlock* block)
