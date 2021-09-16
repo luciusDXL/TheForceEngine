@@ -10,7 +10,7 @@
 struct MemoryRegion;
 typedef u32 RelativePointer;
 
-#define INVALID_RELATIVE_POINTER 0xffffffffu
+#define NULL_RELATIVE_POINTER 0
 
 namespace TFE_Memory
 {

@@ -26,6 +26,7 @@ enum
 	// No more then 256 blocks, and no more than 16MB per block for a total of 4GB.
 	MAX_BLOCK_COUNT = 256,
 	MAX_BLOCK_SIZE  = 16 * 1024 * 1024,
+	RELATIVE_NON_NULL_BIT = 1u,
 };
 
 struct RegionAllocHeader
@@ -391,9 +392,7 @@ namespace TFE_Memory
 		
 	RelativePointer region_getRelativePointer(MemoryRegion* region, void* ptr)
 	{
-		// With 8 byte alignment, it is impossible to have a valid relative pointer that references the highest possible byte, so
-		// it is safe to use that as the invalid marker even though it is technically in range.
-		RelativePointer rp = INVALID_RELATIVE_POINTER;
+		RelativePointer rp = NULL_RELATIVE_POINTER;
 		if (!ptr || !region) { return rp; }
 		
 		for (s32 i = (s32)region->blockCount - 1; i >= 0; i--)
@@ -403,18 +402,25 @@ namespace TFE_Memory
 			{
 				rp = RelativePointer((u8*)ptr - (u8*)block - sizeof(MemoryBlock));
 				rp |= (i << c_relativeBlockShift);
+				assert(!(rp & RELATIVE_NON_NULL_BIT));
+
+				// With 8 byte alignment, the lowest bit should always be 0, so we can use it as a "non-null" bit.
+				rp |= RELATIVE_NON_NULL_BIT;
 				break;
 			}
 		}
+		// With alignment, the lower bit should always be zero.
 		return rp;
 	}
 
 	void* region_getRealPointer(MemoryRegion* region, RelativePointer ptr)
 	{
-		if (ptr == INVALID_RELATIVE_POINTER)
+		if (ptr == NULL_RELATIVE_POINTER)
 		{
 			return nullptr;
 		}
+		assert(ptr & RELATIVE_NON_NULL_BIT);
+		ptr &= ~RELATIVE_NON_NULL_BIT;
 
 		const u32 blockIndex = ptr >> c_relativeBlockShift;
 		assert(blockIndex < region->blockCount);
