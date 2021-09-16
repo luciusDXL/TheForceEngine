@@ -22,4 +22,6 @@ namespace TFE_Memory
 
 	u32 chunkedArraySize(ChunkedArray* arr);
 	void* chunkedArrayGet(ChunkedArray* arr, u32 index);
+
+	// TODO: Serialize/Restore
 }

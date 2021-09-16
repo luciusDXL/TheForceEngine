@@ -259,4 +259,20 @@ namespace TFE_Jedi
 		x |= (x >> 16);
 		return x - (x >> 1);
 	}
+
+	// Size_t
+	inline size_t min(size_t a, size_t b)
+	{
+		return a < b ? a : b;
+	}
+
+	inline size_t max(size_t a, size_t b)
+	{
+		return a > b ? a : b;
+	}
+
+	inline size_t clamp(size_t x, size_t a, size_t b)
+	{
+		return min(max(x, a), b);
+	}
 }

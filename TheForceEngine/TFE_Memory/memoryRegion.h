@@ -28,7 +28,9 @@ namespace TFE_Memory
 
 	// TODO: Support writing to and restoring from streams in memory.
 	bool region_serializeToDisk(MemoryRegion* region, FileStream* file);
-	MemoryRegion* region_restoreFromDisk(FileStream* file);
+	// Restore a region from disk. If 'region' is NULL then a new region is allocated,
+	// otherwise it will attempt to reuse the existing region.
+	MemoryRegion* region_restoreFromDisk(MemoryRegion* region, FileStream* file);
 
 	void region_test();
 }

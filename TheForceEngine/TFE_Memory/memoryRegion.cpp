@@ -2,6 +2,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_System/math.h>
+#include <TFE_Jedi/Math/core_math.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +16,8 @@
 #else
 #define VERIFY_MEMORY()
 #endif
+
+using namespace TFE_Jedi;
 
 enum
 {
@@ -484,29 +487,82 @@ namespace TFE_Memory
 		return true;
 	}
 
-	MemoryRegion* region_restoreFromDisk(FileStream* file)
+	MemoryRegion* region_restoreFromDisk(MemoryRegion* region, FileStream* file)
 	{
 		if (!file || !file->isOpen())
 		{
 			return nullptr;
 		}
-		MemoryRegion* region = (MemoryRegion*)malloc(sizeof(MemoryRegion));
+		if (!region)
+		{
+			region = (MemoryRegion*)malloc(sizeof(MemoryRegion));
+			region->blockArrCapacity = 0;
+		}
 		if (!region)
 		{
 			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Failed to allocate region.");
 			return nullptr;
 		}
 
+		size_t blockAllocStart = 0;
 		file->readBuffer(region->name, 32);
-		file->read(&region->blockArrCapacity);
-		file->read(&region->blockCount);
-		file->read(&region->blockSize);
-		file->read(&region->maxBlocks);
-		region->memBlocks = (MemoryBlock**)malloc(sizeof(MemoryBlock*)*region->blockArrCapacity);
+		if (region->blockArrCapacity == 0)
+		{
+			file->read(&region->blockArrCapacity);
+			file->read(&region->blockCount);
+			file->read(&region->blockSize);
+			file->read(&region->maxBlocks);
+			region->memBlocks = (MemoryBlock**)malloc(sizeof(MemoryBlock*)*region->blockArrCapacity);
+		}
+		else
+		{
+			size_t blockArrCapacity, blockCount, blockSize, maxBlocks;
+			file->read(&blockArrCapacity);
+			file->read(&blockCount);
+			file->read(&blockSize);
+			file->read(&maxBlocks);
 
+			// The region is just too different, we have to start again.
+			if (blockSize != region->blockSize)
+			{
+				// Free memory since we have to reallocate from scratch.
+				for (s32 i = 0; i < region->blockCount; i++)
+				{
+					free(region->memBlocks[i]);
+				}
+				free(region->memBlocks);
+
+				// Recreate.
+				region->blockArrCapacity = blockArrCapacity;
+				region->blockCount = blockCount;
+				region->blockSize = blockSize;
+				region->maxBlocks = maxBlocks;
+				region->memBlocks = (MemoryBlock**)malloc(sizeof(MemoryBlock*)*region->blockArrCapacity);
+			}
+			else  // We don't need to allocate from scratch.
+			{
+				// Don't reallocate existing blocks, just reset them.
+				blockAllocStart = region->blockCount;
+				// Only reallocate if the capacity is lower.
+				if (region->blockArrCapacity < blockArrCapacity)
+				{
+					region->blockArrCapacity = blockArrCapacity;
+					region->memBlocks = (MemoryBlock**)realloc(region->memBlocks, sizeof(MemoryBlock*)*region->blockArrCapacity);
+				}
+				region->blockCount = blockCount;
+				region->blockSize  = blockSize;
+				region->maxBlocks  = maxBlocks;
+			}
+		}
+		
 		for (s32 b = 0; b < region->blockCount; b++)
 		{
-			region->memBlocks[b] = (MemoryBlock*)malloc(sizeof(MemoryBlock) + region->blockSize);
+			// Only allocate the block if it was not part of the original region passed in.
+			if (b >= blockAllocStart)
+			{
+				region->memBlocks[b] = (MemoryBlock*)malloc(sizeof(MemoryBlock) + region->blockSize);
+			}
+
 			MemoryBlock* block = region->memBlocks[b];
 			file->read(&block->count);
 			file->read(&block->sizeFree);
