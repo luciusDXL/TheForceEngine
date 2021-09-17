@@ -20,6 +20,7 @@ namespace TFE_Jedi
 {
 	// Play a one-shot 2D sound effect from a Sound Source.
 	SoundEffectID playSound2D(SoundSourceID soundId);
+	SoundEffectID playSound2D_looping(SoundSourceID soundId);
 	// Play a one-shot 3D sound effect from a Sound Source at 'pos'.
 	void playSound3D_oneshot(SoundSourceID soundId, vec3_fixed pos);
 	// Play a looping 3D sound effect from a Sound Source (sourceID) at 'pos'.

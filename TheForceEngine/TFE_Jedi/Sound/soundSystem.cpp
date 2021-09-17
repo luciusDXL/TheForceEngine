@@ -18,6 +18,18 @@ namespace TFE_Jedi
 		return SoundSourceID(getSourceSlot(source) + 1);
 	}
 
+	SoundEffectID playSound2D_looping(SoundSourceID sourceId)
+	{
+		if (sourceId == NULL_SOUND) { return NULL_SOUND; }
+		SoundBuffer* buffer = TFE_VocAsset::getFromIndex(sourceId - 1);
+		if (!buffer) { return NULL_SOUND; }
+
+		SoundSource* source = createSoundSource(SOUND_2D, 1.0f, 0.5f, buffer);
+		playSource(source, true);
+
+		return SoundSourceID(getSourceSlot(source) + 1);
+	}
+
 	void playSound3D_oneshot(SoundSourceID sourceId, vec3_fixed pos)
 	{
 		if (sourceId == NULL_SOUND) { return; }
