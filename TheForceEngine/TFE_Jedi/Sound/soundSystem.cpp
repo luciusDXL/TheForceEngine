@@ -77,12 +77,14 @@ namespace TFE_Jedi
 		if (sourceId == NULL_SOUND) { return NULL_SOUND; }
 
 		Vec3f posFloat = { fixed16ToFloat(pos.x), fixed16ToFloat(pos.y), fixed16ToFloat(pos.z) };
-		SoundSource* source = getSourceFromSlot(s32(soundId) - 1);
-		if (!source) { return SoundEffectID(0); }
+		u32 slot = soundId & JSND_SLOT_MASK;
+		u32 uid  = soundId >> JSND_UID_SHIFT;
 
-		if (source && isSourcePlaying(source))
+		SoundSource* source = getSourceFromSlot(slot);
+		if (soundId && source && source == s_slotMapping[slot] && uid == s_slotID[slot])
 		{
 			setSourcePosition(source, &posFloat);
+			return soundId;
 		}
 		else
 		{
@@ -93,7 +95,7 @@ namespace TFE_Jedi
 			playSource(source, true);
 		}
 
-		s32 slot = getSourceSlot(source);
+		slot = getSourceSlot(source);
 		assert(slot >= 0);
 
 		s_slotMapping[slot] = source;
