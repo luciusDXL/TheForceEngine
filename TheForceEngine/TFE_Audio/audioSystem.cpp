@@ -74,7 +74,6 @@ struct SoundSource
 
 namespace TFE_Audio
 {
-	#define MAX_SOUND_SOURCES 128
 	// This assumes 2 channel support only. This will do for the initial release.
 	// TODO: Support surround sound setups (5.1, 7.1, etc).
 	// TODO: Support proper HRTF data (optional).
@@ -304,7 +303,7 @@ namespace TFE_Audio
 			newSource->baseVolume = volume;
 			newSource->buffer = buffer;
 			newSource->sampleIndex = 0u;
-			if (copyPosition)
+			if (copyPosition && pos)
 			{
 				newSource->localPos = *pos;
 				newSource->pos = &newSource->localPos;
@@ -358,6 +357,7 @@ namespace TFE_Audio
 
 	void stopSource(SoundSource* source)
 	{
+		if (!source) { return; }
 		MUTEX_LOCK(&s_mutex);
 			source->flags &= ~SND_FLAG_PLAYING;
 		MUTEX_UNLOCK(&s_mutex);

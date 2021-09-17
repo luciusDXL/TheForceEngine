@@ -41,6 +41,7 @@ enum SoundType
 };
 
 #define MONO_SEPERATION 0.5f
+#define MAX_SOUND_SOURCES 128
 
 typedef void (*SoundFinishedCallback)(void* userData, s32 arg);
 

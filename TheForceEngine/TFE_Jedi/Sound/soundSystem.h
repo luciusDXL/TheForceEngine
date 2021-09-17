@@ -10,7 +10,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 
 // Sound Effect ID
-typedef s32 SoundEffectID;
+typedef u32 SoundEffectID;
 // Sound Source Data ID
 typedef s32 SoundSourceID;
 // Null or invalid sound ID
