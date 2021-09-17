@@ -26,7 +26,7 @@ namespace TFE_Jedi
 		SoundSource* source = createSoundSource(SOUND_2D, 1.0f, 0.5f, buffer);
 		if (!source)
 		{
-			return SoundEffectID(0);
+			return NULL_SOUND;
 		}
 		playSource(source);
 
@@ -47,10 +47,9 @@ namespace TFE_Jedi
 		if (!buffer) { return NULL_SOUND; }
 
 		SoundSource* source = createSoundSource(SOUND_2D, 1.0f, 0.5f, buffer);
-		if (!source) { return SoundEffectID(0); }
+		if (!source) { return NULL_SOUND; }
 
 		playSource(source, true);
-
 		s32 slot = getSourceSlot(source);
 		assert(slot >= 0);
 
@@ -69,7 +68,16 @@ namespace TFE_Jedi
 		if (!buffer) { return; }
 
 		Vec3f posFloat = { fixed16ToFloat(pos.x), fixed16ToFloat(pos.y), fixed16ToFloat(pos.z) };
-		TFE_Audio::playOneShot(SOUND_3D, 1.0f, 0.5f, buffer, false, &posFloat, true);
+		SoundSource* source = createSoundSource(SOUND_3D, 1.0f, 0.5f, buffer, &posFloat, true);
+		if (!source) { return; }
+		playSource(source);
+
+		s32 slot = getSourceSlot(source);
+		assert(slot >= 0);
+
+		s_slotMapping[slot] = source;
+		s_slotID[slot] = (s_slotID[slot] + 1) & JSND_UID_MASK;
+		if (s_slotID[slot] == 0) { s_slotID[slot]++; }
 	}
 
 	SoundEffectID playSound3D_looping(SoundSourceID sourceId, SoundEffectID soundId, vec3_fixed pos)
@@ -111,7 +119,7 @@ namespace TFE_Jedi
 		u32 uid = sourceId >> JSND_UID_SHIFT;
 		SoundSource* curSoundSource = getSourceFromSlot(slot);
 		
-		if (s_slotMapping[slot] == curSoundSource && uid == s_slotID[slot])
+		if (curSoundSource == s_slotMapping[slot] && uid == s_slotID[slot])
 		{
 			freeSource(curSoundSource);
 			s_slotMapping[slot] = nullptr;
