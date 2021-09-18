@@ -27,6 +27,9 @@ namespace TFE_DarkForces
 	static SoundEffectID s_fusionFireSndID = 0;
 	static SoundEffectID s_fusionOutOfAmmoSndID = 0;
 	static SoundEffectID s_mineSndId = 0;
+	static SoundEffectID s_concussionFireSndID = 0;
+	static SoundEffectID s_concussionFireSndID1 = 0;
+	static SoundEffectID s_concussionOutOfAmmoSndID = 0;
 	static fixed16_16 s_autoAimDirX;
 	static fixed16_16 s_autoAimDirZ;
 	static fixed16_16 s_wpnPitchSin;
@@ -118,6 +121,12 @@ namespace TFE_DarkForces
 		{ 1,  0,  4,  8 },	// secondary
 		{ 2, 33,  5, 11 },
 		{ 0,  0, 14, 29 },
+	};
+	static const WeaponAnimFrame c_concussionAnim[] =
+	{
+		{ 1, 36, 21, 43 },
+		{ 2,  0,  7, 14 },
+		{ 0,  0, 29, 58 },
 	};
 	static const angle14_32 c_repeaterYawOffset[3] = { 0, 136, -136 };
 	static const angle14_32 c_repeaterPitchOffset[3] = { 136, -136, -136 };
@@ -1591,8 +1600,161 @@ namespace TFE_DarkForces
 
 	void weaponFire_concussion(s32 id)
 	{
-		task_begin;
-		// STUB
+		struct LocalContext
+		{
+			Tick delay;
+			s32  iFrame;
+		};
+		task_begin_ctx;
+
+		if (*s_curPlayerWeapon->ammo)
+		{
+			task_localBlockBegin;
+			if (s_concussionFireSndID)
+			{
+				stopSound(s_concussionFireSndID);
+			}
+			s_concussionFireSndID = playSound2D(s_concussion6SndSrc);
+
+			if (s_curPlayerWeapon->wakeupRange)
+			{
+				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+			}
+
+			fixed16_16 mtx[9];
+			weapon_computeMatrix(mtx, -s_playerObject->pitch, -s_playerObject->yaw);
+
+			vec3_fixed inVec =
+			{
+				0x10000, // 1.0
+				0x8000,  // 0.5
+				0x30000  // 3.0
+			};
+			vec3_fixed outVec;
+			rotateVectorM3x3(&inVec, &outVec, mtx);
+
+			fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
+			fixed16_16 yPos = s_playerObject->posWS.y + outVec.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+			fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
+
+			s32 baseVariation = s_curPlayerWeapon->variation & 0xffff;
+			JBool targetFound = computeAutoaim(xPos, yPos, zPos, s_playerObject->pitch, s_playerObject->yaw, s_curPlayerWeapon->variation & 0xffff);
+			if (!targetFound)
+			{
+				s32 variation = random(baseVariation * 2) - baseVariation;
+				s_weaponFirePitch = s_playerObject->pitch + variation;
+
+				variation = random(baseVariation * 2) - baseVariation;
+				s_weaponFireYaw = s_playerObject->yaw + variation;
+			}
+
+			s32 canFire = s_canFireWeaponPrim;
+			fixed16_16 mtx2[9];
+			s_canFireWeaponPrim = 0;
+			if (canFire > 1)
+			{
+				weapon_computeMatrix(mtx2, -s_weaponFirePitch, -s_weaponFireYaw);
+			}
+
+			// Spawn projectiles.
+			fixed16_16 fire = intToFixed16(canFire);
+			while (canFire)
+			{
+				if (*s_curPlayerWeapon->ammo == 0)
+				{
+					break;
+				}
+				fire -= ONE_16;
+				canFire--;
+				s32 superChargeFrame = s_superCharge ? 0 : 1;
+				// This is always true if super charge is *not* active otherwise
+				// it is true every other frame.
+				if (superChargeFrame | (s_fireFrame & 1))
+				{
+					*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -4, 500);
+				}
+
+				ProjectileLogic* projLogic;
+				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				projLogic = (ProjectileLogic*)createProjectile(PROJ_CONCUSSION, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
+				projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
+				projLogic->prevColObj = s_playerObject;
+
+				if (targetFound)
+				{
+					proj_setYawPitch(projLogic, s_wpnPitchSin, s_wpnPitchCos, s_autoAimDirX, s_autoAimDirZ);
+
+					SecObject* projObj = projLogic->logic.obj;
+					projObj->pitch = s_weaponFirePitch;
+					projObj->yaw = s_weaponFireYaw;
+				}
+				else
+				{
+					proj_setTransform(projLogic, s_weaponFirePitch, s_weaponFireYaw);
+				}
+
+				if (canFire)
+				{
+					assert(0);
+					// TODO
+				}
+				else
+				{
+					projLogic->delta = outVec;
+					ProjectileHitType hitType = proj_handleMovement(projLogic);
+					handleProjectileHit(projLogic, hitType);
+				}
+			}
+			task_localBlockEnd;
+
+			// Animation.
+			if (s_concussionFireSndID1)
+			{
+				stopSound(s_concussionFireSndID1);
+			}
+			s_concussionFireSndID1 = playSound2D(s_concussion5SndSrc);
+
+			for (taskCtx->iFrame = 0; taskCtx->iFrame < TFE_ARRAYSIZE(c_concussionAnim); taskCtx->iFrame++)
+			{
+				s_curPlayerWeapon->frame = c_concussionAnim[taskCtx->iFrame].waxFrame;
+				s_weaponLight = c_concussionAnim[taskCtx->iFrame].weaponLight;
+				taskCtx->delay = (s_superCharge) ? c_concussionAnim[taskCtx->iFrame].delaySupercharge : c_concussionAnim[taskCtx->iFrame].delayNormal;
+
+				do
+				{
+					task_yield(taskCtx->delay);
+					task_callTaskFunc(weapon_handleState);
+				} while (id != 0);
+			}
+
+			s_canFireWeaponPrim = 1;
+			s_canFireWeaponSec = 1;
+		}
+		else  // Out of Ammo
+		{
+			if (s_concussionOutOfAmmoSndID)
+			{
+				stopSound(s_concussionOutOfAmmoSndID);
+			}
+			s_concussionOutOfAmmoSndID = playSound2D(s_concussion1SndSrc);
+
+			taskCtx->delay = (s_superCharge) ? 3 : 7;
+			s_curPlayerWeapon->frame = 0;
+			do
+			{
+				task_yield(taskCtx->delay);
+				task_callTaskFunc(weapon_handleState);
+			} while (id != 0);
+
+			s_canFireWeaponPrim = 0;
+			s_canFireWeaponSec = 0;
+			// if (s_weaponAutoMount2)
+			// {
+				// func_1ece78();
+			// }
+		}
+
 		task_end;
 	}
 

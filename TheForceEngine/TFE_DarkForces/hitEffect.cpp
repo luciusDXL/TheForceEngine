@@ -29,7 +29,6 @@ namespace TFE_DarkForces
 		EXPLOSION_TRIGGER_DIST = FIXED(10),
 	};
 
-	static Wax* s_concussion2;
 	static Wax* s_genExplosion;
 	static SoundSourceID s_concussionExplodeSnd;
 	static EffectData s_effectData[HEFFECT_COUNT];
@@ -415,7 +414,7 @@ namespace TFE_DarkForces
 				RSector* sector = obj->sector;
 				SecObject* newObj = allocateObject();
 
-				sprite_setData(newObj, s_concussion2);
+				sprite_setData(newObj, s_effectData[HEFFECT_CONCUSSION].spriteData);
 				sector_getObjFloorAndCeilHeight(sector, s_explodePos.y, &floor, &dummy);
 				setObjPos_AddToSector(newObj, obj->posWS.x, floor, obj->posWS.z, sector);
 

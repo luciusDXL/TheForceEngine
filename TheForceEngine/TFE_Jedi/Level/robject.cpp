@@ -94,20 +94,23 @@ namespace TFE_Jedi
 		obj->type = OBJ_TYPE_SPRITE;
 		obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 
-		WaxAnim* anim = WAX_AnimPtr(data, 0);
-		WaxView* view = WAX_ViewPtr(data, anim, 0);
-		WaxFrame* frame = WAX_FramePtr(data, view, 0);
-		WaxCell* cell = WAX_CellPtr(data, frame);
+		if (data)
+		{
+			WaxAnim* anim   = WAX_AnimPtr(data, 0);
+			WaxView* view   = WAX_ViewPtr(data, anim, 0);
+			WaxFrame* frame = WAX_FramePtr(data, view, 0);
+			WaxCell* cell   = WAX_CellPtr(data, frame);
 
-		if (obj->worldWidth == -1)
-		{
-			const fixed16_16 width = intToFixed16(TFE_Jedi::abs(cell->sizeX));
-			obj->worldWidth = div16(mul16(data->xScale, width), SPRITE_SCALE_FIXED);
-		}
-		if (obj->worldHeight == -1)
-		{
-			const fixed16_16 height = intToFixed16(TFE_Jedi::abs(cell->sizeY));
-			obj->worldHeight = div16(mul16(data->yScale, height), SPRITE_SCALE_FIXED);
+			if (obj->worldWidth == -1)
+			{
+				const fixed16_16 width = intToFixed16(TFE_Jedi::abs(cell->sizeX));
+				obj->worldWidth = div16(mul16(data->xScale, width), SPRITE_SCALE_FIXED);
+			}
+			if (obj->worldHeight == -1)
+			{
+				const fixed16_16 height = intToFixed16(TFE_Jedi::abs(cell->sizeY));
+				obj->worldHeight = div16(mul16(data->yScale, height), SPRITE_SCALE_FIXED);
+			}
 		}
 	}
 
