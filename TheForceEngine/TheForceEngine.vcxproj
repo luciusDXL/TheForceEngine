@@ -260,7 +260,10 @@
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
     <ClInclude Include="TFE_DarkForces\Actor\actor.h" />
-    <ClInclude Include="TFE_DarkForces\Actor\actor_landmine.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\barrel.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\landmine.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\mousebot.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\scenery.h" />
     <ClInclude Include="TFE_DarkForces\agent.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
     <ClInclude Include="TFE_DarkForces\automap.h" />
@@ -427,7 +430,10 @@
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\actor.cpp" />
-    <ClCompile Include="TFE_DarkForces\Actor\actor_landmine.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\barrel.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\landmine.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\mousebot.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\scenery.cpp" />
     <ClCompile Include="TFE_DarkForces\agent.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\automap.cpp" />

@@ -5,7 +5,10 @@
 #include "animLogic.h"
 #include "vueLogic.h"
 #include "projectile.h"
-#include <TFE_DarkForces/Actor/actor_landmine.h>
+#include <TFE_DarkForces/Actor/barrel.h>
+#include <TFE_DarkForces/Actor/landmine.h>
+#include <TFE_DarkForces/Actor/mousebot.h>
+#include <TFE_DarkForces/Actor/scenery.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -150,7 +153,7 @@ namespace TFE_DarkForces
 					obj_createPickup(obj, itemId);
 					setupFunc = nullptr;
 				}
-				else  // Scenery / Mousebot
+				else
 				{
 					// TODO(Core Game Loop Release) - figure out why scenery isn't being setup correctly.
 					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
@@ -233,6 +236,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_BARREL:
 			{
+				barrel_setup(obj, setupFunc);
 			} break;
 			case KW_LAND_MINE:
 			{
@@ -243,7 +247,7 @@ namespace TFE_DarkForces
 				mineObj->entityFlags |= ETFLAG_LANDMINE;
 				mineObj->projectileLogic = (Logic*)mineLogic;
 
-				actorlandmine_setup(mineObj, setupFunc);
+				landmine_setup(mineObj, setupFunc);
 				return (Logic*)mineLogic;
 			} break;
 			case KW_KELL:
@@ -260,6 +264,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_MOUSEBOT:
 			{
+				mousebot_setup(obj, setupFunc);
 			} break;
 			case KW_WELDER:
 			{
@@ -268,8 +273,7 @@ namespace TFE_DarkForces
 			{
 				obj->flags &= ~OBJ_FLAG_ENEMY;
 				obj->entityFlags = ETFLAG_SCENERY;
-
-				// TODO
+				scenery_setup(obj, setupFunc);
 			} break;
 		}
 

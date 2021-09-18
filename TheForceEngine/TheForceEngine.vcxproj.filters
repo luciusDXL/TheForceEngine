@@ -655,7 +655,16 @@
     <ClInclude Include="TFE_DarkForces\Actor\actor.h">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\Actor\actor_landmine.h">
+    <ClInclude Include="TFE_DarkForces\Actor\landmine.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\mousebot.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\scenery.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\barrel.h">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1068,7 +1077,16 @@
     <ClCompile Include="TFE_DarkForces\Actor\actor.cpp">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_DarkForces\Actor\actor_landmine.cpp">
+    <ClCompile Include="TFE_DarkForces\Actor\landmine.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\mousebot.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\scenery.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\barrel.cpp">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
   </ItemGroup>

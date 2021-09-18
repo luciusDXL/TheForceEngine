@@ -1,4 +1,4 @@
-#include "actor_landmine.h"
+#include "landmine.h"
 #include "../logic.h"
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
@@ -10,7 +10,7 @@ namespace TFE_DarkForces
 	static const s32 s_landmineAnimTable[] =
 	{ 0, -1, 1, 1, -1, 0 };
 
-	void actorlandmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	void landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		// TODO
 	}
