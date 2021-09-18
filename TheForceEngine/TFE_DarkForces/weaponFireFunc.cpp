@@ -1020,6 +1020,18 @@ namespace TFE_DarkForces
 				} while (id != 0);
 
 				s_weaponLight = 0;
+
+				// The repeater has an extra delay before it can be fired again.
+				if (s_isShooting)
+				{
+					taskCtx->delay = (s_superCharge) ? 5 : 10;
+					do
+					{
+						task_yield(taskCtx->delay);
+						task_callTaskFunc(weapon_handleState);
+					} while (id != 0);
+				}
+
 				s_canFireWeaponPrim = 1;
 			}
 			else
@@ -2020,10 +2032,7 @@ namespace TFE_DarkForces
 
 				s_curPlayerWeapon->frame = 1;
 				s_weaponLight = 34;
-				// TODO: Strangely I have to add 1/3 extra delay for the speed to feel right.
-				// I need to investigate further.
-				taskCtx->delay = ((s_superCharge) ? (10+3) : (21+7)) >> 1;
-				//taskCtx->delay = ((s_superCharge) ? 10 : 21) >> 1;
+				taskCtx->delay = ((s_superCharge) ? 14 : 29) >> 1;
 				do
 				{
 					task_yield(taskCtx->delay);

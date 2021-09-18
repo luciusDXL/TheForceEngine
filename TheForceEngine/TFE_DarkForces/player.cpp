@@ -134,8 +134,6 @@ namespace TFE_DarkForces
 	// Actions
 	static JBool s_playerUse = JFALSE;
 	static JBool s_playerActionUse = JFALSE;
-	static JBool s_weaponFiring = JFALSE;
-	static JBool s_weaponFiringSec = JFALSE;
 	static JBool s_playerPrimaryFire = JFALSE;
 	static JBool s_playerSecFire = JFALSE;
 	static JBool s_playerJumping = JFALSE;
@@ -168,6 +166,8 @@ namespace TFE_DarkForces
 	s32 s_weaponLight = 0;
 	fixed16_16 s_gravityAccel;
 
+	JBool s_weaponFiring = JFALSE;
+	JBool s_weaponFiringSec = JFALSE;
 	JBool s_invincibility = JFALSE;
 	JBool s_wearingCleats = JFALSE;
 	JBool s_wearingGasmask = JFALSE;
