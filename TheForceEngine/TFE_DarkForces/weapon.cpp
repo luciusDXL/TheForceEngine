@@ -92,7 +92,7 @@ namespace TFE_DarkForces
 		weaponFire_mortar,			// WPN_MORTAR
 		weaponFire_mine,			// WPN_MINE
 		weaponFire_concussion,		// WPN_CONCUSSION
-		weaponShoot_cannon			// WPN_CANNON
+		weaponFire_cannon			// WPN_CANNON
 	};
 
 	///////////////////////////////////////////

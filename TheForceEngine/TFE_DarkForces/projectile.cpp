@@ -358,6 +358,7 @@ namespace TFE_DarkForces
 				}
 				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
 				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
+				projObj->worldWidth = 0;
 
 				projLogic->type = PROJ_LAND_MINE;
 				projLogic->updateFunc = arcingProjectileUpdateFunc;
@@ -383,6 +384,7 @@ namespace TFE_DarkForces
 				}
 				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
 				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
+				projObj->worldWidth = 0;
 
 				projLogic->type = PROJ_LAND_MINE_PROX;
 				projLogic->updateFunc = arcingProjectileUpdateFunc;
@@ -426,6 +428,8 @@ namespace TFE_DarkForces
 			case PROJ_CONCUSSION:
 			{
 				spirit_setData(projObj);
+				projObj->worldWidth = 0;
+
 				projLogic->type = PROJ_CONCUSSION;
 				projLogic->updateFunc = stdProjectileUpdateFunc;
 				projLogic->dmg = 0;
@@ -478,6 +482,7 @@ namespace TFE_DarkForces
 				}
 				// Setup the looping wax animation.
 				obj_setSpriteAnim(projObj);
+				projObj->worldWidth = 0;
 
 				projLogic->type = PROJ_MISSILE;
 				projLogic->updateFunc = stdProjectileUpdateFunc;

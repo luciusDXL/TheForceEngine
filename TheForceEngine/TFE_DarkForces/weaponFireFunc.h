@@ -18,5 +18,5 @@ namespace TFE_DarkForces
 	void weaponFire_mortar(s32 id);
 	void weaponFire_mine(s32 id);
 	void weaponFire_concussion(s32 id);
-	void weaponShoot_cannon(s32 id);
+	void weaponFire_cannon(s32 id);
 }  // namespace TFE_DarkForces
