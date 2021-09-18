@@ -11,26 +11,11 @@
 namespace TFE_DarkForces
 {
 	///////////////////////////////////////////
-	// Structure Definitions
-	///////////////////////////////////////////
-	struct WeaponAnimState
-	{
-		s32 frame;
-		s32 startOffsetX;
-		s32 startOffsetY;
-		s32 xSpeed;
-		s32 ySpeed;
-		s32 frameCount;
-		u32 ticksPerFrame;
-	};
-			
-	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
 	static JBool s_weaponTexturesLoaded = JFALSE;
 	static JBool s_switchWeapons = JFALSE;
-	static WeaponAnimState s_weaponAnimState;
-
+	
 	static TextureData* s_rhand1 = nullptr;
 	static TextureData* s_gasmaskTexture = nullptr;
 	static PlayerWeapon s_playerWeaponList[WPN_COUNT];
@@ -39,6 +24,8 @@ namespace TFE_DarkForces
 	static Tick s_weaponDelaySeconary;
 	static s32* s_canFirePrimPtr;
 	static s32* s_canFireSecPtr;
+
+	WeaponAnimState s_weaponAnimState;
 
 	s32 s_prevWeapon;
 	s32 s_curWeapon;
@@ -1088,6 +1075,11 @@ namespace TFE_DarkForces
 						
 			const u8* atten = RClassic_Fixed::computeLighting(weaponLightingZDist, 0);
 			TextureData* tex = weapon->frames[weapon->frame];
+			if (weapon->ammo && *weapon->ammo == 0 && (weapon->ammo == &s_playerInfo.ammoDetonator || weapon->ammo == &s_playerInfo.ammoMine))
+			{
+				tex = s_playerWeaponList[WPN_FIST].frames[0];
+			}
+
 			if (atten)
 			{
 				blitTextureToScreenLit(tex, rect, x, y, atten, display);

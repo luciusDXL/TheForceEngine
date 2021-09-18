@@ -26,12 +26,15 @@ namespace TFE_DarkForces
 	static SoundEffectID s_repeaterOutOfAmmoSndId = 0;
 	static SoundEffectID s_fusionFireSndID = 0;
 	static SoundEffectID s_fusionOutOfAmmoSndID = 0;
+	static SoundEffectID s_mineSndId = 0;
 	static fixed16_16 s_autoAimDirX;
 	static fixed16_16 s_autoAimDirZ;
 	static fixed16_16 s_wpnPitchSin;
 	static fixed16_16 s_wpnPitchCos;
 	static angle14_32 s_weaponFirePitch;
 	static angle14_32 s_weaponFireYaw;
+
+	extern WeaponAnimState s_weaponAnimState;
 
 	extern SoundSourceID s_punchSwingSndSrc;
 	extern SoundSourceID s_pistolSndSrc;
@@ -143,6 +146,7 @@ namespace TFE_DarkForces
 	extern void weapon_handleState2(s32 id);
 	extern void weapon_handleOffAnimation(s32 id);
 	extern void weapon_handleOnAnimation(s32 id);
+	extern void weapon_animateOnOrOffscreen(s32 id);
 	void weapon_computeMatrix(fixed16_16* mtx, angle14_32 pitch, angle14_32 yaw);
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation);
 
@@ -1521,7 +1525,67 @@ namespace TFE_DarkForces
 	void weaponFire_mine(s32 id)
 	{
 		task_begin;
-		// STUB
+		if (*s_curPlayerWeapon->ammo)
+		{
+			*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoMine, -1, 30);
+			if (s_curPlayerWeapon->wakeupRange)
+			{
+				vec3_fixed origin = { s_playerObject->posWS.x, s_playerObject->posWS.y, s_playerObject->posWS.z };
+				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
+			}
+
+			s_weaponAnimState =
+			{
+				1,		// frame
+				0, 0,	// offset
+				0, 20,	// xSpeed, ySpeed
+				5, 7	// frameCount, ticksPerFrame
+			};
+			task_callTaskFunc(weapon_animateOnOrOffscreen);
+
+			task_localBlockBegin;
+			fixed16_16 floorHeight, ceilHeight;
+			sector_getObjFloorAndCeilHeight(s_playerObject->sector, s_playerObject->posWS.y, &floorHeight, &ceilHeight);
+
+			ProjectileType type = (s_secondaryFire) ? PROJ_LAND_MINE_PROX : PROJ_LAND_MINE;
+			ProjectileLogic* mine = (ProjectileLogic*)createProjectile(type, s_playerObject->sector, s_playerObject->posWS.x, floorHeight, s_playerObject->posWS.z, s_playerObject);
+			mine->vel = { 0, 0, 0 };
+
+			if (s_mineSndId)
+			{
+				stopSound(s_mineSndId);
+			}
+			s_mineSndId = playSound2D(s_mineSndSrc);
+
+			s32 frame = (*s_curPlayerWeapon->ammo) ? 0 : 2;
+			s_weaponAnimState =
+			{
+				frame,	// frame
+				0, 100,	// offset
+				0, -20,	// xSpeed, ySpeed
+				5, 7	// frameCount, ticksPerFrame
+			};
+			task_localBlockEnd;
+			task_callTaskFunc(weapon_animateOnOrOffscreen);
+		}
+		else
+		{
+			if (s_weaponAutoMount2)
+			{
+				// func_1ece78();
+				// return;
+			}
+
+			s_lastWeapon = s_curWeapon;
+			s_curWeapon = WPN_FIST;
+			s_playerInfo.curWeapon = s_prevWeapon;
+			if (s_weaponOffAnim)
+			{
+				task_callTaskFunc(weapon_handleOffAnimation);
+			}
+			weapon_setNext(s_curWeapon);
+			task_callTaskFunc(weapon_handleOnAnimation);
+		}
 		task_end;
 	}
 

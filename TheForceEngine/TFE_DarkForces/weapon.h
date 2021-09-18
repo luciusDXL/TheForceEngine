@@ -37,6 +37,17 @@ namespace TFE_DarkForces
 		s32 variation;
 	};
 
+	struct WeaponAnimState
+	{
+		s32 frame;
+		s32 startOffsetX;
+		s32 startOffsetY;
+		s32 xSpeed;
+		s32 ySpeed;
+		s32 frameCount;
+		u32 ticksPerFrame;
+	};
+
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////

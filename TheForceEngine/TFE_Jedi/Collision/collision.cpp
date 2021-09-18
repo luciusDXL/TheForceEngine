@@ -1036,7 +1036,7 @@ namespace TFE_Jedi
 		s_collision_wallHit = JFALSE;
 		fixed16_16 approxDist = distApprox(p0.x, p0.z, p1.x, p1.z);
 		fixed16_16 dy = p1.y - p0.y;
-		fixed16_16 yStep = div16(dy, approxDist);
+		fixed16_16 yStep = approxDist ? div16(dy, approxDist) : dy;
 
 		RSector* sector = startSector;
 		RWall* hitWall = nullptr;
