@@ -980,7 +980,44 @@ namespace TFE_DarkForces
 			}
 			else if (id == WTID_HOLSTER)
 			{
-				// TODO(Core Game Loop Release)
+				task_makeActive(s_playerWeaponTask);
+				task_yield(TASK_NO_DELAY);
+				task_callTaskFunc(weapon_handleState);
+
+				if (!s_weaponOffAnim)
+				{
+					weapon_prepareToFire();
+					
+					s_weaponAnimState =
+					{
+						s_curPlayerWeapon->frame,   // frame
+						 0,  0,                     // startOffsetX, startOffsetY
+						 3,  4,                     // xSpeed, ySpeed
+						10, s_superCharge ? 1u : 2u // frameCount, ticksPerFrame
+					};
+					task_callTaskFunc(weapon_animateOnOrOffscreen);
+					s_weaponOffAnim = JTRUE;
+				}
+				else
+				{
+					s_weaponOffAnim = JFALSE;
+					if (s_curWeapon == WPN_PISTOL || s_curWeapon == WPN_RIFLE || s_curWeapon == WPN_REPEATER || s_curWeapon == WPN_FUSION || s_curWeapon == WPN_MORTAR ||
+						s_curWeapon == WPN_CONCUSSION || s_curWeapon == WPN_CANNON)
+					{
+						playSound2D(s_weaponChangeSnd);
+					}
+
+					weapon_fixupAnim();
+
+					s_weaponAnimState =
+					{
+						s_curPlayerWeapon->frame,   // frame
+						30, 40,                     // startOffsetX, startOffsetY
+						-3, -4,                     // xSpeed, ySpeed
+						10, s_superCharge ? 1u : 2u // frameCount, ticksPerFrame
+					};
+					task_callTaskFunc(weapon_animateOnOrOffscreen);
+				}
 			}
 
 			// Handle shooting.
