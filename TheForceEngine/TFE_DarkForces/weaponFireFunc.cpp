@@ -2098,7 +2098,7 @@ namespace TFE_DarkForces
 				fixed16_16 dy = top - yPos;
 				fixed16_16 dz = obj->posWS.z - zPos;
 				angle14_32 angle = vec2ToAngle(dx, dz) & 0x3fff;
-				angle14_32 yawDelta = (angle - yaw) & 0x3ffff;
+				angle14_32 yawDelta = (angle - yaw) & 0x3fff;
 				if (yawDelta > 227 && yawDelta < 16111)
 				{
 					continue;

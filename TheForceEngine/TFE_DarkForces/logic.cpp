@@ -19,6 +19,8 @@ namespace TFE_DarkForces
 	char s_objSeqArg5[256];
 	s32  s_objSeqArgCount;
 
+	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId);
+
 	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc)
 	{
 		if (!obj->logic)
@@ -116,17 +118,9 @@ namespace TFE_DarkForces
 				{
 					newLogic = obj_setUpdate(obj, &setupFunc);
 				}
-				else if (logicId >= KW_TROOP && logicId <= KW_BARREL)	// Enemies and explosives barrels.
+				else if (logicId >= KW_TROOP && logicId <= KW_SCENERY)	// Enemies, explosives barrels, land mines, and scenery.
 				{
-					// TODO(Core Game Loop Release) - come back to this once the level is running
-					//obj->flags |= OBJ_FLAG_HAS_COLLISION;
-					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
-				}
-				else if (logicId == KW_LAND_MINE)	// Pre-placed land mines.
-				{
-					// TODO(Core Game Loop Release) - come back to this once the level is running
-					// Turn off mine collision for now, until this is setup correctly.
-					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
+					newLogic = obj_setEnemyLogic(obj, logicId);
 				}
 				else if (logicId == KW_KEY)         // Vue animation logic.
 				{
@@ -175,5 +169,101 @@ namespace TFE_DarkForces
 		}
 
 		return JTRUE;
+	}
+
+	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId)
+	{
+		obj->flags |= OBJ_FLAG_ENEMY;
+
+		switch (logicId)
+		{
+			case KW_TROOP:
+			case KW_STORM1:
+			{
+			} break;
+			case KW_INT_DROID:
+			{
+			} break;
+			case KW_PROBE_DROID:
+			{
+			} break;
+			case KW_D_TROOP1:
+			{
+			} break;
+			case KW_D_TROOP2:
+			{
+			} break;
+			case KW_D_TROOP3:
+			{
+			} break;
+			case KW_BOBA_FETT:
+			{
+			} break;
+			case KW_COMMANDO:
+			{
+			} break;
+			case KW_I_OFFICER:
+			case KW_I_OFFICER1:
+			case KW_I_OFFICER2:
+			case KW_I_OFFICER3:
+			case KW_I_OFFICER4:
+			case KW_I_OFFICER5:
+			case KW_I_OFFICER6:
+			case KW_I_OFFICER7:
+			case KW_I_OFFICER8:
+			case KW_I_OFFICER9:
+			case KW_I_OFFICERR:
+			case KW_I_OFFICERY:
+			case KW_I_OFFICERB:
+			{
+			} break;
+			case KW_G_GUARD:
+			{
+			} break;
+			case KW_REE_YEES:
+			{
+			} break;
+			case KW_REE_YEES2:
+			{
+			} break;
+			case KW_BOSSK:
+			{
+			} break;
+			case KW_BARREL:
+			{
+			} break;
+			case KW_LAND_MINE:
+			{
+			} break;
+			case KW_KELL:
+			{
+			} break;
+			case KW_SEWER1:
+			{
+			} break;
+			case KW_REMOTE:
+			{
+			} break;
+			case KW_TURRET:
+			{
+			} break;
+			case KW_MOUSEBOT:
+			{
+			} break;
+			case KW_WELDER:
+			{
+			} break;
+			case KW_SCENERY:
+			{
+				obj->flags &= ~OBJ_FLAG_ENEMY;
+				obj->entityFlags = ETFLAG_SCENERY;
+
+				// TODO
+			} break;
+		}
+
+		// Fallthrough returns null.
+		// TODO: Add an assert or error once all of the cases are handled.
+		return nullptr;
 	}
 }  // TFE_DarkForces
