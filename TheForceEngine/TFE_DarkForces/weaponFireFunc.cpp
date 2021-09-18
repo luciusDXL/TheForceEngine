@@ -152,7 +152,7 @@ namespace TFE_DarkForces
 	{
 		-375, -125, 125, 375
 	};
-	static JBool s_fusionCycleCylinders = JTRUE;
+	static JBool s_fusionCycleForward = JTRUE;
 
 	extern void weapon_handleState(s32 id);
 	extern void weapon_handleState2(s32 id);
@@ -1310,10 +1310,23 @@ namespace TFE_DarkForces
 					task_callTaskFunc(weapon_handleState);
 				} while (id != 0);
 
-				s_fusionCylinder++;
-				if (s_fusionCylinder > 4)
+				if (s_fusionCycleForward)
 				{
-					s_fusionCylinder = 1;
+					s_fusionCylinder++;
+					if (s_fusionCylinder > 4)
+					{
+						s_fusionCylinder = 3;
+						s_fusionCycleForward = JFALSE;
+					}
+				}
+				else
+				{
+					s_fusionCylinder--;
+					if (s_fusionCylinder < 1)
+					{
+						s_fusionCylinder = 2;
+						s_fusionCycleForward = JTRUE;
+					}
 				}
 
 				taskCtx->delay = s_superCharge ? 7 : 14;
