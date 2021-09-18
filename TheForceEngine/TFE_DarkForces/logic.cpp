@@ -4,6 +4,8 @@
 #include "updateLogic.h"
 #include "animLogic.h"
 #include "vueLogic.h"
+#include "projectile.h"
+#include <TFE_DarkForces/Actor/actor_landmine.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -19,7 +21,7 @@ namespace TFE_DarkForces
 	char s_objSeqArg5[256];
 	s32  s_objSeqArgCount;
 
-	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId);
+	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc);
 
 	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc)
 	{
@@ -120,7 +122,7 @@ namespace TFE_DarkForces
 				}
 				else if (logicId >= KW_TROOP && logicId <= KW_SCENERY)	// Enemies, explosives barrels, land mines, and scenery.
 				{
-					newLogic = obj_setEnemyLogic(obj, logicId);
+					newLogic = obj_setEnemyLogic(obj, logicId, &setupFunc);
 				}
 				else if (logicId == KW_KEY)         // Vue animation logic.
 				{
@@ -171,7 +173,7 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
-	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId)
+	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc)
 	{
 		obj->flags |= OBJ_FLAG_ENEMY;
 
@@ -234,6 +236,15 @@ namespace TFE_DarkForces
 			} break;
 			case KW_LAND_MINE:
 			{
+				ProjectileLogic* mineLogic = (ProjectileLogic*)createProjectile(PROJ_LAND_MINE_PLACED, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj);
+				freeObject(obj);
+
+				SecObject* mineObj = mineLogic->logic.obj;
+				mineObj->entityFlags |= ETFLAG_LANDMINE;
+				mineObj->projectileLogic = (Logic*)mineLogic;
+
+				actorlandmine_setup(mineObj, setupFunc);
+				return (Logic*)mineLogic;
 			} break;
 			case KW_KELL:
 			{

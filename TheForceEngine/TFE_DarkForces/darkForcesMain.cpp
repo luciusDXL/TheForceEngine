@@ -1,5 +1,4 @@
 #include "darkForcesMain.h"
-#include "actor.h"
 #include "agent.h"
 #include "config.h"
 #include "gameMessage.h"
@@ -11,6 +10,7 @@
 #include "time.h"
 #include "weapon.h"
 #include "GameUI/agentMenu.h"
+#include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>

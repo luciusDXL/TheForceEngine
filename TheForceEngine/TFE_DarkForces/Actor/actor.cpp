@@ -1,5 +1,5 @@
 #include "actor.h"
-#include "logic.h"
+#include "../logic.h"
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>

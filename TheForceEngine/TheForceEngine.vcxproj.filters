@@ -146,6 +146,9 @@
     <Filter Include="Source\TFE_Jedi\Memory">
       <UniqueIdentifier>{10c17c68-b042-45f9-907c-f3419e286e13}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_DarkForces\Actor">
+      <UniqueIdentifier>{5c5db235-f94a-4a65-b567-17d7d129284b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -592,9 +595,6 @@
     <ClInclude Include="TFE_Jedi\Level\roffscreenBuffer.h">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\actor.h">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\weapon.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
@@ -651,6 +651,12 @@
     </ClInclude>
     <ClInclude Include="TFE_Memory\memoryRegion.h">
       <Filter>Source\TFE_Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\actor.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\actor_landmine.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1005,9 +1011,6 @@
     <ClCompile Include="TFE_Jedi\Level\roffscreenBuffer.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_DarkForces\actor.cpp">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_DarkForces\weapon.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
@@ -1061,6 +1064,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Memory\memoryRegion.cpp">
       <Filter>Source\TFE_Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\actor.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\actor_landmine.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

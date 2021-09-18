@@ -1,5 +1,4 @@
 #include "mission.h"
-#include "actor.h"
 #include "agent.h"
 #include "animLogic.h"
 #include "automap.h"
@@ -11,6 +10,7 @@
 #include "player.h"
 #include "projectile.h"
 #include "weapon.h"
+#include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
