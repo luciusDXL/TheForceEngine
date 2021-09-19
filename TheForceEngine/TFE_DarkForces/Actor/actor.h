@@ -75,9 +75,9 @@ struct ActorLogic
 	vec3_fixed vel;
 	s32 u5c;
 	s32 u60;
-	s32 u64;
 	// End Temp
 
+	Task* freeTask;
 	u32 flags;
 };
 

@@ -164,7 +164,7 @@ namespace TFE_DarkForces
 		logic->u48 = 0x2555;		// 0.1458?
 		logic->u4c = FIXED(20);		// possibly movement speed?
 		logic->vel = { 0, 0, 0 };
-		logic->u64 = 0;
+		logic->freeTask = nullptr;
 		logic->flags = 4;
 
 		obj_addLogic(obj, (Logic*)logic, s_actorTask, actorLogicCleanupFunc);
@@ -236,7 +236,7 @@ namespace TFE_DarkForces
 		gameObj->func = nullptr;
 		gameObj->func2 = nullptr;
 		gameObj->u08 = 0;
-		gameObj->freeFunc = free;
+		gameObj->freeFunc = nullptr;
 		gameObj->nextTick = 0;
 		gameObj->obj = logic->obj;
 	}
@@ -552,6 +552,7 @@ namespace TFE_DarkForces
 		obj_setupSmartObj(actor);
 
 		actor->header.func = defaultActorFunc;
+		actor->header.freeFunc = nullptr;
 		actor->func3 = defaultActorFunc2;
 		// Overwrites height even though it was set in obj_setupSmartObj()
 		actor->physics.height = 0x18000;	// 1.5 units
@@ -564,7 +565,37 @@ namespace TFE_DarkForces
 
 	void actorLogicCleanupFunc(Logic* logic)
 	{
-		logic;
+		ActorLogic* actorLogic = (ActorLogic*)logic;
+		ActorHeader** headerList = &actorLogic->gameObj[5];
+		for (s32 i = 0; i < 6; i++)
+		{
+			ActorHeader* header = actorLogic->gameObj[5 - i];
+			if (header)
+			{
+				if (header->freeFunc)
+				{
+					header->freeFunc(header);
+				}
+				else
+				{
+					level_free(header);
+				}
+			}
+		}
+
+		if (actorLogic->freeTask)
+		{
+			s_msgEntity = actorLogic->logic.obj;
+			task_runAndReturn(actorLogic->freeTask, 1);
+		}
+
+		Actor* actor = actorLogic->actor;
+		if (actor && actor->header.freeFunc)
+		{
+			actor->header.freeFunc(&actor->header);
+		}
+		deleteLogicAndObject((Logic*)actorLogic);
+		allocator_deleteItem(s_actorLogics, actorLogic);
 	}
 
 	struct LogicAnimation
