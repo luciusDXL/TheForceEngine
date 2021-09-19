@@ -696,9 +696,7 @@ namespace TFE_Jedi
 		SecObject* colObj = nullptr;
 		s_hcolSector = obj->sector;
 		RSector* curSector = s_hcolSector;
-		s_hcolSrcPos.x = obj->posWS.x;
-		s_hcolSrcPos.y = obj->posWS.y;
-		s_hcolSrcPos.z = obj->posWS.z;
+		s_hcolSrcPos = obj->posWS;
 
 		s_hcolObj = obj;
 		s_hcolDstPos.x = s_hcolSrcPos.x + colInfo->offsetX;
@@ -800,10 +798,8 @@ namespace TFE_Jedi
 				s_hcolDstPos.x = s_hcolSrcPos.x;
 				s_hcolDstPos.z = s_hcolSrcPos.z;
 				colInfo->responseStep  = s_colResponseStep;
-				colInfo->responseDir.x = s_colResponseDir.x;
-				colInfo->responseDir.z = s_colResponseDir.z;
-				colInfo->responsePos.x = s_colResponsePos.x;
-				colInfo->responsePos.z = s_colResponsePos.z;
+				colInfo->responseDir = s_colResponseDir;
+				colInfo->responsePos = s_colResponsePos;
 				colInfo->responseAngle = s_colResponseAngle;
 
 				curSector = s_hcolSector;

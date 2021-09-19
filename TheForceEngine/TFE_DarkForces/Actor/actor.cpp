@@ -218,7 +218,7 @@ namespace TFE_DarkForces
 
 			if (res)
 			{
-				for (s32 i = 0; i < 6; i++)
+				for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
 				{
 					if (!actorLogic->gameObj[i])
 					{
@@ -311,14 +311,7 @@ namespace TFE_DarkForces
 	void actor_addLogicGameObj(ActorLogic* logic, ActorHeader* gameObj)
 	{
 		if (!gameObj) { return; }
-
-		if (!logic->gameObj[0])
-		{
-			logic->gameObj[0] = gameObj;
-			return;
-		}
-
-		for (s32 i = 1; i < ACTOR_MAX_GAME_OBJ; i++)
+		for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
 		{
 			if (!logic->gameObj[i])
 			{
@@ -331,68 +324,63 @@ namespace TFE_DarkForces
 	JBool actor_handleMovementAndCollision(Actor* actor)
 	{
 		SecObject* obj = actor->header.obj;
-		fixed16_16 dx = 0;
-		fixed16_16 dz = 0;
-		fixed16_16 dy = 0;
-		fixed16_16 moveZ = 0;
-		fixed16_16 moveY = 0;
-		fixed16_16 moveX = 0;
+		vec3_fixed desiredMove = { 0, 0, 0 };
+		vec3_fixed move = { 0, 0, 0 };
 
 		actor->collisionWall = nullptr;
 		if (!(actor->updateFlags & 8))
 		{
 			if (actor->updateFlags & 1)
 			{
-				dx = actor->nextPos.x - obj->posWS.x;
-				dz = actor->nextPos.z - obj->posWS.z;
+				desiredMove.x = actor->nextPos.x - obj->posWS.x;
+				desiredMove.z = actor->nextPos.z - obj->posWS.z;
 			}
 			if (!(actor->collisionFlags & 1))
 			{
 				if (actor->updateFlags & 2)
 				{
-					dy = actor->nextPos.y - obj->posWS.y;
+					desiredMove.y = actor->nextPos.y - obj->posWS.y;
 				}
 			}
-			moveZ = moveY = moveX = 0;
-			if (dx | dz)
+			move.z = move.y = move.x = 0;
+			if (desiredMove.x | desiredMove.z)
 			{
 				fixed16_16 dirZ, dirX;
-				fixed16_16 move = mul16(actor->speed, s_deltaTime);
-				computeDirAndLength(dx, dz, &dirX, &dirZ);
+				fixed16_16 frameMove = mul16(actor->speed, s_deltaTime);
+				computeDirAndLength(desiredMove.x, desiredMove.z, &dirX, &dirZ);
 
-				if (dx && dirX)
+				if (desiredMove.x && dirX)
 				{
-					fixed16_16 deltaX = mul16(move, dirX);
-					fixed16_16 absDx = (dx < 0) ? -dx : dx;
-					moveX = clamp(deltaX, -absDx, absDx);
+					fixed16_16 deltaX = mul16(frameMove, dirX);
+					fixed16_16 absDx = (desiredMove.x < 0) ? -desiredMove.x : desiredMove.x;
+					move.x = clamp(deltaX, -absDx, absDx);
 				}
-				if (dz && dirZ)
+				if (desiredMove.z && dirZ)
 				{
-					fixed16_16 deltaZ = mul16(move, dirZ);
-					fixed16_16 absDz = (dz < 0) ? -dz : dz;
-					moveZ = clamp(deltaZ, -absDz, absDz);
+					fixed16_16 deltaZ = mul16(frameMove, dirZ);
+					fixed16_16 absDz = (desiredMove.z < 0) ? -desiredMove.z : desiredMove.z;
+					move.z = clamp(deltaZ, -absDz, absDz);
 				}
 			}
-			if (dy)
+			if (desiredMove.y)
 			{
 				fixed16_16 deltaY = mul16(actor->speedVert, s_deltaTime);
-				fixed16_16 absDy = (dy < 0) ? -dy : dy;
-				moveY = clamp(deltaY, -absDy, absDy);
+				fixed16_16 absDy = (desiredMove.y < 0) ? -desiredMove.y : desiredMove.y;
+				move.y = clamp(deltaY, -absDy, absDy);
 			}
 		}
 
 		if (actor->delta.y)
 		{
-			moveY += actor->delta.y;
+			move.y += actor->delta.y;
 		}
 		CollisionInfo* physics = &actor->physics;
-		fixed16_16 dirX;
-		fixed16_16 dirZ;
-		if (moveX | moveY | moveZ)
+		fixed16_16 dirX, dirZ;
+		if (move.x | move.y | move.z)
 		{
-			physics->offsetX = moveX;
-			physics->offsetY = moveY;
-			physics->offsetZ = moveZ;
+			physics->offsetX = move.x;
+			physics->offsetY = move.y;
+			physics->offsetZ = move.z;
 			handleCollision(physics);
 
 			if (physics->responseStep)
@@ -566,10 +554,9 @@ namespace TFE_DarkForces
 	void actorLogicCleanupFunc(Logic* logic)
 	{
 		ActorLogic* actorLogic = (ActorLogic*)logic;
-		ActorHeader** headerList = &actorLogic->gameObj[5];
-		for (s32 i = 0; i < 6; i++)
+		for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
 		{
-			ActorHeader* header = actorLogic->gameObj[5 - i];
+			ActorHeader* header = actorLogic->gameObj[ACTOR_MAX_GAME_OBJ - 1 - i];
 			if (header)
 			{
 				if (header->freeFunc)
