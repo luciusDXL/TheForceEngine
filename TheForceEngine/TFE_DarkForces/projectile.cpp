@@ -743,12 +743,6 @@ namespace TFE_DarkForces
 								playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
 							}
 						}
-						else
-						{
-							// subtracts ~dist/64 ticks from the current time.
-							// which ensures it will check here again next tick, but it was going to do that anyway...
-							projLogic->duration = s_curTick - floor16(mul16(approxDist / 64, 9545318));	// 9545318 = 145.65
-						}
 					}
 					else if (type == PROJ_LAND_MINE_PROX)	// Player placed proximity landmine (secondary fire).
 					{

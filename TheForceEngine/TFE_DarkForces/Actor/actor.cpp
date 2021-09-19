@@ -293,7 +293,7 @@ namespace TFE_DarkForces
 	{
 		AiActor* enemy = (AiActor*)level_alloc(sizeof(AiActor));
 		gameObj_InitEnemy((GameObject2*)enemy, logic);
-		enemy->baseObj.header.func = defaultAiFunc;
+		enemy->baseObj.header.func  = defaultAiFunc;
 		enemy->baseObj.header.func2 = defaultAiFunc;
 		enemy->baseObj.header.nextTick = 0xffffffff;
 
@@ -743,7 +743,7 @@ namespace TFE_DarkForces
 						s_curAnimation = nullptr;
 						for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
 						{
-							ActorHeader* header = actorLogic->gameObj[5 - i];
+							ActorHeader* header = actorLogic->gameObj[ACTOR_MAX_GAME_OBJ - 1 - i];
 							if (header && header->func)
 							{
 								if (header->nextTick < s_curTick)
