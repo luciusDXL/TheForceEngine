@@ -63,4 +63,5 @@ namespace TFE_DarkForces
 	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, vec3_fixed pos, SecObject* excludeObj);
 	void hitEffectWakeupFunc(SecObject* obj);
 	void hitEffectExplodeFunc(SecObject* obj);
+	void hitEffectMsgFunc(void* logic);
 }  // namespace TFE_DarkForces

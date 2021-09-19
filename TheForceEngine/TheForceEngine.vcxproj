@@ -260,6 +260,7 @@
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
     <ClInclude Include="TFE_DarkForces\Actor\actor.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\aiActor.h" />
     <ClInclude Include="TFE_DarkForces\Actor\barrel.h" />
     <ClInclude Include="TFE_DarkForces\Actor\landmine.h" />
     <ClInclude Include="TFE_DarkForces\Actor\mousebot.h" />

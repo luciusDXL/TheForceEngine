@@ -236,6 +236,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_BARREL:
 			{
+				obj->entityFlags = ETFLAG_AI_ACTOR;
 				barrel_setup(obj, setupFunc);
 			} break;
 			case KW_LAND_MINE:

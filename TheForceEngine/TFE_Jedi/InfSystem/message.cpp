@@ -61,10 +61,10 @@ namespace TFE_Jedi
 
 	void message_sendToObj(SecObject* obj, MessageType msgType, MessageFunc func)
 	{
-		TFE_DarkForces::Logic** logicList = (TFE_DarkForces::Logic**)allocator_getHead((Allocator*)obj->logic);
+		Logic** logicList = (Logic**)allocator_getHead((Allocator*)obj->logic);
 		while (logicList)
 		{
-			TFE_DarkForces::Logic* logic = *logicList;
+			Logic* logic = *logicList;
 			s_msgTarget = logic;
 			{
 				if (logic->task == task_getCurrent() && func)
@@ -78,7 +78,7 @@ namespace TFE_Jedi
 					task_runLocal(logic->task, msgType);
 				}
 			}
-			logicList = (TFE_DarkForces::Logic**)allocator_getNext((Allocator*)obj->logic);
+			logicList = (Logic**)allocator_getNext((Allocator*)obj->logic);
 		}
 	}
 

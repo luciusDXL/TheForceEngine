@@ -11,22 +11,22 @@
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_System/parser.h>
 
-namespace TFE_DarkForces
-{
-	struct Logic;
-	typedef void(*LogicCleanupFunc)(Logic*);
-	typedef JBool(*LogicSetupFunc)(Logic*, KEYWORD);
+struct Logic;
+typedef void(*LogicCleanupFunc)(Logic*);
+typedef JBool(*LogicSetupFunc)(Logic*, KEYWORD);
 
-	struct Logic
-	{
-		RSector* sector;
-		s32 u04;
-		SecObject* obj;
-		Logic** parent;
-		Task* task;
-		LogicCleanupFunc cleanupFunc;
-	};
-	
+struct Logic
+{
+	RSector* sector;
+	s32 u04;
+	SecObject* obj;
+	Logic** parent;
+	Task* task;
+	LogicCleanupFunc cleanupFunc;
+};
+
+namespace TFE_DarkForces
+{		
 	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc);
 	void deleteLogicAndObject(Logic* logic);
 	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos);
