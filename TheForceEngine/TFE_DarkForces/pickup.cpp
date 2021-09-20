@@ -114,6 +114,10 @@ namespace TFE_DarkForces
 	{
 		Pickup* pickup = (Pickup*)s_msgTarget;
 		SecObject* entity = (SecObject*)s_msgEntity;
+		if (id == MSG_DAMAGE || id == MSG_EXPLOSION)
+		{
+			return;
+		}
 		// Only the player can pickup an item.
 		if (!(entity->entityFlags & ETFLAG_PLAYER))
 		{

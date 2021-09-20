@@ -1,6 +1,7 @@
 #include "hitEffect.h"
 #include "animLogic.h"
 #include "projectile.h"
+#include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
@@ -372,14 +373,9 @@ namespace TFE_DarkForces
 	///////////////////////////////////////
 	// Internal
 	///////////////////////////////////////
-	void hitEffectMsgFunc(void* logic)
-	{
-		// TODO(Core Game Loop Release)
-	}
-
 	void hitEffectWakeupFunc(SecObject* obj)
 	{
-		message_sendToObj(obj, MSG_WAKEUP, hitEffectMsgFunc);
+		message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
 	}
 
 	void hitEffectExplodeFunc(SecObject* obj)
@@ -437,7 +433,7 @@ namespace TFE_DarkForces
 			fixed16_16 force = s_curEffectData->force;
 			fixed16_16 attenForce = mul16(div16(leftOverRadius, radius), force);
 			s_msgArg2 = attenForce;
-			message_sendToObj(obj, MSG_EXPLOSION, hitEffectMsgFunc);
+			message_sendToObj(obj, MSG_EXPLOSION, actor_hitEffectMsgFunc);
 		}
 	}
 }  // TFE_DarkForces

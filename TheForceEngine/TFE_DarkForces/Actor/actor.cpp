@@ -83,6 +83,7 @@ namespace TFE_DarkForces
 	// Forward Declarations
 	///////////////////////////////////////////
 	void actorLogicTaskFunc(s32 id);
+	void actorLogicMsgFunc(s32 msg);
 	void actorPhysicsTaskFunc(s32 id);
 	void actorLogicCleanupFunc(Logic* logic);
 	u32  actorLogicSetupFunc(Logic* logic, KEYWORD key);
@@ -147,7 +148,7 @@ namespace TFE_DarkForces
 	void actor_createTask()
 	{
 		s_actorLogics = allocator_create(sizeof(ActorLogic));
-		s_actorTask = createTask("actor", actorLogicTaskFunc);
+		s_actorTask = createTask("actor", actorLogicTaskFunc, actorLogicMsgFunc);
 		s_actorPhysicsTask = createTask("physics", actorPhysicsTaskFunc);
 	}
 
@@ -234,7 +235,7 @@ namespace TFE_DarkForces
 	void gameObj_Init(ActorHeader* gameObj, Logic* logic)
 	{
 		gameObj->func = nullptr;
-		gameObj->func2 = nullptr;
+		gameObj->hitFunc = nullptr;
 		gameObj->u08 = 0;
 		gameObj->freeFunc = nullptr;
 		gameObj->nextTick = 0;
@@ -294,7 +295,7 @@ namespace TFE_DarkForces
 		AiActor* enemy = (AiActor*)level_alloc(sizeof(AiActor));
 		gameObj_InitEnemy((GameObject2*)enemy, logic);
 		enemy->baseObj.header.func  = defaultAiFunc;
-		enemy->baseObj.header.func2 = defaultAiFunc;
+		enemy->baseObj.header.hitFunc = defaultAiFunc;
 		enemy->baseObj.header.nextTick = 0xffffffff;
 
 		enemy->hp = FIXED(4);	// default to 4 HP.
@@ -507,7 +508,7 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	JBool defaultActorFunc2(Actor* actor0, Actor* actor1)
+	JBool defaultActorHitFunc(Actor* actor0, Actor* actor1)
 	{
 		return JFALSE;
 	}
@@ -541,7 +542,7 @@ namespace TFE_DarkForces
 
 		actor->header.func = defaultActorFunc;
 		actor->header.freeFunc = nullptr;
-		actor->func3 = defaultActorFunc2;
+		actor->func3 = defaultActorHitFunc;
 		// Overwrites height even though it was set in obj_setupSmartObj()
 		actor->physics.height = 0x18000;	// 1.5 units
 		actor->physics.wall = nullptr;
@@ -637,9 +638,28 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
+	void actor_hitEffectMsgFunc(void* logic)
+	{
+		ActorLogic* actorLogic = (ActorLogic*)logic;
+		s_curLogic = (Logic*)logic;
+		SecObject* obj = s_curLogic->obj;
+		for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
+		{
+			ActorHeader* header = actorLogic->gameObj[ACTOR_MAX_GAME_OBJ - 1 - i];
+			if (header && header->hitFunc)
+			{
+				Tick nextTick = header->hitFunc((Actor*)header, actorLogic->actor);
+				if (nextTick != 0xffffffff)
+				{
+					header->nextTick = nextTick;
+				}
+			}
+		}
+	}
+
 	void actor_sendTerminalVelMsg(SecObject* obj)
 	{
-		message_sendToObj(obj, MSG_TERMINAL_VEL, hitEffectMsgFunc);
+		message_sendToObj(obj, MSG_TERMINAL_VEL, actor_hitEffectMsgFunc);
 	}
 
 	void actor_handlePhysics(Actor* phyObj, vec3_fixed* vel)
@@ -707,6 +727,18 @@ namespace TFE_DarkForces
 		if (TFE_Jedi::abs(vel->x) < ACTOR_MIN_VELOCITY) { vel->x = 0; }
 		if (TFE_Jedi::abs(vel->y) < ACTOR_MIN_VELOCITY) { vel->y = 0; }
 		if (TFE_Jedi::abs(vel->z) < ACTOR_MIN_VELOCITY) { vel->z = 0; }
+	}
+
+	void actorLogicMsgFunc(s32 msg)
+	{
+		if (msg == 1)
+		{
+			actorLogicCleanupFunc((Logic*)s_msgTarget);
+		}
+		else
+		{
+			actor_hitEffectMsgFunc(s_msgTarget);
+		}
 	}
 
 	void actorLogicTaskFunc(s32 id)

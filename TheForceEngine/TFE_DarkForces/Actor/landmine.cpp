@@ -26,7 +26,7 @@ namespace TFE_DarkForces
 		AiActor* aiActor = actor_createAiActor((Logic*)actorLogic);
 		aiActor->baseObj.u68 |= 2;
 		aiActor->baseObj.header.func  = landAiMineFunc;
-		aiActor->baseObj.header.func2 = landAiMineFunc;
+		aiActor->baseObj.header.hitFunc = landAiMineFunc;
 		aiActor->hp = FIXED(20);
 		actor_addLogicGameObj(actorLogic, (ActorHeader*)aiActor);
 

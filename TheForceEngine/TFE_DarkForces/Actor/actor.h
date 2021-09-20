@@ -28,7 +28,7 @@ typedef void(*ActorFreeFunc)(void*);
 struct ActorHeader
 {
 	ActorFunc func;
-	ActorFunc func2;
+	ActorFunc hitFunc;
 	s32 u08;
 	ActorFreeFunc freeFunc;
 	Tick nextTick;
@@ -91,6 +91,8 @@ namespace TFE_DarkForces
 	AiActor* actor_createAiActor(Logic* logic);
 	Actor* actor_create(Logic* logic);
 	void actor_addLogicGameObj(ActorLogic* logic, ActorHeader* gameObj);
+
+	void actor_hitEffectMsgFunc(void* logic);
 
 	extern Logic* s_curLogic;
 }  // namespace TFE_DarkForces
