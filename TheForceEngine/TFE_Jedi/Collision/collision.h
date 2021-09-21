@@ -47,6 +47,7 @@ struct CollisionInfo
 	fixed16_16 botOffset;
 	fixed16_16 yPos;
 	fixed16_16 height;
+	s32 u1c;
 
 	RWall* wall;
 	s32 u24;

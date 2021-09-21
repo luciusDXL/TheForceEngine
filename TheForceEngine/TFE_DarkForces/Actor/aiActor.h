@@ -51,8 +51,11 @@ struct GameObject2
 
 struct AiActor
 {
-	GameObject2 baseObj;
+	Actor actor;
+	LogicAnimation anim;	// Note: this is temporary, the original game has another structure to hold this.
 
+	s32 ua4;
+	s32 ua8;
 	s32 hp;
 	s32 itemDropId;
 	SoundSourceID hurtSndSrc;

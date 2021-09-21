@@ -7,6 +7,7 @@ namespace TFE_DarkForces
 	Tick s_prevTick = 0;
 	static f64 s_timeAccum = 0.0;
 	fixed16_16 s_deltaTime;
+	fixed16_16 s_frameTicks[13] = { 0 };
 
 	Tick time_frameRateToDelay(u32 frameRate)
 	{
@@ -26,6 +27,14 @@ namespace TFE_DarkForces
 	void updateTime()
 	{
 		s_timeAccum += TFE_System::getDeltaTime() * TIMER_FREQ;
+
+		Tick prevTick = s_curTick;
 		s_curTick = Tick(s_timeAccum);
+
+		fixed16_16 dt = div16(intToFixed16(s_curTick - prevTick), FIXED(TICKS_PER_SECOND));
+		for (s32 i = 0; i < 13; i++)
+		{
+			s_frameTicks[i] += mul16(dt, intToFixed16(i));
+		}
 	}
 }  // TFE_DarkForces

@@ -70,7 +70,7 @@ namespace TFE_Jedi
 				if (logic->task == task_getCurrent() && func)
 				{
 					//s_taskId = msgType;
-					func(logic);
+					func(msgType, logic);
 					//s_taskId = 0;
 				}
 				else

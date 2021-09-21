@@ -14,7 +14,7 @@ struct AiActor;
 
 enum ActorConst
 {
-	ACTOR_MAX_GAME_OBJ = 6
+	ACTOR_MAX_AI = 6
 };
 
 enum ActorCollisionFlags
@@ -22,17 +22,30 @@ enum ActorCollisionFlags
 	ACTORCOL_GRAVITY = FLAG_BIT(1),
 };
 
-typedef JBool(*ActorFunc)(Actor*, Actor*);
+typedef JBool(*ActorFunc)(AiActor*, Actor*);
+typedef JBool(*ActorMsgFunc)(s32 msg, AiActor*, Actor*);
 typedef void(*ActorFreeFunc)(void*);
 
 struct ActorHeader
 {
 	ActorFunc func;
-	ActorFunc hitFunc;
+	ActorMsgFunc msgFunc;
 	s32 u08;
 	ActorFreeFunc freeFunc;
 	Tick nextTick;
 	SecObject* obj;
+};
+
+struct LogicAnimation
+{
+	s32 frameRate;
+	fixed16_16 frameCount;
+	u32 prevTick;
+	fixed16_16 frame;
+	fixed16_16 startFrame;
+	u32 flags;
+	s32 animId;
+	s32 u1c;
 };
 
 struct Actor
@@ -61,7 +74,7 @@ struct ActorLogic
 {
 	Logic logic;
 
-	ActorHeader* gameObj[ACTOR_MAX_GAME_OBJ];
+	AiActor* aiActors[ACTOR_MAX_AI];
 	Actor* actor;
 	const s32* animTable;
 	Tick delay;
@@ -90,9 +103,11 @@ namespace TFE_DarkForces
 	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
 	AiActor* actor_createAiActor(Logic* logic);
 	Actor* actor_create(Logic* logic);
-	void actor_addLogicGameObj(ActorLogic* logic, ActorHeader* gameObj);
+	void actor_addLogicGameObj(ActorLogic* logic, AiActor* aiActor);
 
-	void actor_hitEffectMsgFunc(void* logic);
+	void actor_hitEffectMsgFunc(s32 msg, void* logic);
+	JBool exploderFunc(AiActor* aiActor, Actor* actor);
+	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor);
 
 	extern Logic* s_curLogic;
 }  // namespace TFE_DarkForces

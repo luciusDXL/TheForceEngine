@@ -42,6 +42,9 @@ namespace TFE_DarkForces
 	// delta is 1.0 / 145.0, i.e. s_deltaTime = (s_curTick - s_prevTick) / 145.0
 	// This is used for movement, physics, elevator value changes based on speed, and similar situations.
 	extern fixed16_16 s_deltaTime;
+	// This array ticks at the fps defined by its index.
+	// Each computes dt*frameRate and the indexed framerate (i.e. s_frameTicks[12] = 12 fps).
+	extern fixed16_16 s_frameTicks[13];
 
 	// Convert from frames per second (fps) to Ticks.
 	Tick time_frameRateToDelay(u32 frameRate);

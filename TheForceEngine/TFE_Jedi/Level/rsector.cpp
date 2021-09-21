@@ -934,7 +934,7 @@ namespace TFE_Jedi
 			{
 				obj,
 				offsetX, offsetY, offsetZ,
-				0, yPos, height,
+				0, yPos, height, 0,
 				0, 0, 0,	// to be filled in later.
 				obj->worldWidth,
 			};

@@ -4,6 +4,7 @@
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
+#include <TFE_DarkForces/projectile.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/InfSystem/message.h>
@@ -76,6 +77,9 @@ namespace TFE_DarkForces
 	static Allocator* s_actorLogics = nullptr;
 	static Task* s_actorTask = nullptr;
 	static Task* s_actorPhysicsTask = nullptr;
+
+	static JBool s_objCollisionEnabled = JTRUE;
+	static LogicAnimation* s_curAnimation = nullptr;
 
 	Logic* s_curLogic = nullptr;
 
@@ -155,7 +159,7 @@ namespace TFE_DarkForces
 	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorLogic* logic = (ActorLogic*)allocator_newItem(s_actorLogics);
-		memset(logic->gameObj, 0, sizeof(ActorHeader*) * 6);
+		memset(logic->aiActors, 0, sizeof(AiActor*) * 6);
 
 		logic->actor = nullptr;
 		logic->animTable = nullptr;
@@ -219,11 +223,11 @@ namespace TFE_DarkForces
 
 			if (res)
 			{
-				for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
+				for (s32 i = 0; i < ACTOR_MAX_AI; i++)
 				{
-					if (!actorLogic->gameObj[i])
+					if (!actorLogic->aiActors[i])
 					{
-						actorLogic->gameObj[i] = (ActorHeader*)res;
+						actorLogic->aiActors[i] = (AiActor*)res;
 						return JTRUE;
 					}
 				}
@@ -235,7 +239,7 @@ namespace TFE_DarkForces
 	void gameObj_Init(ActorHeader* gameObj, Logic* logic)
 	{
 		gameObj->func = nullptr;
-		gameObj->hitFunc = nullptr;
+		gameObj->msgFunc = nullptr;
 		gameObj->u08 = 0;
 		gameObj->freeFunc = nullptr;
 		gameObj->nextTick = 0;
@@ -285,7 +289,12 @@ namespace TFE_DarkForces
 		return gameObj->centerOffset;
 	}
 
-	JBool defaultAiFunc(Actor* actor0, Actor* actor1)
+	JBool defaultAiFunc(AiActor* aiActor, Actor* actor)
+	{
+		return JFALSE;
+	}
+
+	JBool defaultMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
 	{
 		return JFALSE;
 	}
@@ -294,9 +303,9 @@ namespace TFE_DarkForces
 	{
 		AiActor* enemy = (AiActor*)level_alloc(sizeof(AiActor));
 		gameObj_InitEnemy((GameObject2*)enemy, logic);
-		enemy->baseObj.header.func  = defaultAiFunc;
-		enemy->baseObj.header.hitFunc = defaultAiFunc;
-		enemy->baseObj.header.nextTick = 0xffffffff;
+		enemy->actor.header.func  = defaultAiFunc;
+		enemy->actor.header.msgFunc = defaultMsgFunc;
+		enemy->actor.header.nextTick = 0xffffffff;
 
 		enemy->hp = FIXED(4);	// default to 4 HP.
 		enemy->itemDropId = -1;
@@ -309,14 +318,14 @@ namespace TFE_DarkForces
 		return enemy;
 	}
 
-	void actor_addLogicGameObj(ActorLogic* logic, ActorHeader* gameObj)
+	void actor_addLogicGameObj(ActorLogic* logic, AiActor* aiActor)
 	{
-		if (!gameObj) { return; }
-		for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
+		if (!aiActor) { return; }
+		for (s32 i = 0; i < ACTOR_MAX_AI; i++)
 		{
-			if (!logic->gameObj[i])
+			if (!logic->aiActors[i])
 			{
-				logic->gameObj[i] = gameObj;
+				logic->aiActors[i] = aiActor;
 				return;
 			}
 		}
@@ -490,8 +499,9 @@ namespace TFE_DarkForces
 		}
 	}
 
-	JBool defaultActorFunc(Actor* actor, Actor* actor1)
+	JBool defaultActorFunc(AiActor* aiActor, Actor* baseActor)
 	{
+		Actor* actor = &aiActor->actor;
 		actor->physics.wall = nullptr;
 		actor->physics.u24 = 0;
 
@@ -508,7 +518,7 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	JBool defaultActorHitFunc(Actor* actor0, Actor* actor1)
+	JBool defaultActorMsgFunc(AiActor* aiActor, Actor* baseActor)
 	{
 		return JFALSE;
 	}
@@ -542,7 +552,7 @@ namespace TFE_DarkForces
 
 		actor->header.func = defaultActorFunc;
 		actor->header.freeFunc = nullptr;
-		actor->func3 = defaultActorHitFunc;
+		actor->func3 = defaultActorMsgFunc;
 		// Overwrites height even though it was set in obj_setupSmartObj()
 		actor->physics.height = 0x18000;	// 1.5 units
 		actor->physics.wall = nullptr;
@@ -555,11 +565,12 @@ namespace TFE_DarkForces
 	void actorLogicCleanupFunc(Logic* logic)
 	{
 		ActorLogic* actorLogic = (ActorLogic*)logic;
-		for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
+		for (s32 i = 0; i < ACTOR_MAX_AI; i++)
 		{
-			ActorHeader* header = actorLogic->gameObj[ACTOR_MAX_GAME_OBJ - 1 - i];
-			if (header)
+			AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
+			if (aiActor)
 			{
+				ActorHeader* header = &aiActor->actor.header;
 				if (header->freeFunc)
 				{
 					header->freeFunc(header);
@@ -585,76 +596,178 @@ namespace TFE_DarkForces
 		deleteLogicAndObject((Logic*)actorLogic);
 		allocator_deleteItem(s_actorLogics, actorLogic);
 	}
-
-	struct LogicAnimation
-	{
-		s32 u00;
-		s32 dt;
-		s32 u08;
-		s32 u0c;
-		fixed16_16 frame;
-		u32 flags;
-		s32 animId;
-		s32 u1c;
-	};
-
-	static JBool s_objCollisionEnabled = JTRUE;
-	static LogicAnimation* s_curAnimation = nullptr;
-	static s32 s_2974f4[16] = { 0 };
-
+	
 	JBool actor_advanceAnimation(LogicAnimation* anim, SecObject* obj)
 	{
-		if (!anim->u08)
+		if (!anim->prevTick)
 		{
-			anim->u08 = s_2974f4[anim->u00];
+			anim->prevTick = s_frameTicks[anim->frameRate];
 			anim->flags &= ~2;
 
-			obj->frame = floor16(anim->frame);
-			obj->projectileLogic = (Logic*)&obj->posWS;
+			obj->frame = floor16(anim->startFrame);
+			anim->frame = anim->startFrame;
 		}
 		else
 		{
-			anim->u0c += s_2974f4[anim->u00] - anim->u08;
-			s32 newFrame = anim->frame + anim->dt;
-			anim->u08 = s_2974f4[anim->u00];
+			anim->frame += s_frameTicks[anim->frameRate] - anim->prevTick;
+			anim->prevTick = s_frameTicks[anim->frameRate];
 
-			if (newFrame <= anim->u0c)
+			fixed16_16 endFrame = anim->startFrame + anim->frameCount;
+			if (anim->frame >= endFrame)
 			{
 				if (anim->flags & 1)
 				{
-					newFrame -= ONE_16;
-					anim->u0c = newFrame;
-					obj->frame = floor16(newFrame);
+					endFrame -= ONE_16;
+					anim->frame = endFrame;
+					obj->frame = floor16(endFrame);
 					return JTRUE;
 				}
 
-				while (newFrame <= anim->u0c)
+				while (anim->frame >= endFrame)
 				{
-					anim->u0c -= anim->dt;
+					anim->frame -= anim->frameCount;
 				}
 			}
-			obj->frame = floor16(anim->u0c);
+			obj->frame = floor16(anim->frame);
 		}
 		return JFALSE;
 	}
 
-	void actor_hitEffectMsgFunc(void* logic)
+	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim)
+	{
+		ActorLogic* actorLogic = (ActorLogic*)s_curLogic;
+		const s32* animTable = actorLogic->animTable;
+		SecObject* obj = actorLogic->logic.obj;
+
+		aiAnim->flags |= 2;
+		if (obj->type & OBJ_TYPE_SPRITE)
+		{
+			aiAnim->prevTick = 0;
+			aiAnim->animId = animTable[animIdx];
+			aiAnim->startFrame = 0;
+			aiAnim->flags |= 1;
+			if (aiAnim->animId != -1)
+			{
+				Wax* wax = obj->wax;	// ecx
+				WaxAnim* anim = WAX_AnimPtr(wax, aiAnim->animId);
+				// frame count, fixed.
+				aiAnim->frameCount = intToFixed16(anim->frameCount);
+				aiAnim->frameRate = anim->frameRate;
+				if (anim->frameRate >= 12)
+				{
+					aiAnim->frameRate = 12;
+				}
+				aiAnim->flags &= ~2;
+			}
+		}
+	}
+
+	void actor_setCurAnimation(LogicAnimation* aiAnim)
+	{
+		if (aiAnim->animId != -1)
+		{
+			s_curAnimation = aiAnim;
+		}
+	}
+
+	void actor_kill()
+	{
+		actorLogicCleanupFunc(s_curLogic);
+		s_curLogic = nullptr;
+	}
+
+	JBool exploderFunc(AiActor* aiActor, Actor* actor)
+	{
+		if (!(aiActor->anim.flags & 2))
+		{
+			s_curAnimation = &aiActor->anim;
+			return JFALSE;
+		}
+		else if ((aiActor->anim.flags & 1) && aiActor->hp <= 0)
+		{
+			actor_kill();
+			return JFALSE;
+		}
+		return JTRUE;
+	}
+
+	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
+	{
+		JBool retValue = JFALSE;
+		SecObject* obj = aiActor->actor.header.obj;
+
+		if (msg == MSG_DAMAGE)
+		{
+			if (aiActor->hp > 0)
+			{
+				ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
+				aiActor->hp -= proj->dmg;
+				JBool retValue;
+				if (aiActor->hp > 0)
+				{
+					retValue = JTRUE;
+				}
+				else
+				{
+					ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_EXP_BARREL, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj);
+					proj->vel = { 0, 0, 0 };
+					obj->flags |= OBJ_FLAG_FULLBRIGHT;
+
+					// Hack... remove other logics. This seems logical but isn't in this part of the code...
+					// TODO: FIX ME.
+					Logic** logic = (Logic**)allocator_getHead((Allocator*)obj->logic);
+					while (logic)
+					{
+						if (*logic != s_curLogic)
+						{
+							if ((*logic)->cleanupFunc)
+							{
+								(*logic)->cleanupFunc(*logic);
+							}
+						}
+						logic = (Logic**)allocator_getNext((Allocator*)obj->logic);
+					};
+					// END HACK
+
+					actor_setupAnimation(2/*animIndex*/, &aiActor->anim);
+					//actor_setCurAnimation(&aiActor->anim);
+					//aiActor->actor.func3(actor, aiActor->actor.func3);
+
+					retValue = JFALSE;
+				}
+			}
+		}
+		else if (msg == MSG_EXPLOSION)
+		{
+			static s32 _exp = 0;
+			_exp++;
+		}
+		return retValue;
+	}
+
+	void actor_hitEffectMsgFunc(s32 msg, void* logic)
 	{
 		ActorLogic* actorLogic = (ActorLogic*)logic;
 		s_curLogic = (Logic*)logic;
 		SecObject* obj = s_curLogic->obj;
-		for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
+		for (s32 i = 0; i < ACTOR_MAX_AI; i++)
 		{
-			ActorHeader* header = actorLogic->gameObj[ACTOR_MAX_GAME_OBJ - 1 - i];
-			if (header && header->hitFunc)
+			AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
+			if (aiActor)
 			{
-				Tick nextTick = header->hitFunc((Actor*)header, actorLogic->actor);
-				if (nextTick != 0xffffffff)
+				ActorHeader* header = &aiActor->actor.header;
+				if (header->msgFunc)
 				{
-					header->nextTick = nextTick;
+					Tick nextTick = header->msgFunc(msg, aiActor, actorLogic->actor);
+					if (nextTick != 0xffffffff)
+					{
+						header->nextTick = nextTick;
+					}
 				}
 			}
 		}
+
+
 	}
 
 	void actor_sendTerminalVelMsg(SecObject* obj)
@@ -737,7 +850,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			actor_hitEffectMsgFunc(s_msgTarget);
+			actor_hitEffectMsgFunc(msg, s_msgTarget);
 		}
 	}
 
@@ -773,14 +886,15 @@ namespace TFE_DarkForces
 					{
 						s_curLogic = (Logic*)actorLogic;
 						s_curAnimation = nullptr;
-						for (s32 i = 0; i < ACTOR_MAX_GAME_OBJ; i++)
+						for (s32 i = 0; i < ACTOR_MAX_AI; i++)
 						{
-							ActorHeader* header = actorLogic->gameObj[ACTOR_MAX_GAME_OBJ - 1 - i];
-							if (header && header->func)
+							AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
+							if (aiActor)
 							{
-								if (header->nextTick < s_curTick)
+								ActorHeader* header = &aiActor->actor.header;
+								if (header->func && header->nextTick < s_curTick)
 								{
-									header->nextTick = header->func((Actor*)header, actorLogic->actor);
+									header->nextTick = header->func(aiActor, actorLogic->actor);
 								}
 							}
 						}
@@ -794,7 +908,7 @@ namespace TFE_DarkForces
 								if (func)
 								{
 									actor_handlePhysics(actor, &actorLogic->vel);
-									func(actor, actor);
+									func((AiActor*)actor, actor);
 								}
 							}
 
@@ -803,6 +917,7 @@ namespace TFE_DarkForces
 								obj->anim = s_curAnimation->animId;
 								if (actor_advanceAnimation(s_curAnimation, obj))
 								{
+									// The animation has finished.
 									s_curAnimation->flags |= 2;
 								}
 							}
