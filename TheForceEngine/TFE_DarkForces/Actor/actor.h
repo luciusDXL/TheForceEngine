@@ -36,6 +36,12 @@ struct ActorHeader
 	SecObject* obj;
 };
 
+enum LogicAnimFlags
+{
+	AFLAG_PLAYED = FLAG_BIT(0),
+	AFLAG_READY  = FLAG_BIT(1),
+};
+
 struct LogicAnimation
 {
 	s32 frameRate;

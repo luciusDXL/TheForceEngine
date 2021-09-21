@@ -22,7 +22,7 @@ namespace TFE_DarkForces
 		aiActor->actor.header.func  = exploderFunc;
 		aiActor->actor.header.msgFunc = exploderMsgFunc;
 		aiActor->hp = FIXED(20);
-		aiActor->anim.flags |= 2;
+		aiActor->anim.flags |= AFLAG_READY;
 		actor_addLogicGameObj(actorLogic, aiActor);
 
 		Actor* actor = actor_create((Logic*)actorLogic);

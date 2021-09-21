@@ -602,7 +602,7 @@ namespace TFE_DarkForces
 		if (!anim->prevTick)
 		{
 			anim->prevTick = s_frameTicks[anim->frameRate];
-			anim->flags &= ~2;
+			anim->flags &= ~AFLAG_READY;
 
 			obj->frame = floor16(anim->startFrame);
 			anim->frame = anim->startFrame;
@@ -615,7 +615,7 @@ namespace TFE_DarkForces
 			fixed16_16 endFrame = anim->startFrame + anim->frameCount;
 			if (anim->frame >= endFrame)
 			{
-				if (anim->flags & 1)
+				if (anim->flags & AFLAG_PLAYED)
 				{
 					endFrame -= ONE_16;
 					anim->frame = endFrame;
@@ -639,25 +639,24 @@ namespace TFE_DarkForces
 		const s32* animTable = actorLogic->animTable;
 		SecObject* obj = actorLogic->logic.obj;
 
-		aiAnim->flags |= 2;
+		aiAnim->flags |= AFLAG_READY;
 		if (obj->type & OBJ_TYPE_SPRITE)
 		{
 			aiAnim->prevTick = 0;
 			aiAnim->animId = animTable[animIdx];
 			aiAnim->startFrame = 0;
-			aiAnim->flags |= 1;
+			aiAnim->flags |= AFLAG_PLAYED;
 			if (aiAnim->animId != -1)
 			{
-				Wax* wax = obj->wax;	// ecx
-				WaxAnim* anim = WAX_AnimPtr(wax, aiAnim->animId);
-				// frame count, fixed.
+				WaxAnim* anim = WAX_AnimPtr(obj->wax, aiAnim->animId);
+
 				aiAnim->frameCount = intToFixed16(anim->frameCount);
-				aiAnim->frameRate = anim->frameRate;
+				aiAnim->frameRate  = anim->frameRate;
 				if (anim->frameRate >= 12)
 				{
 					aiAnim->frameRate = 12;
 				}
-				aiAnim->flags &= ~2;
+				aiAnim->flags &= ~AFLAG_READY;
 			}
 		}
 	}
@@ -695,12 +694,12 @@ namespace TFE_DarkForces
 	// Actor function for exploders (i.e. landmines and exploding barrels).
 	JBool exploderFunc(AiActor* aiActor, Actor* actor)
 	{
-		if (!(aiActor->anim.flags & 2))
+		if (!(aiActor->anim.flags & AFLAG_READY))
 		{
 			s_curAnimation = &aiActor->anim;
 			return JFALSE;
 		}
-		else if ((aiActor->anim.flags & 1) && aiActor->hp <= 0)
+		else if ((aiActor->anim.flags & AFLAG_PLAYED) && aiActor->hp <= 0)
 		{
 			actor_kill();
 			return JFALSE;
@@ -926,7 +925,7 @@ namespace TFE_DarkForces
 								if (actor_advanceAnimation(s_curAnimation, obj))
 								{
 									// The animation has finished.
-									s_curAnimation->flags |= 2;
+									s_curAnimation->flags |= AFLAG_READY;
 								}
 							}
 						}
