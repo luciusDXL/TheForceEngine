@@ -670,12 +670,29 @@ namespace TFE_DarkForces
 		}
 	}
 
+	// Kill the actor, this clears the current logic so the rest of the task function proceeds correctly.
 	void actor_kill()
 	{
 		actorLogicCleanupFunc(s_curLogic);
 		s_curLogic = nullptr;
 	}
 
+	// Removes logics other than the current Logic.
+	void actor_removeLogics(SecObject* obj)
+	{
+		Logic** logicList = (Logic**)allocator_getHead((Allocator*)obj->logic);
+		while (logicList)
+		{
+			Logic* logic = *logicList;
+			if (logic != s_curLogic)
+			{
+				if (logic->cleanupFunc) { logic->cleanupFunc(logic); }
+			}
+			logicList = (Logic**)allocator_getNext((Allocator*)obj->logic);
+		};
+	}
+
+	// Actor function for exploders (i.e. landmines and exploding barrels).
 	JBool exploderFunc(AiActor* aiActor, Actor* actor)
 	{
 		if (!(aiActor->anim.flags & 2))
@@ -691,6 +708,9 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
+	// Actor message function for exploders, this is responsible for processing messages such as 
+	// projectile damage and explosions. For other AI message functions, it would also process
+	// "wake up" messages, but those messages are ignored for exploders.
 	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
 	{
 		JBool retValue = JFALSE;
@@ -713,21 +733,9 @@ namespace TFE_DarkForces
 					proj->vel = { 0, 0, 0 };
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
 
-					// Hack... remove other logics. This seems logical but isn't in this part of the code...
-					// TODO: FIX ME.
-					Logic** logic = (Logic**)allocator_getHead((Allocator*)obj->logic);
-					while (logic)
-					{
-						if (*logic != s_curLogic)
-						{
-							if ((*logic)->cleanupFunc)
-							{
-								(*logic)->cleanupFunc(*logic);
-							}
-						}
-						logic = (Logic**)allocator_getNext((Allocator*)obj->logic);
-					};
-					// END HACK
+					// I have to remove the logics here in order to get this to work, but this doesn't actually happen here in the original code.
+					// TODO: Move to the correct location.
+					actor_removeLogics(obj);
 
 					actor_setupAnimation(2/*animIndex*/, &aiActor->anim);
 					//actor_setCurAnimation(&aiActor->anim);
