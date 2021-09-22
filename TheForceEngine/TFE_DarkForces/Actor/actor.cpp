@@ -79,8 +79,8 @@ namespace TFE_DarkForces
 	static Task* s_actorPhysicsTask = nullptr;
 
 	static JBool s_objCollisionEnabled = JTRUE;
-	static LogicAnimation* s_curAnimation = nullptr;
-
+	
+	LogicAnimation* s_curAnimation = nullptr;
 	Logic* s_curLogic = nullptr;
 
 	///////////////////////////////////////////
@@ -631,6 +631,18 @@ namespace TFE_DarkForces
 			obj->frame = floor16(anim->frame);
 		}
 		return JFALSE;
+	}
+
+	// Get the animation index for the current 'action' from s_curLogic.
+	s32 actor_getAnimationIndex(s32 action)
+	{
+		ActorLogic* logic = (ActorLogic*)s_curLogic;
+		SecObject* obj = logic->logic.obj;
+		if ((obj->type & OBJ_TYPE_SPRITE) && logic->animTable)
+		{
+			return logic->animTable[action];
+		}
+		return -1;
 	}
 
 	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim)

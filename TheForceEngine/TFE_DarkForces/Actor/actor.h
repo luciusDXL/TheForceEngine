@@ -115,5 +115,12 @@ namespace TFE_DarkForces
 	JBool exploderFunc(AiActor* aiActor, Actor* actor);
 	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor);
 
+	void actor_kill();
+	s32 actor_getAnimationIndex(s32 action);
+	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim);
+	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ);
+	void actor_removeLogics(SecObject* obj);
+
+	extern LogicAnimation* s_curAnimation;
 	extern Logic* s_curLogic;
 }  // namespace TFE_DarkForces
