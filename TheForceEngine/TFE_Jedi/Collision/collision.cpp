@@ -440,13 +440,14 @@ namespace TFE_Jedi
 			// End of checks to pull out of the loop.
 			/////////////////////////////////////////////
 
+			s32 objCapacity = curSector->objectCapacity;
 			s32 objCount = curSector->objectCount;
-			SecObject** objList = curSector->objectList;
-			for (s32 objIndex = 0; objIndex < objCount; objIndex++, objList++)
+			for (s32 objListIndex = 0, objIndex = 0; objIndex < objCount && objListIndex < objCapacity; objListIndex++)
 			{
-				SecObject* obj = *objList;
+				SecObject* obj = curSector->objectList[objListIndex];
 				if (obj)
-				{
+				{ 
+					objIndex++;
 					if (skipObj && skipObj == obj) { continue; }
 
 					if (obj->entityFlags & entityFlags)
@@ -623,13 +624,12 @@ namespace TFE_Jedi
 			}
 			// End of start sector check.
 
-			SecObject** objList = sector->objectList;
-			for (s32 objIndex = 0, objListIndex = 0; objIndex < sector->objectCount && objListIndex < sector->objectCapacity; objListIndex++, objList++)
+			for (s32 objIndex = 0, objListIndex = 0; objIndex < sector->objectCount && objListIndex < sector->objectCapacity; objListIndex++)
 			{
-				SecObject* obj = *objList;
+				SecObject* obj = sector->objectList[objListIndex];
 				if (!obj) { continue; }
-
 				objIndex++;
+
 				if (excludeObj && excludeObj == obj) { continue; }
 				if (!(obj->entityFlags & entityFlags)) { continue; }
 				if (obj->posWS.x < x0 || obj->posWS.x > x1 || obj->posWS.z < z0 || obj->posWS.z > z1 || obj->posWS.y < y0 || obj->posWS.y > y1)

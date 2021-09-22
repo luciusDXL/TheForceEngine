@@ -92,7 +92,7 @@ namespace TFE_DarkForces
 		if (s_objCollisionEnabled)
 		{
 			s32 objCount = sector->objectCount;
-			SecObject** objList = sector->objectList;
+			s32 objCapacity = sector->objectCapacity;
 			fixed16_16 relHeight = s_colDstPosY - s_colHeightBase;
 
 			fixed16_16 dirX, dirZ;
@@ -100,12 +100,12 @@ namespace TFE_DarkForces
 			fixed16_16 pathDx = s_colDstPosX - s_colSrcPosX;
 			computeDirAndLength(pathDx, pathDz, &dirX, &dirZ);
 
-			for (; objCount; objList++)
+			for (s32 objIndex = 0, objListIndex = 0; objIndex < objCount && objListIndex < objCapacity; objListIndex++)
 			{
-				SecObject* obj = *objList;
+				SecObject* obj = sector->objectList[objListIndex];
 				if (obj)
 				{
-					objCount--;
+					objIndex++;
 					if ((obj->flags & OBJ_FLAG_HAS_COLLISION) && !(obj->entityFlags & ETFLAG_PICKUP) && obj->worldWidth && (s_colSrcPosX != obj->posWS.x || s_colSrcPosZ != obj->posWS.z))
 					{
 						// Check the seperation of the object and destination position.
@@ -658,13 +658,13 @@ namespace TFE_DarkForces
 		if (floorHeight == ceilHeight) { return JFALSE;	}
 
 		s32 objCount = sector->objectCount;
-		SecObject** objList = sector->objectList;
-		for(; objCount; objList++)
+		s32 objCapacity = sector->objectCapacity;
+		for (s32 objIndex = 0, objListIndex = 0; objIndex < objCount && objListIndex < objCapacity; objListIndex++)
 		{
-			SecObject* obj = *objList;
+			SecObject* obj = sector->objectList[objListIndex];
 			if (obj)
 			{
-				objCount--;
+				objIndex++;
 				if (obj->worldWidth && (obj->entityFlags & ETFLAG_PICKUP))
 				{
 					fixed16_16 dx = obj->posWS.x - s_colDstPosX;
