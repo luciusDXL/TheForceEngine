@@ -691,6 +691,14 @@ namespace TFE_DarkForces
 		};
 	}
 
+	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ)
+	{
+		ActorLogic* actorLogic = (ActorLogic*)s_curLogic;
+		actorLogic->vel.x += pushX;
+		actorLogic->vel.y += pushY;
+		actorLogic->vel.z += pushZ;
+	}
+
 	// Actor function for exploders (i.e. landmines and exploding barrels).
 	JBool exploderFunc(AiActor* aiActor, Actor* actor)
 	{
@@ -746,8 +754,56 @@ namespace TFE_DarkForces
 		}
 		else if (msg == MSG_EXPLOSION)
 		{
-			static s32 _exp = 0;
-			_exp++;
+			if (aiActor->hp <= 0)
+			{
+				return JTRUE;
+			}
+
+			fixed16_16 dmg = s_msgArg1;
+			fixed16_16 force = s_msgArg2;
+			aiActor->hp -= dmg;
+
+			vec3_fixed pushDir;
+			vec3_fixed pos = { obj->posWS.x, obj->posWS.y - obj->worldHeight, obj->posWS.z };
+			computeExplosionPushDir(&pos, &pushDir);
+
+			fixed16_16 pushX = mul16(force, pushDir.x);
+			fixed16_16 pushZ = mul16(force, pushDir.z);
+			if (aiActor->hp > 0)
+			{
+				actor_addVelocity(pushX >> 1, 0, pushZ >> 1);
+				return JTRUE;
+			}
+
+			obj->flags |= OBJ_FLAG_FULLBRIGHT;
+			actor_addVelocity(pushX, 0, pushZ);
+
+			ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_EXP_BARREL, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj);
+			proj->vel = { 0, 0, 0 };
+
+			ProjectileLogic* proj2 = (ProjectileLogic*)createProjectile(PROJ_EXP_BARREL, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj);
+			proj2->vel = { 0, 0, 0 };
+			proj2->hitEffectId = HEFFECT_EXP_INVIS;
+			proj2->duration = s_curTick + 36;
+
+			ActorLogic* actorLogic = (ActorLogic*)s_curLogic;
+			CollisionInfo colInfo = { 0 };
+			colInfo.obj = proj2->logic.obj;
+			colInfo.offsetY = 0;
+			colInfo.offsetX = mul16(actorLogic->vel.x, 0x4000);
+			colInfo.offsetZ = mul16(actorLogic->vel.z, 0x4000);
+			colInfo.botOffset = ONE_16;
+			colInfo.yPos = FIXED(9999);
+			colInfo.height = ONE_16;
+			colInfo.u1c = 0;
+			colInfo.width = colInfo.obj->worldWidth;
+			handleCollision(&colInfo);
+
+			// I have to remove the logics here in order to get this to work, but this doesn't actually happen here in the original code.
+			// TODO: Move to the correct location.
+			actor_removeLogics(obj);
+			actor_setupAnimation(2/*animIndex*/, &aiActor->anim);
+			retValue = JFALSE;
 		}
 		return retValue;
 	}

@@ -143,6 +143,8 @@ namespace TFE_DarkForces
 	void player_setupCamera();
 	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound);
 
+	void computeExplosionPushDir(vec3_fixed* pos, vec3_fixed* pushDir);
+
 	void cheat_teleport();
 	void cheat_enableNoheightCheck();
 	void cheat_bugMode();

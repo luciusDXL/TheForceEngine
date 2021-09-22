@@ -548,10 +548,9 @@ namespace TFE_Jedi
 			}
 			// End of start sector check.
 
-			SecObject** objList = sector->objectList;
-			for (s32 objIndex = 0, objListIndex = 0; objIndex < sector->objectCount && objListIndex < sector->objectCapacity; objListIndex++, objList++)
+			for (s32 objIndex = 0, objListIndex = 0; objIndex < sector->objectCount && objListIndex < sector->objectCapacity; objListIndex++)
 			{
-				SecObject* obj = *objList;
+				SecObject* obj = sector->objectList[objListIndex];
 				if (!obj) { continue; }
 				objIndex++;
 
