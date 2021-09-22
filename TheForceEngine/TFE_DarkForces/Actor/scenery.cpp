@@ -31,6 +31,11 @@ namespace TFE_DarkForces
 			newObj->anim = actor_getAnimationIndex(4);
 			newObj->posWS = obj->posWS;
 			newObj->worldWidth = obj->worldWidth;
+			if (newObj->worldWidth)
+			{
+				newObj->flags |= OBJ_FLAG_HAS_COLLISION;
+			}
+
 			sector_addObject(obj->sector, newObj);
 			actor_kill();
 			return JFALSE;
@@ -93,6 +98,11 @@ namespace TFE_DarkForces
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags &= ~(FLAG_BIT(0) | FLAG_BIT(2));
 		logic->animTable = s_sceneryAnimTable;
+
+		if (obj->worldWidth)
+		{
+			obj->flags |= OBJ_FLAG_HAS_COLLISION;
+		}
 
 		AiActor* aiActor = actor_createAiActor((Logic*)logic);
 		aiActor->actor.header.func = sceneryLogicFunc;
