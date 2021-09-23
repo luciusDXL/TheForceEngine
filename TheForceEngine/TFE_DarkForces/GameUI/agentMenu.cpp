@@ -396,10 +396,10 @@ namespace TFE_DarkForces
 		s32 dx, dy;
 		TFE_Input::getMouseMove(&dx, &dy);
 
-		s_cursorPosAccum.x += dx;
-		s_cursorPosAccum.z += dy;
-		s_cursorPos.x = max(0, min(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, (s32)width - 3));
-		s_cursorPos.z = max(0, min(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, (s32)height - 3));
+		s_cursorPosAccum.x = clamp(s_cursorPosAccum.x + dx, 0, displayInfo.width);
+		s_cursorPosAccum.z = clamp(s_cursorPosAccum.z + dy, 0, displayInfo.height);
+		s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
+		s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
 	}
 
 	void setPalette()
@@ -413,6 +413,21 @@ namespace TFE_DarkForces
 			*outColor = u32(srcColor[0]) | (u32(srcColor[1]) << 8u) | (u32(srcColor[2]) << 16u) | (0xffu << 24u);
 		}
 		TFE_RenderBackend::setPalette(palette);
+	}
+
+	void agentMenu_resetCursor()
+	{
+		// Reset the cursor.
+		u32 width, height;
+		width = TFE_RenderBackend::getVirtualDisplayWidth2D();
+		height = TFE_RenderBackend::getVirtualDisplayHeight();
+
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		s_cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
+		s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
+		s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
 	}
 
 	// TFE Specific.
@@ -443,10 +458,7 @@ namespace TFE_DarkForces
 		};
 		TFE_RenderBackend::createVirtualDisplay(vdisp);
 
-		// Reset the cursor.
-		s_cursorPosAccum = { 0, 0 };
-		s_cursorPos = { 0, 0 };
-
+		agentMenu_resetCursor();
 		setPalette();
 	}
 		
