@@ -1957,7 +1957,7 @@ namespace RClassic_Fixed
 		s_texHeightMask = texture->height - 1;
 		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
 		{
-			const s32 y0 = min(s_screenYMid, s_windowTop[x]);
+			const s32 y0 = max(s_screenYMid, s_windowTop[x]);
 			const s32 y1 = s_windowBot[x];
 
 			s_yPixelCount = y1 - y0 + 1;
