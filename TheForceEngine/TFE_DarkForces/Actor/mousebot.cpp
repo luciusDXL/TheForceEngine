@@ -73,7 +73,7 @@ namespace TFE_DarkForces
 		physActor->ue4 = -1;
 		physActor->hp = FIXED(10);
 		physActor->task2 = mouseBotTask;
-		physActor->ue8 = 0;
+		physActor->state = 0;
 		physActor->actor.header.obj = obj;
 		physActor->actor.physics.obj = obj;
 		actor_addPhysicsActorToWorld(physActor);

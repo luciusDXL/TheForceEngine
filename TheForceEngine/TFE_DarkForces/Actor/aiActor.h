@@ -86,5 +86,5 @@ struct PhysicsActor
 	fixed16_16 hp;
 	Task* task2;
 	s32 ue4;
-	s32 ue8;
+	s32 state;
 };

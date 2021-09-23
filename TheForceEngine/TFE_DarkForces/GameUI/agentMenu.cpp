@@ -329,7 +329,9 @@ namespace TFE_DarkForces
 		u8 color = 47;
 		if (s_agentId >= 0 && s_agentCount > 0)
 		{
-			for (s32 i = 0; i < s_agentData[s_agentId].nextMission - 1; i++)
+			s32 nextMission = min(s_agentData[s_agentId].nextMission, s_maxLevelIndex);
+
+			for (s32 i = 0; i < nextMission - 1 && i < s_maxLevelIndex; i++)
 			{
 				color = 47;
 				if (s_selectedMission == i)
@@ -345,12 +347,12 @@ namespace TFE_DarkForces
 				textY += 8;
 			}
 			color = 47;
-			if (s_selectedMission == s_agentData[s_agentId].nextMission - 1)
+			if (s_selectedMission == nextMission - 1)
 			{
 				color = 32;
 				drawColoredQuad(textX - 3, textY - 1, 118, 9, s_lastSelectedAgent ? 13 : 12, s_framebuffer);
 			}
-			print(s_levelDisplayNames[s_agentData[s_agentId].nextMission - 1], textX, textY, color, s_framebuffer);
+			print(s_levelDisplayNames[nextMission - 1], textX, textY, color, s_framebuffer);
 		}
 
 		// Draw agents.
