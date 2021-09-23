@@ -154,15 +154,15 @@ namespace TFE_DarkForces
 	};
 	static JBool s_fusionCycleForward = JTRUE;
 
-	extern void weapon_handleState(s32 id);
-	extern void weapon_handleState2(s32 id);
-	extern void weapon_handleOffAnimation(s32 id);
-	extern void weapon_handleOnAnimation(s32 id);
-	extern void weapon_animateOnOrOffscreen(s32 id);
+	extern void weapon_handleState(MessageType msg);
+	extern void weapon_handleState2(MessageType msg);
+	extern void weapon_handleOffAnimation(MessageType msg);
+	extern void weapon_handleOnAnimation(MessageType msg);
+	extern void weapon_animateOnOrOffscreen(MessageType msg);
 	void weapon_computeMatrix(fixed16_16* mtx, angle14_32 pitch, angle14_32 yaw);
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation);
 
-	void weaponFire_fist(s32 id)
+	void weaponFire_fist(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -178,7 +178,7 @@ namespace TFE_DarkForces
 		{
 			task_yield(taskCtx->delay);
 			task_callTaskFunc(weapon_handleState);
-		} while (id != 0);
+		} while (msg != MSG_RUN_TASK);
 
 		if (s_punchSwingSndId)
 		{
@@ -234,7 +234,7 @@ namespace TFE_DarkForces
 			{
 				task_yield(taskCtx->delay);
 				task_callTaskFunc(weapon_handleState);
-			} while (id != 0);
+			} while (msg != MSG_RUN_TASK);
 		}
 		s_canFireWeaponPrim = 1;
 		s_canFireWeaponSec = 1;
@@ -242,7 +242,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_pistol(s32 id)
+	void weaponFire_pistol(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -387,7 +387,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 			}
 
 			s_canFireWeaponPrim = 1;
@@ -407,7 +407,7 @@ namespace TFE_DarkForces
 			{
 				task_yield(taskCtx->delay);
 				task_callTaskFunc(weapon_handleState);
-			} while (id != 0);
+			} while (msg != MSG_RUN_TASK);
 
 			s_canFireWeaponPrim = 0;
 			s_canFireWeaponSec = 0;
@@ -420,7 +420,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_rifle(s32 id)
+	void weaponFire_rifle(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -565,7 +565,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 			}
 
 			s_canFireWeaponPrim = 1;
@@ -585,7 +585,7 @@ namespace TFE_DarkForces
 			{
 				task_yield(taskCtx->delay);
 				task_callTaskFunc(weapon_handleState);
-			} while (id != 0);
+			} while (msg != MSG_RUN_TASK);
 
 			s_canFireWeaponPrim = 0;
 			s_canFireWeaponSec = 0;
@@ -598,7 +598,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_thermalDetonator(s32 id)
+	void weaponFire_thermalDetonator(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -620,7 +620,7 @@ namespace TFE_DarkForces
 			{
 				task_yield(c_thermalDetAnim[0].delayNormal);
 				task_callTaskFunc(weapon_handleState);
-			} while (id != 0);
+			} while (msg != MSG_RUN_TASK);
 
 			s_curPlayerWeapon->xOffset = 100;
 			s_curPlayerWeapon->yOffset = 100;
@@ -697,7 +697,7 @@ namespace TFE_DarkForces
 			{
 				task_yield(taskCtx->delay);
 				task_callTaskFunc(weapon_handleState);
-			} while (id != 0);
+			} while (msg != MSG_RUN_TASK);
 
 			if (*s_curPlayerWeapon->ammo)
 			{
@@ -710,7 +710,7 @@ namespace TFE_DarkForces
 					{
 						task_yield(taskCtx->delay);
 						task_callTaskFunc(weapon_handleState);
-					} while (id != 0);
+					} while (msg != MSG_RUN_TASK);
 				}
 			}
 			else
@@ -722,7 +722,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 			}
 
 			s_canFireWeaponPrim = 1;
@@ -750,7 +750,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_repeater(s32 id)
+	void weaponFire_repeater(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -781,7 +781,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				task_localBlockBegin;
 				fixed16_16 mtx[9];
@@ -862,7 +862,7 @@ namespace TFE_DarkForces
 					{
 						task_yield(taskCtx->delay);
 						task_callTaskFunc(weapon_handleState);
-					} while (id != 0);
+					} while (msg != MSG_RUN_TASK);
 				}
 				s_canFireWeaponSec = 1;
 			}
@@ -885,7 +885,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponPrim = 0;
 				s_canFireWeaponSec = 0;
@@ -923,7 +923,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				task_localBlockBegin;
 				fixed16_16 mtx[9];
@@ -1017,7 +1017,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_weaponLight = 0;
 
@@ -1029,7 +1029,7 @@ namespace TFE_DarkForces
 					{
 						task_yield(taskCtx->delay);
 						task_callTaskFunc(weapon_handleState);
-					} while (id != 0);
+					} while (msg != MSG_RUN_TASK);
 				}
 
 				s_canFireWeaponPrim = 1;
@@ -1053,7 +1053,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponPrim = 0;
 				s_canFireWeaponSec = 0;
@@ -1069,7 +1069,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_fusion(s32 id)
+	void weaponFire_fusion(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -1172,7 +1172,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_curPlayerWeapon->frame = 0;
 				s_weaponLight = 0;
@@ -1181,7 +1181,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponSec = 1;
 			}
@@ -1199,7 +1199,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponPrim = 0;
 				s_canFireWeaponSec = 0;
@@ -1320,7 +1320,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				if (s_fusionCycleForward)
 				{
@@ -1348,7 +1348,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponPrim = 1;
 			}
@@ -1366,7 +1366,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponPrim = 0;
 				s_canFireWeaponSec = 0;
@@ -1382,7 +1382,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_mortar(s32 id)
+	void weaponFire_mortar(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -1526,7 +1526,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 			}
 
 			s_canFireWeaponPrim = 1;
@@ -1546,7 +1546,7 @@ namespace TFE_DarkForces
 			{
 				task_yield(taskCtx->delay);
 				task_callTaskFunc(weapon_handleState);
-			} while (id != 0);
+			} while (msg != MSG_RUN_TASK);
 
 			s_canFireWeaponPrim = 0;
 			s_canFireWeaponSec = 0;
@@ -1559,7 +1559,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_mine(s32 id)
+	void weaponFire_mine(MessageType msg)
 	{
 		task_begin;
 		if (*s_curPlayerWeapon->ammo)
@@ -1626,7 +1626,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_concussion(s32 id)
+	void weaponFire_concussion(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -1753,7 +1753,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 			}
 
 			s_canFireWeaponPrim = 1;
@@ -1773,7 +1773,7 @@ namespace TFE_DarkForces
 			{
 				task_yield(taskCtx->delay);
 				task_callTaskFunc(weapon_handleState);
-			} while (id != 0);
+			} while (msg != MSG_RUN_TASK);
 
 			s_canFireWeaponPrim = 0;
 			s_canFireWeaponSec = 0;
@@ -1786,7 +1786,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weaponFire_cannon(s32 id)
+	void weaponFire_cannon(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -1805,7 +1805,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				if (s_cannonFireSndID1)
 				{
@@ -1908,7 +1908,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_curPlayerWeapon->frame = 0;
 				s_weaponLight = 0;
@@ -1917,7 +1917,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponSec = 1;
 			}
@@ -1929,7 +1929,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponSec = 0;
 			}
@@ -2037,7 +2037,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_weaponLight = 0;
 				if (s_isShooting)
@@ -2046,7 +2046,7 @@ namespace TFE_DarkForces
 					{
 						task_yield(taskCtx->delay);
 						task_callTaskFunc(weapon_handleState);
-					} while (id != 0);
+					} while (msg != MSG_RUN_TASK);
 				}
 
 				s_canFireWeaponPrim = 1;
@@ -2065,7 +2065,7 @@ namespace TFE_DarkForces
 				{
 					task_yield(taskCtx->delay);
 					task_callTaskFunc(weapon_handleState);
-				} while (id != 0);
+				} while (msg != MSG_RUN_TASK);
 
 				s_canFireWeaponPrim = 0;
 

@@ -81,7 +81,7 @@ namespace TFE_Jedi
 	Task  s_rootTask;
 	Task* s_taskIter = nullptr;
 	Task* s_curTask = nullptr;
-	s32   s_currentId = -1;
+	MessageType s_currentMsg = MSG_FREE_TASK;
 
 	TaskContext* s_curContext = nullptr;
 
@@ -256,11 +256,11 @@ namespace TFE_Jedi
 		task->userData = data;
 	}
 
-	void task_runLocal(Task* task, s32 id)
+	void task_runLocal(Task* task, MessageType msg)
 	{
 		if (task->localRunFunc)
 		{
-			task->localRunFunc(id);
+			task->localRunFunc(msg);
 		}
 	}
 
@@ -316,7 +316,7 @@ namespace TFE_Jedi
 				}
 				if (task->nextTick <= s_curTick || task->framebreak)
 				{
-					s_currentId = 0;
+					s_currentMsg = MSG_RUN_TASK;
 					s_curTask = task;
 					return;
 				}
@@ -326,7 +326,7 @@ namespace TFE_Jedi
 				task = task->nextSec;
 				if (task->nextTick <= s_curTick || task->framebreak)
 				{
-					s_currentId = 0;
+					s_currentMsg = MSG_RUN_TASK;
 					s_curTask = task;
 					return;
 				}
@@ -343,22 +343,22 @@ namespace TFE_Jedi
 		}
 	}
 
-	void itask_run(Task* task, s32 id)
+	void itask_run(Task* task, MessageType msg)
 	{
 		Task* retTask = s_curTask;
 
 		task->retTask = s_curTask;
-		s_currentId = id;
+		s_currentMsg = msg;
 		s_curTask = task;
 
-		TASK_MSG("Run task '%s' with id: '%d'.", task->name, s_currentId);
+		TASK_MSG("Run task '%s' with msg: '%d'.", task->name, s_currentMsg);
 		s_curContext = &s_curTask->context;
 		s32 level = max(0, s_curContext->level + 1);
 		TaskFunc runFunc = s_curContext->callstack[level];
 		assert(runFunc);
 		if (runFunc)
 		{
-			runFunc(s_currentId);
+			runFunc(s_currentMsg);
 		}
 		if (retTask != s_curTask)
 		{
@@ -386,7 +386,7 @@ namespace TFE_Jedi
 			s_curTask->retTask = nullptr;
 
 			// Set the next task.
-			s_currentId = 0;
+			s_currentMsg = MSG_RUN_TASK;
 			s_curTask = retTask;
 			s_curContext = &s_curTask->context;
 
@@ -426,7 +426,7 @@ namespace TFE_Jedi
 			return JFALSE;
 		}
 		s_prevTime = time;
-		s_currentId = 0;
+		s_currentMsg = MSG_RUN_TASK;
 
 		// Keep processing tasks until the "framebreak" task is hit.
 		// Once the framebreak task completes (if it is not sleeping), then break out of the loop - processing will resume
@@ -447,7 +447,7 @@ namespace TFE_Jedi
 
 				if (runFunc)
 				{
-					runFunc(s_currentId);
+					runFunc(s_currentMsg);
 				}
 			}
 			else
@@ -517,9 +517,9 @@ namespace TFE_Jedi
 	// This task needs to track the current IP at the calling level so it can be resumed when the new function returns.
 	// In addition, we must detect when the return is delayed - due to a yield in the called function - 
 	// so that the recursion level is properly handled on delayed return.
-	bool ctxCall(TaskFunc func, s32 id, s32 ip, const char* funcName)
+	bool ctxCall(TaskFunc func, MessageType msg, s32 ip, const char* funcName)
 	{
-		TASK_MSG("Call Function: '%s', %d.", funcName, id);
+		TASK_MSG("Call Function: '%s', %d.", funcName, msg);
 
 		assert(s_curContext->level >= 0 && s_curContext->level + 1 < TASK_MAX_LEVELS);
 		TaskContext* startContext = s_curContext;
@@ -535,7 +535,7 @@ namespace TFE_Jedi
 		s_curContext->ip[s_curContext->level] = ip;
 		s_curContext->callstack[s_curContext->level + 1] = func;
 		s_curContext->ip[s_curContext->level + 1] = 0;
-		func(id);
+		func(msg);
 
 		if (startCallLevel != startContext->callLevel)
 		{

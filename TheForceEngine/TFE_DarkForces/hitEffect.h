@@ -10,11 +10,6 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
 
-enum HitEffectLogicId
-{
-	HEFFECT_ANIM_COMPLETE = 20,
-};
-
 enum HitEffectID
 {
 	HEFFECT_NONE        = -1,   // no visible effect.

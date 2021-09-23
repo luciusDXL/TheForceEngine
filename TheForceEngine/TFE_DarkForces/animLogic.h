@@ -11,11 +11,6 @@
 #include "logic.h"
 #include "time.h"
 
-enum AnimLogicId
-{
-	ANIM_DELETE = 1,
-};
-
 namespace TFE_DarkForces
 {
 	// This is a type of "Logic" and can be safety cast to Logic {}.

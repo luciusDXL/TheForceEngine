@@ -20,7 +20,7 @@ namespace TFE_DarkForces
 		MISSION_MODE_LOAD_START = 3,	// set right as loading starts.
 	};
 		
-	void mission_startTaskFunc(s32 id);
+	void mission_startTaskFunc(MessageType msg);
 	void mission_setLoadMissionTask(Task* task);
 
 	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);

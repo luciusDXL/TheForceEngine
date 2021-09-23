@@ -13,6 +13,7 @@
 #include <TFE_System/types.h>
 #include <TFE_System/memoryPool.h>
 #include <TFE_DarkForces/time.h>
+#include <TFE_Jedi/InfSystem/message.h>
 
 struct Task;
 #include "taskMacros.h"
@@ -39,7 +40,7 @@ namespace TFE_Jedi
 	void  task_setNextTick(Task* task, Tick tick);
 	void  task_setUserData(Task* task, void* data);
 
-	void  task_runLocal(Task* task, s32 id);
+	void  task_runLocal(Task* task, MessageType msg);
 	
 	// Call once per frame to run the tasks.
 	// The core idea is to split the original recursive tasks into

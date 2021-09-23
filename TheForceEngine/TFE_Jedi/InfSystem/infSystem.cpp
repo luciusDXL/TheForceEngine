@@ -66,9 +66,9 @@ namespace TFE_Jedi
 	static char s_infArgExtra[256];
 	static Stop* s_nextStop;
 
-	void inf_elevatorTaskFunc(s32 id);
-	void inf_telelporterTaskFunc(s32 id);
-	void inf_triggerTaskFunc(s32 id);
+	void inf_elevatorTaskFunc(MessageType msg);
+	void inf_telelporterTaskFunc(MessageType msg);
+	void inf_triggerTaskFunc(MessageType msg);
 
 	void infElevatorMsgFunc(MessageType msgType);
 	void infTriggerMsgFunc(MessageType msgType);
@@ -87,13 +87,13 @@ namespace TFE_Jedi
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj);
 
 	void inf_stopAdjoinCommands(Stop* stop);
-	void inf_stopHandleMessages(s32 id);
+	void inf_stopHandleMessages(MessageType msg);
 	void inf_handleMsgLights();
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
 
-	void inf_teleporterTaskLocal(s32 id);
-	void inf_elevatorTaskLocal(s32 id);
-	void inf_triggerTaskLocal(s32 id);
+	void inf_teleporterTaskLocal(MessageType msg);
+	void inf_elevatorTaskLocal(MessageType msg);
+	void inf_triggerTaskLocal(MessageType msg);
 
 	// TODO: Game side functions
 	void game_levelComplete() {}
@@ -1387,13 +1387,13 @@ namespace TFE_Jedi
 		s_switchDefaultSndId = sound_Load("switch3.voc");
 	}
 
-	void inf_elevatorTaskLocal(s32 id)
+	void inf_elevatorTaskLocal(MessageType msg)
 	{
-		infElevatorMsgFunc(MessageType(id));
+		infElevatorMsgFunc(msg);
 	}
 			
 	// Per frame update.
-	void inf_elevatorTaskFunc(s32 id)
+	void inf_elevatorTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -1404,11 +1404,11 @@ namespace TFE_Jedi
 		};
 		task_begin_ctx;
 
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
-			if (id != 0)	// General elevator message, just pass it along.
+			if (msg != MSG_RUN_TASK)	// General elevator message, just pass it along.
 			{
-				infElevatorMsgFunc(MessageType(id));
+				infElevatorMsgFunc(msg);
 			}
 			else  // id == 0
 			{
@@ -1535,10 +1535,9 @@ namespace TFE_Jedi
 		task_end;
 	}
 		
-	void inf_teleporterTaskLocal(s32 id)
+	void inf_teleporterTaskLocal(MessageType msg)
 	{
-		MessageType msgType = MessageType(id);
-		if (msgType == MSG_TRIGGER && s_msgEvent == INF_EVENT_ENTER_SECTOR)
+		if (msg == MSG_TRIGGER && s_msgEvent == INF_EVENT_ENTER_SECTOR)
 		{
 			task_makeActive(s_teleportTask);
 		}
@@ -1548,7 +1547,7 @@ namespace TFE_Jedi
 		}
 	}
 	
-	void inf_telelporterTaskFunc(s32 id)
+	void inf_telelporterTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -1556,13 +1555,13 @@ namespace TFE_Jedi
 		};
 		task_begin_ctx;
 
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			taskCtx->delay = TASK_SLEEP;
 
-			if (id != 0)
+			if (msg != MSG_RUN_TASK)
 			{
-				inf_teleporterTaskLocal(id);
+				inf_teleporterTaskLocal(msg);
 				taskCtx->delay = TASK_NO_DELAY;
 			}
 			else
@@ -1617,12 +1616,11 @@ namespace TFE_Jedi
 		task_end;
 	}
 
-	void inf_triggerTaskLocal(s32 id)
+	void inf_triggerTaskLocal(MessageType msg)
 	{
-		MessageType msgType = MessageType(id);
 		InfTrigger* trigger = (InfTrigger*)s_msgTarget;
 
-		switch (msgType)
+		switch (msg)
 		{
 			case MSG_FREE:
 			{
@@ -1668,15 +1666,15 @@ namespace TFE_Jedi
 		}
 	}
 
-	void inf_triggerTaskFunc(s32 id)
+	void inf_triggerTaskFunc(MessageType msg)
 	{
 		task_begin;
 		// Wait until explicitly called.
 		task_yield(TASK_SLEEP);
 
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
-			inf_triggerTaskLocal(id);
+			inf_triggerTaskLocal(msg);
 			task_yield(TASK_SLEEP);
 		}
 
@@ -3084,7 +3082,7 @@ namespace TFE_Jedi
 		};
 	}
 		
-	void inf_stopHandleMessages(s32 id)
+	void inf_stopHandleMessages(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -3129,9 +3127,9 @@ namespace TFE_Jedi
 							inf_sendSectorMessage(taskCtx->sector, taskCtx->msg->msgType);
 							task_runLocal(taskCtx->link->task, taskCtx->msg->msgType);
 
-							if (id != 0)
+							if (msg != MSG_RUN_TASK)
 							{
-								infElevatorMessageInternal(MessageType(id));
+								infElevatorMessageInternal(msg);
 								task_yield(TASK_NO_DELAY);
 							}
 

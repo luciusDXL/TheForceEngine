@@ -37,7 +37,7 @@ namespace TFE_DarkForces
 	static Task* s_logicUpdateTask = nullptr;
 	static Allocator* s_logicUpdateList = nullptr;
 
-	void updateLogicTaskFunc(s32 id);
+	void updateLogicTaskFunc(MessageType msg);
 	void updateLogicCleanupFunc(Logic* logic);
 	
 	void updateLogic_clearTask()
@@ -116,10 +116,10 @@ namespace TFE_DarkForces
 		return (Logic*)updateLogic;
 	}
 
-	void updateLogicTaskFunc(s32 id)
+	void updateLogicTaskFunc(MessageType msg)
 	{
 		task_begin;
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			// No need for locals to be persistant.
 			{

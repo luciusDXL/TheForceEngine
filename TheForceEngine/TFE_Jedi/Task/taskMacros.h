@@ -29,11 +29,11 @@
 	case __LINE__:; \
 	} while (0)
 
-#define task_runAndReturn(task, id) \
-	itask_run(task, id)
+#define task_runAndReturn(task, msg) \
+	itask_run(task, msg)
 	
 #define task_callTaskFunc(func)	\
-	do { if (ctxCall(func, id, __LINE__, __FUNCTION__)) { return; } \
+	do { if (ctxCall(func, msg, __LINE__, __FUNCTION__)) { return; } \
 	case __LINE__:; \
 	} while (0)
 
@@ -48,14 +48,14 @@
 	do \
 	{ \
 		task_yield(ticks); \
-	} while (id != 0)
+	} while (msg != MSG_RUN_TASK)
 
 #define task_localBlockBegin {
 #define task_localBlockEnd }
 
 namespace TFE_Jedi
 {
-	typedef void(*TaskFunc)(s32 id);
+	typedef void(*TaskFunc)(MessageType msg);
 
 	//////////////////////////////////////////
 	// Internal functions used by macros.
@@ -64,8 +64,8 @@ namespace TFE_Jedi
 	void ctxAllocate(u32 size);
 	void* ctxGet();
 	void ctxBegin();
-	bool ctxCall(TaskFunc func, s32 id, s32 ip, const char* funcName);
+	bool ctxCall(TaskFunc func, MessageType msg, s32 ip, const char* funcName);
 	void ctxReturn();
 	void itask_yield(Tick delay, s32 ip);
-	void itask_run(Task* task, s32 id);
+	void itask_run(Task* task, MessageType msg);
 }

@@ -26,12 +26,12 @@ namespace TFE_DarkForces
 		allocator_deleteItem(s_spriteAnimList, logic);
 		if (completeTask)
 		{
-			task_runAndReturn(completeTask, 20);
+			task_runAndReturn(completeTask, MSG_SEQ_COMPLETE);
 		}
 	}
 
 	// Logic update function, handles the update of all sprite animations.
-	void spriteAnimLogicFunc(s32 id)
+	void spriteAnimLogicFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -40,9 +40,9 @@ namespace TFE_DarkForces
 			s32 count;
 		};
 		task_begin_ctx;
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
-			if (id == ANIM_DELETE)
+			if (msg == MSG_FREE)
 			{
 				deleteLogicAndObject((Logic*)s_msgTarget);
 				allocator_deleteItem(s_spriteAnimList, s_msgTarget);
@@ -74,7 +74,7 @@ namespace TFE_DarkForces
 								deleteLogicAndObject((Logic*)taskCtx->anim);	// This just deletes the Logic from the list
 								if (completeTask)
 								{
-									task_runAndReturn(completeTask, 20);
+									task_runAndReturn(completeTask, MSG_SEQ_COMPLETE);
 								}
 								allocator_deleteItem(s_spriteAnimList, taskCtx->anim); // This deletes the logic itself.
 							}

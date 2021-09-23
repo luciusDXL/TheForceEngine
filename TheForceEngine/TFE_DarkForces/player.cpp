@@ -227,12 +227,12 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
-	void playerControlTaskFunc(s32 id);
-	void playerControlMsgFunc(s32 msg);
+	void playerControlTaskFunc(MessageType msg);
+	void playerControlMsgFunc(MessageType msg);
 	void setPlayerLight(s32 atten);
 	void setCameraOffset(fixed16_16 offsetX, fixed16_16 offsetY, fixed16_16 offsetZ);
 	void setCameraAngleOffset(angle14_32 offsetPitch, angle14_32 offsetYaw, angle14_32 offsetRoll);
-	void gasSectorTaskFunc(s32 id);
+	void gasSectorTaskFunc(MessageType msg);
 
 	void handlePlayerMoveControls();
 	void handlePlayerPhysics();
@@ -766,7 +766,7 @@ namespace TFE_DarkForces
 		pushDir->z = mul16(dirY, dirZ);
 	}
 
-	void playerControlMsgFunc(s32 msg)
+	void playerControlMsgFunc(MessageType msg)
 	{
 		fixed16_16 shieldDmg = 0;
 		JBool playHitSound = JFALSE;
@@ -825,7 +825,7 @@ namespace TFE_DarkForces
 		player_applyDamage(0, shieldDmg, playHitSound);
 	}
 
-	void playerControlTaskFunc(s32 id)
+	void playerControlTaskFunc(MessageType msg)
 	{
 		task_begin;
 		s_curSafe = level_getSafeFromSector(s_playerObject->sector);
@@ -839,9 +839,9 @@ namespace TFE_DarkForces
 		s_playerTick = s_curTick;
 		s_prevPlayerTick  = s_curTick;
 
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
-			if (id == 0)
+			if (msg == MSG_RUN_TASK)
 			{
 				if (!s_gamePaused)
 				{
@@ -851,11 +851,11 @@ namespace TFE_DarkForces
 					handlePlayerScreenFx();
 				}
 			}
-			else if (id == 22)
+			else if (msg == MSG_DAMAGE)
 			{
 				// TODO(Core Game Loop Release)
 			}
-			else if (id == 23)
+			else if (msg == MSG_EXPLOSION)
 			{
 				// TODO(Core Game Loop Release)
 			}
@@ -1977,7 +1977,7 @@ namespace TFE_DarkForces
 				s_weaponFiring = JTRUE;
 				// This causes the weapon to fire.
 				s_msgArg1 = WFIRETYPE_PRIMARY;
-				task_runAndReturn(s_playerWeaponTask, WTID_START_FIRING);
+				task_runAndReturn(s_playerWeaponTask, MSG_START_FIRING);
 			}
 		}
 		// This happens when the player *stops* firing.
@@ -1987,13 +1987,13 @@ namespace TFE_DarkForces
 			if (!s_weaponFiringSec)
 			{
 				// Spin down.
-				task_runAndReturn(s_playerWeaponTask, WTID_STOP_FIRING);
+				task_runAndReturn(s_playerWeaponTask, MSG_STOP_FIRING);
 			}
 			else
 			{
 				// Start secondary fire.
 				s_msgArg1 = WFIRETYPE_SECONDARY;
-				task_runAndReturn(s_playerWeaponTask, WTID_START_FIRING);
+				task_runAndReturn(s_playerWeaponTask, MSG_START_FIRING);
 			}
 		}
 
@@ -2004,7 +2004,7 @@ namespace TFE_DarkForces
 			{
 				s_weaponFiringSec = JTRUE;
 				s_msgArg1 = WFIRETYPE_SECONDARY;
-				task_runAndReturn(s_playerWeaponTask, WTID_START_FIRING);
+				task_runAndReturn(s_playerWeaponTask, MSG_START_FIRING);
 			}
 		}
 		// This happens when the player *stops* firing.
@@ -2014,13 +2014,13 @@ namespace TFE_DarkForces
 			if (!s_weaponFiring)
 			{
 				// Spin down
-				task_runAndReturn(s_playerWeaponTask, WTID_STOP_FIRING);
+				task_runAndReturn(s_playerWeaponTask, MSG_STOP_FIRING);
 			}
 			else
 			{
 				// Start primary fire.
 				s_msgArg1 = WFIRETYPE_PRIMARY;
-				task_runAndReturn(s_playerWeaponTask, WTID_START_FIRING);
+				task_runAndReturn(s_playerWeaponTask, MSG_START_FIRING);
 			}
 		}
 
@@ -2080,7 +2080,7 @@ namespace TFE_DarkForces
 					{
 						// Change weapon
 						s_msgArg1 = selectedWpn;
-						task_runAndReturn(s_playerWeaponTask, WTID_SWITCH_WEAPON);
+						task_runAndReturn(s_playerWeaponTask, MSG_SWITCH_WPN);
 
 						if (s_playerInfo.curWeapon > s_playerInfo.maxWeapon)
 						{
@@ -2133,7 +2133,7 @@ namespace TFE_DarkForces
 		setScreenFxLevels(healthFx, shieldFx, flashFx);
 	}
 
-	void gasSectorTaskFunc(s32 id)
+	void gasSectorTaskFunc(MessageType msg)
 	{
 		task_begin;
 		while (1)

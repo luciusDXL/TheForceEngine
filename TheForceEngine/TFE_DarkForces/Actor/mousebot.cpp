@@ -26,10 +26,10 @@ namespace TFE_DarkForces
 		PhysicsActor actor;
 	};
 
-	void mouseBotTaskFunc(s32 id)
+	void mouseBotTaskFunc(MessageType msg)
 	{
 		task_begin;
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			task_yield(TASK_NO_DELAY);
 		}

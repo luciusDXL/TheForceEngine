@@ -96,7 +96,7 @@ namespace TFE_DarkForces
 	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType homingMissileProjectileUpdateFunc(ProjectileLogic* logic);
 
-	void projectileTaskFunc(s32 id);
+	void projectileTaskFunc(MessageType msg);
 
 	//////////////////////////////////////////////////////////////
 	// API Implementation
@@ -675,7 +675,7 @@ namespace TFE_DarkForces
 		return (Logic*)projLogic;
 	}
 		
-	void projectileTaskFunc(s32 id)
+	void projectileTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -683,7 +683,7 @@ namespace TFE_DarkForces
 		};
 		task_begin_ctx;
 
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			taskCtx->projLogic = nullptr;
 			task_yield(TASK_NO_DELAY);

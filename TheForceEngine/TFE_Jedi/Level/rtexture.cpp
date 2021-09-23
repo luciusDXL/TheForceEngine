@@ -25,7 +25,7 @@ namespace TFE_Jedi
 
 	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount);
 	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount);
-	void textureAnimationTaskFunc(s32 id);
+	void textureAnimationTaskFunc(MessageType msg);
 
 	u8 readByte(const u8*& data)
 	{
@@ -223,10 +223,10 @@ namespace TFE_Jedi
 	}
 		
 	// Per frame animated texture update.
-	void textureAnimationTaskFunc(s32 id)
+	void textureAnimationTaskFunc(MessageType msg)
 	{
 		task_begin;
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			// No persistent state is required.
 			{

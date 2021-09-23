@@ -87,9 +87,9 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
-	void actorLogicTaskFunc(s32 id);
-	void actorLogicMsgFunc(s32 msg);
-	void actorPhysicsTaskFunc(s32 id);
+	void actorLogicTaskFunc(MessageType msg);
+	void actorLogicMsgFunc(MessageType msg);
+	void actorPhysicsTaskFunc(MessageType msg);
 	void actorLogicCleanupFunc(Logic* logic);
 	u32  actorLogicSetupFunc(Logic* logic, KEYWORD key);
 
@@ -673,7 +673,7 @@ namespace TFE_DarkForces
 		if (actorLogic->freeTask)
 		{
 			s_msgEntity = actorLogic->logic.obj;
-			task_runAndReturn(actorLogic->freeTask, 1);
+			task_runAndReturn(actorLogic->freeTask, MSG_FREE);
 		}
 
 		Actor* actor = actorLogic->actor;
@@ -1005,9 +1005,9 @@ namespace TFE_DarkForces
 		if (TFE_Jedi::abs(vel->z) < ACTOR_MIN_VELOCITY) { vel->z = 0; }
 	}
 
-	void actorLogicMsgFunc(s32 msg)
+	void actorLogicMsgFunc(MessageType msg)
 	{
-		if (msg == 1)
+		if (msg == MSG_FREE)
 		{
 			actorLogicCleanupFunc((Logic*)s_msgTarget);
 		}
@@ -1017,10 +1017,10 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void actorLogicTaskFunc(s32 id)
+	void actorLogicTaskFunc(MessageType msg)
 	{
 		task_begin;
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			if (s_objCollisionEnabled)
 			{
@@ -1031,7 +1031,7 @@ namespace TFE_DarkForces
 				task_yield(0x123);
 			}
 
-			if (id == 0)
+			if (msg == MSG_RUN_TASK)
 			{
 				ActorLogic* actorLogic = (ActorLogic*)allocator_getHead(s_actorLogics);
 				while (actorLogic)
@@ -1096,10 +1096,10 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void actorPhysicsTaskFunc(s32 id)
+	void actorPhysicsTaskFunc(MessageType msg)
 	{
 		task_begin;
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			// TODO(Core Game Loop Release)
 			task_yield(TASK_NO_DELAY);

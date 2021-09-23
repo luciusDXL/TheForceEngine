@@ -77,8 +77,8 @@ namespace TFE_DarkForces
 	TextureData* loadWeaponTexture(const char* texName);
 	void weapon_loadTextures();
 	void weapon_setFireRateInternal(WeaponFireMode mode, Tick delay, s32* canFire);
-	void weapon_playerWeaponTaskFunc(s32 id);
-	void weapon_handleOnAnimation(s32 id);
+	void weapon_playerWeaponTaskFunc(MessageType msg);
+	void weapon_handleOnAnimation(MessageType msg);
 	void weapon_prepareToFire();
 
 	static WeaponFireFunc s_weaponFireFunc[WPN_COUNT] =
@@ -431,7 +431,7 @@ namespace TFE_DarkForces
 		if (nextWeapon != s_playerInfo.curWeapon && s_playerWeaponTask)
 		{
 			s_msgArg1 = nextWeapon;
-			task_runAndReturn(s_playerWeaponTask, WTID_SWITCH_WEAPON);
+			task_runAndReturn(s_playerWeaponTask, MSG_SWITCH_WPN);
 
 			if (s_playerInfo.curWeapon > s_playerInfo.maxWeapon)
 			{
@@ -688,16 +688,16 @@ namespace TFE_DarkForces
 		weapon_setFireRate();
 	}
 
-	void weapon_handleState(s32 id)
+	void weapon_handleState(MessageType msg)
 	{
 		task_begin;
-		if (id == WTID_STOP_FIRING)
+		if (msg == MSG_STOP_FIRING)
 		{
 			s_isShooting = JFALSE;
 			weapon_prepareToFire();
 			s_curPlayerWeapon->flags |= 2;
 		}
-		else if (id == WTID_START_FIRING)
+		else if (msg == MSG_START_FIRING)
 		{
 			s_secondaryFire = s_msgArg1 ? JTRUE : JFALSE;
 			s_isShooting = JTRUE;
@@ -707,7 +707,7 @@ namespace TFE_DarkForces
 			}
 			s_curPlayerWeapon->flags &= ~2;
 		}
-		else if (id == WTID_SWITCH_WEAPON)
+		else if (msg == MSG_SWITCH_WPN)
 		{
 			s_switchWeapons = JTRUE;
 			s_nextWeapon = s_msgArg1;
@@ -738,21 +738,21 @@ namespace TFE_DarkForces
 		weapon->flags |= 2;
 	}
 
-	void weapon_handleState2(s32 id)
+	void weapon_handleState2(MessageType msg)
 	{
 		task_begin;
 		task_makeActive(s_playerWeaponTask);
 		task_yield(TASK_NO_DELAY);
 
-		if (id == WTID_STOP_FIRING)
+		if (msg == MSG_STOP_FIRING)
 		{
 			weapon_stopFiring();
 		}
-		else if (id == WTID_START_FIRING)
+		else if (msg == MSG_START_FIRING)
 		{
 			weapon_setShooting(s_msgArg1);
 		}
-		else if (id == WTID_SWITCH_WEAPON)
+		else if (msg == MSG_SWITCH_WPN)
 		{
 			s_switchWeapons = JTRUE;
 			s_nextWeapon = s_msgArg1;
@@ -761,7 +761,7 @@ namespace TFE_DarkForces
 	}
 		
 	// This task function handles animating a weapon on or off screen, based on the inputs.
-	void weapon_animateOnOrOffscreen(s32 id)
+	void weapon_animateOnOrOffscreen(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -783,22 +783,22 @@ namespace TFE_DarkForces
 			// We may get calls to the weapon task while animating, so handle them as we get them.
 			do
 			{
-				task_yield((id != 0) ? TASK_NO_DELAY : s_weaponAnimState.ticksPerFrame);
+				task_yield((msg != MSG_RUN_TASK) ? TASK_NO_DELAY : s_weaponAnimState.ticksPerFrame);
 
-				if (id == WTID_STOP_FIRING)
+				if (msg == MSG_STOP_FIRING)
 				{
 					weapon_stopFiring();
 				}
-				else if (id == WTID_START_FIRING)
+				else if (msg == MSG_START_FIRING)
 				{
 					weapon_setShooting(s_msgArg1/*secondaryFire*/);
 				}
-				else if (id == WTID_SWITCH_WEAPON)
+				else if (msg == MSG_SWITCH_WPN)
 				{
 					s_switchWeapons = JTRUE;
 					s_nextWeapon = s_msgArg1;
 				}
-			} while (id != 0);
+			} while (msg != MSG_RUN_TASK);
 
 			// Calculate the number of elapsed frames.
 			Tick elapsed = s_curTick - taskCtx->startTick;
@@ -820,7 +820,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weapon_handleOffAnimation(s32 id)
+	void weapon_handleOffAnimation(MessageType msg)
 	{
 		task_begin;
 		// s_prevWeapon is the weapon we are switching away from.
@@ -851,7 +851,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void weapon_handleOnAnimation(s32 id)
+	void weapon_handleOnAnimation(MessageType msg)
 	{
 		task_begin;
 		s_weaponOffAnim = JFALSE;
@@ -885,7 +885,7 @@ namespace TFE_DarkForces
 	{
 		if (s_playerWeaponTask)
 		{
-			task_runAndReturn(s_playerWeaponTask, WTID_HOLSTER);
+			task_runAndReturn(s_playerWeaponTask, MSG_HOLSTER);
 		}
 	}
 
@@ -910,7 +910,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void weapon_playerWeaponTaskFunc(s32 id)
+	void weapon_playerWeaponTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -920,13 +920,13 @@ namespace TFE_DarkForces
 		while (1)
 		{
 			// If the weapon task is called with a non-zero id, handle it here.
-			if (id == WTID_FREE_TASK)
+			if (msg == MSG_FREE_TASK)
 			{
 				task_free(s_playerWeaponTask);
 				s_playerWeaponTask = nullptr;
 				return;
 			}
-			else if (id == WTID_SWITCH_WEAPON)
+			else if (msg == MSG_SWITCH_WPN)
 			{
 				task_makeActive(s_playerWeaponTask);
 				s_nextWeapon = s_msgArg1;
@@ -953,7 +953,7 @@ namespace TFE_DarkForces
 				weapon_setNext(s_curWeapon);
 				task_callTaskFunc(weapon_handleOnAnimation);
 			}
-			else if (id == WTID_START_FIRING)
+			else if (msg == MSG_START_FIRING)
 			{
 				taskCtx->secondaryFire = s_msgArg1;
 				task_makeActive(s_playerWeaponTask);
@@ -972,13 +972,13 @@ namespace TFE_DarkForces
 				weapon_prepareToFire();
 				weapon_setFireRate();
 			}
-			else if (id == WTID_STOP_FIRING)
+			else if (msg == MSG_STOP_FIRING)
 			{
 				s_isShooting = JFALSE;
 				weapon_prepareToFire();
 				s_curPlayerWeapon->flags |= 2;
 			}
-			else if (id == WTID_HOLSTER)
+			else if (msg == MSG_HOLSTER)
 			{
 				task_makeActive(s_playerWeaponTask);
 				task_yield(TASK_NO_DELAY);
@@ -1026,7 +1026,7 @@ namespace TFE_DarkForces
 				s_switchWeapons = JFALSE;
 				s_fireFrame++;
 
-				while (id != 0)
+				while (msg != MSG_RUN_TASK)
 				{
 					task_makeActive(s_playerWeaponTask);
 					task_yield(TASK_NO_DELAY);

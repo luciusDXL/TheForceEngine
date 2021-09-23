@@ -72,16 +72,6 @@ namespace TFE_DarkForces
 		WFIRE_SECONDARY,
 	};
 
-	enum WeaponTaskId
-	{
-		WTID_FREE_TASK = -1,
-		WTID_SWITCH_WEAPON = 2,
-		WTID_START_FIRING = 4,
-		WTID_STOP_FIRING = 5,
-		WTID_HOLSTER = 6,
-		WTID_COUNT
-	};
-
 	enum WeaponFireType
 	{
 		WFIRETYPE_PRIMARY = JFALSE,		// Primary fire.

@@ -4,19 +4,20 @@
 // Player information and object data.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Jedi/InfSystem/message.h>
 
 namespace TFE_DarkForces
 {
-	typedef void(*WeaponFireFunc)(s32 id);
+	typedef void(*WeaponFireFunc)(MessageType msg);
 
-	void weaponFire_fist(s32 id);
-	void weaponFire_pistol(s32 id);
-	void weaponFire_rifle(s32 id);
-	void weaponFire_thermalDetonator(s32 id);
-	void weaponFire_repeater(s32 id);
-	void weaponFire_fusion(s32 id);
-	void weaponFire_mortar(s32 id);
-	void weaponFire_mine(s32 id);
-	void weaponFire_concussion(s32 id);
-	void weaponFire_cannon(s32 id);
+	void weaponFire_fist(MessageType msg);
+	void weaponFire_pistol(MessageType msg);
+	void weaponFire_rifle(MessageType msg);
+	void weaponFire_thermalDetonator(MessageType msg);
+	void weaponFire_repeater(MessageType msg);
+	void weaponFire_fusion(MessageType msg);
+	void weaponFire_mortar(MessageType msg);
+	void weaponFire_mine(MessageType msg);
+	void weaponFire_concussion(MessageType msg);
+	void weaponFire_cannon(MessageType msg);
 }  // namespace TFE_DarkForces

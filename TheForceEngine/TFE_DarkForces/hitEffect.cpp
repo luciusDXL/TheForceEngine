@@ -41,7 +41,7 @@ namespace TFE_DarkForces
 
 	void hitEffectWakeupFunc(SecObject* obj);
 	void hitEffectExplodeFunc(SecObject* obj);
-	void hitEffectTaskFunc(s32 id);
+	void hitEffectTaskFunc(MessageType msg);
 
 	void hitEffect_startup()
 	{
@@ -258,7 +258,7 @@ namespace TFE_DarkForces
 	// Hit effect logic function.
 	// This handles all effects currently queued up.
 	////////////////////////////////////////////////////////////////////////
-	void hitEffectTaskFunc(s32 id)
+	void hitEffectTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -273,11 +273,11 @@ namespace TFE_DarkForces
 
 			// When it is woken up, either it will be directly called with id = 20 after an animation is complete or
 			// is called during the update because there are effects to process.
-			if (id == HEFFECT_ANIM_COMPLETE)
+			if (msg == MSG_SEQ_COMPLETE)
 			{
 				taskCtx->count--;
 			}
-			else if (id == 0)
+			else if (msg == MSG_RUN_TASK)
 			{
 				// There are no yields in this block, so using purely local variables is safe.
 				HitEffect* effect = (HitEffect*)allocator_getHead(s_hitEffects);

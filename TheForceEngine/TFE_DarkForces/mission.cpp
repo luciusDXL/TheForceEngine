@@ -91,7 +91,7 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////
-	void mission_mainTaskFunc(s32 id);
+	void mission_mainTaskFunc(MessageType msg);
 	void setPalette(u8* pal);
 	void blitLoadingScreen();
 	void displayLoadingScreen();
@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);
 	void setLuminanceMask(JBool r, JBool g, JBool b);
 	void setCurrentColorMap(u8* colorMap, u8* lightRamp);
-	void mainTask_handleCall(s32 id);
+	void mainTask_handleCall(MessageType msg);
 	void handleGeneralInput();
 
 	void updateScreensize();
@@ -119,7 +119,7 @@ namespace TFE_DarkForces
 	static Tick s_loadingScreenStart;
 	static Tick s_loadingScreenDelta;
 
-	void mission_startTaskFunc(s32 id)
+	void mission_startTaskFunc(MessageType msg)
 	{
 		task_begin;
 		{
@@ -228,13 +228,13 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void mission_mainTaskFunc(s32 id)
+	void mission_mainTaskFunc(MessageType msg)
 	{
 		task_begin;
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			// This means it is time to abort, we are done with this level.
-			if (s_curTick >= 0 && (s_exitLevel || id < 0))
+			if (s_curTick >= 0 && (s_exitLevel || msg < MSG_RUN_TASK))
 			{
 				break;
 			}
@@ -282,11 +282,11 @@ namespace TFE_DarkForces
 			do
 			{
 				task_yield(TASK_NO_DELAY);
-				if (id != -1 && id != 0)
+				if (msg != MSG_FREE_TASK && msg != MSG_RUN_TASK)
 				{
-					mainTask_handleCall(id);
+					mainTask_handleCall(msg);
 				}
-			} while (id != -1 && id != 0);
+			} while (msg != MSG_FREE_TASK && msg != MSG_RUN_TASK);
 		}
 
 		s_mainTask = nullptr;
@@ -297,9 +297,9 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// Internal Implementation
 	/////////////////////////////////////////////
-	void mainTask_handleCall(s32 id)
+	void mainTask_handleCall(MessageType msg)
 	{
-		if (id == 0x22)	// This message is sent when the power generator is enabled in Talay.
+		if (msg == MSG_LIGHTS)
 		{
 			sector_changeGlobalLightLevel();
 		}

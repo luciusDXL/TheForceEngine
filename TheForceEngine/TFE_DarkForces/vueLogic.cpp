@@ -49,7 +49,7 @@ namespace TFE_DarkForces
 	static size_t s_workBufferSize = 0;
 
 	JBool vueLogicSetupFunc(Logic* logic, KEYWORD key);
-	void vueLogicTaskFunc(s32 id);
+	void vueLogicTaskFunc(MessageType msg);
 	void vueLogicCleanupFunc(Logic *logic);
 
 	Logic* obj_createVueLogic(SecObject* obj, LogicSetupFunc* setupFunc)
@@ -300,12 +300,12 @@ namespace TFE_DarkForces
 	}
 
 	// TODO(Core Game Loop Release): Stubbed out the minimum.
-	void vueLogicTaskFunc(s32 id)
+	void vueLogicTaskFunc(MessageType msg)
 	{
 		task_begin;
 
 		task_yield(TASK_SLEEP);
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			task_yield(TASK_NO_DELAY);
 		}

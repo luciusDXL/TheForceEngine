@@ -31,10 +31,10 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////
-	void pickTaskFunc(s32 id);
+	void pickTaskFunc(MessageType msg);
 	void pickupInvincibility();
 	void pickupInventory();
-	void pickupItem(s32 id);
+	void pickupItem(MessageType msg);
 
 	//////////////////////////////////////////////////////////////
 	// API Implementation
@@ -110,11 +110,11 @@ namespace TFE_DarkForces
 	static Pickup* s_listToFree[MAX_PICKUP_FREE_ITEMS];
 	static s32 s_listToFreeCnt = 0;
 
-	void pickupItem(s32 id)
+	void pickupItem(MessageType msg)
 	{
 		Pickup* pickup = (Pickup*)s_msgTarget;
 		SecObject* entity = (SecObject*)s_msgEntity;
-		if (id == MSG_DAMAGE || id == MSG_EXPLOSION)
+		if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
 		{
 			return;
 		}
@@ -315,7 +315,7 @@ namespace TFE_DarkForces
 					
 	// The current pickup being processed is stored in Message::s_msgTarget
 	// The object "picking up" the item is stored in Message::s_msgEntity
-	void pickTaskFunc(s32 id)
+	void pickTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -325,22 +325,22 @@ namespace TFE_DarkForces
 			JBool pickedUpItem;
 		};
 		task_begin_ctx;
-		while (id != -1)
+		while (msg != MSG_FREE_TASK)
 		{
 			// Sleep until called.
 			task_yield(TASK_SLEEP);
-			if (id == 0)
+			if (msg == MSG_RUN_TASK)
 			{
 				freeItems();
 			}
 
-			if (id == PICKUP_DELETE)
+			if (msg == MSG_FREE)
 			{
 				pickup_cleanupFunc((Logic*)s_msgTarget);
 			}
-			else if (id == PICKUP_ACQUIRE)
+			else if (msg == MSG_PICKUP)
 			{
-				pickupItem(id);
+				pickupItem(msg);
 			}  // if (id == PICKUP_ACQUIRE)
 		}  // while (id != -1)
 		task_end;
@@ -760,7 +760,7 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Internal Implementation
 	//////////////////////////////////////////////////////////////
-	void gasmaskTaskFunc(s32 id)
+	void gasmaskTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -784,7 +784,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void invincibilityTaskFunc(s32 id)
+	void invincibilityTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -809,7 +809,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void superchargeTaskFunc(s32 id)
+	void superchargeTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
@@ -883,7 +883,7 @@ namespace TFE_DarkForces
 				if (s_playerWeaponTask)
 				{
 					s_msgArg1 = s_playerInfo.maxWeapon;
-					task_runAndReturn(s_playerWeaponTask, WTID_SWITCH_WEAPON);
+					task_runAndReturn(s_playerWeaponTask, MSG_SWITCH_WPN);
 					s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
 				}
 				else
