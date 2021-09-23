@@ -164,6 +164,7 @@ namespace TFE_DarkForces
 	s32 s_headwaveVerticalOffset;
 	u32 s_moveAvail = 0xffffffff;
 	s32 s_weaponLight = 0;
+	s32 s_baseAtten = 0;
 	fixed16_16 s_gravityAccel;
 
 	JBool s_weaponFiring = JFALSE;
@@ -1731,7 +1732,7 @@ namespace TFE_DarkForces
 				headlamp = 2*MAX_LIGHT_LEVEL - min(MAX_LIGHT_LEVEL, headlamp);
 			}
 			s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
-			//s_baseAtten = atten;
+			s_baseAtten = atten;
 			if (s_nightvisionActive)
 			{
 				atten = 0;

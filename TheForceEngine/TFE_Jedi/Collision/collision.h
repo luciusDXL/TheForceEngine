@@ -81,6 +81,7 @@ namespace TFE_Jedi
 	RSector* collision_moveObj(SecObject* obj, fixed16_16 dx, fixed16_16 dz);
 	RWall* collision_pathWallCollision(RSector* sector);
 	RWall* collision_wallCollisionFromPath(RSector* sector, fixed16_16 srcX, fixed16_16 srcZ, fixed16_16 dstX, fixed16_16 dstZ);
+	JBool collision_canHitObject(RSector* startSector, RSector* endSector, vec3_fixed p0, vec3_fixed p1, u32 exclWallFlags3);
 
 	SecObject* collision_getObjectCollision(RSector* sector, CollisionInterval* interval, SecObject* prevObj);
 	JBool collision_isAnyObjectInRange(RSector* sector, fixed16_16 radius, vec3_fixed origin, SecObject* skipObj, u32 entityFlags);
@@ -96,4 +97,5 @@ namespace TFE_Jedi
 	// Variables
 	extern fixed16_16 s_colObjOverlap;
 	extern s32 s_collisionFrameWall;
+	extern JBool s_collision_wallHit;
 }

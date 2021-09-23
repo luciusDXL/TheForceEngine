@@ -68,6 +68,7 @@ namespace TFE_Jedi
 	// Internal State
 	////////////////////////////////////////////////////////
 	s32 s_collisionFrameWall;
+	JBool s_collision_wallHit = JFALSE;
 	static ColPath s_col_path;
 
 	static fixed16_16 s_col_hitX;
@@ -105,9 +106,7 @@ namespace TFE_Jedi
 	static fixed16_16 s_col_wallX0;
 	static fixed16_16 s_col_wallX1;
 	static fixed16_16 s_col_wallZ0;
-
-	static JBool s_collision_wallHit = JFALSE;
-
+		
 	// Object Collision
 	static fixed16_16 s_colObjOffsetX;
 	static fixed16_16 s_colObjOffsetZ;
@@ -138,8 +137,7 @@ namespace TFE_Jedi
 	IntersectionResult pathIntersectsWall(ColPath* path, RWall* wall);
 	vec2_fixed* computeIntersectPos();
 	SecObject* internal_getObjectCollision();
-	JBool collision_canHitObject(RSector* startSector, RSector* endSector, vec3_fixed p0, vec3_fixed p1, u32 exclWallFlags3);
-		
+			
 	////////////////////////////////////////////////////////
 	// API Implementation
 	////////////////////////////////////////////////////////

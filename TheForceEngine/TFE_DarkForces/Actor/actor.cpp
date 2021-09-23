@@ -2,6 +2,7 @@
 #include "../logic.h"
 #include "aiActor.h"
 #include <TFE_Game/igame.h>
+#include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
 #include <TFE_DarkForces/projectile.h>
@@ -146,7 +147,19 @@ namespace TFE_DarkForces
 
 	void actor_allocatePhysicsActorList()
 	{
-		s_physicsActors = list_allocate(sizeof(void*), 80);
+		s_physicsActors = list_allocate(sizeof(PhysicsActor*), 80);
+	}
+
+	void actor_addPhysicsActorToWorld(PhysicsActor* actor)
+	{
+		PhysicsActor** actorPtr = (PhysicsActor**)list_addItem(s_physicsActors);
+		*actorPtr = actor;
+
+		actor->xVel = 0;
+		actor->yVel = 0;
+		actor->zVel = 0;
+		actor->ud0  = 0;
+		actor->parent = actorPtr;
 	}
 		
 	void actor_createTask()
@@ -523,7 +536,7 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	void obj_setupSmartObj(Actor* actor)
+	void actor_setupSmartObj(Actor* actor)
 	{
 		SecObject* obj = actor->header.obj;
 
@@ -544,16 +557,91 @@ namespace TFE_DarkForces
 		obj->entityFlags |= ETFLAG_SMART_OBJ;
 	}
 
+	JBool actor_canSeeObject(SecObject* actorObj, SecObject* obj)
+	{
+		vec3_fixed p0 = { actorObj->posWS.x, actorObj->posWS.y - actorObj->worldHeight, actorObj->posWS.z };
+		vec3_fixed p1 = { obj->posWS.x, obj->posWS.y, obj->posWS.z };
+		if (collision_canHitObject(actorObj->sector, obj->sector, p0, p1, 0))
+		{
+			return JTRUE;
+		}
+		if (s_collision_wallHit)
+		{
+			return JFALSE;
+		}
+
+		vec3_fixed p2 = { obj->posWS.x, obj->posWS.y - obj->worldHeight, obj->posWS.z };
+		return collision_canHitObject(actorObj->sector, obj->sector, p0, p2, 0);
+	}
+	   
+	JBool actor_canSeeObjFromDist(SecObject* actorObj, SecObject* obj)
+	{
+		fixed16_16 approxDist = distApprox(actorObj->posWS.x, actorObj->posWS.z, obj->posWS.x, obj->posWS.z);
+		// Crouching makes the target harder to see.
+		if (obj->worldHeight < FIXED(3))
+		{
+			approxDist *= 2;
+		}
+		if (!s_headlampActive)
+		{
+			RSector* sector1 = obj->sector;
+			fixed16_16 ambient = sector1->ambient;
+			if (ambient > FIXED(22))
+			{
+				ambient = FIXED(31);
+			}
+			// Adds up to 248 units to the approximate distande: 248 when ambient = 0, 0 when ambient = 31
+			approxDist += FIXED(248) - (ambient << 3);
+		}
+		else
+		{
+			approxDist -= s_baseAtten * 2;
+		}
+
+		if (approxDist < FIXED(256))
+		{
+			// Since random() is unsigned, the real visible range is [200, 256) because of the conditional above.
+			fixed16_16 rndDist = random(FIXED(256)) + FIXED(200);
+			if (approxDist < rndDist)
+			{
+				return actor_canSeeObject(actorObj, obj);
+			}
+		}
+		return JFALSE;
+	}
+
+	JBool actor_isObjectVisible(SecObject* actorObj, SecObject* obj, angle14_32 fov, fixed16_16 closeDist)
+	{
+		fixed16_16 approxDist = distApprox(actorObj->posWS.x, actorObj->posWS.z, obj->posWS.x, obj->posWS.z);
+		if (approxDist <= closeDist)
+		{
+			return actor_canSeeObjFromDist(actorObj, obj);
+		}
+
+		fixed16_16 dx = obj->posWS.x - actorObj->posWS.x;
+		fixed16_16 dz = obj->posWS.z - actorObj->posWS.z;
+		angle14_32 yaw0 = actorObj->yaw;
+		angle14_32 obj0To1Angle = vec2ToAngle(dx, dz);
+		angle14_32 angleDiff = getAngleDifference(obj0To1Angle, yaw0);
+		angle14_32 right = fov >> 1;
+		angle14_32 left = -(fov >> 1);
+		if (angleDiff > left && angleDiff < right)
+		{
+			return actor_canSeeObjFromDist(actorObj, obj);
+		}
+		return JFALSE;
+	}
+
 	Actor* actor_create(Logic* logic)
 	{
 		Actor* actor = (Actor*)level_alloc(sizeof(Actor));
 		gameObj_Init((ActorHeader*)actor, logic);
-		obj_setupSmartObj(actor);
+		actor_setupSmartObj(actor);
 
 		actor->header.func = defaultActorFunc;
 		actor->header.freeFunc = nullptr;
 		actor->func3 = defaultActorMsgFunc;
-		// Overwrites height even though it was set in obj_setupSmartObj()
+		// Overwrites height even though it was set in actor_setupSmartObj()
 		actor->physics.height = 0x18000;	// 1.5 units
 		actor->physics.wall = nullptr;
 		actor->physics.u24 = 0;

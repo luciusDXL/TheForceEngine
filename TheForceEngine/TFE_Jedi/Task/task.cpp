@@ -252,6 +252,7 @@ namespace TFE_Jedi
 
 	void task_setUserData(Task* task, void* data)
 	{
+		if (!task) { return; }
 		task->userData = data;
 	}
 

@@ -9,5 +9,5 @@
 
 namespace TFE_DarkForces
 {
-	void mousebot_setup(SecObject* obj, LogicSetupFunc* setupFunc);
+	Logic* mousebot_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

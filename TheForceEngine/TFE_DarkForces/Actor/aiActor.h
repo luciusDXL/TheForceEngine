@@ -64,3 +64,27 @@ struct AiActor
 	s32 uc0;
 	s32 uc4;
 };
+
+struct PhysicsActor
+{
+	Actor actor;
+
+	s32 ua4;
+	s32 ua8;
+	s32 uac;
+	s32 ub0;
+	s32 ub4;
+	s32 ub8;
+	s32 ubc;
+	s32 uc0;
+	fixed16_16 xVel;
+	fixed16_16 yVel;
+	fixed16_16 zVel;
+	s32 ud0;
+	PhysicsActor** parent;
+	s32 ud8;
+	fixed16_16 hp;
+	Task* task2;
+	s32 ue4;
+	s32 ue8;
+};

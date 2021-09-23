@@ -86,6 +86,7 @@ namespace TFE_DarkForces
 	extern s32 s_playerLight;
 	extern s32 s_headwaveVerticalOffset;
 	extern s32 s_weaponLight;
+	extern s32 s_baseAtten;
 	extern fixed16_16 s_gravityAccel;
 	extern JBool s_weaponFiring;
 	extern JBool s_weaponFiringSec;

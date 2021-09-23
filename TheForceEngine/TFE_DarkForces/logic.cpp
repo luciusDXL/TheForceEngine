@@ -265,7 +265,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_MOUSEBOT:
 			{
-				mousebot_setup(obj, setupFunc);
+				return mousebot_setup(obj, setupFunc);
 			} break;
 			case KW_WELDER:
 			{

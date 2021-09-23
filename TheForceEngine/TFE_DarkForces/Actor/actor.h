@@ -11,6 +11,7 @@
 struct Actor;
 struct ActorHeader;
 struct AiActor;
+struct PhysicsActor;
 
 enum ActorConst
 {
@@ -104,6 +105,7 @@ namespace TFE_DarkForces
 {
 	void actor_loadSounds();
 	void actor_allocatePhysicsActorList();
+	void actor_addPhysicsActorToWorld(PhysicsActor* actor);
 	void actor_createTask();
 
 	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
@@ -120,6 +122,14 @@ namespace TFE_DarkForces
 	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim);
 	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ);
 	void actor_removeLogics(SecObject* obj);
+	void actor_setupSmartObj(Actor* actor);
+
+	// Returns JTRUE if 'actorObj' can see 'obj'
+	// The object must be as close or closer than 'closeDist' or be within the fov of the 'actorObj'.
+	// Also the distance between actorObj and obj must be less than 200 - 256 units (randomized), and this value is 
+	// adjusted based on the darkness level of the area where 'obj' is (so it is harder to see objects in the dark).
+	// Conversely the headlamp will make 'obj' visible from further away.
+	JBool actor_isObjectVisible(SecObject* actorObj, SecObject* obj, angle14_32 fov, fixed16_16 closeDist);
 
 	extern LogicAnimation* s_curAnimation;
 	extern Logic* s_curLogic;
