@@ -36,6 +36,7 @@ namespace TFE_FrontEndUI
 	{
 		CONFIG_ABOUT = 0,
 		CONFIG_GAME,
+		CONFIG_INPUT,
 		CONFIG_GRAPHICS,
 		CONFIG_HUD,
 		CONFIG_SOUND,
@@ -46,6 +47,7 @@ namespace TFE_FrontEndUI
 	{
 		"About",
 		"Game Settings",
+		"Input",
 		"Graphics",
 		"Hud",
 		"Sound",
@@ -147,6 +149,7 @@ namespace TFE_FrontEndUI
 
 	void configAbout();
 	void configGame();
+	void configInput();
 	void configGraphics();
 	void configHud();
 	void configSound();
@@ -481,7 +484,7 @@ namespace TFE_FrontEndUI
 		else if (s_subUI == FEUI_CONFIG)
 		{
 			bool active = true;
-			const u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+			const u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
 
 			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
@@ -498,6 +501,11 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("Game", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_GAME;
+				TFE_Settings::writeToDisk();
+			}
+			if (ImGui::Button("Input", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_INPUT;
 				TFE_Settings::writeToDisk();
 			}
 			if (ImGui::Button("Graphics", sideBarButtonSize))
@@ -544,9 +552,9 @@ namespace TFE_FrontEndUI
 
 			// adjust the width based on tab.
 			s32 tabWidth = w - 160;
-			if (s_configTab == CONFIG_GRAPHICS || s_configTab == CONFIG_HUD)
+			if (s_configTab >= CONFIG_INPUT)
 			{
-				tabWidth = 400;
+				tabWidth = 414;
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(160.0f, 0.0f));
@@ -565,6 +573,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_GAME:
 				configGame();
+				break;
+			case CONFIG_INPUT:
+				configInput();
 				break;
 			case CONFIG_GRAPHICS:
 				configGraphics();
@@ -765,6 +776,316 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
 			ImGui::EndPopup();
 		}
+	}
+
+	enum ControllerAxisBinding
+	{
+		CAB_MOVE_FWD_BACK = 0,
+		CAB_STRAFE,
+		CAB_LOOK_HORZ,
+		CAB_LOOK_VERT,
+		CAB_COUNT
+	};
+
+	enum MouseMode
+	{
+		MMODE_NONE = 0,
+		MMODE_TURN,
+		MMODE_LOOK,
+	};
+
+	static const char* c_axisBinding[]=
+	{
+		"Forward/Back",
+		"Strafe",
+		"Look Horizontal",
+		"Look Vertical",
+	};
+
+	static const char* c_mouseMode[] =
+	{
+		"Menus Only",
+		"Horizontal Turning",
+		"Mouselook"
+	};
+
+	struct InputConfig
+	{
+		// Controller
+		bool controllerEnable = true;
+		ControllerAxisBinding leftHorz = CAB_STRAFE;
+		ControllerAxisBinding leftVert = CAB_MOVE_FWD_BACK;
+		ControllerAxisBinding rightHorz = CAB_LOOK_HORZ;
+		ControllerAxisBinding rightVert = CAB_LOOK_VERT;
+		f32 leftSensitivity = 1.0f;
+		f32 rightSensitivity = 1.0f;
+		bool leftInvert[2] = { false, false };
+		bool rightInvert[2] = { false, false };
+
+		// Mouse
+		MouseMode mouseMode = MMODE_LOOK;
+		f32 mouseHorzSensitivity = 1.0f;
+		f32 mouseVertSensitivity = 1.0f;
+		bool mouseInvert[2] = { false, false };
+	};
+	static InputConfig s_inputConfig;
+	static bool s_controllerWinOpen = true;
+	static bool s_mouseWinOpen = true;
+	static bool s_inputMappingOpen = true;
+
+	void inputMapping(const char* name, const char* inputName1, const char* inputName2)
+	{
+		ImGui::LabelText("##ConfigLabel", name); ImGui::SameLine(132);
+		ImGui::Button(inputName1, ImVec2(120.0f, 0.0f)); ImGui::SameLine();
+		ImGui::Button(inputName2, ImVec2(120.0f, 0.0f));
+	}
+
+	void configInput()
+	{
+		const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar;
+		f32 scroll = ImGui::GetScrollY();
+		f32 yNext = 45.0f;
+
+		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
+		if (ImGui::BeginChild("Controller Options", ImVec2(390.0f, s_controllerWinOpen ? 400.0f : 29.0f), true, window_flags))
+		{
+			if (ImGui::Button("Controller Options", ImVec2(370.0f, 0.0f)))
+			{
+				s_controllerWinOpen = !s_controllerWinOpen;
+			}
+			ImGui::PopStyleVar();
+
+			if (s_controllerWinOpen)
+			{
+				ImGui::Spacing();
+				ImGui::Checkbox("Enable", &s_inputConfig.controllerEnable);
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "Controller Axis");
+				ImGui::PopFont();
+
+				ImGui::LabelText("##ConfigLabel", "Left Stick Horizontal"); ImGui::SameLine(175);
+				ImGui::SetNextItemWidth(196);
+				ImGui::Combo("##LeftStickHorz", (s32*)&s_inputConfig.leftHorz, c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+
+				ImGui::LabelText("##ConfigLabel", "Left Stick Vertical"); ImGui::SameLine(175);
+				ImGui::SetNextItemWidth(196);
+				ImGui::Combo("##LeftStickVert", (s32*)&s_inputConfig.leftVert, c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+
+				ImGui::LabelText("##ConfigLabel", "Right Stick Horizontal"); ImGui::SameLine(175);
+				ImGui::SetNextItemWidth(196);
+				ImGui::Combo("##RightStickHorz", (s32*)&s_inputConfig.rightHorz, c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+
+				ImGui::LabelText("##ConfigLabel", "Right Stick Vertical"); ImGui::SameLine(175);
+				ImGui::SetNextItemWidth(196);
+				ImGui::Combo("##RightStickVert", (s32*)&s_inputConfig.rightVert, c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+
+				ImGui::Separator();
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "Sensitivity");
+				ImGui::PopFont();
+
+				ImGui::LabelText("##ConfigLabel", "Left Stick");
+				ImGui::SetNextItemWidth(196);
+				ImGui::SliderFloat("##LeftSensitivity", &s_inputConfig.leftSensitivity, 0.0f, 4.0f); ImGui::SameLine(220);
+				ImGui::SetNextItemWidth(64);
+				ImGui::InputFloat("##LeftSensitivityInput", &s_inputConfig.leftSensitivity);
+
+				ImGui::LabelText("##ConfigLabel", "Right Stick");
+				ImGui::SetNextItemWidth(196);
+				ImGui::SliderFloat("##RightSensitivity", &s_inputConfig.rightSensitivity, 0.0f, 4.0f); ImGui::SameLine(220);
+				ImGui::SetNextItemWidth(64);
+				ImGui::InputFloat("##RightSensitivityInput", &s_inputConfig.rightSensitivity);
+
+				ImGui::Separator();
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "Invert Axis");
+				ImGui::PopFont();
+
+				ImGui::LabelText("##ConfigLabel", "Left Stick Invert: "); ImGui::SameLine(175);
+				ImGui::Checkbox("Horizontal##Left", &s_inputConfig.leftInvert[0]); ImGui::SameLine();
+				ImGui::Checkbox("Vertical##Left", &s_inputConfig.leftInvert[1]);
+
+				ImGui::LabelText("##ConfigLabel", "Right Stick Invert: "); ImGui::SameLine(175);
+				ImGui::Checkbox("Horizontal##Right", &s_inputConfig.rightInvert[0]); ImGui::SameLine();
+				ImGui::Checkbox("Vertical##Right", &s_inputConfig.rightInvert[1]);
+
+				yNext += 400.0f;
+			}
+			else
+			{
+				yNext += 29.0f;
+			}
+		}
+		else
+		{
+			yNext += s_controllerWinOpen ? 400.0f : 29.0f;
+			ImGui::PopStyleVar();
+		}
+		ImGui::EndChild();
+				
+		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
+		if (ImGui::BeginChild("##Mouse Options", ImVec2(390.0f, s_mouseWinOpen ? 250.0f : 29.0f), true, window_flags))
+		{
+			if (ImGui::Button("Mouse Options", ImVec2(370.0f, 0.0f)))
+			{
+				s_mouseWinOpen = !s_mouseWinOpen;
+			}
+			ImGui::PopStyleVar();
+
+			if (s_mouseWinOpen)
+			{
+				ImGui::Spacing();
+
+				ImGui::LabelText("##ConfigLabel", "Mouse Mode"); ImGui::SameLine(100);
+				ImGui::SetNextItemWidth(160);
+				ImGui::Combo("##MouseMode", (s32*)&s_inputConfig.mouseMode, c_mouseMode, IM_ARRAYSIZE(c_mouseMode));
+
+				ImGui::Separator();
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "Sensitivity");
+				ImGui::PopFont();
+
+				ImGui::LabelText("##ConfigLabel", "Horizontal");
+				ImGui::SetNextItemWidth(196);
+				ImGui::SliderFloat("##HorzSensitivity", &s_inputConfig.mouseHorzSensitivity, 0.0f, 4.0f); ImGui::SameLine(220);
+				ImGui::SetNextItemWidth(64);
+				ImGui::InputFloat("##HorzSensitivityInput", &s_inputConfig.mouseHorzSensitivity);
+
+				ImGui::LabelText("##ConfigLabel", "Vertical");
+				ImGui::SetNextItemWidth(196);
+				ImGui::SliderFloat("##VertSensitivity", &s_inputConfig.mouseVertSensitivity, 0.0f, 4.0f); ImGui::SameLine(220);
+				ImGui::SetNextItemWidth(64);
+				ImGui::InputFloat("##VertSensitivityInput", &s_inputConfig.mouseVertSensitivity);
+
+				ImGui::Separator();
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "Mouse Invert");
+				ImGui::PopFont();
+
+				ImGui::Checkbox("Horizontal##Mouse", &s_inputConfig.mouseInvert[0]); ImGui::SameLine();
+				ImGui::Checkbox("Vertical##Mouse", &s_inputConfig.mouseInvert[1]);
+
+				yNext += 250.0f;
+			}
+			else
+			{
+				yNext += 29.0f;
+			}
+		}
+		else
+		{
+			yNext += s_controllerWinOpen ? 250.0f : 29.0f;
+			ImGui::PopStyleVar();
+		}
+		ImGui::End();
+		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
+		f32 inputMappingHeight = 1350.0f;
+		if (ImGui::BeginChild("##Input Mapping", ImVec2(390.0f, s_inputMappingOpen ? inputMappingHeight : 29.0f), true, window_flags))
+		{
+			if (ImGui::Button("Input Mapping", ImVec2(370.0f, 0.0f)))
+			{
+				s_inputMappingOpen = !s_inputMappingOpen;
+			}
+			ImGui::PopStyleVar();
+
+			if (s_inputMappingOpen)
+			{
+				ImGui::Spacing();
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "System");
+				ImGui::PopFont();
+
+				inputMapping("Console Toggle", "~", "");
+				inputMapping("System Menu", "Alt + F1", "Right Thumbstick");
+
+				ImGui::Separator();
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "Dark Forces - General");
+				ImGui::PopFont();
+
+				inputMapping("Menu Toggle", "Esc", "Menu [Controller]");
+				inputMapping("PDA Toggle", "F1", "Window [Controller]");
+				inputMapping("Night Vision", "F2", "DPad Left");
+				inputMapping("Cleats", "F3", "");
+				inputMapping("Gas Mask", "F4", "DPad Down");
+				inputMapping("Head Lamp", "F5", "DPad Right");
+				inputMapping("Headwave", "F6", "");
+				inputMapping("HUD Toggle", "F7", "");
+				inputMapping("Holster Weapon", "F8", "");
+				inputMapping("Automount Toggle", "Alt + F8", "");
+				inputMapping("Cycle Prev Weapon", "F9", "Left Button");
+				inputMapping("Cycle Next Weapon", "F10", "Right Button");
+				inputMapping("Prev Weapon", "Backspace", "");
+				inputMapping("Pause", "Pause/Break", "");
+				inputMapping("Automap", "TAB", "DPad Up");
+								
+				ImGui::Separator();
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "Dark Forces - Automap");
+				ImGui::PopFont();
+
+				inputMapping("Zoom In", "+/=", "");
+				inputMapping("Zoom Out", "-", "");
+				inputMapping("Scroll Up", "Alt + Up", "");
+				inputMapping("Scroll Down", "Alt + Down", "");
+				inputMapping("Scroll Left", "Alt + Left", "");
+				inputMapping("Scroll Right", "Alt + Right", "");
+				inputMapping("Layer Up", "]", "");
+				inputMapping("Layer Down", "[", "");
+
+				ImGui::Separator();
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::LabelText("##ConfigLabel", "Dark Forces - Player");
+				ImGui::PopFont();
+
+				inputMapping("Forward", "W", "");
+				inputMapping("Backward", "S", "");
+				inputMapping("Strafe Left", "A", "");
+				inputMapping("Strafe Right", "D", "");
+				inputMapping("Turn Left", "Left", "");
+				inputMapping("Turn Right", "Right", "");
+				inputMapping("Look Up", "Page Up", "");
+				inputMapping("Look Down", "Page Down", "");
+				inputMapping("Center View", "C", "");
+				inputMapping("Run", "Shift", "B [Controller]");
+				inputMapping("Walk Slowly", "Caps Lock", "");
+				inputMapping("Crouch", "Ctrl", "X [Controller]");
+				inputMapping("Jump", "Spacebar", "A [Controller]");
+				inputMapping("Use", "E", "Y [Controller]");
+				inputMapping("Primary Fire", "Left Mouse", "Right Trigger");
+				inputMapping("Secondary Fire", "Right Mouse", "Left Trigger");
+				inputMapping("Fists", "1", "");
+				inputMapping("Bryar Pistol", "2", "");
+				inputMapping("E-11 Blaster", "3", "");
+				inputMapping("Thermal Detonator", "4", "");
+				inputMapping("Repeater Gun", "5", "");
+				inputMapping("Fusion Cutter", "6", "");
+				inputMapping("I.M. Mines", "7", "");
+				inputMapping("Mortar Gun", "8", "");
+				inputMapping("Concussion Rifle", "9", "");
+				inputMapping("Assault Cannon", "0", "");
+			}
+		}
+		else
+		{
+			ImGui::PopStyleVar();
+		}
+		ImGui::End();
+		ImGui::PopStyleVar();
+		ImGui::SetCursorPosY(yNext + (s_inputMappingOpen ? inputMappingHeight : 29.0f));
 	}
 
 	void configGraphics()
