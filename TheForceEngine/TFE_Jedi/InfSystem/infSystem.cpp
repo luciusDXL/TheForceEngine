@@ -127,19 +127,19 @@ namespace TFE_Jedi
 	void inf_createElevatorTask()
 	{
 		s_infElevators = allocator_create(sizeof(InfElevator));
-		s_infElevTask = createTask("elevator", inf_elevatorTaskFunc, inf_elevatorTaskLocal);
+		s_infElevTask = createSubTask("elevator", inf_elevatorTaskFunc, inf_elevatorTaskLocal);
 	}
 
 	void inf_createTeleportTask()
 	{
-		s_teleportTask = createTask("teleporter", inf_telelporterTaskFunc, inf_teleporterTaskLocal);
+		s_teleportTask = createSubTask("teleporter", inf_telelporterTaskFunc, inf_teleporterTaskLocal);
 		task_setNextTick(s_teleportTask, TASK_SLEEP);
 		s_infTeleports = allocator_create(sizeof(Teleport));
 	}
 
 	void inf_createTriggerTask()
 	{
-		s_infTriggerTask = createTask("trigger", inf_triggerTaskFunc, inf_triggerTaskLocal);
+		s_infTriggerTask = createSubTask("trigger", inf_triggerTaskFunc, inf_triggerTaskLocal);
 		s_triggerCount = 0;
 	}
 

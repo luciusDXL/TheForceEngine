@@ -46,10 +46,10 @@ struct Task
 	char name[32];
 #endif
 
-	Task* prevMain;
-	Task* nextMain;
-	Task* prevSec;
-	Task* nextSec;
+	Task* prev;
+	Task* next;
+	Task* subtaskNext;
+	Task* subtaskParent;	// For secondary tasks, this is the parent they are attached to.
 	Task* retTask;			// Task to return to once this one is completed or paused.
 	void* userData;
 	JBool framebreak;		// JTRUE if the task loop should end after this task.
@@ -96,8 +96,8 @@ namespace TFE_Jedi
 		s_stackBlocks = createChunkedArray(TASK_STACK_SIZE, TASK_STACK_CHUNK_SIZE, TASK_PREALLOCATED_CHUNKS, s_gameRegion);
 
 		s_rootTask = { 0 };
-		s_rootTask.prevMain = &s_rootTask;
-		s_rootTask.nextMain = &s_rootTask;
+		s_rootTask.prev = &s_rootTask;
+		s_rootTask.next = &s_rootTask;
 		s_rootTask.nextTick = TASK_SLEEP;
 
 		s_taskIter = &s_rootTask;
@@ -105,7 +105,7 @@ namespace TFE_Jedi
 		s_taskCount = 0;
 	}
 
-	Task* createTask(const char* name, TaskFunc func, TaskFunc localRunFunc)
+	Task* createSubTask(const char* name, TaskFunc func, TaskFunc localRunFunc)
 	{
 		if (!s_tasks)
 		{
@@ -119,19 +119,24 @@ namespace TFE_Jedi
 #ifdef _DEBUG
 		strcpy(newTask->name, name);
 #endif
-		newTask->nextMain = s_curTask->prevSec;
-		newTask->prevMain = nullptr;
-		newTask->nextSec = s_curTask;
-		newTask->prevSec = nullptr;
+
+		// Insert newTask at the head of the subtask list in the current "mainline" task.
+		newTask->next = s_curTask->subtaskNext;
+		newTask->prev = nullptr;
+		if (s_curTask->subtaskNext)
+		{
+			s_curTask->subtaskNext->prev = newTask;
+		}
+		s_curTask->subtaskNext = newTask;
+
+		// The subtask parent is the current task.
+		newTask->subtaskParent = s_curTask;
+		// This task has no subtasks.
+		newTask->subtaskNext = nullptr;
 		newTask->retTask = nullptr;
 		newTask->userData = nullptr;
 		newTask->framebreak = JFALSE;
-		if (s_curTask->prevSec)
-		{
-			s_curTask->prevSec->prevMain = newTask;
-		}
-		s_curTask->prevSec = newTask;
-
+		
 		newTask->nextTick = 0;
 
 		newTask->context = { 0 };
@@ -141,7 +146,7 @@ namespace TFE_Jedi
 		return newTask;
 	}
 
-	Task* pushTask(const char* name, TaskFunc func, JBool framebreak, TaskFunc localRunFunc)
+	Task* createTask(const char* name, TaskFunc func, JBool framebreak, TaskFunc localRunFunc)
 	{
 		if (!s_tasks)
 		{
@@ -156,12 +161,17 @@ namespace TFE_Jedi
 #ifdef _DEBUG
 		strcpy(newTask->name, name);
 #endif
-		newTask->nextMain = s_taskIter->nextMain;
-		newTask->prevMain = s_taskIter;
-		s_taskIter->nextMain = newTask;
-
-		newTask->prevSec = nullptr;
-		newTask->nextSec = nullptr;
+		newTask->next = s_taskIter->next;
+		// This was missing?
+		if (s_taskIter->next)
+		{
+			s_taskIter->next->prev = newTask;
+		}
+		newTask->prev = s_taskIter;
+		s_taskIter->next = newTask;
+		
+		newTask->subtaskNext = nullptr;
+		newTask->subtaskParent = nullptr;
 		newTask->retTask = nullptr;
 		newTask->userData = nullptr;
 		newTask->framebreak = framebreak;
@@ -182,28 +192,31 @@ namespace TFE_Jedi
 
 	void task_free(Task* task)
 	{
-		for (s32 i = 0; i < s_taskCount; i++)
+		// Select the next task before deletion (to avoid executing the same task again).
+		if (task == s_curTask)
 		{
-			Task* itask = (Task*)chunkedArrayGet(s_tasks, i);
-			if (itask != task)
-			{
-				if (itask->prevMain == task)
-				{
-					itask->prevMain = task->prevMain;
-				}
-				if (itask->nextMain == task)
-				{
-					itask->nextMain = task->nextMain;
-				}
-				if (itask->prevSec == task)
-				{
-					itask->prevSec = task->prevSec;
-				}
-				if (itask->nextSec == task)
-				{
-					itask->nextSec = task->nextSec;
-				}
-			}
+			selectNextTask();
+		}
+		// Then remove the task.
+		if (task->prev)
+		{
+			task->prev->next = task->next;
+		}
+		if (task->next)
+		{
+			task->next->prev = task->prev;
+		}
+		// Handle deleting sub-tasks.
+		if (task->subtaskNext)
+		{
+			// Should we free subtasks?
+			assert(0);
+		}
+		// If this task was the subtaskNext, then move the next subtask into that role.
+		Task* parent = task->subtaskParent;
+		if (parent && parent->subtaskNext == task)
+		{
+			parent->subtaskNext = task->next;
 		}
 		
 		// Free any memory allocated for the local context.
@@ -211,11 +224,6 @@ namespace TFE_Jedi
 		// Finally free the task itself from the chunked array.
 		freeToChunkedArray(s_tasks, task);
 		s_taskCount--;
-
-		if (task == s_curTask)
-		{
-			selectNextTask();
-		}
 	}
 
 	void task_freeAll()
@@ -256,11 +264,21 @@ namespace TFE_Jedi
 		task->userData = data;
 	}
 
+	void* task_getUserData()
+	{
+		return s_curTask ? s_curTask->userData : nullptr;
+	}
+
 	void task_runLocal(Task* task, MessageType msg)
 	{
 		if (task->localRunFunc)
 		{
+			Task* prevCur = s_curTask;
+			s_curTask = task;
+
 			task->localRunFunc(msg);
+
+			s_curTask = prevCur;
 		}
 	}
 
@@ -307,13 +325,25 @@ namespace TFE_Jedi
 		Task* task = s_curTask;
 		while (1)
 		{
-			if (task->nextMain)
+			//////////////////////////////////////////////////////////////////////////////////////////
+			// Execution:
+			//  * Go to the next task
+			//  * Check to see if there are sub-tasks
+			//  * If so, the assign current to the sub-task.
+			//  * Execute the task.
+			//  * Once we are on the last sub-task, then go back to the parent.
+			//  * Once the parent executes, then we move on to parent->next and start all over.
+			if (task->next)
 			{
-				task = task->nextMain;
-				while (task->prevSec)
+				// Move the to the next task.
+				task = task->next;
+				// If the task has sub-tasks, loop until we find the last one.
+				// This is usually only one deep.
+				while (task->subtaskNext)
 				{
-					task = task->prevSec;
+					task = task->subtaskNext;
 				}
+				// Then execute the task.
 				if (task->nextTick <= s_curTick || task->framebreak)
 				{
 					s_currentMsg = MSG_RUN_TASK;
@@ -321,9 +351,10 @@ namespace TFE_Jedi
 					return;
 				}
 			}
-			else if (task->nextSec)
+			else if (task->subtaskParent)
 			{
-				task = task->nextSec;
+				// Otherwise, try to execute the parent.
+				task = task->subtaskParent;
 				if (task->nextTick <= s_curTick || task->framebreak)
 				{
 					s_currentMsg = MSG_RUN_TASK;
@@ -337,6 +368,7 @@ namespace TFE_Jedi
 			}
 		}
 
+		// If no selection is possible, assign the first task.
 		if (!s_curTask && s_taskCount)
 		{
 			s_curTask = (Task*)chunkedArrayGet(s_tasks, 0);

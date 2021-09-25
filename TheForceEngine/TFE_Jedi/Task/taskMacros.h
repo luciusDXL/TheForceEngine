@@ -37,12 +37,13 @@
 	case __LINE__:; \
 	} while (0)
 
-#define task_callTaskFuncWithId(func, newId)	\
+#define task_callTaskFuncWithMsg(func, newId)	\
 	do { if (ctxCall(func, newId, __LINE__, __FUNCTION__)) { return; } \
 	case __LINE__:; \
 	} while (0)
 
 #define taskCtx ((LocalContext*)ctxGet())
+#define local(x) ((LocalContext*)ctxGet())-> ## x
 
 #define task_waitWhileIdNotZero(ticks) \
 	do \

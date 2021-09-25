@@ -28,8 +28,11 @@ enum TaskDelay
 // Task System API
 namespace TFE_Jedi
 {
-	Task* createTask(const char* name, TaskFunc func, TaskFunc localRunFunc = nullptr);
-	Task* pushTask(const char* name, TaskFunc func, JBool framebreak = JFALSE, TaskFunc localRunFunc = nullptr);
+	// Create a "main" task. Generally, main tasks are executed in the order created.
+	Task* createTask(const char* name, TaskFunc func, JBool framebreak = JFALSE, TaskFunc localRunFunc = nullptr);
+	// Create a "subtask" under the current task. All sub-tasks under a main task are executed *before* that main task.
+	Task* createSubTask(const char* name, TaskFunc func, TaskFunc localRunFunc = nullptr);
+
 	Task* task_getCurrent();
 
 	void  task_free(Task* task);
@@ -39,6 +42,7 @@ namespace TFE_Jedi
 	void  task_makeActive(Task* task);
 	void  task_setNextTick(Task* task, Tick tick);
 	void  task_setUserData(Task* task, void* data);
+	void* task_getUserData();
 
 	void  task_runLocal(Task* task, MessageType msg);
 	

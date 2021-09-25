@@ -3,6 +3,7 @@
 // Dark Forces
 // Actors - AI agents
 //////////////////////////////////////////////////////////////////////
+#include "aiActor.h"
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Jedi/Collision/collision.h>
@@ -10,8 +11,6 @@
 
 struct Actor;
 struct ActorHeader;
-struct AiActor;
-struct PhysicsActor;
 
 enum ActorConst
 {
@@ -21,58 +20,6 @@ enum ActorConst
 enum ActorCollisionFlags
 {
 	ACTORCOL_GRAVITY = FLAG_BIT(1),
-};
-
-typedef JBool(*ActorFunc)(AiActor*, Actor*);
-typedef JBool(*ActorMsgFunc)(s32 msg, AiActor*, Actor*);
-typedef void(*ActorFreeFunc)(void*);
-
-struct ActorHeader
-{
-	ActorFunc func;
-	ActorMsgFunc msgFunc;
-	s32 u08;
-	ActorFreeFunc freeFunc;
-	Tick nextTick;
-	SecObject* obj;
-};
-
-enum LogicAnimFlags
-{
-	AFLAG_PLAYED = FLAG_BIT(0),
-	AFLAG_READY  = FLAG_BIT(1),
-};
-
-struct LogicAnimation
-{
-	s32 frameRate;
-	fixed16_16 frameCount;
-	u32 prevTick;
-	fixed16_16 frame;
-	fixed16_16 startFrame;
-	u32 flags;
-	s32 animId;
-	s32 u1c;
-};
-
-struct Actor
-{
-	ActorHeader header;
-	ActorFunc func3;
-	CollisionInfo physics;
-	vec3_fixed nextPos;
-	angle14_16 pitch;
-	angle14_16 yaw;
-	angle14_16 roll;
-	s16 u7a;
-	fixed16_16 speed;
-	fixed16_16 speedVert;		// offset from the base to the object center.
-	angle14_32 speedRotation;
-	u32 updateFlags;
-	vec3_fixed delta;
-	RWall* collisionWall;
-	s32 u9c;
-	u32 collisionFlags;
 };
 
 // Logic for 'actors' -
@@ -106,6 +53,7 @@ namespace TFE_DarkForces
 	void actor_loadSounds();
 	void actor_allocatePhysicsActorList();
 	void actor_addPhysicsActorToWorld(PhysicsActor* actor);
+	void actor_removePhysicsActorFromWorld(PhysicsActor* phyActor);
 	void actor_createTask();
 
 	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
@@ -118,6 +66,8 @@ namespace TFE_DarkForces
 	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor);
 
 	void actor_kill();
+	JBool actor_canDie(PhysicsActor* phyActor);
+
 	s32 actor_getAnimationIndex(s32 action);
 	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim);
 	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ);

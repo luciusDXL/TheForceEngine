@@ -50,7 +50,7 @@ namespace TFE_Jedi
 
 	void bitmap_setupAnimationTask()
 	{
-		s_textureAnimTask = createTask("texture animation", textureAnimationTaskFunc);
+		s_textureAnimTask = createSubTask("texture animation", textureAnimationTaskFunc);
 		s_textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
 	}
 

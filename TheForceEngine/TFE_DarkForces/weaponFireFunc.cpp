@@ -2097,8 +2097,8 @@ namespace TFE_DarkForces
 				fixed16_16 top = obj->posWS.y - (obj->worldHeight >> 1) + (obj->worldHeight >> 2);
 				fixed16_16 dy = top - yPos;
 				fixed16_16 dz = obj->posWS.z - zPos;
-				angle14_32 angle = vec2ToAngle(dx, dz) & 0x3fff;
-				angle14_32 yawDelta = (angle - yaw) & 0x3fff;
+				angle14_32 angle = vec2ToAngle(dx, dz) & ANGLE_MASK;
+				angle14_32 yawDelta = (angle - yaw) & ANGLE_MASK;
 				if (yawDelta > 227 && yawDelta < 16111)
 				{
 					continue;
@@ -2108,7 +2108,7 @@ namespace TFE_DarkForces
 				{
 					closest = dist;
 					s_weaponFireYaw = angle;
-					s_weaponFirePitch = vec2ToAngle(-dy, dist) & 0x3fff;
+					s_weaponFirePitch = vec2ToAngle(-dy, dist) & ANGLE_MASK;
 				}
 			}
 		}

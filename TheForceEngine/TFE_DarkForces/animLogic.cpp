@@ -105,7 +105,7 @@ namespace TFE_DarkForces
 		// Create an allocator if one is not already setup.
 		if (!s_spriteAnimTask)
 		{
-			s_spriteAnimTask = pushTask("sprite animation", spriteAnimLogicFunc);
+			s_spriteAnimTask = createTask("sprite animation", spriteAnimLogicFunc);
 		}
 		if (!s_spriteAnimList)
 		{

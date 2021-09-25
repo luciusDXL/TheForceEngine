@@ -325,7 +325,7 @@ namespace TFE_DarkForces
 		
 	void player_createController()
 	{
-		s_playerTask = pushTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
+		s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
 		task_setNextTick(s_playerTask, TASK_SLEEP);
 
 		// Clear out inventory items that the player shouldn't start a level with, such as objectives and keys
@@ -896,7 +896,7 @@ namespace TFE_DarkForces
 		if (s_config.mouseTurnEnabled || s_config.mouseLookEnabled)
 		{
 			s_playerYaw += mdx * PLAYER_MOUSE_TURN_SPD;
-			s_playerYaw &= 0x3fff;
+			s_playerYaw &= ANGLE_MASK;
 		}
 		// Pitch change
 		if (s_config.mouseLookEnabled)
@@ -976,7 +976,7 @@ namespace TFE_DarkForces
 			dYaw >>= s_playerSlow;		// half for "slow"
 
 			s_playerYaw -= dYaw;
-			s_playerYaw &= 0x3fff;
+			s_playerYaw &= ANGLE_MASK;
 		}
 		else if (getActionState(IA_TURN_RT))
 		{
@@ -986,13 +986,13 @@ namespace TFE_DarkForces
 			dYaw >>= s_playerSlow;		// half for "slow"
 
 			s_playerYaw += dYaw;
-			s_playerYaw &= 0x3fff;
+			s_playerYaw &= ANGLE_MASK;
 		}
 		else if (TFE_Input::getAxis(AXIS_RIGHT_X))
 		{
 			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_TURN_SPD, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_RIGHT_X)));
 			s_playerYaw += turnSpeed;
-			s_playerYaw &= 0x3fff;
+			s_playerYaw &= ANGLE_MASK;
 		}
 
 		if (getActionState(IA_LOOK_UP))
@@ -1391,7 +1391,7 @@ namespace TFE_DarkForces
 		}
 
 		// Adjust angles.
-		player->yaw = s_playerYaw & 0x3fff;
+		player->yaw = s_playerYaw & ANGLE_MASK;
 		player->pitch = s_playerPitch;
 		if (s_externalYawSpd)
 		{
@@ -1676,7 +1676,7 @@ namespace TFE_DarkForces
 
 			if (!s_gasSectorTask)
 			{
-				s_gasSectorTask = createTask("gas sector", gasSectorTaskFunc);
+				s_gasSectorTask = createSubTask("gas sector", gasSectorTaskFunc);
 			}
 		}
 		// Free the gas damage task if the gas mask is worn or if the damage flags no longer match up.
@@ -1803,7 +1803,7 @@ namespace TFE_DarkForces
 				s_gasSectorTask = nullptr;
 				if (!s_wearingGasmask)
 				{
-					s_gasSectorTask = createTask("gas sector", gasSectorTaskFunc);
+					s_gasSectorTask = createSubTask("gas sector", gasSectorTaskFunc);
 				}
 				s_pickupFlags = 0xffffffff;
 				s_reviveTick = s_curTick + 436;

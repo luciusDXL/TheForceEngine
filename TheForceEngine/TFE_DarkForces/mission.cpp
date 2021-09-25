@@ -129,7 +129,7 @@ namespace TFE_DarkForces
 
 			s_prevTick = s_curTick;
 			s_playerTick = s_curTick;
-			s_mainTask = pushTask("main task", mission_mainTaskFunc);
+			s_mainTask = createTask("main task", mission_mainTaskFunc);
 
 			s_invalidLevelIndex = JFALSE;
 			s_levelComplete = JFALSE;
@@ -643,7 +643,7 @@ namespace TFE_DarkForces
 		hud_sendTextMessage(20);
 		if (!s_gasmaskTask)
 		{
-			s_gasmaskTask = createTask("gasmask", gasmaskTaskFunc);
+			s_gasmaskTask = createSubTask("gasmask", gasmaskTaskFunc);
 		}
 	}
 		

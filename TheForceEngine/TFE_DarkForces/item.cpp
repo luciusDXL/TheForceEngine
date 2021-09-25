@@ -1,4 +1,6 @@
 #include "item.h"
+#include "pickup.h"
+#include "animLogic.h"
 #include <TFE_FileSystem/paths.h>
 
 using namespace TFE_Jedi;
@@ -89,5 +91,27 @@ namespace TFE_DarkForces
 				s_itemData[i].isWax = JFALSE;
 			}
 		}
+	}
+
+	SecObject* item_create(ItemId itemId)
+	{
+		SecObject* newObj = allocateObject();
+
+		if (s_itemData[itemId].isWax)
+		{
+			sprite_setData(newObj, s_itemData[itemId].wax);
+		}
+		else
+		{
+			frame_setData(newObj, s_itemData[itemId].frame);
+		}
+
+		obj_createPickup(newObj, itemId);
+		if (s_itemData[itemId].isWax)
+		{
+			obj_setSpriteAnim(newObj);
+		}
+
+		return newObj;
 	}
 }  // TFE_DarkForces

@@ -131,7 +131,7 @@ namespace TFE_DarkForces
 	void projectile_createTask()
 	{
 		s_projectiles = allocator_create(sizeof(ProjectileLogic));
-		s_projectileTask = createTask("projectiles", projectileTaskFunc);
+		s_projectileTask = createSubTask("projectiles", projectileTaskFunc);
 	}
 
 	// TODO: Move projectile data to an external file to avoid hardcoding it for TFE.

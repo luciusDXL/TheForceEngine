@@ -103,7 +103,7 @@ namespace TFE_DarkForces
 
 	void pickup_createTask()
 	{
-		s_pickupTask = createTask("pickups", pickTaskFunc, pickupItem);
+		s_pickupTask = createSubTask("pickups", pickTaskFunc, pickupItem);
 	}
 
 	enum { MAX_PICKUP_FREE_ITEMS = 128 };
@@ -849,7 +849,7 @@ namespace TFE_DarkForces
 		{
 			task_free(s_invincibilityTask);
 		}
-		s_invincibilityTask = createTask("invincibility", invincibilityTaskFunc);
+		s_invincibilityTask = createSubTask("invincibility", invincibilityTaskFunc);
 	}
 
 	void pickupSupercharge()
@@ -859,7 +859,7 @@ namespace TFE_DarkForces
 		{
 			task_free(s_superchargeTask);
 		}
-		s_superchargeTask = createTask("supercharge", superchargeTaskFunc);
+		s_superchargeTask = createSubTask("supercharge", superchargeTaskFunc);
 	}
 
 	void pickupInventory()

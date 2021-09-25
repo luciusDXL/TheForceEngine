@@ -28,12 +28,37 @@ namespace TFE_Jedi
 	u8* list_getHead(List* list)
 	{
 		u8* head = list->head;
+		list->iter = list->head;
 		// If the current entry is not filled, get the next one.
 		if (!(head[0] & 1))
 		{
 			return list_getNext(list);
 		}
 		return head + 1;
+	}
+
+	void list_removeItem(List* list, void* item)
+	{
+		if (!list || !item) { return; }
+
+		u8* data = (u8*)item - 1;
+		// Already freed.
+		if (!data[0]) { return; }
+
+		// Free the item and reduce the count.
+		data[0] = 0;
+		list->count--;
+
+		// The original method of finding the next free won't really work today, so...
+		u8* nextFree = list->head;
+		for (s32 i = 0; i < list->capacity; i++, nextFree += list->step)
+		{
+			if (!nextFree[0])
+			{
+				list->nextFree = nextFree;
+				break;
+			}
+		}
 	}
 
 	u8* list_addItem(List* list)

@@ -106,7 +106,7 @@ namespace TFE_Jedi
 		// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
 		const angle14_32 angle = (2 * ONE_16 - (subquadrantF + dXdZ)) >> 5;
 		// the final angle will be in the range of 0 - 16383
-		return angle & 0x3fff;
+		return angle & ANGLE_MASK;
 	}
 
 	fixed16_16 computeDirAndLength(fixed16_16 dx, fixed16_16 dz, fixed16_16* dirX, fixed16_16* dirZ)

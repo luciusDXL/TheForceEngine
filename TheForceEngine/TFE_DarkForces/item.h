@@ -3,6 +3,7 @@
 // Dark Forces Item IDs.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 
@@ -86,4 +87,5 @@ namespace TFE_DarkForces
 	extern ItemData      s_itemData[ITEM_COUNT];
 
 	void item_loadData();
+	SecObject* item_create(ItemId itemId);
 }  // TFE_DarkForces

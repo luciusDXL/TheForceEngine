@@ -82,7 +82,7 @@ namespace TFE_Jedi
 
 	inline void sinCosFixed(angle14_32 angle, fixed16_16* sinValue, fixed16_16* cosValue)
 	{
-		angle &= 0x3fff;	// & 16383
+		angle &= ANGLE_MASK;
 		if (!(angle & 0x1000))
 		{
 			if (!(angle & 0x2000))	// Quadrant 1
@@ -117,7 +117,7 @@ namespace TFE_Jedi
 
 	inline fixed16_16 sinFixed(angle14_32 angle)
 	{
-		angle &= 0x3fff;	// & 16383
+		angle &= ANGLE_MASK;
 		if (!(angle & 0x1000))
 		{
 			if (!(angle & 0x2000))	// Quadrant 1
@@ -139,7 +139,7 @@ namespace TFE_Jedi
 
 	inline fixed16_16 cosFixed(angle14_32 angle)
 	{
-		angle &= 0x3fff;	// & 16383
+		angle &= ANGLE_MASK;
 		if (!(angle & 0x1000))
 		{
 			if (!(angle & 0x2000))	// Quadrant 1

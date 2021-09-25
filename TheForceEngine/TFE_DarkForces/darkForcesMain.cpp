@@ -369,7 +369,7 @@ namespace TFE_DarkForces
 			{
 				bitmap_setAllocator(s_levelRegion);
 
-				s_loadMissionTask = pushTask("start mission", mission_startTaskFunc, JTRUE);
+				s_loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
 				mission_setLoadMissionTask(s_loadMissionTask);
 
 				disableLevelMusic();

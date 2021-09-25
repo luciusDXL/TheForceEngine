@@ -155,18 +155,21 @@ namespace TFE_DarkForces
 		PhysicsActor** actorPtr = (PhysicsActor**)list_addItem(s_physicsActors);
 		*actorPtr = actor;
 
-		actor->xVel = 0;
-		actor->yVel = 0;
-		actor->zVel = 0;
+		actor->vel = { 0, 0, 0 };
 		actor->ud0  = 0;
 		actor->parent = actorPtr;
+	}
+
+	void actor_removePhysicsActorFromWorld(PhysicsActor* phyActor)
+	{
+		list_removeItem(s_physicsActors, phyActor->parent);
 	}
 		
 	void actor_createTask()
 	{
 		s_actorLogics = allocator_create(sizeof(ActorLogic));
-		s_actorTask = createTask("actor", actorLogicTaskFunc, actorLogicMsgFunc);
-		s_actorPhysicsTask = createTask("physics", actorPhysicsTaskFunc);
+		s_actorTask = createSubTask("actor", actorLogicTaskFunc, actorLogicMsgFunc);
+		s_actorPhysicsTask = createSubTask("physics", actorPhysicsTaskFunc);
 	}
 
 	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc)
@@ -500,12 +503,12 @@ namespace TFE_DarkForces
 			{
 				const fixed16_16 angularSpd = mul16(intToFixed16(speedRotation), s_deltaTime);
 				const angle14_32 angleChange = floor16(angularSpd);
-				obj->yaw = (obj->yaw + computeAngleChange(yawDiff, angleChange)) & 0x3fff;
+				obj->yaw = (obj->yaw + computeAngleChange(yawDiff, angleChange)) & ANGLE_MASK;
 
 				if (obj->type & OBJ_TYPE_3D)
 				{
-					obj->pitch = (obj->pitch + computeAngleChange(pitchDiff, angleChange)) & 0x3fff;
-					obj->roll  = (obj->roll  + computeAngleChange(rollDiff,  angleChange)) & 0x3fff;
+					obj->pitch = (obj->pitch + computeAngleChange(pitchDiff, angleChange)) & ANGLE_MASK;
+					obj->roll  = (obj->roll  + computeAngleChange(rollDiff,  angleChange)) & ANGLE_MASK;
 					obj3d_computeTransform(obj);
 				}
 			}
@@ -767,6 +770,27 @@ namespace TFE_DarkForces
 		{
 			s_curAnimation = aiAnim;
 		}
+	}
+
+	JBool actor_canDie(PhysicsActor* phyActor)
+	{
+		SecObject* obj = phyActor->actor.header.obj;
+		RSector* sector = obj->sector;
+		if (sector->secHeight <= 0 && obj->posWS.y <= sector->floorHeight)
+		{
+			if (TFE_Jedi::abs(phyActor->vel.x) >= FIXED(5) || TFE_Jedi::abs(phyActor->vel.z) >= FIXED(5))
+			{
+				return JFALSE;
+			}
+
+			fixed16_16 ceilHeight, floorHeight;
+			sector_getObjFloorAndCeilHeight(sector, obj->posWS.y, &floorHeight, &ceilHeight);
+			if (obj->posWS.y < floorHeight)
+			{
+				return JFALSE;
+			}
+		}
+		return JTRUE;
 	}
 
 	// Kill the actor, this clears the current logic so the rest of the task function proceeds correctly.
@@ -1101,7 +1125,46 @@ namespace TFE_DarkForces
 		task_begin;
 		while (msg != MSG_FREE_TASK)
 		{
-			// TODO(Core Game Loop Release)
+			task_localBlockBegin;
+			PhysicsActor** phyObjPtr = (PhysicsActor**)list_getHead(s_physicsActors);
+			while (phyObjPtr)
+			{
+				PhysicsActor* phyObj = *phyObjPtr;
+				phyObj->actor.physics.wall = nullptr;
+				phyObj->actor.physics.u24 = 0;
+				if (phyObj->actor.updateFlags & 4)
+				{
+					actor_applyTransform(&phyObj->actor);
+				}
+				actor_handlePhysics(&phyObj->actor, &phyObj->vel);
+
+				if ((phyObj->actor.updateFlags & 1) || (phyObj->actor.updateFlags & 2) || phyObj->vel.x || phyObj->vel.y || phyObj->vel.z)
+				{
+					actor_handleMovementAndCollision(&phyObj->actor);
+					CollisionInfo* physics = &phyObj->actor.physics;
+					if (physics->responseStep)
+					{
+						handleCollisionResponseSimple(physics->responseDir.x, physics->responseDir.z, &phyObj->vel.x, &phyObj->vel.z);
+					}
+				}
+
+				SecObject* obj = phyObj->actor.header.obj;
+				LogicAnimation* anim = &phyObj->anim;
+				if (obj->type & OBJ_TYPE_SPRITE)
+				{
+					if (!(anim->flags & 2))
+					{
+						obj->anim = anim->animId;
+						if (actor_advanceAnimation(anim, obj))
+						{
+							anim->flags |= 2;
+						}
+					}
+				}
+
+				phyObjPtr = (PhysicsActor**)list_getNext(s_physicsActors);
+			}
+			task_localBlockEnd;
 			task_yield(TASK_NO_DELAY);
 		}
 		task_end;
