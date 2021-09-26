@@ -70,17 +70,16 @@ namespace TFE_DarkForces
 			computeExplosionPushDir(&pos, &pushDir);
 			vec3_fixed vel = { mul16(force, pushDir.x), mul16(force, pushDir.y), mul16(force, pushDir.z) };
 
+			msg = MSG_RUN_TASK;
 			if (mouseBot->actor.hp <= 0)
 			{
 				mouseBot->actor.state = 2;
 				phyActor->vel = vel;
-				msg = MSG_RUN_TASK;
 			}
 			else
 			{
 				phyActor->vel = { vel.x >> 1, vel.y >> 1, vel.z >> 1 };
 				playSound3D_oneshot(s_mouseBotRes.sound1, obj->posWS);
-				msg = MSG_RUN_TASK;
 			}
 		}
 		return msg;
