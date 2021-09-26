@@ -53,14 +53,39 @@ namespace TFE_DarkForces
 		}
 		return msg;
 	}
-		
-	MessageType mousebot_msgFunc(MessageType msg)
+
+	MessageType mousebot_handleExplosion(MessageType msg, MouseBot* mouseBot)
 	{
-		MouseBot* mouseBot = s_curMouseBot;
-		// TODO
+		PhysicsActor* phyActor = &mouseBot->actor;
+		SecObject* obj = mouseBot->logic.obj;
+		if (mouseBot->actor.alive)
+		{
+			fixed16_16 dmg   = s_msgArg1;
+			fixed16_16 force = s_msgArg2;
+
+			mouseBot->actor.hp -= dmg;
+			vec3_fixed pushDir;
+			vec3_fixed pos = { obj->posWS.x, obj->posWS.y - obj->worldHeight, obj->posWS.z };
+
+			computeExplosionPushDir(&pos, &pushDir);
+			vec3_fixed vel = { mul16(force, pushDir.x), mul16(force, pushDir.y), mul16(force, pushDir.z) };
+
+			if (mouseBot->actor.hp <= 0)
+			{
+				mouseBot->actor.state = 2;
+				phyActor->vel = vel;
+				msg = MSG_RUN_TASK;
+			}
+			else
+			{
+				phyActor->vel = { vel.x >> 1, vel.y >> 1, vel.z >> 1 };
+				playSound3D_oneshot(s_mouseBotRes.sound1, obj->posWS);
+				msg = MSG_DAMAGE;
+			}
+		}
 		return msg;
 	}
-
+		
 	void mousebot_handleActiveState(MessageType msg)
 	{
 		struct LocalContext
@@ -96,7 +121,7 @@ namespace TFE_DarkForces
 				task_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
-					// TODO
+					msg = mousebot_handleExplosion(msg, local(mouseBot));
 				}
 				else if (msg == MSG_EXPLOSION)
 				{
@@ -231,7 +256,7 @@ namespace TFE_DarkForces
 		}
 		else if (msg == MSG_EXPLOSION)
 		{
-			// TODO
+			mousebot_handleExplosion(msg, mouseBot);
 		}
 	}
 
@@ -266,17 +291,7 @@ namespace TFE_DarkForces
 			while (!local(actor)->state)
 			{
 				task_yield(145);
-				s_curMouseBot = local(mouseBot);
-				msg = mousebot_msgFunc(msg);
-				if (msg == MSG_DAMAGE)
-				{
-					// TODO
-				}
-				else if (msg == MSG_EXPLOSION)
-				{
-					// TODO
-				}
-				else if (msg == MSG_RUN_TASK)
+				if (msg == MSG_RUN_TASK)
 				{
 					// Wakeup if the player is visible.
 					if (local(actor)->state == 0 && actor_isObjectVisible(local(obj), s_playerObject, 0x4000/*full 360 degree fov*/, FIXED(25)/*25 units "close distance"*/))
