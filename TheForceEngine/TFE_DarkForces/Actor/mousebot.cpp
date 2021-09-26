@@ -16,6 +16,13 @@
 
 namespace TFE_DarkForces
 {
+	enum MouseBotState
+	{
+		MBSTATE_SLEEPING = 0,
+		MBSTATE_ACTIVE,
+		MBSTATE_DYING
+	};
+
 	struct MouseBotResources
 	{
 		WaxFrame* deadFrame;
@@ -42,7 +49,7 @@ namespace TFE_DarkForces
 			mouseBot->actor.hp -= proj->dmg;
 			if (mouseBot->actor.hp <= 0)
 			{
-				mouseBot->actor.state = 2;
+				mouseBot->actor.state = MBSTATE_DYING;
 				msg = MSG_RUN_TASK;
 			}
 			else
@@ -73,7 +80,7 @@ namespace TFE_DarkForces
 			msg = MSG_RUN_TASK;
 			if (mouseBot->actor.hp <= 0)
 			{
-				mouseBot->actor.state = 2;
+				mouseBot->actor.state = MBSTATE_DYING;
 				phyActor->vel = vel;
 			}
 			else
@@ -113,7 +120,7 @@ namespace TFE_DarkForces
 		
 		local(odd)  = JFALSE;
 		local(flip) = JFALSE;
-		while (local(phyActor)->state == 1)
+		while (local(phyActor)->state == MBSTATE_ACTIVE)
 		{
 			do
 			{
@@ -128,7 +135,7 @@ namespace TFE_DarkForces
 				}
 			} while (msg != MSG_RUN_TASK);
 
-			if (local(phyActor)->state != 1) { break; }
+			if (local(phyActor)->state != MBSTATE_ACTIVE) { break; }
 
 			// Go to sleep if the player hasn't been spotted in about 5 seconds.
 			if (actor_isObjectVisible(local(obj), s_playerObject, 0x4000/*360 degrees*/, FIXED(25)/*closeDist*/))
@@ -141,7 +148,7 @@ namespace TFE_DarkForces
 				// If enough time has past since the player was last spotted, go back to sleep.
 				if (dt > 728) // ~5 seconds.
 				{
-					local(phyActor)->state = 0;
+					local(phyActor)->state = MBSTATE_SLEEPING;
 					break;
 				}
 			}
@@ -272,13 +279,13 @@ namespace TFE_DarkForces
 
 		while (local(mouseBot)->actor.alive)
 		{
-			if (local(actor)->state == 1)
+			if (local(actor)->state == MBSTATE_ACTIVE)
 			{
 				s_curMouseBot = local(mouseBot);
 				task_callTaskFunc(mousebot_handleActiveState);
 				continue;
 			}
-			else if (local(actor)->state == 2)
+			else if (local(actor)->state == MBSTATE_DYING)
 			{
 				s_curMouseBot = local(mouseBot);
 				task_callTaskFunc(mousebot_die);
@@ -286,16 +293,16 @@ namespace TFE_DarkForces
 			}
 
 			local(obj) = local(mouseBot)->logic.obj;
-			while (!local(actor)->state)
+			while (local(actor)->state == MBSTATE_SLEEPING)
 			{
 				task_yield(145);
 				if (msg == MSG_RUN_TASK)
 				{
 					// Wakeup if the player is visible.
-					if (local(actor)->state == 0 && actor_isObjectVisible(local(obj), s_playerObject, 0x4000/*full 360 degree fov*/, FIXED(25)/*25 units "close distance"*/))
+					if (local(actor)->state == MBSTATE_SLEEPING && actor_isObjectVisible(local(obj), s_playerObject, 0x4000/*full 360 degree fov*/, FIXED(25)/*25 units "close distance"*/))
 					{
 						playSound3D_oneshot(s_mouseBotRes.sound0, local(obj)->posWS);
-						local(mouseBot)->actor.state = 1;
+						local(mouseBot)->actor.state = MBSTATE_ACTIVE;
 					}
 				}
 			}
@@ -361,7 +368,7 @@ namespace TFE_DarkForces
 		physActor->alive = JTRUE;
 		physActor->hp = FIXED(10);
 		physActor->actorTask = mouseBotTask;
-		physActor->state = 0;
+		physActor->state = MBSTATE_SLEEPING;
 		physActor->actor.header.obj = obj;
 		physActor->actor.physics.obj = obj;
 		actor_addPhysicsActorToWorld(physActor);
