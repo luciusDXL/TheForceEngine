@@ -80,7 +80,7 @@ namespace TFE_DarkForces
 			{
 				phyActor->vel = { vel.x >> 1, vel.y >> 1, vel.z >> 1 };
 				playSound3D_oneshot(s_mouseBotRes.sound1, obj->posWS);
-				msg = MSG_DAMAGE;
+				msg = MSG_RUN_TASK;
 			}
 		}
 		return msg;
