@@ -165,8 +165,7 @@ namespace TFE_DarkForces
 				s32 rnd = random(100);
 				if (rnd <= 10)	// ~10% chance of playing a sound effect when hitting a wall.
 				{
-					vec3_fixed pos = { local(obj)->posWS.x, local(obj)->posWS.y, local(obj)->posWS.z };
-					playSound3D_oneshot(s_mouseBotRes.sound0, pos);
+					playSound3D_oneshot(s_mouseBotRes.sound0, local(obj)->posWS);
 				}
 				if (local(odd))
 				{
@@ -296,8 +295,7 @@ namespace TFE_DarkForces
 					// Wakeup if the player is visible.
 					if (local(actor)->state == 0 && actor_isObjectVisible(local(obj), s_playerObject, 0x4000/*full 360 degree fov*/, FIXED(25)/*25 units "close distance"*/))
 					{
-						vec3_fixed pos = { local(obj)->posWS.x, local(obj)->posWS.y, local(obj)->posWS.z };
-						playSound3D_oneshot(s_mouseBotRes.sound0, pos);
+						playSound3D_oneshot(s_mouseBotRes.sound0, local(obj)->posWS);
 						local(mouseBot)->actor.state = 1;
 					}
 				}
