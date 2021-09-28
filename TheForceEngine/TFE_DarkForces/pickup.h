@@ -39,7 +39,7 @@ namespace TFE_DarkForces
 	void playerRevive();
 	void pickupSupercharge();
 	
-	extern u32 s_pickupFlags;
+	extern u32 s_playerDying;
 	extern Task* s_superchargeTask;
 	extern Task* s_invincibilityTask;
 	extern Task* s_gasmaskTask;

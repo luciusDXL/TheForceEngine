@@ -352,7 +352,7 @@ namespace TFE_DarkForces
 		s_shieldDamageFx = 0;
 		s_flashEffect = 0;
 
-		s_pickupFlags = 0;
+		s_playerDying = 0;
 		s_externalYawSpd = 0;
 		s_playerPitch = 0;
 		s_playerRoll = 0;
@@ -516,7 +516,7 @@ namespace TFE_DarkForces
 	{
 		s_playerInfo.health = 100;
 		s_playerInfo.healthFract = 0;
-		s_pickupFlags = 0;
+		s_playerDying = 0;
 		s_playerInfo.shields = 200;
 
 		s_playerInfo.itemPistol = JTRUE;
@@ -548,7 +548,7 @@ namespace TFE_DarkForces
 	{
 		s_playerInfo.health = 100;
 		s_playerInfo.healthFract = 0;
-		s_pickupFlags = 0;
+		s_playerDying = 0;
 		s_playerInfo.shields = 200;
 		s_playerInfo.ammoEnergy = 500;
 
@@ -578,7 +578,7 @@ namespace TFE_DarkForces
 	{
 		s_playerInfo.health = 100;
 		s_playerInfo.healthFract = 0;
-		s_pickupFlags = 0;
+		s_playerDying = 0;
 		s_playerInfo.shields = 200;
 		s_playerInfo.itemPistol = JTRUE;
 		s_playerInfo.itemRifle = JTRUE;
@@ -883,7 +883,7 @@ namespace TFE_DarkForces
 		s_jumpScale = 0;
 		s_playerSlow = 0;
 
-		if (s_pickupFlags)
+		if (s_playerDying)
 		{
 			return;
 		}
@@ -1406,7 +1406,7 @@ namespace TFE_DarkForces
 		fixed16_16 ceilHeight;
 		sector_getObjFloorAndCeilHeight(s_playerSector, player->posWS.y, &floorHeight, &ceilHeight);
 		fixed16_16 floorRelHeight = floorHeight - player->posWS.y;
-		if (floorRelHeight > PLAYER_FALL_SCREAM_MINHEIGHT && s_playerUpVel2 > PLAYER_FALL_SCREAM_VEL && !s_kyleScreamSoundId && !s_pickupFlags)
+		if (floorRelHeight > PLAYER_FALL_SCREAM_MINHEIGHT && s_playerUpVel2 > PLAYER_FALL_SCREAM_VEL && !s_kyleScreamSoundId && !s_playerDying)
 		{
 			s_kyleScreamSoundId = playSound2D(s_kyleScreamSoundSource);
 		}
@@ -1805,7 +1805,7 @@ namespace TFE_DarkForces
 				{
 					s_gasSectorTask = createSubTask("gas sector", gasSectorTaskFunc);
 				}
-				s_pickupFlags = 0xffffffff;
+				s_playerDying = 0xffffffff;
 				s_reviveTick = s_curTick + 436;
 			}
 			else
@@ -2024,7 +2024,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		if (!s_pickupFlags)
+		if (!s_playerDying)
 		{
 			s_playerInfo.selectedWeapon = -1;
 

@@ -20,7 +20,7 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// Internal State
 	//////////////////////////////////////////////////////////////
-	u32 s_pickupFlags = 0;
+	u32 s_playerDying = 0;
 	// Pointer to memory where player inventory is saved.
 	Task* s_pickupTask = nullptr;
 	Task* s_superchargeTask = nullptr;
@@ -124,7 +124,7 @@ namespace TFE_DarkForces
 			return;
 		}
 
-		JBool pickedUpItem = s_pickupFlags ? JFALSE : JTRUE;
+		JBool pickedUpItem = s_playerDying ? JFALSE : JTRUE;
 		// Handle pickup based on type.
 		if (pickup->type == ITYPE_WEAPON)
 		{
@@ -740,7 +740,7 @@ namespace TFE_DarkForces
 		s_playerInfo.shields = 100;
 		s_playerInfo.health = 100;
 		s_playerInfo.healthFract = 0;
-		s_pickupFlags = 0;
+		s_playerDying = 0;
 	}
 
 	s32 pickup_addToValue(s32 curValue, s32 amountToAdd, s32 maxAmount)

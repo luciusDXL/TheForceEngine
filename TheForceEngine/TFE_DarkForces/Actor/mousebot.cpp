@@ -114,10 +114,10 @@ namespace TFE_DarkForces
 		local(actor)    = &local(phyActor)->actor;
 		local(colInfo)  = &local(actor)->physics;
 
-		local(actor)->nextPos = local(obj)->posWS;
-		local(actor)->yaw     = local(obj)->yaw;
-		local(tick)           = s_curTick;
-		
+		local(actor)->target.pos = local(obj)->posWS;
+		local(actor)->target.yaw = local(obj)->yaw;
+
+		local(tick) = s_curTick;
 		local(odd)  = JFALSE;
 		local(flip) = JFALSE;
 		while (local(phyActor)->state == MBSTATE_ACTIVE)
@@ -154,15 +154,15 @@ namespace TFE_DarkForces
 			}
 
 			angle14_32 yaw = local(obj)->yaw & ANGLE_MASK;
-			angle14_32 actorYaw = local(actor)->yaw & ANGLE_MASK;
+			angle14_32 actorYaw = local(actor)->target.yaw & ANGLE_MASK;
 			if (actorYaw == yaw)
 			{
 				local(odd) = (s_curTick & 1) ? JTRUE : JFALSE;
 				angle14_32 deltaYaw = random(16338);
-				local(actor)->yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);
+				local(actor)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);
 
-				local(actor)->speedRotation = random(0x3555) + 0x555;
-				local(actor)->updateFlags |= 4;
+				local(actor)->target.speedRotation = random(0x3555) + 0x555;
+				local(actor)->target.flags |= 4;
 				local(flip) = JFALSE;
 			}
 
@@ -175,24 +175,24 @@ namespace TFE_DarkForces
 				}
 				if (local(odd))
 				{
-					local(actor)->yaw += 4096;
+					local(actor)->target.yaw += 4096;
 				}
 				else
 				{
-					local(actor)->yaw -= 4096;
+					local(actor)->target.yaw -= 4096;
 				}
-				local(actor)->speedRotation = random(0x3555);
+				local(actor)->target.speedRotation = random(0x3555);
 				local(flip) = ~local(flip);
 			}
 
 			fixed16_16 speed = local(flip) ? -FIXED(22) : FIXED(22);
 			fixed16_16 cosYaw, sinYaw;
 			sinCosFixed(local(obj)->yaw, &sinYaw, &cosYaw);
-			local(actor)->nextPos.x = local(obj)->posWS.x + mul16(sinYaw, speed);
-			local(actor)->nextPos.z = local(obj)->posWS.z + mul16(cosYaw, speed);
+			local(actor)->target.pos.x = local(obj)->posWS.x + mul16(sinYaw, speed);
+			local(actor)->target.pos.z = local(obj)->posWS.z + mul16(cosYaw, speed);
 
-			local(actor)->speed = FIXED(22);
-			local(actor)->updateFlags |= 1;
+			local(actor)->target.speed = FIXED(22);
+			local(actor)->target.flags |= 1;
 		}
 		task_end;
 	}
@@ -212,7 +212,7 @@ namespace TFE_DarkForces
 		local(actor)    = &local(mouseBot)->actor.actor;
 		local(sector)   = local(obj)->sector;
 
-		local(actor)->updateFlags |= 8;
+		local(actor)->target.flags |= 8;
 		playSound3D_oneshot(s_mouseBotRes.sound2, local(obj)->posWS);
 
 		while (1)
@@ -383,17 +383,17 @@ namespace TFE_DarkForces
 		physActor->actor.physics.yPos = 0;
 		physActor->actor.collisionFlags = (physActor->actor.collisionFlags | 3) & 0xfffffffb;
 		physActor->actor.physics.height = obj->worldHeight + HALF_16;
-		physActor->actor.speed = FIXED(22);
-		physActor->actor.speedRotation = FIXED(3185);
-		physActor->actor.updateFlags &= 0xfffffff0;
-		physActor->actor.pitch = obj->pitch;
-		physActor->actor.yaw = obj->yaw;
-		physActor->actor.roll = obj->roll;
+		physActor->actor.target.speed = FIXED(22);
+		physActor->actor.target.speedRotation = FIXED(3185);
+		physActor->actor.target.flags &= 0xfffffff0;
+		physActor->actor.target.pitch = obj->pitch;
+		physActor->actor.target.yaw   = obj->yaw;
+		physActor->actor.target.roll  = obj->roll;
 
 		obj_addLogic(obj, (Logic*)mouseBot, mouseBotTask, mouseBotLogicCleanupFunc);
 		if (setupFunc)
 		{
-			setupFunc = nullptr;
+			*setupFunc = nullptr;
 		}
 		return (Logic*)mouseBot;
 	}

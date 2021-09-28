@@ -20,22 +20,23 @@ namespace TFE_DarkForces
 		logic->animTable = s_barrelAnimTable;
 
 		AiActor* aiActor = actor_createAiActor((Logic*)logic);
-		aiActor->actor.header.func = exploderFunc;
-		aiActor->actor.header.msgFunc = exploderMsgFunc;
+		aiActor->enemy.header.func = exploderFunc;
+		aiActor->enemy.header.msgFunc = exploderMsgFunc;
 		aiActor->hp = FIXED(11);
-		aiActor->anim.flags |= AFLAG_READY;
-		actor_addLogicGameObj(logic, aiActor);
+		aiActor->enemy.anim.flags |= AFLAG_READY;
+		actorLogic_addActor(logic, aiActor);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
 		actor->collisionFlags |= 1;
 		actor->physics.width = obj->worldWidth;
-		actor->updateFlags = (actor->updateFlags | 8) & 0xfffffff8;
-		actor->speed = 0;
-		actor->speedRotation = 0;
+		actor->target.flags = (actor->target.flags | 8) & 0xfffffff8;
+		actor->target.speed = 0;
+		actor->target.speedRotation = 0;
 
-		aiActor->actor.physics.u1c = (aiActor->actor.physics.u1c | 8) & 0xfffffff8;
-		aiActor->actor.physics.botOffset = 0;
-		aiActor->actor.physics.height = 0;
+		ActorTarget* target = &aiActor->enemy.target;
+		target->flags = (target->flags | 8) & 0xfffffff8;
+		target->speed = 0;
+		target->speedRotation = 0;
 	}
 }  // namespace TFE_DarkForces

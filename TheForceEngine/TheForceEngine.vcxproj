@@ -264,6 +264,7 @@
     <ClInclude Include="TFE_DarkForces\Actor\barrel.h" />
     <ClInclude Include="TFE_DarkForces\Actor\landmine.h" />
     <ClInclude Include="TFE_DarkForces\Actor\mousebot.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\officer.h" />
     <ClInclude Include="TFE_DarkForces\Actor\scenery.h" />
     <ClInclude Include="TFE_DarkForces\agent.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
@@ -434,6 +435,7 @@
     <ClCompile Include="TFE_DarkForces\Actor\barrel.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\landmine.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\mousebot.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\officer.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\scenery.cpp" />
     <ClCompile Include="TFE_DarkForces\agent.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />

@@ -9,6 +9,7 @@
 #include <TFE_DarkForces/Actor/landmine.h>
 #include <TFE_DarkForces/Actor/mousebot.h>
 #include <TFE_DarkForces/Actor/scenery.h>
+#include <TFE_DarkForces/Actor/officer.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -221,6 +222,8 @@ namespace TFE_DarkForces
 			case KW_I_OFFICERY:
 			case KW_I_OFFICERB:
 			{
+				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
+				officer_setup(obj, setupFunc, logicId);
 			} break;
 			case KW_G_GUARD:
 			{

@@ -21,58 +21,8 @@ struct ActorHeader;
 namespace TFE_DarkForces
 {
 	///////////////////////////////////////////
-	// Constants
-	///////////////////////////////////////////
-	enum ActorAlert
-	{
-		ALERT_GAMOR = 0,
-		ALERT_REEYEE,	
-		ALERT_BOSSK,	
-		ALERT_CREATURE,	
-		ALERT_PROBE,	
-		ALERT_INTDROID,	
-		ALERT_COUNT
-	};
-	enum AgentActionSounds
-	{
-		AGENTSND_REMOTE_2 = 0,
-		AGENTSND_AXE_1,			
-		AGENTSND_INTSTUN,	
-		AGENTSND_PROBFIRE_11,
-		AGENTSND_PROBFIRE_12,
-		AGENTSND_CREATURE2,	
-		AGENTSND_PROBFIRE_13,
-		AGENTSND_STORM_HURT,
-		AGENTSND_GAMOR_2,	
-		AGENTSND_REEYEE_2,	
-		AGENTSND_BOSSK_3,	
-		AGENTSND_CREATURE_HURT,
-		AGENTSND_STORM_DIE,	
-		AGENTSND_REEYEE_3,	
-		AGENTSND_BOSSK_DIE,	
-		AGENTSND_GAMOR_1,	
-		AGENTSND_CREATURE_DIE,
-		AGENTSND_EEEK_3,	
-		AGENTSND_SMALL_EXPLOSION,
-		AGENTSND_PROBE_ALM,
-		AGENTSND_TINY_EXPLOSION,
-		AGENTSND_COUNT
-	};
-
-	enum
-	{
-		OFFICER_ALERT_COUNT = 4,
-		STORM_ALERT_COUNT = 8,
-		ACTOR_MIN_VELOCITY = 0x1999,	// < 0.1
-	};
-
-	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
-	static SoundSourceID s_alertSndSrc[ALERT_COUNT];
-	static SoundSourceID s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
-	static SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];
-	static SoundSourceID s_agentSndSrc[AGENTSND_COUNT];
 	static List* s_physicsActors;
 		
 	static Allocator* s_actorLogics = nullptr;
@@ -83,6 +33,11 @@ namespace TFE_DarkForces
 	
 	LogicAnimation* s_curAnimation = nullptr;
 	Logic* s_curLogic = nullptr;
+	ActorEnemy* s_curEnemyActor = nullptr;
+	SoundSourceID s_alertSndSrc[ALERT_COUNT];
+	SoundSourceID s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
+	SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];
+	SoundSourceID s_agentSndSrc[AGENTSND_COUNT];
 
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -252,57 +207,56 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	void gameObj_Init(ActorHeader* gameObj, Logic* logic)
+	void actor_initHeader(ActorHeader* header, Logic* logic)
 	{
-		gameObj->func = nullptr;
-		gameObj->msgFunc = nullptr;
-		gameObj->u08 = 0;
-		gameObj->freeFunc = nullptr;
-		gameObj->nextTick = 0;
-		gameObj->obj = logic->obj;
+		header->func = nullptr;
+		header->msgFunc = nullptr;
+		header->u08 = 0;
+		header->freeFunc = nullptr;
+		header->nextTick = 0;
+		header->obj = logic->obj;
 	}
 
-	fixed16_16 gameObj_InitEnemy(GameObject2* gameObj, Logic* logic)
+	fixed16_16 actor_initEnemy(ActorEnemy* enemyActor, Logic* logic)
 	{
-		gameObj_Init((ActorHeader*)gameObj, logic);
+		actor_initHeader(&enemyActor->header, logic);
 
-		gameObj->width = 0;
-		gameObj->flags = 0;
-		gameObj->u30 = 0;
-		gameObj->u3c = 218;
-		gameObj->u40 = 218;
-		gameObj->u44 = 0;
-		gameObj->height = 291;
-		gameObj->u4c = 43695;	// 0.6667
-		gameObj->u54 = 5;
-		gameObj->u58 = ONE_16;
-		gameObj->u5c = 0;
-		gameObj->u70 = 0;
-		gameObj->u74 = FIXED(30);
-		gameObj->u78 = 0;
-		gameObj->u7c = 0;
+		enemyActor->target.speedRotation = 0;
+		enemyActor->target.speed = 0;
+		enemyActor->target.speedVert = 0;
+		enemyActor->timing.delay = 218;
+		enemyActor->timing.state0Delay = 218;
+		enemyActor->timing.state2Delay = 0;
+		enemyActor->timing.state4Delay = 291;
+		enemyActor->timing.state1Delay = 43695;
+		enemyActor->anim.frameRate = 5;
+		enemyActor->anim.frameCount = ONE_16;
+		enemyActor->anim.prevTick = 0;
+		enemyActor->anim.state = 0;
+		enemyActor->u74 = FIXED(30);
+		enemyActor->state0NextTick = 0;
+		enemyActor->u7c = 0;
 
-		// u38 and u68 are not set anywhere, so these should probably be equal.
-		gameObj->u38 &= 0xf0;
-		gameObj->u68 |= 3;
-		gameObj->u84 = 0;
-		gameObj->nextTick = s_curTick + 0x4446;	// ~120 seconds
+		enemyActor->target.flags &= 0xf0;
+		enemyActor->anim.flags |= 3;
+		enemyActor->u84 = 0;
+		enemyActor->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
-		SecObject* obj = gameObj->header.obj;
+		SecObject* obj = enemyActor->header.obj;
 		// world width and height was set from the sprite data.
-		gameObj->centerOffset = -((TFE_Jedi::abs(obj->worldHeight) >> 1) + ONE_16);
+		enemyActor->centerOffset = -((TFE_Jedi::abs(obj->worldHeight) >> 1) + ONE_16);
 
-		gameObj->u88 = 2;
-		gameObj->u8c = 0;
-		gameObj->u90 = 0;
-		gameObj->u94 = 0;
-		gameObj->u98 = 0;
-		gameObj->u9c = FIXED(160);
-		gameObj->ua0 = 0;
-		gameObj->ua4 = FIXED(230);
-		gameObj->ua8 = 10;
+		enemyActor->u88 = 2;
+		enemyActor->attackSecSndSrc = 0;
+		enemyActor->attackPrimSndSrc = 0;
+		enemyActor->u94 = 0;
+		enemyActor->minDist = 0;
+		enemyActor->maxDist = FIXED(160);
+		enemyActor->ua0 = 0;
+		enemyActor->ua4 = FIXED(230);
+		enemyActor->attackFlags = 10;
 
-		return gameObj->centerOffset;
+		return enemyActor->centerOffset;
 	}
 
 	JBool defaultAiFunc(AiActor* aiActor, Actor* actor)
@@ -317,24 +271,89 @@ namespace TFE_DarkForces
 	
 	AiActor* actor_createAiActor(Logic* logic)
 	{
-		AiActor* enemy = (AiActor*)level_alloc(sizeof(AiActor));
-		gameObj_InitEnemy((GameObject2*)enemy, logic);
-		enemy->actor.header.func  = defaultAiFunc;
-		enemy->actor.header.msgFunc = defaultMsgFunc;
-		enemy->actor.header.nextTick = 0xffffffff;
+		AiActor* enemyActor = (AiActor*)level_alloc(sizeof(AiActor));
+		ActorEnemy* enemy = &enemyActor->enemy;
+		actor_initEnemy(enemy, logic);
+		enemy->header.func  = defaultAiFunc;
+		enemy->header.msgFunc = defaultMsgFunc;
+		enemy->header.nextTick = 0xffffffff;
 
-		enemy->hp = FIXED(4);	// default to 4 HP.
-		enemy->itemDropId = -1;
-		enemy->hurtSndSrc = 0;
-		enemy->dieSndSrc = 0;
-		enemy->ubc = 0;
-		enemy->uc0 = -1;
-		enemy->uc4 = -1;
+		enemyActor->hp = FIXED(4);	// default to 4 HP.
+		enemyActor->itemDropId = -1;
+		enemyActor->hurtSndSrc = 0;
+		enemyActor->dieSndSrc = 0;
+		enemyActor->ubc = 0;
+		enemyActor->uc0 = -1;
+		enemyActor->uc4 = -1;
 
-		return enemy;
+		return enemyActor;
 	}
 
-	void actor_addLogicGameObj(ActorLogic* logic, AiActor* aiActor)
+	JBool defaultGameObjFunc(AiActor* aiActor, Actor* actor)
+	{
+		return JFALSE;
+	}
+
+	JBool defaultGameObjMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
+	{
+		return JFALSE;
+	}
+
+	ActorEnemy* actor_createEnemyActor(Logic* logic)
+	{
+		ActorEnemy* gameObj = (ActorEnemy*)level_alloc(sizeof(ActorEnemy));
+		actor_initEnemy(gameObj, logic);
+		gameObj->header.func = defaultGameObjFunc;
+		gameObj->header.msgFunc = defaultGameObjMsgFunc;
+		return gameObj;
+	}
+
+	JBool defaultSimpleActorFunc(AiActor* aiActor, Actor* actor)
+	{
+		return JFALSE;
+	}
+
+	ActorSimple* actor_createSimpleActor(Logic* logic)
+	{
+		ActorSimple* actor = (ActorSimple*)level_alloc(sizeof(ActorSimple));
+
+		actor->target.speedRotation = 0;
+		actor->target.speed = FIXED(4);
+		actor->target.speedVert = FIXED(10);
+		actor->timing.delay = 72;
+		actor->anim.flags = 0;
+		actor->anim.animId = -1;
+		actor->anim.startFrame = 2;
+		actor->timing.state0Delay = 728;
+		actor->timing.state4Delay = 5;
+		actor->timing.state1Delay = ONE_16;
+
+		actor->timing.nextTick = 0;
+		actor->anim.state = 0;
+		actor->target.flags = 0;
+		actor->anim.prevTick = 0;
+
+		actor_initHeader(&actor->header, logic);
+		actor->header.func = defaultSimpleActorFunc;
+		actor->u74 = FIXED(3);
+		actor->state0NextTick = 0;
+		actor->u7c = 4096;
+
+		return actor;
+	}
+
+	void actor_setupInitAnimation()
+	{
+		ActorLogic* logic = (ActorLogic*)s_curLogic;
+		logic->flags = (logic->flags | 1) & 0xfd;
+		logic->nextTick = s_curTick + logic->delay;
+
+		SecObject* obj = logic->logic.obj;
+		obj->anim = actor_getAnimationIndex(5);
+		obj->frame = 0;
+	}
+
+	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor)
 	{
 		if (!aiActor) { return; }
 		for (s32 i = 0; i < ACTOR_MAX_AI; i++)
@@ -354,25 +373,25 @@ namespace TFE_DarkForces
 		vec3_fixed move = { 0, 0, 0 };
 
 		actor->collisionWall = nullptr;
-		if (!(actor->updateFlags & 8))
+		if (!(actor->target.flags & 8))
 		{
-			if (actor->updateFlags & 1)
+			if (actor->target.flags & 1)
 			{
-				desiredMove.x = actor->nextPos.x - obj->posWS.x;
-				desiredMove.z = actor->nextPos.z - obj->posWS.z;
+				desiredMove.x = actor->target.pos.x - obj->posWS.x;
+				desiredMove.z = actor->target.pos.z - obj->posWS.z;
 			}
 			if (!(actor->collisionFlags & 1))
 			{
-				if (actor->updateFlags & 2)
+				if (actor->target.flags & 2)
 				{
-					desiredMove.y = actor->nextPos.y - obj->posWS.y;
+					desiredMove.y = actor->target.pos.y - obj->posWS.y;
 				}
 			}
 			move.z = move.y = move.x = 0;
 			if (desiredMove.x | desiredMove.z)
 			{
 				fixed16_16 dirZ, dirX;
-				fixed16_16 frameMove = mul16(actor->speed, s_deltaTime);
+				fixed16_16 frameMove = mul16(actor->target.speed, s_deltaTime);
 				computeDirAndLength(desiredMove.x, desiredMove.z, &dirX, &dirZ);
 
 				if (desiredMove.x && dirX)
@@ -390,7 +409,7 @@ namespace TFE_DarkForces
 			}
 			if (desiredMove.y)
 			{
-				fixed16_16 deltaY = mul16(actor->speedVert, s_deltaTime);
+				fixed16_16 deltaY = mul16(actor->target.speedVert, s_deltaTime);
 				fixed16_16 absDy = (desiredMove.y < 0) ? -desiredMove.y : desiredMove.y;
 				move.y = clamp(deltaY, -absDy, absDy);
 			}
@@ -478,17 +497,17 @@ namespace TFE_DarkForces
 	void actor_applyTransform(Actor* actor)
 	{
 		SecObject* obj = actor->header.obj;
-		if (actor->updateFlags & 8)
+		if (actor->target.flags & 8)
 		{
 			return;
 		}
 
-		const angle14_32 speedRotation = actor->speedRotation & 0xffff;
+		const angle14_32 speedRotation = actor->target.speedRotation & 0xffff;
 		if (speedRotation == 0)
 		{
-			obj->pitch = actor->pitch;
-			obj->yaw   = actor->yaw;
-			obj->roll  = actor->roll;
+			obj->pitch = actor->target.pitch;
+			obj->yaw   = actor->target.yaw;
+			obj->roll  = actor->target.roll;
 			if (obj->type & OBJ_TYPE_3D)
 			{
 				obj3d_computeTransform(obj);
@@ -496,9 +515,9 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			const angle14_32 pitchDiff = getAngleDifference(obj->pitch, actor->pitch);
-			const angle14_32 yawDiff   = getAngleDifference(obj->yaw,   actor->yaw);
-			const angle14_32 rollDiff  = getAngleDifference(obj->roll,  actor->roll);
+			const angle14_32 pitchDiff = getAngleDifference(obj->pitch, actor->target.pitch);
+			const angle14_32 yawDiff   = getAngleDifference(obj->yaw,   actor->target.yaw);
+			const angle14_32 rollDiff  = getAngleDifference(obj->roll,  actor->target.roll);
 			if (yawDiff | pitchDiff | rollDiff)
 			{
 				const fixed16_16 angularSpd = mul16(intToFixed16(speedRotation), s_deltaTime);
@@ -517,20 +536,21 @@ namespace TFE_DarkForces
 
 	JBool defaultActorFunc(AiActor* aiActor, Actor* baseActor)
 	{
-		Actor* actor = &aiActor->actor;
+		// This is really a regular actor...
+		Actor* actor = (Actor*)aiActor;
 		actor->physics.wall = nullptr;
 		actor->physics.u24 = 0;
 
-		if (actor->updateFlags & 4)
+		if (actor->target.flags & 4)
 		{
 			actor_applyTransform(actor);
 		}
 
-		if ((actor->updateFlags & 1) || (actor->updateFlags & 2) || actor->delta.x || actor->delta.y || actor->delta.z)
+		if ((actor->target.flags & 1) || (actor->target.flags & 2) || actor->delta.x || actor->delta.y || actor->delta.z)
 		{
 			actor_handleMovementAndCollision(actor);
 		}
-		actor->updateFlags &= ~(1 | 2 | 4);
+		actor->target.flags &= ~(1 | 2 | 4);
 		return JFALSE;
 	}
 
@@ -548,10 +568,10 @@ namespace TFE_DarkForces
 		actor->physics.height = obj->worldHeight;
 		actor->physics.width = obj->worldWidth;
 		actor->physics.responseStep = JFALSE;
-		actor->speed = ONE_16;
-		actor->speedVert = ONE_16;
-		actor->speedRotation = FIXED(45);
-		actor->updateFlags &= 0xf0;
+		actor->target.speed = ONE_16;
+		actor->target.speedVert = ONE_16;
+		actor->target.speedRotation = FIXED(45);
+		actor->target.flags &= 0xf0;
 		actor->delta = { 0, 0, 0 };
 		actor->collisionWall = nullptr;
 		actor->u9c = 0;
@@ -638,7 +658,7 @@ namespace TFE_DarkForces
 	Actor* actor_create(Logic* logic)
 	{
 		Actor* actor = (Actor*)level_alloc(sizeof(Actor));
-		gameObj_Init((ActorHeader*)actor, logic);
+		actor_initHeader(&actor->header, logic);
 		actor_setupSmartObj(actor);
 
 		actor->header.func = defaultActorFunc;
@@ -661,7 +681,7 @@ namespace TFE_DarkForces
 			AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
 			if (aiActor)
 			{
-				ActorHeader* header = &aiActor->actor.header;
+				ActorHeader* header = &aiActor->enemy.header;
 				if (header->freeFunc)
 				{
 					header->freeFunc(header);
@@ -826,12 +846,13 @@ namespace TFE_DarkForces
 	// Actor function for exploders (i.e. landmines and exploding barrels).
 	JBool exploderFunc(AiActor* aiActor, Actor* actor)
 	{
-		if (!(aiActor->anim.flags & AFLAG_READY))
+		LogicAnimation* anim = &aiActor->enemy.anim;
+		if (!(anim->flags & AFLAG_READY))
 		{
-			s_curAnimation = &aiActor->anim;
+			s_curAnimation = anim;
 			return JFALSE;
 		}
-		else if ((aiActor->anim.flags & AFLAG_PLAYED) && aiActor->hp <= 0)
+		else if ((anim->flags & AFLAG_PLAYED) && aiActor->hp <= 0)
 		{
 			actor_kill();
 			return JFALSE;
@@ -845,7 +866,8 @@ namespace TFE_DarkForces
 	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
 	{
 		JBool retValue = JFALSE;
-		SecObject* obj = aiActor->actor.header.obj;
+		SecObject* obj = aiActor->enemy.header.obj;
+		LogicAnimation* anim = &aiActor->enemy.anim;
 
 		if (msg == MSG_DAMAGE)
 		{
@@ -868,7 +890,7 @@ namespace TFE_DarkForces
 					// TODO: Move to the correct location.
 					actor_removeLogics(obj);
 
-					actor_setupAnimation(2/*animIndex*/, &aiActor->anim);
+					actor_setupAnimation(2/*animIndex*/, anim);
 					//actor_setCurAnimation(&aiActor->anim);
 					//aiActor->actor.func3(actor, aiActor->actor.func3);
 
@@ -926,7 +948,7 @@ namespace TFE_DarkForces
 			// I have to remove the logics here in order to get this to work, but this doesn't actually happen here in the original code.
 			// TODO: Move to the correct location.
 			actor_removeLogics(obj);
-			actor_setupAnimation(2/*animIndex*/, &aiActor->anim);
+			actor_setupAnimation(2/*animIndex*/, anim);
 			retValue = JFALSE;
 		}
 		return retValue;
@@ -942,7 +964,7 @@ namespace TFE_DarkForces
 			AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
 			if (aiActor)
 			{
-				ActorHeader* header = &aiActor->actor.header;
+				ActorHeader* header = &aiActor->enemy.header;
 				if (header->msgFunc)
 				{
 					Tick nextTick = header->msgFunc(msg, aiActor, actorLogic->actor);
@@ -1078,7 +1100,7 @@ namespace TFE_DarkForces
 							AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
 							if (aiActor)
 							{
-								ActorHeader* header = &aiActor->actor.header;
+								ActorHeader* header = &aiActor->enemy.header;
 								if (header->func && header->nextTick < s_curTick)
 								{
 									header->nextTick = header->func(aiActor, actorLogic->actor);
@@ -1132,13 +1154,13 @@ namespace TFE_DarkForces
 				PhysicsActor* phyObj = *phyObjPtr;
 				phyObj->actor.physics.wall = nullptr;
 				phyObj->actor.physics.u24 = 0;
-				if (phyObj->actor.updateFlags & 4)
+				if (phyObj->actor.target.flags & 4)
 				{
 					actor_applyTransform(&phyObj->actor);
 				}
 				actor_handlePhysics(&phyObj->actor, &phyObj->vel);
 
-				if ((phyObj->actor.updateFlags & 1) || (phyObj->actor.updateFlags & 2) || phyObj->vel.x || phyObj->vel.y || phyObj->vel.z)
+				if ((phyObj->actor.target.flags & 1) || (phyObj->actor.target.flags & 2) || phyObj->vel.x || phyObj->vel.y || phyObj->vel.z)
 				{
 					actor_handleMovementAndCollision(&phyObj->actor);
 					CollisionInfo* physics = &phyObj->actor.physics;

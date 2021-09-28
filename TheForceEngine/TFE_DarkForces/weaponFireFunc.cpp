@@ -41,28 +41,6 @@ namespace TFE_DarkForces
 	static angle14_32 s_weaponFireYaw;
 
 	extern WeaponAnimState s_weaponAnimState;
-
-	extern SoundSourceID s_punchSwingSndSrc;
-	extern SoundSourceID s_pistolSndSrc;
-	extern SoundSourceID s_pistolEmptySndSrc;
-	extern SoundSourceID s_rifleSndSrc;
-	extern SoundSourceID s_rifleEmptySndSrc;
-	extern SoundSourceID s_fusion1SndSrc;
-	extern SoundSourceID s_fusion2SndSrc;
-	extern SoundSourceID s_repeaterSndSrc;
-	extern SoundSourceID s_repeater1SndSrc;
-	extern SoundSourceID s_repeaterEmptySndSrc;
-	extern SoundSourceID s_mortarFireSndSrc;
-	extern SoundSourceID s_mortarFireSndSrc2;
-	extern SoundSourceID s_mortarEmptySndSrc;
-	extern SoundSourceID s_mineSndSrc;
-	extern SoundSourceID s_concussion6SndSrc;
-	extern SoundSourceID s_concussion5SndSrc;
-	extern SoundSourceID s_concussion1SndSrc;
-	extern SoundSourceID s_plasma4SndSrc;
-	extern SoundSourceID s_plasmaEmptySndSrc;
-	extern SoundSourceID s_missile1SndSrc;
-	extern SoundSourceID s_weaponChangeSnd;
 	extern SoundEffectID s_repeaterFireSndID;
 
 	extern JBool s_weaponAutoMount2;

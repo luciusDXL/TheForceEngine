@@ -16,11 +16,12 @@ namespace TFE_DarkForces
 	// Actor function for exploders (i.e. landmines and exploding barrels).
 	JBool sceneryLogicFunc(AiActor* aiActor, Actor* actor)
 	{
-		SecObject* obj = aiActor->actor.header.obj;
+		LogicAnimation* anim = &aiActor->enemy.anim;
+		SecObject* obj = aiActor->enemy.header.obj;
 
-		if (!(aiActor->anim.flags & AFLAG_READY))
+		if (!(anim->flags & AFLAG_READY))
 		{
-			s_curAnimation = &aiActor->anim;
+			s_curAnimation = anim;
 			return JFALSE;
 		}
 		else if (aiActor->hp <= 0 && actor_getAnimationIndex(4) != -1)
@@ -49,7 +50,8 @@ namespace TFE_DarkForces
 	JBool sceneryMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
 	{
 		JBool retValue = JFALSE;
-		SecObject* obj = aiActor->actor.header.obj;
+		LogicAnimation* anim = &aiActor->enemy.anim;
+		SecObject* obj = aiActor->enemy.header.obj;
 
 		if (msg == MSG_DAMAGE)
 		{
@@ -64,7 +66,7 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					actor_setupAnimation(4, &aiActor->anim);
+					actor_setupAnimation(4, anim);
 					actor_removeLogics(obj);
 					retValue = JFALSE;
 				}
@@ -85,7 +87,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				actor_setupAnimation(4, &aiActor->anim);
+				actor_setupAnimation(4, anim);
 				actor_removeLogics(obj);
 				retValue = JFALSE;
 			}
@@ -105,10 +107,10 @@ namespace TFE_DarkForces
 		}
 
 		AiActor* aiActor = actor_createAiActor((Logic*)logic);
-		aiActor->actor.header.func = sceneryLogicFunc;
-		aiActor->actor.header.msgFunc = sceneryMsgFunc;
-		aiActor->anim.flags |= AFLAG_READY;
+		aiActor->enemy.header.func = sceneryLogicFunc;
+		aiActor->enemy.header.msgFunc = sceneryMsgFunc;
+		aiActor->enemy.anim.flags |= AFLAG_READY;
 		aiActor->hp = FIXED(1);
-		actor_addLogicGameObj(logic, aiActor);
+		actorLogic_addActor(logic, aiActor);
 	}
 }  // namespace TFE_DarkForces

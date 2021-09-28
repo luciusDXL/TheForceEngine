@@ -533,7 +533,7 @@ namespace TFE_DarkForces
 			nextSector = nullptr;
 			if (adjoinSector && !(wall->flags3&WF3_SOLID_WALL))
 			{
-				if (!s_pickupFlags)
+				if (!s_playerDying)
 				{
 					inf_triggerWallEvent(wall, s_playerObject, INF_EVENT_CROSS_LINE_FRONT);
 				}

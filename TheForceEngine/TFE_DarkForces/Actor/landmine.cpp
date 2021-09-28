@@ -19,11 +19,11 @@ namespace TFE_DarkForces
 		actorLogic->animTable = s_landmineAnimTable;
 		
 		AiActor* aiActor = actor_createAiActor((Logic*)actorLogic);
-		aiActor->actor.header.func  = exploderFunc;
-		aiActor->actor.header.msgFunc = exploderMsgFunc;
+		aiActor->enemy.header.func  = exploderFunc;
+		aiActor->enemy.header.msgFunc = exploderMsgFunc;
+		aiActor->enemy.anim.flags |= AFLAG_READY;
 		aiActor->hp = FIXED(20);
-		aiActor->anim.flags |= AFLAG_READY;
-		actor_addLogicGameObj(actorLogic, aiActor);
+		actorLogic_addActor(actorLogic, aiActor);
 
 		Actor* actor = actor_create((Logic*)actorLogic);
 		actorLogic->actor = actor;
@@ -31,13 +31,14 @@ namespace TFE_DarkForces
 		// This was cleared to 0 in createProjectile()
 		actor->physics.width = obj->worldWidth;
 
-		aiActor->actor.physics.u1c = (aiActor->actor.physics.u1c | 8) & 0xfffffff8;
-		aiActor->actor.physics.botOffset = 0;
-		aiActor->actor.physics.height = 0;
+		ActorTarget* target = &aiActor->enemy.target;
+		target->flags = (target->flags | 8) & 0xfffffff8;
+		target->speed = 0;
+		target->speedRotation = 0;
 
-		actor->updateFlags = 8;
-		actor->speed = 0;
-		actor->speedRotation = 0;
+		actor->target.flags = 8;
+		actor->target.speed = 0;
+		actor->target.speedRotation = 0;
 		
 		actorLogic->flags &= ~1;
 		actorLogic->animTable = s_landmineAnimTable;

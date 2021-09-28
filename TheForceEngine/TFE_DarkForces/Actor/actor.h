@@ -12,9 +12,51 @@
 struct Actor;
 struct ActorHeader;
 
-enum ActorConst
+///////////////////////////////////////////
+	// Constants
+	///////////////////////////////////////////
+enum ActorAlert
 {
-	ACTOR_MAX_AI = 6
+	ALERT_GAMOR = 0,
+	ALERT_REEYEE,
+	ALERT_BOSSK,
+	ALERT_CREATURE,
+	ALERT_PROBE,
+	ALERT_INTDROID,
+	ALERT_COUNT
+};
+enum AgentActionSounds
+{
+	AGENTSND_REMOTE_2 = 0,
+	AGENTSND_AXE_1,
+	AGENTSND_INTSTUN,
+	AGENTSND_PROBFIRE_11,
+	AGENTSND_PROBFIRE_12,
+	AGENTSND_CREATURE2,
+	AGENTSND_PROBFIRE_13,
+	AGENTSND_STORM_HURT,
+	AGENTSND_GAMOR_2,
+	AGENTSND_REEYEE_2,
+	AGENTSND_BOSSK_3,
+	AGENTSND_CREATURE_HURT,
+	AGENTSND_STORM_DIE,
+	AGENTSND_REEYEE_3,
+	AGENTSND_BOSSK_DIE,
+	AGENTSND_GAMOR_1,
+	AGENTSND_CREATURE_DIE,
+	AGENTSND_EEEK_3,
+	AGENTSND_SMALL_EXPLOSION,
+	AGENTSND_PROBE_ALM,
+	AGENTSND_TINY_EXPLOSION,
+	AGENTSND_COUNT
+};
+
+enum
+{
+	OFFICER_ALERT_COUNT = 4,
+	STORM_ALERT_COUNT = 8,
+	ACTOR_MIN_VELOCITY = 0x1999,	// < 0.1
+	ACTOR_MAX_AI = 6,
 };
 
 enum ActorCollisionFlags
@@ -39,11 +81,10 @@ struct ActorLogic
 	s32 u44;
 	s32 u48;
 	s32 u4c;
-	vec3_fixed vel;
-	s32 u5c;
-	s32 u60;
 	// End Temp
 
+	vec3_fixed vel;
+	vec2_fixed lastPlayerPos;
 	Task* freeTask;
 	u32 flags;
 };
@@ -59,7 +100,7 @@ namespace TFE_DarkForces
 	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
 	AiActor* actor_createAiActor(Logic* logic);
 	Actor* actor_create(Logic* logic);
-	void actor_addLogicGameObj(ActorLogic* logic, AiActor* aiActor);
+	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor);
 
 	void actor_hitEffectMsgFunc(s32 msg, void* logic);
 	JBool exploderFunc(AiActor* aiActor, Actor* actor);
@@ -74,6 +115,10 @@ namespace TFE_DarkForces
 	void actor_removeLogics(SecObject* obj);
 	void actor_setupSmartObj(Actor* actor);
 
+	ActorEnemy* actor_createEnemyActor(Logic* logic);
+	ActorSimple* actor_createSimpleActor(Logic* logic);
+	void actor_setupInitAnimation();
+
 	// Returns JTRUE if 'actorObj' can see 'obj'
 	// The object must be as close or closer than 'closeDist' or be within the fov of the 'actorObj'.
 	// Also the distance between actorObj and obj must be less than 200 - 256 units (randomized), and this value is 
@@ -83,4 +128,9 @@ namespace TFE_DarkForces
 
 	extern LogicAnimation* s_curAnimation;
 	extern Logic* s_curLogic;
+	extern ActorEnemy* s_curEnemyActor;
+	extern SoundSourceID s_alertSndSrc[ALERT_COUNT];
+	extern SoundSourceID s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
+	extern SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];
+	extern SoundSourceID s_agentSndSrc[AGENTSND_COUNT];
 }  // namespace TFE_DarkForces
