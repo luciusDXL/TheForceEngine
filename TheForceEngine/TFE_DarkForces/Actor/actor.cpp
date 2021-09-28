@@ -320,24 +320,24 @@ namespace TFE_DarkForces
 		actor->target.speedRotation = 0;
 		actor->target.speed = FIXED(4);
 		actor->target.speedVert = FIXED(10);
-		actor->timing.delay = 72;
-		actor->anim.flags = 0;
-		actor->anim.animId = -1;
-		actor->anim.startFrame = 2;
-		actor->timing.state0Delay = 728;
-		actor->timing.state4Delay = 5;
-		actor->timing.state1Delay = ONE_16;
+		actor->u3c = 72;
+		actor->nextTick = 0;
+		actor->playerLastSeen = 0xffffffff;
+		actor->anim.state = 2;
+		actor->delay = 728;	// ~5 seconds between decision points.
+		actor->anim.frameRate = 5;
+		actor->anim.frameCount = ONE_16;
 
-		actor->timing.nextTick = 0;
-		actor->anim.state = 0;
-		actor->target.flags = 0;
 		actor->anim.prevTick = 0;
+		actor->u70 = 0;
+		actor->target.flags = 0;
+		actor->anim.flags = 0;
 
 		actor_initHeader(&actor->header, logic);
 		actor->header.func = defaultSimpleActorFunc;
-		actor->u74 = FIXED(3);
-		actor->state0NextTick = 0;
-		actor->u7c = 4096;
+		actor->targetOffset = FIXED(3);
+		actor->targetVariation = 0;
+		actor->approachVariation = 4096;	// 90 degrees.
 
 		return actor;
 	}

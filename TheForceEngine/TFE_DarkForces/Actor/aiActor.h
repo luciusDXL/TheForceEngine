@@ -81,6 +81,7 @@ struct ActorEnemy
 	s32 u74;
 	s32 state0NextTick;
 	s32 u7c;
+
 	fixed16_16 centerOffset;		// offset from the base to the object center.
 	s32 u84;
 	s32 u88;
@@ -111,12 +112,19 @@ struct ActorSimple
 {
 	ActorHeader header;
 	ActorTarget target;
-	ActorTiming timing;
+	
+	s32 u3c;
+	Tick delay;
+	s32 u44;
 	LogicAnimation anim;
 
-	s32 u74;
-	Tick state0NextTick;
-	s32 u7c;
+	Tick nextTick;
+	Tick playerLastSeen;
+	s32 u70;
+
+	fixed16_16 targetOffset;
+	fixed16_16 targetVariation;
+	angle14_32 approachVariation;
 };
 
 struct AiActor

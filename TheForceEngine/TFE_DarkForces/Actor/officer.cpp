@@ -64,9 +64,9 @@ namespace TFE_DarkForces
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = HALF_16 - 1;
 		actorSimple->target.speed = FIXED(7);
-		actorSimple->timing.delay = 0;
-		actorSimple->anim.prevTick &= 0xfffffffe;
-		actorSimple->timing.state2Delay = TICKS(2);
+		actorSimple->u3c = 0;
+		actorSimple->anim.flags &= 0xfffffffe;
+		actorSimple->u44 = TICKS(2);
 		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
