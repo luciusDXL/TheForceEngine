@@ -6,6 +6,8 @@
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
 #include <TFE_DarkForces/projectile.h>
+#include <TFE_DarkForces/pickup.h>
+#include <TFE_DarkForces/player.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/InfSystem/message.h>
@@ -51,6 +53,8 @@ namespace TFE_DarkForces
 	void actorPhysicsTaskFunc(MessageType msg);
 	void actorLogicCleanupFunc(Logic* logic);
 	u32  actorLogicSetupFunc(Logic* logic, KEYWORD key);
+	void actor_setCurAnimation(LogicAnimation* aiAnim);
+	JBool actor_canSeeObjFromDist(SecObject* actorObj, SecObject* obj);
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -263,19 +267,411 @@ namespace TFE_DarkForces
 		return enemyActor->fireOffset.y;
 	}
 
+	void actor_setDeathCollisionFlags()
+	{
+		ActorLogic* logic = (ActorLogic*)s_curLogic;
+		Actor* actor = logic->actor;
+		actor->collisionFlags |= 2;
+	}
+
+	// Returns JTRUE if the object is on the floor, or JFALSE is not on the floor or moving too fast.
+	JBool actor_onFloor()
+	{
+		ActorLogic* logic = (ActorLogic*)s_curLogic;
+		SecObject* obj = logic->logic.obj;
+		RSector* sector = obj->sector;
+
+		if (sector->secHeight > 0 && obj->posWS.y > sector->floorHeight)
+		{
+			return JTRUE;
+		}
+		fixed16_16 absVelX = TFE_Jedi::abs(logic->vel.x);
+		fixed16_16 absVelZ = TFE_Jedi::abs(logic->vel.z);
+		if (absVelX >= FIXED(5) && absVelZ >= FIXED(5))
+		{
+			return JFALSE;
+		}
+
+		fixed16_16 ceilHeight, floorHeight;
+		sector_getObjFloorAndCeilHeight(sector, obj->posWS.y, &floorHeight, &ceilHeight);
+		return (obj->posWS.y < floorHeight) ? JFALSE : JTRUE;
+	}
+
+	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj)
+	{
+		if (target->pos.z & 1)
+		{
+			if (target->pos.x != obj->posWS.x || target->pos.z != obj->posWS.z)
+			{
+				return JFALSE;
+			}
+		}
+		if (target->pos.z & 2)
+		{
+			if (target->pos.y != obj->posWS.y)
+			{
+				return JFALSE;
+			}
+		}
+
+		if (target->pos.z & 4)
+		{
+			if (target->yaw != obj->yaw || target->pitch != obj->pitch || target->roll == obj->roll)
+			{
+				return JFALSE;
+			}
+		}
+		return JTRUE;
+	}
+
+	angle14_32 actor_offsetTarget(fixed16_16* targetX, fixed16_16* targetZ, fixed16_16 targetOffset, fixed16_16 targetVariation, angle14_32 angle, angle14_32 angleVariation)
+	{
+		if (angleVariation)
+		{
+			angle += random(intToFixed16(angleVariation) * 2) - intToFixed16(angleVariation);
+		}
+
+		fixed16_16 dist;
+		if (targetVariation)
+		{
+			dist = targetOffset + random(targetVariation * 2) - targetVariation;
+		}
+		else
+		{
+			dist = targetOffset;
+		}
+
+		fixed16_16 cosAngle, sinAngle;
+		sinCosFixed(angle, &sinAngle, &cosAngle);
+		*targetX += mul16(dist, sinAngle);
+		*targetZ += mul16(dist, cosAngle);
+		return angle;
+	}
+
+	// returns JTRUE on collision else JFALSE.
+	JBool actor_handleSteps(Actor* actor, ActorTarget* target)
+	{
+		SecObject* obj = actor->header.obj;
+		if (actor->physics.responseStep || actor->collisionWall)
+		{
+			if (!(actor->collisionFlags & 1))
+			{
+				RWall* wall = actor->physics.wall ? actor->physics.wall : actor->collisionWall;
+				if (!wall)
+				{
+					return actor->physics.collidedObj ? JTRUE : JFALSE;
+				}
+
+				RSector* nextSector = wall->nextSector;
+				if (nextSector)
+				{
+					RSector* sector = wall->sector;
+					s32 floorHeight = min(nextSector->floorHeight, sector->floorHeight);
+					s32 ceilHeight = max(nextSector->ceilingHeight, sector->ceilingHeight);
+					s32 gap = floorHeight - ceilHeight;
+					s32 objHeight = obj->worldHeight + ONE_16;
+					// If the object can fit.
+					if (gap > objHeight)
+					{
+						target->pos.y = floorHeight - (TFE_Jedi::abs(gap) >> 1) + (TFE_Jedi::abs(obj->worldHeight) >> 1);
+						target->flags |= 2;
+						return JFALSE;
+					}
+				}
+			}
+			return JTRUE;
+		}
+		return JFALSE;
+	}
+
+	JBool actorLogic_isStopFlagSet()
+	{
+		ActorLogic* logic = (ActorLogic*)s_curLogic;
+		return (logic->flags & 8) ? JTRUE : JFALSE;
+	}
+
+	void actor_changeDirFromCollision(Actor* actor, ActorTarget* target, u32* prevColTick)
+	{
+		SecObject* obj = actor->header.obj;
+		Tick delta = Tick(s_curTick - (*prevColTick));
+		angle14_32 newAngle;
+		if (delta < 145)
+		{
+			newAngle = random_next() & ANGLE_MASK;
+		}
+		else
+		{
+			angle14_32 rAngle = actor->physics.responseAngle + (s_curTick & 0xff) - 128;
+			angle14_32 angleDiff = getAngleDifference(obj->yaw, rAngle) & 8191;
+			if (angleDiff > 4095)
+			{
+				newAngle = actor->physics.responseAngle - 8191;
+			}
+			else
+			{
+				newAngle = actor->physics.responseAngle;
+			}
+		}
+
+		fixed16_16 dirX, dirZ;
+		sinCosFixed(newAngle, &dirX, &dirZ);
+		target->pos.x = obj->posWS.x + (dirX << 7);
+		target->pos.z = obj->posWS.z + (dirZ << 7);
+
+		target->flags = (target->flags | 5) & 0xfffffffd;
+		target->yaw   = newAngle;
+		target->pitch = 0;
+		target->roll  = 0;
+
+		*prevColTick = s_curTick;
+	}
+
+	void actor_updatePlayerVisiblity(JBool playerVis, fixed16_16 posX, fixed16_16 posZ)
+	{
+		ActorLogic* logic = (ActorLogic*)s_curLogic;
+
+		// Update player visibility flag.
+		logic->flags &= ~8;
+		logic->flags |= ((playerVis & 1) << 3);	// flag 8 = player visible.
+
+		if (playerVis)
+		{
+			logic->lastPlayerPos.x = posX;
+			logic->lastPlayerPos.z = posZ;
+		}
+	}
+
+	ActorLogic* actor_getCurrentLogic()
+	{
+		return (ActorLogic*)s_curLogic;
+	}
+
 	JBool defaultAiFunc(AiActor* aiActor, Actor* actor)
 	{
-		return JFALSE;
+		ActorEnemy* enemy = &aiActor->enemy;
+		SecObject* obj = enemy->header.obj;
+		RSector* sector = obj->sector;
+
+		if (!(enemy->anim.flags & 2))
+		{
+			if (obj->type == OBJ_TYPE_SPRITE)
+			{
+				actor_setCurAnimation(&enemy->anim);
+			}
+			actor->updateTargetFunc(actor, &enemy->target);
+			return JFALSE;
+		}
+
+		if (aiActor->hp <= 0)
+		{
+			if (!actor_onFloor())
+			{
+				if (obj->type == OBJ_TYPE_SPRITE)
+				{
+					actor_setCurAnimation(&enemy->anim);
+				}
+				actor->updateTargetFunc(actor, &enemy->target);
+				return JFALSE;
+			}
+			spawnHitEffect(aiActor->dieEffect, sector, obj->posWS, obj);
+
+			// If the secHeight is <= 0, then it is not a water sector.
+			if (sector->secHeight - 1 < 0)
+			{
+				if (aiActor->itemDropId != ITEM_NONE)
+				{
+					SecObject* item = item_create(aiActor->itemDropId);
+					item->posWS = obj->posWS;
+					sector_addObject(sector, item);
+
+					CollisionInfo colInfo =
+					{
+						item,	// obj
+						FIXED(2), 0, FIXED(2),	// offset
+						ONE_16, FIXED(9999), ONE_16, 0,	// botOffset, yPos, height, u1c
+						nullptr, 0, nullptr,
+						item->worldWidth, 0,
+						JFALSE,
+						0, 0, 0, 0, 0
+					};
+					handleCollision(&colInfo);
+
+					fixed16_16 ceilHeight, floorHeight;
+					sector_getObjFloorAndCeilHeight(item->sector, item->posWS.y, &floorHeight, &ceilHeight);
+					item->posWS.y = floorHeight;
+
+					// Free the object if it winds in a water sector.
+					if (item->sector->secHeight - 1 >= 0)
+					{
+						freeObject(item);
+					}
+				}
+				s32 animIndex = actor_getAnimationIndex(4);
+				if (animIndex != -1)
+				{
+					RSector* sector = obj->sector;
+					SecObject* corpse = allocateObject();
+					sprite_setData(corpse, obj->wax);
+					corpse->frame = 0;
+					corpse->anim = actor_getAnimationIndex(4);
+					corpse->posWS.x = obj->posWS.x;
+					corpse->posWS.y = (sector->colSecHeight < obj->posWS.y) ? sector->colSecHeight : obj->posWS.y;
+					corpse->posWS.z = obj->posWS.z;
+					corpse->worldHeight = 0;
+					corpse->worldWidth = 0;
+					corpse->entityFlags |= ETFLAG_512;
+					sector_addObject(obj->sector, corpse);
+				}
+			}
+			actor_kill();
+			return 0;
+		}
+		return 0xffffffff;
 	}
 
 	JBool defaultMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
 	{
+		ActorEnemy* enemy = &aiActor->enemy;
+		SecObject* obj = enemy->header.obj;
+		RSector* sector = obj->sector;
+
+		if (msg == MSG_DAMAGE)
+		{
+			if (aiActor->hp > 0)
+			{
+				ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
+				fixed16_16 dmg = proj->dmg;
+				// Reduce damage by half if an enemy is shooting another enemy.
+				if (proj->prevObj)
+				{
+					u32 aiActorProj = proj->prevObj->entityFlags & ETFLAG_AI_ACTOR;
+					u32 aiActorCur = obj->entityFlags & ETFLAG_AI_ACTOR;
+					if (aiActorProj == aiActorCur)
+					{
+						dmg = proj->dmg >> 1;
+					}
+				}
+				aiActor->hp -= dmg;
+				if (aiActor->stopOnHit)
+				{
+					enemy->target.flags |= 8;
+				}
+
+				LogicAnimation* anim = &enemy->anim;
+				vec3_fixed pushVel;
+				computeDamagePushVelocity(proj, &pushVel);
+				if (aiActor->hp <= 0)
+				{
+					ActorLogic* logic = (ActorLogic*)s_curLogic;
+					actor_addVelocity(pushVel.x*4, pushVel.y*2, pushVel.z*4);
+					if (proj->type == PROJ_PUNCH)
+					{
+						actor_setDeathCollisionFlags();
+						stopSound(logic->alertSndID);
+						playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
+						enemy->anim.flags |= 8;
+						if (obj->type == OBJ_TYPE_SPRITE)
+						{
+							actor_setupAnimation(2, anim);
+						}
+					}
+					else
+					{
+						actor_setDeathCollisionFlags();
+						stopSound(logic->alertSndID);
+						playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
+						enemy->anim.flags |= 8;
+						if (obj->type == OBJ_TYPE_SPRITE)
+						{
+							actor_setupAnimation(3, anim);
+						}
+					}
+				}
+				else
+				{
+					actor_addVelocity(pushVel.x*2, pushVel.y, pushVel.z*2);
+					stopSound(aiActor->hurtSndID);
+					aiActor->hurtSndID = playSound3D_oneshot(aiActor->hurtSndSrc, obj->posWS);
+					if (obj->type == OBJ_TYPE_SPRITE)
+					{
+						actor_setupAnimation(12, anim);
+					}
+				}
+			}
+
+			if (obj->type == OBJ_TYPE_SPRITE)
+			{
+				actor_setCurAnimation(&enemy->anim);
+			}
+			actor->updateTargetFunc(actor, &enemy->target);
+			return JFALSE;
+		}
+		else if (msg == MSG_EXPLOSION)
+		{
+			if (aiActor->hp > 0)
+			{
+				fixed16_16 dmg   = s_msgArg1;
+				fixed16_16 force = s_msgArg2;
+				aiActor->hp -= dmg;
+				if (aiActor->stopOnHit)
+				{
+					enemy->target.flags |= 8;
+				}
+
+				vec3_fixed dir;
+				vec3_fixed pos = { obj->posWS.x, obj->posWS.y - obj->worldHeight, obj->posWS.z };
+				computeExplosionPushDir(&pos, &dir);
+
+				vec3_fixed vel = { mul16(force, dir.x), mul16(force, dir.y), mul16(force, dir.z) };
+				LogicAnimation* anim = &enemy->anim;
+				ActorLogic* logic = (ActorLogic*)s_curLogic;
+				if (aiActor->hp <= 0)
+				{
+					actor_addVelocity(vel.x, vel.y, vel.z);
+					actor_setDeathCollisionFlags();
+					stopSound(logic->alertSndID);
+					playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
+					enemy->target.flags |= 8;
+					if (obj->type == OBJ_TYPE_SPRITE)
+					{
+						actor_setupAnimation(3, anim);
+					}
+				}
+				else
+				{
+					actor_addVelocity(vel.x>>1, vel.y>>1, vel.z>>1);
+					stopSound(aiActor->hurtSndID);
+					aiActor->hurtSndID = playSound3D_oneshot(aiActor->hurtSndSrc, obj->posWS);
+					if (obj->type == OBJ_TYPE_SPRITE)
+					{
+						actor_setupAnimation(12, anim);
+					}
+				}
+			}
+			if (obj->type == OBJ_TYPE_SPRITE)
+			{
+				actor_setCurAnimation(&enemy->anim);
+			}
+			actor->updateTargetFunc(actor, &enemy->target);
+			return JFALSE;
+		}
+		else if (msg == MSG_TERMINAL_VEL)
+		{
+			// TODO
+		}
+		else if (msg == MSG_REV_MOVE)
+		{
+			// TODO
+		}
+
 		return JFALSE;
 	}
 	
 	AiActor* actor_createAiActor(Logic* logic)
 	{
 		AiActor* enemyActor = (AiActor*)level_alloc(sizeof(AiActor));
+		memset(enemyActor, 0, sizeof(AiActor));
+
 		ActorEnemy* enemy = &enemyActor->enemy;
 		actor_initEnemy(enemy, logic);
 		enemy->header.func  = defaultAiFunc;
@@ -288,39 +684,365 @@ namespace TFE_DarkForces
 		enemyActor->hurtSndSrc = NULL_SOUND;
 		enemyActor->dieSndSrc  = NULL_SOUND;
 		enemyActor->hurtSndID  = NULL_SOUND;
-		enemyActor->stopOnHit = JTRUE;
-		enemyActor->dieEffect = HEFFECT_NONE;
+		enemyActor->stopOnHit  = JTRUE;
+		enemyActor->dieEffect  = HEFFECT_NONE;
 
 		return enemyActor;
 	}
 
-	JBool defaultGameObjFunc(AiActor* aiActor, Actor* actor)
+	JBool defaultEnemyFunc(AiActor* aiActor, Actor* actor)
 	{
-		return JFALSE;
+		ActorEnemy* enemy = &aiActor->enemy;
+		ActorLogic* logic = (ActorLogic*)s_curLogic;
+		SecObject* obj = enemy->header.obj;
+		LogicAnimation* anim = &enemy->anim;
+		s32 state = enemy->anim.state;
+
+		switch (state)
+		{
+			case 0:
+			{
+				if (enemy->anim.flags & 2)
+				{
+					enemy->anim.flags &= ~8;
+					enemy->anim.state = 1;
+					if (enemy->state0NextTick < s_curTick)
+					{
+						if (enemy->fireSpread)
+						{
+							enemy->fireSpread -= mul16(FIXED(2), s_deltaTime);
+							if (enemy->fireSpread < FIXED(9))
+							{
+								enemy->fireSpread = FIXED(9);
+							}
+							enemy->state0NextTick = s_curTick + 145;
+						}
+						else
+						{
+							enemy->state0NextTick = 0xffffffff;
+						}
+					}
+					enemy->target.flags &= ~(1 | 2 | 3);
+					// Next AI update.
+					return s_curTick + random(enemy->timing.delay);
+				}
+			} break;
+			case 1:
+			{
+				// actor_handleFightMusic();
+				if (s_playerDying)
+				{
+					if (s_reviveTick <= s_curTick)
+					{
+						enemy->anim.flags |= 2;
+						enemy->anim.state = 0;
+						return enemy->timing.delay;
+					}
+				}
+
+				if (!actor_canSeeObjFromDist(obj, s_playerObject))
+				{
+					actor_updatePlayerVisiblity(JFALSE, 0, 0);
+					enemy->anim.flags |= 2;
+					enemy->anim.state = 0;
+					if (enemy->timing.nextTick < s_curTick)
+					{
+						enemy->timing.delay = enemy->timing.state0Delay;
+						actor_setupInitAnimation();
+					}
+					return enemy->timing.delay;
+				}
+				else
+				{
+					actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
+					enemy->timing.nextTick = s_curTick + enemy->timing.state1Delay;
+					fixed16_16 dist = distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
+					fixed16_16 yDiff = TFE_Jedi::abs(obj->posWS.y - obj->worldHeight - s_eyePos.y);
+					angle14_32 vertAngle = vec2ToAngle(yDiff, dist);
+
+					fixed16_16 baseYDiff = TFE_Jedi::abs(s_playerObject->posWS.y - obj->posWS.y);
+					dist += baseYDiff;
+
+					if (vertAngle < 2275 && dist <= enemy->maxDist)	// ~50 degrees
+					{
+						if (enemy->attackFlags & 1)
+						{
+							if (dist <= enemy->u94)
+							{
+								enemy->anim.state = 2;
+								enemy->timing.delay = enemy->timing.state2Delay;
+							}
+							else if (!(enemy->attackFlags & 2) || dist < enemy->minDist)
+							{
+								enemy->anim.flags |= 2;
+								enemy->anim.state = 0;
+								return enemy->timing.delay;
+							}
+							else
+							{
+								enemy->anim.state = 4;
+								enemy->timing.delay = enemy->timing.state4Delay;
+							}
+						}
+						else
+						{
+							if (dist < enemy->minDist)
+							{
+								enemy->anim.flags |= 2;
+								enemy->anim.state = 0;
+								return enemy->timing.delay;
+							}
+							enemy->anim.state = 2;
+							enemy->timing.delay = enemy->timing.state4Delay;
+						}
+
+						if (obj->type == OBJ_TYPE_SPRITE)
+						{
+							if (enemy->anim.state == 2)
+							{
+								actor_setupAnimation(1, &enemy->anim);
+							}
+							else
+							{
+								actor_setupAnimation(7, &enemy->anim);
+							}
+						}
+
+						enemy->target.pos.x = obj->posWS.x;
+						enemy->target.pos.z = obj->posWS.z;
+						enemy->target.yaw   = vec2ToAngle(s_eyePos.x - obj->posWS.x, s_eyePos.z - obj->posWS.z);
+						enemy->target.pitch = obj->pitch;
+						enemy->target.roll  = obj->roll;
+						enemy->target.flags |= (1 | 4);
+					}
+					else
+					{
+						enemy->anim.flags |= 2;
+						enemy->anim.state = 0;
+						return enemy->timing.delay;
+					}
+				}
+			} break;
+			case 2:
+			{
+				if (!(enemy->anim.flags & 2))
+				{
+					break;
+				}
+
+				if (enemy->attackFlags & 1)
+				{
+					// TODO
+				}
+				if (enemy->attackFlags & 8)
+				{
+					obj->flags |= OBJ_FLAG_FULLBRIGHT;
+				}
+
+				enemy->anim.state = 3;
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(enemy->projType, obj->sector, obj->posWS.x, enemy->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
+				playSound3D_oneshot(enemy->attackPrimSndSrc, obj->posWS);
+
+				proj->prevColObj = obj;
+				proj->prevObj = obj;
+
+				SecObject* projObj = proj->logic.obj;
+				projObj->yaw = obj->yaw;
+				
+				// Handle x and z fire offset.
+				if (enemy->fireOffset.x | enemy->fireOffset.z)
+				{
+					proj->delta.x = enemy->fireOffset.x;
+					proj->delta.z = enemy->fireOffset.z;
+					proj_handleMovement(proj);
+				}
+
+				// Aim at the target.
+				vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
+				proj_aimAtTarget(proj, target);
+
+				if (enemy->fireSpread)
+				{
+					proj->vel.x += random(enemy->fireSpread*2) - enemy->fireSpread;
+					proj->vel.y += random(enemy->fireSpread*2) - enemy->fireSpread;
+					proj->vel.z += random(enemy->fireSpread*2) - enemy->fireSpread;
+				}
+			} break;
+			case 3:
+			{
+				if (enemy->attackFlags & 8)
+				{
+					obj->flags &= ~OBJ_FLAG_FULLBRIGHT;
+				}
+
+				if (obj->type == OBJ_TYPE_SPRITE)
+				{
+					actor_setupAnimation(6, anim);
+				}
+				enemy->anim.state = 0;
+			} break;
+			case 4:
+			{
+				// TODO
+			} break;
+			case 5:
+			{
+				// TODO
+			} break;
+		}
+
+		if (obj->type == OBJ_TYPE_SPRITE)
+		{
+			actor_setCurAnimation(&enemy->anim);
+		}
+		actor->updateTargetFunc(actor, &enemy->target);
+		return enemy->timing.delay;
 	}
 
-	JBool defaultGameObjMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
+	JBool defaultEnemyMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
 	{
-		return JFALSE;
+		ActorEnemy* enemy = &aiActor->enemy;
+		ActorLogic* logic = (ActorLogic*)s_curLogic;
+		if (msg == MSG_WAKEUP)
+		{
+			enemy->timing.nextTick = s_curTick + enemy->timing.state1Delay;
+		}
+		if (logic->flags & 1)
+		{
+			return enemy->timing.delay;
+		}
+		return 0xffffffff;
 	}
 
 	ActorEnemy* actor_createEnemyActor(Logic* logic)
 	{
-		ActorEnemy* gameObj = (ActorEnemy*)level_alloc(sizeof(ActorEnemy));
-		actor_initEnemy(gameObj, logic);
-		gameObj->header.func = defaultGameObjFunc;
-		gameObj->header.msgFunc = defaultGameObjMsgFunc;
-		return gameObj;
+		ActorEnemy* enemyActor = (ActorEnemy*)level_alloc(sizeof(ActorEnemy));
+		memset(enemyActor, 0, sizeof(ActorEnemy));
+
+		actor_initEnemy(enemyActor, logic);
+		enemyActor->header.func = defaultEnemyFunc;
+		enemyActor->header.msgFunc = defaultEnemyMsgFunc;
+		return enemyActor;
 	}
 
 	JBool defaultSimpleActorFunc(AiActor* aiActor, Actor* actor)
 	{
-		return JFALSE;
+		ActorSimple* actorSimple = (ActorSimple*)aiActor;
+		SecObject* obj = actorSimple->header.obj;
+
+		if (actorSimple->anim.state == 1)
+		{
+			ActorTarget* target = &actorSimple->target;
+			if (actorSimple->nextTick < s_curTick || actor_arrivedAtTarget(target, obj))
+			{
+				if (actor_arrivedAtTarget(target, obj))
+				{
+					actorSimple->playerLastSeen = 0xffffffff;
+				}
+				actorSimple->anim.state = 2;
+			}
+			else
+			{
+				if (actorLogic_isStopFlagSet() && actorSimple->anim.animId != -1)
+				{
+					actorSimple->nextTick = 0;
+					actorSimple->delay = actorSimple->startDelay;
+					actorSimple->playerLastSeen = 0xffffffff;
+				}
+				else
+				{
+					actorSimple->playerLastSeen = s_curTick + 0x1111;
+				}
+
+				ActorTarget* target = &actorSimple->target;
+				if (actor_handleSteps(actor, target))
+				{
+					actor_changeDirFromCollision(actor, target, &actorSimple->prevColTick);
+					if (!actorLogic_isStopFlagSet())
+					{
+						actorSimple->delay += 218;
+						if (actorSimple->delay > 1456)
+						{
+							actorSimple->delay = 291;
+						}
+						actorSimple->nextTick = s_curTick + actorSimple->delay;
+					}
+				}
+			}
+		}
+		else if (actorSimple->anim.state == 2)
+		{
+			ActorLogic* logic = actor_getCurrentLogic();
+			fixed16_16 targetX, targetZ;
+			if (actorSimple->playerLastSeen < s_curTick)
+			{
+				targetX = logic->lastPlayerPos.x;
+				targetZ = logic->lastPlayerPos.z;
+			}
+			else
+			{
+				targetX = s_eyePos.x;
+				targetZ = s_eyePos.z;
+			}
+
+			fixed16_16 targetOffset;
+			if (!actorLogic_isStopFlagSet())
+			{
+				// Offset the target by |dx| / 4
+				fixed16_16 dx = TFE_Jedi::abs(s_playerObject->posWS.x - obj->posWS.x);
+				targetOffset = dx >> 2;
+			}
+			else
+			{
+				// Offset the target by the targetOffset.
+				targetOffset = actorSimple->targetOffset;
+			}
+
+			fixed16_16 dx = obj->posWS.x - targetX;
+			fixed16_16 dz = obj->posWS.z - targetZ;
+			angle14_32 angle = vec2ToAngle(dx, dz);
+
+			actorSimple->target.pos.x = targetX;
+			actorSimple->target.pos.z = targetZ;
+			actorSimple->target.flags = (actorSimple->target.flags | 1) & 0xfffffffd;
+			actor_offsetTarget(&actorSimple->target.pos.x, &actorSimple->target.pos.z, targetOffset, actorSimple->targetVariation, angle, actorSimple->approachVariation);
+
+			dx = actorSimple->target.pos.x - obj->posWS.x;
+			dz = actorSimple->target.pos.z - obj->posWS.z;
+			actorSimple->target.pitch = 0;
+			actorSimple->target.roll = 0;
+			actorSimple->target.yaw = vec2ToAngle(dx, dz);
+			actorSimple->target.flags |= 4;
+
+			if (!(logic->flags & 2))
+			{
+				if (obj->type == OBJ_TYPE_SPRITE)
+				{
+					actor_setupAnimation(0, &actorSimple->anim);
+				}
+				logic->flags |= 2;
+			}
+			actorSimple->anim.state = 1;
+			actorSimple->nextTick = s_curTick + actorSimple->delay;
+
+			if (obj->entityFlags & ETFLAG_4096)
+			{
+				// TODO
+			}
+		}
+
+		if (obj->type == OBJ_TYPE_SPRITE)
+		{
+			actor_setCurAnimation(&actorSimple->anim);
+		}
+		actor->updateTargetFunc(actor, &actorSimple->target);
+		return 0;
 	}
 
 	ActorSimple* actor_createSimpleActor(Logic* logic)
 	{
 		ActorSimple* actor = (ActorSimple*)level_alloc(sizeof(ActorSimple));
+		memset(actor, 0, sizeof(ActorSimple));
 
 		actor->target.speedRotation = 0;
 		actor->target.speed = FIXED(4);
@@ -693,6 +1415,8 @@ namespace TFE_DarkForces
 	Actor* actor_create(Logic* logic)
 	{
 		Actor* actor = (Actor*)level_alloc(sizeof(Actor));
+		memset(actor, 0, sizeof(Actor));
+
 		actor_initHeader(&actor->header, logic);
 		actor_setupSmartObj(actor);
 
@@ -803,6 +1527,7 @@ namespace TFE_DarkForces
 			aiAnim->prevTick = 0;
 			aiAnim->animId = animTable[animIdx];
 			aiAnim->startFrame = 0;
+			aiAnim->frame = 0;
 			aiAnim->flags |= AFLAG_PLAYED;
 			if (aiAnim->animId != -1)
 			{
@@ -971,7 +1696,7 @@ namespace TFE_DarkForces
 			sector_getObjFloorAndCeilHeight(obj->sector, obj->posWS.y, &floorHeight, &ceilHeight);
 
 			// Add gravity to our velocity if the object is not on the floor.
-			if (floorHeight > obj->posWS.y)
+			if (obj->posWS.y < floorHeight)
 			{
 				vel->y += mul16(s_gravityAccel, s_deltaTime);
 			}
@@ -1054,11 +1779,17 @@ namespace TFE_DarkForces
 				{
 					SecObject* obj = actorLogic->logic.obj;
 					u32 flags = actorLogic->flags;
-					if ((flags & 1) && (flags & 0xf0))
+					if ((flags & 1) && (flags & 4))
 					{
 						if (actorLogic->nextTick < s_curTick)
 						{
-							// TODO	
+							actorLogic->nextTick = s_curTick + actorLogic->delay;
+							if (actor_isObjectVisible(obj, s_playerObject, actorLogic->fov, actorLogic->nearDist))
+							{
+								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
+								// imuse_triggerFightTrack();
+								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, hitEffectWakeupFunc, obj, ETFLAG_AI_ACTOR);
+							}
 						}
 					}
 					else
@@ -1106,8 +1837,6 @@ namespace TFE_DarkForces
 					actorLogic = (ActorLogic*)allocator_getNext(s_actorLogics);
 				}
 			}
-
-			task_yield(TASK_NO_DELAY);
 		}
 		task_end;
 	}

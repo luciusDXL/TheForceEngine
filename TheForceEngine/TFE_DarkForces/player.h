@@ -12,6 +12,8 @@
 #include <TFE_Jedi/Task/task.h>
 #include "time.h"
 
+struct ProjectileLogic;
+
 namespace TFE_DarkForces
 {
 	struct PlayerInfo
@@ -106,6 +108,7 @@ namespace TFE_DarkForces
 	extern angle14_32 s_pitch, s_yaw, s_roll;
 	extern angle14_32 s_playerYaw;
 	extern Tick s_playerTick;
+	extern Tick s_reviveTick;
 
 	extern SecObject* s_playerObject;
 	extern SecObject* s_playerEye;
@@ -145,6 +148,7 @@ namespace TFE_DarkForces
 	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound);
 
 	void computeExplosionPushDir(vec3_fixed* pos, vec3_fixed* pushDir);
+	void computeDamagePushVelocity(ProjectileLogic* proj, vec3_fixed* vel);
 
 	void cheat_teleport();
 	void cheat_enableNoheightCheck();

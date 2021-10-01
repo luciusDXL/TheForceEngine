@@ -85,7 +85,7 @@ struct ActorEnemy
 	LogicAnimation anim;
 
 	fixed16_16 fireSpread;
-	s32 state0NextTick;
+	Tick state0NextTick;
 	vec3_fixed fireOffset;
 
 	ProjectileType projType;

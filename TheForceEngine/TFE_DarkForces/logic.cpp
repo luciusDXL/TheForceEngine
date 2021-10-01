@@ -185,6 +185,8 @@ namespace TFE_DarkForces
 			case KW_TROOP:
 			case KW_STORM1:
 			{
+				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
+				trooper_setup(obj, setupFunc);
 			} break;
 			case KW_INT_DROID:
 			{
@@ -206,6 +208,8 @@ namespace TFE_DarkForces
 			} break;
 			case KW_COMMANDO:
 			{
+				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
+				commando_setup(obj, setupFunc);
 			} break;
 			case KW_I_OFFICER:
 			case KW_I_OFFICER1:

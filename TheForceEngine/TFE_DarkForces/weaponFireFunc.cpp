@@ -2072,7 +2072,7 @@ namespace TFE_DarkForces
 			if (obj && (obj->flags & OBJ_FLAG_ENEMY))
 			{
 				fixed16_16 dx = obj->posWS.x - xPos;
-				fixed16_16 top = obj->posWS.y - (obj->worldHeight >> 1) + (obj->worldHeight >> 2);
+				fixed16_16 top = obj->posWS.y - (obj->worldHeight >> 1) - (obj->worldHeight >> 2);
 				fixed16_16 dy = top - yPos;
 				fixed16_16 dz = obj->posWS.z - zPos;
 				angle14_32 angle = vec2ToAngle(dx, dz) & ANGLE_MASK;

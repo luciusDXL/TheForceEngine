@@ -1479,6 +1479,23 @@ namespace TFE_DarkForces
 		}
 		return JFALSE;
 	}
+
+	void proj_aimAtTarget(ProjectileLogic* proj, vec3_fixed target)
+	{
+		SecObject* obj = proj->logic.obj;
+		vec3_fixed delta = { target.x - obj->posWS.x, target.y - obj->posWS.y, target.z - obj->posWS.z };
+
+		fixed16_16 dirX, dirZ;
+		computeDirAndLength(delta.x, delta.z, &dirX, &dirZ);
+
+		// This is a roundabout but mathematically correct way of deriving the length...
+		fixed16_16 len = mul16(dirX, delta.x) + mul16(dirZ, delta.z);
+
+		fixed16_16 dirY, dirH;
+		computeDirAndLength(-delta.y, len, &dirY, &dirH);
+
+		proj_setYawPitch(proj, dirY/*sinPitch*/, dirH/*cosPitch*/, dirX/*sinYaw*/, dirZ/*cosYaw*/);
+	}
 		
 	// Returns JTRUE if the hit was properly handled, otherwise returns JFALSE.
 	JBool handleProjectileHit(ProjectileLogic* projLogic, ProjectileHitType hitType)

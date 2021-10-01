@@ -144,7 +144,8 @@ namespace TFE_DarkForces
 			s_loadingScreenStart = s_curTick;
 			{
 				const char* levelName = agent_getLevelName();
-				if (level_load(levelName, s_agentData[s_agentId].difficulty + 1))
+				// For now always load medium difficulty since it cannot be selected.
+				if (level_load(levelName, /*s_agentData[s_agentId].difficulty + 1*/3))
 				{
 					setScreenBrightness(ONE_16);
 					setScreenFxLevels(0, 0, 0);

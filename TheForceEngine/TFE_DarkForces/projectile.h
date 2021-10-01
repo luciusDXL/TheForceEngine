@@ -110,4 +110,6 @@ namespace TFE_DarkForces
 	void proj_setTransform(ProjectileLogic* projLogic, angle14_32 pitch, angle14_32 yaw);
 	ProjectileHitType proj_handleMovement(ProjectileLogic* logic);
 	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType);
+
+	void proj_aimAtTarget(ProjectileLogic* proj, vec3_fixed target);
 }  // namespace TFE_DarkForces

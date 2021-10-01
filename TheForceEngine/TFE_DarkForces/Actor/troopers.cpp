@@ -47,6 +47,8 @@ namespace TFE_DarkForces
 
 	Logic* officer_setup(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD logicId)
 	{
+		obj->flags |= OBJ_FLAG_HAS_COLLISION;
+
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags |= FLAG_BIT(4);	// Use Officer alert table.
 		logic->alertSndSrc = 0;
@@ -62,6 +64,7 @@ namespace TFE_DarkForces
 		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
 		enemyActor->projType = PROJ_PISTOL_BOLT;
 		enemyActor->attackPrimSndSrc = s_pistolSndSrc;
+
 		s_curEnemyActor = enemyActor;
 		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
@@ -76,6 +79,90 @@ namespace TFE_DarkForces
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
 		logic->animTable = s_officerAnimTable;
+		s_curLogic = (Logic*)logic;
+
+		actor->collisionFlags |= 1;
+		actor->physics.width = obj->worldWidth;
+		actor_setupInitAnimation();
+
+		return (Logic*)logic;
+	}
+
+	Logic* trooper_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	{
+		obj->flags |= OBJ_FLAG_HAS_COLLISION;
+
+		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
+		logic->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
+		logic->alertSndSrc = 0;
+
+		AiActor* aiActor = actor_createAiActor((Logic*)logic);
+		aiActor->hp = FIXED(18);
+		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_STORM_HURT];
+		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_STORM_DIE];
+		aiActor->itemDropId = ITEM_RIFLE;
+		actorLogic_addActor(logic, aiActor);
+
+		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
+		s_curEnemyActor = enemyActor;
+		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
+		enemyActor->projType = PROJ_RIFLE_BOLT;
+		enemyActor->attackPrimSndSrc = s_rifleSndSrc;
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
+
+		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
+		actorSimple->target.speedRotation = HALF_16 - 1;
+		actorSimple->target.speed = FIXED(8);
+		actorSimple->u3c = 116;
+		actorSimple->anim.flags &= 0xfffffffe;
+		actorSimple->startDelay = TICKS(2);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
+
+		Actor* actor = actor_create((Logic*)logic);
+		logic->actor = actor;
+		logic->animTable = s_troopAnimTable;
+		s_curLogic = (Logic*)logic;
+
+		actor->collisionFlags |= 1;
+		actor->physics.width = obj->worldWidth;
+		actor_setupInitAnimation();
+
+		return (Logic*)logic;
+	}
+
+	Logic* commando_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	{
+		obj->flags |= OBJ_FLAG_HAS_COLLISION;
+
+		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
+		logic->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
+		logic->alertSndSrc = 0;
+
+		AiActor* aiActor = actor_createAiActor((Logic*)logic);
+		aiActor->hp = FIXED(27);
+		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_STORM_HURT];
+		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_STORM_DIE];
+		aiActor->itemDropId = ITEM_RIFLE;
+		actorLogic_addActor(logic, aiActor);
+
+		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
+		s_curEnemyActor = enemyActor;
+		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
+		enemyActor->projType = PROJ_RIFLE_BOLT;
+		enemyActor->attackPrimSndSrc = s_rifleSndSrc;
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
+
+		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
+		actorSimple->target.speedRotation = HALF_16 - 1;
+		actorSimple->target.speed = FIXED(9);
+		actorSimple->u3c = 116;
+		actorSimple->anim.flags &= 0xfffffffe;
+		actorSimple->startDelay = TICKS(1);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
+
+		Actor* actor = actor_create((Logic*)logic);
+		logic->actor = actor;
+		logic->animTable = s_troopAnimTable;
 		s_curLogic = (Logic*)logic;
 
 		actor->collisionFlags |= 1;

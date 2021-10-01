@@ -823,11 +823,12 @@ namespace TFE_Jedi
 			// The object collides with the ceiling.
 			s_hcolDstPos.y = ceilHeight + colInfo->height;
 		}
-		else if (s_hcolDstPos.y <= floorHeight)
+		else if (s_hcolDstPos.y > floorHeight)
 		{
 			// The object collides with the floor.
 			s_hcolDstPos.y = floorHeight;
 		}
+		s_hcolObj->posWS.y = s_hcolDstPos.y;
 
 		// These values are probably filled in at 2346a6, 23474f, and/or 23487f - which need to be figured out first.
 		colInfo->wall = colWall;
