@@ -520,6 +520,7 @@ namespace TFE_DarkForces
 					corpse->worldHeight = 0;
 					corpse->worldWidth = 0;
 					corpse->entityFlags |= ETFLAG_512;
+					corpse->flags &= ~OBJ_FLAG_HAS_COLLISION;
 					sector_addObject(obj->sector, corpse);
 				}
 			}

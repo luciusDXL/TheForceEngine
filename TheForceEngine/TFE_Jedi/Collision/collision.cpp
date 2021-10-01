@@ -834,8 +834,6 @@ namespace TFE_Jedi
 		colInfo->wall = colWall;
 		colInfo->u24 = b;
 		colInfo->collidedObj = colObj;
-		// Update the collision info y position.
-		colInfo->yPos = s_hcolDstPos.y;
 		if (colWall || b || colObj)
 		{
 			return JFALSE;
