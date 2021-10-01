@@ -257,10 +257,10 @@ namespace TFE_DarkForces
 		enemyActor->projType = PROJ_RIFLE_BOLT;
 		enemyActor->attackSecSndSrc = 0;
 		enemyActor->attackPrimSndSrc = 0;
-		enemyActor->u94 = 0;
+		enemyActor->meleeRange = 0;
 		enemyActor->minDist = 0;
 		enemyActor->maxDist = FIXED(160);
-		enemyActor->ua0 = 0;
+		enemyActor->meleeDmg = 0;
 		enemyActor->ua4 = FIXED(230);
 		enemyActor->attackFlags = 10;
 
@@ -690,7 +690,7 @@ namespace TFE_DarkForces
 
 		return enemyActor;
 	}
-
+		
 	JBool defaultEnemyFunc(AiActor* aiActor, Actor* actor)
 	{
 		ActorEnemy* enemy = &aiActor->enemy;
@@ -768,7 +768,7 @@ namespace TFE_DarkForces
 					{
 						if (enemy->attackFlags & 1)
 						{
-							if (dist <= enemy->u94)
+							if (dist <= enemy->meleeRange)
 							{
 								enemy->anim.state = 2;
 								enemy->timing.delay = enemy->timing.state2Delay;
@@ -831,10 +831,24 @@ namespace TFE_DarkForces
 					break;
 				}
 
-				if (enemy->attackFlags & 1)
+				if (enemy->attackFlags & 1)	// Melee attack!
 				{
-					// TODO
+					enemy->anim.state = 3;
+					fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
+					fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
+					if (dist < enemy->meleeRange)
+					{
+						playSound3D_oneshot(enemy->attackSecSndSrc, obj->posWS);
+						player_applyDamage(enemy->meleeDmg, 0, JTRUE);
+						if (enemy->attackFlags & 8)
+						{
+							obj->flags |= OBJ_FLAG_FULLBRIGHT;
+						}
+					}
+					break;
 				}
+
+				// Ranged Attack!
 				if (enemy->attackFlags & 8)
 				{
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
@@ -884,11 +898,52 @@ namespace TFE_DarkForces
 			} break;
 			case 4:
 			{
-				// TODO
+				if (!(enemy->anim.flags & 2))
+				{
+					break;
+				}
+				if (enemy->attackFlags & 8)
+				{
+					obj->flags |= OBJ_FLAG_FULLBRIGHT;
+				}
+
+				enemy->anim.state = 5;
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(enemy->projType, obj->sector, obj->posWS.x, enemy->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
+				playSound3D_oneshot(enemy->attackPrimSndSrc, obj->posWS);
+				proj->prevColObj = obj;
+				proj->excludeObj = obj;
+
+				SecObject* projObj = proj->logic.obj;
+				projObj->yaw = obj->yaw;
+				if (enemy->projType == PROJ_THERMAL_DET)
+				{
+					// TODO
+				}
+				else
+				{
+					if (enemy->fireOffset.x | enemy->fireOffset.z)
+					{
+						proj->delta.x = enemy->fireOffset.x;
+						proj->delta.z = enemy->fireOffset.z;
+						proj_handleMovement(proj);
+					}
+					vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
+					proj_aimAtTarget(proj, target);
+					if (enemy->fireSpread)
+					{
+						proj->vel.x += random(enemy->fireSpread*2) - enemy->fireSpread;
+						proj->vel.y += random(enemy->fireSpread*2) - enemy->fireSpread;
+						proj->vel.z += random(enemy->fireSpread*2) - enemy->fireSpread;
+					}
+				}
 			} break;
 			case 5:
 			{
-				// TODO
+				if (obj->type == OBJ_TYPE_SPRITE)
+				{
+					actor_setupAnimation(8, anim);
+				}
+				enemy->anim.state = 0;
 			} break;
 		}
 

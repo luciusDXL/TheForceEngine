@@ -103,7 +103,10 @@ namespace TFE_DarkForces
 
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();
+	void actor_initHeader(ActorHeader* header, Logic* logic);
 	JBool actor_canDie(PhysicsActor* phyActor);
+	JBool actor_handleSteps(Actor* actor, ActorTarget* target);
+	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj);
 
 	s32 actor_getAnimationIndex(s32 action);
 	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim);

@@ -6,6 +6,7 @@
 #include "vueLogic.h"
 #include "projectile.h"
 #include <TFE_DarkForces/Actor/exploders.h>
+#include <TFE_DarkForces/Actor/flyers.h>
 #include <TFE_DarkForces/Actor/mousebot.h>
 #include <TFE_DarkForces/Actor/scenery.h>
 #include <TFE_DarkForces/Actor/troopers.h>
@@ -189,6 +190,8 @@ namespace TFE_DarkForces
 			} break;
 			case KW_INT_DROID:
 			{
+				obj->entityFlags = (ETFLAG_AI_ACTOR | ETFLAG_FLYING);
+				intDroid_setup(obj, setupFunc);
 			} break;
 			case KW_PROBE_DROID:
 			{

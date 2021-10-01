@@ -91,12 +91,33 @@ struct ActorEnemy
 	ProjectileType projType;
 	SoundSourceID attackSecSndSrc;
 	SoundSourceID attackPrimSndSrc;
-	s32 u94;
+	fixed16_16 meleeRange;
 	fixed16_16 minDist;
 	fixed16_16 maxDist;
-	s32 ua0;
+	fixed16_16 meleeDmg;
 	s32 ua4;
 	u32 attackFlags;
+};
+
+struct ActorFlyer
+{
+	ActorHeader header;
+	ActorTarget target;
+
+	Tick delay;
+	s32 u40;
+	s32 u44;
+	s32 width;
+	s32 u4c;
+	Tick nextTick;
+	s32 u54;
+	s32 u58;
+	s32 u5c;
+	s32 u60;
+	s32 state;
+	s32 u68;
+	s32 u6c;
+	s32 u70;
 };
 
 struct Actor
