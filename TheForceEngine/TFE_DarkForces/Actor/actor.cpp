@@ -39,6 +39,10 @@ namespace TFE_DarkForces
 	SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];
 	SoundSourceID s_agentSndSrc[AGENTSND_COUNT];
 
+	Tick s_nextAlertTick = 0;
+	u32 s_officerAlertIndex = 0;
+	u32 s_stormtrooperAlertIndex = 0;
+
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
@@ -135,10 +139,10 @@ namespace TFE_DarkForces
 		logic->actor = nullptr;
 		logic->animTable = nullptr;
 		logic->delay = 72;			// Delay in ticks
-		logic->alertSndSrc = 0;
-		logic->u44 = 0;
-		logic->u48 = 0x2555;		// 0.1458?
-		logic->u4c = FIXED(20);		// possibly movement speed?
+		logic->alertSndSrc = NULL_SOUND;
+		logic->alertSndID = NULL_SOUND;
+		logic->fov = 9557;			// ~210 degrees
+		logic->nearDist = FIXED(20);
 		logic->vel = { 0, 0, 0 };
 		logic->freeTask = nullptr;
 		logic->flags = 4;
@@ -233,20 +237,20 @@ namespace TFE_DarkForces
 		enemyActor->anim.frameCount = ONE_16;
 		enemyActor->anim.prevTick = 0;
 		enemyActor->anim.state = 0;
-		enemyActor->u74 = FIXED(30);
+		enemyActor->fireSpread = FIXED(30);
 		enemyActor->state0NextTick = 0;
-		enemyActor->u7c = 0;
+		enemyActor->fireOffset.x = 0;
+		enemyActor->fireOffset.z = 0;
 
 		enemyActor->target.flags &= 0xf0;
 		enemyActor->anim.flags |= 3;
-		enemyActor->u84 = 0;
 		enemyActor->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
 		SecObject* obj = enemyActor->header.obj;
 		// world width and height was set from the sprite data.
-		enemyActor->centerOffset = -((TFE_Jedi::abs(obj->worldHeight) >> 1) + ONE_16);
+		enemyActor->fireOffset.y = -((TFE_Jedi::abs(obj->worldHeight) >> 1) + ONE_16);
 
-		enemyActor->u88 = 2;
+		enemyActor->projType = PROJ_RIFLE_BOLT;
 		enemyActor->attackSecSndSrc = 0;
 		enemyActor->attackPrimSndSrc = 0;
 		enemyActor->u94 = 0;
@@ -256,7 +260,7 @@ namespace TFE_DarkForces
 		enemyActor->ua4 = FIXED(230);
 		enemyActor->attackFlags = 10;
 
-		return enemyActor->centerOffset;
+		return enemyActor->fireOffset.y;
 	}
 
 	JBool defaultAiFunc(AiActor* aiActor, Actor* actor)
@@ -278,13 +282,14 @@ namespace TFE_DarkForces
 		enemy->header.msgFunc = defaultMsgFunc;
 		enemy->header.nextTick = 0xffffffff;
 
-		enemyActor->hp = FIXED(4);	// default to 4 HP.
-		enemyActor->itemDropId = -1;
-		enemyActor->hurtSndSrc = 0;
-		enemyActor->dieSndSrc = 0;
-		enemyActor->ubc = 0;
-		enemyActor->uc0 = -1;
-		enemyActor->uc4 = -1;
+		// Default values.
+		enemyActor->hp = FIXED(4);
+		enemyActor->itemDropId = ITEM_NONE;
+		enemyActor->hurtSndSrc = NULL_SOUND;
+		enemyActor->dieSndSrc  = NULL_SOUND;
+		enemyActor->hurtSndID  = NULL_SOUND;
+		enemyActor->stopOnHit = JTRUE;
+		enemyActor->dieEffect = HEFFECT_NONE;
 
 		return enemyActor;
 	}
@@ -329,7 +334,7 @@ namespace TFE_DarkForces
 		actor->anim.frameCount = ONE_16;
 
 		actor->anim.prevTick = 0;
-		actor->u70 = 0;
+		actor->prevColTick = 0;
 		actor->target.flags = 0;
 		actor->anim.flags = 0;
 
@@ -554,8 +559,38 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	JBool defaultActorMsgFunc(AiActor* aiActor, Actor* baseActor)
+	// Updates the actor target with the passed in target based on the flags.
+	JBool defaultUpdateTargetFunc(Actor* actor, ActorTarget* target)
 	{
+		if (target->flags & 8)
+		{
+			actor->target.flags |= 8;
+		}
+		else
+		{
+			actor->target.flags &= ~8;
+			if (target->flags & 1)
+			{
+				actor->target.pos.x = target->pos.x;
+				actor->target.pos.z = target->pos.z;
+				actor->target.speed = target->speed;
+				actor->target.flags |= 1;
+			}
+			if (target->flags & 2)
+			{
+				actor->target.pos.y = target->pos.y;
+				actor->target.speedVert = target->speedVert;
+				actor->target.flags |= 2;
+			}
+			if (target->flags & 4)
+			{
+				actor->target.pitch = target->pitch;
+				actor->target.yaw   = target->yaw;
+				actor->target.roll  = target->roll;
+				actor->target.speedRotation = target->speedRotation;
+				actor->target.flags |= 4;
+			}
+		}
 		return JFALSE;
 	}
 
@@ -663,7 +698,7 @@ namespace TFE_DarkForces
 
 		actor->header.func = defaultActorFunc;
 		actor->header.freeFunc = nullptr;
-		actor->func3 = defaultActorMsgFunc;
+		actor->updateTargetFunc = defaultUpdateTargetFunc;
 		// Overwrites height even though it was set in actor_setupSmartObj()
 		actor->physics.height = 0x18000;	// 1.5 units
 		actor->physics.wall = nullptr;
@@ -842,119 +877,8 @@ namespace TFE_DarkForces
 		actorLogic->vel.y += pushY;
 		actorLogic->vel.z += pushZ;
 	}
-
-	// Actor function for exploders (i.e. landmines and exploding barrels).
-	JBool exploderFunc(AiActor* aiActor, Actor* actor)
-	{
-		LogicAnimation* anim = &aiActor->enemy.anim;
-		if (!(anim->flags & AFLAG_READY))
-		{
-			s_curAnimation = anim;
-			return JFALSE;
-		}
-		else if ((anim->flags & AFLAG_PLAYED) && aiActor->hp <= 0)
-		{
-			actor_kill();
-			return JFALSE;
-		}
-		return JTRUE;
-	}
-
-	// Actor message function for exploders, this is responsible for processing messages such as 
-	// projectile damage and explosions. For other AI message functions, it would also process
-	// "wake up" messages, but those messages are ignored for exploders.
-	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
-	{
-		JBool retValue = JFALSE;
-		SecObject* obj = aiActor->enemy.header.obj;
-		LogicAnimation* anim = &aiActor->enemy.anim;
-
-		if (msg == MSG_DAMAGE)
-		{
-			if (aiActor->hp > 0)
-			{
-				ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
-				aiActor->hp -= proj->dmg;
-				JBool retValue;
-				if (aiActor->hp > 0)
-				{
-					retValue = JTRUE;
-				}
-				else
-				{
-					ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_EXP_BARREL, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj);
-					proj->vel = { 0, 0, 0 };
-					obj->flags |= OBJ_FLAG_FULLBRIGHT;
-
-					// I have to remove the logics here in order to get this to work, but this doesn't actually happen here in the original code.
-					// TODO: Move to the correct location.
-					actor_removeLogics(obj);
-
-					actor_setupAnimation(2/*animIndex*/, anim);
-					//actor_setCurAnimation(&aiActor->anim);
-					//aiActor->actor.func3(actor, aiActor->actor.func3);
-
-					retValue = JFALSE;
-				}
-			}
-		}
-		else if (msg == MSG_EXPLOSION)
-		{
-			if (aiActor->hp <= 0)
-			{
-				return JTRUE;
-			}
-
-			fixed16_16 dmg = s_msgArg1;
-			fixed16_16 force = s_msgArg2;
-			aiActor->hp -= dmg;
-
-			vec3_fixed pushDir;
-			vec3_fixed pos = { obj->posWS.x, obj->posWS.y - obj->worldHeight, obj->posWS.z };
-			computeExplosionPushDir(&pos, &pushDir);
-
-			fixed16_16 pushX = mul16(force, pushDir.x);
-			fixed16_16 pushZ = mul16(force, pushDir.z);
-			if (aiActor->hp > 0)
-			{
-				actor_addVelocity(pushX >> 1, 0, pushZ >> 1);
-				return JTRUE;
-			}
-
-			obj->flags |= OBJ_FLAG_FULLBRIGHT;
-			actor_addVelocity(pushX, 0, pushZ);
-
-			ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_EXP_BARREL, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj);
-			proj->vel = { 0, 0, 0 };
-
-			ProjectileLogic* proj2 = (ProjectileLogic*)createProjectile(PROJ_EXP_BARREL, obj->sector, obj->posWS.x, obj->posWS.y, obj->posWS.z, obj);
-			proj2->vel = { 0, 0, 0 };
-			proj2->hitEffectId = HEFFECT_EXP_INVIS;
-			proj2->duration = s_curTick + 36;
-
-			ActorLogic* actorLogic = (ActorLogic*)s_curLogic;
-			CollisionInfo colInfo = { 0 };
-			colInfo.obj = proj2->logic.obj;
-			colInfo.offsetY = 0;
-			colInfo.offsetX = mul16(actorLogic->vel.x, 0x4000);
-			colInfo.offsetZ = mul16(actorLogic->vel.z, 0x4000);
-			colInfo.botOffset = ONE_16;
-			colInfo.yPos = FIXED(9999);
-			colInfo.height = ONE_16;
-			colInfo.u1c = 0;
-			colInfo.width = colInfo.obj->worldWidth;
-			handleCollision(&colInfo);
-
-			// I have to remove the logics here in order to get this to work, but this doesn't actually happen here in the original code.
-			// TODO: Move to the correct location.
-			actor_removeLogics(obj);
-			actor_setupAnimation(2/*animIndex*/, anim);
-			retValue = JFALSE;
-		}
-		return retValue;
-	}
-
-	void actor_hitEffectMsgFunc(s32 msg, void* logic)
+	
+	void actor_hitEffectMsgFunc(MessageType msg, void* logic)
 	{
 		ActorLogic* actorLogic = (ActorLogic*)logic;
 		s_curLogic = (Logic*)logic;
@@ -976,7 +900,53 @@ namespace TFE_DarkForces
 			}
 		}
 
+		if (msg == MSG_WAKEUP)
+		{
+			if (actorLogic->flags & 1)
+			{
+				// imuse_triggerFightTrack();
+			}
 
+			if ((actorLogic->flags & 4) && (actorLogic->flags & 1))
+			{
+				if (s_nextAlertTick < s_curTick)
+				{
+					if (actorLogic->flags & 16)  // Officer alert list.
+					{
+						actorLogic->alertSndID = playSound3D_oneshot(s_officerAlertSndSrc[s_officerAlertIndex], obj->posWS);
+						s_officerAlertIndex++;
+						if (s_officerAlertIndex >= 4)
+						{
+							s_officerAlertIndex = 0;
+						}
+					}
+					else if (actorLogic->flags & 32)  // Storm trooper alert list
+					{
+						actorLogic->alertSndID = playSound3D_oneshot(s_stormAlertSndSrc[s_stormtrooperAlertIndex], obj->posWS);
+						s_stormtrooperAlertIndex++;
+						if (s_stormtrooperAlertIndex >= 8)
+						{
+							s_stormtrooperAlertIndex = 0;
+						}
+					}
+					else // Single alert.
+					{
+						actorLogic->alertSndID = playSound3D_oneshot(actorLogic->alertSndSrc, obj->posWS);
+					}
+					s_nextAlertTick = s_curTick + 291;	// ~2 seconds between alerts
+				}
+				actorLogic->flags &= 0xfffffffe;
+			}
+		}
+		else if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
+		{
+			if (actorLogic->flags & 1)
+			{
+				// imuse_triggerFightTrack();
+			}
+			actorLogic->flags &= ~1;
+			s_curAnimation = nullptr;
+		}
 	}
 
 	void actor_sendTerminalVelMsg(SecObject* obj)

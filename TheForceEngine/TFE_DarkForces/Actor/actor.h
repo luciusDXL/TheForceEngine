@@ -73,15 +73,14 @@ struct ActorLogic
 	AiActor* aiActors[ACTOR_MAX_AI];
 	Actor* actor;
 	const s32* animTable;
+
 	Tick delay;
 	Tick nextTick;
 	SoundSourceID alertSndSrc;
+	SoundEffectID alertSndID;
 
-	// Temp - Replace with proper names.
-	s32 u44;
-	s32 u48;
-	s32 u4c;
-	// End Temp
+	angle14_32 fov;
+	fixed16_16 nearDist;
 
 	vec3_fixed vel;
 	vec2_fixed lastPlayerPos;
@@ -102,10 +101,7 @@ namespace TFE_DarkForces
 	Actor* actor_create(Logic* logic);
 	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor);
 
-	void actor_hitEffectMsgFunc(s32 msg, void* logic);
-	JBool exploderFunc(AiActor* aiActor, Actor* actor);
-	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor);
-
+	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();
 	JBool actor_canDie(PhysicsActor* phyActor);
 

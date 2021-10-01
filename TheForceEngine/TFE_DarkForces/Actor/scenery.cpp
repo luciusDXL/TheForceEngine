@@ -11,7 +11,7 @@
 namespace TFE_DarkForces
 {
 	static s32 s_sceneryAnimTable[] =
-	{ 0, -1, -1, -1, 1, 0 };
+	{ 0, -1, -1, -1, 1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1 };
 
 	// Actor function for exploders (i.e. landmines and exploding barrels).
 	JBool sceneryLogicFunc(AiActor* aiActor, Actor* actor)

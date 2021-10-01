@@ -40,7 +40,7 @@ enum MessageType
 	MSG_COUNT
 };
 
-typedef void(*MessageFunc)(s32, void*);
+typedef void(*MessageFunc)(MessageType, void*);
 struct MessageAddress
 {
 	char name[16];

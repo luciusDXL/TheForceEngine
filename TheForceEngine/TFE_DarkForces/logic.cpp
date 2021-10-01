@@ -5,11 +5,10 @@
 #include "animLogic.h"
 #include "vueLogic.h"
 #include "projectile.h"
-#include <TFE_DarkForces/Actor/barrel.h>
-#include <TFE_DarkForces/Actor/landmine.h>
+#include <TFE_DarkForces/Actor/exploders.h>
 #include <TFE_DarkForces/Actor/mousebot.h>
 #include <TFE_DarkForces/Actor/scenery.h>
-#include <TFE_DarkForces/Actor/officer.h>
+#include <TFE_DarkForces/Actor/troopers.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 

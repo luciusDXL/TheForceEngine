@@ -3,6 +3,9 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/time.h>
+#include <TFE_DarkForces/item.h>
+#include <TFE_DarkForces/hitEffect.h>
+#include <TFE_DarkForces/projectile.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
@@ -10,9 +13,11 @@
 #include "actor.h"
 
 using namespace TFE_Jedi;
+using namespace TFE_DarkForces;
 
 struct Actor;
 struct AiActor;
+struct ActorTarget;
 struct Task;
 
 enum LogicAnimFlags
@@ -23,13 +28,14 @@ enum LogicAnimFlags
 
 typedef JBool(*ActorFunc)(AiActor*, Actor*);
 typedef JBool(*ActorMsgFunc)(s32 msg, AiActor*, Actor*);
+typedef u32(*ActorTargetFunc)(Actor*, ActorTarget*);
 typedef void(*ActorFreeFunc)(void*);
 
 struct LogicAnimation
 {
 	s32 frameRate;
 	fixed16_16 frameCount;
-	u32 prevTick;
+	Tick prevTick;
 	fixed16_16 frame;
 	fixed16_16 startFrame;
 	u32 flags;
@@ -78,13 +84,11 @@ struct ActorEnemy
 	ActorTiming timing;
 	LogicAnimation anim;
 
-	s32 u74;
+	fixed16_16 fireSpread;
 	s32 state0NextTick;
-	s32 u7c;
+	vec3_fixed fireOffset;
 
-	fixed16_16 centerOffset;		// offset from the base to the object center.
-	s32 u84;
-	s32 u88;
+	ProjectileType projType;
 	SoundSourceID attackSecSndSrc;
 	SoundSourceID attackPrimSndSrc;
 	s32 u94;
@@ -98,7 +102,7 @@ struct ActorEnemy
 struct Actor
 {
 	ActorHeader   header;
-	ActorFunc     func3;
+	ActorTargetFunc updateTargetFunc;
 	CollisionInfo physics;
 	ActorTarget   target;
 
@@ -115,12 +119,12 @@ struct ActorSimple
 	
 	s32 u3c;
 	Tick delay;
-	s32 u44;
+	Tick startDelay;
 	LogicAnimation anim;
 
 	Tick nextTick;
 	Tick playerLastSeen;
-	s32 u70;
+	Tick prevColTick;
 
 	fixed16_16 targetOffset;
 	fixed16_16 targetVariation;
@@ -130,14 +134,17 @@ struct ActorSimple
 struct AiActor
 {
 	ActorEnemy enemy;
+	fixed16_16 hp;
+	ItemId itemDropId;
 
-	s32 hp;
-	s32 itemDropId;
+	// Sound source IDs
 	SoundSourceID hurtSndSrc;
 	SoundSourceID dieSndSrc;
-	s32 ubc;
-	s32 uc0;
-	s32 uc4;
+	// Currently playing hurt sound effect ID.
+	SoundEffectID hurtSndID;
+
+	JBool stopOnHit;
+	HitEffectID dieEffect;
 };
 
 struct PhysicsActor

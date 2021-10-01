@@ -11,6 +11,7 @@ namespace TFE_DarkForces
 {
 	enum ItemId
 	{
+		ITEM_NONE = -1,			// -1
 		ITEM_PLANS = 0,			// 0x00
 		ITEM_PHRIK = 1,			// 0x01
 		ITEM_NAVA = 2,			// 0x02

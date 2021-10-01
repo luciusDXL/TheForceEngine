@@ -1,7 +1,7 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
 // Dark Forces
-// Actors - AI agents
+// Handles "trooper" enemies - Officers, Commandos, and Storm Troopers
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/logic.h>
@@ -9,5 +9,5 @@
 
 namespace TFE_DarkForces
 {
-	void barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc);
+	Logic* officer_setup(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD logicId);
 }  // namespace TFE_DarkForces

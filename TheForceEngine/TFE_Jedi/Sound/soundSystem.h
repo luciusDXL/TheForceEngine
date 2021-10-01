@@ -22,7 +22,7 @@ namespace TFE_Jedi
 	SoundEffectID playSound2D(SoundSourceID soundId);
 	SoundEffectID playSound2D_looping(SoundSourceID soundId);
 	// Play a one-shot 3D sound effect from a Sound Source at 'pos'.
-	void playSound3D_oneshot(SoundSourceID soundId, vec3_fixed pos);
+	SoundEffectID playSound3D_oneshot(SoundSourceID soundId, vec3_fixed pos);
 	// Play a looping 3D sound effect from a Sound Source (sourceID) at 'pos'.
 	// Pass in the previous sound effect ID to keep using it and it returns the new sound effect ID (if it changes).
 	// Note this function should be called whenever 'pos' needs to be updated if the sound is moving.

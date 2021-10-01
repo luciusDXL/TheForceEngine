@@ -1,4 +1,4 @@
-#include "officer.h"
+#include "troopers.h"
 #include "aiActor.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
@@ -17,8 +17,12 @@
 
 namespace TFE_DarkForces
 {
-	static s32 s_officerAnimTable[] =
-	{ 0, 6, 2, 3, 4, 5 };
+	static const s32 s_officerAnimTable[] =
+	{ 0, 6, 2, 3, 4, 5,  1, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
+	static const s32 s_troopAnimTable[] =
+	{ 0, 1, 3, 2, 4, 5, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
+	static const s32 s_commandoAnimTable[] =
+	{ 0, 1, 2, 3, 4, 5,  6, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
 
 	ItemId officer_getItemDropId(KEYWORD logicId)
 	{
@@ -44,7 +48,7 @@ namespace TFE_DarkForces
 	Logic* officer_setup(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD logicId)
 	{
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
-		logic->flags |= FLAG_BIT(4);
+		logic->flags |= FLAG_BIT(4);	// Use Officer alert table.
 		logic->alertSndSrc = 0;
 
 		AiActor* aiActor = actor_createAiActor((Logic*)logic);
@@ -56,7 +60,7 @@ namespace TFE_DarkForces
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
-		enemyActor->u88 = 1;
+		enemyActor->projType = PROJ_PISTOL_BOLT;
 		enemyActor->attackPrimSndSrc = s_pistolSndSrc;
 		s_curEnemyActor = enemyActor;
 		actorLogic_addActor(logic, (AiActor*)enemyActor);
@@ -66,7 +70,7 @@ namespace TFE_DarkForces
 		actorSimple->target.speed = FIXED(7);
 		actorSimple->u3c = 0;
 		actorSimple->anim.flags &= 0xfffffffe;
-		actorSimple->u44 = TICKS(2);
+		actorSimple->startDelay = TICKS(2);
 		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
