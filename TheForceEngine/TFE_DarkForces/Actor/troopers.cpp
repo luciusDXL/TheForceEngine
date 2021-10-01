@@ -162,7 +162,7 @@ namespace TFE_DarkForces
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
-		logic->animTable = s_troopAnimTable;
+		logic->animTable = s_commandoAnimTable;
 		s_curLogic = (Logic*)logic;
 
 		actor->collisionFlags |= 1;

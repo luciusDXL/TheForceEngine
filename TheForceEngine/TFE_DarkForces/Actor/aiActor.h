@@ -23,7 +23,7 @@ struct Task;
 enum LogicAnimFlags
 {
 	AFLAG_PLAYED = FLAG_BIT(0),
-	AFLAG_READY = FLAG_BIT(1),
+	AFLAG_READY  = FLAG_BIT(1),
 };
 
 typedef JBool(*ActorFunc)(AiActor*, Actor*);

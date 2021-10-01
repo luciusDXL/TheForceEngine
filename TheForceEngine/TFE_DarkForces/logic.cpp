@@ -155,7 +155,6 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					// TODO(Core Game Loop Release) - figure out why scenery isn't being setup correctly.
 					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 				}
 			}

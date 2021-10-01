@@ -1528,7 +1528,6 @@ namespace TFE_DarkForces
 			aiAnim->animId = animTable[animIdx];
 			aiAnim->startFrame = 0;
 			aiAnim->frame = 0;
-			aiAnim->flags |= AFLAG_PLAYED;
 			if (aiAnim->animId != -1)
 			{
 				WaxAnim* anim = WAX_AnimPtr(obj->wax, aiAnim->animId);
