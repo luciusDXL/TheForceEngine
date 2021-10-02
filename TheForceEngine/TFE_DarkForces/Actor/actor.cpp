@@ -272,6 +272,8 @@ namespace TFE_DarkForces
 		ActorLogic* logic = (ActorLogic*)s_curLogic;
 		Actor* actor = logic->actor;
 		actor->collisionFlags |= 2;
+		// Added to disable auto-aim when dying.
+		logic->logic.obj->flags &= ~(OBJ_FLAG_HAS_COLLISION | OBJ_FLAG_ENEMY);
 	}
 
 	// Returns JTRUE if the object is on the floor, or JFALSE is not on the floor or moving too fast.
@@ -513,7 +515,7 @@ namespace TFE_DarkForces
 					SecObject* corpse = allocateObject();
 					sprite_setData(corpse, obj->wax);
 					corpse->frame = 0;
-					corpse->anim = actor_getAnimationIndex(4);
+					corpse->anim = animIndex;
 					corpse->posWS.x = obj->posWS.x;
 					corpse->posWS.y = (sector->colSecHeight < obj->posWS.y) ? sector->colSecHeight : obj->posWS.y;
 					corpse->posWS.z = obj->posWS.z;
@@ -565,27 +567,18 @@ namespace TFE_DarkForces
 				{
 					ActorLogic* logic = (ActorLogic*)s_curLogic;
 					actor_addVelocity(pushVel.x*4, pushVel.y*2, pushVel.z*4);
-					if (proj->type == PROJ_PUNCH)
+
+					actor_setDeathCollisionFlags();
+					stopSound(logic->alertSndID);
+					playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
+					enemy->anim.flags |= 8;
+					if (proj->type == PROJ_PUNCH && obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setDeathCollisionFlags();
-						stopSound(logic->alertSndID);
-						playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
-						enemy->anim.flags |= 8;
-						if (obj->type == OBJ_TYPE_SPRITE)
-						{
-							actor_setupAnimation(2, anim);
-						}
+						actor_setupAnimation(2, anim);
 					}
-					else
+					else if (obj->type == OBJ_TYPE_SPRITE)
 					{
-						actor_setDeathCollisionFlags();
-						stopSound(logic->alertSndID);
-						playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
-						enemy->anim.flags |= 8;
-						if (obj->type == OBJ_TYPE_SPRITE)
-						{
-							actor_setupAnimation(3, anim);
-						}
+						actor_setupAnimation(3, anim);
 					}
 				}
 				else
