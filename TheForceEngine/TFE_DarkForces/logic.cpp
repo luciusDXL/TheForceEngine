@@ -10,6 +10,7 @@
 #include <TFE_DarkForces/Actor/mousebot.h>
 #include <TFE_DarkForces/Actor/scenery.h>
 #include <TFE_DarkForces/Actor/troopers.h>
+#include <TFE_DarkForces/Actor/enemies.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -234,15 +235,23 @@ namespace TFE_DarkForces
 			} break;
 			case KW_G_GUARD:
 			{
+				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
+				gamor_setup(obj, setupFunc);
 			} break;
 			case KW_REE_YEES:
 			{
+				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
+				reeyees_setup(obj, setupFunc);
 			} break;
 			case KW_REE_YEES2:
 			{
+				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
+				reeyees2_setup(obj, setupFunc);
 			} break;
 			case KW_BOSSK:
 			{
+				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
+				bossk_setup(obj, setupFunc);
 			} break;
 			case KW_BARREL:
 			{

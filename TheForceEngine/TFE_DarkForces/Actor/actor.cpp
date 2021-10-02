@@ -246,7 +246,7 @@ namespace TFE_DarkForces
 		enemyActor->fireOffset.x = 0;
 		enemyActor->fireOffset.z = 0;
 
-		enemyActor->target.flags &= 0xf0;
+		enemyActor->target.flags &= 0xfffffff0;
 		enemyActor->anim.flags |= 3;
 		enemyActor->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
@@ -299,22 +299,21 @@ namespace TFE_DarkForces
 
 	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj)
 	{
-		if (target->pos.z & 1)
+		if (target->flags & 1)
 		{
 			if (target->pos.x != obj->posWS.x || target->pos.z != obj->posWS.z)
 			{
 				return JFALSE;
 			}
 		}
-		if (target->pos.z & 2)
+		if (target->flags & 2)
 		{
 			if (target->pos.y != obj->posWS.y)
 			{
 				return JFALSE;
 			}
 		}
-
-		if (target->pos.z & 4)
+		if (target->flags & 4)
 		{
 			if (target->yaw != obj->yaw || target->pitch != obj->pitch || target->roll == obj->roll)
 			{
@@ -411,6 +410,7 @@ namespace TFE_DarkForces
 			{
 				newAngle = actor->physics.responseAngle;
 			}
+			newAngle &= ANGLE_MASK;
 		}
 
 		fixed16_16 dirX, dirZ;
@@ -917,7 +917,17 @@ namespace TFE_DarkForces
 				projObj->yaw = obj->yaw;
 				if (enemy->projType == PROJ_THERMAL_DET)
 				{
-					// TODO
+					proj->bounceCnt = 0;
+					proj->duration = 0xffffffff;
+					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
+					proj_aimArcing(proj, target, proj->speed);
+
+					if (enemy->fireOffset.x | enemy->fireOffset.z)
+					{
+						proj->delta.x = enemy->fireOffset.x;
+						proj->delta.z = enemy->fireOffset.z;
+						proj_handleMovement(proj);
+					}
 				}
 				else
 				{
@@ -989,9 +999,10 @@ namespace TFE_DarkForces
 		if (actorSimple->anim.state == 1)
 		{
 			ActorTarget* target = &actorSimple->target;
-			if (actorSimple->nextTick < s_curTick || actor_arrivedAtTarget(target, obj))
+			JBool arrivedAtTarget = actor_arrivedAtTarget(target, obj);
+			if (actorSimple->nextTick < s_curTick || arrivedAtTarget)
 			{
-				if (actor_arrivedAtTarget(target, obj))
+				if (arrivedAtTarget)
 				{
 					actorSimple->playerLastSeen = 0xffffffff;
 				}

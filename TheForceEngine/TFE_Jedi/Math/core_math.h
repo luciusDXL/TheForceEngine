@@ -115,6 +115,8 @@ namespace TFE_Jedi
 		}
 	}
 
+	angle14_32 arcCosFixed(fixed16_16 sinAngle, angle14_32 angle);
+		
 	inline fixed16_16 sinFixed(angle14_32 angle)
 	{
 		angle &= ANGLE_MASK;

@@ -8,6 +8,8 @@
 
 namespace TFE_Jedi
 {
+	static s32 s_negArcCos;
+
 	/////////////////////////////////////////////
 	// Fixed point
 	/////////////////////////////////////////////
@@ -158,6 +160,35 @@ namespace TFE_Jedi
 		mtxOut[2] = mul16(mtx0[2], mtx1[0]) + mul16(mtx0[5], mtx1[3]) + mul16(mtx0[8], mtx1[6]);
 		mtxOut[5] = mul16(mtx0[2], mtx1[1]) + mul16(mtx0[5], mtx1[4]) + mul16(mtx0[8], mtx1[7]);
 		mtxOut[8] = mul16(mtx0[2], mtx1[2]) + mul16(mtx0[5], mtx1[5]) + mul16(mtx0[8], mtx1[8]);
+	}
+
+	angle14_32 arcCosFixed(fixed16_16 sinAngle, angle14_32 angle)
+	{
+		const fixed16_16* cosTable = s_cosTable;
+		if (sinAngle >= 0)
+		{
+			s_negArcCos = 0;
+		}
+		else
+		{
+			s_negArcCos = 1;
+			sinAngle = -angle;
+		}
+		s32 i = 0;
+		for (; i < 4095; i++, cosTable++)
+		{
+			if (sinAngle >= *cosTable)
+			{
+				break;
+			}
+		}
+
+		angle14_32 resAngle = 4095 - i;
+		if (s_negArcCos)
+		{
+			resAngle += 8192;
+		}
+		return resAngle;
 	}
 
 	/////////////////////////////////////////////

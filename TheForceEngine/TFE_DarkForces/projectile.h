@@ -112,4 +112,5 @@ namespace TFE_DarkForces
 	JBool handleProjectileHit(ProjectileLogic* logic, ProjectileHitType hitType);
 
 	void proj_aimAtTarget(ProjectileLogic* proj, vec3_fixed target);
+	void proj_aimArcing(ProjectileLogic* proj, vec3_fixed target, fixed16_16 speed);
 }  // namespace TFE_DarkForces

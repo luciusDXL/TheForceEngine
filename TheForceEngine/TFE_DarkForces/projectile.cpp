@@ -1496,6 +1496,22 @@ namespace TFE_DarkForces
 
 		proj_setYawPitch(proj, dirY/*sinPitch*/, dirH/*cosPitch*/, dirX/*sinYaw*/, dirZ/*cosYaw*/);
 	}
+
+	void proj_aimArcing(ProjectileLogic* proj, vec3_fixed target, fixed16_16 speed)
+	{
+		SecObject* obj = proj->logic.obj;
+		fixed16_16 dist = distApprox(obj->posWS.x, obj->posWS.z, target.x, target.z);
+		fixed16_16 distOverSpd = div16(dist, speed);
+		fixed16_16 gravityHalfDistOverSpd = mul16(FIXED(120), distOverSpd >> 1);
+
+		fixed16_16 dy = obj->posWS.y - target.y;
+		angle14_32 vertAngle = vec2ToAngle(dy, dist);
+
+		fixed16_16 sinAngle = div16(gravityHalfDistOverSpd, speed);
+		angle14_32 pitch = vertAngle + arcCosFixed(sinAngle, vertAngle);
+		proj->speed = div16(dist + dy, distOverSpd);
+		proj_setTransform(proj, pitch, obj->yaw);
+	}
 		
 	// Returns JTRUE if the hit was properly handled, otherwise returns JFALSE.
 	JBool handleProjectileHit(ProjectileLogic* projLogic, ProjectileHitType hitType)
