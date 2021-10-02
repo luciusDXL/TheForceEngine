@@ -750,7 +750,10 @@ namespace TFE_DarkForces
 		{
 			vel->y = mul16(push, proj->dir.y) * 2;
 		}
-		vel->y = 0;
+		else
+		{
+			vel->y = 0;
+		}
 	}
 
 	void computeExplosionPushDir(vec3_fixed* pos, vec3_fixed* pushDir)
