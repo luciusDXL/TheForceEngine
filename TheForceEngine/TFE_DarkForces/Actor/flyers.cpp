@@ -35,9 +35,7 @@ namespace TFE_DarkForces
 			{
 				flyingActor->state = 0;
 			}
-			// 1d0f60:
-			&flyingActor->target;	// eax
-			SecObject* actorObj = actor->header.obj;		// edx
+			SecObject* actorObj = actor->header.obj;
 			if (actor_arrivedAtTarget(&flyingActor->target, actorObj))
 			{
 				flyingActor->state = 0;
@@ -125,7 +123,7 @@ namespace TFE_DarkForces
 		actorSimple->startDelay = TICKS(2);	// (145.5)*2
 		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
-		ActorFlyer* flyingActor = actor_createFlying((Logic*)logic);	// eax
+		ActorFlyer* flyingActor = actor_createFlying((Logic*)logic);
 		flyingActor->target.speedRotation = 0;
 		flyingActor->target.speed = FIXED(4);
 		flyingActor->target.speedVert = FIXED(10);
@@ -133,7 +131,7 @@ namespace TFE_DarkForces
 		flyingActor->target.speed = FIXED(13);
 		flyingActor->target.speedVert = FIXED(10);
 		flyingActor->delay = 436;	// just shy of 3 seconds.
-		actorLogic_addActor(logic, (AiActor*)flyingActor);	// eax, edx
+		actorLogic_addActor(logic, (AiActor*)flyingActor);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
