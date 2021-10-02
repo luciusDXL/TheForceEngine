@@ -195,6 +195,8 @@ namespace TFE_DarkForces
 			} break;
 			case KW_PROBE_DROID:
 			{
+				obj->entityFlags = (ETFLAG_AI_ACTOR | ETFLAG_FLYING);
+				probeDroid_setup(obj, setupFunc);
 			} break;
 			case KW_D_TROOP1:
 			{

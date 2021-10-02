@@ -19,6 +19,8 @@ namespace TFE_DarkForces
 {
 	static const s32 s_intDroidAnimTable[] =
 	{ 0, 1, 2, 3, 4, 5, -1, 7, -1, -1, -1, -1, 12, -1, -1, -1 };
+	static const s32 s_probeDroidAnimTable[] = 
+	{ 0, 1, 2, 3, 4, 5, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
 		
 	u32 flyingActorFunc(AiActor* aiActor, Actor* actor)
 	{
@@ -124,9 +126,6 @@ namespace TFE_DarkForces
 		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		ActorFlyer* flyingActor = actor_createFlying((Logic*)logic);
-		flyingActor->target.speedRotation = 0;
-		flyingActor->target.speed = FIXED(4);
-		flyingActor->target.speedVert = FIXED(10);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->target.speed = FIXED(13);
 		flyingActor->target.speedVert = FIXED(10);
@@ -141,6 +140,58 @@ namespace TFE_DarkForces
 
 		// Setup the animation.
 		logic->animTable = s_intDroidAnimTable;
+		actor_setupInitAnimation();
+
+		return (Logic*)logic;
+	}
+
+	Logic* probeDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	{
+		obj->flags |= OBJ_FLAG_HAS_COLLISION;
+
+		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
+		logic->fov = 0x4000;	// 360 degrees
+		logic->alertSndSrc = s_alertSndSrc[ALERT_PROBE];
+
+		AiActor* aiActor = actor_createAiActor((Logic*)logic);
+		aiActor->hp = FIXED(45);
+		aiActor->itemDropId = ITEM_POWER;
+		aiActor->stopOnHit = JFALSE;
+		aiActor->dieEffect = HEFFECT_EXP_35;
+		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_PROBE_ALM];
+		actorLogic_addActor(logic, (AiActor*)aiActor);
+
+		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
+		enemyActor->fireOffset.y = -557056;
+		enemyActor->projType = PROJ_RIFLE_BOLT;
+		enemyActor->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_12];
+		enemyActor->attackFlags = 2;
+		s_curEnemyActor = enemyActor;
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
+
+		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
+		actorSimple->target.speedRotation = 0;
+		actorSimple->target.speed = FIXED(6);
+		actorSimple->u3c = 116;
+		actorSimple->anim.flags &= ~FLAG_BIT(0);
+		actorSimple->startDelay = TICKS(2);	// (145.5)*2
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
+
+		ActorFlyer* flyingActor = actor_createFlying((Logic*)logic);
+		flyingActor->target.speedRotation = 0x7fff;
+		flyingActor->target.speed = FIXED(4);
+		flyingActor->target.speedVert = FIXED(2);
+		flyingActor->delay = 436;	// just shy of 3 seconds.
+		actorLogic_addActor(logic, (AiActor*)flyingActor);
+
+		Actor* actor = actor_create((Logic*)logic);
+		logic->actor = actor;
+		actor->collisionFlags = (actor->collisionFlags & 0xfffffff8) | 4;
+		actor->physics.yPos = FIXED(200);
+		actor->physics.width = obj->worldWidth;
+
+		// Setup the animation.
+		logic->animTable = s_probeDroidAnimTable;
 		actor_setupInitAnimation();
 
 		return (Logic*)logic;
