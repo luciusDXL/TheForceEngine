@@ -267,6 +267,7 @@
     <ClInclude Include="TFE_DarkForces\Actor\mousebot.h" />
     <ClInclude Include="TFE_DarkForces\Actor\scenery.h" />
     <ClInclude Include="TFE_DarkForces\Actor\troopers.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\turret.h" />
     <ClInclude Include="TFE_DarkForces\agent.h" />
     <ClInclude Include="TFE_DarkForces\animLogic.h" />
     <ClInclude Include="TFE_DarkForces\automap.h" />
@@ -439,6 +440,7 @@
     <ClCompile Include="TFE_DarkForces\Actor\mousebot.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\scenery.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\troopers.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\turret.cpp" />
     <ClCompile Include="TFE_DarkForces\agent.cpp" />
     <ClCompile Include="TFE_DarkForces\animLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\automap.cpp" />

@@ -1,0 +1,503 @@
+#include "mousebot.h"
+#include "aiActor.h"
+#include "../logic.h"
+#include <TFE_DarkForces/player.h>
+#include <TFE_DarkForces/hitEffect.h>
+#include <TFE_DarkForces/projectile.h>
+#include <TFE_DarkForces/item.h>
+#include <TFE_DarkForces/random.h>
+#include <TFE_DarkForces/pickup.h>
+#include <TFE_DarkForces/weapon.h>
+#include <TFE_Game/igame.h>
+#include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/filestream.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_Jedi/Memory/list.h>
+#include <TFE_Jedi/Memory/allocator.h>
+
+namespace TFE_DarkForces
+{
+	enum TurretState
+	{
+		TURRETSTATE_DEFAULT        = 0,
+		TURRETSTATE_FIRING         = 1,
+		TURRETSTATE_ATTACKING      = 2,
+		TURRETSTATE_AIMING         = 3,
+		TURRETSTATE_OUT_OF_CONTROL = 4,
+		TURRETSTATE_DYING          = 5,
+		TURRETSTATE_COUNT
+	};
+
+	struct TurretResources
+	{
+		SoundSourceID sound1;
+	};
+	struct Turret
+	{
+		Logic logic;
+		PhysicsActor actor;
+
+		angle14_16 pitch;
+		angle14_16 yaw;
+		Tick nextTick;
+	};
+
+	static TurretResources s_turretRes = { 0 };
+	static Turret* s_curTurret;
+	static s32 s_turretNum = 0;
+
+	MessageType turret_handleDamage(MessageType msg, Turret* turret)
+	{
+		PhysicsActor* physicsActor = &turret->actor;
+		if (physicsActor->alive)
+		{
+			ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
+			physicsActor->hp -= proj->dmg;
+			if (physicsActor->hp <= 0)
+			{
+				physicsActor->state = TURRETSTATE_DYING;
+				msg = MSG_RUN_TASK;
+			}
+			else if (physicsActor->hp < FIXED(8))
+			{
+				physicsActor->state = TURRETSTATE_OUT_OF_CONTROL;
+				msg = MSG_RUN_TASK;
+			}
+			else
+			{
+				msg = MSG_DAMAGE;
+			}
+		}
+		return msg;
+	}
+
+	MessageType turret_handleExplosion(MessageType msg, Turret* turret)
+	{
+		PhysicsActor* physicsActor = &turret->actor;
+		if (physicsActor->alive)
+		{
+			fixed16_16 dmg = s_msgArg1;
+			physicsActor->hp -= dmg;
+			if (physicsActor->hp <= 0)
+			{
+				physicsActor->state = TURRETSTATE_DYING;
+				msg = MSG_RUN_TASK;
+			}
+			else if (physicsActor->hp < FIXED(8))
+			{
+				physicsActor->state = TURRETSTATE_OUT_OF_CONTROL;
+				msg = MSG_RUN_TASK;
+			}
+			else
+			{
+				msg = MSG_EXPLOSION;
+			}
+		}
+		return msg;
+	}
+
+	void turret_handleAttackingState(MessageType msg)
+	{
+		struct LocalContext
+		{
+			Turret* turret;
+			PhysicsActor* physicsActor;
+			ActorTarget* target;
+			SecObject* obj;
+		};
+		task_begin_ctx;
+		task_localBlockBegin;
+
+		local(turret) = s_curTurret;
+		local(physicsActor) = &local(turret)->actor;
+		local(target) = &local(physicsActor)->actor.target;
+		local(obj) = local(physicsActor)->actor.header.obj;
+		fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
+		fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
+		local(target)->yaw = vec2ToAngle(dx, dz) & ANGLE_MASK;
+
+		fixed16_16 dist = distApprox(local(obj)->posWS.x, local(obj)->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
+		angle14_32 aimPitch = vec2ToAngle(-(local(obj)->posWS.y - (s_eyePos.y + ONE_16)), dist);
+		// Limit the rotation to +/- 40 degrees.
+		angle14_32 pitchDiff = TFE_Jedi::clamp(getAngleDifference(local(turret)->pitch, aimPitch), -1820, 1820);
+		local(target)->pitch = (local(turret)->pitch + pitchDiff) & 0x3fff;
+		local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
+
+		task_localBlockEnd;
+		local(turret)->nextTick = s_curTick + 436;
+		while (local(physicsActor)->state == TURRETSTATE_ATTACKING)
+		{
+			do
+			{
+				task_yield(72);
+				if (msg == MSG_DAMAGE)
+				{
+					msg = turret_handleDamage(msg, local(turret));
+				}
+				else if (msg == MSG_EXPLOSION)
+				{
+					msg = turret_handleExplosion(msg, local(turret));
+				}
+			} while (msg != MSG_RUN_TASK);
+
+			if (local(physicsActor)->state == TURRETSTATE_ATTACKING && local(target)->yaw == local(obj)->yaw && local(target)->pitch == local(obj)->pitch)
+			{
+				if (!s_playerDying && actor_isObjectVisible(local(obj), s_playerObject, 16384, FIXED(70)))
+				{
+					fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
+					fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
+					if (dist > FIXED(140))
+					{
+						continue;
+					}
+
+					fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
+					fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
+					angle14_32 yaw = vec2ToAngle(dx, dz);
+					angle14_32 yawDiff = getAngleDifference(local(obj)->yaw, yaw) & ANGLE_MASK;
+					if (yawDiff < 3185)
+					{
+						local(turret)->actor.state = TURRETSTATE_FIRING;
+						continue;
+					}
+
+					local(target)->yaw = yaw & ANGLE_MASK;
+					dist = distApprox(local(obj)->posWS.x, local(obj)->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
+					dy = local(obj)->posWS.y - (s_eyePos.y + ONE_16);
+					angle14_32 pitch = vec2ToAngle(-dy, dist);
+					angle14_32 pitchDiff = clamp(getAngleDifference(local(turret)->pitch, pitch), -1820, 1820);
+					local(target)->pitch = (local(turret)->pitch + pitchDiff) & ANGLE_MASK;
+					local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
+					local(turret)->nextTick = s_curTick + 436;
+				}
+				else if (s_curTick >= local(turret)->nextTick)
+				{
+					local(turret)->actor.state = 3;
+				}
+			}
+		}
+		task_end;
+	}
+		
+	void turrent_handleFiringState(MessageType msg)
+	{
+		Turret* turret = s_curTurret;
+		PhysicsActor* physicsActor = &turret->actor;
+		SecObject* obj = physicsActor->actor.header.obj;
+
+		fixed16_16 mtx[9];
+		weapon_computeMatrix(mtx, -obj->pitch, -obj->yaw);
+
+		RSector* sector = obj->sector;
+		vec3_fixed inVec = { 0, 0, 0x4ccc }; // { 0, 0, 0.3 }
+		vec3_fixed outVec;
+		rotateVectorM3x3(&inVec, &outVec, mtx);
+
+		vec3_fixed pos = { obj->posWS.x + outVec.x, obj->posWS.y + outVec.y, obj->posWS.z + outVec.z };
+		ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_TURRET_BOLT, sector, pos.x, pos.y, pos.z, obj);
+		playSound3D_oneshot(s_turretRes.sound1, pos);
+
+		proj->prevColObj = obj;
+		proj->excludeObj = obj;
+		SecObject* projObj = proj->logic.obj;
+		projObj->pitch = obj->pitch;
+		projObj->yaw = obj->yaw;
+
+		vec3_fixed targetPos = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
+		proj_aimAtTarget(proj, targetPos);
+
+		proj->vel.x += random(FIXED(10)) - FIXED(5);
+		proj->vel.y += random(FIXED(10)) - FIXED(5);
+		proj->vel.z += random(FIXED(10)) - FIXED(5);
+
+		physicsActor->state = TURRETSTATE_ATTACKING;
+	}
+
+	void turret_handleHighlyDamagedState(MessageType msg)
+	{
+		struct LocalContext
+		{
+			Turret* turret;
+			PhysicsActor* physicsActor;
+			ActorTarget* target;
+			SecObject* obj;
+		};
+		task_begin_ctx;
+
+		local(turret) = s_curTurret;
+		local(physicsActor) = &local(turret)->actor;
+		local(obj) = local(turret)->logic.obj;
+		while (local(physicsActor)->state == TURRETSTATE_OUT_OF_CONTROL)
+		{
+			do
+			{
+				task_yield(TASK_NO_DELAY);
+				if (msg == MSG_DAMAGE)
+				{
+					msg = turret_handleDamage(msg, local(turret));
+				}
+				else if (msg == MSG_EXPLOSION)
+				{
+					msg = turret_handleExplosion(msg, local(turret));
+				}
+			} while (msg != 0);
+
+			ActorTarget* target = &local(physicsActor)->actor.target;
+			if (local(physicsActor)->state == TURRETSTATE_OUT_OF_CONTROL && target->yaw == local(obj)->yaw && target->pitch == local(obj)->pitch)
+			{
+				fixed16_16 mtx[9];
+				weapon_computeMatrix(mtx, -local(obj)->pitch, -local(obj)->yaw);
+
+				vec3_fixed inVec = { 0, 0, 0x4ccc };  // { 0, 0, 0.3 }
+				vec3_fixed outVec;
+				rotateVectorM3x3(&inVec, &outVec, mtx);
+
+				vec3_fixed pos = { local(obj)->posWS.x + outVec.x, local(obj)->posWS.y + outVec.y, local(obj)->posWS.z + outVec.z };
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_TURRET_BOLT, local(obj)->sector, pos.x, pos.y, pos.z, local(obj));
+				playSound3D_oneshot(s_turretRes.sound1, pos);
+
+				proj->prevColObj = local(obj);
+				proj->excludeObj = local(obj);
+				proj_setTransform(proj, -local(obj)->pitch, local(obj)->yaw);
+
+				// Set a new random target.
+				target->yaw = random(0x4000);
+				target->pitch = (random(0x71c)) & 0x3fff;
+				target->flags = (target->flags | 4) & 0xfffffffe;
+				target->speedRotation = 0x3000;
+			}
+		}
+		task_end;
+	}
+
+	MessageType turret_handleMessages(MessageType msg, Turret* turret)
+	{
+		if (msg == MSG_DAMAGE)
+		{
+			msg = turret_handleDamage(msg, turret);
+		}
+		else if (msg == MSG_EXPLOSION)
+		{
+			msg = turret_handleExplosion(msg, turret);
+		}
+		return msg;
+	}
+
+	void turret_handleDefaultState(MessageType msg)
+	{
+		struct LocalContext
+		{
+			Turret* turret;
+			PhysicsActor* physicsActor;
+			ActorTarget* target;
+			SecObject* obj;
+		};
+		task_begin_ctx;
+
+		local(turret) = s_curTurret;
+		local(physicsActor) = &local(turret)->actor;
+		local(obj) = local(turret)->logic.obj;
+
+		while (local(physicsActor)->state == TURRETSTATE_DEFAULT)
+		{
+			do
+			{
+				task_yield(145);
+				if (msg == MSG_DAMAGE)
+				{
+					msg = turret_handleDamage(msg, local(turret));
+				}
+				else if (msg == MSG_EXPLOSION)
+				{
+					msg = turret_handleDamage(msg, local(turret));
+				}
+
+				if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
+				{
+					local(physicsActor)->state = TURRETSTATE_ATTACKING;
+					task_makeActive(local(physicsActor)->actorTask);
+					task_yield(TASK_NO_DELAY);
+				}
+			} while (msg != MSG_RUN_TASK);
+
+			// Check to see if the player is visible and in range to be shot.
+			// If so, switch to the shooting state (2).
+			if (local(physicsActor)->state == TURRETSTATE_DEFAULT && !s_playerDying && actor_isObjectVisible(local(obj), s_playerObject, 0x4000, FIXED(70)))
+			{
+				fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
+				fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
+				if (dist <= FIXED(140))
+				{
+					local(physicsActor)->state = TURRETSTATE_ATTACKING;
+				}
+			}
+		}
+		task_end;
+	}
+
+	void turretLocalMsgFunc(MessageType msg)
+	{
+		Turret* turret = (Turret*)task_getUserData();
+
+		if (msg == MSG_DAMAGE)
+		{
+			turret_handleDamage(msg, turret);
+		}
+		else if (msg == MSG_EXPLOSION)
+		{
+			turret_handleExplosion(msg, turret);
+		}
+	}
+
+	void turretTaskFunc(MessageType msg)
+	{
+		struct LocalContext
+		{
+			Turret* turret;
+			PhysicsActor* physicsActor;
+			SecObject* obj;
+			ActorTarget* target;
+		};
+		task_begin_ctx;
+		local(turret) = (Turret*)task_getUserData();
+		local(physicsActor) = &local(turret)->actor;
+		local(target) = &local(physicsActor)->actor.target;
+		local(obj) = local(turret)->logic.obj;
+
+		while (local(physicsActor)->alive)
+		{
+			if (local(physicsActor)->state == TURRETSTATE_FIRING)
+			{
+				s_curTurret = local(turret);
+				turrent_handleFiringState(msg);
+			}
+			else if (local(physicsActor)->state == TURRETSTATE_ATTACKING)
+			{
+				s_curTurret = local(turret);
+				task_callTaskFunc(turret_handleAttackingState);
+			}
+			else if (local(physicsActor)->state == TURRETSTATE_AIMING)
+			{
+				local(target)->yaw = local(turret)->yaw;
+				local(target)->pitch = local(turret)->pitch;
+				local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
+
+				while (local(physicsActor)->state == TURRETSTATE_AIMING)
+				{
+					do
+					{
+						task_yield(TASK_NO_DELAY);
+						msg = turret_handleMessages(msg, local(turret));
+					} while (msg != MSG_RUN_TASK);
+
+					// Set to state 0 if the turret has reached its target alignment.
+					if (local(physicsActor)->state == TURRETSTATE_AIMING && local(target)->yaw == local(obj)->yaw && local(target)->pitch == local(obj)->pitch)
+					{
+						local(physicsActor)->state = TURRETSTATE_DEFAULT;
+					}
+				}
+			}
+			else if (local(physicsActor)->state == TURRETSTATE_OUT_OF_CONTROL)
+			{
+				s_curTurret = local(turret);
+				task_callTaskFunc(turret_handleHighlyDamagedState);
+			}
+			else if (local(physicsActor)->state == TURRETSTATE_DYING)
+			{
+				spawnHitEffect(HEFFECT_EXP_NO_DMG, local(obj)->sector, local(obj)->posWS, local(obj));
+				task_yield(TASK_NO_DELAY);
+				local(physicsActor)->alive = JFALSE;
+			}
+			else
+			{
+				s_curTurret = local(turret);
+				task_callTaskFunc(turret_handleDefaultState);
+			}
+		}
+
+		// The Turret is dead.
+		while (msg != MSG_RUN_TASK)
+		{
+			task_yield(TASK_NO_DELAY);
+		}
+		actor_removePhysicsActorFromWorld(local(physicsActor));
+		deleteLogicAndObject(&local(turret)->logic);
+		level_free(local(turret));
+
+		task_end;
+	}
+
+	void turretCleanupFunc(Logic* logic)
+	{
+		Turret* turret = (Turret*)logic;
+
+		Task* task = turret->actor.actorTask;
+		actor_removePhysicsActorFromWorld(&turret->actor);
+		deleteLogicAndObject(&turret->logic);
+		level_free(turret);
+		task_free(task);
+	}
+
+	Logic* turret_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	{
+		if (!s_turretRes.sound1)
+		{
+			s_turretRes.sound1 = sound_Load("TURRET-1.VOC");
+		}
+
+		Turret* turret = (Turret*)level_alloc(sizeof(Turret));
+		memset(turret, 0, sizeof(Turret));
+
+		// Give the name of the task a number so I can tell them apart when debugging.
+		char name[32];
+		sprintf(name, "turret%d", s_turretNum);
+		s_turretNum++;
+		Task* turretTask = createSubTask(name, turretTaskFunc, turretLocalMsgFunc);
+		task_setUserData(turretTask, turret);
+
+		obj->entityFlags = ETFLAG_AI_ACTOR;
+		obj->worldWidth  = FIXED(3);
+		obj->worldHeight = -FIXED(2);
+
+		turret->actor.alive = JTRUE;
+		turret->actor.hp    = FIXED(60);
+		turret->logic.obj   = obj;
+		turret->actor.state = TURRETSTATE_DEFAULT;
+		turret->actor.actorTask = turretTask;
+		turret->yaw   = obj->yaw;
+		turret->pitch = obj->pitch;
+
+		PhysicsActor* physicsActor = &turret->actor;
+		actor_addPhysicsActorToWorld(physicsActor);
+
+		CollisionInfo* physics = &physicsActor->actor.physics;
+		physics->obj    = obj;
+		physics->width  = obj->worldWidth;
+		physics->height = obj->worldHeight + HALF_16;
+		physics->wall   = nullptr;
+		physics->u24    = 0;
+		physics->botOffset = 0;
+		physics->yPos = 0;
+
+		Actor* actor = &physicsActor->actor;
+		actor->header.obj = obj;
+		actor->delta = { 0, 0, 0 };
+		actor->collisionFlags &= 0xfffffff8;
+
+		ActorTarget* target = &physicsActor->actor.target;
+		target->speed = 0;
+		target->flags &= 0xfffffff0;
+		target->speedRotation = 7736;	// ~170 degrees/second.
+		target->pitch = obj->pitch;
+		target->yaw   = obj->yaw;
+		target->roll  = obj->roll;
+		obj_addLogic(obj, (Logic*)turret, turretTask, turretCleanupFunc);
+		
+		if (setupFunc)
+		{
+			*setupFunc = nullptr;
+		}
+		return (Logic*)turret;
+	}
+}  // namespace TFE_DarkForces

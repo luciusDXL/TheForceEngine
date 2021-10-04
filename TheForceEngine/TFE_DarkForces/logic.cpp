@@ -11,6 +11,7 @@
 #include <TFE_DarkForces/Actor/scenery.h>
 #include <TFE_DarkForces/Actor/troopers.h>
 #include <TFE_DarkForces/Actor/enemies.h>
+#include <TFE_DarkForces/Actor/turret.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -281,6 +282,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_TURRET:
 			{
+				return turret_setup(obj, setupFunc);
 			} break;
 			case KW_MOUSEBOT:
 			{

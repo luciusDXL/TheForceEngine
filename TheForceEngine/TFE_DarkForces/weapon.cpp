@@ -573,6 +573,25 @@ namespace TFE_DarkForces
 			weapon->frame = 2;
 		}
 	}
+
+	void weapon_computeMatrix(fixed16_16* mtx, angle14_32 pitch, angle14_32 yaw)
+	{
+		fixed16_16 cosPch, sinPch;
+		sinCosFixed(pitch, &sinPch, &cosPch);
+
+		fixed16_16 cosYaw, sinYaw;
+		sinCosFixed(yaw, &sinYaw, &cosYaw);
+
+		mtx[0] = cosYaw;
+		mtx[1] = 0;
+		mtx[2] = sinYaw;
+		mtx[3] = mul16(sinYaw, sinPch);
+		mtx[4] = cosPch;
+		mtx[5] = -mul16(cosYaw, sinPch);
+		mtx[6] = -mul16(sinYaw, cosPch);
+		mtx[7] = sinPch;
+		mtx[8] = mul16(cosPch, cosYaw);
+	}
 		
 	///////////////////////////////////////////
 	// Internal Implementation

@@ -559,6 +559,7 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level objects '%s'.", levelName);
 			return false;
 		}
+
 		size_t len = file.getSize();
 		s_buffer.resize(len);
 		file.readBuffer(s_buffer.data(), u32(len));
@@ -671,9 +672,9 @@ namespace TFE_Jedi
 			JBool valid = JTRUE;
 			s32 count = s_objectCount;
 
+			line = parser.readLine(bufferPos);
 			for (s32 objIndex = 0; objIndex < count && valid;)
 			{
-				line = parser.readLine(bufferPos);
 				if (!line)
 				{
 					break;
@@ -682,14 +683,17 @@ namespace TFE_Jedi
 				s32 data = 0, objDiff = 0;
 				f32 x, y, z, pch, yaw, rol;
 				char objClass[32];
+
 				if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &objDiff) > 5)
 				{
 					objIndex++;
+										
 					if (TFE_Jedi::abs(objDiff) >= difficulty)
 					{
+						line = parser.readLine(bufferPos);
 						continue;
 					}
-
+										
 					vec3_fixed posWS;
 					posWS.x = floatToFixed16(x);
 					posWS.y = floatToFixed16(y);
@@ -701,6 +705,7 @@ namespace TFE_Jedi
 					RSector* sector = sector_which3D(posWS.x, posWS.y, posWS.z);
 					if (!sector)
 					{
+						line = parser.readLine(bufferPos);
 						continue;
 					}
 
@@ -759,9 +764,10 @@ namespace TFE_Jedi
 						} break;
 					}
 
+					JBool seqRead = JFALSE;
 					if (obj)
 					{
-						JBool seqRead = TFE_DarkForces::object_parseSeq(obj, &parser, &bufferPos);
+						seqRead = TFE_DarkForces::object_parseSeq(obj, &parser, &bufferPos);
 						if (obj->entityFlags & ETFLAG_PLAYER)
 						{
 							if (!s_safeLoc)
@@ -776,6 +782,14 @@ namespace TFE_Jedi
 							sector->flags1 |= SEC_FLAGS1_SAFESECTOR;
 						}
 					}
+					if (!obj || seqRead)
+					{
+						line = parser.readLine(bufferPos);
+					}
+				}
+				else
+				{
+					line = parser.readLine(bufferPos);
 				}
 			}
 		}
