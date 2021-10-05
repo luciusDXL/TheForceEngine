@@ -29,6 +29,24 @@ namespace TFE_DarkForces
 		TURRETSTATE_COUNT
 	};
 
+	enum TurretConstants
+	{
+		TURRET_HP            = FIXED(60),  // Starting HP.
+		TURRET_WIDTH         = FIXED(3),
+		TURRET_HEIGHT        =-FIXED(2),
+		TURRET_FIRE_Z_OFFSET = 0x4ccc,	   // ~0.3
+		TURRET_YAW_TOLERANCE = 3185,	   // How close the turret aim has to be in order to fire.
+		TURRET_PITCH_RANGE   = 1820,	   // How much pitch can deviate from the current value when aiming (+/- 40 degrees)
+		TURRET_MAX_DIST      = FIXED(140), // Maximum distance that the turret will shoot the player.
+		TURRET_MIN_DIST      = FIXED(70),  // Minimum distance where the turret no longer cares about the relative angle when spotting the player.
+		TURRET_ATTACK_DELAY  = 72,         // 0.5 seconds - the minimum delay from entering the attacking state and transitioning to the firing state.
+		TURRET_ATTACK_TRANS  = 436,        // ~3 seconds - the delay from the attacking state to the aiming state, since the last sight of the player.
+		TURRET_ACCURACY_RAND = FIXED(10),  // These determine how accurate the turret is. The higher the value, the more the bolt velocities are randomized.
+		TURRET_ACCURACY_OFFSET = FIXED(5), // These is generally TURRET_ACCURACY_RAND/2
+		TURRET_ROTATION_SPD  = 7736,       // ~170 degrees per second.
+		TURRET_OUT_OF_CONTROL_ROTATE_SPD = 12288,   // ~270 degrees per second - the rotation speed when the turret is out of control.
+	};
+	
 	struct TurretResources
 	{
 		SoundSourceID sound1;
@@ -119,18 +137,17 @@ namespace TFE_DarkForces
 
 		fixed16_16 dist = distApprox(local(obj)->posWS.x, local(obj)->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
 		angle14_32 aimPitch = vec2ToAngle(-(local(obj)->posWS.y - (s_eyePos.y + ONE_16)), dist);
-		// Limit the rotation to +/- 40 degrees.
-		angle14_32 pitchDiff = TFE_Jedi::clamp(getAngleDifference(local(turret)->pitch, aimPitch), -1820, 1820);
-		local(target)->pitch = (local(turret)->pitch + pitchDiff) & 0x3fff;
+		angle14_32 pitchDiff = TFE_Jedi::clamp(getAngleDifference(local(turret)->pitch, aimPitch), -TURRET_PITCH_RANGE, TURRET_PITCH_RANGE);
+		local(target)->pitch = (local(turret)->pitch + pitchDiff) & ANGLE_MASK;
 		local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
 
 		task_localBlockEnd;
-		local(turret)->nextTick = s_curTick + 436;
+		local(turret)->nextTick = s_curTick + TURRET_ATTACK_TRANS;
 		while (local(physicsActor)->state == TURRETSTATE_ATTACKING)
 		{
 			do
 			{
-				task_yield(72);
+				task_yield(TURRET_ATTACK_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					msg = turret_handleDamage(msg, local(turret));
@@ -143,11 +160,11 @@ namespace TFE_DarkForces
 
 			if (local(physicsActor)->state == TURRETSTATE_ATTACKING && local(target)->yaw == local(obj)->yaw && local(target)->pitch == local(obj)->pitch)
 			{
-				if (!s_playerDying && actor_isObjectVisible(local(obj), s_playerObject, 16384, FIXED(70)))
+				if (!s_playerDying && actor_isObjectVisible(local(obj), s_playerObject, ANGLE_MAX, TURRET_MIN_DIST))
 				{
 					fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
 					fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
-					if (dist > FIXED(140))
+					if (dist > TURRET_MAX_DIST)
 					{
 						continue;
 					}
@@ -156,7 +173,7 @@ namespace TFE_DarkForces
 					fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
 					angle14_32 yaw = vec2ToAngle(dx, dz);
 					angle14_32 yawDiff = getAngleDifference(local(obj)->yaw, yaw) & ANGLE_MASK;
-					if (yawDiff < 3185)
+					if (yawDiff < TURRET_YAW_TOLERANCE)
 					{
 						local(turret)->actor.state = TURRETSTATE_FIRING;
 						continue;
@@ -166,14 +183,14 @@ namespace TFE_DarkForces
 					dist = distApprox(local(obj)->posWS.x, local(obj)->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
 					dy = local(obj)->posWS.y - (s_eyePos.y + ONE_16);
 					angle14_32 pitch = vec2ToAngle(-dy, dist);
-					angle14_32 pitchDiff = clamp(getAngleDifference(local(turret)->pitch, pitch), -1820, 1820);
+					angle14_32 pitchDiff = clamp(getAngleDifference(local(turret)->pitch, pitch), -TURRET_PITCH_RANGE, TURRET_PITCH_RANGE);
 					local(target)->pitch = (local(turret)->pitch + pitchDiff) & ANGLE_MASK;
 					local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
-					local(turret)->nextTick = s_curTick + 436;
+					local(turret)->nextTick = s_curTick + TURRET_ATTACK_TRANS;
 				}
 				else if (s_curTick >= local(turret)->nextTick)
 				{
-					local(turret)->actor.state = 3;
+					local(turret)->actor.state = TURRETSTATE_AIMING;
 				}
 			}
 		}
@@ -190,7 +207,7 @@ namespace TFE_DarkForces
 		weapon_computeMatrix(mtx, -obj->pitch, -obj->yaw);
 
 		RSector* sector = obj->sector;
-		vec3_fixed inVec = { 0, 0, 0x4ccc }; // { 0, 0, 0.3 }
+		vec3_fixed inVec = { 0, 0, TURRET_FIRE_Z_OFFSET };
 		vec3_fixed outVec;
 		rotateVectorM3x3(&inVec, &outVec, mtx);
 
@@ -207,9 +224,9 @@ namespace TFE_DarkForces
 		vec3_fixed targetPos = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
 		proj_aimAtTarget(proj, targetPos);
 
-		proj->vel.x += random(FIXED(10)) - FIXED(5);
-		proj->vel.y += random(FIXED(10)) - FIXED(5);
-		proj->vel.z += random(FIXED(10)) - FIXED(5);
+		proj->vel.x += random(TURRET_ACCURACY_RAND) - TURRET_ACCURACY_OFFSET;
+		proj->vel.y += random(TURRET_ACCURACY_RAND) - TURRET_ACCURACY_OFFSET;
+		proj->vel.z += random(TURRET_ACCURACY_RAND) - TURRET_ACCURACY_OFFSET;
 
 		physicsActor->state = TURRETSTATE_ATTACKING;
 	}
@@ -241,7 +258,7 @@ namespace TFE_DarkForces
 				{
 					msg = turret_handleExplosion(msg, local(turret));
 				}
-			} while (msg != 0);
+			} while (msg != MSG_RUN_TASK);
 
 			ActorTarget* target = &local(physicsActor)->actor.target;
 			if (local(physicsActor)->state == TURRETSTATE_OUT_OF_CONTROL && target->yaw == local(obj)->yaw && target->pitch == local(obj)->pitch)
@@ -249,7 +266,7 @@ namespace TFE_DarkForces
 				fixed16_16 mtx[9];
 				weapon_computeMatrix(mtx, -local(obj)->pitch, -local(obj)->yaw);
 
-				vec3_fixed inVec = { 0, 0, 0x4ccc };  // { 0, 0, 0.3 }
+				vec3_fixed inVec = { 0, 0, TURRET_FIRE_Z_OFFSET };
 				vec3_fixed outVec;
 				rotateVectorM3x3(&inVec, &outVec, mtx);
 
@@ -262,10 +279,10 @@ namespace TFE_DarkForces
 				proj_setTransform(proj, -local(obj)->pitch, local(obj)->yaw);
 
 				// Set a new random target.
-				target->yaw = random(0x4000);
-				target->pitch = (random(0x71c)) & 0x3fff;
+				target->yaw   = random(ANGLE_MAX);
+				target->pitch = random(TURRET_PITCH_RANGE) & ANGLE_MASK;
 				target->flags = (target->flags | 4) & 0xfffffffe;
-				target->speedRotation = 0x3000;
+				target->speedRotation = TURRET_OUT_OF_CONTROL_ROTATE_SPD;
 			}
 		}
 		task_end;
@@ -322,12 +339,12 @@ namespace TFE_DarkForces
 			} while (msg != MSG_RUN_TASK);
 
 			// Check to see if the player is visible and in range to be shot.
-			// If so, switch to the shooting state (2).
-			if (local(physicsActor)->state == TURRETSTATE_DEFAULT && !s_playerDying && actor_isObjectVisible(local(obj), s_playerObject, 0x4000, FIXED(70)))
+			// If so, switch to the shooting state.
+			if (local(physicsActor)->state == TURRETSTATE_DEFAULT && !s_playerDying && actor_isObjectVisible(local(obj), s_playerObject, ANGLE_MAX, TURRET_MIN_DIST))
 			{
 				fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
 				fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
-				if (dist <= FIXED(140))
+				if (dist <= TURRET_MAX_DIST)
 				{
 					local(physicsActor)->state = TURRETSTATE_ATTACKING;
 				}
@@ -457,11 +474,11 @@ namespace TFE_DarkForces
 		task_setUserData(turretTask, turret);
 
 		obj->entityFlags = ETFLAG_AI_ACTOR;
-		obj->worldWidth  = FIXED(3);
-		obj->worldHeight = -FIXED(2);
+		obj->worldWidth  = TURRET_WIDTH;
+		obj->worldHeight = TURRET_HEIGHT;
 
 		turret->actor.alive = JTRUE;
-		turret->actor.hp    = FIXED(60);
+		turret->actor.hp    = TURRET_HP;
 		turret->logic.obj   = obj;
 		turret->actor.state = TURRETSTATE_DEFAULT;
 		turret->actor.actorTask = turretTask;
@@ -488,7 +505,7 @@ namespace TFE_DarkForces
 		ActorTarget* target = &physicsActor->actor.target;
 		target->speed = 0;
 		target->flags &= 0xfffffff0;
-		target->speedRotation = 7736;	// ~170 degrees/second.
+		target->speedRotation = TURRET_ROTATION_SPD;
 		target->pitch = obj->pitch;
 		target->yaw   = obj->yaw;
 		target->roll  = obj->roll;

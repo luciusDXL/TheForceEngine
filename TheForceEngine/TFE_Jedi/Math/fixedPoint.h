@@ -18,6 +18,7 @@ namespace TFE_Jedi
 	#define HALF_16 0x8000
 	#define ONE_16  0x10000
 	#define ANGLE_MASK 0x3fff
+	#define ANGLE_MAX  0x4000
 
 	#define FRAC_BITS_16 16ll
 	#define FRAC_MASK_16 ((1 << FRAC_BITS_16) - 1)
