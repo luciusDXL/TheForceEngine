@@ -1,7 +1,7 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
 // Dark Forces
-// Handles "trooper" enemies - Officers, Commandos, and Storm Troopers
+// Handles the main flying enemies - Probe and Interrogation Droids.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/logic.h>
