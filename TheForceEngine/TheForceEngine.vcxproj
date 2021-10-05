@@ -266,6 +266,7 @@
     <ClInclude Include="TFE_DarkForces\Actor\flyers.h" />
     <ClInclude Include="TFE_DarkForces\Actor\mousebot.h" />
     <ClInclude Include="TFE_DarkForces\Actor\scenery.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\sewer.h" />
     <ClInclude Include="TFE_DarkForces\Actor\troopers.h" />
     <ClInclude Include="TFE_DarkForces\Actor\turret.h" />
     <ClInclude Include="TFE_DarkForces\agent.h" />
@@ -439,6 +440,7 @@
     <ClCompile Include="TFE_DarkForces\Actor\flyers.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\mousebot.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\scenery.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\sewer.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\troopers.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\turret.cpp" />
     <ClCompile Include="TFE_DarkForces\agent.cpp" />
