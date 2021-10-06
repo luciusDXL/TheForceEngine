@@ -53,9 +53,7 @@ namespace TFE_DarkForces
 	void actorPhysicsTaskFunc(MessageType msg);
 	void actorLogicCleanupFunc(Logic* logic);
 	u32  actorLogicSetupFunc(Logic* logic, KEYWORD key);
-	void actor_setCurAnimation(LogicAnimation* aiAnim);
-	JBool actor_canSeeObjFromDist(SecObject* actorObj, SecObject* obj);
-
+	
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////

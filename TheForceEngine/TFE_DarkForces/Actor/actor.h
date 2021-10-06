@@ -104,16 +104,20 @@ namespace TFE_DarkForces
 	JBool actor_canDie(PhysicsActor* phyActor);
 	JBool actor_handleSteps(Actor* actor, ActorTarget* target);
 	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj);
+	JBool actor_canSeeObjFromDist(SecObject* actorObj, SecObject* obj);
 
 	s32 actor_getAnimationIndex(s32 action);
 	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim);
 	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ);
 	void actor_removeLogics(SecObject* obj);
 	void actor_setupSmartObj(Actor* actor);
+	void actor_setCurAnimation(LogicAnimation* aiAnim);
+	void actor_updatePlayerVisiblity(JBool playerVis, fixed16_16 posX, fixed16_16 posZ);
 
 	ActorEnemy* actor_createEnemyActor(Logic* logic);
 	ActorSimple* actor_createSimpleActor(Logic* logic);
 	void actor_setupInitAnimation();
+	void actor_setDeathCollisionFlags();
 
 	// Returns JTRUE if 'actorObj' can see 'obj'
 	// The object must be as close or closer than 'closeDist' or be within the fov of the 'actorObj'.
