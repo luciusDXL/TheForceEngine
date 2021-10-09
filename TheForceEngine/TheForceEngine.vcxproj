@@ -261,6 +261,7 @@
     <ClInclude Include="TFE_Audio\RtMidi.h" />
     <ClInclude Include="TFE_DarkForces\Actor\actor.h" />
     <ClInclude Include="TFE_DarkForces\Actor\aiActor.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\dragon.h" />
     <ClInclude Include="TFE_DarkForces\Actor\enemies.h" />
     <ClInclude Include="TFE_DarkForces\Actor\exploders.h" />
     <ClInclude Include="TFE_DarkForces\Actor\flyers.h" />
@@ -435,6 +436,7 @@
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\actor.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\dragon.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\enemies.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\exploders.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\flyers.cpp" />

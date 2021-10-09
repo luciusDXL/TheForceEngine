@@ -5,6 +5,7 @@
 #include "animLogic.h"
 #include "vueLogic.h"
 #include "projectile.h"
+#include <TFE_DarkForces/Actor/dragon.h>
 #include <TFE_DarkForces/Actor/exploders.h>
 #include <TFE_DarkForces/Actor/flyers.h>
 #include <TFE_DarkForces/Actor/mousebot.h>
@@ -274,6 +275,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_KELL:
 			{
+				return kellDragon_setup(obj, setupFunc);
 			} break;
 			case KW_SEWER1:
 			{
