@@ -37,10 +37,7 @@ namespace TFE_Jedi
 	static s32 s_objectCount = 0;
 
 	static TextureData** s_textures;
-	static RSector* s_bossSector;
-	static RSector* s_mohcSector;
-	static RSector* s_controlSector;
-
+	
 	static Allocator* s_soundEmitters;
 	static Allocator* s_safeLoc;
 				
@@ -58,6 +55,9 @@ namespace TFE_Jedi
 	s32 s_maxLayer;
 	s32 s_secretCount;
 	u32 s_sectorCount = 0;
+	RSector* s_bossSector = nullptr;
+	RSector* s_mohcSector = nullptr;
+	RSector* s_controlSector = nullptr;
 	RSector* s_completeSector = nullptr;
 	RSector* s_sectors = nullptr;
 

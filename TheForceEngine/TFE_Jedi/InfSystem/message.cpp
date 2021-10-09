@@ -73,9 +73,13 @@ namespace TFE_Jedi
 					func(msgType, logic);
 					//s_taskId = 0;
 				}
-				else
+				else if (task_hasLocalMsgFunc(logic->task))
 				{
 					task_runLocal(logic->task, msgType);
+				}
+				else
+				{
+					task_runAndReturn(logic->task, msgType);
 				}
 			}
 			logicList = (Logic**)allocator_getNext((Allocator*)obj->logic);

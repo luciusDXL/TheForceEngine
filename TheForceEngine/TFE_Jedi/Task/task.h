@@ -42,9 +42,11 @@ namespace TFE_Jedi
 	void  task_makeActive(Task* task);
 	void  task_setNextTick(Task* task, Tick tick);
 	void  task_setUserData(Task* task, void* data);
+	void  task_setMessage(MessageType msg);
 	void* task_getUserData();
-
+	
 	void  task_runLocal(Task* task, MessageType msg);
+	bool  task_hasLocalMsgFunc(Task* task);
 	
 	// Call once per frame to run the tasks.
 	// The core idea is to split the original recursive tasks into

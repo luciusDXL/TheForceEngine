@@ -269,6 +269,11 @@ namespace TFE_Jedi
 		return s_curTask ? s_curTask->userData : nullptr;
 	}
 
+	void task_setMessage(MessageType msg)
+	{
+		s_currentMsg = msg;
+	}
+
 	void task_runLocal(Task* task, MessageType msg)
 	{
 		if (task->localRunFunc)
@@ -280,6 +285,11 @@ namespace TFE_Jedi
 
 			s_curTask = prevCur;
 		}
+	}
+
+	bool task_hasLocalMsgFunc(Task* task)
+	{
+		return task->localRunFunc != nullptr;
 	}
 
 	void ctxReturn()
