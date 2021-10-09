@@ -685,6 +685,9 @@
     <ClInclude Include="TFE_DarkForces\Actor\dragon.h">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\welder.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1120,6 +1123,9 @@
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Actor\dragon.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\welder.cpp">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
   </ItemGroup>
