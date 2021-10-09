@@ -1238,6 +1238,8 @@ namespace TFE_DarkForces
 			if (desiredMove.y)
 			{
 				fixed16_16 deltaY = mul16(actor->target.speedVert, s_deltaTime);
+				if (desiredMove.y < 0) { deltaY = -deltaY; }
+
 				fixed16_16 absDy = (desiredMove.y < 0) ? -desiredMove.y : desiredMove.y;
 				move.y = clamp(deltaY, -absDy, absDy);
 			}

@@ -49,7 +49,7 @@ namespace TFE_DarkForces
 			if (sector == s_playerObject->sector)
 			{
 				// Target a random height above or below the player y position: playerPosY - [-1.5, 6.5]
-				s32 heightChange = random(FIXED(5)) - 0x18000;	// rand(5) - 1.5
+				fixed16_16 heightChange = random(FIXED(5)) - 0x18000;	// rand(5) - 1.5
 				flyingActor->target.pos.y = s_eyePos.y - heightChange;
 				flyingActor->target.flags |= 2;
 				flyingActor->state = 1;
@@ -131,7 +131,7 @@ namespace TFE_DarkForces
 		flyingActor->target.speedVert = FIXED(10);
 		flyingActor->delay = 436;	// just shy of 3 seconds.
 		actorLogic_addActor(logic, (AiActor*)flyingActor);
-
+				
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
 		actor->collisionFlags = (actor->collisionFlags & 0xfffffff8) | 4;
