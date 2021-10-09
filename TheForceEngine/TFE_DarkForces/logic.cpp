@@ -14,6 +14,7 @@
 #include <TFE_DarkForces/Actor/enemies.h>
 #include <TFE_DarkForces/Actor/sewer.h>
 #include <TFE_DarkForces/Actor/turret.h>
+#include <TFE_DarkForces/Actor/welder.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -294,6 +295,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_WELDER:
 			{
+				return welder_setup(obj, setupFunc);
 			} break;
 			case KW_SCENERY:
 			{
