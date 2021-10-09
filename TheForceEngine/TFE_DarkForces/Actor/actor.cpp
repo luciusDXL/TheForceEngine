@@ -389,7 +389,7 @@ namespace TFE_DarkForces
 		return (logic->flags & 8) ? JTRUE : JFALSE;
 	}
 
-	void actor_changeDirFromCollision(Actor* actor, ActorTarget* target, u32* prevColTick)
+	void actor_changeDirFromCollision(Actor* actor, ActorTarget* target, Tick* prevColTick)
 	{
 		SecObject* obj = actor->header.obj;
 		Tick delta = Tick(s_curTick - (*prevColTick));
@@ -424,6 +424,49 @@ namespace TFE_DarkForces
 		target->roll  = 0;
 
 		*prevColTick = s_curTick;
+	}
+
+	void actor_jumpToTarget(PhysicsActor* physicsActor, SecObject* obj, vec3_fixed target, fixed16_16 speed, angle14_32 angleOffset)
+	{
+		fixed16_16 dist = distApprox(obj->posWS.x, obj->posWS.z, target.x, target.z);
+		fixed16_16 distOverSpeed = div16(dist, speed);
+		fixed16_16 impulse = mul16(s_gravityAccel, distOverSpeed >> 1);
+
+		fixed16_16 dy = obj->posWS.y - target.y;
+		angle14_32 pitch = vec2ToAngle(dy, dist);
+		angle14_32 finalPitch = (angleOffset + pitch + arcCosFixed(div16(impulse, speed), pitch)) & ANGLE_MASK;
+
+		// This simplifies to: (dy/dist + 1.0) * speed
+		fixed16_16 dyOverDistBySpeed = div16(dy + dist, distOverSpeed);
+
+		fixed16_16 sinYaw, cosYaw;
+		fixed16_16 sinPitch, cosPitch;
+		sinCosFixed(obj->yaw, &sinYaw, &cosYaw);
+		sinCosFixed(finalPitch, &sinPitch, &cosPitch);
+
+		physicsActor->vel.x = mul16(sinYaw, dyOverDistBySpeed);
+		physicsActor->vel.z = mul16(cosYaw, dyOverDistBySpeed);
+		physicsActor->vel.y = -mul16(sinPitch, dyOverDistBySpeed);
+
+		physicsActor->vel.x = mul16(cosPitch, physicsActor->vel.x);
+		physicsActor->vel.z = mul16(cosPitch, physicsActor->vel.z);
+	}
+
+	void actor_handleBossDeath(PhysicsActor* physicsActor)
+	{
+		SecObject* obj = physicsActor->actor.header.obj;
+		if (obj->flags & OBJ_FLAG_BOSS)
+		{
+			if (obj->entityFlags & ETFLAG_32768)
+			{
+				// TODO
+				assert(0);
+			}
+			if (s_bossSector)
+			{
+				message_sendToSector(s_bossSector, nullptr, 0, MSG_TRIGGER);
+			}
+		}
 	}
 
 	void actor_updatePlayerVisiblity(JBool playerVis, fixed16_16 posX, fixed16_16 posZ)
@@ -1597,6 +1640,28 @@ namespace TFE_DarkForces
 					aiAnim->frameRate = 12;
 				}
 				aiAnim->flags &= ~AFLAG_READY;
+			}
+		}
+	}
+
+	void actor_setupAnimation2(SecObject* obj, s32 animId, LogicAnimation* anim)
+	{
+		anim->flags |= 2;
+		if (obj->type == OBJ_TYPE_SPRITE)
+		{
+			anim->prevTick = 0;
+			anim->animId = animId;
+			anim->startFrame = 0;
+			if (animId != -1)
+			{
+				WaxAnim* waxAnim = WAX_AnimPtr(obj->wax, animId);
+				anim->frameCount = intToFixed16(waxAnim->frameCount);
+				anim->frameRate = waxAnim->frameRate;
+				if (anim->frameRate >= 12)
+				{
+					anim->frameRate = 12;
+					anim->flags &= ~2;
+				}
 			}
 		}
 	}

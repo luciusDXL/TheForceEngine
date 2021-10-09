@@ -174,11 +174,13 @@ struct PhysicsActor
 {
 	Actor actor;
 	LogicAnimation anim;
+	PhysicsActor** parent;
 
 	vec3_fixed vel;
 	s32 ud0;
-	PhysicsActor** parent;
-	s32 ud8;
+
+	vec2_fixed lastPlayerPos;
+
 	fixed16_16 hp;
 	Task* actorTask;
 	JBool alive;

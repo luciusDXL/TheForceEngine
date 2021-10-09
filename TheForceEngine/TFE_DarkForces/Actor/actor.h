@@ -105,14 +105,21 @@ namespace TFE_DarkForces
 	JBool actor_handleSteps(Actor* actor, ActorTarget* target);
 	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj);
 	JBool actor_canSeeObjFromDist(SecObject* actorObj, SecObject* obj);
+	JBool actor_canSeeObject(SecObject* actorObj, SecObject* obj);
 
 	s32 actor_getAnimationIndex(s32 action);
 	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim);
+	void actor_setupAnimation2(SecObject* obj, s32 animId, LogicAnimation* anim);
 	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ);
 	void actor_removeLogics(SecObject* obj);
 	void actor_setupSmartObj(Actor* actor);
 	void actor_setCurAnimation(LogicAnimation* aiAnim);
 	void actor_updatePlayerVisiblity(JBool playerVis, fixed16_16 posX, fixed16_16 posZ);
+	void actor_changeDirFromCollision(Actor* actor, ActorTarget* target, Tick* prevColTick);
+	void actor_jumpToTarget(PhysicsActor* physicsActor, SecObject* obj, vec3_fixed target, fixed16_16 speed, angle14_32 angleOffset);
+	void actor_handleBossDeath(PhysicsActor* physicsActor);
+
+	angle14_32 actor_offsetTarget(fixed16_16* targetX, fixed16_16* targetZ, fixed16_16 targetOffset, fixed16_16 targetVariation, angle14_32 angle, angle14_32 angleVariation);
 
 	ActorEnemy* actor_createEnemyActor(Logic* logic);
 	ActorSimple* actor_createSimpleActor(Logic* logic);
