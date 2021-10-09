@@ -19,6 +19,15 @@
 
 namespace TFE_DarkForces
 {
+	enum WelderState
+	{
+		WSTATE_DEFAULT = 0,
+		WSTATE_ACTIVE  = 1,
+		WSTATE_RESET   = 2,
+		WSTATE_DYING   = 3,
+		WSTATE_COUNT
+	};
+
 	struct Welder
 	{
 		Logic logic;
@@ -31,11 +40,11 @@ namespace TFE_DarkForces
 	};
 
 	static Wax* s_welderSpark = nullptr;
-	static SoundSourceID s_weld2SoundSrcId = NULL_SOUND;
-	static SoundSourceID s_weld1SoundSrcId = NULL_SOUND;
+	static SoundSourceID s_weld2SoundSrcId     = NULL_SOUND;
+	static SoundSourceID s_weld1SoundSrcId     = NULL_SOUND;
 	static SoundSourceID s_weldSparkSoundSrcId = NULL_SOUND;
-	static SoundSourceID s_weldHurtSoundSrcId = NULL_SOUND;
-	static SoundSourceID s_weldDieSoundSrcId  = NULL_SOUND;
+	static SoundSourceID s_weldHurtSoundSrcId  = NULL_SOUND;
+	static SoundSourceID s_weldDieSoundSrcId   = NULL_SOUND;
 
 	static Welder* s_curWelder = nullptr;
 	static s32 s_welderNum = 0;
@@ -50,7 +59,7 @@ namespace TFE_DarkForces
 			physicsActor->hp -= proj->dmg;
 			if (physicsActor->hp <= 0)
 			{
-				physicsActor->state = 3;
+				physicsActor->state = WSTATE_DYING;
 				msg = MSG_RUN_TASK;
 			}
 			else
@@ -76,7 +85,7 @@ namespace TFE_DarkForces
 			physicsActor->hp -= dmg;
 			if (physicsActor->hp <= 0)
 			{
-				physicsActor->state = 3;
+				physicsActor->state = WSTATE_DYING;
 				msg = MSG_RUN_TASK;
 			}
 			else
@@ -105,7 +114,7 @@ namespace TFE_DarkForces
 		local(welder) = s_curWelder;
 		local(obj) = local(welder)->logic.obj;
 		local(physicsActor) = &local(welder)->actor;
-		while (local(physicsActor)->state == 0)
+		while (local(physicsActor)->state == WSTATE_DEFAULT)
 		{
 			do
 			{
@@ -120,12 +129,12 @@ namespace TFE_DarkForces
 				}
 				if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
 				{
-					local(physicsActor)->state = 1;
+					local(physicsActor)->state = WSTATE_ACTIVE;
 					task_makeActive(local(physicsActor)->actorTask);
 					task_yield(TASK_NO_DELAY);
 				}
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != 0 || s_playerDying) { break; }
+			if (local(physicsActor)->state != WSTATE_DEFAULT || s_playerDying) { break; }
 
 			if (actor_isObjectVisible(local(obj), s_playerObject, ANGLE_MAX, FIXED(25)))
 			{
@@ -134,10 +143,10 @@ namespace TFE_DarkForces
 				// Switch to the attack state if the player is close enough.
 				if (dist <= FIXED(40))
 				{
-					local(physicsActor)->state = 1;
+					local(physicsActor)->state = WSTATE_ACTIVE;
 				}
 			}
-		}  // while (state == 0)
+		}  // while (state == WSTATE_DEFAULT)
 
 		task_end;
 	}
@@ -164,7 +173,7 @@ namespace TFE_DarkForces
 		local(sector) = local(obj)->sector;
 		local(attack) = JFALSE;
 
-		while (local(physicsActor)->state == 1)
+		while (local(physicsActor)->state == WSTATE_ACTIVE)
 		{
 			do
 			{
@@ -178,7 +187,7 @@ namespace TFE_DarkForces
 					msg = welder_handleExplosion(msg, local(welder));
 				}
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != 1) { break; }
+			if (local(physicsActor)->state != WSTATE_ACTIVE) { break; }
 
 			// Is the yaw aligned to the target?
 			if ((local(obj)->yaw & ANGLE_MASK) == (local(target)->yaw & ANGLE_MASK))
@@ -255,10 +264,10 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					local(physicsActor)->state = 2;
+					local(physicsActor)->state = WSTATE_RESET;
 				}
 			}
-		}  // while (state == 1)
+		}  // while (state == WSTATE_ACTIVE)
 
 		task_end;
 	}
@@ -284,7 +293,7 @@ namespace TFE_DarkForces
 		local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
 		local(welder)->sound2Id = playSound3D_oneshot(s_weld2SoundSrcId, local(obj)->posWS);
 
-		while (local(physicsActor)->state == 2)
+		while (local(physicsActor)->state == WSTATE_RESET)
 		{
 			do
 			{
@@ -298,15 +307,15 @@ namespace TFE_DarkForces
 					msg = welder_handleExplosion(msg, local(welder));
 				}
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != 2) { break; }
+			if (local(physicsActor)->state != WSTATE_RESET) { break; }
 
 			if (local(target)->yaw == local(obj)->yaw)
 			{
 				stopSound(local(welder)->sound2Id);
 				playSound3D_oneshot(s_weld1SoundSrcId, local(obj)->posWS);
-				local(physicsActor)->state = 0;
+				local(physicsActor)->state = WSTATE_DEFAULT;
 			}
-		}
+		}  // while (state == WSTATE_RESET)
 
 		task_end;
 	}
@@ -331,17 +340,17 @@ namespace TFE_DarkForces
 			msg = MSG_RUN_TASK;
 			task_setMessage(MSG_RUN_TASK);
 
-			if (local(physicsActor)->state == 1)
+			if (local(physicsActor)->state == WSTATE_ACTIVE)
 			{
 				s_curWelder = local(welder);
 				task_callTaskFunc(welder_handleActiveState);
 			}
-			else if (local(physicsActor)->state == 2)
+			else if (local(physicsActor)->state == WSTATE_RESET)
 			{
 				s_curWelder = local(welder);
 				task_callTaskFunc(welder_handleReset);
 			}
-			else if (local(physicsActor)->state == 3)
+			else if (local(physicsActor)->state == WSTATE_DYING)
 			{
 				local(target)->flags |= 8;
 				stopSound(local(welder)->sound2Id);
@@ -429,7 +438,7 @@ namespace TFE_DarkForces
 		PhysicsActor* physicsActor = &welder->actor;
 		physicsActor->alive = JTRUE;
 		physicsActor->hp = FIXED(130);
-		physicsActor->state = 0;
+		physicsActor->state = WSTATE_DEFAULT;
 		physicsActor->actorTask = task;
 		welder->logic.obj = obj;
 		welder->yaw = obj->yaw;
