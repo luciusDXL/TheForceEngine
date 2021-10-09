@@ -114,6 +114,7 @@ namespace TFE_DarkForces
 	Logic* gamor_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		obj->flags |= OBJ_FLAG_HAS_COLLISION;
+		obj->worldWidth >>= 1;
 
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_GAMOR];

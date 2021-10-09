@@ -1008,7 +1008,7 @@ namespace TFE_DarkForces
 		char name[32];
 		sprintf(name, "KellDragon%d", s_dragonNum);
 		s_dragonNum++;
-		Task* task = createSubTask("KellDragon%u", kellDragonTaskFunc);
+		Task* task = createSubTask(name, kellDragonTaskFunc);
 		task_setUserData(task, dragon);
 
 		obj->entityFlags = ETFLAG_AI_ACTOR;
@@ -1028,6 +1028,9 @@ namespace TFE_DarkForces
 		physicsActor->actor.physics.obj = obj;
 		actor_setupSmartObj(&physicsActor->actor);
 
+		obj->flags |= OBJ_FLAG_HAS_COLLISION;
+		obj->worldWidth >>= 1;
+
 		CollisionInfo* physics = &physicsActor->actor.physics;
 		physics->botOffset = 0x60000;
 		physics->yPos = 0x80000;
@@ -1045,7 +1048,7 @@ namespace TFE_DarkForces
 		anim->flags = (anim->flags | 2) & 0xfffffffe;
 		anim->frameCount = ONE_16;
 		anim->prevTick = 0;
-		actor_setupAnimation2(obj, 5, anim);	// eax, edx, ebx
+		actor_setupAnimation2(obj, 5, anim);
 
 		obj_addLogic(obj, &dragon->logic, task, kellDragonCleanupFunc);
 		if (setupFunc)

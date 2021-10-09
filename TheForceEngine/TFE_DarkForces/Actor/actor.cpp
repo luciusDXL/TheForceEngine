@@ -1660,8 +1660,8 @@ namespace TFE_DarkForces
 				if (anim->frameRate >= 12)
 				{
 					anim->frameRate = 12;
-					anim->flags &= ~2;
 				}
+				anim->flags &= ~2;
 			}
 		}
 	}
