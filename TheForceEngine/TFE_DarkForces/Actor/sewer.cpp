@@ -230,6 +230,7 @@ namespace TFE_DarkForces
 	{
 		obj->flags &= ~(OBJ_FLAG_NEEDS_TRANSFORM | OBJ_FLAG_HAS_COLLISION);
 		obj->entityFlags = ETFLAG_AI_ACTOR;
+		obj->worldWidth >>= 1;
 
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_CREATURE];

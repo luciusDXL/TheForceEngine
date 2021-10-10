@@ -149,6 +149,7 @@ namespace TFE_DarkForces
 	Logic* intDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		obj->flags |= OBJ_FLAG_HAS_COLLISION;
+		obj->worldWidth >>= 1;
 
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->fov = 0x4000;	// 360 degrees
@@ -205,6 +206,7 @@ namespace TFE_DarkForces
 	Logic* probeDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		obj->flags |= OBJ_FLAG_HAS_COLLISION;
+		obj->worldWidth >>= 1;
 
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->fov = 0x4000;	// 360 degrees
