@@ -2402,6 +2402,7 @@ namespace RClassic_Fixed
 						const u8* colPtr = (u8*)cell + columnOffset[texelU];
 
 						// Decompress the column into "work buffer."
+						assert(cell->sizeY <= 1024);
 						sprite_decompressColumn(colPtr, s_workBuffer, cell->sizeY);
 						s_texImage = (u8*)s_workBuffer;
 					}

@@ -284,6 +284,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_REMOTE:
 			{
+				return remote_setup(obj, setupFunc);
 			} break;
 			case KW_TURRET:
 			{

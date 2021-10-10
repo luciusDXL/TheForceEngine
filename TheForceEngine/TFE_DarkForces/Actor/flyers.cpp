@@ -21,6 +21,8 @@ namespace TFE_DarkForces
 	{ 0, 1, 2, 3, 4, 5, -1, 7, -1, -1, -1, -1, 12, -1, -1, -1 };
 	static const s32 s_probeDroidAnimTable[] = 
 	{ 0, 1, 2, 3, 4, 5, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
+	static const s32 s_remoteAnimTable[] =
+	{ 0, 0, 2, 3, -1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1 };
 		
 	u32 flyingActorFunc(AiActor* aiActor, Actor* actor)
 	{
@@ -64,6 +66,37 @@ namespace TFE_DarkForces
 		return 0;
 	}
 
+	u32 flyingActorAiFunc2(AiActor* aiActor, Actor* actor)
+	{
+		ActorFlyer* flyingActor = (ActorFlyer*)aiActor;
+		ActorTarget* target = &flyingActor->target;
+		SecObject* obj = flyingActor->header.obj;
+
+		if (flyingActor->state == 0)
+		{
+			flyingActor->state = 2;
+			return s_curTick + random(flyingActor->delay);
+		}
+		else if (flyingActor->state == 1)
+		{
+			if (actor_arrivedAtTarget(target, obj))
+			{
+				flyingActor->state = 0;
+			}
+		}
+		else if (flyingActor->state == 2)
+		{
+			target->yaw   = random_next() & 0x3fff;
+			target->pitch = obj->pitch;
+			target->roll  = obj->roll;
+			target->flags |= 4;
+			flyingActor->state = 1;
+		}
+
+		actor->updateTargetFunc(actor, target);
+		return 0;
+	}
+
 	ActorFlyer* actor_createFlying(Logic* logic)
 	{
 		ActorFlyer* actor = (ActorFlyer*)level_alloc(sizeof(ActorFlyer));
@@ -86,6 +119,30 @@ namespace TFE_DarkForces
 		actor->header.func = flyingActorFunc;
 		actor->delay = 145;
 
+		return actor;
+	}
+
+	ActorFlyer* actor_createFlying2(Logic* logic)
+	{
+		ActorFlyer* actor = (ActorFlyer*)level_alloc(sizeof(ActorFlyer));
+		actor->target.flags &= 0xfffffff0;
+		actor->target.speedRotation = 0;
+		actor->target.speed = FLAG_BIT(18);
+		actor->target.speedVert = FIXED(10);
+		actor->delay = 72;	// ~0.5 seconds
+		actor->u68 = 0;
+		actor->u6c = -1;
+		actor->state = 2;
+		actor->u40 = 728;
+		actor->width = 5;
+		actor->u4c = ONE_16;
+		actor->u5c &= ~1;
+		actor->nextTick = 0;
+		actor->u70 = 0;
+		actor_initHeader(&actor->header, logic);
+
+		actor->header.func = flyingActorAiFunc2;
+		actor->delay = 145;	// 1 second.
 		return actor;
 	}
 
@@ -192,6 +249,63 @@ namespace TFE_DarkForces
 
 		// Setup the animation.
 		logic->animTable = s_probeDroidAnimTable;
+		actor_setupInitAnimation();
+
+		return (Logic*)logic;
+	}
+
+	Logic* remote_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	{
+		obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_FLYING | ETFLAG_4096;
+		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
+		logic->fov = 0x4000;
+
+		AiActor* aiActor = actor_createAiActor((Logic*)logic);
+		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_TINY_EXPLOSION];
+		aiActor->hp = FIXED(9);
+		actorLogic_addActor(logic, aiActor);
+
+		ActorEnemy* enemy = actor_createEnemyActor((Logic*)logic);
+		enemy->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_13];
+		enemy->projType = PROJ_REMOTE_BOLT;
+		enemy->attackFlags &= 0xfffffffc;
+		enemy->attackFlags |= 2;
+		enemy->fireOffset.y = 0x4000;	// 0.25 units.
+		enemy->maxDist = FIXED(50);
+		s_curEnemyActor = enemy;
+		actorLogic_addActor(logic, (AiActor*)enemy);
+
+		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
+		actorSimple->target.speedRotation = 0x7fff;
+		actorSimple->target.speed = FIXED(15);
+		actorSimple->target.speedVert = FIXED(10);
+		actorSimple->u3c = 436;
+		actorSimple->startDelay = 109;
+		actorSimple->targetOffset = FIXED(9);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
+
+		ActorFlyer* flyingActor = actor_createFlying2((Logic*)logic);
+		flyingActor->target.speedRotation = 0x7fff;
+		flyingActor->delay = 291;
+		actorLogic_addActor(logic, (AiActor*)flyingActor);
+
+		flyingActor = actor_createFlying((Logic*)logic);
+		flyingActor->target.speedRotation = 0x7fff;
+		flyingActor->target.speed = FIXED(13);
+		flyingActor->target.speedVert = FIXED(10);
+		flyingActor->delay = 291;
+		actorLogic_addActor(logic, (AiActor*)flyingActor);
+
+		Actor* actor = actor_create((Logic*)logic);
+		logic->actor = actor;
+		actor->collisionFlags &= 0xfffffff8;
+		actor->collisionFlags |= 4;
+		actor->physics.yPos = FIXED(200);
+
+		// should be: 0xa7ec
+		actor->physics.width = obj->worldWidth >> 1;
+		obj->entityFlags &= 0xfffff7ff;
+		logic->animTable = s_remoteAnimTable;
 		actor_setupInitAnimation();
 
 		return (Logic*)logic;

@@ -11,4 +11,5 @@ namespace TFE_DarkForces
 {
 	Logic* intDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 	Logic* probeDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc);
+	Logic* remote_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

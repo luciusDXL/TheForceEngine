@@ -179,7 +179,10 @@ namespace TFE_Sprite_Jedi
 		fixed16_16 scaledWidth, scaledHeight;
 
 		u32 cellOffsetPtr = 0;
-		for (s32 animIdx = 0; animIdx < 32 && animOffset[animIdx]; animIdx++)
+		fixed16_16 worldWidth, worldHeight;
+
+		s32 animIdx = 0;
+		for (; animIdx < 32 && animOffset[animIdx]; animIdx++)
 		{
 			WaxAnim* dstAnim = (WaxAnim*)((u8*)asset + animOffset[animIdx]);
 
@@ -188,8 +191,16 @@ namespace TFE_Sprite_Jedi
 				scaledWidth  = div16(SPRITE_SCALE_FIXED, dstAnim->worldWidth);
 				scaledHeight = div16(SPRITE_SCALE_FIXED, dstAnim->worldHeight);
 
+				worldWidth  = dstAnim->worldWidth;
+				worldHeight = dstAnim->worldHeight;
+
 				dstWax->xScale = dstAnim->worldWidth;
 				dstWax->yScale = dstAnim->worldHeight;
+			}
+			else
+			{
+				dstAnim->worldWidth = worldWidth;
+				dstAnim->worldHeight = worldHeight;
 			}
 
 			const s32* viewOffsets = dstAnim->viewOffsets;
@@ -212,6 +223,7 @@ namespace TFE_Sprite_Jedi
 					{
 						dstFrame->widthWS  = div16(intToFixed16(dstCell->sizeX), scaledWidth);
 						dstFrame->heightWS = div16(intToFixed16(dstCell->sizeY), scaledHeight);
+						assert(dstFrame->widthWS != 0 && dstFrame->heightWS != 0);
 
 						if (dstCell->columnOffset == 0)
 						{
@@ -244,8 +256,13 @@ namespace TFE_Sprite_Jedi
 				{
 					dstAnim->frameCount = frameCount;
 				}
+				else
+				{
+					assert(frameCount == dstAnim->frameCount);
+				}
 			}
 		}
+		asset->animCount = animIdx;
 
 		s_sprites[name] = asset;
 		return asset;
