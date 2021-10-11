@@ -113,4 +113,7 @@ namespace TFE_DarkForces
 
 	void proj_aimAtTarget(ProjectileLogic* proj, vec3_fixed target);
 	void proj_aimArcing(ProjectileLogic* proj, vec3_fixed target, fixed16_16 speed);
+
+	extern u32 s_hitWallFlag;
+	extern angle14_32 s_projReflectOverrideYaw;
 }  // namespace TFE_DarkForces

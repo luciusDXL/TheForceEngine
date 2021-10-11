@@ -266,6 +266,7 @@
     <ClInclude Include="TFE_DarkForces\Actor\exploders.h" />
     <ClInclude Include="TFE_DarkForces\Actor\flyers.h" />
     <ClInclude Include="TFE_DarkForces\Actor\mousebot.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\phaseOne.h" />
     <ClInclude Include="TFE_DarkForces\Actor\scenery.h" />
     <ClInclude Include="TFE_DarkForces\Actor\sewer.h" />
     <ClInclude Include="TFE_DarkForces\Actor\troopers.h" />
@@ -442,6 +443,7 @@
     <ClCompile Include="TFE_DarkForces\Actor\exploders.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\flyers.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\mousebot.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\phaseOne.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\scenery.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\sewer.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\troopers.cpp" />

@@ -5,7 +5,10 @@
 #include "animLogic.h"
 #include "vueLogic.h"
 #include "projectile.h"
-#include <TFE_DarkForces/Actor/dragon.h>
+#include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Memory/allocator.h>
+
+// Regular Enemies
 #include <TFE_DarkForces/Actor/exploders.h>
 #include <TFE_DarkForces/Actor/flyers.h>
 #include <TFE_DarkForces/Actor/mousebot.h>
@@ -15,8 +18,10 @@
 #include <TFE_DarkForces/Actor/sewer.h>
 #include <TFE_DarkForces/Actor/turret.h>
 #include <TFE_DarkForces/Actor/welder.h>
-#include <TFE_Jedi/Level/robject.h>
-#include <TFE_Jedi/Memory/allocator.h>
+
+// Bosses
+#include <TFE_DarkForces/Actor/dragon.h>
+#include <TFE_DarkForces/Actor/phaseOne.h>
 
 using namespace TFE_Jedi;
 
@@ -205,6 +210,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_D_TROOP1:
 			{
+				return phaseOne_setup(obj, setupFunc);
 			} break;
 			case KW_D_TROOP2:
 			{

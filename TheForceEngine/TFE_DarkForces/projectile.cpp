@@ -71,8 +71,7 @@ namespace TFE_DarkForces
 	static fixed16_16 s_projNextPosZ;
 	static JBool      s_hitWater;
 	static RWall*     s_hitWall;
-	static u32        s_hitWallFlag;
-	
+		
 	// Projectile specific collisions
 	static RSector*   s_colObjSector;
 	static SecObject* s_colHitObj;
@@ -82,6 +81,9 @@ namespace TFE_DarkForces
 
 	// Task
 	static Task* s_projectileTask = nullptr;
+
+	u32 s_hitWallFlag;
+	angle14_32 s_projReflectOverrideYaw = 0;
 
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
@@ -1114,7 +1116,24 @@ namespace TFE_DarkForces
 			{
 				return PHIT_SOLID;
 			}
-			assert(s_hitWallFlag != 4);	// This shouldn't be true, but there is code in the original exe even though the flag should never be set to this value.
+			else if (s_hitWallFlag == 4)
+			{
+				angle14_32 angleDiff = getAngleDifference(obj->yaw, s_projReflectOverrideYaw);
+				obj->yaw = (angleDiff + s_projReflectOverrideYaw) & 0x3fff;
+
+				if (projLogic->reflVariation)
+				{
+					obj->yaw   += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
+					obj->pitch += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
+				}
+				projLogic->prevColObj = nullptr;
+				projLogic->excludeObj = nullptr;
+				proj_setTransform(projLogic, obj->pitch, obj->yaw);
+				playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+
+				projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
+				return PHIT_NONE;
+			}
 		}
 		else if (envHit)
 		{
@@ -1139,7 +1158,24 @@ namespace TFE_DarkForces
 				{
 					return PHIT_SOLID;
 				}
-				assert(s_hitWallFlag != 4);	// This shouldn't be true, but there is code in the original exe even though the flag should never be set to this value.
+				else if (s_hitWallFlag == 4)
+				{
+					angle14_32 angleDiff = getAngleDifference(obj->yaw, s_projReflectOverrideYaw);
+					obj->yaw = (angleDiff + s_projReflectOverrideYaw) & 0x3fff;
+
+					if (projLogic->reflVariation)
+					{
+						obj->yaw += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
+						obj->pitch += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
+					}
+					projLogic->prevColObj = nullptr;
+					projLogic->excludeObj = nullptr;
+					proj_setTransform(projLogic, obj->pitch, obj->yaw);
+					playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+
+					projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
+					return PHIT_NONE;
+				}
 			}
 			return s_hitWater ? PHIT_WATER : PHIT_SOLID;
 		}
