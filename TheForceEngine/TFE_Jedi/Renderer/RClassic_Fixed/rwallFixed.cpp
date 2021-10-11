@@ -2414,7 +2414,7 @@ namespace RClassic_Fixed
 					s_columnOut = &s_display[y0 * s_width + x];
 					// Draw the column.
 					spriteColumnFunc();
-					drawn = JTRUE;
+					if (s_yPixelCount > 1) { drawn = JTRUE; }
 				}
 			}
 		}

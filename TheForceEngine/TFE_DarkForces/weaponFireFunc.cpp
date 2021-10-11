@@ -2081,7 +2081,7 @@ namespace TFE_DarkForces
 					continue;
 				}
 				fixed16_16 dist = computeDirAndLength(dx, dz, &s_autoAimDirX, &s_autoAimDirZ);
-				if (dist < closest)
+				if (dist > 0 && dist < closest)
 				{
 					closest = dist;
 					s_weaponFireYaw = angle;
