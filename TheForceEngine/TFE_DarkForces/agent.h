@@ -56,6 +56,9 @@ namespace TFE_DarkForces
 	void  agent_setLevelComplete(JBool complete);
 	JBool agent_getLevelComplete();
 
+	void agent_levelComplete();
+	void agent_createLevelEndTask();
+
 	extern AgentData s_agentData[MAX_AGENT_COUNT];
 	extern s32 s_maxLevelIndex;
 	extern s32 s_agentId;

@@ -3,6 +3,9 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/rwall.h>
+#include <TFE_Jedi/Collision/collision.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -27,10 +30,10 @@ namespace TFE_DarkForces
 
 		Allocator* frames;
 		Task* task;
-		s32 isCamera;
-		u32 frameDelay;
+		s32  isCamera;
+		Tick frameDelay;
 		s32 u28;
-		s32 u2c;
+		RSector* sector;
 		u32 flags;
 	};
 
@@ -79,6 +82,7 @@ namespace TFE_DarkForces
 		if (!strcasecmp(transformName, "camera"))
 		{
 			// TODO(Core Game Loop Release)
+			assert(0);
 		}
 
 		// Matrix 0
@@ -110,7 +114,7 @@ namespace TFE_DarkForces
 		mtx1[8] = 1;
 
 		VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
-		frame->flags |= VFRAME_FIRST;
+		frame->flags = VFRAME_FIRST;
 
 		size_t bufferPos = 0;
 		while (1)
@@ -155,7 +159,7 @@ namespace TFE_DarkForces
 				frame->offset.z =  floatToFixed16(f10);
 
 				frame->maxPitch = 8191;
-				frame->flags &= ~VFRAME_FIRST;
+				frame->flags = 0;
 			}
 		}
 	}
@@ -299,23 +303,142 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	// TODO(Core Game Loop Release): Stubbed out the minimum.
 	void vueLogicTaskFunc(MessageType msg)
 	{
-		task_begin;
+		struct LocalContext
+		{
+			VueLogic* vue;
+			JBool searchForSector;
+			SecObject* obj;
+			VueFrame* frame;
+			Tick tick;
+			Tick pauseTick;
+			s32 prevFrame;
+		};
+		task_begin_ctx;
 
-		task_yield(TASK_SLEEP);
+		local(vue) = (VueLogic*)task_getUserData();
+		local(searchForSector) = JTRUE;
+		local(obj) = local(vue)->logic.obj;
+		local(vue)->sector = local(obj)->sector;
+		if (local(vue)->u28)
+		{
+			// TODO
+			assert(0);
+		}
+		
 		while (msg != MSG_FREE_TASK)
 		{
-			task_yield(TASK_NO_DELAY);
-		}
+			if (local(vue)->frames)
+			{
+				if (local(vue)->isCamera > 0)
+				{
+					// TODO
+					assert(0);
+				}
+				local(frame) = (VueFrame*)allocator_getHead(local(vue)->frames);
+				local(searchForSector) = JTRUE;
+				local(tick) = s_curTick;
+				local(prevFrame) = 0;
+				if (!local(frame))
+				{
+					break;
+				}
 
+				while (local(frame))
+				{
+					if (local(frame)->flags & VFRAME_FIRST)
+					{
+						local(pauseTick) = s_curTick;
+						task_yield(TASK_SLEEP);
+
+						task_makeActive(task_getCurrent());
+						local(tick) += s_curTick - local(pauseTick);
+						task_yield(TASK_NO_DELAY);
+
+						local(frame) = (VueFrame*)allocator_getNext(local(vue)->frames);
+					}
+					else
+					{
+						task_localBlockBegin;
+							memcpy(local(obj)->transform, local(frame)->mtx, 9 * sizeof(fixed16_16));
+							RSector* newSector = nullptr;
+
+							JBool useCollision = JFALSE;
+							if (local(vue)->sector && local(vue)->sector != s_controlSector)
+							{
+								useCollision = !local(searchForSector);
+							}
+
+							if (useCollision)
+							{
+								RWall* wall = collision_wallCollisionFromPath(local(vue)->sector, local(obj)->posWS.x, local(obj)->posWS.z, local(frame)->offset.x, local(frame)->offset.z);
+								while (wall)
+								{
+									if (wall->nextSector)
+									{
+										newSector = wall->nextSector;
+										wall = collision_pathWallCollision(newSector);
+									}
+									else
+									{
+										break;
+									}
+								}
+								if (wall)
+								{
+									newSector = s_controlSector;
+								}
+							}
+							else
+							{
+								newSector = sector_which3D(local(frame)->offset.x, local(frame)->offset.y, local(frame)->offset.z);
+								if (!newSector)
+								{
+									newSector = s_controlSector;
+								}
+								local(searchForSector) = JFALSE;
+							}
+
+							if (newSector)
+							{
+								sector_addObject(newSector, local(obj));
+								local(vue)->sector = newSector;
+							}
+
+							local(obj)->posWS = local(frame)->offset;
+						task_localBlockEnd;
+
+						task_yield(TASK_NO_DELAY);
+						if (msg == MSG_FREE_TASK) { break; }
+
+						Tick dt = s_curTick - local(tick);
+						s32 frameIndex = dt / local(vue)->frameDelay;
+						for (; local(prevFrame) != frameIndex && local(frame); local(prevFrame)++)
+						{
+							local(frame) = (VueFrame*)allocator_getNext(local(vue)->frames);
+							if (!local(frame) || ((local(vue)->flags & VUE_PAUSED) && (local(frame)->flags & VFRAME_FIRST)))
+							{
+								break;
+							}
+						}
+					}
+				}  // while (frame)
+			}
+			else
+			{
+				task_yield(TASK_SLEEP);
+			}
+		}  // while (msg != MSG_FREE_TASK)
+
+		deleteLogicAndObject((Logic*)local(vue));
 		task_end;
 	}
 
 	void vueLogicCleanupFunc(Logic *logic)
 	{
-		// TODO(Core Game Loop Release)
+		deleteLogicAndObject(logic);
+		task_free(logic->task);
 	}
 
 }  // TFE_DarkForces

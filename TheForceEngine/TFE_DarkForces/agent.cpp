@@ -1,6 +1,7 @@
 #include "agent.h"
 #include "util.h"
 #include "player.h"
+#include "hud.h"
 #include <TFE_Game/igame.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -22,6 +23,8 @@ namespace TFE_DarkForces
 	char** s_levelDisplayNames;
 	char** s_levelGamePaths;
 	char** s_levelSrcPaths;
+
+	static Task* s_levelEndTask = nullptr;
 		
 	///////////////////////////////////////////
 	// API Implementation
@@ -48,6 +51,42 @@ namespace TFE_DarkForces
 
 		file.close();
 		return agentReadCount;
+	}
+
+	void agent_updateLevelStats()
+	{
+		s32 curLevel = s_agentData[s_agentId].selectedMission;
+		if (curLevel > s_agentData[s_agentId].nextMission)
+		{
+			s_agentData[s_agentId].nextMission = curLevel;
+		}
+	}
+
+	void agent_levelComplete()
+	{
+		s_levelComplete = JTRUE;
+		agent_updateLevelStats();
+	}
+		
+	void levelEndTaskFunc(MessageType msg)
+	{
+		task_begin;
+		while (1)
+		{
+			hud_sendTextMessage(461);
+			task_yield(582);			// ~4 seconds
+			hud_sendTextMessage(462);
+			task_yield(4369);			// ~30 seconds
+		}
+		task_end;
+	}
+
+	void agent_createLevelEndTask()
+	{
+		if (!s_levelEndTask)
+		{
+			s_levelEndTask = createSubTask("LevelEnd", levelEndTaskFunc);
+		}
 	}
 	
 	s32 agent_getLevelIndex()

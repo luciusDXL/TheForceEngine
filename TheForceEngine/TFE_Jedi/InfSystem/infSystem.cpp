@@ -5,6 +5,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_DarkForces/hud.h>
+#include <TFE_DarkForces/agent.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/allocator.h>
@@ -94,10 +95,6 @@ namespace TFE_Jedi
 	void inf_teleporterTaskLocal(MessageType msg);
 	void inf_elevatorTaskLocal(MessageType msg);
 	void inf_triggerTaskLocal(MessageType msg);
-
-	// TODO: Game side functions
-	void game_levelComplete() {}
-	void createLevelEndTask() {}
 
 	/////////////////////////////////////////////////////
 	// API
@@ -1474,8 +1471,8 @@ namespace TFE_Jedi
 									taskCtx->elevDeleted = 1;
 									if (delay == IDELAY_COMPLETE)
 									{
-										game_levelComplete();
-										createLevelEndTask();
+										agent_levelComplete();
+										agent_createLevelEndTask();
 									}
 								}
 								else  // Timed
