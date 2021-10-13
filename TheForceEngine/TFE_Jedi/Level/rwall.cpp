@@ -56,25 +56,27 @@ namespace TFE_Jedi
 
 			if (wall->midTex)
 			{
-				RSector* midSector = wall->sector;
-
 				if (!(wall->drawFlags & WDF_BOT) && !(wall->drawFlags & WDF_TOP))
 				{
+					RSector* midSector = wall->sector;
 					fixed16_16 midFloorHeight = wall->sector->floorHeight;
 					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) << 3;
 				}
 				else if (!(wall->drawFlags & WDF_BOT))
 				{
+					RSector* midSector = wall->nextSector;
 					fixed16_16 midFloorHeight = wall->sector->floorHeight;
 					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) << 3;
 				}
 				else if (!(wall->drawFlags & WDF_TOP))
 				{
+					RSector* midSector = wall->sector;
 					fixed16_16 midFloorHeight = wall->nextSector->floorHeight;
 					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) << 3;
 				}
 				else // WDF_TOP_AND_BOT
 				{
+					RSector* midSector = wall->nextSector;
 					fixed16_16 midFloorHeight = wall->nextSector->floorHeight;
 					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) << 3;
 				}

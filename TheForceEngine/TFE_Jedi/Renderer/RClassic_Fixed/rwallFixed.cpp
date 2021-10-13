@@ -890,7 +890,7 @@ namespace RClassic_Fixed
 		s_texHeightMask = texture->height - 1;
 		s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
 
-		fixed16_16 ceil_dYdX = edge->dyCeil_dx;
+		fixed16_16 ceil_dYdX  = edge->dyCeil_dx;
 		fixed16_16 floor_dYdX = edge->dyFloor_dx;
 		fixed16_16 num = solveForZ_Numerator(wallSegment);
 
@@ -2226,7 +2226,7 @@ namespace RClassic_Fixed
 				else
 				{
 					RSector* midSector = wall->nextSector;
-					fixed16_16 midFloorHeight = wall->nextSector->floorHeight;
+					fixed16_16 midFloorHeight = midSector->floorHeight;
 					wall->midTexelHeight = (midFloorHeight - midSector->ceilingHeight) * 8;
 				}
 			}
