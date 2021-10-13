@@ -1,4 +1,5 @@
 // main.cpp : Defines the entry point for the application.
+#include "version.h"
 #include <SDL.h>
 #include <TFE_System/types.h>
 #include <TFE_System/profiler.h>
@@ -432,7 +433,7 @@ int main(int argc, char* argv[])
 	pathsSet &= TFE_Paths::setProgramDataPath("TheForceEngine");
 	pathsSet &= TFE_Paths::setUserDocumentsPath("TheForceEngine");
 	TFE_System::logOpen("the_force_engine_log.txt");
-	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine v%d.%02d.%03d", TFE_MAJOR_VERSION, TFE_MINOR_VERSION, TFE_BUILD_VERSION);
+	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine %s", c_gitVersion);
 	if (!pathsSet)
 	{
 		return PROGRAM_ERROR;

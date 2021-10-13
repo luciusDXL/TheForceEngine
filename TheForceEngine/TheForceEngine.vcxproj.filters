@@ -691,6 +691,9 @@
     <ClInclude Include="TFE_DarkForces\Actor\phaseOne.h">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClInclude>
+    <ClInclude Include="version.h">
+      <Filter>Source</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
