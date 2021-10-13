@@ -1238,6 +1238,10 @@ namespace TFE_Jedi
 
 		// Then loop through all of the items and parse their classes.
 		itemCount = min(itemCount, MAX_INF_ITEMS);
+		// It turns out that Dark Forces is relying on using the previous value of 'num' if a line does not set it properly.
+		// If I clear it every time, then some things stop working.
+		// So rather than relying on the local memory to just line up every loop, I pulled out the local variable.
+		s32 num = 0;
 		for (s32 i = 0; i < itemCount; i++)
 		{
 			line = parser.readLine(bufferPos);
@@ -1248,7 +1252,6 @@ namespace TFE_Jedi
 			}
 
 			char item[256], name[256];
-			s32 num = 0;
 			while (sscanf(line, " ITEM: %s NAME: %s NUM: %d", item, name, &num) < 1)
 			{
 				line = parser.readLine(bufferPos);
