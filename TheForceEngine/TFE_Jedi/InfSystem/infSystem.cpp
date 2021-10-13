@@ -1248,7 +1248,7 @@ namespace TFE_Jedi
 			}
 
 			char item[256], name[256];
-			s32 num;
+			s32 num = -1;
 			while (sscanf(line, " ITEM: %s NAME: %s NUM: %d", item, name, &num) < 1)
 			{
 				line = parser.readLine(bufferPos);
@@ -1868,7 +1868,7 @@ namespace TFE_Jedi
 						stopValue = floatToFixed16(f32(stopValue));
 					}
 				}
-				else if ((s_infArg0[0] >= '0' && s_infArg0[0] <= '9') || s_infArg0[0] == '-')  // Numeric Value
+				else if ((s_infArg0[0] >= '0' && s_infArg0[0] <= '9') || s_infArg0[0] == '-' || s_infArg0[0] == '.')  // Numeric Value
 				{
 					f32 value = strtof(s_infArg0, &endPtr);
 					stopValue = floatToFixed16(value);
@@ -1902,7 +1902,7 @@ namespace TFE_Jedi
 				// Delay is optional, if not specified each elevator has its own default.
 				Tick delay = 0;
 				// Numeric
-				if ((s_infArg1[0] >= '0' && s_infArg1[0] <= '9') || s_infArg1[0] == '-')
+				if ((s_infArg1[0] >= '0' && s_infArg1[0] <= '9') || s_infArg1[0] == '-' || s_infArg1[0] == '.')
 				{
 					f32 value = strtof(s_infArg1, &endPtr);
 					// Convert from seconds to ticks.
