@@ -483,7 +483,7 @@ int main(int argc, char* argv[])
 		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
-	TFE_System::init(s_refreshRate, s_vsync);
+	TFE_System::init(s_refreshRate, s_vsync, c_gitVersion);
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
 
 	// Setup the GPU Device and Window.

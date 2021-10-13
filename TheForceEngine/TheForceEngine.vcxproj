@@ -152,7 +152,12 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>git describe --tags &gt; "$(ProjectDir)\gitVersion.h"</Command>
+      <Command>@(
+echo const char c_gitVersion[] = R"(
+git describe --tags
+echo ^)";
+) &gt; "$(ProjectDir)gitVersion.h"
+</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

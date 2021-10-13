@@ -421,7 +421,7 @@ namespace TFE_FrontEndUI
 			sprintf(versionText, "Version %s", TFE_System::getVersionString());
 			const f32 stringWidth = s_versionFont->CalcTextSizeA(16.0f, 1024.0f, 0.0f, versionText).x;
 
-			ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - 32.0f, f32(h) - 32.0f));
+			ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - 32.0f, f32(h) - 64.0f));
 			ImGui::Begin("##Version", &titleActive, windowInvisFlags);
 			ImGui::Text(versionText);
 			ImGui::End();

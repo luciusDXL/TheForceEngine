@@ -21,7 +21,7 @@ enum LogWriteType
 
 namespace TFE_System
 {
-	void init(f32 refreshRate, bool synced);
+	void init(f32 refreshRate, bool synced, const char* versionString);
 	void shutdown();
 	void resetStartTime();
 

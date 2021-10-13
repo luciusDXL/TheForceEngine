@@ -31,7 +31,7 @@ namespace TFE_System
 
 	static char s_versionString[64];
 
-	void init(f32 refreshRate, bool synced)
+	void init(f32 refreshRate, bool synced, const char* versionString)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_System::init");
 		s_time = SDL_GetPerformanceCounter();
@@ -40,7 +40,7 @@ namespace TFE_System
 		s_refreshRate = f64(refreshRate);
 		s_synced = synced;
 
-		sprintf(s_versionString, "%d.%02d.%03d", TFE_MAJOR_VERSION, TFE_MINOR_VERSION, TFE_BUILD_VERSION);
+		strcpy(s_versionString, versionString);
 	}
 
 	void shutdown()
