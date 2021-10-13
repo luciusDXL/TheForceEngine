@@ -1248,7 +1248,7 @@ namespace TFE_Jedi
 			}
 
 			char item[256], name[256];
-			s32 num = -1;
+			s32 num = 0;
 			while (sscanf(line, " ITEM: %s NAME: %s NUM: %d", item, name, &num) < 1)
 			{
 				line = parser.readLine(bufferPos);
