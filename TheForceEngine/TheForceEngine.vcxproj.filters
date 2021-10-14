@@ -685,6 +685,9 @@
     <ClInclude Include="version.h">
       <Filter>Source</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\generator.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1127,6 +1130,9 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Actor\phaseOne.cpp">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\generator.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

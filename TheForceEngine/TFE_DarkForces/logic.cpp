@@ -7,6 +7,7 @@
 #include "projectile.h"
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_DarkForces/generator.h>
 
 // Regular Enemies
 #include <TFE_DarkForces/Actor/exploders.h>
@@ -144,9 +145,8 @@ namespace TFE_DarkForces
 				}
 				else if (logicId == KW_GENERATOR)	// Enemy generator, used for in-level enemy spawning.
 				{
-					// TODO(Core Game Loop Release) - come back to this once the AI is fully integrated.
-					// Turn off generator collision for now, until this is setup correctly.
-					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
+					KEYWORD genType = getKeywordIndex(s_objSeqArg2);
+					newLogic = obj_createGenerator(obj, &setupFunc, genType);
 				}
 				else if (logicId == KW_DISPATCH)
 				{
