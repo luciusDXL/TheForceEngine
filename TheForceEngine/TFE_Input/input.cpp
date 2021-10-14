@@ -216,7 +216,7 @@ namespace TFE_Input
 		{
 			case KEYMOD_NONE:
 			{
-				return !keyDown(KEY_LALT) && !keyDown(KEY_RALT) && !keyDown(KEY_LCTRL) && !keyDown(KEY_RCTRL);
+				return !keyDown(KEY_LALT) && !keyDown(KEY_RALT);
 			} break;
 			case KEYMOD_ALT:
 			{
