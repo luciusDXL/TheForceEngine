@@ -5,7 +5,6 @@
 #include <TFE_System/profiler.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
-//#include <TFE_ScriptSystem/scriptSystem.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 //#include <TFE_Editor/editor.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -14,7 +13,6 @@
 #include <TFE_Polygon/polygon.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Input/input.h>
-// #include <TFE_Renderer/renderer.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Task/task.h>
@@ -54,7 +52,6 @@ static u32  s_displayWidth = s_baseWindowWidth;
 static u32  s_displayHeight = s_baseWindowHeight;
 static u32  s_monitorWidth = 1280;
 static u32  s_monitorHeight = 720;
-static bool s_gameUiInitRequired = true;
 static char s_screenshotTime[TFE_MAX_PATH];
 static IGame* s_curGame = nullptr;
 
@@ -129,7 +126,7 @@ void handleEvent(SDL_Event& Event)
 					windowSettings->fullscreen = !windowSettings->fullscreen;
 					TFE_RenderBackend::enableFullscreen(windowSettings->fullscreen);
 				}
-				else if (code == KeyboardCode::KEY_PRINTSCREEN || code == KeyboardCode::KEY_F8)
+				else if (code == KeyboardCode::KEY_PRINTSCREEN)
 				{
 					static u64 _screenshotIndex = 0;
 
@@ -283,12 +280,6 @@ void setAppState(AppState newState)
 	case APP_STATE_EDITOR:
 		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 		{
-			if (s_gameUiInitRequired)
-			{
-				// TFE_GameUi::init(renderer);
-				s_gameUiInitRequired = false;
-			}
-
 			//renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
 			// TFE_GameUi::updateUiResolution();
 			//TFE_Editor::enable(renderer);
@@ -324,12 +315,6 @@ void setAppState(AppState newState)
 				}
 				else
 				{
-					if (s_gameUiInitRequired)
-					{
-						// TFE_GameUi::init(renderer);
-						s_gameUiInitRequired = false;
-					}
-
 					//renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
 					//renderer->enableScreenClear(false);
 					TFE_Input::enableRelativeMode(true);
@@ -515,7 +500,6 @@ int main(int argc, char* argv[])
 	TFE_MidiPlayer::init();
 	TFE_Polygon::init();
 	TFE_Image::init();
-	// TFE_ScriptSystem::init();
 	TFE_Jedi::inf_init();
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
@@ -530,16 +514,6 @@ int main(int argc, char* argv[])
 	TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
 
 	// Game loop
-	if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
-	{
-		// TFE_GameUi::init(renderer);
-		s_gameUiInitRequired = false;
-	}
-	else
-	{
-		s_gameUiInitRequired = true;
-	}
-		
 	u32 frame = 0u;
 	bool showPerf = false;
 	bool relativeMode = false;
@@ -588,16 +562,15 @@ int main(int argc, char* argv[])
 		{
 			TFE_FrontEndUI::toggleConsole();
 		}
-	#if 0  // Disable system debug keys for now and reassign later.
-		if (TFE_Input::keyPressed(KEY_F9))
+		else if (TFE_Input::keyPressed(KEY_F9) && TFE_Input::keyDown(KEY_LALT))
 		{
 			showPerf = !showPerf;
 		}
-		if (TFE_Input::keyPressed(KEY_F10))
+		else if (TFE_Input::keyPressed(KEY_F10) && TFE_Input::keyDown(KEY_LALT))
 		{
 			TFE_FrontEndUI::toggleProfilerView();
 		}
-	#endif
+
 		if (systemMenuKeyCombo() && TFE_FrontEndUI::isConfigMenuOpen())
 		{
 			s_curState = TFE_FrontEndUI::menuReturn();
@@ -659,7 +632,10 @@ int main(int argc, char* argv[])
 		}
 		frame++;
 
-		TFE_FRAME_END();
+		if (endInputFrame)
+		{
+			TFE_FRAME_END();
+		}
 	}
 
 	if (s_curGame)
@@ -676,7 +652,6 @@ int main(int argc, char* argv[])
 	TFE_Polygon::shutdown();
 	TFE_Image::shutdown();
 	TFE_Jedi::inf_shutdown();
-	// TFE_ScriptSystem::shutdown();
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();
 	TFE_Settings::shutdown();

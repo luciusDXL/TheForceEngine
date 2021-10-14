@@ -3,6 +3,7 @@
 #include <TFE_DarkForces/time.h>
 #include <TFE_System/system.h>
 #include <TFE_Game/igame.h>
+#include <TFE_System/profiler.h>
 #include <stdarg.h>
 #include <tuple>
 #include <vector>
@@ -87,6 +88,7 @@ namespace TFE_Jedi
 
 	static f64 s_prevTime = 0.0;
 	static f64 s_minIntervalInSec = 0.0;
+	static s32 s_frameActiveTaskCount = 0;
 
 	void selectNextTask();
 
@@ -103,6 +105,7 @@ namespace TFE_Jedi
 		s_taskIter = &s_rootTask;
 		s_curTask = &s_rootTask;
 		s_taskCount = 0;
+		s_frameActiveTaskCount = 0;
 	}
 
 	Task* createSubTask(const char* name, TaskFunc func, TaskFunc localRunFunc)
@@ -450,7 +453,7 @@ namespace TFE_Jedi
 		s_prevTime = TFE_System::getTime();
 		s_minIntervalInSec = minIntervalInSec;
 	}
-		
+
 	// Called once per frame to run all of the tasks.
 	// Returns JFALSE if it cannot be run due to the time interval.
 	JBool task_run()
@@ -459,6 +462,7 @@ namespace TFE_Jedi
 		{
 			return JTRUE;
 		}
+		TFE_ZONE("Task System");
 
 		// Limit the update rate by the minimum interval.
 		// Dark Forces uses discrete 'ticks' to track time and the game behavior is very odd with 0 tick frames.
@@ -469,6 +473,7 @@ namespace TFE_Jedi
 		}
 		s_prevTime = time;
 		s_currentMsg = MSG_RUN_TASK;
+		s_frameActiveTaskCount = 0;
 
 		// Keep processing tasks until the "framebreak" task is hit.
 		// Once the framebreak task completes (if it is not sleeping), then break out of the loop - processing will resume
@@ -482,6 +487,8 @@ namespace TFE_Jedi
 			// This should only be false when hitting the "framebreak" task which is sleeping.
 			if (s_curTask->nextTick <= s_curTick)
 			{
+				s_frameActiveTaskCount++;
+
 				s_curContext = &s_curTask->context;
 				s32 level = max(0, s_curContext->level + 1);
 				TaskFunc runFunc = s_curContext->callstack[level];
@@ -509,6 +516,9 @@ namespace TFE_Jedi
 	{
 		s_curTask  = &s_rootTask;
 		s_taskIter = &s_rootTask;
+
+		TFE_COUNTER(s_taskCount, "Task Count");
+		TFE_COUNTER(s_frameActiveTaskCount, "Active Tasks");
 	}
 
 	s32 task_getCount()
