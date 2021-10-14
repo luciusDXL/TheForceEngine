@@ -427,11 +427,24 @@ namespace TFE_FrontEndUI
 			ImGui::End();
 			ImGui::PopFont();
 
+			s32 menuHeight = (textHeight + 24) * 7 + 4;
+			// Warning Text - Note this is temporary and will be removed once things have settled.
+			{
+				ImGui::SetNextWindowPos(ImVec2(f32((w - textWidth - ((h > 700) ? 256 : 128)) / 2), f32(h - menuHeight - topOffset - ((h > 700) ? 96 : 32))));
+				ImGui::Begin("##Warning", &titleActive, windowInvisFlags);
+				if (h > 700)
+					ImGui::PushFont(s_menuFont);
+				ImGui::Text("    Pre-Release Test Build -");
+				ImGui::Text("Expect Bugs and Missing Features");
+				if (h > 700)
+					ImGui::PopFont();
+				ImGui::End();
+			}
+
 			// Main Menu
 			ImGui::PushFont(s_menuFont);
 
 			bool active = true;
-			s32 menuHeight = (textHeight + 24) * 7 + 4;
 			ImGui::SetNextWindowPos(ImVec2(f32((w - textWidth - 24) / 2), f32(h - menuHeight - topOffset)));
 			ImGui::SetNextWindowSize(ImVec2((f32)textWidth + 24, f32(menuHeight)));
 			ImGui::Begin("##MainMenu", &active, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
