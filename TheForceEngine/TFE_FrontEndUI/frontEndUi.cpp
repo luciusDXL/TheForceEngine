@@ -430,15 +430,30 @@ namespace TFE_FrontEndUI
 			s32 menuHeight = (textHeight + 24) * 7 + 4;
 			// Warning Text - Note this is temporary and will be removed once things have settled.
 			{
-				ImGui::SetNextWindowPos(ImVec2(f32((w - textWidth - ((h > 700) ? 256 : 128)) / 2), f32(h - menuHeight - topOffset - ((h > 700) ? 96 : 32))));
-				ImGui::Begin("##Warning", &titleActive, windowInvisFlags);
+				f32 warningWidth;
+				s32 yOffset;
 				if (h > 700)
+				{
+					yOffset = 96;
 					ImGui::PushFont(s_menuFont);
+					warningWidth = s_menuFont->CalcTextSizeA(32.0f, 1024.0f, 0.0f, "Expect Bugs and Missing Features").x;
+				}
+				else
+				{
+					yOffset = 32;
+					warningWidth = ImGui::GetFont()->CalcTextSizeA(16.0f, 1024.0f, 0.0f, "Expect Bugs and Missing Features").x;
+				}
+
+				ImGui::SetNextWindowPos(ImVec2(f32((w - warningWidth) / 2), f32(h - menuHeight - topOffset - yOffset)));
+				ImGui::Begin("##Warning", &titleActive, windowInvisFlags);
 				ImGui::Text("    Pre-Release Test Build -");
 				ImGui::Text("Expect Bugs and Missing Features");
-				if (h > 700)
-					ImGui::PopFont();
 				ImGui::End();
+
+				if (h > 700)
+				{
+					ImGui::PopFont();
+				}
 			}
 
 			// Main Menu
