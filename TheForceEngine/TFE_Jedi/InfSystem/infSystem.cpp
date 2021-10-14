@@ -923,7 +923,7 @@ namespace TFE_Jedi
 				} break;
 				case KW_MESSAGE:
 				{
-					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_DONE);
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_TRIGGER);
 				} break;
 				case KW_EVENT_MASK:
 				{
@@ -2562,6 +2562,10 @@ namespace TFE_Jedi
 		{
 			// Turn master on.
 			elev->updateFlags |= ELEV_MASTER_ON;
+			return;
+		}
+		else if (!(elev->updateFlags & ELEV_MASTER_ON))
+		{
 			return;
 		}
 
