@@ -27,7 +27,7 @@ namespace TFE_DarkForces
 	{
 		MOBJCOLOR_DEFAULT  = 19,
 		MOBJCOLOR_PROJ     = 6,
-		MOBJCOLOR_512      = 48,
+		MOBJCOLOR_CORPSE   = 48,
 		MOBJCOLOR_LANDMINE = 1,
 		MOBJCOLOR_PICKUP   = 152,
 		MOBJCOLOR_SCENERY  = 21,
@@ -536,9 +536,9 @@ namespace TFE_DarkForces
 			{
 				color = MOBJCOLOR_PROJ;
 			}
-			else if (obj->entityFlags & ETFLAG_512)
+			else if (obj->entityFlags & ETFLAG_CORPSE)
 			{
-				color = MOBJCOLOR_512;
+				color = MOBJCOLOR_CORPSE;
 			}
 			else if (obj->entityFlags & ETFLAG_LANDMINE)
 			{

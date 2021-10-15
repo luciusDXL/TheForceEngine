@@ -236,7 +236,7 @@ namespace TFE_DarkForces
 
 			newObj->frame = 0;
 			newObj->posWS = local(obj)->posWS;
-			newObj->entityFlags |= ETFLAG_512;
+			newObj->entityFlags |= ETFLAG_CORPSE;
 			newObj->worldWidth = 0;
 			newObj->worldHeight = 0;
 			sector_addObject(local(sector), newObj);

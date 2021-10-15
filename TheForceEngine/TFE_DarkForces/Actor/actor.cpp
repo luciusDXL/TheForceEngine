@@ -452,6 +452,43 @@ namespace TFE_DarkForces
 		physicsActor->vel.z = mul16(cosPitch, physicsActor->vel.z);
 	}
 
+	void actor_removeRandomCorpse()
+	{
+		if (s_sectorCount <= 0)
+		{
+			return;
+		}
+		s32 randomSect = floor16(random(intToFixed16(s_sectorCount - 1)));
+		RSector* sector;
+		for (s32 attempt = 0; attempt < s_sectorCount; attempt++, randomSect++)
+		{
+			if (randomSect >= s_sectorCount)
+			{
+				sector = &s_sectors[0];
+				randomSect = 0;
+			}
+			else
+			{
+				sector = &s_sectors[randomSect];
+			}
+
+			SecObject** objList = sector->objectList;
+			for (s32 i = 0, idx = 0; i < sector->objectCount && idx < sector->objectCapacity; idx++)
+			{
+				SecObject* obj = objList[idx];
+				if (obj)
+				{
+					if ((obj->entityFlags & ETFLAG_CORPSE) && !(obj->entityFlags & ETFLAG_CAN_WAKE) && !actor_canSeeObject(obj, s_playerObject))
+					{
+						freeObject(obj);
+						return;
+					}
+					i++;
+				}
+			}
+		}
+	}
+
 	void actor_handleBossDeath(PhysicsActor* physicsActor)
 	{
 		SecObject* obj = physicsActor->actor.header.obj;
@@ -562,7 +599,7 @@ namespace TFE_DarkForces
 					corpse->posWS.z = obj->posWS.z;
 					corpse->worldHeight = 0;
 					corpse->worldWidth = 0;
-					corpse->entityFlags |= ETFLAG_512;
+					corpse->entityFlags |= ETFLAG_CORPSE;
 					corpse->flags &= ~OBJ_FLAG_HAS_COLLISION;
 					sector_addObject(obj->sector, corpse);
 				}

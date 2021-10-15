@@ -55,7 +55,7 @@ namespace TFE_DarkForces
 			corpse->posWS.x = obj->posWS.x;
 			corpse->posWS.z = obj->posWS.z;
 			corpse->posWS.y = sector->floorHeight;
-			corpse->entityFlags |= ETFLAG_512;
+			corpse->entityFlags |= ETFLAG_CORPSE;
 			corpse->worldWidth = 0;
 			sector_addObject(sector, corpse);
 		}

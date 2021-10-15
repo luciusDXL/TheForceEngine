@@ -118,6 +118,7 @@ namespace TFE_DarkForces
 	void actor_changeDirFromCollision(Actor* actor, ActorTarget* target, Tick* prevColTick);
 	void actor_jumpToTarget(PhysicsActor* physicsActor, SecObject* obj, vec3_fixed target, fixed16_16 speed, angle14_32 angleOffset);
 	void actor_handleBossDeath(PhysicsActor* physicsActor);
+	void actor_removeRandomCorpse();
 
 	angle14_32 actor_offsetTarget(fixed16_16* targetX, fixed16_16* targetZ, fixed16_16 targetOffset, fixed16_16 targetVariation, angle14_32 angle, angle14_32 angleVariation);
 

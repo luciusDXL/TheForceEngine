@@ -30,6 +30,7 @@ namespace TFE_DarkForces
 	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc);
 	void deleteLogicAndObject(Logic* logic);
 	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos);
+	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc);
 
 	// Shared variables used for loading.
 	extern char s_objSeqArg0[];

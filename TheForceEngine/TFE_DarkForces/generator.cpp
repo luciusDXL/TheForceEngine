@@ -3,6 +3,8 @@
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/util.h>
+#include <TFE_DarkForces/player.h>
+#include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
@@ -27,20 +29,101 @@ namespace TFE_DarkForces
 		fixed16_16 minDist;
 		fixed16_16 maxDist;
 		Allocator* entities;
-		s32        u34;
+		s32        aliveCount;
 		s32        numTerminate;
-		TickSigned wanderTime;
+		Tick       wanderTime;
 		Wax*       wax;
 		JBool      active;
 	};
 
 	void generatorTaskFunc(MessageType msg)
 	{
-		task_begin;
+		struct LocalContext
+		{
+			Generator* gen;
+			SecObject* obj;
+		};
+		task_begin_ctx;
+		local(gen) = (Generator*)task_getUserData();
+		local(obj) = local(gen)->logic.obj;
+
+		// Initial delay before it starts working.
+		do
+		{
+			task_yield(local(gen)->delay);
+		} while (msg != MSG_RUN_TASK);
 
 		while (1)
 		{
-			task_yield(TASK_NO_DELAY);
+			task_yield(local(gen)->interval);
+			while (local(gen)->numTerminate == 0 && msg == MSG_RUN_TASK)
+			{
+				task_yield(TASK_SLEEP);
+			}
+
+			if (msg == MSG_FREE)
+			{
+				SecObject* entity = (SecObject*)s_msgEntity;
+				SecObject** entityList = (SecObject**)allocator_getHead(local(gen)->entities);
+				while (entityList)
+				{
+					if (entity == *entityList)
+					{
+						allocator_deleteItem(local(gen)->entities, entityList);
+						local(gen)->aliveCount--;
+						break;
+					}
+					entityList = (SecObject**)allocator_getNext(local(gen)->entities);
+				}
+			}
+			else if (msg == MSG_MASTER_ON)
+			{
+				local(gen)->active |= 1;
+			}
+			else if (msg == MSG_MASTER_OFF)
+			{
+				local(gen)->active &= ~1;
+			}
+			else if (msg == MSG_RUN_TASK && (local(gen)->active & 1) && local(gen)->aliveCount < local(gen)->maxAlive)
+			{
+				SecObject* spawn = allocateObject();
+				spawn->posWS = local(obj)->posWS;
+				spawn->yaw = random_next() & ANGLE_MASK;
+				spawn->worldHeight = FIXED(7);
+				sector_addObject(local(obj)->sector, spawn);
+
+				fixed16_16 dy = TFE_Jedi::abs(s_playerObject->posWS.y - spawn->posWS.y);
+				fixed16_16 dist = dy + distApprox(spawn->posWS.x, spawn->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
+				if (dist >= local(gen)->minDist && dist <= local(gen)->maxDist && !actor_canSeeObject(spawn, s_playerObject))
+				{
+					sprite_setData(spawn, local(gen)->wax);
+					obj_setEnemyLogic(spawn, local(gen)->type, nullptr);
+					Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)spawn->logic);
+					ActorLogic* actorLogic = *((ActorLogic**)head);
+
+					actorLogic->flags &= ~1;
+					actorLogic->freeTask = task_getCurrent();
+					local(gen)->aliveCount++;
+					local(gen)->numTerminate--;
+					if (local(gen)->wanderTime == 0xffffffff)
+					{
+						s_curEnemyActor->timing.nextTick = 0xffffffff;
+					}
+					else
+					{
+						s32 randomWanderOffset = floor16(random(intToFixed16(local(gen)->wanderTime >> 1)));
+						s_curEnemyActor->timing.nextTick = s_curTick + local(gen)->wanderTime + floor16(randomWanderOffset);
+					}
+
+					SecObject** entityPtr = (SecObject**)allocator_newItem(local(gen)->entities);
+					*entityPtr = spawn;
+					actor_removeRandomCorpse();
+				}
+				else
+				{
+					freeObject(spawn);
+				}
+			}
 		}
 
 		task_end;
@@ -95,14 +178,14 @@ namespace TFE_DarkForces
 		}
 		else if (key == KW_WANDER_TIME)
 		{
-			TickSigned wanderTime = strToInt(s_objSeqArg1);
+			s32 wanderTime = strToInt(s_objSeqArg1);
 			if (wanderTime == -1)
 			{
-				genLogic->wanderTime = wanderTime;
+				genLogic->wanderTime = 0xffffffffu;
 			}
 			else 
 			{
-				genLogic->wanderTime = wanderTime * 145;
+				genLogic->wanderTime = Tick(wanderTime * 145);
 			}
 			return JTRUE;
 		}
@@ -122,8 +205,8 @@ namespace TFE_DarkForces
 		generator->minDist  = FIXED(60);
 		generator->interval = floor16(random(FIXED(728))) + 2913;
 		generator->maxDist  = FIXED(200);
-		generator->entities = allocator_create(sizeof(void*));
-		generator->u34      = 0;
+		generator->entities = allocator_create(sizeof(SecObject**));
+		generator->aliveCount   = 0;
 		generator->numTerminate = -1;
 		generator->wax = obj->wax;
 		generator->wanderTime = 17478;
