@@ -9,6 +9,8 @@ namespace TFE_DarkForces
 	fixed16_16 s_deltaTime;
 	fixed16_16 s_frameTicks[13] = { 0 };
 
+	JBool s_pauseTimeUpdate = JFALSE;
+
 	Tick time_frameRateToDelay(u32 frameRate)
 	{
 		return Tick(SECONDS_TO_TICKS_ROUNDED / f32(frameRate));
@@ -24,9 +26,17 @@ namespace TFE_DarkForces
 		return Tick(SECONDS_TO_TICKS_ROUNDED / frameRate);
 	}
 
+	void time_pause(JBool pause)
+	{
+		s_pauseTimeUpdate = pause;
+	}
+
 	void updateTime()
 	{
-		s_timeAccum += TFE_System::getDeltaTime() * TIMER_FREQ;
+		if (!s_pauseTimeUpdate)
+		{
+			s_timeAccum += TFE_System::getDeltaTime() * TIMER_FREQ;
+		}
 
 		Tick prevTick = s_curTick;
 		s_curTick = Tick(s_timeAccum);

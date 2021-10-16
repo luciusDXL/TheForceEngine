@@ -297,6 +297,7 @@ namespace TFE_DarkForces
 					s_gamePaused = JFALSE;
 					TFE_Input::clearAccumulatedMouseMove();
 					task_pause(s_gamePaused);
+					time_pause(s_gamePaused);
 				}
 				else if (action == ESC_ABORT_OR_NEXT)
 				{
@@ -304,6 +305,7 @@ namespace TFE_DarkForces
 					s_gamePaused = JFALSE;
 					TFE_Input::clearAccumulatedMouseMove();
 					task_pause(s_gamePaused);
+					time_pause(s_gamePaused);
 				}
 				else if (action == ESC_QUIT)
 				{
@@ -315,6 +317,7 @@ namespace TFE_DarkForces
 				escapeMenu_open(s_framebuffer, s_basePalette);
 				s_gamePaused = JTRUE;
 				task_pause(s_gamePaused, s_mainTask);
+				time_pause(s_gamePaused);
 			}
 
 			// vgaSwapBuffers() in the DOS code.
@@ -836,6 +839,7 @@ namespace TFE_DarkForces
 		{
 			s_gamePaused = ~s_gamePaused;
 			task_pause(s_gamePaused, s_mainTask);
+			time_pause(s_gamePaused);
 		}
 
 		if (!s_gamePaused)

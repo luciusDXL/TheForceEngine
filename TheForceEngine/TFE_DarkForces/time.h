@@ -51,4 +51,5 @@ namespace TFE_DarkForces
 	Tick time_frameRateToDelay(s32 frameRate);
 	Tick time_frameRateToDelay(f32 frameRate);
 	void updateTime();
+	void time_pause(JBool pause);
 }  // namespace TFE_DarkForces
