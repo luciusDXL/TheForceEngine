@@ -690,6 +690,19 @@ namespace TFE_DarkForces
 			s_gasmaskTask = createSubTask("gasmask", gasmaskTaskFunc);
 		}
 	}
+
+	void cheat_gotoLevel(s32 index)
+	{
+		agent_setNextLevelByIndex(index);
+		s_levelComplete = JTRUE;
+		s_exitLevel = JTRUE;
+	}
+
+	void cheat_levelSkip()
+	{
+		agent_levelComplete();
+		s_exitLevel = JTRUE;
+	}
 		
 	void handleBufferedInput()
 	{
@@ -770,48 +783,63 @@ namespace TFE_DarkForces
 					} break;
 					case CHEAT_LASECBASE:
 					{
+						cheat_gotoLevel(0);
 					} break;
 					case CHEAT_LATALAY:
 					{
+						cheat_gotoLevel(1);
 					} break;
 					case CHEAT_LASEWERS:
 					{
+						cheat_gotoLevel(2);
 					} break;
 					case CHEAT_LATESTBASE:
 					{
+						cheat_gotoLevel(3);
 					} break;
 					case CHEAT_LAGROMAS:
 					{
+						cheat_gotoLevel(4);
 					} break;
 					case CHEAT_LADTENTION:
 					{
+						cheat_gotoLevel(5);
 					} break;
 					case CHEAT_LARAMSHAD:
 					{
+						cheat_gotoLevel(6);
 					} break;
 					case CHEAT_LAROBOTICS:
 					{
+						cheat_gotoLevel(7);
 					} break;
 					case CHEAT_LANARSHADA:
 					{
+						cheat_gotoLevel(8);
 					} break;
 					case CHEAT_LAJABSHIP:
 					{
+						cheat_gotoLevel(9);
 					} break;
 					case CHEAT_LAIMPCITY:
 					{
+						cheat_gotoLevel(10);
 					} break;
 					case CHEAT_LAFUELSTAT:
 					{
+						cheat_gotoLevel(11);
 					} break;
 					case CHEAT_LAEXECUTOR:
 					{
+						cheat_gotoLevel(12);
 					} break;
 					case CHEAT_LAARC:
 					{
+						cheat_gotoLevel(13);
 					} break;
 					case CHEAT_LASKIP:
 					{
+						cheat_levelSkip();
 					} break;
 					case CHEAT_LABRADY:
 					{
