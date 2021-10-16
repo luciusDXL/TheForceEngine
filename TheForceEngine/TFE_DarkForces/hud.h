@@ -9,6 +9,9 @@
 
 using namespace TFE_Jedi;
 
+struct OffScreenBuffer;
+struct ScreenRect;
+
 namespace TFE_DarkForces
 {
 	void hud_sendTextMessage(s32 msgId);
@@ -24,6 +27,7 @@ namespace TFE_DarkForces
 
 	void hud_drawMessage(u8* framebuffer);
 	void hud_drawAndUpdate(u8* framebuffer);
+	void hud_drawElementToScreen(OffScreenBuffer* elem, ScreenRect* rect, s32 x0, s32 y0, u8* framebuffer);
 
 	extern fixed16_16 s_flashEffect;
 	extern fixed16_16 s_healthDamageFx;

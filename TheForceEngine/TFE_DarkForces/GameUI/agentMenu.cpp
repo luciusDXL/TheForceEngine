@@ -74,7 +74,6 @@ namespace TFE_DarkForces
 	static u8 s_menuPalette[768];
 	static DeltFrame* s_agentMenuFrames;
 	static DeltFrame* s_agentDlgFrames;
-	static DeltFrame  s_cursor;
 	static u32 s_agentMenuCount;
 	static u32 s_agentDlgCount;
 	
@@ -390,7 +389,7 @@ namespace TFE_DarkForces
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
 		u32 width, height;
-		width = TFE_RenderBackend::getVirtualDisplayWidth2D();
+		width  = TFE_RenderBackend::getVirtualDisplayWidth2D();
 		height = TFE_RenderBackend::getVirtualDisplayHeight();
 
 		s32 dx, dy;

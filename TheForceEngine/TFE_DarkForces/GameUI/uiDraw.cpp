@@ -5,6 +5,7 @@ namespace TFE_DarkForces
 {
 	// This is pretty hacky, but only until actual UI reverse-engineering is done.
 	static FontTFE* s_font = nullptr;
+	DeltFrame s_cursor;
 
 	void createFont()
 	{

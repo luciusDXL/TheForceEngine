@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include "delt.h"
 
 namespace TFE_DarkForces
 {
@@ -16,4 +17,6 @@ namespace TFE_DarkForces
 
 	void print(const char* text, s32 x0, s32 y0, u8 color, u8* framebuffer);
 	s32  getStringPixelLength(const char* str);
+
+	extern DeltFrame s_cursor;
 }

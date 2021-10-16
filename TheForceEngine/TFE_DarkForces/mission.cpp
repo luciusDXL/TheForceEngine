@@ -271,10 +271,9 @@ namespace TFE_DarkForces
 				}
 			}
 
-			handleGeneralInput();
-
 			if (!escapeMenu_isOpen())
 			{
+				handleGeneralInput();
 				handlePaletteFx();
 				if (s_drawAutomap)
 				{
@@ -285,7 +284,37 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				escapeMenu_update();
+				// TODO: Properly handle the palette in Gromas, probably switch to SecBase?
+				setPalette(s_basePalette);
+			}
+			
+			// Move this out of handleGeneralInput so that the HUD is properly copied.
+			if (escapeMenu_isOpen())
+			{
+				EscapeMenuAction action = escapeMenu_update();
+				if (action == ESC_RETURN)
+				{
+					s_gamePaused = JFALSE;
+					TFE_Input::clearAccumulatedMouseMove();
+					task_pause(s_gamePaused);
+				}
+				else if (action == ESC_ABORT_OR_NEXT)
+				{
+					// TODO
+					s_gamePaused = JFALSE;
+					TFE_Input::clearAccumulatedMouseMove();
+					task_pause(s_gamePaused);
+				}
+				else if (action == ESC_QUIT)
+				{
+					TFE_System::postQuitMessage();
+				}
+			}
+			else if (getActionState(IA_MENU_TOGGLE) == STATE_PRESSED)
+			{
+				escapeMenu_open(s_framebuffer, s_basePalette);
+				s_gamePaused = JTRUE;
+				task_pause(s_gamePaused, s_mainTask);
 			}
 
 			// vgaSwapBuffers() in the DOS code.
@@ -801,22 +830,11 @@ namespace TFE_DarkForces
 
 	void handleGeneralInput()
 	{
-		if (escapeMenu_isOpen())
-		{
-			return;
-		}
-
 		// In the DOS code, the game would just loop here - checking to see if paused has been pressed and then continue.
 		// Obviously that won't work for TFE, so the game paused variable is set and the game will have to handle it.
 		if (getActionState(IA_PAUSE) == STATE_PRESSED)
 		{
 			s_gamePaused = ~s_gamePaused;
-			task_pause(s_gamePaused, s_mainTask);
-		}
-		else if (getActionState(IA_MENU_TOGGLE) == STATE_PRESSED)
-		{
-			escapeMenu_open();
-			s_gamePaused = JTRUE;
 			task_pause(s_gamePaused, s_mainTask);
 		}
 

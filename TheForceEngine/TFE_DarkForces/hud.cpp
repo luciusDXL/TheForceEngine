@@ -111,7 +111,6 @@ namespace TFE_DarkForces
 	void getCameraXZ(fixed16_16* x, fixed16_16* z);
 	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, char* msg, u8* framebuffer);
 	void hud_drawString(OffScreenBuffer* elem, Font* font, s32 x0, s32 y0, const char* str);
-	void hud_drawElementToScreen(OffScreenBuffer* elem, ScreenRect* rect, s32 x0, s32 y0, u8* framebuffer);
 
 	///////////////////////////////////////////
 	// API Implementation

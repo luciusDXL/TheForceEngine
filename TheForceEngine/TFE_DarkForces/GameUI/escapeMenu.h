@@ -11,13 +11,14 @@ enum EscapeMenuAction
 	ESC_CONTINUE = 0,	// the menu is still open.
 	ESC_RETURN,			// return to the game.
 	ESC_ABORT_OR_NEXT,	// abort the current mission or move on to the next.
+	ESC_QUIT,			// quit the game.
 	ESC_COUNT
 };
 
 namespace TFE_DarkForces
 {
 	// Opens the escape menu, which sets up the background.
-	void escapeMenu_open();
+	void escapeMenu_open(u8* framebuffer, u8* palette);
 
 	// Returns JTRUE if the escape menu is open.
 	JBool escapeMenu_isOpen();
