@@ -16,6 +16,12 @@ namespace TFE_Jedi
 
 	static const SoundSource* s_slotMapping[MAX_SOUND_SOURCES];
 	static s32 s_slotID[MAX_SOUND_SOURCES] = { 0 };
+
+	void sound_stopAll()
+	{
+		stopAllSounds();
+		memset(s_slotID, 0, sizeof(s32)*MAX_SOUND_SOURCES);
+	}
 	
 	SoundEffectID playSound2D(SoundSourceID sourceId)
 	{

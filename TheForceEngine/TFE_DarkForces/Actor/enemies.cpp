@@ -51,7 +51,7 @@ namespace TFE_DarkForces
 		enemyActor->meleeDmg = FIXED(15);
 		enemyActor->attackFlags = (enemyActor->attackFlags | 3) & 0xfffffff7;
 		enemyActor->minDist = s_reeyeeMinDist;
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
@@ -92,7 +92,7 @@ namespace TFE_DarkForces
 		enemyActor->attackFlags = (enemyActor->attackFlags | 1) & 0xfffffff5;
 		enemyActor->meleeDmg = FIXED(15);
 		enemyActor->meleeRange = FIXED(10);
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
@@ -129,7 +129,7 @@ namespace TFE_DarkForces
 		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		enemyActor->timing.state2Delay = 57;
 		enemyActor->meleeRange = FIXED(13);
 		enemyActor->meleeDmg = FIXED(40);
@@ -174,7 +174,7 @@ namespace TFE_DarkForces
 		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		enemyActor->projType = PROJ_CONCUSSION;
 		enemyActor->maxDist = FIXED(100);
 		enemyActor->minDist = FIXED(10);

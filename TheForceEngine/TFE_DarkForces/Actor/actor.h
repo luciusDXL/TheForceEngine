@@ -85,8 +85,20 @@ struct ActorLogic
 	u32 flags;
 };
 
+struct ActorState
+{
+	LogicAnimation* curAnimation;
+	Logic* curLogic;
+	ActorEnemy* curEnemyActor;
+	Tick nextAlertTick;
+	u32 officerAlertIndex;
+	u32 stormtrooperAlertIndex;
+};
+
 namespace TFE_DarkForces
 {
+	void actor_clearState();
+
 	void actor_loadSounds();
 	void actor_allocatePhysicsActorList();
 	void actor_addPhysicsActorToWorld(PhysicsActor* actor);
@@ -134,9 +146,7 @@ namespace TFE_DarkForces
 	// Conversely the headlamp will make 'obj' visible from further away.
 	JBool actor_isObjectVisible(SecObject* actorObj, SecObject* obj, angle14_32 fov, fixed16_16 closeDist);
 
-	extern LogicAnimation* s_curAnimation;
-	extern Logic* s_curLogic;
-	extern ActorEnemy* s_curEnemyActor;
+	extern ActorState s_actorState;
 	extern SoundSourceID s_alertSndSrc[ALERT_COUNT];
 	extern SoundSourceID s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
 	extern SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];

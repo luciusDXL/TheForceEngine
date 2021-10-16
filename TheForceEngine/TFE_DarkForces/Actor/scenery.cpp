@@ -21,7 +21,7 @@ namespace TFE_DarkForces
 
 		if (!(anim->flags & AFLAG_READY))
 		{
-			s_curAnimation = anim;
+			s_actorState.curAnimation = anim;
 			return JFALSE;
 		}
 		else if (aiActor->hp <= 0 && actor_getAnimationIndex(4) != -1)

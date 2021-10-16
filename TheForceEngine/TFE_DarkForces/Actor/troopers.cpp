@@ -66,7 +66,7 @@ namespace TFE_DarkForces
 		enemyActor->projType = PROJ_PISTOL_BOLT;
 		enemyActor->attackPrimSndSrc = s_pistolSndSrc;
 
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
@@ -80,7 +80,7 @@ namespace TFE_DarkForces
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
 		logic->animTable = s_officerAnimTable;
-		s_curLogic = (Logic*)logic;
+		s_actorState.curLogic = (Logic*)logic;
 
 		actor->collisionFlags |= 1;
 		actor->physics.width = obj->worldWidth;
@@ -106,7 +106,7 @@ namespace TFE_DarkForces
 		actorLogic_addActor(logic, aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
 		enemyActor->projType = PROJ_RIFLE_BOLT;
 		enemyActor->attackPrimSndSrc = s_rifleSndSrc;
@@ -123,7 +123,7 @@ namespace TFE_DarkForces
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
 		logic->animTable = s_troopAnimTable;
-		s_curLogic = (Logic*)logic;
+		s_actorState.curLogic = (Logic*)logic;
 
 		actor->collisionFlags |= 1;
 		actor->physics.width = obj->worldWidth;
@@ -149,7 +149,7 @@ namespace TFE_DarkForces
 		actorLogic_addActor(logic, aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
 		enemyActor->projType = PROJ_RIFLE_BOLT;
 		enemyActor->attackPrimSndSrc = s_rifleSndSrc;
@@ -166,7 +166,7 @@ namespace TFE_DarkForces
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
 		logic->animTable = s_commandoAnimTable;
-		s_curLogic = (Logic*)logic;
+		s_actorState.curLogic = (Logic*)logic;
 
 		actor->collisionFlags |= 1;
 		actor->physics.width = obj->worldWidth;

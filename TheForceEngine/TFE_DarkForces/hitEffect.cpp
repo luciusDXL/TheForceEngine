@@ -43,6 +43,13 @@ namespace TFE_DarkForces
 	void hitEffectExplodeFunc(SecObject* obj);
 	void hitEffectTaskFunc(MessageType msg);
 
+	void hitEffect_clearState()
+	{
+		s_hitEffects = nullptr;
+		s_hitEffectTask = nullptr;
+		s_curEffectData = nullptr;
+	}
+
 	void hitEffect_startup()
 	{
 		// TODO: Move Hit Effect data to an external file instead of hardcoding here.
@@ -250,6 +257,7 @@ namespace TFE_DarkForces
 
 	void hitEffect_createTask()
 	{
+		hitEffect_clearState();
 		s_hitEffects = allocator_create(sizeof(HitEffect));
 		s_hitEffectTask = createSubTask("hitEffects", hitEffectTaskFunc);
 	}

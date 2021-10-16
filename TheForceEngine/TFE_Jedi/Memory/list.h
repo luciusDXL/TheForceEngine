@@ -24,4 +24,5 @@ namespace TFE_Jedi
 	u8* list_addItem(List* list);
 	void list_removeItem(List* list, void* item);
 	List* list_allocate(s32 elemSize, s32 capacity);
+	void list_clear(List* list);
 }

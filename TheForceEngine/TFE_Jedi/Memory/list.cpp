@@ -112,6 +112,19 @@ namespace TFE_Jedi
 		return list;
 	}
 
+	void list_clear(List* list)
+	{
+		s32 size = list->step * list->capacity + sizeof(List);
+		u8* end = (u8*)list + size;
+		list->end = end - list->step;
+		list->self = list;
+
+		u8* start = (u8*)list + sizeof(List);
+		list->head = start;
+
+		initializeList(list);
+	}
+
 	void initializeList(List* list)
 	{
 		list->iter = list->head;

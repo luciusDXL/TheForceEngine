@@ -15,6 +15,7 @@
 #include <algorithm>
 
 using namespace TFE_Jedi;
+extern MemoryRegion* s_gameRegion;
 
 // Jedi code for processing models.
 // TODO: Move to the Jedi_ObjectRenderer (once it exists)?
@@ -360,6 +361,8 @@ namespace TFE_Model_Jedi
 		}
 
 		// Load textures.
+		MemoryRegion* memRegion = TFE_Jedi::bitmap_getAllocator();
+		TFE_Jedi::bitmap_setAllocator(s_gameRegion);
 		if (textureCount)
 		{
 			FilePath filePath;
@@ -394,6 +397,7 @@ namespace TFE_Model_Jedi
 				}
 			}
 		}
+		TFE_Jedi::bitmap_setAllocator(memRegion);
 
 		bool nextLine = true;
 		for (s32 i = 0; i < objectCount; i++)

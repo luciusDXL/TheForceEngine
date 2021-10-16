@@ -128,13 +128,13 @@ namespace TFE_DarkForces
 			displayLoadingScreen();
 			task_yield(MIN_LOAD_TIME);
 
-			s_prevTick = s_curTick;
+			s_prevTick   = s_curTick;
 			s_playerTick = s_curTick;
 			s_mainTask = createTask("main task", mission_mainTaskFunc);
 
 			s_invalidLevelIndex = JFALSE;
-			s_levelComplete = JFALSE;
-			s_exitLevel = JFALSE;
+			s_levelComplete     = JFALSE;
+			s_exitLevel         = JFALSE;
 									
 			s_missionMode = MISSION_MODE_LOAD_START;
 			mission_setupTasks();
@@ -301,11 +301,10 @@ namespace TFE_DarkForces
 				}
 				else if (action == ESC_ABORT_OR_NEXT)
 				{
-					// TODO
-					s_gamePaused = JFALSE;
+					s_exitLevel = JTRUE;
 					TFE_Input::clearAccumulatedMouseMove();
-					task_pause(s_gamePaused);
-					time_pause(s_gamePaused);
+					task_pause(JFALSE);
+					time_pause(JFALSE);
 				}
 				else if (action == ESC_QUIT)
 				{

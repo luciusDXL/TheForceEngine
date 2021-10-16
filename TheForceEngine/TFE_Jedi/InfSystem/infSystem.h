@@ -30,6 +30,7 @@ namespace TFE_Jedi
 {
 	bool inf_init();
 	void inf_shutdown();
+	void inf_clearState();
 	void inf_createElevatorTask();
 	void inf_createTeleportTask();
 	void inf_createTriggerTask();

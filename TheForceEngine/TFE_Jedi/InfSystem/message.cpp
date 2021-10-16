@@ -23,7 +23,6 @@ namespace TFE_Jedi
 
 	void message_free()
 	{
-		allocator_free(s_messageAddr);
 		s_messageAddr = nullptr;
 	}
 

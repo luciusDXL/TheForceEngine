@@ -237,6 +237,19 @@ namespace TFE_Jedi
 		s_taskCount--;
 	}
 
+	void task_reset()
+	{
+		s_rootTask = { 0 };
+		s_rootTask.prev = &s_rootTask;
+		s_rootTask.next = &s_rootTask;
+		s_rootTask.nextTick = TASK_SLEEP;
+
+		s_taskIter = &s_rootTask;
+		s_curTask = &s_rootTask;
+		s_taskCount = 0;
+		s_frameActiveTaskCount = 0;
+	}
+
 	void task_freeAll()
 	{
 		chunkedArrayClear(s_tasks);

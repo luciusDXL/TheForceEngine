@@ -37,7 +37,6 @@ namespace TFE_Jedi
 	static s32 s_objectCount = 0;
 
 	static TextureData** s_textures;
-	
 	static Allocator* s_soundEmitters;
 	static Allocator* s_safeLoc;
 				
@@ -77,13 +76,29 @@ namespace TFE_Jedi
 		s_bossSector       = nullptr;
 		s_mohcSector       = nullptr;
 
+		s_sectors  = nullptr;
+		s_pods     = nullptr;
+		s_sprites  = nullptr;
+		s_frames   = nullptr;
+		s_soundIds = nullptr;
+		s_textures = nullptr;
+
+		s_secretCount  = 0;
+		s_sectorCount  = 0;
+		s_textureCount = 0;
+
+		s_podCount    = 0;
+		s_spriteCount = 0;
+		s_fmeCount    = 0;
+		s_soundCount  = 0;
+		s_objectCount = 0;
+
 		s_controlSector = (RSector*)level_alloc(sizeof(RSector));
 		sector_clear(s_controlSector);
 	}
 
 	JBool level_load(const char* levelName, u8 difficulty)
 	{
-		JBool loaded = JFALSE;
 		if (!levelName) { return JFALSE; }
 
 		if (!level_loadGeometry(levelName)) { return JFALSE; }
@@ -100,6 +115,7 @@ namespace TFE_Jedi
 		s_dataIndex = 0;
 		s_minLayer = INT_MAX;
 		s_maxLayer = INT_MIN;
+		message_free();
 
 		char levelPath[TFE_MAX_PATH];
 		strcpy(levelPath, levelName);

@@ -52,6 +52,7 @@ namespace TFE_DarkForces
 
 	void hitEffect_startup();
 	void hitEffect_createTask();
+	void hitEffect_clearState();
 
 	// Spawn a new hit effect at location (x,y,z) in 'sector'.
 	// The ExcludeObj field is used to avoid effecting a specific object during wakeup or explosions.

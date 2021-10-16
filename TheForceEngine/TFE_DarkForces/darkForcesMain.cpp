@@ -291,6 +291,7 @@ namespace TFE_DarkForces
 
 					// We have returned from the mission tasks.
 					disableLevelMusic();
+					sound_stopAll();
 
 					//if (!s_levelComplete)
 					//{
@@ -368,7 +369,10 @@ namespace TFE_DarkForces
 			case GMODE_MISSION:
 			{
 				bitmap_setAllocator(s_levelRegion);
+				actor_clearState();
 
+				task_reset();
+				inf_clearState();
 				s_loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
 				mission_setLoadMissionTask(s_loadMissionTask);
 

@@ -37,7 +37,7 @@ namespace TFE_Jedi
 	s16 readShort(const u8*& data)
 	{
 		s16 res = *((s16*)data);
-		data+=2;
+		data += 2;
 		return res;
 	}
 
@@ -52,6 +52,11 @@ namespace TFE_Jedi
 	{
 		s_textureAnimTask = createSubTask("texture animation", textureAnimationTaskFunc);
 		s_textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
+	}
+
+	MemoryRegion* bitmap_getAllocator()
+	{
+		return s_memoryRegion;
 	}
 
 	void bitmap_setAllocator(MemoryRegion* allocator)
@@ -193,6 +198,7 @@ namespace TFE_Jedi
 		anim->baseFrame = tex;
 		anim->baseData = tex->image;
 		anim->frameList = (TextureData**)level_alloc(sizeof(TextureData**) * anim->count);
+		assert(anim->frameList);
 
 		for (s32 i = 0; i < anim->count; i++, textureOffsets++)
 		{

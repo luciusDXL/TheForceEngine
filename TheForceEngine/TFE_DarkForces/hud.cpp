@@ -252,8 +252,8 @@ namespace TFE_DarkForces
 		s_prevShields = 0;
 		s_prevHealth = 0;
 		s_prevPrimaryAmmo = 0;
-		s_prevSecondaryAmmo = 0;
-		s_prevSuperchageHud = JFALSE;
+		s_prevSecondaryAmmo  = 0;
+		s_prevSuperchageHud  = JFALSE;
 		s_prevHeadlampActive = JFALSE;
 
 		hud_initAnimation();

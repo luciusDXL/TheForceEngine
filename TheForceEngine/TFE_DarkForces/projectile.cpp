@@ -130,8 +130,16 @@ namespace TFE_DarkForces
 		s_landMineTriggerSnd     = sound_Load("beep-10.voc");
 	}
 
+	void projectile_clearState()
+	{
+		s_projectiles = nullptr;
+		s_projectileTask = nullptr;
+		s_projReflectOverrideYaw = 0;
+	}
+
 	void projectile_createTask()
 	{
+		projectile_clearState();
 		s_projectiles = allocator_create(sizeof(ProjectileLogic));
 		s_projectileTask = createSubTask("projectiles", projectileTaskFunc);
 	}

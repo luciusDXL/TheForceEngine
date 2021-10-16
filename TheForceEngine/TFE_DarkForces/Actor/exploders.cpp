@@ -17,7 +17,7 @@ namespace TFE_DarkForces
 		LogicAnimation* anim = &aiActor->enemy.anim;
 		if (!(anim->flags & AFLAG_READY))
 		{
-			s_curAnimation = anim;
+			s_actorState.curAnimation = anim;
 			return JFALSE;
 		}
 		else if ((anim->flags & AFLAG_PLAYED) && aiActor->hp <= 0)
@@ -98,7 +98,7 @@ namespace TFE_DarkForces
 			proj2->hitEffectId = HEFFECT_EXP_INVIS;
 			proj2->duration = s_curTick + 36;
 
-			ActorLogic* actorLogic = (ActorLogic*)s_curLogic;
+			ActorLogic* actorLogic = (ActorLogic*)s_actorState.curLogic;
 			CollisionInfo colInfo = { 0 };
 			colInfo.obj = proj2->logic.obj;
 			colInfo.offsetY = 0;

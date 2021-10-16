@@ -171,7 +171,7 @@ namespace TFE_DarkForces
 		enemyActor->meleeRange = FIXED(30);
 		enemyActor->meleeDmg = FIXED(5);
 		enemyActor->attackFlags |= 3;
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		// ActorSimple is really a type of Actor.
@@ -225,7 +225,7 @@ namespace TFE_DarkForces
 		enemyActor->projType = PROJ_RIFLE_BOLT;
 		enemyActor->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_12];
 		enemyActor->attackFlags = 2;
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
@@ -274,7 +274,7 @@ namespace TFE_DarkForces
 		enemy->attackFlags |= 2;
 		enemy->fireOffset.y = 0x4000;	// 0.25 units.
 		enemy->maxDist = FIXED(50);
-		s_curEnemyActor = enemy;
+		s_actorState.curEnemyActor = enemy;
 		actorLogic_addActor(logic, (AiActor*)enemy);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);

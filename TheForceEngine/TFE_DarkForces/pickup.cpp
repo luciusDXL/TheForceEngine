@@ -28,6 +28,10 @@ namespace TFE_DarkForces
 	Task* s_gasmaskTask = nullptr;
 	Task* s_gasSectorTask = nullptr;
 
+	enum { MAX_PICKUP_FREE_ITEMS = 128 };
+	static Pickup* s_listToFree[MAX_PICKUP_FREE_ITEMS];
+	static s32 s_listToFreeCnt = 0;
+
 	//////////////////////////////////////////////////////////////
 	// Forward Declarations
 	//////////////////////////////////////////////////////////////
@@ -39,6 +43,18 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	// API Implementation
 	//////////////////////////////////////////////////////////////
+	void pickup_clearState()
+	{
+		s_playerDying = 0;
+		s_listToFreeCnt = 0;
+		// Pointer to memory where player inventory is saved.
+		s_pickupTask = nullptr;
+		s_superchargeTask = nullptr;
+		s_invincibilityTask = nullptr;
+		s_gasmaskTask = nullptr;
+		s_gasSectorTask = nullptr;
+	}
+
 	// TODO: Move keyword to pickup mapping to a datafile to avoid hardcoding.
 	ItemId getPickupItemId(const char* keyword)
 	{
@@ -103,13 +119,10 @@ namespace TFE_DarkForces
 
 	void pickup_createTask()
 	{
+		pickup_clearState();
 		s_pickupTask = createSubTask("pickups", pickTaskFunc, pickupItem);
 	}
-
-	enum { MAX_PICKUP_FREE_ITEMS = 128 };
-	static Pickup* s_listToFree[MAX_PICKUP_FREE_ITEMS];
-	static s32 s_listToFreeCnt = 0;
-
+		
 	void pickupItem(MessageType msg)
 	{
 		Pickup* pickup = (Pickup*)s_msgTarget;

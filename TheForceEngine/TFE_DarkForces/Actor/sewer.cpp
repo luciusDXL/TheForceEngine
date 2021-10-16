@@ -245,7 +245,7 @@ namespace TFE_DarkForces
 		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
-		s_curEnemyActor = enemyActor;
+		s_actorState.curEnemyActor = enemyActor;
 		enemyActor->header.func = sewerCreatureEnemyFunc;
 		enemyActor->timing.state0Delay = 1240;
 		enemyActor->timing.state2Delay = 1240;
@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 		RSector* sector = obj->sector;
 
 		actor_setDeathCollisionFlags();
-		ActorLogic* logic = (ActorLogic*)s_curLogic;
+		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
 		stopSound(logic->alertSndID);
 		playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
 		enemy->target.flags |= 8;

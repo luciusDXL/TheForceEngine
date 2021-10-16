@@ -80,6 +80,7 @@ namespace TFE_Jedi
 	void bitmap_setupAnimationTask();
 
 	void bitmap_setAllocator(MemoryRegion* allocator);
+	MemoryRegion* bitmap_getAllocator();
 	TextureData* bitmap_load(FilePath* filepath, u32 decompress);
 	void bitmap_setupAnimatedTexture(TextureData** texture);
 }

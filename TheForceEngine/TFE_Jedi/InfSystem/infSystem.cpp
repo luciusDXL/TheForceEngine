@@ -121,6 +121,17 @@ namespace TFE_Jedi
 		return strtoul(str, &endPtr, 10);
 	}
 
+	void inf_clearState()
+	{
+		s_infElevators   = nullptr;
+		s_infElevTask    = nullptr;
+		s_teleportTask   = nullptr;
+		s_infTeleports   = nullptr;
+		s_infTriggerTask = nullptr;
+		s_nextStop       = nullptr;
+		s_triggerCount   = 0;
+	}
+
 	void inf_createElevatorTask()
 	{
 		s_infElevators = allocator_create(sizeof(InfElevator));
@@ -3215,6 +3226,7 @@ namespace TFE_Jedi
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj)
 	{
 		InfTrigger* trigger = (InfTrigger*)level_alloc(sizeof(InfTrigger));
+		memset(trigger, 0, sizeof(InfTrigger));
 		s_triggerCount++;
 
 		InfLink* link = nullptr;
