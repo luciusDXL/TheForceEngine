@@ -89,6 +89,8 @@ namespace TFE_Jedi
 	static f64 s_prevTime = 0.0;
 	static f64 s_minIntervalInSec = 0.0;
 	static s32 s_frameActiveTaskCount = 0;
+	static JBool s_taskSystemPaused = JFALSE;
+	static Task* s_taskPauseTask = nullptr;
 
 	void selectNextTask();
 
@@ -191,6 +193,12 @@ namespace TFE_Jedi
 	Task* task_getCurrent()
 	{
 		return s_curTask;
+	}
+
+	void  task_pause(JBool pause, Task* pauseRunTask)
+	{
+		s_taskSystemPaused = pause;
+		s_taskPauseTask = pauseRunTask;
 	}
 
 	void task_free(Task* task)
@@ -474,6 +482,30 @@ namespace TFE_Jedi
 		s_prevTime = time;
 		s_currentMsg = MSG_RUN_TASK;
 		s_frameActiveTaskCount = 0;
+
+		// Return if the task system is paused.
+		if (s_taskSystemPaused)
+		{
+			if (s_taskPauseTask)
+			{
+				s_curTask = s_taskPauseTask;
+				if (s_curTask->nextTick <= s_curTick)
+				{
+					s_frameActiveTaskCount++;
+
+					s_curContext = &s_curTask->context;
+					s32 level = max(0, s_curContext->level + 1);
+					TaskFunc runFunc = s_curContext->callstack[level];
+					assert(runFunc);
+
+					if (runFunc)
+					{
+						runFunc(s_currentMsg);
+					}
+				}
+			}
+			return JTRUE;
+		}
 
 		// Keep processing tasks until the "framebreak" task is hit.
 		// Once the framebreak task completes (if it is not sleeping), then break out of the loop - processing will resume

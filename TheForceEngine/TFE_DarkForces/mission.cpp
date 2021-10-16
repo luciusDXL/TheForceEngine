@@ -11,6 +11,7 @@
 #include "projectile.h"
 #include "weapon.h"
 #include <TFE_DarkForces/Actor/actor.h>
+#include <TFE_DarkForces/GameUI/escapeMenu.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
@@ -242,39 +243,50 @@ namespace TFE_DarkForces
 			// Handle delta time.
 			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
 			s_deltaTime = min(s_deltaTime, MAX_DELTA_TIME);
-			s_prevTick = s_curTick;
+			s_prevTick  = s_curTick;
 			s_playerTick = s_curTick;
 
-			player_setupCamera();
+			if (!escapeMenu_isOpen())
+			{
+				player_setupCamera();
 
-			if (s_missionMode == MISSION_MODE_LOADING)
-			{
-				blitLoadingScreen();
-			}
-			else if (s_missionMode == MISSION_MODE_MAIN)
-			{
-				updateScreensize();
-				drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
-				weapon_draw(s_framebuffer, &s_videoDrawRect);
-				handleVisionFx();
-			}
-			else if (s_missionMode == MISSION_MODE_UNKNOWN)
-			{
-				// STUB
-			}
-			else if (s_missionMode == MISSION_MODE_LOAD_START)
-			{
-				// vgaClearPalette();
+				if (s_missionMode == MISSION_MODE_LOADING)
+				{
+					blitLoadingScreen();
+				}
+				else if (s_missionMode == MISSION_MODE_MAIN)
+				{
+					updateScreensize();
+					drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
+					weapon_draw(s_framebuffer, &s_videoDrawRect);
+					handleVisionFx();
+				}
+				else if (s_missionMode == MISSION_MODE_UNKNOWN)
+				{
+					// STUB
+				}
+				else if (s_missionMode == MISSION_MODE_LOAD_START)
+				{
+					// vgaClearPalette();
+				}
 			}
 
 			handleGeneralInput();
-			handlePaletteFx();
-			if (s_drawAutomap)
+
+			if (!escapeMenu_isOpen())
 			{
-				automap_draw(s_framebuffer);
+				handlePaletteFx();
+				if (s_drawAutomap)
+				{
+					automap_draw(s_framebuffer);
+				}
+				hud_drawAndUpdate(s_framebuffer);
+				hud_drawMessage(s_framebuffer);
 			}
-			hud_drawAndUpdate(s_framebuffer);
-			hud_drawMessage(s_framebuffer);
+			else
+			{
+				escapeMenu_update();
+			}
 
 			// vgaSwapBuffers() in the DOS code.
 			TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
@@ -789,11 +801,23 @@ namespace TFE_DarkForces
 
 	void handleGeneralInput()
 	{
+		if (escapeMenu_isOpen())
+		{
+			return;
+		}
+
 		// In the DOS code, the game would just loop here - checking to see if paused has been pressed and then continue.
 		// Obviously that won't work for TFE, so the game paused variable is set and the game will have to handle it.
 		if (getActionState(IA_PAUSE) == STATE_PRESSED)
 		{
 			s_gamePaused = ~s_gamePaused;
+			task_pause(s_gamePaused, s_mainTask);
+		}
+		else if (getActionState(IA_MENU_TOGGLE) == STATE_PRESSED)
+		{
+			escapeMenu_open();
+			s_gamePaused = JTRUE;
+			task_pause(s_gamePaused, s_mainTask);
 		}
 
 		if (!s_gamePaused)

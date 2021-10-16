@@ -35,6 +35,7 @@ namespace TFE_Jedi
 
 	Task* task_getCurrent();
 
+	void  task_pause(JBool pause, Task* pauseRunTask = nullptr);
 	void  task_free(Task* task);
 	void  task_freeAll();
 	void  task_shutdown();
