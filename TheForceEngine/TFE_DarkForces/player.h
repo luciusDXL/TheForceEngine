@@ -139,6 +139,7 @@ namespace TFE_DarkForces
 
 	void player_init();
 	void player_readInfo(u8* inv, s32* ammo);
+	void player_writeInfo(u8* inv, s32* ammo);
 	void player_clearEyeObject();
 	void player_createController();
 	void player_setupObject(SecObject* obj);

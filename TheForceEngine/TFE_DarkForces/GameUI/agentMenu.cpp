@@ -518,6 +518,8 @@ namespace TFE_DarkForces
 			s_agentData[s_agentCount].selectedMission = 1;
 			s_agentId = s_agentCount;
 			s_agentCount++;
+
+			agent_createNewAgent(s_agentId, &s_agentData[s_agentId]);
 		}
 	}
 

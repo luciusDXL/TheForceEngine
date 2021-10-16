@@ -50,6 +50,7 @@ namespace TFE_DarkForces
 	u8 s_loadingScreenPal[768];
 	u8 s_levelPalette[768];
 	u8 s_basePalette[768];
+	u8 s_escMenuPalette[768];
 	u8 s_framePalette[768];
 
 	// Move these to color?
@@ -284,8 +285,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				// TODO: Properly handle the palette in Gromas, probably switch to SecBase?
-				setPalette(s_basePalette);
+				setPalette(s_escMenuPalette);
 			}
 			
 			// Move this out of handleGeneralInput so that the HUD is properly copied.

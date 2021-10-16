@@ -2,6 +2,7 @@
 #include "util.h"
 #include "player.h"
 #include "hud.h"
+#include "weapon.h"
 #include <TFE_Game/igame.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -55,7 +56,7 @@ namespace TFE_DarkForces
 
 	void agent_updateLevelStats()
 	{
-		s32 curLevel = s_agentData[s_agentId].selectedMission;
+		s32 curLevel = s_agentData[s_agentId].selectedMission + 1;
 		if (curLevel > s_agentData[s_agentId].nextMission)
 		{
 			s_agentData[s_agentId].nextMission = curLevel;
@@ -81,12 +82,22 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
+	void agent_levelEndTask()
+	{
+		s_levelEndTask = nullptr;
+	}
+
 	void agent_createLevelEndTask()
 	{
 		if (!s_levelEndTask)
 		{
 			s_levelEndTask = createSubTask("LevelEnd", levelEndTaskFunc);
 		}
+	}
+
+	void agent_saveLevelCompletion(u8 diff, s32 levelIndex)
+	{
+		s_agentData[s_agentId].completed[levelIndex - 1] = diff;
 	}
 	
 	s32 agent_getLevelIndex()
@@ -118,6 +129,42 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void agent_createNewAgent(s32 agentId, AgentData* data)
+	{
+		FileStream file;
+		if (!openDarkPilotConfig(&file))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
+			return;
+		}
+
+		LevelSaveData saveData;
+		agent_readConfigData(&file, agentId, &saveData);
+		memcpy(&saveData.agentData, data, sizeof(AgentData));
+
+		u8 inv[32] = { 0 };
+		inv[0]  = 0xff;
+		inv[2]  = 0xff;
+		inv[6]  = 0xff;
+		inv[30] = WPN_PISTOL;
+		inv[31] = 3;
+
+		s32 ammo[10] = { 0 };
+		ammo[0] = 100;
+		ammo[7] = 100;
+		ammo[8] = 100;
+		ammo[9] = FIXED(2);
+
+		memset(saveData.inv,  0, 32*14);
+		memset(saveData.ammo, 0, sizeof(s32)*10*14);
+
+		memcpy(saveData.inv, inv, 32);
+		memcpy(saveData.ammo, ammo, sizeof(s32)*10);
+
+		agent_writeAgentConfigData(&file, agentId, &saveData);
+		file.close();
+	}
+
 	void agent_updateAgentSavedData()
 	{
 		FileStream file;
@@ -139,7 +186,31 @@ namespace TFE_DarkForces
 
 		file.close();
 	}
-		
+
+	s32 agent_saveInventory(s32 agentId, s32 nextLevel)
+	{
+		if (nextLevel > 14) { return 0; }
+
+		FileStream file;
+		if (!openDarkPilotConfig(&file)) { return 0; }
+
+		LevelSaveData saveData;
+		if (!agent_readConfigData(&file, agentId, &saveData))
+		{
+			file.close();
+			return 0;
+		}
+
+		s32 levelIndex = nextLevel - 1;
+		s32* ammo = &saveData.ammo[levelIndex * 10];
+		u8* inv = &saveData.inv[levelIndex * 32];
+		player_writeInfo(inv, ammo);
+		s32 written = agent_writeAgentConfigData(&file, agentId, &saveData);
+		file.close();
+
+		return written;
+	}
+
 	JBool agent_loadLevelList(const char* fileName)
 	{
 		FilePath filePath;

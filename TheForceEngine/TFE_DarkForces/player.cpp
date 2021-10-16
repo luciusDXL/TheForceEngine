@@ -267,7 +267,7 @@ namespace TFE_DarkForces
 		s_playerInfo.healthFract = 0;
 		s_energy = FIXED(2);
 	}
-		
+
 	void player_readInfo(u8* inv, s32* ammo)
 	{
 		// Read the inventory.
@@ -321,6 +321,55 @@ namespace TFE_DarkForces
 		s_playerInfo.shields = ammo[7];
 		s_playerInfo.health  = ammo[8];
 		s_energy = ammo[9];
+	}
+
+	void player_writeInfo(u8* inv, s32* ammo)
+	{
+		// Write the inventory.
+		inv[0]  = s_playerInfo.itemPistol;
+		inv[1]  = s_playerInfo.itemRifle;
+		inv[2]  = s_itemUnknown1;
+		inv[3]  = s_playerInfo.itemAutogun;
+		inv[4]  = s_playerInfo.itemMortar;
+		inv[5]  = s_playerInfo.itemFusion;
+		inv[6]  = s_itemUnknown2;
+		inv[7]  = s_playerInfo.itemConcussion;
+		inv[8]  = s_playerInfo.itemCannon;
+		inv[9]  = s_playerInfo.itemRedKey;
+		inv[10] = s_playerInfo.itemYellowKey;
+		inv[11] = s_playerInfo.itemBlueKey;
+		inv[12] = s_playerInfo.itemGoggles;
+		inv[13] = s_playerInfo.itemCleats;
+		inv[14] = s_playerInfo.itemMask;
+		inv[15] = s_playerInfo.itemPlans;
+		inv[16] = s_playerInfo.itemPhrik;
+		inv[17] = s_playerInfo.itemNava;
+		inv[18] = s_playerInfo.itemDatatape;
+		inv[19] = s_playerInfo.itemUnkown;
+		inv[20] = s_playerInfo.itemDtWeapon;
+		inv[21] = s_playerInfo.itemCode1;
+		inv[22] = s_playerInfo.itemCode2;
+		inv[23] = s_playerInfo.itemCode3;
+		inv[24] = s_playerInfo.itemCode4;
+		inv[25] = s_playerInfo.itemCode5;
+		inv[26] = s_playerInfo.itemCode6;
+		inv[27] = s_playerInfo.itemCode7;
+		inv[28] = s_playerInfo.itemCode8;
+		inv[29] = s_playerInfo.itemCode9;
+		inv[30] = s_playerInfo.curWeapon;
+		inv[31] = s_lifeCount;
+
+		// Write Ammo, Shields, Health, and Energy.
+		ammo[0] = s_playerInfo.ammoEnergy;
+		ammo[1] = s_playerInfo.ammoPower;
+		ammo[2] = s_playerInfo.ammoPlasma;
+		ammo[3] = s_playerInfo.ammoDetonator;
+		ammo[4] = s_playerInfo.ammoShell;
+		ammo[5] = s_playerInfo.ammoMine;
+		ammo[6] = s_playerInfo.ammoMissile;
+		ammo[7] = s_playerInfo.shields;
+		ammo[8] = s_playerInfo.health;
+		ammo[9] = s_energy;
 	}
 		
 	void player_createController()

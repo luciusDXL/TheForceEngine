@@ -286,30 +286,29 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					// Temp:
-					s_abortLevel = JTRUE;
-
 					// We have returned from the mission tasks.
 					disableLevelMusic();
 					sound_stopAll();
+					agent_levelEndTask();
 
-					//if (!s_levelComplete)
-					//{
-					//	s_abortLevel = JTRUE;
-					//}
-					//else
-					//{
-					//	s_cutsceneIndex++;
-					//	s32 completedLevelIndex = level_getIndex();
-					//	u8 diff = level_getDifficulty();
+					if (!s_levelComplete)
+					{
+						s_abortLevel = JTRUE;
+						s_cutsceneIndex--;
+					}
+					else
+					{
+						s_cutsceneIndex++;
+						s32 completedLevelIndex = agent_getLevelIndex();
+						u8 diff = 1;	// level_getDifficulty();
 
 						// Save the level completion, inventory and other stats into the agent data and then save to disk.
-					//	agent_saveLevelCompletion(diff, completedLevelIndex);
-					//	agent_updateSavedData();
-					//	agent_saveInventory(s_agentId, completedLevelIndex + 1);
-					//	agent_setNextLevelByIndex(completedLevelIndex + 1);
-					//}
-
+						agent_saveLevelCompletion(diff, completedLevelIndex);
+						agent_updateAgentSavedData();
+						agent_saveInventory(s_agentId, completedLevelIndex + 1);
+						agent_setNextLevelByIndex(completedLevelIndex + 1);
+					}
+					
 					startNextMode();
 
 					region_clear(s_levelRegion);
@@ -547,6 +546,10 @@ namespace TFE_DarkForces
 		if (TFE_Paths::getFilePath("wait.pal", &filePath))
 		{
 			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
+		}
+		if (TFE_Paths::getFilePath("secbase.pal", &filePath))
+		{
+			FileStream::readContents(&filePath, s_escMenuPalette, 768);
 		}
 
 		weapon_enableAutomount(s_config.wpnAutoMount);
