@@ -246,7 +246,7 @@ namespace TFE_DarkForces
 				{
 					if (s_playerInfo.health < 100 || s_playerInfo.shields < 200)
 					{
-						playerRevive();
+						player_revive();
 						// The function sets shields to 100, so set it to the proper value here.
 						s_playerInfo.shields = 200;
 					}
@@ -744,16 +744,6 @@ namespace TFE_DarkForces
 			} break;
 		}
 		return (Logic*)pickup;
-	}
-
-	void playerRevive()
-	{
-		// playerRevive() is called when the player respawns, which is why it sets 100 for shields here.
-		// In the case of picking up the item, the value is then set to 200 after the function call.
-		s_playerInfo.shields = 100;
-		s_playerInfo.health = 100;
-		s_playerInfo.healthFract = 0;
-		s_playerDying = 0;
 	}
 
 	s32 pickup_addToValue(s32 curValue, s32 amountToAdd, s32 maxAmount)

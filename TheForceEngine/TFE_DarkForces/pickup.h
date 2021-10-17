@@ -36,7 +36,6 @@ namespace TFE_DarkForces
 	// Logic update function, called when pickups are handled.
 	void pickup_createTask();
 	// Called when the player respawns.
-	void playerRevive();
 	void pickupSupercharge();
 	
 	extern u32 s_playerDying;

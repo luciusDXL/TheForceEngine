@@ -22,6 +22,7 @@ namespace TFE_DarkForces
 		
 	void mission_startTaskFunc(MessageType msg);
 	void mission_setLoadMissionTask(Task* task);
+	void mission_exitLevel();
 
 	void setScreenFxLevels(s32 healthFx, s32 shieldFx, s32 flashFx);
 	void disableNightvisionInternal();

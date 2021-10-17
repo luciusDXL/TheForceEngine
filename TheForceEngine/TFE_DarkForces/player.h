@@ -144,6 +144,7 @@ namespace TFE_DarkForces
 	void player_createController();
 	void player_setupObject(SecObject* obj);
 	void player_setupEyeObject(SecObject* obj);
+	void player_revive();
 	s32  player_getLifeCount();
 	void player_setupCamera();
 	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound);

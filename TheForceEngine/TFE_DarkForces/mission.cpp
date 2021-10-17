@@ -231,6 +231,11 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void mission_exitLevel()
+	{
+		s_exitLevel = JTRUE;
+	}
+
 	void mission_mainTaskFunc(MessageType msg)
 	{
 		task_begin;

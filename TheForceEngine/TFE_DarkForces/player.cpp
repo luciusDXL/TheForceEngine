@@ -544,6 +544,16 @@ namespace TFE_DarkForces
 		setCameraAngleOffset(0, 0, 0);
 	}
 
+	void player_revive()
+	{
+		// player_revive() is called when the player respawns, which is why it sets 100 for shields here.
+		// In the case of picking up the item, the value is then set to 200 after the function call.
+		s_playerInfo.shields = 100;
+		s_playerInfo.health = 100;
+		s_playerInfo.healthFract = 0;
+		s_playerDying = 0;
+	}
+
 	s32 player_getLifeCount()
 	{
 		return s_lifeCount;
@@ -877,6 +887,118 @@ namespace TFE_DarkForces
 		player_applyDamage(0, shieldDmg, playHitSound);
 	}
 
+	void player_reset()
+	{
+		s_externalYawSpd = 0;
+		s_playerPitch = 0;
+		s_playerRoll = 0;
+		s_forwardSpd = 0;
+		s_strafeSpd = 0;
+		s_maxMoveDist = FIXED(2);
+		// s_282344 = 34;
+		s_minEyeDistFromFloor = FIXED(2);
+		s_postLandVel = 0;
+		s_landUpVel = 0;
+		s_playerVelX = 0;
+		s_playerUpVel = 0;
+		s_playerUpVel2 = 0;
+		s_playerVelZ = 0;
+		s_externalVelX = 0;
+		// s_282380 = 0;
+		s_externalVelZ = 0;
+		s_playerSpeed = 0;
+		s_weaponLight = 0;
+		s_headwaveVerticalOffset = 0;
+		s_playerUse = JFALSE;
+		s_playerActionUse = JFALSE;
+		s_moveAvail = 0;
+
+		s_playerStopAccel = -540672;	// -8.25
+		s_playerCrouchSpd = 0;
+		s_prevDistFromFloor = 0;
+		s_playerObject->worldHeight = 0x5cccc;	// 5.8
+	}
+
+	void player_changeSector(RSector* newSector)
+	{
+		if (newSector)
+		{
+			RSector* prevSector = s_playerObject->sector;
+			if (newSector != prevSector)
+			{
+				if (newSector->layer != prevSector->layer)
+				{
+					automap_setLayer(newSector->layer);
+				}
+				sector_addObject(newSector, s_playerObject);
+			}
+		}
+	}
+
+	void player_clearSuperCharge()
+	{
+		if (s_superchargeTask)
+		{
+			task_free(s_superchargeTask);
+		}
+		s_superCharge = JFALSE;
+		s_superChargeHud = JFALSE;
+		s_superchargeTask = nullptr;
+		weapon_setFireRate();
+	}
+
+	void handlePlayerDying()
+	{
+		s_minEyeDistFromFloor = ONE_16;
+		s_playerCrouchSpd = 0x5b332;	// 5.7
+		s_playerPitch += mul16(0x6aa, s_deltaTime);
+		s_playerRoll  -= mul16(0xd55, s_deltaTime);
+
+		s_playerPitch = clamp(s_playerPitch, -1023, 1023);
+		s_playerRoll  = clamp(s_playerRoll, -1592, 1592);
+
+		s_playerSecFire = JFALSE;
+		s_playerPrimaryFire = JFALSE;
+
+		if (getActionState(IA_PRIMARY_FIRE) || getActionState(IA_JUMP))
+		{
+			if (s_lifeCount != 0 && s_curSafe)
+			{
+				s_lifeCount -= 1;
+				player_revive();
+				player_reset();
+				s_headlampActive = JFALSE;
+
+				s_playerObject->yaw = s_curSafe->yaw;
+				s_playerYaw = s_curSafe->yaw;
+				s_playerObject->posWS.x = s_curSafe->x;
+				s_playerObject->posWS.z = s_curSafe->z;
+
+				RSector* sector = s_curSafe->sector;
+				fixed16_16 floorHeight = sector->floorHeight + sector->secHeight;
+				s_playerObject->posWS.y = floorHeight;
+				s_playerYPos = s_playerObject->posWS.y;
+				player_changeSector(sector);
+
+				s_nextShieldDmgTick = s_curTick + 436;
+				if (s_invincibilityTask)
+				{
+					task_free(s_invincibilityTask);
+				}
+				s_invincibilityTask = nullptr;
+				s_invincibility = 0;
+				player_clearSuperCharge();
+			}
+			else
+			{
+				player_revive();
+				player_reset();
+				s_levelComplete = JFALSE;
+				mission_exitLevel();
+			}
+		}
+	}
+
 	void playerControlTaskFunc(MessageType msg)
 	{
 		task_begin;
@@ -901,6 +1023,10 @@ namespace TFE_DarkForces
 					handlePlayerPhysics();
 					handlePlayerActions();
 					handlePlayerScreenFx();
+					if (s_playerDying)
+					{
+						handlePlayerDying();
+					}
 				}
 			}
 			else if (msg == MSG_DAMAGE)
