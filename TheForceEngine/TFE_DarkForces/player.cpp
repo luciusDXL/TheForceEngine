@@ -145,7 +145,6 @@ namespace TFE_DarkForces
 	static SoundEffectID s_kyleScreamSoundId = 0;
 	// Position and orientation.
 	static vec3_fixed s_playerPos;
-	static fixed16_16 s_playerYPos;
 	static fixed16_16 s_playerObjHeight;
 	static angle14_32 s_playerObjPitch;
 	static angle14_32 s_playerObjYaw;
@@ -193,6 +192,7 @@ namespace TFE_DarkForces
 	Tick s_nextPainSndTick = 0;
 	Task* s_playerTask = nullptr;
 
+	fixed16_16 s_playerYPos;
 	vec3_fixed s_camOffset = { 0 };
 	angle14_32 s_camOffsetPitch = 0;
 	angle14_32 s_camOffsetYaw = 0;

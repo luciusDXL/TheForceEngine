@@ -102,7 +102,7 @@ namespace TFE_Jedi
 					obj->posWS.y += floorOffset;
 					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
-						s_playerHeight += floorOffset;
+						s_playerYPos += floorOffset;
 					}
 				}
 
@@ -112,7 +112,7 @@ namespace TFE_Jedi
 					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
 						// Why not ceilingOffset?
-						s_playerHeight += floorOffset;
+						s_playerYPos += floorOffset;
 					}
 				}
 
@@ -123,7 +123,7 @@ namespace TFE_Jedi
 					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
 						// Why not secHeightOffset?
-						s_playerHeight += floorOffset;
+						s_playerYPos += floorOffset;
 					}
 				}
 			}
