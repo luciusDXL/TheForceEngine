@@ -306,6 +306,7 @@ namespace TFE_DarkForces
 		s32 curWeapon = inv[30];
 		weapon_setNext(curWeapon);
 		s_playerInfo.maxWeapon = max(curWeapon, s_playerInfo.maxWeapon);
+		s_playerInfo.selectedWeapon = -1;
 
 		// Life Count.
 		s_lifeCount = inv[31];
@@ -2204,8 +2205,6 @@ namespace TFE_DarkForces
 
 		if (!s_playerDying)
 		{
-			s_playerInfo.selectedWeapon = -1;
-
 			// Weapon select.
 			if (getActionState(IA_WEAPON_1) == STATE_PRESSED)
 			{
