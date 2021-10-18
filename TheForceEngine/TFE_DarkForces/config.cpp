@@ -203,6 +203,11 @@ namespace TFE_DarkForces
 			}
 		}
 	}
+
+	void config_removeState(InputAction action)
+	{
+		s_actions[action] = STATE_UP;
+	}
 	
 	ActionState getActionState(InputAction action)
 	{

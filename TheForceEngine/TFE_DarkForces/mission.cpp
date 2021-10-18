@@ -316,7 +316,7 @@ namespace TFE_DarkForces
 					TFE_System::postQuitMessage();
 				}
 			}
-			else if (getActionState(IA_MENU_TOGGLE) == STATE_PRESSED)
+			else if (getActionState(IA_MENU_TOGGLE) == STATE_PRESSED && !s_playerDying)
 			{
 				escapeMenu_open(s_framebuffer, s_basePalette);
 				s_gamePaused = JTRUE;

@@ -985,8 +985,11 @@ namespace TFE_DarkForces
 		s_playerSecFire = JFALSE;
 		s_playerPrimaryFire = JFALSE;
 
-		if (getActionState(IA_PRIMARY_FIRE) || getActionState(IA_JUMP))
+		if (getActionState(IA_JUMP) || getActionState(IA_MENU_TOGGLE))
 		{
+			config_removeState(IA_JUMP);
+			config_removeState(IA_MENU_TOGGLE);
+
 			if (s_lifeCount != 0 && s_curSafe)
 			{
 				s_lifeCount -= 1;
