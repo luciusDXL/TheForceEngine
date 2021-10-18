@@ -86,8 +86,8 @@ namespace TFE_DarkForces
 			case KW_MASK:       id = ITEM_MASK;       break;
 			case KW_MINE:       id = ITEM_MINE;       break;
 			case KW_MINES:      id = ITEM_MINES;      break;
-			case KW_MISSLE:     id = ITEM_MISSILE;    break;
-			case KW_MISSLES:    id = ITEM_MISSILES;   break;
+			case KW_MISSILE:    id = ITEM_MISSILE;    break;
+			case KW_MISSILES:   id = ITEM_MISSILES;   break;
 			case KW_MORTAR:     id = ITEM_MORTAR;     break;
 			case KW_NAVA:       id = ITEM_NAVA;       break;
 			case KW_PHRIK:      id = ITEM_PHRIK;      break;
