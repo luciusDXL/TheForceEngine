@@ -1135,8 +1135,8 @@ namespace TFE_DarkForces
 			{
 				tex = s_playerWeaponList[WPN_FIST].frames[0];
 			}
-
-			if (atten)
+			
+			if (atten && !s_weaponLight)
 			{
 				blitTextureToScreenLit(tex, rect, x, y, atten, display);
 			}
