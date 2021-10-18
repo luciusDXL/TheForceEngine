@@ -40,7 +40,7 @@ namespace TFE_DarkForces
 		PLAYER_DMG_CRUSHING            = FIXED(10),   // The player suffers 10 dmg/sec. from crushing damage.
 		PLAYER_FALL_SCREAM_VEL         = FIXED(60),	  // Fall speed when the player starts screaming.
 		PLAYER_FALL_SCREAM_MINHEIGHT   = FIXED(55),   // The player needs to be at least 55 units from the ground before screaming.
-		PLAYER_FALL_HIT_SND_HEIGHT     = 0x4000,	  // 0.25 units, fall height for player to make a sound when hitting the ground.
+		PLAYER_FALL_HIT_SND_HEIGHT     = FIXED(4),	  // 4.0 units, fall height for player to make a sound when hitting the ground.
 		PLAYER_LAND_VEL_CHANGE		   = FIXED(60),	  // Point wear landing velocity to head change velocity changes slope.
 		PLAYER_LAND_VEL_MAX            = FIXED(1000), // Maximum head change landing velocity.
 
@@ -1617,7 +1617,7 @@ namespace TFE_DarkForces
 					// Second height is below ground, so this is liquid.
 					playSound2D(s_landSplashSound);
 				}
-				else if (s_prevDistFromFloor > PLAYER_FALL_HIT_SND_HEIGHT)	// 0.25
+				else if (s_prevDistFromFloor > PLAYER_FALL_HIT_SND_HEIGHT)
 				{
 					// Second height is at or above ground.
 					playSound2D(s_landSolidSound);
