@@ -615,7 +615,7 @@ namespace TFE_DarkForces
 		s_flatLighting = JFALSE;
 		s_visionFxEndCountdown = 3;
 	}
-
+		
 	void disableNightvision()
 	{
 		disableNightvisionInternal();
@@ -655,7 +655,7 @@ namespace TFE_DarkForces
 		s_wearingCleats = JTRUE;
 		hud_sendTextMessage(22);
 	}
-
+		
 	void disableMask()
 	{
 		if (!s_wearingGasmask)

@@ -10,6 +10,8 @@
 #include "pickup.h"
 #include "weapon.h"
 #include <TFE_System/system.h>
+#include <TFE_Game/igame.h>
+#include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
@@ -372,6 +374,15 @@ namespace TFE_DarkForces
 		ammo[8] = s_playerInfo.health;
 		ammo[9] = s_energy;
 	}
+
+	void player_setNextWeapon(s32 nextWpn)
+	{
+		weapon_setNext(nextWpn);
+		if (nextWpn > s_playerInfo.maxWeapon)
+		{
+			s_playerInfo.maxWeapon = nextWpn;
+		}
+	}
 		
 	void player_createController()
 	{
@@ -472,9 +483,22 @@ namespace TFE_DarkForces
 
 		// Handle level-specific hacks.
 		const char* levelName = agent_getLevelName();
-		if (!strcasecmp(levelName, "japship"))
+		if (!strcasecmp(levelName, "jabship"))
 		{
-			// TODO(Core Game Loop Release)
+			u8* src  = (u8*)&s_playerInfo;
+			size_t size = (size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo;
+			if (!s_playerInvSaved)
+			{
+				u8* dst = (u8*)level_alloc(size);
+				s_playerInvSaved = (u32*)dst;
+				memcpy(dst, src, size);
+				memset(src, 0, size);
+
+				player_setNextWeapon(0);
+				disableMask();
+				disableCleats();
+				disableNightvision();
+			}
 		}
 		else if (!strcasecmp(levelName, "gromas"))
 		{
