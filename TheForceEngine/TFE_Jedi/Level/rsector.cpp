@@ -777,13 +777,9 @@ namespace TFE_Jedi
 		wall->w0->z = prevZ;
 
 		// Test the results.
-		JBool canRotateWalls = JFALSE;
-		if (!overlap1)	// no overlap.
+		if (!overlap1 && (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1))
 		{
-			if (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1)
-			{
-				return JFALSE;
-			}
+			return JFALSE;
 		}
 		return JTRUE;
 	}

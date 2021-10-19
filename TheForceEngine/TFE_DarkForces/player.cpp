@@ -1757,7 +1757,7 @@ namespace TFE_DarkForces
 		player->worldHeight = min(eyeHeight, player->worldHeight);
 
 		// Crushing Damage.
-		if (player->worldHeight < minDistToFloor)
+		if (player->worldHeight < minEyeDistFromFloor)
 		{
 			if (!s_crushSoundId)
 			{

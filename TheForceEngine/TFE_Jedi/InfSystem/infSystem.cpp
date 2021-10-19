@@ -3477,8 +3477,7 @@ namespace TFE_Jedi
 		fixed16_16 centerX = elev->dirOrCenter.x;
 		fixed16_16 centerZ = elev->dirOrCenter.z;
 		angle14_32 angleInt = floor16(angle);
-		JBool canRotate = sector_canRotateWalls(sector, angleInt, centerX, centerZ);
-		if (!canRotate)
+		if (!sector_canRotateWalls(sector, angleInt, centerX, centerZ))
 		{
 			return elev->iValue;
 		}
