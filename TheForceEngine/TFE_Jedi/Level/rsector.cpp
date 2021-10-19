@@ -18,8 +18,8 @@ namespace TFE_Jedi
 	// Internal Forward Declarations
 	void sector_computeWallDirAndLength(RWall* wall);
 	void sector_moveWallVertex(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
-	u32  sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide);
-	u32  sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
+	JBool sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide);
+	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ);
 
 	f32 isLeft(Vec2f p0, Vec2f p1, Vec2f p2);
@@ -225,14 +225,14 @@ namespace TFE_Jedi
 		return maxObjHeight;
 	}
 			
-	u32 sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
+	JBool sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
 	{
 		sector->dirtyFlags |= SDF_VERTICES;
 
 		fixed16_16 offsetX = mul16(delta, dirX);
 		fixed16_16 offsetZ = mul16(delta, dirZ);
 
-		u32 sectorBlocked = 0;
+		JBool sectorBlocked = JFALSE;
 		s32 wallCount = sector->wallCount;
 		RWall* wall = sector->walls;
 		for (s32 i = 0; i < wallCount && !sectorBlocked; i++, wall++)
@@ -268,7 +268,7 @@ namespace TFE_Jedi
 			sector_computeBounds(sector);
 		}
 
-		return !sectorBlocked ? 0xffffffff : 0;
+		return ~sectorBlocked;
 	}
 
 	void sector_changeWallLight(RSector* sector, fixed16_16 delta)
@@ -1047,7 +1047,7 @@ namespace TFE_Jedi
 	// objSide: 0 = no overlap, -1/+1 front or behind.
 	JBool sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide)
 	{
-		fixed16_16 halfWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 1;
+		fixed16_16 halfWidth    = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 1;
 		fixed16_16 quarterWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 2;
 		fixed16_16 threeQuartWidth = halfWidth + quarterWidth;
 		*objSide = 0;
@@ -1066,29 +1066,29 @@ namespace TFE_Jedi
 			}
 		}
 
-		vec2_fixed* w0 = wall->w0;
-		fixed16_16 x0 = w0->x;
-		fixed16_16 z0 = w0->z;
-		fixed16_16 dirX = wall->wallDir.z;
-		fixed16_16 dirZ = wall->wallDir.x;
-		fixed16_16 len = wall->length;
-		fixed16_16 dx = obj->posWS.x - x0;
-		fixed16_16 dz = obj->posWS.z - z0;
+		vec2_fixed* w0  = wall->w0;
+		// Given a 2D direction: Dx, Dz; the perpendicular (normal) = -Dz, Dx
+		fixed16_16 nrmX = wall->wallDir.z;
+		fixed16_16 nrmZ = wall->wallDir.x;
+		fixed16_16 len  = wall->length;
+		fixed16_16 dx   = obj->posWS.x - w0->x;
+		fixed16_16 dz   = obj->posWS.z - w0->z;
 
-		fixed16_16 proj = mul16(dx, dirZ) + mul16(dz, dirX);
-		fixed16_16 maxS = threeQuartWidth * 2 + len;	// 1.5 * width + length
-		fixed16_16 s = threeQuartWidth + proj;
-		if (s <= maxS)
+		fixed16_16 proj = mul16(dx, nrmZ) + mul16(dz, nrmX);
+		fixed16_16 minSepDist = threeQuartWidth * 2 + len;	// 1.5 * width + length
+		fixed16_16 projOnWall = TFE_Jedi::abs(threeQuartWidth + proj);
+		if (projOnWall <= minSepDist)
 		{
-			s32 diff = mul16(dx, dirX) - mul16(dz, dirZ);
-			s32 side = (diff >= 0) ? 1 : -1;
+			fixed16_16 perpDist = mul16(dx, nrmX) - mul16(dz, nrmZ);
+			s32 side = (perpDist >= 0) ? 1 : -1;
 
 			*objSide = side;
 			if (side < 0)
 			{
-				diff = -diff;
+				perpDist = -perpDist;
 			}
-			if (diff <= threeQuartWidth)
+			assert(perpDist >= 0);
+			if (perpDist <= threeQuartWidth)
 			{
 				return JTRUE;
 			}
@@ -1099,7 +1099,7 @@ namespace TFE_Jedi
 	// returns 0 if the wall is free to move, else non-zero.
 	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
-		s32 objSide0;
+		s32 objSide0 = 0;
 		// Test the initial position, the code assumes there is no collision at this point.
 		sector_objOverlapsWall(wall, s_playerObject, &objSide0);
 
@@ -1109,7 +1109,7 @@ namespace TFE_Jedi
 		w0->x += offsetX;
 		w0->z += offsetZ;
 
-		s32 objSide1;
+		s32 objSide1 = 0;
 		// Then move the wall and test the new position.
 		JBool col = sector_objOverlapsWall(wall, s_playerObject, &objSide1);
 
@@ -1117,12 +1117,9 @@ namespace TFE_Jedi
 		w0->x = x0;
 		w0->z = z0;
 
-		if (!col)
+		if (!col && (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1))
 		{
-			if (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1)
-			{
-				return JFALSE;
-			}
+			return JFALSE;
 		}
 		return JTRUE;
 	}
