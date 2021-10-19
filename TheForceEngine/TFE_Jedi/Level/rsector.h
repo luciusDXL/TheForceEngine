@@ -157,6 +157,7 @@ namespace TFE_Jedi
 	void sector_getObjFloorAndCeilHeight(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight);
 
 	void sector_changeGlobalLightLevel();
+	void sector_removeCorpses(RSector* sector);
 
 	JBool sector_canRotateWalls(RSector* sector, angle14_32 angle, fixed16_16 centerX, fixed16_16 centerZ);
 	void  sector_rotateWalls(RSector* sector, fixed16_16 centerX, fixed16_16 centerZ, angle14_32 angle);

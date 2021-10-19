@@ -784,6 +784,39 @@ namespace TFE_Jedi
 		return JTRUE;
 	}
 
+	void sector_removeCorpses(RSector* sector)
+	{
+		//s_infCurSector = sector;
+		SecObject* obj = nullptr;
+		s32 objectCount = sector->objectCount;
+
+		s32 freeCount = 0;
+		SecObject* freeList[128];
+
+		for (s32 i = 0, idx = 0; i < objectCount && idx < sector->objectCapacity; idx++)
+		{
+			SecObject* obj = sector->objectList[idx];
+			if (obj)
+			{
+				i++;
+				if (((obj->entityFlags & ETFLAG_PICKUP) || (obj->entityFlags & ETFLAG_CAN_WAKE) || (obj->entityFlags & ETFLAG_AI_ACTOR)) && !(obj->entityFlags & ETFLAG_PROJECTILE) && !(obj->entityFlags & ETFLAG_CORPSE))
+				{
+					continue;
+				}
+
+				if (freeCount < 128)
+				{
+					freeList[freeCount++] = obj;
+				}
+			}
+		}
+
+		for (s32 i = 0; i < freeCount; i++)
+		{
+			freeObject(freeList[i]);
+		}
+	}
+
 	// Returns JTRUE if the walls can rotate.
 	JBool sector_canRotateWalls(RSector* sector, angle14_32 angle, fixed16_16 centerX, fixed16_16 centerZ)
 	{

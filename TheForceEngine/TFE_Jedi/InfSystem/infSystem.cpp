@@ -3351,6 +3351,10 @@ namespace TFE_Jedi
 				fixed16_16 height = sector->floorHeight + sector->secHeight;
 				fixed16_16 maxObjHeightAbove = 0;
 				fixed16_16 maxObjectHeightBelow = 0;
+
+				// Remove dead objects.
+				sector_removeCorpses(sector);
+
 				s32 objCount = sector->objectCount;
 				SecObject** objList = sector->objectList;
 				for (; objCount > 0; objList++)
@@ -3403,6 +3407,9 @@ namespace TFE_Jedi
 				fixed16_16 height = floorHeight - ceilHeight;
 				if (height < maxObjHeight)
 				{
+					// Remove dead objects.
+					sector_removeCorpses(sector);
+
 					// Not sure why it needs to check again...
 					fixed16_16 maxObjHeight = sector_getMaxObjectHeight(sector);
 					fixed16_16 spaceNeeded = maxObjHeight + 0x4000;	// maxObjHeight + 0.25
