@@ -409,10 +409,8 @@ namespace RClassic_Fixed
 		while (1)
 		{
 			RWall* srcWall = srcSeg->srcWall;
-			// TODO : fix this 
-			bool processed = (s_drawFrame == srcWall->drawFrame);
-			//bool processed = false;
-			bool insideWindow = ((srcSeg->z0 >= s_windowMinZ_Fixed || srcSeg->z1 >= s_windowMinZ_Fixed) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX);
+			JBool processed = (s_drawFrame == srcWall->drawFrame) ? JTRUE : JFALSE;
+			JBool insideWindow = ((srcSeg->z0 >= s_windowMinZ_Fixed || srcSeg->z1 >= s_windowMinZ_Fixed) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX) ? JTRUE : JFALSE;
 			if (!processed && insideWindow)
 			{
 				// Copy the source segment into "newSeg" so it can be modified.
@@ -428,7 +426,7 @@ namespace RClassic_Fixed
 				for (s32 n = 0; n < outIndex && segHidden == 0; n++, sortedSeg++)
 				{
 					// Trivially skip segments that do not overlap in screenspace.
-					bool segOverlap = newSeg->wallX0 <= sortedSeg->wallX1 && sortedSeg->wallX0 <= newSeg->wallX1;
+					JBool segOverlap = (newSeg->wallX0 <= sortedSeg->wallX1 && sortedSeg->wallX0 <= newSeg->wallX1) ? JTRUE : JFALSE;
 					if (!segOverlap) { continue; }
 
 					RWall* outSrcWall = sortedSeg->srcWall;
@@ -681,7 +679,7 @@ namespace RClassic_Fixed
 		return outIndex;
 	}
 
-	TextureData* setupSignTexture(RWall* srcWall, fixed16_16* signU0, fixed16_16* signU1, ColumnFunction* signFullbright, ColumnFunction* signLit, bool hqMode)
+	TextureData* setupSignTexture(RWall* srcWall, fixed16_16* signU0, fixed16_16* signU1, ColumnFunction* signFullbright, ColumnFunction* signLit)
 	{
 		if (!srcWall->signTex) { return nullptr; }
 
@@ -763,7 +761,7 @@ namespace RClassic_Fixed
 
 		fixed16_16 signU0 = 0, signU1 = 0;
 		ColumnFunction signFullbright = nullptr, signLit = nullptr;
-		TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
+		TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit);
 
 		fixed16_16 wallDeltaX = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 		fixed16_16 dYdXtop = 0, dYdXbot = 0;
@@ -782,7 +780,7 @@ namespace RClassic_Fixed
 		flat_addEdges(length, wallSegment->wallX0, dYdXbot, y0F, dYdXtop, y0C);
 
 		const s32 texWidth = texture ? texture->width : 0;
-		const bool flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) != 0;
+		const JBool flipHorz = ((srcWall->flags1 & WF1_FLIP_HORIZ)!=0) ? JTRUE : JFALSE;
 				
 		for (s32 i = 0; i < length; i++, x++)
 		{
@@ -888,7 +886,7 @@ namespace RClassic_Fixed
 		s32 lengthInPixels = edge->lengthInPixels;
 
 		s_texHeightMask = texture->height - 1;
-		s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
+		JBool flipHorz = ((srcWall->flags1 & WF1_FLIP_HORIZ)!=0) ? JTRUE : JFALSE;
 
 		fixed16_16 ceil_dYdX  = edge->dyCeil_dx;
 		fixed16_16 floor_dYdX = edge->dyFloor_dx;
@@ -1185,12 +1183,12 @@ namespace RClassic_Fixed
 		fixed16_16 u0 = wallSegment->uCoord0;
 		fixed16_16 num = solveForZ_Numerator(wallSegment);
 		s_texHeightMask = tex->height - 1;
-		s32 flipHorz = (wall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
-		s32 illumSign = (wall->flags1 & WF1_ILLUM_SIGN) ? -1 : 0;
+		JBool flipHorz  = ((wall->flags1 & WF1_FLIP_HORIZ)!=0) ? JTRUE : JFALSE;
+		JBool illumSign = ((wall->flags1 & WF1_ILLUM_SIGN)!=0) ? JTRUE : JFALSE;
 
 		fixed16_16 signU0 = 0, signU1 = 0;
 		ColumnFunction signFullbright = nullptr, signLit = nullptr;
-		TextureData* signTex = setupSignTexture(wall, &signU0, &signU1, &signFullbright, &signLit, false);
+		TextureData* signTex = setupSignTexture(wall, &signU0, &signU1, &signFullbright, &signLit);
 
 		if (length > 0)
 		{
@@ -1399,12 +1397,12 @@ namespace RClassic_Fixed
 		}
 
 		fixed16_16 uCoord0 = wallSegment->uCoord0;
-		s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
-		s32 illumSign = (srcWall->flags1 & WF1_ILLUM_SIGN) ? -1 : 0;
+		JBool flipHorz  = ((srcWall->flags1 & WF1_FLIP_HORIZ)!=0) ? JTRUE : JFALSE;
+		JBool illumSign = ((srcWall->flags1 & WF1_ILLUM_SIGN)!=0) ? JTRUE : JFALSE;
 
 		fixed16_16 signU0 = 0, signU1 = 0;
 		ColumnFunction signFullbright = nullptr, signLit = nullptr;
-		TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
+		TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit);
 
 		for (s32 i = 0, x = x0; i < lengthInPixels; i++, x++)
 		{
@@ -1581,7 +1579,7 @@ namespace RClassic_Fixed
 			fixed16_16 u0 = wallSegment->uCoord0;
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 			s_texHeightMask = topTex->height - 1;
-			s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
+			JBool flipHorz = ((srcWall->flags1 & WF1_FLIP_HORIZ)!=0) ? JTRUE : JFALSE;
 
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
@@ -1677,12 +1675,12 @@ namespace RClassic_Fixed
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 
 			s_texHeightMask = botTex->height - 1;
-			s32 flipHorz = (srcWall->flags1 & WF1_FLIP_HORIZ) ? -1 : 0;
-			s32 illumSign = (srcWall->flags1 & WF1_ILLUM_SIGN) ? -1 : 0;
+			JBool flipHorz  = ((srcWall->flags1 & WF1_FLIP_HORIZ)!=0) ? JTRUE : JFALSE;
+			JBool illumSign = ((srcWall->flags1 & WF1_ILLUM_SIGN)!=0) ? JTRUE : JFALSE;
 
 			fixed16_16 signU0 = 0, signU1 = 0;
 			ColumnFunction signFullbright = nullptr, signLit = nullptr;
-			TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit, false);
+			TextureData* signTex = setupSignTexture(srcWall, &signU0, &signU1, &signFullbright, &signLit);
 
 			if (length > 0)
 			{
