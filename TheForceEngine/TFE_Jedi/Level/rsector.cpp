@@ -803,6 +803,10 @@ namespace TFE_Jedi
 				{
 					continue;
 				}
+				if ((obj->entityFlags & ETFLAG_PLAYER) || obj == s_playerObject || obj == s_playerEye)
+				{
+					continue;
+				}
 
 				if (freeCount < 128)
 				{
