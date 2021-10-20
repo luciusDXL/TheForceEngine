@@ -1204,13 +1204,68 @@ namespace TFE_Jedi
 			*ceilHeight -= SEC_SKY_HEIGHT;
 		}
 	}
+
+	void sector_moveObject(SecObject* obj, fixed16_16 offsetX, fixed16_16 offsetZ)
+	{
+		//if (obj->flags & OBJ_FLAG_HAS_COLLISION)
+		{
+			s32 height = obj->worldHeight + HALF_16;
+			CollisionInfo info =
+			{
+				obj,
+				offsetX, 0, offsetZ,
+				0, FIXED(9999), height, 0,
+				0, 0, 0,	// to be filled in later.
+				obj->worldWidth,
+			};
+			handleCollision(&info);
+
+			if (info.responseStep && info.wall)
+			{
+				handleCollisionResponseSimple(info.responseDir.x, info.responseDir.z, &info.offsetX, &info.offsetZ);
+				handleCollision(&info);
+			}
+
+			RSector* newSector = sector_which3D(obj->posWS.x, obj->posWS.y, obj->posWS.z);
+			if (newSector != obj->sector)
+			{
+				if (obj->entityFlags & (ETFLAG_CORPSE | ETFLAG_PICKUP))
+				{
+					obj->posWS.y = newSector->colSecHeight;
+				}
+			}
+			if (newSector)
+			{
+				sector_addObject(newSector, obj);
+			}
+		}
+	}
 		
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
-		// TODO(Core Game Loop Release)
-		// As far as I can tell, no objects are actually affected in-game by this.
-		// So I'm going to leave this empty for now and look deeper into it later once I have 
-		// more information.
+		JBool reverse  = (flags & ELEV_MOVING_REVERSE)!=0 ? JTRUE : JFALSE;
+		JBool masterOn = (flags & ELEV_MASTER_ON)!=0      ? JTRUE : JFALSE;
+		JBool moving   = (flags & ELEV_MOVING)!=0         ? JTRUE : JFALSE;
+
+		SecObject** objList = sector->objectList;
+		for (s32 i = 0, idx = 0; i < sector->objectCount && idx < sector->objectCapacity; idx++)
+		{
+			SecObject* obj = objList[idx];
+			if (obj)
+			{
+				i++;
+				if (obj->entityFlags != ETFLAG_PLAYER)
+				{
+					// This never seems to hit so far, so this is TODO...
+					if ((moving && obj->posWS.y == sector->floorHeight) ||
+						(masterOn && sector->secHeight && sector->floorHeight + sector->secHeight == obj->posWS.y) ||
+						(reverse && obj->posWS.y == sector->ceilingHeight))
+					{
+						sector_moveObject(obj, offsetX, offsetZ);
+					}
+				}
+			}
+		}
 	}
 		
 	// Tests if a point (p2) is to the left, on or right of an infinite line (p0 -> p1).
