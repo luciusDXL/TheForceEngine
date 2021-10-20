@@ -119,10 +119,9 @@ namespace TFE_Jedi
 				fixed16_16 secHeight = sector->floorHeight + sector->secHeight;
 				if (obj->posWS.y == secHeight)
 				{
-					obj->posWS.y += secondHeightOffset;
+					obj->posWS.y += heightOffset;
 					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
-						// Why not secHeightOffset?
 						s_playerYPos += floorOffset;
 					}
 				}
