@@ -885,8 +885,7 @@ namespace TFE_DarkForces
 			{
 				if (s_playerWeaponTask)
 				{
-					s_msgArg1 = s_playerInfo.maxWeapon;
-					task_runAndReturn(s_playerWeaponTask, MSG_SWITCH_WPN);
+					weapon_queueWeaponSwitch(s_playerInfo.maxWeapon);
 					s_playerInfo.maxWeapon = max(s_playerInfo.curWeapon, s_playerInfo.maxWeapon);
 				}
 				else

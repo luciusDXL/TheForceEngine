@@ -15,6 +15,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	static JBool s_weaponTexturesLoaded = JFALSE;
 	static JBool s_switchWeapons = JFALSE;
+	static JBool s_queWeaponSwitch = JFALSE;
 	
 	static TextureData* s_rhand1 = nullptr;
 	static TextureData* s_gasmaskTexture = nullptr;
@@ -556,6 +557,7 @@ namespace TFE_DarkForces
 
 		s_superCharge = JFALSE;
 		s_superChargeHud = JFALSE;
+		s_queWeaponSwitch = JFALSE;
 		s_superchargeTask = nullptr;
 	}
 
@@ -705,6 +707,13 @@ namespace TFE_DarkForces
 		}
 
 		weapon_setFireRate();
+	}
+
+	void weapon_queueWeaponSwitch(s32 wpnId)
+	{
+		s_queWeaponSwitch = JTRUE;
+		s_msgArg1 = wpnId;
+		task_makeActive(s_playerWeaponTask);
 	}
 
 	void weapon_handleState(MessageType msg)
@@ -945,8 +954,10 @@ namespace TFE_DarkForces
 				s_playerWeaponTask = nullptr;
 				return;
 			}
-			else if (msg == MSG_SWITCH_WPN)
+			else if (msg == MSG_SWITCH_WPN || s_queWeaponSwitch)
 			{
+				s_queWeaponSwitch = JFALSE;
+
 				task_makeActive(s_playerWeaponTask);
 				s_nextWeapon = s_msgArg1;
 				task_makeActive(s_playerWeaponTask);
@@ -1043,6 +1054,7 @@ namespace TFE_DarkForces
 			while (s_isShooting)
 			{
 				s_switchWeapons = JFALSE;
+				s_queWeaponSwitch = JFALSE;
 				s_fireFrame++;
 
 				while (msg != MSG_RUN_TASK)
