@@ -652,7 +652,6 @@ namespace TFE_DarkForces
 				{
 					ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
 					actor_addVelocity(pushVel.x*4, pushVel.y*2, pushVel.z*4);
-
 					actor_setDeathCollisionFlags();
 					stopSound(logic->alertSndID);
 					playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
@@ -668,6 +667,13 @@ namespace TFE_DarkForces
 				}
 				else
 				{
+					// Keep the y velocity from accumulating forever.
+					ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+					if (logic->vel.y < 0)
+					{
+						pushVel.y = 0;
+					}
+
 					actor_addVelocity(pushVel.x*2, pushVel.y, pushVel.z*2);
 					stopSound(aiActor->hurtSndID);
 					aiActor->hurtSndID = playSound3D_oneshot(aiActor->hurtSndSrc, obj->posWS);
