@@ -515,9 +515,11 @@ namespace TFE_DarkForces
 			strCopyAndZero(s_agentData[s_agentCount].name, s_newAgentName, 32);
 			s_agentData[s_agentCount].difficulty = 1;
 			s_agentData[s_agentCount].nextMission = 1;
-			s_agentData[s_agentCount].selectedMission = 1;
+			s_agentData[s_agentCount].selectedMission = 0;
 			s_agentId = s_agentCount;
+
 			s_agentCount++;
+			s_selectedMission = 0;
 
 			agent_createNewAgent(s_agentId, &s_agentData[s_agentId]);
 		}
