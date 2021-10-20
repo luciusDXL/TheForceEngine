@@ -1153,7 +1153,7 @@ namespace TFE_DarkForces
 
 				s_curPlayerWeapon->frame = 0;
 				s_weaponLight = 0;
-				taskCtx->delay = (s_superCharge) ? 19 : 23;
+				taskCtx->delay = (s_superCharge) ? 19 : 39;
 				do
 				{
 					task_yield(taskCtx->delay);
