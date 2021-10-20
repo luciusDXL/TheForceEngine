@@ -483,16 +483,27 @@ namespace TFE_DarkForces
 
 		// Handle level-specific hacks.
 		const char* levelName = agent_getLevelName();
+		TFE_System::logWrite(LOG_MSG, "Player", "Setting up level '%s'", levelName);
 		if (!strcasecmp(levelName, "jabship"))
 		{
 			u8* src  = (u8*)&s_playerInfo;
 			size_t size = (size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo;
+			assert(size == 140);
+			s_playerInvSaved = nullptr;	// This should already be null, but...
 			if (!s_playerInvSaved)
 			{
 				u8* dst = (u8*)level_alloc(size);
+				if (!dst)
+				{
+					TFE_System::logWrite(LOG_ERROR, "Player", "Cannot allocate player inventory space - %u bytes.", size);
+					dst = (u8*)level_alloc(140);
+				}
+
 				s_playerInvSaved = (u32*)dst;
 				memcpy(dst, src, size);
 				memset(src, 0, size);
+
+				TFE_System::logWrite(LOG_MSG, "Player", "Player Inventory copied, size = %u", size);
 
 				player_setNextWeapon(0);
 				disableMask();

@@ -256,6 +256,9 @@ namespace TFE_DarkForces
 		s_prevSuperchageHud  = JFALSE;
 		s_prevHeadlampActive = JFALSE;
 
+		s_secretsFound = 0;
+		s_secretsPercent = 0;
+
 		hud_initAnimation();
 		hud_setupToggleAnim1(JTRUE);
 		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
@@ -275,7 +278,7 @@ namespace TFE_DarkForces
 			// s_screenDirtyLeft[s_curFrameBufferIdx] = JTRUE;
 		}
 
-		if (s_showData)
+		if (s_showData && s_playerEye)
 		{
 			fixed16_16 x, z;
 			getCameraXZ(&x, &z);
