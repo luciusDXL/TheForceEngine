@@ -194,6 +194,7 @@ namespace TFE_MidiPlayer
 					localTime = 0u;
 					loopStart = -1;
 				}
+
 				runThread = s_runMusicThread.load();
 				if (runThread) { TFE_System::sleep(16); }
 				continue;
@@ -207,6 +208,7 @@ namespace TFE_MidiPlayer
 
 			if (s_pauseMusic.load())
 			{
+				TFE_System::updateThreadLocal(&localTime);
 				continue;
 			}
 
