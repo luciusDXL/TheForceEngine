@@ -978,7 +978,7 @@ namespace TFE_Jedi
 			if (obj)
 			{
 				s_colObjCount--;
-				if (obj != s_colObjPrev && obj->worldWidth)
+				if (obj != s_colObjPrev && obj->worldWidth && !(obj->entityFlags & ETFLAG_PICKUP))
 				{
 					if (obj->worldHeight >= 0)
 					{
