@@ -43,6 +43,7 @@ namespace TFE_MidiPlayer
 	static MidiRuntime s_runtime;
 	static atomic_bool s_isPlaying;
 	static atomic_bool s_changeVolume;
+	static atomic_bool s_pauseMusic;
 	static atomic_u32  s_transition;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
@@ -69,6 +70,7 @@ namespace TFE_MidiPlayer
 		TFE_MidiDevice::selectDevice(0);
 		s_runMusicThread.store(true);
 		s_isPlaying.store(false);
+		s_pauseMusic.store(false);
 		s_transition.store(TRANSITION_NONE);
 		s_resetThreadLocalTime.store(true);
 
@@ -142,25 +144,18 @@ namespace TFE_MidiPlayer
 
 	void pause()
 	{
-		if (!s_thread->isPaused())
-		{
-			stopAllNotes();
-			s_thread->pause();
-		}
+		s_pauseMusic.store(true);
+		stopAllNotes();
 	}
 
 	void resume()
 	{
-		if (s_thread->isPaused())
-		{
-			s_thread->resume();
-		}
+		s_pauseMusic.store(false);
 	}
 	
 	void stop()
 	{
 		s_isPlaying.store(false);
-		stopAllNotes();
 		resume();
 	}
 
@@ -196,6 +191,7 @@ namespace TFE_MidiPlayer
 					// Stop all of the notes.
 					stopAllNotes();
 					wasPlaying = false;
+					localTime = 0u;
 					loopStart = -1;
 				}
 				runThread = s_runMusicThread.load();
@@ -207,6 +203,11 @@ namespace TFE_MidiPlayer
 			if (s_changeVolume.exchange(false))
 			{
 				changeVolume();
+			}
+
+			if (s_pauseMusic.load())
+			{
+				continue;
 			}
 
 			// Returns the current value while atomically updating the variable.
