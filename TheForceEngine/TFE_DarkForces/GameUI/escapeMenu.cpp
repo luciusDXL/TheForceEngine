@@ -53,8 +53,12 @@ namespace TFE_DarkForces
 	void escMenu_handleMousePosition();
 	EscapeMenuAction escapeMenu_updateUI();
 
+	extern void pauseLevelMusic();
+	extern void resumeLevelMusic();
+
 	void escapeMenu_open(u8* framebuffer, u8* palette)
 	{
+		pauseLevelMusic();
 		s_escMenuOpen = JTRUE;
 		if (!s_escMenuFrames)
 		{
@@ -78,7 +82,7 @@ namespace TFE_DarkForces
 		for (s32 i = 0; i < s_framebufferCopy->size; i++)
 		{
 			u8 color = s_framebufferCopy->image[i];
-			u8* rgb  = &palette[color * 3];
+			u8* rgb = &palette[color * 3];
 			u8 luminance = ((rgb[1] >> 1) + (rgb[0] >> 2) + (rgb[2] >> 2)) >> 1;
 			s_framebufferCopy->image[i] = 63 - luminance;
 		}
@@ -92,10 +96,14 @@ namespace TFE_DarkForces
 	{
 		return s_escMenuOpen;
 	}
-		
+
 	EscapeMenuAction escapeMenu_update()
 	{
 		EscapeMenuAction action = escapeMenu_updateUI();
+		if (action != ESC_CONTINUE)
+		{
+			resumeLevelMusic();
+		}
 		
 		// Draw the screen capture.
 		hud_drawElementToScreen(s_framebufferCopy, &s_screenRect, 0, 0, s_framebuffer);

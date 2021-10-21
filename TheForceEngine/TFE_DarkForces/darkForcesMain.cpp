@@ -127,6 +127,8 @@ namespace TFE_DarkForces
 	void cutscenes_startup(s32 id);
 	void startNextMode();
 	void disableLevelMusic();
+	void pauseLevelMusic();
+	void resumeLevelMusic();
 	void startLevelMusic(s32 levelIndex);
 
 	/////////////////////////////////////////////
@@ -322,6 +324,16 @@ namespace TFE_DarkForces
 	void disableLevelMusic()
 	{
 		TFE_MidiPlayer::stop();
+	}
+
+	void pauseLevelMusic()
+	{
+		TFE_MidiPlayer::pause();
+	}
+
+	void resumeLevelMusic()
+	{
+		TFE_MidiPlayer::resume();
 	}
 
 	void startLevelMusic(s32 levelIndex)

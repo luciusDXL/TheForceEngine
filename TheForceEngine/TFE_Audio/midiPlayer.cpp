@@ -144,6 +144,7 @@ namespace TFE_MidiPlayer
 	{
 		if (!s_thread->isPaused())
 		{
+			stopAllNotes();
 			s_thread->pause();
 		}
 	}
@@ -159,6 +160,8 @@ namespace TFE_MidiPlayer
 	void stop()
 	{
 		s_isPlaying.store(false);
+		stopAllNotes();
+		resume();
 	}
 
 	void changeVolume()
