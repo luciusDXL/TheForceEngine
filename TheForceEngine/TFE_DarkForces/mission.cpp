@@ -22,6 +22,8 @@
 #include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_FrontEndUI/frontEndUi.h>
+#include <TFE_FrontEndUI/console.h>
 #include <TFE_System/system.h>
 #include <TFE_Input/input.h>
 
@@ -114,17 +116,36 @@ namespace TFE_DarkForces
 	void applyLuminanceFilter(u8* pal, JBool lumRedMask, JBool lumGreenMask, JBool lumBlueMask);
 	void applyScreenFxToPalette(u8* pal, s32 healthFxLevel, s32 shieldFxLevel, s32 flashFxLevel);
 	void applyScreenBrightness(u8* pal, s32 brightness);
+
+	void executeCheat(CheatID cheatID);
 			
 	/////////////////////////////////////////////
 	// API Implementation
 	/////////////////////////////////////////////
 	static Tick s_loadingScreenStart;
 	static Tick s_loadingScreenDelta;
+	static CheatID s_queuedCheatID = CHEAT_NONE;
+
+	void console_cheat(const ConsoleArgList& args)
+	{
+		if (args.size() < 2) { return; }
+
+		const char* cheatStr = args[1].c_str();
+		s_queuedCheatID = cheat_getIDFromString(cheatStr);
+
+		// Close the console so the cheat can be executed.
+		TFE_FrontEndUI::toggleConsole();
+		mission_pause(JFALSE);
+		TFE_Input::enableRelativeMode(true);
+	}
 
 	void mission_startTaskFunc(MessageType msg)
 	{
 		task_begin;
 		{
+			// TFE-specific
+			CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
+
 			// Make sure the loading screen is displayed for at least 1 second.
 			displayLoadingScreen();
 			task_yield(MIN_LOAD_TIME);
@@ -415,6 +436,7 @@ namespace TFE_DarkForces
 		s_cheatString[0] = 0;
 		s_cheatCharIndex = 0;
 		s_cheatInputCount = 0;
+		s_queuedCheatID = CHEAT_NONE;
 
 		for (s32 i = 9; i >= 0; i--)
 		{
@@ -708,6 +730,127 @@ namespace TFE_DarkForces
 		agent_levelComplete();
 		s_exitLevel = JTRUE;
 	}
+
+	void executeCheat(CheatID cheatID)
+	{
+		if (cheatID == CHEAT_NONE)
+		{
+			return;
+		}
+
+		switch (cheatID)
+		{
+			case CHEAT_LACDS:
+			{
+				automap_updateMapData(MAP_INCR_SECTOR_MODE);
+			} break;
+			case CHEAT_LANTFH:
+			{
+				automap_updateMapData(MAP_TELEPORT);
+				cheat_teleport();
+			} break;
+			case CHEAT_LAPOGO:
+			{
+				cheat_enableNoheightCheck();
+			} break;
+			case CHEAT_LARANDY:
+			{
+				pickupSupercharge();
+				hud_sendTextMessage(701);
+			} break;
+			case CHEAT_LAIMLAME:
+			{
+				cheat_godMode();
+			} break;
+			case CHEAT_LAPOSTAL:
+			{
+				cheat_postal();
+			} break;
+			case CHEAT_LADATA:
+			{
+				hud_toggleDataDisplay();
+			} break;
+			case CHEAT_LABUG:
+			{
+				cheat_bugMode();
+			} break;
+			case CHEAT_LAREDLITE:
+			{
+			} break;
+			case CHEAT_LASECBASE:
+			{
+				cheat_gotoLevel(0);
+			} break;
+			case CHEAT_LATALAY:
+			{
+				cheat_gotoLevel(1);
+			} break;
+			case CHEAT_LASEWERS:
+			{
+				cheat_gotoLevel(2);
+			} break;
+			case CHEAT_LATESTBASE:
+			{
+				cheat_gotoLevel(3);
+			} break;
+			case CHEAT_LAGROMAS:
+			{
+				cheat_gotoLevel(4);
+			} break;
+			case CHEAT_LADTENTION:
+			{
+				cheat_gotoLevel(5);
+			} break;
+			case CHEAT_LARAMSHAD:
+			{
+				cheat_gotoLevel(6);
+			} break;
+			case CHEAT_LAROBOTICS:
+			{
+				cheat_gotoLevel(7);
+			} break;
+			case CHEAT_LANARSHADA:
+			{
+				cheat_gotoLevel(8);
+			} break;
+			case CHEAT_LAJABSHIP:
+			{
+				cheat_gotoLevel(9);
+			} break;
+			case CHEAT_LAIMPCITY:
+			{
+				cheat_gotoLevel(10);
+			} break;
+			case CHEAT_LAFUELSTAT:
+			{
+				cheat_gotoLevel(11);
+			} break;
+			case CHEAT_LAEXECUTOR:
+			{
+				cheat_gotoLevel(12);
+			} break;
+			case CHEAT_LAARC:
+			{
+				cheat_gotoLevel(13);
+			} break;
+			case CHEAT_LASKIP:
+			{
+				cheat_levelSkip();
+			} break;
+			case CHEAT_LABRADY:
+			{
+				cheat_fullAmmo();
+			} break;
+			case CHEAT_LAUNLOCK:
+			{
+				cheat_unlock();
+			} break;
+			case CHEAT_LAMAXOUT:
+			{
+				cheat_maxout();
+			} break;
+		}
+	}
 		
 	void handleBufferedInput()
 	{
@@ -742,123 +885,7 @@ namespace TFE_DarkForces
 				s_cheatString[s_cheatCharIndex] = 0;
 
 				CheatID cheatID = cheat_getID();
-				if (cheatID == CHEAT_NONE)
-				{
-					continue;
-				}
-
-				switch (cheatID)
-				{
-					case CHEAT_LACDS:
-					{
-						automap_updateMapData(MAP_INCR_SECTOR_MODE);
-					} break;
-					case CHEAT_LANTFH:
-					{
-						automap_updateMapData(MAP_TELEPORT);
-						cheat_teleport();
-					} break;
-					case CHEAT_LAPOGO:
-					{
-						cheat_enableNoheightCheck();
-					} break;
-					case CHEAT_LARANDY:
-					{
-						pickupSupercharge();
-						hud_sendTextMessage(701);
-					} break;
-					case CHEAT_LAIMLAME:
-					{
-						cheat_godMode();
-					} break;
-					case CHEAT_LAPOSTAL:
-					{
-						cheat_postal();
-					} break;
-					case CHEAT_LADATA:
-					{
-						hud_toggleDataDisplay();
-					} break;
-					case CHEAT_LABUG:
-					{
-						cheat_bugMode();
-					} break;
-					case CHEAT_LAREDLITE:
-					{
-					} break;
-					case CHEAT_LASECBASE:
-					{
-						cheat_gotoLevel(0);
-					} break;
-					case CHEAT_LATALAY:
-					{
-						cheat_gotoLevel(1);
-					} break;
-					case CHEAT_LASEWERS:
-					{
-						cheat_gotoLevel(2);
-					} break;
-					case CHEAT_LATESTBASE:
-					{
-						cheat_gotoLevel(3);
-					} break;
-					case CHEAT_LAGROMAS:
-					{
-						cheat_gotoLevel(4);
-					} break;
-					case CHEAT_LADTENTION:
-					{
-						cheat_gotoLevel(5);
-					} break;
-					case CHEAT_LARAMSHAD:
-					{
-						cheat_gotoLevel(6);
-					} break;
-					case CHEAT_LAROBOTICS:
-					{
-						cheat_gotoLevel(7);
-					} break;
-					case CHEAT_LANARSHADA:
-					{
-						cheat_gotoLevel(8);
-					} break;
-					case CHEAT_LAJABSHIP:
-					{
-						cheat_gotoLevel(9);
-					} break;
-					case CHEAT_LAIMPCITY:
-					{
-						cheat_gotoLevel(10);
-					} break;
-					case CHEAT_LAFUELSTAT:
-					{
-						cheat_gotoLevel(11);
-					} break;
-					case CHEAT_LAEXECUTOR:
-					{
-						cheat_gotoLevel(12);
-					} break;
-					case CHEAT_LAARC:
-					{
-						cheat_gotoLevel(13);
-					} break;
-					case CHEAT_LASKIP:
-					{
-						cheat_levelSkip();
-					} break;
-					case CHEAT_LABRADY:
-					{
-						cheat_fullAmmo();
-					} break;
-					case CHEAT_LAUNLOCK:
-					{
-						cheat_unlock();
-					} break;
-					case CHEAT_LAMAXOUT:
-					{
-						cheat_maxout();
-					} break;
-				}
+				executeCheat(cheatID);
 			}
 		}
 	}
@@ -883,6 +910,11 @@ namespace TFE_DarkForces
 		if (!s_gamePaused)
 		{
 			handleBufferedInput();
+			if (s_queuedCheatID != CHEAT_NONE)
+			{
+				executeCheat(s_queuedCheatID);
+				s_queuedCheatID = CHEAT_NONE;
+			}
 
 			// For now just deal with a few controls.
 			if (getActionState(IA_PDA_TOGGLE) == STATE_PRESSED)

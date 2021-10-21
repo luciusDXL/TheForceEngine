@@ -42,6 +42,25 @@ namespace TFE_DarkForces
 	s32  s_cheatCharIndex = 0;
 	s32  s_cheatInputCount = 0;
 
+	CheatID cheat_getIDFromString(const char* cheatStr)
+	{
+		if (!cheatStr || strlen(cheatStr) <= 2)
+		{
+			return CHEAT_NONE;
+		}
+
+		s32 maxMatchIndex = 0;
+		const size_t cheatCount = TFE_ARRAYSIZE(c_cheatStrings);
+		for (size_t cheatIndex = 0; cheatIndex < cheatCount; cheatIndex++)
+		{
+			if (strcasecmp(cheatStr + 2, c_cheatStrings[cheatIndex]) == 0)
+			{
+				return CheatID(cheatIndex + 1);
+			}
+		}
+		return CHEAT_NONE;
+	}
+
 	CheatID cheat_getID()
 	{
 		if (!s_cheatCharIndex)
