@@ -203,7 +203,7 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture count.");
 			return false;
 		}
-		s_textures = (TextureData**)level_alloc(s_textureCount * sizeof(TextureData**));
+		s_textures = (TextureData**)res_alloc(s_textureCount * sizeof(TextureData**));
 
 		// Load Textures.
 		TextureData** texture = s_textures;
@@ -603,7 +603,7 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "PODS %d", &s_podCount) == 1)
 		{
-			s_pods = (JediModel**)level_alloc(sizeof(JediModel*)*s_podCount);
+			s_pods = (JediModel**)res_alloc(sizeof(JediModel*)*s_podCount);
 			for (s32 p = 0; p < s_podCount; p++)
 			{
 				line = parser.readLine(bufferPos);
@@ -623,7 +623,7 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "SPRS %d", &s_spriteCount) == 1)
 		{
-			s_sprites = (JediWax**)level_alloc(sizeof(JediWax*)*s_spriteCount);
+			s_sprites = (JediWax**)res_alloc(sizeof(JediWax*)*s_spriteCount);
 			for (s32 s = 0; s < s_spriteCount; s++)
 			{
 				line = parser.readLine(bufferPos);
@@ -643,7 +643,7 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "FMES %d", &s_fmeCount) == 1)
 		{
-			s_frames = (JediFrame**)level_alloc(sizeof(JediFrame*)*s_fmeCount);
+			s_frames = (JediFrame**)res_alloc(sizeof(JediFrame*)*s_fmeCount);
 			for (s32 f = 0; f < s_fmeCount; f++)
 			{
 				line = parser.readLine(bufferPos);

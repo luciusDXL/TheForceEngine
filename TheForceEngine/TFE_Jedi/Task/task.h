@@ -12,6 +12,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_System/memoryPool.h>
+#include <TFE_FileSystem/filestream.h>
 #include <TFE_DarkForces/time.h>
 #include <TFE_Jedi/InfSystem/message.h>
 

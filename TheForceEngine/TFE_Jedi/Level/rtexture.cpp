@@ -197,7 +197,7 @@ namespace TFE_Jedi
 		anim->texPtr = texture;			// pointer to the texture pointer, allowing us to update that pointer later.
 		anim->baseFrame = tex;
 		anim->baseData = tex->image;
-		anim->frameList = (TextureData**)level_alloc(sizeof(TextureData**) * anim->count);
+		anim->frameList = (TextureData**)res_alloc(sizeof(TextureData**) * anim->count);
 		assert(anim->frameList);
 
 		for (s32 i = 0; i < anim->count; i++, textureOffsets++)

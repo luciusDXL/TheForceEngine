@@ -570,7 +570,7 @@ namespace TFE_DarkForces
 		}
 
 		// Allocate 256 colors * 32 light levels + 256, where the last 256 is so that the address can be rounded to the next 256 byte boundary.
-		u8* colorMapBase = (u8*)level_alloc(8576);
+		u8* colorMapBase = (u8*)res_alloc(8576);
 		u8* colorMap = colorMapBase;
 		*basePtr = colorMapBase;
 		if (size_t(colorMap) & 0xffu)

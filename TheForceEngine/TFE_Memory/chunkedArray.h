@@ -3,6 +3,7 @@
 // Chunked array allocator
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_FileSystem/filestream.h>
 #include <vector>
 #include <string>
 
@@ -23,5 +24,8 @@ namespace TFE_Memory
 	u32 chunkedArraySize(ChunkedArray* arr);
 	void* chunkedArrayGet(ChunkedArray* arr, u32 index);
 
-	// TODO: Serialize/Restore
+	void serialize(ChunkedArray* arr, FileStream* file);
+	ChunkedArray* restore(FileStream* file, MemoryRegion* region);
+
+	s32 getSlotIndex(ChunkedArray* arr, u8* ptr);
 }

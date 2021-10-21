@@ -312,6 +312,7 @@ namespace TFE_DarkForces
 					startNextMode();
 
 					region_clear(s_levelRegion);
+					region_clear(s_resRegion);
 					bitmap_setAllocator(s_gameRegion);
 				}
 			} break;
@@ -367,7 +368,7 @@ namespace TFE_DarkForces
 			}  break;
 			case GMODE_MISSION:
 			{
-				bitmap_setAllocator(s_levelRegion);
+				bitmap_setAllocator(s_resRegion);
 				actor_clearState();
 
 				task_reset();

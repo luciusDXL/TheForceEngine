@@ -36,6 +36,59 @@ namespace TFE_Memory
 	};
 	void addFreeSlot(ChunkedArray* arr, u8* ptr);
 
+	void serialize(ChunkedArray* arr, FileStream* file)
+	{
+		assert(file);
+		size_t size = size_t(&arr->chunks) - sizeof(arr);
+		file->writeBuffer(arr, (u32)size);
+
+		const u32 chunkAllocSize = arr->elemPerChunk * arr->elemSize;
+		for (u32 i = 0; i < arr->chunkCount; i++)
+		{
+			file->write(arr->chunks[i], chunkAllocSize);
+		}
+
+		for (u32 i = 0; i < arr->freeSlotCount; i++)
+		{
+			s32 freeSlotIndex = getSlotIndex(arr, arr->freeSlots[i]);
+			file->write(&freeSlotIndex);
+		}
+	}
+
+	ChunkedArray* restore(FileStream* file, MemoryRegion* region)
+	{
+		assert(file && region);
+		ChunkedArray* arr = (ChunkedArray*)region_alloc(region, sizeof(ChunkedArray));
+		memset(arr, 0, sizeof(ChunkedArray));
+
+		size_t size = size_t(&arr->chunks) - sizeof(arr);
+		file->readBuffer(arr, (u32)size);
+
+		arr->chunks = (u8**)region_realloc(region, arr->chunks, sizeof(u8*) * arr->chunkCount);
+		const u32 chunkAllocSize = arr->elemPerChunk * arr->elemSize;
+		for (u32 i = 0; i < arr->chunkCount; i++)
+		{
+			arr->chunks[i] = (u8*)region_alloc(region, chunkAllocSize);
+			file->read(arr->chunks[i], chunkAllocSize);
+		}
+
+		arr->freeSlots = (u8**)region_realloc(region, arr->freeSlots, sizeof(u8**) * arr->freeSlotCapacity);
+		for (u32 i = 0; i < arr->freeSlotCount; i++)
+		{
+			s32 freeSlotIndex;
+			file->read(&freeSlotIndex);
+			if (freeSlotIndex >= 0)
+			{
+				arr->freeSlots[i] = arr->chunks[freeSlotIndex];
+			}
+			else
+			{
+				arr->freeSlots[i] = nullptr;
+			}
+		}
+		return arr;
+	}
+
 	ChunkedArray* createChunkedArray(u32 elemSize, u32 elemPerChunk, u32 initChunkCount, MemoryRegion* region)
 	{
 		ChunkedArray* arr = (ChunkedArray*)region_alloc(region, sizeof(ChunkedArray));
@@ -164,5 +217,17 @@ namespace TFE_Memory
 		}
 		arr->freeSlots[arr->freeSlotCount] = ptr;
 		arr->freeSlotCount++;
+	}
+
+	s32 getSlotIndex(ChunkedArray* arr, u8* ptr)
+	{
+		for (s32 i = 0; i < (s32)arr->chunkCount; i++)
+		{
+			if (arr->chunks[i] == ptr)
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 }

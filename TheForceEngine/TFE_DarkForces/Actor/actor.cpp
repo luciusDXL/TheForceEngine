@@ -467,9 +467,9 @@ namespace TFE_DarkForces
 		}
 		s32 randomSect = floor16(random(intToFixed16(s_sectorCount - 1)));
 		RSector* sector;
-		for (s32 attempt = 0; attempt < s_sectorCount; attempt++, randomSect++)
+		for (u32 attempt = 0; attempt < s_sectorCount; attempt++, randomSect++)
 		{
-			if (randomSect >= s_sectorCount)
+			if (randomSect >= (s32)s_sectorCount)
 			{
 				sector = &s_sectors[0];
 				randomSect = 0;
