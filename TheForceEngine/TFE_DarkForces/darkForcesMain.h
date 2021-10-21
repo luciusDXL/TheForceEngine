@@ -11,6 +11,7 @@ namespace TFE_DarkForces
 	struct DarkForces : IGame
 	{
 		bool runGame(s32 argCount, const char* argv[]) override;
+		void pauseGame(bool pause) override;
 		void exitGame() override;
 		void loopGame() override;
 	};

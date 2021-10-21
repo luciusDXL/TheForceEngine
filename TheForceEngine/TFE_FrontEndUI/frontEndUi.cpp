@@ -301,7 +301,7 @@ namespace TFE_FrontEndUI
 		return s_appState == APP_STATE_MENU && s_subUI == FEUI_NONE;
 	}
 
-	void toggleConsole()
+	bool toggleConsole()
 	{
 		s_consoleActive = !s_consoleActive;
 		// Start open
@@ -313,6 +313,7 @@ namespace TFE_FrontEndUI
 		{
 			TFE_Console::startClose();
 		}
+		return s_consoleActive;
 	}
 
 	bool isConsoleOpen()

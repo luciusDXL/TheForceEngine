@@ -34,7 +34,7 @@ namespace TFE_FrontEndUI
 	void enableConfigMenu();
 	AppState menuReturn();
 	void setMenuReturnState(AppState state);
-	void toggleConsole();
+	bool toggleConsole();
 
 	bool shouldClearScreen();
 	bool restartGame();

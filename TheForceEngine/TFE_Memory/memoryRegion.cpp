@@ -394,6 +394,27 @@ namespace TFE_Memory
 		}
 	}
 		
+	size_t region_getMemoryUsed(MemoryRegion* region)
+	{
+		size_t used = 0;
+		for (s32 i = 0; i < region->blockCount; i++)
+		{
+			used += (region->blockSize - region->memBlocks[i]->sizeFree);
+		}
+		return used;
+	}
+
+	void region_getBlockInfo(MemoryRegion* region, size_t* blockCount, size_t* blockSize)
+	{
+		*blockCount = region->blockCount;
+		*blockSize = region->blockSize;
+	}
+
+	size_t region_getMemoryCapacity(MemoryRegion* region)
+	{
+		return region->blockCount * region->blockSize;
+	}
+		
 	RelativePointer region_getRelativePointer(MemoryRegion* region, void* ptr)
 	{
 		RelativePointer rp = NULL_RELATIVE_POINTER;

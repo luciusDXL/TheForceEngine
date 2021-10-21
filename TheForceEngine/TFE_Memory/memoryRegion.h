@@ -23,6 +23,10 @@ namespace TFE_Memory
 	void* region_realloc(MemoryRegion* region, void* ptr, size_t size);
 	void  region_free(MemoryRegion* region, void* ptr);
 
+	size_t  region_getMemoryUsed(MemoryRegion* region);
+	size_t  region_getMemoryCapacity(MemoryRegion* region);
+	void region_getBlockInfo(MemoryRegion* region, size_t* blockCount, size_t* blockSize);
+
 	RelativePointer region_getRelativePointer(MemoryRegion* region, void* ptr);
 	void* region_getRealPointer(MemoryRegion* region, RelativePointer ptr);
 

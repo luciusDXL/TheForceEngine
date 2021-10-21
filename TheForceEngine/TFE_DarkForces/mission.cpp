@@ -863,15 +863,21 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void mission_pause(JBool pause)
+	{
+		s_gamePaused = pause;
+		task_pause(s_gamePaused, s_mainTask);
+		time_pause(s_gamePaused);
+		TFE_Input::clearAccumulatedMouseMove();
+	}
+
 	void handleGeneralInput()
 	{
 		// In the DOS code, the game would just loop here - checking to see if paused has been pressed and then continue.
 		// Obviously that won't work for TFE, so the game paused variable is set and the game will have to handle it.
 		if (getActionState(IA_PAUSE) == STATE_PRESSED)
 		{
-			s_gamePaused = ~s_gamePaused;
-			task_pause(s_gamePaused, s_mainTask);
-			time_pause(s_gamePaused);
+			mission_pause(~s_gamePaused);
 		}
 
 		if (!s_gamePaused)

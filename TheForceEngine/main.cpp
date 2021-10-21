@@ -560,7 +560,12 @@ int main(int argc, char* argv[])
 		// Update
 		if (TFE_Input::keyPressed(KEY_GRAVE))
 		{
-			TFE_FrontEndUI::toggleConsole();
+			bool isOpening = TFE_FrontEndUI::toggleConsole();
+			if (s_curGame)
+			{
+				s_curGame->pauseGame(isOpening);
+			}
+			TFE_Input::enableRelativeMode(!isOpening);
 		}
 		else if (TFE_Input::keyPressed(KEY_F9) && TFE_Input::keyDown(KEY_LALT))
 		{

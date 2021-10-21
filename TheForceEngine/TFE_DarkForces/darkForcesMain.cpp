@@ -173,6 +173,11 @@ namespace TFE_DarkForces
 		configShutdown();
 	}
 
+	void DarkForces::pauseGame(bool pause)
+	{
+		mission_pause(pause ? JTRUE : JFALSE);
+	}
+
 	/**********The basic structure of the Dark Forces main loop is as follows:***************
 	while (1)  // <- This will be replaced by the function call from the main TFE loop.
 	{

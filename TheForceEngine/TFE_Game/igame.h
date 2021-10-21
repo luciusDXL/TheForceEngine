@@ -27,8 +27,9 @@ struct IGame
 {
 	virtual bool runGame(s32 argCount, const char* argv[]) = 0;
 	virtual void exitGame() = 0;
+	virtual void pauseGame(bool pause) = 0;
 	virtual void loopGame() {};
-
+		
 	GameID id;
 };
 

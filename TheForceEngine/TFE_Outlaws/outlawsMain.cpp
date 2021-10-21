@@ -8,6 +8,11 @@ namespace TFE_Outlaws
 		return false;
 	}
 
+	void Outlaws::pauseGame(bool pause)
+	{
+		// STUB
+	}
+
 	void Outlaws::exitGame()
 	{
 		// STUB

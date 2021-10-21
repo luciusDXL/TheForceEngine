@@ -48,8 +48,9 @@ namespace TFE_Jedi
 		CVAR_INT(s_maxWallCount, "d_maxWallCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum wall count for a given sector.");
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum adjoin depth count.");
 
-		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU");
-		CCMD("rgetSubRenderer", console_getSubRenderer, 0, "Get the current sub-renderer.");
+		// Remove temporarily until they do something useful again.
+		//CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU");
+		//CCMD("rgetSubRenderer", console_getSubRenderer, 0, "Get the current sub-renderer.");
 
 		// Setup performance counters.
 		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
