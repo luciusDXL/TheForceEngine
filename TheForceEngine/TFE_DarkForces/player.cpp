@@ -509,6 +509,7 @@ namespace TFE_DarkForces
 				disableMask();
 				disableCleats();
 				disableNightvision();
+				hud_clearMessage();
 			}
 		}
 		else if (!strcasecmp(levelName, "gromas"))

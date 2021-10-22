@@ -828,16 +828,18 @@ namespace TFE_DarkForces
 				local(physicsActor)->state = 1;
 				break;
 			}
-			else if (local(nextTick) >= s_curTick || actor_arrivedAtTarget(local(target), local(obj)))
+
+			JBool arrivedAtTarget = actor_arrivedAtTarget(local(target), local(obj));
+			if (local(nextTick) < s_curTick || arrivedAtTarget)
 			{
 				local(arrived) = JTRUE;
-				if (actor_arrivedAtTarget(local(target), local(obj)))
+				if (arrivedAtTarget)
 				{
 					local(nextTick2) = 0;
 				}
 			}
 
-			if (local(nextTick2))
+			if (local(arrived))
 			{
 				local(arrived) = JFALSE;
 				vec2_fixed target;
