@@ -164,8 +164,9 @@ namespace TFE_Jedi
 	inline fixed16_16 vec2Length(fixed16_16 dx, fixed16_16 dz)
 	{
 		// Trade precision to avoid overflow.
-		// The same as: 2 * sqrt( (dx/2)^2 + (dz/2)^2 ) = 2 * sqrt( (dx^2)/4 + (dz^2)/4 )
-		return fixedSqrt((mul16(dx, dx)>>2) + (mul16(dz, dz)>>2)) << 1;
+		dx = (dx + ((dx < 0) ? -1 : 0)) >> 1;
+		dz = (dz + ((dz < 0) ? -1 : 0)) >> 1;
+		return fixedSqrt(mul16(dx, dx) + mul16(dz, dz)) << 1;
 	}
 
 	fixed16_16 computeDirAndLength(fixed16_16 dx, fixed16_16 dz, fixed16_16* dirX, fixed16_16* dirZ);

@@ -117,13 +117,13 @@ namespace TFE_Jedi
 
 		if (dist)
 		{
-			*dirX = div16(dx, dist);
-			*dirZ = div16(dz, dist);
+			*dirX = clamp(div16(dx, dist), -ONE_16, ONE_16);
+			*dirZ = clamp(div16(dz, dist), -ONE_16, ONE_16);
 		}
 		else
 		{
-			*dirZ = 0;
 			*dirX = 0;
+			*dirZ = 0;
 		}
 
 		return dist;
@@ -131,8 +131,8 @@ namespace TFE_Jedi
 
 	angle14_32 getAngleDifference(angle14_32 angle0, angle14_32 angle1)
 	{
-		angle0 &= 16383;
-		angle1 &= 16383;
+		angle0 &= ANGLE_MASK;
+		angle1 &= ANGLE_MASK;
 
 		angle14_32 dAngle = angle1 - angle0;
 		if (abs(dAngle) <= 8191)

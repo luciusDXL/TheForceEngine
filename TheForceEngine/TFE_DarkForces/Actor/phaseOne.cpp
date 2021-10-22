@@ -666,10 +666,11 @@ namespace TFE_DarkForces
 				break;
 			}
 
-			if (local(nextTick2) < s_curTick && actor_arrivedAtTarget(local(target), local(obj)))
+			JBool arrivedAtTarget = actor_arrivedAtTarget(local(target), local(obj));
+			if (local(nextTick2) < s_curTick || arrivedAtTarget)
 			{
 				local(updateTargetPos) = JTRUE;
-				if (actor_arrivedAtTarget(local(target), local(obj)))
+				if (arrivedAtTarget)
 				{
 					local(nextTick) = 0;
 				}
@@ -680,7 +681,7 @@ namespace TFE_DarkForces
 			if (local(updateTargetPos))
 			{
 				local(updateTargetPos) = JFALSE;
-				if (s_curTick >= local(nextTick))
+				if (s_curTick > local(nextTick))
 				{
 					targetX = s_eyePos.x;
 					targetZ = s_eyePos.z;
