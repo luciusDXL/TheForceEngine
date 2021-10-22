@@ -1144,6 +1144,9 @@ namespace TFE_DarkForces
 			{
 				// Offset the target by |dx| / 4
 				fixed16_16 dx = TFE_Jedi::abs(s_playerObject->posWS.x - obj->posWS.x);
+				// Note: there is a bug in the original DOS code -
+				// it was supposed to used dx or dz, whichever is *larger* - but both sides of the conditional
+				// use dx.
 				targetOffset = dx >> 2;
 			}
 			else
