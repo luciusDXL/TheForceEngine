@@ -143,6 +143,15 @@ namespace TFE_DarkForces
 		TFE_Console::addToHistory(res);
 	}
 
+	void printFlyerComponent(ActorFlyer* flyer)
+	{
+		printTarget(&flyer->target);
+		
+		char res[256];
+		sprintf(res, "State %u", flyer->state);
+		TFE_Console::addToHistory(res);
+	}
+
 	void console_showActorInfo(const ConsoleArgList& args)
 	{
 		if (!s_selectedActorObj)
@@ -167,6 +176,27 @@ namespace TFE_DarkForces
 			sprintf(res, "nextTick: %u; velocity: (%.3f, %.3f, %.3f) units/sec.", actorLogic->nextTick, fixed16ToFloat(actorLogic->vel.x), fixed16ToFloat(actorLogic->vel.y), fixed16ToFloat(actorLogic->vel.z));
 			TFE_Console::addToHistory(res);
 
+			Actor* actor = actorLogic->actor;
+			TFE_Console::addToHistory("-------------------------");
+			TFE_Console::addToHistory("     Main Actor");
+			TFE_Console::addToHistory("-------------------------");
+			printTarget(&actor->target);
+
+			sprintf(res, "Movement: (%.3f, %.3f, %.3f)", fixed16ToFloat(actor->delta.x), fixed16ToFloat(actor->delta.y), fixed16ToFloat(actor->delta.z));
+			TFE_Console::addToHistory(res);
+
+			sprintf(res, "CollisionInfo: last delta (%.3f, %.3f, %.3f); offsets: (%.3f, %.3f)", fixed16ToFloat(actor->physics.offsetX),
+				fixed16ToFloat(actor->physics.offsetY), fixed16ToFloat(actor->physics.offsetZ), fixed16ToFloat(actor->physics.botOffset), fixed16ToFloat(actor->physics.yPos));
+			TFE_Console::addToHistory(res);
+
+			sprintf(res, "Col Response: Responding %d; Response Dir (%.3f, %.3f); Response Pos (%.3f, %.3f); Angle %.3f", actor->physics.responseStep ? 1 : 0,
+				fixed16ToFloat(actor->physics.responseDir.x), fixed16ToFloat(actor->physics.responseDir.z), 
+				fixed16ToFloat(actor->physics.responsePos.x), fixed16ToFloat(actor->physics.responsePos.z), f32(actor->physics.responseAngle) * 360.0f / 16384.0f);
+			TFE_Console::addToHistory(res);
+
+			sprintf(res, "CollisionWall %d; flags %u", actor->collisionWall ? 1 : 0, actor->collisionFlags);
+			TFE_Console::addToHistory(res);
+			
 			for (s32 i = 0; i < 6; i++)
 			{
 				AiActor* actor = actorLogic->aiActors[i];
@@ -203,9 +233,14 @@ namespace TFE_DarkForces
 					} break;
 					case SAT_FLYER:
 					{
+						TFE_Console::addToHistory("-------------------------");
+						TFE_Console::addToHistory("     Flying Component");
+						TFE_Console::addToHistory("-------------------------");
+						printFlyerComponent((ActorFlyer*)actor);
 					} break;
 					default:
 					{
+						TFE_Console::addToHistory("--- Unknown Component ---");
 					}
 				}
 			}
