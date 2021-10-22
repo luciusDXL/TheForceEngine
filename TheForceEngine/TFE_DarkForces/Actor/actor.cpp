@@ -1094,11 +1094,14 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				if (actorLogic_isStopFlagSet() && actorSimple->anim.animId != -1)
+				if (actorLogic_isStopFlagSet())
 				{
-					actorSimple->nextTick = 0;
-					actorSimple->delay = actorSimple->startDelay;
-					actorSimple->playerLastSeen = 0xffffffff;
+					if (actorSimple->playerLastSeen != 0xffffffff)
+					{
+						actorSimple->nextTick = 0;
+						actorSimple->delay = actorSimple->startDelay;
+						actorSimple->playerLastSeen = 0xffffffff;
+					}
 				}
 				else
 				{
@@ -1179,6 +1182,7 @@ namespace TFE_DarkForces
 			if (obj->entityFlags & ETFLAG_4096)
 			{
 				// TODO
+				assert(0);
 			}
 		}
 
