@@ -7,7 +7,10 @@
 #include "projectile.h"
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Collision/collision.h>
+#include <TFE_Jedi/Level/rwall.h>
 #include <TFE_DarkForces/generator.h>
+#include <TFE_DarkForces/random.h>
 
 // Regular Enemies
 #include <TFE_DarkForces/Actor/exploders.h>
@@ -185,7 +188,7 @@ namespace TFE_DarkForces
 
 		return JTRUE;
 	}
-
+	
 	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc)
 	{
 		obj->flags |= OBJ_FLAG_ENEMY;
@@ -315,5 +318,70 @@ namespace TFE_DarkForces
 		// Fallthrough returns null.
 		// TODO: Add an assert or error once all of the cases are handled.
 		return nullptr;
+	}
+
+	SecObject* logic_spawnEnemy(const char* waxName, const char* typeName)
+	{
+		Wax* wax = TFE_Sprite_Jedi::getWax(waxName);
+		if (!wax)
+		{
+			return nullptr;
+		}
+		KEYWORD type = getKeywordIndex(typeName);
+		if (type == KW_UNKNOWN || type < KW_TROOP || type > KW_SCENERY)
+		{
+			return nullptr;
+		}
+
+		vec3_fixed pos = s_playerObject->posWS;
+		fixed16_16 sinYaw, cosYaw;
+		sinCosFixed(s_playerObject->yaw, &sinYaw, &cosYaw);
+
+		vec3_fixed spawnPos;
+		fixed16_16 dist = FIXED(8);
+		spawnPos.x = pos.x + mul16(sinYaw, dist);
+		spawnPos.y = pos.y;
+		spawnPos.z = pos.z + mul16(cosYaw, dist);
+
+		RSector* sector = s_playerObject->sector;
+		RWall* wall = collision_wallCollisionFromPath(sector, pos.x, pos.z, spawnPos.x, spawnPos.z);
+		fixed16_16 floorHeight = sector->floorHeight;
+		fixed16_16 ceilingHeight = sector->ceilingHeight;
+		while (wall)
+		{
+			if (wall->nextSector)
+			{
+				RSector* next = wall->nextSector;
+				floorHeight = min(floorHeight, next->floorHeight);
+				ceilingHeight = max(ceilingHeight, next->ceilingHeight);
+				fixed16_16 opening = floorHeight - ceilingHeight;
+				if (opening < FIXED(5) || TFE_Jedi::abs(sector->floorHeight - next->floorHeight) > FIXED(2))
+				{
+					break;
+				}
+
+				sector = next;
+				wall = collision_wallCollisionFromPath(sector, pos.x, pos.z, spawnPos.x, spawnPos.z);
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		if (wall)
+		{
+			return nullptr;
+		}
+
+		SecObject* spawn = allocateObject();
+		spawn->posWS = spawnPos;
+		spawn->yaw = random_next() & ANGLE_MASK;
+		sector_addObject(sector, spawn);
+
+		sprite_setData(spawn, wax);
+		obj_setEnemyLogic(spawn, type, nullptr);
+
+		return spawn;
 	}
 }  // TFE_DarkForces

@@ -31,6 +31,7 @@ namespace TFE_DarkForces
 	void deleteLogicAndObject(Logic* logic);
 	JBool object_parseSeq(SecObject* obj, TFE_Parser* parser, size_t* bufferPos);
 	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc);
+	SecObject* logic_spawnEnemy(const char* waxName, const char* typeName);
 
 	// Shared variables used for loading.
 	extern char s_objSeqArg0[];

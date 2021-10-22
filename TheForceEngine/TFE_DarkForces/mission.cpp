@@ -12,6 +12,7 @@
 #include "weapon.h"
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_DarkForces/GameUI/escapeMenu.h>
+#include <TFE_DarkForces/logic.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
@@ -139,12 +140,19 @@ namespace TFE_DarkForces
 		TFE_Input::enableRelativeMode(true);
 	}
 
+	void console_spawnEnemy(const ConsoleArgList& args)
+	{
+		if (args.size() < 3) { return; }
+		logic_spawnEnemy(args[1].c_str(), args[2].c_str());
+	}
+
 	void mission_startTaskFunc(MessageType msg)
 	{
 		task_begin;
 		{
 			// TFE-specific
 			CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
+			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 2 units in the player direction.");
 
 			// Make sure the loading screen is displayed for at least 1 second.
 			displayLoadingScreen();
