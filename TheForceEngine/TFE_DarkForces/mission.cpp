@@ -152,7 +152,7 @@ namespace TFE_DarkForces
 		{
 			// TFE-specific
 			CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
-			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 2 units in the player direction.");
+			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 8 units away in the player direction. Example: spawnEnemy offcfin.wax i_officer");
 
 			// Make sure the loading screen is displayed for at least 1 second.
 			displayLoadingScreen();
