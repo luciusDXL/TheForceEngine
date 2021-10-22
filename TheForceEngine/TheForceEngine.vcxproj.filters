@@ -691,6 +691,9 @@
     <ClInclude Include="TFE_DarkForces\GameUI\escapeMenu.h">
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\actorDebug.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1139,6 +1142,9 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\GameUI\escapeMenu.cpp">
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\actorDebug.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

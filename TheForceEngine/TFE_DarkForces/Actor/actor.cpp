@@ -1231,7 +1231,7 @@ namespace TFE_DarkForces
 		obj->frame = 0;
 	}
 
-	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor)
+	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor, SubActorType type)
 	{
 		if (!aiActor) { return; }
 		for (s32 i = 0; i < ACTOR_MAX_AI; i++)
@@ -1239,6 +1239,7 @@ namespace TFE_DarkForces
 			if (!logic->aiActors[i])
 			{
 				logic->aiActors[i] = aiActor;
+				logic->type[i] = type;
 				return;
 			}
 		}

@@ -25,6 +25,9 @@
 #include <TFE_Jedi/Task/task.h>
 #include <assert.h>
 
+// Debugging
+#include <TFE_DarkForces/Actor/actorDebug.h>
+
 using namespace TFE_Memory;
 
 namespace TFE_DarkForces
@@ -154,6 +157,10 @@ namespace TFE_DarkForces
 		loadAgentAndLevelData();
 
 		renderer_init();
+
+		// TFE Specific
+		actorDebug_init();
+
 		return true;
 	}
 
@@ -171,6 +178,9 @@ namespace TFE_DarkForces
 		task_shutdown();
 
 		configShutdown();
+
+		// TFE Specific
+		actorDebug_free();
 	}
 
 	void DarkForces::pauseGame(bool pause)
@@ -387,6 +397,7 @@ namespace TFE_DarkForces
 			{
 				bitmap_setAllocator(s_resRegion);
 				actor_clearState();
+				actorDebug_clear();
 
 				task_reset();
 				inf_clearState();

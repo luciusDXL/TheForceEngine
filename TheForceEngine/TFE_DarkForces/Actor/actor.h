@@ -61,6 +61,15 @@ enum ActorCollisionFlags
 	ACTORCOL_GRAVITY = FLAG_BIT(1),
 };
 
+enum SubActorType
+{
+	SAT_AI_ACTOR = 0,
+	SAT_ENEMY,
+	SAT_SIMPLE,
+	SAT_FLYER,
+	SAT_COUNT
+};
+
 // Logic for 'actors' -
 // an Actor is something with animated 'actions' that can move around in the world.
 struct ActorLogic
@@ -83,6 +92,9 @@ struct ActorLogic
 	vec2_fixed lastPlayerPos;
 	Task* freeTask;
 	u32 flags;
+
+	// Added for TFE, for debugging.
+	SubActorType type[ACTOR_MAX_AI];
 };
 
 struct ActorState
@@ -108,7 +120,7 @@ namespace TFE_DarkForces
 	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
 	AiActor* actor_createAiActor(Logic* logic);
 	Actor* actor_create(Logic* logic);
-	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor);
+	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor, SubActorType type);
 
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();

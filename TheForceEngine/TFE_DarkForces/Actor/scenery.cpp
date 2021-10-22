@@ -111,6 +111,6 @@ namespace TFE_DarkForces
 		aiActor->enemy.header.msgFunc = sceneryMsgFunc;
 		aiActor->enemy.anim.flags |= AFLAG_READY;
 		aiActor->hp = FIXED(1);
-		actorLogic_addActor(logic, aiActor);
+		actorLogic_addActor(logic, aiActor, SAT_AI_ACTOR);
 	}
 }  // namespace TFE_DarkForces

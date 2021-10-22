@@ -47,6 +47,8 @@ namespace TFE_Jedi
 	void  task_setUserData(Task* task, void* data);
 	void  task_setMessage(MessageType msg);
 	void* task_getUserData();
+
+	const char* task_getName(Task* task);
 	
 	void  task_runLocal(Task* task, MessageType msg);
 	bool  task_hasLocalMsgFunc(Task* task);

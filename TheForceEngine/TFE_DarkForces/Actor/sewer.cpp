@@ -242,7 +242,7 @@ namespace TFE_DarkForces
 		aiActor->hp = FIXED(36);
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_CREATURE_HURT];
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_CREATURE_DIE];
-		actorLogic_addActor(logic, (AiActor*)aiActor);
+		actorLogic_addActor(logic, (AiActor*)aiActor, SAT_AI_ACTOR);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		s_actorState.curEnemyActor = enemyActor;
@@ -254,7 +254,7 @@ namespace TFE_DarkForces
 		enemyActor->ua4 = FIXED(360);
 		enemyActor->attackSecSndSrc = s_agentSndSrc[AGENTSND_CREATURE2];
 		enemyActor->attackFlags = (enemyActor->attackFlags | 1) & 0xfffffffd;
-		actorLogic_addActor(logic, (AiActor*)enemyActor);
+		actorLogic_addActor(logic, (AiActor*)enemyActor, SAT_ENEMY);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0x7fff;
@@ -262,7 +262,7 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 58;
 		actorSimple->startDelay = 72;
 		actorSimple->anim.flags &= 0xfffffffe;
-		actorLogic_addActor(logic, (AiActor*)actorSimple);
+		actorLogic_addActor(logic, (AiActor*)actorSimple, SAT_SIMPLE);
 
 		Actor* actor = actor_create((Logic*)logic);	// eax
 		logic->actor = actor;

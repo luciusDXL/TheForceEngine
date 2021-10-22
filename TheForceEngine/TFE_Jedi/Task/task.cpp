@@ -43,9 +43,7 @@ struct TaskContext
 
 struct Task
 {
-#ifdef _DEBUG
 	char name[32];
-#endif
 
 	Task* prev;
 	Task* next;
@@ -121,9 +119,7 @@ namespace TFE_Jedi
 		assert(newTask);
 
 		s_taskCount++;
-#ifdef _DEBUG
 		strcpy(newTask->name, name);
-#endif
 
 		// Insert newTask at the head of the subtask list in the current "mainline" task.
 		newTask->next = s_curTask->subtaskNext;
@@ -163,9 +159,7 @@ namespace TFE_Jedi
 
 		s_taskCount++;
 		// Insert the task after 's_taskIter'
-#ifdef _DEBUG
 		strcpy(newTask->name, name);
-#endif
 		newTask->next = s_taskIter->next;
 		// This was missing?
 		if (s_taskIter->next)
@@ -291,6 +285,11 @@ namespace TFE_Jedi
 	void* task_getUserData()
 	{
 		return s_curTask ? s_curTask->userData : nullptr;
+	}
+
+	const char* task_getName(Task* task)
+	{
+		return task->name;
 	}
 
 	void task_setMessage(MessageType msg)

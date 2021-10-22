@@ -297,6 +297,16 @@ namespace TFE_Console
 
 	void registerCommand(const char* name, ConsoleFunc func, u32 argCount, const char* helpString, bool repeat)
 	{
+		size_t count = s_cmd.size();
+		const ConsoleCommand* cmd = s_cmd.data();
+		for (size_t i = 0; i < count; i++, cmd++)
+		{
+			if (strcasecmp(cmd->name.c_str(), name) == 0)
+			{
+				return;
+			}
+		}
+
 		s_cmd.push_back({ name, helpString, func, argCount, repeat });
 	}
 
