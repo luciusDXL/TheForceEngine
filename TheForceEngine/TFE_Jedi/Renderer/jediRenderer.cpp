@@ -173,6 +173,7 @@ namespace TFE_Jedi
 	{
 		// Clear the top pixel row.
 		memset(display, 0, s_width);
+		memset(display + (s_height - 1) * s_width, 0, s_width);
 
 		s_drawFrame++;
 		RClassic_Fixed::computeSkyOffsets();
