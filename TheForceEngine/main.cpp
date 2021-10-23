@@ -558,32 +558,35 @@ int main(int argc, char* argv[])
 		TFE_Ui::begin();
 						
 		// Update
-		if (TFE_Input::keyPressed(KEY_GRAVE))
+		if (TFE_FrontEndUI::uiControlsEnabled())
 		{
-			bool isOpening = TFE_FrontEndUI::toggleConsole();
-			if (s_curGame)
+			if (TFE_Input::keyPressed(KEY_GRAVE))
 			{
-				s_curGame->pauseGame(isOpening);
+				bool isOpening = TFE_FrontEndUI::toggleConsole();
+				if (s_curGame)
+				{
+					s_curGame->pauseGame(isOpening);
+				}
+				TFE_Input::enableRelativeMode(!isOpening);
 			}
-			TFE_Input::enableRelativeMode(!isOpening);
-		}
-		else if (TFE_Input::keyPressed(KEY_F9) && TFE_Input::keyDown(KEY_LALT))
-		{
-			showPerf = !showPerf;
-		}
-		else if (TFE_Input::keyPressed(KEY_F10) && TFE_Input::keyDown(KEY_LALT))
-		{
-			TFE_FrontEndUI::toggleProfilerView();
-		}
+			else if (TFE_Input::keyPressed(KEY_F9) && TFE_Input::keyDown(KEY_LALT))
+			{
+				showPerf = !showPerf;
+			}
+			else if (TFE_Input::keyPressed(KEY_F10) && TFE_Input::keyDown(KEY_LALT))
+			{
+				TFE_FrontEndUI::toggleProfilerView();
+			}
 
-		if (systemMenuKeyCombo() && TFE_FrontEndUI::isConfigMenuOpen())
-		{
-			s_curState = TFE_FrontEndUI::menuReturn();
-		}
-		else if (systemMenuKeyCombo())
-		{
-			TFE_FrontEndUI::enableConfigMenu();
-			TFE_FrontEndUI::setMenuReturnState(s_curState);
+			if (systemMenuKeyCombo() && TFE_FrontEndUI::isConfigMenuOpen())
+			{
+				s_curState = TFE_FrontEndUI::menuReturn();
+			}
+			else if (systemMenuKeyCombo())
+			{
+				TFE_FrontEndUI::enableConfigMenu();
+				TFE_FrontEndUI::setMenuReturnState(s_curState);
+			}
 		}
 
 		TFE_System::update();

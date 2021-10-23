@@ -135,5 +135,9 @@ namespace TFE_DarkForces
 	void config_updateInput();
 	void config_removeState(InputAction action);
 
+	InputConfig* config_get();
+	u32 getBindingsForAction(InputAction action, u32* indices, u32 maxIndices);
+	InputBinding* getBindindByIndex(u32 index);
+
 	extern GameConfig s_config;
 }  // TFE_DarkForces

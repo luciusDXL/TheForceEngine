@@ -10,6 +10,6 @@
 
 namespace TFE_DarkForces
 {
-	void barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc);
-	void landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc);
+	Logic* barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc);
+	Logic* landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

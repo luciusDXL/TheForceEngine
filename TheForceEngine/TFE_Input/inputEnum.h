@@ -11,7 +11,8 @@ enum Axis
 	AXIS_RIGHT_Y,
 	AXIS_LEFT_TRIGGER,
 	AXIS_RIGHT_TRIGGER,
-	AXIS_COUNT
+	AXIS_COUNT,
+	AXIS_UNKNOWN = AXIS_COUNT
 };
 
 enum Button
@@ -31,7 +32,8 @@ enum Button
 	CONTROLLER_BUTTON_DPAD_DOWN,
 	CONTROLLER_BUTTON_DPAD_LEFT,
 	CONTROLLER_BUTTON_DPAD_RIGHT,
-	CONTROLLER_BUTTON_COUNT
+	CONTROLLER_BUTTON_COUNT,
+	CONTROLLER_BUTTON_UNKNOWN = CONTROLLER_BUTTON_COUNT
 };
 
 enum MouseAxis
@@ -48,7 +50,8 @@ enum MouseButton
 	MBUTTON_RIGHT,
 	MBUTTON_X1,
 	MBUTTON_X2,
-	MBUTTON_COUNT
+	MBUTTON_COUNT,
+	MBUTTON_UNKNOWN = MBUTTON_COUNT
 };
 
 // Matches SDL2 Keycodes but provided seperately for possible future changes and to avoid having to include SDL2 where it doesn't make sense.

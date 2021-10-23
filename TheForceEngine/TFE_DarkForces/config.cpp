@@ -1,5 +1,6 @@
 #include "config.h"
 #include <TFE_Game/igame.h>
+#include <assert.h>
 
 namespace TFE_DarkForces
 {
@@ -129,7 +130,7 @@ namespace TFE_DarkForces
 
 		s_inputConfig.binds[index] = *binding;
 	}
-		
+
 	void addDefaultControlBinds()
 	{
 		for (s32 i = 0; i < TFE_ARRAYSIZE(s_defaultKeyboardBinds); i++)
@@ -212,5 +213,33 @@ namespace TFE_DarkForces
 	ActionState getActionState(InputAction action)
 	{
 		return s_actions[action];
+	}
+
+	u32 getBindingsForAction(InputAction action, u32* indices, u32 maxIndices)
+	{
+		assert(indices);
+		u32 count = 0;
+		for (u32 i = 0; i < s_inputConfig.bindCount; i++)
+		{
+			if (s_inputConfig.binds[i].action == action)
+			{
+				indices[count++] = i;
+				if (count >= maxIndices)
+				{
+					return count;
+				}
+			}
+		}
+		return count;
+	}
+
+	InputBinding* getBindindByIndex(u32 index)
+	{
+		return &s_inputConfig.binds[index];
+	}
+
+	InputConfig* config_get()
+	{
+		return &s_inputConfig;
 	}
 }  // TFE_DarkForces

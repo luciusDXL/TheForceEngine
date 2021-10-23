@@ -95,7 +95,7 @@ namespace TFE_DarkForces
 		return retValue;
 	}
 
-	void scenery_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	Logic* scenery_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags &= ~(FLAG_BIT(0) | FLAG_BIT(2));
@@ -112,5 +112,7 @@ namespace TFE_DarkForces
 		aiActor->enemy.anim.flags |= AFLAG_READY;
 		aiActor->hp = FIXED(1);
 		actorLogic_addActor(logic, aiActor, SAT_AI_ACTOR);
+
+		return (Logic*)logic;
 	}
 }  // namespace TFE_DarkForces

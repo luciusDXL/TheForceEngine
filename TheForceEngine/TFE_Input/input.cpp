@@ -39,6 +39,14 @@ namespace TFE_Input
 	static const char* const* s_mouseButtonNames;
 	static const char* const* s_keyboardNames;
 
+	const char* c_keyModNames[] =
+	{
+		"",      // KEYMOD_NONE = 0,
+		"ALT",   // KEYMOD_ALT,
+		"CTRL",  // KEYMOD_CTRL,
+		"SHIFT", // KEYMOD_SHIFT,
+	};
+
 	////////////////////////////////////////////////////////
 	// Implementation
 	////////////////////////////////////////////////////////
@@ -210,6 +218,72 @@ namespace TFE_Input
 		return s_keyPressed[key] != 0;
 	}
 
+	KeyboardCode getKeyPressed()
+	{
+		for (s32 i = 0; i < KEY_COUNT; i++)
+		{
+			if (s_keyPressed[i])
+			{
+				return KeyboardCode(i);
+			}
+		}
+		return KEY_UNKNOWN;
+	}
+
+	Button getControllerButtonPressed()
+	{
+		for (s32 i = 0; i < CONTROLLER_BUTTON_COUNT; i++)
+		{
+			if (s_buttonPressed[i])
+			{
+				return Button(i);
+			}
+		}
+		return CONTROLLER_BUTTON_UNKNOWN;
+	}
+
+	Axis getControllerAnalogDown()
+	{
+		if (fabsf(s_axis[AXIS_RIGHT_TRIGGER]) > 0.5f)
+		{
+			return AXIS_RIGHT_TRIGGER;
+		}
+		else if (fabsf(s_axis[AXIS_LEFT_TRIGGER]) > 0.5f)
+		{
+			return AXIS_LEFT_TRIGGER;
+		}
+		return AXIS_UNKNOWN;
+	}
+
+	MouseButton getMouseButtonPressed()
+	{
+		for (s32 i = 0; i < MBUTTON_COUNT; i++)
+		{
+			if (s_mousePressed[i])
+			{
+				return MouseButton(i);
+			}
+		}
+		return MBUTTON_UNKNOWN;
+	}
+
+	KeyModifier getKeyModifierDown()
+	{
+		if (keyDown(KEY_LALT) || keyDown(KEY_RALT))
+		{
+			return KEYMOD_ALT;
+		}
+		else if (keyDown(KEY_LCTRL) || keyDown(KEY_RCTRL))
+		{
+			return KEYMOD_CTRL;
+		}
+		else if (keyDown(KEY_LSHIFT) || keyDown(KEY_RSHIFT))
+		{
+			return KEYMOD_SHIFT;
+		}
+		return KEYMOD_NONE;
+	}
+		
 	bool keyModDown(KeyModifier keyMod)
 	{
 		switch (keyMod)
@@ -385,5 +459,10 @@ namespace TFE_Input
 		}
 
 		return s_keyboardNames ? s_keyboardNames[key] : "";
+	}
+
+	const char* getKeyboardModifierName(KeyModifier mod)
+	{
+		return c_keyModNames[mod];
 	}
 }

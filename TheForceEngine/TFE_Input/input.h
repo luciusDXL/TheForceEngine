@@ -60,10 +60,17 @@ namespace TFE_Input
 	const char* getBufferedText();
 	bool bufferedKeyDown(KeyboardCode key);
 
+	KeyboardCode getKeyPressed();
+	KeyModifier  getKeyModifierDown();
+	Button getControllerButtonPressed();
+	Axis getControllerAnalogDown();
+	MouseButton getMouseButtonPressed();
+	
 	bool loadKeyNames(const char* path);
 	const char* getControllerAxisName(Axis axis);
 	const char* getControllButtonName(Button button);
 	const char* getMouseAxisName(MouseAxis axis);
 	const char* getMouseButtonName(MouseButton button);
 	const char* getKeyboardName(KeyboardCode key);
+	const char* getKeyboardModifierName(KeyModifier mod);
 };

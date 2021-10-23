@@ -1,6 +1,7 @@
 #include "frontEndUi.h"
 #include "console.h"
 #include "profilerView.h"
+#include <TFE_DarkForces/config.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -869,11 +870,101 @@ namespace TFE_FrontEndUI
 		ImGui::Button(inputName2, ImVec2(120.0f, 0.0f));
 	}
 
+	void getBindingString(TFE_DarkForces::InputBinding* binding, char* inputName)
+	{
+		if (binding->type == TFE_DarkForces::ITYPE_KEYBOARD)
+		{
+			if (binding->keyMod)
+			{
+				sprintf_s(inputName, 64, "%s + %s", TFE_Input::getKeyboardModifierName(binding->keyMod), TFE_Input::getKeyboardName(binding->keyCode));
+			}
+			else
+			{
+				strcpy_s(inputName, 64, TFE_Input::getKeyboardName(binding->keyCode));
+			}
+		}
+		else if (binding->type == TFE_DarkForces::ITYPE_MOUSE)
+		{
+			strcpy_s(inputName, 64, TFE_Input::getMouseButtonName(binding->mouseBtn));
+		}
+		else if (binding->type == TFE_DarkForces::ITYPE_CONTROLLER)
+		{
+			strcpy_s(inputName, 64, TFE_Input::getControllButtonName(binding->ctrlBtn));
+		}
+		else if (binding->type == TFE_DarkForces::ITYPE_CONTROLLER_AXIS)
+		{
+			strcpy_s(inputName, 64, TFE_Input::getControllerAxisName(binding->axis));
+		}
+	}
+
+	static s32 s_keyIndex = -1;
+	static s32 s_keySlot = -1;
+	static KeyModifier s_keyMod = KEYMOD_NONE;
+
+	void inputMappingDarkForces(const char* name, TFE_DarkForces::InputAction action)
+	{
+		u32 indices[2];
+		u32 count = TFE_DarkForces::getBindingsForAction(action, indices, 2);
+
+		char inputName1[256] = "##Input1";
+		char inputName2[256] = "##Input2";
+
+		ImGui::LabelText("##ConfigLabel", name); ImGui::SameLine(132);
+		if (count >= 1)
+		{
+			TFE_DarkForces::InputBinding* binding = TFE_DarkForces::getBindindByIndex(indices[0]);
+			getBindingString(binding, inputName1);
+			strcat(inputName1, "##Input1");
+			strcat(inputName1, name);
+		}
+		else
+		{
+			strcat(inputName1, name);
+		}
+
+		if (count >= 2)
+		{
+			TFE_DarkForces::InputBinding* binding = TFE_DarkForces::getBindindByIndex(indices[1]);
+			getBindingString(binding, inputName2);
+			strcat(inputName2, "##Input2");
+			strcat(inputName2, name);
+		}
+		else
+		{
+			strcat(inputName2, name);
+		}
+
+		if (ImGui::Button(inputName1, ImVec2(120.0f, 0.0f)))
+		{
+			// Press Key Popup.
+			s_keyIndex = s32(action);
+			s_keySlot = 0;
+			s_keyMod = TFE_Input::getKeyModifierDown();
+			ImGui::OpenPopup("##ChangeBinding");
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(inputName2, ImVec2(120.0f, 0.0f)))
+		{
+			// Press Key Popup.
+			s_keyIndex = s32(action);
+			s_keySlot = 1;
+			s_keyMod = TFE_Input::getKeyModifierDown();
+			ImGui::OpenPopup("##ChangeBinding");
+		}
+	}
+
+	bool uiControlsEnabled()
+	{
+		return !ImGui::IsPopupOpen("##ChangeBinding") && s_configTab != CONFIG_INPUT;
+	}
+
 	void configInput()
 	{
 		const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar;
 		f32 scroll = ImGui::GetScrollY();
 		f32 yNext = 45.0f;
+
+		TFE_DarkForces::InputConfig* dfBindings = TFE_DarkForces::config_get();
 
 		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
@@ -1017,7 +1108,7 @@ namespace TFE_FrontEndUI
 		ImGui::End();
 		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-		f32 inputMappingHeight = 1350.0f;
+		f32 inputMappingHeight = 1360.0f;
 		if (ImGui::BeginChild("##Input Mapping", ImVec2(390.0f, s_inputMappingOpen ? inputMappingHeight : 29.0f), true, window_flags))
 		{
 			if (ImGui::Button("Input Mapping", ImVec2(370.0f, 0.0f)))
@@ -1043,21 +1134,21 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Dark Forces - General");
 				ImGui::PopFont();
 
-				inputMapping("Menu Toggle", "Esc", "Menu [Controller]");
-				inputMapping("PDA Toggle", "F1", "Window [Controller]");
-				inputMapping("Night Vision", "F2", "DPad Left");
-				inputMapping("Cleats", "F3", "");
-				inputMapping("Gas Mask", "F4", "DPad Down");
-				inputMapping("Head Lamp", "F5", "DPad Right");
-				inputMapping("Headwave", "F6", "");
-				inputMapping("HUD Toggle", "F7", "");
-				inputMapping("Holster Weapon", "F8", "");
-				inputMapping("Automount Toggle", "Alt + F8", "");
-				inputMapping("Cycle Prev Weapon", "F9", "Left Button");
-				inputMapping("Cycle Next Weapon", "F10", "Right Button");
-				inputMapping("Prev Weapon", "Backspace", "");
-				inputMapping("Pause", "Pause/Break", "");
-				inputMapping("Automap", "TAB", "DPad Up");
+				inputMappingDarkForces("Menu Toggle",       TFE_DarkForces::IA_MENU_TOGGLE);
+				inputMappingDarkForces("PDA Toggle",        TFE_DarkForces::IA_PDA_TOGGLE);
+				inputMappingDarkForces("Night Vision",      TFE_DarkForces::IA_NIGHT_VISION_TOG);
+				inputMappingDarkForces("Cleats",            TFE_DarkForces::IA_CLEATS_TOGGLE);
+				inputMappingDarkForces("Gas Mask",          TFE_DarkForces::IA_GAS_MASK_TOGGLE);
+				inputMappingDarkForces("Head Lamp",         TFE_DarkForces::IA_HEAD_LAMP_TOGGLE);
+				inputMappingDarkForces("Headwave",          TFE_DarkForces::IA_HEADWAVE_TOGGLE);
+				inputMappingDarkForces("HUD Toggle",        TFE_DarkForces::IA_HUD_TOGGLE);
+				inputMappingDarkForces("Holster Weapon",    TFE_DarkForces::IA_HOLSTER_WEAPON);
+				inputMappingDarkForces("Automount Toggle",  TFE_DarkForces::IA_AUTOMOUNT_TOGGLE);
+				inputMappingDarkForces("Cycle Prev Weapon", TFE_DarkForces::IA_CYCLEWPN_PREV);
+				inputMappingDarkForces("Cycle Next Weapon", TFE_DarkForces::IA_CYCLEWPN_NEXT);
+				inputMappingDarkForces("Prev Weapon",       TFE_DarkForces::IA_WPN_PREV);
+				inputMappingDarkForces("Pause",             TFE_DarkForces::IA_PAUSE);
+				inputMappingDarkForces("Automap",           TFE_DarkForces::IA_AUTOMAP);
 								
 				ImGui::Separator();
 
@@ -1065,14 +1156,15 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Dark Forces - Automap");
 				ImGui::PopFont();
 
-				inputMapping("Zoom In", "+/=", "");
-				inputMapping("Zoom Out", "-", "");
-				inputMapping("Scroll Up", "Alt + Up", "");
-				inputMapping("Scroll Down", "Alt + Down", "");
-				inputMapping("Scroll Left", "Alt + Left", "");
-				inputMapping("Scroll Right", "Alt + Right", "");
-				inputMapping("Layer Up", "]", "");
-				inputMapping("Layer Down", "[", "");
+				inputMappingDarkForces("Zoom In",      TFE_DarkForces::IA_MAP_ZOOM_IN);
+				inputMappingDarkForces("Zoom Out",     TFE_DarkForces::IA_MAP_ZOOM_OUT);
+				inputMappingDarkForces("Enable Scroll",TFE_DarkForces::IA_MAP_ENABLE_SCROLL);
+				inputMappingDarkForces("Scroll Up",    TFE_DarkForces::IA_MAP_SCROLL_UP);
+				inputMappingDarkForces("Scroll Down",  TFE_DarkForces::IA_MAP_SCROLL_DN);
+				inputMappingDarkForces("Scroll Left",  TFE_DarkForces::IA_MAP_SCROLL_LT);
+				inputMappingDarkForces("Scroll Right", TFE_DarkForces::IA_MAP_SCROLL_RT);
+				inputMappingDarkForces("Layer Up",     TFE_DarkForces::IA_MAP_LAYER_UP);
+				inputMappingDarkForces("Layer Down",   TFE_DarkForces::IA_MAP_LAYER_DN);
 
 				ImGui::Separator();
 
@@ -1080,32 +1172,109 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Dark Forces - Player");
 				ImGui::PopFont();
 
-				inputMapping("Forward", "W", "");
-				inputMapping("Backward", "S", "");
-				inputMapping("Strafe Left", "A", "");
-				inputMapping("Strafe Right", "D", "");
-				inputMapping("Turn Left", "Left", "");
-				inputMapping("Turn Right", "Right", "");
-				inputMapping("Look Up", "Page Up", "");
-				inputMapping("Look Down", "Page Down", "");
-				inputMapping("Center View", "C", "");
-				inputMapping("Run", "Shift", "B [Controller]");
-				inputMapping("Walk Slowly", "Caps Lock", "");
-				inputMapping("Crouch", "Ctrl", "X [Controller]");
-				inputMapping("Jump", "Spacebar", "A [Controller]");
-				inputMapping("Use", "E", "Y [Controller]");
-				inputMapping("Primary Fire", "Left Mouse", "Right Trigger");
-				inputMapping("Secondary Fire", "Right Mouse", "Left Trigger");
-				inputMapping("Fists", "1", "");
-				inputMapping("Bryar Pistol", "2", "");
-				inputMapping("E-11 Blaster", "3", "");
-				inputMapping("Thermal Detonator", "4", "");
-				inputMapping("Repeater Gun", "5", "");
-				inputMapping("Fusion Cutter", "6", "");
-				inputMapping("I.M. Mines", "7", "");
-				inputMapping("Mortar Gun", "8", "");
-				inputMapping("Concussion Rifle", "9", "");
-				inputMapping("Assault Cannon", "0", "");
+				inputMappingDarkForces("Forward",           TFE_DarkForces::IA_FORWARD);
+				inputMappingDarkForces("Backward",          TFE_DarkForces::IA_BACKWARD);
+				inputMappingDarkForces("Strafe Left",       TFE_DarkForces::IA_STRAFE_LT);
+				inputMappingDarkForces("Strafe Right",      TFE_DarkForces::IA_STRAFE_RT);
+				inputMappingDarkForces("Turn Left",         TFE_DarkForces::IA_TURN_LT);
+				inputMappingDarkForces("Turn Right",        TFE_DarkForces::IA_TURN_RT);
+				inputMappingDarkForces("Look Up",           TFE_DarkForces::IA_LOOK_UP);
+				inputMappingDarkForces("Look Down",         TFE_DarkForces::IA_LOOK_DN);
+				inputMappingDarkForces("Center View",       TFE_DarkForces::IA_CENTER_VIEW);
+				inputMappingDarkForces("Run",               TFE_DarkForces::IA_RUN);
+				inputMappingDarkForces("Walk Slowly",       TFE_DarkForces::IA_SLOW);
+				inputMappingDarkForces("Crouch",            TFE_DarkForces::IA_CROUCH);
+				inputMappingDarkForces("Jump",              TFE_DarkForces::IA_JUMP);
+				inputMappingDarkForces("Use",               TFE_DarkForces::IA_USE);
+				inputMappingDarkForces("Primary Fire",      TFE_DarkForces::IA_PRIMARY_FIRE);
+				inputMappingDarkForces("Secondary Fire",    TFE_DarkForces::IA_SECONDARY_FIRE);
+				inputMappingDarkForces("Fists",             TFE_DarkForces::IA_WEAPON_1);
+				inputMappingDarkForces("Bryar Pistol",      TFE_DarkForces::IA_WEAPON_2);
+				inputMappingDarkForces("E-11 Blaster",      TFE_DarkForces::IA_WEAPON_3);
+				inputMappingDarkForces("Thermal Detonator", TFE_DarkForces::IA_WEAPON_4);
+				inputMappingDarkForces("Repeater Gun",      TFE_DarkForces::IA_WEAPON_5);
+				inputMappingDarkForces("Fusion Cutter",     TFE_DarkForces::IA_WEAPON_6);
+				inputMappingDarkForces("I.M. Mines",        TFE_DarkForces::IA_WEAPON_7);
+				inputMappingDarkForces("Mortar Gun",        TFE_DarkForces::IA_WEAPON_8);
+				inputMappingDarkForces("Concussion Rifle",  TFE_DarkForces::IA_WEAPON_9);
+				inputMappingDarkForces("Assault Cannon",    TFE_DarkForces::IA_WEAPON_10);
+								
+				if (ImGui::BeginPopupModal("##ChangeBinding", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("Press a key, controller button or mouse button.");
+
+					KeyboardCode key = TFE_Input::getKeyPressed();
+					Button ctrlBtn = TFE_Input::getControllerButtonPressed();
+					MouseButton mouseBtn = TFE_Input::getMouseButtonPressed();
+					Axis ctrlAnalog = TFE_Input::getControllerAnalogDown();
+
+					u32 indices[2];
+					u32 count = TFE_DarkForces::getBindingsForAction(TFE_DarkForces::InputAction(s_keyIndex), indices, 2);
+
+					TFE_DarkForces::InputBinding* binding;
+					TFE_DarkForces::InputBinding newBinding;
+					if (s_keySlot >= count)
+					{
+						binding = &newBinding;
+					}
+					else
+					{
+						binding = TFE_DarkForces::getBindindByIndex(indices[s_keySlot]);
+					}
+
+					bool setBinding = false;
+					if (key != KEY_UNKNOWN)
+					{
+						setBinding = true;
+
+						memset(binding, 0, sizeof(TFE_DarkForces::InputBinding));
+						binding->action = TFE_DarkForces::InputAction(s_keyIndex);
+						binding->keyCode = key;
+						binding->keyMod = s_keyMod;
+						binding->type = TFE_DarkForces::ITYPE_KEYBOARD;
+					}
+					else if (ctrlBtn != CONTROLLER_BUTTON_UNKNOWN)
+					{
+						setBinding = true;
+
+						memset(binding, 0, sizeof(TFE_DarkForces::InputBinding));
+						binding->action = TFE_DarkForces::InputAction(s_keyIndex);
+						binding->ctrlBtn = ctrlBtn;
+						binding->type = TFE_DarkForces::ITYPE_CONTROLLER;
+					}
+					else if (mouseBtn != MBUTTON_UNKNOWN)
+					{
+						setBinding = true;
+
+						memset(binding, 0, sizeof(TFE_DarkForces::InputBinding));
+						binding->action = TFE_DarkForces::InputAction(s_keyIndex);
+						binding->mouseBtn = mouseBtn;
+						binding->type = TFE_DarkForces::ITYPE_MOUSE;
+					}
+					else if (ctrlAnalog != AXIS_UNKNOWN)
+					{
+						setBinding = true;
+
+						memset(binding, 0, sizeof(TFE_DarkForces::InputBinding));
+						binding->action = TFE_DarkForces::InputAction(s_keyIndex);
+						binding->axis = ctrlAnalog;
+						binding->type = TFE_DarkForces::ITYPE_CONTROLLER_AXIS;
+					}
+
+					if (setBinding)
+					{
+						if (s_keySlot >= count)
+						{
+							TFE_DarkForces::addInputBinding(binding);
+						}
+
+						s_keyIndex = -1;
+						s_keySlot = -1;
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::EndPopup();
+				}
 			}
 		}
 		else

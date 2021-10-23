@@ -120,7 +120,7 @@ namespace TFE_DarkForces
 		return retValue;
 	}
 
-	void barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	Logic* barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		obj->flags |= OBJ_FLAG_HAS_COLLISION;
@@ -148,9 +148,11 @@ namespace TFE_DarkForces
 		target->flags = (target->flags | 8) & 0xfffffff8;
 		target->speed = 0;
 		target->speedRotation = 0;
+
+		return (Logic*)logic;
 	}
 
-	void landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	Logic* landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorLogic* actorLogic = actor_setupActorLogic(obj, setupFunc);
 		actorLogic->flags &= ~4;
@@ -181,5 +183,7 @@ namespace TFE_DarkForces
 
 		actorLogic->flags &= ~1;
 		actorLogic->animTable = s_mineBarrelAnimTable;
+
+		return (Logic*)actorLogic;
 	}
 }  // namespace TFE_DarkForces

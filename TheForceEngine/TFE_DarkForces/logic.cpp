@@ -199,17 +199,17 @@ namespace TFE_DarkForces
 			case KW_STORM1:
 			{
 				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
-				trooper_setup(obj, setupFunc);
+				return trooper_setup(obj, setupFunc);
 			} break;
 			case KW_INT_DROID:
 			{
 				obj->entityFlags = (ETFLAG_AI_ACTOR | ETFLAG_FLYING);
-				intDroid_setup(obj, setupFunc);
+				return intDroid_setup(obj, setupFunc);
 			} break;
 			case KW_PROBE_DROID:
 			{
 				obj->entityFlags = (ETFLAG_AI_ACTOR | ETFLAG_FLYING);
-				probeDroid_setup(obj, setupFunc);
+				return probeDroid_setup(obj, setupFunc);
 			} break;
 			case KW_D_TROOP1:
 			{
@@ -227,7 +227,7 @@ namespace TFE_DarkForces
 			case KW_COMMANDO:
 			{
 				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
-				commando_setup(obj, setupFunc);
+				return commando_setup(obj, setupFunc);
 			} break;
 			case KW_I_OFFICER:
 			case KW_I_OFFICER1:
@@ -244,32 +244,32 @@ namespace TFE_DarkForces
 			case KW_I_OFFICERB:
 			{
 				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
-				officer_setup(obj, setupFunc, logicId);
+				return officer_setup(obj, setupFunc, logicId);
 			} break;
 			case KW_G_GUARD:
 			{
 				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
-				gamor_setup(obj, setupFunc);
+				return gamor_setup(obj, setupFunc);
 			} break;
 			case KW_REE_YEES:
 			{
 				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
-				reeyees_setup(obj, setupFunc);
+				return reeyees_setup(obj, setupFunc);
 			} break;
 			case KW_REE_YEES2:
 			{
 				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
-				reeyees2_setup(obj, setupFunc);
+				return reeyees2_setup(obj, setupFunc);
 			} break;
 			case KW_BOSSK:
 			{
 				obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_HAS_GRAVITY;
-				bossk_setup(obj, setupFunc);
+				return bossk_setup(obj, setupFunc);
 			} break;
 			case KW_BARREL:
 			{
 				obj->entityFlags = ETFLAG_AI_ACTOR;
-				barrel_setup(obj, setupFunc);
+				return barrel_setup(obj, setupFunc);
 			} break;
 			case KW_LAND_MINE:
 			{
@@ -311,7 +311,7 @@ namespace TFE_DarkForces
 			{
 				obj->flags &= ~OBJ_FLAG_ENEMY;
 				obj->entityFlags = ETFLAG_SCENERY;
-				scenery_setup(obj, setupFunc);
+				return scenery_setup(obj, setupFunc);
 			} break;
 		}
 
