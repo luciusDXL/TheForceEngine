@@ -96,12 +96,27 @@ namespace TFE_Input
 	static ActionState s_actions[IA_COUNT];
 
 	void addDefaultControlBinds();
-
+	   
 	void inputMapping_startup()
 	{
 		s_inputConfig.bindCount = 0;
 		s_inputConfig.bindCapacity = IA_COUNT * 2;
 		s_inputConfig.binds = (InputBinding*)malloc(sizeof(InputBinding)*s_inputConfig.bindCapacity);
+
+		// Controller
+		s_inputConfig.controllerFlags = CFLAG_ENABLE;
+		s_inputConfig.axis[AA_LOOK_HORZ] = AXIS_LEFT_X;
+		s_inputConfig.axis[AA_LOOK_VERT] = AXIS_LEFT_Y;
+		s_inputConfig.axis[AA_MOVE]      = AXIS_RIGHT_X;
+		s_inputConfig.axis[AA_STRAFE]    = AXIS_RIGHT_Y;
+		s_inputConfig.ctrlSensitivity[0] = 1.0f;
+		s_inputConfig.ctrlSensitivity[1] = 1.0f;
+
+		// Mouse
+		s_inputConfig.mouseFlags = 0;
+		s_inputConfig.mouseMode = MMODE_LOOK;
+		s_inputConfig.mouseSensitivity[0] = 1.0f;
+		s_inputConfig.mouseSensitivity[1] = 1.0f;
 
 		memset(s_actions, 0, sizeof(ActionState) * IA_COUNT);
 		addDefaultControlBinds();

@@ -82,6 +82,7 @@ namespace TFE_Input
 		AA_LOOK_VERT,
 		AA_MOVE,
 		AA_STRAFE,
+		AA_COUNT
 	};
 
 	enum InputType
@@ -116,11 +117,43 @@ namespace TFE_Input
 		KeyModifier keyMod = KEYMOD_NONE;
 	};
 
+	enum ControllerFlags
+	{
+		CFLAG_ENABLE            = FLAG_BIT(0),
+		CFLAG_INVERT_LEFT_HORZ  = FLAG_BIT(1),
+		CFLAG_INVERT_LEFT_VERT  = FLAG_BIT(2),
+		CFLAG_INVERT_RIGHT_HORZ = FLAG_BIT(3),
+		CFLAG_INVERT_RIGHT_VERT = FLAG_BIT(4),
+	};
+
+	enum MouseFlags
+	{
+		MFLAG_INVERT_HORZ = FLAG_BIT(0),
+		MFLAG_INVERT_VERT = FLAG_BIT(1),
+	};
+
+	enum MouseMode
+	{
+		MMODE_NONE = 0,
+		MMODE_TURN,
+		MMODE_LOOK,
+	};
+
 	struct InputConfig
 	{
 		u32 bindCount;
 		u32 bindCapacity;
 		InputBinding* binds;
+
+		// Controller
+		u32 controllerFlags;	// see ControllerFlags.
+		Axis axis[AA_COUNT];	// axis mapping.
+		f32 ctrlSensitivity[2];	// left/right sensitivity.
+
+		// Mouse
+		u32 mouseFlags;			// see MouseFlags.
+		MouseMode mouseMode;	// see MouseMode.
+		f32 mouseSensitivity[2];// horizontal/vertical sensitivity.
 	};
 
 	void inputMapping_startup();

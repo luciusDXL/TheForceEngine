@@ -810,28 +810,12 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	enum ControllerAxisBinding
-	{
-		CAB_MOVE_FWD_BACK = 0,
-		CAB_STRAFE,
-		CAB_LOOK_HORZ,
-		CAB_LOOK_VERT,
-		CAB_COUNT
-	};
-
-	enum MouseMode
-	{
-		MMODE_NONE = 0,
-		MMODE_TURN,
-		MMODE_LOOK,
-	};
-
 	static const char* c_axisBinding[]=
 	{
-		"Forward/Back",
-		"Strafe",
-		"Look Horizontal",
-		"Look Vertical",
+		"X Left Axis",
+		"Y Left Axis",
+		"X Right Axis",
+		"Y Right Axis",
 	};
 
 	static const char* c_mouseMode[] =
@@ -841,36 +825,10 @@ namespace TFE_FrontEndUI
 		"Mouselook"
 	};
 
-	struct InputConfig
-	{
-		// Controller
-		bool controllerEnable = true;
-		ControllerAxisBinding leftHorz = CAB_STRAFE;
-		ControllerAxisBinding leftVert = CAB_MOVE_FWD_BACK;
-		ControllerAxisBinding rightHorz = CAB_LOOK_HORZ;
-		ControllerAxisBinding rightVert = CAB_LOOK_VERT;
-		f32 leftSensitivity = 1.0f;
-		f32 rightSensitivity = 1.0f;
-		bool leftInvert[2] = { false, false };
-		bool rightInvert[2] = { false, false };
-
-		// Mouse
-		MouseMode mouseMode = MMODE_LOOK;
-		f32 mouseHorzSensitivity = 1.0f;
-		f32 mouseVertSensitivity = 1.0f;
-		bool mouseInvert[2] = { false, false };
-	};
-	static InputConfig s_inputConfig;
+	static InputConfig* s_inputConfig = nullptr;
 	static bool s_controllerWinOpen = true;
 	static bool s_mouseWinOpen = true;
 	static bool s_inputMappingOpen = true;
-
-	void inputMapping(const char* name, const char* inputName1, const char* inputName2)
-	{
-		ImGui::LabelText("##ConfigLabel", name); ImGui::SameLine(132);
-		ImGui::Button(inputName1, ImVec2(120.0f, 0.0f)); ImGui::SameLine();
-		ImGui::Button(inputName2, ImVec2(120.0f, 0.0f));
-	}
 
 	void getBindingString(InputBinding* binding, char* inputName)
 	{
@@ -903,7 +861,7 @@ namespace TFE_FrontEndUI
 	static s32 s_keySlot = -1;
 	static KeyModifier s_keyMod = KEYMOD_NONE;
 
-	void inputMappingDarkForces(const char* name, InputAction action)
+	void inputMapping(const char* name, InputAction action)
 	{
 		u32 indices[2];
 		u32 count = inputMapping_getBindingsForAction(action, indices, 2);
@@ -966,7 +924,7 @@ namespace TFE_FrontEndUI
 		f32 scroll = ImGui::GetScrollY();
 		f32 yNext = 45.0f;
 
-		TFE_Input::InputConfig* bindings = inputMapping_get();
+		s_inputConfig = inputMapping_get();
 
 		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
@@ -982,27 +940,32 @@ namespace TFE_FrontEndUI
 			if (s_controllerWinOpen)
 			{
 				ImGui::Spacing();
-				ImGui::Checkbox("Enable", &s_inputConfig.controllerEnable);
+				bool controllerEnable = (s_inputConfig->controllerFlags & CFLAG_ENABLE) != 0;
+				if (ImGui::Checkbox("Enable", &controllerEnable))
+				{
+					if (controllerEnable) { s_inputConfig->controllerFlags |=  CFLAG_ENABLE; }
+					                 else { s_inputConfig->controllerFlags &= ~CFLAG_ENABLE; }
+				}
 
 				ImGui::PushFont(s_dialogFont);
 				ImGui::LabelText("##ConfigLabel", "Controller Axis");
 				ImGui::PopFont();
 
-				ImGui::LabelText("##ConfigLabel", "Left Stick Horizontal"); ImGui::SameLine(175);
+				ImGui::LabelText("##ConfigLabel", "Horizontal Turn"); ImGui::SameLine(175);
 				ImGui::SetNextItemWidth(196);
-				ImGui::Combo("##LeftStickHorz", (s32*)&s_inputConfig.leftHorz, c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+				ImGui::Combo("##CtrlLookHorz", (s32*)&s_inputConfig->axis[AA_LOOK_HORZ], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
-				ImGui::LabelText("##ConfigLabel", "Left Stick Vertical"); ImGui::SameLine(175);
+				ImGui::LabelText("##ConfigLabel", "Vertical Look"); ImGui::SameLine(175);
 				ImGui::SetNextItemWidth(196);
-				ImGui::Combo("##LeftStickVert", (s32*)&s_inputConfig.leftVert, c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+				ImGui::Combo("##CtrlLookVert", (s32*)&s_inputConfig->axis[AA_LOOK_VERT], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
-				ImGui::LabelText("##ConfigLabel", "Right Stick Horizontal"); ImGui::SameLine(175);
+				ImGui::LabelText("##ConfigLabel", "Move"); ImGui::SameLine(175);
 				ImGui::SetNextItemWidth(196);
-				ImGui::Combo("##RightStickHorz", (s32*)&s_inputConfig.rightHorz, c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+				ImGui::Combo("##CtrlMove", (s32*)&s_inputConfig->axis[AA_MOVE], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
-				ImGui::LabelText("##ConfigLabel", "Right Stick Vertical"); ImGui::SameLine(175);
+				ImGui::LabelText("##ConfigLabel", "Strafe"); ImGui::SameLine(175);
 				ImGui::SetNextItemWidth(196);
-				ImGui::Combo("##RightStickVert", (s32*)&s_inputConfig.rightVert, c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+				ImGui::Combo("##CtrlStrafe", (s32*)&s_inputConfig->axis[AA_STRAFE], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
 				ImGui::Separator();
 
@@ -1012,15 +975,15 @@ namespace TFE_FrontEndUI
 
 				ImGui::LabelText("##ConfigLabel", "Left Stick");
 				ImGui::SetNextItemWidth(196);
-				ImGui::SliderFloat("##LeftSensitivity", &s_inputConfig.leftSensitivity, 0.0f, 4.0f); ImGui::SameLine(220);
+				ImGui::SliderFloat("##LeftSensitivity", &s_inputConfig->ctrlSensitivity[0], 0.0f, 4.0f); ImGui::SameLine(220);
 				ImGui::SetNextItemWidth(64);
-				ImGui::InputFloat("##LeftSensitivityInput", &s_inputConfig.leftSensitivity);
+				ImGui::InputFloat("##LeftSensitivityInput", &s_inputConfig->ctrlSensitivity[0]);
 
 				ImGui::LabelText("##ConfigLabel", "Right Stick");
 				ImGui::SetNextItemWidth(196);
-				ImGui::SliderFloat("##RightSensitivity", &s_inputConfig.rightSensitivity, 0.0f, 4.0f); ImGui::SameLine(220);
+				ImGui::SliderFloat("##RightSensitivity", &s_inputConfig->ctrlSensitivity[1], 0.0f, 4.0f); ImGui::SameLine(220);
 				ImGui::SetNextItemWidth(64);
-				ImGui::InputFloat("##RightSensitivityInput", &s_inputConfig.rightSensitivity);
+				ImGui::InputFloat("##RightSensitivityInput", &s_inputConfig->ctrlSensitivity[1]);
 
 				ImGui::Separator();
 
@@ -1028,13 +991,25 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Invert Axis");
 				ImGui::PopFont();
 
+				bool invertLeftHorz = (s_inputConfig->controllerFlags & CFLAG_INVERT_LEFT_HORZ) != 0;
+				bool invertLeftVert = (s_inputConfig->controllerFlags & CFLAG_INVERT_LEFT_VERT) != 0;
 				ImGui::LabelText("##ConfigLabel", "Left Stick Invert: "); ImGui::SameLine(175);
-				ImGui::Checkbox("Horizontal##Left", &s_inputConfig.leftInvert[0]); ImGui::SameLine();
-				ImGui::Checkbox("Vertical##Left", &s_inputConfig.leftInvert[1]);
-
+				ImGui::Checkbox("Horizontal##Left", &invertLeftHorz); ImGui::SameLine();
+				ImGui::Checkbox("Vertical##Left", &invertLeftVert);
+				if (invertLeftHorz) { s_inputConfig->controllerFlags |=  CFLAG_INVERT_LEFT_HORZ; }
+				else                { s_inputConfig->controllerFlags &= ~CFLAG_INVERT_LEFT_HORZ; }
+				if (invertLeftVert) { s_inputConfig->controllerFlags |=  CFLAG_INVERT_LEFT_VERT; }
+				               else { s_inputConfig->controllerFlags &= ~CFLAG_INVERT_LEFT_VERT; }
+				
+				bool invertRightHorz = (s_inputConfig->controllerFlags & CFLAG_INVERT_RIGHT_HORZ) != 0;
+				bool invertRightVert = (s_inputConfig->controllerFlags & CFLAG_INVERT_RIGHT_VERT) != 0;
 				ImGui::LabelText("##ConfigLabel", "Right Stick Invert: "); ImGui::SameLine(175);
-				ImGui::Checkbox("Horizontal##Right", &s_inputConfig.rightInvert[0]); ImGui::SameLine();
-				ImGui::Checkbox("Vertical##Right", &s_inputConfig.rightInvert[1]);
+				ImGui::Checkbox("Horizontal##Right", &invertRightHorz); ImGui::SameLine();
+				ImGui::Checkbox("Vertical##Right", &invertRightVert);
+				if (invertRightHorz) { s_inputConfig->controllerFlags |=  CFLAG_INVERT_RIGHT_HORZ; }
+				                else { s_inputConfig->controllerFlags &= ~CFLAG_INVERT_RIGHT_HORZ; }
+				if (invertRightVert) { s_inputConfig->controllerFlags |=  CFLAG_INVERT_RIGHT_VERT; }
+				                else { s_inputConfig->controllerFlags &= ~CFLAG_INVERT_RIGHT_VERT; }
 
 				yNext += 400.0f;
 			}
@@ -1066,7 +1041,7 @@ namespace TFE_FrontEndUI
 
 				ImGui::LabelText("##ConfigLabel", "Mouse Mode"); ImGui::SameLine(100);
 				ImGui::SetNextItemWidth(160);
-				ImGui::Combo("##MouseMode", (s32*)&s_inputConfig.mouseMode, c_mouseMode, IM_ARRAYSIZE(c_mouseMode));
+				ImGui::Combo("##MouseMode", (s32*)&s_inputConfig->mouseMode, c_mouseMode, IM_ARRAYSIZE(c_mouseMode));
 
 				ImGui::Separator();
 
@@ -1076,15 +1051,15 @@ namespace TFE_FrontEndUI
 
 				ImGui::LabelText("##ConfigLabel", "Horizontal");
 				ImGui::SetNextItemWidth(196);
-				ImGui::SliderFloat("##HorzSensitivity", &s_inputConfig.mouseHorzSensitivity, 0.0f, 4.0f); ImGui::SameLine(220);
+				ImGui::SliderFloat("##HorzSensitivity", &s_inputConfig->mouseSensitivity[0], 0.0f, 4.0f); ImGui::SameLine(220);
 				ImGui::SetNextItemWidth(64);
-				ImGui::InputFloat("##HorzSensitivityInput", &s_inputConfig.mouseHorzSensitivity);
+				ImGui::InputFloat("##HorzSensitivityInput", &s_inputConfig->mouseSensitivity[0]);
 
 				ImGui::LabelText("##ConfigLabel", "Vertical");
 				ImGui::SetNextItemWidth(196);
-				ImGui::SliderFloat("##VertSensitivity", &s_inputConfig.mouseVertSensitivity, 0.0f, 4.0f); ImGui::SameLine(220);
+				ImGui::SliderFloat("##VertSensitivity", &s_inputConfig->mouseSensitivity[1], 0.0f, 4.0f); ImGui::SameLine(220);
 				ImGui::SetNextItemWidth(64);
-				ImGui::InputFloat("##VertSensitivityInput", &s_inputConfig.mouseVertSensitivity);
+				ImGui::InputFloat("##VertSensitivityInput", &s_inputConfig->mouseSensitivity[1]);
 
 				ImGui::Separator();
 
@@ -1092,8 +1067,14 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Mouse Invert");
 				ImGui::PopFont();
 
-				ImGui::Checkbox("Horizontal##Mouse", &s_inputConfig.mouseInvert[0]); ImGui::SameLine();
-				ImGui::Checkbox("Vertical##Mouse", &s_inputConfig.mouseInvert[1]);
+				bool invertHorz = (s_inputConfig->mouseFlags & MFLAG_INVERT_HORZ) != 0;
+				bool invertVert = (s_inputConfig->mouseFlags & MFLAG_INVERT_VERT) != 0;
+				ImGui::Checkbox("Horizontal##Mouse", &invertHorz); ImGui::SameLine();
+				ImGui::Checkbox("Vertical##Mouse", &invertVert);
+				if (invertHorz) { s_inputConfig->mouseFlags |=  MFLAG_INVERT_HORZ; }
+				           else { s_inputConfig->mouseFlags &= ~MFLAG_INVERT_HORZ; }
+				if (invertVert) { s_inputConfig->mouseFlags |=  MFLAG_INVERT_VERT; }
+				           else { s_inputConfig->mouseFlags &= ~MFLAG_INVERT_VERT; }
 
 				yNext += 250.0f;
 			}
@@ -1127,8 +1108,8 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "System");
 				ImGui::PopFont();
 
-				inputMappingDarkForces("Console Toggle", IAS_CONSOLE);
-				inputMappingDarkForces("System Menu", IAS_SYSTEM_MENU);
+				inputMapping("Console Toggle", IAS_CONSOLE);
+				inputMapping("System Menu", IAS_SYSTEM_MENU);
 
 				ImGui::Separator();
 
@@ -1136,21 +1117,21 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Dark Forces - General");
 				ImGui::PopFont();
 
-				inputMappingDarkForces("Menu Toggle",       IADF_MENU_TOGGLE);
-				inputMappingDarkForces("PDA Toggle",        IADF_PDA_TOGGLE);
-				inputMappingDarkForces("Night Vision",      IADF_NIGHT_VISION_TOG);
-				inputMappingDarkForces("Cleats",            IADF_CLEATS_TOGGLE);
-				inputMappingDarkForces("Gas Mask",          IADF_GAS_MASK_TOGGLE);
-				inputMappingDarkForces("Head Lamp",         IADF_HEAD_LAMP_TOGGLE);
-				inputMappingDarkForces("Headwave",          IADF_HEADWAVE_TOGGLE);
-				inputMappingDarkForces("HUD Toggle",        IADF_HUD_TOGGLE);
-				inputMappingDarkForces("Holster Weapon",    IADF_HOLSTER_WEAPON);
-				inputMappingDarkForces("Automount Toggle",  IADF_AUTOMOUNT_TOGGLE);
-				inputMappingDarkForces("Cycle Prev Weapon", IADF_CYCLEWPN_PREV);
-				inputMappingDarkForces("Cycle Next Weapon", IADF_CYCLEWPN_NEXT);
-				inputMappingDarkForces("Prev Weapon",       IADF_WPN_PREV);
-				inputMappingDarkForces("Pause",             IADF_PAUSE);
-				inputMappingDarkForces("Automap",           IADF_AUTOMAP);
+				inputMapping("Menu Toggle",       IADF_MENU_TOGGLE);
+				inputMapping("PDA Toggle",        IADF_PDA_TOGGLE);
+				inputMapping("Night Vision",      IADF_NIGHT_VISION_TOG);
+				inputMapping("Cleats",            IADF_CLEATS_TOGGLE);
+				inputMapping("Gas Mask",          IADF_GAS_MASK_TOGGLE);
+				inputMapping("Head Lamp",         IADF_HEAD_LAMP_TOGGLE);
+				inputMapping("Headwave",          IADF_HEADWAVE_TOGGLE);
+				inputMapping("HUD Toggle",        IADF_HUD_TOGGLE);
+				inputMapping("Holster Weapon",    IADF_HOLSTER_WEAPON);
+				inputMapping("Automount Toggle",  IADF_AUTOMOUNT_TOGGLE);
+				inputMapping("Cycle Prev Weapon", IADF_CYCLEWPN_PREV);
+				inputMapping("Cycle Next Weapon", IADF_CYCLEWPN_NEXT);
+				inputMapping("Prev Weapon",       IADF_WPN_PREV);
+				inputMapping("Pause",             IADF_PAUSE);
+				inputMapping("Automap",           IADF_AUTOMAP);
 								
 				ImGui::Separator();
 
@@ -1158,15 +1139,15 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Dark Forces - Automap");
 				ImGui::PopFont();
 
-				inputMappingDarkForces("Zoom In",      IADF_MAP_ZOOM_IN);
-				inputMappingDarkForces("Zoom Out",     IADF_MAP_ZOOM_OUT);
-				inputMappingDarkForces("Enable Scroll",IADF_MAP_ENABLE_SCROLL);
-				inputMappingDarkForces("Scroll Up",    IADF_MAP_SCROLL_UP);
-				inputMappingDarkForces("Scroll Down",  IADF_MAP_SCROLL_DN);
-				inputMappingDarkForces("Scroll Left",  IADF_MAP_SCROLL_LT);
-				inputMappingDarkForces("Scroll Right", IADF_MAP_SCROLL_RT);
-				inputMappingDarkForces("Layer Up",     IADF_MAP_LAYER_UP);
-				inputMappingDarkForces("Layer Down",   IADF_MAP_LAYER_DN);
+				inputMapping("Zoom In",      IADF_MAP_ZOOM_IN);
+				inputMapping("Zoom Out",     IADF_MAP_ZOOM_OUT);
+				inputMapping("Enable Scroll",IADF_MAP_ENABLE_SCROLL);
+				inputMapping("Scroll Up",    IADF_MAP_SCROLL_UP);
+				inputMapping("Scroll Down",  IADF_MAP_SCROLL_DN);
+				inputMapping("Scroll Left",  IADF_MAP_SCROLL_LT);
+				inputMapping("Scroll Right", IADF_MAP_SCROLL_RT);
+				inputMapping("Layer Up",     IADF_MAP_LAYER_UP);
+				inputMapping("Layer Down",   IADF_MAP_LAYER_DN);
 
 				ImGui::Separator();
 
@@ -1174,32 +1155,32 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Dark Forces - Player");
 				ImGui::PopFont();
 
-				inputMappingDarkForces("Forward",           IADF_FORWARD);
-				inputMappingDarkForces("Backward",          IADF_BACKWARD);
-				inputMappingDarkForces("Strafe Left",       IADF_STRAFE_LT);
-				inputMappingDarkForces("Strafe Right",      IADF_STRAFE_RT);
-				inputMappingDarkForces("Turn Left",         IADF_TURN_LT);
-				inputMappingDarkForces("Turn Right",        IADF_TURN_RT);
-				inputMappingDarkForces("Look Up",           IADF_LOOK_UP);
-				inputMappingDarkForces("Look Down",         IADF_LOOK_DN);
-				inputMappingDarkForces("Center View",       IADF_CENTER_VIEW);
-				inputMappingDarkForces("Run",               IADF_RUN);
-				inputMappingDarkForces("Walk Slowly",       IADF_SLOW);
-				inputMappingDarkForces("Crouch",            IADF_CROUCH);
-				inputMappingDarkForces("Jump",              IADF_JUMP);
-				inputMappingDarkForces("Use",               IADF_USE);
-				inputMappingDarkForces("Primary Fire",      IADF_PRIMARY_FIRE);
-				inputMappingDarkForces("Secondary Fire",    IADF_SECONDARY_FIRE);
-				inputMappingDarkForces("Fists",             IADF_WEAPON_1);
-				inputMappingDarkForces("Bryar Pistol",      IADF_WEAPON_2);
-				inputMappingDarkForces("E-11 Blaster",      IADF_WEAPON_3);
-				inputMappingDarkForces("Thermal Detonator", IADF_WEAPON_4);
-				inputMappingDarkForces("Repeater Gun",      IADF_WEAPON_5);
-				inputMappingDarkForces("Fusion Cutter",     IADF_WEAPON_6);
-				inputMappingDarkForces("I.M. Mines",        IADF_WEAPON_7);
-				inputMappingDarkForces("Mortar Gun",        IADF_WEAPON_8);
-				inputMappingDarkForces("Concussion Rifle",  IADF_WEAPON_9);
-				inputMappingDarkForces("Assault Cannon",    IADF_WEAPON_10);
+				inputMapping("Forward",           IADF_FORWARD);
+				inputMapping("Backward",          IADF_BACKWARD);
+				inputMapping("Strafe Left",       IADF_STRAFE_LT);
+				inputMapping("Strafe Right",      IADF_STRAFE_RT);
+				inputMapping("Turn Left",         IADF_TURN_LT);
+				inputMapping("Turn Right",        IADF_TURN_RT);
+				inputMapping("Look Up",           IADF_LOOK_UP);
+				inputMapping("Look Down",         IADF_LOOK_DN);
+				inputMapping("Center View",       IADF_CENTER_VIEW);
+				inputMapping("Run",               IADF_RUN);
+				inputMapping("Walk Slowly",       IADF_SLOW);
+				inputMapping("Crouch",            IADF_CROUCH);
+				inputMapping("Jump",              IADF_JUMP);
+				inputMapping("Use",               IADF_USE);
+				inputMapping("Primary Fire",      IADF_PRIMARY_FIRE);
+				inputMapping("Secondary Fire",    IADF_SECONDARY_FIRE);
+				inputMapping("Fists",             IADF_WEAPON_1);
+				inputMapping("Bryar Pistol",      IADF_WEAPON_2);
+				inputMapping("E-11 Blaster",      IADF_WEAPON_3);
+				inputMapping("Thermal Detonator", IADF_WEAPON_4);
+				inputMapping("Repeater Gun",      IADF_WEAPON_5);
+				inputMapping("Fusion Cutter",     IADF_WEAPON_6);
+				inputMapping("I.M. Mines",        IADF_WEAPON_7);
+				inputMapping("Mortar Gun",        IADF_WEAPON_8);
+				inputMapping("Concussion Rifle",  IADF_WEAPON_9);
+				inputMapping("Assault Cannon",    IADF_WEAPON_10);
 								
 				if (ImGui::BeginPopupModal("##ChangeBinding", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 				{
