@@ -12,7 +12,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Polygon/polygon.h>
 #include <TFE_RenderBackend/renderBackend.h>
-#include <TFE_Input/input.h>
+#include <TFE_Input/inputMapping.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Task/task.h>
@@ -41,6 +41,7 @@
 #define PROGRAM_SUCCESS 0
 
 #pragma comment(lib, "SDL2main.lib")
+using namespace TFE_Input;
 
 // Replace with settings.
 static bool s_vsync = true;
@@ -338,7 +339,7 @@ void setAppState(AppState newState)
 
 bool systemMenuKeyCombo()
 {
-	return (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)) && TFE_Input::keyPressed(KEY_F1);
+	return inputMapping_getActionState(IAS_SYSTEM_MENU) == STATE_PRESSED;
 }
 
 void parseCommandLine(s32 argc, char* argv[])
@@ -504,6 +505,7 @@ int main(int argc, char* argv[])
 	TFE_Palette::createDefault256();
 	TFE_FrontEndUI::init();
 	game_init();
+	inputMapping_startup();
 
 	// Uncomment to test memory region allocator.
 	// TFE_Memory::region_test();
@@ -544,6 +546,7 @@ int main(int argc, char* argv[])
 		SDL_GetMouseState(&mouseAbsX, &mouseAbsY);
 		TFE_Input::setRelativeMousePos(mouseX, mouseY);
 		TFE_Input::setMousePos(mouseAbsX, mouseAbsY);
+		inputMapping_updateInput();
 
 		const AppState appState = TFE_FrontEndUI::update();
 		if (appState == APP_STATE_QUIT)
@@ -560,7 +563,7 @@ int main(int argc, char* argv[])
 		// Update
 		if (TFE_FrontEndUI::uiControlsEnabled())
 		{
-			if (TFE_Input::keyPressed(KEY_GRAVE))
+			if (inputMapping_getActionState(IAS_CONSOLE) == STATE_PRESSED)
 			{
 				bool isOpening = TFE_FrontEndUI::toggleConsole();
 				if (s_curGame)
@@ -652,6 +655,7 @@ int main(int argc, char* argv[])
 		s_curGame = nullptr;
 	}
 	game_destroy();
+	inputMapping_shutdown();
 
 	// Cleanup
 	TFE_FrontEndUI::shutdown();

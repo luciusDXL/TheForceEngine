@@ -7,7 +7,7 @@
 #include <TFE_DarkForces/config.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
-#include <TFE_Input/input.h>
+#include <TFE_Input/inputMapping.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -16,6 +16,7 @@
 #include <TFE_System/system.h>
 
 using namespace TFE_Jedi;
+using namespace TFE_Input;
 
 namespace TFE_DarkForces
 {
@@ -141,7 +142,7 @@ namespace TFE_DarkForces
 	{
 		EscapeMenuAction action = ESC_CONTINUE;
 		escMenu_handleMousePosition();
-		if (getActionState(IA_MENU_TOGGLE) == STATE_PRESSED)
+		if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED)
 		{
 			action = ESC_RETURN;
 			s_escMenuOpen = JFALSE;

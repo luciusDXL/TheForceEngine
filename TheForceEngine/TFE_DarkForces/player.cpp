@@ -10,6 +10,7 @@
 #include "pickup.h"
 #include "weapon.h"
 #include <TFE_System/system.h>
+#include <TFE_Input/inputMapping.h>
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Level/level.h>
@@ -20,6 +21,8 @@
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
 #include <TFE_Audio/audioSystem.h>
+
+using namespace TFE_Input;
 
 namespace TFE_DarkForces
 {
@@ -997,10 +1000,10 @@ namespace TFE_DarkForces
 		s_playerSecFire = JFALSE;
 		s_playerPrimaryFire = JFALSE;
 
-		if (getActionState(IA_JUMP) || getActionState(IA_MENU_TOGGLE))
+		if (inputMapping_getActionState(IADF_JUMP) || inputMapping_getActionState(IADF_MENU_TOGGLE))
 		{
-			config_removeState(IA_JUMP);
-			config_removeState(IA_MENU_TOGGLE);
+			inputMapping_removeState(IADF_JUMP);
+			inputMapping_removeState(IADF_MENU_TOGGLE);
 
 			if (s_lifeCount != 0 && s_curSafe)
 			{
@@ -1123,12 +1126,12 @@ namespace TFE_DarkForces
 		}
 
 		// Controls
-		if (getActionState(IA_FORWARD))
+		if (inputMapping_getActionState(IADF_FORWARD))
 		{
 			fixed16_16 speed = mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
 			s_forwardSpd = max(speed, s_forwardSpd);
 		}
-		else if (getActionState(IA_BACKWARD))
+		else if (inputMapping_getActionState(IADF_BACKWARD))
 		{
 			fixed16_16 speed = -mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
 			s_forwardSpd = min(speed, s_forwardSpd);
@@ -1146,16 +1149,16 @@ namespace TFE_DarkForces
 			}
 		}
 
-		if (getActionState(IA_RUN))
+		if (inputMapping_getActionState(IADF_RUN))
 		{
 			s_playerRun |= 1;
 		}
-		else if (getActionState(IA_SLOW))
+		else if (inputMapping_getActionState(IADF_SLOW))
 		{
 			s_playerSlow |= 1;
 		}
 
-		s32 crouch = getActionState(IA_CROUCH) ? 1 : 0;
+		s32 crouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
 		if (s_moveAvail & crouch)
 		{
 			fixed16_16 speed = PLAYER_CROUCH_SPEED;
@@ -1166,7 +1169,7 @@ namespace TFE_DarkForces
 
 		JBool wasJumping = s_playerJumping;
 		s_playerJumping = JFALSE;
-		if (getActionState(IA_JUMP))
+		if (inputMapping_getActionState(IADF_JUMP))
 		{
 			if (!s_moveAvail || wasJumping)
 			{
@@ -1186,7 +1189,7 @@ namespace TFE_DarkForces
 		//////////////////////////////////////////
 		// Pitch and Roll controls.
 		//////////////////////////////////////////
-		if (getActionState(IA_TURN_LT))
+		if (inputMapping_getActionState(IADF_TURN_LT))
 		{
 			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
 			fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
@@ -1196,7 +1199,7 @@ namespace TFE_DarkForces
 			s_playerYaw -= dYaw;
 			s_playerYaw &= ANGLE_MASK;
 		}
-		else if (getActionState(IA_TURN_RT))
+		else if (inputMapping_getActionState(IADF_TURN_RT))
 		{
 			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
 			fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
@@ -1213,7 +1216,7 @@ namespace TFE_DarkForces
 			s_playerYaw &= ANGLE_MASK;
 		}
 
-		if (getActionState(IA_LOOK_UP))
+		if (inputMapping_getActionState(IADF_LOOK_UP))
 		{
 			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
 			fixed16_16 dPitch = mul16(turnSpeed, s_deltaTime);
@@ -1221,7 +1224,7 @@ namespace TFE_DarkForces
 			dPitch >>= s_playerSlow;	// half for "slow"
 			s_playerPitch = clamp(s_playerPitch + dPitch, -PITCH_LIMIT, PITCH_LIMIT);
 		}
-		else if (getActionState(IA_LOOK_DN))
+		else if (inputMapping_getActionState(IADF_LOOK_DN))
 		{
 			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
 			fixed16_16 dPitch = mul16(turnSpeed, s_deltaTime);
@@ -1235,18 +1238,18 @@ namespace TFE_DarkForces
 			s_playerPitch = clamp(s_playerPitch + turnSpeed, -PITCH_LIMIT, PITCH_LIMIT);
 		}
 
-		if (getActionState(IA_CENTER_VIEW))
+		if (inputMapping_getActionState(IADF_CENTER_VIEW))
 		{
 			s_playerPitch = 0;
 			s_playerRoll  = 0;
 		}
 
-		if (getActionState(IA_STRAFE_RT))
+		if (inputMapping_getActionState(IADF_STRAFE_RT))
 		{
 			fixed16_16 speed = mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
 			s_strafeSpd = max(speed, s_strafeSpd);
 		}
-		else if (getActionState(IA_STRAFE_LT))
+		else if (inputMapping_getActionState(IADF_STRAFE_LT))
 		{
 			fixed16_16 speed = -mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
 			s_strafeSpd = min(speed, s_strafeSpd);
@@ -1264,16 +1267,16 @@ namespace TFE_DarkForces
 			}
 		}
 
-		if (getActionState(IA_USE))
+		if (inputMapping_getActionState(IADF_USE))
 		{
 			s_playerUse = JTRUE;
 		}
 
-		if (getActionState(IA_PRIMARY_FIRE))
+		if (inputMapping_getActionState(IADF_PRIMARY_FIRE))
 		{
 			s_playerPrimaryFire = JTRUE;
 		}
-		else if (getActionState(IA_SECONDARY_FIRE))
+		else if (inputMapping_getActionState(IADF_SECONDARY_FIRE))
 		{
 			s_playerSecFire = JTRUE;
 		}
@@ -2245,43 +2248,43 @@ namespace TFE_DarkForces
 		if (!s_playerDying)
 		{
 			// Weapon select.
-			if (getActionState(IA_WEAPON_1) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_WEAPON_1) == STATE_PRESSED)
 			{
 				s_playerInfo.selectedWeapon = WPN_FIST;
 			}
-			if (getActionState(IA_WEAPON_2) == STATE_PRESSED && s_playerInfo.itemPistol)
+			if (inputMapping_getActionState(IADF_WEAPON_2) == STATE_PRESSED && s_playerInfo.itemPistol)
 			{
 				s_playerInfo.selectedWeapon = WPN_PISTOL;
 			}
-			if (getActionState(IA_WEAPON_3) == STATE_PRESSED && s_playerInfo.itemRifle)
+			if (inputMapping_getActionState(IADF_WEAPON_3) == STATE_PRESSED && s_playerInfo.itemRifle)
 			{
 				s_playerInfo.selectedWeapon = WPN_RIFLE;
 			}
-			if (getActionState(IA_WEAPON_4) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_WEAPON_4) == STATE_PRESSED)
 			{
 				s_playerInfo.selectedWeapon = WPN_THERMAL_DET;
 			}
-			if (getActionState(IA_WEAPON_5) == STATE_PRESSED && s_playerInfo.itemAutogun)
+			if (inputMapping_getActionState(IADF_WEAPON_5) == STATE_PRESSED && s_playerInfo.itemAutogun)
 			{
 				s_playerInfo.selectedWeapon = WPN_REPEATER;
 			}
-			if (getActionState(IA_WEAPON_6) == STATE_PRESSED && s_playerInfo.itemFusion)
+			if (inputMapping_getActionState(IADF_WEAPON_6) == STATE_PRESSED && s_playerInfo.itemFusion)
 			{
 				s_playerInfo.selectedWeapon = WPN_FUSION;
 			}
-			if (getActionState(IA_WEAPON_7) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_WEAPON_7) == STATE_PRESSED)
 			{
 				s_playerInfo.selectedWeapon = WPN_MINE;
 			}
-			if (getActionState(IA_WEAPON_8) == STATE_PRESSED && s_playerInfo.itemMortar)
+			if (inputMapping_getActionState(IADF_WEAPON_8) == STATE_PRESSED && s_playerInfo.itemMortar)
 			{
 				s_playerInfo.selectedWeapon = WPN_MORTAR;
 			}
-			if (getActionState(IA_WEAPON_9) == STATE_PRESSED && s_playerInfo.itemConcussion)
+			if (inputMapping_getActionState(IADF_WEAPON_9) == STATE_PRESSED && s_playerInfo.itemConcussion)
 			{
 				s_playerInfo.selectedWeapon = WPN_CONCUSSION;
 			}
-			if (getActionState(IA_WEAPON_10) == STATE_PRESSED && s_playerInfo.itemCannon)
+			if (inputMapping_getActionState(IADF_WEAPON_10) == STATE_PRESSED && s_playerInfo.itemCannon)
 			{
 				s_playerInfo.selectedWeapon = WPN_CANNON;
 			}

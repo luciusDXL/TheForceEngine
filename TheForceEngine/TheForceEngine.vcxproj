@@ -398,6 +398,7 @@ echo ^)";
     <ClInclude Include="TFE_Game\igame.h" />
     <ClInclude Include="TFE_Input\input.h" />
     <ClInclude Include="TFE_Input\inputEnum.h" />
+    <ClInclude Include="TFE_Input\inputMapping.h" />
     <ClInclude Include="TFE_Jedi\Collision\collision.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infElevatorUpdateFunc.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infPublicTypes.h" />
@@ -576,6 +577,7 @@ echo ^)";
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp" />
     <ClCompile Include="TFE_Game\igame.cpp" />
     <ClCompile Include="TFE_Input\input.cpp" />
+    <ClCompile Include="TFE_Input\inputMapping.cpp" />
     <ClCompile Include="TFE_Jedi\Collision\collision.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\message.cpp" />

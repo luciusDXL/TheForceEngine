@@ -152,7 +152,7 @@ namespace TFE_DarkForces
 		TFE_Jedi::task_setDefaults();
 		TFE_Jedi::task_setMinStepInterval(1.0 / TIMER_FREQ);
 		TFE_Jedi::setupInitCameraAndLights();
-		configStartup();
+		config_startup();
 		gameStartup();
 		loadAgentAndLevelData();
 
@@ -177,7 +177,7 @@ namespace TFE_DarkForces
 		TFE_Paths::clearLocalArchives();
 		task_shutdown();
 
-		configShutdown();
+		config_shutdown();
 
 		// TFE Specific
 		actorDebug_free();
@@ -296,12 +296,7 @@ namespace TFE_DarkForces
 			{
 				// At this point the mission has already been launched.
 				// The task system will take over. Basically every frame we just check to see if there are any tasks running.
-				if (task_getCount())
-				{
-					// Added for TFE:
-					config_updateInput();
-				}
-				else
+				if (!task_getCount())
 				{
 					// We have returned from the mission tasks.
 					disableLevelMusic();

@@ -26,9 +26,10 @@
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/system.h>
-#include <TFE_Input/input.h>
+#include <TFE_Input/inputMapping.h>
 
 using namespace TFE_Jedi;
+using namespace TFE_Input;
 
 namespace TFE_DarkForces
 {
@@ -345,7 +346,7 @@ namespace TFE_DarkForces
 					TFE_System::postQuitMessage();
 				}
 			}
-			else if (getActionState(IA_MENU_TOGGLE) == STATE_PRESSED && !s_playerDying)
+			else if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED && !s_playerDying)
 			{
 				escapeMenu_open(s_framebuffer, s_basePalette);
 				s_gamePaused = JTRUE;
@@ -910,7 +911,7 @@ namespace TFE_DarkForces
 	{
 		// In the DOS code, the game would just loop here - checking to see if paused has been pressed and then continue.
 		// Obviously that won't work for TFE, so the game paused variable is set and the game will have to handle it.
-		if (getActionState(IA_PAUSE) == STATE_PRESSED)
+		if (inputMapping_getActionState(IADF_PAUSE) == STATE_PRESSED)
 		{
 			mission_pause(~s_gamePaused);
 		}
@@ -925,11 +926,11 @@ namespace TFE_DarkForces
 			}
 
 			// For now just deal with a few controls.
-			if (getActionState(IA_PDA_TOGGLE) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_PDA_TOGGLE) == STATE_PRESSED)
 			{
 				// STUB: Bring up PDA.
 			}
-			if (getActionState(IA_NIGHT_VISION_TOG) == STATE_PRESSED && s_playerInfo.itemGoggles)
+			if (inputMapping_getActionState(IADF_NIGHT_VISION_TOG) == STATE_PRESSED && s_playerInfo.itemGoggles)
 			{
 				if (s_nightvisionActive)
 				{
@@ -940,7 +941,7 @@ namespace TFE_DarkForces
 					enableNightVision();
 				}
 			}
-			if (getActionState(IA_CLEATS_TOGGLE) == STATE_PRESSED && s_playerInfo.itemCleats)
+			if (inputMapping_getActionState(IADF_CLEATS_TOGGLE) == STATE_PRESSED && s_playerInfo.itemCleats)
 			{
 				if (s_wearingCleats)
 				{
@@ -951,7 +952,7 @@ namespace TFE_DarkForces
 					enableCleats();
 				}
 			}
-			if (getActionState(IA_GAS_MASK_TOGGLE) == STATE_PRESSED && s_playerInfo.itemMask)
+			if (inputMapping_getActionState(IADF_GAS_MASK_TOGGLE) == STATE_PRESSED && s_playerInfo.itemMask)
 			{
 				if (s_wearingGasmask)
 				{
@@ -962,7 +963,7 @@ namespace TFE_DarkForces
 					enableMask();
 				}
 			}
-			if (getActionState(IA_HEAD_LAMP_TOGGLE) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_HEAD_LAMP_TOGGLE) == STATE_PRESSED)
 			{
 				if (s_headlampActive)
 				{
@@ -975,7 +976,7 @@ namespace TFE_DarkForces
 			}
 			renderer_setupCameraLight(JFALSE, s_headlampActive);
 
-			if (getActionState(IA_HEADWAVE_TOGGLE) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_HEADWAVE_TOGGLE) == STATE_PRESSED)
 			{
 				s_config.headwave = ~s_config.headwave;
 				if (s_config.headwave)
@@ -988,17 +989,17 @@ namespace TFE_DarkForces
 				}
 			}
 
-			if (getActionState(IA_HUD_TOGGLE) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_HUD_TOGGLE) == STATE_PRESSED)
 			{
 				hud_setupToggleAnim1(JFALSE);
 			}
 
-			if (getActionState(IA_HOLSTER_WEAPON) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_HOLSTER_WEAPON) == STATE_PRESSED)
 			{
 				weapon_holster();
 			}
 
-			if (getActionState(IA_AUTOMOUNT_TOGGLE) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_AUTOMOUNT_TOGGLE) == STATE_PRESSED)
 			{
 				s_config.wpnAutoMount = ~s_config.wpnAutoMount;
 				weapon_enableAutomount(s_config.wpnAutoMount);
@@ -1012,16 +1013,16 @@ namespace TFE_DarkForces
 				}
 			}
 
-			if (getActionState(IA_CYCLEWPN_PREV))
+			if (inputMapping_getActionState(IADF_CYCLEWPN_PREV))
 			{
 				player_cycleWeapons(-1);
 			}
-			else if (getActionState(IA_CYCLEWPN_NEXT))
+			else if (inputMapping_getActionState(IADF_CYCLEWPN_NEXT))
 			{
 				player_cycleWeapons(1);
 			}
 
-			if (getActionState(IA_AUTOMAP) == STATE_PRESSED)
+			if (inputMapping_getActionState(IADF_AUTOMAP) == STATE_PRESSED)
 			{
 				s_drawAutomap = ~s_drawAutomap;
 				if (s_drawAutomap)
@@ -1038,7 +1039,7 @@ namespace TFE_DarkForces
 
 			if (s_drawAutomap)
 			{
-				if (getActionState(IA_MAP_ENABLE_SCROLL))
+				if (inputMapping_getActionState(IADF_MAP_ENABLE_SCROLL))
 				{
 					automap_disableTeleport();
 				}
@@ -1047,23 +1048,23 @@ namespace TFE_DarkForces
 					automap_enableTeleport();
 				}
 
-				if (getActionState(IA_MAP_ZOOM_IN))
+				if (inputMapping_getActionState(IADF_MAP_ZOOM_IN))
 				{
 					automap_updateMapData(MAP_ZOOM_IN);
 				}
-				else if (getActionState(IA_MAP_ZOOM_OUT))
+				else if (inputMapping_getActionState(IADF_MAP_ZOOM_OUT))
 				{
 					automap_updateMapData(MAP_ZOOM_OUT);
 				}
 
-				if (getActionState(IA_MAP_LAYER_UP) == STATE_PRESSED)
+				if (inputMapping_getActionState(IADF_MAP_LAYER_UP) == STATE_PRESSED)
 				{
 					automap_updateMapData(MAP_LAYER_UP);
 
 					s32 msgId = min(automap_getLayer() + 609, 618);
 					hud_sendTextMessage(msgId);
 				}
-				else if (getActionState(IA_MAP_LAYER_DN) == STATE_PRESSED)
+				else if (inputMapping_getActionState(IADF_MAP_LAYER_DN) == STATE_PRESSED)
 				{
 					automap_updateMapData(MAP_LAYER_DOWN);
 
@@ -1073,19 +1074,19 @@ namespace TFE_DarkForces
 
 				if (!s_automapCanTeleport)
 				{
-					if (getActionState(IA_MAP_SCROLL_UP))
+					if (inputMapping_getActionState(IADF_MAP_SCROLL_UP))
 					{
 						automap_updateMapData(MAP_MOVE1_UP);
 					}
-					if (getActionState(IA_MAP_SCROLL_DN))
+					if (inputMapping_getActionState(IADF_MAP_SCROLL_DN))
 					{
 						automap_updateMapData(MAP_MOVE1_DN);
 					}
-					if (getActionState(IA_MAP_SCROLL_LT))
+					if (inputMapping_getActionState(IADF_MAP_SCROLL_LT))
 					{
 						automap_updateMapData(MAP_MOVE1_LEFT);
 					}
-					if (getActionState(IA_MAP_SCROLL_RT))
+					if (inputMapping_getActionState(IADF_MAP_SCROLL_RT))
 					{
 						automap_updateMapData(MAP_MOVE1_RIGHT);
 					}
