@@ -77,6 +77,22 @@ namespace TFE_System
 		}
 
 		sprintf(s_workStr, "[%s] %s", tag, s_msgStr);
-		TFE_FrontEndUI::logToConsole(s_workStr);
+		size_t len = strlen(s_msgStr);
+		char* msg = s_msgStr;
+		char* msgStart = msg;
+		for (size_t i = 0; i < len; i++)
+		{
+			if (msg[i] == '\n')
+			{
+				msg[i] = 0;
+				TFE_FrontEndUI::logToConsole(msgStart);
+
+				msgStart = msg + i + 1;
+			}
+		}
+		if (msgStart < s_msgStr + len)
+		{
+			TFE_FrontEndUI::logToConsole(msgStart);
+		}
 	}
 }

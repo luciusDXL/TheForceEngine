@@ -8,6 +8,7 @@
 #include "weapon.h"
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
+#include <TFE_FrontEndUI/console.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
 #include <TFE_Jedi/Level/rfont.h>
@@ -131,6 +132,9 @@ namespace TFE_DarkForces
 		s_hudMsgExpireTick = s_curTick + ((msg->priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
 		s_hudCurrentMsgId  = msgId;
 		s_hudMsgPriority   = msg->priority;
+
+		// TFE specific
+		TFE_Console::addToHistory(msgText);
 	}
 
 	void hud_clearMessage()
