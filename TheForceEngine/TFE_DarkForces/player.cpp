@@ -1113,16 +1113,18 @@ namespace TFE_DarkForces
 
 		s32 mdx, mdy;
 		TFE_Input::getAccumulatedMouseMove(&mdx, &mdy);
+		InputConfig* inputConfig = TFE_Input::inputMapping_get();
+
 		// Yaw change
-		if (s_config.mouseTurnEnabled || s_config.mouseLookEnabled)
+		if (inputConfig->mouseMode == MMODE_TURN || inputConfig->mouseMode == MMODE_LOOK)
 		{
-			s_playerYaw += mdx * PLAYER_MOUSE_TURN_SPD;
+			s_playerYaw += s32(f32(mdx * PLAYER_MOUSE_TURN_SPD) * inputMapping_getHorzMouseSensitivity());
 			s_playerYaw &= ANGLE_MASK;
 		}
 		// Pitch change
-		if (s_config.mouseLookEnabled)
+		if (inputConfig->mouseMode == MMODE_LOOK)
 		{
-			s_playerPitch = clamp(s_playerPitch - mdy * PLAYER_MOUSE_TURN_SPD, -PITCH_LIMIT, PITCH_LIMIT);
+			s_playerPitch = clamp(s_playerPitch - s32(f32(mdy * PLAYER_MOUSE_TURN_SPD) * inputMapping_getVertMouseSensitivity()), -PITCH_LIMIT, PITCH_LIMIT);
 		}
 
 		// Controls

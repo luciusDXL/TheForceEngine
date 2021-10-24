@@ -1,9 +1,14 @@
 #include "inputMapping.h"
 #include <TFE_Game/igame.h>
+#include <TFE_FileSystem/paths.h>
 #include <assert.h>
 
 namespace TFE_Input
 {
+	static const char* c_inputRemappingName = "tfe_input_remapping.bin";
+	static const char  c_inputRemappingHdr[4] = { 'T', 'F', 'E', 0 };
+	static const u32   c_inputRemappingVersion = 0x00010000;
+
 	static InputBinding s_defaultKeyboardBinds[] =
 	{
 		// System
@@ -94,11 +99,18 @@ namespace TFE_Input
 
 	static InputConfig s_inputConfig = { 0 };
 	static ActionState s_actions[IA_COUNT];
-
+		
 	void addDefaultControlBinds();
 	   
 	void inputMapping_startup()
 	{
+		// First try to restore from disk.
+		if (inputMapping_restore())
+		{
+			return;
+		}
+
+		// If that fails, setup the defaults.
 		s_inputConfig.bindCount = 0;
 		s_inputConfig.bindCapacity = IA_COUNT * 2;
 		s_inputConfig.binds = (InputBinding*)malloc(sizeof(InputBinding)*s_inputConfig.bindCapacity);
@@ -120,6 +132,9 @@ namespace TFE_Input
 
 		memset(s_actions, 0, sizeof(ActionState) * IA_COUNT);
 		addDefaultControlBinds();
+
+		// Once the defaults are setup, write out the file to disk for next time.
+		inputMapping_serialize();
 	}
 
 	void inputMapping_shutdown()
@@ -128,6 +143,76 @@ namespace TFE_Input
 		s_inputConfig.bindCount = 0;
 		s_inputConfig.bindCapacity = 0;
 		s_inputConfig.binds = nullptr;
+	}
+		
+	bool inputMapping_serialize()
+	{
+		const char* path = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
+		char fullPath[TFE_MAX_PATH];
+
+		sprintf(fullPath, "%s%s", path, c_inputRemappingName);
+		FileStream file;
+		if (!file.open(fullPath, FileStream::MODE_WRITE))
+		{
+			return false;
+		}
+
+		file.writeBuffer(c_inputRemappingHdr, 4);
+		file.write(&c_inputRemappingVersion);
+
+		file.write(&s_inputConfig.bindCount);
+		file.write(&s_inputConfig.bindCapacity);
+		file.writeBuffer(s_inputConfig.binds, sizeof(InputBinding), s_inputConfig.bindCount);
+
+		file.write(&s_inputConfig.controllerFlags);
+		file.writeBuffer(s_inputConfig.axis, sizeof(Axis), AA_COUNT);
+		file.write(s_inputConfig.ctrlSensitivity, 2);
+
+		file.write(&s_inputConfig.mouseFlags);
+		file.writeBuffer(&s_inputConfig.mouseMode, sizeof(MouseMode));
+		file.write(s_inputConfig.mouseSensitivity, 2);
+
+		file.close();
+		return true;
+	}
+
+	bool inputMapping_restore()
+	{
+		const char* path = TFE_Paths::getPath(PATH_USER_DOCUMENTS);
+		char fullPath[TFE_MAX_PATH];
+
+		sprintf(fullPath, "%s%s", path, c_inputRemappingName);
+		FileStream file;
+		if (!file.open(fullPath, FileStream::MODE_READ))
+		{
+			return false;
+		}
+
+		char hdr[4];
+		u32 version;
+		file.readBuffer(hdr, 4);
+		file.read(&version);
+		if (memcmp(hdr, c_inputRemappingHdr, 4) != 0 || version != c_inputRemappingVersion)
+		{
+			file.close();
+			return false;
+		}
+
+		file.read(&s_inputConfig.bindCount);
+		file.read(&s_inputConfig.bindCapacity);
+		s_inputConfig.binds = (InputBinding*)realloc(s_inputConfig.binds, sizeof(InputBinding) * s_inputConfig.bindCapacity);
+		file.readBuffer(s_inputConfig.binds, sizeof(InputBinding), s_inputConfig.bindCount);
+
+		file.read(&s_inputConfig.controllerFlags);
+		file.readBuffer(s_inputConfig.axis, sizeof(Axis), AA_COUNT);
+		file.read(s_inputConfig.ctrlSensitivity, 2);
+
+		file.read(&s_inputConfig.mouseFlags);
+		file.readBuffer(&s_inputConfig.mouseMode, sizeof(MouseMode));
+		file.read(s_inputConfig.mouseSensitivity, 2);
+
+		file.close();
+		return true;
 	}
 
 	void inputMapping_addBinding(InputBinding* binding)
@@ -254,6 +339,16 @@ namespace TFE_Input
 		axisValue *= s_inputConfig.ctrlSensitivity[mappedAxis < AXIS_RIGHT_X ? 0 : 1];
 
 		return axisValue;
+	}
+		
+	f32 inputMapping_getHorzMouseSensitivity()
+	{
+		return s_inputConfig.mouseSensitivity[0] * ((s_inputConfig.mouseFlags & MFLAG_INVERT_HORZ) ? -1.0f : 1.0f);
+	}
+
+	f32 inputMapping_getVertMouseSensitivity()
+	{
+		return s_inputConfig.mouseSensitivity[1] * ((s_inputConfig.mouseFlags & MFLAG_INVERT_VERT) ? -1.0f : 1.0f);
 	}
 
 	u32 inputMapping_getBindingsForAction(InputAction action, u32* indices, u32 maxIndices)

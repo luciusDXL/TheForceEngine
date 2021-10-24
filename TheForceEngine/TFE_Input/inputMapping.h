@@ -158,6 +158,9 @@ namespace TFE_Input
 
 	void inputMapping_startup();
 	void inputMapping_shutdown();
+
+	bool inputMapping_serialize();
+	bool inputMapping_restore();
 		
 	void inputMapping_addBinding(InputBinding* binding);
 	ActionState inputMapping_getActionState(InputAction action);
@@ -168,4 +171,7 @@ namespace TFE_Input
 	InputConfig* inputMapping_get();
 	u32 inputMapping_getBindingsForAction(InputAction action, u32* indices, u32 maxIndices);
 	InputBinding* inputMapping_getBindindByIndex(u32 index);
+
+	f32 inputMapping_getHorzMouseSensitivity();
+	f32 inputMapping_getVertMouseSensitivity();
 }  // TFE_Input

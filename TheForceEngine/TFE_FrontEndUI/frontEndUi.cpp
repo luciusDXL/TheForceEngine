@@ -290,6 +290,7 @@ namespace TFE_FrontEndUI
 		s_appState = s_menuRetState;
 		TFE_Settings::writeToDisk();
 		TFE_Input::enableRelativeMode(s_relativeMode);
+		inputMapping_serialize();
 
 		return s_appState;
 	}
@@ -529,41 +530,48 @@ namespace TFE_FrontEndUI
 			{
 				s_configTab = CONFIG_ABOUT;
 				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
 			}
 			if (ImGui::Button("Game", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_GAME;
 				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
 			}
 			if (ImGui::Button("Input", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_INPUT;
 				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
 			}
 			if (ImGui::Button("Graphics", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_GRAPHICS;
 				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
 			}
 			if (ImGui::Button("Hud", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_HUD;
 				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
 			}
 			if (ImGui::Button("Sound", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_SOUND;
 				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
 			}
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
-				s_restartGame = s_menuRetState == APP_STATE_MENU;
+				s_restartGame = (s_menuRetState == APP_STATE_MENU);
 
 				s_subUI = FEUI_NONE;
 				s_appState = s_menuRetState;
 				TFE_Settings::writeToDisk();
 				TFE_Input::enableRelativeMode(s_relativeMode);
+				inputMapping_serialize();
 			}
 			if (s_menuRetState != APP_STATE_MENU && ImGui::Button("Exit to Menu", sideBarButtonSize))
 			{
@@ -573,6 +581,7 @@ namespace TFE_FrontEndUI
 				s_subUI = FEUI_NONE;
 				s_appState = APP_STATE_MENU;
 				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
 
 				// End the current game.
 				// TODO
