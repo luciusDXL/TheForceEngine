@@ -1136,9 +1136,9 @@ namespace TFE_DarkForces
 			fixed16_16 speed = -mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
 			s_forwardSpd = min(speed, s_forwardSpd);
 		}
-		else if (TFE_Input::getAxis(AXIS_LEFT_Y))
+		else if (inputMapping_getAnalogAxis(AA_MOVE))
 		{
-			fixed16_16 speed = mul16(mul16(PLAYER_FORWARD_SPEED, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_LEFT_Y)));
+			fixed16_16 speed = mul16(mul16(PLAYER_FORWARD_SPEED, s_deltaTime), floatToFixed16(clamp(inputMapping_getAnalogAxis(AA_MOVE), -1.0f, 1.0f)));
 			if (speed < 0)
 			{
 				s_forwardSpd = min(speed, s_forwardSpd);
@@ -1209,9 +1209,9 @@ namespace TFE_DarkForces
 			s_playerYaw += dYaw;
 			s_playerYaw &= ANGLE_MASK;
 		}
-		else if (TFE_Input::getAxis(AXIS_RIGHT_X))
+		else if (inputMapping_getAnalogAxis(AA_LOOK_HORZ))
 		{
-			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_TURN_SPD, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_RIGHT_X)));
+			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_TURN_SPD, s_deltaTime), floatToFixed16(inputMapping_getAnalogAxis(AA_LOOK_HORZ)));
 			s_playerYaw += turnSpeed;
 			s_playerYaw &= ANGLE_MASK;
 		}
@@ -1232,9 +1232,9 @@ namespace TFE_DarkForces
 			dPitch >>= s_playerSlow;	// half for "slow"
 			s_playerPitch = clamp(s_playerPitch - dPitch, -PITCH_LIMIT, PITCH_LIMIT);
 		}
-		else if (TFE_Input::getAxis(AXIS_RIGHT_Y))
+		else if (inputMapping_getAnalogAxis(AA_LOOK_VERT))
 		{
-			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_PITCH_SPD, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_RIGHT_Y)));
+			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_PITCH_SPD, s_deltaTime), floatToFixed16(inputMapping_getAnalogAxis(AA_LOOK_VERT)));
 			s_playerPitch = clamp(s_playerPitch + turnSpeed, -PITCH_LIMIT, PITCH_LIMIT);
 		}
 
@@ -1254,9 +1254,9 @@ namespace TFE_DarkForces
 			fixed16_16 speed = -mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
 			s_strafeSpd = min(speed, s_strafeSpd);
 		}
-		else if (TFE_Input::getAxis(AXIS_LEFT_X))
+		else if (inputMapping_getAnalogAxis(AA_STRAFE))
 		{
-			fixed16_16 speed = mul16(mul16(PLAYER_STRAFE_SPEED, s_deltaTime), floatToFixed16(TFE_Input::getAxis(AXIS_LEFT_X)));
+			fixed16_16 speed = mul16(mul16(PLAYER_STRAFE_SPEED, s_deltaTime), floatToFixed16(clamp(inputMapping_getAnalogAxis(AA_STRAFE), -1.0f, 1.0f)));
 			if (speed < 0)
 			{
 				s_strafeSpd = min(speed, s_strafeSpd);

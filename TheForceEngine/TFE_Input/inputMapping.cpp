@@ -105,10 +105,10 @@ namespace TFE_Input
 
 		// Controller
 		s_inputConfig.controllerFlags = CFLAG_ENABLE;
-		s_inputConfig.axis[AA_LOOK_HORZ] = AXIS_LEFT_X;
-		s_inputConfig.axis[AA_LOOK_VERT] = AXIS_LEFT_Y;
-		s_inputConfig.axis[AA_MOVE]      = AXIS_RIGHT_X;
-		s_inputConfig.axis[AA_STRAFE]    = AXIS_RIGHT_Y;
+		s_inputConfig.axis[AA_LOOK_HORZ] = AXIS_RIGHT_X;
+		s_inputConfig.axis[AA_LOOK_VERT] = AXIS_RIGHT_Y;
+		s_inputConfig.axis[AA_STRAFE]    = AXIS_LEFT_X;
+		s_inputConfig.axis[AA_MOVE]      = AXIS_LEFT_Y;
 		s_inputConfig.ctrlSensitivity[0] = 1.0f;
 		s_inputConfig.ctrlSensitivity[1] = 1.0f;
 
@@ -198,6 +198,11 @@ namespace TFE_Input
 				} break;
 				case ITYPE_CONTROLLER:
 				{
+					if (!(s_inputConfig.controllerFlags & CFLAG_ENABLE))
+					{
+						break;
+					}
+
 					if (TFE_Input::buttonPressed(bind->ctrlBtn))
 					{
 						s_actions[bind->action] = STATE_PRESSED;
@@ -209,6 +214,11 @@ namespace TFE_Input
 				} break;
 				case ITYPE_CONTROLLER_AXIS:
 				{
+					if (!(s_inputConfig.controllerFlags & CFLAG_ENABLE))
+					{
+						break;
+					}
+
 					if (TFE_Input::getAxis(bind->axis) > 0.5f)
 					{
 						s_actions[bind->action] = STATE_DOWN;
@@ -226,6 +236,24 @@ namespace TFE_Input
 	ActionState inputMapping_getActionState(InputAction action)
 	{
 		return s_actions[action];
+	}
+
+	f32 inputMapping_getAnalogAxis(AnalogAxis axis)
+	{
+		if (!(s_inputConfig.controllerFlags & CFLAG_ENABLE))
+		{
+			return 0.0f;
+		}
+
+		Axis mappedAxis = s_inputConfig.axis[axis];
+		f32 axisValue = TFE_Input::getAxis(mappedAxis);
+		if (s_inputConfig.controllerFlags & (1 << (mappedAxis + 1)))
+		{
+			axisValue = -axisValue;
+		}
+		axisValue *= s_inputConfig.ctrlSensitivity[mappedAxis < AXIS_RIGHT_X ? 0 : 1];
+
+		return axisValue;
 	}
 
 	u32 inputMapping_getBindingsForAction(InputAction action, u32* indices, u32 maxIndices)

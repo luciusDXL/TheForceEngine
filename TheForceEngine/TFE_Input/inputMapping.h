@@ -80,8 +80,8 @@ namespace TFE_Input
 	{
 		AA_LOOK_HORZ = 0,
 		AA_LOOK_VERT,
-		AA_MOVE,
 		AA_STRAFE,
+		AA_MOVE,
 		AA_COUNT
 	};
 
@@ -161,6 +161,7 @@ namespace TFE_Input
 		
 	void inputMapping_addBinding(InputBinding* binding);
 	ActionState inputMapping_getActionState(InputAction action);
+	f32  inputMapping_getAnalogAxis(AnalogAxis axis);
 	void inputMapping_updateInput();
 	void inputMapping_removeState(InputAction action);
 

@@ -961,11 +961,11 @@ namespace TFE_FrontEndUI
 
 				ImGui::LabelText("##ConfigLabel", "Move"); ImGui::SameLine(175);
 				ImGui::SetNextItemWidth(196);
-				ImGui::Combo("##CtrlMove", (s32*)&s_inputConfig->axis[AA_MOVE], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+				ImGui::Combo("##CtrlStrafe", (s32*)&s_inputConfig->axis[AA_STRAFE], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
 				ImGui::LabelText("##ConfigLabel", "Strafe"); ImGui::SameLine(175);
 				ImGui::SetNextItemWidth(196);
-				ImGui::Combo("##CtrlStrafe", (s32*)&s_inputConfig->axis[AA_STRAFE], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
+				ImGui::Combo("##CtrlMove", (s32*)&s_inputConfig->axis[AA_MOVE], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
 				ImGui::Separator();
 
