@@ -101,17 +101,14 @@ namespace TFE_Jedi
 		if (strcasecmp(value, "Classic_Fixed") == 0)
 		{
 			setSubRenderer(TSR_CLASSIC_FIXED);
-			// setupLevel(width, height);
 		}
 		else if (strcasecmp(value, "Classic_Float") == 0)
 		{
 			setSubRenderer(TSR_CLASSIC_FLOAT);
-			// setupLevel(width, height);
 		}
 		else if (strcasecmp(value, "Classic_GPU") == 0)
 		{
 			setSubRenderer(TSR_CLASSIC_GPU);
-			// setupLevel(width, height);
 		}
 	}
 
@@ -142,21 +139,6 @@ namespace TFE_Jedi
 			s_subRenderer = subRenderer;
 		}
 	}
-
-#if 0
-	void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId, s32 worldAmbient, bool cameraLightSource)
-	{
-		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setCamera(yaw, pitch, x, y, z, sectorId); }
-		// else { RClassic_Float::setCamera(yaw, pitch, x, y, z, sectorId); }
-
-		s_sectorId = sectorId;
-		s_cameraLightSource = 0;
-		s_worldAmbient = worldAmbient;
-		s_cameraLightSource = cameraLightSource ? -1 : 0;
-
-		s_drawFrame++;
-	}
-#endif
 
 	void renderer_setWorldAmbient(s32 value)
 	{
