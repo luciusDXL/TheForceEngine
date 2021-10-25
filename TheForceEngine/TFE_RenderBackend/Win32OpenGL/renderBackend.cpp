@@ -266,6 +266,11 @@ namespace TFE_RenderBackend
 		s_screenCapture->resize(m_windowState.width, m_windowState.height);
 	}
 
+	void clearWindow()
+	{
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
+
 	void getDisplayInfo(DisplayInfo* displayInfo)
 	{
 		assert(displayInfo);

@@ -94,6 +94,7 @@ namespace TFE_RenderBackend
 
 	void resize(s32 width, s32 height);
 	void enableFullscreen(bool enable);
+	void clearWindow();
 
 	void getDisplayInfo(DisplayInfo* displayInfo);
 	void updateSettings();

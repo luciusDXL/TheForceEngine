@@ -530,10 +530,6 @@ int main(int argc, char* argv[])
 			relativeMode = enableRelative;
 			SDL_SetRelativeMouseMode(relativeMode ? SDL_TRUE : SDL_FALSE);
 		}
-		if (TFE_FrontEndUI::shouldClearScreen())
-		{
-			//renderer->enableScreenClear(true);
-		}
 
 		// System events
 		SDL_Event event;
@@ -620,6 +616,10 @@ int main(int argc, char* argv[])
 				s_curGame->loopGame();
 				endInputFrame = TFE_Jedi::task_run() != 0;
 			}
+		}
+		else
+		{
+			TFE_RenderBackend::clearWindow();
 		}
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
 

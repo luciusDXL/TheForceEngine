@@ -936,6 +936,13 @@ namespace TFE_FrontEndUI
 		s_inputConfig = inputMapping_get();
 
 		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
+		if (ImGui::Button("Reset To Defaults"))
+		{
+			inputMapping_resetToDefaults();
+		}
+		yNext += 32.0f;
+
+		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
 		if (ImGui::BeginChild("Controller Options", ImVec2(390.0f, s_controllerWinOpen ? 400.0f : 29.0f), true, window_flags))
@@ -1100,7 +1107,7 @@ namespace TFE_FrontEndUI
 		ImGui::End();
 		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-		f32 inputMappingHeight = 1360.0f;
+		f32 inputMappingHeight = 1376.0f;
 		if (ImGui::BeginChild("##Input Mapping", ImVec2(390.0f, s_inputMappingOpen ? inputMappingHeight : 29.0f), true, window_flags))
 		{
 			if (ImGui::Button("Input Mapping", ImVec2(370.0f, 0.0f)))

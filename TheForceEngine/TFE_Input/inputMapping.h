@@ -158,6 +158,7 @@ namespace TFE_Input
 
 	void inputMapping_startup();
 	void inputMapping_shutdown();
+	void inputMapping_resetToDefaults();
 
 	bool inputMapping_serialize();
 	bool inputMapping_restore();
