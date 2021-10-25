@@ -474,6 +474,19 @@ namespace TFE_Jedi
 		s_minIntervalInSec = minIntervalInSec;
 	}
 
+	JBool task_canRun()
+	{
+		if (s_taskCount)
+		{
+			const f64 time = TFE_System::getTime();
+			if (time - s_prevTime < s_minIntervalInSec)
+			{
+				return JFALSE;
+			}
+		}
+		return JTRUE;
+	}
+
 	// Called once per frame to run all of the tasks.
 	// Returns JFALSE if it cannot be run due to the time interval.
 	JBool task_run()

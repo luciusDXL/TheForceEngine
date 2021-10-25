@@ -555,9 +555,10 @@ int main(int argc, char* argv[])
 		}
 
 		TFE_Ui::begin();
+		TFE_System::update();
 						
 		// Update
-		if (TFE_FrontEndUI::uiControlsEnabled())
+		if (TFE_FrontEndUI::uiControlsEnabled() && task_canRun())
 		{
 			if (inputMapping_getActionState(IAS_CONSOLE) == STATE_PRESSED)
 			{
@@ -588,7 +589,6 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		TFE_System::update();
 		if (showPerf)
 		{
 			//TFE_Editor::showPerf(frame);
@@ -623,15 +623,11 @@ int main(int argc, char* argv[])
 		}
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
 
-		// Render
-		//renderer->begin();
-		// Do stuff
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
 		if (s_curState == APP_STATE_EDITOR)
 		{
 			//swap = TFE_Editor::render();
 		}
-		//renderer->end();
 
 		// Blit the frame to the window and draw UI.
 		TFE_RenderBackend::swap(swap);
@@ -640,6 +636,7 @@ int main(int argc, char* argv[])
 		if (endInputFrame)
 		{
 			TFE_Input::endFrame();
+			inputMapping_endFrame();
 		}
 		frame++;
 

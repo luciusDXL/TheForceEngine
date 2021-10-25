@@ -61,6 +61,7 @@ namespace TFE_Jedi
 	// thread and then blit the results in the main thread.
 	// Returns false if tasks cannot be run due to the time interval.
 	JBool task_run();
+	JBool task_canRun();
 	void task_setDefaults();
 	void task_setMinStepInterval(f64 minIntervalInSec);
 

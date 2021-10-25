@@ -247,13 +247,16 @@ namespace TFE_Input
 		}
 	}
 
-	void inputMapping_updateInput()
+	void inputMapping_endFrame()
 	{
 		for (u32 i = 0; i < IA_COUNT; i++)
 		{
 			s_actions[i] = STATE_UP;
 		}
+	}
 
+	void inputMapping_updateInput()
+	{
 		for (u32 i = 0; i < s_inputConfig.bindCount; i++)
 		{
 			InputBinding* bind = &s_inputConfig.binds[i];

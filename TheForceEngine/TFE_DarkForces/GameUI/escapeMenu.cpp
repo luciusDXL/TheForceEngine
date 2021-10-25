@@ -235,7 +235,7 @@ namespace TFE_DarkForces
 		height = TFE_RenderBackend::getVirtualDisplayHeight();
 
 		s32 dx, dy;
-		TFE_Input::getMouseMove(&dx, &dy);
+		TFE_Input::getAccumulatedMouseMove(&dx, &dy);
 
 		s_cursorPosAccum.x = clamp(s_cursorPosAccum.x + dx, 0, displayInfo.width);
 		s_cursorPosAccum.z = clamp(s_cursorPosAccum.z + dy, 0, displayInfo.height);

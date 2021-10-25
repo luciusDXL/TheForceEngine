@@ -74,6 +74,7 @@ namespace TFE_Input
 		IADF_SECONDARY_FIRE,
 
 		IA_COUNT,
+		IAS_COUNT = IAS_SYSTEM_MENU + 1,
 	};
 
 	enum AnalogAxis
@@ -168,6 +169,7 @@ namespace TFE_Input
 	f32  inputMapping_getAnalogAxis(AnalogAxis axis);
 	void inputMapping_updateInput();
 	void inputMapping_removeState(InputAction action);
+	void inputMapping_endFrame();
 
 	InputConfig* inputMapping_get();
 	u32 inputMapping_getBindingsForAction(InputAction action, u32* indices, u32 maxIndices);
