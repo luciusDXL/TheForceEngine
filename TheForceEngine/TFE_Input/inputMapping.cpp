@@ -229,7 +229,7 @@ namespace TFE_Input
 		if (s_inputConfig.bindCount > s_inputConfig.bindCapacity)
 		{
 			s_inputConfig.bindCapacity += IA_COUNT;
-			s_inputConfig.binds = (InputBinding*)game_realloc(s_inputConfig.binds, sizeof(InputBinding)*s_inputConfig.bindCapacity);
+			s_inputConfig.binds = (InputBinding*)realloc(s_inputConfig.binds, sizeof(InputBinding)*s_inputConfig.bindCapacity);
 		}
 
 		s_inputConfig.binds[index] = *binding;
