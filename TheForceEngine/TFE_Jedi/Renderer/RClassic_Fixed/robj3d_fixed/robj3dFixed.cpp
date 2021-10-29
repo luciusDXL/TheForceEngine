@@ -79,7 +79,7 @@ namespace RClassic_Fixed
 			const s32 pixel_y = round16(div16(mul16(vertex->y, s_rcfState.focalLenAspect), z) + s_rcfState.projOffsetY);
 
 			// If the X position is out of view, skip the vertex.
-			if (pixel_x < s_minScreenX || pixel_x > s_maxScreenX)
+			if (pixel_x < s_minScreenX_Pixels || pixel_x > s_maxScreenX_Pixels)
 			{
 				continue;
 			}

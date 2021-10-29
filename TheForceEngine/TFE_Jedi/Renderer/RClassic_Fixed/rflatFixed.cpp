@@ -209,7 +209,7 @@ namespace RClassic_Fixed
 
 		for (s32 y = s_windowMinY_Pixels; y <= s_wallMaxCeilY && y < s_windowMaxY_Pixels; y++)
 		{
-			s32 x = s_windowMinX;
+			s32 x = s_windowMinX_Pixels;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_screenYMidBase - s_screenYMid;
 			assert(yShear + y + s_height * 2 >= 0 && yShear + y + s_height * 2 <= s_height * 4);
@@ -276,7 +276,7 @@ namespace RClassic_Fixed
 
 		for (s32 y = max(s_wallMinFloorY, s_windowMinY_Pixels); y <= s_windowMaxY_Pixels; y++)
 		{
-			s32 x = s_windowMinX;
+			s32 x = s_windowMinX_Pixels;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_screenYMidBase - s_screenYMid;
 			assert(yShear + y + s_height * 2 >= 0 && yShear + y + s_height * 2 <= s_height * 4);
@@ -287,7 +287,7 @@ namespace RClassic_Fixed
 			s32 right = 0;
 			for (s32 i = 0; i < count;)
 			{
-				s32 winMaxX = s_windowMaxX;
+				s32 winMaxX = s_windowMaxX_Pixels;
 
 				// Search for the left edge of the scanline.
 				if (!flat_buildScanlineFloor(i, count, x, y, left, right, s_scanlineWidth, edges))
@@ -370,8 +370,8 @@ namespace RClassic_Fixed
 
 	void flat_drawPolygonScanline(s32 x0, s32 x1, s32 y, bool trans)
 	{
-		x0 = max(x0, s_windowMinX);
-		x1 = min(x1, s_windowMaxX);
+		x0 = max(x0, s_windowMinX_Pixels);
+		x1 = min(x1, s_windowMaxX_Pixels);
 		clipScanline(&x0, &x1, y);
 
 		s_scanlineWidth = x1 - x0 + 1;

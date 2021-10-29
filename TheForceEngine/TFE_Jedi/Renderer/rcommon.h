@@ -19,10 +19,10 @@ namespace TFE_Jedi
 	extern s32 s_screenXMid;
 	
 	// Window
-	extern s32 s_minScreenX;
-	extern s32 s_maxScreenX;
-	extern s32 s_windowMinX;
-	extern s32 s_windowMaxX;
+	extern s32 s_minScreenX_Pixels;
+	extern s32 s_maxScreenX_Pixels;
+	extern s32 s_windowMinX_Pixels;
+	extern s32 s_windowMaxX_Pixels;
 	extern s32 s_windowMinY_Pixels;
 	extern s32 s_windowMaxY_Pixels;
 	extern s32 s_windowMaxCeil;

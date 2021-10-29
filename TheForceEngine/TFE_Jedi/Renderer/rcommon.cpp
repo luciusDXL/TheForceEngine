@@ -15,10 +15,10 @@ namespace TFE_Jedi
 	s32 s_screenXMid;
 
 	// Window
-	s32 s_minScreenX;
-	s32 s_maxScreenX;
-	s32 s_windowMinX;
-	s32 s_windowMaxX;
+	s32 s_minScreenX_Pixels;
+	s32 s_maxScreenX_Pixels;
+	s32 s_windowMinX_Pixels;
+	s32 s_windowMaxX_Pixels;
 	s32 s_windowMinY_Pixels;
 	s32 s_windowMaxY_Pixels;
 	s32 s_windowMaxCeil;

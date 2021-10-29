@@ -29,8 +29,8 @@ namespace TFE_Jedi
 		}
 		s_wallMaxCeilY = s_windowMinY_Pixels - 1;
 		s_wallMinFloorY = s_windowMaxY_Pixels + 1;
-		s_windowMinX = adjoinEdges->x0;
-		s_windowMaxX = adjoinEdges->x1;
+		s_windowMinX_Pixels = adjoinEdges->x0;
+		s_windowMaxX_Pixels = adjoinEdges->x1;
 		s_windowTopPrev = s_windowTop;
 		s_windowBotPrev = s_windowBot;
 		s_prevSector = s_curSector;

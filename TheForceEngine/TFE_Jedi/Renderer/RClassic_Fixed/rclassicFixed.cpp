@@ -112,10 +112,10 @@ namespace RClassic_Fixed
 		s_viewHeightFixed = intToFixed16(h);
 		s_screenWidth = w;
 		s_screenHeight = h;
-		s_minScreenX = x0;
+		s_minScreenX_Pixels = x0;
 		s_minScreenX_Fixed = intToFixed16(x0);
-		s_maxScreenX = x0 + w - 1;
-		s_maxScreenX_Fixed = intToFixed16(s_maxScreenX);
+		s_maxScreenX_Pixels = x0 + w - 1;
+		s_maxScreenX_Fixed = intToFixed16(s_maxScreenX_Pixels);
 		s_minScreenY = y0;
 		s_rcfState.windowMinY = intToFixed16(y0);
 		s_rcfState.windowMaxY = intToFixed16(y0 + h - 1);
@@ -136,8 +136,8 @@ namespace RClassic_Fixed
 		s_rcfState.projOffsetY = intToFixed16(yc);
 		s_rcfState.projOffsetYBase = s_rcfState.projOffsetY;
 
-		s_windowX0 = s_minScreenX;
-		s_windowX1 = s_maxScreenX;
+		s_windowX0 = s_minScreenX_Pixels;
+		s_windowX1 = s_maxScreenX_Pixels;
 
 		s_rcfState.oneOverHalfWidth = div16(ONE_16, halfWidthFixed);
 
@@ -181,7 +181,7 @@ namespace RClassic_Fixed
 
 		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
 		s_flatEdge = flatEdge;
-		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
+		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
 		
 		s_columnTop = (s32*)game_realloc(s_columnTop, s_width * sizeof(s32));
 		s_columnBot = (s32*)game_realloc(s_columnBot, s_width * sizeof(s32));

@@ -123,10 +123,10 @@ namespace TFE_Jedi
 						// Cull against the current "window."
 						const fixed16_16 z = curObj->posVS.z;
 						const s32 x0 = round16(div16(mul16(xMin, s_rcfState.focalLength), z)) + s_screenXMid;
-						if (x0 > s_windowMaxX) { continue; }
+						if (x0 > s_windowMaxX_Pixels) { continue; }
 
 						const s32 x1 = round16(div16(mul16(xMax, s_rcfState.focalLength), z)) + s_screenXMid;
-						if (x1 < s_windowMinX) { continue; }
+						if (x1 < s_windowMinX_Pixels) { continue; }
 
 						// Finally add the object to render.
 						buffer[drawCount++] = curObj;
@@ -162,7 +162,7 @@ namespace TFE_Jedi
 	{
 		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
 		s_flatEdge = flatEdge;
-		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
+		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
 	}
 
 	void TFE_Sectors_Fixed::draw(RSector* sector)
@@ -202,7 +202,7 @@ namespace TFE_Jedi
 		if (s_adjoinDepth > 1)
 		{
 			depthPrev = &s_rcfState.depth1d_all[(s_adjoinDepth - 2) * s_width];
-			memcpy(&s_rcfState.depth1d[s_minScreenX], &depthPrev[s_minScreenX], s_width * 4);
+			memcpy(&s_rcfState.depth1d[s_minScreenX_Pixels], &depthPrev[s_minScreenX_Pixels], s_width * 4);
 		}
 
 		s_wallMaxCeilY = s_windowMinY_Pixels;
@@ -420,14 +420,14 @@ namespace TFE_Jedi
 					{
 						if (prevAdjoinSeg->wallX1 + 1 == curAdjoinSeg->wallX0)
 						{
-							s_windowX0 = s_windowMinX;
+							s_windowX0 = s_windowMinX_Pixels;
 						}
 					}
 					if (nextAdjoin)
 					{
 						if (curAdjoinSeg->wallX1 == nextAdjoin->wallX0 - 1)
 						{
-							s_windowX1 = s_windowMaxX;
+							s_windowX1 = s_windowMaxX_Pixels;
 						}
 					}
 
@@ -452,7 +452,7 @@ namespace TFE_Jedi
 
 		if (!(s_curSector->flags1 & SEC_FLAGS1_SUBSECTOR) && depthPrev && s_drawFrame != s_prevSector->prevDrawFrame2)
 		{
-			memcpy(&depthPrev[s_windowMinX], &s_rcfState.depth1d[s_windowMinX], (s_windowMaxX - s_windowMinX + 1) * sizeof(fixed16_16));
+			memcpy(&depthPrev[s_windowMinX_Pixels], &s_rcfState.depth1d[s_windowMinX_Pixels], (s_windowMaxX_Pixels - s_windowMinX_Pixels + 1) * sizeof(fixed16_16));
 		}
 
 		// Objects
@@ -522,8 +522,8 @@ namespace TFE_Jedi
 
 		// Note: This is pretty inefficient, especially at higher resolutions.
 		// The column loops below can be adjusted to do the copy only in the required ranges.
-		memcpy(&winTopNext[s_minScreenX], &winTop[s_minScreenX], s_width * 4);
-		memcpy(&winBotNext[s_minScreenX], &winBot[s_minScreenX], s_width * 4);
+		memcpy(&winTopNext[s_minScreenX_Pixels], &winTop[s_minScreenX_Pixels], s_width * 4);
+		memcpy(&winBotNext[s_minScreenX_Pixels], &winBot[s_minScreenX_Pixels], s_width * 4);
 
 		// Loop through each adjoin and setup the column range based on the edge pair and the parent
 		// column range.
@@ -583,8 +583,8 @@ namespace TFE_Jedi
 		}
 		s_wallMaxCeilY = s_windowMinY_Pixels - 1;
 		s_wallMinFloorY = s_windowMaxY_Pixels + 1;
-		s_windowMinX = adjoinEdges->x0;
-		s_windowMaxX = adjoinEdges->x1;
+		s_windowMinX_Pixels = adjoinEdges->x0;
+		s_windowMaxX_Pixels = adjoinEdges->x1;
 		s_windowTopPrev = s_windowTop;
 		s_windowBotPrev = s_windowBot;
 		s_prevSector = s_curSector;
@@ -604,8 +604,8 @@ namespace TFE_Jedi
 		dst->windowMinFloor = s_windowMinFloor;
 		dst->wallMaxCeilY = s_wallMaxCeilY;
 		dst->wallMinFloorY = s_wallMinFloorY;
-		dst->windowMinX = s_windowMinX;
-		dst->windowMaxX = s_windowMaxX;
+		dst->windowMinX = s_windowMinX_Pixels;
+		dst->windowMaxX = s_windowMaxX_Pixels;
 		dst->windowTop = s_windowTop;
 		dst->windowBot = s_windowBot;
 		dst->windowTopPrev = s_windowTopPrev;
@@ -629,8 +629,8 @@ namespace TFE_Jedi
 		s_windowMinFloor = src->windowMinFloor;
 		s_wallMaxCeilY = src->wallMaxCeilY;
 		s_wallMinFloorY = src->wallMinFloorY;
-		s_windowMinX = src->windowMinX;
-		s_windowMaxX = src->windowMaxX;
+		s_windowMinX_Pixels = src->windowMinX;
+		s_windowMaxX_Pixels = src->windowMaxX;
 		s_windowTop = src->windowTop;
 		s_windowBot = src->windowBot;
 		s_windowTopPrev = src->windowTopPrev;

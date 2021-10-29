@@ -165,8 +165,8 @@ namespace TFE_Jedi
 		s_lightSourceRamp = lightSourceRamp;
 		clear1dDepth();
 
-		s_windowMinX = s_minScreenX;
-		s_windowMaxX = s_maxScreenX;
+		s_windowMinX_Pixels = s_minScreenX_Pixels;
+		s_windowMaxX_Pixels = s_maxScreenX_Pixels;
 		s_windowMinY_Pixels = 1;
 		s_windowMaxY_Pixels = s_height - 1;
 		s_windowMaxCeil = s_minScreenY;

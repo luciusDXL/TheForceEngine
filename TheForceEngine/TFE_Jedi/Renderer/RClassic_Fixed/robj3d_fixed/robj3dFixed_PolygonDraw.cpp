@@ -365,7 +365,7 @@ namespace RClassic_Fixed
 		s32 edgeFound = 0;
 		for (; edgeFound == 0 && s_rowY <= s_maxScreenY; s_rowY++)
 		{
-			if (s_rowY >= s_windowMinY_Pixels && s_windowMaxY_Pixels != 0 && s_edgeLeft_X0_Pixel <= s_windowMaxX && s_edgeRight_X0_Pixel >= s_windowMinX)
+			if (s_rowY >= s_windowMinY_Pixels && s_windowMaxY_Pixels != 0 && s_edgeLeft_X0_Pixel <= s_windowMaxX_Pixels && s_edgeRight_X0_Pixel >= s_windowMinX_Pixels)
 			{
 				flat_drawPolygonScanline(s_edgeLeft_X0_Pixel, s_edgeRight_X0_Pixel, s_rowY, trans);
 			}

@@ -308,16 +308,16 @@ namespace RClassic_Fixed
 		x1pixel = round16(x1proj) - 1;
 		
 		// Handle near plane clipping by adjusting the walls to avoid holes.
-		if (clipX0_Near != 0 && x0pixel > s_minScreenX)
+		if (clipX0_Near != 0 && x0pixel > s_minScreenX_Pixels)
 		{
 			x0 = -ONE_16;
 			dx = x1 + ONE_16;
-			x0pixel = s_minScreenX;
+			x0pixel = s_minScreenX_Pixels;
 		}
-		if (clipX1_Near != 0 && x1pixel < s_maxScreenX)
+		if (clipX1_Near != 0 && x1pixel < s_maxScreenX_Pixels)
 		{
 			dx = ONE_16 - x0;
-			x1pixel = s_maxScreenX;
+			x1pixel = s_maxScreenX_Pixels;
 		}
 
 		// The wall is backfacing if x0 > x1
@@ -327,7 +327,7 @@ namespace RClassic_Fixed
 			return;
 		}
 		// The wall is completely outside of the screen.
-		if (x0pixel > s_maxScreenX || x1pixel < s_minScreenX)
+		if (x0pixel > s_maxScreenX_Pixels || x1pixel < s_minScreenX_Pixels)
 		{
 			wall->visible = 0;
 			return;
@@ -342,13 +342,13 @@ namespace RClassic_Fixed
 		RWallSegment* wallSeg = &s_wallSegListSrc[s_nextWall];
 		s_nextWall++;
 
-		if (x0pixel < s_minScreenX)
+		if (x0pixel < s_minScreenX_Pixels)
 		{
-			x0pixel = s_minScreenX;
+			x0pixel = s_minScreenX_Pixels;
 		}
-		if (x1pixel > s_maxScreenX)
+		if (x1pixel > s_maxScreenX_Pixels)
 		{
-			x1pixel = s_maxScreenX;
+			x1pixel = s_maxScreenX_Pixels;
 		}
 
 		wallSeg->srcWall = wall;
@@ -410,15 +410,15 @@ namespace RClassic_Fixed
 		{
 			RWall* srcWall = srcSeg->srcWall;
 			JBool processed = (s_drawFrame == srcWall->drawFrame) ? JTRUE : JFALSE;
-			JBool insideWindow = ((srcSeg->z0 >= s_rcfState.windowMinZ || srcSeg->z1 >= s_rcfState.windowMinZ) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX) ? JTRUE : JFALSE;
+			JBool insideWindow = ((srcSeg->z0 >= s_rcfState.windowMinZ || srcSeg->z1 >= s_rcfState.windowMinZ) && srcSeg->wallX0 <= s_windowMaxX_Pixels && srcSeg->wallX1 >= s_windowMinX_Pixels) ? JTRUE : JFALSE;
 			if (!processed && insideWindow)
 			{
 				// Copy the source segment into "newSeg" so it can be modified.
 				*newSeg = *srcSeg;
 
 				// Clip the segment 'newSeg' to the current window.
-				if (newSeg->wallX0 < s_windowMinX) { newSeg->wallX0 = s_windowMinX; }
-				if (newSeg->wallX1 > s_windowMaxX) { newSeg->wallX1 = s_windowMaxX; }
+				if (newSeg->wallX0 < s_windowMinX_Pixels) { newSeg->wallX0 = s_windowMinX_Pixels; }
+				if (newSeg->wallX1 > s_windowMaxX_Pixels) { newSeg->wallX1 = s_windowMaxX_Pixels; }
 
 				// Check 'newSeg' versus all of the segments already added for this sector.
 				RWallSegment* sortedSeg = segOutList;
@@ -1812,7 +1812,7 @@ namespace RClassic_Fixed
 		s_texHeightMask = texture->height - 1;
 		const s32 texWidthMask = texture->width - 1;
 
-		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
+		for (s32 x = s_windowMinX_Pixels; x <= s_windowMaxX_Pixels; x++)
 		{
 			const s32 y0 = s_windowTop[x];
 			const s32 y1 = min(s_columnTop[x], s_windowBot[x]);
@@ -1857,7 +1857,7 @@ namespace RClassic_Fixed
 		}
 
 		s_texHeightMask = texture->height - 1;
-		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
+		for (s32 x = s_windowMinX_Pixels; x <= s_windowMaxX_Pixels; x++)
 		{
 			const s32 y0 = s_windowTop[x];
 			const s32 y1 = min(s_screenYMid - 1, s_windowBot[x]);
@@ -1908,7 +1908,7 @@ namespace RClassic_Fixed
 		s_texHeightMask = texture->height - 1;
 		const s32 texWidthMask = texture->width - 1;
 
-		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
+		for (s32 x = s_windowMinX_Pixels; x <= s_windowMaxX_Pixels; x++)
 		{
 			const s32 y0 = max(s_columnBot[x], s_windowTop[x]);
 			const s32 y1 = s_windowBot[x];
@@ -1953,7 +1953,7 @@ namespace RClassic_Fixed
 		}
 
 		s_texHeightMask = texture->height - 1;
-		for (s32 x = s_windowMinX; x <= s_windowMaxX; x++)
+		for (s32 x = s_windowMinX_Pixels; x <= s_windowMaxX_Pixels; x++)
 		{
 			const s32 y0 = max(s_screenYMid, s_windowTop[x]);
 			const s32 y1 = s_windowBot[x];
@@ -2284,7 +2284,7 @@ namespace RClassic_Fixed
 
 		s32 x0_pixel = round16(projX0);
 		s32 y0_pixel = round16(projY0);
-		if (x0_pixel > s_windowMaxX || y0_pixel > s_windowMaxY_Pixels)
+		if (x0_pixel > s_windowMaxX_Pixels || y0_pixel > s_windowMaxY_Pixels)
 		{
 			return;
 		}
@@ -2297,7 +2297,7 @@ namespace RClassic_Fixed
 
 		s32 x1_pixel = round16(projX1);
 		s32 y1_pixel = round16(projY1);
-		if (x1_pixel < s_windowMinX || y1_pixel < s_windowMinY_Pixels)
+		if (x1_pixel < s_windowMinX_Pixels || y1_pixel < s_windowMinY_Pixels)
 		{
 			return;
 		}

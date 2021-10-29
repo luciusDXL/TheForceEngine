@@ -31,7 +31,7 @@ s32 robj3d_findNextEdge(s32 xMinIndex, s32 xMin)
 		vec3_fixed* cur = &s_polyProjVtx[curIndex];
 		vec3_fixed* next = &s_polyProjVtx[nextIndex];
 		s32 dx = next->x - cur->x;
-		if (next->x == s_maxScreenX)
+		if (next->x == s_maxScreenX_Pixels)
 		{
 			dx++;
 		}
@@ -107,7 +107,7 @@ s32 robj3d_findPrevEdge(s32 minXIndex)
 		vec3_fixed* cur = &s_polyProjVtx[curIndex];
 		vec3_fixed* prev = &s_polyProjVtx[prevIndex];
 		s32 dx = prev->x - cur->x;
-		if (s_maxScreenX == prev->x)
+		if (s_maxScreenX_Pixels == prev->x)
 		{
 			dx++;
 		}
@@ -339,7 +339,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 
 	if (FIND_NEXT_EDGE(minXIndex, xMin) != 0 || FIND_PREV_EDGE(minXIndex) != 0) { return; }
 
-	for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX && s_columnX <= s_maxScreenX; s_columnX++)
+	for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX_Pixels && s_columnX <= s_maxScreenX_Pixels; s_columnX++)
 	{
 		const fixed16_16 edgeMinZ = min(s_edgeBot_Z0, s_edgeTop_Z0);
 		const fixed16_16 z = s_rcfState.depth1d[s_columnX];
@@ -370,7 +370,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 			s_columnHeight = y0_Bot - y0_Top + 1;
 			// TODO: Figure out why I have to add: s_columnX >= s_windowMinX && s_columnX <= s_windowMaxX
 			// I must have missed a step elsewhere.
-			if (s_columnHeight > 0 && s_columnX >= s_windowMinX && s_columnX <= s_windowMaxX)
+			if (s_columnHeight > 0 && s_columnX >= s_windowMinX_Pixels && s_columnX <= s_windowMaxX_Pixels)
 			{
 				const fixed16_16 height = intToFixed16(s_edgeBotY0_Pixel - s_edgeTopY0_Pixel + 1);
 				s_pcolumnOut = &s_display[y0_Top*s_width + s_columnX];

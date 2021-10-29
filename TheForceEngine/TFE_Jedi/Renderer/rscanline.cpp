@@ -33,7 +33,7 @@ namespace TFE_Jedi
 			{
 				x = edge->x0;
 				s32 ey = s_columnTop[x];
-				while (x < s_windowMaxX && y > ey)
+				while (x < s_windowMaxX_Pixels && y > ey)
 				{
 					x++;
 					ey = s_columnTop[x];
@@ -86,7 +86,7 @@ namespace TFE_Jedi
 					{
 						x = edge->x0;
 						s32 ey = s_columnTop[x];
-						while (x < s_windowMaxX && ey >= y)
+						while (x < s_windowMaxX_Pixels && ey >= y)
 						{
 							x++;
 							ey = s_columnTop[x];
@@ -140,7 +140,7 @@ namespace TFE_Jedi
 			{
 				x = edge->x0;
 				s32 ey = s_columnBot[x];
-				while (x < s_windowMaxX && y < ey)
+				while (x < s_windowMaxX_Pixels && y < ey)
 				{
 					x++;
 					ey = s_columnBot[x];
@@ -193,7 +193,7 @@ namespace TFE_Jedi
 					{
 						x = edge->x0;
 						s32 ey = s_columnBot[x];
-						while (x < s_windowMaxX && ey <= y)
+						while (x < s_windowMaxX_Pixels && ey <= y)
 						{
 							x++;
 							ey = s_columnBot[x];
@@ -222,13 +222,13 @@ namespace TFE_Jedi
 	{
 		s32 x0 = *left;
 		s32 x1 = *right;
-		if (x0 > s_windowMaxX || x1 < s_windowMinX)
+		if (x0 > s_windowMaxX_Pixels || x1 < s_windowMinX_Pixels)
 		{
 			*left = x1 + 1;
 			return;
 		}
-		if (x0 < s_windowMinX) { x0 = s_windowMinX; *left = x0; }
-		if (x1 > s_windowMaxX) { x1 = s_windowMaxX; *right = x1; }
+		if (x0 < s_windowMinX_Pixels) { x0 = s_windowMinX_Pixels; *left = x0; }
+		if (x1 > s_windowMaxX_Pixels) { x1 = s_windowMaxX_Pixels; *right = x1; }
 
 		// s_windowMaxCeil and s_windowMinFloor overlap and y is inside that overlap.
 		if (y < s_windowMaxCeil && y > s_windowMinFloor)
