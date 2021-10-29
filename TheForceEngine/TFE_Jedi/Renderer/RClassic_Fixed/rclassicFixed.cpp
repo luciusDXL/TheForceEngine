@@ -3,7 +3,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Game/igame.h>
-#include "rcommonFixed.h"
+#include "rclassicFixedSharedState.h"
 #include "rlightingFixed.h"
 #include "rflatFixed.h"
 #include "../redgePair.h"
@@ -42,9 +42,9 @@ namespace RClassic_Fixed
 
 	void transformPointByCamera(vec3_fixed* worldPoint, vec3_fixed* viewPoint)
 	{
-		viewPoint->x = mul16(worldPoint->x, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->z, RClassic_Fixed::s_sinYaw_Fixed) + RClassic_Fixed::s_xCameraTrans_Fixed;
-		viewPoint->y = worldPoint->y - RClassic_Fixed::s_eyeHeight_Fixed;
-		viewPoint->z = mul16(worldPoint->z, RClassic_Fixed::s_cosYaw_Fixed) + mul16(worldPoint->x, RClassic_Fixed::s_negSinYaw_Fixed) + RClassic_Fixed::s_zCameraTrans_Fixed;
+		viewPoint->x = mul16(worldPoint->x, s_rcfState.cosYaw) + mul16(worldPoint->z, s_rcfState.sinYaw) + s_rcfState.cameraTrans.x;
+		viewPoint->y = worldPoint->y - s_rcfState.eyeHeight;
+		viewPoint->z = mul16(worldPoint->z, s_rcfState.cosYaw) + mul16(worldPoint->x, s_rcfState.negSinYaw) + s_rcfState.cameraTrans.z;
 	}
 
 	void setCameraWorldPos(fixed16_16 x, fixed16_16 z, fixed16_16 eyeHeight)
@@ -56,43 +56,43 @@ namespace RClassic_Fixed
 
 	void computeCameraTransform(RSector* sector, angle14_32 pitch, angle14_32 yaw, fixed16_16 camX, fixed16_16 camY, fixed16_16 camZ)
 	{
-		s_cameraPosX_Fixed = camX;
-		s_cameraPosZ_Fixed = camZ;
-		s_eyeHeight_Fixed = camY;
+		s_rcfState.cameraPos.x = camX;
+		s_rcfState.cameraPos.z = camZ;
+		s_rcfState.eyeHeight = camY;
 
 		s_sector = sector;
 
-		s_cameraYaw_Fixed = yaw;
-		s_cameraPitch_Fixed = pitch;
+		s_rcfState.cameraYaw = yaw;
+		s_rcfState.cameraPitch = pitch;
 		const fixed16_16 pitchOffsetScale = FIXED(226);	// half_width / sin(360*2047/16384)
 
 		s_xOffset = -camX;
 		s_zOffset = -camZ;
-		sinCosFixed(-yaw, &s_sinYaw_Fixed, &s_cosYaw_Fixed);
+		sinCosFixed(-yaw, &s_rcfState.sinYaw, &s_rcfState.cosYaw);
 
-		s_negSinYaw_Fixed = -s_sinYaw_Fixed;
-		if (s_maxPitch != s_cameraPitch_Fixed)
+		s_rcfState.negSinYaw = -s_rcfState.sinYaw;
+		if (s_maxPitch != s_rcfState.cameraPitch)
 		{
-			fixed16_16 sinPitch = sinFixed(s_cameraPitch_Fixed);
+			fixed16_16 sinPitch = sinFixed(s_rcfState.cameraPitch);
 			fixed16_16 pitchOffset = mul16(sinPitch, pitchOffsetScale);
-			s_projOffsetY = s_projOffsetYBase + pitchOffset;
+			s_rcfState.projOffsetY = s_rcfState.projOffsetYBase + pitchOffset;
 			s_screenYMid  = s_screenYMidBase + floor16(pitchOffset);
 
 			// yMax*0.5 / halfWidth; ~pixel Aspect
-			s_yPlaneBot_Fixed =  div16((s_viewHeightFixed >> 1) - pitchOffset, s_halfWidth_Fixed);
-			s_yPlaneTop_Fixed = -div16((s_viewHeightFixed >> 1) + pitchOffset, s_halfWidth_Fixed);
+			s_rcfState.yPlaneBot =  div16((s_viewHeightFixed >> 1) - pitchOffset, s_rcfState.halfWidth);
+			s_rcfState.yPlaneTop = -div16((s_viewHeightFixed >> 1) + pitchOffset, s_rcfState.halfWidth);
 		}
 
-		s_zCameraTrans_Fixed = mul16(s_zOffset, s_cosYaw_Fixed) + mul16(s_xOffset, s_negSinYaw_Fixed);
-		s_xCameraTrans_Fixed = mul16(s_xOffset, s_cosYaw_Fixed) + mul16(s_zOffset, s_sinYaw_Fixed);
-		setCameraWorldPos(s_cameraPosX_Fixed, s_cameraPosZ_Fixed, s_eyeHeight_Fixed);
-		s_worldYaw = s_cameraYaw_Fixed;
+		s_rcfState.cameraTrans.z = mul16(s_zOffset, s_rcfState.cosYaw) + mul16(s_xOffset, s_rcfState.negSinYaw);
+		s_rcfState.cameraTrans.x = mul16(s_xOffset, s_rcfState.cosYaw) + mul16(s_zOffset, s_rcfState.sinYaw);
+		setCameraWorldPos(s_rcfState.cameraPos.x, s_rcfState.cameraPos.z, s_rcfState.eyeHeight);
+		s_worldYaw = s_rcfState.cameraYaw;
 
 		// Camera Transform:
-		s_cameraMtx_Fixed[0] = s_cosYaw_Fixed;
-		s_cameraMtx_Fixed[2] = s_negSinYaw_Fixed;
-		s_cameraMtx_Fixed[6] = s_sinYaw_Fixed;
-		s_cameraMtx_Fixed[8] = s_cosYaw_Fixed;
+		s_rcfState.cameraMtx[0] = s_rcfState.cosYaw;
+		s_rcfState.cameraMtx[2] = s_rcfState.negSinYaw;
+		s_rcfState.cameraMtx[6] = s_rcfState.sinYaw;
+		s_rcfState.cameraMtx[8] = s_rcfState.cosYaw;
 	}
 
 	void computeSkyOffsets()
@@ -101,8 +101,8 @@ namespace RClassic_Fixed
 		TFE_Jedi::getSkyParallax(&parallax[0], &parallax[1]);
 
 		// angles range from -16384 to 16383; multiply by 4 to convert to [-1, 1) range.
-		s_skyYawOffset_Fixed   = -mul16(s_cameraYaw_Fixed   * ANGLE_TO_FIXED_SCALE, parallax[0]);
-		s_skyPitchOffset_Fixed = -mul16(s_cameraPitch_Fixed * ANGLE_TO_FIXED_SCALE, parallax[1]);
+		s_rcfState.skyYawOffset   = -mul16(s_rcfState.cameraYaw   * ANGLE_TO_FIXED_SCALE, parallax[0]);
+		s_rcfState.skyPitchOffset = -mul16(s_rcfState.cameraPitch * ANGLE_TO_FIXED_SCALE, parallax[1]);
 	}
 		
 	void setupScreenParameters(s32 w, s32 h, s32 x0, s32 y0)
@@ -110,15 +110,15 @@ namespace RClassic_Fixed
 		s32 pixelCount = w * h;
 		s_viewWidthFixed  = intToFixed16(w);
 		s_viewHeightFixed = intToFixed16(h);
-		s_screenWidth  = w;
+		s_screenWidth = w;
 		s_screenHeight = h;
 		s_minScreenX = x0;
 		s_minScreenX_Fixed = intToFixed16(x0);
 		s_maxScreenX = x0 + w - 1;
 		s_maxScreenX_Fixed = intToFixed16(s_maxScreenX);
 		s_minScreenY = y0;
-		s_windowMinYFixed = intToFixed16(y0);
-		s_windowMaxYFixed = intToFixed16(y0 + h - 1);
+		s_rcfState.windowMinY = intToFixed16(y0);
+		s_rcfState.windowMaxY = intToFixed16(y0 + h - 1);
 		s_fullDetail = JTRUE;
 
 		s_maxScreenY = y0 + h - 1;
@@ -127,23 +127,23 @@ namespace RClassic_Fixed
 		
 	void setupProjectionParameters(fixed16_16 halfWidthFixed, s32 xc, s32 yc)
 	{
-		s_halfWidth_Fixed = halfWidthFixed;
+		s_rcfState.halfWidth = halfWidthFixed;
 		s_screenXMid = xc;
 		s_screenYMid = yc;
 		s_screenYMidBase = yc;
 
-		s_projOffsetX = intToFixed16(xc);
-		s_projOffsetY = intToFixed16(yc);
-		s_projOffsetYBase = s_projOffsetY;
+		s_rcfState.projOffsetX = intToFixed16(xc);
+		s_rcfState.projOffsetY = intToFixed16(yc);
+		s_rcfState.projOffsetYBase = s_rcfState.projOffsetY;
 
 		s_windowX0 = s_minScreenX;
 		s_windowX1 = s_maxScreenX;
 
-		s_oneOverHalfWidth = div16(ONE_16, halfWidthFixed);
+		s_rcfState.oneOverHalfWidth = div16(ONE_16, halfWidthFixed);
 
 		// TFE
-		s_focalLength_Fixed = s_halfWidth_Fixed;
-		s_focalLenAspect_Fixed = s_halfWidth_Fixed;
+		s_rcfState.focalLength = s_rcfState.halfWidth;
+		s_rcfState.focalLenAspect = s_rcfState.halfWidth;
 	}
 
 	void setWidthFraction(fixed16_16 widthFract)
@@ -159,11 +159,11 @@ namespace RClassic_Fixed
 		{
 			if (yOffset == yMid)
 			{
-				s_rcpY[yMid + 400] = ONE_16;
+				s_rcfState.rcpY[yMid + 400] = ONE_16;
 			}
 			else
 			{
-				s_rcpY[yOffset + 400] = div16(ONE_16, intToFixed16(yOffset - yMid));
+				s_rcfState.rcpY[yOffset + 400] = div16(ONE_16, intToFixed16(yOffset - yMid));
 			}
 		}
 	}
@@ -181,11 +181,11 @@ namespace RClassic_Fixed
 
 		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
 		s_flatEdge = flatEdge;
-		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_windowMaxYFixed, 0, s_windowMinYFixed);
+		flat_addEdges(s_screenWidth, s_minScreenX, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
 		
 		s_columnTop = (s32*)game_realloc(s_columnTop, s_width * sizeof(s32));
 		s_columnBot = (s32*)game_realloc(s_columnBot, s_width * sizeof(s32));
-		s_depth1d_all_Fixed = (fixed16_16*)game_realloc(s_depth1d_all_Fixed, s_width * sizeof(fixed16_16) * (MAX_ADJOIN_DEPTH + 1));
+		s_rcfState.depth1d_all = (fixed16_16*)game_realloc(s_rcfState.depth1d_all, s_width * sizeof(fixed16_16) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowTop_all = (s32*)game_realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowBot_all = (s32*)game_realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
@@ -193,9 +193,9 @@ namespace RClassic_Fixed
 		memset(s_windowBot_all, s_maxScreenY, 320);
 
 		// Build tables
-		s_column_Z_Over_X = (fixed16_16*)game_realloc(s_column_Z_Over_X, s_width * sizeof(fixed16_16));
-		s_column_X_Over_Z = (fixed16_16*)game_realloc(s_column_X_Over_Z, s_width * sizeof(fixed16_16));
-		s_skyTable_Fixed = (fixed16_16*)game_realloc(s_skyTable_Fixed, (s_width + 1) * sizeof(fixed16_16));
+		s_rcfState.column_Z_Over_X = (fixed16_16*)game_realloc(s_rcfState.column_Z_Over_X, s_width * sizeof(fixed16_16));
+		s_rcfState.column_X_Over_Z = (fixed16_16*)game_realloc(s_rcfState.column_X_Over_Z, s_width * sizeof(fixed16_16));
+		s_rcfState.skyTable = (fixed16_16*)game_realloc(s_rcfState.skyTable, (s_width + 1) * sizeof(fixed16_16));
 
 		// Here we assume a 90 degree field of view, this forms a frustum (not drawn to scale):
 		//     W = width of plane in pixels
@@ -211,7 +211,7 @@ namespace RClassic_Fixed
 		for (s32 i = 0, x = 0; x < 320; x++, i++)
 		{
 			fixed16_16 xPos = intToFixed16(x - xMid);
-			s_column_Z_Over_X[i] = (xMid != x) ? div16(s_halfWidth_Fixed, xPos) : s_halfWidth_Fixed;
+			s_rcfState.column_Z_Over_X[i] = (xMid != x) ? div16(s_rcfState.halfWidth, xPos) : s_rcfState.halfWidth;
 		}
 
 		for (s32 i = 0, x = 0; x < 320; i++, x++)
@@ -219,15 +219,15 @@ namespace RClassic_Fixed
 			if (x != xMid)
 			{
 				fixed16_16 xPos = intToFixed16(x - xMid);
-				s_column_X_Over_Z[i] = div16(xPos, s_halfWidth_Fixed);
+				s_rcfState.column_X_Over_Z[i] = div16(xPos, s_rcfState.halfWidth);
 			}
 			else
 			{
-				s_column_X_Over_Z[i] = 0;
+				s_rcfState.column_X_Over_Z[i] = 0;
 			}
 		}
 
-		s_rcpY = (fixed16_16*)game_realloc(s_rcpY, 4 * s_height * sizeof(fixed16_16));
+		s_rcfState.rcpY = (fixed16_16*)game_realloc(s_rcfState.rcpY, 4 * s_height * sizeof(fixed16_16));
 		buildRcpYTable();
 	}
 
@@ -237,7 +237,7 @@ namespace RClassic_Fixed
 		TFE_Jedi::getSkyParallax(&parallax0, &parallax1);
 
 		s32 xMid = s_screenXMid;
-		s_skyTable_Fixed[0] = 0;
+		s_rcfState.skyTable[0] = 0;
 		for (s32 i = 0, x = 0; x < 320; i++, x++)
 		{
 			s32 xPos = x - xMid;
@@ -246,7 +246,7 @@ namespace RClassic_Fixed
 			fixed16_16 angleFract = fixed16_16(angleFractF) << 2;
 
 			// This intentionally overflows when x = 0 and becomes 0...
-			s_skyTable_Fixed[1 + i] = mul16(angleFract, parallax0);
+			s_rcfState.skyTable[1 + i] = mul16(angleFract, parallax0);
 		}
 	}
 
@@ -284,7 +284,7 @@ namespace RClassic_Fixed
 		TFE_Jedi::setSkyParallax(FIXED(1024), FIXED(1024));
 		computeSkyTable();
 
-		setIdentityMatrix(s_cameraMtx_Fixed);
+		setIdentityMatrix(s_rcfState.cameraMtx);
 		computeCameraTransform(nullptr, 0, 0, 0, 0, 0);
 
 		s_lightCount = 0;

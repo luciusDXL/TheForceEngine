@@ -4,7 +4,7 @@
 
 #include "robj3dFixed_PolygonSetup.h"
 #include "robj3dFixed_TransformAndLighting.h"
-#include "../rcommonFixed.h"
+#include "../rclassicFixedSharedState.h"
 
 namespace TFE_Jedi
 {

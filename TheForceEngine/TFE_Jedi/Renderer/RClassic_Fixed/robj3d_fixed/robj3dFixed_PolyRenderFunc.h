@@ -325,7 +325,7 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 	}
 
 	// If the polygon is too small or off screen, skip it.
-	if (xMin >= xMax || yMin > s_windowMaxY || yMax < s_windowMinY) { return; }
+	if (xMin >= xMax || yMin > s_windowMaxY_Pixels || yMax < s_windowMinY_Pixels) { return; }
 
 	assert(s_colorMap);
 	s_polyColorMap = s_colorMap;
@@ -342,10 +342,10 @@ void robj3d_drawFlatColorPolygon(vec3_fixed* projVertices, s32 vertexCount, u8 c
 	for (s32 foundEdge = 0; !foundEdge && s_columnX >= s_minScreenX && s_columnX <= s_maxScreenX; s_columnX++)
 	{
 		const fixed16_16 edgeMinZ = min(s_edgeBot_Z0, s_edgeTop_Z0);
-		const fixed16_16 z = s_depth1d_Fixed[s_columnX];
+		const fixed16_16 z = s_rcfState.depth1d[s_columnX];
 
 		// Is ave edge Z occluded by walls? Is column outside of the vertical area?
-		if (edgeMinZ < z && s_edgeTopY0_Pixel <= s_windowMaxY && s_edgeBotY0_Pixel >= s_windowMinY)
+		if (edgeMinZ < z && s_edgeTopY0_Pixel <= s_windowMaxY_Pixels && s_edgeBotY0_Pixel >= s_windowMinY_Pixels)
 		{
 			const s32 winTop = s_objWindowTop[s_columnX];
 			const s32 winBot = s_objWindowBot[s_columnX];

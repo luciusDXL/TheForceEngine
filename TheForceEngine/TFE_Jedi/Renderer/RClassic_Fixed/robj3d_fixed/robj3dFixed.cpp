@@ -9,7 +9,7 @@
 #include "robj3dFixed_Culling.h"
 #include "robj3dFixed_Clipping.h"
 #include "robj3dFixed_PolygonDraw.h"
-#include "../rcommonFixed.h"
+#include "../rclassicFixedSharedState.h"
 #include "../../rcommon.h"
 
 namespace TFE_Jedi
@@ -75,8 +75,8 @@ namespace RClassic_Fixed
 			const fixed16_16 z = vertex->z;
 			if (z <= ONE_16) { continue; }
 
-			const s32 pixel_x = round16(div16(mul16(vertex->x, s_focalLength_Fixed), z) + s_projOffsetX);
-			const s32 pixel_y = round16(div16(mul16(vertex->y, s_focalLenAspect_Fixed), z) + s_projOffsetY);
+			const s32 pixel_x = round16(div16(mul16(vertex->x, s_rcfState.focalLength),    z) + s_rcfState.projOffsetX);
+			const s32 pixel_y = round16(div16(mul16(vertex->y, s_rcfState.focalLenAspect), z) + s_rcfState.projOffsetY);
 
 			// If the X position is out of view, skip the vertex.
 			if (pixel_x < s_minScreenX || pixel_x > s_maxScreenX)
@@ -84,7 +84,7 @@ namespace RClassic_Fixed
 				continue;
 			}
 			// Check the 1d depth buffer and Y positon and skip if occluded.
-			if (z >= s_depth1d_Fixed[pixel_x] || pixel_y > s_windowMaxY || pixel_y < s_windowMinY || pixel_y < s_windowTop[pixel_x] || pixel_y > s_windowBot[pixel_x])
+			if (z >= s_rcfState.depth1d[pixel_x] || pixel_y > s_windowMaxY_Pixels || pixel_y < s_windowMinY_Pixels || pixel_y < s_windowTop[pixel_x] || pixel_y > s_windowBot[pixel_x])
 			{
 				continue;
 			}
@@ -97,8 +97,8 @@ namespace RClassic_Fixed
 	{
 		for (s32 i = 0; i < count; i++, pos++, out++)
 		{
-			out->x = round16(div16(mul16(pos->x, s_focalLength_Fixed), pos->z) + s_projOffsetX);
-			out->y = round16(div16(mul16(pos->y, s_focalLenAspect_Fixed), pos->z) + s_projOffsetY);
+			out->x = round16(div16(mul16(pos->x, s_rcfState.focalLength),    pos->z) + s_rcfState.projOffsetX);
+			out->y = round16(div16(mul16(pos->y, s_rcfState.focalLenAspect), pos->z) + s_rcfState.projOffsetY);
 			out->z = pos->z;
 		}
 	}

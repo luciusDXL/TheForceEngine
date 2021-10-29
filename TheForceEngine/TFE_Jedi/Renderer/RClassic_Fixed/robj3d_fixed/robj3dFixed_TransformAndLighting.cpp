@@ -2,7 +2,7 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include "robj3dFixed_TransformAndLighting.h"
-#include "../rcommonFixed.h"
+#include "../rclassicFixedSharedState.h"
 #include "../rlightingFixed.h"
 #include "../../rcommon.h"
 
@@ -117,17 +117,17 @@ namespace RClassic_Fixed
 	void robj3d_transformAndLight(SecObject* obj, JediModel* model)
 	{
 		vec3_fixed offsetWS;
-		offsetWS.x = obj->posWS.x - s_cameraPosX_Fixed;
-		offsetWS.y = obj->posWS.y - s_eyeHeight_Fixed;
-		offsetWS.z = obj->posWS.z - s_cameraPosZ_Fixed;
+		offsetWS.x = obj->posWS.x - s_rcfState.cameraPos.x;
+		offsetWS.y = obj->posWS.y - s_rcfState.eyeHeight;
+		offsetWS.z = obj->posWS.z - s_rcfState.cameraPos.z;
 
 		// Calculate the view space object camera offset.
 		vec3_fixed offsetVS;
-		rotateVectorM3x3(&offsetWS, &offsetVS, s_cameraMtx_Fixed);
+		rotateVectorM3x3(&offsetWS, &offsetVS, s_rcfState.cameraMtx);
 
 		// Concatenate the camera and object rotation matrices.
 		fixed16_16 xform[9];
-		mulMatrix3x3(s_cameraMtx_Fixed, obj->transform, xform);
+		mulMatrix3x3(s_rcfState.cameraMtx, obj->transform, xform);
 
 		// Transform model vertices into view space.
 		robj3d_transformVertices(model->vertexCount, (vec3_fixed*)model->vertices, xform, &offsetVS, s_verticesVS);

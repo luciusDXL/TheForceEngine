@@ -4,7 +4,7 @@
 #include <TFE_Jedi/Level/level.h>
 #include "rcommon.h"
 #include "rsectorRender.h"
-#include "RClassic_Fixed/rcommonFixed.h"
+#include "RClassic_Fixed/rclassicFixedSharedState.h"
 #include "RClassic_Fixed/rclassicFixed.h"
 #include "RClassic_Fixed/rsectorFixed.h"
 
@@ -167,8 +167,8 @@ namespace TFE_Jedi
 
 		s_windowMinX = s_minScreenX;
 		s_windowMaxX = s_maxScreenX;
-		s_windowMinY = 1;
-		s_windowMaxY = s_height - 1;
+		s_windowMinY_Pixels = 1;
+		s_windowMaxY_Pixels = s_height - 1;
 		s_windowMaxCeil = s_minScreenY;
 		s_windowMinFloor = s_maxScreenY;
 		s_flatCount = 0;
@@ -208,13 +208,8 @@ namespace TFE_Jedi
 	{
 		if (s_subRenderer == TSR_CLASSIC_FIXED)
 		{
-			memset(RClassic_Fixed::s_depth1d_all_Fixed, 0, s_width * sizeof(s32));
-			RClassic_Fixed::s_windowMinZ_Fixed = 0;
-		}
-		else
-		{
-			memset(s_depth1d_all, 0, s_width * sizeof(f32));
-			s_windowMinZ = 0.0f;
+			memset(s_rcfState.depth1d_all, 0, s_width * sizeof(s32));
+			s_rcfState.windowMinZ = 0;
 		}
 	}
 }

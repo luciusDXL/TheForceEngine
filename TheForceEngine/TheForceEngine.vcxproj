@@ -419,7 +419,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Memory\list.h" />
     <ClInclude Include="TFE_Jedi\Renderer\jediRenderer.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixed.h" />
-    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rcommonFixed.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\redgePairFixed.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rflatFixed.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rlightingFixed.h" />
@@ -594,7 +594,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Memory\list.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\jediRenderer.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixed.cpp" />
-    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rcommonFixed.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\redgePairFixed.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rflatFixed.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rlightingFixed.cpp" />

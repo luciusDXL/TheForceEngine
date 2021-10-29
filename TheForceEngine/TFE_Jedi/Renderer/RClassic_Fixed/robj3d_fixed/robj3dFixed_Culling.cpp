@@ -4,7 +4,7 @@
 
 #include "robj3dFixed_Culling.h"
 #include "robj3dFixed_TransformAndLighting.h"
-#include "../rcommonFixed.h"
+#include "../rclassicFixedSharedState.h"
 #include "../../rcommon.h"
 
 namespace TFE_Jedi

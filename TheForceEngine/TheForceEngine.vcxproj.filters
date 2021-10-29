@@ -526,9 +526,6 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixed.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rcommonFixed.h">
-      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\redgePairFixed.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
     </ClInclude>
@@ -696,6 +693,9 @@
     </ClInclude>
     <ClInclude Include="TFE_Input\inputMapping.h">
       <Filter>Source\TFE_Input</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1002,9 +1002,6 @@
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixed.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rcommonFixed.cpp">
-      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\redgePairFixed.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
     </ClCompile>
@@ -1151,6 +1148,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Input\inputMapping.cpp">
       <Filter>Source\TFE_Input</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

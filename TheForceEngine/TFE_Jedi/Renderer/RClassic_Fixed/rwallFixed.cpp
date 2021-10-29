@@ -8,7 +8,7 @@
 #include "rlightingFixed.h"
 #include "rsectorFixed.h"
 #include "redgePairFixed.h"
-#include "rcommonFixed.h"
+#include "rclassicFixedSharedState.h"
 #include "../rcommon.h"
 #include "../jediRenderer.h"
 
@@ -212,7 +212,7 @@ namespace RClassic_Fixed
 		//////////////////////////////////////////////////
 		// Clip the Wall Segment by the near plane.
 		//////////////////////////////////////////////////
-		if ((z0 < 0 || z1 < 0) && segmentCrossesLine(0, 0, 0, -s_halfHeight_Fixed, x0, x0, x1, z1) != 0)
+		if ((z0 < 0 || z1 < 0) && segmentCrossesLine(0, 0, 0, -s_rcfState.halfHeight, x0, x0, x1, z1) != 0)
 		{
 			wall->visible = 0;
 			return;
@@ -302,8 +302,8 @@ namespace RClassic_Fixed
 		// Project.
 		//////////////////////////////////////////////////
 		s32 x0pixel, x1pixel;
-		fixed16_16 x0proj = div16(mul16(x0, s_focalLength_Fixed), z0) + s_projOffsetX;
-		fixed16_16 x1proj = div16(mul16(x1, s_focalLength_Fixed), z1) + s_projOffsetX;
+		fixed16_16 x0proj = div16(mul16(x0, s_rcfState.focalLength), z0) + s_rcfState.projOffsetX;
+		fixed16_16 x1proj = div16(mul16(x1, s_rcfState.focalLength), z1) + s_rcfState.projOffsetX;
 		x0pixel = round16(x0proj);
 		x1pixel = round16(x1proj) - 1;
 		
@@ -410,7 +410,7 @@ namespace RClassic_Fixed
 		{
 			RWall* srcWall = srcSeg->srcWall;
 			JBool processed = (s_drawFrame == srcWall->drawFrame) ? JTRUE : JFALSE;
-			JBool insideWindow = ((srcSeg->z0 >= s_windowMinZ_Fixed || srcSeg->z1 >= s_windowMinZ_Fixed) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX) ? JTRUE : JFALSE;
+			JBool insideWindow = ((srcSeg->z0 >= s_rcfState.windowMinZ || srcSeg->z1 >= s_rcfState.windowMinZ) && srcSeg->wallX0 <= s_windowMaxX && srcSeg->wallX1 >= s_windowMinX) ? JTRUE : JFALSE;
 			if (!processed && insideWindow)
 			{
 				// Copy the source segment into "newSeg" so it can be modified.
@@ -720,17 +720,17 @@ namespace RClassic_Fixed
 		fixed16_16 ceilingHeight = sector->ceilingHeight;
 		fixed16_16 floorHeight = sector->floorHeight;
 
-		fixed16_16 ceilEyeRel  = ceilingHeight - s_eyeHeight_Fixed;
-		fixed16_16 floorEyeRel = floorHeight   - s_eyeHeight_Fixed;
+		fixed16_16 ceilEyeRel  = ceilingHeight - s_rcfState.eyeHeight;
+		fixed16_16 floorEyeRel = floorHeight   - s_rcfState.eyeHeight;
 
 		fixed16_16 z0 = wallSegment->z0;
 		fixed16_16 z1 = wallSegment->z1;
 
 		fixed16_16 y0C, y0F, y1C, y1F;
-		y0C = div16(mul16(ceilEyeRel,  s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		y1C = div16(mul16(ceilEyeRel,  s_focalLenAspect_Fixed), z1) + s_projOffsetY;
-		y0F = div16(mul16(floorEyeRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		y1F = div16(mul16(floorEyeRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		y0C = div16(mul16(ceilEyeRel,  s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		y1C = div16(mul16(ceilEyeRel,  s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
+		y0F = div16(mul16(floorEyeRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		y1F = div16(mul16(floorEyeRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		s32 y0C_pixel = round16(y0C);
 		s32 y1C_pixel = round16(y1C);
@@ -742,15 +742,15 @@ namespace RClassic_Fixed
 		fixed16_16 numerator = solveForZ_Numerator(wallSegment);
 
 		// For some reason we only early-out if the ceiling is below the view.
-		if (y0C_pixel > s_windowMaxY && y1C_pixel > s_windowMaxY)
+		if (y0C_pixel > s_windowMaxY_Pixels && y1C_pixel > s_windowMaxY_Pixels)
 		{
-			fixed16_16 yMax = intToFixed16(s_windowMaxY + 1);
+			fixed16_16 yMax = intToFixed16(s_windowMaxY_Pixels + 1);
 			flat_addEdges(length, x, 0, yMax, 0, yMax);
 
 			for (s32 i = 0; i < length; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, numerator);
-				s_columnTop[x] = s_windowMaxY;
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, numerator);
+				s_columnTop[x] = s_windowMaxY_Pixels;
 			}
 
 			srcWall->visible = 0;
@@ -795,7 +795,7 @@ namespace RClassic_Fixed
 
 			fixed16_16 dxView = 0;
 			fixed16_16 z = solveForZ(wallSegment, x, numerator, &dxView);
-			s_depth1d_Fixed[x] = z;
+			s_rcfState.depth1d[x] = z;
 
 			fixed16_16 uScale = wallSegment->uScale;
 			fixed16_16 uCoord0 = wallSegment->uCoord0 + srcWall->midOffset.x;
@@ -919,7 +919,7 @@ namespace RClassic_Fixed
 				s_vCoordFixed = mul16(yF0 - intToFixed16(yF_pixel) + HALF_16, s_vCoordStep) + srcWall->midOffset.z;
 
 				s_columnOut = &s_display[yC_pixel*s_width + x];
-				s_depth1d_Fixed[x] = z;
+				s_rcfState.depth1d[x] = z;
 				s_columnLight = computeLighting(z, floor16(srcWall->wallLight));
 
 				if (s_columnLight)
@@ -951,26 +951,26 @@ namespace RClassic_Fixed
 		fixed16_16 cProj0, cProj1;
 		if ((flags1 & SEC_FLAGS1_EXTERIOR) && (nextFlags1 & SEC_FLAGS1_EXT_ADJ))  // ceiling
 		{
-			cProj0 = cProj1 = intToFixed16(s_windowMinY);
+			cProj0 = cProj1 = intToFixed16(s_windowMinY_Pixels);
 		}
 		else
 		{
-			fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
-			cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-			cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+			fixed16_16 ceilRel = sector->ceilingHeight - s_rcfState.eyeHeight;
+			cProj0 = div16(mul16(ceilRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+			cProj1 = div16(mul16(ceilRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 		}
 
 		s32 c0pixel = round16(cProj0);
 		s32 c1pixel = round16(cProj1);
-		if (c0pixel > s_windowMaxY && c1pixel > s_windowMaxY)
+		if (c0pixel > s_windowMaxY_Pixels && c1pixel > s_windowMaxY_Pixels)
 		{
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
-			flat_addEdges(length, x, 0, intToFixed16(s_windowMaxY + 1), 0, intToFixed16(s_windowMaxY + 1));
+			flat_addEdges(length, x, 0, intToFixed16(s_windowMaxY_Pixels + 1), 0, intToFixed16(s_windowMaxY_Pixels + 1));
 			const fixed16_16 numerator = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, numerator);
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, numerator);
 			}
 
 			srcWall->visible = 0;
@@ -981,28 +981,28 @@ namespace RClassic_Fixed
 		fixed16_16 fProj0, fProj1;
 		if ((sector->flags1 & SEC_FLAGS1_PIT) && (nextFlags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))	// floor
 		{
-			fProj0 = fProj1 = intToFixed16(s_windowMaxY);
+			fProj0 = fProj1 = intToFixed16(s_windowMaxY_Pixels);
 		}
 		else
 		{
-			fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
-			fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-			fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+			fixed16_16 floorRel = sector->floorHeight - s_rcfState.eyeHeight;
+			fProj0 = div16(mul16(floorRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+			fProj1 = div16(mul16(floorRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 		}
 
 		s32 f0pixel = round16(fProj0);
 		s32 f1pixel = round16(fProj1);
-		if (f0pixel < s_windowMinY && f1pixel < s_windowMinY)
+		if (f0pixel < s_windowMinY_Pixels && f1pixel < s_windowMinY_Pixels)
 		{
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
-			flat_addEdges(length, x, 0, intToFixed16(s_windowMinY - 1), 0, intToFixed16(s_windowMinY - 1));
+			flat_addEdges(length, x, 0, intToFixed16(s_windowMinY_Pixels - 1), 0, intToFixed16(s_windowMinY_Pixels - 1));
 
 			const fixed16_16 numerator = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, numerator);
-				s_columnBot[x] = s_windowMinY;
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, numerator);
+				s_columnBot[x] = s_windowMinY_Pixels;
 			}
 			srcWall->visible = 0;
 			//srcWall->drawFlags = -1;
@@ -1047,7 +1047,7 @@ namespace RClassic_Fixed
 				s_columnTop[x] = y0_pixel - 1;
 				s_columnBot[x] = y1_pixel + 1;
 
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, numerator);
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, numerator);
 				y0 += dydxCeil;
 				y1 += dydxFloor;
 			}
@@ -1069,66 +1069,66 @@ namespace RClassic_Fixed
 		fixed16_16 cProj0, cProj1;
 		if ((sector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 		{
-			cProj1 = intToFixed16(s_windowMinY);
+			cProj1 = intToFixed16(s_windowMinY_Pixels);
 			cProj0 = cProj1;
 		}
 		else
 		{
-			fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
-			cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-			cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+			fixed16_16 ceilRel = sector->ceilingHeight - s_rcfState.eyeHeight;
+			cProj0 = div16(mul16(ceilRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+			cProj1 = div16(mul16(ceilRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 		}
 
 		s32 cy0 = round16(cProj0);
 		s32 cy1 = round16(cProj1);
-		if (cy0 > s_windowMaxY && cy1 >= s_windowMaxY)
+		if (cy0 > s_windowMaxY_Pixels && cy1 >= s_windowMaxY_Pixels)
 		{
 			wall->visible = 0;
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - x + 1;
 
-			flat_addEdges(length, x, 0, intToFixed16(s_windowMaxY + 1), 0, intToFixed16(s_windowMaxY + 1));
+			flat_addEdges(length, x, 0, intToFixed16(s_windowMaxY_Pixels + 1), 0, intToFixed16(s_windowMaxY_Pixels + 1));
 
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
-				s_columnTop[x] = s_windowMaxY;
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
+				s_columnTop[x] = s_windowMaxY_Pixels;
 			}
 			wall->seen = JTRUE;
 			return;
 		}
 
-		fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
+		fixed16_16 floorRel = sector->floorHeight - s_rcfState.eyeHeight;
 		fixed16_16 fProj0, fProj1;
-		fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		fProj0 = div16(mul16(floorRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		fProj1 = div16(mul16(floorRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		s32 fy0 = round16(fProj0);
 		s32 fy1 = round16(fProj1);
-		if (fy0 < s_windowMinY && fy1 < s_windowMinY)
+		if (fy0 < s_windowMinY_Pixels && fy1 < s_windowMinY_Pixels)
 		{
 			// Wall is above the top of the screen.
 			wall->visible = 0;
 			s32 x = wallSegment->wallX0;
 			s32 length = wallSegment->wallX1 - x + 1;
 
-			flat_addEdges(length, x, 0, intToFixed16(s_windowMinY - 1), 0, intToFixed16(s_windowMinY - 1));
+			flat_addEdges(length, x, 0, intToFixed16(s_windowMinY_Pixels - 1), 0, intToFixed16(s_windowMinY_Pixels - 1));
 
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
-				s_columnBot[x] = s_windowMinY;
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
+				s_columnBot[x] = s_windowMinY_Pixels;
 			}
 			wall->seen = JTRUE;
 			return;
 		}
 
-		fixed16_16 floorRelNext = nextSector->floorHeight - s_eyeHeight_Fixed;
+		fixed16_16 floorRelNext = nextSector->floorHeight - s_rcfState.eyeHeight;
 		fixed16_16 fNextProj0, fNextProj1;
-		fNextProj0 = div16(mul16(floorRelNext, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		fNextProj1 = div16(mul16(floorRelNext, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		fNextProj0 = div16(mul16(floorRelNext, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		fNextProj1 = div16(mul16(floorRelNext, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		s32 xOffset = wallSegment->wallX0 - wallSegment->wallX0_raw;
 		s32 length = wallSegment->wallX1 - wallSegment->wallX0 + 1;
@@ -1160,21 +1160,21 @@ namespace RClassic_Fixed
 
 		s32 yTop0 = round16(fNextProj0);
 		s32 yTop1 = round16(fNextProj1);
-		if ((yTop0 > s_windowMinY || yTop1 > s_windowMinY) && sector->ceilingHeight < nextSector->floorHeight)
+		if ((yTop0 > s_windowMinY_Pixels || yTop1 > s_windowMinY_Pixels) && sector->ceilingHeight < nextSector->floorHeight)
 		{
 			wall_addAdjoinSegment(length, wallSegment->wallX0, floorNext_dYdX, fNextProj0, ceil_dYdX, cProj0, wallSegment);
 		}
 
-		if (yTop0 > s_windowMaxY && yTop1 > s_windowMaxY)
+		if (yTop0 > s_windowMaxY_Pixels && yTop1 > s_windowMaxY_Pixels)
 		{
-			s32 bot = s_windowMaxY + 1;
+			s32 bot = s_windowMaxY_Pixels + 1;
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0; i < length; i++, x++, yC += ceil_dYdX)
 			{
 				s32 yC_pixel = min(round16(yC), s_windowBot[x]);
 				s_columnTop[x] = yC_pixel - 1;
 				s_columnBot[x] = bot;
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
 			}
 			wall->seen = JTRUE;
 			return;
@@ -1226,7 +1226,7 @@ namespace RClassic_Fixed
 					fixed16_16 dz = z - z0;
 					uCoord = u0 + mul16(dz, wallSegment->uScale) + wall->botOffset.x;
 				}
-				s_depth1d_Fixed[x] = z;
+				s_rcfState.depth1d[x] = z;
 				if (s_yPixelCount > 0)
 				{
 					s32 widthMask = tex->width - 1;
@@ -1297,24 +1297,24 @@ namespace RClassic_Fixed
 		s32 x0 = wallSegment->wallX0;
 		s32 lengthInPixels = wallSegment->wallX1 - wallSegment->wallX0 + 1;
 
-		fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
+		fixed16_16 ceilRel = sector->ceilingHeight - s_rcfState.eyeHeight;
 		fixed16_16 yC0, yC1;
-		yC0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		yC1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		yC0 = div16(mul16(ceilRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		yC1 = div16(mul16(ceilRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		s32 yC0_pixel = round16(yC0);
 		s32 yC1_pixel = round16(yC1);
 
 		s_texHeightMask = texture->height - 1;
 
-		if (yC0_pixel > s_windowMaxY && yC1_pixel > s_windowMaxY)
+		if (yC0_pixel > s_windowMaxY_Pixels && yC1_pixel > s_windowMaxY_Pixels)
 		{
 			srcWall->visible = 0;
-			for (s32 i = 0; i < lengthInPixels; i++) { s_columnTop[x0 + i] = s_windowMaxY; }
-			flat_addEdges(lengthInPixels, x0, 0, intToFixed16(s_windowMaxY + 1), 0, intToFixed16(s_windowMaxY + 1));
+			for (s32 i = 0; i < lengthInPixels; i++) { s_columnTop[x0 + i] = s_windowMaxY_Pixels; }
+			flat_addEdges(lengthInPixels, x0, 0, intToFixed16(s_windowMaxY_Pixels + 1), 0, intToFixed16(s_windowMaxY_Pixels + 1));
 			for (s32 i = 0, x = x0; i < lengthInPixels; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
 			}
 			srcWall->seen = JTRUE;
 			return;
@@ -1323,33 +1323,33 @@ namespace RClassic_Fixed
 		fixed16_16 yF0, yF1;
 		if ((sector->flags1 & SEC_FLAGS1_PIT) && (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 		{
-			yF0 = yF1 = intToFixed16(s_windowMaxY);
+			yF0 = yF1 = intToFixed16(s_windowMaxY_Pixels);
 		}
 		else
 		{
-			fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
-			yF0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-			yF1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+			fixed16_16 floorRel = sector->floorHeight - s_rcfState.eyeHeight;
+			yF0 = div16(mul16(floorRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+			yF1 = div16(mul16(floorRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 		}
 		s32 yF0_pixel = round16(yF0);
 		s32 yF1_pixel = round16(yF1);
-		if (yF0_pixel < s_windowMinY && yF1_pixel < s_windowMinY)
+		if (yF0_pixel < s_windowMinY_Pixels && yF1_pixel < s_windowMinY_Pixels)
 		{
 			srcWall->visible = 0;
-			for (s32 i = 0; i < lengthInPixels; i++) { s_columnBot[x0 + i] = s_windowMinY; }
-			flat_addEdges(lengthInPixels, x0, 0, intToFixed16(s_windowMinY - 1), 0, intToFixed16(s_windowMinY - 1));
+			for (s32 i = 0; i < lengthInPixels; i++) { s_columnBot[x0 + i] = s_windowMinY_Pixels; }
+			flat_addEdges(lengthInPixels, x0, 0, intToFixed16(s_windowMinY_Pixels - 1), 0, intToFixed16(s_windowMinY_Pixels - 1));
 			for (s32 i = 0, x = x0; i < lengthInPixels; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
 			}
 			srcWall->seen = JTRUE;
 			return;
 		}
 
-		fixed16_16 next_ceilRel = next->ceilingHeight - s_eyeHeight_Fixed;
+		fixed16_16 next_ceilRel = next->ceilingHeight - s_rcfState.eyeHeight;
 		fixed16_16 next_yC0, next_yC1;
-		next_yC0 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		next_yC1 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		next_yC0 = div16(mul16(next_ceilRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		next_yC1 = div16(mul16(next_ceilRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		fixed16_16 xOffset = intToFixed16(wallSegment->wallX0 - wallSegment->wallX0_raw);
 		fixed16_16 length = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
@@ -1372,14 +1372,14 @@ namespace RClassic_Fixed
 		flat_addEdges(lengthInPixels, x0, floor_dYdX, yF0, ceil_dYdX, yC0);
 		s32 next_yC0_pixel = round16(next_yC0);
 		s32 next_yC1_pixel = round16(next_yC1);
-		if ((next_yC0_pixel < s_windowMaxY || next_yC1_pixel < s_windowMaxY) && (sector->floorHeight > next->ceilingHeight))
+		if ((next_yC0_pixel < s_windowMaxY_Pixels || next_yC1_pixel < s_windowMaxY_Pixels) && (sector->floorHeight > next->ceilingHeight))
 		{
 			wall_addAdjoinSegment(lengthInPixels, x0, floor_dYdX, yF0, next_ceil_dYdX, next_yC0, wallSegment);
 		}
 
-		if (next_yC0_pixel < s_windowMinY && next_yC1_pixel < s_windowMinY)
+		if (next_yC0_pixel < s_windowMinY_Pixels && next_yC1_pixel < s_windowMinY_Pixels)
 		{
-			for (s32 i = 0; i < lengthInPixels; i++) { s_columnTop[x0 + i] = s_windowMinY - 1; }
+			for (s32 i = 0; i < lengthInPixels; i++) { s_columnTop[x0 + i] = s_windowMinY_Pixels - 1; }
 			for (s32 i = 0, x = x0; i < lengthInPixels; i++, x++)
 			{
 				yF0_pixel = round16(yF0);
@@ -1389,7 +1389,7 @@ namespace RClassic_Fixed
 				}
 
 				s_columnBot[x] = yF0_pixel + 1;
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
 				yF0 += floor_dYdX;
 			}
 			srcWall->seen = JTRUE;
@@ -1432,7 +1432,7 @@ namespace RClassic_Fixed
 			fixed16_16 uCoord0 = wallSegment->uCoord0 + srcWall->topOffset.x;
 			fixed16_16 uCoord = uCoord0 + ((wallSegment->orient == WORIENT_DZ_DX) ? mul16(dxView, uScale) : mul16(z - z0, uScale));
 
-			s_depth1d_Fixed[x] = z;
+			s_rcfState.depth1d[x] = z;
 			if (s_yPixelCount > 0)
 			{
 				s32 widthMask = texture->width - 1;
@@ -1504,57 +1504,57 @@ namespace RClassic_Fixed
 		s32 length    =  wallSegment->wallX1 - wallSegment->wallX0 + 1;
 		fixed16_16 lengthRaw = intToFixed16(wallSegment->wallX1_raw - wallSegment->wallX0_raw);
 
-		fixed16_16 ceilRel = sector->ceilingHeight - s_eyeHeight_Fixed;
+		fixed16_16 ceilRel = sector->ceilingHeight - s_rcfState.eyeHeight;
 		fixed16_16 cProj0, cProj1;
-		cProj0 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		cProj1 = div16(mul16(ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		cProj0 = div16(mul16(ceilRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		cProj1 = div16(mul16(ceilRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		s32 c0_pixel = round16(cProj0);
 		s32 c1_pixel = round16(cProj1);
 				
-		if (c0_pixel > s_windowMaxY && c1_pixel > s_windowMaxY)
+		if (c0_pixel > s_windowMaxY_Pixels && c1_pixel > s_windowMaxY_Pixels)
 		{
 			srcWall->visible = 0;
-			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMaxY; }
+			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMaxY_Pixels; }
 
-			flat_addEdges(length, x0, 0, intToFixed16(s_windowMaxY + 1), 0, intToFixed16(s_windowMaxY + 1));
+			flat_addEdges(length, x0, 0, intToFixed16(s_windowMaxY_Pixels + 1), 0, intToFixed16(s_windowMaxY_Pixels + 1));
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
 			}
 			srcWall->seen = JTRUE;
 			return;
 		}
 
-		fixed16_16 floorRel = sector->floorHeight - s_eyeHeight_Fixed;
+		fixed16_16 floorRel = sector->floorHeight - s_rcfState.eyeHeight;
 		fixed16_16 fProj0, fProj1;
-		fProj0 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		fProj1 = div16(mul16(floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		fProj0 = div16(mul16(floorRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		fProj1 = div16(mul16(floorRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		s32 f0_pixel = round16(fProj0);
 		s32 f1_pixel = round16(fProj1);
-		if (f0_pixel < s_windowMinY && f1_pixel < s_windowMinY)
+		if (f0_pixel < s_windowMinY_Pixels && f1_pixel < s_windowMinY_Pixels)
 		{
 			srcWall->visible = 0;
-			for (s32 i = 0; i < length; i++) { s_columnBot[x0 + i] = s_windowMinY; }
+			for (s32 i = 0; i < length; i++) { s_columnBot[x0 + i] = s_windowMinY_Pixels; }
 
-			flat_addEdges(length, x0, 0, intToFixed16(s_windowMinY - 1), 0, intToFixed16(s_windowMinY - 1));
+			flat_addEdges(length, x0, 0, intToFixed16(s_windowMinY_Pixels - 1), 0, intToFixed16(s_windowMinY_Pixels - 1));
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
 
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
-				s_depth1d_Fixed[x] = solveForZ(wallSegment, x, num);
+				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
 			}
 			srcWall->seen = JTRUE;
 			return;
 		}
 
 		RSector* nextSector = srcWall->nextSector;
-		fixed16_16 next_ceilRel = nextSector->ceilingHeight - s_eyeHeight_Fixed;
+		fixed16_16 next_ceilRel = nextSector->ceilingHeight - s_rcfState.eyeHeight;
 		fixed16_16 next_cProj0, next_cProj1;
-		next_cProj0 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		next_cProj1 = div16(mul16(next_ceilRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		next_cProj0 = div16(mul16(next_ceilRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		next_cProj1 = div16(mul16(next_ceilRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		fixed16_16 ceil_dYdX = 0;
 		fixed16_16 next_ceil_dYdX = 0;
@@ -1574,7 +1574,7 @@ namespace RClassic_Fixed
 		
 		s32 cn0_pixel = round16(next_cProj0);
 		s32 cn1_pixel = round16(next_cProj1);
-		if (cn0_pixel >= s_windowMinY || cn1_pixel >= s_windowMinY)
+		if (cn0_pixel >= s_windowMinY_Pixels || cn1_pixel >= s_windowMinY_Pixels)
 		{
 			fixed16_16 u0 = wallSegment->uCoord0;
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
@@ -1611,7 +1611,7 @@ namespace RClassic_Fixed
 					fixed16_16 dz = z - z0;
 					u = u0 + mul16(dz, wallSegment->uScale) + srcWall->topOffset.x;
 				}
-				s_depth1d_Fixed[x] = z;
+				s_rcfState.depth1d[x] = z;
 				if (s_yPixelCount > 0)
 				{
 					s32 widthMask = topTex->width - 1;
@@ -1642,13 +1642,13 @@ namespace RClassic_Fixed
 		}
 		else
 		{
-			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMinY - 1; }
+			for (s32 i = 0; i < length; i++) { s_columnTop[x0 + i] = s_windowMinY_Pixels - 1; }
 		}
 
-		fixed16_16 next_floorRel = nextSector->floorHeight - s_eyeHeight_Fixed;
+		fixed16_16 next_floorRel = nextSector->floorHeight - s_rcfState.eyeHeight;
 		fixed16_16 next_fProj0, next_fProj1;
-		next_fProj0 = div16(mul16(next_floorRel, s_focalLenAspect_Fixed), z0) + s_projOffsetY;
-		next_fProj1 = div16(mul16(next_floorRel, s_focalLenAspect_Fixed), z1) + s_projOffsetY;
+		next_fProj0 = div16(mul16(next_floorRel, s_rcfState.focalLenAspect), z0) + s_rcfState.projOffsetY;
+		next_fProj1 = div16(mul16(next_floorRel, s_rcfState.focalLenAspect), z1) + s_rcfState.projOffsetY;
 
 		fixed16_16 next_floor_dYdX = 0;
 		fixed16_16 floor_dYdX = 0;
@@ -1669,7 +1669,7 @@ namespace RClassic_Fixed
 		f0_pixel = round16(next_fProj0);
 		f1_pixel = round16(next_fProj1);
 
-		if (f0_pixel <= s_windowMaxY || f1_pixel <= s_windowMaxY)
+		if (f0_pixel <= s_windowMaxY_Pixels || f1_pixel <= s_windowMaxY_Pixels)
 		{
 			fixed16_16 u0 = wallSegment->uCoord0;
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
@@ -1714,7 +1714,7 @@ namespace RClassic_Fixed
 						fixed16_16 dz = z - z0;
 						uCoord = u0 + mul16(dz, wallSegment->uScale) + srcWall->botOffset.x;
 					}
-					s_depth1d_Fixed[x] = z;
+					s_rcfState.depth1d[x] = z;
 					if (s_yPixelCount > 0)
 					{
 						s32 widthMask = botTex->width - 1;
@@ -1770,7 +1770,7 @@ namespace RClassic_Fixed
 		}
 		else
 		{
-			for (s32 i = 0; i < length; i++) { s_columnBot[x0 + i] = s_windowMaxY + 1; }
+			for (s32 i = 0; i < length; i++) { s_columnBot[x0 + i] = s_windowMaxY_Pixels + 1; }
 		}
 		flat_addEdges(length, x0, floor_dYdX, fProj0, ceil_dYdX, cProj0);
 
@@ -1778,7 +1778,7 @@ namespace RClassic_Fixed
 		s32 next_f1_pixel = round16(next_fProj1);
 		s32 next_c0_pixel = round16(next_cProj0);
 		s32 next_c1_pixel = round16(next_cProj1);
-		if ((next_f0_pixel <= s_windowMinY && next_f1_pixel <= s_windowMinY) || (next_c0_pixel >= s_windowMaxY && next_c1_pixel >= s_windowMaxY) || (nextSector->floorHeight <= nextSector->ceilingHeight))
+		if ((next_f0_pixel <= s_windowMinY_Pixels && next_f1_pixel <= s_windowMinY_Pixels) || (next_c0_pixel >= s_windowMaxY_Pixels && next_c1_pixel >= s_windowMaxY_Pixels) || (nextSector->floorHeight <= nextSector->ceilingHeight))
 		{
 			srcWall->seen = JTRUE;
 			return;
@@ -1792,7 +1792,7 @@ namespace RClassic_Fixed
 	// Other parts of those same conditionals are modified to handle higher resolutions.
 	void wall_drawSkyTop(RSector* sector)
 	{
-		if (s_wallMaxCeilY < s_windowMinY) { return; }
+		if (s_wallMaxCeilY < s_windowMinY_Pixels) { return; }
 		TFE_ZONE("Draw Sky");
 
 		TextureData* texture = *sector->ceilTex;
@@ -1822,14 +1822,14 @@ namespace RClassic_Fixed
 			{
 				if (s_height == SKY_BASE_HEIGHT)
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->ceilOffset.z;
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_rcfState.skyPitchOffset - sector->ceilOffset.z;
 				}
 				else
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->ceilOffset.z;
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_rcfState.skyPitchOffset - sector->ceilOffset.z;
 				}
 
-				s32 texelU = ( floor16(sector->ceilOffset.x - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) ) & texWidthMask;
+				s32 texelU = ( floor16(sector->ceilOffset.x - s_rcfState.skyYawOffset + s_rcfState.skyTable[x]) ) & texWidthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 				s_columnOut = &s_display[y0*s_width + x];
 				drawColumn_Fullbright();
@@ -1867,15 +1867,15 @@ namespace RClassic_Fixed
 			{
 				if (s_height == SKY_BASE_HEIGHT)
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->ceilOffset.z;
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_rcfState.skyPitchOffset - sector->ceilOffset.z;
 				}
 				else
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->ceilOffset.z;
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_rcfState.skyPitchOffset - sector->ceilOffset.z;
 				}
 
 				s32 widthMask = texture->width - 1;
-				s32 texelU = floor16(sector->ceilOffset.x - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & widthMask;
+				s32 texelU = floor16(sector->ceilOffset.x - s_rcfState.skyYawOffset + s_rcfState.skyTable[x]) & widthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 				s_columnOut = &s_display[y0*s_width + x];
 
@@ -1888,7 +1888,7 @@ namespace RClassic_Fixed
 	// Other parts of those same conditionals are modified to handle higher resolutions.
 	void wall_drawSkyBottom(RSector* sector)
 	{
-		if (s_wallMinFloorY > s_windowMaxY) { return; }
+		if (s_wallMinFloorY > s_windowMaxY_Pixels) { return; }
 		TFE_ZONE("Draw Sky");
 
 		TextureData* texture = *sector->floorTex;
@@ -1918,14 +1918,14 @@ namespace RClassic_Fixed
 			{
 				if (s_height == SKY_BASE_HEIGHT)
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->floorOffset.z;
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_rcfState.skyPitchOffset - sector->floorOffset.z;
 				}
 				else
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->floorOffset.z;
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_rcfState.skyPitchOffset - sector->floorOffset.z;
 				}
 
-				s32 texelU = floor16(sector->floorOffset.x - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & texWidthMask;
+				s32 texelU = floor16(sector->floorOffset.x - s_rcfState.skyYawOffset + s_rcfState.skyTable[x]) & texWidthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 				s_columnOut = &s_display[y0*s_width + x];
 				drawColumn_Fullbright();
@@ -1963,15 +1963,15 @@ namespace RClassic_Fixed
 			{
 				if (s_height == SKY_BASE_HEIGHT)
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_skyPitchOffset_Fixed - sector->floorOffset.z;
+					s_vCoordFixed = intToFixed16(s_texHeightMask - y1) - s_rcfState.skyPitchOffset - sector->floorOffset.z;
 				}
 				else
 				{
-					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_skyPitchOffset_Fixed - sector->floorOffset.z;
+					s_vCoordFixed = intToFixed16(s_texHeightMask) - mul16(intToFixed16(y1), heightScale) - s_rcfState.skyPitchOffset - sector->floorOffset.z;
 				}
 
 				s32 widthMask = texture->width - 1;
-				s32 texelU = floor16(sector->floorOffset.x - s_skyYawOffset_Fixed + s_skyTable_Fixed[x]) & widthMask;
+				s32 texelU = floor16(sector->floorOffset.x - s_rcfState.skyYawOffset + s_rcfState.skyTable[x]) & widthMask;
 				s_texImage = &texture->image[texelU << texture->logSizeY];
 				s_columnOut = &s_display[y0*s_width + x];
 
@@ -2028,7 +2028,7 @@ namespace RClassic_Fixed
 		if (wallSegment->orient == WORIENT_DZ_DX)
 		{
 			// Solve for viewspace X at the current pixel x coordinate in order to get dx in viewspace.
-			fixed16_16 den = s_column_Z_Over_X[x] - wallSegment->slope;
+			fixed16_16 den = s_rcfState.column_Z_Over_X[x] - wallSegment->slope;
 			// Avoid divide by zero.
 			if (den == 0) { den = 1; }
 
@@ -2045,7 +2045,7 @@ namespace RClassic_Fixed
 		else  // WORIENT_DX_DZ
 		{
 			// Directly solve for Z at the current pixel x coordinate.
-			fixed16_16 den = s_column_X_Over_Z[x] - wallSegment->slope;
+			fixed16_16 den = s_rcfState.column_X_Over_Z[x] - wallSegment->slope;
 			// Avoid divide by 0.
 			if (den == 0) { den = 1; }
 
@@ -2279,12 +2279,12 @@ namespace RClassic_Fixed
 		const fixed16_16 y0 = obj->posVS.y - yOffset;
 
 		const fixed16_16 rcpZ = div16(ONE_16, z);
-		const fixed16_16 projX0 = mul16(mul16(x0, s_focalLength_Fixed), rcpZ) + s_projOffsetX;
-		const fixed16_16 projY0 = mul16(mul16(y0, s_focalLenAspect_Fixed), rcpZ) + s_projOffsetY;
+		const fixed16_16 projX0 = mul16(mul16(x0, s_rcfState.focalLength),    rcpZ) + s_rcfState.projOffsetX;
+		const fixed16_16 projY0 = mul16(mul16(y0, s_rcfState.focalLenAspect), rcpZ) + s_rcfState.projOffsetY;
 
 		s32 x0_pixel = round16(projX0);
 		s32 y0_pixel = round16(projY0);
-		if (x0_pixel > s_windowMaxX || y0_pixel > s_windowMaxY)
+		if (x0_pixel > s_windowMaxX || y0_pixel > s_windowMaxY_Pixels)
 		{
 			return;
 		}
@@ -2292,12 +2292,12 @@ namespace RClassic_Fixed
 		const fixed16_16 x1 = x0 + frame->widthWS;
 		const fixed16_16 y1 = y0 + frame->heightWS;
 
-		const fixed16_16 projX1 = mul16(mul16(x1, s_focalLength_Fixed), rcpZ) + s_projOffsetX;
-		const fixed16_16 projY1 = mul16(mul16(y1, s_focalLenAspect_Fixed), rcpZ) + s_projOffsetY;
+		const fixed16_16 projX1 = mul16(mul16(x1, s_rcfState.focalLength),    rcpZ) + s_rcfState.projOffsetX;
+		const fixed16_16 projY1 = mul16(mul16(y1, s_rcfState.focalLenAspect), rcpZ) + s_rcfState.projOffsetY;
 
 		s32 x1_pixel = round16(projX1);
 		s32 y1_pixel = round16(projY1);
-		if (x1_pixel < s_windowMinX || y1_pixel < s_windowMinY)
+		if (x1_pixel < s_windowMinX || y1_pixel < s_windowMinY_Pixels)
 		{
 			return;
 		}
@@ -2367,7 +2367,7 @@ namespace RClassic_Fixed
 		const u32* columnOffset = (u32*)(basePtr + cell->columnOffset);
 		for (s32 x = x0_pixel; x <= x1_pixel; x++, uCoord += uCoordStep)
 		{
-			if (z < s_depth1d_Fixed[x])
+			if (z < s_rcfState.depth1d[x])
 			{
 				s32 y0 = y0_pixel;
 				s32 y1 = y1_pixel;

@@ -4,7 +4,7 @@
 #include "rlightingFixed.h"
 #include "redgePairFixed.h"
 #include "rclassicFixed.h"
-#include "rcommonFixed.h"
+#include "rclassicFixedSharedState.h"
 #include "../rscanline.h"
 #include "../rsectorRender.h"
 #include "../redgePair.h"
@@ -61,13 +61,13 @@ namespace RClassic_Fixed
 			{
 				s_wallMinFloorY = s_flatEdge->yPixel_F1 + 1;
 			}
-			if (s_wallMaxCeilY < s_windowMinY)
+			if (s_wallMaxCeilY < s_windowMinY_Pixels)
 			{
-				s_wallMaxCeilY = s_windowMinY;
+				s_wallMaxCeilY = s_windowMinY_Pixels;
 			}
-			if (s_wallMinFloorY > s_windowMaxY)
+			if (s_wallMinFloorY > s_windowMaxY_Pixels)
 			{
-				s_wallMinFloorY = s_windowMaxY;
+				s_wallMinFloorY = s_windowMaxY_Pixels;
 			}
 
 			s_flatEdge++;
@@ -195,25 +195,25 @@ namespace RClassic_Fixed
 
 	void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count)
 	{
-		fixed16_16 textureOffsetU = s_cameraPosX_Fixed - sector->ceilOffset.x;
-		fixed16_16 textureOffsetV = sector->ceilOffset.z - s_cameraPosZ_Fixed;
+		fixed16_16 textureOffsetU = s_rcfState.cameraPos.x - sector->ceilOffset.x;
+		fixed16_16 textureOffsetV = sector->ceilOffset.z - s_rcfState.cameraPos.z;
 
-		fixed16_16 relCeil          =  sector->ceilingHeight - s_eyeHeight_Fixed;
-		fixed16_16 scaledRelCeil    =  mul16(relCeil, s_focalLenAspect_Fixed);
-		fixed16_16 cosScaledRelCeil =  mul16(scaledRelCeil, s_cosYaw_Fixed);
-		fixed16_16 negSinRelCeil    = -mul16(relCeil, s_sinYaw_Fixed);
-		fixed16_16 sinScaledRelCeil =  mul16(scaledRelCeil, s_sinYaw_Fixed);
-		fixed16_16 negCosRelCeil    = -mul16(relCeil, s_cosYaw_Fixed);
+		fixed16_16 relCeil          =  sector->ceilingHeight - s_rcfState.eyeHeight;
+		fixed16_16 scaledRelCeil    =  mul16(relCeil, s_rcfState.focalLenAspect);
+		fixed16_16 cosScaledRelCeil =  mul16(scaledRelCeil, s_rcfState.cosYaw);
+		fixed16_16 negSinRelCeil    = -mul16(relCeil, s_rcfState.sinYaw);
+		fixed16_16 sinScaledRelCeil =  mul16(scaledRelCeil, s_rcfState.sinYaw);
+		fixed16_16 negCosRelCeil    = -mul16(relCeil, s_rcfState.cosYaw);
 
 		if (!flat_setTexture(*sector->ceilTex)) { return; }
 
-		for (s32 y = s_windowMinY; y <= s_wallMaxCeilY && y < s_windowMaxY; y++)
+		for (s32 y = s_windowMinY_Pixels; y <= s_wallMaxCeilY && y < s_windowMaxY_Pixels; y++)
 		{
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_screenYMidBase - s_screenYMid;
 			assert(yShear + y + s_height * 2 >= 0 && yShear + y + s_height * 2 <= s_height * 4);
-			fixed16_16 yRcp = s_rcpY[yShear + y + s_height*2];
+			fixed16_16 yRcp = s_rcfState.rcpY[yShear + y + s_height*2];
 			fixed16_16 z = mul16(scaledRelCeil, yRcp);
 
 			s32 left = 0;
@@ -261,26 +261,26 @@ namespace RClassic_Fixed
 		
 	void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count)
 	{
-		fixed16_16 textureOffsetU = s_cameraPosX_Fixed - sector->floorOffset.x;
-		fixed16_16 textureOffsetV = sector->floorOffset.z - s_cameraPosZ_Fixed;
+		fixed16_16 textureOffsetU = s_rcfState.cameraPos.x - sector->floorOffset.x;
+		fixed16_16 textureOffsetV = sector->floorOffset.z - s_rcfState.cameraPos.z;
 
-		fixed16_16 relFloor       = sector->floorHeight - s_eyeHeight_Fixed;
-		fixed16_16 scaledRelFloor = mul16(relFloor, s_focalLenAspect_Fixed);
+		fixed16_16 relFloor       = sector->floorHeight - s_rcfState.eyeHeight;
+		fixed16_16 scaledRelFloor = mul16(relFloor, s_rcfState.focalLenAspect);
 
-		fixed16_16 cosScaledRelFloor = mul16(scaledRelFloor, s_cosYaw_Fixed);
-		fixed16_16 negSinRelFloor    =-mul16(relFloor, s_sinYaw_Fixed);
-		fixed16_16 sinScaledRelFloor = mul16(scaledRelFloor, s_sinYaw_Fixed);
-		fixed16_16 negCosRelFloor    =-mul16(relFloor, s_cosYaw_Fixed);
+		fixed16_16 cosScaledRelFloor = mul16(scaledRelFloor, s_rcfState.cosYaw);
+		fixed16_16 negSinRelFloor    =-mul16(relFloor, s_rcfState.sinYaw);
+		fixed16_16 sinScaledRelFloor = mul16(scaledRelFloor, s_rcfState.sinYaw);
+		fixed16_16 negCosRelFloor    =-mul16(relFloor, s_rcfState.cosYaw);
 
 		if (!flat_setTexture(*sector->floorTex)) { return; }
 
-		for (s32 y = max(s_wallMinFloorY, s_windowMinY); y <= s_windowMaxY; y++)
+		for (s32 y = max(s_wallMinFloorY, s_windowMinY_Pixels); y <= s_windowMaxY_Pixels; y++)
 		{
 			s32 x = s_windowMinX;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_screenYMidBase - s_screenYMid;
 			assert(yShear + y + s_height * 2 >= 0 && yShear + y + s_height * 2 <= s_height * 4);
-			fixed16_16 yRcp = s_rcpY[yShear + y + s_height*2];
+			fixed16_16 yRcp = s_rcfState.rcpY[yShear + y + s_height*2];
 			fixed16_16 z = mul16(scaledRelFloor, yRcp);
 
 			s32 left = 0;
@@ -351,15 +351,15 @@ namespace RClassic_Fixed
 		
 	void flat_preparePolygon(fixed16_16 heightOffset, fixed16_16 offsetX, fixed16_16 offsetZ, TextureData* texture)
 	{
-		s_poly_offsetX = s_cameraPosX_Fixed - offsetX;
-		s_poly_offsetZ = offsetZ - s_cameraPosZ_Fixed;
+		s_poly_offsetX = s_rcfState.cameraPos.x - offsetX;
+		s_poly_offsetZ = offsetZ - s_rcfState.cameraPos.z;
 
-		s_poly_scaledHOffset = mul16(heightOffset, s_focalLenAspect_Fixed);
-		s_poly_sinYawHOffset = mul16(s_sinYaw_Fixed, heightOffset);
-		s_poly_cosYawHOffset = mul16(s_cosYaw_Fixed, heightOffset);
+		s_poly_scaledHOffset = mul16(heightOffset, s_rcfState.focalLenAspect);
+		s_poly_sinYawHOffset = mul16(s_rcfState.sinYaw, heightOffset);
+		s_poly_cosYawHOffset = mul16(s_rcfState.cosYaw, heightOffset);
 
-		s_poly_cosYawScaledHOffset = mul16(s_cosYaw_Fixed, s_poly_scaledHOffset);
-		s_poly_sinYawScaledHOffset = mul16(s_sinYaw_Fixed, s_poly_scaledHOffset);
+		s_poly_cosYawScaledHOffset = mul16(s_rcfState.cosYaw, s_poly_scaledHOffset);
+		s_poly_sinYawScaledHOffset = mul16(s_rcfState.sinYaw, s_poly_scaledHOffset);
 
 		s_ftexWidthMask  = texture->width - 1;
 		s_ftexHeightMask = texture->height - 1;
@@ -382,7 +382,7 @@ namespace RClassic_Fixed
 
 		const s32 yShear = s_screenYMidBase - s_screenYMid;
 		assert(yShear + y + s_height * 2 >= 0 && yShear + y + s_height * 2 <= s_height * 4);
-		const fixed16_16 yRcp = s_rcpY[yShear + y + s_height*2];
+		const fixed16_16 yRcp = s_rcfState.rcpY[yShear + y + s_height*2];
 		const fixed16_16 z = mul16(s_poly_scaledHOffset, yRcp);
 		const fixed16_16 right = intToFixed16(x1 - 1 - s_screenXMid);
 

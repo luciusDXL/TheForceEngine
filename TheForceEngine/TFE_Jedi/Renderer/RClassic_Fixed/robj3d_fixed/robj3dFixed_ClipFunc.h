@@ -471,8 +471,8 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 	///////////////////////////////////////////////////
 	for (s32 i = 0; i < srcVertexCount; i++)
 	{
-		s_clipY0 = mul16(s_yPlaneTop_Fixed, s_clipPos0->z);
-		s_clipY1 = mul16(s_yPlaneTop_Fixed, s_clipPos1->z);
+		s_clipY0 = mul16(s_rcfState.yPlaneTop, s_clipPos0->z);
+		s_clipY1 = mul16(s_rcfState.yPlaneTop, s_clipPos1->z);
 
 		// If the edge is completely behind the plane, then continue.
 		if (s_clipPos0->y < s_clipY0 && s_clipPos1->y < s_clipY1)
@@ -531,14 +531,14 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 
 			const fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
 			const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
-			s_clipParam1 = mul16(s_yPlaneTop_Fixed, dz) - dy;
+			s_clipParam1 = mul16(s_rcfState.yPlaneTop, dz) - dy;
 
 			s_clipIntersectZ = s_clipParam0;
 			if (s_clipParam1 != 0)
 			{
 				s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
 			}
-			s_clipIntersectY = mul16(s_yPlaneTop_Fixed, s_clipIntersectZ);
+			s_clipIntersectY = mul16(s_rcfState.yPlaneTop, s_clipIntersectZ);
 			const fixed16_16 aDz = TFE_Jedi::abs(s_clipPos1->z - s_clipPos0->z);
 			const fixed16_16 aDy = TFE_Jedi::abs(s_clipPos1->y - s_clipPos0->y);
 
@@ -589,8 +589,8 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 	///////////////////////////////////////////////////
 	for (s32 i = 0; i < srcVertexCount; i++)
 	{
-		s_clipY0 = mul16(s_yPlaneBot_Fixed, s_clipPos0->z);
-		s_clipY1 = mul16(s_yPlaneBot_Fixed, s_clipPos1->z);
+		s_clipY0 = mul16(s_rcfState.yPlaneBot, s_clipPos0->z);
+		s_clipY1 = mul16(s_rcfState.yPlaneBot, s_clipPos1->z);
 
 		// If the edge is completely behind the plane, then continue.
 		if (s_clipPos0->y > s_clipY0 && s_clipPos1->y > s_clipY1)
@@ -650,14 +650,14 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 
 			const fixed16_16 dy = s_clipPos1->y - s_clipPos0->y;
 			const fixed16_16 dz = s_clipPos1->z - s_clipPos0->z;
-			s_clipParam1 = mul16(s_yPlaneBot_Fixed, dz) - dy;
+			s_clipParam1 = mul16(s_rcfState.yPlaneBot, dz) - dy;
 
 			s_clipIntersectZ = s_clipParam0;
 			if (s_clipParam1 != 0)
 			{
 				s_clipIntersectZ = div16(s_clipParam0, s_clipParam1);
 			}
-			s_clipIntersectY = mul16(s_yPlaneBot_Fixed, s_clipIntersectZ);
+			s_clipIntersectY = mul16(s_rcfState.yPlaneBot, s_clipIntersectZ);
 			const fixed16_16 aDz = TFE_Jedi::abs(s_clipPos1->z - s_clipPos0->z);
 			const fixed16_16 aDy = TFE_Jedi::abs(s_clipPos1->y - s_clipPos0->y);
 

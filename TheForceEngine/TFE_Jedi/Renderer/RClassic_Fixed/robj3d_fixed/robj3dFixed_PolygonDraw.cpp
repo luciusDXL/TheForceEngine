@@ -9,7 +9,7 @@
 #include "robj3dFixed_Clipping.h"
 #include "../rsectorFixed.h"
 #include "../rflatFixed.h"
-#include "../rcommonFixed.h"
+#include "../rclassicFixedSharedState.h"
 #include "../rlightingFixed.h"
 #include "../../rcommon.h"
 
@@ -338,7 +338,7 @@ namespace RClassic_Fixed
 				s_polyMaxIndex = i;
 			}
 		}
-		if (yMin >= yMax || yMin > s_windowMaxY || yMax < s_windowMinY)
+		if (yMin >= yMax || yMin > s_windowMaxY_Pixels || yMax < s_windowMinY_Pixels)
 		{
 			return;
 		}
@@ -351,7 +351,7 @@ namespace RClassic_Fixed
 			return;
 		}
 
-		fixed16_16 heightOffset = planeY - s_eyeHeight_Fixed;
+		fixed16_16 heightOffset = planeY - s_rcfState.eyeHeight;
 		// TODO: Figure out why s_heightInPixels has the wrong sign here.
 		if (yMax <= -s_screenYMid)
 		{
@@ -365,7 +365,7 @@ namespace RClassic_Fixed
 		s32 edgeFound = 0;
 		for (; edgeFound == 0 && s_rowY <= s_maxScreenY; s_rowY++)
 		{
-			if (s_rowY >= s_windowMinY && s_windowMaxY != 0 && s_edgeLeft_X0_Pixel <= s_windowMaxX && s_edgeRight_X0_Pixel >= s_windowMinX)
+			if (s_rowY >= s_windowMinY_Pixels && s_windowMaxY_Pixels != 0 && s_edgeLeft_X0_Pixel <= s_windowMaxX && s_edgeRight_X0_Pixel >= s_windowMinX)
 			{
 				flat_drawPolygonScanline(s_edgeLeft_X0_Pixel, s_edgeRight_X0_Pixel, s_rowY, trans);
 			}

@@ -4,7 +4,7 @@
 
 #include "robj3dFixed_Clipping.h"
 #include "robj3dFixed_PolygonSetup.h"
-#include "../rcommonFixed.h"
+#include "../rclassicFixedSharedState.h"
 #include "../../rcommon.h"
 
 namespace TFE_Jedi
