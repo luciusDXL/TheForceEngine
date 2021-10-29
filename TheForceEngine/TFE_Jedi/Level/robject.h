@@ -44,7 +44,7 @@ enum EntityTypeFlags
 	ETFLAG_CORPSE         = FLAG_BIT(9),	// Corpse
 	ETFLAG_CAN_DISABLE    = FLAG_BIT(10),	// An object that can be enabled or disabled by INF.
 	ETFLAG_SMART_OBJ      = FLAG_BIT(11),	// An object that can manipulate the level, such as opening doors.
-	ETFLAG_4096			  = FLAG_BIT(12),	// Unknown, used by AI.
+	ETFLAG_REMOTE         = FLAG_BIT(12),	// Unknown, used by AI.
 	ETFLAG_LANDMINE       = FLAG_BIT(13),	// Specifically set if a pre-placed landmine.
 	ETFLAG_16384          = FLAG_BIT(14),	// Used by AI.
 	ETFLAG_32768          = FLAG_BIT(15),	// Used by AI.

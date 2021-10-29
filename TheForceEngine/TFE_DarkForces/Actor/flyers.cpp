@@ -256,7 +256,7 @@ namespace TFE_DarkForces
 
 	Logic* remote_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_FLYING | ETFLAG_4096;
+		obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_FLYING | ETFLAG_REMOTE;
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->fov = 0x4000;
 

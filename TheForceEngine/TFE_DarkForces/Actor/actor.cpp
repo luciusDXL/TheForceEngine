@@ -1182,10 +1182,12 @@ namespace TFE_DarkForces
 			actorSimple->anim.state = 1;
 			actorSimple->nextTick = s_curTick + actorSimple->delay;
 
-			if (obj->entityFlags & ETFLAG_4096)
+			if (obj->entityFlags & ETFLAG_REMOTE)
 			{
-				// TODO
-				assert(0);
+				if (!(logic->flags & 1) && (logic->flags & 2))
+				{
+					playSound3D_oneshot(s_agentSndSrc[AGENTSND_REMOTE_2], obj->posWS);
+				}
 			}
 		}
 
