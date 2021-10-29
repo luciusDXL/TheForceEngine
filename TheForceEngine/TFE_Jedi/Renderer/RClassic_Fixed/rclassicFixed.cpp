@@ -16,10 +16,10 @@ namespace TFE_Jedi
 namespace RClassic_Fixed
 {
 	static JBool s_fullDetail = JTRUE;
-	static fixed16_16 s_viewWidthFixed;
-	static fixed16_16 s_viewHeightFixed;
-	static fixed16_16 s_minScreenX_Fixed;
-	static fixed16_16 s_maxScreenX_Fixed;
+	static fixed16_16 s_viewWidth;
+	static fixed16_16 s_viewHeight;
+	static fixed16_16 s_minScreenX;
+	static fixed16_16 s_maxScreenX;
 	static fixed16_16 s_screenWidthFract;
 	static fixed16_16 s_oneOverWidthFract;
 	static fixed16_16 s_worldX;
@@ -79,8 +79,8 @@ namespace RClassic_Fixed
 			s_screenYMid  = s_screenYMidBase + floor16(pitchOffset);
 
 			// yMax*0.5 / halfWidth; ~pixel Aspect
-			s_rcfState.yPlaneBot =  div16((s_viewHeightFixed >> 1) - pitchOffset, s_rcfState.halfWidth);
-			s_rcfState.yPlaneTop = -div16((s_viewHeightFixed >> 1) + pitchOffset, s_rcfState.halfWidth);
+			s_rcfState.yPlaneBot =  div16((s_viewHeight >> 1) - pitchOffset, s_rcfState.halfWidth);
+			s_rcfState.yPlaneTop = -div16((s_viewHeight >> 1) + pitchOffset, s_rcfState.halfWidth);
 		}
 
 		s_rcfState.cameraTrans.z = mul16(s_zOffset, s_rcfState.cosYaw) + mul16(s_xOffset, s_rcfState.negSinYaw);
@@ -107,22 +107,23 @@ namespace RClassic_Fixed
 		
 	void setupScreenParameters(s32 w, s32 h, s32 x0, s32 y0)
 	{
-		s32 pixelCount = w * h;
-		s_viewWidthFixed  = intToFixed16(w);
-		s_viewHeightFixed = intToFixed16(h);
-		s_screenWidth = w;
+		s_viewWidth  = intToFixed16(w);
+		s_viewHeight = intToFixed16(h);
+		s_screenWidth  = w;
 		s_screenHeight = h;
+
 		s_minScreenX_Pixels = x0;
-		s_minScreenX_Fixed = intToFixed16(x0);
 		s_maxScreenX_Pixels = x0 + w - 1;
-		s_maxScreenX_Fixed = intToFixed16(s_maxScreenX_Pixels);
+		s_minScreenX = intToFixed16(s_minScreenX_Pixels);
+		s_maxScreenX = intToFixed16(s_maxScreenX_Pixels);
+
 		s_minScreenY = y0;
+		s_maxScreenY = y0 + h - 1;
 		s_rcfState.windowMinY = intToFixed16(y0);
 		s_rcfState.windowMaxY = intToFixed16(y0 + h - 1);
-		s_fullDetail = JTRUE;
 
-		s_maxScreenY = y0 + h - 1;
-		s_pixelCount = pixelCount;
+		s_fullDetail = JTRUE;
+		s_pixelCount = w * h;
 	}
 		
 	void setupProjectionParameters(fixed16_16 halfWidthFixed, s32 xc, s32 yc)
