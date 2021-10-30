@@ -680,7 +680,7 @@ namespace TFE_Jedi
 	void handleCollisionResponseSimple(fixed16_16 dirX, fixed16_16 dirZ, fixed16_16* moveX, fixed16_16* moveZ)
 	{
 		fixed16_16 proj = mul16(*moveX, dirX) + mul16(*moveZ, dirZ);
-		*moveX = mul16(proj, dirZ);
+		*moveX = mul16(proj, dirX);
 		*moveZ = mul16(proj, dirZ);
 	}
 

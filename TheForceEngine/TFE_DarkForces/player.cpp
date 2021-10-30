@@ -103,7 +103,7 @@ namespace TFE_DarkForces
 		1, 2, 3, 4, 5, 6, 7, 8, 9,
 		10, 11, 12, 13, 14, 15, 16
 	};
-
+		
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
@@ -530,6 +530,13 @@ namespace TFE_DarkForces
 	void playerLogicCleanupFunc(Logic* logic)
 	{
 		// TODO(Core Game Loop Release)
+	}
+
+	void player_getVelocity(vec3_fixed* vel)
+	{
+		vel->x = s_playerVelX;
+		vel->y = s_playerUpVel;
+		vel->z = s_playerVelZ;
 	}
 
 	void player_setupObject(SecObject* obj)

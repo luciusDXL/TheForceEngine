@@ -255,6 +255,7 @@ namespace TFE_Sprite_Jedi
 				if (v == 0)
 				{
 					dstAnim->frameCount = frameCount;
+					assert(frameCount);
 				}
 				else
 				{

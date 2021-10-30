@@ -334,8 +334,9 @@ namespace TFE_DarkForces
 	{
 		if (angleVariation)
 		{
-			angle += random(intToFixed16(angleVariation) * 2) - intToFixed16(angleVariation);
+			angle += floor16(random(intToFixed16(angleVariation) * 2) - intToFixed16(angleVariation));
 		}
+		angle &= ANGLE_MASK;
 
 		fixed16_16 dist;
 		if (targetVariation)
@@ -457,6 +458,24 @@ namespace TFE_DarkForces
 
 		physicsActor->vel.x = mul16(cosPitch, physicsActor->vel.x);
 		physicsActor->vel.z = mul16(cosPitch, physicsActor->vel.z);
+	}
+
+	void actor_leadTarget(ProjectileLogic* proj)
+	{
+		SecObject* projObj = proj->logic.obj;
+
+		fixed16_16 dist = distApprox(projObj->posWS.x, projObj->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
+		fixed16_16 travelTime = div16(dist, proj->speed);
+		vec3_fixed playerVel;
+		player_getVelocity(&playerVel);
+
+		vec3_fixed target =
+		{
+			s_playerObject->posWS.x + mul16(playerVel.x, travelTime),
+			s_playerObject->posWS.y + mul16(playerVel.y, travelTime) + ONE_16 - s_playerObject->worldHeight,
+			s_playerObject->posWS.z + mul16(playerVel.z, travelTime)
+		};
+		proj_aimAtTarget(proj, target);
 	}
 
 	void actor_removeRandomCorpse()
@@ -1693,7 +1712,9 @@ namespace TFE_DarkForces
 			aiAnim->frame = 0;
 			if (aiAnim->animId != -1)
 			{
+				assert(aiAnim->animId < obj->wax->animCount);
 				WaxAnim* anim = WAX_AnimPtr(obj->wax, aiAnim->animId);
+				assert(anim);
 
 				aiAnim->frameCount = intToFixed16(anim->frameCount);
 				aiAnim->frameRate  = anim->frameRate;
@@ -1716,7 +1737,10 @@ namespace TFE_DarkForces
 			anim->startFrame = 0;
 			if (animId != -1)
 			{
+				assert(animId < obj->wax->animCount);
 				WaxAnim* waxAnim = WAX_AnimPtr(obj->wax, animId);
+				assert(waxAnim);
+
 				anim->frameCount = intToFixed16(waxAnim->frameCount);
 				anim->frameRate = waxAnim->frameRate;
 				if (anim->frameRate >= 12)
@@ -1726,6 +1750,12 @@ namespace TFE_DarkForces
 				anim->flags &= ~2;
 			}
 		}
+	}
+
+	void actor_setAnimFrameRange(LogicAnimation* anim, s32 startFrame, s32 endFrame)
+	{
+		anim->frameCount = intToFixed16(endFrame - startFrame + 1);
+		anim->startFrame = intToFixed16(startFrame);
 	}
 
 	void actor_setCurAnimation(LogicAnimation* aiAnim)
@@ -2062,7 +2092,7 @@ namespace TFE_DarkForces
 						obj->anim = anim->animId;
 						if (actor_advanceAnimation(anim, obj))
 						{
-							anim->flags |= 2;
+							anim->flags |= AFLAG_READY;
 						}
 					}
 				}

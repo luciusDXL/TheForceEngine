@@ -697,6 +697,9 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\phaseTwo.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1151,6 +1154,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rclassicFixedSharedState.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\phaseTwo.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
