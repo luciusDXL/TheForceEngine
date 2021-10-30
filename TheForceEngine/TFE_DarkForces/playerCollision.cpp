@@ -420,14 +420,10 @@ namespace TFE_DarkForces
 			s_colWall0 = s_colWallCollided;
 			if (s_colWall0)
 			{
-				s_colResponseStep = JTRUE;
-				s_colResponseDir.x = s_colWall0->wallDir.x;
-				s_colResponseDir.z = s_colWall0->wallDir.z;
+				s_colResponseStep  = JTRUE;
+				s_colResponseDir   = s_colWall0->wallDir;
 				s_colResponseAngle = s_colWall0->angle;
-
-				vec2_fixed* w0 = s_colWall0->w0;
-				s_colResponsePos.x = w0->x;
-				s_colResponsePos.z = w0->z;
+				s_colResponsePos   = *s_colWall0->w0;
 			}
 			return JFALSE;
 		}
@@ -454,9 +450,8 @@ namespace TFE_DarkForces
 			// push at a rate of 4 units / second.
 			fixed16_16 pushSpd = FIXED(4);
 			// make sure the overlap adjustment is at least the size of the "push"
-			overlap = max(overlap, mul16(pushSpd, s_deltaTime));
-			RSector* sector = obj->sector;
-			s_colCurBot = sector->floorHeight;
+			overlap = min(overlap, mul16(pushSpd, s_deltaTime));
+			s_colCurBot = obj->sector->floorHeight;
 		}
 		// Move along 'overlap' so that the cylinder is nearly touching and move along move direction based on projection.
 		// This has the effect of attracting or pushing the object in order to remove the gap or overlap.

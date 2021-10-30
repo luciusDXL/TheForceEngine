@@ -1499,7 +1499,7 @@ namespace TFE_DarkForces
 						
 			// Determine if a collision response is required.
 			collided = JTRUE;
-			if (prevResponseStep == s_colResponseStep)
+			if (!s_colResponseStep)
 			{
 				break;
 			}
