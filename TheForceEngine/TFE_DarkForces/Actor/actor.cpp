@@ -373,10 +373,10 @@ namespace TFE_DarkForces
 				if (nextSector)
 				{
 					RSector* sector = wall->sector;
-					s32 floorHeight = min(nextSector->floorHeight, sector->floorHeight);
-					s32 ceilHeight = max(nextSector->ceilingHeight, sector->ceilingHeight);
-					s32 gap = floorHeight - ceilHeight;
-					s32 objHeight = obj->worldHeight + ONE_16;
+					fixed16_16 floorHeight = min(nextSector->floorHeight, sector->floorHeight);
+					fixed16_16 ceilHeight  = max(nextSector->ceilingHeight, sector->ceilingHeight);
+					fixed16_16 gap = floorHeight - ceilHeight;
+					fixed16_16 objHeight = obj->worldHeight + ONE_16;
 					// If the object can fit.
 					if (gap > objHeight)
 					{
@@ -1605,8 +1605,8 @@ namespace TFE_DarkForces
 		actor->header.func = defaultActorFunc;
 		actor->header.freeFunc = nullptr;
 		actor->updateTargetFunc = defaultUpdateTargetFunc;
-		// Overwrites height even though it was set in actor_setupSmartObj()
-		actor->physics.height = 0x18000;	// 1.5 units
+		// Overwrites width even though it was set in actor_setupSmartObj()
+		actor->physics.width = 0x18000;	// 1.5 units
 		actor->physics.wall = nullptr;
 		actor->physics.u24 = 0;
 		actor->physics.obj = actor->header.obj;
