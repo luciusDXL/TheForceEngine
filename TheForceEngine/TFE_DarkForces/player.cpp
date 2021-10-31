@@ -1945,7 +1945,7 @@ namespace TFE_DarkForces
 		}
 
 		weapon->rollOffset = -div16(s_playerRoll, 13);
-		weapon->pchOffset  = s_playerPitch >> 6;
+		weapon->pchOffset  = (s_playerPitch + (s_playerPitch < 0 ? (1<<6) : 0)) >> 6;
 
 		// Handle camera lighting and night vision.
 		if (player->flags & 2)
