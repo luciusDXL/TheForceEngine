@@ -1899,7 +1899,7 @@ namespace TFE_DarkForces
 			fixed16_16 dmg = mul16(PLAYER_DMG_FLOOR_HIGH, s_deltaTime);
 			player_applyDamage(dmg, 0, JTRUE);
 		}
-		else if (dmgFlags == lowAndHighFlag && !s_wearingGasmask)
+		else if (dmgFlags == lowAndHighFlag && !s_wearingGasmask && !s_playerDying)
 		{
 			fixed16_16 dmg = mul16(PLAYER_DMG_FLOOR_LOW, s_deltaTime);
 			player_applyDamage(dmg, 0, JFALSE);
@@ -1910,7 +1910,7 @@ namespace TFE_DarkForces
 			}
 		}
 		// Free the gas damage task if the gas mask is worn or if the damage flags no longer match up.
-		if (s_gasSectorTask && (s_wearingGasmask || dmgFlags != lowAndHighFlag))
+		if (s_gasSectorTask && (s_wearingGasmask || dmgFlags != lowAndHighFlag || s_playerDying))
 		{
 			task_free(s_gasSectorTask);
 			s_gasSectorTask = nullptr;
@@ -2031,10 +2031,6 @@ namespace TFE_DarkForces
 				}
 				health = 0;
 				s_gasSectorTask = nullptr;
-				if (!s_wearingGasmask)
-				{
-					s_gasSectorTask = createSubTask("gas sector", gasSectorTaskFunc);
-				}
 				s_playerDying = 0xffffffff;
 				s_reviveTick = s_curTick + 436;
 			}

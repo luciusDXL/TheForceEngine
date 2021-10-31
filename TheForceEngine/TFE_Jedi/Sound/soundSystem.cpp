@@ -123,6 +123,8 @@ namespace TFE_Jedi
 
 	void stopSound(SoundEffectID sourceId)
 	{
+		if (sourceId == NULL_SOUND) { return; }
+
 		u32 slot = sourceId & JSND_SLOT_MASK;
 		u32 uid = sourceId >> JSND_UID_SHIFT;
 		SoundSource* curSoundSource = getSourceFromSlot(slot);
