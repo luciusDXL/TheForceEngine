@@ -31,6 +31,7 @@ namespace TFE_DarkForces
 		HOMING_ANGULAR_ACCEL       = 1820,       // Rate at which homing speed increases in angular units / second: ~40 degrees / second.
 		HOMING_PITCH_ZERO_MIN      = 2047,       // Range of pitch angles that are mapped to zero degrees.
 		HOMING_PITCH_ZERO_MAX      = 14335,      // Range of pitch angles that are mapped to zero degrees.
+		PROJ_PATH_MAX_SECTORS      = 16,		 // The maximum number of sectors in a projectile path (i.e. how many sectors can a projectile cross in a single frame).
 	};
 
 	//////////////////////////////////////////////////////////////
@@ -62,8 +63,7 @@ namespace TFE_DarkForces
 	static SoundSourceID s_bobaBallCameraSnd      = NULL_SOUND;
 	static SoundSourceID s_homingMissileFlightSnd = NULL_SOUND;
 
-	static RSector*   s_projStartSector[16];
-	static RSector*   s_projPath[16];
+	static RSector*   s_projPath[PROJ_PATH_MAX_SECTORS];
 	static RSector*   s_projSector;
 	static s32        s_projIter;
 	static fixed16_16 s_projNextPosX;
@@ -623,7 +623,6 @@ namespace TFE_DarkForces
 				{
 					sprite_setData(projObj, s_probeProj);
 				}
-				// 1f3398:
 				projObj->flags |= OBJ_FLAG_FULLBRIGHT;
 				projObj->worldWidth = 0;
 				// Setup the looping wax animation.
@@ -1045,7 +1044,7 @@ namespace TFE_DarkForces
 			obj->posWS.y = s_colObjAdjY;
 			fixed16_16 dz = s_colObjAdjZ - obj->posWS.z;
 			fixed16_16 dx = s_colObjAdjX - obj->posWS.x;
-			RSector* newSector = collision_moveObj(obj, dx, dz);
+			collision_moveObj(obj, dx, dz);
 
 			if (projLogic->bounceCnt == -1)
 			{
@@ -1203,7 +1202,7 @@ namespace TFE_DarkForces
 		s_hitWall = nullptr;
 		s_hitWater = JFALSE;
 		s_projSector = sector;
-		s_projStartSector[0] = sector;
+		s_projPath[0] = sector;
 		s_projIter = 1;
 		s_projNextPosX = obj->posWS.x + projLogic->delta.x;
 		s_projNextPosY = obj->posWS.y + projLogic->delta.y;
@@ -1227,9 +1226,10 @@ namespace TFE_DarkForces
 				fixed16_16 y1 = projLogic->type == PROJ_THERMAL_DET ? s_projNextPosY - obj->worldHeight : s_projNextPosY;
 				if (obj->posWS.y <= bot && obj->posWS.y >= top && y0 <= bot && y1 >= top)
 				{
-					s_projIter++;
 					s_projSector = wall->nextSector;
 					s_projPath[s_projIter] = s_projSector;
+					s_projIter++;
+					assert(s_projIter <= PROJ_PATH_MAX_SECTORS);
 					wall = collision_pathWallCollision(s_projSector);
 					continue;
 				}
@@ -1363,9 +1363,10 @@ namespace TFE_DarkForces
 				return JTRUE;
 			}
 
-			s_projIter++;
 			s_projSector = wall->nextSector;
 			s_projPath[s_projIter] = s_projSector;
+			s_projIter++;
+			assert(s_projIter <= PROJ_PATH_MAX_SECTORS);
 			wall = collision_pathWallCollision(s_projSector);
 		}
 
@@ -1501,7 +1502,7 @@ namespace TFE_DarkForces
 		while (!hitObj && s_projIter > 0)
 		{
 			s_projIter--;
-			hitObj = collision_getObjectCollision(s_projStartSector[s_projIter], &interval, projLogic->prevColObj);
+			hitObj = collision_getObjectCollision(s_projPath[s_projIter], &interval, projLogic->prevColObj);
 		}
 		if (hitObj)
 		{
