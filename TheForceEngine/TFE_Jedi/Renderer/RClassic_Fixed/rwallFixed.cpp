@@ -949,9 +949,9 @@ namespace RClassic_Fixed
 		u32 nextFlags1 = nextSector->flags1;
 
 		fixed16_16 cProj0, cProj1;
-		if ((flags1 & SEC_FLAGS1_EXTERIOR) || (nextFlags1 & SEC_FLAGS1_EXT_ADJ))  // ceiling
+		if ((flags1 & SEC_FLAGS1_EXTERIOR) && (nextFlags1 & SEC_FLAGS1_EXT_ADJ))  // ceiling
 		{
-			cProj0 = cProj1 = intToFixed16(s_windowMinY_Pixels);
+			cProj0 = cProj1 = s_rcfState.windowMinY;
 		}
 		else
 		{
@@ -971,17 +971,18 @@ namespace RClassic_Fixed
 			for (s32 i = 0; i < length; i++, x++)
 			{
 				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, numerator);
+				s_columnTop[x] = s_windowMaxY_Pixels;
 			}
 
 			srcWall->visible = 0;
-			//srcWall->drawFlags = -1;
+			srcWall->seen = JTRUE;
 			return;
 		}
 
 		fixed16_16 fProj0, fProj1;
 		if ((sector->flags1 & SEC_FLAGS1_PIT) && (nextFlags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))	// floor
 		{
-			fProj0 = fProj1 = intToFixed16(s_windowMaxY_Pixels);
+			fProj0 = fProj1 = s_rcfState.windowMaxY;
 		}
 		else
 		{
@@ -1005,7 +1006,7 @@ namespace RClassic_Fixed
 				s_columnBot[x] = s_windowMinY_Pixels;
 			}
 			srcWall->visible = 0;
-			//srcWall->drawFlags = -1;
+			srcWall->seen = JTRUE;
 			return;
 		}
 
@@ -1018,7 +1019,7 @@ namespace RClassic_Fixed
 		fixed16_16 dydxFloor = 0;
 		if (lengthRaw != 0)
 		{
-			dydxCeil = div16(cProj1 - cProj0, lengthRaw);
+			dydxCeil  = div16(cProj1 - cProj0, lengthRaw);
 			dydxFloor = div16(fProj1 - fProj0, lengthRaw);
 		}
 		fixed16_16 y0 = cProj0;
@@ -1053,7 +1054,7 @@ namespace RClassic_Fixed
 			}
 		}
 
-		//srcWall->drawFlags = -1;
+		srcWall->seen = JTRUE;
 	}
 
 	void wall_drawBottom(RWallSegment* wallSegment)

@@ -48,6 +48,7 @@ namespace TFE_Jedi
 		RWall* wall = sector->walls;
 		for (s32 w = 0; w < sector->wallCount; w++, wall++)
 		{
+			wall->drawFlags = WDF_MIDDLE;
 			if (wall->nextSector)
 			{
 				RSector* wSector = wall->sector;
@@ -58,8 +59,9 @@ namespace TFE_Jedi
 				RSector* mSector = mirror->sector;
 				fixed16_16 mFloorHeight = mSector->floorHeight;
 				fixed16_16 mCeilHeight = mSector->ceilingHeight;
+				assert(mSector == wall->nextSector);
 
-				wall->drawFlags = WDF_MIDDLE;
+				//wall->drawFlags = WDF_MIDDLE;
 				mirror->drawFlags = WDF_MIDDLE;
 
 				if (wCeilHeight < mCeilHeight)
