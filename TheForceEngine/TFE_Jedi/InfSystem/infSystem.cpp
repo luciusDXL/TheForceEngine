@@ -182,7 +182,7 @@ namespace TFE_Jedi
 		stop->messages = 0;
 		stop->adjoinCmds = 0;
 		stop->pageId = 0;
-		stop->floorTex = 0;
+		stop->floorTex = nullptr;
 		stop->ceilTex = 0;
 
 		return stop;
@@ -1507,19 +1507,19 @@ namespace TFE_Jedi
 									inf_stopAdjoinCommands(taskCtx->nextStop);
 
 									// Floor texture change.
-									TextureData* floorTex = taskCtx->nextStop->floorTex;
+									TextureData** floorTex = taskCtx->nextStop->floorTex;
 									if (floorTex)
 									{
 										RSector* sector = taskCtx->elev->sector;
-										sector->floorTex = &floorTex;
+										sector->floorTex = floorTex;
 									}
 
 									// Ceiling texture change.
-									TextureData* ceilTex = taskCtx->nextStop->ceilTex;
+									TextureData** ceilTex = taskCtx->nextStop->ceilTex;
 									if (ceilTex)
 									{
 										RSector* sector = taskCtx->elev->sector;
-										sector->ceilTex = &ceilTex;
+										sector->ceilTex = ceilTex;
 									}
 
 									// Page (special 2D sound effect that plays, such as voice overs).
@@ -2000,11 +2000,11 @@ namespace TFE_Jedi
 					RSector* sector = msgAddr->sector;
 					if (s_infArg1[0] == 'C' || s_infArg1[0] == 'c')
 					{
-						stop->ceilTex = *sector->ceilTex;
+						stop->ceilTex = sector->ceilTex;
 					}
 					else
 					{
-						stop->floorTex = *sector->floorTex;
+						stop->floorTex = sector->floorTex;
 					}
 				}
 			} break;

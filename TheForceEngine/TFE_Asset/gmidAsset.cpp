@@ -427,7 +427,8 @@ namespace TFE_GmidAsset
 
 							if (metaType == META_SEQ_NAME || metaType == META_TEXT_EVENT || metaType == META_MARKER_TEXT)
 							{
-								char text[32];
+								char text[256];
+								assert(metaLength < 256);
 								memcpy(text, eventData, metaLength);
 								text[metaLength] = 0;
 

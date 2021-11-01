@@ -21,7 +21,7 @@ struct MidiTempoEvent
 
 struct MidiMarker
 {
-	char name[32];
+	char name[256];
 };
 
 enum MidiTrackEventType
@@ -74,7 +74,7 @@ struct MidiTrackEvent
 
 struct Track
 {
-	char name[32];
+	char name[256];
 	u16 id;
 	u16 pad16;
 	f32 msPerTick;	// tempo at time 0.

@@ -265,7 +265,7 @@ bool sdlInit()
 
 static AppState s_curState = APP_STATE_UNINIT;
 
-void setAppState(AppState newState)
+void setAppState(AppState newState, int argc, char* argv[])
 {
 	const TFE_Settings_Graphics* config = TFE_Settings::getGraphicsSettings();
 
@@ -307,7 +307,7 @@ void setAppState(AppState newState)
 					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
 					newState = APP_STATE_CANNOT_RUN;
 				}
-				else if (!s_curGame->runGame(0, nullptr))
+				else if (!s_curGame->runGame(argc, (const char**)argv))
 				{
 					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
 					freeGame(s_curGame);
@@ -551,7 +551,7 @@ int main(int argc, char* argv[])
 		}
 		else if (appState != s_curState)
 		{
-			setAppState(appState);
+			setAppState(appState, argc, argv);
 		}
 
 		TFE_Ui::begin();

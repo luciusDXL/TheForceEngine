@@ -152,8 +152,8 @@ namespace TFE_Jedi
 		Allocator* messages;
 		Allocator* adjoinCmds;
 		SoundSourceID pageId;
-		TextureData* floorTex;
-		TextureData* ceilTex;
+		TextureData** floorTex;
+		TextureData** ceilTex;
 	};
 
 	struct InfElevator
