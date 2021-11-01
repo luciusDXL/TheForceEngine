@@ -949,7 +949,7 @@ namespace RClassic_Fixed
 		u32 nextFlags1 = nextSector->flags1;
 
 		fixed16_16 cProj0, cProj1;
-		if ((flags1 & SEC_FLAGS1_EXTERIOR) && (nextFlags1 & SEC_FLAGS1_EXT_ADJ))  // ceiling
+		if ((flags1 & SEC_FLAGS1_EXTERIOR) || (nextFlags1 & SEC_FLAGS1_EXT_ADJ))  // ceiling
 		{
 			cProj0 = cProj1 = intToFixed16(s_windowMinY_Pixels);
 		}
@@ -1069,8 +1069,8 @@ namespace RClassic_Fixed
 		fixed16_16 cProj0, cProj1;
 		if ((sector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 		{
-			cProj1 = intToFixed16(s_windowMinY_Pixels);
-			cProj0 = cProj1;
+			cProj0 = s_rcfState.windowMinY;
+			cProj1 = cProj0;
 		}
 		else
 		{
@@ -2054,7 +2054,7 @@ namespace RClassic_Fixed
 
 		return z;
 	}
-		
+
 	void drawColumn_Fullbright()
 	{
 		fixed16_16 vCoordFixed = s_vCoordFixed;
