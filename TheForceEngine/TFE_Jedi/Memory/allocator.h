@@ -17,6 +17,7 @@ namespace TFE_Jedi
 	void  allocator_deleteItem(Allocator* alloc, void* item);
 
 	// Random access.
+	s32   allocator_getCount(Allocator* alloc);
 	void* allocator_getByIndex(Allocator* alloc, s32 index);
 
 	// Iteration

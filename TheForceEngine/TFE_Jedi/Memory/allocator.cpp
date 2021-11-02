@@ -112,6 +112,18 @@ namespace TFE_Jedi
 	}
 
 	// Random access.
+	s32 allocator_getCount(Allocator* alloc)
+	{
+		s32 count = 0;
+		AllocHeader* header = alloc->head;
+		while (header != ALLOC_INVALID_PTR)
+		{
+			count++;
+			header = header->next;
+		}
+		return count;
+	}
+
 	void* allocator_getByIndex(Allocator* alloc, s32 index)
 	{
 		if (!alloc) { return nullptr; }

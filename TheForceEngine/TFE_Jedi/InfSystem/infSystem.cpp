@@ -398,10 +398,12 @@ namespace TFE_Jedi
 				}
 				Stop* stop0 = allocateStop(elev);
 				stop0->value = maxFloor;
+				stop0->index = 0;
 
 				// Add another stop.
 				Stop* stop1 = allocateStop(elev);
 				stop1->value = minFloor;
+				stop1->index = 1;
 
 				elev->speed = FIXED(8);
 				elev->trigMove = TRIGMOVE_CONT;
@@ -431,9 +433,11 @@ namespace TFE_Jedi
 				Stop* stop0 = allocateStop(elev);
 				stop0->value = sector->floorHeight;
 				stop0->delay = IDELAY_HOLD;
+				stop0->index = 0;
 
 				Stop* stop1 = allocateStop(elev);
 				stop1->value = sector->ceilingHeight;
+				stop1->index = 1;
 
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->sound1 = NULL_SOUND;
@@ -453,7 +457,9 @@ namespace TFE_Jedi
 				Stop* stop1 = allocateStop(elev);
 				stop0->value = sector->ceilingHeight;
 				stop0->delay = IDELAY_HOLD;
+				stop0->index = 0;
 				stop1->value = sector->floorHeight;
+				stop1->index = 1;
 
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = FIXED(15);
@@ -472,9 +478,11 @@ namespace TFE_Jedi
 				Stop* stop0 = allocateStop(elev);
 				stop0->value = middle;
 				stop0->delay = IDELAY_HOLD;
+				stop0->index = 0;
 
 				Stop* stop1 = allocateStop(elev);
 				stop1->value = sector->ceilingHeight;
+				stop1->index = 1;
 				inf_gotoInitialStop(elev, 0);
 
 				elev->trigMove = TRIGMOVE_LAST;
@@ -489,9 +497,11 @@ namespace TFE_Jedi
 				stop0 = allocateStop(elev);
 				stop0->value = middle;
 				stop0->delay = IDELAY_HOLD;
+				stop0->index = 0;
 
 				stop1 = allocateStop(elev);
 				stop1->value = sector->floorHeight;
+				stop1->index = 1;
 
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = FIXED(15);
@@ -540,9 +550,11 @@ namespace TFE_Jedi
 
 				stop0->value = sector->floorHeight;
 				stop0->delay = IDELAY_HOLD;
+				stop0->index = 0;
 
 				stop1->value = sector->ceilingHeight;
 				stop1->delay = IDELAY_TERMINATE;
+				stop1->index = 1;
 
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = 0;
@@ -582,6 +594,11 @@ namespace TFE_Jedi
 		stop->pageId = NULL_SOUND;	// no page sound by default.
 		stop->floorTex = nullptr;
 		stop->ceilTex = nullptr;
+		// This is a slow operation so it is only included if TFE_INCLUDE_STOP_INDEX == 1
+		stop->index = -1;
+		#if TFE_INCLUDE_STOP_INDEX == 1
+			stop->index = allocator_getCount(stops) - 1;
+		#endif
 
 		return stop;
 	}
@@ -2626,7 +2643,7 @@ namespace TFE_Jedi
 				// This will not fire if the elevator is in the HOLD or delay state.
 				// This is because nextStop should already be set in that case, so firing it again
 				// will cause the elevator to skip a stop.
-				if (elev->nextTick <= s_curTick)
+				if (elev->nextTick < s_curTick)
 				{
 					elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
 				}
