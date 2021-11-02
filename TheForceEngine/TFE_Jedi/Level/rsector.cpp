@@ -124,7 +124,7 @@ namespace TFE_Jedi
 					obj->posWS.y += heightOffset;
 					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
-						s_playerYPos += floorOffset;
+						s_playerYPos += heightOffset;
 					}
 				}
 			}
@@ -804,7 +804,7 @@ namespace TFE_Jedi
 				{
 					continue;
 				}
-				if ((obj->entityFlags & ETFLAG_PLAYER) || obj == s_playerObject || obj == s_playerEye)
+				if ((obj->entityFlags & ETFLAG_PLAYER) || obj == s_playerObject || obj == s_playerEye || obj->entityFlags == 0)
 				{
 					continue;
 				}
