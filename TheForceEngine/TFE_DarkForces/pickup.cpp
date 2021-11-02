@@ -132,7 +132,7 @@ namespace TFE_DarkForces
 			return;
 		}
 		// Only the player can pickup an item.
-		if (!(entity->entityFlags & ETFLAG_PLAYER))
+		if (entity && !(entity->entityFlags & ETFLAG_PLAYER))
 		{
 			return;
 		}

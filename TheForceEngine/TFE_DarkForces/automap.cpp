@@ -109,8 +109,8 @@ namespace TFE_DarkForces
 		{
 			case MAP_CENTER_PLAYER:
 			{
-				RSector* sector = s_playerEye->sector;
-				s_mapLayer = sector->layer;
+				RSector* sector = s_playerEye ? s_playerEye->sector : nullptr;
+				if (sector) { s_mapLayer = sector->layer; }
 				s_mapX1 = s_mapX0 = s_eyePos.x;
 				s_mapZ1 = s_mapZ0 = s_eyePos.z;
 			} break;
