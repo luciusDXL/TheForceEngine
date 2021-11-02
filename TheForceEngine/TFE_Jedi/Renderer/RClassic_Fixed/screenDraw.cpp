@@ -231,7 +231,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output)
+	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output, JBool forceTransparency)
 	{
 		s32 x1 = x0 + texture->width - 1;
 		s32 y1 = y0 + texture->height - 1;
@@ -264,7 +264,7 @@ namespace TFE_Jedi
 		if (yPixelCount <= 0) { return; }
 
 		u8* buffer = texture->image + texture->height*srcX + srcY;
-		if (texture->flags & OPACITY_TRANS)
+		if ((texture->flags & OPACITY_TRANS) || forceTransparency)
 		{
 			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
 			{
@@ -280,7 +280,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void blitTextureToScreenLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, const u8* atten, u8* output)
+	void blitTextureToScreenLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, const u8* atten, u8* output, JBool forceTransparency)
 	{
 		s32 x1 = x0 + texture->width - 1;
 		s32 y1 = y0 + texture->height - 1;
@@ -313,7 +313,7 @@ namespace TFE_Jedi
 		if (yPixelCount <= 0) { return; }
 
 		u8* buffer = texture->image + texture->height*srcX + srcY;
-		if (texture->flags & OPACITY_TRANS)
+		if ((texture->flags & OPACITY_TRANS) || forceTransparency)
 		{
 			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
 			{

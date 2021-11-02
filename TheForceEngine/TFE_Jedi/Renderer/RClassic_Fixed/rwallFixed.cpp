@@ -1316,6 +1316,7 @@ namespace RClassic_Fixed
 			for (s32 i = 0, x = x0; i < lengthInPixels; i++, x++)
 			{
 				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
+				s_columnTop[x] = s_windowMaxY_Pixels;
 			}
 			srcWall->seen = JTRUE;
 			return;
@@ -1342,6 +1343,7 @@ namespace RClassic_Fixed
 			for (s32 i = 0, x = x0; i < lengthInPixels; i++, x++)
 			{
 				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
+				s_columnBot[x] = s_windowMinY_Pixels;
 			}
 			srcWall->seen = JTRUE;
 			return;
@@ -1523,6 +1525,7 @@ namespace RClassic_Fixed
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
 				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
+				s_columnTop[x] = s_windowMaxY_Pixels;
 			}
 			srcWall->seen = JTRUE;
 			return;
@@ -1546,6 +1549,7 @@ namespace RClassic_Fixed
 			for (s32 i = 0, x = x0; i < length; i++, x++)
 			{
 				s_rcfState.depth1d[x] = solveForZ(wallSegment, x, num);
+				s_columnBot[x] = s_windowMinY_Pixels;
 			}
 			srcWall->seen = JTRUE;
 			return;

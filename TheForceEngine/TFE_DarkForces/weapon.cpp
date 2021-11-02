@@ -1150,11 +1150,11 @@ namespace TFE_DarkForces
 			
 			if (atten && !s_weaponLight)
 			{
-				blitTextureToScreenLit(tex, rect, x, y, atten, display);
+				blitTextureToScreenLit(tex, rect, x, y, atten, display, JTRUE);
 			}
 			else
 			{
-				blitTextureToScreen(tex, rect, x, y, display);
+				blitTextureToScreen(tex, rect, x, y, display, JTRUE);
 			}
 		}
 

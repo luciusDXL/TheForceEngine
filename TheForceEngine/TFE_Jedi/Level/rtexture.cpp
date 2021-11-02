@@ -156,7 +156,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			texture->dataSize = texture->width * texture->height;
+			texture->dataSize = texture->width * max(1, texture->height);
 			// Datasize, ignored.
 			data += 4;
 			texture->columns = nullptr;
