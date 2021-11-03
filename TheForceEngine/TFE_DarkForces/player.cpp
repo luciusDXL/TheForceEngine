@@ -1289,6 +1289,13 @@ namespace TFE_DarkForces
 		{
 			s_playerSecFire = JTRUE;
 		}
+
+		// Reduce the players ability to adjust the velocity while they have vertical velocity.
+		if (s_playerUpVel)
+		{
+			s_forwardSpd >>= 8;
+			s_strafeSpd  >>= 8;
+		}
 	}
 
 	fixed16_16 adjustForwardSpeed(fixed16_16 spd)
