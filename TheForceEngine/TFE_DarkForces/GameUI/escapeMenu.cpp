@@ -54,12 +54,12 @@ namespace TFE_DarkForces
 	void escMenu_handleMousePosition();
 	EscapeMenuAction escapeMenu_updateUI();
 
-	extern void pauseLevelMusic();
-	extern void resumeLevelMusic();
+	extern void pauseLevelSound();
+	extern void resumeLevelSound();
 
 	void escapeMenu_open(u8* framebuffer, u8* palette)
 	{
-		pauseLevelMusic();
+		pauseLevelSound();
 		s_escMenuOpen = JTRUE;
 		if (!s_escMenuFrames)
 		{
@@ -103,7 +103,7 @@ namespace TFE_DarkForces
 		EscapeMenuAction action = escapeMenu_updateUI();
 		if (action != ESC_CONTINUE)
 		{
-			resumeLevelMusic();
+			resumeLevelSound();
 		}
 		
 		// Draw the screen capture.

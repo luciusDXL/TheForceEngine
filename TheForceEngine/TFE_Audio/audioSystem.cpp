@@ -91,6 +91,7 @@ namespace TFE_Audio
 	// TODO: This will need to be buffered to avoid locks.
 	static SoundSource s_sources[MAX_SOUND_SOURCES];
 	static Mutex s_mutex;
+	static bool s_paused = false;
 
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData);
 	void setSoundVolumeConsole(const ConsoleArgList& args);
@@ -151,6 +152,16 @@ namespace TFE_Audio
 	f32 getVolume()
 	{
 		return s_soundFxVolume;
+	}
+
+	void pause()
+	{
+		s_paused = true;
+	}
+
+	void resume()
+	{
+		s_paused = false;
 	}
 
 	// Issue - too many locks, wasted time looping over inactive sources.
@@ -463,7 +474,7 @@ namespace TFE_Audio
 			f32 valueRight = 0.0f;
 			
 			SoundSource* snd = s_sources;
-			for (u32 s = 0; s < s_sourceCount; s++, snd++)
+			for (u32 s = 0; s < s_sourceCount && !s_paused; s++, snd++)
 			{
 				if (!(snd->flags&SND_FLAG_PLAYING)) { continue; }
 				assert(snd->buffer->data);

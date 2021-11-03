@@ -16,6 +16,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Audio/midiPlayer.h>
+#include <TFE_Audio/audioSystem.h>
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Jedi/Level/rfont.h>
@@ -130,8 +131,8 @@ namespace TFE_DarkForces
 	void cutscenes_startup(s32 id);
 	void startNextMode();
 	void disableLevelMusic();
-	void pauseLevelMusic();
-	void resumeLevelMusic();
+	void pauseLevelSound();
+	void resumeLevelSound();
 	void startLevelMusic(s32 levelIndex);
 
 	/////////////////////////////////////////////
@@ -336,14 +337,16 @@ namespace TFE_DarkForces
 		TFE_MidiPlayer::stop();
 	}
 
-	void pauseLevelMusic()
+	void pauseLevelSound()
 	{
 		TFE_MidiPlayer::pause();
+		TFE_Audio::pause();
 	}
 
-	void resumeLevelMusic()
+	void resumeLevelSound()
 	{
 		TFE_MidiPlayer::resume();
+		TFE_Audio::resume();
 	}
 
 	void startLevelMusic(s32 levelIndex)
