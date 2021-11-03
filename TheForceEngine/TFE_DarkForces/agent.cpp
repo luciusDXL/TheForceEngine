@@ -174,7 +174,7 @@ namespace TFE_DarkForces
 			return;
 		}
 
-		for (s32 i = 0; i < 14; i++)	// i = [ebp-0x08]
+		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
 			LevelSaveData saveData;
 			agent_readConfigData(&file, i, &saveData);
@@ -316,6 +316,27 @@ namespace TFE_DarkForces
 		u8* inv = &levelData.inv[(levelIndex - 1) * 32];
 		player_readInfo(inv, ammo);
 	}
+
+	// Creates a new Dark Pilot config file, which is used for saving.
+	JBool createDarkPilotConfig(const char* path)
+	{
+		FileStream darkPilot;
+		if (!darkPilot.open(path, FileStream::MODE_WRITE))
+		{
+			return JFALSE;
+		}
+
+		u8 header[] = { 'P', 'C', 'F', 0x12, 0x0e };
+		LevelSaveData clearData = { 0 };
+		darkPilot.write(header, 5);
+		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
+		{
+			darkPilot.writeBuffer(&clearData, sizeof(LevelSaveData));
+		}
+				
+		darkPilot.close();
+		return JTRUE;
+	}
 		
 	// This function differs slightly from Dark Forces in the following ways:
 	// 1. First it tries to open the CFG file from PATH_PROGRAM_DATA/DarkPilot.cfg
@@ -338,6 +359,11 @@ namespace TFE_DarkForces
 			if (FileUtil::exists(sourcePath))
 			{
 				FileUtil::copyFile(sourcePath, programDataPath);
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
+				createDarkPilotConfig(programDataPath);
 			}
 		}
 		// Then try opening the file.
