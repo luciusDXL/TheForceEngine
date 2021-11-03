@@ -19,12 +19,10 @@
 // TODO: This will make adding Outlaws harder, fix the abstraction.
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/time.h>
-//#include <TFE_Game/gameConstants.h>
 #include "infTypesInternal.h"
 // Include update functions
 #include "infElevatorUpdateFunc.h"
 
-//using namespace TFE_GameConstants;
 using namespace TFE_Jedi;
 using namespace TFE_DarkForces;
 
@@ -1860,6 +1858,9 @@ namespace TFE_Jedi
 			case KW_WAKEUP:
 				*type = MSG_WAKEUP;
 				break;
+			case KW_M_TRIGGER:
+				*type = MSG_TRIGGER;
+				break;
 			default:
 				*type = defType;
 		}
@@ -2164,7 +2165,7 @@ namespace TFE_Jedi
 
 				s32 index = strToInt(s_infArg0);
 				Stop* stop = inf_getStopByIndex(elev, index);
-				stop->pageId = soundSourceId;
+				if (stop) { stop->pageId = soundSourceId; }
 			} break;
 			case KW_SEQEND:
 			{
@@ -2630,7 +2631,7 @@ namespace TFE_Jedi
 				return;
 			}
 		}
-
+				
 		// Other messages.
 		switch (msgType)
 		{
