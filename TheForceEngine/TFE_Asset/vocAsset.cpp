@@ -167,6 +167,11 @@ namespace TFE_VocAsset
 	// Dark Forces requires the 8 bit codec to be used.
 	void addSoundData(SoundBuffer* voc, s32 sampleRate, u8 codec, const u8* soundData, u32 size)
 	{
+		// Some mods have sounds with codec == 13 which is invalid, reset to 8 bits in that case.
+		if (codec == 13)
+		{
+			codec = CODEC_8BITS;
+		}
 		assert(codec == CODEC_8BITS);
 		voc->sampleRate = sampleRate;
 		// For some reason Dark Forces VOCs specify 10989Hz sample rate but are played back by the engine at 11025Hz

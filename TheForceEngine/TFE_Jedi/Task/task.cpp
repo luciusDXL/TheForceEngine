@@ -436,6 +436,13 @@ namespace TFE_Jedi
 
 	void itask_yield(Tick delay, s32 ip)
 	{
+		// This is caused by a bug in a mod.
+		// TODO: Figure out the root cause.
+		if (s_curContext != &s_curTask->context)
+		{
+			s_curContext = &s_curTask->context;
+		}
+
 		// Copy the ip so we know where to return.
 		assert(s_curContext->level >= 0 && s_curContext->level < TASK_MAX_LEVELS);
 		s_curContext->ip[s_curContext->level] = ip;

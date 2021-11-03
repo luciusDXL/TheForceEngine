@@ -179,15 +179,16 @@ namespace TFE_Jedi
 		
 		// Another value that is ignored.
 		line = parser.readLine(bufferPos);
+		JBool readNextLine = JTRUE;
 		if (sscanf(line, "MUSIC %s", s_readBuffer) != 1)
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read music name.");
-			return false;
+			TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Cannot read music name.");
+			readNextLine = JFALSE;
 		}
 
 		// Sky Parallax.
 		f32 parallax0, parallax1;
-		line = parser.readLine(bufferPos);
+		if (readNextLine) { line = parser.readLine(bufferPos); }
 		if (sscanf(line, "PARALLAX %f %f", &parallax0, &parallax1) != 2)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read parallax values.");
@@ -214,7 +215,7 @@ namespace TFE_Jedi
 			if (sscanf(line, " TEXTURE: %s", textureName) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
-				return false;
+				textureName[0] = 0;
 			}
 
 			// If <NoTexture> is found, do not try to load - this will cause the default texture to be used.

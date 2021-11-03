@@ -319,7 +319,7 @@ namespace TFE_DarkForces
 
 	void freeItems()
 	{
-		for (s32 i = 0; i < s_listToFreeCnt; i++)
+		for (s32 i = s_listToFreeCnt - 1; i >= 0; i--)
 		{
 			pickup_cleanupFunc((Logic*)s_listToFree[i]);
 		}

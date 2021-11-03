@@ -710,5 +710,11 @@ s32 robj3d_clipPolygon(vec3_fixed* pos, s32 count)
 			memcpy(uv, s_clipUvOut, outVertexCount * sizeof(vec2_fixed));
 		#endif
 	}
+	// There is a corner case where 0 z is produced which causes crashes on Windows.
+	// (It is kind of weird that it doesn't affect DOS...)
+	for (s32 i = 0; i < outVertexCount; i++)
+	{
+		pos[i].z = max(pos[i].z, ONE_16);
+	}
 	return outVertexCount;
 }
