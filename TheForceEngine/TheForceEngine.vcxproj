@@ -458,6 +458,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\rscanline.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rsectorRender.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rwallRender.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\rwallSegment.h" />
     <ClInclude Include="TFE_Jedi\Sound\soundSystem.h" />
     <ClInclude Include="TFE_Jedi\Task\task.h" />
     <ClInclude Include="TFE_Jedi\Task\taskMacros.h" />

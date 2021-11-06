@@ -8,6 +8,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/redgePair.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
+#include <TFE_Jedi/Renderer/rwallSegment.h>
 
 namespace TFE_Jedi
 {
@@ -58,6 +59,10 @@ namespace TFE_Jedi
 		EdgePairFixed  flatEdgeList[MAX_SEG];
 		EdgePairFixed* adjoinEdge;
 		EdgePairFixed  adjoinEdgeList[MAX_ADJOIN_SEG * MAX_ADJOIN_DEPTH];
+
+		RWallSegment   wallSegListDst[MAX_SEG];
+		RWallSegment   wallSegListSrc[MAX_SEG];
+		RWallSegment** adjoinSegment;
 	};
 	extern RClassicFloatState s_rcfltState;
 }  // TFE_Jedi

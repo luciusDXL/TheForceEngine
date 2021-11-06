@@ -19,10 +19,6 @@ using namespace TFE_Jedi::RClassic_Float;
 
 namespace TFE_Jedi
 {
-	RClassic_Float::RWallSegment s_wallSegListDst[MAX_SEG];
-	RClassic_Float::RWallSegment s_wallSegListSrc[MAX_SEG];
-	RClassic_Float::RWallSegment** s_adjoinSegment;
-
 	namespace
 	{
 		s32 wallSortX(const void* r0, const void* r1)
@@ -255,7 +251,7 @@ namespace TFE_Jedi
 			TFE_ZONE_END(wallProcess);
 		}
 
-		RWallSegment* wallSegment = &s_wallSegListDst[s_curWallSeg];
+		RWallSegment* wallSegment = &s_rcfltState.wallSegListDst[s_curWallSeg];
 		s32 drawSegCnt = wall_mergeSort(wallSegment, MAX_SEG - s_curWallSeg, startWall, drawWallCount);
 		s_curWallSeg += drawSegCnt;
 
@@ -272,7 +268,7 @@ namespace TFE_Jedi
 		RWallSegment* adjoinList[MAX_ADJOIN_DEPTH];
 
 		s_rcfltState.adjoinEdge = adjoinEdges;
-		s_adjoinSegment = adjoinList;
+		s_rcfltState.adjoinSegment = adjoinList;
 
 		// Draw each wall segment in the sector.
 		TFE_ZONE_BEGIN(secDrawWalls, "Draw Walls");

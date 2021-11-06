@@ -28,8 +28,4 @@ namespace TFE_Jedi
 		void adjoin_computeWindowBounds(EdgePairFixed* adjoinEdges);
 		void adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePairFixed* adjoinEdges, s32 adjoinCount);
 	};
-
-	extern RClassic_Float::RWallSegment s_wallSegListDst[MAX_SEG];
-	extern RClassic_Float::RWallSegment s_wallSegListSrc[MAX_SEG];
-	extern RClassic_Float::RWallSegment** s_adjoinSegment;
 }  // TFE_Jedi

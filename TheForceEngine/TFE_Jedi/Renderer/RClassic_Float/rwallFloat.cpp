@@ -339,7 +339,7 @@ namespace RClassic_Float
 			return;
 		}
 	
-		RWallSegment* wallSeg = &s_wallSegListSrc[s_nextWall];
+		RWallSegment* wallSeg = &s_rcfltState.wallSegListSrc[s_nextWall];
 		s_nextWall++;
 
 		if (x0pixel < s_minScreenX_Pixels)
@@ -399,7 +399,7 @@ namespace RClassic_Float
 		s32 splitWallCount = 0;
 		s32 splitWallIndex = -count;
 
-		RWallSegment* srcSeg = &s_wallSegListSrc[start];
+		RWallSegment* srcSeg = &s_rcfltState.wallSegListSrc[start];
 		RWallSegment* curSegOut = segOutList;
 
 		RWallSegment  tempSeg;
@@ -2152,8 +2152,8 @@ namespace RClassic_Float
 			s_rcfltState.adjoinEdge++;
 			s_adjoinSegCount++;
 
-			*s_adjoinSegment = wallSegment;
-			s_adjoinSegment++;
+			*s_rcfltState.adjoinSegment = wallSegment;
+			s_rcfltState.adjoinSegment++;
 		}
 	}
 

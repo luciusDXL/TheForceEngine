@@ -8,8 +8,8 @@
 #include "RClassic_Fixed/rclassicFixed.h"
 #include "RClassic_Fixed/rsectorFixed.h"
 
-//#include "RClassic_Float/rclassicFloat.h"
-//#include "RClassic_Float/rsectorFloat.h"
+#include "RClassic_Float/rclassicFloat.h"
+#include "RClassic_Float/rsectorFloat.h"
 
 #include <TFE_System/profiler.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
