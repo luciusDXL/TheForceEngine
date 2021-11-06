@@ -36,8 +36,8 @@ namespace RClassic_Float
 	static u8  s_workBuffer[1024];
 
 	s32 segmentCrossesLine(fixed16_16 ax0, fixed16_16 ay0, fixed16_16 ax1, fixed16_16 ay1, fixed16_16 bx0, fixed16_16 by0, fixed16_16 bx1, fixed16_16 by1);
-	fixed16_16 solveForZ_Numerator(RWallSegment* wallSegment);
-	fixed16_16 solveForZ(RWallSegment* wallSegment, s32 x, fixed16_16 numerator, fixed16_16* outViewDx=nullptr);
+	fixed16_16 solveForZ_Numerator(RWallSegmentFloat* wallSegment);
+	fixed16_16 solveForZ(RWallSegmentFloat* wallSegment, s32 x, fixed16_16 numerator, fixed16_16* outViewDx=nullptr);
 	void drawColumn_Fullbright();
 	void drawColumn_Lit();
 	void drawColumn_Fullbright_Trans();
@@ -339,7 +339,7 @@ namespace RClassic_Float
 			return;
 		}
 	
-		RWallSegment* wallSeg = &s_rcfltState.wallSegListSrc[s_nextWall];
+		RWallSegmentFloat* wallSeg = &s_rcfltState.wallSegListSrc[s_nextWall];
 		s_nextWall++;
 
 		if (x0pixel < s_minScreenX_Pixels)
@@ -387,7 +387,7 @@ namespace RClassic_Float
 		wall->visible = 1;
 	}
 
-	s32 wall_mergeSort(RWallSegment* segOutList, s32 availSpace, s32 start, s32 count)
+	s32 wall_mergeSort(RWallSegmentFloat* segOutList, s32 availSpace, s32 start, s32 count)
 	{
 		TFE_ZONE("Wall Merge/Sort");
 
@@ -399,12 +399,12 @@ namespace RClassic_Float
 		s32 splitWallCount = 0;
 		s32 splitWallIndex = -count;
 
-		RWallSegment* srcSeg = &s_rcfltState.wallSegListSrc[start];
-		RWallSegment* curSegOut = segOutList;
+		RWallSegmentFloat* srcSeg = &s_rcfltState.wallSegListSrc[start];
+		RWallSegmentFloat* curSegOut = segOutList;
 
-		RWallSegment  tempSeg;
-		RWallSegment* newSeg = &tempSeg;
-		RWallSegment  splitWalls[MAX_SPLIT_WALLS];
+		RWallSegmentFloat  tempSeg;
+		RWallSegmentFloat* newSeg = &tempSeg;
+		RWallSegmentFloat  splitWalls[MAX_SPLIT_WALLS];
 				
 		while (1)
 		{
@@ -421,7 +421,7 @@ namespace RClassic_Float
 				if (newSeg->wallX1 > s_windowMaxX_Pixels) { newSeg->wallX1 = s_windowMaxX_Pixels; }
 
 				// Check 'newSeg' versus all of the segments already added for this sector.
-				RWallSegment* sortedSeg = segOutList;
+				RWallSegmentFloat* sortedSeg = segOutList;
 				s32 segHidden = 0;
 				for (s32 n = 0; n < outIndex && segHidden == 0; n++, sortedSeg++)
 				{
@@ -477,11 +477,11 @@ namespace RClassic_Float
 						if (side == FRONT)
 						{
 							s32 copyCount = outIndex - 1 - n;
-							RWallSegment* outCur = sortedSeg;
-							RWallSegment* outNext = sortedSeg + 1;
+							RWallSegmentFloat* outCur = sortedSeg;
+							RWallSegmentFloat* outNext = sortedSeg + 1;
 
 							// We are deleting outCur since it is completely hidden by moving all segments from outNext onwards to outCur.
-							memmove(outCur, outNext, copyCount * sizeof(RWallSegment));
+							memmove(outCur, outNext, copyCount * sizeof(RWallSegmentFloat));
 
 							// We are deleting outCur since it is completely hidden by 'newSeg'
 							// Back up 1 step in the loop, so that outNext is processed (it will hold the same location as outCur before deletion).
@@ -507,7 +507,7 @@ namespace RClassic_Float
 								}
 								else
 								{
-									RWallSegment* splitWall = &splitWalls[splitWallCount];
+									RWallSegmentFloat* splitWall = &splitWalls[splitWallCount];
 									*splitWall = *newSeg;
 									splitWall->wallX0 = sortedSeg->wallX1 + 1;
 									splitWallCount++;
@@ -579,7 +579,7 @@ namespace RClassic_Float
 								{
 									// Split sortedSeg into 2 and insert newSeg in between.
 									// { sortedSeg | newSeg | splitWall (from sortedSeg) }
-									RWallSegment* splitWall = &splitWalls[splitWallCount];
+									RWallSegmentFloat* splitWall = &splitWalls[splitWallCount];
 									splitWallCount++;
 
 									*splitWall = *sortedSeg;
@@ -710,7 +710,7 @@ namespace RClassic_Float
 		return signTex;
 	}
 
-	void wall_drawSolid(RWallSegment* wallSegment)
+	void wall_drawSolid(RWallSegmentFloat* wallSegment)
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
@@ -872,7 +872,7 @@ namespace RClassic_Float
 		srcWall->seen = JTRUE;
 	}
 
-	void wall_drawTransparent(RWallSegment* wallSegment, EdgePairFixed* edge)
+	void wall_drawTransparent(RWallSegmentFloat* wallSegment, EdgePairFixed* edge)
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
@@ -937,7 +937,7 @@ namespace RClassic_Float
 		}
 	}
 
-	void wall_drawMask(RWallSegment* wallSegment)
+	void wall_drawMask(RWallSegmentFloat* wallSegment)
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
@@ -1057,7 +1057,7 @@ namespace RClassic_Float
 		srcWall->seen = JTRUE;
 	}
 
-	void wall_drawBottom(RWallSegment* wallSegment)
+	void wall_drawBottom(RWallSegmentFloat* wallSegment)
 	{
 		RWall* wall = wallSegment->srcWall;
 		RSector* sector = wall->sector;
@@ -1285,7 +1285,7 @@ namespace RClassic_Float
 		wall->seen = JTRUE;
 	}
 
-	void wall_drawTop(RWallSegment* wallSegment)
+	void wall_drawTop(RWallSegmentFloat* wallSegment)
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
@@ -1495,7 +1495,7 @@ namespace RClassic_Float
 		srcWall->seen = JTRUE;
 	}
 
-	void wall_drawTopAndBottom(RWallSegment* wallSegment)
+	void wall_drawTopAndBottom(RWallSegmentFloat* wallSegment)
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
@@ -2009,7 +2009,7 @@ namespace RClassic_Float
 	}
 		
 	// When solving for Z, part of the computation can be done once per wall.
-	fixed16_16 solveForZ_Numerator(RWallSegment* wallSegment)
+	fixed16_16 solveForZ_Numerator(RWallSegmentFloat* wallSegment)
 	{
 		const fixed16_16 z0 = wallSegment->z0;
 
@@ -2027,7 +2027,7 @@ namespace RClassic_Float
 	}
 	
 	// Solve for perspective correct Z at the current x pixel coordinate.
-	fixed16_16 solveForZ(RWallSegment* wallSegment, s32 x, fixed16_16 numerator, fixed16_16* outViewDx/*=nullptr*/)
+	fixed16_16 solveForZ(RWallSegmentFloat* wallSegment, s32 x, fixed16_16 numerator, fixed16_16* outViewDx/*=nullptr*/)
 	{
 		fixed16_16 z;	// perspective correct z coordinate at the current x pixel coordinate.
 		if (wallSegment->orient == WORIENT_DZ_DX)
@@ -2132,7 +2132,7 @@ namespace RClassic_Float
 		}
 	}
 
-	void wall_addAdjoinSegment(s32 length, s32 x0, fixed16_16 top_dydx, fixed16_16 y1, fixed16_16 bot_dydx, fixed16_16 y0, RWallSegment* wallSegment)
+	void wall_addAdjoinSegment(s32 length, s32 x0, fixed16_16 top_dydx, fixed16_16 y1, fixed16_16 bot_dydx, fixed16_16 y0, RWallSegmentFloat* wallSegment)
 	{
 		if (s_adjoinSegCount < MAX_ADJOIN_SEG)
 		{

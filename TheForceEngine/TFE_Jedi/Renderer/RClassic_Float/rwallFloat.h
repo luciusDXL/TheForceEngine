@@ -20,21 +20,21 @@ namespace TFE_Jedi
 	namespace RClassic_Float
 	{
 		void wall_process(RWall* wall);
-		s32  wall_mergeSort(RWallSegment* segOutList, s32 availSpace, s32 start, s32 count);
+		s32  wall_mergeSort(RWallSegmentFloat* segOutList, s32 availSpace, s32 start, s32 count);
 
-		void wall_drawSolid(RWallSegment* wallSegment);
-		void wall_drawTransparent(RWallSegment* wallSegment, EdgePairFixed* edge);
-		void wall_drawMask(RWallSegment* wallSegment);
-		void wall_drawBottom(RWallSegment* wallSegment);
-		void wall_drawTop(RWallSegment* wallSegment);
-		void wall_drawTopAndBottom(RWallSegment* wallSegment);
+		void wall_drawSolid(RWallSegmentFloat* wallSegment);
+		void wall_drawTransparent(RWallSegmentFloat* wallSegment, EdgePairFixed* edge);
+		void wall_drawMask(RWallSegmentFloat* wallSegment);
+		void wall_drawBottom(RWallSegmentFloat* wallSegment);
+		void wall_drawTop(RWallSegmentFloat* wallSegment);
+		void wall_drawTopAndBottom(RWallSegmentFloat* wallSegment);
 
 		void wall_drawSkyTop(RSector* sector);
 		void wall_drawSkyTopNoWall(RSector* sector);
 		void wall_drawSkyBottom(RSector* sector);
 		void wall_drawSkyBottomNoWall(RSector* sector);
 
-		void wall_addAdjoinSegment(s32 length, s32 x0, fixed16_16 top_dydx, fixed16_16 y1, fixed16_16 bot_dydx, fixed16_16 y0, RWallSegment* wallSegment);
+		void wall_addAdjoinSegment(s32 length, s32 x0, fixed16_16 top_dydx, fixed16_16 y1, fixed16_16 bot_dydx, fixed16_16 y0, RWallSegmentFloat* wallSegment);
 
 		void wall_setupAdjoinDrawFlags(RWall* wall);
 		void wall_computeTexelHeights(RWall* wall);

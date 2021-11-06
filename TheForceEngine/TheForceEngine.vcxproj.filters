@@ -755,7 +755,7 @@
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Float\robj3d_float</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Jedi\Renderer\rwallSegment.h">
-      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

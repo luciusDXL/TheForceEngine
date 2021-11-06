@@ -60,9 +60,9 @@ namespace TFE_Jedi
 		EdgePairFixed* adjoinEdge;
 		EdgePairFixed  adjoinEdgeList[MAX_ADJOIN_SEG * MAX_ADJOIN_DEPTH];
 
-		RWallSegment   wallSegListDst[MAX_SEG];
-		RWallSegment   wallSegListSrc[MAX_SEG];
-		RWallSegment** adjoinSegment;
+		RWallSegmentFloat   wallSegListDst[MAX_SEG];
+		RWallSegmentFloat   wallSegListSrc[MAX_SEG];
+		RWallSegmentFloat** adjoinSegment;
 	};
 	extern RClassicFloatState s_rcfltState;
 }  // TFE_Jedi

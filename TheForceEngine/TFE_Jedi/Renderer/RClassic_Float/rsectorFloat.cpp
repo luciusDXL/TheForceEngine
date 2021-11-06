@@ -23,7 +23,7 @@ namespace TFE_Jedi
 	{
 		s32 wallSortX(const void* r0, const void* r1)
 		{
-			return ((const RWallSegment*)r0)->wallX0 - ((const RWallSegment*)r1)->wallX0;
+			return ((const RWallSegmentFloat*)r0)->wallX0 - ((const RWallSegmentFloat*)r1)->wallX0;
 		}
 
 		s32 sortObjectsFixed(const void* r0, const void* r1)
@@ -251,12 +251,12 @@ namespace TFE_Jedi
 			TFE_ZONE_END(wallProcess);
 		}
 
-		RWallSegment* wallSegment = &s_rcfltState.wallSegListDst[s_curWallSeg];
+		RWallSegmentFloat* wallSegment = &s_rcfltState.wallSegListDst[s_curWallSeg];
 		s32 drawSegCnt = wall_mergeSort(wallSegment, MAX_SEG - s_curWallSeg, startWall, drawWallCount);
 		s_curWallSeg += drawSegCnt;
 
 		TFE_ZONE_BEGIN(wallQSort, "Wall QSort");
-			qsort(wallSegment, drawSegCnt, sizeof(RWallSegment), wallSortX);
+			qsort(wallSegment, drawSegCnt, sizeof(RWallSegmentFloat), wallSortX);
 		TFE_ZONE_END(wallQSort);
 
 		s32 flatCount = s_flatCount;
@@ -265,7 +265,7 @@ namespace TFE_Jedi
 
 		s32 adjoinStart = s_adjoinSegCount;
 		EdgePairFixed* adjoinEdges = &s_rcfltState.adjoinEdgeList[adjoinStart];
-		RWallSegment* adjoinList[MAX_ADJOIN_DEPTH];
+		RWallSegmentFloat* adjoinList[MAX_ADJOIN_DEPTH];
 
 		s_rcfltState.adjoinEdge = adjoinEdges;
 		s_rcfltState.adjoinSegment = adjoinList;
@@ -384,9 +384,9 @@ namespace TFE_Jedi
 		if (adjoinCount && s_adjoinDepth < MAX_ADJOIN_DEPTH)
 		{
 			adjoin_setupAdjoinWindow(winBot, winBotNext, winTop, winTopNext, adjoinEdges, adjoinCount);
-			RWallSegment** seg = adjoinList;
-			RWallSegment* prevAdjoinSeg = nullptr;
-			RWallSegment* curAdjoinSeg  = nullptr;
+			RWallSegmentFloat** seg = adjoinList;
+			RWallSegmentFloat* prevAdjoinSeg = nullptr;
+			RWallSegmentFloat* curAdjoinSeg  = nullptr;
 
 			s32 adjoinEnd = adjoinCount - 1;
 			for (s32 i = 0; i < adjoinCount; i++, seg++, adjoinEdges++)
@@ -395,7 +395,7 @@ namespace TFE_Jedi
 				curAdjoinSeg = *seg;
 
 				RWall* srcWall = curAdjoinSeg->srcWall;
-				RWallSegment* nextAdjoin = (i < adjoinEnd) ? *(seg + 1) : nullptr;
+				RWallSegmentFloat* nextAdjoin = (i < adjoinEnd) ? *(seg + 1) : nullptr;
 				RSector* nextSector = srcWall->nextSector;
 				if (s_adjoinDepth < MAX_ADJOIN_DEPTH && s_adjoinDepth < s_maxDepthCount)
 				{
