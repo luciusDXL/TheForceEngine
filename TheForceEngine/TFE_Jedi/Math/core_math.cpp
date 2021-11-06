@@ -199,9 +199,9 @@ namespace TFE_Jedi
 		f32 sinYaw, cosYaw;
 		f32 sinPch, cosPch;
 		f32 sinRol, cosRol;
-		sinCosFlt(yaw, sinYaw, cosYaw);
-		sinCosFlt(pitch, sinPch, cosPch);
-		sinCosFlt(roll, sinRol, cosRol);
+		sinCosFlt(yaw, &sinYaw, &cosYaw);
+		sinCosFlt(pitch, &sinPch, &cosPch);
+		sinCosFlt(roll, &sinRol, &cosRol);
 
 		transform[0] = cosYaw * cosRol;
 		transform[1] = cosPch * sinRol + sinPch * sinYaw*cosPch;
@@ -234,5 +234,12 @@ namespace TFE_Jedi
 			vOut->y = 0;
 			vOut->z = 0;
 		}
+	}
+
+	void rotateVectorM3x3(vec3_float* inVec, vec3_float* outVec, f32* mtx)
+	{
+		outVec->x = inVec->x*mtx[0] + inVec->y*mtx[3] + inVec->z*mtx[6];
+		outVec->y = inVec->x*mtx[1] + inVec->y*mtx[4] + inVec->z*mtx[7];
+		outVec->z = inVec->x*mtx[2] + inVec->y*mtx[5] + inVec->z*mtx[8];
 	}
 }

@@ -79,7 +79,7 @@ namespace TFE_Jedi
 
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
 	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx);
-
+	
 	inline void sinCosFixed(angle14_32 angle, fixed16_16* sinValue, fixed16_16* cosValue)
 	{
 		angle &= ANGLE_MASK;
@@ -241,12 +241,13 @@ namespace TFE_Jedi
 	}
 
 	void normalizeVec3(vec3_float* vIn, vec3_float* vOut);
+	void rotateVectorM3x3(vec3_float* inVec, vec3_float* outVec, f32* mtx);
 
-	inline void sinCosFlt(f32 angle, f32& sinValue, f32& cosValue)
+	inline void sinCosFlt(f32 angle, f32* sinValue, f32* cosValue)
 	{
 		const f32 scale = -PI / 180.0f;
-		sinValue = sinf(scale * angle);
-		cosValue = cosf(scale * angle);
+		*sinValue = sinf(scale * angle);
+		*cosValue = cosf(scale * angle);
 	}
 
 	void computeTransformFromAngles_Float(f32 yaw, f32 pitch, f32 roll, f32* transform);

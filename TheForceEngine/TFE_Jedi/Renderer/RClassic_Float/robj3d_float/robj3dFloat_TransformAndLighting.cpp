@@ -116,17 +116,17 @@ namespace RClassic_Float
 		
 	void robj3d_transformAndLight(SecObject* obj, JediModel* model)
 	{
-		vec3_fixed offsetWS;
+		vec3_float offsetWS;
 		offsetWS.x = obj->posWS.x - s_rcfltState.cameraPos.x;
 		offsetWS.y = obj->posWS.y - s_rcfltState.eyeHeight;
 		offsetWS.z = obj->posWS.z - s_rcfltState.cameraPos.z;
 
 		// Calculate the view space object camera offset.
-		vec3_fixed offsetVS;
+		vec3_float offsetVS;
 		rotateVectorM3x3(&offsetWS, &offsetVS, s_rcfltState.cameraMtx);
 
 		// Concatenate the camera and object rotation matrices.
-		fixed16_16 xform[9];
+		f32 xform[9];
 		mulMatrix3x3(s_rcfltState.cameraMtx, obj->transform, xform);
 
 		// Transform model vertices into view space.

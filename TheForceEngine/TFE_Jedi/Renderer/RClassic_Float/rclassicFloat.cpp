@@ -68,7 +68,7 @@ namespace RClassic_Float
 
 		s_xOffset = -camX;
 		s_zOffset = -camZ;
-		sinCosFixed(-yaw, &s_rcfltState.sinYaw, &s_rcfltState.cosYaw);
+		sinCosFlt(-yaw, &s_rcfltState.sinYaw, &s_rcfltState.cosYaw);
 
 		s_rcfltState.negSinYaw = -s_rcfltState.sinYaw;
 		if (s_maxPitch != s_rcfltState.cameraPitch)
@@ -160,11 +160,11 @@ namespace RClassic_Float
 		{
 			if (yOffset == yMid)
 			{
-				s_rcfltState.rcpY[yMid + 400] = ONE_16;
+				s_rcfltState.rcpY[yMid + 400] = 1.0f;
 			}
 			else
 			{
-				s_rcfltState.rcpY[yOffset + 400] = div16(ONE_16, intToFixed16(yOffset - yMid));
+				s_rcfltState.rcpY[yOffset + 400] = 1.0f / f32(yOffset - yMid);
 			}
 		}
 	}
@@ -180,13 +180,13 @@ namespace RClassic_Float
 		s32 widthFract = div16(intToFixed16(w), FIXED(320));
 		setWidthFraction(widthFract);
 
-		EdgePairFixed* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
+		EdgePairFloat* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
 		s_rcfltState.flatEdge = flatEdge;
 		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfltState.windowMaxY, 0, s_rcfltState.windowMinY);
 		
 		s_columnTop = (s32*)game_realloc(s_columnTop, s_width * sizeof(s32));
 		s_columnBot = (s32*)game_realloc(s_columnBot, s_width * sizeof(s32));
-		s_rcfltState.depth1d_all = (fixed16_16*)game_realloc(s_rcfltState.depth1d_all, s_width * sizeof(fixed16_16) * (MAX_ADJOIN_DEPTH + 1));
+		s_rcfltState.depth1d_all = (f32*)game_realloc(s_rcfltState.depth1d_all, s_width * sizeof(f32) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowTop_all = (s32*)game_realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 		s_windowBot_all = (s32*)game_realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
@@ -194,9 +194,9 @@ namespace RClassic_Float
 		memset(s_windowBot_all, s_maxScreenY, 320);
 
 		// Build tables
-		s_rcfltState.column_Z_Over_X = (fixed16_16*)game_realloc(s_rcfltState.column_Z_Over_X, s_width * sizeof(fixed16_16));
-		s_rcfltState.column_X_Over_Z = (fixed16_16*)game_realloc(s_rcfltState.column_X_Over_Z, s_width * sizeof(fixed16_16));
-		s_rcfltState.skyTable = (fixed16_16*)game_realloc(s_rcfltState.skyTable, (s_width + 1) * sizeof(fixed16_16));
+		s_rcfltState.column_Z_Over_X = (f32*)game_realloc(s_rcfltState.column_Z_Over_X, s_width * sizeof(f32));
+		s_rcfltState.column_X_Over_Z = (f32*)game_realloc(s_rcfltState.column_X_Over_Z, s_width * sizeof(f32));
+		s_rcfltState.skyTable = (f32*)game_realloc(s_rcfltState.skyTable, (s_width + 1) * sizeof(f32));
 
 		// Here we assume a 90 degree field of view, this forms a frustum (not drawn to scale):
 		//     W = width of plane in pixels
@@ -228,7 +228,7 @@ namespace RClassic_Float
 			}
 		}
 
-		s_rcfltState.rcpY = (fixed16_16*)game_realloc(s_rcfltState.rcpY, 4 * s_height * sizeof(fixed16_16));
+		s_rcfltState.rcpY = (f32*)game_realloc(s_rcfltState.rcpY, 4 * s_height * sizeof(f32));
 		buildRcpYTable();
 	}
 
@@ -251,19 +251,19 @@ namespace RClassic_Float
 		}
 	}
 
-	void setIdentityMatrix(s32* mtx)
+	void setIdentityMatrix(f32* mtx)
 	{
-		mtx[0] = ONE_16;
+		mtx[0] = 1.0f;
 		mtx[3] = 0;
 		mtx[6] = 0;
 
 		mtx[1] = 0;
-		mtx[4] = ONE_16;
+		mtx[4] = 1.0f;
 		mtx[7] = 0;
 
 		mtx[2] = 0;
 		mtx[5] = 0;
-		mtx[8] = ONE_16;
+		mtx[8] = 1.0f;
 	}
 
 	void createLight(CameraLight* light, fixed16_16 x, fixed16_16 y, fixed16_16 z, fixed16_16 brightness)

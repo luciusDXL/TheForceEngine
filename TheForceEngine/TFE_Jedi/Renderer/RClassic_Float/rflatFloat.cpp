@@ -195,15 +195,15 @@ namespace RClassic_Float
 
 	void flat_drawCeiling(RSector* sector, EdgePairFixed* edges, s32 count)
 	{
-		fixed16_16 textureOffsetU = s_rcfltState.cameraPos.x - sector->ceilOffset.x;
-		fixed16_16 textureOffsetV = sector->ceilOffset.z - s_rcfltState.cameraPos.z;
+		f32 textureOffsetU = s_rcfltState.cameraPos.x - sector->ceilOffset.x;
+		f32 textureOffsetV = sector->ceilOffset.z - s_rcfltState.cameraPos.z;
 
-		fixed16_16 relCeil          =  sector->ceilingHeight - s_rcfltState.eyeHeight;
-		fixed16_16 scaledRelCeil    =  mul16(relCeil, s_rcfltState.focalLenAspect);
-		fixed16_16 cosScaledRelCeil =  mul16(scaledRelCeil, s_rcfltState.cosYaw);
-		fixed16_16 negSinRelCeil    = -mul16(relCeil, s_rcfltState.sinYaw);
-		fixed16_16 sinScaledRelCeil =  mul16(scaledRelCeil, s_rcfltState.sinYaw);
-		fixed16_16 negCosRelCeil    = -mul16(relCeil, s_rcfltState.cosYaw);
+		f32 relCeil          =  sector->ceilingHeight - s_rcfltState.eyeHeight;
+		f32 scaledRelCeil    =  relCeil * s_rcfltState.focalLenAspect;
+		f32 cosScaledRelCeil =  scaledRelCeil * s_rcfltState.cosYaw;
+		f32 negSinRelCeil    = -relCeil * s_rcfltState.sinYaw;
+		f32 sinScaledRelCeil =  scaledRelCeil * s_rcfltState.sinYaw;
+		f32 negCosRelCeil    = -relCeil * s_rcfltState.cosYaw;
 
 		if (!flat_setTexture(*sector->ceilTex)) { return; }
 
@@ -212,9 +212,8 @@ namespace RClassic_Float
 			s32 x = s_windowMinX_Pixels;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_screenYMidBase - s_screenYMid;
-			assert(yShear + y + s_height * 2 >= 0 && yShear + y + s_height * 2 <= s_height * 4);
-			fixed16_16 yRcp = s_rcfltState.rcpY[yShear + y + s_height*2];
-			fixed16_16 z = mul16(scaledRelCeil, yRcp);
+			f32 yRcp = 1.0f / f32(yShear + y);
+			f32 z = scaledRelCeil * yRcp;
 
 			s32 left = 0;
 			s32 right = 0;
@@ -261,16 +260,16 @@ namespace RClassic_Float
 		
 	void flat_drawFloor(RSector* sector, EdgePairFixed* edges, s32 count)
 	{
-		fixed16_16 textureOffsetU = s_rcfltState.cameraPos.x - sector->floorOffset.x;
-		fixed16_16 textureOffsetV = sector->floorOffset.z - s_rcfltState.cameraPos.z;
+		f32 textureOffsetU = s_rcfltState.cameraPos.x - sector->floorOffset.x;
+		f32 textureOffsetV = sector->floorOffset.z - s_rcfltState.cameraPos.z;
 
-		fixed16_16 relFloor       = sector->floorHeight - s_rcfltState.eyeHeight;
-		fixed16_16 scaledRelFloor = mul16(relFloor, s_rcfltState.focalLenAspect);
+		f32 relFloor       = sector->floorHeight - s_rcfltState.eyeHeight;
+		f32 scaledRelFloor = mul16(relFloor, s_rcfltState.focalLenAspect);
 
-		fixed16_16 cosScaledRelFloor = mul16(scaledRelFloor, s_rcfltState.cosYaw);
-		fixed16_16 negSinRelFloor    =-mul16(relFloor, s_rcfltState.sinYaw);
-		fixed16_16 sinScaledRelFloor = mul16(scaledRelFloor, s_rcfltState.sinYaw);
-		fixed16_16 negCosRelFloor    =-mul16(relFloor, s_rcfltState.cosYaw);
+		f32 cosScaledRelFloor = scaledRelFloor * s_rcfltState.cosYaw;
+		f32 negSinRelFloor    =-relFloor * s_rcfltState.sinYaw;
+		f32 sinScaledRelFloor = scaledRelFloor * s_rcfltState.sinYaw;
+		f32 negCosRelFloor    =-relFloor * s_rcfltState.cosYaw;
 
 		if (!flat_setTexture(*sector->floorTex)) { return; }
 
@@ -279,9 +278,8 @@ namespace RClassic_Float
 			s32 x = s_windowMinX_Pixels;
 			s32 yOffset = y * s_width;
 			s32 yShear = s_screenYMidBase - s_screenYMid;
-			assert(yShear + y + s_height * 2 >= 0 && yShear + y + s_height * 2 <= s_height * 4);
-			fixed16_16 yRcp = s_rcfltState.rcpY[yShear + y + s_height*2];
-			fixed16_16 z = mul16(scaledRelFloor, yRcp);
+			f32 yRcp = 1.0f / f32(yShear + y);
+			f32 z = scaledRelFloor * yRcp;
 
 			s32 left = 0;
 			s32 right = 0;
@@ -381,17 +379,16 @@ namespace RClassic_Float
 		s_scanlineOut = &s_display[y * s_width + x0];
 
 		const s32 yShear = s_screenYMidBase - s_screenYMid;
-		assert(yShear + y + s_height * 2 >= 0 && yShear + y + s_height * 2 <= s_height * 4);
-		const fixed16_16 yRcp = s_rcfltState.rcpY[yShear + y + s_height*2];
-		const fixed16_16 z = mul16(s_poly_scaledHOffset, yRcp);
-		const fixed16_16 right = intToFixed16(x1 - 1 - s_screenXMid);
+		const f32 yRcp = 1.0f / f32(yShear + y);
+		const f32 z = s_poly_scaledHOffset * yRcp;
+		const f32 right = f32(x1 - 1 - s_screenXMid);
 
-		const fixed16_16 u0 = s_poly_sinYawScaledHOffset - mul16(s_poly_cosYawHOffset, right);
-		const fixed16_16 v0 = s_poly_cosYawScaledHOffset + mul16(s_poly_sinYawHOffset, right);
-		s_scanlineU0 = (mul16(u0, yRcp) - s_poly_offsetX) * 8;
-		s_scanlineV0 = (mul16(v0, yRcp) - s_poly_offsetZ) * 8;
-		s_scanline_dVdX = -mul16(s_poly_sinYawHOffset, yRcp) * 8;
-		s_scanline_dUdX =  mul16(s_poly_cosYawHOffset, yRcp) * 8;
+		const f32 u0 = s_poly_sinYawScaledHOffset - s_poly_cosYawHOffset * right;
+		const f32 v0 = s_poly_cosYawScaledHOffset + s_poly_sinYawHOffset * right;
+		s_scanlineU0 = (u0*yRcp - s_poly_offsetX) * 8;
+		s_scanlineV0 = (v0*yRcp - s_poly_offsetZ) * 8;
+		s_scanline_dVdX = -(s_poly_sinYawHOffset*yRcp) * 8;
+		s_scanline_dUdX =  (s_poly_cosYawHOffset*yRcp) * 8;
 
 		s_scanlineLight = computeLighting(z, 0);
 		const s32 index = (!s_scanlineLight) + trans*2;
