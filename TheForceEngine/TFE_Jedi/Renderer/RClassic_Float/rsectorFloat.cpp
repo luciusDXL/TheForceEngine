@@ -6,22 +6,22 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 
-#include "rclassicFixed.h"
-#include "rsectorFixed.h"
-#include "rflatFixed.h"
-#include "rlightingFixed.h"
-#include "redgePairFixed.h"
-#include "rclassicFixedSharedState.h"
-#include "robj3d_fixed/robj3dFixed.h"
+#include "rclassicFloat.h"
+#include "rsectorFloat.h"
+#include "rflatFloat.h"
+#include "rlightingFloat.h"
+#include "redgePairFloat.h"
+#include "rclassicFloatSharedState.h"
+#include "robj3d_float/robj3dFloat.h"
 #include "../rcommon.h"
 
-using namespace TFE_Jedi::RClassic_Fixed;
+using namespace TFE_Jedi::RClassic_Float;
 
 namespace TFE_Jedi
 {
-	RClassic_Fixed::RWallSegment s_wallSegListDst[MAX_SEG];
-	RClassic_Fixed::RWallSegment s_wallSegListSrc[MAX_SEG];
-	RClassic_Fixed::RWallSegment** s_adjoinSegment;
+	RClassic_Float::RWallSegment s_wallSegListDst[MAX_SEG];
+	RClassic_Float::RWallSegment s_wallSegListSrc[MAX_SEG];
+	RClassic_Float::RWallSegment** s_adjoinSegment;
 
 	namespace
 	{
@@ -122,10 +122,10 @@ namespace TFE_Jedi
 
 						// Cull against the current "window."
 						const fixed16_16 z = curObj->posVS.z;
-						const s32 x0 = round16(div16(mul16(xMin, s_rcfState.focalLength), z)) + s_screenXMid;
+						const s32 x0 = round16(div16(mul16(xMin, s_rcfltState.focalLength), z)) + s_screenXMid;
 						if (x0 > s_windowMaxX_Pixels) { continue; }
 
-						const s32 x1 = round16(div16(mul16(xMax, s_rcfState.focalLength), z)) + s_screenXMid;
+						const s32 x1 = round16(div16(mul16(xMax, s_rcfltState.focalLength), z)) + s_screenXMid;
 						if (x1 < s_windowMinX_Pixels) { continue; }
 
 						// Finally add the object to render.
@@ -158,14 +158,14 @@ namespace TFE_Jedi
 		}
 	}
 
-	void TFE_Sectors_Fixed::prepare()
+	void TFE_Sectors_Float::prepare()
 	{
-		EdgePairFixed* flatEdge = &s_rcfState.flatEdgeList[s_flatCount];
-		s_rcfState.flatEdge = flatEdge;
-		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
+		EdgePairFixed* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
+		s_rcfltState.flatEdge = flatEdge;
+		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfltState.windowMaxY, 0, s_rcfltState.windowMinY);
 	}
 
-	void TFE_Sectors_Fixed::draw(RSector* sector)
+	void TFE_Sectors_Float::draw(RSector* sector)
 	{
 		s_curSector = sector;
 		s_sectorIndex++;
@@ -180,7 +180,7 @@ namespace TFE_Jedi
 		s32* winTopNext = &s_windowTop_all[s_adjoinDepth * s_width];
 		s32* winBotNext = &s_windowBot_all[s_adjoinDepth * s_width];
 
-		s_rcfState.depth1d = &s_rcfState.depth1d_all[(s_adjoinDepth - 1) * s_width];
+		s_rcfltState.depth1d = &s_rcfltState.depth1d_all[(s_adjoinDepth - 1) * s_width];
 
 		s32 startWall = s_curSector->startWall;
 		s32 drawWallCount = s_curSector->drawWallCnt;
@@ -201,8 +201,8 @@ namespace TFE_Jedi
 		fixed16_16* depthPrev = nullptr;
 		if (s_adjoinDepth > 1)
 		{
-			depthPrev = &s_rcfState.depth1d_all[(s_adjoinDepth - 2) * s_width];
-			memcpy(&s_rcfState.depth1d[s_minScreenX_Pixels], &depthPrev[s_minScreenX_Pixels], s_width * 4);
+			depthPrev = &s_rcfltState.depth1d_all[(s_adjoinDepth - 2) * s_width];
+			memcpy(&s_rcfltState.depth1d[s_minScreenX_Pixels], &depthPrev[s_minScreenX_Pixels], s_width * 4);
 		}
 
 		s_wallMaxCeilY = s_windowMinY_Pixels;
@@ -215,8 +215,8 @@ namespace TFE_Jedi
 				vec2_fixed* vtxVS = s_curSector->verticesVS;
 				for (s32 v = 0; v < s_curSector->vertexCount; v++)
 				{
-					vtxVS->x = mul16(vtxWS->x, s_rcfState.cosYaw)    + mul16(vtxWS->z, s_rcfState.sinYaw) + s_rcfState.cameraTrans.x;
-					vtxVS->z = mul16(vtxWS->x, s_rcfState.negSinYaw) + mul16(vtxWS->z, s_rcfState.cosYaw) + s_rcfState.cameraTrans.z;
+					vtxVS->x = mul16(vtxWS->x, s_rcfltState.cosYaw)    + mul16(vtxWS->z, s_rcfltState.sinYaw) + s_rcfltState.cameraTrans.x;
+					vtxVS->z = mul16(vtxWS->x, s_rcfltState.negSinYaw) + mul16(vtxWS->z, s_rcfltState.cosYaw) + s_rcfltState.cameraTrans.z;
 					vtxVS++;
 					vtxWS++;
 				}
@@ -264,14 +264,14 @@ namespace TFE_Jedi
 		TFE_ZONE_END(wallQSort);
 
 		s32 flatCount = s_flatCount;
-		EdgePairFixed* flatEdge = &s_rcfState.flatEdgeList[s_flatCount];
-		s_rcfState.flatEdge = flatEdge;
+		EdgePairFixed* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
+		s_rcfltState.flatEdge = flatEdge;
 
 		s32 adjoinStart = s_adjoinSegCount;
-		EdgePairFixed* adjoinEdges = &s_rcfState.adjoinEdgeList[adjoinStart];
+		EdgePairFixed* adjoinEdges = &s_rcfltState.adjoinEdgeList[adjoinStart];
 		RWallSegment* adjoinList[MAX_ADJOIN_DEPTH];
 
-		s_rcfState.adjoinEdge = adjoinEdges;
+		s_rcfltState.adjoinEdge = adjoinEdges;
 		s_adjoinSegment = adjoinList;
 
 		// Draw each wall segment in the sector.
@@ -431,7 +431,7 @@ namespace TFE_Jedi
 						}
 					}
 
-					s_rcfState.windowMinZ = min(curAdjoinSeg->z0, curAdjoinSeg->z1);
+					s_rcfltState.windowMinZ = min(curAdjoinSeg->z0, curAdjoinSeg->z1);
 					draw(nextSector);
 					
 					if (s_adjoinDepth)
@@ -452,7 +452,7 @@ namespace TFE_Jedi
 
 		if (!(s_curSector->flags1 & SEC_FLAGS1_SUBSECTOR) && depthPrev && s_drawFrame != s_prevSector->prevDrawFrame2)
 		{
-			memcpy(&depthPrev[s_windowMinX_Pixels], &s_rcfState.depth1d[s_windowMinX_Pixels], (s_windowMaxX_Pixels - s_windowMinX_Pixels + 1) * sizeof(fixed16_16));
+			memcpy(&depthPrev[s_windowMinX_Pixels], &s_rcfltState.depth1d[s_windowMinX_Pixels], (s_windowMaxX_Pixels - s_windowMinX_Pixels + 1) * sizeof(fixed16_16));
 		}
 
 		// Objects
@@ -490,8 +490,8 @@ namespace TFE_Jedi
 				{
 					TFE_ZONE("Draw WAX");
 
-					fixed16_16 dx = s_rcfState.cameraPos.x - obj->posWS.x;
-					fixed16_16 dz = s_rcfState.cameraPos.z - obj->posWS.z;
+					fixed16_16 dx = s_rcfltState.cameraPos.x - obj->posWS.x;
+					fixed16_16 dz = s_rcfltState.cameraPos.z - obj->posWS.z;
 					angle14_32 angle = vec2ToAngle(dx, dz);
 
 					sprite_drawWax(angle, obj);
@@ -516,7 +516,7 @@ namespace TFE_Jedi
 		s_curSector->prevDrawFrame2 = s_drawFrame;
 	}
 		
-	void TFE_Sectors_Fixed::adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePairFixed* adjoinEdges, s32 adjoinCount)
+	void TFE_Sectors_Float::adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePairFixed* adjoinEdges, s32 adjoinCount)
 	{
 		TFE_ZONE("Setup Adjoin Window");
 
@@ -559,7 +559,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void TFE_Sectors_Fixed::adjoin_computeWindowBounds(EdgePairFixed* adjoinEdges)
+	void TFE_Sectors_Float::adjoin_computeWindowBounds(EdgePairFixed* adjoinEdges)
 	{
 		s32 yC = adjoinEdges->yPixel_C0;
 		if (yC > s_windowMinY_Pixels)
@@ -590,12 +590,12 @@ namespace TFE_Jedi
 		s_prevSector = s_curSector;
 	}
 
-	void TFE_Sectors_Fixed::saveValues(s32 index)
+	void TFE_Sectors_Float::saveValues(s32 index)
 	{
 		SectorSaveValues* dst = &s_sectorStack[index];
 		dst->curSector = s_curSector;
 		dst->prevSector = s_prevSector;
-		dst->depth1d = s_rcfState.depth1d;
+		dst->depth1d = s_rcfltState.depth1d;
 		dst->windowX0 = s_windowX0;
 		dst->windowX1 = s_windowX1;
 		dst->windowMinY = s_windowMinY_Pixels;
@@ -615,12 +615,12 @@ namespace TFE_Jedi
 		dst->sectorAmbientFraction = s_sectorAmbientFraction;
 	}
 
-	void TFE_Sectors_Fixed::restoreValues(s32 index)
+	void TFE_Sectors_Float::restoreValues(s32 index)
 	{
 		const SectorSaveValues* src = &s_sectorStack[index];
 		s_curSector = src->curSector;
 		s_prevSector = src->prevSector;
-		s_rcfState.depth1d = (fixed16_16*)src->depth1d;
+		s_rcfltState.depth1d = (fixed16_16*)src->depth1d;
 		s_windowX0 = src->windowX0;
 		s_windowX1 = src->windowX1;
 		s_windowMinY_Pixels = src->windowMinY;
@@ -641,7 +641,7 @@ namespace TFE_Jedi
 	}
 
 	// Switch from float to fixed.
-	void TFE_Sectors_Fixed::subrendererChanged()
+	void TFE_Sectors_Float::subrendererChanged()
 	{
 	}
 }
