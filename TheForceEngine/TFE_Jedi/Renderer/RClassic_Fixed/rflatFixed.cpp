@@ -51,15 +51,15 @@ namespace RClassic_Fixed
 				yFloor1 += mul16(dyFloor_dx, lengthFixed);
 			}
 
-			edgePair_setup(length, x0, dyFloor_dx, yFloor1, yFloor, dyCeil_dx, yCeil, yCeil1, s_flatEdge);
+			edgePair_setup(length, x0, dyFloor_dx, yFloor1, yFloor, dyCeil_dx, yCeil, yCeil1, s_rcfState.flatEdge);
 
-			if (s_flatEdge->yPixel_C1 - 1 > s_wallMaxCeilY)
+			if (s_rcfState.flatEdge->yPixel_C1 - 1 > s_wallMaxCeilY)
 			{
-				s_wallMaxCeilY = s_flatEdge->yPixel_C1 - 1;
+				s_wallMaxCeilY = s_rcfState.flatEdge->yPixel_C1 - 1;
 			}
-			if (s_flatEdge->yPixel_F1 + 1 < s_wallMinFloorY)
+			if (s_rcfState.flatEdge->yPixel_F1 + 1 < s_wallMinFloorY)
 			{
-				s_wallMinFloorY = s_flatEdge->yPixel_F1 + 1;
+				s_wallMinFloorY = s_rcfState.flatEdge->yPixel_F1 + 1;
 			}
 			if (s_wallMaxCeilY < s_windowMinY_Pixels)
 			{
@@ -70,7 +70,7 @@ namespace RClassic_Fixed
 				s_wallMinFloorY = s_windowMaxY_Pixels;
 			}
 
-			s_flatEdge++;
+			s_rcfState.flatEdge++;
 			s_flatCount++;
 		}
 	}
@@ -193,7 +193,7 @@ namespace RClassic_Fixed
 		return true;
 	}
 
-	void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count)
+	void flat_drawCeiling(RSector* sector, EdgePairFixed* edges, s32 count)
 	{
 		fixed16_16 textureOffsetU = s_rcfState.cameraPos.x - sector->ceilOffset.x;
 		fixed16_16 textureOffsetV = sector->ceilOffset.z - s_rcfState.cameraPos.z;
@@ -259,7 +259,7 @@ namespace RClassic_Fixed
 		}
 	}
 		
-	void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count)
+	void flat_drawFloor(RSector* sector, EdgePairFixed* edges, s32 count)
 	{
 		fixed16_16 textureOffsetU = s_rcfState.cameraPos.x - sector->floorOffset.x;
 		fixed16_16 textureOffsetV = sector->floorOffset.z - s_rcfState.cameraPos.z;

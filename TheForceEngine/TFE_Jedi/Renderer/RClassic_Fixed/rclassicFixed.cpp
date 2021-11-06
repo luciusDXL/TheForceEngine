@@ -180,8 +180,8 @@ namespace RClassic_Fixed
 		s32 widthFract = div16(intToFixed16(w), FIXED(320));
 		setWidthFraction(widthFract);
 
-		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
-		s_flatEdge = flatEdge;
+		EdgePairFixed* flatEdge = &s_rcfState.flatEdgeList[s_flatCount];
+		s_rcfState.flatEdge = flatEdge;
 		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
 		
 		s_columnTop = (s32*)game_realloc(s_columnTop, s_width * sizeof(s32));

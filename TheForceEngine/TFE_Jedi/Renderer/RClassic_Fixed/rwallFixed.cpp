@@ -872,7 +872,7 @@ namespace RClassic_Fixed
 		srcWall->seen = JTRUE;
 	}
 
-	void wall_drawTransparent(RWallSegment* wallSegment, EdgePair* edge)
+	void wall_drawTransparent(RWallSegment* wallSegment, EdgePairFixed* edge)
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
@@ -2147,9 +2147,9 @@ namespace RClassic_Fixed
 			{
 				y1End += mul16(top_dydx, lengthFixed);
 			}
-			edgePair_setup(length, x0, top_dydx, y1End, y1, bot_dydx, y0, y0End, s_adjoinEdge);
+			edgePair_setup(length, x0, top_dydx, y1End, y1, bot_dydx, y0, y0End, s_rcfState.adjoinEdge);
 
-			s_adjoinEdge++;
+			s_rcfState.adjoinEdge++;
 			s_adjoinSegCount++;
 
 			*s_adjoinSegment = wallSegment;

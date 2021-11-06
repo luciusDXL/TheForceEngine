@@ -7,8 +7,6 @@ struct ColorMap;
 
 namespace TFE_Jedi
 {
-	struct EdgePair;
-
 	// Resolution
 	extern s32 s_width;
 	extern s32 s_height;
@@ -65,11 +63,6 @@ namespace TFE_Jedi
 	extern s32 s_flatCount;
 	extern s32 s_wallMaxCeilY;
 	extern s32 s_wallMinFloorY;
-
-	extern EdgePair* s_flatEdge;
-	extern EdgePair  s_flatEdgeList[];
-	extern EdgePair* s_adjoinEdge;
-	extern EdgePair  s_adjoinEdgeList[];
 	
 	// Lighting
 	extern const u8* s_colorMap;

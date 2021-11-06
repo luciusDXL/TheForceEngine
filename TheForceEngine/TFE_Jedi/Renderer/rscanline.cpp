@@ -4,14 +4,14 @@
 
 namespace TFE_Jedi
 {
-	bool flat_buildScanlineCeiling(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, s32& scanlineLength, const EdgePair* edges)
+	bool flat_buildScanlineCeiling(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, s32& scanlineLength, const EdgePairFixed* edges)
 	{
 		// Search for the left edge of the scanline.
 		s32 hasLeft = 0;
 		s32 hasRight = 0;
 		while (i < count && hasLeft == 0)
 		{
-			const EdgePair* edge = &edges[i];
+			const EdgePairFixed* edge = &edges[i];
 			if (y < edge->yPixel_C0)	// Y is above the current edge, so start at left = x
 			{
 				left = x;
@@ -56,7 +56,7 @@ namespace TFE_Jedi
 			// Search for the right edge of the scanline.
 			while (i < count && hasRight == 0)
 			{
-				const EdgePair* edge = &edges[i];
+				const EdgePairFixed* edge = &edges[i];
 				if (y < edge->yPixel_C0)		// Y is above the current edge, so move on to the next edge.
 				{
 					x = edge->x1 + 1;
@@ -111,14 +111,14 @@ namespace TFE_Jedi
 		return true;
 	}
 
-	bool flat_buildScanlineFloor(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, s32& scanlineLength, const EdgePair* edges)
+	bool flat_buildScanlineFloor(s32& i, s32 count, s32& x, s32 y, s32& left, s32& right, s32& scanlineLength, const EdgePairFixed* edges)
 	{
 		// Search for the left edge of the scanline.
 		s32 hasLeft = 0;
 		s32 hasRight = 0;
 		while (i < count && hasLeft == 0)
 		{
-			const EdgePair* edge = &edges[i];
+			const EdgePairFixed* edge = &edges[i];
 			if (y >= edge->yPixel_F0)	// Y is above the current edge, so start at left = x
 			{
 				left = x;
@@ -163,7 +163,7 @@ namespace TFE_Jedi
 			// Search for the right edge of the scanline.
 			while (i < count && hasRight == 0)
 			{
-				const EdgePair* edge = &edges[i];
+				const EdgePairFixed* edge = &edges[i];
 				if (y >= edge->yPixel_F0)		// Y is above the current edge, so move on to the next edge.
 				{
 					x = edge->x1 + 1;

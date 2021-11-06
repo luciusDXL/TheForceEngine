@@ -8,7 +8,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 
 struct RSector;
-struct EdgePair;
+struct EdgePairFixed;
 
 namespace TFE_Jedi
 {
@@ -16,8 +16,8 @@ namespace TFE_Jedi
 	{
 		void flat_addEdges(s32 length, s32 x0, fixed16_16 dyFloor_dx, fixed16_16 yFloor, fixed16_16 dyCeil_dx, fixed16_16 yCeil);
 
-		void flat_drawCeiling(RSector* sector, EdgePair* edges, s32 count);
-		void flat_drawFloor(RSector* sector, EdgePair* edges, s32 count);
+		void flat_drawCeiling(RSector* sector, EdgePairFixed* edges, s32 count);
+		void flat_drawFloor(RSector* sector, EdgePairFixed* edges, s32 count);
 
 		// Set Parameters for 3D object rendering.
 		void flat_preparePolygon(fixed16_16 heightOffset, fixed16_16 offsetX, fixed16_16 offsetZ, TextureData* texture);

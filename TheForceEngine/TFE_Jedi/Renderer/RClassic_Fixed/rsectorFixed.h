@@ -25,8 +25,8 @@ namespace TFE_Jedi
 	private:
 		void saveValues(s32 index);
 		void restoreValues(s32 index);
-		void adjoin_computeWindowBounds(EdgePair* adjoinEdges);
-		void adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePair* adjoinEdges, s32 adjoinCount);
+		void adjoin_computeWindowBounds(EdgePairFixed* adjoinEdges);
+		void adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePairFixed* adjoinEdges, s32 adjoinCount);
 	};
 
 	extern RClassic_Fixed::RWallSegment s_wallSegListDst[MAX_SEG];

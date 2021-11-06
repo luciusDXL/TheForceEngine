@@ -6,6 +6,8 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Renderer/redgePair.h>
+#include <TFE_Jedi/Renderer/rlimits.h>
 
 namespace TFE_Jedi
 {
@@ -52,6 +54,10 @@ namespace TFE_Jedi
 
 		// Flats
 		fixed16_16* rcpY;
+		EdgePairFixed* flatEdge;
+		EdgePairFixed  flatEdgeList[MAX_SEG];
+		EdgePairFixed* adjoinEdge;
+		EdgePairFixed  adjoinEdgeList[MAX_ADJOIN_SEG * MAX_ADJOIN_DEPTH];
 	};
 	extern RClassicFixedState s_rcfState;
 }  // TFE_Jedi

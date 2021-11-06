@@ -5,7 +5,7 @@ struct ColorMap;
 
 namespace TFE_Jedi
 {
-	struct EdgePair;
+	struct EdgePairFixed;
 
 	namespace RClassic_Fixed
 	{

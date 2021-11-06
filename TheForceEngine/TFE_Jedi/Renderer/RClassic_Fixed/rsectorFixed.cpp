@@ -160,8 +160,8 @@ namespace TFE_Jedi
 
 	void TFE_Sectors_Fixed::prepare()
 	{
-		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
-		s_flatEdge = flatEdge;
+		EdgePairFixed* flatEdge = &s_rcfState.flatEdgeList[s_flatCount];
+		s_rcfState.flatEdge = flatEdge;
 		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
 	}
 
@@ -264,14 +264,14 @@ namespace TFE_Jedi
 		TFE_ZONE_END(wallQSort);
 
 		s32 flatCount = s_flatCount;
-		EdgePair* flatEdge = &s_flatEdgeList[s_flatCount];
-		s_flatEdge = flatEdge;
+		EdgePairFixed* flatEdge = &s_rcfState.flatEdgeList[s_flatCount];
+		s_rcfState.flatEdge = flatEdge;
 
 		s32 adjoinStart = s_adjoinSegCount;
-		EdgePair* adjoinEdges = &s_adjoinEdgeList[adjoinStart];
+		EdgePairFixed* adjoinEdges = &s_rcfState.adjoinEdgeList[adjoinStart];
 		RWallSegment* adjoinList[MAX_ADJOIN_DEPTH];
 
-		s_adjoinEdge = adjoinEdges;
+		s_rcfState.adjoinEdge = adjoinEdges;
 		s_adjoinSegment = adjoinList;
 
 		// Draw each wall segment in the sector.
@@ -516,7 +516,7 @@ namespace TFE_Jedi
 		s_curSector->prevDrawFrame2 = s_drawFrame;
 	}
 		
-	void TFE_Sectors_Fixed::adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePair* adjoinEdges, s32 adjoinCount)
+	void TFE_Sectors_Fixed::adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePairFixed* adjoinEdges, s32 adjoinCount)
 	{
 		TFE_ZONE("Setup Adjoin Window");
 
@@ -559,7 +559,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void TFE_Sectors_Fixed::adjoin_computeWindowBounds(EdgePair* adjoinEdges)
+	void TFE_Sectors_Fixed::adjoin_computeWindowBounds(EdgePairFixed* adjoinEdges)
 	{
 		s32 yC = adjoinEdges->yPixel_C0;
 		if (yC > s_windowMinY_Pixels)

@@ -5,7 +5,7 @@
 
 namespace TFE_Jedi
 {
-	void TFE_Sectors::computeAdjoinWindowBounds(EdgePair* adjoinEdges)
+	void TFE_Sectors::computeAdjoinWindowBounds(EdgePairFixed* adjoinEdges)
 	{
 		s32 yC = adjoinEdges->yPixel_C0;
 		if (yC > s_windowMinY_Pixels)

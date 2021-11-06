@@ -61,12 +61,7 @@ namespace TFE_Jedi
 	s32 s_flatCount;
 	s32 s_wallMaxCeilY;
 	s32 s_wallMinFloorY;
-
-	EdgePair* s_flatEdge;
-	EdgePair  s_flatEdgeList[MAX_SEG];
-	EdgePair* s_adjoinEdge;
-	EdgePair  s_adjoinEdgeList[MAX_ADJOIN_SEG * MAX_ADJOIN_DEPTH];
-
+		
 	// Lighting
 	const u8* s_colorMap = nullptr;
 	const u8* s_lightSourceRamp = nullptr;

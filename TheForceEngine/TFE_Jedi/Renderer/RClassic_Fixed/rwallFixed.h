@@ -12,7 +12,7 @@
 #include "../rwallRender.h"
 
 struct RSector;
-struct EdgePair;
+struct EdgePairFixed;
 
 namespace TFE_Jedi
 {
@@ -39,7 +39,7 @@ namespace TFE_Jedi
 		s32  wall_mergeSort(RWallSegment* segOutList, s32 availSpace, s32 start, s32 count);
 
 		void wall_drawSolid(RWallSegment* wallSegment);
-		void wall_drawTransparent(RWallSegment* wallSegment, EdgePair* edge);
+		void wall_drawTransparent(RWallSegment* wallSegment, EdgePairFixed* edge);
 		void wall_drawMask(RWallSegment* wallSegment);
 		void wall_drawBottom(RWallSegment* wallSegment);
 		void wall_drawTop(RWallSegment* wallSegment);

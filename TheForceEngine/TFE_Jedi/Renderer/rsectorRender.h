@@ -48,12 +48,12 @@ namespace TFE_Jedi
 		s32     sectorAmbientFraction;
 	};
 
-	struct EdgePair;
+	struct EdgePairFixed;
 
 	class TFE_Sectors
 	{
 	public:
-		void computeAdjoinWindowBounds(EdgePair* adjoinEdges);
+		void computeAdjoinWindowBounds(EdgePairFixed* adjoinEdges);
 
 		// Sub-Renderer specific
 		virtual void prepare() = 0;
