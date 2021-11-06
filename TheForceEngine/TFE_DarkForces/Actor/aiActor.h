@@ -177,7 +177,7 @@ struct PhysicsActor
 	PhysicsActor** parent;
 
 	vec3_fixed vel;
-	s32 ud0;
+	SoundEffectID moveSndId;
 
 	vec2_fixed lastPlayerPos;
 

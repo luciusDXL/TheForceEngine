@@ -124,7 +124,7 @@ namespace TFE_DarkForces
 		*actorPtr = actor;
 
 		actor->vel = { 0, 0, 0 };
-		actor->ud0  = 0;
+		actor->moveSndId = NULL_SOUND;
 		actor->parent = actorPtr;
 	}
 
