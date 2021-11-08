@@ -424,6 +424,7 @@ namespace TFE_DarkForces
 				{
 					if (local(phase) == 1)
 					{
+						local(nextPhaseChangeTick) = s_curTick + 1456;
 						local(accel) = (s_curTick & 1) ? -FIXED(15) : FIXED(15);
 						local(phase) = 6;
 					}
