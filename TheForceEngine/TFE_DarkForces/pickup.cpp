@@ -845,7 +845,7 @@ namespace TFE_DarkForces
 		
 	void pickupInvincibility()
 	{
-		s_invincibility = JTRUE;
+		s_invincibility = -1;
 		s_playerInfo.shields = JTRUE;	// This seems like a bug...
 		// Free old invincibility task and create a new invincibility task.
 		if (s_invincibilityTask)

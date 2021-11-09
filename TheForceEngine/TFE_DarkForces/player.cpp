@@ -171,9 +171,9 @@ namespace TFE_DarkForces
 	s32 s_baseAtten = 0;
 	fixed16_16 s_gravityAccel;
 
+	s32   s_invincibility = 0;
 	JBool s_weaponFiring = JFALSE;
 	JBool s_weaponFiringSec = JFALSE;
-	JBool s_invincibility = JFALSE;
 	JBool s_wearingCleats = JFALSE;
 	JBool s_wearingGasmask = JFALSE;
 	JBool s_nightvisionActive = JFALSE;
@@ -813,11 +813,11 @@ namespace TFE_DarkForces
 	{
 		if (!s_invincibility)
 		{
-			s_invincibility = JTRUE;
+			s_invincibility = -2;
 		}
 		else
 		{
-			s_invincibility = JFALSE;
+			s_invincibility = 0;
 		}
 		hud_sendTextMessage(702);
 	}
@@ -2024,7 +2024,8 @@ namespace TFE_DarkForces
 				}
 			}
 		}
-		if (healthDmg)
+		applyDmg = (s_invincibility == -2) ? 0 : 1;
+		if (applyDmg && healthDmg)
 		{
 			health -= healthDmg;
 			if (health < ONE_16)
