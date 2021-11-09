@@ -247,8 +247,8 @@ namespace TFE_DarkForces
 			sinCosFixed(vertAngle, &sinPitch, &cosPitch);
 
 			fixed16_16 prevYVelDelta = yVelDelta;
-			yVelDelta = mul16(cosPitch, yVelDelta);
-			hVelDelta = mul16(sinPitch, prevYVelDelta);
+			yVelDelta =  mul16(cosPitch, yVelDelta);
+			hVelDelta = -mul16(sinPitch, prevYVelDelta);
 
 			fixed16_16 sinYaw, cosYaw;
 			sinCosFixed(obj->yaw, &sinYaw, &cosYaw);
@@ -395,7 +395,7 @@ namespace TFE_DarkForces
 			task_localBlockBegin;
 				fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
 				fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
-				angle14_32 angle = vec2ToAngle(dx, dz);
+				angle14_32 angle = vec2ToAngle(dx, dz) & ANGLE_MASK;
 
 				if (local(phase) == 0 || local(phase) == 5)
 				{
@@ -408,6 +408,7 @@ namespace TFE_DarkForces
 					if (local(phase) == 0)
 					{
 						local(nextPhaseChangeTick) = s_curTick + 728;
+						local(moveState)->vertAngle = ONE_16;
 						local(moveState)->yVelOffset = ONE_16;
 						local(phase) = 5;
 
@@ -583,6 +584,7 @@ namespace TFE_DarkForces
 			u32 phase;
 			Tick nextCheckForPlayerTick;
 			Tick changeStateTick;
+			Tick nextChangePhaseTick;
 		};
 		task_begin_ctx;
 
@@ -595,6 +597,7 @@ namespace TFE_DarkForces
 		local(phase) = 0;
 		local(nextCheckForPlayerTick) = 0;
 		local(changeStateTick) = s_curTick + 8739;
+		local(nextChangePhaseTick) = s_curTick + 1456;
 		local(physicsActor)->actor.collisionFlags |= 4;
 
 		while (local(physicsActor)->state == BOBASTATE_SEARCH)
@@ -622,6 +625,12 @@ namespace TFE_DarkForces
 			}
 
 			bobaFett_handleMovement(local(bobaFett));
+
+			if (local(nextChangePhaseTick) < s_curTick)
+			{
+				local(phase) = (s_curTick & 1) ? 0 : 1;
+				local(nextChangePhaseTick) = s_curTick + 1456;
+			}
 
 			if (local(nextCheckForPlayerTick) < s_curTick)
 			{
