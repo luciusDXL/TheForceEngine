@@ -595,6 +595,7 @@ namespace TFE_DarkForces
 					sprite_setData(projObj, s_homingMissileProj);
 				}
 				obj_setSpriteAnim(projObj);
+				projObj->worldWidth >>= 1;
 				projObj->flags |= OBJ_FLAG_ENEMY;
 
 				projLogic->flags |= PROJFLAG_EXPLODE;
@@ -956,7 +957,9 @@ namespace TFE_DarkForces
 		projLogic->delta.z = mul16(projLogic->vel.z, dt);
 
 		// Then apply movement and handle the 'explode early' special case.
+		s_collision_excludeEntityFlags = ETFLAG_PROJECTILE;
 		ProjectileHitType hitType = proj_handleMovement(projLogic);
+		s_collision_excludeEntityFlags = 0;
 		if (hitType == PHIT_NONE)
 		{
 			// There is a chance that the missile will explode early, once it gets within a certain range.

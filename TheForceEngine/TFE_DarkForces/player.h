@@ -148,6 +148,7 @@ namespace TFE_DarkForces
 	void player_revive();
 	s32  player_getLifeCount();
 	void player_getVelocity(vec3_fixed* vel);
+	fixed16_16 player_getSquaredDistance(SecObject* obj);
 	void player_setupCamera();
 	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound);
 

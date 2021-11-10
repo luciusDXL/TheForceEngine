@@ -543,6 +543,16 @@ namespace TFE_DarkForces
 		vel->z = s_playerVelZ;
 	}
 
+	fixed16_16 player_getSquaredDistance(SecObject* obj)
+	{
+		fixed16_16 dx = obj->posWS.x - s_playerObject->posWS.x;
+		fixed16_16 dy = obj->posWS.y - s_playerObject->posWS.y;
+		fixed16_16 dz = obj->posWS.z - s_playerObject->posWS.z;
+
+		// distSq overflows if dist > 181 units.
+		return mul16(dx, dx) + mul16(dy, dy) + mul16(dz, dz);
+	}
+
 	void player_setupObject(SecObject* obj)
 	{
 		s_playerObject = obj;
