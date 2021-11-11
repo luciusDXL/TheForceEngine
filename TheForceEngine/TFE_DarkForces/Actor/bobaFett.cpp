@@ -16,6 +16,7 @@
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Settings/settings.h>
 
 namespace TFE_DarkForces
 {
@@ -470,7 +471,15 @@ namespace TFE_DarkForces
 				}
 
 				angle14_32 angleDiff = getAngleDifference(angle, local(obj)->yaw);
-				if (angleDiff < 1592)	// ~35 degrees
+				// The original DOS code has a bug where it only checks the angle difference in one direction.
+				// The 'df_fixBobaFettFireDir' will cause the negative direction to be tested if true.
+				JBool canShoot = (angleDiff < 1592) ? JTRUE : JFALSE;	// ~35 degrees
+				if (TFE_Settings::getGameSettings()->df_fixBobaFettFireDir && angleDiff <= -1592)
+				{
+					canShoot = JFALSE;
+				}
+
+				if (canShoot)
 				{
 					if (local(nextAimedShotTick) < s_curTick && actor_canSeeObject(local(obj), s_playerObject))
 					{

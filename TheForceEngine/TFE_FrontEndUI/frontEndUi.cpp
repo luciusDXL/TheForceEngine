@@ -710,8 +710,8 @@ namespace TFE_FrontEndUI
 
 	void configGame()
 	{
-		TFE_Settings_Game* darkForces = TFE_Settings::getGameSettings("Dark Forces");
-		TFE_Settings_Game* outlaws = TFE_Settings::getGameSettings("Outlaws");
+		TFE_GameHeader* darkForces = TFE_Settings::getGameHeader("Dark Forces");
+		TFE_GameHeader* outlaws = TFE_Settings::getGameHeader("Outlaws");
 
 		s32 browseWinOpen = -1;
 		

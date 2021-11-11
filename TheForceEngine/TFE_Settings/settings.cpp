@@ -6,6 +6,7 @@
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/parser.h>
 #include <assert.h>
+#include <algorithm>
 #include <vector>
 
 #ifdef _WIN32
@@ -17,15 +18,15 @@ namespace TFE_Settings
 	//////////////////////////////////////////////////////////////////////////////////
 	// Local State
 	//////////////////////////////////////////////////////////////////////////////////
-	#define LINEBUF_LEN 1024
-		
+#define LINEBUF_LEN 1024
+
 	static char s_settingsPath[TFE_MAX_PATH];
 	static TFE_Settings_Window s_windowSettings = {};
 	static TFE_Settings_Graphics s_graphicsSettings = {};
 	static TFE_Settings_Hud s_hudSettings = {};
 	static TFE_Settings_Sound s_soundSettings = {};
 	static TFE_Game s_game = {};
-	static TFE_Settings_Game s_gameSettings[Game_Count];
+	static TFE_Settings_Game s_gameSettings = {};
 	static char s_lineBuffer[LINEBUF_LEN];
 	static std::vector<char> s_iniBuffer;
 
@@ -87,16 +88,16 @@ namespace TFE_Settings
 	bool init()
 	{
 		// Clear out game settings.
-		memset(s_gameSettings, 0, sizeof(TFE_Settings_Game) * Game_Count);
+		memset(&s_gameSettings, 0, sizeof(TFE_Settings_Game));
 		for (u32 i = 0; i < Game_Count; i++)
 		{
-			strcpy(s_gameSettings[i].gameName, c_gameName[i]);
+			strcpy(s_gameSettings.header[i].gameName, c_gameName[i]);
 		}
-		strcpy(s_game.game, s_gameSettings[0].gameName);
+		strcpy(s_game.game, s_gameSettings.header[0].gameName);
 
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
 		if (FileUtil::exists(s_settingsPath)) { return readFromDisk(); }
-			
+
 		checkGameData();
 		return writeToDisk();
 	}
@@ -106,25 +107,25 @@ namespace TFE_Settings
 		// Write any settings to disk before shutting down.
 		writeToDisk();
 	}
-		
+
 	void checkGameData()
 	{
 		for (u32 gameId = 0; gameId < Game_Count; gameId++)
 		{
-			const size_t sourcePathLen = strlen(s_gameSettings[gameId].sourcePath);
-			bool pathValid = sourcePathLen && FileUtil::directoryExits(s_gameSettings[gameId].sourcePath);
-		#ifdef _WIN32
+			const size_t sourcePathLen = strlen(s_gameSettings.header[gameId].sourcePath);
+			bool pathValid = sourcePathLen && FileUtil::directoryExits(s_gameSettings.header[gameId].sourcePath);
+#ifdef _WIN32
 			// First try looking through the registry.
 			if (!pathValid)
 			{
-				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamLocalPath[gameId], s_gameSettings[gameId].sourcePath);
-			
+				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamLocalPath[gameId], s_gameSettings.header[gameId].sourcePath);
+
 				if (!pathValid)
 				{
-					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], s_gameSettings[gameId].sourcePath);
+					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], s_gameSettings.header[gameId].sourcePath);
 				}
 			}
-		#endif
+#endif
 			// If the registry approach fails, just try looking in the various hardcoded paths.
 			if (!pathValid)
 			{
@@ -134,7 +135,7 @@ namespace TFE_Settings
 				{
 					if (FileUtil::directoryExits(locations[i]))
 					{
-						strcpy(s_gameSettings[gameId].sourcePath, locations[i]);
+						strcpy(s_gameSettings.header[gameId].sourcePath, locations[i]);
 						pathValid = true;
 						break;
 					}
@@ -157,7 +158,7 @@ namespace TFE_Settings
 
 			parseIniFile(s_iniBuffer.data(), len);
 			checkGameData();
-			
+
 			return true;
 		}
 		return false;
@@ -208,17 +209,22 @@ namespace TFE_Settings
 		return &s_game;
 	}
 
-	TFE_Settings_Game* getGameSettings(const char* gameName)
+	TFE_GameHeader* getGameHeader(const char* gameName)
 	{
 		for (u32 i = 0; i < Game_Count; i++)
 		{
 			if (strcasecmp(gameName, c_gameName[i]) == 0)
 			{
-				return &s_gameSettings[i];
+				return &s_gameSettings.header[i];
 			}
 		}
 
 		return nullptr;
+	}
+
+	TFE_Settings_Game* getGameSettings()
+	{
+		return &s_gameSettings;
 	}
 
 	void writeHeader(FileStream& file, const char* section)
@@ -313,8 +319,14 @@ namespace TFE_Settings
 		for (u32 i = 0; i < Game_Count; i++)
 		{
 			writeHeader(settings, c_sectionNames[SECTION_GAME_START + i]);
-			writeKeyValue_String(settings, "sourcePath", s_gameSettings[i].sourcePath);
-			writeKeyValue_String(settings, "emulatorPath", s_gameSettings[i].emulatorPath);
+			writeKeyValue_String(settings, "sourcePath", s_gameSettings.header[i].sourcePath);
+			writeKeyValue_String(settings, "emulatorPath", s_gameSettings.header[i].emulatorPath);
+
+			if (i == Game_Dark_Forces)
+			{
+				writeKeyValue_Int(settings, "airControl", s_gameSettings.df_airControl);
+				writeKeyValue_Bool(settings, "fixBobaFettFireDir", s_gameSettings.df_fixBobaFettFireDir);
+			}
 		}
 	}
 
@@ -611,13 +623,21 @@ namespace TFE_Settings
 	{
 		if (strcasecmp("sourcePath", key) == 0)
 		{
-			strcpy(s_gameSettings[Game_Dark_Forces].sourcePath, value);
-			appendSlash(s_gameSettings[Game_Dark_Forces].sourcePath);
+			strcpy(s_gameSettings.header[Game_Dark_Forces].sourcePath, value);
+			appendSlash(s_gameSettings.header[Game_Dark_Forces].sourcePath);
 		}
 		else if (strcasecmp("emulatorPath", key) == 0)
 		{
-			strcpy(s_gameSettings[Game_Dark_Forces].emulatorPath, value);
-			appendSlash(s_gameSettings[Game_Dark_Forces].emulatorPath);
+			strcpy(s_gameSettings.header[Game_Dark_Forces].emulatorPath, value);
+			appendSlash(s_gameSettings.header[Game_Dark_Forces].emulatorPath);
+		}
+		else if (strcasecmp("airControl", key) == 0)
+		{
+			s_gameSettings.df_airControl = std::min(std::max(parseInt(value), 0), 8);
+		}
+		else if (strcasecmp("fixBobaFettFireDir", key) == 0)
+		{
+			s_gameSettings.df_fixBobaFettFireDir = parseBool(value);
 		}
 	}
 
@@ -625,8 +645,8 @@ namespace TFE_Settings
 	{
 		if (strcasecmp("sourcePath", key) == 0)
 		{
-			strcpy(s_gameSettings[Game_Outlaws].sourcePath, value);
-			appendSlash(s_gameSettings[Game_Outlaws].sourcePath);
+			strcpy(s_gameSettings.header[Game_Outlaws].sourcePath, value);
+			appendSlash(s_gameSettings.header[Game_Outlaws].sourcePath);
 		}
 	}
 	

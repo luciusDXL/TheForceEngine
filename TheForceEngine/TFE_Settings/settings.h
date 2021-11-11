@@ -87,11 +87,21 @@ struct TFE_Game
 	GameID id;
 };
 
-struct TFE_Settings_Game
+struct TFE_GameHeader
 {
 	char gameName[64];
 	char sourcePath[TFE_MAX_PATH];
 	char emulatorPath[TFE_MAX_PATH];
+};
+
+struct TFE_Settings_Game
+{
+	TFE_GameHeader header[Game_Count];
+
+	// Dark Forces
+	s32  df_airControl = 0;				// Air control, default = 0, where 0 = speed/256 and 8 = speed; range = [0, 8]
+	bool df_fixBobaFettFireDir = false;	// By default, Boba Fett does not correctly check the angle difference between him and the player in
+										// one direction, enabling this will fix that.
 };
 
 namespace TFE_Settings
@@ -107,5 +117,6 @@ namespace TFE_Settings
 	TFE_Settings_Hud* getHudSettings();
 	TFE_Settings_Sound* getSoundSettings();
 	TFE_Game* getGame();
-	TFE_Settings_Game* getGameSettings(const char* gameName);
+	TFE_GameHeader* getGameHeader(const char* gameName);
+	TFE_Settings_Game* getGameSettings();
 }

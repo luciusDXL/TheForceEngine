@@ -10,6 +10,7 @@
 #include "pickup.h"
 #include "weapon.h"
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/mission.h>
@@ -1307,8 +1308,11 @@ namespace TFE_DarkForces
 		// Reduce the players ability to adjust the velocity while they have vertical velocity.
 		if (s_playerUpVel)
 		{
-			s_forwardSpd >>= 8;
-			s_strafeSpd  >>= 8;
+			// TFE specific
+			const s32 airControl = 8 - TFE_Settings::getGameSettings()->df_airControl;
+			// In the original DOS code, airControl = 8.
+			s_forwardSpd >>= airControl;
+			s_strafeSpd  >>= airControl;
 		}
 	}
 

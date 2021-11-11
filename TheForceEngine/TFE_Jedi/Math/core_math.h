@@ -169,6 +169,15 @@ namespace TFE_Jedi
 		return fixedSqrt(mul16(dx, dx) + mul16(dz, dz)) << 1;
 	}
 
+	inline fixed16_16 vec3Length(fixed16_16 dx, fixed16_16 dy, fixed16_16 dz)
+	{
+		// Trade precision to avoid overflow.
+		dx = (dx + ((dx < 0) ? -1 : 0)) >> 1;
+		dy = (dy + ((dy < 0) ? -1 : 0)) >> 1;
+		dz = (dz + ((dz < 0) ? -1 : 0)) >> 1;
+		return fixedSqrt(mul16(dx, dx) + mul16(dy, dy) + mul16(dz, dz)) << 1;
+	}
+
 	fixed16_16 computeDirAndLength(fixed16_16 dx, fixed16_16 dz, fixed16_16* dirX, fixed16_16* dirZ);
 
 	void computeTransformFromAngles_Fixed(angle14_32 yaw, angle14_32 pitch, angle14_32 roll, fixed16_16* transform);

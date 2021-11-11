@@ -74,6 +74,7 @@ namespace TFE_DarkForces
 		vec3_fixed delta;       // Movement amount in the current timeslice in units.
 		vec3_fixed vel;         // Projectile velocity in units / second.
 		fixed16_16 speed;       // Projectile speed in units / second.
+		fixed16_16 col_speed;	// Added for TFE to adjust for initial speed for collision detection purposes with small timesteps.
 		vec3_fixed dir;         // Projectile facing direction.
 		fixed16_16 horzBounciness;
 		fixed16_16 vertBounciness;

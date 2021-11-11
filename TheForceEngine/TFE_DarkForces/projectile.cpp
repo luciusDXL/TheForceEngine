@@ -675,6 +675,7 @@ namespace TFE_DarkForces
 				projLogic->cameraPassSnd = s_bobaBallCameraSnd;
 			} break;
 		}
+		projLogic->col_speed = projLogic->speed;
 
 		projObj->posWS.x = x;
 		projObj->posWS.y = y;
@@ -1487,7 +1488,7 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 
-		const fixed16_16 move = mul16(projLogic->speed, s_deltaTime);
+		const fixed16_16 move = mul16(projLogic->col_speed, s_deltaTime);
 		CollisionInterval interval =
 		{
 			obj->posWS.x,   // x0
