@@ -48,18 +48,22 @@ namespace TFE_RenderBackend
 	static u32 s_rtWidth, s_rtHeight;
 
 	static Blit* s_postEffectBlit;
+	static std::vector<SDL_Rect> s_displayBounds;
 
 	void drawVirtualDisplay();
 	void setupPostEffectChain();
-
+		
 	SDL_Window* createWindow(const WindowState& state)
 	{
 		u32 windowFlags = SDL_WINDOW_OPENGL;
 		bool windowed = !(state.flags & WINFLAG_FULLSCREEN);
 
 		TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
-
-		int x = windowSettings->x, y = windowSettings->y;
+		
+		s32 x = windowSettings->x, y = windowSettings->y;
+		s32 displayIndex = getDisplayIndex(x, y);
+		assert(displayIndex >= 0);
+		
 		if (windowed)
 		{
 			y = std::max(32, y);
@@ -68,8 +72,11 @@ namespace TFE_RenderBackend
 		}
 		else
 		{
-			x = 0;
-			y = 0;
+			MonitorInfo monitorInfo;
+			getDisplayMonitorInfo(displayIndex, &monitorInfo);
+
+			x = monitorInfo.x;
+			y = monitorInfo.y;
 			windowFlags |= SDL_WINDOW_BORDERLESS;
 		}
 
@@ -141,6 +148,11 @@ namespace TFE_RenderBackend
 
 		s_virtualDisplay = nullptr;
 		m_window = nullptr;
+	}
+
+	bool getVsyncEnabled()
+	{
+		return SDL_GL_GetSwapInterval() > 0;
 	}
 
 	void setClearColor(const f32* color)
@@ -225,6 +237,71 @@ namespace TFE_RenderBackend
 		s_screenCapture->resize(width, height);
 	}
 
+	void enumerateDisplays()
+	{
+		// Get the displays and their bounds.
+		s32 displayCount = SDL_GetNumVideoDisplays();
+		s_displayBounds.resize(displayCount);
+		for (s32 i = 0; i < displayCount; i++)
+		{
+			SDL_GetDisplayBounds(i, &s_displayBounds[i]);
+		}
+	}
+		
+	s32 getDisplayCount()
+	{
+		enumerateDisplays();
+		return (s32)s_displayBounds.size();
+	}
+
+	s32 getDisplayIndex(s32 x, s32 y)
+	{
+		enumerateDisplays();
+
+		// Then determine which display the window sits in.
+		s32 displayIndex = -1;
+		for (size_t i = 0; i < s_displayBounds.size(); i++)
+		{
+			if (x >= s_displayBounds[i].x && x < s_displayBounds[i].x + s_displayBounds[i].w &&
+				y >= s_displayBounds[i].y && y < s_displayBounds[i].x + s_displayBounds[i].h)
+			{
+				displayIndex = s32(i);
+				break;
+			}
+		}
+
+		return displayIndex;
+	}
+		
+	bool getDisplayMonitorInfo(s32 displayIndex, MonitorInfo* monitorInfo)
+	{
+		enumerateDisplays();
+		if (displayIndex >= (s32)s_displayBounds.size())
+		{
+			return false;
+		}
+
+		monitorInfo->x = s_displayBounds[displayIndex].x;
+		monitorInfo->y = s_displayBounds[displayIndex].y;
+		monitorInfo->w = s_displayBounds[displayIndex].w;
+		monitorInfo->h = s_displayBounds[displayIndex].h;
+		return true;
+	}
+
+	f32 getDisplayRefreshRate()
+	{
+		TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
+		SDL_GetWindowPosition((SDL_Window*)m_window, &windowSettings->x, &windowSettings->y);
+		s32 displayIndex = getDisplayIndex(windowSettings->x, windowSettings->y);
+		if (displayIndex >= 0)
+		{
+			SDL_DisplayMode mode = { 0 };
+			SDL_GetDesktopDisplayMode(displayIndex, &mode);
+			return (f32)mode.refresh_rate;
+		}
+		return 0.0f;
+	}
+
 	void enableFullscreen(bool enable)
 	{
 		TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
@@ -233,6 +310,17 @@ namespace TFE_RenderBackend
 		if (enable)
 		{
 			SDL_GetWindowPosition((SDL_Window*)m_window, &windowSettings->x, &windowSettings->y);
+			s32 displayIndex = getDisplayIndex(windowSettings->x, windowSettings->y);
+			if (displayIndex < 0)
+			{
+				displayIndex = 0;
+				windowSettings->x = s_displayBounds[0].x;
+				windowSettings->y = s_displayBounds[0].y;
+				windowSettings->baseWidth  = std::min(windowSettings->baseWidth,  (u32)s_displayBounds[0].w);
+				windowSettings->baseHeight = std::min(windowSettings->baseHeight, (u32)s_displayBounds[0].h);
+			}
+			m_windowState.monitorWidth  = s_displayBounds[displayIndex].w;
+			m_windowState.monitorHeight = s_displayBounds[displayIndex].h;
 
 			m_windowState.flags |= WINFLAG_FULLSCREEN;
 
@@ -241,9 +329,9 @@ namespace TFE_RenderBackend
 			SDL_SetWindowBordered((SDL_Window*)m_window, SDL_FALSE);
 
 			SDL_SetWindowSize((SDL_Window*)m_window, m_windowState.monitorWidth, m_windowState.monitorHeight);
-			SDL_SetWindowPosition((SDL_Window*)m_window, 0, 0);
+			SDL_SetWindowPosition((SDL_Window*)m_window, s_displayBounds[displayIndex].x, s_displayBounds[displayIndex].y);
 
-			m_windowState.width = m_windowState.monitorWidth;
+			m_windowState.width  = m_windowState.monitorWidth;
 			m_windowState.height = m_windowState.monitorHeight;
 		}
 		else
@@ -257,7 +345,7 @@ namespace TFE_RenderBackend
 			SDL_SetWindowSize((SDL_Window*)m_window, m_windowState.baseWindowWidth, m_windowState.baseWindowHeight);
 			SDL_SetWindowPosition((SDL_Window*)m_window, windowSettings->x, windowSettings->y);
 
-			m_windowState.width = m_windowState.baseWindowWidth;
+			m_windowState.width  = m_windowState.baseWindowWidth;
 			m_windowState.height = m_windowState.baseWindowHeight;
 		}
 

@@ -1,4 +1,6 @@
 #include <TFE_System/system.h>
+#include <TFE_System/profiler.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <SDL.h>
 #include <assert.h>
 #include <stdio.h>
@@ -29,6 +31,8 @@ namespace TFE_System
 	static bool s_resetStartTime = false;
 	static bool s_quitMessagePosted = false;
 
+	static s32 s_missedFrameCount = 0;
+
 	static char s_versionString[64];
 
 	void init(f32 refreshRate, bool synced, const char* versionString)
@@ -40,6 +44,7 @@ namespace TFE_System
 		s_refreshRate = f64(refreshRate);
 		s_synced = synced;
 
+		TFE_COUNTER(s_missedFrameCount, "Miss-Predicted Vysnc Intervals");
 		strcpy(s_versionString, versionString);
 	}
 
@@ -90,7 +95,21 @@ namespace TFE_System
 		if (s_synced && s_refreshRate > 0.0f)
 		{
 			const f64 intervals = std::max(1.0, floor(dt * s_refreshRate + 0.1));
-			dt = intervals / s_refreshRate;
+			f64 newDt = intervals / s_refreshRate;
+
+			f64 roundDiff = fabs(newDt - dt);
+			if (roundDiff > 0.25 / s_refreshRate)
+			{
+				// Something went wrong, so use the original delta time and check if the refresh rate has changed.
+				// Also verify that vsync is still set.
+				s_refreshRate = (f64)TFE_RenderBackend::getDisplayRefreshRate();
+				s_synced = TFE_RenderBackend::getVsyncEnabled();
+				s_missedFrameCount++;
+			}
+			else
+			{
+				dt = newDt;
+			}
 		}
 
 		// Next make sure that if the current fps is too low, that the game just slows down.
