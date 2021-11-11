@@ -11,10 +11,10 @@ namespace TFE_Jedi
 
 namespace RClassic_Float
 {
-	vec3_fixed s_polygonVerticesVS[POLY_MAX_VTX_COUNT];
-	vec3_fixed s_polygonVerticesProj[POLY_MAX_VTX_COUNT];
-	vec2_fixed s_polygonUv[POLY_MAX_VTX_COUNT];
-	fixed16_16 s_polygonIntensity[POLY_MAX_VTX_COUNT];
+	vec3_float s_polygonVerticesVS[POLY_MAX_VTX_COUNT];
+	vec3_float s_polygonVerticesProj[POLY_MAX_VTX_COUNT];
+	vec2_float s_polygonUv[POLY_MAX_VTX_COUNT];
+	f32 s_polygonIntensity[POLY_MAX_VTX_COUNT];
 
 	void robj3d_setupPolygon(Polygon* polygon)
 	{
@@ -28,16 +28,17 @@ namespace RClassic_Float
 		if (polygon->shading & PSHADE_TEXTURE)
 		{
 			const vec2_fixed* uv = (vec2_fixed*)polygon->uv;
-			const vec2_fixed zero = { 0 };
 			if (uv)
 			{
 				for (s32 v = 0; v < polygon->vertexCount; v++)
 				{
-					s_polygonUv[v] = uv[v];
+					s_polygonUv[v].x = fixed16ToFloat(uv[v].x);
+					s_polygonUv[v].z = fixed16ToFloat(uv[v].z);
 				}
 			}
 			else
 			{
+				vec2_float zero = { 0 };
 				for (s32 v = 0; v < polygon->vertexCount; v++)
 				{
 					s_polygonUv[v] = zero;

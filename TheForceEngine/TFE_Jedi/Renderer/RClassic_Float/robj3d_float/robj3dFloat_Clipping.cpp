@@ -15,35 +15,35 @@ namespace RClassic_Float
 	/////////////////////////////////////////////
 	// Clipping
 	/////////////////////////////////////////////
-	static fixed16_16 s_clipIntensityBuffer[POLY_MAX_VTX_COUNT];	// a buffer to hold clipped/final intensities
-	static vec3_fixed s_clipPosBuffer[POLY_MAX_VTX_COUNT];			// a buffer to hold clipped/final positions
-	static vec2_fixed s_clipUvBuffer[POLY_MAX_VTX_COUNT];			// a buffer to hold clipped/final texture coordinates
+	static f32        s_clipIntensityBuffer[POLY_MAX_VTX_COUNT];	// a buffer to hold clipped/final intensities
+	static vec3_float s_clipPosBuffer[POLY_MAX_VTX_COUNT];			// a buffer to hold clipped/final positions
+	static vec2_float s_clipUvBuffer[POLY_MAX_VTX_COUNT];			// a buffer to hold clipped/final texture coordinates
 
-	static fixed16_16  s_clipY0;
-	static fixed16_16  s_clipY1;
-	static fixed16_16  s_clipParam0;
-	static fixed16_16  s_clipParam1;
-	static fixed16_16  s_clipIntersectY;
-	static fixed16_16  s_clipIntersectZ;
-	static vec3_fixed* s_clipTempPos;
-	static fixed16_16  s_clipPlanePos0;
-	static fixed16_16  s_clipPlanePos1;
-	static fixed16_16* s_clipTempIntensity;
-	static fixed16_16* s_clipIntensitySrc;
-	static fixed16_16* s_clipIntensity0;
-	static fixed16_16* s_clipIntensity1;
-	static vec2_fixed* s_clipTempUv;
-	static vec2_fixed* s_clipUvSrc;
-	static vec2_fixed* s_clipUv0;
-	static vec2_fixed* s_clipUv1;
-	static fixed16_16  s_clipParam;
-	static fixed16_16  s_clipIntersectX;
-	static vec3_fixed* s_clipPos0;
-	static vec3_fixed* s_clipPos1;
-	static vec3_fixed* s_clipPosSrc;
-	static vec3_fixed* s_clipPosOut;
-	static fixed16_16* s_clipIntensityOut;
-	static vec2_fixed* s_clipUvOut;
+	static f32  s_clipY0;
+	static f32  s_clipY1;
+	static f32  s_clipParam0;
+	static f32  s_clipParam1;
+	static f32  s_clipIntersectY;
+	static f32  s_clipIntersectZ;
+	static vec3_float* s_clipTempPos;
+	static f32  s_clipPlanePos0;
+	static f32  s_clipPlanePos1;
+	static f32* s_clipTempIntensity;
+	static f32* s_clipIntensitySrc;
+	static f32* s_clipIntensity0;
+	static f32* s_clipIntensity1;
+	static vec2_float* s_clipTempUv;
+	static vec2_float* s_clipUvSrc;
+	static vec2_float* s_clipUv0;
+	static vec2_float* s_clipUv1;
+	static f32  s_clipParam;
+	static f32  s_clipIntersectX;
+	static vec3_float* s_clipPos0;
+	static vec3_float* s_clipPos1;
+	static vec3_float* s_clipPosSrc;
+	static vec3_float* s_clipPosOut;
+	static f32* s_clipIntensityOut;
+	static vec2_float* s_clipUvOut;
 	
 	////////////////////////////////////////////////
 	// Instantiate Clip Routines.

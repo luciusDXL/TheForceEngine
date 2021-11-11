@@ -254,9 +254,15 @@ namespace TFE_Jedi
 
 	inline void sinCosFlt(f32 angle, f32* sinValue, f32* cosValue)
 	{
-		const f32 scale = -PI / 180.0f;
+		const f32 scale = -PI / 16384.0f;
 		*sinValue = sinf(scale * angle);
 		*cosValue = cosf(scale * angle);
+	}
+
+	inline f32 sinFlt(f32 angle)
+	{
+		const f32 scale = -PI / 16384.0f;
+		return sinf(scale * angle);
 	}
 
 	void computeTransformFromAngles_Float(f32 yaw, f32 pitch, f32 roll, f32* transform);

@@ -20,85 +20,109 @@ namespace RClassic_Float
 	// Vertex Processing
 	/////////////////////////////////////////////
 	// Vertex attributes transformed to viewspace.
-	vec3_fixed s_verticesVS[MAX_VERTEX_COUNT_3DO];
-	vec3_fixed s_vertexNormalsVS[MAX_VERTEX_COUNT_3DO];
+	vec3_float s_verticesVS[MAX_VERTEX_COUNT_3DO];
+	vec3_float s_vertexNormalsVS[MAX_VERTEX_COUNT_3DO];
 	// Vertex Lighting.
-	fixed16_16 s_vertexIntensity[MAX_VERTEX_COUNT_3DO];
+	f32 s_vertexIntensity[MAX_VERTEX_COUNT_3DO];
 
 	/////////////////////////////////////////////
 	// Polygon Processing
 	/////////////////////////////////////////////
 	// Polygon normals in viewspace (used for culling).
-	vec3_fixed s_polygonNormalsVS[MAX_POLYGON_COUNT_3DO];
+	vec3_float s_polygonNormalsVS[MAX_POLYGON_COUNT_3DO];
 			
-	void robj3d_transformVertices(s32 vertexCount, vec3_fixed* vtxIn, s32* xform, vec3_fixed* offset, vec3_fixed* vtxOut)
+	void robj3d_transformVertices(s32 vertexCount, vec3_fixed* vtxIn, f32* xform, vec3_float* offset, vec3_float* vtxOut)
 	{
 		for (s32 v = 0; v < vertexCount; v++, vtxOut++, vtxIn++)
 		{
-			vtxOut->x = mul16(vtxIn->x, xform[0]) + mul16(vtxIn->y, xform[3]) + mul16(vtxIn->z, xform[6]) + offset->x;
-			vtxOut->y = mul16(vtxIn->x, xform[1]) + mul16(vtxIn->y, xform[4]) + mul16(vtxIn->z, xform[7]) + offset->y;
-			vtxOut->z = mul16(vtxIn->x, xform[2]) + mul16(vtxIn->y, xform[5]) + mul16(vtxIn->z, xform[8]) + offset->z;
+			const vec3_float vtxFlt = { fixed16ToFloat(vtxIn->x), fixed16ToFloat(vtxIn->y), fixed16ToFloat(vtxIn->z) };
+
+			vtxOut->x = (vtxFlt.x*xform[0]) + (vtxFlt.y*xform[3]) + (vtxFlt.z*xform[6]) + offset->x;
+			vtxOut->y = (vtxFlt.x*xform[1]) + (vtxFlt.y*xform[4]) + (vtxFlt.z*xform[7]) + offset->y;
+			vtxOut->z = (vtxFlt.x*xform[2]) + (vtxFlt.y*xform[5]) + (vtxFlt.z*xform[8]) + offset->z;
 		}
 	}
 
-	fixed16_16 robj3d_dotProduct(const vec3_fixed* pos, const vec3_fixed* normal, const vec3_fixed* dir)
+	void robj3d_mulMatrix3x3(f32* mtx0, fixed16_16* mtx1, f32* mtxOut)
 	{
-		fixed16_16 nx = normal->x - pos->x;
-		fixed16_16 ny = normal->y - pos->y;
-		fixed16_16 nz = normal->z - pos->z;
+		const f32 mtx1Flt[9]=
+		{
+			fixed16ToFloat(mtx1[0]), fixed16ToFloat(mtx1[1]), fixed16ToFloat(mtx1[2]),
+			fixed16ToFloat(mtx1[3]), fixed16ToFloat(mtx1[4]), fixed16ToFloat(mtx1[5]),
+			fixed16ToFloat(mtx1[6]), fixed16ToFloat(mtx1[7]), fixed16ToFloat(mtx1[8]),
+		};
 
-		fixed16_16 dx = dir->x - pos->x;
-		fixed16_16 dy = dir->y - pos->y;
-		fixed16_16 dz = dir->z - pos->z;
+		mtxOut[0] = (mtx0[0] * mtx1Flt[0]) + (mtx0[3] * mtx1Flt[3]) + (mtx0[6] * mtx1Flt[6]);
+		mtxOut[3] = (mtx0[0] * mtx1Flt[1]) + (mtx0[3] * mtx1Flt[4]) + (mtx0[6] * mtx1Flt[7]);
+		mtxOut[6] = (mtx0[0] * mtx1Flt[2]) + (mtx0[3] * mtx1Flt[5]) + (mtx0[6] * mtx1Flt[8]);
 
-		fixed16_16 ndx = mul16(nx, dx);
-		fixed16_16 ndy = mul16(ny, dy);
-		fixed16_16 ndz = mul16(nz, dz);
+		mtxOut[1] = (mtx0[1] * mtx1Flt[0]) + (mtx0[4] * mtx1Flt[3]) + (mtx0[7] * mtx1Flt[6]);
+		mtxOut[4] = (mtx0[1] * mtx1Flt[1]) + (mtx0[4] * mtx1Flt[4]) + (mtx0[7] * mtx1Flt[7]);
+		mtxOut[7] = (mtx0[1] * mtx1Flt[2]) + (mtx0[4] * mtx1Flt[5]) + (mtx0[7] * mtx1Flt[8]);
+
+		mtxOut[2] = (mtx0[2] * mtx1Flt[0]) + (mtx0[5] * mtx1Flt[3]) + (mtx0[8] * mtx1Flt[6]);
+		mtxOut[5] = (mtx0[2] * mtx1Flt[1]) + (mtx0[5] * mtx1Flt[4]) + (mtx0[8] * mtx1Flt[7]);
+		mtxOut[8] = (mtx0[2] * mtx1Flt[2]) + (mtx0[5] * mtx1Flt[5]) + (mtx0[8] * mtx1Flt[8]);
+	}
+
+	f32 robj3d_dotProduct(const vec3_float* pos, const vec3_float* normal, const vec3_float* dir)
+	{
+		f32 nx = normal->x - pos->x;
+		f32 ny = normal->y - pos->y;
+		f32 nz = normal->z - pos->z;
+
+		f32 dx = dir->x - pos->x;
+		f32 dy = dir->y - pos->y;
+		f32 dz = dir->z - pos->z;
+
+		f32 ndx = nx * dx;
+		f32 ndy = ny * dy;
+		f32 ndz = nz * dz;
 
 		return ndx + ndy + ndz;
 	}
 		
-	void robj3d_shadeVertices(s32 vertexCount, fixed16_16* outShading, const vec3_fixed* vertices, const vec3_fixed* normals)
+	void robj3d_shadeVertices(s32 vertexCount, f32* outShading, const vec3_float* vertices, const vec3_float* normals)
 	{
-		const vec3_fixed* normal = normals;
-		const vec3_fixed* vertex = vertices;
+		const vec3_float* normal = normals;
+		const vec3_float* vertex = vertices;
 		for (s32 i = 0; i < vertexCount; i++, normal++, vertex++, outShading++)
 		{
-			fixed16_16 intensity = 0;
+			f32 intensity = 0.0f;
 			if (s_sectorAmbient >= 31)
 			{
-				intensity = VSHADE_MAX_INTENSITY;
+				intensity = VSHADE_MAX_INTENSITY_FLT;
 			}
 			else
 			{
-				fixed16_16 lightIntensity = intensity;
+				f32 lightIntensity = intensity;
 
 				// Lighting
 				for (s32 i = 0; i < s_lightCount; i++)
 				{
-					const CameraLight* light = &s_cameraLight[i];
-					const vec3_fixed dir =
+					const CameraLightFlt* light = &s_cameraLight[i];
+					const vec3_float dir =
 					{
 						vertex->x + light->lightVS.x,
 						vertex->y + light->lightVS.y,
 						vertex->z + light->lightVS.z
 					};
 
-					const fixed16_16 I = robj3d_dotProduct(vertex, normal, &dir);
-					if (I > 0)
+					const f32 I = robj3d_dotProduct(vertex, normal, &dir);
+					if (I > 0.0f)
 					{
-						fixed16_16 source = light->brightness;
-						fixed16_16 sourceIntensity = mul16(VSHADE_MAX_INTENSITY, source);
-						lightIntensity += mul16(I, sourceIntensity);
+						f32 source = light->brightness;
+						f32 sourceIntensity = VSHADE_MAX_INTENSITY_FLT * source;
+						lightIntensity += (I * sourceIntensity);
 					}
 				}
-				intensity += mul16(lightIntensity, s_sectorAmbientFraction);
+				intensity += lightIntensity * fixed16ToFloat(s_sectorAmbientFraction);
 
 				// Distance falloff
-				const fixed16_16 z = max(0, vertex->z);
+				const f32 z = max(0.0f, vertex->z);
 				if (s_worldAmbient < 31 || s_cameraLightSource)
 				{
-					const s32 depthScaled = min(s32(z >> 14), 127);
+					const s32 depthScaled = (s32)min(z * 6.0f, 127.0f);
 					const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
 					if (cameraSource > 0)
 					{
@@ -106,9 +130,9 @@ namespace RClassic_Float
 					}
 				}
 
-				const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
-				intensity = max(intToFixed16(s_sectorAmbient), intensity) - falloff;
-				intensity = clamp(intensity, s_scaledAmbient, VSHADE_MAX_INTENSITY);
+				const s32 falloff = floorFloat(z * 6.0f);
+				intensity = max(f32(s_sectorAmbient), intensity) - falloff;
+				intensity = clamp(intensity, (f32)s_scaledAmbient, VSHADE_MAX_INTENSITY_FLT);
 			}
 			*outShading = intensity;
 		}
@@ -127,7 +151,7 @@ namespace RClassic_Float
 
 		// Concatenate the camera and object rotation matrices.
 		f32 xform[9];
-		mulMatrix3x3(s_rcfltState.cameraMtx, obj->transform, xform);
+		robj3d_mulMatrix3x3(s_rcfltState.cameraMtx, obj->transform, xform);
 
 		// Transform model vertices into view space.
 		robj3d_transformVertices(model->vertexCount, (vec3_fixed*)model->vertices, xform, &offsetVS, s_verticesVS);

@@ -6,12 +6,12 @@ namespace TFE_Jedi
 
 namespace RClassic_Float
 {
-	void edgePair_setup(s32 length, s32 x0, fixed16_16 dyFloor_dx, fixed16_16 yFloor1, fixed16_16 yFloor, fixed16_16 dyCeil_dx, fixed16_16 yCeil, fixed16_16 yCeil1, EdgePairFloat* edgePair)
+	void edgePair_setup(s32 length, s32 x0, f32 dyFloor_dx, f32 yFloor1, f32 yFloor, f32 dyCeil_dx, f32 yCeil, f32 yCeil1, EdgePairFloat* edgePair)
 	{
-		const s32 yF0 = round16(yFloor);
-		const s32 yF1 = round16(yFloor1);
-		const s32 yC0 = round16(yCeil);
-		const s32 yC1 = round16(yCeil1);
+		const s32 yF0 = roundFloat(yFloor);
+		const s32 yF1 = roundFloat(yFloor1);
+		const s32 yC0 = roundFloat(yCeil);
+		const s32 yC1 = roundFloat(yCeil1);
 
 		edgePair->yCeil0 = yCeil;
 		edgePair->yCeil1 = yCeil1;

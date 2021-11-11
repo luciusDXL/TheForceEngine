@@ -43,18 +43,20 @@ namespace TFE_Jedi
 		f32  skyPitchOffset;
 		f32* skyTable;
 		f32  cameraMtx[9];
+		f32  aspectScaleX;
+		f32  aspectScaleY;
+		f32  nearPlaneHalfLen;
 
 		// Window
 		f32 windowMinZ;
 		f32 windowMinY;
 		f32 windowMaxY;
-		
+				
 		// Column Heights
 		f32* column_Z_Over_X;
 		f32* column_X_Over_Z;
 
 		// Flats
-		f32* rcpY;
 		EdgePairFloat* flatEdge;
 		EdgePairFloat  flatEdgeList[MAX_SEG];
 		EdgePairFloat* adjoinEdge;

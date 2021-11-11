@@ -437,6 +437,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rsectorFixed.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rwallFixed.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\screenDraw.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\fixedPoint20.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rclassicFloat.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rclassicFloatSharedState.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\redgePairFloat.h" />

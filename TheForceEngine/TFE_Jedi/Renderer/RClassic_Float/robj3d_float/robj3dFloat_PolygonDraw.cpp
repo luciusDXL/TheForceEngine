@@ -7,6 +7,7 @@
 #include "robj3dFloat_TransformAndLighting.h"
 #include "robj3dFloat_PolygonSetup.h"
 #include "robj3dFloat_Clipping.h"
+#include "../fixedPoint20.h"
 #include "../rsectorFloat.h"
 #include "../rflatFloat.h"
 #include "../rclassicFloatSharedState.h"
@@ -18,6 +19,11 @@ namespace TFE_Jedi
 
 namespace RClassic_Float
 {
+	struct vec2_fixed20
+	{
+		fixed44_20 x, z;
+	};
+
 	////////////////////////////////////////////////
 	// Polygon Drawing
 	////////////////////////////////////////////////
@@ -25,9 +31,9 @@ namespace RClassic_Float
 	static u8  s_polyColorIndex;
 	static s32 s_polyVertexCount;
 	static s32 s_polyMaxIndex;
-	static fixed16_16* s_polyIntensity;
-	static vec2_fixed* s_polyUv;
-	static vec3_fixed* s_polyProjVtx;
+	static f32* s_polyIntensity;
+	static vec2_float* s_polyUv;
+	static vec3_float* s_polyProjVtx;
 	static const u8*   s_polyColorMap;
 	static TextureData* s_polyTexture;
 
@@ -38,41 +44,41 @@ namespace RClassic_Float
 	static s32 s_dither;
 	static u8* s_pcolumnOut;
 		
-	static fixed16_16  s_col_I0;
-	static fixed16_16  s_col_dIdY;
-	static vec2_fixed  s_col_Uv0;
-	static vec2_fixed  s_col_dUVdY;
+	static fixed44_20 s_col_I0;
+	static fixed44_20 s_col_dIdY;
+	static vec2_fixed20 s_col_Uv0;
+	static vec2_fixed20 s_col_dUVdY;
 
 	// Polygon Edges
-	static fixed16_16  s_ditherOffset;
+	static fixed44_20  s_ditherOffset;
 	// Bottom Edge
-	static fixed16_16  s_edgeBot_Z0;
-	static fixed16_16  s_edgeBot_dZdX;
-	static fixed16_16  s_edgeBot_dIdX;
-	static fixed16_16  s_edgeBot_I0;
-	static vec2_fixed  s_edgeBot_dUVdX;
-	static vec2_fixed  s_edgeBot_Uv0;
-	static fixed16_16  s_edgeBot_dYdX;
-	static fixed16_16  s_edgeBot_Y0;
+	static f32  s_edgeBot_Z0;
+	static f32  s_edgeBot_dZdX;
+	static f32  s_edgeBot_dIdX;
+	static f32  s_edgeBot_I0;
+	static vec2_float  s_edgeBot_dUVdX;
+	static vec2_float  s_edgeBot_Uv0;
+	static f32  s_edgeBot_dYdX;
+	static f32  s_edgeBot_Y0;
 	// Top Edge
-	static fixed16_16  s_edgeTop_dIdX;
-	static vec2_fixed  s_edgeTop_dUVdX;
-	static vec2_fixed  s_edgeTop_Uv0;
-	static fixed16_16  s_edgeTop_dYdX;
-	static fixed16_16  s_edgeTop_Z0;
-	static fixed16_16  s_edgeTop_Y0;
-	static fixed16_16  s_edgeTop_dZdX;
-	static fixed16_16  s_edgeTop_I0;
+	static f32  s_edgeTop_dIdX;
+	static vec2_float  s_edgeTop_dUVdX;
+	static vec2_float  s_edgeTop_Uv0;
+	static f32  s_edgeTop_dYdX;
+	static f32  s_edgeTop_Z0;
+	static f32  s_edgeTop_Y0;
+	static f32  s_edgeTop_dZdX;
+	static f32  s_edgeTop_I0;
 	// Left Edge
-	static fixed16_16  s_edgeLeft_X0;
-	static fixed16_16  s_edgeLeft_Z0;
-	static fixed16_16  s_edgeLeft_dXdY;
-	static fixed16_16  s_edgeLeft_dZmdY;
+	static f32  s_edgeLeft_X0;
+	static f32  s_edgeLeft_Z0;
+	static f32  s_edgeLeft_dXdY;
+	static f32  s_edgeLeft_dZmdY;
 	// Right Edge
-	static fixed16_16  s_edgeRight_X0;
-	static fixed16_16  s_edgeRight_Z0;
-	static fixed16_16  s_edgeRight_dXdY;
-	static fixed16_16  s_edgeRight_dZmdY;
+	static f32  s_edgeRight_X0;
+	static f32  s_edgeRight_Z0;
+	static f32  s_edgeRight_dXdY;
+	static f32  s_edgeRight_dZmdY;
 	// Edge Pixels & Indices
 	static s32 s_edgeBotY0_Pixel;
 	static s32 s_edgeTopY0_Pixel;
@@ -87,31 +93,30 @@ namespace RClassic_Float
 	static s32 s_edgeLeftLength;
 	static s32 s_edgeRightLength;
 
-	u8 robj3d_computePolygonColor(vec3_fixed* normal, u8 color, fixed16_16 z)
+	u8 robj3d_computePolygonColor(vec3_float* normal, u8 color, f32 z)
 	{
 		if (s_sectorAmbient >= 31) { return color; }
 		s_polyColorMap = s_colorMap;
-
 		s32 lightLevel = 0;
 		
-		fixed16_16 lighting = 0;
+		f32 lighting = 0.0f;
 		for (s32 i = 0; i < s_lightCount; i++)
 		{
-			const CameraLight* light = &s_cameraLight[i];
-			const s32 L = dot(normal, &light->lightVS);
+			const CameraLightFlt* light = &s_cameraLight[i];
+			const f32 L = dot(normal, &light->lightVS);
 
-			if (L > 0)
+			if (L > 0.0f)
 			{
-				const fixed16_16 brightness = mul16(light->brightness, VSHADE_MAX_INTENSITY);
-				lighting += mul16(L, brightness);
+				const f32 brightness = light->brightness * VSHADE_MAX_INTENSITY_FLT;
+				lighting += L * brightness;
 			}
 		}
-		lightLevel += floor16(mul16(lighting, s_sectorAmbientFraction));
+		lightLevel += floorFloat(lighting * fixed16ToFloat(s_sectorAmbientFraction));
 		if (lightLevel >= 31) { return color; }
 
 		if (s_worldAmbient < 31 || s_cameraLightSource)
 		{
-			const s32 depthScaled = min(s32(z >> 14), 127);
+			const s32 depthScaled = (s32)min(z * 4.0f, 127.0f);
 			const s32 cameraSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
 			if (cameraSource > 0)
 			{
@@ -119,8 +124,8 @@ namespace RClassic_Float
 			}
 		}
 
-		z = max(z, 0);
-		const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
+		z = max(z, 0.0f);
+		const s32 falloff = s32(z * 6.0f);
 		lightLevel = max(lightLevel, s_sectorAmbient);
 		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
 
@@ -130,29 +135,29 @@ namespace RClassic_Float
 		return s_polyColorMap[lightLevel*256 + color];
 	}
 
-	u8 robj3d_computePolygonLightLevel(vec3_fixed* normal, fixed16_16 z)
+	u8 robj3d_computePolygonLightLevel(vec3_float* normal, f32 z)
 	{
 		if (s_sectorAmbient >= 31) { return 31; }
 		s32 lightLevel = 0;
 
-		fixed16_16 lighting = 0;
+		f32 lighting = 0.0f;
 		for (s32 i = 0; i < s_lightCount; i++)
 		{
-			const CameraLight* light = &s_cameraLight[i];
-			const s32 L = dot(normal, &light->lightVS);
+			const CameraLightFlt* light = &s_cameraLight[i];
+			const f32 L = dot(normal, &light->lightVS);
 
-			if (L > 0)
+			if (L > 0.0f)
 			{
-				const fixed16_16 brightness = mul16(light->brightness, VSHADE_MAX_INTENSITY);
-				lighting += mul16(L, brightness);
+				const f32 brightness = light->brightness * VSHADE_MAX_INTENSITY_FLT;
+				lighting += L * brightness;
 			}
 		}
-		lightLevel += floor16(mul16(lighting, s_sectorAmbientFraction));
+		lightLevel += floorFloat(lighting * fixed16ToFloat(s_sectorAmbientFraction));
 		if (lightLevel >= 31) { return 31; }
 
 		if (s_worldAmbient < 31 || s_cameraLightSource)
 		{
-			const s32 depthScaled = min(s32(z >> 14), 127);
+			const s32 depthScaled = (s32)min(z * 4.0f, 127.0f);
 			const s32 cameraSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
 			if (cameraSource > 0)
 			{
@@ -160,8 +165,8 @@ namespace RClassic_Float
 			}
 		}
 
-		z = max(z, 0);
-		const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
+		z = max(z, 0.0f);
+		const s32 falloff = s32(z * 6.0f);
 		lightLevel = max(lightLevel, s_sectorAmbient);
 		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
 
@@ -215,30 +220,30 @@ namespace RClassic_Float
 			if (nextIndex >= s_polyVertexCount) { nextIndex = 0; }
 			else if (nextIndex < 0) { nextIndex = s_polyVertexCount - 1; }
 
-			const vec3_fixed* cur = &s_polyProjVtx[curIndex];
-			const vec3_fixed* next = &s_polyProjVtx[nextIndex];
-			const s32 y0 = cur->y;
-			const s32 y1 = next->y;
+			const vec3_float* cur  = &s_polyProjVtx[curIndex];
+			const vec3_float* next = &s_polyProjVtx[nextIndex];
+			const s32 y0 = s32(cur->y + 0.5f);
+			const s32 y1 = s32(next->y + 0.5f);
 
 			s32 dy = y1 - y0;
 			if (y1 == s_maxScreenY) { dy++; }
 
 			if (dy > 0)
 			{
-				const s32 x0 = cur->x;
-				const s32 x1 = next->x;
-				const fixed16_16 dX = intToFixed16(x1 - x0);
-				const fixed16_16 dY = intToFixed16(dy);
-				const fixed16_16 dXdY = div16(dX, dY);
+				const s32 x0 = s32(cur->x + 0.5f);
+				const s32 x1 = s32(next->x + 0.5f);
+				const f32 dX = f32(x1 - x0);
+				const f32 dY = f32(dy);
+				const f32 dXdY = dX / dY;
 
 				s_edgeRight_X0_Pixel = x0;
-				s_edgeRight_X0 = intToFixed16(x0);
+				s_edgeRight_X0 = f32(x0);
 				s_edgeRightLength = dy;
 
 				s_edgeRight_dXdY = dXdY;
 				s_edgeRight_Z0 = cur->z;
 
-				s_edgeRight_dZmdY = mul16(next->z - cur->z, dY);
+				s_edgeRight_dZmdY = (next->z - cur->z) * dY;
 				s_edgeRightIndex = nextIndex;
 				return 0;
 			}
@@ -272,30 +277,30 @@ namespace RClassic_Float
 			if (prevIndex >= s_polyVertexCount) { prevIndex = 0; }
 			else if (prevIndex < 0) { prevIndex = s_polyVertexCount - 1; }
 
-			const vec3_fixed* cur = &s_polyProjVtx[curIndex];
-			const vec3_fixed* prev = &s_polyProjVtx[prevIndex];
-			const s32 y0 = cur->y;
-			const s32 y1 = prev->y;
+			const vec3_float* cur  = &s_polyProjVtx[curIndex];
+			const vec3_float* prev = &s_polyProjVtx[prevIndex];
+			const s32 y0 = s32(cur->y  + 0.5f);
+			const s32 y1 = s32(prev->y + 0.5f);
 
 			s32 dy = y1 - y0;
 			if (y1 == s_maxScreenY) { dy++; }
 
 			if (dy > 0)
 			{
-				const s32 x0 = cur->x;
-				const s32 x1 = prev->x;
-				const fixed16_16 dX = intToFixed16(x1 - x0);
-				const fixed16_16 dY = intToFixed16(dy);
-				const fixed16_16 dXdY = div16(dX, dY);
+				const s32 x0 = s32(cur->x  + 0.5f);
+				const s32 x1 = s32(prev->x + 0.5f);
+				const f32 dX = f32(x1 - x0);
+				const f32 dY = f32(dy);
+				const f32 dXdY = dX / dY;
 
 				s_edgeLeft_X0_Pixel = x0;
-				s_edgeLeft_X0 = intToFixed16(x0);
+				s_edgeLeft_X0 = f32(x0);
 				s_edgeLeftLength = dy;
 
 				s_edgeLeft_dXdY = dXdY;
 				s_edgeLeft_Z0 = cur->z;
 
-				s_edgeLeft_dZmdY = mul16(prev->z - cur->z, dY);
+				s_edgeLeft_dZmdY = (prev->z - cur->z) * dY;
 				s_edgeLeftIndex = prevIndex;
 				return 0;
 			}
@@ -313,7 +318,7 @@ namespace RClassic_Float
 		return -1;
 	}
 
-	void robj3d_drawPlaneTexturePolygon(vec3_fixed* projVertices, s32 vertexCount, TextureData* texture, fixed16_16 planeY, fixed16_16 ceilOffsetX, fixed16_16 ceilOffsetZ, fixed16_16 floorOffsetX, fixed16_16 floorOffsetZ)
+	void robj3d_drawPlaneTexturePolygon(vec3_float* projVertices, s32 vertexCount, TextureData* texture, f32 planeY, f32 ceilOffsetX, f32 ceilOffsetZ, f32 floorOffsetX, f32 floorOffsetZ)
 	{
 		if (vertexCount <= 0) { return; }
 
@@ -324,17 +329,17 @@ namespace RClassic_Float
 		s_polyProjVtx = projVertices;
 		s_polyVertexCount = vertexCount;
 		
-		vec3_fixed* vertex = projVertices;
+		vec3_float* vertex = projVertices;
 		for (s32 i = 0; i < s_polyVertexCount; i++, vertex++)
 		{
 			if (vertex->y < yMin)
 			{
-				yMin = vertex->y;
+				yMin = s32(vertex->y + 0.5f);
 				minIndex = i;
 			}
 			if (vertex->y > yMax)
 			{
-				yMax = vertex->y;
+				yMax = s32(vertex->y + 0.5f);
 				s_polyMaxIndex = i;
 			}
 		}
@@ -351,7 +356,7 @@ namespace RClassic_Float
 			return;
 		}
 
-		fixed16_16 heightOffset = planeY - s_rcfltState.eyeHeight;
+		f32 heightOffset = planeY - s_rcfltState.eyeHeight;
 		// TODO: Figure out why s_heightInPixels has the wrong sign here.
 		if (yMax <= -s_screenYMid)
 		{
@@ -379,7 +384,7 @@ namespace RClassic_Float
 			{
 				s_edgeLeft_X0 += s_edgeLeft_dXdY;
 				s_edgeLeft_Z0 += s_edgeLeft_dZmdY;
-				s_edgeLeft_X0_Pixel = round16(s_edgeLeft_X0);
+				s_edgeLeft_X0_Pixel = roundFloat(s_edgeLeft_X0);
 
 				// Right Z0 increment in the wrong place again.
 				// TODO: Figure out the consequences of this bug.
@@ -393,7 +398,7 @@ namespace RClassic_Float
 			else
 			{
 				s_edgeRight_X0 += s_edgeRight_dXdY;
-				s_edgeRight_X0_Pixel = round16(s_edgeRight_X0);
+				s_edgeRight_X0_Pixel = roundFloat(s_edgeRight_X0);
 
 				// This is the proper place for this.
 				s_edgeRight_Z0 += s_edgeRight_dZmdY;
@@ -410,7 +415,7 @@ namespace RClassic_Float
 				u8 color = polygon->color;
 				if (s_enableFlatShading)
 				{
-					color = robj3d_computePolygonColor(&s_polygonNormalsVS[polygon->index], color, polygon->zAve);
+					color = robj3d_computePolygonColor(&s_polygonNormalsVS[polygon->index], color, polygon->zAvef);
 				}
 				robj3d_drawFlatColorPolygon(s_polygonVerticesProj, polyVertexCount, color);
 			} break;
@@ -423,7 +428,7 @@ namespace RClassic_Float
 				u8 lightLevel = 0;
 				if (s_enableFlatShading)
 				{
-					lightLevel = robj3d_computePolygonLightLevel(&s_polygonNormalsVS[polygon->index], polygon->zAve);
+					lightLevel = robj3d_computePolygonLightLevel(&s_polygonNormalsVS[polygon->index], polygon->zAvef);
 				}
 				robj3d_drawFlatTexturePolygon(s_polygonVerticesProj, s_polygonUv, polyVertexCount, polygon->texture, lightLevel);
 			} break;
@@ -434,8 +439,10 @@ namespace RClassic_Float
 			case PSHADE_PLANE:
 			{
 				const RSector* sector = obj->sector;
-				const fixed16_16 planeY = model->vertices[polygon->indices[0]].y + obj->posWS.y;
-				robj3d_drawPlaneTexturePolygon(s_polygonVerticesProj, polyVertexCount, polygon->texture, planeY, sector->ceilOffset.x, sector->ceilOffset.z, sector->floorOffset.x, sector->floorOffset.z);
+				const f32 planeY = fixed16ToFloat(model->vertices[polygon->indices[0]].y + obj->posWS.y);
+				// TODO: Caching.
+				robj3d_drawPlaneTexturePolygon(s_polygonVerticesProj, polyVertexCount, polygon->texture, planeY,
+					fixed16ToFloat(sector->ceilOffset.x), fixed16ToFloat(sector->ceilOffset.z), fixed16ToFloat(sector->floorOffset.x), fixed16ToFloat(sector->floorOffset.z));
 			} break;
 			default:
 			{

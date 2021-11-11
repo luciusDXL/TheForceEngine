@@ -14,10 +14,10 @@ namespace TFE_Jedi
 {
 	namespace RClassic_Float
 	{
-		extern vec3_fixed s_polygonVerticesVS[POLY_MAX_VTX_COUNT];
-		extern vec3_fixed s_polygonVerticesProj[POLY_MAX_VTX_COUNT];
-		extern vec2_fixed s_polygonUv[POLY_MAX_VTX_COUNT];
-		extern fixed16_16 s_polygonIntensity[POLY_MAX_VTX_COUNT];
+		extern vec3_float s_polygonVerticesVS[POLY_MAX_VTX_COUNT];
+		extern vec3_float s_polygonVerticesProj[POLY_MAX_VTX_COUNT];
+		extern vec2_float s_polygonUv[POLY_MAX_VTX_COUNT];
+		extern f32 s_polygonIntensity[POLY_MAX_VTX_COUNT];
 
 		void robj3d_setupPolygon(Polygon* polygon);
 	}

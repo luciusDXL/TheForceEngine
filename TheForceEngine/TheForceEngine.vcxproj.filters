@@ -709,9 +709,6 @@
     <ClInclude Include="TFE_DarkForces\Actor\bobaFett.h">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\Actor\phaseThree.h">
-      <Filter>Source\TFE_DarkForces\Actor</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rclassicFloat.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Float</Filter>
     </ClInclude>
@@ -759,6 +756,12 @@
     </ClInclude>
     <ClInclude Include="TFE_Jedi\Renderer\rwallSegment.h">
       <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Actor\phaseThree.h">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\fixedPoint20.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_Float</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1221,9 +1224,6 @@
     <ClCompile Include="TFE_DarkForces\Actor\bobaFett.cpp">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_DarkForces\Actor\phaseThree.cpp">
-      <Filter>Source\TFE_DarkForces\Actor</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rclassicFloat.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Float</Filter>
     </ClCompile>
@@ -1262,6 +1262,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Float\robj3d_float</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Actor\phaseThree.cpp">
+      <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

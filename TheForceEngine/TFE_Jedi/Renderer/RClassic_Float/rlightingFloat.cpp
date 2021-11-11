@@ -13,26 +13,26 @@ namespace RClassic_Float
 	#define LIGHT_ATTEN0 20
 	#define LIGHT_ATTEN1 21
 
-	CameraLight s_cameraLight[] =
+	CameraLightFlt s_cameraLight[] =
 	{
-		{ {0, 0, ONE_16}, {0, 0, 0}, ONE_16 },
-		{ {0, ONE_16, 0}, {0, 0, 0}, ONE_16 },
-		{ {ONE_16, 0, 0}, {0, 0, 0}, ONE_16 },
+		{ {0, 0, 1.0f}, {0, 0, 0}, 1.0f },
+		{ {0, 1.0f, 0}, {0, 0, 0}, 1.0f },
+		{ {1.0f, 0, 0}, {0, 0, 0}, 1.0f },
 	};
 
-	const u8* computeLighting(fixed16_16 depth, s32 lightOffset)
+	const u8* computeLighting(f32 depth, s32 lightOffset)
 	{
 		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)
 		{
 			return nullptr;
 		}
-		depth = max(depth, 0);
+		depth = max(depth, 0.0f);
 		s32 light = 0;
 
 		// handle camera lightsource
 		if (s_worldAmbient < MAX_LIGHT_LEVEL || s_cameraLightSource)
 		{
-			s32 depthScaled = min(s32(depth >> LIGHT_SCALE), 127);
+			s32 depthScaled = min(s32(depth * 4.0f), 127);
 			s32 lightSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
 			if (lightSource > 0)
 			{
@@ -43,7 +43,7 @@ namespace RClassic_Float
 		s32 secAmb = s_sectorAmbient;
 		if (light < secAmb) { light = secAmb; }
 
-		s32 depthAtten = s32((depth >> LIGHT_ATTEN0) + (depth >> LIGHT_ATTEN1));		// depth * 3/32
+		s32 depthAtten = s32(depth / 16.0f) + s32(depth / 32.0f);		// depth * 3/32
 		light = max(light - depthAtten, s_scaledAmbient);
 
 		if (lightOffset != 0)

@@ -5,6 +5,7 @@
 #include "redgePairFloat.h"
 #include "rclassicFloat.h"
 #include "rclassicFloatSharedState.h"
+#include "fixedPoint20.h"
 #include "../rscanline.h"
 #include "../rsectorRender.h"
 #include "../redgePair.h"
@@ -18,10 +19,10 @@ namespace RClassic_Float
 {
 	static s32 s_scanlineX0;
 
-	static fixed16_16 s_scanlineU0;
-	static fixed16_16 s_scanlineV0;
-	static fixed16_16 s_scanline_dUdX;
-	static fixed16_16 s_scanline_dVdX;
+	static fixed44_20 s_scanlineU0;
+	static fixed44_20 s_scanlineV0;
+	static fixed44_20 s_scanline_dUdX;
+	static fixed44_20 s_scanline_dVdX;
 
 	static s32 s_scanlineWidth;
 	static const u8* s_scanlineLight;
@@ -34,21 +35,21 @@ namespace RClassic_Float
 	static s32 s_ftexHeightMask;
 	static s32 s_ftexHeightLog2;
 		
-	void flat_addEdges(s32 length, s32 x0, fixed16_16 dyFloor_dx, fixed16_16 yFloor, fixed16_16 dyCeil_dx, fixed16_16 yCeil)
+	void flat_addEdges(s32 length, s32 x0, f32 dyFloor_dx, f32 yFloor, f32 dyCeil_dx, f32 yCeil)
 	{
 		if (s_flatCount < MAX_SEG && length > 0)
 		{
-			const fixed16_16 lengthFixed = intToFixed16(length - 1);
+			const f32 lengthFlt = f32(length - 1);
 
-			fixed16_16 yCeil1 = yCeil;
+			f32 yCeil1 = yCeil;
 			if (dyCeil_dx != 0)
 			{
-				yCeil1 += mul16(dyCeil_dx, lengthFixed);
+				yCeil1 += dyCeil_dx * lengthFlt;
 			}
-			fixed16_16 yFloor1 = yFloor;
+			f32 yFloor1 = yFloor;
 			if (dyFloor_dx != 0)
 			{
-				yFloor1 += mul16(dyFloor_dx, lengthFixed);
+				yFloor1 += dyFloor_dx * lengthFlt;
 			}
 
 			edgePair_setup(length, x0, dyFloor_dx, yFloor1, yFloor, dyCeil_dx, yCeil, yCeil1, s_rcfltState.flatEdge);
@@ -79,103 +80,69 @@ namespace RClassic_Float
 	// to account for C vs ASM differences.
 	void drawScanline()
 	{
-		fixed16_16 V = s_scanlineV0;
-		fixed16_16 U = s_scanlineU0;
-		fixed16_16 dVdX = s_scanline_dVdX;
-		fixed16_16 dUdX = s_scanline_dUdX;
+		const fixed44_20 dVdX = s_scanline_dVdX;
+		const fixed44_20 dUdX = s_scanline_dUdX;
+		fixed44_20 V = s_scanlineV0;
+		fixed44_20 U = s_scanlineU0;
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
-		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
-		texel &= s_ftexDataEnd;
-		U += dUdX;
-		V += dVdX;
-
-		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--, U += dUdX, V += dVdX)
 		{
-			u8 c = s_scanlineLight[s_ftexImage[texel]];
-			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
-			texel &= s_ftexDataEnd;
-			U += dUdX;
-			V += dVdX;
-			s_scanlineOut[i] = c;
+			const u32 texel = ((floor20(U) & 63) * 64 + (floor20(V) & 63)) & s_ftexDataEnd;
+			s_scanlineOut[i] = s_scanlineLight[s_ftexImage[texel]];
 		}
 	}
 
 	void drawScanline_Fullbright()
 	{
-		fixed16_16 V = s_scanlineV0;
-		fixed16_16 U = s_scanlineU0;
-		fixed16_16 dVdX = s_scanline_dVdX;
-		fixed16_16 dUdX = s_scanline_dUdX;
+		const fixed44_20 dVdX = s_scanline_dVdX;
+		const fixed44_20 dUdX = s_scanline_dUdX;
+		fixed44_20 V = s_scanlineV0;
+		fixed44_20 U = s_scanlineU0;
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
-		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
-		texel &= s_ftexDataEnd;
-		U += dUdX;
-		V += dVdX;
-
-		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--, U += dUdX, V += dVdX)
 		{
-			u8 c = s_ftexImage[texel];
-			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
-			texel &= s_ftexDataEnd;
-			U += dUdX;
-			V += dVdX;
-			s_scanlineOut[i] = c;
+			const u32 texel = ((floor20(U) & 63) * 64 + (floor20(V) & 63)) & s_ftexDataEnd;
+			s_scanlineOut[i] = s_ftexImage[texel];
 		}
 	}
 
 	void drawScanline_Trans()
 	{
-		fixed16_16 V = s_scanlineV0;
-		fixed16_16 U = s_scanlineU0;
-		fixed16_16 dVdX = s_scanline_dVdX;
-		fixed16_16 dUdX = s_scanline_dUdX;
+		const fixed44_20 dVdX = s_scanline_dVdX;
+		const fixed44_20 dUdX = s_scanline_dUdX;
+		fixed44_20 V = s_scanlineV0;
+		fixed44_20 U = s_scanlineU0;
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
-		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
-		texel &= s_ftexDataEnd;
-		U += dUdX;
-		V += dVdX;
-
-		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--, U += dUdX, V += dVdX)
 		{
-			u8 baseColor = s_ftexImage[texel];
-			u8 c = s_scanlineLight[baseColor];
-			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
-			texel &= s_ftexDataEnd;
-			U += dUdX;
-			V += dVdX;
+			const u32 texel = ((floor20(U) & 63) * 64 + (floor20(V) & 63)) & s_ftexDataEnd;
+			const u8 baseColor = s_ftexImage[texel];
 
-			if (baseColor) { s_scanlineOut[i] = c; }
+			if (baseColor) { s_scanlineOut[i] = s_scanlineLight[baseColor]; }
 		}
 	}
 
 	void drawScanline_Fullbright_Trans()
 	{
-		fixed16_16 V = s_scanlineV0;
-		fixed16_16 U = s_scanlineU0;
-		fixed16_16 dVdX = s_scanline_dVdX;
-		fixed16_16 dUdX = s_scanline_dUdX;
+		const fixed44_20 dVdX = s_scanline_dVdX;
+		const fixed44_20 dUdX = s_scanline_dUdX;
+		fixed44_20 V = s_scanlineV0;
+		fixed44_20 U = s_scanlineU0;
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
-		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
-		texel &= s_ftexDataEnd;
-		U += dUdX;
-		V += dVdX;
-
-		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
+		for (s32 i = s_scanlineWidth - 1; i >= 0; i--, U += dUdX, V += dVdX)
 		{
-			u8 c = s_ftexImage[texel];
-			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
-			texel &= s_ftexDataEnd;
-			U += dUdX;
-			V += dVdX;
-			if (c) { s_scanlineOut[i] = c; }
+			const u32 texel = ((floor20(U) & 63) * 64 + (floor20(V) & 63)) & s_ftexDataEnd;
+			const u8 baseColor = s_ftexImage[texel];
+
+			if (baseColor) { s_scanlineOut[i] = baseColor; }
 		}
 	}
 			   
@@ -192,7 +159,7 @@ namespace RClassic_Float
 
 		return true;
 	}
-
+	
 	void flat_drawCeiling(RSector* sector, EdgePairFixed* edges, s32 count)
 	{
 		f32 textureOffsetU = s_rcfltState.cameraPos.x - sector->ceilOffset.x;
@@ -209,13 +176,13 @@ namespace RClassic_Float
 
 		for (s32 y = s_windowMinY_Pixels; y <= s_wallMaxCeilY && y < s_windowMaxY_Pixels; y++)
 		{
-			s32 x = s_windowMinX_Pixels;
-			s32 yOffset = y * s_width;
-			s32 yShear = s_screenYMidBase - s_screenYMid;
-			f32 yRcp = 1.0f / f32(yShear + y);
-			f32 z = scaledRelCeil * yRcp;
+			const s32 yOffset = y * s_width;
+			const f32 yShear = f32(y + s_screenYMidBase - s_screenYMid);
+			const f32 yRcp = (yShear != 0.0f) ? 1.0f/yShear : 1.0f;
+			const f32 z = scaledRelCeil * yRcp;
 
-			s32 left = 0;
+			s32 x = s_windowMinX_Pixels;
+			s32 left  = 0;
 			s32 right = 0;
 			for (s32 i = 0; i < count;)
 			{
@@ -231,18 +198,17 @@ namespace RClassic_Float
 					s_scanlineX0  = left;
 					s_scanlineOut = &s_display[left + yOffset];
 
-					const fixed16_16 worldToTexelScale = fixed16_16(8);
-					fixed16_16 rightClip = intToFixed16(right - s_screenXMid);
+					const f32 worldToTexelScale = 8.0f;
+					f32 rightClip = f32(right - s_screenXMid) * s_rcfltState.aspectScaleX;
+					f32 v0 = (cosScaledRelCeil - (negSinRelCeil*rightClip)) * yRcp;
+					f32 u0 = (sinScaledRelCeil + (negCosRelCeil*rightClip)) * yRcp;
 
-					fixed16_16 v0 = mul16(cosScaledRelCeil - mul16(negSinRelCeil, rightClip), yRcp);
-					fixed16_16 u0 = mul16(sinScaledRelCeil + mul16(negCosRelCeil, rightClip), yRcp);
+					s_scanlineV0 = floatToFixed20((v0 - textureOffsetV) * worldToTexelScale);
+					s_scanlineU0 = floatToFixed20((u0 - textureOffsetU) * worldToTexelScale);
 
-					s_scanlineV0 = (v0 - textureOffsetV) * worldToTexelScale;
-					s_scanlineU0 = (u0 - textureOffsetU) * worldToTexelScale;
-
-					s_scanline_dVdX =  mul16(negSinRelCeil, yRcp) * worldToTexelScale;
-					s_scanline_dUdX = -mul16(negCosRelCeil, yRcp) * worldToTexelScale;
-
+					const f32 worldTexelScaleAspect = yRcp * worldToTexelScale * s_rcfltState.aspectScaleY;
+					s_scanline_dVdX =  floatToFixed20(negSinRelCeil * worldTexelScaleAspect);
+					s_scanline_dUdX = -floatToFixed20(negCosRelCeil * worldTexelScaleAspect);
 					s_scanlineLight =  computeLighting(z, 0);
 					
 					if (s_scanlineLight)
@@ -264,7 +230,7 @@ namespace RClassic_Float
 		f32 textureOffsetV = sector->floorOffset.z - s_rcfltState.cameraPos.z;
 
 		f32 relFloor       = sector->floorHeight - s_rcfltState.eyeHeight;
-		f32 scaledRelFloor = mul16(relFloor, s_rcfltState.focalLenAspect);
+		f32 scaledRelFloor = relFloor * s_rcfltState.focalLenAspect;
 
 		f32 cosScaledRelFloor = scaledRelFloor * s_rcfltState.cosYaw;
 		f32 negSinRelFloor    =-relFloor * s_rcfltState.sinYaw;
@@ -275,12 +241,12 @@ namespace RClassic_Float
 
 		for (s32 y = max(s_wallMinFloorY, s_windowMinY_Pixels); y <= s_windowMaxY_Pixels; y++)
 		{
-			s32 x = s_windowMinX_Pixels;
-			s32 yOffset = y * s_width;
-			s32 yShear = s_screenYMidBase - s_screenYMid;
-			f32 yRcp = 1.0f / f32(yShear + y);
-			f32 z = scaledRelFloor * yRcp;
+			const s32 yOffset = y * s_width;
+			const f32 yShear = f32(y + s_screenYMidBase - s_screenYMid);
+			const f32 yRcp = (yShear != 0.0f) ? 1.0f/f32(yShear + y) : 1.0f;
+			const f32 z = scaledRelFloor * yRcp;
 
+			s32 x = s_windowMinX_Pixels;
 			s32 left = 0;
 			s32 right = 0;
 			for (s32 i = 0; i < count;)
@@ -300,16 +266,16 @@ namespace RClassic_Float
 					s_scanlineX0 = left;
 					s_scanlineOut = &s_display[left + yOffset];
 
-					fixed16_16 rightClip = intToFixed16(right - s_screenXMid);
-					fixed16_16 worldToTexelScale = fixed16_16(8);
+					const f32 worldToTexelScale = 8.0f;
+					f32 rightClip = f32(right - s_screenXMid) * s_rcfltState.aspectScaleX;
+					f32 v0 = (cosScaledRelFloor - (negSinRelFloor * rightClip)) * yRcp;
+					f32 u0 = (sinScaledRelFloor + (negCosRelFloor * rightClip)) * yRcp;
+					s_scanlineV0 = floatToFixed20((v0 - textureOffsetV) * worldToTexelScale);
+					s_scanlineU0 = floatToFixed20((u0 - textureOffsetU) * worldToTexelScale);
 
-					fixed16_16 v0 = mul16(cosScaledRelFloor - mul16(negSinRelFloor, rightClip), yRcp);
-					fixed16_16 u0 = mul16(sinScaledRelFloor + mul16(negCosRelFloor, rightClip), yRcp);
-					s_scanlineV0 = (v0 - textureOffsetV) * worldToTexelScale;
-					s_scanlineU0 = (u0 - textureOffsetU) * worldToTexelScale;
-
-					s_scanline_dVdX =  mul16(negSinRelFloor, yRcp) * worldToTexelScale;
-					s_scanline_dUdX = -mul16(negCosRelFloor, yRcp) * worldToTexelScale;
+					const f32 worldTexelScaleAspect = yRcp * worldToTexelScale * s_rcfltState.aspectScaleY;
+					s_scanline_dVdX =  floatToFixed20(negSinRelFloor * worldTexelScaleAspect);
+					s_scanline_dUdX = -floatToFixed20(negCosRelFloor * worldTexelScaleAspect);
 					s_scanlineLight = computeLighting(z, 0);
 
 					if (s_scanlineLight)
@@ -337,27 +303,27 @@ namespace RClassic_Float
 		drawScanline_Fullbright_Trans
 	};
 
-	static fixed16_16 s_poly_offsetX;
-	static fixed16_16 s_poly_offsetZ;
+	static f32 s_poly_offsetX;
+	static f32 s_poly_offsetZ;
 
-	static fixed16_16 s_poly_scaledHOffset;
-	static fixed16_16 s_poly_sinYawHOffset;
-	static fixed16_16 s_poly_cosYawHOffset;
+	static f32 s_poly_scaledHOffset;
+	static f32 s_poly_sinYawHOffset;
+	static f32 s_poly_cosYawHOffset;
 
-	static fixed16_16 s_poly_cosYawScaledHOffset;
-	static fixed16_16 s_poly_sinYawScaledHOffset;
+	static f32 s_poly_cosYawScaledHOffset;
+	static f32 s_poly_sinYawScaledHOffset;
 		
-	void flat_preparePolygon(fixed16_16 heightOffset, fixed16_16 offsetX, fixed16_16 offsetZ, TextureData* texture)
+	void flat_preparePolygon(f32 heightOffset, f32 offsetX, f32 offsetZ, TextureData* texture)
 	{
 		s_poly_offsetX = s_rcfltState.cameraPos.x - offsetX;
 		s_poly_offsetZ = offsetZ - s_rcfltState.cameraPos.z;
 
-		s_poly_scaledHOffset = mul16(heightOffset, s_rcfltState.focalLenAspect);
-		s_poly_sinYawHOffset = mul16(s_rcfltState.sinYaw, heightOffset);
-		s_poly_cosYawHOffset = mul16(s_rcfltState.cosYaw, heightOffset);
+		s_poly_scaledHOffset = heightOffset * s_rcfltState.focalLenAspect;
+		s_poly_sinYawHOffset = s_rcfltState.sinYaw * heightOffset;
+		s_poly_cosYawHOffset = s_rcfltState.cosYaw * heightOffset;
 
-		s_poly_cosYawScaledHOffset = mul16(s_rcfltState.cosYaw, s_poly_scaledHOffset);
-		s_poly_sinYawScaledHOffset = mul16(s_rcfltState.sinYaw, s_poly_scaledHOffset);
+		s_poly_cosYawScaledHOffset = s_rcfltState.cosYaw * s_poly_scaledHOffset;
+		s_poly_sinYawScaledHOffset = s_rcfltState.sinYaw * s_poly_scaledHOffset;
 
 		s_ftexWidthMask  = texture->width - 1;
 		s_ftexHeightMask = texture->height - 1;
@@ -378,17 +344,19 @@ namespace RClassic_Float
 		s_scanlineX0  = x0;
 		s_scanlineOut = &s_display[y * s_width + x0];
 
-		const s32 yShear = s_screenYMidBase - s_screenYMid;
-		const f32 yRcp = 1.0f / f32(yShear + y);
+		const f32 yShear = f32(y + s_screenYMidBase - s_screenYMid);
+		const f32 yRcp = (yShear != 0.0f) ? 1.0f/yShear : 1.0f;
 		const f32 z = s_poly_scaledHOffset * yRcp;
-		const f32 right = f32(x1 - 1 - s_screenXMid);
+		const f32 right = f32(x1 - 1 - s_screenXMid) * s_rcfltState.aspectScaleX;
 
-		const f32 u0 = s_poly_sinYawScaledHOffset - s_poly_cosYawHOffset * right;
-		const f32 v0 = s_poly_cosYawScaledHOffset + s_poly_sinYawHOffset * right;
-		s_scanlineU0 = (u0*yRcp - s_poly_offsetX) * 8;
-		s_scanlineV0 = (v0*yRcp - s_poly_offsetZ) * 8;
-		s_scanline_dVdX = -(s_poly_sinYawHOffset*yRcp) * 8;
-		s_scanline_dUdX =  (s_poly_cosYawHOffset*yRcp) * 8;
+		const f32 u0 = s_poly_sinYawScaledHOffset - (s_poly_cosYawHOffset*right);
+		const f32 v0 = s_poly_cosYawScaledHOffset + (s_poly_sinYawHOffset*right);
+		s_scanlineU0 = floatToFixed20((u0*yRcp - s_poly_offsetX) * 8.0f);
+		s_scanlineV0 = floatToFixed20((v0*yRcp - s_poly_offsetZ) * 8.0f);
+
+		const f32 worldTexelScaleAspect = yRcp * 8.0f * s_rcfltState.aspectScaleY;
+		s_scanline_dVdX = -floatToFixed20(s_poly_sinYawHOffset*worldTexelScaleAspect);
+		s_scanline_dUdX =  floatToFixed20(s_poly_cosYawHOffset*worldTexelScaleAspect);
 
 		s_scanlineLight = computeLighting(z, 0);
 		const s32 index = (!s_scanlineLight) + trans*2;
