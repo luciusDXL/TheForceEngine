@@ -135,16 +135,17 @@ namespace TFE_Jedi
 		angle1 &= ANGLE_MASK;
 
 		angle14_32 dAngle = angle1 - angle0;
-		if (abs(dAngle) <= 8191)
+		if (abs(dAngle) <= 8191)	// less than 180 degrees
 		{
 			return dAngle;
 		}
+		// Otherwise we have to compute the "shortest arc".
 		if (dAngle >= 0)
 		{
-			return dAngle - 16383;
+			return dAngle - ANGLE_MAX - 1;
 		}
 		// dAngle < 0
-		return dAngle + 16384;
+		return dAngle + ANGLE_MAX;
 	}
 
 	void mulMatrix3x3(fixed16_16* mtx0, fixed16_16* mtx1, fixed16_16* mtxOut)

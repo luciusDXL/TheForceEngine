@@ -69,6 +69,7 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////////
 	s32 s_collisionFrameWall;
 	JBool s_collision_wallHit = JFALSE;
+	u32 s_collision_excludeEntityFlags = 0;
 	static ColPath s_col_path;
 
 	static fixed16_16 s_col_hitX;
@@ -978,7 +979,7 @@ namespace TFE_Jedi
 			if (obj)
 			{
 				s_colObjCount--;
-				if (obj != s_colObjPrev && obj->worldWidth && !(obj->entityFlags & ETFLAG_PICKUP))
+				if (!(obj->entityFlags & s_collision_excludeEntityFlags) && obj != s_colObjPrev && obj->worldWidth && !(obj->entityFlags & ETFLAG_PICKUP))
 				{
 					if (obj->worldHeight >= 0)
 					{

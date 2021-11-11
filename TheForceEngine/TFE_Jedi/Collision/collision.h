@@ -98,4 +98,5 @@ namespace TFE_Jedi
 	extern fixed16_16 s_colObjOverlap;
 	extern s32 s_collisionFrameWall;
 	extern JBool s_collision_wallHit;
+	extern u32 s_collision_excludeEntityFlags;
 }

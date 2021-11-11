@@ -47,7 +47,7 @@ enum EntityTypeFlags
 	ETFLAG_REMOTE         = FLAG_BIT(12),	// Unknown, used by AI.
 	ETFLAG_LANDMINE       = FLAG_BIT(13),	// Specifically set if a pre-placed landmine.
 	ETFLAG_16384          = FLAG_BIT(14),	// Used by AI.
-	ETFLAG_32768          = FLAG_BIT(15),	// Used by AI.
+	ETFLAG_GENERAL_MOHC   = FLAG_BIT(15),	// Used by AI.
 	ETFLAG_LANDMINE_WPN   = FLAG_BIT(16),	// A landmine weapon - i.e. player placed landmines.
 	ETFLAG_PLAYER         = FLAG_BIT(31),	// This is the player object.
 

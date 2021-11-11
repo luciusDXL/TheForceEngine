@@ -1,4 +1,4 @@
-#include "phaseTwo.h"
+#include "phaseThree.h"
 #include "aiActor.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
@@ -18,19 +18,24 @@
 
 namespace TFE_DarkForces
 {
-	enum PhaseTwoStates
+	enum PhaseThreeStates
 	{
-		P2STATE_DEFAULT = 0,
-		P2STATE_CHARGE,
-		P2STATE_WANDER,
-		P2STATE_FIRE_MISSILES,
-		P2STATE_FIRE_PLASMA,
-		P2STATE_DYING,
-		P2STATE_SEARCH,
-		P2STATE_COUNT
+		P3STATE_DEFAULT = 0,
+		P3STATE_CHARGE,
+		P3STATE_WANDER,
+		P3STATE_FIRE_MISSILES,
+		P3STATE_FIRE_PLASMA,
+		P3STATE_DYING,
+		P3STATE_SEARCH,
+		P3STATE_COUNT
 	};
 
-	struct PhaseTwo
+	static const angle14_16 c_phaseThreeMissileOffsets[] =
+	{
+		-2275, -1365, -455, 455, 1365, 2275
+	};
+
+	struct PhaseThree
 	{
 		Logic logic;
 		PhysicsActor actor;
@@ -40,15 +45,15 @@ namespace TFE_DarkForces
 		JBool noDeath;
 	};
 
-	static SoundSourceID s_phase2aSndID = NULL_SOUND;
-	static SoundSourceID s_phase2bSndID = NULL_SOUND;
-	static SoundSourceID s_phase2cSndID = NULL_SOUND;
-	static SoundSourceID s_phase2RocketSndID = NULL_SOUND;
+	static SoundSourceID s_phase3aSndID = NULL_SOUND;
+	static SoundSourceID s_phase3bSndID = NULL_SOUND;
+	static SoundSourceID s_phase3cSndID = NULL_SOUND;
+	static SoundSourceID s_phase3RocketSndID = NULL_SOUND;
 
-	static PhaseTwo* s_curTrooper = nullptr;
+	static PhaseThree* s_curTrooper = nullptr;
 	static s32 s_trooperNum = 0;
 
-	JBool phaseTwo_updatePlayerPos(PhaseTwo* trooper)
+	JBool phaseThree_updatePlayerPos(PhaseThree* trooper)
 	{
 		if (actor_canSeeObject(trooper->logic.obj, s_playerObject))
 		{
@@ -59,11 +64,11 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	void phaseTwo_handleDamage(MessageType msg)
+	void phaseThree_handleDamage(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -89,14 +94,14 @@ namespace TFE_DarkForces
 
 			if (local(physicsActor)->hp <= 0)
 			{
-				local(physicsActor)->state = P2STATE_DYING;
+				local(physicsActor)->state = P3STATE_DYING;
 				msg = MSG_RUN_TASK;
 				task_setMessage(msg);
 			}
 			else
 			{
 				stopSound(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = playSound3D_oneshot(s_phase2bSndID, local(obj)->posWS);
+				local(trooper)->hitSndId = playSound3D_oneshot(s_phase3bSndID, local(obj)->posWS);
 
 				if (random(100) <= 10)
 				{
@@ -106,7 +111,7 @@ namespace TFE_DarkForces
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					local(anim)->flags |= 1;
-					actor_setupAnimation2(local(obj), 12, local(anim));
+					actor_setupAnimation2(local(obj), 10, local(anim));
 
 					// Wait for animation to finish.
 					do
@@ -126,11 +131,11 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseTwo_handleExplosion(MessageType msg)
+	void phaseThree_handleExplosion(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -163,7 +168,7 @@ namespace TFE_DarkForces
 
 			if (local(physicsActor)->hp <= 0)
 			{
-				local(physicsActor)->state = P2STATE_DYING;
+				local(physicsActor)->state = P3STATE_DYING;
 				local(physicsActor)->vel = local(vel);
 				msg = MSG_RUN_TASK;
 				task_setMessage(msg);
@@ -176,7 +181,7 @@ namespace TFE_DarkForces
 				local(physicsActor)->vel = { local(vel).x >> 1, local(vel).y >> 1, local(vel).z >> 1 };
 
 				stopSound(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = playSound3D_oneshot(s_phase2bSndID, local(obj)->posWS);
+				local(trooper)->hitSndId = playSound3D_oneshot(s_phase3bSndID, local(obj)->posWS);
 
 				if (random(100) <= 10)
 				{
@@ -186,7 +191,7 @@ namespace TFE_DarkForces
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					local(anim)->flags |= 1;
-					actor_setupAnimation2(local(obj), 12, local(anim));
+					actor_setupAnimation2(local(obj), 10, local(anim));
 
 					// Wait for animation to finish.
 					do
@@ -206,11 +211,11 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseTwo_handleMsg(MessageType msg)
+	void phaseThree_handleMsg(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 		};
 		task_begin_ctx;
 		local(trooper) = s_curTrooper;
@@ -220,7 +225,7 @@ namespace TFE_DarkForces
 			if (!local(trooper)->noDeath)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleDamage);
+				task_callTaskFunc(phaseThree_handleDamage);
 			}
 			else
 			{
@@ -233,7 +238,7 @@ namespace TFE_DarkForces
 			if (!local(trooper)->noDeath)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleExplosion);
+				task_callTaskFunc(phaseThree_handleExplosion);
 			}
 			else
 			{
@@ -243,11 +248,11 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseTwo_chargePlayer(MessageType msg)
+	void phaseThree_chargePlayer(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -267,23 +272,23 @@ namespace TFE_DarkForces
 
 		if (random(100) <= 40)
 		{
-			local(trooper)->rocketSndId = playSound3D_oneshot(s_phase2RocketSndID, local(obj)->posWS);
+			local(trooper)->rocketSndId = playSound3D_oneshot(s_phase3RocketSndID, local(obj)->posWS);
 			local(anim)->flags |= 1;
 			actor_setupAnimation2(local(obj), 13, local(anim));
-			actor_setAnimFrameRange(local(anim), 0, 2);
+			actor_setAnimFrameRange(local(anim), 0, 1);
 
 			// Wait for the animation to finish.
 			do
 			{
 				task_yield(0);
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleMsg);
+				task_callTaskFunc(phaseThree_handleMsg);
 			} while (!(local(anim)->flags & 2) || msg != MSG_RUN_TASK);
 
 			actor_setupAnimation2(local(obj), 13, local(anim));
-			actor_setAnimFrameRange(local(anim), 3, 3);
+			actor_setAnimFrameRange(local(anim), 2, 2);
 
-			local(target)->speed = FIXED(60);
+			local(target)->speed = FIXED(70);
 			local(flying) = JTRUE;
 			local(physicsActor)->actor.collisionFlags &= 0xfffffffc;
 			local(physicsActor)->actor.physics.yPos = FIXED(9999);
@@ -291,43 +296,43 @@ namespace TFE_DarkForces
 		else
 		{
 			local(physicsActor)->actor.collisionFlags |= 3;
-			local(target)->speed = FIXED(15);
+			local(target)->speed = FIXED(25);
 			local(flying) = JFALSE;
 			local(anim)->flags &= 0xfffffffe;
 			actor_setupAnimation2(local(obj), 0, local(anim));
 		}
 
-		while (local(physicsActor)->state == P2STATE_CHARGE)
+		while (local(physicsActor)->state == P3STATE_CHARGE)
 		{
 			do
 			{
 				task_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleMsg);
+				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
 			
 			if (random(100) <= 10)
 			{
-				if (!s_playerDying && phaseTwo_updatePlayerPos(local(trooper)))
+				if (!s_playerDying && phaseThree_updatePlayerPos(local(trooper)))
 				{
 					if (random(player_getSquaredDistance(local(obj))) <= FIXED(100) && local(obj)->yaw == local(target)->yaw)	// essentially <= (dist = 10)
 					{
-						local(physicsActor)->state = (random(100) > 40) ? P2STATE_FIRE_PLASMA : P2STATE_FIRE_MISSILES;
+						local(physicsActor)->state = (random(100) > 40) ? P3STATE_FIRE_PLASMA : P3STATE_FIRE_MISSILES;
 						if (local(flying))
 						{
 							local(anim)->flags |= 1;
 							actor_setupAnimation2(local(obj), 13, local(anim));
-							actor_setAnimFrameRange(local(anim), 4, 4);
+							actor_setAnimFrameRange(local(anim), 3, 3);
 							do
 							{
 								task_yield(0);
 								s_curTrooper = local(trooper);
-								task_callTaskFunc(phaseTwo_handleMsg);
+								task_callTaskFunc(phaseThree_handleMsg);
 							} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 							local(physicsActor)->actor.collisionFlags |= 3;
 							local(physicsActor)->actor.physics.yPos = FIXED(9999);
-							local(target)->speed = FIXED(15);
+							local(target)->speed = FIXED(25);
 							local(target)->flags &= 0xfffffffd;
 							stopSound(local(trooper)->rocketSndId);
 						}
@@ -336,10 +341,10 @@ namespace TFE_DarkForces
 				else if (!s_playerDying)
 				{
 					stopSound(local(trooper)->rocketSndId);
-					local(physicsActor)->state = P2STATE_SEARCH;
+					local(physicsActor)->state = P3STATE_SEARCH;
 				}
 			}
-			if (local(physicsActor)->state != P2STATE_CHARGE) { break; }
+			if (local(physicsActor)->state != P3STATE_CHARGE) { break; }
 
 			local(target)->flags &= 0xfffffff7;
 			if (actor_handleSteps(&local(physicsActor)->actor, local(target)))
@@ -365,8 +370,8 @@ namespace TFE_DarkForces
 
 				fixed16_16 sinYaw, cosYaw;
 				sinCosFixed(local(obj)->yaw, &sinYaw, &cosYaw);
-				local(target)->pos.x = local(obj)->posWS.x + mul16(sinYaw, FIXED(30));
-				local(target)->pos.z = local(obj)->posWS.z + mul16(cosYaw, FIXED(30));
+				local(target)->pos.x = local(obj)->posWS.x + mul16(sinYaw, FIXED(25));
+				local(target)->pos.z = local(obj)->posWS.z + mul16(cosYaw, FIXED(25));
 				local(target)->flags |= 1;
 
 				if (local(flying))
@@ -381,11 +386,11 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseTwo_wander(MessageType msg)
+	void phaseThree_wander(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -423,28 +428,28 @@ namespace TFE_DarkForces
 			local(target)->flags |= 4;
 		task_localBlockEnd;
 
-		while (local(physicsActor)->state == P2STATE_WANDER)
+		while (local(physicsActor)->state == P3STATE_WANDER)
 		{
 			do
 			{
 				task_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleMsg);
+				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != P2STATE_WANDER) { break; }
+			if (local(physicsActor)->state != P3STATE_WANDER) { break; }
 
 			task_localBlockBegin;
 			CollisionInfo* collisionInfo = &local(physicsActor)->actor.physics;
 			if (collisionInfo->wall || collisionInfo->collidedObj)
 			{
-				local(physicsActor)->state = P2STATE_CHARGE;
+				local(physicsActor)->state = P3STATE_CHARGE;
 				break;
 			}
 			
 			fixed16_16 dist = distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
-			if (s_playerDying || !phaseTwo_updatePlayerPos(local(trooper)) || dist > FIXED(20))
+			if (s_playerDying || !phaseThree_updatePlayerPos(local(trooper)) || dist > FIXED(20))
 			{
-				local(physicsActor)->state = P2STATE_CHARGE;
+				local(physicsActor)->state = P3STATE_CHARGE;
 				break;
 			}
 			task_localBlockEnd;
@@ -453,7 +458,7 @@ namespace TFE_DarkForces
 			{
 				if (random(100) <= 10)
 				{
-					local(physicsActor)->state = (random(100) > 40) ? P2STATE_FIRE_PLASMA : P2STATE_FIRE_MISSILES;
+					local(physicsActor)->state = (random(100) > 40) ? P3STATE_FIRE_PLASMA : P3STATE_FIRE_MISSILES;
 					fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
 					fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
 					local(target)->yaw = vec2ToAngle(dx, dz);
@@ -488,12 +493,12 @@ namespace TFE_DarkForces
 		local(anim)->flags |= 2;
 		task_end;
 	}
-
-	void phaseTwo_fireMissiles(MessageType msg)
+		
+	void phaseThree_fireMissiles(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -509,25 +514,25 @@ namespace TFE_DarkForces
 
 		local(target)->flags &= 0xfffffffe;
 		local(physicsActor)->actor.collisionFlags |= 3;
-		while (local(physicsActor)->state == P2STATE_FIRE_MISSILES)
+		while (local(physicsActor)->state == P3STATE_FIRE_MISSILES)
 		{
 			do
 			{
 				task_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleMsg);
+				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != P2STATE_FIRE_MISSILES) { break; }
+			if (local(physicsActor)->state != P3STATE_FIRE_MISSILES) { break; }
 
 			local(anim)->flags |= 1;
-			actor_setupAnimation2(local(obj), 1, local(anim));
+			actor_setupAnimation2(local(obj), 11, local(anim));
 
 			// Wait for the animation to finish.
 			do
 			{
 				task_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleMsg);
+				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK || !(local(anim)->flags&2));
 
 			// Attempt to attack.
@@ -535,20 +540,20 @@ namespace TFE_DarkForces
 				local(obj)->flags |= OBJ_FLAG_FULLBRIGHT;
 				playSound3D_oneshot(s_missile1SndSrc, local(obj)->posWS);
 
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_MISSILE, local(obj)->sector, local(obj)->posWS.x, local(obj)->posWS.y - FIXED(9), local(obj)->posWS.z, local(obj));
-				proj->prevColObj = local(obj);
-				proj->excludeObj = local(obj);
+				// Fire 6 missiles with different yaw offsets.
+				for (s32 i = 0; i < 6; i++)
+				{
+					ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_HOMING_MISSILE, local(obj)->sector, local(obj)->posWS.x, local(obj)->posWS.y - FIXED(11), local(obj)->posWS.z, local(obj));
+					proj->prevColObj = local(obj);
+					proj->excludeObj = local(obj);
 
-				fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
-				fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
-				SecObject* projObj = proj->logic.obj;
-				projObj->yaw = vec2ToAngle(dx, dz);
-
-				vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
-				proj_aimAtTarget(proj, target);
+					SecObject* projObj = proj->logic.obj;
+					projObj->yaw = local(target)->yaw + c_phaseThreeMissileOffsets[i];
+					proj_setTransform(proj, 0, projObj->yaw);
+				}
 
 				local(anim)->flags |= 1;
-				actor_setupAnimation2(local(obj), 6, local(anim));
+				actor_setupAnimation2(local(obj), 12, local(anim));
 			task_localBlockEnd;
 
 			// Wait for the animation to finish.
@@ -556,21 +561,21 @@ namespace TFE_DarkForces
 			{
 				task_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleMsg);
+				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 			local(obj)->flags &= ~OBJ_FLAG_FULLBRIGHT;
-			local(physicsActor)->state = P2STATE_WANDER;
+			local(physicsActor)->state = P3STATE_WANDER;
 		}
 				
 		task_end;
 	}
 
-	void phaseTwo_firePlasma(MessageType msg)
+	void phaseThree_firePlasma(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -596,22 +601,22 @@ namespace TFE_DarkForces
 		{
 			task_yield(TASK_NO_DELAY);
 			s_curTrooper = local(trooper);
-			task_callTaskFunc(phaseTwo_handleMsg);
+			task_callTaskFunc(phaseThree_handleMsg);
 		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 		local(shotCount) = random(20) + 1;
 		local(obj)->flags |= OBJ_FLAG_FULLBRIGHT;
 		local(target)->flags |= 8;
 
-		while (local(physicsActor)->state == P2STATE_FIRE_PLASMA)
+		while (local(physicsActor)->state == P3STATE_FIRE_PLASMA)
 		{
 			do
 			{
 				task_yield(29);
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleMsg);
+				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
-			if (local(physicsActor)->state != P2STATE_FIRE_PLASMA) { break; }
+			if (local(physicsActor)->state != P3STATE_FIRE_PLASMA) { break; }
 
 			playSound3D_oneshot(s_plasma4SndSrc, local(obj)->posWS);
 
@@ -625,7 +630,7 @@ namespace TFE_DarkForces
 			local(shotCount)--;
 			if (local(shotCount) == 0)
 			{
-				local(physicsActor)->state = P2STATE_WANDER;
+				local(physicsActor)->state = P3STATE_WANDER;
 			}
 		}
 
@@ -637,18 +642,18 @@ namespace TFE_DarkForces
 		{
 			task_yield(TASK_NO_DELAY);
 			s_curTrooper = local(trooper);
-			task_callTaskFunc(phaseTwo_handleMsg);
+			task_callTaskFunc(phaseThree_handleMsg);
 		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 		local(obj)->flags &= ~OBJ_FLAG_FULLBRIGHT;
 		task_end;
 	}
 
-	void phaseTwo_handleDying(MessageType msg)
+	void phaseThree_handleDying(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -664,7 +669,7 @@ namespace TFE_DarkForces
 
 		local(target)->flags |= 8;
 		stopSound(local(trooper)->rocketSndId);
-		playSound3D_oneshot(s_phase2cSndID, local(obj)->posWS);
+		playSound3D_oneshot(s_phase3cSndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 2, local(anim));
@@ -695,55 +700,6 @@ namespace TFE_DarkForces
 				corpse->worldHeight = 0;
 				corpse->entityFlags |= (ETFLAG_CORPSE | ETFLAG_16384);
 				sector_addObject(sector, corpse);
-
-				// Create Plasma pickup
-				SecObject* item = item_create(ITEM_PLASMA);
-				item->posWS = local(obj)->posWS;
-				sector_addObject(sector, item);
-
-				// Try to move the object 3 units away in X and Z to help sorting.
-				CollisionInfo collisionInfo =
-				{
-					item,
-					FIXED(3), 0, FIXED(3),	// offset
-					ONE_16, FIXED(9999), ONE_16, 0,	// botOffset, yPos, height, 0x1c
-					nullptr, 0, nullptr,	// wall, u24, collidedObj
-					item->worldWidth, 0, 0,	// width, u30, responseStep
-					{0,0}, {0,0}, 0			// responseDir, responsePos, responseAngle.
-				};
-				handleCollision(&collisionInfo);
-
-				RSector* itemSector = item->sector;
-				item->posWS.y = itemSector->floorHeight;
-				// If the item is dropped into a liquid, then delete the item.
-				if (itemSector->secHeight - 1 >= 0)	// eax
-				{
-					freeObject(item);
-				}
-
-				// Create Missile pickup
-				item = item_create(ITEM_MISSILES);
-				item->posWS = local(obj)->posWS;
-				sector_addObject(sector, item);
-
-				collisionInfo =
-				{
-					item,
-					0, FIXED(3), FIXED(3),	// offset
-					ONE_16, FIXED(9999), ONE_16, 0,	// botOffset, yPos, height, 0x1c
-					nullptr, 0, nullptr,	// wall, u24, collidedObj
-					item->worldWidth, 0, 0,	// width, u30, responseStep
-					{0,0}, {0,0}, 0			// responseDir, responsePos, responseAngle.
-				};
-				handleCollision(&collisionInfo);
-
-				itemSector = item->sector;
-				item->posWS.y = itemSector->floorHeight;
-				// If the item is dropped into a liquid, then delete the item.
-				if (itemSector->secHeight - 1 >= 0)	// eax
-				{
-					freeObject(item);
-				}
 			}
 			local(physicsActor)->alive = JFALSE;
 			actor_handleBossDeath(local(physicsActor));
@@ -752,11 +708,11 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseTwo_lookForPlayer(MessageType msg)
+	void phaseThree_lookForPlayer(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -790,13 +746,13 @@ namespace TFE_DarkForces
 		local(target)->speed = FIXED(30);
 		local(physicsActor)->actor.collisionFlags &= 0xfffffffc;
 
-		while (local(physicsActor)->state == P2STATE_SEARCH || local(forceContinue))
+		while (local(physicsActor)->state == P3STATE_SEARCH || local(forceContinue))
 		{
 			do
 			{
 				task_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleMsg);
+				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
 			if (s_playerDying) { continue; }
 
@@ -805,7 +761,7 @@ namespace TFE_DarkForces
 			{
 				local(physicsActor)->lastPlayerPos.x = s_playerObject->posWS.x;
 				local(physicsActor)->lastPlayerPos.z = s_playerObject->posWS.z;
-				local(physicsActor)->state = P2STATE_CHARGE;
+				local(physicsActor)->state = P3STATE_CHARGE;
 			}
 
 			if (local(retargetTick) < s_curTick || actor_arrivedAtTarget(local(target), local(obj)))
@@ -870,11 +826,11 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseTwoTaskFunc(MessageType msg)
+	void phaseThreeTaskFunc(MessageType msg)
 	{
 		struct LocalContext
 		{
-			PhaseTwo* trooper;
+			PhaseThree* trooper;
 			SecObject* obj;
 			PhysicsActor* physicsActor;
 			ActorTarget* target;
@@ -882,7 +838,7 @@ namespace TFE_DarkForces
 		};
 		task_begin_ctx;
 
-		local(trooper) = (PhaseTwo*)task_getUserData();
+		local(trooper) = (PhaseThree*)task_getUserData();
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
 		local(target) = &local(physicsActor)->actor.target;
@@ -893,60 +849,60 @@ namespace TFE_DarkForces
 			msg = MSG_RUN_TASK;
 			task_setMessage(msg);
 
-			if (local(physicsActor)->state == P2STATE_CHARGE)
+			if (local(physicsActor)->state == P3STATE_CHARGE)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_chargePlayer);
+				task_callTaskFunc(phaseThree_chargePlayer);
 			}
-			else if (local(physicsActor)->state == P2STATE_WANDER)
+			else if (local(physicsActor)->state == P3STATE_WANDER)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_wander);
+				task_callTaskFunc(phaseThree_wander);
 			}
-			else if (local(physicsActor)->state == P2STATE_FIRE_MISSILES)
+			else if (local(physicsActor)->state == P3STATE_FIRE_MISSILES)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_fireMissiles);
+				task_callTaskFunc(phaseThree_fireMissiles);
 			}
-			else if (local(physicsActor)->state == P2STATE_FIRE_PLASMA)
+			else if (local(physicsActor)->state == P3STATE_FIRE_PLASMA)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_firePlasma);
+				task_callTaskFunc(phaseThree_firePlasma);
 			}
-			else if (local(physicsActor)->state == P2STATE_DYING)
+			else if (local(physicsActor)->state == P3STATE_DYING)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_handleDying);
+				task_callTaskFunc(phaseThree_handleDying);
 			}
-			else if (local(physicsActor)->state == P2STATE_SEARCH)
+			else if (local(physicsActor)->state == P3STATE_SEARCH)
 			{
 				s_curTrooper = local(trooper);
-				task_callTaskFunc(phaseTwo_lookForPlayer);
+				task_callTaskFunc(phaseThree_lookForPlayer);
 			}
 			else
 			{
-				while (local(physicsActor)->state == P2STATE_DEFAULT)
+				while (local(physicsActor)->state == P3STATE_DEFAULT)
 				{
 					do
 					{
 						task_yield(145);
 						s_curTrooper = local(trooper);
-						task_callTaskFunc(phaseTwo_handleMsg);
+						task_callTaskFunc(phaseThree_handleMsg);
 
 						if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
 						{
-							local(physicsActor)->state = P2STATE_CHARGE;
+							local(physicsActor)->state = P3STATE_CHARGE;
 							task_makeActive(local(physicsActor)->actorTask);
 							task_yield(TASK_NO_DELAY);
 						}
 					} while (msg != MSG_RUN_TASK);
 
-					if (local(physicsActor)->state == 0 && phaseTwo_updatePlayerPos(local(trooper)))
+					if (local(physicsActor)->state == 0 && phaseThree_updatePlayerPos(local(trooper)))
 					{
-						playSound3D_oneshot(s_phase2aSndID, local(obj)->posWS);
-						local(physicsActor)->state = P2STATE_CHARGE;
+						playSound3D_oneshot(s_phase3aSndID, local(obj)->posWS);
+						local(physicsActor)->state = P3STATE_CHARGE;
 					}
-				}  // while (state == P2STATE_DEFAULT)
+				}  // while (state == P3STATE_DEFAULT)
 			}
 		}  // while (alive)
 
@@ -963,9 +919,9 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	void phaseTwoCleanupFunc(Logic* logic)
+	void phaseThreeCleanupFunc(Logic* logic)
 	{
-		PhaseTwo* trooper = (PhaseTwo*)logic;
+		PhaseThree* trooper = (PhaseThree*)logic;
 		PhysicsActor* physicsActor = &trooper->actor;
 
 		actor_removePhysicsActorFromWorld(physicsActor);
@@ -974,43 +930,47 @@ namespace TFE_DarkForces
 		task_free(physicsActor->actorTask);
 	}
 
-	Logic* phaseTwo_setup(SecObject* obj, LogicSetupFunc* setupFunc)
+	Logic* phaseThree_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_phase2aSndID)
+		if (!s_phase3aSndID)
 		{
-			s_phase2aSndID = sound_Load("phase2a.voc");
+			s_phase3aSndID = sound_Load("phase3a.voc");
+			assert(s_phase3aSndID);
 		}
-		if (!s_phase2bSndID)
+		if (!s_phase3bSndID)
 		{
-			s_phase2bSndID = sound_Load("phase2b.voc");
+			s_phase3bSndID = sound_Load("phase3b.voc");
+			assert(s_phase3bSndID);
 		}
-		if (!s_phase2RocketSndID)
+		if (!s_phase3RocketSndID)
 		{
-			s_phase2RocketSndID = sound_Load("rocket-1.voc");
+			s_phase3RocketSndID = sound_Load("rocket-1.voc");
+			assert(s_phase3RocketSndID);
 		}
-		if (!s_phase2cSndID)
+		if (!s_phase3cSndID)
 		{
-			s_phase2cSndID = sound_Load("phase2c.voc");
+			s_phase3cSndID = sound_Load("phase3c.voc");
+			assert(s_phase3cSndID);
 		}
-		// setSoundEffectVolume(s_phase2cSndID, 100);
+		// setSoundEffectVolume(s_phase3cSndID, 120);
 
-		PhaseTwo* trooper = (PhaseTwo*)level_alloc(sizeof(PhaseTwo));
-		memset(trooper, 0, sizeof(PhaseTwo));
+		PhaseThree* trooper = (PhaseThree*)level_alloc(sizeof(PhaseThree));
+		memset(trooper, 0, sizeof(PhaseThree));
 
 		PhysicsActor* physicsActor = &trooper->actor;
 
 		// Give the name of the task a number so I can tell them apart when debugging.
 		char name[32];
-		sprintf(name, "PhaseTwo%d", s_trooperNum);
+		sprintf(name, "PhaseThree%d", s_trooperNum);
 		s_trooperNum++;
-		Task* task = createSubTask(name, phaseTwoTaskFunc);
+		Task* task = createSubTask(name, phaseThreeTaskFunc);
 		task_setUserData(task, trooper);
 
-		obj->entityFlags = ETFLAG_AI_ACTOR;
+		obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_GENERAL_MOHC;
 		obj->worldWidth >>= 1;
 
 		physicsActor->alive = JTRUE;
-		physicsActor->hp = FIXED(350);
+		physicsActor->hp = FIXED(750);
 		physicsActor->state = 0;
 		physicsActor->actorTask = task;
 		trooper->hitSndId = 0;
@@ -1028,7 +988,7 @@ namespace TFE_DarkForces
 
 		ActorTarget* target = &physicsActor->actor.target;
 		target->flags &= 0xfffffff0;
-		target->speed = FIXED(15);
+		target->speed = FIXED(25);
 		target->speedVert = FIXED(10);
 		target->speedRotation = 0x3000;
 
@@ -1039,8 +999,8 @@ namespace TFE_DarkForces
 		anim->flags |= 2;
 		anim->flags &= 0xfffffffe;
 
-		actor_setupAnimation2(obj, 5, anim);
-		obj_addLogic(obj, (Logic*)trooper, task, phaseTwoCleanupFunc);
+		actor_setupAnimation2(obj, 3, anim);
+		obj_addLogic(obj, (Logic*)trooper, task, phaseThreeCleanupFunc);
 
 		if (setupFunc)
 		{

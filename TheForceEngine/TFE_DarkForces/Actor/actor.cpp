@@ -520,12 +520,14 @@ namespace TFE_DarkForces
 		SecObject* obj = physicsActor->actor.header.obj;
 		if (obj->flags & OBJ_FLAG_BOSS)
 		{
-			if (obj->entityFlags & ETFLAG_32768)
+			if (obj->entityFlags & ETFLAG_GENERAL_MOHC)
 			{
-				// TODO
-				assert(0);
+				if (s_mohcSector)
+				{
+					message_sendToSector(s_mohcSector, nullptr, 0, MSG_TRIGGER);
+				}
 			}
-			if (s_bossSector)
+			else if (s_bossSector)
 			{
 				message_sendToSector(s_bossSector, nullptr, 0, MSG_TRIGGER);
 			}

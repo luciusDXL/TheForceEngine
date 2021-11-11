@@ -443,9 +443,9 @@ int main(int argc, char* argv[])
 	// Setup game paths.
 	// Get the current game.
 	const TFE_Game* game = TFE_Settings::getGame();
-	const TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings(game->game);
-	TFE_Paths::setPath(PATH_SOURCE_DATA, gameSettings->sourcePath);
-	TFE_Paths::setPath(PATH_EMULATOR, gameSettings->emulatorPath);
+	const TFE_GameHeader* gameHeader = TFE_Settings::getGameHeader(game->game);
+	TFE_Paths::setPath(PATH_SOURCE_DATA, gameHeader->sourcePath);
+	TFE_Paths::setPath(PATH_EMULATOR, gameHeader->emulatorPath);
 
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM));
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM_DATA));

@@ -89,10 +89,10 @@ namespace TFE_DarkForces
 	extern s32 s_headwaveVerticalOffset;
 	extern s32 s_weaponLight;
 	extern s32 s_baseAtten;
+	extern s32 s_invincibility;
 	extern fixed16_16 s_gravityAccel;
 	extern JBool s_weaponFiring;
 	extern JBool s_weaponFiringSec;
-	extern JBool s_invincibility;
 	extern JBool s_wearingCleats;
 	extern JBool s_wearingGasmask;
 	extern JBool s_nightvisionActive;
@@ -148,6 +148,7 @@ namespace TFE_DarkForces
 	void player_revive();
 	s32  player_getLifeCount();
 	void player_getVelocity(vec3_fixed* vel);
+	fixed16_16 player_getSquaredDistance(SecObject* obj);
 	void player_setupCamera();
 	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound);
 

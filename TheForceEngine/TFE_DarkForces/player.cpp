@@ -10,6 +10,7 @@
 #include "pickup.h"
 #include "weapon.h"
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/mission.h>
@@ -171,9 +172,9 @@ namespace TFE_DarkForces
 	s32 s_baseAtten = 0;
 	fixed16_16 s_gravityAccel;
 
+	s32   s_invincibility = 0;
 	JBool s_weaponFiring = JFALSE;
 	JBool s_weaponFiringSec = JFALSE;
-	JBool s_invincibility = JFALSE;
 	JBool s_wearingCleats = JFALSE;
 	JBool s_wearingGasmask = JFALSE;
 	JBool s_nightvisionActive = JFALSE;
@@ -543,6 +544,16 @@ namespace TFE_DarkForces
 		vel->z = s_playerVelZ;
 	}
 
+	fixed16_16 player_getSquaredDistance(SecObject* obj)
+	{
+		fixed16_16 dx = obj->posWS.x - s_playerObject->posWS.x;
+		fixed16_16 dy = obj->posWS.y - s_playerObject->posWS.y;
+		fixed16_16 dz = obj->posWS.z - s_playerObject->posWS.z;
+
+		// distSq overflows if dist > 181 units.
+		return mul16(dx, dx) + mul16(dy, dy) + mul16(dz, dz);
+	}
+
 	void player_setupObject(SecObject* obj)
 	{
 		s_playerObject = obj;
@@ -813,11 +824,11 @@ namespace TFE_DarkForces
 	{
 		if (!s_invincibility)
 		{
-			s_invincibility = JTRUE;
+			s_invincibility = -2;
 		}
 		else
 		{
-			s_invincibility = JFALSE;
+			s_invincibility = 0;
 		}
 		hud_sendTextMessage(702);
 	}
@@ -1297,8 +1308,11 @@ namespace TFE_DarkForces
 		// Reduce the players ability to adjust the velocity while they have vertical velocity.
 		if (s_playerUpVel)
 		{
-			s_forwardSpd >>= 8;
-			s_strafeSpd  >>= 8;
+			// TFE specific
+			const s32 airControl = 8 - TFE_Settings::getGameSettings()->df_airControl;
+			// In the original DOS code, airControl = 8.
+			s_forwardSpd >>= airControl;
+			s_strafeSpd  >>= airControl;
 		}
 	}
 
@@ -2024,7 +2038,8 @@ namespace TFE_DarkForces
 				}
 			}
 		}
-		if (healthDmg)
+		applyDmg = (s_invincibility == -2) ? 0 : 1;
+		if (applyDmg && healthDmg)
 		{
 			health -= healthDmg;
 			if (health < ONE_16)

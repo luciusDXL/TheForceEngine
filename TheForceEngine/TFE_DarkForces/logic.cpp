@@ -27,6 +27,7 @@
 #include <TFE_DarkForces/Actor/dragon.h>
 #include <TFE_DarkForces/Actor/phaseOne.h>
 #include <TFE_DarkForces/Actor/phaseTwo.h>
+#include <TFE_DarkForces/Actor/phaseThree.h>
 #include <TFE_DarkForces/Actor/bobaFett.h>
 
 using namespace TFE_Jedi;
@@ -223,6 +224,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_D_TROOP3:
 			{
+				return phaseThree_setup(obj, setupFunc);
 			} break;
 			case KW_BOBA_FETT:
 			{

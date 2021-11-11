@@ -175,6 +175,10 @@ void TFE_Parser::tokenizeLine(const char* line, TokenList& tokens)
 	{
 		if (line[c] == '"')
 		{
+			if (inQuote && curTokenPos == 0)
+			{
+				tokens.push_back("");
+			}
 			inQuote = !inQuote;
 		}
 		else if (!inQuote && (isWhitespace(line[c]) || isSeparator(line[c])))

@@ -354,6 +354,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\Actor\flyers.h" />
     <ClInclude Include="TFE_DarkForces\Actor\mousebot.h" />
     <ClInclude Include="TFE_DarkForces\Actor\phaseOne.h" />
+    <ClInclude Include="TFE_DarkForces\Actor\phaseThree.h" />
     <ClInclude Include="TFE_DarkForces\Actor\phaseTwo.h" />
     <ClInclude Include="TFE_DarkForces\Actor\scenery.h" />
     <ClInclude Include="TFE_DarkForces\Actor\sewer.h" />
@@ -554,6 +555,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\Actor\flyers.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\mousebot.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\phaseOne.cpp" />
+    <ClCompile Include="TFE_DarkForces\Actor\phaseThree.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\phaseTwo.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\scenery.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\sewer.cpp" />

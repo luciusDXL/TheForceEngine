@@ -139,6 +139,23 @@ namespace TFE_DarkForces
 	extern void weapon_animateOnOrOffscreen(MessageType msg);
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation);
 
+	// Adjust the speed - in TFE the framerate may be higher than expected by the original code, which means that this
+	// step (proj->delta) is too large for the 'speed'.
+	void tfe_adjustWeaponCollisionSpeed(ProjectileLogic* proj)
+	{
+		fixed16_16 initSpeed = div16(vec3Length(proj->delta.x, proj->delta.y, proj->delta.z), s_deltaTime);
+		proj->col_speed = proj->speed;
+		if (initSpeed > proj->speed)
+		{
+			proj->col_speed = initSpeed;
+		}
+	}
+
+	void tfe_restoreWeaponCollisionSpeed(ProjectileLogic* proj)
+	{
+		proj->col_speed = proj->speed;
+	}
+
 	void weaponFire_fist(MessageType msg)
 	{
 		struct LocalContext
@@ -195,8 +212,12 @@ namespace TFE_DarkForces
 			};
 			rotateVectorM3x3(&inVec, &proj->delta, mtx);
 
+			tfe_adjustWeaponCollisionSpeed(proj);
+
 			ProjectileHitType hitType = proj_handleMovement(proj);
 			handleProjectileHit(proj, hitType);
+
+			tfe_restoreWeaponCollisionSpeed(proj);
 		}
 		task_localBlockEnd;
 
@@ -334,12 +355,15 @@ namespace TFE_DarkForces
 					rotateVectorM3x3(&inVec2, &outVec2, mtx2);
 					// First try using the outVec value computed above.
 					projLogic->delta = outVec;
+					tfe_adjustWeaponCollisionSpeed(projLogic);
 
 					ProjectileHitType hitType = proj_handleMovement(projLogic);
 					if (!handleProjectileHit(projLogic, hitType))
 					{
 						// If that fails, then try the new value.
 						projLogic->delta = outVec2;
+						tfe_adjustWeaponCollisionSpeed(projLogic);
+
 						hitType = proj_handleMovement(projLogic);
 						fire = handleProjectileHit(projLogic, hitType);
 					}
@@ -347,9 +371,12 @@ namespace TFE_DarkForces
 				else
 				{
 					projLogic->delta = outVec;
+					tfe_adjustWeaponCollisionSpeed(projLogic);
+
 					ProjectileHitType hitType = proj_handleMovement(projLogic);
 					handleProjectileHit(projLogic, hitType);
 				}
+				tfe_restoreWeaponCollisionSpeed(projLogic);
 			}
 			task_localBlockEnd;
 			
@@ -512,12 +539,15 @@ namespace TFE_DarkForces
 					rotateVectorM3x3(&inVec2, &outVec2, mtx2);
 					// First try using the outVec value computed above.
 					projLogic->delta = outVec;
+					tfe_adjustWeaponCollisionSpeed(projLogic);
 
 					ProjectileHitType hitType = proj_handleMovement(projLogic);
 					if (!handleProjectileHit(projLogic, hitType))
 					{
 						// If that fails, then try the new value.
 						projLogic->delta = outVec2;
+						tfe_adjustWeaponCollisionSpeed(projLogic);
+
 						hitType = proj_handleMovement(projLogic);
 						fire = handleProjectileHit(projLogic, hitType);
 					}
@@ -525,9 +555,12 @@ namespace TFE_DarkForces
 				else
 				{
 					projLogic->delta = outVec;
+					tfe_adjustWeaponCollisionSpeed(projLogic);
+
 					ProjectileHitType hitType = proj_handleMovement(projLogic);
 					handleProjectileHit(projLogic, hitType);
 				}
+				tfe_restoreWeaponCollisionSpeed(projLogic);
 			}
 			task_localBlockEnd;
 
@@ -657,9 +690,12 @@ namespace TFE_DarkForces
 
 			vec3_fixed inVec = { FIXED(2), FIXED(2), FIXED(2) };
 			rotateVectorM3x3(&inVec, &proj->delta, mtx);
+			tfe_adjustWeaponCollisionSpeed(proj);
 
 			ProjectileHitType hitType = proj_handleMovement(proj);
 			handleProjectileHit(proj, hitType);
+
+			tfe_restoreWeaponCollisionSpeed(proj);
 			task_localBlockEnd;
 
 			// Handle animation
@@ -821,9 +857,12 @@ namespace TFE_DarkForces
 						else
 						{
 							proj[i]->delta = outVec;
+							tfe_adjustWeaponCollisionSpeed(proj[i]);
+
 							// Initial movement to make sure the player isn't too close to a wall or adjoin.
 							ProjectileHitType hitType = proj_handleMovement(proj[i]);
 							handleProjectileHit(proj[i], hitType);
+							tfe_restoreWeaponCollisionSpeed(proj[i]);
 						}
 					}
 				}
@@ -980,9 +1019,12 @@ namespace TFE_DarkForces
 					else
 					{
 						projLogic->delta = outVec;
+						tfe_adjustWeaponCollisionSpeed(projLogic);
+
 						// Initial movement to make sure the player isn't too close to a wall or adjoin.
 						ProjectileHitType hitType = proj_handleMovement(projLogic);
 						handleProjectileHit(projLogic, hitType);
+						tfe_restoreWeaponCollisionSpeed(projLogic);
 					}
 				}
 				task_localBlockEnd;
@@ -1132,9 +1174,12 @@ namespace TFE_DarkForces
 						else
 						{
 							proj[i]->delta = outVec;
+							tfe_adjustWeaponCollisionSpeed(proj[i]);
+
 							// Initial movement to make sure the player isn't too close to a wall or adjoin.
 							ProjectileHitType hitType = proj_handleMovement(proj[i]);
 							handleProjectileHit(proj[i], hitType);
+							tfe_restoreWeaponCollisionSpeed(proj[i]);
 						}
 					}
 				}
@@ -1283,9 +1328,12 @@ namespace TFE_DarkForces
 					else
 					{
 						projLogic->delta = outVec;
+						tfe_adjustWeaponCollisionSpeed(projLogic);
+
 						// Initial movement to make sure the player isn't too close to a wall or adjoin.
 						ProjectileHitType hitType = proj_handleMovement(projLogic);
 						handleProjectileHit(projLogic, hitType);
+						tfe_restoreWeaponCollisionSpeed(projLogic);
 					}
 				}
 				task_localBlockEnd;
@@ -1464,12 +1512,15 @@ namespace TFE_DarkForces
 					rotateVectorM3x3(&worldUp, &outVec2, mtx2);
 					// First try using the outVec value computed above.
 					projLogic->delta = outVec;
+					tfe_adjustWeaponCollisionSpeed(projLogic);
 
 					ProjectileHitType hitType = proj_handleMovement(projLogic);
 					if (!handleProjectileHit(projLogic, hitType))
 					{
 						// If that fails, then try the new value.
 						projLogic->delta = outVec2;
+						tfe_adjustWeaponCollisionSpeed(projLogic);
+
 						hitType = proj_handleMovement(projLogic);
 						fire = handleProjectileHit(projLogic, hitType);
 					}
@@ -1477,9 +1528,12 @@ namespace TFE_DarkForces
 				else
 				{
 					projLogic->delta = outVec;
+					tfe_adjustWeaponCollisionSpeed(projLogic);
+
 					ProjectileHitType hitType = proj_handleMovement(projLogic);
 					handleProjectileHit(projLogic, hitType);
 				}
+				tfe_restoreWeaponCollisionSpeed(projLogic);
 			}
 			task_localBlockEnd;
 
@@ -1581,6 +1635,8 @@ namespace TFE_DarkForces
 			};
 			task_localBlockEnd;
 			task_callTaskFunc(weapon_animateOnOrOffscreen);
+
+			task_yield(2);
 		}
 		else
 		{
@@ -1707,8 +1763,12 @@ namespace TFE_DarkForces
 				else
 				{
 					projLogic->delta = outVec;
+					tfe_adjustWeaponCollisionSpeed(projLogic);
+
 					ProjectileHitType hitType = proj_handleMovement(projLogic);
 					handleProjectileHit(projLogic, hitType);
+
+					tfe_restoreWeaponCollisionSpeed(projLogic);
 				}
 			}
 			task_localBlockEnd;
@@ -1871,8 +1931,12 @@ namespace TFE_DarkForces
 					{
 						// Initial movement and collision.
 						projLogic->delta = outVec;
+						tfe_adjustWeaponCollisionSpeed(projLogic);
+
 						ProjectileHitType hit = proj_handleMovement(projLogic);
 						handleProjectileHit(projLogic, hit);
+
+						tfe_restoreWeaponCollisionSpeed(projLogic);
 					}
 				}
 				task_localBlockEnd;
@@ -2000,9 +2064,13 @@ namespace TFE_DarkForces
 					else
 					{
 						projLogic->delta = outVec;
+						tfe_adjustWeaponCollisionSpeed(projLogic);
+
 						// Initial movement to make sure the player isn't too close to a wall or adjoin.
 						ProjectileHitType hitType = proj_handleMovement(projLogic);
 						handleProjectileHit(projLogic, hitType);
+
+						tfe_restoreWeaponCollisionSpeed(projLogic);
 					}
 				}
 				task_localBlockEnd;

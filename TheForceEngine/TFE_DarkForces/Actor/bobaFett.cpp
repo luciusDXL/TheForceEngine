@@ -16,6 +16,7 @@
 #include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Settings/settings.h>
 
 namespace TFE_DarkForces
 {
@@ -33,8 +34,8 @@ namespace TFE_DarkForces
 		vec3_fixed target;
 		fixed16_16 yAccel;
 		SoundSourceID soundSrc;
-		angle14_32 vertAngle;
-		fixed16_16 unused;
+		angle14_32 vertAngleRange;
+		fixed16_16 vertAngle;
 		fixed16_16 yVelOffset;
 		fixed16_16 accel;
 	};
@@ -197,7 +198,7 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
-	fixed16_16 bobaFett_changeYVel(fixed16_16 yTarget, fixed16_16 yPos, fixed16_16 yVel, fixed16_16 yVelOffset, angle14_32* vertAngle)
+	fixed16_16 bobaFett_changeYVel(fixed16_16 yTarget, fixed16_16 yPos, fixed16_16 yVel, fixed16_16 yVelOffset, angle14_32* vertAngleRange)
 	{
 		fixed16_16 target = -yTarget;
 		fixed16_16 pos = -yPos;
@@ -209,12 +210,11 @@ namespace TFE_DarkForces
 			if (vel != dy)
 			{
 				vel = max(0, dy - vel);
-				*vertAngle = clamp(ONE_16 - (vel - 0x13333), 0, ONE_16);
+				*vertAngleRange = clamp(ONE_16 - (vel - 0x13333), 0, ONE_16);
+				vel = min(ONE_16, vel);
 
-				s32 maxChange = mul16(TFE_Jedi::abs(dy) + FIXED(4), s_deltaTime);
-				vel = min(ONE_16, vel) - yVelOffset;
-				vel = clamp(vel, -maxChange, maxChange) + yVelOffset;
-				return vel;
+				fixed16_16 maxChange = mul16(TFE_Jedi::abs(dy) + FIXED(4), s_deltaTime);
+				return clamp(vel - yVelOffset, -maxChange, maxChange) + yVelOffset;
 			}
 		}
 		return yTarget;
@@ -231,7 +231,7 @@ namespace TFE_DarkForces
 
 	void bobaFett_handleVerticalMove(PhysicsActor* physicsActor, fixed16_16 yVelOffset, angle14_32 vertAngle, fixed16_16 yAccel, SoundSourceID soundSrc)
 	{
-		fixed16_16 yVel, hVel;
+		fixed16_16 yVelDelta, hVelDelta;
 		SecObject* obj = physicsActor->actor.header.obj;
 		if (yVelOffset)
 		{
@@ -244,19 +244,19 @@ namespace TFE_DarkForces
 				bobaFett_setRocketPitch(physicsActor->moveSndId, sndPitch);
 			}
 			fixed16_16 sinPitch, cosPitch;
-			yVel = mul16(mul16(yVelOffset, yAccel), s_deltaTime);
+			yVelDelta = mul16(mul16(yVelOffset, yAccel), s_deltaTime);
 			sinCosFixed(vertAngle, &sinPitch, &cosPitch);
 
-			fixed16_16 prevYVel = yVel;
-			yVel = mul16(cosPitch, yVel);
-			hVel = mul16(sinPitch, prevYVel);
+			fixed16_16 prevYVelDelta = yVelDelta;
+			yVelDelta =  mul16(cosPitch, yVelDelta);
+			hVelDelta = -mul16(sinPitch, prevYVelDelta);
 
 			fixed16_16 sinYaw, cosYaw;
 			sinCosFixed(obj->yaw, &sinYaw, &cosYaw);
 
-			physicsActor->vel.x += mul16(hVel, sinYaw);
-			physicsActor->vel.y += yVel;
-			physicsActor->vel.z += mul16(hVel, cosYaw);
+			physicsActor->vel.x += mul16(hVelDelta, sinYaw);
+			physicsActor->vel.y -= yVelDelta;
+			physicsActor->vel.z += mul16(hVelDelta, cosYaw);
 		}
 		else if (physicsActor->moveSndId)
 		{
@@ -283,7 +283,24 @@ namespace TFE_DarkForces
 			obj->yaw &= ANGLE_MASK;
 		}
 
-		moveState->yVelOffset = bobaFett_changeYVel(moveState->target.y, obj->posWS.y, physicsActor->vel.y, moveState->yVelOffset, &moveState->vertAngle);
+		// Adjust the vertical movement angle.
+		fixed16_16 dist = distApprox(obj->posWS.x, obj->posWS.z, moveState->target.x, moveState->target.z);
+		fixed16_16 scaledDist = min(ONE_16, dist >> 7);
+		fixed16_16 newVertAngle = mul16(scaledDist, FIXED(100));
+
+		fixed16_16 cosVelAngle, sinVelAngle;
+		sinCosFixed(velAngle, &cosVelAngle, &sinVelAngle);
+
+		newVertAngle -= (mul16(physicsActor->vel.z, cosVelAngle) + mul16(physicsActor->vel.x, sinVelAngle));
+		newVertAngle = clamp(div16(newVertAngle, FIXED(100)), moveState->vertAngleRange, -moveState->vertAngleRange);
+
+		fixed16_16 targetVertAngle   = floor16(mul16(newVertAngle, FIXED(2048)));
+		fixed16_16 maxVertAngleDelta = floor16(mul16(FIXED(1365), s_deltaTime));
+		fixed16_16 vertAngleDelta    = clamp(targetVertAngle - moveState->vertAngle, -maxVertAngleDelta, maxVertAngleDelta);
+		moveState->vertAngle        += vertAngleDelta;
+
+		// Change the Y velocity offset and vertical ange range.
+		moveState->yVelOffset = bobaFett_changeYVel(moveState->target.y, obj->posWS.y, physicsActor->vel.y, moveState->yVelOffset, &moveState->vertAngleRange);
 		if (moveState->accel)
 		{
 			fixed16_16 sinYaw, cosYaw;
@@ -293,6 +310,7 @@ namespace TFE_DarkForces
 			physicsActor->vel.x += mul16(velDelta, sinYaw);
 			physicsActor->vel.z += mul16(velDelta, cosYaw);
 		}
+		// Handle the vertical move based on the y velocity and vertical angle.
 		bobaFett_handleVerticalMove(physicsActor, moveState->yVelOffset, moveState->vertAngle, moveState->yAccel, moveState->soundSrc);
 	}
 
@@ -378,7 +396,7 @@ namespace TFE_DarkForces
 			task_localBlockBegin;
 				fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
 				fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
-				angle14_32 angle = vec2ToAngle(dx, dz);
+				angle14_32 angle = vec2ToAngle(dx, dz) & ANGLE_MASK;
 
 				if (local(phase) == 0 || local(phase) == 5)
 				{
@@ -391,6 +409,7 @@ namespace TFE_DarkForces
 					if (local(phase) == 0)
 					{
 						local(nextPhaseChangeTick) = s_curTick + 728;
+						local(moveState)->vertAngle = ONE_16;
 						local(moveState)->yVelOffset = ONE_16;
 						local(phase) = 5;
 
@@ -407,6 +426,7 @@ namespace TFE_DarkForces
 				{
 					if (local(phase) == 1)
 					{
+						local(nextPhaseChangeTick) = s_curTick + 1456;
 						local(accel) = (s_curTick & 1) ? -FIXED(15) : FIXED(15);
 						local(phase) = 6;
 					}
@@ -451,7 +471,15 @@ namespace TFE_DarkForces
 				}
 
 				angle14_32 angleDiff = getAngleDifference(angle, local(obj)->yaw);
-				if (angleDiff < 1592)	// ~35 degrees
+				// The original DOS code has a bug where it only checks the angle difference in one direction.
+				// The 'df_fixBobaFettFireDir' will cause the negative direction to be tested if true.
+				JBool canShoot = (angleDiff < 1592) ? JTRUE : JFALSE;	// ~35 degrees
+				if (TFE_Settings::getGameSettings()->df_fixBobaFettFireDir && angleDiff <= -1592)
+				{
+					canShoot = JFALSE;
+				}
+
+				if (canShoot)
 				{
 					if (local(nextAimedShotTick) < s_curTick && actor_canSeeObject(local(obj), s_playerObject))
 					{
@@ -565,6 +593,7 @@ namespace TFE_DarkForces
 			u32 phase;
 			Tick nextCheckForPlayerTick;
 			Tick changeStateTick;
+			Tick nextChangePhaseTick;
 		};
 		task_begin_ctx;
 
@@ -577,6 +606,7 @@ namespace TFE_DarkForces
 		local(phase) = 0;
 		local(nextCheckForPlayerTick) = 0;
 		local(changeStateTick) = s_curTick + 8739;
+		local(nextChangePhaseTick) = s_curTick + 1456;
 		local(physicsActor)->actor.collisionFlags |= 4;
 
 		while (local(physicsActor)->state == BOBASTATE_SEARCH)
@@ -604,6 +634,12 @@ namespace TFE_DarkForces
 			}
 
 			bobaFett_handleMovement(local(bobaFett));
+
+			if (local(nextChangePhaseTick) < s_curTick)
+			{
+				local(phase) = (s_curTick & 1) ? 0 : 1;
+				local(nextChangePhaseTick) = s_curTick + 1456;
+			}
 
 			if (local(nextCheckForPlayerTick) < s_curTick)
 			{
@@ -791,8 +827,8 @@ namespace TFE_DarkForces
 		bobaFett->unused   = 0;
 		bobaFett->hitSndId = 0;
 		bobaFett->moveState.yAccel = FIXED(220);
-		bobaFett->moveState.vertAngle = ONE_16;
-		bobaFett->moveState.unused = 0;
+		bobaFett->moveState.vertAngleRange = ONE_16;
+		bobaFett->moveState.vertAngle = 0;
 		bobaFett->moveState.yVelOffset = 0;
 		bobaFett->moveState.soundSrc   = s_bobaRocket2SndID;
 		bobaFett->moveState.accel = 0;
