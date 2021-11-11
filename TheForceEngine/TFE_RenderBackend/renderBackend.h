@@ -78,6 +78,12 @@ struct ColorCorrection
 	f32 gamma;
 };
 
+struct MonitorInfo
+{
+	s32 x, y;
+	s32 w, h;
+};
+
 typedef void* RenderTargetHandle;
 class TextureGpu;
 
@@ -85,6 +91,7 @@ namespace TFE_RenderBackend
 {
 	bool init(const WindowState& state);
 	void destroy();
+	bool getVsyncEnabled();
 
 	void setClearColor(const f32* color);
 	void swap(bool blitVirtualDisplay);
@@ -93,6 +100,10 @@ namespace TFE_RenderBackend
 	void stopGifRecording();
 
 	void resize(s32 width, s32 height);
+	s32  getDisplayCount();
+	s32  getDisplayIndex(s32 x, s32 y);
+	bool getDisplayMonitorInfo(s32 displayIndex, MonitorInfo* monitorInfo);
+	f32  getDisplayRefreshRate();
 	void enableFullscreen(bool enable);
 	void clearWindow();
 

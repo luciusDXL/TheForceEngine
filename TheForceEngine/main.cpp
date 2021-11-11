@@ -47,6 +47,7 @@ using namespace TFE_Input;
 static bool s_vsync = true;
 static bool s_loop  = true;
 static f32  s_refreshRate = 0;
+static s32  s_displayIndex = 0;
 static u32  s_baseWindowWidth = 1280;
 static u32  s_baseWindowHeight = 720;
 static u32  s_displayWidth = s_baseWindowWidth;
@@ -234,30 +235,52 @@ bool sdlInit()
 	const int code = SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
 	if (code != 0) { return false; }
 
+	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
+	bool fullscreen    = windowSettings->fullscreen;
+	s_displayWidth     = windowSettings->width;
+	s_displayHeight    = windowSettings->height;
+	s_baseWindowWidth  = windowSettings->baseWidth;
+	s_baseWindowHeight = windowSettings->baseHeight;
+
+	// Get the displays and their bounds.
+	s_displayIndex = TFE_RenderBackend::getDisplayIndex(windowSettings->x, windowSettings->y);
+	// Reset the display if the window is out of bounds.
+	if (s_displayIndex < 0)
+	{
+		MonitorInfo mInfo;
+		s_displayIndex = 0;
+		TFE_RenderBackend::getDisplayMonitorInfo(0, &mInfo);
+
+		windowSettings->x = mInfo.x;
+		windowSettings->y = mInfo.y;
+		windowSettings->width  = min(windowSettings->width,  mInfo.w);
+		windowSettings->height = min(windowSettings->height, mInfo.h);
+		windowSettings->baseWidth  = windowSettings->width;
+		windowSettings->baseHeight = windowSettings->height;
+
+		s_displayWidth     = windowSettings->width;
+		s_displayHeight    = windowSettings->height;
+		s_baseWindowWidth  = windowSettings->baseWidth;
+		s_baseWindowHeight = windowSettings->baseHeight;
+	}
+
 	// Determine the display mode settings based on the desktop.
 	SDL_DisplayMode mode = {};
-	SDL_GetDesktopDisplayMode(0, &mode);
+	SDL_GetDesktopDisplayMode(s_displayIndex, &mode);
 	s_refreshRate = (f32)mode.refresh_rate;
-
-	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
-	bool fullscreen = windowSettings->fullscreen;
-	s_displayWidth = windowSettings->width;
-	s_displayHeight = windowSettings->height;
-	s_baseWindowWidth = windowSettings->baseWidth;
-	s_baseWindowHeight = windowSettings->baseHeight;
 
 	if (fullscreen)
 	{
-		s_displayWidth = mode.w;
+		s_displayWidth  = mode.w;
 		s_displayHeight = mode.h;
 	}
 	else
 	{
-		s_displayWidth = std::min(s_displayWidth, (u32)mode.w);
+		s_displayWidth  = std::min(s_displayWidth,  (u32)mode.w);
 		s_displayHeight = std::min(s_displayHeight, (u32)mode.h);
 	}
 
-	s_monitorWidth = mode.w;
+	s_monitorWidth  = mode.w;
 	s_monitorHeight = mode.h;
 
 	return true;
@@ -523,7 +546,7 @@ int main(int argc, char* argv[])
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
 		TFE_FRAME_BEGIN();
-
+		
 		bool enableRelative = TFE_Input::relativeModeEnabled();
 		if (enableRelative != relativeMode)
 		{
