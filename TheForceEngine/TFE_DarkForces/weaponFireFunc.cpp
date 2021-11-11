@@ -1635,6 +1635,8 @@ namespace TFE_DarkForces
 			};
 			task_localBlockEnd;
 			task_callTaskFunc(weapon_animateOnOrOffscreen);
+
+			task_yield(2);
 		}
 		else
 		{
