@@ -39,7 +39,7 @@ namespace TFE_GmidAsset
 		}
 		size_t size = gmidAsset.getSize();
 		s_buffer.resize(size + 1);
-		gmidAsset.readBuffer(s_buffer.data(), size);
+		gmidAsset.readBuffer(s_buffer.data(), (u32)size);
 		gmidAsset.close();
 
 		GMidiAsset* midi = new GMidiAsset;

@@ -290,7 +290,6 @@ namespace TFE_RenderBackend
 
 	f32 getDisplayRefreshRate()
 	{
-		TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
 		s32 x, y;
 		SDL_GetWindowPosition((SDL_Window*)m_window, &x, &y);
 		s32 displayIndex = getDisplayIndex(x, y);

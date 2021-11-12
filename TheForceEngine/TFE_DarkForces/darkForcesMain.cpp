@@ -568,7 +568,7 @@ namespace TFE_DarkForces
 
 		if (TFE_Paths::getFilePath("wait.bm", &filePath))
 		{
-			s_loadScreen = TFE_Jedi::bitmap_load(&filePath, 0);
+			s_loadScreen = TFE_Jedi::bitmap_load(&filePath, 1);
 		}
 		if (TFE_Paths::getFilePath("wait.pal", &filePath))
 		{
