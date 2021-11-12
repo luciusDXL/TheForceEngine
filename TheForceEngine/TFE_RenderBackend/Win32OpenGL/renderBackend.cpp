@@ -290,9 +290,9 @@ namespace TFE_RenderBackend
 
 	f32 getDisplayRefreshRate()
 	{
-		TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
-		SDL_GetWindowPosition((SDL_Window*)m_window, &windowSettings->x, &windowSettings->y);
-		s32 displayIndex = getDisplayIndex(windowSettings->x, windowSettings->y);
+		s32 x, y;
+		SDL_GetWindowPosition((SDL_Window*)m_window, &x, &y);
+		s32 displayIndex = getDisplayIndex(x, y);
 		if (displayIndex >= 0)
 		{
 			SDL_DisplayMode mode = { 0 };
@@ -315,7 +315,7 @@ namespace TFE_RenderBackend
 			{
 				displayIndex = 0;
 				windowSettings->x = s_displayBounds[0].x;
-				windowSettings->y = s_displayBounds[0].y;
+				windowSettings->y = s_displayBounds[0].y + 32;
 				windowSettings->baseWidth  = std::min(windowSettings->baseWidth,  (u32)s_displayBounds[0].w);
 				windowSettings->baseHeight = std::min(windowSettings->baseHeight, (u32)s_displayBounds[0].h);
 			}

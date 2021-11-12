@@ -36,7 +36,7 @@ namespace TFE_VocAsset
 		}
 		size_t size = vocAsset.getSize();
 		s_buffer.resize(size + 1);
-		vocAsset.readBuffer(s_buffer.data(), size);
+		vocAsset.readBuffer(s_buffer.data(), (u32)size);
 		vocAsset.close();
 
 		return true;

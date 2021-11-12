@@ -252,11 +252,12 @@ bool sdlInit()
 		TFE_RenderBackend::getDisplayMonitorInfo(0, &mInfo);
 
 		windowSettings->x = mInfo.x;
-		windowSettings->y = mInfo.y;
+		windowSettings->y = mInfo.y + 32;
 		windowSettings->width  = min(windowSettings->width,  mInfo.w);
 		windowSettings->height = min(windowSettings->height, mInfo.h);
 		windowSettings->baseWidth  = windowSettings->width;
 		windowSettings->baseHeight = windowSettings->height;
+		TFE_Settings::writeToDisk();
 
 		s_displayWidth     = windowSettings->width;
 		s_displayHeight    = windowSettings->height;
