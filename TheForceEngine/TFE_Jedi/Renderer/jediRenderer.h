@@ -44,6 +44,7 @@ namespace TFE_Jedi
 {
 	void renderer_init();
 	void renderer_destroy();
+	void renderer_reset();
 	void setupInitCameraAndLights();
 
 	// Set the current sub-renderer.

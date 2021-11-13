@@ -274,8 +274,6 @@ namespace TFE_Jedi
 
 	void sector_changeWallLight(RSector* sector, fixed16_16 delta)
 	{
-		sector->dirtyFlags |= SDF_WALL_LIGHT;
-
 		RWall* wall = sector->walls;
 		s32 wallCount = sector->wallCount;
 		for (s32 i = 0; i < wallCount; i++, wall++)
@@ -384,6 +382,8 @@ namespace TFE_Jedi
 	{
 		if (sector != obj->sector)
 		{
+			sector->dirtyFlags |= SDF_CHANGE_OBJ;
+
 			// Remove the object from its current sector (if it has one).
 			if (obj->sector)
 			{
@@ -440,9 +440,10 @@ namespace TFE_Jedi
 	void sector_removeObject(SecObject* obj)
 	{
 		if (!obj || !obj->sector) { return; }
-
+		
 		RSector* sector = obj->sector;
 		obj->sector = nullptr;
+		sector->dirtyFlags |= SDF_CHANGE_OBJ;
 
 		// Remove the object from the object list.
 		SecObject** objList = sector->objectList;

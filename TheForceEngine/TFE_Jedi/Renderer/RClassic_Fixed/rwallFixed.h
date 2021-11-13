@@ -36,9 +36,6 @@ namespace TFE_Jedi
 
 		void wall_addAdjoinSegment(s32 length, s32 x0, fixed16_16 top_dydx, fixed16_16 y1, fixed16_16 bot_dydx, fixed16_16 y0, RWallSegmentFixed* wallSegment);
 
-		void wall_setupAdjoinDrawFlags(RWall* wall);
-		void wall_computeTexelHeights(RWall* wall);
-
 		// Sprite code for now because so much is shared.
 		void sprite_drawFrame(u8* basePtr, WaxFrame* frame, SecObject* obj);
 	}

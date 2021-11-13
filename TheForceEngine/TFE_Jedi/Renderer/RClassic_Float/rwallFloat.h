@@ -13,17 +13,45 @@
 #include "../rwallSegment.h"
 
 struct RSector;
-struct EdgePairFixed;
 
 namespace TFE_Jedi
 {
+	struct EdgePairFloat;
+	struct SectorCached;
+
+	struct WallCached
+	{
+		RWall* wall;	// base wall.
+		SectorCached* sector;
+		// Vertices (viewspace) - points to cached vertices.
+		vec2_float* v0;
+		vec2_float* v1;
+		// Wall length in texels.
+		f32 texelLength;
+
+		// Wall heights in texels.
+		f32 topTexelHeight;
+		f32 midTexelHeight;
+		f32 botTexelHeight;
+
+		// Texture Offsets
+		vec2_float topOffset;
+		vec2_float midOffset;
+		vec2_float botOffset;
+		vec2_float signOffset;
+
+		// Direction and length.
+		vec2_float wallDir;
+		f32 length;
+	};
+
 	namespace RClassic_Float
 	{
-		void wall_process(RWall* wall);
+		void wall_process(WallCached* wallCached);
 		s32  wall_mergeSort(RWallSegmentFloat* segOutList, s32 availSpace, s32 start, s32 count);
 
 		void wall_drawSolid(RWallSegmentFloat* wallSegment);
-		void wall_drawTransparent(RWallSegmentFloat* wallSegment, EdgePairFixed* edge);
+		void wall_drawTransparent(RWallSegmentFloat* wallSegment, EdgePairFloat* edge);
 		void wall_drawMask(RWallSegmentFloat* wallSegment);
 		void wall_drawBottom(RWallSegmentFloat* wallSegment);
 		void wall_drawTop(RWallSegmentFloat* wallSegment);
@@ -34,12 +62,9 @@ namespace TFE_Jedi
 		void wall_drawSkyBottom(RSector* sector);
 		void wall_drawSkyBottomNoWall(RSector* sector);
 
-		void wall_addAdjoinSegment(s32 length, s32 x0, fixed16_16 top_dydx, fixed16_16 y1, fixed16_16 bot_dydx, fixed16_16 y0, RWallSegmentFloat* wallSegment);
-
-		void wall_setupAdjoinDrawFlags(RWall* wall);
-		void wall_computeTexelHeights(RWall* wall);
+		void wall_addAdjoinSegment(s32 length, s32 x0, f32 top_dydx, f32 y1, f32 bot_dydx, f32 y0, RWallSegmentFloat* wallSegment);
 
 		// Sprite code for now because so much is shared.
-		void sprite_drawFrame(u8* basePtr, WaxFrame* frame, SecObject* obj);
+		void sprite_drawFrame(u8* basePtr, WaxFrame* frame, SecObject* obj, vec3_float* cachedPosVS);
 	}
 }

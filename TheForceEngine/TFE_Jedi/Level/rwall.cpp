@@ -39,6 +39,8 @@ namespace TFE_Jedi
 
 	void wall_computeTexelHeights(RWall* wall)
 	{
+		wall->sector->dirtyFlags |= SDF_HEIGHTS;
+
 		if (wall->nextSector)
 		{
 			if (wall->drawFlags & WDF_TOP)
@@ -92,6 +94,8 @@ namespace TFE_Jedi
 
 	fixed16_16 wall_computeDirectionVector(RWall* wall)
 	{
+		wall->sector->dirtyFlags |= SDF_WALL_SHAPE;
+
 		// Calculate dx and dz
 		fixed16_16 dx = wall->w1->x - wall->w0->x;
 		fixed16_16 dz = wall->w1->z - wall->w0->z;

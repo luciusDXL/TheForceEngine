@@ -56,6 +56,7 @@ namespace TFE_Jedi
 		void computeAdjoinWindowBounds(EdgePairFixed* adjoinEdges);
 
 		// Sub-Renderer specific
+		virtual void reset() = 0;
 		virtual void prepare() = 0;
 		virtual void draw(RSector* sector) = 0;
 		virtual void subrendererChanged() = 0;

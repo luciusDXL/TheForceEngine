@@ -160,7 +160,7 @@ namespace RClassic_Float
 		return true;
 	}
 	
-	void flat_drawCeiling(RSector* sector, EdgePairFixed* edges, s32 count)
+	void flat_drawCeiling(RSector* sector, EdgePairFloat* edges, s32 count)
 	{
 		f32 textureOffsetU = s_rcfltState.cameraPos.x - sector->ceilOffset.x;
 		f32 textureOffsetV = sector->ceilOffset.z - s_rcfltState.cameraPos.z;
@@ -186,7 +186,7 @@ namespace RClassic_Float
 			s32 right = 0;
 			for (s32 i = 0; i < count;)
 			{
-				if (!flat_buildScanlineCeiling(i, count, x, y, left, right, s_scanlineWidth, edges))
+				if (!flat_buildScanlineCeiling(i, count, x, y, left, right, s_scanlineWidth, (EdgePairFixed*)edges))
 				{
 					break;
 				}
@@ -224,7 +224,7 @@ namespace RClassic_Float
 		}
 	}
 		
-	void flat_drawFloor(RSector* sector, EdgePairFixed* edges, s32 count)
+	void flat_drawFloor(RSector* sector, EdgePairFloat* edges, s32 count)
 	{
 		f32 textureOffsetU = s_rcfltState.cameraPos.x - sector->floorOffset.x;
 		f32 textureOffsetV = sector->floorOffset.z - s_rcfltState.cameraPos.z;
@@ -254,7 +254,7 @@ namespace RClassic_Float
 				s32 winMaxX = s_windowMaxX_Pixels;
 
 				// Search for the left edge of the scanline.
-				if (!flat_buildScanlineFloor(i, count, x, y, left, right, s_scanlineWidth, edges))
+				if (!flat_buildScanlineFloor(i, count, x, y, left, right, s_scanlineWidth, (EdgePairFixed*)edges))
 				{
 					break;
 				}

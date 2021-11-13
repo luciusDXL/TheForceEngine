@@ -68,6 +68,14 @@ namespace TFE_Jedi
 		delete s_sectorRenderer;
 	}
 
+	void renderer_reset()
+	{
+		if (s_sectorRenderer)
+		{
+			s_sectorRenderer->reset();
+		}
+	}
+
 	void setupInitCameraAndLights()
 	{
 		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setupInitCameraAndLights(); }
@@ -130,13 +138,28 @@ namespace TFE_Jedi
 
 	void setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
 	{
-		// HACK:
-		// Force sub-renderer to fixed for now until the refactoring is complete.
-		subRenderer = TSR_CLASSIC_FIXED;
-
 		if (subRenderer != s_subRenderer)
 		{
 			s_subRenderer = subRenderer;
+			if (s_sectorRenderer)
+			{
+				s_sectorRenderer->subrendererChanged();
+			}
+
+			delete s_sectorRenderer;
+			s_sectorRenderer = nullptr;
+
+			switch (subRenderer)
+			{
+				case TSR_CLASSIC_FIXED:
+				{
+					s_sectorRenderer = new TFE_Sectors_Fixed();
+				} break;
+				case TSR_CLASSIC_FLOAT:
+				{
+					s_sectorRenderer = new TFE_Sectors_Float();
+				} break;
+			}
 		}
 	}
 

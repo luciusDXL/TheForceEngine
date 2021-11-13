@@ -1,5 +1,7 @@
 #include <TFE_System/profiler.h>
 #include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_Game/igame.h>
+#include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -16,32 +18,38 @@
 #include "../rcommon.h"
 
 using namespace TFE_Jedi::RClassic_Float;
+#define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
 
 namespace TFE_Jedi
 {
 	namespace
 	{
+		static TFE_Sectors_Float* s_ctx = nullptr;
+
 		s32 wallSortX(const void* r0, const void* r1)
 		{
 			return ((const RWallSegmentFloat*)r0)->wallX0 - ((const RWallSegmentFloat*)r1)->wallX0;
 		}
 
-		s32 sortObjectsFixed(const void* r0, const void* r1)
+		s32 sortObjectsFloat(const void* r0, const void* r1)
 		{
 			SecObject* obj0 = *((SecObject**)r0);
 			SecObject* obj1 = *((SecObject**)r1);
 
+			const SectorCached* cached0 = &s_ctx->m_cachedSectors[obj0->sector->id];
+			const SectorCached* cached1 = &s_ctx->m_cachedSectors[obj1->sector->id];
+
 			if (obj0->type == OBJ_TYPE_3D && obj1->type == OBJ_TYPE_3D)
 			{
 				// Both objects are 3D.
-				const fixed16_16 distSq0 = dotFixed(obj0->posVS, obj0->posVS);
-				const fixed16_16 distSq1 = dotFixed(obj1->posVS, obj1->posVS);
-				const fixed16_16 dist0 = fixedSqrt(distSq0);
-				const fixed16_16 dist1 = fixedSqrt(distSq1);
-
+				const f32 distSq0 = dotFloat(cached0->objPosVS[obj0->index], cached0->objPosVS[obj0->index]);
+				const f32 distSq1 = dotFloat(cached1->objPosVS[obj1->index], cached1->objPosVS[obj1->index]);
+				const f32 dist0 = sqrtf(distSq0);
+				const f32 dist1 = sqrtf(distSq1);
+				
 				if (obj0->model->isBridge && obj1->model->isBridge)
 				{
-					return dist1 - dist0;
+					return signZero(dist1 - dist0);
 				}
 				else if (obj0->model->isBridge == 1)
 				{
@@ -52,7 +60,7 @@ namespace TFE_Jedi
 					return 1;
 				}
 
-				return dist1 - dist0;
+				return signZero(dist1 - dist0);
 			}
 			else if (obj0->type == OBJ_TYPE_3D && obj0->model->isBridge)
 			{
@@ -64,14 +72,16 @@ namespace TFE_Jedi
 			}
 
 			// Default case:
-			return obj1->posVS.z - obj0->posVS.z;
+			return signZero(cached1->objPosVS[obj1->index].z - cached0->objPosVS[obj0->index].z);
 		}
-				
+
 		s32 cullObjects(RSector* sector, SecObject** buffer)
 		{
 			s32 drawCount = 0;
 			SecObject** obj = sector->objectList;
 			s32 count = sector->objectCount;
+
+			const SectorCached* cached = &s_ctx->m_cachedSectors[sector->id];
 
 			for (s32 i = count - 1; i >= 0 && drawCount < MAX_VIEW_OBJ_COUNT; i--, obj++)
 			{
@@ -88,40 +98,40 @@ namespace TFE_Jedi
 					const s32 type = curObj->type;
 					if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
 					{
-						if (curObj->posVS.z >= ONE_16)
+						if (cached->objPosVS[curObj->index].z >= ONE_16)
 						{
 							buffer[drawCount++] = curObj;
 						}
 					}
 					else if (type == OBJ_TYPE_3D)
 					{
-						const fixed16_16 radius = curObj->model->radius;
-						const fixed16_16 zMax = curObj->posVS.z + radius;
+						const f32 radius = fixed16ToFloat(curObj->model->radius);
+						const f32 zMax = cached->objPosVS[curObj->index].z + radius;
 						// Near plane
-						if (zMax < ONE_16) { continue; }
+						if (zMax < 1.0f) { continue; }
 
 						// Left plane
-						const fixed16_16 xMax = curObj->posVS.x + radius;
+						const f32 xMax = cached->objPosVS[curObj->index].x + radius;
 						if (xMax < -zMax) { continue; }
 
 						// Right plane
-						const fixed16_16 xMin = curObj->posVS.x - radius;
+						const f32 xMin = cached->objPosVS[curObj->index].x - radius;
 						if (xMin > zMax) { continue; }
 
 						// The object straddles the near plane, so add it and move on.
-						const fixed16_16 zMin = curObj->posVS.z - radius;
-						if (zMin <= 0)
+						const f32 zMin = cached->objPosVS[curObj->index].z - radius;
+						if (zMin < FLT_EPSILON)
 						{
 							buffer[drawCount++] = curObj;
 							continue;
 						}
 
 						// Cull against the current "window."
-						const fixed16_16 z = curObj->posVS.z;
-						const s32 x0 = round16(div16(mul16(xMin, s_rcfltState.focalLength), z)) + s_screenXMid;
+						const f32 rcpZ = 1.0f / cached->objPosVS[curObj->index].z;
+						const s32 x0 = roundFloat((xMin*s_rcfltState.focalLength)*rcpZ) + s_screenXMid;
 						if (x0 > s_windowMaxX_Pixels) { continue; }
 
-						const s32 x1 = round16(div16(mul16(xMax, s_rcfltState.focalLength), z)) + s_screenXMid;
+						const s32 x1 = roundFloat((xMax*s_rcfltState.focalLength)*rcpZ) + s_screenXMid;
 						if (x1 < s_windowMinX_Pixels) { continue; }
 
 						// Finally add the object to render.
@@ -133,7 +143,7 @@ namespace TFE_Jedi
 			return drawCount;
 		}
 
-		void sprite_drawWax(s32 angle, SecObject* obj)
+		void sprite_drawWax(s32 angle, SecObject* obj, vec3_float* cachedPosVS)
 		{
 			// Angles range from [0, 16384), divide by 512 to get 32 even buckets.
 			s32 angleDiff = (angle - obj->yaw) >> 9;
@@ -149,20 +159,40 @@ namespace TFE_Jedi
 				// And finall the frame from the current sequence.
 				WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 0x1f);
 				// Draw the frame.
-				sprite_drawFrame((u8*)wax, frame, obj);
+				sprite_drawFrame((u8*)wax, frame, obj, cachedPosVS);
 			}
 		}
 	}
 
+	void TFE_Sectors_Float::reset()
+	{
+		m_cachedSectors = nullptr;
+		m_cachedSectorCount = 0;
+	}
+
 	void TFE_Sectors_Float::prepare()
 	{
-		EdgePairFixed* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
+		allocateCachedData();
+
+		EdgePairFloat* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
 		s_rcfltState.flatEdge = flatEdge;
 		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfltState.windowMaxY, 0, s_rcfltState.windowMinY);
 	}
 
+	void transformPointByCameraFixedToFloat(vec3_fixed* worldPoint, vec3_float* viewPoint)
+	{
+		const f32 x = fixed16ToFloat(worldPoint->x);
+		const f32 y = fixed16ToFloat(worldPoint->y);
+		const f32 z = fixed16ToFloat(worldPoint->z);
+
+		viewPoint->x = x*s_rcfltState.cosYaw + z*s_rcfltState.sinYaw + s_rcfltState.cameraTrans.x;
+		viewPoint->y = y - s_rcfltState.eyeHeight;
+		viewPoint->z = z*s_rcfltState.cosYaw + x*s_rcfltState.negSinYaw + s_rcfltState.cameraTrans.z;
+	}
+	
 	void TFE_Sectors_Float::draw(RSector* sector)
 	{
+		s_ctx = this;
 		s_curSector = sector;
 		s_sectorIndex++;
 		s_adjoinIndex++;
@@ -194,25 +224,33 @@ namespace TFE_Jedi
 
 		s_windowTop = winTop;
 		s_windowBot = winBot;
-		fixed16_16* depthPrev = nullptr;
+		f32* depthPrev = nullptr;
 		if (s_adjoinDepth > 1)
 		{
 			depthPrev = &s_rcfltState.depth1d_all[(s_adjoinDepth - 2) * s_width];
 			memcpy(&s_rcfltState.depth1d[s_minScreenX_Pixels], &depthPrev[s_minScreenX_Pixels], s_width * 4);
 		}
 
-		s_wallMaxCeilY = s_windowMinY_Pixels;
+		s_wallMaxCeilY  = s_windowMinY_Pixels;
 		s_wallMinFloorY = s_windowMaxY_Pixels;
+		SectorCached* cachedSector = &m_cachedSectors[s_curSector->id];
 
 		if (s_drawFrame != s_curSector->prevDrawFrame)
 		{
+			TFE_ZONE_BEGIN(secUpdateCache, "Update Sector Cache");
+				updateCachedSector(cachedSector, s_curSector->dirtyFlags);
+			TFE_ZONE_END(secUpdateCache);
+
 			TFE_ZONE_BEGIN(secXform, "Sector Vertex Transform");
 				vec2_fixed* vtxWS = s_curSector->verticesWS;
-				vec2_fixed* vtxVS = s_curSector->verticesVS;
+				vec2_float* vtxVS = cachedSector->verticesVS;
 				for (s32 v = 0; v < s_curSector->vertexCount; v++)
 				{
-					vtxVS->x = mul16(vtxWS->x, s_rcfltState.cosYaw)    + mul16(vtxWS->z, s_rcfltState.sinYaw) + s_rcfltState.cameraTrans.x;
-					vtxVS->z = mul16(vtxWS->x, s_rcfltState.negSinYaw) + mul16(vtxWS->z, s_rcfltState.cosYaw) + s_rcfltState.cameraTrans.z;
+					const f32 x = fixed16ToFloat(vtxWS->x);
+					const f32 z = fixed16ToFloat(vtxWS->z);
+
+					vtxVS->x = x*s_rcfltState.cosYaw     + z*s_rcfltState.sinYaw + s_rcfltState.cameraTrans.x;
+					vtxVS->z = x*s_rcfltState.negSinYaw  + z*s_rcfltState.cosYaw + s_rcfltState.cameraTrans.z;
 					vtxVS++;
 					vtxWS++;
 				}
@@ -220,6 +258,7 @@ namespace TFE_Jedi
 
 			TFE_ZONE_BEGIN(objXform, "Sector Object Transform");
 				SecObject** obj = s_curSector->objectList;
+				vec3_float* objPosVS = cachedSector->objPosVS;
 				for (s32 i = s_curSector->objectCount - 1; i >= 0; i--, obj++)
 				{
 					SecObject* curObj = *obj;
@@ -231,14 +270,14 @@ namespace TFE_Jedi
 
 					if (curObj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
 					{
-						transformPointByCamera(&curObj->posWS, &curObj->posVS);
+						transformPointByCameraFixedToFloat(&curObj->posWS, &objPosVS[curObj->index]);
 					}
 				}
 			TFE_ZONE_END(objXform);
 
 			TFE_ZONE_BEGIN(wallProcess, "Sector Wall Process");
 				startWall = s_nextWall;
-				RWall* wall = s_curSector->walls;
+				WallCached* wall = cachedSector->cachedWalls;
 				for (s32 i = 0; i < s_curSector->wallCount; i++, wall++)
 				{
 					wall_process(wall);
@@ -260,11 +299,11 @@ namespace TFE_Jedi
 		TFE_ZONE_END(wallQSort);
 
 		s32 flatCount = s_flatCount;
-		EdgePairFixed* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
+		EdgePairFloat* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
 		s_rcfltState.flatEdge = flatEdge;
 
 		s32 adjoinStart = s_adjoinSegCount;
-		EdgePairFixed* adjoinEdges = &s_rcfltState.adjoinEdgeList[adjoinStart];
+		EdgePairFloat* adjoinEdges = &s_rcfltState.adjoinEdgeList[adjoinStart];
 		RWallSegmentFloat* adjoinList[MAX_ADJOIN_DEPTH];
 
 		s_rcfltState.adjoinEdge = adjoinEdges;
@@ -274,7 +313,7 @@ namespace TFE_Jedi
 		TFE_ZONE_BEGIN(secDrawWalls, "Draw Walls");
 		for (s32 i = 0; i < drawSegCnt; i++, wallSegment++)
 		{
-			RWall* srcWall = wallSegment->srcWall;
+			RWall* srcWall = wallSegment->srcWall->wall;
 			RSector* nextSector = srcWall->nextSector;
 
 			if (!nextSector)
@@ -394,7 +433,7 @@ namespace TFE_Jedi
 				prevAdjoinSeg = curAdjoinSeg;
 				curAdjoinSeg = *seg;
 
-				RWall* srcWall = curAdjoinSeg->srcWall;
+				RWall* srcWall = curAdjoinSeg->srcWall->wall;
 				RWallSegmentFloat* nextAdjoin = (i < adjoinEnd) ? *(seg + 1) : nullptr;
 				RSector* nextSector = srcWall->nextSector;
 				if (s_adjoinDepth < MAX_ADJOIN_DEPTH && s_adjoinDepth < s_maxDepthCount)
@@ -448,7 +487,7 @@ namespace TFE_Jedi
 
 		if (!(s_curSector->flags1 & SEC_FLAGS1_SUBSECTOR) && depthPrev && s_drawFrame != s_prevSector->prevDrawFrame2)
 		{
-			memcpy(&depthPrev[s_windowMinX_Pixels], &s_rcfltState.depth1d[s_windowMinX_Pixels], (s_windowMaxX_Pixels - s_windowMinX_Pixels + 1) * sizeof(fixed16_16));
+			memcpy(&depthPrev[s_windowMinX_Pixels], &s_rcfltState.depth1d[s_windowMinX_Pixels], (s_windowMaxX_Pixels - s_windowMinX_Pixels + 1) * sizeof(f32));
 		}
 
 		// Objects
@@ -475,9 +514,10 @@ namespace TFE_Jedi
 			}
 
 			// Sort objects in viewspace (generally back to front but there are special cases).
-			qsort(s_objBuffer, objCount, sizeof(SecObject*), sortObjectsFixed);
+			qsort(s_objBuffer, objCount, sizeof(SecObject*), sortObjectsFloat);
 
 			// Draw objects in order.
+			vec3_float* cachedPosVS = cachedSector->objPosVS;
 			for (s32 i = 0; i < objCount; i++)
 			{
 				SecObject* obj = s_objBuffer[i];
@@ -486,11 +526,11 @@ namespace TFE_Jedi
 				{
 					TFE_ZONE("Draw WAX");
 
-					fixed16_16 dx = s_rcfltState.cameraPos.x - obj->posWS.x;
-					fixed16_16 dz = s_rcfltState.cameraPos.z - obj->posWS.z;
-					angle14_32 angle = vec2ToAngle(dx, dz);
+					f32 dx = s_rcfltState.cameraPos.x - fixed16ToFloat(obj->posWS.x);
+					f32 dz = s_rcfltState.cameraPos.z - fixed16ToFloat(obj->posWS.z);
+					s32 angle = vec2ToAngle(dx, dz);
 
-					sprite_drawWax(angle, obj);
+					sprite_drawWax(angle, obj, &cachedPosVS[obj->index]);
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
@@ -502,7 +542,7 @@ namespace TFE_Jedi
 				{
 					TFE_ZONE("Draw Frame");
 
-					sprite_drawFrame((u8*)obj->fme, obj->fme, obj);
+					sprite_drawFrame((u8*)obj->fme, obj->fme, obj, &cachedPosVS[obj->index]);
 				}
 			}
 		}
@@ -512,7 +552,7 @@ namespace TFE_Jedi
 		s_curSector->prevDrawFrame2 = s_drawFrame;
 	}
 		
-	void TFE_Sectors_Float::adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePairFixed* adjoinEdges, s32 adjoinCount)
+	void TFE_Sectors_Float::adjoin_setupAdjoinWindow(s32* winBot, s32* winBotNext, s32* winTop, s32* winTopNext, EdgePairFloat* adjoinEdges, s32 adjoinCount)
 	{
 		TFE_ZONE("Setup Adjoin Window");
 
@@ -528,11 +568,11 @@ namespace TFE_Jedi
 			const s32 x0 = adjoinEdges->x0;
 			const s32 x1 = adjoinEdges->x1;
 
-			const fixed16_16 ceil_dYdX = adjoinEdges->dyCeil_dx;
-			fixed16_16 y = adjoinEdges->yCeil0;
+			const f32 ceil_dYdX = adjoinEdges->dyCeil_dx;
+			f32 y = adjoinEdges->yCeil0;
 			for (s32 x = x0; x <= x1; x++, y += ceil_dYdX)
 			{
-				s32 yPixel = round16(y);
+				s32 yPixel = roundFloat(y);
 				s32 yBot = winBotNext[x];
 				s32 yTop = winTop[x];
 				if (yPixel > yTop)
@@ -540,11 +580,11 @@ namespace TFE_Jedi
 					winTopNext[x] = (yPixel <= yBot) ? yPixel : yBot + 1;
 				}
 			}
-			const fixed16_16 floor_dYdX = adjoinEdges->dyFloor_dx;
+			const f32 floor_dYdX = adjoinEdges->dyFloor_dx;
 			y = adjoinEdges->yFloor0;
 			for (s32 x = x0; x <= x1; x++, y += floor_dYdX)
 			{
-				s32 yPixel = round16(y);
+				s32 yPixel = roundFloat(y);
 				s32 yTop = winTop[x];
 				s32 yBot = winBot[x];
 				if (yPixel < yBot)
@@ -555,7 +595,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void TFE_Sectors_Float::adjoin_computeWindowBounds(EdgePairFixed* adjoinEdges)
+	void TFE_Sectors_Float::adjoin_computeWindowBounds(EdgePairFloat* adjoinEdges)
 	{
 		s32 yC = adjoinEdges->yPixel_C0;
 		if (yC > s_windowMinY_Pixels)
@@ -616,7 +656,7 @@ namespace TFE_Jedi
 		const SectorSaveValues* src = &s_sectorStack[index];
 		s_curSector = src->curSector;
 		s_prevSector = src->prevSector;
-		s_rcfltState.depth1d = (fixed16_16*)src->depth1d;
+		s_rcfltState.depth1d = (f32*)src->depth1d;
 		s_windowX0 = src->windowX0;
 		s_windowX1 = src->windowX1;
 		s_windowMinY_Pixels = src->windowMinY;
@@ -636,8 +676,120 @@ namespace TFE_Jedi
 		s_sectorAmbientFraction = src->sectorAmbientFraction;
 	}
 
+	void TFE_Sectors_Float::freeCachedData()
+	{
+		level_free(m_cachedSectors);
+		m_cachedSectors = nullptr;
+		m_cachedSectorCount = 0;
+	}
+		
+	void TFE_Sectors_Float::updateCachedWalls(SectorCached* cached, u32 flags)
+	{
+		if (!(flags & SDF_WALL_CHANGE)) { return; }
+
+		RSector* srcSector = cached->sector;
+		cached->cachedWalls = (WallCached*)level_alloc(sizeof(WallCached) * srcSector->wallCount);
+		memset(cached->cachedWalls, 0, sizeof(WallCached) * srcSector->wallCount);
+
+		for (s32 w = 0; w < srcSector->wallCount; w++)
+		{
+			WallCached* wcached = &cached->cachedWalls[w];
+			RWall* srcWall = &srcSector->walls[w];
+
+			if (flags & SDF_INIT_SETUP)
+			{
+				wcached->wall = srcWall;
+				wcached->sector = cached;
+				wcached->v0 = &cached->verticesVS[PTR_OFFSET(srcWall->v0, srcSector->verticesVS) / sizeof(vec2_fixed)];
+				wcached->v1 = &cached->verticesVS[PTR_OFFSET(srcWall->v1, srcSector->verticesVS) / sizeof(vec2_fixed)];
+			}
+
+			if (flags & SDF_HEIGHTS)
+			{
+				wcached->topTexelHeight = fixed16ToFloat(srcWall->topTexelHeight);
+				wcached->midTexelHeight = fixed16ToFloat(srcWall->midTexelHeight);
+				wcached->botTexelHeight = fixed16ToFloat(srcWall->botTexelHeight);
+			}
+
+			if (flags & SDF_WALL_OFFSETS)
+			{
+				wcached->texelLength = fixed16ToFloat(srcWall->texelLength);
+
+				wcached->topOffset.x = fixed16ToFloat(srcWall->topOffset.x);
+				wcached->topOffset.z = fixed16ToFloat(srcWall->topOffset.z);
+				wcached->midOffset.x = fixed16ToFloat(srcWall->midOffset.x);
+				wcached->midOffset.z = fixed16ToFloat(srcWall->midOffset.z);
+				wcached->botOffset.x = fixed16ToFloat(srcWall->botOffset.x);
+				wcached->botOffset.z = fixed16ToFloat(srcWall->botOffset.z);
+				wcached->signOffset.x = fixed16ToFloat(srcWall->signOffset.x);
+				wcached->signOffset.z = fixed16ToFloat(srcWall->signOffset.z);
+			}
+
+			if (flags & SDF_WALL_SHAPE)
+			{
+				wcached->wallDir.x = fixed16ToFloat(srcWall->wallDir.x);
+				wcached->wallDir.z = fixed16ToFloat(srcWall->wallDir.z);
+				wcached->length = fixed16ToFloat(srcWall->length);
+			}
+		}
+	}
+
+	void TFE_Sectors_Float::updateCachedSector(SectorCached* cached, u32 flags)
+	{
+		RSector* srcSector = cached->sector;
+
+		if (flags & SDF_INIT_SETUP)
+		{
+			cached->verticesVS = (vec2_float*)level_alloc(sizeof(vec2_float) * srcSector->vertexCount);
+		}
+
+		if (flags & SDF_HEIGHTS)
+		{
+			cached->floorHeight = fixed16ToFloat(srcSector->floorHeight);
+			cached->ceilingHeight = fixed16ToFloat(srcSector->ceilingHeight);
+		}
+
+		if (flags & SDF_FLAT_OFFSETS)
+		{
+			cached->floorOffset.x = fixed16ToFloat(srcSector->floorOffset.x);
+			cached->floorOffset.z = fixed16ToFloat(srcSector->floorOffset.z);
+			cached->ceilOffset.x = fixed16ToFloat(srcSector->ceilOffset.x);
+			cached->ceilOffset.z = fixed16ToFloat(srcSector->ceilOffset.z);
+		}
+
+		if (cached->objectCapacity < srcSector->objectCapacity)
+		{
+			cached->objPosVS = (vec3_float*)level_realloc(cached->objPosVS, sizeof(vec3_float) * cached->objectCapacity);
+		}
+
+		updateCachedWalls(cached, flags);
+		srcSector->dirtyFlags = 0;
+	}
+
+	void TFE_Sectors_Float::allocateCachedData()
+	{
+		if (m_cachedSectorCount && m_cachedSectorCount != s_sectorCount)
+		{
+			freeCachedData();
+		}
+
+		if (!m_cachedSectors)
+		{
+			m_cachedSectorCount = s_sectorCount;
+			m_cachedSectors = (SectorCached*)level_alloc(sizeof(SectorCached) * m_cachedSectorCount);
+			memset(m_cachedSectors, 0, sizeof(SectorCached) * m_cachedSectorCount);
+
+			for (u32 i = 0; i < m_cachedSectorCount; i++)
+			{
+				m_cachedSectors[i].sector = &s_sectors[i];
+				updateCachedSector(&m_cachedSectors[i], SDF_ALL);
+			}
+		}
+	}
+
 	// Switch from float to fixed.
 	void TFE_Sectors_Float::subrendererChanged()
 	{
+		freeCachedData();
 	}
 }

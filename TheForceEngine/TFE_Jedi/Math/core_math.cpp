@@ -243,4 +243,53 @@ namespace TFE_Jedi
 		outVec->y = inVec->x*mtx[1] + inVec->y*mtx[4] + inVec->z*mtx[7];
 		outVec->z = inVec->x*mtx[2] + inVec->y*mtx[5] + inVec->z*mtx[8];
 	}
+
+	s32 vec2ToAngle(f32 dx, f32 dz)
+	{
+		if (dx == 0.0f && dz == 0.0f)
+		{
+			return 0;
+		}
+
+		const s32 signsDiff = (signV2A(dx) != signV2A(dz)) ? 1 : 0;
+		// Splits the view into 4 quadrants, 0 - 3:
+		// 1 | 0
+		// -----
+		// 2 | 3
+		const s32 quadrant = (dz < 0.0f ? 2 : 0) + signsDiff;
+
+		// Further splits the quadrants into sub-quadrants:
+		// \2|1/
+		// 3\|/0
+		//---*---
+		// 4/|\7
+		// /5|6\
+			//
+		dx = fabsf(dx);
+		dz = fabsf(dz);
+		const s32 subquadrant = quadrant * 2 + ((dx < dz) ? (1 - signsDiff) : signsDiff);
+
+		// true in sub-quadrants: 0, 3, 4, 7; where dz tends towards 0.
+		if ((subquadrant - 1) & 2)
+		{
+			// The original code did the "3 xor" trick to swap dx and dz.
+			std::swap(dx, dz);
+		}
+
+		// next compute |dx| / |dz|, which will be a value from 0.0 to 1.0
+		f32 dXdZ = dx / dz;
+		if (subquadrant & 1)
+		{
+			// invert the ratio in sub-quadrants 1, 3, 5, 7 to maintain the correct direction.
+			dXdZ = 1.0f - dXdZ;
+		}
+
+		// subquadrantF is based on the sub-quadrant, essentially fixed16(subquadrant)
+		// which has a range of 0 to 7.0 (see above).
+		const f32 subquadrantF = f32(subquadrant);
+		// this flips the angle so that straight up (dx = 0, dz > 0) is 0, right is 90, down is 180.
+		const f32 angle = 2.0f - (subquadrantF + dXdZ);
+		// the final angle will be in the range of 0 - 16383
+		return s32(angle * 2048.0f) & ANGLE_MASK;
+	}
 }

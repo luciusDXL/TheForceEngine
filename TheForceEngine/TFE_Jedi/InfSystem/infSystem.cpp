@@ -2181,8 +2181,6 @@ namespace TFE_Jedi
 
 	void inf_setWallBits(RWall* wall)
 	{
-		wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
-
 		u32 flagsIndex = s_msgArg1;
 		u32 bits = s_msgArg2;
 		if (flagsIndex == 1)
@@ -2217,8 +2215,6 @@ namespace TFE_Jedi
 
 	void inf_clearWallBits(RWall* wall)
 	{
-		wall->sector->dirtyFlags |= SDF_WALL_FLAGS;
-
 		u32 flagsIndex = s_msgArg1;
 		u32 bits = s_msgArg2;
 		if (flagsIndex == 1)
@@ -2470,7 +2466,6 @@ namespace TFE_Jedi
 			{
 				wall->flags1 &= ~(WF1_HIDE_ON_MAP | WF1_SHOW_NORMAL_ON_MAP);
 			}
-			sector->dirtyFlags |= SDF_WALL_FLAGS;
 		}
 	}
 
@@ -3089,8 +3084,6 @@ namespace TFE_Jedi
 				{
 					sector->flags3 |= bits;
 				}
-
-				sector->dirtyFlags |= SDF_SECTOR_FLAGS;
 			} break;
 			case MSG_CLEAR_BITS:
 			{
@@ -3109,8 +3102,6 @@ namespace TFE_Jedi
 				{
 					sector->flags3 &= ~bits;
 				}
-
-				sector->dirtyFlags |= SDF_SECTOR_FLAGS;
 			} break;
 		};
 	}
@@ -3201,7 +3192,6 @@ namespace TFE_Jedi
 			// Store the old value in flags3 so the lights can be toggled.
 			sector->flags3 = floor16(sector->ambient);
 			sector->ambient = newAmbient;
-			sector->dirtyFlags |= SDF_SECTOR_LIGHT;
 		}
 	}
 
@@ -3598,13 +3588,11 @@ namespace TFE_Jedi
 	{
 		RSector* sector = elev->sector;
 		sector->ambient += delta;
-		sector->dirtyFlags |= SDF_SECTOR_LIGHT;
 
 		Slave* child = (Slave*)allocator_getHead(elev->slaves);
 		while (child)
 		{
 			child->sector->ambient += delta;
-			child->sector->dirtyFlags |= SDF_SECTOR_LIGHT;
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
 		return sector->ambient;

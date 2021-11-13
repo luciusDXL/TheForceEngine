@@ -10,6 +10,8 @@
 
 namespace TFE_Jedi
 {
+	struct WallCached;
+
 	struct RWallSegmentFixed
 	{
 		RWall* srcWall;		// Source wall
@@ -31,7 +33,7 @@ namespace TFE_Jedi
 
 	struct RWallSegmentFloat
 	{
-		RWall* srcWall;		// Source wall
+		WallCached* srcWall;// Source wall
 		s32 wallX0_raw;		// Projected wall X coordinates before adjoin/wall clipping.
 		s32 wallX1_raw;
 		s32 wallX0;			// Clipped projected X Coordinates.

@@ -300,6 +300,7 @@ namespace TFE_DarkForces
 				if (!task_getCount())
 				{
 					// We have returned from the mission tasks.
+					renderer_reset();
 					disableLevelMusic();
 					sound_stopAll();
 					agent_levelEndTask();

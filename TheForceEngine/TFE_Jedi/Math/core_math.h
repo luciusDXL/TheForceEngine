@@ -252,6 +252,9 @@ namespace TFE_Jedi
 	void normalizeVec3(vec3_float* vIn, vec3_float* vOut);
 	void rotateVectorM3x3(vec3_float* inVec, vec3_float* outVec, f32* mtx);
 
+	// Returns an DF angle, where 360 degrees = 16384 angular units (~45.5 units / degree).
+	s32 vec2ToAngle(f32 dx, f32 dz);
+
 	inline void sinCosFlt(f32 angle, f32* sinValue, f32* cosValue)
 	{
 		const f32 scale = -PI / 16384.0f;

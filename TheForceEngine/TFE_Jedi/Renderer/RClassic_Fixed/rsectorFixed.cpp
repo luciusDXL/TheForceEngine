@@ -161,6 +161,10 @@ namespace TFE_Jedi
 		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
 	}
 
+	void TFE_Sectors_Fixed::reset()
+	{
+	}
+
 	void TFE_Sectors_Fixed::draw(RSector* sector)
 	{
 		s_curSector = sector;
