@@ -10,6 +10,7 @@
 
 #include "RClassic_Float/rclassicFloat.h"
 #include "RClassic_Float/rsectorFloat.h"
+#include "RClassic_Float/rclassicFloatSharedState.h"
 
 #include <TFE_System/profiler.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
@@ -49,8 +50,8 @@ namespace TFE_Jedi
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum adjoin depth count.");
 
 		// Remove temporarily until they do something useful again.
-		//CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU");
-		//CCMD("rgetSubRenderer", console_getSubRenderer, 0, "Get the current sub-renderer.");
+		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU");
+		CCMD("rgetSubRenderer", console_getSubRenderer, 0, "Get the current sub-renderer.");
 
 		// Setup performance counters.
 		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
@@ -78,7 +79,9 @@ namespace TFE_Jedi
 
 	void setupInitCameraAndLights()
 	{
-		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setupInitCameraAndLights(); }
+		// if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setupInitCameraAndLights(); }
+		RClassic_Fixed::setupInitCameraAndLights();
+		RClassic_Float::setupInitCameraAndLights(320, 200);
 	}
 
 #if 0
@@ -91,8 +94,10 @@ namespace TFE_Jedi
 
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0)
 	{
-		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::blitTextureToScreen(texture, x0, y0); }
+		// if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::blitTextureToScreen(texture, x0, y0); }
 		//else { RClassic_Float::setResolution(width, height); }
+
+		RClassic_Fixed::blitTextureToScreen(texture, x0, y0);
 	}
 
 	void clear3DView(u8* framebuffer)
@@ -174,6 +179,18 @@ namespace TFE_Jedi
 		s_cameraLightSource = headlamp;
 	}
 
+	void renderer_computeCameraTransform(RSector* sector, angle14_32 pitch, angle14_32 yaw, fixed16_16 camX, fixed16_16 camY, fixed16_16 camZ)
+	{
+		if (s_subRenderer == TSR_CLASSIC_FIXED)
+		{
+			RClassic_Fixed::computeCameraTransform(sector, pitch, yaw, camX, camY, camZ);
+		}
+		else if (s_subRenderer == TSR_CLASSIC_FLOAT)
+		{
+			RClassic_Float::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
+		}
+	}
+
 	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp)
 	{
 		// Clear the top pixel row.
@@ -181,7 +198,14 @@ namespace TFE_Jedi
 		memset(display + (s_height - 1) * s_width, 0, s_width);
 
 		s_drawFrame++;
-		RClassic_Fixed::computeSkyOffsets();
+		if (s_subRenderer == TSR_CLASSIC_FIXED)
+		{
+			RClassic_Fixed::computeSkyOffsets();
+		}
+		else if (s_subRenderer == TSR_CLASSIC_FLOAT)
+		{
+			RClassic_Float::computeSkyOffsets();
+		}
 
 		s_display = display;
 		s_colorMap = colormap;
@@ -192,10 +216,10 @@ namespace TFE_Jedi
 		s_windowMaxX_Pixels = s_maxScreenX_Pixels;
 		s_windowMinY_Pixels = 1;
 		s_windowMaxY_Pixels = s_height - 1;
-		s_windowMaxCeil = s_minScreenY;
+		s_windowMaxCeil  = s_minScreenY;
 		s_windowMinFloor = s_maxScreenY;
-		s_flatCount = 0;
-		s_nextWall = 0;
+		s_flatCount  = 0;
+		s_nextWall   = 0;
 		s_curWallSeg = 0;
 		s_drawnSpriteCount = 0;
 
@@ -233,6 +257,11 @@ namespace TFE_Jedi
 		{
 			memset(s_rcfState.depth1d_all, 0, s_width * sizeof(s32));
 			s_rcfState.windowMinZ = 0;
+		}
+		else if (s_subRenderer == TSR_CLASSIC_FLOAT)
+		{
+			memset(s_rcfltState.depth1d_all, 0, s_width * sizeof(f32));
+			s_rcfltState.windowMinZ = 0.0f;
 		}
 	}
 }

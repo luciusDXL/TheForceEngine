@@ -400,6 +400,7 @@ namespace TFE_Model_Jedi
 		TFE_Jedi::bitmap_setAllocator(memRegion);
 
 		bool nextLine = true;
+		s32 vertexOffset = 0;
 		for (s32 i = 0; i < objectCount; i++)
 		{
 			if (nextLine)
@@ -440,7 +441,12 @@ namespace TFE_Model_Jedi
 				assert(0);
 				return false;
 			}
-			s32 vertexOffset = model->vertexCount;
+			// Apparently zero vertex objects are allowed, these simply refer back to the existing vertex offset.
+			if (vertexCount)
+			{
+				vertexOffset = model->vertexCount;
+			}
+
 			for (s32 v = 0; v < vertexCount; v++)
 			{
 				buffer = parser.readLine(bufferPos, true);

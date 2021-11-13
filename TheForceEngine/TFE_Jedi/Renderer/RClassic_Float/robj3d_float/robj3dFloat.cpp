@@ -111,8 +111,8 @@ namespace RClassic_Float
 		{
 			const f32 rcpZ = 1.0f / pos->z;
 
-			out->x = floorf((pos->x*s_rcfltState.focalLength)   *rcpZ + s_rcfltState.halfWidth);
-			out->y = floorf((pos->y*s_rcfltState.focalLenAspect)*rcpZ + s_rcfltState.halfHeight);
+			out->x = (f32)roundFloat((pos->x*s_rcfltState.focalLength)   *rcpZ + s_rcfltState.projOffsetX);
+			out->y = (f32)roundFloat((pos->y*s_rcfltState.focalLenAspect)*rcpZ + s_rcfltState.projOffsetY);
 			out->z = pos->z;
 		}
 	}

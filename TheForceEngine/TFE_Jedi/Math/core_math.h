@@ -257,14 +257,14 @@ namespace TFE_Jedi
 
 	inline void sinCosFlt(f32 angle, f32* sinValue, f32* cosValue)
 	{
-		const f32 scale = -PI / 16384.0f;
+		const f32 scale = 2.0f * PI / 16384.0f;
 		*sinValue = sinf(scale * angle);
 		*cosValue = cosf(scale * angle);
 	}
 
 	inline f32 sinFlt(f32 angle)
 	{
-		const f32 scale = -PI / 16384.0f;
+		const f32 scale = 2.0f * PI / 16384.0f;
 		return sinf(scale * angle);
 	}
 

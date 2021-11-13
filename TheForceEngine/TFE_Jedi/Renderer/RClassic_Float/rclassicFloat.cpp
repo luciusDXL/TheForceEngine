@@ -91,6 +91,7 @@ namespace RClassic_Float
 		// Camera Transform:
 		s_rcfltState.cameraMtx[0] = s_rcfltState.cosYaw;
 		s_rcfltState.cameraMtx[2] = s_rcfltState.negSinYaw;
+		s_rcfltState.cameraMtx[4] = 1.0f;
 		s_rcfltState.cameraMtx[6] = s_rcfltState.sinYaw;
 		s_rcfltState.cameraMtx[8] = s_rcfltState.cosYaw;
 	}
@@ -218,19 +219,19 @@ namespace RClassic_Float
 	{
 		fixed16_16 parallax0, parallax1;
 		TFE_Jedi::getSkyParallax(&parallax0, &parallax1);
+		f32 parallaxFlt = fixed16ToFloat(parallax0);
 
 		s32 xMid   = s_screenXMid;
-		f32 xScale = 0.5f / f32(s_width);
+		f32 xScale = 2.0f / f32(s_width);
 		s_rcfltState.skyTable[0] = 0;
 		for (s32 i = 0, x = 0; x < s_width; i++, x++)
 		{
-			s32 xPos = x - xMid;
-			// This is atanf(float(x) / 160.0f) / (2pi)
-			f32 angleFractF = atanf(f32(xPos) * xScale) * 2607.595f;
-			f32 angleFract = angleFractF / 16384.0f;
+			f32 xOffset = f32(x - xMid);
+			f32 angleFractF = atanf(xOffset * xScale) * 2607.595f;
+			f32 angleFract =  angleFractF / 16384.0f;
 
 			// This intentionally overflows when x = 0 and becomes 0...
-			s_rcfltState.skyTable[1 + i] = angleFract * parallax0;
+			s_rcfltState.skyTable[1 + i] = angleFract * parallaxFlt;
 		}
 	}
 

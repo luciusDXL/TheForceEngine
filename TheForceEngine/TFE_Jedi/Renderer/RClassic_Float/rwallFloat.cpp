@@ -723,7 +723,7 @@ namespace RClassic_Float
 		{
 			// Compute the U texel range, the overlay is only drawn within this range.
 			*signU0 = srcWall->signOffset.x;
-			*signU1 = *signU0 + intToFixed16(signTex->width);
+			*signU1 = *signU0 + f32(signTex->width);
 
 			// Determine the column functions based on texture opacity and flags.
 			// In the original DOS code, the sign column functions are different but only because they do not apply the texture height mask
@@ -856,7 +856,7 @@ namespace RClassic_Float
 
 				// scale the texel offset based on the v coord step.
 				// the result is the sub-texel offset
-				f32 v0 = s_vCoordStep * vPixelOffset;
+				f32 v0 = vCoordStep * vPixelOffset;
 				s_vCoordFixed = floatToFixed20(v0 + cachedWall->midOffset.z);
 
 				// Texture image data = imageStart + u * texHeight
@@ -2259,8 +2259,8 @@ namespace RClassic_Float
 		const f32 fOffsetX = fixed16ToFloat(frame->offsetX);
 		const f32 fOffsetY = fixed16ToFloat(frame->offsetY);
 
-		const f32 x0 = cachedPosVS->x - fOffsetY;
-		const f32 yOffset = frame->heightWS - fOffsetY;
+		const f32 x0 = cachedPosVS->x - fOffsetX;
+		const f32 yOffset = heightWS  - fOffsetY;
 		const f32 y0 = cachedPosVS->y - yOffset;
 
 		const f32 rcpZ = 1.0f/z;
@@ -2274,8 +2274,8 @@ namespace RClassic_Float
 			return;
 		}
 
-		const f32 x1 = x0 + frame->widthWS;
-		const f32 y1 = y0 + frame->heightWS;
+		const f32 x1 = x0 + widthWS;
+		const f32 y1 = y0 + heightWS;
 		const f32 projX1 = x1*s_rcfltState.focalLength   *rcpZ + s_rcfltState.projOffsetX;
 		const f32 projY1 = y1*s_rcfltState.focalLenAspect*rcpZ + s_rcfltState.projOffsetY;
 

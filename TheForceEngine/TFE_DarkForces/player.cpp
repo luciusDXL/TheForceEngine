@@ -847,7 +847,7 @@ namespace TFE_DarkForces
 
 			if (s_playerEye->sector)
 			{
-				RClassic_Fixed::computeCameraTransform(s_playerEye->sector, s_pitch, s_yaw, s_eyePos.x, s_eyePos.y, s_eyePos.z);
+				renderer_computeCameraTransform(s_playerEye->sector, s_pitch, s_yaw, s_eyePos.x, s_eyePos.y, s_eyePos.z);
 			}
 			renderer_setWorldAmbient(s_playerLight);
 		}

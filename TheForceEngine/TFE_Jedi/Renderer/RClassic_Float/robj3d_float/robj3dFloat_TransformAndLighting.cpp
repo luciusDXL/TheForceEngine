@@ -141,9 +141,9 @@ namespace RClassic_Float
 	void robj3d_transformAndLight(SecObject* obj, JediModel* model)
 	{
 		vec3_float offsetWS;
-		offsetWS.x = obj->posWS.x - s_rcfltState.cameraPos.x;
-		offsetWS.y = obj->posWS.y - s_rcfltState.eyeHeight;
-		offsetWS.z = obj->posWS.z - s_rcfltState.cameraPos.z;
+		offsetWS.x = fixed16ToFloat(obj->posWS.x) - s_rcfltState.cameraPos.x;
+		offsetWS.y = fixed16ToFloat(obj->posWS.y) - s_rcfltState.eyeHeight;
+		offsetWS.z = fixed16ToFloat(obj->posWS.z) - s_rcfltState.cameraPos.z;
 
 		// Calculate the view space object camera offset.
 		vec3_float offsetVS;

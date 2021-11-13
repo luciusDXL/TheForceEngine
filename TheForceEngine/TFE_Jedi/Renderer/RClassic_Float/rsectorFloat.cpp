@@ -98,7 +98,7 @@ namespace TFE_Jedi
 					const s32 type = curObj->type;
 					if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
 					{
-						if (cached->objPosVS[curObj->index].z >= ONE_16)
+						if (cached->objPosVS[curObj->index].z >= 1.0f)
 						{
 							buffer[drawCount++] = curObj;
 						}
@@ -399,7 +399,7 @@ namespace TFE_Jedi
 			}
 			else
 			{
-				flat_drawCeiling(s_curSector, flatEdge, newFlatCount);
+				flat_drawCeiling(cachedSector, flatEdge, newFlatCount);
 			}
 			if (s_curSector->flags1 & SEC_FLAGS1_PIT)
 			{
@@ -414,7 +414,7 @@ namespace TFE_Jedi
 			}
 			else
 			{
-				flat_drawFloor(s_curSector, flatEdge, newFlatCount);
+				flat_drawFloor(cachedSector, flatEdge, newFlatCount);
 			}
 		TFE_ZONE_END(secDrawFlats);
 
@@ -688,8 +688,11 @@ namespace TFE_Jedi
 		if (!(flags & SDF_WALL_CHANGE)) { return; }
 
 		RSector* srcSector = cached->sector;
-		cached->cachedWalls = (WallCached*)level_alloc(sizeof(WallCached) * srcSector->wallCount);
-		memset(cached->cachedWalls, 0, sizeof(WallCached) * srcSector->wallCount);
+		if (flags & SDF_INIT_SETUP)
+		{
+			cached->cachedWalls = (WallCached*)level_alloc(sizeof(WallCached) * srcSector->wallCount);
+			memset(cached->cachedWalls, 0, sizeof(WallCached) * srcSector->wallCount);
+		}
 
 		for (s32 w = 0; w < srcSector->wallCount; w++)
 		{
@@ -759,6 +762,7 @@ namespace TFE_Jedi
 
 		if (cached->objectCapacity < srcSector->objectCapacity)
 		{
+			cached->objectCapacity = srcSector->objectCapacity;
 			cached->objPosVS = (vec3_float*)level_realloc(cached->objPosVS, sizeof(vec3_float) * cached->objectCapacity);
 		}
 

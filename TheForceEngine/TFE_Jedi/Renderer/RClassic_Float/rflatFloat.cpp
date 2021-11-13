@@ -1,5 +1,6 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include "rsectorFloat.h"
 #include "rflatFloat.h"
 #include "rlightingFloat.h"
 #include "redgePairFloat.h"
@@ -160,24 +161,24 @@ namespace RClassic_Float
 		return true;
 	}
 	
-	void flat_drawCeiling(RSector* sector, EdgePairFloat* edges, s32 count)
+	void flat_drawCeiling(SectorCached* sectorCached, EdgePairFloat* edges, s32 count)
 	{
-		f32 textureOffsetU = s_rcfltState.cameraPos.x - sector->ceilOffset.x;
-		f32 textureOffsetV = sector->ceilOffset.z - s_rcfltState.cameraPos.z;
+		f32 textureOffsetU = s_rcfltState.cameraPos.x - sectorCached->ceilOffset.x;
+		f32 textureOffsetV = sectorCached->ceilOffset.z - s_rcfltState.cameraPos.z;
 
-		f32 relCeil          =  sector->ceilingHeight - s_rcfltState.eyeHeight;
+		f32 relCeil          = sectorCached->ceilingHeight - s_rcfltState.eyeHeight;
 		f32 scaledRelCeil    =  relCeil * s_rcfltState.focalLenAspect;
 		f32 cosScaledRelCeil =  scaledRelCeil * s_rcfltState.cosYaw;
 		f32 negSinRelCeil    = -relCeil * s_rcfltState.sinYaw;
 		f32 sinScaledRelCeil =  scaledRelCeil * s_rcfltState.sinYaw;
 		f32 negCosRelCeil    = -relCeil * s_rcfltState.cosYaw;
 
-		if (!flat_setTexture(*sector->ceilTex)) { return; }
+		if (!flat_setTexture(*sectorCached->sector->ceilTex)) { return; }
 
 		for (s32 y = s_windowMinY_Pixels; y <= s_wallMaxCeilY && y < s_windowMaxY_Pixels; y++)
 		{
 			const s32 yOffset = y * s_width;
-			const f32 yShear = f32(y + s_screenYMidBase - s_screenYMid);
+			const f32 yShear = f32(y - s_screenYMid);
 			const f32 yRcp = (yShear != 0.0f) ? 1.0f/yShear : 1.0f;
 			const f32 z = scaledRelCeil * yRcp;
 
@@ -224,12 +225,12 @@ namespace RClassic_Float
 		}
 	}
 		
-	void flat_drawFloor(RSector* sector, EdgePairFloat* edges, s32 count)
+	void flat_drawFloor(SectorCached* sectorCached, EdgePairFloat* edges, s32 count)
 	{
-		f32 textureOffsetU = s_rcfltState.cameraPos.x - sector->floorOffset.x;
-		f32 textureOffsetV = sector->floorOffset.z - s_rcfltState.cameraPos.z;
+		f32 textureOffsetU = s_rcfltState.cameraPos.x - sectorCached->floorOffset.x;
+		f32 textureOffsetV = sectorCached->floorOffset.z - s_rcfltState.cameraPos.z;
 
-		f32 relFloor       = sector->floorHeight - s_rcfltState.eyeHeight;
+		f32 relFloor       = sectorCached->floorHeight - s_rcfltState.eyeHeight;
 		f32 scaledRelFloor = relFloor * s_rcfltState.focalLenAspect;
 
 		f32 cosScaledRelFloor = scaledRelFloor * s_rcfltState.cosYaw;
@@ -237,13 +238,13 @@ namespace RClassic_Float
 		f32 sinScaledRelFloor = scaledRelFloor * s_rcfltState.sinYaw;
 		f32 negCosRelFloor    =-relFloor * s_rcfltState.cosYaw;
 
-		if (!flat_setTexture(*sector->floorTex)) { return; }
+		if (!flat_setTexture(*sectorCached->sector->floorTex)) { return; }
 
 		for (s32 y = max(s_wallMinFloorY, s_windowMinY_Pixels); y <= s_windowMaxY_Pixels; y++)
 		{
 			const s32 yOffset = y * s_width;
-			const f32 yShear = f32(y + s_screenYMidBase - s_screenYMid);
-			const f32 yRcp = (yShear != 0.0f) ? 1.0f/f32(yShear + y) : 1.0f;
+			const f32 yShear = f32(y - s_screenYMid);
+			const f32 yRcp = (yShear != 0.0f) ? 1.0f/yShear : 1.0f;
 			const f32 z = scaledRelFloor * yRcp;
 
 			s32 x = s_windowMinX_Pixels;
