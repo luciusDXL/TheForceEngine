@@ -192,6 +192,10 @@ namespace TFE_Jedi
 		return JFALSE;
 	}
 
+	/////////////////////////////////////////////////////////
+	// Original drawing code assumes 320x200
+	/////////////////////////////////////////////////////////
+
 	void textureBlitColumnOpaque(u8* image, u8* outBuffer, s32 yPixelCount)
 	{
 		s32 end = yPixelCount - 1;
@@ -332,6 +336,303 @@ namespace TFE_Jedi
 			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
 			{
 				textureBlitColumnOpaqueLit(buffer, output + y0 * stride + col, yPixelCount, atten);
+			}
+		}
+	}
+
+	/////////////////////////////////////////////////////////
+	// The "scaled" variants allow for scaling.
+	/////////////////////////////////////////////////////////
+	void textureBlitColumnOpaqueScaled(u8* image, u8* outBuffer, s32 yPixelCount, fixed16_16 vCoord, fixed16_16 vStep)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
+		{
+			s32 v = floor16(vCoord);
+			outBuffer[offset] = image[v];
+		}
+	}
+
+	void textureBlitColumnTransScaled(u8* image, u8* outBuffer, s32 yPixelCount, fixed16_16 vCoord, fixed16_16 vStep)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
+		{
+			s32 v = floor16(vCoord);
+			if (image[v]) { outBuffer[offset] = image[v]; }
+		}
+	}
+
+	void textureBlitColumnOpaqueLitScaled(u8* image, u8* outBuffer, s32 yPixelCount, const u8* atten, fixed16_16 vCoord, fixed16_16 vStep)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
+		{
+			s32 v = floor16(vCoord);
+			outBuffer[offset] = atten[image[v]];
+		}
+	}
+
+	void textureBlitColumnTransLitScaled(u8* image, u8* outBuffer, s32 yPixelCount, const u8* atten, fixed16_16 vCoord, fixed16_16 vStep)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
+		{
+			s32 v = floor16(vCoord);
+			if (image[v]) { outBuffer[offset] = atten[image[v]]; }
+		}
+	}
+
+	void textureBlitColumnOpaqueScaledRow(u8* image, u8* outBuffer, s32 yPixelCount, s32 imageStride, fixed16_16 vCoord, fixed16_16 vStep)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
+		{
+			s32 v = floor16(vCoord)*imageStride;
+			outBuffer[offset] = image[v];
+		}
+	}
+
+	void textureBlitColumnTransScaledRow(u8* image, u8* outBuffer, s32 yPixelCount, s32 imageStride, fixed16_16 vCoord, fixed16_16 vStep)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
+		{
+			s32 v = floor16(vCoord)*imageStride;
+			if (image[v]) { outBuffer[offset] = image[v]; }
+		}
+	}
+
+	void textureBlitColumnOpaqueLitScaledRow(u8* image, u8* outBuffer, s32 yPixelCount, s32 imageStride, const u8* atten, fixed16_16 vCoord, fixed16_16 vStep)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
+		{
+			s32 v = floor16(vCoord)*imageStride;
+			outBuffer[offset] = atten[image[v]];
+		}
+	}
+
+	void textureBlitColumnTransLitScaledRow(u8* image, u8* outBuffer, s32 yPixelCount, s32 imageStride, const u8* atten, fixed16_16 vCoord, fixed16_16 vStep)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
+		{
+			s32 v = floor16(vCoord)*imageStride;
+			if (image[v]) { outBuffer[offset] = atten[image[v]]; }
+		}
+	}
+
+	void blitTextureToScreenScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output, JBool forceTransparency)
+	{
+		ScreenImage image =
+		{
+			texture->width,
+			texture->height,
+			texture->image,
+			(forceTransparency || (texture->flags & OPACITY_TRANS)) ? JTRUE : JFALSE,
+			JTRUE
+		};
+		blitTextureToScreenScaled(&image, rect, x0, y0, xScale, yScale, output);
+	}
+
+	void blitTextureToScreenScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output)
+	{
+		s32 x1 = x0 + floor16(mul16(intToFixed16(texture->width - 1),  xScale));
+		s32 y1 = y0 + floor16(mul16(intToFixed16(texture->height - 1), yScale));
+		fixed16_16 u0 = 0, v1 = 0;
+		fixed16_16 u1 = intToFixed16(texture->width  - 1);
+		fixed16_16 v0 = intToFixed16(texture->height - 1);
+		fixed16_16 uStep =  div16(intToFixed16(texture->width),  intToFixed16(x1 - x0 + 1));
+		fixed16_16 vStep = -div16(intToFixed16(texture->height), intToFixed16(y1 - y0 + 1));
+
+		if (!texture->columnOriented)
+		{
+			swap(v0, v1);
+			vStep = -vStep;
+		}
+
+		// Cull if outside of the draw rect.
+		if (x1 < rect->x0 || y1 < rect->y0 || x0 > rect->x1 || y0 > rect->y1) { return; }
+
+		if (y0 < rect->y0)
+		{
+			v0 += vStep * (rect->y0 - y0);
+			y0 = rect->y0;
+		}
+		if (y1 > rect->y1)
+		{
+			y1 = rect->y1;
+		}
+
+		if (x0 < rect->x0)
+		{
+			u0 += uStep * (rect->x0 - x0);
+			x0 = rect->x0;
+		}
+		if (x1 > rect->x1)
+		{
+			x1 = rect->x1;
+		}
+
+		s32 yPixelCount = y1 - y0 + 1;
+		if (yPixelCount <= 0) { return; }
+
+		const u32 stride = vfb_getStride();
+		if (texture->columnOriented)
+		{
+			fixed16_16 u = u0;
+			if (texture->trans)
+			{
+				for (s32 col = x0; col <= x1; col++, u += uStep)
+				{
+					u8* buffer = texture->image + floor16(u)*texture->height;
+					textureBlitColumnTransScaled(buffer, output + y0 * stride + col, yPixelCount, v0, vStep);
+				}
+			}
+			else
+			{
+				for (s32 col = x0; col <= x1; col++, u += uStep)
+				{
+					u8* buffer = texture->image + floor16(u)*texture->height;
+					textureBlitColumnOpaqueScaled(buffer, output + y0 * stride + col, yPixelCount, v0, vStep);
+				}
+			}
+		}
+		else
+		{
+			const s32 imageStride = texture->width;
+			fixed16_16 u = u0;
+			if (texture->trans)
+			{
+				for (s32 col = x0; col <= x1; col++, u += uStep)
+				{
+					u8* buffer = texture->image + floor16(u);
+					textureBlitColumnTransScaledRow(buffer, output + y0 * stride + col, yPixelCount, imageStride, v0, vStep);
+				}
+			}
+			else
+			{
+				for (s32 col = x0; col <= x1; col++, u += uStep)
+				{
+					u8* buffer = texture->image + floor16(u);
+					textureBlitColumnOpaqueScaledRow(buffer, output + y0 * stride + col, yPixelCount, imageStride, v0, vStep);
+				}
+			}
+		}
+	}
+
+	void blitTextureToScreenLitScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, const u8* atten, u8* output, JBool forceTransparency)
+	{
+		ScreenImage image = 
+		{
+			texture->width,
+			texture->height,
+			texture->image,
+			forceTransparency || (texture->flags & OPACITY_TRANS) ? JTRUE : JFALSE,
+			JTRUE
+		};
+		blitTextureToScreenLitScaled(&image, rect, x0, y0, xScale, yScale, atten, output);
+	}
+
+	void blitTextureToScreenLitScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, const u8* atten, u8* output)
+	{
+		s32 x1 = x0 + floor16(mul16(intToFixed16(texture->width - 1), xScale));
+		s32 y1 = y0 + floor16(mul16(intToFixed16(texture->height - 1), yScale));
+		fixed16_16 u0 = 0, v1 = 0;
+		fixed16_16 u1 = intToFixed16(texture->width - 1);
+		fixed16_16 v0 = intToFixed16(texture->height - 1);
+		fixed16_16 uStep =  div16(intToFixed16(texture->width - 1), intToFixed16(x1 - x0));
+		fixed16_16 vStep = -div16(intToFixed16(texture->height - 1), intToFixed16(y1 - y0));
+
+		if (!texture->columnOriented)
+		{
+			swap(v0, v1);
+			vStep = -vStep;
+		}
+
+		// Cull if outside of the draw rect.
+		if (x1 < rect->x0 || y1 < rect->y0 || x0 > rect->x1 || y0 > rect->y1) { return; }
+
+		if (y0 < rect->y0)
+		{
+			v0 += vStep * (rect->y0 - y0);
+			y0 = rect->y0;
+		}
+		if (y1 > rect->y1)
+		{
+			y1 = rect->y1;
+		}
+
+		if (x0 < rect->x0)
+		{
+			u0 += uStep * (rect->x0 - x0);
+			x0 = rect->x0;
+		}
+		if (x1 > rect->x1)
+		{
+			x1 = rect->x1;
+		}
+
+		s32 yPixelCount = y1 - y0 + 1;
+		if (yPixelCount <= 0) { return; }
+
+		const u32 stride = vfb_getStride();
+		if (texture->columnOriented)
+		{
+			fixed16_16 u = u0;
+			if (texture->trans)
+			{
+				for (s32 col = x0; col <= x1; col++, u += uStep)
+				{
+					u8* buffer = texture->image + floor16(u)*texture->height;
+					textureBlitColumnTransLitScaled(buffer, output + y0 * stride + col, yPixelCount, atten, v0, vStep);
+				}
+			}
+			else
+			{
+				for (s32 col = x0; col <= x1; col++, u += uStep)
+				{
+					u8* buffer = texture->image + floor16(u)*texture->height;
+					textureBlitColumnOpaqueLitScaled(buffer, output + y0 * stride + col, yPixelCount, atten, v0, vStep);
+				}
+			}
+		}
+		else
+		{
+			const s32 imageStride = texture->width;
+			fixed16_16 u = u0;
+			if (texture->trans)
+			{
+				for (s32 col = x0; col <= x1; col++, u += uStep)
+				{
+					u8* buffer = texture->image + floor16(u);
+					textureBlitColumnTransLitScaledRow(buffer, output + y0 * stride + col, yPixelCount, imageStride, atten, v0, vStep);
+				}
+			}
+			else
+			{
+				for (s32 col = x0; col <= x1; col++, u += uStep)
+				{
+					u8* buffer = texture->image + floor16(u);
+					textureBlitColumnOpaqueLitScaledRow(buffer, output + y0 * stride + col, yPixelCount, imageStride, atten, v0, vStep);
+				}
 			}
 		}
 	}

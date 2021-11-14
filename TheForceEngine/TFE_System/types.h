@@ -95,10 +95,10 @@ struct Mat4
 
 // Jedi "Bool" type.
 typedef u32 JBool;
-enum
+enum JediBool : u32
 {
-	JTRUE = 0xffffffff,
-	JFALSE = 0,
+	JTRUE  = 0xffffffffu,
+	JFALSE = 0u,
 };
 
 #ifdef _WIN32

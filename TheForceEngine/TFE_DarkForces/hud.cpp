@@ -509,8 +509,28 @@ namespace TFE_DarkForces
 			}
 		}
 		assert(s_rightHudVertAnim >= 0 && s_rightHudVertAnim < 4);
-		hud_drawElementToScreen(s_cachedHudRight, screenRect, 260, c_hudVertAnimTable[s_rightHudVertAnim], framebuffer);
-		hud_drawElementToScreen(s_cachedHudLeft,  screenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim],  framebuffer);
+		u32 dispWidth, dispHeight;
+		vfb_getResolution(&dispWidth, &dispHeight);
+		if (dispWidth == 320 && dispHeight == 200)
+		{
+			// The original 320x200 code.
+			hud_drawElementToScreen(s_cachedHudRight, screenRect, 260, c_hudVertAnimTable[s_rightHudVertAnim], framebuffer);
+			hud_drawElementToScreen(s_cachedHudLeft,  screenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim],  framebuffer);
+		}
+		else
+		{
+			// HUD scaling.
+			fixed16_16 xScale = vfb_getXScale();
+			fixed16_16 yScale = vfb_getYScale();
+
+			s32 x0 = floor16(mul16(intToFixed16(260), xScale)) + vfb_getWidescreenOffset();
+			s32 x1 = vfb_getWidescreenOffset();
+			s32 y0 = floor16(mul16(intToFixed16(c_hudVertAnimTable[s_rightHudVertAnim]), yScale));
+			s32 y1 = floor16(mul16(intToFixed16(c_hudVertAnimTable[s_rightHudVertAnim]), yScale));
+
+			hud_drawElementToScreenScaled(s_cachedHudRight, screenRect, x0, y0, xScale, yScale, framebuffer);
+			hud_drawElementToScreenScaled(s_cachedHudLeft,  screenRect, x1, y1, xScale, yScale, framebuffer);
+		}
 	}
 
 	///////////////////////////////////////////
@@ -693,5 +713,18 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+	}
+
+	void hud_drawElementToScreenScaled(OffScreenBuffer* elem, ScreenRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* framebuffer)
+	{
+		ScreenImage image =
+		{
+			elem->width,
+			elem->height,
+			elem->image,
+			(elem->flags & OBF_TRANS) ? JTRUE : JFALSE,
+			JFALSE
+		};
+		blitTextureToScreenScaled(&image, (DrawRect*)rect, x0, y0, xScale, yScale, framebuffer);
 	}
 }  // TFE_DarkForces

@@ -12,6 +12,10 @@ namespace TFE_Jedi
 	static u32 s_height = 0;
 	static u32 s_prevWidth = 0;
 	static u32 s_prevHeight = 0;
+	static s32 s_widescreenOffset = 0;
+
+	static fixed16_16 s_xScale = ONE_16;
+	static fixed16_16 s_yScale = ONE_16;
 
 	static ScreenRect s_screenRect[VFB_RECT_COUNT];
 
@@ -36,6 +40,9 @@ namespace TFE_Jedi
 			s_width  = width;
 			s_height = height;
 			vfb_createVirtualDisplay(width, height);
+
+			s_xScale = ONE_16;
+			s_yScale = ONE_16;
 		}
 		else
 		{
@@ -48,6 +55,32 @@ namespace TFE_Jedi
 			s_frameBuffer = (u8*)malloc(s_width * s_height);
 			s_curFrameBuffer = s_frameBuffer;
 			vfb_createVirtualDisplay(width, height);
+
+			// Square or rectangular pixels?
+			if (s_height == 200 || s_height == 400)
+			{
+				// Rectangular pixels
+				s_yScale = div16(intToFixed16(s_height), intToFixed16(200));
+				s_xScale = s_yScale;
+
+				if (s_height == 200)
+				{
+					s_widescreenOffset = (s_width - 320) / 2;
+				}
+				else if (s_height == 400)
+				{
+					s_widescreenOffset = (s_width - 640) / 2;
+				}
+			}
+			else
+			{
+				// Square pixels
+				s_yScale = div16(intToFixed16(s_height), intToFixed16(200));
+				// yScale / 1.2
+				s_xScale = div16(s_yScale, 78643);
+
+				s_widescreenOffset = (s_width - s_height*4/3) / 2;
+			}
 		}
 
 		s_screenRect[VFB_RECT_UI] =
@@ -70,6 +103,24 @@ namespace TFE_Jedi
 	void vfb_setPalette(const u32* palette)
 	{
 		TFE_RenderBackend::setPalette(palette);
+	}
+
+	////////////////////////////
+	// Get Scale Factors
+	////////////////////////////
+	fixed16_16 vfb_getXScale()
+	{
+		return s_xScale;
+	}
+
+	fixed16_16 vfb_getYScale()
+	{
+		return s_yScale;
+	}
+
+	s32 vfb_getWidescreenOffset()
+	{
+		return s_widescreenOffset;
 	}
 
 	////////////////////////////
@@ -124,6 +175,10 @@ namespace TFE_Jedi
 		if (graphics->gpuColorConvert)
 		{
 			vdispFlags |= VDISP_GPU_COLOR_CONVERT;
+		}
+		if (graphics->widescreen && (width != 320 || height != 200))
+		{
+			vdispFlags |= VDISP_WIDESCREEN;
 		}
 
 		// TFE Specific: always use 320x200 when rendering in-game UI (for now).

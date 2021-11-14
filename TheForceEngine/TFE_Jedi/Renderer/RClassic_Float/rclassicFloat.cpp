@@ -2,6 +2,7 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Game/igame.h>
 #include "rclassicFloatSharedState.h"
 #include "rlightingFloat.h"
@@ -149,6 +150,43 @@ namespace RClassic_Float
 		s_rcfltState.aspectScaleX = 1.0f;
 		s_rcfltState.aspectScaleY = 1.0f;
 		s_rcfltState.nearPlaneHalfLen = 1.0f;
+
+		if (TFE_RenderBackend::getWidescreen())
+		{
+			// 200p and 400p get special handling because they are 16:10 resolutions in 4:3.
+			if (s_height == 200 || s_height == 400)
+			{
+				s_rcfltState.focalLenAspect = (s_height == 200) ? 160.0f : 320.0f;
+			}
+			else
+			{
+				s_rcfltState.focalLenAspect = (s_height * 4 / 3) * 0.5f;
+			}
+
+			const f32 aspectScale = (s_height == 200 || s_height == 400) ? (10.0f / 16.0f) : (3.0f / 4.0f);
+			s_rcfltState.nearPlaneHalfLen = aspectScale * (f32(s_width) / f32(s_height));
+			// at low resolution, increase the nearPlaneHalfLen slightly to avoid cutting off the last column.
+			if (s_height == 200)
+			{
+				s_rcfltState.nearPlaneHalfLen += 0.001f;
+			}
+		}
+
+		if (TFE_RenderBackend::getWidescreen())
+		{
+			// The (4/3) or (16/10) factor removes the 4:3 or 16:10 aspect ratio already factored in 's_halfWidth' 
+			// The (height/width) factor adjusts for the resolution pixel aspect ratio.
+			const f32 scaleFactor = (s_height == 200 || s_height == 400) ? (16.0f / 10.0f) : (4.0f / 3.0f);
+			s_rcfltState.focalLength = s_rcfltState.halfWidth * scaleFactor * f32(s_height) / f32(s_width);
+		}
+		if (s_height != 200 && s_height != 400)
+		{
+			// Scale factor to account for converting from rectangular pixels to square pixels when computing flat texture coordinates.
+			// Factor = (16/10) / (4/3)
+			s_rcfltState.aspectScaleX = 1.2f;
+			s_rcfltState.aspectScaleY = 1.2f;
+		}
+		s_rcfltState.focalLenAspect *= s_rcfltState.aspectScaleY;
 	}
 
 	void setWidthFraction(f32 widthFract)

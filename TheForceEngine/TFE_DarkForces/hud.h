@@ -28,6 +28,7 @@ namespace TFE_DarkForces
 	void hud_drawMessage(u8* framebuffer);
 	void hud_drawAndUpdate(u8* framebuffer);
 	void hud_drawElementToScreen(OffScreenBuffer* elem, ScreenRect* rect, s32 x0, s32 y0, u8* framebuffer);
+	void hud_drawElementToScreenScaled(OffScreenBuffer* elem, ScreenRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* framebuffer);
 
 	extern fixed16_16 s_flashEffect;
 	extern fixed16_16 s_healthDamageFx;

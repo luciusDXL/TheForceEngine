@@ -345,7 +345,7 @@ namespace RClassic_Float
 		s_scanlineX0  = x0;
 		s_scanlineOut = &s_display[y * s_width + x0];
 
-		const f32 yShear = f32(y + s_screenYMidBase - s_screenYMid);
+		const f32 yShear = f32(y - s_screenYMid);
 		const f32 yRcp = (yShear != 0.0f) ? 1.0f/yShear : 1.0f;
 		const f32 z = s_poly_scaledHOffset * yRcp;
 		const f32 right = f32(x1 - 1 - s_screenXMid) * s_rcfltState.aspectScaleX;

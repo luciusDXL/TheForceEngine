@@ -6,6 +6,7 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rlightingFixed.h>
+#include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
 
 namespace TFE_DarkForces
@@ -1148,13 +1149,36 @@ namespace TFE_DarkForces
 				tex = s_playerWeaponList[WPN_FIST].frames[0];
 			}
 			
-			if (atten && !s_weaponLight)
+			u32 dispWidth, dispHeight;
+			vfb_getResolution(&dispWidth, &dispHeight);
+
+			if (dispWidth == 320 && dispHeight == 200)
 			{
-				blitTextureToScreenLit(tex, rect, x, y, atten, display, JTRUE);
+				if (atten && !s_weaponLight)
+				{
+					blitTextureToScreenLit(tex, rect, x, y, atten, display, JTRUE);
+				}
+				else
+				{
+					blitTextureToScreen(tex, rect, x, y, display, JTRUE);
+				}
 			}
 			else
 			{
-				blitTextureToScreen(tex, rect, x, y, display, JTRUE);
+				// HUD scaling.
+				fixed16_16 xScale = vfb_getXScale();
+				fixed16_16 yScale = vfb_getYScale();
+				x = floor16(mul16(xScale, intToFixed16(x))) + vfb_getWidescreenOffset();
+				y = floor16(mul16(yScale, intToFixed16(y)));
+
+				if (atten && !s_weaponLight)
+				{
+					blitTextureToScreenLitScaled(tex, rect, x, y, xScale, yScale, atten, display, JTRUE);
+				}
+				else
+				{
+					blitTextureToScreenScaled(tex, rect, x, y, xScale, yScale, display, JTRUE);
+				}
 			}
 		}
 
@@ -1169,13 +1193,37 @@ namespace TFE_DarkForces
 			}
 			const u8* atten = RClassic_Fixed::computeLighting(gasmaskLightingZDist, 0);
 			TextureData* tex = s_gasmaskTexture;
-			if (atten)
+
+			u32 dispWidth, dispHeight;
+			vfb_getResolution(&dispWidth, &dispHeight);
+
+			if (dispWidth == 320 && dispHeight == 200)
 			{
-				blitTextureToScreenLit(tex, rect, x, y, atten, display);
+				if (atten)
+				{
+					blitTextureToScreenLit(tex, rect, x, y, atten, display);
+				}
+				else
+				{
+					blitTextureToScreen(tex, rect, x, y, display);
+				}
 			}
 			else
 			{
-				blitTextureToScreen(tex, rect, x, y, display);
+				// HUD scaling.
+				fixed16_16 xScale = vfb_getXScale();
+				fixed16_16 yScale = vfb_getYScale();
+				x = floor16(mul16(xScale, intToFixed16(x))) + vfb_getWidescreenOffset();
+				y = floor16(mul16(yScale, intToFixed16(y)));
+
+				if (atten && !s_weaponLight)
+				{
+					blitTextureToScreenLitScaled(tex, rect, x, y, xScale, yScale, atten, display);
+				}
+				else
+				{
+					blitTextureToScreenScaled(tex, rect, x, y, xScale, yScale, display);
+				}
 			}
 		}
 	}

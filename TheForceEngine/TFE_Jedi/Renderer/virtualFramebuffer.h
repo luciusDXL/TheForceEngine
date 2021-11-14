@@ -36,6 +36,13 @@ namespace TFE_Jedi
 	void vfb_setPalette(const u32* palette);
 
 	////////////////////////////
+	// Get Scale Factors
+	////////////////////////////
+	fixed16_16 vfb_getXScale();
+	fixed16_16 vfb_getYScale();
+	s32 vfb_getWidescreenOffset();
+
+	////////////////////////////
 	// Per-Frame
 	////////////////////////////
 	// Frame rendering is done, copy the results to GPU memory.

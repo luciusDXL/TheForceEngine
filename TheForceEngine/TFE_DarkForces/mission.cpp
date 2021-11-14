@@ -15,6 +15,7 @@
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Settings/settings.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -150,8 +151,20 @@ namespace TFE_DarkForces
 	void mission_createRenderDisplay()
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		DisplayInfo info;
+		TFE_RenderBackend::getDisplayInfo(&info);
 
-		vfb_setResolution(graphics->gameResolution.x, graphics->gameResolution.z);
+		s32 adjustedWidth = graphics->gameResolution.x;
+		if (graphics->widescreen && (graphics->gameResolution.z == 200 || graphics->gameResolution.z == 400))
+		{
+			adjustedWidth = (graphics->gameResolution.z * info.width / info.height) * 12 / 10;
+		}
+		else if (graphics->widescreen)
+		{
+			adjustedWidth = graphics->gameResolution.z * info.width / info.height;
+		}
+
+		vfb_setResolution(adjustedWidth, graphics->gameResolution.z);
 		s_framebuffer = vfb_getCpuBuffer();
 
 		if (graphics->gameResolution.x != 320 || graphics->gameResolution.z != 200 || graphics->widescreen)
