@@ -10,7 +10,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
-#include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
+#include <TFE_Jedi/Renderer/screenDraw.h>
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
@@ -87,9 +87,6 @@ namespace TFE_DarkForces
 	static s32 s_prevSecondaryAmmo = 0;
 	static JBool s_prevSuperchageHud = JFALSE;
 	static JBool s_prevHeadlampActive = JFALSE;
-
-	static DrawRect s_hudTextDrawRect = { 0, 0, 319, 199 };
-	static ScreenRect s_hudTextScreenRect = { 0, 0, 319, 199 };
 
 	///////////////////////////////////////////
 	// Shared State
@@ -272,7 +269,7 @@ namespace TFE_DarkForces
 	{
 		if (s_missionMode == MISSION_MODE_MAIN && s_hudMessage[0])
 		{
-			displayHudMessage(s_hudFont, &s_hudTextDrawRect, 4, 10, s_hudMessage, framebuffer);
+			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 4, 10, s_hudMessage, framebuffer);
 			if (s_curTick > s_hudMsgExpireTick)
 			{
 				s_hudMessage[0]   = 0;
@@ -289,13 +286,15 @@ namespace TFE_DarkForces
 
 			char dataStr[64];
 			sprintf(dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
-			displayHudMessage(s_hudFont, &s_hudTextDrawRect, 164, 10, dataStr, framebuffer);
+			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164, 10, dataStr, framebuffer);
 			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
 		}
 	}
 		
 	void hud_drawAndUpdate(u8* framebuffer)
 	{
+		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_UI);
+
 		// Clear the 3D view while the HUD positions are being animated.
 		if (s_rightHudMove || s_leftHudMove)
 		{
@@ -475,7 +474,7 @@ namespace TFE_DarkForces
 				s_prevSuperchageHud = s_superChargeHud;
 			}
 
-			if (s_rightHudShow || s_screenRect.bot >= 160)
+			if (s_rightHudShow || screenRect->bot >= 160)
 			{
 				if (s_rightHudVertAnim > s_rightHudVertTarget)
 				{
@@ -491,7 +490,7 @@ namespace TFE_DarkForces
 					s_rightHudShow--;
 				}
 			}
-			if (s_leftHudShow || s_screenRect.bot >= 160)
+			if (s_leftHudShow || screenRect->bot >= 160)
 			{
 				if (s_leftHudVertAnim > s_leftHudVertTarget)
 				{
@@ -510,8 +509,8 @@ namespace TFE_DarkForces
 			}
 		}
 		assert(s_rightHudVertAnim >= 0 && s_rightHudVertAnim < 4);
-		hud_drawElementToScreen(s_cachedHudRight, &s_hudTextScreenRect, 260, c_hudVertAnimTable[s_rightHudVertAnim], framebuffer);
-		hud_drawElementToScreen(s_cachedHudLeft,  &s_hudTextScreenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim],  framebuffer);
+		hud_drawElementToScreen(s_cachedHudRight, screenRect, 260, c_hudVertAnimTable[s_rightHudVertAnim], framebuffer);
+		hud_drawElementToScreen(s_cachedHudLeft,  screenRect,   0, c_hudVertAnimTable[s_leftHudVertAnim],  framebuffer);
 	}
 
 	///////////////////////////////////////////
@@ -664,14 +663,15 @@ namespace TFE_DarkForces
 		{
 			x1 = rect->right;
 		}
-		s32 yOffset = y0 * 320;
+		const u32 stride = vfb_getStride();
+		s32 yOffset = y0 * stride;
 		if (elem->flags & OBF_TRANS)
 		{
 			for (s32 x = x0; x <= x1; x++)
 			{
 				u8* output = framebuffer + x + yOffset;
 				u8* imageSrc = image + x - x0;
-				for (s32 y = y0; y <= y1; y++, output += 320, imageSrc += elem->width)
+				for (s32 y = y0; y <= y1; y++, output += stride, imageSrc += elem->width)
 				{
 					u8 color = *imageSrc;
 					if (color)
@@ -687,7 +687,7 @@ namespace TFE_DarkForces
 			{
 				u8* output = framebuffer + x + yOffset;
 				u8* imageSrc = image + x - x0;
-				for (s32 y = y0; y <= y1; y++, output += 320, imageSrc += elem->width)
+				for (s32 y = y0; y <= y1; y++, output += stride, imageSrc += elem->width)
 				{
 					*output = *imageSrc;
 				}

@@ -11,6 +11,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_System/system.h>
+#include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 
 using namespace TFE_Jedi;
 
@@ -54,7 +55,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	static JBool s_loaded = JFALSE;
 	static JBool s_displayInit = JFALSE;
-	static u8 s_framebuffer[320 * 200];
+	static u8*   s_framebuffer = nullptr;
 	static Vec2i s_cursorPosAccum;
 	static Vec2i s_cursorPos;
 
@@ -389,8 +390,7 @@ namespace TFE_DarkForces
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
 		u32 width, height;
-		width  = TFE_RenderBackend::getVirtualDisplayWidth2D();
-		height = TFE_RenderBackend::getVirtualDisplayHeight();
+		vfb_getResolution(&width, &height);
 
 		s32 dx, dy;
 		TFE_Input::getAccumulatedMouseMove(&dx, &dy);
@@ -411,15 +411,14 @@ namespace TFE_DarkForces
 		{
 			*outColor = u32(srcColor[0]) | (u32(srcColor[1]) << 8u) | (u32(srcColor[2]) << 16u) | (0xffu << 24u);
 		}
-		TFE_RenderBackend::setPalette(palette);
+		vfb_setPalette(palette);
 	}
 
 	void agentMenu_resetCursor()
 	{
 		// Reset the cursor.
 		u32 width, height;
-		width = TFE_RenderBackend::getVirtualDisplayWidth2D();
-		height = TFE_RenderBackend::getVirtualDisplayHeight();
+		vfb_getResolution(&width, &height);
 
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
@@ -432,30 +431,8 @@ namespace TFE_DarkForces
 	// TFE Specific.
 	void agentMenu_startupDisplay()
 	{
-		// Setup or update the virtual display.
-		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-		u32 vdispFlags = 0;
-		if (graphics->asyncFramebuffer)
-		{
-			vdispFlags |= VDISP_ASYNC_FRAMEBUFFER;
-		}
-		if (graphics->gpuColorConvert)
-		{
-			vdispFlags |= VDISP_GPU_COLOR_CONVERT;
-		}
-
-		// TFE Specific: always use 320x200 when rendering in-game UI (for now).
-		VirtualDisplayInfo vdisp =
-		{
-			DMODE_ASPECT_CORRECT,	// Output display mode.
-			vdispFlags,				// See VirtualDisplayFlags.
-
-			320,	// full width
-			200,	// full height
-			320,	// width for 2D game UI and cutscenes.
-			320,	// width for 3D drawing.
-		};
-		TFE_RenderBackend::createVirtualDisplay(vdisp);
+		vfb_setResolution(320, 200);
+		s_framebuffer = vfb_getCpuBuffer();
 
 		agentMenu_resetCursor();
 		setPalette();
@@ -504,7 +481,7 @@ namespace TFE_DarkForces
 		blitDeltaFrame(&s_cursor, s_cursorPos.x, s_cursorPos.z, s_framebuffer);
 
 		setPalette();
-		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
+		vfb_swap();
 	}
 
 	void agentMenu_createNewAgent()

@@ -448,7 +448,6 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_TransformAndLighting.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rsectorFixed.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\rwallFixed.h" />
-    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\screenDraw.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\fixedPoint20.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rclassicFloat.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rclassicFloatSharedState.h" />
@@ -473,6 +472,8 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\rsectorRender.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rwallRender.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rwallSegment.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\screenDraw.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\virtualFramebuffer.h" />
     <ClInclude Include="TFE_Jedi\Sound\soundSystem.h" />
     <ClInclude Include="TFE_Jedi\Task\task.h" />
     <ClInclude Include="TFE_Jedi\Task\taskMacros.h" />
@@ -641,7 +642,6 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\robj3d_fixed\robj3dFixed_TransformAndLighting.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rsectorFixed.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\rwallFixed.cpp" />
-    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\screenDraw.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rclassicFloat.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rclassicFloatSharedState.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\redgePairFloat.cpp" />
@@ -658,6 +658,8 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\rcommon.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rscanline.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rsectorRender.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\screenDraw.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\virtualFramebuffer.cpp" />
     <ClCompile Include="TFE_Jedi\Sound\soundSystem.cpp" />
     <ClCompile Include="TFE_Jedi\Task\task.cpp" />
     <ClCompile Include="TFE_Memory\chunkedArray.cpp" />

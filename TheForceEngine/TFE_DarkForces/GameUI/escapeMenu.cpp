@@ -48,8 +48,6 @@ namespace TFE_DarkForces
 	static s32  s_buttonPressed;
 	static bool s_buttonHover;
 
-	static ScreenRect s_screenRect = { 0, 0, 319, 199 };
-
 	void escMenu_resetCursor();
 	void escMenu_handleMousePosition();
 	EscapeMenuAction escapeMenu_updateUI();
@@ -107,7 +105,8 @@ namespace TFE_DarkForces
 		}
 		
 		// Draw the screen capture.
-		hud_drawElementToScreen(s_framebufferCopy, &s_screenRect, 0, 0, s_framebuffer);
+		ScreenRect* drawRect = vfb_getScreenRect(VFB_RECT_UI);
+		hud_drawElementToScreen(s_framebufferCopy, drawRect, 0, 0, s_framebuffer);
 		// Draw the menu background.
 		blitDeltaFrame(&s_escMenuFrames[0], 0, 0, s_framebuffer);
 
@@ -214,8 +213,7 @@ namespace TFE_DarkForces
 	{
 		// Reset the cursor.
 		u32 width, height;
-		width = TFE_RenderBackend::getVirtualDisplayWidth2D();
-		height = TFE_RenderBackend::getVirtualDisplayHeight();
+		vfb_getResolution(&width, &height);
 
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
@@ -231,8 +229,7 @@ namespace TFE_DarkForces
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
 		u32 width, height;
-		width = TFE_RenderBackend::getVirtualDisplayWidth2D();
-		height = TFE_RenderBackend::getVirtualDisplayHeight();
+		vfb_getResolution(&width, &height);
 
 		s32 dx, dy;
 		TFE_Input::getAccumulatedMouseMove(&dx, &dy);

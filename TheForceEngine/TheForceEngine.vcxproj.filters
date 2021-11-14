@@ -628,9 +628,6 @@
     <ClInclude Include="TFE_DarkForces\vueLogic.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Jedi\Renderer\RClassic_Fixed\screenDraw.h">
-      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Jedi\Math\cosTable.h">
       <Filter>Source\TFE_Jedi\Math</Filter>
     </ClInclude>
@@ -762,6 +759,12 @@
     </ClInclude>
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\fixedPoint20.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_Float</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\virtualFramebuffer.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\screenDraw.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1152,9 +1155,6 @@
     <ClCompile Include="TFE_DarkForces\vueLogic.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Jedi\Renderer\RClassic_Fixed\screenDraw.cpp">
-      <Filter>Source\TFE_Jedi\Renderer\RClassic_Fixed</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Jedi\Math\cosTable.cpp">
       <Filter>Source\TFE_Jedi\Math</Filter>
     </ClCompile>
@@ -1265,6 +1265,12 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Actor\phaseThree.cpp">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\virtualFramebuffer.cpp">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\screenDraw.cpp">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

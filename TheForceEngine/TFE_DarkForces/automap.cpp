@@ -8,7 +8,7 @@
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
-#include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
+#include <TFE_Jedi/Renderer/screenDraw.h>
 
 using namespace TFE_Jedi;
 
@@ -83,22 +83,24 @@ namespace TFE_DarkForces
 	// computeScaledScreenBounds() calls _computeScreenBounds() - so merged here.
 	void automap_computeScreenBounds()
 	{
+		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_RENDER);
+
 		if (s_pdaActive)
 		{
 			// STUB
 		}
 		else
 		{
-			s32 leftEdge = intToFixed16(s_screenRect.left - 159);
+			s32 leftEdge = intToFixed16(screenRect->left - 159);
 			s_scrLeftScaled = div16(leftEdge, s_screenScale);
 
-			s32 rightEdge = intToFixed16(s_screenRect.right - 159);
+			s32 rightEdge = intToFixed16(screenRect->right - 159);
 			s_scrRightScaled = div16(rightEdge, s_screenScale);
 
-			s32 topEdge = intToFixed16(s_screenRect.top - 99);
+			s32 topEdge = intToFixed16(screenRect->top - 99);
 			s_scrTopScaled = -div16(topEdge, s_screenScale);
 
-			s32 botEdge = intToFixed16(s_screenRect.bot - 99);
+			s32 botEdge = intToFixed16(screenRect->bot - 99);
 			s_scrBotScaled = -div16(botEdge, s_screenScale);
 		}
 	}
@@ -343,11 +345,12 @@ namespace TFE_DarkForces
 
 	void automap_drawPointWithRadius(fixed16_16 x, fixed16_16 z, fixed16_16 r, u8 color)
 	{
+		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_RENDER);
 		automap_projectPosition(&x, &z);
 		fixed16_16 rScreen = mul16(r, s_screenScale);
 		if (!s_pdaActive)
 		{
-			screen_drawCircle(&s_screenRect, x, z, rScreen, 0x1c7, color, s_mapFramebuffer);
+			screen_drawCircle(screenRect, x, z, rScreen, 0x1c7, color, s_mapFramebuffer);
 		}
 		else
 		{
@@ -401,10 +404,11 @@ namespace TFE_DarkForces
 
 	void automap_drawPoint(fixed16_16 x, fixed16_16 z, u8 color)
 	{
+		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_RENDER);
 		automap_projectPosition(&x, &z);
 		if (!s_pdaActive)
 		{
-			screen_drawPoint(&s_screenRect, x, z, color, s_mapFramebuffer);
+			screen_drawPoint(screenRect, x, z, color, s_mapFramebuffer);
 		}
 		else
 		{
@@ -414,13 +418,14 @@ namespace TFE_DarkForces
 
 	void automap_drawLine(fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1, u8 color)
 	{
+		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_RENDER);
 		if (s_pdaActive)
 		{
 			// TODO
 		}
 		else // 1c6eec:
 		{
-			screen_drawLine(&s_screenRect, x0, z0, x1, z1, color, s_mapFramebuffer);
+			screen_drawLine(screenRect, x0, z0, x1, z1, color, s_mapFramebuffer);
 		}
 	}
 

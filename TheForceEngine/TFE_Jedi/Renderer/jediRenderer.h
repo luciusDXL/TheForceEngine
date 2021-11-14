@@ -22,6 +22,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 
 enum TFE_SubRenderer
 {
@@ -30,14 +31,6 @@ enum TFE_SubRenderer
 	TSR_CLASSIC_GPU,		// Derived from the Reverse-Engineered Jedi Renderer but using the GPU for low-level rendering.
 	TSR_COUNT,
 	TSR_INVALID,			// Invalid sub-renderer.
-};
-
-struct ScreenRect
-{
-	s32 left;
-	s32 top;
-	s32 right;
-	s32 bot;
 };
 
 namespace TFE_Jedi
@@ -76,7 +69,6 @@ namespace TFE_Jedi
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
 	void clear3DView(u8* framebuffer);
 
-	extern ScreenRect s_screenRect;
 	extern s32 s_drawnSpriteCount;
 	extern SecObject* s_drawnSprites[];
 }

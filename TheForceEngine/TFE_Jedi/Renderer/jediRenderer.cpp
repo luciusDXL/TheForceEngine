@@ -25,7 +25,6 @@ namespace TFE_Jedi
 	static bool s_init = false;
 	static MemoryPool s_memPool;
 	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
-	ScreenRect s_screenRect = { 0, 1, 319, 198 };
 	
 	TFE_Sectors* s_sectorRenderer = nullptr;
 
@@ -94,9 +93,6 @@ namespace TFE_Jedi
 
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0)
 	{
-		// if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::blitTextureToScreen(texture, x0, y0); }
-		//else { RClassic_Float::setResolution(width, height); }
-
 		RClassic_Fixed::blitTextureToScreen(texture, x0, y0);
 	}
 
@@ -158,11 +154,17 @@ namespace TFE_Jedi
 			{
 				case TSR_CLASSIC_FIXED:
 				{
+					vfb_setResolution(320, 200);
 					s_sectorRenderer = new TFE_Sectors_Fixed();
+					RClassic_Fixed::setupInitCameraAndLights();
 				} break;
 				case TSR_CLASSIC_FLOAT:
 				{
 					s_sectorRenderer = new TFE_Sectors_Float();
+
+					u32 width, height;
+					vfb_getResolution(&width, &height);
+					RClassic_Float::setupInitCameraAndLights(width, height);
 				} break;
 			}
 		}

@@ -51,10 +51,6 @@ namespace TFE_Jedi
 		f32 windowMinZ;
 		f32 windowMinY;
 		f32 windowMaxY;
-				
-		// Column Heights
-		f32* column_Z_Over_X;
-		f32* column_X_Over_Z;
 
 		// Flats
 		EdgePairFloat* flatEdge;

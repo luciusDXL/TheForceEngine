@@ -6,7 +6,7 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rlightingFixed.h>
-#include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
+#include <TFE_Jedi/Renderer/screenDraw.h>
 
 namespace TFE_DarkForces
 {

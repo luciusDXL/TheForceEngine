@@ -180,39 +180,7 @@ namespace RClassic_Float
 		memset(s_windowBot_all, s_maxScreenY, s_width);
 
 		// Build tables
-		s_rcfltState.column_Z_Over_X = (f32*)game_realloc(s_rcfltState.column_Z_Over_X, s_width * sizeof(f32));
-		s_rcfltState.column_X_Over_Z = (f32*)game_realloc(s_rcfltState.column_X_Over_Z, s_width * sizeof(f32));
 		s_rcfltState.skyTable = (f32*)game_realloc(s_rcfltState.skyTable, (s_width + 1) * sizeof(f32));
-
-		// Here we assume a 90 degree field of view, this forms a frustum (not drawn to scale):
-		//     W = width of plane in pixels
-		// *---*---*
-		//  \ Z|  /  Z = depth of plane
-		//   \ | /
-		//    \|/
-		//     *
-		// Where the distance to the screen where the half width is 0.5*W is also 0.5*W
-		// i.e. Z = 0.5*W.
-		// Z/X in screenspace = W / (x_in_pixels - 0.5*width_in_pixels)
-		s32 xMid = s_screenXMid;
-		for (s32 i = 0, x = 0; x < s_width; x++, i++)
-		{
-			f32 xPos = f32(x - xMid);
-			s_rcfltState.column_Z_Over_X[i] = (xMid != x) ? (s_rcfltState.halfWidth / xPos) : s_rcfltState.halfWidth;
-		}
-
-		for (s32 i = 0, x = 0; x < s_width; i++, x++)
-		{
-			if (x != xMid)
-			{
-				f32 xPos = f32(x - xMid);
-				s_rcfltState.column_X_Over_Z[i] = (xPos / s_rcfltState.halfWidth);
-			}
-			else
-			{
-				s_rcfltState.column_X_Over_Z[i] = 0.0f;
-			}
-		}
 	}
 
 	void computeSkyTable()
@@ -266,8 +234,14 @@ namespace RClassic_Float
 		s_height = height;
 
 		buildProjectionTables(width>>1, height>>1, s_width, s_height - 2);
+
+		fixed16_16 prevParallax0, prevParallax1;
+		TFE_Jedi::getSkyParallax(&prevParallax0, &prevParallax1);
+
 		TFE_Jedi::setSkyParallax(FIXED(1024), FIXED(1024));
 		computeSkyTable();
+
+		TFE_Jedi::setSkyParallax(prevParallax0, prevParallax1);
 
 		setIdentityMatrix(s_rcfltState.cameraMtx);
 		computeCameraTransform(nullptr, 0, 0, 0, 0, 0);

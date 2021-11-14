@@ -14,15 +14,15 @@
 #include <TFE_DarkForces/GameUI/escapeMenu.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Game/igame.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/rcommon.h>
-#include <TFE_Jedi/Renderer/RClassic_Fixed/screenDraw.h>
+#include <TFE_Jedi/Renderer/screenDraw.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
-#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/system.h>
@@ -37,12 +37,6 @@ namespace TFE_DarkForces
 	// Show the loading screen for at least 1 second.
 	#define MIN_LOAD_TIME 145
 
-	static DrawRect s_videoDrawRect =
-	{
-		0, 0,
-		319, 199
-	};
-	
 	/////////////////////////////////////////////
 	// Shared State
 	/////////////////////////////////////////////
@@ -85,7 +79,7 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////
-	static u8 s_framebuffer[320 * 200];
+	static u8*   s_framebuffer = nullptr;
 	static JBool s_exitLevel = JFALSE;
 	static Task* s_levelEndTask = nullptr;
 	static Task* s_mainTask = nullptr;
@@ -147,10 +141,35 @@ namespace TFE_DarkForces
 		logic_spawnEnemy(args[1].c_str(), args[2].c_str());
 	}
 
+	void mission_createDisplay()
+	{
+		vfb_setResolution(320, 200);
+		s_framebuffer = vfb_getCpuBuffer();
+	}
+
+	void mission_createRenderDisplay()
+	{
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+
+		vfb_setResolution(graphics->gameResolution.x, graphics->gameResolution.z);
+		s_framebuffer = vfb_getCpuBuffer();
+
+		if (graphics->gameResolution.x != 320 || graphics->gameResolution.z != 200 || graphics->widescreen)
+		{
+			TFE_Jedi::setSubRenderer(TSR_CLASSIC_FLOAT);
+		}
+		else
+		{
+			TFE_Jedi::setSubRenderer(TSR_CLASSIC_FIXED);
+		}
+	}
+
 	void mission_startTaskFunc(MessageType msg)
 	{
 		task_begin;
 		{
+			mission_createDisplay();
+
 			// TFE-specific
 			CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
 			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 8 units away in the player direction. Example: spawnEnemy offcfin.wax i_officer");
@@ -216,6 +235,7 @@ namespace TFE_DarkForces
 					// initSoundEffects();  <- TODO: Handle later
 					s_missionMode = MISSION_MODE_MAIN;
 					s_gamePaused = JFALSE;
+					mission_createRenderDisplay();
 					hud_startup();
 				}
 			}
@@ -276,6 +296,10 @@ namespace TFE_DarkForces
 			{
 				break;
 			}
+
+			// Grab the current framebuffer in case in changed.
+			s_framebuffer = vfb_getCpuBuffer();
+
 			// Handle delta time.
 			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
 			s_deltaTime = min(s_deltaTime, MAX_DELTA_TIME);
@@ -294,7 +318,7 @@ namespace TFE_DarkForces
 				{
 					updateScreensize();
 					drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
-					weapon_draw(s_framebuffer, &s_videoDrawRect);
+					weapon_draw(s_framebuffer, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI));
 					handleVisionFx();
 				}
 				else if (s_missionMode == MISSION_MODE_UNKNOWN)
@@ -355,7 +379,7 @@ namespace TFE_DarkForces
 			}
 
 			// vgaSwapBuffers() in the DOS code.
-			TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
+			vfb_swap();
 
 			// Pump tasks and look for any with a different ID.
 			do
@@ -396,13 +420,13 @@ namespace TFE_DarkForces
 		{
 			*outColor = CONV_6bitTo8bit(srcColor[0]) | (CONV_6bitTo8bit(srcColor[1]) << 8u) | (CONV_6bitTo8bit(srcColor[2]) << 16u) | (0xffu << 24u);
 		}
-		TFE_RenderBackend::setPalette(palette);
+		vfb_setPalette(palette);
 	}
 				
 	void blitLoadingScreen()
 	{
 		if (!s_loadScreen) { return; }
-		blitTextureToScreen(s_loadScreen, &s_videoDrawRect, 0/*x0*/, 0/*y0*/, s_framebuffer);
+		blitTextureToScreen(s_loadScreen, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 0/*x0*/, 0/*y0*/, s_framebuffer);
 	}
 
 	void displayLoadingScreen()
@@ -414,8 +438,8 @@ namespace TFE_DarkForces
 		// This hackery basically removes that latency so the image is properly displayed immediately.
 		setPalette(s_loadingScreenPal);
 		setPalette(s_loadingScreenPal);
-		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
-		TFE_RenderBackend::updateVirtualDisplay(s_framebuffer, 320 * 200);
+		vfb_swap();
+		vfb_swap();
 	}
 
 	void mission_setupTasks()

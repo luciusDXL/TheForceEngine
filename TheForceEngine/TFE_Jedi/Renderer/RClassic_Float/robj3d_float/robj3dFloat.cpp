@@ -3,6 +3,7 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 
 #include "robj3dFloat.h"
 #include "robj3dFloat_TransformAndLighting.h"
@@ -31,7 +32,8 @@ namespace RClassic_Float
 		if (model->flags & MFLAG_DRAW_VERTICES)
 		{
 			// Scale the points based on the resolution ratio.
-			const u32 height = TFE_RenderBackend::getVirtualDisplayHeight();
+			u32 width, height;
+			vfb_getResolution(&width, &height);
 			const s32 scale = (s32)max(1, height / 200);
 
 			// If the MFLAG_DRAW_VERTICES flag is set, draw all vertices as points. 

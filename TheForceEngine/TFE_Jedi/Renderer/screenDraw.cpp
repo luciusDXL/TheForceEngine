@@ -18,7 +18,7 @@ namespace TFE_Jedi
 	void screen_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color, u8* framebuffer)
 	{
 		if (x < rect->left || x > rect->right || z < rect->top || z > rect->bot) { return; }
-		framebuffer[z*320+x] = color;
+		framebuffer[z*vfb_getStride()+x] = color;
 	}
 
 	void screen_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color, u8* framebuffer)
@@ -28,6 +28,7 @@ namespace TFE_Jedi
 			return;
 		}
 
+		const u32 stride = vfb_getStride();
 		s32 x = x0, z = z0;
 		s32 dx = x1 - x;
 		s32 dz = z1 - z;
@@ -38,7 +39,7 @@ namespace TFE_Jedi
 		if (zDir > 0) { dx = -dx; }
 
 		// Place the first point.
-		framebuffer[z0*320 + x0] = color;
+		framebuffer[z0*stride + x0] = color;
 
 		s32 dist = 0;
 		while (x != x1 || z != z1)
@@ -55,7 +56,7 @@ namespace TFE_Jedi
 				dist += dx;
 				z += zDir;
 			}
-			framebuffer[z*320 + x] = color;
+			framebuffer[z*stride + x] = color;
 		}
 	}
 
@@ -195,7 +196,8 @@ namespace TFE_Jedi
 	{
 		s32 end = yPixelCount - 1;
 		s32 offset = 0;
-		for (s32 i = end; i >= 0; i--, offset += 320)
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride)
 		{
 			outBuffer[offset] = image[i];
 		}
@@ -205,7 +207,8 @@ namespace TFE_Jedi
 	{
 		s32 end = yPixelCount - 1;
 		s32 offset = 0;
-		for (s32 i = end; i >= 0; i--, offset += 320)
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride)
 		{
 			if (image[i]) { outBuffer[offset] = image[i]; }
 		}
@@ -215,7 +218,8 @@ namespace TFE_Jedi
 	{
 		s32 end = yPixelCount - 1;
 		s32 offset = 0;
-		for (s32 i = end; i >= 0; i--, offset += 320)
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride)
 		{
 			outBuffer[offset] = atten[image[i]];
 		}
@@ -225,7 +229,8 @@ namespace TFE_Jedi
 	{
 		s32 end = yPixelCount - 1;
 		s32 offset = 0;
-		for (s32 i = end; i >= 0; i--, offset += 320)
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride)
 		{
 			if (image[i]) { outBuffer[offset] = atten[image[i]]; }
 		}
@@ -233,7 +238,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output, JBool forceTransparency)
 	{
-		s32 x1 = x0 + texture->width - 1;
+		s32 x1 = x0 + texture->width  - 1;
 		s32 y1 = y0 + texture->height - 1;
 
 		// Cull if outside of the draw rect.
@@ -264,18 +269,19 @@ namespace TFE_Jedi
 		if (yPixelCount <= 0) { return; }
 
 		u8* buffer = texture->image + texture->height*srcX + srcY;
+		const u32 stride = vfb_getStride();
 		if ((texture->flags & OPACITY_TRANS) || forceTransparency)
 		{
 			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
 			{
-				textureBlitColumnTrans(buffer, output + y0 * 320 + col, yPixelCount);
+				textureBlitColumnTrans(buffer, output + y0 * stride + col, yPixelCount);
 			}
 		}
 		else
 		{
 			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
 			{
-				textureBlitColumnOpaque(buffer, output + y0 * 320 + col, yPixelCount);
+				textureBlitColumnOpaque(buffer, output + y0 * stride + col, yPixelCount);
 			}
 		}
 	}
@@ -313,18 +319,19 @@ namespace TFE_Jedi
 		if (yPixelCount <= 0) { return; }
 
 		u8* buffer = texture->image + texture->height*srcX + srcY;
+		const u32 stride = vfb_getStride();
 		if ((texture->flags & OPACITY_TRANS) || forceTransparency)
 		{
 			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
 			{
-				textureBlitColumnTransLit(buffer, output + y0 * 320 + col, yPixelCount, atten);
+				textureBlitColumnTransLit(buffer, output + y0 * stride + col, yPixelCount, atten);
 			}
 		}
 		else
 		{
 			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
 			{
-				textureBlitColumnOpaqueLit(buffer, output + y0 * 320 + col, yPixelCount, atten);
+				textureBlitColumnOpaqueLit(buffer, output + y0 * stride + col, yPixelCount, atten);
 			}
 		}
 	}
