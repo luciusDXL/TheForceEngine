@@ -84,8 +84,8 @@ namespace RClassic_Float
 			const f32 z = vertex->z;
 			if (z <= 1.0f) { continue; }
 
-			const s32 pixel_x = roundFloat((vertex->x*s_rcfltState.focalLength)    / z + s_rcfltState.halfWidth);
-			const s32 pixel_y = roundFloat((vertex->y*s_rcfltState.focalLenAspect) / z + s_rcfltState.halfHeight);
+			const s32 pixel_x = roundFloat((vertex->x*s_rcfltState.focalLength)    / z + s_rcfltState.projOffsetX);
+			const s32 pixel_y = roundFloat((vertex->y*s_rcfltState.focalLenAspect) / z + s_rcfltState.projOffsetY);
 
 			// If the X position is out of view, skip the vertex.
 			if (pixel_x < s_minScreenX_Pixels || pixel_x > s_maxScreenX_Pixels)
