@@ -13,6 +13,7 @@ namespace TFE_Jedi
 	static u32 s_prevWidth = 0;
 	static u32 s_prevHeight = 0;
 	static s32 s_widescreenOffset = 0;
+	static bool s_widescreen = false;
 
 	static fixed16_16 s_xScale = ONE_16;
 	static fixed16_16 s_yScale = ONE_16;
@@ -27,12 +28,14 @@ namespace TFE_Jedi
 	// Note that the current graphics settings are
 	// used internally when setting up (GPU palette conversion,etc.)
 	////////////////////////////////////////////////////////////////////////
-	void vfb_setResolution(u32 width, u32 height)
+	JBool vfb_setResolution(u32 width, u32 height)
 	{
-		if (width == s_width && height == s_height)
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		if (width == s_width && height == s_height && s_widescreen == graphics->widescreen)
 		{
-			return;
+			return JFALSE;
 		}
+		s_widescreen = graphics->widescreen;
 
 		if (width == 320 && height == 200)
 		{
@@ -105,6 +108,8 @@ namespace TFE_Jedi
 		// Avoid flashing the previous buffer when swapping.
 		vfb_swap();
 		vfb_swap();
+
+		return JTRUE;
 	}
 
 	void vfb_setPalette(const u32* palette)

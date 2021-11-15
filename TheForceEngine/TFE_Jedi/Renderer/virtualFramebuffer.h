@@ -32,7 +32,7 @@ namespace TFE_Jedi
 	// Note that the current graphics settings are
 	// used internally when setting up (GPU palette conversion,etc.)
 	////////////////////////////////////////////////////////////////////////
-	void vfb_setResolution(u32 width, u32 height);
+	JBool vfb_setResolution(u32 width, u32 height);
 	void vfb_setPalette(const u32* palette);
 
 	////////////////////////////

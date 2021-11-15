@@ -44,7 +44,6 @@
 using namespace TFE_Input;
 
 // Replace with settings.
-static bool s_vsync = true;
 static bool s_loop  = true;
 static f32  s_refreshRate = 0;
 static s32  s_displayIndex = 0;
@@ -493,14 +492,15 @@ int main(int argc, char* argv[])
 		TFE_System::logClose();
 		return PROGRAM_ERROR;
 	}
-	TFE_System::init(s_refreshRate, s_vsync, c_gitVersion);
 	TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
-
+	TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+	TFE_System::init(s_refreshRate, graphics->vsync, c_gitVersion);
+	
 	// Setup the GPU Device and Window.
 	u32 windowFlags = 0;
 	if (windowSettings->fullscreen) { TFE_System::logWrite(LOG_MSG, "Display", "Fullscreen enabled."); windowFlags |= WINFLAG_FULLSCREEN; }
-	if (s_vsync)      { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
-		
+	if (graphics->vsync) { TFE_System::logWrite(LOG_MSG, "Display", "Vertical Sync enabled."); windowFlags |= WINFLAG_VSYNC; }
+	
 	WindowState windowState =
 	{
 		"",
@@ -535,7 +535,6 @@ int main(int argc, char* argv[])
 	// TFE_Memory::region_test();
 
 	// Color correction.
-	const TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 	const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
 	TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
 

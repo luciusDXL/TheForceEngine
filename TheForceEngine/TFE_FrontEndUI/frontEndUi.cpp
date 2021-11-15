@@ -14,6 +14,9 @@
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_Ui/imGUI/imgui.h>
+// Game
+#include <TFE_DarkForces/mission.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
 
 using namespace TFE_Input;
 
@@ -519,6 +522,8 @@ namespace TFE_FrontEndUI
 			bool active = true;
 			const u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+
+			TFE_Input::clearAccumulatedMouseMove();
 
 			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 			ImGui::SetNextWindowSize(ImVec2(160.0f, f32(h)));
@@ -1299,15 +1304,15 @@ namespace TFE_FrontEndUI
 
 		bool fullscreen = window->fullscreen;
 		bool windowed = !fullscreen;
-		bool vsync = true;
+		bool vsync = TFE_System::getVSync();
 		if (ImGui::Checkbox("Fullscreen", &fullscreen))
 		{
 			windowed = !fullscreen;
 		}
-		// TODO
 		ImGui::SameLine();
 		if (ImGui::Checkbox("Vsync", &vsync))
 		{
+			TFE_System::setVsync(vsync);
 		}
 		if (ImGui::Checkbox("Windowed", &windowed))
 		{
@@ -1323,7 +1328,6 @@ namespace TFE_FrontEndUI
 		//////////////////////////////////////////////////////
 		// Resolution
 		//////////////////////////////////////////////////////
-		// TODO
 		bool widescreen = graphics->widescreen;
 
 		ImGui::PushFont(s_dialogFont);
@@ -1335,34 +1339,33 @@ namespace TFE_FrontEndUI
 		ImGui::Combo("##Resolution", &s_resIndex, widescreen ? c_resolutionsWide : c_resolutions, IM_ARRAYSIZE(c_resolutions));
 		if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim))
 		{
+			DisplayInfo displayInfo;
+			TFE_RenderBackend::getDisplayInfo(&displayInfo);
+			graphics->gameResolution.x = displayInfo.width;
+			graphics->gameResolution.z = displayInfo.height;
+			graphics->widescreen = true;
 		}
 		else if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim) + 1)
 		{
 			ImGui::LabelText("##ConfigLabel", "Custom:"); ImGui::SameLine(100);
 			ImGui::SetNextItemWidth(196);
 			ImGui::InputInt2("##CustomInput", graphics->gameResolution.m);
+
+			graphics->gameResolution.x = max(graphics->gameResolution.x, 10);
+			graphics->gameResolution.z = max(graphics->gameResolution.z, 10);
 		}
 		else
 		{
 			graphics->gameResolution = c_resolutionDim[s_resIndex];
-			if (s_menuRetState != APP_STATE_MENU)
-			{
-				// TODO
-				//TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
-				//TFE_GameLoop::update(true);
-				//TFE_GameLoop::draw();
-			}
 		}
 
 		ImGui::Checkbox("Widescreen", &widescreen);
 		if (widescreen != graphics->widescreen)
 		{
 			graphics->widescreen = widescreen;
-			// TODO
-			// TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
 		}
 		ImGui::Separator();
-
+				
 		//////////////////////////////////////////////////////
 		// Renderer
 		//////////////////////////////////////////////////////
@@ -1384,12 +1387,6 @@ namespace TFE_FrontEndUI
 			ImGui::Checkbox("Async Framebuffer", &graphics->asyncFramebuffer);
 			ImGui::Checkbox("GPU Color Conversion", &graphics->gpuColorConvert);
 			ImGui::Checkbox("Perspective Correct 3DO Texturing", &graphics->perspectiveCorrectTexturing);
-
-			if (prevAsync != graphics->asyncFramebuffer || prevColorConvert != graphics->gpuColorConvert)
-			{
-				// TODO
-				// TFE_GameLoop::changeResolution(graphics->gameResolution.x, graphics->gameResolution.z);
-			}
 		}
 		else if (s_rendererIndex == 1)
 		{
@@ -1484,7 +1481,7 @@ namespace TFE_FrontEndUI
 
 		const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
 		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
-
+						   
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////
@@ -1506,6 +1503,12 @@ namespace TFE_FrontEndUI
 			ImGui::SliderFloat("Softness", &s_bloomSoftness, 0.0f, 1.0f);
 			ImGui::SetNextItemWidth(196);
 			ImGui::SliderFloat("Intensity", &s_bloomIntensity, 0.0f, 1.0f);
+		}
+
+		if (s_menuRetState != APP_STATE_MENU)
+		{
+			TFE_Jedi::render_setResolution();
+			TFE_DarkForces::mission_render();
 		}
 	}
 
@@ -1533,9 +1536,10 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(196);
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512);
 
-		// TODO
-		// TFE_GameLoop::update(true);
-		// TFE_GameLoop::draw();
+		if (s_menuRetState != APP_STATE_MENU)
+		{
+			TFE_DarkForces::mission_render();
+		}
 	}
 
 	void configSound()

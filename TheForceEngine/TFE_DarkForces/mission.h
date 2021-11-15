@@ -31,6 +31,8 @@ namespace TFE_DarkForces
 	void disableMask();
 	void disableCleats();
 	void disableNightvision();
+
+	void mission_render();
 		
 	extern JBool s_gamePaused;
 	extern GameMissionMode s_missionMode;

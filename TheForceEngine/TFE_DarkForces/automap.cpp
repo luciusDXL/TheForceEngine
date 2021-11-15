@@ -91,16 +91,19 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			s32 leftEdge = intToFixed16(screenRect->left - 159);
+			u32 dispWidth, dispHeight;
+			vfb_getResolution(&dispWidth, &dispHeight);
+
+			fixed16_16 leftEdge = intToFixed16(screenRect->left - s32(dispWidth) + 1);
 			s_scrLeftScaled = div16(leftEdge, s_screenScale);
 
-			s32 rightEdge = intToFixed16(screenRect->right - 159);
+			fixed16_16 rightEdge = intToFixed16(screenRect->right - s32(dispWidth) + 1);
 			s_scrRightScaled = div16(rightEdge, s_screenScale);
 
-			s32 topEdge = intToFixed16(screenRect->top - 99);
+			fixed16_16 topEdge = intToFixed16(screenRect->top - s32(dispHeight) + 1);
 			s_scrTopScaled = -div16(topEdge, s_screenScale);
 
-			s32 botEdge = intToFixed16(screenRect->bot - 99);
+			fixed16_16 botEdge = intToFixed16(screenRect->bot - s32(dispHeight) + 1);
 			s_scrBotScaled = -div16(botEdge, s_screenScale);
 		}
 	}
@@ -259,9 +262,12 @@ namespace TFE_DarkForces
 
 	void automap_draw(u8* framebuffer)
 	{
+		u32 dispWidth, dispHeight;
+		vfb_getResolution(&dispWidth, &dispHeight);
+
 		s_pdaActive = JFALSE;
-		s_mapXCenterInPixels = 159;
-		s_mapZCenterInPixels = 99;
+		s_mapXCenterInPixels = dispWidth/2 - 1;
+		s_mapZCenterInPixels = dispHeight/2 - 1;
 		s_mapFramebuffer = framebuffer;
 		automap_drawSectors();
 	}

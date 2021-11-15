@@ -1220,7 +1220,7 @@ namespace TFE_DarkForces
 				fixed16_16 xScale = vfb_getXScale();
 				fixed16_16 yScale = vfb_getYScale();
 				x = floor16(mul16(xScale, intToFixed16(x))) + vfb_getWidescreenOffset();
-				y = floor16(mul16(yScale, intToFixed16(y)));
+				y = floor16(yScale + mul16(yScale, intToFixed16(y)));
 
 				if (atten && !s_weaponLight)
 				{

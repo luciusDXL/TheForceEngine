@@ -155,6 +155,11 @@ namespace TFE_RenderBackend
 		return SDL_GL_GetSwapInterval() > 0;
 	}
 
+	void enableVsync(bool enable)
+	{
+		SDL_GL_SetSwapInterval(enable ? 1 : 0);
+	}
+
 	void setClearColor(const f32* color)
 	{
 		glClearColor(color[0], color[1], color[2], color[3]);

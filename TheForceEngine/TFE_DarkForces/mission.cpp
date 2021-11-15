@@ -34,13 +34,13 @@ using namespace TFE_Input;
 
 namespace TFE_DarkForces
 {
-	#define CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
+#define CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
 	// Show the loading screen for at least 1 second.
-	#define MIN_LOAD_TIME 145
+#define MIN_LOAD_TIME 145
 
-	/////////////////////////////////////////////
-	// Shared State
-	/////////////////////////////////////////////
+/////////////////////////////////////////////
+// Shared State
+/////////////////////////////////////////////
 	JBool s_gamePaused = JTRUE;
 	JBool s_canTeleport = JTRUE;
 	GameMissionMode s_missionMode = MISSION_MODE_MAIN;
@@ -63,7 +63,7 @@ namespace TFE_DarkForces
 	JBool s_screenBrightnessChanged = JFALSE;
 	JBool s_screenFxChanged = JFALSE;
 	JBool s_lumMaskChanged = JFALSE;
-	
+
 	s32 s_flashFxLevel = 0;
 	s32 s_healthFxLevel = 0;
 	s32 s_shieldFxLevel = 0;
@@ -76,7 +76,7 @@ namespace TFE_DarkForces
 	u8* s_levelColorMap = nullptr;
 	u8* s_levelColorMapBasePtr = nullptr;
 	u8 s_levelLightRamp[LIGHT_SOURCE_LEVELS];
-	
+
 	/////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////
@@ -85,7 +85,7 @@ namespace TFE_DarkForces
 	static Task* s_levelEndTask = nullptr;
 	static Task* s_mainTask = nullptr;
 	static Task* s_missionLoadTask = nullptr;
-	
+
 	static s32 s_visionFxCountdown = 0;
 	static s32 s_visionFxEndCountdown = 0;
 
@@ -115,7 +115,7 @@ namespace TFE_DarkForces
 	void applyScreenBrightness(u8* pal, s32 brightness);
 
 	void executeCheat(CheatID cheatID);
-			
+
 	/////////////////////////////////////////////
 	// API Implementation
 	/////////////////////////////////////////////
@@ -191,14 +191,14 @@ namespace TFE_DarkForces
 			displayLoadingScreen();
 			task_yield(MIN_LOAD_TIME);
 
-			s_prevTick   = s_curTick;
+			s_prevTick = s_curTick;
 			s_playerTick = s_curTick;
 			s_mainTask = createTask("main task", mission_mainTaskFunc);
 
 			s_invalidLevelIndex = JFALSE;
-			s_levelComplete     = JFALSE;
-			s_exitLevel         = JFALSE;
-									
+			s_levelComplete = JFALSE;
+			s_exitLevel = JFALSE;
+
 			s_missionMode = MISSION_MODE_LOAD_START;
 			mission_setupTasks();
 			displayLoadingScreen();
@@ -268,7 +268,7 @@ namespace TFE_DarkForces
 	{
 		s_missionLoadTask = task;
 	}
-			
+
 	// In DOS, this was part of drawWorld() - 
 	// for TFE I split it out to limit the amount of game code in the renderer.
 	void handleVisionFx()
@@ -297,6 +297,23 @@ namespace TFE_DarkForces
 	void mission_exitLevel()
 	{
 		s_exitLevel = JTRUE;
+	}
+
+	void mission_render()
+	{
+		if (task_getCount() > 1 && s_missionMode == MISSION_MODE_MAIN)
+		{
+			s_framebuffer = vfb_getCpuBuffer();
+			updateScreensize();
+			drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
+			weapon_draw(s_framebuffer, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI));
+			handleVisionFx();
+			handlePaletteFx();
+			hud_drawAndUpdate(s_framebuffer);
+			hud_drawMessage(s_framebuffer);
+
+			vfb_swap();
+		}
 	}
 
 	void mission_mainTaskFunc(MessageType msg)

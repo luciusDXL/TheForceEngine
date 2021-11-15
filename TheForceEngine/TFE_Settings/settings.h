@@ -31,6 +31,7 @@ struct TFE_Settings_Graphics
 	bool  gpuColorConvert = true;
 	bool  colorCorrection = false;
 	bool  perspectiveCorrectTexturing = false;
+	bool  vsync = true;
 	f32   brightness = 1.0f;
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;

@@ -24,6 +24,8 @@ namespace TFE_System
 	void init(f32 refreshRate, bool synced, const char* versionString);
 	void shutdown();
 	void resetStartTime();
+	void setVsync(bool sync);
+	bool getVSync();
 
 	void update();
 	f64 updateThreadLocal(u64* localTime);

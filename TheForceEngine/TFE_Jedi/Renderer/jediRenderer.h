@@ -43,7 +43,7 @@ namespace TFE_Jedi
 
 	// Set the current sub-renderer.
 	// Note that changing the sub-renderer at runtime may result in re-initialization of rendering data, causing a hitch.
-	void setSubRenderer(TFE_SubRenderer subRenderer = TSR_CLASSIC_FIXED);
+	JBool setSubRenderer(TFE_SubRenderer subRenderer = TSR_CLASSIC_FIXED);
 
 	// Camera parameters: yaw, pitch, position (x, y, z)
 	//                    sectorId containing the camera.
@@ -61,6 +61,7 @@ namespace TFE_Jedi
 	void setResolution(s32 width, s32 height);
 #endif
 
+	JBool render_setResolution();
 	void renderer_setVisionEffect(s32 effect);
 	void renderer_setupCameraLight(JBool flatShading, JBool headlamp);
 	void renderer_setWorldAmbient(s32 value);

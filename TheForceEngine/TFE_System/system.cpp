@@ -1,6 +1,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/profiler.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Settings/settings.h>
 #include <SDL.h>
 #include <assert.h>
 #include <stdio.h>
@@ -50,6 +51,18 @@ namespace TFE_System
 
 	void shutdown()
 	{
+	}
+
+	void setVsync(bool sync)
+	{
+		s_synced = sync;
+		TFE_Settings::getGraphicsSettings()->vsync = sync;
+		TFE_RenderBackend::enableVsync(sync);
+	}
+
+	bool getVSync()
+	{
+		return s_synced;
 	}
 
 	const char* getVersionString()

@@ -367,6 +367,26 @@ namespace TFE_Jedi
 		}
 	}
 
+	void textureBlitColumnTransIScaled(u8* image, u8* outBuffer, s32 yPixelCount, s32 scale, s32 v0)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		s32 vStep = 0;
+		s32 v = v0;
+		for (s32 i = end; i >= 0; i--, offset += stride)
+		{
+			if (image[v]) { outBuffer[offset] = image[v]; }
+
+			vStep++;
+			if (vStep >= scale)
+			{
+				vStep = 0;
+				v--;
+			}
+		}
+	}
+
 	void textureBlitColumnOpaqueLitScaled(u8* image, u8* outBuffer, s32 yPixelCount, const u8* atten, fixed16_16 vCoord, fixed16_16 vStep)
 	{
 		s32 end = yPixelCount - 1;
@@ -450,6 +470,30 @@ namespace TFE_Jedi
 			JTRUE
 		};
 		blitTextureToScreenScaled(&image, rect, x0, y0, xScale, yScale, output);
+	}
+
+	void blitTextureToScreenIScale(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, s32 scale, u8* output)
+	{
+		s32 x1 = x0 + (texture->width  - 1)*scale;
+		s32 y1 = y0 + (texture->height - 1)*scale;
+		s32 yPixelCount = y1 - y0 + 1;
+		if (yPixelCount <= 0) { return; }
+
+		s32 uStep = scale;
+		s32 u = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 col = x0; col <= x1; col++)
+		{
+			u8* buffer = texture->image + u*texture->height;
+			textureBlitColumnTransIScaled(buffer, output + y0 * stride + col, yPixelCount, scale, texture->height - 1);
+
+			uStep++;
+			if (uStep >= scale)
+			{
+				uStep = 0;
+				u++;
+			}
+		}
 	}
 
 	void blitTextureToScreenScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output)

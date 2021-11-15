@@ -276,6 +276,33 @@ namespace RClassic_Fixed
 		normalizeVec3(dirWS, dirWS);
 	}
 
+	void changeResolution(s32 width, s32 height)
+	{
+		s_width  = width;
+		s_height = height;
+
+		buildProjectionTables(width >> 1, height >> 1, s_width, s_height - 2);
+
+		fixed16_16 prevParallax0, prevParallax1;
+		TFE_Jedi::getSkyParallax(&prevParallax0, &prevParallax1);
+				
+		TFE_Jedi::setSkyParallax(FIXED(1024), FIXED(1024));
+		computeSkyTable();
+
+		TFE_Jedi::setSkyParallax(prevParallax0, prevParallax1);
+
+		s_lightCount = 0;
+
+		createLight(&s_cameraLight[0], 0, 0, ONE_16, ONE_16);
+		s_lightCount++;
+
+		createLight(&s_cameraLight[1], 0, ONE_16, 0, ONE_16);
+		s_lightCount++;
+
+		createLight(&s_cameraLight[2], ONE_16, 0, 0, ONE_16);
+		s_lightCount++;
+	}
+
 	void setupInitCameraAndLights()
 	{
 		s_width  = 320;

@@ -10,6 +10,7 @@ namespace TFE_Jedi
 	namespace RClassic_Float
 	{
 		void setupInitCameraAndLights(s32 width, s32 height);
+		void changeResolution(s32 width, s32 height);
 
 		void computeCameraTransform(RSector* sector, f32 pitch, f32 yaw, f32 camX, f32 camY, f32 camZ);
 		void transformPointByCamera(vec3_float* worldPoint, vec3_float* viewPoint);

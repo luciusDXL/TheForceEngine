@@ -42,4 +42,6 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output);
 	void blitTextureToScreenLitScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, const u8* atten, u8* output);
+
+	void blitTextureToScreenIScale(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, s32 scale, u8* output);
 }

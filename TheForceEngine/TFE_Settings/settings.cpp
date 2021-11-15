@@ -285,6 +285,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "gpuColorConvert", s_graphicsSettings.gpuColorConvert);
 		writeKeyValue_Bool(settings, "colorCorrection", s_graphicsSettings.colorCorrection);
 		writeKeyValue_Bool(settings, "perspectiveCorrect3DO", s_graphicsSettings.perspectiveCorrectTexturing);
+		writeKeyValue_Bool(settings, "vsync", s_graphicsSettings.vsync);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
 		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
@@ -522,6 +523,10 @@ namespace TFE_Settings
 		else if (strcasecmp("perspectiveCorrect3DO", key) == 0)
 		{
 			s_graphicsSettings.perspectiveCorrectTexturing = parseBool(value);
+		}
+		else if (strcasecmp("vsync", key) == 0)
+		{
+			s_graphicsSettings.vsync = parseBool(value);
 		}
 		else if (strcasecmp("brightness", key) == 0)
 		{

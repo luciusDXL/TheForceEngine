@@ -228,7 +228,7 @@ namespace RClassic_Float
 		f32 parallaxFlt = fixed16ToFloat(parallax0);
 
 		s32 xMid   = s_screenXMid;
-		f32 xScale = 2.0f / f32(s_width);
+		f32 xScale = s_rcfltState.nearPlaneHalfLen * 2.0f / f32(s_width);
 		s_rcfltState.skyTable[0] = 0;
 		for (s32 i = 0, x = 0; x < s_width; i++, x++)
 		{
@@ -264,6 +264,33 @@ namespace RClassic_Float
 		dirWS->z = z;
 		light->brightness = brightness;
 		normalizeVec3(dirWS, dirWS);
+	}
+
+	void changeResolution(s32 width, s32 height)
+	{
+		s_width = width;
+		s_height = height;
+
+		buildProjectionTables(width >> 1, height >> 1, s_width, s_height - 2);
+
+		fixed16_16 prevParallax0, prevParallax1;
+		TFE_Jedi::getSkyParallax(&prevParallax0, &prevParallax1);
+
+		TFE_Jedi::setSkyParallax(FIXED(1024), FIXED(1024));
+		computeSkyTable();
+
+		TFE_Jedi::setSkyParallax(prevParallax0, prevParallax1);
+
+		s_lightCount = 0;
+
+		createLight(&s_cameraLight[0], 0, 0, 1.0f, 1.0f);
+		s_lightCount++;
+
+		createLight(&s_cameraLight[1], 0, 1.0f, 0, 1.0f);
+		s_lightCount++;
+
+		createLight(&s_cameraLight[2], 1.0f, 0, 0, 1.0f);
+		s_lightCount++;
 	}
 
 	void setupInitCameraAndLights(s32 width, s32 height)

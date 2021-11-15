@@ -632,30 +632,69 @@ namespace TFE_DarkForces
 	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, char* msg, u8* framebuffer)
 	{
 		if (!font || !rect || !framebuffer) { return; }
+		u32 dispWidth, dispHeight;
+		vfb_getResolution(&dispWidth, &dispHeight);
 
-		s32 xi = x;
-		s32 x0 = x;
-		for (char c = *msg; c != 0;)
+		if (dispHeight == 200)
 		{
-			if (c == '\n')
+			s32 xi = x;
+			s32 x0 = x;
+			for (char c = *msg; c != 0;)
 			{
-				xi = x0;
-				y += font->height + font->vertSpacing;
-			}
-			else if (c == ' ')
-			{
-				xi += font->width;
-			}
-			else if (c >= font->minChar && c <= font->maxChar)
-			{
-				s32 charIndex = c - font->minChar;
-				TextureData* glyph = &font->glyphs[charIndex];
-				blitTextureToScreen(glyph, rect, xi, y, framebuffer);
+				if (c == '\n')
+				{
+					xi = x0;
+					y += font->height + font->vertSpacing;
+				}
+				else if (c == ' ')
+				{
+					xi += font->width;
+				}
+				else if (c >= font->minChar && c <= font->maxChar)
+				{
+					s32 charIndex = c - font->minChar;
+					TextureData* glyph = &font->glyphs[charIndex];
+					blitTextureToScreen(glyph, rect, xi, y, framebuffer);
 
-				xi += font->horzSpacing + glyph->width;
+					xi += font->horzSpacing + glyph->width;
+				}
+				msg++;
+				c = *msg;
 			}
-			msg++;
-			c = *msg;
+		}
+		else
+		{
+			// Round to the nearest integer scale
+			s32 yScale = floor16(vfb_getYScale());
+			s32 xScale = yScale;
+
+			s32 xi = x * xScale;
+			s32 x0 = x;
+			y *= yScale;
+
+			s32 fWidth = font->width * xScale;
+			for (char c = *msg; c != 0;)
+			{
+				if (c == '\n')
+				{
+					xi = x0;
+					y += (font->height + font->vertSpacing) * yScale;
+				}
+				else if (c == ' ')
+				{
+					xi += fWidth;
+				}
+				else if (c >= font->minChar && c <= font->maxChar)
+				{
+					s32 charIndex = c - font->minChar;
+					TextureData* glyph = &font->glyphs[charIndex];
+					blitTextureToScreenIScale(glyph, rect, xi, y, yScale, framebuffer);
+
+					xi += (font->horzSpacing + glyph->width)*xScale;
+				}
+				msg++;
+				c = *msg;
+			}
 		}
 	}
 

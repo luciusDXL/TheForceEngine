@@ -13,6 +13,8 @@
 #include "RClassic_Float/rclassicFloatSharedState.h"
 
 #include <TFE_System/profiler.h>
+#include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FrontEndUI/console.h>
@@ -132,42 +134,98 @@ namespace TFE_Jedi
 		TFE_Console::addToHistory(c_subRenderers[s_subRenderer]);
 	}
 
-	void renderer_setVisionEffect(s32 effect)
+	JBool render_setResolution()
 	{
-		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setVisionEffect(effect); }
-	}
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		DisplayInfo info;
+		TFE_RenderBackend::getDisplayInfo(&info);
 
-	void setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
-	{
-		if (subRenderer != s_subRenderer)
+		s32 width  = graphics->gameResolution.x;
+		s32 height = graphics->gameResolution.z;
+		if (graphics->widescreen && (height == 200 || height == 400))
+		{
+			width = (height * info.width / info.height) * 12 / 10;
+		}
+		else if (graphics->widescreen)
+		{
+			width = height * info.width / info.height;
+		}
+
+		if (!vfb_setResolution(width, height))
+		{
+			return JFALSE;
+		}
+
+		TFE_SubRenderer subRenderer = (width == 320 && height == 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT;
+		if (s_subRenderer != subRenderer)
 		{
 			s_subRenderer = subRenderer;
 			if (s_sectorRenderer)
 			{
 				s_sectorRenderer->subrendererChanged();
 			}
-
 			delete s_sectorRenderer;
 			s_sectorRenderer = nullptr;
-
-			switch (subRenderer)
-			{
-				case TSR_CLASSIC_FIXED:
-				{
-					vfb_setResolution(320, 200);
-					s_sectorRenderer = new TFE_Sectors_Fixed();
-					RClassic_Fixed::setupInitCameraAndLights();
-				} break;
-				case TSR_CLASSIC_FLOAT:
-				{
-					s_sectorRenderer = new TFE_Sectors_Float();
-
-					u32 width, height;
-					vfb_getResolution(&width, &height);
-					RClassic_Float::setupInitCameraAndLights(width, height);
-				} break;
-			}
 		}
+
+		if (width == 320 && height == 200)
+		{
+			if (!s_sectorRenderer)
+			{
+				s_sectorRenderer = new TFE_Sectors_Fixed();
+			}
+			RClassic_Fixed::changeResolution(width, height);
+		}
+		else
+		{
+			if (!s_sectorRenderer)
+			{
+				s_sectorRenderer = new TFE_Sectors_Float();
+			}
+			RClassic_Float::changeResolution(width, height);
+		}
+		return JTRUE;
+	}
+
+	void renderer_setVisionEffect(s32 effect)
+	{
+		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setVisionEffect(effect); }
+	}
+
+	JBool setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
+	{
+		if (subRenderer == s_subRenderer)
+		{
+			return JFALSE;
+		}
+
+		s_subRenderer = subRenderer;
+		if (s_sectorRenderer)
+		{
+			s_sectorRenderer->subrendererChanged();
+		}
+
+		delete s_sectorRenderer;
+		s_sectorRenderer = nullptr;
+
+		switch (subRenderer)
+		{
+			case TSR_CLASSIC_FIXED:
+			{
+				vfb_setResolution(320, 200);
+				s_sectorRenderer = new TFE_Sectors_Fixed();
+				RClassic_Fixed::setupInitCameraAndLights();
+			} break;
+			case TSR_CLASSIC_FLOAT:
+			{
+				s_sectorRenderer = new TFE_Sectors_Float();
+
+				u32 width, height;
+				vfb_getResolution(&width, &height);
+				RClassic_Float::setupInitCameraAndLights(width, height);
+			} break;
+		}
+		return JTRUE;
 	}
 
 	void renderer_setWorldAmbient(s32 value)
@@ -183,6 +241,7 @@ namespace TFE_Jedi
 
 	void renderer_computeCameraTransform(RSector* sector, angle14_32 pitch, angle14_32 yaw, fixed16_16 camX, fixed16_16 camY, fixed16_16 camZ)
 	{
+	#if 0
 		if (s_subRenderer == TSR_CLASSIC_FIXED)
 		{
 			RClassic_Fixed::computeCameraTransform(sector, pitch, yaw, camX, camY, camZ);
@@ -191,6 +250,12 @@ namespace TFE_Jedi
 		{
 			RClassic_Float::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
 		}
+	#endif
+
+		// For now compute both fixed-point and floating-point camera transforms so that it is easier to swap between sub-renderers.
+		// TODO: Find a cleaner alternative.
+		RClassic_Fixed::computeCameraTransform(sector, pitch, yaw, camX, camY, camZ);
+		RClassic_Float::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
 	}
 
 	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp)
