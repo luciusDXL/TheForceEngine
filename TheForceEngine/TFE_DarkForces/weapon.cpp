@@ -1171,6 +1171,12 @@ namespace TFE_DarkForces
 				x = floor16(mul16(xScale, intToFixed16(x))) + vfb_getWidescreenOffset();
 				y = floor16(mul16(yScale, intToFixed16(y)));
 
+				// Hack to handle the Dark Trooper rifle.
+				if (weapon->frames[0]->width == 169)
+				{
+					x += vfb_getWidescreenOffset();
+				}
+
 				if (atten && !s_weaponLight)
 				{
 					blitTextureToScreenLitScaled(tex, rect, x, y, xScale, yScale, atten, display, JTRUE);

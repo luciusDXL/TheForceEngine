@@ -8,6 +8,7 @@
 #include "weapon.h"
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
@@ -519,17 +520,53 @@ namespace TFE_DarkForces
 		}
 		else
 		{
+			TFE_Settings_Hud* hudSettings = TFE_Settings::getHudSettings();
+			
 			// HUD scaling.
 			fixed16_16 xScale = vfb_getXScale();
 			fixed16_16 yScale = vfb_getYScale();
+			fixed16_16 hudScaleX = xScale;
+			fixed16_16 hudScaleY = yScale;
+			u32 dispWidth, dispHeight;
+			vfb_getResolution(&dispWidth, &dispHeight);
 
-			s32 x0 = floor16(mul16(intToFixed16(260), xScale)) + vfb_getWidescreenOffset();
-			s32 x1 = vfb_getWidescreenOffset();
-			s32 y0 = floor16(mul16(intToFixed16(c_hudVertAnimTable[s_rightHudVertAnim]), yScale));
-			s32 y1 = floor16(mul16(intToFixed16(c_hudVertAnimTable[s_rightHudVertAnim]), yScale));
+			if (hudSettings->hudScale == TFE_HUDSCALE_SCALED)
+			{
+				hudScaleX = floatToFixed16(hudSettings->scale);
+				hudScaleY = floatToFixed16(hudSettings->scale);
+			}
+			else if (hudSettings->scale != 0)
+			{
+				hudScaleX = floatToFixed16(fixed16ToFloat(xScale) * hudSettings->scale);
+				hudScaleY = floatToFixed16(fixed16ToFloat(yScale) * hudSettings->scale);
+			}
 
-			hud_drawElementToScreenScaled(s_cachedHudRight, screenRect, x0, y0, xScale, yScale, framebuffer);
-			hud_drawElementToScreenScaled(s_cachedHudLeft,  screenRect, x1, y1, xScale, yScale, framebuffer);
+			s32 x0, x1;
+			if (hudSettings->hudPos == TFE_HUDPOS_4_3)
+			{
+				x0 = floor16(mul16(intToFixed16(260), xScale)) + vfb_getWidescreenOffset();
+				x1 = vfb_getWidescreenOffset();
+			}
+			else
+			{
+				x0 = dispWidth - floor16(mul16(intToFixed16(s_cachedHudRight->width - 1), hudScaleX));
+				x1 = 0;
+			}
+			x0 -= hudSettings->pixelOffset[0];
+			x1 += hudSettings->pixelOffset[0];
+
+			s32 y0 = floor16(yScale + mul16(intToFixed16(c_hudVertAnimTable[s_rightHudVertAnim]), yScale));
+			s32 y1 = floor16(yScale + mul16(intToFixed16(c_hudVertAnimTable[s_leftHudVertAnim]), yScale));
+			y0 += hudSettings->pixelOffset[1];
+			y1 += hudSettings->pixelOffset[1];
+
+			hud_drawElementToScreenScaled(s_cachedHudRight, screenRect, x0, y0, hudScaleX, hudScaleY, framebuffer);
+			hud_drawElementToScreenScaled(s_cachedHudLeft,  screenRect, x1, y1, hudScaleX, hudScaleY, framebuffer);
+
+			if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0)
+			{
+				// TODO: Draw the backend.
+			}
 		}
 	}
 
