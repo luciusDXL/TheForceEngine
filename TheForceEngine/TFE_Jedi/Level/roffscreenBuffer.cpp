@@ -20,6 +20,12 @@ namespace TFE_Jedi
 		return buffer;
 	}
 
+	void freeOffScreenBuffer(OffScreenBuffer* buffer)
+	{
+		game_free(buffer->image);
+		game_free(buffer);
+	}
+
 	void offscreenBuffer_clearImage(OffScreenBuffer* buffer, u8 clear_color)
 	{
 		memset(buffer->image, clear_color, buffer->size);

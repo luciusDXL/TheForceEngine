@@ -24,6 +24,7 @@ enum OffScreenBufferFlags
 namespace TFE_Jedi
 {
 	OffScreenBuffer* createOffScreenBuffer(s32 width, s32 height, u32 flags);
+	void freeOffScreenBuffer(OffScreenBuffer* buffer);
 	void offscreenBuffer_clearImage(OffScreenBuffer* buffer, u8 clear_color);
 
 	// Draw texture 'tex' to the offscreen buffer 'buffer' at position (x, y).

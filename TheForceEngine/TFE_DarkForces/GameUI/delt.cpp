@@ -2,6 +2,8 @@
 #include <TFE_Game/igame.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Jedi/Renderer/virtualFramebuffer.h>
+#include <TFE_Jedi/Renderer/screenDraw.h>
 
 namespace TFE_DarkForces
 {
@@ -167,6 +169,24 @@ namespace TFE_DarkForces
 			srcTexels += w;
 			output += 320;
 		}
+	}
+
+	void blitDeltaFrameScaled(DeltFrame* frame, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* framebuffer)
+	{
+		s32 x1 = x0 + floor16(mul16(intToFixed16(frame->texture.width - 1), xScale));
+		s32 y1 = y0 + floor16(mul16(intToFixed16(frame->texture.height- 1), yScale));
+
+		ScreenImage scrImage=
+		{
+			frame->texture.width,
+			frame->texture.height,
+			frame->texture.image,
+			JTRUE,
+			JFALSE
+		};
+
+		ScreenRect* rect = vfb_getScreenRect(VFB_RECT_UI);
+		blitTextureToScreenScaled(&scrImage, (DrawRect*)rect, x0, y0, xScale, yScale, framebuffer);
 	}
 
 	void loadDeltIntoFrame(DeltFrame* frame, const u8* buffer, u32 size)

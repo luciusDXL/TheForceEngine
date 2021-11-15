@@ -69,10 +69,17 @@ namespace TFE_DarkForces
 			s_escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_escMenuFrames);
 		}
 
-		// TODO: Use proper resolution.
+		u32 dispWidth, dispHeight;
+		vfb_getResolution(&dispWidth, &dispHeight);
+		if (s_framebufferCopy && (s_framebufferCopy->width != dispWidth || s_framebufferCopy->height != dispHeight))
+		{
+			freeOffScreenBuffer(s_framebufferCopy);
+			s_framebufferCopy = nullptr;
+		}
+
 		if (!s_framebufferCopy)
 		{
-			s_framebufferCopy = createOffScreenBuffer(320, 200, OBF_NONE);
+			s_framebufferCopy = createOffScreenBuffer(dispWidth, dispHeight, OBF_NONE);
 		}
 		memcpy(s_framebufferCopy->image, framebuffer, s_framebufferCopy->size);
 		s_framebuffer = framebuffer;
@@ -106,30 +113,67 @@ namespace TFE_DarkForces
 		
 		// Draw the screen capture.
 		ScreenRect* drawRect = vfb_getScreenRect(VFB_RECT_UI);
-		hud_drawElementToScreen(s_framebufferCopy, drawRect, 0, 0, s_framebuffer);
-		// Draw the menu background.
-		blitDeltaFrame(&s_escMenuFrames[0], 0, 0, s_framebuffer);
+		u32 dispWidth, dispHeight;
+		vfb_getResolution(&dispWidth, &dispHeight);
 
-		if (s_levelComplete)
+		if (dispWidth == 320 && dispHeight == 200)
 		{
-			if (s_buttonPressed == ESC_BTN_ABORT && s_buttonHover)
-			{
-				blitDeltaFrame(&s_escMenuFrames[3], 0, 0, s_framebuffer);
-			}
-			else
-			{
-				blitDeltaFrame(&s_escMenuFrames[4], 0, 0, s_framebuffer);
-			}
-		}
-		if ((s_buttonPressed > ESC_BTN_ABORT || (s_buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_buttonHover)
-		{
-			// Draw the highlight button
-			const s32 highlightIndices[] = { 1, 7, 9, 5 };
-			blitDeltaFrame(&s_escMenuFrames[highlightIndices[s_buttonPressed]], 0, 0, s_framebuffer);
-		}
+			hud_drawElementToScreen(s_framebufferCopy, drawRect, 0, 0, s_framebuffer);
+			// Draw the menu background.
+			blitDeltaFrame(&s_escMenuFrames[0], 0, 0, s_framebuffer);
 
-		// Draw the mouse.
-		blitDeltaFrame(&s_cursor, s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+			if (s_levelComplete)
+			{
+				if (s_buttonPressed == ESC_BTN_ABORT && s_buttonHover)
+				{
+					blitDeltaFrame(&s_escMenuFrames[3], 0, 0, s_framebuffer);
+				}
+				else
+				{
+					blitDeltaFrame(&s_escMenuFrames[4], 0, 0, s_framebuffer);
+				}
+			}
+			if ((s_buttonPressed > ESC_BTN_ABORT || (s_buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_buttonHover)
+			{
+				// Draw the highlight button
+				const s32 highlightIndices[] = { 1, 7, 9, 5 };
+				blitDeltaFrame(&s_escMenuFrames[highlightIndices[s_buttonPressed]], 0, 0, s_framebuffer);
+			}
+
+			// Draw the mouse.
+			blitDeltaFrame(&s_cursor, s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+		}
+		else
+		{
+			const fixed16_16 xScale = vfb_getXScale();
+			const fixed16_16 yScale = vfb_getYScale();
+			const s32 xOffset = vfb_getWidescreenOffset();
+
+			hud_drawElementToScreen(s_framebufferCopy, drawRect, 0, 0, s_framebuffer);
+			// Draw the menu background.
+			blitDeltaFrameScaled(&s_escMenuFrames[0], xOffset, 0, xScale, yScale, s_framebuffer);
+
+			if (s_levelComplete)
+			{
+				if (s_buttonPressed == ESC_BTN_ABORT && s_buttonHover)
+				{
+					blitDeltaFrameScaled(&s_escMenuFrames[3], xOffset, 0, xScale, yScale, s_framebuffer);
+				}
+				else
+				{
+					blitDeltaFrameScaled(&s_escMenuFrames[4], xOffset, 0, xScale, yScale, s_framebuffer);
+				}
+			}
+			if ((s_buttonPressed > ESC_BTN_ABORT || (s_buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_buttonHover)
+			{
+				// Draw the highlight button
+				const s32 highlightIndices[] = { 1, 7, 9, 5 };
+				blitDeltaFrameScaled(&s_escMenuFrames[highlightIndices[s_buttonPressed]], xOffset, 0, xScale, yScale, s_framebuffer);
+			}
+
+			// Draw the mouse.
+			blitDeltaFrameScaled(&s_cursor, s_cursorPos.x, s_cursorPos.z, xScale, yScale, s_framebuffer);
+		}
 		return action;
 	}
 
@@ -147,8 +191,15 @@ namespace TFE_DarkForces
 			s_escMenuOpen = JFALSE;
 		}
 
-		const s32 x = s_cursorPos.x;
-		const s32 z = s_cursorPos.z;
+		s32 x = s_cursorPos.x;
+		s32 z = s_cursorPos.z;
+
+		// Move into "UI space"
+		fixed16_16 xScale = vfb_getXScale();
+		fixed16_16 yScale = vfb_getYScale();
+		x = floor16(div16(intToFixed16(x - vfb_getWidescreenOffset()), xScale));
+		z = floor16(div16(intToFixed16(z), yScale));
+
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
 			s_buttonPressed = -1;

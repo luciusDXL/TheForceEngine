@@ -36,9 +36,10 @@ namespace TFE_Jedi
 
 		if (width == 320 && height == 200)
 		{
-			s_curFrameBuffer = s_frameBuffer320x200;
-			s_width  = width;
+			s_width = width;
 			s_height = height;
+
+			s_curFrameBuffer = s_frameBuffer320x200;
 			vfb_createVirtualDisplay(width, height);
 
 			s_xScale = ONE_16;
@@ -54,6 +55,7 @@ namespace TFE_Jedi
 			free(s_frameBuffer);
 			s_frameBuffer = (u8*)malloc(s_width * s_height);
 			s_curFrameBuffer = s_frameBuffer;
+			
 			vfb_createVirtualDisplay(width, height);
 
 			// Square or rectangular pixels?
@@ -82,6 +84,7 @@ namespace TFE_Jedi
 				s_widescreenOffset = (s_width - s_height*4/3) / 2;
 			}
 		}
+		memset(s_curFrameBuffer, 0, s_width * s_height);
 
 		s_screenRect[VFB_RECT_UI] =
 		{
@@ -98,6 +101,10 @@ namespace TFE_Jedi
 			s32(s_width) - 1,
 			s32(s_height) - 2,
 		};
+
+		// Avoid flashing the previous buffer when swapping.
+		vfb_swap();
+		vfb_swap();
 	}
 
 	void vfb_setPalette(const u32* palette)
