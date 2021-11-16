@@ -263,6 +263,7 @@ namespace TFE_Jedi
 		{
 			RSector* sector = &s_sectors[i];
 			sector_clear(sector);
+			sector->index = i;
 
 			// Sector ID and Name
 			line = parser.readLine(bufferPos);

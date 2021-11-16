@@ -173,6 +173,104 @@ namespace TFE_Jedi
 		return texture;
 	}
 
+	TextureData* bitmap_loadFromMemory(const u8* data, size_t size, u32 decompress)
+	{
+		TextureData* texture = (TextureData*)malloc(sizeof(TextureData));
+		const u8* fheader = data;
+		data += 3;
+
+		if (strncmp((char*)fheader, "BM ", 3))
+		{
+			TFE_System::logWrite(LOG_ERROR, "bitmap_load", "Load From Memory - invalid data.");
+			return nullptr;
+		}
+
+		u8 version = readByte(data);
+		if (version != DF_BM_VERSION)
+		{
+			TFE_System::logWrite(LOG_ERROR, "bitmap_load", "Load From Memory - invalid BM version '%u'.", version);
+			return nullptr;
+		}
+
+		texture->width = readShort(data);
+		texture->height = readShort(data);
+		texture->uvWidth = readShort(data);
+		texture->uvHeight = readShort(data);
+		texture->flags = readByte(data);
+		texture->logSizeY = readByte(data);
+		texture->compressed = readByte(data);
+		// value is ignored.
+		data++;
+
+		if (texture->compressed)
+		{
+			s32 inSize = readInt(data);
+			// values are ignored.
+			data += 12;
+
+			if (decompress & 1)
+			{
+				texture->dataSize = texture->width * texture->height;
+				texture->image = (u8*)malloc(texture->dataSize);
+
+				const u8* inBuffer = data;
+				data += inSize;
+
+				const u32* columns = (u32*)data;
+				data += sizeof(u32) * texture->width;
+
+				if (texture->compressed == 1)
+				{
+					u8* dst = texture->image;
+					for (s32 i = 0; i < texture->width; i++, dst += texture->height)
+					{
+						const u8* src = &inBuffer[columns[i]];
+						decompressColumn_Type1(src, dst, texture->height);
+					}
+				}
+				else if (texture->compressed == 2)
+				{
+					u8* dst = texture->image;
+					for (s32 i = 0; i < texture->width; i++, dst += texture->height)
+					{
+						const u8* src = &inBuffer[columns[i]];
+						decompressColumn_Type2(src, dst, texture->height);
+					}
+				}
+				texture->compressed = 0;
+				texture->columns = nullptr;
+			}
+			else
+			{
+				texture->dataSize = inSize;
+				texture->image = (u8*)malloc(texture->dataSize);
+				memcpy(texture->image, data, texture->dataSize);
+				data += texture->dataSize;
+
+				texture->columns = (u32*)malloc(texture->width * sizeof(u32));
+				memcpy(texture->columns, data, texture->width * sizeof(u32));
+				data += texture->width * sizeof(u32);
+			}
+		}
+		else
+		{
+			texture->dataSize = texture->width * max(1, texture->height);
+			// Datasize, ignored.
+			data += 4;
+			texture->columns = nullptr;
+
+			// Padding, ignored.
+			data += 12;
+
+			// Allocate and read the BM image.
+			texture->image = (u8*)malloc(texture->dataSize);
+			memcpy(texture->image, data, texture->dataSize);
+			data += texture->dataSize;
+		}
+
+		return texture;
+	}
+
 	void bitmap_setupAnimatedTexture(TextureData** texture)
 	{
 		TextureData* tex = *texture;

@@ -70,6 +70,7 @@ struct RSector
 {
 	RSector* self;
 	s32 id;
+	s32 index;				// 'index' was added for TFE to help with sector caching, since id is not necessarily match the index.
 	s32 prevDrawFrame;		// previous frame that this sector was drawn/updated.
 	s32 prevDrawFrame2;		// previous frame drawn (again...)
 

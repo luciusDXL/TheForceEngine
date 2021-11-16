@@ -38,6 +38,7 @@ namespace TFE_Paths
 	const char* getPath(TFE_PathType pathType);
 	bool hasPath(TFE_PathType pathType);
 	void appendPath(TFE_PathType pathType, const char* filename, char* path, size_t bufferLen = TFE_MAX_PATH);
+	void fixupPathAsDirectory(char* fullPath);
 
 	void clearSearchPaths();
 	void clearLocalArchives();

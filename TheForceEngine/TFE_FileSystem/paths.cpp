@@ -109,7 +109,7 @@ namespace TFE_Paths
 		snprintf(path, bufferLen, "%s%s", getPath(pathType), filename);
 	}
 
-	void fixupPath(char* fullPath)
+	void fixupPathAsDirectory(char* fullPath)
 	{
 		size_t len = strlen(fullPath);
 		// Fix-up slashes.
@@ -167,7 +167,7 @@ namespace TFE_Paths
 	{
 		char fullPath[TFE_MAX_PATH];
 		snprintf(fullPath, TFE_MAX_PATH, "%s%s", getPath(PATH_SOURCE_DATA), localSearchPath);
-		fixupPath(fullPath);
+		fixupPathAsDirectory(fullPath);
 
 		addSearchPath(fullPath);
 	}
@@ -176,7 +176,7 @@ namespace TFE_Paths
 	{
 		char fullPath[TFE_MAX_PATH];
 		strcpy(fullPath, absoluteSearchPath);
-		fixupPath(fullPath);
+		fixupPathAsDirectory(fullPath);
 
 		addSearchPath(fullPath);
 	}

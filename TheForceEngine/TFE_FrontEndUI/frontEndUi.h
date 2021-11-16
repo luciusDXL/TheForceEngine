@@ -44,5 +44,7 @@ namespace TFE_FrontEndUI
 	void logToConsole(const char* str);
 	bool uiControlsEnabled();
 
+	char* getSelectedMod();
+
 	void toggleProfilerView();
 }

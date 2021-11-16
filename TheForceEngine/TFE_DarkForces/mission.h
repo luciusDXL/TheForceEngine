@@ -10,6 +10,8 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Task/task.h>
 
+#define CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
+
 namespace TFE_DarkForces
 {
 	enum GameMissionMode

@@ -574,7 +574,21 @@ int main(int argc, char* argv[])
 		}
 		else if (appState != s_curState)
 		{
-			setAppState(appState, argc, argv);
+			char* selectedMod = TFE_FrontEndUI::getSelectedMod();
+			if (selectedMod && selectedMod[0] && appState == APP_STATE_GAME)
+			{
+				char* newArgs[16];
+				for (s32 i = 0; i < argc; i++)
+				{
+					newArgs[i] = argv[i];
+				}
+				newArgs[argc] = selectedMod;
+				setAppState(appState, argc + 1, newArgs);
+			}
+			else
+			{
+				setAppState(appState, argc, argv);
+			}
 		}
 
 		TFE_Ui::begin();

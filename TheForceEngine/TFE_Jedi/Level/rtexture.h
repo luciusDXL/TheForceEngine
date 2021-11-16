@@ -83,4 +83,7 @@ namespace TFE_Jedi
 	MemoryRegion* bitmap_getAllocator();
 	TextureData* bitmap_load(FilePath* filepath, u32 decompress);
 	void bitmap_setupAnimatedTexture(TextureData** texture);
+
+	// Used for tools.
+	TextureData* bitmap_loadFromMemory(const u8* data, size_t size, u32 decompress);
 }

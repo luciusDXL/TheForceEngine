@@ -36,8 +36,8 @@ namespace TFE_Jedi
 			SecObject* obj0 = *((SecObject**)r0);
 			SecObject* obj1 = *((SecObject**)r1);
 
-			const SectorCached* cached0 = &s_ctx->m_cachedSectors[obj0->sector->id];
-			const SectorCached* cached1 = &s_ctx->m_cachedSectors[obj1->sector->id];
+			const SectorCached* cached0 = &s_ctx->m_cachedSectors[obj0->sector->index];
+			const SectorCached* cached1 = &s_ctx->m_cachedSectors[obj1->sector->index];
 
 			if (obj0->type == OBJ_TYPE_3D && obj1->type == OBJ_TYPE_3D)
 			{
@@ -81,7 +81,7 @@ namespace TFE_Jedi
 			SecObject** obj = sector->objectList;
 			s32 count = sector->objectCount;
 
-			const SectorCached* cached = &s_ctx->m_cachedSectors[sector->id];
+			const SectorCached* cached = &s_ctx->m_cachedSectors[sector->index];
 
 			for (s32 i = count - 1; i >= 0 && drawCount < MAX_VIEW_OBJ_COUNT; i--, obj++)
 			{
@@ -233,7 +233,7 @@ namespace TFE_Jedi
 
 		s_wallMaxCeilY  = s_windowMinY_Pixels;
 		s_wallMinFloorY = s_windowMaxY_Pixels;
-		SectorCached* cachedSector = &m_cachedSectors[s_curSector->id];
+		SectorCached* cachedSector = &m_cachedSectors[s_curSector->index];
 
 		if (s_drawFrame != s_curSector->prevDrawFrame)
 		{

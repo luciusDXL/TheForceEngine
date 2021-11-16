@@ -34,7 +34,6 @@ using namespace TFE_Input;
 
 namespace TFE_DarkForces
 {
-#define CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
 	// Show the loading screen for at least 1 second.
 #define MIN_LOAD_TIME 145
 

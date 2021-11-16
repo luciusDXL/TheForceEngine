@@ -4,6 +4,7 @@
 #include <TFE_DarkForces/config.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
+#include <TFE_System/parser.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -11,6 +12,7 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Input/inputMapping.h>
+#include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_Ui/markdown.h>
 #include <TFE_Ui/imGUI/imgui.h>
@@ -35,6 +37,7 @@ namespace TFE_FrontEndUI
 		FEUI_MANUAL,
 		FEUI_CREDITS,
 		FEUI_CONFIG,
+		FEUI_MODS,
 		FEUI_COUNT
 	};
 
@@ -147,6 +150,7 @@ namespace TFE_FrontEndUI
 
 	static UiImage s_logoGpuImage;
 	static UiImage s_titleGpuImage;
+	static UiImage s_gradientImage;
 
 	static UiImage s_buttonNormal[7];
 	static UiImage s_buttonSelected[7];
@@ -162,6 +166,8 @@ namespace TFE_FrontEndUI
 	void pickCurrentResolution();
 	void manual();
 	void credits();
+	void readMods();
+	void modSelectionUI();
 
 	void menuItem_Start();
 	void menuItem_Manual();
@@ -215,6 +221,10 @@ namespace TFE_FrontEndUI
 		if (!loadGpuImage("UI_Images/TFE_TitleText.png", &s_titleGpuImage))
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE Title: \"UI_Images/TFE_TitleText.png\"");
+		}
+		if (!loadGpuImage("UI_Images/Gradient.png", &s_gradientImage))
+		{
+			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load TFE Title: \"UI_Images/Gradient.png\"");
 		}
 
 		bool buttonsLoaded = true;
@@ -515,6 +525,21 @@ namespace TFE_FrontEndUI
 				s_subUI = FEUI_NONE;
 			}
 			credits();
+			ImGui::End();
+		}
+		else if (s_subUI == FEUI_MODS)
+		{
+			bool active = true;
+			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+			ImGui::SetNextWindowSize(ImVec2(f32(w), f32(h)));
+
+			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+			ImGui::Begin("Mods", &active, window_flags);
+			if (ImGui::Button("Cancel") || !active)
+			{
+				s_subUI = FEUI_NONE;
+			}
+			modSelectionUI();
 			ImGui::End();
 		}
 		else if (s_subUI == FEUI_CONFIG)
@@ -1593,6 +1618,8 @@ namespace TFE_FrontEndUI
 
 	void menuItem_Mods()
 	{
+		s_subUI = FEUI_MODS;
+		readMods();
 	}
 
 	void menuItem_Editor()
@@ -1603,5 +1630,463 @@ namespace TFE_FrontEndUI
 	void menuItem_Exit()
 	{
 		s_appState = APP_STATE_QUIT;
+	}
+
+	struct EditorTexture
+	{
+		TextureGpu* texture = nullptr;
+		u32  width = 0;
+		u32  height = 0;
+		f32  rect[4];
+		Vec2f scale = { 1.0f, 1.0f };
+	};
+
+	struct ModData
+	{
+		std::vector<std::string> gobFiles;
+		std::string textFile;
+		std::string imageFile;
+		EditorTexture image;
+
+		std::string name;
+		std::string relativePath;
+		std::string text;
+	};
+	static std::vector<ModData> s_mods;
+
+	void fixupName(char* name)
+	{
+		size_t len = strlen(name);
+		name[0] = toupper(name[0]);
+		for (size_t i = 1; i < len; i++)
+		{
+			name[i] = tolower(name[i]);
+		}
+	}
+
+	static std::vector<char> s_fileBuffer;
+	static std::vector<u8> s_readBuffer[2];
+	static s32 s_selectedMod;
+
+	bool parseNameFromText(const char* textFileName, const char* path, char* name, std::string* fullText)
+	{
+		if (!textFileName || textFileName[0] == 0) { return false; }
+
+		char fullPath[TFE_MAX_PATH];
+		sprintf(fullPath, "%s%s", path, textFileName);
+
+		FileStream textFile;
+		if (!textFile.open(fullPath, FileStream::MODE_READ))
+		{
+			return false;
+		}
+		size_t textLen = textFile.getSize();
+		s_fileBuffer.resize(textLen);
+		textFile.readBuffer(s_fileBuffer.data(), textLen);
+		textFile.close();
+
+		*fullText = s_fileBuffer.data();
+
+		TFE_Parser parser;
+		parser.init(s_fileBuffer.data(), textLen);
+		// First pass - look for "Title" followed by ':'
+		size_t bufferPos = 0;
+		size_t titleLen = strlen("Title");
+		bool foundTitle = false;
+		while (!foundTitle)
+		{
+			const char* line = parser.readLine(bufferPos, true);
+			if (!line)
+			{
+				break;
+			}
+
+			if (strncasecmp("Title", line, titleLen) == 0)
+			{
+				size_t lineLen = strlen(line);
+				for (size_t c = titleLen + 1; c < lineLen; c++)
+				{
+					if (line[c] == ':' && line[c + 1] == ' ')
+					{
+						// Found it.
+						strcpy(name, &line[c + 2]);
+						foundTitle = true;
+						break;
+					}
+				}
+			}
+		}
+
+		if (foundTitle)
+		{
+			size_t titleLen = strlen(name);
+			size_t lastValid = 0;
+			for (size_t c = 0; c < titleLen; c++)
+			{
+				if (name[c] != ' ' && name[c] != '-')
+				{
+					lastValid = c;
+				}
+				if (name[c] == '-')
+				{
+					break;
+				}
+			}
+			if (lastValid > 0)
+			{
+				name[lastValid + 1] = 0;
+			}
+			return true;
+		}
+
+		return false;
+	}
+		
+	// Convert the source palette to 32-bit color.
+	bool convertPalette(const u8* srcPalette, u32* dstPalette)
+	{
+		const u8* srcColor = srcPalette;
+		for (s32 i = 0; i < 256; i++, dstPalette++, srcColor += 3)
+		{
+			*dstPalette = CONV_6bitTo8bit(srcColor[0]) | (CONV_6bitTo8bit(srcColor[1]) << 8u) | (CONV_6bitTo8bit(srcColor[2]) << 16u) | (0xffu << 24u);
+		}
+		return true;
+	}
+
+	static std::vector<u32> s_imageBuffer;
+
+	void convertDfTextureToTrueColor(const TextureData* src, const u32* palette, u32* image)
+	{
+		for (s32 y = 0; y < src->height; y++)
+		{
+			for (s32 x = 0; x < src->width; x++)
+			{
+				image[y*src->width + x] = palette[src->image[x*src->height + y]];
+			}
+		}
+	}
+
+	bool createTexture(const TextureData* src, const u32* palette, EditorTexture* tex)
+	{
+		if (!src || !tex) { return false; }
+		tex->scale = { 1.0f, 1.0f };
+
+		s_imageBuffer.resize(src->width * src->height);
+		u32* image = s_imageBuffer.data();
+		convertDfTextureToTrueColor(src, palette, image);
+
+		tex->texture = TFE_RenderBackend::createTexture(src->width, src->height, image);
+
+		tex->scale.x = 1.0f;
+		tex->scale.z = 1.0f;
+		tex->rect[0] = 0.0f;
+		tex->rect[1] = 0.0f;
+		tex->rect[2] = 0.0f;
+		tex->rect[3] = 0.0f;
+		return true;
+	}
+
+	char s_selectedModCmd[TFE_MAX_PATH] = "";
+
+	char* getSelectedMod()
+	{
+		return s_selectedModCmd;
+	}
+
+	void readMods()
+	{
+		s_mods.clear();
+		s_selectedMod = -1;
+		s_selectedModCmd[0] = 0;
+
+		// There are 3 possible mod directory locations:
+		// In the TFE directory,
+		// In the original source data.
+		// In ProgramData/
+		char sourceDataModDir[TFE_MAX_PATH];
+		snprintf(sourceDataModDir, TFE_MAX_PATH, "%sMods/", TFE_Paths::getPath(PATH_SOURCE_DATA));
+		TFE_Paths::fixupPathAsDirectory(sourceDataModDir);
+
+		// Add Mods/ paths to the program data directory and local executable directory.
+		// Note only directories that exist are actually added.
+		const char* programData = TFE_Paths::getPath(PATH_PROGRAM_DATA);
+		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+
+		char programDataModDir[TFE_MAX_PATH];
+		sprintf(programDataModDir, "%sMods/", programData);
+		TFE_Paths::fixupPathAsDirectory(programDataModDir);
+
+		char programDirModDir[TFE_MAX_PATH];
+		sprintf(programDirModDir, "%sMods/", programDir);
+		TFE_Paths::fixupPathAsDirectory(programDirModDir);
+
+		s32 modPathCount = 0;
+		char modPaths[3][TFE_MAX_PATH];
+		if (FileUtil::directoryExits(sourceDataModDir))
+		{
+			strcpy(modPaths[modPathCount], sourceDataModDir);
+			modPathCount++;
+		}
+		if (FileUtil::directoryExits(programDataModDir))
+		{
+			strcpy(modPaths[modPathCount], programDataModDir);
+			modPathCount++;
+		}
+		if (FileUtil::directoryExits(programDirModDir))
+		{
+			strcpy(modPaths[modPathCount], programDirModDir);
+			modPathCount++;
+		}
+
+		if (!modPathCount)
+		{
+			return;
+		}
+				
+		FileList gobFiles, txtFiles, imgFiles;
+		FileList dirList;
+		for (s32 i = 0; i < modPathCount; i++)
+		{
+			dirList.clear();
+			FileUtil::readSubdirectories(modPaths[i], dirList);
+			if (dirList.empty()) { continue; }
+
+			const size_t count = dirList.size();
+			const std::string* dir = dirList.data();
+			for (size_t d = 0; d < count; d++)
+			{
+				// TODO: Deal with possible duplicates.
+
+				// Clear doesn't deallocate in most implementations, so doing it this way should reduce memory allocations.
+				gobFiles.clear();
+				txtFiles.clear();
+				imgFiles.clear();
+					
+				const char* subDir = dir[d].c_str();
+				FileUtil::readDirectory(subDir, "gob", gobFiles);
+				FileUtil::readDirectory(subDir, "txt", txtFiles);
+				FileUtil::readDirectory(subDir, "jpg", imgFiles);
+
+				// No gob files = no mod.
+				if (gobFiles.empty())
+				{
+					continue;
+				}
+				s_mods.push_back({});
+				ModData& mod = s_mods.back();
+
+				mod.gobFiles  = gobFiles;
+				mod.textFile  = txtFiles.empty() ? "" : txtFiles[0];
+				mod.imageFile = imgFiles.empty() ? "" : imgFiles[0];
+
+				const char* fullDir = dir[d].c_str();
+				size_t fullDirLen = strlen(fullDir);
+				for (size_t i = 0; i < fullDirLen; i++)
+				{
+					if (strncasecmp("Mods", &fullDir[i], 4) == 0)
+					{
+						mod.relativePath = &fullDir[i + 5];
+						break;
+					}
+				}
+
+				//if (mod.imageFile.empty())
+				{
+					// Extract a "poster", if possible, from the GOB file.
+					// And then save it as a JPG in /ProgramData/TheForceEngine/ModPosters/NAME.jpg
+					char modPath[TFE_MAX_PATH], srcPath[TFE_MAX_PATH], srcPathTex[TFE_MAX_PATH];
+					sprintf(modPath, "%s%s", dir[d].c_str(), mod.gobFiles[0].c_str());
+					sprintf(srcPath, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
+					sprintf(srcPathTex, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "TEXTURES.GOB");
+
+					mod.gobFiles[0];
+					Archive* archiveMod  = Archive::getArchive(ARCHIVE_GOB, mod.gobFiles[0].c_str(), modPath);
+					Archive* archiveTex  = Archive::getArchive(ARCHIVE_GOB, "TEXTURES.GOB", srcPathTex);
+					Archive* archiveBase = Archive::getArchive(ARCHIVE_GOB, "DARK.GOB", srcPath);
+
+					s_readBuffer[0].clear();
+					s_readBuffer[1].clear();
+					if (archiveMod || archiveBase)
+					{
+						if (archiveMod->openFile("wait.bm"))
+						{
+							s_readBuffer[0].resize(archiveMod->getFileLength());
+							archiveMod->readFile(s_readBuffer[0].data(), archiveMod->getFileLength());
+							archiveMod->closeFile();
+						}
+						else if (archiveTex->openFile("wait.bm"))
+						{
+							s_readBuffer[0].resize(archiveTex->getFileLength());
+							archiveTex->readFile(s_readBuffer[0].data(), archiveTex->getFileLength());
+							archiveTex->closeFile();
+						}
+
+						if (archiveMod->openFile("wait.pal"))
+						{
+							s_readBuffer[1].resize(archiveMod->getFileLength());
+							archiveMod->readFile(s_readBuffer[1].data(), archiveMod->getFileLength());
+							archiveMod->closeFile();
+						}
+						else if (archiveBase->openFile("wait.pal"))
+						{
+							s_readBuffer[1].resize(archiveBase->getFileLength());
+							archiveBase->readFile(s_readBuffer[1].data(), archiveBase->getFileLength());
+							archiveBase->closeFile();
+						}
+					}
+
+					if (!s_readBuffer[0].empty() && !s_readBuffer[1].empty())
+					{
+						TextureData* imageData = bitmap_loadFromMemory(s_readBuffer[0].data(), s_readBuffer[0].size(), 1);
+						u32 palette[256];
+						convertPalette(s_readBuffer[1].data(), palette);
+						createTexture(imageData, palette, &mod.image);
+					}
+				}
+
+				char name[TFE_MAX_PATH];
+				if (mod.gobFiles.size() > 1)
+				{
+					size_t len = dir[d].length();
+					const char* dirStr = dir[d].c_str();
+					// find the last slash.
+					size_t lastSlash = 0;
+					for (size_t c = 0; c < len; c++)
+					{
+						if (c < len - 1 && (dirStr[c] == '/' || dirStr[c] == '\\'))
+						{
+							lastSlash = c;
+						}
+					}
+
+					sprintf(name, "Group: %s", lastSlash ? &dirStr[lastSlash + 1] : dirStr);
+					len = strlen(name);
+					if (name[len - 1] == '/' || name[len - 1] == '\\')
+					{
+						name[len - 1] = 0;
+					}
+					fixupName(name);
+				}
+				else if (!parseNameFromText(mod.textFile.c_str(), dir[d].c_str(), name, &mod.text))
+				{
+					const char* gobFileName = mod.gobFiles[0].c_str();
+					memcpy(name, gobFileName, strlen(gobFileName) - 4);
+					name[strlen(gobFileName) - 4] = 0;
+					fixupName(name);
+				}
+
+				mod.name = name;
+			}
+		}
+	}
+
+	void modSelectionUI()
+	{
+		s_selectedModCmd[0] = 0;
+		if (s_mods.empty()) { return; }
+		
+		ImGui::Separator();
+
+		DisplayInfo dispInfo;
+		TFE_RenderBackend::getDisplayInfo(&dispInfo);
+		s32 columns = max(1, (dispInfo.width - 16) / 268);
+		
+		s32 y = ImGui::GetCursorPosY();
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		for (size_t i = 0; i < s_mods.size();)
+		{
+			for (s32 x = 0; x < columns && i < s_mods.size(); x++, i++)
+			{
+				char label[32];
+				sprintf(label, "###%d", i);
+				ImGui::SetCursorPos(ImVec2(x * 268 + 16, y));
+				ImGui::InvisibleButton(label, ImVec2(256, 192));
+				if (ImGui::IsItemClicked() && s_selectedMod < 0)
+				{
+					s_selectedMod = i;
+					TFE_System::logWrite(LOG_MSG, "Mods", "Selected Mod = %d", i);
+				}
+
+				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+				{
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16-2, y-2), ImVec2(x * 268 + 16 + 256+2, y + 192+2), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(s_gradientImage.image, ImVec2(x * 268 + 16 - 2, y - 2), ImVec2(x * 268 + 16 + 256 + 2, y + 192 + 2), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0x40ffb080, 8.0f, ImDrawCornerFlags_All);
+				}
+				else
+				{
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16, y), ImVec2(x * 268 + 16 + 256, y + 192), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+				}
+									
+				ImGui::SetCursorPos(ImVec2(x * 268 + 20, y + 192));
+				ImGui::LabelText("###Label", s_mods[i].name.c_str());
+			}
+			y += 232;
+		}
+
+		if (s_selectedMod >= 0)
+		{
+			bool open = true;
+			s32 infoWidth = dispInfo.width - 120;
+			s32 infoHeight = dispInfo.height - 120;
+
+			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+			ImGui::SetCursorPos(ImVec2(10, 10));
+			ImGui::Begin("Mod Info", &open, ImVec2(infoWidth, infoHeight), 1.0f, window_flags);
+				ImDrawList* drawList = ImGui::GetWindowDrawList();
+				ImVec2 cursor = ImGui::GetCursorPos();
+				drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[s_selectedMod].image.texture), ImVec2(cursor.x+64, cursor.y+64), ImVec2(cursor.x+320+64, cursor.y+200+64), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+
+				ImGui::PushFont(s_dialogFont);
+				ImGui::SetCursorPosX(cursor.x + 320 + 70);
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.9f, 1.0f, 1.0f));
+				ImGui::LabelText("###", s_mods[s_selectedMod].name.c_str());
+				ImGui::PopStyleColor();
+
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
+				ImGui::SetCursorPos(ImVec2(cursor.x + 10, cursor.y + 220));
+				ImGui::Text("Game: Dark Forces");
+				ImGui::SetCursorPosX(cursor.x + 10);
+				ImGui::Text("Type: Vanilla Compatible");
+				ImGui::PopStyleColor();
+				
+				ImGui::SetCursorPos(ImVec2(cursor.x + 90, cursor.y + 320));
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+				if (ImGui::Button("PLAY", ImVec2(128, 32)))
+				{
+					sprintf(s_selectedModCmd, "-u%s%s", s_mods[s_selectedMod].relativePath.c_str(), s_mods[s_selectedMod].gobFiles[0].c_str());
+					s_appState = APP_STATE_GAME;
+					s_subUI = FEUI_NONE;
+					open = false;
+				}
+				ImGui::PopStyleColor(3);
+
+				ImGui::SetCursorPos(ImVec2(cursor.x + 90, cursor.y + 360));
+				if (ImGui::Button("CANCEL", ImVec2(128, 32)))
+				{
+					open = false;
+				}
+
+				ImGui::PopFont();
+
+				ImGui::SetCursorPos(ImVec2(cursor.x + 320 + 8, cursor.y + 30));
+				ImGui::BeginChild("###Mod Info Text", ImVec2(infoWidth-344, infoHeight-68), true, ImGuiWindowFlags_NoBringToFrontOnFocus);
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
+				ImGui::TextWrapped(s_mods[s_selectedMod].text.c_str());
+				ImGui::PopStyleColor();
+				ImGui::EndChild();
+
+				if (!ImGui::IsRootWindowOrAnyChildFocused())
+				{
+					open = false;
+				}
+			ImGui::End();
+
+			if (!open)
+			{
+				s_selectedMod = -1;
+			}
+		}
 	}
 }
