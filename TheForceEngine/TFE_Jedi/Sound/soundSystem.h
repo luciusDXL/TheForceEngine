@@ -19,6 +19,7 @@ typedef s32 SoundSourceID;
 namespace TFE_Jedi
 {
 	void sound_stopAll();
+	void sound_freeAll();
 
 	// Play a one-shot 2D sound effect from a Sound Source.
 	SoundEffectID playSound2D(SoundSourceID soundId);

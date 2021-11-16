@@ -35,6 +35,7 @@ enum TFE_SubRenderer
 
 namespace TFE_Jedi
 {
+	void renderer_resetState();
 	void renderer_init();
 	void renderer_destroy();
 	void renderer_reset();

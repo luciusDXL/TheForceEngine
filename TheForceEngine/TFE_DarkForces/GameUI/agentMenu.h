@@ -11,4 +11,7 @@ namespace TFE_DarkForces
 	// Return True if the menu is still running.
 	// levelIndex will hold the selected level index (1 - 14).
 	JBool agentMenu_update(s32* levelIndex);
+
+	// Reset Presistent State.
+	void agentMenu_resetState();
 }

@@ -26,4 +26,7 @@ namespace TFE_DarkForces
 	// Returns ESC_CONTINUE if the menu is still running,
 	// otherwise the menu has been closed.
 	EscapeMenuAction escapeMenu_update();
+
+	// Reset Persistent state
+	void escapeMenu_resetState();
 }

@@ -40,6 +40,14 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////
 	// Implementation
 	/////////////////////////////////////////////
+	void renderer_resetState()
+	{
+		RClassic_Fixed::resetState();
+		RClassic_Float::resetState();
+		s_sectorId = -1;
+		s_sectorRenderer = nullptr;
+	}
+
 	void renderer_init()
 	{
 		if (s_init) { return; }
@@ -260,6 +268,13 @@ namespace TFE_Jedi
 
 	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp)
 	{
+		if (!s_sectorRenderer)
+		{
+			TFE_SubRenderer subRenderer = s_subRenderer;
+			s_subRenderer = TSR_INVALID;
+			setSubRenderer(subRenderer);
+		}
+
 		// Clear the top pixel row.
 		memset(display, 0, s_width);
 		memset(display + (s_height - 1) * s_width, 0, s_width);

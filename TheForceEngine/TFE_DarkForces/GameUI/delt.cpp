@@ -30,6 +30,12 @@ namespace TFE_DarkForces
 
 	void loadDeltIntoFrame(DeltFrame* frame, const u8* buffer, u32 size);
 
+	void delt_resetState()
+	{
+		s_buffer = nullptr;
+		s_bufferSize = 0;
+	}
+
 	u8* getTempBuffer(size_t size)
 	{
 		if (size > s_bufferSize)

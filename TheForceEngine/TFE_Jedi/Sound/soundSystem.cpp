@@ -22,6 +22,12 @@ namespace TFE_Jedi
 		stopAllSounds();
 		memset(s_slotID, 0, sizeof(s32)*MAX_SOUND_SOURCES);
 	}
+
+	void sound_freeAll()
+	{
+		sound_stopAll();
+		TFE_VocAsset::freeAll();
+	}
 	
 	SoundEffectID playSound2D(SoundSourceID sourceId)
 	{

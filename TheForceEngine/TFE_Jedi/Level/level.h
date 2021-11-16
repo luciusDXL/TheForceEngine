@@ -38,6 +38,7 @@ namespace TFE_Jedi
 {
 	JBool level_load(const char* levelName, u8 difficulty);
 	void  level_clearData();
+	void  level_freeAllAssets();
 
 	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector);
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1);

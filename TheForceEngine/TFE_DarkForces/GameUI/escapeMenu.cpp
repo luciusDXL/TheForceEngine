@@ -55,6 +55,14 @@ namespace TFE_DarkForces
 	extern void pauseLevelSound();
 	extern void resumeLevelSound();
 
+	void escapeMenu_resetState()
+	{
+		s_escMenuFrames = nullptr;
+		s_framebufferCopy = nullptr;
+		s_framebuffer = nullptr;
+		s_escMenuOpen = JFALSE;
+	}
+
 	void escapeMenu_open(u8* framebuffer, u8* palette)
 	{
 		pauseLevelSound();

@@ -100,6 +100,16 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
+	void agentMenu_resetState()
+	{
+		s_loaded = JFALSE;
+		s_displayInit = JFALSE;
+		s_agentMenuFrames = nullptr;
+		s_agentDlgFrames = nullptr;
+		s_framebuffer = nullptr;
+		delt_resetState();
+	}
+
 	JBool agentMenu_update(s32* levelIndex)
 	{
 		if (!s_loaded)
@@ -294,7 +304,7 @@ namespace TFE_DarkForces
 	{
 		memset(s_framebuffer, 0, 320 * 200);
 		blitDeltaFrame(&s_agentMenuFrames[0], 0, 0, s_framebuffer);
-
+		
 		// Draw the buttons
 		for (s32 i = 0; i < 4; i++)
 		{

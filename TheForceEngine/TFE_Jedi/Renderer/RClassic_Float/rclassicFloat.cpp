@@ -195,6 +195,12 @@ namespace RClassic_Float
 		s_oneOverWidthFract = 1.0f / widthFract;
 	}
 
+	void resetState()
+	{
+		s_rcfltState.depth1d_all = nullptr;
+		s_rcfltState.skyTable = nullptr;
+	}
+
 	void buildProjectionTables(s32 xc, s32 yc, s32 w, s32 h)
 	{
 		s32 halfHeight = h >> 1;

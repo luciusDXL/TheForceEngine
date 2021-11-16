@@ -567,13 +567,23 @@ int main(int argc, char* argv[])
 		TFE_Input::setMousePos(mouseAbsX, mouseAbsY);
 		inputMapping_updateInput();
 
-		const AppState appState = TFE_FrontEndUI::update();
+		AppState appState = TFE_FrontEndUI::update();
 		if (appState == APP_STATE_QUIT)
 		{
 			s_loop = false;
 		}
 		else if (appState != s_curState)
 		{
+			if (appState == APP_STATE_EXIT_TO_MENU)	// Return to the menu from the game.
+			{
+				if (s_curGame)
+				{
+					freeGame(s_curGame);
+					s_curGame = nullptr;
+				}
+				appState = APP_STATE_MENU;
+			}
+
 			char* selectedMod = TFE_FrontEndUI::getSelectedMod();
 			if (selectedMod && selectedMod[0] && appState == APP_STATE_GAME)
 			{

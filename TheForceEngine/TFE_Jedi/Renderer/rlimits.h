@@ -1,6 +1,10 @@
 #pragma once
 #include <TFE_System/types.h>
 
+// TODO: Add an option to increase these limits, particularly
+// MAX_ADJOIN_SEG (tested up to 384) and
+// MAX_ADJOIN_DEPTH (tested up to 256).
+
 namespace TFE_Jedi
 {
 	#define MAX_DRAWN_SPRITE_STORE 32 // Maximum number of drawn sprites stored for future reference (like autoaim).

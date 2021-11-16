@@ -9,6 +9,7 @@ namespace TFE_Jedi
 
 	namespace RClassic_Float
 	{
+		void resetState();
 		void setupInitCameraAndLights(s32 width, s32 height);
 		void changeResolution(s32 width, s32 height);
 

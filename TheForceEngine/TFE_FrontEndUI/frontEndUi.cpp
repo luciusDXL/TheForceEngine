@@ -268,7 +268,12 @@ namespace TFE_FrontEndUI
 
 	AppState update()
 	{
-		return s_appState;
+		AppState state = s_appState;
+		if (state == APP_STATE_EXIT_TO_MENU)
+		{
+			s_appState = APP_STATE_MENU;
+		}
+		return state;
 	}
 
 	void setAppState(AppState state)
@@ -609,7 +614,7 @@ namespace TFE_FrontEndUI
 				s_menuRetState = APP_STATE_MENU;
 
 				s_subUI = FEUI_NONE;
-				s_appState = APP_STATE_MENU;
+				s_appState = APP_STATE_EXIT_TO_MENU;
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 

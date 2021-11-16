@@ -78,6 +78,7 @@ namespace TFE_DarkForces
 		WFIRETYPE_SECONDARY = JTRUE,	// Secondary fire.
 	};
 
+	void weapon_resetState();
 	void weapon_startup();
 	void weapon_enableAutomount(JBool enable);
 	void weapon_setNext(s32 wpnIndex);

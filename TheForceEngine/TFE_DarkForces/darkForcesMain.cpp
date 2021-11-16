@@ -10,6 +10,7 @@
 #include "time.h"
 #include "weapon.h"
 #include "GameUI/agentMenu.h"
+#include "GameUI/escapeMenu.h"
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>
@@ -20,6 +21,7 @@
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Jedi/Level/rfont.h>
+#include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
@@ -167,6 +169,8 @@ namespace TFE_DarkForces
 
 	void DarkForces::exitGame()
 	{
+		disableLevelMusic();
+
 		s_localMessages.count = 0;
 		s_localMessages.msgList = nullptr;
 		s_hotKeyMessages.count = 0;
@@ -181,6 +185,19 @@ namespace TFE_DarkForces
 		config_shutdown();
 
 		// TFE Specific
+		// Reset state
+		s_state = GSTATE_STARTUP_CUTSCENES;
+		s_localMsgLoaded = JFALSE;
+		s_hudModeStd = JTRUE;
+		s_screenShotSndSrc = NULL_SOUND;
+		s_loadMissionTask = nullptr;
+		weapon_resetState();
+		renderer_resetState();
+		sound_freeAll();
+		level_freeAllAssets();
+		agentMenu_resetState();
+		escapeMenu_resetState();
+		// Free debug data
 		actorDebug_free();
 	}
 

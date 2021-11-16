@@ -15,6 +15,8 @@ namespace TFE_DarkForces
 		s16 offsetY;
 	};
 
+	void delt_resetState();
+
 	u8* getTempBuffer(size_t size);
 	JBool loadPaletteFromPltt(const char* name, u8* palette);
 	u32 getFramesFromAnim(const char* name, DeltFrame** outFrames);

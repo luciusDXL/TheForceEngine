@@ -169,6 +169,21 @@ namespace RClassic_Fixed
 		}
 	}
 
+	void resetState()
+	{
+		s_rcfState.depth1d_all = nullptr;
+		s_rcfState.skyTable = nullptr;
+		s_rcfState.column_Z_Over_X = nullptr;
+		s_rcfState.column_X_Over_Z = nullptr;
+		s_rcfState.rcpY = nullptr;
+
+		// Shared state
+		s_columnTop = nullptr;
+		s_columnBot = nullptr;
+		s_windowTop_all = nullptr;
+		s_windowBot_all = nullptr;
+	}
+
 	void buildProjectionTables(s32 xc, s32 yc, s32 w, s32 h)
 	{
 		s32 halfHeight = h >> 1;

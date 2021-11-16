@@ -9,6 +9,7 @@ namespace TFE_Jedi
 
 	namespace RClassic_Fixed
 	{
+		void resetState();
 		void setupInitCameraAndLights();
 		void changeResolution(s32 width, s32 height);
 

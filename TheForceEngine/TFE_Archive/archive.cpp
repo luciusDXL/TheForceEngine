@@ -37,7 +37,7 @@ ArchiveType Archive::getArchiveTypeFromName(const char* path)
 
 Archive* Archive::getArchive(ArchiveType type, const char* name, const char* path)
 {
-	ArchiveMap::iterator iArchive = s_archives[type].find(name);
+	ArchiveMap::iterator iArchive = s_archives[type].find(path);
 	if (iArchive != s_archives[type].end())
 	{
 		return iArchive->second;
@@ -80,7 +80,7 @@ Archive* Archive::getArchive(ArchiveType type, const char* name, const char* pat
 		strcpy(archive->m_name, name);
 		archive->open(path);
 		archive->m_type = type;
-		(s_archives[type])[name] = archive;
+		(s_archives[type])[path] = archive;
 	}
 	return archive;
 }

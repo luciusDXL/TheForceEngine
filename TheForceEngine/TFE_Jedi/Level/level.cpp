@@ -558,6 +558,12 @@ namespace TFE_Jedi
 
 		return true;
 	}
+
+	void level_freeAllAssets()
+	{
+		TFE_Sprite_Jedi::freeAll();
+		TFE_Model_Jedi::freeAll();
+	}
 					
 	JBool level_loadObjects(const char* levelName, u8 difficulty)
 	{

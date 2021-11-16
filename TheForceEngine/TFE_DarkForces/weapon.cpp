@@ -41,7 +41,7 @@ namespace TFE_DarkForces
 	s32 s_canFireWeaponSec;
 	s32 s_canFireWeaponPrim;
 	u32 s_fireFrame = 0;
-
+		
 	SoundSourceID s_punchSwingSndSrc;
 	SoundSourceID s_pistolSndSrc;
 	SoundSourceID s_pistolEmptySndSrc;
@@ -100,6 +100,25 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
+	void weapon_resetState()
+	{
+		s_weaponTexturesLoaded = JFALSE;
+		s_switchWeapons = JFALSE;
+		s_queWeaponSwitch = JFALSE;
+
+		s_rhand1 = nullptr;
+		s_gasmaskTexture = nullptr;
+
+		s_weaponAutoMount2 = JFALSE;
+		s_secondaryFire = JFALSE;
+		s_weaponOffAnim = JFALSE;
+		s_isShooting = JFALSE;
+
+		s_fireFrame = 0;
+		s_curPlayerWeapon = nullptr;
+		s_playerWeaponTask = nullptr;
+	}
+
 	void weapon_startup()
 	{
 		// TODO: Move this into data instead of hard coding it like vanilla Dark Forces.
