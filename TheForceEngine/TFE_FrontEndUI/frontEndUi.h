@@ -38,7 +38,6 @@ namespace TFE_FrontEndUI
 	bool toggleConsole();
 
 	bool shouldClearScreen();
-	bool restartGame();
 
 	bool isConfigMenuOpen();
 	bool isConsoleOpen();

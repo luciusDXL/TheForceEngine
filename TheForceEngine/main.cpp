@@ -339,14 +339,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 				}
 				else
 				{
-					//renderer->changeResolution(config->gameResolution.x, config->gameResolution.z, TFE_Settings::getGraphicsSettings()->widescreen, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, TFE_Settings::getGraphicsSettings()->gpuColorConvert);
-					//renderer->enableScreenClear(false);
 					TFE_Input::enableRelativeMode(true);
-					if (TFE_FrontEndUI::restartGame())
-					{
-						// TFE_GameMain::init(renderer);
-						// TFE_GameUi::updateUiResolution();
-					}
 				}
 			}
 		}

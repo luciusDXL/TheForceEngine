@@ -146,7 +146,6 @@ namespace TFE_FrontEndUI
 
 	static bool s_consoleActive = false;
 	static bool s_relativeMode;
-	static bool s_restartGame;
 
 	static UiImage s_logoGpuImage;
 	static UiImage s_titleGpuImage;
@@ -206,7 +205,6 @@ namespace TFE_FrontEndUI
 		s_menuRetState = APP_STATE_MENU;
 		s_subUI = FEUI_NONE;
 		s_relativeMode = false;
-		s_restartGame = true;
 
 		ImGuiIO& io = ImGui::GetIO();
 		s_menuFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 32);
@@ -302,8 +300,6 @@ namespace TFE_FrontEndUI
 
 	AppState menuReturn()
 	{
-		s_restartGame = s_menuRetState == APP_STATE_MENU;
-
 		s_subUI = FEUI_NONE;
 		s_appState = s_menuRetState;
 		TFE_Settings::writeToDisk();
@@ -311,11 +307,6 @@ namespace TFE_FrontEndUI
 		inputMapping_serialize();
 
 		return s_appState;
-	}
-
-	bool restartGame()
-	{
-		return s_restartGame;
 	}
 
 	bool shouldClearScreen()
@@ -600,8 +591,6 @@ namespace TFE_FrontEndUI
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
-				s_restartGame = (s_menuRetState == APP_STATE_MENU);
-
 				s_subUI = FEUI_NONE;
 				s_appState = s_menuRetState;
 				TFE_Settings::writeToDisk();
@@ -610,7 +599,6 @@ namespace TFE_FrontEndUI
 			}
 			if (s_menuRetState != APP_STATE_MENU && ImGui::Button("Exit to Menu", sideBarButtonSize))
 			{
-				s_restartGame = true;
 				s_menuRetState = APP_STATE_MENU;
 
 				s_subUI = FEUI_NONE;
