@@ -304,6 +304,8 @@ namespace TFE_DarkForces
 	{
 		if (task_getCount() > 1 && s_missionMode == MISSION_MODE_MAIN)
 		{
+			TFE_Jedi::render_setResolution();
+
 			s_framebuffer = vfb_getCpuBuffer();
 			updateScreensize();
 			drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);

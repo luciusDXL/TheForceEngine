@@ -1537,7 +1537,6 @@ namespace TFE_FrontEndUI
 
 		if (s_menuRetState != APP_STATE_MENU)
 		{
-			TFE_Jedi::render_setResolution();
 			TFE_DarkForces::mission_render();
 		}
 	}
