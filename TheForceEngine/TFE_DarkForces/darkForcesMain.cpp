@@ -9,6 +9,7 @@
 #include "projectile.h"
 #include "time.h"
 #include "weapon.h"
+#include "vueLogic.h"
 #include "GameUI/agentMenu.h"
 #include "GameUI/escapeMenu.h"
 #include <TFE_DarkForces/Actor/actor.h>
@@ -197,6 +198,7 @@ namespace TFE_DarkForces
 		level_freeAllAssets();
 		agentMenu_resetState();
 		escapeMenu_resetState();
+		vue_resetState();
 		// Free debug data
 		actorDebug_free();
 	}
@@ -549,6 +551,7 @@ namespace TFE_DarkForces
 	void loadMapNumFont()
 	{
 		FilePath filePath;
+		s_mapNumFont = nullptr;
 		if (TFE_Paths::getFilePath("map-nums.fnt", &filePath))
 		{
 			s_mapNumFont = font_load(&filePath);

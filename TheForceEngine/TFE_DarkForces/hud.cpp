@@ -158,6 +158,7 @@ namespace TFE_DarkForces
 			parseMessageFile(&s_hudMessages, &filePath, 1);
 		}
 		s_hudMessage[0] = 0;
+		s_hudFont = nullptr;
 		if (TFE_Paths::getFilePath("glowing.fnt", &filePath))
 		{
 			s_hudFont = font_load(&filePath);

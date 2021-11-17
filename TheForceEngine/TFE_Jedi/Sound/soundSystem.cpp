@@ -21,6 +21,7 @@ namespace TFE_Jedi
 	{
 		stopAllSounds();
 		memset(s_slotID, 0, sizeof(s32)*MAX_SOUND_SOURCES);
+		memset(s_slotMapping, 0, sizeof(SoundSource*)*MAX_SOUND_SOURCES);
 	}
 
 	void sound_freeAll()

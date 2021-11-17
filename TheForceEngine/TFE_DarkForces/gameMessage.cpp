@@ -11,7 +11,6 @@ namespace TFE_DarkForces
 
 	void gameMessage_freeBuffer()
 	{
-		game_free(s_buffer);
 		s_buffer = nullptr;
 	}
 

@@ -48,6 +48,7 @@ namespace TFE_DarkForces
 		s_hitEffects = nullptr;
 		s_hitEffectTask = nullptr;
 		s_curEffectData = nullptr;
+		s_genExplosion = nullptr;
 	}
 
 	void hitEffect_startup()

@@ -629,7 +629,8 @@ namespace TFE_Model_Jedi
 				}
 
 				nextLine = true;
-				for (s32 v = 0; v < texVertexCount; v++)
+				// Keep reading until the format no longer matches...
+				for (s32 v = 0; ; v++)
 				{
 					buffer = parser.readLine(bufferPos, true);
 					if (!buffer) { return false; }
@@ -659,7 +660,9 @@ namespace TFE_Model_Jedi
 				}
 				nextLine = true;
 
-				if (sscanf(buffer, "TEXTURE TRIANGLES %d", &triangleCount) == 1)
+				s32 texTriangleCount;
+				s32 texQuadCount;
+				if (sscanf(buffer, "TEXTURE TRIANGLES %d", &texTriangleCount) == 1)
 				{
 					Polygon* polygon = &model->polygons[basePolygonCount];
 					for (s32 p = 0; p < triangleCount; p++, polygon++)
@@ -686,7 +689,7 @@ namespace TFE_Model_Jedi
 						polygon->uv[2].y = mul16(s_tmpVtx[c].y, texHeight);
 					}
 				}
-				else if (sscanf(buffer, "TEXTURE QUADS %d", &quadCount) == 1)
+				else if (sscanf(buffer, "TEXTURE QUADS %d", &texQuadCount) == 1)
 				{
 					Polygon* polygon = &model->polygons[basePolygonCount];
 					for (s32 p = 0; p < quadCount; p++, polygon++)

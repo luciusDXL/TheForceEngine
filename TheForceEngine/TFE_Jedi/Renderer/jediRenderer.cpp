@@ -18,14 +18,12 @@
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FrontEndUI/console.h>
-#include <TFE_System/memoryPool.h>
 
 namespace TFE_Jedi
 {
 	static s32 s_sectorId = -1;
 
 	static bool s_init = false;
-	static MemoryPool s_memPool;
 	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
 	
 	TFE_Sectors* s_sectorRenderer = nullptr;
@@ -88,9 +86,14 @@ namespace TFE_Jedi
 
 	void setupInitCameraAndLights()
 	{
+		u32 dispWidth, dispHeight;
+		vfb_getResolution(&dispWidth, &dispHeight);
+		dispWidth  = max(dispWidth,  320);
+		dispHeight = max(dispHeight, 200);
+
 		// if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setupInitCameraAndLights(); }
 		RClassic_Fixed::setupInitCameraAndLights();
-		RClassic_Float::setupInitCameraAndLights(320, 200);
+		RClassic_Float::setupInitCameraAndLights(dispWidth, dispHeight);
 	}
 
 #if 0

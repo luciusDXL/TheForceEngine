@@ -163,6 +163,12 @@ namespace TFE_DarkForces
 			}
 		}
 	}
+
+	void vue_resetState()
+	{
+		s_workBufferSize = 0;
+		s_workBuffer = nullptr;
+	}
 		
 	char* allocateWorkBuffer(size_t size)
 	{

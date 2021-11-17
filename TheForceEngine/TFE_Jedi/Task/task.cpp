@@ -260,10 +260,16 @@ namespace TFE_Jedi
 		freeChunkedArray(s_stackBlocks);
 
 		s_curTask     = nullptr;
+		s_taskIter    = nullptr;
 		s_tasks       = nullptr;
 		s_stackBlocks = nullptr;
 		s_curContext  = nullptr;
 		s_taskCount   = 0;
+
+		s_prevTime = 0.0;
+		s_minIntervalInSec = 0.0;
+		s_frameActiveTaskCount = 0;
+		s_taskPauseTask = nullptr;
 	}
 
 	void task_makeActive(Task* task)

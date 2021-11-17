@@ -285,6 +285,13 @@ namespace TFE_Memory
 		size = alloc_align(size + sizeof(RegionAllocHeader));
 		if (size > region->blockSize) { return nullptr; }
 
+		// If the current block is already large enough, skip looping over the memory blocks.
+		RegionAllocHeader* header = (RegionAllocHeader*)((u8*)ptr - sizeof(RegionAllocHeader));
+		if (header->size >= size)
+		{
+			return ptr;
+		}
+
 		// First try to reallocate in the same region.
 		u32 prevSize = 0;
 		for (s32 i = (s32)region->blockCount - 1; i >= 0; i--)
@@ -352,7 +359,7 @@ namespace TFE_Memory
 		void* newMem = region_alloc(region, size);
 		if (!newMem) { return nullptr; }
 		// Copy over the contents from the previous block.
-		if (prevSize)
+		if (prevSize > sizeof(RegionAllocHeader))
 		{
 			memcpy(newMem, ptr, std::min((u32)size, prevSize) - sizeof(RegionAllocHeader));
 		}

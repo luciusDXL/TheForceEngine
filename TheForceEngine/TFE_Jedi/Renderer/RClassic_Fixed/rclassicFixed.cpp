@@ -178,6 +178,7 @@ namespace RClassic_Fixed
 		s_rcfState.rcpY = nullptr;
 
 		// Shared state
+		s_flatCount = 0;
 		s_columnTop = nullptr;
 		s_columnBot = nullptr;
 		s_windowTop_all = nullptr;
@@ -202,8 +203,8 @@ namespace RClassic_Fixed
 		s_columnTop = (s32*)game_realloc(s_columnTop, s_width * sizeof(s32));
 		s_columnBot = (s32*)game_realloc(s_columnBot, s_width * sizeof(s32));
 		s_rcfState.depth1d_all = (fixed16_16*)game_realloc(s_rcfState.depth1d_all, s_width * sizeof(fixed16_16) * (MAX_ADJOIN_DEPTH + 1));
-		s_windowTop_all = (s32*)game_realloc(s_windowTop, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
-		s_windowBot_all = (s32*)game_realloc(s_windowBot, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
+		s_windowTop_all = (s32*)game_realloc(s_windowTop_all, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
+		s_windowBot_all = (s32*)game_realloc(s_windowBot_all, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
 
 		memset(s_windowTop_all, s_minScreenY, 320);
 		memset(s_windowBot_all, s_maxScreenY, 320);

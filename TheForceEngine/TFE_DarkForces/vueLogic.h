@@ -14,4 +14,6 @@
 namespace TFE_DarkForces
 {
 	Logic* obj_createVueLogic(SecObject* obj, LogicSetupFunc* setupFunc);
+
+	void vue_resetState();
 }  // namespace TFE_DarkForces
