@@ -668,7 +668,7 @@ namespace TFE_Model_Jedi
 					for (s32 p = 0; p < triangleCount; p++, polygon++)
 					{
 						buffer = parser.readLine(bufferPos, true);
-						if (!buffer) { return false; }
+						if (!buffer) { break; }
 
 						s32 num, a, b, c;
 						if (sscanf(buffer, "%d: %d %d %d", &num, &a, &b, &c) != 4)
@@ -695,7 +695,7 @@ namespace TFE_Model_Jedi
 					for (s32 p = 0; p < quadCount; p++, polygon++)
 					{
 						buffer = parser.readLine(bufferPos, true);
-						if (!buffer) { return false; }
+						if (!buffer) { break; }
 
 						s32 num, a, b, c, d;
 						if (sscanf(buffer, "%d: %d %d %d %d", &num, &a, &b, &c, &d) != 5)
