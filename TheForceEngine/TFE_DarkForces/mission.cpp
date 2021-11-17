@@ -162,6 +162,8 @@ namespace TFE_DarkForces
 		{
 			adjustedWidth = graphics->gameResolution.z * info.width / info.height;
 		}
+		// Make sure the adjustedWidth is divisible by 4.
+		adjustedWidth = 4*((adjustedWidth + 3) >> 2);
 
 		vfb_setResolution(adjustedWidth, graphics->gameResolution.z);
 		s_framebuffer = vfb_getCpuBuffer();

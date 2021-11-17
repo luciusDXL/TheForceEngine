@@ -161,6 +161,8 @@ namespace TFE_Jedi
 		{
 			width = height * info.width / info.height;
 		}
+		// Make sure the adjustedWidth is divisible by 4.
+		width = 4 * ((width + 3) >> 2);
 
 		if (!vfb_setResolution(width, height))
 		{
