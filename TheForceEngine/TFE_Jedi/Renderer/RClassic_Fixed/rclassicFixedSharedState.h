@@ -54,7 +54,7 @@ namespace TFE_Jedi
 		fixed16_16* column_X_Over_Z;
 
 		// Flats
-		fixed16_16* rcpY;
+		fixed16_16*    rcpY;
 		EdgePairFixed* flatEdge;
 		EdgePairFixed  flatEdgeList[MAX_SEG];
 		EdgePairFixed* adjoinEdge;

@@ -77,7 +77,7 @@ namespace RClassic_Float
 			f32 sinPitch = sinFlt(s_rcfltState.cameraPitch);
 			f32 pitchOffset = sinPitch * pitchOffsetScale;
 			s_rcfltState.projOffsetY = s_rcfltState.projOffsetYBase + pitchOffset;
-			s_screenYMid  = s_screenYMidBase + (s32)floorf(pitchOffset);
+			s_screenYMidFlt = s_screenYMidBase + (s32)floorf(pitchOffset);
 
 			// yMax*0.5 / halfWidth; ~pixel Aspect
 			s_rcfltState.yPlaneBot =  (s_viewHeight*0.5f - pitchOffset) / s_rcfltState.focalLenAspect;
@@ -132,7 +132,7 @@ namespace RClassic_Float
 	{
 		s_rcfltState.halfWidth = halfWidthFlt;
 		s_screenXMid = xc;
-		s_screenYMid = yc;
+		s_screenYMidFlt = yc;
 		s_screenYMidBase = yc;
 
 		s_rcfltState.projOffsetX = f32(xc);

@@ -353,7 +353,7 @@ namespace RClassic_Fixed
 
 		fixed16_16 heightOffset = planeY - s_rcfState.eyeHeight;
 		// TODO: Figure out why s_heightInPixels has the wrong sign here.
-		if (yMax <= -s_screenYMid)
+		if (yMax <= -s_screenYMidFix)
 		{
 			flat_preparePolygon(heightOffset, ceilOffsetX, ceilOffsetZ, texture);
 		}

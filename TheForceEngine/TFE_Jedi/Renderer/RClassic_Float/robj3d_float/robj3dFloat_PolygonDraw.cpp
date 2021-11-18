@@ -358,7 +358,7 @@ namespace RClassic_Float
 
 		f32 heightOffset = planeY - s_rcfltState.eyeHeight;
 		// TODO: Figure out why s_heightInPixels has the wrong sign here.
-		if (yMax <= -s_screenYMid)
+		if (yMax <= -s_screenYMidFlt)
 		{
 			flat_preparePolygon(heightOffset, ceilOffsetX, ceilOffsetZ, texture);
 		}

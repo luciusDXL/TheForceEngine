@@ -76,7 +76,7 @@ namespace RClassic_Fixed
 			fixed16_16 sinPitch = sinFixed(s_rcfState.cameraPitch);
 			fixed16_16 pitchOffset = mul16(sinPitch, pitchOffsetScale);
 			s_rcfState.projOffsetY = s_rcfState.projOffsetYBase + pitchOffset;
-			s_screenYMid  = s_screenYMidBase + floor16(pitchOffset);
+			s_screenYMidFix = s_screenYMidBase + floor16(pitchOffset);
 
 			// yMax*0.5 / halfWidth; ~pixel Aspect
 			s_rcfState.yPlaneBot =  div16((s_viewHeight >> 1) - pitchOffset, s_rcfState.halfWidth);
@@ -130,7 +130,7 @@ namespace RClassic_Fixed
 	{
 		s_rcfState.halfWidth = halfWidthFixed;
 		s_screenXMid = xc;
-		s_screenYMid = yc;
+		s_screenYMidFix = yc;
 		s_screenYMidBase = yc;
 
 		s_rcfState.projOffsetX = intToFixed16(xc);
@@ -155,7 +155,7 @@ namespace RClassic_Fixed
 
 	void buildRcpYTable()
 	{
-		s32 yMid = s_screenYMid;
+		s32 yMid = s_screenYMidFix;
 		for (s32 yOffset = -400; yOffset < 400; yOffset++)
 		{
 			if (yOffset == yMid)
@@ -294,8 +294,10 @@ namespace RClassic_Fixed
 
 	void changeResolution(s32 width, s32 height)
 	{
+		assert(width == 320 && height == 200);
 		s_width  = width;
 		s_height = height;
+		s_flatCount = 0;
 
 		buildProjectionTables(width >> 1, height >> 1, s_width, s_height - 2);
 

@@ -1865,7 +1865,7 @@ namespace RClassic_Fixed
 		for (s32 x = s_windowMinX_Pixels; x <= s_windowMaxX_Pixels; x++)
 		{
 			const s32 y0 = s_windowTop[x];
-			const s32 y1 = min(s_screenYMid - 1, s_windowBot[x]);
+			const s32 y1 = min(s_screenYMidFix - 1, s_windowBot[x]);
 
 			s_yPixelCount = y1 - y0 + 1;
 			if (s_yPixelCount > 0)
@@ -1960,7 +1960,7 @@ namespace RClassic_Fixed
 		s_texHeightMask = texture->height - 1;
 		for (s32 x = s_windowMinX_Pixels; x <= s_windowMaxX_Pixels; x++)
 		{
-			const s32 y0 = max(s_screenYMid, s_windowTop[x]);
+			const s32 y0 = max(s_screenYMidFix, s_windowTop[x]);
 			const s32 y1 = s_windowBot[x];
 
 			s_yPixelCount = y1 - y0 + 1;

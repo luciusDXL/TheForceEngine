@@ -10,7 +10,8 @@ namespace TFE_Jedi
 	// Resolution
 	extern s32 s_width;
 	extern s32 s_height;
-	extern s32 s_screenYMid;
+	extern s32 s_screenYMidFix;
+	extern s32 s_screenYMidFlt;
 	extern s32 s_screenYMidBase;
 	extern s32 s_minScreenY;
 	extern s32 s_maxScreenY;

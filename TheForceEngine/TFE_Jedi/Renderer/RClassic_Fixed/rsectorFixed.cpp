@@ -462,7 +462,7 @@ namespace TFE_Jedi
 		{
 			// Which top and bottom edges are we going to use to clip objects?
 			s_objWindowTop = s_windowTop;
-			if (s_windowMinY_Pixels < s_screenYMid || s_windowMaxCeil < s_screenYMid)
+			if (s_windowMinY_Pixels < s_screenYMidFix || s_windowMaxCeil < s_screenYMidFix)
 			{
 				if (s_prevSector && s_prevSector->ceilingHeight <= s_curSector->ceilingHeight)
 				{
@@ -470,7 +470,7 @@ namespace TFE_Jedi
 				}
 			}
 			s_objWindowBot = s_windowBot;
-			if (s_windowMaxY_Pixels > s_screenYMid || s_windowMinFloor > s_screenYMid)
+			if (s_windowMaxY_Pixels > s_screenYMidFix || s_windowMinFloor > s_screenYMidFix)
 			{
 				if (s_prevSector && s_prevSector->floorHeight >= s_curSector->floorHeight)
 				{
