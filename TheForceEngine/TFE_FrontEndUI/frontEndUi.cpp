@@ -158,6 +158,8 @@ namespace TFE_FrontEndUI
 
 	static MenuItemSelected s_menuItemselected[7];
 
+	char s_selectedModCmd[TFE_MAX_PATH] = "";
+
 	void configAbout();
 	void configGame();
 	void configInput();
@@ -169,6 +171,7 @@ namespace TFE_FrontEndUI
 	void credits();
 	void readMods();
 	void modSelectionUI();
+	void cleanupModLoaderResources();
 
 	void menuItem_Start();
 	void menuItem_Manual();
@@ -536,6 +539,7 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("Cancel") || !active)
 			{
 				s_subUI = FEUI_NONE;
+				cleanupModLoaderResources();
 			}
 			modSelectionUI();
 			ImGui::End();
@@ -607,10 +611,7 @@ namespace TFE_FrontEndUI
 				s_appState = APP_STATE_EXIT_TO_MENU;
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
-
-				// End the current game.
-				// TODO
-				// TFE_GameLoop::endLevel();
+				s_selectedModCmd[0] = 0;
 			}
 			ImGui::PopFont();
 
@@ -1711,7 +1712,7 @@ namespace TFE_FrontEndUI
 			{
 				return false;
 			}
-			size_t textLen = textFile.getSize();
+			textLen = textFile.getSize();
 			s_fileBuffer.resize(textLen);
 			textFile.readBuffer(s_fileBuffer.data(), (u32)textLen);
 			textFile.close();
@@ -1747,7 +1748,7 @@ namespace TFE_FrontEndUI
 			}
 			if (lastZero) { lastZero++; }
 		}
-		*fullText = s_fileBuffer.data() + lastZero;
+		*fullText = std::string(s_fileBuffer.data() + lastZero, s_fileBuffer.data() + s_fileBuffer.size());
 
 		TFE_Parser parser;
 		parser.init(fullText->c_str(), fullText->length());
@@ -1873,8 +1874,6 @@ namespace TFE_FrontEndUI
 		tex->rect[3] = 0.0f;
 		return true;
 	}
-
-	char s_selectedModCmd[TFE_MAX_PATH] = "";
 
 	char* getSelectedMod()
 	{
@@ -2262,6 +2261,18 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	void cleanupModLoaderResources()
+	{
+		for (size_t i = 0; i < s_mods.size(); i++)
+		{
+			if (s_mods[i].image.texture)
+			{
+				TFE_RenderBackend::freeTexture(s_mods[i].image.texture);
+			}
+		}
+		s_mods.clear();
+	}
+
 	void modSelectionUI()
 	{
 		// Load in the mod data a few at a time so to limit waiting for loading.
@@ -2349,6 +2360,8 @@ namespace TFE_FrontEndUI
 				ImGui::Text("Game: Dark Forces");
 				ImGui::SetCursorPosX(cursor.x + 10);
 				ImGui::Text("Type: Vanilla Compatible");
+				ImGui::SetCursorPosX(cursor.x + 10);
+				ImGui::Text("File: %s", s_mods[s_selectedMod].gobFiles[0].c_str());
 				ImGui::PopStyleColor();
 				
 				ImGui::SetCursorPos(ImVec2(cursor.x + 90, cursor.y + 320));
@@ -2388,6 +2401,10 @@ namespace TFE_FrontEndUI
 			if (!open)
 			{
 				s_selectedMod = -1;
+				if (s_subUI == FEUI_NONE)
+				{
+					cleanupModLoaderResources();
+				}
 			}
 		}
 	}
