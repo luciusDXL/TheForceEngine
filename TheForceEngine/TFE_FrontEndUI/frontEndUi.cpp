@@ -1930,11 +1930,151 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	enum QueuedReadType
+	{
+		QREAD_DIR = 0,
+		QREAD_ZIP,
+		QREAD_COUNT
+	};
+
+	struct QueuedRead
+	{
+		QueuedReadType type;
+		std::string path;
+		std::string fileName;
+	};
+	static std::vector<QueuedRead> s_readQueue;
+	static size_t s_readIndex = 0;
+
+	void readFromQueue(size_t itemsPerFrame)
+	{
+		FileList gobFiles, txtFiles, imgFiles;
+		const size_t readEnd = min(s_readIndex + itemsPerFrame, s_readQueue.size());
+		const QueuedRead* reads = s_readQueue.data();
+		for (size_t i = s_readIndex; i < readEnd; i++, s_readIndex++)
+		{
+			if (reads[i].type == QREAD_DIR)
+			{
+				// Clear doesn't deallocate in most implementations, so doing it this way should reduce memory allocations.
+				gobFiles.clear();
+				txtFiles.clear();
+				imgFiles.clear();
+
+				const char* subDir = reads[i].path.c_str();
+				FileUtil::readDirectory(subDir, "gob", gobFiles);
+				FileUtil::readDirectory(subDir, "txt", txtFiles);
+				FileUtil::readDirectory(subDir, "jpg", imgFiles);
+
+				// No gob files = no mod.
+				if (gobFiles.size() != 1)
+				{
+					continue;
+				}
+				s_mods.push_back({});
+				ModData& mod = s_mods.back();
+
+				mod.gobFiles = gobFiles;
+				mod.textFile = txtFiles.empty() ? "" : txtFiles[0];
+				mod.imageFile = imgFiles.empty() ? "" : imgFiles[0];
+
+				size_t fullDirLen = strlen(subDir);
+				for (size_t i = 0; i < fullDirLen; i++)
+				{
+					if (strncasecmp("Mods", &subDir[i], 4) == 0)
+					{
+						mod.relativePath = &subDir[i + 5];
+						break;
+					}
+				}
+
+				//if (mod.imageFile.empty())
+				{
+					extractPosterFromMod(subDir, mod.gobFiles[0].c_str(), &mod.image);
+				}
+
+				char name[TFE_MAX_PATH];
+				if (!parseNameFromText(mod.textFile.c_str(), subDir, name, &mod.text))
+				{
+					const char* gobFileName = mod.gobFiles[0].c_str();
+					memcpy(name, gobFileName, strlen(gobFileName) - 4);
+					name[strlen(gobFileName) - 4] = 0;
+					fixupName(name);
+				}
+
+				mod.name = name;
+			}
+			else
+			{
+				ZipArchive zipArchive;
+				const char* modPath = reads[i].path.c_str();
+				const char* zipName = reads[i].fileName.c_str();
+
+				char zipPath[TFE_MAX_PATH];
+				sprintf(zipPath, "%s%s", modPath, zipName);
+				if (!zipArchive.open(zipPath)) { continue; }
+
+				s32 gobFileIndex = -1;
+				s32 txtFileIndex = -1;
+				s32 jpgFileIndex = -1;
+
+				// Look for the following:
+				// 1. Gob File.
+				// 2. Text File.
+				// 3. JPG
+				for (u32 f = 0; f < zipArchive.getFileCount(); f++)
+				{
+					const char* fileName = zipArchive.getFileName(f);
+					size_t len = strlen(fileName);
+					if (len <= 4)
+					{
+						continue;
+					}
+					const char* ext = &fileName[len - 3];
+					if (strcasecmp(ext, "gob") == 0)
+					{
+						gobFileIndex = s32(f);
+					}
+					else if (strcasecmp(ext, "txt") == 0)
+					{
+						txtFileIndex = s32(f);
+					}
+					else if (strcasecmp(ext, "jpg") == 0)
+					{
+						jpgFileIndex = s32(f);
+					}
+				}
+				if (gobFileIndex >= 0)
+				{
+					s_mods.push_back({});
+					ModData& mod = s_mods.back();
+					mod.gobFiles.push_back(zipName);
+
+					char name[TFE_MAX_PATH];
+					if (!parseNameFromText(mod.gobFiles[0].c_str(), modPath, name, &mod.text))
+					{
+						const char* gobFileName = mod.gobFiles[0].c_str();
+						memcpy(name, gobFileName, strlen(gobFileName) - 4);
+						name[strlen(gobFileName) - 4] = 0;
+						fixupName(name);
+					}
+					mod.name = name;
+
+					extractPosterFromMod(modPath, mod.gobFiles[0].c_str(), &mod.image);
+				}
+
+				zipArchive.close();
+			}
+		}
+	}
+
 	void readMods()
 	{
 		s_mods.clear();
 		s_selectedMod = -1;
 		s_selectedModCmd[0] = 0;
+
+		s_readQueue.clear();
+		s_readIndex = 0;
 
 		// There are 3 possible mod directory locations:
 		// In the TFE directory,
@@ -1992,78 +2132,7 @@ namespace TFE_FrontEndUI
 			const std::string* dir = dirList.data();
 			for (size_t d = 0; d < count; d++)
 			{
-				// TODO: Deal with possible duplicates.
-
-				// Clear doesn't deallocate in most implementations, so doing it this way should reduce memory allocations.
-				gobFiles.clear();
-				txtFiles.clear();
-				imgFiles.clear();
-					
-				const char* subDir = dir[d].c_str();
-				FileUtil::readDirectory(subDir, "gob", gobFiles);
-				FileUtil::readDirectory(subDir, "txt", txtFiles);
-				FileUtil::readDirectory(subDir, "jpg", imgFiles);
-
-				// No gob files = no mod.
-				if (gobFiles.empty())
-				{
-					continue;
-				}
-				s_mods.push_back({});
-				ModData& mod = s_mods.back();
-
-				mod.gobFiles  = gobFiles;
-				mod.textFile  = txtFiles.empty() ? "" : txtFiles[0];
-				mod.imageFile = imgFiles.empty() ? "" : imgFiles[0];
-
-				const char* fullDir = dir[d].c_str();
-				size_t fullDirLen = strlen(fullDir);
-				for (size_t i = 0; i < fullDirLen; i++)
-				{
-					if (strncasecmp("Mods", &fullDir[i], 4) == 0)
-					{
-						mod.relativePath = &fullDir[i + 5];
-						break;
-					}
-				}
-
-				//if (mod.imageFile.empty())
-				{
-					extractPosterFromMod(dir[d].c_str(), mod.gobFiles[0].c_str(), &mod.image);
-				}
-
-				char name[TFE_MAX_PATH];
-				if (mod.gobFiles.size() > 1)
-				{
-					size_t len = dir[d].length();
-					const char* dirStr = dir[d].c_str();
-					// find the last slash.
-					size_t lastSlash = 0;
-					for (size_t c = 0; c < len; c++)
-					{
-						if (c < len - 1 && (dirStr[c] == '/' || dirStr[c] == '\\'))
-						{
-							lastSlash = c;
-						}
-					}
-
-					sprintf(name, "Group: %s", lastSlash ? &dirStr[lastSlash + 1] : dirStr);
-					len = strlen(name);
-					if (name[len - 1] == '/' || name[len - 1] == '\\')
-					{
-						name[len - 1] = 0;
-					}
-					fixupName(name);
-				}
-				else if (!parseNameFromText(mod.textFile.c_str(), dir[d].c_str(), name, &mod.text))
-				{
-					const char* gobFileName = mod.gobFiles[0].c_str();
-					memcpy(name, gobFileName, strlen(gobFileName) - 4);
-					name[strlen(gobFileName) - 4] = 0;
-					fixupName(name);
-				}
-
-				mod.name = name;
+				s_readQueue.push_back({ QREAD_DIR, dir[d], "" });
 			}
 		}
 		// Read Zip Files.
@@ -2072,69 +2141,16 @@ namespace TFE_FrontEndUI
 			zipList.clear();
 			FileUtil::readDirectory(modPaths[i], "zip", zipList);
 			size_t count = zipList.size();
-			ZipArchive zipArchive;
-			char zipPath[TFE_MAX_PATH];
 			for (size_t z = 0; z < count; z++)
 			{
-				sprintf(zipPath, "%s%s", modPaths[i], zipList[z].c_str());
-				if (!zipArchive.open(zipPath)) { continue; }
-
-				s32 gobFileIndex = -1;
-				s32 txtFileIndex = -1;
-				s32 jpgFileIndex = -1;
-
-				// Look for the following:
-				// 1. Gob File.
-				// 2. Text File.
-				// 3. JPG
-				for (u32 f = 0; f < zipArchive.getFileCount(); f++)
-				{
-					const char* fileName = zipArchive.getFileName(f);
-					size_t len = strlen(fileName);
-					if (len <= 4)
-					{
-						continue;
-					}
-					const char* ext = &fileName[len - 3];
-					if (strcasecmp(ext, "gob") == 0)
-					{
-						gobFileIndex = s32(f);
-					}
-					else if (strcasecmp(ext, "txt") == 0)
-					{
-						txtFileIndex = s32(f);
-					}
-					else if (strcasecmp(ext, "jpg") == 0)
-					{
-						jpgFileIndex = s32(f);
-					}
-				}
-				if (gobFileIndex >= 0)
-				{
-					s_mods.push_back({});
-					ModData& mod = s_mods.back();
-					mod.gobFiles.push_back(zipList[z].c_str());
-
-					char name[TFE_MAX_PATH];
-					if (!parseNameFromText(mod.gobFiles[0].c_str(), modPaths[i], name, &mod.text))
-					{
-						const char* gobFileName = mod.gobFiles[0].c_str();
-						memcpy(name, gobFileName, strlen(gobFileName) - 4);
-						name[strlen(gobFileName) - 4] = 0;
-						fixupName(name);
-					}
-					mod.name = name;
-
-					extractPosterFromMod(modPaths[i], mod.gobFiles[0].c_str(), &mod.image);
-				}
-								
-				zipArchive.close();
+				s_readQueue.push_back({ QREAD_ZIP, modPaths[i], zipList[z] });
 			}
 		}
 	}
 
 	void modSelectionUI()
 	{
+		readFromQueue(3);
 		s_selectedModCmd[0] = 0;
 		if (s_mods.empty()) { return; }
 		
