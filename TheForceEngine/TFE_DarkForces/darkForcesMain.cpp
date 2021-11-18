@@ -134,6 +134,7 @@ namespace TFE_DarkForces
 	void cutscenes_startup(s32 id);
 	void startNextMode();
 	void disableLevelMusic();
+	void freeAllMidi();
 	void pauseLevelSound();
 	void resumeLevelSound();
 	void startLevelMusic(s32 levelIndex);
@@ -154,7 +155,7 @@ namespace TFE_DarkForces
 		loadLocalMessages();
 		openGobFiles();
 		TFE_Jedi::task_setDefaults();
-		TFE_Jedi::task_setMinStepInterval(1.0 / TIMER_FREQ);
+		TFE_Jedi::task_setMinStepInterval(1.0f / f32(TICKS_PER_SECOND));
 		TFE_Jedi::setupInitCameraAndLights();
 		config_startup();
 		gameStartup();
@@ -170,7 +171,7 @@ namespace TFE_DarkForces
 
 	void DarkForces::exitGame()
 	{
-		disableLevelMusic();
+		freeAllMidi();
 
 		s_localMessages.count = 0;
 		s_localMessages.msgList = nullptr;
@@ -355,6 +356,12 @@ namespace TFE_DarkForces
 	void disableLevelMusic()
 	{
 		TFE_MidiPlayer::stop();
+	}
+
+	void freeAllMidi()
+	{
+		disableLevelMusic();
+		TFE_GmidAsset::freeAll();
 	}
 
 	void pauseLevelSound()
