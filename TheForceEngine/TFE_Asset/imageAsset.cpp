@@ -37,6 +37,35 @@ namespace TFE_Image
 		ilShutDown();
 	}
 
+	Image* loadFromMemory(const u8* buffer, size_t size)
+	{
+		Image* image = new Image;
+
+		// Now let's switch over to using devIL...
+		ILuint handle;
+
+		// In the next section, we load one image
+		ilGenImages(1, &handle);
+		ilBindImage(handle);
+		if (ilLoadL(IL_JPG, buffer, size) == IL_FALSE)
+		{
+			return nullptr;
+		}
+		
+		// Let’s spy on it a little bit
+		image->width  = (u32)ilGetInteger(IL_IMAGE_WIDTH);  // getting image width
+		image->height = (u32)ilGetInteger(IL_IMAGE_HEIGHT); // and height
+
+		image->data = new u32[image->width * image->height];
+		// get the image data
+		ilCopyPixels(0, 0, 0, image->width, image->height, 1, IL_RGBA, IL_UNSIGNED_BYTE, image->data);
+
+		// Finally, clean the mess!
+		ilDeleteImages(1, &handle);
+
+		return image;
+	}
+
 	Image* get(const char* imagePath)
 	{
 		ImageMap::iterator iImage = s_images.find(imagePath);

@@ -19,6 +19,7 @@ namespace TFE_Image
 	void shutdown();
 
 	Image* get(const char* imagePath);
+	Image* loadFromMemory(const u8* buffer, size_t size);
 	void free(Image* image);
 	void freeAll();
 

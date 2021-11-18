@@ -1645,6 +1645,8 @@ namespace TFE_FrontEndUI
 		std::string name;
 		std::string relativePath;
 		std::string text;
+
+		bool invertImage = true;
 	};
 	static std::vector<ModData> s_mods;
 
@@ -1719,10 +1721,36 @@ namespace TFE_FrontEndUI
 			return false;
 		}
 
-		*fullText = s_fileBuffer.data();
+		// Some files start with garbage at the beginning...
+		// So try a small probe first to see if such fixup is reqiured.
+		bool needsFixup = false;
+		for (size_t i = 0; i < 10 && i < s_fileBuffer.size(); i++)
+		{
+			if (s_fileBuffer[i] == 0)
+			{
+				needsFixup = true;
+				break;
+			}
+		}
+		// If it is, try to find a valid start.
+		size_t lastZero = 0;
+		if (needsFixup)
+		{
+			size_t len = s_fileBuffer.size();
+			const char* text = s_fileBuffer.data();
+			for (size_t i = 0; i < len - 1 && i < 128; i++)
+			{
+				if (text[i] == 0)
+				{
+					lastZero = i;
+				}
+			}
+			if (lastZero) { lastZero++; }
+		}
+		*fullText = s_fileBuffer.data() + lastZero;
 
 		TFE_Parser parser;
-		parser.init(s_fileBuffer.data(), textLen);
+		parser.init(fullText->c_str(), fullText->length());
 		// First pass - look for "Title" followed by ':'
 		size_t bufferPos = 0;
 		size_t titleLen = strlen("Title");
@@ -1751,6 +1779,32 @@ namespace TFE_FrontEndUI
 			}
 		}
 
+		if (!foundTitle)
+		{
+			// Looking for "Title" failed, try reading the first 'valid' line.
+			bufferPos = 0;
+			while (!foundTitle)
+			{
+				const char* line = parser.readLine(bufferPos, true);
+				if (!line)
+				{
+					break;
+				}
+				if (line[0] == '<' || line[0] == '>' || line[0] == '=' || line[0] == '|')
+				{
+					continue;
+				}
+				if (strncasecmp(line, "PRESENTING", strlen("PRESENTING")) == 0)
+				{
+					continue;
+				}
+
+				strcpy(name, line);
+				foundTitle = true;
+				break;
+			}
+		}
+
 		if (foundTitle)
 		{
 			size_t titleLen = strlen(name);
@@ -1772,7 +1826,7 @@ namespace TFE_FrontEndUI
 			}
 			return true;
 		}
-
+		
 		return false;
 	}
 		
@@ -1825,6 +1879,52 @@ namespace TFE_FrontEndUI
 	char* getSelectedMod()
 	{
 		return s_selectedModCmd;
+	}
+
+	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, EditorTexture* poster)
+	{
+		if (zipFile && zipFile[0])
+		{
+			char zipPath[TFE_MAX_PATH];
+			sprintf(zipPath, "%s%s", baseDir, zipFile);
+
+			ZipArchive zipArchive;
+			if (!zipArchive.open(zipPath)) { return; }
+			if (zipArchive.openFile(imageFileName))
+			{
+				size_t imageSize = zipArchive.getFileLength();
+				s_imageBuffer.resize(imageSize);
+				zipArchive.readFile(s_imageBuffer.data(), imageSize);
+				zipArchive.closeFile();
+
+				Image* image = TFE_Image::loadFromMemory((u8*)s_imageBuffer.data(), imageSize);
+				if (image)
+				{
+					TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+					poster->texture = gpuImage;
+					poster->width = image->width;
+					poster->height = image->height;
+
+					delete[] image->data;
+					delete image;
+				}
+			}
+			zipArchive.close();
+		}
+		else
+		{
+			char imagePath[TFE_MAX_PATH];
+			sprintf(imagePath, "%s%s", baseDir, imageFileName);
+
+			Image* image = TFE_Image::get(imagePath);
+			if (image)
+			{
+				TextureGpu* gpuImage = TFE_RenderBackend::createTexture(image->width, image->height, image->data, MAG_FILTER_LINEAR);
+				poster->texture = gpuImage;
+				poster->width   = image->width;
+				poster->height  = image->height;
+			}
+		}
 	}
 
 	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, EditorTexture* poster)
@@ -1987,9 +2087,15 @@ namespace TFE_FrontEndUI
 					}
 				}
 
-				//if (mod.imageFile.empty())
+				if (mod.imageFile.empty())
 				{
 					extractPosterFromMod(subDir, mod.gobFiles[0].c_str(), &mod.image);
+					mod.invertImage = true;
+				}
+				else
+				{
+					extractPosterFromImage(subDir, nullptr, mod.imageFile.c_str(), &mod.image);
+					mod.invertImage = false;
 				}
 
 				char name[TFE_MAX_PATH];
@@ -2059,7 +2165,16 @@ namespace TFE_FrontEndUI
 					}
 					mod.name = name;
 
-					extractPosterFromMod(modPath, mod.gobFiles[0].c_str(), &mod.image);
+					if (jpgFileIndex < 0)
+					{
+						extractPosterFromMod(modPath, mod.gobFiles[0].c_str(), &mod.image);
+						mod.invertImage = true;
+					}
+					else
+					{
+						extractPosterFromImage(modPath, mod.gobFiles[0].c_str(), zipArchive.getFileName(jpgFileIndex), &mod.image);
+						mod.invertImage = false;
+					}
 				}
 
 				zipArchive.close();
@@ -2120,7 +2235,6 @@ namespace TFE_FrontEndUI
 			return;
 		}
 				
-		FileList gobFiles, txtFiles, imgFiles;
 		FileList dirList, zipList;
 		for (s32 i = 0; i < modPathCount; i++)
 		{
@@ -2150,6 +2264,7 @@ namespace TFE_FrontEndUI
 
 	void modSelectionUI()
 	{
+		// Load in the mod data a few at a time so to limit waiting for loading.
 		readFromQueue(3);
 		s_selectedModCmd[0] = 0;
 		if (s_mods.empty()) { return; }
@@ -2180,16 +2295,31 @@ namespace TFE_FrontEndUI
 
 				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				{
-					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16-2, yScrolled -2), ImVec2(x * 268 + 16 + 256+2, yScrolled + 192+2), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16-2, yScrolled -2), ImVec2(x * 268 + 16 + 256+2, yScrolled + 192+2), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
 					drawList->AddImageRounded(s_gradientImage.image, ImVec2(x * 268 + 16 - 2, yScrolled - 2), ImVec2(x * 268 + 16 + 256 + 2, yScrolled + 192 + 2), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0x40ffb080, 8.0f, ImDrawCornerFlags_All);
 				}
 				else
 				{
-					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16, yScrolled), ImVec2(x * 268 + 16 + 256, yScrolled + 192), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16, yScrolled), ImVec2(x * 268 + 16 + 256, yScrolled + 192), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
 				}
 									
 				ImGui::SetCursorPos(ImVec2(x * 268 + 20, y + 192));
-				ImGui::LabelText("###Label", s_mods[i].name.c_str());
+
+				// Limit the name to 36 characters to avoid going into the next cell.
+				if (s_mods[i].name.length() <= 36)
+				{
+					ImGui::LabelText("###Label", s_mods[i].name.c_str());
+				}
+				else
+				{
+					char name[TFE_MAX_PATH];
+					strcpy(name, s_mods[i].name.c_str());
+					name[33] = '.';
+					name[34] = '.';
+					name[35] = '.';
+					name[36] = 0;
+					ImGui::LabelText("###Label", name);
+				}
 			}
 			y += 232;
 		}
@@ -2205,7 +2335,8 @@ namespace TFE_FrontEndUI
 			ImGui::Begin("Mod Info", &open, ImVec2(infoWidth, infoHeight), 1.0f, window_flags);
 				ImDrawList* drawList = ImGui::GetWindowDrawList();
 				ImVec2 cursor = ImGui::GetCursorPos();
-				drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[s_selectedMod].image.texture), ImVec2(cursor.x+64, cursor.y+64), ImVec2(cursor.x+320+64, cursor.y+200+64), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+				drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[s_selectedMod].image.texture), ImVec2(cursor.x+64, cursor.y+64), ImVec2(cursor.x+320+64, cursor.y+200+64),
+					ImVec2(0.0f, s_mods[s_selectedMod].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[s_selectedMod].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
 
 				ImGui::PushFont(s_dialogFont);
 				ImGui::SetCursorPosX(cursor.x + 320 + 70);
