@@ -21,6 +21,8 @@
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_Archive/archive.h>
+#include <TFE_Archive/zipArchive.h>
+#include <TFE_Archive/gobMemoryArchive.h>
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
@@ -491,10 +493,51 @@ namespace TFE_DarkForces
 		FilePath archivePath;
 		if (TFE_Paths::getFilePath(gobName, &archivePath))
 		{
-			Archive* archive = Archive::getArchive(ARCHIVE_GOB, gobName, archivePath.path);
-			if (archive)
+			// Is this really a gob?
+			const size_t len = strlen(gobName);
+			const char* ext = &gobName[len - 3];
+			if (strcasecmp(ext, "zip") == 0 || strcasecmp(ext, "pk3") == 0)
 			{
-				TFE_Paths::addLocalArchive(archive);
+				// In the case of a zip file, we want to extract the GOB into an in-memory format and use that directly.
+				ZipArchive zipArchive;
+				if (zipArchive.open(archivePath.path))
+				{
+					s32 gobIndex = -1;
+					const u32 count = zipArchive.getFileCount();
+					for (u32 i = 0; i < count; i++)
+					{
+						const char* name = zipArchive.getFileName(i);
+						const size_t nameLen = strlen(name);
+						const char* zext = &name[nameLen - 3];
+						if (strcasecmp(zext, "gob") == 0)
+						{
+							gobIndex = i;
+							break;
+						}
+					}
+
+					if (gobIndex >= 0)
+					{
+						u32 bufferLen = zipArchive.getFileLength(gobIndex);
+						u8* buffer = (u8*)malloc(bufferLen);
+						zipArchive.openFile(gobIndex);
+						zipArchive.readFile(buffer, bufferLen);
+						zipArchive.closeFile();
+
+						GobMemoryArchive* gobArchive = new GobMemoryArchive();
+						gobArchive->open(buffer, bufferLen);
+						TFE_Paths::addLocalArchive(gobArchive);
+					}
+					zipArchive.close();
+				}
+			}
+			else
+			{
+				Archive* archive = Archive::getArchive(ARCHIVE_GOB, gobName, archivePath.path);
+				if (archive)
+				{
+					TFE_Paths::addLocalArchive(archive);
+				}
 			}
 		}
 	}

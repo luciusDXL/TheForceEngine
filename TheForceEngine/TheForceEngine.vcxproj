@@ -328,6 +328,7 @@ echo ^)";
     <ClInclude Include="Shaders\grid.h" />
     <ClInclude Include="TFE_Archive\archive.h" />
     <ClInclude Include="TFE_Archive\gobArchive.h" />
+    <ClInclude Include="TFE_Archive\gobMemoryArchive.h" />
     <ClInclude Include="TFE_Archive\labArchive.h" />
     <ClInclude Include="TFE_Archive\lfdArchive.h" />
     <ClInclude Include="TFE_Archive\zipArchive.h" />
@@ -535,6 +536,7 @@ echo ^)";
   <ItemGroup>
     <ClCompile Include="TFE_Archive\archive.cpp" />
     <ClCompile Include="TFE_Archive\gobArchive.cpp" />
+    <ClCompile Include="TFE_Archive\gobMemoryArchive.cpp" />
     <ClCompile Include="TFE_Archive\labArchive.cpp" />
     <ClCompile Include="TFE_Archive\lfdArchive.cpp" />
     <ClCompile Include="TFE_Archive\zipArchive.cpp" />

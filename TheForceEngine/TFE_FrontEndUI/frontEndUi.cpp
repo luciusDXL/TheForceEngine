@@ -11,6 +11,8 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Asset/imageAsset.h>
+#include <TFE_Archive/zipArchive.h>
+#include <TFE_Archive/gobMemoryArchive.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
@@ -1664,18 +1666,58 @@ namespace TFE_FrontEndUI
 	{
 		if (!textFileName || textFileName[0] == 0) { return false; }
 
-		char fullPath[TFE_MAX_PATH];
-		sprintf(fullPath, "%s%s", path, textFileName);
+		const size_t len = strlen(textFileName);
+		const char* ext = &textFileName[len - 3];
+		size_t textLen = 0;
+		if (strcasecmp(ext, "zip") == 0)
+		{
+			ZipArchive zipArchive;
+			char zipPath[TFE_MAX_PATH];
+			sprintf(zipPath, "%s%s", path, textFileName);
+			if (zipArchive.open(zipPath))
+			{
+				s32 txtIndex = -1;
+				const u32 count = zipArchive.getFileCount();
+				for (u32 i = 0; i < count; i++)
+				{
+					const char* name = zipArchive.getFileName(i);
+					const size_t nameLen = strlen(name);
+					const char* zext = &name[nameLen - 3];
+					if (strcasecmp(zext, "txt") == 0)
+					{
+						txtIndex = i;
+						break;
+					}
+				}
 
-		FileStream textFile;
-		if (!textFile.open(fullPath, FileStream::MODE_READ))
+				if (txtIndex >= 0 && zipArchive.openFile(txtIndex))
+				{
+					textLen = zipArchive.getFileLength();
+					s_fileBuffer.resize(textLen);
+					zipArchive.readFile(s_fileBuffer.data(), textLen);
+					zipArchive.closeFile();
+				}
+			}
+		}
+		else
+		{
+			char fullPath[TFE_MAX_PATH];
+			sprintf(fullPath, "%s%s", path, textFileName);
+
+			FileStream textFile;
+			if (!textFile.open(fullPath, FileStream::MODE_READ))
+			{
+				return false;
+			}
+			size_t textLen = textFile.getSize();
+			s_fileBuffer.resize(textLen);
+			textFile.readBuffer(s_fileBuffer.data(), (u32)textLen);
+			textFile.close();
+		}
+		if (!textLen)
 		{
 			return false;
 		}
-		size_t textLen = textFile.getSize();
-		s_fileBuffer.resize(textLen);
-		textFile.readBuffer(s_fileBuffer.data(), textLen);
-		textFile.close();
 
 		*fullText = s_fileBuffer.data();
 
@@ -1785,6 +1827,109 @@ namespace TFE_FrontEndUI
 		return s_selectedModCmd;
 	}
 
+	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, EditorTexture* poster)
+	{
+		// Extract a "poster", if possible, from the GOB file.
+		// And then save it as a JPG in /ProgramData/TheForceEngine/ModPosters/NAME.jpg
+		char modPath[TFE_MAX_PATH], srcPath[TFE_MAX_PATH], srcPathTex[TFE_MAX_PATH];
+		sprintf(modPath, "%s%s", baseDir, archiveFileName);
+		sprintf(srcPath, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
+		sprintf(srcPathTex, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "TEXTURES.GOB");
+
+		GobMemoryArchive gobMemArchive;
+		const size_t len = strlen(archiveFileName);
+		const char* archiveExt = &archiveFileName[len - 3];
+		Archive* archiveMod = nullptr;
+		bool archiveIsGob = true;
+		if (strcasecmp(archiveExt, "zip") == 0)
+		{
+			archiveIsGob = false;
+
+			ZipArchive zipArchive;
+			if (zipArchive.open(modPath))
+			{
+				// Find the gob...
+				s32 gobIndex = -1;
+				const u32 count = zipArchive.getFileCount();
+				for (u32 i = 0; i < count; i++)
+				{
+					const char* name = zipArchive.getFileName(i);
+					const size_t nameLen = strlen(name);
+					const char* zext = &name[nameLen - 3];
+					if (strcasecmp(zext, "gob") == 0)
+					{
+						gobIndex = i;
+						break;
+					}
+				}
+
+				if (gobIndex >= 0)
+				{
+					u32 bufferLen = zipArchive.getFileLength(gobIndex);
+					u8* buffer = (u8*)malloc(bufferLen);
+					zipArchive.openFile(gobIndex);
+					zipArchive.readFile(buffer, bufferLen);
+					zipArchive.closeFile();
+
+					gobMemArchive.open(buffer, bufferLen);
+					archiveMod = &gobMemArchive;
+				}
+
+				zipArchive.close();
+			}
+		}
+		else
+		{
+			archiveMod = Archive::getArchive(ARCHIVE_GOB, archiveFileName, modPath);
+		}
+		Archive* archiveTex  = Archive::getArchive(ARCHIVE_GOB, "TEXTURES.GOB", srcPathTex);
+		Archive* archiveBase = Archive::getArchive(ARCHIVE_GOB, "DARK.GOB", srcPath);
+
+		s_readBuffer[0].clear();
+		s_readBuffer[1].clear();
+		if (archiveMod || archiveBase)
+		{
+			if (archiveMod && archiveMod->openFile("wait.bm"))
+			{
+				s_readBuffer[0].resize(archiveMod->getFileLength());
+				archiveMod->readFile(s_readBuffer[0].data(), archiveMod->getFileLength());
+				archiveMod->closeFile();
+			}
+			else if (archiveTex->openFile("wait.bm"))
+			{
+				s_readBuffer[0].resize(archiveTex->getFileLength());
+				archiveTex->readFile(s_readBuffer[0].data(), archiveTex->getFileLength());
+				archiveTex->closeFile();
+			}
+
+			if (archiveMod && archiveMod->openFile("wait.pal"))
+			{
+				s_readBuffer[1].resize(archiveMod->getFileLength());
+				archiveMod->readFile(s_readBuffer[1].data(), archiveMod->getFileLength());
+				archiveMod->closeFile();
+			}
+			else if (archiveBase->openFile("wait.pal"))
+			{
+				s_readBuffer[1].resize(archiveBase->getFileLength());
+				archiveBase->readFile(s_readBuffer[1].data(), archiveBase->getFileLength());
+				archiveBase->closeFile();
+			}
+		}
+
+		if (!s_readBuffer[0].empty() && !s_readBuffer[1].empty())
+		{
+			TextureData* imageData = bitmap_loadFromMemory(s_readBuffer[0].data(), s_readBuffer[0].size(), 1);
+			u32 palette[256];
+			convertPalette(s_readBuffer[1].data(), palette);
+			createTexture(imageData, palette, poster);
+		}
+
+		if (archiveMod && archiveIsGob)
+		{
+			Archive::freeArchive(archiveMod);
+		}
+	}
+
 	void readMods()
 	{
 		s_mods.clear();
@@ -1836,7 +1981,7 @@ namespace TFE_FrontEndUI
 		}
 				
 		FileList gobFiles, txtFiles, imgFiles;
-		FileList dirList;
+		FileList dirList, zipList;
 		for (s32 i = 0; i < modPathCount; i++)
 		{
 			dirList.clear();
@@ -1884,56 +2029,7 @@ namespace TFE_FrontEndUI
 
 				//if (mod.imageFile.empty())
 				{
-					// Extract a "poster", if possible, from the GOB file.
-					// And then save it as a JPG in /ProgramData/TheForceEngine/ModPosters/NAME.jpg
-					char modPath[TFE_MAX_PATH], srcPath[TFE_MAX_PATH], srcPathTex[TFE_MAX_PATH];
-					sprintf(modPath, "%s%s", dir[d].c_str(), mod.gobFiles[0].c_str());
-					sprintf(srcPath, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
-					sprintf(srcPathTex, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "TEXTURES.GOB");
-
-					mod.gobFiles[0];
-					Archive* archiveMod  = Archive::getArchive(ARCHIVE_GOB, mod.gobFiles[0].c_str(), modPath);
-					Archive* archiveTex  = Archive::getArchive(ARCHIVE_GOB, "TEXTURES.GOB", srcPathTex);
-					Archive* archiveBase = Archive::getArchive(ARCHIVE_GOB, "DARK.GOB", srcPath);
-
-					s_readBuffer[0].clear();
-					s_readBuffer[1].clear();
-					if (archiveMod || archiveBase)
-					{
-						if (archiveMod->openFile("wait.bm"))
-						{
-							s_readBuffer[0].resize(archiveMod->getFileLength());
-							archiveMod->readFile(s_readBuffer[0].data(), archiveMod->getFileLength());
-							archiveMod->closeFile();
-						}
-						else if (archiveTex->openFile("wait.bm"))
-						{
-							s_readBuffer[0].resize(archiveTex->getFileLength());
-							archiveTex->readFile(s_readBuffer[0].data(), archiveTex->getFileLength());
-							archiveTex->closeFile();
-						}
-
-						if (archiveMod->openFile("wait.pal"))
-						{
-							s_readBuffer[1].resize(archiveMod->getFileLength());
-							archiveMod->readFile(s_readBuffer[1].data(), archiveMod->getFileLength());
-							archiveMod->closeFile();
-						}
-						else if (archiveBase->openFile("wait.pal"))
-						{
-							s_readBuffer[1].resize(archiveBase->getFileLength());
-							archiveBase->readFile(s_readBuffer[1].data(), archiveBase->getFileLength());
-							archiveBase->closeFile();
-						}
-					}
-
-					if (!s_readBuffer[0].empty() && !s_readBuffer[1].empty())
-					{
-						TextureData* imageData = bitmap_loadFromMemory(s_readBuffer[0].data(), s_readBuffer[0].size(), 1);
-						u32 palette[256];
-						convertPalette(s_readBuffer[1].data(), palette);
-						createTexture(imageData, palette, &mod.image);
-					}
+					extractPosterFromMod(dir[d].c_str(), mod.gobFiles[0].c_str(), &mod.image);
 				}
 
 				char name[TFE_MAX_PATH];
@@ -1970,6 +2066,71 @@ namespace TFE_FrontEndUI
 				mod.name = name;
 			}
 		}
+		// Read Zip Files.
+		for (s32 i = 0; i < modPathCount; i++)
+		{
+			zipList.clear();
+			FileUtil::readDirectory(modPaths[i], "zip", zipList);
+			size_t count = zipList.size();
+			ZipArchive zipArchive;
+			char zipPath[TFE_MAX_PATH];
+			for (size_t z = 0; z < count; z++)
+			{
+				sprintf(zipPath, "%s%s", modPaths[i], zipList[z].c_str());
+				if (!zipArchive.open(zipPath)) { continue; }
+
+				s32 gobFileIndex = -1;
+				s32 txtFileIndex = -1;
+				s32 jpgFileIndex = -1;
+
+				// Look for the following:
+				// 1. Gob File.
+				// 2. Text File.
+				// 3. JPG
+				for (u32 f = 0; f < zipArchive.getFileCount(); f++)
+				{
+					const char* fileName = zipArchive.getFileName(f);
+					size_t len = strlen(fileName);
+					if (len <= 4)
+					{
+						continue;
+					}
+					const char* ext = &fileName[len - 3];
+					if (strcasecmp(ext, "gob") == 0)
+					{
+						gobFileIndex = s32(f);
+					}
+					else if (strcasecmp(ext, "txt") == 0)
+					{
+						txtFileIndex = s32(f);
+					}
+					else if (strcasecmp(ext, "jpg") == 0)
+					{
+						jpgFileIndex = s32(f);
+					}
+				}
+				if (gobFileIndex >= 0)
+				{
+					s_mods.push_back({});
+					ModData& mod = s_mods.back();
+					mod.gobFiles.push_back(zipList[z].c_str());
+
+					char name[TFE_MAX_PATH];
+					if (!parseNameFromText(mod.gobFiles[0].c_str(), modPaths[i], name, &mod.text))
+					{
+						const char* gobFileName = mod.gobFiles[0].c_str();
+						memcpy(name, gobFileName, strlen(gobFileName) - 4);
+						name[strlen(gobFileName) - 4] = 0;
+						fixupName(name);
+					}
+					mod.name = name;
+
+					extractPosterFromMod(modPaths[i], mod.gobFiles[0].c_str(), &mod.image);
+				}
+								
+				zipArchive.close();
+			}
+		}
 	}
 
 	void modSelectionUI()
@@ -1999,14 +2160,16 @@ namespace TFE_FrontEndUI
 					TFE_System::logWrite(LOG_MSG, "Mods", "Selected Mod = %d", i);
 				}
 
+				f32 yScrolled = y - ImGui::GetScrollY();
+
 				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				{
-					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16-2, y-2), ImVec2(x * 268 + 16 + 256+2, y + 192+2), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
-					drawList->AddImageRounded(s_gradientImage.image, ImVec2(x * 268 + 16 - 2, y - 2), ImVec2(x * 268 + 16 + 256 + 2, y + 192 + 2), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0x40ffb080, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16-2, yScrolled -2), ImVec2(x * 268 + 16 + 256+2, yScrolled + 192+2), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(s_gradientImage.image, ImVec2(x * 268 + 16 - 2, yScrolled - 2), ImVec2(x * 268 + 16 + 256 + 2, yScrolled + 192 + 2), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0x40ffb080, 8.0f, ImDrawCornerFlags_All);
 				}
 				else
 				{
-					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16, y), ImVec2(x * 268 + 16 + 256, y + 192), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16, yScrolled), ImVec2(x * 268 + 16 + 256, yScrolled + 192), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
 				}
 									
 				ImGui::SetCursorPos(ImVec2(x * 268 + 20, y + 192));

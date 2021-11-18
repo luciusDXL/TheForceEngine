@@ -1,22 +1,22 @@
 #pragma once
+// A GOB archive fully loaded into memory.
+
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include "archive.h"
+#include "gobArchive.h"
 
-class GobMemoryArchive;
-
-class GobArchive : public Archive
+class GobMemoryArchive : public Archive
 {
 public:
-	friend GobMemoryArchive;
-public:
-	GobArchive() : m_archiveOpen(false), m_curFile(-1) {}
-	~GobArchive() override;
+	GobMemoryArchive() : m_archiveOpen(false), m_curFile(-1) {}
+	~GobMemoryArchive() override;
 
 	// Archive
 	bool create(const char *archivePath) override;
 	bool open(const char *archivePath) override;
+	bool open(const u8* buffer, size_t size);
 	void close() override;
 
 	// File Access
@@ -42,34 +42,12 @@ public:
 	void addFile(const char* fileName, const char* filePath) override;
 
 private:
-	#pragma pack(push)
-	#pragma pack(1)
-
-	typedef struct
-	{
-		char GOB_MAGIC[4];
-		long MASTERX;	// offset to GOB_Index_t
-	} GOB_Header_t;
-
-	typedef struct
-	{
-		long IX;		// offset to the start of the file.
-		long LEN;		// length of the file.
-		char NAME[13];	// file name.
-	} GOB_Entry_t;
-
-	typedef struct
-	{
-		long MASTERN;	// num files
-		GOB_Entry_t *entries;
-	} GOB_Index_t;
-
-	#pragma pack(pop)
-
-	FileStream m_file;
+	const u8* m_buffer;
+	size_t m_size;
+	size_t m_readLoc;
 	bool m_archiveOpen;
 
-	GOB_Header_t m_header;
-	GOB_Index_t m_fileList;
+	GobArchive::GOB_Header_t* m_header;
+	GobArchive::GOB_Index_t   m_fileList;
 	s32 m_curFile;
 };

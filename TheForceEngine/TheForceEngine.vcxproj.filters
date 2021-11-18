@@ -766,6 +766,9 @@
     <ClInclude Include="TFE_Jedi\Renderer\screenDraw.h">
       <Filter>Source\TFE_Jedi\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Archive\gobMemoryArchive.h">
+      <Filter>Source\TFE_Archive</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1271,6 +1274,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\screenDraw.cpp">
       <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Archive\gobMemoryArchive.cpp">
+      <Filter>Source\TFE_Archive</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
