@@ -409,7 +409,9 @@ echo ^)";
     <ClInclude Include="TFE_FileSystem\paths.h" />
     <ClInclude Include="TFE_FileSystem\stream.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
+    <ClInclude Include="TFE_FrontEndUI\editorTexture.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
+    <ClInclude Include="TFE_FrontEndUI\modLoader.h" />
     <ClInclude Include="TFE_FrontEndUI\profilerView.h" />
     <ClInclude Include="TFE_Game\igame.h" />
     <ClInclude Include="TFE_Input\input.h" />
@@ -611,7 +613,9 @@ echo ^)";
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
+    <ClCompile Include="TFE_FrontEndUI\editorTexture.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />
+    <ClCompile Include="TFE_FrontEndUI\modLoader.cpp" />
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp" />
     <ClCompile Include="TFE_Game\igame.cpp" />
     <ClCompile Include="TFE_Input\input.cpp" />

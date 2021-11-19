@@ -769,6 +769,12 @@
     <ClInclude Include="TFE_Archive\gobMemoryArchive.h">
       <Filter>Source\TFE_Archive</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_FrontEndUI\modLoader.h">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_FrontEndUI\editorTexture.h">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1277,6 +1283,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Archive\gobMemoryArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_FrontEndUI\modLoader.cpp">
+      <Filter>Source\TFE_FrontEndUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_FrontEndUI\editorTexture.cpp">
+      <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

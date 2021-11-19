@@ -22,6 +22,8 @@ enum AppState
 	APP_STATE_UNINIT = APP_STATE_COUNT
 };
 
+struct ImFont;
+
 namespace TFE_FrontEndUI
 {
 	void init();
@@ -45,6 +47,12 @@ namespace TFE_FrontEndUI
 	bool uiControlsEnabled();
 
 	char* getSelectedMod();
+	void  clearSelectedMod();
+	void  setSelectedMod(const char* mod);
+	void* getGradientTexture();
+	void  setState(AppState state);
+	void  clearMenuState();
+	ImFont* getDialogFont();
 
 	void toggleProfilerView();
 }
