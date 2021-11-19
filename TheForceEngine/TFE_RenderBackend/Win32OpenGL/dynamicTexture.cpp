@@ -61,7 +61,6 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 	s_tempBuffer.resize(bufferSize);
 	memset(s_tempBuffer.data(), 0x00, bufferSize);
 
-	TFE_System::logWrite(LOG_MSG, "DynamicTexture", "Create Dynamic Texture: %u x %u.", m_width, m_height);
 	m_textures = new TextureGpu*[m_bufferCount];
 	for (u32 i = 0; i < m_bufferCount; i++)
 	{
@@ -72,7 +71,6 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 		m_textures[i]->update(s_tempBuffer.data(), bufferSize);
 	}
 
-	TFE_System::logWrite(LOG_MSG, "DynamicTexture", "Create Staging Buffers.");
 	if (OpenGL_Caps::supportsPbo())
 	{
 		m_stagingBuffers = new u32[m_bufferCount];
@@ -86,7 +84,6 @@ bool DynamicTexture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* =
 		CHECK_GL_ERROR
 	}
 
-	TFE_System::logWrite(LOG_MSG, "DynamicTexture", "Dynamic Texture Complete.");
 	return m_textures && m_bufferCount;
 }
 

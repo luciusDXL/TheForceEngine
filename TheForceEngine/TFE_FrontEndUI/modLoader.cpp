@@ -65,6 +65,8 @@ namespace TFE_FrontEndUI
 	static std::vector<u8> s_imageBuffer;
 	static size_t s_readIndex = 0;
 
+	static ViewMode s_viewMode = VIEW_IMAGES;
+
 	void fixupName(char* name);
 	void readFromQueue(size_t itemsPerFrame);
 	bool parseNameFromText(const char* textFileName, const char* path, char* name, std::string* fullText);
@@ -162,16 +164,14 @@ namespace TFE_FrontEndUI
 		}
 		s_mods.clear();
 	}
-
-	void modLoader_selectionUI()
+		
+	ViewMode modLoader_getViewMode()
 	{
-		// Load in the mod data a few at a time so to limit waiting for loading.
-		readFromQueue(3);
-		clearSelectedMod();
-		if (s_mods.empty()) { return; }
+		return s_viewMode;
+	}
 
-		ImGui::Separator();
-
+	void modLoader_imageListUI()
+	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
 		s32 columns = max(1, (dispInfo.width - 16) / 268);
@@ -224,9 +224,161 @@ namespace TFE_FrontEndUI
 			}
 			y += 232;
 		}
+	}
+
+	void modLoader_NameListUI()
+	{
+		DisplayInfo dispInfo;
+		TFE_RenderBackend::getDisplayInfo(&dispInfo);
+		s32 rowCount = (dispInfo.height - 112) / 28;
+
+		char buttonLabel[32];
+		ImGui::PushFont(getDialogFont());
+		size_t i = 0;
+		for (s32 x = 0; i < s_mods.size(); x++)
+		{
+			for (s32 y = 0; y < rowCount && i < s_mods.size(); y++, i++)
+			{
+				sprintf(buttonLabel, "###mod%zd", i);
+				ImVec2 cursor(8.0f + x * 410, 88.0f + y * 28);
+				ImGui::SetCursorPos(cursor);
+				if (ImGui::Button(buttonLabel, ImVec2(400, 24)) && s_selectedMod < 0)
+				{
+					s_selectedMod = s32(i);
+					TFE_System::logWrite(LOG_MSG, "Mods", "Selected Mod = %d", i);
+				}
+				
+				ImGui::SetCursorPos(ImVec2(cursor.x + 8.0f, cursor.y - 2.0f));
+				char name[TFE_MAX_PATH];
+				strcpy(name, s_mods[i].name.c_str());
+				size_t len = strlen(name);
+				if (len > 36)
+				{
+					name[33] = '.';
+					name[34] = '.';
+					name[35] = '.';
+					name[36] = 0;
+				}
+
+				ImGui::LabelText("###", name);
+			}
+		}
+		ImGui::PopFont();
+	}
+
+	void modLoader_FileListUI()
+	{
+		DisplayInfo dispInfo;
+		TFE_RenderBackend::getDisplayInfo(&dispInfo);
+		s32 rowCount = (dispInfo.height - 112) / 28;
+
+		char buttonLabel[32];
+		ImGui::PushFont(getDialogFont());
+		size_t i = 0;
+		for (s32 x = 0; i < s_mods.size(); x++)
+		{
+			for (s32 y = 0; y < rowCount && i < s_mods.size(); y++, i++)
+			{
+				sprintf(buttonLabel, "###mod%zd", i);
+				ImVec2 cursor(8.0f + x * 410, 88.0f + y * 28);
+				ImGui::SetCursorPos(cursor);
+				if (ImGui::Button(buttonLabel, ImVec2(400, 24)) && s_selectedMod < 0)
+				{
+					s_selectedMod = s32(i);
+					TFE_System::logWrite(LOG_MSG, "Mods", "Selected Mod = %d", i);
+				}
+
+				ImGui::SetCursorPos(ImVec2(cursor.x + 8.0f, cursor.y - 2.0f));
+				char name[TFE_MAX_PATH];
+				strcpy(name, s_mods[i].gobFiles[0].c_str());
+				size_t len = strlen(name);
+				if (len > 36)
+				{
+					name[33] = '.';
+					name[34] = '.';
+					name[35] = '.';
+					name[36] = 0;
+				}
+
+				ImGui::LabelText("###", name);
+			}
+		}
+		ImGui::PopFont();
+	}
+
+	void modLoader_selectionUI()
+	{
+		// Load in the mod data a few at a time so to limit waiting for loading.
+		readFromQueue(3);
+		clearSelectedMod();
+		if (s_mods.empty()) { return; }
+
+		ImGui::Separator();
+		ImGui::PushFont(getDialogFont());
+
+		ImGui::LabelText("###", "VIEW");
+		ImGui::SameLine(128.0f);
+
+		bool viewImages   = s_viewMode == VIEW_IMAGES;
+		bool viewNameList = s_viewMode == VIEW_NAME_LIST;
+		bool viewFileList = s_viewMode == VIEW_FILE_LIST;
+		if (ImGui::Checkbox("Images", &viewImages))
+		{
+			if (viewImages)
+			{
+				s_viewMode = VIEW_IMAGES;
+			}
+			else
+			{
+				s_viewMode = VIEW_NAME_LIST;
+			}
+		}
+		ImGui::SameLine(236.0f);
+		if (ImGui::Checkbox("Name List", &viewNameList))
+		{
+			if (viewNameList)
+			{
+				s_viewMode = VIEW_NAME_LIST;
+			}
+			else
+			{
+				s_viewMode = VIEW_FILE_LIST;
+			}
+		}
+		ImGui::SameLine(380.0f);
+		if (ImGui::Checkbox("File List", &viewFileList))
+		{
+			if (viewFileList)
+			{
+				s_viewMode = VIEW_FILE_LIST;
+			}
+			else
+			{
+				s_viewMode = VIEW_IMAGES;
+			}
+		}
+		ImGui::PopFont();
+
+		ImGui::Separator();
+			   
+		if (s_viewMode == VIEW_IMAGES)
+		{
+			modLoader_imageListUI();
+		}
+		else if (s_viewMode == VIEW_NAME_LIST)
+		{
+			modLoader_NameListUI();
+		}
+		else if (s_viewMode == VIEW_FILE_LIST)
+		{
+			modLoader_FileListUI();
+		}
 
 		if (s_selectedMod >= 0)
 		{
+			DisplayInfo dispInfo;
+			TFE_RenderBackend::getDisplayInfo(&dispInfo);
+
 			bool open = true;
 			bool retFromLoader = false;
 			s32 infoWidth = dispInfo.width - 120;

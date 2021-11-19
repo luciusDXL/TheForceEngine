@@ -533,7 +533,11 @@ namespace TFE_FrontEndUI
 			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 			ImGui::SetNextWindowSize(ImVec2(f32(w), f32(h)));
 
-			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+			u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
+			if (modLoader_getViewMode() != VIEW_IMAGES)
+			{
+				window_flags |= ImGuiWindowFlags_HorizontalScrollbar;
+			}
 			ImGui::Begin("Mods", &active, window_flags);
 			if (ImGui::Button("Cancel") || !active)
 			{

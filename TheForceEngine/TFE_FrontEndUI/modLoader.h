@@ -11,7 +11,17 @@
 
 namespace TFE_FrontEndUI
 {
+	enum ViewMode
+	{
+		VIEW_IMAGES = 0,
+		VIEW_NAME_LIST,
+		VIEW_FILE_LIST,
+		VIEW_COUNT
+	};
+
 	void modLoader_read();
 	void modLoader_cleanupResources();
 	void modLoader_selectionUI();
+
+	ViewMode modLoader_getViewMode();
 }
