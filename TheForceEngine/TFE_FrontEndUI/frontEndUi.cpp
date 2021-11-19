@@ -33,6 +33,20 @@ namespace TFE_FrontEndUI
 		u32 height;
 	};
 
+	enum QueuedReadType
+	{
+		QREAD_DIR = 0,
+		QREAD_ZIP,
+		QREAD_COUNT
+	};
+
+	struct QueuedRead
+	{
+		QueuedReadType type;
+		std::string path;
+		std::string fileName;
+	};
+	
 	enum SubUI
 	{
 		FEUI_NONE = 0,
@@ -158,7 +172,10 @@ namespace TFE_FrontEndUI
 
 	static MenuItemSelected s_menuItemselected[7];
 
-	char s_selectedModCmd[TFE_MAX_PATH] = "";
+	// Mod Support
+	static char s_selectedModCmd[TFE_MAX_PATH] = "";
+	static std::vector<QueuedRead> s_readQueue;
+	static size_t s_readIndex = 0;
 
 	void configAbout();
 	void configGame();
@@ -1964,7 +1981,7 @@ namespace TFE_FrontEndUI
 
 				if (gobIndex >= 0)
 				{
-					u32 bufferLen = zipArchive.getFileLength(gobIndex);
+					size_t bufferLen = zipArchive.getFileLength(gobIndex);
 					u8* buffer = (u8*)malloc(bufferLen);
 					zipArchive.openFile(gobIndex);
 					zipArchive.readFile(buffer, bufferLen);
@@ -2028,23 +2045,7 @@ namespace TFE_FrontEndUI
 			Archive::freeArchive(archiveMod);
 		}
 	}
-
-	enum QueuedReadType
-	{
-		QREAD_DIR = 0,
-		QREAD_ZIP,
-		QREAD_COUNT
-	};
-
-	struct QueuedRead
-	{
-		QueuedReadType type;
-		std::string path;
-		std::string fileName;
-	};
-	static std::vector<QueuedRead> s_readQueue;
-	static size_t s_readIndex = 0;
-
+		
 	void readFromQueue(size_t itemsPerFrame)
 	{
 		FileList gobFiles, txtFiles, imgFiles;
@@ -2286,19 +2287,19 @@ namespace TFE_FrontEndUI
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
 		s32 columns = max(1, (dispInfo.width - 16) / 268);
 		
-		s32 y = ImGui::GetCursorPosY();
+		f32 y = ImGui::GetCursorPosY();
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
 		for (size_t i = 0; i < s_mods.size();)
 		{
 			for (s32 x = 0; x < columns && i < s_mods.size(); x++, i++)
 			{
 				char label[32];
-				sprintf(label, "###%d", i);
-				ImGui::SetCursorPos(ImVec2(x * 268 + 16, y));
+				sprintf(label, "###%zd", i);
+				ImGui::SetCursorPos(ImVec2(f32(x) * 268.0f + 16.0f, y));
 				ImGui::InvisibleButton(label, ImVec2(256, 192));
 				if (ImGui::IsItemClicked() && s_selectedMod < 0)
 				{
-					s_selectedMod = i;
+					s_selectedMod = s32(i);
 					TFE_System::logWrite(LOG_MSG, "Mods", "Selected Mod = %d", i);
 				}
 
@@ -2306,15 +2307,15 @@ namespace TFE_FrontEndUI
 
 				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				{
-					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16-2, yScrolled -2), ImVec2(x * 268 + 16 + 256+2, yScrolled + 192+2), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
-					drawList->AddImageRounded(s_gradientImage.image, ImVec2(x * 268 + 16 - 2, yScrolled - 2), ImVec2(x * 268 + 16 + 256 + 2, yScrolled + 192 + 2), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0x40ffb080, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(f32(x) * 268 + 16-2, yScrolled -2), ImVec2(f32(x) * 268 + 16 + 256+2, yScrolled + 192+2), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(s_gradientImage.image, ImVec2(f32(x) * 268 + 16 - 2, yScrolled - 2), ImVec2(f32(x) * 268 + 16 + 256 + 2, yScrolled + 192 + 2), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0x40ffb080, 8.0f, ImDrawCornerFlags_All);
 				}
 				else
 				{
-					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(x * 268 + 16, yScrolled), ImVec2(x * 268 + 16 + 256, yScrolled + 192), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(f32(x) * 268 + 16, yScrolled), ImVec2(f32(x) * 268 + 16 + 256, yScrolled + 192), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
 				}
 									
-				ImGui::SetCursorPos(ImVec2(x * 268 + 20, y + 192));
+				ImGui::SetCursorPos(ImVec2(f32(x) * 268 + 20, y + 192));
 
 				// Limit the name to 36 characters to avoid going into the next cell.
 				if (s_mods[i].name.length() <= 36)
@@ -2343,7 +2344,7 @@ namespace TFE_FrontEndUI
 
 			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
 			ImGui::SetCursorPos(ImVec2(10, 10));
-			ImGui::Begin("Mod Info", &open, ImVec2(infoWidth, infoHeight), 1.0f, window_flags);
+			ImGui::Begin("Mod Info", &open, ImVec2(f32(infoWidth), f32(infoHeight)), 1.0f, window_flags);
 				ImDrawList* drawList = ImGui::GetWindowDrawList();
 				ImVec2 cursor = ImGui::GetCursorPos();
 				drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[s_selectedMod].image.texture), ImVec2(cursor.x+64, cursor.y+64), ImVec2(cursor.x+320+64, cursor.y+200+64),
@@ -2386,7 +2387,7 @@ namespace TFE_FrontEndUI
 				ImGui::PopFont();
 
 				ImGui::SetCursorPos(ImVec2(cursor.x + 320 + 8, cursor.y + 30));
-				ImGui::BeginChild("###Mod Info Text", ImVec2(infoWidth-344, infoHeight-68), true, ImGuiWindowFlags_NoBringToFrontOnFocus);
+				ImGui::BeginChild("###Mod Info Text", ImVec2(f32(infoWidth-344), f32(infoHeight-68)), true, ImGuiWindowFlags_NoBringToFrontOnFocus);
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
 				ImGui::TextWrapped(s_mods[s_selectedMod].text.c_str());
 				ImGui::PopStyleColor();
