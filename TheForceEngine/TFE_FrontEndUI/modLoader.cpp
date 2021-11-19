@@ -309,7 +309,7 @@ namespace TFE_FrontEndUI
 	void modLoader_selectionUI()
 	{
 		// Load in the mod data a few at a time so to limit waiting for loading.
-		readFromQueue(3);
+		readFromQueue(1);
 		clearSelectedMod();
 		if (s_mods.empty()) { return; }
 
