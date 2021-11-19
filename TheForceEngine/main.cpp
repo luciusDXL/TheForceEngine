@@ -438,22 +438,26 @@ int main(int argc, char* argv[])
 	TFE_System::logWrite(LOG_MSG, "Main", "The Force Engine %s", c_gitVersion);
 	if (!pathsSet)
 	{
+		TFE_System::logWrite(LOG_ERROR, "Main", "Cannot set paths.");
 		return PROGRAM_ERROR;
 	}
 
 	// Before loading settings, read in the Input key lists.
 	if (!TFE_Input::loadKeyNames("UI_Text/KeyText.txt"))
 	{
+		TFE_System::logWrite(LOG_ERROR, "Main", "Cannot load key names.");
 		return PROGRAM_ERROR;
 	}
 
 	// Initialize settings so that the paths can be read.
 	if (!TFE_Settings::init())
 	{
+		TFE_System::logWrite(LOG_ERROR, "Main", "Cannot load settings.");
 		return PROGRAM_ERROR;
 	}
 
 	// Override settings with command line options.
+	TFE_System::logWrite(LOG_ERROR, "Main", "Parse Command Line.");
 	parseCommandLine(argc, argv);
 
 	// Setup game paths.

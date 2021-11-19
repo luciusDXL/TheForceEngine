@@ -479,7 +479,21 @@ namespace TFE_DarkForces
 					loadCustomGob(arg + 2);
 				}
 			}
-			
+		}
+
+		// TFE: Support drag and drop.
+		if (argCount == 2)
+		{
+			const char* arg = argv[1];
+			if (arg && arg[0] && arg[0] != '-')
+			{
+				const size_t len = strlen(arg);
+				const char* ext = len > 3 ? &arg[len - 3] : nullptr;
+				if (ext && strcasecmp(ext, "zip") == 0)
+				{
+					loadCustomGob(arg);
+				}
+			}
 		}
 	}
 
@@ -518,7 +532,7 @@ namespace TFE_DarkForces
 
 					if (gobIndex >= 0)
 					{
-						u32 bufferLen = zipArchive.getFileLength(gobIndex);
+						u32 bufferLen = (u32)zipArchive.getFileLength(gobIndex);
 						u8* buffer = (u8*)malloc(bufferLen);
 						zipArchive.openFile(gobIndex);
 						zipArchive.readFile(buffer, bufferLen);

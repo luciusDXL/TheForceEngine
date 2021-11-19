@@ -47,7 +47,7 @@ namespace TFE_Image
 		// In the next section, we load one image
 		ilGenImages(1, &handle);
 		ilBindImage(handle);
-		if (ilLoadL(IL_JPG, buffer, size) == IL_FALSE)
+		if (ilLoadL(IL_JPG, buffer, (ILuint)size) == IL_FALSE)
 		{
 			return nullptr;
 		}

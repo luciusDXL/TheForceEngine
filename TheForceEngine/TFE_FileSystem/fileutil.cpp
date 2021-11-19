@@ -78,6 +78,23 @@ namespace FileUtil
 		GetCurrentDirectoryA(512, dir);
 	}
 
+	void getExecutionDirectory(char* dir)
+	{
+	#ifdef _WIN32
+		GetModuleFileNameA(NULL, dir, MAX_PATH);
+		size_t len = strlen(dir);
+		size_t lastSlash = 0;
+		for (size_t i = 0; i < len; i++)
+		{
+			if (dir[i] == '/' || dir[i] == '\\')
+			{
+				lastSlash = i;
+			}
+		}
+		dir[lastSlash] = 0;
+	#endif
+	}
+
 	void setCurrentDirectory(const char* dir)
 	{
 		SetCurrentDirectoryA(dir);

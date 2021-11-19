@@ -11,6 +11,7 @@ namespace FileUtil
 	void readDirectory(const char* dir, const char* ext, FileList& fileList);
 	bool makeDirectory(const char* dir);
 	void getCurrentDirectory(char* dir);
+	void getExecutionDirectory(char* dir);
 	void setCurrentDirectory(const char* dir);
 
 	void readSubdirectories(const char* dir, FileList& dirList);
