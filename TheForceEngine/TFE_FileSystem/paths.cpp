@@ -2,6 +2,7 @@
 #include "paths.h"
 #include "fileutil.h"
 #include "filestream.h"
+#include <TFE_System/system.h>
 #include <TFE_Archive/archive.h>
 #include <string>
 
@@ -89,8 +90,18 @@ namespace TFE_Paths
 	{
 		char path[TFE_MAX_PATH];
 		FileUtil::getCurrentDirectory(path);
+		// This is here for ease of use in Visual Studio.
+		// Check to see if the current directory is valid.
+		char testPath[TFE_MAX_PATH];
+		sprintf(testPath, "%s/%s", path, "SDL2.dll");
+		if (!FileUtil::exists(testPath))
+		{
+			FileUtil::getExecutionDirectory(path);
+		}
+
 		s_paths[PATH_PROGRAM] = path;
 		s_paths[PATH_PROGRAM] += "\\";
+		FileUtil::setCurrentDirectory(s_paths[PATH_PROGRAM].c_str());
 		return true;
 	}
 

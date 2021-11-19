@@ -491,7 +491,26 @@ namespace TFE_DarkForces
 				const char* ext = len > 3 ? &arg[len - 3] : nullptr;
 				if (ext && strcasecmp(ext, "zip") == 0)
 				{
-					loadCustomGob(arg);
+					// Next check to see if the path is already in the local paths.
+					char path[TFE_MAX_PATH];
+					char fileName[TFE_MAX_PATH];
+					size_t len = strlen(arg);
+					size_t lastSlash = 0;
+					for (size_t i = 0; i < len; i++)
+					{
+						if (arg[i] == '\\' || arg[i] == '/')
+						{
+							lastSlash = i;
+						}
+					}
+					memcpy(path, arg, lastSlash + 1);
+					memcpy(fileName, &arg[lastSlash + 1], len - lastSlash - 1);
+
+					TFE_Paths::fixupPathAsDirectory(path);
+					TFE_Paths::addAbsoluteSearchPath(path);
+					TFE_System::logWrite(LOG_MSG, "DarkForces", "Drag and Drop Mod File: '%s'; Path: '%s'", fileName, path);
+					
+					loadCustomGob(fileName);
 				}
 			}
 		}
