@@ -457,7 +457,6 @@ int main(int argc, char* argv[])
 	}
 
 	// Override settings with command line options.
-	TFE_System::logWrite(LOG_ERROR, "Main", "Parse Command Line.");
 	parseCommandLine(argc, argv);
 
 	// Setup game paths.

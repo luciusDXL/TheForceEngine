@@ -724,7 +724,7 @@ namespace TFE_FrontEndUI
 		s_readBuffer[1].clear();
 		if (archiveMod || archiveBase)
 		{
-			if (archiveMod && archiveMod->openFile("wait.bm"))
+			if (archiveMod && archiveMod->fileExists("wait.bm") && archiveMod->openFile("wait.bm"))
 			{
 				s_readBuffer[0].resize(archiveMod->getFileLength());
 				archiveMod->readFile(s_readBuffer[0].data(), archiveMod->getFileLength());
@@ -737,7 +737,7 @@ namespace TFE_FrontEndUI
 				archiveTex->closeFile();
 			}
 
-			if (archiveMod && archiveMod->openFile("wait.pal"))
+			if (archiveMod && archiveMod->fileExists("wait.pal") && archiveMod->openFile("wait.pal"))
 			{
 				s_readBuffer[1].resize(archiveMod->getFileLength());
 				archiveMod->readFile(s_readBuffer[1].data(), archiveMod->getFileLength());
