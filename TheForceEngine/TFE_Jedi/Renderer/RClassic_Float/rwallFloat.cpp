@@ -2130,8 +2130,7 @@ namespace RClassic_Float
 		for (s32 i = end; i >= 0; i--, offset -= s_width, vCoordFixed += s_vCoordStep)
 		{
 			const s32 v = floor20(vCoordFixed) & s_texHeightMask;
-			const u8 c = tex[v];
-			s_columnOut[offset] = c;
+			s_columnOut[offset] = tex[v];
 		}
 	}
 
@@ -2145,8 +2144,7 @@ namespace RClassic_Float
 		for (s32 i = end; i >= 0; i--, offset -= s_width, vCoordFixed += s_vCoordStep)
 		{
 			const s32 v = floor20(vCoordFixed) & s_texHeightMask;
-			const u8 c  = s_columnLight[tex[v]];
-			s_columnOut[offset] = c;
+			s_columnOut[offset] = s_columnLight[tex[v]];
 		}
 	}
 
