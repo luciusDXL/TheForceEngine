@@ -3,6 +3,8 @@
 // Wall
 // Dark Forces Derived Renderer - Wall functions
 //////////////////////////////////////////////////////////////////////
+
+#include <utility>
 #include <TFE_System/types.h>
 #include "core_math.h"
 
