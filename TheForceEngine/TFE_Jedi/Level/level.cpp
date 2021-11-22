@@ -746,6 +746,7 @@ namespace TFE_Jedi
 						{
 							sector_addObject(sector, obj);
 							obj3d_setData(obj, s_pods[s_dataIndex]);
+							obj->pitch = -obj->pitch;
 							obj3d_computeTransform(obj);
 						} break;
 						case KW_SPRITE:
