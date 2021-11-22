@@ -634,14 +634,18 @@ namespace TFE_RenderBackend
 
 			// pillarbox
 			x = (m_windowState.width - w) / 2;
+			if (x < 0) { x = 0; }
 		}
-		else if (s_displayMode == DMODE_ASPECT_CORRECT && !s_widescreen)
+		else if (s_displayMode == DMODE_ASPECT_CORRECT && (!s_widescreen || h > w))
 		{
+			s_widescreen = false;
+			TFE_Settings::getGraphicsSettings()->widescreen = false;
 			h = 3 * m_windowState.width / 4;
 			w = m_windowState.width;
 
 			// letterbox
 			y = (m_windowState.height - h) / 2;
+			if (y < 0) { y = 0; }
 		}
 		TFE_PostProcess::clearEffectStack();
 
