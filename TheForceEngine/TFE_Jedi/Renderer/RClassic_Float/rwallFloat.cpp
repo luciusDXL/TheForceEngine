@@ -2123,53 +2123,42 @@ namespace RClassic_Float
 	void drawColumn_Fullbright()
 	{
 		fixed44_20 vCoordFixed = s_vCoordFixed;
-		u8* tex = s_texImage;
-
-		s32 v = floor20(vCoordFixed) & s_texHeightMask;
-		s32 end = s_yPixelCount - 1;
+		const u8* tex = s_texImage;
+		const s32 end = s_yPixelCount - 1;
 
 		s32 offset = end * s_width;
-		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		for (s32 i = end; i >= 0; i--, offset -= s_width, vCoordFixed += s_vCoordStep)
 		{
-			const u8 c = tex[v];
-			vCoordFixed += s_vCoordStep;
-			v = floor20(vCoordFixed) & s_texHeightMask;
-			s_columnOut[offset] = c;
+			const s32 v = floor20(vCoordFixed) & s_texHeightMask;
+			s_columnOut[offset] = tex[v];
 		}
 	}
 
 	void drawColumn_Lit()
 	{
 		fixed44_20 vCoordFixed = s_vCoordFixed;
-		u8* tex = s_texImage;
-
-		s32 v = floor20(vCoordFixed) & s_texHeightMask;
-		s32 end = s_yPixelCount - 1;
+		const u8* tex = s_texImage;
+		const s32 end = s_yPixelCount - 1;
 
 		s32 offset = end * s_width;
-		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		for (s32 i = end; i >= 0; i--, offset -= s_width, vCoordFixed += s_vCoordStep)
 		{
-			const u8 c = s_columnLight[tex[v]];
-			vCoordFixed += s_vCoordStep;
-			v = floor20(vCoordFixed) & s_texHeightMask;
-			s_columnOut[offset] = c;
+			const s32 v = floor20(vCoordFixed) & s_texHeightMask;
+			s_columnOut[offset] = s_columnLight[tex[v]];
 		}
 	}
 
 	void drawColumn_Fullbright_Trans()
 	{
 		fixed44_20 vCoordFixed = s_vCoordFixed;
-		u8* tex = s_texImage;
-
-		s32 v = floor20(vCoordFixed) & s_texHeightMask;
-		s32 end = s_yPixelCount - 1;
+		const u8* tex = s_texImage;
+		const s32 end = s_yPixelCount - 1;
 
 		s32 offset = end * s_width;
-		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		for (s32 i = end; i >= 0; i--, offset -= s_width, vCoordFixed += s_vCoordStep)
 		{
+			const s32 v = floor20(vCoordFixed) & s_texHeightMask;
 			const u8 c = tex[v];
-			vCoordFixed += s_vCoordStep;
-			v = floor20(vCoordFixed) & s_texHeightMask;
 			if (c) { s_columnOut[offset] = c; }
 		}
 	}
@@ -2177,17 +2166,14 @@ namespace RClassic_Float
 	void drawColumn_Lit_Trans()
 	{
 		fixed44_20 vCoordFixed = s_vCoordFixed;
-		u8* tex = s_texImage;
-
-		s32 v = floor20(vCoordFixed) & s_texHeightMask;
-		s32 end = s_yPixelCount - 1;
+		const u8* tex = s_texImage;
+		const s32 end = s_yPixelCount - 1;
 
 		s32 offset = end * s_width;
-		for (s32 i = end; i >= 0; i--, offset -= s_width)
+		for (s32 i = end; i >= 0; i--, offset -= s_width, vCoordFixed += s_vCoordStep)
 		{
+			const s32 v = floor20(vCoordFixed) & s_texHeightMask;
 			const u8 c = tex[v];
-			vCoordFixed += s_vCoordStep;
-			v = floor20(vCoordFixed) & s_texHeightMask;
 			if (c) { s_columnOut[offset] = s_columnLight[c]; }
 		}
 	}
