@@ -459,7 +459,7 @@ namespace TFE_DarkForces
 	void blitLoadingScreen()
 	{
 		if (!s_loadScreen) { return; }
-		blitTextureToScreen(s_loadScreen, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 0/*x0*/, 0/*y0*/, s_framebuffer);
+		blitTextureToScreen(s_loadScreen, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 0/*x0*/, 0/*y0*/, s_framebuffer, JFALSE, JTRUE);
 	}
 
 	void displayLoadingScreen()

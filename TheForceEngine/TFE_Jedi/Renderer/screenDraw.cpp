@@ -240,7 +240,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output, JBool forceTransparency)
+	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output, JBool forceTransparency, JBool forceOpaque)
 	{
 		s32 x1 = x0 + texture->width  - 1;
 		s32 y1 = y0 + texture->height - 1;
@@ -274,7 +274,7 @@ namespace TFE_Jedi
 
 		u8* buffer = texture->image + texture->height*srcX + srcY;
 		const u32 stride = vfb_getStride();
-		if ((texture->flags & OPACITY_TRANS) || forceTransparency)
+		if (!forceOpaque && ((texture->flags & OPACITY_TRANS) || forceTransparency))
 		{
 			for (s32 col = x0; col <= x1; col++, buffer += texture->height)
 			{
