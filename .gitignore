@@ -50,6 +50,7 @@
 
 #Directories
 .vs/
+Internal/
 TheForceEngine/Mods/
 TheForceEngine/screenshots/
 TheForceEngine/Reference/
