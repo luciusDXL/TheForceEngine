@@ -2,7 +2,7 @@
 #include "agent.h"
 #include "config.h"
 #include "gameMessage.h"
-#include "gameList.h"
+#include "cutsceneList.h"
 #include "hud.h"
 #include "item.h"
 #include "mission.h"
@@ -116,7 +116,7 @@ namespace TFE_DarkForces
 	static const GMidiAsset* s_levelBoss;
 
 	static Task* s_loadMissionTask = nullptr;
-	static ListItem* s_cutsceneList = nullptr;
+	static CutsceneState* s_cutsceneList = nullptr;
 
 	static GameState s_state = GSTATE_STARTUP_CUTSCENES;
 	static s32 s_levelIndex;
@@ -182,7 +182,7 @@ namespace TFE_DarkForces
 		s_hotKeyMessages.count = 0;
 		s_hotKeyMessages.msgList = nullptr;
 		gameMessage_freeBuffer();
-		gameList_freeBuffer();
+		cutsceneList_freeBuffer();
 
 		// Clear paths and archives.
 		TFE_Paths::clearSearchPaths();
@@ -360,7 +360,7 @@ namespace TFE_DarkForces
 
 	void loadCutsceneList()
 	{
-		s_cutsceneList = gameList_load("cutscene.lst");
+		s_cutsceneList = cutsceneList_load("cutscene.lst");
 	}
 	
 	void disableLevelMusic()

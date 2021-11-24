@@ -775,7 +775,7 @@
     <ClInclude Include="TFE_FrontEndUI\editorTexture.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\gameList.h">
+    <ClInclude Include="TFE_DarkForces\cutsceneList.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1293,7 +1293,7 @@
     <ClCompile Include="TFE_FrontEndUI\editorTexture.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_DarkForces\gameList.cpp">
+    <ClCompile Include="TFE_DarkForces\cutsceneList.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>

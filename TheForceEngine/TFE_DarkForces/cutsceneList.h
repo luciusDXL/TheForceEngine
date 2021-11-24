@@ -1,14 +1,13 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
-// Dark Forces Game Message
-// This handles HUD messages, local messages, etc.
+// Dark Forces Cutscene List
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
 
 namespace TFE_DarkForces
 {
-	struct ListItem
+	struct CutsceneState
 	{
 		char archive[14];
 		char scene[10];
@@ -20,6 +19,6 @@ namespace TFE_DarkForces
 		s16 volume;
 	};
 
-	void gameList_freeBuffer();
-	ListItem* gameList_load(const char* filename);
+	void cutsceneList_freeBuffer();
+	CutsceneState* cutsceneList_load(const char* filename);
 }  // TFE_DarkForces
