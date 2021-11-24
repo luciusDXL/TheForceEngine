@@ -379,7 +379,9 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\automap.h" />
     <ClInclude Include="TFE_DarkForces\cheats.h" />
     <ClInclude Include="TFE_DarkForces\config.h" />
+    <ClInclude Include="TFE_DarkForces\cutscene.h" />
     <ClInclude Include="TFE_DarkForces\cutsceneList.h" />
+    <ClInclude Include="TFE_DarkForces\cutscene_player.h" />
     <ClInclude Include="TFE_DarkForces\darkForcesMain.h" />
     <ClInclude Include="TFE_DarkForces\gameMessage.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\agentMenu.h" />
@@ -586,7 +588,9 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\automap.cpp" />
     <ClCompile Include="TFE_DarkForces\cheats.cpp" />
     <ClCompile Include="TFE_DarkForces\config.cpp" />
+    <ClCompile Include="TFE_DarkForces\cutscene.cpp" />
     <ClCompile Include="TFE_DarkForces\cutsceneList.cpp" />
+    <ClCompile Include="TFE_DarkForces\cutscene_player.cpp" />
     <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp" />
     <ClCompile Include="TFE_DarkForces\gameMessage.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\agentMenu.cpp" />
