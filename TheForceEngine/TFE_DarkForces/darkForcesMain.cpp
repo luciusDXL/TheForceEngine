@@ -1,6 +1,7 @@
 #include "darkForcesMain.h"
 #include "agent.h"
 #include "config.h"
+#include "cutscene.h"
 #include "gameMessage.h"
 #include "cutsceneList.h"
 #include "hud.h"
@@ -135,7 +136,6 @@ namespace TFE_DarkForces
 	void openGobFiles();
 	void gameStartup();
 	void loadAgentAndLevelData();
-	void cutscenes_startup(s32 id);
 	void startNextMode();
 	void disableLevelMusic();
 	void freeAllMidi();
@@ -166,7 +166,7 @@ namespace TFE_DarkForces
 		loadAgentAndLevelData();
 
 		renderer_init();
-
+		
 		// TFE Specific
 		actorDebug_init();
 
@@ -283,7 +283,8 @@ namespace TFE_DarkForces
 		{
 			case GSTATE_STARTUP_CUTSCENES:
 			{
-				cutscenes_startup(10);
+				cutscene_play(10);
+				s_state = GSTATE_CUTSCENE;
 				s_invalidLevelIndex = JFALSE;
 			} break;
 			case GSTATE_AGENT_MENU:
@@ -310,8 +311,10 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_CUTSCENE:
 			{
-				// STUB
-				startNextMode();
+				if (!cutscene_update())
+				{
+					startNextMode();
+				}
 			} break;
 			case GSTATE_BRIEFING:
 			{
@@ -361,6 +364,7 @@ namespace TFE_DarkForces
 	void loadCutsceneList()
 	{
 		s_cutsceneList = cutsceneList_load("cutscene.lst");
+		cutscene_init(s_cutsceneList);
 	}
 	
 	void disableLevelMusic()
@@ -419,9 +423,8 @@ namespace TFE_DarkForces
 			} break;
 			case GMODE_CUTSCENE:
 			{
-				// STUB
-				// cutscenes_startup(s_cutsceneData[s_cutsceneIndex].cutscene);
-				// This will also change s_state -> GSTATE_CUTSCENE
+				cutscene_play(s_cutsceneData[s_cutsceneIndex].cutscene);
+				s_state = GSTATE_CUTSCENE;
 			} break;
 			case GMODE_BRIEFING:
 			{
@@ -697,14 +700,6 @@ namespace TFE_DarkForces
 		return nullptr;
 	}
 
-	void cutscenes_startup(s32 id)
-	{
-		// STUB
-		// TODO in the following releases.
-
-		s_state = GSTATE_AGENT_MENU;
-	}
-		
 	void loadAgentAndLevelData()
 	{
 		agent_loadData();

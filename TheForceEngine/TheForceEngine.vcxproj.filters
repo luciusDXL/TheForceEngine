@@ -146,6 +146,9 @@
     <Filter Include="Source\TFE_Jedi\Renderer\RClassic_Float\robj3d_float">
       <UniqueIdentifier>{acefdcf2-a934-432e-a2a3-450ff132731e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_DarkForces\Landru">
+      <UniqueIdentifier>{16d4cd76-d325-4388-9c2f-ef36f102cbce}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -784,6 +787,21 @@
     <ClInclude Include="TFE_DarkForces\cutscene_player.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\cutscene_film.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lactor.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lview.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lrect.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\ltimer.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1307,6 +1325,21 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\cutscene_player.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\cutscene_film.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lactor.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lview.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lrect.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\ltimer.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

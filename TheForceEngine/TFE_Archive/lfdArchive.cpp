@@ -51,7 +51,7 @@ bool LfdArchive::open(const char *archivePath)
 		memcpy(ext, entry.TYPE, 4);
 		ext[4] = 0;
 
-		sprintf(m_fileList.entries[i].NAME, "%s.%s", name, ext);
+		sprintf(m_fileList.entries[i].NAME, "%s", name, ext);
 		m_fileList.entries[i].LENGTH = entry.LENGTH;
 		m_fileList.entries[i].IX = IX + sizeof(LFD_Entry_t);
 
