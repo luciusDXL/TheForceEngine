@@ -1,5 +1,5 @@
 #include "cutsceneList.h"
-#include "util.h"
+#include <TFE_DarkForces/util.h>
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>

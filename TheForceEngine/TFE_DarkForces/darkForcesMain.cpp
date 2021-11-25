@@ -1,9 +1,7 @@
 #include "darkForcesMain.h"
 #include "agent.h"
 #include "config.h"
-#include "cutscene.h"
 #include "gameMessage.h"
-#include "cutsceneList.h"
 #include "hud.h"
 #include "item.h"
 #include "mission.h"
@@ -14,6 +12,8 @@
 #include "vueLogic.h"
 #include "GameUI/agentMenu.h"
 #include "GameUI/escapeMenu.h"
+#include <TFE_DarkForces/Landru/cutscene.h>
+#include <TFE_DarkForces/Landru/cutsceneList.h>
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>

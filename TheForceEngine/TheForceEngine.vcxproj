@@ -379,10 +379,6 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\automap.h" />
     <ClInclude Include="TFE_DarkForces\cheats.h" />
     <ClInclude Include="TFE_DarkForces\config.h" />
-    <ClInclude Include="TFE_DarkForces\cutscene.h" />
-    <ClInclude Include="TFE_DarkForces\cutsceneList.h" />
-    <ClInclude Include="TFE_DarkForces\cutscene_film.h" />
-    <ClInclude Include="TFE_DarkForces\cutscene_player.h" />
     <ClInclude Include="TFE_DarkForces\darkForcesMain.h" />
     <ClInclude Include="TFE_DarkForces\gameMessage.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\agentMenu.h" />
@@ -394,6 +390,10 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\hitEffect.h" />
     <ClInclude Include="TFE_DarkForces\hud.h" />
     <ClInclude Include="TFE_DarkForces\item.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\cutscene.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\cutsceneList.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\cutscene_film.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\cutscene_player.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lactor.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lrect.h" />
     <ClInclude Include="TFE_DarkForces\Landru\ltimer.h" />
@@ -593,10 +593,6 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\automap.cpp" />
     <ClCompile Include="TFE_DarkForces\cheats.cpp" />
     <ClCompile Include="TFE_DarkForces\config.cpp" />
-    <ClCompile Include="TFE_DarkForces\cutscene.cpp" />
-    <ClCompile Include="TFE_DarkForces\cutsceneList.cpp" />
-    <ClCompile Include="TFE_DarkForces\cutscene_film.cpp" />
-    <ClCompile Include="TFE_DarkForces\cutscene_player.cpp" />
     <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp" />
     <ClCompile Include="TFE_DarkForces\gameMessage.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\agentMenu.cpp" />
@@ -608,6 +604,10 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\hitEffect.cpp" />
     <ClCompile Include="TFE_DarkForces\hud.cpp" />
     <ClCompile Include="TFE_DarkForces\item.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\cutscene.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\cutsceneList.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\cutscene_film.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\cutscene_player.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lactor.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lrect.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\ltimer.cpp" />

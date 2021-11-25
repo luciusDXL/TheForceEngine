@@ -1,5 +1,4 @@
 #include "cutscene_film.h"
-#include "util.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>

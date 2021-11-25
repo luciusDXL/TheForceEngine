@@ -778,18 +778,6 @@
     <ClInclude Include="TFE_FrontEndUI\editorTexture.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\cutsceneList.h">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_DarkForces\cutscene.h">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_DarkForces\cutscene_player.h">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_DarkForces\cutscene_film.h">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\Landru\lactor.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
@@ -800,6 +788,18 @@
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
     <ClInclude Include="TFE_DarkForces\Landru\ltimer.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\cutscene.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\cutscene_film.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\cutscene_player.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\cutsceneList.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1317,18 +1317,6 @@
     <ClCompile Include="TFE_FrontEndUI\editorTexture.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_DarkForces\cutsceneList.cpp">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_DarkForces\cutscene.cpp">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_DarkForces\cutscene_player.cpp">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_DarkForces\cutscene_film.cpp">
-      <Filter>Source\TFE_DarkForces</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\lactor.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
@@ -1339,6 +1327,18 @@
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\ltimer.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\cutscene.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\cutscene_film.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\cutscene_player.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\cutsceneList.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>

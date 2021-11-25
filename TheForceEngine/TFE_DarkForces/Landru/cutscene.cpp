@@ -1,6 +1,5 @@
 #include "cutscene.h"
 #include "cutscene_player.h"
-#include "util.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>

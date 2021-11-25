@@ -1,6 +1,5 @@
 #include "cutscene_player.h"
 #include "cutscene_film.h"
-#include "util.h"
 #include "time.h"
 #include <TFE_DarkForces/Landru/ltimer.h>
 #include <TFE_Game/igame.h>
@@ -50,7 +49,7 @@ namespace TFE_DarkForces
 
 	static s32 s_scene  = SCENE_EXIT;
 	static s32 s_playId = 0;
-	static Tick s_frameDelay;
+	static LTick s_frameDelay;
 
 	extern CutsceneState* s_playSeq;
 	extern s32 s_soundVolume;
