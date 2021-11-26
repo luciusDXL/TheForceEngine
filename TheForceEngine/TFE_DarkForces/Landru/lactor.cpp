@@ -1,4 +1,5 @@
 #include "lactor.h"
+#include "lcanvas.h"
 #include "lview.h"
 #include "ltimer.h"
 #include <TFE_Game/igame.h>
@@ -204,8 +205,8 @@ namespace TFE_DarkForces
 						if (lview_clipObjToView(i, curActor->zplane, &curActor->frame, &rect, &clipRect))
 						{
 							s32 curRefresh = (curActor->flags&LAFLAG_REFRESH) | (curActor->flags&LAFLAG_REFRESHABLE) | refresh;
-							// TODO:
-							// set drawing canvas clip (&clipRect)
+							lcanvas_setClip(&clipRect);
+
 							s16 x, y;
 							lactor_getRelativePos(curActor, &rect, &x, &y);
 							curActor->drawFunc(curActor, &rect, &clipRect, x, y, curRefresh ? JTRUE : JFALSE);

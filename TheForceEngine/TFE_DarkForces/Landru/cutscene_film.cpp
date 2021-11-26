@@ -2,6 +2,7 @@
 #include "lactorDelt.h"
 #include "lactorAnim.h"
 #include "lactorCust.h"
+#include "lcanvas.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
@@ -94,13 +95,7 @@ namespace TFE_DarkForces
 		if (actor)
 		{
 			LRect rect;
-			u32 width, height;
-			vfb_getResolution(&width, &height);
-			// GetDrawingCanvasClip(&rect);
-			rect.left   = 0;
-			rect.top    = 0;
-			rect.right  = s16(width);
-			rect.bottom = s16(height);
+			lcanvas_getClip(&rect);
 
 			if (actor->resType == CF_TYPE_DELTA_ACTOR)
 			{
@@ -123,7 +118,7 @@ namespace TFE_DarkForces
 	JBool cutsceneFilm_readObject(u32 type, const char* name, u8** obj)
 	{
 		LRect rect;
-		// GetDrawingCanvasBounds(&rect);
+		lcanvas_getBounds(&rect);
 
 		LActor* actor = nullptr;
 		JBool retValue = JTRUE;

@@ -1,5 +1,6 @@
 #include "lactorDelt.h"
 #include "cutscene_film.h"
+#include "lcanvas.h"
 #include "lview.h"
 #include "ltimer.h"
 #include <TFE_Game/igame.h>
@@ -10,12 +11,7 @@ namespace TFE_DarkForces
 	static JBool s_lactorDeltInit = JFALSE;
 
 	///////////////////////////////////////////
-	// TODO: Canvas and draw API.
-	JBool lcanvas_clipRectToCanvas(LRect* rect)
-	{
-		return JFALSE;
-	}
-
+	// TODO: Draw API.
 	void deltaImage(s16* data, s16 x, s16 y)
 	{
 	}

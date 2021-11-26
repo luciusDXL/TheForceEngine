@@ -1,5 +1,6 @@
 #include "lview.h"
 #include "lactor.h"
+#include "lcanvas.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -43,17 +44,11 @@ namespace TFE_DarkForces
 
 	void lview_initView(LView* view)
 	{
-		u32 width, height;
-		vfb_getResolution(&width, &height);
-
 		for (s32 i = 0; i < LVIEW_COUNT; i++)
 		{
 			if (i == 0)
 			{
-				view->frame[i].left   = 0;
-				view->frame[i].top    = 0;
-				view->frame[i].right  = s16(width);
-				view->frame[i].bottom = s16(height);
+				lcanvas_getBounds(&view->frame[i]);
 				view->zStart[i] = -32000;
 				view->zStop[i]  =  32000;
 			}
@@ -76,11 +71,7 @@ namespace TFE_DarkForces
 			view->trackActive[i] = 0;
 			view->clearView[i] = LVIEW_FLAG_CLEAR | LVIEW_FLAG_COPY;
 		}
-
-		view->clipFrame.left   = 0;
-		view->clipFrame.top    = 0;
-		view->clipFrame.right  = s16(width);
-		view->clipFrame.bottom = s16(height);
+		lcanvas_getBounds(&view->clipFrame);
 
 		view->time = 0;
 		view->refreshWorld = 0;
@@ -258,13 +249,7 @@ namespace TFE_DarkForces
 
 	void lview_restoreClipFrame()
 	{
-		u32 width, height;
-		vfb_getResolution(&width, &height);
-
-		s_view->clipFrame.left   = 0;
-		s_view->clipFrame.top    = 0;
-		s_view->clipFrame.right  = s16(width - 1);
-		s_view->clipFrame.bottom = s16(height - 1);
+		lcanvas_getBounds(&s_view->clipFrame);
 	}
 
 	void lview_setZPlane(s16 viewIndex, s16 zStart, s16 zStop)
