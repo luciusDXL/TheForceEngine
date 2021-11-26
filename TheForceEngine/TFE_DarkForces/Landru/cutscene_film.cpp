@@ -1,4 +1,7 @@
 #include "cutscene_film.h"
+#include "lactorDelt.h"
+#include "lactorAnim.h"
+#include "lactorCust.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
@@ -13,6 +16,8 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
+	LActor* cutsceneFilm_cloneActor(u32 type, const char* name);
+
 	Film* allocate()
 	{
 		Film* film = (Film*)game_alloc(sizeof(Film));
@@ -71,43 +76,117 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
-	JBool cutsceneFilm_readObject(u32 type, const char* name, u8** data)
+	LActor* cutsceneFilm_cloneActor(u32 type, const char* name)
 	{
-		JBool found = JFALSE;
+		LActor* curActor = lactor_getList();
+		LActor* actor = nullptr;
+		s32 equal = 0;
+		while (curActor && !actor)
+		{
+			if (type == curActor->resType && strcmp(name, curActor->name) == 0)
+			{
+				actor = curActor;
+			}
+			curActor = curActor->next;
+		}
+
+		curActor = nullptr;
+		if (actor)
+		{
+			LRect rect;
+			u32 width, height;
+			vfb_getResolution(&width, &height);
+			// GetDrawingCanvasClip(&rect);
+			rect.left   = 0;
+			rect.top    = 0;
+			rect.right  = s16(width);
+			rect.bottom = s16(height);
+
+			if (actor->resType == CF_TYPE_DELTA_ACTOR)
+			{
+				curActor = lactorDelt_alloc(nullptr, &rect, 0, 0, 0);
+			}
+			else
+			{
+				curActor = lactorAnim_alloc(nullptr, &rect, 0, 0, 0);
+			}
+
+			if (curActor)
+			{
+				lactor_copyData(curActor, actor);
+				lactor_setName(curActor, type, name);
+			}
+		}
+		return curActor;
+	}
+
+	JBool cutsceneFilm_readObject(u32 type, const char* name, u8** obj)
+	{
+		LRect rect;
+		// GetDrawingCanvasBounds(&rect);
+
+		LActor* actor = nullptr;
+		JBool retValue = JTRUE;
 		if (type != CF_TYPE_VIEW && type != CF_TYPE_CUSTOM_ACTOR)
 		{
 			if (type == CF_TYPE_DELTA_ACTOR)
 			{
-				found = JTRUE;
+				actor = cutsceneFilm_cloneActor(type, name);
+				if (!actor)
+				{
+					actor = lactorDelt_load(name, &rect, 0, 0, 0);
+				}
+				if (!actor) { retValue = JFALSE; }
 			}
-			else if (type == CF_TYPE_ANIM_ACTOR && !found)
+			else if (type == CF_TYPE_ANIM_ACTOR)
 			{
-				found = JTRUE;
+				actor = cutsceneFilm_cloneActor(type, name);
+				if (!actor)
+				{
+					actor = lactorAnim_load(name, &rect, 0, 0, 0);
+				}
 			}
-			else if (type == CF_TYPE_PALETTE && !found)
+			else if (type == CF_TYPE_PALETTE)
 			{
-				found = JTRUE;
+				// TODO: load palette.
 			}
-			else if (type == CF_TYPE_GMIDI && !found)
+			else if (type == CF_TYPE_GMIDI)
 			{
-				found = JTRUE;
+				// TODO: load midi.
 			}
-			else if (type == CF_TYPE_VOC_SOUND && !found)
+			else if (type == CF_TYPE_VOC_SOUND)
 			{
-				found = JTRUE;
+				// TODO: load sound.
 			}
 		}
 		else if (type == CF_TYPE_CUSTOM_ACTOR)
 		{
-			found = JTRUE;
+			actor = lactorCust_alloc(nullptr, &rect, 0, 0, 0);
+			if (actor)
+			{
+				lactor_setDrawFunc(actor, nullptr);
+			}
+			if (!actor) { retValue = JFALSE; }
 		}
 
-		if (!found)
+		if (actor)
 		{
-			static s32 _x = 0;
-			_x++;
+			lactor_setTime(actor, -1, -1);
+			*obj = (u8*)actor;
 		}
+		/*  TODO
+		else if (palette)
+		{
+			*obj = (u8*)palette;
+		}
+		else
+		{
+			*obj = (u8*)sound;
+		}
+		*/
 
+		// For now always return true until this is complete.
+		// return retValue;
 		return JTRUE;
 	}
 
@@ -145,7 +224,10 @@ namespace TFE_DarkForces
 
 		u8** array = nullptr;
 		FilePath resPath;
-		if (TFE_Paths::getFilePath(name, &resPath))
+		char filmName[32];
+		sprintf(filmName, "%s.FILM", name);
+
+		if (TFE_Paths::getFilePath(filmName, &resPath))
 		{
 			FileStream file;
 			file.open(&resPath, FileStream::MODE_READ);

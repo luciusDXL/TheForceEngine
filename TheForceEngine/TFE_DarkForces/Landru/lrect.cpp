@@ -113,7 +113,7 @@ namespace TFE_DarkForces
 	}
 		
 	// Flips within the parent.
-	void lrect_flip(LRect* rect, LRect* parent, s16 xFlip, s16 yFlip)
+	void lrect_flip(LRect* rect, LRect* parent, JBool xFlip, JBool yFlip)
 	{
 		if (xFlip)
 		{

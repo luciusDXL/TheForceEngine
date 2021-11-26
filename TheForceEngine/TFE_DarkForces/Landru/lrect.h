@@ -30,7 +30,7 @@ namespace TFE_DarkForces
 	void lrect_offset(LRect* rect, s16 dx, s16 dy);
 	void lrect_origin(LRect* rect);
 	void lrect_align(LRect* rect, LRect* parent, LAlignType xAlign, LAlignType yAlign);
-	void lrect_flip(LRect* rect, LRect* parent, s16 xFlip, s16 yFlip);
+	void lrect_flip(LRect* rect, LRect* parent, JBool xFlip, JBool yFlip);
 	void lrect_inset(LRect* rect, s16 dx, s16 dy);
 	void lrect_enclose(LRect* r1, LRect* r2);
 	void lrect_clipPoint(LRect* rect, s16* x, s16* y);

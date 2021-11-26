@@ -208,7 +208,7 @@ namespace TFE_DarkForces
 							// set drawing canvas clip (&clipRect)
 							s16 x, y;
 							lactor_getRelativePos(curActor, &rect, &x, &y);
-							curActor->drawFunc(curActor, &rect, &clipRect, x, y, curRefresh);
+							curActor->drawFunc(curActor, &rect, &clipRect, x, y, curRefresh ? JTRUE : JFALSE);
 						}
 					}
 

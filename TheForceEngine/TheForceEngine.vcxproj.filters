@@ -802,6 +802,15 @@
     <ClInclude Include="TFE_DarkForces\Landru\cutsceneList.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lactorAnim.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lactorCust.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lactorDelt.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1339,6 +1348,15 @@
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\cutsceneList.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lactorAnim.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lactorCust.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lactorDelt.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>

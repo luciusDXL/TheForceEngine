@@ -36,11 +36,11 @@ namespace TFE_DarkForces
 {
 	struct LActor;
 
-	typedef s16(*LActorDrawFunc)(LActor*, LRect*, LRect*, s16, s16, s16);
+	typedef JBool(*LActorDrawFunc)(LActor*, LRect*, LRect*, s16, s16, JBool);
 	typedef void(*LActorUpdateFunc)(LActor*);
 	typedef void(*LActorCallback)(LActor*, s32);
 	typedef void(*LActorFrameFunc)(LActor*, LRect*);
-	typedef LActor*(*LActorStateFunc)(LActor*, s16 state, s16 stateFract);
+	typedef void(*LActorStateFunc)(LActor*, s16, s16);
 
 	struct LActor
 	{
