@@ -59,7 +59,7 @@ namespace TFE_DarkForces
 		s_lastRate += curRate;
 		s_time += curRate;
 
-		if (s_lastRate >= s_frameRate)
+		if (s_lastRate >= (LTick)s_frameRate)
 		{
 			return JFALSE;
 		}

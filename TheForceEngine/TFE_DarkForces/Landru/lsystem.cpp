@@ -21,7 +21,6 @@ namespace TFE_DarkForces
 		ltime_init();
 		lview_init();
 		lpalette_init();
-		ldraw_init();
 
 		// TODO: Load core fonts, system palette, etc.
 	}
