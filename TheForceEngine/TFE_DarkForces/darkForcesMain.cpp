@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 			{
 				cutscene_play(10);
 				s_state = GSTATE_CUTSCENE;
-				s_invalidLevelIndex = JFALSE;
+				s_invalidLevelIndex = JTRUE;
 			} break;
 			case GSTATE_AGENT_MENU:
 			{

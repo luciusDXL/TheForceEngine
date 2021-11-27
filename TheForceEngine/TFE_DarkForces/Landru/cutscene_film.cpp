@@ -30,6 +30,8 @@ namespace TFE_DarkForces
 	void cutsceneFilm_stepPalette(Film* film, FilmObject* filmObj, u8* data);
 	void cutsceneFilm_rewind(Film* film);
 	void cutsceneFilm_update(Film* film);
+	void cutsceneFilm_freeData(Film* film);
+	void cutsceneFilm_freeDataObject(Film* film, s16 index);
 
 	//////////////////////////////
 	// Fade API
@@ -40,7 +42,7 @@ namespace TFE_DarkForces
 	// End
 	//////////////////////////////
 
-	Film* allocate()
+	Film* cutsceneFilm_allocate()
 	{
 		Film* film = (Film*)game_alloc(sizeof(Film));
 		if (!film) { return nullptr; }
@@ -50,6 +52,67 @@ namespace TFE_DarkForces
 		film->flags = CF_STATE_REFRESH;
 
 		return film;
+	}
+
+	void cutsceneFilm_free(Film* film)
+	{
+		if (!film) { return; }
+
+		if (film->varPtr)
+		{
+			game_free(film->varPtr);
+		}
+		if (film->varPtr2)
+		{
+			game_free(film->varPtr2);
+		}
+		if (film->flags & CF_STATE_DISCARD)
+		{
+			cutsceneFilm_freeData(film);
+		}
+		game_free(film);
+	}
+
+	void cutsceneFilm_freeData(Film* film)
+	{
+		if (!film->array) { return; }
+
+		for (s32 i = 0; i < film->arraySize; i++)
+		{
+			cutsceneFilm_freeDataObject(film, i);
+		}
+
+		game_free(film->array);
+		film->array = nullptr;
+	}
+
+	void cutsceneFilm_freeDataObject(Film* film, s16 index)
+	{
+		FilmObject* filmObj = (FilmObject*)film->array[index];
+		if (filmObj)
+		{
+			switch (filmObj->id)
+			{
+				case CF_FILE_ACTOR:
+				{
+					LActor* actor = (LActor*)filmObj->data;
+					lactor_removeActor(actor);
+					lactor_free(actor);
+				} break;
+				case CF_FILE_PALETTE:
+				{
+					LPalette* pal = (LPalette*)filmObj->data;
+					lpalette_remove(pal);
+					lpalette_free(pal);
+				} break;
+				case CF_FILE_SOUND:
+				{
+					// TODO
+				} break;
+			}
+			game_free(filmObj);
+			film->array[index] = nullptr;
+		}
 	}
 
 	u32 swapEndian(u32 x)
@@ -234,7 +297,7 @@ namespace TFE_DarkForces
 
 	Film* cutsceneFilm_load(const char* name, LRect* frameRect, s16 x, s16 y, s16 z, FilmLoadCallback callback)
 	{
-		Film* film = allocate();
+		Film* film = cutsceneFilm_allocate();
 		if (!film) { return nullptr; }
 
 		u8** array = nullptr;
@@ -573,6 +636,9 @@ namespace TFE_DarkForces
 		if (chunk[1] == CF_CMD_PALETTE_SET)
 		{
 			lpalette_setDstPal((LPalette*)filmObj->data);
+			// Hack.
+			lpalette_copyDstToScreen(0, 0, 255);
+			lpalette_putScreenPal();
 		}
 	}
 
@@ -658,6 +724,8 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+
+		film->curCell++;
 	}
 
 	void cutsceneFilm_update(Film* film)

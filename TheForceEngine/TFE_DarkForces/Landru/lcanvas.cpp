@@ -59,6 +59,12 @@ namespace TFE_DarkForces
 
 		// TODO: Actual drawing API.
 		// PaintClippedRect(rect, 0);
+		// Hack.
+		u8* buffer = vfb_getCpuBuffer();
+		for (s32 i = 0; i < 320 * 200; i++)
+		{
+			buffer[i] = 0;
+		}
 
 		lcanvas_setClip(&clipRect);
 	}

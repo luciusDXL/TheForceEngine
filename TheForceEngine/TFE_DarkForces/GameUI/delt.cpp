@@ -28,8 +28,6 @@ namespace TFE_DarkForces
 	static u8* s_buffer = nullptr;
 	static size_t s_bufferSize = 0;
 
-	void loadDeltIntoFrame(DeltFrame* frame, const u8* buffer, u32 size);
-
 	void delt_resetState()
 	{
 		s_buffer = nullptr;
@@ -215,10 +213,15 @@ namespace TFE_DarkForces
 		memset(frame->texture.image, 0, frame->texture.dataSize);
 
 		const u8* data = buffer + sizeof(DeltHeader);
-		const u8* end = buffer + size;
-		while (data < end)
+		const u8* end = size ? buffer + size : nullptr;
+		while ((data && data < end) || !data)
 		{
 			const DeltLine* line = (DeltLine*)data;
+			if (line->sizeAndType == 0)
+			{
+				break;
+			}
+
 			data += sizeof(DeltLine);
 
 			const s32 startX = line->xStart;

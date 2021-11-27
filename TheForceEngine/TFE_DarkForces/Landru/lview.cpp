@@ -113,6 +113,7 @@ namespace TFE_DarkForces
 
 	void lview_blit()
 	{
+		vfb_swap();
 		// Wait for frame.
 		// Fade to video.
 	}

@@ -13,7 +13,7 @@ namespace TFE_DarkForces
 	void lactorDelt_init();
 	void lactorDelt_destroy();
 
-	LActor* lactorDelt_alloc(u8* delta, LRect* frame, s16 xOffset, s16 yOffset, s16 zPlane);
+	LActor* lactorDelt_alloc(u8* delta,LRect* frame, s16 xOffset, s16 yOffset, s16 zPlane);
 	LActor* lactorDelt_load(const char* name, LRect* rect, s16 x, s16 y, s16 zPlane);
 
 	// Draw

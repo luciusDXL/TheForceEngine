@@ -2,6 +2,7 @@
 #include "cutscene_film.h"
 #include "lcanvas.h"
 #include "lview.h"
+#include "ldraw.h"
 #include "ltimer.h"
 #include <TFE_Game/igame.h>
 #include <assert.h>
@@ -12,22 +13,6 @@ namespace TFE_DarkForces
 
 	///////////////////////////////////////////
 	// TODO: Draw API.
-	void deltaImage(s16* data, s16 x, s16 y)
-	{
-	}
-
-	void deltaClip(s16* data, s16 x, s16 y)
-	{
-	}
-
-	void deltaFlip(s16* data, s16 x, s16 y, s16 w)
-	{
-	}
-
-	void deltaFlipClip(s16* data, s16 x, s16 y, s16 w)
-	{
-	}
-
 	void dirtyRect(LRect* rect)
 	{
 	}
@@ -168,7 +153,7 @@ namespace TFE_DarkForces
 
 		s16 ex = data16[2] + x;
 		s16 ey = data16[3] + y;
-		data16 += 4;
+		//data16 += 4;
 
 		LRect drect;
 		lrect_set(&drect, sx, sy, ex + 1, ey + 1);
@@ -218,7 +203,7 @@ namespace TFE_DarkForces
 			ex = data16[2] + x;
 			ey = data16[3] + y;
 		}
-		data16 += 4;
+		//data16 += 4;
 
 		LRect drect;
 		lrect_set(&drect, sx, sy, ex + 1, ey + 1);

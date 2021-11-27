@@ -53,6 +53,7 @@ namespace TFE_DarkForces
 	static s32 s_playId = 0;
 	static LTick s_frameDelay;
 	static LActor* s_textCrawl = nullptr;
+	static Film* s_film = nullptr;
 
 	extern CutsceneState* s_playSeq;
 	extern s32 s_soundVolume;
@@ -146,8 +147,8 @@ namespace TFE_DarkForces
 			LRect rect;
 			lcanvas_getBounds(&rect);
 
-			Film* film = cutsceneFilm_load(name, &rect, 0, 0, 0, cutscene_loadCallback);
-			if (!film)
+			s_film = cutsceneFilm_load(name, &rect, 0, 0, 0, cutscene_loadCallback);
+			if (!s_film)
 			{
 				TFE_System::logWrite(LOG_ERROR, "CutscenePlayer", "Unable to load all items in cutscene '%s'.", name);
 				s_scene = SCENE_EXIT;
@@ -185,18 +186,44 @@ namespace TFE_DarkForces
 		}
 		lview_clearUpdateFunc();
 	}
+
+	static JBool s_skipSceneInput = JFALSE;
+	static JBool s_nextSceneInput = JFALSE;
 		
 	JBool cutscenePlayer_update()
 	{
 		if (s_scene == SCENE_EXIT) { return JFALSE; }
 
-		s32 exitValue = lview_loop();
-		if (exitValue != VIEW_LOOP_RUNNING)
+		// TFE: Added since inputs can be skipped at slow framerates.
+		if (TFE_Input::keyPressed(KEY_ESCAPE) || TFE_Input::keyPressed(KEY_RETURN))
 		{
-			lview_endLoop();
-			if (s_scene != SCENE_EXIT)
+			s_skipSceneInput = JTRUE;
+		}
+		else if (TFE_Input::keyPressed(KEY_SPACE))
+		{
+			s_nextSceneInput = JTRUE;
+		}
+
+		tfe_updateLTime();
+		if (ltime_isFrameReady())
+		{
+			s32 exitValue = lview_loop();
+			if (exitValue != VIEW_LOOP_RUNNING)
 			{
-				cutscenePlayer_start(exitValue);
+				lview_endLoop();
+				cutscenePlayer_stop();
+				cutsceneFilm_remove(s_film);
+				cutsceneFilm_free(s_film);
+				s_film = nullptr;
+				
+				if (exitValue != SCENE_EXIT)
+				{
+					cutscenePlayer_start(exitValue);
+				}
+				else
+				{
+					s_scene = SCENE_EXIT;
+				}
 			}
 		}
 
@@ -208,11 +235,17 @@ namespace TFE_DarkForces
 		s16 nextScene = s_playSeq[s_playId].nextId;
 		s16 skipScene = s_playSeq[s_playId].skip;
 
-		if (TFE_Input::keyPressed(KEY_ESCAPE) || TFE_Input::keyPressed(KEY_RETURN))
+		if (s_skipSceneInput)
 		{
+			s_skipSceneInput = JFALSE;
 			return skipScene;
 		}
-		else if (TFE_Input::keyPressed(KEY_SPACE))
+		else if (s_nextSceneInput)
+		{
+			s_nextSceneInput = JFALSE;
+			return nextScene;
+		}
+		else if (s_film->curCell >= s_film->cellCount)
 		{
 			return nextScene;
 		}

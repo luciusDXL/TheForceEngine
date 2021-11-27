@@ -3,6 +3,7 @@
 #include "ltimer.h"
 #include "lpalette.h"
 #include "lview.h"
+#include "ldraw.h"
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -20,6 +21,7 @@ namespace TFE_DarkForces
 		ltime_init();
 		lview_init();
 		lpalette_init();
+		ldraw_init();
 
 		// TODO: Load core fonts, system palette, etc.
 	}

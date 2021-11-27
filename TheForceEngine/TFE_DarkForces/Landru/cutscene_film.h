@@ -124,6 +124,9 @@ namespace TFE_DarkForces
 		FilmCallback   callback;
 	};
 
+	Film* cutsceneFilm_allocate();
+	void cutsceneFilm_free(Film* film);
+
 	Film* cutsceneFilm_load(const char* name, LRect* frameRect, s16 x, s16 y, s16 z, FilmLoadCallback callback);
 	void cutsceneFilm_discardData(Film* film);
 	void cutsceneFilm_keepData(Film* film);

@@ -528,6 +528,8 @@ namespace TFE_DarkForces
 		}
 	}
 
+#define _CONV_6bitTo8bit(x) (((x)<<2) | ((x)>>4))
+
 	void lpalette_setVgaPalette()
 	{
 		u32 palette[256];
@@ -535,8 +537,9 @@ namespace TFE_DarkForces
 		LRGB* srcColor = s_videoPal->colors;
 		for (s32 i = 0; i < 256; i++, outColor++, srcColor++)
 		{
-			*outColor = u32(srcColor->r) | (u32(srcColor->g) << 8u) | (u32(srcColor->b) << 16u) | (0xffu << 24u);
+			*outColor = _CONV_6bitTo8bit(srcColor->r) | (_CONV_6bitTo8bit(srcColor->g) << 8u) | (_CONV_6bitTo8bit(srcColor->b) << 16u) | (0xffu << 24u);
 		}
+		vfb_setPalette(palette);
 		vfb_setPalette(palette);
 	}
 
