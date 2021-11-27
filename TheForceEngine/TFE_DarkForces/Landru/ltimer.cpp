@@ -26,6 +26,19 @@ namespace TFE_DarkForces
 		s_curTick = LTick(curTick);
 	}
 
+	void ltime_init()
+	{
+		s_timeInSec = 0.0;
+		s_accum = 0.0;
+		s_curTick = 0;
+		s_lastTick = 0;
+		s_frameRate = 20;
+
+		s_prevRate = 0;
+		s_lastRate = 0;
+		s_time = 0;
+	}
+
 	void ltime_setFrameRate(u16 delay)
 	{
 		s_frameRate = delay;

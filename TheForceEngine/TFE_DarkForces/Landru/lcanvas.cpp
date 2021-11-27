@@ -1,6 +1,7 @@
 #include "lcanvas.h"
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <assert.h>
 
 using namespace TFE_Jedi;
@@ -17,6 +18,8 @@ namespace TFE_DarkForces
 		s_lcanvasSize[1] = h;
 		lrect_set(&s_lcanvasRect, 0, 0, w, h);
 		s_lcanvasClipRect = s_lcanvasRect;
+
+		vfb_setResolution(w, h);
 	}
 
 	void lcanvas_destroy()
@@ -46,5 +49,17 @@ namespace TFE_DarkForces
 	void lcanvas_clearClipRect()
 	{
 		s_lcanvasClipRect = s_lcanvasRect;
+	}
+
+	void lcanvas_eraseRect(LRect* rect)
+	{
+		LRect clipRect;
+		lcanvas_getClip(&clipRect);
+		lcanvas_clearClipRect();
+
+		// TODO: Actual drawing API.
+		// PaintClippedRect(rect, 0);
+
+		lcanvas_setClip(&clipRect);
 	}
 }  // namespace TFE_DarkForces

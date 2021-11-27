@@ -1,5 +1,7 @@
 #include "cutscene.h"
 #include "cutscene_player.h"
+#include "lsystem.h"
+#include "lcanvas.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -36,9 +38,9 @@ namespace TFE_DarkForces
 		}
 		if (!found) return;
 
-		// Change to 320x200.
-		vfb_setResolution(320, 200);
-
+		lcanvas_init(320, 200);
+		lsystem_init();
+		
 		// The original code then starts the cutscene loop here, and then returns when done.
 		// Instead we set a bool and then the calling code will call 'update' until it returns false.
 		s_playing = JTRUE;

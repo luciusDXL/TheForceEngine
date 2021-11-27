@@ -754,6 +754,8 @@ namespace TFE_DarkForces
 		{
 			LActor* curActorSort = actorSort;
 			LActor* curActorBase = actorBase;
+			actorBase = actorBase->next;
+
 			LActor* lastActorSort = nullptr;
 			curActorBase->next = nullptr;
 
@@ -767,7 +769,7 @@ namespace TFE_DarkForces
 			{
 				if (!lastActorSort)
 				{
-					actorSort = curActorSort;
+					actorSort = curActorBase;
 				}
 				else
 				{

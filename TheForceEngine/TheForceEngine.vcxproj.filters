@@ -814,6 +814,12 @@
     <ClInclude Include="TFE_DarkForces\Landru\lcanvas.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lsystem.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lpalette.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1363,6 +1369,12 @@
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\lcanvas.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lsystem.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lpalette.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>

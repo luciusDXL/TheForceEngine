@@ -15,12 +15,13 @@ namespace TFE_DarkForces
 	enum LViewConstants
 	{
 		LVIEW_COUNT = 4,
+		VIEW_LOOP_RUNNING = INT_MAX,
 		// Flags
 		LVIEW_FLAG_CLEAR = FLAG_BIT(0),
 		LVIEW_FLAG_COPY  = FLAG_BIT(1),
 	};
 
-	typedef s16(*LViewUpdateFunc)(s32);
+	typedef s32(*LViewUpdateFunc)(s32);
 
 	struct LView
 	{
@@ -60,6 +61,10 @@ namespace TFE_DarkForces
 	LView* lview_alloc();
 	void lview_free(LView* view);
 	void lview_initView(LView* view);
+
+	void lview_startLoop();
+	void lview_endLoop();
+	s32  lview_loop();
 
 	void lview_setCurrent(LView* view);
 	LView* lview_getCurrent();

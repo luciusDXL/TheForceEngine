@@ -7,6 +7,7 @@
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/Landru/lactor.h>
 #include "cutscene.h"
+#include "lpalette.h"
 
 namespace TFE_DarkForces
 {
@@ -73,52 +74,7 @@ namespace TFE_DarkForces
 		CF_STATE_USER_FLAG1  = FLAG_BIT(14),
 		CF_STATE_USER_FLAG2  = FLAG_BIT(15),
 	};
-
-	struct RGB
-	{
-		u8 r, g, b;
-	};
-
-	struct Cycle
-	{
-		s16 dir;
-		s16 rate;
-		u8 active;
-		u8 current;
-		u8 low;
-		u8 high;
-	};
-
-	enum LfdPaletteConstants : u32
-	{
-		PALETTE_TYPE = 0x504c5454,		// 'PLTT'
-		MAX_PALETTE_CYCLES = 4,
-		MAX_CYCLE_RATE = 4915,
-		MAX_COLORS = 256,
-		PALETTE_KEEPABLE = 0x0040,
-		PALETTE_KEEP = 0x0080,
-	};
-
-	struct LfdPalette
-	{
-		u32 resType;
-		char name[8];
-		LfdPalette* next;
-
-		u8* colors;
-
-		Cycle cycles[MAX_PALETTE_CYCLES];
-		u8 cycle_count;
-		u8 cycle_active;
-
-		s16 start;
-		s16 end;
-		s16 len;
-
-		u16 flags;
-		u8* varptr;
-	};
-
+		
 	struct FilmObject
 	{
 		u32 resType;
@@ -130,16 +86,17 @@ namespace TFE_DarkForces
 
 	struct Film;
 
-	typedef s16(*FilmDrawFunc)(Film*, LRect*, LRect*, s16, s16, s16);
-	typedef s16(*FilmUpdateFunc)(Film*);
-	typedef s16(*FilmCallback)(Film*, FilmObject*);
+	typedef JBool(*FilmDrawFunc)(Film*, LRect*, LRect*, s16, s16, JBool);
+	typedef void(*FilmUpdateFunc)(Film*);
+	typedef JBool(*FilmCallback)(Film*, s32);
+	typedef JBool(*FilmLoadCallback)(Film*, FilmObject*);
 
 	struct Film
 	{
 		u32 resType;
-		char name[8];
+		char name[16];
 		Film* next;
-		LfdPalette* def_palette;
+		LPalette* def_palette;
 
 		s32 start;
 		s32 stop;
@@ -162,10 +119,21 @@ namespace TFE_DarkForces
 		u8** array;
 		s16 arraySize;
 
-		FilmDrawFunc   draw;
-		FilmUpdateFunc update;
+		FilmDrawFunc   drawFunc;
+		FilmUpdateFunc updateFunc;
 		FilmCallback   callback;
 	};
 
-	Film* cutsceneFilm_load(const char* name, LRect* frameRect, s16 x, s16 y, s16 z, void* callback);
+	Film* cutsceneFilm_load(const char* name, LRect* frameRect, s16 x, s16 y, s16 z, FilmLoadCallback callback);
+	void cutsceneFilm_discardData(Film* film);
+	void cutsceneFilm_keepData(Film* film);
+	void cutsceneFilm_rewindActor(Film* film, FilmObject* filmObj, u8* data);
+	void cutsceneFilm_stepActor(Film* film, FilmObject* filmObj, u8* data);
+
+	void cutsceneFilm_add(Film* film);
+	void cutsceneFilm_remove(Film* film);
+
+	void cutsceneFilm_updateFilms(s32 time);
+	void cutsceneFilm_updateCallbacks(s32 time);
+	void cutsceneFilm_drawFilms(JBool refresh);
 }  // TFE_DarkForces

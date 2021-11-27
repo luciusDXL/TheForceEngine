@@ -399,7 +399,9 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\Landru\lactorCust.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lactorDelt.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lcanvas.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\lpalette.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lrect.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\lsystem.h" />
     <ClInclude Include="TFE_DarkForces\Landru\ltimer.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lview.h" />
     <ClInclude Include="TFE_DarkForces\logic.h" />
@@ -617,7 +619,9 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\Landru\lactorCust.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lactorDelt.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lcanvas.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\lpalette.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lrect.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\lsystem.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\ltimer.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lview.cpp" />
     <ClCompile Include="TFE_DarkForces\logic.cpp" />

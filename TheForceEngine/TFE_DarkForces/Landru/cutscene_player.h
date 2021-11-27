@@ -10,6 +10,7 @@
 namespace TFE_DarkForces
 {
 	void cutscenePlayer_start(s32 scene);
+	void cutscenePlayer_stop();
 
 	// Returns JTRUE if we want to continue playing.
 	// Note: this is a little different than the original code, which ran in a while loop until finished.

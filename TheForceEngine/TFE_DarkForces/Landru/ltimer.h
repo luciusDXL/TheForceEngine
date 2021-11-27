@@ -15,6 +15,7 @@ namespace TFE_DarkForces
 	void tfe_updateLTime();
 
 	// Landru timer API.
+	void ltime_init();
 	void ltime_setFrameRate(u16 delay);
 	LTick ltime_elapsed();
 	JBool ltime_checkTimeElapsed();

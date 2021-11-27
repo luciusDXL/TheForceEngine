@@ -17,7 +17,28 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
+	static Film* s_firstFilm = nullptr;
+
 	LActor* cutsceneFilm_cloneActor(u32 type, const char* name);
+	void cutsceneFilm_initFilm(Film* film, u8** array, LRect* frame, s16 x, s16 y, s16 zPlane);
+	void cutsceneFilm_setName(Film* film, u32 resType, const char* name);
+	JBool cutsceneFilm_isTimeStamp(Film* film, FilmObject* filmObj, u8* data);
+	void cutsceneFilm_setActorToFilm(FilmObject* filmObj, u8* data);
+	void cutsceneFilm_setViewToFilm(Film* film, FilmObject* filmObj, u8* data);
+	void cutsceneFilm_setFade(s16 fade, s16 colorFade);
+	void cutsceneFilm_stepView(Film* film, FilmObject* filmObj, u8* data);
+	void cutsceneFilm_stepPalette(Film* film, FilmObject* filmObj, u8* data);
+	void cutsceneFilm_rewind(Film* film);
+	void cutsceneFilm_update(Film* film);
+
+	//////////////////////////////
+	// Fade API
+	JBool lfade_isActive()
+	{
+		return JFALSE;
+	}
+	// End
+	//////////////////////////////
 
 	Film* allocate()
 	{
@@ -121,6 +142,7 @@ namespace TFE_DarkForces
 		lcanvas_getBounds(&rect);
 
 		LActor* actor = nullptr;
+		LPalette* pal = nullptr;
 		JBool retValue = JTRUE;
 		if (type != CF_TYPE_VIEW && type != CF_TYPE_CUSTOM_ACTOR)
 		{
@@ -140,10 +162,12 @@ namespace TFE_DarkForces
 				{
 					actor = lactorAnim_load(name, &rect, 0, 0, 0);
 				}
+				if (!actor) { retValue = JFALSE; }
 			}
 			else if (type == CF_TYPE_PALETTE)
 			{
-				// TODO: load palette.
+				pal = lpalette_load(name);
+				if (!pal) { retValue = JFALSE; }
 			}
 			else if (type == CF_TYPE_GMIDI)
 			{
@@ -169,26 +193,22 @@ namespace TFE_DarkForces
 			lactor_setTime(actor, -1, -1);
 			*obj = (u8*)actor;
 		}
-		/*  TODO
-		else if (palette)
+		else if (pal)
 		{
-			*obj = (u8*)palette;
+			*obj = (u8*)pal;
 		}
 		else
 		{
-			*obj = (u8*)sound;
+			// *obj = (u8*)sound;
+			// TODO: Sounds
+			// Sounds are skipped for now, just just make this null.
+			*obj = nullptr;
 		}
-		*/
-
-		// For now always return true until this is complete.
-		// return retValue;
-		return JTRUE;
+		return retValue;
 	}
 
-	JBool cutsceneFilm_readObjects(Film* film, void* callback)
+	JBool cutsceneFilm_readObjects(Film* film, FilmLoadCallback filmCallback)
 	{
-		FilmCallback filmCallback = nullptr;// (FilmCallback)callback;
-
 		for (s32 i = 0; i < film->arraySize; i++)
 		{
 			FilmObject* obj = (FilmObject*)film->array[i];
@@ -212,7 +232,7 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
-	Film* cutsceneFilm_load(const char* name, LRect* frameRect, s16 x, s16 y, s16 z, void* callback)
+	Film* cutsceneFilm_load(const char* name, LRect* frameRect, s16 x, s16 y, s16 z, FilmLoadCallback callback)
 	{
 		Film* film = allocate();
 		if (!film) { return nullptr; }
@@ -268,6 +288,550 @@ namespace TFE_DarkForces
 			}
 		}
 
+		if (array)
+		{
+			cutsceneFilm_initFilm(film, array, frameRect, x, y, z);
+			cutsceneFilm_setName(film, CF_TYPE_FILM, name);
+		}
+		else
+		{
+			game_free(film);
+			film = nullptr;
+		}
+
 		return film;
+	}
+
+	void cutsceneFilm_setName(Film* film, u32 resType, const char* name)
+	{
+		film->resType = resType;
+		strcpy(film->name, name);
+	}
+		
+	void cutsceneFilm_initFilm(Film* film, u8** array, LRect* frame, s16 x, s16 y, s16 zPlane)
+	{
+		film->frameRect = *frame;
+		film->x = x;
+		film->y = y;
+		film->zplane = zPlane;
+		cutsceneFilm_discardData(film);
+
+		film->drawFunc = nullptr;
+		film->updateFunc = cutsceneFilm_update;
+		film->array = array;
+
+		cutsceneFilm_add(film);
+	}
+		
+	void cutsceneFilm_discardData(Film* film)
+	{
+		film->flags |= CF_STATE_DISCARD;
+	}
+
+	void cutsceneFilm_keepData(Film* film)
+	{
+		film->flags &= ~CF_STATE_DISCARD;
+	}
+
+	JBool cutsceneFilm_isTimeStamp(Film* film, FilmObject* filmObj, u8* data)
+	{
+		s16* chunk = (s16*)(data + filmObj->offset);
+		if (chunk[1] == CF_CMD_TIMESTAMP && chunk[2] == (s16)film->curCell)
+		{
+			return JTRUE;
+		}
+		return JFALSE;
+	}
+
+	void cutsceneFilm_rewindView(Film* film, FilmObject* filmObj, u8* data)
+	{
+		filmObj->offset = 0;
+		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
+		{
+			cutsceneFilm_stepView(film, filmObj, data);
+		}
+	}
+
+	void cutsceneFilm_rewindPalette(Film* film, FilmObject* filmObj, u8* data)
+	{
+		filmObj->offset = 0;
+		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
+		{
+			cutsceneFilm_stepPalette(film, filmObj, data);
+		}
+	}
+
+	void cutsceneFilm_rewindActor(Film* film, FilmObject* filmObj, u8* data)
+	{
+		LActor* actor = (LActor*)filmObj->data;
+		lcanvas_getClip(&actor->frame);
+
+		lactor_setPos(actor, 0, 0, 0, 0);
+		lactor_setSpeed(actor, 0, 0, 0, 0);
+		lactor_setState(actor, 0, 0);
+		lactor_setZPlane(actor, 0);
+		lactor_setFlip(actor, JFALSE, JFALSE);
+
+		if (lactor_isVisible(actor))
+		{
+			lactor_hide(actor);
+		}
+
+		actor->var1 = 0;
+		actor->var2 = 0;
+		filmObj->offset = 0;
+
+		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
+		{
+			cutsceneFilm_stepActor(film, filmObj, data);
+		}
+	}
+
+	JBool cutsceneFilm_isFading()
+	{
+		//TODO
+		return JFALSE;
+	}
+
+	void cutsceneFilm_rewindObjects(Film* film)
+	{
+		film->curCell = 0;
+
+		// Store the screen palette.
+		lpalette_copyScreenToDest(0, 0, 255);
+		lpalette_copyScreenToSrc(0, 0, 255);
+		// Clear the palette
+		lpalette_setDstColor(0, 255, 0, 0, 0);
+
+		if (film->def_palette)
+		{
+			lpalette_setDstPal(film->def_palette);
+		}
+
+		for (s32 i = 0; i < film->arraySize; i++)
+		{
+			FilmObject* filmObj = (FilmObject*)film->array[i];
+			if (filmObj)
+			{
+				switch (filmObj->id)
+				{
+					case CF_FILE_VIEW:
+					{
+						cutsceneFilm_rewindView(film, filmObj, (u8*)(filmObj + 1));
+					} break;
+					case CF_FILE_PALETTE:
+					{
+						cutsceneFilm_rewindPalette(film, filmObj, (u8*)(filmObj + 1));
+					} break;
+					case CF_FILE_ACTOR:
+					{
+						cutsceneFilm_rewindActor(film, filmObj, (u8*)(filmObj + 1));
+					} break;
+					case CF_FILE_SOUND:
+					{
+						// TODO
+					} break;
+				}
+			}
+		}
+
+		if (!lpalette_compareSrcDst())
+		{
+			if (cutsceneFilm_isFading())
+			{
+				// cutsceneFilm_startFade(1);
+			}
+			else if (!lfade_isActive())
+			{
+				// lfade_startColor(snapColorFade, 1, 1, 0, 1);
+			}
+			else
+			{
+				lpalette_copyDstToScreen(0, 0, 255);
+				lpalette_putScreenPal();
+			}
+		}
+		else if (cutsceneFilm_isFading())
+		{
+			// cutsceneFilm_startFade(0);
+		}
+
+		// Advance to the next frame.
+		film->curCell++;
+	}
+
+	void cutsceneFilm_stepFilmFrame(FilmObject* filmObj, u8* data)
+	{
+		s16* chunk = (s16*)(data + filmObj->offset);
+		filmObj->offset += chunk[0];
+	}
+
+	JBool cutsceneFilm_isNextFrame(FilmObject* filmObj, u8* data)
+	{
+		s16* chunk = (s16*)(data + filmObj->offset);
+		if (chunk[1] == CF_CMD_TIMESTAMP || chunk[1] == CF_CMD_END)
+		{
+			return JTRUE;
+		}
+		return JFALSE;
+	}
+
+	void cutsceneFilm_setActorToFilm(FilmObject* filmObj, u8* data)
+	{
+		s16* chunk = (s16*)(data + filmObj->offset);
+		u32 type = chunk[1];
+		LActor* actor = (LActor*)filmObj->data;
+		chunk += 2;
+
+		switch (type)
+		{
+			case CF_CMD_ACTOR_POS:
+				lactor_setPos(actor, chunk[0], chunk[1], chunk[2], chunk[3]);
+				break;
+
+			case CF_CMD_ACTOR_VEL:
+				lactor_setSpeed(actor, chunk[0], chunk[1], chunk[2], chunk[3]);
+				break;
+
+			case CF_CMD_ACTOR_Z:
+				lactor_setZPlane(actor, chunk[0]);
+				break;
+
+			case CF_CMD_ACTOR_STATE:
+				lactor_setState(actor, chunk[0], chunk[1]);
+				break;
+
+			case CF_CMD_ACTOR_STATEV:
+				lactor_setStateSpeed(actor, chunk[0], chunk[1]);
+				break;
+
+			case CF_CMD_ACTOR_VAR1:
+				actor->var1 = chunk[0];
+				break;
+
+			case CF_CMD_ACTOR_VAR2:
+				actor->var2 = chunk[0];
+				break;
+
+			case CF_CMD_ACTOR_CLIP:
+				lrect_set(&actor->frame, chunk[0], chunk[1], chunk[2], chunk[3]);
+				break;
+
+			case CF_CMD_ACTOR_CLIPV:
+				lrect_set(&actor->frameVelocity, chunk[0], chunk[1], chunk[2], chunk[3]);
+				break;
+
+			case CF_CMD_ACTOR_SHOW:
+				if (chunk[0]) { lactor_show(actor); }
+				else { lactor_hide(actor); }
+				break;
+
+			case CF_CMD_ACTOR_FLIP:
+				lactor_setFlip(actor, chunk[0], chunk[1]);
+				break;
+		}
+	}
+
+	void cutsceneFilm_setViewToFilm(Film* film, FilmObject* filmObj, u8* data)
+	{
+		s16* chunk = (s16*)(data + filmObj->offset);
+		u8*  byteChunk = (u8*)chunk;
+		u16  type = chunk[1];
+
+		switch (type)
+		{
+			case CF_CMD_VIEW_SETRGB:
+			{
+				u16 start = (u16)byteChunk[4];
+				u16 stop = (u16)byteChunk[5];
+				u16 r = (u16)byteChunk[6];
+				u16 g = (u16)byteChunk[7];
+				u16 b = (u16)byteChunk[8];
+
+				lpalette_setDstColor(start, stop, r, g, b);
+			} break;
+			case CF_CMD_VIEW_DEFPAL:
+			{
+				lpalette_setDstColor(0, 255, 0, 0, 0);
+				if (film->def_palette)
+				{
+					lpalette_setDstPal(film->def_palette);
+				}
+			} break;
+			case CF_CMD_VIEW_FADE:
+			{
+				s16 fade = chunk[2];
+				s16 colorFade = chunk[3];
+				cutsceneFilm_setFade(fade, colorFade);
+			} break;
+		}
+	}
+
+	void cutsceneFilm_setPaletteToFilm(Film* film, FilmObject* filmObj, u8* data)
+	{
+		s16* chunk = (s16*)(data + filmObj->offset);
+		if (chunk[1] == CF_CMD_PALETTE_SET)
+		{
+			lpalette_setDstPal((LPalette*)filmObj->data);
+		}
+	}
+
+	void cutsceneFilm_setFade(s16 fade, s16 colorFade)
+	{
+		// TODO
+	}
+
+	void cutsceneFilm_stepActor(Film* film, FilmObject* filmObj, u8* data)
+	{
+		LActor* actor = (LActor*)filmObj->data;
+		if (actor && actor->updateFunc)
+		{
+			actor->updateFunc(actor);
+		}
+
+		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
+		{
+			cutsceneFilm_stepFilmFrame(filmObj, data);
+			while (!cutsceneFilm_isNextFrame(filmObj, data))
+			{
+				cutsceneFilm_setActorToFilm(filmObj, data);
+				cutsceneFilm_stepFilmFrame(filmObj, data);
+			}
+		}
+	}
+
+	void cutsceneFilm_stepView(Film* film, FilmObject* filmObj, u8* data)
+	{
+		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
+		{
+			cutsceneFilm_stepFilmFrame(filmObj, data);
+			while (!cutsceneFilm_isNextFrame(filmObj, data))
+			{
+				cutsceneFilm_setViewToFilm(film, filmObj, data);
+				cutsceneFilm_stepFilmFrame(filmObj, data);
+			}
+		}
+	}
+
+	void cutsceneFilm_stepPalette(Film* film, FilmObject* filmObj, u8* data)
+	{
+		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
+		{
+			cutsceneFilm_stepFilmFrame(filmObj, data);
+			while (!cutsceneFilm_isNextFrame(filmObj, data))
+			{
+				cutsceneFilm_setPaletteToFilm(film, filmObj, data);
+				cutsceneFilm_stepFilmFrame(filmObj, data);
+			}
+		}
+	}
+		
+	void cutsceneFilm_stepObjects(Film* film)
+	{
+		if (!lfade_isActive())
+		{
+			lpalette_copyScreenToDest(0, 0, 255);
+			lpalette_copyScreenToSrc(0, 0, 255);
+		}
+
+		u8** array = film->array;
+		for (s32 i = 0; i < film->arraySize; i++)
+		{
+			FilmObject* filmObj = (FilmObject*)array[i];
+			if (filmObj)
+			{
+				switch (filmObj->id)
+				{
+					case CF_FILE_VIEW:
+						// TODO: Handle fading.
+						cutsceneFilm_stepView(film, filmObj, (u8*)(filmObj + 1));
+						break;
+					case CF_FILE_PALETTE:
+						cutsceneFilm_stepPalette(film, filmObj, (u8*)(filmObj + 1));
+						break;
+					case CF_FILE_ACTOR:
+						cutsceneFilm_stepActor(film, filmObj, (u8*)(filmObj + 1));
+						break;
+					case CF_FILE_SOUND:
+						// TODO
+						break;
+				}
+			}
+		}
+	}
+
+	void cutsceneFilm_update(Film* film)
+	{
+		cutsceneFilm_stepObjects(film);
+	}
+
+	void cutsceneFilm_updateCallbacks(s32 time)
+	{
+		Film* film = s_firstFilm;
+		while (film)
+		{
+			if (film->callback)
+			{
+				film->callback(film, time);
+			}
+			film = film->next;
+		}
+	}
+
+	void cutsceneFilm_start(Film* film)
+	{
+		cutsceneFilm_rewind(film);
+		film->flags |= (CF_STATE_VISIBLE | CF_STATE_ACTIVE);
+	}
+
+	void cutsceneFilm_stop(Film* film)
+	{
+		film->flags &= ~(CF_STATE_VISIBLE | CF_STATE_ACTIVE);
+	}
+
+	void cutsceneFilm_rewind(Film* film)
+	{
+		cutsceneFilm_rewindObjects(film);
+	}
+
+	JBool cutsceneFilm_isActive(Film* film)
+	{
+		return (film->flags & CF_STATE_ACTIVE) ? JTRUE : JFALSE;
+	}
+
+	JBool cutsceneFilm_isLooping(Film* film)
+	{
+		return (film->flags & CF_STATE_REPEAT) ? JTRUE : JFALSE;
+	}
+	
+	void cutsceneFilm_updateFilms(s32 time)
+	{
+		Film* film = s_firstFilm;
+		while (film)
+		{
+			if (film->start == time)
+			{
+				cutsceneFilm_start(film);
+				if (film->stop == time)
+				{
+					cutsceneFilm_stop(film);
+				}
+			}
+			else if (film->stop == time)
+			{
+				cutsceneFilm_stop(film);
+			}
+			else if (!film->cellCount)
+			{
+				if (cutsceneFilm_isActive(film))
+				{
+					cutsceneFilm_stop(film);
+				}
+			}
+			else if (film->curCell >= film->cellCount)
+			{
+				if (cutsceneFilm_isLooping(film))
+				{
+					cutsceneFilm_rewind(film);
+				}
+				else
+				{
+					cutsceneFilm_stop(film);
+				}
+			}
+			else
+			{
+				if (film->updateFunc && cutsceneFilm_isActive(film))
+				{
+					film->updateFunc(film);
+				}
+			}
+
+			film = film->next;
+		}
+	}
+
+	void cutsceneFilm_getRelativePos(Film* film, LRect* rect, s16* x, s16* y)
+	{
+		*x = film->x - film->frameRect.left + rect->left;
+		*y = film->y - film->frameRect.top  + rect->top;
+	}
+
+	void cutsceneFilm_drawFilms(JBool refresh)
+	{
+		Film* film = s_firstFilm;
+		for (s32 i = 0; i < LVIEW_COUNT; i++)
+		{
+			LRect rect;
+			lview_getFrame(i, &rect);
+			if (lrect_isEmpty(&rect)) { continue; }
+
+			Film* curFilm = film;
+			while (curFilm)
+			{
+				LRect clipRect;
+				if (curFilm->drawFunc && (curFilm->flags & CF_STATE_VISIBLE) && lview_clipObjToView(i, curFilm->zplane, &curFilm->frameRect, &rect, &clipRect))
+				{
+					JBool curRefresh = (curFilm->flags & CF_STATE_REFRESH) | (curFilm->flags & CF_STATE_REFRESHABLE) | refresh;
+					lcanvas_setClip(&clipRect);
+
+					s16 x, y;
+					cutsceneFilm_getRelativePos(curFilm, &rect, &x, &y);
+					curFilm->drawFunc(curFilm, &rect, &clipRect, x, y, curRefresh);
+				}
+
+				curFilm = curFilm->next;
+			}
+		}
+
+		for (Film* curFilm = film; curFilm; curFilm = curFilm->next)
+		{
+			curFilm->flags &= ~CF_STATE_REFRESH;
+		}
+	}
+
+	void cutsceneFilm_add(Film* film)
+	{
+		Film* curFilm = s_firstFilm;
+		Film* lastFilm = nullptr;
+		while (curFilm && curFilm->zplane > film->zplane)
+		{
+			lastFilm = curFilm;
+			curFilm = curFilm->next;
+		}
+
+		film->next = curFilm;
+		if (!lastFilm)
+		{
+			s_firstFilm = film;
+		}
+		else
+		{
+			lastFilm->next = film;
+		}
+	}
+
+	void cutsceneFilm_remove(Film* film)
+	{
+		Film* curFilm = s_firstFilm;
+		Film* lastFilm = nullptr;
+		while (curFilm && curFilm != film)
+		{
+			lastFilm = curFilm;
+			curFilm = curFilm->next;
+		}
+
+		if (curFilm == film)
+		{
+			if (!lastFilm)
+			{
+				s_firstFilm = curFilm->next;
+			}
+			else
+			{
+				lastFilm->next = curFilm->next;
+			}
+			film->next = nullptr;
+		}
 	}
 }  // TFE_DarkForces

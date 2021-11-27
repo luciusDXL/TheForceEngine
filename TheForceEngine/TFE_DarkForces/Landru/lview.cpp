@@ -1,6 +1,8 @@
 #include "lview.h"
 #include "lactor.h"
 #include "lcanvas.h"
+#include "lpalette.h"
+#include "cutscene_film.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -13,10 +15,14 @@ namespace TFE_DarkForces
 	LView* s_view = nullptr;
 	JBool s_lviewInit = JFALSE;
 	static LView* s_defaultView = nullptr;
+	static JBool s_running = JFALSE;
+	static s32 s_exitValue = VIEW_LOOP_RUNNING;
 
 	void lview_freeData(LView* view);
 	void lview_initView(LView* view);
 	void lview_trackView(s16 viewIndex, s16 snap);
+	void lview_update(s32 time);
+	void lview_updateCallback(s32 time);
 
 	void lview_init()
 	{
@@ -54,11 +60,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				view->frame[i].left   = 0;
-				view->frame[i].top    = 0;
-				view->frame[i].right  = 0;
-				view->frame[i].bottom = 0;
-
+				lrect_clear(&view->frame[i]);
 				view->zStart[i] = -32767;
 				view->zStop[i]  =  32767;
 			}
@@ -82,9 +84,107 @@ namespace TFE_DarkForces
 		view->updateFunc = nullptr;
 	}
 
+	void lview_clear()
+	{
+		if (s_view->clear)
+		{
+			lcanvas_eraseRect(&s_view->clipFrame);
+		}
+		else
+		{
+			for (s32 i = 0; i < LVIEW_COUNT; i++)
+			{
+				if (s_view->clearView[i] & LVIEW_FLAG_CLEAR)
+				{
+					LRect rect;
+					lview_getViewClipFrame(i, &rect);
+					lcanvas_eraseRect(&rect);
+				}
+			}
+		}
+	}
+
+	void lview_draw(JBool refresh)
+	{
+		cutsceneFilm_drawFilms(refresh);
+		lactor_draw(refresh);
+		// TODO: System dialogs.
+	}
+
+	void lview_blit()
+	{
+		// Wait for frame.
+		// Fade to video.
+	}
+
+	void lview_startLoop()
+	{
+		s_view->time = 0;
+		s_view->step = 0;
+		s_view->stepCount = 0;
+		s_exitValue = VIEW_LOOP_RUNNING;
+	}
+
+	void lview_endLoop()
+	{
+		// lview_freeAll(s_view);
+		lview_initView(s_view);
+		lpalette_stopAllCycles();
+	}
+		
+	// A single iteration of the view loop.
+	s32 lview_loop()
+	{
+		if (s_exitValue != VIEW_LOOP_RUNNING)
+		{
+			return s_exitValue;
+		}
+
+		if (!s_view->step)
+		{
+			lview_update(s_view->time);
+			lview_updateCallback(s_view->time);
+		}
+
+		lview_clear();
+		lview_draw(s_view->refreshWorld);
+		s_view->refreshWorld = JFALSE;
+
+		lview_blit();
+
+		if (!s_view->step)
+		{
+			lpalette_cycleScreen();
+			if (s_view->updateFunc) { s_exitValue = s_view->updateFunc(s_view->time); }
+			s_view->time++;
+		}
+
+		return s_exitValue;
+	}
+		
+	void lview_update(s32 time)
+	{
+		ltime_often();
+		lview_move();
+		cutsceneFilm_updateFilms(time);
+		lactor_update(time);
+	}
+
+	void lview_updateCallback(s32 time)
+	{
+		ltime_often();
+		cutsceneFilm_updateCallbacks(time);
+		lactor_updateCallbacks(time);
+		lactor_updateZPlanes();
+		// sound_updateCallbacks(time);
+		// sound_freeUserSounds(sound_getList());
+	}
+
 	LView* lview_alloc()
 	{
-		return (LView*)game_alloc(sizeof(LView));
+		LView* view = (LView*)game_alloc(sizeof(LView));
+		memset(view, 0, sizeof(LView));
+		return view;
 	}
 
 	void lview_free(LView* view)
