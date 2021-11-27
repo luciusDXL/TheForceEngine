@@ -8,7 +8,6 @@
 
 namespace TFE_DarkForces
 {
-	void ldraw_init();
 	void deltaImage(s16* data, s16 x, s16 y);
 	void deltaClip(s16* data, s16 x, s16 y);
 	void deltaFlip(s16* data, s16 x, s16 y, s16 w);

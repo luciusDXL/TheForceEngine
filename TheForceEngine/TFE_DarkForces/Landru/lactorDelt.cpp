@@ -153,7 +153,7 @@ namespace TFE_DarkForces
 
 		s16 ex = data16[2] + x;
 		s16 ey = data16[3] + y;
-		//data16 += 4;
+		data16 += 4;
 
 		LRect drect;
 		lrect_set(&drect, sx, sy, ex + 1, ey + 1);
@@ -203,7 +203,7 @@ namespace TFE_DarkForces
 			ex = data16[2] + x;
 			ey = data16[3] + y;
 		}
-		//data16 += 4;
+		data16 += 4;
 
 		LRect drect;
 		lrect_set(&drect, sx, sy, ex + 1, ey + 1);
@@ -231,6 +231,4 @@ namespace TFE_DarkForces
 
 		return retValue;
 	}
-
-	
 }  // namespace TFE_DarkForces
