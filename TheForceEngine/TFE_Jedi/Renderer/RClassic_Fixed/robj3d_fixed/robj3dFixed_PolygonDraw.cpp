@@ -1,3 +1,5 @@
+#include <climits>
+
 #include <TFE_System/profiler.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>

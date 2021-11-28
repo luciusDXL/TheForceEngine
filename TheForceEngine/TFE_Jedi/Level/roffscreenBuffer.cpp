@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "roffscreenBuffer.h"
 #include <TFE_System/system.h>
 #include <TFE_Game/igame.h>

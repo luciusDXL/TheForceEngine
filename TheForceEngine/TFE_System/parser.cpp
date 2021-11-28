@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "parser.h"
 #include <algorithm>
 

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "glslParser.h"
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>

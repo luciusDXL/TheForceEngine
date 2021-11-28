@@ -1,5 +1,3 @@
-#pragma once
-
 #include "math.h"
 
 namespace TFE_Math

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "item.h"
 #include "pickup.h"
 #include "animLogic.h"

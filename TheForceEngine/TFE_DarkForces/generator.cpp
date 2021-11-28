@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "generator.h"
 #include "time.h"
 #include <TFE_Game/igame.h>

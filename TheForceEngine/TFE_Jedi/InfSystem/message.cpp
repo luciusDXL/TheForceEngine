@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "message.h"
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_System/system.h>

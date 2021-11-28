@@ -1,3 +1,6 @@
+#include <climits>
+#include <cstring>
+
 #include "textureAsset.h"
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "bobaFett.h"
 #include "aiActor.h"
 #include "../logic.h"

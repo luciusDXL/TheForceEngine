@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "logic.h"
 #include "pickup.h"
 #include "player.h"

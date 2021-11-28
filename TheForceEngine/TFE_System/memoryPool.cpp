@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "memoryPool.h"
 #include <TFE_System/system.h>
 #include <algorithm>

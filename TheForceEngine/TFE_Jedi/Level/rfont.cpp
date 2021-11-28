@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "rfont.h"
 #include "rtexture.h"
 #include <TFE_Game/igame.h>

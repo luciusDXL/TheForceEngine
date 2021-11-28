@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "escapeMenu.h"
 #include "delt.h"
 #include "uiDraw.h"

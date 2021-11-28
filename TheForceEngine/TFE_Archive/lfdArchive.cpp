@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <TFE_System/system.h>
 #include "lfdArchive.h"
 #include <assert.h>

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "colormapAsset.h"
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>

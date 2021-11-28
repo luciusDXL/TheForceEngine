@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "agent.h"
 #include "util.h"
 #include "player.h"

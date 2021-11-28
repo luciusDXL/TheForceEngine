@@ -1,3 +1,6 @@
+#include <climits>
+#include <cstring>
+
 #include "level.h"
 #include "rwall.h"
 #include "rtexture.h"

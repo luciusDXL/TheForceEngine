@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "player.h"
 #include "playerLogic.h"
 #include "playerCollision.h"

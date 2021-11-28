@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "mousebot.h"
 #include "aiActor.h"
 #include "../logic.h"

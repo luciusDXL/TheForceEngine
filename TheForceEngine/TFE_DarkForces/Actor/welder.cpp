@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "welder.h"
 #include "aiActor.h"
 #include "../logic.h"

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <TFE_System/profiler.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>

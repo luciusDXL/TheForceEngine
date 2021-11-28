@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "editBox.h"
 #include "uiDraw.h"
 #include <TFE_System/system.h>

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "darkForcesMain.h"
 #include "agent.h"
 #include "config.h"
