@@ -3,6 +3,7 @@
 #include "lactorAnim.h"
 #include "lactorCust.h"
 #include "lcanvas.h"
+#include "lfade.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
@@ -18,6 +19,8 @@ using namespace TFE_Jedi;
 namespace TFE_DarkForces
 {
 	static Film* s_firstFilm = nullptr;
+	static FadeType s_filmFade = ftype_noFade;
+	static FadeColorType s_filmColorFade = fcolorType_noColorFade;
 
 	LActor* cutsceneFilm_cloneActor(u32 type, const char* name);
 	void cutsceneFilm_initFilm(Film* film, u8** array, LRect* frame, s16 x, s16 y, s16 zPlane);
@@ -33,14 +36,10 @@ namespace TFE_DarkForces
 	void cutsceneFilm_freeData(Film* film);
 	void cutsceneFilm_freeDataObject(Film* film, s16 index);
 
-	//////////////////////////////
-	// Fade API
-	JBool lfade_isActive()
-	{
-		return JFALSE;
-	}
-	// End
-	//////////////////////////////
+	void cutsceneFilm_setFade(s16 fade, s16 colorFade);
+	void cutsceneFilm_clearFade();
+	void cutsceneFilm_startFade(JBool paletteChange);
+	JBool cutsceneFilm_isFading();
 
 	Film* cutsceneFilm_allocate()
 	{
@@ -450,12 +449,6 @@ namespace TFE_DarkForces
 		}
 	}
 
-	JBool cutsceneFilm_isFading()
-	{
-		//TODO
-		return JFALSE;
-	}
-
 	void cutsceneFilm_rewindObjects(Film* film)
 	{
 		film->curCell = 0;
@@ -502,11 +495,11 @@ namespace TFE_DarkForces
 		{
 			if (cutsceneFilm_isFading())
 			{
-				// cutsceneFilm_startFade(1);
+				cutsceneFilm_startFade(JTRUE);
 			}
 			else if (!lfade_isActive())
 			{
-				// lfade_startColor(snapColorFade, 1, 1, 0, 1);
+				lfade_startColorFade(fcolorType_snapColorFade, JTRUE, 1, 0, 1);
 			}
 			else
 			{
@@ -516,7 +509,7 @@ namespace TFE_DarkForces
 		}
 		else if (cutsceneFilm_isFading())
 		{
-			// cutsceneFilm_startFade(0);
+			cutsceneFilm_startFade(JFALSE);
 		}
 
 		// Advance to the next frame.
@@ -636,15 +629,36 @@ namespace TFE_DarkForces
 		if (chunk[1] == CF_CMD_PALETTE_SET)
 		{
 			lpalette_setDstPal((LPalette*)filmObj->data);
-			// Hack.
-			lpalette_copyDstToScreen(0, 0, 255);
-			lpalette_putScreenPal();
 		}
 	}
-
+				
 	void cutsceneFilm_setFade(s16 fade, s16 colorFade)
 	{
-		// TODO
+		s_filmFade = (FadeType)fade;
+		s_filmColorFade = (FadeColorType)colorFade;
+	}
+
+	void cutsceneFilm_clearFade()
+	{
+		s_filmFade = ftype_noFade;
+		s_filmColorFade = fcolorType_noColorFade;
+	}
+
+	void cutsceneFilm_startFade(JBool paletteChange)
+	{
+		s16 lock = 1;
+		if (s_filmColorFade == fcolorType_paletteColorFade && s_filmFade <= ftype_longSnapFade)
+		{
+			lock = 0;
+		}
+
+		lfade_startFull(s_filmFade, s_filmColorFade, paletteChange, 0, lock);
+		cutsceneFilm_clearFade();
+	}
+
+	JBool cutsceneFilm_isFading()
+	{
+		return (s_filmFade == ftype_noFade && s_filmColorFade == fcolorType_noColorFade) ? JFALSE : JTRUE;
 	}
 
 	void cutsceneFilm_stepActor(Film* film, FilmObject* filmObj, u8* data)
@@ -709,7 +723,6 @@ namespace TFE_DarkForces
 				switch (filmObj->id)
 				{
 					case CF_FILE_VIEW:
-						// TODO: Handle fading.
 						cutsceneFilm_stepView(film, filmObj, (u8*)(filmObj + 1));
 						break;
 					case CF_FILE_PALETTE:
@@ -722,6 +735,30 @@ namespace TFE_DarkForces
 						// TODO
 						break;
 				}
+			}
+		}
+
+		if (!lfade_isActive())
+		{
+			if (!lpalette_compareSrcDst())
+			{
+				if (cutsceneFilm_isFading())
+				{
+					cutsceneFilm_startFade(JTRUE);
+				}
+				else if (!lfade_isActive())
+				{
+					lfade_startColorFade(fcolorType_snapColorFade, JTRUE, 1, 0, 1);
+				}
+				else
+				{
+					lpalette_copyDstToScreen(0, 0, 255);
+					lpalette_putScreenPal();
+				}
+			}
+			else if (cutsceneFilm_isFading())
+			{
+				cutsceneFilm_startFade(JFALSE);
 			}
 		}
 

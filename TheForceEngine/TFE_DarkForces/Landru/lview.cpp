@@ -2,6 +2,7 @@
 #include "lactor.h"
 #include "lcanvas.h"
 #include "lpalette.h"
+#include "lfade.h"
 #include "cutscene_film.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -113,9 +114,8 @@ namespace TFE_DarkForces
 
 	void lview_blit()
 	{
+		lcanvas_applyFade(JFALSE);
 		vfb_swap();
-		// Wait for frame.
-		// Fade to video.
 	}
 
 	void lview_startLoop()

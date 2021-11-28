@@ -1,5 +1,6 @@
 #include "lsystem.h"
 #include "lcanvas.h"
+#include "lfade.h"
 #include "ltimer.h"
 #include "lpalette.h"
 #include "lview.h"
@@ -21,6 +22,7 @@ namespace TFE_DarkForces
 		ltime_init();
 		lview_init();
 		lpalette_init();
+		lfade_init();
 
 		// TODO: Load core fonts, system palette, etc.
 	}
@@ -30,5 +32,6 @@ namespace TFE_DarkForces
 		s_lsystemInit = JFALSE;
 		lview_destroy();
 		lpalette_destroy();
+		lfade_destroy();
 	}
 }  // namespace TFE_DarkForces

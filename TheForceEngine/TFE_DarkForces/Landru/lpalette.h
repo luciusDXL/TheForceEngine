@@ -31,6 +31,10 @@ namespace TFE_DarkForces
 		MAX_COLORS = 256,
 		PALETTE_KEEPABLE = 0x0040,
 		PALETTE_KEEP = 0x0080,
+
+		LPAL_BUILD_PALETTE  = 0,
+		LPAL_BUILD_MONOSRC  = 1,
+		LPAL_BUILD_MONODEST = 2,
 	};
 
 	struct LPalette
@@ -82,5 +86,8 @@ namespace TFE_DarkForces
 	void lpalette_setScreenPal(LPalette* pal);
 	void lpalette_setScreenRGB(s16 start, s16 stop, s16 r, s16 g, s16 b);
 	void lpalette_setDstPal(LPalette* pal);
+	void lpalette_setSrcPal(LPalette* pal);
 	void lpalette_setDstColor(s16 start, s16 stop, s16 r, s16 g, s16 b);
+
+	void lpalette_buildFadePalette(s16 type, s16 start, s16 stop, s16 step, s16 fr, s16 fg, s16 fb);
 }  // namespace TFE_DarkForces

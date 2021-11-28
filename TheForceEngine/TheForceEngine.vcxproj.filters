@@ -823,6 +823,9 @@
     <ClInclude Include="TFE_DarkForces\Landru\ldraw.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lfade.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1381,6 +1384,9 @@
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\ldraw.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lfade.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>

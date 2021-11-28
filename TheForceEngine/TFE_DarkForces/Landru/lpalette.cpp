@@ -431,6 +431,11 @@ namespace TFE_DarkForces
 		lpalette_copy(s_dstPal, pal, pal->start, pal->len, pal->start);
 	}
 
+	void lpalette_setSrcPal(LPalette* pal)
+	{
+		lpalette_copy(s_srcPal, pal, pal->start, pal->len, pal->start);
+	}
+
 	void lpalette_setDstColor(s16 start, s16 stop, s16 r, s16 g, s16 b)
 	{
 		lpalette_setRGB(s_dstPal, r, g, b, start, stop - start + 1);
@@ -525,6 +530,86 @@ namespace TFE_DarkForces
 		if (count)
 		{
 			lpalette_setVgaPalette();
+		}
+	}
+
+	void lpalette_buildPaletteToPalette(s16 start, s16 stop, s16 step)
+	{
+		LRGB* src1 = s_srcPal->colors;
+		LRGB* src2 = s_dstPal->colors;
+		LRGB* dst  = s_screenPal->colors;
+
+		for (s32 slot = start; slot <= stop; slot++)
+		{
+			s32 r = s32(src2[slot].r) - s32(src1[slot].r);
+			s32 g = s32(src2[slot].g) - s32(src1[slot].g);
+			s32 b = s32(src2[slot].b) - s32(src1[slot].b);
+
+			r = (r * step) / 256;
+			g = (g * step) / 256;
+			b = (b * step) / 256;
+
+			dst[slot].r = u8(src1[slot].r + r);
+			dst[slot].g = u8(src1[slot].g + g);
+			dst[slot].b = u8(src1[slot].b + b);
+		}
+	}
+
+	void lpalette_buildPaletteToMono(s16 start, s16 stop, s16 step, s16 fr, s16 fg, s16 fb)
+	{
+		LRGB* src = s_srcPal->colors;
+		LRGB* dst = s_screenPal->colors;
+
+		for (s32 slot = start; slot <= stop; slot++)
+		{
+			s32 r = s32(fr) - s32(src[slot].r);
+			s32 g = s32(fg) - s32(src[slot].g);
+			s32 b = s32(fb) - s32(src[slot].b);
+
+			r = (r * step) / 256;
+			g = (g * step) / 256;
+			b = (b * step) / 256;
+
+			dst[slot].r = u8(s32(src[slot].r) + r);
+			dst[slot].g = u8(s32(src[slot].g) + g);
+			dst[slot].b = u8(s32(src[slot].b) + b);
+		}
+	}
+
+	void lpalette_buildMonoToPalette(s16 start, s16 stop, s16 step, s16 fr, s16 fg, s16 fb)
+	{
+		LRGB* src = s_dstPal->colors;
+		LRGB* dst = s_screenPal->colors;
+
+		for (s32 slot = start; slot <= stop; slot++)
+		{
+			s32 r = s32(src[slot].r) - s32(fr);
+			s32 g = s32(src[slot].g) - s32(fg);
+			s32 b = s32(src[slot].b) - s32(fb);
+
+			r = (r * step) / 256;
+			g = (g * step) / 256;
+			b = (b * step) / 256;
+
+			dst[slot].r = u8(s32(fr) + r);
+			dst[slot].g = u8(s32(fg) + g);
+			dst[slot].b = u8(s32(fb) + b);
+		}
+	}
+
+	void lpalette_buildFadePalette(s16 type, s16 start, s16 stop, s16 step, s16 fr, s16 fg, s16 fb)
+	{
+		switch (type)
+		{
+			case LPAL_BUILD_PALETTE:
+				lpalette_buildPaletteToPalette(start, stop, step);
+				break;
+			case LPAL_BUILD_MONOSRC:
+				lpalette_buildMonoToPalette(start, stop, step, fr, fg, fb);
+				break;
+			case LPAL_BUILD_MONODEST:
+				lpalette_buildPaletteToMono(start, stop, step, fr, fg, fb);
+				break;
 		}
 	}
 

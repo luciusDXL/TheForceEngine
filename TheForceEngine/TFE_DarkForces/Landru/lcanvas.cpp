@@ -1,4 +1,5 @@
 #include "lcanvas.h"
+#include "lfade.h"
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -67,5 +68,32 @@ namespace TFE_DarkForces
 		}
 
 		lcanvas_setClip(&clipRect);
+	}
+
+	void lcanvas_applyFade(JBool dialog)
+	{
+		LRect rect;
+		lcanvas_getBounds(&rect);
+
+		/*
+		if (cursor is visible)
+		{
+			TODO: Cursor is visible.
+		}
+		else
+		{
+			...
+		}
+		*/
+		lfade_applyFade(&rect, dialog);
+	}
+
+	void lcanvas_copyScreenToVideo(LRect* rect)
+	{
+	}
+
+	void lcanvas_copyPortionToVideo(LRect* rect, s16 x, s16 y)
+	{
+
 	}
 }  // namespace TFE_DarkForces
