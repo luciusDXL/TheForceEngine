@@ -38,7 +38,6 @@ namespace TFE_DarkForces
 		}
 		if (!found) return;
 
-		lcanvas_init(320, 200);
 		lsystem_init();
 		
 		// The original code then starts the cutscene loop here, and then returns when done.

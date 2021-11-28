@@ -19,6 +19,7 @@ namespace TFE_DarkForces
 	void lsystem_init()
 	{
 		if (s_lsystemInit) { return; }
+		lcanvas_init(320, 200);
 		ltime_init();
 		lview_init();
 		lpalette_init();
@@ -30,6 +31,7 @@ namespace TFE_DarkForces
 	void lsystem_destroy()
 	{
 		s_lsystemInit = JFALSE;
+		lcanvas_destroy();
 		lview_destroy();
 		lpalette_destroy();
 		lfade_destroy();

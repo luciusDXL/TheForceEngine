@@ -10,10 +10,63 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
+	static u8* s_bitmap = nullptr;
+	static s32 s_bitmapWidth = 0;
+	static s32 s_bitmapHeight = 0;
+
+	void ldraw_init(s16 w, s16 h)
+	{
+		if (w != s_bitmapWidth || h != s_bitmapHeight)
+		{
+			game_free(s_bitmap);
+			s_bitmap = (u8*)game_alloc(w * h);
+
+			s_bitmapWidth  = w;
+			s_bitmapHeight = h;
+		}
+	}
+
+	void ldraw_destroy()
+	{
+		game_free(s_bitmap);
+		s_bitmap = nullptr;
+		s_bitmapWidth = 0;
+		s_bitmapHeight = 0;
+	}
+
+	u8* ldraw_getBitmap()
+	{
+		return s_bitmap;
+	}
+
+	void drawClippedColorRect(LRect* rect, u8 color)
+	{
+		u8* framebuffer = s_bitmap;
+		const u32 stride = s_bitmapWidth;
+
+		LRect clipRect;
+		lcanvas_getClip(&clipRect);
+
+		LRect drawRect = *rect;
+		if (!lrect_clip(&drawRect, &clipRect))
+		{
+			return;
+		}
+
+		for (s32 y = drawRect.top; y < drawRect.bottom; y++)
+		{
+			u8* output = &framebuffer[y * stride];
+			for (s32 x = drawRect.left; x < drawRect.right; x++)
+			{
+				output[x] = color;
+			}
+		}
+	}
+
 	void deltaImage(s16* data, s16 x, s16 y)
 	{
-		u8* framebuffer = vfb_getCpuBuffer();
-		const u32 stride = vfb_getStride();
+		u8* framebuffer = s_bitmap;
+		const u32 stride = s_bitmapWidth;
 
 		u8* srcImage = (u8*)data;
 		while (1)
@@ -74,8 +127,8 @@ namespace TFE_DarkForces
 
 	void deltaClip(s16* data, s16 x, s16 y)
 	{
-		u8* framebuffer = vfb_getCpuBuffer();
-		const u32 stride = vfb_getStride();
+		u8* framebuffer = s_bitmap;
+		const u32 stride = s_bitmapWidth;
 
 		LRect clipRect;
 		lcanvas_getClip(&clipRect);

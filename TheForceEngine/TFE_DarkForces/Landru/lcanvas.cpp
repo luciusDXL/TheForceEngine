@@ -1,5 +1,6 @@
 #include "lcanvas.h"
 #include "lfade.h"
+#include "ldraw.h"
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -12,6 +13,8 @@ namespace TFE_DarkForces
 	static s16 s_lcanvasSize[2];
 	static LRect s_lcanvasRect;
 	static LRect s_lcanvasClipRect;
+
+	void lcanvas_copyToFramebuffer(LRect* rect, s16 x, s16 y);
 		
 	void lcanvas_init(s16 w, s16 h)
 	{
@@ -21,10 +24,12 @@ namespace TFE_DarkForces
 		s_lcanvasClipRect = s_lcanvasRect;
 
 		vfb_setResolution(w, h);
+		ldraw_init(w, h);
 	}
 
 	void lcanvas_destroy()
 	{
+		ldraw_destroy();
 	}
 
 	void lcanvas_getBounds(LRect* rect)
@@ -58,14 +63,7 @@ namespace TFE_DarkForces
 		lcanvas_getClip(&clipRect);
 		lcanvas_clearClipRect();
 
-		// TODO: Actual drawing API.
-		// PaintClippedRect(rect, 0);
-		// Hack.
-		u8* buffer = vfb_getCpuBuffer();
-		for (s32 i = 0; i < 320 * 200; i++)
-		{
-			buffer[i] = 0;
-		}
+		drawClippedColorRect(rect, 0);
 
 		lcanvas_setClip(&clipRect);
 	}
@@ -90,10 +88,43 @@ namespace TFE_DarkForces
 
 	void lcanvas_copyScreenToVideo(LRect* rect)
 	{
+		lcanvas_copyPortionToVideo(rect, rect->left, rect->top);
 	}
-
+		
 	void lcanvas_copyPortionToVideo(LRect* rect, s16 x, s16 y)
 	{
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
 
+		LRect srcRect = *rect;
+		if (!lrect_clip(&srcRect, &bounds)) { return; }
+
+		LRect clipRect = srcRect;
+		lrect_offset(&clipRect, x - rect->left, y - rect->top);
+		LRect dstRect = clipRect;
+		if (!lrect_clip(&dstRect, &bounds)) { return; }
+
+		srcRect.left    += dstRect.left   - clipRect.left;
+		srcRect.top     += dstRect.top    - clipRect.top;
+		srcRect.right   += dstRect.right  - clipRect.right;
+		srcRect.bottom  += dstRect.bottom - clipRect.bottom;
+
+		lcanvas_copyToFramebuffer(&srcRect, rect->left, rect->top);
+	}
+
+	void lcanvas_copyToFramebuffer(LRect* srcRect, s16 x, s16 y)
+	{
+		const u8* srcData = ldraw_getBitmap();
+		u8* dstData = vfb_getCpuBuffer();
+		if (!srcData || !dstData) { return; }
+
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
+		s32 width = bounds.right - bounds.left;
+				
+		for (s32 fy = srcRect->top; fy < srcRect->bottom; fy++)
+		{
+			memcpy(&dstData[(y + fy)*width + srcRect->left + x], &srcData[fy*width + srcRect->left], srcRect->right - srcRect->left);
+		}
 	}
 }  // namespace TFE_DarkForces
