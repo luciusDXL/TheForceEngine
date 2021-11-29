@@ -826,7 +826,7 @@
     <ClInclude Include="TFE_DarkForces\Landru\lfade.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\Landru\crawl.h">
+    <ClInclude Include="TFE_DarkForces\Landru\textCrawl.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1392,7 +1392,7 @@
     <ClCompile Include="TFE_DarkForces\Landru\lfade.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_DarkForces\Landru\crawl.cpp">
+    <ClCompile Include="TFE_DarkForces\Landru\textCrawl.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>

@@ -9,6 +9,6 @@
 
 namespace TFE_DarkForces
 {
-	void openCrawl(LActor* actor, Film* film);
-	void closeCrawl(LActor* actor);
+	void openTextCrawl(LActor* actor, Film* film);
+	void closeTextCrawl(LActor* actor);
 }  // namespace TFE_DarkForces
