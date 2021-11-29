@@ -123,9 +123,12 @@ namespace TFE_DarkForces
 
 	JBool lactorDelt_draw(LActor* actor, LRect* rect, LRect* clipRect, s16 x, s16 y, JBool refresh)
 	{
-		if (!refresh) { return JFALSE; }
-
+		if (!refresh)
+		{
+			return JFALSE;
+		}
 		u8* data = actor->data;
+
 		JBool retValue = JFALSE;
 		if (data)
 		{
@@ -177,6 +180,7 @@ namespace TFE_DarkForces
 			{
 				dirtyRect(&clipRect);
 			}
+			retValue = JTRUE;
 		}
 
 		return retValue;
@@ -227,7 +231,6 @@ namespace TFE_DarkForces
 			{
 				dirtyRect(&clipRect);
 			}
-
 			retValue = JTRUE;
 		}
 

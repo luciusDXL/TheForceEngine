@@ -1,5 +1,6 @@
 #include "lactorCust.h"
 #include "cutscene_film.h"
+#include "ldraw.h"
 #include "lview.h"
 #include "ltimer.h"
 #include <TFE_Game/igame.h>
@@ -61,8 +62,7 @@ namespace TFE_DarkForces
 
 		LRect ra;
 		lrect_set(&ra, x, y, x + actor->w, y + actor->h);
-		JBool retValue = JFALSE;
-		// retValue = PaintClippedRect(&ra, actor->fgColor);
+		JBool retValue = drawClippedColorRect(&ra, (u8)actor->fgColor);
 
 		if (lactor_isDirty(actor))
 		{

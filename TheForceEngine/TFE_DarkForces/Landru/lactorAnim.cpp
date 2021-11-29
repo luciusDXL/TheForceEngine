@@ -6,6 +6,8 @@
 #include <TFE_Game/igame.h>
 #include <assert.h>
 
+#include "ldraw.h"
+
 namespace TFE_DarkForces
 {
 	static JBool s_animActorInit = JFALSE;
@@ -154,9 +156,12 @@ namespace TFE_DarkForces
 
 	JBool lactorAnim_draw(LActor* actor, LRect* rect, LRect* clipRect, s16 x, s16 y, JBool refresh)
 	{
-		if (!refresh) { return JFALSE; }
+		if (!refresh)
+		{
+			return JFALSE;
+		}
 		u8* data = lactor_getArrayData(actor, actor->state);
-
+				
 		JBool retValue = JFALSE;
 		if (data)
 		{
@@ -169,6 +174,7 @@ namespace TFE_DarkForces
 				retValue = lactorDelt_drawClipped(data, x, y, lactor_isDirty(actor));
 			}
 		}
+
 		return retValue;
 	}
 

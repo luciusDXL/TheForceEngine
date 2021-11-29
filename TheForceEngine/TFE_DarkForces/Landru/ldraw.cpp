@@ -39,7 +39,7 @@ namespace TFE_DarkForces
 		return s_bitmap;
 	}
 
-	void drawClippedColorRect(LRect* rect, u8 color)
+	JBool drawClippedColorRect(LRect* rect, u8 color)
 	{
 		u8* framebuffer = s_bitmap;
 		const u32 stride = s_bitmapWidth;
@@ -50,7 +50,7 @@ namespace TFE_DarkForces
 		LRect drawRect = *rect;
 		if (!lrect_clip(&drawRect, &clipRect))
 		{
-			return;
+			return JFALSE;
 		}
 
 		for (s32 y = drawRect.top; y < drawRect.bottom; y++)
@@ -61,6 +61,7 @@ namespace TFE_DarkForces
 				output[x] = color;
 			}
 		}
+		return JTRUE;
 	}
 
 	void deltaImage(s16* data, s16 x, s16 y)
@@ -68,7 +69,7 @@ namespace TFE_DarkForces
 		u8* framebuffer = s_bitmap;
 		const u32 stride = s_bitmapWidth;
 
-		u8* srcImage = (u8*)data;
+		const u8* srcImage = (u8*)data;
 		while (1)
 		{
 			const s16* deltaLine = (s16*)srcImage;

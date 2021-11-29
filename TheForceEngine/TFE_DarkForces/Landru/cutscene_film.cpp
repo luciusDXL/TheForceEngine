@@ -496,6 +496,8 @@ namespace TFE_DarkForces
 			if (cutsceneFilm_isFading())
 			{
 				cutsceneFilm_startFade(JTRUE);
+				// TODO: This is a bit of a hack, I'm still trying to figure out how the animations get ahead 1 frame when fading in.
+				film->curCell++;
 			}
 			else if (!lfade_isActive())
 			{
