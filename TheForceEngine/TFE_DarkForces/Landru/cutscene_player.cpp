@@ -188,6 +188,8 @@ namespace TFE_DarkForces
 
 	static JBool s_skipSceneInput = JFALSE;
 	static JBool s_nextSceneInput = JFALSE;
+	static JBool s_cutscenePause = JFALSE;
+	static JBool s_cutsceneStepFrame = JFALSE;
 		
 	JBool cutscenePlayer_update()
 	{
@@ -203,8 +205,32 @@ namespace TFE_DarkForces
 			s_nextSceneInput = JTRUE;
 		}
 
-		tfe_updateLTime();
-		if (ltime_isFrameReady())
+		//////////////////////////
+		// DEBUG
+		if (TFE_Input::keyPressed(KEY_PAUSE))
+		{
+			s_cutscenePause = ~s_cutscenePause;
+		}
+
+		s_cutsceneStepFrame = JFALSE;
+		if (s_cutscenePause && TFE_Input::keyPressed(KEY_BACKSPACE))
+		{
+			s_cutsceneStepFrame = JTRUE;
+		}
+		//////////////////////////
+
+		JBool stepView = JFALSE;
+		if (s_cutscenePause)
+		{
+			stepView = s_cutsceneStepFrame;
+		}
+		else
+		{
+			tfe_updateLTime();
+			stepView = ltime_isFrameReady();
+		}
+
+		if (stepView)
 		{
 			s32 exitValue = lview_loop();
 			if (exitValue != VIEW_LOOP_RUNNING)

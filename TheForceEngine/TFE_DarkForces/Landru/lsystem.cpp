@@ -1,4 +1,8 @@
 #include "lsystem.h"
+#include "lactor.h"
+#include "lactorAnim.h"
+#include "lactorCust.h"
+#include "lactorDelt.h"
 #include "lcanvas.h"
 #include "lfade.h"
 #include "ltimer.h"
@@ -25,6 +29,11 @@ namespace TFE_DarkForces
 		lpalette_init();
 		lfade_init();
 
+		lactor_init();
+		lactorDelt_init();
+		lactorAnim_init();
+		lactorCust_init();
+
 		// TODO: Load core fonts, system palette, etc.
 	}
 
@@ -35,5 +44,10 @@ namespace TFE_DarkForces
 		lview_destroy();
 		lpalette_destroy();
 		lfade_destroy();
+
+		lactorCust_destroy();
+		lactorAnim_destroy();
+		lactorDelt_destroy();
+		lactor_destroy();
 	}
 }  // namespace TFE_DarkForces
