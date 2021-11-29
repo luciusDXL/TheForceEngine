@@ -390,6 +390,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\hitEffect.h" />
     <ClInclude Include="TFE_DarkForces\hud.h" />
     <ClInclude Include="TFE_DarkForces\item.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\crawl.h" />
     <ClInclude Include="TFE_DarkForces\Landru\cutscene.h" />
     <ClInclude Include="TFE_DarkForces\Landru\cutsceneList.h" />
     <ClInclude Include="TFE_DarkForces\Landru\cutscene_film.h" />
@@ -612,6 +613,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\hitEffect.cpp" />
     <ClCompile Include="TFE_DarkForces\hud.cpp" />
     <ClCompile Include="TFE_DarkForces\item.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\crawl.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\cutscene.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\cutsceneList.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\cutscene_film.cpp" />

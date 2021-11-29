@@ -64,11 +64,8 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
-	void deltaImage(s16* data, s16 x, s16 y)
+	void drawDeltaIntoBitmap(s16* data, s16 x, s16 y, u8* framebuffer, s32 stride)
 	{
-		u8* framebuffer = s_bitmap;
-		const u32 stride = s_bitmapWidth;
-
 		const u8* srcImage = (u8*)data;
 		while (1)
 		{
@@ -83,9 +80,9 @@ namespace TFE_DarkForces
 			s16 yStart = deltaLine[2] + y;
 			// Size of the Delta Line structure.
 			srcImage += sizeof(s16) * 3;
-						
+
 			const JBool rle = (sizeAndType & 1) ? JTRUE : JFALSE;
-			s32 pixelCount  = (sizeAndType >> 1) & 0x3fff;
+			s32 pixelCount = (sizeAndType >> 1) & 0x3fff;
 			u8* dstImage = &framebuffer[yStart*stride + xStart];
 
 			while (pixelCount > 0)
@@ -124,6 +121,11 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+	}
+
+	void deltaImage(s16* data, s16 x, s16 y)
+	{
+		drawDeltaIntoBitmap(data, x, y, s_bitmap, s_bitmapWidth);
 	}
 
 	void deltaClip(s16* data, s16 x, s16 y)

@@ -2,6 +2,7 @@
 #include "cutscene_film.h"
 #include "lcanvas.h"
 #include "time.h"
+#include "crawl.h"
 #include <TFE_DarkForces/Landru/ltimer.h>
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
@@ -162,11 +163,10 @@ namespace TFE_DarkForces
 			// Text Crawl handling
 			if (sceneId == TEXTCRAWL_SCENE)
 			{
-				s_textCrawl = lactor_find(CF_TYPE_DELTA_ACTOR, "textcrawl");
+				s_textCrawl = lactor_find(CF_TYPE_DELTA_ACTOR, "textcraw");
 				if (s_textCrawl)
 				{
-					// TODO: The text crawl gets its own special playback.
-					// OpenCrawl(textcrawl, film);
+					openCrawl(s_textCrawl, s_film);
 				}
 			}
 
@@ -180,7 +180,7 @@ namespace TFE_DarkForces
 	{
 		if (s_textCrawl)
 		{
-			// CloseCrawl(s_textCrawl);
+			closeCrawl(s_textCrawl);
 			s_textCrawl = nullptr;
 		}
 		lview_clearUpdateFunc();

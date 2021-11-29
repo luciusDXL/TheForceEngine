@@ -17,4 +17,6 @@ namespace TFE_DarkForces
 	void deltaFlip(s16* data, s16 x, s16 y, s16 w);
 	void deltaFlipClip(s16* data, s16 x, s16 y, s16 w);
 	JBool drawClippedColorRect(LRect* rect, u8 color);
+
+	void drawDeltaIntoBitmap(s16* data, s16 x, s16 y, u8* framebuffer, s32 stride);
 }  // namespace TFE_DarkForces
