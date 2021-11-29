@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "infSystem.h"
 #include "message.h"
 #include <TFE_Game/igame.h>

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "postprocess.h"
 #include "postprocesseffect.h"
 #include <TFE_RenderBackend/vertexBuffer.h>

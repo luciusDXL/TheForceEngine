@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "profiler.h"
 #include <assert.h>
 #include <algorithm>

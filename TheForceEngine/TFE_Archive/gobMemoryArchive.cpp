@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "gobMemoryArchive.h"
 #include <TFE_System/system.h>
 #include <TFE_Game/igame.h>

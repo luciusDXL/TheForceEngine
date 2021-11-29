@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "screenCapture.h"
 #include "openGL_Caps.h"
 #include "../renderBackend.h"

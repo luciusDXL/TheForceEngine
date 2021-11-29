@@ -1,4 +1,4 @@
-#include "AudioDevice.h"
+#include "audioDevice.h"
 #include <TFE_System/system.h>
 #include "RtAudio.h"
 

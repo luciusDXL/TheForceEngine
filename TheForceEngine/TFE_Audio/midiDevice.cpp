@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "midiDevice.h"
 #include "RtMidi.h"
 #include <TFE_System/system.h>

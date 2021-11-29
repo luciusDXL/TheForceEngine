@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <algorithm>
 
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
 #undef min
@@ -23,6 +24,7 @@
 
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "sdl2.lib")
+#endif
 
 namespace TFE_RenderBackend
 {

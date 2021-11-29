@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "spriteAsset_Jedi.h"
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>

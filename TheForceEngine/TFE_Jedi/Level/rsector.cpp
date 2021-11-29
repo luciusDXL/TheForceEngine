@@ -1,3 +1,6 @@
+#include <climits>
+#include <cstring>
+
 #include "rsector.h"
 #include "rwall.h"
 #include "robject.h"

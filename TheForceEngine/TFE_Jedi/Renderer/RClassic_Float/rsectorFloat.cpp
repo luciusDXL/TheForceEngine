@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <TFE_System/profiler.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Game/igame.h>

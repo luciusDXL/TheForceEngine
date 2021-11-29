@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "vueLogic.h"
 #include "time.h"
 #include <TFE_Game/igame.h>

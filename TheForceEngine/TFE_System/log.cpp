@@ -1,4 +1,6 @@
-#pragma once
+#include <cstdarg>
+#include <cstring>
+
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
@@ -7,10 +9,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <io.h>
 
 #ifdef _WIN32
 	#include <Windows.h>
+	#include <io.h>
 #endif
 
 namespace TFE_System

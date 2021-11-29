@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "turret.h"
 #include "aiActor.h"
 #include "../logic.h"

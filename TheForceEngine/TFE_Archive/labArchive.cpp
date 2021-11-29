@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <TFE_System/system.h>
 #include "labArchive.h"
 #include <assert.h>

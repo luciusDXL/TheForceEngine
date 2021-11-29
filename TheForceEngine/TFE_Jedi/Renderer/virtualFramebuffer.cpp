@@ -1,4 +1,6 @@
-#include "virtualFrameBuffer.h"
+#include <cstring>
+
+#include "virtualFramebuffer.h"
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Settings/settings.h>
 

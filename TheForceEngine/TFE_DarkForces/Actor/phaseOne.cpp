@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "phaseOne.h"
 #include "aiActor.h"
 #include "../logic.h"

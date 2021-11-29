@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "task.h"
 #include <TFE_Memory/chunkedArray.h>
 #include <TFE_DarkForces/time.h>

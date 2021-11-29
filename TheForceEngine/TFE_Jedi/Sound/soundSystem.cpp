@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "soundSystem.h"
 #include <TFE_Asset/vocAsset.h>
 #include <TFE_Audio/audioSystem.h>

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "dragon.h"
 #include "aiActor.h"
 #include "../logic.h"

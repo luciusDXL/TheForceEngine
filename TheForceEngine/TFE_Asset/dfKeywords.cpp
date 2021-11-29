@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "dfKeywords.h"
 #include <TFE_System/system.h>
 
