@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "agentMenu.h"
 #include "editBox.h"
 #include "delt.h"

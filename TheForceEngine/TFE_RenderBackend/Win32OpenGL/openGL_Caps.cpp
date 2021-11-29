@@ -1,4 +1,4 @@
-#include "OpenGL_Caps.h"
+#include "openGL_Caps.h"
 #include <GL/glew.h>
 #include <assert.h>
 

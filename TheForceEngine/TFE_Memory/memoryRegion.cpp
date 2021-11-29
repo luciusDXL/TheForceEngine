@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "memoryRegion.h"
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>

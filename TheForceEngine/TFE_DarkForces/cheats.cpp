@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "cheats.h"
 #include <TFE_Jedi/Math/core_math.h>
 

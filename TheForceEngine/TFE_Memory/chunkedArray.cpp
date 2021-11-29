@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "chunkedArray.h"
 #include <TFE_System/system.h>
 #include <TFE_Memory/memoryRegion.h>

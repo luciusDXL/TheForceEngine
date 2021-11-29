@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "archive.h"
 #include "gobArchive.h"
 #include "lfdArchive.h"

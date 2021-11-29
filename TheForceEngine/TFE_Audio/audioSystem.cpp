@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "audioSystem.h"
 #include "audioDevice.h"
 #include <TFE_System/system.h>

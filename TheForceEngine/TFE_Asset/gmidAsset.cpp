@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "gmidAsset.h"
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>

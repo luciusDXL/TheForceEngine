@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Math/fixedPoint.h>

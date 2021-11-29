@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "uiDraw.h"
 #include <TFE_Asset/fontAsset.h>
 

@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "util.h"
 #include <TFE_Game/igame.h>
 

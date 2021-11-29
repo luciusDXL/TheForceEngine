@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "inputMapping.h"
 #include <TFE_Game/igame.h>
 #include <TFE_FileSystem/paths.h>

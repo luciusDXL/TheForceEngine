@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "../dynamicTexture.h"
 #include "openGL_Caps.h"
 #include <TFE_System/system.h>

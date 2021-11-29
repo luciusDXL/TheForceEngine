@@ -1,3 +1,5 @@
+#include <climits>
+
 #include "actorDebug.h"
 #include "actor.h"
 #include <TFE_Game/igame.h>
