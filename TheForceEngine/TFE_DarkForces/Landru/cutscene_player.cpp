@@ -60,7 +60,6 @@ namespace TFE_DarkForces
 	extern s32 s_musicVolume;
 	extern s32 s_enabled;
 
-	s32 cutscenePlayer_playScene(s32 scene);
 	void cutscene_customSoundCallback(LActor* actor, s32 time);
 	s32  lcutscenePlayer_endView(s32 time);
 				
@@ -251,11 +250,6 @@ namespace TFE_DarkForces
 		}
 
 		return VIEW_LOOP_RUNNING;
-	}
-
-	s32 cutscenePlayer_playScene(s32 scene)
-	{
-		return scene;
 	}
 
 	// TODO: Handle midi cue points.

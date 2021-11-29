@@ -44,6 +44,11 @@ namespace TFE_DarkForces
 		s_frameRate = delay;
 	}
 
+	u16 ltime_getDelay()
+	{
+		return s_frameRate;
+	}
+
 	LTick ltime_elapsed()
 	{
 		if (s_lastTick == 0) { s_lastTick = s_curTick; }

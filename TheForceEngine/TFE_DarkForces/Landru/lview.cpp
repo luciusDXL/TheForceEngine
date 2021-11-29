@@ -15,6 +15,7 @@ namespace TFE_DarkForces
 {
 	LView* s_view = nullptr;
 	JBool s_lviewInit = JFALSE;
+	JBool s_updateView = JTRUE;
 	static LView* s_defaultView = nullptr;
 	static JBool s_running = JFALSE;
 	static s32 s_exitValue = VIEW_LOOP_RUNNING;
@@ -37,6 +38,7 @@ namespace TFE_DarkForces
 			s_defaultView->frameCount = 0;
 			lview_setCurrent(s_defaultView);
 		}
+		s_updateView = JTRUE;
 	}
 
 	void lview_destroy()
@@ -114,7 +116,10 @@ namespace TFE_DarkForces
 
 	void lview_blit()
 	{
-		lcanvas_applyFade(JFALSE);
+		// Note: in Dark Forces, the fade is a while loop, pausing the view code.
+		// For TFE, we run once loop iteration at a time, meaning that we have to
+		// pause the view code using internal state.
+		s_updateView = lcanvas_applyFade(JFALSE);
 		vfb_swap();
 	}
 
@@ -141,23 +146,29 @@ namespace TFE_DarkForces
 			return s_exitValue;
 		}
 
-		if (!s_view->step)
+		if (s_updateView)
 		{
-			lview_update(s_view->time);
-			lview_updateCallback(s_view->time);
-		}
+			if (!s_view->step)
+			{
+				lview_update(s_view->time);
+				lview_updateCallback(s_view->time);
+			}
 
-		lview_clear();
-		lview_draw(s_view->refreshWorld);
-		s_view->refreshWorld = JFALSE;
+			lview_clear();
+			lview_draw(s_view->refreshWorld);
+			s_view->refreshWorld = JFALSE;
+		}
 
 		lview_blit();
 
-		if (!s_view->step)
+		if (s_updateView)
 		{
-			lpalette_cycleScreen();
-			if (s_view->updateFunc) { s_exitValue = s_view->updateFunc(s_view->time); }
-			s_view->time++;
+			if (!s_view->step)
+			{
+				lpalette_cycleScreen();
+				if (s_view->updateFunc) { s_exitValue = s_view->updateFunc(s_view->time); }
+				s_view->time++;
+			}
 		}
 
 		return s_exitValue;

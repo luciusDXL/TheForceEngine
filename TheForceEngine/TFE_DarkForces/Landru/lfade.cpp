@@ -1,6 +1,7 @@
 #include "lfade.h"
 #include "lcanvas.h"
 #include "lpalette.h"
+#include "ltimer.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -457,69 +458,105 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void lfade_applyFade(LRect* rect, JBool dialog)
+	static LRect s_fadeRect;
+	static JBool s_fadeDialog;
+	static s32 s_fadeTime;
+	static s32 s_fadeLockTime = -1;
+	static s32 s_fadeLockEnd = -1;
+	static u16 s_baseRate;
+
+	void lfade_loop(s32 time)
 	{
-		s32 lockTime, lockEnd;
-		lfade_calculateFadeLockTime(&lockTime, &lockEnd);
+		lfade_fadeToVideoPalette(time, s_fadeLockTime);
 
-		for (s32 time = lockTime; time <= lockEnd; time++)
+		if (lfade_isStep(s_fade->fullType, s_fade->fullLock, s_fade->fullDelay, time, s_fadeLockTime))
 		{
-			lfade_fadeToVideoPalette(time, lockTime);
-
-			if (lfade_isStep(s_fade->fullType, s_fade->fullLock, s_fade->fullDelay, time, lockTime))
+			lfade_copyToVideo(&s_fadeRect, s_fade->fullType, s_fade->fullStep, s_fade->fullLen, time != s_fadeLockEnd);
+			s_fade->fullStep++;
+			if (s_fade->fullStep > s_fade->fullLen)
 			{
-				lfade_copyToVideo(rect, s_fade->fullType, s_fade->fullStep, s_fade->fullLen, time != lockEnd);
-				s_fade->fullStep++;
-				if (s_fade->fullStep > s_fade->fullLen)
-				{
-					s_fade->fullType = ftype_noFade;
-				}
+				s_fade->fullType = ftype_noFade;
+			}
+		}
+		else
+		{
+			if (lfade_isDelayStep(s_fade->fullType, s_fade->fullDelay, time, s_fadeLockTime))
+			{
+				s_fade->fullDelay--;
+			}
+
+			if (s_fadeDialog)
+			{
+				lfade_copyToVideo(&s_fadeRect, ftype_snapFade, 0, 0, JFALSE);
 			}
 			else
 			{
-				if (lfade_isDelayStep(s_fade->fullType, s_fade->fullDelay, time, lockTime))
+				for (s32 i = 0; i < LVIEW_COUNT; i++)
 				{
-					s_fade->fullDelay--;
-				}
-
-				if (dialog)
-				{
-					lfade_copyToVideo(rect, ftype_snapFade, 0, 0, JFALSE);
-				}
-				else
-				{
-					for (s32 i = 0; i < LVIEW_COUNT; i++)
+					if (lview_copyEnabled(i))
 					{
-						if (lview_copyEnabled(i))
-						{
-							LRect frame;
-							lview_getViewClipFrame(i, &frame);
-							lrect_clip(&frame, rect);
+						LRect frame;
+						lview_getViewClipFrame(i, &frame);
+						lrect_clip(&frame, &s_fadeRect);
 
-							if (lfade_isStep(s_fade->type[i], s_fade->lock[i], s_fade->delay[i], time, lockTime))
+						if (lfade_isStep(s_fade->type[i], s_fade->lock[i], s_fade->delay[i], time, s_fadeLockTime))
+						{
+							lfade_copyToVideo(&frame, s_fade->type[i], s_fade->step[i], s_fade->len[i], time != s_fadeLockEnd);
+							s_fade->step[i]++;
+							if (s_fade->step[i] > s_fade->len[i])
 							{
-								lfade_copyToVideo(&frame, s_fade->type[i], s_fade->step[i], s_fade->len[i], time != lockEnd);
-								s_fade->step[i]++;
-								if (s_fade->step[i] > s_fade->len[i])
-								{
-									s_fade->type[i] = ftype_noFade;
-								}
+								s_fade->type[i] = ftype_noFade;
 							}
-							else
+						}
+						else
+						{
+							if (lfade_isDelayStep(s_fade->type[i], s_fade->delay[i], time, s_fadeLockTime))
 							{
-								if (lfade_isDelayStep(s_fade->type[i], s_fade->delay[i], time, lockTime))
-								{
-									s_fade->delay[i]--;
-								}
-								if (s_fade->type[i] == ftype_noFade)
-								{
-									lfade_copyToVideo(&frame, ftype_snapFade, 0, 0, time != lockEnd);
-								}
+								s_fade->delay[i]--;
+							}
+							if (s_fade->type[i] == ftype_noFade)
+							{
+								lfade_copyToVideo(&frame, ftype_snapFade, 0, 0, time != s_fadeLockEnd);
 							}
 						}
 					}
 				}
 			}
 		}
+	}
+	
+	JBool lfade_applyFadeLoop(LRect* rect, JBool dialog)
+	{
+		if (s_fadeLockTime < 0)
+		{
+			s_fadeRect = *rect;
+			s_fadeDialog = dialog;
+			lfade_calculateFadeLockTime(&s_fadeLockTime, &s_fadeLockEnd);
+			s_fadeTime = s_fadeLockTime;
+			s_baseRate = ltime_getDelay();
+		}
+		// We are not fading at all.
+		if (s_fadeTime > s_fadeLockEnd)
+		{
+			return JTRUE;
+		}
+		// Fading is applied
+		if (s_fadeTime <= s_fadeLockEnd)
+		{
+			lfade_loop(s_fadeTime);
+			s_fadeTime++;
+
+			if (s_fadeTime > s_fadeLockEnd)
+			{
+				s_fadeLockTime = -1;
+				s_fadeLockEnd  = -1;
+				s_fadeTime = 0;
+				ltime_setFrameRate(s_baseRate);
+				return JTRUE;
+			}
+			// Fading occurs at a higher framerate.
+			ltime_setFrameRate(4);
+		}
+		return JFALSE;
 	}
 }

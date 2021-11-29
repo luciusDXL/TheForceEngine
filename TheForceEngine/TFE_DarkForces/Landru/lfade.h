@@ -90,5 +90,5 @@ namespace TFE_DarkForces
 	void lfade_setColor(s16 r, s16 g, s16 b);
 
 	JBool lfade_isActive();
-	void  lfade_applyFade(LRect* rect, JBool dialog);
+	JBool lfade_applyFadeLoop(LRect* rect, JBool dialog);
 }  // namespace TFE_DarkForces

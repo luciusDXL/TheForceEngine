@@ -68,7 +68,7 @@ namespace TFE_DarkForces
 		lcanvas_setClip(&clipRect);
 	}
 
-	void lcanvas_applyFade(JBool dialog)
+	JBool lcanvas_applyFade(JBool dialog)
 	{
 		LRect rect;
 		lcanvas_getBounds(&rect);
@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 			...
 		}
 		*/
-		lfade_applyFade(&rect, dialog);
+		return lfade_applyFadeLoop(&rect, dialog);
 	}
 
 	void lcanvas_copyScreenToVideo(LRect* rect)

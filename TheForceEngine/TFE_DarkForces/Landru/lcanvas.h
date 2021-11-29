@@ -18,7 +18,7 @@ namespace TFE_DarkForces
 	void  lcanvas_clearClipRect();
 
 	void  lcanvas_eraseRect(LRect* rect);
-	void  lcanvas_applyFade(JBool dialog);
+	JBool lcanvas_applyFade(JBool dialog);
 
 	void  lcanvas_copyScreenToVideo(LRect* rect);
 	void  lcanvas_copyPortionToVideo(LRect* rect, s16 x, s16 y);
