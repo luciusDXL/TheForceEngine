@@ -574,6 +574,8 @@ namespace TFE_Jedi
 		strcpy(levelPath, levelName);
 		strcat(levelPath, ".O");
 
+		s32 curDiff = s32(difficulty) + 1;
+
 		FilePath filePath;
 		if (!TFE_Paths::getFilePath(levelPath, &filePath))
 		{
@@ -714,13 +716,14 @@ namespace TFE_Jedi
 				if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &objDiff) > 5)
 				{
 					objIndex++;
-										
-					if (TFE_Jedi::abs(objDiff) >= difficulty)
+					// objDiff >= 0: This difficulty and all greater.
+					// objDiff <  0: Less than this difficulty.
+					if ((objDiff >= 0 && curDiff < objDiff) || (objDiff < 0 && curDiff > TFE_Jedi::abs(objDiff)))
 					{
 						line = parser.readLine(bufferPos);
 						continue;
 					}
-										
+
 					vec3_fixed posWS;
 					posWS.x = floatToFixed16(x);
 					posWS.y = floatToFixed16(y);

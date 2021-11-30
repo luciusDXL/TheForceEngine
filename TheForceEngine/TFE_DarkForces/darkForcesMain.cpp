@@ -15,6 +15,7 @@
 #include "vueLogic.h"
 #include "GameUI/agentMenu.h"
 #include "GameUI/escapeMenu.h"
+#include "GameUI/missionBriefing.h"
 #include "Landru/lsystem.h"
 #include <TFE_DarkForces/Landru/cutscene.h>
 #include <TFE_DarkForces/Landru/cutsceneList.h>
@@ -390,13 +391,24 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_BRIEFING:
 			{
-				// Normally this stays while the briefing is active and then when finished, we either increment to move on, or 
-				// decrement to move back to the level.
-				s_cutsceneIndex++;
-				// else
-				// s_invalidLevelIndex = JTRUE;
-				// s_cutsceneIndex--;
-				startNextMode();
+				s32 skill;
+				JBool abort;
+				if (!missionBriefing_update(&skill, &abort))
+				{
+					TFE_Input::clearAccumulatedMouseMove();
+
+					if (abort)
+					{
+						s_invalidLevelIndex = JTRUE;
+						s_cutsceneIndex--;
+					}
+					else
+					{
+						s_agentData[s_agentId].difficulty = skill;
+						s_cutsceneIndex++;
+					}
+					startNextMode();
+				}
 			} break;
 			case GSTATE_MISSION:
 			{
@@ -419,7 +431,7 @@ namespace TFE_DarkForces
 					{
 						s_cutsceneIndex++;
 						s32 completedLevelIndex = agent_getLevelIndex();
-						u8 diff = 1;	// level_getDifficulty();
+						u8 diff = s_agentData[s_agentId].difficulty;
 
 						// Save the level completion, inventory and other stats into the agent data and then save to disk.
 						agent_saveLevelCompletion(diff, completedLevelIndex);
@@ -515,9 +527,20 @@ namespace TFE_DarkForces
 			{
 				// TODO: Check to see if cutscenes are disabled, if so we also skip the mission briefing.
 				const char* levelName = agent_getLevelName();
-				// missionBriefing_start(levelName);
+				s32 briefingIndex = 0;
+				for (s32 i = 0; i < s_briefingList.count; i++)
+				{
+					if (strcasecmp(levelName, s_briefingList.briefing[i].mission) == 0)
+					{
+						briefingIndex = i;
+						break;
+					}
+				}
 
-				// Set the state.
+				s32 skill = (s32)s_agentData[s_agentId].difficulty;
+				BriefingInfo* brief = &s_briefingList.briefing[briefingIndex];
+				missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
+
 				s_state = GSTATE_BRIEFING;
 			}  break;
 			case GMODE_MISSION:

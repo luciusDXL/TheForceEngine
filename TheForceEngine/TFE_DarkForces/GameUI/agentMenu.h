@@ -14,4 +14,7 @@ namespace TFE_DarkForces
 
 	// Reset Presistent State.
 	void agentMenu_resetState();
+
+	// TODO: Factor out into its own file.
+	void menu_blitCursor(s32 x, s32 y, u8* framebuffer);
 }

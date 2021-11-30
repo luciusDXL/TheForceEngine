@@ -495,10 +495,15 @@ namespace TFE_DarkForces
 
 		s_missionBegin = JFALSE;
 	}
+
+	void menu_blitCursor(s32 x, s32 y, u8* framebuffer)
+	{
+		blitDeltaFrame(&s_cursor, x, y, framebuffer);
+	}
 		
 	void agentMenu_blit()
 	{
-		blitDeltaFrame(&s_cursor, s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+		menu_blitCursor(s_cursorPos.x, s_cursorPos.z, s_framebuffer);
 
 		setPalette();
 		vfb_swap();

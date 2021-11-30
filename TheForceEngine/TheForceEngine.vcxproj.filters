@@ -832,6 +832,9 @@
     <ClInclude Include="TFE_DarkForces\briefingList.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\GameUI\missionBriefing.h">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1400,6 +1403,9 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\briefingList.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\GameUI\missionBriefing.cpp">
+      <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

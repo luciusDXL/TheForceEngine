@@ -18,9 +18,7 @@ namespace TFE_DarkForces
 	}
 	//////////////////////////////////////////////
 
-	void  lactorDelt_getFrame(LActor* actor, LRect* rect);
 	void  lactorDelt_initActor(LActor* actor, u8* data, LRect* frame, s16 xOffset, s16 yOffset, s16 zPlane);
-	JBool lactorDelt_draw(LActor* actor, LRect* rect, LRect* clipRect, s16 x, s16 y, JBool refresh);
 	void  lactorDelt_update(LActor* actor);
 
 	void lactorDelt_init()
@@ -121,6 +119,12 @@ namespace TFE_DarkForces
 		actor->bounds = rect;
 	}
 
+	void lactorDelt_update(LActor* actor)
+	{
+		lactor_move(actor);
+		lactor_moveFrame(actor);
+	}
+
 	JBool lactorDelt_draw(LActor* actor, LRect* rect, LRect* clipRect, s16 x, s16 y, JBool refresh)
 	{
 		if (!refresh)
@@ -141,13 +145,8 @@ namespace TFE_DarkForces
 				retValue = lactorDelt_drawClipped(data, x, y, lactor_isDirty(actor));
 			}
 		}
-		return retValue;
-	}
 
-	void lactorDelt_update(LActor* actor)
-	{
-		lactor_move(actor);
-		lactor_moveFrame(actor);
+		return retValue;
 	}
 		
 	JBool lactorDelt_drawClipped(u8* data, s16 x, s16 y, JBool dirty)
