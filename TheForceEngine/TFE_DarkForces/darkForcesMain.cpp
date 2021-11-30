@@ -14,6 +14,7 @@
 #include "vueLogic.h"
 #include "GameUI/agentMenu.h"
 #include "GameUI/escapeMenu.h"
+#include "Landru/lsystem.h"
 #include <TFE_DarkForces/Landru/cutscene.h>
 #include <TFE_DarkForces/Landru/cutsceneList.h>
 #include <TFE_DarkForces/Actor/actor.h>
@@ -65,7 +66,7 @@ namespace TFE_DarkForces
 
 	enum GameMode
 	{
-		GMODE_ERROR = -1,
+		GMODE_END = -1,
 		GMODE_CUTSCENE = 0,
 		GMODE_BRIEFING = 1,
 		GMODE_MISSION = 2,
@@ -78,24 +79,80 @@ namespace TFE_DarkForces
 		s32 cutscene;
 	};
 		
-	// For this release, cutscenes and mission briefings are not supported - so just hack together the cutscene list.
-	// This is normally read from disk and controls the flow between missions.
 	static CutsceneData s_cutsceneData[] =
 	{
-		{1,  GMODE_MISSION, 0},
-		{2,  GMODE_MISSION, 0},
-		{3,  GMODE_MISSION, 0},
-		{4,  GMODE_MISSION, 0},
-		{5,  GMODE_MISSION, 0},
-		{6,  GMODE_MISSION, 0},
-		{7,  GMODE_MISSION, 0},
-		{8,  GMODE_MISSION, 0},
-		{9,  GMODE_MISSION, 0},
-		{10, GMODE_MISSION, 0},
-		{11, GMODE_MISSION, 0},
-		{12, GMODE_MISSION, 0},
-		{13, GMODE_MISSION, 0},
-		{14, GMODE_MISSION, 0}
+		{ 1,  GMODE_CUTSCENE, 100 },
+		{ 1,  GMODE_BRIEFING,   0 },
+		{ 1,  GMODE_MISSION,	0 },
+		{ 1,  GMODE_CUTSCENE, 150 },
+
+		{ 2,  GMODE_CUTSCENE, 200 },
+		{ 2,  GMODE_BRIEFING,   0 },
+		{ 2,  GMODE_MISSION,    0 },
+		{ 2,  GMODE_CUTSCENE, 250 },
+
+		{ 3,  GMODE_CUTSCENE, 300 },
+		{ 3,  GMODE_BRIEFING,   0 },
+		{ 3,  GMODE_MISSION,	0 },
+		{ 3,  GMODE_CUTSCENE, 350 },
+
+		{ 4,  GMODE_CUTSCENE, 400 },
+		{ 4,  GMODE_BRIEFING,   0 },
+		{ 4,  GMODE_MISSION,    0 },
+		{ 4,  GMODE_CUTSCENE, 450 },
+
+		{ 5,  GMODE_CUTSCENE, 500 },
+		{ 5,  GMODE_BRIEFING,	0 },
+		{ 5,  GMODE_MISSION,	0 },
+		{ 5,  GMODE_CUTSCENE, 550 },
+
+		{ 6,  GMODE_CUTSCENE, 600 },
+		{ 6,  GMODE_BRIEFING,	0 },
+		{ 6,  GMODE_MISSION,	0 },
+		{ 6,  GMODE_CUTSCENE, 650 },
+
+		{ 7,  GMODE_CUTSCENE, 700 },
+		{ 7,  GMODE_BRIEFING,	0 },
+		{ 7,  GMODE_MISSION,	0 },
+		{ 7,  GMODE_CUTSCENE, 750 },
+
+		{ 8,  GMODE_CUTSCENE, 800 },
+		{ 8,  GMODE_BRIEFING,	0 },
+		{ 8,  GMODE_MISSION, 	0 },
+		{ 8,  GMODE_CUTSCENE, 850 },
+
+		{ 9,  GMODE_CUTSCENE, 900 },
+		{ 9,  GMODE_BRIEFING,	0 },
+		{ 9,  GMODE_MISSION,	0 },
+		{ 9,  GMODE_CUTSCENE, 950 },
+
+		{ 10, GMODE_CUTSCENE,1000 },
+		{ 10, GMODE_BRIEFING,   0 },
+		{ 10, GMODE_MISSION,	0 },
+		{ 10, GMODE_CUTSCENE,1050 },
+
+		{ 11, GMODE_CUTSCENE,1100 },
+		{ 11, GMODE_BRIEFING,	0 },
+		{ 11, GMODE_MISSION,	0 },
+		{ 11, GMODE_CUTSCENE,1150 },
+
+		{ 12, GMODE_CUTSCENE,1200 },
+		{ 12, GMODE_BRIEFING,	0 },
+		{ 12, GMODE_MISSION,	0 },
+		{ 12, GMODE_CUTSCENE,1250 },
+
+		{ 13, GMODE_CUTSCENE,1300 },
+		{ 13, GMODE_BRIEFING,	0 },
+		{ 13, GMODE_MISSION,	0 },
+		{ 13, GMODE_CUTSCENE,1350 },
+
+		{ 14, GMODE_CUTSCENE,1400 },
+		{ 14, GMODE_BRIEFING,   0 },
+		{ 14, GMODE_MISSION,	0 },
+		{ 14, GMODE_CUTSCENE,1450 },
+		{ 14, GMODE_CUTSCENE,1500 },	//	game ending.
+		// Game flow end (restart).
+		{ -1, GMODE_END, -1 }
 	};
 	
 	/////////////////////////////////////////////
@@ -166,6 +223,7 @@ namespace TFE_DarkForces
 		config_startup();
 		gameStartup();
 		loadAgentAndLevelData();
+		lsystem_init();
 
 		renderer_init();
 		
@@ -185,6 +243,7 @@ namespace TFE_DarkForces
 		s_hotKeyMessages.msgList = nullptr;
 		gameMessage_freeBuffer();
 		cutsceneList_freeBuffer();
+		lsystem_destroy();
 
 		// Clear paths and archives.
 		TFE_Paths::clearSearchPaths();
@@ -315,7 +374,16 @@ namespace TFE_DarkForces
 			{
 				if (!cutscene_update())
 				{
-					startNextMode();
+					s_cutsceneIndex++;
+					if (s_cutsceneData[s_cutsceneIndex].nextGameMode == GMODE_END)
+					{
+						s_state = GSTATE_AGENT_MENU;
+						s_invalidLevelIndex = JTRUE;
+					}
+					else
+					{
+						startNextMode();
+					}
 				}
 			} break;
 			case GSTATE_BRIEFING:
@@ -418,20 +486,29 @@ namespace TFE_DarkForces
 		GameMode mode = s_cutsceneData[s_cutsceneIndex].nextGameMode;
 		switch (mode)
 		{
-			case GMODE_ERROR:
+			case GMODE_END:
 			{
-				// STUB
-				// Error Handling.
+				s_cutsceneIndex = 0;
+				s_invalidLevelIndex = JTRUE;
+				startNextMode();
 			} break;
 			case GMODE_CUTSCENE:
 			{
-				cutscene_play(s_cutsceneData[s_cutsceneIndex].cutscene);
-				s_state = GSTATE_CUTSCENE;
+				if (cutscene_play(s_cutsceneData[s_cutsceneIndex].cutscene))
+				{
+					s_state = GSTATE_CUTSCENE;
+				}
+				else
+				{
+					s_cutsceneIndex++;
+					startNextMode();
+				}
 			} break;
 			case GMODE_BRIEFING:
 			{
 				// STUB
-				// This will also change s_state -> GSTATE_BRIEFING
+				s_cutsceneIndex++;
+				startNextMode();
 			}  break;
 			case GMODE_MISSION:
 			{

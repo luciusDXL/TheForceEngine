@@ -16,7 +16,7 @@ namespace TFE_DarkForces
 
 	void cutscene_init(CutsceneState* cutsceneList);
 
-	void  cutscene_play(s32 sceneId);
+	JBool cutscene_play(s32 sceneId);
 	JBool cutscene_update();
 	void  cutscene_enable(s32 enable);
 	s32   cutscene_isEnabled();

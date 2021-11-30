@@ -23,6 +23,7 @@ namespace TFE_DarkForces
 	void lsystem_init()
 	{
 		if (s_lsystemInit) { return; }
+
 		lcanvas_init(320, 200);
 		ltime_init();
 		lview_init();
@@ -39,6 +40,8 @@ namespace TFE_DarkForces
 
 	void lsystem_destroy()
 	{
+		if (!s_lsystemInit) { return; }
+
 		s_lsystemInit = JFALSE;
 		lcanvas_destroy();
 		lview_destroy();

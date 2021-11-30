@@ -26,24 +26,30 @@ namespace TFE_DarkForces
 		s_playing = JFALSE;
 	}
 
-	void cutscene_play(s32 sceneId)
+	JBool cutscene_play(s32 sceneId)
 	{
-		if (!s_enabled || !s_playSeq) { return; }
+		if (!s_enabled || !s_playSeq) { return JFALSE; }
 
 		// Search for the requested scene.
 		s32 found = 0;
 		for (s32 i = 0; !found && s_playSeq[i].id != SCENE_EXIT; i++)
 		{
-			if (s_playSeq[i].id == sceneId) { found = 1; }
+			if (s_playSeq[i].id == sceneId)
+			{
+				found = 1;
+				break;
+			}
 		}
-		if (!found) return;
-
-		lsystem_init();
+		if (!found) return JFALSE;
+		// Re-initialize the canvas, so cutscenes run at the correct resolution even if it was changed for gameplay
+		// (i.e. high resolution support).
+		lcanvas_init(320, 200);
 		
 		// The original code then starts the cutscene loop here, and then returns when done.
 		// Instead we set a bool and then the calling code will call 'update' until it returns false.
 		s_playing = JTRUE;
 		cutscenePlayer_start(sceneId);
+		return JTRUE;
 	}
 
 	JBool cutscene_update()

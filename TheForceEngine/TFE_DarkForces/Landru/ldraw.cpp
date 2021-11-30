@@ -204,11 +204,137 @@ namespace TFE_DarkForces
 
 	void deltaFlip(s16* data, s16 x, s16 y, s16 w)
 	{
-		assert(0);
+		u8* framebuffer = s_bitmap;
+		const u32 stride = s_bitmapWidth;
+
+		const u8* srcImage = (u8*)data;
+		while (1)
+		{
+			const s16* deltaLine = (s16*)srcImage;
+			s16 sizeAndType = deltaLine[0];
+			if (sizeAndType == 0)
+			{
+				break;
+			}
+
+			s16 xCur = deltaLine[1] + w - 1 - x;
+			s16 yStart = deltaLine[2] + y;
+			// Size of the Delta Line structure.
+			srcImage += sizeof(s16) * 3;
+
+			const JBool rle = (sizeAndType & 1) ? JTRUE : JFALSE;
+			s32 pixelCount = (sizeAndType >> 1) & 0x3fff;
+			u8* dstImage = &framebuffer[yStart*stride];
+
+			while (pixelCount > 0)
+			{
+				if (rle)
+				{
+					//read count byte...
+					u8 count = *srcImage; srcImage++;
+					if (!(count & 1)) // direct
+					{
+						count >>= 1;
+						for (s32 p = 0; p < count; p++, xCur--, srcImage++)
+						{
+							dstImage[xCur] = *srcImage;
+						}
+						pixelCount -= count;
+					}
+					else	//rle
+					{
+						count >>= 1;
+						const u8 pixel = *srcImage; srcImage++;
+						for (s32 p = 0; p < count; p++, xCur--)
+						{
+							dstImage[xCur] = pixel;
+						}
+						pixelCount -= count;
+					}
+				}
+				else
+				{
+					for (s32 p = 0; p < pixelCount; p++, xCur--, srcImage++)
+					{
+						dstImage[xCur] = *srcImage;
+					}
+					pixelCount = 0;
+				}
+			}
+		}
 	}
 
 	void deltaFlipClip(s16* data, s16 x, s16 y, s16 w)
 	{
-		assert(0);
+		u8* framebuffer = s_bitmap;
+		const u32 stride = s_bitmapWidth;
+
+		LRect clipRect;
+		lcanvas_getClip(&clipRect);
+
+		u8* srcImage = (u8*)data;
+		while (1)
+		{
+			const s16* deltaLine = (s16*)srcImage;
+			s16 sizeAndType = deltaLine[0];
+			s16 xStart = deltaLine[1] + x;
+			s16 yStart = deltaLine[2] + y;
+			srcImage += 3 * sizeof(s16);
+
+			if (sizeAndType == 0) { break; }
+
+			const JBool rle = (sizeAndType & 1) ? JTRUE : JFALSE;
+			s32 pixelCount = (sizeAndType >> 1) & 0x3fff;
+			u8* dstImage = &framebuffer[yStart*stride];
+
+			s16 xCur = w - 1 - xStart;
+			s16 yCur = yStart;
+			JBool writeRow = (yCur >= clipRect.top && yCur < clipRect.bottom) ? JTRUE : JFALSE;
+
+			while (pixelCount > 0)
+			{
+				if (rle)
+				{
+					//read count byte...
+					u8 count = *srcImage; srcImage++;
+					if (!(count & 1)) // direct
+					{
+						count >>= 1;
+						for (s32 p = 0; p < count; p++, srcImage++, xCur--)
+						{
+							if (writeRow && xCur >= clipRect.left && xCur < clipRect.right)
+							{
+								dstImage[xCur] = *srcImage;
+							}
+						}
+						pixelCount -= count;
+					}
+					else	//rle
+					{
+						count >>= 1;
+						const u8 pixel = *srcImage; srcImage++;
+						for (s32 p = 0; p < count; p++, xCur--)
+						{
+							if (writeRow && xCur >= clipRect.left && xCur < clipRect.right)
+							{
+								dstImage[xCur] = pixel;
+							}
+						}
+						pixelCount -= count;
+					}
+				}
+				else
+				{
+					for (s32 p = 0; p < pixelCount; p++, srcImage++, xCur--)
+					{
+						if (writeRow && xCur >= clipRect.left && xCur < clipRect.right)
+						{
+							dstImage[xCur] = *srcImage;
+						}
+					}
+					pixelCount = 0;
+				}
+			}
+		}
 	}
 }

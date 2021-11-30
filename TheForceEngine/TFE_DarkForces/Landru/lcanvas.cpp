@@ -124,7 +124,7 @@ namespace TFE_DarkForces
 				
 		for (s32 fy = srcRect->top; fy < srcRect->bottom; fy++)
 		{
-			memcpy(&dstData[(y + fy)*width + srcRect->left + x], &srcData[fy*width + srcRect->left], srcRect->right - srcRect->left);
+			memcpy(&dstData[(y+fy-srcRect->top)*width + x], &srcData[fy*width + srcRect->left], srcRect->right - srcRect->left);
 		}
 	}
 }  // namespace TFE_DarkForces
