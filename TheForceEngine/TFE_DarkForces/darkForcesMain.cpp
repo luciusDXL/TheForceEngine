@@ -3,6 +3,7 @@
 #include "darkForcesMain.h"
 #include "agent.h"
 #include "config.h"
+#include "briefingList.h"
 #include "gameMessage.h"
 #include "hud.h"
 #include "item.h"
@@ -169,7 +170,7 @@ namespace TFE_DarkForces
 	static Font* s_swFont1 = nullptr;
 	static Font* s_mapNumFont = nullptr;
 	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
-	static void* s_briefingList;	// STUBBED - to be replaced by the real structure.
+	static BriefingList s_briefingList = { 0 };
 
 	static const GMidiAsset* s_levelStalk;
 	static const GMidiAsset* s_levelFight;
@@ -242,6 +243,7 @@ namespace TFE_DarkForces
 		s_hotKeyMessages.count = 0;
 		s_hotKeyMessages.msgList = nullptr;
 		gameMessage_freeBuffer();
+		briefingList_freeBuffer();
 		cutsceneList_freeBuffer();
 		lsystem_destroy();
 
@@ -388,7 +390,12 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_BRIEFING:
 			{
-				// STUB
+				// Normally this stays while the briefing is active and then when finished, we either increment to move on, or 
+				// decrement to move back to the level.
+				s_cutsceneIndex++;
+				// else
+				// s_invalidLevelIndex = JTRUE;
+				// s_cutsceneIndex--;
 				startNextMode();
 			} break;
 			case GSTATE_MISSION:
@@ -506,9 +513,12 @@ namespace TFE_DarkForces
 			} break;
 			case GMODE_BRIEFING:
 			{
-				// STUB
-				s_cutsceneIndex++;
-				startNextMode();
+				// TODO: Check to see if cutscenes are disabled, if so we also skip the mission briefing.
+				const char* levelName = agent_getLevelName();
+				// missionBriefing_start(levelName);
+
+				// Set the state.
+				s_state = GSTATE_BRIEFING;
 			}  break;
 			case GMODE_MISSION:
 			{
@@ -772,13 +782,6 @@ namespace TFE_DarkForces
 		setSoundSourceVolume(s_screenShotSndSrc, 127);
 	}
 
-	void* loadBriefingList(const char* fileName)
-	{
-		// STUB
-		// TODO in the following releases.
-		return nullptr;
-	}
-
 	void loadAgentAndLevelData()
 	{
 		agent_loadData();
@@ -786,7 +789,10 @@ namespace TFE_DarkForces
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load level list.");
 		}
-		s_briefingList = loadBriefingList("briefing.lst");
+		if (!parseBriefingList(&s_briefingList, "briefing.lst"))
+		{
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load briefing list.");
+		}
 
 		FilePath filePath;
 		if (TFE_Paths::getFilePath("hotkeys.msg", &filePath))
