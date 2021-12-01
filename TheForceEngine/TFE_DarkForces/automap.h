@@ -29,7 +29,9 @@ namespace TFE_DarkForces
 
 	void automap_computeScreenBounds();
 	void automap_updateMapData(MapUpdateID id);
+	void automap_resetScale();
 	void automap_draw(u8* framebuffer);
+	void automap_setPdaActive(JBool enable);
 
 	s32  automap_getLayer();
 	void automap_setLayer(s32 layer);

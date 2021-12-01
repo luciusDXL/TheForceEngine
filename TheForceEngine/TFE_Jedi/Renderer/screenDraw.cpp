@@ -423,6 +423,13 @@ namespace TFE_Jedi
 		}
 	}
 
+	static u8 s_transColor = 0;
+
+	void screenDraw_setTransColor(u8 color)
+	{
+		s_transColor = color;
+	}
+
 	void textureBlitColumnTransScaledRow(u8* image, u8* outBuffer, s32 yPixelCount, s32 imageStride, fixed16_16 vCoord, fixed16_16 vStep)
 	{
 		s32 end = yPixelCount - 1;
@@ -431,7 +438,7 @@ namespace TFE_Jedi
 		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
 		{
 			s32 v = floor16(vCoord)*imageStride;
-			if (image[v]) { outBuffer[offset] = image[v]; }
+			if (image[v] != s_transColor) { outBuffer[offset] = image[v]; }
 		}
 	}
 

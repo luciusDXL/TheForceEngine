@@ -1,8 +1,6 @@
 #include <cstring>
 
-#include "agentMenu.h"
-#include "editBox.h"
-#include "uiDraw.h"
+#include "missionBriefing.h"
 #include "menu.h"
 #include <TFE_DarkForces/Landru/lactorDelt.h>
 #include <TFE_DarkForces/Landru/lactorAnim.h>
@@ -28,12 +26,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
-	enum MissionBriefingConstants
-	{
-		BRIEF_VERT_MARGIN = 0,
-		BRIEF_LINE_SCROLL = 12,
-		BRIEF_PAGE_SCROLL = BRIEF_LINE_SCROLL*10,
-	};
 	enum BriefingButton
 	{
 		BRIEF_BTN_OK = 0,
@@ -48,17 +40,17 @@ namespace TFE_DarkForces
 	static s32 s_keyPressed = -1;
 	static JBool s_briefingOpen = JFALSE;
 	static s32 s_skill = 0;
-	static LfdArchive s_archive;
-	static s32 s_briefingMaxY;
 	static LRect s_briefRect = { 25, 15, 155, 305 };
-	static LRect s_overlayRect;
 	static LRect s_missionTextRect;
 	static LRect s_viewBounds;
-	static s16 s_briefY;
 	static LActor* s_briefActor = nullptr;
 	static LActor* s_menuActor = nullptr;
 	static LPalette* s_palette = nullptr;
 	static u8* s_framebuffer = nullptr;
+
+	s16 s_briefY;
+	s32 s_briefingMaxY;
+	LRect s_overlayRect;
 
 	enum
 	{
@@ -98,25 +90,17 @@ namespace TFE_DarkForces
 		s_briefingOpen = JFALSE;
 		s_skill = skill;
 
-		FilePath lfdPath;
-		if (!TFE_Paths::getFilePath(archive, &lfdPath))
+		if (!menu_openResourceArchive(archive))
 		{
 			return;
 		}
-
-		// Load the mission briefing text.
-		if (!s_archive.open(lfdPath.path))
-		{
-			return;
-		}
-		TFE_Paths::addLocalArchive(&s_archive);
 
 		// Mission specific text and images.
 		s_briefActor = lactorDelt_load(mission, &s_briefRect, 0, 0, 0);
 		if (!s_briefActor)
 		{
-			TFE_Paths::removeLastArchive();
-			s_archive.close();
+			menu_closeResourceArchive();
+			return;
 		}
 
 		// Menu Items
@@ -150,9 +134,7 @@ namespace TFE_DarkForces
 				lactorAnim_getFrame(s_menuActor, &s_missionTextRect);
 			}
 		}
-		
-		s_archive.close();
-		TFE_Paths::removeLastArchive();
+		menu_closeResourceArchive();
 		
 		LRect rect;
 		lactor_setTime(s_briefActor, -1, -1);
@@ -397,9 +379,7 @@ namespace TFE_DarkForces
 		lcanvas_clearClipRect();
 
 		menu_blitCursor(s_cursorPos.x, s_cursorPos.z, s_framebuffer);
-
-		memcpy(vfb_getCpuBuffer(), s_framebuffer, 320 * 200);
-		vfb_swap();
+		menu_blitToScreen();
 		return JTRUE;
 	}
 	

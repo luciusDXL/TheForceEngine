@@ -7,6 +7,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 
 struct ScreenRect;
+struct TextureData;
 
 namespace TFE_Jedi
 {
@@ -44,4 +45,6 @@ namespace TFE_Jedi
 	void blitTextureToScreenLitScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, const u8* atten, u8* output);
 
 	void blitTextureToScreenIScale(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, s32 scale, u8* output);
+
+	void screenDraw_setTransColor(u8 color);
 }

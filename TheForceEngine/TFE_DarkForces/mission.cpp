@@ -12,6 +12,7 @@
 #include "weapon.h"
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_DarkForces/GameUI/escapeMenu.h>
+#include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Settings/settings.h>
@@ -176,6 +177,7 @@ namespace TFE_DarkForces
 		{
 			TFE_Jedi::setSubRenderer(TSR_CLASSIC_FIXED);
 		}
+		automap_resetScale();
 	}
 
 	void mission_startTaskFunc(MessageType msg)
@@ -314,6 +316,7 @@ namespace TFE_DarkForces
 			handlePaletteFx();
 			hud_drawAndUpdate(s_framebuffer);
 			hud_drawMessage(s_framebuffer);
+			automap_resetScale();
 
 			vfb_swap();
 		}
@@ -339,7 +342,7 @@ namespace TFE_DarkForces
 			s_prevTick  = s_curTick;
 			s_playerTick = s_curTick;
 
-			if (!escapeMenu_isOpen())
+			if (!escapeMenu_isOpen() && !pda_isOpen())
 			{
 				player_setupCamera();
 
@@ -364,7 +367,7 @@ namespace TFE_DarkForces
 				}
 			}
 
-			if (!escapeMenu_isOpen())
+			if (!escapeMenu_isOpen() && !pda_isOpen())
 			{
 				handleGeneralInput();
 				handlePaletteFx();
@@ -401,6 +404,16 @@ namespace TFE_DarkForces
 				else if (action == ESC_QUIT)
 				{
 					TFE_System::postQuitMessage();
+				}
+			}
+			else if (pda_isOpen())
+			{
+				pda_update();
+
+				// If the PDA was closed, then unpause the game.
+				if (!pda_isOpen())
+				{
+					mission_pause(JFALSE);
 				}
 			}
 			else if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED && !s_playerDying)
@@ -985,7 +998,8 @@ namespace TFE_DarkForces
 			// For now just deal with a few controls.
 			if (inputMapping_getActionState(IADF_PDA_TOGGLE) == STATE_PRESSED)
 			{
-				// STUB: Bring up PDA.
+				mission_pause(JTRUE);
+				pda_start(agent_getLevelName());
 			}
 			if (inputMapping_getActionState(IADF_NIGHT_VISION_TOG) == STATE_PRESSED && s_playerInfo.itemGoggles)
 			{

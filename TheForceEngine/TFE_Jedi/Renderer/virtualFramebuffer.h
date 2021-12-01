@@ -49,6 +49,12 @@ namespace TFE_Jedi
 	void vfb_swap();
 
 	////////////////////////////
+	// Clipping
+	////////////////////////////
+	void vfb_setScreenRect(ScreenRectType type, ScreenRect* rect);
+	void vfb_restoreScreenRect(ScreenRectType type);
+
+	////////////////////////////
 	// Query
 	////////////////////////////
 	// Get the CPU buffer for rendering.

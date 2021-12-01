@@ -21,6 +21,7 @@ namespace TFE_Jedi
 	static fixed16_16 s_yScale = ONE_16;
 
 	static ScreenRect s_screenRect[VFB_RECT_COUNT];
+	static ScreenRect s_screenPrev[VFB_RECT_COUNT];
 
 	void vfb_createVirtualDisplay(u32 width, u32 height);
 		
@@ -153,6 +154,18 @@ namespace TFE_Jedi
 	u8* vfb_getCpuBuffer()
 	{
 		return s_curFrameBuffer;
+	}
+		
+	// Set the clip rect.
+	void vfb_setScreenRect(ScreenRectType type, ScreenRect* rect)
+	{
+		s_screenPrev[type] = s_screenRect[type];
+		s_screenRect[type] = *rect;
+	}
+
+	void vfb_restoreScreenRect(ScreenRectType type)
+	{
+		s_screenRect[type] = s_screenPrev[type];
 	}
 
 	// Get the valid screen rect for the current mode.

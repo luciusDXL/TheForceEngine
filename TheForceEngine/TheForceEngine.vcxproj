@@ -388,6 +388,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\GameUI\escapeMenu.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\menu.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\missionBriefing.h" />
+    <ClInclude Include="TFE_DarkForces\GameUI\pda.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\uiDraw.h" />
     <ClInclude Include="TFE_DarkForces\generator.h" />
     <ClInclude Include="TFE_DarkForces\hitEffect.h" />
@@ -614,6 +615,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\GameUI\escapeMenu.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\menu.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\missionBriefing.cpp" />
+    <ClCompile Include="TFE_DarkForces\GameUI\pda.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\uiDraw.cpp" />
     <ClCompile Include="TFE_DarkForces\generator.cpp" />
     <ClCompile Include="TFE_DarkForces\hitEffect.cpp" />

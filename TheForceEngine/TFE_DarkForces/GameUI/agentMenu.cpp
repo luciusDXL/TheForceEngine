@@ -454,10 +454,9 @@ namespace TFE_DarkForces
 		
 	void agentMenu_blit()
 	{
-		menu_blitCursor(s_cursorPos.x, s_cursorPos.z, s_framebuffer);
-
 		setPalette();
-		vfb_swap();
+		menu_blitCursor(s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+		menu_blitToScreen(s_framebuffer);
 	}
 
 	void agentMenu_createNewAgent()

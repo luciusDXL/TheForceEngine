@@ -85,11 +85,6 @@ namespace TFE_DarkForces
 	{
 		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_RENDER);
 
-		if (s_pdaActive)
-		{
-			// STUB
-		}
-		else
 		{
 			u32 dispWidth, dispHeight;
 			vfb_getResolution(&dispWidth, &dispHeight);
@@ -105,6 +100,22 @@ namespace TFE_DarkForces
 
 			fixed16_16 botEdge = intToFixed16(screenRect->bot - s32(dispHeight) + 1);
 			s_scrBotScaled = -div16(botEdge, s_screenScale);
+		}
+	}
+
+	void automap_resetScale()
+	{
+		// default scale.
+		s_screenScale = 0xc000;	// 0.75
+
+		// Adjust for resolution.
+		u32 width, height;
+		vfb_getResolution(&width, &height);
+
+		if (height != 200)
+		{
+			fixed16_16 scaleFactor = div16(intToFixed16(height), FIXED(200));
+			s_screenScale = mul16(s_screenScale, scaleFactor);
 		}
 	}
 
@@ -175,8 +186,9 @@ namespace TFE_DarkForces
 			{
 				if (s_pdaActive)
 				{
-					// screenScale /= 0.8
-					s_screenScale = div16(s_screenScale, 0xcccc);
+					// screenScale *= 0.8
+					s_screenScale = mul16(0xcccc, s_screenScale);
+					s_screenScale = max(0x666, s_screenScale);
 				}
 				else
 				{
@@ -191,8 +203,9 @@ namespace TFE_DarkForces
 			{
 				if (s_pdaActive)
 				{
-					// screenScale *= 0.8
-					s_screenScale = mul16(0xcccc, s_screenScale);
+					// screenScale /= 0.8
+					s_screenScale = div16(s_screenScale, 0xcccc);
+					s_screenScale = min(FIXED(32), s_screenScale);
 				}
 				else
 				{
@@ -260,16 +273,21 @@ namespace TFE_DarkForces
 		s_automapCanTeleport = JTRUE;
 	}
 
+	void automap_setPdaActive(JBool enable)
+	{
+		s_pdaActive = enable;
+	}
+
 	void automap_draw(u8* framebuffer)
 	{
 		u32 dispWidth, dispHeight;
 		vfb_getResolution(&dispWidth, &dispHeight);
 
-		s_pdaActive = JFALSE;
 		s_mapXCenterInPixels = dispWidth/2 - 1;
 		s_mapZCenterInPixels = dispHeight/2 - 1;
 		s_mapFramebuffer = framebuffer;
 		automap_drawSectors();
+		s_pdaActive = JFALSE;
 	}
 
 	s32 automap_getLayer()
@@ -284,7 +302,7 @@ namespace TFE_DarkForces
 
 	void automap_drawSectors()
 	{
-		if (s_automapAutoCenter || s_pdaActive)
+		if (s_automapAutoCenter && !s_pdaActive)
 		{
 			s_mapX0 = s_eyePos.x;
 			s_mapX1 = s_mapX0;
@@ -354,14 +372,7 @@ namespace TFE_DarkForces
 		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_RENDER);
 		automap_projectPosition(&x, &z);
 		fixed16_16 rScreen = mul16(r, s_screenScale);
-		if (!s_pdaActive)
-		{
-			screen_drawCircle(screenRect, x, z, rScreen, 0x1c7, color, s_mapFramebuffer);
-		}
-		else
-		{
-			// TODO
-		}
+		screen_drawCircle(screenRect, x, z, rScreen, 0x1c7, color, s_mapFramebuffer);
 	}
 
 	void automap_drawPointWithDirection(fixed16_16 x, fixed16_16 z, angle14_32 angle, fixed16_16 len, u8 color)
@@ -412,27 +423,13 @@ namespace TFE_DarkForces
 	{
 		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_RENDER);
 		automap_projectPosition(&x, &z);
-		if (!s_pdaActive)
-		{
-			screen_drawPoint(screenRect, x, z, color, s_mapFramebuffer);
-		}
-		else
-		{
-			// TODO
-		}
+		screen_drawPoint(screenRect, x, z, color, s_mapFramebuffer);
 	}
 
 	void automap_drawLine(fixed16_16 x0, fixed16_16 z0, fixed16_16 x1, fixed16_16 z1, u8 color)
 	{
 		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_RENDER);
-		if (s_pdaActive)
-		{
-			// TODO
-		}
-		else // 1c6eec:
-		{
-			screen_drawLine(screenRect, x0, z0, x1, z1, color, s_mapFramebuffer);
-		}
+		screen_drawLine(screenRect, x0, z0, x1, z1, color, s_mapFramebuffer);
 	}
 
 	void automap_drawWall(RWall* wall, u8 color)
