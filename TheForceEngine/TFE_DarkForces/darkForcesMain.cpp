@@ -13,6 +13,7 @@
 #include "time.h"
 #include "weapon.h"
 #include "vueLogic.h"
+#include "GameUI/menu.h"
 #include "GameUI/agentMenu.h"
 #include "GameUI/escapeMenu.h"
 #include "GameUI/missionBriefing.h"
@@ -273,8 +274,10 @@ namespace TFE_DarkForces
 		sound_freeAll();
 		level_freeAllAssets();
 		agentMenu_resetState();
+		menu_resetState();
 		escapeMenu_resetState();
 		vue_resetState();
+		lsystem_destroy();
 		// Free debug data
 		actorDebug_free();
 	}

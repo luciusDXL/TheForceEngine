@@ -3,6 +3,7 @@
 #include "agentMenu.h"
 #include "editBox.h"
 #include "delt.h"
+#include "menu.h"
 #include "uiDraw.h"
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/util.h>
@@ -58,8 +59,6 @@ namespace TFE_DarkForces
 	static JBool s_loaded = JFALSE;
 	static JBool s_displayInit = JFALSE;
 	static u8*   s_framebuffer = nullptr;
-	static Vec2i s_cursorPosAccum;
-	static Vec2i s_cursorPos;
 
 	static s32 s_selectedMission = 0;
 	static s32 s_editCursorFlicker = 0;
@@ -70,9 +69,6 @@ namespace TFE_DarkForces
 	static JBool s_quitConfirmDlg = JFALSE;
 	static JBool s_missionBegin = JFALSE;
 	static EditBox s_editBox = {};
-
-	static s32 s_buttonPressed = -1;
-	static JBool s_buttonHover = JFALSE;
 	
 	static u8 s_menuPalette[768];
 	static DeltFrame* s_agentMenuFrames;
@@ -88,7 +84,6 @@ namespace TFE_DarkForces
 	void agentMenu_startup();
 	void agentMenu_startupDisplay();
 	void agentMenu_blit();
-	void agentMenu_handleMousePosition();
 	void agentMenu_update();
 	void agentMenu_draw();
 
@@ -116,6 +111,7 @@ namespace TFE_DarkForces
 	{
 		if (!s_loaded)
 		{
+			menu_init();
 			agentMenu_startup();
 			s_loaded = JTRUE;
 		}
@@ -127,7 +123,7 @@ namespace TFE_DarkForces
 		}
 
 		// Update the mouse position.
-		agentMenu_handleMousePosition();
+		menu_handleMousePosition();
 		agentMenu_update();
 		agentMenu_draw();
 		
@@ -396,31 +392,6 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void agentMenu_handleMousePosition()
-	{
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
-		u32 width, height;
-		vfb_getResolution(&width, &height);
-
-		s32 dx, dy;
-		TFE_Input::getAccumulatedMouseMove(&dx, &dy);
-
-		s_cursorPosAccum.x = clamp(s_cursorPosAccum.x + dx, 0, displayInfo.width);
-		s_cursorPosAccum.z = clamp(s_cursorPosAccum.z + dy, 0, displayInfo.height);
-		if (displayInfo.width >= displayInfo.height)
-		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
-		}
-		else
-		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
-		}
-	}
-
 	void setPalette()
 	{
 		// Update the palette.
@@ -434,27 +405,12 @@ namespace TFE_DarkForces
 		vfb_setPalette(palette);
 	}
 
-	void agentMenu_resetCursor()
-	{
-		// Reset the cursor.
-		u32 width, height;
-		vfb_getResolution(&width, &height);
-
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
-		s_cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
-		s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-		s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
-	}
-
 	// TFE Specific.
 	void agentMenu_startupDisplay()
 	{
-		vfb_setResolution(320, 200);
-		s_framebuffer = vfb_getCpuBuffer();
+		s_framebuffer = menu_startupDisplay();
+		menu_resetCursor();
 
-		agentMenu_resetCursor();
 		setPalette();
 	}
 		
@@ -494,11 +450,6 @@ namespace TFE_DarkForces
 		}
 
 		s_missionBegin = JFALSE;
-	}
-
-	void menu_blitCursor(s32 x, s32 y, u8* framebuffer)
-	{
-		blitDeltaFrame(&s_cursor, x, y, framebuffer);
 	}
 		
 	void agentMenu_blit()

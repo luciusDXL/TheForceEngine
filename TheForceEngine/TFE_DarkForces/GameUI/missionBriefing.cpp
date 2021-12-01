@@ -3,6 +3,7 @@
 #include "agentMenu.h"
 #include "editBox.h"
 #include "uiDraw.h"
+#include "menu.h"
 #include <TFE_DarkForces/Landru/lactorDelt.h>
 #include <TFE_DarkForces/Landru/lactorAnim.h>
 #include <TFE_DarkForces/Landru/lpalette.h>
@@ -44,13 +45,7 @@ namespace TFE_DarkForces
 		BRIEF_BTN_HARD,
 		BRIEF_BTN_COUNT,
 	};
-	static s32 s_buttonPressed = -1;
 	static s32 s_keyPressed = -1;
-	static JBool s_buttonHover = JFALSE;
-
-	static Vec2i s_cursorPosAccum = { 0 };
-	static Vec2i s_cursorPos = { 0 };
-
 	static JBool s_briefingOpen = JFALSE;
 	static s32 s_skill = 0;
 	static LfdArchive s_archive;
@@ -91,13 +86,15 @@ namespace TFE_DarkForces
 		-1, //		MENU_TYPE_BUTTON_UP,
 	};
 
-	void missionBriefing_resetCursor();
-
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
 	void missionBriefing_start(const char* archive, const char* bgAnim, const char* mission, const char* palette, s32 skill)
 	{
+		menu_init();
+		menu_startupDisplay();
+		menu_resetCursor();
+
 		s_briefingOpen = JFALSE;
 		s_skill = skill;
 
@@ -178,7 +175,6 @@ namespace TFE_DarkForces
 		lcanvas_getBounds(&s_viewBounds);
 
 		ltime_setFrameRate(20);
-		missionBriefing_resetCursor();
 	}
 		
 	void drawButton(BriefingButton id)
@@ -195,46 +191,6 @@ namespace TFE_DarkForces
 
 		lactor_setState(s_menuActor, 2*(1+id) + (pressed ? 0 : 1), 0);
 		lactorAnim_draw(s_menuActor, &s_viewBounds, &s_viewBounds, 0, 0, JTRUE);
-	}
-
-	// TODO: Merge these with the agent menu and other menus.
-	void missionBriefing_resetCursor()
-	{
-		// Reset the cursor.
-		u32 width, height;
-		vfb_getResolution(&width, &height);
-
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
-		s_cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
-		s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-		s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
-	}
-		
-	void missionBriefing_handleMousePosition()
-	{
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
-		u32 width, height;
-		vfb_getResolution(&width, &height);
-
-		s32 dx, dy;
-		TFE_Input::getAccumulatedMouseMove(&dx, &dy);
-
-		s_cursorPosAccum.x = clamp(s_cursorPosAccum.x + dx, 0, displayInfo.width);
-		s_cursorPosAccum.z = clamp(s_cursorPosAccum.z + dy, 0, displayInfo.height);
-		if (displayInfo.width >= displayInfo.height)
-		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
-		}
-		else
-		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
-		}
 	}
 
 	void missionBriefing_scroll(s32 amt)
@@ -256,7 +212,7 @@ namespace TFE_DarkForces
 		JBool exitBriefing = JFALSE;
 		
 		// Mouse interactions.
-		missionBriefing_handleMousePosition();
+		menu_handleMousePosition();
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
 			s_buttonPressed = -1;

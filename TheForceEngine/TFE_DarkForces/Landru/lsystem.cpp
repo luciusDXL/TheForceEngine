@@ -24,6 +24,7 @@ namespace TFE_DarkForces
 	{
 		if (s_lsystemInit) { return; }
 
+		s_lsystemInit = JTRUE;
 		lcanvas_init(320, 200);
 		ltime_init();
 		lview_init();
