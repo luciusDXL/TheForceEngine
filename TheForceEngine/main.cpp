@@ -479,6 +479,13 @@ int main(int argc, char* argv[])
 		FileUtil::makeDirectory(screenshotDir);
 	}
 
+	// Create a mods temporary directory.
+	char tempPath[TFE_MAX_PATH];
+	sprintf(tempPath, "%sTemp/", TFE_Paths::getPath(PATH_PROGRAM_DATA));
+	if (!FileUtil::directoryExits(tempPath))
+	{
+		FileUtil::makeDirectory(tempPath);
+	}
 	generateScreenshotTime();
 
 	// Initialize SDL

@@ -21,9 +21,16 @@
 
 namespace TFE_Paths
 {
+	struct FileMapping
+	{
+		std::string fileName;
+		std::string realPath;
+	};
+
 	static std::string s_paths[PATH_COUNT];
 	static std::vector<Archive*> s_localArchives;
 	static std::vector<std::string> s_searchPaths;
+	static std::vector<FileMapping> s_fileMappings;
 
 	void setPath(TFE_PathType pathType, const char* path)
 	{
@@ -158,9 +165,29 @@ namespace TFE_Paths
 		}
 	}
 
+	void addSearchPathToHead(const char* fullPath)
+	{
+		if (FileUtil::directoryExits(fullPath))
+		{
+			const size_t count = s_searchPaths.size();
+			const std::string* path = s_searchPaths.data();
+			for (size_t i = 0; i < count; i++, path++)
+			{
+				// If the path already exists, then don't add it again.
+				if (!strcasecmp(path->c_str(), fullPath))
+				{
+					return;
+				}
+			}
+
+			s_searchPaths.insert(s_searchPaths.begin(), fullPath);
+		}
+	}
+
 	void clearSearchPaths()
 	{
 		s_searchPaths.clear();
+		s_fileMappings.clear();
 	}
 
 	void clearLocalArchives()
@@ -174,6 +201,21 @@ namespace TFE_Paths
 		s_localArchives.clear();
 	}
 
+	// Add a single file that can be referenced by 'fileName' even though the real name may be different.
+	void addSingleFilePath(const char* fileName, const char* filePath)
+	{
+		char fileNameLC[TFE_MAX_PATH];
+		strcpy(fileNameLC, fileName);
+		_strlwr(fileNameLC);
+
+		char filePathFixed[TFE_MAX_PATH];
+		strcpy(filePathFixed, filePath);
+		FileUtil::fixupPath(filePathFixed);
+
+		FileMapping mapping = { fileNameLC, filePathFixed };
+		s_fileMappings.push_back(mapping);
+	}
+
 	void addLocalSearchPath(const char* localSearchPath)
 	{
 		char fullPath[TFE_MAX_PATH];
@@ -181,6 +223,15 @@ namespace TFE_Paths
 		fixupPathAsDirectory(fullPath);
 
 		addSearchPath(fullPath);
+	}
+
+	void addAbsoluteSearchPathToHead(const char* absoluteSearchPath)
+	{
+		char fullPath[TFE_MAX_PATH];
+		strcpy(fullPath, absoluteSearchPath);
+		fixupPathAsDirectory(fullPath);
+
+		addSearchPathToHead(fullPath);
 	}
 
 	void addAbsoluteSearchPath(const char* absoluteSearchPath)
@@ -208,7 +259,21 @@ namespace TFE_Paths
 		outPath->index = INVALID_FILE;
 		outPath->path[0] = 0;
 
-		// Search in the local search paths first: s_searchPaths.
+		// Search for any filemappings.
+		// This is usually only used with mods and usually limited to 0-3 files.
+		const size_t mappingCount  = s_fileMappings.size();
+		const FileMapping* mapping = s_fileMappings.data();
+		for (size_t i = 0; i < mappingCount; i++, mapping++)
+		{
+			// Early out if the first character doesn't match to avoid testing the entire string.
+			if (mapping->fileName[0] == tolower(fileName[0]) && strcasecmp(mapping->fileName.c_str(), fileName) == 0)
+			{
+				strcpy(outPath->path, mapping->realPath.c_str());
+				return true;
+			}
+		}
+
+		// Search in the local search paths before local archives: s_searchPaths.
 		const size_t pathCount = s_searchPaths.size();
 		const std::string* localPath = s_searchPaths.data();
 		for (size_t i = 0; i < pathCount; i++, localPath++)

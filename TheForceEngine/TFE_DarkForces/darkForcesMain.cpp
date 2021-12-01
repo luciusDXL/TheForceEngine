@@ -23,6 +23,7 @@
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/audioSystem.h>
@@ -54,6 +55,11 @@ namespace TFE_DarkForces
 		"SOUNDS.GOB",
 		"TEXTURES.GOB",
 		"SPRITES.GOB",
+	};
+
+	enum GameConstants
+	{
+		MAX_MOD_LFD = 16,
 	};
 	   
 	enum GameState
@@ -647,6 +653,12 @@ namespace TFE_DarkForces
 	void loadCustomGob(const char* gobName)
 	{
 		FilePath archivePath;
+		s32 lfdIndex[MAX_MOD_LFD];
+		char lfdName[MAX_MOD_LFD][TFE_MAX_PATH];
+		char briefingName[TFE_MAX_PATH];
+		s32 lfdCount = 0;
+		s32 briefingIndex = -1;
+
 		if (TFE_Paths::getFilePath(gobName, &archivePath))
 		{
 			// Is this really a gob?
@@ -668,8 +680,25 @@ namespace TFE_DarkForces
 						if (strcasecmp(zext, "gob") == 0)
 						{
 							gobIndex = i;
-							break;
 						}
+						else if (strcasecmp(zext, "lfd") == 0 && lfdCount < MAX_MOD_LFD)
+						{
+							if (strstr(name, "brief") || strstr(name, "BRIEF"))
+							{
+								briefingIndex = i;
+							}
+							else
+							{
+								lfdIndex[lfdCount++] = i;
+							}
+						}
+					}
+
+					// If there is only 1 LFD, assume it is mission briefings.
+					if (lfdCount == 1 && briefingIndex < 0)
+					{
+						briefingIndex = lfdIndex[0];
+						lfdCount = 0;
 					}
 
 					if (gobIndex >= 0)
@@ -684,6 +713,52 @@ namespace TFE_DarkForces
 						gobArchive->open(buffer, bufferLen);
 						TFE_Paths::addLocalArchive(gobArchive);
 					}
+
+					char tempPath[TFE_MAX_PATH];
+					sprintf(tempPath, "%sTemp/", TFE_Paths::getPath(PATH_PROGRAM_DATA));
+					// Extract and copy the briefing.
+					if (briefingIndex >= 0)
+					{
+						u32 bufferLen = (u32)zipArchive.getFileLength(briefingIndex);
+						u8* buffer = (u8*)malloc(bufferLen);
+						zipArchive.openFile(briefingIndex);
+						zipArchive.readFile(buffer, bufferLen);
+						zipArchive.closeFile();
+
+						char lfdPath[TFE_MAX_PATH];
+						sprintf(lfdPath, "%sdfbrief.lfd", tempPath);
+						FileStream file;
+						if (file.open(lfdPath, FileStream::MODE_WRITE))
+						{
+							file.writeBuffer(buffer, bufferLen);
+							file.close();
+						}
+						free(buffer);
+
+						TFE_Paths::addSingleFilePath("dfbrief.lfd", lfdPath);
+					}
+					// Extract and copy the LFD.
+					for (s32 i = 0; i < lfdCount; i++)
+					{
+						u32 bufferLen = (u32)zipArchive.getFileLength(lfdIndex[i]);
+						u8* buffer = (u8*)malloc(bufferLen);
+						zipArchive.openFile(lfdIndex[i]);
+						zipArchive.readFile(buffer, bufferLen);
+						zipArchive.closeFile();
+
+						char lfdPath[TFE_MAX_PATH];
+						sprintf(lfdPath, "%scutscenes%d.lfd", tempPath, i);
+						FileStream file;
+						if (file.open(lfdPath, FileStream::MODE_WRITE))
+						{
+							file.writeBuffer(buffer, bufferLen);
+							file.close();
+						}
+						free(buffer);
+
+						TFE_Paths::addSingleFilePath(zipArchive.getFileName(lfdIndex[i]), lfdPath);
+					}
+
 					zipArchive.close();
 				}
 			}
@@ -693,6 +768,62 @@ namespace TFE_DarkForces
 				if (archive)
 				{
 					TFE_Paths::addLocalArchive(archive);
+
+					// Handle LFD files.
+					char modPath[TFE_MAX_PATH];
+					FileUtil::getFilePath(archivePath.path, modPath);
+
+					// Look for LFD files.
+					lfdCount = 0;
+					briefingIndex = -1;
+
+					FileList fileList;
+					FileUtil::readDirectory(modPath, "lfd", fileList);
+					const size_t count = fileList.size();
+					const std::string* file = fileList.data();
+															
+					for (size_t i = 0; i < count; i++, file++)
+					{
+						const size_t len = file->length();
+						const char* name = file->c_str();
+
+						if (lfdCount < 16)
+						{
+							if (strstr(name, "brief") || strstr(name, "BRIEF"))
+							{
+								briefingIndex = s32(i);
+								strcpy(briefingName, name);
+							}
+							else if (lfdCount < MAX_MOD_LFD)
+							{
+								strcpy(lfdName[lfdCount], name);
+								lfdCount++;
+							}
+						}
+					}
+
+					// If there is only 1 LFD, assume it is mission briefings.
+					if (lfdCount == 1 && briefingIndex < 0)
+					{
+						strcpy(briefingName, lfdName[0]);
+						briefingIndex = 0;
+						lfdCount = 0;
+					}
+
+					// Extract and copy the briefing.
+					char lfdPath[TFE_MAX_PATH];
+					if (briefingIndex >= 0)
+					{
+						sprintf(lfdPath, "%s%s", modPath, briefingName);
+						TFE_Paths::addSingleFilePath("dfbrief.lfd", lfdPath);
+					}
+
+					// Extract and copy the LFD.
+					for (s32 i = 0; i < lfdCount; i++)
+					{
+						sprintf(lfdPath, "%s%s", modPath, lfdName[i]);
+						TFE_Paths::addSingleFilePath(lfdName[i], lfdPath);
+					}
 				}
 			}
 		}

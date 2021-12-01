@@ -45,7 +45,11 @@ namespace TFE_Paths
 
 	void addLocalSearchPath(const char* localSearchPath);
 	void addAbsoluteSearchPath(const char* absoluteSearchPath);
+	void addAbsoluteSearchPathToHead(const char* absoluteSearchPath);
 	void addLocalArchive(Archive* archive);
 	void removeLastArchive();
 	bool getFilePath(const char* fileName, FilePath* path);
+
+	// Add a single file that can be referenced by 'fileName' even though the real name may be different.
+	void addSingleFilePath(const char* fileName, const char* filePath);
 }
