@@ -47,13 +47,14 @@ namespace TFE_DarkForces
 		{
 			s_archive.open(lfdPath.path);
 			TFE_Paths::addLocalArchive(&s_archive);
+
+			// Default font used by in-game UI.
 			lfont_load("font8", 0);
 			lfont_set(0);
 
+			s_archive.close();
 			TFE_Paths::removeLastArchive();
 		}
-
-		// TODO: Load core fonts, system palette, etc.
 	}
 
 	void lsystem_destroy()
