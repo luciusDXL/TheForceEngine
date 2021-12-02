@@ -98,8 +98,7 @@ namespace TFE_DarkForces
 	void pda_drawOverlay();
 
 	extern void pauseLevelSound();
-	extern void resumeLevelSound();
-	
+		
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
@@ -188,14 +187,12 @@ namespace TFE_DarkForces
 	{
 		if (!s_pdaOpen)
 		{
-			resumeLevelSound();
 			return;
 		}
 		
 		if (TFE_Input::keyPressed(KEY_F1) || TFE_Input::keyPressed(KEY_ESCAPE))
 		{
 			s_pdaOpen = JFALSE;
-			resumeLevelSound();
 			return;
 		}
 		

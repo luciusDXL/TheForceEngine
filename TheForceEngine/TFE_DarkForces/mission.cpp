@@ -36,11 +36,11 @@ using namespace TFE_Input;
 namespace TFE_DarkForces
 {
 	// Show the loading screen for at least 1 second.
-#define MIN_LOAD_TIME 145
+	#define MIN_LOAD_TIME 145
 
-/////////////////////////////////////////////
-// Shared State
-/////////////////////////////////////////////
+	/////////////////////////////////////////////
+	// Shared State
+	/////////////////////////////////////////////
 	JBool s_gamePaused = JTRUE;
 	JBool s_canTeleport = JTRUE;
 	GameMissionMode s_missionMode = MISSION_MODE_MAIN;
@@ -115,6 +115,7 @@ namespace TFE_DarkForces
 	void applyScreenBrightness(u8* pal, s32 brightness);
 
 	void executeCheat(CheatID cheatID);
+	extern void resumeLevelSound();
 
 	/////////////////////////////////////////////
 	// API Implementation
@@ -414,6 +415,7 @@ namespace TFE_DarkForces
 				if (!pda_isOpen())
 				{
 					mission_pause(JFALSE);
+					resumeLevelSound();
 				}
 			}
 			else if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED && !s_playerDying)
