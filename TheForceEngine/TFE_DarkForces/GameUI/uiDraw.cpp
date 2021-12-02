@@ -1,73 +1,30 @@
 #include <cstring>
 
 #include "uiDraw.h"
-#include <TFE_Asset/fontAsset.h>
+#include <TFE_DarkForces/Landru/lfont.h>
 
 namespace TFE_DarkForces
 {
-	// This is pretty hacky, but only until actual UI reverse-engineering is done.
-	static FontTFE* s_font = nullptr;
+	// TODO: Factor out to the Landru system.
 	DeltFrame s_cursor;
-
-	void createFont()
-	{
-		s_font = TFE_Font::createSystemFont6x8();
-	}
 
 	void print(const char* text, s32 x0, s32 y0, u8 color, u8* framebuffer)
 	{
-		if (!text || !s_font) { return; }
+		LRect frame;
+		frame.left   = x0;
+		frame.top    = y0;
+		frame.right  = 320;
+		frame.bottom = 200;
 
-		const size_t len = strlen(text);
-		s32 dx = s_font->maxWidth;
-		s32 h = s_font->height;
-		s32 y1 = y0 + s_font->height - 1;
-
-		for (size_t i = 0; i < len; i++, text++)
-		{
-			const char c = *text;
-			if (c < s_font->startChar || c > s_font->endChar) { x0 += dx;  continue; }
-
-			const s32 index = s32(c) - s_font->startChar;
-			const s32 w = s_font->width[index];
-			const u8* image = s_font->imageData + s_font->imageOffset[index];
-			u8* output = &framebuffer[y0 * 320];
-			
-			s32 x1 = x0 + w - 1;
-			s32 yOffset = h - 1;
-			for (s32 y = y0; y <= y1; y++, yOffset--)
-			{
-				for (s32 x = x0, offset = yOffset; x <= x1; x++, offset += h)
-				{
-					if (image[offset])
-					{
-						output[x] = color;
-					}
-				}
-				output += 320;
-			}
-
-			x0 += s_font->step[index];
-		}
+		lfont_setFrame(&frame);
+		lfont_setColor(color);
+		lfont_drawText(text, framebuffer);
 	}
 
 	s32 getStringPixelLength(const char* str)
 	{
-		if (!str || !s_font) { return 0; }
-		const s32 len = (s32)strlen(str);
-		if (len < 1) { return 0; }
-
-		s32 pixelLen = 0;
-		s32 dx = s_font->maxWidth;
-		for (s32 i = 0; i < len; i++, str++)
-		{
-			const char c = *str;
-			if (c < s_font->startChar || c > s_font->endChar) { pixelLen += dx;  continue; }
-
-			const s32 index = s32(c) - s_font->startChar;
-			pixelLen += s_font->step[index];
-		}
-		return pixelLen;
+		if (!str) { return 0; }
+		return lfont_getTextWidth(str);
 	}
 
 	void drawColoredQuad(s32 x0, s32 y0, s32 w, s32 h, u8 color, u8* framebuffer)

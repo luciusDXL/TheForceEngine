@@ -427,8 +427,6 @@ namespace TFE_DarkForces
 		getFrameFromDelt("cursor.delt", &s_cursor);
 		TFE_Paths::removeLastArchive();
 
-		createFont();
-
 		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
 			if (!s_agentData[i].name[0])
