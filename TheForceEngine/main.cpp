@@ -355,7 +355,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 
 bool systemMenuKeyCombo()
 {
-	return inputMapping_getActionState(IAS_SYSTEM_MENU) == STATE_PRESSED;
+	return TFE_System::systemUiRequestPosted() || (inputMapping_getActionState(IAS_SYSTEM_MENU) == STATE_PRESSED);
 }
 
 void parseCommandLine(s32 argc, char* argv[])
@@ -628,11 +628,16 @@ int main(int argc, char* argv[])
 				TFE_FrontEndUI::toggleProfilerView();
 			}
 
-			if (systemMenuKeyCombo() && TFE_FrontEndUI::isConfigMenuOpen())
+			bool toggleSystemMenu = systemMenuKeyCombo();
+			if (TFE_FrontEndUI::isConfigMenuOpen() && (toggleSystemMenu || TFE_Input::keyPressed(KEY_ESCAPE)))
 			{
+				// "Eat" the escape key so it doesn't also open the Escape menu.
+				TFE_Input::clearKeyPressed(KEY_ESCAPE);
+				inputMapping_clearKeyBinding(KEY_ESCAPE);
+
 				s_curState = TFE_FrontEndUI::menuReturn();
 			}
-			else if (systemMenuKeyCombo())
+			else if (toggleSystemMenu)
 			{
 				TFE_FrontEndUI::enableConfigMenu();
 				TFE_FrontEndUI::setMenuReturnState(s_curState);

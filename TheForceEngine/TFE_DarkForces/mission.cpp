@@ -388,12 +388,17 @@ namespace TFE_DarkForces
 			if (escapeMenu_isOpen())
 			{
 				EscapeMenuAction action = escapeMenu_update();
-				if (action == ESC_RETURN)
+				if (action == ESC_RETURN || action == ESC_CONFIG)
 				{
 					s_gamePaused = JFALSE;
 					TFE_Input::clearAccumulatedMouseMove();
 					task_pause(s_gamePaused);
 					time_pause(s_gamePaused);
+
+					if (action == ESC_CONFIG)
+					{
+						TFE_System::postSystemUiRequest();
+					}
 				}
 				else if (action == ESC_ABORT_OR_NEXT)
 				{

@@ -334,6 +334,20 @@ namespace TFE_Input
 		return s_actions[action];
 	}
 
+	void inputMapping_clearKeyBinding(KeyboardCode key)
+	{
+		// Search through bindings and clear any actions with this key.
+		for (u32 i = 0; i < s_inputConfig.bindCount; i++)
+		{
+			InputBinding* bind = &s_inputConfig.binds[i];
+			if (bind->type == ITYPE_KEYBOARD && bind->keyCode == key)
+			{
+				inputMapping_removeState(bind->action);
+				return;
+			}
+		}
+	}
+
 	f32 inputMapping_getAnalogAxis(AnalogAxis axis)
 	{
 		if (!(s_inputConfig.controllerFlags & CFLAG_ENABLE))

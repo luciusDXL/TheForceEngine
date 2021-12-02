@@ -12,6 +12,7 @@ enum EscapeMenuAction
 	ESC_RETURN,			// return to the game.
 	ESC_ABORT_OR_NEXT,	// abort the current mission or move on to the next.
 	ESC_QUIT,			// quit the game.
+	ESC_CONFIG,			// configuration menu.
 	ESC_COUNT
 };
 
