@@ -841,6 +841,9 @@
     <ClInclude Include="TFE_DarkForces\GameUI\pda.h">
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lfont.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1418,6 +1421,9 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\GameUI\pda.cpp">
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lfont.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

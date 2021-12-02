@@ -205,23 +205,23 @@ namespace TFE_DarkForces
 			{
 				case ITEM_PLANS:
 				{
-					s_goalItems.plans = JTRUE;
+					s_complete[1][0] = JTRUE;
 				} break;
 				case ITEM_PHRIK:
 				{
-					s_goalItems.phrik = JTRUE;
+					s_complete[1][1] = JTRUE;
 				} break;
 				case ITEM_NAVA:
 				{
-					s_goalItems.nava = JTRUE;
+					s_complete[1][2] = JTRUE;
 				} break;
 				case ITEM_DT_WEAPON:
 				{
-					s_goalItems.dtWeapon = JTRUE;
+					s_complete[1][5] = JTRUE;
 				} break;
 				case ITEM_DATATAPE:
 				{
-					s_goalItems.datatape = JTRUE;
+					s_complete[1][4] = JTRUE;
 				} break;
 			}
 		}
@@ -276,7 +276,7 @@ namespace TFE_DarkForces
 		{
 			hud_sendTextMessage(312);
 			pickupInventory();
-			s_goalItems.stolenInv = JTRUE;
+			s_complete[1][6] = JTRUE;
 
 			if (s_completeSector)
 			{

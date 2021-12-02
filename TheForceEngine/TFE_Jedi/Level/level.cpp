@@ -27,8 +27,10 @@ namespace TFE_Jedi
 	enum
 	{
 		DF_LEVEL_VERSION_MAJOR = 2,
-		DF_LEVEL_VERSION_MINOR = 1
+		DF_LEVEL_VERSION_MINOR = 1,
 	};
+	JBool s_complete[2][NUM_COMPLETE];
+	s32 s_completeNum[2][NUM_COMPLETE];
 
 	static s32 s_dataIndex;
 	static s32 s_textureCount;
@@ -103,6 +105,16 @@ namespace TFE_Jedi
 	JBool level_load(const char* levelName, u8 difficulty)
 	{
 		if (!levelName) { return JFALSE; }
+
+		// Clear just in case.
+		for (s32 i = 0; i < NUM_COMPLETE; i++)
+		{
+			s_completeNum[COMPL_TRIG][i] = -1;
+			s_completeNum[COMPL_ITEM][i] = -1;
+
+			s_complete[COMPL_TRIG][i] = JFALSE;
+			s_complete[COMPL_ITEM][i] = JFALSE;
+		}
 
 		if (!level_loadGeometry(levelName)) { return JFALSE; }
 		level_loadObjects(levelName, difficulty);
@@ -567,6 +579,95 @@ namespace TFE_Jedi
 		TFE_Sprite_Jedi::freeAll();
 		TFE_Model_Jedi::freeAll();
 	}
+
+	JBool level_isGoalComplete(s32 goalIndex)
+	{
+		for (s32 i = 0; i < NUM_COMPLETE; i++)
+		{
+			if (s_completeNum[COMPL_TRIG][i] == goalIndex)
+			{
+				return s_complete[COMPL_TRIG][i];
+			}
+
+			if (s_completeNum[COMPL_ITEM][i] == goalIndex)
+			{
+				return s_complete[COMPL_ITEM][i];
+			}
+		}
+		return JFALSE;
+	}
+		
+	JBool level_loadGoals(const char* levelName)
+	{
+		char levelPath[TFE_MAX_PATH];
+		strcpy(levelPath, levelName);
+		strcat(levelPath, ".GOL");
+				
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(levelPath, &filePath))
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot find level goals '%s'.", levelName);
+			return JFALSE;
+		}
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot open level goals '%s'.", levelName);
+			return JFALSE;
+		}
+
+		size_t len = file.getSize();
+		s_buffer.resize(len);
+		file.readBuffer(s_buffer.data(), u32(len));
+		file.close();
+
+		TFE_Parser parser;
+		size_t bufferPos = 0;
+		parser.init(s_buffer.data(), s_buffer.size());
+		parser.enableBlockComments();
+		parser.addCommentString("//");
+		parser.addCommentString("#");
+
+		const char* line;
+		line = parser.readLine(bufferPos);
+		s32 versionMajor, versionMinor;
+		if (sscanf(line, "GOL %d.%d", &versionMajor, &versionMinor) != 2)
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot parse version for Goal file '%s'.", levelName);
+			return false;
+		}
+
+		line = parser.readLine(bufferPos);
+		while (line)
+		{
+			s32 goalNum, typeNum;
+			char type[32];
+			if (sscanf(line, " GOAL: %d %s %d", &goalNum, type, &typeNum) == 3)
+			{
+				if (typeNum < 0 || typeNum >= NUM_COMPLETE)
+				{
+					TFE_System::logWrite(LOG_ERROR, "Goals", "Bad item or trigger number in .GOL file");
+				}
+
+				if (typeNum >= 0 && typeNum < NUM_COMPLETE)
+				{
+					if (strcasecmp(type, "ITEM:") == 0)
+					{
+						s_completeNum[COMPL_ITEM][typeNum] = goalNum;
+					}
+					else if (strcasecmp(type, "TRIG:") == 0)
+					{
+						s_completeNum[COMPL_TRIG][typeNum] = goalNum;
+					}
+				}
+			}
+
+			line = parser.readLine(bufferPos);
+		}
+		file.close();
+
+		return JTRUE;
+	}
 					
 	JBool level_loadObjects(const char* levelName, u8 difficulty)
 	{
@@ -844,13 +945,7 @@ namespace TFE_Jedi
 		}
 		return nullptr;
 	}
-
-	JBool level_loadGoals(const char* levelName)
-	{
-		// TODO(Core Game Loop Release)
-		return JTRUE;
-	}
-
+		
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1)
 	{
 		*parallax0 = s_parallax0;

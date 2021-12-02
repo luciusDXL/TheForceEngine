@@ -164,7 +164,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	PlayerInfo s_playerInfo = { 0 };
 	PlayerLogic s_playerLogic = { 0 };
-	GoalItems s_goalItems   = { 0 };
 	fixed16_16 s_energy = 2 * ONE_16;
 	s32 s_lifeCount;
 	s32 s_playerLight = 0;
@@ -185,7 +184,6 @@ namespace TFE_DarkForces
 	JBool s_superChargeHud= JFALSE;
 	JBool s_playerSecMoved = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
-	JBool s_goals[16] = { 0 };
 
 	RSector* s_playerSector = nullptr;
 	SecObject* s_playerObject = nullptr;
@@ -300,7 +298,7 @@ namespace TFE_DarkForces
 		s_playerInfo.itemPhrik     = inv[16];
 		s_playerInfo.itemNava      = inv[17];
 		s_playerInfo.itemDatatape  = inv[18];
-		s_playerInfo.itemUnkown    = inv[19];
+		s_playerInfo.itemUnused    = inv[19];
 		s_playerInfo.itemDtWeapon  = inv[20];
 		s_playerInfo.itemCode1 = inv[21];
 		s_playerInfo.itemCode2 = inv[22];
@@ -356,7 +354,7 @@ namespace TFE_DarkForces
 		inv[16] = s_playerInfo.itemPhrik;
 		inv[17] = s_playerInfo.itemNava;
 		inv[18] = s_playerInfo.itemDatatape;
-		inv[19] = s_playerInfo.itemUnkown;
+		inv[19] = s_playerInfo.itemUnused;
 		inv[20] = s_playerInfo.itemDtWeapon;
 		inv[21] = s_playerInfo.itemCode1;
 		inv[22] = s_playerInfo.itemCode2;
@@ -403,7 +401,7 @@ namespace TFE_DarkForces
 		s_playerInfo.itemPlans    = JFALSE;
 		s_playerInfo.itemPhrik    = JFALSE;
 		s_playerInfo.itemNava     = JFALSE;
-		s_playerInfo.itemUnkown   = JFALSE;
+		s_playerInfo.itemUnused   = JFALSE;
 		s_playerInfo.itemDtWeapon = JFALSE;
 		s_playerInfo.itemCode1    = JFALSE;
 		s_playerInfo.itemCode2    = JFALSE;
@@ -722,7 +720,7 @@ namespace TFE_DarkForces
 		s_playerInfo.itemPhrik = JTRUE;
 		s_playerInfo.itemNava = JTRUE;
 		s_playerInfo.itemDatatape = JTRUE;
-		s_playerInfo.itemUnkown = JTRUE;
+		s_playerInfo.itemUnused = JTRUE;
 		s_playerInfo.itemDtWeapon = JTRUE;
 		s_playerInfo.itemCode1 = JTRUE;
 		s_playerInfo.itemCode2 = JTRUE;
@@ -757,7 +755,7 @@ namespace TFE_DarkForces
 		s_playerInfo.itemPhrik = JTRUE;
 		s_playerInfo.itemNava = JTRUE;
 		s_playerInfo.itemDatatape = JTRUE;
-		s_playerInfo.itemUnkown = JTRUE;
+		s_playerInfo.itemUnused = JTRUE;
 		s_playerInfo.itemDtWeapon = JTRUE;
 		s_playerInfo.itemCode1 = JTRUE;
 		s_playerInfo.itemCode2 = JTRUE;
@@ -2394,5 +2392,113 @@ namespace TFE_DarkForces
 			task_yield(291);	// wait for 2 seconds.
 		}
 		task_end;
+	}
+		
+	JBool player_hasWeapon(s32 weaponIndex)
+	{
+		JBool retval = JFALSE;
+		switch (weaponIndex)
+		{
+		case 2:
+			retval = s_playerInfo.itemPistol;
+			break;
+		case 3:
+			retval = s_playerInfo.itemRifle;
+			break;
+		case 4:
+			retval = s_playerInfo.ammoDetonator > 0 ? JTRUE : JFALSE;
+			break;
+		case 5:
+			retval = s_playerInfo.itemAutogun;
+			break;
+		case 6:
+			retval = s_playerInfo.itemFusion;
+			break;
+		case 7:
+			retval = s_playerInfo.ammoMine > 0 ? JTRUE : JFALSE;
+			break;
+		case 8:
+			retval = s_playerInfo.itemMortar;
+			break;
+		case 9:
+			retval = s_playerInfo.itemConcussion;
+			break;
+		case 10:
+			retval = s_playerInfo.itemCannon;
+			break;
+		}
+		return retval;
+	}
+
+	JBool player_hasItem(s32 itemIndex)
+	{
+		JBool retval = JFALSE;
+		switch (itemIndex)
+		{
+		case 0:
+			retval = s_playerInfo.itemRedKey;
+			break;
+		case 1:
+			retval = s_playerInfo.itemYellowKey;
+			break;
+		case 2:
+			retval = s_playerInfo.itemBlueKey;
+			break;
+		case 3:
+			retval = s_playerInfo.itemGoggles;
+			break;
+		case 4:
+			retval = s_playerInfo.itemCleats;
+			break;
+		case 5:
+			retval = s_playerInfo.itemMask;
+			break;
+		case 6:
+			retval = s_playerInfo.itemPlans;
+			break;
+		case 7:
+			retval = s_playerInfo.itemPhrik;
+			break;
+		case 8:
+			retval = s_playerInfo.itemNava;
+			break;
+		case 9:
+			retval = s_playerInfo.itemDatatape;
+			break;
+		case 10:
+			retval = s_playerInfo.itemUnused;
+			break;
+		case 11:
+			retval = s_playerInfo.itemDtWeapon;
+			break;
+		case 12:
+			retval = s_playerInfo.itemCode1;
+			break;
+		case 13:
+			retval = s_playerInfo.itemCode2;
+			break;
+		case 14:
+			retval = s_playerInfo.itemCode3;
+			break;
+		case 15:
+			retval = s_playerInfo.itemCode4;
+			break;
+		case 16:
+			retval = s_playerInfo.itemCode5;
+			break;
+		case 17:
+			retval = s_playerInfo.itemCode6;
+			break;
+		case 18:
+			retval = s_playerInfo.itemCode7;
+			break;
+		case 19:
+			retval = s_playerInfo.itemCode8;
+			break;
+		case 20:
+			retval = s_playerInfo.itemCode9;
+			break;
+		}
+		return retval;
 	}
 }  // TFE_DarkForces

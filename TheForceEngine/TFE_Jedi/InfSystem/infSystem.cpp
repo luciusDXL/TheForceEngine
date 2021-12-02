@@ -66,7 +66,7 @@ namespace TFE_Jedi
 	static char s_infArg4[256];
 	static char s_infArgExtra[256];
 	static Stop* s_nextStop;
-
+		
 	void inf_elevatorTaskFunc(MessageType msg);
 	void inf_telelporterTaskFunc(MessageType msg);
 	void inf_triggerTaskFunc(MessageType msg);
@@ -2756,7 +2756,7 @@ namespace TFE_Jedi
 			case MSG_COMPLETE:
 			{
 				// Fill in the goal specified by 'arg1'
-				s_goals[arg1] = JTRUE;
+				s_complete[0][arg1] = JTRUE;
 				// Move the elevator to the stop specified by 'arg1' if it is NOT holding.
 				if (elev->nextTick < s_curTick)
 				{

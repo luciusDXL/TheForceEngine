@@ -516,11 +516,6 @@ namespace TFE_DarkForces
 		s_cheatCharIndex = 0;
 		s_cheatInputCount = 0;
 		s_queuedCheatID = CHEAT_NONE;
-
-		for (s32 i = 9; i >= 0; i--)
-		{
-			s_goals[i] = JFALSE;
-		}
 	}
 		
 	void setScreenBrightness(fixed16_16 brightness)

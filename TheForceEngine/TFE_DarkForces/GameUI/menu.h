@@ -4,6 +4,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
+#include <TFE_DarkForces/Landru/lrect.h>
 
 namespace TFE_DarkForces
 {
@@ -21,9 +22,9 @@ namespace TFE_DarkForces
 
 	// 'framebuffer' can be passed in to override the default source bitmap.
 	// If null, the Landru bitmap will be used.
-	void menu_blitToScreen(u8* framebuffer = nullptr, JBool transparent = JFALSE);
+	void menu_blitToScreen(u8* framebuffer = nullptr, JBool transparent = JFALSE, JBool swap = JTRUE);
 	void menu_blitCursorScaled(s16 x, s16 y, u8* buffer);
-
+	   
 	// Variables.
 	extern Vec2i s_cursorPos;
 	extern s32 s_buttonPressed;

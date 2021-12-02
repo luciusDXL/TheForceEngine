@@ -105,7 +105,6 @@ namespace TFE_DarkForces
 	u8* menu_startupDisplay()
 	{
 		vfb_setResolution(320, 200);
-		menu_resetCursor();
 		return vfb_getCpuBuffer();
 	}
 
@@ -136,7 +135,7 @@ namespace TFE_DarkForces
 		TFE_Paths::removeLastArchive();
 	}
 
-	void menu_blitToScreen(u8* framebuffer/*=nullptr*/, JBool transparent/*=JFALSE*/)
+	void menu_blitToScreen(u8* framebuffer/*=nullptr*/, JBool transparent/*=JFALSE*/, JBool swap/*=JTRUE*/)
 	{
 		u32 outWidth, outHeight;
 		vfb_getResolution(&outWidth, &outHeight);
@@ -149,8 +148,24 @@ namespace TFE_DarkForces
 
 		if (outWidth == 320 && outHeight == 200)
 		{
-			// This is a straight copy - best for performance since the GPU can do the upscale.
-			memcpy(vfb_getCpuBuffer(), framebuffer, 320 * 200);
+			if (transparent)
+			{
+				TFE_Jedi::ScreenImage canvas =
+				{
+					320,
+					200,
+					framebuffer,
+					transparent,
+					JFALSE,
+				};
+				ScreenRect* uiRect = vfb_getScreenRect(VFB_RECT_UI);
+				blitTextureToScreen(&canvas, (DrawRect*)uiRect, 0, 0, vfb_getCpuBuffer());
+			}
+			else
+			{
+				// This is a straight copy - best for performance since the GPU can do the upscale.
+				memcpy(vfb_getCpuBuffer(), framebuffer, 320 * 200);
+			}
 		}
 		else
 		{
@@ -177,20 +192,21 @@ namespace TFE_DarkForces
 			}
 			blitTextureToScreenScaled(&canvas, (DrawRect*)uiRect, offset, 0, xScale, yScale, vfb_getCpuBuffer());
 		}
-		vfb_swap();
+		if (swap) { vfb_swap(); }
 	}
 
 	void menu_blitCursorScaled(s16 x, s16 y, u8* buffer)
 	{
 		ScreenRect* uiRect = vfb_getScreenRect(VFB_RECT_UI);
-		fixed16_16 scale = ONE_16 * (uiRect->bot - uiRect->top + 1) / 200;
+		fixed16_16 xScale = vfb_getXScale();
+		fixed16_16 yScale = vfb_getYScale();
 
-		s32 virtualWidth = floor16(mul16(intToFixed16(320), scale));
+		s32 virtualWidth = floor16(mul16(intToFixed16(320), xScale));
 		s32 offset = max(0, ((uiRect->right - uiRect->left + 1) - virtualWidth) / 2);
 
-		x = floor16(mul16(intToFixed16(x), scale)) + offset;
-		y = floor16(mul16(intToFixed16(y), scale));
+		x = floor16(mul16(intToFixed16(x), xScale)) + offset;
+		y = floor16(mul16(intToFixed16(y), yScale));
 
-		blitDeltaFrameScaled(&s_cursor, x, y, scale, scale, buffer);
+		blitDeltaFrameScaled(&s_cursor, x, y, xScale, yScale, buffer);
 	}
 }

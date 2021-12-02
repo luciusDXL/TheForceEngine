@@ -77,6 +77,8 @@ namespace TFE_DarkForces
 			TFE_Paths::addLocalArchive(archive);
 
 			s_escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_escMenuFrames);
+			
+			TFE_Paths::removeLastArchive();
 		}
 
 		u32 dispWidth, dispHeight;

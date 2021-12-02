@@ -85,7 +85,6 @@ namespace TFE_DarkForces
 	{
 		menu_init();
 		menu_startupDisplay();
-		menu_resetCursor();
 
 		s_briefingOpen = JFALSE;
 		s_skill = skill;
