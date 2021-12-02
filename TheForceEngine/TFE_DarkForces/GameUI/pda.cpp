@@ -96,12 +96,16 @@ namespace TFE_DarkForces
 	void pda_drawMapButtons();
 	void pdaDrawBriefingButtons();
 	void pda_drawOverlay();
+
+	extern void pauseLevelSound();
+	extern void resumeLevelSound();
 	
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
 	void pda_start(const char* levelName)
 	{
+		pauseLevelSound();
 		if (!s_pdaLoaded)
 		{
 			if (!menu_openResourceArchive("dfbrief.lfd"))
@@ -184,12 +188,14 @@ namespace TFE_DarkForces
 	{
 		if (!s_pdaOpen)
 		{
+			resumeLevelSound();
 			return;
 		}
 		
 		if (TFE_Input::keyPressed(KEY_F1) || TFE_Input::keyPressed(KEY_ESCAPE))
 		{
 			s_pdaOpen = JFALSE;
+			resumeLevelSound();
 			return;
 		}
 		
