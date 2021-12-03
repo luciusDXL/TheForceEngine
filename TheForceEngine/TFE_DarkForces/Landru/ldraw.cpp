@@ -217,7 +217,7 @@ namespace TFE_DarkForces
 				break;
 			}
 
-			s16 xCur = deltaLine[1] + w - 1 - x;
+			s16 xCur = w - deltaLine[1] + x;
 			s16 yStart = deltaLine[2] + y;
 			// Size of the Delta Line structure.
 			srcImage += sizeof(s16) * 3;
@@ -287,7 +287,7 @@ namespace TFE_DarkForces
 			s32 pixelCount = (sizeAndType >> 1) & 0x3fff;
 			u8* dstImage = &framebuffer[yStart*stride];
 
-			s16 xCur = w - 1 - xStart;
+			s16 xCur = w - deltaLine[1] + x;
 			s16 yCur = yStart;
 			JBool writeRow = (yCur >= clipRect.top && yCur < clipRect.bottom) ? JTRUE : JFALSE;
 
