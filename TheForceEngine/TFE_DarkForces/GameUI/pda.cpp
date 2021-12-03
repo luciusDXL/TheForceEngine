@@ -150,12 +150,13 @@ namespace TFE_DarkForces
 			s_pdaArt = lactorAnim_load("pda", &s_viewBounds, 0, 0, 0);
 			s_palette = lpalette_load("menu");
 			lactor_setTime(s_pdaArt, -1, -1);
-			lpalette_setScreenPal(s_palette);
-
+			
 			menu_closeResourceArchive();
 
 			s_pdaLoaded = JTRUE;
 		}
+		lpalette_setScreenPal(s_palette);
+
 		s_pdaOpen = JTRUE;
 		s_buttonPressed = -1;
 		s_simulatePressed = -1;
