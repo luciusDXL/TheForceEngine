@@ -133,6 +133,7 @@ namespace TFE_DarkForces
 		if (s_missionBegin)
 		{
 			s_displayInit = JFALSE;
+			vfb_forceToBlack();
 		}
 
 		*levelIndex = s_selectedMission + 1;

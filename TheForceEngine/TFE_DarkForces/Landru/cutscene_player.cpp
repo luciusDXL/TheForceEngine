@@ -61,6 +61,11 @@ namespace TFE_DarkForces
 	extern s32 s_musicVolume;
 	extern s32 s_enabled;
 
+	static JBool s_skipSceneInput = JFALSE;
+	static JBool s_nextSceneInput = JFALSE;
+	static JBool s_cutscenePause = JFALSE;
+	static JBool s_cutsceneStepFrame = JFALSE;
+
 	void cutscene_customSoundCallback(LActor* actor, s32 time);
 	s32  lcutscenePlayer_endView(s32 time);
 				
@@ -75,8 +80,6 @@ namespace TFE_DarkForces
 	{
 		if (obj->id == CF_FILE_ACTOR)
 		{
-			cutsceneFilm_rewindActor(film, obj, (u8*)(obj + 1));
-
 			LActor* actor = (LActor*)obj->data;
 			if (actor->resType == CF_TYPE_CUSTOM_ACTOR)
 			{
@@ -185,12 +188,7 @@ namespace TFE_DarkForces
 		}
 		lview_clearUpdateFunc();
 	}
-
-	static JBool s_skipSceneInput = JFALSE;
-	static JBool s_nextSceneInput = JFALSE;
-	static JBool s_cutscenePause = JFALSE;
-	static JBool s_cutsceneStepFrame = JFALSE;
-		
+				
 	JBool cutscenePlayer_update()
 	{
 		if (s_scene == SCENE_EXIT) { return JFALSE; }
@@ -205,8 +203,8 @@ namespace TFE_DarkForces
 			s_nextSceneInput = JTRUE;
 		}
 
-		//////////////////////////
-		// DEBUG
+		/////////////////////////////////
+		// DEBUG: Single step cutscenes.
 		if (TFE_Input::keyPressed(KEY_PAUSE))
 		{
 			s_cutscenePause = ~s_cutscenePause;
@@ -217,7 +215,7 @@ namespace TFE_DarkForces
 		{
 			s_cutsceneStepFrame = JTRUE;
 		}
-		//////////////////////////
+		/////////////////////////////////
 
 		JBool stepView = JFALSE;
 		if (s_cutscenePause)
@@ -263,11 +261,13 @@ namespace TFE_DarkForces
 		if (s_skipSceneInput)
 		{
 			s_skipSceneInput = JFALSE;
+			vfb_forceToBlack();
 			return skipScene;
 		}
 		else if (s_nextSceneInput)
 		{
 			s_nextSceneInput = JFALSE;
+			vfb_forceToBlack();
 			return nextScene;
 		}
 		else if (s_film->curCell >= s_film->cellCount)

@@ -526,7 +526,7 @@ namespace TFE_DarkForces
 				count++;
 			}
 		}
-
+				
 		if (count)
 		{
 			lpalette_setVgaPalette();

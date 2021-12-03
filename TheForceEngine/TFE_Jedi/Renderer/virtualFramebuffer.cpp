@@ -138,6 +138,14 @@ namespace TFE_Jedi
 		return s_widescreenOffset;
 	}
 
+	void vfb_forceToBlack()
+	{
+		memset(vfb_getCpuBuffer(), 0, s_width * s_height);
+		// Black for two frames.
+		vfb_swap();
+		vfb_swap();
+	}
+
 	////////////////////////////
 	// Per-Frame
 	////////////////////////////

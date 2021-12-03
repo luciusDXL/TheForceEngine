@@ -47,6 +47,7 @@ namespace TFE_Jedi
 	////////////////////////////
 	// Frame rendering is done, copy the results to GPU memory.
 	void vfb_swap();
+	void vfb_forceToBlack();
 
 	////////////////////////////
 	// Clipping

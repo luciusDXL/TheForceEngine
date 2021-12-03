@@ -2,6 +2,7 @@
 #include "lcanvas.h"
 #include "lpalette.h"
 #include "ltimer.h"
+#include "ldraw.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -243,6 +244,9 @@ namespace TFE_DarkForces
 				{
 					if (step == mid)
 					{
+						// Make sure we are show the next frame *before* changing the palette.
+						lcanvas_showNextFrame();
+
 						lpalette_copyDstToScreen(0, 0, 255);
 						lpalette_putScreenPal();
 					}

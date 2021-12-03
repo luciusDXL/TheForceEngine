@@ -86,6 +86,17 @@ namespace TFE_DarkForces
 		return lfade_applyFadeLoop(&rect, dialog);
 	}
 
+	void lcanvas_showNextFrame()
+	{
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
+		s32 width  = bounds.right - bounds.left;
+		s32 height = bounds.bottom - bounds.top;
+
+		memcpy(vfb_getCpuBuffer(), ldraw_getBitmap(), width * height);
+		vfb_swap();
+	}
+
 	void lcanvas_copyScreenToVideo(LRect* rect)
 	{
 		lcanvas_copyPortionToVideo(rect, rect->left, rect->top);

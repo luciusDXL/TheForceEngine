@@ -496,9 +496,6 @@ namespace TFE_DarkForces
 			if (cutsceneFilm_isFading())
 			{
 				cutsceneFilm_startFade(JTRUE);
-				// TODO: For some reason this fixes the animation issue in the first cutscene (when the animated object transitions to the
-				// static frame). But doing this all of the time breaks other cutscenes.
-				// film->curCell++;
 			}
 			else if (!lfade_isActive())
 			{
