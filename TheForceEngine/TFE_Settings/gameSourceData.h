@@ -29,37 +29,39 @@ namespace TFE_Settings
 		"outlaws/",				// Game_Outlaws
 	};
 
-	static const char* c_darkForcesLocations[] =
-	{
-		// C drive
-		"C:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
-		"C:/Program Files/Steam/steamapps/common/dark forces/Game/",
-		"C:/Program Files (x86)/GOG.com/Star Wars - Dark Forces/",
-		"C:/GOG Games/Star Wars - Dark Forces/",
-		// D drive
-		"D:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
-		"D:/Program Files/Steam/steamapps/common/dark forces/Game/",
-		"D:/Program Files (x86)/GOG.com/Star Wars - Dark Forces/",
-		"D:/GOG Games/Star Wars - Dark Forces/",
-	};
-	static const char* c_outlawsLocations[] =
-	{
-		// C drive
-		"C:/Program Files (x86)/Steam/steamapps/common/outlaws/",
-		"C:/Program Files/Steam/steamapps/common/outlaws/",
-		"C:/Program Files (x86)/GOG.com/outlaws/",
-		"C:/GOG Games/outlaws/",
-		// D drive
-		"D:/Program Files (x86)/Steam/steamapps/common/outlaws/",
-		"D:/Program Files/Steam/steamapps/common/outlaws/",
-		"D:/Program Files (x86)/GOG.com/outlaws/",
-		"D:/GOG Games/outlaws/",
-	};
-	static const u32 c_hardcodedPathCount = TFE_ARRAYSIZE(c_darkForcesLocations);
+	#ifdef _WIN32
+		static const char* c_darkForcesLocations[] =
+		{
+			// C drive
+			"C:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
+			"C:/Program Files/Steam/steamapps/common/dark forces/Game/",
+			"C:/Program Files (x86)/GOG.com/Star Wars - Dark Forces/",
+			"C:/GOG Games/Star Wars - Dark Forces/",
+			// D drive
+			"D:/Program Files (x86)/Steam/steamapps/common/dark forces/Game/",
+			"D:/Program Files/Steam/steamapps/common/dark forces/Game/",
+			"D:/Program Files (x86)/GOG.com/Star Wars - Dark Forces/",
+			"D:/GOG Games/Star Wars - Dark Forces/",
+		};
+		static const char* c_outlawsLocations[] =
+		{
+			// C drive
+			"C:/Program Files (x86)/Steam/steamapps/common/outlaws/",
+			"C:/Program Files/Steam/steamapps/common/outlaws/",
+			"C:/Program Files (x86)/GOG.com/outlaws/",
+			"C:/GOG Games/outlaws/",
+			// D drive
+			"D:/Program Files (x86)/Steam/steamapps/common/outlaws/",
+			"D:/Program Files/Steam/steamapps/common/outlaws/",
+			"D:/Program Files (x86)/GOG.com/outlaws/",
+			"D:/GOG Games/outlaws/",
+		};
+		static const u32 c_hardcodedPathCount = TFE_ARRAYSIZE(c_darkForcesLocations);
 
-	static const char** c_gameLocations[] =
-	{
-		c_darkForcesLocations,
-		c_outlawsLocations
-	};
+		static const char** c_gameLocations[] =
+		{
+			c_darkForcesLocations,
+			c_outlawsLocations
+		};
+	#endif /* _WIN32 */
 }

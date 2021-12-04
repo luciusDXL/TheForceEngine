@@ -125,7 +125,7 @@ namespace TFE_Settings
 					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], s_gameSettings.header[gameId].sourcePath);
 				}
 			}
-#endif
+			
 			// If the registry approach fails, just try looking in the various hardcoded paths.
 			if (!pathValid)
 			{
@@ -141,6 +141,7 @@ namespace TFE_Settings
 					}
 				}
 			}
+#endif /* _WIN32 */
 		}
 		writeToDisk();
 	}
