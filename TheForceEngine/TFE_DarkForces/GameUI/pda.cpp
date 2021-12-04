@@ -287,44 +287,44 @@ namespace TFE_DarkForces
 			{
 				switch (s_buttonPressed)
 				{
-				case PDA_BTN_PANUP:
-				{
-					automap_updateMapData(MAP_MOVE1_UP);
-				} break;
-				case PDA_BTN_PANRIGHT:
-				{
-					automap_updateMapData(MAP_MOVE1_RIGHT);
-				} break;
-				case PDA_BTN_PANDOWN:
-				{
-					automap_updateMapData(MAP_MOVE1_DN);
-				} break;
-				case PDA_BTN_PANLEFT:
-				{
-					automap_updateMapData(MAP_MOVE1_LEFT);
-				} break;
-				case PDA_BTN_ZOOMOUT:
-				{
-					automap_updateMapData(MAP_ZOOM_IN);
-				} break;
-				case PDA_BTN_ZOOMIN:
-				{
-					automap_updateMapData(MAP_ZOOM_OUT);
-				} break;
-				case PDA_BTN_LAYERUP:
-				{
-					if (s_buttonPressed == s_simulatePressed)
+					case PDA_BTN_PANUP:
 					{
-						automap_updateMapData(MAP_LAYER_UP);
-					}
-				} break;
-				case PDA_BTN_LAYERDOWN:
-				{
-					if (s_buttonPressed == s_simulatePressed)
+						automap_updateMapData(MAP_MOVE1_UP);
+					} break;
+					case PDA_BTN_PANRIGHT:
 					{
-						automap_updateMapData(MAP_LAYER_DOWN);
-					}
-				} break;
+						automap_updateMapData(MAP_MOVE1_RIGHT);
+					} break;
+					case PDA_BTN_PANDOWN:
+					{
+						automap_updateMapData(MAP_MOVE1_DN);
+					} break;
+					case PDA_BTN_PANLEFT:
+					{
+						automap_updateMapData(MAP_MOVE1_LEFT);
+					} break;
+					case PDA_BTN_ZOOMOUT:
+					{
+						automap_updateMapData(MAP_ZOOM_IN);
+					} break;
+					case PDA_BTN_ZOOMIN:
+					{
+						automap_updateMapData(MAP_ZOOM_OUT);
+					} break;
+					case PDA_BTN_LAYERUP:
+					{
+						if (s_buttonPressed == s_simulatePressed)
+						{
+							automap_updateMapData(MAP_LAYER_UP);
+						}
+					} break;
+					case PDA_BTN_LAYERDOWN:
+					{
+						if (s_buttonPressed == s_simulatePressed)
+						{
+							automap_updateMapData(MAP_LAYER_DOWN);
+						}
+					} break;
 				}
 			}
 			else if (s_pdaMode == PDA_MODE_BRIEF && s_buttonPressed && ltime_isFrameReady())
@@ -372,53 +372,53 @@ namespace TFE_DarkForces
 			{
 				switch (s_buttonPressed)
 				{
-				case PDA_BTN_PANUP:
-				{
-					automap_updateMapData(MAP_MOVE1_UP);
-				} break;
-				case PDA_BTN_PANRIGHT:
-				{
-					automap_updateMapData(MAP_MOVE1_RIGHT);
-				} break;
-				case PDA_BTN_PANDOWN:
-				{
-					automap_updateMapData(MAP_MOVE1_DN);
-				} break;
-				case PDA_BTN_PANLEFT:
-				{
-					automap_updateMapData(MAP_MOVE1_LEFT);
-				} break;
-				case PDA_BTN_ZOOMOUT:
-				{
-					automap_updateMapData(MAP_ZOOM_IN);
-				} break;
-				case PDA_BTN_ZOOMIN:
-				{
-					automap_updateMapData(MAP_ZOOM_OUT);
-				} break;
+					case PDA_BTN_PANUP:
+					{
+						automap_updateMapData(MAP_MOVE1_UP);
+					} break;
+					case PDA_BTN_PANRIGHT:
+					{
+						automap_updateMapData(MAP_MOVE1_RIGHT);
+					} break;
+					case PDA_BTN_PANDOWN:
+					{
+						automap_updateMapData(MAP_MOVE1_DN);
+					} break;
+					case PDA_BTN_PANLEFT:
+					{
+						automap_updateMapData(MAP_MOVE1_LEFT);
+					} break;
+					case PDA_BTN_ZOOMOUT:
+					{
+						automap_updateMapData(MAP_ZOOM_IN);
+					} break;
+					case PDA_BTN_ZOOMIN:
+					{
+						automap_updateMapData(MAP_ZOOM_OUT);
+					} break;
 				}
 			}
 			else if (s_buttonHover && s_pdaMode == PDA_MODE_BRIEF && ltime_isFrameReady())
 			{
 				switch (s_buttonPressed)
 				{
-				case PDA_BTN_PANUP:
-				{
-					if (s_briefY > -BRIEF_VERT_MARGIN)
+					case PDA_BTN_PANUP:
 					{
-						s_briefY -= BRIEF_LINE_SCROLL;
-						if (s_briefY < -BRIEF_VERT_MARGIN) s_briefY = -BRIEF_VERT_MARGIN;
-					}
-				} break;
-				case PDA_BTN_PANDOWN:
-				{
-					if (s_briefY != s_briefingMaxY)
+						if (s_briefY > -BRIEF_VERT_MARGIN)
+						{
+							s_briefY -= BRIEF_LINE_SCROLL;
+							if (s_briefY < -BRIEF_VERT_MARGIN) s_briefY = -BRIEF_VERT_MARGIN;
+						}
+					} break;
+					case PDA_BTN_PANDOWN:
 					{
-						s_briefY += BRIEF_LINE_SCROLL;
+						if (s_briefY != s_briefingMaxY)
+						{
+							s_briefY += BRIEF_LINE_SCROLL;
 
-						if (s_briefY > s_briefingMaxY) s_briefY = s_briefingMaxY;
-					}
-				} break;
+							if (s_briefY > s_briefingMaxY) s_briefY = s_briefingMaxY;
+						}
+					} break;
 				}
 			}
 		}
@@ -428,39 +428,39 @@ namespace TFE_DarkForces
 			{
 				switch (s_buttonPressed)
 				{
-				case PDA_BTN_MAP:
-				{
-					s_pdaMode = PDA_MODE_MAP;
-				} break;
-				case PDA_BTN_WEAPONS:
-				{
-					s_pdaMode = PDA_MODE_WEAPONS;
-				} break;
-				case PDA_BTN_INV:
-				{
-					s_pdaMode = PDA_MODE_INV;
-				} break;
-				case PDA_BTN_GOALS:
-				{
-					s_pdaMode = PDA_MODE_GOALS;
-				} break;
-				case PDA_BTN_BRIEF:
-				{
-					s_pdaMode = PDA_MODE_BRIEF;
-				} break;
-				case PDA_BTN_EXIT:
-				{
-					s_pdaOpen = JFALSE;
-					automap_updateMapData(MAP_ENABLE_AUTOCENTER);
-				} break;
-				case PDA_BTN_LAYERUP:
-				{
-					automap_updateMapData(MAP_LAYER_UP);
-				} break;
-				case PDA_BTN_LAYERDOWN:
-				{
-					automap_updateMapData(MAP_LAYER_DOWN);
-				} break;
+					case PDA_BTN_MAP:
+					{
+						s_pdaMode = PDA_MODE_MAP;
+					} break;
+					case PDA_BTN_WEAPONS:
+					{
+						s_pdaMode = PDA_MODE_WEAPONS;
+					} break;
+					case PDA_BTN_INV:
+					{
+						s_pdaMode = PDA_MODE_INV;
+					} break;
+					case PDA_BTN_GOALS:
+					{
+						s_pdaMode = PDA_MODE_GOALS;
+					} break;
+					case PDA_BTN_BRIEF:
+					{
+						s_pdaMode = PDA_MODE_BRIEF;
+					} break;
+					case PDA_BTN_EXIT:
+					{
+						s_pdaOpen = JFALSE;
+						automap_updateMapData(MAP_ENABLE_AUTOCENTER);
+					} break;
+					case PDA_BTN_LAYERUP:
+					{
+						automap_updateMapData(MAP_LAYER_UP);
+					} break;
+					case PDA_BTN_LAYERDOWN:
+					{
+						automap_updateMapData(MAP_LAYER_DOWN);
+					} break;
 				}
 			}
 			// Reset.
