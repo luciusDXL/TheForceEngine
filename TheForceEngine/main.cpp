@@ -405,9 +405,16 @@ void parseCommandLine(s32 argc, char* argv[])
 
 void generateScreenshotTime()
 {
+	#ifdef _WIN32
 	__time64_t time;
 	_time64(&time);
 	strcpy(s_screenshotTime, _ctime64(&time));
+	#else
+	/* posix will take system precision */
+	time_t time_val;
+	time(&time_val);
+	strcpy(s_screenshotTime, ctime(&time_val));
+	#endif /* _WIN32 */
 
 	// Replace ':' with '_'
 	size_t len = strlen(s_screenshotTime);
