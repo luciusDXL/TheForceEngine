@@ -1,5 +1,7 @@
 #include <cstring>
 
+#include <strings.h>
+
 #include "vueLogic.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
@@ -270,8 +272,12 @@ namespace TFE_DarkForces
 			}
 			else
 			{
+				#ifdef _WIN32
 				_strupr(s_objSeqArg2);
 				if (strstr(s_objSeqArg2, "CAMERA"))
+				#else
+				if (strcasecmp(s_objSeqArg2, "CAMERA"))
+				#endif /* _WIN32 */
 				{
 					isCamera = 1;
 				}
@@ -289,8 +295,12 @@ namespace TFE_DarkForces
 			}
 			else
 			{
+				#ifdef _WIN32
 				_strupr(s_objSeqArg2);
 				if (strstr(s_objSeqArg2, "CAMERA"))
+				#else
+				if (strcasecmp(s_objSeqArg2, "CAMERA"))
+				#endif /* _WIN32 */
 				{
 					isCamera = 1;
 				}
@@ -342,7 +352,10 @@ namespace TFE_DarkForces
 				if (local(vue)->isCamera > 0)
 				{
 					// TODO
+					// This fails outside of Windows...?
+					#ifdef _WIN32
 					assert(0);
+					#endif /* _WIN32 */
 				}
 				local(frame) = (VueFrame*)allocator_getHead(local(vue)->frames);
 				local(searchForSector) = JTRUE;
