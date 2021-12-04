@@ -1,6 +1,7 @@
 #include "cutscene_player.h"
 #include "cutscene_film.h"
 #include "lcanvas.h"
+#include "lsound.h"
 #include "lsystem.h"
 #include "time.h"
 #include "textCrawl.h"
@@ -91,8 +92,11 @@ namespace TFE_DarkForces
 		}
 		else if (obj->id == CF_FILE_SOUND)
 		{
-			// TODO
-			// Ignoring sounds for the first pass.
+			LSound* sound = (LSound*)obj->data;
+			if (sound->var2 > 0)
+			{
+				lsound_setKeep(sound);
+			}
 		}
 		return JFALSE;
 	}
