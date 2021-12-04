@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "frontEndUi.h"
 #include "console.h"
 #include "profilerView.h"
@@ -877,24 +879,44 @@ namespace TFE_FrontEndUI
 		{
 			if (binding->keyMod)
 			{
-				sprintf_s(inputName, 64, "%s + %s", TFE_Input::getKeyboardModifierName(binding->keyMod), TFE_Input::getKeyboardName(binding->keyCode));
+				#ifdef _WIN32
+					sprintf_s(inputName, 64, "%s + %s", TFE_Input::getKeyboardModifierName(binding->keyMod), TFE_Input::getKeyboardName(binding->keyCode));
+				#else
+					snprintf(inputName, 64, "%s + %s", TFE_Input::getKeyboardModifierName(binding->keyMod), TFE_Input::getKeyboardName(binding->keyCode));
+				#endif
 			}
 			else
 			{
-				strcpy_s(inputName, 64, TFE_Input::getKeyboardName(binding->keyCode));
+				#ifdef _WIN32
+					strcpy_s(inputName, 64, TFE_Input::getKeyboardName(binding->keyCode));
+				#else
+					strncpy(inputName, TFE_Input::getKeyboardName(binding->keyCode), 64);
+				#endif
 			}
 		}
 		else if (binding->type == ITYPE_MOUSE)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getMouseButtonName(binding->mouseBtn));
+			#ifdef _WIN32
+				strcpy_s(inputName, 64, TFE_Input::getMouseButtonName(binding->mouseBtn));
+			#else
+				strncpy(inputName, TFE_Input::getMouseButtonName(binding->mouseBtn), 64);
+			#endif
 		}
 		else if (binding->type == ITYPE_CONTROLLER)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getControllButtonName(binding->ctrlBtn));
+			#ifdef _WIN32
+				strcpy_s(inputName, 64, TFE_Input::getControllButtonName(binding->ctrlBtn));
+			#else
+				strncpy(inputName, TFE_Input::getControllButtonName(binding->ctrlBtn), 64);
+			#endif
 		}
 		else if (binding->type == ITYPE_CONTROLLER_AXIS)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getControllerAxisName(binding->axis));
+			#ifdef _WIN32
+				strcpy_s(inputName, 64, TFE_Input::getControllerAxisName(binding->axis));
+			#else
+				strncpy(inputName, TFE_Input::getControllerAxisName(binding->axis), 64);
+			#endif
 		}
 	}
 
