@@ -57,6 +57,15 @@ namespace TFE_DarkForces
 		s_lcanvasClipRect = s_lcanvasRect;
 	}
 
+	void lcanvas_clear()
+	{
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
+		s32 width  = bounds.right - bounds.left;
+		s32 height = bounds.bottom - bounds.top;
+		memset(ldraw_getBitmap(), 0, width * height);
+	}
+
 	void lcanvas_eraseRect(LRect* rect)
 	{
 		LRect clipRect;

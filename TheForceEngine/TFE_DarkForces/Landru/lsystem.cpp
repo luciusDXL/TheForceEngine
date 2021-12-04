@@ -81,6 +81,7 @@ namespace TFE_DarkForces
 	void lsystem_destroy()
 	{
 		if (!s_lsystemInit) { return; }
+		vfb_forceToBlack();
 
 		s_lsystemInit = JFALSE;
 		lcanvas_destroy();

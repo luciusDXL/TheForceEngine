@@ -21,6 +21,7 @@ namespace TFE_DarkForces
 		{
 			landru_free(s_bitmap);
 			s_bitmap = (u8*)landru_alloc(w * h);
+			memset(s_bitmap, 0, w * h);
 
 			s_bitmapWidth  = w;
 			s_bitmapHeight = h;

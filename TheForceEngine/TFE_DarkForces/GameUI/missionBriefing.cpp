@@ -368,6 +368,7 @@ namespace TFE_DarkForces
 			s_briefingOpen = JFALSE;
 			*skill = s_skill;
 			vfb_forceToBlack();
+			lcanvas_clear();
 			return JFALSE;
 		}
 

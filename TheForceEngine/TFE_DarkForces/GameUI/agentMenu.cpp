@@ -7,6 +7,7 @@
 #include "uiDraw.h"
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/util.h>
+#include <TFE_DarkForces/Landru/lcanvas.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
@@ -134,6 +135,7 @@ namespace TFE_DarkForces
 		{
 			s_displayInit = JFALSE;
 			vfb_forceToBlack();
+			lcanvas_clear();
 		}
 
 		*levelIndex = s_selectedMission + 1;

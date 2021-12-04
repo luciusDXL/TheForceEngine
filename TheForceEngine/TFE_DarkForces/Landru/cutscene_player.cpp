@@ -275,6 +275,7 @@ namespace TFE_DarkForces
 			s_skipSceneInput = JFALSE;
 			sound_stopAll();
 			vfb_forceToBlack();
+			lcanvas_clear();
 			return skipScene;
 		}
 		else if (s_nextSceneInput)
@@ -282,6 +283,7 @@ namespace TFE_DarkForces
 			s_nextSceneInput = JFALSE;
 			sound_stopAll();
 			vfb_forceToBlack();
+			lcanvas_clear();
 			return nextScene;
 		}
 		else if (s_film->curCell >= s_film->cellCount)
