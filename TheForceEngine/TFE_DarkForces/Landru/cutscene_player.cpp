@@ -1,6 +1,7 @@
 #include "cutscene_player.h"
 #include "cutscene_film.h"
 #include "lcanvas.h"
+#include "lsystem.h"
 #include "time.h"
 #include "textCrawl.h"
 #include <TFE_DarkForces/Landru/ltimer.h>
@@ -10,6 +11,7 @@
 #include <TFE_Archive/lfdArchive.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
 
@@ -99,7 +101,7 @@ namespace TFE_DarkForces
 	{
 		s_scene = sceneId;
 		s_textCrawl = nullptr;
-
+		
 		// Find current scene.
 		s_playId = 0;
 		while (sceneId != s_playSeq[s_playId].id && s_playSeq[s_playId].id != SCENE_EXIT)
@@ -150,9 +152,13 @@ namespace TFE_DarkForces
 			LRect rect;
 			lcanvas_getBounds(&rect);
 
+			lsystem_setAllocator(LALLOC_CUTSCENE);
 			s_film = cutsceneFilm_load(name, &rect, 0, 0, 0, cutscene_loadCallback);
 			if (!s_film)
 			{
+				lsystem_clearAllocator(LALLOC_CUTSCENE);
+				lsystem_setAllocator(LALLOC_PERSISTENT);
+
 				TFE_System::logWrite(LOG_ERROR, "CutscenePlayer", "Unable to load all items in cutscene '%s'.", name);
 				s_scene = SCENE_EXIT;
 				return;
@@ -250,6 +256,12 @@ namespace TFE_DarkForces
 			}
 		}
 
+		if (s_scene == SCENE_EXIT)
+		{
+			lsystem_clearAllocator(LALLOC_CUTSCENE);
+			lsystem_setAllocator(LALLOC_PERSISTENT);
+		}
+
 		return s_scene != SCENE_EXIT ? JTRUE : JFALSE;
 	}
 
@@ -261,12 +273,14 @@ namespace TFE_DarkForces
 		if (s_skipSceneInput)
 		{
 			s_skipSceneInput = JFALSE;
+			sound_stopAll();
 			vfb_forceToBlack();
 			return skipScene;
 		}
 		else if (s_nextSceneInput)
 		{
 			s_nextSceneInput = JFALSE;
+			sound_stopAll();
 			vfb_forceToBlack();
 			return nextScene;
 		}

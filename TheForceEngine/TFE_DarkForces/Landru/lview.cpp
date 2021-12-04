@@ -2,6 +2,7 @@
 #include "lactor.h"
 #include "lcanvas.h"
 #include "lpalette.h"
+#include "lsystem.h"
 #include "lfade.h"
 #include "cutscene_film.h"
 #include <TFE_Game/igame.h>
@@ -194,7 +195,7 @@ namespace TFE_DarkForces
 
 	LView* lview_alloc()
 	{
-		LView* view = (LView*)game_alloc(sizeof(LView));
+		LView* view = (LView*)landru_alloc(sizeof(LView));
 		memset(view, 0, sizeof(LView));
 		return view;
 	}
@@ -202,7 +203,7 @@ namespace TFE_DarkForces
 	void lview_free(LView* view)
 	{
 		lview_freeData(view);
-		game_free(view);
+		landru_free(view);
 	}
 
 	void lview_setCurrent(LView* view)

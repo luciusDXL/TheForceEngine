@@ -1,4 +1,5 @@
 #include "lactorDelt.h"
+#include "lsystem.h"
 #include "cutscene_film.h"
 #include "lcanvas.h"
 #include "lview.h"
@@ -82,14 +83,14 @@ namespace TFE_DarkForces
 		}
 		u32 deltSize = (u32)file.getSize();
 
-		u8* data = (u8*)game_alloc(deltSize);
+		u8* data = (u8*)landru_alloc(deltSize);
 		file.readBuffer(data, deltSize);
 		file.close();
 
 		LActor* actor = lactor_alloc(0);
 		if (!actor)
 		{
-			game_free(data);
+			landru_free(data);
 			return nullptr;
 		}
 

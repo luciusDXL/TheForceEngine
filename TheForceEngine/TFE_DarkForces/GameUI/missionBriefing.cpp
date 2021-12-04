@@ -157,6 +157,20 @@ namespace TFE_DarkForces
 
 		ltime_setFrameRate(20);
 	}
+
+	void missionBriefing_cleanup()
+	{
+		lactor_removeActor(s_briefActor);
+		lactor_removeActor(s_menuActor);
+
+		lactor_free(s_briefActor);
+		lactor_free(s_menuActor);
+		lpalette_free(s_palette);
+
+		s_briefActor = nullptr;
+		s_menuActor = nullptr;
+		s_palette = nullptr;
+	}
 		
 	void drawButton(BriefingButton id)
 	{

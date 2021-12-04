@@ -2,6 +2,7 @@
 #include "lcanvas.h"
 #include "ldraw.h"
 #include "lpalette.h"
+#include "lsystem.h"
 #include "ltimer.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -84,7 +85,7 @@ namespace TFE_DarkForces
 
 	LFont* lfont_alloc(s16 id)
 	{
-		LFont* font = (LFont*)game_alloc(sizeof(LFont));
+		LFont* font = (LFont*)landru_alloc(sizeof(LFont));
 		if (font)
 		{
 			lfont_initFont(font);
@@ -99,13 +100,13 @@ namespace TFE_DarkForces
 
 		if (font->widthArray)
 		{
-			game_free(font->widthArray);
+			landru_free(font->widthArray);
 		}
 		if (font->data)
 		{
-			game_free(font->data);
+			landru_free(font->data);
 		}
-		game_free(font);
+		landru_free(font);
 	}
 
 	void lfont_initFont(LFont* font)
@@ -170,7 +171,7 @@ namespace TFE_DarkForces
 		file.read(&font->baseline);
 		file.read(&font->isColor);
 		
-		font->widthArray = (u8*)game_alloc(256);
+		font->widthArray = (u8*)landru_alloc(256);
 		memset(font->widthArray, 0, 256);
 		if (font->widthArray)
 		{
@@ -178,7 +179,7 @@ namespace TFE_DarkForces
 		}
 
 		u32 fontSize = font->charSize * font->numChars;
-		font->data = (u8*)game_alloc(fontSize);
+		font->data = (u8*)landru_alloc(fontSize);
 		file.readBuffer(font->data, fontSize);
 
 		file.close();

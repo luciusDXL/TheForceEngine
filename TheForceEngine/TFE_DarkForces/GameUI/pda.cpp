@@ -169,14 +169,34 @@ namespace TFE_DarkForces
 		TFE_Input::endFrame();
 	}
 
+	void pda_cleanup()
+	{
+		lactor_removeActor(s_briefing);
+		lactor_removeActor(s_pdaArt);
+		lactor_removeActor(s_goalsActor);
+		lactor_removeActor(s_weapons);
+		lactor_removeActor(s_items);
+
+		lactor_free(s_briefing);
+		lactor_free(s_pdaArt);
+		lactor_free(s_goalsActor);
+		lactor_free(s_weapons);
+		lactor_free(s_items);
+		lpalette_free(s_palette);
+
+		pda_resetState();
+	}
+
 	void pda_resetState()
 	{
 		s_pdaOpen   = JFALSE;
 		s_pdaLoaded = JFALSE;
+		s_briefing   = nullptr;
 		s_pdaArt     = nullptr;
 		s_goalsActor = nullptr;
 		s_weapons    = nullptr;
 		s_items      = nullptr;
+		s_palette    = nullptr;
 	}
 
 	JBool pda_isOpen()

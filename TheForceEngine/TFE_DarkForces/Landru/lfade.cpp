@@ -1,6 +1,7 @@
 #include "lfade.h"
 #include "lcanvas.h"
 #include "lpalette.h"
+#include "lsystem.h"
 #include "ltimer.h"
 #include "ldraw.h"
 #include <TFE_Game/igame.h>
@@ -53,12 +54,12 @@ namespace TFE_DarkForces
 
 	LFade* lfade_alloc()
 	{
-		return (LFade*)game_alloc(sizeof(LFade));
+		return (LFade*)landru_alloc(sizeof(LFade));
 	}
 
 	void lfade_free(LFade* fade)
 	{
-		game_free(fade);
+		landru_free(fade);
 	}
 
 	void lfade_start(s16 viewId, FadeType type, FadeColorType colorType, JBool paletteChange, s16 delay, s16 lock)

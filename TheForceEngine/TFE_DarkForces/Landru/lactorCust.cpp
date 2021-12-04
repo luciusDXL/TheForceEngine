@@ -1,4 +1,5 @@
 #include "lactorCust.h"
+#include "lsystem.h"
 #include "cutscene_film.h"
 #include "ldraw.h"
 #include "lview.h"

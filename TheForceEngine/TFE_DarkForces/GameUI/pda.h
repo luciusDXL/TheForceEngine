@@ -8,7 +8,8 @@
 
 namespace TFE_DarkForces
 {
-	void  pda_start(const char* levelName);
+	void pda_start(const char* levelName);
+	void pda_cleanup();
 	void pda_resetState();
 
 	JBool pda_isOpen();

@@ -1,4 +1,5 @@
 #include "lactor.h"
+#include "lsystem.h"
 #include "lcanvas.h"
 #include "lview.h"
 #include "ltimer.h"
@@ -25,12 +26,14 @@ namespace TFE_DarkForces
 	void lactor_destroy()
 	{
 		s_lactorInit = JFALSE;
+		s_actorType = nullptr;
+		s_actorList = nullptr;
 	}
 
 	JBool lactor_createType(u32 type, LActorFrameFunc frameFunc, LActorStateFunc stateFunc)
 	{
 		assert(s_lactorInit);
-		LActorType* newType = (LActorType*)game_alloc(sizeof(LActorType));
+		LActorType* newType = (LActorType*)landru_alloc(sizeof(LActorType));
 		if (newType)
 		{
 			newType->type = type;
@@ -58,7 +61,7 @@ namespace TFE_DarkForces
 			if (lastType) { lastType->next = newType->next; }
 			else { s_actorType = s_actorType->next; }
 
-			game_free(newType);
+			landru_free(newType);
 		}
 	}
 
@@ -104,6 +107,8 @@ namespace TFE_DarkForces
 
 	void lactor_removeActor(LActor* actor)
 	{
+		if (!actor) { return; }
+
 		LActor* curActor = s_actorList;
 		LActor* lastActor = nullptr;
 
@@ -113,7 +118,7 @@ namespace TFE_DarkForces
 			curActor = curActor->next;
 		}
 
-		if (curActor)
+		if (curActor && curActor == actor)
 		{
 			if (!lastActor)
 			{
@@ -129,7 +134,7 @@ namespace TFE_DarkForces
 
 	LActor* lactor_alloc(s16 extend)
 	{
-		LActor* actor = (LActor*)game_alloc(sizeof(LActor) + extend);
+		LActor* actor = (LActor*)landru_alloc(sizeof(LActor) + extend);
 		memset(actor, 0, sizeof(LActor) + extend);
 
 		if (actor)
@@ -155,13 +160,13 @@ namespace TFE_DarkForces
 
 		if (actor->varPtr)
 		{
-			game_free(actor->varPtr);
+			landru_free(actor->varPtr);
 		}
 		if (actor->varPtr2)
 		{
-			game_free(actor->varPtr2);
+			landru_free(actor->varPtr2);
 		}
-		game_free(actor);
+		landru_free(actor);
 	}
 
 	void lactor_freeList(LActor* actor)
@@ -799,7 +804,7 @@ namespace TFE_DarkForces
 		{
 			if (actor->data)
 			{
-				game_free(actor->data);
+				landru_free(actor->data);
 			}
 			if (actor->array)
 			{
@@ -807,10 +812,10 @@ namespace TFE_DarkForces
 				{
 					if (actor->array[i])
 					{
-						game_free(actor->array[i]);
+						landru_free(actor->array[i]);
 					}
 				}
-				game_free(actor->array);
+				landru_free(actor->array);
 			}
 		}
 

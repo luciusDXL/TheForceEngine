@@ -1,5 +1,6 @@
 #include "ldraw.h"
 #include "lcanvas.h"
+#include "lsystem.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
@@ -18,8 +19,8 @@ namespace TFE_DarkForces
 	{
 		if (w != s_bitmapWidth || h != s_bitmapHeight)
 		{
-			game_free(s_bitmap);
-			s_bitmap = (u8*)game_alloc(w * h);
+			landru_free(s_bitmap);
+			s_bitmap = (u8*)landru_alloc(w * h);
 
 			s_bitmapWidth  = w;
 			s_bitmapHeight = h;
@@ -28,7 +29,7 @@ namespace TFE_DarkForces
 
 	void ldraw_destroy()
 	{
-		game_free(s_bitmap);
+		landru_free(s_bitmap);
 		s_bitmap = nullptr;
 		s_bitmapWidth = 0;
 		s_bitmapHeight = 0;

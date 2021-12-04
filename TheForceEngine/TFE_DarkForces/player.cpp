@@ -276,8 +276,6 @@ namespace TFE_DarkForces
 
 	void player_readInfo(u8* inv, s32* ammo)
 	{
-		assert(inv[0]);	// The player should always have the pistol.
-
 		// Read the inventory.
 		s_playerInfo.itemPistol    = inv[0];
 		s_playerInfo.itemRifle     = inv[1];
@@ -379,8 +377,6 @@ namespace TFE_DarkForces
 		ammo[7] = s_playerInfo.shields;
 		ammo[8] = s_playerInfo.health;
 		ammo[9] = s_energy;
-
-		assert(inv[0]);	// The player should always have the pistol.
 	}
 
 	void player_setNextWeapon(s32 nextWpn)

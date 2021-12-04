@@ -14,6 +14,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Memory/memoryRegion.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <assert.h>
@@ -24,10 +25,23 @@ namespace TFE_DarkForces
 {
 	static JBool s_lsystemInit = JFALSE;
 	static LfdArchive s_archive = {};
+	static LfdArchive s_soundFx = {};
+	static MemoryRegion* s_lmem = nullptr;
+	static MemoryRegion* s_lscene = nullptr;
+	MemoryRegion* s_alloc = nullptr;
 
+	enum LandruConstants
+	{
+		LANDRU_MEMORY_BASE   = 4 * 1024 * 1024, // 4 MB
+		CUTSCENE_MEMORY_BASE = 8 * 1024 * 1024, // 8 MB
+	};
+	
 	void lsystem_init()
 	{
 		if (s_lsystemInit) { return; }
+		s_lmem = TFE_Memory::region_create("Landru", LANDRU_MEMORY_BASE);
+		s_lscene = TFE_Memory::region_create("Cutscene", CUTSCENE_MEMORY_BASE);
+		lsystem_setAllocator(LALLOC_PERSISTENT);
 
 		s_lsystemInit = JTRUE;
 		lcanvas_init(320, 200);
@@ -55,6 +69,13 @@ namespace TFE_DarkForces
 			s_archive.close();
 			TFE_Paths::removeLastArchive();
 		}
+
+		FilePath sfxPath;
+		if (TFE_Paths::getFilePath("jedisfx.lfd", &sfxPath))
+		{
+			s_soundFx.open(sfxPath.path);
+			TFE_Paths::addLocalArchive(&s_soundFx);
+		}
 	}
 
 	void lsystem_destroy()
@@ -72,5 +93,19 @@ namespace TFE_DarkForces
 		lactorAnim_destroy();
 		lactorDelt_destroy();
 		lactor_destroy();
+
+		TFE_Memory::region_destroy(s_lmem);
+		TFE_Memory::region_destroy(s_lscene);
+	}
+
+	void lsystem_setAllocator(LAllocator alloc)
+	{
+		s_alloc = (alloc == LALLOC_PERSISTENT) ? s_lmem : s_lscene;
+	}
+
+	void lsystem_clearAllocator(LAllocator alloc)
+	{
+		MemoryRegion* region = (alloc == LALLOC_PERSISTENT) ? s_lmem : s_lscene;
+		TFE_Memory::region_clear(region);
 	}
 }  // namespace TFE_DarkForces

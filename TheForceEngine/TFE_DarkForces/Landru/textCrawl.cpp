@@ -1,6 +1,7 @@
 #include "textCrawl.h"
 #include "lcanvas.h"
 #include "ldraw.h"
+#include "lsystem.h"
 #include "lview.h"
 #include "ltimer.h"
 #include <TFE_Jedi/Math/core_math.h>
@@ -55,7 +56,7 @@ namespace TFE_DarkForces
 		s_bitmapWidth  = actor->w + 1;
 		s_bitmapHeight = actor->h + 1;
 
-		s_bitmap = (u8*)game_alloc(s_bitmapWidth * s_bitmapHeight);
+		s_bitmap = (u8*)landru_alloc(s_bitmapWidth * s_bitmapHeight);
 		memset(s_bitmap, 0, s_bitmapWidth * s_bitmapHeight);
 		drawDeltaIntoBitmap(data16, 0, 0, s_bitmap, s_bitmapWidth);
 
@@ -65,7 +66,7 @@ namespace TFE_DarkForces
 	void closeTextCrawl(LActor* actor)
 	{
 		if (!s_bitmap) { return; }
-		game_free(s_bitmap);
+		landru_free(s_bitmap);
 
 		s_crawlFilm  = nullptr;
 		s_bitmap = nullptr;

@@ -19,7 +19,6 @@ namespace TFE_VocAsset
 	static VocMap s_vocAssets;
 	static VocList s_vocAssetList;
 	static std::vector<u8> s_buffer;
-	static const char* c_defaultGob = "SOUNDS.GOB";
 
 	bool parseVoc(SoundBuffer* voc);
 

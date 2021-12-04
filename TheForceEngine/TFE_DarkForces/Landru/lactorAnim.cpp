@@ -1,5 +1,6 @@
 #include "lactorAnim.h"
 #include "lactorDelt.h"
+#include "lsystem.h"
 #include "cutscene_film.h"
 #include "lview.h"
 #include "ltimer.h"
@@ -73,7 +74,10 @@ namespace TFE_DarkForces
 	LActor* lactorAnim_load(const char* name, LRect* rect, s16 x, s16 y, s16 zPlane)
 	{
 		LActor* actor = lactor_alloc(0);
-		if (!actor) { return nullptr; }
+		if (!actor)
+		{
+			return nullptr;
+		}
 
 		char animName[32];
 		sprintf(animName, "%s.ANIM", name);
@@ -85,7 +89,7 @@ namespace TFE_DarkForces
 
 			s16 animCount;
 			file.read(&animCount);
-			u8** array = (u8**)game_alloc(sizeof(u8*) * animCount);
+			u8** array = (u8**)landru_alloc(sizeof(u8*) * animCount);
 			if (array)
 			{
 				for (s32 i = 0; i < animCount; i++)
@@ -94,7 +98,7 @@ namespace TFE_DarkForces
 					file.read(&deltaSize);
 					if (deltaSize <= 0) { array[i] = nullptr; continue; }
 
-					array[i] = (u8*)game_alloc(deltaSize);
+					array[i] = (u8*)landru_alloc(deltaSize);
 					file.readBuffer(array[i], deltaSize);
 				}
 			}

@@ -17,6 +17,7 @@
 #include "GameUI/agentMenu.h"
 #include "GameUI/escapeMenu.h"
 #include "GameUI/missionBriefing.h"
+#include "GameUI/pda.h"
 #include "Landru/lsystem.h"
 #include <TFE_DarkForces/Landru/cutscene.h>
 #include <TFE_DarkForces/Landru/cutsceneList.h>
@@ -275,6 +276,7 @@ namespace TFE_DarkForces
 		level_freeAllAssets();
 		agentMenu_resetState();
 		menu_resetState();
+		pda_resetState();
 		escapeMenu_resetState();
 		vue_resetState();
 		lsystem_destroy();
@@ -404,6 +406,7 @@ namespace TFE_DarkForces
 				JBool abort;
 				if (!missionBriefing_update(&skill, &abort))
 				{
+					missionBriefing_cleanup();
 					TFE_Input::clearAccumulatedMouseMove();
 
 					if (abort)
@@ -430,6 +433,7 @@ namespace TFE_DarkForces
 					disableLevelMusic();
 					sound_stopAll();
 					agent_levelEndTask();
+					pda_cleanup();
 
 					if (!s_levelComplete)
 					{

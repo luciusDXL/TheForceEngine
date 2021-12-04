@@ -1,4 +1,5 @@
 #include "cutscene_film.h"
+#include "lsystem.h"
 #include "lactorDelt.h"
 #include "lactorAnim.h"
 #include "lactorCust.h"
@@ -8,7 +9,9 @@
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Asset/vocAsset.h>
 #include <TFE_Archive/lfdArchive.h>
+#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_FileSystem/filestream.h>
@@ -31,6 +34,7 @@ namespace TFE_DarkForces
 	void cutsceneFilm_setFade(s16 fade, s16 colorFade);
 	void cutsceneFilm_stepView(Film* film, FilmObject* filmObj, u8* data);
 	void cutsceneFilm_stepPalette(Film* film, FilmObject* filmObj, u8* data);
+	void cutsceneFilm_stepSound(Film* film, FilmObject* filmObj, u8* data);
 	void cutsceneFilm_rewind(Film* film);
 	void cutsceneFilm_update(Film* film);
 	void cutsceneFilm_freeData(Film* film);
@@ -43,7 +47,7 @@ namespace TFE_DarkForces
 
 	Film* cutsceneFilm_allocate()
 	{
-		Film* film = (Film*)game_alloc(sizeof(Film));
+		Film* film = (Film*)landru_alloc(sizeof(Film));
 		if (!film) { return nullptr; }
 
 		memset(film, 0, sizeof(Film));
@@ -59,17 +63,17 @@ namespace TFE_DarkForces
 
 		if (film->varPtr)
 		{
-			game_free(film->varPtr);
+			landru_free(film->varPtr);
 		}
 		if (film->varPtr2)
 		{
-			game_free(film->varPtr2);
+			landru_free(film->varPtr2);
 		}
 		if (film->flags & CF_STATE_DISCARD)
 		{
 			cutsceneFilm_freeData(film);
 		}
-		game_free(film);
+		landru_free(film);
 	}
 
 	void cutsceneFilm_freeData(Film* film)
@@ -81,7 +85,7 @@ namespace TFE_DarkForces
 			cutsceneFilm_freeDataObject(film, i);
 		}
 
-		game_free(film->array);
+		landru_free(film->array);
 		film->array = nullptr;
 	}
 
@@ -106,10 +110,10 @@ namespace TFE_DarkForces
 				} break;
 				case CF_FILE_SOUND:
 				{
-					// TODO
+					// This doesn't exist in the original code.
 				} break;
 			}
-			game_free(filmObj);
+			landru_free(filmObj);
 			film->array[index] = nullptr;
 		}
 	}
@@ -140,7 +144,7 @@ namespace TFE_DarkForces
 			file->read(&used);
 
 			// Allocate space for the object.
-			FilmObject* obj = (FilmObject*)game_alloc(sizeof(FilmObject) + used);
+			FilmObject* obj = (FilmObject*)landru_alloc(sizeof(FilmObject) + used);
 			if (!obj)
 			{
 				return JFALSE;
@@ -205,6 +209,7 @@ namespace TFE_DarkForces
 
 		LActor* actor = nullptr;
 		LPalette* pal = nullptr;
+		s32 soundId = -1;
 		JBool retValue = JTRUE;
 		if (type != CF_TYPE_VIEW && type != CF_TYPE_CUSTOM_ACTOR)
 		{
@@ -237,7 +242,23 @@ namespace TFE_DarkForces
 			}
 			else if (type == CF_TYPE_VOC_SOUND)
 			{
-				// TODO: load sound.
+				/*
+				char soundName[32];
+				sprintf(soundName, "%s.VOIC", name);
+				SoundBuffer* sound = TFE_VocAsset::get(soundName);
+				if (!sound)
+				{
+					sprintf(soundName, "%s.VOC", name);
+					sound = TFE_VocAsset::get(soundName);
+					if (!sound) { retValue = JFALSE; }
+				}
+
+				if (sound)
+				{
+					// index = 0 = no sound.
+					soundId = TFE_VocAsset::getIndex(soundName) + 1;
+				}
+				*/
 			}
 		}
 		else if (type == CF_TYPE_CUSTOM_ACTOR)
@@ -261,10 +282,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			// *obj = (u8*)sound;
-			// TODO: Sounds
-			// Sounds are skipped for now, just just make this null.
-			*obj = nullptr;
+			*obj = nullptr;// (u8*)(size_t)soundId;
 		}
 		return retValue;
 	}
@@ -280,8 +298,8 @@ namespace TFE_DarkForces
 			{
 				if (filmCallback && filmCallback(film, obj))
 				{
-					game_free(obj->data);
-					game_free(obj);
+					landru_free(obj->data);
+					landru_free(obj);
 					film->array[i] = nullptr;
 				}
 			}
@@ -319,11 +337,11 @@ namespace TFE_DarkForces
 			if (version != CF_VERSION)
 			{
 				file.close();
-				game_free(film);
+				landru_free(film);
 				return nullptr;
 			}
 
-			array = (u8**)game_alloc(sizeof(u8*) * arraySize);
+			array = (u8**)landru_alloc(sizeof(u8*) * arraySize);
 			memset(array, 0, sizeof(u8*) * arraySize);
 			if (array)
 			{
@@ -334,8 +352,8 @@ namespace TFE_DarkForces
 
 				if (!cutsceneFilm_loadResources(&file, film->array, film->arraySize))
 				{
-					game_free(film);
-					game_free(array);
+					landru_free(film);
+					landru_free(array);
 					film = nullptr;
 				}
 			}
@@ -343,8 +361,8 @@ namespace TFE_DarkForces
 
 			if (!cutsceneFilm_readObjects(film, callback))
 			{
-				game_free(film);
-				game_free(array);
+				landru_free(film);
+				landru_free(array);
 				film = nullptr;
 				array = nullptr;
 			}
@@ -357,7 +375,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			game_free(film);
+			landru_free(film);
 			film = nullptr;
 		}
 
@@ -449,6 +467,19 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void cutsceneFilm_rewindSound(Film* film, FilmObject* filmObj, u8* data)
+	{
+		s32 soundId = (s32)(size_t)filmObj->data;
+		filmObj->offset = 0;
+		stopSound(soundId);
+
+		// sound->var1 = sound->var2 = 0;
+		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
+		{
+			cutsceneFilm_stepSound(film, filmObj, data);
+		}
+	}
+
 	void cutsceneFilm_rewindObjects(Film* film)
 	{
 		film->curCell = 0;
@@ -485,7 +516,7 @@ namespace TFE_DarkForces
 					} break;
 					case CF_FILE_SOUND:
 					{
-						// TODO
+						cutsceneFilm_rewindSound(film, filmObj, (u8*)(filmObj + 1));
 					} break;
 				}
 			}
@@ -631,6 +662,61 @@ namespace TFE_DarkForces
 			lpalette_setDstPal((LPalette*)filmObj->data);
 		}
 	}
+
+	void cutsceneFilm_setSoundToFilm(Film* film, FilmObject* filmObj, u8* data)
+	{
+		s32 soundId = (s32)(size_t)filmObj->data;
+		s16* chunk = (s16*)(data + filmObj->offset);
+		u16  type = chunk[1];
+		chunk += 2;
+
+		switch (type)
+		{
+			case CF_CMD_SOUND_START:
+			{
+				// TODO
+				playSound2D(soundId);
+			} break;
+			case CF_CMD_SOUND_STOP:
+			{
+				stopSound(soundId);
+			} break;
+			case CF_CMD_SOUND_VOLUME:
+			{
+				// TODO
+			} break;
+			case CF_CMD_SOUND_FADE:
+			{
+				// TODO
+			} break;
+			case CF_CMD_SOUND_VAR1:
+			{
+				// TODO
+			} break;
+			case CF_CMD_SOUND_VAR2:
+			{
+				// TODO
+			} break;
+			case CF_CMD_SOUND_CMD:
+			{
+				if (chunk[0])
+				{
+					// TODO
+					playSound2D(soundId);
+				}
+				// TODO
+			} break;
+			case CF_CMD_SOUND_CMD2:
+			{
+				if (chunk[0])
+				{
+					// TODO
+					playSound2D(soundId);
+				}
+				// TODO
+			} break;
+		}
+	}
 				
 	void cutsceneFilm_setFade(s16 fade, s16 colorFade)
 	{
@@ -705,6 +791,22 @@ namespace TFE_DarkForces
 			}
 		}
 	}
+
+	void cutsceneFilm_stepSound(Film* film, FilmObject* filmObj, u8* data)
+	{
+		// TODO
+		return;
+
+		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
+		{
+			cutsceneFilm_stepFilmFrame(filmObj, data);
+			while (!cutsceneFilm_isNextFrame(filmObj, data))
+			{
+				cutsceneFilm_setSoundToFilm(film, filmObj, data);
+				cutsceneFilm_stepFilmFrame(filmObj, data);
+			}
+		}
+	}
 		
 	void cutsceneFilm_stepObjects(Film* film)
 	{
@@ -732,7 +834,7 @@ namespace TFE_DarkForces
 						cutsceneFilm_stepActor(film, filmObj, (u8*)(filmObj + 1));
 						break;
 					case CF_FILE_SOUND:
-						// TODO
+						cutsceneFilm_stepSound(film, filmObj, (u8*)(filmObj + 1));
 						break;
 				}
 			}

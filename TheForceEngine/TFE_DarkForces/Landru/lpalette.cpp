@@ -1,4 +1,5 @@
 #include "lpalette.h"
+#include "lsystem.h"
 #include "lview.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -10,13 +11,13 @@ using namespace TFE_Jedi;
 namespace TFE_DarkForces
 {
 	// System palettes
-	static LPalette* s_firstPal = nullptr;
-	static LPalette* s_workPal = nullptr;
+	static LPalette* s_firstPal  = nullptr;
+	static LPalette* s_workPal   = nullptr;
 	static LPalette* s_screenPal = nullptr;
-	static LPalette* s_srcPal = nullptr;
-	static LPalette* s_dstPal = nullptr;
-	static LPalette* s_videoPal = nullptr;
-	static JBool s_lpaletteInit = JFALSE;
+	static LPalette* s_srcPal    = nullptr;
+	static LPalette* s_dstPal    = nullptr;
+	static LPalette* s_videoPal  = nullptr;
+	static JBool s_lpaletteInit  = JFALSE;
 
 	void lpalette_setName(LPalette* pal, u32 resType, const char* name);
 	void lpalette_restoreScreenPal(s16 low, s16 high);
@@ -27,12 +28,12 @@ namespace TFE_DarkForces
 	void lpalette_init()
 	{
 		s_lpaletteInit = JTRUE;
-		s_firstPal = nullptr;
+		s_firstPal  = nullptr;
 		s_screenPal = lpalette_alloc(0, MAX_COLORS);
-		s_srcPal = lpalette_alloc(0, MAX_COLORS);
-		s_dstPal = lpalette_alloc(0, MAX_COLORS);
-		s_workPal = lpalette_alloc(0, MAX_COLORS);
-		s_videoPal = lpalette_alloc(0, MAX_COLORS);
+		s_srcPal    = lpalette_alloc(0, MAX_COLORS);
+		s_dstPal    = lpalette_alloc(0, MAX_COLORS);
+		s_workPal   = lpalette_alloc(0, MAX_COLORS);
+		s_videoPal  = lpalette_alloc(0, MAX_COLORS);
 		lpalette_setRGB(s_videoPal, 0x3f, 0x3f, 0x3f, 0, MAX_COLORS);
 	}
 
@@ -45,11 +46,12 @@ namespace TFE_DarkForces
 		lpalette_free(s_workPal);
 		lpalette_free(s_videoPal);
 
-		s_workPal = nullptr;
+		s_firstPal  = nullptr;
+		s_workPal   = nullptr;
 		s_screenPal = nullptr;
-		s_srcPal = nullptr;
-		s_dstPal = nullptr;
-		s_videoPal = nullptr;
+		s_srcPal    = nullptr;
+		s_dstPal    = nullptr;
+		s_videoPal  = nullptr;
 	}
 
 	LPalette* lpalette_getList()
@@ -121,13 +123,13 @@ namespace TFE_DarkForces
 	{
 		if (!length) { return nullptr; }
 
-		LPalette* pal = (LPalette*)game_alloc(sizeof(LPalette));
+		LPalette* pal = (LPalette*)landru_alloc(sizeof(LPalette));
 		if (!pal) { return nullptr; }
 
-		LRGB* rgb = (LRGB*)game_alloc(sizeof(LRGB) * length);
+		LRGB* rgb = (LRGB*)landru_alloc(sizeof(LRGB) * length);
 		if (!rgb)
 		{
-			game_free(pal);
+			landru_free(pal);
 			return nullptr;
 		}
 		memset(rgb, 0, sizeof(LRGB) * length);
@@ -146,15 +148,18 @@ namespace TFE_DarkForces
 
 	void lpalette_free(LPalette* pal)
 	{
+		if (!pal) { return; }
+
+		lpalette_remove(pal);
 		if (pal->colors)
 		{
-			game_free(pal->colors);
+			landru_free(pal->colors);
 		}
 		if (pal->varptr)
 		{
-			game_free(pal->varptr);
+			landru_free(pal->varptr);
 		}
-		game_free(pal);
+		landru_free(pal);
 	}
 
 	void lpalette_freeList(LPalette* pal)
@@ -186,7 +191,7 @@ namespace TFE_DarkForces
 		}
 
 		u32 palSize = (u32)file.getSize();
-		u8* data = (u8*)game_alloc(palSize);
+		u8* data = (u8*)landru_alloc(palSize);
 		file.readBuffer(data, palSize);
 		file.close();
 
@@ -199,7 +204,7 @@ namespace TFE_DarkForces
 		LPalette* pal = lpalette_alloc(start, count);
 		if (!pal)
 		{
-			game_free(data);
+			landru_free(data);
 			return nullptr;
 		}
 
