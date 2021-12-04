@@ -286,7 +286,7 @@ namespace TFE_Audio
 	}
 
 	// Sound source that the client holds onto.
-	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos, bool copyPosition)
+	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos, bool copyPosition, SoundFinishedCallback callback, void* userData)
 	{
 		if (!buffer) { return nullptr; }
 
@@ -326,8 +326,8 @@ namespace TFE_Audio
 				newSource->pos = pos;
 			}
 			newSource->seperation = stereoSeperation;
-			newSource->finishedCallback = nullptr;
-			newSource->finishedUserData = nullptr;
+			newSource->finishedCallback = callback;
+			newSource->finishedUserData = userData;
 		}
 		MUTEX_UNLOCK(&s_mutex);
 
@@ -382,6 +382,7 @@ namespace TFE_Audio
 		MUTEX_LOCK(&s_mutex);
 			source->flags &= ~SND_FLAG_PLAYING;
 			source->flags &= ~SND_FLAG_ACTIVE;
+			source->buffer = nullptr;
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
@@ -430,8 +431,8 @@ namespace TFE_Audio
 		{
 			if (s_sources[s].flags&SND_FLAG_FINISHED)
 			{
-				s_sources[s].flags &= ~SND_FLAG_FINISHED;
-				s_sources[s].flags &= ~SND_FLAG_ACTIVE;
+				s_sources[s].flags = 0;
+				s_sources[s].buffer = nullptr;
 				if (s_sources[s].finishedCallback)
 				{
 					s_sources[s].finishedCallback(s_sources[s].finishedUserData, s_sources[s].finishedArg);

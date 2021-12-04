@@ -5,6 +5,8 @@
 // the main game.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Asset/vocAsset.h>
+#include <TFE_Audio/audioSystem.h>
 #include "lsystem.h"
 
 enum LSoundType
@@ -35,6 +37,10 @@ struct LSound
 
 	LSoundCallback callback;
 	u8* data;
+
+	// Internal, this is in iMuse in the original game.
+	SoundBuffer  soundBuffer;
+	SoundSource* soundSource;
 };
 
 namespace TFE_DarkForces
@@ -54,4 +60,7 @@ namespace TFE_DarkForces
 	void lsound_setPan(LSound* sound, s16 pan);
 	void lsound_setPanFade(LSound* sound, s16 pan, s16 time);
 	void lsound_setKeep(LSound* sound);
+
+	LSound* lsound_getList();
+	void lsound_freeSounds(LSound* sound);
 }  // namespace TFE_DarkForces

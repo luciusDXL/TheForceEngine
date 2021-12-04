@@ -43,6 +43,8 @@ namespace TFE_DarkForces
 		SOUND_USER_FLAG2 = FLAG_BIT(15),
 	};
 
+	void soundFinished(void* userData, s32 arg);
+
 	void lsound_actionFunc(s16 state, LSound* sound, s16 var1, s16 var2);
 	LSound* lsound_alloc(u8* data, s16 extend);
 	void lsound_initSound(LSound* sound);
@@ -140,6 +142,9 @@ namespace TFE_DarkForces
 		sound->flags |= SOUND_DISCARD;
 		sound->id = id;
 
+		TFE_VocAsset::parseVoc(&sound->soundBuffer, sound->data);
+		sound->soundSource = nullptr;
+
 		return sound;
 	}
 
@@ -177,7 +182,79 @@ namespace TFE_DarkForces
 
 	void lsound_freePlaying(LSound* sound, JBool stop)
 	{
+		if (!sound) { return; }
 
+		if ((sound->flags & SOUND_KEEP) || (sound->flags & SOUND_KEEPABLE))	// Keep the sound for one cycle.
+		{
+			sound->flags &= ~SOUND_KEEP;
+			if (!(sound->flags & SOUND_KEEP_USER))
+			{
+				sound->flags &= ~SOUND_KEEP_USER;
+			}
+		}
+		else  // Remove
+		{
+			LSound* curSound  = s_firstSound;
+			LSound* lastSound = nullptr;
+			while (curSound && curSound != sound)
+			{
+				lastSound = curSound;
+				curSound = curSound->next;
+			}
+
+			if (curSound == sound)
+			{
+				if (lastSound)
+				{
+					lastSound->next = sound->next;
+				}
+				else
+				{
+					s_firstSound = sound->next;
+				}
+				sound->next = nullptr;
+			}
+			else
+			{
+				return;
+			}
+
+			if (stop)
+			{
+				lsound_stop(sound);
+			}
+
+			if ((sound->flags & SOUND_DISCARD) && sound->data)
+			{
+				landru_free(sound->data);
+
+				// TFE
+				if (sound->soundSource)
+				{
+					TFE_Audio::freeSource(sound->soundSource);
+				}
+				free(sound->soundBuffer.data);
+			}
+
+			if (sound->varPtr)  { landru_free(sound->varPtr); }
+			if (sound->varPtr2) { landru_free(sound->varPtr2); }
+			landru_free(sound);
+		}
+	}
+
+	LSound* lsound_getList()
+	{
+		return s_firstSound;
+	}
+
+	void lsound_freeSounds(LSound* sound)
+	{
+		while (sound)
+		{
+			LSound* nextSound = sound->next;
+			lsound_free(sound);
+			sound = nextSound;
+		}
 	}
 
 	void lsound_initSound(LSound* sound)
@@ -216,19 +293,35 @@ namespace TFE_DarkForces
 				break;
 
 			case SOUND_CMD_STARTSFX:
+			{
 				// ImStartSfx((DWORD)the_sound, PRIORITY);
-				break;
+				if (!sound->soundSource)
+				{
+					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, 1.0f, 0.5f, &sound->soundBuffer, nullptr, false, soundFinished, sound);
+					TFE_Audio::playSource(sound->soundSource);
+				}
+			} break;
 
 			case SOUND_CMD_STARTSPEECH:
 				// ImStartVoice((DWORD)the_sound, PRIORITY);
+				if (!sound->soundSource)
+				{
+					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, 1.0f, 0.5f, &sound->soundBuffer, nullptr, false, soundFinished, sound);
+					TFE_Audio::playSource(sound->soundSource);
+				}
 				break;
 
 			case SOUND_CMD_STOP:
 				// ImStopSound((DWORD)the_sound);
+				// TFE_Audio::stopSource(sound->soundSource);
 				break;
-
+				
 			case SOUND_CMD_VOLUME:
 				// ImSetParam((DWORD)the_sound, soundVol, var1);
+				if (sound->soundSource && TFE_Audio::isSourcePlaying(sound->soundSource))
+				{
+					TFE_Audio::setSourceVolume(sound->soundSource, f32(var1) / 128.0f);
+				}
 				break;
 
 			case SOUND_CMD_FADE:
@@ -245,5 +338,11 @@ namespace TFE_DarkForces
 				// ImFade ((DWORD)the_sound, fadePan, var1, var2);
 				break;
 		}
+	}
+
+	void soundFinished(void* userData, s32 arg)
+	{
+		LSound* sound = (LSound*)userData;
+		sound->soundSource = nullptr;
 	}
 }  // namespace TFE_DarkForces

@@ -210,6 +210,82 @@ namespace TFE_VocAsset
 		voc->loopEnd = voc->size;
 	}
 
+	bool parseVoc(SoundBuffer* voc, u8* buffer)
+	{
+		memset(voc, 0, sizeof(SoundBuffer));
+		voc->type = SOUND_DATA_8BIT;
+
+		// Read the header.
+		u8* readBuffer = buffer;
+		VocHeader* header = (VocHeader*)readBuffer;
+		readBuffer += sizeof(VocHeader);
+
+		// Parse blocks.
+		readBuffer = buffer + header->datablockOffset;
+		while (1)
+		{
+			const BlockType type = BlockType(*readBuffer); readBuffer++;
+			// Break if this is the final block.
+			if (type == VOC_TERMINATOR || type > VOC_END_REPEAT) { break; }
+
+			// All other blocks have a 3 byte size (up to 16MB).
+			const u32 blockLen = readBuffer[0] | (readBuffer[1] << 8u) | (readBuffer[2] << 16u);
+			readBuffer += 3;
+			// Block parsing.
+			switch (type)
+			{
+				case VOC_SOUND_DATA:
+				{
+					const s32 sampleRate = 1000000 / (256 - (s32)readBuffer[0]);
+					const u8  codec = readBuffer[1];
+					const u8* soundData = &readBuffer[2];
+					addSoundData(voc, sampleRate, codec, soundData, blockLen - 2);
+				} break;
+				case VOC_SOUND_CONTINUE:
+				{
+					const u8* soundData = &readBuffer[2];
+					continueSoundData(voc, soundData, blockLen);
+				} break;
+				case VOC_SILENCE:
+				{
+					const u16 silenceLen = *((u16*)readBuffer);
+					const s32 sampleRate = 1000000 / (256 - (s32)readBuffer[2]);
+					addSilence(voc, sampleRate, silenceLen);
+				} break;
+				case VOC_MARKER:
+				{
+					const u16 markerId = *((u16*)readBuffer);
+					addMarker(voc, markerId);
+				} break;
+				case VOC_ASCII:
+				{
+					// The string is ignored.
+				} break;
+				case VOC_REPEAT:
+				{
+					const u16 repeatCount = *((u16*)readBuffer);
+					loopStart(voc, repeatCount);
+				} break;
+				case VOC_END_REPEAT:
+				{
+					loopEnd(voc);
+				} break;
+				default:
+					assert(0);
+			};
+			// Move to the next block.
+			readBuffer += blockLen;
+		}
+
+		if (!(voc->flags & SBUFFER_FLAG_LOOPING))
+		{
+			voc->loopStart = 0;
+			voc->loopEnd = voc->size;
+		}
+
+		return voc->data != nullptr;
+	}
+
 	bool parseVoc(SoundBuffer* voc)
 	{
 		if (s_buffer.empty() || !voc) { return false; }

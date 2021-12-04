@@ -83,6 +83,7 @@ namespace TFE_DarkForces
 			cutsceneFilm_freeDataObject(film, i);
 		}
 
+		lsound_freeSounds(lsound_getList());
 		landru_free(film->array);
 		film->array = nullptr;
 	}
@@ -809,9 +810,6 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_stepSound(Film* film, FilmObject* filmObj, u8* data)
 	{
-		// TODO
-		return;
-
 		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
 		{
 			cutsceneFilm_stepFilmFrame(filmObj, data);
