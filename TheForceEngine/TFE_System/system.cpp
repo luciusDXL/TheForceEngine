@@ -1,3 +1,5 @@
+#include <ctime>
+
 #include <TFE_System/system.h>
 #include <TFE_System/profiler.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -191,6 +193,16 @@ namespace TFE_System
 	void sleep(u32 sleepDeltaMS)
 	{
 		Sleep(sleepDeltaMS);
+	}
+#else
+	void sleep(u32 sleepDeltaMS)
+	{
+		const struct timespec sleeptime = {
+			0,
+			sleepDeltaMS * 1000
+		};
+
+		nanosleep(&sleeptime, NULL);
 	}
 #endif
 
