@@ -298,6 +298,8 @@ namespace TFE_DarkForces
 		}
 
 		// Keyboard shortcuts.
+
+		// These need to be timer limited so that the scrolling works correctly.
 		if (ltime_isFrameReady())
 		{
 			s_keyPressed = -1;
@@ -311,34 +313,7 @@ namespace TFE_DarkForces
 				s_keyPressed = BRIEF_BTN_DOWN;
 				missionBriefing_scroll(BRIEF_LINE_SCROLL);
 			}
-
-			if (TFE_Input::keyDown(KEY_E))
-			{
-				s_keyPressed = BRIEF_BTN_EASY;
-				s_skill = 0;
-			}
-			else if (TFE_Input::keyDown(KEY_M))
-			{
-				s_keyPressed = BRIEF_BTN_MEDIUM;
-				s_skill = 1;
-			}
-			else if (TFE_Input::keyDown(KEY_H))
-			{
-				s_keyPressed = BRIEF_BTN_HARD;
-				s_skill = 2;
-			}
-
-			if (TFE_Input::keyDown(KEY_C) || TFE_Input::keyDown(KEY_ESCAPE))
-			{
-				*abort = JTRUE;
-				exitBriefing = JTRUE;
-			}
-			else if (TFE_Input::keyDown(KEY_O) || TFE_Input::keyDown(KEY_RETURN))
-			{
-				*abort = JFALSE;
-				exitBriefing = JTRUE;
-			}
-
+			
 			if (TFE_Input::keyDown(KEY_PAGEUP))
 			{
 				missionBriefing_scroll(-BRIEF_PAGE_SCROLL);
@@ -347,6 +322,33 @@ namespace TFE_DarkForces
 			{
 				missionBriefing_scroll(BRIEF_PAGE_SCROLL);
 			}
+		}
+
+		if (TFE_Input::keyDown(KEY_E))
+		{
+			s_keyPressed = BRIEF_BTN_EASY;
+			s_skill = 0;
+		}
+		else if (TFE_Input::keyDown(KEY_M))
+		{
+			s_keyPressed = BRIEF_BTN_MEDIUM;
+			s_skill = 1;
+		}
+		else if (TFE_Input::keyDown(KEY_H))
+		{
+			s_keyPressed = BRIEF_BTN_HARD;
+			s_skill = 2;
+		}
+
+		if (TFE_Input::keyDown(KEY_C) || TFE_Input::keyDown(KEY_ESCAPE))
+		{
+			*abort = JTRUE;
+			exitBriefing = JTRUE;
+		}
+		else if (TFE_Input::keyDown(KEY_O) || TFE_Input::keyDown(KEY_RETURN))
+		{
+			*abort = JFALSE;
+			exitBriefing = JTRUE;
 		}
 
 		return exitBriefing;
