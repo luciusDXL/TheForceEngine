@@ -2,6 +2,7 @@
 #include "lactor.h"
 #include "lcanvas.h"
 #include "lpalette.h"
+#include "lsound.h"
 #include "lsystem.h"
 #include "lfade.h"
 #include "cutscene_film.h"
@@ -181,6 +182,7 @@ namespace TFE_DarkForces
 		lview_move();
 		cutsceneFilm_updateFilms(time);
 		lactor_update(time);
+		lsound_update();
 	}
 
 	void lview_updateCallback(s32 time)

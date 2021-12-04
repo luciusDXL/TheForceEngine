@@ -30,6 +30,7 @@ struct LSound
 
 	s16 flags;
 	s16 volume;
+	s16 pan;
 	s16 var1;
 	s16 var2;
 	u8* varPtr;
@@ -63,4 +64,6 @@ namespace TFE_DarkForces
 
 	LSound* lsound_getList();
 	void lsound_freeSounds(LSound* sound);
+
+	void lsound_update();
 }  // namespace TFE_DarkForces

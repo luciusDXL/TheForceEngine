@@ -289,6 +289,8 @@ namespace TFE_Audio
 	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos, bool copyPosition, SoundFinishedCallback callback, void* userData)
 	{
 		if (!buffer) { return nullptr; }
+		assert(volume >= 0.0f && volume <= 1.0f);
+		assert(stereoSeperation >= 0.0f && stereoSeperation <= 1.0f);
 
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
@@ -388,7 +390,12 @@ namespace TFE_Audio
 
 	void setSourceVolume(SoundSource* source, f32 volume)
 	{
+		volume = std::max(0.0f, std::min(1.0f, volume));
 		source->baseVolume = volume;
+		if (source->type == SOUND_2D)
+		{
+			source->volume = source->baseVolume;
+		}
 	}
 
 	void setSourceStereoSeperation(SoundSource* source, f32 stereoSeperation)

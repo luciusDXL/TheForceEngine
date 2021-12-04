@@ -709,7 +709,10 @@ namespace TFE_DarkForces
 				}
 
 				if (chunk[1]) { lsound_setVolume(sound, chunk[1]); }
-				if (chunk[2] || chunk[3]) { lsound_setFade(sound, chunk[2], chunk[3]); }
+				if (chunk[2] || chunk[3])
+				{
+					lsound_setFade(sound, chunk[2], chunk[3]);
+				}
 			} break;
 			case CF_CMD_SOUND_CMD2:
 			{
@@ -726,7 +729,10 @@ namespace TFE_DarkForces
 				}
 
 				if (chunk[1]) { lsound_setVolume(sound, chunk[1]); }
-				if (chunk[2] || chunk[3]) { lsound_setFade(sound, chunk[2], chunk[3]); }
+				if (chunk[2] || chunk[3])
+				{
+					lsound_setFade(sound, chunk[2], chunk[3]);
+				}
 
 				if (chunk[4]) { lsound_setPan(sound, chunk[4]); }
 				if (chunk[5] || chunk[6]) { lsound_setPanFade(sound, chunk[5], chunk[6]); }

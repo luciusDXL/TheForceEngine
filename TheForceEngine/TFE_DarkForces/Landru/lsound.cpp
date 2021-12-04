@@ -4,11 +4,34 @@
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_Jedi/Math/core_math.h>
 #include <assert.h>
+
+using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
-	LSound* s_firstSound = nullptr;
+	enum FaderType
+	{
+		FADER_VOLUME = 0,
+		FADER_PAN,
+	};
+	enum { MAX_FADERS = 128 };
+
+	struct SoundFader
+	{
+		FaderType type;
+		s16 target;
+		s16 time;
+
+		fixed16_16 cur;
+		fixed16_16 delta;
+
+		LSound* sound;
+		LTick startTick;
+		LTick lastTick;
+	};
+	
 	enum SoundCommand
 	{
 		SOUND_CMD_NULL = 0,
@@ -43,6 +66,10 @@ namespace TFE_DarkForces
 		SOUND_USER_FLAG2 = FLAG_BIT(15),
 	};
 
+	static SoundFader s_faders[MAX_FADERS];
+	static s32 s_faderCount = 0;
+	static LSound* s_firstSound = nullptr;
+
 	void soundFinished(void* userData, s32 arg);
 
 	void lsound_actionFunc(s16 state, LSound* sound, s16 var1, s16 var2);
@@ -54,6 +81,8 @@ namespace TFE_DarkForces
 
 	void lsound_init()
 	{
+		s_firstSound = nullptr;
+		s_faderCount = 0;
 	}
 
 	void lsound_destroy()
@@ -255,6 +284,7 @@ namespace TFE_DarkForces
 			lsound_free(sound);
 			sound = nextSound;
 		}
+		s_faderCount = 0;
 	}
 
 	void lsound_initSound(LSound* sound)
@@ -264,6 +294,7 @@ namespace TFE_DarkForces
 		sound->id = 0;
 		sound->flags = 0;
 		sound->volume = 128;
+		sound->pan = 64;
 		
 		sound->var1 = 0;
 		sound->var2 = 0;
@@ -274,68 +305,136 @@ namespace TFE_DarkForces
 		sound->callback = nullptr;
 		sound->data = nullptr;
 	}
+		
+	void lsound_addFader(LSound* sound, FaderType type, s16 target, s16 time)
+	{
+		if (s_faderCount >= MAX_FADERS) { return; }
+		SoundFader* fader = &s_faders[s_faderCount];
+		s_faderCount++;
+
+		fader->target = target;
+		fader->time = time;
+		fader->cur = (type == FADER_VOLUME) ? intToFixed16(sound->volume) : intToFixed16(sound->pan);
+
+		fixed16_16 volumeDelta = intToFixed16(target) - fader->cur;
+		fader->delta = time ? div16(volumeDelta, intToFixed16(time)) : volumeDelta;
+		fader->sound = sound;
+		fader->startTick = ltime_curTick();
+		fader->lastTick  = fader->startTick;
+	}
+
+	void lsound_removeFader(s32 index)
+	{
+		for (s32 i = index; i < s_faderCount - 1; i++)
+		{
+			s_faders[i] = s_faders[i + 1];
+		}
+		s_faderCount--;
+	}
+
+	void lsound_update()
+	{
+		LTick curTick = ltime_curTick();
+		for (s32 i = s_faderCount - 1; i >= 0; i--)
+		{
+			SoundFader* fader = &s_faders[i];
+
+			s32 dt = s32(curTick - fader->lastTick);
+			fader->lastTick = curTick;
+			
+			fader->cur += mul16(fader->delta, intToFixed16(dt));
+			fader->time -= dt;
+
+			fixed16_16 cur = fader->cur;
+			LSound* sound  = fader->sound;
+			FaderType type = fader->type;
+			if (fader->time <= 0)
+			{
+				cur = intToFixed16(fader->target);
+				lsound_removeFader(i);
+			}
+	
+			if (type == FADER_VOLUME)
+			{
+				sound->volume = floor16(cur);
+				assert(sound->volume > 0);
+				if (sound->soundSource)
+				{
+					TFE_Audio::setSourceVolume(sound->soundSource, f32(sound->volume) / 128.0f);
+				}
+			}
+			else
+			{
+				sound->pan = floor16(cur);
+				if (sound->soundSource)
+				{
+					TFE_Audio::setSourceStereoSeperation(sound->soundSource, f32(sound->pan) / 128.0f);
+				}
+			}
+		}
+	}
 
 	void lsound_actionFunc(s16 state, LSound* sound, s16 var1, s16 var2)
 	{
+		static JBool hit = JFALSE;
 		switch (state)
 		{
 			case SOUND_CMD_PAUSE:
 				// ImPause();
 				// group_vol_gbl = ImSetGroupVol(groupMaster, 0);
+				hit = JTRUE;
 				break;
-
 			case SOUND_CMD_UNPAUSE:
 				// ImSetGroupVol(groupMaster, group_vol_gbl);
 				// ImResume();
+				hit = JTRUE;
 				break;
 			case SOUND_CMD_STARTMUSIC:
-				// ImStartMusic((DWORD)the_sound, PRIORITY);
 				break;
-
 			case SOUND_CMD_STARTSFX:
 			{
-				// ImStartSfx((DWORD)the_sound, PRIORITY);
+				bool looping = (sound->soundBuffer.flags & SBUFFER_FLAG_LOOPING) != 0;
 				if (!sound->soundSource)
 				{
-					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, 1.0f, 0.5f, &sound->soundBuffer, nullptr, false, soundFinished, sound);
-					TFE_Audio::playSource(sound->soundSource);
+					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)/128.0f, f32(sound->pan)/128.0f, &sound->soundBuffer, nullptr, false, soundFinished, sound);
+					TFE_Audio::playSource(sound->soundSource, looping);
 				}
 			} break;
-
 			case SOUND_CMD_STARTSPEECH:
-				// ImStartVoice((DWORD)the_sound, PRIORITY);
 				if (!sound->soundSource)
 				{
-					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, 1.0f, 0.5f, &sound->soundBuffer, nullptr, false, soundFinished, sound);
+					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)/128.0f, f32(sound->pan)/128.0f, &sound->soundBuffer, nullptr, false, soundFinished, sound);
 					TFE_Audio::playSource(sound->soundSource);
 				}
 				break;
-
 			case SOUND_CMD_STOP:
-				// ImStopSound((DWORD)the_sound);
-				// TFE_Audio::stopSource(sound->soundSource);
-				break;
-				
-			case SOUND_CMD_VOLUME:
-				// ImSetParam((DWORD)the_sound, soundVol, var1);
-				if (sound->soundSource && TFE_Audio::isSourcePlaying(sound->soundSource))
+				if (sound->soundSource)
 				{
-					TFE_Audio::setSourceVolume(sound->soundSource, f32(var1) / 128.0f);
+					TFE_Audio::freeSource(sound->soundSource);
+					sound->soundSource = nullptr;
 				}
 				break;
-
+			case SOUND_CMD_VOLUME:
+				sound->volume = var1;
+				assert(sound->volume > 0);
+				if (sound->soundSource)
+				{
+					TFE_Audio::setSourceVolume(sound->soundSource, f32(sound->volume)/128.0f);
+				}
+				break;
 			case SOUND_CMD_FADE:
-				// ImFadeParam((DWORD)the_sound, soundVol, var1, var2);
-				// ImFade ((DWORD)the_sound, fadeVol, var1, var2);
+				lsound_addFader(sound, FADER_VOLUME, var1, var2);
 				break;
-
 			case SOUND_CMD_PAN:
-				// ImSetParam((DWORD)the_sound, soundPan, var1);
+				sound->pan = var1;
+				if (sound->soundSource)
+				{
+					TFE_Audio::setSourceStereoSeperation(sound->soundSource, f32(sound->pan)/128.0f);
+				}
 				break;
-
 			case SOUND_CMD_PAN_FADE:
-				// ImFadeParam((DWORD)the_sound, soundPan, var1, var2);
-				// ImFade ((DWORD)the_sound, fadePan, var1, var2);
+				lsound_addFader(sound, FADER_PAN, var1, var2);
+				hit = JTRUE;
 				break;
 		}
 	}

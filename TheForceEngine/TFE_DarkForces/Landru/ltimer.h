@@ -21,6 +21,7 @@ namespace TFE_DarkForces
 	LTick ltime_elapsed();
 	JBool ltime_checkTimeElapsed();
 	JBool ltime_often();
+	LTick ltime_curTick();
 
 	// This is also altered from DOS to return JTRUE when the frame is ready instead of 
 	// looping.
