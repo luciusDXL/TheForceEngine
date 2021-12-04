@@ -1,3 +1,4 @@
+#include <cinttypes>
 #include <cstring>
 
 #include "gmidAsset.h"
@@ -529,8 +530,7 @@ namespace TFE_GmidAsset
 				} break;
 				default:
 				{
-					const char* typeChar = (char*)&chunk.type;
-					TFE_System::logWrite(LOG_ERROR, "Midi", "Unknown GMID chunk type: %c%c%c%c", typeChar[0]);
+					TFE_System::logWrite(LOG_ERROR, "Midi", "Unknown GMID chunk type: %" PRIu32, chunk.type);
 				}
 			}
 

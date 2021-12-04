@@ -1,4 +1,6 @@
 // main.cpp : Defines the entry point for the application.
+#include <cinttypes>
+
 #include "version.h"
 #include <SDL.h>
 #include <TFE_System/types.h>
@@ -35,12 +37,12 @@
 #undef min
 #undef max
 #endif
+#pragma comment(lib, "SDL2main.lib")
 #endif
 
 #define PROGRAM_ERROR   1
 #define PROGRAM_SUCCESS 0
 
-#pragma comment(lib, "SDL2main.lib")
 using namespace TFE_Input;
 
 // Replace with settings.
@@ -135,7 +137,7 @@ void handleEvent(SDL_Event& Event)
 					TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
 										
 					char screenshotPath[TFE_MAX_PATH];
-					sprintf(screenshotPath, "%stfe_screenshot_%s_%llu.jpg", screenshotDir, s_screenshotTime, _screenshotIndex);
+					sprintf(screenshotPath, "%stfe_screenshot_%s_%" PRIu64 ".jpg", screenshotDir, s_screenshotTime, _screenshotIndex);
 					_screenshotIndex++;
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
@@ -151,7 +153,7 @@ void handleEvent(SDL_Event& Event)
 						TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
 
 						char gifPath[TFE_MAX_PATH];
-						sprintf(gifPath, "%stfe_gif_%s_%llu.gif", screenshotDir, s_screenshotTime, _gifIndex);
+						sprintf(gifPath, "%stfe_gif_%s_%" PRIu64 ".gif", screenshotDir, s_screenshotTime, _gifIndex);
 						_gifIndex++;
 
 						TFE_RenderBackend::startGifRecording(gifPath);
