@@ -1,4 +1,5 @@
-#pragma once
+#include <cstring>
+
 #include "paths.h"
 #include "fileutil.h"
 #include "filestream.h"
@@ -32,8 +33,8 @@ namespace TFE_Paths
 
 	bool setProgramDataPath(const char* append)
 	{
-#ifdef _WIN32
 		char path[TFE_MAX_PATH];
+#ifdef _WIN32
 		// Get path for each computer, non-user specific and non-roaming data.
 		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_COMMON_APPDATA, NULL, 0, path)))
 		{
@@ -54,14 +55,24 @@ namespace TFE_Paths
 			s_paths[PATH_PROGRAM_DATA] = s_paths[PATH_PROGRAM];
 			return !s_paths[PATH_PROGRAM].empty();
 		}
+#elif defined(__APPLE__)
+#else
+		strcpy(path, getenv("HOME"));
+		strcat(path, "/.local/share/");
+		strcat(path, append);
+
+		s_paths[PATH_PROGRAM_DATA] = path;
+		s_paths[PATH_PROGRAM_DATA] += "/";
+
+		FileUtil::makeDirectory(path);
+		return true;
 #endif
-		return false;
 	}
 
 	bool setUserDocumentsPath(const char* append)
 	{
-#ifdef _WIN32
 		char path[TFE_MAX_PATH];
+#ifdef _WIN32
 		// Get path for each computer, non-user specific and non-roaming data.
 		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, 0, path)))
 		{
@@ -82,25 +93,40 @@ namespace TFE_Paths
 			s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM];
 			return !s_paths[PATH_PROGRAM].empty();
 		}
+#else
+		strcpy(path, getenv("HOME"));
+		strcat(path, "/");
+		strcat(path, append);
+
+		s_paths[PATH_USER_DOCUMENTS] = path;
+		s_paths[PATH_USER_DOCUMENTS] += "/";
+
+		FileUtil::makeDirectory(path);
+		return true;
 #endif
-		return false;
 	}
 
 	bool setProgramPath()
 	{
 		char path[TFE_MAX_PATH];
 		FileUtil::getCurrentDirectory(path);
-		// This is here for ease of use in Visual Studio.
-		// Check to see if the current directory is valid.
-		char testPath[TFE_MAX_PATH];
-		sprintf(testPath, "%s/%s", path, "SDL2.dll");
-		if (!FileUtil::exists(testPath))
-		{
-			FileUtil::getExecutionDirectory(path);
-		}
+		#ifdef _WIN32
+			// This is here for ease of use in Visual Studio.
+			// Check to see if the current directory is valid.
+			char testPath[TFE_MAX_PATH];
+			sprintf(testPath, "%s/%s", path, "SDL2.dll");
+			if (!FileUtil::exists(testPath))
+			{
+				FileUtil::getExecutionDirectory(path);
+			}
+		#endif /* _WIN32 */
 
 		s_paths[PATH_PROGRAM] = path;
+		#ifdef _WIN32
 		s_paths[PATH_PROGRAM] += "\\";
+		#else
+		s_paths[PATH_PROGRAM] += "/";
+		#endif /* _WIN32 */
 		FileUtil::setCurrentDirectory(s_paths[PATH_PROGRAM].c_str());
 		return true;
 	}
