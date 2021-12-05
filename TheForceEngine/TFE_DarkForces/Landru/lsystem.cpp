@@ -6,6 +6,7 @@
 #include "lcanvas.h"
 #include "lfade.h"
 #include "lfont.h"
+#include "lmusic.h"
 #include "lsound.h"
 #include "ltimer.h"
 #include "lpalette.h"
@@ -51,6 +52,7 @@ namespace TFE_DarkForces
 		lpalette_init();
 		lfade_init();
 		lfont_init();
+		lmusic_init();
 		lsound_init();
 
 		lactor_init();
@@ -91,6 +93,7 @@ namespace TFE_DarkForces
 		lpalette_destroy();
 		lfade_destroy();
 		lfont_destroy();
+		lmusic_destroy();
 		lsound_destroy();
 
 		lactorCust_destroy();

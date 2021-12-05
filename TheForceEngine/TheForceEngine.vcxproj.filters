@@ -847,6 +847,9 @@
     <ClInclude Include="TFE_DarkForces\Landru\lsound.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lmusic.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1429,6 +1432,9 @@
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\lsound.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lmusic.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>

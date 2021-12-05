@@ -2,6 +2,7 @@
 #include "cutscene_film.h"
 #include "lcanvas.h"
 #include "lsound.h"
+#include "lmusic.h"
 #include "lsystem.h"
 #include "time.h"
 #include "textCrawl.h"
@@ -116,8 +117,7 @@ namespace TFE_DarkForces
 		// Start the next sequence of MIDI music.
 		if (s_playSeq[s_playId].music > 0)
 		{
-			// TODO
-			// Sound_StartCutscene(s_playSeq[s_playId].music);
+			lmusic_startCutscene(s_playSeq[s_playId].music);
 		}
 
 		Archive* lfd = nullptr;
@@ -262,6 +262,7 @@ namespace TFE_DarkForces
 
 		if (s_scene == SCENE_EXIT)
 		{
+			lmusic_stop();
 			lsystem_clearAllocator(LALLOC_CUTSCENE);
 			lsystem_setAllocator(LALLOC_PERSISTENT);
 		}
@@ -278,6 +279,7 @@ namespace TFE_DarkForces
 		{
 			s_skipSceneInput = JFALSE;
 			sound_stopAll();
+			lmusic_stop();
 			vfb_forceToBlack();
 			lcanvas_clear();
 			return skipScene;
@@ -298,13 +300,13 @@ namespace TFE_DarkForces
 		return VIEW_LOOP_RUNNING;
 	}
 
-	// TODO: Handle midi cue points.
 	void cutscene_customSoundCallback(LActor* actor, s32 time)
 	{
 		s32 var1 = actor->var1;
-		if (var1 != 0)
+		if (var1)
 		{
-			// Sound_setCuePoint(var1 < 0 ? 0 : var1);
+			if (var1 < 0) { lmusic_setCuePoint(0); }
+			         else { lmusic_setCuePoint(var1); }
 		}
 	}
 }  // TFE_DarkForces

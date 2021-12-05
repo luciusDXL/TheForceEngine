@@ -237,7 +237,8 @@ namespace TFE_DarkForces
 			}
 			else if (type == CF_TYPE_GMIDI)
 			{
-				// TODO: load midi.
+				sound = lsound_loadMusic(name);
+				if (!sound) { retValue = JFALSE; }
 			}
 			else if (type == CF_TYPE_VOC_SOUND)
 			{

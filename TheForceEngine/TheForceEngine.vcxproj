@@ -406,6 +406,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\Landru\ldraw.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lfade.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lfont.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\lmusic.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lpalette.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lrect.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lsound.h" />
@@ -635,6 +636,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\Landru\ldraw.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lfade.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lfont.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\lmusic.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lpalette.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lrect.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lsound.cpp" />

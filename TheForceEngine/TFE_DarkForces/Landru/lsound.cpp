@@ -16,7 +16,6 @@ namespace TFE_DarkForces
 		FADER_VOLUME = 0,
 		FADER_PAN,
 	};
-	enum { MAX_FADERS = 128 };
 
 	struct SoundFader
 	{
@@ -50,8 +49,9 @@ namespace TFE_DarkForces
 
 	enum SoundConstants
 	{
-		MAX_SOUNDS = 0x0030,
-		PRIORITY = 64,
+		MAX_SOUNDS = 48,
+		MAX_FADERS = 48,
+		PRIORITY   = 64,
 	};
 
 	enum SoundFlags
@@ -66,19 +66,20 @@ namespace TFE_DarkForces
 		SOUND_USER_FLAG2 = FLAG_BIT(15),
 	};
 
-	static SoundFader s_faders[MAX_FADERS];
 	static s32 s_faderCount = 0;
+	static SoundFader s_faders[MAX_FADERS];
 	static LSound* s_firstSound = nullptr;
 
 	void soundFinished(void* userData, s32 arg);
 
 	void lsound_actionFunc(s16 state, LSound* sound, s16 var1, s16 var2);
-	LSound* lsound_alloc(u8* data, s16 extend);
 	void lsound_initSound(LSound* sound);
-	LSound* lsound_load(u32 type, const char* name, s16 id);
 	void lsound_setName(LSound* sound, u32 resType, const char* name);
 	void lsound_freePlaying(LSound* sound, JBool stop);
 
+	LSound* lsound_alloc(u8* data, s16 extend);
+	LSound* lsound_load(u32 type, const char* name, s16 id);
+	
 	void lsound_init()
 	{
 		s_firstSound = nullptr;
@@ -101,10 +102,9 @@ namespace TFE_DarkForces
 
 	LSound* lsound_loadMusic(const char* name)
 	{
-		// TODO
-		return nullptr;
+		return lsound_load(CF_TYPE_GMIDI, name, gmidiSound);
 	}
-		
+
 	void lsound_startSpeech(LSound* sound)
 	{
 		lsound_actionFunc(SOUND_CMD_STARTSPEECH, sound, 0, 0);
@@ -148,11 +148,11 @@ namespace TFE_DarkForces
 	LSound* lsound_load(u32 type, const char* name, s16 id)
 	{
 		char soundFile[32];
-		sprintf(soundFile, "%s.VOIC", name);
+		sprintf(soundFile, "%s.%s", name, type == CF_TYPE_VOC_SOUND ? "VOIC" : "GMID");
 		FilePath soundPath;
 		FileStream file;
 		if (!TFE_Paths::getFilePath(soundFile, &soundPath)) { return nullptr; }
-		if (!file.open(&soundPath, FileStream::MODE_READ))   { return nullptr; }
+		if (!file.open(&soundPath, FileStream::MODE_READ)) { return nullptr; }
 
 		u32 len = (u32)file.getSize();
 		u8* data = (u8*)landru_alloc(len);
@@ -171,9 +171,14 @@ namespace TFE_DarkForces
 		sound->flags |= SOUND_DISCARD;
 		sound->id = id;
 
-		TFE_VocAsset::parseVoc(&sound->soundBuffer, sound->data);
+		if (type == CF_TYPE_VOC_SOUND)
+		{
+			TFE_VocAsset::parseVoc(&sound->soundBuffer, sound->data);
+		}
+		else
+		{
+		}
 		sound->soundSource = nullptr;
-
 		return sound;
 	}
 
@@ -373,20 +378,16 @@ namespace TFE_DarkForces
 			}
 		}
 	}
-
+		
 	void lsound_actionFunc(s16 state, LSound* sound, s16 var1, s16 var2)
 	{
 		static JBool hit = JFALSE;
 		switch (state)
 		{
 			case SOUND_CMD_PAUSE:
-				// ImPause();
-				// group_vol_gbl = ImSetGroupVol(groupMaster, 0);
 				hit = JTRUE;
 				break;
 			case SOUND_CMD_UNPAUSE:
-				// ImSetGroupVol(groupMaster, group_vol_gbl);
-				// ImResume();
 				hit = JTRUE;
 				break;
 			case SOUND_CMD_STARTMUSIC:
@@ -396,14 +397,16 @@ namespace TFE_DarkForces
 				bool looping = (sound->soundBuffer.flags & SBUFFER_FLAG_LOOPING) != 0;
 				if (!sound->soundSource)
 				{
-					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)/128.0f, f32(sound->pan)/128.0f, &sound->soundBuffer, nullptr, false, soundFinished, sound);
+					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)/128.0f, f32(sound->pan)/128.0f,
+						&sound->soundBuffer, nullptr, false, soundFinished, sound);
 					TFE_Audio::playSource(sound->soundSource, looping);
 				}
 			} break;
 			case SOUND_CMD_STARTSPEECH:
 				if (!sound->soundSource)
 				{
-					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)/128.0f, f32(sound->pan)/128.0f, &sound->soundBuffer, nullptr, false, soundFinished, sound);
+					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)/128.0f, f32(sound->pan)/128.0f,
+						&sound->soundBuffer, nullptr, false, soundFinished, sound);
 					TFE_Audio::playSource(sound->soundSource);
 				}
 				break;
@@ -416,7 +419,6 @@ namespace TFE_DarkForces
 				break;
 			case SOUND_CMD_VOLUME:
 				sound->volume = var1;
-				assert(sound->volume > 0);
 				if (sound->soundSource)
 				{
 					TFE_Audio::setSourceVolume(sound->soundSource, f32(sound->volume)/128.0f);
@@ -438,7 +440,7 @@ namespace TFE_DarkForces
 				break;
 		}
 	}
-
+	   
 	void soundFinished(void* userData, s32 arg)
 	{
 		LSound* sound = (LSound*)userData;
