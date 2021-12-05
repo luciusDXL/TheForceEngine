@@ -318,6 +318,7 @@ namespace TFE_MidiPlayer
 					case MIDI_PAUSE:
 					{
 						isPaused = true;
+						stopAllNotes();
 					} break;
 					case MIDI_RESUME:
 					{
