@@ -8,6 +8,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -18,10 +19,10 @@ enum CVarFlag
 	CVFLAG_DO_NOT_SERIALIZE = (1 << 1),
 };
 
-#define CVAR_INT(var, name, flags, help) TFE_Console::registerCVarInt(name, flags, &##var, help)
-#define CVAR_FLOAT(var, name, flags, help) TFE_Console::registerCVarFloat(name, flags, &##var, help)
-#define CVAR_BOOL(var, name, flags, help) TFE_Console::registerCVarBool(name, flags, &##var, help)
-#define CVAR_STRING(var, name, flags, help) TFE_Console::registerCVarString(name, flags, ##var, sizeof(var), help)
+#define CVAR_INT(var, name, flags, help) TFE_Console::registerCVarInt(name, flags, &var, help)
+#define CVAR_FLOAT(var, name, flags, help) TFE_Console::registerCVarFloat(name, flags, &var, help)
+#define CVAR_BOOL(var, name, flags, help) TFE_Console::registerCVarBool(name, flags, &var, help)
+#define CVAR_STRING(var, name, flags, help) TFE_Console::registerCVarString(name, flags, &var, sizeof(var), help)
 
 // Register a basic command
 #define CCMD(name, func, argCount, help) TFE_Console::registerCommand(name, func, argCount, help)
