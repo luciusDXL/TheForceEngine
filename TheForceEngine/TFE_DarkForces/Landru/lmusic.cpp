@@ -32,6 +32,8 @@ namespace TFE_DarkForces
 
 	static s32 s_curSeq = 0;
 	static s32 s_curCuePoint = 0;
+	static f32 s_volume = 1.0f;
+	static f32 s_baseVolume = 1.0f;
 	
 	void lmusic_init()
 	{
@@ -103,9 +105,6 @@ namespace TFE_DarkForces
 		memset(s_sequences, 0, sizeof(Sequence) * SEQUENCE_COUNT * MAX_CUE_POINTS);
 	}
 		
-	static f32 s_volume;
-	static f32 s_baseVolume;
-
 	void lmusic_reset()
 	{
 		s_curSeq = 0;

@@ -118,7 +118,7 @@ namespace TFE_MidiPlayer
 
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		setVolume(soundSettings->musicVolume);
-		s_timeScale = 1000.0 * 0.87;
+		s_timeScale = 1000.0;
 
 		return res && s_thread;
 	}
