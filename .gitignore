@@ -60,3 +60,6 @@ TheForceEngine/VTune Profiler Results/
 Build/
 TheForceEngine/bug_reports/
 WDFuseCommonFiles/
+
+# Linux Build
+TheForceEngine/tfe
