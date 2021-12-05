@@ -73,7 +73,7 @@ namespace FileUtil
 					stat(pathString, &pathStat);
 
 					if (pathStat.st_mode & S_IFREG || pathStat.st_mode & S_IFLNK)
-						fileList.push_back(string(pathString));
+						fileList.push_back(string(currentDirName));
 
 					free(pathString);
 				}
