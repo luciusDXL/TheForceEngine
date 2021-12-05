@@ -1,3 +1,4 @@
+#include <cctype>
 #include <cstring>
 
 #include <strings.h>
@@ -258,6 +259,16 @@ namespace TFE_DarkForces
 		task_makeActive(vueLogic->task);
 	}
 
+	#ifndef _WIN32
+	static void _strupr(char *str) {
+		const size_t length = strlen(str);
+		
+		for (size_t i = 0; i < length; i++) {
+			str[i] = (char) toupper((int) str[i]);
+		}
+	}
+	#endif /* _WIN32 */
+
 	JBool vueLogicSetupFunc(Logic* logic, KEYWORD key)
 	{
 		VueLogic* vueLogic = (VueLogic*)logic;
@@ -272,12 +283,8 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				#ifdef _WIN32
 				_strupr(s_objSeqArg2);
 				if (strstr(s_objSeqArg2, "CAMERA"))
-				#else
-				if (strcasecmp(s_objSeqArg2, "CAMERA"))
-				#endif /* _WIN32 */
 				{
 					isCamera = 1;
 				}
@@ -295,12 +302,8 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				#ifdef _WIN32
 				_strupr(s_objSeqArg2);
 				if (strstr(s_objSeqArg2, "CAMERA"))
-				#else
-				if (strcasecmp(s_objSeqArg2, "CAMERA"))
-				#endif /* _WIN32 */
 				{
 					isCamera = 1;
 				}
