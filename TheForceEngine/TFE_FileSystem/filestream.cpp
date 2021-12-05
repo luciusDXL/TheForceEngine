@@ -1,4 +1,5 @@
-#pragma once
+#include <cstring>
+
 #include "filestream.h"
 #include <TFE_Archive/archive.h>
 #include <assert.h>
@@ -248,8 +249,8 @@ void FileStream::flush()
 }
 
 //internal
-template <>	//template specialization for the string type since it has to be handled differently.
-void FileStream::readType<std::string>(std::string* ptr, u32 count)
+//specialization for the string type since it has to be handled differently.
+void FileStream::readString(std::string* ptr, u32 count)
 {
 	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
 	assert(count <= 256);
@@ -274,8 +275,8 @@ void FileStream::readType(T* ptr, u32 count)
 	readBuffer(ptr, sizeof(T), count);
 }
 
-template <>	//template specialization for the string type since it has to be handled differently.
-void FileStream::writeType<std::string>(const std::string* ptr, u32 count)
+//specialization for the string type since it has to be handled differently.
+void FileStream::writeString(const std::string* ptr, u32 count)
 {
 	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
 	assert(m_file);	// TODO: Add Archive support.
