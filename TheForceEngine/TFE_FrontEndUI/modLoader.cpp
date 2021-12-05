@@ -99,9 +99,12 @@ namespace TFE_FrontEndUI
 		sprintf(programDataModDir, "%sMods/", programData);
 		TFE_Paths::fixupPathAsDirectory(programDataModDir);
 
+		// likely won't be able to create a Mods folder in bin...
+		#ifdef _WIN32
 		char programDirModDir[TFE_MAX_PATH];
 		sprintf(programDirModDir, "%sMods/", programDir);
 		TFE_Paths::fixupPathAsDirectory(programDirModDir);
+		#endif /* _WIN32 */
 
 		s32 modPathCount = 0;
 		char modPaths[3][TFE_MAX_PATH];
@@ -115,11 +118,13 @@ namespace TFE_FrontEndUI
 			strcpy(modPaths[modPathCount], programDataModDir);
 			modPathCount++;
 		}
+		#ifdef _WIN32
 		if (FileUtil::directoryExits(programDirModDir))
 		{
 			strcpy(modPaths[modPathCount], programDirModDir);
 			modPathCount++;
 		}
+		#endif /* _WIN32 */
 
 		if (!modPathCount)
 		{
