@@ -1,0 +1,17 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/include/SDL2",
+                "/usr/include/rtaudio",
+                "/usr/include/rtmidi"
+            ],
+            "defines": [
+                "__LINUX_ALSA__"
+            ]
+        }
+    ],
+    "version": 4
+}
