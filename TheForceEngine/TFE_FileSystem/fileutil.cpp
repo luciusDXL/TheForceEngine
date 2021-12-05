@@ -352,6 +352,9 @@ namespace FileUtil
 
 			stat(path, &dirstat);
 
+			if (errno == ENOENT)
+				return false;
+
 			return (dirstat.st_mode & S_IFDIR) != 0;
 		#endif
 	}
