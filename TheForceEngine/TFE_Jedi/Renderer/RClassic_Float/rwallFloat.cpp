@@ -2361,7 +2361,7 @@ namespace RClassic_Float
 					const f32 vOffset = f32(y1_pixel - y1);
 					s_vCoordFixed = floatToFixed20(vOffset*vCoordStep);
 
-					s32 texelU = floorFloat(uCoord);
+					s32 texelU = min(cell->sizeX-1, floorFloat(uCoord));
 					if (flip)
 					{
 						texelU = cell->sizeX - texelU - 1;
@@ -2372,7 +2372,7 @@ namespace RClassic_Float
 						const u8* colPtr = (u8*)cell + columnOffset[texelU];
 
 						// Decompress the column into "work buffer."
-						assert(cell->sizeY <= 1024);
+						assert(cell->sizeY <= 1024 && texelU >= 0 && texelU < cell->sizeX);
 						sprite_decompressColumn(colPtr, s_workBuffer, cell->sizeY);
 						s_texImage = (u8*)s_workBuffer;
 					}
