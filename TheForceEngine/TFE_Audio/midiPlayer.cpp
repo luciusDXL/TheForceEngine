@@ -161,6 +161,8 @@ namespace TFE_MidiPlayer
 		
 	void playSong(const GMidiAsset* gmidAsset, bool loop, s32 track)
 	{
+		if (!gmidAsset) { return; }
+
 		MUTEX_LOCK(&s_mutex);
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)

@@ -163,6 +163,10 @@ namespace TFE_DarkForces
 				lsystem_clearAllocator(LALLOC_CUTSCENE);
 				lsystem_setAllocator(LALLOC_PERSISTENT);
 
+				// Close the archive.
+				TFE_Paths::removeLastArchive();
+				delete lfd;
+
 				TFE_System::logWrite(LOG_ERROR, "CutscenePlayer", "Unable to load all items in cutscene '%s'.", name);
 				s_scene = SCENE_EXIT;
 				return;
@@ -186,6 +190,10 @@ namespace TFE_DarkForces
 			// In the original code, the playback loop starts here, and then the cleanup afterward.
 			// For TFE, the function will return and then cutscenePlayer_update() will handle each frame.
 			lview_startLoop();
+		}
+		else
+		{
+			s_scene = SCENE_EXIT;
 		}
 	}
 

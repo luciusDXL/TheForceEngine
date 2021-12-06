@@ -1040,6 +1040,8 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_remove(Film* film)
 	{
+		if (!film) { return; }
+
 		Film* curFilm = s_firstFilm;
 		Film* lastFilm = nullptr;
 		while (curFilm && curFilm != film)
