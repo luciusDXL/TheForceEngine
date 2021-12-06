@@ -116,7 +116,6 @@ namespace TFE_DarkForces
 	{
 		TFE_MidiPlayer::stop();
 		TFE_MidiPlayer::setVolume(s_baseVolume);
-		TFE_MidiPlayer::midiSetTimeScale(1.0);
 	}
 
 	s32 lmusic_startCutscene(s32 newSeq)
@@ -124,9 +123,6 @@ namespace TFE_DarkForces
 		if (newSeq > SEQUENCE_COUNT) { return s_curSeq; }
 		s_baseVolume = TFE_MidiPlayer::getVolume();
 		s_volume = s_baseVolume;
-
-		// TODO: Figure out why...
-		TFE_MidiPlayer::midiSetTimeScale(0.87);
 		
 		if (s_curSeq != newSeq)
 		{

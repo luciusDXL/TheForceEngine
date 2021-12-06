@@ -75,7 +75,7 @@ namespace TFE_MidiPlayer
 	// However, for cutscenes to line up, we seem to have to play at less than realtime (87%) -
 	// indicating a bug with iMuse or with the way the midi files are being parsed.
 	// TODO: Listen and verify the tempo.
-	static f64 s_timeScale = 1000.0 * 0.87;
+	static f64 s_timeScale = 1000.0;
 
 	static const f32 c_musicVolumeScale = 0.5f;
 	static MidiRuntime s_runtime;

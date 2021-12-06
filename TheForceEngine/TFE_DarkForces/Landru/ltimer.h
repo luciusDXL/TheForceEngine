@@ -8,7 +8,8 @@
 
 namespace TFE_DarkForces
 {
-	#define LTICKS_PER_SECOND 291.3
+	//#define LTICKS_PER_SECOND 291.31
+	#define LTICKS_PER_SECOND 309.52
 	typedef u32 LTick;	// Landru tick = 291.3 / second.
 
 	// TFE Specific - this replaces the timer interrupt.
