@@ -324,28 +324,28 @@ namespace TFE_DarkForces
 			}
 		}
 
-		if (TFE_Input::keyDown(KEY_E))
+		if (TFE_Input::keyPressed(KEY_E))
 		{
 			s_keyPressed = BRIEF_BTN_EASY;
 			s_skill = 0;
 		}
-		else if (TFE_Input::keyDown(KEY_M))
+		else if (TFE_Input::keyPressed(KEY_M))
 		{
 			s_keyPressed = BRIEF_BTN_MEDIUM;
 			s_skill = 1;
 		}
-		else if (TFE_Input::keyDown(KEY_H))
+		else if (TFE_Input::keyPressed(KEY_H))
 		{
 			s_keyPressed = BRIEF_BTN_HARD;
 			s_skill = 2;
 		}
 
-		if (TFE_Input::keyDown(KEY_C) || TFE_Input::keyDown(KEY_ESCAPE))
+		if (TFE_Input::keyPressed(KEY_C) || TFE_Input::keyPressed(KEY_ESCAPE))
 		{
 			*abort = JTRUE;
 			exitBriefing = JTRUE;
 		}
-		else if (TFE_Input::keyDown(KEY_O) || TFE_Input::keyDown(KEY_RETURN))
+		else if (TFE_Input::keyPressed(KEY_O) || TFE_Input::keyPressed(KEY_RETURN))
 		{
 			*abort = JFALSE;
 			exitBriefing = JTRUE;
