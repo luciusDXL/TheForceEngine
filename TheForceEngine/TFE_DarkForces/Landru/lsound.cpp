@@ -69,6 +69,8 @@ namespace TFE_DarkForces
 	static s32 s_faderCount = 0;
 	static SoundFader s_faders[MAX_FADERS];
 	static LSound* s_firstSound = nullptr;
+	static const f32 c_volumeScale = 1.0f/128.0f;
+	static const f32 c_panScale = 1.0f/128.0f;
 
 	void soundFinished(void* userData, s32 arg);
 
@@ -365,7 +367,7 @@ namespace TFE_DarkForces
 				assert(sound->volume > 0);
 				if (sound->soundSource)
 				{
-					TFE_Audio::setSourceVolume(sound->soundSource, f32(sound->volume) / 128.0f);
+					TFE_Audio::setSourceVolume(sound->soundSource, f32(sound->volume)*c_volumeScale);
 				}
 			}
 			else
@@ -373,7 +375,7 @@ namespace TFE_DarkForces
 				sound->pan = floor16(cur);
 				if (sound->soundSource)
 				{
-					TFE_Audio::setSourceStereoSeperation(sound->soundSource, f32(sound->pan) / 128.0f);
+					TFE_Audio::setSourceStereoSeperation(sound->soundSource, f32(sound->pan)*c_panScale);
 				}
 			}
 		}
@@ -381,63 +383,74 @@ namespace TFE_DarkForces
 		
 	void lsound_actionFunc(s16 state, LSound* sound, s16 var1, s16 var2)
 	{
-		static JBool hit = JFALSE;
 		switch (state)
 		{
 			case SOUND_CMD_PAUSE:
-				hit = JTRUE;
-				break;
+			{
+				// I don't think this is actually used.
+				assert(0);
+			} break;
 			case SOUND_CMD_UNPAUSE:
-				hit = JTRUE;
-				break;
+			{
+				// I don't think this is actually used.
+				assert(0);
+			} break;
 			case SOUND_CMD_STARTMUSIC:
-				break;
+			{
+				// I don't think this is actually used.
+				assert(0);
+			} break;
 			case SOUND_CMD_STARTSFX:
 			{
 				bool looping = (sound->soundBuffer.flags & SBUFFER_FLAG_LOOPING) != 0;
 				if (!sound->soundSource)
 				{
-					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)/128.0f, f32(sound->pan)/128.0f,
+					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)*c_volumeScale, f32(sound->pan)*c_panScale,
 						&sound->soundBuffer, nullptr, false, soundFinished, sound);
 					TFE_Audio::playSource(sound->soundSource, looping);
 				}
 			} break;
 			case SOUND_CMD_STARTSPEECH:
+			{
 				if (!sound->soundSource)
 				{
-					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)/128.0f, f32(sound->pan)/128.0f,
+					sound->soundSource = TFE_Audio::createSoundSource(SoundType::SOUND_2D, f32(sound->volume)*c_volumeScale, f32(sound->pan)*c_panScale,
 						&sound->soundBuffer, nullptr, false, soundFinished, sound);
 					TFE_Audio::playSource(sound->soundSource);
 				}
-				break;
+			} break;
 			case SOUND_CMD_STOP:
+			{
 				if (sound->soundSource)
 				{
 					TFE_Audio::freeSource(sound->soundSource);
 					sound->soundSource = nullptr;
 				}
-				break;
+			} break;
 			case SOUND_CMD_VOLUME:
+			{
 				sound->volume = var1;
 				if (sound->soundSource)
 				{
-					TFE_Audio::setSourceVolume(sound->soundSource, f32(sound->volume)/128.0f);
+					TFE_Audio::setSourceVolume(sound->soundSource, f32(sound->volume)*c_volumeScale);
 				}
-				break;
+			} break;
 			case SOUND_CMD_FADE:
+			{
 				lsound_addFader(sound, FADER_VOLUME, var1, var2);
-				break;
+			} break;
 			case SOUND_CMD_PAN:
+			{
 				sound->pan = var1;
 				if (sound->soundSource)
 				{
-					TFE_Audio::setSourceStereoSeperation(sound->soundSource, f32(sound->pan)/128.0f);
+					TFE_Audio::setSourceStereoSeperation(sound->soundSource, f32(sound->pan)*c_panScale);
 				}
-				break;
+			} break;
 			case SOUND_CMD_PAN_FADE:
+			{
 				lsound_addFader(sound, FADER_PAN, var1, var2);
-				hit = JTRUE;
-				break;
+			} break;
 		}
 	}
 	   
