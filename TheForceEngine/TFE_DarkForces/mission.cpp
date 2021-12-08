@@ -4,6 +4,7 @@
 #include "automap.h"
 #include "cheats.h"
 #include "config.h"
+#include "gameMusic.h"
 #include "hud.h"
 #include "updateLogic.h"
 #include "pickup.h"
@@ -1166,6 +1167,18 @@ namespace TFE_DarkForces
 				}
 			}
 		}
+
+		// DEBUG - change music state.
+	#if 0
+		if (TFE_Input::keyPressed(KEY_F))
+		{
+			gameMusic_setState(MUS_STATE_FIGHT);
+		}
+		else if (TFE_Input::keyPressed(KEY_G))
+		{
+			gameMusic_setState(MUS_STATE_STALK);
+		}
+	#endif
 	}
 
 	void updateScreensize()

@@ -304,9 +304,12 @@ namespace TFE_GmidAsset
 					{
 						evt.arg[0].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
 						if (tokens.size() >= 2)
-							evt.arg[1].fArg = (f32)strtod(tokens[0].c_str(), &endPtr);
+							evt.arg[1].fArg = (f32)strtod(tokens[1].c_str(), &endPtr);
 						else
 							evt.arg[1].fArg = 0.0f;
+
+						evt.arg[1].fArg = 0.0f;
+						evt.arg[2].fArg = 0.0f;
 					}
 				} break;
 				case IMUSE_CLEAR_CALLBACK:

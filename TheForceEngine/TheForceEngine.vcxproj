@@ -383,6 +383,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\config.h" />
     <ClInclude Include="TFE_DarkForces\darkForcesMain.h" />
     <ClInclude Include="TFE_DarkForces\gameMessage.h" />
+    <ClInclude Include="TFE_DarkForces\gameMusic.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\agentMenu.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\delt.h" />
     <ClInclude Include="TFE_DarkForces\GameUI\editBox.h" />
@@ -613,6 +614,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\config.cpp" />
     <ClCompile Include="TFE_DarkForces\darkForcesMain.cpp" />
     <ClCompile Include="TFE_DarkForces\gameMessage.cpp" />
+    <ClCompile Include="TFE_DarkForces\gameMusic.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\agentMenu.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\delt.cpp" />
     <ClCompile Include="TFE_DarkForces\GameUI\editBox.cpp" />

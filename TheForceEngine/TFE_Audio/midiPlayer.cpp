@@ -41,6 +41,7 @@ namespace TFE_MidiPlayer
 		};
 		u32 measure;
 		u32 beat;
+		u32 tick;
 		u32 newTrack;
 		f32 newVolume;
 		bool loop;
@@ -241,7 +242,7 @@ namespace TFE_MidiPlayer
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
-	void midiJump(s32 track, s32 measure, s32 beat)
+	void midiJump(s32 track, s32 measure, s32 beat, s32 tick)
 	{
 		MUTEX_LOCK(&s_mutex);
 		MidiCmd* midiCmd = midiAllocCmd();
@@ -251,6 +252,7 @@ namespace TFE_MidiPlayer
 			midiCmd->newTrack = track;
 			midiCmd->measure = measure;
 			midiCmd->beat = beat;
+			midiCmd->tick = tick;
 		}
 		MUTEX_UNLOCK(&s_mutex);
 	}
@@ -267,9 +269,52 @@ namespace TFE_MidiPlayer
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
+	iMuseCallback midiGet_iMuseCallback()
+	{
+		return s_iMuseCallback;
+	}
+
 	f32 getVolume()
 	{
 		return s_masterVolume;
+	}
+
+	u32 getMeasure()
+	{
+		const s32 trackId = s_trackId;
+		const GMidiAsset* asset = s_runtime.asset;
+		if (!asset || trackId < 0 || trackId >= (s32)asset->trackCount)
+		{
+			return 0;
+		}
+
+		const u64 curTick = u64(s_runtime.tracks[trackId].curTick);
+		return u32(curTick / (u64)s_runtime.asset->tracks[0].ticksPerMeasure);
+	}
+
+	u32 getBeat()
+	{
+		const s32 trackId = s_trackId;
+		const GMidiAsset* asset = s_runtime.asset;
+		if (!asset || trackId < 0 || trackId >= (s32)asset->trackCount)
+		{
+			return 0;
+		}
+
+		const u64 curTick = u64(s_runtime.tracks[s_trackId].curTick);
+		return u32((curTick / (u64)s_runtime.asset->tracks[0].ticksPerBeat) & 3);
+	}
+
+	u64 getTick()
+	{
+		const s32 trackId = s_trackId;
+		const GMidiAsset* asset = s_runtime.asset;
+		if (!asset || trackId < 0 || trackId >= (s32)asset->trackCount)
+		{
+			return 0;
+		}
+
+		return u64(s_runtime.tracks[s_trackId].curTick);
 	}
 
 	//////////////////////////////////////////////////
@@ -366,7 +411,7 @@ namespace TFE_MidiPlayer
 					{
 						if (midiCmd->newTrack >= 0 && midiCmd->newTrack < s_runtime.asset->trackCount)
 						{
-							const u64 tick = midiCmd->measure * s_runtime.asset->tracks[0].ticksPerMeasure + midiCmd->beat * s_runtime.asset->tracks[0].ticksPerBeat;
+							const u64 tick = midiCmd->tick + midiCmd->measure * s_runtime.asset->tracks[0].ticksPerMeasure + midiCmd->beat * s_runtime.asset->tracks[0].ticksPerBeat;
 							s_trackId = midiCmd->newTrack;
 							s_runtime.tracks[s_trackId].curTick = (f64)tick;
 							resetLocalTime(loopStart, localTime, dt);
@@ -470,13 +515,9 @@ namespace TFE_MidiPlayer
 							case MTK_IMUSE:
 							{
 								const iMuseEvent* imuse = &track->imuseEvents[evt[e].index];
-								if (imuse->cmd == IMUSE_CLEAR_CALLBACK)
+								if (imuse->cmd == IMUSE_LOOP_START)
 								{
-									s_iMuseCallback = nullptr;
-								}
-								else if (imuse->cmd == IMUSE_LOOP_START)
-								{
-									// TODO
+									// Sets the loop point, but that is already recorded in the Loop End event.
 								}
 								else if (imuse->cmd == IMUSE_LOOP_END)
 								{
@@ -490,7 +531,11 @@ namespace TFE_MidiPlayer
 								}
 								else if (s_iMuseCallback)
 								{
-									s_iMuseCallback(imuse);
+									iMuseCallback callback = s_iMuseCallback;
+									// Clear the callback
+									s_iMuseCallback = nullptr;
+									// Call the original callback.
+									callback(imuse);
 								}
 							} break;
 						}

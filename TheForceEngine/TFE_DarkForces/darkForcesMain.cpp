@@ -5,6 +5,7 @@
 #include "config.h"
 #include "briefingList.h"
 #include "gameMessage.h"
+#include "gameMusic.h"
 #include "hud.h"
 #include "item.h"
 #include "mission.h"
@@ -206,11 +207,9 @@ namespace TFE_DarkForces
 	void gameStartup();
 	void loadAgentAndLevelData();
 	void startNextMode();
-	void disableLevelMusic();
 	void freeAllMidi();
 	void pauseLevelSound();
 	void resumeLevelSound();
-	void startLevelMusic(s32 levelIndex);
 
 	/////////////////////////////////////////////
 	// API
@@ -430,7 +429,7 @@ namespace TFE_DarkForces
 				{
 					// We have returned from the mission tasks.
 					renderer_reset();
-					disableLevelMusic();
+					gameMusic_stop();
 					sound_stopAll();
 					agent_levelEndTask();
 					pda_cleanup();
@@ -469,14 +468,9 @@ namespace TFE_DarkForces
 		cutscene_init(s_cutsceneList);
 	}
 	
-	void disableLevelMusic()
-	{
-		TFE_MidiPlayer::stop();
-	}
-
 	void freeAllMidi()
 	{
-		disableLevelMusic();
+		gameMusic_stop();
 		TFE_GmidAsset::freeAll();
 	}
 
@@ -490,21 +484,6 @@ namespace TFE_DarkForces
 	{
 		TFE_MidiPlayer::resume();
 		TFE_Audio::resume();
-	}
-
-	void startLevelMusic(s32 levelIndex)
-	{
-		char stalkTrackName[64];
-		char fightTrackName[64];
-		char bossTrackName[64];
-		sprintf(stalkTrackName, "STALK-%02d.GMD", levelIndex);
-		sprintf(fightTrackName, "FIGHT-%02d.GMD", levelIndex);
-		sprintf(bossTrackName, "BOSS-%02d.GMD", levelIndex);
-
-		s_levelStalk = TFE_GmidAsset::get(stalkTrackName);
-		s_levelFight = TFE_GmidAsset::get(fightTrackName);
-		s_levelBoss = TFE_GmidAsset::get(bossTrackName);
-		TFE_MidiPlayer::playSong(s_levelStalk, true);
 	}
 
 	void startNextMode()
@@ -567,9 +546,8 @@ namespace TFE_DarkForces
 				s_loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
 				mission_setLoadMissionTask(s_loadMissionTask);
 
-				disableLevelMusic();
 				s32 levelIndex = agent_getLevelIndex();
-				startLevelMusic(levelIndex);
+				gameMusic_start(levelIndex);
 
 				agent_setLevelComplete(JFALSE);
 				agent_readSavedDataForLevel(s_agentId, levelIndex);
