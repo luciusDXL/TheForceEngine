@@ -211,14 +211,17 @@ namespace TFE_GmidAsset
 					evt.cmd = iMuseCommand(i);
 				}
 			}
-			if (evt.cmd == IMUSE_UNKNOWN) { return; }
+			if (evt.cmd == IMUSE_UNKNOWN)
+			{
+				return;
+			}
 			
 			char* endPtr = nullptr;
 			switch (evt.cmd)
 			{
 				case IMUSE_START_NEW:
 				{
-
+					// No data.
 				} break;
 				case IMUSE_STALK_TRANS:
 				{
@@ -308,7 +311,7 @@ namespace TFE_GmidAsset
 				} break;
 				case IMUSE_CLEAR_CALLBACK:
 				{
-
+					// No data.
 				} break;
 				case IMUSE_TO:
 				{

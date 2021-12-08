@@ -850,6 +850,9 @@
     <ClInclude Include="TFE_DarkForces\Landru\lmusic.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Audio\iMuseEvent.h">
+      <Filter>Source\TFE_Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

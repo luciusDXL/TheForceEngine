@@ -4,8 +4,18 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Audio/midi.h>
+#include <TFE_Audio/iMuseEvent.h>
 #include <string>
 #include <vector>
+
+enum MidiTrackEventType
+{
+	MTK_TEMPO = 0,
+	MTK_MARKER,
+	MTK_MIDI,
+	MTK_IMUSE,
+	MTK_COUNT
+};
 
 struct MidiEvent
 {
@@ -22,47 +32,6 @@ struct MidiTempoEvent
 struct MidiMarker
 {
 	char name[256];
-};
-
-enum MidiTrackEventType
-{
-	MTK_TEMPO = 0,
-	MTK_MARKER,
-	MTK_MIDI,
-	MTK_IMUSE,
-	MTK_COUNT
-};
-
-enum iMuseCommand
-{
-	IMUSE_START_NEW = 0,
-	IMUSE_STALK_TRANS,
-	IMUSE_FIGHT_TRANS,
-	IMUSE_ENGAGE_TRANS,
-	IMUSE_FROM_FIGHT,
-	IMUSE_FROM_STALK,
-	IMUSE_FROM_BOSS,
-	IMUSE_CLEAR_CALLBACK,
-	IMUSE_TO,
-	IMUSE_LOOP_START,
-	IMUSE_LOOP_END,
-	IMUSE_COUNT,
-	IMUSE_UNKNOWN = IMUSE_COUNT
-};
-
-struct iMuseEventArg
-{
-	union
-	{
-		f32 fArg;
-		s32 nArg;
-	};
-};
-
-struct iMuseEvent
-{
-	iMuseCommand cmd = IMUSE_UNKNOWN;
-	iMuseEventArg arg[3] = { 0 };
 };
 
 struct MidiTrackEvent
