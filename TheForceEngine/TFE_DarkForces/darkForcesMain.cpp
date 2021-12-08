@@ -3,8 +3,8 @@
 #include "darkForcesMain.h"
 #include "agent.h"
 #include "config.h"
+#include "briefingList.h"
 #include "gameMessage.h"
-#include "gameList.h"
 #include "hud.h"
 #include "item.h"
 #include "mission.h"
@@ -13,12 +13,19 @@
 #include "time.h"
 #include "weapon.h"
 #include "vueLogic.h"
+#include "GameUI/menu.h"
 #include "GameUI/agentMenu.h"
 #include "GameUI/escapeMenu.h"
+#include "GameUI/missionBriefing.h"
+#include "GameUI/pda.h"
+#include "Landru/lsystem.h"
+#include <TFE_DarkForces/Landru/cutscene.h>
+#include <TFE_DarkForces/Landru/cutsceneList.h>
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/audioSystem.h>
@@ -51,6 +58,11 @@ namespace TFE_DarkForces
 		"TEXTURES.GOB",
 		"SPRITES.GOB",
 	};
+
+	enum GameConstants
+	{
+		MAX_MOD_LFD = 16,
+	};
 	   
 	enum GameState
 	{
@@ -64,7 +76,7 @@ namespace TFE_DarkForces
 
 	enum GameMode
 	{
-		GMODE_ERROR = -1,
+		GMODE_END = -1,
 		GMODE_CUTSCENE = 0,
 		GMODE_BRIEFING = 1,
 		GMODE_MISSION = 2,
@@ -77,24 +89,80 @@ namespace TFE_DarkForces
 		s32 cutscene;
 	};
 		
-	// For this release, cutscenes and mission briefings are not supported - so just hack together the cutscene list.
-	// This is normally read from disk and controls the flow between missions.
 	static CutsceneData s_cutsceneData[] =
 	{
-		{1,  GMODE_MISSION, 0},
-		{2,  GMODE_MISSION, 0},
-		{3,  GMODE_MISSION, 0},
-		{4,  GMODE_MISSION, 0},
-		{5,  GMODE_MISSION, 0},
-		{6,  GMODE_MISSION, 0},
-		{7,  GMODE_MISSION, 0},
-		{8,  GMODE_MISSION, 0},
-		{9,  GMODE_MISSION, 0},
-		{10, GMODE_MISSION, 0},
-		{11, GMODE_MISSION, 0},
-		{12, GMODE_MISSION, 0},
-		{13, GMODE_MISSION, 0},
-		{14, GMODE_MISSION, 0}
+		{ 1,  GMODE_CUTSCENE, 100 },
+		{ 1,  GMODE_BRIEFING,   0 },
+		{ 1,  GMODE_MISSION,	0 },
+		{ 1,  GMODE_CUTSCENE, 150 },
+
+		{ 2,  GMODE_CUTSCENE, 200 },
+		{ 2,  GMODE_BRIEFING,   0 },
+		{ 2,  GMODE_MISSION,    0 },
+		{ 2,  GMODE_CUTSCENE, 250 },
+
+		{ 3,  GMODE_CUTSCENE, 300 },
+		{ 3,  GMODE_BRIEFING,   0 },
+		{ 3,  GMODE_MISSION,	0 },
+		{ 3,  GMODE_CUTSCENE, 350 },
+
+		{ 4,  GMODE_CUTSCENE, 400 },
+		{ 4,  GMODE_BRIEFING,   0 },
+		{ 4,  GMODE_MISSION,    0 },
+		{ 4,  GMODE_CUTSCENE, 450 },
+
+		{ 5,  GMODE_CUTSCENE, 500 },
+		{ 5,  GMODE_BRIEFING,	0 },
+		{ 5,  GMODE_MISSION,	0 },
+		{ 5,  GMODE_CUTSCENE, 550 },
+
+		{ 6,  GMODE_CUTSCENE, 600 },
+		{ 6,  GMODE_BRIEFING,	0 },
+		{ 6,  GMODE_MISSION,	0 },
+		{ 6,  GMODE_CUTSCENE, 650 },
+
+		{ 7,  GMODE_CUTSCENE, 700 },
+		{ 7,  GMODE_BRIEFING,	0 },
+		{ 7,  GMODE_MISSION,	0 },
+		{ 7,  GMODE_CUTSCENE, 750 },
+
+		{ 8,  GMODE_CUTSCENE, 800 },
+		{ 8,  GMODE_BRIEFING,	0 },
+		{ 8,  GMODE_MISSION, 	0 },
+		{ 8,  GMODE_CUTSCENE, 850 },
+
+		{ 9,  GMODE_CUTSCENE, 900 },
+		{ 9,  GMODE_BRIEFING,	0 },
+		{ 9,  GMODE_MISSION,	0 },
+		{ 9,  GMODE_CUTSCENE, 950 },
+
+		{ 10, GMODE_CUTSCENE,1000 },
+		{ 10, GMODE_BRIEFING,   0 },
+		{ 10, GMODE_MISSION,	0 },
+		{ 10, GMODE_CUTSCENE,1050 },
+
+		{ 11, GMODE_CUTSCENE,1100 },
+		{ 11, GMODE_BRIEFING,	0 },
+		{ 11, GMODE_MISSION,	0 },
+		{ 11, GMODE_CUTSCENE,1150 },
+
+		{ 12, GMODE_CUTSCENE,1200 },
+		{ 12, GMODE_BRIEFING,	0 },
+		{ 12, GMODE_MISSION,	0 },
+		{ 12, GMODE_CUTSCENE,1250 },
+
+		{ 13, GMODE_CUTSCENE,1300 },
+		{ 13, GMODE_BRIEFING,	0 },
+		{ 13, GMODE_MISSION,	0 },
+		{ 13, GMODE_CUTSCENE,1350 },
+
+		{ 14, GMODE_CUTSCENE,1400 },
+		{ 14, GMODE_BRIEFING,   0 },
+		{ 14, GMODE_MISSION,	0 },
+		{ 14, GMODE_CUTSCENE,1450 },
+		{ 14, GMODE_CUTSCENE,1500 },	//	game ending.
+		// Game flow end (restart).
+		{ -1, GMODE_END, -1 }
 	};
 	
 	/////////////////////////////////////////////
@@ -111,14 +179,14 @@ namespace TFE_DarkForces
 	static Font* s_swFont1 = nullptr;
 	static Font* s_mapNumFont = nullptr;
 	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
-	static void* s_briefingList;	// STUBBED - to be replaced by the real structure.
+	static BriefingList s_briefingList = { 0 };
 
 	static const GMidiAsset* s_levelStalk;
 	static const GMidiAsset* s_levelFight;
 	static const GMidiAsset* s_levelBoss;
 
 	static Task* s_loadMissionTask = nullptr;
-	static ListItem* s_cutsceneList = nullptr;
+	static CutsceneState* s_cutsceneList = nullptr;
 
 	static GameState s_state = GSTATE_STARTUP_CUTSCENES;
 	static s32 s_levelIndex;
@@ -137,7 +205,6 @@ namespace TFE_DarkForces
 	void openGobFiles();
 	void gameStartup();
 	void loadAgentAndLevelData();
-	void cutscenes_startup(s32 id);
 	void startNextMode();
 	void disableLevelMusic();
 	void freeAllMidi();
@@ -166,9 +233,10 @@ namespace TFE_DarkForces
 		config_startup();
 		gameStartup();
 		loadAgentAndLevelData();
+		lsystem_init();
 
 		renderer_init();
-
+		
 		// TFE Specific
 		actorDebug_init();
 
@@ -184,7 +252,9 @@ namespace TFE_DarkForces
 		s_hotKeyMessages.count = 0;
 		s_hotKeyMessages.msgList = nullptr;
 		gameMessage_freeBuffer();
-		gameList_freeBuffer();
+		briefingList_freeBuffer();
+		cutsceneList_freeBuffer();
+		lsystem_destroy();
 
 		// Clear paths and archives.
 		TFE_Paths::clearSearchPaths();
@@ -205,8 +275,11 @@ namespace TFE_DarkForces
 		sound_freeAll();
 		level_freeAllAssets();
 		agentMenu_resetState();
+		menu_resetState();
+		pda_resetState();
 		escapeMenu_resetState();
 		vue_resetState();
+		lsystem_destroy();
 		// Free debug data
 		actorDebug_free();
 	}
@@ -285,8 +358,9 @@ namespace TFE_DarkForces
 		{
 			case GSTATE_STARTUP_CUTSCENES:
 			{
-				cutscenes_startup(10);
-				s_invalidLevelIndex = JFALSE;
+				cutscene_play(10);
+				s_state = GSTATE_CUTSCENE;
+				s_invalidLevelIndex = JTRUE;
 			} break;
 			case GSTATE_AGENT_MENU:
 			{
@@ -312,13 +386,41 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_CUTSCENE:
 			{
-				// STUB
-				startNextMode();
+				if (!cutscene_update())
+				{
+					s_cutsceneIndex++;
+					if (s_cutsceneData[s_cutsceneIndex].nextGameMode == GMODE_END)
+					{
+						s_state = GSTATE_AGENT_MENU;
+						s_invalidLevelIndex = JTRUE;
+					}
+					else
+					{
+						startNextMode();
+					}
+				}
 			} break;
 			case GSTATE_BRIEFING:
 			{
-				// STUB
-				startNextMode();
+				s32 skill;
+				JBool abort;
+				if (!missionBriefing_update(&skill, &abort))
+				{
+					missionBriefing_cleanup();
+					TFE_Input::clearAccumulatedMouseMove();
+
+					if (abort)
+					{
+						s_invalidLevelIndex = JTRUE;
+						s_cutsceneIndex--;
+					}
+					else
+					{
+						s_agentData[s_agentId].difficulty = skill;
+						s_cutsceneIndex++;
+					}
+					startNextMode();
+				}
 			} break;
 			case GSTATE_MISSION:
 			{
@@ -331,6 +433,7 @@ namespace TFE_DarkForces
 					disableLevelMusic();
 					sound_stopAll();
 					agent_levelEndTask();
+					pda_cleanup();
 
 					if (!s_levelComplete)
 					{
@@ -341,7 +444,7 @@ namespace TFE_DarkForces
 					{
 						s_cutsceneIndex++;
 						s32 completedLevelIndex = agent_getLevelIndex();
-						u8 diff = 1;	// level_getDifficulty();
+						u8 diff = s_agentData[s_agentId].difficulty;
 
 						// Save the level completion, inventory and other stats into the agent data and then save to disk.
 						agent_saveLevelCompletion(diff, completedLevelIndex);
@@ -362,7 +465,8 @@ namespace TFE_DarkForces
 
 	void loadCutsceneList()
 	{
-		s_cutsceneList = gameList_load("cutscene.lst");
+		s_cutsceneList = cutsceneList_load("cutscene.lst");
+		cutscene_init(s_cutsceneList);
 	}
 	
 	void disableLevelMusic()
@@ -414,21 +518,43 @@ namespace TFE_DarkForces
 		GameMode mode = s_cutsceneData[s_cutsceneIndex].nextGameMode;
 		switch (mode)
 		{
-			case GMODE_ERROR:
+			case GMODE_END:
 			{
-				// STUB
-				// Error Handling.
+				s_cutsceneIndex = 0;
+				s_invalidLevelIndex = JTRUE;
+				startNextMode();
 			} break;
 			case GMODE_CUTSCENE:
 			{
-				// STUB
-				// cutscenes_startup(s_cutsceneData[s_cutsceneIndex].cutscene);
-				// This will also change s_state -> GSTATE_CUTSCENE
+				if (cutscene_play(s_cutsceneData[s_cutsceneIndex].cutscene))
+				{
+					s_state = GSTATE_CUTSCENE;
+				}
+				else
+				{
+					s_cutsceneIndex++;
+					startNextMode();
+				}
 			} break;
 			case GMODE_BRIEFING:
 			{
-				// STUB
-				// This will also change s_state -> GSTATE_BRIEFING
+				// TODO: Check to see if cutscenes are disabled, if so we also skip the mission briefing.
+				const char* levelName = agent_getLevelName();
+				s32 briefingIndex = 0;
+				for (s32 i = 0; i < s_briefingList.count; i++)
+				{
+					if (strcasecmp(levelName, s_briefingList.briefing[i].mission) == 0)
+					{
+						briefingIndex = i;
+						break;
+					}
+				}
+
+				s32 skill = (s32)s_agentData[s_agentId].difficulty;
+				BriefingInfo* brief = &s_briefingList.briefing[briefingIndex];
+				missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
+
+				s_state = GSTATE_BRIEFING;
 			}  break;
 			case GMODE_MISSION:
 			{
@@ -534,6 +660,12 @@ namespace TFE_DarkForces
 	void loadCustomGob(const char* gobName)
 	{
 		FilePath archivePath;
+		s32 lfdIndex[MAX_MOD_LFD];
+		char lfdName[MAX_MOD_LFD][TFE_MAX_PATH];
+		char briefingName[TFE_MAX_PATH];
+		s32 lfdCount = 0;
+		s32 briefingIndex = -1;
+
 		if (TFE_Paths::getFilePath(gobName, &archivePath))
 		{
 			// Is this really a gob?
@@ -555,8 +687,25 @@ namespace TFE_DarkForces
 						if (strcasecmp(zext, "gob") == 0)
 						{
 							gobIndex = i;
-							break;
 						}
+						else if (strcasecmp(zext, "lfd") == 0 && lfdCount < MAX_MOD_LFD)
+						{
+							if (strstr(name, "brief") || strstr(name, "BRIEF"))
+							{
+								briefingIndex = i;
+							}
+							else
+							{
+								lfdIndex[lfdCount++] = i;
+							}
+						}
+					}
+
+					// If there is only 1 LFD, assume it is mission briefings.
+					if (lfdCount == 1 && briefingIndex < 0)
+					{
+						briefingIndex = lfdIndex[0];
+						lfdCount = 0;
 					}
 
 					if (gobIndex >= 0)
@@ -571,6 +720,52 @@ namespace TFE_DarkForces
 						gobArchive->open(buffer, bufferLen);
 						TFE_Paths::addLocalArchive(gobArchive);
 					}
+
+					char tempPath[TFE_MAX_PATH];
+					sprintf(tempPath, "%sTemp/", TFE_Paths::getPath(PATH_PROGRAM_DATA));
+					// Extract and copy the briefing.
+					if (briefingIndex >= 0)
+					{
+						u32 bufferLen = (u32)zipArchive.getFileLength(briefingIndex);
+						u8* buffer = (u8*)malloc(bufferLen);
+						zipArchive.openFile(briefingIndex);
+						zipArchive.readFile(buffer, bufferLen);
+						zipArchive.closeFile();
+
+						char lfdPath[TFE_MAX_PATH];
+						sprintf(lfdPath, "%sdfbrief.lfd", tempPath);
+						FileStream file;
+						if (file.open(lfdPath, FileStream::MODE_WRITE))
+						{
+							file.writeBuffer(buffer, bufferLen);
+							file.close();
+						}
+						free(buffer);
+
+						TFE_Paths::addSingleFilePath("dfbrief.lfd", lfdPath);
+					}
+					// Extract and copy the LFD.
+					for (s32 i = 0; i < lfdCount; i++)
+					{
+						u32 bufferLen = (u32)zipArchive.getFileLength(lfdIndex[i]);
+						u8* buffer = (u8*)malloc(bufferLen);
+						zipArchive.openFile(lfdIndex[i]);
+						zipArchive.readFile(buffer, bufferLen);
+						zipArchive.closeFile();
+
+						char lfdPath[TFE_MAX_PATH];
+						sprintf(lfdPath, "%scutscenes%d.lfd", tempPath, i);
+						FileStream file;
+						if (file.open(lfdPath, FileStream::MODE_WRITE))
+						{
+							file.writeBuffer(buffer, bufferLen);
+							file.close();
+						}
+						free(buffer);
+
+						TFE_Paths::addSingleFilePath(zipArchive.getFileName(lfdIndex[i]), lfdPath);
+					}
+
 					zipArchive.close();
 				}
 			}
@@ -580,6 +775,62 @@ namespace TFE_DarkForces
 				if (archive)
 				{
 					TFE_Paths::addLocalArchive(archive);
+
+					// Handle LFD files.
+					char modPath[TFE_MAX_PATH];
+					FileUtil::getFilePath(archivePath.path, modPath);
+
+					// Look for LFD files.
+					lfdCount = 0;
+					briefingIndex = -1;
+
+					FileList fileList;
+					FileUtil::readDirectory(modPath, "lfd", fileList);
+					const size_t count = fileList.size();
+					const std::string* file = fileList.data();
+															
+					for (size_t i = 0; i < count; i++, file++)
+					{
+						const size_t len = file->length();
+						const char* name = file->c_str();
+
+						if (lfdCount < 16)
+						{
+							if (strstr(name, "brief") || strstr(name, "BRIEF"))
+							{
+								briefingIndex = s32(i);
+								strcpy(briefingName, name);
+							}
+							else if (lfdCount < MAX_MOD_LFD)
+							{
+								strcpy(lfdName[lfdCount], name);
+								lfdCount++;
+							}
+						}
+					}
+
+					// If there is only 1 LFD, assume it is mission briefings.
+					if (lfdCount == 1 && briefingIndex < 0)
+					{
+						strcpy(briefingName, lfdName[0]);
+						briefingIndex = 0;
+						lfdCount = 0;
+					}
+
+					// Extract and copy the briefing.
+					char lfdPath[TFE_MAX_PATH];
+					if (briefingIndex >= 0)
+					{
+						sprintf(lfdPath, "%s%s", modPath, briefingName);
+						TFE_Paths::addSingleFilePath("dfbrief.lfd", lfdPath);
+					}
+
+					// Extract and copy the LFD.
+					for (s32 i = 0; i < lfdCount; i++)
+					{
+						sprintf(lfdPath, "%s%s", modPath, lfdName[i]);
+						TFE_Paths::addSingleFilePath(lfdName[i], lfdPath);
+					}
 				}
 			}
 		}
@@ -692,21 +943,6 @@ namespace TFE_DarkForces
 		setSoundSourceVolume(s_screenShotSndSrc, 127);
 	}
 
-	void* loadBriefingList(const char* fileName)
-	{
-		// STUB
-		// TODO in the following releases.
-		return nullptr;
-	}
-
-	void cutscenes_startup(s32 id)
-	{
-		// STUB
-		// TODO in the following releases.
-
-		s_state = GSTATE_AGENT_MENU;
-	}
-		
 	void loadAgentAndLevelData()
 	{
 		agent_loadData();
@@ -714,7 +950,10 @@ namespace TFE_DarkForces
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load level list.");
 		}
-		s_briefingList = loadBriefingList("briefing.lst");
+		if (!parseBriefingList(&s_briefingList, "briefing.lst"))
+		{
+			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load briefing list.");
+		}
 
 		FilePath filePath;
 		if (TFE_Paths::getFilePath("hotkeys.msg", &filePath))

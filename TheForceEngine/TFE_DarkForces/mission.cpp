@@ -12,6 +12,7 @@
 #include "weapon.h"
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_DarkForces/GameUI/escapeMenu.h>
+#include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Settings/settings.h>
@@ -35,11 +36,11 @@ using namespace TFE_Input;
 namespace TFE_DarkForces
 {
 	// Show the loading screen for at least 1 second.
-#define MIN_LOAD_TIME 145
+	#define MIN_LOAD_TIME 145
 
-/////////////////////////////////////////////
-// Shared State
-/////////////////////////////////////////////
+	/////////////////////////////////////////////
+	// Shared State
+	/////////////////////////////////////////////
 	JBool s_gamePaused = JTRUE;
 	JBool s_canTeleport = JTRUE;
 	GameMissionMode s_missionMode = MISSION_MODE_MAIN;
@@ -114,6 +115,7 @@ namespace TFE_DarkForces
 	void applyScreenBrightness(u8* pal, s32 brightness);
 
 	void executeCheat(CheatID cheatID);
+	extern void resumeLevelSound();
 
 	/////////////////////////////////////////////
 	// API Implementation
@@ -176,6 +178,7 @@ namespace TFE_DarkForces
 		{
 			TFE_Jedi::setSubRenderer(TSR_CLASSIC_FIXED);
 		}
+		automap_resetScale();
 	}
 
 	void mission_startTaskFunc(MessageType msg)
@@ -210,7 +213,7 @@ namespace TFE_DarkForces
 			{
 				const char* levelName = agent_getLevelName();
 				// For now always load medium difficulty since it cannot be selected.
-				if (level_load(levelName, /*s_agentData[s_agentId].difficulty + 1*/3))
+				if (level_load(levelName, s_agentData[s_agentId].difficulty))
 				{
 					setScreenBrightness(ONE_16);
 					setScreenFxLevels(0, 0, 0);
@@ -314,6 +317,7 @@ namespace TFE_DarkForces
 			handlePaletteFx();
 			hud_drawAndUpdate(s_framebuffer);
 			hud_drawMessage(s_framebuffer);
+			automap_resetScale();
 
 			vfb_swap();
 		}
@@ -339,7 +343,7 @@ namespace TFE_DarkForces
 			s_prevTick  = s_curTick;
 			s_playerTick = s_curTick;
 
-			if (!escapeMenu_isOpen())
+			if (!escapeMenu_isOpen() && !pda_isOpen())
 			{
 				player_setupCamera();
 
@@ -364,7 +368,7 @@ namespace TFE_DarkForces
 				}
 			}
 
-			if (!escapeMenu_isOpen())
+			if (!escapeMenu_isOpen() && !pda_isOpen())
 			{
 				handleGeneralInput();
 				handlePaletteFx();
@@ -384,12 +388,17 @@ namespace TFE_DarkForces
 			if (escapeMenu_isOpen())
 			{
 				EscapeMenuAction action = escapeMenu_update();
-				if (action == ESC_RETURN)
+				if (action == ESC_RETURN || action == ESC_CONFIG)
 				{
 					s_gamePaused = JFALSE;
 					TFE_Input::clearAccumulatedMouseMove();
 					task_pause(s_gamePaused);
 					time_pause(s_gamePaused);
+
+					if (action == ESC_CONFIG)
+					{
+						TFE_System::postSystemUiRequest();
+					}
 				}
 				else if (action == ESC_ABORT_OR_NEXT)
 				{
@@ -401,6 +410,17 @@ namespace TFE_DarkForces
 				else if (action == ESC_QUIT)
 				{
 					TFE_System::postQuitMessage();
+				}
+			}
+			else if (pda_isOpen())
+			{
+				pda_update();
+
+				// If the PDA was closed, then unpause the game.
+				if (!pda_isOpen())
+				{
+					mission_pause(JFALSE);
+					resumeLevelSound();
 				}
 			}
 			else if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED && !s_playerDying)
@@ -503,11 +523,6 @@ namespace TFE_DarkForces
 		s_cheatCharIndex = 0;
 		s_cheatInputCount = 0;
 		s_queuedCheatID = CHEAT_NONE;
-
-		for (s32 i = 9; i >= 0; i--)
-		{
-			s_goals[i] = JFALSE;
-		}
 	}
 		
 	void setScreenBrightness(fixed16_16 brightness)
@@ -985,7 +1000,8 @@ namespace TFE_DarkForces
 			// For now just deal with a few controls.
 			if (inputMapping_getActionState(IADF_PDA_TOGGLE) == STATE_PRESSED)
 			{
-				// STUB: Bring up PDA.
+				mission_pause(JTRUE);
+				pda_start(agent_getLevelName());
 			}
 			if (inputMapping_getActionState(IADF_NIGHT_VISION_TOG) == STATE_PRESSED && s_playerInfo.itemGoggles)
 			{

@@ -129,8 +129,6 @@ void LfdArchive::closeFile()
 u32 LfdArchive::getFileIndex(const char* file)
 {
 	if (!m_archiveOpen) { return INVALID_FILE; }
-
-	m_file.open(m_archivePath, FileStream::MODE_READ);
 	m_curFile = -1;
 
 	//search for this file.
@@ -147,8 +145,6 @@ u32 LfdArchive::getFileIndex(const char* file)
 bool LfdArchive::fileExists(const char *file)
 {
 	if (!m_archiveOpen) { return false; }
-
-	m_file.open(m_archivePath, FileStream::MODE_READ);
 	m_curFile = -1;
 
 	//search for this file.

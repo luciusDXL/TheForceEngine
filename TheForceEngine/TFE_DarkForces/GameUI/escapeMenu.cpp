@@ -77,6 +77,8 @@ namespace TFE_DarkForces
 			TFE_Paths::addLocalArchive(archive);
 
 			s_escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_escMenuFrames);
+			
+			TFE_Paths::removeLastArchive();
 		}
 
 		u32 dispWidth, dispHeight;
@@ -118,6 +120,7 @@ namespace TFE_DarkForces
 		EscapeMenuAction action = escapeMenu_updateUI();
 		if (action != ESC_CONTINUE)
 		{
+			s_escMenuOpen = JFALSE;
 			resumeLevelSound();
 		}
 		
@@ -190,6 +193,46 @@ namespace TFE_DarkForces
 	///////////////////////////////////////
 	// Internal
 	///////////////////////////////////////
+	EscapeMenuAction escapeMenu_handleAction(EscapeMenuAction action, s32 actionPressed)
+	{
+		if (actionPressed < 0)
+		{
+			// Handle keyboard shortcuts.
+			if ((TFE_Input::keyPressed(KEY_A) && !s_levelComplete) || (TFE_Input::keyPressed(KEY_N) && s_levelComplete))
+			{
+				actionPressed = ESC_BTN_ABORT;
+			}
+			if (TFE_Input::keyPressed(KEY_C))
+			{
+				actionPressed = ESC_BTN_CONFIG;
+			}
+			if (TFE_Input::keyPressed(KEY_Q))
+			{
+				actionPressed = ESC_BTN_QUIT;
+			}
+			if (TFE_Input::keyPressed(KEY_R))
+			{
+				actionPressed = ESC_BTN_RETURN;
+			}
+		}
+		
+		switch (actionPressed)
+		{
+		case ESC_BTN_ABORT:
+			action = ESC_ABORT_OR_NEXT;
+			break;
+		case ESC_BTN_CONFIG:
+			action = ESC_CONFIG;
+			break;
+		case ESC_BTN_QUIT:
+			action = ESC_QUIT;
+			break;
+		case ESC_BTN_RETURN:
+			action = ESC_RETURN;
+			break;
+		};
+		return action;
+	}
 
 	EscapeMenuAction escapeMenu_updateUI()
 	{
@@ -239,27 +282,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			if (s_buttonPressed >= ESC_BTN_ABORT && s_buttonHover)
-			{
-				s_escMenuOpen = JFALSE;
-				
-				switch (s_buttonPressed)
-				{
-				case ESC_BTN_ABORT:
-					action = ESC_ABORT_OR_NEXT;
-					break;
-				case ESC_BTN_CONFIG:
-					// TODO
-					action = ESC_RETURN;
-					break;
-				case ESC_BTN_QUIT:
-					action = ESC_QUIT;
-					break;
-				case ESC_BTN_RETURN:
-					action = ESC_RETURN;
-					break;
-				};
-			}
+			action = escapeMenu_handleAction(action, (s_buttonPressed >= ESC_BTN_ABORT && s_buttonHover) ? s_buttonPressed : -1);
 			// Reset.
 			s_buttonPressed = -1;
 			s_buttonHover = false;

@@ -169,6 +169,7 @@ namespace TFE_Input
 	f32  inputMapping_getAnalogAxis(AnalogAxis axis);
 	void inputMapping_updateInput();
 	void inputMapping_removeState(InputAction action);
+	void inputMapping_clearKeyBinding(KeyboardCode key);
 	void inputMapping_endFrame();
 
 	InputConfig* inputMapping_get();

@@ -34,6 +34,13 @@ struct Safe
 	s16 pad;
 };
 
+enum GoalConstants
+{
+	COMPL_TRIG = 0,
+	COMPL_ITEM = 1,
+	NUM_COMPLETE = 10,
+};
+
 namespace TFE_Jedi
 {
 	JBool level_load(const char* levelName, u8 difficulty);
@@ -45,6 +52,7 @@ namespace TFE_Jedi
 	void setSkyParallax(fixed16_16 parallax0, fixed16_16 parallax1);
 
 	Safe* level_getSafeFromSector(RSector* sector);
+	JBool level_isGoalComplete(s32 goalIndex);
 		
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;
@@ -58,4 +66,6 @@ namespace TFE_Jedi
 	extern s32 s_minLayer;
 	extern s32 s_maxLayer;
 	extern s32 s_secretCount;
+
+	extern JBool s_complete[2][NUM_COMPLETE];
 }

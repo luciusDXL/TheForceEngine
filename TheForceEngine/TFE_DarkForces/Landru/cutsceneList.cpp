@@ -1,7 +1,7 @@
 #include <cstring>
 
-#include "gameList.h"
-#include "util.h"
+#include "cutsceneList.h"
+#include <TFE_DarkForces/util.h>
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
@@ -11,7 +11,7 @@ namespace TFE_DarkForces
 {
 	static char* s_buffer = nullptr;
 
-	void gameList_freeBuffer()
+	void cutsceneList_freeBuffer()
 	{
 		s_buffer = nullptr;
 	}
@@ -23,7 +23,7 @@ namespace TFE_DarkForces
 		return dstString;
 	}
 
-	ListItem* gameList_load(const char* filename)
+	CutsceneState* cutsceneList_load(const char* filename)
 	{
 		FilePath filePath;
 		if (!TFE_Paths::getFilePath(filename, &filePath))
@@ -68,8 +68,8 @@ namespace TFE_DarkForces
 			return nullptr;
 		}
 
-		ListItem* items = (ListItem*)game_alloc((count + 1) * sizeof(ListItem));
-		memset(items, 0, (count + 1) * sizeof(ListItem));
+		CutsceneState* items = (CutsceneState*)game_alloc((count + 1) * sizeof(CutsceneState));
+		memset(items, 0, (count + 1) * sizeof(CutsceneState));
 		if (!items)
 		{
 			TFE_System::logWrite(LOG_ERROR, "LoadList", "Cannot allocate %d list items.", count + 1);

@@ -15,6 +15,8 @@ namespace TFE_Jedi
 		CLIP_BOT   = 0x0100,
 	};
 
+	static u8 s_transColor = 0;
+
 	void screen_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color, u8* framebuffer)
 	{
 		if (x < rect->left || x > rect->right || z < rect->top || z > rect->bot) { return; }
@@ -214,9 +216,85 @@ namespace TFE_Jedi
 		const u32 stride = vfb_getStride();
 		for (s32 i = end; i >= 0; i--, offset += stride)
 		{
-			if (image[i]) { outBuffer[offset] = image[i]; }
+			if (image[i] != s_transColor) { outBuffer[offset] = image[i]; }
 		}
 	}
+
+	void textureBlitColumnOpaqueRow(u8* image, u8* outBuffer, s32 imageStride, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		s32 yOffset = end * imageStride;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, yOffset -= imageStride)
+		{
+			outBuffer[offset] = image[yOffset];
+		}
+	}
+
+	void textureBlitColumnTransRow(u8* image, u8* outBuffer, s32 imageStride, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		s32 yOffset = end * imageStride;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, yOffset -= imageStride)
+		{
+			if (image[yOffset] != s_transColor) { outBuffer[offset] = image[yOffset]; }
+		}
+	}
+
+	//////////////////////////////////
+	// Image blit functions
+	void imageBlitColumnOpaque(u8* image, u8* outBuffer, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, image++)
+		{
+			outBuffer[offset] = *image;
+		}
+	}
+
+	void imageBlitColumnTrans(u8* image, u8* outBuffer, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride)
+		{
+			u8 color = *image;
+			if (color != s_transColor) { outBuffer[offset] = color; }
+		}
+	}
+
+	void imageBlitColumnOpaqueRow(u8* image, u8* outBuffer, s32 imageStride, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		s32 yOffset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, yOffset += imageStride)
+		{
+			outBuffer[offset] = image[yOffset];
+		}
+	}
+
+	void imageBlitColumnTransRow(u8* image, u8* outBuffer, s32 imageStride, s32 yPixelCount)
+	{
+		s32 end = yPixelCount - 1;
+		s32 offset = 0;
+		s32 yOffset = 0;
+		const u32 stride = vfb_getStride();
+		for (s32 i = end; i >= 0; i--, offset += stride, yOffset += imageStride)
+		{
+			u8 color = image[yOffset];
+			if (color != s_transColor) { outBuffer[offset] = color; }
+		}
+	}
+
+	/////////////////////////////////
 
 	void textureBlitColumnOpaqueLit(u8* image, u8* outBuffer, s32 yPixelCount, const u8* atten)
 	{
@@ -236,7 +314,7 @@ namespace TFE_Jedi
 		const u32 stride = vfb_getStride();
 		for (s32 i = end; i >= 0; i--, offset += stride)
 		{
-			if (image[i]) { outBuffer[offset] = atten[image[i]]; }
+			if (image[i] != s_transColor) { outBuffer[offset] = atten[image[i]]; }
 		}
 	}
 
@@ -422,6 +500,11 @@ namespace TFE_Jedi
 			outBuffer[offset] = image[v];
 		}
 	}
+		
+	void screenDraw_setTransColor(u8 color)
+	{
+		s_transColor = color;
+	}
 
 	void textureBlitColumnTransScaledRow(u8* image, u8* outBuffer, s32 yPixelCount, s32 imageStride, fixed16_16 vCoord, fixed16_16 vStep)
 	{
@@ -431,7 +514,7 @@ namespace TFE_Jedi
 		for (s32 i = end; i >= 0; i--, offset += stride, vCoord += vStep)
 		{
 			s32 v = floor16(vCoord)*imageStride;
-			if (image[v]) { outBuffer[offset] = image[v]; }
+			if (image[v] != s_transColor) { outBuffer[offset] = image[v]; }
 		}
 	}
 
@@ -492,6 +575,78 @@ namespace TFE_Jedi
 			{
 				uStep = 0;
 				u++;
+			}
+		}
+	}
+
+	void blitTextureToScreen(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, u8* output)
+	{
+		s32 x1 = x0 + texture->width - 1;
+		s32 y1 = y0 + texture->height - 1;
+
+		// Cull if outside of the draw rect.
+		if (x1 < rect->x0 || y1 < rect->y0 || x0 > rect->x1 || y0 > rect->y1) { return; }
+
+		s32 srcX = 0, srcY = 0;
+		if (y0 < rect->y0)
+		{
+			y0 = rect->y0;
+		}
+		if (y1 > rect->y1)
+		{
+			srcY = y1 - rect->y1;
+			y1 = rect->y1;
+		}
+
+		if (x0 < rect->x0)
+		{
+			srcX = x0 - rect->x0;
+			x0 = rect->x0;
+		}
+		if (x1 > rect->x1)
+		{
+			x1 = rect->x1;
+		}
+
+		s32 yPixelCount = y1 - y0 + 1;
+		if (yPixelCount <= 0) { return; }
+
+		const u32 stride = vfb_getStride();
+		output += y0 * stride;
+		if (texture->columnOriented)
+		{
+			u8* buffer = texture->image + texture->height*srcX + srcY;
+			if (texture->trans)
+			{
+				for (s32 col = x0; col <= x1; col++, buffer += texture->height)
+				{
+					imageBlitColumnTrans(buffer, output + col, yPixelCount);
+				}
+			}
+			else
+			{
+				for (s32 col = x0; col <= x1; col++, buffer += texture->height)
+				{
+					imageBlitColumnOpaque(buffer, output + col, yPixelCount);
+				}
+			}
+		}
+		else
+		{
+			u8* buffer = texture->image + texture->width*srcY + srcX;
+			if (texture->trans)
+			{
+				for (s32 col = x0; col <= x1; col++, buffer++)
+				{
+					imageBlitColumnTransRow(buffer, output + col, texture->width, yPixelCount);
+				}
+			}
+			else
+			{
+				for (s32 col = x0; col <= x1; col++, buffer++)
+				{
+					imageBlitColumnOpaqueRow(buffer, output + col, texture->width, yPixelCount);
+				}
 			}
 		}
 	}

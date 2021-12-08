@@ -17,4 +17,6 @@ namespace TFE_VocAsset
 
 	s32 getIndex(const char* name);
 	SoundBuffer* getFromIndex(s32 index);
+
+	bool parseVoc(SoundBuffer* voc, u8* buffer);
 };

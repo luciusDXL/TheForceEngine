@@ -286,9 +286,11 @@ namespace TFE_Audio
 	}
 
 	// Sound source that the client holds onto.
-	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos, bool copyPosition)
+	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos, bool copyPosition, SoundFinishedCallback callback, void* userData)
 	{
 		if (!buffer) { return nullptr; }
+		assert(volume >= 0.0f && volume <= 1.0f);
+		assert(stereoSeperation >= 0.0f && stereoSeperation <= 1.0f);
 
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
@@ -326,8 +328,8 @@ namespace TFE_Audio
 				newSource->pos = pos;
 			}
 			newSource->seperation = stereoSeperation;
-			newSource->finishedCallback = nullptr;
-			newSource->finishedUserData = nullptr;
+			newSource->finishedCallback = callback;
+			newSource->finishedUserData = userData;
 		}
 		MUTEX_UNLOCK(&s_mutex);
 
@@ -382,12 +384,18 @@ namespace TFE_Audio
 		MUTEX_LOCK(&s_mutex);
 			source->flags &= ~SND_FLAG_PLAYING;
 			source->flags &= ~SND_FLAG_ACTIVE;
+			source->buffer = nullptr;
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	void setSourceVolume(SoundSource* source, f32 volume)
 	{
+		volume = std::max(0.0f, std::min(1.0f, volume));
 		source->baseVolume = volume;
+		if (source->type == SOUND_2D)
+		{
+			source->volume = source->baseVolume;
+		}
 	}
 
 	void setSourceStereoSeperation(SoundSource* source, f32 stereoSeperation)
@@ -430,8 +438,8 @@ namespace TFE_Audio
 		{
 			if (s_sources[s].flags&SND_FLAG_FINISHED)
 			{
-				s_sources[s].flags &= ~SND_FLAG_FINISHED;
-				s_sources[s].flags &= ~SND_FLAG_ACTIVE;
+				s_sources[s].flags = 0;
+				s_sources[s].buffer = nullptr;
 				if (s_sources[s].finishedCallback)
 				{
 					s_sources[s].finishedCallback(s_sources[s].finishedUserData, s_sources[s].finishedArg);

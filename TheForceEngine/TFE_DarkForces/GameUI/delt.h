@@ -22,6 +22,8 @@ namespace TFE_DarkForces
 	u32 getFramesFromAnim(const char* name, DeltFrame** outFrames);
 	JBool getFrameFromDelt(const char* name, DeltFrame* outFrame);
 
+	void loadDeltIntoFrame(DeltFrame* frame, const u8* buffer, u32 size);
+
 	void blitDeltaFrame(DeltFrame* frame, s32 x, s32 y, u8* framebuffer);
 	void blitDeltaFrameScaled(DeltFrame* frame, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* framebuffer);
 }

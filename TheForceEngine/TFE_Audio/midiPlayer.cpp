@@ -1,11 +1,13 @@
 #include "midiPlayer.h"
 #include "midiDevice.h"
+#include "audioDevice.h"
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_System/system.h>
 #include <TFE_System/Threads/thread.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
 #include <algorithm>
+#include <assert.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
@@ -16,6 +18,33 @@
 
 namespace TFE_MidiPlayer
 {
+	enum MidiPlayerCmd
+	{
+		MIDI_START,
+		MIDI_STOP,
+		MIDI_PAUSE,
+		MIDI_RESUME,
+		MIDI_CHANGE_VOL,
+		MIDI_JUMP,
+		MIDI_STOP_NOTES,
+		MIDI_COUNT
+	};
+
+	struct MidiCmd
+	{
+		MidiPlayerCmd cmd;
+		const GMidiAsset* newAsset;
+		u32 measure;
+		u32 beat;
+		u32 newTrack;
+		f32 newVolume;
+		bool loop;
+	};
+
+	enum { MAX_MIDI_CMD = 256 };
+	static MidiCmd s_midiCmdBuffer[MAX_MIDI_CMD];
+	static u32 s_midiCmdCount = 0;
+		
 	struct MidiRuntimeTrack
 	{
 		f32 msPerTick;
@@ -39,21 +68,27 @@ namespace TFE_MidiPlayer
 		TRANSITION_COUNT
 	};
 
+	// 1 ms
+	static const f64 MIDI_FRAME = (1.0 / 1000.0);
+
+	// Time scale should be exactly 1000 to convert from ms to sec.
+	// However, for cutscenes to line up, we seem to have to play at less than realtime (87%) -
+	// indicating a bug with iMuse or with the way the midi files are being parsed.
+	// TODO: Listen and verify the tempo.
+	static f64 s_timeScale = 1000.0;
+
 	static const f32 c_musicVolumeScale = 0.5f;
 	static MidiRuntime s_runtime;
-	static atomic_bool s_isPlaying;
-	static atomic_bool s_changeVolume;
-	static atomic_bool s_pauseMusic;
-	static atomic_u32  s_transition;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 	static Thread* s_thread = nullptr;
 
 	static atomic_bool s_runMusicThread;
-	static atomic_bool s_resetThreadLocalTime;
+	static s32 s_trackId = 0;
 
 	static u8 s_channelSrcVolume[16] = { 0 };
-		
+	static Mutex s_mutex;
+			
 	TFE_THREADRET midiUpdateFunc(void* userData);
 	void stopAllNotes();
 	void changeVolume();
@@ -69,10 +104,8 @@ namespace TFE_MidiPlayer
 		bool res = TFE_MidiDevice::init();
 		TFE_MidiDevice::selectDevice(0);
 		s_runMusicThread.store(true);
-		s_isPlaying.store(false);
-		s_pauseMusic.store(false);
-		s_transition.store(TRANSITION_NONE);
-		s_resetThreadLocalTime.store(true);
+
+		MUTEX_INITIALIZE(&s_mutex);
 
 		s_thread = Thread::create("MidiThread", midiUpdateFunc, nullptr);
 		if (s_thread)
@@ -85,6 +118,7 @@ namespace TFE_MidiPlayer
 
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		setVolume(soundSettings->musicVolume);
+		s_timeScale = 1000.0;
 
 		return res && s_thread;
 	}
@@ -103,27 +137,43 @@ namespace TFE_MidiPlayer
 
 		delete s_thread;
 		TFE_MidiDevice::destroy();
+
+		MUTEX_DESTROY(&s_mutex);
 	}
 
-	void playSong(const GMidiAsset* gmidAsset, bool loop)
+	void midiSetTimeScale(f64 scale)
 	{
-		s_runtime.asset = gmidAsset;
-		s_runtime.loop = loop;
-		for (u32 i = 0; i < gmidAsset->trackCount; i++)
-		{
-			s_runtime.tracks[i].curTick   = 0;
-			s_runtime.tracks[i].lastEvent = -1;
-			s_runtime.tracks[i].msPerTick = gmidAsset->tracks[i].msPerTick;
-		}
+		s_timeScale = 1000.0 * scale;
+	}
 
-		for (u32 i = 0; i < 16; i++)
-		{
-			s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
-		}
-		changeVolume();
+	MidiCmd* midiAllocCmd()
+	{
+		if (s_midiCmdCount >= MAX_MIDI_CMD) { return nullptr; }
+		MidiCmd* cmd = &s_midiCmdBuffer[s_midiCmdCount];
+		s_midiCmdCount++;
+		return cmd;
+	}
 
-		s_isPlaying.store(true);
-		s_resetThreadLocalTime.store(true);
+	void midiClearCmdBuffer()
+	{
+		s_midiCmdCount = 0;
+	}
+		
+	void playSong(const GMidiAsset* gmidAsset, bool loop, s32 track)
+	{
+		if (!gmidAsset) { return; }
+
+		MUTEX_LOCK(&s_mutex);
+		MidiCmd* midiCmd = midiAllocCmd();
+		if (midiCmd)
+		{
+			midiCmd->cmd = MIDI_START;
+			midiCmd->newAsset  = gmidAsset;
+			midiCmd->newTrack  = track;
+			midiCmd->newVolume = s_masterVolume;
+			midiCmd->loop = loop;
+		}
+		MUTEX_UNLOCK(&s_mutex);
 
 		if (s_thread->isPaused())
 		{
@@ -133,8 +183,14 @@ namespace TFE_MidiPlayer
 	
 	void setVolume(f32 volume)
 	{
-		s_masterVolume = volume;
-		s_masterVolumeScaled = volume * c_musicVolumeScale;
+		MUTEX_LOCK(&s_mutex);
+		MidiCmd* midiCmd = midiAllocCmd();
+		if (midiCmd)
+		{
+			midiCmd->cmd = MIDI_CHANGE_VOL;
+			midiCmd->newVolume = volume;
+		}
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	f32 getVolume()
@@ -144,19 +200,35 @@ namespace TFE_MidiPlayer
 
 	void pause()
 	{
-		s_pauseMusic.store(true);
-		stopAllNotes();
+		MUTEX_LOCK(&s_mutex);
+		MidiCmd* midiCmd = midiAllocCmd();
+		if (midiCmd)
+		{
+			midiCmd->cmd = MIDI_PAUSE;
+		}
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	void resume()
 	{
-		s_pauseMusic.store(false);
+		MUTEX_LOCK(&s_mutex);
+		MidiCmd* midiCmd = midiAllocCmd();
+		if (midiCmd)
+		{
+			midiCmd->cmd = MIDI_RESUME;
+		}
+		MUTEX_UNLOCK(&s_mutex);
 	}
 	
 	void stop()
 	{
-		s_isPlaying.store(false);
-		resume();
+		MUTEX_LOCK(&s_mutex);
+		MidiCmd* midiCmd = midiAllocCmd();
+		if (midiCmd)
+		{
+			midiCmd->cmd = MIDI_STOP;
+		}
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	void changeVolume()
@@ -174,17 +246,112 @@ namespace TFE_MidiPlayer
 			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_ALL_NOTES_OFF);
 		}
 	}
+
+	void midiJump(s32 track, s32 measure, s32 beat)
+	{
+		MUTEX_LOCK(&s_mutex);
+		MidiCmd* midiCmd = midiAllocCmd();
+		if (midiCmd)
+		{
+			midiCmd->cmd = MIDI_JUMP;
+			midiCmd->newTrack = track;
+			midiCmd->measure = measure;
+			midiCmd->beat = beat;
+		}
+		MUTEX_UNLOCK(&s_mutex);
+	}
+
+	void resetLocalTime(s32& loopStart, u64& localTime, f64& dt)
+	{
+		stopAllNotes();
+		localTime = 0u;
+		loopStart = -1;
+		dt = 0.0;
+	}
 		
 	// Thread Function
 	TFE_THREADRET midiUpdateFunc(void* userData)
 	{
-		bool runThread = true;
+		bool runThread  = true;
 		bool wasPlaying = false;
+		bool isPlaying  = false;
+		bool isPaused = false;
 		s32 loopStart = -1;
 		u64 localTime = 0;
+		f64 dt = 0.0;
 		while (runThread)
 		{
-			if (!s_isPlaying.load())
+			// Read from the command buffer.
+			MUTEX_LOCK(&s_mutex);
+			MidiCmd* midiCmd = s_midiCmdBuffer;
+			for (u32 i = 0; i < s_midiCmdCount; i++, midiCmd++)
+			{
+				switch (midiCmd->cmd)
+				{
+					case MIDI_START:
+					{
+						const GMidiAsset* asset = midiCmd->newAsset;
+						const u32 trackCount = asset->trackCount;
+						s_runtime.asset = asset;
+						s_runtime.loop  = midiCmd->loop;
+						for (u32 i = 0; i < trackCount; i++)
+						{
+							s_runtime.tracks[i].curTick = 0;
+							s_runtime.tracks[i].lastEvent = -1;
+							s_runtime.tracks[i].msPerTick = asset->tracks[i].msPerTick;
+						}
+
+						for (u32 i = 0; i < 16; i++)
+						{
+							s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
+						}
+						changeVolume();
+
+						isPlaying = true;
+						s_trackId = midiCmd->newTrack;
+						resetLocalTime(loopStart, localTime, dt);
+					} break;
+					case MIDI_STOP:
+					{
+						isPlaying = false;
+						isPaused  = false;
+						stopAllNotes();
+					} break;
+					case MIDI_PAUSE:
+					{
+						isPaused = true;
+						stopAllNotes();
+					} break;
+					case MIDI_RESUME:
+					{
+						isPaused = false;
+					} break;
+					case MIDI_CHANGE_VOL:
+					{
+						s_masterVolume = midiCmd->newVolume;
+						s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
+						changeVolume();
+					} break;
+					case MIDI_JUMP:
+					{
+						if (midiCmd->newTrack >= 0 && midiCmd->newTrack < s_runtime.asset->trackCount)
+						{
+							const u64 tick = midiCmd->measure * s_runtime.asset->tracks[0].ticksPerMeasure + midiCmd->beat * s_runtime.asset->tracks[0].ticksPerBeat;
+							s_trackId = midiCmd->newTrack;
+							s_runtime.tracks[s_trackId].curTick = (f64)tick;
+							resetLocalTime(loopStart, localTime, dt);
+						}
+					} break;
+					case MIDI_STOP_NOTES:
+					{
+						stopAllNotes();
+					} break;
+				}
+			}
+			s_midiCmdCount = 0;
+			MUTEX_UNLOCK(&s_mutex);
+
+			if (!isPlaying)
 			{
 				if (wasPlaying)
 				{
@@ -201,35 +368,23 @@ namespace TFE_MidiPlayer
 			}
 			wasPlaying = true;
 
-			if (s_changeVolume.exchange(false))
-			{
-				changeVolume();
-			}
-
-			if (s_pauseMusic.load())
+			if (isPaused)
 			{
 				TFE_System::updateThreadLocal(&localTime);
+				if (runThread) { TFE_System::sleep(1); }
 				continue;
 			}
 
-			// Returns the current value while atomically updating the variable.
-			bool resetLocalTime = s_resetThreadLocalTime.exchange(false);
-			if (resetLocalTime)
-			{
-				stopAllNotes();
-				localTime = 0u;
-				loopStart = -1;
-			}
-			const f64 dt = TFE_System::updateThreadLocal(&localTime);
-			const u32 transition = s_transition.load();
-
+			const GMidiAsset* asset = s_runtime.asset;
 			const u32 trackCount = s_runtime.asset->trackCount;
+			const u32 trackId = s_trackId;
+			dt += TFE_System::updateThreadLocal(&localTime);
+
 			bool allTracksFinished = true;
-			if (trackCount)
+			if (trackCount && dt >= MIDI_FRAME)
 			{
-				const u32 i = 0;
-				const Track* track = &s_runtime.asset->tracks[i];
-				MidiRuntimeTrack* runtimeTrack = &s_runtime.tracks[i];
+				const Track* track = &asset->tracks[trackId];
+				MidiRuntimeTrack* runtimeTrack = &s_runtime.tracks[trackId];
 				if ((u32)runtimeTrack->curTick >= track->length)
 				{
 					continue;
@@ -237,7 +392,8 @@ namespace TFE_MidiPlayer
 
 				allTracksFinished = false;
 				const f64 prevTick = runtimeTrack->curTick;
-				f64 nextTick = prevTick + dt * 1000.0 / runtimeTrack->msPerTick;
+				f64 nextTick = prevTick + dt * s_timeScale / runtimeTrack->msPerTick;
+				dt = 0.0;
 
 				u32 start = (u32)prevTick;
 				u32 end   = (u32)nextTick;
@@ -258,7 +414,7 @@ namespace TFE_MidiPlayer
 							case MTK_MARKER:
 							{
 								const MidiMarker* marker = &track->markers[evt[e].index];
-								TFE_System::logWrite(LOG_MSG, "iMuse", "Marker Track %d, \"%s\"", i, marker->name);
+								TFE_System::logWrite(LOG_MSG, "iMuse", "Marker Track %d, \"%s\"", trackId, marker->name);
 							} break;
 							case MTK_MIDI:
 							{
@@ -316,10 +472,13 @@ namespace TFE_MidiPlayer
 									} break;
 									case IMUSE_LOOP_END:
 									{
-										nextTick = imuse->arg[0].nArg;
-										runtimeTrack->lastEvent = -1;
-										breakFromLoop = true;
-										stopAllNotes();
+										if (s_runtime.loop)  // TODO: Is this accurate?
+										{
+											nextTick = imuse->arg[0].nArg;
+											runtimeTrack->lastEvent = -1;
+											breakFromLoop = true;
+											stopAllNotes();
+										}
 									} break;
 								};
 							} break;
@@ -335,7 +494,7 @@ namespace TFE_MidiPlayer
 			}
 			runThread = s_runMusicThread.load();
 			// Give other threads a chance to run...
-			//if (runThread) { TFE_System::sleep(0); }
+			// if (runThread) { TFE_System::sleep(0); }
 		};
 		
 		return (TFE_THREADRET)0;
@@ -345,10 +504,7 @@ namespace TFE_MidiPlayer
 	void setMusicVolumeConsole(const ConsoleArgList& args)
 	{
 		if (args.size() < 2) { return; }
-
-		s_masterVolume = TFE_Console::getFloatArg(args[1]);
-		s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
-		s_changeVolume.store(true);
+		setVolume(TFE_Console::getFloatArg(args[1]));
 
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		soundSettings->musicVolume = s_masterVolume;

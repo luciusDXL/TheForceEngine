@@ -370,7 +370,7 @@ namespace TFE_GmidAsset
 		readChunk(buffer, &header);
 		// Check the header type and make sure it is correct.
 		if (header.type != c_MIDI) { return false; }
-				
+
 		u32 tick = 0;
 		u32 trackIndex = 0;
 		u32 ticksPerQuarterNote = 0;
@@ -390,9 +390,9 @@ namespace TFE_GmidAsset
 				} break;
 				case c_MThd:
 				{
-					const u32 format     = readU16(chunkData);
+					const u32 format = readU16(chunkData);
 					midi->trackCount = readU16(chunkData);
-					const u32 division   = readU16(chunkData);
+					const u32 division = readU16(chunkData);
 					if (division & 0x8000)
 					{
 						assert(0);
@@ -411,6 +411,9 @@ namespace TFE_GmidAsset
 					curTrack->pad16 = 0;
 					curTrack->loopStart = -1;
 					curTrack->loopEnd = -1;
+
+					curTrack->ticksPerBeat = ticksPerQuarterNote;
+					curTrack->ticksPerMeasure = ticksPerQuarterNote * 4;
 				} break;
 				case c_MTrk:
 				{

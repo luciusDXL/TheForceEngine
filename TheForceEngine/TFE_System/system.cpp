@@ -33,6 +33,7 @@ namespace TFE_System
 	static bool s_synced = false;
 	static bool s_resetStartTime = false;
 	static bool s_quitMessagePosted = false;
+	static bool s_systemUiRequestPosted = false;
 
 	static s32 s_missedFrameCount = 0;
 
@@ -210,9 +211,21 @@ namespace TFE_System
 	{
 		s_quitMessagePosted = true;
 	}
+		
+	void postSystemUiRequest()
+	{
+		s_systemUiRequestPosted = true;
+	}
 
 	bool quitMessagePosted()
 	{
 		return s_quitMessagePosted;
+	}
+
+	bool systemUiRequestPosted()
+	{
+		bool systemUiPostReq = s_systemUiRequestPosted;
+		s_systemUiRequestPosted = false;
+		return systemUiPostReq;
 	}
 }

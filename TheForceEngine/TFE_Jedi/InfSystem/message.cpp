@@ -36,8 +36,8 @@ namespace TFE_Jedi
 		}
 		MessageAddress* msgAddr = (MessageAddress*)allocator_newItem(s_messageAddr);
 
-		memset(msgAddr->name, 0, 16);
-		strcpy(msgAddr->name, name);
+		assert(strlen(name) <= 16);
+		strncpy(msgAddr->name, name, 16);
 
 		msgAddr->param0 = param0;
 		msgAddr->param1 = param1;
@@ -49,7 +49,7 @@ namespace TFE_Jedi
 		MessageAddress* msgAddr = (MessageAddress*)allocator_getHead(s_messageAddr);
 		while (msgAddr)
 		{
-			if (strcasecmp(name, msgAddr->name) == 0)
+			if (strncasecmp(name, msgAddr->name, 16) == 0)
 			{
 				return msgAddr;
 			}

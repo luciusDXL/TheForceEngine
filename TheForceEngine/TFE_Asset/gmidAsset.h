@@ -83,6 +83,9 @@ struct Track
 	s32 loopStart;
 	s32 loopEnd;
 
+	u32 ticksPerBeat;
+	u32 ticksPerMeasure;
+
 	// Ordered event list.
 	std::vector<MidiTrackEvent> eventList;
 

@@ -218,6 +218,11 @@ namespace TFE_Input
 		return s_keyPressed[key] != 0;
 	}
 
+	void clearKeyPressed(KeyboardCode key)
+	{
+		s_keyPressed[key] = 0;
+	}
+
 	KeyboardCode getKeyPressed()
 	{
 		for (s32 i = 0; i < KEY_COUNT; i++)

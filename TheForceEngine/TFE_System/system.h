@@ -53,5 +53,8 @@ namespace TFE_System
 	void postQuitMessage();
 	bool quitMessagePosted();
 
+	void postSystemUiRequest();
+	bool systemUiRequestPosted();
+
 	const char* getVersionString();
 }

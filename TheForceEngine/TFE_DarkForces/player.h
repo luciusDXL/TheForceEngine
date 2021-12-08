@@ -38,7 +38,7 @@ namespace TFE_DarkForces
 		JBool itemPlans;
 		JBool itemPhrik;
 		JBool itemDatatape;
-		JBool itemUnkown;
+		JBool itemUnused;
 		JBool itemNava;
 		JBool itemDtWeapon;
 		JBool itemCode1;
@@ -70,19 +70,7 @@ namespace TFE_DarkForces
 		s32 index2;
 	};
 
-	struct GoalItems
-	{
-		JBool plans;	// Death Star plans
-		JBool phrik;	// Phrik metal sample
-		JBool nava;		// Nava card in Nar Shadaa
-		JBool nava2;	// Nava card in Jaba's ship.
-		JBool datatape;	// Datatapes from Imperial City.
-		JBool dtWeapon;	// Dark Trooper Weapon
-		JBool stolenInv;// Stolen inventory
-	};
-
 	extern PlayerInfo s_playerInfo;
-	extern GoalItems s_goalItems;
 	extern fixed16_16 s_energy;
 	extern s32 s_lifeCount;
 	extern s32 s_playerLight;
@@ -100,7 +88,6 @@ namespace TFE_DarkForces
 	extern JBool s_superCharge;
 	extern JBool s_superChargeHud;
 	extern JBool s_playerSecMoved;
-	extern JBool s_goals[];
 	extern u32* s_playerInvSaved;
 	// Eye parameters
 	extern fixed16_16 s_playerHeight;
@@ -151,6 +138,9 @@ namespace TFE_DarkForces
 	fixed16_16 player_getSquaredDistance(SecObject* obj);
 	void player_setupCamera();
 	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound);
+
+	JBool player_hasWeapon(s32 weaponIndex);
+	JBool player_hasItem(s32 itemIndex);
 
 	void computeExplosionPushDir(vec3_fixed* pos, vec3_fixed* pushDir);
 	void computeDamagePushVelocity(ProjectileLogic* proj, vec3_fixed* vel);
