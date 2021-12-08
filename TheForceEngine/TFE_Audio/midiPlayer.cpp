@@ -249,9 +249,11 @@ namespace TFE_MidiPlayer
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_JUMP;
-			midiCmd->newTrack = track;
-			midiCmd->measure = measure;
-			midiCmd->beat = beat;
+			// The code calling this is '1' based for tracks, measure, and beat.
+			assert(track >= 1 && measure >= 1 && beat >= 1);
+			midiCmd->newTrack = track - 1;
+			midiCmd->measure = measure - 1;
+			midiCmd->beat = beat - 1;
 			midiCmd->tick = tick;
 		}
 		MUTEX_UNLOCK(&s_mutex);
@@ -285,11 +287,11 @@ namespace TFE_MidiPlayer
 		const GMidiAsset* asset = s_runtime.asset;
 		if (!asset || trackId < 0 || trackId >= (s32)asset->trackCount)
 		{
-			return 0;
+			return 1;
 		}
 
 		const u64 curTick = u64(s_runtime.tracks[trackId].curTick);
-		return u32(curTick / (u64)s_runtime.asset->tracks[0].ticksPerMeasure);
+		return 1 + u32(curTick / (u64)s_runtime.asset->tracks[0].ticksPerMeasure);
 	}
 
 	u32 getBeat()
@@ -298,11 +300,11 @@ namespace TFE_MidiPlayer
 		const GMidiAsset* asset = s_runtime.asset;
 		if (!asset || trackId < 0 || trackId >= (s32)asset->trackCount)
 		{
-			return 0;
+			return 1;
 		}
 
 		const u64 curTick = u64(s_runtime.tracks[s_trackId].curTick);
-		return u32((curTick / (u64)s_runtime.asset->tracks[0].ticksPerBeat) & 3);
+		return 1 + u32((curTick / (u64)s_runtime.asset->tracks[0].ticksPerBeat) & 3);
 	}
 
 	u64 getTick()

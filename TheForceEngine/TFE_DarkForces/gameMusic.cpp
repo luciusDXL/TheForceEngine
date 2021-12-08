@@ -279,7 +279,7 @@ namespace TFE_DarkForces
 				s_savedBeat = TFE_MidiPlayer::getBeat();
 
 				s_transChunk = evt->arg[0].nArg;
-				TFE_MidiPlayer::midiJump(s_transChunk, 0, 0);
+				TFE_MidiPlayer::midiJump(1+s_transChunk, 1, 1);
 				TFE_MidiPlayer::midiSet_iMuseCallback(iMuseCallback2);
 			}
 			else
@@ -345,7 +345,7 @@ namespace TFE_DarkForces
 		if (count)
 		{
 			s32 r = gameMusic_random(0, count - 1);
-			TFE_MidiPlayer::midiJump(s_transChunk, (s32)evt->arg[r].fArg - 2, 3, 300);
+			TFE_MidiPlayer::midiJump(1+s_transChunk, (s32)evt->arg[r].fArg - 1, 4, 300);
 			TFE_MidiPlayer::midiSet_iMuseCallback(iMuseCallback2);
 		}
 		else if (evt->cmd == IMUSE_START_NEW)
@@ -358,7 +358,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				TFE_MidiPlayer::midiJump(0, s_savedMeasure, s_savedBeat, 300);
+				TFE_MidiPlayer::midiJump(1, s_savedMeasure, s_savedBeat, 300);
 			}
 		}
 		else
@@ -387,7 +387,7 @@ namespace TFE_DarkForces
 			}
 			s_stateEntrances[s_currentState] = value;
 
-			TFE_MidiPlayer::midiJump(0, value - 2, 3, 400);
+			TFE_MidiPlayer::midiJump(1, value - 1, 4, 400);
 		}
 		else if (evt->cmd != IMUSE_CLEAR_CALLBACK)
 		{

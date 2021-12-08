@@ -18,7 +18,7 @@ namespace TFE_MidiPlayer
 	// Start a new song.
 	void playSong(const GMidiAsset* gmidAsset, bool loop, s32 track = 0);
 	// Jump to a new location in the midi stream.
-	void midiJump(s32 track, s32 measure, s32 beat = 0, s32 tick = 0);
+	void midiJump(s32 track, s32 measure, s32 beat = 1, s32 tick = 0);
 	// Change the overall music volume.
 	void setVolume(f32 volume);
 

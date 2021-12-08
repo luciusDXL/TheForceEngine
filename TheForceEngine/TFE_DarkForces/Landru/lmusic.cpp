@@ -241,7 +241,7 @@ namespace TFE_DarkForces
 						{
 							s_volume = s_baseVolume;
 							TFE_MidiPlayer::setVolume(s_volume);
-							TFE_MidiPlayer::midiJump(newChunk - 1, newMeasure - 1, 0);
+							TFE_MidiPlayer::midiJump(newChunk, newMeasure, 1);
 						}
 					}
 				}
