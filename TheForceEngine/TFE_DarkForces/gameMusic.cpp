@@ -13,9 +13,10 @@ namespace TFE_DarkForces
 	enum MusicConstants
 	{
 		MUS_LEVEL_COUNT = 14,
+		MUS_STATE_COUNT = 5,
 	};
 
-	static const char s_levelMusic[MUS_LEVEL_COUNT][5][10] =
+	static const char s_levelMusic[MUS_LEVEL_COUNT][MUS_STATE_COUNT][10] =
 	{
 		// LEVEL 1
 		{
@@ -132,14 +133,14 @@ namespace TFE_DarkForces
 	};
 
 	MusicState s_currentState = MUS_STATE_NULLSTATE;
-	MusicState s_oldState;
+	MusicState s_oldState = MUS_STATE_NULLSTATE;
 	static s32 s_stateEntrances[MUS_STATE_UNDEFINED] = { 0 };
 	static s32 s_currentLevel = 0;
 	static GMidiAsset* s_oldSong = nullptr;
 	static GMidiAsset* s_newSong = nullptr;
 	static s32 s_transChunk = 0;
-	static u32 s_savedMeasure;
-	static u32 s_savedBeat;
+	static u32 s_savedMeasure = 0;
+	static u32 s_savedBeat = 0;
 
 	s32  gameMusic_setLevel(s32 level);
 	void loadMusic(const char* fileName);
@@ -202,21 +203,22 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				const char* songName = s_levelMusic[s_currentLevel-1][state-1];
-				GMidiAsset* song = getMusic(songName);
-				if (song)
+				const char* newSongName = s_levelMusic[s_currentLevel-1][state-1];
+				const char* oldSongName = s_levelMusic[s_currentLevel-1][s_currentState-1];
+				GMidiAsset* newSong = getMusic(newSongName);
+				if (newSong)
 				{
 					if (s_currentState != MUS_STATE_NULLSTATE)
 					{
 						if (!TFE_MidiPlayer::midiGet_iMuseCallback())
 						{
-							s_oldSong = getMusic(s_levelMusic[s_currentLevel-1][s_currentState-1]);
+							s_oldSong = getMusic(oldSongName);
 							TFE_MidiPlayer::midiSet_iMuseCallback(iMuseCallback1);
 						}
 					}
 					else
 					{
-						TFE_MidiPlayer::playSong(song, true);
+						TFE_MidiPlayer::playSong(newSong, true);
 					}
 
 					s_oldState = s_currentState;
@@ -224,7 +226,7 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_ERROR, "GameMusic", "Cannot start song '%s'.", songName);
+					TFE_System::logWrite(LOG_ERROR, "GameMusic", "Cannot start song '%s'.", newSongName);
 				}
 			}
 		}
@@ -401,8 +403,8 @@ namespace TFE_DarkForces
 		if (!initFlag)
 		{
 			initFlag = 1;
-			rseed1 = (s32)&rseed2;
-			rseed2 = ~(s32)&rseed1;
+			rseed1 =  (s32)(size_t)(&rseed2);
+			rseed2 = ~(s32)(size_t)(&rseed1);
 		}
 
 		for (s32 i = 0; i < 23; i++)
