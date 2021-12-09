@@ -23,6 +23,8 @@ namespace TFE_DarkForces
 	void gameMusic_stop();
 
 	void gameMusic_setState(MusicState state);
+	void gameMusic_startFight();
+	void gameMusic_sustainFight();
 
 	MusicState gameMusic_getState();
 }  // TFE_DarkForces

@@ -14,6 +14,7 @@ namespace TFE_DarkForces
 	{
 		MUS_LEVEL_COUNT = 14,
 		MUS_STATE_COUNT = 5,
+		MUS_FIGHT_TIME  = TICKS(3),
 	};
 
 	static const char s_levelMusic[MUS_LEVEL_COUNT][MUS_STATE_COUNT][10] =
@@ -141,11 +142,14 @@ namespace TFE_DarkForces
 	static s32 s_transChunk = 0;
 	static u32 s_savedMeasure = 0;
 	static u32 s_savedBeat = 0;
-
+	static Task* s_musicTask = nullptr;
+	static JBool s_desiredFightState = JFALSE;
+	
 	s32  gameMusic_setLevel(s32 level);
 	void loadMusic(const char* fileName);
 	GMidiAsset* getMusic(const char* fileName);
 	s32 gameMusic_random(s32 low, s32 high);
+	void gameMusic_taskFunc(MessageType msg);
 	void iMuseCallback1(const iMuseEvent* evt);
 	void iMuseCallback2(const iMuseEvent* evt);
 	void iMuseCallback3(const iMuseEvent* evt);
@@ -153,14 +157,17 @@ namespace TFE_DarkForces
 	void gameMusic_start(s32 level)
 	{
 		memset(s_stateEntrances, 0, MUS_STATE_UNDEFINED * sizeof(s32));
+		s_musicTask = createSubTask("iMuse", gameMusic_taskFunc);
 
 		gameMusic_setLevel(level);
 		gameMusic_setState(MUS_STATE_STALK);
+		s_desiredFightState = JFALSE;
 	}
 
 	void gameMusic_stop()
 	{
 		gameMusic_setState(MUS_STATE_NULLSTATE);
+		s_musicTask = nullptr;
 	}
 
 	s32 gameMusic_setLevel(s32 level)
@@ -240,6 +247,53 @@ namespace TFE_DarkForces
 	MusicState gameMusic_getState()
 	{
 		return s_currentState;
+	}
+				
+	void gameMusic_startFight()
+	{
+		static s32 scriptTimer = 0;
+		if (s_curTick - scriptTimer > TICKS(8))
+		{
+			scriptTimer = s_curTick - TICKS(6);
+		}
+		else
+		{
+			scriptTimer += TICKS(3);
+		}
+
+		if (scriptTimer > s_curTick)
+		{
+			// TFE_System::logWrite(LOG_MSG, "iMuse", "Trigger Fight");
+			task_setNextTick(s_musicTask, s_curTick + MUS_FIGHT_TIME);
+			if (!s_desiredFightState)
+			{
+				gameMusic_setState(MUS_STATE_FIGHT);
+				s_desiredFightState = JTRUE;
+			}
+		}
+	}
+
+	void gameMusic_sustainFight()
+	{
+		if (s_desiredFightState)
+		{
+			// TFE_System::logWrite(LOG_MSG, "iMuse", "Sustain Fight");
+			gameMusic_startFight();
+		}
+	}
+
+	void gameMusic_taskFunc(MessageType msg)
+	{
+		task_begin;
+		while (msg != MSG_FREE_TASK)
+		{
+			task_yield(TASK_SLEEP);
+
+			// TFE_System::logWrite(LOG_MSG, "iMuse", "Trigger Stalk");
+			gameMusic_setState(MUS_STATE_STALK);
+			s_desiredFightState = JFALSE;
+		}
+		task_end;
 	}
 
 	void loadMusic(const char* fileName)

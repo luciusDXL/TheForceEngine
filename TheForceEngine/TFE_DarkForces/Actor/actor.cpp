@@ -2,6 +2,7 @@
 
 #include "actor.h"
 #include "../logic.h"
+#include "../gameMusic.h"
 #include "aiActor.h"
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/random.h>
@@ -837,10 +838,10 @@ namespace TFE_DarkForces
 			} break;
 			case 1:
 			{
-				// actor_handleFightMusic();
+				gameMusic_sustainFight();
 				if (s_playerDying)
 				{
-					if (s_reviveTick <= s_curTick)
+					if (s_curTick >= s_reviveTick)
 					{
 						enemy->anim.flags |= 2;
 						enemy->anim.state = 0;
@@ -1847,7 +1848,7 @@ namespace TFE_DarkForces
 		{
 			if (actorLogic->flags & 1)
 			{
-				// imuse_triggerFightTrack();
+				gameMusic_startFight();
 			}
 
 			if ((actorLogic->flags & 4) && (actorLogic->flags & 1))
@@ -1885,7 +1886,7 @@ namespace TFE_DarkForces
 		{
 			if (actorLogic->flags & 1)
 			{
-				// imuse_triggerFightTrack();
+				gameMusic_startFight();
 			}
 			actorLogic->flags &= ~1;
 			s_actorState.curAnimation = nullptr;
@@ -2005,7 +2006,7 @@ namespace TFE_DarkForces
 							if (actor_isObjectVisible(obj, s_playerObject, actorLogic->fov, actorLogic->nearDist))
 							{
 								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
-								// imuse_triggerFightTrack();
+								gameMusic_startFight();
 								collision_effectObjectsInRangeXZ(obj->sector, FIXED(150), obj->posWS, hitEffectWakeupFunc, obj, ETFLAG_AI_ACTOR);
 							}
 						}

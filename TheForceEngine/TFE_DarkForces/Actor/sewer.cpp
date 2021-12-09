@@ -1,6 +1,7 @@
 #include "sewer.h"
 #include "aiActor.h"
 #include "../logic.h"
+#include "../gameMusic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
 #include <TFE_DarkForces/projectile.h>
@@ -142,7 +143,7 @@ namespace TFE_DarkForces
 			} break;
 			case 1:
 			{
-				// actor_handleFightMusic(&enemy->anim);
+				gameMusic_sustainFight();
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
