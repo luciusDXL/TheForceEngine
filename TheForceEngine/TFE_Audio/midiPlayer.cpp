@@ -519,13 +519,14 @@ namespace TFE_MidiPlayer
 								const iMuseEvent* imuse = &track->imuseEvents[evt[e].index];
 								if (imuse->cmd == IMUSE_LOOP_START)
 								{
-									// Sets the loop point, but that is already recorded in the Loop End event.
+									loopStart = evt[e].tick;
 								}
 								else if (imuse->cmd == IMUSE_LOOP_END)
 								{
 									if (s_runtime.loop)  // TODO: Is this accurate?
 									{
-										nextTick = imuse->arg[0].nArg;
+										// If the loop start isn't set, use the pre-recorded value.
+										nextTick = loopStart >= 0 ? loopStart : imuse->arg[0].nArg;
 										runtimeTrack->lastEvent = -1;
 										breakFromLoop = true;
 										stopAllNotes();

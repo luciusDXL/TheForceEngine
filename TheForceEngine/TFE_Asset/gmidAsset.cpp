@@ -381,11 +381,18 @@ namespace TFE_GmidAsset
 		u32 ticksPerQuarterNote = 0;
 		Track* curTrack = nullptr;
 		midi->length = 0u;
-		while (buffer < end)
+		bool endReached = false;
+		while (buffer < end && !endReached)
 		{
 			// Read each chunk in order.
 			GmdChunk chunk;
 			readChunk(buffer, &chunk);
+			
+			// Sometimes there is a bad chunk at the end, so detect that case.
+			if (buffer >= end)
+			{
+				break;
+			}
 
 			const u8* chunkData = buffer;
 			switch (chunk.type)
@@ -429,7 +436,16 @@ namespace TFE_GmidAsset
 						u8  midiEvent = readU8(chunkData);
 
 						tick += deltaTime;
-						if (midiEvent == 0xff)
+						if (midiEvent == 0)
+						{
+							// We are done now.
+							if (curTrack->length == 0)
+							{
+								curTrack->length = tick;
+							}
+							break;
+						}
+						else if (midiEvent == 0xff)
 						{
 							// Meta Event
 							const MetaType metaType = (MetaType)readU8(chunkData);
@@ -452,8 +468,7 @@ namespace TFE_GmidAsset
 									addMidiMarker(curTrack, tick, text);
 								}
 							}
-
-							if (metaType == META_TEMPO)
+							else if (metaType == META_TEMPO)
 							{
 								// microseconds per quarter note (i.e. seconds per note = microsec / 1,000,000)
 								// 1 - 16777215
@@ -502,7 +517,6 @@ namespace TFE_GmidAsset
 									curTrack->loopEnd = -1;
 								}
 							}
-
 							chunkData += metaLength;
 						}
 						else if (midiEvent == 0xf0 || midiEvent == 0xf7)
@@ -523,7 +537,7 @@ namespace TFE_GmidAsset
 							const u32 evtType    = midiEvent & 0xf0;
 							const u32 evtChannel = midiEvent & 0x0f;
 							const u32 midiEvtLen = (evtType == MID_PROGRAM_CHANGE || evtType == MID_CHANNEL_PRESSURE) ? 1 : 2;
-
+																					
 							const u8 data1 = readU8(chunkData);
 							const u8 data2 = midiEvtLen > 1 ? readU8(chunkData) : 0;
 
@@ -531,7 +545,7 @@ namespace TFE_GmidAsset
 						}
 						else
 						{
-							TFE_System::logWrite(LOG_ERROR, "Midi", "Running status not supported.");
+							TFE_System::logWrite(LOG_ERROR, "Midi", "Running status not supported: 0x%x", midiEvent);
 							chunkData++;
 						}
 					}
@@ -539,7 +553,7 @@ namespace TFE_GmidAsset
 				default:
 				{
 					const char* typeChar = (char*)&chunk.type;
-					TFE_System::logWrite(LOG_ERROR, "Midi", "Unknown GMID chunk type: %c%c%c%c", typeChar[0]);
+					TFE_System::logWrite(LOG_ERROR, "Midi", "Unknown GMID chunk type: %c%c%c%c", typeChar[0], typeChar[1], typeChar[2], typeChar[3]);
 				}
 			}
 
