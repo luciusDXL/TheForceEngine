@@ -111,20 +111,19 @@ namespace TFE_Jedi
 			setSourcePosition(source, &posFloat);
 			return soundId;
 		}
-		else
-		{
-			SoundBuffer* buffer = TFE_VocAsset::getFromIndex(sourceId - 1);
-			if (!buffer) { return NULL_SOUND; }
 
-			source = createSoundSource(SOUND_3D, 1.0f, 0.5f, buffer, &posFloat, true);
-			playSource(source, true);
-		}
+		SoundBuffer* buffer = TFE_VocAsset::getFromIndex(sourceId - 1);
+		if (!buffer) { return NULL_SOUND; }
 
+		source = createSoundSource(SOUND_3D, 1.0f, 0.5f, buffer, &posFloat, true);
 		slot = getSourceSlot(source);
 		if (slot >= MAX_SOUND_SOURCES)
 		{
+			freeSource(source);
 			return NULL_SOUND;
 		}
+
+		playSource(source, true);
 
 		s_slotMapping[slot] = source;
 		s_slotID[slot] = (s_slotID[slot] + 1) & JSND_UID_MASK;
