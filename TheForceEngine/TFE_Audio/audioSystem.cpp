@@ -6,40 +6,20 @@
 #include <TFE_System/math.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
+#include <TFE_System/profiler.h>
 #include <assert.h>
 #include <algorithm>
-
-// TODO: Add a command queue to avoid locking on the audio thread.
-// Commands for adding/removing sources, changing volume, etc.
-/*
-#include <atomic>
-typedef std::atomic_int  s32_atomic;
-typedef std::atomic_uint u32_atomic;
-#define atomicFetchAdd(a,b)   std::atomic_fetch_add(a,b)
-#define atomicWrite(a, value) std::atomic_store(a, value)
-#define atomicRead(a)         std::atomic_load(a)
-
-u32 writeBuffer;
-u32_atomic readBuffer;	// just keep incrementing and fixup after read.
-
-writeBuffer = 0;
-atomicWrite(&readBuffer, BUFFER_COUNT - 1);
-
-// Write data to [writeBuffer]
-// ...
-// Mark the readBuffer = writeBuffer
-atomicWrite(&readBuffer, writeBuffer);
-// Increment writeBuffer for next frame.
-writeBuffer = (writeBuffer + 1) % BUFFER_COUNT;
-
-// Read current buffer index in the audio thread.
-u32 index = atomicRead(&readBuffer);
-*/
 
 // Comment out the desired sigmoid function and comment all of the others.
 //#define AUDIO_SIGMOID_CLIP 1
 #define AUDIO_SIGMOID_TANH 1
 //#define AUDIO_SIGMOID_RCP_SQRT 1
+
+// Volume level below which sound processing can be skipped.
+#define SND_CULL_VOLUME 0.0001f
+
+// Set to 1 to enable audio timing counters.
+#define AUDIO_TIMING 0
 
 enum SoundSourceFlags
 {
@@ -99,6 +79,13 @@ namespace TFE_Audio
 	void setSoundVolumeConsole(const ConsoleArgList& args);
 	void getSoundVolumeConsole(const ConsoleArgList& args);
 
+#if AUDIO_TIMING == 1
+	static f64 s_soundIterMaxF = 0.0;
+	static f64 s_soundIterAveF = 0.0;
+	static s32 s_soundIterMax = 0;
+	static s32 s_soundIterAve = 0;
+#endif
+
 	bool init()
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_AudioSystem::init");
@@ -109,6 +96,11 @@ namespace TFE_Audio
 
 		CCMD("setSoundVolume", setSoundVolumeConsole, 1, "Sets the sound volume, range is 0.0 to 1.0");
 		CCMD("getSoundVolume", getSoundVolumeConsole, 0, "Get the current sound volume.");
+
+	#if AUDIO_TIMING == 1
+		TFE_COUNTER(s_soundIterMax, "SoundIterMax-MicroSec");
+		TFE_COUNTER(s_soundIterAve, "SoundIterAve-MicroSec");
+	#endif
 
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		setVolume(soundSettings->soundFxVolume);
@@ -165,18 +157,6 @@ namespace TFE_Audio
 	{
 		s_paused = false;
 	}
-
-	// Issue - too many locks, wasted time looping over inactive sources.
-	// TODO: Reduce audio thread cost and remove locks:
-	// 1. SoundSource base array.
-	// 2. SoundSource active array, only contains active sounds, sounds with data, etc.
-	// 3. Add small queue with finished sounds; do cleanup during main thread update().
-	//
-	// Better:
-	// Keep threads data seperate.
-	// Add command buffer.
-	// Add/Remove from main thread (add sound when play is called, set volume, etc.)
-	// Setup finished queue to handle sounds finishing.
 
 	void update(const Vec3f* listenerPos, const Vec3f* listenerDir)
 	{
@@ -471,34 +451,60 @@ namespace TFE_Audio
 
 		return sampleValue * c_scale[type] + c_offset[type];
 	}
-		
+
 	// Audio callback
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData)
 	{
 		f32* buffer = (f32*)outputBuffer;
-	
+
+	#if AUDIO_TIMING == 1
+		u64 soundIterStart = TFE_System::getCurrentTimeInTicks();
+	#endif
+
+		// First clear samples
+		memset(buffer, 0, sizeof(f32)*bufferSize*2);
+
 		MUTEX_LOCK(&s_mutex);
-		for (u32 i = 0; i < bufferSize; i++, buffer += 2)
+		// Then loop through the sources.
+		SoundSource* snd = s_sources;
+		for (u32 s = 0; s < s_sourceCount && !s_paused; s++, snd++)
 		{
-			f32 valueLeft  = 0.0f;
-			f32 valueRight = 0.0f;
-			
-			SoundSource* snd = s_sources;
-			for (u32 s = 0; s < s_sourceCount && !s_paused; s++, snd++)
+			if (!(snd->flags&SND_FLAG_PLAYING)) { continue; }
+			assert(snd->buffer->data);
+
+			// Stereo Seperation.
+			const f32 sepSq = std::max(snd->volume - snd->seperation*snd->seperation, 0.0f) * s_soundFxScale;
+			const f32 invSepSq = std::max(snd->volume - (1.0f - snd->seperation) * (1.0f - snd->seperation), 0.0f) * s_soundFxScale;
+
+			// Skip sound sample processing the sound is too quiet...
+			const u32 sndBufferSize = snd->buffer->size;
+			if (sepSq < SND_CULL_VOLUME && invSepSq < SND_CULL_VOLUME)
 			{
-				if (!(snd->flags&SND_FLAG_PLAYING)) { continue; }
-				assert(snd->buffer->data);
+				// Pretend we played the sound and handle looping.
+				snd->sampleIndex += bufferSize;
+				if (snd->sampleIndex >= sndBufferSize)
+				{
+					if (snd->flags&SND_FLAG_LOOPING)
+					{
+						snd->sampleIndex = (snd->sampleIndex % sndBufferSize) + snd->buffer->loopStart;
+					}
+					else
+					{
+						snd->flags &= ~SND_FLAG_PLAYING;
+						snd->flags |= SND_FLAG_FINISHED;
+						snd->sampleIndex = 0u;
+					}
+				}
+				continue;
+			}
 
-				// Compute the sample value.
-				const f32 sampleValue = sampleBuffer(snd->sampleIndex, snd->buffer->type, snd->buffer->data) * s_soundFxScale;
-				// Stereo Seperation.
-				const f32 sepSq = snd->seperation*snd->seperation;
-				const f32 invSepSq = (1.0f - snd->seperation) * (1.0f - snd->seperation);
-				valueLeft  += std::max(snd->volume - sepSq, 0.0f) * sampleValue;
-				valueRight += std::max(snd->volume - invSepSq, 0.0f) * sampleValue;
-
-				snd->sampleIndex++;
-				if (snd->sampleIndex >= snd->buffer->size)
+			// Sample loop.
+			buffer = (f32*)outputBuffer;
+			// The sound may be split into multiple iterations if it loops or the loop
+			// may end early, once we reach the end.
+			for (u32 i = 0; i < bufferSize;)
+			{
+				if (snd->sampleIndex >= sndBufferSize)
 				{
 					if (snd->flags&SND_FLAG_LOOPING)
 					{
@@ -509,33 +515,61 @@ namespace TFE_Audio
 						snd->flags &= ~SND_FLAG_PLAYING;
 						snd->flags |= SND_FLAG_FINISHED;
 						snd->sampleIndex = 0u;
+						break;
 					}
 				}
+
+				const SoundDataType type = snd->buffer->type;
+				const u8* data = snd->buffer->data;
+				const u32 end = std::min(sndBufferSize, snd->sampleIndex + bufferSize - i);
+				u32 sIndex = snd->sampleIndex;
+				for (; sIndex < end; i++, sIndex++, buffer += 2)
+				{
+					const f32 sample = sampleBuffer(sIndex, type, data);
+					buffer[0] += sample * sepSq;
+					buffer[1] += sample * invSepSq;
+				}
+				snd->sampleIndex = sIndex;
 			}
+		}
+		// Cleanup sound sources while we are still in the mutex.
+		cleanupSources();
+		MUTEX_UNLOCK(&s_mutex);
+
+		// Finally handle out of range audio samples.
+		buffer = (f32*)outputBuffer;
+		for (u32 i = 0; i < bufferSize; i++, buffer += 2)
+		{
+			const f32 valueLeft  = buffer[0];
+			const f32 valueRight = buffer[1];
 
 			// Audio outside of the [-1, 1] range will cause overflow, which is a major artifact.
 			// Instead the audio needs to be limited in range, which can be done in several ways.
 			// Sigmoid functions map an arbitrary range into [-1, 1] generall along an S-Curve, allowing us to avoid overflow.
 		#if defined(AUDIO_SIGMOID_CLIP)		// Not really a Sigmoid function but acts in a similar way, naively mapping to the required range.
-			valueLeft  = std::max(-c_channelLimit, std::min(valueLeft,  c_channelLimit));
-			valueRight = std::max(-c_channelLimit, std::min(valueRight, c_channelLimit));
+			buffer[0] = std::max(-c_channelLimit, std::min(valueLeft,  c_channelLimit));
+			buffer[1] = std::max(-c_channelLimit, std::min(valueRight, c_channelLimit));
 		#elif defined(AUDIO_SIGMOID_TANH)	// Considered one of the most "musical sounding" sigmoid functions, it avoids hard clipping.
 			// Note the usable range is approximately -4.8 to 4.8 so the volumes should be adjusted to stay within those ranges when possible.
 			// Still much better than the effect -1 to 1 range with hard clipping and cheaper than the more accurate library tanh(). :)
-			valueLeft  = TFE_Math::tanhf_series(valueLeft);
-			valueRight = TFE_Math::tanhf_series(valueRight);
+			buffer[0] = TFE_Math::tanhf_series(valueLeft);
+			buffer[1] = TFE_Math::tanhf_series(valueRight);
 		#elif defined(AUDIO_SIGMOID_RCP_SQRT)
-			valueLeft  = valueLeft  / sqrtf(1.0f + valueLeft  * valueLeft);
-			valueRight = valueRight / sqrtf(1.0f + valueRight * valueRight);
+			buffer[0] = valueLeft  / sqrtf(1.0f + valueLeft * valueLeft);
+			buffer[1] = valueRight / sqrtf(1.0f + valueRight * valueRight);
 		#endif
-
-			//stereo output.
-			buffer[0] = valueLeft;
-			buffer[1] = valueRight;
 		}
-		cleanupSources();
-		MUTEX_UNLOCK(&s_mutex);
 
+		// Timing
+	#if AUDIO_TIMING == 1
+		u64 soundIterEnd = TFE_System::getCurrentTimeInTicks();
+		f64 soundIterDeltaMS = 1000000.0 * TFE_System::convertFromTicksToSeconds(soundIterEnd - soundIterStart);
+		s_soundIterAveF = soundIterDeltaMS * 0.01 + s_soundIterAveF * 0.99;
+		s_soundIterMaxF = std::max(s_soundIterMaxF, soundIterDeltaMS);
+		s_soundIterAve = s32(s_soundIterAveF);
+		s_soundIterMax = s32(s_soundIterMaxF);
+	#endif
+		
 		return 0;
 	}
 		
