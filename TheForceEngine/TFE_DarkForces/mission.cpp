@@ -694,7 +694,6 @@ namespace TFE_DarkForces
 	{
 		hud_sendTextMessage(12);
 		s_headlampActive = JFALSE;
-		hud_setupToggleAnim1(JTRUE);
 	}
 
 	void enableHeadlamp()
@@ -703,7 +702,6 @@ namespace TFE_DarkForces
 		{
 			s_headlampActive = JTRUE;
 			hud_sendTextMessage(13);
-			hud_setupToggleAnim1(JTRUE);
 		}
 	}
 

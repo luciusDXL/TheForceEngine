@@ -121,7 +121,10 @@ namespace TFE_Jedi
 		}
 
 		slot = getSourceSlot(source);
-		assert(slot >= 0);
+		if (slot >= MAX_SOUND_SOURCES)
+		{
+			return NULL_SOUND;
+		}
 
 		s_slotMapping[slot] = source;
 		s_slotID[slot] = (s_slotID[slot] + 1) & JSND_UID_MASK;
