@@ -39,14 +39,15 @@ namespace TFE_Jedi
 		if (!buffer) { return NULL_SOUND; }
 
 		SoundSource* source = createSoundSource(SOUND_2D, 1.0f, 0.5f, buffer);
-		if (!source)
+		if (!source) { return NULL_SOUND; }
+		
+		s32 slot = getSourceSlot(source);
+		if (slot < 0)
 		{
+			freeSource(source);
 			return NULL_SOUND;
 		}
 		playSource(source);
-
-		s32 slot = getSourceSlot(source);
-		assert(slot >= 0);
 
 		s_slotMapping[slot] = source;
 		s_slotID[slot] = (s_slotID[slot] + 1) & JSND_UID_MASK;
@@ -64,9 +65,13 @@ namespace TFE_Jedi
 		SoundSource* source = createSoundSource(SOUND_2D, 1.0f, 0.5f, buffer);
 		if (!source) { return NULL_SOUND; }
 
-		playSource(source, true);
 		s32 slot = getSourceSlot(source);
-		assert(slot >= 0);
+		if (slot < 0)
+		{
+			freeSource(source);
+			return NULL_SOUND;
+		}
+		playSource(source, true);
 
 		s_slotMapping[slot] = source;
 		s_slotID[slot] = (s_slotID[slot] + 1) & JSND_UID_MASK;
@@ -85,10 +90,14 @@ namespace TFE_Jedi
 		Vec3f posFloat = { fixed16ToFloat(pos.x), fixed16ToFloat(pos.y), fixed16ToFloat(pos.z) };
 		SoundSource* source = createSoundSource(SOUND_3D, 1.0f, 0.5f, buffer, &posFloat, true);
 		if (!source) { return NULL_SOUND; }
-		playSource(source);
-
+		
 		s32 slot = getSourceSlot(source);
-		assert(slot >= 0);
+		if (slot < 0)
+		{
+			freeSource(source);
+			return NULL_SOUND;
+		}
+		playSource(source);
 
 		s_slotMapping[slot] = source;
 		s_slotID[slot] = (s_slotID[slot] + 1) & JSND_UID_MASK;
@@ -122,7 +131,6 @@ namespace TFE_Jedi
 			freeSource(source);
 			return NULL_SOUND;
 		}
-
 		playSource(source, true);
 
 		s_slotMapping[slot] = source;
