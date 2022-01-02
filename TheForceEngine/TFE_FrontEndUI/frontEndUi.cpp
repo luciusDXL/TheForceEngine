@@ -134,6 +134,7 @@ namespace TFE_FrontEndUI
 
 	static s32 s_resIndex = 0;
 	static s32 s_rendererIndex = 0;
+	static f32 s_uiScale = 1.0f;
 	static char* s_aboutDisplayStr = nullptr;
 	static char* s_manualDisplayStr = nullptr;
 	static char* s_creditsDisplayStr = nullptr;
@@ -210,11 +211,13 @@ namespace TFE_FrontEndUI
 		s_subUI = FEUI_NONE;
 		s_relativeMode = false;
 
+		s_uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
+
 		ImGuiIO& io = ImGui::GetIO();
-		s_menuFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 32);
-		s_versionFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 16);
-		s_titleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 48);
-		s_dialogFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 20);
+		s_menuFont    = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(32*s_uiScale + 0.5f));
+		s_versionFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(16*s_uiScale + 0.5f));
+		s_titleFont   = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(48*s_uiScale + 0.5f));
+		s_dialogFont  = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(20*s_uiScale + 0.5f));
 
 		if (!loadGpuImage("UI_Images/TFE_TitleLogo.png", &s_logoGpuImage))
 		{
@@ -437,42 +440,15 @@ namespace TFE_FrontEndUI
 			ImGui::PushFont(s_versionFont);
 			char versionText[256];
 			sprintf(versionText, "Version %s", TFE_System::getVersionString());
-			const f32 stringWidth = s_versionFont->CalcTextSizeA(16.0f, 1024.0f, 0.0f, versionText).x;
+			const f32 stringWidth = s_versionFont->CalcTextSizeA(s_versionFont->FontSize, 1024.0f, 0.0f, versionText).x;
 
-			ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - 32.0f, f32(h) - 64.0f));
+			ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - s_versionFont->FontSize*2.0f, f32(h) - s_versionFont->FontSize*4.0f));
 			ImGui::Begin("##Version", &titleActive, windowInvisFlags);
 			ImGui::Text(versionText);
 			ImGui::End();
 			ImGui::PopFont();
 
 			s32 menuHeight = (textHeight + 24) * 7 + 4;
-			// Warning Text - Note this is temporary and will be removed once things have settled.
-			{
-				f32 warningWidth;
-				s32 yOffset;
-				if (h > 700)
-				{
-					yOffset = 96;
-					ImGui::PushFont(s_menuFont);
-					warningWidth = s_menuFont->CalcTextSizeA(32.0f, 1024.0f, 0.0f, "Expect Bugs and Missing Features").x;
-				}
-				else
-				{
-					yOffset = 32;
-					warningWidth = ImGui::GetFont()->CalcTextSizeA(16.0f, 1024.0f, 0.0f, "Expect Bugs and Missing Features").x;
-				}
-
-				ImGui::SetNextWindowPos(ImVec2(f32((w - warningWidth) / 2), f32(h - menuHeight - topOffset - yOffset)));
-				ImGui::Begin("##Warning", &titleActive, windowInvisFlags);
-				ImGui::Text("    Pre-Release Test Build -");
-				ImGui::Text("Expect Bugs and Missing Features");
-				ImGui::End();
-
-				if (h > 700)
-				{
-					ImGui::PopFont();
-				}
-			}
 
 			// Main Menu
 			ImGui::PushFont(s_menuFont);
@@ -559,10 +535,10 @@ namespace TFE_FrontEndUI
 			TFE_Input::clearAccumulatedMouseMove();
 
 			ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-			ImGui::SetNextWindowSize(ImVec2(160.0f, f32(h)));
+			ImGui::SetNextWindowSize(ImVec2(160.0f*s_uiScale, f32(h)));
 			ImGui::Begin("##Sidebar", &active, window_flags);
 
-			ImVec2 sideBarButtonSize(144, 24);
+			ImVec2 sideBarButtonSize(144*s_uiScale, 24*s_uiScale);
 			ImGui::PushFont(s_dialogFont);
 			if (ImGui::Button("About", sideBarButtonSize))
 			{
@@ -624,13 +600,13 @@ namespace TFE_FrontEndUI
 			ImGui::End();
 
 			// adjust the width based on tab.
-			s32 tabWidth = w - 160;
+			s32 tabWidth = w - 160*s_uiScale;
 			if (s_configTab >= CONFIG_INPUT)
 			{
-				tabWidth = 414;
+				tabWidth = 414*s_uiScale;
 			}
 
-			ImGui::SetNextWindowPos(ImVec2(160.0f, 0.0f));
+			ImGui::SetNextWindowPos(ImVec2(160.0f*s_uiScale, 0.0f));
 			ImGui::SetNextWindowSize(ImVec2(f32(tabWidth), f32(h)));
 			ImGui::SetNextWindowBgAlpha(0.95f);
 			ImGui::Begin("##Settings", &active, window_flags);
@@ -754,14 +730,14 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Game Source Data");
 		ImGui::PopFont();
 
-		ImGui::Text("Dark Forces:"); ImGui::SameLine(100);
+		ImGui::Text("Dark Forces:"); ImGui::SameLine(100*s_uiScale);
 		ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024); ImGui::SameLine();
 		if (ImGui::Button("Browse##DarkForces"))
 		{
 			browseWinOpen = 0;
 		}
 
-		ImGui::Text("Outlaws:"); ImGui::SameLine(100);
+		ImGui::Text("Outlaws:"); ImGui::SameLine(100*s_uiScale);
 		ImGui::InputText("##OutlawsSource", outlaws->sourcePath, 1024); ImGui::SameLine();
 		if (ImGui::Button("Browse##Outlaws"))
 		{
@@ -910,7 +886,7 @@ namespace TFE_FrontEndUI
 		char inputName1[256] = "##Input1";
 		char inputName2[256] = "##Input2";
 
-		ImGui::LabelText("##ConfigLabel", name); ImGui::SameLine(132);
+		ImGui::LabelText("##ConfigLabel", name); ImGui::SameLine(132*s_uiScale);
 		if (count >= 1)
 		{
 			InputBinding* binding = inputMapping_getBindindByIndex(indices[0]);
@@ -935,7 +911,7 @@ namespace TFE_FrontEndUI
 			strcat(inputName2, name);
 		}
 
-		if (ImGui::Button(inputName1, ImVec2(120.0f, 0.0f)))
+		if (ImGui::Button(inputName1, ImVec2(120.0f*s_uiScale, 0.0f)))
 		{
 			// Press Key Popup.
 			s_keyIndex = s32(action);
@@ -944,7 +920,7 @@ namespace TFE_FrontEndUI
 			ImGui::OpenPopup("##ChangeBinding");
 		}
 		ImGui::SameLine();
-		if (ImGui::Button(inputName2, ImVec2(120.0f, 0.0f)))
+		if (ImGui::Button(inputName2, ImVec2(120.0f*s_uiScale, 0.0f)))
 		{
 			// Press Key Popup.
 			s_keyIndex = s32(action);
@@ -967,19 +943,19 @@ namespace TFE_FrontEndUI
 
 		s_inputConfig = inputMapping_get();
 
-		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
+		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		if (ImGui::Button("Reset To Defaults"))
 		{
 			inputMapping_resetToDefaults();
 		}
-		yNext += 32.0f;
+		yNext += 32.0f*s_uiScale;
 
-		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
+		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-		if (ImGui::BeginChild("Controller Options", ImVec2(390.0f, s_controllerWinOpen ? 400.0f : 29.0f), true, window_flags))
+		if (ImGui::BeginChild("Controller Options", ImVec2(390.0f*s_uiScale, (s_controllerWinOpen ? 400.0f : 29.0f)*s_uiScale), true, window_flags))
 		{
-			if (ImGui::Button("Controller Options", ImVec2(370.0f, 0.0f)))
+			if (ImGui::Button("Controller Options", ImVec2(370.0f*s_uiScale, 0.0f)))
 			{
 				s_controllerWinOpen = !s_controllerWinOpen;
 			}
@@ -999,20 +975,20 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "Controller Axis");
 				ImGui::PopFont();
 
-				ImGui::LabelText("##ConfigLabel", "Horizontal Turn"); ImGui::SameLine(175);
-				ImGui::SetNextItemWidth(196);
+				ImGui::LabelText("##ConfigLabel", "Horizontal Turn"); ImGui::SameLine(175*s_uiScale);
+				ImGui::SetNextItemWidth(196*s_uiScale);
 				ImGui::Combo("##CtrlLookHorz", (s32*)&s_inputConfig->axis[AA_LOOK_HORZ], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
-				ImGui::LabelText("##ConfigLabel", "Vertical Look"); ImGui::SameLine(175);
-				ImGui::SetNextItemWidth(196);
+				ImGui::LabelText("##ConfigLabel", "Vertical Look"); ImGui::SameLine(175*s_uiScale);
+				ImGui::SetNextItemWidth(196*s_uiScale);
 				ImGui::Combo("##CtrlLookVert", (s32*)&s_inputConfig->axis[AA_LOOK_VERT], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
-				ImGui::LabelText("##ConfigLabel", "Move"); ImGui::SameLine(175);
-				ImGui::SetNextItemWidth(196);
+				ImGui::LabelText("##ConfigLabel", "Move"); ImGui::SameLine(175*s_uiScale);
+				ImGui::SetNextItemWidth(196*s_uiScale);
 				ImGui::Combo("##CtrlStrafe", (s32*)&s_inputConfig->axis[AA_STRAFE], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
-				ImGui::LabelText("##ConfigLabel", "Strafe"); ImGui::SameLine(175);
-				ImGui::SetNextItemWidth(196);
+				ImGui::LabelText("##ConfigLabel", "Strafe"); ImGui::SameLine(175*s_uiScale);
+				ImGui::SetNextItemWidth(196*s_uiScale);
 				ImGui::Combo("##CtrlMove", (s32*)&s_inputConfig->axis[AA_MOVE], c_axisBinding, IM_ARRAYSIZE(c_axisBinding));
 
 				ImGui::Separator();
@@ -1022,15 +998,15 @@ namespace TFE_FrontEndUI
 				ImGui::PopFont();
 
 				ImGui::LabelText("##ConfigLabel", "Left Stick");
-				ImGui::SetNextItemWidth(196);
-				ImGui::SliderFloat("##LeftSensitivity", &s_inputConfig->ctrlSensitivity[0], 0.0f, 4.0f); ImGui::SameLine(220);
-				ImGui::SetNextItemWidth(64);
+				ImGui::SetNextItemWidth(196*s_uiScale);
+				ImGui::SliderFloat("##LeftSensitivity", &s_inputConfig->ctrlSensitivity[0], 0.0f, 4.0f); ImGui::SameLine(220*s_uiScale);
+				ImGui::SetNextItemWidth(64*s_uiScale);
 				ImGui::InputFloat("##LeftSensitivityInput", &s_inputConfig->ctrlSensitivity[0]);
 
 				ImGui::LabelText("##ConfigLabel", "Right Stick");
-				ImGui::SetNextItemWidth(196);
-				ImGui::SliderFloat("##RightSensitivity", &s_inputConfig->ctrlSensitivity[1], 0.0f, 4.0f); ImGui::SameLine(220);
-				ImGui::SetNextItemWidth(64);
+				ImGui::SetNextItemWidth(196*s_uiScale);
+				ImGui::SliderFloat("##RightSensitivity", &s_inputConfig->ctrlSensitivity[1], 0.0f, 4.0f); ImGui::SameLine(220*s_uiScale);
+				ImGui::SetNextItemWidth(64*s_uiScale);
 				ImGui::InputFloat("##RightSensitivityInput", &s_inputConfig->ctrlSensitivity[1]);
 
 				ImGui::Separator();
@@ -1041,7 +1017,7 @@ namespace TFE_FrontEndUI
 
 				bool invertLeftHorz = (s_inputConfig->controllerFlags & CFLAG_INVERT_LEFT_HORZ) != 0;
 				bool invertLeftVert = (s_inputConfig->controllerFlags & CFLAG_INVERT_LEFT_VERT) != 0;
-				ImGui::LabelText("##ConfigLabel", "Left Stick Invert: "); ImGui::SameLine(175);
+				ImGui::LabelText("##ConfigLabel", "Left Stick Invert: "); ImGui::SameLine(175*s_uiScale);
 				ImGui::Checkbox("Horizontal##Left", &invertLeftHorz); ImGui::SameLine();
 				ImGui::Checkbox("Vertical##Left", &invertLeftVert);
 				if (invertLeftHorz) { s_inputConfig->controllerFlags |=  CFLAG_INVERT_LEFT_HORZ; }
@@ -1051,7 +1027,7 @@ namespace TFE_FrontEndUI
 				
 				bool invertRightHorz = (s_inputConfig->controllerFlags & CFLAG_INVERT_RIGHT_HORZ) != 0;
 				bool invertRightVert = (s_inputConfig->controllerFlags & CFLAG_INVERT_RIGHT_VERT) != 0;
-				ImGui::LabelText("##ConfigLabel", "Right Stick Invert: "); ImGui::SameLine(175);
+				ImGui::LabelText("##ConfigLabel", "Right Stick Invert: "); ImGui::SameLine(175*s_uiScale);
 				ImGui::Checkbox("Horizontal##Right", &invertRightHorz); ImGui::SameLine();
 				ImGui::Checkbox("Vertical##Right", &invertRightVert);
 				if (invertRightHorz) { s_inputConfig->controllerFlags |=  CFLAG_INVERT_RIGHT_HORZ; }
@@ -1059,25 +1035,25 @@ namespace TFE_FrontEndUI
 				if (invertRightVert) { s_inputConfig->controllerFlags |=  CFLAG_INVERT_RIGHT_VERT; }
 				                else { s_inputConfig->controllerFlags &= ~CFLAG_INVERT_RIGHT_VERT; }
 
-				yNext += 400.0f;
+				yNext += 400.0f*s_uiScale;
 			}
 			else
 			{
-				yNext += 29.0f;
+				yNext += 29.0f*s_uiScale;
 			}
 		}
 		else
 		{
-			yNext += s_controllerWinOpen ? 400.0f : 29.0f;
+			yNext += (s_controllerWinOpen ? 400.0f : 29.0f)*s_uiScale;
 			ImGui::PopStyleVar();
 		}
 		ImGui::EndChild();
 				
-		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
+		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-		if (ImGui::BeginChild("##Mouse Options", ImVec2(390.0f, s_mouseWinOpen ? 250.0f : 29.0f), true, window_flags))
+		if (ImGui::BeginChild("##Mouse Options", ImVec2(390.0f*s_uiScale, (s_mouseWinOpen ? 250.0f : 29.0f)*s_uiScale), true, window_flags))
 		{
-			if (ImGui::Button("Mouse Options", ImVec2(370.0f, 0.0f)))
+			if (ImGui::Button("Mouse Options", ImVec2(370.0f*s_uiScale, 0.0f)))
 			{
 				s_mouseWinOpen = !s_mouseWinOpen;
 			}
@@ -1087,8 +1063,8 @@ namespace TFE_FrontEndUI
 			{
 				ImGui::Spacing();
 
-				ImGui::LabelText("##ConfigLabel", "Mouse Mode"); ImGui::SameLine(100);
-				ImGui::SetNextItemWidth(160);
+				ImGui::LabelText("##ConfigLabel", "Mouse Mode"); ImGui::SameLine(100*s_uiScale);
+				ImGui::SetNextItemWidth(160*s_uiScale);
 				ImGui::Combo("##MouseMode", (s32*)&s_inputConfig->mouseMode, c_mouseMode, IM_ARRAYSIZE(c_mouseMode));
 
 				ImGui::Separator();
@@ -1098,15 +1074,15 @@ namespace TFE_FrontEndUI
 				ImGui::PopFont();
 
 				ImGui::LabelText("##ConfigLabel", "Horizontal");
-				ImGui::SetNextItemWidth(196);
-				ImGui::SliderFloat("##HorzSensitivity", &s_inputConfig->mouseSensitivity[0], 0.0f, 4.0f); ImGui::SameLine(220);
-				ImGui::SetNextItemWidth(64);
+				ImGui::SetNextItemWidth(196*s_uiScale);
+				ImGui::SliderFloat("##HorzSensitivity", &s_inputConfig->mouseSensitivity[0], 0.0f, 4.0f); ImGui::SameLine(220*s_uiScale);
+				ImGui::SetNextItemWidth(64*s_uiScale);
 				ImGui::InputFloat("##HorzSensitivityInput", &s_inputConfig->mouseSensitivity[0]);
 
 				ImGui::LabelText("##ConfigLabel", "Vertical");
-				ImGui::SetNextItemWidth(196);
-				ImGui::SliderFloat("##VertSensitivity", &s_inputConfig->mouseSensitivity[1], 0.0f, 4.0f); ImGui::SameLine(220);
-				ImGui::SetNextItemWidth(64);
+				ImGui::SetNextItemWidth(196*s_uiScale);
+				ImGui::SliderFloat("##VertSensitivity", &s_inputConfig->mouseSensitivity[1], 0.0f, 4.0f); ImGui::SameLine(220*s_uiScale);
+				ImGui::SetNextItemWidth(64*s_uiScale);
 				ImGui::InputFloat("##VertSensitivityInput", &s_inputConfig->mouseSensitivity[1]);
 
 				ImGui::Separator();
@@ -1124,25 +1100,25 @@ namespace TFE_FrontEndUI
 				if (invertVert) { s_inputConfig->mouseFlags |=  MFLAG_INVERT_VERT; }
 				           else { s_inputConfig->mouseFlags &= ~MFLAG_INVERT_VERT; }
 
-				yNext += 250.0f;
+				yNext += 250.0f*s_uiScale;
 			}
 			else
 			{
-				yNext += 29.0f;
+				yNext += 29.0f*s_uiScale;
 			}
 		}
 		else
 		{
-			yNext += s_controllerWinOpen ? 250.0f : 29.0f;
+			yNext += (s_controllerWinOpen ? 250.0f : 29.0f)*s_uiScale;
 			ImGui::PopStyleVar();
 		}
 		ImGui::End();
-		ImGui::SetNextWindowPos(ImVec2(165.0f, yNext - scroll));
+		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-		f32 inputMappingHeight = 1376.0f;
-		if (ImGui::BeginChild("##Input Mapping", ImVec2(390.0f, s_inputMappingOpen ? inputMappingHeight : 29.0f), true, window_flags))
+		f32 inputMappingHeight = 1376.0f*s_uiScale;
+		if (ImGui::BeginChild("##Input Mapping", ImVec2(390.0f*s_uiScale, s_inputMappingOpen ? inputMappingHeight : 29.0f*s_uiScale), true, window_flags))
 		{
-			if (ImGui::Button("Input Mapping", ImVec2(370.0f, 0.0f)))
+			if (ImGui::Button("Input Mapping", ImVec2(370.0f*s_uiScale, 0.0f)))
 			{
 				s_inputMappingOpen = !s_inputMappingOpen;
 			}
@@ -1314,7 +1290,7 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::End();
 		ImGui::PopStyleVar();
-		ImGui::SetCursorPosY(yNext + (s_inputMappingOpen ? inputMappingHeight : 29.0f));
+		ImGui::SetCursorPosY(yNext + (s_inputMappingOpen ? inputMappingHeight : 29.0f*s_uiScale));
 	}
 
 	void configGraphics()
@@ -1361,7 +1337,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Virtual Resolution");
 		ImGui::PopFont();
 
-		ImGui::LabelText("##ConfigLabel", "Standard Resolution:"); ImGui::SameLine(150);
+		ImGui::LabelText("##ConfigLabel", "Standard Resolution:"); ImGui::SameLine(150*s_uiScale);
 		ImGui::SetNextItemWidth(196);
 		ImGui::Combo("##Resolution", &s_resIndex, widescreen ? c_resolutionsWide : c_resolutions, IM_ARRAYSIZE(c_resolutions));
 		if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim))
@@ -1374,7 +1350,7 @@ namespace TFE_FrontEndUI
 		}
 		else if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim) + 1)
 		{
-			ImGui::LabelText("##ConfigLabel", "Custom:"); ImGui::SameLine(100);
+			ImGui::LabelText("##ConfigLabel", "Custom:"); ImGui::SameLine(100*s_uiScale);
 			ImGui::SetNextItemWidth(196);
 			ImGui::InputInt2("##CustomInput", graphics->gameResolution.m);
 
@@ -1400,8 +1376,8 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Rendering");
 		ImGui::PopFont();
 
-		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75);
-		ImGui::SetNextItemWidth(196);
+		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75*s_uiScale);
+		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::Combo("##Renderer", &s_rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
 		if (s_rendererIndex == 0)
 		{
@@ -1432,11 +1408,11 @@ namespace TFE_FrontEndUI
 			static s32 s_msaa = 3;
 			static f32 s_filterSharpness = 0.8f;
 
-			const s32 comboOffset = 170;
+			const s32 comboOffset = 170*s_uiScale;
 
 			// Hardware
 			ImGui::LabelText("##ConfigLabel", "Color Depth"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			if (ImGui::Combo("##ColorDepth", &s_colorDepth, c_colorDepth, IM_ARRAYSIZE(c_colorDepth)))
 			{
 				if (s_colorDepth == 0) { s_nearTexFilter = 0; s_farTexFilter = 0; }
@@ -1446,31 +1422,31 @@ namespace TFE_FrontEndUI
 			if (s_colorDepth == 1)
 			{
 				ImGui::LabelText("##ConfigLabel", "Colormap Interpolation"); ImGui::SameLine(comboOffset);
-				ImGui::SetNextItemWidth(196);
+				ImGui::SetNextItemWidth(196*s_uiScale);
 				ImGui::Combo("##ColormapInterp", &s_colormapInterp, c_colormap_interp, IM_ARRAYSIZE(c_colormap_interp));
 			}
 
 			ImGui::LabelText("##ConfigLabel", "3D Polygon Sorting"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::Combo("##3DSort", &s_objectSort, c_3d_object_sort, IM_ARRAYSIZE(c_3d_object_sort));
 
 			ImGui::LabelText("##ConfigLabel", "Texture Filter Near"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::Combo("##TexFilterNear", &s_nearTexFilter, c_near_tex_filter, IM_ARRAYSIZE(c_near_tex_filter));
 
 			if (s_nearTexFilter == 2)
 			{
-				ImGui::SetNextItemWidth(196);
+				ImGui::SetNextItemWidth(196*s_uiScale);
 				ImGui::SliderFloat("Sharpness", &s_filterSharpness, 0.0f, 1.0f);
 				ImGui::Spacing();
 			}
 
 			ImGui::LabelText("##ConfigLabel", "Texture Filter Far"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::Combo("##TexFilterFar", &s_farTexFilter, c_far_tex_filter, IM_ARRAYSIZE(c_far_tex_filter));
 
 			ImGui::LabelText("##ConfigLabel", "Anti-aliasing"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::Combo("##MSAA", &s_msaa, c_aa, IM_ARRAYSIZE(c_aa));
 		}
 		ImGui::Separator();
@@ -1485,16 +1461,16 @@ namespace TFE_FrontEndUI
 		ImGui::Checkbox("Enable", &graphics->colorCorrection);
 		if (graphics->colorCorrection)
 		{
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::SliderFloat("Brightness", &graphics->brightness, 0.0f, 2.0f);
 
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::SliderFloat("Contrast", &graphics->contrast, 0.0f, 2.0f);
 
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::SliderFloat("Saturation", &graphics->saturation, 0.0f, 2.0f);
 
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::SliderFloat("Gamma", &graphics->gamma, 0.0f, 2.0f);
 		}
 		else
@@ -1526,9 +1502,9 @@ namespace TFE_FrontEndUI
 		ImGui::TextColored({ 1.0f, 1.0f, 1.0f, 0.33f }, "Bloom [TODO]");
 		if (s_bloom)
 		{
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::SliderFloat("Softness", &s_bloomSoftness, 0.0f, 1.0f);
-			ImGui::SetNextItemWidth(196);
+			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::SliderFloat("Intensity", &s_bloomIntensity, 0.0f, 1.0f);
 		}
 
@@ -1543,23 +1519,23 @@ namespace TFE_FrontEndUI
 		TFE_Settings_Hud* hud = TFE_Settings::getHudSettings();
 		TFE_Settings_Window* window = TFE_Settings::getWindowSettings();
 
-		ImGui::LabelText("##ConfigLabel", "Hud Scale Type:"); ImGui::SameLine(150);
-		ImGui::SetNextItemWidth(196);
+		ImGui::LabelText("##ConfigLabel", "Hud Scale Type:"); ImGui::SameLine(150*s_uiScale);
+		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::Combo("##HudScaleType", (s32*)&hud->hudScale, c_tfeHudScaleStrings, IM_ARRAYSIZE(c_tfeHudScaleStrings));
 
-		ImGui::LabelText("##ConfigLabel", "Hud Position Type:"); ImGui::SameLine(150);
-		ImGui::SetNextItemWidth(196);
+		ImGui::LabelText("##ConfigLabel", "Hud Position Type:"); ImGui::SameLine(150*s_uiScale);
+		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::Combo("##HudPosType", (s32*)&hud->hudPos, c_tfeHudPosStrings, IM_ARRAYSIZE(c_tfeHudPosStrings));
 
 		ImGui::Separator();
 
-		ImGui::SetNextItemWidth(196);
+		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f");
 
-		ImGui::SetNextItemWidth(196);
+		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::SliderInt("Offset X", &hud->pixelOffset[0], -512, 512);
 
-		ImGui::SetNextItemWidth(196);
+		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512);
 
 		if (s_menuRetState != APP_STATE_MENU)

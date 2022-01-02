@@ -34,6 +34,7 @@ namespace TFE_Console
 	static ImFont* s_consoleFont;
 	static f32 s_height;
 	static f32 s_anim;
+	static s32 s_fontSize;
 	static s32 s_historyIndex;
 	static s32 s_historyScroll;
 
@@ -55,8 +56,11 @@ namespace TFE_Console
 
 	bool init()
 	{
+		s32 scale = TFE_Ui::getUiScale();
+		s_fontSize = (scale * 20) / 100;
+
 		ImGuiIO& io = ImGui::GetIO();
-		s_consoleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", 20);
+		s_consoleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", s_fontSize);
 		s_height = 0.0f;
 		s_anim = 0.0f;
 		s_historyIndex = -1;
@@ -561,12 +565,12 @@ namespace TFE_Console
 			}
 
 			const s32 count = (s32)s_history.size();
-			const s32 elementsPerPage = ((s32)consoleHeight - 36) / 20;
+			const s32 elementsPerPage = ((s32)consoleHeight - 16 - s_fontSize) / s_fontSize;
 			s_historyScroll = std::max(0, std::min(s_historyScroll, count - elementsPerPage));
 			s32 start = count - 1 - s_historyScroll;
 
-			s32 y = (s32)consoleHeight - 56;
-			for (s32 i = start; i >= 0 && y > -20; i--, y -= 20)
+			s32 y = (s32)consoleHeight - 16 - 2*s_fontSize;
+			for (s32 i = start; i >= 0 && y > -s_fontSize; i--, y -= s_fontSize)
 			{
 				ImGui::SetCursorPosY(f32(y));
 				ImGui::TextColored(ImVec4(s_history[i].color.x, s_history[i].color.y, s_history[i].color.z, s_history[i].color.w), s_history[i].text.c_str());
@@ -574,7 +578,7 @@ namespace TFE_Console
 
 			ImGui::SetKeyboardFocusHere();
 			ImGui::SetNextItemWidth(f32(w - 16));
-			ImGui::SetCursorPosY(consoleHeight - 32.0f);
+			ImGui::SetCursorPosY(consoleHeight - 12.0f - s_fontSize);
 			u32 flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_NoHorizontalScroll |
 						ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory;
 			// Make sure the key to close the console doesn't make its was into the command line.

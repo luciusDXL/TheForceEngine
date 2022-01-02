@@ -105,6 +105,7 @@ namespace TFE_RenderBackend
 	s32  getDisplayIndex(s32 x, s32 y);
 	bool getDisplayMonitorInfo(s32 displayIndex, MonitorInfo* monitorInfo);
 	f32  getDisplayRefreshRate();
+	void getCurrentMonitorInfo(MonitorInfo* monitorInfo);
 	void enableFullscreen(bool enable);
 	void clearWindow();
 
