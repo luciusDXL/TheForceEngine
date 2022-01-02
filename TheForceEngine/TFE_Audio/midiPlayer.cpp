@@ -563,10 +563,11 @@ namespace TFE_MidiPlayer
 	void setMusicVolumeConsole(const ConsoleArgList& args)
 	{
 		if (args.size() < 2) { return; }
-		setVolume(TFE_Console::getFloatArg(args[1]));
+		f32 volume = TFE_Console::getFloatArg(args[1]);
+		setVolume(volume);
 
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
-		soundSettings->musicVolume = s_masterVolume;
+		soundSettings->musicVolume = volume;
 		TFE_Settings::writeToDisk();
 	}
 
