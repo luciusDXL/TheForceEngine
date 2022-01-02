@@ -66,13 +66,21 @@ namespace TFE_DarkForces
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
+		MonitorInfo monitorInfo;
+		TFE_RenderBackend::getCurrentMonitorInfo(&monitorInfo);
+
 		LRect bounds;
 		lcanvas_getBounds(&bounds);
-		s32 width = bounds.right - bounds.left;
+		s32 width  = bounds.right  - bounds.left;
 		s32 height = bounds.bottom - bounds.top;
 
 		s32 dx, dy;
 		TFE_Input::getAccumulatedMouseMove(&dx, &dy);
+
+		// Scale the mouse delta based on monitor resolution.
+		s32 uiScale = max(100, 100 * monitorInfo.h / 1080);
+		dx = (dx * uiScale) / 100;
+		dy = (dy * uiScale) / 100;
 
 		s_cursorPosAccum.x = clamp(s_cursorPosAccum.x + dx, 0, displayInfo.width);
 		s_cursorPosAccum.z = clamp(s_cursorPosAccum.z + dy, 0, displayInfo.height);

@@ -101,8 +101,20 @@ namespace TFE_RenderBackend
 		OpenGL_Caps::queryCapabilities();
 		TFE_System::logWrite(LOG_MSG, "RenderBackend", "OpenGL Device Tier: %d", OpenGL_Caps::getDeviceTier());
 
-		TFE_Ui::init(window, context, 100);
+		MonitorInfo monitorInfo;
+		getDisplayMonitorInfo(displayIndex, &monitorInfo);
+		// High resolution displays (> 1080p) tend to be very high density, so increase the scale somewhat.
+		s32 uiScale = 100;
+		if (monitorInfo.h >= 2160) // 4k+
+		{
+			uiScale = 125 * monitorInfo.h / 1080;	// scale based on 1080p being the base.
+		}
+		else if (monitorInfo.h >= 1440) // 1440p
+		{
+			uiScale = 150;
+		}
 
+		TFE_Ui::init(window, context, uiScale);
 		return window;
 	}
 		
@@ -307,6 +319,17 @@ namespace TFE_RenderBackend
 			return (f32)mode.refresh_rate;
 		}
 		return 0.0f;
+	}
+
+	void getCurrentMonitorInfo(MonitorInfo* monitorInfo)
+	{
+		TFE_Settings_Window* windowSettings = TFE_Settings::getWindowSettings();
+
+		s32 x = windowSettings->x, y = windowSettings->y;
+		s32 displayIndex = getDisplayIndex(x, y);
+		assert(displayIndex >= 0);
+
+		getDisplayMonitorInfo(displayIndex, monitorInfo);
 	}
 
 	void enableFullscreen(bool enable)
