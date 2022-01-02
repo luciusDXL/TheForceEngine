@@ -261,7 +261,7 @@ namespace TFE_DarkForces
 			scriptTimer += TICKS(3);
 		}
 
-		if (scriptTimer > s_curTick)
+		if (scriptTimer > (s32)s_curTick)
 		{
 			// TFE_System::logWrite(LOG_MSG, "iMuse", "Trigger Fight");
 			task_setNextTick(s_musicTask, s_curTick + MUS_FIGHT_TIME);

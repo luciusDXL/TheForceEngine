@@ -600,10 +600,10 @@ namespace TFE_FrontEndUI
 			ImGui::End();
 
 			// adjust the width based on tab.
-			s32 tabWidth = w - 160*s_uiScale;
+			s32 tabWidth = w - s32(160*s_uiScale);
 			if (s_configTab >= CONFIG_INPUT)
 			{
-				tabWidth = 414*s_uiScale;
+				tabWidth = s32(414*s_uiScale);
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(160.0f*s_uiScale, 0.0f));
@@ -1408,7 +1408,7 @@ namespace TFE_FrontEndUI
 			static s32 s_msaa = 3;
 			static f32 s_filterSharpness = 0.8f;
 
-			const s32 comboOffset = 170*s_uiScale;
+			const f32 comboOffset = floorf(170*s_uiScale);
 
 			// Hardware
 			ImGui::LabelText("##ConfigLabel", "Color Depth"); ImGui::SameLine(comboOffset);

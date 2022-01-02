@@ -60,7 +60,7 @@ namespace TFE_Console
 		s_fontSize = (scale * 20) / 100;
 
 		ImGuiIO& io = ImGui::GetIO();
-		s_consoleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", s_fontSize);
+		s_consoleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", (f32)s_fontSize);
 		s_height = 0.0f;
 		s_anim = 0.0f;
 		s_historyIndex = -1;
