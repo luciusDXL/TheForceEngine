@@ -24,5 +24,5 @@ namespace TFE_FrontEndUI
 {
 	bool convertPalette(const u8* srcPalette, u32* dstPalette);
 	void convertDfTextureToTrueColor(const TextureData* src, const u32* palette, u32* image);
-	bool createTexture(const TextureData* src, const u32* palette, EditorTexture* tex);
+	bool createTexture(const TextureData* src, const u32* palette, EditorTexture* tex, MagFilter filter = MAG_FILTER_NONE);
 }
