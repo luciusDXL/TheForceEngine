@@ -170,11 +170,11 @@ namespace TFE_FrontEndUI
 		return s_viewMode;
 	}
 
-	void modLoader_imageListUI()
+	void modLoader_imageListUI(f32 uiScale)
 	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
-		s32 columns = max(1, (dispInfo.width - 16) / 268);
+		s32 columns = max(1, (dispInfo.width - s32(16*uiScale)) / s32(268*uiScale));
 
 		f32 y = ImGui::GetCursorPosY();
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -184,8 +184,8 @@ namespace TFE_FrontEndUI
 			{
 				char label[32];
 				sprintf(label, "###%zd", i);
-				ImGui::SetCursorPos(ImVec2(f32(x) * 268.0f + 16.0f, y));
-				ImGui::InvisibleButton(label, ImVec2(256, 192));
+				ImGui::SetCursorPos(ImVec2((f32(x) * 268.0f + 16.0f)*uiScale, y));
+				ImGui::InvisibleButton(label, ImVec2(256*uiScale, 192*uiScale));
 				if (ImGui::IsItemClicked() && s_selectedMod < 0)
 				{
 					s_selectedMod = s32(i);
@@ -196,15 +196,21 @@ namespace TFE_FrontEndUI
 
 				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				{
-					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(f32(x) * 268 + 16 - 2, yScrolled - 2), ImVec2(f32(x) * 268 + 16 + 256 + 2, yScrolled + 192 + 2), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
-					drawList->AddImageRounded(getGradientTexture(), ImVec2(f32(x) * 268 + 16 - 2, yScrolled - 2), ImVec2(f32(x) * 268 + 16 + 256 + 2, yScrolled + 192 + 2), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 0x40ffb080, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2((f32(x) * 268 + 16 - 2)*uiScale, yScrolled - 2*uiScale),
+						ImVec2((f32(x) * 268 + 16 + 256 + 2)*uiScale, yScrolled + (192 + 2)*uiScale), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f),
+						ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(getGradientTexture(), ImVec2((f32(x) * 268 + 16 - 2)*uiScale, yScrolled - 2*uiScale),
+						ImVec2((f32(x) * 268 + 16 + 256 + 2)*uiScale, yScrolled + (192 + 2)*uiScale), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+						0x40ffb080, 8.0f, ImDrawCornerFlags_All);
 				}
 				else
 				{
-					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2(f32(x) * 268 + 16, yScrolled), ImVec2(f32(x) * 268 + 16 + 256, yScrolled + 192), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
+					drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[i].image.texture), ImVec2((f32(x) * 268 + 16)*uiScale, yScrolled),
+						ImVec2((f32(x) * 268 + 16 + 256)*uiScale, yScrolled + 192*uiScale), ImVec2(0.0f, s_mods[i].invertImage ? 1.0f : 0.0f),
+						ImVec2(1.0f, s_mods[i].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
 				}
 
-				ImGui::SetCursorPos(ImVec2(f32(x) * 268 + 20, y + 192));
+				ImGui::SetCursorPos(ImVec2((f32(x) * 268 + 20)*uiScale, y + 192*uiScale));
 
 				// Limit the name to 36 characters to avoid going into the next cell.
 				if (s_mods[i].name.length() <= 36)
@@ -222,15 +228,15 @@ namespace TFE_FrontEndUI
 					ImGui::LabelText("###Label", name);
 				}
 			}
-			y += 232;
+			y += 232*uiScale;
 		}
 	}
 
-	void modLoader_NameListUI()
+	void modLoader_NameListUI(f32 uiScale)
 	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
-		s32 rowCount = (dispInfo.height - 112) / 28;
+		s32 rowCount = (dispInfo.height - s32(112*uiScale)) / s32(28*uiScale);
 
 		char buttonLabel[32];
 		ImGui::PushFont(getDialogFont());
@@ -240,15 +246,15 @@ namespace TFE_FrontEndUI
 			for (s32 y = 0; y < rowCount && i < s_mods.size(); y++, i++)
 			{
 				sprintf(buttonLabel, "###mod%zd", i);
-				ImVec2 cursor(8.0f + x * 410, 88.0f + y * 28);
+				ImVec2 cursor((8.0f + x * 410)*uiScale, (88.0f + y * 28)*uiScale);
 				ImGui::SetCursorPos(cursor);
-				if (ImGui::Button(buttonLabel, ImVec2(400, 24)) && s_selectedMod < 0)
+				if (ImGui::Button(buttonLabel, ImVec2(400*uiScale, 24*uiScale)) && s_selectedMod < 0)
 				{
 					s_selectedMod = s32(i);
 					TFE_System::logWrite(LOG_MSG, "Mods", "Selected Mod = %d", i);
 				}
 				
-				ImGui::SetCursorPos(ImVec2(cursor.x + 8.0f, cursor.y - 2.0f));
+				ImGui::SetCursorPos(ImVec2(cursor.x + 8.0f*uiScale, cursor.y - 2.0f*uiScale));
 				char name[TFE_MAX_PATH];
 				strcpy(name, s_mods[i].name.c_str());
 				size_t len = strlen(name);
@@ -266,11 +272,11 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 	}
 
-	void modLoader_FileListUI()
+	void modLoader_FileListUI(f32 uiScale)
 	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
-		s32 rowCount = (dispInfo.height - 112) / 28;
+		s32 rowCount = (dispInfo.height - s32(112*uiScale)) / s32(28*uiScale);
 
 		char buttonLabel[32];
 		ImGui::PushFont(getDialogFont());
@@ -280,15 +286,15 @@ namespace TFE_FrontEndUI
 			for (s32 y = 0; y < rowCount && i < s_mods.size(); y++, i++)
 			{
 				sprintf(buttonLabel, "###mod%zd", i);
-				ImVec2 cursor(8.0f + x * 410, 88.0f + y * 28);
+				ImVec2 cursor((8.0f + x * 410)*uiScale, (88.0f + y * 28)*uiScale);
 				ImGui::SetCursorPos(cursor);
-				if (ImGui::Button(buttonLabel, ImVec2(400, 24)) && s_selectedMod < 0)
+				if (ImGui::Button(buttonLabel, ImVec2(400*uiScale, 24*uiScale)) && s_selectedMod < 0)
 				{
 					s_selectedMod = s32(i);
 					TFE_System::logWrite(LOG_MSG, "Mods", "Selected Mod = %d", i);
 				}
 
-				ImGui::SetCursorPos(ImVec2(cursor.x + 8.0f, cursor.y - 2.0f));
+				ImGui::SetCursorPos(ImVec2(cursor.x + 8.0f*uiScale, cursor.y - 2.0f*uiScale));
 				char name[TFE_MAX_PATH];
 				strcpy(name, s_mods[i].gobFiles[0].c_str());
 				size_t len = strlen(name);
@@ -308,6 +314,8 @@ namespace TFE_FrontEndUI
 
 	void modLoader_selectionUI()
 	{
+		f32 uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
+
 		// Load in the mod data a few at a time so to limit waiting for loading.
 		readFromQueue(1);
 		clearSelectedMod();
@@ -317,7 +325,7 @@ namespace TFE_FrontEndUI
 		ImGui::PushFont(getDialogFont());
 
 		ImGui::LabelText("###", "VIEW");
-		ImGui::SameLine(128.0f);
+		ImGui::SameLine(128.0f*uiScale);
 
 		bool viewImages   = s_viewMode == VIEW_IMAGES;
 		bool viewNameList = s_viewMode == VIEW_NAME_LIST;
@@ -333,7 +341,7 @@ namespace TFE_FrontEndUI
 				s_viewMode = VIEW_NAME_LIST;
 			}
 		}
-		ImGui::SameLine(236.0f);
+		ImGui::SameLine(236.0f*uiScale);
 		if (ImGui::Checkbox("Name List", &viewNameList))
 		{
 			if (viewNameList)
@@ -345,7 +353,7 @@ namespace TFE_FrontEndUI
 				s_viewMode = VIEW_FILE_LIST;
 			}
 		}
-		ImGui::SameLine(380.0f);
+		ImGui::SameLine(380.0f*uiScale);
 		if (ImGui::Checkbox("File List", &viewFileList))
 		{
 			if (viewFileList)
@@ -363,15 +371,15 @@ namespace TFE_FrontEndUI
 			   
 		if (s_viewMode == VIEW_IMAGES)
 		{
-			modLoader_imageListUI();
+			modLoader_imageListUI(uiScale);
 		}
 		else if (s_viewMode == VIEW_NAME_LIST)
 		{
-			modLoader_NameListUI();
+			modLoader_NameListUI(uiScale);
 		}
 		else if (s_viewMode == VIEW_FILE_LIST)
 		{
-			modLoader_FileListUI();
+			modLoader_FileListUI(uiScale);
 		}
 
 		if (s_selectedMod >= 0)
@@ -381,37 +389,37 @@ namespace TFE_FrontEndUI
 
 			bool open = true;
 			bool retFromLoader = false;
-			s32 infoWidth = dispInfo.width - 120;
-			s32 infoHeight = dispInfo.height - 120;
+			s32 infoWidth  = dispInfo.width  - s32(120*uiScale);
+			s32 infoHeight = dispInfo.height - s32(120*uiScale);
 
 			const u32 window_flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
-			ImGui::SetCursorPos(ImVec2(10, 10));
+			ImGui::SetCursorPos(ImVec2(10*uiScale, 10*uiScale));
 			ImGui::Begin("Mod Info", &open, ImVec2(f32(infoWidth), f32(infoHeight)), 1.0f, window_flags);
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
 			ImVec2 cursor = ImGui::GetCursorPos();
-			drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[s_selectedMod].image.texture), ImVec2(cursor.x + 64, cursor.y + 64), ImVec2(cursor.x + 320 + 64, cursor.y + 200 + 64),
+			drawList->AddImageRounded(TFE_RenderBackend::getGpuPtr(s_mods[s_selectedMod].image.texture), ImVec2(cursor.x + 64, cursor.y + 64), ImVec2(cursor.x + 64 + 320*uiScale, cursor.y + 64 + 200*uiScale),
 				ImVec2(0.0f, s_mods[s_selectedMod].invertImage ? 1.0f : 0.0f), ImVec2(1.0f, s_mods[s_selectedMod].invertImage ? 0.0f : 1.0f), 0xffffffff, 8.0f, ImDrawCornerFlags_All);
 
 			ImGui::PushFont(getDialogFont());
-			ImGui::SetCursorPosX(cursor.x + 320 + 70);
+			ImGui::SetCursorPosX(cursor.x + (320 + 70)*uiScale);
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.9f, 1.0f, 1.0f));
 			ImGui::LabelText("###", s_mods[s_selectedMod].name.c_str());
 			ImGui::PopStyleColor();
 
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
-			ImGui::SetCursorPos(ImVec2(cursor.x + 10, cursor.y + 220));
+			ImGui::SetCursorPos(ImVec2(cursor.x + 10*uiScale, cursor.y + 220*uiScale));
 			ImGui::Text("Game: Dark Forces");
-			ImGui::SetCursorPosX(cursor.x + 10);
+			ImGui::SetCursorPosX(cursor.x + 10*uiScale);
 			ImGui::Text("Type: Vanilla Compatible");
-			ImGui::SetCursorPosX(cursor.x + 10);
+			ImGui::SetCursorPosX(cursor.x + 10*uiScale);
 			ImGui::Text("File: %s", s_mods[s_selectedMod].gobFiles[0].c_str());
 			ImGui::PopStyleColor();
 
-			ImGui::SetCursorPos(ImVec2(cursor.x + 90, cursor.y + 320));
+			ImGui::SetCursorPos(ImVec2(cursor.x + 90*uiScale, cursor.y + 320*uiScale));
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.0f, 0.0f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.0f, 0.0f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-			if (ImGui::Button("PLAY", ImVec2(128, 32)))
+			if (ImGui::Button("PLAY", ImVec2(128*uiScale, 32*uiScale)))
 			{
 				char selectedModCmd[TFE_MAX_PATH];
 				sprintf(selectedModCmd, "-u%s%s", s_mods[s_selectedMod].relativePath.c_str(), s_mods[s_selectedMod].gobFiles[0].c_str());
@@ -424,16 +432,16 @@ namespace TFE_FrontEndUI
 			}
 			ImGui::PopStyleColor(3);
 
-			ImGui::SetCursorPos(ImVec2(cursor.x + 90, cursor.y + 360));
-			if (ImGui::Button("CANCEL", ImVec2(128, 32)))
+			ImGui::SetCursorPos(ImVec2(cursor.x + 90*uiScale, cursor.y + 360*uiScale));
+			if (ImGui::Button("CANCEL", ImVec2(128*uiScale, 32*uiScale)))
 			{
 				open = false;
 			}
 
 			ImGui::PopFont();
 
-			ImGui::SetCursorPos(ImVec2(cursor.x + 320 + 8, cursor.y + 30));
-			ImGui::BeginChild("###Mod Info Text", ImVec2(f32(infoWidth - 344), f32(infoHeight - 68)), true, ImGuiWindowFlags_NoBringToFrontOnFocus);
+			ImGui::SetCursorPos(ImVec2(cursor.x + 328*uiScale, cursor.y + 30*uiScale));
+			ImGui::BeginChild("###Mod Info Text", ImVec2(f32(infoWidth - 344*uiScale), f32(infoHeight - 68*uiScale)), true, ImGuiWindowFlags_NoBringToFrontOnFocus);
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
 			ImGui::TextWrapped(s_mods[s_selectedMod].text.c_str());
 			ImGui::PopStyleColor();
@@ -908,7 +916,7 @@ namespace TFE_FrontEndUI
 			TextureData* imageData = bitmap_loadFromMemory(s_readBuffer[0].data(), s_readBuffer[0].size(), 1);
 			u32 palette[256];
 			convertPalette(s_readBuffer[1].data(), palette);
-			createTexture(imageData, palette, poster);
+			createTexture(imageData, palette, poster, MAG_FILTER_LINEAR);
 		}
 
 		if (archiveMod && archiveIsGob)

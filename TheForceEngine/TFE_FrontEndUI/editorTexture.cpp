@@ -42,7 +42,7 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	bool createTexture(const TextureData* src, const u32* palette, EditorTexture* tex)
+	bool createTexture(const TextureData* src, const u32* palette, EditorTexture* tex, MagFilter filter)
 	{
 		if (!src || !tex) { return false; }
 		tex->scale = { 1.0f, 1.0f };
@@ -51,7 +51,7 @@ namespace TFE_FrontEndUI
 		u32* image = s_imageBuffer.data();
 		convertDfTextureToTrueColor(src, palette, image);
 
-		tex->texture = TFE_RenderBackend::createTexture(src->width, src->height, image);
+		tex->texture = TFE_RenderBackend::createTexture(src->width, src->height, image, filter);
 
 		tex->scale.x = 1.0f;
 		tex->scale.z = 1.0f;
