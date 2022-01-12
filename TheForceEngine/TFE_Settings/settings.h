@@ -69,6 +69,8 @@ struct TFE_Settings_Hud
 	TFE_HudScale hudScale = TFE_HUDSCALE_PROPORTIONAL;
 	// This setting determines how the left and right corners are calculated, which have an offset of (0,0).
 	TFE_HudPosition hudPos = TFE_HUDPOS_EDGE;
+	// This setting determines whether the weapon will wave/bob.
+	bool weaponWave = true;
 
 	// Scale of the HUD, ignored if HudScale is TFE_HUDSCALE_PROPORTIONAL.
 	f32 scale = 1.0f;
