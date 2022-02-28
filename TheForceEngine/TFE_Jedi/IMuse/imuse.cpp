@@ -3,6 +3,129 @@
 
 namespace TFE_Jedi
 {
+	////////////////////////////////////////////////////
+	// Structures
+	////////////////////////////////////////////////////
+	struct SoundPlayer;
+	struct SoundChannel;
+	struct ImMidiChannel;
+
+	struct ImMidiChannel
+	{
+		SoundPlayer* player;
+		SoundChannel* channel;
+		ImMidiChannel* sharedMidiChannel;
+		s32 channelId;
+
+		s32 pgm;
+		s32 priority;
+		s32 noteReq;
+		s32 volume;
+
+		s32 pan;
+		s32 modulation;
+		s32 finalPan;
+		s32 sustain;
+
+		s32* instrumentMask;
+		s32* instrumentMask2;
+		SoundPlayer* sharedPart;
+
+		s32 u3c;
+		s32 u40;
+		s32 sharedPartChannelId;
+	};
+
+	struct SoundChannel
+	{
+		ImMidiChannel* data;
+		s32 partStatus;
+		s32 partPgm;
+		s32 partTrim;
+		s32 partPriority;
+		s32 priority;
+		s32 partNoteReq;
+		s32 partVolume;
+		s32 groupVolume;
+		s32 partPan;
+		s32 modulation;
+		s32 sustain;
+		s32 pitchBend;
+		s32 outChannelCount;
+		s32 pan;
+	};
+
+	struct PlayerData
+	{
+		SoundPlayer* player;
+		s32 soundId;
+		s32 seqIndex;
+		s32 chunkOffset;
+		s32 tick;
+		s32 prevTick;
+		s32 chunkPtr;
+		s32 ticksPerBeat;
+		s32 beatsPerMeasure;
+		s32 tickFixed;
+		s32 tempo;
+		s32 step;
+		s32 speed;
+		s32 stepFixed;
+	};
+
+	struct SoundPlayer
+	{
+		SoundPlayer* prev;
+		SoundPlayer* next;
+		PlayerData* data;
+		SoundPlayer* sharedPart;
+		s32 sharedPartId;
+		s32 soundId;
+		s32 marker;
+		s32 group;
+		s32 priority;
+		s32 volume;
+		s32 groupVolume;
+		s32 pan;
+		s32 detune;
+		s32 transpose;
+		s32 mailbox;
+		s32 hook;
+
+		SoundChannel channels[16];
+	};
+
+	struct InstrumentSound
+	{
+		SoundPlayer* soundList;
+		// Members used per sound.
+		InstrumentSound* next;
+		SoundPlayer* soundPlayer;
+		s32 instrumentId;
+		s32 channelId;
+		s32 curTick;
+		s32 curTickFixed;
+	};
+
+	struct ImSoundFader
+	{
+		s32 active;
+		s32 soundId;
+		iMuseParameter param;
+		s32 curValue;
+		s32 timeRem;
+		s32 fadeTime;
+		s32 signedStep;
+		s32 unsignedStep;
+		s32 errAccum;
+		s32 stepDir;
+	};
+
+	/////////////////////////////////////////////////////
+	// Internal State
+	/////////////////////////////////////////////////////
+	static ImMidiChannel s_midiChannels[16];
+
 	/////////////////////////////////////////////////////////// 
 	// Main API
 	// -----------------------------------------------------
