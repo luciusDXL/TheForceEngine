@@ -865,6 +865,12 @@
     <ClInclude Include="TFE_Jedi\IMuse\imSoundFader.h">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\IMuse\imTrigger.h">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\IMuse\imOpCodes.h">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1459,6 +1465,9 @@
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\IMuse\imSoundFader.cpp">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\IMuse\imTrigger.cpp">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClCompile>
   </ItemGroup>

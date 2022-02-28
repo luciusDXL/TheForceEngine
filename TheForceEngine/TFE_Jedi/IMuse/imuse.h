@@ -20,6 +20,7 @@
 // permission of the original copyright holders (LucasArts).
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include "imOpCodes.h"
 
 // Used by ImSetParam() and ImGetParam().
 enum iMuseParameter

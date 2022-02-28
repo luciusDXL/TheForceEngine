@@ -444,7 +444,9 @@ echo ^)";
     <ClInclude Include="TFE_Input\inputEnum.h" />
     <ClInclude Include="TFE_Input\inputMapping.h" />
     <ClInclude Include="TFE_Jedi\Collision\collision.h" />
+    <ClInclude Include="TFE_Jedi\IMuse\imOpCodes.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imSoundFader.h" />
+    <ClInclude Include="TFE_Jedi\IMuse\imTrigger.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imuse.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infElevatorUpdateFunc.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infPublicTypes.h" />
@@ -675,6 +677,7 @@ echo ^)";
     <ClCompile Include="TFE_Input\inputMapping.cpp" />
     <ClCompile Include="TFE_Jedi\Collision\collision.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imSoundFader.cpp" />
+    <ClCompile Include="TFE_Jedi\IMuse\imTrigger.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imuse.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\message.cpp" />

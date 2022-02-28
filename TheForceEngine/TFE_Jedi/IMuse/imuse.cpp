@@ -286,30 +286,6 @@ namespace TFE_Jedi
 		return imNotImplemented;
 	}
 
-	s32 ImSetTrigger(s32 sound, s32 marker, s32 opcode)  // Modified based on actual usage to simplify
-	{
-		// Stub
-		return imNotImplemented;
-	}
-
-	s32 ImCheckTrigger(s32 sound, s32 marker, s32 opcode)
-	{
-		// Stub
-		return imNotImplemented;
-	}
-
-	s32 ImClearTrigger(s32 sound, s32 marker, s32 opcode)
-	{
-		// Stub
-		return imNotImplemented;
-	}
-
-	s32 ImDeferCommand(s32 time, s32 opcode, s32 sound)  // Modified based on actual usage to simplify
-	{
-		// Stub
-		return imNotImplemented;
-	}
-
 	s32 ImJumpMidi(s32 sound, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain)
 	{
 		// Stub
