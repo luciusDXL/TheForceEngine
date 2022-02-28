@@ -28,6 +28,9 @@
 // Replace with music system
 #include <TFE_Audio/midiPlayer.h>
 
+// Test
+#include <TFE_ForceScript/TFE_VM/vmTest.h>
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
@@ -540,6 +543,9 @@ int main(int argc, char* argv[])
 	// Color correction.
 	const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
 	TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
+
+	// Test Scripting
+	vm_test();
 
 	// Game loop
 	u32 frame = 0u;

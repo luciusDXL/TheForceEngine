@@ -434,6 +434,11 @@ echo ^)";
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
     <ClInclude Include="TFE_FileSystem\paths.h" />
     <ClInclude Include="TFE_FileSystem\stream.h" />
+    <ClInclude Include="TFE_ForceScript\TFE_VM\opcodes.h" />
+    <ClInclude Include="TFE_ForceScript\TFE_VM\registers.h" />
+    <ClInclude Include="TFE_ForceScript\TFE_VM\value.h" />
+    <ClInclude Include="TFE_ForceScript\TFE_VM\vm.h" />
+    <ClInclude Include="TFE_ForceScript\TFE_VM\vmTest.h" />
     <ClInclude Include="TFE_FrontEndUI\console.h" />
     <ClInclude Include="TFE_FrontEndUI\editorTexture.h" />
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h" />
@@ -663,6 +668,8 @@ echo ^)";
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
+    <ClCompile Include="TFE_ForceScript\TFE_VM\vm.cpp" />
+    <ClCompile Include="TFE_ForceScript\TFE_VM\vmTest.cpp" />
     <ClCompile Include="TFE_FrontEndUI\console.cpp" />
     <ClCompile Include="TFE_FrontEndUI\editorTexture.cpp" />
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp" />

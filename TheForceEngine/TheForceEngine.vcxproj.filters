@@ -149,6 +149,12 @@
     <Filter Include="Source\TFE_DarkForces\Landru">
       <UniqueIdentifier>{16d4cd76-d325-4388-9c2f-ef36f102cbce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_ForceScript">
+      <UniqueIdentifier>{827867c7-248a-4049-8846-b509f62ca6c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\TFE_VM">
+      <UniqueIdentifier>{e3f90ecb-a813-465a-8f81-b2e9f6cb65b0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -856,6 +862,21 @@
     <ClInclude Include="TFE_DarkForces\gameMusic.h">
       <Filter>Source\TFE_DarkForces</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_ForceScript\TFE_VM\opcodes.h">
+      <Filter>Source\TFE_ForceScript\TFE_VM</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\TFE_VM\registers.h">
+      <Filter>Source\TFE_ForceScript\TFE_VM</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\TFE_VM\value.h">
+      <Filter>Source\TFE_ForceScript\TFE_VM</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\TFE_VM\vm.h">
+      <Filter>Source\TFE_ForceScript\TFE_VM</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\TFE_VM\vmTest.h">
+      <Filter>Source\TFE_ForceScript\TFE_VM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1445,6 +1466,12 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\gameMusic.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\TFE_VM\vm.cpp">
+      <Filter>Source\TFE_ForceScript\TFE_VM</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\TFE_VM\vmTest.cpp">
+      <Filter>Source\TFE_ForceScript\TFE_VM</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
