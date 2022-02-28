@@ -274,12 +274,6 @@ namespace TFE_Jedi
 		return imNotImplemented;
 	}
 
-	s32 ImFadeParam(s32 sound, s32 param, s32 val, s32 time)
-	{
-		// Stub
-		return imNotImplemented;
-	}
-
 	s32 ImSetHook(s32 sound, s32 val)
 	{
 		// Stub
