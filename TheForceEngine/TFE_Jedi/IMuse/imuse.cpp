@@ -135,12 +135,21 @@ namespace TFE_Jedi
 	s32  ImHandleChannelGroupVolume();
 	s32  ImGetGroupVolume(s32 group);
 	void ImHandleChannelVolumeChange(SoundPlayer* player, SoundChannel* channel);
-	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
 	void ImResetSoundChannel(SoundChannel* channel);
 	void ImFreeMidiChannel(ImMidiChannel* channelData);
 	void ImMidiSetupParts();
 	void ImAssignMidiChannel(SoundPlayer* player, SoundChannel* channel, ImMidiChannel* midiChannel);
 	ImMidiChannel* ImGetFreeMidiChannel();
+
+	// Midi channel commands
+	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
+	void ImMidiChannelSetPgm(ImMidiChannel* midiChannel, s32 pgm);
+	void ImMidiChannelSetPriority(ImMidiChannel* midiChannel, s32 priority);
+	void ImMidiChannelSetPartNoteReq(ImMidiChannel* midiChannel, s32 noteReq);
+	void ImMidiChannelSetPan(ImMidiChannel* midiChannel, s32 pan);
+	void ImMidiChannelSetModulation(ImMidiChannel* midiChannel, s32 modulation);
+	void ImHandleChannelPan(ImMidiChannel* midiChannel, s32 pan);
+	void ImSetChannelSustain(ImMidiChannel* midiChannel, s32 sustain);
 		
 	/////////////////////////////////////////////////////
 	// Internal State
@@ -570,7 +579,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					// IM_TODO
+					// IM_TODO:
 				}
 				ImAssignMidiChannel(newPlayer, newChannel, midiChannel);
 
@@ -606,15 +615,14 @@ namespace TFE_Jedi
 		midiChannel->player  = player;
 		midiChannel->channel = channel;
 
-		// TODO: Fill in functions.
-		// ImMidiChannelSetPgm(midiChannel, channel->partPgm);
-		// ImMidiChannelSetPriority(midiChannel, channel->priority);
-		// ImMidiChannelSetPartNoteReq(midiChannel, channel->partNoteReq);
+		ImMidiChannelSetPgm(midiChannel, channel->partPgm);
+		ImMidiChannelSetPriority(midiChannel, channel->priority);
+		ImMidiChannelSetPartNoteReq(midiChannel, channel->partNoteReq);
 		ImMidiChannelSetVolume(midiChannel, channel->groupVolume);
-		// ImMidiChannelSetPan(midiChannel, channel->partPan);
-		// ImMidiChannelSetModulation(midiChannel, channel->modulation);
-		// ImHandleChannelPan(midiChannel, channel->pan);
-		// ImSetChannelSustain(midiChannel, channel->sustain);
+		ImMidiChannelSetPan(midiChannel, channel->partPan);
+		ImMidiChannelSetModulation(midiChannel, channel->modulation);
+		ImHandleChannelPan(midiChannel, channel->pan);
+		ImSetChannelSustain(midiChannel, channel->sustain);
 	}
 
 	void _ImNoteOff(s32 channelId, s32 instrId)
@@ -627,16 +635,23 @@ namespace TFE_Jedi
 		// Stub
 	}
 
-	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume)
+	void ImSendMidiMsg_(u8 channel, u8 msg, u8 arg1)
 	{
-		if (midiChannel && volume != midiChannel->volume)
-		{
-			midiChannel->sharedMidiChannel->volume = volume;
-			midiChannel->volume = volume;
-			ImSendMidiMsg_(midiChannel->channelId, MID_VOLUME_MSB, volume);
-		}
+		// Stub
 	}
 
+	void ImSendMidiMsg_R_(u8 channel, u8 msg)
+	{
+		// Stub
+	}
+
+	// For Pan, "Fine" resolution is 14-bit where 8192 (0x2000) is center - MID_PAN_LSB
+	// Most devices use coarse adjustment instead (7 bits, 64 is center) - MID_PAN_MSB
+	void ImSetPanFine_(s32 channel, s32 pan)
+	{
+		// Stub
+	}
+		
 	void ImResetSoundChannel(SoundChannel* channel)
 	{
 		ImMidiChannel* data = channel->data;
@@ -672,4 +687,94 @@ namespace TFE_Jedi
 		}
 	}
 
+	////////////////////////////////////////
+	// Midi Commands
+	////////////////////////////////////////
+	void ImMidiChannelSetPgm(ImMidiChannel* midiChannel, s32 pgm)
+	{
+		if (midiChannel && pgm != midiChannel->pgm)
+		{
+			midiChannel->sharedMidiChannel->pgm = pgm;
+			midiChannel->pgm = pgm;
+			ImSendMidiMsg_R_(midiChannel->channelId, pgm);
+		}
+	}
+
+	void ImMidiChannelSetPriority(ImMidiChannel* midiChannel, s32 priority)
+	{
+		if (midiChannel && priority != midiChannel->priority)
+		{
+			midiChannel->sharedMidiChannel->priority = priority;
+			midiChannel->priority = priority;
+			ImSendMidiMsg_(midiChannel->channelId, MID_GPC1_MSB, priority);
+		}
+	}
+
+	void ImMidiChannelSetPartNoteReq(ImMidiChannel* midiChannel, s32 noteReq)
+	{
+		if (midiChannel && noteReq != midiChannel->noteReq)
+		{
+			midiChannel->sharedMidiChannel->noteReq = noteReq;
+			midiChannel->noteReq = noteReq;
+			ImSendMidiMsg_(midiChannel->channelId, MID_GPC2_MSB, noteReq);
+		}
+	}
+
+	void ImMidiChannelSetPan(ImMidiChannel* midiChannel, s32 pan)
+	{
+		if (midiChannel && pan != midiChannel->pan)
+		{
+			midiChannel->sharedMidiChannel->pan = pan;
+			midiChannel->pan = pan;
+			ImSendMidiMsg_(midiChannel->channelId, MID_PAN_MSB, pan);
+		}
+	}
+
+	void ImMidiChannelSetModulation(ImMidiChannel* midiChannel, s32 modulation)
+	{
+		if (midiChannel && modulation != midiChannel->modulation)
+		{
+			midiChannel->sharedMidiChannel->modulation = modulation;
+			midiChannel->modulation = modulation;
+			ImSendMidiMsg_(midiChannel->channelId, MID_MODULATIONWHEEL_MSB, modulation);
+		}
+	}
+
+	void ImHandleChannelPan(ImMidiChannel* midiChannel, s32 pan)
+	{
+		if (midiChannel && pan != midiChannel->finalPan)
+		{
+			midiChannel->sharedMidiChannel->finalPan = pan;
+			midiChannel->finalPan = pan;
+			ImSetPanFine_(midiChannel->channelId, 2 * pan + 8192);
+		}
+	}
+
+	void ImSetChannelSustain(ImMidiChannel* midiChannel, s32 sustain)
+	{
+		if (midiChannel)
+		{
+			midiChannel->sustain = sustain;
+			if (!sustain)
+			{
+				for (s32 r = 0; r < MIDI_INSTRUMENT_COUNT; r++)
+				{
+					if (midiChannel->instrumentMask2[r] & s_channelMask[midiChannel->channelId])
+					{
+						// IM_TODO
+					}
+				}
+			}
+		}
+	}
+
+	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume)
+	{
+		if (midiChannel && volume != midiChannel->volume)
+		{
+			midiChannel->sharedMidiChannel->volume = volume;
+			midiChannel->volume = volume;
+			ImSendMidiMsg_(midiChannel->channelId, MID_VOLUME_MSB, volume);
+		}
+	}
 }
