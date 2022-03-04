@@ -2,6 +2,7 @@
 #include "imSoundFader.h"
 #include <TFE_System/system.h>
 #include <TFE_Audio/midi.h>
+#include <assert.h>
 
 namespace TFE_Jedi
 {
@@ -68,8 +69,8 @@ namespace TFE_Jedi
 			if (trigger->soundId)
 			{
 				if ((soundId == -1 || soundId == trigger->soundId) &&
-					(marker == -1 || marker == trigger->marker) &&
-					(opcode == -1 || opcode == trigger->opcode))
+					(marker  == -1 || marker  == trigger->marker) &&
+					(opcode  == -1 || opcode  == trigger->opcode))
 				{
 					count++;
 				}
@@ -170,6 +171,11 @@ namespace TFE_Jedi
 		if (cmd->opcode == imStopSound)
 		{
 			ImStopSound(cmd->args[0]);
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_ERROR, "IMuse", "Unimplemented deferred command.");
+			assert(0);
 		}
 	}
 

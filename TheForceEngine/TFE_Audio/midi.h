@@ -129,3 +129,9 @@ enum MidiController
 	MID_POLY_OFF,
 	MID_POLY_ON
 };
+
+enum MidiInstruments
+{
+	// General midi supports instruments 0 - 127
+	MIDI_INSTRUMENT_COUNT = 128,
+};

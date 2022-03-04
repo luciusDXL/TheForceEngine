@@ -52,6 +52,16 @@ enum iMuseParameter
 	waveStreamFlag   = 0x1800	// set if wave streamed
 };
 
+enum iMuseGroup
+{
+	groupMaster = 0,		// master
+	groupSfx    = 1,		// sound effects
+	groupVoice  = 2,		// voice
+	groupMusic  = 3,		// music
+	groupDippedMusic = 4,	// auto dip music
+	groupMaxCount = 16
+};
+
 // ImGetParam() soundType.
 enum iMuseSoundType  
 {
@@ -69,12 +79,6 @@ enum iMuseErrorCode
 	imArgErr         = -5,
 	imAllocErr       = -6,
 	imIllegalErr     = -7
-};
-
-enum MidiInstruments
-{
-	// General midi supports instruments 0 - 127
-	MIDI_INSTRUMENT_COUNT = 128,
 };
 
 namespace TFE_Jedi
