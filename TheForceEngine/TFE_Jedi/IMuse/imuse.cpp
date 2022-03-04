@@ -139,7 +139,10 @@ namespace TFE_Jedi
 	void ImFreeMidiChannel(ImMidiChannel* channelData);
 	void ImMidiSetupParts();
 	void ImAssignMidiChannel(SoundPlayer* player, SoundChannel* channel, ImMidiChannel* midiChannel);
+	u8*  ImGetSoundData(u32 id);
+	u8*  ImInternalGetSoundData(u32 soundId);
 	ImMidiChannel* ImGetFreeMidiChannel();
+	s32 ImSetupPlayer(u32 soundId, s32 priority);
 
 	// Midi channel commands
 	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
@@ -162,6 +165,9 @@ namespace TFE_Jedi
 		(1 << 12), (1 << 13), (1 << 14), (1 << 15)
 	};
 
+	const char* c_midi = "MIDI";
+	const u32 c_crea = 0x61657243;	// "Crea"
+
 	static ImMidiChannel s_midiChannels[16];
 	static s32 s_imPause = 0;
 	static s32 s_midiPaused = 0;
@@ -178,6 +184,10 @@ namespace TFE_Jedi
 		127, 127, 127, 127,
 		127, 127, 127, 127,
 	};
+
+	// Midi files loaded.
+	static u32 s_midiFileCount = 0;
+	static u8* s_midiFiles[6];
 
 	/////////////////////////////////////////////////////////// 
 	// Main API
@@ -334,16 +344,48 @@ namespace TFE_Jedi
 		return groupVolume;
 	}
 
-	s32 ImStartSound(s32 sound, s32 priority)
+	s32 ImStartSound(s32 soundId, s32 priority)
 	{
-		// Stub
-		return imNotImplemented;
+		u8* data = ImInternalGetSoundData(soundId);
+		if (!data)
+		{
+			TFE_System::logWrite(LOG_ERROR, "IMuse", "null sound addr in StartSound()");
+			return imFail;
+		}
+
+		s32 i = 0;
+		for (; i < 4; i++)
+		{
+			if (data[i] != c_midi[i])
+			{
+				break;
+			}
+		}
+		if (i == 4)  // Midi
+		{
+			return ImSetupPlayer(soundId, priority);
+		}
+		else  // Digital Sound
+		{
+			// IM_TODO: Digital sound
+		}
+		return imSuccess;
 	}
 
 	s32 ImStopSound(s32 sound)
 	{
-		// Stub
-		return imNotImplemented;
+		/* Stub
+		s32 type = ImGetSoundType(soundId);
+		if (type == typeMidi)
+		{
+			return ImFreeSoundPlayer(soundId);
+		}
+		else if (type == typeWave)
+		{
+			// IM_TODO: Digital sound
+		}
+		*/
+		return imFail;
 	}
 
 	s32 ImStopAllSounds(void)
@@ -623,6 +665,43 @@ namespace TFE_Jedi
 		ImMidiChannelSetModulation(midiChannel, channel->modulation);
 		ImHandleChannelPan(midiChannel, channel->pan);
 		ImSetChannelSustain(midiChannel, channel->sustain);
+	}
+
+	u8* ImGetSoundData(u32 id)
+	{
+		if (id & (1 << 31))
+		{
+			return s_midiFiles[id & 0x7fffffff];
+		}
+		else
+		{
+			// IM_TODO: Digital sound.
+		}
+		return nullptr;
+	}
+
+	s32 ImInternal_SoundValid(u32 soundId)
+	{
+		if (soundId && soundId < 0xfff00000)
+		{
+			return 1;
+		}
+		return 0;
+	}
+
+	u8* ImInternalGetSoundData(u32 soundId)
+	{
+		if (ImInternal_SoundValid(soundId))
+		{
+			return ImGetSoundData(soundId);
+		}
+		return nullptr;
+	}
+
+	s32 ImSetupPlayer(u32 soundId, s32 priority)
+	{
+		// Stub: TODO
+		return imNotImplemented;
 	}
 
 	void _ImNoteOff(s32 channelId, s32 instrId)
