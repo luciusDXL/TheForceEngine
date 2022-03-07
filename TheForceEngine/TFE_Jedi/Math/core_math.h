@@ -268,6 +268,12 @@ namespace TFE_Jedi
 		return sinf(scale * angle);
 	}
 
+	inline f32 tanFlt(f32 angle)
+	{
+		const f32 scale = 2.0f * PI / 16384.0f;
+		return tanf(scale * angle);
+	}
+
 	void computeTransformFromAngles_Float(f32 yaw, f32 pitch, f32 roll, f32* transform);
 
 	inline u32 previousPowerOf2(u32 x)
