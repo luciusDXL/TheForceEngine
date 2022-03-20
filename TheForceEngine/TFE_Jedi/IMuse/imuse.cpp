@@ -94,7 +94,7 @@ namespace TFE_Jedi
 		s32 mailbox;
 		s32 hook;
 
-		SoundChannel channels[16];
+		SoundChannel channels[imChannelCount];
 	};
 
 	struct InstrumentSound
@@ -157,7 +157,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
-	static const s32 s_channelMask[16] =
+	static const s32 s_channelMask[imChannelCount] =
 	{
 		(1 <<  0), (1 <<  1), (1 <<  2), (1 <<  3),
 		(1 <<  4), (1 <<  5), (1 <<  6), (1 <<  7),
@@ -168,7 +168,7 @@ namespace TFE_Jedi
 	const char* c_midi = "MIDI";
 	const u32 c_crea = 0x61657243;	// "Crea"
 
-	static ImMidiChannel s_midiChannels[16];
+	static ImMidiChannel s_midiChannels[imChannelCount];
 	static s32 s_imPause = 0;
 	static s32 s_midiPaused = 0;
 	static s32 s_digitalPause = 0;
@@ -179,10 +179,10 @@ namespace TFE_Jedi
 	static s32 s_groupVolume[groupMaxCount] = { 0 };
 	static s32 s_soundGroupVolume[groupMaxCount] =
 	{
-		127, 127, 127, 127,
-		127, 127, 127, 127,
-		127, 127, 127, 127,
-		127, 127, 127, 127,
+		imMaxVolume, imMaxVolume, imMaxVolume, imMaxVolume,
+		imMaxVolume, imMaxVolume, imMaxVolume, imMaxVolume,
+		imMaxVolume, imMaxVolume, imMaxVolume, imMaxVolume,
+		imMaxVolume, imMaxVolume, imMaxVolume, imMaxVolume,
 	};
 
 	// Midi files loaded.
@@ -312,13 +312,11 @@ namespace TFE_Jedi
 
 	s32 ImSetGroupVol(s32 group, s32 volume)
 	{
-		if (group >= groupMaxCount || volume > 127)
+		if (group >= groupMaxCount || volume > imMaxVolume)
 		{
 			return imArgErr;
 		}
-
-		// If volume == -1, return the current volume instead.
-		if (volume == -1)
+		else if (volume == imGetValue)
 		{
 			return s_groupVolume[group];
 		}
@@ -330,13 +328,13 @@ namespace TFE_Jedi
 			s_soundGroupVolume[groupMaster] = 0;
 			for (s32 i = 1; i < groupMaxCount; i++)
 			{
-				s_soundGroupVolume[i] = ((s_groupVolume[i] + 1) * volume) >> 7;
+				s_soundGroupVolume[i] = ((s_groupVolume[i] + 1) * volume) >> imVolumeShift;
 			}
 		}
 		else
 		{
 			s_groupVolume[group] = volume;
-			s_soundGroupVolume[group] = ((s_groupVolume[groupMaster] + 1) * volume) >> 7;
+			s_soundGroupVolume[group] = ((s_groupVolume[groupMaster] + 1) * volume) >> imVolumeShift;
 		}
 		ImHandleChannelGroupVolume();
 		// TODO: func_2e9689();
@@ -493,9 +491,9 @@ namespace TFE_Jedi
 		{
 			s32 sndVol = player->volume + 1;
 			s32 groupVol = ImGetGroupVolume(player->group);
-			player->groupVolume = (sndVol * groupVol) >> 7;
+			player->groupVolume = (sndVol * groupVol) >> imVolumeShift;
 
-			for (s32 i = 0; i < 16; i++)
+			for (s32 i = 0; i < imChannelCount; i++)
 			{
 				SoundChannel* channel = &player->channels[i];
 				ImHandleChannelVolumeChange(player, channel);
@@ -524,7 +522,7 @@ namespace TFE_Jedi
 		}
 		s32 partTrim   = channel->partTrim   + 1;
 		s32 partVolume = channel->partVolume + 1;
-		channel->groupVolume = (partVolume * partTrim * player->groupVolume) >> 14;
+		channel->groupVolume = (partVolume * partTrim * player->groupVolume) >> (2*imVolumeShift);
 
 		// These checks seem redundant. If groupVolume is != 0, then by definition partTrim and partVolume are != 0.
 		if (!player->groupVolume || !channel->partTrim || !channel->partVolume)
@@ -550,7 +548,7 @@ namespace TFE_Jedi
 
 		while (player)
 		{
-			for (s32 m = 0; m < 16; m++)
+			for (s32 m = 0; m < imChannelCount; m++)
 			{
 				SoundChannel* channel = &player->channels[m];
 				SoundPlayer* sharedPart = player->sharedPart;
@@ -636,7 +634,7 @@ namespace TFE_Jedi
 
 	ImMidiChannel* ImGetFreeMidiChannel()
 	{
-		for (s32 i = 0; i < 15; i++)
+		for (s32 i = 0; i < imChannelCount - 1; i++)
 		{
 			if (!s_midiChannels[i].player && !s_midiChannels[i].sharedPart)
 			{
@@ -669,9 +667,9 @@ namespace TFE_Jedi
 
 	u8* ImGetSoundData(u32 id)
 	{
-		if (id & (1 << 31))
+		if (id & imMidiFlag)
 		{
-			return s_midiFiles[id & 0x7fffffff];
+			return s_midiFiles[id & imMidiMask];
 		}
 		else
 		{
@@ -682,7 +680,7 @@ namespace TFE_Jedi
 
 	s32 ImInternal_SoundValid(u32 soundId)
 	{
-		if (soundId && soundId < 0xfff00000)
+		if (soundId && soundId < imValidMask)
 		{
 			return 1;
 		}

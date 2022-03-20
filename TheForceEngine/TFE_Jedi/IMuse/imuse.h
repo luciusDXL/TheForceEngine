@@ -62,11 +62,13 @@ enum iMuseGroup
 	groupMaxCount = 16
 };
 
-// ImGetParam() soundType.
 enum iMuseSoundType  
 {
 	typeMidi = 1,
-	typeWave = 2
+	typeWave = 2,
+	imMidiFlag  = (1u << 31u),
+	imMidiMask  = 0x7fffffffu,
+	imValidMask = 0xfff00000u,
 };
 
 enum iMuseErrorCode
@@ -79,6 +81,14 @@ enum iMuseErrorCode
 	imArgErr         = -5,
 	imAllocErr       = -6,
 	imIllegalErr     = -7
+};
+
+enum iMuseConst
+{
+	imMaxVolume    = 127,  // Maximum allowed volume, correlated with imVolumeShift.
+	imVolumeShift  = 7,    // Amount to shift when multiplying volumes.
+	imChannelCount = 16,   // Number of midi channels.
+	imGetValue     = -1,   // Magic number to get values instead of set them.
 };
 
 namespace TFE_Jedi
