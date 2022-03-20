@@ -11,7 +11,7 @@ namespace TFE_Jedi
 	struct ImSoundFader
 	{
 		s32 active;
-		s32 soundId;
+		ImSoundId soundId;
 		iMuseParameter param;
 		s32 curValue;
 		s32 timeRem;
@@ -26,7 +26,7 @@ namespace TFE_Jedi
 	// Internal State
 	/////////////////////////////////////////////////////
 	static s32 s_imFadersActive = 0;
-	static ImSoundFader s_soundFaders[16];
+	static ImSoundFader s_soundFaders[imChannelCount];
 
 	/////////////////////////////////////////////////////////// 
 	// API
@@ -77,7 +77,7 @@ namespace TFE_Jedi
 
 	s32 ImClearAllSoundFaders()
 	{
-		for (s32 i = 0; i < 16; i++)
+		for (s32 i = 0; i < imChannelCount; i++)
 		{
 			s_soundFaders[i].active = 0;
 		}
@@ -85,10 +85,10 @@ namespace TFE_Jedi
 		return imSuccess;
 	}
 
-	void ImClearSoundFaders(s32 soundId, s32 param)
+	void ImClearSoundFaders(ImSoundId soundId, s32 param)
 	{
 		ImSoundFader* fader = s_soundFaders;
-		for (s32 i = 0; i < 16; i++, fader++)
+		for (s32 i = 0; i < imChannelCount; i++, fader++)
 		{
 			if (fader->active)
 			{
@@ -107,7 +107,7 @@ namespace TFE_Jedi
 	// value is the target value for the parameter (such as volume).
 	// time is the amount of time this should take, 0 for instant changes (negative values are invalid).
 	//   time is in "iMuse frames" = 1/60th of a sec. per frame.
-	s32 ImFadeParam(s32 soundId, s32 param, s32 value, s32 time)
+	s32 ImFadeParam(ImSoundId soundId, s32 param, s32 value, s32 time)
 	{
 		// Check that the sound and time are valid.
 		if (!soundId || time < 0)
@@ -139,7 +139,7 @@ namespace TFE_Jedi
 
 		// Otherwise find a free fader and set it up.
 		ImSoundFader* fader = s_soundFaders;
-		for (s32 i = 0; i < 16; i++, fader++)
+		for (s32 i = 0; i < imChannelCount; i++, fader++)
 		{
 			if (!fader->active)
 			{

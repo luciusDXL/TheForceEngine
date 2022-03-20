@@ -89,10 +89,13 @@ enum iMuseConst
 	imVolumeShift  = 7,    // Amount to shift when multiplying volumes.
 	imChannelCount = 16,   // Number of midi channels.
 	imGetValue     = -1,   // Magic number to get values instead of set them.
+	imSoundWildcard = 0xffffffff,
 };
 
 namespace TFE_Jedi
 {
+	typedef u32 ImSoundId;
+
 	////////////////////////////////////////////////////
 	// High level functions
 	////////////////////////////////////////////////////
@@ -108,9 +111,9 @@ namespace TFE_Jedi
 	extern s32 ImSetVoiceVol(s32 vol);
 	extern s32 ImGetVoiceVol(void);
 
-	extern s32 ImStartSfx(s32 sound, s32 priority);
-	extern s32 ImStartVoice(s32 sound, s32 priority);
-	extern s32 ImStartMusic(s32 sound, s32 priority);
+	extern s32 ImStartSfx(ImSoundId soundId, s32 priority);
+	extern s32 ImStartVoice(ImSoundId soundId, s32 priority);
+	extern s32 ImStartMusic(ImSoundId soundId, s32 priority);
 
 	////////////////////////////////////////////////////
 	// Low level functions
@@ -120,21 +123,21 @@ namespace TFE_Jedi
 	extern s32 ImPause(void);
 	extern s32 ImResume(void);
 	extern s32 ImSetGroupVol(s32 group, s32 vol);
-	extern s32 ImStartSound(s32 sound, s32 priority);
-	extern s32 ImStopSound(s32 sound);
+	extern s32 ImStartSound(ImSoundId soundId, s32 priority);
+	extern s32 ImStopSound(ImSoundId soundId);
 	extern s32 ImStopAllSounds(void);
-	extern s32 ImGetNextSound(s32 sound);
-	extern s32 ImSetParam(s32 sound, s32 param, s32 val);
-	extern s32 ImGetParam(s32 sound, s32 param);
-	extern s32 ImFadeParam(s32 sound, s32 param, s32 val, s32 time);
-	extern s32 ImSetHook(s32 sound, s32 val);
-	extern s32 ImGetHook(s32 sound);
-	extern s32 ImSetTrigger(s32 sound, s32 marker, s32 opcode);  // Modified based on actual usage to simplify
-	extern s32 ImCheckTrigger(s32 sound, s32 marker, s32 opcode);
-	extern s32 ImClearTrigger(s32 sound, s32 marker, s32 opcode);
+	extern s32 ImGetNextSound(ImSoundId soundId);
+	extern s32 ImSetParam(ImSoundId soundId, s32 param, s32 val);
+	extern s32 ImGetParam(ImSoundId soundId, s32 param);
+	extern s32 ImFadeParam(ImSoundId soundId, s32 param, s32 val, s32 time);
+	extern s32 ImSetHook(ImSoundId soundId, s32 val);
+	extern s32 ImGetHook(ImSoundId soundId);
+	extern s32 ImSetTrigger(ImSoundId soundId, s32 marker, s32 opcode);  // Modified based on actual usage to simplify
+	extern s32 ImCheckTrigger(ImSoundId soundId, s32 marker, s32 opcode);
+	extern s32 ImClearTrigger(ImSoundId soundId, s32 marker, s32 opcode);
 	extern s32 ImDeferCommand(s32 time, s32 opcode, s32 sound);  // Modified based on actual usage to simplify
 
-	extern s32 ImJumpMidi(s32 sound, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain);
-	extern s32 ImSendMidiMsg(s32 sound, s32 arg1, s32 arg2, s32 arg3);
-	extern s32 ImShareParts(s32 sound1, s32 sound2);
+	extern s32 ImJumpMidi(ImSoundId soundId, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain);
+	extern s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3);
+	extern s32 ImShareParts(ImSoundId sound1, ImSoundId sound2);
 }  // namespace TFE_Jedi

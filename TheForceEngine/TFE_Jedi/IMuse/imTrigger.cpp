@@ -11,7 +11,7 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////
 	struct ImTrigger
 	{
-		s32 soundId;
+		ImSoundId soundId;
 		s32 marker;
 		s32 opcode;
 		s32 args[10];
@@ -24,11 +24,16 @@ namespace TFE_Jedi
 		s32 args[10];
 	};
 
+	enum ImTriggerConst
+	{
+		ImMaxDeferredCmd = 8,
+	};
+
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
-	static ImTrigger s_triggers[16];
-	static ImDeferCmd s_deferCmd[8];
+	static ImTrigger s_triggers[imChannelCount];
+	static ImDeferCmd s_deferCmd[ImMaxDeferredCmd];
 	static s32 s_imDeferredCmds = 0;
 
 	void ImHandleDeferredCommand(ImDeferCmd* cmd);
@@ -36,12 +41,12 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////////// 
 	// API
 	/////////////////////////////////////////////////////////// 
-	s32 ImSetTrigger(s32 soundId, s32 marker, s32 opcode)
+	s32 ImSetTrigger(ImSoundId soundId, s32 marker, s32 opcode)
 	{
 		if (!soundId) { return imArgErr; }
 
 		ImTrigger* trigger = s_triggers;
-		for (s32 i = 0; i < 16; i++, trigger++)
+		for (s32 i = 0; i < imChannelCount; i++, trigger++)
 		{
 			if (!trigger->soundId)
 			{
@@ -60,15 +65,15 @@ namespace TFE_Jedi
 
 	// Returns the number of matching triggers.
 	// '-1' acts as a wild card.
-	s32 ImCheckTrigger(s32 soundId, s32 marker, s32 opcode)
+	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, s32 opcode)
 	{
 		ImTrigger* trigger = s_triggers;
 		s32 count = 0;
-		for (s32 i = 0; i < 16; i++, trigger++)
+		for (s32 i = 0; i < imChannelCount; i++, trigger++)
 		{
 			if (trigger->soundId)
 			{
-				if ((soundId == -1 || soundId == trigger->soundId) &&
+				if ((soundId == imSoundWildcard || soundId == trigger->soundId) &&
 					(marker  == -1 || marker  == trigger->marker) &&
 					(opcode  == -1 || opcode  == trigger->opcode))
 				{
@@ -79,13 +84,13 @@ namespace TFE_Jedi
 		return count;
 	}
 
-	s32 ImClearTrigger(s32 soundId, s32 marker, s32 opcode)
+	s32 ImClearTrigger(ImSoundId soundId, s32 marker, s32 opcode)
 	{
 		ImTrigger* trigger = s_triggers;
-		for (s32 i = 0; i < 16; i++, trigger++)
+		for (s32 i = 0; i < imChannelCount; i++, trigger++)
 		{
 			// Only clear set triggers and match Sound ID
-			if (trigger->soundId && (soundId == -1 || soundId == trigger->soundId))
+			if (trigger->soundId && (soundId == imSoundWildcard || soundId == trigger->soundId))
 			{
 				// Match marker and opcode.
 				if ((marker == -1 || marker == trigger->marker) && (opcode == -1 || opcode == trigger->opcode))
@@ -99,11 +104,11 @@ namespace TFE_Jedi
 
 	s32 ImClearTriggersAndCmds()
 	{
-		for (s32 i = 0; i < 16; i++)
+		for (s32 i = 0; i < imChannelCount; i++)
 		{
 			s_triggers[i].soundId = 0;
 		}
-		for (s32 i = 0; i < 8; i++)
+		for (s32 i = 0; i < ImMaxDeferredCmd; i++)
 		{
 			s_deferCmd[i].time = 0;
 		}
@@ -121,7 +126,7 @@ namespace TFE_Jedi
 			return imArgErr;
 		}
 
-		for (s32 i = 0; i < 8; i++, cmd++)
+		for (s32 i = 0; i < ImMaxDeferredCmd; i++, cmd++)
 		{
 			if (cmd->time == 0)
 			{
@@ -145,7 +150,7 @@ namespace TFE_Jedi
 		if (s_imDeferredCmds)
 		{
 			s_imDeferredCmds = 0;
-			for (s32 i = 0; i < 8; i++, cmd++)
+			for (s32 i = 0; i < ImMaxDeferredCmd; i++, cmd++)
 			{
 				if (cmd->time)
 				{

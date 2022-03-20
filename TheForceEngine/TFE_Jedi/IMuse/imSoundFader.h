@@ -25,6 +25,6 @@ namespace TFE_Jedi
 {
 	void ImUpdateSoundFaders();
 	s32  ImClearAllSoundFaders();
-	void ImClearSoundFaders(s32 soundId, s32 param);
-	s32  ImFadeParam(s32 soundId, s32 param, s32 value, s32 time);
+	void ImClearSoundFaders(ImSoundId soundId, s32 param);
+	s32  ImFadeParam(ImSoundId soundId, s32 param, s32 value, s32 time);
 }  // namespace TFE_Jedi

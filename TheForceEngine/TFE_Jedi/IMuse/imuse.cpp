@@ -60,7 +60,7 @@ namespace TFE_Jedi
 	struct PlayerData
 	{
 		SoundPlayer* player;
-		s32 soundId;
+		ImSoundId soundId;
 		s32 seqIndex;
 		s32 chunkOffset;
 		s32 tick;
@@ -82,7 +82,7 @@ namespace TFE_Jedi
 		PlayerData* data;
 		SoundPlayer* sharedPart;
 		s32 sharedPartId;
-		s32 soundId;
+		ImSoundId soundId;
 		s32 marker;
 		s32 group;
 		s32 priority;
@@ -112,7 +112,7 @@ namespace TFE_Jedi
 	struct ImSoundFader
 	{
 		s32 active;
-		s32 soundId;
+		ImSoundId soundId;
 		iMuseParameter param;
 		s32 curValue;
 		s32 timeRem;
@@ -139,10 +139,10 @@ namespace TFE_Jedi
 	void ImFreeMidiChannel(ImMidiChannel* channelData);
 	void ImMidiSetupParts();
 	void ImAssignMidiChannel(SoundPlayer* player, SoundChannel* channel, ImMidiChannel* midiChannel);
-	u8*  ImGetSoundData(u32 id);
-	u8*  ImInternalGetSoundData(u32 soundId);
+	u8*  ImGetSoundData(ImSoundId id);
+	u8*  ImInternalGetSoundData(ImSoundId soundId);
 	ImMidiChannel* ImGetFreeMidiChannel();
-	s32 ImSetupPlayer(u32 soundId, s32 priority);
+	s32 ImSetupPlayer(ImSoundId soundId, s32 priority);
 
 	// Midi channel commands
 	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
@@ -250,19 +250,19 @@ namespace TFE_Jedi
 		return imNotImplemented;
 	}
 
-	s32 ImStartSfx(s32 sound, s32 priority)
+	s32 ImStartSfx(ImSoundId soundId, s32 priority)
 	{
 		// Stub
 		return imNotImplemented;
 	}
 
-	s32 ImStartVoice(s32 sound, s32 priority)
+	s32 ImStartVoice(ImSoundId soundId, s32 priority)
 	{
 		// Stub
 		return imNotImplemented;
 	}
 
-	s32 ImStartMusic(s32 sound, s32 priority)
+	s32 ImStartMusic(ImSoundId soundId, s32 priority)
 	{
 		// Stub
 		return imNotImplemented;
@@ -342,7 +342,7 @@ namespace TFE_Jedi
 		return groupVolume;
 	}
 
-	s32 ImStartSound(s32 soundId, s32 priority)
+	s32 ImStartSound(ImSoundId soundId, s32 priority)
 	{
 		u8* data = ImInternalGetSoundData(soundId);
 		if (!data)
@@ -370,7 +370,7 @@ namespace TFE_Jedi
 		return imSuccess;
 	}
 
-	s32 ImStopSound(s32 sound)
+	s32 ImStopSound(ImSoundId soundId)
 	{
 		/* Stub
 		s32 type = ImGetSoundType(soundId);
@@ -392,49 +392,57 @@ namespace TFE_Jedi
 		return imNotImplemented;
 	}
 
-	s32 ImGetNextSound(s32 sound)
+	s32 ImGetNextSound(ImSoundId soundId)
 	{
 		// Stub
 		return imNotImplemented;
 	}
 
-	s32 ImSetParam(s32 sound, s32 param, s32 val)
+	s32 ImSetParam(ImSoundId soundId, s32 param, s32 val)
+	{
+		//iMuseSoundType type = (iMuseSoundType)ImGetSoundType(soundId);
+		//if (type == typeMidi)
+		//{
+			//return ImSetMidiParam(soundId, param, value);
+		//}
+		//else if (type == typeWave)
+		//{
+			//return ImSetWaveParam(soundId, param, value);
+		//}
+		return imFail;
+	}
+
+	s32 ImGetParam(ImSoundId soundId, s32 param)
 	{
 		// Stub
 		return imNotImplemented;
 	}
 
-	s32 ImGetParam(s32 sound, s32 param)
+	s32 ImSetHook(ImSoundId soundId, s32 val)
 	{
 		// Stub
 		return imNotImplemented;
 	}
 
-	s32 ImSetHook(s32 sound, s32 val)
+	s32 ImGetHook(ImSoundId soundId)
 	{
 		// Stub
 		return imNotImplemented;
 	}
 
-	s32 ImGetHook(s32 sound)
+	s32 ImJumpMidi(ImSoundId soundId, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain)
 	{
 		// Stub
 		return imNotImplemented;
 	}
 
-	s32 ImJumpMidi(s32 sound, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain)
+	s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3)
 	{
 		// Stub
 		return imNotImplemented;
 	}
 
-	s32 ImSendMidiMsg(s32 sound, s32 arg1, s32 arg2, s32 arg3)
-	{
-		// Stub
-		return imNotImplemented;
-	}
-
-	s32 ImShareParts(s32 sound1, s32 sound2)
+	s32 ImShareParts(ImSoundId sound1, ImSoundId sound2)
 	{
 		// Stub
 		return imNotImplemented;
@@ -678,7 +686,7 @@ namespace TFE_Jedi
 		return nullptr;
 	}
 
-	s32 ImInternal_SoundValid(u32 soundId)
+	s32 ImInternal_SoundValid(ImSoundId soundId)
 	{
 		if (soundId && soundId < imValidMask)
 		{
@@ -687,7 +695,7 @@ namespace TFE_Jedi
 		return 0;
 	}
 
-	u8* ImInternalGetSoundData(u32 soundId)
+	u8* ImInternalGetSoundData(ImSoundId soundId)
 	{
 		if (ImInternal_SoundValid(soundId))
 		{
@@ -696,7 +704,7 @@ namespace TFE_Jedi
 		return nullptr;
 	}
 
-	s32 ImSetupPlayer(u32 soundId, s32 priority)
+	s32 ImSetupPlayer(ImSoundId soundId, s32 priority)
 	{
 		// Stub: TODO
 		return imNotImplemented;

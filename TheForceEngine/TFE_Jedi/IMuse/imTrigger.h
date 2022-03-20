@@ -20,12 +20,13 @@
 // permission of the original copyright holders (LucasArts).
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include "imuse.h"
 
 namespace TFE_Jedi
 {
-	s32 ImSetTrigger(s32 soundId, s32 marker, s32 opcode);
-	s32 ImCheckTrigger(s32 soundId, s32 marker, s32 opcode);
-	s32 ImClearTrigger(s32 soundId, s32 marker, s32 opcode);
+	s32 ImSetTrigger(ImSoundId soundId, s32 marker, s32 opcode);
+	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, s32 opcode);
+	s32 ImClearTrigger(ImSoundId soundId, s32 marker, s32 opcode);
 	s32 ImClearTriggersAndCmds();
 
 	s32  ImDeferCommand(s32 time, s32 opcode, s32 arg1);
