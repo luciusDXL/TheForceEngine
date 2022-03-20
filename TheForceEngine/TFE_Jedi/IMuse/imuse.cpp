@@ -2,6 +2,8 @@
 #include <TFE_Audio/midi.h>
 #include <TFE_System/system.h>
 #include <assert.h>
+#include "imTrigger.h"
+#include "imSoundFader.h"
 
 namespace TFE_Jedi
 {
@@ -143,6 +145,19 @@ namespace TFE_Jedi
 	u8*  ImInternalGetSoundData(ImSoundId soundId);
 	ImMidiChannel* ImGetFreeMidiChannel();
 	s32 ImSetupPlayer(ImSoundId soundId, s32 priority);
+	s32 ImFreeSoundPlayer(ImSoundId soundId);
+	s32 ImReleaseAllPlayers();
+	s32 ImReleaseAllWaveSounds();
+	s32 ImGetSoundType(ImSoundId soundId);
+	s32 ImSetMidiParam(ImSoundId soundId, s32 param, s32 value);
+	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value);
+	s32 ImGetMidiParam(ImSoundId soundId, s32 param);
+	s32 ImGetWaveParam(ImSoundId soundId, s32 param);
+	s32 ImGetPendingSoundCount(s32 soundId);
+	ImSoundId ImFindNextMidiSound(ImSoundId soundId);
+	ImSoundId ImFindNextWaveSound(ImSoundId soundId);
+	SoundPlayer* ImGetSoundPlayer(ImSoundId soundId);
+	s32 ImSetHookMidi(ImSoundId soundId, s32 value);
 
 	// Midi channel commands
 	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
@@ -372,7 +387,6 @@ namespace TFE_Jedi
 
 	s32 ImStopSound(ImSoundId soundId)
 	{
-		/* Stub
 		s32 type = ImGetSoundType(soundId);
 		if (type == typeMidi)
 		{
@@ -382,52 +396,89 @@ namespace TFE_Jedi
 		{
 			// IM_TODO: Digital sound
 		}
-		*/
 		return imFail;
 	}
 
 	s32 ImStopAllSounds(void)
 	{
-		// Stub
-		return imNotImplemented;
+		s32 res = ImClearAllSoundFaders();
+		res |= ImClearTriggersAndCmds();
+		res |= ImReleaseAllPlayers();
+		res |= ImReleaseAllWaveSounds();
+		return res;
 	}
 
 	s32 ImGetNextSound(ImSoundId soundId)
 	{
-		// Stub
-		return imNotImplemented;
+		ImSoundId nextMidiId = ImFindNextMidiSound(soundId);
+		ImSoundId nextWaveId = ImFindNextWaveSound(soundId);
+		if (nextMidiId == 0 || (nextWaveId > 0 && nextMidiId >= nextWaveId))
+		{
+			return nextWaveId;
+		}
+		return nextMidiId;
 	}
 
-	s32 ImSetParam(ImSoundId soundId, s32 param, s32 val)
+	s32 ImSetParam(ImSoundId soundId, s32 param, s32 value)
 	{
-		//iMuseSoundType type = (iMuseSoundType)ImGetSoundType(soundId);
-		//if (type == typeMidi)
-		//{
-			//return ImSetMidiParam(soundId, param, value);
-		//}
-		//else if (type == typeWave)
-		//{
-			//return ImSetWaveParam(soundId, param, value);
-		//}
+		iMuseSoundType type = (iMuseSoundType)ImGetSoundType(soundId);
+		if (type == typeMidi)
+		{
+			return ImSetMidiParam(soundId, param, value);
+		}
+		else if (type == typeWave)
+		{
+			return ImSetWaveParam(soundId, param, value);
+		}
 		return imFail;
 	}
 
 	s32 ImGetParam(ImSoundId soundId, s32 param)
 	{
-		// Stub
-		return imNotImplemented;
+		iMuseSoundType type = (iMuseSoundType)ImGetSoundType(soundId);
+		if (param)
+		{
+			if (param == soundPendCount)
+			{
+				return ImGetPendingSoundCount(soundId);
+			}
+			else if (type == typeMidi)
+			{
+				return ImGetMidiParam(soundId, param);
+			}
+			else if (type == typeWave)
+			{
+				return ImGetWaveParam(soundId, param);
+			}
+			else if (param == soundPlayCount)
+			{
+				// This is zero here, since there is no valid type - 
+				// so no sounds are that type are playing.
+				return 0;
+			}
+			return imFail;
+		}
+		return type;
 	}
 
-	s32 ImSetHook(ImSoundId soundId, s32 val)
+	s32 ImSetHook(ImSoundId soundId, s32 value)
 	{
-		// Stub
-		return imNotImplemented;
+		iMuseSoundType type = (iMuseSoundType)ImGetSoundType(soundId);
+		if (type == typeMidi)
+		{
+			return ImSetHookMidi(soundId, value);
+		}
+		else if (type == typeWave)
+		{
+			// IM_TODO
+		}
+		return imFail;
 	}
 
 	s32 ImGetHook(ImSoundId soundId)
 	{
-		// Stub
-		return imNotImplemented;
+		// Not called from Dark Forces.
+		return imSuccess;
 	}
 
 	s32 ImJumpMidi(ImSoundId soundId, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain)
@@ -673,7 +724,7 @@ namespace TFE_Jedi
 		ImSetChannelSustain(midiChannel, channel->sustain);
 	}
 
-	u8* ImGetSoundData(u32 id)
+	u8* ImGetSoundData(ImSoundId id)
 	{
 		if (id & imMidiFlag)
 		{
@@ -770,6 +821,147 @@ namespace TFE_Jedi
 				}
 			}
 		}
+	}
+
+	void ImReleaseSoundPlayer(SoundPlayer* player)
+	{
+		// imNotImplemented
+	}
+
+	s32 ImFreeSoundPlayer(ImSoundId soundId)
+	{
+		return imNotImplemented;
+	}
+
+	s32 ImReleaseAllPlayers()
+	{
+		SoundPlayer* player = nullptr;
+		do
+		{
+			player = *s_soundPlayerList;
+			if (player)
+			{
+				ImReleaseSoundPlayer(player);
+			}
+		} while (player);
+		return imSuccess;
+	}
+
+	s32 ImReleaseAllWaveSounds()
+	{
+		/*
+		** Stubbed
+		ImWaveSound* snd = s_imWaveSounds;
+		ImSoundPlayerLock();
+		if (snd)
+		{
+			// IM_TODO
+		}
+		ImSoundPlayerUnlock();
+		*/
+		return imSuccess;
+	}
+		
+	s32 ImGetSoundType(ImSoundId soundId)
+	{
+		return imNotImplemented;
+	}
+
+	s32 ImSetMidiParam(ImSoundId soundId, s32 param, s32 value)
+	{
+		return imNotImplemented;
+	}
+
+	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value)
+	{
+		return imNotImplemented;
+	}
+
+	s32 ImGetMidiParam(ImSoundId soundId, s32 param)
+	{
+		return imNotImplemented;
+	}
+
+	s32 ImGetWaveParam(ImSoundId soundId, s32 param)
+	{
+		return imNotImplemented;
+	}
+
+	s32 ImGetPendingSoundCount(s32 soundId)
+	{
+		// Not called by Dark Forces.
+		assert(0);
+		return 0;
+	}
+
+	// Search a list for the smallest non-zero value that is atleast minValue.
+	ImSoundId ImFindNextMidiSound(ImSoundId soundId)
+	{
+		ImSoundId value = 0;
+		SoundPlayer* entry = *s_soundPlayerList;
+		while (entry)
+		{
+			if (soundId < entry->soundId)
+			{
+				if (!value || value > entry->soundId)
+				{
+					value = entry->soundId;
+				}
+			}
+			entry = entry->next;
+		}
+		return value;
+	}
+
+	ImSoundId ImFindNextWaveSound(ImSoundId soundId)
+	{
+		ImSoundId nextSoundId = 0;
+		/*
+		** Stubbed **
+		ImWaveSound* snd = s_imWaveSounds;
+		while (snd)
+		{
+			if (snd->soundId > soundId)
+			{
+				if (nextSoundId)
+				{
+					// IM_TODO
+				}
+				nextSoundId = snd->soundId;
+			}
+			snd = snd->next;
+		}
+		*/
+		return nextSoundId;
+	}
+
+	SoundPlayer* ImGetSoundPlayer(ImSoundId soundId)
+	{
+		SoundPlayer* player = *s_soundPlayerList;
+		while (player)
+		{
+			if (player->soundId == soundId)
+			{
+				break;
+			}
+			player = player->next;
+		}
+		return player;
+	}
+
+	s32 ImSetHookMidi(ImSoundId soundId, s32 value)
+	{
+		if ((u32)value > 0x80000000ul)
+		{
+			return imArgErr;
+		}
+		SoundPlayer* player = ImGetSoundPlayer(soundId);
+		if (!player)
+		{
+			return imInvalidSound;
+		}
+		player->hook = value;
+		return imSuccess;
 	}
 
 	////////////////////////////////////////

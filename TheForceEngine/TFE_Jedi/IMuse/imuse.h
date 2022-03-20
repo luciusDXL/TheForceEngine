@@ -127,10 +127,10 @@ namespace TFE_Jedi
 	extern s32 ImStopSound(ImSoundId soundId);
 	extern s32 ImStopAllSounds(void);
 	extern s32 ImGetNextSound(ImSoundId soundId);
-	extern s32 ImSetParam(ImSoundId soundId, s32 param, s32 val);
+	extern s32 ImSetParam(ImSoundId soundId, s32 param, s32 value);
 	extern s32 ImGetParam(ImSoundId soundId, s32 param);
-	extern s32 ImFadeParam(ImSoundId soundId, s32 param, s32 val, s32 time);
-	extern s32 ImSetHook(ImSoundId soundId, s32 val);
+	extern s32 ImFadeParam(ImSoundId soundId, s32 param, s32 value, s32 time);
+	extern s32 ImSetHook(ImSoundId soundId, s32 value);
 	extern s32 ImGetHook(ImSoundId soundId);
 	extern s32 ImSetTrigger(ImSoundId soundId, s32 marker, s32 opcode);  // Modified based on actual usage to simplify
 	extern s32 ImCheckTrigger(ImSoundId soundId, s32 marker, s32 opcode);
