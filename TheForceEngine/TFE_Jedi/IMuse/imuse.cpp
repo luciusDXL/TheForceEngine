@@ -1,9 +1,11 @@
 #include "imuse.h"
 #include <TFE_Audio/midi.h>
 #include <TFE_System/system.h>
+#include <TFE_Jedi/Math/fixedPoint.h>
 #include <assert.h>
 #include "imTrigger.h"
 #include "imSoundFader.h"
+#include "midiData.h"
 
 namespace TFE_Jedi
 {
@@ -125,9 +127,47 @@ namespace TFE_Jedi
 		s32 stepDir;
 	};
 
+	typedef void(*MidiCmdFunc1)(PlayerData* playerData, u8* chunkData);
+	typedef void(*MidiCmdFunc2)(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2);
+	union MidiCmdFunc
+	{
+		MidiCmdFunc1 func1;
+		MidiCmdFunc2 func2;
+	};
+
+	static u8 s_midiMsgSize[] =
+	{
+		3, 3, 3, 3, 2, 2, 3, 1,
+	};
+	static s32 s_midiMessageSize2[] =
+	{
+		3, 3, 3, 3, 2, 2, 3,
+	};
+
+	enum ImMidiMessageIndex
+	{
+		IM_MID_NOTE_OFF = 0,
+		IM_MID_NOTE_ON = 1,
+		IM_MID_KEY_PRESSURE = 2,
+		IM_MID_CONTROL_CHANGE = 3,
+		IM_MID_PROGRAM_CHANGE = 4,
+		IM_MID_CHANNEL_PRESSURE = 5,
+		IM_MID_PITCH_BEND = 6,
+		IM_MID_SYS_FUNC = 7,
+		IM_MID_EVENT = 8,
+		IM_MID_COUNT = 9,
+	};
+		
 	/////////////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////////////
+	void ImAdvanceSound(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc);
+	void ImAdvanceMidiPlayer(PlayerData* playerData);
+	void ImJumpSustain(SoundPlayer* player, u8* sndData, PlayerData* playerData1, PlayerData* playerData2);
+	void ImMidiGetSoundInstruments(SoundPlayer* player, s32* soundMidiInstrumentMask, s32* midiInstrumentCount);
+	s32  ImMidiGetTickDelta(PlayerData* playerData, u32 prevTick, u32 tick);
+	void ImMidiProcessSustain(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc, SoundPlayer* player);
+
 	void ImSoundPlayerLock();
 	void ImSoundPlayerUnlock();
 	s32  ImPauseMidi();
@@ -158,9 +198,16 @@ namespace TFE_Jedi
 	ImSoundId ImFindNextWaveSound(ImSoundId soundId);
 	SoundPlayer* ImGetSoundPlayer(ImSoundId soundId);
 	s32 ImSetHookMidi(ImSoundId soundId, s32 value);
+	s32 ImFixupSoundTick(PlayerData* data, s32 value);
+	s32 ImSetSequence(PlayerData* data, u8* sndData, s32 seqIndex);
+
+	void ImMidiLock();
+	void ImMidiUnlock();
 
 	// Midi channel commands
 	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
+	void ImHandleChannelDetuneChange(SoundPlayer* player, SoundChannel* channel);
+	void ImHandleChannelPitchBend(SoundPlayer* player, s32 channelIndex, s32 fractValue, s32 intValue);
 	void ImMidiChannelSetPgm(ImMidiChannel* midiChannel, s32 pgm);
 	void ImMidiChannelSetPriority(ImMidiChannel* midiChannel, s32 priority);
 	void ImMidiChannelSetPartNoteReq(ImMidiChannel* midiChannel, s32 noteReq);
@@ -168,7 +215,18 @@ namespace TFE_Jedi
 	void ImMidiChannelSetModulation(ImMidiChannel* midiChannel, s32 modulation);
 	void ImHandleChannelPan(ImMidiChannel* midiChannel, s32 pan);
 	void ImSetChannelSustain(ImMidiChannel* midiChannel, s32 sustain);
-		
+
+	void ImCheckForTrackEnd(PlayerData* playerData, u8* data);
+	void ImMidiJump2_NoteOn(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2);
+	void ImMidiCommand(SoundPlayer* player, s32 channelIndex, s32 midiCmd, s32 value);
+	void ImMidiStopAllNotes(SoundPlayer* player);
+
+	void ImMidiNoteOff(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2);
+	void ImMidiNoteOn(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2);
+	void ImMidiProgramChange(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2);
+	void ImMidiPitchBend(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2);
+	void ImMidiEvent(PlayerData* playerData, u8* chunkData);
+			
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
@@ -188,8 +246,15 @@ namespace TFE_Jedi
 	static s32 s_midiPaused = 0;
 	static s32 s_digitalPause = 0;
 	static s32 s_sndPlayerLock = 0;
+	static s32 s_midiLock = 0;
+	static s32 s_trackTicksRemaining;
+	static s32 s_midiTickDelta;
+	static s32 s_midiTrackEnd;
+	static s32 s_imEndOfTrack;
 
 	static SoundPlayer** s_soundPlayerList = nullptr;
+	static PlayerData* s_imSoundHeaderCopy1 = nullptr;
+	static PlayerData* s_imSoundHeaderCopy2 = nullptr;
 
 	static s32 s_groupVolume[groupMaxCount] = { 0 };
 	static s32 s_soundGroupVolume[groupMaxCount] =
@@ -199,6 +264,36 @@ namespace TFE_Jedi
 		imMaxVolume, imMaxVolume, imMaxVolume, imMaxVolume,
 		imMaxVolume, imMaxVolume, imMaxVolume, imMaxVolume,
 	};
+
+	static s32 s_midiChannelTrim[imChannelCount] = { 0 };
+	static s32 s_midiInstrumentChannelMask[MIDI_INSTRUMENT_COUNT];
+	static s32 s_midiInstrumentChannelMask3[MIDI_INSTRUMENT_COUNT];
+	static s32 s_midiInstrumentChannelMask2[MIDI_INSTRUMENT_COUNT];
+	static s32 s_curMidiInstrumentMask[MIDI_INSTRUMENT_COUNT];
+	static s32 s_curInstrumentCount;
+
+	// Midi functions for each message type - see ImMidiMessageIndex{} above.
+	static MidiCmdFunc s_jumpMidiCmdFunc[IM_MID_COUNT] =
+	{
+		nullptr, nullptr, nullptr, nullptr,
+		nullptr, nullptr, nullptr, nullptr,
+		ImMidiEvent,
+	};
+	static MidiCmdFunc s_jumpMidiCmdFunc2[IM_MID_COUNT] =
+	{
+		nullptr, (MidiCmdFunc1)ImMidiJump2_NoteOn, nullptr, nullptr,
+		nullptr, nullptr, nullptr, nullptr,
+		ImCheckForTrackEnd
+	};
+	static MidiCmdFunc s_midiCmdFunc[IM_MID_COUNT] =
+	{
+		(MidiCmdFunc1)ImMidiNoteOff, (MidiCmdFunc1)ImMidiNoteOn, nullptr, (MidiCmdFunc1)ImMidiCommand,
+		(MidiCmdFunc1)ImMidiProgramChange, nullptr, (MidiCmdFunc1)ImMidiPitchBend, nullptr,
+		ImMidiEvent,
+	};
+
+	static InstrumentSound** s_imActiveInstrSounds = nullptr;
+	static InstrumentSound** s_imInactiveInstrSounds = nullptr;
 
 	// Midi files loaded.
 	static u32 s_midiFileCount = 0;
@@ -436,29 +531,29 @@ namespace TFE_Jedi
 	s32 ImGetParam(ImSoundId soundId, s32 param)
 	{
 		iMuseSoundType type = (iMuseSoundType)ImGetSoundType(soundId);
-		if (param)
+		if (param == soundType)
 		{
-			if (param == soundPendCount)
-			{
-				return ImGetPendingSoundCount(soundId);
-			}
-			else if (type == typeMidi)
-			{
-				return ImGetMidiParam(soundId, param);
-			}
-			else if (type == typeWave)
-			{
-				return ImGetWaveParam(soundId, param);
-			}
-			else if (param == soundPlayCount)
-			{
-				// This is zero here, since there is no valid type - 
-				// so no sounds are that type are playing.
-				return 0;
-			}
-			return imFail;
+			return type;
 		}
-		return type;
+		else if (param == soundPendCount)
+		{
+			return ImGetPendingSoundCount(soundId);
+		}
+		else if (type == typeMidi)
+		{
+			return ImGetMidiParam(soundId, param);
+		}
+		else if (type == typeWave)
+		{
+			return ImGetWaveParam(soundId, param);
+		}
+		else if (param == soundPlayCount)
+		{
+			// This is zero here, since there is no valid type - 
+			// so no sounds are that type are playing.
+			return 0;
+		}
+		return imFail;
 	}
 
 	s32 ImSetHook(ImSoundId soundId, s32 value)
@@ -483,8 +578,66 @@ namespace TFE_Jedi
 
 	s32 ImJumpMidi(ImSoundId soundId, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain)
 	{
-		// Stub
-		return imNotImplemented;
+		SoundPlayer* player = ImGetSoundPlayer(soundId);
+		if (!player) { return imInvalidSound; }
+
+		PlayerData* data = player->data;
+		u8* sndData = ImInternalGetSoundData(data->soundId);
+		if (!sndData) { return imInvalidSound; }
+
+		measure--;
+		beat--;
+		chunk--;
+		if (measure >= 1000 || beat >= 12 || tick >= 480)
+		{
+			return imArgErr;
+		}
+
+		ImMidiLock();
+		memcpy(s_imSoundHeaderCopy2, data, 56);
+		memcpy(s_imSoundHeaderCopy1, data, 56);
+
+		u32 newTick = ImFixupSoundTick(data, intToFixed16(measure)*16 + intToFixed16(beat) + tick);
+		// If we are jumping backwards - we reset the chunk.
+		if (chunk != s_imSoundHeaderCopy1->seqIndex || newTick < (u32)s_imSoundHeaderCopy1->chunkOffset)
+		{
+			if (ImSetSequence(s_imSoundHeaderCopy1, sndData, chunk))
+			{
+				TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid chunk.");
+				ImMidiUnlock();
+				return imFail;
+			}
+		}
+		s_imSoundHeaderCopy1->tick = newTick;
+		ImAdvanceSound(s_imSoundHeaderCopy1, sndData, s_jumpMidiCmdFunc);
+		if (s_imEndOfTrack)
+		{
+			TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid ms:bt:tk...");
+			ImMidiUnlock();
+			return imFail;
+		}
+
+		if (sustain)
+		{
+			// Loop through the channels.
+			for (s32 c = 0; c < imChannelCount; c++)
+			{
+				ImMidiCommand(data->player, c, MID_SUSTAIN_SWITCH, 0);
+				ImMidiCommand(data->player, c, MID_MODULATIONWHEEL_MSB, 0);
+				ImHandleChannelPitchBend(data->player, c, 0, 64);
+			}
+			ImJumpSustain(data->player, sndData, s_imSoundHeaderCopy1, s_imSoundHeaderCopy2);
+		}
+		else
+		{
+			ImMidiStopAllNotes(data->player);
+		}
+
+		memcpy(data, s_imSoundHeaderCopy1, 56);
+		s_imEndOfTrack = 1;
+		ImMidiUnlock();
+
+		return imSuccess;
 	}
 
 	s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3)
@@ -495,8 +648,19 @@ namespace TFE_Jedi
 
 	s32 ImShareParts(ImSoundId sound1, ImSoundId sound2)
 	{
-		// Stub
-		return imNotImplemented;
+		SoundPlayer* player1 = ImGetSoundPlayer(sound1);
+		SoundPlayer* player2 = ImGetSoundPlayer(sound2);
+		if (!player1 || player1->sharedPart || !player2 || player2->sharedPart)
+		{
+			return imFail;
+		}
+
+		player1->sharedPart = player2;
+		player1->sharedPartId = sound2;
+		player2->sharedPart = player1;
+		player2->sharedPartId = sound1;
+		ImMidiSetupParts();
+		return imSuccess;
 	}
 
 	/////////////////////////////////////////////////////////// 
@@ -964,6 +1128,348 @@ namespace TFE_Jedi
 		return imSuccess;
 	}
 
+	void ImMidiLock()
+	{
+		s_midiLock++;
+	}
+
+	void ImMidiUnlock()
+	{
+		if (s_midiLock)
+		{
+			s_midiLock--;
+		}
+	}
+
+	s32 ImSetSequence(PlayerData* data, u8* sndData, s32 seqIndex)
+	{
+		u8* chunk = midi_gotoHeader(sndData, "MTrk", seqIndex);
+		if (!chunk)
+		{
+			TFE_System::logWrite(LOG_ERROR, "iMuse", "Sq couldn't find chunk %d", seqIndex + 1);
+			return imFail;
+		}
+
+		// Skip the header and size to the data.
+		u8* chunkData = &chunk[8];	// ebx
+		data->seqIndex = seqIndex;	// eax
+		// offset of the chunk data from the base sound data.
+		data->chunkOffset = s32(chunkData - sndData);
+
+		u32 dt = midi_getVariableLengthValue(&chunkData);
+		data->prevTick = ImFixupSoundTick(data, dt);
+		data->tick = 0;
+		data->chunkPtr = s32(chunkData - (sndData + data->chunkOffset));
+		return imSuccess;
+	}
+
+	s32 ImFixupSoundTick(PlayerData* data, s32 value)
+	{
+		while ((value & 0xffff) >= data->ticksPerBeat)
+		{
+			value = value - data->ticksPerBeat + ONE_16;
+			while ((value & FIXED(15)) >= data->beatsPerMeasure)
+			{
+				value = value - data->beatsPerMeasure + ONE_16;
+			}
+		}
+		return value;
+	}
+						
+	// Advance the current sound to the next tick.
+	void ImAdvanceSound(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc)
+	{
+		s_imEndOfTrack = 0;
+		s32 prevTick = playerData->prevTick;
+		s32 tick = playerData->tick;
+		u8* chunkData = sndData + playerData->chunkOffset + playerData->chunkPtr;
+		while (tick > prevTick)
+		{
+			u8 data = chunkData[0];
+			s32 idx = 0;
+			if (data < 0xf0)
+			{
+				if (data & 0x80)
+				{
+					u8 msgType = (data & 0x70) >> 4;
+					u8 channel = data & 0x0f;
+					if (midiCmdFunc[msgType].func2)
+					{
+						midiCmdFunc[msgType].func2(playerData->player, channel, chunkData[1], chunkData[2]);
+					}
+					chunkData += s_midiMsgSize[msgType];
+				}
+			}
+			else
+			{
+				if (data == 0xf0)
+				{
+					idx = IM_MID_SYS_FUNC;
+				}
+				else
+				{
+					if (data != 0xff)
+					{
+						// 2eec0b:
+						printf("ERROR:sq unknown msg type 0x%x...", data);
+						ImReleaseSoundPlayer(playerData->player);
+						return;
+					}
+
+					idx = IM_MID_EVENT;
+					chunkData++;
+				}
+				if (midiCmdFunc[idx].func1)
+				{
+					midiCmdFunc[idx].func1(playerData, chunkData);
+				}
+
+				// This steps past the current chunk, if we don't know what a chunk is, it should be skipped.
+				chunkData++;
+				// chunkSize is a variable length value.
+				chunkData += midi_getVariableLengthValue(&chunkData);
+			}
+
+			if (s_imEndOfTrack)
+			{
+				TFE_System::logWrite(LOG_ERROR, "iMuse", "ImAdvanceSound() - Invalid end of track encountered.");
+				return;
+			}
+
+			u32 dt = midi_getVariableLengthValue(&chunkData);
+			prevTick += dt;
+			if ((prevTick & 0xffff) >= playerData->ticksPerBeat)
+			{
+				prevTick = ImFixupSoundTick(playerData, prevTick);
+			}
+		}
+		playerData->prevTick = prevTick;
+		u8* chunkBase = sndData + playerData->chunkOffset;
+		playerData->chunkPtr = s32(chunkData - chunkBase);
+	}
+
+	// This gets called at a fixed rate, where each step = 'stepFixed' ticks.
+	void ImAdvanceMidiPlayer(PlayerData* playerData)
+	{
+		playerData->tickFixed += playerData->stepFixed;
+		playerData->tick += floor16(playerData->tickFixed);
+		playerData->tickFixed &= 0xffff0000;
+
+		if ((playerData->tick & 0xffff) >= playerData->ticksPerBeat)
+		{
+			playerData->tick = ImFixupSoundTick(playerData, playerData->tick);
+		}
+		if (playerData->prevTick < playerData->tick)
+		{
+			u8* sndData = ImInternalGetSoundData(playerData->soundId);
+			if (sndData)
+			{
+				ImAdvanceSound(playerData, sndData, s_midiCmdFunc);
+				return;
+			}
+			TFE_System::logWrite(LOG_ERROR, "iMuse", "sq int handler got null addr");
+			// TODO: ERROR handling
+		}
+	}
+		
+	void ImMidiGetSoundInstruments(SoundPlayer* player, s32* soundMidiInstrumentMask, s32* midiInstrumentCount)
+	{
+		*midiInstrumentCount = 0;
+
+		u32 channelMask = 0;
+		// Determine which outout channels that this sound is playing on.
+		// The result is a 16 bit mask. For example, if the sound is only playing on channel 1,
+		// the resulting mask = 1<<1 = 2.
+		for (s32 i = 0; i < imChannelCount; i++)
+		{
+			ImMidiChannel* midiChannel = &s_midiChannels[i];
+			if (player == midiChannel->player)
+			{
+				channelMask |= s_channelMask[midiChannel->channelId];
+			}
+		}
+
+		for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
+		{
+			u32 value = s_midiInstrumentChannelMask[i] & channelMask;
+			soundMidiInstrumentMask[i] = value;
+			// Count the number of channels currently playing the instrument.
+			// This is counting the bits.
+			while (value)
+			{
+				(*midiInstrumentCount) += (value & 1);
+				value >>= 1;
+			}
+		}
+
+		channelMask = 0;
+		for (s32 i = 0; i < imChannelCount - 1; i++)
+		{
+			ImMidiChannel* midiChannel = &s_midiChannels[i];
+			if (player == midiChannel->sharedPart)
+			{
+				channelMask |= s_channelMask[midiChannel->sharedPartChannelId];
+			}
+		}
+
+		for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
+		{
+			u32 value = s_midiInstrumentChannelMask2[i] & channelMask;
+			soundMidiInstrumentMask[i] |= value;
+
+			while (value)
+			{
+				(*midiInstrumentCount) += (value & 1);
+				value >>= 1;
+			}
+		}
+	}
+
+	s32 ImMidiGetTickDelta(PlayerData* playerData, u32 prevTick, u32 tick)
+	{
+		const u32 ticksPerMeasure = playerData->ticksPerBeat * playerData->beatsPerMeasure;
+
+		// Compute the previous midi tick.
+		u32 prevMeasure = prevTick >> 14;
+		u32 prevMeasureTick = prevMeasure * ticksPerMeasure;
+
+		u32 prevBeat = (prevTick & 0xf0000) >> 16;
+		u32 prevBeatTick = prevBeat * playerData->ticksPerBeat;
+		u32 prevMidiTick = prevMeasureTick + prevBeatTick + (prevTick & 0xffff);
+
+		// Compute the current midi tick.
+		u32 curMeasure = tick >> 14;
+		u32 curMeasureTick = curMeasure * ticksPerMeasure;
+
+		u32 curBeat = (tick & 0xf0000) >> 16;
+		u32 curBeatTick = curBeat * playerData->ticksPerBeat;
+		u32 curMidiTick = curMeasureTick + curBeatTick + (tick & 0xffff);
+
+		return curMidiTick - prevMidiTick;
+	}
+
+	void ImMidiProcessSustain(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc, SoundPlayer* player)
+	{
+		s_midiTrackEnd = 0;
+
+		u8* data = sndData + playerData->chunkOffset + playerData->chunkPtr;
+		s_midiTickDelta = ImMidiGetTickDelta(playerData, playerData->prevTick, playerData->tick);
+
+		while (!s_midiTrackEnd)
+		{
+			u8 value = data[0];
+			u8 msgFuncIndex;
+			u32 msgSize;
+			if (value < 0xf0 && (value & 0x80))
+			{
+				u8 msgType = (value & 0x70) >> 4;
+				u8 channel = (value & 0x0f);
+				if (midiCmdFunc[msgType].func2)
+				{
+					midiCmdFunc[msgType].func2(player, channel, data[1], data[2]);
+				}
+				msgSize = s_midiMessageSize2[msgType];
+			}
+			else
+			{
+				if (value == 0xf0)
+				{
+					msgFuncIndex = IM_MID_SYS_FUNC;
+				}
+				else if (value != 0xff)
+				{
+					TFE_System::logWrite(LOG_ERROR, "iMuse", "su unknown  msg type 0x%x.", value);
+					return;
+				}
+				else
+				{
+					msgFuncIndex = IM_MID_EVENT;
+					data++;
+				}
+				if (midiCmdFunc[msgFuncIndex].func1)
+				{
+					midiCmdFunc[msgFuncIndex].func1(playerData, data);
+				}
+				data++;
+				msgSize = midi_getVariableLengthValue(&data);
+			}
+			data += msgSize;
+			// Length of message in "ticks"
+			s_midiTickDelta += midi_getVariableLengthValue(&data);
+		}
+	}
+
+	void ImJumpSustain(SoundPlayer* player, u8* sndData, PlayerData* playerData1, PlayerData* playerData2)
+	{
+		for (s32 i = 0; i < imChannelCount; i++)
+		{
+			SoundChannel* channel = &player->channels[i];
+			s32 trim = 0;
+			if (channel)
+			{
+				trim = 1 << channel->partTrim;
+			}
+			s_midiChannelTrim[i] = trim;
+		}
+
+		// Remove instruments based on the midi channel 'trim'.
+		ImMidiGetSoundInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
+		InstrumentSound* instrInfo = *s_imActiveInstrSounds;
+		while (instrInfo && s_curInstrumentCount)
+		{
+			if (instrInfo->soundPlayer == player)
+			{
+				s32 mask = s_curMidiInstrumentMask[instrInfo->instrumentId];
+				s32 trim = s_midiChannelTrim[instrInfo->channelId];
+				if (trim & mask)
+				{
+					s_curMidiInstrumentMask[instrInfo->instrumentId] &= ~trim;
+					s_curInstrumentCount--;
+				}
+			}
+			instrInfo = instrInfo->next;
+		}
+
+		if (s_curInstrumentCount)
+		{
+			ImMidiProcessSustain(playerData1, sndData, s_jumpMidiCmdFunc2, player);
+
+			// Make sure all notes were turned off during the sustain, and if not then clean up or there will be hanging notes.
+			if (s_curInstrumentCount)
+			{
+				TFE_System::logWrite(LOG_ERROR, "iMuse", "su couldn't find all note-offs...");
+				for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
+				{
+					if (s_curMidiInstrumentMask[i])
+					{
+						for (s32 t = 0; t < imChannelCount; t++)
+						{
+							if (s_curMidiInstrumentMask[i] & s_midiChannelTrim[t])
+							{
+								TFE_System::logWrite(LOG_ERROR, "iMuse", "missing note %d on chan %d...", i, s_curMidiInstrumentMask[i]);
+								ImMidiNoteOff(player, t, i, 0);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		s_trackTicksRemaining = 0;
+		instrInfo = *s_imActiveInstrSounds;
+		while (instrInfo)
+		{
+			s32 curTick = instrInfo->curTick;
+			if (curTick > s_trackTicksRemaining)
+			{
+				s_trackTicksRemaining = curTick;
+			}
+			instrInfo = instrInfo->next;
+		}
+		ImMidiGetSoundInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
+		ImMidiProcessSustain(playerData2, sndData, s_jumpMidiCmdFunc2, player);
+	}
+
 	////////////////////////////////////////
 	// Midi Commands
 	////////////////////////////////////////
@@ -1053,5 +1559,74 @@ namespace TFE_Jedi
 			midiChannel->volume = volume;
 			ImSendMidiMsg_(midiChannel->channelId, MID_VOLUME_MSB, volume);
 		}
+	}
+		
+	void ImHandleChannelDetuneChange(SoundPlayer* player, SoundChannel* channel)
+	{
+		channel->pan = (player->transpose << 8) + player->detune + channel->pitchBend;
+		ImMidiChannel* data = channel->data;
+		if (data)
+		{
+			ImHandleChannelPan(data, channel->pan);
+		}
+	}
+
+	void ImHandleChannelPitchBend(SoundPlayer* player, s32 channelIndex, s32 fractValue, s32 intValue)
+	{
+		SoundChannel* channel = &player->channels[channelIndex];
+		s32 pitchBend = ((intValue << 7) | fractValue) - (64 << 7);
+		if (channel->outChannelCount)
+		{
+			channel->pan = (channel->outChannelCount * pitchBend) >> 5;	// range -256, 256
+			ImHandleChannelDetuneChange(player, channel);
+		}
+		else
+		{
+			// No sound channels, this should never be hit.
+			assert(0);
+		}
+	}
+
+	//////////////////////////////////
+	// Midi Advance Functions
+	//////////////////////////////////
+	void ImCheckForTrackEnd(PlayerData* playerData, u8* data)
+	{
+	}
+
+	void ImMidiJump2_NoteOn(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	{
+	}
+
+	void ImMidiStopAllNotes(SoundPlayer* player)
+	{
+		for (s32 i = 0; i < imChannelCount; i++)
+		{
+			ImMidiCommand(player, i, MID_ALL_NOTES_OFF, 0);
+		}
+	}
+
+	void ImMidiCommand(SoundPlayer* player, s32 channelIndex, s32 midiCmd, s32 value)
+	{
+	}
+
+	void ImMidiNoteOff(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	{
+	}
+
+	void ImMidiNoteOn(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	{
+	}
+
+	void ImMidiProgramChange(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	{
+	}
+
+	void ImMidiPitchBend(SoundPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	{
+	}
+
+	void ImMidiEvent(PlayerData* playerData, u8* chunkData)
+	{
 	}
 }

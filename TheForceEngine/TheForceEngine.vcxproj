@@ -448,6 +448,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\IMuse\imSoundFader.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imTrigger.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imuse.h" />
+    <ClInclude Include="TFE_Jedi\IMuse\midiData.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infElevatorUpdateFunc.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infPublicTypes.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infSystem.h" />
@@ -679,6 +680,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\IMuse\imSoundFader.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imTrigger.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imuse.cpp" />
+    <ClCompile Include="TFE_Jedi\IMuse\midiData.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\message.cpp" />
     <ClCompile Include="TFE_Jedi\Level\level.cpp" />
