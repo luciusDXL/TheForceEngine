@@ -168,15 +168,20 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////////////
-	void ImAdvanceSound(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc);
+	void ImUpdate();
+	void ImUpdateMidi();
+	void ImUpdateInstrumentSounds();
+
+	void ImAdvanceMidi(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc);
 	void ImAdvanceMidiPlayer(PlayerData* playerData);
 	void ImJumpSustain(ImMidiPlayer* player, u8* sndData, PlayerData* playerData1, PlayerData* playerData2);
 	void ImMidiGetInstruments(ImMidiPlayer* player, s32* soundMidiInstrumentMask, s32* midiInstrumentCount);
 	s32  ImMidiGetTickDelta(PlayerData* playerData, u32 prevTick, u32 tick);
 	void ImMidiProcessSustain(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc, ImMidiPlayer* player);
-
+		
 	void ImMidiPlayerLock();
 	void ImMidiPlayerUnlock();
+	void ImPrintMidiState();
 	s32  ImPauseMidi();
 	s32  ImPauseDigitalSound();
 	s32  ImResumeMidi();
@@ -267,8 +272,13 @@ namespace TFE_Jedi
 	const u32 c_crea = 0x61657243;	// "Crea"
 	static s32 s_iMuseTimestepMicrosec = 6944;
 
+	static s32 s_iMuseTimeInMicrosec = 0;
+	static s32 s_iMuseTimeLong = 0;
+	static s32 s_iMuseSystemTime = 0;
+
 	static ImMidiChannel s_midiChannels[imChannelCount];
 	static s32 s_imPause = 0;
+	static s32 s_midiFrame = 0;
 	static s32 s_midiPaused = 0;
 	static s32 s_digitalPause = 0;
 	static s32 s_sndPlayerLock = 0;
@@ -640,7 +650,7 @@ namespace TFE_Jedi
 			}
 		}
 		s_imSoundHeaderCopy1->tick = newTick;
-		ImAdvanceSound(s_imSoundHeaderCopy1, sndData, s_jumpMidiCmdFunc);
+		ImAdvanceMidi(s_imSoundHeaderCopy1, sndData, s_jumpMidiCmdFunc);
 		if (s_imEndOfTrack)
 		{
 			TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid ms:bt:tk...");
@@ -694,9 +704,145 @@ namespace TFE_Jedi
 		return imSuccess;
 	}
 
+	///////////////////////////////////////////////////////////
+	// Internal "main loop"
+	///////////////////////////////////////////////////////////
+	
+	// Main update entry point which is called at a fixed rate (see ImGetDeltaTime).
+	// This is responsible for updating the midi players and updating digital audio playback.
+	void ImUpdate()
+	{
+		const s32 dtInMicrosec = ImGetDeltaTime();
+
+		// Update Midi and Audio
+		ImUpdateMidi();
+		// TODO: ImUpdateWave();
+		if (s_imPause)
+		{
+			return;
+		}
+
+		// Update faders and deferred commands that update at a rate of 60 fps.
+		s_iMuseTimeInMicrosec += dtInMicrosec;
+		while (s_iMuseTimeInMicrosec >= 16667)
+		{
+			s_iMuseTimeInMicrosec -= 16667;
+			s32 prevTime = s_iMuseSystemTime;
+			s_iMuseSystemTime++;	// increment the system time every 1/60th of a second.
+
+			ImUpdateSoundFaders();
+			ImHandleDeferredCommands();
+		}
+
+		// Update Group Volumes every 6 "frames".
+		s_iMuseTimeLong += dtInMicrosec;
+		while (s_iMuseTimeLong >= 100000)	// ~6 frames @ 60Hz
+		{
+			s_iMuseTimeLong -= 100000;
+
+			s32 musicVolume = ImSetGroupVol(groupMusic, imGetValue);
+			ImSoundId soundId = 0;
+			do
+			{
+				soundId = ImGetNextSound(soundId);
+				if (soundId)
+				{
+					if (ImGetParam(soundId, soundGroup) == groupVoice)
+					{
+						musicVolume = (musicVolume * 82) >> imVolumeShift;
+						break;
+					}
+				}
+			} while (soundId);
+
+			s32 dippedMusicVolume = ImSetGroupVol(groupDippedMusic, imGetValue);
+			if (dippedMusicVolume > musicVolume)
+			{
+				dippedMusicVolume -= 6;
+				if (dippedMusicVolume <= musicVolume)
+				{
+					dippedMusicVolume = musicVolume;
+				}
+				ImSetGroupVol(groupDippedMusic, dippedMusicVolume);
+			}
+			else if (dippedMusicVolume != musicVolume)
+			{
+				dippedMusicVolume += 3;
+				if (dippedMusicVolume >= musicVolume)
+				{
+					dippedMusicVolume = musicVolume;
+				}
+				ImSetGroupVol(groupDippedMusic, dippedMusicVolume);
+			}
+		}
+	}
+
+	void ImUpdateMidi()
+	{
+		if (s_midiLock)
+		{
+			return;
+		}
+
+		ImMidiLock();
+		s_midiFrame++;
+		if (s_midiFrame > 75)  // Prints the iMuse state every 75 "frames".
+		{
+			s_midiFrame = 0;
+			ImPrintMidiState();
+		}
+		if (!s_midiPaused)  // Update the midi state and instruments.
+		{
+			ImMidiPlayer* player = *s_midiPlayerList;
+			while (player)
+			{
+				ImAdvanceMidiPlayer(player->data);
+				player = player->next;
+			}
+			ImUpdateInstrumentSounds();
+		}
+		ImMidiUnlock();
+	}
+
 	/////////////////////////////////////////////////////////// 
 	// Internal Implementation
 	/////////////////////////////////////////////////////////// 
+	void ImPrintMidiState()
+	{
+		// Compiled out in the original code.
+		// TODO: Replace with TFE debug data.
+	}
+
+	void ImUpdateInstrumentSounds()
+	{
+		if (!s_imActiveInstrSounds)
+		{
+			return;
+		}
+
+		InstrumentSound* instrInfo = *s_imActiveInstrSounds;
+		while (instrInfo)
+		{
+			InstrumentSound* next = instrInfo->next;
+			ImMidiPlayer* player = instrInfo->midiPlayer;
+			PlayerData* data = player->data;
+
+			instrInfo->curTickFixed += data->stepFixed;
+			s32 curTickInt = floor16(instrInfo->curTickFixed);
+			instrInfo->curTick -= curTickInt;
+
+			// Set the high bytes to 0.
+			instrInfo->curTickFixed &= 0x0000ffff;
+			if (instrInfo->curTick < 0)
+			{
+				ImMidiNoteOff(instrInfo->midiPlayer, instrInfo->channelId, instrInfo->instrumentId, 0);
+				ImListRemove((ImList**)s_imActiveInstrSounds, (ImList*)instrInfo);
+				ImListAdd((ImList**)s_imInactiveInstrSounds, (ImList*)instrInfo);
+			}
+			instrInfo = next;
+		}
+	}
+
 	s32 ImPauseMidi()
 	{
 		s_midiPaused = 1;
@@ -1721,7 +1867,7 @@ namespace TFE_Jedi
 	}
 						
 	// Advance the current sound to the next tick.
-	void ImAdvanceSound(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc)
+	void ImAdvanceMidi(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc)
 	{
 		s_imEndOfTrack = 0;
 		s32 prevTick = playerData->prevTick;
@@ -1775,7 +1921,7 @@ namespace TFE_Jedi
 
 			if (s_imEndOfTrack)
 			{
-				TFE_System::logWrite(LOG_ERROR, "iMuse", "ImAdvanceSound() - Invalid end of track encountered.");
+				TFE_System::logWrite(LOG_ERROR, "iMuse", "ImAdvanceMidi() - Invalid end of track encountered.");
 				return;
 			}
 
@@ -1807,7 +1953,7 @@ namespace TFE_Jedi
 			u8* sndData = ImInternalGetSoundData(playerData->soundId);
 			if (sndData)
 			{
-				ImAdvanceSound(playerData, sndData, s_midiCmdFunc);
+				ImAdvanceMidi(playerData, sndData, s_midiCmdFunc);
 				return;
 			}
 			TFE_System::logWrite(LOG_ERROR, "iMuse", "sq int handler got null addr");
