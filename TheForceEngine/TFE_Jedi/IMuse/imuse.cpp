@@ -237,6 +237,10 @@ namespace TFE_Jedi
 	void ImMidiProgramChange(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	void ImMidiPitchBend(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	void ImMidiEvent(PlayerData* playerData, u8* chunkData);
+
+	void ImHandleNoteOff(ImMidiChannel* midiChannel, s32 instrumentId);
+	void ImHandleNoteOn(ImMidiChannel* channel, s32 instrumentId, s32 velocity);
+	void ImMidi_Channel9_NoteOn(s32 priority, s32 partNoteReq, s32 volume, s32 instrumentId, s32 velocity);
 			
 	/////////////////////////////////////////////////////
 	// Internal State
@@ -284,6 +288,10 @@ namespace TFE_Jedi
 	static s32 s_midiInstrumentChannelMask2[MIDI_INSTRUMENT_COUNT];
 	static s32 s_curMidiInstrumentMask[MIDI_INSTRUMENT_COUNT];
 	static s32 s_curInstrumentCount;
+
+	static s32 s_ImCh9_priority;
+	static s32 s_ImCh9_partNoteReq;
+	static s32 s_ImCh9_volume;
 
 	// Midi functions for each message type - see ImMidiMessageIndex{} above.
 	static MidiCmdFunc s_jumpMidiCmdFunc[IM_MID_COUNT] =
@@ -1037,6 +1045,11 @@ namespace TFE_Jedi
 	}
 
 	void _ImNoteOff(s32 channelId, s32 instrId)
+	{
+		// Stub
+	}
+
+	void _ImNoteOn(s32 channelId, s32 instrId, s32 velocity)
 	{
 		// Stub
 	}
@@ -2022,10 +2035,35 @@ namespace TFE_Jedi
 	//////////////////////////////////
 	void ImCheckForTrackEnd(PlayerData* playerData, u8* data)
 	{
+		if (data[0] == META_END_OF_TRACK)
+		{
+			s_midiTrackEnd = 1;
+		}
 	}
 
-	void ImMidiJump2_NoteOn(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	void ImMidiJump2_NoteOn(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2)
 	{
+		const s32 instrumentId = arg1;
+		if (s_midiTickDelta > s_trackTicksRemaining)
+		{
+			s_midiTrackEnd = 1;
+		}
+		else if (s_midiChannelTrim[channelId] & s_curMidiInstrumentMask[instrumentId])
+		{
+			s_curMidiInstrumentMask[instrumentId] &= ~s_midiChannelTrim[channelId];
+			InstrumentSound* instrInfo = *s_imActiveInstrSounds;
+			while (instrInfo)
+			{
+				s32 delta = s_midiTickDelta - 10;
+				if (instrInfo->soundPlayer == player && instrInfo->instrumentId == instrumentId && instrInfo->channelId == channelId &&
+					delta <= instrInfo->curTick)
+				{
+					instrInfo->curTick = delta;
+					break;
+				}
+				instrInfo = instrInfo->next;
+			}
+		}
 	}
 
 	void ImMidiStopAllNotes(ImMidiPlayer* player)
@@ -2038,25 +2076,226 @@ namespace TFE_Jedi
 
 	void ImMidiCommand(ImMidiPlayer* player, s32 channelIndex, s32 midiCmd, s32 value)
 	{
+		SoundChannel* channel = &player->channels[channelIndex];
+
+		if (midiCmd == MID_MODULATIONWHEEL_MSB)
+		{
+			channel->modulation = value;
+			if (channel->data)
+			{
+				ImMidiChannelSetModulation(channel->data, value);
+			}
+		}
+		else if (midiCmd == MID_VOLUME_MSB)
+		{
+			channel->partVolume = value;
+			ImHandleChannelVolumeChange(player, channel);
+		}
+		else if (midiCmd == MID_PAN_MSB)
+		{
+			channel->partPan = value;
+			if (channel->data)
+			{
+				s32 pan = clamp(value + player->pan - imPanCenter, 0, imPanMax);
+				ImMidiChannelSetPan(channel->data, pan);
+			}
+		}
+		else if (midiCmd == MID_GPC1_MSB)
+		{
+			if (value < 12)
+			{
+				channel->outChannelCount = value;
+				ImMidiPitchBend(player, channelIndex, 0, imPanCenter);
+			}
+		}
+		else if (midiCmd == MID_GPC2_MSB)
+		{
+			channel->partNoteReq = value;
+			if (channel->data)
+			{
+				ImMidiChannelSetPartNoteReq(channel->data, value);
+			}
+		}
+		else if (midiCmd == MID_GPC3_MSB)
+		{
+			channel->partPriority = value;
+			ImHandleChannelPriorityChange(player, channel);
+			ImMidiSetupParts();
+		}
+		else if (midiCmd == MID_SUSTAIN_SWITCH)
+		{
+			channel->sustain = value;
+			if (channel->data)
+			{
+				ImSetChannelSustain(channel->data, value);
+			}
+		}
+		else if (midiCmd == MID_ALL_NOTES_OFF)
+		{
+			channel->sustain = 0;
+			if (channel->data)
+			{
+				ImFreeMidiChannel(channel->data);
+			}
+		}
 	}
 
-	void ImMidiNoteOff(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	void ImMidiNoteOff(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2)
 	{
+		s32 instrumentId = arg1;
+		SoundChannel* channel = &player->channels[channelId];
+		if (channel->partStatus)
+		{
+			if (channel->data)
+			{
+				ImHandleNoteOff(channel->data, instrumentId);
+			}
+		}
+		else
+		{
+			_ImNoteOff(9, instrumentId);
+		}
 	}
 
-	void ImMidiNoteOn(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	void ImMidiNoteOn(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2)
 	{
+		s32 instrumentId = arg1;
+		s32 velocity = arg2;
+		SoundChannel* channel = &player->channels[channelId];
+		if (!velocity)
+		{
+			ImMidiNoteOff(player, channelId, instrumentId, 0);
+		}
+		else if (channel->partStatus)
+		{
+			if (channel->data)
+			{
+				ImHandleNoteOn(channel->data, instrumentId, velocity);
+			}
+		}
+		else
+		{
+			ImMidi_Channel9_NoteOn(channel->priority, channel->partNoteReq, channel->groupVolume, instrumentId, velocity);
+		}
 	}
 
-	void ImMidiProgramChange(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	void ImMidiProgramChange(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2)
 	{
+		const s32 pgm = arg1;
+		SoundChannel* channel = &player->channels[channelId];
+		channel->partPgm = pgm;
+		if (!channel->partStatus)
+		{
+			channel->partStatus = 1;
+			ImMidiSetupParts();
+		}
+		else if (channel->data)
+		{
+			ImMidiChannelSetPgm(channel->data, pgm);
+		}
 	}
 
-	void ImMidiPitchBend(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	void ImMidiPitchBend(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2)
 	{
+		const s32 pitchBendFract = arg1;
+		const s32 pitchBendInt = arg2;
+
+		SoundChannel* channel = &player->channels[channelId];
+		s32 pitchBend = ((pitchBendInt << 7) | pitchBendFract) - (64 << 7);
+		s32 channelCount = channel->outChannelCount;
+
+		// There should always be channels.
+		assert(channelCount);
+		if (channelCount)
+		{
+			channel->pitchBend = (pitchBend * channelCount) >> 5;
+			ImHandleChannelDetuneChange(player, channel);
+		}
 	}
 
 	void ImMidiEvent(PlayerData* playerData, u8* chunkData)
 	{
+		u8* data = chunkData;
+		MetaType metaType = MetaType(*data);
+		// Skip past the metaType and length.
+		data += 2;
+
+		if (metaType == META_END_OF_TRACK)
+		{
+			s_imEndOfTrack = 1;
+		}
+		else if (metaType == META_TEMPO)
+		{
+			u32 tempo = (data[0] << 16) | (data[1] << 8) | data[2];
+			ImSetTempo(playerData, tempo);
+		}
+		else if (metaType == META_TIME_SIG)
+		{
+			ImSetMidiTicksPerBeat(playerData, 960 >> (data[1] - 1), data[0]);
+		}
+	}
+
+	void ImHandleNoteOn(ImMidiChannel* channel, s32 instrumentId, s32 velocity)
+	{
+		if (!channel)
+		{
+			return;
+		}
+
+		s32 channelMask = s_channelMask[channel->channelId];
+		if (channel->instrumentMask[instrumentId] & channelMask)
+		{
+			_ImNoteOff(channel->channelId, instrumentId);
+		}
+		else
+		{
+			if (channel->instrumentMask2[instrumentId] & channelMask)
+			{
+				channel->instrumentMask2[instrumentId] = ~channelMask;
+				channel->instrumentMask[instrumentId] |= channelMask;
+				_ImNoteOff(channel->channelId, instrumentId);
+			}
+			else
+			{
+				channel->instrumentMask[instrumentId] |= channelMask;
+			}
+		}
+		_ImNoteOn(channel->channelId, instrumentId, velocity);
+	}
+
+	void ImMidi_Channel9_NoteOn(s32 priority, s32 partNoteReq, s32 volume, s32 instrumentId, s32 velocity)
+	{
+		if (s_ImCh9_priority != priority)
+		{
+			s_ImCh9_priority = priority;
+			ImSendMidiMsg_(9, MID_GPC3_MSB, priority);
+		}
+		if (s_ImCh9_partNoteReq != partNoteReq)
+		{
+			s_ImCh9_partNoteReq = partNoteReq;
+			ImSendMidiMsg_(9, MID_GPC2_MSB, partNoteReq);
+		}
+		if (s_ImCh9_volume != volume)
+		{
+			s_ImCh9_volume = volume;
+			ImSendMidiMsg_(9, MID_VOLUME_MSB, volume);
+		}
+		_ImNoteOn(9, instrumentId, velocity);
+	}
+
+	void ImHandleNoteOff(ImMidiChannel* midiChannel, s32 instrumentId)
+	{
+		if (midiChannel)
+		{
+			u32 channelMask = s_channelMask[midiChannel->channelId];
+			if (midiChannel->instrumentMask[instrumentId] & channelMask)
+			{
+				midiChannel->instrumentMask[instrumentId] &= ~channelMask;
+				if (!midiChannel->sustain)
+				{
+					_ImNoteOff(midiChannel->channelId, instrumentId);
+				}
+			}
+		}
 	}
 }
