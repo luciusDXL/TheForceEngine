@@ -165,7 +165,7 @@ namespace TFE_Jedi
 	void ImAdvanceSound(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc);
 	void ImAdvanceMidiPlayer(PlayerData* playerData);
 	void ImJumpSustain(ImMidiPlayer* player, u8* sndData, PlayerData* playerData1, PlayerData* playerData2);
-	void ImMidiGetSoundInstruments(ImMidiPlayer* player, s32* soundMidiInstrumentMask, s32* midiInstrumentCount);
+	void ImMidiGetInstruments(ImMidiPlayer* player, s32* soundMidiInstrumentMask, s32* midiInstrumentCount);
 	s32  ImMidiGetTickDelta(PlayerData* playerData, u32 prevTick, u32 tick);
 	void ImMidiProcessSustain(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc, ImMidiPlayer* player);
 
@@ -1294,7 +1294,7 @@ namespace TFE_Jedi
 			}
 		}
 
-		data->step = (ticks << 16) / tempo;
+		data->step = intToFixed16(ticks) / tempo;
 		ImMidiSetSpeed(data, data->speed);
 	}
 
@@ -1316,8 +1316,8 @@ namespace TFE_Jedi
 		}
 
 		// Skip the header and size to the data.
-		u8* chunkData = &chunk[8];	// ebx
-		data->seqIndex = seqIndex;	// eax
+		u8* chunkData = &chunk[8];
+		data->seqIndex = seqIndex;
 		// offset of the chunk data from the base sound data.
 		data->chunkOffset = s32(chunkData - sndData);
 
@@ -1375,8 +1375,7 @@ namespace TFE_Jedi
 				{
 					if (data != 0xff)
 					{
-						// 2eec0b:
-						printf("ERROR:sq unknown msg type 0x%x...", data);
+						TFE_System::logWrite(LOG_ERROR, "iMuse", "sq unknown msg type 0x%x...", data);
 						ImReleaseSoundPlayer(playerData->player);
 						return;
 					}
@@ -1437,7 +1436,7 @@ namespace TFE_Jedi
 		}
 	}
 		
-	void ImMidiGetSoundInstruments(ImMidiPlayer* player, s32* soundMidiInstrumentMask, s32* midiInstrumentCount)
+	void ImMidiGetInstruments(ImMidiPlayer* player, s32* soundMidiInstrumentMask, s32* midiInstrumentCount)
 	{
 		*midiInstrumentCount = 0;
 
@@ -1578,7 +1577,7 @@ namespace TFE_Jedi
 		}
 
 		// Remove instruments based on the midi channel 'trim'.
-		ImMidiGetSoundInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
+		ImMidiGetInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
 		InstrumentSound* instrInfo = *s_imActiveInstrSounds;
 		while (instrInfo && s_curInstrumentCount)
 		{
@@ -1631,7 +1630,7 @@ namespace TFE_Jedi
 			}
 			instrInfo = instrInfo->next;
 		}
-		ImMidiGetSoundInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
+		ImMidiGetInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
 		ImMidiProcessSustain(playerData2, sndData, s_jumpMidiCmdFunc2, player);
 	}
 
