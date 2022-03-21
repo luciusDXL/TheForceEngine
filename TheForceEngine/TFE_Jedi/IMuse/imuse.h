@@ -88,6 +88,7 @@ enum iMuseConst
 	imMaxVolume    = 127,  // Maximum allowed volume, correlated with imVolumeShift.
 	imMaxPriority  = 127,
 	imPanCenter    = 64,
+	imPanMax       = 127,
 	imVolumeShift  = 7,    // Amount to shift when multiplying volumes.
 	imChannelCount = 16,   // Number of midi channels.
 	imGetValue     = -1,   // Magic number to get values instead of set them.
