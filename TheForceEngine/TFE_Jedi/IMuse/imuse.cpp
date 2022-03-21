@@ -80,6 +80,12 @@ namespace TFE_Jedi
 		s32 stepFixed;
 	};
 
+	struct ImList
+	{
+		ImList* prev;
+		ImList* next;
+	};
+
 	struct ImMidiPlayer
 	{
 		ImMidiPlayer* prev;
@@ -187,7 +193,6 @@ namespace TFE_Jedi
 	ImMidiChannel* ImGetFreeMidiChannel();
 	ImMidiPlayer* ImGetFreePlayer(s32 priority);
 	s32 ImStartMidiPlayerInternal(PlayerData* data, ImSoundId soundId);
-	s32 ImAddPlayer(ImMidiPlayer** sndList, ImMidiPlayer* player);
 	s32 ImSetupMidiPlayer(ImSoundId soundId, s32 priority);
 	s32 ImFreeSoundPlayer(ImSoundId soundId);
 	s32 ImReleaseAllPlayers();
@@ -214,6 +219,11 @@ namespace TFE_Jedi
 	s32  ImMidiSetSpeed(PlayerData* data, u32 value);
 	void ImSetTempo(PlayerData* data, u32 tempo);
 	void ImSetMidiTicksPerBeat(PlayerData* data, s32 ticksPerBeat, s32 beatsPerMeasure);;
+	void ImReleaseMidiPlayer(ImMidiPlayer* player);
+	void ImRemoveInstrumentSound(ImMidiPlayer* player);
+
+	s32 ImListRemove(ImList** list, ImList* item);
+	s32 ImListAdd(ImList** list, ImList* item);
 
 	// Midi channel commands
 	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
@@ -970,22 +980,22 @@ namespace TFE_Jedi
 		return ImSetSequence(data, sndData, 0);
 	}
 
-	s32 ImAddPlayer(ImMidiPlayer** sndList, ImMidiPlayer* player)
+	s32 ImListAdd(ImList** list, ImList* item)
 	{
-		if (!player || player->next || player->prev)
+		if (!item || item->next || item->prev)
 		{
 			TFE_System::logWrite(LOG_ERROR, "iMuse", "List arg err when adding");
 			return imArgErr;
 		}
 
-		player->next = *sndList;
-		if (*sndList)
+		item->next = *list;
+		if (*list)
 		{
-			player->next->prev = player;
+			item->next->prev = item;
 		}
 
-		player->prev = nullptr;
-		*sndList = player;
+		item->prev = nullptr;
+		*list = item;
 		return imSuccess;
 	}
 
@@ -1040,7 +1050,7 @@ namespace TFE_Jedi
 		}
 
 		player->soundId = soundId;
-		ImAddPlayer(s_midiPlayerList, player);
+		ImListAdd((ImList**)s_midiPlayerList, (ImList*)player);
 		return imSuccess;
 	}
 
@@ -1111,14 +1121,104 @@ namespace TFE_Jedi
 		}
 	}
 
-	void ImReleaseSoundPlayer(ImMidiPlayer* player)
+	void ImSetEndOfTrack()
 	{
-		// imNotImplemented
+		s_imEndOfTrack = 1;
+	}
+				
+	s32 ImListRemove(ImList** list, ImList* item)
+	{
+		ImList* curItem = *list;
+		if (!item || !curItem)
+		{
+			TFE_System::logWrite(LOG_ERROR, "iMuse", "List arg err when removing.");
+			return imArgErr;
+		}
+		while (curItem && item != curItem)
+		{
+			curItem = curItem->next;
+		}
+		if (!curItem)
+		{
+			TFE_System::logWrite(LOG_ERROR, "iMuse", "Item not on list.");
+			return imNotFound;
+		}
+
+		if (item->next)
+		{
+			item->next->prev = item->prev;
+		}
+		if (item->prev)
+		{
+			item->prev->next = item->next;
+		}
+		else
+		{
+			*list = item->next;
+		}
+		item->next = nullptr;
+		item->prev = nullptr;
+
+		return imSuccess;
+	}
+
+	void ImRemoveInstrumentSound(ImMidiPlayer* player)
+	{
+		InstrumentSound* instrInfo = *s_imActiveInstrSounds;
+		while (instrInfo)
+		{
+			InstrumentSound* next = instrInfo->next;
+			if (player == instrInfo->soundPlayer)
+			{
+				ImListRemove((ImList**)s_imActiveInstrSounds, (ImList*)instrInfo);
+				ImListAdd((ImList**)s_imInactiveInstrSounds, (ImList*)instrInfo);
+			}
+			instrInfo = next;
+		}
+	}
+
+	void ImReleaseMidiPlayer(ImMidiPlayer* player)
+	{
+		s32 res = ImListRemove((ImList**)s_midiPlayerList, (ImList*)player);
+		ImClearSoundFaders(player->soundId, -1);
+		ImClearTrigger(player->soundId, -1, -1);
+		ImRemoveInstrumentSound(player);
+		ImSetEndOfTrack();
+
+		for (s32 i = 0; i < imChannelCount; i++)
+		{
+			SoundChannel* channel = &player->channels[i];
+			ImResetSoundChannel(channel);
+		}
+
+		player->soundId = 0;
+		player->sharedPart;
+		if (player->sharedPart)
+		{
+			player->sharedPart->sharedPartId = 0;
+			player->sharedPart = nullptr;
+		}
+		ImMidiSetupParts();
 	}
 
 	s32 ImFreeSoundPlayer(ImSoundId soundId)
 	{
-		return imNotImplemented;
+		ImMidiPlayer* player = ImGetMidiPlayer(soundId);
+		if (player)
+		{
+			ImReleaseMidiPlayer(player);
+			// This should be null - but the original code handles duplicates.
+			do
+			{
+				player = ImGetMidiPlayer(soundId);
+				if (player)
+				{
+					ImReleaseMidiPlayer(player);
+				}
+			} while (player);
+			return imSuccess;
+		}
+		return imFail;
 	}
 
 	s32 ImReleaseAllPlayers()
@@ -1129,7 +1229,7 @@ namespace TFE_Jedi
 			player = *s_midiPlayerList;
 			if (player)
 			{
-				ImReleaseSoundPlayer(player);
+				ImReleaseMidiPlayer(player);
 			}
 		} while (player);
 		return imSuccess;
@@ -1655,7 +1755,7 @@ namespace TFE_Jedi
 					if (data != 0xff)
 					{
 						TFE_System::logWrite(LOG_ERROR, "iMuse", "sq unknown msg type 0x%x...", data);
-						ImReleaseSoundPlayer(playerData->player);
+						ImReleaseMidiPlayer(playerData->player);
 						return;
 					}
 
