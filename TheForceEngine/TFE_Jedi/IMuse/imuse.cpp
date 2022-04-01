@@ -582,7 +582,6 @@ namespace TFE_Jedi
 			s_soundGroupVolume[group] = ((s_groupVolume[groupMaster] + 1) * volume) >> imVolumeShift;
 		}
 		ImHandleChannelGroupVolume();
-		// TODO: func_2e9689();
 
 		return groupVolume;
 	}
