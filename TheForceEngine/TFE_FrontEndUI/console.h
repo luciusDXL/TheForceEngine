@@ -40,6 +40,18 @@ namespace TFE_Console
 		CVAR_STRING,
 	};
 
+	struct CValue
+	{
+		union
+		{
+			s32*  valueInt;
+			f32*  valueFloat;
+			bool* valueBool;
+			char* valueString;
+			void* valuePtr;
+		};
+	};
+
 	struct CVar
 	{
 		std::string name;
@@ -52,7 +64,7 @@ namespace TFE_Console
 			s32*  valueInt;
 			f32*  valueFloat;
 			bool* valueBool;
-			char* stringValue;
+			char* valueString;
 			void* valuePtr;
 		};
 

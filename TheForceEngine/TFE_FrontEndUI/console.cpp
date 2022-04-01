@@ -14,6 +14,8 @@
 
 namespace TFE_Console
 {
+	#define CSTR_LEN 4096
+
 	struct HistoryEntry
 	{
 		Vec4f color;
@@ -40,7 +42,7 @@ namespace TFE_Console
 
 	static std::vector<HistoryEntry> s_history;
 	static std::vector<std::string> s_commandHistory;
-	static char s_cmdLine[4096];
+	static char s_cmdLine[CSTR_LEN];
 
 	static const Vec4f c_historyDefaultColor = { 0.5f, 0.5f, 0.75f, 1.0f };
 	static const Vec4f c_historyCmdColor     = { 0.5f, 1.0f, 1.0f, 1.0f };
@@ -53,6 +55,8 @@ namespace TFE_Console
 	void registerDefaultCommands();
 	void setVariable(const char* name, const char* value);
 	void getVariable(const char* name, char* value);
+
+	void createCVar(const char* name, const char* helpString, u32 flags, CVarType type, CValue value, u32 maxLen = 0);
 
 	bool init()
 	{
@@ -125,6 +129,35 @@ namespace TFE_Console
 		}
 		return nullptr;
 	}
+
+	void createCVar(const char* name, const char* helpString, u32 flags, CVarType type, CValue value, u32 maxLen)
+	{
+		CVar newCVar;
+		newCVar.name = name;
+		newCVar.helpString = helpString;
+		newCVar.type  = type;
+		newCVar.flags = flags;
+		switch (type)
+		{
+			case CVAR_INT:
+				newCVar.valueInt   = value.valueInt;
+				newCVar.defaultInt = *value.valueInt;
+				break;
+			case CVAR_FLOAT:
+				newCVar.valueFloat = value.valueFloat;
+				newCVar.defaultFlt = *value.valueFloat;
+				break;
+			case CVAR_BOOL:
+				newCVar.valueBool   = value.valueBool;
+				newCVar.defaultBool = *value.valueBool;
+				break;
+			case CVAR_STRING:
+				newCVar.valueString = value.valueString;
+				newCVar.defaultString = *value.valueString;
+				break;
+		}
+		s_var.push_back(newCVar);
+	}
 			
 	void registerCVarInt(const char* name, u32 flags, s32* var, const char* helpString)
 	{
@@ -140,20 +173,14 @@ namespace TFE_Console
 			}
 
 			cvar->helpString = helpString;
-			cvar->type = CVAR_INT;
+			cvar->type  = CVAR_INT;
 			cvar->flags = flags;
 			cvar->valueInt = var;
 			return;
 		}
 
-		CVar newCVar;
-		newCVar.name = name;
-		newCVar.helpString = helpString;
-		newCVar.type = CVAR_INT;
-		newCVar.flags = flags;
-		newCVar.valueInt = var;
-		newCVar.defaultInt = *var;
-		s_var.push_back(newCVar);
+		CValue value; value.valueInt = var;
+		createCVar(name, helpString, flags, CVAR_INT, value);
 	}
 
 	void registerCVarFloat(const char* name, u32 flags, f32* var, const char* helpString)
@@ -176,14 +203,8 @@ namespace TFE_Console
 			return;
 		}
 
-		CVar newCVar;
-		newCVar.name = name;
-		newCVar.helpString = helpString;
-		newCVar.type = CVAR_FLOAT;
-		newCVar.flags = flags;
-		newCVar.valueFloat = var;
-		newCVar.defaultFlt = *var;
-		s_var.push_back(newCVar);
+		CValue value; value.valueFloat = var;
+		createCVar(name, helpString, flags, CVAR_FLOAT, value);
 	}
 
 	void registerCVarBool(const char* name, u32 flags, bool* var, const char* helpString)
@@ -206,14 +227,8 @@ namespace TFE_Console
 			return;
 		}
 
-		CVar newCVar;
-		newCVar.name = name;
-		newCVar.helpString = helpString;
-		newCVar.type = CVAR_BOOL;
-		newCVar.flags = flags;
-		newCVar.valueBool = var;
-		newCVar.defaultBool = *var;
-		s_var.push_back(newCVar);
+		CValue value; value.valueBool = var;
+		createCVar(name, helpString, flags, CVAR_BOOL, value);
 	}
 
 	void registerCVarString(const char* name, u32 flags, char* var, u32 maxLen, const char* helpString)
@@ -232,19 +247,12 @@ namespace TFE_Console
 			cvar->helpString = helpString;
 			cvar->type = CVAR_STRING;
 			cvar->flags = flags;
-			cvar->stringValue = var;
+			cvar->valueString = var;
 			return;
 		}
 
-		CVar newCVar;
-		newCVar.name = name;
-		newCVar.helpString = helpString;
-		newCVar.type = CVAR_STRING;
-		newCVar.flags = flags;
-		newCVar.stringValue = var;
-		newCVar.maxLen = maxLen;
-		newCVar.defaultString = *var;
-		s_var.push_back(newCVar);
+		CValue value; value.valueString = var;
+		createCVar(name, helpString, flags, CVAR_STRING, value, maxLen);
 	}
 
 	void addSerializedCVarInt(const char* name, s32 value)
@@ -335,7 +343,7 @@ namespace TFE_Console
 					break;
 				case CVAR_STRING:
 					assert(cvar->defaultString.size() <= cvar->maxLen);
-					strcpy(cvar->stringValue, cvar->defaultString.c_str());
+					strcpy(cvar->valueString, cvar->defaultString.c_str());
 					break;
 				default:
 					TFE_System::logWrite(LOG_ERROR, "CVar", "CVar %s has an unknown type %d", cvar->name.c_str(), cvar->type);
@@ -367,7 +375,7 @@ namespace TFE_Console
 			}
 		}
 
-		char errorMsg[4096];
+		char errorMsg[CSTR_LEN];
 		sprintf(errorMsg, "cmdHelp - cannot find command \"%s\"", args[1].c_str());
 		s_history.push_back({ c_historyErrorColor, errorMsg });
 	}
@@ -386,7 +394,7 @@ namespace TFE_Console
 			}
 		}
 
-		char errorMsg[4096];
+		char errorMsg[CSTR_LEN];
 		sprintf(errorMsg, "varHelp - cannot find variable \"%s\"", args[1].c_str());
 		s_history.push_back({ c_historyErrorColor, errorMsg });
 	}
@@ -444,7 +452,7 @@ namespace TFE_Console
 				
 	void execute(const ConsoleArgList& args, const char* inputText)
 	{
-		char errorMsg[4096];
+		char errorMsg[CSTR_LEN];
 
 		const size_t count = s_cmd.size();
 		const ConsoleCommand* cmd = s_cmd.data();
@@ -514,7 +522,7 @@ namespace TFE_Console
 		parser.tokenizeLine(cmd, tokens);
 		if (tokens.size() < 1)
 		{
-			char errorMsg[4096];
+			char errorMsg[CSTR_LEN];
 			sprintf(errorMsg, "Invalid Command - only whitespace found.");
 			s_history.push_back({ c_historyErrorColor, errorMsg });
 			return;
@@ -657,14 +665,14 @@ namespace TFE_Console
 	{
 		if (!var->valuePtr)
 		{
-			char errorMsg[4096];
+			char errorMsg[CSTR_LEN];
 			sprintf(errorMsg, "set - Variable not initialized \"%s\"", var->name.c_str());
 			s_history.push_back({ c_historyErrorColor, errorMsg });
 			return;
 		}
 
 		char* endPtr;
-		char msg[4096];
+		char msg[CSTR_LEN];
 		switch (var->type)
 		{
 		case CVAR_INT:
@@ -693,9 +701,9 @@ namespace TFE_Console
 			break;
 		case CVAR_STRING:
 			const size_t sizeToCopy = std::min(strlen(value), (size_t)var->maxLen);
-			strncpy(var->stringValue, value, sizeToCopy);
-			var->stringValue[sizeToCopy] = 0;
-			sprintf(msg, "set %s = \"%s\"", var->name.c_str(), var->stringValue);
+			strncpy(var->valueString, value, sizeToCopy);
+			var->valueString[sizeToCopy] = 0;
+			sprintf(msg, "set %s = \"%s\"", var->name.c_str(), var->valueString);
 			break;
 		};
 
@@ -704,7 +712,7 @@ namespace TFE_Console
 
 	void setVariable(const char* name, const char* value)
 	{
-		char errorMsg[4096];
+		char errorMsg[CSTR_LEN];
 
 		size_t count = s_var.size();
 		for (size_t i = 0; i < count; i++)
@@ -740,20 +748,20 @@ namespace TFE_Console
 		}
 		if (!var)
 		{
-			char errorMsg[4096];
+			char errorMsg[CSTR_LEN];
 			sprintf(errorMsg, "get - Unknown variable \"%s\"", name);
 			s_history.push_back({ c_historyErrorColor, errorMsg });
 			return;
 		}
 		if (!var->valuePtr)
 		{
-			char errorMsg[4096];
+			char errorMsg[CSTR_LEN];
 			sprintf(errorMsg, "get - Variable not initialized \"%s\"", name);
 			s_history.push_back({ c_historyErrorColor, errorMsg });
 			return;
 		}
 
-		char msg[4096];
+		char msg[CSTR_LEN];
 		switch (var->type)
 		{
 		case CVAR_INT:
@@ -766,7 +774,7 @@ namespace TFE_Console
 			sprintf(msg, "%s = %s", var->name.c_str(), *var->valueBool ? "true" : "false");
 			break;
 		case CVAR_STRING:
-			sprintf(msg, "%s = \"%s\"", var->name.c_str(), var->stringValue);
+			sprintf(msg, "%s = \"%s\"", var->name.c_str(), var->valueString);
 			break;
 		};
 

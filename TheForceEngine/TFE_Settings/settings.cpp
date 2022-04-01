@@ -356,7 +356,7 @@ namespace TFE_Settings
 				sprintf(value, "bool %s", cvar->valueBool ? ((*cvar->valueBool) ? "true" : "false") : (cvar->serializedBool ? "true" : "false"));
 				break;
 			case TFE_Console::CVAR_STRING:
-				sprintf(value, "string \"%s\"", cvar->stringValue ? cvar->stringValue : cvar->serializedString.c_str());
+				sprintf(value, "string \"%s\"", cvar->valueString ? cvar->valueString : cvar->serializedString.c_str());
 				break;
 			default:
 				continue;
