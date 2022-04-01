@@ -22,6 +22,8 @@
 #include <TFE_System/types.h>
 #include "imOpCodes.h"
 
+struct MemoryRegion;
+
 // Used by ImSetParam() and ImGetParam().
 enum iMuseParameter
 {
@@ -118,10 +120,12 @@ namespace TFE_Jedi
 	extern s32 ImStartVoice(ImSoundId soundId, s32 priority);
 	extern s32 ImStartMusic(ImSoundId soundId, s32 priority);
 
+	extern s32 ImLoadMidi(const char *name);
+
 	////////////////////////////////////////////////////
 	// Low level functions
 	////////////////////////////////////////////////////
-	extern s32 ImInitialize(void);
+	extern s32 ImInitialize(MemoryRegion* memRegion);
 	extern s32 ImTerminate(void);
 	extern s32 ImPause(void);
 	extern s32 ImResume(void);

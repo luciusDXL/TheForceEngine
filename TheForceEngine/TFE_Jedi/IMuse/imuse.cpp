@@ -2,8 +2,11 @@
 #include <TFE_Audio/midi.h>
 #include <TFE_System/system.h>
 #include <TFE_System/Threads/thread.h>
+#include <TFE_Memory/memoryRegion.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_FileSystem/filestream.h>
+#include <TFE_FileSystem/paths.h>
 #include <assert.h>
 #include "imTrigger.h"
 #include "imSoundFader.h"
@@ -11,6 +14,12 @@
 
 namespace TFE_Jedi
 {
+	#define IM_MAX_SOUNDS 32
+	#define imuse_alloc(size) TFE_Memory::region_alloc(s_memRegion, size)
+	#define imuse_realloc(ptr, size) TFE_Memory::region_realloc(s_memRegion, ptr, size)
+	#define imuse_free(ptr) TFE_Memory::region_free(s_memRegion, ptr)
+	#define IM_NULL_SOUNDID ImSoundId(0)
+
 	////////////////////////////////////////////////////
 	// Structures
 	////////////////////////////////////////////////////
@@ -135,6 +144,19 @@ namespace TFE_Jedi
 		s32 stepDir;
 	};
 
+	struct ImSound
+	{
+		ImSound* prev;
+		ImSound* next;
+		s32 id;
+		char name[10];
+		s16 u16;
+		s32 u18;
+		s32 u1c;
+		s32 u20;
+		s32 refCount;
+	};
+
 	typedef void(*MidiCmdFunc1)(PlayerData* playerData, u8* chunkData);
 	typedef void(*MidiCmdFunc2)(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	union MidiCmdFunc
@@ -171,7 +193,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	void TFE_ImStartupThread();
 	void TFE_ImShutdownThread();
-
+		
 	void ImUpdate();
 	void ImUpdateMidi();
 	void ImUpdateInstrumentSounds();
@@ -234,6 +256,10 @@ namespace TFE_Jedi
 	s32 ImListRemove(ImList** list, ImList* item);
 	s32 ImListAdd(ImList** list, ImList* item);
 
+	ImSoundId ImFindMidi(const char* name);
+	ImSoundId ImOpenMidi(const char* name);
+	s32 ImCloseMidi(char* name);
+
 	// Midi channel commands
 	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
 	void ImHandleChannelDetuneChange(ImMidiPlayer* player, ImMidiOutChannel* channel);
@@ -276,6 +302,7 @@ namespace TFE_Jedi
 	const u32 c_crea = 0x61657243;	// "Crea"
 	static s32 s_iMuseTimestepMicrosec = 6944;
 
+	static MemoryRegion* s_memRegion = nullptr;
 	static s32 s_iMuseTimeInMicrosec = 0;
 	static s32 s_iMuseTimeLong = 0;
 	static s32 s_iMuseSystemTime = 0;
@@ -291,10 +318,11 @@ namespace TFE_Jedi
 	static s32 s_midiTickDelta;
 	static s32 s_midiTrackEnd;
 	static s32 s_imEndOfTrack;
+	static bool s_imEnableMusic = true;
 
 	static atomic_bool s_imuseThreadActive;
 	static Thread* s_thread = nullptr;
-
+	
 	static ImMidiPlayer s_midiPlayers[2];
 	static ImMidiPlayer** s_midiPlayerList = nullptr;
 	static PlayerData* s_imSoundHeaderCopy1 = nullptr;
@@ -315,6 +343,9 @@ namespace TFE_Jedi
 	static s32 s_midiInstrumentChannelMask2[MIDI_INSTRUMENT_COUNT];
 	static s32 s_curMidiInstrumentMask[MIDI_INSTRUMENT_COUNT];
 	static s32 s_curInstrumentCount;
+
+	static ImSound s_sounds[IM_MAX_SOUNDS];
+	static ImSound* s_soundList = nullptr;
 
 	static s32 s_ImCh9_priority;
 	static s32 s_ImCh9_partNoteReq;
@@ -425,12 +456,67 @@ namespace TFE_Jedi
 		// Stub
 		return imNotImplemented;
 	}
+		
+	s32 ImLoadMidi(const char *name)
+	{
+		if (!s_imEnableMusic || !name || !name[0])
+		{
+			return imFail;
+		}
+
+		ImSoundId soundId = ImFindMidi(name);
+		if (soundId)
+		{
+			ImSound* sound = s_soundList;
+			while (sound)
+			{
+				if (sound->id == soundId)
+				{
+					sound->refCount++;
+					return soundId;
+				}
+				sound = sound->next;
+			}
+		}
+
+		for (s32 n = 0; n < 10; n++)
+		{
+			ImSound* sound = &s_sounds[n];
+			if (!sound->id)
+			{
+				if (strlen(name) >= 17)
+				{
+					TFE_System::logWrite(LOG_ERROR, "IMuse", "Name too long: %s", name);
+					return imFail;
+				}
+				soundId = ImOpenMidi(name);
+				if (!soundId)
+				{
+					TFE_System::logWrite(LOG_ERROR, "IMuse", "Host couldn't load sound");
+					return imFail;
+				}
+
+				strcpy(sound->name, name);
+				sound->id = soundId;
+				sound->refCount = 1;
+				ImListAdd((ImList**)&s_soundList, (ImList*)sound);
+				return soundId;
+			}
+		}
+
+		TFE_System::logWrite(LOG_ERROR, "IMuse", "Sound List FULL!");
+		return imFail;
+	}
 
 	////////////////////////////////////////////////////
 	// Low level functions
 	////////////////////////////////////////////////////
-	s32 ImInitialize(void)
+	s32 ImInitialize(MemoryRegion* memRegion)
 	{
+		s_soundList = &s_sounds[0];
+		memset(s_sounds, 0, sizeof(ImSound) * IM_MAX_SOUNDS);
+		s_memRegion = memRegion;
+
 		// In the original code, the interrupt is setup here, TFE uses a thread to simulate this.
 		TFE_ImStartupThread();
 		return imSuccess;
@@ -1176,6 +1262,77 @@ namespace TFE_Jedi
 		ImMidiSetSpeed(data, 128);
 		ImSetMidiTicksPerBeat(data, 480, 4);
 		return ImSetSequence(data, sndData, 0);
+	}
+
+	ImSoundId ImFindMidi(const char* name)
+	{
+		ImSound* sound = s_soundList;
+		while (sound)
+		{
+			if (!strcasecmp(name, sound->name) && sound->refCount)
+			{
+				return sound->id;
+			}
+			sound = sound->next;
+		}
+		return IM_NULL_SOUNDID;
+	}
+
+	ImSoundId loadMidiFile(char* midiFile)
+	{
+		char midiPath[TFE_MAX_PATH];
+		FilePath filePath;
+		if (!TFE_Paths::getFilePath(midiPath, &filePath))
+		{
+			TFE_System::logWrite(LOG_ERROR, "IMuse", "Cannot find midi file '%s'.", midiFile);
+			return IM_NULL_SOUNDID;
+		}
+		FileStream file;
+		if (!file.open(&filePath, FileStream::MODE_READ))
+		{
+			TFE_System::logWrite(LOG_ERROR, "IMuse", "Cannot open midi file '%s'.", midiFile);
+			return IM_NULL_SOUNDID;
+		}
+		size_t len = file.getSize();
+		s_midiFiles[s_midiFileCount] = (u8*)imuse_alloc(len);
+		file.readBuffer(s_midiFiles[s_midiFileCount], u32(len));
+		file.close();
+
+		ImSoundId id = ImSoundId(s_midiFileCount | imMidiFlag);
+		s_midiFileCount++;
+		return id;
+	}
+
+	ImSoundId ImOpenMidi(const char* name)
+	{
+		char filename[32];
+		strcpy(filename, name);
+		strcat(filename, ".gmd");
+		return loadMidiFile(filename);
+	}
+
+	s32 ImCloseMidi(char* name)
+	{
+		ImSound* sound = s_soundList;
+		while (sound)
+		{
+			if (!strcasecmp(sound->name, name) && sound->refCount)
+			{
+				sound->refCount--;
+				if (sound->refCount <= 0)
+				{
+					u32 index = sound->id & imMidiMask;
+					imuse_free(s_midiFiles[index]);
+					s_midiFiles[index] = nullptr;
+
+					sound->id = IM_NULL_SOUNDID;
+					sound->refCount = 0;
+				}
+				break;
+			}
+			sound = sound->next;
+		}
+		return imSuccess;
 	}
 
 	s32 ImListAdd(ImList** list, ImList* item)
