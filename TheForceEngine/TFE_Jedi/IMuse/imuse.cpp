@@ -15,6 +15,7 @@
 namespace TFE_Jedi
 {
 	#define IM_MAX_SOUNDS 32
+	#define IM_MIDI_PLAYER_COUNT 2
 	#define imuse_alloc(size) TFE_Memory::region_alloc(s_memRegion, size)
 	#define imuse_realloc(ptr, size) TFE_Memory::region_realloc(s_memRegion, ptr, size)
 	#define imuse_free(ptr) TFE_Memory::region_free(s_memRegion, ptr)
@@ -323,7 +324,7 @@ namespace TFE_Jedi
 	static atomic_bool s_imuseThreadActive;
 	static Thread* s_thread = nullptr;
 	
-	static ImMidiPlayer s_midiPlayers[2];
+	static ImMidiPlayer s_midiPlayers[IM_MIDI_PLAYER_COUNT];
 	static ImMidiPlayer** s_midiPlayerList = nullptr;
 	static PlayerData* s_imSoundHeaderCopy1 = nullptr;
 	static PlayerData* s_imSoundHeaderCopy2 = nullptr;
@@ -514,7 +515,9 @@ namespace TFE_Jedi
 	s32 ImInitialize(MemoryRegion* memRegion)
 	{
 		s_soundList = &s_sounds[0];
+		s_midiPlayerList = (ImMidiPlayer**)&s_midiPlayers;
 		memset(s_sounds, 0, sizeof(ImSound) * IM_MAX_SOUNDS);
+		memset(s_midiPlayers, 0, sizeof(ImMidiPlayer) * IM_MIDI_PLAYER_COUNT);
 		s_memRegion = memRegion;
 
 		// In the original code, the interrupt is setup here, TFE uses a thread to simulate this.
