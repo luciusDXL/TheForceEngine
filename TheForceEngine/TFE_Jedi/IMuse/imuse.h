@@ -121,7 +121,7 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////
 	// Low level functions
 	////////////////////////////////////////////////////
-	extern s32 ImInitialize();
+	extern s32 ImInitialize(void);
 	extern s32 ImTerminate(void);
 	extern s32 ImPause(void);
 	extern s32 ImResume(void);

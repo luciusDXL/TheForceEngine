@@ -157,6 +157,11 @@ namespace TFE_System
 		return f64(ticks) * s_freq;
 	}
 
+	f64 microsecondsToSeconds(f64 mu)
+	{
+		return mu / 1000000.0;
+	}
+
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion)
 	{
 #ifdef _WIN32

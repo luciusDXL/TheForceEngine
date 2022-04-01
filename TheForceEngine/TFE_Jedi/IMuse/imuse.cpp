@@ -1,6 +1,7 @@
 #include "imuse.h"
 #include <TFE_Audio/midi.h>
 #include <TFE_System/system.h>
+#include <TFE_System/Threads/thread.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <assert.h>
@@ -168,10 +169,13 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////////////
+	void TFE_ImStartupThread();
+	void TFE_ImShutdownThread();
+
 	void ImUpdate();
 	void ImUpdateMidi();
 	void ImUpdateInstrumentSounds();
-
+		
 	void ImAdvanceMidi(PlayerData* playerData, u8* sndData, MidiCmdFunc* midiCmdFunc);
 	void ImAdvanceMidiPlayer(PlayerData* playerData);
 	void ImJumpSustain(ImMidiPlayer* player, u8* sndData, PlayerData* playerData1, PlayerData* playerData2);
@@ -287,6 +291,9 @@ namespace TFE_Jedi
 	static s32 s_midiTickDelta;
 	static s32 s_midiTrackEnd;
 	static s32 s_imEndOfTrack;
+
+	static atomic_bool s_imuseThreadActive;
+	static Thread* s_thread = nullptr;
 
 	static ImMidiPlayer s_midiPlayers[2];
 	static ImMidiPlayer** s_midiPlayerList = nullptr;
@@ -422,16 +429,17 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////
 	// Low level functions
 	////////////////////////////////////////////////////
-	s32 ImInitialize()
+	s32 ImInitialize(void)
 	{
-		// Stub
-		return imNotImplemented;
+		// In the original code, the interrupt is setup here, TFE uses a thread to simulate this.
+		TFE_ImStartupThread();
+		return imSuccess;
 	}
 
 	s32 ImTerminate(void)
 	{
-		// Stub
-		return imNotImplemented;
+		TFE_ImShutdownThread();
+		return imSuccess;
 	}
 
 	s32 ImPause(void)
@@ -707,6 +715,50 @@ namespace TFE_Jedi
 	///////////////////////////////////////////////////////////
 	// Internal "main loop"
 	///////////////////////////////////////////////////////////
+	// This is the equivalent of the iMuse interrupt handler in DOS.
+	TFE_THREADRET TFE_ImThreadFunc(void* userData)
+	{
+		const f64 timeStep = TFE_System::microsecondsToSeconds((f64)ImGetDeltaTime());
+
+		bool runThread = true;
+		u64  localTime = 0;
+		f64  accumTime = 0.0;
+		while (runThread)
+		{
+			accumTime += TFE_System::updateThreadLocal(&localTime);
+			while (accumTime >= timeStep)
+			{
+				ImUpdate();
+				accumTime -= timeStep;
+			}
+			runThread = s_imuseThreadActive.load();
+		}
+		return (TFE_THREADRET)0;
+	}
+		
+	// The equivalent of setting up a interrupt callback.
+	void TFE_ImStartupThread()
+	{
+		s_imuseThreadActive.store(true);
+		s_thread = Thread::create("IMuseThread", TFE_ImThreadFunc, nullptr);
+		if (s_thread)
+		{
+			s_thread->run();
+		}
+	}
+
+	void TFE_ImShutdownThread()
+	{
+		s_imuseThreadActive.store(false);
+		if (s_thread->isPaused())
+		{
+			s_thread->resume();
+		}
+		s_thread->waitOnExit();
+
+		delete s_thread;
+		s_thread = nullptr;
+	}
 	
 	// Main update entry point which is called at a fixed rate (see ImGetDeltaTime).
 	// This is responsible for updating the midi players and updating digital audio playback.

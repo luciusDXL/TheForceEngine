@@ -40,6 +40,7 @@ namespace TFE_System
 
 	u64 getCurrentTimeInTicks();
 	f64 convertFromTicksToSeconds(u64 ticks);
+	f64 microsecondsToSeconds(f64 mu);
 
 	// Log
 	bool logOpen(const char* filename);
