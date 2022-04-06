@@ -9,6 +9,8 @@
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
 
+struct MemoryRegion;
+
 // Sound Effect ID
 typedef u32 SoundEffectID;
 // Sound Source Data ID
@@ -18,6 +20,9 @@ typedef s32 SoundSourceID;
 
 namespace TFE_Jedi
 {
+	void sound_open(MemoryRegion* memRegion);
+	void sound_close();
+
 	void sound_stopAll();
 	void sound_freeAll();
 

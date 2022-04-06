@@ -26,6 +26,9 @@ namespace TFE_MidiPlayer
 	// The callback runs in the same thread as the Midi playback, which means that callbacks should not
 	// do any heavy processing. It also means that reads are accurate.
 	void midiSet_iMuseCallback(iMuseCallback callback);
+
+	// Callback
+	void midiSetCallback(void(*callback)(void) = nullptr, f64 timeStep = 0.0);
 		
 	// Pause the midi player, which also stops all sound channels.
 	void pause();

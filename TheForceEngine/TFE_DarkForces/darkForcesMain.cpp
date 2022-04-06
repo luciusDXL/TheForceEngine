@@ -226,6 +226,10 @@ namespace TFE_DarkForces
 		processCommandLineArgs(argCount, argv);
 		loadLocalMessages();
 		openGobFiles();
+
+		// Sound is initialized before the task system.
+		sound_open(s_gameRegion);
+
 		TFE_Jedi::task_setDefaults();
 		TFE_Jedi::task_setMinStepInterval(1.0f / f32(TICKS_PER_SECOND));
 		TFE_Jedi::setupInitCameraAndLights();
@@ -259,6 +263,9 @@ namespace TFE_DarkForces
 		TFE_Paths::clearSearchPaths();
 		TFE_Paths::clearLocalArchives();
 		task_shutdown();
+
+		// Sound is destroyed after the task system.
+		sound_close();
 
 		config_shutdown();
 

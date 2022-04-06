@@ -65,6 +65,13 @@ namespace TFE_MidiPlayer
 		bool loop;
 	};
 
+	struct MidiCallback
+	{
+		void(*callback)(void) = nullptr;	// callback function to call.
+		f64 timeStep = 0.0;					// delay between calls, this acts like an interrupt handler.
+		f64 accumulator = 0.0;				// current accumulator.
+	};
+	
 	enum Transition
 	{
 		TRANSITION_NONE = 0,
@@ -94,6 +101,8 @@ namespace TFE_MidiPlayer
 
 	static u8 s_channelSrcVolume[16] = { 0 };
 	static Mutex s_mutex;
+
+	static MidiCallback s_midiCallback = {};
 			
 	TFE_THREADRET midiUpdateFunc(void* userData);
 	void stopAllNotes();
@@ -259,6 +268,7 @@ namespace TFE_MidiPlayer
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
+	// TODO: Remove once the switch to the iMuse library is complete.
 	void midiSet_iMuseCallback(iMuseCallback callback)
 	{
 		MUTEX_LOCK(&s_mutex);
@@ -319,6 +329,13 @@ namespace TFE_MidiPlayer
 		return u64(s_runtime.tracks[s_trackId].curTick);
 	}
 
+	void midiSetCallback(void(*callback)(void), f64 timeStep)
+	{
+		s_midiCallback.callback = callback;
+		s_midiCallback.timeStep = timeStep;
+		s_midiCallback.accumulator = 0.0;
+	}
+
 	//////////////////////////////////////////////////
 	// Internal
 	//////////////////////////////////////////////////
@@ -345,7 +362,7 @@ namespace TFE_MidiPlayer
 		loopStart = -1;
 		dt = 0.0;
 	}
-		
+				
 	// Thread Function
 	TFE_THREADRET midiUpdateFunc(void* userData)
 	{
@@ -355,9 +372,21 @@ namespace TFE_MidiPlayer
 		bool isPaused = false;
 		s32 loopStart = -1;
 		u64 localTime = 0;
+		u64 localTimeCallback = 0;
 		f64 dt = 0.0;
 		while (runThread)
 		{
+			// Callback (such as iMuse).
+			if (s_midiCallback.callback)
+			{
+				s_midiCallback.accumulator += TFE_System::updateThreadLocal(&localTimeCallback);
+				while (s_midiCallback.accumulator >= s_midiCallback.timeStep)
+				{
+					s_midiCallback.callback();
+					s_midiCallback.accumulator -= s_midiCallback.timeStep;
+				}
+			}
+
 			// Read from the command buffer.
 			MUTEX_LOCK(&s_mutex);
 			MidiCmd* midiCmd = s_midiCmdBuffer;
@@ -423,6 +452,7 @@ namespace TFE_MidiPlayer
 					{
 						stopAllNotes();
 					} break;
+					// TODO: Remove once the conversion to the iMuse library is complete.
 					case MIDI_SET_IMUSE_CALLBACK:
 					{
 						s_iMuseCallback = midiCmd->callback;

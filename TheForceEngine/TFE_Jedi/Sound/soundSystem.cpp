@@ -3,6 +3,7 @@
 #include "soundSystem.h"
 #include <TFE_Asset/vocAsset.h>
 #include <TFE_Audio/audioSystem.h>
+#include <TFE_Jedi/IMuse/imuse.h>
 
 using namespace TFE_Audio;
 
@@ -18,6 +19,16 @@ namespace TFE_Jedi
 
 	static const SoundSource* s_slotMapping[MAX_SOUND_SOURCES];
 	static s32 s_slotID[MAX_SOUND_SOURCES] = { 0 };
+
+	void sound_open(MemoryRegion* memRegion)
+	{
+		ImInitialize(memRegion);
+	}
+
+	void sound_close()
+	{
+		ImTerminate();
+	}
 
 	void sound_stopAll()
 	{
