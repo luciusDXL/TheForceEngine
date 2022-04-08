@@ -2,6 +2,8 @@
 #include "console.h"
 #include "profilerView.h"
 #include "modLoader.h"
+#include <TFE_Audio/audioSystem.h>
+#include <TFE_Audio/midiPlayer.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
@@ -1546,9 +1548,23 @@ namespace TFE_FrontEndUI
 
 	void configSound()
 	{
-		ImGui::PushFont(s_dialogFont);
-		ImGui::LabelText("##ConfigLabel", "Under Construction");
-		ImGui::PopFont();
+		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
+		s32 soundFxVolume = s32(sound->soundFxVolume * 100.0f);
+		s32 musicVolume   = s32(sound->musicVolume * 100.0f);
+
+		ImGui::LabelText("##Label", "Sound FX Volume"); ImGui::SameLine(f32(128 * s_uiScale));
+		ImGui::SliderInt("##SoundFXVolume", &soundFxVolume, 0, 100, "%d%%");
+
+		ImGui::LabelText("##Label", "Music Volume"); ImGui::SameLine(f32(128 * s_uiScale));
+		ImGui::SliderInt("##MusicVolume",    &musicVolume,   0, 100, "%d%%");
+		// TODO: Add separate volume controls for cutscenes.
+		// TODO: Add master volume control.
+
+		sound->soundFxVolume = clamp(f32(soundFxVolume) * 0.01f, 0.0f, 1.0f);
+		sound->musicVolume   = clamp(f32(musicVolume)   * 0.01f, 0.0f, 1.0f);
+
+		TFE_Audio::setVolume(sound->soundFxVolume);
+		TFE_MidiPlayer::setVolume(sound->musicVolume);
 	}
 
 	void pickCurrentResolution()
