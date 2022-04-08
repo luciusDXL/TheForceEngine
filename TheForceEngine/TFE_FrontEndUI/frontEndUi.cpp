@@ -1546,22 +1546,30 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	// Uses a percentage slider (0 - 100%) to adjust a floating point value (0.0 - 1.0).
+	// TODO: Refactor UI code to use this and similar functionality.
+	void labelSliderPercent(f32* floatValue, const char* labelText)
+	{
+		assert(floatValue && labelText);
+		if (!floatValue || !labelText) { return; }
+
+		ImGui::LabelText("##Label", labelText);
+		ImGui::SameLine(f32(128 * s_uiScale));
+		s32 percValue = s32((*floatValue) * 100.0f);
+
+		char sliderId[256];
+		sprintf_s(sliderId, 256, "##%s", labelText);
+		ImGui::SliderInt(sliderId, &percValue, 0, 100, "%d%%");
+		*floatValue = clamp(f32(percValue) * 0.01f, 0.0f, 1.0f);
+	}
+
 	void configSound()
 	{
 		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
-		s32 soundFxVolume = s32(sound->soundFxVolume * 100.0f);
-		s32 musicVolume   = s32(sound->musicVolume * 100.0f);
-
-		ImGui::LabelText("##Label", "Sound FX Volume"); ImGui::SameLine(f32(128 * s_uiScale));
-		ImGui::SliderInt("##SoundFXVolume", &soundFxVolume, 0, 100, "%d%%");
-
-		ImGui::LabelText("##Label", "Music Volume"); ImGui::SameLine(f32(128 * s_uiScale));
-		ImGui::SliderInt("##MusicVolume",    &musicVolume,   0, 100, "%d%%");
+		labelSliderPercent(&sound->soundFxVolume, "Sound FX Volume");
+		labelSliderPercent(&sound->musicVolume,   "Music Volume");
 		// TODO: Add separate volume controls for cutscenes.
 		// TODO: Add master volume control.
-
-		sound->soundFxVolume = clamp(f32(soundFxVolume) * 0.01f, 0.0f, 1.0f);
-		sound->musicVolume   = clamp(f32(musicVolume)   * 0.01f, 0.0f, 1.0f);
 
 		TFE_Audio::setVolume(sound->soundFxVolume);
 		TFE_MidiPlayer::setVolume(sound->musicVolume);
