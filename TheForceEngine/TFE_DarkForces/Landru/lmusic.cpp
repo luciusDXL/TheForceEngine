@@ -4,10 +4,13 @@
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
+#include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
 #include <assert.h>
+
+using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
@@ -127,7 +130,12 @@ namespace TFE_DarkForces
 		if (s_curSeq != newSeq)
 		{
 			s_curSeq = newSeq;
+			// Placeholder API
 			TFE_MidiPlayer::stop();
+
+			// iMuse API
+			ImStopAllSounds();
+			ImUnloadAll();
 
 			s_curCuePoint = 0;
 			if (s_curSeq)
@@ -136,6 +144,10 @@ namespace TFE_DarkForces
 				{
 					if (s_sequences[s_curSeq - 1][x].name[0])
 					{
+						// iMuse API
+						ImLoadMidi(s_sequences[s_curSeq - 1][x].name);
+
+						// Placeholder API
 						char soundFile[32];
 						const char* soundName = s_sequences[s_curSeq - 1][x].name;
 						sprintf(soundFile, "%s.GMD", soundName);

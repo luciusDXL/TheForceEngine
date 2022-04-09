@@ -120,6 +120,7 @@ namespace TFE_Jedi
 	extern s32 ImStartVoice(ImSoundId soundId, s32 priority);
 	extern s32 ImStartMusic(ImSoundId soundId, s32 priority);
 
+	extern void ImUnloadAll(void);
 	extern s32 ImLoadMidi(const char *name);
 
 	////////////////////////////////////////////////////

@@ -323,7 +323,7 @@ namespace TFE_Jedi
 	static bool s_imEnableMusic = true;
 
 	static ImMidiPlayer s_midiPlayers[IM_MIDI_PLAYER_COUNT];
-	static ImMidiPlayer** s_midiPlayerList = nullptr;
+	static ImMidiPlayer* s_midiPlayerList = nullptr;
 	static PlayerData* s_imSoundHeaderCopy1 = nullptr;
 	static PlayerData* s_imSoundHeaderCopy2 = nullptr;
 
@@ -455,7 +455,20 @@ namespace TFE_Jedi
 		// Stub
 		return imNotImplemented;
 	}
-		
+
+	void ImUnloadAll(void)
+	{
+		for (s32 n = 0; n < 10; n++)
+		{
+			ImSound* sound = &s_sounds[n];
+			if (sound->id)
+			{
+				ImCloseMidi(sound->name);
+			}
+		}
+	}
+	
+	// Called ImLoadSound() in the original code, but it only loads midi.
 	s32 ImLoadMidi(const char *name)
 	{
 		if (!s_imEnableMusic || !name || !name[0])
@@ -512,10 +525,9 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////
 	s32 ImInitialize(MemoryRegion* memRegion)
 	{
-		s_soundList = &s_sounds[0];
-		s_midiPlayerList = (ImMidiPlayer**)&s_midiPlayers;
+		s_soundList = nullptr;
+		s_midiPlayerList = nullptr;
 		memset(s_sounds, 0, sizeof(ImSound) * IM_MAX_SOUNDS);
-		memset(s_midiPlayers, 0, sizeof(ImMidiPlayer) * IM_MIDI_PLAYER_COUNT);
 		ImClearAllSoundFaders();
 		ImClearTriggersAndCmds();
 		s_memRegion = memRegion;
@@ -889,7 +901,7 @@ namespace TFE_Jedi
 		}
 		if (!s_midiPaused)  // Update the midi state and instruments.
 		{
-			ImMidiPlayer* player = *s_midiPlayerList;
+			ImMidiPlayer* player = s_midiPlayerList;
 			while (player)
 			{
 				ImAdvanceMidiPlayer(player->data);
@@ -982,7 +994,7 @@ namespace TFE_Jedi
 
 	s32 ImHandleChannelGroupVolume()
 	{
-		ImMidiPlayer* player = *s_midiPlayerList;
+		ImMidiPlayer* player = s_midiPlayerList;
 		while (player)
 		{
 			s32 sndVol = player->volume + 1;
@@ -1035,7 +1047,7 @@ namespace TFE_Jedi
 
 	void ImMidiSetupParts()
 	{
-		ImMidiPlayer* player = *s_midiPlayerList;
+		ImMidiPlayer* player = s_midiPlayerList;
 		ImMidiPlayer*  prevPlayer2  = nullptr;
 		ImMidiPlayer*  prevPlayer   = nullptr;
 		ImMidiOutChannel* prevChannel2 = nullptr;
@@ -1119,7 +1131,7 @@ namespace TFE_Jedi
 				}
 				ImAssignMidiChannel(newPlayer, newChannel, midiChannel);
 
-				player = *s_midiPlayerList;
+				player = s_midiPlayerList;
 				prevPlayer2  = nullptr;
 				prevPlayer   = nullptr;
 				prevChannel2 = nullptr;
@@ -1238,9 +1250,8 @@ namespace TFE_Jedi
 
 	ImSoundId loadMidiFile(char* midiFile)
 	{
-		char midiPath[TFE_MAX_PATH];
 		FilePath filePath;
-		if (!TFE_Paths::getFilePath(midiPath, &filePath))
+		if (!TFE_Paths::getFilePath(midiFile, &filePath))
 		{
 			TFE_System::logWrite(LOG_ERROR, "IMuse", "Cannot find midi file '%s'.", midiFile);
 			return IM_NULL_SOUNDID;
@@ -1277,7 +1288,7 @@ namespace TFE_Jedi
 			if (!strcasecmp(sound->name, name) && sound->refCount)
 			{
 				sound->refCount--;
-				if (sound->refCount <= 0)
+				// The ref count seems to be ignored here.
 				{
 					u32 index = sound->id & imMidiMask;
 					imuse_free(s_midiFiles[index]);
@@ -1285,6 +1296,8 @@ namespace TFE_Jedi
 
 					sound->id = IM_NULL_SOUNDID;
 					sound->refCount = 0;
+
+					ImListRemove((ImList**)&s_soundList, (ImList*)sound);
 				}
 				break;
 			}
@@ -1301,13 +1314,14 @@ namespace TFE_Jedi
 			return imArgErr;
 		}
 
-		item->next = *list;
-		if (*list)
+		ImList* next = *list;
+		item->next = next;
+		if (next)
 		{
-			item->next->prev = item;
+			next->prev = item;
 		}
-
 		item->prev = nullptr;
+
 		*list = item;
 		return imSuccess;
 	}
@@ -1363,7 +1377,7 @@ namespace TFE_Jedi
 		}
 
 		player->soundId = soundId;
-		ImListAdd((ImList**)s_midiPlayerList, (ImList*)player);
+		ImListAdd((ImList**)&s_midiPlayerList, (ImList*)player);
 		return imSuccess;
 	}
 
@@ -1492,7 +1506,7 @@ namespace TFE_Jedi
 
 	void ImReleaseMidiPlayer(ImMidiPlayer* player)
 	{
-		s32 res = ImListRemove((ImList**)s_midiPlayerList, (ImList*)player);
+		s32 res = ImListRemove((ImList**)&s_midiPlayerList, (ImList*)player);
 		ImClearSoundFaders(player->soundId, -1);
 		ImClearTrigger(player->soundId, -1, -1);
 		ImRemoveInstrumentSound(player);
@@ -1539,7 +1553,7 @@ namespace TFE_Jedi
 		ImMidiPlayer* player = nullptr;
 		do
 		{
-			player = *s_midiPlayerList;
+			player = s_midiPlayerList;
 			if (player)
 			{
 				ImReleaseMidiPlayer(player);
@@ -1743,7 +1757,7 @@ namespace TFE_Jedi
 	s32 ImGetMidiParam(ImSoundId soundId, s32 param)
 	{
 		s32 playCount = 0;
-		ImMidiPlayer* player = *s_midiPlayerList;
+		ImMidiPlayer* player = s_midiPlayerList;
 		while (player)
 		{
 			if (player->soundId == soundId)
@@ -1862,7 +1876,7 @@ namespace TFE_Jedi
 	ImSoundId ImFindNextMidiSound(ImSoundId soundId)
 	{
 		ImSoundId value = 0;
-		ImMidiPlayer* player = *s_midiPlayerList;
+		ImMidiPlayer* player = s_midiPlayerList;
 		while (player)
 		{
 			if (soundId < player->soundId)
@@ -1901,7 +1915,7 @@ namespace TFE_Jedi
 
 	ImMidiPlayer* ImGetMidiPlayer(ImSoundId soundId)
 	{
-		ImMidiPlayer* player = *s_midiPlayerList;
+		ImMidiPlayer* player = s_midiPlayerList;
 		while (player)
 		{
 			if (player->soundId == soundId)
