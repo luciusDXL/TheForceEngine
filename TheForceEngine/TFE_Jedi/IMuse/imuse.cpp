@@ -9,6 +9,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <assert.h>
+#include "imList.h"
 #include "imTrigger.h"
 #include "imSoundFader.h"
 #include "midiData.h"
@@ -102,12 +103,6 @@ namespace TFE_Jedi
 		s32 step;
 		s32 speed;
 		s32 stepFixed;
-	};
-
-	struct ImList
-	{
-		ImList* prev;
-		ImList* next;
 	};
 
 	struct ImMidiPlayer
@@ -271,9 +266,6 @@ namespace TFE_Jedi
 	void ImSetMidiTicksPerBeat(ImPlayerData* data, s32 ticksPerBeat, s32 beatsPerMeasure);;
 	void ImReleaseMidiPlayer(ImMidiPlayer* player);
 	void ImRemoveInstrumentSound(ImMidiPlayer* player);
-
-	s32 ImListRemove(ImList** list, ImList* item);
-	s32 ImListAdd(ImList** list, ImList* item);
 
 	ImSoundId ImOpenMidi(const char* name);
 	s32 ImCloseMidi(char* name);
@@ -565,7 +557,7 @@ namespace TFE_Jedi
 				strcpy(sound->name, name);
 				sound->id = soundId;
 				sound->refCount = 1;
-				ImListAdd((ImList**)&s_soundList, (ImList*)sound);
+				IM_LIST_ADD(s_soundList, sound);
 				return soundId;
 			}
 		}
@@ -1015,8 +1007,8 @@ namespace TFE_Jedi
 			if (instrInfo->curTick < 0)
 			{
 				ImMidiNoteOff(instrInfo->midiPlayer, instrInfo->channelId, instrInfo->instrumentId, 0);
-				ImListRemove((ImList**)&s_imActiveInstrSounds, (ImList*)instrInfo);
-				ImListAdd((ImList**)&s_imInactiveInstrSounds, (ImList*)instrInfo);
+				IM_LIST_REM(s_imActiveInstrSounds,   instrInfo);
+				IM_LIST_ADD(s_imInactiveInstrSounds, instrInfo);
 			}
 			instrInfo = next;
 		}
@@ -1368,7 +1360,7 @@ namespace TFE_Jedi
 					sound->id = IM_NULL_SOUNDID;
 					sound->refCount = 0;
 
-					ImListRemove((ImList**)&s_soundList, (ImList*)sound);
+					IM_LIST_REM(s_soundList, sound);
 				}
 				break;
 			}
@@ -1376,27 +1368,7 @@ namespace TFE_Jedi
 		}
 		return imSuccess;
 	}
-
-	s32 ImListAdd(ImList** list, ImList* item)
-	{
-		if (!item || item->next || item->prev)
-		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "List arg err when adding");
-			return imArgErr;
-		}
-
-		ImList* next = *list;
-		item->next = next;
-		if (next)
-		{
-			next->prev = item;
-		}
-		item->prev = nullptr;
-
-		*list = item;
-		return imSuccess;
-	}
-
+		
 	s32 ImSetupMidiPlayer(ImSoundId soundId, s32 priority)
 	{
 		s32 clampedPriority = clamp(priority, 0, imMaxPriority);
@@ -1448,7 +1420,7 @@ namespace TFE_Jedi
 		}
 
 		player->soundId = soundId;
-		ImListAdd((ImList**)&s_midiPlayerList, (ImList*)player);
+		IM_LIST_ADD(s_midiPlayerList, player);
 		return imSuccess;
 	}
 
@@ -1523,43 +1495,7 @@ namespace TFE_Jedi
 	{
 		s_imEndOfTrack = 1;
 	}
-				
-	s32 ImListRemove(ImList** list, ImList* item)
-	{
-		ImList* curItem = *list;
-		if (!item || !curItem)
-		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "List arg err when removing.");
-			return imArgErr;
-		}
-		while (curItem && item != curItem)
-		{
-			curItem = curItem->next;
-		}
-		if (!curItem)
-		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "Item not on list.");
-			return imNotFound;
-		}
-
-		if (item->next)
-		{
-			item->next->prev = item->prev;
-		}
-		if (item->prev)
-		{
-			item->prev->next = item->next;
-		}
-		else
-		{
-			*list = item->next;
-		}
-		item->next = nullptr;
-		item->prev = nullptr;
-
-		return imSuccess;
-	}
-
+	
 	void ImRemoveInstrumentSound(ImMidiPlayer* player)
 	{
 		InstrumentSound* instrInfo = s_imActiveInstrSounds;
@@ -1568,8 +1504,8 @@ namespace TFE_Jedi
 			InstrumentSound* next = instrInfo->next;
 			if (player == instrInfo->midiPlayer)
 			{
-				ImListRemove((ImList**)&s_imActiveInstrSounds, (ImList*)instrInfo);
-				ImListAdd((ImList**)&s_imInactiveInstrSounds, (ImList*)instrInfo);
+				IM_LIST_REM(s_imActiveInstrSounds,   instrInfo);
+				IM_LIST_ADD(s_imInactiveInstrSounds, instrInfo);
 			}
 			instrInfo = next;
 		}
@@ -1577,7 +1513,7 @@ namespace TFE_Jedi
 
 	void ImReleaseMidiPlayer(ImMidiPlayer* player)
 	{
-		s32 res = ImListRemove((ImList**)&s_midiPlayerList, (ImList*)player);
+		s32 res = IM_LIST_REM(s_midiPlayerList, player);
 		ImClearSoundFaders(player->soundId, -1);
 		ImClearTrigger(player->soundId, -1, -1);
 		ImRemoveInstrumentSound(player);
@@ -2960,7 +2896,7 @@ namespace TFE_Jedi
 		{
 			sound->prev = nullptr;
 			sound->next = nullptr;
-			ImListAdd((ImList**)&s_imInactiveInstrSounds, (ImList*)sound);
+			IM_LIST_ADD(s_imInactiveInstrSounds, sound);
 		}
 		return imSuccess;
 	}
