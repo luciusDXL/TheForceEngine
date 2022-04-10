@@ -47,6 +47,9 @@ namespace TFE_System
 	void logClose();
 	void logWrite(LogWriteType type, const char* tag, const char* str, ...);
 
+	// Lighter weight debug output (only useful when running in a terminal or debugger).
+	void debugWrite(const char* tag, const char* str, ...);
+
 	// System
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion);
 	void sleep(u32 sleepDeltaMS);

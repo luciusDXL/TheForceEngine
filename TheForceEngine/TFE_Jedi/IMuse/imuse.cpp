@@ -855,7 +855,7 @@ namespace TFE_Jedi
 
 	s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3)
 	{
-		// Stub
+		TFE_System::debugWrite("IMuse Midi", "MSG [s 0x%x, a1 0x%x, a2 0x%x, a3 0x%x]", soundId, arg1, arg2, arg3);
 		return imNotImplemented;
 	}
 
@@ -1427,26 +1427,31 @@ namespace TFE_Jedi
 	void _ImNoteOff(s32 channelId, s32 instrId)
 	{
 		// Stub
+		TFE_System::debugWrite("IMuse Midi", "NOTE OFF [c 0x%x, i 0x%x]", channelId, instrId);
 	}
 
 	void _ImNoteOn(s32 channelId, s32 instrId, s32 velocity)
 	{
 		// Stub
+		TFE_System::debugWrite("IMuse Midi", "NOTE ON [c 0x%x, i 0x%x]", channelId, instrId);
 	}
 
 	void ImSendMidiMsg_(s32 channelId, MidiController ctrl, s32 value)
 	{
 		// Stub
+		TFE_System::debugWrite("IMuse Midi", "MSG [c 0x%x, ctrl 0x%x, v 0x%x]", channelId, ctrl, value);
 	}
 
 	void ImSendMidiMsg_(u8 channel, u8 msg, u8 arg1)
 	{
 		// Stub
+		TFE_System::debugWrite("IMuse Midi", "MSG [c 0x%x, m 0x%x, a 0x%x]", channel, msg, arg1);
 	}
 
 	void ImSendMidiMsg_R_(u8 channel, u8 msg)
 	{
 		// Stub
+		TFE_System::debugWrite("IMuse Midi", "PGM [c 0x%x, pgm 0x%x]", channel, msg);
 	}
 
 	// For Pan, "Fine" resolution is 14-bit where 8192 (0x2000) is center - MID_PAN_LSB
@@ -1454,6 +1459,7 @@ namespace TFE_Jedi
 	void ImSetPanFine_(s32 channel, s32 pan)
 	{
 		// Stub
+		TFE_System::debugWrite("IMuse Midi", "PAN FINE [c 0x%x, pan %d]", channel, pan);
 	}
 		
 	void ImResetMidiOutChannel(ImMidiOutChannel* channel)
@@ -2048,7 +2054,7 @@ namespace TFE_Jedi
 			value = value - data->ticksPerBeat + ONE_16;
 			while ((value & FIXED(15)) >= data->beatsPerMeasure)
 			{
-				value = value - data->beatsPerMeasure + ONE_16;
+				value = value - data->beatsPerMeasure + FIXED(16);
 			}
 		}
 		return value;
@@ -2076,6 +2082,10 @@ namespace TFE_Jedi
 						midiCmdFunc[msgType].func2(playerData->player, channel, chunkData[1], chunkData[2]);
 					}
 					chunkData += s_midiMsgSize[msgType];
+				}
+				else
+				{
+					assert(0);
 				}
 			}
 			else

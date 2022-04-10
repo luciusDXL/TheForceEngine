@@ -40,6 +40,26 @@ namespace TFE_System
 	{
 		s_logFile.close();
 	}
+	
+	void debugWrite(const char* tag, const char* str, ...)
+	{
+		if (!tag || !str) { return; }
+
+		//Handle the variable input, "printf" style messages
+		va_list arg;
+		va_start(arg, str);
+		vsprintf(s_msgStr, str, arg);
+		va_end(arg);
+
+		sprintf(s_workStr, "[%s] %s\r\n", tag, s_msgStr);
+
+		//Write to the debugger or terminal output.
+		#ifdef _WIN32
+			OutputDebugStringA(s_workStr);
+		#else
+			printf(s_workStr);
+		#endif
+	}
 
 	void logWrite(LogWriteType type, const char* tag, const char* str, ...)
 	{

@@ -52,17 +52,14 @@ namespace TFE_Jedi
 
 	u32 midi_getVariableLengthValue(u8** chunkData)
 	{
-		u32 value = (*chunkData)[0];
-		(*chunkData)++;
-		if (value & 0x80)
+		u32 value = 0u;
+		for (u32 i = 0; i < 4; i++)
 		{
-			u8 nextValue = (*chunkData)[0];
-			do
-			{
-				value = ((value & 0x7f) << 7) + (nextValue & 0x7f);
-				nextValue = (*chunkData)[0];
-				(*chunkData)++;
-			} while (nextValue & 0x80);
+			const u8 partial = (*chunkData)[0];
+			(*chunkData)++;
+
+			value = (value << 7u) | (partial & 0x7f);
+			if (!(partial & 0x80)) { break; }
 		}
 		return value;
 	}
