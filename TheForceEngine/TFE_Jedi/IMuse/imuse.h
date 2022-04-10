@@ -122,6 +122,7 @@ namespace TFE_Jedi
 
 	extern void ImUnloadAll(void);
 	extern s32 ImLoadMidi(const char *name);
+	extern ImSoundId ImFindMidi(const char* name);
 
 	////////////////////////////////////////////////////
 	// Low level functions

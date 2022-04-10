@@ -14,7 +14,7 @@ namespace TFE_DarkForces
 	void lmusic_init();
 	void lmusic_destroy();
 
-	s32 lmusic_startCutscene(s32 newSeq);
+	s32 lmusic_setSequence(s32 newSeq);
 	s32 lmusic_setCuePoint(s32 newCuePoint);
 	void lmusic_stop();
 	void lmusic_reset();

@@ -117,7 +117,7 @@ namespace TFE_DarkForces
 		// Start the next sequence of MIDI music.
 		if (s_playSeq[s_playId].music > 0)
 		{
-			lmusic_startCutscene(s_playSeq[s_playId].music);
+			lmusic_setSequence(s_playSeq[s_playId].music);
 		}
 
 		Archive* lfd = nullptr;
@@ -211,7 +211,7 @@ namespace TFE_DarkForces
 	{
 		if (s_scene == SCENE_EXIT) { return JFALSE; }
 
-		// TFE: Added since inputs can be skipped at slow framerates.
+		// TFE: Added since inputs can be skipped at low framerates.
 		if (TFE_Input::keyPressed(KEY_ESCAPE) || TFE_Input::keyPressed(KEY_RETURN))
 		{
 			s_skipSceneInput = JTRUE;

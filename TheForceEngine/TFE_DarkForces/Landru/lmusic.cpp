@@ -1,6 +1,5 @@
 #include "lmusic.h"
 #include "lsound.h"
-#include <TFE_Asset/gmidAsset.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
@@ -8,6 +7,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
+#include <TFE_System/system.h>
 #include <assert.h>
 
 using namespace TFE_Jedi;
@@ -28,8 +28,6 @@ namespace TFE_DarkForces
 		s32  xMeasure;
 		s8   yChunk;
 		s32  yMeasure;
-
-		GMidiAsset* gmidi;
 	};
 	static Sequence s_sequences[SEQUENCE_COUNT][MAX_CUE_POINTS];
 
@@ -117,75 +115,60 @@ namespace TFE_DarkForces
 
 	void lmusic_stop()
 	{
-		TFE_MidiPlayer::stop();
-		TFE_MidiPlayer::setVolume(s_baseVolume);
+		ImStopAllSounds();
+		ImUnloadAll();
 	}
 
-	s32 lmusic_startCutscene(s32 newSeq)
+	s32 lmusic_setSequence(s32 newSeq)
 	{
-		if (newSeq > SEQUENCE_COUNT) { return s_curSeq; }
-		s_baseVolume = TFE_MidiPlayer::getVolume();
-		s_volume = s_baseVolume;
-		
-		if (s_curSeq != newSeq)
-		{
-			s_curSeq = newSeq;
-			// Placeholder API
-			TFE_MidiPlayer::stop();
+		if (newSeq > SEQUENCE_COUNT || s_curSeq == newSeq) { return s_curSeq; }
+		s32 oldSeq = s_curSeq;
+		s_curSeq = newSeq;
 
-			// iMuse API
+		if (s_curSeq != oldSeq)
+		{
+			TFE_System::logWrite(LOG_MSG, "Landru Music", "Set Seq %lu...", newSeq);
 			ImStopAllSounds();
 			ImUnloadAll();
-
-			s_curCuePoint = 0;
+			s_curCuePoint = 0;		//reset cue point on sequence change.
 			if (s_curSeq)
 			{
-				for (s32 x = 0; x < MAX_CUE_POINTS; x++)
+				for (s32 i = 0; i < MAX_CUE_POINTS; i++)
 				{
-					if (s_sequences[s_curSeq - 1][x].name[0])
+					if (s_sequences[s_curSeq - 1][i].name[0])
 					{
-						// iMuse API
-						ImLoadMidi(s_sequences[s_curSeq - 1][x].name);
-
-						// Placeholder API
-						char soundFile[32];
-						const char* soundName = s_sequences[s_curSeq - 1][x].name;
-						sprintf(soundFile, "%s.GMD", soundName);
-						
-						s_sequences[s_curSeq - 1][x].gmidi = TFE_GmidAsset::get(soundFile);
+						ImLoadMidi(s_sequences[s_curSeq - 1][i].name);
 					}
 				}
 			}
 		}
-
 		return s_curSeq;
-	}
-
-	GMidiAsset* getMidi(const char* name)
-	{
-		char soundFile[32];
-		sprintf(soundFile, "%s.GMD", name);
-		return TFE_GmidAsset::get(soundFile);
 	}
 
 	s32 lmusic_setCuePoint(s32 newCuePoint)
 	{
-		static GMidiAsset* saveSound = nullptr;
-		
+		static s32 saveSound = 0;
+		ImPause();
+
 		if (s_curSeq && newCuePoint < MAX_CUE_POINTS && newCuePoint != s_curCuePoint)
 		{
 			if (!newCuePoint)
 			{
 				s_curCuePoint = newCuePoint;
-				TFE_MidiPlayer::stop();
-				saveSound = nullptr;
+				ImStopAllSounds();
+				saveSound = 0;
 			}
 			else
 			{
-				GMidiAsset* oldSound = getMidi(s_sequences[s_curSeq-1][s_curCuePoint-1].name);
-
 				if (s_curCuePoint)
 				{
+					ImClearTrigger(-1, -1, -1);	// Clear pending midi transitions.
+
+					const char* oldTitle = s_sequences[s_curSeq - 1][s_curCuePoint - 1].name;
+					s32 oldSound = ImFindMidi(oldTitle);
+					if (!oldSound) { oldSound = saveSound; }
+					else { saveSound = oldSound; }
+
 					char* newTitle = s_sequences[s_curSeq - 1][newCuePoint - 1].name;
 					char oldChunk  = s_sequences[s_curSeq - 1][newCuePoint - 1].xChunk;
 					char newChunk  = s_sequences[s_curSeq - 1][newCuePoint - 1].yChunk;
@@ -197,26 +180,24 @@ namespace TFE_DarkForces
 
 					if (oldChunk == 26)
 					{
-						TFE_MidiPlayer::stop();
-						saveSound = nullptr;
+						// End of sequence marker.
+						ImStopSound(oldSound);
+						saveSound = 0;
 					}
 					else if (oldChunk == '?')
 					{
-						// Fade: oldSound, masterVol, 0, 60*((rand()%3)+1));
-						s_volume = 0.0f;
-						TFE_MidiPlayer::setVolume(s_volume);
+						// Fade randomly over 1 - 3 seconds.
+						ImFadeParam(oldSound, soundVol, 0, 60 * ((rand() % 3) + 1));
 					}
 					else if (oldChunk == '.')
 					{
-						// Fade: oldSound, masterVol, 0, 120);
-						s_volume = 0.0f;
-						TFE_MidiPlayer::setVolume(s_volume);
+						// Fade slowly over 2 seconds.
+						ImFadeParam(oldSound, soundVol, 0, 120);
 					}
 					else if (oldChunk == '!')
 					{
-						// Fade: oldSound, masterVol, 0, 60);
-						s_volume = 0.0f;
-						TFE_MidiPlayer::setVolume(s_volume);
+						// Fade over 1 second.
+						ImFadeParam(oldSound, soundVol, 0, 60);
 					}
 					else if (oldChunk == '0')
 					{
@@ -224,51 +205,63 @@ namespace TFE_DarkForces
 					}
 					else if (oldChunk == '1' || (oldMeasure == 0 && newMeasure == 0))
 					{
-						GMidiAsset* newSound = getMidi(newTitle);
+						// This is in the original code as a printf
+						TFE_System::logWrite(LOG_MSG, "Landru Music", "oc: %d om: %d ", ImGetParam(oldSound, midiChunk), ImGetParam(oldSound, midiMeasure));
+						s32 newSound = ImFindMidi(newTitle);
 						if (oldSound != newSound)
 						{
-							TFE_MidiPlayer::stop();
-
-							s_volume = s_baseVolume;
-							TFE_MidiPlayer::setVolume(s_volume);
-							TFE_MidiPlayer::playSong(newSound, false);
+							ImStopSound(oldSound);
+							ImStartSound(newSound, 64);
+							ImSetHook(oldSound, 0);
+							TFE_System::logWrite(LOG_WARNING, "Landru Music", "jhk foulup: old: %d new: %d", oldSound, newSound);
 						}
 						else
 						{
-							// hooks?
+							// Intra-file transition
+							ImSetHook(oldSound, 1);
+							TFE_System::logWrite(LOG_MSG, "Landru Music", "jump hook 1 set... %d", newCuePoint);
 						}
 					}
-					else
+					else  // If current pos < X, jump to Y (or if in different chunk)
 					{
-						GMidiAsset* newSound = getMidi(newTitle);
+						s32 newSound = ImFindMidi(newTitle);
 						if (oldSound != newSound)
 						{
-							TFE_MidiPlayer::stop();
-
-							s_volume = s_baseVolume;
-							TFE_MidiPlayer::setVolume(s_volume);
-							TFE_MidiPlayer::playSong(newSound, false);
+							ImStopSound(oldSound);
+							ImStartSound(newSound, 64);
+							ImSetHook(oldSound, 0);
+							TFE_System::logWrite(LOG_MSG, "Landru Music", "Switch files  old: %d new: %d", oldSound, newSound);
 						}
 						else
 						{
-							s_volume = s_baseVolume;
-							TFE_MidiPlayer::setVolume(s_volume);
-							TFE_MidiPlayer::midiJump(newChunk, newMeasure, 1);
+							if (ImGetParam(oldSound, midiChunk) < oldChunk ||
+							   (ImGetParam(oldSound, midiChunk) == oldChunk && ImGetParam(oldSound, midiMeasure) < oldMeasure))
+							{
+								TFE_System::logWrite(LOG_MSG, "Landru Music", "oc: %d om: %d ", oldChunk, oldMeasure);
+								TFE_System::logWrite(LOG_MSG, "Landru Music", "cc: %d cm: %d ", ImGetParam(oldSound, midiChunk), ImGetParam(oldSound, midiMeasure));
+								TFE_System::logWrite(LOG_MSG, "Landru Music", "nc: %d nm: %d ", newChunk, newMeasure);
+								ImJumpMidi(newSound, newChunk, newMeasure, 1, 0, 0);
+								ImSetHook(oldSound, 0);
+							}
+							else
+							{
+								TFE_System::logWrite(LOG_WARNING, "Landru Music", "nogo");
+							}
 						}
 					}
 				}
 				else
 				{
-					saveSound = s_sequences[s_curSeq - 1][newCuePoint - 1].gmidi;
-
-					s_volume = s_baseVolume;
-					TFE_MidiPlayer::setVolume(s_volume);
-					TFE_MidiPlayer::playSong(saveSound, false);
+					s32 newSound = ImFindMidi(s_sequences[s_curSeq - 1][newCuePoint - 1].name);
+					ImStartSound(newSound, 64);
+					saveSound = newSound;
 				}
 
 				s_curCuePoint = newCuePoint;
 			}
 		}
+		ImResume();
+
 		return s_curCuePoint;
 	}
 }  // namespace TFE_DarkForces
