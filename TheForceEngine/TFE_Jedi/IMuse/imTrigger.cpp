@@ -37,6 +37,7 @@ namespace TFE_Jedi
 	static s32 s_imDeferredCmds = 0;
 
 	void ImHandleDeferredCommand(ImDeferCmd* cmd);
+	void ImTriggerExecute(ImTrigger* trigger, s32 marker);
 
 	/////////////////////////////////////////////////////////// 
 	// API
@@ -165,6 +166,33 @@ namespace TFE_Jedi
 		}
 	}
 
+	void ImSetSoundTrigger(u32 soundId, s32 marker)
+	{
+		ImTrigger* trigger = s_triggers;
+		// Look for the matching trigger.
+		for (s32 i = 0; i < imChannelCount; i++, trigger++)
+		{
+			s32 triggerSndId = trigger->soundId;
+			// Trigger is null or doesn't match.
+			if (!triggerSndId || triggerSndId != soundId)
+			{
+				continue;
+			}
+
+			// The code never reaches this point in Dark Forces.
+			if (trigger->marker)
+			{
+				TFE_System::logWrite(LOG_ERROR, "IMuse", "trigger->marker should always be 0 in Dark Forces.");
+				assert(0);
+
+				if ((marker >= 0x80 && trigger->marker == 0x80) || (marker <= 0x80 && trigger->marker == marker))
+				{
+					ImTriggerExecute(trigger, marker);
+				}
+			}
+		}
+	}
+
 	////////////////////////////////////
 	// Internal
 	////////////////////////////////////
@@ -181,6 +209,25 @@ namespace TFE_Jedi
 		{
 			TFE_System::logWrite(LOG_ERROR, "IMuse", "Unimplemented deferred command.");
 			assert(0);
+		}
+	}
+
+	// ImTriggerExecute() is never called when running Dark Forces.
+	void ImTriggerExecute(ImTrigger* trigger, s32 marker)
+	{
+		TFE_System::logWrite(LOG_ERROR, "IMuse", "ImTriggerExecute() is not called in Dark Forces.");
+		assert(0);
+
+		trigger->soundId = 0;
+		if (trigger->opcode < imUndefined)
+		{
+			// In the original code, this passed in all 10 parameters.
+			// ImProcessCommand(trigger->opcode, *arg0, *arg1, *arg2);
+		}
+		else
+		{
+			// This assumes that the opcode is actually a function pointer...
+			// ImCommandFunc(trigger->opcode)(trigger->opcode, *arg0, *arg1, *arg2);
 		}
 	}
 

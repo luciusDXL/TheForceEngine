@@ -130,7 +130,7 @@ namespace TFE_DarkForces
 			TFE_System::logWrite(LOG_MSG, "Landru Music", "Set Seq %lu...", newSeq);
 			ImStopAllSounds();
 			ImUnloadAll();
-			s_curCuePoint = 0;		//reset cue point on sequence change.
+			s_curCuePoint = 0;		// Reset cue point on sequence change.
 			if (s_curSeq)
 			{
 				for (s32 i = 0; i < MAX_CUE_POINTS; i++)
@@ -147,7 +147,7 @@ namespace TFE_DarkForces
 
 	s32 lmusic_setCuePoint(s32 newCuePoint)
 	{
-		static s32 saveSound = 0;
+		static ImSoundId saveSound = 0;
 		ImPause();
 
 		if (s_curSeq && newCuePoint < MAX_CUE_POINTS && newCuePoint != s_curCuePoint)
@@ -165,7 +165,7 @@ namespace TFE_DarkForces
 					ImClearTrigger(-1, -1, -1);	// Clear pending midi transitions.
 
 					const char* oldTitle = s_sequences[s_curSeq - 1][s_curCuePoint - 1].name;
-					s32 oldSound = ImFindMidi(oldTitle);
+					ImSoundId oldSound = ImFindMidi(oldTitle);
 					if (!oldSound) { oldSound = saveSound; }
 					else { saveSound = oldSound; }
 
@@ -175,8 +175,8 @@ namespace TFE_DarkForces
 					s32 oldMeasure = s_sequences[s_curSeq - 1][newCuePoint - 1].xMeasure;
 					s32 newMeasure = s_sequences[s_curSeq - 1][newCuePoint - 1].yMeasure;
 
-					if (oldChunk >= '@') { oldChunk -= '@'; }
-					if (newChunk >= '@') { newChunk -= '@'; }
+					if (oldChunk > '@') { oldChunk -= '@'; }
+					if (newChunk > '@') { newChunk -= '@'; }
 
 					if (oldChunk == 26)
 					{
@@ -224,7 +224,7 @@ namespace TFE_DarkForces
 					}
 					else  // If current pos < X, jump to Y (or if in different chunk)
 					{
-						s32 newSound = ImFindMidi(newTitle);
+						ImSoundId newSound = ImFindMidi(newTitle);
 						if (oldSound != newSound)
 						{
 							ImStopSound(oldSound);
@@ -252,7 +252,7 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					s32 newSound = ImFindMidi(s_sequences[s_curSeq - 1][newCuePoint - 1].name);
+					ImSoundId newSound = ImFindMidi(s_sequences[s_curSeq - 1][newCuePoint - 1].name);
 					ImStartSound(newSound, 64);
 					saveSound = newSound;
 				}

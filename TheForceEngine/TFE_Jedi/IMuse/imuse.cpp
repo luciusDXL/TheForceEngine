@@ -193,16 +193,16 @@ namespace TFE_Jedi
 
 	enum ImMidiMessageIndex
 	{
-		IM_MID_NOTE_OFF = 0,
-		IM_MID_NOTE_ON = 1,
-		IM_MID_KEY_PRESSURE = 2,
-		IM_MID_CONTROL_CHANGE = 3,
-		IM_MID_PROGRAM_CHANGE = 4,
+		IM_MID_NOTE_OFF         = 0,
+		IM_MID_NOTE_ON          = 1,
+		IM_MID_KEY_PRESSURE     = 2,
+		IM_MID_CONTROL_CHANGE   = 3,
+		IM_MID_PROGRAM_CHANGE   = 4,
 		IM_MID_CHANNEL_PRESSURE = 5,
-		IM_MID_PITCH_BEND = 6,
-		IM_MID_SYS_FUNC = 7,
-		IM_MID_EVENT = 8,
-		IM_MID_COUNT = 9,
+		IM_MID_PITCH_BEND       = 6,
+		IM_MID_SYS_FUNC         = 7,
+		IM_MID_EVENT            = 8,
+		IM_MID_COUNT            = 9,
 	};
 		
 	/////////////////////////////////////////////////////
@@ -222,6 +222,7 @@ namespace TFE_Jedi
 	void ImMidiPlayerLock();
 	void ImMidiPlayerUnlock();
 	void ImPrintMidiState();
+	s32  ImJumpMidiInternal(ImPlayerData* data, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain);
 	s32  ImPauseMidi();
 	s32  ImPauseDigitalSound();
 	s32  ImResumeMidi();
@@ -300,9 +301,11 @@ namespace TFE_Jedi
 
 	void ImMidiNoteOff(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	void ImMidiNoteOn(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
+	void ImMidiPressure(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	void ImMidiProgramChange(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	void ImMidiPitchBend(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	void ImMidiEvent(ImPlayerData* playerData, u8* chunkData);
+	void ImMidiSystemFunc(ImPlayerData* playerData, u8* chunkData);
 
 	void ImHandleNoteOff(ImMidiChannel* midiChannel, s32 instrumentId);
 	void ImHandleNoteOn(ImMidiChannel* channel, s32 instrumentId, s32 velocity);
@@ -391,21 +394,39 @@ namespace TFE_Jedi
 	// Midi functions for each message type - see ImMidiMessageIndex{} above.
 	static MidiCmdFunc s_jumpMidiCmdFunc[IM_MID_COUNT] =
 	{
-		nullptr, nullptr, nullptr, nullptr,
-		nullptr, nullptr, nullptr, nullptr,
-		ImMidiEvent,
+		nullptr,        // IM_MID_NOTE_OFF
+		nullptr,        // IM_MID_NOTE_ON
+		nullptr,        // IM_MID_KEY_PRESSURE
+		nullptr,        // IM_MID_CONTROL_CHANGE
+		nullptr,        // IM_MID_PROGRAM_CHANGE
+		nullptr,        // IM_MID_CHANNEL_PRESSURE
+		nullptr,        // IM_MID_PITCH_BEND
+		nullptr,        // IM_MID_SYS_FUNC
+		ImMidiEvent,    // IM_MID_EVENT
 	};
 	static MidiCmdFunc s_jumpMidiCmdFunc2[IM_MID_COUNT] =
 	{
-		nullptr, (MidiCmdFunc1)ImMidiJump2_NoteOn, nullptr, nullptr,
-		nullptr, nullptr, nullptr, nullptr,
-		ImCheckForTrackEnd
+		nullptr,                           // IM_MID_NOTE_OFF
+		(MidiCmdFunc1)ImMidiJump2_NoteOn,  // IM_MID_NOTE_ON
+		nullptr,                           // IM_MID_KEY_PRESSURE
+		nullptr,                           // IM_MID_CONTROL_CHANGE
+		nullptr,                           // IM_MID_PROGRAM_CHANGE
+		nullptr,                           // IM_MID_CHANNEL_PRESSURE
+		nullptr,                           // IM_MID_PITCH_BEND
+		nullptr,                           // IM_MID_SYS_FUNC
+		ImCheckForTrackEnd                 // IM_MID_EVENT
 	};
 	static MidiCmdFunc s_midiCmdFunc[IM_MID_COUNT] =
 	{
-		(MidiCmdFunc1)ImMidiNoteOff, (MidiCmdFunc1)ImMidiNoteOn, nullptr, (MidiCmdFunc1)ImMidiCommand,
-		(MidiCmdFunc1)ImMidiProgramChange, nullptr, (MidiCmdFunc1)ImMidiPitchBend, nullptr,
-		ImMidiEvent,
+		(MidiCmdFunc1)ImMidiNoteOff,         // IM_MID_NOTE_OFF
+		(MidiCmdFunc1)ImMidiNoteOn,          // IM_MID_NOTE_ON
+		(MidiCmdFunc1)ImMidiPressure,        // IM_MID_KEY_PRESSURE
+		(MidiCmdFunc1)ImMidiCommand,         // IM_MID_CONTROL_CHANGE
+		(MidiCmdFunc1)ImMidiProgramChange,   // IM_MID_PROGRAM_CHANGE
+		(MidiCmdFunc1)ImMidiPressure,        // IM_MID_CHANNEL_PRESSURE
+		(MidiCmdFunc1)ImMidiPitchBend,       // IM_MID_PITCH_BEND
+		ImMidiSystemFunc,                    // IM_MID_SYS_FUNC
+		ImMidiEvent,                         // IM_MID_EVENT
 	};
 
 	static MidiCallFunc s_midiCallFuncs[10] =
@@ -788,69 +809,13 @@ namespace TFE_Jedi
 		// Not called from Dark Forces.
 		return imSuccess;
 	}
-
+		
 	s32 ImJumpMidi(ImSoundId soundId, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain)
 	{
 		ImMidiPlayer* player = ImGetMidiPlayer(soundId);
 		if (!player) { return imInvalidSound; }
 
-		ImPlayerData* data = player->data;
-		u8* sndData = ImInternalGetSoundData(data->soundId);
-		if (!sndData) { return imInvalidSound; }
-
-		measure--;
-		beat--;
-		chunk--;
-		if (measure >= 1000 || beat >= 12 || tick >= 480)
-		{
-			return imArgErr;
-		}
-
-		ImMidiLock();
-		memcpy(&s_imSoundHeaderCopy2, data, sizeof(ImPlayerData));
-		memcpy(&s_imSoundHeaderCopy1, data, sizeof(ImPlayerData));
-
-		u32 newTick = ImFixupSoundTick(data, intToFixed16(measure)*16 + intToFixed16(beat) + tick);
-		// If we are jumping backwards - we reset the chunk.
-		if (chunk != s_imSoundHeaderCopy1.seqIndex || newTick < (u32)s_imSoundHeaderCopy1.chunkOffset)
-		{
-			if (ImSetSequence(&s_imSoundHeaderCopy1, sndData, chunk))
-			{
-				TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid chunk.");
-				ImMidiUnlock();
-				return imFail;
-			}
-		}
-		s_imSoundHeaderCopy1.tick = newTick;
-		ImAdvanceMidi(&s_imSoundHeaderCopy1, sndData, s_jumpMidiCmdFunc);
-		if (s_imEndOfTrack)
-		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid ms:bt:tk...");
-			ImMidiUnlock();
-			return imFail;
-		}
-
-		if (sustain)
-		{
-			// Loop through the channels.
-			for (s32 c = 0; c < imChannelCount; c++)
-			{
-				ImMidiCommand(data->player, c, MID_SUSTAIN_SWITCH, 0);
-				ImMidiCommand(data->player, c, MID_MODULATIONWHEEL_MSB, 0);
-				ImHandleChannelPitchBend(data->player, c, 0, 64);
-			}
-			ImJumpSustain(data->player, sndData, &s_imSoundHeaderCopy1, &s_imSoundHeaderCopy2);
-		}
-		else
-		{
-			ImMidiStopAllNotes(data->player);
-		}
-
-		memcpy(data, &s_imSoundHeaderCopy1, sizeof(ImPlayerData));
-		s_imEndOfTrack = 1;
-		ImMidiUnlock();
-
-		return imSuccess;
+		return ImJumpMidiInternal(player->data, chunk, measure, beat, tick, sustain);
 	}
 
 	s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3)
@@ -982,6 +947,66 @@ namespace TFE_Jedi
 	{
 		// Compiled out in the original code.
 		// TODO: Replace with TFE debug data.
+	}
+
+	s32 ImJumpMidiInternal(ImPlayerData* data, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain)
+	{
+		u8* sndData = ImInternalGetSoundData(data->soundId);
+		if (!sndData) { return imInvalidSound; }
+
+		measure--;
+		beat--;
+		chunk--;
+		if (measure >= 1000 || beat >= 12 || tick >= 480)
+		{
+			return imArgErr;
+		}
+
+		ImMidiLock();
+		memcpy(&s_imSoundHeaderCopy2, data, sizeof(ImPlayerData));
+		memcpy(&s_imSoundHeaderCopy1, data, sizeof(ImPlayerData));
+
+		u32 newTick = ImFixupSoundTick(data, intToFixed16(measure) * 16 + intToFixed16(beat) + tick);
+		// If we are jumping backwards - we reset the chunk.
+		if (chunk != s_imSoundHeaderCopy1.seqIndex || newTick < (u32)s_imSoundHeaderCopy1.chunkOffset)
+		{
+			if (ImSetSequence(&s_imSoundHeaderCopy1, sndData, chunk))
+			{
+				TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid chunk.");
+				ImMidiUnlock();
+				return imFail;
+			}
+		}
+		s_imSoundHeaderCopy1.tick = newTick;
+		ImAdvanceMidi(&s_imSoundHeaderCopy1, sndData, s_jumpMidiCmdFunc);
+		if (s_imEndOfTrack)
+		{
+			TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid ms:bt:tk...");
+			ImMidiUnlock();
+			return imFail;
+		}
+
+		if (sustain)
+		{
+			// Loop through the channels.
+			for (s32 c = 0; c < imChannelCount; c++)
+			{
+				ImMidiCommand(data->player, c, MID_SUSTAIN_SWITCH, 0);
+				ImMidiCommand(data->player, c, MID_MODULATIONWHEEL_MSB, 0);
+				ImHandleChannelPitchBend(data->player, c, 0, 64);
+			}
+			ImJumpSustain(data->player, sndData, &s_imSoundHeaderCopy1, &s_imSoundHeaderCopy2);
+		}
+		else
+		{
+			ImMidiStopAllNotes(data->player);
+		}
+
+		memcpy(data, &s_imSoundHeaderCopy1, sizeof(ImPlayerData));
+		s_imEndOfTrack = 1;
+		ImMidiUnlock();
+
+		return imSuccess;
 	}
 
 	void ImUpdateInstrumentSounds()
@@ -1987,7 +2012,7 @@ namespace TFE_Jedi
 		ImMidiUnlock();
 		return imSuccess;
 	}
-		
+
 	void ImSetTempo(ImPlayerData* data, u32 tempo)
 	{
 		s32 ticks = ImGetDeltaTime() * 480;
@@ -2687,6 +2712,13 @@ namespace TFE_Jedi
 		}
 	}
 
+	void ImMidiPressure(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2)
+	{
+		// Not used by Dark Forces.
+		TFE_System::logWrite(LOG_ERROR, "IMuse", "ImMidiPressure() unimplemented.");
+		assert(0);
+	}
+	
 	void ImMidiProgramChange(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2)
 	{
 		const s32 pgm = arg1;
@@ -2740,6 +2772,75 @@ namespace TFE_Jedi
 		else if (metaType == META_TIME_SIG)
 		{
 			ImSetMidiTicksPerBeat(playerData, 960 >> (data[1] - 1), data[0]);
+		}
+	}
+
+	s32 ImUpdateHook(s32* hook, s32 newValue)
+	{
+		if (newValue)
+		{
+			if (newValue == *hook)
+			{
+				return imFail;
+			}
+			*hook = 0;
+			return imSuccess;
+		}
+
+		if (*hook == 0x80)
+		{
+			*hook = newValue;
+			return imFail;
+		}
+
+		return imSuccess;
+	}
+
+	void ImMidiSystemFunc(ImPlayerData* playerData, u8* chunkData)
+	{
+		u8* data = chunkData + 1;
+		if (*chunkData != 0xf0)
+		{
+			return;
+		}
+
+		if (data[0] > 0x7f || data[1] != 0x7d)
+		{
+			return;
+		}
+		data += 2;
+
+		u8 value = *data;
+		data++;
+		if (value == 0)
+		{
+			// Set Marker
+			ImMidiPlayer* player = playerData->player;
+			u8 marker = *data;
+			player->marker = marker;
+			ImSetSoundTrigger(player->soundId, marker);
+		}
+		else if (value == 1)
+		{
+			s32 value = *data;
+			data++;
+
+			ImMidiPlayer* player = playerData->player;
+			s32* hook = &player->hook;
+			if (ImUpdateHook(hook, value) == imSuccess)
+			{
+				ImJumpMidiInternal(playerData, data[0], (data[1] << 7) | data[2], data[3], (data[4] << 7) | data[5], data[6]);
+			}
+		}
+		else if (value == 3)
+		{
+			ImMidiPlayer* player = playerData->player;
+			player->marker = 0x80;
+			ImSetSoundTrigger(player->soundId, (s32)data);
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_ERROR, "IMuse", "ERROR:mp got bad sysex msg...");
 		}
 	}
 

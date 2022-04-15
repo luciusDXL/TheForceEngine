@@ -31,4 +31,5 @@ namespace TFE_Jedi
 
 	s32  ImDeferCommand(s32 time, s32 opcode, s32 arg1);
 	void ImHandleDeferredCommands();
+	void ImSetSoundTrigger(u32 soundId, s32 marker);
 }  // namespace TFE_Jedi

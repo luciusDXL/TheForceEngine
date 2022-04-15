@@ -313,8 +313,7 @@ namespace TFE_DarkForces
 		s32 var1 = actor->var1;
 		if (var1)
 		{
-			if (var1 < 0) { lmusic_setCuePoint(0); }
-			         else { lmusic_setCuePoint(var1); }
+			lmusic_setCuePoint(max(0, var1));
 		}
 	}
 }  // TFE_DarkForces
