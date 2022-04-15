@@ -2775,11 +2775,11 @@ namespace TFE_Jedi
 		}
 	}
 
-	s32 ImUpdateHook(s32* hook, s32 newValue)
+	s32 ImUpdateHook(s32* hook, u8 newValue)
 	{
 		if (newValue)
 		{
-			if (newValue == *hook)
+			if ((s32)newValue == *hook)
 			{
 				return imFail;
 			}
@@ -2789,7 +2789,7 @@ namespace TFE_Jedi
 
 		if (*hook == 0x80)
 		{
-			*hook = newValue;
+			*hook = (s32)newValue;
 			return imFail;
 		}
 
@@ -2822,7 +2822,7 @@ namespace TFE_Jedi
 		}
 		else if (value == 1)
 		{
-			s32 value = *data;
+			value = *data;
 			data++;
 
 			ImMidiPlayer* player = playerData->player;
@@ -2836,7 +2836,7 @@ namespace TFE_Jedi
 		{
 			ImMidiPlayer* player = playerData->player;
 			player->marker = 0x80;
-			ImSetSoundTrigger(player->soundId, (s32)data);
+			ImSetSoundTrigger(player->soundId, *data);
 		}
 		else
 		{
