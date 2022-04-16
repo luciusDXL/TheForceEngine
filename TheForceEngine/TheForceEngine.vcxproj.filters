@@ -877,6 +877,15 @@
     <ClInclude Include="TFE_Jedi\IMuse\imList.h">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\IMuse\imMidiPlayer.h">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\IMuse\imConst.h">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\IMuse\imMidiCmd.h">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1480,6 +1489,15 @@
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\IMuse\imList.cpp">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\IMuse\imMidiPlayer.cpp">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\IMuse\imConst.cpp">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\IMuse\imMidiCmd.cpp">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClCompile>
   </ItemGroup>

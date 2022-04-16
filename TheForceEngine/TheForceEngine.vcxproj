@@ -444,7 +444,10 @@ echo ^)";
     <ClInclude Include="TFE_Input\inputEnum.h" />
     <ClInclude Include="TFE_Input\inputMapping.h" />
     <ClInclude Include="TFE_Jedi\Collision\collision.h" />
+    <ClInclude Include="TFE_Jedi\IMuse\imConst.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imList.h" />
+    <ClInclude Include="TFE_Jedi\IMuse\imMidiCmd.h" />
+    <ClInclude Include="TFE_Jedi\IMuse\imMidiPlayer.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imOpCodes.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imSoundFader.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imTrigger.h" />
@@ -678,7 +681,10 @@ echo ^)";
     <ClCompile Include="TFE_Input\input.cpp" />
     <ClCompile Include="TFE_Input\inputMapping.cpp" />
     <ClCompile Include="TFE_Jedi\Collision\collision.cpp" />
+    <ClCompile Include="TFE_Jedi\IMuse\imConst.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imList.cpp" />
+    <ClCompile Include="TFE_Jedi\IMuse\imMidiCmd.cpp" />
+    <ClCompile Include="TFE_Jedi\IMuse\imMidiPlayer.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imSoundFader.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imTrigger.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imuse.cpp" />
