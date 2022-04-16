@@ -80,9 +80,9 @@ namespace TFE_Jedi
 				chunkData += midi_getVariableLengthValue(&chunkData);
 			}
 
+			// If we have reached the end, then we are done for now.
 			if (s_imEndOfTrack)
 			{
-				TFE_System::logWrite(LOG_ERROR, "iMuse", "ImAdvanceMidi() - Invalid end of track encountered.");
 				return;
 			}
 
