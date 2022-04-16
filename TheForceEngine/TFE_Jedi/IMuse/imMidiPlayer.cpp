@@ -14,11 +14,12 @@ namespace TFE_Jedi
 	// TODO: Fix these externs.
 	extern void _ImNoteOff(s32 channelId, s32 instrId);
 	extern void ImMidiSetupParts();
-
+	
 	InstrumentSound* s_imActiveInstrSounds = nullptr;
 	InstrumentSound* s_imInactiveInstrSounds = nullptr;
 	InstrumentSound s_instrumentSounds[24];
 	ImMidiPlayer* s_midiPlayerList = nullptr;
+	s32 s_midiTrackEnd = 0;
 	s32 s_imEndOfTrack = 0;
 
 	void ImSetEndOfTrack();

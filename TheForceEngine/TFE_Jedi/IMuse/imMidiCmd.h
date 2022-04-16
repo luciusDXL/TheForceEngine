@@ -56,13 +56,10 @@ namespace TFE_Jedi
 
 	// TODO: These are currently defined in imuse.cpp, move them over.
 	extern void ImMidiJumpSustain_NoteOn(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2);
-	extern void ImCheckForTrackEnd(ImPlayerData* playerData, u8* data);
 	extern void ImMidiCommand(ImMidiPlayer* player, s32 channelIndex, s32 midiCmd, s32 value);
 	extern void ImMidiNoteOff(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	extern void ImMidiNoteOn(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
-	extern void ImMidiPressure(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	extern void ImMidiProgramChange(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	extern void ImMidiPitchBend(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	extern void ImMidiEvent(ImPlayerData* playerData, u8* chunkData);
-	extern void ImMidiSystemFunc(ImPlayerData* playerData, u8* chunkData);
 }  // namespace TFE_Jedi
