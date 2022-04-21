@@ -334,6 +334,12 @@ namespace TFE_MidiPlayer
 		s_midiCallback.callback = callback;
 		s_midiCallback.timeStep = timeStep;
 		s_midiCallback.accumulator = 0.0;
+
+		for (u32 i = 0; i < 16; i++)
+		{
+			s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
+		}
+		changeVolume();
 	}
 
 	//////////////////////////////////////////////////
@@ -362,7 +368,19 @@ namespace TFE_MidiPlayer
 		loopStart = -1;
 		dt = 0.0;
 	}
-				
+
+	void sendMessageDirect(u8 type, u8 arg1, u8 arg2)
+	{
+		u8 msg[] = { type, arg1, arg2 };
+		if ((type & 0xf0) == MID_CONTROL_CHANGE && arg1 == MID_VOLUME_MSB)
+		{
+			const s32 channelIndex = type & 0x0f;
+			s_channelSrcVolume[channelIndex] = arg2;
+			msg[2] = u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled);
+		}
+		TFE_MidiDevice::sendMessage(msg, 3);
+	}
+
 	// Thread Function
 	TFE_THREADRET midiUpdateFunc(void* userData)
 	{
@@ -385,8 +403,10 @@ namespace TFE_MidiPlayer
 					s_midiCallback.callback();
 					s_midiCallback.accumulator -= s_midiCallback.timeStep;
 				}
+				runThread = s_runMusicThread.load();
+				continue;
 			}
-
+			
 			// Read from the command buffer.
 			MUTEX_LOCK(&s_mutex);
 			MidiCmd* midiCmd = s_midiCmdBuffer;
@@ -462,6 +482,7 @@ namespace TFE_MidiPlayer
 			s_midiCmdCount = 0;
 			MUTEX_UNLOCK(&s_mutex);
 
+			// Read from the midi buffer.
 			if (!isPlaying)
 			{
 				if (wasPlaying)

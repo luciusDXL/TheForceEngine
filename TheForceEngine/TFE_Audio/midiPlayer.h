@@ -22,6 +22,10 @@ namespace TFE_MidiPlayer
 	// Change the overall music volume.
 	void setVolume(f32 volume);
 
+	// Send a direct midi message.
+	// Note: this should be called from the midi thread.
+	void sendMessageDirect(u8 type, u8 arg1=0, u8 arg2=0);
+
 	// The iMuse callback is called whenever iMuse commands are encountered in the midi stream.
 	// The callback runs in the same thread as the Midi playback, which means that callbacks should not
 	// do any heavy processing. It also means that reads are accurate.

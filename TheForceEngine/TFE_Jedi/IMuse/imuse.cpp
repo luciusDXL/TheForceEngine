@@ -18,6 +18,7 @@
 namespace TFE_Jedi
 {
 	#define IM_MAX_SOUNDS 32
+	#define IM_MIDI_FILE_COUNT 6
 	#define IM_MIDI_PLAYER_COUNT 2
 	#define imuse_alloc(size) TFE_Memory::region_alloc(s_memRegion, size)
 	#define imuse_realloc(ptr, size) TFE_Memory::region_realloc(s_memRegion, ptr, size)
@@ -216,7 +217,7 @@ namespace TFE_Jedi
 
 	// Midi files loaded.
 	static u32 s_midiFileCount = 0;
-	static u8* s_midiFiles[6];
+	static u8* s_midiFiles[IM_MIDI_FILE_COUNT];
 
 	/////////////////////////////////////////////////////////// 
 	// Main API
@@ -1124,6 +1125,8 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "IMuse", "Cannot open midi file '%s'.", midiFile);
 			return IM_NULL_SOUNDID;
 		}
+		assert(s_midiFileCount < IM_MIDI_FILE_COUNT);
+
 		size_t len = file.getSize();
 		s_midiFiles[s_midiFileCount] = (u8*)imuse_alloc(len);
 		file.readBuffer(s_midiFiles[s_midiFileCount], u32(len));
@@ -1226,31 +1229,35 @@ namespace TFE_Jedi
 	void _ImNoteOff(s32 channelId, s32 instrId)
 	{
 		// Stub
-		TFE_System::debugWrite("IMuse Midi", "NOTE OFF [c 0x%x, i 0x%x]", channelId, instrId);
+		//TFE_System::debugWrite("IMuse Midi", "NOTE OFF [c 0x%x, i 0x%x]", channelId, instrId);
+		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_OFF | channelId, instrId);
 	}
 
 	void _ImNoteOn(s32 channelId, s32 instrId, s32 velocity)
 	{
 		// Stub
-		TFE_System::debugWrite("IMuse Midi", "NOTE ON [c 0x%x, i 0x%x]", channelId, instrId);
+		//TFE_System::debugWrite("IMuse Midi", "NOTE ON [c 0x%x, i 0x%x]", channelId, instrId);
+		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_ON | channelId, instrId, velocity);
 	}
 
 	void ImSendMidiMsg_(s32 channelId, MidiController ctrl, s32 value)
 	{
-		// Stub
-		TFE_System::debugWrite("IMuse Midi", "MSG [c 0x%x, ctrl 0x%x, v 0x%x]", channelId, ctrl, value);
-	}
+		// Test
+		if (ctrl != MID_VOLUME_MSB)
+		{
+			return;
+		}
 
-	void ImSendMidiMsg_(u8 channel, u8 msg, u8 arg1)
-	{
 		// Stub
-		TFE_System::debugWrite("IMuse Midi", "MSG [c 0x%x, m 0x%x, a 0x%x]", channel, msg, arg1);
+		//TFE_System::debugWrite("IMuse Midi", "MSG [c 0x%x, ctrl 0x%x, v 0x%x]", channelId, ctrl, value);
+		TFE_MidiPlayer::sendMessageDirect(MID_CONTROL_CHANGE | channelId, ctrl, value);
 	}
 
 	void ImSendMidiMsg_R_(u8 channel, u8 msg)
 	{
 		// Stub
-		TFE_System::debugWrite("IMuse Midi", "PGM [c 0x%x, pgm 0x%x]", channel, msg);
+		//TFE_System::debugWrite("IMuse Midi", "PGM [c 0x%x, pgm 0x%x]", channel, msg);
+		TFE_MidiPlayer::sendMessageDirect(MID_PROGRAM_CHANGE | channel, msg);
 	}
 
 	// For Pan, "Fine" resolution is 14-bit where 8192 (0x2000) is center - MID_PAN_LSB
@@ -1771,7 +1778,8 @@ namespace TFE_Jedi
 	void ImAdvanceMidiPlayer(ImPlayerData* playerData)
 	{
 		playerData->tickFixed += playerData->stepFixed;
-		playerData->tick += floor16(playerData->tickFixed);
+		//playerData->tick += floor16(playerData->tickFixed);
+		playerData->tick += floor16(playerData->stepFixed);
 		playerData->tickFixed &= 0xffff0000;
 
 		if ((playerData->tick & 0xffff) >= playerData->ticksPerBeat)
@@ -1959,15 +1967,13 @@ namespace TFE_Jedi
 				TFE_System::logWrite(LOG_ERROR, "iMuse", "su couldn't find all note-offs...");
 				for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 				{
-					if (s_curMidiInstrumentMask[i])
+					if (!s_curMidiInstrumentMask[i]) { continue; }
+					for (s32 t = 0; t < imChannelCount; t++)
 					{
-						for (s32 t = 0; t < imChannelCount; t++)
+						if (s_curMidiInstrumentMask[i] & s_midiChannelTrim[t])
 						{
-							if (s_curMidiInstrumentMask[i] & s_midiChannelTrim[t])
-							{
-								TFE_System::logWrite(LOG_ERROR, "iMuse", "missing note %d on chan %d...", i, s_curMidiInstrumentMask[i]);
-								ImMidiNoteOff(player, t, i, 0);
-							}
+							TFE_System::logWrite(LOG_ERROR, "iMuse", "missing note %d on chan %d...", i, s_curMidiInstrumentMask[i]);
+							ImMidiNoteOff(player, t, i, 0);
 						}
 					}
 				}
