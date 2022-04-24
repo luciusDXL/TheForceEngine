@@ -20,6 +20,8 @@
 
 namespace TFE_System
 {
+	f64 c_gameTimeScale = 1.02;	// Adjust game time to match DosBox.
+
 	static u64 s_time;
 	static u64 s_startTime;
 	static f64 s_freq;

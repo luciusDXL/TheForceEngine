@@ -103,12 +103,12 @@ namespace TFE_Jedi
 		ImSoundId soundId;
 		s32 seqIndex;
 		s32 chunkOffset;
-		s32 tick;
-		s32 prevTick;
+		s32 nextTick;			// Next tick
+		s32 curTick;			// Current tick
 		s32 chunkPtr;
 		s32 ticksPerBeat;
 		s32 beatsPerMeasure;
-		s32 tickFixed;
+		s32 tickAccum;			// Fixed-point tick accumulator, preserves the fractional part of the tick to avoid time being lost.
 		s32 tempo;
 		s32 step;
 		s32 speed;

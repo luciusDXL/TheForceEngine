@@ -516,7 +516,7 @@ int main(int argc, char* argv[])
 		windowFlags,
 		s_refreshRate
 	};
-	sprintf(windowState.name, "The Force Engine  v%s", TFE_System::getVersionString());
+	sprintf(windowState.name, "The Force Engine  %s", TFE_System::getVersionString());
 	if (!TFE_RenderBackend::init(windowState))
 	{
 		TFE_System::logWrite(LOG_CRITICAL, "GPU", "Cannot initialize GPU/Window.");

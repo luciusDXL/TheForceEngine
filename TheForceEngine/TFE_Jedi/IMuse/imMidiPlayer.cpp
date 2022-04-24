@@ -28,10 +28,11 @@ namespace TFE_Jedi
 	void ImAdvanceMidi(ImPlayerData* playerData, u8* sndData, MidiCmdFuncUnion* midiCmdFunc)
 	{
 		s_imEndOfTrack = 0;
-		s32 tick = playerData->prevTick;
+		s32 tick = playerData->curTick;
+		s32 nextTick = playerData->nextTick;
 		u8* chunkData = sndData + playerData->chunkOffset + playerData->chunkPtr;
 
-		while (tick < playerData->tick)
+		while (tick < nextTick)
 		{
 			u8 data = chunkData[0];
 			if (data < MID_EXCLUSIVE_START)
@@ -93,7 +94,7 @@ namespace TFE_Jedi
 				tick = ImFixupSoundTick(playerData, tick);
 			}
 		}
-		playerData->prevTick = tick;
+		playerData->curTick = tick;
 		u8* chunkBase = sndData + playerData->chunkOffset;
 		playerData->chunkPtr = s32(chunkData - chunkBase);
 	}
@@ -103,7 +104,13 @@ namespace TFE_Jedi
 		while ((value & 0xffff) >= data->ticksPerBeat)
 		{
 			value = value - data->ticksPerBeat + ONE_16;
+			// This needs to be here so that we don't overflow the number of beats (15).
+			while ((value & FIXED(15)) >= data->beatsPerMeasure)
+			{
+				value = value - data->beatsPerMeasure + FIXED(16);
+			}
 		}
+		// Just in case.
 		while ((value & FIXED(15)) >= data->beatsPerMeasure)
 		{
 			value = value - data->beatsPerMeasure + FIXED(16);

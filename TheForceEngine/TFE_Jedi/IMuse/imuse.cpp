@@ -399,7 +399,7 @@ namespace TFE_Jedi
 
 	s32 ImTerminate(void)
 	{
-		TFE_MidiPlayer::midiSetCallback();
+		TFE_MidiPlayer::midiClearCallback();
 		return imSuccess;
 	}
 
@@ -741,9 +741,9 @@ namespace TFE_Jedi
 		memcpy(&s_imSoundHeaderCopy2, data, sizeof(ImPlayerData));
 		memcpy(&s_imSoundHeaderCopy1, data, sizeof(ImPlayerData));
 
-		u32 newTick = ImFixupSoundTick(data, intToFixed16(measure) * 16 + intToFixed16(beat) + tick);
+		u32 nextTick = ImFixupSoundTick(data, intToFixed16(measure) * 16 + intToFixed16(beat) + tick);
 		// If we are jumping backwards - we reset the chunk.
-		if (chunk != s_imSoundHeaderCopy1.seqIndex || newTick < (u32)s_imSoundHeaderCopy1.chunkOffset)
+		if (chunk != s_imSoundHeaderCopy1.seqIndex || nextTick < (u32)s_imSoundHeaderCopy1.chunkOffset)
 		{
 			if (ImSetSequence(&s_imSoundHeaderCopy1, sndData, chunk))
 			{
@@ -752,7 +752,7 @@ namespace TFE_Jedi
 				return imFail;
 			}
 		}
-		s_imSoundHeaderCopy1.tick = newTick;
+		s_imSoundHeaderCopy1.nextTick = nextTick;
 		ImAdvanceMidi(&s_imSoundHeaderCopy1, sndData, s_jumpMidiCmdFunc);
 		if (s_imEndOfTrack)
 		{
@@ -1090,7 +1090,7 @@ namespace TFE_Jedi
 		}
 
 		data->soundId = soundId;
-		data->tickFixed = 0;
+		data->tickAccum = 0;
 		ImSetTempo(data, 500000); // microseconds per beat, 500000 = 120 beats per minute
 		ImMidiSetSpeed(data, 128);
 		ImSetMidiTicksPerBeat(data, 480, 4);
@@ -1477,15 +1477,15 @@ namespace TFE_Jedi
 		}
 		else if (param == midiMeasure)
 		{
-			return (data->tick >> 14) + 1;
+			return (data->nextTick >> 20) + 1;
 		}
 		else if (param == midiBeat)
 		{
-			return ((data->tick & 0xf0000) >> 16) + 1;
+			return ((data->nextTick & 0xf0000) >> 16) + 1;
 		}
 		else if (param == midiTick)
 		{
-			return data->tick & 0xffff;
+			return data->nextTick & 0xffff;
 		}
 		else if (param == midiSpeed)
 		{
@@ -1768,8 +1768,8 @@ namespace TFE_Jedi
 		data->chunkOffset = s32(chunkData - sndData);
 
 		u32 dt = midi_getVariableLengthValue(&chunkData);
-		data->prevTick = ImFixupSoundTick(data, dt);
-		data->tick = 0;
+		data->curTick = ImFixupSoundTick(data, dt);
+		data->nextTick = 0;
 		data->chunkPtr = s32(chunkData - (sndData + data->chunkOffset));
 		return imSuccess;
 	}
@@ -1777,16 +1777,16 @@ namespace TFE_Jedi
 	// This gets called at a fixed rate, where each step = 'stepFixed' ticks.
 	void ImAdvanceMidiPlayer(ImPlayerData* playerData)
 	{
-		playerData->tickFixed += playerData->stepFixed;
-		//playerData->tick += floor16(playerData->tickFixed);
-		playerData->tick += floor16(playerData->stepFixed);
-		playerData->tickFixed &= 0xffff0000;
+		playerData->tickAccum += playerData->stepFixed;
+		playerData->nextTick += floor16(playerData->tickAccum);
+		// Keep the fractional part.
+		playerData->tickAccum = fract16(playerData->tickAccum);
 
-		if ((playerData->tick & 0xffff) >= playerData->ticksPerBeat)
+		if ((playerData->nextTick & 0xffff) >= playerData->ticksPerBeat)
 		{
-			playerData->tick = ImFixupSoundTick(playerData, playerData->tick);
+			playerData->nextTick = ImFixupSoundTick(playerData, playerData->nextTick);
 		}
-		if (playerData->prevTick < playerData->tick)
+		if (playerData->curTick < playerData->nextTick)
 		{
 			u8* sndData = ImInternalGetSoundData(playerData->soundId);
 			if (sndData)
@@ -1857,7 +1857,7 @@ namespace TFE_Jedi
 		const u32 ticksPerMeasure = playerData->ticksPerBeat * playerData->beatsPerMeasure;
 
 		// Compute the previous midi tick.
-		u32 prevMeasure = prevTick >> 14;
+		u32 prevMeasure = prevTick >> 20;
 		u32 prevMeasureTick = prevMeasure * ticksPerMeasure;
 
 		u32 prevBeat = (prevTick & 0xf0000) >> 16;
@@ -1865,7 +1865,7 @@ namespace TFE_Jedi
 		u32 prevMidiTick = prevMeasureTick + prevBeatTick + (prevTick & 0xffff);
 
 		// Compute the current midi tick.
-		u32 curMeasure = tick >> 14;
+		u32 curMeasure = tick >> 20;
 		u32 curMeasureTick = curMeasure * ticksPerMeasure;
 
 		u32 curBeat = (tick & 0xf0000) >> 16;
@@ -1880,13 +1880,12 @@ namespace TFE_Jedi
 		s_midiTrackEnd = 0;
 
 		u8* data = sndData + playerData->chunkOffset + playerData->chunkPtr;
-		s_midiTickDelta = ImMidiGetTickDelta(playerData, playerData->prevTick, playerData->tick);
+		s_midiTickDelta = ImMidiGetTickDelta(playerData, playerData->curTick, playerData->nextTick);
 
 		while (!s_midiTrackEnd)
 		{
 			u8 value = data[0];
 			u8 msgFuncIndex;
-			u32 msgSize;
 			if (value < 0xf0 && (value & 0x80))
 			{
 				u8 msgType = (value & 0x70) >> 4;
@@ -1895,21 +1894,21 @@ namespace TFE_Jedi
 				{
 					midiCmdFunc[msgType].cmdFunc(player, channel, data[1], data[2]);
 				}
-				msgSize = s_midiMessageSize2[msgType];
+				data += s_midiMessageSize2[msgType];
 			}
 			else
 			{
-				if (value == 0xf0)
+				if (value == MID_EXCLUSIVE_START)
 				{
 					msgFuncIndex = IM_MID_SYS_FUNC;
 				}
-				else if (value != 0xff)
-				{
-					TFE_System::logWrite(LOG_ERROR, "iMuse", "su unknown  msg type 0x%x.", value);
-					return;
-				}
 				else
 				{
+					if (value != 0xff)
+					{
+						TFE_System::logWrite(LOG_ERROR, "iMuse", "su unknown msg type 0x%x.", value);
+						return;
+					}
 					msgFuncIndex = IM_MID_EVENT;
 					data++;
 				}
@@ -1918,9 +1917,8 @@ namespace TFE_Jedi
 					midiCmdFunc[msgFuncIndex].evtFunc(playerData, data);
 				}
 				data++;
-				msgSize = midi_getVariableLengthValue(&data);
+				data += midi_getVariableLengthValue(&data);
 			}
-			data += msgSize;
 			// Length of message in "ticks"
 			s_midiTickDelta += midi_getVariableLengthValue(&data);
 		}
@@ -2604,7 +2602,7 @@ namespace TFE_Jedi
 		}
 
 		// In the original code, the interrupt is setup here, TFE uses a thread to simulate this.
-		const f64 timeStep = TFE_System::microsecondsToSeconds((f64)s_iMuseTimestepMicrosec);
+		const f64 timeStep = TFE_System::microsecondsToSeconds((f64)s_iMuseTimestepMicrosec) / TFE_System::c_gameTimeScale;
 		TFE_MidiPlayer::midiSetCallback(ImUpdate, timeStep);
 
 		return imSuccess;

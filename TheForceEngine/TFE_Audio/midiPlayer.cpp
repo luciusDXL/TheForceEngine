@@ -331,6 +331,7 @@ namespace TFE_MidiPlayer
 
 	void midiSetCallback(void(*callback)(void), f64 timeStep)
 	{
+		MUTEX_LOCK(&s_mutex);
 		s_midiCallback.callback = callback;
 		s_midiCallback.timeStep = timeStep;
 		s_midiCallback.accumulator = 0.0;
@@ -340,6 +341,16 @@ namespace TFE_MidiPlayer
 			s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
 		}
 		changeVolume();
+		MUTEX_UNLOCK(&s_mutex);
+	}
+
+	void midiClearCallback()
+	{
+		MUTEX_LOCK(&s_mutex);
+		s_midiCallback.callback = nullptr;
+		s_midiCallback.timeStep = 0.0;
+		s_midiCallback.accumulator = 0.0;
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	//////////////////////////////////////////////////
@@ -395,20 +406,19 @@ namespace TFE_MidiPlayer
 		while (runThread)
 		{
 			// Callback (such as iMuse).
+			MUTEX_LOCK(&s_mutex);
 			if (s_midiCallback.callback)
 			{
 				s_midiCallback.accumulator += TFE_System::updateThreadLocal(&localTimeCallback);
-				while (s_midiCallback.accumulator >= s_midiCallback.timeStep)
+				while (s_midiCallback.callback && s_midiCallback.accumulator >= s_midiCallback.timeStep)
 				{
 					s_midiCallback.callback();
 					s_midiCallback.accumulator -= s_midiCallback.timeStep;
 				}
 				runThread = s_runMusicThread.load();
-				continue;
 			}
 			
 			// Read from the command buffer.
-			MUTEX_LOCK(&s_mutex);
 			MidiCmd* midiCmd = s_midiCmdBuffer;
 			for (u32 i = 0; i < s_midiCmdCount; i++, midiCmd++)
 			{
@@ -481,6 +491,11 @@ namespace TFE_MidiPlayer
 			}
 			s_midiCmdCount = 0;
 			MUTEX_UNLOCK(&s_mutex);
+
+			if (s_midiCallback.callback)
+			{
+				continue;
+			}
 
 			// Read from the midi buffer.
 			if (!isPlaying)

@@ -22,7 +22,7 @@ namespace TFE_DarkForces
 	{
 		s_timeInSec += TFE_System::getDeltaTime();
 		// Convert from seconds to ticks.
-		f64 curTick = f64(LTICKS_PER_SECOND) * s_timeInSec;
+		f64 curTick = f64(LTICKS_PER_SECOND) * s_timeInSec * TFE_System::c_gameTimeScale;
 		s_curTick = LTick(curTick);
 	}
 

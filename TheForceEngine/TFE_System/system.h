@@ -61,4 +61,6 @@ namespace TFE_System
 	bool systemUiRequestPosted();
 
 	const char* getVersionString();
+
+	extern f64 c_gameTimeScale;
 }
