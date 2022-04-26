@@ -595,7 +595,7 @@ namespace TFE_Jedi
 
 	s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3)
 	{
-		TFE_System::debugWrite("IMuse Midi", "MSG [s 0x%x, a1 0x%x, a2 0x%x, a3 0x%x]", soundId, arg1, arg2, arg3);
+		IM_DBG_MSG("IMuse Midi", "MSG [s 0x%x, a1 0x%x, a2 0x%x, a3 0x%x]", soundId, arg1, arg2, arg3);
 		return imNotImplemented;
 	}
 
@@ -741,9 +741,9 @@ namespace TFE_Jedi
 		memcpy(&s_imSoundHeaderCopy2, data, sizeof(ImPlayerData));
 		memcpy(&s_imSoundHeaderCopy1, data, sizeof(ImPlayerData));
 
-		u32 nextTick = ImFixupSoundTick(data, intToFixed16(measure) * 16 + intToFixed16(beat) + tick);
-		// If we are jumping backwards - we reset the chunk.
-		if (chunk != s_imSoundHeaderCopy1.seqIndex || nextTick < (u32)s_imSoundHeaderCopy1.chunkOffset)
+		u32 nextTick = ImFixupSoundTick(data, ImTime_setMeasure(measure) + ImTime_setBeat(beat) + ImTime_setTick(tick));
+		// If we either change chunks or jump backwards, the sequence needs to be setup/reset.
+		if (chunk != s_imSoundHeaderCopy1.seqIndex || nextTick < (u32)s_imSoundHeaderCopy1.nextTick)
 		{
 			if (ImSetSequence(&s_imSoundHeaderCopy1, sndData, chunk))
 			{
@@ -1228,35 +1228,21 @@ namespace TFE_Jedi
 
 	void _ImNoteOff(s32 channelId, s32 instrId)
 	{
-		// Stub
-		//TFE_System::debugWrite("IMuse Midi", "NOTE OFF [c 0x%x, i 0x%x]", channelId, instrId);
 		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_OFF | channelId, instrId);
 	}
 
 	void _ImNoteOn(s32 channelId, s32 instrId, s32 velocity)
 	{
-		// Stub
-		//TFE_System::debugWrite("IMuse Midi", "NOTE ON [c 0x%x, i 0x%x]", channelId, instrId);
 		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_ON | channelId, instrId, velocity);
 	}
 
 	void ImSendMidiMsg_(s32 channelId, MidiController ctrl, s32 value)
 	{
-		// Test
-		if (ctrl != MID_VOLUME_MSB)
-		{
-			return;
-		}
-
-		// Stub
-		//TFE_System::debugWrite("IMuse Midi", "MSG [c 0x%x, ctrl 0x%x, v 0x%x]", channelId, ctrl, value);
 		TFE_MidiPlayer::sendMessageDirect(MID_CONTROL_CHANGE | channelId, ctrl, value);
 	}
 
 	void ImSendMidiMsg_R_(u8 channel, u8 msg)
 	{
-		// Stub
-		//TFE_System::debugWrite("IMuse Midi", "PGM [c 0x%x, pgm 0x%x]", channel, msg);
 		TFE_MidiPlayer::sendMessageDirect(MID_PROGRAM_CHANGE | channel, msg);
 	}
 
@@ -1265,7 +1251,7 @@ namespace TFE_Jedi
 	void ImSetPanFine_(s32 channel, s32 pan)
 	{
 		// Stub
-		TFE_System::debugWrite("IMuse Midi", "PAN FINE [c 0x%x, pan %d]", channel, pan);
+		IM_DBG_MSG("IMuse Midi", "PAN FINE [c 0x%x, pan %d]", channel, pan);
 	}
 
 	s32 ImFreeMidiPlayer(ImSoundId soundId)
@@ -1773,7 +1759,7 @@ namespace TFE_Jedi
 		data->chunkPtr = s32(chunkData - (sndData + data->chunkOffset));
 		return imSuccess;
 	}
-
+		
 	// This gets called at a fixed rate, where each step = 'stepFixed' ticks.
 	void ImAdvanceMidiPlayer(ImPlayerData* playerData)
 	{
@@ -1851,26 +1837,26 @@ namespace TFE_Jedi
 			}
 		}
 	}
-
+		
 	s32 ImMidiGetTickDelta(ImPlayerData* playerData, u32 prevTick, u32 tick)
 	{
 		const u32 ticksPerMeasure = playerData->ticksPerBeat * playerData->beatsPerMeasure;
 
 		// Compute the previous midi tick.
-		u32 prevMeasure = prevTick >> 20;
+		u32 prevMeasure = ImTime_getMeasure(prevTick);
 		u32 prevMeasureTick = prevMeasure * ticksPerMeasure;
 
-		u32 prevBeat = (prevTick & 0xf0000) >> 16;
+		u32 prevBeat = ImTime_getBeat(prevTick);
 		u32 prevBeatTick = prevBeat * playerData->ticksPerBeat;
-		u32 prevMidiTick = prevMeasureTick + prevBeatTick + (prevTick & 0xffff);
+		u32 prevMidiTick = prevMeasureTick + prevBeatTick + ImTime_getTicks(prevTick);
 
 		// Compute the current midi tick.
-		u32 curMeasure = tick >> 20;
+		u32 curMeasure = ImTime_getMeasure(tick);
 		u32 curMeasureTick = curMeasure * ticksPerMeasure;
 
-		u32 curBeat = (tick & 0xf0000) >> 16;
+		u32 curBeat = ImTime_getBeat(tick);
 		u32 curBeatTick = curBeat * playerData->ticksPerBeat;
-		u32 curMidiTick = curMeasureTick + curBeatTick + (tick & 0xffff);
+		u32 curMidiTick = curMeasureTick + curBeatTick + ImTime_getTicks(tick);
 
 		return curMidiTick - prevMidiTick;
 	}

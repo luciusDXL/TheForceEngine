@@ -33,6 +33,32 @@ enum iMuseConst
 	imSoundWildcard = 0xffffffff,
 };
 
+// Time in iMuse is stored like the following:
+// ---------------------------------------------------------
+// | 12-bits            | 4-bits         | 16-bits
+// ---------------------------------------------------------
+// | offset=20-bits     | offset=16-bits | offset=0 bits
+// ---------------------------------------------------------
+// | Measure (0 - 4095) | Beat (0 - 15)  | Tick (0 - 65535)
+// ---------------------------------------------------------
+
+// Get Time
+#define ImTime_getTicks(t)   ((t) & 0xffff)
+#define ImTime_getBeat(t)    (((t) >> 16) & 0xf)
+#define ImTime_getMeasure(t) ((t) >> 20)
+
+// Set Time
+#define ImTime_setTick(t)    (t)
+#define ImTime_setBeat(b)    ((b)<<16)
+#define ImTime_setMeasure(m) ((m)<<20)
+
+#define IM_SHOW_DEBUG_MSG 0
+#if IM_SHOW_DEBUG_MSG
+	#define IM_DBG_MSG(tag, str, ...) TFE_System::debugWrite(tag, str, __VA_ARGS__)
+#else
+	#define IM_DBG_MSG(tag, str, ...)
+#endif
+
 namespace TFE_Jedi
 {
 	typedef u32 ImSoundId;

@@ -175,6 +175,7 @@ namespace TFE_DarkForces
 					s32 oldMeasure = s_sequences[s_curSeq - 1][newCuePoint - 1].xMeasure;
 					s32 newMeasure = s_sequences[s_curSeq - 1][newCuePoint - 1].yMeasure;
 
+					// A = 1, B = 2, ...
 					if (oldChunk > '@') { oldChunk -= '@'; }
 					if (newChunk > '@') { newChunk -= '@'; }
 
