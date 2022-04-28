@@ -1798,7 +1798,7 @@ namespace TFE_Jedi
 			ImMidiChannel* midiChannel = &s_midiChannels[i];
 			if (player == midiChannel->player)
 			{
-				channelMask |= s_channelMask[midiChannel->channelId];
+				channelMask |= c_channelMask[midiChannel->channelId];
 			}
 		}
 
@@ -1821,7 +1821,7 @@ namespace TFE_Jedi
 			ImMidiChannel* midiChannel = &s_midiChannels[i];
 			if (player == midiChannel->sharedPart)
 			{
-				channelMask |= s_channelMask[midiChannel->sharedId];
+				channelMask |= c_channelMask[midiChannel->sharedId];
 			}
 		}
 
@@ -1880,7 +1880,7 @@ namespace TFE_Jedi
 				{
 					midiCmdFunc[msgType].cmdFunc(player, channel, data[1], data[2]);
 				}
-				data += s_midiMessageSize2[msgType];
+				data += c_midiMsgSize[msgType];
 			}
 			else
 			{
@@ -2051,7 +2051,7 @@ namespace TFE_Jedi
 			{
 				for (s32 r = 0; r < MIDI_INSTRUMENT_COUNT; r++)
 				{
-					if (midiChannel->instrumentMask2[r] & s_channelMask[midiChannel->channelId])
+					if (midiChannel->instrumentMask2[r] & c_channelMask[midiChannel->channelId])
 					{
 						// IM_TODO
 					}
@@ -2361,7 +2361,7 @@ namespace TFE_Jedi
 	{
 		if (!channel) { return; }
 
-		s32 channelMask = s_channelMask[channel->channelId];
+		u32 channelMask = c_channelMask[channel->channelId];
 		if (channel->instrumentMask[instrumentId] & channelMask)
 		{
 			_ImNoteOff(channel->channelId, instrumentId);
@@ -2406,7 +2406,7 @@ namespace TFE_Jedi
 	{
 		if (midiChannel)
 		{
-			u32 channelMask = s_channelMask[midiChannel->channelId];
+			const u32 channelMask = c_channelMask[midiChannel->channelId];
 			if (midiChannel->instrumentMask[instrumentId] & channelMask)
 			{
 				midiChannel->instrumentMask[instrumentId] &= ~channelMask;

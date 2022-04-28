@@ -47,7 +47,7 @@ namespace TFE_Jedi
 					{
 						midiCmdFunc[msgType].cmdFunc(playerData->player, channel, chunkData[1], chunkData[2]);
 					}
-					chunkData += s_midiMsgSize[msgType];
+					chunkData += c_midiMsgSize[msgType];
 				}
 				else
 				{
@@ -139,7 +139,7 @@ namespace TFE_Jedi
 	{
 		if (channelData)
 		{
-			u32 channelMask = s_channelMask[channelData->channelId];
+			const u32 channelMask = c_channelMask[channelData->channelId];
 			channelData->sustain = 0;
 			for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 			{

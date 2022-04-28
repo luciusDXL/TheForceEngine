@@ -34,12 +34,13 @@ enum iMuseConst
 };
 
 // Time in iMuse is stored like the following:
+// Where, generally, there are 480 ticks/beat and 4 beats/measure.
 // ---------------------------------------------------------
-// | 12-bits            | 4-bits         | 16-bits
+// | 12-bits            | 4-bits         | 16-bits         |
 // ---------------------------------------------------------
-// | offset=20-bits     | offset=16-bits | offset=0 bits
+// | offset=20-bits     | offset=16-bits | offset=0 bits   |
 // ---------------------------------------------------------
-// | Measure (0 - 4095) | Beat (0 - 15)  | Tick (0 - 65535)
+// | Measure (0 - 999)  | Beat (0 - 11)  | Tick (0 - 479)  |
 // ---------------------------------------------------------
 
 // Get Time
@@ -52,6 +53,8 @@ enum iMuseConst
 #define ImTime_setBeat(b)    ((b)<<16)
 #define ImTime_setMeasure(m) ((m)<<20)
 
+// These debug messages are very verbose so should be disabled in release builds.
+// Lower frequency messages that are kept in release use logWrite() directly.
 #define IM_SHOW_DEBUG_MSG 0
 #if IM_SHOW_DEBUG_MSG
 	#define IM_DBG_MSG(tag, str, ...) TFE_System::debugWrite(tag, str, __VA_ARGS__)
@@ -63,7 +66,6 @@ namespace TFE_Jedi
 {
 	typedef u32 ImSoundId;
 
-	extern const u8 s_midiMsgSize[];
-	extern const s32 s_midiMessageSize2[];
-	extern const s32 s_channelMask[imChannelCount];
+	extern const u8  c_midiMsgSize[];
+	extern const u32 c_channelMask[imChannelCount];
 }  // namespace TFE_Jedi

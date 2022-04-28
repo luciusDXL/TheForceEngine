@@ -4,19 +4,16 @@
 
 namespace TFE_Jedi
 {
-	const u8 s_midiMsgSize[] =
+	// In the original code, there are two arrays of midi message size, but the values are exactly the same.
+	const u8 c_midiMsgSize[] =
 	{
 		3, 3, 3, 3, 2, 2, 3, 1,
 	};
-	const s32 s_midiMessageSize2[] =
+	const u32 c_channelMask[imChannelCount] =
 	{
-		3, 3, 3, 3, 2, 2, 3, 1,
-	};
-	const s32 s_channelMask[imChannelCount] =
-	{
-		(1 << 0), (1 << 1), (1 << 2), (1 << 3),
-		(1 << 4), (1 << 5), (1 << 6), (1 << 7),
-		(1 << 8), (1 << 9), (1 << 10), (1 << 11),
-		(1 << 12), (1 << 13), (1 << 14), (1 << 15)
+		FLAG_BIT( 0), FLAG_BIT( 1), FLAG_BIT( 2), FLAG_BIT( 3),
+		FLAG_BIT( 4), FLAG_BIT( 5), FLAG_BIT( 6), FLAG_BIT( 7),
+		FLAG_BIT( 8), FLAG_BIT( 9), FLAG_BIT(10), FLAG_BIT(11),
+		FLAG_BIT(12), FLAG_BIT(13), FLAG_BIT(14), FLAG_BIT(15)
 	};
 }  // namespace TFE_Jedi
