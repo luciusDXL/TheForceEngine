@@ -23,8 +23,7 @@ namespace TFE_Jedi
 	#define imuse_alloc(size) TFE_Memory::region_alloc(s_memRegion, size)
 	#define imuse_realloc(ptr, size) TFE_Memory::region_realloc(s_memRegion, ptr, size)
 	#define imuse_free(ptr) TFE_Memory::region_free(s_memRegion, ptr)
-	#define IM_NULL_SOUNDID ImSoundId(0)
-
+	
 	////////////////////////////////////////////////////
 	// Structures
 	////////////////////////////////////////////////////
@@ -590,12 +589,13 @@ namespace TFE_Jedi
 		ImMidiPlayer* player = ImGetMidiPlayer(soundId);
 		if (!player) { return imInvalidSound; }
 
+		IM_DBG_MSG("JMP(C)");
 		return ImJumpMidiInternal(player->data, chunk, measure, beat, tick, sustain);
 	}
 
 	s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3)
 	{
-		IM_DBG_MSG("IMuse Midi", "MSG [s 0x%x, a1 0x%x, a2 0x%x, a3 0x%x]", soundId, arg1, arg2, arg3);
+		IM_DBG_MSG("MSG [s 0x%x, a1 0x%x, a2 0x%x, a3 0x%x]", soundId, arg1, arg2, arg3);
 		return imNotImplemented;
 	}
 
@@ -741,6 +741,7 @@ namespace TFE_Jedi
 		memcpy(&s_imSoundHeaderCopy2, data, sizeof(ImPlayerData));
 		memcpy(&s_imSoundHeaderCopy1, data, sizeof(ImPlayerData));
 
+		IM_DBG_MSG("JMP c:%d t:%03d.%02d.%03d -> %03d.%02d.%03d s:%d", chunk, ImTime_getMeasure(data->nextTick), ImTime_getBeat(data->nextTick), ImTime_getTicks(data->nextTick), measure, beat, tick, sustain);
 		u32 nextTick = ImFixupSoundTick(data, ImTime_setMeasure(measure) + ImTime_setBeat(beat) + ImTime_setTick(tick));
 		// If we either change chunks or jump backwards, the sequence needs to be setup/reset.
 		if (chunk != s_imSoundHeaderCopy1.seqIndex || nextTick < (u32)s_imSoundHeaderCopy1.nextTick)
@@ -1251,7 +1252,7 @@ namespace TFE_Jedi
 	void ImSetPanFine_(s32 channel, s32 pan)
 	{
 		// Stub
-		IM_DBG_MSG("IMuse Midi", "PAN FINE [c 0x%x, pan %d]", channel, pan);
+		IM_DBG_MSG("PAN FINE [c 0x%x, pan %d]", channel, pan);
 	}
 
 	s32 ImFreeMidiPlayer(ImSoundId soundId)
@@ -1463,15 +1464,15 @@ namespace TFE_Jedi
 		}
 		else if (param == midiMeasure)
 		{
-			return (data->nextTick >> 20) + 1;
+			return ImTime_getMeasure(data->nextTick) + 1;
 		}
 		else if (param == midiBeat)
 		{
-			return ((data->nextTick & 0xf0000) >> 16) + 1;
+			return ImTime_getBeat(data->nextTick) + 1;
 		}
 		else if (param == midiTick)
 		{
-			return data->nextTick & 0xffff;
+			return ImTime_getTicks(data->nextTick);
 		}
 		else if (param == midiSpeed)
 		{

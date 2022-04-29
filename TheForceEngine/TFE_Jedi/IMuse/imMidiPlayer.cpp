@@ -31,7 +31,7 @@ namespace TFE_Jedi
 		s32 tick = playerData->curTick;
 		s32 nextTick = playerData->nextTick;
 		u8* chunkData = sndData + playerData->chunkOffset + playerData->chunkPtr;
-		IM_DBG_MSG("IMuse", "cur: %03d.%02d.%04d, next: %03d.%02d.%04d", ImTime_getMeasure(tick), ImTime_getBeat(tick), ImTime_getTicks(tick),
+		IM_DBG_MSG("t: %03d.%02d.%03d -> %03d.%02d.%03d", ImTime_getMeasure(tick), ImTime_getBeat(tick), ImTime_getTicks(tick),
 		           ImTime_getMeasure(nextTick), ImTime_getBeat(nextTick), ImTime_getTicks(nextTick));
 
 		while (tick < nextTick)

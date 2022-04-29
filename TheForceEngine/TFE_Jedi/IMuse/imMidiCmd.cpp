@@ -108,7 +108,7 @@ namespace TFE_Jedi
 			u8 marker = *data;
 			player->marker = marker;
 
-			IM_DBG_MSG("IMuse", "Set Marker: %d", marker);
+			IM_DBG_MSG("Set Marker: %d", marker);
 			ImSetSoundTrigger(player->soundId, marker);
 		}
 		else if (value == 1)
@@ -120,13 +120,14 @@ namespace TFE_Jedi
 			s32* hook = &player->hook;
 			if (ImUpdateHook(hook, value) == imSuccess)
 			{
-				IM_DBG_MSG("IMuse", "Jump c:%d t:%03d.%02d.%04d s:%d", data[0]-1, ((data[1] << 7) | data[2])-1, data[3]-1, (data[4] << 7) | data[5], data[6]);
+				IM_DBG_MSG("JMP(I)");
 				ImJumpMidiInternal(playerData, data[0], (data[1] << 7) | data[2], data[3], (data[4] << 7) | data[5], data[6]);
 			}
 		}
 		else if (value == 3)
 		{
 			ImMidiPlayer* player = playerData->player;
+			IM_DBG_MSG("Marker: 0x80");
 			player->marker = 0x80;
 			ImSetSoundTrigger(player->soundId, *data);
 		}

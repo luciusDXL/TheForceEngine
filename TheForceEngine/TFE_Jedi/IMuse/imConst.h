@@ -57,10 +57,12 @@ enum iMuseConst
 // Lower frequency messages that are kept in release use logWrite() directly.
 #define IM_SHOW_DEBUG_MSG 0
 #if IM_SHOW_DEBUG_MSG
-	#define IM_DBG_MSG(tag, str, ...) TFE_System::debugWrite(tag, str, __VA_ARGS__)
+	#define IM_DBG_MSG(str, ...) TFE_System::debugWrite("IMuse", str, __VA_ARGS__)
 #else
-	#define IM_DBG_MSG(tag, str, ...)
+	#define IM_DBG_MSG(str, ...)
 #endif
+
+#define IM_NULL_SOUNDID 0
 
 namespace TFE_Jedi
 {

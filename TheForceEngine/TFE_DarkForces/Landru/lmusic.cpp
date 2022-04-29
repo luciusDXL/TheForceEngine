@@ -31,6 +31,7 @@ namespace TFE_DarkForces
 	};
 	static Sequence s_sequences[SEQUENCE_COUNT][MAX_CUE_POINTS];
 
+	static ImSoundId s_saveSound = IM_NULL_SOUNDID;
 	static s32 s_curSeq = 0;
 	static s32 s_curCuePoint = 0;
 	static f32 s_volume = 1.0f;
@@ -147,16 +148,14 @@ namespace TFE_DarkForces
 
 	s32 lmusic_setCuePoint(s32 newCuePoint)
 	{
-		static ImSoundId saveSound = 0;
 		ImPause();
 
-		if (s_curSeq && newCuePoint < MAX_CUE_POINTS && newCuePoint != s_curCuePoint)
+		if (s_curSeq && (u32)newCuePoint < MAX_CUE_POINTS && newCuePoint != s_curCuePoint)
 		{
 			if (!newCuePoint)
 			{
-				s_curCuePoint = newCuePoint;
 				ImStopAllSounds();
-				saveSound = 0;
+				s_saveSound = IM_NULL_SOUNDID;
 			}
 			else
 			{
@@ -166,8 +165,8 @@ namespace TFE_DarkForces
 
 					const char* oldTitle = s_sequences[s_curSeq - 1][s_curCuePoint - 1].name;
 					ImSoundId oldSound = ImFindMidi(oldTitle);
-					if (!oldSound) { oldSound = saveSound; }
-					else { saveSound = oldSound; }
+					if (!oldSound) { oldSound = s_saveSound; }
+					else { s_saveSound = oldSound; }
 
 					char* newTitle = s_sequences[s_curSeq - 1][newCuePoint - 1].name;
 					char oldChunk  = s_sequences[s_curSeq - 1][newCuePoint - 1].xChunk;
@@ -183,7 +182,7 @@ namespace TFE_DarkForces
 					{
 						// End of sequence marker.
 						ImStopSound(oldSound);
-						saveSound = 0;
+						s_saveSound = IM_NULL_SOUNDID;
 					}
 					else if (oldChunk == '?')
 					{
@@ -202,7 +201,7 @@ namespace TFE_DarkForces
 					}
 					else if (oldChunk == '0')
 					{
-						// Nothing.
+						// Do nothing.
 					}
 					else if (oldChunk == '1' || (oldMeasure == 0 && newMeasure == 0))
 					{
@@ -223,7 +222,7 @@ namespace TFE_DarkForces
 							TFE_System::logWrite(LOG_MSG, "Landru Music", "jump hook 1 set... %d", newCuePoint);
 						}
 					}
-					else  // If current pos < X, jump to Y (or if in different chunk)
+					else  // If current pos < X or in a different chunk, jump to Y.
 					{
 						ImSoundId newSound = ImFindMidi(newTitle);
 						if (oldSound != newSound)
@@ -231,7 +230,7 @@ namespace TFE_DarkForces
 							ImStopSound(oldSound);
 							ImStartSound(newSound, 64);
 							ImSetHook(oldSound, 0);
-							TFE_System::logWrite(LOG_MSG, "Landru Music", "Switch files  old: %d new: %d", oldSound, newSound);
+							TFE_System::logWrite(LOG_MSG, "Landru Music", "Switch files old: %d new: %d", oldSound, newSound);
 						}
 						else
 						{
@@ -255,11 +254,12 @@ namespace TFE_DarkForces
 				{
 					ImSoundId newSound = ImFindMidi(s_sequences[s_curSeq - 1][newCuePoint - 1].name);
 					ImStartSound(newSound, 64);
-					saveSound = newSound;
+					s_saveSound = newSound;
 				}
-
-				s_curCuePoint = newCuePoint;
 			}
+
+			// Update the cue point.
+			s_curCuePoint = newCuePoint;
 		}
 		ImResume();
 

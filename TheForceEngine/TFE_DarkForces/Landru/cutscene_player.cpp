@@ -310,7 +310,7 @@ namespace TFE_DarkForces
 
 	void cutscene_customSoundCallback(LActor* actor, s32 time)
 	{
-		s32 var1 = actor->var1;
+		const s32 var1 = actor->var1;
 		if (var1)
 		{
 			lmusic_setCuePoint(max(0, var1));
