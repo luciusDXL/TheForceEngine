@@ -51,10 +51,13 @@ namespace TFE_Jedi
 	};
 
 	extern MidiCmdFuncUnion s_jumpMidiCmdFunc[IM_MID_COUNT];
+	extern MidiCmdFuncUnion s_jumpMidiSustainOpenCmdFunc[IM_MID_COUNT];
 	extern MidiCmdFuncUnion s_jumpMidiSustainCmdFunc[IM_MID_COUNT];
 	extern MidiCmdFuncUnion s_midiCmdFunc[IM_MID_COUNT];
 
 	// TODO: These are currently defined in imuse.cpp, move them over.
+	extern void ImMidiJumpSustainOpen_NoteOff(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2);
+	extern void ImMidiJumpSustainOpen_NoteOn(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2);
 	extern void ImMidiJumpSustain_NoteOn(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2);
 	extern void ImMidiCommand(ImMidiPlayer* player, s32 channelIndex, s32 midiCmd, s32 value);
 	extern void ImMidiNoteOff(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);

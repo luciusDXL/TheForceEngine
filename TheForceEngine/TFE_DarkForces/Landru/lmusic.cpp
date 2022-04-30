@@ -207,7 +207,7 @@ namespace TFE_DarkForces
 					{
 						// This is in the original code as a printf
 						TFE_System::logWrite(LOG_MSG, "Landru Music", "oc: %d om: %d ", ImGetParam(oldSound, midiChunk), ImGetParam(oldSound, midiMeasure));
-						s32 newSound = ImFindMidi(newTitle);
+						ImSoundId newSound = ImFindMidi(newTitle);
 						if (oldSound != newSound)
 						{
 							ImStopSound(oldSound);

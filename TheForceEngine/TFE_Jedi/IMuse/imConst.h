@@ -46,6 +46,7 @@ enum iMuseConst
 // Get Time
 #define ImTime_getTicks(t)   ((t) & 0xffff)
 #define ImTime_getBeat(t)    (((t) >> 16) & 0xf)
+#define ImTime_getBeatFixed(t) ((t) & 0xf0000)
 #define ImTime_getMeasure(t) ((t) >> 20)
 
 // Set Time

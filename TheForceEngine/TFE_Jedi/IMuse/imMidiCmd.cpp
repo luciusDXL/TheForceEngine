@@ -31,6 +31,18 @@ namespace TFE_Jedi
 		MIDI_FUNC(nullptr),        // IM_MID_SYS_FUNC
 		MIDI_FUNC(ImMidiEvent),    // IM_MID_EVENT
 	};
+	MidiCmdFuncUnion s_jumpMidiSustainOpenCmdFunc[IM_MID_COUNT] =
+	{
+		MIDI_FUNC(ImMidiJumpSustainOpen_NoteOff),// IM_MID_NOTE_OFF
+		MIDI_FUNC(ImMidiJumpSustainOpen_NoteOn), // IM_MID_NOTE_ON
+		MIDI_FUNC(nullptr),                      // IM_MID_KEY_PRESSURE
+		MIDI_FUNC(nullptr),                      // IM_MID_CONTROL_CHANGE
+		MIDI_FUNC(nullptr),                      // IM_MID_PROGRAM_CHANGE
+		MIDI_FUNC(nullptr),                      // IM_MID_CHANNEL_PRESSURE
+		MIDI_FUNC(nullptr),                      // IM_MID_PITCH_BEND
+		MIDI_FUNC(nullptr),                      // IM_MID_SYS_FUNC
+		MIDI_FUNC(ImCheckForTrackEnd)            // IM_MID_EVENT
+	};
 	MidiCmdFuncUnion s_jumpMidiSustainCmdFunc[IM_MID_COUNT] =
 	{
 		MIDI_FUNC(nullptr),                  // IM_MID_NOTE_OFF

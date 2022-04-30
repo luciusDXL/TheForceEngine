@@ -57,8 +57,8 @@ namespace TFE_Jedi
 		s32 finalPan;
 		s32 sustain;
 
-		s32* instrumentMask;
-		s32* instrumentMask2;
+		u32* instrumentMask;
+		u32* instrumentMask2;
 		ImMidiPlayer* sharedPart;
 		ImMidiOutChannel* sharedChannel;
 		ImMidiChannel* prevChannel;

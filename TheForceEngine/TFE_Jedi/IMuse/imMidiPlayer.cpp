@@ -103,19 +103,19 @@ namespace TFE_Jedi
 
 	s32 ImFixupSoundTick(ImPlayerData* data, s32 value)
 	{
-		while ((value & 0xffff) >= data->ticksPerBeat)
+		while (ImTime_getTicks(value) >= data->ticksPerBeat)
 		{
-			value = value - data->ticksPerBeat + ONE_16;
+			value = value - data->ticksPerBeat + ImTime_setBeat(1);
 			// This needs to be here so that we don't overflow the number of beats (15).
-			while ((value & FIXED(15)) >= data->beatsPerMeasure)
+			while (ImTime_getBeatFixed(value) >= data->beatsPerMeasure)
 			{
-				value = value - data->beatsPerMeasure + FIXED(16);
+				value = value - data->beatsPerMeasure + ImTime_setMeasure(1);
 			}
 		}
 		// Just in case.
-		while ((value & FIXED(15)) >= data->beatsPerMeasure)
+		while (ImTime_getBeatFixed(value) >= data->beatsPerMeasure)
 		{
-			value = value - data->beatsPerMeasure + FIXED(16);
+			value = value - data->beatsPerMeasure + ImTime_setMeasure(1);
 		}
 		return value;
 	}
