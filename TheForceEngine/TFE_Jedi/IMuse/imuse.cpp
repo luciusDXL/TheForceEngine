@@ -150,6 +150,13 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
+	// These need to be updated across threads.
+	atomic_s32 s_imPause = 0;
+	atomic_s32 s_midiPaused = 0;
+	atomic_s32 s_digitalPause = 0;
+	atomic_s32 s_sndPlayerLock = 0;
+	atomic_s32 s_midiLock = 0;
+
 	static iMuseInitData s_imInitData = { 0, 0, 8, 6944 };
 
 	// TODO: Split modules into files.
@@ -166,12 +173,7 @@ namespace TFE_Jedi
 	static s32 s_iMuseSystemTime = 0;
 
 	static ImMidiChannel s_midiChannels[imChannelCount - 1];
-	static s32 s_imPause = 0;
 	static s32 s_midiFrame = 0;
-	static s32 s_midiPaused = 0;
-	static s32 s_digitalPause = 0;
-	static s32 s_sndPlayerLock = 0;
-	static s32 s_midiLock = 0;
 	static s32 s_trackTicksRemaining;
 	static s32 s_midiTickDelta;
 	static bool s_imEnableMusic = true;
@@ -410,7 +412,8 @@ namespace TFE_Jedi
 			res |= ImPauseDigitalSound();
 		}
 		s_imPause++;
-		return (res == imSuccess) ? s_imPause : res;
+		s32 pause = s_imPause;
+		return (res == imSuccess) ? pause : res;
 	}
 
 	s32 ImResume(void)
@@ -425,7 +428,8 @@ namespace TFE_Jedi
 		{
 			s_imPause--;
 		}
-		return (res == imSuccess) ? s_imPause : res;
+		s32 pause = s_imPause;
+		return (res == imSuccess) ? pause : res;
 	}
 
 	s32 ImSetGroupVol(s32 group, s32 volume)
@@ -594,7 +598,9 @@ namespace TFE_Jedi
 
 	s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3)
 	{
+		// Not called by Dark Forces.
 		IM_DBG_MSG("MSG [s 0x%x, a1 0x%x, a2 0x%x, a3 0x%x]", soundId, arg1, arg2, arg3);
+		assert(0);
 		return imNotImplemented;
 	}
 
@@ -727,7 +733,7 @@ namespace TFE_Jedi
 	{
 		u8* sndData = ImInternalGetSoundData(data->soundId);
 		if (!sndData) { return imInvalidSound; }
-
+				
 		measure--;
 		beat--;
 		chunk--;
@@ -740,7 +746,7 @@ namespace TFE_Jedi
 		memcpy(&s_imSoundHeaderCopy2, data, sizeof(ImPlayerData));
 		memcpy(&s_imSoundHeaderCopy1, data, sizeof(ImPlayerData));
 
-		IM_DBG_MSG("JMP c:%d t:%03d.%02d.%03d -> %03d.%02d.%03d s:%d", chunk, ImTime_getMeasure(data->nextTick), ImTime_getBeat(data->nextTick), ImTime_getTicks(data->nextTick), measure, beat, tick, sustain);
+		IM_DBG_MSG("JMP c:%d t:%03d.%02d.%03d -> c:%d t:%03d.%02d.%03d [s:%d]", s_imSoundHeaderCopy1.seqIndex, ImTime_getMeasure(data->nextTick), ImTime_getBeat(data->nextTick), ImTime_getTicks(data->nextTick), chunk, measure, beat, tick, sustain);
 		u32 nextTick = ImFixupSoundTick(data, ImTime_setMeasure(measure) + ImTime_setBeat(beat) + ImTime_setTick(tick));
 		// If we either change chunks or jump backwards, the sequence needs to be setup/reset.
 		if (chunk != s_imSoundHeaderCopy1.seqIndex || nextTick < (u32)s_imSoundHeaderCopy1.nextTick)
@@ -1192,6 +1198,7 @@ namespace TFE_Jedi
 		player->detune = 0;
 		player->transpose = 0;
 		player->mailbox = 0;
+		IM_DBG_MSG("Init: Hook = 0");
 		player->hook = 0;
 
 		for (s32 i = 0; i < imChannelCount; i++)
@@ -1655,7 +1662,7 @@ namespace TFE_Jedi
 
 	s32 ImSetHookMidi(ImSoundId soundId, s32 value)
 	{
-		if ((u32)value > 0x80000000ul)
+		if (value > 0x80)
 		{
 			return imArgErr;
 		}
@@ -1664,6 +1671,7 @@ namespace TFE_Jedi
 		{
 			return imInvalidSound;
 		}
+		IM_DBG_MSG("Hook = %d", value);
 		player->hook = value;
 		return imSuccess;
 	}

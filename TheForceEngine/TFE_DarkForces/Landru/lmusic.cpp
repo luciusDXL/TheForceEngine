@@ -217,7 +217,7 @@ namespace TFE_DarkForces
 						}
 						else
 						{
-							// Intra-file transition
+							// This will take the next '1' value jump (this is used to break out of loops, etc.).
 							ImSetHook(oldSound, 1);
 							TFE_System::logWrite(LOG_MSG, "Landru Music", "jump hook 1 set... %d", newCuePoint);
 						}

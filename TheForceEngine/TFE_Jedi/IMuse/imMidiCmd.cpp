@@ -80,16 +80,18 @@ namespace TFE_Jedi
 	{
 		if (newValue)
 		{
-			if ((s32)newValue == *hook)
+			if ((s32)newValue != (*hook))
 			{
 				return imFail;
 			}
+			IM_DBG_MSG("Set Hook = 0, Hook = %d, New Value = %d", *hook, newValue);
 			*hook = 0;
 			return imSuccess;
 		}
 
-		if (*hook == 0x80)
+		if ((*hook) == 0x80)
 		{
+			IM_DBG_MSG("Hook = %d", newValue);
 			*hook = (s32)newValue;
 			return imFail;
 		}
@@ -129,11 +131,14 @@ namespace TFE_Jedi
 			data++;
 
 			ImMidiPlayer* player = playerData->player;
-			s32* hook = &player->hook;
-			if (ImUpdateHook(hook, value) == imSuccess)
+			if (ImUpdateHook(&player->hook, value) == imSuccess) 
 			{
-				IM_DBG_MSG("JMP(I)");
+				IM_DBG_MSG("JMP(I) h:%d", value);
 				ImJumpMidiInternal(playerData, data[0], (data[1] << 7) | data[2], data[3], (data[4] << 7) | data[5], data[6]);
+			}
+			else
+			{
+				IM_DBG_MSG("JMP(I) Skipped - h:%d", value);
 			}
 		}
 		else if (value == 3)
