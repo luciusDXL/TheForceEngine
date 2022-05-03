@@ -107,17 +107,7 @@ namespace TFE_Jedi
 
 	ImSoundId ImOpenMidi(const char* name);
 	s32 ImCloseMidi(char* name);
-
 	s32 ImMidiCall(s32 index, s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc_initDriver(s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc1(s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc2(s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc4(s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc5(s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc6(s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc7(s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc8(s32 id, s32 arg1, s32 arg2, s32 arg3);
-	s32 midiFunc9(s32 id, s32 arg1, s32 arg2, s32 arg3);
 
 	// Midi channel commands
 	void ImMidiChannelSetVolume(ImMidiChannel* midiChannel, s32 volume);
@@ -207,13 +197,6 @@ namespace TFE_Jedi
 	static s32 s_ImCh9_priority;
 	static s32 s_ImCh9_partNoteReq;
 	static s32 s_ImCh9_volume;
-	
-	static MidiCallFunc s_midiCallFuncs[10] =
-	{
-		midiFunc_initDriver, midiFunc1, midiFunc2, nullptr,
-		midiFunc4, midiFunc5, midiFunc6, midiFunc7,
-		midiFunc8, midiFunc9,
-	};
 
 	// Midi files loaded.
 	static u32 s_midiFileCount = 0;
@@ -340,13 +323,13 @@ namespace TFE_Jedi
 			{
 				if (strlen(name) >= 17)
 				{
-					TFE_System::logWrite(LOG_ERROR, "IMuse", "Name too long: %s", name);
+					IM_LOG_ERR("Name too long: %s", name);
 					return imFail;
 				}
 				soundId = ImOpenMidi(name);
 				if (!soundId)
 				{
-					TFE_System::logWrite(LOG_ERROR, "IMuse", "Host couldn't load sound");
+					IM_LOG_ERR("Host couldn't load sound");
 					return imFail;
 				}
 
@@ -358,7 +341,7 @@ namespace TFE_Jedi
 			}
 		}
 
-		TFE_System::logWrite(LOG_ERROR, "IMuse", "Sound List FULL!");
+		IM_LOG_ERR("Sound List FULL!");
 		return imFail;
 	}
 
@@ -380,7 +363,7 @@ namespace TFE_Jedi
 
 		s_iMuseTimeInMicrosec = 0;
 		s_iMuseTimeLong = 0;
-		TFE_System::logWrite(LOG_MSG, "iMuse", "Initializing...COMMANDS module...");
+		IM_LOG_MSG("Initializing...COMMANDS module...");
 
 		if (ImSetupFilesModule(&s_imInitData) == imSuccess)
 		{
@@ -392,7 +375,7 @@ namespace TFE_Jedi
 			if (ImInitializeInterrupt(&s_imInitData)    != imSuccess) { return imFail; }
 
 			s_imPause = 0;
-			TFE_System::logWrite(LOG_MSG, "iMuse", "Initialization complete...");
+			IM_LOG_MSG("Initialization complete...");
 		}
 		return imSuccess;
 	}
@@ -468,7 +451,7 @@ namespace TFE_Jedi
 		u8* data = ImInternalGetSoundData(soundId);
 		if (!data)
 		{
-			TFE_System::logWrite(LOG_ERROR, "IMuse", "null sound addr in StartSound()");
+			IM_LOG_ERR("null sound addr in StartSound()");
 			return imFail;
 		}
 
@@ -753,7 +736,7 @@ namespace TFE_Jedi
 		{
 			if (ImSetSequence(&s_imSoundHeaderCopy1, sndData, chunk))
 			{
-				TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid chunk.");
+				IM_LOG_ERR("sq jump to invalid chunk.");
 				ImMidiUnlock();
 				return imFail;
 			}
@@ -762,7 +745,7 @@ namespace TFE_Jedi
 		ImAdvanceMidi(&s_imSoundHeaderCopy1, sndData, s_jumpMidiCmdFunc);
 		if (s_imEndOfTrack)
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "sq jump to invalid ms:bt:tk...");
+			IM_LOG_WRN("sq jump to invalid ms:bt:tk...");
 			ImMidiUnlock();
 			return imFail;
 		}
@@ -894,7 +877,7 @@ namespace TFE_Jedi
 		if (!channel->outChannelCount)
 		{
 			// This should never be hit.
-			TFE_System::logWrite(LOG_ERROR, "IMuse", "Sound channel has 0 output channels.");
+			IM_LOG_ERR("Sound channel has 0 output channels.");
 			assert(0);
 		}
 		s32 partTrim   = channel->partTrim   + 1;
@@ -1083,7 +1066,7 @@ namespace TFE_Jedi
 				return midiPlayer;
 			}
 		}
-		TFE_System::logWrite(LOG_ERROR, "iMuse", "no spare players");
+		IM_LOG_WRN("no spare players");
 		return nullptr;
 	}
 		
@@ -1122,13 +1105,13 @@ namespace TFE_Jedi
 		FilePath filePath;
 		if (!TFE_Paths::getFilePath(midiFile, &filePath))
 		{
-			TFE_System::logWrite(LOG_ERROR, "IMuse", "Cannot find midi file '%s'.", midiFile);
+			IM_LOG_ERR("Cannot find midi file '%s'.", midiFile);
 			return IM_NULL_SOUNDID;
 		}
 		FileStream file;
 		if (!file.open(&filePath, FileStream::MODE_READ))
 		{
-			TFE_System::logWrite(LOG_ERROR, "IMuse", "Cannot open midi file '%s'.", midiFile);
+			IM_LOG_ERR("Cannot open midi file '%s'.", midiFile);
 			return IM_NULL_SOUNDID;
 		}
 		assert(s_midiFileCount < IM_MIDI_FILE_COUNT);
@@ -1233,29 +1216,29 @@ namespace TFE_Jedi
 		return imSuccess;
 	}
 
-	void _ImNoteOff(s32 channelId, s32 instrId)
+	void ImNoteOff(s32 channelId, s32 instrId)
 	{
 		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_OFF | channelId, instrId);
 	}
 
-	void _ImNoteOn(s32 channelId, s32 instrId, s32 velocity)
+	void ImNoteOn(s32 channelId, s32 instrId, s32 velocity)
 	{
 		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_ON | channelId, instrId, velocity);
 	}
 
-	void ImSendMidiMsg_(s32 channelId, MidiController ctrl, s32 value)
+	void ImControlChange(s32 channelId, MidiController ctrl, s32 value)
 	{
 		TFE_MidiPlayer::sendMessageDirect(MID_CONTROL_CHANGE | channelId, ctrl, value);
 	}
 
-	void ImSendMidiMsg_R_(u8 channel, u8 msg)
+	void ImProgramChange(u8 channel, u8 msg)
 	{
 		TFE_MidiPlayer::sendMessageDirect(MID_PROGRAM_CHANGE | channel, msg);
 	}
 
 	// For Pan, "Fine" resolution is 14-bit where 8192 (0x2000) is center - MID_PAN_LSB
 	// Most devices use coarse adjustment instead (7 bits, 64 is center) - MID_PAN_MSB
-	void ImSetPanFine_(s32 channel, s32 pan)
+	void ImSetPanFine(s32 channel, s32 pan)
 	{
 		// Stub
 		IM_DBG_MSG("PAN FINE [c 0x%x, pan %d]", channel, pan);
@@ -1450,7 +1433,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "PlSetParam() couldn't set param %lu.", param);
+			IM_LOG_WRN("PlSetParam() couldn't set param %lu.", param);
 			return imArgErr;
 		}
 
@@ -1751,7 +1734,7 @@ namespace TFE_Jedi
 		u8* chunk = midi_gotoHeader(sndData, "MTrk", seqIndex);
 		if (!chunk)
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "Sq couldn't find chunk %d", seqIndex + 1);
+			IM_LOG_ERR("Sq couldn't find chunk %d", seqIndex + 1);
 			return imFail;
 		}
 
@@ -1788,7 +1771,7 @@ namespace TFE_Jedi
 				ImAdvanceMidi(playerData, sndData, s_midiCmdFunc);
 				return;
 			}
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "sq int handler got null addr");
+			IM_LOG_ERR("sq int handler got null addr");
 			// TODO: ERROR handling
 		}
 	}
@@ -1900,7 +1883,7 @@ namespace TFE_Jedi
 				{
 					if (value != 0xff)
 					{
-						TFE_System::logWrite(LOG_ERROR, "iMuse", "su unknown msg type 0x%x.", value);
+						IM_LOG_ERR("su unknown msg type 0x%x.", value);
 						return;
 					}
 					msgFuncIndex = IM_MID_EVENT;
@@ -1951,7 +1934,7 @@ namespace TFE_Jedi
 			// Make sure all notes were turned off during the sustain, and if not then clean up or there will be hanging notes.
 			if (s_curInstrumentCount)
 			{
-				TFE_System::logWrite(LOG_ERROR, "iMuse", "su couldn't find all note-offs...");
+				IM_LOG_WRN("su couldn't find all note-offs...");
 				for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 				{
 					if (!s_curMidiInstrumentMask[i]) { continue; }
@@ -1959,7 +1942,7 @@ namespace TFE_Jedi
 					{
 						if (s_curMidiInstrumentMask[i] & s_midiSustainChannelMask[t])
 						{
-							TFE_System::logWrite(LOG_ERROR, "iMuse", "missing note %d on chan %d...", i, s_curMidiInstrumentMask[i]);
+							IM_LOG_WRN("missing note %d on chan %d...", i, s_curMidiInstrumentMask[i]);
 							ImMidiNoteOff(player, t, i, 0);
 						}
 					}
@@ -1991,7 +1974,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->pgm = pgm;
 			midiChannel->pgm = pgm;
-			ImSendMidiMsg_R_(midiChannel->channelId, pgm);
+			ImProgramChange(midiChannel->channelId, pgm);
 		}
 	}
 
@@ -2001,7 +1984,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->priority = priority;
 			midiChannel->priority = priority;
-			ImSendMidiMsg_(midiChannel->channelId, MID_GPC1_MSB, priority);
+			ImControlChange(midiChannel->channelId, MID_GPC1_MSB, priority);
 		}
 	}
 
@@ -2011,7 +1994,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->noteReq = noteReq;
 			midiChannel->noteReq = noteReq;
-			ImSendMidiMsg_(midiChannel->channelId, MID_GPC2_MSB, noteReq);
+			ImControlChange(midiChannel->channelId, MID_GPC2_MSB, noteReq);
 		}
 	}
 
@@ -2021,7 +2004,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->pan = pan;
 			midiChannel->pan = pan;
-			ImSendMidiMsg_(midiChannel->channelId, MID_PAN_MSB, pan);
+			ImControlChange(midiChannel->channelId, MID_PAN_MSB, pan);
 		}
 	}
 
@@ -2031,7 +2014,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->modulation = modulation;
 			midiChannel->modulation = modulation;
-			ImSendMidiMsg_(midiChannel->channelId, MID_MODULATIONWHEEL_MSB, modulation);
+			ImControlChange(midiChannel->channelId, MID_MODULATIONWHEEL_MSB, modulation);
 		}
 	}
 
@@ -2041,7 +2024,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->finalPan = pan;
 			midiChannel->finalPan = pan;
-			ImSetPanFine_(midiChannel->channelId, 2 * pan + 8192);
+			ImSetPanFine(midiChannel->channelId, 2 * pan + 8192);
 		}
 	}
 
@@ -2069,7 +2052,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->volume = volume;
 			midiChannel->volume = volume;
-			ImSendMidiMsg_(midiChannel->channelId, MID_VOLUME_MSB, volume);
+			ImControlChange(midiChannel->channelId, MID_VOLUME_MSB, volume);
 		}
 	}
 		
@@ -2104,64 +2087,10 @@ namespace TFE_Jedi
 	///////////////////////////////////
 	s32 ImMidiCall(s32 index, s32 id, s32 arg1, s32 arg2, s32 arg3)
 	{
-		if (index == 0)
-		{
-			// DOS specific.
-			// ImSetupMidiDescriptor();
-		}
-		if (index < 10 && s_midiCallFuncs[index])
-		{
-			s_midiCallFuncs[index](id, arg1, arg2, arg3);
-			return imSuccess;
-		}
-		return imFail;
-	}
-
-	s32 midiFunc_initDriver(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
+		// This is used to interface with the midi driver in DOS.
+		// In TFE, midi commands are sent directly to the low-level midi system.
 		return imSuccess;
 	}
-
-	s32 midiFunc1(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
-		return imSuccess;
-	}
-
-	s32 midiFunc2(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
-		return imSuccess;
-	}
-
-	s32 midiFunc4(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
-		return imSuccess;
-	}
-
-	s32 midiFunc5(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
-		return imSuccess;
-	}
-
-	s32 midiFunc6(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
-		return imSuccess;
-	}
-
-	s32 midiFunc7(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
-		return imSuccess;
-	}
-
-	s32 midiFunc8(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
-		return imSuccess;
-	}
-
-	s32 midiFunc9(s32 id, s32 arg1, s32 arg2, s32 arg3)
-	{
-		return imSuccess;
-	}
-
 
 	//////////////////////////////////
 	// Midi Advance Functions
@@ -2181,12 +2110,12 @@ namespace TFE_Jedi
 			InstrumentSound* sound = s_imInactiveInstrSounds;
 			if (!sound)
 			{
-				TFE_System::logWrite(LOG_ERROR, "IMuse", "su unable to alloc Sustain...");
+				IM_LOG_ERR("su unable to alloc Sustain...");
 				return;
 			}
 
-			ImListRemove((ImList**)&s_imInactiveInstrSounds, (ImList*)sound);
-			ImListAdd((ImList**)&s_imActiveInstrSounds, (ImList*)sound);
+			IM_LIST_REM(s_imInactiveInstrSounds, sound);
+			IM_LIST_ADD(s_imActiveInstrSounds, sound);
 
 			sound->midiPlayer = player;
 			sound->instrumentId = instrumentId;
@@ -2319,7 +2248,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			_ImNoteOff(9, instrumentId);
+			ImNoteOff(9, instrumentId);
 		}
 	}
 
@@ -2408,7 +2337,7 @@ namespace TFE_Jedi
 		u32 channelMask = c_channelMask[channel->channelId];
 		if (channel->instrumentMask[instrumentId] & channelMask)
 		{
-			_ImNoteOff(channel->channelId, instrumentId);
+			ImNoteOff(channel->channelId, instrumentId);
 		}
 		else
 		{
@@ -2416,14 +2345,14 @@ namespace TFE_Jedi
 			{
 				channel->instrumentMask2[instrumentId] = ~channelMask;
 				channel->instrumentMask[instrumentId] |= channelMask;
-				_ImNoteOff(channel->channelId, instrumentId);
+				ImNoteOff(channel->channelId, instrumentId);
 			}
 			else
 			{
 				channel->instrumentMask[instrumentId] |= channelMask;
 			}
 		}
-		_ImNoteOn(channel->channelId, instrumentId, velocity);
+		ImNoteOn(channel->channelId, instrumentId, velocity);
 	}
 
 	void ImMidi_Channel9_NoteOn(s32 priority, s32 partNoteReq, s32 volume, s32 instrumentId, s32 velocity)
@@ -2431,19 +2360,19 @@ namespace TFE_Jedi
 		if (s_ImCh9_priority != priority)
 		{
 			s_ImCh9_priority = priority;
-			ImSendMidiMsg_(9, MID_GPC3_MSB, priority);
+			ImControlChange(9, MID_GPC3_MSB, priority);
 		}
 		if (s_ImCh9_partNoteReq != partNoteReq)
 		{
 			s_ImCh9_partNoteReq = partNoteReq;
-			ImSendMidiMsg_(9, MID_GPC2_MSB, partNoteReq);
+			ImControlChange(9, MID_GPC2_MSB, partNoteReq);
 		}
 		if (s_ImCh9_volume != volume)
 		{
 			s_ImCh9_volume = volume;
-			ImSendMidiMsg_(9, MID_VOLUME_MSB, volume);
+			ImControlChange(9, MID_VOLUME_MSB, volume);
 		}
-		_ImNoteOn(9, instrumentId, velocity);
+		ImNoteOn(9, instrumentId, velocity);
 	}
 
 	void ImHandleNoteOff(ImMidiChannel* midiChannel, s32 instrumentId)
@@ -2456,7 +2385,7 @@ namespace TFE_Jedi
 				midiChannel->instrumentMask[instrumentId] &= ~channelMask;
 				if (!midiChannel->sustain)
 				{
-					_ImNoteOff(midiChannel->channelId, instrumentId);
+					ImNoteOff(midiChannel->channelId, instrumentId);
 				}
 			}
 		}
@@ -2467,7 +2396,7 @@ namespace TFE_Jedi
 	///////////////////////////////////////////////////////////
 	s32 ImSetupFilesModule(iMuseInitData* initData)
 	{
-		TFE_System::logWrite(LOG_MSG, "iMuse", "FILES module...");
+		IM_LOG_MSG("FILES module...");
 		s_imFilesData = initData;
 		return s_imFilesData ? imSuccess : imFail;
 	}
@@ -2484,7 +2413,7 @@ namespace TFE_Jedi
 
 	s32 ImInitializeSlots(iMuseInitData* initData)
 	{
-		TFE_System::logWrite(LOG_MSG, "iMuse", "SLOTS module...");
+		IM_LOG_MSG("SLOTS module...");
 
 		ImMidiCall(0, 0, 0, 0, 0);
 		s_midiDriverNotReady = 0;
@@ -2532,27 +2461,27 @@ namespace TFE_Jedi
 			sharedChannel->instrumentMask = s_midiInstrumentChannelMask2;
 			sharedChannel->instrumentMask2 = s_midiInstrumentChannelMask3;
 
-			ImSendMidiMsg_R_(sharedChannel->channelId, sharedChannel->pgm);
-			ImSendMidiMsg_(sharedChannel->channelId, MID_GPC3_MSB, sharedChannel->priority);
-			ImSendMidiMsg_(sharedChannel->channelId, MID_GPC2_MSB, sharedChannel->noteReq);
-			ImSendMidiMsg_(sharedChannel->channelId, MID_VOLUME_MSB, sharedChannel->volume);
-			ImSendMidiMsg_(sharedChannel->channelId, MID_PAN_MSB, sharedChannel->pan);
-			ImSendMidiMsg_(sharedChannel->channelId, MID_MODULATIONWHEEL_MSB, sharedChannel->modulation);
-			ImSetPanFine_(sharedChannel->channelId, sharedChannel->finalPan * 2 + 0x2000);
+			ImProgramChange(sharedChannel->channelId, sharedChannel->pgm);
+			ImControlChange(sharedChannel->channelId, MID_GPC3_MSB, sharedChannel->priority);
+			ImControlChange(sharedChannel->channelId, MID_GPC2_MSB, sharedChannel->noteReq);
+			ImControlChange(sharedChannel->channelId, MID_VOLUME_MSB, sharedChannel->volume);
+			ImControlChange(sharedChannel->channelId, MID_PAN_MSB, sharedChannel->pan);
+			ImControlChange(sharedChannel->channelId, MID_MODULATIONWHEEL_MSB, sharedChannel->modulation);
+			ImSetPanFine(sharedChannel->channelId, sharedChannel->finalPan * 2 + 0x2000);
 		}
 		// Channel 15 maps to 9 and only uses 3 parameters.
 		s_ImCh9_priority = 0;
 		s_ImCh9_partNoteReq = 1;
 		s_ImCh9_volume = 127;
-		ImSendMidiMsg_(9, MID_GPC3_MSB, s_ImCh9_priority);
-		ImSendMidiMsg_(9, MID_GPC2_MSB, s_ImCh9_partNoteReq);
-		ImSendMidiMsg_(9, MID_VOLUME_MSB, s_ImCh9_volume);
+		ImControlChange(9, MID_GPC3_MSB, s_ImCh9_priority);
+		ImControlChange(9, MID_GPC2_MSB, s_ImCh9_partNoteReq);
+		ImControlChange(9, MID_VOLUME_MSB, s_ImCh9_volume);
 		return imSuccess;
 	}
 
 	s32 ImInitializeSustain()
 	{
-		TFE_System::logWrite(LOG_MSG, "iMuse", "SUSTAIN module...");
+		IM_LOG_MSG("SUSTAIN module...");
 		s_imInactiveInstrSounds = nullptr;
 		s_imActiveInstrSounds = nullptr;
 
@@ -2568,7 +2497,7 @@ namespace TFE_Jedi
 
 	s32 ImInitializePlayers()
 	{
-		TFE_System::logWrite(LOG_MSG, "iMuse", "PLAYERS module...");
+		IM_LOG_MSG("PLAYERS module...");
 		ImMidiPlayer* player = s_midiPlayers;
 		s_midiPlayerList = nullptr;
 		s_soundList = nullptr;
@@ -2587,20 +2516,20 @@ namespace TFE_Jedi
 
 	s32 ImInitializeMidiEngine(iMuseInitData* initData)
 	{
-		TFE_System::logWrite(LOG_MSG, "iMuse", "MIDI engine....");
+		IM_LOG_MSG("MIDI engine....");
 		if (ImInitializeSlots(initData) != imSuccess)
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "SL: MIDI driver init failed...");
+			IM_LOG_ERR("SL: MIDI driver init failed...");
 			return imFail;
 		}
 		if (ImInitializeSustain() != imSuccess)
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "SL: MIDI driver init failed...");
+			IM_LOG_ERR("SL: MIDI driver init failed...");
 			return imFail;
 		}
 		if (ImInitializePlayers() != imSuccess)
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "SL: MIDI driver init failed...");
+			IM_LOG_ERR("SL: MIDI driver init failed...");
 			return imFail;
 		}
 

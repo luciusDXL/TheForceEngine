@@ -60,7 +60,7 @@ namespace TFE_Jedi
 				return imSuccess;
 			}
 		}
-		TFE_System::logWrite(LOG_ERROR, "IMuse", "tr unable to alloc trigger.");
+		IM_LOG_WRN("tr unable to alloc trigger.");
 		return imAllocErr;
 	}
 
@@ -141,7 +141,7 @@ namespace TFE_Jedi
 			}
 		}
 
-		TFE_System::logWrite(LOG_ERROR, "IMuse", "tr unable to alloc deferred cmd.");
+		IM_LOG_WRN("tr unable to alloc deferred cmd.");
 		return imAllocErr;
 	}
 		
@@ -182,7 +182,7 @@ namespace TFE_Jedi
 			// The code never reaches this point in Dark Forces.
 			if (trigger->marker)
 			{
-				TFE_System::logWrite(LOG_ERROR, "IMuse", "trigger->marker should always be 0 in Dark Forces.");
+				IM_LOG_ERR("trigger->marker should always be 0 in Dark Forces.");
 				assert(0);
 
 				if ((marker >= 0x80 && trigger->marker == 0x80) || (marker <= 0x80 && trigger->marker == marker))
@@ -207,7 +207,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			TFE_System::logWrite(LOG_ERROR, "IMuse", "Unimplemented deferred command.");
+			IM_LOG_ERR("Unimplemented deferred command.");
 			assert(0);
 		}
 	}
@@ -215,7 +215,7 @@ namespace TFE_Jedi
 	// ImTriggerExecute() is never called when running Dark Forces.
 	void ImTriggerExecute(ImTrigger* trigger, s32 marker)
 	{
-		TFE_System::logWrite(LOG_ERROR, "IMuse", "ImTriggerExecute() is not called in Dark Forces.");
+		IM_LOG_ERR("ImTriggerExecute() is not called in Dark Forces.");
 		assert(0);
 
 		trigger->soundId = 0;

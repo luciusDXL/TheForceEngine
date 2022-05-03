@@ -263,7 +263,6 @@ namespace TFE_DarkForces
 
 		if (scriptTimer > (s32)s_curTick)
 		{
-			// TFE_System::logWrite(LOG_MSG, "iMuse", "Trigger Fight");
 			task_setNextTick(s_musicTask, s_curTick + MUS_FIGHT_TIME);
 			if (!s_desiredFightState)
 			{
@@ -277,7 +276,6 @@ namespace TFE_DarkForces
 	{
 		if (s_desiredFightState)
 		{
-			// TFE_System::logWrite(LOG_MSG, "iMuse", "Sustain Fight");
 			gameMusic_startFight();
 		}
 	}
@@ -289,7 +287,6 @@ namespace TFE_DarkForces
 		{
 			task_yield(TASK_SLEEP);
 
-			// TFE_System::logWrite(LOG_MSG, "iMuse", "Trigger Stalk");
 			gameMusic_setState(MUS_STATE_STALK);
 			s_desiredFightState = JFALSE;
 		}

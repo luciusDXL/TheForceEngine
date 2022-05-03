@@ -41,7 +41,6 @@ namespace TFE_Jedi
 		IM_MID_COUNT            = 9,
 	};
 
-	typedef s32(*MidiCallFunc)(s32, s32, s32, s32);
 	typedef void(*MidiEventFunc)(ImPlayerData* playerData, u8* chunkData);
 	typedef void(*MidiCmdFunc)(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2);
 	union MidiCmdFuncUnion

@@ -8,7 +8,7 @@ namespace TFE_Jedi
 	{
 		if (!item || item->next || item->prev)
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "List arg err when adding");
+			IM_LOG_ERR("List arg err when adding");
 			return imArgErr;
 		}
 
@@ -29,7 +29,7 @@ namespace TFE_Jedi
 		ImList* curItem = *list;
 		if (!item || !curItem)
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "List arg err when removing.");
+			IM_LOG_ERR("List arg err when removing.");
 			return imArgErr;
 		}
 		while (curItem && item != curItem)
@@ -38,7 +38,7 @@ namespace TFE_Jedi
 		}
 		if (!curItem)
 		{
-			TFE_System::logWrite(LOG_ERROR, "iMuse", "Item not on list.");
+			IM_LOG_ERR("Item not on list.");
 			return imNotFound;
 		}
 

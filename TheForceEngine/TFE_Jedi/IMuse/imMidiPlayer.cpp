@@ -12,7 +12,7 @@
 namespace TFE_Jedi
 {
 	// TODO: Fix these externs.
-	extern void _ImNoteOff(s32 channelId, s32 instrId);
+	extern void ImNoteOff(s32 channelId, s32 instrId);
 	extern void ImMidiSetupParts();
 	
 	InstrumentSound* s_imActiveInstrSounds = nullptr;
@@ -51,7 +51,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_ERROR, "iMuse", "Invalid midi message: %u", data);
+					IM_LOG_ERR("Invalid midi message: %u", data);
 					assert(0);
 				}
 			}
@@ -66,7 +66,7 @@ namespace TFE_Jedi
 				{
 					if (data != 0xff)
 					{
-						TFE_System::logWrite(LOG_ERROR, "iMuse", "sq unknown msg type 0x%x...", data);
+						IM_LOG_ERR("sq unknown msg type 0x%x...", data);
 						ImReleaseMidiPlayer(playerData->player);
 						return;
 					}
@@ -146,12 +146,12 @@ namespace TFE_Jedi
 				s32 instrMask = channelData->instrumentMask[i];
 				if (channelData->instrumentMask[i] & channelMask)
 				{
-					_ImNoteOff(channelData->channelId, i);
+					ImNoteOff(channelData->channelId, i);
 					channelData->instrumentMask[i] &= ~channelMask;
 				}
 				else if (channelData->instrumentMask2[i] & channelMask)
 				{
-					_ImNoteOff(channelData->channelId, i);
+					ImNoteOff(channelData->channelId, i);
 					channelData->instrumentMask2[i] &= ~channelMask;
 				}
 			}

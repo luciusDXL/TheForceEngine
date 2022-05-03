@@ -21,6 +21,12 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 
+// Debug/Log Message Verbosity Settings.
+#define IM_SHOW_DEBUG_MSG   0  // High frequency debug messages, these are only written out to the console or debug output.
+#define IM_SHOW_LOG_MSG     0  // IMuse messages, usually the original DOS messages. A few new messages were added for TFE.
+#define IM_SHOW_LOG_WARNING 1  // IMuse warnings, usually the original DOS messages. A few new warnings were added for TFE.
+// IMuse errors are always enabled. They are usually the original DOS messages. A few new errors were added for TFE.
+
 enum iMuseConst
 {
 	imMaxVolume    = 127,  // Maximum allowed volume, correlated with imVolumeShift.
@@ -54,16 +60,34 @@ enum iMuseConst
 #define ImTime_setBeat(b)    ((b)<<16)
 #define ImTime_setMeasure(m) ((m)<<20)
 
+// Null sound define
+#define IM_NULL_SOUNDID 0
+
+// DEBUGGING & LOGGING
 // These debug messages are very verbose so should be disabled in release builds.
 // Lower frequency messages that are kept in release use logWrite() directly.
-#define IM_SHOW_DEBUG_MSG 0
 #if IM_SHOW_DEBUG_MSG
 	#define IM_DBG_MSG(str, ...) TFE_System::debugWrite("IMuse", str, __VA_ARGS__)
 #else
 	#define IM_DBG_MSG(str, ...)
 #endif
 
-#define IM_NULL_SOUNDID 0
+// Original messages from DOS and a few new errors added for TFE.
+// Note, when enabled, these write to the console and log file. Dark Forces disables
+// output from these messages but I have preserved them in TFE for debugging.
+// Also note for TFE - errors are always written, less important or expected errors are relegated to warnings.
+#define IM_LOG_ERR(str, ...) TFE_System::logWrite(LOG_ERROR, "iMuse", str, __VA_ARGS__)
+#if IM_SHOW_LOG_MSG
+	#define IM_LOG_MSG(str, ...) TFE_System::logWrite(LOG_MSG, "iMuse", str, __VA_ARGS__)
+#else
+	#define IM_LOG_MSG(str, ...)
+#endif
+
+#if IM_SHOW_LOG_WARNING
+#define IM_LOG_WRN(str, ...) TFE_System::logWrite(LOG_WARNING, "iMuse", str, __VA_ARGS__)
+#else
+#define IM_LOG_WRN(str, ...)
+#endif
 
 namespace TFE_Jedi
 {

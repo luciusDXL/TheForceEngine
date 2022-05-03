@@ -150,14 +150,14 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			TFE_System::logWrite(LOG_ERROR, "IMuse", "ERROR:mp got bad sysex msg...");
+			IM_LOG_ERR("mp got bad sysex msg...");
 		}
 	}
 
 	void ImMidiPressure(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2)
 	{
 		// Not used by Dark Forces.
-		TFE_System::logWrite(LOG_ERROR, "IMuse", "ImMidiPressure() unimplemented.");
+		IM_LOG_ERR("ImMidiPressure() unimplemented.");
 		assert(0);
 	}
 }  // namespace TFE_Jedi
