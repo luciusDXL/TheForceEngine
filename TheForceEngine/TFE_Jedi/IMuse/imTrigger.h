@@ -24,12 +24,12 @@
 
 namespace TFE_Jedi
 {
-	s32 ImSetTrigger(ImSoundId soundId, s32 marker, s32 opcode);
-	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, s32 opcode);
-	s32 ImClearTrigger(ImSoundId soundId, s32 marker, s32 opcode);
+	s32 ImSetTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);
+	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);
+	s32 ImClearTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);
 	s32 ImClearTriggersAndCmds();
 
-	s32  ImDeferCommand(s32 time, s32 opcode, s32 arg1);
+	s32  ImDeferCommand(s32 time, ptrdiff_t opcode, s32 arg1);
 	void ImHandleDeferredCommands();
-	void ImSetSoundTrigger(u32 soundId, s32 marker);
+	void ImSetSoundTrigger(u32 soundId, void* marker);
 }  // namespace TFE_Jedi

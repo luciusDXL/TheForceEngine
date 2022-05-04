@@ -40,6 +40,7 @@
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/IMuse/imuse.h>
 #include <assert.h>
 
 // Debugging
@@ -181,10 +182,6 @@ namespace TFE_DarkForces
 	static Font* s_mapNumFont = nullptr;
 	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
 	static BriefingList s_briefingList = { 0 };
-
-	static const GMidiAsset* s_levelStalk;
-	static const GMidiAsset* s_levelFight;
-	static const GMidiAsset* s_levelBoss;
 
 	static Task* s_loadMissionTask = nullptr;
 	static CutsceneState* s_cutsceneList = nullptr;

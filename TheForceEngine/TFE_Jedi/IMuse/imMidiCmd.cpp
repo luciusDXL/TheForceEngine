@@ -124,7 +124,7 @@ namespace TFE_Jedi
 			player->marker = marker;
 
 			IM_DBG_MSG("Set Marker: %d", marker);
-			ImSetSoundTrigger(player->soundId, marker);
+			ImSetSoundTrigger(player->soundId, (void*)marker);
 		}
 		else if (value == 1)
 		{
@@ -147,7 +147,7 @@ namespace TFE_Jedi
 			ImMidiPlayer* player = playerData->player;
 			IM_DBG_MSG("Marker: 0x80");
 			player->marker = 0x80;
-			ImSetSoundTrigger(player->soundId, *data);
+			ImSetSoundTrigger(player->soundId, (void*)data);
 		}
 		else
 		{

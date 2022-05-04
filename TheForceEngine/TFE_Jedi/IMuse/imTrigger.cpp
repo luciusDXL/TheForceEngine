@@ -13,16 +13,18 @@ namespace TFE_Jedi
 	{
 		ImSoundId soundId;
 		s32 marker;
-		s32 opcode;
+		ptrdiff_t opcode;			// opcode is sometimes used to pass pointers.
 		s32 args[10];
 	};
 
 	struct ImDeferCmd
 	{
 		s32 time;
-		s32 opcode;
+		ptrdiff_t opcode;
 		s32 args[10];
 	};
+
+	typedef void(*ImTriggerCmdFunc)(char*);
 
 	enum ImTriggerConst
 	{
@@ -37,12 +39,12 @@ namespace TFE_Jedi
 	static s32 s_imDeferredCmds = 0;
 
 	void ImHandleDeferredCommand(ImDeferCmd* cmd);
-	void ImTriggerExecute(ImTrigger* trigger, s32 marker);
+	void ImTriggerExecute(ImTrigger* trigger, void* marker);
 
 	/////////////////////////////////////////////////////////// 
 	// API
 	/////////////////////////////////////////////////////////// 
-	s32 ImSetTrigger(ImSoundId soundId, s32 marker, s32 opcode)
+	s32 ImSetTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode)
 	{
 		if (!soundId) { return imArgErr; }
 
@@ -66,7 +68,7 @@ namespace TFE_Jedi
 
 	// Returns the number of matching triggers.
 	// '-1' acts as a wild card.
-	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, s32 opcode)
+	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode)
 	{
 		ImTrigger* trigger = s_triggers;
 		s32 count = 0;
@@ -85,7 +87,7 @@ namespace TFE_Jedi
 		return count;
 	}
 
-	s32 ImClearTrigger(ImSoundId soundId, s32 marker, s32 opcode)
+	s32 ImClearTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode)
 	{
 		ImTrigger* trigger = s_triggers;
 		for (s32 i = 0; i < imChannelCount; i++, trigger++)
@@ -96,7 +98,7 @@ namespace TFE_Jedi
 				// Match marker and opcode.
 				if ((marker == -1 || marker == trigger->marker) && (opcode == -1 || opcode == trigger->opcode))
 				{
-					trigger->soundId = 0;
+					trigger->soundId = IM_NULL_SOUNDID;
 				}
 			}
 		}
@@ -107,7 +109,7 @@ namespace TFE_Jedi
 	{
 		for (s32 i = 0; i < imChannelCount; i++)
 		{
-			s_triggers[i].soundId = 0;
+			s_triggers[i].soundId = IM_NULL_SOUNDID;
 		}
 		for (s32 i = 0; i < ImMaxDeferredCmd; i++)
 		{
@@ -119,7 +121,7 @@ namespace TFE_Jedi
 
 	// The original function can take a variable number of arguments, but it is used exactly once in Dark Forces,
 	// so I simplified it.
-	s32 ImDeferCommand(s32 time, s32 opcode, s32 arg1)
+	s32 ImDeferCommand(s32 time, ptrdiff_t opcode, s32 arg1)
 	{
 		ImDeferCmd* cmd = s_deferCmd;
 		if (time == 0)
@@ -166,7 +168,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void ImSetSoundTrigger(u32 soundId, s32 marker)
+	void ImSetSoundTrigger(u32 soundId, void* marker)
 	{
 		ImTrigger* trigger = s_triggers;
 		// Look for the matching trigger.
@@ -184,12 +186,14 @@ namespace TFE_Jedi
 			{
 				IM_LOG_ERR("trigger->marker should always be 0 in Dark Forces.");
 				assert(0);
-
+			#if 0
 				if ((marker >= 0x80 && trigger->marker == 0x80) || (marker <= 0x80 && trigger->marker == marker))
 				{
-					ImTriggerExecute(trigger, marker);
+					//
 				}
+			#endif
 			}
+			ImTriggerExecute(trigger, marker);
 		}
 	}
 
@@ -212,22 +216,19 @@ namespace TFE_Jedi
 		}
 	}
 
-	// ImTriggerExecute() is never called when running Dark Forces.
-	void ImTriggerExecute(ImTrigger* trigger, s32 marker)
+	void ImTriggerExecute(ImTrigger* trigger, void* marker)
 	{
-		IM_LOG_ERR("ImTriggerExecute() is not called in Dark Forces.");
-		assert(0);
-
 		trigger->soundId = 0;
 		if (trigger->opcode < imUndefined)
 		{
 			// In the original code, this passed in all 10 parameters.
 			// ImProcessCommand(trigger->opcode, *arg0, *arg1, *arg2);
+			IM_LOG_ERR("Unimplemented trigger opcode.");
+			assert(0);
 		}
 		else
 		{
-			// This assumes that the opcode is actually a function pointer...
-			// ImCommandFunc(trigger->opcode)(trigger->opcode, *arg0, *arg1, *arg2);
+			ImTriggerCmdFunc(trigger->opcode)((char*)marker);
 		}
 	}
 

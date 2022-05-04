@@ -1751,7 +1751,7 @@ namespace TFE_Jedi
 		// Determine which outout channels that this sound is playing on.
 		// The result is a 16 bit mask. For example, if the sound is only playing on channel 1,
 		// the resulting mask = 1<<1 = 2.
-		for (s32 i = 0; i < imChannelCount; i++)
+		for (s32 i = 0; i < imChannelCount - 1; i++)
 		{
 			ImMidiChannel* midiChannel = &s_midiChannels[i];
 			if (player == midiChannel->player)

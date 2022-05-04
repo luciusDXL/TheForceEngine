@@ -4,7 +4,6 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Audio/midi.h>
-#include <TFE_Audio/iMuseEvent.h>
 #include <string>
 #include <vector>
 
@@ -61,7 +60,6 @@ struct Track
 	// Event type arrays.
 	std::vector<MidiTempoEvent> tempoEvents;
 	std::vector<MidiEvent>      midiEvents;
-	std::vector<iMuseEvent>     imuseEvents;
 	std::vector<MidiMarker>     markers;
 };
 

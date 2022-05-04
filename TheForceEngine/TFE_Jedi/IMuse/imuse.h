@@ -128,10 +128,10 @@ namespace TFE_Jedi
 	extern s32 ImFadeParam(ImSoundId soundId, s32 param, s32 value, s32 time);
 	extern s32 ImSetHook(ImSoundId soundId, s32 value);
 	extern s32 ImGetHook(ImSoundId soundId);
-	extern s32 ImSetTrigger(ImSoundId soundId, s32 marker, s32 opcode);  // Modified based on actual usage to simplify
-	extern s32 ImCheckTrigger(ImSoundId soundId, s32 marker, s32 opcode);
-	extern s32 ImClearTrigger(ImSoundId soundId, s32 marker, s32 opcode);
-	extern s32 ImDeferCommand(s32 time, s32 opcode, s32 sound);  // Modified based on actual usage to simplify
+	extern s32 ImSetTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);  // Modified based on actual usage to simplify
+	extern s32 ImCheckTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);
+	extern s32 ImClearTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);
+	extern s32 ImDeferCommand(s32 time, ptrdiff_t opcode, s32 sound);  // Modified based on actual usage to simplify
 
 	extern s32 ImJumpMidi(ImSoundId soundId, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain);
 	extern s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3);
