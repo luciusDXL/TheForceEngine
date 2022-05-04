@@ -893,95 +893,93 @@ namespace TFE_Jedi
 	void ImMidiSetupParts()
 	{
 		ImMidiPlayer* player = s_midiPlayerList;
-		ImMidiPlayer*  prevPlayer2  = nullptr;
-		ImMidiPlayer*  prevPlayer   = nullptr;
-		ImMidiOutChannel* prevChannel2 = nullptr;
-		ImMidiOutChannel* prevChannel  = nullptr;
-		s32 r;
+		ImMidiPlayer* newPlayer  = nullptr;
+		ImMidiPlayer* prevPlayer = nullptr;
+		ImMidiOutChannel* newChannel  = nullptr;
+		ImMidiOutChannel* prevChannel = nullptr;
+		s32 cont = 0;
 
 		while (player)
 		{
+			ImMidiPlayer* sharedPart = player->sharedPart;
 			for (s32 m = 0; m < imChannelCount; m++)
 			{
 				ImMidiOutChannel* channel = &player->channels[m];
-				ImMidiPlayer* sharedPart = player->sharedPart;
-				ImMidiOutChannel* sharedChannels = nullptr;
-				if (player->sharedPart)
+				ImMidiOutChannel* sharedChannel = sharedPart ? &sharedPart->channels[m] : nullptr;
+
+				if (sharedChannel && sharedChannel->partStatus)
 				{
-					sharedChannels = player->sharedPart->channels;
-				}
-				ImMidiOutChannel* sharedChannels2 = sharedChannels;
-				if (sharedChannels2)
-				{
-					if (channel->data && !sharedChannels->data && sharedChannels->partStatus)
+					if (channel->data && !sharedChannel->data)
 					{
-						ImMidiPlayer* sharedPart = player->sharedPart;
-						if (sharedPart->groupVolume && sharedChannels->partTrim && sharedChannels->partVolume)
+						if (sharedPart->groupVolume && sharedChannel->partTrim && sharedChannel->partVolume)
 						{
-							ImAssignMidiChannel(sharedPart, sharedChannels, channel->data);
+							ImAssignMidiChannel(sharedPart, sharedChannel, channel->data);
 						}
 					}
-					else if (!channel->data && sharedChannels2->data && channel->partStatus && player->groupVolume &&
-						channel->partTrim && channel->partVolume)
+					else if (!channel->data && sharedChannel->data && channel->partStatus && player->groupVolume &&
+						      channel->partTrim && channel->partVolume)
 					{
-						ImAssignMidiChannel(player, channel, sharedChannels2->data->sharedMidiChannel);
+						ImAssignMidiChannel(player, channel, sharedChannel->data->sharedMidiChannel);
 					}
 				}
+
 				if (channel->data)
 				{
-					if (sharedChannels2 && sharedChannels2->data)
+					if (sharedChannel && sharedChannel->data)
 					{
-						if (sharedChannels2->priority > channel->priority)
-						{
-							continue;
-						}
+						if (sharedChannel->priority > channel->priority) { continue; }
 					}
 					if (prevChannel)
 					{
-						if (channel->priority > prevChannel->priority)
-						{
-							continue;
-						}
+						if (channel->priority > prevChannel->priority) { continue; }
 					}
-					prevPlayer = player;
+					prevPlayer  = player;
 					prevChannel = channel;
-					r = 1;
+					cont = 1;
 				}
 				else if (channel->partStatus && player->groupVolume && channel->partTrim && channel->partVolume)
 				{
-					if (!prevChannel2 || channel->priority > prevChannel2->priority)
+					if (!newChannel || channel->priority > newChannel->priority)
 					{
-						prevPlayer2 = player;
-						prevChannel2 = channel;
-						r = 0;
+						newPlayer  = player;
+						newChannel = channel;
+						cont = 0;
 					}
 				}
 			}
 			player = player->next;
 
 			// This will only start once all of the players has been exhausted.
-			if (prevChannel2 && !player)
+			if (newChannel && !player)
 			{
 				ImMidiChannel* midiChannel = ImGetFreeMidiChannel();
-				ImMidiPlayer*  newPlayer  = nullptr;
-				ImMidiOutChannel* newChannel = nullptr;
-				if (midiChannel)
+				if (!midiChannel)
 				{
-					newPlayer  = prevPlayer2;
-					newChannel = prevChannel2;
-				}
-				else
-				{
-					// IM_TODO:
-					assert(0);
+					s32 newPriority  = newChannel->priority;
+					s32 prevPriority = prevChannel->priority;
+					if (newPriority <= prevPriority && (prevPriority != newPriority || !cont || newPlayer == prevPlayer))
+					{
+						return;
+					}
+					
+					// The new channel has higher priority, so reset the previous and reassign.
+					ImMidiChannel* prev = prevChannel->data;
+					ImResetMidiOutChannel(prev->channel);
+
+					ImMidiChannel* shared = prev->sharedMidiChannel;
+					if (shared && shared->channel)
+					{
+						ImResetMidiOutChannel(shared->channel);
+					}
+					midiChannel = prev;
 				}
 				ImAssignMidiChannel(newPlayer, newChannel, midiChannel);
 
-				player = s_midiPlayerList;
-				prevPlayer2  = nullptr;
-				prevPlayer   = nullptr;
-				prevChannel2 = nullptr;
-				prevChannel  = nullptr;
+				player      = s_midiPlayerList;
+				newPlayer   = nullptr;
+				prevPlayer  = nullptr;
+				newChannel  = nullptr;
+				prevChannel = nullptr;
 			}
 		}
 	}
