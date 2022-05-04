@@ -36,7 +36,7 @@ enum iMuseConst
 	imVolumeShift  = 7,    // Amount to shift when multiplying volumes.
 	imChannelCount = 16,   // Number of midi channels.
 	imGetValue     = -1,   // Magic number to get values instead of set them.
-	imSoundWildcard = 0xffffffff,
+	imWildcard     = -1
 };
 
 // Time in iMuse is stored like the following:

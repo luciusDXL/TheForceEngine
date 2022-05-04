@@ -54,8 +54,8 @@ namespace TFE_Jedi
 			if (!trigger->soundId)
 			{
 				trigger->soundId = soundId;
-				trigger->marker = marker;
-				trigger->opcode = opcode;
+				trigger->marker  = marker;
+				trigger->opcode  = opcode;
 
 				// The code beyond this point handles variable parameters - but this isn't used in Dark Forces.
 				// It blindly copies 10 arguments from the stack and stores them in trigger->args[]
@@ -67,7 +67,6 @@ namespace TFE_Jedi
 	}
 
 	// Returns the number of matching triggers.
-	// '-1' acts as a wild card.
 	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode)
 	{
 		ImTrigger* trigger = s_triggers;
@@ -76,9 +75,9 @@ namespace TFE_Jedi
 		{
 			if (trigger->soundId)
 			{
-				if ((soundId == imSoundWildcard || soundId == trigger->soundId) &&
-					(marker  == -1 || marker  == trigger->marker) &&
-					(opcode  == -1 || opcode  == trigger->opcode))
+				if ((soundId == ImSoundId(imWildcard) || soundId == trigger->soundId) &&
+					(marker  == imWildcard || marker  == trigger->marker) &&
+					(opcode  == imWildcard || opcode  == trigger->opcode))
 				{
 					count++;
 				}
@@ -93,10 +92,12 @@ namespace TFE_Jedi
 		for (s32 i = 0; i < imChannelCount; i++, trigger++)
 		{
 			// Only clear set triggers and match Sound ID
-			if (trigger->soundId && (soundId == imSoundWildcard || soundId == trigger->soundId))
+			if (trigger->soundId &&
+			   (soundId == ImSoundId(imWildcard) || soundId == trigger->soundId))
 			{
 				// Match marker and opcode.
-				if ((marker == -1 || marker == trigger->marker) && (opcode == -1 || opcode == trigger->opcode))
+				if ((marker == imWildcard || marker == trigger->marker) &&
+					(opcode == imWildcard || opcode == trigger->opcode))
 				{
 					trigger->soundId = IM_NULL_SOUNDID;
 				}
@@ -174,7 +175,7 @@ namespace TFE_Jedi
 		// Look for the matching trigger.
 		for (s32 i = 0; i < imChannelCount; i++, trigger++)
 		{
-			s32 triggerSndId = trigger->soundId;
+			ImSoundId triggerSndId = trigger->soundId;
 			// Trigger is null or doesn't match.
 			if (!triggerSndId || triggerSndId != soundId)
 			{
@@ -186,12 +187,6 @@ namespace TFE_Jedi
 			{
 				IM_LOG_ERR("trigger->marker should always be 0 in Dark Forces.");
 				assert(0);
-			#if 0
-				if ((marker >= 0x80 && trigger->marker == 0x80) || (marker <= 0x80 && trigger->marker == marker))
-				{
-					//
-				}
-			#endif
 			}
 			ImTriggerExecute(trigger, marker);
 		}
@@ -218,7 +213,7 @@ namespace TFE_Jedi
 
 	void ImTriggerExecute(ImTrigger* trigger, void* marker)
 	{
-		trigger->soundId = 0;
+		trigger->soundId = IM_NULL_SOUNDID;
 		if (trigger->opcode < imUndefined)
 		{
 			// In the original code, this passed in all 10 parameters.

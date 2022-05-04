@@ -9,6 +9,10 @@
 
 namespace TFE_DarkForces
 {
+	// Internally, iMuse stores opcodes as integers (ptrdiff_t in TFE, so it is big enough to hold a pointer).
+	// So this macro is a nice way of signifying the intent in the code.
+	#define MUSIC_CALLBACK(c) ptrdiff_t(c)
+
 	enum MusicConstants
 	{
 		MUS_LEVEL_COUNT = 14,
@@ -16,7 +20,7 @@ namespace TFE_DarkForces
 		MUS_FIGHT_TIME  = TICKS(3),
 	};
 
-	static const char s_levelMusic[MUS_LEVEL_COUNT][MUS_STATE_COUNT][10] =
+	static const char c_levelMusic[MUS_LEVEL_COUNT][MUS_STATE_COUNT][10] =
 	{
 		// LEVEL 1
 		{
@@ -151,6 +155,9 @@ namespace TFE_DarkForces
 	void iMuseCallback2(char* marker);
 	void iMuseCallback3(char* marker);
 
+	s32   readNumber(char** ptrptr);
+	char* parseEvent(char* ptr);
+
 	void gameMusic_start(s32 level)
 	{
 		memset(s_stateEntrances, 0, MUS_STATE_UNDEFINED * sizeof(s32));
@@ -189,9 +196,9 @@ namespace TFE_DarkForces
 				{
 					for (s32 i = 1; i < MUS_STATE_UNDEFINED; i++)
 					{
-						if (s_levelMusic[s_currentLevel - 1][i - 1][0])
+						if (c_levelMusic[s_currentLevel - 1][i - 1][0])
 						{
-							ImLoadMidi(s_levelMusic[s_currentLevel-1][i-1]);
+							ImLoadMidi(c_levelMusic[s_currentLevel-1][i-1]);
 						}
 					}
 				}
@@ -212,19 +219,21 @@ namespace TFE_DarkForces
 				s_currentState = state;
 				ImStopAllSounds();
 			}
-			else if (ImFindMidi(s_levelMusic[s_currentLevel-1][state-1]))
+			else if (ImFindMidi(c_levelMusic[s_currentLevel-1][state-1]))
 			{
 				if (s_currentState)
 				{
+					// If there is no trigger set yet, set callback 1, otherwise we keep the current trigger.
 					if (!ImCheckTrigger(-1, -1, -1))
 					{
-						s_oldSong = ImFindMidi(s_levelMusic[s_currentLevel - 1][s_currentState - 1]);
-						ImSetTrigger(s_oldSong, 0, (ptrdiff_t)iMuseCallback1);
+						s_oldSong = ImFindMidi(c_levelMusic[s_currentLevel - 1][s_currentState - 1]);
+						ImSetTrigger(s_oldSong, 0, MUSIC_CALLBACK(iMuseCallback1));
 					}
 				}
 				else
 				{
-					ImStartSound(ImFindMidi(s_levelMusic[s_currentLevel - 1][state - 1]), 64);
+					// Start the sound from scratch since this is the initial state.
+					ImStartSound(ImFindMidi(c_levelMusic[s_currentLevel - 1][state - 1]), 64);
 				}
 
 				s_oldState = s_currentState;
@@ -246,17 +255,17 @@ namespace TFE_DarkForces
 				
 	void gameMusic_startFight()
 	{
-		static s32 scriptTimer = 0;
-		if (s_curTick - scriptTimer > TICKS(8))
+		static s32 fightTimer = 0;
+		if (s_curTick - fightTimer > TICKS(8))
 		{
-			scriptTimer = s_curTick - TICKS(6);
+			fightTimer = s_curTick - TICKS(6);
 		}
 		else
 		{
-			scriptTimer += TICKS(3);
+			fightTimer += TICKS(3);
 		}
 
-		if (scriptTimer > (s32)s_curTick)
+		if (fightTimer > (s32)s_curTick)
 		{
 			task_setNextTick(s_musicTask, s_curTick + MUS_FIGHT_TIME);
 			if (!s_desiredFightState)
@@ -288,12 +297,13 @@ namespace TFE_DarkForces
 		task_end;
 	}
 		
+	// Initial callback.
 	void iMuseCallback1(char* marker)
 	{
-		s32 punt = 0;
-		if (strncmp(marker, "to ", 3) == 0)
+		if (!strncmp(marker, "to ", 3))
 		{
-			if (strncmp(&marker[4], "slow", 4) == 0)
+			s32 punt = 0;
+			if (!strncmp(&marker[4], "slow", 4))
 			{
 				if (s_currentState <= s_oldState || s_currentState == MUS_STATE_FIGHT)
 				{
@@ -307,25 +317,93 @@ namespace TFE_DarkForces
 
 			if (!punt)
 			{
+				// Get the current measure and beat so we can return to it later.
 				ImPause();
 				s_savedMeasure = ImGetParam(s_oldSong, midiMeasure);
 				s_savedBeat = ImGetParam(s_oldSong, midiBeat);
 				ImResume();
 
-				s32 transNumber = marker[3] - 'A';	// "to A", "to B", etc.
-				s_transChunk = transNumber;
-				ImJumpMidi(s_oldSong, 1 + transNumber, 1, 1, 0, 1);
-				ImSetTrigger(s_oldSong, 0, (ptrdiff_t)iMuseCallback2);
+				// This is a transition, so update the trigger.
+				s_transChunk = marker[3] - 'A';	// "to A", "to B", etc.
+				ImJumpMidi(s_oldSong, 1 + s_transChunk, 1, 1, 0, 1);
+				ImSetTrigger(s_oldSong, 0, MUSIC_CALLBACK(iMuseCallback2));
 			}
 			else
 			{
+				// Reset the trigger.
 				TFE_System::logWrite(LOG_MSG, "Music", "Punt!...");
-				ImSetTrigger(s_oldSong, 0, (ptrdiff_t)iMuseCallback1);
+				ImSetTrigger(s_oldSong, 0, MUSIC_CALLBACK(iMuseCallback1));
 			}
 		}
 		else
 		{
 			TFE_System::logWrite(LOG_MSG, "Music", "Callback1 got bogus marker...");
+			assert(0);
+		}
+	}
+		
+	// Callback after transition.
+	void iMuseCallback2(char* marker)
+	{
+		char* lptr = parseEvent(marker);
+		s32 count = 0;
+		if (lptr)
+		{
+			// Jump to transition piece.
+			while (lptr[count]) { count++; }
+			s32 r = gameMusic_random(0, count - 1);
+
+			TFE_System::logWrite(LOG_MSG, "Music", "trans%lu=%lu...", s_oldState, lptr[r]);
+			ImJumpMidi(s_oldSong, 1 + s_transChunk, lptr[r] - 1, 4, 300, 1);
+			ImSetTrigger(s_oldSong, 0, MUSIC_CALLBACK(iMuseCallback2));
+		}
+		else if (!strcmp(marker, "start new"))
+		{
+			s_newSong = ImFindMidi(c_levelMusic[s_currentLevel - 1][s_currentState - 1]);
+			if (s_oldSong != s_newSong)
+			{
+				ImDeferCommand(15, imStopSound, s_oldSong);
+				ImStartSound(s_newSong, 64);
+				ImShareParts(s_oldSong, s_newSong);
+				ImSetTrigger(s_newSong, 0, MUSIC_CALLBACK(iMuseCallback3));
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_MSG, "Music", "Reset position!...");
+				ImJumpMidi(s_newSong, 1, s_savedMeasure, s_savedBeat, 300, 1);
+			}
+		}
+		else
+		{
+			ImSetTrigger(s_oldSong, 0, MUSIC_CALLBACK(iMuseCallback2));
+		}
+	}
+
+	void iMuseCallback3(char* marker)
+	{
+		char* lptr = parseEvent(marker);
+		if (lptr)
+		{
+			s32 count = 0;
+			while (lptr[count]) { count++; }
+			s32 r = gameMusic_random(0, count - 1);
+
+			if (lptr[r] == s_stateEntrances[s_currentState])
+			{
+				r = gameMusic_random(0, count - 1);
+			}
+			if (lptr[r] == s_stateEntrances[s_currentState])
+			{
+				r = gameMusic_random(0, count - 1);
+			}
+			s_stateEntrances[s_currentState] = lptr[r];
+
+			TFE_System::logWrite(LOG_MSG, "Music", "entry%lu=%lu...", s_currentState, lptr[r]);
+			ImJumpMidi(s_newSong, 1, lptr[r] - 1, 4, 400, 0);
+		}
+		else if (strcmp(marker, "clear callback"))	// Keep going until the "clear callback" marker is set.
+		{
+			ImSetTrigger(s_newSong, 0, MUSIC_CALLBACK(iMuseCallback3));
 		}
 	}
 
@@ -427,69 +505,6 @@ namespace TFE_DarkForces
 			}
 		}
 		return nullptr;
-	}
-
-	void iMuseCallback2(char* marker)
-	{
-		char* lptr = parseEvent(marker);
-		s32 count = 0;
-		if (lptr)
-		{
-			while (lptr[count]) { count++; }
-			s32 r = gameMusic_random(0, count - 1);
-
-			TFE_System::logWrite(LOG_MSG, "Music", "trans%lu=%lu...", s_oldState, lptr[r]);
-			ImJumpMidi(s_oldSong, 1 + s_transChunk, lptr[r] - 1, 4, 300, 1);
-			ImSetTrigger(s_oldSong, 0, (ptrdiff_t)iMuseCallback2);
-		}
-		else if (!strcmp(marker, "start new"))
-		{
-			s_newSong = ImFindMidi(s_levelMusic[s_currentLevel - 1][s_currentState - 1]);
-			if (s_oldSong != s_newSong)
-			{
-				ImDeferCommand(15, imStopSound, s_oldSong);
-				ImStartSound(s_newSong, 64);
-				ImShareParts(s_oldSong, s_newSong);
-				ImSetTrigger(s_newSong, 0, (ptrdiff_t)iMuseCallback3);
-			}
-			else
-			{
-				TFE_System::logWrite(LOG_MSG, "Music", "Reset position!...");
-				ImJumpMidi(s_newSong, 1, s_savedMeasure, s_savedBeat, 300, 1);
-			}
-		}
-		else
-		{
-			ImSetTrigger(s_oldSong, 0, (ptrdiff_t)iMuseCallback2);
-		}
-	}
-
-	void iMuseCallback3(char* marker)
-	{
-		char* lptr = parseEvent(marker);
-		if (lptr)
-		{
-			s32 count = 0;
-			while (lptr[count]) { count++; }
-			s32 r = gameMusic_random(0, count - 1);
-
-			if (lptr[r] == s_stateEntrances[s_currentState])
-			{
-				r = gameMusic_random(0, count - 1);
-			}
-			if (lptr[r] == s_stateEntrances[s_currentState])
-			{
-				r = gameMusic_random(0, count - 1);
-			}
-			s_stateEntrances[s_currentState] = lptr[r];
-
-			TFE_System::logWrite(LOG_MSG, "Music", "entry%lu=%lu...", s_currentState, lptr[r]);
-			ImJumpMidi(s_newSong, 1, lptr[r] - 1, 4, 400, 0);
-		}
-		else if (!strcmp(marker, "clear callback"))
-		{
-			ImSetTrigger(s_newSong, 0, (ptrdiff_t)iMuseCallback3);
-		}
 	}
 
 	s32 gameMusic_random(s32 low, s32 high)
