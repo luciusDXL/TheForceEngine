@@ -187,7 +187,7 @@ namespace TFE_Jedi
 	static u32 s_midiInstrumentChannelMask[MIDI_INSTRUMENT_COUNT];
 	static u32 s_midiInstrumentChannelMask1[MIDI_INSTRUMENT_COUNT];
 	static u32 s_midiInstrumentChannelMask3[MIDI_INSTRUMENT_COUNT];
-	static u32 s_midiInstrumentChannelMask2[MIDI_INSTRUMENT_COUNT];
+	static u32 s_midiInstrumentChannelMaskShared[MIDI_INSTRUMENT_COUNT];
 	static u32 s_curMidiInstrumentMask[MIDI_INSTRUMENT_COUNT];
 	static s32 s_curInstrumentCount;
 
@@ -775,11 +775,6 @@ namespace TFE_Jedi
 
 	void ImUpdateInstrumentSounds()
 	{
-		if (!s_imActiveInstrSounds)
-		{
-			return;
-		}
-
 		InstrumentSound* instrInfo = s_imActiveInstrSounds;
 		while (instrInfo)
 		{
@@ -788,11 +783,9 @@ namespace TFE_Jedi
 			ImPlayerData* data = player->data;
 
 			instrInfo->curTickFixed += data->stepFixed;
-			s32 curTickInt = floor16(instrInfo->curTickFixed);
-			instrInfo->curTick -= curTickInt;
+			instrInfo->curTick      -= floor16(instrInfo->curTickFixed);
+			instrInfo->curTickFixed  = fract16(instrInfo->curTickFixed);
 
-			// Set the high bytes to 0.
-			instrInfo->curTickFixed &= 0x0000ffff;
 			if (instrInfo->curTick < 0)
 			{
 				ImMidiNoteOff(instrInfo->midiPlayer, instrInfo->channelId, instrInfo->instrumentId, 0);
@@ -1147,6 +1140,7 @@ namespace TFE_Jedi
 					u32 index = sound->id & imMidiMask;
 					imuse_free(s_midiFiles[index]);
 					s_midiFiles[index] = nullptr;
+					s_midiFileCount--;
 
 					sound->id = IM_NULL_SOUNDID;
 					sound->refCount = 0;
@@ -1818,7 +1812,7 @@ namespace TFE_Jedi
 
 		for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 		{
-			u32 value = s_midiInstrumentChannelMask2[i] & channelMask;
+			u32 value = s_midiInstrumentChannelMaskShared[i] & channelMask;
 			soundMidiInstrumentMask[i] |= value;
 
 			while (value)
@@ -2035,11 +2029,13 @@ namespace TFE_Jedi
 			midiChannel->sustain = sustain;
 			if (!sustain)
 			{
-				for (s32 r = 0; r < MIDI_INSTRUMENT_COUNT; r++)
+				const u32 mask = c_channelMask[midiChannel->channelId];
+				for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 				{
-					if (midiChannel->instrumentMask2[r] & c_channelMask[midiChannel->channelId])
+					if (midiChannel->instrumentMask2[i] & c_channelMask[midiChannel->channelId])
 					{
-						// IM_TODO
+						midiChannel->instrumentMask2[i] &= ~mask;
+						ImNoteOff(midiChannel->channelId, i);
 					}
 				}
 			}
@@ -2420,7 +2416,7 @@ namespace TFE_Jedi
 		for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 		{
 			s_midiInstrumentChannelMask[i] = 0;
-			s_midiInstrumentChannelMask2[i] = 0;
+			s_midiInstrumentChannelMaskShared[i] = 0;
 			s_midiInstrumentChannelMask1[i] = 0;
 			s_midiInstrumentChannelMask3[i] = 0;
 		}
@@ -2458,7 +2454,7 @@ namespace TFE_Jedi
 			sharedChannel->modulation = 0;
 			sharedChannel->finalPan = 0;
 			sharedChannel->sustain = 0;
-			sharedChannel->instrumentMask = s_midiInstrumentChannelMask2;
+			sharedChannel->instrumentMask  = s_midiInstrumentChannelMaskShared;
 			sharedChannel->instrumentMask2 = s_midiInstrumentChannelMask3;
 
 			ImProgramChange(sharedChannel->channelId, sharedChannel->pgm);

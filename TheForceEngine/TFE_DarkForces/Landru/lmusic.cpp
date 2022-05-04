@@ -230,7 +230,7 @@ namespace TFE_DarkForces
 							ImStopSound(oldSound);
 							ImStartSound(newSound, 64);
 							ImSetHook(oldSound, 0);
-							TFE_System::logWrite(LOG_MSG, "Landru Music", "Switch files old: %d new: %d", oldSound, newSound);
+							TFE_System::logWrite(LOG_MSG, "Landru Music", "Switch files old: 0x%x new: 0x%x", oldSound, newSound);
 						}
 						else
 						{

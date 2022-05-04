@@ -74,8 +74,8 @@ namespace TFE_Jedi
 		s32 sharedFinalPan;
 		s32 sharedSustain;
 
-		s32* sharedInstrumentMask;
-		s32* sharedInstrumentMask2;
+		u32* sharedInstrumentMask;
+		u32* sharedInstrumentMask2;
 	};
 
 	struct ImMidiOutChannel

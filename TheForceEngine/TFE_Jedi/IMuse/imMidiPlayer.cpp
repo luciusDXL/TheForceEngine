@@ -128,6 +128,7 @@ namespace TFE_Jedi
 			InstrumentSound* next = instrInfo->next;
 			if (player == instrInfo->midiPlayer)
 			{
+				ImMidiNoteOff(instrInfo->midiPlayer, instrInfo->channelId, instrInfo->instrumentId, 0);
 				IM_LIST_REM(s_imActiveInstrSounds, instrInfo);
 				IM_LIST_ADD(s_imInactiveInstrSounds, instrInfo);
 			}
