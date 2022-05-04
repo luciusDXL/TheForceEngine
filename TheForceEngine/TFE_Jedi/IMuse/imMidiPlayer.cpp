@@ -185,11 +185,11 @@ namespace TFE_Jedi
 			ImResetMidiOutChannel(channel);
 		}
 
-		player->soundId = 0;
-		player->sharedPart;
+		player->soundId = IM_NULL_SOUNDID;
 		if (player->sharedPart)
 		{
 			player->sharedPart->sharedPartId = 0;
+			player->sharedPart->sharedPart = nullptr;
 			player->sharedPart = nullptr;
 		}
 		ImMidiSetupParts();
