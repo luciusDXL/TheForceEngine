@@ -36,20 +36,6 @@ namespace TFE_MidiPlayer
 	enum { MAX_MIDI_CMD = 256 };
 	static MidiCmd s_midiCmdBuffer[MAX_MIDI_CMD];
 	static u32 s_midiCmdCount = 0;
-		
-	struct MidiRuntimeTrack
-	{
-		f32 msPerTick;
-		f64 curTick;
-		s32 lastEvent;
-	};
-
-	struct MidiRuntime
-	{
-		const GMidiAsset* asset;
-		MidiRuntimeTrack tracks[8];
-		bool loop;
-	};
 
 	struct MidiCallback
 	{
@@ -58,9 +44,6 @@ namespace TFE_MidiPlayer
 		f64 accumulator = 0.0;				// current accumulator.
 	};
 
-	// 1 ms
-	static const f64 MIDI_FRAME = (1.0 / 1000.0);
-
 	// Time scale should be exactly 1000 to convert from ms to sec.
 	// However, for cutscenes to line up, we seem to have to play at less than realtime (87%) -
 	// indicating a bug with iMuse or with the way the midi files are being parsed.
@@ -68,14 +51,11 @@ namespace TFE_MidiPlayer
 	static f64 s_timeScale = 1000.0;
 
 	static const f32 c_musicVolumeScale = 0.5f;
-	static MidiRuntime s_runtime;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 	static Thread* s_thread = nullptr;
 
 	static atomic_bool s_runMusicThread;
-	static s32 s_trackId = 0;
-
 	static u8 s_channelSrcVolume[16] = { 0 };
 	static Mutex s_mutex;
 
