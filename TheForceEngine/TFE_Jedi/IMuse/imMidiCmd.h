@@ -20,6 +20,7 @@
 // permission of the original copyright holders (LucasArts).
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Audio/midi.h>
 #include "imConst.h"
 
 namespace TFE_Jedi
@@ -53,6 +54,13 @@ namespace TFE_Jedi
 	extern MidiCmdFuncUnion s_jumpMidiSustainOpenCmdFunc[IM_MID_COUNT];
 	extern MidiCmdFuncUnion s_jumpMidiSustainCmdFunc[IM_MID_COUNT];
 	extern MidiCmdFuncUnion s_midiCmdFunc[IM_MID_COUNT];
+
+	// Low level midi commands.
+	void ImNoteOff(s32 channelId, s32 instrId);
+	void ImNoteOn(s32 channelId, s32 instrId, s32 velocity);
+	void ImControlChange(s32 channelId, MidiController ctrl, s32 value);
+	void ImProgramChange(u8 channel, u8 msg);
+	void ImSetPanFine(s32 channel, s32 pan);
 
 	// TODO: These are currently defined in imuse.cpp, move them over.
 	extern void ImMidiJumpSustainOpen_NoteOff(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2);

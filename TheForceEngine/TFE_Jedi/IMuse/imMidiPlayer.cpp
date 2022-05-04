@@ -12,7 +12,6 @@
 namespace TFE_Jedi
 {
 	// TODO: Fix these externs.
-	extern void ImNoteOff(s32 channelId, s32 instrId);
 	extern void ImMidiSetupParts();
 	
 	InstrumentSound* s_imActiveInstrSounds = nullptr;
@@ -68,6 +67,7 @@ namespace TFE_Jedi
 					{
 						IM_LOG_ERR("sq unknown msg type 0x%x...", data);
 						ImReleaseMidiPlayer(playerData->player);
+						assert(0);
 						return;
 					}
 					msgType = IM_MID_EVENT;

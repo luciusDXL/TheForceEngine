@@ -6,6 +6,7 @@
 #include "midiData.h"
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Audio/midi.h>
+#include <TFE_Audio/midiPlayer.h>
 #include <TFE_System/system.h>
 #include <assert.h>
 
@@ -160,4 +161,35 @@ namespace TFE_Jedi
 		IM_LOG_ERR("ImMidiPressure() unimplemented.");
 		assert(0);
 	}
+
+	//////////////////////////////////////////////
+	// Low-level Midi Commands
+	//////////////////////////////////////////////
+	void ImNoteOff(s32 channelId, s32 instrId)
+	{
+		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_OFF | channelId, instrId);
+	}
+
+	void ImNoteOn(s32 channelId, s32 instrId, s32 velocity)
+	{
+		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_ON | channelId, instrId, velocity);
+	}
+
+	void ImControlChange(s32 channelId, MidiController ctrl, s32 value)
+	{
+		TFE_MidiPlayer::sendMessageDirect(MID_CONTROL_CHANGE | channelId, ctrl, value);
+	}
+
+	void ImProgramChange(u8 channel, u8 msg)
+	{
+		TFE_MidiPlayer::sendMessageDirect(MID_PROGRAM_CHANGE | channel, msg);
+	}
+
+	// For Pan, "Fine" resolution is 14-bit where 8192 (0x2000) is center - MID_PAN_LSB
+	// Most devices use coarse adjustment instead (7 bits, 64 is center) - MID_PAN_MSB
+	void ImSetPanFine(s32 channel, s32 pan)
+	{
+		// General Midi uses MID_PAN_MSB, so this is a no-op.
+	}
+
 }  // namespace TFE_Jedi

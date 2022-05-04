@@ -973,6 +973,7 @@ namespace TFE_Jedi
 				else
 				{
 					// IM_TODO:
+					assert(0);
 				}
 				ImAssignMidiChannel(newPlayer, newChannel, midiChannel);
 
@@ -1209,35 +1210,7 @@ namespace TFE_Jedi
 		IM_LIST_ADD(s_midiPlayerList, player);
 		return imSuccess;
 	}
-
-	void ImNoteOff(s32 channelId, s32 instrId)
-	{
-		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_OFF | channelId, instrId);
-	}
-
-	void ImNoteOn(s32 channelId, s32 instrId, s32 velocity)
-	{
-		TFE_MidiPlayer::sendMessageDirect(MID_NOTE_ON | channelId, instrId, velocity);
-	}
-
-	void ImControlChange(s32 channelId, MidiController ctrl, s32 value)
-	{
-		TFE_MidiPlayer::sendMessageDirect(MID_CONTROL_CHANGE | channelId, ctrl, value);
-	}
-
-	void ImProgramChange(u8 channel, u8 msg)
-	{
-		TFE_MidiPlayer::sendMessageDirect(MID_PROGRAM_CHANGE | channel, msg);
-	}
-
-	// For Pan, "Fine" resolution is 14-bit where 8192 (0x2000) is center - MID_PAN_LSB
-	// Most devices use coarse adjustment instead (7 bits, 64 is center) - MID_PAN_MSB
-	void ImSetPanFine(s32 channel, s32 pan)
-	{
-		// Stub
-		IM_DBG_MSG("PAN FINE [c 0x%x, pan %d]", channel, pan);
-	}
-
+		
 	s32 ImFreeMidiPlayer(ImSoundId soundId)
 	{
 		ImMidiPlayer* player = ImGetMidiPlayer(soundId);
@@ -1878,6 +1851,7 @@ namespace TFE_Jedi
 					if (value != 0xff)
 					{
 						IM_LOG_ERR("su unknown msg type 0x%x.", value);
+						assert(0);
 						return;
 					}
 					msgFuncIndex = IM_MID_EVENT;
@@ -1932,16 +1906,18 @@ namespace TFE_Jedi
 				for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 				{
 					if (!s_curMidiInstrumentMask[i]) { continue; }
-					for (s32 t = 0; t < imChannelCount; t++)
+					for (s32 c = 0; c < imChannelCount; c++)
 					{
-						if (s_curMidiInstrumentMask[i] & s_midiSustainChannelMask[t])
+						if (s_curMidiInstrumentMask[i] & s_midiSustainChannelMask[c])
 						{
-							IM_LOG_WRN("missing note %d on chan %d...", i, s_curMidiInstrumentMask[i]);
-							ImMidiNoteOff(player, t, i, 0);
+							IM_LOG_WRN("missing note %d on chan %d...", i, c);
+							ImMidiNoteOff(player, c, i, 0);
+							s_curInstrumentCount--;
 						}
 					}
 				}
 			}
+			assert(s_curInstrumentCount == 0);
 		}
 
 		s_trackTicksRemaining = 0;
@@ -2018,7 +1994,7 @@ namespace TFE_Jedi
 		{
 			midiChannel->sharedMidiChannel->finalPan = pan;
 			midiChannel->finalPan = pan;
-			ImSetPanFine(midiChannel->channelId, 2 * pan + 8192);
+			ImSetPanFine(midiChannel->channelId, 2*pan + 8192);
 		}
 	}
 
@@ -2339,8 +2315,8 @@ namespace TFE_Jedi
 		{
 			if (channel->instrumentMask2[instrumentId] & channelMask)
 			{
-				channel->instrumentMask2[instrumentId] = ~channelMask;
-				channel->instrumentMask[instrumentId] |= channelMask;
+				channel->instrumentMask2[instrumentId] &= ~channelMask;
+				channel->instrumentMask[instrumentId]  |=  channelMask;
 				ImNoteOff(channel->channelId, instrumentId);
 			}
 			else
@@ -2463,7 +2439,7 @@ namespace TFE_Jedi
 			ImControlChange(sharedChannel->channelId, MID_VOLUME_MSB, sharedChannel->volume);
 			ImControlChange(sharedChannel->channelId, MID_PAN_MSB, sharedChannel->pan);
 			ImControlChange(sharedChannel->channelId, MID_MODULATIONWHEEL_MSB, sharedChannel->modulation);
-			ImSetPanFine(sharedChannel->channelId, sharedChannel->finalPan * 2 + 0x2000);
+			ImSetPanFine(sharedChannel->channelId, sharedChannel->finalPan*2 + 8192);
 		}
 		// Channel 15 maps to 9 and only uses 3 parameters.
 		s_ImCh9_priority = 0;
