@@ -44,13 +44,7 @@ namespace TFE_MidiPlayer
 		f64 accumulator = 0.0;				// current accumulator.
 	};
 
-	// Time scale should be exactly 1000 to convert from ms to sec.
-	// However, for cutscenes to line up, we seem to have to play at less than realtime (87%) -
-	// indicating a bug with iMuse or with the way the midi files are being parsed.
-	// TODO: Listen and verify the tempo.
-	static f64 s_timeScale = 1000.0;
-
-	static const f32 c_musicVolumeScale = 0.5f;
+	static const f32 c_musicVolumeScale = 0.75f;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 	static Thread* s_thread = nullptr;
@@ -60,7 +54,7 @@ namespace TFE_MidiPlayer
 	static Mutex s_mutex;
 
 	static MidiCallback s_midiCallback = {};
-			
+
 	TFE_THREADRET midiUpdateFunc(void* userData);
 	void stopAllNotes();
 	void changeVolume();
@@ -90,8 +84,7 @@ namespace TFE_MidiPlayer
 
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		setVolume(soundSettings->musicVolume);
-		s_timeScale = 1000.0;
-		
+
 		return res && s_thread;
 	}
 
@@ -111,11 +104,6 @@ namespace TFE_MidiPlayer
 
 		MUTEX_DESTROY(&s_mutex);
 	}
-	
-	void midiSetTimeScale(f64 scale)
-	{
-		s_timeScale = 1000.0 * scale;
-	}
 
 	//////////////////////////////////////////////////
 	// Command Buffer
@@ -132,7 +120,7 @@ namespace TFE_MidiPlayer
 	{
 		s_midiCmdCount = 0;
 	}
-	
+
 	//////////////////////////////////////////////////
 	// Command Interface
 	//////////////////////////////////////////////////
@@ -147,7 +135,7 @@ namespace TFE_MidiPlayer
 		}
 		MUTEX_UNLOCK(&s_mutex);
 	}
-	
+
 	void pause()
 	{
 		MUTEX_LOCK(&s_mutex);
@@ -166,6 +154,17 @@ namespace TFE_MidiPlayer
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_RESUME;
+		}
+		MUTEX_UNLOCK(&s_mutex);
+	}
+
+	void stopMidiSound()
+	{
+		MUTEX_LOCK(&s_mutex);
+		MidiCmd* midiCmd = midiAllocCmd();
+		if (midiCmd)
+		{
+			midiCmd->cmd = MIDI_STOP_NOTES;
 		}
 		MUTEX_UNLOCK(&s_mutex);
 	}

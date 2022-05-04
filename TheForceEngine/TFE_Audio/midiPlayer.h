@@ -6,8 +6,7 @@ namespace TFE_MidiPlayer
 {
 	bool init();
 	void destroy();
-	void midiSetTimeScale(f64 scale = 1.0);
-
+	
 	///////////////////////////////////////////////////////////
 	// Commands
 	//   Commands are queued for processing by the midi thread.
@@ -28,6 +27,8 @@ namespace TFE_MidiPlayer
 	void pause();
 	// Resume midi playback from where it left off.
 	void resume();
+	// Stop all notes.
+	void stopMidiSound();
 
 	///////////////////////////////////////////////////////////
 	// Reads

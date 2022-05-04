@@ -494,6 +494,8 @@ namespace TFE_Jedi
 		res |= ImClearTriggersAndCmds();
 		res |= ImReleaseAllPlayers();
 		res |= ImReleaseAllWaveSounds();
+
+		TFE_MidiPlayer::stopMidiSound();
 		return res;
 	}
 
