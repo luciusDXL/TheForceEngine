@@ -250,18 +250,8 @@ namespace TFE_MidiPlayer
 		f64 dt = 0.0;
 		while (runThread)
 		{
-			// Callback (such as iMuse).
 			MUTEX_LOCK(&s_mutex);
-			if (s_midiCallback.callback && !isPaused)
-			{
-				s_midiCallback.accumulator += TFE_System::updateThreadLocal(&localTimeCallback);
-				while (s_midiCallback.callback && s_midiCallback.accumulator >= s_midiCallback.timeStep)
-				{
-					s_midiCallback.callback();
-					s_midiCallback.accumulator -= s_midiCallback.timeStep;
-				}
-			}
-			
+						
 			// Read from the command buffer.
 			MidiCmd* midiCmd = s_midiCmdBuffer;
 			for (u32 i = 0; i < s_midiCmdCount; i++, midiCmd++)
@@ -270,6 +260,7 @@ namespace TFE_MidiPlayer
 				{
 					case MIDI_PAUSE:
 					{
+						localTimeCallback = 0;
 						isPaused = true;
 						stopAllNotes();
 					} break;
@@ -286,10 +277,25 @@ namespace TFE_MidiPlayer
 					case MIDI_STOP_NOTES:
 					{
 						stopAllNotes();
+						// Reset callback time.
+						localTimeCallback = 0;
+						s_midiCallback.accumulator = 0.0;
 					} break;
 				}
 			}
 			s_midiCmdCount = 0;
+
+			// Process the midi callback, if it exists.
+			if (s_midiCallback.callback && !isPaused)
+			{
+				s_midiCallback.accumulator += TFE_System::updateThreadLocal(&localTimeCallback);
+				while (s_midiCallback.callback && s_midiCallback.accumulator >= s_midiCallback.timeStep)
+				{
+					s_midiCallback.callback();
+					s_midiCallback.accumulator -= s_midiCallback.timeStep;
+				}
+			}
+
 			MUTEX_UNLOCK(&s_mutex);
 
 			runThread = s_runMusicThread.load();

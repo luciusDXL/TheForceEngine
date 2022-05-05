@@ -161,7 +161,6 @@ namespace TFE_DarkForces
 	void gameMusic_start(s32 level)
 	{
 		memset(s_stateEntrances, 0, MUS_STATE_UNDEFINED * sizeof(s32));
-		// This should go into sound_open()
 		s_musicTask = createSubTask("iMuse", gameMusic_taskFunc);
 
 		gameMusic_setLevel(level);
