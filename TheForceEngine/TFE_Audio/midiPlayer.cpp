@@ -36,6 +36,7 @@ namespace TFE_MidiPlayer
 	enum { MAX_MIDI_CMD = 256 };
 	static MidiCmd s_midiCmdBuffer[MAX_MIDI_CMD];
 	static u32 s_midiCmdCount = 0;
+	static f64 s_maxNoteLength = 16.0;		// defaults to 16 seconds.
 
 	struct MidiCallback
 	{
@@ -43,17 +44,26 @@ namespace TFE_MidiPlayer
 		f64 timeStep = 0.0;					// delay between calls, this acts like an interrupt handler.
 		f64 accumulator = 0.0;				// current accumulator.
 	};
-
+		
 	static const f32 c_musicVolumeScale = 0.75f;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 	static Thread* s_thread = nullptr;
 
 	static atomic_bool s_runMusicThread;
-	static u8 s_channelSrcVolume[16] = { 0 };
+	static u8 s_channelSrcVolume[MIDI_CHANNEL_COUNT] = { 0 };
 	static Mutex s_mutex;
 
 	static MidiCallback s_midiCallback = {};
+
+	// Hanging note detection.
+	struct Instrument
+	{
+		u32 channelMask;
+		f64 time[MIDI_CHANNEL_COUNT];
+	};
+	static Instrument s_instrOn[MIDI_INSTRUMENT_COUNT] = { 0 };
+	static f64 s_curNoteTime = 0.0;
 
 	TFE_THREADRET midiUpdateFunc(void* userData);
 	void stopAllNotes();
@@ -84,6 +94,7 @@ namespace TFE_MidiPlayer
 
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		setVolume(soundSettings->musicVolume);
+		setMaximumNoteLength();
 
 		return res && s_thread;
 	}
@@ -135,6 +146,12 @@ namespace TFE_MidiPlayer
 		}
 		MUTEX_UNLOCK(&s_mutex);
 	}
+	
+	// Set the length in seconds that a note is allowed to play for in seconds.
+	void setMaximumNoteLength(f32 dt)
+	{
+		s_maxNoteLength = f64(dt);
+	}
 
 	void pause()
 	{
@@ -181,7 +198,7 @@ namespace TFE_MidiPlayer
 		s_midiCallback.timeStep = timeStep;
 		s_midiCallback.accumulator = 0.0;
 
-		for (u32 i = 0; i < 16; i++)
+		for (u32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
 		}
@@ -203,7 +220,7 @@ namespace TFE_MidiPlayer
 	//////////////////////////////////////////////////
 	void changeVolume()
 	{
-		for (u32 i = 0; i < 16; i++)
+		for (u32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_VOLUME_MSB, u8(s_channelSrcVolume[i] * s_masterVolumeScaled));
 		}
@@ -211,30 +228,67 @@ namespace TFE_MidiPlayer
 
 	void stopAllNotes()
 	{
-		for (u32 i = 0; i < 16; i++)
+		for (u32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_ALL_NOTES_OFF);
 		}
+		// Reset instrument data.
+		memset(s_instrOn, 0, sizeof(Instrument) * MIDI_INSTRUMENT_COUNT);
+		s_curNoteTime = 0.0;
 	}
-	
-	void resetLocalTime(s32& loopStart, u64& localTime, f64& dt)
-	{
-		stopAllNotes();
-		localTime = 0u;
-		loopStart = -1;
-		dt = 0.0;
-	}
-
+		
 	void sendMessageDirect(u8 type, u8 arg1, u8 arg2)
 	{
 		u8 msg[] = { type, arg1, arg2 };
-		if ((type & 0xf0) == MID_CONTROL_CHANGE && arg1 == MID_VOLUME_MSB)
+		u8 msgType = (type & 0xf0);
+		if (msgType == MID_CONTROL_CHANGE && arg1 == MID_VOLUME_MSB)
 		{
 			const s32 channelIndex = type & 0x0f;
 			s_channelSrcVolume[channelIndex] = arg2;
 			msg[2] = u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled);
 		}
 		TFE_MidiDevice::sendMessage(msg, 3);
+
+		// Record currently playing instruments and the note-on times.
+		if (msgType == MID_NOTE_OFF || msgType == MID_NOTE_ON)
+		{
+			const u8 instr   = arg1;
+			const u8 channel = type & 0x0f;
+			if (msgType == MID_NOTE_OFF)
+			{
+				s_instrOn[instr].channelMask  &= ~(1 << channel);
+				s_instrOn[instr].time[channel] = 0.0;
+			}
+			else  // MID_NOTE_ON
+			{
+				s_instrOn[instr].channelMask  |= (1 << channel);
+				s_instrOn[instr].time[channel] = s_curNoteTime;
+			}
+		}
+	}
+	
+	void detectHangingNotes()
+	{
+		for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
+		{
+			// Skip any instruments not being used.
+			if (!s_instrOn[i].channelMask) { continue; }
+
+			// Look for used channels.
+			for (u32 c = 0; c < MIDI_CHANNEL_COUNT; c++)
+			{
+				const u32 channelMask = 1u << c;
+				if ((s_instrOn[i].channelMask & channelMask) && (s_curNoteTime - s_instrOn[i].time[c] > s_maxNoteLength))
+				{
+					// Turn off the note.
+					TFE_MidiDevice::sendMessage(MID_NOTE_OFF | c, i);
+
+					// Reset the instrument channel information.
+					s_instrOn[i].channelMask &= ~channelMask;
+					s_instrOn[i].time[c] = 0.0;
+				}
+			}
+		}
 	}
 
 	// Thread Function
@@ -293,11 +347,14 @@ namespace TFE_MidiPlayer
 				{
 					s_midiCallback.callback();
 					s_midiCallback.accumulator -= s_midiCallback.timeStep;
+					s_curNoteTime += s_midiCallback.timeStep;
 				}
+
+				// Check for hanging notes.
+				detectHangingNotes();
 			}
 
 			MUTEX_UNLOCK(&s_mutex);
-
 			runThread = s_runMusicThread.load();
 		};
 		

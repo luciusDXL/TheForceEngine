@@ -162,7 +162,7 @@ namespace TFE_Jedi
 	static s32 s_iMuseTimeLong = 0;
 	static s32 s_iMuseSystemTime = 0;
 
-	static ImMidiChannel s_midiChannels[imChannelCount - 1];
+	static ImMidiChannel s_midiChannels[MIDI_CHANNEL_COUNT - 1];
 	static s32 s_midiFrame = 0;
 	static s32 s_trackTicksRemaining;
 	static s32 s_midiTickDelta;
@@ -183,7 +183,7 @@ namespace TFE_Jedi
 		imMaxVolume, imMaxVolume, imMaxVolume, imMaxVolume,
 	};
 
-	static u32 s_midiSustainChannelMask[imChannelCount] = { 0 };
+	static u32 s_midiSustainChannelMask[MIDI_CHANNEL_COUNT] = { 0 };
 	static u32 s_midiInstrumentChannelMask[MIDI_INSTRUMENT_COUNT];
 	static u32 s_midiInstrumentChannelMask1[MIDI_INSTRUMENT_COUNT];
 	static u32 s_midiInstrumentChannelMask3[MIDI_INSTRUMENT_COUNT];
@@ -383,6 +383,7 @@ namespace TFE_Jedi
 	s32 ImTerminate(void)
 	{
 		TFE_MidiPlayer::midiClearCallback();
+		TFE_MidiPlayer::setMaximumNoteLength();
 		return imSuccess;
 	}
 
@@ -755,7 +756,7 @@ namespace TFE_Jedi
 		if (sustain)
 		{
 			// Loop through the channels.
-			for (s32 c = 0; c < imChannelCount; c++)
+			for (s32 c = 0; c < MIDI_CHANNEL_COUNT; c++)
 			{
 				ImMidiCommand(data->player, c, MID_SUSTAIN_SWITCH, 0);
 				ImMidiCommand(data->player, c, MID_MODULATIONWHEEL_MSB, 0);
@@ -848,7 +849,7 @@ namespace TFE_Jedi
 			s32 groupVol = ImGetGroupVolume(player->group);
 			player->groupVolume = (sndVol * groupVol) >> imVolumeShift;
 
-			for (s32 i = 0; i < imChannelCount; i++)
+			for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 			{
 				ImMidiOutChannel* channel = &player->channels[i];
 				ImHandleChannelVolumeChange(player, channel);
@@ -904,7 +905,7 @@ namespace TFE_Jedi
 		while (player)
 		{
 			ImMidiPlayer* sharedPart = player->sharedPart;
-			for (s32 m = 0; m < imChannelCount; m++)
+			for (s32 m = 0; m < MIDI_CHANNEL_COUNT; m++)
 			{
 				ImMidiOutChannel* channel = &player->channels[m];
 				ImMidiOutChannel* sharedChannel = sharedPart ? &sharedPart->channels[m] : nullptr;
@@ -988,7 +989,7 @@ namespace TFE_Jedi
 
 	ImMidiChannel* ImGetFreeMidiChannel()
 	{
-		for (s32 i = 0; i < imChannelCount - 1; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT - 1; i++)
 		{
 			if (!s_midiChannels[i].player && !s_midiChannels[i].sharedPart)
 			{
@@ -1179,7 +1180,7 @@ namespace TFE_Jedi
 		IM_DBG_MSG("Init: Hook = 0");
 		player->hook = 0;
 
-		for (s32 i = 0; i < imChannelCount; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			ImMidiOutChannel* channel = &player->channels[i];
 
@@ -1331,7 +1332,7 @@ namespace TFE_Jedi
 			s32 groupVol = ImGetGroupVolume(value);
 			player->groupVolume = (playerVol * groupVol) >> 7;
 
-			for (s32 m = 0; m < imChannelCount; m++)
+			for (s32 m = 0; m < MIDI_CHANNEL_COUNT; m++)
 			{
 				ImHandleChannelVolumeChange(player, &channels[m]);
 			}
@@ -1339,7 +1340,7 @@ namespace TFE_Jedi
 		else if (imParam == soundPriority && value <= imMaxPriority)
 		{
 			player->priority = value;
-			for (s32 m = 0; m < imChannelCount; m++)
+			for (s32 m = 0; m < MIDI_CHANNEL_COUNT; m++)
 			{
 				ImHandleChannelPriorityChange(player, &channels[m]);
 			}
@@ -1350,7 +1351,7 @@ namespace TFE_Jedi
 			s32 groupVol = ImGetGroupVolume(player->group);
 			player->groupVolume = ((value + 1) * groupVol) >> imVolumeShift;
 
-			for (s32 m = 0; m < imChannelCount; m++)
+			for (s32 m = 0; m < MIDI_CHANNEL_COUNT; m++)
 			{
 				ImHandleChannelVolumeChange(player, &channels[m]);
 			}
@@ -1358,7 +1359,7 @@ namespace TFE_Jedi
 		else if (imParam == soundPan && value <= imPanMax)
 		{
 			player->pan = value;
-			for (s32 m = 0; m < imChannelCount; m++)
+			for (s32 m = 0; m < MIDI_CHANNEL_COUNT; m++)
 			{
 				s32 pan = clamp(channels[m].partPan + value - imPanCenter, 0, imPanMax);
 				ImMidiChannelSetPan(channels[m].data, pan);
@@ -1368,7 +1369,7 @@ namespace TFE_Jedi
 		{
 			if (value < -9216 || value > 9216) { return imArgErr; }
 			player->detune = value;
-			for (s32 m = 0; m < imChannelCount; m++)
+			for (s32 m = 0; m < MIDI_CHANNEL_COUNT; m++)
 			{
 				ImHandleChannelDetuneChange(player, &channels[m]);
 			}
@@ -1378,7 +1379,7 @@ namespace TFE_Jedi
 			if (value < -12 || value > 12) { return imArgErr; }
 			player->transpose = (value == 0) ? 0 : ImWrapTranspose(value + player->transpose, -12, 12);
 
-			for (s32 m = 0; m < imChannelCount; m++)
+			for (s32 m = 0; m < MIDI_CHANNEL_COUNT; m++)
 			{
 				ImHandleChannelDetuneChange(player, &channels[m]);
 			}
@@ -1393,7 +1394,7 @@ namespace TFE_Jedi
 		}
 		else if (imParam == midiPartTrim)
 		{
-			if (midiChannel >= imChannelCount || value > imMaxVolume) { return imArgErr; }
+			if (midiChannel >= MIDI_CHANNEL_COUNT || value > imMaxVolume) { return imArgErr; }
 
 			channels[midiChannel].partTrim = value;
 			ImHandleChannelVolumeChange(player, &channels[midiChannel]);
@@ -1751,7 +1752,7 @@ namespace TFE_Jedi
 		// Determine which outout channels that this sound is playing on.
 		// The result is a 16 bit mask. For example, if the sound is only playing on channel 1,
 		// the resulting mask = 1<<1 = 2.
-		for (s32 i = 0; i < imChannelCount - 1; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT - 1; i++)
 		{
 			ImMidiChannel* midiChannel = &s_midiChannels[i];
 			if (player == midiChannel->player)
@@ -1774,7 +1775,7 @@ namespace TFE_Jedi
 		}
 
 		channelMask = 0;
-		for (s32 i = 0; i < imChannelCount - 1; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT - 1; i++)
 		{
 			ImMidiChannel* midiChannel = &s_midiChannels[i];
 			if (player == midiChannel->sharedPart)
@@ -1871,7 +1872,7 @@ namespace TFE_Jedi
 
 	void ImJumpSustain(ImMidiPlayer* player, u8* sndData, ImPlayerData* playerData1, ImPlayerData* playerData2)
 	{
-		for (s32 i = 0; i < imChannelCount; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			ImMidiChannel* channel = player->channels[i].data;
 			s_midiSustainChannelMask[i] = (channel) ? (1u << u32(channel->channelId)) : 0;
@@ -1884,11 +1885,11 @@ namespace TFE_Jedi
 		{
 			if (instrInfo->midiPlayer == player)
 			{
-				u32 mask = s_curMidiInstrumentMask[instrInfo->instrumentId];
-				u32 activeMask = s_midiSustainChannelMask[instrInfo->channelId];
-				if (activeMask & mask)
+				u32 instrMask = s_curMidiInstrumentMask[instrInfo->instrumentId];
+				u32 channelMask = s_midiSustainChannelMask[instrInfo->channelId];
+				if (channelMask & instrMask)
 				{
-					s_curMidiInstrumentMask[instrInfo->instrumentId] &= ~activeMask;
+					s_curMidiInstrumentMask[instrInfo->instrumentId] &= ~channelMask;
 					s_curInstrumentCount--;
 				}
 			}
@@ -1906,7 +1907,7 @@ namespace TFE_Jedi
 				for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 				{
 					if (!s_curMidiInstrumentMask[i]) { continue; }
-					for (s32 c = 0; c < imChannelCount; c++)
+					for (s32 c = 0; c < MIDI_CHANNEL_COUNT; c++)
 					{
 						if (s_curMidiInstrumentMask[i] & s_midiSustainChannelMask[c])
 						{
@@ -2005,12 +2006,12 @@ namespace TFE_Jedi
 			midiChannel->sustain = sustain;
 			if (!sustain)
 			{
-				const u32 mask = c_channelMask[midiChannel->channelId];
+				const u32 channelMask = c_channelMask[midiChannel->channelId];
 				for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 				{
-					if (midiChannel->instrumentMask2[i] & c_channelMask[midiChannel->channelId])
+					if (midiChannel->instrumentMask2[i] & channelMask)
 					{
-						midiChannel->instrumentMask2[i] &= ~mask;
+						midiChannel->instrumentMask2[i] &= ~channelMask;
 						ImNoteOff(midiChannel->channelId, i);
 					}
 				}
@@ -2070,10 +2071,10 @@ namespace TFE_Jedi
 	void ImMidiJumpSustainOpen_NoteOff(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2)
 	{
 		const u8 instrumentId = arg1;
-		const u32 activeMask = s_midiSustainChannelMask[channelId];
-		if (s_curMidiInstrumentMask[instrumentId] & activeMask)
+		const u32 channelMask = s_midiSustainChannelMask[channelId];
+		if (s_curMidiInstrumentMask[instrumentId] & channelMask)
 		{
-			s_curMidiInstrumentMask[instrumentId] &= ~activeMask;
+			s_curMidiInstrumentMask[instrumentId] &= ~channelMask;
 			s_curInstrumentCount--;
 			if (s_curInstrumentCount == 0)
 			{
@@ -2110,14 +2111,14 @@ namespace TFE_Jedi
 	void ImMidiJumpSustain_NoteOn(ImMidiPlayer* player, u8 channelId, u8 arg1, u8 arg2)
 	{
 		const s32 instrumentId = arg1;
-		const u32 activeMask = s_midiSustainChannelMask[channelId];
+		const u32 channelMask  = s_midiSustainChannelMask[channelId];
 		if (s_midiTickDelta > s_trackTicksRemaining)
 		{
 			s_midiTrackEnd = 1;
 		}
-		else if (activeMask & s_curMidiInstrumentMask[instrumentId])
+		else if (s_curMidiInstrumentMask[instrumentId] & channelMask)
 		{
-			s_curMidiInstrumentMask[instrumentId] &= ~activeMask;
+			s_curMidiInstrumentMask[instrumentId] &= ~channelMask;
 			InstrumentSound* instrInfo = s_imActiveInstrSounds;
 			while (instrInfo)
 			{
@@ -2135,7 +2136,7 @@ namespace TFE_Jedi
 
 	void ImMidiStopAllNotes(ImMidiPlayer* player)
 	{
-		for (s32 i = 0; i < imChannelCount; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			ImMidiCommand(player, i, MID_ALL_NOTES_OFF, 0);
 		}
@@ -2316,14 +2317,11 @@ namespace TFE_Jedi
 			if (channel->instrumentMask2[instrumentId] & channelMask)
 			{
 				channel->instrumentMask2[instrumentId] &= ~channelMask;
-				channel->instrumentMask[instrumentId]  |=  channelMask;
 				ImNoteOff(channel->channelId, instrumentId);
 			}
-			else
-			{
-				channel->instrumentMask[instrumentId] |= channelMask;
-			}
 		}
+
+		channel->instrumentMask[instrumentId] |= channelMask;
 		ImNoteOn(channel->channelId, instrumentId, velocity);
 	}
 
@@ -2355,6 +2353,7 @@ namespace TFE_Jedi
 			if (midiChannel->instrumentMask[instrumentId] & channelMask)
 			{
 				midiChannel->instrumentMask[instrumentId] &= ~channelMask;
+				assert(!midiChannel->sustain);
 				if (!midiChannel->sustain)
 				{
 					ImNoteOff(midiChannel->channelId, instrumentId);
@@ -2375,7 +2374,7 @@ namespace TFE_Jedi
 
 	s32 ImInitializeGroupVolume()
 	{
-		for (s32 i = 0; i < imChannelCount; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			s_groupVolume[i] = 127;
 			s_soundGroupVolume[i] = 127;
@@ -2396,7 +2395,7 @@ namespace TFE_Jedi
 			s_midiInstrumentChannelMask1[i] = 0;
 			s_midiInstrumentChannelMask3[i] = 0;
 		}
-		for (s32 i = 0; i < imChannelCount - 1; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT - 1; i++)
 		{
 			ImMidiChannel* channel = &s_midiChannels[i];
 			channel->player = nullptr;
@@ -2535,6 +2534,7 @@ namespace TFE_Jedi
 		// In the original code, the interrupt is setup here, TFE uses a thread to simulate this.
 		const f64 timeStep = TFE_System::microsecondsToSeconds((f64)s_iMuseTimestepMicrosec) / TFE_System::c_gameTimeScale;
 		TFE_MidiPlayer::midiSetCallback(ImUpdate, timeStep);
+		TFE_MidiPlayer::setMaximumNoteLength(4.0f);	// 8 seconds is the correct value, but 4 works well enough.
 
 		return imSuccess;
 	}

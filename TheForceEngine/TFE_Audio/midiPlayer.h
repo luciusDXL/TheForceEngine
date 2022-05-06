@@ -14,6 +14,8 @@ namespace TFE_MidiPlayer
 
 	// Change the overall music volume.
 	void setVolume(f32 volume);
+	// Set the maximum length in seconds that a note is allowed to play for in seconds.
+	void setMaximumNoteLength(f32 dt = 16.0f);
 
 	// Send a direct midi message.
 	// Note: this should be called from the midi thread.

@@ -6,6 +6,7 @@
 #include "midiData.h"
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Audio/midi.h>
+#include <TFE_Audio/midiPlayer.h>
 #include <TFE_System/system.h>
 #include <assert.h>
 
@@ -144,7 +145,7 @@ namespace TFE_Jedi
 			channelData->sustain = 0;
 			for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 			{
-				s32 instrMask = channelData->instrumentMask[i];
+				u32 instrMask = channelData->instrumentMask[i];
 				if (channelData->instrumentMask[i] & channelMask)
 				{
 					ImNoteOff(channelData->channelId, i);
@@ -179,7 +180,7 @@ namespace TFE_Jedi
 		ImRemoveInstrumentSound(player);
 		ImSetEndOfTrack();
 
-		for (s32 i = 0; i < imChannelCount; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			ImMidiOutChannel* channel = &player->channels[i];
 			ImResetMidiOutChannel(channel);

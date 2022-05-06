@@ -134,4 +134,6 @@ enum MidiInstruments
 {
 	// General midi supports instruments 0 - 127
 	MIDI_INSTRUMENT_COUNT = 128,
+	// General midi supports 16 channels (also called "voices")
+	MIDI_CHANNEL_COUNT = 16,
 };

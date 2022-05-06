@@ -20,6 +20,7 @@
 // permission of the original copyright holders (LucasArts).
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Audio/midi.h>
 
 // Debug/Log Message Verbosity Settings.
 #define IM_SHOW_DEBUG_MSG   0  // High frequency debug messages, these are only written out to the console or debug output.
@@ -34,7 +35,6 @@ enum iMuseConst
 	imPanCenter    = 64,
 	imPanMax       = 127,
 	imVolumeShift  = 7,    // Amount to shift when multiplying volumes.
-	imChannelCount = 16,   // Number of midi channels.
 	imGetValue     = -1,   // Magic number to get values instead of set them.
 	imWildcard     = -1
 };
@@ -94,5 +94,5 @@ namespace TFE_Jedi
 	typedef u32 ImSoundId;
 
 	extern const u8  c_midiMsgSize[];
-	extern const u32 c_channelMask[imChannelCount];
+	extern const u32 c_channelMask[MIDI_CHANNEL_COUNT];
 }  // namespace TFE_Jedi

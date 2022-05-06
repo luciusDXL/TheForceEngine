@@ -34,7 +34,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
-	static ImTrigger s_triggers[imChannelCount];
+	static ImTrigger s_triggers[MIDI_CHANNEL_COUNT];
 	static ImDeferCmd s_deferCmd[ImMaxDeferredCmd];
 	static s32 s_imDeferredCmds = 0;
 
@@ -49,7 +49,7 @@ namespace TFE_Jedi
 		if (!soundId) { return imArgErr; }
 
 		ImTrigger* trigger = s_triggers;
-		for (s32 i = 0; i < imChannelCount; i++, trigger++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++, trigger++)
 		{
 			if (!trigger->soundId)
 			{
@@ -71,7 +71,7 @@ namespace TFE_Jedi
 	{
 		ImTrigger* trigger = s_triggers;
 		s32 count = 0;
-		for (s32 i = 0; i < imChannelCount; i++, trigger++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++, trigger++)
 		{
 			if (trigger->soundId)
 			{
@@ -89,7 +89,7 @@ namespace TFE_Jedi
 	s32 ImClearTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode)
 	{
 		ImTrigger* trigger = s_triggers;
-		for (s32 i = 0; i < imChannelCount; i++, trigger++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++, trigger++)
 		{
 			// Only clear set triggers and match Sound ID
 			if (trigger->soundId &&
@@ -108,7 +108,7 @@ namespace TFE_Jedi
 
 	s32 ImClearTriggersAndCmds()
 	{
-		for (s32 i = 0; i < imChannelCount; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			s_triggers[i].soundId = IM_NULL_SOUNDID;
 		}
@@ -173,7 +173,7 @@ namespace TFE_Jedi
 	{
 		ImTrigger* trigger = s_triggers;
 		// Look for the matching trigger.
-		for (s32 i = 0; i < imChannelCount; i++, trigger++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++, trigger++)
 		{
 			ImSoundId triggerSndId = trigger->soundId;
 			// Trigger is null or doesn't match.

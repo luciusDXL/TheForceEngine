@@ -134,7 +134,7 @@ namespace TFE_Jedi
 		s32 mailbox;
 		s32 hook;
 
-		ImMidiOutChannel channels[imChannelCount];
+		ImMidiOutChannel channels[MIDI_CHANNEL_COUNT];
 	};
 	
 	extern s32 s_imEndOfTrack;

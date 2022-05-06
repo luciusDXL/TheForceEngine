@@ -26,7 +26,7 @@ namespace TFE_Jedi
 	// Internal State
 	/////////////////////////////////////////////////////
 	static s32 s_imFadersActive = 0;
-	static ImSoundFader s_soundFaders[imChannelCount];
+	static ImSoundFader s_soundFaders[MIDI_CHANNEL_COUNT];
 
 	/////////////////////////////////////////////////////////// 
 	// API
@@ -77,7 +77,7 @@ namespace TFE_Jedi
 
 	s32 ImClearAllSoundFaders()
 	{
-		for (s32 i = 0; i < imChannelCount; i++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			s_soundFaders[i].active = 0;
 		}
@@ -88,7 +88,7 @@ namespace TFE_Jedi
 	void ImClearSoundFaders(ImSoundId soundId, s32 param)
 	{
 		ImSoundFader* fader = s_soundFaders;
-		for (s32 i = 0; i < imChannelCount; i++, fader++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++, fader++)
 		{
 			if (fader->active)
 			{
@@ -139,7 +139,7 @@ namespace TFE_Jedi
 
 		// Otherwise find a free fader and set it up.
 		ImSoundFader* fader = s_soundFaders;
-		for (s32 i = 0; i < imChannelCount; i++, fader++)
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++, fader++)
 		{
 			if (!fader->active)
 			{
