@@ -139,8 +139,8 @@ namespace TFE_Jedi
 	
 	extern s32 s_imEndOfTrack;
 	extern s32 s_midiTrackEnd;
-	extern InstrumentSound* s_imActiveInstrSounds;
-	extern InstrumentSound* s_imInactiveInstrSounds;
+	extern InstrumentSound* s_imActiveSustainedSounds;
+	extern InstrumentSound* s_imFreeSustainedSounds;
 	extern InstrumentSound s_instrumentSounds[24];
 	extern ImMidiPlayer* s_midiPlayerList;
 	

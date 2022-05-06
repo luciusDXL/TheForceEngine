@@ -15,8 +15,8 @@ namespace TFE_Jedi
 	// TODO: Fix these externs.
 	extern void ImMidiSetupParts();
 	
-	InstrumentSound* s_imActiveInstrSounds = nullptr;
-	InstrumentSound* s_imInactiveInstrSounds = nullptr;
+	InstrumentSound* s_imActiveSustainedSounds = nullptr;
+	InstrumentSound* s_imFreeSustainedSounds = nullptr;
 	InstrumentSound s_instrumentSounds[24];
 	ImMidiPlayer* s_midiPlayerList = nullptr;
 	s32 s_midiTrackEnd = 0;
@@ -123,15 +123,15 @@ namespace TFE_Jedi
 
 	void ImRemoveInstrumentSound(ImMidiPlayer* player)
 	{
-		InstrumentSound* instrInfo = s_imActiveInstrSounds;
+		InstrumentSound* instrInfo = s_imActiveSustainedSounds;
 		while (instrInfo)
 		{
 			InstrumentSound* next = instrInfo->next;
 			if (player == instrInfo->midiPlayer)
 			{
 				ImMidiNoteOff(instrInfo->midiPlayer, instrInfo->channelId, instrInfo->instrumentId, 0);
-				IM_LIST_REM(s_imActiveInstrSounds, instrInfo);
-				IM_LIST_ADD(s_imInactiveInstrSounds, instrInfo);
+				IM_LIST_REM(s_imActiveSustainedSounds, instrInfo);
+				IM_LIST_ADD(s_imFreeSustainedSounds, instrInfo);
 			}
 			instrInfo = next;
 		}
