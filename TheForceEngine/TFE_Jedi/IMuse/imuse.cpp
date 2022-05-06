@@ -56,7 +56,7 @@ namespace TFE_Jedi
 	void ImUpdateSustainedNotes();
 		
 	void ImAdvanceMidiPlayer(ImPlayerData* playerData);
-	void ImJumpSustain(ImMidiPlayer* player, u8* sndData, ImPlayerData* playerData1, ImPlayerData* playerData2);
+	void ImJumpSustain(ImMidiPlayer* player, u8* sndData, ImPlayerData* playerPrevData, ImPlayerData* playerNextData);
 	void ImMidiGetInstruments(ImMidiPlayer* player, u32* soundMidiInstrumentMask, s32* midiInstrumentCount);
 	s32  ImMidiGetTickDelta(ImPlayerData* playerData, u32 prevTick, u32 tick);
 	void ImMidiProcessSustain(ImPlayerData* playerData, u8* sndData, MidiCmdFuncUnion* midiCmdFunc, ImMidiPlayer* player);
@@ -170,8 +170,8 @@ namespace TFE_Jedi
 
 	static ImMidiPlayer s_midiPlayers[IM_MIDI_PLAYER_COUNT];
 	static ImPlayerData s_playerData[IM_MIDI_PLAYER_COUNT];
-	static ImPlayerData s_imSoundHeaderCopy1;
-	static ImPlayerData s_imSoundHeaderCopy2;
+	static ImPlayerData s_imSoundNextState;
+	static ImPlayerData s_imSoundPrevState;
 	static s32 s_midiDriverNotReady = 1;
 
 	static s32 s_groupVolume[groupMaxCount] = { 0 };
@@ -729,23 +729,23 @@ namespace TFE_Jedi
 		}
 
 		ImMidiLock();
-		memcpy(&s_imSoundHeaderCopy2, data, sizeof(ImPlayerData));
-		memcpy(&s_imSoundHeaderCopy1, data, sizeof(ImPlayerData));
+		memcpy(&s_imSoundPrevState, data, sizeof(ImPlayerData));
+		memcpy(&s_imSoundNextState, data, sizeof(ImPlayerData));
 
-		IM_DBG_MSG("JMP c:%d t:%03d.%02d.%03d -> c:%d t:%03d.%02d.%03d [s:%d]", s_imSoundHeaderCopy1.seqIndex, ImTime_getMeasure(data->nextTick), ImTime_getBeat(data->nextTick), ImTime_getTicks(data->nextTick), chunk, measure, beat, tick, sustain);
+		IM_DBG_MSG("JMP c:%d t:%03d.%02d.%03d -> c:%d t:%03d.%02d.%03d [s:%d]", s_imSoundNextState.seqIndex, ImTime_getMeasure(data->nextTick), ImTime_getBeat(data->nextTick), ImTime_getTicks(data->nextTick), chunk, measure, beat, tick, sustain);
 		u32 nextTick = ImFixupSoundTick(data, ImTime_setMeasure(measure) + ImTime_setBeat(beat) + ImTime_setTick(tick));
 		// If we either change chunks or jump backwards, the sequence needs to be setup/reset.
-		if (chunk != s_imSoundHeaderCopy1.seqIndex || nextTick < (u32)s_imSoundHeaderCopy1.nextTick)
+		if (chunk != s_imSoundNextState.seqIndex || nextTick < (u32)s_imSoundNextState.nextTick)
 		{
-			if (ImSetSequence(&s_imSoundHeaderCopy1, sndData, chunk))
+			if (ImSetSequence(&s_imSoundNextState, sndData, chunk))
 			{
 				IM_LOG_ERR("sq jump to invalid chunk.");
 				ImMidiUnlock();
 				return imFail;
 			}
 		}
-		s_imSoundHeaderCopy1.nextTick = nextTick;
-		ImAdvanceMidi(&s_imSoundHeaderCopy1, sndData, s_jumpMidiCmdFunc);
+		s_imSoundNextState.nextTick = nextTick;
+		ImAdvanceMidi(&s_imSoundNextState, sndData, s_jumpMidiCmdFunc);
 		if (s_imEndOfTrack)
 		{
 			IM_LOG_WRN("sq jump to invalid ms:bt:tk...");
@@ -762,14 +762,14 @@ namespace TFE_Jedi
 				ImMidiCommand(data->player, c, MID_MODULATIONWHEEL_MSB, 0);
 				ImHandleChannelPitchBend(data->player, c, 0, 64);
 			}
-			ImJumpSustain(data->player, sndData, &s_imSoundHeaderCopy2, &s_imSoundHeaderCopy1);
+			ImJumpSustain(data->player, sndData, &s_imSoundPrevState, &s_imSoundNextState);
 		}
 		else
 		{
 			ImMidiStopAllNotes(data->player);
 		}
 
-		memcpy(data, &s_imSoundHeaderCopy1, sizeof(ImPlayerData));
+		memcpy(data, &s_imSoundNextState, sizeof(ImPlayerData));
 		s_imEndOfTrack = 1;
 		ImMidiUnlock();
 
@@ -1874,7 +1874,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void ImJumpSustain(ImMidiPlayer* player, u8* sndData, ImPlayerData* playerData1, ImPlayerData* playerData2)
+	void ImJumpSustain(ImMidiPlayer* player, u8* sndData, ImPlayerData* playerPrevData, ImPlayerData* playerNextData)
 	{
 		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
@@ -1904,7 +1904,7 @@ namespace TFE_Jedi
 		{
 			// Capture future "note off" events and add them to the active sounds.
 			// These sounds will continue to play during the transition.
-			ImMidiProcessSustain(playerData1, sndData, s_jumpMidiSustainOpenCmdFunc, player);
+			ImMidiProcessSustain(playerPrevData, sndData, s_jumpMidiSustainOpenCmdFunc, player);
 
 			// Make sure all "note off" events have been captured. If uncaptured notes still exist, we have to turn them off manually.
 			if (s_curInstrumentCount)
@@ -1937,7 +1937,7 @@ namespace TFE_Jedi
 		}
 		// Get the current instruments again.
 		ImMidiGetInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
-		ImMidiProcessSustain(playerData2, sndData, s_jumpMidiSustainCmdFunc, player);
+		ImMidiProcessSustain(playerNextData, sndData, s_jumpMidiSustainCmdFunc, player);
 	}
 
 	////////////////////////////////////////
