@@ -171,8 +171,8 @@ namespace TFE_Jedi
 
 	void ImSetSoundTrigger(u32 soundId, void* marker)
 	{
+		// Look for triggers with matching soundId.
 		ImTrigger* trigger = s_triggers;
-		// Look for the matching trigger.
 		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++, trigger++)
 		{
 			ImSoundId triggerSndId = trigger->soundId;
@@ -181,13 +181,13 @@ namespace TFE_Jedi
 			{
 				continue;
 			}
-
-			// The code never reaches this point in Dark Forces.
 			if (trigger->marker)
 			{
+				// trigger->marker is never non-zero when running Dark Forces.
 				IM_LOG_ERR("trigger->marker should always be 0 in Dark Forces.");
 				assert(0);
 			}
+			// Execute the matching trigger.
 			ImTriggerExecute(trigger, marker);
 		}
 	}
@@ -216,6 +216,7 @@ namespace TFE_Jedi
 		trigger->soundId = IM_NULL_SOUNDID;
 		if (trigger->opcode < imUndefined)
 		{
+			// This is not used by Dark Forces.
 			// In the original code, this passed in all 10 parameters.
 			// ImProcessCommand(trigger->opcode, *arg0, *arg1, *arg2);
 			IM_LOG_ERR("Unimplemented trigger opcode.");
