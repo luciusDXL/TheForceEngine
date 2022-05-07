@@ -29,10 +29,10 @@ namespace TFE_Jedi
 	struct ImMidiOutChannel;
 	struct ImMidiChannel;
 
-	struct InstrumentSound
+	struct ImSustainedSound
 	{
-		InstrumentSound* prev;
-		InstrumentSound* next;
+		ImSustainedSound* prev;
+		ImSustainedSound* next;
 		ImMidiPlayer* midiPlayer;
 		s32 instrumentId;
 		s32 channelId;
@@ -139,9 +139,9 @@ namespace TFE_Jedi
 	
 	extern s32 s_imEndOfTrack;
 	extern s32 s_midiTrackEnd;
-	extern InstrumentSound* s_imActiveSustainedSounds;
-	extern InstrumentSound* s_imFreeSustainedSounds;
-	extern InstrumentSound s_instrumentSounds[24];
+	extern ImSustainedSound* s_imActiveSustainedSounds;
+	extern ImSustainedSound* s_imFreeSustainedSounds;
+	extern ImSustainedSound  s_sustainedSounds[24];
 	extern ImMidiPlayer* s_midiPlayerList;
 	
 	extern s32 ImFixupSoundTick(ImPlayerData* data, s32 value);

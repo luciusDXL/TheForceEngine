@@ -778,24 +778,24 @@ namespace TFE_Jedi
 
 	void ImUpdateSustainedNotes()
 	{
-		InstrumentSound* instrInfo = s_imActiveSustainedSounds;
-		while (instrInfo)
+		ImSustainedSound* sustainedSound = s_imActiveSustainedSounds;
+		while (sustainedSound)
 		{
-			InstrumentSound* next = instrInfo->next;
-			ImMidiPlayer* player  = instrInfo->midiPlayer;
-			ImPlayerData* data    = player->data;
+			ImSustainedSound* next = sustainedSound->next;
+			ImMidiPlayer* player   = sustainedSound->midiPlayer;
+			ImPlayerData* data     = player->data;
 
-			instrInfo->curTickFixed += data->stepFixed;
-			instrInfo->curTick      -= floor16(instrInfo->curTickFixed);
-			instrInfo->curTickFixed  = fract16(instrInfo->curTickFixed);
+			sustainedSound->curTickFixed += data->stepFixed;
+			sustainedSound->curTick      -= floor16(sustainedSound->curTickFixed);
+			sustainedSound->curTickFixed  = fract16(sustainedSound->curTickFixed);
 
-			if (instrInfo->curTick < 0)
+			if (sustainedSound->curTick < 0)
 			{
-				ImMidiNoteOff(instrInfo->midiPlayer, instrInfo->channelId, instrInfo->instrumentId, 0);
-				IM_LIST_REM(s_imActiveSustainedSounds, instrInfo);
-				IM_LIST_ADD(s_imFreeSustainedSounds, instrInfo);
+				ImMidiNoteOff(sustainedSound->midiPlayer, sustainedSound->channelId, sustainedSound->instrumentId, 0);
+				IM_LIST_REM(s_imActiveSustainedSounds, sustainedSound);
+				IM_LIST_ADD(s_imFreeSustainedSounds,   sustainedSound);
 			}
-			instrInfo = next;
+			sustainedSound = next;
 		}
 	}
 
@@ -1884,20 +1884,20 @@ namespace TFE_Jedi
 
 		// Remove active sustained from the midi instrument list, these should already be tracked.
 		ImMidiGetInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
-		InstrumentSound* instrInfo = s_imActiveSustainedSounds;
-		while (instrInfo && s_curInstrumentCount)
+		ImSustainedSound* sustainedSound = s_imActiveSustainedSounds;
+		while (sustainedSound && s_curInstrumentCount)
 		{
-			if (instrInfo->midiPlayer == player)
+			if (sustainedSound->midiPlayer == player)
 			{
-				u32 instrMask   = s_curMidiInstrumentMask[instrInfo->instrumentId];
-				u32 channelMask = s_midiSustainChannelMask[instrInfo->channelId];
+				u32 instrMask   = s_curMidiInstrumentMask[sustainedSound->instrumentId];
+				u32 channelMask = s_midiSustainChannelMask[sustainedSound->channelId];
 				if (channelMask & instrMask)
 				{
-					s_curMidiInstrumentMask[instrInfo->instrumentId] &= ~channelMask;
+					s_curMidiInstrumentMask[sustainedSound->instrumentId] &= ~channelMask;
 					s_curInstrumentCount--;
 				}
 			}
-			instrInfo = instrInfo->next;
+			sustainedSound = sustainedSound->next;
 		}
 
 		if (s_curInstrumentCount)
@@ -1929,11 +1929,11 @@ namespace TFE_Jedi
 
 		// Go through active sounds and calculate the time remaining for the sustain.
 		s_trackTicksRemaining = 0;
-		instrInfo = s_imActiveSustainedSounds;
-		while (instrInfo)
+		sustainedSound = s_imActiveSustainedSounds;
+		while (sustainedSound)
 		{
-			s_trackTicksRemaining = max(s_trackTicksRemaining, instrInfo->curTick);
-			instrInfo = instrInfo->next;
+			s_trackTicksRemaining = max(s_trackTicksRemaining, sustainedSound->curTick);
+			sustainedSound = sustainedSound->next;
 		}
 		// Get the current instruments again.
 		ImMidiGetInstruments(player, s_curMidiInstrumentMask, &s_curInstrumentCount);
@@ -2084,7 +2084,7 @@ namespace TFE_Jedi
 			{
 				s_midiTrackEnd = 1;
 			}
-			InstrumentSound* sound = s_imFreeSustainedSounds;
+			ImSustainedSound* sound = s_imFreeSustainedSounds;
 			if (!sound)
 			{
 				IM_LOG_ERR("su unable to alloc Sustain...");
@@ -2122,17 +2122,17 @@ namespace TFE_Jedi
 		else if (s_curMidiInstrumentMask[instrumentId] & channelMask)
 		{
 			s_curMidiInstrumentMask[instrumentId] &= ~channelMask;
-			InstrumentSound* instrInfo = s_imActiveSustainedSounds;
-			while (instrInfo)
+			ImSustainedSound* sustainedSound = s_imActiveSustainedSounds;
+			while (sustainedSound)
 			{
 				s32 delta = s_midiTickDelta - 10;
-				if (instrInfo->midiPlayer == player && instrInfo->instrumentId == instrumentId && instrInfo->channelId == channelId &&
-					delta <= instrInfo->curTick)
+				if (sustainedSound->midiPlayer == player && sustainedSound->instrumentId == instrumentId && sustainedSound->channelId == channelId &&
+					delta <= sustainedSound->curTick)
 				{
-					instrInfo->curTick = delta;
+					sustainedSound->curTick = delta;
 					break;
 				}
-				instrInfo = instrInfo->next;
+				sustainedSound = sustainedSound->next;
 			}
 		}
 	}
@@ -2459,7 +2459,7 @@ namespace TFE_Jedi
 		s_imFreeSustainedSounds = nullptr;
 		s_imActiveSustainedSounds = nullptr;
 
-		InstrumentSound* sound = s_instrumentSounds;
+		ImSustainedSound* sound = s_sustainedSounds;
 		for (s32 i = 0; i < 24; i++, sound++)
 		{
 			sound->prev = nullptr;
