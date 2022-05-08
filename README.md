@@ -6,7 +6,7 @@ The Force Engine is a project with the goal to reverse engineer and rebuild the 
 
 Playing Dark Forces or Outlaws using the Force Engine will add ease of use and modern features such as higher resolutions and modern control schemes such as mouse-look. Using the built-in tools will allow for easier modding with more modern UI, greater flexibility and the ability to use enhancements made to the Jedi Engine for Outlaws in custom Dark Forces levels - such as slopes, stacked sectors, per-sector color maps and more.
 
-Note that while Dark Forces support is almost complete (version 0.8), Outlaws is **not** playable yet - the focus so far has been on the framework, Dark Forces support, and JEDI reverse-engineering. However, Outlaws support is planned and will be complete in TFE version 2.0. See **Current State** below.
+Note that while Dark Forces support is nearly complete (version 0.8), Outlaws is **not** playable yet - the focus so far has been on the framework, Dark Forces support, and JEDI reverse-engineering. However, Outlaws support is planned and will be complete in TFE version 2.0. See **Current State** below.
 
 ## Copyright
 Some parts of the source code are derived by reverse-engineering the original (DOS) Dark Forces executable (and soon Outlaws - Windows). As a result, this code has been derived and translated from code copyrighted by LucasArts. Areas of the code where this is the case will include a notice in their main header file, such as /TFE_JediRenderer/jediRenderer.h
