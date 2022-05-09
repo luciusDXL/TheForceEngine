@@ -16,7 +16,7 @@ Some parts of the source code are derived by reverse-engineering the original (D
 
 I consider the reverse-engineering to be "Fair Use" - a means of supporting the games on other platforms and to improve support on existing platforms without claiming ownership of the games themselves or their IPs. You are still required to own a copy of the original games in order to play them using The Force Engine.
 
-That said using code from sections so marked in a commercial project is risky without permission of the original copyright holders (LucasArts/Disnay).
+That said using code from sections so marked in a commercial project is risky without permission of the original copyright holders (LucasArts/Disney).
 
 ## Current State
 The project is in a pre-release state, version 0.8. While it shares a legacy with DarkXL, it is a complete rewrite - rebuilt from the ground up with a much greater focus on accuracy. It is much more focused than the XL Engine, focused on being a Jedi Engine replacement/port only - thus full support for Dark Forces and later Outlaws. Please check the [Roadmap](Roadmap.md) for more information on release timetable and planned feature-set.
