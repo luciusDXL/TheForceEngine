@@ -1,6 +1,8 @@
 # The Force Engine (TFE)
 * [Website](https://theforceengine.github.io/)
 * [Release Downloads](https://theforceengine.github.io/downloads.html)
+* [Forums](https://the-force-engine.freeforums.net/)
+* [Discord](https://discord.gg/hpsJnY9)
 
 ## About
 The Force Engine is a project with the goal to reverse engineer and rebuild the Jedi Engine for modern systems and the games that used that engine - **Dark Forces** and **Outlaws**. The project will include modern, built-in tools, such as a level editor and will make it easy to play **Dark Forces** and **Outlaws** on modern systems as well as the many community **mods** designed to work with the original games.
