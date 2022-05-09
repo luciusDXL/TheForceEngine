@@ -1,5 +1,6 @@
 # The Force Engine (TFE)
 [Website](https://theforceengine.github.io/)
+[Release Downloads](https://theforceengine.github.io/downloads.html)
 
 ## About
 The Force Engine is a project with the goal to reverse engineer and rebuild the Jedi Engine for modern systems and the games that used that engine - **Dark Forces** and **Outlaws**. The project will include modern, built-in tools, such as a level editor and will make it easy to play **Dark Forces** and **Outlaws** on modern systems as well as the many community **mods** designed to work with the original games.
@@ -20,6 +21,8 @@ The project is in a pre-release state, version 0.8. While it shares a legacy wit
 
 ### Current Release
 The current release is **version 0.8** and only supports Dark Forces. All weapons, AI, items, and other systems function, with the exception of IMuse. You can play through Dark Forces from beginning to end and play some Dark Forces mods. There are still bugs, the music isn't correct, some ambient level sounds are missing, and sound falloff is not accurate.
+
+If you are not a developer and/or wish to play the current official release, download it here: https://theforceengine.github.io/downloads.html
 
 ### Next Release
 **Version 0.9** is expected to be released soon. This version will have full IMuse support, including music cues and dynamic changes in-game. It will also include missing ambient level sounds, and accurate sound falloff and playback.
