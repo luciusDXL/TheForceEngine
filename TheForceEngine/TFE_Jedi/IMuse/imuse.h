@@ -65,11 +65,11 @@ enum iMuseGroup
 	groupMaxCount = 16
 };
 
-enum iMuseSoundType  
+enum iMuseSoundType: u32  // Force enum to unsigned (C++ 11)
 {
-	typeMidi = 1,
-	typeWave = 2,
-	imMidiFlag  = (1u << 31u),
+	typeMidi = 1u,
+	typeWave = 2u,
+	imMidiFlag  = 0x80000000u,
 	imMidiMask  = 0x7fffffffu,
 	imValidMask = 0xfff00000u,
 };
@@ -108,7 +108,7 @@ namespace TFE_Jedi
 	extern s32 ImStartMusic(ImSoundId soundId, s32 priority);
 
 	extern void ImUnloadAll(void);
-	extern s32 ImLoadMidi(const char *name);
+	extern ImSoundId ImLoadMidi(const char *name);
 	extern ImSoundId ImFindMidi(const char* name);
 
 	////////////////////////////////////////////////////
@@ -122,16 +122,16 @@ namespace TFE_Jedi
 	extern s32 ImStartSound(ImSoundId soundId, s32 priority);
 	extern s32 ImStopSound(ImSoundId soundId);
 	extern s32 ImStopAllSounds(void);
-	extern s32 ImGetNextSound(ImSoundId soundId);
+	extern ImSoundId ImGetNextSound(ImSoundId soundId);
 	extern s32 ImSetParam(ImSoundId soundId, s32 param, s32 value);
 	extern s32 ImGetParam(ImSoundId soundId, s32 param);
 	extern s32 ImFadeParam(ImSoundId soundId, s32 param, s32 value, s32 time);
 	extern s32 ImSetHook(ImSoundId soundId, s32 value);
 	extern s32 ImGetHook(ImSoundId soundId);
-	extern s32 ImSetTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);  // Modified based on actual usage to simplify
-	extern s32 ImCheckTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);
-	extern s32 ImClearTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode);
-	extern s32 ImDeferCommand(s32 time, ptrdiff_t opcode, s32 sound);  // Modified based on actual usage to simplify
+	extern s32 ImSetTrigger(ImSoundId soundId, s32 marker, iptr opcode);  // Modified based on actual usage to simplify
+	extern s32 ImCheckTrigger(ImSoundId soundId, s32 marker, iptr opcode);
+	extern s32 ImClearTrigger(ImSoundId soundId, s32 marker, iptr opcode);
+	extern s32 ImDeferCommand(s32 time, iptr opcode, s64 sound);  // Modified based on actual usage to simplify
 
 	extern s32 ImJumpMidi(ImSoundId soundId, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain);
 	extern s32 ImSendMidiMsg(ImSoundId soundId, s32 arg1, s32 arg2, s32 arg3);

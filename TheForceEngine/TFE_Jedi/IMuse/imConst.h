@@ -91,7 +91,7 @@ enum iMuseConst
 
 namespace TFE_Jedi
 {
-	typedef u32 ImSoundId;
+	typedef s64 ImSoundId;
 
 	extern const u8  c_midiMsgSize[];
 	extern const u32 c_channelMask[MIDI_CHANNEL_COUNT];

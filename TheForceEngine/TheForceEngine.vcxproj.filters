@@ -886,6 +886,9 @@
     <ClInclude Include="TFE_Jedi\IMuse\imMidiCmd.h">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\IMuse\imDigitalSound.h">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1498,6 +1501,9 @@
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\IMuse\imMidiCmd.cpp">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\IMuse\imDigitalSound.cpp">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClCompile>
   </ItemGroup>

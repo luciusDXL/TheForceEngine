@@ -51,8 +51,11 @@ namespace TFE_DarkForces
 		s_bitmapWidth  = actor->w + 1;
 		s_bitmapHeight = actor->h + 1;
 
-		s_bitmap = (u8*)landru_alloc(s_bitmapWidth * s_bitmapHeight);
-		memset(s_bitmap, 0, s_bitmapWidth * s_bitmapHeight);
+		// In some mods, the with and height aren't exactly correct...
+		// This can cause crashes on Windows.
+		size_t bufferSize = s_bitmapWidth * s_bitmapHeight * 3 / 2;	// 1.5x memory allocation.
+		s_bitmap = (u8*)landru_alloc(bufferSize);
+		memset(s_bitmap, 0, bufferSize);
 		// Decompress the image into its own bitmap.
 		drawDeltaIntoBitmap((s16*)actor->data + 4, 0, 0, s_bitmap, s_bitmapWidth);
 

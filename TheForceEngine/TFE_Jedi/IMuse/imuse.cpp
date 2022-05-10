@@ -31,7 +31,7 @@ namespace TFE_Jedi
 	{
 		ImSound* prev;
 		ImSound* next;
-		s32 id;
+		ImSoundId id;
 		char name[10];
 		s16 u16;
 		s32 u18;
@@ -89,7 +89,7 @@ namespace TFE_Jedi
 	s32 ImGetMidiTimeParam(ImPlayerData* data, s32 param);
 	s32 ImGetMidiParam(ImSoundId soundId, s32 param);
 	s32 ImGetWaveParam(ImSoundId soundId, s32 param);
-	s32 ImGetPendingSoundCount(s32 soundId);
+	s32 ImGetPendingSoundCount(ImSoundId soundId);
 	s32 ImWrapTranspose(s32 value, s32 a, s32 b);
 	void ImHandleChannelPriorityChange(ImMidiPlayer* player, ImMidiOutChannel* channel);
 	ImSoundId ImFindNextMidiSound(ImSoundId soundId);
@@ -294,7 +294,7 @@ namespace TFE_Jedi
 	}
 	
 	// Called ImLoadSound() in the original code, but it only loads midi.
-	s32 ImLoadMidi(const char *name)
+	ImSoundId ImLoadMidi(const char *name)
 	{
 		if (!s_imEnableMusic || !name || !name[0])
 		{
@@ -500,7 +500,7 @@ namespace TFE_Jedi
 		return res;
 	}
 
-	s32 ImGetNextSound(ImSoundId soundId)
+	ImSoundId ImGetNextSound(ImSoundId soundId)
 	{
 		ImSoundId nextMidiId = ImFindNextMidiSound(soundId);
 		ImSoundId nextWaveId = ImFindNextWaveSound(soundId);
@@ -643,7 +643,7 @@ namespace TFE_Jedi
 			s_iMuseTimeLong -= 100000;
 
 			s32 musicVolume = ImSetGroupVol(groupMusic, imGetValue);
-			ImSoundId soundId = 0;
+			ImSoundId soundId = IM_NULL_SOUNDID;
 			do
 			{
 				soundId = ImGetNextSound(soundId);
@@ -1263,7 +1263,7 @@ namespace TFE_Jedi
 		
 	s32 ImGetSoundType(ImSoundId soundId)
 	{
-		ImSoundId foundId = 0;
+		ImSoundId foundId = IM_NULL_SOUNDID;
 		// First check midi sounds.
 		do
 		{
@@ -1549,7 +1549,7 @@ namespace TFE_Jedi
 		return imNotImplemented;
 	}
 
-	s32 ImGetPendingSoundCount(s32 soundId)
+	s32 ImGetPendingSoundCount(ImSoundId soundId)
 	{
 		// Not called by Dark Forces.
 		assert(0);
@@ -1559,7 +1559,7 @@ namespace TFE_Jedi
 	// Search a list for the smallest non-zero value that is atleast minValue.
 	ImSoundId ImFindNextMidiSound(ImSoundId soundId)
 	{
-		ImSoundId value = 0;
+		ImSoundId value = IM_NULL_SOUNDID;
 		ImMidiPlayer* player = s_midiPlayerList;
 		while (player)
 		{
@@ -1577,7 +1577,7 @@ namespace TFE_Jedi
 
 	ImSoundId ImFindNextWaveSound(ImSoundId soundId)
 	{
-		ImSoundId nextSoundId = 0;
+		ImSoundId nextSoundId = IM_NULL_SOUNDID;
 		/*
 		** Stubbed **
 		ImWaveSound* snd = s_imWaveSounds;

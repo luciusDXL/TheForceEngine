@@ -121,7 +121,7 @@ namespace TFE_Jedi
 		ImMidiPlayer* next;
 		ImPlayerData* data;
 		ImMidiPlayer* sharedPart;
-		s32 sharedPartId;
+		ImSoundId sharedPartId;
 		ImSoundId soundId;
 		s32 marker;
 		s32 group;

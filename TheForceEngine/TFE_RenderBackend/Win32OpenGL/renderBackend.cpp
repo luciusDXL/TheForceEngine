@@ -491,7 +491,7 @@ namespace TFE_RenderBackend
 
 	void* getVirtualDisplayGpuPtr()
 	{
-		return (void*)(intptr_t)s_virtualDisplay->getTexture()->getHandle();
+		return (void*)(iptr)s_virtualDisplay->getTexture()->getHandle();
 	}
 
 	bool getWidescreen()
@@ -637,12 +637,12 @@ namespace TFE_RenderBackend
 
 	void* getGpuPtr(const TextureGpu* texture)
 	{
-		return (void*)(intptr_t)texture->getHandle();
+		return (void*)(iptr)texture->getHandle();
 	}
 
 	void drawIndexedTriangles(u32 triCount, u32 indexStride, u32 indexStart)
 	{
-		glDrawElements(GL_TRIANGLES, triCount * 3, indexStride == 4 ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT, (void*)(intptr_t)(indexStart * indexStride));
+		glDrawElements(GL_TRIANGLES, triCount * 3, indexStride == 4 ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT, (void*)(iptr)(indexStart * indexStride));
 	}
 
 	// Setup the Post effect chain based on current settings.

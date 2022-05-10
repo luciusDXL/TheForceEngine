@@ -13,15 +13,15 @@ namespace TFE_Jedi
 	{
 		ImSoundId soundId;
 		s32 marker;
-		ptrdiff_t opcode;			// opcode is sometimes used to pass pointers.
-		s32 args[10];
+		iptr opcode;			// opcode is sometimes used to pass pointers.
+		s64 args[10];
 	};
 
 	struct ImDeferCmd
 	{
 		s32 time;
-		ptrdiff_t opcode;
-		s32 args[10];
+		iptr opcode;
+		s64 args[10];
 	};
 
 	typedef void(*ImTriggerCmdFunc)(char*);
@@ -44,7 +44,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////////// 
 	// API
 	/////////////////////////////////////////////////////////// 
-	s32 ImSetTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode)
+	s32 ImSetTrigger(ImSoundId soundId, s32 marker, iptr opcode)
 	{
 		if (!soundId) { return imArgErr; }
 
@@ -67,7 +67,7 @@ namespace TFE_Jedi
 	}
 
 	// Returns the number of matching triggers.
-	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode)
+	s32 ImCheckTrigger(ImSoundId soundId, s32 marker, iptr opcode)
 	{
 		ImTrigger* trigger = s_triggers;
 		s32 count = 0;
@@ -75,7 +75,7 @@ namespace TFE_Jedi
 		{
 			if (trigger->soundId)
 			{
-				if ((soundId == ImSoundId(imWildcard) || soundId == trigger->soundId) &&
+				if ((soundId == imWildcard || soundId == trigger->soundId) &&
 					(marker  == imWildcard || marker  == trigger->marker) &&
 					(opcode  == imWildcard || opcode  == trigger->opcode))
 				{
@@ -86,14 +86,13 @@ namespace TFE_Jedi
 		return count;
 	}
 
-	s32 ImClearTrigger(ImSoundId soundId, s32 marker, ptrdiff_t opcode)
+	s32 ImClearTrigger(ImSoundId soundId, s32 marker, iptr opcode)
 	{
 		ImTrigger* trigger = s_triggers;
 		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++, trigger++)
 		{
 			// Only clear set triggers and match Sound ID
-			if (trigger->soundId &&
-			   (soundId == ImSoundId(imWildcard) || soundId == trigger->soundId))
+			if (trigger->soundId && (soundId == imWildcard || soundId == trigger->soundId))
 			{
 				// Match marker and opcode.
 				if ((marker == imWildcard || marker == trigger->marker) &&
@@ -122,7 +121,7 @@ namespace TFE_Jedi
 
 	// The original function can take a variable number of arguments, but it is used exactly once in Dark Forces,
 	// so I simplified it.
-	s32 ImDeferCommand(s32 time, ptrdiff_t opcode, s32 arg1)
+	s32 ImDeferCommand(s32 time, iptr opcode, s64 arg1)
 	{
 		ImDeferCmd* cmd = s_deferCmd;
 		if (time == 0)
@@ -169,7 +168,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void ImSetSoundTrigger(u32 soundId, void* marker)
+	void ImSetSoundTrigger(ImSoundId soundId, void* marker)
 	{
 		// Look for triggers with matching soundId.
 		ImTrigger* trigger = s_triggers;

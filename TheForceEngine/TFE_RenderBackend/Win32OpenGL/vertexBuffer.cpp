@@ -85,7 +85,7 @@ void VertexBuffer::bind()
 	for (u32 i = 0; i < m_attrCount; i++)
 	{
 		glEnableVertexAttribArray(m_attrMapping[i].id);
-		glVertexAttribPointer(m_attrMapping[i].id, m_attrMapping[i].channels, c_glType[m_attrMapping[i].type], m_attrMapping[i].normalized, m_stride, (void*)(intptr_t)m_attrMapping[i].offset);
+		glVertexAttribPointer(m_attrMapping[i].id, m_attrMapping[i].channels, c_glType[m_attrMapping[i].type], m_attrMapping[i].normalized, m_stride, (void*)(iptr)m_attrMapping[i].offset);
 	}
 }
 
