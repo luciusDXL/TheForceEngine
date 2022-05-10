@@ -13,6 +13,7 @@
 #include "imTrigger.h"
 #include "imSoundFader.h"
 #include "imMidiPlayer.h"
+#include "imDigitalSound.h"
 #include "midiData.h"
 
 namespace TFE_Jedi
@@ -39,15 +40,7 @@ namespace TFE_Jedi
 		s32 u20;
 		s32 refCount;
 	};
-
-	struct iMuseInitData
-	{
-		u32 systemTime = 0;            // iMuse 60Hz timer clock
-		s32 waveSpeed = 0;             // 0 = 11KHz, 1 = 22KHz
-		s32 waveMixCount = 8;	       // set 0 to 16 mixer channels
-		u32 imuseIntUsecCount = 6944;  // iMuse interrupt freq
-	};
-				
+						
 	/////////////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////////////
@@ -85,12 +78,10 @@ namespace TFE_Jedi
 	s32 ImReleaseAllWaveSounds();
 	s32 ImGetSoundType(ImSoundId soundId);
 	s32 ImSetMidiParam(ImSoundId soundId, s32 param, s32 value);
-	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetMidiTimeParam(ImPlayerData* data, s32 param);
 	s32 ImGetMidiParam(ImSoundId soundId, s32 param);
-	s32 ImGetWaveParam(ImSoundId soundId, s32 param);
 	s32 ImGetPendingSoundCount(ImSoundId soundId);
-	s32 ImWrapTranspose(s32 value, s32 a, s32 b);
+	s32 ImWrapValue(s32 value, s32 a, s32 b);
 	void ImHandleChannelPriorityChange(ImMidiPlayer* player, ImMidiOutChannel* channel);
 	ImSoundId ImFindNextMidiSound(ImSoundId soundId);
 	ImSoundId ImFindNextWaveSound(ImSoundId soundId);
@@ -134,7 +125,6 @@ namespace TFE_Jedi
 	s32 ImInitializeSustain();
 	s32 ImInitializePlayers();
 	s32 ImInitializeMidiEngine(iMuseInitData* initData);
-	s32 ImInitializeDigitalAudio(iMuseInitData* initData);
 	s32 ImInitializeInterrupt(iMuseInitData* initData);
 			
 	/////////////////////////////////////////////////////
@@ -147,7 +137,7 @@ namespace TFE_Jedi
 	atomic_s32 s_sndPlayerLock = 0;
 	atomic_s32 s_midiLock = 0;
 
-	static iMuseInitData s_imInitData = { 0, 0, 8, 6944 };
+	static iMuseInitData s_imInitData = { 0, IM_WAVE_11kHz, 8, 6944 };
 
 	// TODO: Split modules into files.
 	// Files module.
@@ -1298,7 +1288,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	s32 ImWrapTranspose(s32 value, s32 a, s32 b)
+	s32 ImWrapValue(s32 value, s32 a, s32 b)
 	{
 		while (value < a)
 		{
@@ -1377,7 +1367,7 @@ namespace TFE_Jedi
 		else if (imParam == soundTranspose)
 		{
 			if (value < -12 || value > 12) { return imArgErr; }
-			player->transpose = (value == 0) ? 0 : ImWrapTranspose(value + player->transpose, -12, 12);
+			player->transpose = (value == 0) ? 0 : ImWrapValue(value + player->transpose, -12, 12);
 
 			for (s32 m = 0; m < MIDI_CHANNEL_COUNT; m++)
 			{
@@ -1406,11 +1396,6 @@ namespace TFE_Jedi
 		}
 
 		return imSuccess;
-	}
-
-	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value)
-	{
-		return imNotImplemented;
 	}
 
 	s32 ImGetMidiTimeParam(ImPlayerData* data, s32 param)
@@ -1542,11 +1527,6 @@ namespace TFE_Jedi
 		}
 
 		return imInvalidSound;
-	}
-
-	s32 ImGetWaveParam(ImSoundId soundId, s32 param)
-	{
-		return imNotImplemented;
 	}
 
 	s32 ImGetPendingSoundCount(ImSoundId soundId)
@@ -2511,20 +2491,7 @@ namespace TFE_Jedi
 		s_midiLock = 0;
 		return imSuccess;
 	}
-
-	s32 ImInitializeDigitalAudio(iMuseInitData* initData)
-	{
-	#if 0  // TODO
-		if (ImInitializeDigitalAudio_(initData) != imSuccess)
-		{
-			return imFail;
-		}
-	#endif
-
-		s_sndPlayerLock = 0;
-		return imSuccess;
-	}
-
+	
 	s32 ImInitializeInterrupt(iMuseInitData* initData)
 	{
 		// This function has been simplified compared to DOS, since TFE does not use

@@ -22,7 +22,11 @@
 #include <TFE_System/types.h>
 #include "imuse.h"
 
+struct iMuseInitData;
+
 namespace TFE_Jedi
 {
-	
+	s32 ImInitializeDigitalAudio(iMuseInitData* initData);
+	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value);
+	s32 ImGetWaveParam(ImSoundId soundId, s32 param);
 }  // namespace TFE_Jedi

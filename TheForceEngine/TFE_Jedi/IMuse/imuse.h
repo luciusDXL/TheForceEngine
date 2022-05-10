@@ -25,6 +25,20 @@
 
 struct MemoryRegion;
 
+enum ImWaveSpeed
+{
+	IM_WAVE_11kHz = 0,
+	IM_WAVE_22kHz = 1,
+};
+
+struct iMuseInitData
+{
+	u32 systemTime = 0;						// iMuse 60Hz timer clock
+	ImWaveSpeed waveSpeed = IM_WAVE_11kHz;  // 0 = 11KHz, 1 = 22KHz
+	s32 waveMixCount = 8;					// set 0 to 16 mixer channels
+	u32 imuseIntUsecCount = 6944;			// iMuse interrupt freq
+};
+
 // Used by ImSetParam() and ImGetParam().
 enum iMuseParameter
 {
