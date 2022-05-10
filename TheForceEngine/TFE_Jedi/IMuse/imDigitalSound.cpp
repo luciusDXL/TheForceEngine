@@ -1,5 +1,7 @@
 #include "imuse.h"
 #include "imDigitalSound.h"
+#include "imList.h"
+#include <TFE_Jedi/Math/core_math.h>
 #include <TFE_System/system.h>
 #include <TFE_Audio/midi.h>
 #include <assert.h>
@@ -33,8 +35,22 @@ namespace TFE_Jedi
 	{
 		ImWavePlayer* prev;
 		ImWavePlayer* next;
-		ImWaveData*   data;
-		iptr soundId;
+		ImWaveData* data;
+		ImSoundId soundId;
+
+		s32 u10;
+		s32 u14;
+		s32 priority;
+		s32 volume;
+
+		s32 baseVol;
+		s32 pan;
+		s32 u28;
+		s32 u2c;
+
+		s32 u30;
+		s32 u34;
+		s32 u38;
 	};
 
 	struct ImWaveData
@@ -80,11 +96,13 @@ namespace TFE_Jedi
 	extern void ImMidiPlayerUnlock();
 	extern s32 ImWrapValue(s32 value, s32 a, s32 b);
 	extern s32 ImGetGroupVolume(s32 group);
+	extern u8* ImInternalGetSoundData(ImSoundId soundId);
 
 	ImWaveData* ImGetWaveData(s32 index);
 	s32 ImComputeDigitalFalloff(iMuseInitData* initData);
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetWaveParamIntern(ImSoundId soundId, s32 param);
+	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 arg);
 	
 	/////////////////////////////////////////////////////////// 
 	// API
@@ -141,6 +159,14 @@ namespace TFE_Jedi
 	{
 		ImMidiPlayerLock();
 		s32 res = ImGetWaveParamIntern(soundId, param);
+		ImMidiPlayerUnlock();
+		return res;
+	}
+
+	s32 ImStartDigitalSound(ImSoundId soundId, s32 priority)
+	{
+		ImMidiPlayerLock();
+		s32 res = ImStartDigitalSoundIntern(soundId, priority, 0);
 		ImMidiPlayerUnlock();
 		return res;
 	}
@@ -310,6 +336,94 @@ namespace TFE_Jedi
 			sound = sound->next;
 		}
 		return (param == soundPlayCount) ? soundCount : imInvalidSound;
+	}
+
+	ImWavePlayer* ImAllocWavePlayer(s32 priority)
+	{
+		ImWavePlayer* player = s_imWavePlayer;
+		ImWavePlayer* newPlayer = nullptr;
+		for (s32 i = 0; i < s_imWaveMixCount; i++, player++)
+		{
+			if (!player->soundId)
+			{
+				return player;
+			}
+		}
+
+		IM_LOG_WRN("ERR: no spare tracks...");
+		// TODO
+		return nullptr;
+	}
+
+	s32 ImWaveReadNextChunk(ImWaveData* data)
+	{
+		s32 ret = imSuccess;
+		u8* chunkData = s_imWaveChunkData;
+		if (data->chunkIndex != 0)
+		{
+			// TODO
+		}
+		u8* sndData = ImInternalGetSoundData(data->player->soundId);
+		if (!sndData)
+		{
+			// TODO
+			return imFail;
+		}
+		memcpy(chunkData, sndData + data->offset, 48);
+
+		// TODO...
+		return imSuccess;
+	}
+
+	s32 ImWaveSetupPlayerData(ImWavePlayer* player, s32 arg)
+	{
+		ImWaveData* data = player->data;
+		data->offset = 0;
+		data->chunkSize = 0;
+		data->u0c = 0;
+		data->u20 = 0;
+
+		if (arg)	// arg = 0 so far...
+		{
+			// TODO
+		}
+
+		data->chunkIndex = 0;
+		return ImWaveReadNextChunk(data);
+	}
+
+	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 arg)
+	{
+		priority = clamp(priority, 0, 127);
+		ImWavePlayer* player = ImAllocWavePlayer(priority);
+		if (!player)
+		{
+			return imFail;
+		}
+
+		player->soundId = soundId;
+		player->u10 = 0;
+		player->u14 = 0;
+		player->priority = priority;
+		player->volume = 128;
+		player->baseVol = ImGetGroupVolume(0);
+		player->pan = 64;
+		player->u28 = 0;
+		player->u2c = 0;
+		player->u30 = 0;
+		player->u34 = 0;
+		player->u38 = 0;
+		if (ImWaveSetupPlayerData(player, arg) != imSuccess)
+		{
+			// TODO: Error
+			return imFail;
+		}
+
+		ImMidiPlayerLock();
+		IM_LIST_ADD(s_imWaveSounds, player);
+		ImMidiPlayerUnlock();
+
+		return imSuccess;
 	}
 
 }  // namespace TFE_Jedi

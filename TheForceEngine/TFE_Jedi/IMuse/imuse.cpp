@@ -40,6 +40,27 @@ namespace TFE_Jedi
 		s32 u20;
 		s32 refCount;
 	};
+
+	struct ImResource
+	{
+		u32 resType;
+		char resName[8];
+
+		ImResource* next;
+		u32 type;
+		s16 id;
+
+		s16 flags;
+		s16 value;
+
+		s16 var1;
+		s16 var2;
+		u8* varptr;
+		u8* ptr;
+
+		void(*user)(ImResource*, u32);
+		u8* data;
+	};
 						
 	/////////////////////////////////////////////////////
 	// Forward Declarations
@@ -255,14 +276,20 @@ namespace TFE_Jedi
 
 	s32 ImStartSfx(ImSoundId soundId, s32 priority)
 	{
-		// Stub
-		return imNotImplemented;
+		if (ImStartSound(soundId, priority) == imSuccess)
+		{
+			return ImSetParam(soundId, soundGroup, 1);
+		}
+		return imFail;
 	}
 
 	s32 ImStartVoice(ImSoundId soundId, s32 priority)
 	{
-		// Stub
-		return imNotImplemented;
+		if (ImStartSound(soundId, priority) == imSuccess)
+		{
+			return ImSetParam(soundId, soundGroup, 2);
+		}
+		return imFail;
 	}
 
 	s32 ImStartMusic(ImSoundId soundId, s32 priority)
@@ -460,7 +487,15 @@ namespace TFE_Jedi
 		}
 		else  // Digital Sound
 		{
-			// IM_TODO: Digital sound
+			const u8* creative = (u8*)(iptr)c_crea;
+			for (i = 0; i < 4; i++)
+			{
+				if (data[i] != creative[i])
+				{
+					return imFail;
+				}
+			}
+			return ImStartDigitalSound(soundId, priority);
 		}
 		return imSuccess;
 	}
@@ -1009,7 +1044,7 @@ namespace TFE_Jedi
 		ImHandleChannelPan(midiChannel, channel->pan);
 		ImSetChannelSustain(midiChannel, channel->sustain);
 	}
-
+		
 	u8* ImGetSoundData(ImSoundId id)
 	{
 		if (id & imMidiFlag)
@@ -1018,14 +1053,18 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			// IM_TODO: Digital sound.
+			// Cast ImSoundId as a pointer.
+			ImResource* res = (ImResource*)id;
+			return res->data;
 		}
 		return nullptr;
 	}
 
 	s32 ImInternal_SoundValid(ImSoundId soundId)
 	{
-		if (soundId && soundId < imValidMask)
+		// Since soundId can be a pointer, we can't use the original imValidMask since the pointer may be 64-bit.
+		// if (soundId && soundId < imValidMask)
+		if (soundId)
 		{
 			return 1;
 		}
