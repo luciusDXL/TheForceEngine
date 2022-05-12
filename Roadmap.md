@@ -43,13 +43,13 @@ With this release, TFE will be a complete replacement for DosBox. This release w
 ### Estimated Release: August 2022
 Quite some time ago now, I implemented an experimental voxel renderer that integrated seamlessly with the Jedi classic renderer. However, there were some loose ends to deal with, such as not supporting the full VOX format and dealing with some palette issues. This release will integrate that code with the main branch and add support for replacing objects with their voxel counterpart.
 
-# Mac and Linux Support
-### Estimated Release: September 2022
-With this release, TFE will gain initial support on Mac and Linux. While the code more or less compiles on Linux (or is pretty close), there is more work to make sure it works well. And the Mac requires its own treatment and testing.
-
 # Tools
-### Estimated Release: November 2022
+### Estimated Release: September 2022
 The focus of this release is to get the tools working again with the reverse-engineered code. This will include basic functionality like importing and exporting assets, viewing them, etc. and the first release of the full level editor. It might still be missing some planned features, but as of this release it should be fully usable for building real levels and mods.
+
+# Mac and Linux Support
+### Estimated Release: November 2022
+With this release, TFE will gain initial support on Mac and Linux. While the code more or less compiles on Linux (or is pretty close), there is more work to make sure it works well. And the Mac requires its own treatment and testing.
 
 # Towards Version 2.0
 Once version 1.0 is released, I plan on beginning the process of adding Outlaws support to TFE. I don’t yet have any real way of making any time estimates beyond this point, but I expect the reverse-engineering process to proceed at a much quicker rate for Outlaws for several reasons:
