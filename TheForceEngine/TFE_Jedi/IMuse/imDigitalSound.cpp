@@ -1,5 +1,6 @@
 #include "imuse.h"
 #include "imDigitalSound.h"
+#include "imTrigger.h"
 #include "imList.h"
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_System/system.h>
@@ -58,7 +59,7 @@ namespace TFE_Jedi
 		ImWavePlayer* player;
 		s32 offset;
 		s32 chunkSize;
-		s32 u0c;
+		s32 baseOffset;
 
 		s32 chunkIndex;
 		s32 u14;
@@ -355,23 +356,123 @@ namespace TFE_Jedi
 		return nullptr;
 	}
 
-	s32 ImWaveReadNextChunk(ImWaveData* data)
+	u8* ImGetChunkSoundData(s32 chunkIndex, s32 rangeMin, s32 rangeMax)
 	{
-		s32 ret = imSuccess;
-		u8* chunkData = s_imWaveChunkData;
-		if (data->chunkIndex != 0)
-		{
-			// TODO
-		}
-		u8* sndData = ImInternalGetSoundData(data->player->soundId);
-		if (!sndData)
-		{
-			// TODO
-			return imFail;
-		}
-		memcpy(chunkData, sndData + data->offset, 48);
+		IM_LOG_ERR("Digital Sound chunk index should be zero in Dark Forces, but is %d.", chunkIndex);
+		assert(0);
+		return nullptr;
+	}
 
-		// TODO...
+	s32 ImSeekToNextChunk(ImWaveData* data)
+	{
+		while (1)
+		{
+			u8* chunkData = s_imWaveChunkData;
+			u8* sndData = nullptr;
+
+			if (data->chunkIndex)
+			{
+				sndData = ImGetChunkSoundData(data->chunkIndex, 0, 48);
+				if (!sndData)
+				{
+					sndData = ImGetChunkSoundData(data->chunkIndex, 0, 1);
+				}
+				if (!sndData)
+				{
+					return imNotFound;
+				}
+			}
+			else  // chunkIndex == 0
+			{
+				ImWavePlayer* player = data->player;
+				sndData = ImInternalGetSoundData(player->soundId);
+				if (!sndData)
+				{
+					if (player->u34 == 0)
+					{
+						player->u34 = 8;
+					}
+					IM_LOG_ERR("null sound addr in SeekToNextChunk()...");
+					return imFail;
+				}
+			}
+
+			memcpy(chunkData, sndData + data->offset, 48);
+			u8 id = *chunkData;
+			chunkData++;
+
+			if (id == 0)
+			{
+				return imFail;
+			}
+			else if (id == 1)	// found the next useful chunk.
+			{
+				s32 chunkSize = (chunkData[0] | (chunkData[1] << 8) | (chunkData[2] << 16)) - 2;
+				chunkData += 5;
+
+				data->chunkSize = chunkSize;
+				if (chunkSize > 220000)
+				{
+					ImWavePlayer* player = data->player;
+					if (player->u34 == 0)
+					{
+						player->u34 = 9;
+					}
+				}
+
+				data->offset += 6;
+				if (data->chunkIndex)
+				{
+					IM_LOG_ERR("data->chunkIndex should be 0 in Dark Forces, it is: %d.", data->chunkIndex);
+					assert(0);
+				}
+				return imSuccess;
+			}
+			else if (id == 4)
+			{
+				chunkData += 3;
+				ImSetSoundTrigger((ImSoundId)data->player, chunkData);
+				data->offset += 6;
+			}
+			else if (id == 6)
+			{
+				data->baseOffset = data->offset;
+				data->offset += 6;
+				if (data->chunkIndex != 0)
+				{
+					IM_LOG_ERR("data->chunkIndex should be 0 in Dark Forces, it is: %d.", data->chunkIndex);
+					assert(0);
+				}
+			}
+			else if (id == 7)
+			{
+				data->offset = data->baseOffset;
+				if (data->chunkIndex != 0)
+				{
+					IM_LOG_ERR("data->chunkIndex should be 0 in Dark Forces, it is: %d.", data->chunkIndex);
+					assert(0);
+				}
+			}
+			else if (id == 'C')
+			{
+				if (chunkData[0] != 'r' || chunkData[1] != 'e' || chunkData[2] != 'a')
+				{
+					IM_LOG_ERR("ERR: Illegal chunk in sound %lu...", data->player->soundId);
+					return imFail;
+				}
+				data->offset += 26;
+				if (data->chunkIndex)
+				{
+					IM_LOG_ERR("data->chunkIndex should be 0 in Dark Forces, it is: %d.", data->chunkIndex);
+					assert(0);
+				}
+			}
+			else
+			{
+				IM_LOG_ERR("ERR: Illegal chunk in sound %lu...", data->player->soundId);
+				return imFail;
+			}
+		}
 		return imSuccess;
 	}
 
@@ -380,7 +481,7 @@ namespace TFE_Jedi
 		ImWaveData* data = player->data;
 		data->offset = 0;
 		data->chunkSize = 0;
-		data->u0c = 0;
+		data->baseOffset = 0;
 		data->u20 = 0;
 
 		if (arg)	// arg = 0 so far...
@@ -389,7 +490,7 @@ namespace TFE_Jedi
 		}
 
 		data->chunkIndex = 0;
-		return ImWaveReadNextChunk(data);
+		return ImSeekToNextChunk(data);
 	}
 
 	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 arg)
