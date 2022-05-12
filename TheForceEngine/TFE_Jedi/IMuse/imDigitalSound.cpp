@@ -103,7 +103,7 @@ namespace TFE_Jedi
 	s32 ImComputeDigitalFalloff(iMuseInitData* initData);
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetWaveParamIntern(ImSoundId soundId, s32 param);
-	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 arg);
+	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex);
 	
 	/////////////////////////////////////////////////////////// 
 	// API
@@ -476,7 +476,7 @@ namespace TFE_Jedi
 		return imSuccess;
 	}
 
-	s32 ImWaveSetupPlayerData(ImWavePlayer* player, s32 arg)
+	s32 ImWaveSetupPlayerData(ImWavePlayer* player, s32 chunkIndex)
 	{
 		ImWaveData* data = player->data;
 		data->offset = 0;
@@ -484,16 +484,17 @@ namespace TFE_Jedi
 		data->baseOffset = 0;
 		data->u20 = 0;
 
-		if (arg)	// arg = 0 so far...
+		if (chunkIndex)
 		{
-			// TODO
+			IM_LOG_ERR("data->chunkIndex should be 0 in Dark Forces, it is: %d.", chunkIndex);
+			assert(0);
 		}
 
 		data->chunkIndex = 0;
 		return ImSeekToNextChunk(data);
 	}
 
-	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 arg)
+	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex)
 	{
 		priority = clamp(priority, 0, 127);
 		ImWavePlayer* player = ImAllocWavePlayer(priority);
@@ -514,9 +515,9 @@ namespace TFE_Jedi
 		player->u30 = 0;
 		player->u34 = 0;
 		player->u38 = 0;
-		if (ImWaveSetupPlayerData(player, arg) != imSuccess)
+		if (ImWaveSetupPlayerData(player, chunkIndex) != imSuccess)
 		{
-			// TODO: Error
+			IM_LOG_ERR("Failed to setup wave player data - soundId: 0x%x, priority: %d", soundId, priority);
 			return imFail;
 		}
 
