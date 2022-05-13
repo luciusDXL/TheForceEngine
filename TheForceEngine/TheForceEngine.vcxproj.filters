@@ -152,6 +152,9 @@
     <Filter Include="Source\TFE_Jedi\IMuse">
       <UniqueIdentifier>{60ca479d-31f9-44a4-9dd7-a98b9e27cee3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_System\CrashHandler">
+      <UniqueIdentifier>{a09ca3f0-35ed-4cb9-824f-d72b0fdd200f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -889,6 +892,9 @@
     <ClInclude Include="TFE_Jedi\IMuse\imDigitalSound.h">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_System\CrashHandler\crashHandler.h">
+      <Filter>Source\TFE_System\CrashHandler</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1505,6 +1511,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\IMuse\imDigitalSound.cpp">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp">
+      <Filter>Source\TFE_System\CrashHandler</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

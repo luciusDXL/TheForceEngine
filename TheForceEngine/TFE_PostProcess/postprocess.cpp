@@ -119,9 +119,15 @@ namespace TFE_PostProcess
 		s_indexBuffer.bind();
 
 		PostEffectInstance* effectInst = s_effects.data();
-		for (size_t i = 0; i < count; i++, effectInst++)
+		for (size_t e = 0; e < count; e++, effectInst++)
 		{
 			PostProcessEffect* effect = effectInst->effect;
+			if (!effect)
+			{
+				TFE_System::logWrite(LOG_ERROR, "PostFX", "Effect instance has NULL effect. Index = %u", e);
+				continue;
+			}
+
 			Shader* shader = effect->m_shader;
 			shader->bind();
 

@@ -539,6 +539,7 @@ echo ^)";
     <ClInclude Include="TFE_Settings\gameSourceData.h" />
     <ClInclude Include="TFE_Settings\settings.h" />
     <ClInclude Include="TFE_Settings\windows\registry.h" />
+    <ClInclude Include="TFE_System\CrashHandler\crashHandler.h" />
     <ClInclude Include="TFE_System\math.h" />
     <ClInclude Include="TFE_System\memoryPool.h" />
     <ClInclude Include="TFE_System\parser.h" />
@@ -758,6 +759,7 @@ echo ^)";
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\vertexBuffer.cpp" />
     <ClCompile Include="TFE_Settings\settings.cpp" />
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
+    <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />
     <ClCompile Include="TFE_System\log.cpp" />
     <ClCompile Include="TFE_System\math.cpp" />
     <ClCompile Include="TFE_System\memoryPool.cpp" />

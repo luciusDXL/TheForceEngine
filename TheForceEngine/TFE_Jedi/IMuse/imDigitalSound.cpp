@@ -86,9 +86,8 @@ namespace TFE_Jedi
 	static s32 s_imWaveNanosecsPerSample;
 	static iMuseInitData* s_imDigitalData;
 
-	static u8  s_imWaveFalloffTableNeg[1028];
-	static u8  s_imWaveFalloffTablePos[1024];
-	static u8* s_imWaveFalloffTable = s_imWaveFalloffTablePos;
+	static u8  s_imWaveFalloffTableMem[2052];
+	static u8* s_imWaveFalloffTable = &s_imWaveFalloffTableMem[1028];
 
 	extern atomic_s32 s_sndPlayerLock;
 	extern atomic_s32 s_digitalPause;

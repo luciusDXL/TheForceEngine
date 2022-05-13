@@ -15,6 +15,7 @@
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
+#include <TFE_System/CrashHandler/crashHandler.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Asset/paletteAsset.h>
 #include <TFE_Asset/imageAsset.h>
@@ -39,6 +40,8 @@
 
 #define PROGRAM_ERROR   1
 #define PROGRAM_SUCCESS 0
+
+#define INSTALL_CRASH_HANDLER 1
 
 #pragma comment(lib, "SDL2main.lib")
 using namespace TFE_Input;
@@ -429,6 +432,11 @@ void generateScreenshotTime()
 
 int main(int argc, char* argv[])
 {
+	#if INSTALL_CRASH_HANDLER
+	TFE_CrashHandler::setProcessExceptionHandlers();
+	TFE_CrashHandler::setThreadExceptionHandlers();
+	#endif
+
 	// Paths
 	bool pathsSet = true;
 	pathsSet &= TFE_Paths::setProgramPath();
