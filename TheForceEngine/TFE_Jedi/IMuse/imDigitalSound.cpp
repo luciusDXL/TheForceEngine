@@ -91,8 +91,11 @@ namespace TFE_Jedi
 
 	// In DOS these are 8-bit outputs since that is what the driver is accepting.
 	// For TFE, floating-point audio output is used, so these convert to floating-point.
-	static f32  s_imWaveFalloffTableMem[2052];
-	static f32* s_imWaveFalloffTable = &s_imWaveFalloffTableMem[1028];
+	static f32  s_audioNormalizationMem[2052];
+	// Normalizes the sum of all audio playback (16-bit) to a [-1,1) floating point value.
+	// The mapping can be addressed with negative values (i.e. s_audioNormalization[-16]), which is why
+	// it is built this way.
+	static f32* s_audioNormalization = &s_audioNormalizationMem[1028];
 
 	static f32* s_audioDriverOut;
 	static s16 s_audioOut[512];
@@ -109,7 +112,7 @@ namespace TFE_Jedi
 	extern u8* ImInternalGetSoundData(ImSoundId soundId);
 
 	ImWaveData* ImGetWaveData(s32 index);
-	s32 ImComputeDigitalFalloff(iMuseInitData* initData);
+	s32 ImComputeAudioNormalization(iMuseInitData* initData);
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetWaveParamIntern(ImSoundId soundId, s32 param);
 	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex);
@@ -158,7 +161,7 @@ namespace TFE_Jedi
 		TFE_Audio::setAudioThreadCallback(ImUpdateWave);
 
 		s_sndPlayerLock = 0;
-		return ImComputeDigitalFalloff(initData);
+		return ImComputeAudioNormalization(initData);
 	}
 
 	void ImTerminateDigitalAudio()
@@ -217,7 +220,7 @@ namespace TFE_Jedi
 		return &s_imWaveData[index];
 	}
 
-	s32 ImComputeDigitalFalloff(iMuseInitData* initData)
+	s32 ImComputeAudioNormalization(iMuseInitData* initData)
 	{
 		s_imDigitalData = initData;
 		s32 waveMixCount = initData->waveMixCount;
@@ -230,8 +233,8 @@ namespace TFE_Jedi
 			volumeOffset >>= 8;
 
 			// These values are 8-bit in DOS, but converted to floating point for TFE.
-			s_imWaveFalloffTable[i] = f32(volumeMidPoint + volumeOffset) / 128.0f - 1.0f;
-			s_imWaveFalloffTable[-i-1] = f32(volumeMidPoint - volumeOffset - 1) / 128.0f - 1.0f;
+			s_audioNormalization[i]    = f32(volumeMidPoint + volumeOffset)     / 128.0f - 1.0f;
+			s_audioNormalization[-i-1] = f32(volumeMidPoint - volumeOffset - 1) / 128.0f - 1.0f;
 		}
 		return imSuccess;
 	}
@@ -658,7 +661,7 @@ namespace TFE_Jedi
 		f32* driverOut = s_audioDriverOut;
 		for (; bufferSize > 0; bufferSize--, audioOut++, driverOut++)
 		{
-			*driverOut = s_imWaveFalloffTable[*audioOut];
+			*driverOut = s_audioNormalization[*audioOut];
 		}
 		return imSuccess;
 	}
