@@ -75,6 +75,8 @@ namespace TFE_Audio
 	static Mutex s_mutex;
 	static bool s_paused = false;
 
+	static AudioThreadCallback s_audioThreadCallback = nullptr;
+
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData);
 	void setSoundVolumeConsole(const ConsoleArgList& args);
 	void getSoundVolumeConsole(const ConsoleArgList& args);
@@ -156,6 +158,13 @@ namespace TFE_Audio
 	void resume()
 	{
 		s_paused = false;
+	}
+		
+	void setAudioThreadCallback(AudioThreadCallback callback)
+	{
+		MUTEX_LOCK(&s_mutex);
+		s_audioThreadCallback = callback;
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	void update(const Vec3f* listenerPos, const Vec3f* listenerDir)
@@ -463,8 +472,14 @@ namespace TFE_Audio
 
 		// First clear samples
 		memset(buffer, 0, sizeof(f32)*bufferSize*2);
-
+			   
 		MUTEX_LOCK(&s_mutex);
+		// Then call the audio thread callback
+		if (s_audioThreadCallback)
+		{
+			s_audioThreadCallback(buffer, bufferSize);
+		}
+
 		// Then loop through the sources.
 		SoundSource* snd = s_sources;
 		for (u32 s = 0; s < s_sourceCount && !s_paused; s++, snd++)

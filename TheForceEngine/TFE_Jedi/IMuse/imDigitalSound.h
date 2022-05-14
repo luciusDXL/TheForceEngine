@@ -27,7 +27,10 @@ struct iMuseInitData;
 namespace TFE_Jedi
 {
 	s32 ImInitializeDigitalAudio(iMuseInitData* initData);
+	void ImTerminateDigitalAudio();
+
 	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetWaveParam(ImSoundId soundId, s32 param);
 	s32 ImStartDigitalSound(ImSoundId soundId, s32 priority);
+	void ImUpdateWave(f32* buffer, u32 bufferSize);
 }  // namespace TFE_Jedi

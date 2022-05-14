@@ -399,6 +399,7 @@ namespace TFE_Jedi
 
 	s32 ImTerminate(void)
 	{
+		ImTerminateDigitalAudio();
 		TFE_MidiPlayer::midiClearCallback();
 		TFE_MidiPlayer::setMaximumNoteLength();
 		return imSuccess;

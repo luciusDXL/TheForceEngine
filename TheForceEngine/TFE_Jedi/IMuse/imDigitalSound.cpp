@@ -1,10 +1,12 @@
 #include "imuse.h"
 #include "imDigitalSound.h"
+#include "imSoundFader.h"
 #include "imTrigger.h"
 #include "imList.h"
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_System/system.h>
 #include <TFE_Audio/midi.h>
+#include <TFE_Audio/audioSystem.h>
 #include <assert.h>
 
 namespace TFE_Jedi
@@ -12,82 +14,90 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////
 	// Structures
 	////////////////////////////////////////////////////
+	struct ImWaveData;
+
 	struct ImWaveSound
 	{
-		s32 u00;
+		ImWaveSound* prev;
 		ImWaveSound* next;
-		u32 waveStreamFlag;
+		ImWaveData* data;
 		ImSoundId soundId;
+
 		s32 marker;
 		s32 group;
 		s32 priority;
 		s32 baseVolume;
+
 		s32 volume;
 		s32 pan;
 		s32 detune;
 		s32 transpose;
+
 		s32 detuneTrans;
 		s32 mailbox;
 	};
 
-	struct ImWaveData;
-
-	struct ImWavePlayer
-	{
-		ImWavePlayer* prev;
-		ImWavePlayer* next;
-		ImWaveData* data;
-		ImSoundId soundId;
-
-		s32 u10;
-		s32 u14;
-		s32 priority;
-		s32 volume;
-
-		s32 baseVol;
-		s32 pan;
-		s32 u28;
-		s32 u2c;
-
-		s32 u30;
-		s32 u34;
-		s32 u38;
-	};
-
 	struct ImWaveData
 	{
-		ImWavePlayer* player;
+		ImWaveSound* sound;
 		s32 offset;
 		s32 chunkSize;
 		s32 baseOffset;
-
 		s32 chunkIndex;
-		s32 u14;
-		s32 u18;
-		s32 u1c;
-
 		s32 u20;
-		s32 u24;
-		s32 u28;
-		s32 u2c;
-
-		s32 u30;
 	};
+
+	struct AudioFrame
+	{
+		u8* data;
+		s32 size;
+	};
+
+	/////////////////////////////////////////////////////
+	// Tables
+	/////////////////////////////////////////////////////
+	static u8 s_audioPanVolumeTable[] =
+	{
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
+		0x00, 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,
+		0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+		0x00, 0x00, 0x01, 0x01, 0x02, 0x02, 0x02, 0x03, 0x03, 0x03, 0x03, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+		0x00, 0x00, 0x01, 0x01, 0x02, 0x02, 0x03, 0x03, 0x04, 0x04, 0x04, 0x04, 0x05, 0x05, 0x05, 0x05, 0x05,
+		0x00, 0x01, 0x01, 0x02, 0x02, 0x03, 0x03, 0x04, 0x04, 0x05, 0x05, 0x05, 0x06, 0x06, 0x06, 0x06, 0x06,
+		0x00, 0x01, 0x01, 0x02, 0x03, 0x03, 0x04, 0x04, 0x05, 0x05, 0x06, 0x06, 0x06, 0x07, 0x07, 0x07, 0x07,
+		0x00, 0x01, 0x02, 0x02, 0x03, 0x04, 0x04, 0x05, 0x06, 0x06, 0x07, 0x07, 0x07, 0x08, 0x08, 0x08, 0x08,
+		0x00, 0x01, 0x02, 0x03, 0x03, 0x04, 0x05, 0x06, 0x06, 0x07, 0x07, 0x08, 0x08, 0x09, 0x09, 0x09, 0x09,
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x06, 0x07, 0x08, 0x08, 0x09, 0x09, 0x0A, 0x0A, 0x0A, 0x0A,
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x09, 0x0A, 0x0A, 0x0B, 0x0B, 0x0B, 0x0B,
+		0x00, 0x01, 0x02, 0x03, 0x05, 0x06, 0x07, 0x08, 0x08, 0x09, 0x0A, 0x0B, 0x0B, 0x0B, 0x0C, 0x0C, 0x0C,
+		0x00, 0x01, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0B, 0x0C, 0x0C, 0x0D, 0x0D, 0x0D,
+		0x00, 0x01, 0x03, 0x04, 0x05, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0C, 0x0D, 0x0D, 0x0E, 0x0E, 0x0E,
+		0x00, 0x01, 0x03, 0x04, 0x06, 0x07, 0x08, 0x0A, 0x0B, 0x0C, 0x0C, 0x0D, 0x0E, 0x0E, 0x0F, 0x0F, 0x0F,
+		0x00, 0x02, 0x03, 0x05, 0x06, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x0F, 0x10, 0x10, 0x10
+	};
+	static u8 s_audio8bitTo16bit[16 * 128];	// TODO: Get values.
 	
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
 	static ImWaveSound* s_imWaveSounds = nullptr;
-	static ImWaveSound  s_imWaveSoundStore[16];
-	static ImWavePlayer s_imWavePlayer[16];
+	static ImWaveSound  s_imWaveSound[16];
 	static ImWaveData   s_imWaveData[16];
 	static u8  s_imWaveChunkData[48];
 	static s32 s_imWaveMixCount = 8;
 	static s32 s_imWaveNanosecsPerSample;
 	static iMuseInitData* s_imDigitalData;
 
-	static u8  s_imWaveFalloffTableMem[2052];
-	static u8* s_imWaveFalloffTable = &s_imWaveFalloffTableMem[1028];
+	// In DOS these are 8-bit outputs since that is what the driver is accepting.
+	// For TFE, floating-point audio output is used, so these convert to floating-point.
+	static f32  s_imWaveFalloffTableMem[2052];
+	static f32* s_imWaveFalloffTable = &s_imWaveFalloffTableMem[1028];
+
+	static f32* s_audioDriverOut;
+	static s16 s_audioOut[512];
+	static s32 s_audioOutSize;
+	static u8* s_audioData;
 
 	extern atomic_s32 s_sndPlayerLock;
 	extern atomic_s32 s_digitalPause;
@@ -103,6 +113,8 @@ namespace TFE_Jedi
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetWaveParamIntern(ImSoundId soundId, s32 param);
 	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex);
+	s32 audioPlaySoundFrame(ImWaveSound* sound);
+	s32 audioWriteToDriver();
 	
 	/////////////////////////////////////////////////////////// 
 	// API
@@ -132,19 +144,26 @@ namespace TFE_Jedi
 			s_imWaveNanosecsPerSample = 45454;
 		}
 
-		ImWavePlayer* player = s_imWavePlayer;
-		for (s32 i = 0; i < s_imWaveMixCount; i++, player++)
+		ImWaveSound* sound = s_imWaveSound;
+		for (s32 i = 0; i < s_imWaveMixCount; i++, sound++)
 		{
-			player->prev = nullptr;
-			player->next = nullptr;
+			sound->prev = nullptr;
+			sound->next = nullptr;
 			ImWaveData* data = ImGetWaveData(i);
-			player->data = data;
-			data->player = player;
-			player->soundId = IM_NULL_SOUNDID;
+			sound->data = data;
+			data->sound = sound;
+			sound->soundId = IM_NULL_SOUNDID;
 		}
+
+		TFE_Audio::setAudioThreadCallback(ImUpdateWave);
 
 		s_sndPlayerLock = 0;
 		return ImComputeDigitalFalloff(initData);
+	}
+
+	void ImTerminateDigitalAudio()
+	{
+		TFE_Audio::setAudioThreadCallback();
 	}
 
 	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value)
@@ -170,6 +189,25 @@ namespace TFE_Jedi
 		ImMidiPlayerUnlock();
 		return res;
 	}
+		
+	void ImUpdateWave(f32* buffer, u32 bufferSize)
+	{
+		// Prepare buffers.
+		s_audioDriverOut = buffer;
+		s_audioOutSize = bufferSize;
+		memset(s_audioOut, 0, bufferSize * sizeof(s16));
+
+		// Write sounds to s_audioOut.
+		ImWaveSound* sound = s_imWaveSounds;
+		while (sound)
+		{
+			audioPlaySoundFrame(sound);
+			sound = sound->next;
+		}
+
+		// Convert s_audioOut to "driver" buffer.
+		audioWriteToDriver();
+	}
 
 	////////////////////////////////////
 	// Internal
@@ -191,9 +229,9 @@ namespace TFE_Jedi
 			s32 volumeOffset = ((waveMixCount * 127 * i) << 8) / (waveMixCount * 127 + (waveMixCount - 1)*i) + 128;
 			volumeOffset >>= 8;
 
-			s_imWaveFalloffTable[i] = volumeMidPoint + volumeOffset;
-			u8* vol = s_imWaveFalloffTable - i - 1;
-			*vol = volumeMidPoint - volumeOffset - 1;
+			// These values are 8-bit in DOS, but converted to floating point for TFE.
+			s_imWaveFalloffTable[i] = f32(volumeMidPoint + volumeOffset) / 128.0f - 1.0f;
+			s_imWaveFalloffTable[-i-1] = f32(volumeMidPoint - volumeOffset - 1) / 128.0f - 1.0f;
 		}
 		return imSuccess;
 	}
@@ -326,7 +364,7 @@ namespace TFE_Jedi
 				}
 				else if (param == waveStreamFlag)
 				{
-					return sound->waveStreamFlag ? 1 : 0;
+					return sound->data ? 1 : 0;
 				}
 				else
 				{
@@ -338,15 +376,15 @@ namespace TFE_Jedi
 		return (param == soundPlayCount) ? soundCount : imInvalidSound;
 	}
 
-	ImWavePlayer* ImAllocWavePlayer(s32 priority)
+	ImWaveSound* ImAllocWavePlayer(s32 priority)
 	{
-		ImWavePlayer* player = s_imWavePlayer;
-		ImWavePlayer* newPlayer = nullptr;
-		for (s32 i = 0; i < s_imWaveMixCount; i++, player++)
+		ImWaveSound* sound = s_imWaveSound;
+		ImWaveSound* newSound = nullptr;
+		for (s32 i = 0; i < s_imWaveMixCount; i++, sound++)
 		{
-			if (!player->soundId)
+			if (!sound->soundId)
 			{
-				return player;
+				return sound;
 			}
 		}
 
@@ -383,13 +421,13 @@ namespace TFE_Jedi
 			}
 			else  // chunkIndex == 0
 			{
-				ImWavePlayer* player = data->player;
-				sndData = ImInternalGetSoundData(player->soundId);
+				ImWaveSound* sound = data->sound;
+				sndData = ImInternalGetSoundData(sound->soundId);
 				if (!sndData)
 				{
-					if (player->u34 == 0)
+					if (sound->mailbox == 0)
 					{
-						player->u34 = 8;
+						sound->mailbox = 8;
 					}
 					IM_LOG_ERR("null sound addr in SeekToNextChunk()...");
 					return imFail;
@@ -412,10 +450,10 @@ namespace TFE_Jedi
 				data->chunkSize = chunkSize;
 				if (chunkSize > 220000)
 				{
-					ImWavePlayer* player = data->player;
-					if (player->u34 == 0)
+					ImWaveSound* sound = data->sound;
+					if (sound->mailbox == 0)
 					{
-						player->u34 = 9;
+						sound->mailbox = 9;
 					}
 				}
 
@@ -430,7 +468,7 @@ namespace TFE_Jedi
 			else if (id == 4)
 			{
 				chunkData += 3;
-				ImSetSoundTrigger((ImSoundId)data->player, chunkData);
+				ImSetSoundTrigger((ImSoundId)data->sound, chunkData);
 				data->offset += 6;
 			}
 			else if (id == 6)
@@ -456,7 +494,7 @@ namespace TFE_Jedi
 			{
 				if (chunkData[0] != 'r' || chunkData[1] != 'e' || chunkData[2] != 'a')
 				{
-					IM_LOG_ERR("ERR: Illegal chunk in sound %lu...", data->player->soundId);
+					IM_LOG_ERR("ERR: Illegal chunk in sound %lu...", data->sound->soundId);
 					return imFail;
 				}
 				data->offset += 26;
@@ -468,16 +506,16 @@ namespace TFE_Jedi
 			}
 			else
 			{
-				IM_LOG_ERR("ERR: Illegal chunk in sound %lu...", data->player->soundId);
+				IM_LOG_ERR("ERR: Illegal chunk in sound %lu...", data->sound->soundId);
 				return imFail;
 			}
 		}
 		return imSuccess;
 	}
 
-	s32 ImWaveSetupPlayerData(ImWavePlayer* player, s32 chunkIndex)
+	s32 ImWaveSetupSoundData(ImWaveSound* sound, s32 chunkIndex)
 	{
-		ImWaveData* data = player->data;
+		ImWaveData* data = sound->data;
 		data->offset = 0;
 		data->chunkSize = 0;
 		data->baseOffset = 0;
@@ -496,34 +534,132 @@ namespace TFE_Jedi
 	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex)
 	{
 		priority = clamp(priority, 0, 127);
-		ImWavePlayer* player = ImAllocWavePlayer(priority);
-		if (!player)
+		ImWaveSound* sound = ImAllocWavePlayer(priority);
+		if (!sound)
 		{
 			return imFail;
 		}
 
-		player->soundId = soundId;
-		player->u10 = 0;
-		player->u14 = 0;
-		player->priority = priority;
-		player->volume = 128;
-		player->baseVol = ImGetGroupVolume(0);
-		player->pan = 64;
-		player->u28 = 0;
-		player->u2c = 0;
-		player->u30 = 0;
-		player->u34 = 0;
-		player->u38 = 0;
-		if (ImWaveSetupPlayerData(player, chunkIndex) != imSuccess)
+		sound->soundId = soundId;
+		sound->marker = 0;
+		sound->group = 0;
+		sound->priority = priority;
+		sound->volume = 128;
+		sound->baseVolume = ImGetGroupVolume(0);
+		sound->pan = 64;
+		sound->detune = 0;
+		sound->transpose = 0;
+		sound->detuneTrans = 0;
+		sound->mailbox = 0;
+		if (ImWaveSetupSoundData(sound, chunkIndex) != imSuccess)
 		{
 			IM_LOG_ERR("Failed to setup wave player data - soundId: 0x%x, priority: %d", soundId, priority);
 			return imFail;
 		}
 
 		ImMidiPlayerLock();
-		IM_LIST_ADD(s_imWaveSounds, player);
+		IM_LIST_ADD(s_imWaveSounds, sound);
 		ImMidiPlayerUnlock();
 
+		return imSuccess;
+	}
+
+	void ImFreeWaveSound(ImWaveSound* sound)
+	{
+		IM_LIST_REM(s_imWaveSounds, sound);
+		ImClearSoundFaders(sound->soundId, -1);
+		ImClearTrigger(sound->soundId, -1, -1);
+		sound->soundId = IM_NULL_SOUNDID;
+	}
+		
+	void digitalAudioOutput_Stereo(s16* audioOut, u8* sndData, u8* leftVol, u8* rightVol, s32 size)
+	{
+		for (; size > 0; size--, sndData++, audioOut+=2)
+		{
+			const u8 sample = *sndData;
+			audioOut[0] += leftVol[sample];
+			audioOut[1] += rightVol[sample];
+		}
+	}
+
+	void audioProcessFrame(AudioFrame* audioFrame, s32 outOffset, s32 vol, s32 pan)
+	{
+		s32 vTop = vol >> 3;
+		if (vol)
+		{
+			vTop++;
+		}
+		if (vTop >= 17)
+		{
+			vTop = 1;
+		}
+
+		s32 panTop = (pan >> 3) - 8;
+		if (pan > 64)
+		{
+			panTop++;
+		}
+
+		s32 left     = s_audioPanVolumeTable[8 - panTop + vTop * 17];
+		s32 right    = s_audioPanVolumeTable[8 + panTop + vTop * 17];
+		u8* leftVol  = &s_audio8bitTo16bit[left << 8];
+		u8* rightVol = &s_audio8bitTo16bit[right << 8];
+
+		digitalAudioOutput_Stereo(&s_audioOut[outOffset * 2], audioFrame->data, leftVol, rightVol, audioFrame->size);
+	}
+
+	s32 audioPlaySoundFrame(ImWaveSound* sound)
+	{
+		ImWaveData* data = sound->data;
+		s32 bufferSize = s_audioOutSize >> 1;
+		s32 offset = 0;
+		s32 res = imSuccess;
+		while (bufferSize > 0)
+		{
+			res = imSuccess;
+			if (!data->chunkSize)
+			{
+				res = ImSeekToNextChunk(data);
+				if (res != imSuccess)
+				{
+					if (res == imFail)  // Sound has finished playing.
+					{
+						ImFreeWaveSound(sound);
+					}
+					break;
+				}
+			}
+			if (!bufferSize)
+			{
+				break;
+			}
+
+			s32 readSize = (bufferSize <= data->chunkSize) ? bufferSize : data->chunkSize;
+			s_audioData = ImInternalGetSoundData(sound->soundId) + data->offset;
+			audioProcessFrame((AudioFrame*)s_audioData, offset, sound->baseVolume, sound->pan);
+
+			offset += readSize;
+			bufferSize -= readSize;
+			data->offset += readSize;
+			data->chunkSize -= readSize;
+		}
+		return res;
+	}
+
+	s32 audioWriteToDriver()
+	{
+		if (!s_audioOut)
+		{
+			return imInvalidSound;
+		}
+
+		s32 bufferSize = s_audioOutSize;
+		s16* audioOut  = s_audioOut;
+		f32* driverOut = s_audioDriverOut;
+		for (; bufferSize > 0; bufferSize--, audioOut++, driverOut++)
+		{
+			*driverOut = s_imWaveFalloffTable[*audioOut];
+		}
 		return imSuccess;
 	}
 

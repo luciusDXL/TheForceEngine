@@ -44,6 +44,7 @@ enum SoundType
 #define MAX_SOUND_SOURCES 128
 
 typedef void (*SoundFinishedCallback)(void* userData, s32 arg);
+typedef void (*AudioThreadCallback)(f32* buffer, u32 bufferSize);
 
 namespace TFE_Audio
 {
@@ -62,6 +63,8 @@ namespace TFE_Audio
 	f32  getVolume();
 	void pause();
 	void resume();
+
+	void setAudioThreadCallback(AudioThreadCallback callback = nullptr);
 
 	// Update position audio and other audio effects.
 	void update(const Vec3f* listenerPos, const Vec3f* listenerDir);
