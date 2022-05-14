@@ -104,7 +104,6 @@ namespace TFE_Jedi
 	s32 ImWrapValue(s32 value, s32 a, s32 b);
 	void ImHandleChannelPriorityChange(ImMidiPlayer* player, ImMidiOutChannel* channel);
 	ImSoundId ImFindNextMidiSound(ImSoundId soundId);
-	ImSoundId ImFindNextWaveSound(ImSoundId soundId);
 	ImMidiPlayer* ImGetMidiPlayer(ImSoundId soundId);
 	s32 ImSetHookMidi(ImSoundId soundId, s32 value);
 	s32 ImSetSequence(ImPlayerData* data, u8* sndData, s32 seqIndex);
@@ -529,7 +528,7 @@ namespace TFE_Jedi
 	{
 		ImSoundId nextMidiId = ImFindNextMidiSound(soundId);
 		ImSoundId nextWaveId = ImFindNextWaveSound(soundId);
-		if (nextMidiId == 0 || (nextWaveId > 0 && nextMidiId >= nextWaveId))
+		if (nextMidiId == 0 || (nextWaveId > IM_NULL_SOUNDID && nextMidiId >= nextWaveId))
 		{
 			return nextWaveId;
 		}
@@ -1293,7 +1292,7 @@ namespace TFE_Jedi
 		} while (foundId);
 
 		// Then check for wave sounds.
-		foundId = 0;
+		foundId = IM_NULL_SOUNDID;
 		do
 		{
 			foundId = ImFindNextWaveSound(foundId);
@@ -1582,29 +1581,7 @@ namespace TFE_Jedi
 		}
 		return value;
 	}
-
-	ImSoundId ImFindNextWaveSound(ImSoundId soundId)
-	{
-		ImSoundId nextSoundId = IM_NULL_SOUNDID;
-		/*
-		** Stubbed **
-		ImWaveSound* snd = s_imWaveSounds;
-		while (snd)
-		{
-			if (snd->soundId > soundId)
-			{
-				if (nextSoundId)
-				{
-					// IM_TODO
-				}
-				nextSoundId = snd->soundId;
-			}
-			snd = snd->next;
-		}
-		*/
-		return nextSoundId;
-	}
-
+		
 	ImMidiPlayer* ImGetMidiPlayer(ImSoundId soundId)
 	{
 		ImMidiPlayer* player = s_midiPlayerList;

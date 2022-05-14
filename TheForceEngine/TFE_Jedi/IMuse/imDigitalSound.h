@@ -36,4 +36,5 @@ namespace TFE_Jedi
 
 	s32 ImFreeWaveSoundById(ImSoundId soundId);
 	s32 ImFreeAllWaveSounds();
+	ImSoundId ImFindNextWaveSound(ImSoundId soundId);
 }  // namespace TFE_Jedi

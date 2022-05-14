@@ -57,7 +57,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
-	static ImWaveSound* s_imWaveSounds = nullptr;
+	static ImWaveSound* s_imWaveSoundList = nullptr;
 	static ImWaveSound  s_imWaveSound[16];
 	static ImWaveData   s_imWaveData[16];
 	static u8  s_imWaveChunkData[48];
@@ -110,7 +110,7 @@ namespace TFE_Jedi
 		}
 		s_imWaveMixCount = initData->waveMixCount;
 		s_digitalPause = 0;
-		s_imWaveSounds = nullptr;
+		s_imWaveSoundList = nullptr;
 
 		if (initData->waveSpeed == IM_WAVE_11kHz) // <- this is the path taken by Dark Forces DOS
 		{
@@ -179,7 +179,7 @@ namespace TFE_Jedi
 		memset(s_audioOut, 0, bufferSize * sizeof(s16));
 
 		// Write sounds to s_audioOut.
-		ImWaveSound* sound = s_imWaveSounds;
+		ImWaveSound* sound = s_imWaveSoundList;
 		while (sound)
 		{
 			audioPlaySoundFrame(sound);
@@ -219,7 +219,7 @@ namespace TFE_Jedi
 
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value)
 	{
-		ImWaveSound* sound = s_imWaveSounds;
+		ImWaveSound* sound = s_imWaveSoundList;
 		while (sound)
 		{
 			if (sound->soundId == soundId)
@@ -298,7 +298,7 @@ namespace TFE_Jedi
 	s32 ImGetWaveParamIntern(ImSoundId soundId, s32 param)
 	{
 		s32 soundCount = 0;
-		ImWaveSound* sound = s_imWaveSounds;
+		ImWaveSound* sound = s_imWaveSoundList;
 		while (sound)
 		{
 			if (sound->soundId == soundId)
@@ -372,7 +372,7 @@ namespace TFE_Jedi
 		IM_LOG_WRN("ERR: no spare tracks...");
 		s32 minPriority = 127;
 		ImWaveSound* minPrioritySound = nullptr;
-		sound = s_imWaveSounds;
+		sound = s_imWaveSoundList;
 		while (sound)
 		{
 			if (sound->priority <= minPriority)
@@ -560,7 +560,7 @@ namespace TFE_Jedi
 		}
 
 		ImMidiPlayerLock();
-		IM_LIST_ADD(s_imWaveSounds, sound);
+		IM_LIST_ADD(s_imWaveSoundList, sound);
 		ImMidiPlayerUnlock();
 
 		return imSuccess;
@@ -568,7 +568,7 @@ namespace TFE_Jedi
 
 	void ImFreeWaveSound(ImWaveSound* sound)
 	{
-		IM_LIST_REM(s_imWaveSounds, sound);
+		IM_LIST_REM(s_imWaveSoundList, sound);
 		ImClearSoundFaders(sound->soundId, -1);
 		ImClearTrigger(sound->soundId, -1, -1);
 		sound->soundId = IM_NULL_SOUNDID;
@@ -584,7 +584,7 @@ namespace TFE_Jedi
 
 	s32 ImFreeAllWaveSounds()
 	{
-		ImWaveSound* sound = s_imWaveSounds;
+		ImWaveSound* sound = s_imWaveSoundList;
 		ImMidiPlayerLock();
 		while (sound)
 		{
@@ -594,6 +594,25 @@ namespace TFE_Jedi
 		}
 		ImMidiPlayerUnlock();
 		return imSuccess;
+	}
+
+	ImSoundId ImFindNextWaveSound(ImSoundId soundId)
+	{
+		ImSoundId nextSoundId = IM_NULL_SOUNDID;
+		ImWaveSound* sound = s_imWaveSoundList;
+		// Find the smallest ID that is greater than 'soundId' or NULL if soundId is the last one.
+		while (sound)
+		{
+			if (sound->soundId > soundId)
+			{
+				if (!nextSoundId || sound->soundId < nextSoundId)
+				{
+					nextSoundId = sound->soundId;
+				}
+			}
+			sound = sound->next;
+		}
+		return nextSoundId;
 	}
 	
 	// leftMapping:  map left channel samples to final values based on volume and pan.
@@ -695,7 +714,7 @@ namespace TFE_Jedi
 	{
 		s32 result = imInvalidSound;
 
-		ImWaveSound* sound = s_imWaveSounds;
+		ImWaveSound* sound = s_imWaveSoundList;
 		while (sound)
 		{
 			ImWaveSound* next = sound->next;
