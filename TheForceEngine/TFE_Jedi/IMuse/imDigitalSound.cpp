@@ -92,6 +92,7 @@ namespace TFE_Jedi
 	s32 ImComputeAudioNormalization(iMuseInitData* initData);
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetWaveParamIntern(ImSoundId soundId, s32 param);
+	s32 ImFreeWaveSoundByIdIntern(ImSoundId soundId);
 	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex);
 	s32 audioPlaySoundFrame(ImWaveSound* sound);
 	s32 audioWriteToDriver();
@@ -572,6 +573,28 @@ namespace TFE_Jedi
 		ImClearTrigger(sound->soundId, -1, -1);
 		sound->soundId = IM_NULL_SOUNDID;
 	}
+
+	s32 ImFreeWaveSoundById(ImSoundId soundId)
+	{
+		ImMidiPlayerLock();
+		s32 res = ImFreeWaveSoundByIdIntern(soundId);
+		ImMidiPlayerUnlock();
+		return res;
+	}
+
+	s32 ImFreeAllWaveSounds()
+	{
+		ImWaveSound* sound = s_imWaveSounds;
+		ImMidiPlayerLock();
+		while (sound)
+		{
+			ImWaveSound* next = sound->next;
+			ImFreeWaveSound(sound);
+			sound = next;
+		}
+		ImMidiPlayerUnlock();
+		return imSuccess;
+	}
 	
 	// leftMapping:  map left channel samples to final values based on volume and pan.
 	// rightMapping: map right channel samples to final values based on volume and pan.
@@ -666,6 +689,25 @@ namespace TFE_Jedi
 			*driverOut = s_audioNormalization[*audioOut];
 		}
 		return imSuccess;
+	}
+
+	s32 ImFreeWaveSoundByIdIntern(ImSoundId soundId)
+	{
+		s32 result = imInvalidSound;
+
+		ImWaveSound* sound = s_imWaveSounds;
+		while (sound)
+		{
+			ImWaveSound* next = sound->next;
+			if (sound->soundId == soundId)
+			{
+				ImFreeWaveSound(sound);
+				result = imSuccess;
+			}
+			sound = next;
+		}
+
+		return result;
 	}
 
 }  // namespace TFE_Jedi

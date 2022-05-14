@@ -33,4 +33,7 @@ namespace TFE_Jedi
 	s32 ImGetWaveParam(ImSoundId soundId, s32 param);
 	s32 ImStartDigitalSound(ImSoundId soundId, s32 priority);
 	void ImUpdateWave(f32* buffer, u32 bufferSize);
+
+	s32 ImFreeWaveSoundById(ImSoundId soundId);
+	s32 ImFreeAllWaveSounds();
 }  // namespace TFE_Jedi

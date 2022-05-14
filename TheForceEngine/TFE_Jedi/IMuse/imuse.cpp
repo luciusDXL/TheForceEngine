@@ -96,7 +96,6 @@ namespace TFE_Jedi
 	s32 ImSetupMidiPlayer(ImSoundId soundId, s32 priority);
 	s32 ImFreeMidiPlayer(ImSoundId soundId);
 	s32 ImReleaseAllPlayers();
-	s32 ImReleaseAllWaveSounds();
 	s32 ImGetSoundType(ImSoundId soundId);
 	s32 ImSetMidiParam(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetMidiTimeParam(ImPlayerData* data, s32 param);
@@ -510,7 +509,7 @@ namespace TFE_Jedi
 		}
 		else if (type == typeWave)
 		{
-			// IM_TODO: Digital sound
+			return ImFreeWaveSoundById(soundId);
 		}
 		return imFail;
 	}
@@ -520,7 +519,7 @@ namespace TFE_Jedi
 		s32 res = ImClearAllSoundFaders();
 		res |= ImClearTriggersAndCmds();
 		res |= ImReleaseAllPlayers();
-		res |= ImReleaseAllWaveSounds();
+		res |= ImFreeAllWaveSounds();
 
 		TFE_MidiPlayer::stopMidiSound();
 		return res;
@@ -1277,21 +1276,6 @@ namespace TFE_Jedi
 				ImReleaseMidiPlayer(player);
 			}
 		} while (player);
-		return imSuccess;
-	}
-
-	s32 ImReleaseAllWaveSounds()
-	{
-		/*
-		** Stubbed
-		ImWaveSound* snd = s_imWaveSounds;
-		ImMidiPlayerLock();
-		if (snd)
-		{
-			// IM_TODO
-		}
-		ImMidiPlayerUnlock();
-		*/
 		return imSuccess;
 	}
 		
