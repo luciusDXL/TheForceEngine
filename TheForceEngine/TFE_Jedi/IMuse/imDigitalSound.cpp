@@ -88,13 +88,14 @@ namespace TFE_Jedi
 	extern u8* ImInternalGetSoundData(ImSoundId soundId);
 
 	ImWaveData* ImGetWaveData(s32 index);
+	void ImFreeWaveSound(ImWaveSound* sound);
 	s32 ImComputeAudioNormalization(iMuseInitData* initData);
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetWaveParamIntern(ImSoundId soundId, s32 param);
 	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex);
 	s32 audioPlaySoundFrame(ImWaveSound* sound);
 	s32 audioWriteToDriver();
-	
+		
 	/////////////////////////////////////////////////////////// 
 	// API
 	/////////////////////////////////////////////////////////// 
@@ -355,7 +356,7 @@ namespace TFE_Jedi
 		return (param == soundPlayCount) ? soundCount : imInvalidSound;
 	}
 
-	ImWaveSound* ImAllocWavePlayer(s32 priority)
+	ImWaveSound* ImAllocWaveSound(s32 priority)
 	{
 		ImWaveSound* sound = s_imWaveSound;
 		ImWaveSound* newSound = nullptr;
@@ -368,8 +369,29 @@ namespace TFE_Jedi
 		}
 
 		IM_LOG_WRN("ERR: no spare tracks...");
-		// TODO
-		return nullptr;
+		s32 minPriority = 127;
+		ImWaveSound* minPrioritySound = nullptr;
+		sound = s_imWaveSounds;
+		while (sound)
+		{
+			if (sound->priority <= minPriority)
+			{
+				minPriority = sound->priority;
+				minPrioritySound = sound;
+			}
+			sound = sound->next;
+		}
+
+		newSound = nullptr;
+		if (sound)
+		{
+			if (priority >= minPriority)
+			{
+				ImFreeWaveSound(minPrioritySound);
+				newSound = minPrioritySound;
+			}
+		}
+		return newSound;
 	}
 
 	u8* ImGetChunkSoundData(s32 chunkIndex, s32 rangeMin, s32 rangeMax)
@@ -513,7 +535,7 @@ namespace TFE_Jedi
 	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex)
 	{
 		priority = clamp(priority, 0, 127);
-		ImWaveSound* sound = ImAllocWavePlayer(priority);
+		ImWaveSound* sound = ImAllocWaveSound(priority);
 		if (!sound)
 		{
 			return imFail;
