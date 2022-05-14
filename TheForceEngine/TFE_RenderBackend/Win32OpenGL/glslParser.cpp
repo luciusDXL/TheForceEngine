@@ -4,6 +4,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_RenderBackend/renderState.h>
+#include <TFE_System/system.h>
 #include <GL/glew.h>
 #include <assert.h>
 
@@ -28,6 +29,11 @@ namespace GLSLParser
 			{
 				fileName[c - start] = input[c];
 			}
+		}
+		if (end - start < 0 || end - start >= 64)
+		{
+			TFE_System::logWrite(LOG_ERROR, "GLSL Parser", "Cannot parse include.");
+			return 0;
 		}
 		fileName[end - start] = 0;
 

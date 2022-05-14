@@ -10,7 +10,7 @@
 class GobMemoryArchive : public Archive
 {
 public:
-	GobMemoryArchive() : m_archiveOpen(false), m_curFile(-1) {}
+	GobMemoryArchive() : m_buffer(nullptr), m_size(0), m_readLoc(0), m_archiveOpen(false), m_curFile(-1) {}
 	~GobMemoryArchive() override;
 
 	// Archive

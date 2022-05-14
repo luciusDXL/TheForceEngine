@@ -450,7 +450,7 @@ namespace TFE_Audio
 		
 	f32 sampleBuffer(u32 index, SoundDataType type, const u8* data)
 	{
-		f32 sampleValue;
+		f32 sampleValue = 0.0f;
 		switch (type)
 		{
 			case SOUND_DATA_8BIT:  { sampleValue = (f32)data[index]; } break;

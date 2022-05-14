@@ -145,7 +145,7 @@ namespace TFE_Memory
 		MemoryRegion* region = (MemoryRegion*)malloc(sizeof(MemoryRegion));
 		if (!region)
 		{
-			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Failed to allocate region '%s'.", region->name);
+			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Failed to allocate region '%s'.", name);
 			return nullptr;
 		}
 
@@ -158,7 +158,7 @@ namespace TFE_Memory
 		if (!allocateNewBlock(region))
 		{
 			free(region);
-			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Failed to memory block of size %u in region '%s'.", blockSize, region->name);
+			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Failed to memory block of size %u in region '%s'.", blockSize, name);
 			return nullptr;
 		}
 		VERIFY_MEMORY();
@@ -584,6 +584,13 @@ namespace TFE_Memory
 				region->maxBlocks  = maxBlocks;
 			}
 		}
+
+		if (!region->memBlocks)
+		{
+			free(region);
+			TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Failed to allocate region.");
+			return nullptr;
+		}
 		
 		for (s32 b = 0; b < region->blockCount; b++)
 		{
@@ -594,6 +601,13 @@ namespace TFE_Memory
 			}
 
 			MemoryBlock* block = region->memBlocks[b];
+			if (!block)
+			{
+				TFE_System::logWrite(LOG_ERROR, "MemoryRegion", "Invalid memory block.");
+				file->close();
+				return nullptr;
+			}
+
 			file->read(&block->count);
 			file->read(&block->sizeFree);
 			for (s32 bin = 0; bin < ALLOC_BIN_COUNT; bin++)
@@ -753,6 +767,7 @@ namespace TFE_Memory
 		}
 
 		size_t blockIndex = region->blockCount;
+		assert(blockIndex < region->blockArrCapacity);
 		region->memBlocks[blockIndex] = (MemoryBlock*)malloc(sizeof(MemoryBlock) + region->blockSize);
 		if (!region->memBlocks[blockIndex])
 		{

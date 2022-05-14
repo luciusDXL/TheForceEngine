@@ -408,7 +408,11 @@ void generateScreenshotTime()
 {
 	__time64_t time;
 	_time64(&time);
-	strcpy(s_screenshotTime, _ctime64(&time));
+	const char* timeString = _ctime64(&time);
+	if (timeString)
+	{
+		strcpy(s_screenshotTime, timeString);
+	}
 
 	// Replace ':' with '_'
 	size_t len = strlen(s_screenshotTime);

@@ -83,8 +83,7 @@ namespace TFE_DarkForces
 					if (sequence && sequence <= SEQUENCE_COUNT && index < MAX_CUE_POINTS)
 					{
 						strncpy(s_sequences[sequence - 1][index].name, name, 9);
-						size_t len = strlen(s_sequences[sequence - 1][index].name);
-						s_sequences[sequence-1][index].name[len] = 0;
+						s_sequences[sequence - 1][index].name[9] = 0;
 
 						s_sequences[sequence-1][index].xChunk = xChunk;
 						s_sequences[sequence-1][index].xMeasure = xMeasure;

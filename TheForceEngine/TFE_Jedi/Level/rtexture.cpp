@@ -250,7 +250,10 @@ namespace TFE_Jedi
 				data += texture->dataSize;
 
 				texture->columns = (u32*)malloc(texture->width * sizeof(u32));
-				memcpy(texture->columns, data, texture->width * sizeof(u32));
+				if (texture->columns)
+				{
+					memcpy(texture->columns, data, texture->width * sizeof(u32));
+				}
 				data += texture->width * sizeof(u32);
 			}
 		}
@@ -266,7 +269,10 @@ namespace TFE_Jedi
 
 			// Allocate and read the BM image.
 			texture->image = (u8*)malloc(texture->dataSize);
-			memcpy(texture->image, data, texture->dataSize);
+			if (texture->image)
+			{
+				memcpy(texture->image, data, texture->dataSize);
+			}
 			data += texture->dataSize;
 		}
 

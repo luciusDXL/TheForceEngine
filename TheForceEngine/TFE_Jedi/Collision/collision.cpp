@@ -387,6 +387,11 @@ namespace TFE_Jedi
 	// Note only objects with a clear line-of-sight are accepted.
 	JBool collision_isAnyObjectInRange(RSector* sector, fixed16_16 radius, vec3_fixed origin, SecObject* skipObj, u32 entityFlags)
 	{
+		if (!sector)
+		{
+			return JFALSE;
+		}
+
 		fixed16_16 x0 = origin.x - radius;
 		fixed16_16 y0 = origin.y - radius;
 		fixed16_16 z0 = origin.z - radius;
@@ -579,6 +584,11 @@ namespace TFE_Jedi
 	// Note the collision path is 2D (XZ) but cannot pass through sectors with a gap smaller than 0.5 units.
 	void collision_effectObjectsInRangeXZ(RSector* startSector, fixed16_16 range, vec3_fixed origin, CollisionEffectFunc effectFunc, SecObject* excludeObj, u32 entityFlags)
 	{
+		if (!startSector)
+		{
+			return;
+		}
+
 		const fixed16_16 x0 = origin.x - range;
 		const fixed16_16 y0 = origin.y - range;
 		const fixed16_16 z0 = origin.z - range;

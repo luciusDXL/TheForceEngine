@@ -673,6 +673,8 @@ namespace TFE_Console
 
 		char* endPtr;
 		char msg[CSTR_LEN];
+		msg[0] = 0;
+
 		switch (var->type)
 		{
 		case CVAR_INT:
@@ -762,6 +764,8 @@ namespace TFE_Console
 		}
 
 		char msg[CSTR_LEN];
+		msg[0] = 0;
+
 		switch (var->type)
 		{
 		case CVAR_INT:

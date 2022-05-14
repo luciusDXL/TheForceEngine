@@ -8,6 +8,11 @@ namespace WindowsRegistry
 {
 	bool readStringFromRegistry(HKEY key, const char* subKey, const char* valueName, char* value)
 	{
+		if (!subKey || !valueName || !value)
+		{
+			return false;
+		}
+
 		value[0] = 0;
 		HKEY pathKey;
 		if (RegOpenKeyExA(key, subKey, 0, KEY_QUERY_VALUE, &pathKey) == ERROR_SUCCESS)

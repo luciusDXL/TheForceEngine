@@ -226,7 +226,7 @@ namespace TFE_GmidAsset
 				case c_MTrk:
 				{
 					const u8* chunkDataEnd = chunkData + chunk.size;
-					while (chunkData < chunkDataEnd)
+					while (chunkData < chunkDataEnd && curTrack)
 					{
 						u32 deltaTime = readVariableLength(chunkData);
 						u8  midiEvent = readU8(chunkData);

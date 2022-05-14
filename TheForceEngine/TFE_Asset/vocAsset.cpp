@@ -159,9 +159,18 @@ namespace TFE_VocAsset
 
 	void continueSoundData(SoundBuffer* voc, const u8* soundData, u32 size)
 	{
-		voc->data = (u8*)realloc(voc->data, voc->size + size);
-		memcpy(voc->data + voc->size, soundData, size);
-		voc->size += size;
+		if (!voc || !soundData || !size)
+		{
+			return;
+		}
+
+		u8* newData = (u8*)realloc(voc->data, voc->size + size);
+		if (newData)
+		{
+			voc->data = newData;
+			memcpy(voc->data + voc->size, soundData, size);
+			voc->size += size;
+		}
 	}
 	
 	// Each sound block can have a different sampleRate but Dark Forces does not use this capability.

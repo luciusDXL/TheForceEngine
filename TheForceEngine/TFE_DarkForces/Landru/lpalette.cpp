@@ -82,6 +82,8 @@ namespace TFE_DarkForces
 
 	void lpalette_remove(LPalette* pal)
 	{
+		if (!pal) { return; }
+
 		LPalette* curPal = s_firstPal;
 		LPalette* lastPal = nullptr;
 

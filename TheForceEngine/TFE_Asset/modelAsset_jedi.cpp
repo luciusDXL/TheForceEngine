@@ -67,6 +67,11 @@ namespace TFE_Jedi_Object3d
 
 		model->vertexNormals = (vec3*)malloc(vertexCount * sizeof(vec3));
 		vec3* outNormal = model->vertexNormals;
+		if (!outNormal)
+		{
+			TFE_System::logWrite(LOG_ERROR, "ComputeVertexNormals", "Output normal pointer is NULL.");
+			return;
+		}
 
 		// For each vertex, go through each polyon and see if it belongs.
 		// Add polygon normals for each polygon the vertex belongs to.
@@ -430,7 +435,7 @@ namespace TFE_Model_Jedi
 				return false;
 			}
 			TextureData* texture = nullptr;
-			if (textureId != -1)
+			if (textureId != -1 && model->textures)
 			{
 				texture = model->textures[textureId];
 			}

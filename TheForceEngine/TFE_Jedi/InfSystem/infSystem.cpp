@@ -1746,8 +1746,8 @@ namespace TFE_Jedi
 	{
 		if (hitWall->signTex)
 		{
-			fixed16_16 baseHeight;
-			fixed16_16 uOffset;
+			fixed16_16 baseHeight = 0;
+			fixed16_16 uOffset = 0;
 			switch (hitWall->drawFlags)
 			{
 				case WDF_MIDDLE:
@@ -3331,7 +3331,10 @@ namespace TFE_Jedi
 		trigger->textId = 0;
 		trigger->link   = link;
 		trigger->type   = type;
-		link->freeFunc  = inf_triggerFreeFunc;
+		if (link)
+		{
+			link->freeFunc = inf_triggerFreeFunc;
+		}
 
 		return trigger;
 	}

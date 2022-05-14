@@ -1050,7 +1050,8 @@ namespace TFE_Jedi
 	{
 		if (id & imMidiFlag)
 		{
-			return s_midiFiles[id & imMidiMask];
+			const ImSoundId index = id & imMidiMask;
+			return index < IM_MIDI_FILE_COUNT ? s_midiFiles[index] : nullptr;
 		}
 		else
 		{
@@ -1169,10 +1170,13 @@ namespace TFE_Jedi
 				sound->refCount--;
 				// The ref count seems to be ignored here.
 				{
-					u32 index = sound->id & imMidiMask;
-					imuse_free(s_midiFiles[index]);
-					s_midiFiles[index] = nullptr;
-					s_midiFileCount--;
+					const ImSoundId index = sound->id & imMidiMask;
+					if (index < IM_MIDI_FILE_COUNT)
+					{
+						imuse_free(s_midiFiles[index]);
+						s_midiFiles[index] = nullptr;
+						s_midiFileCount--;
+					}
 
 					sound->id = IM_NULL_SOUNDID;
 					sound->refCount = 0;

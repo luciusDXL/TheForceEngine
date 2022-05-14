@@ -321,7 +321,7 @@ namespace RClassic_Fixed
 
 		s32 yMin = INT_MAX;
 		s32 yMax = INT_MIN;
-		s32 minIndex;
+		s32 minIndex = 0;
 
 		s_polyProjVtx = projVertices;
 		s_polyVertexCount = vertexCount;
