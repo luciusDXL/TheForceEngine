@@ -1,5 +1,6 @@
 #include "crashHandler.h"
 #include <TFE_System/system.h>
+#include <TFE_FileSystem/paths.h>
 
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 #include <windows.h>
@@ -29,7 +30,10 @@
 EXTERNC void * _AddressOfReturnAddress(void);
 EXTERNC void * _ReturnAddress(void);
 
-#endif 
+#endif
+
+static char s_dirBuffer[TFE_MAX_PATH];
+static char s_msgBuffer[TFE_MAX_PATH];
 
 // Collects current process state.
 static void getExceptionPointers(u32 dwExceptionCode, EXCEPTION_POINTERS** pExceptionPointers);
@@ -229,19 +233,31 @@ void createMiniDump(EXCEPTION_POINTERS* pExcPtrs)
     FreeLibrary(hDbgHelp);
 }
 
+void showCrashReportPopup(const char* message)
+{
+	// Get the current directory.
+	GetCurrentDirectoryA(TFE_MAX_PATH, s_dirBuffer);
+	// Build the message.
+	sprintf_s(s_msgBuffer, TFE_MAX_PATH, "The Force Engine (TFE) Crashed.\n%s\nCrash dump written to '%s'.", message, s_dirBuffer);
+	// Write to the log.
+	TFE_System::logWrite(LOG_ERROR, "Crash", s_msgBuffer);
+	TFE_System::logClose();
+	// Output to a popup message box.
+	MessageBoxA(NULL, (LPCSTR)s_msgBuffer, (LPCSTR)"Crash Report", MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
+}
+
 // Structured exception handler
 LONG WINAPI sehHandler(PEXCEPTION_POINTERS pExceptionPtrs)
 { 
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - caught using SEH. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("SEH Exception");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);
-	
+			
 	// Unreacheable code  
 	return EXCEPTION_EXECUTE_HANDLER;
 }
@@ -258,9 +274,8 @@ void terminateHandler()
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - Abnormal Program Termination. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("Abnormal Program Termination");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    
@@ -278,9 +293,8 @@ void unexpectedHandler()
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - Unexpected Call Handler. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("Unexpected Call Handler");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    	    
@@ -298,9 +312,8 @@ void pureCallHandler()
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - Pure Call Handler. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("Pure Call Handler");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1); 
@@ -319,9 +332,8 @@ void invalidParameterHandler(const wchar_t* expression, const wchar_t* function,
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - Invalid System Call. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("Invalid System Call");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    
@@ -339,9 +351,8 @@ int newHandler(size_t)
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - Memory Allocation Error. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("Memory Allocation Error");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);
@@ -362,9 +373,8 @@ void sigabrtHandler(int)
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - SIGABRT. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("SIGABRT");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);   
@@ -380,9 +390,8 @@ void sigfpeHandler(int /*code*/, int subcode)
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - SIGFPE. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("SIGFPE");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    
@@ -400,9 +409,8 @@ void sigillHandler(int)
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - SIGILL. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("SIGILL");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    
@@ -420,9 +428,8 @@ void sigintHandler(int)
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - SIGINT. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("SIGINT");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    
@@ -438,9 +445,8 @@ void sigsegvHandler(int)
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - SIGSEGV. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("SIGSEGV");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    
@@ -458,9 +464,8 @@ void sigtermHandler(int)
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Attempt to write to the log...
-	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - SIGTERM. A crash dump has been written to the TFE directory.");
-	TFE_System::logClose();
+	// Attempt to write to the log and show an crash pop up.
+	showCrashReportPopup("SIGTERM");
 
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    
