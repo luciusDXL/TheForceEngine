@@ -446,6 +446,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Collision\collision.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imConst.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imDigitalSound.h" />
+    <ClInclude Include="TFE_Jedi\IMuse\imDigitalVolumeTable.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imList.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imMidiCmd.h" />
     <ClInclude Include="TFE_Jedi\IMuse\imMidiPlayer.h" />

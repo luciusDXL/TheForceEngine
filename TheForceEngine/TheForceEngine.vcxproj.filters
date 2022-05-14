@@ -895,6 +895,9 @@
     <ClInclude Include="TFE_System\CrashHandler\crashHandler.h">
       <Filter>Source\TFE_System\CrashHandler</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\IMuse\imDigitalVolumeTable.h">
+      <Filter>Source\TFE_Jedi\IMuse</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
