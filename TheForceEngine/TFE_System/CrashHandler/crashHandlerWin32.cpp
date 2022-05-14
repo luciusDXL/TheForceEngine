@@ -235,12 +235,12 @@ LONG WINAPI sehHandler(PEXCEPTION_POINTERS pExceptionPtrs)
 	// Write minidump file
 	createMiniDump(pExceptionPtrs);
 
-	// Terminate process
-	TerminateProcess(GetCurrentProcess(), 1);
-
 	// Attempt to write to the log...
 	TFE_System::logWrite(LOG_ERROR, "Crash", "TFE Crashed - caught using SEH. A crash dump has been written to the TFE directory.");
 	TFE_System::logClose();
+
+	// Terminate process
+	TerminateProcess(GetCurrentProcess(), 1);
 	
 	// Unreacheable code  
 	return EXCEPTION_EXECUTE_HANDLER;
@@ -303,8 +303,7 @@ void pureCallHandler()
 	TFE_System::logClose();
 
 	// Terminate process
-	TerminateProcess(GetCurrentProcess(), 1);    
-	 
+	TerminateProcess(GetCurrentProcess(), 1); 
 }
 
 // CRT invalid parameter handler
@@ -466,5 +465,3 @@ void sigtermHandler(int)
 	// Terminate process
 	TerminateProcess(GetCurrentProcess(), 1);    
 }
-
-

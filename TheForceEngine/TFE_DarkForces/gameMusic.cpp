@@ -149,6 +149,7 @@ namespace TFE_DarkForces
 	static JBool s_desiredFightState = JFALSE;
 	
 	s32  gameMusic_setLevel(s32 level);
+	void gameMusic_reset();
 	s32 gameMusic_random(s32 low, s32 high);
 	void gameMusic_taskFunc(MessageType msg);
 	void iMuseCallback1(char* marker);
@@ -172,6 +173,7 @@ namespace TFE_DarkForces
 	{
 		gameMusic_setState(MUS_STATE_NULLSTATE);
 		s_musicTask = nullptr;
+		s_currentLevel = -1;
 	}
 
 	s32 gameMusic_setLevel(s32 level)
