@@ -12,6 +12,9 @@
 
 namespace TFE_Jedi
 {
+	#define MAX_SOUND_CHANNELS 16
+	#define DEFAULT_SOUND_CHANNELS 8
+
 	////////////////////////////////////////////////////
 	// Structures
 	////////////////////////////////////////////////////
@@ -45,7 +48,6 @@ namespace TFE_Jedi
 		s32 chunkSize;
 		s32 baseOffset;
 		s32 chunkIndex;
-		s32 u20;
 	};
 
 	struct AudioFrame
@@ -58,20 +60,20 @@ namespace TFE_Jedi
 	// Internal State
 	/////////////////////////////////////////////////////
 	static ImWaveSound* s_imWaveSoundList = nullptr;
-	static ImWaveSound  s_imWaveSound[16];
-	static ImWaveData   s_imWaveData[16];
+	static ImWaveSound  s_imWaveSound[MAX_SOUND_CHANNELS];
+	static ImWaveData   s_imWaveData[MAX_SOUND_CHANNELS];
 	static u8  s_imWaveChunkData[48];
-	static s32 s_imWaveMixCount = 8;
+	static s32 s_imWaveMixCount = DEFAULT_SOUND_CHANNELS;
 	static s32 s_imWaveNanosecsPerSample;
 	static iMuseInitData* s_imDigitalData;
 
 	// In DOS these are 8-bit outputs since that is what the driver is accepting.
 	// For TFE, floating-point audio output is used, so these convert to floating-point.
-	static f32  s_audioNormalizationMem[2052];
+	static f32  s_audioNormalizationMem[DEFAULT_SOUND_CHANNELS * 256 + 4];
 	// Normalizes the sum of all audio playback (16-bit) to a [-1,1) floating point value.
 	// The mapping can be addressed with negative values (i.e. s_audioNormalization[-16]), which is why
 	// it is built this way.
-	static f32* s_audioNormalization = &s_audioNormalizationMem[1028];
+	static f32* s_audioNormalization = &s_audioNormalizationMem[DEFAULT_SOUND_CHANNELS * 128 + 4];
 
 	static f32* s_audioDriverOut;
 	static s16 s_audioOut[512];
@@ -197,6 +199,7 @@ namespace TFE_Jedi
 	////////////////////////////////////
 	ImWaveData* ImGetWaveData(s32 index)
 	{
+		assert(index < MAX_SOUND_CHANNELS);
 		return &s_imWaveData[index];
 	}
 
@@ -289,7 +292,7 @@ namespace TFE_Jedi
 					return imSuccess;
 				}
 				// Invalid Parameter
-				IM_LOG_ERR("ERR: TrSetParam() couldn't set param %lu...", param);
+				IM_LOG_ERR("TrSetParam() couldn't set param %lu...", param);
 				return imArgErr;
 			}
 			sound = sound->next;
@@ -523,7 +526,6 @@ namespace TFE_Jedi
 		data->offset = 0;
 		data->chunkSize = 0;
 		data->baseOffset = 0;
-		data->u20 = 0;
 
 		if (chunkIndex)
 		{
