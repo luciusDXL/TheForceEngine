@@ -477,7 +477,7 @@ namespace TFE_Audio
 		// Then call the audio thread callback
 		if (s_audioThreadCallback)
 		{
-			s_audioThreadCallback(buffer, bufferSize);
+			s_audioThreadCallback(buffer, bufferSize, s_soundFxVolume);
 		}
 
 		// Then loop through the sources.

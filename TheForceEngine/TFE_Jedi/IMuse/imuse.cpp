@@ -74,14 +74,10 @@ namespace TFE_Jedi
 	s32  ImMidiGetTickDelta(ImPlayerData* playerData, u32 prevTick, u32 tick);
 	void ImMidiProcessSustain(ImPlayerData* playerData, u8* sndData, MidiCmdFuncUnion* midiCmdFunc, ImMidiPlayer* player);
 		
-	void ImDigitalPlayerLock();
-	void ImDigitalPlayerUnlock();
 	void ImPrintMidiState();
 	s32  ImJumpMidiInternal(ImPlayerData* data, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain);
 	s32  ImPauseMidi();
-	s32  ImPauseDigitalSound();
 	s32  ImResumeMidi();
-	s32  ImResumeDigitalSound();
 	s32  ImHandleChannelGroupVolume();
 	s32  ImGetGroupVolume(s32 group);
 	void ImHandleChannelVolumeChange(ImMidiPlayer* player, ImMidiOutChannel* channel);
@@ -1551,9 +1547,9 @@ namespace TFE_Jedi
 		ImMidiPlayer* player = s_midiPlayerList;
 		while (player)
 		{
-			if (soundId < player->soundId)
+			if (u64(soundId) < u64(player->soundId))
 			{
-				if (!value || value > player->soundId)
+				if (!value || u64(value) > u64(player->soundId))
 				{
 					value = player->soundId;
 				}

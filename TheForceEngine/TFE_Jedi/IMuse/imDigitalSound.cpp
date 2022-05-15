@@ -91,7 +91,7 @@ namespace TFE_Jedi
 	s32 ImFreeWaveSoundByIdIntern(ImSoundId soundId);
 	s32 ImStartDigitalSoundIntern(ImSoundId soundId, s32 priority, s32 chunkIndex);
 	s32 audioPlaySoundFrame(ImWaveSound* sound);
-	s32 audioWriteToDriver();
+	s32 audioWriteToDriver(f32 systemVolume);
 		
 	/////////////////////////////////////////////////////////// 
 	// API
@@ -169,7 +169,7 @@ namespace TFE_Jedi
 		return res;
 	}
 		
-	void ImUpdateWave(f32* buffer, u32 bufferSize)
+	void ImUpdateWave(f32* buffer, u32 bufferSize, f32 systemVolume)
 	{
 		// Prepare buffers.
 		s_audioDriverOut = buffer;
@@ -185,7 +185,7 @@ namespace TFE_Jedi
 		}
 
 		// Convert s_audioOut to "driver" buffer.
-		audioWriteToDriver();
+		audioWriteToDriver(systemVolume);
 	}
 
 	s32 ImPauseDigitalSound()
@@ -630,9 +630,9 @@ namespace TFE_Jedi
 		// Find the smallest ID that is greater than 'soundId' or NULL if soundId is the last one.
 		while (sound)
 		{
-			if (sound->soundId > soundId)
+			if (u64(sound->soundId) > u64(soundId))
 			{
-				if (!nextSoundId || sound->soundId < nextSoundId)
+				if (!nextSoundId || u64(sound->soundId) < u64(nextSoundId))
 				{
 					nextSoundId = sound->soundId;
 				}
@@ -720,7 +720,7 @@ namespace TFE_Jedi
 		return res;
 	}
 
-	s32 audioWriteToDriver()
+	s32 audioWriteToDriver(f32 systemVolume)
 	{
 		if (!s_audioOut)
 		{
@@ -732,7 +732,7 @@ namespace TFE_Jedi
 		f32* driverOut = s_audioDriverOut;
 		for (; bufferSize > 0; bufferSize--, audioOut++, driverOut++)
 		{
-			*driverOut = s_audioNormalization[*audioOut];
+			*driverOut = s_audioNormalization[*audioOut] * systemVolume;
 		}
 		return imSuccess;
 	}

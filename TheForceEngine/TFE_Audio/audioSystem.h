@@ -44,7 +44,7 @@ enum SoundType
 #define MAX_SOUND_SOURCES 128
 
 typedef void (*SoundFinishedCallback)(void* userData, s32 arg);
-typedef void (*AudioThreadCallback)(f32* buffer, u32 bufferSize);
+typedef void (*AudioThreadCallback)(f32* buffer, u32 bufferSize, f32 systemVolume);
 
 namespace TFE_Audio
 {
