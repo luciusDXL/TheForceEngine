@@ -614,7 +614,6 @@ namespace TFE_Model_Jedi
 			else  // No polygons
 			{
 				TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' object %s has no polygons.", name, objName);
-				assert(0);
 				return false;
 			}
 

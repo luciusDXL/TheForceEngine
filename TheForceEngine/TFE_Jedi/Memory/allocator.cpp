@@ -1,6 +1,7 @@
 #include "allocator.h"
 #include <TFE_System/system.h>
 #include <TFE_Game/igame.h>
+#include <assert.h>
 
 struct AllocHeader
 {
@@ -17,7 +18,6 @@ struct Allocator
 	AllocHeader* iter;
 	s32 size;
 	s32 refCount;
-	s32* u1c;
 };
 
 namespace TFE_Jedi
@@ -27,11 +27,25 @@ namespace TFE_Jedi
 	// This is hardcoded in DF, here I calculate it based off of size_t so that it works for both 32-bit and 64-bit code.
 	static const size_t c_invalidPtr = (~size_t(0)) - sizeof(AllocHeader) + 1;
 	#define ALLOC_INVALID_PTR ((AllocHeader*)c_invalidPtr)
+	#define MAX_ALLOC_SIZE (8*1024*1024)  // 8MB
 
 	// Create and free an allocator.
 	Allocator* allocator_create(s32 allocSize)
 	{
+		if (allocSize > MAX_ALLOC_SIZE || allocSize <= 0)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Allocator", "Invalid allocator size: %d", allocSize);
+			assert(0);
+			return nullptr;
+		}
+
 		Allocator* res = (Allocator*)level_alloc(sizeof(Allocator));
+		if (!res)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Allocator", "Could not allocate Allocator.");
+			assert(0);
+			return nullptr;
+		}
 		res->self = res;
 
 		// the original code used special bit patterns to represent invalid pointers.
@@ -40,9 +54,7 @@ namespace TFE_Jedi
 		res->iterPrev = ALLOC_INVALID_PTR;
 		res->iter = ALLOC_INVALID_PTR;
 		res->size = allocSize + sizeof(AllocHeader);
-
 		res->refCount = 0;
-		res->u1c = nullptr;
 
 		return res;
 	}
@@ -68,6 +80,13 @@ namespace TFE_Jedi
 		if (!alloc) { return nullptr; }
 
 		AllocHeader* header = (AllocHeader*)level_alloc(alloc->size);
+		if (!header)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Allocator", "allocator_newItem - cannot allocate header of size %d", alloc->size);
+			assert(0);
+			return nullptr;
+		}
+
 		header->next = ALLOC_INVALID_PTR;
 		header->prev = alloc->tail;
 

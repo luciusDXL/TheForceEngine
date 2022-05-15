@@ -144,7 +144,9 @@ namespace TFE_Jedi
 
 	void ImTerminateDigitalAudio()
 	{
+		ImFreeAllWaveSounds();
 		TFE_Audio::setAudioThreadCallback();
+		s_imWaveSoundList = nullptr;
 	}
 
 	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value)
