@@ -74,8 +74,8 @@ namespace TFE_Jedi
 	s32  ImMidiGetTickDelta(ImPlayerData* playerData, u32 prevTick, u32 tick);
 	void ImMidiProcessSustain(ImPlayerData* playerData, u8* sndData, MidiCmdFuncUnion* midiCmdFunc, ImMidiPlayer* player);
 		
-	void ImMidiPlayerLock();
-	void ImMidiPlayerUnlock();
+	void ImDigitalPlayerLock();
+	void ImDigitalPlayerUnlock();
 	void ImPrintMidiState();
 	s32  ImJumpMidiInternal(ImPlayerData* data, s32 chunk, s32 measure, s32 beat, s32 tick, s32 sustain);
 	s32  ImPauseMidi();
@@ -151,8 +151,6 @@ namespace TFE_Jedi
 	// These need to be updated across threads.
 	atomic_s32 s_imPause = 0;
 	atomic_s32 s_midiPaused = 0;
-	atomic_s32 s_digitalPause = 0;
-	atomic_s32 s_sndPlayerLock = 0;
 	atomic_s32 s_midiLock = 0;
 
 	static iMuseInitData s_imInitData = { 0, IM_WAVE_11kHz, 8, 6944 };
@@ -653,7 +651,6 @@ namespace TFE_Jedi
 
 		// Update Midi and Audio
 		ImUpdateMidi();
-		// TODO: ImUpdateWave();
 		if (s_imPause)
 		{
 			return;
@@ -840,41 +837,12 @@ namespace TFE_Jedi
 		return imSuccess;
 	}
 
-	s32 ImPauseDigitalSound()
-	{
-		ImMidiPlayerLock();
-		s_digitalPause = 1;
-		ImMidiPlayerUnlock();
-		return imSuccess;
-	}
-		
 	s32 ImResumeMidi()
 	{
 		s_midiPaused = 0;
 		return imSuccess;
 	}
-
-	s32 ImResumeDigitalSound()
-	{
-		ImMidiPlayerLock();
-		s_digitalPause = 0;
-		ImMidiPlayerUnlock();
-		return imSuccess;
-	}
 		
-	void ImMidiPlayerLock()
-	{
-		s_sndPlayerLock++;
-	}
-
-	void ImMidiPlayerUnlock()
-	{
-		if (s_sndPlayerLock)
-		{
-			s_sndPlayerLock--;
-		}
-	}
-
 	s32 ImHandleChannelGroupVolume()
 	{
 		ImMidiPlayer* player = s_midiPlayerList;
@@ -1060,6 +1028,7 @@ namespace TFE_Jedi
 		if (id & imMidiFlag)
 		{
 			const ImSoundId index = id & imMidiMask;
+			assert(index < IM_MIDI_FILE_COUNT);
 			return index < IM_MIDI_FILE_COUNT ? s_midiFiles[index] : nullptr;
 		}
 		else
@@ -1180,6 +1149,7 @@ namespace TFE_Jedi
 				// The ref count seems to be ignored here.
 				{
 					const ImSoundId index = sound->id & imMidiMask;
+					assert(index < IM_MIDI_FILE_COUNT);
 					if (index < IM_MIDI_FILE_COUNT)
 					{
 						imuse_free(s_midiFiles[index]);
