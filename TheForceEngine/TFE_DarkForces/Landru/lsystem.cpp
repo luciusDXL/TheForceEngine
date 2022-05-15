@@ -7,7 +7,6 @@
 #include "lfade.h"
 #include "lfont.h"
 #include "lmusic.h"
-#include "lsound.h"
 #include "ltimer.h"
 #include "lpalette.h"
 #include "lview.h"
@@ -19,6 +18,7 @@
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
+#include <TFE_Jedi/Sound/gameSound.h>
 #include <assert.h>
 
 using namespace TFE_Jedi;
@@ -53,7 +53,7 @@ namespace TFE_DarkForces
 		lfade_init();
 		lfont_init();
 		lmusic_init();
-		lsound_init();
+		gameSoundInit();
 
 		lactor_init();
 		lactorDelt_init();
@@ -94,7 +94,7 @@ namespace TFE_DarkForces
 		lfade_destroy();
 		lfont_destroy();
 		lmusic_destroy();
-		lsound_destroy();
+		gameSoundDestroy();
 
 		lactorCust_destroy();
 		lactorAnim_destroy();

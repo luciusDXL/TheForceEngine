@@ -850,9 +850,6 @@
     <ClInclude Include="TFE_DarkForces\Landru\lfont.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_DarkForces\Landru\lsound.h">
-      <Filter>Source\TFE_DarkForces\Landru</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\Landru\lmusic.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
@@ -1480,9 +1477,6 @@
       <Filter>Source\TFE_DarkForces\GameUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\lfont.cpp">
-      <Filter>Source\TFE_DarkForces\Landru</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_DarkForces\Landru\lsound.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Landru\lmusic.cpp">

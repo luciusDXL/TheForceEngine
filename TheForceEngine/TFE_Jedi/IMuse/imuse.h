@@ -79,12 +79,12 @@ enum iMuseGroup
 	groupMaxCount = 16
 };
 
-enum iMuseSoundType: u32  // Force enum to unsigned (C++ 11)
+enum iMuseSoundType: u64  // Force enum to unsigned (C++ 11)
 {
 	typeMidi = 1u,
 	typeWave = 2u,
-	imMidiFlag  = 0x80000000u,
-	imMidiMask  = 0x7fffffffu,
+	imMidiFlag  = 0x8000000000000000u,
+	imMidiMask  = 0x7fffffffffffffffu,
 	imValidMask = 0xfff00000u,
 };
 

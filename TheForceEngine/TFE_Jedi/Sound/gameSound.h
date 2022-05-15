@@ -34,6 +34,8 @@ enum GameSoundType
 	digitalSound
 };
 
+// Structure padding matters due to the hacky way iMuse gets at the sound data,
+// so I promoted 16-bit members to 32-bit to simplify.
 struct GameSound
 {
 	u32 resType;
@@ -41,13 +43,13 @@ struct GameSound
 
 	GameSound* next;
 	GameSoundType type;
-	s16 id;
+	s32 id;
 
-	s16 flags;
-	s16 volume;
+	s32 flags;
+	s32 volume;
 
-	s16 var1;
-	s16 var2;
+	s32 var1;
+	s32 var2;
 	u8* varptr;
 	u8* varhdl;
 

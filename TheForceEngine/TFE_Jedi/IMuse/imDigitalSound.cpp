@@ -50,12 +50,6 @@ namespace TFE_Jedi
 		s32 chunkIndex;
 	};
 
-	struct AudioFrame
-	{
-		u8* data;
-		s32 size;
-	};
-	
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
@@ -180,7 +174,7 @@ namespace TFE_Jedi
 		// Prepare buffers.
 		s_audioDriverOut = buffer;
 		s_audioOutSize = bufferSize;
-		memset(s_audioOut, 0, bufferSize * sizeof(s16));
+		memset(s_audioOut, 0, 2 * bufferSize * sizeof(s16));
 
 		// Write sounds to s_audioOut.
 		ImWaveSound* sound = s_imWaveSoundList;
@@ -631,7 +625,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void audioProcessFrame(AudioFrame* audioFrame, s32 outOffset, s32 vol, s32 pan)
+	void audioProcessFrame(u8* audioFrame, s32 size, s32 outOffset, s32 vol, s32 pan)
 	{
 		s32 vTop = vol >> 3;
 		if (vol)
@@ -656,13 +650,13 @@ namespace TFE_Jedi
 		const s8* leftMapping  = (s8*)&s_audioVolumeToSignedMapping[leftVolume  << 8];
 		const s8* rightMapping = (s8*)&s_audioVolumeToSignedMapping[rightVolume << 8];
 
-		digitalAudioOutput_Stereo(&s_audioOut[outOffset * 2], audioFrame->data, leftMapping, rightMapping, audioFrame->size);
+		digitalAudioOutput_Stereo(&s_audioOut[outOffset * 2], audioFrame, leftMapping, rightMapping, size);
 	}
 
 	s32 audioPlaySoundFrame(ImWaveSound* sound)
 	{
 		ImWaveData* data = sound->data;
-		s32 bufferSize = s_audioOutSize >> 1;
+		s32 bufferSize = s_audioOutSize;
 		s32 offset = 0;
 		s32 res = imSuccess;
 		while (bufferSize > 0)
@@ -687,7 +681,7 @@ namespace TFE_Jedi
 
 			s32 readSize = (bufferSize <= data->chunkSize) ? bufferSize : data->chunkSize;
 			s_audioData = ImInternalGetSoundData(sound->soundId) + data->offset;
-			audioProcessFrame((AudioFrame*)s_audioData, offset, sound->baseVolume, sound->pan);
+			audioProcessFrame(s_audioData, readSize, offset, sound->baseVolume, sound->pan);
 
 			offset += readSize;
 			bufferSize -= readSize;
@@ -704,7 +698,7 @@ namespace TFE_Jedi
 			return imInvalidSound;
 		}
 
-		s32 bufferSize = s_audioOutSize;
+		s32 bufferSize = s_audioOutSize * 2;
 		s16* audioOut  = s_audioOut;
 		f32* driverOut = s_audioDriverOut;
 		for (; bufferSize > 0; bufferSize--, audioOut++, driverOut++)

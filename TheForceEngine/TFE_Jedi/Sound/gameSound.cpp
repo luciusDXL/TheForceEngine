@@ -124,64 +124,6 @@ namespace TFE_Jedi
 	}
 
 	/////////////////////////////////////////////////////////
-	// System Internal
-	/////////////////////////////////////////////////////////
-	void freeSoundList(GameSound* sound)
-	{
-		while (sound)
-		{
-			GameSound* next = sound->next;
-			gameSoundFree(sound);
-			sound = next;
-		}
-	}
-
-	void purgeAllSounds()
-	{
-		GameSound* sound = s_soundList;
-
-		while (sound)
-		{
-			clearSoundKeep(sound);
-			clearSoundKeepable(sound);
-			sound = sound->next;
-		}
-
-		freeSoundList(s_soundList);
-		s_soundList = nullptr;
-	}
-
-	void initSound(GameSound* sound)
-	{
-		memset(sound, 0, sizeof(GameSound));
-		sound->volume = 128;
-	}
-
-	u8* readFileData(const char* name)
-	{
-		FilePath path;
-		if (!TFE_Paths::getFilePath(name, &path))
-		{
-			return nullptr;
-		}
-		FileStream file;
-		if (!file.open(&path, FileStream::MODE_READ))
-		{
-			return nullptr;
-		}
-		u32 size = (u32)file.getSize();
-		u8* data = (u8*)game_alloc(size);
-		if (!data)
-		{
-			return nullptr;
-		}
-		file.readBuffer(data, size);
-		file.close();
-
-		return data;
-	}
-
-	/////////////////////////////////////////////////////////
 	// Game Sound <-> iMuse interface.
 	/////////////////////////////////////////////////////////
 	void startSfx(GameSound* sound)
@@ -219,9 +161,8 @@ namespace TFE_Jedi
 		ImFadeParam((ImSoundId)sound, soundPan, pan, time);
 	}
 
-
 	/////////////////////////////////////////////////////////
-	// Game Sound implementation
+	// Game Sound General Interface
 	/////////////////////////////////////////////////////////
 	void copySoundData(GameSound* dstSound, GameSound* srcSound)
 	{
@@ -319,5 +260,69 @@ namespace TFE_Jedi
 		{
 			sound->name[i] = 0;
 		}
+	}
+
+	/////////////////////////////////////////////////////////
+	// System Internal
+	/////////////////////////////////////////////////////////
+	void freeSoundList(GameSound* sound)
+	{
+		while (sound)
+		{
+			GameSound* next = sound->next;
+			gameSoundFree(sound);
+			sound = next;
+		}
+	}
+
+	void purgeAllSounds()
+	{
+		GameSound* sound = s_soundList;
+
+		while (sound)
+		{
+			clearSoundKeep(sound);
+			clearSoundKeepable(sound);
+			sound = sound->next;
+		}
+
+		freeSoundList(s_soundList);
+		s_soundList = nullptr;
+	}
+
+	void initSound(GameSound* sound)
+	{
+		memset(sound, 0, sizeof(GameSound));
+		sound->volume = 128;
+	}
+
+	u8* readFileData(const char* name)
+	{
+		FilePath path;
+		char fileName[TFE_MAX_PATH];
+		sprintf(fileName, "%s.VOC", name);
+		if (!TFE_Paths::getFilePath(fileName, &path))
+		{
+			sprintf(fileName, "%s.VOIC", name);
+			if (!TFE_Paths::getFilePath(fileName, &path))
+			{
+				return nullptr;
+			}
+		}
+		FileStream file;
+		if (!file.open(&path, FileStream::MODE_READ))
+		{
+			return nullptr;
+		}
+		u32 size = (u32)file.getSize();
+		u8* data = (u8*)game_alloc(size);
+		if (!data)
+		{
+			return nullptr;
+		}
+		file.readBuffer(data, size);
+		file.close();
+
+		return data;
 	}
 }  // TFE_JediSound

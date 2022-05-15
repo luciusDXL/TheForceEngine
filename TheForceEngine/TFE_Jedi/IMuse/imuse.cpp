@@ -44,21 +44,20 @@ namespace TFE_Jedi
 	struct ImResource
 	{
 		u32 resType;
-		char resName[8];
+		char name[8];
 
 		ImResource* next;
-		u32 type;
-		s16 id;
+		s32 type;
+		s32 id;
 
-		s16 flags;
-		s16 value;
+		s32 flags;
+		s32 volume;
 
-		s16 var1;
-		s16 var2;
+		s32 var1;
+		s32 var2;
 		u8* varptr;
-		u8* ptr;
+		u8* varhdl;
 
-		void(*user)(ImResource*, u32);
 		u8* data;
 	};
 						
@@ -163,7 +162,7 @@ namespace TFE_Jedi
 	static iMuseInitData* s_imFilesData;
 
 	const char* c_midi = "MIDI";
-	const u32 c_crea = 0x61657243;	// "Crea"
+	const char* c_crea = "Crea";
 	static s32 s_iMuseTimestepMicrosec = 6944;
 
 	static MemoryRegion* s_memRegion = nullptr;
@@ -498,7 +497,7 @@ namespace TFE_Jedi
 		}
 		else  // Digital Sound
 		{
-			const u8* creative = (u8*)(iptr)c_crea;
+			const u8* creative = (u8*)c_crea;
 			for (i = 0; i < 4; i++)
 			{
 				if (data[i] != creative[i])

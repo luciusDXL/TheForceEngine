@@ -5,13 +5,13 @@
 #include "lactorCust.h"
 #include "lcanvas.h"
 #include "lfade.h"
-#include "lsound.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_Archive/lfdArchive.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
+#include <TFE_Jedi/Sound/gameSound.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
 
@@ -24,6 +24,7 @@ namespace TFE_DarkForces
 	static FadeColorType s_filmColorFade = fcolorType_noColorFade;
 
 	LActor* cutsceneFilm_cloneActor(u32 type, const char* name);
+	GameSound* cutsceneFilm_cloneSound(u32 type, const char* name);
 	void cutsceneFilm_initFilm(Film* film, u8** array, LRect* frame, s16 x, s16 y, s16 zPlane);
 	void cutsceneFilm_setName(Film* film, u32 resType, const char* name);
 	JBool cutsceneFilm_isTimeStamp(Film* film, FilmObject* filmObj, u8* data);
@@ -83,7 +84,6 @@ namespace TFE_DarkForces
 			cutsceneFilm_freeDataObject(film, i);
 		}
 
-		lsound_freeSounds(lsound_getList());
 		landru_free(film->array);
 		film->array = nullptr;
 	}
@@ -201,6 +201,50 @@ namespace TFE_DarkForces
 		return curActor;
 	}
 
+	GameSound* cutsceneFilm_cloneSound(u32 type, const char* name)
+	{
+		GameSound* curSound = gameSoundGetList();
+		GameSound* sound = nullptr;
+
+		while (curSound && !sound)
+		{
+			s32 equal = 0;
+			if (type == curSound->resType)
+			{
+				equal = 1;
+
+				s32 i = 0;
+				for (; i < 8 && name[i]; i++)
+				{
+					if (name[i] != curSound->name[i]) { equal = 0; }
+				}
+				if (i < 8 && curSound->name[i])
+				{
+					equal = 0;
+				}
+			}
+			if (equal)
+			{
+				sound = curSound;
+			}
+
+			curSound = curSound->next;
+		}
+
+		curSound = nullptr;
+		if (sound)
+		{
+			curSound = gameSoundAlloc(nullptr);
+			if (curSound)
+			{
+				copySoundData(curSound, sound);
+				setSoundName(curSound, type, name);
+			}
+		}
+
+		return curSound;
+	}
+
 	JBool cutsceneFilm_readObject(u32 type, const char* name, u8** obj)
 	{
 		LRect rect;
@@ -208,7 +252,7 @@ namespace TFE_DarkForces
 
 		LActor* actor = nullptr;
 		LPalette* pal = nullptr;
-		LSound* sound = nullptr;
+		GameSound* sound = nullptr;
 		JBool retValue = JTRUE;
 		if (type != CF_TYPE_VIEW && type != CF_TYPE_CUSTOM_ACTOR)
 		{
@@ -237,12 +281,17 @@ namespace TFE_DarkForces
 			}
 			else if (type == CF_TYPE_GMIDI)
 			{
-				sound = lsound_loadMusic(name);
+				sound = nullptr;
+				assert(0);
 				if (!sound) { retValue = JFALSE; }
 			}
 			else if (type == CF_TYPE_VOC_SOUND)
 			{
-				sound = lsound_loadDigital(name);
+				sound = cutsceneFilm_cloneSound(digitalSound, name);
+				if (!sound)
+				{
+					sound = gameSoundLoad(name, digitalSound);
+				}
 				if (!sound) { retValue = JFALSE; }
 			}
 		}
@@ -454,14 +503,13 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_rewindSound(Film* film, FilmObject* filmObj, u8* data)
 	{
-		LSound* sound = (LSound*)filmObj->data;
+		GameSound* sound = (GameSound*)filmObj->data;
 		filmObj->offset = 0;
 
-		lsound_stop(sound);
+		stopSound(sound);
 		sound->var1 = 0;
 		sound->var2 = 0;
 
-		// sound->var1 = sound->var2 = 0;
 		if (cutsceneFilm_isTimeStamp(film, filmObj, data))
 		{
 			cutsceneFilm_stepSound(film, filmObj, data);
@@ -653,7 +701,7 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_setSoundToFilm(Film* film, FilmObject* filmObj, u8* data)
 	{
-		LSound* sound = (LSound*)filmObj->data;
+		GameSound* sound = (GameSound*)filmObj->data;
 		s16* chunk = (s16*)(data + filmObj->offset);
 		u16  type = chunk[1];
 		chunk += 2;
@@ -664,31 +712,31 @@ namespace TFE_DarkForces
 			{
 				if (sound->var2 == 1)
 				{
-					lsound_startSpeech(sound);
+					startSpeech(sound);
 				}
 				else
 				{
-					lsound_startSfx(sound);
+					startSfx(sound);
 				}
 			} break;
 			case CF_CMD_SOUND_STOP:
 			{
-				lsound_stop(sound);
+				stopSound(sound);
 			} break;
 			case CF_CMD_SOUND_VOLUME:
 			{
-				lsound_setVolume(sound, chunk[0]);
+				setSoundVolume(sound, chunk[0]);
 			} break;
 			case CF_CMD_SOUND_FADE:
 			{
-				lsound_setFade(sound, chunk[0], chunk[1]);
+				setSoundFade(sound, chunk[0], chunk[1]);
 			} break;
 			case CF_CMD_SOUND_VAR1:
 			{
 				sound->var1 = chunk[0];
 				if (sound->var1 == 1)
 				{
-					lsound_setKeep(sound);
+					setSoundKeep(sound);
 				}
 			} break;
 			case CF_CMD_SOUND_VAR2:
@@ -701,18 +749,18 @@ namespace TFE_DarkForces
 				{
 					if (sound->var2 == 1)
 					{
-						lsound_startSpeech(sound);
+						startSpeech(sound);
 					}
 					else
 					{
-						lsound_startSfx(sound);
+						startSfx(sound);
 					}
 				}
 
-				if (chunk[1]) { lsound_setVolume(sound, chunk[1]); }
+				if (chunk[1]) { setSoundVolume(sound, chunk[1]); }
 				if (chunk[2] || chunk[3])
 				{
-					lsound_setFade(sound, chunk[2], chunk[3]);
+					setSoundFade(sound, chunk[2], chunk[3]);
 				}
 			} break;
 			case CF_CMD_SOUND_CMD2:
@@ -721,22 +769,22 @@ namespace TFE_DarkForces
 				{
 					if (sound->var2 == 1)
 					{
-						lsound_startSpeech(sound);
+						startSpeech(sound);
 					}
 					else
 					{
-						lsound_startSfx(sound);
+						startSfx(sound);
 					}
 				}
 
-				if (chunk[1]) { lsound_setVolume(sound, chunk[1]); }
+				if (chunk[1]) { setSoundVolume(sound, chunk[1]); }
 				if (chunk[2] || chunk[3])
 				{
-					lsound_setFade(sound, chunk[2], chunk[3]);
+					setSoundFade(sound, chunk[2], chunk[3]);
 				}
 
-				if (chunk[4]) { lsound_setPan(sound, chunk[4]); }
-				if (chunk[5] || chunk[6]) { lsound_setPanFade(sound, chunk[5], chunk[6]); }
+				if (chunk[4]) { setSoundPan(sound, chunk[4]); }
+				if (chunk[5] || chunk[6]) { setSoundPanFade(sound, chunk[5], chunk[6]); }
 			} break;
 		}
 	}

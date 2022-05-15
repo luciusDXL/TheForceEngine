@@ -1,5 +1,4 @@
 #include "lmusic.h"
-#include "lsound.h"
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
