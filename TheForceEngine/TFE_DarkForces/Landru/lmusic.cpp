@@ -101,6 +101,7 @@ namespace TFE_DarkForces
 
 	void lmusic_destroy()
 	{
+		s_saveSound = IM_NULL_SOUNDID;
 		s_curSeq = 0;
 		s_curCuePoint = 0;
 		memset(s_sequences, 0, sizeof(Sequence) * SEQUENCE_COUNT * MAX_CUE_POINTS);
@@ -108,6 +109,7 @@ namespace TFE_DarkForces
 		
 	void lmusic_reset()
 	{
+		s_saveSound = IM_NULL_SOUNDID;
 		s_curSeq = 0;
 		s_curCuePoint = 0;
 		s_volume = s_baseVolume;
