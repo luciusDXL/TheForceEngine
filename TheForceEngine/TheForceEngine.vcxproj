@@ -514,6 +514,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\rwallSegment.h" />
     <ClInclude Include="TFE_Jedi\Renderer\screenDraw.h" />
     <ClInclude Include="TFE_Jedi\Renderer\virtualFramebuffer.h" />
+    <ClInclude Include="TFE_Jedi\Sound\gameSound.h" />
     <ClInclude Include="TFE_Jedi\Sound\soundSystem.h" />
     <ClInclude Include="TFE_Jedi\Task\task.h" />
     <ClInclude Include="TFE_Jedi\Task\taskMacros.h" />
@@ -738,6 +739,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\rsectorRender.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\screenDraw.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\virtualFramebuffer.cpp" />
+    <ClCompile Include="TFE_Jedi\Sound\gameSound.cpp" />
     <ClCompile Include="TFE_Jedi\Sound\soundSystem.cpp" />
     <ClCompile Include="TFE_Jedi\Task\task.cpp" />
     <ClCompile Include="TFE_Memory\chunkedArray.cpp" />

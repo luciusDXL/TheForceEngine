@@ -898,6 +898,9 @@
     <ClInclude Include="TFE_Jedi\IMuse\imDigitalVolumeTable.h">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Sound\gameSound.h">
+      <Filter>Source\TFE_Jedi\Sound</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1517,6 +1520,9 @@
     </ClCompile>
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp">
       <Filter>Source\TFE_System\CrashHandler</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Sound\gameSound.cpp">
+      <Filter>Source\TFE_Jedi\Sound</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
