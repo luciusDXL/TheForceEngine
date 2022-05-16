@@ -269,7 +269,7 @@ namespace TFE_Jedi
 	{
 		if (ImStartSound(soundId, priority) == imSuccess)
 		{
-			return ImSetParam(soundId, soundGroup, 1);
+			return ImSetParam(soundId, soundGroup, groupSfx);
 		}
 		return imFail;
 	}
@@ -278,7 +278,7 @@ namespace TFE_Jedi
 	{
 		if (ImStartSound(soundId, priority) == imSuccess)
 		{
-			return ImSetParam(soundId, soundGroup, 2);
+			return ImSetParam(soundId, soundGroup, groupVoice);
 		}
 		return imFail;
 	}
@@ -533,7 +533,7 @@ namespace TFE_Jedi
 	{
 		ImSoundId nextMidiId = ImFindNextMidiSound(soundId);
 		ImSoundId nextWaveId = ImFindNextWaveSound(soundId);
-		if (nextMidiId == 0 || (nextWaveId > IM_NULL_SOUNDID && nextMidiId >= nextWaveId))
+		if (nextMidiId == 0 || (nextWaveId && u64(nextMidiId) >= u64(nextWaveId)))
 		{
 			return nextWaveId;
 		}

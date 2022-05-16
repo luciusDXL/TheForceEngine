@@ -260,6 +260,7 @@ namespace TFE_Jedi
 						return imArgErr;
 					}
 					sound->volume = ((sound->baseVolume + 1) * ImGetGroupVolume(value)) >> 7;
+					sound->group = value;
 					return imSuccess;
 				}
 				else if (param == soundPriority)
