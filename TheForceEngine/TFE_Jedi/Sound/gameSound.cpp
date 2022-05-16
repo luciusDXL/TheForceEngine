@@ -68,6 +68,7 @@ namespace TFE_Jedi
 
 	void gameSoundFree(GameSound* sound)
 	{
+		if (!sound) { return; }
 		gameSoundFreePlaying(sound, JTRUE);
 	}
 

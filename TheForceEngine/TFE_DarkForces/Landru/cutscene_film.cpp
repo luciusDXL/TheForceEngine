@@ -109,7 +109,8 @@ namespace TFE_DarkForces
 				} break;
 				case CF_FILE_SOUND:
 				{
-					// This doesn't exist in the original code.
+					GameSound* sound = (GameSound*)filmObj->data;
+					stopSound(sound);
 				} break;
 			}
 			landru_free(filmObj);
