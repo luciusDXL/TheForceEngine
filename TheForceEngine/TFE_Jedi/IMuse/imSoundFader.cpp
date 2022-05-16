@@ -2,6 +2,7 @@
 #include "imSoundFader.h"
 #include <TFE_System/system.h>
 #include <TFE_Audio/midi.h>
+#include <assert.h>
 
 namespace TFE_Jedi
 {
@@ -43,7 +44,10 @@ namespace TFE_Jedi
 				{
 					s_imFadersActive = 1;
 					fader->timeRem--;
-					if (fader->timeRem == 0) { fader->active = 0; }
+					if (fader->timeRem == 0)
+					{
+						fader->active = 0;
+					}
 
 					s32 nextValue = fader->curValue + fader->signedStep;
 					fader->errAccum += fader->unsignedStep;

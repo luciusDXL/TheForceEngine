@@ -180,8 +180,9 @@ namespace TFE_Jedi
 		ImWaveSound* sound = s_imWaveSoundList;
 		while (sound)
 		{
+			ImWaveSound* next = sound->next;
 			audioPlaySoundFrame(sound);
-			sound = sound->next;
+			sound = next;
 		}
 
 		// Convert s_audioOut to "driver" buffer.
@@ -703,14 +704,10 @@ namespace TFE_Jedi
 					break;
 				}
 			}
-			if (!bufferSize)
-			{
-				break;
-			}
 
 			s32 readSize = (bufferSize <= data->chunkSize) ? bufferSize : data->chunkSize;
 			s_audioData = ImInternalGetSoundData(sound->soundId) + data->offset;
-			audioProcessFrame(s_audioData, readSize, offset, sound->baseVolume, sound->pan);
+			audioProcessFrame(s_audioData, readSize, offset, sound->volume, sound->pan);
 
 			offset += readSize;
 			bufferSize -= readSize;

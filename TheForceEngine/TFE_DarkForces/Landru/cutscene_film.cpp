@@ -218,7 +218,7 @@ namespace TFE_DarkForces
 				{
 					if (name[i] != curSound->name[i]) { equal = 0; }
 				}
-				if (i < 8 && curSound->name[i])
+				if (i < 8 && curSound->name[i] && equal)
 				{
 					equal = 0;
 				}
@@ -231,18 +231,17 @@ namespace TFE_DarkForces
 			curSound = curSound->next;
 		}
 
-		curSound = nullptr;
+		GameSound* clonedSound = nullptr;
 		if (sound)
 		{
-			curSound = gameSoundAlloc(nullptr);
-			if (curSound)
+			clonedSound = gameSoundAlloc(nullptr);
+			if (clonedSound)
 			{
-				copySoundData(curSound, sound);
-				setSoundName(curSound, type, name);
+				copySoundData(clonedSound, sound);
+				setSoundName(clonedSound, type, name);
 			}
 		}
-
-		return curSound;
+		return clonedSound;
 	}
 
 	JBool cutsceneFilm_readObject(u32 type, const char* name, u8** obj)

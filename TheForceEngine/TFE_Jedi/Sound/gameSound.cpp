@@ -59,6 +59,7 @@ namespace TFE_Jedi
 
 		// Then allocate the sound itself.
 		GameSound* sound = gameSoundAlloc(data);
+		setSoundName(sound, soundType, name);
 		discardSoundData(sound);
 		sound->type = soundType;
 
@@ -259,6 +260,7 @@ namespace TFE_Jedi
 		while (i < GS_NAME_LEN)
 		{
 			sound->name[i] = 0;
+			i++;
 		}
 	}
 
