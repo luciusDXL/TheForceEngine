@@ -66,6 +66,7 @@ namespace TFE_Jedi
 	GameSound* gameSoundLoad(const char* name, GameSoundType soundType);
 	void gameSoundFree(GameSound* sound);
 	void gameSoundFreePlaying(GameSound* sound, JBool stop);
+	void freeSoundList(GameSound* sound);
 
 	// Game Sound <-> iMuse interface.
 	void startSfx(GameSound* sound);

@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 		if (s_skipSceneInput)
 		{
 			s_skipSceneInput = JFALSE;
-			gameSoundDestroy();
+			freeSoundList(gameSoundGetList());
 			lmusic_stop();
 			vfb_forceToBlack();
 			lcanvas_clear();
@@ -294,7 +294,7 @@ namespace TFE_DarkForces
 		else if (s_nextSceneInput)
 		{
 			s_nextSceneInput = JFALSE;
-			gameSoundDestroy();
+			freeSoundList(gameSoundGetList());
 			vfb_forceToBlack();
 			lcanvas_clear();
 			return nextScene;
