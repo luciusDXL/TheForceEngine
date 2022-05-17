@@ -2,6 +2,7 @@
 #include "animLogic.h"
 #include "random.h"
 #include "player.h"
+#include "sound.h"
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Jedi/Collision/collision.h>
@@ -11,7 +12,6 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Memory/allocator.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 
 using namespace TFE_Jedi;
 
@@ -53,15 +53,15 @@ namespace TFE_DarkForces
 	static WaxFrame*  s_landmineFrame;
 	static WaxFrame*  s_thermalDetProj;
 
-	static SoundSourceID s_stdProjCameraSnd       = NULL_SOUND;
-	static SoundSourceID s_stdProjReflectSnd      = NULL_SOUND;
-	static SoundSourceID s_thermalDetReflectSnd   = NULL_SOUND;
-	static SoundSourceID s_plasmaCameraSnd        = NULL_SOUND;
-	static SoundSourceID s_plasmaReflectSnd       = NULL_SOUND;
-	static SoundSourceID s_missileLoopingSnd      = NULL_SOUND;
-	static SoundSourceID s_landMineTriggerSnd     = NULL_SOUND;
-	static SoundSourceID s_bobaBallCameraSnd      = NULL_SOUND;
-	static SoundSourceID s_homingMissileFlightSnd = NULL_SOUND;
+	static SoundSourceId s_stdProjCameraSnd       = NULL_SOUND;
+	static SoundSourceId s_stdProjReflectSnd      = NULL_SOUND;
+	static SoundSourceId s_thermalDetReflectSnd   = NULL_SOUND;
+	static SoundSourceId s_plasmaCameraSnd        = NULL_SOUND;
+	static SoundSourceId s_plasmaReflectSnd       = NULL_SOUND;
+	static SoundSourceId s_missileLoopingSnd      = NULL_SOUND;
+	static SoundSourceId s_landMineTriggerSnd     = NULL_SOUND;
+	static SoundSourceId s_bobaBallCameraSnd      = NULL_SOUND;
+	static SoundSourceId s_homingMissileFlightSnd = NULL_SOUND;
 
 	static RSector*   s_projPath[PROJ_PATH_MAX_SECTORS];
 	static RSector*   s_projSector;
@@ -119,15 +119,15 @@ namespace TFE_DarkForces
 		s_homingMissileProj = TFE_Sprite_Jedi::getWax("wdt3msl.wax");
 		s_bobafetBall       = TFE_Sprite_Jedi::getWax("bobaball.wax");
 
-		s_stdProjReflectSnd      = sound_Load("boltref1.voc");
-		s_thermalDetReflectSnd   = sound_Load("thermal1.voc");
-		s_plasmaReflectSnd       = sound_Load("bigrefl1.voc");
-		s_stdProjCameraSnd       = sound_Load("lasrby.voc");
-		s_plasmaCameraSnd        = sound_Load("emisby.voc");
-		s_missileLoopingSnd      = sound_Load("rocket-1.voc");
-		s_homingMissileFlightSnd = sound_Load("tracker.voc");
-		s_bobaBallCameraSnd      = sound_Load("fireball.voc");
-		s_landMineTriggerSnd     = sound_Load("beep-10.voc");
+		s_stdProjReflectSnd      = sound_load("boltref1.voc", SOUND_PRIORITY_LOW1);
+		s_thermalDetReflectSnd   = sound_load("thermal1.voc", SOUND_PRIORITY_LOW1);
+		s_plasmaReflectSnd       = sound_load("bigrefl1.voc", SOUND_PRIORITY_LOW1);
+		s_stdProjCameraSnd       = sound_load("lasrby.voc",   SOUND_PRIORITY_LOW3);
+		s_plasmaCameraSnd        = sound_load("emisby.voc",   SOUND_PRIORITY_LOW3);
+		s_missileLoopingSnd      = sound_load("rocket-1.voc", SOUND_PRIORITY_LOW3);
+		s_homingMissileFlightSnd = sound_load("tracker.voc",  SOUND_PRIORITY_LOW3);
+		s_bobaBallCameraSnd      = sound_load("fireball.voc", SOUND_PRIORITY_LOW3);
+		s_landMineTriggerSnd     = sound_load("beep-10.voc",  SOUND_PRIORITY_HIGH3);
 	}
 
 	void projectile_clearState()
@@ -751,7 +751,7 @@ namespace TFE_DarkForces
 							{
 								projLogic->type = PROJ_LAND_MINE;
 								projLogic->duration = s_curTick + 87;  // The landmine will explode in 0.6 seconds.
-								playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
+								sound_playCued(s_landMineTriggerSnd, obj->posWS);
 							}
 						}
 					}
@@ -761,7 +761,7 @@ namespace TFE_DarkForces
 						{
 							projLogic->type = PROJ_LAND_MINE;
 							projLogic->duration = s_curTick + TICKS_PER_SECOND;	// The landmine will explode in 1 second.
-							playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
+							sound_playCued(s_landMineTriggerSnd, obj->posWS);
 						}
 					}
 					else
@@ -792,7 +792,7 @@ namespace TFE_DarkForces
 				// Play a looping sound as the projectile travels, this updates its position if already playing.
 				if (projLogic->flightSndSource)
 				{
-					projLogic->flightSndId = playSound3D_looping(projLogic->flightSndSource, projLogic->flightSndId, obj->posWS);
+					projLogic->flightSndId = sound_maintain(projLogic->flightSndId, projLogic->flightSndSource, obj->posWS);
 				}
 				// Play a sound as the object passes near the camera.
 				if (projLogic->cameraPassSnd && (projLogic->flags & PROJFLAG_CAMERA_PASS_SOUND))
@@ -801,13 +801,13 @@ namespace TFE_DarkForces
 					fixed16_16 approxDist = dy + distApprox(s_eyePos.x, s_eyePos.z, obj->posWS.x, obj->posWS.z);
 					if (approxDist < CAMERA_SOUND_RANGE)
 					{
-						playSound3D_oneshot(projLogic->cameraPassSnd, obj->posWS);
+						sound_playCued(projLogic->cameraPassSnd, obj->posWS);
 						projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 					}
 				}
 				else if (projLogic->cameraPassSnd && projLogic->flightSndId)
 				{
-					stopSound(projLogic->flightSndId);
+					sound_stop(projLogic->flightSndId);
 					projLogic->flightSndId = NULL_SOUND;
 				}
 				// Finally handle the hit itself (this includes going out of range).
@@ -828,7 +828,7 @@ namespace TFE_DarkForces
 		projLogic->duration = s_curTick + delay;
 
 		SecObject* obj = projLogic->logic.obj;
-		playSound3D_oneshot(s_landMineTriggerSnd, obj->posWS);
+		sound_playCued(s_landMineTriggerSnd, obj->posWS);
 	}
 
 	//////////////////////////////////////////////////////////////
@@ -1062,7 +1062,7 @@ namespace TFE_DarkForces
 				projLogic->prevColObj = nullptr;
 				projLogic->excludeObj = nullptr;
 				proj_setTransform(projLogic, obj->pitch, obj->yaw);
-				playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+				sound_playCued(projLogic->reflectSnd, obj->posWS);
 
 				projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
 				projLogic->delta.x = mul16(HALF_16, projLogic->dir.x);
@@ -1140,7 +1140,7 @@ namespace TFE_DarkForces
 				projLogic->prevColObj = nullptr;
 				projLogic->excludeObj = nullptr;
 				proj_setTransform(projLogic, obj->pitch, obj->yaw);
-				playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+				sound_playCued(projLogic->reflectSnd, obj->posWS);
 
 				projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
 				return PHIT_NONE;
@@ -1182,7 +1182,7 @@ namespace TFE_DarkForces
 					projLogic->prevColObj = nullptr;
 					projLogic->excludeObj = nullptr;
 					proj_setTransform(projLogic, obj->pitch, obj->yaw);
-					playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+					sound_playCued(projLogic->reflectSnd, obj->posWS);
 
 					projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
 					return PHIT_NONE;
@@ -1313,7 +1313,7 @@ namespace TFE_DarkForces
 					projLogic->prevColObj = nullptr;
 					projLogic->excludeObj = nullptr;
 					proj_setTransform(projLogic, obj->pitch, obj->yaw);
-					playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+					sound_playCued(projLogic->reflectSnd, obj->posWS);
 
 					projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
 					obj->posWS.y = s_projNextPosY;
@@ -1348,7 +1348,7 @@ namespace TFE_DarkForces
 						projLogic->prevColObj = nullptr;
 						projLogic->excludeObj = nullptr;
 						proj_setTransform(projLogic, obj->pitch, obj->yaw);
-						playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+						sound_playCued(projLogic->reflectSnd, obj->posWS);
 
 						projLogic->flags |= 1;
 						obj->posWS.y = s_projNextPosY;
@@ -1425,7 +1425,7 @@ namespace TFE_DarkForces
 		// If the thermal detonator is hitting the ground at a fast enough speed, play the reflect sound.
 		if (projLogic->type == PROJ_THERMAL_DET && TFE_Jedi::abs(projLogic->speed) > FIXED(7))
 		{
-			playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+			sound_playCued(projLogic->reflectSnd, obj->posWS);
 		}
 
 		if (projLogic->bounceCnt == -1)
@@ -1462,7 +1462,7 @@ namespace TFE_DarkForces
 				projLogic->prevColObj = nullptr;
 				projLogic->excludeObj = nullptr;
 				proj_setTransform(projLogic, obj->pitch, obj->yaw);
-				playSound3D_oneshot(projLogic->reflectSnd, obj->posWS);
+				sound_playCued(projLogic->reflectSnd, obj->posWS);
 
 				obj->posWS.y = s_projNextPosY;
 				collision_moveObj(obj, projLogic->delta.x, projLogic->delta.z);
@@ -1571,7 +1571,7 @@ namespace TFE_DarkForces
 		{
 			case PHIT_SKY:
 			{
-				stopSound(projLogic->flightSndId);
+				sound_stop(projLogic->flightSndId);
 
 				// Delete the projectile itself.
 				allocator_addRef(s_projectiles);
@@ -1584,7 +1584,7 @@ namespace TFE_DarkForces
 			case PHIT_SOLID:
 			{
 				// Stop the projectiles in-flight sound.
-				stopSound(projLogic->flightSndId);
+				sound_stop(projLogic->flightSndId);
 
 				// Spawn the projectile hit effect.
 				if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (projLogic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
@@ -1601,7 +1601,7 @@ namespace TFE_DarkForces
 			} break;
 			case PHIT_OUT_OF_RANGE:
 			{
-				stopSound(projLogic->flightSndId);
+				sound_stop(projLogic->flightSndId);
 				if (projLogic->flags & PROJFLAG_EXPLODE)
 				{
 					if (obj->posWS.y <= sector->floorHeight && obj->posWS.y >= sector->ceilingHeight && (projLogic->type != PROJ_PUNCH || hitType != PHIT_OUT_OF_RANGE))
@@ -1619,7 +1619,7 @@ namespace TFE_DarkForces
 			} break;
 			case PHIT_WATER:
 			{
-				stopSound(projLogic->flightSndId);
+				sound_stop(projLogic->flightSndId);
 				spawnHitEffect(HEFFECT_SPLASH, obj->sector, obj->posWS, projLogic->excludeObj);
 
 				// Delete the projectile itself.

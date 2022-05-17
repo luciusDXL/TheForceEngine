@@ -9,10 +9,10 @@
 #include <TFE_DarkForces/projectile.h>
 #include <TFE_DarkForces/pickup.h>
 #include <TFE_DarkForces/player.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/InfSystem/message.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 

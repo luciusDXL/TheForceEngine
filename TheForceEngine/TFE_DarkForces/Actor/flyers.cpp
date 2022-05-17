@@ -7,11 +7,11 @@
 #include <TFE_DarkForces/item.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/weapon.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 

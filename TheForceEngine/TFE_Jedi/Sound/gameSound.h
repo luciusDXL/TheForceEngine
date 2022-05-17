@@ -90,4 +90,6 @@ namespace TFE_Jedi
 	void  clearSoundKeepable(GameSound* sound);
 	JBool isSoundKeepable(GameSound* sound);
 	void  setSoundName(GameSound* sound, u32 type, const char* name);
+
+	u8* readVocFileData(const char* name, u32* size = nullptr);
 }  // namespace TFE_Jedi

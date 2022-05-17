@@ -1,7 +1,7 @@
 #include "automap.h"
 #include "player.h"
 #include "hud.h"
-#include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>

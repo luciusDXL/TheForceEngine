@@ -3,13 +3,14 @@
 // Allocator API as found in the Jedi Engine
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_Memory/memoryRegion.h>
 
 struct Allocator;
 
 namespace TFE_Jedi
 {
 	// Create and free an allocator.
-	Allocator* allocator_create(s32 allocSize);
+	Allocator* allocator_create(s32 allocSize, MemoryRegion* region = nullptr);
 	void allocator_free(Allocator* alloc);
 
 	// Allocate and free individual items.

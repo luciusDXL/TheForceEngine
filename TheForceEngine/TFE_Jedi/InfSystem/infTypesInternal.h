@@ -118,7 +118,7 @@ namespace TFE_Jedi
 		s32 u34;
 		JBool master;
 		TextureData* tex;
-		SoundSourceID soundId;
+		SoundSourceId soundId;
 		s32 state;
 		s32* u48;
 		u32 textId;
@@ -154,7 +154,7 @@ namespace TFE_Jedi
 		Tick delay;				// delay in 'ticks' (see TICKS_PER_SECOND in TFE_DarkForces/time.h)
 		Allocator* messages;
 		Allocator* adjoinCmds;
-		SoundSourceID pageId;
+		SoundSourceId pageId;
 		TextureData** floorTex;
 		TextureData** ceilTex;
 
@@ -181,10 +181,10 @@ namespace TFE_Jedi
 		fixed16_16 iValue;
 		vec2_fixed dirOrCenter;
 		u32 flags;
-		SoundSourceID sound0;
-		SoundSourceID sound1;
-		SoundSourceID sound2;
-		SoundEffectID loopingSoundID;
+		SoundSourceId sound0;
+		SoundSourceId sound1;
+		SoundSourceId sound2;
+		SoundEffectId loopingSoundID;
 		s32 u54;
 		s32 updateFlags;
 	};

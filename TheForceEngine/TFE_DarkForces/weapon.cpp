@@ -42,35 +42,35 @@ namespace TFE_DarkForces
 	s32 s_canFireWeaponPrim;
 	u32 s_fireFrame = 0;
 		
-	SoundSourceID s_punchSwingSndSrc;
-	SoundSourceID s_pistolSndSrc;
-	SoundSourceID s_pistolEmptySndSrc;
-	SoundSourceID s_rifleSndSrc;
-	SoundSourceID s_rifleEmptySndSrc;
-	SoundSourceID s_fusion1SndSrc;
-	SoundSourceID s_fusion2SndSrc;
-	SoundSourceID s_repeaterSndSrc;
-	SoundSourceID s_repeater1SndSrc;
-	SoundSourceID s_repeaterEmptySndSrc;
-	SoundSourceID s_mortarFireSndSrc;
-	SoundSourceID s_mortarFireSndSrc2;
-	SoundSourceID s_mortarEmptySndSrc;
-	SoundSourceID s_mineSndSrc;
-	SoundSourceID s_concussion6SndSrc;
-	SoundSourceID s_concussion5SndSrc;
-	SoundSourceID s_concussion1SndSrc;
-	SoundSourceID s_plasma4SndSrc;
-	SoundSourceID s_plasmaEmptySndSrc;
-	SoundSourceID s_missile1SndSrc;
-	SoundSourceID s_weaponChangeSnd;
+	SoundSourceId s_punchSwingSndSrc;
+	SoundSourceId s_pistolSndSrc;
+	SoundSourceId s_pistolEmptySndSrc;
+	SoundSourceId s_rifleSndSrc;
+	SoundSourceId s_rifleEmptySndSrc;
+	SoundSourceId s_fusion1SndSrc;
+	SoundSourceId s_fusion2SndSrc;
+	SoundSourceId s_repeaterSndSrc;
+	SoundSourceId s_repeater1SndSrc;
+	SoundSourceId s_repeaterEmptySndSrc;
+	SoundSourceId s_mortarFireSndSrc;
+	SoundSourceId s_mortarFireSndSrc2;
+	SoundSourceId s_mortarEmptySndSrc;
+	SoundSourceId s_mineSndSrc;
+	SoundSourceId s_concussion6SndSrc;
+	SoundSourceId s_concussion5SndSrc;
+	SoundSourceId s_concussion1SndSrc;
+	SoundSourceId s_plasma4SndSrc;
+	SoundSourceId s_plasmaEmptySndSrc;
+	SoundSourceId s_missile1SndSrc;
+	SoundSourceId s_weaponChangeSnd;
 
-	SoundEffectID s_repeaterFireSndID = 0;
+	SoundEffectId s_repeaterFireSndID = 0;
 
 	///////////////////////////////////////////
 	// Shared State
 	///////////////////////////////////////////
 	PlayerWeapon* s_curPlayerWeapon = nullptr;
-	SoundSourceID s_superchargeCountdownSound;
+	SoundSourceId s_superchargeCountdownSound;
 	Task* s_playerWeaponTask = nullptr;
 
 	///////////////////////////////////////////
@@ -337,28 +337,28 @@ namespace TFE_DarkForces
 		weapon_loadTextures();
 
 		// Load Sounds.
-		s_punchSwingSndSrc    = sound_Load("swing.voc");
-		s_pistolSndSrc        = sound_Load("pistol-1.voc");
-		s_pistolEmptySndSrc   = sound_Load("pistout1.voc");
-		s_rifleSndSrc         = sound_Load("rifle-1.voc");
-		s_rifleEmptySndSrc    = sound_Load("riflout.voc");
-		s_fusion1SndSrc       = sound_Load("fusion1.voc");
-		s_fusion2SndSrc       = sound_Load("fusion2.voc");
-		s_repeaterSndSrc      = sound_Load("repeater.voc");
-		s_repeater1SndSrc     = sound_Load("repeat-1.voc");
-		s_repeaterEmptySndSrc = sound_Load("rep-emp.voc");
-		s_mortarFireSndSrc    = sound_Load("mortar4.voc");
-		s_mortarFireSndSrc2   = sound_Load("mortar2.voc");
-		s_mortarEmptySndSrc   = sound_Load("mortar9.voc");
-		s_mineSndSrc          = sound_Load("claymor1.voc");
-		s_concussion6SndSrc   = sound_Load("concuss6.voc");
-		s_concussion5SndSrc   = sound_Load("concuss5.voc");
-		s_concussion1SndSrc   = sound_Load("concuss1.voc");
-		s_plasma4SndSrc       = sound_Load("plasma4.voc");
-		s_plasmaEmptySndSrc   = sound_Load("plas-emp.voc");
-		s_missile1SndSrc      = sound_Load("missile1.voc");
-		s_weaponChangeSnd     = sound_Load("weapon1.voc");
-		s_superchargeCountdownSound = sound_Load("quarter.voc");
+		s_punchSwingSndSrc    = sound_load("swing.voc",    SOUND_PRIORITY_HIGH3);
+		s_pistolSndSrc        = sound_load("pistol-1.voc", SOUND_PRIORITY_HIGH0);
+		s_pistolEmptySndSrc   = sound_load("pistout1.voc", SOUND_PRIORITY_HIGH0);
+		s_rifleSndSrc         = sound_load("rifle-1.voc",  SOUND_PRIORITY_HIGH0);
+		s_rifleEmptySndSrc    = sound_load("riflout.voc",  SOUND_PRIORITY_HIGH0);
+		s_fusion1SndSrc       = sound_load("fusion1.voc",  SOUND_PRIORITY_HIGH3);
+		s_fusion2SndSrc       = sound_load("fusion2.voc",  SOUND_PRIORITY_HIGH3);
+		s_repeaterSndSrc      = sound_load("repeater.voc", SOUND_PRIORITY_HIGH3);
+		s_repeater1SndSrc     = sound_load("repeat-1.voc", SOUND_PRIORITY_HIGH3);
+		s_repeaterEmptySndSrc = sound_load("rep-emp.voc",  SOUND_PRIORITY_HIGH3);
+		s_mortarFireSndSrc    = sound_load("mortar4.voc",  SOUND_PRIORITY_HIGH3);
+		s_mortarFireSndSrc2   = sound_load("mortar2.voc",  SOUND_PRIORITY_HIGH3);
+		s_mortarEmptySndSrc   = sound_load("mortar9.voc",  SOUND_PRIORITY_HIGH3);
+		s_mineSndSrc          = sound_load("claymor1.voc", SOUND_PRIORITY_HIGH3);
+		s_concussion6SndSrc   = sound_load("concuss6.voc", SOUND_PRIORITY_HIGH3);
+		s_concussion5SndSrc   = sound_load("concuss5.voc", SOUND_PRIORITY_HIGH3);
+		s_concussion1SndSrc   = sound_load("concuss1.voc", SOUND_PRIORITY_HIGH3);
+		s_plasma4SndSrc       = sound_load("plasma4.voc",  SOUND_PRIORITY_HIGH3);
+		s_plasmaEmptySndSrc   = sound_load("plas-emp.voc", SOUND_PRIORITY_HIGH3);
+		s_missile1SndSrc      = sound_load("missile1.voc", SOUND_PRIORITY_HIGH3);
+		s_weaponChangeSnd     = sound_load("weapon1.voc",  SOUND_PRIORITY_LOW4);
+		s_superchargeCountdownSound = sound_load("quarter.voc", SOUND_PRIORITY_HIGH4);
 
 		s_isShooting       = JFALSE;
 		s_secondaryFire    = JFALSE;
@@ -770,7 +770,7 @@ namespace TFE_DarkForces
 		{
 			if (s_repeaterFireSndID)
 			{
-				stopSound(s_repeaterFireSndID);
+				sound_stop(s_repeaterFireSndID);
 				s_repeaterFireSndID = 0;
 			}
 			s_curPlayerWeapon->frame = 0;
@@ -876,7 +876,7 @@ namespace TFE_DarkForces
 		{
 			if (s_repeaterFireSndID)
 			{
-				stopSound(s_repeaterFireSndID);
+				sound_stop(s_repeaterFireSndID);
 				s_repeaterFireSndID = 0;
 			}
 			s_curPlayerWeapon->frame = 0;
@@ -905,7 +905,7 @@ namespace TFE_DarkForces
 		s_weaponOffAnim = JFALSE;
 		if (s_curWeapon != WPN_FIST && s_curWeapon != WPN_THERMAL_DET && s_curWeapon != WPN_MINE)
 		{
-			playSound2D(s_weaponChangeSnd);
+			sound_play(s_weaponChangeSnd);
 		}
 				
 		if (s_prevWeapon == WPN_THERMAL_DET)
@@ -944,7 +944,7 @@ namespace TFE_DarkForces
 		{
 			if (s_repeaterFireSndID)
 			{
-				stopSound(s_repeaterFireSndID);
+				sound_stop(s_repeaterFireSndID);
 				s_repeaterFireSndID = 0;
 			}
 			weapon->frame = 0;
@@ -1054,7 +1054,7 @@ namespace TFE_DarkForces
 					if (s_curWeapon == WPN_PISTOL || s_curWeapon == WPN_RIFLE || s_curWeapon == WPN_REPEATER || s_curWeapon == WPN_FUSION || s_curWeapon == WPN_MORTAR ||
 						s_curWeapon == WPN_CONCUSSION || s_curWeapon == WPN_CANNON)
 					{
-						playSound2D(s_weaponChangeSnd);
+						sound_play(s_weaponChangeSnd);
 					}
 
 					weapon_fixupAnim();

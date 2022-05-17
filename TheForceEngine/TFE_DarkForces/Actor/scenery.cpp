@@ -3,8 +3,8 @@
 #include "aiActor.h"
 #include <TFE_DarkForces/projectile.h>
 #include <TFE_DarkForces/player.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/InfSystem/message.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 

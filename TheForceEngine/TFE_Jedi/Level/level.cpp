@@ -10,6 +10,7 @@
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Asset/vocAsset.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
@@ -21,6 +22,8 @@
 
 // TODO: Fix game dependency?
 #include <TFE_DarkForces/logic.h>
+
+using namespace TFE_DarkForces;
 
 namespace TFE_Jedi
 {
@@ -48,7 +51,7 @@ namespace TFE_Jedi
 	static JediModel** s_pods;
 	static JediWax** s_sprites;
 	static JediFrame** s_frames;
-	static s32* s_soundIds;
+	static SoundSourceId* s_soundIds;
 
 	static Task* s_soundEmitterTask;
 
@@ -777,21 +780,15 @@ namespace TFE_Jedi
 		line = parser.readLine(bufferPos);
 		if (sscanf(line, "SOUNDS %d", &s_soundCount) == 1)
 		{
+			s_soundIds = (SoundSourceId*)res_alloc(sizeof(SoundSourceId)*s_soundCount);
 			for (s32 s = 0; s < s_soundCount; s++)
 			{
 				line = parser.readLine(bufferPos);
 
 				char name[32];
-				if (sscanf(line, "SOUND: %s", name) == 1)
+				if (sscanf(line, " SOUND: %s ", name) == 1)
 				{
-					// The DOS code uses indices for sounds but TFE just returns the buffers for now.
-					s32 index = 0;
-					if (TFE_VocAsset::get(name))
-					{
-						// index = 0 = no sound.
-						index = TFE_VocAsset::getIndex(name) + 1;
-					}
-					s_soundIds[s] = index;
+					s_soundIds[s] = sound_load(name, SOUND_PRIORITY_LOW2);
 				}
 			}
 		}
@@ -899,7 +896,7 @@ namespace TFE_Jedi
 					JBool seqRead = JFALSE;
 					if (obj)
 					{
-						seqRead = TFE_DarkForces::object_parseSeq(obj, &parser, &bufferPos);
+						seqRead = object_parseSeq(obj, &parser, &bufferPos);
 						if (obj->entityFlags & ETFLAG_PLAYER)
 						{
 							if (!s_safeLoc)

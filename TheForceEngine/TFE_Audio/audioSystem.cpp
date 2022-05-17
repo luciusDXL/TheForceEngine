@@ -33,20 +33,13 @@ enum SoundSourceFlags
 struct SoundSource
 {
 	SoundType type;
-	f32 baseVolume;
 	f32 volume;
-	f32 seperation;		//stereo seperation.
 	u32 sampleIndex;
 	u32 flags;
 	s32 slot;
 
 	// Sound data.
 	const SoundBuffer* buffer;
-
-	// positional data.
-	const Vec3f* pos;
-	// local position if a pointer isn't used - this is for transient effects.
-	Vec3f localPos;
 
 	// Callback.
 	SoundFinishedCallback finishedCallback = nullptr;
@@ -56,10 +49,6 @@ struct SoundSource
 
 namespace TFE_Audio
 {
-	// This assumes 2 channel support only. This will do for the initial release.
-	// TODO: Support surround sound setups (5.1, 7.1, etc).
-	// TODO: Support proper HRTF data (optional).
-	static const f32 c_stereoSwing   = 0.45f;	// 0.0 = mono positional audio (sound equal in both speakers), 0.5 = full swing (i.e. sound to the left is ONLY heard in the left speaker).
 	static const f32 c_channelLimit  = 1.0f;
 	static const f32 c_soundHeadroom = 0.35f;	// approximately 1 / sqrt(8); assuming 8 uncorrelated sounds playing at full volume.
 
@@ -69,7 +58,6 @@ namespace TFE_Audio
 	static f32 s_soundFxScale = s_soundFxVolume * c_soundHeadroom;	// actual volume scale based on client set volume and headroom.
 
 	static u32 s_sourceCount;
-	static Vec3f s_listener;
 	// TODO: This will need to be buffered to avoid locks.
 	static SoundSource s_sources[MAX_SOUND_SOURCES];
 	static Mutex s_mutex;
@@ -92,7 +80,6 @@ namespace TFE_Audio
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_AudioSystem::init");
 		s_sourceCount = 0u;
-		s_listener = { 0 };
 
 		MUTEX_INITIALIZE(&s_mutex);
 
@@ -167,61 +154,9 @@ namespace TFE_Audio
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
-	void update(const Vec3f* listenerPos, const Vec3f* listenerDir)
-	{
-		// Currently positional audio only accounts for the "horizontal plane"
-		// TODO: Support proper HRTF as an option, though we want to keep the "old school" handling in for the classic mode.
-		Vec2f listDirXZ = { listenerDir->x, listenerDir->z };
-		listDirXZ = TFE_Math::normalize(&listDirXZ);
-
-		SoundSource* snd = s_sources;
-		for (u32 s = 0; s < s_sourceCount; s++, snd++)
-		{
-			if (!(snd->flags & SND_FLAG_ACTIVE)) { continue; }
-
-			if (snd->type == SOUND_2D)
-			{
-				snd->volume = snd->baseVolume;
-			}
-			else
-			{
-				// Compute attentuation and channel seperation.
-				const Vec3f offset = { snd->pos->x - listenerPos->x, snd->pos->y - listenerPos->y, snd->pos->z - listenerPos->z };
-				const f32 distSq = TFE_Math::dot(&offset, &offset);
-
-				if (distSq >= c_clipDistance * c_clipDistance)
-				{
-					snd->volume = 0.0f;
-				}
-				else if (distSq < c_closeDistance * c_closeDistance)
-				{
-					snd->volume = snd->baseVolume;
-				}
-				else
-				{
-					const f32 dist = sqrtf(distSq);
-					const f32 atten = 1.0f - (dist - c_closeDistance) / (c_clipDistance - c_closeDistance);
-					snd->volume = snd->baseVolume * atten * atten;
-				}
-
-				snd->seperation = 0.5f;
-				if (snd->volume > FLT_EPSILON)
-				{
-					// Spatialization is done on the XZ plane.
-					const Vec2f offsetXZ = { offset.x, offset.z };
-					const Vec2f dir = TFE_Math::normalize(&offsetXZ);
-					// Sin of the angle between the listener direction and direction from listener to sound effect.
-					const f32 sinAngle = dir.z*listDirXZ.x - dir.x*listDirXZ.z;
-					// Stereo Seperation ranges from 0.0 (left), through 0.5 (middle) to 1.0 (right).
-					snd->seperation -= c_stereoSwing * sinAngle;
-				}
-			}
-		}
-	}
-
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 	// Note that looping one shots are valid.
-	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos, bool copyPosition, SoundFinishedCallback finishedCallback, void* cbUserData, s32 cbArg)
+	bool playOneShot(SoundType type, f32 volume, const SoundBuffer* buffer, bool looping, SoundFinishedCallback finishedCallback, void* cbUserData, s32 cbArg)
 	{
 		if (!buffer) { return false; }
 
@@ -252,19 +187,8 @@ namespace TFE_Audio
 				newSource->flags |= SND_FLAG_LOOPING;
 			}
 			newSource->volume = type == SOUND_3D ? 0.0f : volume;
-			newSource->baseVolume = volume;
 			newSource->buffer = buffer;
 			newSource->sampleIndex = 0u;
-			if (copyPosition)
-			{
-				newSource->localPos = *pos;
-				newSource->pos = &newSource->localPos;
-			}
-			else
-			{
-				newSource->pos = pos;
-			}
-			newSource->seperation = stereoSeperation;
 			newSource->finishedCallback = finishedCallback;
 			newSource->finishedUserData = cbUserData;
 			newSource->finishedArg = cbArg;
@@ -275,11 +199,10 @@ namespace TFE_Audio
 	}
 
 	// Sound source that the client holds onto.
-	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos, bool copyPosition, SoundFinishedCallback callback, void* userData)
+	SoundSource* createSoundSource(SoundType type, f32 volume, const SoundBuffer* buffer, SoundFinishedCallback callback, void* userData)
 	{
 		if (!buffer) { return nullptr; }
 		assert(volume >= 0.0f && volume <= 1.0f);
-		assert(stereoSeperation >= 0.0f && stereoSeperation <= 1.0f);
 
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
@@ -303,20 +226,9 @@ namespace TFE_Audio
 		{
 			newSource->type = type;
 			newSource->flags = SND_FLAG_ACTIVE;
-			newSource->volume = type == SOUND_2D ? volume : 0.0f;
-			newSource->baseVolume = volume;
+			newSource->volume = volume;
 			newSource->buffer = buffer;
 			newSource->sampleIndex = 0u;
-			if (copyPosition && pos)
-			{
-				newSource->localPos = *pos;
-				newSource->pos = &newSource->localPos;
-			}
-			else
-			{
-				newSource->pos = pos;
-			}
-			newSource->seperation = stereoSeperation;
 			newSource->finishedCallback = callback;
 			newSource->finishedUserData = userData;
 		}
@@ -379,22 +291,7 @@ namespace TFE_Audio
 
 	void setSourceVolume(SoundSource* source, f32 volume)
 	{
-		volume = std::max(0.0f, std::min(1.0f, volume));
-		source->baseVolume = volume;
-		if (source->type == SOUND_2D)
-		{
-			source->volume = source->baseVolume;
-		}
-	}
-
-	void setSourceStereoSeperation(SoundSource* source, f32 stereoSeperation)
-	{
-		source->seperation = std::max(0.0f, std::min(stereoSeperation, 1.0f));
-	}
-
-	void setSourcePosition(SoundSource* source, const Vec3f* pos)
-	{
-		source->localPos = *pos;
+		source->volume = std::max(0.0f, std::min(1.0f, volume));
 	}
 
 	// This will restart the sound and change the buffer.
@@ -475,7 +372,7 @@ namespace TFE_Audio
 			   
 		MUTEX_LOCK(&s_mutex);
 		// Then call the audio thread callback
-		if (s_audioThreadCallback)
+		if (s_audioThreadCallback && !s_paused)
 		{
 			s_audioThreadCallback(buffer, bufferSize, s_soundFxVolume);
 		}
@@ -487,13 +384,9 @@ namespace TFE_Audio
 			if (!(snd->flags&SND_FLAG_PLAYING)) { continue; }
 			assert(snd->buffer->data);
 
-			// Stereo Seperation.
-			const f32 sepSq = std::max(snd->volume - snd->seperation*snd->seperation, 0.0f) * s_soundFxScale;
-			const f32 invSepSq = std::max(snd->volume - (1.0f - snd->seperation) * (1.0f - snd->seperation), 0.0f) * s_soundFxScale;
-
 			// Skip sound sample processing the sound is too quiet...
 			const u32 sndBufferSize = snd->buffer->size;
-			if (sepSq < SND_CULL_VOLUME && invSepSq < SND_CULL_VOLUME)
+			if (snd->volume < SND_CULL_VOLUME)
 			{
 				// Pretend we played the sound and handle looping.
 				snd->sampleIndex += bufferSize;
@@ -540,9 +433,9 @@ namespace TFE_Audio
 				u32 sIndex = snd->sampleIndex;
 				for (; sIndex < end; i++, sIndex++, buffer += 2)
 				{
-					const f32 sample = sampleBuffer(sIndex, type, data);
-					buffer[0] += sample * sepSq;
-					buffer[1] += sample * invSepSq;
+					const f32 sample = sampleBuffer(sIndex, type, data) * snd->volume;
+					buffer[0] += sample;
+					buffer[1] += sample;
 				}
 				snd->sampleIndex = sIndex;
 			}

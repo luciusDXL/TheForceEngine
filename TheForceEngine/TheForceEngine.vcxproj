@@ -423,6 +423,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\playerLogic.h" />
     <ClInclude Include="TFE_DarkForces\projectile.h" />
     <ClInclude Include="TFE_DarkForces\random.h" />
+    <ClInclude Include="TFE_DarkForces\sound.h" />
     <ClInclude Include="TFE_DarkForces\time.h" />
     <ClInclude Include="TFE_DarkForces\updateLogic.h" />
     <ClInclude Include="TFE_DarkForces\util.h" />
@@ -514,7 +515,6 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\screenDraw.h" />
     <ClInclude Include="TFE_Jedi\Renderer\virtualFramebuffer.h" />
     <ClInclude Include="TFE_Jedi\Sound\gameSound.h" />
-    <ClInclude Include="TFE_Jedi\Sound\soundSystem.h" />
     <ClInclude Include="TFE_Jedi\Task\task.h" />
     <ClInclude Include="TFE_Jedi\Task\taskMacros.h" />
     <ClInclude Include="TFE_Memory\chunkedArray.h" />
@@ -665,6 +665,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\playerCollision.cpp" />
     <ClCompile Include="TFE_DarkForces\projectile.cpp" />
     <ClCompile Include="TFE_DarkForces\random.cpp" />
+    <ClCompile Include="TFE_DarkForces\sound.cpp" />
     <ClCompile Include="TFE_DarkForces\time.cpp" />
     <ClCompile Include="TFE_DarkForces\updateLogic.cpp" />
     <ClCompile Include="TFE_DarkForces\util.cpp" />
@@ -738,7 +739,6 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\screenDraw.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\virtualFramebuffer.cpp" />
     <ClCompile Include="TFE_Jedi\Sound\gameSound.cpp" />
-    <ClCompile Include="TFE_Jedi\Sound\soundSystem.cpp" />
     <ClCompile Include="TFE_Jedi\Task\task.cpp" />
     <ClCompile Include="TFE_Memory\chunkedArray.cpp" />
     <ClCompile Include="TFE_Memory\memoryRegion.cpp" />

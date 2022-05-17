@@ -7,11 +7,11 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Asset/dfKeywords.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include "logic.h"
 #include "hitEffect.h"
+#include "sound.h"
 #include "time.h"
 
 namespace TFE_DarkForces
@@ -85,10 +85,10 @@ namespace TFE_DarkForces
 		angle14_32 homingAngleSpd;		  // How quickly a homing projectile lines up in angle units / second.
 		s32 bounceCnt;
 		s32 reflVariation;
-		SoundEffectID flightSndId;        // Looping sound instance played while the projectile moves.
-		SoundSourceID flightSndSource;    // Source looping sound.
-		SoundSourceID cameraPassSnd;      // Sound effect played when the projectile passes near the camera.
-		SoundSourceID reflectSnd;         // Sound effect played when the projectile is reflected off of the floor, ceiling or wall.
+		SoundEffectId flightSndId;        // Looping sound instance played while the projectile moves.
+		SoundSourceId flightSndSource;    // Source looping sound.
+		SoundSourceId cameraPassSnd;      // Sound effect played when the projectile passes near the camera.
+		SoundSourceId reflectSnd;         // Sound effect played when the projectile is reflected off of the floor, ceiling or wall.
 		ProjectileFunc updateFunc;        // Projectile update function, this determines how the projectile moves.
 		HitEffectID reflectEffectId;
 		HitEffectID hitEffectId;          // The effect to play when the projectile hits a solid surface.

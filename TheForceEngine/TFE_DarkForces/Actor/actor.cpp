@@ -3,6 +3,7 @@
 #include "actor.h"
 #include "../logic.h"
 #include "../gameMusic.h"
+#include "../sound.h"
 #include "aiActor.h"
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/random.h>
@@ -14,7 +15,6 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/InfSystem/message.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -42,10 +42,10 @@ namespace TFE_DarkForces
 	// Shared State
 	///////////////////////////////////////////
 	ActorState s_actorState = { 0 };
-	SoundSourceID s_alertSndSrc[ALERT_COUNT];
-	SoundSourceID s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
-	SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];
-	SoundSourceID s_agentSndSrc[AGENTSND_COUNT];
+	SoundSourceId s_alertSndSrc[ALERT_COUNT];
+	SoundSourceId s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
+	SoundSourceId s_stormAlertSndSrc[STORM_ALERT_COUNT];
+	SoundSourceId s_agentSndSrc[AGENTSND_COUNT];
 
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -69,51 +69,51 @@ namespace TFE_DarkForces
 
 	void actor_loadSounds()
 	{
-		s_alertSndSrc[ALERT_GAMOR]    = sound_Load("gamor-3.voc");
-		s_alertSndSrc[ALERT_REEYEE]   = sound_Load("reeyee-1.voc");
-		s_alertSndSrc[ALERT_BOSSK]    = sound_Load("bossk-1.voc");
-		s_alertSndSrc[ALERT_CREATURE] = sound_Load("creatur1.voc");
-		s_alertSndSrc[ALERT_PROBE]    = sound_Load("probe-1.voc");
-		s_alertSndSrc[ALERT_INTDROID] = sound_Load("intalert.voc");
+		s_alertSndSrc[ALERT_GAMOR]    = sound_load("gamor-3.voc",  SOUND_PRIORITY_MED5);
+		s_alertSndSrc[ALERT_REEYEE]   = sound_load("reeyee-1.voc", SOUND_PRIORITY_MED5);
+		s_alertSndSrc[ALERT_BOSSK]    = sound_load("bossk-1.voc",  SOUND_PRIORITY_MED5);
+		s_alertSndSrc[ALERT_CREATURE] = sound_load("creatur1.voc", SOUND_PRIORITY_MED5);
+		s_alertSndSrc[ALERT_PROBE]    = sound_load("probe-1.voc",  SOUND_PRIORITY_MED5);
+		s_alertSndSrc[ALERT_INTDROID] = sound_load("intalert.voc", SOUND_PRIORITY_MED5);
 
-		s_officerAlertSndSrc[0] = sound_Load("ranofc02.voc");
-		s_officerAlertSndSrc[1] = sound_Load("ranofc04.voc");
-		s_officerAlertSndSrc[2] = sound_Load("ranofc05.voc");
-		s_officerAlertSndSrc[3] = sound_Load("ranofc06.voc");
+		s_officerAlertSndSrc[0] = sound_load("ranofc02.voc", SOUND_PRIORITY_MED5);
+		s_officerAlertSndSrc[1] = sound_load("ranofc04.voc", SOUND_PRIORITY_MED5);
+		s_officerAlertSndSrc[2] = sound_load("ranofc05.voc", SOUND_PRIORITY_MED5);
+		s_officerAlertSndSrc[3] = sound_load("ranofc06.voc", SOUND_PRIORITY_MED5);
 
-		s_stormAlertSndSrc[0] = sound_Load("ransto01.voc");
-		s_stormAlertSndSrc[1] = sound_Load("ransto02.voc");
-		s_stormAlertSndSrc[2] = sound_Load("ransto03.voc");
-		s_stormAlertSndSrc[3] = sound_Load("ransto04.voc");
-		s_stormAlertSndSrc[4] = sound_Load("ransto05.voc");
-		s_stormAlertSndSrc[5] = sound_Load("ransto06.voc");
-		s_stormAlertSndSrc[6] = sound_Load("ransto07.voc");
-		s_stormAlertSndSrc[7] = sound_Load("ransto08.voc");
+		s_stormAlertSndSrc[0] = sound_load("ransto01.voc", SOUND_PRIORITY_MED5);
+		s_stormAlertSndSrc[1] = sound_load("ransto02.voc", SOUND_PRIORITY_MED5);
+		s_stormAlertSndSrc[2] = sound_load("ransto03.voc", SOUND_PRIORITY_MED5);
+		s_stormAlertSndSrc[3] = sound_load("ransto04.voc", SOUND_PRIORITY_MED5);
+		s_stormAlertSndSrc[4] = sound_load("ransto05.voc", SOUND_PRIORITY_MED5);
+		s_stormAlertSndSrc[5] = sound_load("ransto06.voc", SOUND_PRIORITY_MED5);
+		s_stormAlertSndSrc[6] = sound_load("ransto07.voc", SOUND_PRIORITY_MED5);
+		s_stormAlertSndSrc[7] = sound_load("ransto08.voc", SOUND_PRIORITY_MED5);
 
 		// Attacks, hurt, death.
-		s_agentSndSrc[AGENTSND_REMOTE_2]        = sound_Load("remote-2.voc");
-		s_agentSndSrc[AGENTSND_AXE_1]           = sound_Load("axe-1.voc");
-		s_agentSndSrc[AGENTSND_INTSTUN]         = sound_Load("intstun.voc");
-		s_agentSndSrc[AGENTSND_PROBFIRE_11]     = sound_Load("probfir1.voc");
-		s_agentSndSrc[AGENTSND_PROBFIRE_12]     = sound_Load("probfir1.voc");
-		s_agentSndSrc[AGENTSND_CREATURE2]       = sound_Load("creatur2.voc");
-		s_agentSndSrc[AGENTSND_PROBFIRE_13]     = sound_Load("probfir1.voc");
-		s_agentSndSrc[AGENTSND_STORM_HURT]      = sound_Load("st-hrt-1.voc");
-		s_agentSndSrc[AGENTSND_GAMOR_2]         = sound_Load("gamor-2.voc");
-		s_agentSndSrc[AGENTSND_REEYEE_2]        = sound_Load("reeyee-2.voc");
-		s_agentSndSrc[AGENTSND_BOSSK_3]         = sound_Load("bossk-3.voc");
-		s_agentSndSrc[AGENTSND_CREATURE_HURT]   = sound_Load("creathrt.voc");
-		s_agentSndSrc[AGENTSND_STORM_DIE]       = sound_Load("st-die-1.voc");
-		s_agentSndSrc[AGENTSND_REEYEE_3]        = sound_Load("reeyee-3.voc");
-		s_agentSndSrc[AGENTSND_BOSSK_DIE]       = sound_Load("bosskdie.voc");
-		s_agentSndSrc[AGENTSND_GAMOR_1]         = sound_Load("gamor-1.voc");
-		s_agentSndSrc[AGENTSND_CREATURE_DIE]    = sound_Load("creatdie.voc");
-		s_agentSndSrc[AGENTSND_EEEK_3]          = sound_Load("eeek-3.voc");
-		s_agentSndSrc[AGENTSND_SMALL_EXPLOSION] = sound_Load("ex-small.voc");
-		s_agentSndSrc[AGENTSND_PROBE_ALM]       = sound_Load("probalm.voc");
-		s_agentSndSrc[AGENTSND_TINY_EXPLOSION]  = sound_Load("ex-tiny1.voc");
+		s_agentSndSrc[AGENTSND_REMOTE_2]        = sound_load("remote-2.voc", SOUND_PRIORITY_LOW0);
+		s_agentSndSrc[AGENTSND_AXE_1]           = sound_load("axe-1.voc",    SOUND_PRIORITY_LOW0);
+		s_agentSndSrc[AGENTSND_INTSTUN]         = sound_load("intstun.voc",  SOUND_PRIORITY_LOW0);
+		s_agentSndSrc[AGENTSND_PROBFIRE_11]     = sound_load("probfir1.voc", SOUND_PRIORITY_LOW0);
+		s_agentSndSrc[AGENTSND_PROBFIRE_12]     = sound_load("probfir1.voc", SOUND_PRIORITY_LOW0);
+		s_agentSndSrc[AGENTSND_CREATURE2]       = sound_load("creatur2.voc", SOUND_PRIORITY_LOW0);
+		s_agentSndSrc[AGENTSND_PROBFIRE_13]     = sound_load("probfir1.voc", SOUND_PRIORITY_LOW0);
+		s_agentSndSrc[AGENTSND_STORM_HURT]      = sound_load("st-hrt-1.voc", SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_GAMOR_2]         = sound_load("gamor-2.voc",  SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_REEYEE_2]        = sound_load("reeyee-2.voc", SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_BOSSK_3]         = sound_load("bossk-3.voc",  SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_CREATURE_HURT]   = sound_load("creathrt.voc", SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_STORM_DIE]       = sound_load("st-die-1.voc", SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_REEYEE_3]        = sound_load("reeyee-3.voc", SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_BOSSK_DIE]       = sound_load("bosskdie.voc", SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_GAMOR_1]         = sound_load("gamor-1.voc",  SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_CREATURE_DIE]    = sound_load("creatdie.voc", SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_EEEK_3]          = sound_load("eeek-3.voc",   SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_SMALL_EXPLOSION] = sound_load("ex-small.voc", SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_PROBE_ALM]       = sound_load("probalm.voc",  SOUND_PRIORITY_MED5);
+		s_agentSndSrc[AGENTSND_TINY_EXPLOSION]  = sound_load("ex-tiny1.voc", SOUND_PRIORITY_MED5);
 
-		setSoundSourceVolume(s_agentSndSrc[AGENTSND_REMOTE_2], 40);
+		sound_setBaseVolume(s_agentSndSrc[AGENTSND_REMOTE_2], 40);
 	}
 
 	void actor_allocatePhysicsActorList()
@@ -677,8 +677,8 @@ namespace TFE_DarkForces
 					ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
 					actor_addVelocity(pushVel.x*4, pushVel.y*2, pushVel.z*4);
 					actor_setDeathCollisionFlags();
-					stopSound(logic->alertSndID);
-					playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
+					sound_stop(logic->alertSndID);
+					sound_playCued(aiActor->dieSndSrc, obj->posWS);
 					enemy->anim.flags |= 8;
 					if (proj->type == PROJ_PUNCH && obj->type == OBJ_TYPE_SPRITE)
 					{
@@ -699,8 +699,8 @@ namespace TFE_DarkForces
 					}
 
 					actor_addVelocity(pushVel.x*2, pushVel.y, pushVel.z*2);
-					stopSound(aiActor->hurtSndID);
-					aiActor->hurtSndID = playSound3D_oneshot(aiActor->hurtSndSrc, obj->posWS);
+					sound_stop(aiActor->hurtSndID);
+					aiActor->hurtSndID = sound_playCued(aiActor->hurtSndSrc, obj->posWS);
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
 						actor_setupAnimation(12, anim);
@@ -738,8 +738,8 @@ namespace TFE_DarkForces
 				{
 					actor_addVelocity(vel.x, vel.y, vel.z);
 					actor_setDeathCollisionFlags();
-					stopSound(logic->alertSndID);
-					playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
+					sound_stop(logic->alertSndID);
+					sound_playCued(aiActor->dieSndSrc, obj->posWS);
 					enemy->target.flags |= 8;
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
@@ -749,8 +749,8 @@ namespace TFE_DarkForces
 				else
 				{
 					actor_addVelocity(vel.x>>1, vel.y>>1, vel.z>>1);
-					stopSound(aiActor->hurtSndID);
-					aiActor->hurtSndID = playSound3D_oneshot(aiActor->hurtSndSrc, obj->posWS);
+					sound_stop(aiActor->hurtSndID);
+					aiActor->hurtSndID = sound_playCued(aiActor->hurtSndSrc, obj->posWS);
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
 						actor_setupAnimation(12, anim);
@@ -946,7 +946,7 @@ namespace TFE_DarkForces
 					fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
 					if (dist < enemy->meleeRange)
 					{
-						playSound3D_oneshot(enemy->attackSecSndSrc, obj->posWS);
+						sound_playCued(enemy->attackSecSndSrc, obj->posWS);
 						player_applyDamage(enemy->meleeDmg, 0, JTRUE);
 						if (enemy->attackFlags & 8)
 						{
@@ -964,7 +964,7 @@ namespace TFE_DarkForces
 
 				enemy->anim.state = 3;
 				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(enemy->projType, obj->sector, obj->posWS.x, enemy->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
-				playSound3D_oneshot(enemy->attackPrimSndSrc, obj->posWS);
+				sound_playCued(enemy->attackPrimSndSrc, obj->posWS);
 
 				proj->prevColObj = obj;
 				proj->prevObj = obj;
@@ -1017,7 +1017,7 @@ namespace TFE_DarkForces
 
 				enemy->anim.state = 5;
 				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(enemy->projType, obj->sector, obj->posWS.x, enemy->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
-				playSound3D_oneshot(enemy->attackPrimSndSrc, obj->posWS);
+				sound_playCued(enemy->attackPrimSndSrc, obj->posWS);
 				proj->prevColObj = obj;
 				proj->excludeObj = obj;
 
@@ -1210,7 +1210,7 @@ namespace TFE_DarkForces
 			{
 				if (!(logic->flags & 1) && (logic->flags & 2))
 				{
-					playSound3D_oneshot(s_agentSndSrc[AGENTSND_REMOTE_2], obj->posWS);
+					sound_playCued(s_agentSndSrc[AGENTSND_REMOTE_2], obj->posWS);
 				}
 			}
 		}
@@ -1857,7 +1857,7 @@ namespace TFE_DarkForces
 				{
 					if (actorLogic->flags & 16)  // Officer alert list.
 					{
-						actorLogic->alertSndID = playSound3D_oneshot(s_officerAlertSndSrc[s_actorState.officerAlertIndex], obj->posWS);
+						actorLogic->alertSndID = sound_playCued(s_officerAlertSndSrc[s_actorState.officerAlertIndex], obj->posWS);
 						s_actorState.officerAlertIndex++;
 						if (s_actorState.officerAlertIndex >= 4)
 						{
@@ -1866,7 +1866,7 @@ namespace TFE_DarkForces
 					}
 					else if (actorLogic->flags & 32)  // Storm trooper alert list
 					{
-						actorLogic->alertSndID = playSound3D_oneshot(s_stormAlertSndSrc[s_actorState.stormtrooperAlertIndex], obj->posWS);
+						actorLogic->alertSndID = sound_playCued(s_stormAlertSndSrc[s_actorState.stormtrooperAlertIndex], obj->posWS);
 						s_actorState.stormtrooperAlertIndex++;
 						if (s_actorState.stormtrooperAlertIndex >= 8)
 						{
@@ -1875,7 +1875,7 @@ namespace TFE_DarkForces
 					}
 					else // Single alert.
 					{
-						actorLogic->alertSndID = playSound3D_oneshot(actorLogic->alertSndSrc, obj->posWS);
+						actorLogic->alertSndID = sound_playCued(actorLogic->alertSndSrc, obj->posWS);
 					}
 					s_actorState.nextAlertTick = s_curTick + 291;	// ~2 seconds between alerts
 				}

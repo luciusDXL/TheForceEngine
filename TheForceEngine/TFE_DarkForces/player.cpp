@@ -149,8 +149,8 @@ namespace TFE_DarkForces
 	static JBool s_limitStepHeight = JTRUE;
 	static JBool s_smallModeEnabled = JFALSE;
 	// Currently playing sound effects.
-	static SoundEffectID s_crushSoundId = 0;
-	static SoundEffectID s_kyleScreamSoundId = 0;
+	static SoundEffectId s_crushSoundId = 0;
+	static SoundEffectId s_kyleScreamSoundId = 0;
 	// Position and orientation.
 	static vec3_fixed s_playerPos;
 	static fixed16_16 s_playerObjHeight;
@@ -208,20 +208,20 @@ namespace TFE_DarkForces
 	JBool s_itemUnknown1;	// 0x282428
 	JBool s_itemUnknown2;	// 0x28242c
 
-	SoundSourceID s_landSplashSound;
-	SoundSourceID s_landSolidSound;
-	SoundSourceID s_gasDamageSoundSource;
-	SoundSourceID s_maskSoundSource1;
-	SoundSourceID s_maskSoundSource2;
-	SoundSourceID s_invCountdownSound;
-	SoundSourceID s_jumpSoundSource;
-	SoundSourceID s_nightVisionActiveSoundSource;
-	SoundSourceID s_nightVisionDeactiveSoundSource;
-	SoundSourceID s_playerDeathSoundSource;
-	SoundSourceID s_crushSoundSource;
-	SoundSourceID s_playerHealthHitSoundSource;
-	SoundSourceID s_kyleScreamSoundSource;
-	SoundSourceID s_playerShieldHitSoundSource;
+	SoundSourceId s_landSplashSound;
+	SoundSourceId s_landSolidSound;
+	SoundSourceId s_gasDamageSoundSource;
+	SoundSourceId s_maskSoundSource1;
+	SoundSourceId s_maskSoundSource2;
+	SoundSourceId s_invCountdownSound;
+	SoundSourceId s_jumpSoundSource;
+	SoundSourceId s_nightVisionActiveSoundSource;
+	SoundSourceId s_nightVisionDeactiveSoundSource;
+	SoundSourceId s_playerDeathSoundSource;
+	SoundSourceId s_crushSoundSource;
+	SoundSourceId s_playerHealthHitSoundSource;
+	SoundSourceId s_kyleScreamSoundSource;
+	SoundSourceId s_playerShieldHitSoundSource;
 
 	fixed16_16 s_playerHeight;
 	// Speed Modifiers
@@ -250,20 +250,20 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void player_init()
 	{
-		s_landSplashSound                = sound_Load("swim-in.voc");
-		s_landSolidSound                 = sound_Load("land-1.voc");
-		s_gasDamageSoundSource           = sound_Load("choke.voc");
-		s_maskSoundSource1               = sound_Load("mask1.voc");
-		s_maskSoundSource2               = sound_Load("mask2.voc");
-		s_invCountdownSound              = sound_Load("quarter.voc");
-		s_jumpSoundSource                = sound_Load("jump-1.voc");
-		s_nightVisionActiveSoundSource   = sound_Load("goggles1.voc");
-		s_nightVisionDeactiveSoundSource = sound_Load("goggles2.voc");
-		s_playerDeathSoundSource         = sound_Load("kyledie1.voc");
-		s_crushSoundSource               = sound_Load("crush.voc");
-		s_playerHealthHitSoundSource     = sound_Load("health1.voc");
-		s_kyleScreamSoundSource          = sound_Load("fall.voc");
-		s_playerShieldHitSoundSource     = sound_Load("shield1.voc");
+		s_landSplashSound                = sound_load("swim-in.voc",  SOUND_PRIORITY_HIGH4);
+		s_landSolidSound                 = sound_load("land-1.voc",   SOUND_PRIORITY_HIGH4);
+		s_gasDamageSoundSource           = sound_load("choke.voc",    SOUND_PRIORITY_MED2);
+		s_maskSoundSource1               = sound_load("mask1.voc",    SOUND_PRIORITY_MED2);
+		s_maskSoundSource2               = sound_load("mask2.voc",    SOUND_PRIORITY_MED2);
+		s_invCountdownSound              = sound_load("quarter.voc",  SOUND_PRIORITY_HIGH4);
+		s_jumpSoundSource                = sound_load("jump-1.voc",   SOUND_PRIORITY_HIGH4);
+		s_nightVisionActiveSoundSource   = sound_load("goggles1.voc", SOUND_PRIORITY_MED2);
+		s_nightVisionDeactiveSoundSource = sound_load("goggles2.voc", SOUND_PRIORITY_MED2);
+		s_playerDeathSoundSource         = sound_load("kyledie1.voc", SOUND_PRIORITY_HIGH5);
+		s_crushSoundSource               = sound_load("crush.voc",    SOUND_PRIORITY_HIGH4);
+		s_playerHealthHitSoundSource     = sound_load("health1.voc",  SOUND_PRIORITY_HIGH4);
+		s_kyleScreamSoundSource          = sound_load("fall.voc",     SOUND_PRIORITY_MED4);
+		s_playerShieldHitSoundSource     = sound_load("shield1.voc",  SOUND_PRIORITY_MED5);
 
 		s_playerInfo.ammoEnergy  = pickup_addToValue(0, 100, 999);
 		s_playerInfo.ammoPower   = pickup_addToValue(0, 100, 999);
@@ -847,14 +847,6 @@ namespace TFE_DarkForces
 			}
 			renderer_setWorldAmbient(s_playerLight);
 		}
-
-		// This is temporary until the full Jedi Sound system is reverse-engineered.
-		vec2_fixed dir;
-		sinCosFixed(s_yaw, &dir.x, &dir.z);
-
-		Vec3f listenerPos = { fixed16ToFloat(s_eyePos.x), fixed16ToFloat(s_eyePos.y), fixed16ToFloat(s_eyePos.z) };
-		Vec3f listenerDir = { fixed16ToFloat(dir.x), 0, fixed16ToFloat(dir.z) };
-		TFE_Audio::update(&listenerPos, &listenerDir);
 	}
 
 	void computeDamagePushVelocity(ProjectileLogic* proj, vec3_fixed* vel)
@@ -1197,7 +1189,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				playSound2D(s_jumpSoundSource);
+				sound_play(s_jumpSoundSource);
 
 				fixed16_16 speed = PLAYER_JUMP_IMPULSE << s_jumpScale;
 				s_playerJumping = JTRUE;
@@ -1659,7 +1651,7 @@ namespace TFE_DarkForces
 		fixed16_16 floorRelHeight = floorHeight - player->posWS.y;
 		if (floorRelHeight > PLAYER_FALL_SCREAM_MINHEIGHT && s_playerUpVel2 > PLAYER_FALL_SCREAM_VEL && !s_kyleScreamSoundId && !s_playerDying)
 		{
-			s_kyleScreamSoundId = playSound2D(s_kyleScreamSoundSource);
+			s_kyleScreamSoundId = sound_play(s_kyleScreamSoundSource);
 		}
 		sector_getObjFloorAndCeilHeight(player->sector, player->posWS.y, &floorHeight, &ceilHeight);
 
@@ -1678,7 +1670,7 @@ namespace TFE_DarkForces
 		{
 			if (s_kyleScreamSoundId)
 			{
-				stopSound(s_kyleScreamSoundId);
+				sound_stop(s_kyleScreamSoundId);
 				s_kyleScreamSoundId = NULL_SOUND;
 			}
 			// Handle player land event - this both plays a sound effect and sends an INF message.
@@ -1687,12 +1679,12 @@ namespace TFE_DarkForces
 				if (s_nextSector->secHeight - 1 >= 0)
 				{
 					// Second height is below ground, so this is liquid.
-					playSound2D(s_landSplashSound);
+					sound_play(s_landSplashSound);
 				}
 				else if (s_prevDistFromFloor > PLAYER_FALL_HIT_SND_HEIGHT)
 				{
 					// Second height is at or above ground.
-					playSound2D(s_landSolidSound);
+					sound_play(s_landSolidSound);
 				}
 				message_sendToSector(s_nextSector, player, INF_EVENT_LAND, MSG_TRIGGER);
 
@@ -1806,7 +1798,7 @@ namespace TFE_DarkForces
 		{
 			if (!s_crushSoundId)
 			{
-				s_crushSoundId = playSound2D(s_crushSoundSource);
+				s_crushSoundId = sound_play(s_crushSoundSource);
 			}
 			// Crushing damage is 10 damage/second
 			fixed16_16 crushingDmg = mul16(PLAYER_DMG_CRUSHING, s_deltaTime);
@@ -1816,7 +1808,7 @@ namespace TFE_DarkForces
 		}
 		else if (s_crushSoundId)
 		{
-			stopSound(s_crushSoundId);
+			sound_stop(s_crushSoundId);
 			s_crushSoundId = NULL_SOUND;
 		}
 
@@ -2024,7 +2016,7 @@ namespace TFE_DarkForces
 				s_playerInfo.shields = pickup_addToValue(floor16(shields), 0, 200);
 				if (playHitSound)
 				{
-					playSound2D(s_playerShieldHitSoundSource);
+					sound_play(s_playerShieldHitSoundSource);
 				}
 
 				s_shieldDamageFx += (shieldDmg << 2);
@@ -2045,7 +2037,7 @@ namespace TFE_DarkForces
 				s_playerInfo.health = pickup_addToValue(0, 0, 100);
 				if (playHitSound)
 				{
-					playSound2D(s_playerDeathSoundSource);
+					sound_play(s_playerDeathSoundSource);
 				}
 				if (s_gasSectorTask)
 				{
@@ -2060,7 +2052,7 @@ namespace TFE_DarkForces
 			{
 				if (playHitSound && s_curTick > s_nextPainSndTick)
 				{
-					playSound2D(s_playerHealthHitSoundSource);
+					sound_play(s_playerHealthHitSoundSource);
 					s_nextPainSndTick = s_curTick + 0x48;
 				}
 				health = max(0, health);
@@ -2384,7 +2376,7 @@ namespace TFE_DarkForces
 		task_begin;
 		while (1)
 		{
-			playSound2D(s_gasDamageSoundSource);
+			sound_play(s_gasDamageSoundSource);
 			task_yield(291);	// wait for 2 seconds.
 		}
 		task_end;

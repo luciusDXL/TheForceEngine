@@ -8,8 +8,8 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/agent.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_FileSystem/paths.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_System/parser.h>
@@ -39,15 +39,15 @@ namespace TFE_Jedi
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
 
 	// These need to be filled out somewhere.
-	static SoundSourceID s_moveCeilSound0 = NULL_SOUND;
-	static SoundSourceID s_moveCeilSound1 = NULL_SOUND;
-	static SoundSourceID s_moveCeilSound2 = NULL_SOUND;
-	static SoundSourceID s_moveFloorSound0 = NULL_SOUND;
-	static SoundSourceID s_moveFloorSound1 = NULL_SOUND;
-	static SoundSourceID s_moveFloorSound2 = NULL_SOUND;
-	static SoundSourceID s_doorSound = NULL_SOUND;
-	static SoundSourceID s_needKeySoundId = NULL_SOUND;
-	static SoundSourceID s_switchDefaultSndId = NULL_SOUND;
+	static SoundSourceId s_moveCeilSound0 = NULL_SOUND;
+	static SoundSourceId s_moveCeilSound1 = NULL_SOUND;
+	static SoundSourceId s_moveCeilSound2 = NULL_SOUND;
+	static SoundSourceId s_moveFloorSound0 = NULL_SOUND;
+	static SoundSourceId s_moveFloorSound1 = NULL_SOUND;
+	static SoundSourceId s_moveFloorSound2 = NULL_SOUND;
+	static SoundSourceId s_doorSound = NULL_SOUND;
+	static SoundSourceId s_needKeySoundId = NULL_SOUND;
+	static SoundSourceId s_switchDefaultSndId = NULL_SOUND;
 	
 	// INF delta time in ticks.
 	static s32 s_triggerCount = 0;
@@ -1195,11 +1195,11 @@ namespace TFE_Jedi
 				} break;
 				case KW_SOUND_COLON:
 				{
-					SoundSourceID soundSourceId = NULL_SOUND;
+					SoundSourceId soundSourceId = NULL_SOUND;
 					// Not ascii
 					if (s_infArg0[0] < '0' || s_infArg0[0] > '9')
 					{
-						soundSourceId = sound_Load(s_infArg0);
+						soundSourceId = sound_load(s_infArg0, SOUND_PRIORITY_LOW3);
 					}
 					trigger->soundId = soundSourceId;
 				} break;
@@ -1412,19 +1412,19 @@ namespace TFE_Jedi
 	// Sounds
 	void inf_loadSounds()
 	{
-		s_moveCeilSound0  = sound_Load("door2-1.voc");
-		s_moveCeilSound1  = sound_Load("door2-2.voc");
-		s_moveCeilSound2  = sound_Load("door2-3.voc");
-		s_moveFloorSound0 = sound_Load("elev2-1.voc");
-		s_moveFloorSound1 = sound_Load("elev2-2.voc");
-		s_moveFloorSound2 = sound_Load("elev2-3.voc");
-		s_doorSound       = sound_Load("door.voc");
-		s_needKeySoundId  = sound_Load("locked-1.voc");
+		s_moveCeilSound0  = sound_load("door2-1.voc", SOUND_PRIORITY_LOW3);
+		s_moveCeilSound1  = sound_load("door2-2.voc", SOUND_PRIORITY_LOW3);
+		s_moveCeilSound2  = sound_load("door2-3.voc", SOUND_PRIORITY_LOW3);
+		s_moveFloorSound0 = sound_load("elev2-1.voc", SOUND_PRIORITY_LOW3);
+		s_moveFloorSound1 = sound_load("elev2-2.voc", SOUND_PRIORITY_LOW3);
+		s_moveFloorSound2 = sound_load("elev2-3.voc", SOUND_PRIORITY_LOW3);
+		s_doorSound       = sound_load("door.voc", SOUND_PRIORITY_LOW3);
+		s_needKeySoundId  = sound_load("locked-1.voc", SOUND_PRIORITY_LOW3);
 	}
 
 	void inf_loadDefaultSwitchSound()
 	{
-		s_switchDefaultSndId = sound_Load("switch3.voc");
+		s_switchDefaultSndId = sound_load("switch3.voc", SOUND_PRIORITY_HIGH1);
 	}
 
 	void inf_elevatorTaskLocal(MessageType msg)
@@ -1469,7 +1469,7 @@ namespace TFE_Jedi
 							// Play the initial sound as the elevator starts moving.
 							if (nextStop && *taskCtx->elev->value != nextStop->value)
 							{
-								playSound3D_oneshot(taskCtx->elev->sound0, sndPos);
+								sound_playCued(taskCtx->elev->sound0, sndPos);
 							}
 
 							// Update the next time, so this will move on the next update.
@@ -1485,7 +1485,7 @@ namespace TFE_Jedi
 							vec3_fixed sndPos = inf_getElevSoundPos(taskCtx->elev);
 
 							// Start up the sound effect, track it since it is looping.
-							taskCtx->elev->loopingSoundID = playSound3D_looping(taskCtx->elev->sound1, taskCtx->elev->loopingSoundID, sndPos);
+							taskCtx->elev->loopingSoundID = sound_maintain(taskCtx->elev->loopingSoundID, taskCtx->elev->sound1, sndPos);
 						}
 
 						// if reachedStop = JFALSE, elevator has not reached the next stop.
@@ -1552,10 +1552,10 @@ namespace TFE_Jedi
 									}
 
 									// Page (special 2D sound effect that plays, such as voice overs).
-									SoundSourceID pageId = taskCtx->nextStop->pageId;
+									SoundSourceId pageId = taskCtx->nextStop->pageId;
 									if (pageId)
 									{
-										playSound2D(pageId);
+										sound_play(pageId);
 									}
 
 									// Advance to the next stop.
@@ -2146,7 +2146,7 @@ namespace TFE_Jedi
 			} break;
 			case KW_SOUND_COLON:
 			{
-				SoundSourceID soundSourceId = 0;
+				SoundSourceId soundSourceId = 0;
 				if (s_infArg1[0] >= '0' && s_infArg1[0] <= '9')
 				{
 					// Any numeric value means "no sound."
@@ -2154,7 +2154,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					soundSourceId = sound_Load(s_infArg1);
+					soundSourceId = sound_load(s_infArg1, SOUND_PRIORITY_LOW3);
 				}
 
 				// Determine which elevator sound to assign soundId to.
@@ -2174,8 +2174,8 @@ namespace TFE_Jedi
 			} break;
 			case KW_PAGE:
 			{
-				SoundSourceID soundSourceId = sound_Load(s_infArg1);
-				setSoundSourceVolume(soundSourceId, 127);
+				SoundSourceId soundSourceId = sound_load(s_infArg1, SOUND_PRIORITY_HIGH5);
+				sound_setBaseVolume(soundSourceId, 127);
 
 				s32 index = strToInt(s_infArg0);
 				Stop* stop = inf_getStopByIndex(elev, index);
@@ -2411,7 +2411,7 @@ namespace TFE_Jedi
 					{
 						// Get the sound location.
 						vec3_fixed pos = inf_getElevSoundPos(elev);
-						playSound3D_oneshot(elev->sound0, pos);
+						sound_playCued(elev->sound0, pos);
 					}
 
 					// Update the next time so the elevator will move on the next update.
@@ -2427,7 +2427,7 @@ namespace TFE_Jedi
 				{
 					// Get the sound location.
 					vec3_fixed pos = inf_getElevSoundPos(elev);
-					playSound3D_oneshot(elev->sound0, pos);
+					sound_playCued(elev->sound0, pos);
 				}
 				// Update the next time so the elevator will move on the next update.
 				elev->nextTick = s_curTick;
@@ -2445,7 +2445,7 @@ namespace TFE_Jedi
 					if (elev->nextStop && *elev->value != elev->nextStop->value)
 					{
 						vec3_fixed pos = inf_getElevSoundPos(elev);
-						playSound3D_oneshot(elev->sound0, pos);
+						sound_playCued(elev->sound0, pos);
 					}
 					elev->nextTick = s_curTick;
 					elev->updateFlags |= ELEV_MOVING;
@@ -2463,7 +2463,7 @@ namespace TFE_Jedi
 					if (elev->nextStop && *elev->value != elev->nextStop->value)
 					{
 						vec3_fixed pos = inf_getElevSoundPos(elev);
-						playSound3D_oneshot(elev->sound0, pos);
+						sound_playCued(elev->sound0, pos);
 					}
 					elev->nextTick = s_curTick;
 					elev->updateFlags |= ELEV_MOVING;
@@ -2488,7 +2488,7 @@ namespace TFE_Jedi
 		if (trigger->master)
 		{
 			// Play trigger sound.
-			playSound2D(trigger->soundId);
+			sound_play(trigger->soundId);
 
 			// Trigger targets (clients).
 			TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
@@ -2622,21 +2622,21 @@ namespace TFE_Jedi
 			{
 				// "You need the red key."
 				hud_sendTextMessage(6);
-				playSound2D(s_needKeySoundId);
+				sound_play(s_needKeySoundId);
 				return;
 			}
 			else if (key == KEY_YELLOW && !s_playerInfo.itemYellowKey)
 			{
 				// "You need the yellow key."
 				hud_sendTextMessage(7);
-				playSound2D(s_needKeySoundId);
+				sound_play(s_needKeySoundId);
 				return;
 			}
 			else if (key == KEY_BLUE && !s_playerInfo.itemBlueKey)
 			{
 				// "You need the blue key."
 				hud_sendTextMessage(8);
-				playSound2D(s_needKeySoundId);
+				sound_play(s_needKeySoundId);
 				return;
 			}
 		}
@@ -2663,7 +2663,7 @@ namespace TFE_Jedi
 					if (*elev->value != elev->nextStop->value)
 					{
 						vec3_fixed pos = inf_getElevSoundPos(elev);
-						playSound3D_oneshot(elev->sound0, pos);
+						sound_playCued(elev->sound0, pos);
 					}
 					elev->nextTick = s_curTick;
 					elev->updateFlags |= ELEV_MOVING;
@@ -2687,7 +2687,7 @@ namespace TFE_Jedi
 					if (*elev->value != elev->nextStop->value)
 					{
 						vec3_fixed pos = inf_getElevSoundPos(elev);
-						playSound3D_oneshot(elev->sound0, pos);
+						sound_playCued(elev->sound0, pos);
 					}
 					elev->updateFlags |= ELEV_MOVING;
 					elev->nextTick = s_curTick;
@@ -2706,7 +2706,7 @@ namespace TFE_Jedi
 					// and then get it moving...
 					if (!(elev->updateFlags & ELEV_MOVING))
 					{
-						playSound3D_oneshot(elev->sound0, pos);
+						sound_playCued(elev->sound0, pos);
 						elev->updateFlags |= ELEV_MOVING;
 						elev->nextTick = s_curTick;
 					}
@@ -2716,10 +2716,10 @@ namespace TFE_Jedi
 					// This seems like buggy behavior... but I'm going to leave it alone for now.
 					if (elev->updateFlags & ELEV_MOVING)
 					{
-						stopSound(elev->loopingSoundID);
+						sound_stop(elev->loopingSoundID);
 						elev->loopingSoundID = NULL_SOUND;
 
-						playSound3D_oneshot(elev->sound2, pos);
+						sound_playCued(elev->sound2, pos);
 						elev->updateFlags &= ~ELEV_MOVING;
 					}
 				}
@@ -2756,10 +2756,10 @@ namespace TFE_Jedi
 					vec3_fixed pos = inf_getElevSoundPos(elev);
 
 					// Stop the looping sound and then play the stopping sound.
-					stopSound(elev->loopingSoundID);
+					sound_stop(elev->loopingSoundID);
 					elev->loopingSoundID = NULL_SOUND;
 					// Play the stop one shot.
-					playSound3D_oneshot(elev->sound2, pos);
+					sound_playCued(elev->sound2, pos);
 
 					// Remove the "moving" flag.
 					elev->updateFlags &= ~ELEV_MOVING;
@@ -2780,7 +2780,7 @@ namespace TFE_Jedi
 					if (*elev->value != elev->nextStop->value)
 					{
 						vec3_fixed pos = inf_getElevSoundPos(elev);
-						playSound3D_oneshot(elev->sound0, pos);
+						sound_playCued(elev->sound0, pos);
 					}
 					elev->nextTick = s_curTick;
 					elev->updateFlags |= ELEV_MOVING;
@@ -2848,10 +2848,10 @@ namespace TFE_Jedi
 			vec3_fixed pos = inf_getElevSoundPos(elev);
 
 			// Stop the looping middle sound and then play the stop sound.
-			stopSound(elev->loopingSoundID);
+			sound_stop(elev->loopingSoundID);
 			elev->loopingSoundID = NULL_SOUND;
 			// Play the stop one shot.
-			playSound3D_oneshot(elev->sound2, pos);
+			sound_playCued(elev->sound2, pos);
 		}
 		// If there is a delay, then the elevator is not moving.
 		if (nextStop->delay)

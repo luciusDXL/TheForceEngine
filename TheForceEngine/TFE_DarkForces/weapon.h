@@ -5,8 +5,8 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/core_math.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
+#include "sound.h"
 
 namespace TFE_Jedi
 {
@@ -95,29 +95,29 @@ namespace TFE_DarkForces
 	void weapon_queueWeaponSwitch(s32 wpnId);
 
 	extern PlayerWeapon* s_curPlayerWeapon;
-	extern SoundSourceID s_superchargeCountdownSound;
+	extern SoundSourceId s_superchargeCountdownSound;
 	extern Task* s_playerWeaponTask;
 
 	// Weapon sounds (external since AI uses it).
-	extern SoundSourceID s_punchSwingSndSrc;
-	extern SoundSourceID s_pistolSndSrc;
-	extern SoundSourceID s_pistolEmptySndSrc;
-	extern SoundSourceID s_rifleSndSrc;
-	extern SoundSourceID s_rifleEmptySndSrc;
-	extern SoundSourceID s_fusion1SndSrc;
-	extern SoundSourceID s_fusion2SndSrc;
-	extern SoundSourceID s_repeaterSndSrc;
-	extern SoundSourceID s_repeater1SndSrc;
-	extern SoundSourceID s_repeaterEmptySndSrc;
-	extern SoundSourceID s_mortarFireSndSrc;
-	extern SoundSourceID s_mortarFireSndSrc2;
-	extern SoundSourceID s_mortarEmptySndSrc;
-	extern SoundSourceID s_mineSndSrc;
-	extern SoundSourceID s_concussion6SndSrc;
-	extern SoundSourceID s_concussion5SndSrc;
-	extern SoundSourceID s_concussion1SndSrc;
-	extern SoundSourceID s_plasma4SndSrc;
-	extern SoundSourceID s_plasmaEmptySndSrc;
-	extern SoundSourceID s_missile1SndSrc;
-	extern SoundSourceID s_weaponChangeSnd;
+	extern SoundSourceId s_punchSwingSndSrc;
+	extern SoundSourceId s_pistolSndSrc;
+	extern SoundSourceId s_pistolEmptySndSrc;
+	extern SoundSourceId s_rifleSndSrc;
+	extern SoundSourceId s_rifleEmptySndSrc;
+	extern SoundSourceId s_fusion1SndSrc;
+	extern SoundSourceId s_fusion2SndSrc;
+	extern SoundSourceId s_repeaterSndSrc;
+	extern SoundSourceId s_repeater1SndSrc;
+	extern SoundSourceId s_repeaterEmptySndSrc;
+	extern SoundSourceId s_mortarFireSndSrc;
+	extern SoundSourceId s_mortarFireSndSrc2;
+	extern SoundSourceId s_mortarEmptySndSrc;
+	extern SoundSourceId s_mineSndSrc;
+	extern SoundSourceId s_concussion6SndSrc;
+	extern SoundSourceId s_concussion5SndSrc;
+	extern SoundSourceId s_concussion1SndSrc;
+	extern SoundSourceId s_plasma4SndSrc;
+	extern SoundSourceId s_plasmaEmptySndSrc;
+	extern SoundSourceId s_missile1SndSrc;
+	extern SoundSourceId s_weaponChangeSnd;
 }  // namespace TFE_DarkForces

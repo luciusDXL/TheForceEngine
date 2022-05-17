@@ -511,9 +511,6 @@
     <ClInclude Include="TFE_Jedi\Level\rwall.h">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Jedi\Sound\soundSystem.h">
-      <Filter>Source\TFE_Jedi\Sound</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Jedi\Renderer\jediRenderer.h">
       <Filter>Source\TFE_Jedi\Renderer</Filter>
     </ClInclude>
@@ -898,6 +895,9 @@
     <ClInclude Include="TFE_Jedi\Sound\gameSound.h">
       <Filter>Source\TFE_Jedi\Sound</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_DarkForces\sound.h">
+      <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1184,9 +1184,6 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Level\rwall.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Jedi\Sound\soundSystem.cpp">
-      <Filter>Source\TFE_Jedi\Sound</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\jediRenderer.cpp">
       <Filter>Source\TFE_Jedi\Renderer</Filter>
@@ -1517,6 +1514,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Sound\gameSound.cpp">
       <Filter>Source\TFE_Jedi\Sound</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\sound.cpp">
+      <Filter>Source\TFE_DarkForces</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -1,13 +1,13 @@
 #include "hitEffect.h"
 #include "animLogic.h"
 #include "projectile.h"
+#include "sound.h"
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
 
 using namespace TFE_Jedi;
@@ -31,7 +31,7 @@ namespace TFE_DarkForces
 	};
 
 	static Wax* s_genExplosion;
-	static SoundSourceID s_concussionExplodeSnd;
+	static SoundSourceId s_concussionExplodeSnd;
 	static EffectData s_effectData[HEFFECT_COUNT];
 	static Allocator* s_hitEffects;
 	static Task* s_hitEffectTask = nullptr;
@@ -62,7 +62,7 @@ namespace TFE_DarkForces
 			0,                              // damage
 			0,                              // explosiveRange
 			FIXED(40),                      // wakeupRange
-			sound_Load("ex-tiny1.voc"),     // soundEffect
+			sound_load("ex-tiny1.voc", SOUND_PRIORITY_LOW0),     // soundEffect
 		};
 		s_effectData[HEFFECT_THERMDET_EXP] =
 		{
@@ -72,7 +72,7 @@ namespace TFE_DarkForces
 			FIXED(60),                      // damage
 			FIXED(30),                      // explosiveRange
 			FIXED(50),                      // wakeupRange
-			sound_Load("ex-small.voc"),		// soundEffect
+			sound_load("ex-small.voc", SOUND_PRIORITY_LOW0),		// soundEffect
 		};
 		s_effectData[HEFFECT_PLASMA_EXP] =
 		{
@@ -82,7 +82,7 @@ namespace TFE_DarkForces
 			0,                              // damage
 			0,                              // explosiveRange
 			FIXED(40),                      // wakeupRange
-			sound_Load("ex-tiny1.voc"),     // soundEffect
+			sound_load("ex-tiny1.voc", SOUND_PRIORITY_LOW0),     // soundEffect
 		};
 		s_effectData[HEFFECT_MORTAR_EXP] =
 		{
@@ -92,7 +92,7 @@ namespace TFE_DarkForces
 			FIXED(50),                      // damage
 			FIXED(40),                      // explosiveRange
 			FIXED(60),                      // wakeupRange
-			sound_Load("ex-med1.voc"),      // soundEffect
+			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 		s_effectData[HEFFECT_CONCUSSION] =
 		{
@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 			FIXED(30),                      // damage
 			FIXED(25),                      // explosiveRange
 			FIXED(60),                      // wakeupRange
-			sound_Load("ex-lrg1.voc"),      // soundEffect
+			sound_load("ex-lrg1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 		s_effectData[HEFFECT_CONCUSSION2] =
 		{
@@ -112,7 +112,7 @@ namespace TFE_DarkForces
 			FIXED(30),                      // damage
 			FIXED(25),                      // explosiveRange
 			FIXED(60),                      // wakeupRange
-			sound_Load("ex-lrg1.voc"),      // soundEffect
+			sound_load("ex-lrg1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 		s_effectData[HEFFECT_MISSILE_EXP] =
 		{
@@ -122,7 +122,7 @@ namespace TFE_DarkForces
 			FIXED(70),                      // damage
 			FIXED(40),                      // explosiveRange
 			FIXED(70),                      // wakeupRange
-			sound_Load("ex-med1.voc"),      // soundEffect
+			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 		s_effectData[HEFFECT_MISSILE_WEAK] =
 		{
@@ -132,7 +132,7 @@ namespace TFE_DarkForces
 			FIXED(25),                      // damage
 			FIXED(40),                      // explosiveRange
 			FIXED(70),                      // wakeupRange
-			sound_Load("ex-med1.voc"),      // soundEffect
+			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 		s_effectData[HEFFECT_PUNCH] =
 		{
@@ -142,7 +142,7 @@ namespace TFE_DarkForces
 			0,                              // damage
 			0,                              // explosiveRange
 			FIXED(10),                      // wakeupRange
-			sound_Load("punch.voc"),        // soundEffect
+			sound_load("punch.voc", SOUND_PRIORITY_LOW1),        // soundEffect
 		};
 		s_effectData[HEFFECT_CANNON_EXP] =
 		{
@@ -152,7 +152,7 @@ namespace TFE_DarkForces
 			0,                              // damage
 			0,                              // explosiveRange
 			FIXED(50),                      // wakeupRange
-			sound_Load("ex-med1.voc"),      // soundEffect
+			sound_load("ex-med1.voc", SOUND_PRIORITY_LOW0),      // soundEffect
 		};
 		s_effectData[HEFFECT_REPEATER_EXP] =
 		{
@@ -162,7 +162,7 @@ namespace TFE_DarkForces
 			0,                              // damage
 			0,                              // explosiveRange
 			FIXED(50),                      // wakeupRange
-			sound_Load("ex-tiny1.voc"),     // soundEffect
+			sound_load("ex-tiny1.voc", SOUND_PRIORITY_LOW0),     // soundEffect
 		};
 		s_effectData[HEFFECT_LARGE_EXP] =
 		{
@@ -172,7 +172,7 @@ namespace TFE_DarkForces
 			FIXED(90),                      // damage
 			FIXED(45),                      // explosiveRange
 			FIXED(90),                      // wakeupRange
-			sound_Load("ex-lrg1.voc"),      // soundEffect
+			sound_load("ex-lrg1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 		s_effectData[HEFFECT_EXP_BARREL] =
 		{
@@ -182,7 +182,7 @@ namespace TFE_DarkForces
 			FIXED(60),                      // damage
 			FIXED(40),                      // explosiveRange
 			FIXED(60),                      // wakeupRange
-			sound_Load("ex-med1.voc"),      // soundEffect
+			sound_load("ex-med1.voc", SOUND_PRIORITY_MED3),      // soundEffect
 		};
 		s_effectData[HEFFECT_EXP_INVIS] =
 		{
@@ -202,7 +202,7 @@ namespace TFE_DarkForces
 			0,                          // damage
 			0,                          // explosiveRange
 			FIXED(40),                  // wakeupRange
-			sound_Load("swim-in.voc"),  // soundEffect
+			sound_load("swim-in.voc", SOUND_PRIORITY_LOW3),  // soundEffect
 		};
 
 		s_genExplosion = TFE_Sprite_Jedi::getWax("genexp.wax");
@@ -215,7 +215,7 @@ namespace TFE_DarkForces
 			FIXED(35),                      // damage
 			FIXED(30),                      // explosiveRange
 			FIXED(50),                      // wakeupRange
-			sound_Load("ex-med1.voc"),      // soundEffect
+			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 		s_effectData[HEFFECT_EXP_NO_DMG] =
 		{
@@ -225,7 +225,7 @@ namespace TFE_DarkForces
 			0,                              // damage
 			0,                              // explosiveRange
 			FIXED(50),                      // wakeupRange
-			sound_Load("ex-med1.voc"),      // soundEffect
+			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 		s_effectData[HEFFECT_EXP_25] =
 		{
@@ -235,7 +235,7 @@ namespace TFE_DarkForces
 			FIXED(25),                      // damage
 			FIXED(20),                      // explosiveRange
 			FIXED(50),                      // wakeupRange
-			sound_Load("ex-med1.voc"),      // soundEffect
+			sound_load("ex-med1.voc", SOUND_PRIORITY_HIGH2),      // soundEffect
 		};
 	}
 	
@@ -347,7 +347,7 @@ namespace TFE_DarkForces
 					if (s_curEffectData->soundEffect)
 					{
 						vec3_fixed soundPos = { x,y,z };
-						playSound3D_oneshot(s_curEffectData->soundEffect, soundPos);
+						sound_playCued(s_curEffectData->soundEffect, soundPos);
 					}
 
 					if (s_curEffectData->explosiveRange)
@@ -428,7 +428,7 @@ namespace TFE_DarkForces
 
 				SpriteAnimLogic* logic = (SpriteAnimLogic*)obj_setSpriteAnim(newObj);
 				setupAnimationFromLogic(logic, 0/*animIndex*/, 0/*firstFrame*/, 0xffffffff/*lastFrame*/, 1/*loopCount*/);
-				playSound3D_oneshot(s_concussionExplodeSnd, newObj->posWS);
+				sound_playCued(s_concussionExplodeSnd, newObj->posWS);
 
 				s_msgArg1 = s_curEffectData->damage;
 			}

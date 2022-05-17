@@ -8,11 +8,11 @@
 #include <TFE_DarkForces/projectile.h>
 #include <TFE_DarkForces/item.h>
 #include <TFE_DarkForces/random.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -28,9 +28,9 @@ namespace TFE_DarkForces
 	struct MouseBotResources
 	{
 		WaxFrame* deadFrame;
-		SoundSourceID sound0;
-		SoundSourceID sound1;
-		SoundSourceID sound2;
+		SoundSourceId sound0;
+		SoundSourceId sound1;
+		SoundSourceId sound2;
 	};
 	struct MouseBot
 	{
@@ -56,7 +56,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				playSound3D_oneshot(s_mouseBotRes.sound1, obj->posWS);
+				sound_playCued(s_mouseBotRes.sound1, obj->posWS);
 				msg = MSG_DAMAGE;
 			}
 		}
@@ -88,7 +88,7 @@ namespace TFE_DarkForces
 			else
 			{
 				phyActor->vel = { vel.x >> 1, vel.y >> 1, vel.z >> 1 };
-				playSound3D_oneshot(s_mouseBotRes.sound1, obj->posWS);
+				sound_playCued(s_mouseBotRes.sound1, obj->posWS);
 			}
 		}
 		return msg;
@@ -173,7 +173,7 @@ namespace TFE_DarkForces
 				s32 rnd = random(100);
 				if (rnd <= 10)	// ~10% chance of playing a sound effect when hitting a wall.
 				{
-					playSound3D_oneshot(s_mouseBotRes.sound0, local(obj)->posWS);
+					sound_playCued(s_mouseBotRes.sound0, local(obj)->posWS);
 				}
 				if (local(odd))
 				{
@@ -215,7 +215,7 @@ namespace TFE_DarkForces
 		local(sector)   = local(obj)->sector;
 
 		local(actor)->target.flags |= 8;
-		playSound3D_oneshot(s_mouseBotRes.sound2, local(obj)->posWS);
+		sound_playCued(s_mouseBotRes.sound2, local(obj)->posWS);
 
 		while (1)
 		{
@@ -303,7 +303,7 @@ namespace TFE_DarkForces
 					// Wakeup if the player is visible.
 					if (local(actor)->state == MBSTATE_SLEEPING && actor_isObjectVisible(local(obj), s_playerObject, 0x4000/*full 360 degree fov*/, FIXED(25)/*25 units "close distance"*/))
 					{
-						playSound3D_oneshot(s_mouseBotRes.sound0, local(obj)->posWS);
+						sound_playCued(s_mouseBotRes.sound0, local(obj)->posWS);
 						local(mouseBot)->actor.state = MBSTATE_ACTIVE;
 					}
 				}
@@ -341,15 +341,15 @@ namespace TFE_DarkForces
 		}
 		if (!s_mouseBotRes.sound0)
 		{
-			s_mouseBotRes.sound0 = sound_Load("eeek-1.voc");
+			s_mouseBotRes.sound0 = sound_load("eeek-1.voc", SOUND_PRIORITY_MED5);
 		}
 		if (!s_mouseBotRes.sound1)
 		{
-			s_mouseBotRes.sound1 = sound_Load("eeek-2.voc");
+			s_mouseBotRes.sound1 = sound_load("eeek-2.voc", SOUND_PRIORITY_LOW0);
 		}
 		if (!s_mouseBotRes.sound2)
 		{
-			s_mouseBotRes.sound2 = sound_Load("eeek-3.voc");
+			s_mouseBotRes.sound2 = sound_load("eeek-3.voc", SOUND_PRIORITY_MED5);
 		}
 
 		MouseBot* mouseBot = (MouseBot*)level_alloc(sizeof(MouseBot));

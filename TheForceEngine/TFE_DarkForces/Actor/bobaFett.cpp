@@ -10,12 +10,12 @@
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/pickup.h>
 #include <TFE_DarkForces/weapon.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Level/rwall.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Settings/settings.h>
@@ -35,7 +35,7 @@ namespace TFE_DarkForces
 	{
 		vec3_fixed target;
 		fixed16_16 yAccel;
-		SoundSourceID soundSrc;
+		SoundSourceId soundSrc;
 		angle14_32 vertAngleRange;
 		fixed16_16 vertAngle;
 		fixed16_16 yVelOffset;
@@ -49,18 +49,18 @@ namespace TFE_DarkForces
 
 		s32 unused;
 		BobaFettMoveState moveState;
-		SoundEffectID hitSndId;
+		SoundEffectId hitSndId;
 	};
 
-	static SoundSourceID s_boba1SndID = NULL_SOUND;
-	static SoundSourceID s_boba3SndID = NULL_SOUND;
-	static SoundSourceID s_boba2SndID = NULL_SOUND;
-	static SoundSourceID s_boba4SndID = NULL_SOUND;
-	static SoundSourceID s_bobaRocket2SndID = NULL_SOUND;
+	static SoundSourceId s_boba1SndID = NULL_SOUND;
+	static SoundSourceId s_boba3SndID = NULL_SOUND;
+	static SoundSourceId s_boba2SndID = NULL_SOUND;
+	static SoundSourceId s_boba4SndID = NULL_SOUND;
+	static SoundSourceId s_bobaRocket2SndID = NULL_SOUND;
 
 	static BobaFett* s_curBobaFett = nullptr;
 	static s32 s_bobaFettNum = 0;
-	static s32 s_bobaFett_pitchScale = 0;
+	extern s32 s_lastMaintainVolume;
 
 	void bobaFett_handleDamage(MessageType msg)
 	{
@@ -94,8 +94,8 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				stopSound(local(bobaFett)->hitSndId);
-				local(bobaFett)->hitSndId = playSound3D_oneshot(s_boba3SndID, local(obj)->posWS);
+				sound_stop(local(bobaFett)->hitSndId);
+				local(bobaFett)->hitSndId = sound_playCued(s_boba3SndID, local(obj)->posWS);
 
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
@@ -152,8 +152,8 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				stopSound(local(bobaFett)->hitSndId);
-				local(bobaFett)->hitSndId = playSound3D_oneshot(s_boba3SndID, local(obj)->posWS);
+				sound_stop(local(bobaFett)->hitSndId);
+				local(bobaFett)->hitSndId = sound_playCued(s_boba3SndID, local(obj)->posWS);
 
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
@@ -222,28 +222,19 @@ namespace TFE_DarkForces
 		return yTarget;
 	}
 
-	void bobaFett_setRocketPitch(u32 sndId, u32 pitch)
-	{
-		if (sndId)
-		{
-			// TODO
-			// sound_changePitch(sndId, 0x600, pitch & 0x7f);
-		}
-	}
-
-	void bobaFett_handleVerticalMove(PhysicsActor* physicsActor, fixed16_16 yVelOffset, angle14_32 vertAngle, fixed16_16 yAccel, SoundSourceID soundSrc)
+	void bobaFett_handleVerticalMove(PhysicsActor* physicsActor, fixed16_16 yVelOffset, angle14_32 vertAngle, fixed16_16 yAccel, SoundSourceId soundSrc)
 	{
 		fixed16_16 yVelDelta, hVelDelta;
 		SecObject* obj = physicsActor->actor.header.obj;
 		if (yVelOffset)
 		{
-			physicsActor->moveSndId = playSound3D_looping(soundSrc, physicsActor->moveSndId, obj->posWS);
+			physicsActor->moveSndId = sound_maintain(physicsActor->moveSndId, soundSrc, obj->posWS);
 
-			if (s_bobaFett_pitchScale)
+			if (s_lastMaintainVolume)
 			{
-				intToFixed16(s_bobaFett_pitchScale);
-				u32 sndPitch = (u32)floor16(mul16(mul16(yVelOffset, yVelOffset), intToFixed16(s_bobaFett_pitchScale)));
-				bobaFett_setRocketPitch(physicsActor->moveSndId, sndPitch);
+				intToFixed16(s_lastMaintainVolume);
+				s32 vol = floor16(mul16(mul16(yVelOffset, yVelOffset), intToFixed16(s_lastMaintainVolume)));
+				sound_setVolume(physicsActor->moveSndId, vol);
 			}
 			fixed16_16 sinPitch, cosPitch;
 			yVelDelta = mul16(mul16(yVelOffset, yAccel), s_deltaTime);
@@ -262,7 +253,7 @@ namespace TFE_DarkForces
 		}
 		else if (physicsActor->moveSndId)
 		{
-			stopSound(physicsActor->moveSndId);
+			sound_stop(physicsActor->moveSndId);
 			physicsActor->moveSndId = 0;
 		}
 	}
@@ -490,7 +481,7 @@ namespace TFE_DarkForces
 						proj->prevColObj = local(obj);
 						proj->excludeObj = local(obj);
 
-						playSound3D_oneshot(s_boba2SndID, local(obj)->posWS);
+						sound_playCued(s_boba2SndID, local(obj)->posWS);
 						SecObject* projObj = proj->logic.obj;
 						projObj->yaw = angle;
 						actor_leadTarget(proj);
@@ -504,7 +495,7 @@ namespace TFE_DarkForces
 						proj->prevColObj = local(obj);
 						proj->excludeObj = local(obj);
 
-						playSound3D_oneshot(s_boba2SndID, local(obj)->posWS);
+						sound_playCued(s_boba2SndID, local(obj)->posWS);
 						SecObject* projObj = proj->logic.obj;
 						projObj->yaw = angle;
 						proj_aimAtTarget(proj, s_playerObject->posWS);
@@ -552,8 +543,8 @@ namespace TFE_DarkForces
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags |= 8;
-		stopSound(local(physicsActor)->moveSndId);
-		playSound3D_oneshot(s_boba4SndID, local(obj)->posWS);
+		sound_stop(local(physicsActor)->moveSndId);
+		sound_playCued(s_boba4SndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		local(anim)->frameRate = 8;
@@ -705,7 +696,7 @@ namespace TFE_DarkForces
 
 			if (actor_canSeeObject(local(obj), s_playerObject))
 			{
-				playSound3D_oneshot(s_boba1SndID, local(obj)->posWS);
+				sound_playCued(s_boba1SndID, local(obj)->posWS);
 				local(physicsActor)->state = BOBASTATE_SEARCH;
 				actor_setupAnimation2(local(obj), 0, local(anim));
 			}
@@ -786,23 +777,23 @@ namespace TFE_DarkForces
 	{
 		if (!s_boba1SndID)
 		{
-			s_boba1SndID = sound_Load("boba-1.voc");
+			s_boba1SndID = sound_load("boba-1.voc", SOUND_PRIORITY_MED5);
 		}
 		if (!s_boba3SndID)
 		{
-			s_boba3SndID = sound_Load("boba-3.voc");
+			s_boba3SndID = sound_load("boba-3.voc", SOUND_PRIORITY_LOW0);
 		}
 		if (!s_boba2SndID)
 		{
-			s_boba2SndID = sound_Load("boba-2.voc");
+			s_boba2SndID = sound_load("boba-2.voc", SOUND_PRIORITY_LOW0);
 		}
 		if (!s_boba4SndID)
 		{
-			s_boba4SndID = sound_Load("boba-4.voc");
+			s_boba4SndID = sound_load("boba-4.voc", SOUND_PRIORITY_MED5);
 		}
 		if (!s_bobaRocket2SndID)
 		{
-			s_bobaRocket2SndID = sound_Load("rocket-2.voc");
+			s_bobaRocket2SndID = sound_load("rocket-2.voc", SOUND_PRIORITY_LOW5);
 		}
 
 		BobaFett* bobaFett = (BobaFett*)level_alloc(sizeof(BobaFett));

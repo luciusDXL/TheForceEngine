@@ -8,8 +8,8 @@
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
+#include "sound.h"
 #include "time.h"
 
 struct ProjectileLogic;
@@ -110,20 +110,20 @@ namespace TFE_DarkForces
 	extern Task* s_playerTask;
 
 	// Sounds
-	extern SoundSourceID s_landSplashSound;
-	extern SoundSourceID s_landSolidSound;
-	extern SoundSourceID s_gasDamageSoundSource;
-	extern SoundSourceID s_maskSoundSource1;
-	extern SoundSourceID s_maskSoundSource2;
-	extern SoundSourceID s_invCountdownSound;
-	extern SoundSourceID s_jumpSoundSource;
-	extern SoundSourceID s_nightVisionActiveSoundSource;
-	extern SoundSourceID s_nightVisionDeactiveSoundSource;
-	extern SoundSourceID s_playerDeathSoundSource;
-	extern SoundSourceID s_crushSoundSource;
-	extern SoundSourceID s_playerHealthHitSoundSource;
-	extern SoundSourceID s_kyleScreamSoundSource;
-	extern SoundSourceID s_playerShieldHitSoundSource;
+	extern SoundSourceId s_landSplashSound;
+	extern SoundSourceId s_landSolidSound;
+	extern SoundSourceId s_gasDamageSoundSource;
+	extern SoundSourceId s_maskSoundSource1;
+	extern SoundSourceId s_maskSoundSource2;
+	extern SoundSourceId s_invCountdownSound;
+	extern SoundSourceId s_jumpSoundSource;
+	extern SoundSourceId s_nightVisionActiveSoundSource;
+	extern SoundSourceId s_nightVisionDeactiveSoundSource;
+	extern SoundSourceId s_playerDeathSoundSource;
+	extern SoundSourceId s_crushSoundSource;
+	extern SoundSourceId s_playerHealthHitSoundSource;
+	extern SoundSourceId s_kyleScreamSoundSource;
+	extern SoundSourceId s_playerShieldHitSoundSource;
 
 	void player_init();
 	void player_readInfo(u8* inv, s32* ammo);

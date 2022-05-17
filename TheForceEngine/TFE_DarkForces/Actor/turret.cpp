@@ -10,11 +10,11 @@
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/pickup.h>
 #include <TFE_DarkForces/weapon.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -51,7 +51,7 @@ namespace TFE_DarkForces
 	
 	struct TurretResources
 	{
-		SoundSourceID sound1;
+		SoundSourceId sound1;
 	};
 	struct Turret
 	{
@@ -215,7 +215,7 @@ namespace TFE_DarkForces
 
 		vec3_fixed pos = { obj->posWS.x + outVec.x, obj->posWS.y + outVec.y, obj->posWS.z + outVec.z };
 		ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_TURRET_BOLT, sector, pos.x, pos.y, pos.z, obj);
-		playSound3D_oneshot(s_turretRes.sound1, pos);
+		sound_playCued(s_turretRes.sound1, pos);
 
 		proj->prevColObj = obj;
 		proj->excludeObj = obj;
@@ -274,7 +274,7 @@ namespace TFE_DarkForces
 
 				vec3_fixed pos = { local(obj)->posWS.x + outVec.x, local(obj)->posWS.y + outVec.y, local(obj)->posWS.z + outVec.z };
 				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_TURRET_BOLT, local(obj)->sector, pos.x, pos.y, pos.z, local(obj));
-				playSound3D_oneshot(s_turretRes.sound1, pos);
+				sound_playCued(s_turretRes.sound1, pos);
 
 				proj->prevColObj = local(obj);
 				proj->excludeObj = local(obj);
@@ -462,7 +462,7 @@ namespace TFE_DarkForces
 	{
 		if (!s_turretRes.sound1)
 		{
-			s_turretRes.sound1 = sound_Load("TURRET-1.VOC");
+			s_turretRes.sound1 = sound_load("TURRET-1.VOC", SOUND_PRIORITY_MED2);
 		}
 
 		Turret* turret = (Turret*)level_alloc(sizeof(Turret));

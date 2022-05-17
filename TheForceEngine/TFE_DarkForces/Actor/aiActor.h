@@ -8,9 +8,9 @@
 #include <TFE_DarkForces/item.h>
 #include <TFE_DarkForces/hitEffect.h>
 #include <TFE_DarkForces/projectile.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include "actor.h"
 
@@ -91,8 +91,8 @@ struct ActorEnemy
 	vec3_fixed fireOffset;
 
 	ProjectileType projType;
-	SoundSourceID attackSecSndSrc;
-	SoundSourceID attackPrimSndSrc;
+	SoundSourceId attackSecSndSrc;
+	SoundSourceId attackPrimSndSrc;
 	fixed16_16 meleeRange;
 	fixed16_16 minDist;
 	fixed16_16 maxDist;
@@ -161,10 +161,10 @@ struct AiActor
 	ItemId itemDropId;
 
 	// Sound source IDs
-	SoundSourceID hurtSndSrc;
-	SoundSourceID dieSndSrc;
+	SoundSourceId hurtSndSrc;
+	SoundSourceId dieSndSrc;
 	// Currently playing hurt sound effect ID.
-	SoundEffectID hurtSndID;
+	SoundEffectId hurtSndID;
 
 	JBool stopOnHit;
 	HitEffectID dieEffect;
@@ -177,7 +177,7 @@ struct PhysicsActor
 	PhysicsActor** parent;
 
 	vec3_fixed vel;
-	SoundEffectID moveSndId;
+	SoundEffectId moveSndId;
 
 	vec2_fixed lastPlayerPos;
 

@@ -204,6 +204,8 @@ namespace TFE_Jedi
 	static u32 s_midiFileCount = 0;
 	static u8* s_midiFiles[IM_MIDI_FILE_COUNT];
 
+	static ImResourceCallback s_resourceCallback = nullptr;
+
 	/////////////////////////////////////////////////////////// 
 	// Main API
 	// -----------------------------------------------------
@@ -405,6 +407,12 @@ namespace TFE_Jedi
 		s_soundList = nullptr;
 		s_midiFileCount = 0;
 
+		return imSuccess;
+	}
+		
+	s32 ImSetResourceCallback(ImResourceCallback callback)
+	{
+		s_resourceCallback = callback;
 		return imSuccess;
 	}
 
@@ -1029,9 +1037,18 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			// Cast ImSoundId as a pointer.
-			ImResource* res = (ImResource*)id;
-			return res->data;
+			u8* data = nullptr;
+			if (s_resourceCallback)
+			{
+				data = s_resourceCallback(id);
+			}
+			else
+			{
+				// Cast ImSoundId as a pointer.
+				ImResource* res = (ImResource*)id;
+				data = res->data;
+			}
+			return data;
 		}
 		return nullptr;
 	}

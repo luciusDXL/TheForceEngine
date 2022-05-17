@@ -15,24 +15,24 @@ namespace TFE_DarkForces
 		MAX_AUTOAIM_DIST = FIXED(9999),
 	};
 
-	static SoundEffectID s_punchSwingSndId = 0;
-	static SoundEffectID s_pistolSndId = 0;
-	static SoundEffectID s_rifleSndId = 0;
-	static SoundEffectID s_mortarFireSndID = 0;
-	static SoundEffectID s_mortarFireSndID2 = 0;
-	static SoundEffectID s_outOfAmmoSndId = 0;
-	static SoundEffectID s_mortarOutofAmmoSndId = 0;
-	static SoundEffectID s_repeaterFireSndID1 = 0;
-	static SoundEffectID s_repeaterOutOfAmmoSndId = 0;
-	static SoundEffectID s_fusionFireSndID = 0;
-	static SoundEffectID s_fusionOutOfAmmoSndID = 0;
-	static SoundEffectID s_mineSndId = 0;
-	static SoundEffectID s_concussionFireSndID = 0;
-	static SoundEffectID s_concussionFireSndID1 = 0;
-	static SoundEffectID s_concussionOutOfAmmoSndID = 0;
-	static SoundEffectID s_cannonOutOfAmmoSndID = 0;
-	static SoundEffectID s_cannonFireSndID = 0;
-	static SoundEffectID s_cannonFireSndID1 = 0;
+	static SoundEffectId s_punchSwingSndId = 0;
+	static SoundEffectId s_pistolSndId = 0;
+	static SoundEffectId s_rifleSndId = 0;
+	static SoundEffectId s_mortarFireSndID = 0;
+	static SoundEffectId s_mortarFireSndID2 = 0;
+	static SoundEffectId s_outOfAmmoSndId = 0;
+	static SoundEffectId s_mortarOutofAmmoSndId = 0;
+	static SoundEffectId s_repeaterFireSndID1 = 0;
+	static SoundEffectId s_repeaterOutOfAmmoSndId = 0;
+	static SoundEffectId s_fusionFireSndID = 0;
+	static SoundEffectId s_fusionOutOfAmmoSndID = 0;
+	static SoundEffectId s_mineSndId = 0;
+	static SoundEffectId s_concussionFireSndID = 0;
+	static SoundEffectId s_concussionFireSndID1 = 0;
+	static SoundEffectId s_concussionOutOfAmmoSndID = 0;
+	static SoundEffectId s_cannonOutOfAmmoSndID = 0;
+	static SoundEffectId s_cannonFireSndID = 0;
+	static SoundEffectId s_cannonFireSndID1 = 0;
 	static fixed16_16 s_autoAimDirX;
 	static fixed16_16 s_autoAimDirZ;
 	static fixed16_16 s_wpnPitchSin;
@@ -41,7 +41,7 @@ namespace TFE_DarkForces
 	static angle14_32 s_weaponFireYaw;
 
 	extern WeaponAnimState s_weaponAnimState;
-	extern SoundEffectID s_repeaterFireSndID;
+	extern SoundEffectId s_repeaterFireSndID;
 
 	extern JBool s_weaponAutoMount2;
 	extern JBool s_secondaryFire;
@@ -176,9 +176,9 @@ namespace TFE_DarkForces
 
 		if (s_punchSwingSndId)
 		{
-			stopSound(s_punchSwingSndId);
+			sound_stop(s_punchSwingSndId);
 		}
-		s_punchSwingSndId = playSound2D(s_punchSwingSndSrc);
+		s_punchSwingSndId = sound_play(s_punchSwingSndSrc);
 
 		if (s_curPlayerWeapon->wakeupRange)
 		{
@@ -254,9 +254,9 @@ namespace TFE_DarkForces
 			task_localBlockBegin;
 			if (s_pistolSndId)
 			{
-				stopSound(s_pistolSndId);
+				sound_stop(s_pistolSndId);
 			}
-			s_pistolSndId = playSound2D(s_pistolSndSrc);
+			s_pistolSndId = sound_play(s_pistolSndSrc);
 
 			if (s_curPlayerWeapon->wakeupRange)
 			{
@@ -401,9 +401,9 @@ namespace TFE_DarkForces
 		{
 			if (s_outOfAmmoSndId)
 			{
-				stopSound(s_outOfAmmoSndId);
+				sound_stop(s_outOfAmmoSndId);
 			}
-			s_outOfAmmoSndId = playSound2D(s_pistolEmptySndSrc);
+			s_outOfAmmoSndId = sound_play(s_pistolEmptySndSrc);
 
 			taskCtx->delay = (s_superCharge) ? 3 : 7;
 			s_curPlayerWeapon->frame = 0;
@@ -438,9 +438,9 @@ namespace TFE_DarkForces
 			task_localBlockBegin;
 			if (s_rifleSndId)
 			{
-				stopSound(s_rifleSndId);
+				sound_stop(s_rifleSndId);
 			}
-			s_rifleSndId = playSound2D(s_rifleSndSrc);
+			s_rifleSndId = sound_play(s_rifleSndSrc);
 
 			if (s_curPlayerWeapon->wakeupRange)
 			{
@@ -585,9 +585,9 @@ namespace TFE_DarkForces
 		{
 			if (s_outOfAmmoSndId)
 			{
-				stopSound(s_outOfAmmoSndId);
+				sound_stop(s_outOfAmmoSndId);
 			}
-			s_outOfAmmoSndId = playSound2D(s_pistolEmptySndSrc);
+			s_outOfAmmoSndId = sound_play(s_pistolEmptySndSrc);
 
 			taskCtx->delay = (s_superCharge) ? 3 : 7;
 			s_curPlayerWeapon->frame = 0;
@@ -778,9 +778,9 @@ namespace TFE_DarkForces
 			{
 				if (s_repeaterFireSndID1)
 				{
-					stopSound(s_repeaterFireSndID1);
+					sound_stop(s_repeaterFireSndID1);
 				}
-				s_repeaterFireSndID1 = playSound2D(s_repeater1SndSrc);
+				s_repeaterFireSndID1 = sound_play(s_repeater1SndSrc);
 
 				if (s_curPlayerWeapon->wakeupRange)
 				{
@@ -886,14 +886,14 @@ namespace TFE_DarkForces
 			{
 				if (s_repeaterFireSndID)
 				{
-					stopSound(s_repeaterFireSndID);
+					sound_stop(s_repeaterFireSndID);
 					s_repeaterFireSndID = 0;
 				}
 				if (s_repeaterOutOfAmmoSndId)
 				{
-					stopSound(s_repeaterOutOfAmmoSndId);
+					sound_stop(s_repeaterOutOfAmmoSndId);
 				}
-				s_repeaterOutOfAmmoSndId = playSound2D(s_repeaterEmptySndSrc);
+				s_repeaterOutOfAmmoSndId = sound_play(s_repeaterEmptySndSrc);
 
 				taskCtx->delay = (s_superCharge) ? 3 : 7;
 				s_curPlayerWeapon->frame = 0;
@@ -921,10 +921,10 @@ namespace TFE_DarkForces
 				{
 					if (s_repeaterFireSndID1)
 					{
-						stopSound(s_repeaterFireSndID1);
+						sound_stop(s_repeaterFireSndID1);
 					}
-					s_repeaterFireSndID1 = playSound2D(s_repeater1SndSrc);
-					s_repeaterFireSndID = playSound2D_looping(s_repeaterSndSrc);
+					s_repeaterFireSndID1 = sound_play(s_repeater1SndSrc);
+					s_repeaterFireSndID  = sound_play(s_repeaterSndSrc);
 				}
 
 				if (s_curPlayerWeapon->wakeupRange)
@@ -1057,14 +1057,14 @@ namespace TFE_DarkForces
 			{
 				if (s_repeaterFireSndID)
 				{
-					stopSound(s_repeaterFireSndID);
+					sound_stop(s_repeaterFireSndID);
 					s_repeaterFireSndID = 0;
 				}
 				if (s_repeaterOutOfAmmoSndId)
 				{
-					stopSound(s_repeaterOutOfAmmoSndId);
+					sound_stop(s_repeaterOutOfAmmoSndId);
 				}
-				s_repeaterOutOfAmmoSndId = playSound2D(s_repeaterEmptySndSrc);
+				s_repeaterOutOfAmmoSndId = sound_play(s_repeaterEmptySndSrc);
 
 				taskCtx->delay = (s_superCharge) ? 3 : 7;
 				s_curPlayerWeapon->frame = 0;
@@ -1103,9 +1103,9 @@ namespace TFE_DarkForces
 			{
 				if (s_fusionFireSndID)
 				{
-					stopSound(s_fusionFireSndID);
+					sound_stop(s_fusionFireSndID);
 				}
-				s_fusionFireSndID = playSound2D(s_fusion1SndSrc);
+				s_fusionFireSndID = sound_play(s_fusion1SndSrc);
 
 				if (s_curPlayerWeapon->wakeupRange)
 				{
@@ -1211,9 +1211,9 @@ namespace TFE_DarkForces
 			{
 				if (s_fusionOutOfAmmoSndID)
 				{
-					stopSound(s_fusionOutOfAmmoSndID);
+					sound_stop(s_fusionOutOfAmmoSndID);
 				}
-				s_fusionOutOfAmmoSndID = playSound2D(s_fusion2SndSrc);
+				s_fusionOutOfAmmoSndID = sound_play(s_fusion2SndSrc);
 
 				taskCtx->delay = (s_superCharge) ? 3 : 7;
 				s_curPlayerWeapon->frame = 0;
@@ -1239,9 +1239,9 @@ namespace TFE_DarkForces
 			{
 				if (s_fusionFireSndID)
 				{
-					stopSound(s_fusionFireSndID);
+					sound_stop(s_fusionFireSndID);
 				}
-				s_fusionFireSndID = playSound2D(s_fusion1SndSrc);
+				s_fusionFireSndID = sound_play(s_fusion1SndSrc);
 
 				if (s_curPlayerWeapon->wakeupRange)
 				{
@@ -1381,9 +1381,9 @@ namespace TFE_DarkForces
 			{
 				if (s_fusionOutOfAmmoSndID)
 				{
-					stopSound(s_fusionOutOfAmmoSndID);
+					sound_stop(s_fusionOutOfAmmoSndID);
 				}
-				s_fusionOutOfAmmoSndID = playSound2D(s_fusion2SndSrc);
+				s_fusionOutOfAmmoSndID = sound_play(s_fusion2SndSrc);
 
 				taskCtx->delay = (s_superCharge) ? 3 : 7;
 				s_curPlayerWeapon->frame = 0;
@@ -1421,9 +1421,9 @@ namespace TFE_DarkForces
 			task_localBlockBegin;
 			if (s_mortarFireSndID)
 			{
-				stopSound(s_mortarFireSndID);
+				sound_stop(s_mortarFireSndID);
 			}
-			s_mortarFireSndID = playSound2D(s_mortarFireSndSrc);
+			s_mortarFireSndID = sound_play(s_mortarFireSndSrc);
 
 			if (s_curPlayerWeapon->wakeupRange)
 			{
@@ -1544,9 +1544,9 @@ namespace TFE_DarkForces
 				{
 					if (s_mortarFireSndID2)
 					{
-						stopSound(s_mortarFireSndID2);
+						sound_stop(s_mortarFireSndID2);
 					}
-					s_mortarFireSndID2 = playSound2D(s_mortarFireSndSrc2);
+					s_mortarFireSndID2 = sound_play(s_mortarFireSndSrc2);
 				}
 
 				s_curPlayerWeapon->frame = c_mortarAnim[taskCtx->iFrame].waxFrame;
@@ -1567,9 +1567,9 @@ namespace TFE_DarkForces
 		{
 			if (s_mortarOutofAmmoSndId)
 			{
-				stopSound(s_mortarOutofAmmoSndId);
+				sound_stop(s_mortarOutofAmmoSndId);
 			}
-			s_mortarOutofAmmoSndId = playSound2D(s_mortarEmptySndSrc);
+			s_mortarOutofAmmoSndId = sound_play(s_mortarEmptySndSrc);
 
 			taskCtx->delay = (s_superCharge) ? 3 : 7;
 			s_curPlayerWeapon->frame = 0;
@@ -1621,9 +1621,9 @@ namespace TFE_DarkForces
 
 			if (s_mineSndId)
 			{
-				stopSound(s_mineSndId);
+				sound_stop(s_mineSndId);
 			}
-			s_mineSndId = playSound2D(s_mineSndSrc);
+			s_mineSndId = sound_play(s_mineSndSrc);
 
 			s32 frame = (*s_curPlayerWeapon->ammo) ? 0 : 2;
 			s_weaponAnimState =
@@ -1673,9 +1673,9 @@ namespace TFE_DarkForces
 			task_localBlockBegin;
 			if (s_concussionFireSndID)
 			{
-				stopSound(s_concussionFireSndID);
+				sound_stop(s_concussionFireSndID);
 			}
-			s_concussionFireSndID = playSound2D(s_concussion6SndSrc);
+			s_concussionFireSndID = sound_play(s_concussion6SndSrc);
 
 			if (s_curPlayerWeapon->wakeupRange)
 			{
@@ -1776,9 +1776,9 @@ namespace TFE_DarkForces
 			// Animation.
 			if (s_concussionFireSndID1)
 			{
-				stopSound(s_concussionFireSndID1);
+				sound_stop(s_concussionFireSndID1);
 			}
-			s_concussionFireSndID1 = playSound2D(s_concussion5SndSrc);
+			s_concussionFireSndID1 = sound_play(s_concussion5SndSrc);
 
 			for (taskCtx->iFrame = 0; taskCtx->iFrame < TFE_ARRAYSIZE(c_concussionAnim); taskCtx->iFrame++)
 			{
@@ -1800,9 +1800,9 @@ namespace TFE_DarkForces
 		{
 			if (s_concussionOutOfAmmoSndID)
 			{
-				stopSound(s_concussionOutOfAmmoSndID);
+				sound_stop(s_concussionOutOfAmmoSndID);
 			}
-			s_concussionOutOfAmmoSndID = playSound2D(s_concussion1SndSrc);
+			s_concussionOutOfAmmoSndID = sound_play(s_concussion1SndSrc);
 
 			taskCtx->delay = (s_superCharge) ? 3 : 7;
 			s_curPlayerWeapon->frame = 0;
@@ -1846,9 +1846,9 @@ namespace TFE_DarkForces
 
 				if (s_cannonFireSndID1)
 				{
-					stopSound(s_cannonFireSndID1);
+					sound_stop(s_cannonFireSndID1);
 				}
-				s_cannonFireSndID1 = playSound2D(s_missile1SndSrc);
+				s_cannonFireSndID1 = sound_play(s_missile1SndSrc);
 
 				if (s_curPlayerWeapon->wakeupRange)
 				{
@@ -1981,9 +1981,9 @@ namespace TFE_DarkForces
 			{
 				if (s_cannonFireSndID)
 				{
-					stopSound(s_cannonFireSndID);
+					sound_stop(s_cannonFireSndID);
 				}
-				s_cannonFireSndID = playSound2D(s_plasma4SndSrc);
+				s_cannonFireSndID = sound_play(s_plasma4SndSrc);
 
 				if (s_curPlayerWeapon->wakeupRange)
 				{
@@ -2100,9 +2100,9 @@ namespace TFE_DarkForces
 			{
 				if (s_cannonOutOfAmmoSndID)
 				{
-					stopSound(s_cannonOutOfAmmoSndID);
+					sound_stop(s_cannonOutOfAmmoSndID);
 				}
-				s_cannonOutOfAmmoSndID = playSound2D(s_plasmaEmptySndSrc);
+				s_cannonOutOfAmmoSndID = sound_play(s_plasmaEmptySndSrc);
 
 				taskCtx->delay = (s_superCharge) ? 3 : 7;
 				s_curPlayerWeapon->frame = 0;

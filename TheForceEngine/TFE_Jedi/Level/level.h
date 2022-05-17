@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_System/memoryPool.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include "rsector.h"

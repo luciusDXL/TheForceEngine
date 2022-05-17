@@ -14,7 +14,6 @@ namespace TFE_Jedi
 	void purgeAllSounds();
 	void freeSoundList(GameSound* sound);
 	void initSound(GameSound* sound);
-	u8*  readFileData(const char* name);
 
 	/////////////////////////////////////////////////////////
 	// System
@@ -55,7 +54,7 @@ namespace TFE_Jedi
 	GameSound* gameSoundLoad(const char* name, GameSoundType soundType)
 	{
 		// Read the data from the file.
-		u8* data = readFileData(name);
+		u8* data = readVocFileData(name);
 
 		// Then allocate the sound itself.
 		GameSound* sound = gameSoundAlloc(data);
@@ -275,6 +274,51 @@ namespace TFE_Jedi
 		}
 	}
 
+	u8* readVocFileData(const char* name, u32* sizeOut)
+	{
+		FilePath path;
+		if (strstr(name, ".voc") || strstr(name, ".VOC"))
+		{
+			if (!TFE_Paths::getFilePath(name, &path))
+			{
+				return nullptr;
+			}
+		}
+		else
+		{
+			char fileName[TFE_MAX_PATH];
+			sprintf(fileName, "%s.VOC", name);
+			if (!TFE_Paths::getFilePath(fileName, &path))
+			{
+				sprintf(fileName, "%s.VOIC", name);
+				if (!TFE_Paths::getFilePath(fileName, &path))
+				{
+					return nullptr;
+				}
+			}
+		}
+		FileStream file;
+		if (!file.open(&path, FileStream::MODE_READ))
+		{
+			return nullptr;
+		}
+		u32 size = (u32)file.getSize();
+		u8* data = (u8*)game_alloc(size);
+		if (!data)
+		{
+			return nullptr;
+		}
+		file.readBuffer(data, size);
+		file.close();
+
+		if (sizeOut)
+		{
+			*sizeOut = size;
+		}
+
+		return data;
+	}
+
 	/////////////////////////////////////////////////////////
 	// System Internal
 	/////////////////////////////////////////////////////////
@@ -297,35 +341,5 @@ namespace TFE_Jedi
 	{
 		memset(sound, 0, sizeof(GameSound));
 		sound->volume = 128;
-	}
-
-	u8* readFileData(const char* name)
-	{
-		FilePath path;
-		char fileName[TFE_MAX_PATH];
-		sprintf(fileName, "%s.VOC", name);
-		if (!TFE_Paths::getFilePath(fileName, &path))
-		{
-			sprintf(fileName, "%s.VOIC", name);
-			if (!TFE_Paths::getFilePath(fileName, &path))
-			{
-				return nullptr;
-			}
-		}
-		FileStream file;
-		if (!file.open(&path, FileStream::MODE_READ))
-		{
-			return nullptr;
-		}
-		u32 size = (u32)file.getSize();
-		u8* data = (u8*)game_alloc(size);
-		if (!data)
-		{
-			return nullptr;
-		}
-		file.readBuffer(data, size);
-		file.close();
-
-		return data;
 	}
 }  // TFE_JediSound

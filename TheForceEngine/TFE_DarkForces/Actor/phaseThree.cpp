@@ -10,11 +10,11 @@
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/pickup.h>
 #include <TFE_DarkForces/weapon.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -42,15 +42,15 @@ namespace TFE_DarkForces
 		Logic logic;
 		PhysicsActor actor;
 
-		SoundEffectID rocketSndId;
-		SoundEffectID hitSndId;
+		SoundEffectId rocketSndId;
+		SoundEffectId hitSndId;
 		JBool noDeath;
 	};
 
-	static SoundSourceID s_phase3aSndID = NULL_SOUND;
-	static SoundSourceID s_phase3bSndID = NULL_SOUND;
-	static SoundSourceID s_phase3cSndID = NULL_SOUND;
-	static SoundSourceID s_phase3RocketSndID = NULL_SOUND;
+	static SoundSourceId s_phase3aSndID = NULL_SOUND;
+	static SoundSourceId s_phase3bSndID = NULL_SOUND;
+	static SoundSourceId s_phase3cSndID = NULL_SOUND;
+	static SoundSourceId s_phase3RocketSndID = NULL_SOUND;
 
 	static PhaseThree* s_curTrooper = nullptr;
 	static s32 s_trooperNum = 0;
@@ -102,8 +102,8 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				stopSound(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = playSound3D_oneshot(s_phase3bSndID, local(obj)->posWS);
+				sound_stop(local(trooper)->hitSndId);
+				local(trooper)->hitSndId = sound_playCued(s_phase3bSndID, local(obj)->posWS);
 
 				if (random(100) <= 10)
 				{
@@ -182,8 +182,8 @@ namespace TFE_DarkForces
 				local(vel).z -= (local(vel).z < 0 ? 1 : 0);
 				local(physicsActor)->vel = { local(vel).x >> 1, local(vel).y >> 1, local(vel).z >> 1 };
 
-				stopSound(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = playSound3D_oneshot(s_phase3bSndID, local(obj)->posWS);
+				sound_stop(local(trooper)->hitSndId);
+				local(trooper)->hitSndId = sound_playCued(s_phase3bSndID, local(obj)->posWS);
 
 				if (random(100) <= 10)
 				{
@@ -274,7 +274,7 @@ namespace TFE_DarkForces
 
 		if (random(100) <= 40)
 		{
-			local(trooper)->rocketSndId = playSound3D_oneshot(s_phase3RocketSndID, local(obj)->posWS);
+			local(trooper)->rocketSndId = sound_playCued(s_phase3RocketSndID, local(obj)->posWS);
 			local(anim)->flags |= 1;
 			actor_setupAnimation2(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 0, 1);
@@ -336,13 +336,13 @@ namespace TFE_DarkForces
 							local(physicsActor)->actor.physics.yPos = FIXED(9999);
 							local(target)->speed = FIXED(25);
 							local(target)->flags &= 0xfffffffd;
-							stopSound(local(trooper)->rocketSndId);
+							sound_stop(local(trooper)->rocketSndId);
 						}
 					}
 				}
 				else if (!s_playerDying)
 				{
-					stopSound(local(trooper)->rocketSndId);
+					sound_stop(local(trooper)->rocketSndId);
 					local(physicsActor)->state = P3STATE_SEARCH;
 				}
 			}
@@ -540,7 +540,7 @@ namespace TFE_DarkForces
 			// Attempt to attack.
 			task_localBlockBegin;
 				local(obj)->flags |= OBJ_FLAG_FULLBRIGHT;
-				playSound3D_oneshot(s_missile1SndSrc, local(obj)->posWS);
+				sound_playCued(s_missile1SndSrc, local(obj)->posWS);
 
 				// Fire 6 missiles with different yaw offsets.
 				for (s32 i = 0; i < 6; i++)
@@ -620,7 +620,7 @@ namespace TFE_DarkForces
 			} while (msg != MSG_RUN_TASK);
 			if (local(physicsActor)->state != P3STATE_FIRE_PLASMA) { break; }
 
-			playSound3D_oneshot(s_plasma4SndSrc, local(obj)->posWS);
+			sound_playCued(s_plasma4SndSrc, local(obj)->posWS);
 
 			ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_CANNON, local(obj)->sector, local(obj)->posWS.x, local(obj)->posWS.y - FIXED(9), local(obj)->posWS.z, local(obj));
 			proj->prevColObj = local(obj);
@@ -670,8 +670,8 @@ namespace TFE_DarkForces
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags |= 8;
-		stopSound(local(trooper)->rocketSndId);
-		playSound3D_oneshot(s_phase3cSndID, local(obj)->posWS);
+		sound_stop(local(trooper)->rocketSndId);
+		sound_playCued(s_phase3cSndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 2, local(anim));
@@ -901,7 +901,7 @@ namespace TFE_DarkForces
 
 					if (local(physicsActor)->state == 0 && phaseThree_updatePlayerPos(local(trooper)))
 					{
-						playSound3D_oneshot(s_phase3aSndID, local(obj)->posWS);
+						sound_playCued(s_phase3aSndID, local(obj)->posWS);
 						local(physicsActor)->state = P3STATE_CHARGE;
 					}
 				}  // while (state == P3STATE_DEFAULT)
@@ -936,22 +936,23 @@ namespace TFE_DarkForces
 	{
 		if (!s_phase3aSndID)
 		{
-			s_phase3aSndID = sound_Load("phase3a.voc");
+			s_phase3aSndID = sound_load("phase3a.voc", SOUND_PRIORITY_MED5);
 			assert(s_phase3aSndID);
 		}
 		if (!s_phase3bSndID)
 		{
-			s_phase3bSndID = sound_Load("phase3b.voc");
+			s_phase3bSndID = sound_load("phase3b.voc", SOUND_PRIORITY_LOW0);
 			assert(s_phase3bSndID);
 		}
 		if (!s_phase3RocketSndID)
 		{
-			s_phase3RocketSndID = sound_Load("rocket-1.voc");
+			s_phase3RocketSndID = sound_load("rocket-1.voc", SOUND_PRIORITY_HIGH0);
 			assert(s_phase3RocketSndID);
 		}
 		if (!s_phase3cSndID)
 		{
-			s_phase3cSndID = sound_Load("phase3c.voc");
+			s_phase3cSndID = sound_load("phase3c.voc", SOUND_PRIORITY_HIGH5);
+			sound_setBaseVolume(s_phase3cSndID, 120);
 			assert(s_phase3cSndID);
 		}
 		// setSoundEffectVolume(s_phase3cSndID, 120);

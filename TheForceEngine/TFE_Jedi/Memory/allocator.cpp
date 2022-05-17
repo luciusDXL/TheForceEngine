@@ -1,5 +1,6 @@
 #include "allocator.h"
 #include <TFE_System/system.h>
+#include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
 #include <assert.h>
 
@@ -16,6 +17,7 @@ struct Allocator
 	AllocHeader* tail;
 	AllocHeader* iterPrev;
 	AllocHeader* iter;
+	MemoryRegion* region;
 	s32 size;
 	s32 refCount;
 };
@@ -30,7 +32,7 @@ namespace TFE_Jedi
 	#define MAX_ALLOC_SIZE (8*1024*1024)  // 8MB
 
 	// Create and free an allocator.
-	Allocator* allocator_create(s32 allocSize)
+	Allocator* allocator_create(s32 allocSize, MemoryRegion* region)
 	{
 		if (allocSize > MAX_ALLOC_SIZE || allocSize <= 0)
 		{
@@ -38,8 +40,8 @@ namespace TFE_Jedi
 			assert(0);
 			return nullptr;
 		}
-
-		Allocator* res = (Allocator*)level_alloc(sizeof(Allocator));
+		region = region ? region : s_levelRegion;	// If a null region is passed in, assume we want the level region.
+		Allocator* res = (Allocator*)TFE_Memory::region_alloc(region, sizeof(Allocator));
 		if (!res)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Allocator", "Could not allocate Allocator.");
@@ -47,6 +49,7 @@ namespace TFE_Jedi
 			return nullptr;
 		}
 		res->self = res;
+		res->region = region;
 
 		// the original code used special bit patterns to represent invalid pointers.
 		res->head = ALLOC_INVALID_PTR;
@@ -71,7 +74,7 @@ namespace TFE_Jedi
 		}
 
 		alloc->self = (Allocator*)ALLOC_INVALID_PTR;
-		level_free(alloc);
+		TFE_Memory::region_free(alloc->region, alloc);
 	}
 
 	// Allocate and free individual items.
@@ -79,7 +82,7 @@ namespace TFE_Jedi
 	{
 		if (!alloc) { return nullptr; }
 
-		AllocHeader* header = (AllocHeader*)level_alloc(alloc->size);
+		AllocHeader* header = (AllocHeader*)TFE_Memory::region_alloc(alloc->region, alloc->size);
 		if (!header)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Allocator", "allocator_newItem - cannot allocate header of size %d", alloc->size);
@@ -127,7 +130,7 @@ namespace TFE_Jedi
 			alloc->iterPrev = header->next;
 		}
 
-		level_free(header);
+		TFE_Memory::region_free(alloc->region, header);
 	}
 
 	// Random access.

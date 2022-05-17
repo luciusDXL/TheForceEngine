@@ -8,7 +8,7 @@
 #include <TFE_Asset/dfKeywords.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
+#include "sound.h"
 
 enum HitEffectID
 {
@@ -42,7 +42,7 @@ struct EffectData
 	fixed16_16 damage;
 	fixed16_16 explosiveRange;
 	fixed16_16 wakeupRange;
-	SoundSourceID soundEffect;
+	SoundSourceId soundEffect;
 };
 
 namespace TFE_DarkForces

@@ -4,8 +4,8 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Level/robject.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
+#include "sound.h"
 
 namespace TFE_DarkForces
 {
@@ -82,9 +82,9 @@ namespace TFE_DarkForces
 		JBool isWax;
 	};
 
-	extern SoundSourceID s_powerupPickupSnd;
-	extern SoundSourceID s_invItemPickupSnd;
-	extern SoundSourceID s_wpnPickupSnd;
+	extern SoundSourceId s_powerupPickupSnd;
+	extern SoundSourceId s_invItemPickupSnd;
+	extern SoundSourceId s_wpnPickupSnd;
 	extern ItemData      s_itemData[ITEM_COUNT];
 
 	void item_loadData();

@@ -732,7 +732,7 @@ namespace TFE_DarkForces
 		if (!s_energy)
 		{
 			hud_sendTextMessage(11);
-			playSound2D(s_nightVisionDeactiveSoundSource);
+			sound_play(s_nightVisionDeactiveSoundSource);
 			s_nightvisionActive = JFALSE;
 			return;
 		}
@@ -740,7 +740,7 @@ namespace TFE_DarkForces
 		s_nightvisionActive = JTRUE;
 		beginNightVision(16);
 		hud_sendTextMessage(10);
-		playSound2D(s_nightVisionActiveSoundSource);
+		sound_play(s_nightVisionActiveSoundSource);
 	}
 
 	void disableCleats()

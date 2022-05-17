@@ -414,7 +414,7 @@ namespace TFE_Jedi
 		}
 
 		newSound = nullptr;
-		if (sound)
+		if (minPrioritySound)
 		{
 			if (priority >= minPriority)
 			{

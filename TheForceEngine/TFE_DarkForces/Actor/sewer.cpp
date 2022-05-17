@@ -9,11 +9,11 @@
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/pickup.h>
 #include <TFE_DarkForces/weapon.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -90,8 +90,8 @@ namespace TFE_DarkForces
 				return sewerCreatureDie(aiActor, actor);
 			}
 
-			stopSound(aiActor->hurtSndID);
-			aiActor->hurtSndID = playSound3D_oneshot(aiActor->hurtSndSrc, obj->posWS);
+			sound_stop(aiActor->hurtSndID);
+			aiActor->hurtSndID = sound_playCued(aiActor->hurtSndSrc, obj->posWS);
 			return 0xffffffff;
 		}
 		else if (msg == MSG_EXPLOSION)
@@ -110,8 +110,8 @@ namespace TFE_DarkForces
 			aiActor->hp -= dmg;
 			if (aiActor->hp > 0)
 			{
-				stopSound(aiActor->hurtSndID);
-				aiActor->hurtSndID = playSound3D_oneshot(aiActor->hurtSndSrc, obj->posWS);
+				sound_stop(aiActor->hurtSndID);
+				aiActor->hurtSndID = sound_playCued(aiActor->hurtSndSrc, obj->posWS);
 				return 0xffffffff;
 			}
 			return sewerCreatureDie(aiActor, actor);
@@ -205,7 +205,7 @@ namespace TFE_DarkForces
 				if (enemy->anim.flags & 2)
 				{
 					enemy->anim.state = 3;
-					playSound3D_oneshot(enemy->attackSecSndSrc, obj->posWS);
+					sound_playCued(enemy->attackSecSndSrc, obj->posWS);
 
 					fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
 					fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
@@ -287,8 +287,8 @@ namespace TFE_DarkForces
 
 		actor_setDeathCollisionFlags();
 		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
-		stopSound(logic->alertSndID);
-		playSound3D_oneshot(aiActor->dieSndSrc, obj->posWS);
+		sound_stop(logic->alertSndID);
+		sound_playCued(aiActor->dieSndSrc, obj->posWS);
 		enemy->target.flags |= 8;
 
 		if ((obj->anim == 1 || obj->anim == 6) && obj->type == OBJ_TYPE_SPRITE)

@@ -66,24 +66,19 @@ namespace TFE_Audio
 
 	void setAudioThreadCallback(AudioThreadCallback callback = nullptr);
 
-	// Update position audio and other audio effects.
-	void update(const Vec3f* listenerPos, const Vec3f* listenerDir);
-
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 	// Note that looping one shots are valid though may generate too many sound sources if not used carefully.
-	bool playOneShot(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, bool looping, const Vec3f* pos = nullptr, bool copyPosition = false,
+	bool playOneShot(SoundType type, f32 volume, const SoundBuffer* buffer, bool looping,
 					 SoundFinishedCallback finishedCallback = nullptr, void* cbUserData = nullptr, s32 cbArg = 0);
 
 	// Sound source that the client holds onto.
-	SoundSource* createSoundSource(SoundType type, f32 volume, f32 stereoSeperation, const SoundBuffer* buffer, const Vec3f* pos = nullptr, bool copyPosition = false, SoundFinishedCallback callback = nullptr, void* userData = nullptr);
+	SoundSource* createSoundSource(SoundType type, f32 volume, const SoundBuffer* buffer, SoundFinishedCallback callback = nullptr, void* userData = nullptr);
 	void playSource(SoundSource* source, bool looping = false);
 	void stopSource(SoundSource* source);
 	void freeSource(SoundSource* source);
 	void setSourceVolume(SoundSource* source, f32 volume);
-	void setSourceStereoSeperation(SoundSource* source, f32 stereoSeperation);
 	// This will restart the sound and change the buffer.
 	void setSourceBuffer(SoundSource* source, const SoundBuffer* buffer);
-	void setSourcePosition(SoundSource* source, const Vec3f* pos);
 
 	bool isSourcePlaying(SoundSource* source);
 	f32  getSourceVolume(SoundSource* source);

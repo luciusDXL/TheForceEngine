@@ -180,7 +180,7 @@ namespace TFE_DarkForces
 	static TextureData* s_diskErrorImg = nullptr;
 	static Font* s_swFont1 = nullptr;
 	static Font* s_mapNumFont = nullptr;
-	static SoundSourceID s_screenShotSndSrc = NULL_SOUND;
+	static SoundSourceId s_screenShotSndSrc = NULL_SOUND;
 	static BriefingList s_briefingList = { 0 };
 
 	static Task* s_loadMissionTask = nullptr;
@@ -275,7 +275,7 @@ namespace TFE_DarkForces
 		s_loadMissionTask = nullptr;
 		weapon_resetState();
 		renderer_resetState();
-		sound_freeAll();
+		sound_close();
 		level_freeAllAssets();
 		agentMenu_resetState();
 		menu_resetState();
@@ -434,7 +434,7 @@ namespace TFE_DarkForces
 					// We have returned from the mission tasks.
 					renderer_reset();
 					gameMusic_stop();
-					sound_stopAll();
+					sound_levelStop();
 					agent_levelEndTask();
 					pda_cleanup();
 
@@ -541,6 +541,8 @@ namespace TFE_DarkForces
 			}  break;
 			case GMODE_MISSION:
 			{
+				sound_levelStart();
+
 				bitmap_setAllocator(s_resRegion);
 				actor_clearState();
 				actorDebug_clear();
@@ -921,8 +923,8 @@ namespace TFE_DarkForces
 		}
 
 		weapon_enableAutomount(s_config.wpnAutoMount);
-		s_screenShotSndSrc = sound_Load("scrshot.voc");
-		setSoundSourceVolume(s_screenShotSndSrc, 127);
+		s_screenShotSndSrc = sound_load("scrshot.voc", SOUND_PRIORITY_HIGH0);
+		sound_setBaseVolume(s_screenShotSndSrc, 127);
 	}
 
 	void loadAgentAndLevelData()

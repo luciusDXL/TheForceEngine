@@ -2,12 +2,11 @@
 #include "player.h"
 #include "hud.h"
 #include "weapon.h"
+#include "sound.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Task/task.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 
 using namespace TFE_Jedi;
 
@@ -296,15 +295,15 @@ namespace TFE_DarkForces
 		// Play pickup sound.
 		if (pickup->type == ITYPE_KEY_ITEM || pickup->type == ITYPE_POWERUP)
 		{
-			playSound2D(s_powerupPickupSnd);
+			sound_play(s_powerupPickupSnd);
 		}
 		else if (pickup->type == ITYPE_OBJECTIVE || pickup->type == ITYPE_SPECIAL)
 		{
-			playSound2D(s_invItemPickupSnd);
+			sound_play(s_invItemPickupSnd);
 		}
 		else
 		{
-			playSound2D(s_wpnPickupSnd);
+			sound_play(s_wpnPickupSnd);
 		}
 
 		// Initialize effect
@@ -767,7 +766,7 @@ namespace TFE_DarkForces
 	{
 		struct LocalContext
 		{
-			SoundEffectID soundId;
+			SoundEffectId soundId;
 		};
 		task_begin_ctx;
 
@@ -775,12 +774,12 @@ namespace TFE_DarkForces
 		{
 			task_yield(291);	// ~2 seconds.
 
-			taskCtx->soundId = playSound2D(s_maskSoundSource1);
+			taskCtx->soundId = sound_play(s_maskSoundSource1);
 			sound_pitchShift(taskCtx->soundId, -16);
 
 			task_yield(291);	// ~2 seconds.
 
-			taskCtx->soundId = playSound2D(s_maskSoundSource2);
+			taskCtx->soundId = sound_play(s_maskSoundSource2);
 			sound_pitchShift(taskCtx->soundId, 16);
 		}
 
@@ -798,7 +797,7 @@ namespace TFE_DarkForces
 
 		for (taskCtx->i = 4; taskCtx->i >= 0; taskCtx->i--)
 		{
-			playSound2D(s_invCountdownSound);
+			sound_play(s_invCountdownSound);
 			s_playerInfo.shields = 200;
 			task_waitWhileIdNotZero(87);	// 0.6 seconds.
 
@@ -829,7 +828,7 @@ namespace TFE_DarkForces
 
 		for (taskCtx->i = 4; taskCtx->i >= 0; taskCtx->i--)
 		{
-			playSound2D(s_superchargeCountdownSound);
+			sound_play(s_superchargeCountdownSound);
 			s_superChargeHud = JFALSE;
 			task_waitWhileIdNotZero(87);	// 0.6 seconds.
 

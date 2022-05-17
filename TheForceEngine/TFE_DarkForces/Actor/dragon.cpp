@@ -9,12 +9,12 @@
 #include <TFE_DarkForces/item.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/pickup.h>
+#include <TFE_DarkForces/sound.h>
 #include <TFE_DarkForces/weapon.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 
@@ -27,7 +27,7 @@ namespace TFE_DarkForces
 
 		s32 animIndex;
 		fixed16_16 painLevel;
-		SoundEffectID painSndId;
+		SoundEffectId painSndId;
 		JBool retreat;
 		Tick nextTick;
 		s32 pad;
@@ -51,11 +51,11 @@ namespace TFE_DarkForces
 		{ 10, FIXED(24) },
 	};
 
-	static SoundSourceID s_kellSound0 = NULL_SOUND;
-	static SoundSourceID s_kellSound1 = NULL_SOUND;
-	static SoundSourceID s_kellSound2 = NULL_SOUND;
-	static SoundSourceID s_kellSound3 = NULL_SOUND;
-	static SoundSourceID s_kellSound4 = NULL_SOUND;
+	static SoundSourceId s_kellSound0 = NULL_SOUND;
+	static SoundSourceId s_kellSound1 = NULL_SOUND;
+	static SoundSourceId s_kellSound2 = NULL_SOUND;
+	static SoundSourceId s_kellSound3 = NULL_SOUND;
+	static SoundSourceId s_kellSound4 = NULL_SOUND;
 
 	static KellDragon* s_curDragon = nullptr;
 	static s32 s_dragonNum = 0;
@@ -92,8 +92,8 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				stopSound(local(dragon)->painSndId);
-				local(dragon)->painSndId = playSound3D_oneshot(s_kellSound2, local(obj)->posWS);
+				sound_stop(local(dragon)->painSndId);
+				local(dragon)->painSndId = sound_playCued(s_kellSound2, local(obj)->posWS);
 
 				if (random(100) <= 20)
 				{
@@ -178,8 +178,8 @@ namespace TFE_DarkForces
 				local(physicsActor)->vel.y = local(vel).y >> 1;
 				local(physicsActor)->vel.z = local(vel).z >> 1;
 
-				stopSound(local(dragon)->painSndId);
-				local(dragon)->painSndId = playSound3D_oneshot(s_kellSound2, local(obj)->posWS);
+				sound_stop(local(dragon)->painSndId);
+				local(dragon)->painSndId = sound_playCued(s_kellSound2, local(obj)->posWS);
 
 				if (random(100) <= 20)
 				{
@@ -542,7 +542,7 @@ namespace TFE_DarkForces
 			local(anim)->flags |= 1;
 			actor_setupAnimation2(local(obj), 9, local(anim));
 			local(anim)->frameRate = 8;
-			playSound3D_oneshot(s_kellSound1, local(obj)->posWS);
+			sound_playCued(s_kellSound1, local(obj)->posWS);
 
 			// Wait for the animation to finish playing.
 			do
@@ -596,7 +596,7 @@ namespace TFE_DarkForces
 			local(physicsActor)->vel.z = 0;
 			actor_setupAnimation2(local(obj), 11, local(anim));
 			local(anim)->frameRate = 8;
-			playSound3D_oneshot(s_kellSound4, local(obj)->posWS);
+			sound_playCued(s_kellSound4, local(obj)->posWS);
 
 			// Wait for the animation to finish playing.
 			do
@@ -688,7 +688,7 @@ namespace TFE_DarkForces
 				}
 			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
-			playSound3D_oneshot(s_kellSound4, local(obj)->posWS);
+			sound_playCued(s_kellSound4, local(obj)->posWS);
 			fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
 			fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
 			if (dist <= FIXED(20))
@@ -729,7 +729,7 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->actor.target;
 
 		local(target)->flags |= 8;
-		playSound3D_oneshot(s_kellSound3, local(obj)->posWS);
+		sound_playCued(s_kellSound3, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 2, local(anim));
@@ -953,7 +953,7 @@ namespace TFE_DarkForces
 					if (local(physicsActor)->state == 0 && kellDragon_canSeePlayer(local(dragon)))
 					{
 						SecObject* obj = local(dragon)->logic.obj;
-						playSound3D_oneshot(s_kellSound0, obj->posWS);
+						sound_playCued(s_kellSound0, obj->posWS);
 						local(physicsActor)->state = 1;
 					}
 				}  // while (state == 0)
@@ -986,23 +986,23 @@ namespace TFE_DarkForces
 	{
 		if (!s_kellSound0)
 		{
-			s_kellSound0 = sound_Load("kell-1.voc");
+			s_kellSound0 = sound_load("kell-1.voc", SOUND_PRIORITY_MED5);
 		}
 		if (!s_kellSound2)
 		{
-			s_kellSound2 = sound_Load("kell-8.voc");
+			s_kellSound2 = sound_load("kell-8.voc", SOUND_PRIORITY_LOW0);
 		}
 		if (!s_kellSound4)
 		{
-			s_kellSound4 = sound_Load("kell-5.voc");
+			s_kellSound4 = sound_load("kell-5.voc", SOUND_PRIORITY_LOW0);
 		}
 		if (!s_kellSound1)
 		{
-			s_kellSound1 = sound_Load("kelljump.voc");
+			s_kellSound1 = sound_load("kelljump.voc", SOUND_PRIORITY_LOW0);
 		}
 		if (!s_kellSound3)
 		{
-			s_kellSound3 = sound_Load("kell-7.voc");
+			s_kellSound3 = sound_load("kell-7.voc", SOUND_PRIORITY_MED5);
 		}
 
 		KellDragon* dragon = (KellDragon*)level_alloc(sizeof(KellDragon));

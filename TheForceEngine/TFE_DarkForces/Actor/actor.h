@@ -4,10 +4,10 @@
 // Core Actor/AI functionality.
 //////////////////////////////////////////////////////////////////////
 #include "aiActor.h"
+#include "../sound.h"
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Jedi/Collision/collision.h>
-#include <TFE_Jedi/Sound/soundSystem.h>
 
 ///////////////////////////////////////////
 // Constants
@@ -82,8 +82,8 @@ struct ActorLogic
 
 	Tick delay;
 	Tick nextTick;
-	SoundSourceID alertSndSrc;
-	SoundEffectID alertSndID;
+	SoundSourceId alertSndSrc;
+	SoundEffectId alertSndID;
 
 	angle14_32 fov;
 	fixed16_16 nearDist;
@@ -161,8 +161,8 @@ namespace TFE_DarkForces
 	JBool actor_isObjectVisible(SecObject* actorObj, SecObject* obj, angle14_32 fov, fixed16_16 closeDist);
 
 	extern ActorState s_actorState;
-	extern SoundSourceID s_alertSndSrc[ALERT_COUNT];
-	extern SoundSourceID s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
-	extern SoundSourceID s_stormAlertSndSrc[STORM_ALERT_COUNT];
-	extern SoundSourceID s_agentSndSrc[AGENTSND_COUNT];
+	extern SoundSourceId s_alertSndSrc[ALERT_COUNT];
+	extern SoundSourceId s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
+	extern SoundSourceId s_stormAlertSndSrc[STORM_ALERT_COUNT];
+	extern SoundSourceId s_agentSndSrc[AGENTSND_COUNT];
 }  // namespace TFE_DarkForces

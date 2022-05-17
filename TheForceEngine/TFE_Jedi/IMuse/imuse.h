@@ -39,6 +39,8 @@ struct iMuseInitData
 	u32 imuseIntUsecCount = 6944;			// iMuse interrupt freq
 };
 
+typedef u8*(*ImResourceCallback)(s64);
+
 // Used by ImSetParam() and ImGetParam().
 enum iMuseParameter
 {
@@ -130,6 +132,7 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////
 	extern s32 ImInitialize(MemoryRegion* memRegion);
 	extern s32 ImTerminate(void);
+	extern s32 ImSetResourceCallback(ImResourceCallback callback);
 	extern s32 ImPause(void);
 	extern s32 ImResume(void);
 	extern s32 ImSetGroupVol(s32 group, s32 vol);
