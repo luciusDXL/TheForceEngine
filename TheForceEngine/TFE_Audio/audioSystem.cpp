@@ -56,7 +56,6 @@ namespace TFE_Audio
 	static f32 s_soundFxVolume = 1.0f;
 
 	static u32 s_sourceCount;
-	// TODO: This will need to be buffered to avoid locks.
 	static SoundSource s_sources[MAX_SOUND_SOURCES];
 	static Mutex s_mutex;
 	static bool s_paused = false;
@@ -375,6 +374,8 @@ namespace TFE_Audio
 		}
 
 		// Then loop through the sources.
+		// Note: this is no longer used by Dark Forces. However I decided to keep direct sound support around
+		// so it can be used for tools.
 		SoundSource* snd = s_sources;
 		for (u32 s = 0; s < s_sourceCount && !s_paused; s++, snd++)
 		{

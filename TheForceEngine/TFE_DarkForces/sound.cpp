@@ -15,10 +15,6 @@
 
 namespace TFE_DarkForces
 {
-	/////////////////////////////////////////////////////////////
-	// TODO: Add a callback to iMuse to get the sound data from
-	// the ID. Then hook it up here and with GameSound.
-	/////////////////////////////////////////////////////////////
 	struct LevelSound
 	{
 		SoundEffectId id;
@@ -37,6 +33,13 @@ namespace TFE_DarkForces
 	#define MAX_LEVEL_SOUNDS 300
 	#define CUE_RING1 FIXED(30)
 	#define CUE_RING2 FIXED(150)
+
+	// SoundID is structed as:
+	// <- Higher .... Lower ->
+	// 1-bit: always zero (this is the midi flag bit) | 15-bits: instance | 48-bits: pointer offset
+	static const s64 c_soundIdMask = 0xffffffffffffll;	// (1 << 48) - 1
+	static const s64 c_soundInstanceShift = 48ll;
+	static const s32 c_soundInstanceMask = 0x7fff;
 
 	static s32 s_tPan[32] = { 00,-06,-12,-18,-24,-30,-36,-42,-48,-42,-36,-30,-24,-18,-12,-06,00,06,12,18,24,30,36,42,48,42,36,30,24,18,12,06 };
 	static Allocator* s_levelSoundList = nullptr;
@@ -308,23 +311,18 @@ namespace TFE_DarkForces
 		angle = getAngleDifference(s_yaw, angle);
 		*pan = s_tPan[((angle + 8192) / 512) & 31];
 	}
-
+		
 	SoundEffectId soundInstance(SoundSourceId soundId, s32 instance)
 	{
 		SoundEffectId id = soundId - (SoundEffectId)s_levelSoundList;
-		assert(id <= 0xffffffffffffll);
-		if (instance > 0)
-		{
-			static s32 __x = 0;
-			__x++;
-		}
-		id |= s64(instance & 0x7fff) << s64(48);
+		assert(id <= c_soundIdMask);
+		id |= s64(instance & c_soundInstanceMask) << c_soundInstanceShift;
 		return id;
 	}
 
 	LevelSound* getSoundPtr(SoundSourceId id)
 	{
-		return (LevelSound*)((u8*)s_levelSoundList + (id & s64(0xffffffffffffll)));
+		return (LevelSound*)((u8*)s_levelSoundList + (id & c_soundIdMask));
 	}
 
 	u8* sound_getResource(SoundEffectId id)
