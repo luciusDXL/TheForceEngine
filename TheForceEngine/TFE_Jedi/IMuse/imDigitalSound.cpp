@@ -675,7 +675,7 @@ namespace TFE_Jedi
 	// rightMapping: map right channel samples to final values based on volume and pan.
 	void digitalAudioOutput_Stereo(s16* audioOut, const u8* sndData, const s8* leftMapping, const s8* rightMapping, s32 size)
 	{
-		for (; size > 0; size--, sndData++, audioOut+=2)
+		for (s32 i = 0; i < size; i++, sndData++, audioOut+=2)
 		{
 			const u8 sample = *sndData;
 			audioOut[0] += (s16)leftMapping[sample];
@@ -694,13 +694,13 @@ namespace TFE_Jedi
 		{
 			vTop = 1;
 		}
-
+		
 		s32 panTop = (pan >> 3) - 8;
 		if (pan > 64)
 		{
 			panTop++;
 		}
-
+		
 		// Calculate where the in panVolume mapping channel to read from for each channel.
 		s32 leftVolume  = s_audioPanVolumeTable[8 - panTop + vTop*17];
 		s32 rightVolume = s_audioPanVolumeTable[8 + panTop + vTop*17];
@@ -755,7 +755,7 @@ namespace TFE_Jedi
 		s32 bufferSize = s_audioOutSize * 2;
 		s16* audioOut  = s_audioOut;
 		f32* driverOut = s_audioDriverOut;
-		for (; bufferSize > 0; bufferSize--, audioOut++, driverOut++)
+		for (s32 i = 0; i < bufferSize; i++, audioOut++, driverOut++)
 		{
 			*driverOut = s_audioNormalization[*audioOut] * systemVolume;
 		}
