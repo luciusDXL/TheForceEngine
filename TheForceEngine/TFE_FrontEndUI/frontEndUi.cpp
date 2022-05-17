@@ -8,6 +8,7 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -762,6 +763,23 @@ namespace TFE_FrontEndUI
 
 		ImGui::SetNextItemWidth(256.0f);
 		ImGui::Combo("##Current Game", &s_gameIndex, c_games, IM_ARRAYSIZE(c_games));
+
+		//////////////////////////////////////////////////////
+		// Game Settings
+		//////////////////////////////////////////////////////
+		ImGui::Separator();
+
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Dark Forces Settings");
+		ImGui::PopFont();
+
+		bool disableFightMusic = gameSettings->df_disableFightMusic;
+		if (ImGui::Checkbox("Disable Fight Music", &disableFightMusic))
+		{
+			gameSettings->df_disableFightMusic = disableFightMusic;
+		}
 
 		// File dialogs...
 		if (browseWinOpen >= 0)
@@ -1570,6 +1588,20 @@ namespace TFE_FrontEndUI
 		labelSliderPercent(&sound->musicVolume,   "Music Volume");
 		// TODO: Add separate volume controls for cutscenes.
 		// TODO: Add master volume control.
+
+		bool use16Channels = sound->use16Channels;
+		if (ImGui::Checkbox("Enable 16-channel iMuse Digital Audio", &use16Channels))
+		{
+			sound->use16Channels = use16Channels;
+			if (sound->use16Channels)
+			{
+				ImSetDigitalChannelCount(16);
+			}
+			else
+			{
+				ImSetDigitalChannelCount(8);
+			}
+		}
 
 		TFE_Audio::setVolume(sound->soundFxVolume);
 		TFE_MidiPlayer::setVolume(sound->musicVolume);

@@ -221,50 +221,46 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////
 	s32 ImSetMasterVol(s32 vol)
 	{
-		// Stub
-		return imNotImplemented;
+		ImSetGroupVol(groupMaster, vol);
+		return imSuccess;
 	}
 
 	s32 ImGetMasterVol(void)
 	{
-		// Stub
-		return imNotImplemented;
+		return ImGetGroupVolume(groupMaster);
 	}
 
 	s32 ImSetMusicVol(s32 vol)
 	{
-		// Stub
-		return imNotImplemented;
+		ImSetGroupVol(groupMusic, vol);
+		return imSuccess;
 	}
 
 	s32 ImGetMusicVol(void)
 	{
-		// Stub
-		return imNotImplemented;
+		return ImGetGroupVolume(groupMusic);
 	}
 
 	s32 ImSetSfxVol(s32 vol)
 	{
-		// Stub
-		return imNotImplemented;
+		ImSetGroupVol(groupSfx, vol);
+		return imSuccess;
 	}
 
 	s32 ImGetSfxVol(void)
 	{
-		// Stub
-		return imNotImplemented;
+		return ImGetGroupVolume(groupSfx);
 	}
 
 	s32 ImSetVoiceVol(s32 vol)
 	{
-		// Stub
-		return imNotImplemented;
+		ImSetGroupVol(groupVoice, vol);
+		return imSuccess;
 	}
 
 	s32 ImGetVoiceVol(void)
 	{
-		// Stub
-		return imNotImplemented;
+		return ImGetGroupVolume(groupVoice);
 	}
 
 	s32 ImStartSfx(ImSoundId soundId, s32 priority)
@@ -287,7 +283,8 @@ namespace TFE_Jedi
 
 	s32 ImStartMusic(ImSoundId soundId, s32 priority)
 	{
-		// Stub
+		// Not used in Dark Forces.
+		assert(0);
 		return imNotImplemented;
 	}
 

@@ -3,6 +3,7 @@
 #include "sound.h"
 #include "player.h"
 #include <TFE_Jedi/Sound/gameSound.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/vocAsset.h>
 #include <TFE_Audio/audioSystem.h>
@@ -52,6 +53,12 @@ namespace TFE_DarkForces
 		s_levelSoundList = allocator_create(sizeof(LevelSound), s_gameRegion);
 		s_instance = 0;
 		ImInitialize(memRegion);
+		
+		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
+		if (sound->use16Channels)
+		{
+			ImSetDigitalChannelCount(16);
+		}
 	}
 
 	void sound_close()

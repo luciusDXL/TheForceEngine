@@ -1,6 +1,7 @@
 #include "gameMusic.h"
 #include "util.h"
 #include "random.h"
+#include <TFE_Settings/settings.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
@@ -149,8 +150,7 @@ namespace TFE_DarkForces
 	static JBool s_desiredFightState = JFALSE;
 	
 	s32  gameMusic_setLevel(s32 level);
-	void gameMusic_reset();
-	s32 gameMusic_random(s32 low, s32 high);
+	s32  gameMusic_random(s32 low, s32 high);
 	void gameMusic_taskFunc(MessageType msg);
 	void iMuseCallback1(char* marker);
 	void iMuseCallback2(char* marker);
@@ -257,6 +257,21 @@ namespace TFE_DarkForces
 	void gameMusic_startFight()
 	{
 		static s32 fightTimer = 0;
+		// Allow the user to disable fight music transitions.
+		// If this is changed while in the fight state or already transitioning, then nothing will
+		// happen until the next available transition point.
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		if (gameSettings->df_disableFightMusic)
+		{
+			s_desiredFightState = JFALSE;
+			fightTimer = 0;
+			if (gameMusic_getState() != MUS_STATE_STALK)
+			{
+				gameMusic_setState(MUS_STATE_STALK);
+			}
+			return;
+		}
+
 		if (s_curTick - fightTimer > TICKS(8))
 		{
 			fightTimer = s_curTick - TICKS(6);

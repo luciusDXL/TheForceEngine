@@ -66,11 +66,11 @@ namespace TFE_Jedi
 
 	// In DOS these are 8-bit outputs since that is what the driver is accepting.
 	// For TFE, floating-point audio output is used, so these convert to floating-point.
-	static f32  s_audioNormalizationMem[DEFAULT_SOUND_CHANNELS * 256 + 4];
+	static f32  s_audioNormalizationMem[MAX_SOUND_CHANNELS * 256 + 4];
 	// Normalizes the sum of all audio playback (16-bit) to a [-1,1) floating point value.
 	// The mapping can be addressed with negative values (i.e. s_audioNormalization[-16]), which is why
 	// it is built this way.
-	static f32* s_audioNormalization = &s_audioNormalizationMem[DEFAULT_SOUND_CHANNELS * 128 + 4];
+	static f32* s_audioNormalization = &s_audioNormalizationMem[MAX_SOUND_CHANNELS * 128 + 4];
 
 	static f32* s_audioDriverOut;
 	static s16 s_audioOut[512];
@@ -85,7 +85,8 @@ namespace TFE_Jedi
 
 	ImWaveData* ImGetWaveData(s32 index);
 	void ImFreeWaveSound(ImWaveSound* sound);
-	s32 ImComputeAudioNormalization(iMuseInitData* initData);
+	s32 ImComputeAudioNormalizationInit(iMuseInitData* initData);
+	s32 ImComputeAudioNormalization(s32 waveMixCount);
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value);
 	s32 ImGetWaveParamIntern(ImSoundId soundId, s32 param);
 	s32 ImFreeWaveSoundByIdIntern(ImSoundId soundId);
@@ -135,7 +136,7 @@ namespace TFE_Jedi
 		TFE_Audio::setAudioThreadCallback(ImUpdateWave);
 
 		s_sndPlayerLock = 0;
-		return ImComputeAudioNormalization(initData);
+		return ImComputeAudioNormalizationInit(initData);
 	}
 
 	void ImTerminateDigitalAudio()
@@ -143,6 +144,28 @@ namespace TFE_Jedi
 		ImFreeAllWaveSounds();
 		TFE_Audio::setAudioThreadCallback();
 		s_imWaveSoundList = nullptr;
+	}
+
+	s32 ImSetDigitalChannelCount(s32 count)
+	{
+		if (count < 0 || count > MAX_SOUND_CHANNELS)
+		{
+			return imArgErr;
+		}
+		ImFreeAllWaveSounds();
+
+		s_imWaveMixCount = count;
+		ImWaveSound* sound = s_imWaveSound;
+		for (s32 i = 0; i < s_imWaveMixCount; i++, sound++)
+		{
+			sound->prev = nullptr;
+			sound->next = nullptr;
+			ImWaveData* data = ImGetWaveData(i);
+			sound->data = data;
+			data->sound = sound;
+			sound->soundId = IM_NULL_SOUNDID;
+		}
+		return ImComputeAudioNormalization(count);
 	}
 
 	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value)
@@ -227,10 +250,8 @@ namespace TFE_Jedi
 		return &s_imWaveData[index];
 	}
 
-	s32 ImComputeAudioNormalization(iMuseInitData* initData)
+	s32 ImComputeAudioNormalization(s32 waveMixCount)
 	{
-		s_imDigitalData = initData;
-		s32 waveMixCount = initData->waveMixCount;
 		s32 volumeMidPoint = 128;
 		s32 tableSize = waveMixCount << 7;
 		for (s32 i = 0; i < tableSize; i++)
@@ -240,10 +261,16 @@ namespace TFE_Jedi
 			volumeOffset >>= 8;
 
 			// These values are 8-bit in DOS, but converted to floating point for TFE.
-			s_audioNormalization[i]    = f32(volumeMidPoint + volumeOffset)     / 128.0f - 1.0f;
-			s_audioNormalization[-i-1] = f32(volumeMidPoint - volumeOffset - 1) / 128.0f - 1.0f;
+			s_audioNormalization[i] = f32(volumeMidPoint + volumeOffset) / 128.0f - 1.0f;
+			s_audioNormalization[-i - 1] = f32(volumeMidPoint - volumeOffset - 1) / 128.0f - 1.0f;
 		}
 		return imSuccess;
+	}
+
+	s32 ImComputeAudioNormalizationInit(iMuseInitData* initData)
+	{
+		s_imDigitalData = initData;
+		return ImComputeAudioNormalization(initData->waveMixCount);
 	}
 
 	s32 ImSetWaveParamInternal(ImSoundId soundId, s32 param, s32 value)
@@ -651,8 +678,8 @@ namespace TFE_Jedi
 		for (; size > 0; size--, sndData++, audioOut+=2)
 		{
 			const u8 sample = *sndData;
-			audioOut[0] += leftMapping[sample];
-			audioOut[1] += rightMapping[sample];
+			audioOut[0] += (s16)leftMapping[sample];
+			audioOut[1] += (s16)rightMapping[sample];
 		}
 	}
 

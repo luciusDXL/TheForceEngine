@@ -80,6 +80,7 @@ struct TFE_Settings_Sound
 {
 	f32 soundFxVolume = 1.0f;
 	f32 musicVolume = 1.0f;
+	bool use16Channels = true;
 };
 
 struct TFE_Game
@@ -103,6 +104,7 @@ struct TFE_Settings_Game
 	s32  df_airControl = 0;				// Air control, default = 0, where 0 = speed/256 and 8 = speed; range = [0, 8]
 	bool df_fixBobaFettFireDir = false;	// By default, Boba Fett does not correctly check the angle difference between him and the player in
 										// one direction, enabling this will fix that.
+	bool df_disableFightMusic = false;	// Set to true to disable fight music and music transitions during gameplay.
 };
 
 namespace TFE_Settings

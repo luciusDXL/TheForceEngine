@@ -307,6 +307,7 @@ namespace TFE_Settings
 		writeHeader(settings, c_sectionNames[SECTION_SOUND]);
 		writeKeyValue_Float(settings, "soundFxVolume", s_soundSettings.soundFxVolume);
 		writeKeyValue_Float(settings, "musicVolume", s_soundSettings.musicVolume);
+		writeKeyValue_Bool(settings, "use16Channels", s_soundSettings.use16Channels);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -327,6 +328,7 @@ namespace TFE_Settings
 			{
 				writeKeyValue_Int(settings, "airControl", s_gameSettings.df_airControl);
 				writeKeyValue_Bool(settings, "fixBobaFettFireDir", s_gameSettings.df_fixBobaFettFireDir);
+				writeKeyValue_Bool(settings, "disableFightMusic", s_gameSettings.df_disableFightMusic);
 			}
 		}
 	}
@@ -594,6 +596,10 @@ namespace TFE_Settings
 		{
 			s_soundSettings.musicVolume = parseFloat(value);
 		}
+		else if (strcasecmp("use16Channels", key) == 0)
+		{
+			s_soundSettings.use16Channels = parseBool(value);
+		}
 	}
 
 	void parseGame(const char* key, const char* value)
@@ -643,6 +649,10 @@ namespace TFE_Settings
 		else if (strcasecmp("fixBobaFettFireDir", key) == 0)
 		{
 			s_gameSettings.df_fixBobaFettFireDir = parseBool(value);
+		}
+		else if (strcasecmp("disableFightMusic", key) == 0)
+		{
+			s_gameSettings.df_disableFightMusic = parseBool(value);
 		}
 	}
 
