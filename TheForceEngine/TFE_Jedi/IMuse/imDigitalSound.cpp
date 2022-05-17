@@ -14,6 +14,7 @@ namespace TFE_Jedi
 {
 	#define MAX_SOUND_CHANNELS 16
 	#define DEFAULT_SOUND_CHANNELS 8
+	#define AUDIO_BUFFER_SIZE 512
 
 	////////////////////////////////////////////////////
 	// Structures
@@ -73,7 +74,7 @@ namespace TFE_Jedi
 	static f32* s_audioNormalization = &s_audioNormalizationMem[MAX_SOUND_CHANNELS * 128 + 4];
 
 	static f32* s_audioDriverOut;
-	static s16 s_audioOut[512];
+	static s16 s_audioOut[AUDIO_BUFFER_SIZE];
 	static s32 s_audioOutSize;
 	static u8* s_audioData;
 			
@@ -197,6 +198,7 @@ namespace TFE_Jedi
 		// Prepare buffers.
 		s_audioDriverOut = buffer;
 		s_audioOutSize = bufferSize;
+		assert(bufferSize * 2 <= AUDIO_BUFFER_SIZE);
 		memset(s_audioOut, 0, 2 * bufferSize * sizeof(s16));
 
 		// Write sounds to s_audioOut.

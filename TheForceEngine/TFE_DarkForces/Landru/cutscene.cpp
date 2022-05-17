@@ -4,9 +4,12 @@
 #include "lcanvas.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
+#include <TFE_Audio/audioSystem.h>
+#include <TFE_Audio/midiPlayer.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_System/parser.h>
 
 using namespace TFE_Jedi;
@@ -29,6 +32,9 @@ namespace TFE_DarkForces
 	JBool cutscene_play(s32 sceneId)
 	{
 		if (!s_enabled || !s_playSeq) { return JFALSE; }
+		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
+		TFE_Audio::setVolume(soundSettings->cutsceneSoundFxVolume);
+		TFE_MidiPlayer::setVolume(soundSettings->cutsceneMusicVolume);
 
 		// Search for the requested scene.
 		s32 found = 0;

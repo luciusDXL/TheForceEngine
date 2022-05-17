@@ -1584,11 +1584,14 @@ namespace TFE_FrontEndUI
 	void configSound()
 	{
 		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
-		labelSliderPercent(&sound->soundFxVolume, "Sound FX Volume");
-		labelSliderPercent(&sound->musicVolume,   "Music Volume");
-		// TODO: Add separate volume controls for cutscenes.
-		// TODO: Add master volume control.
+		ImGui::LabelText("##ConfigLabel", "Sound Volume");
+		labelSliderPercent(&sound->soundFxVolume, "Game SoundFX");
+		labelSliderPercent(&sound->musicVolume,   "Game Music");
+		labelSliderPercent(&sound->cutsceneSoundFxVolume, "Cutscene SoundFX");
+		labelSliderPercent(&sound->cutsceneMusicVolume, "Cutscene Music");
 
+		ImGui::Separator();
+		ImGui::LabelText("##ConfigLabel", "Sound Settings");
 		bool use16Channels = sound->use16Channels;
 		if (ImGui::Checkbox("Enable 16-channel iMuse Digital Audio", &use16Channels))
 		{

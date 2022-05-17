@@ -307,6 +307,8 @@ namespace TFE_Settings
 		writeHeader(settings, c_sectionNames[SECTION_SOUND]);
 		writeKeyValue_Float(settings, "soundFxVolume", s_soundSettings.soundFxVolume);
 		writeKeyValue_Float(settings, "musicVolume", s_soundSettings.musicVolume);
+		writeKeyValue_Float(settings, "cutsceneSoundFxVolume", s_soundSettings.cutsceneSoundFxVolume);
+		writeKeyValue_Float(settings, "cutsceneMusicVolume", s_soundSettings.cutsceneMusicVolume);
 		writeKeyValue_Bool(settings, "use16Channels", s_soundSettings.use16Channels);
 	}
 
@@ -595,6 +597,14 @@ namespace TFE_Settings
 		else if (strcasecmp("musicVolume", key) == 0)
 		{
 			s_soundSettings.musicVolume = parseFloat(value);
+		}
+		else if (strcasecmp("cutsceneSoundFxVolume", key) == 0)
+		{
+			s_soundSettings.cutsceneSoundFxVolume = parseFloat(value);
+		}
+		else if (strcasecmp("cutsceneMusicVolume", key) == 0)
+		{
+			s_soundSettings.cutsceneMusicVolume = parseFloat(value);
 		}
 		else if (strcasecmp("use16Channels", key) == 0)
 		{

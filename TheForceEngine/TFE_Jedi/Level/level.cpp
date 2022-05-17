@@ -34,6 +34,13 @@ namespace TFE_Jedi
 	};
 	JBool s_complete[2][NUM_COMPLETE];
 	s32 s_completeNum[2][NUM_COMPLETE];
+		
+	struct AmbientSound
+	{
+		SoundSourceId soundId;
+		SoundEffectId instanceId;
+		vec3_fixed pos;
+	};
 
 	static s32 s_dataIndex;
 	static s32 s_textureCount;
@@ -52,6 +59,9 @@ namespace TFE_Jedi
 	static JediWax** s_sprites;
 	static JediFrame** s_frames;
 	static SoundSourceId* s_soundIds;
+
+	static Allocator* s_ambientSounds = nullptr;
+	static Task* s_ambientSoundTask = nullptr;
 
 	static Task* s_soundEmitterTask;
 
@@ -90,6 +100,9 @@ namespace TFE_Jedi
 		s_frames   = nullptr;
 		s_soundIds = nullptr;
 		s_textures = nullptr;
+
+		s_ambientSounds = nullptr;
+		s_ambientSoundTask = nullptr;
 
 		s_secretCount  = 0;
 		s_sectorCount  = 0;
@@ -671,6 +684,37 @@ namespace TFE_Jedi
 
 		return JTRUE;
 	}
+		
+	void ambientSoundTaskFunc(MessageType msg)
+	{
+		task_begin;
+		while (msg != MSG_FREE_TASK)
+		{
+			task_localBlockBegin;
+			AmbientSound* ambientSound = (AmbientSound*)allocator_getHead(s_ambientSounds);
+			while (ambientSound)
+			{
+				ambientSound->instanceId = sound_maintain(ambientSound->instanceId, ambientSound->soundId, ambientSound->pos);
+				ambientSound = (AmbientSound*)allocator_getNext(s_ambientSounds);
+			}
+			task_localBlockEnd;
+			task_yield(72);	// half a second.
+		}
+		task_end;
+	}
+
+	void level_addAmbientSound(SoundSourceId soundId, vec3_fixed pos)
+	{
+		if (!s_ambientSounds)
+		{
+			s_ambientSounds = allocator_create(sizeof(AmbientSound));
+			s_ambientSoundTask = createSubTask("AmbientSound", ambientSoundTaskFunc);
+		}
+		AmbientSound* ambientSound = (AmbientSound*)allocator_newItem(s_ambientSounds);
+		ambientSound->soundId = soundId;
+		ambientSound->instanceId = 0;
+		ambientSound->pos = pos;
+	}
 					
 	JBool level_loadObjects(const char* levelName, u8 difficulty)
 	{
@@ -870,8 +914,7 @@ namespace TFE_Jedi
 						} break;
 						case KW_SOUND:
 						{
-							// TODO(Core Game Loop Release)
-							// addSoundObject(s_soundIds[s_dataIndex], obj->posWS.x, obj->posWS.y, obj->posWS.z);
+							level_addAmbientSound(s_soundIds[data], obj->posWS);
 							freeObject(obj);
 							obj = nullptr;
 						} break;

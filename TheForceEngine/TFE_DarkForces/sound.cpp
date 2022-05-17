@@ -7,6 +7,7 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/vocAsset.h>
 #include <TFE_Audio/audioSystem.h>
+#include <TFE_Audio/midiPlayer.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_Jedi/Memory/allocator.h>
@@ -72,6 +73,10 @@ namespace TFE_DarkForces
 	// Called at level startup and shutdown.
 	void sound_levelStart()
 	{
+		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
+		TFE_Audio::setVolume(soundSettings->soundFxVolume);
+		TFE_MidiPlayer::setVolume(soundSettings->musicVolume);
+
 		ImSetResourceCallback(sound_getResource);
 		s_instance = 1;
 	}
@@ -256,7 +261,7 @@ namespace TFE_DarkForces
 
 				if (!idInstance)
 				{
-					idInstance = sound_play(idSound);
+					idInstance = sound_playCued(idSound, pos);
 				}
 				sound_setVolume(idInstance, vol);
 				sound_setPan(idInstance, pan);
@@ -291,6 +296,7 @@ namespace TFE_DarkForces
 			{
 				// The sound will be attenuated based on distance.
 				fixed16_16 ratio = div16(CUE_RING2 - dist, CUE_RING2 - CUE_RING1);
+				assert(ratio >= 0 && ratio <= ONE_16);
 				volume = floor16(mul16(ratio, intToFixed16(sound->volume)));
 				volume = min(127, volume);
 			}
@@ -302,7 +308,7 @@ namespace TFE_DarkForces
 		angle = getAngleDifference(s_yaw, angle);
 		*pan = s_tPan[((angle + 8192) / 512) & 31];
 	}
-		
+
 	SoundEffectId soundInstance(SoundSourceId soundId, s32 instance)
 	{
 		SoundEffectId id = soundId - (SoundEffectId)s_levelSoundList;

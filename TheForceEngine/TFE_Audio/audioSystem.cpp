@@ -50,12 +50,10 @@ struct SoundSource
 namespace TFE_Audio
 {
 	static const f32 c_channelLimit  = 1.0f;
-	static const f32 c_soundHeadroom = 0.35f;	// approximately 1 / sqrt(8); assuming 8 uncorrelated sounds playing at full volume.
+	static const f32 c_soundHeadroom = 0.7f;
 
 	// Client volume controls, ranging from [0, 1]
 	static f32 s_soundFxVolume = 1.0f;
-	// Internal sound scale based on the client volume and headroom.
-	static f32 s_soundFxScale = s_soundFxVolume * c_soundHeadroom;	// actual volume scale based on client set volume and headroom.
 
 	static u32 s_sourceCount;
 	// TODO: This will need to be buffered to avoid locks.
@@ -129,7 +127,6 @@ namespace TFE_Audio
 	void setVolume(f32 volume)
 	{
 		s_soundFxVolume = volume;
-		s_soundFxScale = s_soundFxVolume * c_soundHeadroom;
 	}
 
 	f32 getVolume()
@@ -374,7 +371,7 @@ namespace TFE_Audio
 		// Then call the audio thread callback
 		if (s_audioThreadCallback && !s_paused)
 		{
-			s_audioThreadCallback(buffer, bufferSize, s_soundFxVolume);
+			s_audioThreadCallback(buffer, bufferSize, s_soundFxVolume * c_soundHeadroom);
 		}
 
 		// Then loop through the sources.
@@ -487,8 +484,7 @@ namespace TFE_Audio
 		if (args.size() < 2) { return; }
 
 		s_soundFxVolume = TFE_Console::getFloatArg(args[1]);
-		s_soundFxScale = s_soundFxVolume * c_soundHeadroom;
-
+		
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		soundSettings->soundFxVolume = s_soundFxVolume;
 		TFE_Settings::writeToDisk();
