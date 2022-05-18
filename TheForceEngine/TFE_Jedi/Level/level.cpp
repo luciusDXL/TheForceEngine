@@ -865,7 +865,7 @@ namespace TFE_Jedi
 						readNextLine = JTRUE;
 					}
 
-					s32 data = 0, objDiff = 0;
+					s32 objDiff = 0;
 					f32 x, y, z, pch, yaw, rol;
 					char objClass[32];
 
@@ -928,7 +928,7 @@ namespace TFE_Jedi
 							} break;
 							case KW_SOUND:
 							{
-								level_addAmbientSound(s_soundIds[data], obj->posWS);
+								level_addAmbientSound(s_soundIds[s_dataIndex], obj->posWS);
 								freeObject(obj);
 								obj = nullptr;
 							} break;
