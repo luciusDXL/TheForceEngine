@@ -760,215 +760,221 @@ namespace TFE_Jedi
 			return false;
 		}
 
-		line = parser.readLine(bufferPos);
-		line = parser.readLine(bufferPos);
-		if (sscanf(line, "PODS %d", &s_podCount) == 1)
+		while (line = parser.readLine(bufferPos))
 		{
-			s_pods = (JediModel**)res_alloc(sizeof(JediModel*)*s_podCount);
-			for (s32 p = 0; p < s_podCount; p++)
+			if (sscanf(line, "PODS %d", &s_podCount) == 1)
 			{
-				line = parser.readLine(bufferPos);
-
-				char podName[32];
-				if (sscanf(line, " POD: %s", podName) == 1)
-				{
-					s_pods[p] = TFE_Model_Jedi::get(podName);
-					if (!s_pods[p])
-					{
-						s_pods[p] = TFE_Model_Jedi::get("default.3do");
-					}
-				}
-			}
-		}
-
-		line = parser.readLine(bufferPos);
-		if (sscanf(line, "SPRS %d", &s_spriteCount) == 1)
-		{
-			s_sprites = (JediWax**)res_alloc(sizeof(JediWax*)*s_spriteCount);
-			for (s32 s = 0; s < s_spriteCount; s++)
-			{
-				line = parser.readLine(bufferPos);
-
-				char name[32];
-				if (sscanf(line, " SPR: %s", name) == 1)
-				{
-					s_sprites[s] = TFE_Sprite_Jedi::getWax(name);
-				}
-				if (!s_sprites[s])
-				{
-					s_sprites[s] = TFE_Sprite_Jedi::getWax("default.wax");
-				}
-			}
-		}
-
-		line = parser.readLine(bufferPos);
-		if (sscanf(line, "FMES %d", &s_fmeCount) == 1)
-		{
-			s_frames = (JediFrame**)res_alloc(sizeof(JediFrame*)*s_fmeCount);
-			for (s32 f = 0; f < s_fmeCount; f++)
-			{
-				line = parser.readLine(bufferPos);
-
-				char name[32];
-				if (sscanf(line, " FME: %s", name) == 1)
-				{
-					s_frames[f] = TFE_Sprite_Jedi::getFrame(name);
-				}
-				if (!s_frames[f])
-				{
-					s_frames[f] = TFE_Sprite_Jedi::getFrame("default.fme");
-				}
-			}
-		}
-
-		line = parser.readLine(bufferPos);
-		if (sscanf(line, "SOUNDS %d", &s_soundCount) == 1)
-		{
-			s_soundIds = (SoundSourceId*)res_alloc(sizeof(SoundSourceId)*s_soundCount);
-			for (s32 s = 0; s < s_soundCount; s++)
-			{
-				line = parser.readLine(bufferPos);
-
-				char name[32];
-				if (sscanf(line, " SOUND: %s ", name) == 1)
-				{
-					s_soundIds[s] = sound_load(name, SOUND_PRIORITY_LOW2);
-				}
-			}
-		}
-
-		line = parser.readLine(bufferPos);
-		if (sscanf(line, "OBJECTS %d", &s_objectCount) == 1)
-		{
-			JBool valid = JTRUE;
-			s32 count = s_objectCount;
-
-			line = parser.readLine(bufferPos);
-			for (s32 objIndex = 0; objIndex < count && valid;)
-			{
-				if (!line)
-				{
-					break;
-				}
-
-				s32 data = 0, objDiff = 0;
-				f32 x, y, z, pch, yaw, rol;
-				char objClass[32];
-
-				if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &objDiff) > 5)
-				{
-					objIndex++;
-					// objDiff >= 0: This difficulty and all greater.
-					// objDiff <  0: Less than this difficulty.
-					if ((objDiff >= 0 && curDiff < objDiff) || (objDiff < 0 && curDiff > TFE_Jedi::abs(objDiff)))
-					{
-						line = parser.readLine(bufferPos);
-						continue;
-					}
-
-					vec3_fixed posWS;
-					posWS.x = floatToFixed16(x);
-					posWS.y = floatToFixed16(y);
-					posWS.z = floatToFixed16(z);
-
-					// The DOS code allocated the object, tried to find the sector it is in and than frees the object
-					// if it doesn't fit.
-					// Instead TFE just reads the values and only allocates the object if it has a valid sector.
-					RSector* sector = sector_which3D(posWS.x, posWS.y, posWS.z);
-					if (!sector)
-					{
-						line = parser.readLine(bufferPos);
-						continue;
-					}
-
-					SecObject* obj = allocateObject();
-					obj->posWS = posWS;
-					obj->pitch = floatDegreesToFixed(pch);
-					obj->yaw   = floatDegreesToFixed(yaw);
-					obj->roll  = floatDegreesToFixed(rol);
-
-					KEYWORD classType = getKeywordIndex(objClass);
-					switch (classType)
-					{
-						case KW_3D:
-						{
-							sector_addObject(sector, obj);
-							obj3d_setData(obj, s_pods[s_dataIndex]);
-							obj->pitch = -obj->pitch;
-							obj3d_computeTransform(obj);
-						} break;
-						case KW_SPRITE:
-						{
-							sector_addObject(sector, obj);
-							sprite_setData(obj, s_sprites[s_dataIndex]);
-						} break;
-						case KW_FRAME:
-						{
-							sector_addObject(sector, obj);
-							frame_setData(obj, s_frames[s_dataIndex]);
-						} break;
-						case KW_SPIRIT:
-						{
-							sector_addObject(sector, obj);
-							spirit_setData(obj);
-						} break;
-						case KW_SOUND:
-						{
-							level_addAmbientSound(s_soundIds[data], obj->posWS);
-							freeObject(obj);
-							obj = nullptr;
-						} break;
-						case KW_SAFE:
-						{
-							if (!s_safeLoc)
-							{
-								s_safeLoc = allocator_create(sizeof(Safe));
-							}
-							Safe* safe = (Safe*)allocator_newItem(s_safeLoc);
-							safe->sector = sector;
-							safe->x = obj->posWS.x;
-							safe->z = obj->posWS.z;
-							safe->yaw = obj->yaw;
-							sector->flags1 |= SEC_FLAGS1_SAFESECTOR;
-
-							freeObject(obj);
-							obj = nullptr;
-						} break;
-						default:
-						{
-							freeObject(obj);
-							obj = nullptr;
-							TFE_System::logWrite(LOG_ERROR, "Level Load", "Invalid Object Class: %d - Skipping Object.", classType);
-							continue;
-						}
-					}
-
-					JBool seqRead = JFALSE;
-					if (obj)
-					{
-						seqRead = object_parseSeq(obj, &parser, &bufferPos);
-						if (obj->entityFlags & ETFLAG_PLAYER)
-						{
-							if (!s_safeLoc)
-							{
-								s_safeLoc = allocator_create(sizeof(Safe));
-							}
-							Safe* safe = (Safe*)allocator_newItem(s_safeLoc);
-							safe->sector = obj->sector;
-							safe->x = obj->posWS.x;
-							safe->z = obj->posWS.z;
-							safe->yaw = obj->yaw;
-							sector->flags1 |= SEC_FLAGS1_SAFESECTOR;
-						}
-					}
-					if (!obj || seqRead)
-					{
-						line = parser.readLine(bufferPos);
-					}
-				}
-				else
+				s_pods = (JediModel**)res_alloc(sizeof(JediModel*)*s_podCount);
+				for (s32 p = 0; p < s_podCount; p++)
 				{
 					line = parser.readLine(bufferPos);
+					s_pods[p] = nullptr;
+
+					char podName[32];
+					if (sscanf(line, " POD: %s", podName) == 1)
+					{
+						s_pods[p] = TFE_Model_Jedi::get(podName);
+						if (!s_pods[p])
+						{
+							s_pods[p] = TFE_Model_Jedi::get("default.3do");
+						}
+					}
+					else
+					{
+						TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in pod list '%s' - skipping.", line);
+					}
+				}
+			}
+			else if (sscanf(line, "SPRS %d", &s_spriteCount) == 1)
+			{
+				s_sprites = (JediWax**)res_alloc(sizeof(JediWax*)*s_spriteCount);
+				for (s32 s = 0; s < s_spriteCount; s++)
+				{
+					line = parser.readLine(bufferPos);
+					s_sprites[s] = nullptr;
+
+					char name[32];
+					if (sscanf(line, " SPR: %s ", name) == 1)
+					{
+						s_sprites[s] = TFE_Sprite_Jedi::getWax(name);
+						if (!s_sprites[s])
+						{
+							s_sprites[s] = TFE_Sprite_Jedi::getWax("default.wax");
+						}
+					}
+					else
+					{
+						TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in sprite list '%s' - skipping.", line);
+					}
+				}
+			}
+			else if (sscanf(line, "FMES %d", &s_fmeCount) == 1)
+			{
+				s_frames = (JediFrame**)res_alloc(sizeof(JediFrame*)*s_fmeCount);
+				for (s32 f = 0; f < s_fmeCount; f++)
+				{
+					line = parser.readLine(bufferPos);
+					s_frames[f] = nullptr;
+
+					char name[32];
+					if (sscanf(line, " FME: %s ", name) == 1)
+					{
+						s_frames[f] = TFE_Sprite_Jedi::getFrame(name);
+						if (!s_frames[f])
+						{
+							s_frames[f] = TFE_Sprite_Jedi::getFrame("default.fme");
+						}
+					}
+					else
+					{
+						TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in fme list '%s' - skipping.", line);
+					}
+				}
+			}
+			else if (sscanf(line, "SOUNDS %d", &s_soundCount) == 1)
+			{
+				s_soundIds = (SoundSourceId*)res_alloc(sizeof(SoundSourceId)*s_soundCount);
+				for (s32 s = 0; s < s_soundCount; s++)
+				{
+					line = parser.readLine(bufferPos);
+
+					char name[32];
+					if (sscanf(line, " SOUND: %s ", name) == 1)
+					{
+						s_soundIds[s] = sound_load(name, SOUND_PRIORITY_LOW2);
+					}
+					else
+					{
+						TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in sound list '%s' - skipping.", line);
+					}
+				}
+			}
+			else if (sscanf(line, "OBJECTS %d", &s_objectCount) == 1)
+			{
+				s32 count = s_objectCount;
+				JBool readNextLine = JTRUE;
+				for (s32 objIndex = 0; objIndex < count;)
+				{
+					if (readNextLine)
+					{
+						line = parser.readLine(bufferPos);
+						if (!line) { break; }
+					}
+					else
+					{
+						readNextLine = JTRUE;
+					}
+
+					s32 data = 0, objDiff = 0;
+					f32 x, y, z, pch, yaw, rol;
+					char objClass[32];
+
+					if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &objDiff) > 5)
+					{
+						objIndex++;
+						// objDiff >= 0: This difficulty and all greater.
+						// objDiff <  0: Less than this difficulty.
+						if ((objDiff >= 0 && curDiff < objDiff) || (objDiff < 0 && curDiff > TFE_Jedi::abs(objDiff)))
+						{
+							line = parser.readLine(bufferPos);
+							continue;
+						}
+
+						vec3_fixed posWS;
+						posWS.x = floatToFixed16(x);
+						posWS.y = floatToFixed16(y);
+						posWS.z = floatToFixed16(z);
+
+						// The DOS code allocated the object, tried to find the sector it is in and than frees the object
+						// if it doesn't fit.
+						// Instead TFE just reads the values and only allocates the object if it has a valid sector.
+						RSector* sector = sector_which3D(posWS.x, posWS.y, posWS.z);
+						if (!sector)
+						{
+							line = parser.readLine(bufferPos);
+							continue;
+						}
+
+						SecObject* obj = allocateObject();
+						obj->posWS = posWS;
+						obj->pitch = floatDegreesToFixed(pch);
+						obj->yaw = floatDegreesToFixed(yaw);
+						obj->roll = floatDegreesToFixed(rol);
+
+						KEYWORD classType = getKeywordIndex(objClass);
+						switch (classType)
+						{
+							case KW_3D:
+							{
+								sector_addObject(sector, obj);
+								obj3d_setData(obj, s_pods[s_dataIndex]);
+								obj->pitch = -obj->pitch;
+								obj3d_computeTransform(obj);
+							} break;
+							case KW_SPRITE:
+							{
+								sector_addObject(sector, obj);
+								sprite_setData(obj, s_sprites[s_dataIndex]);
+							} break;
+							case KW_FRAME:
+							{
+								sector_addObject(sector, obj);
+								frame_setData(obj, s_frames[s_dataIndex]);
+							} break;
+							case KW_SPIRIT:
+							{
+								sector_addObject(sector, obj);
+								spirit_setData(obj);
+							} break;
+							case KW_SOUND:
+							{
+								level_addAmbientSound(s_soundIds[data], obj->posWS);
+								freeObject(obj);
+								obj = nullptr;
+							} break;
+							case KW_SAFE:
+							{
+								if (!s_safeLoc)
+								{
+									s_safeLoc = allocator_create(sizeof(Safe));
+								}
+								Safe* safe = (Safe*)allocator_newItem(s_safeLoc);
+								safe->sector = sector;
+								safe->x = obj->posWS.x;
+								safe->z = obj->posWS.z;
+								safe->yaw = obj->yaw;
+								sector->flags1 |= SEC_FLAGS1_SAFESECTOR;
+
+								freeObject(obj);
+								obj = nullptr;
+							} break;
+							default:
+							{
+								freeObject(obj);
+								obj = nullptr;
+								TFE_System::logWrite(LOG_ERROR, "Level Load", "Invalid Object Class: %d - Skipping Object.", classType);
+								continue;
+							}
+						}
+
+						if (obj)
+						{
+							readNextLine = object_parseSeq(obj, &parser, &bufferPos);
+							if (obj->entityFlags & ETFLAG_PLAYER)
+							{
+								if (!s_safeLoc)
+								{
+									s_safeLoc = allocator_create(sizeof(Safe));
+								}
+								Safe* safe = (Safe*)allocator_newItem(s_safeLoc);
+								safe->sector = obj->sector;
+								safe->x = obj->posWS.x;
+								safe->z = obj->posWS.z;
+								safe->yaw = obj->yaw;
+								sector->flags1 |= SEC_FLAGS1_SAFESECTOR;
+							}
+						}
+					}
 				}
 			}
 		}
