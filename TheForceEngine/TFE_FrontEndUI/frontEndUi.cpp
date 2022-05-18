@@ -884,6 +884,10 @@ namespace TFE_FrontEndUI
 		{
 			strcpy_s(inputName, 64, TFE_Input::getMouseButtonName(binding->mouseBtn));
 		}
+		else if (binding->type == ITYPE_MOUSEWHEEL)
+		{
+			strcpy_s(inputName, 64, TFE_Input::getMouseWheelName(binding->mouseWheel));
+		}
 		else if (binding->type == ITYPE_CONTROLLER)
 		{
 			strcpy_s(inputName, 64, TFE_Input::getControllButtonName(binding->ctrlBtn));
@@ -1235,6 +1239,9 @@ namespace TFE_FrontEndUI
 					MouseButton mouseBtn = TFE_Input::getMouseButtonPressed();
 					Axis ctrlAnalog = TFE_Input::getControllerAnalogDown();
 
+					s32 wdx, wdy;
+					TFE_Input::getMouseWheel(&wdx, &wdy);
+
 					u32 indices[2];
 					s32 count = (s32)inputMapping_getBindingsForAction(InputAction(s_keyIndex), indices, 2);
 
@@ -1286,6 +1293,30 @@ namespace TFE_FrontEndUI
 						binding->action = InputAction(s_keyIndex);
 						binding->axis = ctrlAnalog;
 						binding->type = ITYPE_CONTROLLER_AXIS;
+					}
+					else if (wdx || wdy)
+					{
+						setBinding = true;
+
+						memset(binding, 0, sizeof(InputBinding));
+						binding->action = InputAction(s_keyIndex);
+						binding->type = ITYPE_MOUSEWHEEL;
+						if (wdx < 0)
+						{
+							binding->mouseWheel = MOUSEWHEEL_LEFT;
+						}
+						else if (wdx > 0)
+						{
+							binding->mouseWheel = MOUSEWHEEL_RIGHT;
+						}
+						else if (wdy > 0)
+						{
+							binding->mouseWheel = MOUSEWHEEL_UP;
+						}
+						else if (wdy < 0)
+						{
+							binding->mouseWheel = MOUSEWHEEL_DOWN;
+						}
 					}
 
 					if (setBinding)

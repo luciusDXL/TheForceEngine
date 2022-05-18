@@ -43,6 +43,15 @@ enum MouseAxis
 	MOUSE_AXIS_COUNT
 };
 
+enum MouseWheel
+{
+	MOUSEWHEEL_LEFT = 0,
+	MOUSEWHEEL_RIGHT,
+	MOUSEWHEEL_UP,
+	MOUSEWHEEL_DOWN,
+	MOUSEWHEEL_COUNT
+};
+
 enum MouseButton
 {
 	MBUTTON_LEFT = 0,

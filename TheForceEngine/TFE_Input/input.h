@@ -72,6 +72,7 @@ namespace TFE_Input
 	const char* getControllButtonName(Button button);
 	const char* getMouseAxisName(MouseAxis axis);
 	const char* getMouseButtonName(MouseButton button);
+	const char* getMouseWheelName(MouseWheel axis);
 	const char* getKeyboardName(KeyboardCode key);
 	const char* getKeyboardModifierName(KeyModifier mod);
 };

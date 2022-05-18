@@ -34,6 +34,12 @@
 "Mouse_X1"	// MBUTTON_X1
 "Mouse_X2"	// MBUTTON_X2
 
+[MouseWheel]
+"MouseWheel_Left",	// MOUSEWHEEL_LEFT
+"MouseWheel_Right",	// MOUSEWHEEL_RIGHT
+"MouseWheel_Up",	// MOUSEWHEEL_UP
+"MouseWheel_Down",	// MOUSEWHEEL_DOWN
+
 [Keyboard]
 "unknown 0" // KEY_UNKNOWN
 "unknown 1" // KEY_UNKNOWN + 1

@@ -28,8 +28,8 @@ namespace TFE_Input
 		{ IADF_HUD_TOGGLE,      ITYPE_KEYBOARD, KEY_F7 },
 		{ IADF_HOLSTER_WEAPON,  ITYPE_KEYBOARD, KEY_F8 },
 		{ IADF_AUTOMOUNT_TOGGLE,ITYPE_KEYBOARD, KEY_F8, KEYMOD_ALT },
-		{ IADF_CYCLEWPN_PREV,   ITYPE_KEYBOARD, KEY_F9 },
-		{ IADF_CYCLEWPN_NEXT,   ITYPE_KEYBOARD, KEY_F10 },
+		{ IADF_CYCLEWPN_PREV,   ITYPE_MOUSEWHEEL, MOUSEWHEEL_DOWN },
+		{ IADF_CYCLEWPN_NEXT,   ITYPE_MOUSEWHEEL, MOUSEWHEEL_UP },
 		{ IADF_WPN_PREV,        ITYPE_KEYBOARD, KEY_BACKSPACE },
 		{ IADF_PAUSE,           ITYPE_KEYBOARD, KEY_PAUSE },
 		{ IADF_AUTOMAP,         ITYPE_KEYBOARD, KEY_TAB },
@@ -290,6 +290,18 @@ namespace TFE_Input
 						{
 							s_actions[bind->action] = STATE_DOWN;
 						}
+					}
+				} break;
+				case ITYPE_MOUSEWHEEL:
+				{
+					s32 dx, dy;
+					TFE_Input::getMouseWheel(&dx, &dy);
+					if ((bind->mouseWheel == MOUSEWHEEL_LEFT  && dx < 0) || 
+						(bind->mouseWheel == MOUSEWHEEL_RIGHT && dx > 0) ||
+						(bind->mouseWheel == MOUSEWHEEL_UP    && dy > 0) ||
+						(bind->mouseWheel == MOUSEWHEEL_DOWN  && dy < 0))
+					{
+						s_actions[bind->action] = STATE_PRESSED;
 					}
 				} break;
 				case ITYPE_CONTROLLER:

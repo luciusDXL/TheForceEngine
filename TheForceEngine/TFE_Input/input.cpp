@@ -37,6 +37,7 @@ namespace TFE_Input
 	static const char* const* s_controllerButtonNames;
 	static const char* const* s_mouseAxisNames;
 	static const char* const* s_mouseButtonNames;
+	static const char* const* s_mouseWheelNames;
 	static const char* const* s_keyboardNames;
 
 	const char* c_keyModNames[] =
@@ -373,6 +374,7 @@ namespace TFE_Input
 			ControllerButtons,
 			MouseAxis,
 			MouseButtons,
+			MouseWheelAxis,
 			Keyboard,
 		};
 
@@ -411,6 +413,12 @@ namespace TFE_Input
 				section = MouseButtons;
 				s_mouseButtonNames = new const char*[MBUTTON_COUNT];
 				curList = (char**)s_mouseButtonNames;
+			}
+			else if (strcasecmp(item, "[MouseWheel]") == 0)
+			{
+				section = MouseWheelAxis;
+				s_mouseWheelNames = new const char*[MOUSEWHEEL_COUNT];
+				curList = (char**)s_mouseWheelNames;
 			}
 			else if (strcasecmp(item, "[Keyboard]") == 0)
 			{
@@ -454,6 +462,11 @@ namespace TFE_Input
 	const char* getMouseButtonName(MouseButton button)
 	{
 		return s_mouseButtonNames ? s_mouseButtonNames[button] : "";
+	}
+
+	const char* getMouseWheelName(MouseWheel axis)
+	{
+		return s_mouseWheelNames ? s_mouseWheelNames[axis] : "";
 	}
 
 	const char* getKeyboardName(KeyboardCode key)

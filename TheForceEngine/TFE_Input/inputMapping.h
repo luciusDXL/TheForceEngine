@@ -92,6 +92,7 @@ namespace TFE_Input
 		ITYPE_MOUSE,
 		ITYPE_CONTROLLER,
 		ITYPE_CONTROLLER_AXIS,
+		ITYPE_MOUSEWHEEL,
 		ITYPE_COUNT
 	};
 
@@ -112,6 +113,7 @@ namespace TFE_Input
 			u32          code;
 			KeyboardCode keyCode;
 			MouseButton  mouseBtn;
+			MouseWheel   mouseWheel;
 			Button       ctrlBtn;
 			Axis         axis;
 		};
