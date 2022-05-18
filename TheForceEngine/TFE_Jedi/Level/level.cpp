@@ -210,16 +210,17 @@ namespace TFE_Jedi
 		
 		// Another value that is ignored.
 		line = parser.readLine(bufferPos);
-		JBool readNextLine = JTRUE;
 		if (sscanf(line, "MUSIC %s", s_readBuffer) != 1)
 		{
 			TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Cannot read music name.");
-			readNextLine = JFALSE;
+		}
+		else
+		{
+			line = parser.readLine(bufferPos);
 		}
 
 		// Sky Parallax.
 		f32 parallax0, parallax1;
-		if (readNextLine) { line = parser.readLine(bufferPos); }
 		if (sscanf(line, "PARALLAX %f %f", &parallax0, &parallax1) != 2)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read parallax values.");
@@ -236,6 +237,7 @@ namespace TFE_Jedi
 			return false;
 		}
 		s_textures = (TextureData**)res_alloc(s_textureCount * sizeof(TextureData**));
+		memset(s_textures, 0, s_textureCount * sizeof(TextureData**));
 
 		// Load Textures.
 		TextureData** texture = s_textures;
@@ -247,18 +249,16 @@ namespace TFE_Jedi
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
 				textureName[0] = 0;
+				break;
 			}
 
 			// If <NoTexture> is found, do not try to load - this will cause the default texture to be used.
 			TextureData* tex = nullptr;
-			if (strcasecmp(textureName, "<NoTexture>"))
+			if (TFE_Paths::getFilePath(textureName, &filePath))
 			{
-				if (TFE_Paths::getFilePath(textureName, &filePath))
-				{
-					tex = bitmap_load(&filePath, 1);
-				}
+				tex = bitmap_load(&filePath, 1);
 			}
-
+	
 			if (!tex)
 			{
 				TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Could not open '%s', using 'default.bm' instead.", textureName);
@@ -298,7 +298,7 @@ namespace TFE_Jedi
 
 			// Sector ID and Name
 			line = parser.readLine(bufferPos);
-			if (sscanf(line, "SECTOR %d", &sector->id) != 1)
+			if (sscanf(line, " SECTOR %d", &sector->id) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector id.");
 				return false;
@@ -450,7 +450,7 @@ namespace TFE_Jedi
 				line = parser.readLine(bufferPos);
 
 				f32 x, z;
-				sscanf(line, " X: %f Z: %f", &x, &z);
+				sscanf(line, " X: %f Z: %f ", &x, &z);
 				sector->verticesWS[v].x = floatToFixed16(x);
 				sector->verticesWS[v].z = floatToFixed16(z);
 			}
@@ -684,7 +684,7 @@ namespace TFE_Jedi
 
 		return JTRUE;
 	}
-		
+
 	void ambientSoundTaskFunc(MessageType msg)
 	{
 		task_begin;
@@ -715,7 +715,7 @@ namespace TFE_Jedi
 		ambientSound->instanceId = 0;
 		ambientSound->pos = pos;
 	}
-					
+
 	JBool level_loadObjects(const char* levelName, u8 difficulty)
 	{
 		char levelPath[TFE_MAX_PATH];
@@ -727,13 +727,13 @@ namespace TFE_Jedi
 		FilePath filePath;
 		if (!TFE_Paths::getFilePath(levelPath, &filePath))
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot find level objects '%s'.", levelName);
+			TFE_System::logWrite(LOG_ERROR, "Level Load", "Cannot find level objects '%s'.", levelName);
 			return false;
 		}
 		FileStream file;
 		if (!file.open(&filePath, FileStream::MODE_READ))
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level objects '%s'.", levelName);
+			TFE_System::logWrite(LOG_ERROR, "Level Load", "Cannot open level objects '%s'.", levelName);
 			return false;
 		}
 
@@ -756,7 +756,7 @@ namespace TFE_Jedi
 		s32 versionMajor, versionMinor;
 		if (sscanf(line, "O %d.%d", &versionMajor, &versionMinor) != 2)
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot parse version for Object file '%s'.", levelName);
+			TFE_System::logWrite(LOG_ERROR, "Level Load", "Cannot parse version for Object file '%s'.", levelName);
 			return false;
 		}
 
@@ -770,18 +770,21 @@ namespace TFE_Jedi
 					line = parser.readLine(bufferPos);
 					s_pods[p] = nullptr;
 
-					char podName[32];
-					if (sscanf(line, " POD: %s", podName) == 1)
+					if (line)
 					{
-						s_pods[p] = TFE_Model_Jedi::get(podName);
-						if (!s_pods[p])
+						char podName[32];
+						if (sscanf(line, " POD: %s", podName) == 1)
 						{
-							s_pods[p] = TFE_Model_Jedi::get("default.3do");
+							s_pods[p] = TFE_Model_Jedi::get(podName);
+							if (!s_pods[p])
+							{
+								s_pods[p] = TFE_Model_Jedi::get("default.3do");
+							}
 						}
-					}
-					else
-					{
-						TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in pod list '%s' - skipping.", line);
+						else
+						{
+							TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in pod list '%s' - skipping.", line);
+						}
 					}
 				}
 			}
@@ -793,18 +796,21 @@ namespace TFE_Jedi
 					line = parser.readLine(bufferPos);
 					s_sprites[s] = nullptr;
 
-					char name[32];
-					if (sscanf(line, " SPR: %s ", name) == 1)
+					if (line)
 					{
-						s_sprites[s] = TFE_Sprite_Jedi::getWax(name);
-						if (!s_sprites[s])
+						char name[32];
+						if (sscanf(line, " SPR: %s ", name) == 1)
 						{
-							s_sprites[s] = TFE_Sprite_Jedi::getWax("default.wax");
+							s_sprites[s] = TFE_Sprite_Jedi::getWax(name);
+							if (!s_sprites[s])
+							{
+								s_sprites[s] = TFE_Sprite_Jedi::getWax("default.wax");
+							}
 						}
-					}
-					else
-					{
-						TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in sprite list '%s' - skipping.", line);
+						else
+						{
+							TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in sprite list '%s' - skipping.", line);
+						}
 					}
 				}
 			}
@@ -816,18 +822,21 @@ namespace TFE_Jedi
 					line = parser.readLine(bufferPos);
 					s_frames[f] = nullptr;
 
-					char name[32];
-					if (sscanf(line, " FME: %s ", name) == 1)
+					if (line)
 					{
-						s_frames[f] = TFE_Sprite_Jedi::getFrame(name);
-						if (!s_frames[f])
+						char name[32];
+						if (sscanf(line, " FME: %s ", name) == 1)
 						{
-							s_frames[f] = TFE_Sprite_Jedi::getFrame("default.fme");
+							s_frames[f] = TFE_Sprite_Jedi::getFrame(name);
+							if (!s_frames[f])
+							{
+								s_frames[f] = TFE_Sprite_Jedi::getFrame("default.fme");
+							}
 						}
-					}
-					else
-					{
-						TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in fme list '%s' - skipping.", line);
+						else
+						{
+							TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in fme list '%s' - skipping.", line);
+						}
 					}
 				}
 			}
@@ -837,15 +846,19 @@ namespace TFE_Jedi
 				for (s32 s = 0; s < s_soundCount; s++)
 				{
 					line = parser.readLine(bufferPos);
+					s_soundIds[s] = NULL_SOUND;
 
-					char name[32];
-					if (sscanf(line, " SOUND: %s ", name) == 1)
+					if (line)
 					{
-						s_soundIds[s] = sound_load(name, SOUND_PRIORITY_LOW2);
-					}
-					else
-					{
-						TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in sound list '%s' - skipping.", line);
+						char name[32];
+						if (sscanf(line, " SOUND: %s ", name) == 1)
+						{
+							s_soundIds[s] = sound_load(name, SOUND_PRIORITY_LOW2);
+						}
+						else
+						{
+							TFE_System::logWrite(LOG_WARNING, "Level Load", "Unknown line in sound list '%s' - skipping.", line);
+						}
 					}
 				}
 			}
