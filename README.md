@@ -19,18 +19,13 @@ I consider the reverse-engineering to be "Fair Use" - a means of supporting the 
 That said using code from sections so marked in a commercial project is risky without permission of the original copyright holders (LucasArts/Disney).
 
 ## Current State
-The project is in a pre-release state, version 0.8. While it shares a legacy with DarkXL, it is a complete rewrite - rebuilt from the ground up with a much greater focus on accuracy. It is much more focused than the XL Engine, focused on being a Jedi Engine replacement/port only - thus full support for Dark Forces and later Outlaws. Please check the [Roadmap](Roadmap.md) for more information on release timetable and planned feature-set.
+The project is in a pre-release state, version 0.9. While it shares a legacy with DarkXL, it is a complete rewrite - rebuilt from the ground up with a much greater focus on accuracy. It is much more focused than the XL Engine, focused on being a Jedi Engine replacement/port only - thus full support for Dark Forces and later Outlaws. Please check the [Roadmap](Roadmap.md) for more information on release timetable and planned feature-set.
 
 ### Current Release
-The current release is **version 0.8** and only supports Dark Forces. All weapons, AI, items, and other systems function, with the exception of IMuse. You can play through Dark Forces from beginning to end and play some Dark Forces mods. There are still bugs, the music isn't correct, some ambient level sounds are missing, and sound falloff is not accurate.
-
-If you are not a developer and/or wish to play the current official release, download it here: https://theforceengine.github.io/downloads.html
+The current release is **version 0.9** and only supports Dark Forces. All weapons, AI, items, and all other systems function, including IMuse. You can play through Dark Forces from beginning to end and play some Dark Forces mods. There are still bugs, that will be addressed for version 1.0.
 
 ### Next Release
-**Version 0.9** is expected to be released soon. This version will have full IMuse support, including music cues and dynamic changes in-game. It will also include missing ambient level sounds, and accurate sound falloff and playback.
-
-### Progress Towards Next Release
-IMuse music has recently been completed and work on the sound system is underway.
+**Version 1.0**, though I plan on doing smaller releases as bugs are fixed.
 
 ### Building
 The project builds on Windows, though there is no proper CMake build system yet. Build it using Visual Studio 2017, only x64 builds (Debug/Release).
