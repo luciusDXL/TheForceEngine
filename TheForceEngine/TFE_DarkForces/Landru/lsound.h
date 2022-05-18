@@ -68,7 +68,7 @@ namespace TFE_DarkForces
 	void lSoundFreePlaying(LSound* sound, JBool stop);
 	void freeSoundList(LSound* sound);
 
-	// Game Sound <-> iMuse interface.
+	// Landru Sound <-> iMuse interface.
 	void startSfx(LSound* sound);
 	void startSpeech(LSound* sound);
 	void stopSound(LSound* sound);
@@ -77,7 +77,7 @@ namespace TFE_DarkForces
 	void setSoundPan(LSound* sound, s32 pan);
 	void setSoundPanFade(LSound* sound, s32 pan, s32 time);
 
-	// Game Sound only.
+	// Landru Sound only.
 	void copySoundData(LSound* dstSound, LSound* srcSound);
 	LSound* findSoundType(const char* name, u32 type);
 	void  discardSoundData(LSound* sound);

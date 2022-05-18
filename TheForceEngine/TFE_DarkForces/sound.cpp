@@ -188,7 +188,6 @@ namespace TFE_DarkForces
 		{
 			priority = sound->priority;
 		}
-		// Here is where it breaks - I should pass in a function to convert IDs to data.
 		ImStartSfx(idInstance, priority);
 		sound_setVolume(idInstance, sound->volume);
 
@@ -252,7 +251,7 @@ namespace TFE_DarkForces
 
 			if (vol)
 			{
-				// Check to see if the soiund is still playing at specific intervals.
+				// Check to see if the sound is still playing at specific intervals.
 				if (idInstance && !(s_curTick & 0x0f))
 				{
 					if (ImGetParam(idInstance, soundPlayCount) == 0)
@@ -264,7 +263,7 @@ namespace TFE_DarkForces
 
 				if (!idInstance)
 				{
-					idInstance = sound_playCued(idSound, pos);
+					idInstance = sound_play(idSound);
 				}
 				sound_setVolume(idInstance, vol);
 				sound_setPan(idInstance, pan);
