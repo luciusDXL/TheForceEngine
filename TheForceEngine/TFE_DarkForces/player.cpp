@@ -107,7 +107,7 @@ namespace TFE_DarkForces
 		10, 11, 12, 13, 14, 15, 16
 	};
 
-	const fixed16_16 c_flashDelta  = 13107 * 145;	// 0.2 seconds in fixed point ticks (i.e. FIXED(0.2) * TICKS_PER_SEC)
+	const fixed16_16 c_flashDelta  = 39321 * 145;	// 0.6 seconds in fixed point ticks (i.e. FIXED(0.6) * TICKS_PER_SEC)
 	const fixed16_16 c_damageDelta =  6553 * 145;	// 0.1
 	const fixed16_16 c_shieldDelta = 13107 * 145;	// 0.2
 
