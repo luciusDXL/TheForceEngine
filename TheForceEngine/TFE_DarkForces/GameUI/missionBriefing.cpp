@@ -205,6 +205,10 @@ namespace TFE_DarkForces
 	JBool missionBriefing_handleInput(JBool* abort)
 	{
 		JBool exitBriefing = JFALSE;
+
+		// Add support for mouse wheel scrolling.
+		s32 wdx, wdy;
+		TFE_Input::getMouseWheel(&wdx, &wdy);
 		
 		// Mouse interactions.
 		menu_handleMousePosition();
@@ -256,6 +260,16 @@ namespace TFE_DarkForces
 		}
 		else
 		{
+			// Mouse wheel support.
+			if (wdy > 0) // up
+			{
+				missionBriefing_scroll(-BRIEF_LINE_SCROLL * wdy);
+			}
+			else if (wdy < 0) // down
+			{
+				missionBriefing_scroll(-BRIEF_LINE_SCROLL * wdy);
+			}
+
 			if (s_buttonPressed >= 0 && s_buttonHover)
 			{
 				switch (s_buttonPressed)

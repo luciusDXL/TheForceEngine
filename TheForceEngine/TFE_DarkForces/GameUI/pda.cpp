@@ -263,7 +263,11 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void pda_handleButtons()
 	{
-		if (TFE_Input::mousePressed(MBUTTON_LEFT) || s_simulatePressed >= 0)
+		// Add support for mouse wheel scrolling.
+		s32 wdx, wdy;
+		TFE_Input::getMouseWheel(&wdx, &wdy);
+
+		if (TFE_Input::mousePressed(MBUTTON_LEFT) || s_simulatePressed >= 0 || wdy)
 		{
 			s_buttonPressed = -1;
 			s32 count = (s_pdaMode == PDA_MODE_MAP || s_pdaMode == PDA_MODE_BRIEF) ? PDA_BTN_COUNT : PDA_BTN_EXIT + 1;
@@ -282,9 +286,19 @@ namespace TFE_DarkForces
 					break;
 				}
 			}
-
-			if (s_pdaMode == PDA_MODE_MAP && s_buttonPressed && ltime_isFrameReady())
+						
+			if (s_pdaMode == PDA_MODE_MAP && (s_buttonPressed || wdy) && ltime_isFrameReady())
 			{
+				// Add support for mouse wheel scrolling.
+				if (wdy < 0)
+				{
+					automap_updateMapData(MAP_ZOOM_IN);
+				}
+				else if (wdy > 0)
+				{
+					automap_updateMapData(MAP_ZOOM_OUT);
+				}
+
 				switch (s_buttonPressed)
 				{
 					case PDA_BTN_PANUP:
@@ -327,27 +341,45 @@ namespace TFE_DarkForces
 					} break;
 				}
 			}
-			else if (s_pdaMode == PDA_MODE_BRIEF && s_buttonPressed && ltime_isFrameReady())
+			else if (s_pdaMode == PDA_MODE_BRIEF && (s_buttonPressed || wdy) && ltime_isFrameReady())
 			{
-				switch (s_buttonPressed)
-				{
-				case PDA_BTN_PANUP:
+				// Add support for mouse wheel scrolling.
+				if (wdy > 0) // up
 				{
 					if (s_briefY > -BRIEF_VERT_MARGIN)
 					{
-						s_briefY -= BRIEF_LINE_SCROLL;
+						s_briefY -= BRIEF_LINE_SCROLL * wdy;
 						if (s_briefY < -BRIEF_VERT_MARGIN) s_briefY = -BRIEF_VERT_MARGIN;
 					}
-				} break;
-				case PDA_BTN_PANDOWN:
+				}
+				else if (wdy < 0) // down
 				{
 					if (s_briefY != s_briefingMaxY)
 					{
-						s_briefY += BRIEF_LINE_SCROLL;
-
+						s_briefY -= BRIEF_LINE_SCROLL * wdy;
 						if (s_briefY > s_briefingMaxY) s_briefY = s_briefingMaxY;
 					}
-				} break;
+				}
+
+				switch (s_buttonPressed)
+				{
+					case PDA_BTN_PANUP:
+					{
+						if (s_briefY > -BRIEF_VERT_MARGIN)
+						{
+							s_briefY -= BRIEF_LINE_SCROLL;
+							if (s_briefY < -BRIEF_VERT_MARGIN) s_briefY = -BRIEF_VERT_MARGIN;
+						}
+					} break;
+					case PDA_BTN_PANDOWN:
+					{
+						if (s_briefY != s_briefingMaxY)
+						{
+							s_briefY += BRIEF_LINE_SCROLL;
+
+							if (s_briefY > s_briefingMaxY) s_briefY = s_briefingMaxY;
+						}
+					} break;
 				}
 			}
 		}
