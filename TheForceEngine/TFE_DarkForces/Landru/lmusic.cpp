@@ -103,6 +103,7 @@ namespace TFE_DarkForces
 		s_saveSound = IM_NULL_SOUNDID;
 		s_curSeq = 0;
 		s_curCuePoint = 0;
+		s_volume = s_baseVolume;
 		memset(s_sequences, 0, sizeof(Sequence) * SEQUENCE_COUNT * MAX_CUE_POINTS);
 	}
 		

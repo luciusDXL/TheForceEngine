@@ -20,6 +20,7 @@
 #include "GameUI/missionBriefing.h"
 #include "GameUI/pda.h"
 #include "Landru/lsystem.h"
+#include "Landru/lmusic.h"
 #include <TFE_DarkForces/Landru/cutscene.h>
 #include <TFE_DarkForces/Landru/cutsceneList.h>
 #include <TFE_DarkForces/Actor/actor.h>
@@ -436,6 +437,7 @@ namespace TFE_DarkForces
 					gameMusic_stop();
 					sound_levelStop();
 					agent_levelEndTask();
+					lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
 					pda_cleanup();
 
 					if (!s_levelComplete)

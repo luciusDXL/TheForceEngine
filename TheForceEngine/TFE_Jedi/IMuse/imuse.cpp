@@ -403,6 +403,7 @@ namespace TFE_Jedi
 		s_midiTickDelta = 0;
 		s_soundList = nullptr;
 		s_midiFileCount = 0;
+		s_resourceCallback = nullptr;
 
 		return imSuccess;
 	}

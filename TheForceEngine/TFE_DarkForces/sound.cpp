@@ -67,6 +67,7 @@ namespace TFE_DarkForces
 
 	void sound_close()
 	{
+		sound_levelStop();
 		allocator_free(s_gameSoundList);
 		s_gameSoundList = nullptr;
 		s_instance = 0;

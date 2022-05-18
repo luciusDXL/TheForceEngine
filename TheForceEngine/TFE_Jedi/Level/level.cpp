@@ -934,6 +934,13 @@ namespace TFE_Jedi
 							freeObject(obj);
 							obj = nullptr;
 						} break;
+						default:
+						{
+							freeObject(obj);
+							obj = nullptr;
+							TFE_System::logWrite(LOG_ERROR, "Level Load", "Invalid Object Class: %d - Skipping Object.", classType);
+							continue;
+						}
 					}
 
 					JBool seqRead = JFALSE;
