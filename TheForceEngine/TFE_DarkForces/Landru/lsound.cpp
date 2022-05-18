@@ -1,41 +1,43 @@
 #include <cstring>
 
-#include "gameSound.h"
+#include "lsound.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 
-namespace TFE_Jedi
+using namespace TFE_Jedi;
+
+namespace TFE_DarkForces
 {
 	#define DEFAULT_PRIORITY 64
-	static GameSound* s_soundList = nullptr;
+	static LSound* s_soundList = nullptr;
 
 	void purgeAllSounds();
-	void freeSoundList(GameSound* sound);
-	void initSound(GameSound* sound);
+	void freeSoundList(LSound* sound);
+	void initSound(LSound* sound);
 
 	/////////////////////////////////////////////////////////
 	// System
 	/////////////////////////////////////////////////////////
-	void gameSoundInit()
+	void lSoundInit()
 	{
 		s_soundList = nullptr;
 	}
 
-	void gameSoundDestroy()
+	void lSoundDestroy()
 	{
 		purgeAllSounds();
 	}
 
-	GameSound* gameSoundGetList()
+	LSound* lSoundGetList()
 	{
 		return s_soundList;
 	}
 
-	GameSound* gameSoundAlloc(u8* data)
+	LSound* lSoundAlloc(u8* data)
 	{
-		GameSound* sound = (GameSound*)game_alloc(sizeof(GameSound));
+		LSound* sound = (LSound*)game_alloc(sizeof(LSound));
 		if (sound)
 		{
 			initSound(sound);
@@ -51,13 +53,13 @@ namespace TFE_Jedi
 		return sound;
 	}
 		
-	GameSound* gameSoundLoad(const char* name, GameSoundType soundType)
+	LSound* lSoundLoad(const char* name, LSoundType soundType)
 	{
 		// Read the data from the file.
 		u8* data = readVocFileData(name);
 
 		// Then allocate the sound itself.
-		GameSound* sound = gameSoundAlloc(data);
+		LSound* sound = lSoundAlloc(data);
 		setSoundName(sound, soundType, name);
 		discardSoundData(sound);
 		sound->type = soundType;
@@ -65,13 +67,13 @@ namespace TFE_Jedi
 		return sound;
 	}
 
-	void gameSoundFree(GameSound* sound)
+	void lSoundFree(LSound* sound)
 	{
 		if (!sound) { return; }
-		gameSoundFreePlaying(sound, JTRUE);
+		lSoundFreePlaying(sound, JTRUE);
 	}
 
-	void gameSoundFreePlaying(GameSound* sound, JBool stop)
+	void lSoundFreePlaying(LSound* sound, JBool stop)
 	{
 		if (isSoundKeep(sound) || isSoundKeepable(sound))
 		{
@@ -79,8 +81,8 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			GameSound* curSound = s_soundList;
-			GameSound* lastSound = nullptr;
+			LSound* curSound = s_soundList;
+			LSound* lastSound = nullptr;
 
 			while (curSound && curSound != sound)
 			{
@@ -127,37 +129,37 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////////
 	// Game Sound <-> iMuse interface.
 	/////////////////////////////////////////////////////////
-	void startSfx(GameSound* sound)
+	void startSfx(LSound* sound)
 	{
 		ImStartSfx((ImSoundId)sound, DEFAULT_PRIORITY);
 	}
 
-	void startSpeech(GameSound* sound)
+	void startSpeech(LSound* sound)
 	{
 		ImStartVoice((ImSoundId)sound, DEFAULT_PRIORITY);
 	}
 
-	void stopSound(GameSound* sound)
+	void stopSound(LSound* sound)
 	{
 		ImStopSound((ImSoundId)sound);
 	}
 
-	void setSoundVolume(GameSound* sound, s32 volume)
+	void setSoundVolume(LSound* sound, s32 volume)
 	{
 		ImSetParam((ImSoundId)sound, soundVol, volume);
 	}
 
-	void setSoundFade(GameSound* sound, s32 volume, s32 time)
+	void setSoundFade(LSound* sound, s32 volume, s32 time)
 	{
 		ImFadeParam((ImSoundId)sound, soundVol, volume, time);
 	}
 
-	void setSoundPan(GameSound* sound, s32 pan)
+	void setSoundPan(LSound* sound, s32 pan)
 	{
 		ImSetParam((ImSoundId)sound, soundPan, pan);
 	}
 
-	void setSoundPanFade(GameSound* sound, s32 pan, s32 time)
+	void setSoundPanFade(LSound* sound, s32 pan, s32 time)
 	{
 		ImFadeParam((ImSoundId)sound, soundPan, pan, time);
 	}
@@ -165,7 +167,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////////
 	// Game Sound General Interface
 	/////////////////////////////////////////////////////////
-	void copySoundData(GameSound* dstSound, GameSound* srcSound)
+	void copySoundData(LSound* dstSound, LSound* srcSound)
 	{
 		if (isDiscardSoundData(dstSound) && dstSound->data)
 		{
@@ -178,9 +180,9 @@ namespace TFE_Jedi
 		dstSound->type = srcSound->type;
 	}
 		
-	GameSound* findSoundType(const char* name, u32 type)
+	LSound* findSoundType(const char* name, u32 type)
 	{
-		GameSound* sound = s_soundList;
+		LSound* sound = s_soundList;
 		s32 found = 0;
 		while (sound && !found)
 		{
@@ -188,11 +190,11 @@ namespace TFE_Jedi
 			{
 				found = 1;
 				s32 i = 0;
-				for (; i < GS_NAME_LEN && found && name[i]; i++)
+				for (; i < LS_NAME_LEN && found && name[i]; i++)
 				{
 					found = (sound->name[i] == tolower(name[i]));
 				}
-				if (found && i < GS_NAME_LEN && sound->name[i]) { found = 0; }
+				if (found && i < LS_NAME_LEN && sound->name[i]) { found = 0; }
 			}
 
 			if (!found)
@@ -203,73 +205,73 @@ namespace TFE_Jedi
 		return sound;
 	}
 
-	void discardSoundData(GameSound* sound)
+	void discardSoundData(LSound* sound)
 	{
-		sound->flags |= GS_SOUND_DISCARD;
+		sound->flags |= LS_SOUND_DISCARD;
 	}
 
-	void nonDiscardSoundData(GameSound* sound)
+	void nonDiscardSoundData(LSound* sound)
 	{
-		sound->flags &= ~GS_SOUND_DISCARD;
+		sound->flags &= ~LS_SOUND_DISCARD;
 	}
 
-	JBool isDiscardSoundData(GameSound* sound)
+	JBool isDiscardSoundData(LSound* sound)
 	{
-		return sound->flags & GS_SOUND_DISCARD;
+		return sound->flags & LS_SOUND_DISCARD;
 	}
 
-	void setSoundKeep(GameSound* sound)
+	void setSoundKeep(LSound* sound)
 	{
-		sound->flags |= GS_SOUND_KEEP;
+		sound->flags |= LS_SOUND_KEEP;
 	}
 
-	void clearSoundKeep(GameSound* sound)
+	void clearSoundKeep(LSound* sound)
 	{
-		sound->flags &= ~GS_SOUND_KEEP;
+		sound->flags &= ~LS_SOUND_KEEP;
 	}
 
-	JBool isSoundKeep(GameSound* sound)
+	JBool isSoundKeep(LSound* sound)
 	{
-		return sound->flags & GS_SOUND_KEEP;
+		return sound->flags & LS_SOUND_KEEP;
 	}
 
-	void setSoundKeepable(GameSound* sound)
+	void setSoundKeepable(LSound* sound)
 	{
-		sound->flags |= GS_SOUND_KEEPABLE;
+		sound->flags |= LS_SOUND_KEEPABLE;
 	}
 
-	void clearSoundKeepable(GameSound* sound)
+	void clearSoundKeepable(LSound* sound)
 	{
-		sound->flags &= ~GS_SOUND_KEEPABLE;
+		sound->flags &= ~LS_SOUND_KEEPABLE;
 	}
 
-	JBool isSoundKeepable(GameSound* sound)
+	JBool isSoundKeepable(LSound* sound)
 	{
-		return sound->flags & GS_SOUND_KEEPABLE;
+		return sound->flags & LS_SOUND_KEEPABLE;
 	}
 
-	void setSoundName(GameSound* sound, u32 type, const char* name)
+	void setSoundName(LSound* sound, u32 type, const char* name)
 	{
 		sound->resType = type;
 
 		s32 i = 0;
-		for (; i < GS_NAME_LEN && name[i]; i++)
+		for (; i < LS_NAME_LEN && name[i]; i++)
 		{
 			sound->name[i] = tolower(name[i]);
 		}
-		while (i < GS_NAME_LEN)
+		while (i < LS_NAME_LEN)
 		{
 			sound->name[i] = 0;
 			i++;
 		}
 	}
 
-	void freeSoundList(GameSound* sound)
+	void freeSoundList(LSound* sound)
 	{
 		while (sound)
 		{
-			GameSound* next = sound->next;
-			gameSoundFree(sound);
+			LSound* next = sound->next;
+			lSoundFree(sound);
 			sound = next;
 		}
 	}
@@ -324,7 +326,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////////
 	void purgeAllSounds()
 	{
-		GameSound* sound = s_soundList;
+		LSound* sound = s_soundList;
 
 		while (sound)
 		{
@@ -337,9 +339,9 @@ namespace TFE_Jedi
 		s_soundList = nullptr;
 	}
 
-	void initSound(GameSound* sound)
+	void initSound(LSound* sound)
 	{
-		memset(sound, 0, sizeof(GameSound));
+		memset(sound, 0, sizeof(LSound));
 		sound->volume = 128;
 	}
 }  // TFE_JediSound

@@ -2,6 +2,7 @@
 #include "cutscene_film.h"
 #include "lcanvas.h"
 #include "lmusic.h"
+#include "lsound.h"
 #include "lsystem.h"
 #include "time.h"
 #include "textCrawl.h"
@@ -12,7 +13,6 @@
 #include <TFE_Archive/lfdArchive.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
-#include <TFE_Jedi/Sound/gameSound.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
 
@@ -92,7 +92,7 @@ namespace TFE_DarkForces
 		}
 		else if (obj->id == CF_FILE_SOUND)
 		{
-			GameSound* sound = (GameSound*)obj->data;
+			LSound* sound = (LSound*)obj->data;
 			if (sound->var2 > 0)
 			{
 				setSoundKeep(sound);
@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 		if (s_skipSceneInput)
 		{
 			s_skipSceneInput = JFALSE;
-			freeSoundList(gameSoundGetList());
+			freeSoundList(lSoundGetList());
 			lmusic_stop();
 			vfb_forceToBlack();
 			lcanvas_clear();
@@ -294,7 +294,7 @@ namespace TFE_DarkForces
 		else if (s_nextSceneInput)
 		{
 			s_nextSceneInput = JFALSE;
-			freeSoundList(gameSoundGetList());
+			freeSoundList(lSoundGetList());
 			vfb_forceToBlack();
 			lcanvas_clear();
 			return nextScene;

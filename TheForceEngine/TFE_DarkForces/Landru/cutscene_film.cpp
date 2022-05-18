@@ -5,13 +5,13 @@
 #include "lactorCust.h"
 #include "lcanvas.h"
 #include "lfade.h"
+#include "lsound.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_Archive/lfdArchive.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
-#include <TFE_Jedi/Sound/gameSound.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
 
@@ -24,7 +24,7 @@ namespace TFE_DarkForces
 	static FadeColorType s_filmColorFade = fcolorType_noColorFade;
 
 	LActor* cutsceneFilm_cloneActor(u32 type, const char* name);
-	GameSound* cutsceneFilm_cloneSound(u32 type, const char* name);
+	LSound* cutsceneFilm_cloneSound(u32 type, const char* name);
 	void cutsceneFilm_initFilm(Film* film, u8** array, LRect* frame, s16 x, s16 y, s16 zPlane);
 	void cutsceneFilm_setName(Film* film, u32 resType, const char* name);
 	JBool cutsceneFilm_isTimeStamp(Film* film, FilmObject* filmObj, u8* data);
@@ -109,7 +109,7 @@ namespace TFE_DarkForces
 				} break;
 				case CF_FILE_SOUND:
 				{
-					GameSound* sound = (GameSound*)filmObj->data;
+					LSound* sound = (LSound*)filmObj->data;
 					stopSound(sound);
 				} break;
 			}
@@ -202,10 +202,10 @@ namespace TFE_DarkForces
 		return curActor;
 	}
 
-	GameSound* cutsceneFilm_cloneSound(u32 type, const char* name)
+	LSound* cutsceneFilm_cloneSound(u32 type, const char* name)
 	{
-		GameSound* curSound = gameSoundGetList();
-		GameSound* sound = nullptr;
+		LSound* curSound = lSoundGetList();
+		LSound* sound = nullptr;
 
 		while (curSound && !sound)
 		{
@@ -232,10 +232,10 @@ namespace TFE_DarkForces
 			curSound = curSound->next;
 		}
 
-		GameSound* clonedSound = nullptr;
+		LSound* clonedSound = nullptr;
 		if (sound)
 		{
-			clonedSound = gameSoundAlloc(nullptr);
+			clonedSound = lSoundAlloc(nullptr);
 			if (clonedSound)
 			{
 				copySoundData(clonedSound, sound);
@@ -252,7 +252,7 @@ namespace TFE_DarkForces
 
 		LActor* actor = nullptr;
 		LPalette* pal = nullptr;
-		GameSound* sound = nullptr;
+		LSound* sound = nullptr;
 		JBool retValue = JTRUE;
 		if (type != CF_TYPE_VIEW && type != CF_TYPE_CUSTOM_ACTOR)
 		{
@@ -290,7 +290,7 @@ namespace TFE_DarkForces
 				sound = cutsceneFilm_cloneSound(digitalSound, name);
 				if (!sound)
 				{
-					sound = gameSoundLoad(name, digitalSound);
+					sound = lSoundLoad(name, digitalSound);
 				}
 				if (!sound) { retValue = JFALSE; }
 			}
@@ -503,7 +503,7 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_rewindSound(Film* film, FilmObject* filmObj, u8* data)
 	{
-		GameSound* sound = (GameSound*)filmObj->data;
+		LSound* sound = (LSound*)filmObj->data;
 		filmObj->offset = 0;
 
 		stopSound(sound);
@@ -701,7 +701,7 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_setSoundToFilm(Film* film, FilmObject* filmObj, u8* data)
 	{
-		GameSound* sound = (GameSound*)filmObj->data;
+		LSound* sound = (LSound*)filmObj->data;
 		s16* chunk = (s16*)(data + filmObj->offset);
 		u16  type = chunk[1];
 		chunk += 2;

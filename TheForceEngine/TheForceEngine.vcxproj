@@ -411,6 +411,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\Landru\lmusic.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lpalette.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lrect.h" />
+    <ClInclude Include="TFE_DarkForces\Landru\lsound.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lsystem.h" />
     <ClInclude Include="TFE_DarkForces\Landru\ltimer.h" />
     <ClInclude Include="TFE_DarkForces\Landru\lview.h" />
@@ -514,7 +515,6 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\rwallSegment.h" />
     <ClInclude Include="TFE_Jedi\Renderer\screenDraw.h" />
     <ClInclude Include="TFE_Jedi\Renderer\virtualFramebuffer.h" />
-    <ClInclude Include="TFE_Jedi\Sound\gameSound.h" />
     <ClInclude Include="TFE_Jedi\Task\task.h" />
     <ClInclude Include="TFE_Jedi\Task\taskMacros.h" />
     <ClInclude Include="TFE_Memory\chunkedArray.h" />
@@ -654,6 +654,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\Landru\lmusic.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lpalette.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lrect.cpp" />
+    <ClCompile Include="TFE_DarkForces\Landru\lsound.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lsystem.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\ltimer.cpp" />
     <ClCompile Include="TFE_DarkForces\Landru\lview.cpp" />
@@ -738,7 +739,6 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\rsectorRender.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\screenDraw.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\virtualFramebuffer.cpp" />
-    <ClCompile Include="TFE_Jedi\Sound\gameSound.cpp" />
     <ClCompile Include="TFE_Jedi\Task\task.cpp" />
     <ClCompile Include="TFE_Memory\chunkedArray.cpp" />
     <ClCompile Include="TFE_Memory\memoryRegion.cpp" />

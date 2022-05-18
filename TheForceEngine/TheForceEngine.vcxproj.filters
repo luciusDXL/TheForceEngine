@@ -119,9 +119,6 @@
     <Filter Include="Source\TFE_Jedi\Renderer">
       <UniqueIdentifier>{28396230-168e-4dfb-9e75-f0e7aa9f3d63}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_Jedi\Sound">
-      <UniqueIdentifier>{807a91b5-ef62-4fb4-bdc1-957cee1770c7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_Jedi\Task">
       <UniqueIdentifier>{75fe1c00-b9f2-4e8c-a62c-4a59f897f467}</UniqueIdentifier>
     </Filter>
@@ -892,11 +889,11 @@
     <ClInclude Include="TFE_Jedi\IMuse\imDigitalVolumeTable.h">
       <Filter>Source\TFE_Jedi\IMuse</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Jedi\Sound\gameSound.h">
-      <Filter>Source\TFE_Jedi\Sound</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_DarkForces\sound.h">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_DarkForces\Landru\lsound.h">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1512,11 +1509,11 @@
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp">
       <Filter>Source\TFE_System\CrashHandler</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Jedi\Sound\gameSound.cpp">
-      <Filter>Source\TFE_Jedi\Sound</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_DarkForces\sound.cpp">
       <Filter>Source\TFE_DarkForces</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_DarkForces\Landru\lsound.cpp">
+      <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -2,7 +2,7 @@
 
 #include "sound.h"
 #include "player.h"
-#include <TFE_Jedi/Sound/gameSound.h>
+#include <TFE_DarkForces/Landru/lsound.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/vocAsset.h>
