@@ -876,7 +876,6 @@ namespace TFE_Jedi
 						// objDiff <  0: Less than this difficulty.
 						if ((objDiff >= 0 && curDiff < objDiff) || (objDiff < 0 && curDiff > TFE_Jedi::abs(objDiff)))
 						{
-							line = parser.readLine(bufferPos);
 							continue;
 						}
 
@@ -891,7 +890,6 @@ namespace TFE_Jedi
 						RSector* sector = sector_which3D(posWS.x, posWS.y, posWS.z);
 						if (!sector)
 						{
-							line = parser.readLine(bufferPos);
 							continue;
 						}
 
