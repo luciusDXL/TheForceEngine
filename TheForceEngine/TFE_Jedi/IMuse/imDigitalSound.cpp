@@ -16,6 +16,9 @@ namespace TFE_Jedi
 	#define DEFAULT_SOUND_CHANNELS 8
 	#define AUDIO_BUFFER_SIZE 512
 
+	#define AUDIO_LOCK()   TFE_Audio::lock()
+	#define AUDIO_UNLOCK() TFE_Audio::unlock()
+
 	////////////////////////////////////////////////////
 	// Structures
 	////////////////////////////////////////////////////
@@ -55,7 +58,6 @@ namespace TFE_Jedi
 	// Internal State
 	/////////////////////////////////////////////////////
 	atomic_s32 s_digitalPause = 0;
-	atomic_s32 s_sndPlayerLock = 0;
 
 	static ImWaveSound* s_imWaveSoundList = nullptr;
 	static ImWaveSound  s_imWaveSound[MAX_SOUND_CHANNELS];
@@ -78,8 +80,6 @@ namespace TFE_Jedi
 	static s32 s_audioOutSize;
 	static u8* s_audioData;
 			
-	extern void ImDigitalPlayerLock();
-	extern void ImDigitalPlayerUnlock();
 	extern s32 ImWrapValue(s32 value, s32 a, s32 b);
 	extern s32 ImGetGroupVolume(s32 group);
 	extern u8* ImInternalGetSoundData(ImSoundId soundId);
@@ -136,7 +136,6 @@ namespace TFE_Jedi
 
 		TFE_Audio::setAudioThreadCallback(ImUpdateWave);
 
-		s_sndPlayerLock = 0;
 		return ImComputeAudioNormalizationInit(initData);
 	}
 
@@ -155,42 +154,39 @@ namespace TFE_Jedi
 		}
 		ImFreeAllWaveSounds();
 
-		s_imWaveMixCount = count;
-		ImWaveSound* sound = s_imWaveSound;
-		for (s32 i = 0; i < s_imWaveMixCount; i++, sound++)
+		AUDIO_LOCK();
 		{
-			sound->prev = nullptr;
-			sound->next = nullptr;
-			ImWaveData* data = ImGetWaveData(i);
-			sound->data = data;
-			data->sound = sound;
-			sound->soundId = IM_NULL_SOUNDID;
+			s_imWaveMixCount = count;
+			ImWaveSound* sound = s_imWaveSound;
+			for (s32 i = 0; i < s_imWaveMixCount; i++, sound++)
+			{
+				sound->prev = nullptr;
+				sound->next = nullptr;
+				ImWaveData* data = ImGetWaveData(i);
+				sound->data = data;
+				data->sound = sound;
+				sound->soundId = IM_NULL_SOUNDID;
+			}
 		}
+		AUDIO_UNLOCK();
+
 		return ImComputeAudioNormalization(count);
 	}
 
 	s32 ImSetWaveParam(ImSoundId soundId, s32 param, s32 value)
 	{
-		ImDigitalPlayerLock();
 		s32 res = ImSetWaveParamInternal(soundId, param, value);
-		ImDigitalPlayerUnlock();
 		return res;
 	}
 
 	s32 ImGetWaveParam(ImSoundId soundId, s32 param)
 	{
-		ImDigitalPlayerLock();
-		s32 res = ImGetWaveParamIntern(soundId, param);
-		ImDigitalPlayerUnlock();
-		return res;
+		return ImGetWaveParamIntern(soundId, param);
 	}
 
 	s32 ImStartDigitalSound(ImSoundId soundId, s32 priority)
 	{
-		ImDigitalPlayerLock();
-		s32 res = ImStartDigitalSoundIntern(soundId, priority, 0);
-		ImDigitalPlayerUnlock();
-		return res;
+		return ImStartDigitalSoundIntern(soundId, priority, 0);
 	}
 		
 	void ImUpdateWave(f32* buffer, u32 bufferSize, f32 systemVolume)
@@ -216,31 +212,14 @@ namespace TFE_Jedi
 
 	s32 ImPauseDigitalSound()
 	{
-		ImDigitalPlayerLock();
 		s_digitalPause = 1;
-		ImDigitalPlayerUnlock();
 		return imSuccess;
 	}
 
 	s32 ImResumeDigitalSound()
 	{
-		ImDigitalPlayerLock();
 		s_digitalPause = 0;
-		ImDigitalPlayerUnlock();
 		return imSuccess;
-	}
-
-	void ImDigitalPlayerLock()
-	{
-		s_sndPlayerLock++;
-	}
-
-	void ImDigitalPlayerUnlock()
-	{
-		if (s_sndPlayerLock)
-		{
-			s_sndPlayerLock--;
-		}
 	}
 
 	////////////////////////////////////
@@ -428,7 +407,8 @@ namespace TFE_Jedi
 			}
 		}
 
-		IM_LOG_WRN("ERR: no spare tracks...");
+		AUDIO_LOCK();
+		IM_DBG_MSG("ERR: no spare tracks...");
 		s32 minPriority = 127;
 		ImWaveSound* minPrioritySound = nullptr;
 		sound = s_imWaveSoundList;
@@ -451,6 +431,8 @@ namespace TFE_Jedi
 				newSound = minPrioritySound;
 			}
 		}
+
+		AUDIO_UNLOCK();
 		return newSound;
 	}
 
@@ -617,9 +599,11 @@ namespace TFE_Jedi
 			return imFail;
 		}
 
-		ImDigitalPlayerLock();
-		IM_LIST_ADD(s_imWaveSoundList, sound);
-		ImDigitalPlayerUnlock();
+		AUDIO_LOCK();
+		{
+			IM_LIST_ADD(s_imWaveSoundList, sound);
+		}
+		AUDIO_UNLOCK();
 
 		return imSuccess;
 	}
@@ -634,23 +618,22 @@ namespace TFE_Jedi
 
 	s32 ImFreeWaveSoundById(ImSoundId soundId)
 	{
-		ImDigitalPlayerLock();
-		s32 res = ImFreeWaveSoundByIdIntern(soundId);
-		ImDigitalPlayerUnlock();
-		return res;
+		return ImFreeWaveSoundByIdIntern(soundId);
 	}
 
 	s32 ImFreeAllWaveSounds()
 	{
-		ImWaveSound* sound = s_imWaveSoundList;
-		ImDigitalPlayerLock();
-		while (sound)
+		AUDIO_LOCK();
 		{
-			ImWaveSound* next = sound->next;
-			ImFreeWaveSound(sound);
-			sound = next;
+			ImWaveSound* sound = s_imWaveSoundList;
+			while (sound)
+			{
+				ImWaveSound* next = sound->next;
+				ImFreeWaveSound(sound);
+				sound = next;
+			}
 		}
-		ImDigitalPlayerUnlock();
+		AUDIO_UNLOCK();
 		return imSuccess;
 	}
 
@@ -768,17 +751,21 @@ namespace TFE_Jedi
 	{
 		s32 result = imInvalidSound;
 
-		ImWaveSound* sound = s_imWaveSoundList;
-		while (sound)
+		AUDIO_LOCK();
 		{
-			ImWaveSound* next = sound->next;
-			if (sound->soundId == soundId)
+			ImWaveSound* sound = s_imWaveSoundList;
+			while (sound)
 			{
-				ImFreeWaveSound(sound);
-				result = imSuccess;
+				ImWaveSound* next = sound->next;
+				if (sound->soundId == soundId)
+				{
+					ImFreeWaveSound(sound);
+					result = imSuccess;
+				}
+				sound = next;
 			}
-			sound = next;
 		}
+		AUDIO_UNLOCK();
 
 		return result;
 	}

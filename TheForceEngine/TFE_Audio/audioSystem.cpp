@@ -150,6 +150,16 @@ namespace TFE_Audio
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
+	void lock()
+	{
+		MUTEX_LOCK(&s_mutex);
+	}
+
+	void unlock()
+	{
+		MUTEX_UNLOCK(&s_mutex);
+	}
+
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 	// Note that looping one shots are valid.
 	bool playOneShot(SoundType type, f32 volume, const SoundBuffer* buffer, bool looping, SoundFinishedCallback finishedCallback, void* cbUserData, s32 cbArg)

@@ -64,6 +64,9 @@ namespace TFE_Audio
 	void pause();
 	void resume();
 
+	void lock();
+	void unlock();
+
 	void setAudioThreadCallback(AudioThreadCallback callback = nullptr);
 
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.

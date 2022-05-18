@@ -82,7 +82,7 @@ struct TFE_Settings_Sound
 	f32 musicVolume = 1.0f;
 	f32 cutsceneSoundFxVolume = 0.9f;
 	f32 cutsceneMusicVolume = 1.0f;
-	bool use16Channels = true;
+	bool use16Channels = false;
 };
 
 struct TFE_Game
