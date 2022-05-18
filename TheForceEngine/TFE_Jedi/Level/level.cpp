@@ -252,13 +252,11 @@ namespace TFE_Jedi
 				break;
 			}
 
-			// If <NoTexture> is found, do not try to load - this will cause the default texture to be used.
 			TextureData* tex = nullptr;
 			if (TFE_Paths::getFilePath(textureName, &filePath))
 			{
 				tex = bitmap_load(&filePath, 1);
 			}
-	
 			if (!tex)
 			{
 				TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Could not open '%s', using 'default.bm' instead.", textureName);
@@ -268,6 +266,7 @@ namespace TFE_Jedi
 				if (!tex)
 				{
 					TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "'default.bm' is not a valid BM file!");
+					assert(0);
 					return false;
 				}
 			}

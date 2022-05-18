@@ -106,7 +106,11 @@ namespace TFE_DarkForces
 		1, 2, 3, 4, 5, 6, 7, 8, 9,
 		10, 11, 12, 13, 14, 15, 16
 	};
-		
+
+	const fixed16_16 c_flashDelta  = 13107 * 145;	// 0.2 seconds in fixed point ticks (i.e. FIXED(0.2) * TICKS_PER_SEC)
+	const fixed16_16 c_damageDelta =  6553 * 145;	// 0.1
+	const fixed16_16 c_shieldDelta = 13107 * 145;	// 0.2
+
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
@@ -2334,7 +2338,7 @@ namespace TFE_DarkForces
 			}
 		}
 	}
-		
+				
 	void handlePlayerScreenFx()
 	{
 		s32 healthFx, shieldFx, flashFx;
@@ -2342,7 +2346,7 @@ namespace TFE_DarkForces
 		{
 			s32 effectIndex = min(15, s_healthDamageFx >> 16);
 			healthFx = c_healthDmgToFx[effectIndex];
-			s_healthDamageFx = max(0, s_healthDamageFx - ONE_16);
+			s_healthDamageFx = max(0, s_healthDamageFx - mul16(c_damageDelta, s_deltaTime));
 		}
 		else
 		{
@@ -2352,7 +2356,7 @@ namespace TFE_DarkForces
 		{
 			s32 effectIndex = min(15, s_shieldDamageFx >> 16);
 			shieldFx = c_shieldDmgToFx[effectIndex];
-			s_shieldDamageFx = max(0, s_shieldDamageFx - ONE_16);
+			s_shieldDamageFx = max(0, s_shieldDamageFx - mul16(c_shieldDelta, s_deltaTime));
 		}
 		else
 		{
@@ -2362,7 +2366,7 @@ namespace TFE_DarkForces
 		{
 			s32 effectIndex = min(15, s_flashEffect >> 16);
 			flashFx = c_flashAmtToFx[effectIndex];
-			s_flashEffect = max(0, s_flashEffect - ONE_16);
+			s_flashEffect = max(0, s_flashEffect - mul16(c_flashDelta, s_deltaTime));
 		}
 		else
 		{
