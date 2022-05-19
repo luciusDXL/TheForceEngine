@@ -249,7 +249,7 @@ namespace TFE_Jedi
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
 				textureName[0] = 0;
-				break;
+				continue;
 			}
 
 			TextureData* tex = nullptr;

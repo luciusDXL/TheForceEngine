@@ -1717,8 +1717,10 @@ namespace TFE_DarkForces
 			aiAnim->frame = 0;
 			if (aiAnim->animId != -1)
 			{
-				assert(aiAnim->animId < obj->wax->animCount);
-				WaxAnim* anim = WAX_AnimPtr(obj->wax, aiAnim->animId);
+				// In DOS there is no check but for some reason it doesn't crash.
+				// On Windows this crashes if animId is too large, so clamp.
+				s32 animId = min(aiAnim->animId, obj->wax->animCount - 1);
+				WaxAnim* anim = WAX_AnimPtr(obj->wax, animId);
 				assert(anim);
 
 				aiAnim->frameCount = intToFixed16(anim->frameCount);

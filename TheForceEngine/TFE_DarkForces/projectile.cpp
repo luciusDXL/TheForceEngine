@@ -801,13 +801,13 @@ namespace TFE_DarkForces
 					fixed16_16 approxDist = dy + distApprox(s_eyePos.x, s_eyePos.z, obj->posWS.x, obj->posWS.z);
 					if (approxDist < CAMERA_SOUND_RANGE)
 					{
-						sound_playCued(projLogic->cameraPassSnd, obj->posWS);
+						projLogic->flightSndId = sound_playCued(projLogic->cameraPassSnd, obj->posWS);
 						projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 					}
 				}
 				else if (projLogic->cameraPassSnd && projLogic->flightSndId)
 				{
-					sound_stop(projLogic->flightSndId);
+					sound_adjustCued(projLogic->flightSndId, obj->posWS);
 					projLogic->flightSndId = NULL_SOUND;
 				}
 				// Finally handle the hit itself (this includes going out of range).
