@@ -1826,69 +1826,76 @@ namespace TFE_DarkForces
 			//s_282344 = 34 - dH;
 		}
 
-		// Headwave
+		// Calculate the head and weapon wave offsets.
 		s32 xWpnWaveOffset = 0;
-		s_headwaveVerticalOffset = 0;
-		if (s_config.headwave && (player->flags & 2))
+		s32 headwaveVerticalOffset = 0;
+		fixed16_16 playerSpeed = distApprox(0, 0, s_playerVelX, s_playerVelZ);
+		if (!moved)
 		{
-			fixed16_16 playerSpeed = distApprox(0, 0, s_playerVelX, s_playerVelZ);
-			if (!moved)
+			playerSpeed = 0;
+		}
+		if ((s_playerSector->flags1 & SEC_FLAGS1_ICE_FLOOR) && !s_wearingCleats)
+		{
+			playerSpeed = 0;
+		}
+
+		if (playerSpeed != s_playerSpeed)
+		{
+			fixed16_16 speedDelta = playerSpeed - s_playerSpeed;
+			fixed16_16 maxFrameChange = mul16(FIXED(32), s_deltaTime);
+
+			if (speedDelta > maxFrameChange)
 			{
-				playerSpeed = 0;
+				speedDelta = maxFrameChange;
 			}
-			if ((s_playerSector->flags1 & SEC_FLAGS1_ICE_FLOOR) && !s_wearingCleats)
+			else if (speedDelta < -maxFrameChange)
 			{
-				playerSpeed = 0;
+				speedDelta = -maxFrameChange;
 			}
+			s_playerSpeed += speedDelta;
+		}
+		sinCosFixed((s_curTick & 0xffff) << 7, &s_wpnSin, &s_wpnCos);
 
-			if (playerSpeed != s_playerSpeed)
+		fixed16_16 playerSpeedFract = div16(s_playerSpeed, FIXED(32));
+		headwaveVerticalOffset = mul16(mul16(s_wpnCos, PLAYER_HEADWAVE_VERT_SPD), playerSpeedFract);
+
+		sinCosFixed((s_curTick & 0xffff) << 6, &s_wpnSin, &s_wpnCos);
+		xWpnWaveOffset = mul16(playerSpeedFract, s_wpnCos) >> 12;
+
+		// Water...
+		if (s_playerSector->secHeight - 1 >= 0)
+		{
+			if (s_externalVelX || s_externalVelZ)
 			{
-				fixed16_16 speedDelta = playerSpeed - s_playerSpeed;
-				fixed16_16 maxFrameChange = mul16(FIXED(32), s_deltaTime);
+				fixed16_16 externSpd = distApprox(0, 0, s_externalVelX, s_externalVelZ);
 
-				if (speedDelta > maxFrameChange)
-				{
-					speedDelta = maxFrameChange;
-				}
-				else if (speedDelta < -maxFrameChange)
-				{
-					speedDelta = -maxFrameChange;
-				}
-				s_playerSpeed += speedDelta;
-			}
-			sinCosFixed((s_curTick & 0xffff) << 7, &s_wpnSin, &s_wpnCos);
-
-			fixed16_16 playerSpeedFract = div16(s_playerSpeed, FIXED(32));
-			s_headwaveVerticalOffset = mul16(mul16(s_wpnCos, PLAYER_HEADWAVE_VERT_SPD), playerSpeedFract);
-
-			sinCosFixed((s_curTick & 0xffff) << 6, &s_wpnSin, &s_wpnCos);
-			xWpnWaveOffset = mul16(playerSpeedFract, s_wpnCos) >> 12;
-
-			// Water...
-			if (s_playerSector->secHeight - 1 >= 0)
-			{
-				if (s_externalVelX || s_externalVelZ)
-				{
-					fixed16_16 externSpd = distApprox(0, 0, s_externalVelX, s_externalVelZ);
-
-					// Replace the fractional part with the current time fractional part.
-					// I think this is meant to add some "randomness" to the headwave while in water.
-					fixed16_16 speed = externSpd & (~0xffff);
-					speed |= (s_curTick & 0xffff);
-					// Then multiply by 16 and take the cosine - this is meant to be a small modification to the weapon motion
-					// (note that the base multiplier is 128).
-					sinCosFixed(speed << 4, &s_wpnSin, &s_wpnCos);
-					// Modify the headwave motion.
-					s_headwaveVerticalOffset += mul16(s_wpnCos, PLAYER_HEADWAVE_VERT_WATER_SPD);
-				}
+				// Replace the fractional part with the current time fractional part.
+				// I think this is meant to add some "randomness" to the headwave while in water.
+				fixed16_16 speed = externSpd & (~0xffff);
+				speed |= (s_curTick & 0xffff);
+				// Then multiply by 16 and take the cosine - this is meant to be a small modification to the weapon motion
+				// (note that the base multiplier is 128).
+				sinCosFixed(speed << 4, &s_wpnSin, &s_wpnCos);
+				// Modify the headwave motion.
+				headwaveVerticalOffset += mul16(s_wpnCos, PLAYER_HEADWAVE_VERT_WATER_SPD);
 			}
 		}
-		setCameraOffset(0, s_headwaveVerticalOffset, 0);
 
-		// Apply the weapon motion.
+		if (s_config.headwave && (player->flags & 2))
+		{
+			// If head wave is enabled, store the offset and apply it. This offset also affects projectiles fired by the player so
+			// we must not store it if head waving is disabled.
+			s_headwaveVerticalOffset = headwaveVerticalOffset;
+			setCameraOffset(0, s_headwaveVerticalOffset, 0);
+		}
+
 		PlayerWeapon* weapon = s_curPlayerWeapon;
-		weapon->xWaveOffset = xWpnWaveOffset;					// the x offset has 4 bits of sub-texel precision.
-		weapon->yWaveOffset = s_headwaveVerticalOffset >> 13;	// the y offset is probably the same 4 bits of precision & multiplied by half.
+		if (TFE_Settings::getHudSettings()->weaponWave)
+		{
+			// If weapon wave is enabled, apply the offset.
+			weapon->xWaveOffset = xWpnWaveOffset;                   // the x offset has 4 bits of sub-texel precision.
+			weapon->yWaveOffset = headwaveVerticalOffset >> 13;     // the y offset is probably the same 4 bits of precision & multiplied by half.
+		}
 			   
 		// The moves the player can make are restricted based on whether they are on the floor or not.
 		if (s_colCurLowestFloor == player->posWS.y)

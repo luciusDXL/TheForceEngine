@@ -297,6 +297,7 @@ namespace TFE_Settings
 		writeHeader(settings, c_sectionNames[SECTION_HUD]);
 		writeKeyValue_String(settings, "hudScale", c_tfeHudScaleStrings[s_hudSettings.hudScale]);
 		writeKeyValue_String(settings, "hudPos", c_tfeHudPosStrings[s_hudSettings.hudPos]);
+		writeKeyValue_Bool(settings, "weaponWave", s_hudSettings.weaponWave);
 		writeKeyValue_Float(settings, "scale", s_hudSettings.scale);
 		writeKeyValue_Int(settings, "pixelOffsetX", s_hudSettings.pixelOffset[0]);
 		writeKeyValue_Int(settings, "pixelOffsetY", s_hudSettings.pixelOffset[1]);
@@ -585,6 +586,10 @@ namespace TFE_Settings
 		else if (strcasecmp("pixelOffsetY", key) == 0)
 		{
 			s_hudSettings.pixelOffset[1] = parseInt(value);
+		}
+		else if (strcasecmp("weaponWave", key) == 0)
+		{
+			s_hudSettings.weaponWave = parseBool(value);
 		}
 	}
 

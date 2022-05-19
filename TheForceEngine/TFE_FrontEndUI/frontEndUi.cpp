@@ -1589,6 +1589,10 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512);
 
+		ImGui::Separator();
+
+		ImGui::Checkbox("Weapon Wave", &hud->weaponWave);
+
 		if (s_menuRetState != APP_STATE_MENU)
 		{
 			TFE_DarkForces::mission_render();
