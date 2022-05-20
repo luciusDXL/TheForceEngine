@@ -19,14 +19,14 @@ namespace TFE_Jedi
 		obj->frame = 0;
 		obj->anim = 0;
 		obj->worldWidth = -1;
+		obj->worldHeight = -1;
 		obj->ptr = nullptr;
 		obj->sector = nullptr;
 		obj->logic = nullptr;
 		obj->projectileLogic = nullptr;
 		obj->type = OBJ_TYPE_SPIRIT;
 		obj->entityFlags = ETFLAG_NONE;
-		obj->worldHeight = -1;
-		obj->flags = 0;
+		obj->flags = OBJ_FLAG_NEEDS_TRANSFORM | OBJ_FLAG_MOVABLE;
 		obj->self = obj;
 		return obj;
 	}
@@ -103,7 +103,7 @@ namespace TFE_Jedi
 
 			if (obj->worldWidth == -1)
 			{
-				const fixed16_16 width = intToFixed16(TFE_Jedi::abs(cell->sizeX));
+				const fixed16_16 width = intToFixed16(TFE_Jedi::abs(cell->sizeX)/2);
 				obj->worldWidth = div16(mul16(data->xScale, width), SPRITE_SCALE_FIXED);
 			}
 			if (obj->worldHeight == -1)
@@ -123,8 +123,8 @@ namespace TFE_Jedi
 
 		if (obj->worldWidth == -1)
 		{
-			const fixed16_16 width = intToFixed16(TFE_Jedi::abs(cell->sizeX));
-			obj->worldWidth = div16(width >> 1, SPRITE_SCALE_FIXED);
+			const fixed16_16 width = intToFixed16(TFE_Jedi::abs(cell->sizeX)/2);
+			obj->worldWidth = div16(width, SPRITE_SCALE_FIXED);
 		}
 		if (obj->worldHeight == -1)
 		{

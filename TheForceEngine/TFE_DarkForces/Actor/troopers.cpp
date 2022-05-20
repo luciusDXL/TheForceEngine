@@ -47,9 +47,6 @@ namespace TFE_DarkForces
 
 	Logic* officer_setup(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD logicId)
 	{
-		obj->flags |= OBJ_FLAG_HAS_COLLISION;
-		obj->worldWidth >>= 1;
-
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags |= FLAG_BIT(4);	// Use Officer alert table.
 		logic->alertSndSrc = 0;
@@ -91,9 +88,6 @@ namespace TFE_DarkForces
 
 	Logic* trooper_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		obj->flags |= OBJ_FLAG_HAS_COLLISION;
-		obj->worldWidth >>= 1;
-
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
 		logic->alertSndSrc = 0;
@@ -134,9 +128,6 @@ namespace TFE_DarkForces
 
 	Logic* commando_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		obj->flags |= OBJ_FLAG_HAS_COLLISION;
-		obj->worldWidth >>= 1;
-
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
 		logic->alertSndSrc = 0;

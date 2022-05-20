@@ -53,6 +53,8 @@ namespace TFE_Jedi
 
 	Safe* level_getSafeFromSector(RSector* sector);
 	JBool level_isGoalComplete(s32 goalIndex);
+
+	void level_addSound(const char* name, u32 freq, s32 priority);
 		
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;

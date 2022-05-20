@@ -970,7 +970,6 @@ namespace TFE_DarkForces
 		task_setUserData(task, trooper);
 
 		obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_GENERAL_MOHC;
-		obj->worldWidth >>= 1;
 
 		physicsActor->alive = JTRUE;
 		physicsActor->hp = FIXED(750);

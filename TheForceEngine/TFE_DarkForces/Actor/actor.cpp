@@ -281,7 +281,7 @@ namespace TFE_DarkForces
 		Actor* actor = logic->actor;
 		actor->collisionFlags |= 2;
 		// Added to disable auto-aim when dying.
-		logic->logic.obj->flags &= ~(OBJ_FLAG_HAS_COLLISION | OBJ_FLAG_ENEMY);
+		logic->logic.obj->flags &= ~OBJ_FLAG_ENEMY;
 	}
 
 	// Returns JTRUE if the object is on the floor, or JFALSE is not on the floor or moving too fast.
@@ -631,7 +631,6 @@ namespace TFE_DarkForces
 					corpse->worldHeight = 0;
 					corpse->worldWidth = 0;
 					corpse->entityFlags |= ETFLAG_CORPSE;
-					corpse->flags &= ~OBJ_FLAG_HAS_COLLISION;
 					sector_addObject(obj->sector, corpse);
 				}
 			}

@@ -27,7 +27,7 @@ enum ObjectFlags
 	OJB_FLAG_BIT_1           = FLAG_BIT(1),  // Unknown
 	OBJ_FLAG_NEEDS_TRANSFORM = FLAG_BIT(2),  // Object needs to be transformed and rendered.
 	OBJ_FLAG_FULLBRIGHT      = FLAG_BIT(3),  // Rendered as fullbright (not lit).
-	OBJ_FLAG_HAS_COLLISION   = FLAG_BIT(4),  // Object is solid (has collision).
+	OBJ_FLAG_MOVABLE         = FLAG_BIT(4),  // Object is movable.
 	OBJ_FLAG_BOSS            = FLAG_BIT(5),  // Boss enemy.
 	OBJ_FLAG_BIT_6           = FLAG_BIT(6),  // Unknown
 };

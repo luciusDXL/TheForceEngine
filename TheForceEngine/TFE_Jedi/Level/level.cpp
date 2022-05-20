@@ -715,6 +715,11 @@ namespace TFE_Jedi
 		ambientSound->pos = pos;
 	}
 
+	void level_addSound(const char* name, u32 freq, s32 priority)
+	{
+		// TODO
+	}
+
 	JBool level_loadObjects(const char* levelName, u8 difficulty)
 	{
 		char levelPath[TFE_MAX_PATH];
@@ -908,8 +913,8 @@ namespace TFE_Jedi
 						SecObject* obj = allocateObject();
 						obj->posWS = posWS;
 						obj->pitch = floatDegreesToFixed(pch);
-						obj->yaw = floatDegreesToFixed(yaw);
-						obj->roll = floatDegreesToFixed(rol);
+						obj->yaw   = floatDegreesToFixed(yaw);
+						obj->roll  = floatDegreesToFixed(rol);
 
 						KEYWORD classType = getKeywordIndex(objClass);
 						switch (classType)

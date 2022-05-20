@@ -131,7 +131,7 @@ namespace TFE_DarkForces
 			{
 				if (enemy->anim.flags & 2)
 				{
-					obj->flags &= ~(OBJ_FLAG_NEEDS_TRANSFORM | OBJ_FLAG_HAS_COLLISION);
+					obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 					obj->worldWidth = 0;
 					obj->posWS.y = sector->floorHeight + sector->secHeight;
 
@@ -187,7 +187,7 @@ namespace TFE_DarkForces
 				enemy->timing.nextTick = s_curTick + enemy->timing.state1Delay;
 				enemy->target.flags |= 8;
 				obj->worldWidth = FIXED(3);
-				obj->flags |= (OBJ_FLAG_NEEDS_TRANSFORM | OBJ_FLAG_HAS_COLLISION);
+				obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
 					if (enemy->anim.state == 2)  // Attack animation
@@ -229,9 +229,8 @@ namespace TFE_DarkForces
 
 	Logic* sewerCreature_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		obj->flags &= ~(OBJ_FLAG_NEEDS_TRANSFORM | OBJ_FLAG_HAS_COLLISION);
+		obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 		obj->entityFlags = ETFLAG_AI_ACTOR;
-		obj->worldWidth >>= 1;
 
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_CREATURE];

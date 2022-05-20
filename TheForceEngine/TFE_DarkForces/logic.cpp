@@ -97,10 +97,6 @@ namespace TFE_DarkForces
 		else if (key == KW_RADIUS)
 		{
 			obj->worldWidth = floatToFixed16(strtof(s_objSeqArg1, &endPtr));
-			if (obj->worldWidth > 0)
-			{
-				obj->flags |= OBJ_FLAG_HAS_COLLISION;
-			}
 		}
 		else  // Invalid key.
 		{
@@ -160,7 +156,6 @@ namespace TFE_DarkForces
 				{
 					// TODO(Core Game Loop Release) - come back to this once the level is running
 					// Turn off dispatch collision for now, until this is setup correctly.
-					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 				}
 				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
 				{
@@ -171,10 +166,6 @@ namespace TFE_DarkForces
 					ItemId itemId = getPickupItemId(s_objSeqArg2);
 					obj_createPickup(obj, itemId);
 					setupFunc = nullptr;
-				}
-				else
-				{
-					obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
 				}
 			}
 			else if (key == KW_SEQEND)

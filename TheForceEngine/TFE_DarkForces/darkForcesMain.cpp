@@ -537,9 +537,17 @@ namespace TFE_DarkForces
 
 				s32 skill = (s32)s_agentData[s_agentId].difficulty;
 				BriefingInfo* brief = &s_briefingList.briefing[briefingIndex];
-				missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
-
-				s_state = GSTATE_BRIEFING;
+				if (brief)
+				{
+					missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
+					s_state = GSTATE_BRIEFING;
+				}
+				else
+				{
+					s_cutsceneIndex++;
+					startNextMode();
+					return;
+				}
 			}  break;
 			case GMODE_MISSION:
 			{

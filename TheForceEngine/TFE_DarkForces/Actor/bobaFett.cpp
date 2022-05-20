@@ -809,7 +809,6 @@ namespace TFE_DarkForces
 		task_setUserData(task, bobaFett);
 
 		obj->entityFlags = ETFLAG_AI_ACTOR;
-		obj->worldWidth >>= 1;
 		obj->worldHeight = FIXED(7);
 
 		physicsActor->alive = JTRUE;

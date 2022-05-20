@@ -246,7 +246,7 @@ namespace TFE_Jedi
 				sectorBlocked |= sector_canWallMove(wall, offsetX, offsetZ);
 
 				RWall* mirror = wall->mirrorWall;
-				if (wall->mirrorWall && (mirror->flags1 & WF1_WALL_MORPHS))
+				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 				{
 					sectorBlocked |= sector_canWallMove(mirror, offsetX, offsetZ);
 				}
@@ -753,13 +753,13 @@ namespace TFE_Jedi
 	{
 		fixed16_16 objSide0;
 		SecObject* player = s_playerObject;
-		JBool overlap0 = sector_objOverlapsWall(wall, player, &objSide0);
+		sector_objOverlapsWall(wall, player, &objSide0);
 
 		fixed16_16 localX = wall->worldPos0.x - centerX;
 		fixed16_16 localZ = wall->worldPos0.z - centerZ;
 
-		fixed16_16 dirZ = wall->wallDir.z;
 		fixed16_16 dirX = wall->wallDir.x;
+		fixed16_16 dirZ = wall->wallDir.z;
 		fixed16_16 prevX = wall->w0->x;
 		fixed16_16 prevZ = wall->w0->z;
 
@@ -782,11 +782,8 @@ namespace TFE_Jedi
 		wall->w0->z = prevZ;
 
 		// Test the results.
-		if (!overlap1 && (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1))
-		{
-			return JFALSE;
-		}
-		return JTRUE;
+		if (overlap1 || ((objSide0 & objSide1) && (objSide0 != objSide1))) { return JTRUE; }
+		return JFALSE;
 	}
 
 	void sector_removeCorpses(RSector* sector)
@@ -948,7 +945,7 @@ namespace TFE_Jedi
 
 	void sector_rotateObj(SecObject* obj, angle14_32 deltaAngle, fixed16_16 cosdAngle, fixed16_16 sindAngle, fixed16_16 centerX, fixed16_16 centerZ)
 	{
-		if (obj->flags & OBJ_FLAG_HAS_COLLISION)
+		if (obj->flags & OBJ_FLAG_MOVABLE)
 		{
 			if (obj->entityFlags & ETFLAG_PLAYER)
 			{
@@ -964,15 +961,15 @@ namespace TFE_Jedi
 
 			fixed16_16 offsetY = 0;
 			fixed16_16 offsetX = mul16(relX, cosdAngle) - mul16(relZ, sindAngle) + centerX - obj->posWS.x;
-			fixed16_16 yPos = FIXED(9999);
 			fixed16_16 offsetZ = mul16(relX, sindAngle) + mul16(relZ, cosdAngle) + centerZ - obj->posWS.z;
+
 			fixed16_16 height = obj->worldHeight + HALF_16;
 
 			CollisionInfo info =
 			{
 				obj,
 				offsetX, offsetY, offsetZ,
-				0, yPos, height, 0,
+				0, FIXED(9999), height, 0,
 				0, 0, 0,	// to be filled in later.
 				obj->worldWidth,
 			};
@@ -1067,42 +1064,47 @@ namespace TFE_Jedi
 		}
 
 		// Update the previous wall, since it would have changed as well.
-		RWall* nextWall = nullptr;
+		RWall* prevWall = nullptr;
 		if (wall->id == 0)
 		{
 			s32 last = sector->wallCount - 1;
-			nextWall = &sector->walls[last];
+			prevWall = &sector->walls[last];
 		}
 		else
 		{
-			nextWall = wall - 1;
+			prevWall = wall - 1;
 		}
 		// Compute the wall direction and length of the previous wall.
-		sector_computeWallDirAndLength(nextWall);
+		sector_computeWallDirAndLength(prevWall);
+
+		// Set the appropriate game value if the player is inside the sector.
+		sector = prevWall->sector;
+		if (sector->flags1 & SEC_FLAGS1_PLAYER)
+		{
+			s_playerSecMoved = JTRUE;
+		}
 	}
 
 	// returns 0 if the object does NOT overlap, otherwise non-zero.
 	// objSide: 0 = no overlap, -1/+1 front or behind.
 	JBool sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide)
 	{
-		fixed16_16 halfWidth    = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 1;
-		fixed16_16 quarterWidth = (obj->worldWidth - SIGN_BIT(obj->worldWidth)) >> 2;
-		fixed16_16 threeQuartWidth = halfWidth + quarterWidth;
 		*objSide = 0;
-
 		RSector* next = wall->nextSector;
 		if (next)
 		{
 			RSector* sector = wall->sector;
-			if (obj->posWS.y <= sector->floorHeight)
+			if (sector->floorHeight >= obj->posWS.y)
 			{
 				fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
-				if (objTop > sector->ceilingHeight)
+				if (sector->ceilingHeight < objTop)
 				{
-					return 0;
+					return JFALSE;
 				}
 			}
 		}
+
+		const fixed16_16 threeQuartWidth = obj->worldWidth/2 + obj->worldWidth/4;
 
 		vec2_fixed* w0  = wall->w0;
 		// Given a 2D direction: Dx, Dz; the perpendicular (normal) = -Dz, Dx
@@ -1114,19 +1116,13 @@ namespace TFE_Jedi
 
 		fixed16_16 proj = mul16(dx, nrmZ) + mul16(dz, nrmX);
 		fixed16_16 minSepDist = threeQuartWidth * 2 + len;	// 1.5 * width + length
-		fixed16_16 projOnWall = TFE_Jedi::abs(threeQuartWidth + proj);
-		if (projOnWall <= minSepDist)
+		if (u32(proj + threeQuartWidth) <= u32(minSepDist))
 		{
 			fixed16_16 perpDist = mul16(dx, nrmX) - mul16(dz, nrmZ);
 			s32 side = (perpDist >= 0) ? 1 : -1;
 
 			*objSide = side;
-			if (side < 0)
-			{
-				perpDist = -perpDist;
-			}
-			assert(perpDist >= 0);
-			if (perpDist <= threeQuartWidth)
+			if (abs(perpDist) <= threeQuartWidth)
 			{
 				return JTRUE;
 			}
@@ -1137,29 +1133,26 @@ namespace TFE_Jedi
 	// returns 0 if the wall is free to move, else non-zero.
 	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
-		s32 objSide0 = 0;
 		// Test the initial position, the code assumes there is no collision at this point.
+		s32 objSide0 = 0;
 		sector_objOverlapsWall(wall, s_playerObject, &objSide0);
 
 		vec2_fixed* w0 = wall->w0;
-		fixed16_16 z0 = w0->z;
 		fixed16_16 x0 = w0->x;
+		fixed16_16 z0 = w0->z;
 		w0->x += offsetX;
 		w0->z += offsetZ;
 
-		s32 objSide1 = 0;
 		// Then move the wall and test the new position.
+		s32 objSide1 = 0;
 		JBool col = sector_objOverlapsWall(wall, s_playerObject, &objSide1);
 
 		// Restore the wall.
 		w0->x = x0;
 		w0->z = z0;
 
-		if (!col && (objSide0 == 0 || objSide1 == 0 || objSide0 == objSide1))
-		{
-			return JFALSE;
-		}
-		return JTRUE;
+		if (col || ((objSide0 & objSide1) && (objSide0 != objSide1))) { return JTRUE; }
+		return JFALSE;
 	}
 
 	void sector_getFloorAndCeilHeight(RSector* sector, fixed16_16* floorHeight, fixed16_16* ceilHeight)
@@ -1212,7 +1205,7 @@ namespace TFE_Jedi
 
 	void sector_moveObject(SecObject* obj, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
-		//if (obj->flags & OBJ_FLAG_HAS_COLLISION)
+		if (obj->flags & OBJ_FLAG_MOVABLE)
 		{
 			s32 height = obj->worldHeight + HALF_16;
 			CollisionInfo info =
@@ -1248,9 +1241,9 @@ namespace TFE_Jedi
 		
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
-		JBool reverse  = (flags & ELEV_MOVING_REVERSE)!=0 ? JTRUE : JFALSE;
-		JBool masterOn = (flags & ELEV_MASTER_ON)!=0      ? JTRUE : JFALSE;
-		JBool moving   = (flags & ELEV_MOVING)!=0         ? JTRUE : JFALSE;
+		JBool ceiling  = (flags & INF_EFLAG_MOVE_CEIL)!=0  ? JTRUE : JFALSE;
+		JBool offset   = (flags & INF_EFLAG_MOVE_SECHT)!=0 ? JTRUE : JFALSE;
+		JBool floor    = (flags & INF_EFLAG_MOVE_FLOOR)!=0 ? JTRUE : JFALSE;
 
 		SecObject** objList = sector->objectList;
 		for (s32 i = 0, idx = 0; i < sector->objectCount && idx < sector->objectCapacity; idx++)
@@ -1259,12 +1252,11 @@ namespace TFE_Jedi
 			if (obj)
 			{
 				i++;
-				if (obj->entityFlags != ETFLAG_PLAYER)
+				if ((obj->flags & OBJ_FLAG_MOVABLE) && (obj->entityFlags != ETFLAG_PLAYER))
 				{
-					// This never seems to hit so far, so this is TODO...
-					if ((moving && obj->posWS.y == sector->floorHeight) ||
-						(masterOn && sector->secHeight && sector->floorHeight + sector->secHeight == obj->posWS.y) ||
-						(reverse && obj->posWS.y == sector->ceilingHeight))
+					if ((floor   && obj->posWS.y == sector->floorHeight) ||
+						(offset  && sector->secHeight && sector->floorHeight + sector->secHeight == obj->posWS.y) ||
+						(ceiling && obj->posWS.y == sector->ceilingHeight))
 					{
 						sector_moveObject(obj, offsetX, offsetZ);
 					}

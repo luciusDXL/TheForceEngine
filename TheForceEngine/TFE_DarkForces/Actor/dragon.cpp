@@ -1032,8 +1032,7 @@ namespace TFE_DarkForces
 		physicsActor->actor.physics.obj = obj;
 		actor_setupSmartObj(&physicsActor->actor);
 
-		obj->flags |= OBJ_FLAG_HAS_COLLISION;
-		obj->worldWidth >>= 1;
+		obj->flags |= OBJ_FLAG_MOVABLE;
 
 		CollisionInfo* physics = &physicsActor->actor.physics;
 		physics->botOffset = 0x60000;

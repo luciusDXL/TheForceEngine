@@ -863,8 +863,7 @@ namespace TFE_DarkForces
 		task_setUserData(task, trooper);
 
 		obj->entityFlags = ETFLAG_AI_ACTOR;
-		obj->worldWidth >>= 1;
-
+		
 		physicsActor->alive = JTRUE;
 		physicsActor->hp = FIXED(180);
 		physicsActor->state = 0;

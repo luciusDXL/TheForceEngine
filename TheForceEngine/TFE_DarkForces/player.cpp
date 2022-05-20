@@ -560,7 +560,7 @@ namespace TFE_DarkForces
 		obj_addLogic(obj, (Logic*)&s_playerLogic, s_playerTask, playerLogicCleanupFunc);
 
 		s_playerObject->entityFlags|= ETFLAG_PLAYER;
-		s_playerObject->flags      |= OBJ_FLAG_HAS_COLLISION;
+		s_playerObject->flags      |= OBJ_FLAG_MOVABLE;
 		s_playerObject->worldHeight = PLAYER_HEIGHT;
 		s_playerObject->worldWidth  = PLAYER_WIDTH;
 

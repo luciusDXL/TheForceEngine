@@ -123,7 +123,6 @@ namespace TFE_DarkForces
 	Logic* barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
-		obj->flags |= OBJ_FLAG_HAS_COLLISION;
 
 		logic->flags &= 0xfffffffb;
 		logic->flags &= 0xfffffffe;

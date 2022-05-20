@@ -111,7 +111,7 @@ namespace TFE_DarkForces
 		updateLogic->logic.parent = logicItem;
 		updateLogic->logic.cleanupFunc = updateLogicCleanupFunc;
 		updateLogic->logic.task = s_logicUpdateTask;
-		obj->flags &= ~OBJ_FLAG_HAS_COLLISION;
+		obj->flags &= ~OBJ_FLAG_MOVABLE;
 
 		return (Logic*)updateLogic;
 	}

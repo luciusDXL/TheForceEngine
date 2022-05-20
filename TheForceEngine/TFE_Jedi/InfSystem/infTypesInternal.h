@@ -28,9 +28,9 @@ namespace TFE_Jedi
 
 	enum ElevUpdateFlags
 	{
-		ELEV_MOVING         = FLAG_BIT(0),	// elevator should be moving.
-		ELEV_MASTER_ON      = FLAG_BIT(1),	// master on
-		ELEV_MOVING_REVERSE = FLAG_BIT(2),	// the elevator is moving in reverse.
+		ELEV_MOVING     = FLAG_BIT(0),	// elevator should be moving.
+		ELEV_MASTER_ON  = FLAG_BIT(1),	// master on
+		ELEV_CRUSH      = FLAG_BIT(2),	// the elevator is moving in reverse.
 	};
 
 	enum InfDelay

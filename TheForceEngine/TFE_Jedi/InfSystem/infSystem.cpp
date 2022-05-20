@@ -874,6 +874,7 @@ namespace TFE_Jedi
 		while (!seqEnd)
 		{
 			line = parser.readLine(bufferPos);
+			if (!line) { break; }
 			// There is another class in this sequence, so finish the current class by setting up the initial stop.
 			if (strstr(line, "CLASS"))
 			{
@@ -916,7 +917,7 @@ namespace TFE_Jedi
 		{
 			line = parser.readLine(bufferPos);
 			// There is another class in this sequence, so we are done with the trigger.
-			if (strstr(line, "CLASS"))
+			if (!line || strstr(line, "CLASS"))
 			{
 				break;
 			}
@@ -929,6 +930,7 @@ namespace TFE_Jedi
 			// Continue reading, but the information cannot be filled in properly.
 			if (!sector)
 			{
+				assert(0);
 				if (itemId == KW_SEQEND)
 				{
 					seqEnd = true;
@@ -1027,7 +1029,7 @@ namespace TFE_Jedi
 		{
 			line = parser.readLine(bufferPos);
 			// There is another class in this sequence, so we are done with the trigger.
-			if (strstr(line, "CLASS"))
+			if (!line || strstr(line, "CLASS"))
 			{
 				break;
 			}
@@ -1124,7 +1126,7 @@ namespace TFE_Jedi
 		while (!seqEnd)
 		{
 			line = parser.readLine(bufferPos);
-			if (strstr(line, "CLASS"))
+			if (!line || strstr(line, "CLASS"))
 			{
 				break;
 			}
@@ -1205,7 +1207,7 @@ namespace TFE_Jedi
 				} break;
 				case KW_MESSAGE:
 				{
-					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_DONE);
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_TRIGGER);
 				} break;
 			}  // switch (itemId)
 		}  // while (!seqEnd)
@@ -1277,11 +1279,13 @@ namespace TFE_Jedi
 		}
 
 		// Then loop through all of the items and parse their classes.
-		itemCount = min(itemCount, MAX_INF_ITEMS);
-		// It turns out that Dark Forces is relying on using the previous value of 'num' if a line does not set it properly.
-		// If I clear it every time, then some things stop working.
-		// So rather than relying on the local memory to just line up every loop, I pulled out the local variable.
-		s32 num = 0;
+		if (itemCount > MAX_INF_ITEMS)
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Too many INF items - skipping extra items.");
+			itemCount = MAX_INF_ITEMS;
+		}
+
+		s32 wallNum = 0;
 		for (s32 i = 0; i < itemCount; i++)
 		{
 			line = parser.readLine(bufferPos);
@@ -1292,7 +1296,7 @@ namespace TFE_Jedi
 			}
 
 			char item[256], name[256];
-			while (sscanf(line, " ITEM: %s NAME: %s NUM: %d", item, name, &num) < 1)
+			while (sscanf(line, " ITEM: %s NAME: %s NUM: %d", item, name, &wallNum) < 1)
 			{
 				line = parser.readLine(bufferPos);
 				if (!line)
@@ -1308,32 +1312,32 @@ namespace TFE_Jedi
 			{
 				case KW_LEVEL:
 				{
-					// This is very incomplete and needs to be fixed.
-					// This doesn't actually work correctly in the base game though, so its lower priority.
 					line = parser.readLine(bufferPos);
-					if (strstr(line, "SEQ"))
+					if (line && strstr(line, "SEQ"))
 					{
-						char itemName[256];
-						s32 argCount = sscanf(line, " %s %s %s %s %s %s %s", itemName, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArgExtra, s_infArgExtra);
-						KEYWORD levelItem = getKeywordIndex(itemName);
-						if (levelItem == KW_AMB_SOUND)
+						while (line = parser.readLine(bufferPos))
 						{
-							// TODO(Core Game Loop Release)
-						}
-						else if (levelItem == KW_SEQEND)
-						{
-							// TODO(Core Game Loop Release)
-						}
-						else
-						{
-							// TODO(Core Game Loop Release)
+							char itemName[256];
+							s32 argCount = sscanf(line, " %s %s %s %s %s %s %s", itemName, s_infArg0, s_infArg1, s_infArg2, s_infArg3, s_infArgExtra, s_infArgExtra);
+							KEYWORD levelItem = getKeywordIndex(itemName);
+							switch (levelItem)
+							{
+								case KW_SEQEND:
+									break;
+								case KW_AMB_SOUND:
+								{
+									level_addSound(s_infArg0, u32(atof(s_infArg1) * 145.65f), atoi(s_infArg2));
+									continue;
+								}
+							}
+							break;
 						}
 					}
 				} break;
 				case KW_SECTOR:
 				{
 					line = parser.readLine(bufferPos);
-					if (!strstr(line, "SEQ"))
+					if (!line || !strstr(line, "SEQ"))
 					{
 						continue;
 					}
@@ -1342,7 +1346,7 @@ namespace TFE_Jedi
 					// Loop until seqend since an INF item may have multiple classes.
 					while (1)
 					{
-						if (!strstr(line, "CLASS"))
+						if (!line || !strstr(line, "CLASS"))
 						{
 							break;
 						}
@@ -1356,7 +1360,6 @@ namespace TFE_Jedi
 						{
 							if (parseElevator(parser, bufferPos, name))
 							{
-								// If we have reached the end of the sequence, time to break out of the loop.
 								break;
 							}
 						}
@@ -1364,7 +1367,6 @@ namespace TFE_Jedi
 						{
 							if (parseSectorTrigger(parser, bufferPos, argCount, name))
 							{
-								// If we have reached the end of the sequence, time to break out of the loop.
 								break;
 							}
 						}
@@ -1372,7 +1374,6 @@ namespace TFE_Jedi
 						{
 							if (parseTeleport(parser, bufferPos, name))
 							{
-								// If we have reached the end of the sequence, time to break out of the loop.
 								break;
 							}
 						}
@@ -1381,7 +1382,7 @@ namespace TFE_Jedi
 				case KW_LINE:
 				{
 					line = parser.readLine(bufferPos);
-					if (!strstr(line, "SEQ"))
+					if (!line || !strstr(line, "SEQ"))
 					{
 						continue;
 					}
@@ -1390,14 +1391,14 @@ namespace TFE_Jedi
 					// Loop until seqend since an INF item may have multiple classes.
 					while (1)
 					{
-						if (!strstr(line, "CLASS"))
+						if (!line || !strstr(line, "CLASS"))
 						{
 							break;
 						}
 
 						char id[256];
 						s32 argCount = sscanf(line, " %s %s %s %s %s", id, s_infArg0, s_infArg1, s_infArg2, s_infArg3);
-						if (parseLineTrigger(parser, bufferPos, argCount, name, num))
+						if (parseLineTrigger(parser, bufferPos, argCount, name, wallNum))
 						{
 							break;
 						}
@@ -1431,6 +1432,38 @@ namespace TFE_Jedi
 	{
 		infElevatorMsgFunc(msg);
 	}
+
+	void inf_startElevator(InfElevator* elev)
+	{
+		// Figure out the source position for the sound effect.
+		vec3_fixed sndPos = inf_getElevSoundPos(elev);
+
+		// Play the startup sound effect if the elevator is not already at the next stop.
+		Stop* nextStop = elev->nextStop;
+		// Play the initial sound as the elevator starts moving.
+		if (nextStop && *elev->value != nextStop->value)
+		{
+			sound_playCued(elev->sound0, sndPos);
+		}
+
+		// Update the next time, so this will move on the next update.
+		elev->nextTick = s_curTick;
+
+		// Flag the elevator as moving.
+		elev->updateFlags |= ELEV_MOVING;
+	}
+
+	void inf_elevatorVolume(InfElevator* elev)
+	{
+		if (elev->updateFlags & ELEV_MOVING)
+		{
+			// Figure out the source position for the sound effect.
+			vec3_fixed sndPos = inf_getElevSoundPos(elev);
+
+			// Start up the sound effect, track it since it is looping.
+			elev->loopingSoundID = sound_maintain(elev->loopingSoundID, elev->sound1, sndPos);
+		}
+	}
 			
 	// Per frame update.
 	void inf_elevatorTaskFunc(MessageType msg)
@@ -1461,43 +1494,20 @@ namespace TFE_Jedi
 						// If not already moving, get started.
 						if (!(taskCtx->elev->updateFlags & ELEV_MOVING) && !taskCtx->elevDeleted)
 						{
-							// Figure out the source position for the sound effect.
-							vec3_fixed sndPos = inf_getElevSoundPos(taskCtx->elev);
-
-							// Play the startup sound effect if the elevator is not already at the next stop.
-							Stop* nextStop = taskCtx->elev->nextStop;
-							// Play the initial sound as the elevator starts moving.
-							if (nextStop && *taskCtx->elev->value != nextStop->value)
-							{
-								sound_playCued(taskCtx->elev->sound0, sndPos);
-							}
-
-							// Update the next time, so this will move on the next update.
-							taskCtx->elev->nextTick = s_curTick;
-
-							// Flag the elevator as moving.
-							taskCtx->elev->updateFlags |= ELEV_MOVING;
+							inf_startElevator(taskCtx->elev);
 						}
-						// If the elevator is moving, then play the looping sound.
-						if (taskCtx->elev->updateFlags & ELEV_MOVING)
-						{
-							// Figure out the source position for the sound effect.
-							vec3_fixed sndPos = inf_getElevSoundPos(taskCtx->elev);
+						inf_elevatorVolume(taskCtx->elev);
 
-							// Start up the sound effect, track it since it is looping.
-							taskCtx->elev->loopingSoundID = sound_maintain(taskCtx->elev->loopingSoundID, taskCtx->elev->sound1, sndPos);
-						}
-
-						// if reachedStop = JFALSE, elevator has not reached the next stop.
 						if (updateElevator(taskCtx->elev))
 						{
+							// The elevator has reached the next stop.
 							elevHandleStopDelay(taskCtx->elev);
 
 							taskCtx->nextStop = taskCtx->elev->nextStop;
-							if (taskCtx->elev->updateFlags & ELEV_MOVING_REVERSE)
+							if (taskCtx->elev->updateFlags & ELEV_CRUSH)
 							{
 								taskCtx->elev->nextTick = s_curTick + TICKS_PER_SECOND;	// this will pause the elevator for one second.
-								taskCtx->elev->updateFlags &= ~ELEV_MOVING_REVERSE;		// remove the reverse flag.
+								taskCtx->elev->updateFlags &= ~ELEV_CRUSH;				// remove the crush flag.
 							}
 							else
 							{
@@ -1531,36 +1541,36 @@ namespace TFE_Jedi
 								s_nextStop = taskCtx->nextStop;
 								task_callTaskFunc(inf_stopHandleMessages);
 
+								task_localBlockBegin;
+								// Adjoin Commands.
+								inf_stopAdjoinCommands(taskCtx->nextStop);
+
+								// Floor texture change.
+								TextureData** floorTex = taskCtx->nextStop->floorTex;
+								if (floorTex)
 								{
-									// Adjoin Commands.
-									inf_stopAdjoinCommands(taskCtx->nextStop);
-
-									// Floor texture change.
-									TextureData** floorTex = taskCtx->nextStop->floorTex;
-									if (floorTex)
-									{
-										RSector* sector = taskCtx->elev->sector;
-										sector->floorTex = floorTex;
-									}
-
-									// Ceiling texture change.
-									TextureData** ceilTex = taskCtx->nextStop->ceilTex;
-									if (ceilTex)
-									{
-										RSector* sector = taskCtx->elev->sector;
-										sector->ceilTex = ceilTex;
-									}
-
-									// Page (special 2D sound effect that plays, such as voice overs).
-									SoundSourceId pageId = taskCtx->nextStop->pageId;
-									if (pageId)
-									{
-										sound_play(pageId);
-									}
-
-									// Advance to the next stop.
-									taskCtx->elev->nextStop = inf_advanceStops(taskCtx->elev->stops, 0, 1);
+									RSector* sector = taskCtx->elev->sector;
+									sector->floorTex = floorTex;
 								}
+
+								// Ceiling texture change.
+								TextureData** ceilTex = taskCtx->nextStop->ceilTex;
+								if (ceilTex)
+								{
+									RSector* sector = taskCtx->elev->sector;
+									sector->ceilTex = ceilTex;
+								}
+
+								// Page (special 2D sound effect that plays, such as voice overs).
+								SoundSourceId pageId = taskCtx->nextStop->pageId;
+								if (pageId)
+								{
+									sound_play(pageId);
+								}
+
+								// Advance to the next stop.
+								taskCtx->elev->nextStop = inf_advanceStops(taskCtx->elev->stops, 0, 1);
+								task_localBlockEnd;
 							} // (!elevDeleted)
 						}
 					} // ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
@@ -2047,7 +2057,7 @@ namespace TFE_Jedi
 				if (argCount > 2)
 				{
 					f32 value = strtof(s_infArg1, &endPtr);
-					slaveValue = floatToFixed16(value);
+					slaveValue = s32(value * 16383.0f / 360.0f);
 				}
 				inf_addSlave(elev, slaveValue, msgAddr->sector);
 			} break;
@@ -2222,7 +2232,8 @@ namespace TFE_Jedi
 			RWall* mirror = wall->mirrorWall;
 			if (mirror)
 			{
-				mirror->flags3 |= (bits & 0x0f);
+				const u32 allowedMirrorFlags = (WF3_ALWAYS_WALK | WF3_CANNOT_FIRE_THROUGH | WF3_PLAYER_WALK_ONLY | WF3_SOLID_WALL);
+				mirror->flags3 |= (bits & allowedMirrorFlags);
 			}
 		}
 	}
@@ -2255,7 +2266,8 @@ namespace TFE_Jedi
 			RWall* mirror = wall->mirrorWall;
 			if (mirror)
 			{
-				mirror->flags3 &= ~(bits & 0x0f);
+				const u32 allowedMirrorFlags = (WF3_ALWAYS_WALK | WF3_CANNOT_FIRE_THROUGH | WF3_PLAYER_WALK_ONLY | WF3_SOLID_WALL);
+				mirror->flags3 &= ~(bits & allowedMirrorFlags);
 			}
 		}
 	}
@@ -2270,7 +2282,7 @@ namespace TFE_Jedi
 		while (link)
 		{
 			// Fire off the link task if the event and entity match the requirements.
-			if ((evt == INF_EVENT_NONE || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->entityFlags)) && link->task)
+			if ((evt == INF_EVENT_NONE || evt == INF_EVENT_ANY || (link->eventMask & evt)) && (!entity || (link->entityMask & entity->entityFlags)) && link->task)
 			{
 				s_msgEntity = entity;
 				s_msgTarget = link->target;
@@ -2278,16 +2290,6 @@ namespace TFE_Jedi
 
 				allocator_addRef(infLink);
 				task_runLocal(link->task, msgType);
-
-				// Drain pending tasks before moving on.
-				/* TODO
-				while (s_taskId)
-				{
-					func_1c7a02(s_curTask);
-					yieldTask(0);
-				}
-				*/
-
 				allocator_release(infLink);
 			}
 			link = (InfLink*)allocator_getNext(infLink);
@@ -2301,15 +2303,15 @@ namespace TFE_Jedi
 		fixed16_16* value = elev->value;
 		Stop* nextStop = elev->nextStop;
 
-		fixed16_16 v0 = *value;
-		fixed16_16 v1 = v0;
+		fixed16_16 pos = *value;
+		fixed16_16 targetPos = pos;
 		if (nextStop)
 		{
-			v1 = nextStop->value;
+			targetPos = nextStop->value;
 		}
 
 		// The elevator has reached the next stop.
-		if (v1 == v0 && nextStop)
+		if (pos == targetPos && nextStop)
 		{
 			return JTRUE;
 		}
@@ -2354,25 +2356,14 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			fixed16_16 delta = v1 - v0;
+			fixed16_16 delta = targetPos - pos;
 			frameDelta = delta;
 			if (elev->speed)
 			{
 				if (!elev->fixedStep)
 				{
-					fixed16_16 change = mul16(elev->speed, s_deltaTime);
-					if (delta > change)
-					{
-						frameDelta = change;
-					}
-					else if (delta < -change)
-					{
-						frameDelta = -change;
-					}
-					else
-					{
-						frameDelta = delta;
-					}
+					fixed16_16 move = mul16(elev->speed, s_deltaTime);
+					frameDelta = delta > move ? move : delta < -move ? -move : delta;
 				}
 				else
 				{
@@ -2382,20 +2373,19 @@ namespace TFE_Jedi
 			}
 		}
 
-		fixed16_16 newValue;
 		if (updateFunc)
 		{
-			newValue = updateFunc(elev, frameDelta);
+			pos = updateFunc(elev, frameDelta);
 		}
 		else
 		{
 			// If there is no update function, just increment the value based and move on.
 			*elev->value += frameDelta;
-			newValue = *elev->value;
+			pos = *elev->value;
 		}
 
 		// Returns JTRUE if the elevator has reached the next stop, otherwise returns JFALSE.
-		return (v1 == newValue && elev->nextStop) ? JTRUE : JFALSE;
+		return (targetPos == pos && elev->nextStop) ? JTRUE : JFALSE;
 	}
 
 	void inf_elevHandleTriggerMsg(InfElevator* elev, u32 evt)
@@ -2733,13 +2723,13 @@ namespace TFE_Jedi
 					{
 						// This will go to the previous stop.
 						elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
-						elev->updateFlags |= ELEV_MOVING_REVERSE;
+						elev->updateFlags |= ELEV_CRUSH;
 					}
 					else  // TRIGMOVE_LAST or TRIGMOVE_NEXT or TRIGMOVE_PREV
 					{
 						// This will get the last stop.
 						elev->nextStop = inf_advanceStops(elev->stops, -1, 0);
-						elev->updateFlags |= ELEV_MOVING_REVERSE;
+						elev->updateFlags |= ELEV_CRUSH;
 					}
 					elev->nextTick = 0;
 				}
@@ -3153,7 +3143,7 @@ namespace TFE_Jedi
 					taskCtx->link = (InfLink*)allocator_getHead(taskCtx->infLink);
 					while (taskCtx->link)
 					{
-						if (taskCtx->link->task && (taskCtx->msg->event <= 0 || (taskCtx->link->eventMask & taskCtx->msg->event)))
+						if (taskCtx->link->task && (taskCtx->msg->event == INF_EVENT_NONE || taskCtx->msg->event == INF_EVENT_ANY || (taskCtx->link->eventMask & taskCtx->msg->event)))
 						{
 							allocator_addRef(taskCtx->msgList);
 
@@ -3347,24 +3337,24 @@ namespace TFE_Jedi
 	{
 		RSector* sector = elev->sector;
 		fixed16_16 secHeightDelta = 0;
-		fixed16_16 ceilDelta = 0;
+		fixed16_16 ceilDelta  = 0;
 		fixed16_16 floorDelta = 0;
 
 		switch (elev->type)
 		{
-		case IELEV_MOVE_CEILING:
-			ceilDelta = delta;
-			break;
-		case IELEV_MOVE_FLOOR:
-			floorDelta = delta;
-			break;
-		case IELEV_MOVE_OFFSET:
-			secHeightDelta = delta;
-			break;
-		case IELEV_MOVE_FC:
-			floorDelta = delta;
-			ceilDelta = delta;
-			break;
+			case IELEV_MOVE_CEILING:
+				ceilDelta = delta;
+				break;
+			case IELEV_MOVE_FLOOR:
+				floorDelta = delta;
+				break;
+			case IELEV_MOVE_OFFSET:
+				secHeightDelta = delta;
+				break;
+			case IELEV_MOVE_FC:
+				floorDelta = delta;
+				ceilDelta = delta;
+				break;
 		}
 
 		fixed16_16 maxObjHeight = sector_getMaxObjectHeight(sector);
@@ -3373,7 +3363,7 @@ namespace TFE_Jedi
 			maxObjHeight += 0x4000;	// maxObjHeight + 0.25
 			if (secHeightDelta)
 			{
-				fixed16_16 height = sector->floorHeight + sector->secHeight;
+				fixed16_16 offsetHeight = sector->floorHeight + sector->secHeight;
 				fixed16_16 maxObjHeightAbove = 0;
 				fixed16_16 maxObjectHeightBelow = 0;
 
@@ -3385,72 +3375,51 @@ namespace TFE_Jedi
 				for (; objCount > 0; objList++)
 				{
 					SecObject* obj = *objList;
-					if (!obj)
-					{
-						continue;
-					}
+					if (!obj) { continue; }
 
 					objCount--;
 					fixed16_16 objHeight = obj->worldHeight + ONE_16;
-					// Object is below the second height
-					if (obj->posWS.y > height)
+					if (obj->posWS.y > offsetHeight) // Object is below the second height
 					{
-						if (objHeight > maxObjectHeightBelow)
-						{
-							maxObjectHeightBelow = objHeight;
-						}
+						maxObjectHeightBelow = max(maxObjectHeightBelow, objHeight);
 					}
-					// Object is on or above the second height
-					else
+					else // Object is on or above the second height
 					{
-						if (objHeight > maxObjHeightAbove)
-						{
-							maxObjHeightAbove = objHeight;
-						}
+						maxObjHeightAbove = max(maxObjHeightAbove, objHeight);
 					}
 				}
 
 				// The new second height after adjustment (only second height so far).
-				height += secHeightDelta;
+				offsetHeight += secHeightDelta;
 				// Difference between the base floor height and the adjusted second height.
-				fixed16_16 floorDelta = sector->floorHeight - (height + ONE_16);
+				fixed16_16 floorDelta = sector->floorHeight - (offsetHeight + ONE_16);
 				// Difference betwen the adjusted second height and the ceiling.
-				fixed16_16 ceilDelta = height - sector->ceilingHeight;
+				fixed16_16 ceilDelta = offsetHeight - sector->ceilingHeight;
 				if (floorDelta < maxObjectHeightBelow || ceilDelta < maxObjHeightAbove)
 				{
 					// If there are objects in the way, set the next stop as the previous.
 					elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
-					floorDelta = 0;
 					secHeightDelta = 0;
-					ceilDelta = 0;
 				}
 			}
 			else
 			{
 				fixed16_16 floorHeight = sector->floorHeight + floorDelta;
-				fixed16_16 ceilHeight = sector->ceilingHeight + ceilDelta;
-				fixed16_16 height = floorHeight - ceilHeight;
-				if (height < maxObjHeight)
+				fixed16_16 ceilHeight  = sector->ceilingHeight + ceilDelta;
+				fixed16_16 spaceAvail  = floorHeight - ceilHeight;
+				if (spaceAvail < maxObjHeight)
 				{
 					// Remove dead objects.
 					sector_removeCorpses(sector);
-
-					// Not sure why it needs to check again...
-					fixed16_16 maxObjHeight = sector_getMaxObjectHeight(sector);
-					fixed16_16 spaceNeeded = maxObjHeight + 0x4000;	// maxObjHeight + 0.25
-					floorHeight = sector->floorHeight + floorDelta;
-					ceilHeight = sector->ceilingHeight + ceilDelta;
-					fixed16_16 spaceAvail = floorHeight - ceilHeight;
-
+					
 					// If the height between floor and ceiling is too small for the tallest object AND
 					// If the floor is moving up or the ceiling is moving down and this is NOT a crushing sector.
-					if (maxObjHeight > 0 && spaceAvail < spaceNeeded && (floorDelta < 0 || ceilDelta > 0) && !(sector->flags1 & SEC_FLAGS1_CRUSHING))
+					if ((floorDelta < 0 || ceilDelta > 0) && !(sector->flags1 & SEC_FLAGS1_CRUSHING))
 					{
-						Stop* stop = inf_advanceStops(elev->stops, 0, -1);
+						elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
 						floorDelta = 0;
 						secHeightDelta = 0;
 						ceilDelta = 0;
-						elev->nextStop = stop;
 					}
 				}
 			}
@@ -3504,11 +3473,11 @@ namespace TFE_Jedi
 		RSector* sector = elev->sector;
 		sector->dirtyFlags |= SDF_VERTICES;
 
-		fixed16_16 deltaRounded = (delta > 0) ? fixed16_16((delta + HALF_16) & 0xffff0000) : -fixed16_16((HALF_16 - delta) & 0xffff0000);
-		fixed16_16 angle = elev->iValue + delta;
-		fixed16_16 centerX = elev->dirOrCenter.x;
-		fixed16_16 centerZ = elev->dirOrCenter.z;
-		angle14_32 angleInt = floor16(angle);
+		delta = (delta > 0) ? fixed16_16((delta + HALF_16) & 0xffff0000) : -fixed16_16((HALF_16 - delta) & 0xffff0000);
+		const fixed16_16 angle = elev->iValue + delta;
+		const fixed16_16 centerX = elev->dirOrCenter.x;
+		const fixed16_16 centerZ = elev->dirOrCenter.z;
+		const angle14_32 angleInt = floor16(angle);
 		if (!sector_canRotateWalls(sector, angleInt, centerX, centerZ))
 		{
 			return elev->iValue;
@@ -3518,27 +3487,22 @@ namespace TFE_Jedi
 		while (child)
 		{
 			// The value in slave can be used as an angular offset.
-			s32 childAngle = fract16(child->value) + angleInt;
-			sector = child->sector;
-			if (!sector_canRotateWalls(child->sector, childAngle, centerX, centerZ))
+			if (!sector_canRotateWalls(child->sector, child->value + angleInt, centerX, centerZ))
 			{
 				return elev->iValue;
 			}
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
-
 		sector_rotateWalls(elev->sector, centerX, centerZ, angleInt);
 
-		angle14_32 deltaInt = floor16(deltaRounded);
+		const angle14_32 deltaInt = floor16(delta);
 		sector_rotateObjects(elev->sector, deltaInt, centerX, centerZ, elev->flags);
 
 		child = (Slave*)allocator_getHead(elev->slaves);
 		while (child)
 		{
-			s32 childAngle = (angle >> 16) + (child->value & 0xffff);
-			sector_rotateWalls(child->sector, centerX, centerZ, childAngle);
+			sector_rotateWalls(child->sector, centerX, centerZ, angleInt + child->value);
 			sector_rotateObjects(child->sector, deltaInt, centerX, centerZ, elev->flags);
-
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
 		elev->iValue = angle;

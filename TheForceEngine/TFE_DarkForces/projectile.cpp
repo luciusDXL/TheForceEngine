@@ -151,7 +151,7 @@ namespace TFE_DarkForces
 		SecObject* projObj = allocateObject();
 
 		projObj->entityFlags |= ETFLAG_PROJECTILE;
-		projObj->flags &= ~OBJ_FLAG_HAS_COLLISION;
+		projObj->flags &= ~OBJ_FLAG_MOVABLE;
 		projObj->projectileLogic = projLogic;
 
 		projLogic->prevColObj = nullptr;
@@ -253,7 +253,7 @@ namespace TFE_DarkForces
 				{
 					frame_setData(projObj, s_thermalDetProj);
 				}
-				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
+				projObj->flags |= OBJ_FLAG_MOVABLE;
 				projObj->worldWidth = 0;
 
 				projLogic->flags |= PROJFLAG_EXPLODE;
@@ -367,7 +367,7 @@ namespace TFE_DarkForces
 					frame_setData(projObj, s_landmineWpnFrame);
 				}
 				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
-				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
+				projObj->flags |= OBJ_FLAG_MOVABLE;
 				projObj->worldWidth = 0;
 
 				projLogic->type = PROJ_LAND_MINE;
@@ -393,7 +393,7 @@ namespace TFE_DarkForces
 					frame_setData(projObj, s_landmineWpnFrame);
 				}
 				projObj->entityFlags |= ETFLAG_LANDMINE_WPN;
-				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
+				projObj->flags |= OBJ_FLAG_MOVABLE;
 				projObj->worldWidth = 0;
 
 				projLogic->type = PROJ_LAND_MINE_PROX;
@@ -419,7 +419,7 @@ namespace TFE_DarkForces
 					frame_setData(projObj, s_landmineFrame);
 				}
 				projLogic->type = PROJ_LAND_MINE_PLACED;
-				projObj->flags |= OBJ_FLAG_HAS_COLLISION;
+				projObj->flags |= OBJ_FLAG_MOVABLE;
 				projObj->worldWidth = 0;
 
 				projLogic->updateFunc = landMineUpdateFunc;
@@ -595,7 +595,6 @@ namespace TFE_DarkForces
 					sprite_setData(projObj, s_homingMissileProj);
 				}
 				obj_setSpriteAnim(projObj);
-				projObj->worldWidth >>= 1;
 				projObj->flags |= OBJ_FLAG_ENEMY;
 
 				projLogic->flags |= PROJFLAG_EXPLODE;
