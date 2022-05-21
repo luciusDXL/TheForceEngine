@@ -416,6 +416,7 @@ namespace TFE_Jedi
 				const u32 count = value & 0x7f;
 				// store 0 at dst
 				memset(dst, 0, count);
+				dst += count;
 				pixelCount -= count;
 			}
 			else
