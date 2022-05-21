@@ -1065,6 +1065,7 @@ namespace RClassic_Fixed
 		RSector* sector = wall->sector;
 		RSector* nextSector = wall->nextSector;
 		TextureData* tex = *wall->botTex;
+		if (!tex) { return; }
 
 		fixed16_16 z0 = wallSegment->z0;
 		fixed16_16 z1 = wallSegment->z1;
@@ -1293,6 +1294,8 @@ namespace RClassic_Fixed
 		RSector* sector = srcWall->sector;
 		RSector* next = srcWall->nextSector;
 		TextureData* texture = *srcWall->topTex;
+		if (!texture) { return; }
+
 		fixed16_16 z0 = wallSegment->z0;
 		fixed16_16 z1 = wallSegment->z1;
 		fixed16_16 num = solveForZ_Numerator(wallSegment);
@@ -1581,7 +1584,7 @@ namespace RClassic_Fixed
 		
 		s32 cn0_pixel = round16(next_cProj0);
 		s32 cn1_pixel = round16(next_cProj1);
-		if (cn0_pixel >= s_windowMinY_Pixels || cn1_pixel >= s_windowMinY_Pixels)
+		if (topTex && (cn0_pixel >= s_windowMinY_Pixels || cn1_pixel >= s_windowMinY_Pixels))
 		{
 			fixed16_16 u0 = wallSegment->uCoord0;
 			fixed16_16 num = solveForZ_Numerator(wallSegment);
@@ -1676,7 +1679,7 @@ namespace RClassic_Fixed
 		f0_pixel = round16(next_fProj0);
 		f1_pixel = round16(next_fProj1);
 
-		if (f0_pixel <= s_windowMaxY_Pixels || f1_pixel <= s_windowMaxY_Pixels)
+		if (botTex && (f0_pixel <= s_windowMaxY_Pixels || f1_pixel <= s_windowMaxY_Pixels))
 		{
 			fixed16_16 u0 = wallSegment->uCoord0;
 			fixed16_16 num = solveForZ_Numerator(wallSegment);

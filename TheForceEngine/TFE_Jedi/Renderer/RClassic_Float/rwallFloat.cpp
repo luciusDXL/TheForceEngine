@@ -1111,6 +1111,7 @@ namespace RClassic_Float
 		RSector* sector = srcWall->sector;
 		RSector* nextSector = srcWall->nextSector;
 		TextureData* tex = *srcWall->botTex;
+		if (!tex) { return; }
 
 		f32 z0 = wallSegment->z0;
 		f32 z1 = wallSegment->z1;
@@ -1342,6 +1343,7 @@ namespace RClassic_Float
 		RSector* sector = srcWall->sector;
 		RSector* next = srcWall->nextSector;
 		TextureData* texture = *srcWall->topTex;
+		if (!texture) { return; }
 
 		f32 z0 = wallSegment->z0;
 		f32 z1 = wallSegment->z1;
@@ -1632,7 +1634,7 @@ namespace RClassic_Float
 		
 		s32 cn0_pixel = roundFloat(next_cProj0);
 		s32 cn1_pixel = roundFloat(next_cProj1);
-		if (cn0_pixel >= s_windowMinY_Pixels || cn1_pixel >= s_windowMinY_Pixels)
+		if (topTex && (cn0_pixel >= s_windowMinY_Pixels || cn1_pixel >= s_windowMinY_Pixels))
 		{
 			f32 u0 = wallSegment->uCoord0;
 			f32 num = solveForZ_Numerator(wallSegment);
@@ -1728,7 +1730,7 @@ namespace RClassic_Float
 		f0_pixel = roundFloat(next_fProj0);
 		f1_pixel = roundFloat(next_fProj1);
 
-		if (f0_pixel <= s_windowMaxY_Pixels || f1_pixel <= s_windowMaxY_Pixels)
+		if (botTex && (f0_pixel <= s_windowMaxY_Pixels || f1_pixel <= s_windowMaxY_Pixels))
 		{
 			f32 u0 = wallSegment->uCoord0;
 			f32 num = solveForZ_Numerator(wallSegment);
