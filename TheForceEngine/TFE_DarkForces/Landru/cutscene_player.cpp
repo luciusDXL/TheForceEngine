@@ -159,15 +159,10 @@ namespace TFE_DarkForces
 			s_film = cutsceneFilm_load(name, &rect, 0, 0, 0, cutscene_loadCallback);
 			if (!s_film)
 			{
-				lsystem_clearAllocator(LALLOC_CUTSCENE);
-				lsystem_setAllocator(LALLOC_PERSISTENT);
-
-				// Close the archive.
 				TFE_Paths::removeLastArchive();
 				delete lfd;
-
-				TFE_System::logWrite(LOG_ERROR, "CutscenePlayer", "Unable to load all items in cutscene '%s'.", name);
 				s_scene = SCENE_EXIT;
+				TFE_System::logWrite(LOG_ERROR, "CutscenePlayer", "Unable to load all items in cutscene '%s'.", name);
 				return;
 			}
 			lview_setUpdateFunc(lcutscenePlayer_endView);
