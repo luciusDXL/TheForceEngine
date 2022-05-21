@@ -759,6 +759,10 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(&local(bobaFett)->logic);
 		level_free(local(bobaFett));
 		
+		while (msg != MSG_RUN_TASK)
+		{
+			task_yield(TASK_NO_DELAY);
+		}
 		task_end;
 	}
 

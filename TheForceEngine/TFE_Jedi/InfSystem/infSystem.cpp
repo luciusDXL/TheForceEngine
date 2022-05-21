@@ -1059,10 +1059,6 @@ namespace TFE_Jedi
 				seqEnd = true;
 				break;
 			}
-			else
-			{
-				break;
-			}
 		}
 
 		return seqEnd;

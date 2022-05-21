@@ -596,6 +596,7 @@ namespace TFE_Jedi
 		if (ImWaveSetupSoundData(sound, chunkIndex) != imSuccess)
 		{
 			IM_LOG_ERR("Failed to setup wave player data - soundId: 0x%x, priority: %d", soundId, priority);
+			ImFreeWaveSound(sound);
 			return imFail;
 		}
 
