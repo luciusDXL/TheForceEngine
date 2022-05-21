@@ -231,7 +231,7 @@ namespace TFE_Jedi
 
 		// Number of textures used by the level.
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, "TEXTURES %d", &s_textureCount) != 1)
+		if (sscanf(line, " TEXTURES %d", &s_textureCount) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture count.");
 			return false;
@@ -245,37 +245,43 @@ namespace TFE_Jedi
 		{
 			line = parser.readLine(bufferPos);
 			char textureName[256];
-			if (sscanf(line, " TEXTURE: %s", textureName) != 1)
+			if (sscanf(line, " TEXTURE: %s ", textureName) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
-				textureName[0] = 0;
-				continue;
-			}
-
-			TextureData* tex = nullptr;
-			if (TFE_Paths::getFilePath(textureName, &filePath))
-			{
-				tex = bitmap_load(&filePath, 1);
-			}
-			if (!tex)
-			{
-				TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Could not open '%s', using 'default.bm' instead.", textureName);
-
 				TFE_Paths::getFilePath("default.bm", &filePath);
-				tex = bitmap_load(&filePath, 1);
+				*texture = bitmap_load(&filePath, 1);
+			}
+			else if (strcasecmp(textureName, "<NoTexture>") == 0)
+			{
+				*texture = nullptr;
+			}
+			else
+			{
+				TextureData* tex = nullptr;
+				if (TFE_Paths::getFilePath(textureName, &filePath))
+				{
+					tex = bitmap_load(&filePath, 1);
+				}
 				if (!tex)
 				{
-					TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "'default.bm' is not a valid BM file!");
-					assert(0);
-					return false;
-				}
-			}
-			*texture = tex;
+					TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Could not open '%s', using 'default.bm' instead.", textureName);
 
-			// Setup an animated texture.
-			if (tex->uvWidth == BM_ANIMATED_TEXTURE)
-			{
-				bitmap_setupAnimatedTexture(texture);
+					TFE_Paths::getFilePath("default.bm", &filePath);
+					tex = bitmap_load(&filePath, 1);
+					if (!tex)
+					{
+						TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "'default.bm' is not a valid BM file!");
+						assert(0);
+						return false;
+					}
+				}
+				*texture = tex;
+
+				// Setup an animated texture.
+				if (tex->uvWidth == BM_ANIMATED_TEXTURE)
+				{
+					bitmap_setupAnimatedTexture(texture);
+				}
 			}
 		}
 
