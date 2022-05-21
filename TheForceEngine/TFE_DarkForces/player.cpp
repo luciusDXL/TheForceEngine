@@ -1401,7 +1401,8 @@ namespace TFE_DarkForces
 				s_playerVelZ = mul16(friction, s_playerVelZ);
 			}
 			// Just stop moving if the velocity is low enough, to avoid jittering forever.
-			if (distApprox(0, 0, s_playerVelX, s_playerVelZ) < HALF_16)
+			// Note: The jitter threshold has been halved in TFE in order to work at higher framerates.
+			if (distApprox(0, 0, s_playerVelX, s_playerVelZ) < HALF_16/2)
 			{
 				s_playerVelX = 0;
 				s_playerVelZ = 0;
