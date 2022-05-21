@@ -257,6 +257,7 @@ namespace TFE_Jedi
 		elev->nextStop = nullptr;
 		elev->value = nullptr;
 		elev->iValue = 0;
+		elev->prevValue = 0;
 		elev->dirOrCenter.x = 0;
 		elev->dirOrCenter.z = 0;
 		elev->flags = 0;
@@ -717,6 +718,7 @@ namespace TFE_Jedi
 		teleport->dstAngle[2] = 0;
 		teleport->sector = sector;
 		teleport->type = type;
+		teleport->target = nullptr;
 
 		if (!sector->infLink)
 		{
@@ -2343,12 +2345,13 @@ namespace TFE_Jedi
 				break;
 		}
 
+		fixed16_16 dt = s_deltaTime;
 		fixed16_16 frameDelta = 0;
 		if (!nextStop)
 		{
 			// If there are no stops, then the elevator keeps going forever...
 			// Useful for scrolling textures, constantly spinning gears, etc.
-			frameDelta = mul16(elev->speed, s_deltaTime);
+			frameDelta = mul16(elev->speed, dt);
 		}
 		else
 		{
@@ -2358,7 +2361,7 @@ namespace TFE_Jedi
 			{
 				if (!elev->fixedStep)
 				{
-					fixed16_16 move = mul16(elev->speed, s_deltaTime);
+					fixed16_16 move = mul16(elev->speed, dt);
 					frameDelta = delta > move ? move : delta < -move ? -move : delta;
 				}
 				else
@@ -3469,10 +3472,26 @@ namespace TFE_Jedi
 		RSector* sector = elev->sector;
 		sector->dirtyFlags |= SDF_VERTICES;
 
-		delta = (delta > 0) ? fixed16_16((delta + HALF_16) & 0xffff0000) : -fixed16_16((HALF_16 - delta) & 0xffff0000);
-		const fixed16_16 angle = elev->iValue + delta;
-		const fixed16_16 centerX = elev->dirOrCenter.x;
-		const fixed16_16 centerZ = elev->dirOrCenter.z;
+		JBool halfStep = JFALSE;
+		if (abs(delta) < HALF_16)
+		{
+			// This is a minor hack to allow slow moving rotating sectors to work at up to 144Hz.
+			// Basically it allows slowly rotating elevators to work at 2x the framerate by rounding in halves - yielding similar
+			// behavior to vanilla.
+			fixed16_16 d2 = delta * 2;
+			d2 = (d2 > 0) ? fixed16_16((d2 + HALF_16) & 0xffff0000) : -fixed16_16((HALF_16 - d2) & 0xffff0000);
+			delta = d2 / 2;
+			halfStep = JTRUE;
+		}
+		else
+		{
+			// This is the DOS code.
+			delta = (delta > 0) ? fixed16_16((delta + HALF_16) & 0xffff0000) : -fixed16_16((HALF_16 - delta) & 0xffff0000);
+		}
+
+		const fixed16_16 angle    = elev->iValue + delta;
+		const fixed16_16 centerX  = elev->dirOrCenter.x;
+		const fixed16_16 centerZ  = elev->dirOrCenter.z;
 		const angle14_32 angleInt = floor16(angle);
 		if (!sector_canRotateWalls(sector, angleInt, centerX, centerZ))
 		{
@@ -3491,7 +3510,10 @@ namespace TFE_Jedi
 		}
 		sector_rotateWalls(elev->sector, centerX, centerZ, angleInt);
 
-		const angle14_32 deltaInt = floor16(delta);
+		// The original DOS code was deltaInt = floor16(delta);
+		// But this code allows for half steps to be taken when needed at high framerates without modifying the
+		// original behavior in other cases.
+		const angle14_32 deltaInt = halfStep ? (angleInt - elev->prevValue) : floor16(delta);
 		sector_rotateObjects(elev->sector, deltaInt, centerX, centerZ, elev->flags);
 
 		child = (Slave*)allocator_getHead(elev->slaves);
@@ -3501,6 +3523,7 @@ namespace TFE_Jedi
 			sector_rotateObjects(child->sector, deltaInt, centerX, centerZ, elev->flags);
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
+		elev->prevValue = angleInt;
 		elev->iValue = angle;
 		return elev->iValue;
 	}

@@ -187,5 +187,7 @@ namespace TFE_Jedi
 		SoundEffectId loopingSoundID;
 		s32 u54;
 		s32 updateFlags;
+		// TFE
+		fixed16_16 prevValue;
 	};
 }
