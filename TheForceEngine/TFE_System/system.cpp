@@ -24,9 +24,11 @@ namespace TFE_System
 
 	static u64 s_time;
 	static u64 s_startTime;
+	static u64 s_lastSyncCheck;
+	static u64 s_syncCheckDelay;
 	static f64 s_freq;
 	static f64 s_refreshRate;
-
+	
 	static f64 s_dt = 1.0 / 60.0;		// This is just to handle the first frame, so any reasonable value will work.
 	static const f64 c_maxDt = 0.05;	// 20 fps
 
@@ -43,7 +45,9 @@ namespace TFE_System
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_System::init");
 		s_time = SDL_GetPerformanceCounter();
+		s_lastSyncCheck = s_time;
 		s_startTime = s_time;
+		s_syncCheckDelay = SDL_GetPerformanceFrequency() * 10;	// 10 seconds.
 		s_freq = 1.0 / (f64)SDL_GetPerformanceFrequency();
 		s_refreshRate = f64(refreshRate);
 		s_synced = synced;
@@ -61,6 +65,7 @@ namespace TFE_System
 		s_synced = sync;
 		TFE_Settings::getGraphicsSettings()->vsync = sync;
 		TFE_RenderBackend::enableVsync(sync);
+		s_lastSyncCheck = SDL_GetPerformanceCounter();
 	}
 
 	bool getVSync()
@@ -94,7 +99,7 @@ namespace TFE_System
 		// This assumes that SDL_GetPerformanceCounter() is monotonic.
 		// However if errors do occur, the dt clamp later should limit the side effects.
 		const u64 curTime = SDL_GetPerformanceCounter();
-		const u64 uDt = curTime - s_time;
+		const u64 uDt = (curTime > s_time) ? (curTime - s_time) : 1;	// Make sure time is monotonic.
 		s_time = curTime;
 		if (s_resetStartTime)
 		{
@@ -108,7 +113,7 @@ namespace TFE_System
 		// If vsync is enabled, then round up to the nearest vsync interval as our delta time.
 		// Ideally, if we are hitting the correct framerate, this should always be 
 		// 1 vsync interval.
-		if (s_synced && s_refreshRate > 0.0f)
+		if (s_synced && s_refreshRate > 0.0f && s_refreshRate < 120.0f)	// If the refresh rate is too high, rounding becomes unreliable.
 		{
 			const f64 intervals = std::max(1.0, floor(dt * s_refreshRate + 0.1));
 			f64 newDt = intervals / s_refreshRate;
@@ -118,8 +123,14 @@ namespace TFE_System
 			{
 				// Something went wrong, so use the original delta time and check if the refresh rate has changed.
 				// Also verify that vsync is still set.
-				s_refreshRate = (f64)TFE_RenderBackend::getDisplayRefreshRate();
-				s_synced = TFE_RenderBackend::getVsyncEnabled();
+				// Note that checking vsync state and refresh are costly, so don't do it constantly.
+				if (curTime - s_lastSyncCheck > s_syncCheckDelay)
+				{
+					f64 newRate = (f64)TFE_RenderBackend::getDisplayRefreshRate();
+					s_refreshRate = newRate ? newRate : s_refreshRate;
+					s_synced = TFE_RenderBackend::getVsyncEnabled();
+					s_lastSyncCheck = curTime;
+				}
 				s_missedFrameCount++;
 			}
 			else
