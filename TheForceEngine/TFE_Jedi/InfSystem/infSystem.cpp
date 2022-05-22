@@ -3008,9 +3008,9 @@ namespace TFE_Jedi
 			{
 				speed = elev->nextStop->value - *elev->value;
 			}
-			if (!speed) { return; }
+			if (speed == 0) { return; }
 
-			speed = (speed > 0) ? elev->speed : -elev->speed;
+			speed = (speed >= 0) ? elev->speed : -elev->speed;
 			if (elev->type == IELEV_MOVE_WALL || elev->type == IELEV_SCROLL_FLOOR || elev->type == IELEV_SCROLL_CEILING)
 			{
 				vel->x = mul16(speed, elev->dirOrCenter.x);
