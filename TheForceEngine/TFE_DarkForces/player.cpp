@@ -132,7 +132,7 @@ namespace TFE_DarkForces
 	static fixed16_16 s_externalVelX;
 	static fixed16_16 s_externalVelZ;
 	static fixed16_16 s_playerCrouchSpd;
-	static fixed16_16 s_playerSpeed;
+	static fixed16_16 s_playerSpeedAve;
 	static fixed16_16 s_prevDistFromFloor = 0;
 	static fixed16_16 s_wpnSin = 0;
 	static fixed16_16 s_wpnCos = 0;
@@ -172,7 +172,7 @@ namespace TFE_DarkForces
 	s32 s_lifeCount;
 	s32 s_playerLight = 0;
 	s32 s_headwaveVerticalOffset;
-	u32 s_moveAvail = 0xffffffff;
+	JBool s_onFloor = JTRUE;
 	s32 s_weaponLight = 0;
 	s32 s_baseAtten = 0;
 	fixed16_16 s_gravityAccel;
@@ -448,7 +448,7 @@ namespace TFE_DarkForces
 		s_externalVelX = 0;
 		s_externalVelZ = 0;
 		s_playerCrouchSpd = 0;
-		s_playerSpeed  = 0;
+		s_playerSpeedAve = 0;
 
 		s_weaponLight    = 0;
 		s_levelAtten     = 0;
@@ -584,13 +584,13 @@ namespace TFE_DarkForces
 	{
 		if (s_playerEye)
 		{
-			s_playerEye->flags &= ~2;
+			s_playerEye->flags &= ~OBJ_FLAG_EYE;
 			s_playerEye->flags |= s_playerEyeFlags;
 		}
 		s_playerEye = obj;
 		player_setupCamera();
 
-		s_playerEye->flags |= 2;
+		s_playerEye->flags |= OBJ_FLAG_EYE;
 		s_playerEyeFlags = s_playerEye->flags & 4;
 		s_playerEye->flags &= ~4;
 
@@ -960,12 +960,12 @@ namespace TFE_DarkForces
 		s_externalVelX = 0;
 		// s_282380 = 0;
 		s_externalVelZ = 0;
-		s_playerSpeed = 0;
+		s_playerSpeedAve = 0;
 		s_weaponLight = 0;
 		s_headwaveVerticalOffset = 0;
 		s_playerUse = JFALSE;
 		s_playerActionUse = JFALSE;
-		s_moveAvail = 0;
+		s_onFloor = JFALSE;
 
 		s_playerStopAccel = -540672;	// -8.25
 		s_playerCrouchSpd = 0;
@@ -1175,7 +1175,7 @@ namespace TFE_DarkForces
 		}
 
 		s32 crouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
-		if (s_moveAvail & crouch)
+		if (s_onFloor & crouch)
 		{
 			fixed16_16 speed = PLAYER_CROUCH_SPEED;
 			speed <<= s_playerRun;			// this will be '1' if running.
@@ -1187,7 +1187,7 @@ namespace TFE_DarkForces
 		s_playerJumping = JFALSE;
 		if (inputMapping_getActionState(IADF_JUMP))
 		{
-			if (!s_moveAvail || wasJumping)
+			if (!s_onFloor || wasJumping)
 			{
 				s_playerJumping = wasJumping;
 			}
@@ -1424,27 +1424,34 @@ namespace TFE_DarkForces
 				if (link->type == LTYPE_SECTOR)
 				{
 					InfElevator* elev = link->elev;
-					s_playerSector->floorHeight;
-					JBool effected = JFALSE;
-					if ((player->posWS.y == s_playerSector->floorHeight && (elev->flags & INF_EFLAG_MOVE_FLOOR)) ||
-						(player->posWS.y != s_playerSector->floorHeight && (elev->flags & INF_EFLAG_MOVE_SECHT)))
-					{
-						effected = JTRUE;
-					}
-					if (effected)
-					{
-						fixed16_16 speed;
-						vec3_fixed vel;
-						inf_getMovingElevatorVelocity(elev, &vel, &speed);
+					JBool moved = JFALSE;
 
-						if (!speed && s_playerSector->secHeight > 0)
+					if (player->posWS.y == s_playerSector->floorHeight)
+					{
+						if (elev->flags & INF_EFLAG_MOVE_FLOOR) { moved = JTRUE; }
+					}
+					else if (elev->flags & INF_EFLAG_MOVE_SECHT)
+					{
+						moved = JTRUE;
+					}
+
+					if (moved)
+					{
+						fixed16_16 angularSpd;
+						vec3_fixed vel;
+						inf_getMovingElevatorVelocity(elev, &vel, &angularSpd);
+
+						if (!angularSpd && secHeight > 0)
 						{
+							// liquid behavior - dampens velocity.
 							vel.x = mul16(vel.x, MOVING_SURFACE_MUL);
 							vel.z = mul16(vel.z, MOVING_SURFACE_MUL);
 						}
 						else
 						{
-							// TODO(Core Game Loop Release)
+							// This is never hit in Dark Forces because it appears that the angularSpd update in
+							// inf_getMovingElevatorVelocity() was removed for some reason.
+							assert(0);
 						}
 
 						if (vel.x || vel.z)
@@ -1584,7 +1591,8 @@ namespace TFE_DarkForces
 				s_externalVelZ = mul16(s_externalVelZ, friction);
 			}
 			fixed16_16 approxLen = distApprox(0, 0, s_externalVelX, s_externalVelZ);
-			if (approxLen < HALF_16)
+			// Reduce the friction min length by half to account for higher framerates.
+			if (approxLen < HALF_16/2)
 			{
 				s_externalVelX = 0;
 				s_externalVelZ = 0;
@@ -1660,17 +1668,15 @@ namespace TFE_DarkForces
 		}
 		sector_getObjFloorAndCeilHeight(player->sector, player->posWS.y, &floorHeight, &ceilHeight);
 
-		// Warning: even though the code calculates 'gravityAccelDt' - it doesn't actually apply to the velocity.
-		// I'm not sure where this happens yet - so for now it is added here until I can figure out what I'm missing.
-		// Fortunately it seems to work correctly.
+		// Gravity.
 		fixed16_16 gravityAccelDt = mul16(s_gravityAccel, s_deltaTime);
+		// This happens in an interrupt in the original DOS code.
 		s_playerUpVel2 += gravityAccelDt;
-		s_playerUpVel = s_playerUpVel2;
+		s_playerUpVel  = s_playerUpVel2;
 		s_playerYPos += mul16(s_playerUpVel, s_deltaTime);
-
 		s_playerLogic.move.y = s_playerYPos - player->posWS.y;
-				
 		player->posWS.y = s_playerYPos;
+
 		if (s_playerYPos >= s_colCurLowestFloor)
 		{
 			if (s_kyleScreamSoundId)
@@ -1694,15 +1700,14 @@ namespace TFE_DarkForces
 				message_sendToSector(s_nextSector, player, INF_EVENT_LAND, MSG_TRIGGER);
 
 				// 's_playerUpVel' determines how much the view collapses to the ground based on hit velocity.
-				// vel: s_playerUpVel
-				// postLandVel = vel < 60 ? vel / 4 : vel / 8 + 7.5
-				// note that 60/4 = 60/8 + 7.5
-				s_postLandVel = s_playerUpVel >> 2;
-				if (s_playerUpVel >= PLAYER_LAND_VEL_CHANGE)	// 60 units per second
+				if (s_playerUpVel < PLAYER_LAND_VEL_CHANGE)
 				{
-					s_postLandVel -= ((s_playerUpVel - PLAYER_LAND_VEL_CHANGE) >> 3);
+					s_postLandVel = min(s_playerUpVel >> 2, PLAYER_LAND_VEL_MAX);
 				}
-				s_postLandVel = min(PLAYER_LAND_VEL_MAX, s_postLandVel);	// Limit the maximum landing velocity.
+				else
+				{
+					s_postLandVel = min((s_playerUpVel >> 2) - ((s_playerUpVel - PLAYER_LAND_VEL_CHANGE) >> 3), PLAYER_LAND_VEL_MAX);
+				}
 				s_landUpVel = s_playerUpVel;
 			}
 			else
@@ -1734,14 +1739,7 @@ namespace TFE_DarkForces
 				s_playerUpVel2 = yVel;
 
 				fixed16_16 newPlayerBot = s_colCurHighestCeil + player->worldHeight + ONE_16;
-				if (newPlayerBot > s_colCurLowestFloor)
-				{
-					s_playerYPos = s_colCurLowestFloor;
-				}
-				else // Otherwise place the player so that their height is maintained.
-				{
-					s_playerYPos = newPlayerBot;
-				}
+				s_playerYPos = min(s_colCurLowestFloor, newPlayerBot);
 				player->posWS.y = s_playerYPos;
 			}
 		}
@@ -1756,10 +1754,7 @@ namespace TFE_DarkForces
 			player->worldHeight -= mul16(s_postLandVel, s_deltaTime);
 			// Reduce the post land velocity by 20 units / second.
 			s_postLandVel -= mul16(FIXED(20), s_deltaTime);
-			if (s_postLandVel < 0)
-			{
-				s_postLandVel = 0;
-			}
+			s_postLandVel = max(0, s_postLandVel);
 		}
 		else
 		{
@@ -1822,66 +1817,43 @@ namespace TFE_DarkForces
 			fixed16_16 dH = PLAYER_HEIGHT - player->worldHeight;
 			fixed16_16 maxMove = (s_playerInWater) ? FIXED(25) : FIXED(32);
 			s_maxMoveDist = maxMove - dH * 4;
-			//s32 dhIntX16 = floor16(dH << 4);
-			//s32 dH = s32(float(dhIntX16) * 54.6f);
-			//s_282344 = 34 - dH;
 		}
 
 		// Headwave
 		s32 xWpnWaveOffset = 0;
 		s_headwaveVerticalOffset = 0;
-		if (s_config.headwave && (player->flags & 2))
+		if (s_config.headwave && (player->flags & OBJ_FLAG_EYE))
 		{
-			fixed16_16 playerSpeed = distApprox(0, 0, s_playerVelX, s_playerVelZ);
+			fixed16_16 playerSpeedAve = distApprox(0, 0, s_playerVelX, s_playerVelZ);
 			if (!moved)
 			{
-				playerSpeed = 0;
+				playerSpeedAve = 0;
 			}
 			if ((s_playerSector->flags1 & SEC_FLAGS1_ICE_FLOOR) && !s_wearingCleats)
 			{
-				playerSpeed = 0;
+				playerSpeedAve = 0;
 			}
 
-			if (playerSpeed != s_playerSpeed)
+			if (s_playerSpeedAve != playerSpeedAve)
 			{
-				fixed16_16 speedDelta = playerSpeed - s_playerSpeed;
 				fixed16_16 maxFrameChange = mul16(FIXED(32), s_deltaTime);
-
-				if (speedDelta > maxFrameChange)
-				{
-					speedDelta = maxFrameChange;
-				}
-				else if (speedDelta < -maxFrameChange)
-				{
-					speedDelta = -maxFrameChange;
-				}
-				s_playerSpeed += speedDelta;
+				fixed16_16 speedDelta = clamp(playerSpeedAve - s_playerSpeedAve, -maxFrameChange, maxFrameChange);
+				s_playerSpeedAve += speedDelta;
 			}
-			sinCosFixed((s_curTick & 0xffff) << 7, &s_wpnSin, &s_wpnCos);
 
-			fixed16_16 playerSpeedFract = div16(s_playerSpeed, FIXED(32));
+			sinCosFixed(s_curTick << 7, &s_wpnSin, &s_wpnCos);
+			fixed16_16 playerSpeedFract = div16(s_playerSpeedAve, FIXED(32));
 			s_headwaveVerticalOffset = mul16(mul16(s_wpnCos, PLAYER_HEADWAVE_VERT_SPD), playerSpeedFract);
 
-			sinCosFixed((s_curTick & 0xffff) << 6, &s_wpnSin, &s_wpnCos);
+			sinCosFixed(s_curTick << 6, &s_wpnSin, &s_wpnCos);
 			xWpnWaveOffset = mul16(playerSpeedFract, s_wpnCos) >> 12;
 
 			// Water...
-			if (s_playerSector->secHeight - 1 >= 0)
+			if (s_playerSector->secHeight - 1 >= 0 && (s_externalVelX || s_externalVelZ))
 			{
-				if (s_externalVelX || s_externalVelZ)
-				{
-					fixed16_16 externSpd = distApprox(0, 0, s_externalVelX, s_externalVelZ);
-
-					// Replace the fractional part with the current time fractional part.
-					// I think this is meant to add some "randomness" to the headwave while in water.
-					fixed16_16 speed = externSpd & (~0xffff);
-					speed |= (s_curTick & 0xffff);
-					// Then multiply by 16 and take the cosine - this is meant to be a small modification to the weapon motion
-					// (note that the base multiplier is 128).
-					sinCosFixed(speed << 4, &s_wpnSin, &s_wpnCos);
-					// Modify the headwave motion.
-					s_headwaveVerticalOffset += mul16(s_wpnCos, PLAYER_HEADWAVE_VERT_WATER_SPD);
-				}
+				fixed16_16 externSpd = distApprox(0, 0, s_externalVelX, s_externalVelZ) >> 17;
+				sinCosFixed(s_curTick << 4, &s_wpnSin, &s_wpnCos);
+				s_headwaveVerticalOffset += mul16(s_wpnCos, PLAYER_HEADWAVE_VERT_WATER_SPD);
 			}
 		}
 		setCameraOffset(0, s_headwaveVerticalOffset, 0);
@@ -1890,29 +1862,29 @@ namespace TFE_DarkForces
 		PlayerWeapon* weapon = s_curPlayerWeapon;
 		weapon->xWaveOffset = xWpnWaveOffset;					// the x offset has 4 bits of sub-texel precision.
 		weapon->yWaveOffset = s_headwaveVerticalOffset >> 13;	// the y offset is probably the same 4 bits of precision & multiplied by half.
-			   
+
 		// The moves the player can make are restricted based on whether they are on the floor or not.
 		if (s_colCurLowestFloor == player->posWS.y)
 		{
-			s_moveAvail = 0xffffffff;
+			s_onFloor = JTRUE;
 			s_prevDistFromFloor = 0;
 		}
 		else
 		{
 			// Player is *not* on the floor, so things like crouching and jumping are not available.
-			s_moveAvail = 0;
+			s_onFloor = JFALSE;
 		}
 
 		// Apply sector or floor damage.
 		u32 lowAndHighFlag = SEC_FLAGS1_LOW_DAMAGE | SEC_FLAGS1_HIGH_DAMAGE;
 		u32 dmgFlags = s_playerSector->flags1 & lowAndHighFlag;
 		// Handle damage floors.
-		if (dmgFlags == SEC_FLAGS1_LOW_DAMAGE && s_moveAvail)
+		if (dmgFlags == SEC_FLAGS1_LOW_DAMAGE && s_onFloor)
 		{
 			fixed16_16 dmg = mul16(PLAYER_DMG_FLOOR_LOW, s_deltaTime);
 			player_applyDamage(dmg, 0, JTRUE);
 		}
-		else if (dmgFlags == SEC_FLAGS1_HIGH_DAMAGE && s_moveAvail)
+		else if (dmgFlags == SEC_FLAGS1_HIGH_DAMAGE && s_onFloor)
 		{
 			fixed16_16 dmg = mul16(PLAYER_DMG_FLOOR_HIGH, s_deltaTime);
 			player_applyDamage(dmg, 0, JTRUE);
@@ -1953,20 +1925,24 @@ namespace TFE_DarkForces
 			player->posWS.y = s_colCurHighestCeil;
 		}
 
-		if (player->worldHeight - s_camOffset.y > player->posWS.y - s_colMinHeight)
+		// Clamp the height if needed.
+		fixed16_16 yTop = player->posWS.y - s_colMinHeight;
+		fixed16_16 yBot = player->posWS.y - s_colMaxHeight + 0x4000;
+		if (player->worldHeight - s_camOffset.y > yTop)
 		{
-			player->worldHeight = player->posWS.y - s_colMinHeight + s_camOffset.y;
+			player->worldHeight = yTop + s_camOffset.y;
 		}
-		if (player->worldHeight - s_camOffset.y < player->posWS.y - s_colMaxHeight + 0x4000)
+		if (player->worldHeight - s_camOffset.y < yBot)
 		{
-			player->worldHeight = player->posWS.y - s_colMaxHeight + s_camOffset.y + 0x4000;
+			player->worldHeight = yBot + s_camOffset.y;
 		}
 
-		weapon->rollOffset = -div16(s_playerRoll, 13);
-		weapon->pchOffset  = (s_playerPitch + (s_playerPitch < 0 ? (1<<6) : 0)) >> 6;
+		weapon->rollOffset = -s_playerRoll / 13;
+		// TFE adds an extra offset to limit the gap at the bottom of the view.
+		weapon->pchOffset  = (s_playerPitch + (s_playerPitch < 0 ? 128 : 0)) / 64;
 
 		// Handle camera lighting and night vision.
-		if (player->flags & 2)
+		if (player->flags & OBJ_FLAG_EYE)
 		{
 			// This code is incorrect but it doesn't actually matter...
 			// roll is always 0.
@@ -1977,7 +1953,7 @@ namespace TFE_DarkForces
 			{
 				fixed16_16 energy = min(ONE_16, s_energy);
 				headlamp = floor16(mul16(energy, FIXED(64)));
-				headlamp = 2*MAX_LIGHT_LEVEL - min(MAX_LIGHT_LEVEL, headlamp);
+				headlamp = min(MAX_LIGHT_LEVEL, headlamp);
 			}
 			s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
 			s_baseAtten = atten;

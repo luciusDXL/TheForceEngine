@@ -384,7 +384,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemPlans;
 				pickup->msgId[0] = 400;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_PHRIK:
 			{
@@ -392,7 +392,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemPhrik;
 				pickup->msgId[0] = 401;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_NAVA:
 			{
@@ -400,7 +400,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemNava;
 				pickup->msgId[0] = 402;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_DT_WEAPON:
 			{
@@ -408,7 +408,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemDtWeapon;
 				pickup->msgId[0] = 405;
 
-				obj->flags |= OBJ_FLAG_BIT_6;
+				obj->flags |= OBJ_FLAG_MISSION;
 			} break;
 			case ITEM_DATATAPE:
 			{
@@ -416,7 +416,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemDatatape;
 				pickup->msgId[0] = 406;
 
-				obj->flags |= OBJ_FLAG_BIT_6;
+				obj->flags |= OBJ_FLAG_MISSION;
 			} break;
 			// WEAPONS
 			case ITEM_RIFLE:
@@ -639,7 +639,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode1;
 				pickup->msgId[0] = 501;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_CODE2:
 			{
@@ -647,7 +647,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode2;
 				pickup->msgId[0] = 502;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_CODE3:
 			{
@@ -655,7 +655,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode3;
 				pickup->msgId[0] = 503;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_CODE4:
 			{
@@ -663,7 +663,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode4;
 				pickup->msgId[0] = 504;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_CODE5:
 			{
@@ -671,7 +671,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode5;
 				pickup->msgId[0] = 505;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_CODE6:
 			{
@@ -679,7 +679,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode6;
 				pickup->msgId[0] = 506;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_CODE7:
 			{
@@ -687,7 +687,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode7;
 				pickup->msgId[0] = 507;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_CODE8:
 			{
@@ -695,7 +695,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode8;
 				pickup->msgId[0] = 508;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_CODE9:
 			{
@@ -703,7 +703,7 @@ namespace TFE_DarkForces
 				pickup->item = &s_playerInfo.itemCode9;
 				pickup->msgId[0] = 509;
 
-				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_BIT_6);
+				obj->flags |= (OBJ_FLAG_FULLBRIGHT | OBJ_FLAG_MISSION);
 			} break;
 			case ITEM_INVINCIBLE:
 			{

@@ -1759,7 +1759,7 @@ namespace TFE_Jedi
 				case WDF_TOP:
 				{
 					baseHeight = hitWall->nextSector->ceilingHeight;
-					uOffset = hitWall->topOffset.x;	// esi
+					uOffset = hitWall->topOffset.x;
 				} break;
 				case WDF_BOT:
 				case WDF_TOP_AND_BOT:
@@ -2582,15 +2582,15 @@ namespace TFE_Jedi
 			elev->updateFlags |= ELEV_MASTER_ON;
 			return;
 		}
-		else if (!(elev->updateFlags & ELEV_MASTER_ON))
+		if (!(elev->updateFlags & ELEV_MASTER_ON))
 		{
 			return;
 		}
 
 		// For other messages, make sure the correct key is held.
-		if (event != INF_EVENT_31)
+		if (event != INF_EVENT_INTERNAL)
 		{
-			// Non-player entities cannot use this because it requires a key.
+			// Non-smart entities cannot use this because it requires a key.
 			if (entity && (entity->entityFlags & ETFLAG_SMART_OBJ) && elev->key != KEY_NONE)
 			{
 				return;
@@ -2994,23 +2994,23 @@ namespace TFE_Jedi
 		return JFALSE;
 	}
 
-	void inf_getMovingElevatorVelocity(InfElevator* elev, vec3_fixed* vel, fixed16_16* _speed)
+	void inf_getMovingElevatorVelocity(InfElevator* elev, vec3_fixed* vel, fixed16_16* angularSpeed)
 	{
 		vel->x = 0;
 		vel->y = 0;
 		vel->z = 0;
-		*_speed = 0;
+		*angularSpeed = 0;
 
 		if (elev->updateFlags & ELEV_MOVING)
 		{
-			fixed16_16 toNext = 1;
+			fixed16_16 speed = 1;
 			if (elev->nextStop)
 			{
-				toNext = elev->nextStop->value - *elev->value;
+				speed = elev->nextStop->value - *elev->value;
 			}
-			if (!toNext) { return; }
+			if (!speed) { return; }
 
-			fixed16_16 speed = (toNext > 0) ? elev->speed : -elev->speed;
+			speed = (speed > 0) ? elev->speed : -elev->speed;
 			if (elev->type == IELEV_MOVE_WALL || elev->type == IELEV_SCROLL_FLOOR || elev->type == IELEV_SCROLL_CEILING)
 			{
 				vel->x = mul16(speed, elev->dirOrCenter.x);
