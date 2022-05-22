@@ -408,6 +408,7 @@ namespace TFE_DarkForces
 			{
 				s32 skill;
 				JBool abort;
+				lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
 				if (!missionBriefing_update(&skill, &abort))
 				{
 					missionBriefing_cleanup();
