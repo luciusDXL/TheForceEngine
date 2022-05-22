@@ -3193,8 +3193,9 @@ namespace TFE_Jedi
 
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev)
 	{
-		vec3_fixed pos;
-		RSector* sector = elev->sector;
+		vec3_fixed pos = { 0 };
+		RSector* sector = elev ? elev->sector : nullptr;
+		if (!sector) { return pos; }
 
 		// Figure out the source position for the sound effect.
 		pos.y = sector->secHeight + sector->floorHeight;
@@ -3202,8 +3203,11 @@ namespace TFE_Jedi
 		{
 			// First vertex position.
 			vec2_fixed* vtx = (vec2_fixed*)sector->verticesWS;
-			pos.x = vtx->x;
-			pos.z = vtx->z;
+			if (vtx)
+			{
+				pos.x = vtx->x;
+				pos.z = vtx->z;
+			}
 		}
 		else
 		{
