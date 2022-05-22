@@ -568,8 +568,6 @@ namespace TFE_Jedi
 			} break;
 		};
 
-		// TODO(Core Game Loop Release):
-		// link->freeFunc = inf_elevFreeFunc;
 		if (elev)
 		{
 			inf_gotoInitialStop(elev, 0);
@@ -590,11 +588,6 @@ namespace TFE_Jedi
 
 		stop->value = value;
 		stop->delay = TICKS(4);	// default delay = 4 seconds.
-		stop->messages = nullptr;
-		stop->adjoinCmds = nullptr;
-		stop->pageId = NULL_SOUND;	// no page sound by default.
-		stop->floorTex = nullptr;
-		stop->ceilTex = nullptr;
 		// This is a slow operation so it is only included if TFE_INCLUDE_STOP_INDEX == 1
 		stop->index = -1;
 		#if TFE_INCLUDE_STOP_INDEX == 1
@@ -1481,7 +1474,7 @@ namespace TFE_Jedi
 			{
 				infElevatorMsgFunc(msg);
 			}
-			else  // id == 0
+			else  // id == MSG_RUN_TASK
 			{
 				taskCtx->elev = (InfElevator*)allocator_getHead(s_infElevators);
 				while (taskCtx->elev)
@@ -2474,36 +2467,38 @@ namespace TFE_Jedi
 
 	void inf_handleTriggerMsg(InfTrigger* trigger)
 	{
-		if (trigger->master)
+		if (!trigger->master)
 		{
-			// Play trigger sound.
-			sound_play(trigger->soundId);
+			return;
+		}
 
-			// Trigger targets (clients).
-			TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
-			u32 event = s_msgEvent;
-			while (target)
+		// Play trigger sound.
+		sound_play(trigger->soundId);
+
+		// Trigger targets (clients).
+		TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
+		u32 event = s_msgEvent;
+		while (target)
+		{
+			if (target->eventMask & event)
 			{
-				if (target->eventMask & event)
-				{
-					s_msgArg1 = trigger->arg0;
-					s_msgArg2 = trigger->arg1;
+				s_msgArg1 = trigger->arg0;
+				s_msgArg2 = trigger->arg1;
 
-					if (target->wall)
-					{
-						inf_wallSendMessage(target->wall, nullptr, trigger->event, trigger->cmd);
-					}
-					else if (target->sector)
-					{
-						message_sendToSector(target->sector, nullptr, trigger->event, trigger->cmd);
-					}
-					else  // the target is a trigger, recursively call the msg func.
-					{
-						infTriggerMsgFunc(trigger->cmd);
-					}
+				if (target->wall)
+				{
+					inf_wallSendMessage(target->wall, nullptr, trigger->event, trigger->cmd);
 				}
-				target = (TriggerTarget*)allocator_getNext(trigger->targets);
+				else if (target->sector)
+				{
+					message_sendToSector(target->sector, nullptr, trigger->event, trigger->cmd);
+				}
+				else  // the target is a trigger, recursively call the msg func.
+				{
+					infTriggerMsgFunc(trigger->cmd);
+				}
 			}
+			target = (TriggerTarget*)allocator_getNext(trigger->targets);
 		}
 
 		// Send "TEXT" message.
@@ -2526,9 +2521,7 @@ namespace TFE_Jedi
 					{
 						trigger->state = 0;
 					}
-
-					s32 state = trigger->state;
-					trigger->tex = animTex->frameList[state];
+					trigger->tex = animTex->frameList[trigger->state];
 				}
 			} break;
 			case ITRIGGER_SINGLE:
@@ -2540,8 +2533,7 @@ namespace TFE_Jedi
 					{
 						trigger->state = 1;
 					}
-					s32 state = trigger->state;
-					trigger->tex = animTex->frameList[state];
+					trigger->tex = animTex->frameList[trigger->state];
 					// Single can only be triggered once.
 					trigger->master = JFALSE;
 				}
@@ -2555,8 +2547,7 @@ namespace TFE_Jedi
 					{
 						trigger->state = 1;
 					}
-					s32 state = trigger->state;
-					trigger->tex = animTex->frameList[state];
+					trigger->tex = animTex->frameList[trigger->state];
 				}
 				// Switch1 can only be triggered once until it recieves the "DONE" message.
 				trigger->master = JFALSE;
@@ -2817,7 +2808,7 @@ namespace TFE_Jedi
 						trigger->state = 0;
 						trigger->tex = animTex->frameList[0];
 					}
-					// reactive the trigger.
+					// reactivate the trigger.
 					trigger->master = JTRUE;
 				}
 			} break;
@@ -3035,9 +3026,10 @@ namespace TFE_Jedi
 			case MSG_WAKEUP:
 			{
 				s32 objCount = sector->objectCount;
+				s32 objCapacity = sector->objectCapacity;
 				SecObject** objList = sector->objectList;
 
-				for (s32 i = 0; i < objCount; objList++)
+				for (s32 i = 0; i < objCount && i < objCapacity; objList++)
 				{
 					SecObject* obj = *objList;
 					if (obj)
@@ -3055,9 +3047,10 @@ namespace TFE_Jedi
 			case MSG_MASTER_OFF:
 			{
 				s32 objCount = sector->objectCount;
+				s32 objCapacity = sector->objectCapacity;
 				SecObject** objList = sector->objectList;
 
-				for (s32 i = 0; i < objCount; objList++)
+				for (s32 i = 0; i < objCount && i < objCapacity; objList++)
 				{
 					SecObject* obj = *objList;
 					if (obj)

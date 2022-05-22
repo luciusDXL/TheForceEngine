@@ -47,8 +47,11 @@ namespace TFE_System
 		s_time = SDL_GetPerformanceCounter();
 		s_lastSyncCheck = s_time;
 		s_startTime = s_time;
-		s_syncCheckDelay = SDL_GetPerformanceFrequency() * 10;	// 10 seconds.
-		s_freq = 1.0 / (f64)SDL_GetPerformanceFrequency();
+
+		const u64 timerFreq = SDL_GetPerformanceFrequency();
+		s_syncCheckDelay = timerFreq * 10;	// 10 seconds.
+		s_freq = 1.0 / (f64)timerFreq;
+
 		s_refreshRate = f64(refreshRate);
 		s_synced = synced;
 
