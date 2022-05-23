@@ -1447,7 +1447,7 @@ namespace TFE_DarkForces
 							vel.x = mul16(vel.x, MOVING_SURFACE_MUL);
 							vel.z = mul16(vel.z, MOVING_SURFACE_MUL);
 						}
-						else
+						else if (angularSpd)
 						{
 							// This is never hit in Dark Forces because it appears that the angularSpd update in
 							// inf_getMovingElevatorVelocity() was removed for some reason.
@@ -1465,7 +1465,9 @@ namespace TFE_DarkForces
 							else
 							{
 								s_externalVelX += vel.x;
-								s_externalVelZ += vel.z;
+								// This is a bug in Dark Forces, and should have been += vel.z;
+								// However mods rely on this bug, so we have to keep it.
+								s_externalVelZ += angularSpd;
 							}
 							s_onMovingSurface = 1;
 						}
