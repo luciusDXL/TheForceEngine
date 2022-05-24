@@ -313,21 +313,21 @@ namespace TFE_Jedi
 		anim->frameList = (TextureData**)res_alloc(sizeof(TextureData**) * anim->count);
 		assert(anim->frameList);
 
-		u8* base = tex->image + 2;
-		for (s32 i = 0; i < anim->count; i++, textureOffsets++)
+		const u8* base = tex->image + 2;
+		for (s32 i = 0; i < anim->count; i++)
 		{
-			u32 offset = *textureOffsets;
-			TextureData* frame = (TextureData*)(base + offset);
+			TextureData* frame = (TextureData*)(base + textureOffsets[i]);
+
+			// Allocate an image buffer since everything no longer fits nicely.
+			u8* frameImage = (u8*)res_alloc(frame->width * frame->height);
+			memcpy(frameImage, (u8*)frame + 0x1c, frame->width * frame->height);
+
 			// We have to make sure the structure offsets line up with DOS...
 			frame->flags = *((u8*)frame + 0x18);
 			frame->compressed = *((u8*)frame + 0x19);
+			frame->image = frameImage;
+
 			anim->frameList[i] = frame;
-
-			// Offset to account for differences in pointer size.
-			size_t pointerOffset = 2 * (sizeof(size_t) - sizeof(s32));
-
-			// Skip past the header directly to the pixel data.
-			frame->image = (u8*)frame + sizeof(TextureData) - pointerOffset;
 		}
 
 		if (frameRate)

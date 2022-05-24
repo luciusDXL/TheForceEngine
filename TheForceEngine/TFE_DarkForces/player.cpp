@@ -12,6 +12,7 @@
 #include "pickup.h"
 #include "weapon.h"
 #include <TFE_System/system.h>
+#include <TFE_FrontEndUI/console.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_Game/igame.h>
@@ -248,6 +249,9 @@ namespace TFE_DarkForces
 	void handlePlayerPhysics();
 	void handlePlayerActions();
 	void handlePlayerScreenFx();
+
+	// TFE
+	void player_warp(const ConsoleArgList& args);
 		
 	///////////////////////////////////////////
 	// API Implentation
@@ -276,6 +280,8 @@ namespace TFE_DarkForces
 		s_playerInfo.health      = pickup_addToValue(0, 100, 100);
 		s_playerInfo.healthFract = 0;
 		s_energy = FIXED(2);
+
+		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
 	}
 
 	void player_readInfo(u8* inv, s32* ammo)
@@ -2471,5 +2477,22 @@ namespace TFE_DarkForces
 			break;
 		}
 		return retval;
+	}
+
+	// TFE
+	void player_warp(const ConsoleArgList& args)
+	{
+		if (args.size() < 4) { return; }
+		fixed16_16 x =  floatToFixed16(TFE_Console::getFloatArg(args[1]));
+		fixed16_16 y = -floatToFixed16(TFE_Console::getFloatArg(args[2]));
+		fixed16_16 z =  floatToFixed16(TFE_Console::getFloatArg(args[3]));
+
+		s_playerObject->posWS = { x, y, z };
+		s_playerPos = s_playerObject->posWS;
+
+		RSector* sector = sector_which3D(x, y, z);
+		sector_addObject(sector, s_playerObject);
+
+		s_playerSector = s_playerObject->sector;
 	}
 }  // TFE_DarkForces

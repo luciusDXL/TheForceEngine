@@ -844,14 +844,15 @@ namespace RClassic_Fixed
 				// Handle the "sign texture" - a wall overlay.
 				if (signTex && uCoord >= signU0 && uCoord <= signU1)
 				{
-					fixed16_16 signYBase = y0F + div16(srcWall->signOffset.z, s_vCoordStep);
-					s32 y0 = max(floor16(signYBase - div16(intToFixed16(signTex->height), s_vCoordStep) + ONE_16 + HALF_16), top);
-					s32 y1 = min(floor16(signYBase + HALF_16), bot);
+					fixed16_16 signYbot = y0F + div16(srcWall->signOffset.z, s_vCoordStep);
+					fixed16_16 signYtop = signYbot - div16(intToFixed16(signTex->height), s_vCoordStep) + ONE_16;
+					s32 y0 = max(round16(signYtop), top);
+					s32 y1 = min(round16(signYbot), bot);
 					s_yPixelCount = y1 - y0 + 1;
 
 					if (s_yPixelCount > 0)
 					{
-						s_vCoordFixed = mul16(signYBase - intToFixed16(y1) + HALF_16, s_vCoordStep);
+						s_vCoordFixed = mul16(signYbot - intToFixed16(y1) + HALF_16, s_vCoordStep);
 						s_columnOut = &s_display[y0*s_width + x];
 						texelU = floor16(uCoord - signU0);
 						s_texImage = &signTex->image[texelU << signTex->logSizeY];
