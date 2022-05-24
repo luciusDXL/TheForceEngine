@@ -43,6 +43,13 @@ namespace TFE_Jedi
 		return res;
 	}
 
+	u16 readUShort(const u8*& data)
+	{
+		u16 res = *((u16*)data);
+		data += 2;
+		return res;
+	}
+
 	s32 readInt(const u8*& data)
 	{
 		s32 res = *((s32*)data);
@@ -96,8 +103,8 @@ namespace TFE_Jedi
 			return nullptr;
 		}
 
-		texture->width = readShort(data);
-		texture->height = readShort(data);
+		texture->width = readUShort(data);
+		texture->height = readUShort(data);
 		texture->uvWidth = readShort(data);
 		texture->uvHeight = readShort(data);
 		texture->flags = readByte(data);
@@ -105,7 +112,7 @@ namespace TFE_Jedi
 		texture->compressed = readByte(data);
 		// value is ignored.
 		data++;
-
+		
 		if (texture->compressed)
 		{
 			s32 inSize = readInt(data);
@@ -158,7 +165,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			texture->dataSize = texture->width * max(1, texture->height);
+			texture->dataSize = texture->width * texture->height;
 			// Datasize, ignored.
 			data += 4;
 			texture->columns = nullptr;
@@ -194,8 +201,8 @@ namespace TFE_Jedi
 			return nullptr;
 		}
 
-		texture->width = readShort(data);
-		texture->height = readShort(data);
+		texture->width = readUShort(data);
+		texture->height = readUShort(data);
 		texture->uvWidth = readShort(data);
 		texture->uvHeight = readShort(data);
 		texture->flags = readByte(data);
@@ -259,7 +266,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			texture->dataSize = texture->width * max(1, texture->height);
+			texture->dataSize = texture->width * texture->height;
 			// Datasize, ignored.
 			data += 4;
 			texture->columns = nullptr;
@@ -306,10 +313,14 @@ namespace TFE_Jedi
 		anim->frameList = (TextureData**)res_alloc(sizeof(TextureData**) * anim->count);
 		assert(anim->frameList);
 
+		u8* base = tex->image + 2;
 		for (s32 i = 0; i < anim->count; i++, textureOffsets++)
 		{
 			u32 offset = *textureOffsets;
-			TextureData* frame = (TextureData*)(tex->image + 2 + offset);
+			TextureData* frame = (TextureData*)(base + offset);
+			// We have to make sure the structure offsets line up with DOS...
+			frame->flags = *((u8*)frame + 0x18);
+			frame->compressed = *((u8*)frame + 0x19);
 			anim->frameList[i] = frame;
 
 			// Offset to account for differences in pointer size.

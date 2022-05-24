@@ -1226,11 +1226,11 @@ namespace TFE_DarkForces
 			{
 				if (atten)
 				{
-					blitTextureToScreenLit(tex, rect, x, y, atten, display);
+					blitTextureToScreenLit(tex, rect, x, y, atten, display, JTRUE);
 				}
 				else
 				{
-					blitTextureToScreen(tex, rect, x, y, display);
+					blitTextureToScreen(tex, rect, x, y, display, JTRUE);
 				}
 			}
 			else
@@ -1243,11 +1243,11 @@ namespace TFE_DarkForces
 
 				if (atten && !s_weaponLight)
 				{
-					blitTextureToScreenLitScaled(tex, rect, x, y, xScale, yScale, atten, display);
+					blitTextureToScreenLitScaled(tex, rect, x, y, xScale, yScale, atten, display, JTRUE);
 				}
 				else
 				{
-					blitTextureToScreenScaled(tex, rect, x, y, xScale, yScale, display);
+					blitTextureToScreenScaled(tex, rect, x, y, xScale, yScale, display, JTRUE);
 				}
 			}
 		}

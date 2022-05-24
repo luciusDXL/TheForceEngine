@@ -31,8 +31,8 @@ enum OpacityFlags
 #pragma pack(1)
 struct TextureData
 {
-	s16 width;		// if = 1 then multiple BM in the file
-	s16 height;		// EXCEPT if SizeY also = 1, in which case
+	u16 width;		// if = 1 then multiple BM in the file
+	u16 height;		// EXCEPT if SizeY also = 1, in which case
 					// it is a 1x1 BM
 	s16 uvWidth;	// portion of texture actually used
 	s16 uvHeight;	// portion of texture actually used
