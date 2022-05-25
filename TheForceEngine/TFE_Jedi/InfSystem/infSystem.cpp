@@ -1768,7 +1768,7 @@ namespace TFE_Jedi
 					uOffset = hitWall->botOffset.x;
 				} break;
 			}
-
+			
 			if (yPos)
 			{
 				fixed16_16 base = baseHeight + (hitWall->signOffset.z >> 3);
@@ -1784,8 +1784,10 @@ namespace TFE_Jedi
 
 			if (paramPos)
 			{
-				fixed16_16 base = -(uOffset >> 3) + (hitWall->signOffset.x >> 3);
+				fixed16_16 base = (hitWall->signOffset.x - uOffset) >> 3;
+				// base - 0.5
 				fixed16_16 left = base - HALF_16;
+				// base + texWidth/8 + 0.5
 				fixed16_16 right = base + ((*hitWall->signTex)->width << 13) + HALF_16;
 				if (paramPos < left || paramPos > right)
 				{

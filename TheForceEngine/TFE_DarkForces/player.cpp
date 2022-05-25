@@ -2082,8 +2082,7 @@ namespace TFE_DarkForces
 				collision_getHitPoint(&x, &z);
 
 				// Nudge the wall.
-				vec2_fixed* w0 = wall->w0;
-				fixed16_16 distFromW0 = vec2Length(w0->x - x, w0->z - z);
+				fixed16_16 distFromW0 = vec2Length(wall->w0->x - x, wall->w0->z - z);
 				inf_wallAndMirrorSendMessageAtPos(wall, s_playerObject, INF_EVENT_NUDGE_FRONT, distFromW0, eyeHeight);
 				// Nudge the next sector from the outside.
 				message_sendToSector(nextSector, s_playerObject, INF_EVENT_NUDGE_BACK, MSG_TRIGGER);
@@ -2101,7 +2100,7 @@ namespace TFE_DarkForces
 						{
 							// Trigger the next wall.
 							collision_getHitPoint(&x, &z);
-							distFromW0 = vec2Length(w0->x - x, w0->z - z);
+							distFromW0 = vec2Length(wall->w0->x - x, wall->w0->z - z);
 							inf_wallAndMirrorSendMessageAtPos(wall, s_playerObject, INF_EVENT_NUDGE_FRONT, distFromW0, eyeHeight);
 
 							nextSector = wall->nextSector;
@@ -2132,8 +2131,7 @@ namespace TFE_DarkForces
 				fixed16_16 x, z;
 				collision_getHitPoint(&x, &z);
 
-				vec2_fixed* w0 = wall->w0;
-				s32 distFromW0 = vec2Length(w0->x - x, w0->z - z);
+				s32 distFromW0 = vec2Length(wall->w0->x - x, wall->w0->z - z);
 				inf_wallAndMirrorSendMessageAtPos(wall, s_playerObject, INF_EVENT_NUDGE_FRONT, distFromW0, eyeHeight);
 			}
 		}
@@ -2486,13 +2484,15 @@ namespace TFE_DarkForces
 		fixed16_16 x =  floatToFixed16(TFE_Console::getFloatArg(args[1]));
 		fixed16_16 y = -floatToFixed16(TFE_Console::getFloatArg(args[2]));
 		fixed16_16 z =  floatToFixed16(TFE_Console::getFloatArg(args[3]));
-
-		s_playerObject->posWS = { x, y, z };
-		s_playerPos = s_playerObject->posWS;
-
 		RSector* sector = sector_which3D(x, y, z);
-		sector_addObject(sector, s_playerObject);
 
-		s_playerSector = s_playerObject->sector;
+		if (sector)
+		{
+			s_playerObject->posWS = { x, y, z };
+			s_playerPos = s_playerObject->posWS;
+
+			sector_addObject(sector, s_playerObject);
+			s_playerSector = s_playerObject->sector;
+		}
 	}
 }  // TFE_DarkForces
