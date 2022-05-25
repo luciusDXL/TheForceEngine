@@ -891,6 +891,9 @@ namespace RClassic_Float
 						s_columnOut = &s_display[y0*s_width + x];
 						texelU = floorFloat(uCoord - signU0);
 						s_texImage = &signTex->image[texelU << signTex->logSizeY];
+
+						s32 heightMask = s_texHeightMask;
+						s_texHeightMask = signTex->height - 1;
 						if (s_columnLight)
 						{
 							signLit();
@@ -899,6 +902,7 @@ namespace RClassic_Float
 						{
 							signFullbright();
 						}
+						s_texHeightMask = heightMask;
 					}
 				}
 			}
@@ -1315,6 +1319,9 @@ namespace RClassic_Float
 							s_columnOut = &s_display[y0*s_width + x];
 							texelU = floorFloat(uCoord - signU0);
 							s_texImage = &signTex->image[texelU << signTex->logSizeY];
+
+							s32 heightMask = s_texHeightMask;
+							s_texHeightMask = signTex->height - 1;
 							if (s_columnLight)
 							{
 								signLit();
@@ -1323,6 +1330,7 @@ namespace RClassic_Float
 							{
 								signFullbright();
 							}
+							s_texHeightMask = heightMask;
 						}
 					}
 				}
@@ -1529,6 +1537,9 @@ namespace RClassic_Float
 						s_columnOut = &s_display[y0*s_width + x];
 						texelU = floorFloat(uCoord - signU0);
 						s_texImage = &signTex->image[texelU << signTex->logSizeY];
+
+						s32 heightMask = s_texHeightMask;
+						s_texHeightMask = signTex->height - 1;
 						if (s_columnLight)
 						{
 							signLit();
@@ -1537,6 +1548,7 @@ namespace RClassic_Float
 						{
 							signFullbright();
 						}
+						s_texHeightMask = heightMask;
 					}
 				}
 			}
@@ -1815,6 +1827,9 @@ namespace RClassic_Float
 								s_columnOut = &s_display[y0*s_width + x];
 								texelU = floorFloat(uCoord - signU0);
 								s_texImage = &signTex->image[texelU << signTex->logSizeY];
+
+								s32 heightMask = s_texHeightMask;
+								s_texHeightMask = signTex->height - 1;
 								if (s_columnLight)
 								{
 									signLit();
@@ -1823,6 +1838,7 @@ namespace RClassic_Float
 								{
 									signFullbright();
 								}
+								s_texHeightMask = heightMask;
 							}
 						}
 					}

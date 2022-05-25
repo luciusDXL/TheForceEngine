@@ -856,6 +856,9 @@ namespace RClassic_Fixed
 						s_columnOut = &s_display[y0*s_width + x];
 						texelU = floor16(uCoord - signU0);
 						s_texImage = &signTex->image[texelU << signTex->logSizeY];
+
+						s32 heightMask = s_texHeightMask;
+						s_texHeightMask = signTex->height - 1;
 						if (s_columnLight)
 						{
 							signLit();
@@ -864,6 +867,7 @@ namespace RClassic_Fixed
 						{
 							signFullbright();
 						}
+						s_texHeightMask = heightMask;
 					}
 				}
 			}
@@ -1270,6 +1274,9 @@ namespace RClassic_Fixed
 							s_columnOut = &s_display[y0*s_width + x];
 							texelU = floor16(uCoord - signU0);
 							s_texImage = &signTex->image[texelU << signTex->logSizeY];
+
+							s32 heightMask = s_texHeightMask;
+							s_texHeightMask = signTex->height - 1;
 							if (s_columnLight)
 							{
 								signLit();
@@ -1278,6 +1285,7 @@ namespace RClassic_Fixed
 							{
 								signFullbright();
 							}
+							s_texHeightMask = heightMask;
 						}
 					}
 				}
@@ -1481,6 +1489,9 @@ namespace RClassic_Fixed
 						s_columnOut = &s_display[y0*s_width + x];
 						texelU = floor16(uCoord - signU0);
 						s_texImage = &signTex->image[texelU << signTex->logSizeY];
+
+						s32 heightMask = s_texHeightMask;
+						s_texHeightMask = signTex->height - 1;
 						if (s_columnLight)
 						{
 							signLit();
@@ -1489,6 +1500,7 @@ namespace RClassic_Fixed
 						{
 							signFullbright();
 						}
+						s_texHeightMask = heightMask;
 					}
 				}
 			}
@@ -1763,6 +1775,9 @@ namespace RClassic_Fixed
 								s_columnOut = &s_display[y0*s_width + x];
 								texelU = floor16(uCoord - signU0);
 								s_texImage = &signTex->image[texelU << signTex->logSizeY];
+
+								s32 heightMask = s_texHeightMask;
+								s_texHeightMask = signTex->height - 1;
 								if (s_columnLight)
 								{
 									signLit();
@@ -1771,6 +1786,7 @@ namespace RClassic_Fixed
 								{
 									signFullbright();
 								}
+								s_texHeightMask = heightMask;
 							}
 						}
 					}
