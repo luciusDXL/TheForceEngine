@@ -418,7 +418,7 @@ namespace TFE_Model_Jedi
 			nextLine = true;
 
 			char objName[32];
-			if (sscanf(buffer, "OBJECT %s", objName) != 1)
+			if (sscanf(buffer, " OBJECT %s", objName) != 1)
 			{
 				// Some of the models have fewer object entries than objectCount (bad data, "fixed" by the code).
 				TFE_System::logWrite(LOG_WARNING, "Object3D_Load", "'%s' has too few objects, continuing anyway.", name);
@@ -428,7 +428,7 @@ namespace TFE_Model_Jedi
 			buffer = parser.readLine(bufferPos, true);
 			if (!buffer) { return false; }
 			s32 textureId;
-			if (sscanf(buffer, "TEXTURE %d", &textureId) != 1)
+			if (sscanf(buffer, " TEXTURE %d", &textureId) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' unable to parse TEXTURE ID.", name);
 				assert(0);
@@ -442,7 +442,7 @@ namespace TFE_Model_Jedi
 
 			buffer = parser.readLine(bufferPos, true);
 			if (!buffer) { return false; }
-			if (sscanf(buffer, "VERTICES %d", &vertexCount) != 1)
+			if (sscanf(buffer, " VERTICES %d", &vertexCount) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' unable to parse object VERTICES entry.", name);
 				assert(0);
@@ -454,14 +454,18 @@ namespace TFE_Model_Jedi
 				vertexOffset = model->vertexCount;
 			}
 
-			for (s32 v = 0; v < vertexCount; v++)
+			while (1)
 			{
 				buffer = parser.readLine(bufferPos, true);
-				if (!buffer) { return false; }
+				if (!buffer)
+				{ 
+					nextLine = false;
+					break;
+				}
 
 				s32 index;
 				f32 x, y, z;
-				if (sscanf(buffer, "%d: %f %f %f", &index, &x, &y, &z) != 4)
+				if (sscanf(buffer, " %d: %f %f %f", &index, &x, &y, &z) != 4)
 				{
 					nextLine = false;
 					break;
@@ -481,13 +485,17 @@ namespace TFE_Model_Jedi
 
 			s32 triangleCount = 0, quadCount = 0;
 			s32 basePolygonCount = model->polygonCount;
-			if (sscanf(buffer, "TRIANGLES %d", &triangleCount) == 1)
+			if (sscanf(buffer, " TRIANGLES %d", &triangleCount) == 1)
 			{
 				s32 polygonCount = model->polygonCount;
-				for (s32 p = 0; p < triangleCount; p++, model->polygonCount++)
+				while (1)
 				{
 					buffer = parser.readLine(bufferPos, true);
-					if (!buffer) { return false; }
+					if (!buffer)
+					{
+						nextLine = false;
+						break;
+					}
 
 					s32 num, a, b, c, color;
 					char shading[32];
@@ -496,6 +504,7 @@ namespace TFE_Model_Jedi
 						nextLine = false;
 						break;
 					}
+
 					a += vertexOffset;
 					b += vertexOffset;
 					c += vertexOffset;
@@ -509,6 +518,8 @@ namespace TFE_Model_Jedi
 					polygon->indices[1] = b;
 					polygon->indices[2] = c;
 					polygon->color = color;
+
+					model->polygonCount++;
 
 					if (strcasecmp(shading, "FLAT") == 0)
 					{
@@ -545,17 +556,21 @@ namespace TFE_Model_Jedi
 					}
 				}
 			}
-			else if (sscanf(buffer, "QUADS %d", &quadCount) == 1)
+			else if (sscanf(buffer, " QUADS %d", &quadCount) == 1)
 			{
 				s32 polygonCount = model->polygonCount;
-				for (s32 p = 0; p < quadCount; p++, model->polygonCount++)
+				while (1)
 				{
 					buffer = parser.readLine(bufferPos, true);
-					if (!buffer) { return false; }
+					if (!buffer)
+					{ 
+						nextLine = false;
+						break;
+					}
 
 					s32 num, a, b, c, d, color;
 					char shading[32];
-					if (sscanf(buffer, "%d: %d %d %d %d %d %s", &num, &a, &b, &c, &d, &color, shading) != 7)
+					if (sscanf(buffer, " %d: %d %d %d %d %d %s", &num, &a, &b, &c, &d, &color, shading) != 7)
 					{
 						nextLine = false;
 						break;
@@ -575,6 +590,8 @@ namespace TFE_Model_Jedi
 					polygon->indices[2] = c;
 					polygon->indices[3] = d;
 					polygon->color = color;
+
+					model->polygonCount++;
 
 					if (strcasecmp(shading, "FLAT") == 0)
 					{
@@ -627,7 +644,7 @@ namespace TFE_Model_Jedi
 				nextLine = true;
 
 				s32 texVertexCount;
-				if (sscanf(buffer, "TEXTURE VERTICES %d", &texVertexCount) != 1)
+				if (sscanf(buffer, " TEXTURE VERTICES %d", &texVertexCount) != 1)
 				{
 					TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' unable to parse TEXTURE VERTICES.", name);
 					assert(0);
@@ -643,7 +660,7 @@ namespace TFE_Model_Jedi
 
 					s32 num;
 					f32 x, y;
-					if (sscanf(buffer, "%d: %f %f", &num, &x, &y) != 3)
+					if (sscanf(buffer, " %d: %f %f", &num, &x, &y) != 3)
 					{
 						// Handle buggy input data.
 						nextLine = false;
@@ -668,16 +685,16 @@ namespace TFE_Model_Jedi
 
 				s32 texTriangleCount;
 				s32 texQuadCount;
-				if (sscanf(buffer, "TEXTURE TRIANGLES %d", &texTriangleCount) == 1)
+				if (sscanf(buffer, " TEXTURE TRIANGLES %d", &texTriangleCount) == 1)
 				{
 					Polygon* polygon = &model->polygons[basePolygonCount];
-					for (s32 p = 0; p < triangleCount; p++, polygon++)
+					while (1)
 					{
 						buffer = parser.readLine(bufferPos, true);
 						if (!buffer) { break; }
 
 						s32 num, a, b, c;
-						if (sscanf(buffer, "%d: %d %d %d", &num, &a, &b, &c) != 4)
+						if (sscanf(buffer, " %d: %d %d %d", &num, &a, &b, &c) != 4)
 						{
 							nextLine = false;
 							break;
@@ -693,18 +710,20 @@ namespace TFE_Model_Jedi
 						polygon->uv[1].y = mul16(s_tmpVtx[b].y, texHeight);
 						polygon->uv[2].x = mul16(s_tmpVtx[c].x, texWidth);
 						polygon->uv[2].y = mul16(s_tmpVtx[c].y, texHeight);
+
+						polygon++;
 					}
 				}
-				else if (sscanf(buffer, "TEXTURE QUADS %d", &texQuadCount) == 1)
+				else if (sscanf(buffer, " TEXTURE QUADS %d", &texQuadCount) == 1)
 				{
 					Polygon* polygon = &model->polygons[basePolygonCount];
-					for (s32 p = 0; p < quadCount; p++, polygon++)
+					while (1)
 					{
 						buffer = parser.readLine(bufferPos, true);
 						if (!buffer) { break; }
 
 						s32 num, a, b, c, d;
-						if (sscanf(buffer, "%d: %d %d %d %d", &num, &a, &b, &c, &d) != 5)
+						if (sscanf(buffer, " %d: %d %d %d %d", &num, &a, &b, &c, &d) != 5)
 						{
 							nextLine = false;
 							break;
@@ -721,6 +740,8 @@ namespace TFE_Model_Jedi
 						polygon->uv[2].y = mul16(s_tmpVtx[c].y, texHeight);
 						polygon->uv[3].x = mul16(s_tmpVtx[d].x, texWidth);
 						polygon->uv[3].y = mul16(s_tmpVtx[d].y, texHeight);
+
+						polygon++;
 					}
 				}
 			}
