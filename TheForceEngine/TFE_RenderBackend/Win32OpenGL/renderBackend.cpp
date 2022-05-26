@@ -28,6 +28,8 @@
 
 namespace TFE_RenderBackend
 {
+	static const f32 c_tallScreenThreshold = 1.32f;	// 4:3 + epsilon.
+
 	// Screenshot stuff... needs to be refactored.
 	static char s_screenshotPath[TFE_MAX_PATH];
 	static bool s_screenshotQueued = false;
@@ -652,25 +654,29 @@ namespace TFE_RenderBackend
 		s32 x = 0, y = 0;
 		s32 w = m_windowState.width;
 		s32 h = m_windowState.height;
-		if (s_displayMode == DMODE_ASPECT_CORRECT && w >= h && !s_widescreen)
+		f32 aspect = f32(w) / f32(h);
+
+		if (s_displayMode == DMODE_ASPECT_CORRECT && aspect > c_tallScreenThreshold && !s_widescreen)
 		{
+			// Calculate width based on height.
 			w = 4 * m_windowState.height / 3;
 			h = m_windowState.height;
 
 			// pillarbox
-			x = (m_windowState.width - w) / 2;
-			if (x < 0) { x = 0; }
+			x = std::max(0, ((s32)m_windowState.width - w) / 2);
 		}
-		else if (s_displayMode == DMODE_ASPECT_CORRECT && (!s_widescreen || h > w))
+		else if (s_displayMode == DMODE_ASPECT_CORRECT && (!s_widescreen || aspect <= c_tallScreenThreshold))
 		{
+			// Disable widescreen.
 			s_widescreen = false;
 			TFE_Settings::getGraphicsSettings()->widescreen = false;
+
+			// Calculate height based on width.
 			h = 3 * m_windowState.width / 4;
 			w = m_windowState.width;
 
 			// letterbox
-			y = (m_windowState.height - h) / 2;
-			if (y < 0) { y = 0; }
+			y = std::max(0, ((s32)m_windowState.height - h) / 2);
 		}
 		TFE_PostProcess::clearEffectStack();
 

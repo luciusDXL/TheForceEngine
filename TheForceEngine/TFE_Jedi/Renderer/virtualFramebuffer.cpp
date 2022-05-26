@@ -87,7 +87,7 @@ namespace TFE_Jedi
 				// yScale / 1.2
 				s_xScale = div16(s_yScale, 78643);
 
-				s_widescreenOffset = (s_width - s_height*4/3) / 2;
+				s_widescreenOffset = max(0, ((s32)s_width - (s32)s_height*4/3) / 2);
 			}
 		}
 		memset(s_curFrameBuffer, 0, s_width * s_height);
