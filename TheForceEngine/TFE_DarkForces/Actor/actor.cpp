@@ -767,7 +767,7 @@ namespace TFE_DarkForces
 		{
 			// TODO
 		}
-		else if (msg == MSG_REV_MOVE)
+		else if (msg == MSG_CRUSH)
 		{
 			// TODO
 		}

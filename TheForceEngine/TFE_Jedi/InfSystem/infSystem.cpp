@@ -1426,22 +1426,25 @@ namespace TFE_Jedi
 
 	void inf_startElevator(InfElevator* elev)
 	{
-		// Figure out the source position for the sound effect.
-		vec3_fixed sndPos = inf_getElevSoundPos(elev);
-
-		// Play the startup sound effect if the elevator is not already at the next stop.
-		Stop* nextStop = elev->nextStop;
-		// Play the initial sound as the elevator starts moving.
-		if (nextStop && *elev->value != nextStop->value)
+		if (!(elev->updateFlags & ELEV_MOVING))
 		{
-			sound_playCued(elev->sound0, sndPos);
+			// Figure out the source position for the sound effect.
+			vec3_fixed sndPos = inf_getElevSoundPos(elev);
+
+			// Play the startup sound effect if the elevator is not already at the next stop.
+			Stop* nextStop = elev->nextStop;
+			// Play the initial sound as the elevator starts moving.
+			if (nextStop && *elev->value != nextStop->value)
+			{
+				sound_playCued(elev->sound0, sndPos);
+			}
+
+			// Update the next time, so this will move on the next update.
+			elev->nextTick = s_curTick;
+
+			// Flag the elevator as moving.
+			elev->updateFlags |= ELEV_MOVING;
 		}
-
-		// Update the next time, so this will move on the next update.
-		elev->nextTick = s_curTick;
-
-		// Flag the elevator as moving.
-		elev->updateFlags |= ELEV_MOVING;
 	}
 
 	void inf_elevatorVolume(InfElevator* elev)
@@ -2639,17 +2642,7 @@ namespace TFE_Jedi
 				{
 					elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
 				}
-				// Play the start sound and update the flags / next update time.
-				if (!(elev->updateFlags & ELEV_MOVING))
-				{
-					if (*elev->value != elev->nextStop->value)
-					{
-						vec3_fixed pos = inf_getElevSoundPos(elev);
-						sound_playCued(elev->sound0, pos);
-					}
-					elev->nextTick = s_curTick;
-					elev->updateFlags |= ELEV_MOVING;
-				}
+				inf_startElevator(elev);
 			} break;
 			case MSG_PREV_STOP:
 			{
@@ -2663,17 +2656,7 @@ namespace TFE_Jedi
 				}
 				// Back to the previous stop (see the note above on why this can happen twice).
 				elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
-				// Play the start sound and update the flags / next update time.
-				if (!(elev->updateFlags & ELEV_MOVING))
-				{
-					if (*elev->value != elev->nextStop->value)
-					{
-						vec3_fixed pos = inf_getElevSoundPos(elev);
-						sound_playCued(elev->sound0, pos);
-					}
-					elev->updateFlags |= ELEV_MOVING;
-					elev->nextTick = s_curTick;
-				}
+				inf_startElevator(elev);
 			} break;
 			case MSG_GOTO_STOP:
 			if (elev->stops)
@@ -2682,22 +2665,15 @@ namespace TFE_Jedi
 				if (stop->value != *elev->value)
 				{
 					elev->nextStop = stop;
-					vec3_fixed pos = inf_getElevSoundPos(elev);
+					inf_startElevator(elev);
 
-					// In this case the original code will play the start sound if the elevator isn't moving
-					// and then get it moving...
-					if (!(elev->updateFlags & ELEV_MOVING))
-					{
-						sound_playCued(elev->sound0, pos);
-						elev->updateFlags |= ELEV_MOVING;
-						elev->nextTick = s_curTick;
-					}
 					// ... and then stop which - which always happens because updateFlags is or will be set to moving
 					// and then stops the looping sound if it is playing and then play the stop sound.
 					// So in some cases you will get the start sound and the stop sound and then the start sound again slightly later.
 					// This seems like buggy behavior... but I'm going to leave it alone for now.
 					if (elev->updateFlags & ELEV_MOVING)
 					{
+						vec3_fixed pos = inf_getElevSoundPos(elev);
 						sound_stop(elev->loopingSoundID);
 						elev->loopingSoundID = NULL_SOUND;
 
@@ -2706,7 +2682,7 @@ namespace TFE_Jedi
 					}
 				}
 			} break;
-			case MSG_REV_MOVE:
+			case MSG_CRUSH:
 			{
 				RSector* sector = elev->sector;
 				if (!(sector->flags1 & SEC_FLAGS1_CRUSHING))

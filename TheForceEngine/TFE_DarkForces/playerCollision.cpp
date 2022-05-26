@@ -642,7 +642,7 @@ namespace TFE_DarkForces
 		
 	JBool collision_handleCrushing(RSector* sector)
 	{
-		message_sendToSector(sector, s_playerObject, 0, MSG_REV_MOVE);
+		message_sendToSector(sector, s_playerObject, 0, MSG_CRUSH);
 		return JTRUE;
 	}
 

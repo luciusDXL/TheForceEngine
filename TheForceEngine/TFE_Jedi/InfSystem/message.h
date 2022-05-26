@@ -23,7 +23,7 @@ enum MessageType
 	MSG_NEXT_STOP    = 8,
 	MSG_PREV_STOP    = 9,
 	MSG_GOTO_STOP    = 11,
-	MSG_REV_MOVE     = 12,
+	MSG_CRUSH        = 12,
 	MSG_SEQ_COMPLETE = 20,
 	MSG_DONE         = 21,
 	MSG_DAMAGE       = 22,
