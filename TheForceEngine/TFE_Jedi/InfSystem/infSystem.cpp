@@ -36,6 +36,8 @@ namespace TFE_Jedi
 		DELAY_SLEEP = 0xffffffff,
 	};
 
+	const fixed16_16 c_verticalElevCrushThres = 0x3000;	// 0x4000 in the original code, reduced to account for higher framerate.
+
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
 
 	// These need to be filled out somewhere.
@@ -204,6 +206,7 @@ namespace TFE_Jedi
 			if (elev) { elev->nextTick = s_curTick; }
 			return;
 		}
+
 		Stop* stop = (Stop*)allocator_getByIndex(elev->stops, stopIndex);
 		if (!stop) { return; }
 
@@ -522,7 +525,7 @@ namespace TFE_Jedi
 				link = inf_addElevatorToSector(elev, sector);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
-				// This makes the player move with the sector.
+				// This makes the objects move with the sector.
 				elev->flags = INF_EFLAG_MOVE_FLOOR | INF_EFLAG_MOVE_SECHT | INF_EFLAG_MOVE_CEIL;
 			} break;
 			case IELEV_SP_MORPH_MOVE1:
@@ -538,7 +541,7 @@ namespace TFE_Jedi
 				link = inf_addElevatorToSector(elev, sector);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
 				link->eventMask = INF_EVENT_ANY;
-				// This makes the player move with the sector.
+				// This makes the objects move with the sector.
 				elev->flags = INF_EFLAG_MOVE_FLOOR | INF_EFLAG_MOVE_SECHT | INF_EFLAG_MOVE_CEIL;
 			} break;
 			case IELEV_SP_EXPLOSIVE_WALL:
@@ -3088,7 +3091,6 @@ namespace TFE_Jedi
 			Allocator* infLink;
 			InfMessage* msg;
 			RSector* sector;
-			RWall* wall;
 			InfLink* link;
 		};
 		task_begin_ctx;
@@ -3099,10 +3101,9 @@ namespace TFE_Jedi
 		{
 			s_msgArg1 = taskCtx->msg->arg1;
 			s_msgArg2 = taskCtx->msg->arg2;
-			taskCtx->wall = taskCtx->msg->wall;
-			if (taskCtx->wall)
+			if (taskCtx->msg->wall)
 			{
-				inf_wallSendMessage(taskCtx->wall, nullptr, taskCtx->msg->event, taskCtx->msg->msgType);
+				inf_wallSendMessage(taskCtx->msg->wall, nullptr, taskCtx->msg->event, taskCtx->msg->msgType);
 			}
 			else if (taskCtx->msg->sector)
 			{
@@ -3302,8 +3303,7 @@ namespace TFE_Jedi
 
 		return trigger;
 	}
-
-
+		
 	///////////////////////////////////////////////////
 	// Elevator Update Functions
 	///////////////////////////////////////////////////
@@ -3334,7 +3334,7 @@ namespace TFE_Jedi
 		fixed16_16 maxObjHeight = sector_getMaxObjectHeight(sector);
 		if (maxObjHeight)
 		{
-			maxObjHeight += 0x4000;	// maxObjHeight + 0.25
+			maxObjHeight += c_verticalElevCrushThres;
 			if (secHeightDelta)
 			{
 				fixed16_16 offsetHeight = sector->floorHeight + sector->secHeight;
@@ -3385,15 +3385,22 @@ namespace TFE_Jedi
 				{
 					// Remove dead objects.
 					sector_removeCorpses(sector);
-					
-					// If the height between floor and ceiling is too small for the tallest object AND
-					// If the floor is moving up or the ceiling is moving down and this is NOT a crushing sector.
-					if ((floorDelta < 0 || ceilDelta > 0) && !(sector->flags1 & SEC_FLAGS1_CRUSHING))
+
+					// See if there is anything else in the way.
+					maxObjHeight = sector_getMaxObjectHeight(sector);
+					if (maxObjHeight)
 					{
-						elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
-						floorDelta = 0;
-						secHeightDelta = 0;
-						ceilDelta = 0;
+						maxObjHeight += c_verticalElevCrushThres;
+
+						// If the height between floor and ceiling is too small for the tallest object AND
+						// If the floor is moving up or the ceiling is moving down and this is NOT a crushing sector.
+						if (spaceAvail < maxObjHeight && (floorDelta < 0 || ceilDelta > 0) && !(sector->flags1 & SEC_FLAGS1_CRUSHING))
+						{
+							elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
+							floorDelta = 0;
+							secHeightDelta = 0;
+							ceilDelta = 0;
+						}
 					}
 				}
 			}
