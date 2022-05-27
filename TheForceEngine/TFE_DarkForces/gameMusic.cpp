@@ -354,7 +354,6 @@ namespace TFE_DarkForces
 		else
 		{
 			TFE_System::logWrite(LOG_MSG, "Music", "Callback1 got bogus marker...");
-			assert(0);
 		}
 	}
 		

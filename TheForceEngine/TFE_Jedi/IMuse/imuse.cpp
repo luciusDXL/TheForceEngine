@@ -879,7 +879,6 @@ namespace TFE_Jedi
 		{
 			// This should never be hit.
 			IM_LOG_ERR("Sound channel has 0 output channels.");
-			assert(0);
 		}
 		s32 partTrim   = channel->partTrim   + 1;
 		s32 partVolume = channel->partVolume + 1;
@@ -2029,11 +2028,6 @@ namespace TFE_Jedi
 			channel->pan = (channel->outChannelCount * pitchBend) >> 5;	// range -256, 256
 			ImHandleChannelDetuneChange(player, channel);
 		}
-		else
-		{
-			// No sound channels, this should never be hit.
-			assert(0);
-		}
 	}
 
 	///////////////////////////////////
@@ -2152,7 +2146,7 @@ namespace TFE_Jedi
 		{
 			if (value < 12)
 			{
-				channel->outChannelCount = value;
+				//channel->outChannelCount = value;
 				ImMidiPitchBend(player, channelIndex, 0, imPanCenter);
 			}
 		}
@@ -2253,7 +2247,6 @@ namespace TFE_Jedi
 		s32 channelCount = channel->outChannelCount;
 
 		// There should always be channels.
-		assert(channelCount);
 		if (channelCount)
 		{
 			channel->pitchBend = (pitchBend * channelCount) >> 5;
@@ -2333,7 +2326,6 @@ namespace TFE_Jedi
 			if (midiChannel->instrumentMask[instrumentId] & channelMask)
 			{
 				midiChannel->instrumentMask[instrumentId] &= ~channelMask;
-				assert(!midiChannel->sustain);
 				if (!midiChannel->sustain)
 				{
 					ImNoteOff(midiChannel->channelId, instrumentId);

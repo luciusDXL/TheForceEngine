@@ -311,23 +311,31 @@ namespace TFE_Jedi
 		anim->baseFrame = tex;
 		anim->baseData = tex->image;
 		anim->frameList = (TextureData**)res_alloc(sizeof(TextureData**) * anim->count);
+		// Allocate frame memory here since load-in-place does not work because structure size changes.
+		TextureData* outFrames = (TextureData*)res_alloc(sizeof(TextureData) * anim->count);
 		assert(anim->frameList);
 
 		const u8* base = tex->image + 2;
 		for (s32 i = 0; i < anim->count; i++)
 		{
-			TextureData* frame = (TextureData*)(base + textureOffsets[i]);
+			const TextureData* frame = (TextureData*)(base + textureOffsets[i]);
+			outFrames[i] = *frame;
+
+			// Somehow this doesn't crash in DOS...
+			if (frame->width >= 32768 || frame->height >= 32768)
+			{
+				outFrames[i] = outFrames[0];
+			}
 
 			// Allocate an image buffer since everything no longer fits nicely.
-			u8* frameImage = (u8*)res_alloc(frame->width * frame->height);
-			memcpy(frameImage, (u8*)frame + 0x1c, frame->width * frame->height);
+			outFrames[i].image = (u8*)res_alloc(outFrames[i].width * outFrames[i].height);
+			memcpy(outFrames[i].image, (u8*)frame + 0x1c, outFrames[i].width * outFrames[i].height);
 
 			// We have to make sure the structure offsets line up with DOS...
-			frame->flags = *((u8*)frame + 0x18);
-			frame->compressed = *((u8*)frame + 0x19);
-			frame->image = frameImage;
+			outFrames[i].flags = *((u8*)frame + 0x18);
+			outFrames[i].compressed = *((u8*)frame + 0x19);
 
-			anim->frameList[i] = frame;
+			anim->frameList[i] = &outFrames[i];
 		}
 
 		if (frameRate)
