@@ -306,7 +306,7 @@ namespace TFE_Jedi
 
 		s32 adjoinStart = s_adjoinSegCount;
 		EdgePairFloat* adjoinEdges = &s_rcfltState.adjoinEdgeList[adjoinStart];
-		RWallSegmentFloat* adjoinList[MAX_ADJOIN_DEPTH];
+		RWallSegmentFloat* adjoinList[MAX_ADJOIN_DEPTH_EXT];
 
 		s_rcfltState.adjoinEdge = adjoinEdges;
 		s_rcfltState.adjoinSegment = adjoinList;
@@ -422,7 +422,7 @@ namespace TFE_Jedi
 
 		// Adjoins
 		s32 adjoinCount = s_adjoinSegCount - adjoinStart;
-		if (adjoinCount && s_adjoinDepth < MAX_ADJOIN_DEPTH)
+		if (adjoinCount && s_adjoinDepth < s_maxAdjoinDepthRecursion)
 		{
 			adjoin_setupAdjoinWindow(winBot, winBotNext, winTop, winTopNext, adjoinEdges, adjoinCount);
 			RWallSegmentFloat** seg = adjoinList;
@@ -438,7 +438,7 @@ namespace TFE_Jedi
 				RWall* srcWall = curAdjoinSeg->srcWall->wall;
 				RWallSegmentFloat* nextAdjoin = (i < adjoinEnd) ? *(seg + 1) : nullptr;
 				RSector* nextSector = srcWall->nextSector;
-				if (s_adjoinDepth < MAX_ADJOIN_DEPTH && s_adjoinDepth < s_maxDepthCount)
+				if (s_adjoinDepth < s_maxAdjoinDepthRecursion && s_adjoinDepth < s_maxDepthCount)
 				{
 					s32 index = s_adjoinDepth - 1;
 					saveValues(index);

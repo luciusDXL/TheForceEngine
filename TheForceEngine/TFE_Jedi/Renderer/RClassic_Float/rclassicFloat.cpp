@@ -218,9 +218,9 @@ namespace RClassic_Float
 		
 		s_columnTop = (s32*)game_realloc(s_columnTop, s_width * sizeof(s32));
 		s_columnBot = (s32*)game_realloc(s_columnBot, s_width * sizeof(s32));
-		s_rcfltState.depth1d_all = (f32*)game_realloc(s_rcfltState.depth1d_all, s_width * sizeof(f32) * (MAX_ADJOIN_DEPTH + 1));
-		s_windowTop_all = (s32*)game_realloc(s_windowTop_all, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
-		s_windowBot_all = (s32*)game_realloc(s_windowBot_all, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH + 1));
+		s_rcfltState.depth1d_all = (f32*)game_realloc(s_rcfltState.depth1d_all, s_width * sizeof(f32) * (MAX_ADJOIN_DEPTH_EXT + 1));
+		s_windowTop_all = (s32*)game_realloc(s_windowTop_all, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH_EXT + 1));
+		s_windowBot_all = (s32*)game_realloc(s_windowBot_all, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH_EXT + 1));
 
 		memset(s_windowTop_all, s_minScreenY, s_width);
 		memset(s_windowBot_all, s_maxScreenY, s_width);

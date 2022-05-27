@@ -69,6 +69,7 @@ namespace TFE_Jedi
 		TFE_COUNTER(s_adjoinSegCount, "Adjoin Segment Count");
 
 		s_sectorRenderer = new TFE_Sectors_Fixed();
+		renderer_setLimits();
 	}
 
 	void renderer_destroy()
@@ -81,6 +82,20 @@ namespace TFE_Jedi
 		if (s_sectorRenderer)
 		{
 			s_sectorRenderer->reset();
+		}
+	}
+
+	void renderer_setLimits()
+	{
+		if (TFE_Settings::getGraphicsSettings()->extendAjoinLimits)
+		{
+			s_maxAdjoinSegCount = MAX_ADJOIN_SEG_EXT;
+			s_maxAdjoinDepthRecursion = MAX_ADJOIN_DEPTH_EXT;
+		}
+		else
+		{
+			s_maxAdjoinSegCount = MAX_ADJOIN_SEG;
+			s_maxAdjoinDepthRecursion = MAX_ADJOIN_DEPTH;
 		}
 	}
 

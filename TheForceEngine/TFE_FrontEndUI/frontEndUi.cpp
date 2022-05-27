@@ -1440,7 +1440,7 @@ namespace TFE_FrontEndUI
 			// Software
 			ImGui::Checkbox("Async Framebuffer", &graphics->asyncFramebuffer);
 			ImGui::Checkbox("GPU Color Conversion", &graphics->gpuColorConvert);
-			ImGui::Checkbox("Perspective Correct 3DO Texturing", &graphics->perspectiveCorrectTexturing);
+			ImGui::Checkbox("Extend Adjoin/Portal Limits", &graphics->extendAjoinLimits);
 		}
 		else if (s_rendererIndex == 1)
 		{

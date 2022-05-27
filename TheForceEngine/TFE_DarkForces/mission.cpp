@@ -309,6 +309,7 @@ namespace TFE_DarkForces
 		if (task_getCount() > 1 && s_missionMode == MISSION_MODE_MAIN)
 		{
 			TFE_Jedi::render_setResolution();
+			TFE_Jedi::renderer_setLimits();
 
 			s_framebuffer = vfb_getCpuBuffer();
 			updateScreensize();

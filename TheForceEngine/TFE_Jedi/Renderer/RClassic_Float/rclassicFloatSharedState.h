@@ -56,7 +56,7 @@ namespace TFE_Jedi
 		EdgePairFloat* flatEdge;
 		EdgePairFloat  flatEdgeList[MAX_SEG];
 		EdgePairFloat* adjoinEdge;
-		EdgePairFloat  adjoinEdgeList[MAX_ADJOIN_SEG * MAX_ADJOIN_DEPTH];
+		EdgePairFloat  adjoinEdgeList[MAX_ADJOIN_SEG_EXT * MAX_ADJOIN_DEPTH_EXT];
 
 		RWallSegmentFloat   wallSegListDst[MAX_SEG];
 		RWallSegmentFloat   wallSegListSrc[MAX_SEG];

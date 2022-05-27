@@ -79,6 +79,10 @@ namespace TFE_Jedi
 
 	extern JBool s_flatLighting;
 
+	// Limits
+	extern s32 s_maxAdjoinSegCount;
+	extern s32 s_maxAdjoinDepthRecursion;
+
 	// Debug
 	extern s32 s_maxWallCount;
 	extern s32 s_maxDepthCount;

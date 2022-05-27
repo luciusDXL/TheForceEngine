@@ -2200,7 +2200,7 @@ namespace RClassic_Float
 
 	void wall_addAdjoinSegment(s32 length, s32 x0, f32 top_dydx, f32 y1, f32 bot_dydx, f32 y0, RWallSegmentFloat* wallSegment)
 	{
-		if (s_adjoinSegCount < MAX_ADJOIN_SEG)
+		if (s_adjoinSegCount < s_maxAdjoinSegCount)
 		{
 			f32 lengthFlt = f32(length - 1);
 			f32 y0End = y0;

@@ -1,10 +1,6 @@
 #pragma once
 #include <TFE_System/types.h>
 
-// TODO: Add an option to increase these limits, particularly
-// MAX_ADJOIN_SEG (tested up to 384) and
-// MAX_ADJOIN_DEPTH (tested up to 256).
-
 namespace TFE_Jedi
 {
 	#define MAX_DRAWN_SPRITE_STORE 32 // Maximum number of drawn sprites stored for future reference (like autoaim).
@@ -16,4 +12,9 @@ namespace TFE_Jedi
 	#define LIGHT_SOURCE_LEVELS	128 // Number of levels in the light source (like the headlamp or weapon fire).
 	#define LIGHT_LEVELS		 32 // Number of light levels, maximum = LIGHT_LEVELS - 1
 	#define MAX_LIGHT_LEVEL (LIGHT_LEVELS-1)
+
+	// Extended Max Limits
+	#define MAX_ADJOIN_SEG_EXT   512 // Maximum number of adjoin segments with extended limits.
+	#define MAX_ADJOIN_DEPTH_EXT 255 // Maximum adjoin recursion depth with extended limits.
+
 }

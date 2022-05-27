@@ -39,6 +39,7 @@ namespace TFE_Jedi
 	void renderer_init();
 	void renderer_destroy();
 	void renderer_reset();
+	void renderer_setLimits();
 	void setupInitCameraAndLights();
 	void renderer_computeCameraTransform(RSector* sector, angle14_32 pitch, angle14_32 yaw, fixed16_16 camX, fixed16_16 camY, fixed16_16 camZ);
 
