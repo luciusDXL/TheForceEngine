@@ -71,7 +71,7 @@ namespace TFE_Jedi
 		
 	void obj3d_computeTransform(SecObject* obj)
 	{
-		computeTransform3x3(obj->transform, -obj->yaw, obj->pitch, obj->roll);
+		computeTransform3x3(obj->transform, obj->yaw, obj->pitch, obj->roll);
 	}
 
 	void spirit_setData(SecObject* obj)
@@ -145,16 +145,19 @@ namespace TFE_Jedi
 		sinCosFixed(pitch, &sinPch, &cosPch);
 		sinCosFixed(roll,  &sinRol, &cosRol);
 
-		transform[0] = mul16(cosYaw, cosRol);
-		transform[1] = mul16(cosPch, sinRol) + mul16(mul16(sinPch, sinYaw), cosPch);
-		transform[2] = mul16(sinPch, sinRol) - mul16(mul16(cosPch, sinYaw), cosRol);
+		fixed16_16 sRol_sPitch = mul16(sinRol, sinPch);
+		fixed16_16 cRol_sPitch = mul16(cosRol, sinPch);
 
-		transform[3] = -mul16(cosYaw, sinRol);
-		transform[4] = mul16(cosPch, cosRol) - mul16(mul16(sinPch, sinYaw), sinRol);
-		transform[5] = mul16(sinPch, cosRol) + mul16(mul16(cosPch, sinYaw), sinRol);
+		transform[0] =  mul16(cosRol, cosYaw) + mul16(sRol_sPitch, sinYaw);
+		transform[1] = -mul16(sinRol, cosYaw) + mul16(cRol_sPitch, sinYaw);
+		transform[2] =  mul16(cosPch, sinYaw);
 
-		transform[6] =  sinYaw;
-		transform[7] = -mul16(sinPch, cosYaw);
+		transform[3] =  mul16(cosPch, sinRol);
+		transform[4] =  mul16(cosRol, cosPch);
+		transform[5] = -sinPch;
+
+		transform[6] = -mul16(cosRol, sinYaw) + mul16(sRol_sPitch, cosYaw);
+		transform[7] =  mul16(sinRol, sinYaw) + mul16(cRol_sPitch, cosYaw);
 		transform[8] =  mul16(cosPch, cosYaw);
 	}
 } // namespace TFE_Jedi
