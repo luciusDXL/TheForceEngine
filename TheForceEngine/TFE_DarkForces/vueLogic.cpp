@@ -34,7 +34,6 @@ namespace TFE_DarkForces
 		Task* task;
 		s32  isCamera;
 		Tick frameDelay;
-		s32 u28;
 		RSector* sector;
 		u32 flags;
 	};
@@ -46,7 +45,7 @@ namespace TFE_DarkForces
 
 		angle14_16 maxYaw;
 		angle14_16 maxPitch;
-		s32 pad;
+		angle14_16 roll;
 		u32 flags;
 	};
 
@@ -64,8 +63,7 @@ namespace TFE_DarkForces
 		vueLogic->logic.obj = obj;
 		vueLogic->frames = nullptr;
 		vueLogic->frameDelay = 9;	// 9 Ticks between frames = ~16 fps
-		vueLogic->u28 = 0;
-		vueLogic->flags &= ~VUE_PAUSED;
+		vueLogic->flags = 0;
 
 		obj->entityFlags |= ETFLAG_CAN_WAKE;
 
@@ -81,87 +79,105 @@ namespace TFE_DarkForces
 
 	void loadVueFile(Allocator* vueList, char* transformName, TFE_Parser* parser)
 	{
+		size_t bufferPos = 0;
 		if (!strcasecmp(transformName, "camera"))
 		{
-			// TODO(Core Game Loop Release)
-			assert(0);
-		}
-
-		// Matrix 0
-		fixed16_16 mtx0[9];
-		mtx0[0] = ONE_16;
-		mtx0[1] = 0;
-		mtx0[2] = 0;
-
-		mtx0[3] = 0;
-		mtx0[4] = 1;
-		mtx0[5] = ONE_16 - 1;
-
-		mtx0[6] = 0;
-		mtx0[7] = -ONE_16 + 1;
-		mtx0[8] = 1;
-
-		// Matrix 1
-		fixed16_16 mtx1[9];
-		mtx1[0] = ONE_16;
-		mtx1[1] = 0;
-		mtx1[2] = 0;
-
-		mtx1[3] = 0;
-		mtx1[4] = 1;
-		mtx1[5] = ONE_16 - 1;
-
-		mtx1[6] = 0;
-		mtx1[7] = -ONE_16 + 1;
-		mtx1[8] = 1;
-
-		VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
-		frame->flags = VFRAME_FIRST;
-
-		size_t bufferPos = 0;
-		while (1)
-		{
-			const char* line = parser->readLine(bufferPos);
-			if (!line)
+			while (1)
 			{
-				break;
-			}
+				const char* line = parser->readLine(bufferPos);
+				if (!line) { break; }
 
-			char name[32];
-			f32 f00, f01, f02, f03, f04, f05, f06, f07, f08, f09, f10, f11;
-			s32 count = sscanf(line, "transform %s %f %f %f %f %f %f %f %f %f %f %f %f", name, &f00, &f01, &f02, &f03, &f04, &f05, &f06, &f07, &f08, &f09, &f10, &f11);
-			if (count == 13)
-			{
-				// Is this the correct transform?
-				if (transformName[0] != '*' && strcasecmp(name, transformName))
+				f32 x1, z1, y1, x2, z2, y2, r, lens;
+				if (sscanf(line, "camera %f %f %f %f %f %f %f %f", &x1, &z1, &y1, &x2, &z2, &y2, &r, &lens) == 8)
 				{
-					continue;
+					y1 = -y1;
+					y2 = -y2;
+					VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
+					frame->offset.x = floatToFixed16(x1);
+					frame->offset.y = floatToFixed16(y1);
+					frame->offset.z = floatToFixed16(z1);
+					frame->maxYaw = vec2ToAngle(floatToFixed16(x2 - x1), floatToFixed16(z2 - z1));
+					frame->maxPitch = 0;
+					frame->roll = angle14_32(r * 16383.0f / 360.0f);
 				}
-				frame = (VueFrame*)allocator_newItem(vueList);
+			}
+		}
+		else
+		{
+			// Matrix 0
+			fixed16_16 mtx0[9];
+			mtx0[0] = ONE_16;
+			mtx0[1] = 0;
+			mtx0[2] = 0;
 
-				// Rotation/Scale matrix.
-				fixed16_16 frameMtx[9];
-				frameMtx[0] = floatToFixed16(f00);
-				frameMtx[1] = floatToFixed16(f01);
-				frameMtx[2] = floatToFixed16(f02);
-				frameMtx[3] = floatToFixed16(f03);
-				frameMtx[4] = floatToFixed16(f04);
-				frameMtx[5] = floatToFixed16(f05);
-				frameMtx[6] = floatToFixed16(f06);
-				frameMtx[7] = floatToFixed16(f07);
-				frameMtx[8] = floatToFixed16(f08);
+			mtx0[3] = 0;
+			mtx0[4] = 1;
+			mtx0[5] = ONE_16 - 1;
 
-				// Transform to DF coordinate system.
-				fixed16_16 tempMtx[9];
-				mulMatrix3x3(mtx1, frameMtx, tempMtx);
-				mulMatrix3x3(tempMtx, mtx0, frame->mtx);
+			mtx0[6] = 0;
+			mtx0[7] = -ONE_16 + 1;
+			mtx0[8] = 1;
 
-				frame->offset.x =  floatToFixed16(f09);
-				frame->offset.y = -floatToFixed16(f11);
-				frame->offset.z =  floatToFixed16(f10);
+			// Matrix 1
+			fixed16_16 mtx1[9];
+			mtx1[0] = ONE_16;
+			mtx1[1] = 0;
+			mtx1[2] = 0;
 
-				frame->maxPitch = 8191;
-				frame->flags = 0;
+			mtx1[3] = 0;
+			mtx1[4] = 1;
+			mtx1[5] = ONE_16 - 1;
+
+			mtx1[6] = 0;
+			mtx1[7] = -ONE_16 + 1;
+			mtx1[8] = 1;
+
+			VueFrame* frame = (VueFrame*)allocator_newItem(vueList);
+			frame->flags = VFRAME_FIRST;
+
+			while (1)
+			{
+				const char* line = parser->readLine(bufferPos);
+				if (!line)
+				{
+					break;
+				}
+
+				char name[32];
+				f32 f00, f01, f02, f03, f04, f05, f06, f07, f08, f09, f10, f11;
+				s32 count = sscanf(line, "transform %s %f %f %f %f %f %f %f %f %f %f %f %f", name, &f00, &f01, &f02, &f03, &f04, &f05, &f06, &f07, &f08, &f09, &f10, &f11);
+				if (count == 13)
+				{
+					// Is this the correct transform?
+					if (transformName[0] == '*' || strcasecmp(name, transformName) == 0)
+					{
+						frame = (VueFrame*)allocator_newItem(vueList);
+
+						// Rotation/Scale matrix.
+						fixed16_16 frameMtx[9];
+						frameMtx[0] = floatToFixed16(f00);
+						frameMtx[1] = floatToFixed16(f01);
+						frameMtx[2] = floatToFixed16(f02);
+						frameMtx[3] = floatToFixed16(f03);
+						frameMtx[4] = floatToFixed16(f04);
+						frameMtx[5] = floatToFixed16(f05);
+						frameMtx[6] = floatToFixed16(f06);
+						frameMtx[7] = floatToFixed16(f07);
+						frameMtx[8] = floatToFixed16(f08);
+
+						// Transform to DF coordinate system.
+						fixed16_16 tempMtx[9];
+						mulMatrix3x3(mtx1, frameMtx, tempMtx);
+						mulMatrix3x3(tempMtx, mtx0, frame->mtx);
+
+						frame->offset.x =  floatToFixed16(f09);
+						frame->offset.y = -floatToFixed16(f11);
+						frame->offset.z =  floatToFixed16(f10);
+
+						frame->maxPitch = 8191;
+						frame->flags = 0;
+					}
+				}
 			}
 		}
 	}
@@ -329,11 +345,6 @@ namespace TFE_DarkForces
 		local(searchForSector) = JTRUE;
 		local(obj) = local(vue)->logic.obj;
 		local(vue)->sector = local(obj)->sector;
-		if (local(vue)->u28)
-		{
-			// TODO
-			assert(0);
-		}
 		
 		while (msg != MSG_FREE_TASK)
 		{
@@ -343,7 +354,9 @@ namespace TFE_DarkForces
 				{
 					// TODO
 					assert(0);
+					continue;
 				}
+
 				local(frame) = (VueFrame*)allocator_getHead(local(vue)->frames);
 				local(searchForSector) = JTRUE;
 				local(tick) = s_curTick;
@@ -357,13 +370,15 @@ namespace TFE_DarkForces
 				{
 					if (local(frame)->flags & VFRAME_FIRST)
 					{
-						local(pauseTick) = s_curTick;
-						task_yield(TASK_SLEEP);
+						if (local(vue)->flags & VUE_PAUSED)
+						{
+							local(pauseTick) = s_curTick;
+							task_yield(TASK_SLEEP);
 
-						task_makeActive(task_getCurrent());
-						local(tick) += s_curTick - local(pauseTick);
-						task_yield(TASK_NO_DELAY);
-
+							task_makeActive(task_getCurrent());
+							local(tick) += s_curTick - local(pauseTick);
+							task_yield(TASK_NO_DELAY);
+						}
 						local(frame) = (VueFrame*)allocator_getNext(local(vue)->frames);
 					}
 					else
