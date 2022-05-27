@@ -752,7 +752,7 @@ namespace RClassic_Float
 
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
-		TextureData* texture = *srcWall->midTex;
+		TextureData* texture = srcWall->midTex ? *srcWall->midTex : nullptr;
 		if (!texture) { return; }
 
 		f32 ceilingHeight = cachedSector->ceilingHeight;
