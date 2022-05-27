@@ -716,7 +716,7 @@ namespace RClassic_Fixed
 	{
 		RWall* srcWall = wallSegment->srcWall;
 		RSector* sector = srcWall->sector;
-		TextureData* texture = *srcWall->midTex;
+		TextureData* texture = srcWall->midTex ? *srcWall->midTex : nullptr;
 		if (!texture) { return; }
 
 		fixed16_16 ceilingHeight = sector->ceilingHeight;
