@@ -388,7 +388,7 @@ void robj3d_drawFlatColorPolygon(vec3_float* projVertices, s32 vertexCount, u8 c
 					f32 col_I0 = s_edgeBot_I0;
 					if (yOffset)
 					{
-						col_I0 += (yOffset * s_col_dIdY);
+						col_I0 += (yOffset * col_dIdY);
 					}
 					s_col_dIdY = floatToFixed20(col_dIdY);
 					s_col_I0 = floatToFixed20(col_I0);
