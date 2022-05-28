@@ -11,6 +11,7 @@
 #include "player.h"
 #include "projectile.h"
 #include "weapon.h"
+#include "darkForcesMain.h"
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_DarkForces/GameUI/escapeMenu.h>
 #include <TFE_DarkForces/GameUI/pda.h>
@@ -406,6 +407,7 @@ namespace TFE_DarkForces
 				}
 				else if (action == ESC_QUIT)
 				{
+					saveLevelStatus();
 					TFE_System::postQuitMessage();
 				}
 			}

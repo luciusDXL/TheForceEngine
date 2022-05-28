@@ -373,6 +373,14 @@ namespace TFE_DarkForces
 				drawColoredQuad(textX - 3, textY - 1, 118, 9, s_lastSelectedAgent ? 13 : 12, s_framebuffer);
 			}
 			print(s_levelDisplayNames[nextMission - 1], textX, textY, color, s_framebuffer);
+
+			// Show final level complete.
+			if (s_agentData[s_agentId].nextMission > s_maxLevelIndex)
+			{
+				yOffset = -20 + 8 * (s_maxLevelIndex - 1);
+				s32 diff = s_agentData[s_agentId].completed[s_maxLevelIndex-1] + 11;
+				blitDeltaFrame(&s_agentMenuFrames[diff], 0, yOffset, s_framebuffer);
+			}
 		}
 
 		// Draw agents.

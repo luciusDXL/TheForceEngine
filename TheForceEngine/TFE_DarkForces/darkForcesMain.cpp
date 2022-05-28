@@ -293,6 +293,26 @@ namespace TFE_DarkForces
 	{
 		mission_pause(pause ? JTRUE : JFALSE);
 	}
+		
+	void handleLevelComplete()
+	{
+		s32 completedLevelIndex = agent_getLevelIndex();
+		u8 diff = s_agentData[s_agentId].difficulty;
+
+		// Save the level completion, inventory and other stats into the agent data and then save to disk.
+		agent_saveLevelCompletion(diff, completedLevelIndex);
+		agent_updateAgentSavedData();
+		agent_saveInventory(s_agentId, completedLevelIndex + 1);
+		agent_setNextLevelByIndex(completedLevelIndex + 1);
+	}
+
+	void saveLevelStatus()
+	{
+		if (s_levelComplete)
+		{
+			handleLevelComplete();
+		}
+	}
 
 	/**********The basic structure of the Dark Forces main loop is as follows:***************
 	while (1)  // <- This will be replaced by the function call from the main TFE loop.
@@ -453,14 +473,7 @@ namespace TFE_DarkForces
 					else
 					{
 						s_cutsceneIndex++;
-						s32 completedLevelIndex = agent_getLevelIndex();
-						u8 diff = s_agentData[s_agentId].difficulty;
-
-						// Save the level completion, inventory and other stats into the agent data and then save to disk.
-						agent_saveLevelCompletion(diff, completedLevelIndex);
-						agent_updateAgentSavedData();
-						agent_saveInventory(s_agentId, completedLevelIndex + 1);
-						agent_setNextLevelByIndex(completedLevelIndex + 1);
+						handleLevelComplete();
 					}
 					
 					startNextMode();

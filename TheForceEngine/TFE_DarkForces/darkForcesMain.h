@@ -15,4 +15,6 @@ namespace TFE_DarkForces
 		void exitGame() override;
 		void loopGame() override;
 	};
+
+	extern void saveLevelStatus();
 }
