@@ -175,20 +175,27 @@ namespace TFE_DarkForces
 
 			if (s_levelComplete)
 			{
+				// Attempt to clean up the button positions, note this is only a problem at non-vanilla resolutions.
+				fixed16_16 yOffset = (dispHeight == 200 || dispHeight == 400) ? 0 : round16(yScale / 2);
+
 				if (s_buttonPressed == ESC_BTN_ABORT && s_buttonHover)
 				{
-					blitDeltaFrameScaled(&s_escMenuFrames[3], xOffset, 0, xScale, yScale, s_framebuffer);
+					blitDeltaFrameScaled(&s_escMenuFrames[3], xOffset, yOffset, xScale, yScale, s_framebuffer);
 				}
 				else
 				{
-					blitDeltaFrameScaled(&s_escMenuFrames[4], xOffset, 0, xScale, yScale, s_framebuffer);
+					blitDeltaFrameScaled(&s_escMenuFrames[4], xOffset, yOffset, xScale, yScale, s_framebuffer);
 				}
 			}
 			if ((s_buttonPressed > ESC_BTN_ABORT || (s_buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_buttonHover)
 			{
+				// Attempt to clean up the button positions, note this is only a problem at non-vanilla resolutions.
+				fixed16_16 yOffset = (dispHeight == 200 || dispHeight == 400) ? 0 : round16(yScale / 2);
+				yOffset = min(yOffset, 3 - s_buttonPressed);
+
 				// Draw the highlight button
 				const s32 highlightIndices[] = { 1, 7, 9, 5 };
-				blitDeltaFrameScaled(&s_escMenuFrames[highlightIndices[s_buttonPressed]], xOffset, 0, xScale, yScale, s_framebuffer);
+				blitDeltaFrameScaled(&s_escMenuFrames[highlightIndices[s_buttonPressed]], xOffset, yOffset, xScale, yScale, s_framebuffer);
 			}
 
 			// Draw the mouse.
