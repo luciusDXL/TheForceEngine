@@ -136,6 +136,9 @@ namespace TFE_DarkForces
 			s_displayInit = JFALSE;
 			vfb_forceToBlack();
 			lcanvas_clear();
+
+			assert(s_selectedMission >= 0 && s_selectedMission <= MAX_LEVEL_COUNT - 1);
+			s_selectedMission = clamp(s_selectedMission, 0, MAX_LEVEL_COUNT - 1);
 		}
 
 		*levelIndex = s_selectedMission + 1;
@@ -166,6 +169,12 @@ namespace TFE_DarkForces
 			return;
 		}
 
+		if (s_selectedMission < 0)
+		{
+			assert(0);	// This shouldn't happen.
+			s_selectedMission = 0;
+		}
+
 		const s32 x = s_cursorPos.x;
 		const s32 z = s_cursorPos.z;
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
@@ -186,13 +195,13 @@ namespace TFE_DarkForces
 			{
 				if (x >= 25 && x < 122 && z >= 35 && z < 147 && s_agentCount > 0)
 				{
-					s_agentId = max(0, min((z - 35) / 8, (s32)s_agentCount - 1));
-					s_selectedMission = s_agentData[s_agentId].selectedMission - 1;
+					s_agentId = clamp((z - 35) / 8, 0, (s32)s_agentCount - 1);
+					s_selectedMission = max(0, s_agentData[s_agentId].selectedMission - 1);
 					s_lastSelectedAgent = true;
 				}
 				else if (x >= 171 && x < 290 && z >= 35 && z < 147 && s_agentCount > 0)
 				{
-					s_selectedMission = max(0, min((z - 35) / 8, (s32)s_agentData[s_agentId].nextMission - 1));
+					s_selectedMission = clamp((z - 35) / 8, 0, (s32)s_agentData[s_agentId].nextMission - 1);
 					s_agentData[s_agentId].selectedMission = s_selectedMission + 1;
 					s_lastSelectedAgent = false;
 				}
@@ -442,7 +451,7 @@ namespace TFE_DarkForces
 		if (s_agentCount > 0)
 		{
 			s_agentId = 0;
-			s_selectedMission = s_agentData[s_agentId].selectedMission - 1;
+			s_selectedMission = max(0, s_agentData[s_agentId].selectedMission - 1);
 		}
 		else
 		{
@@ -493,7 +502,7 @@ namespace TFE_DarkForces
 		memset(&s_agentData[s_agentCount], 0, sizeof(AgentData));
 		
 		s_agentId = s_agentCount > 0 ? 0 : -1;
-		s_selectedMission = s_agentCount > 0 ? s_agentData[0].selectedMission : -1;
+		s_selectedMission = s_agentCount > 0 ? s_agentData[0].selectedMission : 0;
 	}
 
 	// UI routines.
