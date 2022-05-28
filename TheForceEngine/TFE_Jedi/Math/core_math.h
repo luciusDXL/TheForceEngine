@@ -79,6 +79,16 @@ namespace TFE_Jedi
 
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut);
 	void rotateVectorM3x3(vec3_fixed* inVec, vec3_fixed* outVec, s32* mtx);
+
+	inline fixed16_16 tanFixed(angle14_32 angle)
+	{
+		angle &= ANGLE_MASK;
+		if (angle < 8192)
+		{
+			return s_tanTable[angle];
+		}
+		return s_tanTable[angle - 8192];
+	}
 	
 	inline void sinCosFixed(angle14_32 angle, fixed16_16* sinValue, fixed16_16* cosValue)
 	{
@@ -254,6 +264,12 @@ namespace TFE_Jedi
 
 	// Returns an DF angle, where 360 degrees = 16384 angular units (~45.5 units / degree).
 	s32 vec2ToAngle(f32 dx, f32 dz);
+
+	inline f32 tanFlt(f32 angle)
+	{
+		const f32 scale = 2.0f * PI / 16384.0f;
+		return tanf(scale * angle);
+	}
 
 	inline void sinCosFlt(f32 angle, f32* sinValue, f32* cosValue)
 	{

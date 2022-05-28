@@ -67,7 +67,6 @@ namespace RClassic_Float
 
 		s_rcfltState.cameraYaw = yaw;
 		s_rcfltState.cameraPitch = pitch;
-		const f32 pitchOffsetScale = 226.0f * s_rcfltState.focalLenAspect/160.0f;	// half_width / sin(360*2047/16384)
 
 		s_xOffset = -camX;
 		s_zOffset = -camZ;
@@ -76,8 +75,7 @@ namespace RClassic_Float
 		s_rcfltState.negSinYaw = -s_rcfltState.sinYaw;
 		if (s_maxPitch != s_rcfltState.cameraPitch)
 		{
-			f32 sinPitch = sinFlt(s_rcfltState.cameraPitch);
-			f32 pitchOffset = sinPitch * pitchOffsetScale;
+			f32 pitchOffset = tanFlt(pitch) * s_rcfltState.focalLenAspect;
 			s_rcfltState.projOffsetY = s_rcfltState.projOffsetYBase + pitchOffset;
 			s_screenYMidFlt = s_screenYMidBase + (s32)floorf(pitchOffset);
 

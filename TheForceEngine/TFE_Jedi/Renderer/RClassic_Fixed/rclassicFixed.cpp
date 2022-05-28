@@ -55,7 +55,7 @@ namespace RClassic_Fixed
 		s_worldZ = z;
 		s_worldY = eyeHeight;
 	}
-
+		
 	void computeCameraTransform(RSector* sector, angle14_32 pitch, angle14_32 yaw, fixed16_16 camX, fixed16_16 camY, fixed16_16 camZ)
 	{
 		s_rcfState.cameraPos.x = camX;
@@ -66,7 +66,6 @@ namespace RClassic_Fixed
 
 		s_rcfState.cameraYaw = yaw;
 		s_rcfState.cameraPitch = pitch;
-		const fixed16_16 pitchOffsetScale = FIXED(226);	// half_width / sin(360*2047/16384)
 
 		s_xOffset = -camX;
 		s_zOffset = -camZ;
@@ -75,8 +74,7 @@ namespace RClassic_Fixed
 		s_rcfState.negSinYaw = -s_rcfState.sinYaw;
 		if (s_maxPitch != s_rcfState.cameraPitch)
 		{
-			fixed16_16 sinPitch = sinFixed(s_rcfState.cameraPitch);
-			fixed16_16 pitchOffset = mul16(sinPitch, pitchOffsetScale);
+			fixed16_16 pitchOffset = mul16(tanFixed(pitch), s_rcfState.halfWidth);
 			s_rcfState.projOffsetY = s_rcfState.projOffsetYBase + pitchOffset;
 			s_screenYMidFix = s_screenYMidBase + floor16(pitchOffset);
 

@@ -1144,7 +1144,10 @@ namespace TFE_DarkForces
 		// Pitch change
 		if (inputConfig->mouseMode == MMODE_LOOK)
 		{
-			s_playerPitch = clamp(s_playerPitch - s32(f32(mdy * PLAYER_MOUSE_TURN_SPD) * inputMapping_getVertMouseSensitivity()), -PITCH_LIMIT, PITCH_LIMIT);
+			f32 pitchDelta = f32(mdy * PLAYER_MOUSE_TURN_SPD) * inputMapping_getVertMouseSensitivity();
+			// Counteract the tan() call later in the delta in order to make the movement perceptually linear.
+			pitchDelta = atanf(pitchDelta/2047.0f * PI) / PI * 2047.0f;
+			s_playerPitch = clamp(s_playerPitch - s32(pitchDelta), -PITCH_LIMIT, PITCH_LIMIT);
 		}
 
 		// Controls
@@ -1257,6 +1260,9 @@ namespace TFE_DarkForces
 		else if (inputMapping_getAnalogAxis(AA_LOOK_VERT))
 		{
 			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_PITCH_SPD, s_deltaTime), floatToFixed16(inputMapping_getAnalogAxis(AA_LOOK_VERT)));
+			// Counteract the tan() call later in the delta in order to make the movement perceptually linear.
+			turnSpeed = (fixed16_16)floatToFixed16(atanf((f32)fixed16ToFloat(turnSpeed) / 2047.0f * PI) / PI * 2047.0f);
+
 			s_playerPitch = clamp(s_playerPitch + turnSpeed, -PITCH_LIMIT, PITCH_LIMIT);
 		}
 

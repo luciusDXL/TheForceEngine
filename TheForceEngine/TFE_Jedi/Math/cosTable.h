@@ -9,4 +9,5 @@
 namespace TFE_Jedi
 {
 	extern const fixed16_16 s_cosTable[];
+	extern const fixed16_16 s_tanTable[];
 }
