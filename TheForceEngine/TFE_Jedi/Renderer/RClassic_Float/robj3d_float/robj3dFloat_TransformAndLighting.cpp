@@ -122,17 +122,18 @@ namespace RClassic_Float
 				const f32 z = max(0.0f, vertex->z);
 				if (s_worldAmbient < 31 || s_cameraLightSource)
 				{
-					const s32 depthScaled = (s32)min(z * 6.0f, 127.0f);
-					const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
-					if (cameraSource > 0)
+					s32 depthScaled = min(s32(z * 4.0f), 127);
+					s32 lightSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
+					if (lightSource > 0)
 					{
-						intensity += intToFixed16(cameraSource);
+						intensity += f32(lightSource);
 					}
 				}
+				intensity = max(intensity, f32(s_sectorAmbient));
 
-				const s32 falloff = floorFloat(z * 6.0f);
-				intensity = max(f32(s_sectorAmbient), intensity) - falloff;
-				intensity = clamp(intensity, (f32)s_scaledAmbient, VSHADE_MAX_INTENSITY_FLT);
+				const s32 falloff = s32(z / 16.0f) + s32(z / 32.0f);		// depth * 3/32
+				intensity = max(intensity - f32(falloff), f32(s_scaledAmbient));
+				intensity = clamp(intensity, 0.0f, VSHADE_MAX_INTENSITY_FLT);
 			}
 			*outShading = intensity;
 		}

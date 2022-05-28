@@ -71,9 +71,8 @@ namespace RClassic_Fixed
 			}
 			else
 			{
-				fixed16_16 lightIntensity = intensity;
-
 				// Lighting
+				fixed16_16 lightIntensity = 0;
 				for (s32 i = 0; i < s_lightCount; i++)
 				{
 					const CameraLight* light = &s_cameraLight[i];
@@ -105,10 +104,11 @@ namespace RClassic_Fixed
 						intensity += intToFixed16(cameraSource);
 					}
 				}
+				intensity = max(intensity, intToFixed16(s_sectorAmbient));
 
-				const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
-				intensity = max(intToFixed16(s_sectorAmbient), intensity) - falloff;
-				intensity = clamp(intensity, s_scaledAmbient, VSHADE_MAX_INTENSITY);
+				const s32 falloff = (z >> LIGHT_ATTEN0) + (z >> LIGHT_ATTEN1);
+				intensity = max(intensity - falloff, s_scaledAmbient);
+				intensity = clamp(intensity, 0, VSHADE_MAX_INTENSITY);
 			}
 			*outShading = intensity;
 		}

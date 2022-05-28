@@ -91,7 +91,7 @@ namespace RClassic_Fixed
 
 	u8 robj3d_computePolygonColor(vec3_fixed* normal, u8 color, fixed16_16 z)
 	{
-		if (s_sectorAmbient >= 31) { return color; }
+		if (s_sectorAmbient >= MAX_LIGHT_LEVEL) { return color; }
 		s_polyColorMap = s_colorMap;
 
 		s32 lightLevel = 0;
@@ -111,19 +111,19 @@ namespace RClassic_Fixed
 		lightLevel += floor16(mul16(lighting, s_sectorAmbientFraction));
 		if (lightLevel >= 31) { return color; }
 
-		if (s_worldAmbient < 31 || s_cameraLightSource)
+		if (s_cameraLightSource)
 		{
 			const s32 depthScaled = min(s32(z >> 14), 127);
-			const s32 cameraSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
+			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
 			if (cameraSource > 0)
 			{
 				lightLevel += cameraSource;
 			}
 		}
+		lightLevel = max(lightLevel, s_sectorAmbient);
 
 		z = max(z, 0);
-		const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
-		lightLevel = max(lightLevel, s_sectorAmbient);
+		const s32 falloff = (z >> LIGHT_ATTEN0) + (z >> LIGHT_ATTEN1);
 		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
 
 		if (lightLevel >= 31) { return color; }
@@ -155,19 +155,19 @@ namespace RClassic_Fixed
 		if (s_worldAmbient < 31 || s_cameraLightSource)
 		{
 			const s32 depthScaled = min(s32(z >> 14), 127);
-			const s32 cameraSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
+			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
 			if (cameraSource > 0)
 			{
 				lightLevel += cameraSource;
 			}
 		}
+		lightLevel = max(lightLevel, s_sectorAmbient);
 
 		z = max(z, 0);
-		const s32 falloff = (z >> 15) + (z >> 14);	// z * 0.75
-		lightLevel = max(lightLevel, s_sectorAmbient);
+		const s32 falloff = (z >> LIGHT_ATTEN0) + (z >> LIGHT_ATTEN1);
 		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
 
-		return clamp(lightLevel, 0, 31);
+		return clamp(lightLevel, 0, MAX_LIGHT_LEVEL);
 	}
 		
 	////////////////////////////////////////////////

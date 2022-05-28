@@ -116,19 +116,19 @@ namespace RClassic_Float
 		lightLevel += floorFloat(lighting * fixed16ToFloat(s_sectorAmbientFraction));
 		if (lightLevel >= 31) { return color; }
 
-		if (s_worldAmbient < 31 || s_cameraLightSource)
+		if (s_cameraLightSource)
 		{
 			const s32 depthScaled = (s32)min(z * 4.0f, 127.0f);
-			const s32 cameraSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
+			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
 			if (cameraSource > 0)
 			{
 				lightLevel += cameraSource;
 			}
 		}
+		lightLevel = max(lightLevel, s_sectorAmbient);
 
 		z = max(z, 0.0f);
-		const s32 falloff = s32(z * 6.0f);
-		lightLevel = max(lightLevel, s_sectorAmbient);
+		const s32 falloff = s32(z / 16.0f) + s32(z / 32.0f);
 		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
 
 		if (lightLevel >= 31) { return color; }
@@ -157,22 +157,22 @@ namespace RClassic_Float
 		lightLevel += floorFloat(lighting * fixed16ToFloat(s_sectorAmbientFraction));
 		if (lightLevel >= 31) { return 31; }
 
-		if (s_worldAmbient < 31 || s_cameraLightSource)
+		if (s_cameraLightSource)
 		{
 			const s32 depthScaled = (s32)min(z * 4.0f, 127.0f);
-			const s32 cameraSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
+			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
 			if (cameraSource > 0)
 			{
 				lightLevel += cameraSource;
 			}
 		}
+		lightLevel = max(lightLevel, s_sectorAmbient);
 
 		z = max(z, 0.0f);
-		const s32 falloff = s32(z * 6.0f);
-		lightLevel = max(lightLevel, s_sectorAmbient);
+		const s32 falloff = s32(z / 16.0f) + s32(z / 32.0f);
 		lightLevel = max(lightLevel - falloff, s_scaledAmbient);
 
-		return clamp(lightLevel, 0, 31);
+		return clamp(lightLevel, 0, MAX_LIGHT_LEVEL);
 	}
 		
 	////////////////////////////////////////////////

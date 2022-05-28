@@ -1,6 +1,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include "rlightingFixed.h"
+#include "rclassicFixed.h"
 #include "../rcommon.h"
 #include "../rlimits.h"
 
@@ -9,16 +10,29 @@ namespace TFE_Jedi
 
 namespace RClassic_Fixed
 {
-	#define LIGHT_SCALE 14
-	#define LIGHT_ATTEN0 20
-	#define LIGHT_ATTEN1 21
-
 	CameraLight s_cameraLight[] =
 	{
 		{ {0, 0, ONE_16}, {0, 0, 0}, ONE_16 },
 		{ {0, ONE_16, 0}, {0, 0, 0}, ONE_16 },
 		{ {ONE_16, 0, 0}, {0, 0, 0}, ONE_16 },
 	};
+
+	void light_transformDirLights()
+	{
+		vec3_fixed pos = { 0 };
+		vec3_fixed viewPos;
+		transformPointByCamera(&pos, &viewPos);
+
+		for (s32 i = 0; i < s_lightCount; i++)
+		{
+			vec3_fixed dir;
+			transformPointByCamera(&s_cameraLight[i].lightWS, &dir);
+			s_cameraLight[i].lightVS.x = -(dir.x - viewPos.x);
+			s_cameraLight[i].lightVS.y = -(dir.y - viewPos.y);
+			s_cameraLight[i].lightVS.z = -(dir.z - viewPos.z);
+			normalizeVec3(&s_cameraLight[i].lightVS, &s_cameraLight[i].lightVS);
+		}
+	}
 
 	const u8* computeLighting(fixed16_16 depth, s32 lightOffset)
 	{

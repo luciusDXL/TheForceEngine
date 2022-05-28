@@ -179,6 +179,8 @@ namespace TFE_Jedi
 		EdgePairFloat* flatEdge = &s_rcfltState.flatEdgeList[s_flatCount];
 		s_rcfltState.flatEdge = flatEdge;
 		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfltState.windowMaxY, 0, s_rcfltState.windowMinY);
+
+		light_transformDirLights();
 	}
 
 	void transformPointByCameraFixedToFloat(vec3_fixed* worldPoint, vec3_float* viewPoint)

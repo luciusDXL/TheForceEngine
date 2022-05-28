@@ -29,8 +29,8 @@ namespace TFE_Jedi_Object3d
 		const fixed16_16 dy = vIn->y - v0->y;
 		const fixed16_16 dz = vIn->z - v0->z;
 		const fixed16_16 xSq = mul16(dx, dx);
-		const fixed16_16 ySq = dy * dy;
-		const fixed16_16 zSq = dz * dz;
+		const fixed16_16 ySq = mul16(dy, dy);
+		const fixed16_16 zSq = mul16(dz, dz);
 		const fixed16_16 len = fixedSqrt(xSq + ySq + zSq);
 
 		// The Jedi 3D object renderer expect normals in the form of v0 + dir rather than just dir as used today.
@@ -92,12 +92,11 @@ namespace TFE_Jedi_Object3d
 				{
 					if (v == indices[i])
 					{
-						const vec3* v1 = &model->vertices[indices[i]];
+						const vec3* v1 = &model->vertices[indices[1]];
 						normal.x += cnrm->x - v1->x;
 						normal.y += cnrm->y - v1->y;
 						normal.z += cnrm->z - v1->z;
 						ncount++;
-
 						break;
 					}
 				}
@@ -179,15 +178,14 @@ namespace TFE_Model_Jedi
 		// Compute culling normals.
 		model->polygonNormals = (vec3*)malloc(model->polygonCount * sizeof(vec3));
 
-		vec3* cullingNormal = model->polygonNormals;
+		vec3* polygonNormal = model->polygonNormals;
 		Polygon* polygon = model->polygons;
-		for (s32 i = 0; i < model->polygonCount; i++, polygon++, cullingNormal++)
+		for (s32 i = 0; i < model->polygonCount; i++, polygon++, polygonNormal++)
 		{
 			vec3* v0 = &model->vertices[polygon->indices[0]];
 			vec3* v1 = &model->vertices[polygon->indices[1]];
 			vec3* v2 = &model->vertices[polygon->indices[2]];
-
-			object3d_computePolygonNormal(v1, v2, v0, cullingNormal);
+			object3d_computePolygonNormal(v1, v2, v0, polygonNormal);
 		}
 
 		// Compute vertex normals if vertex lighting is required.

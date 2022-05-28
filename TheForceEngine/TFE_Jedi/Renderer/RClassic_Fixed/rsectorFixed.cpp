@@ -161,6 +161,8 @@ namespace TFE_Jedi
 		EdgePairFixed* flatEdge = &s_rcfState.flatEdgeList[s_flatCount];
 		s_rcfState.flatEdge = flatEdge;
 		flat_addEdges(s_screenWidth, s_minScreenX_Pixels, 0, s_rcfState.windowMaxY, 0, s_rcfState.windowMinY);
+
+		light_transformDirLights();
 	}
 
 	void TFE_Sectors_Fixed::reset()

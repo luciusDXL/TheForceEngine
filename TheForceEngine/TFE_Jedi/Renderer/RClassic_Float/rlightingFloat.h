@@ -19,6 +19,7 @@ namespace TFE_Jedi
 		};
 		extern CameraLightFlt s_cameraLight[];
 
+		void light_transformDirLights();
 		const u8* computeLighting(f32 depth, s32 lightOffset);
 	}
 }

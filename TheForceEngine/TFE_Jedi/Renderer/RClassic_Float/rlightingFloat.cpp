@@ -1,6 +1,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include "rlightingFloat.h"
+#include "rclassicFloat.h"
 #include "../rcommon.h"
 #include "../rlimits.h"
 
@@ -19,6 +20,23 @@ namespace RClassic_Float
 		{ {0, 1.0f, 0}, {0, 0, 0}, 1.0f },
 		{ {1.0f, 0, 0}, {0, 0, 0}, 1.0f },
 	};
+
+	void light_transformDirLights()
+	{
+		vec3_float pos = { 0 };
+		vec3_float viewPos;
+		transformPointByCamera(&pos, &viewPos);
+
+		for (s32 i = 0; i < s_lightCount; i++)
+		{
+			vec3_float dir;
+			transformPointByCamera(&s_cameraLight[i].lightWS, &dir);
+			s_cameraLight[i].lightVS.x = -(dir.x - viewPos.x);
+			s_cameraLight[i].lightVS.y = -(dir.y - viewPos.y);
+			s_cameraLight[i].lightVS.z = -(dir.z - viewPos.z);
+			normalizeVec3(&s_cameraLight[i].lightVS, &s_cameraLight[i].lightVS);
+		}
+	}
 
 	const u8* computeLighting(f32 depth, s32 lightOffset)
 	{

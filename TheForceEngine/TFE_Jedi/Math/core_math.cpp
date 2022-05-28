@@ -38,8 +38,8 @@ namespace TFE_Jedi
 		
 	void normalizeVec3(vec3_fixed* vIn, vec3_fixed* vOut)
 	{
-		s32 distSq = mul16(vIn->x, vIn->x) + mul16(vIn->y, vIn->y) + mul16(vIn->z, vIn->z);
-		s32 dist = fixedSqrt(distSq);
+		fixed16_16 distSq = mul16(vIn->x, vIn->x) + mul16(vIn->y, vIn->y) + mul16(vIn->z, vIn->z);
+		fixed16_16 dist = fixedSqrt(distSq);
 
 		if (dist > 0)
 		{

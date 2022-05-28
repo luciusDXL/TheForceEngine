@@ -2,6 +2,8 @@
 #include <TFE_System/types.h>
 
 struct ColorMap;
+struct RSector;
+struct TextureData;
 
 namespace TFE_Jedi
 {
