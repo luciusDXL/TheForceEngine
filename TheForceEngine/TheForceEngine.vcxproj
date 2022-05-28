@@ -441,6 +441,7 @@ echo ^)";
     <ClInclude Include="TFE_FrontEndUI\modLoader.h" />
     <ClInclude Include="TFE_FrontEndUI\profilerView.h" />
     <ClInclude Include="TFE_Game\igame.h" />
+    <ClInclude Include="TFE_Game\reticle.h" />
     <ClInclude Include="TFE_Input\input.h" />
     <ClInclude Include="TFE_Input\inputEnum.h" />
     <ClInclude Include="TFE_Input\inputMapping.h" />
@@ -524,6 +525,7 @@ echo ^)";
     <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
     <ClInclude Include="TFE_Polygon\polygon.h" />
     <ClInclude Include="TFE_PostProcess\blit.h" />
+    <ClInclude Include="TFE_PostProcess\overlay.h" />
     <ClInclude Include="TFE_PostProcess\postprocess.h" />
     <ClInclude Include="TFE_PostProcess\postprocesseffect.h" />
     <ClInclude Include="TFE_RenderBackend\dynamicTexture.h" />
@@ -682,6 +684,7 @@ echo ^)";
     <ClCompile Include="TFE_FrontEndUI\modLoader.cpp" />
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp" />
     <ClCompile Include="TFE_Game\igame.cpp" />
+    <ClCompile Include="TFE_Game\reticle.cpp" />
     <ClCompile Include="TFE_Input\input.cpp" />
     <ClCompile Include="TFE_Input\inputMapping.cpp" />
     <ClCompile Include="TFE_Jedi\Collision\collision.cpp" />
@@ -746,6 +749,7 @@ echo ^)";
     <ClCompile Include="TFE_Polygon\clipper.cpp" />
     <ClCompile Include="TFE_Polygon\polygon.cpp" />
     <ClCompile Include="TFE_PostProcess\blit.cpp" />
+    <ClCompile Include="TFE_PostProcess\overlay.cpp" />
     <ClCompile Include="TFE_PostProcess\postprocess.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\dynamicTexture.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\glslParser.cpp" />
@@ -821,6 +825,8 @@ echo ^)";
     <None Include="Shaders\line2d.vert" />
     <None Include="Shaders\line3d.frag" />
     <None Include="Shaders\line3d.vert" />
+    <None Include="Shaders\overlay.frag" />
+    <None Include="Shaders\overlay.vert" />
     <None Include="Shaders\tri2dColor.frag" />
     <None Include="Shaders\tri2dColor.vert" />
     <None Include="Shaders\tri2dTextured.frag" />

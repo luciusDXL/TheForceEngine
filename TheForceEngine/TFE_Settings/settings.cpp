@@ -291,6 +291,14 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
 		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
 		writeKeyValue_Float(settings, "gamma", s_graphicsSettings.gamma);
+
+		writeKeyValue_Bool(settings, "reticleEnable",   s_graphicsSettings.reticleEnable);
+		writeKeyValue_Int(settings,  "reticleIndex",    s_graphicsSettings.reticleIndex);
+		writeKeyValue_Float(settings, "reticleRed",     s_graphicsSettings.reticleRed);
+		writeKeyValue_Float(settings, "reticleGreen",   s_graphicsSettings.reticleGreen);
+		writeKeyValue_Float(settings, "reticleBlue",    s_graphicsSettings.reticleBlue);
+		writeKeyValue_Float(settings, "reticleOpacity", s_graphicsSettings.reticleOpacity);
+		writeKeyValue_Float(settings, "reticleScale",   s_graphicsSettings.reticleScale);
 	}
 		
 	void writeHudSettings(FileStream& settings)
@@ -552,6 +560,34 @@ namespace TFE_Settings
 		else if (strcasecmp("gamma", key) == 0)
 		{
 			s_graphicsSettings.gamma = parseFloat(value);
+		}
+		else if (strcasecmp("reticleEnable", key) == 0)
+		{
+			s_graphicsSettings.reticleEnable = parseBool(value);
+		}
+		else if (strcasecmp("reticleIndex", key) == 0)
+		{
+			s_graphicsSettings.reticleIndex = parseInt(value);
+		}
+		else if (strcasecmp("reticleRed", key) == 0)
+		{
+			s_graphicsSettings.reticleRed = parseFloat(value);
+		}
+		else if (strcasecmp("reticleGreen", key) == 0)
+		{
+			s_graphicsSettings.reticleGreen = parseFloat(value);
+		}
+		else if (strcasecmp("reticleBlue", key) == 0)
+		{
+			s_graphicsSettings.reticleBlue = parseFloat(value);
+		}
+		else if (strcasecmp("reticleOpacity", key) == 0)
+		{
+			s_graphicsSettings.reticleOpacity = parseFloat(value);
+		}
+		else if (strcasecmp("reticleScale", key) == 0)
+		{
+			s_graphicsSettings.reticleScale = parseFloat(value);
 		}
 	}
 

@@ -15,6 +15,7 @@
 #include <TFE_Archive/lfdArchive.h>
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/util.h>
+#include <TFE_Game/reticle.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/input.h>
@@ -104,6 +105,9 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void pda_start(const char* levelName)
 	{
+		// TFE
+		reticle_enable(false);
+
 		pauseLevelSound();
 		if (!s_pdaLoaded)
 		{
@@ -213,6 +217,9 @@ namespace TFE_DarkForces
 		
 		if (TFE_Input::keyPressed(KEY_F1) || TFE_Input::keyPressed(KEY_ESCAPE))
 		{
+			// TFE
+			reticle_enable(true);
+
 			s_pdaOpen = JFALSE;
 			return;
 		}

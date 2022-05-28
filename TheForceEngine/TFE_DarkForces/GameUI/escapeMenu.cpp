@@ -7,6 +7,7 @@
 #include <TFE_DarkForces/util.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/config.h>
+#include <TFE_Game/reticle.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/inputMapping.h>
@@ -67,6 +68,9 @@ namespace TFE_DarkForces
 
 	void escapeMenu_open(u8* framebuffer, u8* palette)
 	{
+		// TFE
+		reticle_enable(false);
+
 		pauseLevelSound();
 		s_escMenuOpen = JTRUE;
 		if (!s_escMenuFrames)
@@ -122,6 +126,9 @@ namespace TFE_DarkForces
 		{
 			s_escMenuOpen = JFALSE;
 			resumeLevelSound();
+
+			// TFE
+			reticle_enable(true);
 		}
 		
 		// Draw the screen capture.

@@ -5,6 +5,7 @@
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_DarkForces/config.h>
+#include <TFE_Game/reticle.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
@@ -1388,7 +1389,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Virtual Resolution");
 		ImGui::PopFont();
 
-		ImGui::LabelText("##ConfigLabel", "Standard Resolution:"); ImGui::SameLine(150*s_uiScale);
+		ImGui::LabelText("##ConfigLabel", "Standard Resolution:"); ImGui::SameLine(150 * s_uiScale);
 		ImGui::SetNextItemWidth(196);
 		ImGui::Combo("##Resolution", &s_resIndex, widescreen ? c_resolutionsWide : c_resolutions, IM_ARRAYSIZE(c_resolutions));
 		if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim))
@@ -1401,7 +1402,7 @@ namespace TFE_FrontEndUI
 		}
 		else if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim) + 1)
 		{
-			ImGui::LabelText("##ConfigLabel", "Custom:"); ImGui::SameLine(100*s_uiScale);
+			ImGui::LabelText("##ConfigLabel", "Custom:"); ImGui::SameLine(100 * s_uiScale);
 			ImGui::SetNextItemWidth(196);
 			ImGui::InputInt2("##CustomInput", graphics->gameResolution.m);
 
@@ -1419,7 +1420,7 @@ namespace TFE_FrontEndUI
 			graphics->widescreen = widescreen;
 		}
 		ImGui::Separator();
-				
+
 		//////////////////////////////////////////////////////
 		// Renderer
 		//////////////////////////////////////////////////////
@@ -1427,8 +1428,8 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Rendering");
 		ImGui::PopFont();
 
-		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75*s_uiScale);
-		ImGui::SetNextItemWidth(196*s_uiScale);
+		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75 * s_uiScale);
+		ImGui::SetNextItemWidth(196 * s_uiScale);
 		ImGui::Combo("##Renderer", &s_rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
 		if (s_rendererIndex == 0)
 		{
@@ -1459,11 +1460,11 @@ namespace TFE_FrontEndUI
 			static s32 s_msaa = 3;
 			static f32 s_filterSharpness = 0.8f;
 
-			const f32 comboOffset = floorf(170*s_uiScale);
+			const f32 comboOffset = floorf(170 * s_uiScale);
 
 			// Hardware
 			ImGui::LabelText("##ConfigLabel", "Color Depth"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			if (ImGui::Combo("##ColorDepth", &s_colorDepth, c_colorDepth, IM_ARRAYSIZE(c_colorDepth)))
 			{
 				if (s_colorDepth == 0) { s_nearTexFilter = 0; s_farTexFilter = 0; }
@@ -1473,31 +1474,31 @@ namespace TFE_FrontEndUI
 			if (s_colorDepth == 1)
 			{
 				ImGui::LabelText("##ConfigLabel", "Colormap Interpolation"); ImGui::SameLine(comboOffset);
-				ImGui::SetNextItemWidth(196*s_uiScale);
+				ImGui::SetNextItemWidth(196 * s_uiScale);
 				ImGui::Combo("##ColormapInterp", &s_colormapInterp, c_colormap_interp, IM_ARRAYSIZE(c_colormap_interp));
 			}
 
 			ImGui::LabelText("##ConfigLabel", "3D Polygon Sorting"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::Combo("##3DSort", &s_objectSort, c_3d_object_sort, IM_ARRAYSIZE(c_3d_object_sort));
 
 			ImGui::LabelText("##ConfigLabel", "Texture Filter Near"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::Combo("##TexFilterNear", &s_nearTexFilter, c_near_tex_filter, IM_ARRAYSIZE(c_near_tex_filter));
 
 			if (s_nearTexFilter == 2)
 			{
-				ImGui::SetNextItemWidth(196*s_uiScale);
+				ImGui::SetNextItemWidth(196 * s_uiScale);
 				ImGui::SliderFloat("Sharpness", &s_filterSharpness, 0.0f, 1.0f);
 				ImGui::Spacing();
 			}
 
 			ImGui::LabelText("##ConfigLabel", "Texture Filter Far"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::Combo("##TexFilterFar", &s_farTexFilter, c_far_tex_filter, IM_ARRAYSIZE(c_far_tex_filter));
 
 			ImGui::LabelText("##ConfigLabel", "Anti-aliasing"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::Combo("##MSAA", &s_msaa, c_aa, IM_ARRAYSIZE(c_aa));
 		}
 		ImGui::Separator();
@@ -1512,30 +1513,57 @@ namespace TFE_FrontEndUI
 		ImGui::Checkbox("Enable", &graphics->colorCorrection);
 		if (graphics->colorCorrection)
 		{
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::SliderFloat("Brightness", &graphics->brightness, 0.0f, 2.0f);
 
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::SliderFloat("Contrast", &graphics->contrast, 0.0f, 2.0f);
 
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::SliderFloat("Saturation", &graphics->saturation, 0.0f, 2.0f);
 
-			ImGui::SetNextItemWidth(196*s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
 			ImGui::SliderFloat("Gamma", &graphics->gamma, 0.0f, 2.0f);
 		}
 		else
 		{
 			// If color correction is disabled, reset values.
 			graphics->brightness = 1.0f;
-			graphics->contrast   = 1.0f;
+			graphics->contrast = 1.0f;
 			graphics->saturation = 1.0f;
-			graphics->gamma      = 1.0f;
+			graphics->gamma = 1.0f;
 		}
 
 		const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
 		TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
-						   
+
+		ImGui::Separator();
+
+		//////////////////////////////////////////////////////
+		// Reticle
+		//////////////////////////////////////////////////////
+		ImGui::PushFont(s_dialogFont);
+		ImGui::LabelText("##ConfigLabel", "Crosshair");
+		ImGui::PopFont();
+
+		if (ImGui::Checkbox("Enable###ReticleEnable", &graphics->reticleEnable))
+		{
+			reticle_enable(graphics->reticleEnable);
+		}
+		if (graphics->reticleEnable)
+		{
+			ImGui::SliderInt("Shape###ReticleShape", &graphics->reticleIndex, 0, reticle_getShapeCount() - 1);
+			ImGui::SliderFloat4("Color###ReticleColor", &graphics->reticleRed, 0.0f, 1.0f);
+
+			s32 scale = s32(graphics->reticleScale * 4.0f + 0.5f);
+			ImGui::SliderInt("Scale###ReticleScale", &scale, 1, 8);
+			graphics->reticleScale = f32(scale) * 0.25f;
+
+			reticle_setShape(graphics->reticleIndex);
+			reticle_setScale(graphics->reticleScale);
+			reticle_setColor(&graphics->reticleRed);
+		}
+
 		ImGui::Separator();
 
 		//////////////////////////////////////////////////////

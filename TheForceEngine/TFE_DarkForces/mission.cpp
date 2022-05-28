@@ -16,6 +16,7 @@
 #include <TFE_DarkForces/GameUI/pda.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Game/igame.h>
+#include <TFE_Game/reticle.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -250,11 +251,13 @@ namespace TFE_DarkForces
 					setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
 					automap_updateMapData(MAP_CENTER_PLAYER);
 					setSkyParallax(s_parallax0, s_parallax1);
-					// initSoundEffects();  <- TODO: Handle later
 					s_missionMode = MISSION_MODE_MAIN;
 					s_gamePaused = JFALSE;
 					mission_createRenderDisplay();
 					hud_startup();
+
+					// TFE
+					reticle_enable(true);
 				}
 			}
 			TFE_Input::clearAccumulatedMouseMove();
@@ -359,14 +362,6 @@ namespace TFE_DarkForces
 					drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
 					weapon_draw(s_framebuffer, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI));
 					handleVisionFx();
-				}
-				else if (s_missionMode == MISSION_MODE_UNKNOWN)
-				{
-					// STUB
-				}
-				else if (s_missionMode == MISSION_MODE_LOAD_START)
-				{
-					// vgaClearPalette();
 				}
 			}
 

@@ -37,6 +37,15 @@ struct TFE_Settings_Graphics
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;
 	f32   gamma = 1.0f;
+
+	// Reticle
+	bool reticleEnable  = false;
+	s32  reticleIndex   = 6;
+	f32  reticleRed     = 0.25f;
+	f32  reticleGreen   = 1.00f;
+	f32  reticleBlue    = 0.25f;
+	f32  reticleOpacity = 1.00f;
+	f32  reticleScale   = 1.0f;
 };
 
 enum TFE_HudScale

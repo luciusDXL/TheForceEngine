@@ -2,6 +2,7 @@
 
 #include "postprocess.h"
 #include "postprocesseffect.h"
+#include "overlay.h"
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_System/profiler.h>
@@ -45,7 +46,9 @@ namespace TFE_PostProcess
 	static IndexBuffer s_indexBuffer;
 	static f32 s_screenScale[2];
 	static std::vector<PostEffectInstance> s_effects;
-		
+
+	static Overlay* s_overlayEffect = nullptr;
+
 	////////////////////////////////////////////////
 	// Forward Declarations
 	////////////////////////////////////////////////
@@ -72,6 +75,8 @@ namespace TFE_PostProcess
 		};
 		s_vertexBuffer.create(4, sizeof(EffectVertex), c_effectAttrCount, c_effectAttrMapping, false, (void*)vertices);
 		s_indexBuffer.create(6, sizeof(u16), false, (void*)indices);
+		s_overlayEffect = new Overlay();
+		s_overlayEffect->init();
 
 		return true;
 	}
@@ -79,8 +84,11 @@ namespace TFE_PostProcess
 	void destroy()
 	{
 		clearEffectStack();
+		removeAllOverlays();
 		s_vertexBuffer.destroy();
 		s_indexBuffer.destroy();
+		s_overlayEffect->destroy();
+		delete s_overlayEffect;
 	}
 
 	void clearEffectStack()
@@ -104,6 +112,127 @@ namespace TFE_PostProcess
 		memcpy(instance.inputs, inputs, inputCount * sizeof(PostEffectInput));
 
 		s_effects.push_back(instance);
+	}
+
+	struct OverlayEffect
+	{
+		OverlayID id;
+		OverlayImage overlay;
+		bool active;
+		f32 tint[4] = { 0 };
+		f32 x = 0.0f, y = 0.0f;
+		f32 scale = 1.0f;
+	};
+	std::vector<OverlayEffect> s_overlayEffects;
+	std::vector<OverlayID> s_freeOverlayEffects;
+
+	// Overlays - images drawn on top after the post process stack has executed.
+	OverlayID addOverlayTexture(OverlayImage* overlay, f32* tint, f32 screenX, f32 screenY, f32 scale)
+	{
+		OverlayEffect effect = {};
+		effect.active = true;
+		effect.overlay = *overlay;
+		for (s32 i = 0; i < 4; i++) { effect.tint[i] = tint ? tint[i] : 1.0f; }
+		effect.x = screenX;
+		effect.y = screenY;
+		effect.scale = scale;
+
+		OverlayID id;
+		if (s_freeOverlayEffects.empty())
+		{
+			id = (OverlayID)s_overlayEffects.size();
+			effect.id = id;
+			s_overlayEffects.push_back(effect);
+		}
+		else
+		{
+			id = s_freeOverlayEffects.back();
+			s_freeOverlayEffects.pop_back();
+
+			effect.id = id;
+			s_overlayEffects[id] = effect;
+		}
+		return id;
+	}
+
+	const OverlayImage* getOverlayImage(OverlayID id)
+	{
+		if (id >= s_overlayEffects.size())
+		{
+			return nullptr;
+		}
+		return &s_overlayEffects[id].overlay;
+	}
+
+	void setOverlayImage(OverlayID id, const OverlayImage* image)
+	{
+		if (id >= s_overlayEffects.size())
+		{
+			return;
+		}
+		s_overlayEffects[id].overlay = *image;
+	}
+
+	void modifyOverlay(OverlayID id, f32* tint, f32 screenX, f32 screenY, f32 scale)
+	{
+		if (id >= s_overlayEffects.size())
+		{
+			return;
+		}
+
+		for (s32 i = 0; i < 4; i++) { s_overlayEffects[id].tint[i] = tint ? tint[i] : 1.0f; }
+		s_overlayEffects[id].x = screenX;
+		s_overlayEffects[id].y = screenY;
+		s_overlayEffects[id].scale = scale;
+	}
+
+	void getOverlaySettings(OverlayID id, f32* tint, f32* screenX, f32* screenY, f32* scale)
+	{
+		if (id >= s_overlayEffects.size())
+		{
+			return;
+		}
+		if (tint)
+		{
+			for (s32 i = 0; i < 4; i++) { tint[i] = s_overlayEffects[id].tint[i]; }
+		}
+		if (screenX)
+		{
+			*screenX = s_overlayEffects[id].x;
+		}
+		if (screenY)
+		{
+			*screenY = s_overlayEffects[id].y;
+		}
+		if (scale)
+		{
+			*scale = s_overlayEffects[id].scale;
+		}
+	}
+
+	void enableOverlay(OverlayID id, bool enable)
+	{
+		if (id >= s_overlayEffects.size())
+		{
+			return;
+		}
+		s_overlayEffects[id].active = enable;
+	}
+
+	void removeOverlay(OverlayID id)
+	{
+		if (id >= s_overlayEffects.size() || !s_overlayEffects[id].active)
+		{
+			return;
+		}
+		s_overlayEffects[id].active = false;
+		s_freeOverlayEffects.push_back(id);
+	}
+
+	void removeAllOverlays()
+	{
+		s_overlayEffects.clear();
+		s_freeOverlayEffects.clear();
 	}
 
 	void execute()
@@ -166,6 +295,46 @@ namespace TFE_PostProcess
 			}
 		}
 
+		const size_t overlayCount = s_overlayEffects.size();
+		OverlayEffect* effect = s_overlayEffects.data();
+
+		Shader* shader = s_overlayEffect->m_shader;
+		s_overlayEffect->setEffectState();
+		shader->bind();
+
+		for (size_t i = 0; i < overlayCount; i++, effect++)
+		{
+			if (!effect->active) { continue; }
+
+			// Overlay Image.
+			effect->overlay.texture->bind();
+			
+			// Scale Offset.
+			f32 scale = effect->scale;
+			f32 scaledWidth  = scale * f32(effect->overlay.overlayWidth)  * 2.0f * s_screenScale[0];
+			f32 scaledHeight = scale * f32(effect->overlay.overlayHeight) * 2.0f * s_screenScale[1];
+			f32 halfWidth  = scaledWidth * 0.5f;
+			f32 halfHeight = scaledHeight * 0.5f;
+			f32 x = 2.0f * f32(effect->x) - 1.0f - halfWidth;
+			f32 y = 2.0f * f32(effect->y) - 1.0f - halfHeight;
+			const f32 scaleOffset[] = { scaledWidth, scaledHeight, x, y };
+			shader->setVariable(s_overlayEffect->m_scaleOffsetId, SVT_VEC4, scaleOffset);
+
+			// Uv Scale Offset.
+			f32 uScale = f32(effect->overlay.overlayWidth)  / f32(effect->overlay.texture->getWidth());
+			f32 vScale = f32(effect->overlay.overlayHeight) / f32(effect->overlay.texture->getHeight());
+			f32 uOffset = f32(effect->overlay.overlayX) / f32(effect->overlay.texture->getWidth());
+			f32 vOffset = f32(effect->overlay.overlayY) / f32(effect->overlay.texture->getHeight());
+			const f32 uvScaleOffset[] = { uScale, vScale, uOffset, vOffset };
+			shader->setVariable(s_overlayEffect->m_uvOffsetSizeId, SVT_VEC4, uvScaleOffset);
+
+			// Tint.
+			shader->setVariable(s_overlayEffect->m_tintId, SVT_VEC4, effect->tint);
+
+			drawRectangle();
+		}
+
+		TextureGpu::clear();
 		Shader::unbind();
 		s_vertexBuffer.unbind();
 		s_indexBuffer.unbind();

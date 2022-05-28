@@ -895,6 +895,12 @@
     <ClInclude Include="TFE_DarkForces\Landru\lsound.h">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_PostProcess\overlay.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Game\reticle.h">
+      <Filter>Source\TFE_Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1515,6 +1521,12 @@
     <ClCompile Include="TFE_DarkForces\Landru\lsound.cpp">
       <Filter>Source\TFE_DarkForces\Landru</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_PostProcess\overlay.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\reticle.cpp">
+      <Filter>Source\TFE_Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -1655,6 +1667,12 @@
     </None>
     <None Include="Documentation\markdown\Game\GameManual.md">
       <Filter>Documentation\markdown\Game</Filter>
+    </None>
+    <None Include="Shaders\overlay.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\overlay.vert">
+      <Filter>Source\Shaders</Filter>
     </None>
   </ItemGroup>
 </Project>

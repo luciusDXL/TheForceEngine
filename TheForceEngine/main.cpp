@@ -5,6 +5,7 @@
 #include <TFE_System/profiler.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_Game/igame.h>
+#include <TFE_Game/reticle.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 //#include <TFE_Editor/editor.h>
 #include <TFE_FileSystem/fileutil.h>
@@ -553,6 +554,9 @@ int main(int argc, char* argv[])
 	const ColorCorrection colorCorrection = { graphics->brightness, graphics->contrast, graphics->saturation, graphics->gamma };
 	TFE_RenderBackend::setColorCorrection(graphics->colorCorrection, &colorCorrection);
 
+	// Optional Reticle.
+	reticle_init();
+
 	// Game loop
 	u32 frame = 0u;
 	bool showPerf = false;
@@ -719,6 +723,7 @@ int main(int argc, char* argv[])
 		s_curGame = nullptr;
 	}
 	game_destroy();
+	reticle_destroy();
 	inputMapping_shutdown();
 
 	// Cleanup
@@ -731,7 +736,6 @@ int main(int argc, char* argv[])
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();
 	TFE_Settings::shutdown();
-	//TFE_Renderer::destroy(renderer);
 	TFE_RenderBackend::destroy();
 	SDL_Quit();
 		

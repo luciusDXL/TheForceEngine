@@ -24,6 +24,7 @@
 #include <TFE_DarkForces/Landru/cutscene.h>
 #include <TFE_DarkForces/Landru/cutsceneList.h>
 #include <TFE_DarkForces/Actor/actor.h>
+#include <TFE_Game/reticle.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
@@ -440,6 +441,9 @@ namespace TFE_DarkForces
 					agent_levelEndTask();
 					lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
 					pda_cleanup();
+
+					// TFE
+					reticle_enable(false);
 
 					if (!s_levelComplete)
 					{
