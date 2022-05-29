@@ -148,6 +148,11 @@ namespace TFE_Jedi
 		*z = s_col_hitZ;
 	}
 
+	fixed16_16 collision_getHitDistance()
+	{
+		return s_col_hitDist;
+	}
+
 	RWall* collision_pathWallCollision(RSector* sector)
 	{
 		RWall* wall = sector->walls;
@@ -383,6 +388,53 @@ namespace TFE_Jedi
 		return internal_getObjectCollision();
 	}
 
+	void sector_calculateFloor(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight)
+	{
+		y -= FIXED(2);	// adjust the y value to handle second heights.
+		if (sector->secHeight < 0 && y > sector->floorHeight + sector->secHeight)
+		{
+			*floorHeight = sector->floorHeight;
+			*ceilHeight  = sector->floorHeight + sector->secHeight;
+		}
+		else
+		{
+			*floorHeight = sector->floorHeight + sector->secHeight;
+			*ceilHeight = sector->ceilingHeight;
+		}
+
+		if (sector->flags1 & SEC_FLAGS1_PIT) { *floorHeight += SEC_SKY_HEIGHT; }
+		if (sector->flags1 & SEC_FLAGS1_EXTERIOR) { *ceilHeight -= SEC_SKY_HEIGHT; }
+	}
+
+	JBool collision_lineOfSight(RSector* sector0, RSector* sector1, vec3_fixed pos0, vec3_fixed pos1, u32 wallFlags3)
+	{
+		fixed16_16 len = distApprox(pos0.x, pos0.z, pos1.x, pos1.z);
+		fixed16_16 slope = div16(pos1.y - pos0.y, len);
+
+		RSector* sector = sector0;
+		RWall* hitWall = collision_wallCollisionFromPath(sector, pos0.x, pos0.z, pos1.x, pos1.z);
+		while (hitWall)
+		{
+			if (!hitWall->nextSector || (hitWall->flags3 & wallFlags3))
+			{
+				return JFALSE;
+			}
+
+			len = collision_getHitDistance();
+			fixed16_16 y = pos0.y + mul16(len, slope);
+
+			RSector* hitSector = hitWall->sector;
+			RSector* hitNextSector = hitWall->nextSector;
+			if (y < hitSector->ceilingHeight || y < hitNextSector->ceilingHeight) { return JFALSE; }
+			if (y > hitSector->floorHeight || y > hitNextSector->floorHeight) { return JFALSE; }
+
+			sector = hitNextSector;
+			hitWall = collision_pathWallCollision(sector);
+		}
+
+		return (sector == sector1) ? JTRUE : JFALSE;
+	}
+
 	// Determines if an object with the correct entityFlag(s) is in range (radius) of (x,y,z) in sector and is not skipObj.
 	// Note only objects with a clear line-of-sight are accepted.
 	JBool collision_isAnyObjectInRange(RSector* sector, fixed16_16 radius, vec3_fixed origin, SecObject* skipObj, u32 entityFlags)
@@ -415,27 +467,7 @@ namespace TFE_Jedi
 			}
 
 			fixed16_16 floorHeight, ceilHeight;
-			fixed16_16 secHeight = sector->secHeight;
-			fixed16_16 adjSecHeight = sector->floorHeight + secHeight;
-			if (secHeight < 0 && adjSecHeight < secHeightThreshold)
-			{
-				floorHeight = sector->floorHeight;
-				ceilHeight = adjSecHeight;
-			}
-			else
-			{
-				floorHeight = adjSecHeight;
-				ceilHeight  = sector->ceilingHeight;
-			}
-			// Note: second heights above pits will be buggy in this case.
-			if (sector->flags1 & SEC_FLAGS1_PIT)
-			{
-				floorHeight += SEC_SKY_HEIGHT;
-			}
-			if (sector->flags1 & SEC_FLAGS1_EXTERIOR)
-			{
-				ceilHeight -= SEC_SKY_HEIGHT;
-			}
+			sector_calculateFloor(sector, origin.y, &floorHeight, &ceilHeight);
 			if (floorHeight < y0 || ceilHeight > y1)
 			{
 				continue;
@@ -449,53 +481,34 @@ namespace TFE_Jedi
 			for (s32 objListIndex = 0, objIndex = 0; objIndex < objCount && objListIndex < objCapacity; objListIndex++)
 			{
 				SecObject* obj = curSector->objectList[objListIndex];
-				if (obj)
-				{ 
-					objIndex++;
-					if (skipObj && skipObj == obj) { continue; }
+				if (!obj) { continue; }
 
-					if (obj->entityFlags & entityFlags)
+				objIndex++;
+				if (skipObj && skipObj == obj) { continue; }
+				if (!(obj->entityFlags & entityFlags)) { continue; }
+				if (obj->posWS.x < x0 || obj->posWS.x > x1 || obj->posWS.z < z0 || obj->posWS.z > z1 || obj->posWS.y < y0 || obj->posWS.y > y1)
+				{
+					continue;
+				}
+
+				RSector* curSector = sector;
+				RWall* hitWall = collision_wallCollisionFromPath(sector, origin.x, origin.z, obj->posWS.x, obj->posWS.z);
+				while (hitWall && curSector && curSector != obj->sector)
+				{
+					curSector = hitWall->nextSector;
+					if (curSector)
 					{
-						if (obj->posWS.x < x0 || obj->posWS.x > x1 || obj->posWS.z < z0 || obj->posWS.z > z1 || obj->posWS.y < y0 || obj->posWS.y > y1)
+						if (curSector->floorHeight - curSector->ceilingHeight < HALF_16)
 						{
-							continue;
+							break;
 						}
-						RWall* hitWall = nullptr;
-						fixed16_16 dx = obj->posWS.x - origin.x;
-						fixed16_16 dz = obj->posWS.z - origin.z;
-						if (dx || dz)
-						{
-							s_col_path.x0 = origin.x;
-							s_col_path.z0 = origin.z;
-							s_col_path.x1 = obj->posWS.x;
-							s_col_path.z1 = obj->posWS.z;
-							s_collisionFrameWall++;
-							hitWall = collision_pathWallCollision(sector);
-						}
-
-						RSector* nextSector = sector;
-						// If the trace hit a wall, keep traversing from sector to sector as long as
-						// 1) the wall is an adjoin (i.e. has a "nextSector")
-						// 2) there is a gap to fit through.
-						while (hitWall && nextSector && nextSector != obj->sector)
-						{
-							nextSector = hitWall->nextSector;
-							if (nextSector)
-							{
-								if (nextSector->floorHeight - nextSector->ceilingHeight < 0)
-								{
-									break;
-								}
-								hitWall = collision_pathWallCollision(nextSector);
-							}
-						}
-						// Finally if the end of the trace is inside of the same sector as the source,
-						// we have a clear path.
-						if (nextSector == obj->sector)
-						{
-							return JTRUE;
-						}
+						hitWall = collision_pathWallCollision(curSector);
 					}
+				}
+
+				if (curSector == obj->sector)
+				{
+					return JTRUE;
 				}
 			}
 		}
@@ -525,32 +538,8 @@ namespace TFE_Jedi
 			}
 
 			fixed16_16 floor, ceil;
-			fixed16_16 secHeight = startSector->secHeight;
-			fixed16_16 adjSecHeight = startSector->floorHeight + secHeight;
-			if (secHeight < 0 && adjSecHeight < secHeightThreshold)
-			{
-				floor = startSector->floorHeight;
-				ceil = adjSecHeight;
-			}
-			else
-			{
-				floor = adjSecHeight;
-				ceil = startSector->ceilingHeight;
-			}
-
-			if (startSector->flags1 & SEC_FLAGS1_PIT)
-			{
-				floor += SEC_SKY_HEIGHT;
-			}
-			if (startSector->flags1 & SEC_FLAGS1_EXTERIOR)
-			{
-				ceil -= SEC_SKY_HEIGHT;
-			}
-
-			if (y0 > floor || y1 < ceil)
-			{
-				continue;
-			}
+			sector_calculateFloor(sector, origin.y, &floor, &ceil);
+			if (y0 > floor || y1 < ceil) { continue; }
 			// End of start sector check.
 
 			for (s32 objIndex = 0, objListIndex = 0; objIndex < sector->objectCount && objListIndex < sector->objectCapacity; objListIndex++)
@@ -565,11 +554,12 @@ namespace TFE_Jedi
 				{
 					continue;
 				}
-
-				JBool canHit = collision_canHitObject(startSector, obj->sector, origin, obj->posWS, WF3_CANNOT_FIRE_THROUGH);
+								
+				JBool canHit = collision_lineOfSight(startSector, obj->sector, origin, obj->posWS, WF3_CANNOT_FIRE_THROUGH);
 				if (!canHit)
 				{
-					canHit = collision_canHitObject(startSector, obj->sector, origin, obj->posWS, WF3_CANNOT_FIRE_THROUGH);
+					vec3_fixed topPos = { obj->posWS.x, obj->posWS.y - obj->worldHeight, obj->posWS.z };
+					canHit = collision_lineOfSight(startSector, obj->sector, origin, topPos, WF3_CANNOT_FIRE_THROUGH);
 				}
 				// Finally the object can be hit, so call the effect function.
 				if (canHit)
@@ -607,26 +597,7 @@ namespace TFE_Jedi
 				continue;
 			}
 			fixed16_16 floor, ceil;
-			fixed16_16 secHeight = startSector->secHeight;
-			fixed16_16 adjSecHeight = startSector->floorHeight + secHeight;
-			if (secHeight < 0 && adjSecHeight < secHeightThreshold)
-			{
-				floor = startSector->floorHeight;
-				ceil = adjSecHeight;
-			}
-			else
-			{
-				floor = adjSecHeight;
-				ceil = startSector->ceilingHeight;
-			}
-			if (startSector->flags1 & SEC_FLAGS1_PIT)
-			{
-				floor += SEC_SKY_HEIGHT;
-			}
-			if (startSector->flags1 & SEC_FLAGS1_EXTERIOR)
-			{
-				ceil -= SEC_SKY_HEIGHT;
-			}
+			sector_calculateFloor(startSector, origin.y, &floor, &ceil);
 			if (y0 > floor || y1 < ceil)
 			{
 				continue;
