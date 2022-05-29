@@ -409,7 +409,8 @@ namespace TFE_Jedi
 	JBool collision_lineOfSight(RSector* sector0, RSector* sector1, vec3_fixed pos0, vec3_fixed pos1, u32 wallFlags3)
 	{
 		fixed16_16 len = distApprox(pos0.x, pos0.z, pos1.x, pos1.z);
-		fixed16_16 slope = div16(pos1.y - pos0.y, len);
+		fixed16_16 dy  = pos1.y - pos0.y;
+		fixed16_16 slope = len ? div16(dy, len) : dy;
 
 		RSector* sector = sector0;
 		RWall* hitWall = collision_wallCollisionFromPath(sector, pos0.x, pos0.z, pos1.x, pos1.z);
