@@ -26,6 +26,13 @@ namespace TFE_Jedi
 		VFB_RECT_COUNT
 	};
 
+	enum FramebufferMode
+	{
+		VFB_UNSET = 0,
+		VFB_TEXTURE,
+		VFB_RENDER_TRAGET,
+	};
+
 	////////////////////////////////////////////////////////////////////////
 	// Setup
 	// -----------------
@@ -34,6 +41,7 @@ namespace TFE_Jedi
 	////////////////////////////////////////////////////////////////////////
 	JBool vfb_setResolution(u32 width, u32 height);
 	void vfb_setPalette(const u32* palette);
+	void vfb_setMode(FramebufferMode mode = VFB_TEXTURE);
 
 	////////////////////////////
 	// Get Scale Factors

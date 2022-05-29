@@ -52,6 +52,7 @@ enum VirtualDisplayFlags
 	VDISP_WIDESCREEN		= (1 << 0),		// Widescreen output
 	VDISP_ASYNC_FRAMEBUFFER = (1 << 1),		// Asynchronous framebuffer upload, trades latency for performance.
 	VDISP_GPU_COLOR_CONVERT = (1 << 2),		// Use Gpu color conversion, reducing upload bandwidth for a small GPU cost.
+	VDISP_RENDER_TARGET     = (1 << 3),		// Create a render target for GPU rendering.
 	VDISP_DEFAULT = (VDISP_ASYNC_FRAMEBUFFER | VDISP_GPU_COLOR_CONVERT)
 };
 

@@ -23,6 +23,9 @@ namespace TFE_Jedi
 	static ScreenRect s_screenRect[VFB_RECT_COUNT];
 	static ScreenRect s_screenPrev[VFB_RECT_COUNT];
 
+	static FramebufferMode s_mode = VFB_TEXTURE;
+	static FramebufferMode s_nextMode = VFB_TEXTURE;
+
 	void vfb_createVirtualDisplay(u32 width, u32 height);
 		
 	////////////////////////////////////////////////////////////////////////
@@ -34,11 +37,12 @@ namespace TFE_Jedi
 	JBool vfb_setResolution(u32 width, u32 height)
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-		if (width == s_width && height == s_height && s_widescreen == graphics->widescreen)
+		if (width == s_width && height == s_height && s_widescreen == graphics->widescreen && s_mode == s_nextMode)
 		{
 			return JFALSE;
 		}
 		s_widescreen = graphics->widescreen;
+		s_mode = s_nextMode;
 
 		if (width == 320 && height == 200)
 		{
@@ -118,6 +122,11 @@ namespace TFE_Jedi
 	void vfb_setPalette(const u32* palette)
 	{
 		TFE_RenderBackend::setPalette(palette);
+	}
+
+	void vfb_setMode(FramebufferMode mode)
+	{
+		s_nextMode = mode;
 	}
 
 	////////////////////////////
@@ -214,6 +223,10 @@ namespace TFE_Jedi
 		if (graphics->widescreen && (width != 320 || height != 200))
 		{
 			vdispFlags |= VDISP_WIDESCREEN;
+		}
+		if (s_mode == VFB_RENDER_TRAGET)
+		{
+			vdispFlags |= VDISP_RENDER_TARGET;
 		}
 
 		// TFE Specific: always use 320x200 when rendering in-game UI (for now).
