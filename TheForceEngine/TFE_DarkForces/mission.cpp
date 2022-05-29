@@ -1100,15 +1100,19 @@ namespace TFE_DarkForces
 					automap_updateMapData(MAP_ENABLE_AUTOCENTER);
 					automap_updateMapData(MAP_CENTER_PLAYER);
 					s_canTeleport = JTRUE;
+					reticle_enable(false);
 				}
 				else
 				{
 					s_canTeleport = JFALSE;
+					reticle_enable(true);
 				}
 			}
 
 			if (s_drawAutomap)
 			{
+				reticle_enable(false);
+
 				if (inputMapping_getActionState(IADF_MAP_ENABLE_SCROLL))
 				{
 					automap_disableTeleport();
