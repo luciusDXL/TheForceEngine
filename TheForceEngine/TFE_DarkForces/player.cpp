@@ -280,6 +280,7 @@ namespace TFE_DarkForces
 		s_playerInfo.health      = pickup_addToValue(0, 100, 100);
 		s_playerInfo.healthFract = 0;
 		s_energy = FIXED(2);
+		s_reviveTick = 0;
 
 		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
 	}
@@ -446,6 +447,7 @@ namespace TFE_DarkForces
 		s_jumpScale   = 0;
 		s_playerSlow  = 0;
 		s_onMovingSurface = 0;
+		s_reviveTick = 0;
 
 		s_playerVelX   = 0;
 		s_playerUpVel  = 0;
@@ -2022,7 +2024,7 @@ namespace TFE_DarkForces
 			}
 		}
 		applyDmg = (s_invincibility == -2) ? 0 : 1;
-		if (applyDmg && healthDmg)
+		if (applyDmg && healthDmg && health)
 		{
 			health -= healthDmg;
 			if (health < ONE_16)
@@ -2040,7 +2042,7 @@ namespace TFE_DarkForces
 				}
 				health = 0;
 				s_gasSectorTask = nullptr;
-				s_playerDying = 0xffffffff;
+				s_playerDying = JTRUE;
 				s_reviveTick = s_curTick + 436;
 			}
 			else
@@ -2048,7 +2050,7 @@ namespace TFE_DarkForces
 				if (playHitSound && s_curTick > s_nextPainSndTick)
 				{
 					sound_play(s_playerHealthHitSoundSource);
-					s_nextPainSndTick = s_curTick + 0x48;
+					s_nextPainSndTick = s_curTick + 72;	// half a second.
 				}
 				health = max(0, health);
 				s32 healthInt = floor16(health);
