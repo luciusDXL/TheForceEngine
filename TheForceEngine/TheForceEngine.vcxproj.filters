@@ -152,6 +152,9 @@
     <Filter Include="Source\TFE_System\CrashHandler">
       <UniqueIdentifier>{a09ca3f0-35ed-4cb9-824f-d72b0fdd200f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Jedi\Renderer\RClassic_GPU">
+      <UniqueIdentifier>{3fef5522-8f9a-4a26-a141-f83545f982ae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -901,6 +904,12 @@
     <ClInclude Include="TFE_Game\reticle.h">
       <Filter>Source\TFE_Game</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1526,6 +1535,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Game\reticle.cpp">
       <Filter>Source\TFE_Game</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

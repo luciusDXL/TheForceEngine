@@ -175,7 +175,7 @@ namespace TFE_DarkForces
 
 		if (graphics->gameResolution.x != 320 || graphics->gameResolution.z != 200 || graphics->widescreen)
 		{
-			TFE_Jedi::setSubRenderer(TSR_CLASSIC_FLOAT);
+			TFE_Jedi::setSubRenderer(TSR_HIGH_RESOLUTION);
 		}
 		else
 		{

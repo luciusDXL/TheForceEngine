@@ -12,6 +12,9 @@
 #include "RClassic_Float/rsectorFloat.h"
 #include "RClassic_Float/rclassicFloatSharedState.h"
 
+#include "RClassic_GPU/rclassicGPU.h"
+#include "RClassic_GPU/rsectorGPU.h"
+
 #include <TFE_System/profiler.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Settings/settings.h>
@@ -21,12 +24,10 @@
 
 namespace TFE_Jedi
 {
-	static s32 s_sectorId = -1;
-
 	static bool s_init = false;
 	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
-	
 	TFE_Sectors* s_sectorRenderer = nullptr;
+	RendererType s_rendererType = RENDERER_SOFTWARE;
 
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -42,7 +43,7 @@ namespace TFE_Jedi
 	{
 		RClassic_Fixed::resetState();
 		RClassic_Float::resetState();
-		s_sectorId = -1;
+		RClassic_GPU::resetState();
 		s_sectorRenderer = nullptr;
 	}
 
@@ -99,6 +100,12 @@ namespace TFE_Jedi
 		}
 	}
 
+	void renderer_setType(RendererType type)
+	{
+		s_rendererType = type;
+		render_setResolution();
+	}
+
 	void setupInitCameraAndLights()
 	{
 		u32 dispWidth, dispHeight;
@@ -106,18 +113,10 @@ namespace TFE_Jedi
 		dispWidth  = max(dispWidth,  320);
 		dispHeight = max(dispHeight, 200);
 
-		// if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setupInitCameraAndLights(); }
 		RClassic_Fixed::setupInitCameraAndLights();
 		RClassic_Float::setupInitCameraAndLights(dispWidth, dispHeight);
+		RClassic_GPU::setupInitCameraAndLights(dispWidth, dispHeight);
 	}
-
-#if 0
-	void setResolution(s32 width, s32 height)
-	{
-		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setResolution(width, height); }
-		//else { RClassic_Float::setResolution(width, height); }
-	}
-#endif
 
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0)
 	{
@@ -134,7 +133,6 @@ namespace TFE_Jedi
 		if (args.size() < 2) { return; }
 		const char* value = args[1].c_str();
 
-		s32 width = s_width, height = s_height;
 		if (strcasecmp(value, "Classic_Fixed") == 0)
 		{
 			setSubRenderer(TSR_CLASSIC_FIXED);
@@ -159,7 +157,7 @@ namespace TFE_Jedi
 		};
 		TFE_Console::addToHistory(c_subRenderers[s_subRenderer]);
 	}
-
+		
 	JBool render_setResolution()
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
@@ -184,7 +182,7 @@ namespace TFE_Jedi
 			return JFALSE;
 		}
 
-		TFE_SubRenderer subRenderer = (width == 320 && height == 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT;
+		TFE_SubRenderer subRenderer = s_rendererType == RENDERER_HARDWARE ? TSR_CLASSIC_GPU : (width == 320 && height == 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT;
 		if (s_subRenderer != subRenderer)
 		{
 			s_subRenderer = subRenderer;
@@ -196,7 +194,7 @@ namespace TFE_Jedi
 			s_sectorRenderer = nullptr;
 		}
 
-		if (width == 320 && height == 200)
+		if (width == 320 && height == 200 && subRenderer == TSR_CLASSIC_FIXED)
 		{
 			if (!s_sectorRenderer)
 			{
@@ -204,13 +202,21 @@ namespace TFE_Jedi
 			}
 			RClassic_Fixed::changeResolution(width, height);
 		}
-		else
+		else if (s_rendererType == RENDERER_SOFTWARE)
 		{
 			if (!s_sectorRenderer)
 			{
 				s_sectorRenderer = new TFE_Sectors_Float();
 			}
 			RClassic_Float::changeResolution(width, height);
+		}
+		else
+		{
+			if (!s_sectorRenderer)
+			{
+				s_sectorRenderer = new TFE_Sectors_GPU();
+			}
+			RClassic_GPU::changeResolution(width, height);
 		}
 		return JTRUE;
 	}
@@ -222,6 +228,11 @@ namespace TFE_Jedi
 
 	JBool setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
 	{
+		if (subRenderer == TSR_HIGH_RESOLUTION)
+		{
+			subRenderer = s_rendererType == RENDERER_HARDWARE ? TSR_CLASSIC_GPU : TSR_CLASSIC_FLOAT;
+		}
+
 		if (subRenderer == s_subRenderer)
 		{
 			return JFALSE;
@@ -251,6 +262,14 @@ namespace TFE_Jedi
 				u32 width, height;
 				vfb_getResolution(&width, &height);
 				RClassic_Float::setupInitCameraAndLights(width, height);
+			} break;
+			case TSR_CLASSIC_GPU:
+			{
+				s_sectorRenderer = new TFE_Sectors_GPU();
+
+				u32 width, height;
+				vfb_getResolution(&width, &height);
+				RClassic_GPU::setupInitCameraAndLights(width, height);
 			} break;
 		}
 		return JTRUE;
@@ -284,6 +303,7 @@ namespace TFE_Jedi
 		// TODO: Find a cleaner alternative.
 		RClassic_Fixed::computeCameraTransform(sector, pitch, yaw, camX, camY, camZ);
 		RClassic_Float::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
+		RClassic_GPU::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
 	}
 
 	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp)
@@ -307,6 +327,10 @@ namespace TFE_Jedi
 		else if (s_subRenderer == TSR_CLASSIC_FLOAT)
 		{
 			RClassic_Float::computeSkyOffsets();
+		}
+		else if (s_subRenderer == TSR_CLASSIC_GPU)
+		{
+			RClassic_GPU::computeSkyOffsets();
 		}
 
 		s_display = display;

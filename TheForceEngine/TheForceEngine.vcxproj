@@ -506,6 +506,8 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rsectorFloat.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rwallFloat.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rcommon.h" />
     <ClInclude Include="TFE_Jedi\Renderer\redgePair.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rlimits.h" />
@@ -737,6 +739,8 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rsectorFloat.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rwallFloat.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rcommon.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rscanline.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rsectorRender.cpp" />

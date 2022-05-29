@@ -30,7 +30,15 @@ enum TFE_SubRenderer
 	TSR_CLASSIC_FLOAT,		// Derived from the Reverse-Engineered Jedi Renderer but using floating point.
 	TSR_CLASSIC_GPU,		// Derived from the Reverse-Engineered Jedi Renderer but using the GPU for low-level rendering.
 	TSR_COUNT,
+	TSR_HIGH_RESOLUTION,	// Pick a high resolution renderer based on the type.
 	TSR_INVALID,			// Invalid sub-renderer.
+};
+
+enum RendererType
+{
+	RENDERER_SOFTWARE = 0,
+	RENDERER_HARDWARE,
+	RENDERER_COUNT
 };
 
 namespace TFE_Jedi
@@ -40,6 +48,7 @@ namespace TFE_Jedi
 	void renderer_destroy();
 	void renderer_reset();
 	void renderer_setLimits();
+	void renderer_setType(RendererType type = RENDERER_SOFTWARE);
 	void setupInitCameraAndLights();
 	void renderer_computeCameraTransform(RSector* sector, angle14_32 pitch, angle14_32 yaw, fixed16_16 camX, fixed16_16 camY, fixed16_16 camZ);
 
@@ -55,13 +64,6 @@ namespace TFE_Jedi
 	//void setCamera(f32 yaw, f32 pitch, f32 x, f32 y, f32 z, s32 sectorId, s32 worldAmbient = 0, bool cameraLightSource = false);
 	// Draw the scene to the passed in display using the colormap for shading.
 	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp);
-
-#if 0
-	// Setup the currently loaded level for rendering at the specified resolution.
-	void setupLevel(s32 width, s32 height);
-	// Set the current resolution to render, this may involve regenerating lookup-tables, depending on the sub-renderer.
-	void setResolution(s32 width, s32 height);
-#endif
 
 	JBool render_setResolution();
 	void renderer_setVisionEffect(s32 effect);
