@@ -763,13 +763,28 @@ namespace TFE_DarkForces
 			actor->updateTargetFunc(actor, &enemy->target);
 			return JFALSE;
 		}
-		else if (msg == MSG_TERMINAL_VEL)
+		else if (msg == MSG_TERMINAL_VEL || msg == MSG_CRUSH)
 		{
-			// TODO
-		}
-		else if (msg == MSG_CRUSH)
-		{
-			// TODO
+			if (aiActor->hp > 0)
+			{
+				aiActor->hp = 0;
+				if (aiActor->stopOnHit)
+				{
+					enemy->target.flags |= 8;
+				}
+
+				LogicAnimation* anim = &enemy->anim;
+				ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+
+				actor_setDeathCollisionFlags();
+				sound_stop(logic->alertSndID);
+				sound_playCued(aiActor->dieSndSrc, obj->posWS);
+				enemy->anim.flags |= 8;
+				if (obj->type == OBJ_TYPE_SPRITE)
+				{
+					actor_setupAnimation(3, anim);
+				}
+			}
 		}
 
 		return JFALSE;
