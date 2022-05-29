@@ -28,6 +28,7 @@ namespace TFE_Jedi
 
 	void TFE_Sectors_GPU::draw(RSector* sector)
 	{
+		// Start by just drawing the current sector.
 	}
 
 	void TFE_Sectors_GPU::subrendererChanged()

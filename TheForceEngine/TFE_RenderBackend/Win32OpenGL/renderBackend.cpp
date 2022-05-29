@@ -38,6 +38,8 @@ namespace TFE_RenderBackend
 	static void* m_window;
 	static DynamicTexture* s_virtualDisplay = nullptr;
 	static DynamicTexture* s_palette = nullptr;
+	static TextureGpu* s_virtualRenderTexture = nullptr;
+	static RenderTarget* s_virtualRenderTarget = nullptr;
 	static ScreenCapture*  s_screenCapture = nullptr;
 
 	static u32 s_virtualWidth, s_virtualHeight;
@@ -47,6 +49,7 @@ namespace TFE_RenderBackend
 	static bool s_widescreen = false;
 	static bool s_asyncFrameBuffer = true;
 	static bool s_gpuColorConvert = false;
+	static bool s_useRenderTarget = false;
 	static DisplayMode s_displayMode;
 	static f32 s_clearColor[4] = { 0.0f };
 	static u32 s_rtWidth, s_rtHeight;
@@ -55,7 +58,7 @@ namespace TFE_RenderBackend
 	static std::vector<SDL_Rect> s_displayBounds;
 
 	void drawVirtualDisplay();
-	void setupPostEffectChain();
+	void setupPostEffectChain(bool useDynamicTexture);
 		
 	SDL_Window* createWindow(const WindowState& state)
 	{
@@ -160,9 +163,11 @@ namespace TFE_RenderBackend
 		TFE_Ui::shutdown();
 
 		delete s_virtualDisplay;
+		delete s_virtualRenderTarget;
 		SDL_DestroyWindow((SDL_Window*)m_window);
 
 		s_virtualDisplay = nullptr;
+		s_virtualRenderTarget = nullptr;
 		m_window = nullptr;
 	}
 
@@ -253,7 +258,7 @@ namespace TFE_RenderBackend
 			windowSettings->baseHeight = height;
 		}
 		glViewport(0, 0, width, height);
-		setupPostEffectChain();
+		setupPostEffectChain(!s_useRenderTarget);
 
 		s_screenCapture->resize(width, height);
 	}
@@ -382,7 +387,7 @@ namespace TFE_RenderBackend
 		}
 
 		glViewport(0, 0, m_windowState.width, m_windowState.height);
-		setupPostEffectChain();
+		setupPostEffectChain(!s_useRenderTarget);
 		s_screenCapture->resize(m_windowState.width, m_windowState.height);
 	}
 
@@ -400,38 +405,6 @@ namespace TFE_RenderBackend
 		displayInfo->refreshRate = (m_windowState.flags & WINFLAG_VSYNC) != 0 ? m_windowState.refreshRate : 0.0f;
 	}
 
-	// virtual display
-	bool createVirtualDisplay(u32 width, u32 height, DisplayMode mode, bool asyncFramebuffer, bool gpuColorConvert)
-	{
-		if (s_virtualDisplay)
-		{
-			delete s_virtualDisplay;
-		}
-
-		s_virtualWidth = width;
-		s_virtualHeight = height;
-		s_virtualWidthUi = width;
-		s_virtualWidth3d = width;
-		s_displayMode = mode;
-		s_widescreen = false;
-		s_asyncFrameBuffer = asyncFramebuffer;
-		s_gpuColorConvert = gpuColorConvert;
-
-		s_virtualDisplay = new DynamicTexture();
-		if (gpuColorConvert)
-		{
-			s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
-		}
-		else
-		{
-			s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
-		}
-		
-		setupPostEffectChain();
-
-		return s_virtualDisplay->create(width, height, s_asyncFrameBuffer ? 2 : 1, s_gpuColorConvert ? DTEX_R8 : DTEX_RGBA8);
-	}
-
 	// New version of the function.
 	bool createVirtualDisplay(const VirtualDisplayInfo& vdispInfo)
 	{
@@ -439,6 +412,12 @@ namespace TFE_RenderBackend
 		{
 			delete s_virtualDisplay;
 		}
+		if (s_virtualRenderTarget)
+		{
+			delete s_virtualRenderTarget;
+		}
+		s_virtualDisplay = nullptr;
+		s_virtualRenderTarget = nullptr;
 
 		s_virtualWidth = vdispInfo.width;
 		s_virtualHeight = vdispInfo.height;
@@ -448,20 +427,37 @@ namespace TFE_RenderBackend
 		s_widescreen = (vdispInfo.flags & VDISP_WIDESCREEN) != 0;
 		s_asyncFrameBuffer = (vdispInfo.flags & VDISP_ASYNC_FRAMEBUFFER) != 0;
 		s_gpuColorConvert = (vdispInfo.flags & VDISP_GPU_COLOR_CONVERT) != 0;
+		s_useRenderTarget = (vdispInfo.flags & VDISP_RENDER_TARGET) != 0;
 
-		s_virtualDisplay = new DynamicTexture();
-		if (s_gpuColorConvert)
+		bool result = false;
+		if (s_useRenderTarget)
 		{
-			s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
+			s_virtualRenderTarget = new RenderTarget();
+			s_virtualRenderTexture = new TextureGpu();
+
+			result  = s_virtualRenderTexture->create(s_virtualWidth, s_virtualHeight);
+			result &= s_virtualRenderTarget->create(s_virtualRenderTexture, true);
+
+			// The renderer will handle this instead.
+			s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
+			setupPostEffectChain(false);
 		}
 		else
 		{
-			s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
+			s_virtualDisplay = new DynamicTexture();
+			if (s_gpuColorConvert)
+			{
+				s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
+			}
+			else
+			{
+				s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
+			}
+
+			setupPostEffectChain(true);
+			result = s_virtualDisplay->create(s_virtualWidth, s_virtualHeight, s_asyncFrameBuffer ? 2 : 1, s_gpuColorConvert ? DTEX_R8 : DTEX_RGBA8);
 		}
-
-		setupPostEffectChain();
-
-		return s_virtualDisplay->create(s_virtualWidth, s_virtualHeight, s_asyncFrameBuffer ? 2 : 1, s_gpuColorConvert ? DTEX_R8 : DTEX_RGBA8);
+		return result;
 	}
 
 	u32 getVirtualDisplayWidth2D()
@@ -514,9 +510,32 @@ namespace TFE_RenderBackend
 	void updateVirtualDisplay(const void* buffer, size_t size)
 	{
 		TFE_ZONE("Update Virtual Display");
-		s_virtualDisplay->update(buffer, size);
+		if (s_virtualDisplay)
+		{
+			s_virtualDisplay->update(buffer, size);
+		}
 	}
-		
+
+	void bindVirtualDisplay()
+	{
+		if (s_virtualRenderTarget)
+		{
+			s_virtualRenderTarget->bind();
+		}
+	}
+
+	void clearVirtualDisplay(f32* color)
+	{
+		if (s_virtualDisplay)
+		{
+			// TODO
+		}
+		else if (s_virtualRenderTarget)
+		{
+			s_virtualRenderTarget->clear(color, 1.0f);
+		}
+	}
+
 	void setPalette(const u32* palette)
 	{
 		if (palette && getGPUColorConvert())
@@ -533,7 +552,7 @@ namespace TFE_RenderBackend
 			if (enabled) { s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CORRECTION); }
 			else { s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CORRECTION); }
 
-			setupPostEffectChain();
+			setupPostEffectChain(!s_useRenderTarget);
 		}
 
 		if (color)
@@ -545,7 +564,7 @@ namespace TFE_RenderBackend
 	void drawVirtualDisplay()
 	{
 		TFE_ZONE("Draw Virtual Display");
-		if (!s_virtualDisplay) { return; }
+		if (!s_virtualDisplay && !s_virtualRenderTarget) { return; }
 
 		// Only clear if (1) s_virtualDisplay == null or (2) s_displayMode != DMODE_STRETCH
 		if (s_displayMode != DMODE_STRETCH)
@@ -649,7 +668,7 @@ namespace TFE_RenderBackend
 
 	// Setup the Post effect chain based on current settings.
 	// TODO: Move out of render backend since this should be independent of the backend.
-	void setupPostEffectChain()
+	void setupPostEffectChain(bool useDynamicTexture)
 	{
 		s32 x = 0, y = 0;
 		s32 w = m_windowState.width;
@@ -680,11 +699,23 @@ namespace TFE_RenderBackend
 		}
 		TFE_PostProcess::clearEffectStack();
 
-		const PostEffectInput blitInputs[]=
+		if (useDynamicTexture)
 		{
-			{ PTYPE_DYNAMIC_TEX, s_virtualDisplay },
-			{ PTYPE_DYNAMIC_TEX, s_palette }
-		};
-		TFE_PostProcess::appendEffect(s_postEffectBlit, TFE_ARRAYSIZE(blitInputs), blitInputs, nullptr, x, y, w, h);
+			const PostEffectInput blitInputs[] =
+			{
+				{ PTYPE_DYNAMIC_TEX, s_virtualDisplay },
+				{ PTYPE_DYNAMIC_TEX, s_palette }
+			};
+			TFE_PostProcess::appendEffect(s_postEffectBlit, TFE_ARRAYSIZE(blitInputs), blitInputs, nullptr, x, y, w, h);
+		}
+		else
+		{
+			const PostEffectInput blitInputs[] =
+			{
+				{ PTYPE_TEXTURE, (void*)s_virtualRenderTarget->getTexture() },
+				{ PTYPE_DYNAMIC_TEX, s_palette }
+			};
+			TFE_PostProcess::appendEffect(s_postEffectBlit, TFE_ARRAYSIZE(blitInputs), blitInputs, nullptr, x, y, w, h);
+		}
 	}
 }  // namespace

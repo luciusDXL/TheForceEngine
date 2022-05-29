@@ -13,7 +13,7 @@ namespace TFE_Jedi
 	class TFE_Sectors_GPU : public TFE_Sectors
 	{
 	public:
-		TFE_Sectors_GPU() {}
+		TFE_Sectors_GPU() : m_gpuInit(false) {}
 
 		// Sub-Renderer specific
 		void reset() override;
@@ -22,6 +22,7 @@ namespace TFE_Jedi
 		void subrendererChanged() override;
 
 	private:
+		bool m_gpuInit;
 
 	public:
 	};

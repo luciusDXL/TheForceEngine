@@ -308,10 +308,11 @@ namespace TFE_DarkForces
 		s_exitLevel = JTRUE;
 	}
 
-	void mission_render()
+	void mission_render(s32 rendererIndex)
 	{
 		if (task_getCount() > 1 && s_missionMode == MISSION_MODE_MAIN)
 		{
+			TFE_Jedi::renderer_setType(rendererIndex == 0 ? RENDERER_SOFTWARE : RENDERER_HARDWARE);
 			TFE_Jedi::render_setResolution();
 			TFE_Jedi::renderer_setLimits();
 

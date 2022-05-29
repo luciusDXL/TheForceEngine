@@ -149,10 +149,32 @@ namespace TFE_Jedi
 
 	void vfb_forceToBlack()
 	{
-		memset(vfb_getCpuBuffer(), 0, s_width * s_height);
-		// Black for two frames.
-		vfb_swap();
-		vfb_swap();
+		if (s_mode == VFB_TEXTURE)
+		{
+			memset(vfb_getCpuBuffer(), 0, s_width * s_height);
+			// Black for two frames.
+			vfb_swap();
+			vfb_swap();
+		}
+		else
+		{
+			f32 color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			TFE_RenderBackend::clearVirtualDisplay(color);
+		}
+	}
+
+	void vfb_bindRenderTarget()
+	{
+		TFE_RenderBackend::bindVirtualDisplay();
+
+		// For now, in the future disable again (but clear depth).
+		f32 color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		TFE_RenderBackend::clearVirtualDisplay(color);
+	}
+
+	void vfb_unbindRenderTarget()
+	{
+		TFE_RenderBackend::unbindRenderTarget();
 	}
 
 	////////////////////////////

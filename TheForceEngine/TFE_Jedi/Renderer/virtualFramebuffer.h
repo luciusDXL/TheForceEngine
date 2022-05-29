@@ -57,6 +57,9 @@ namespace TFE_Jedi
 	void vfb_swap();
 	void vfb_forceToBlack();
 
+	void vfb_bindRenderTarget();
+	void vfb_unbindRenderTarget();
+
 	////////////////////////////
 	// Clipping
 	////////////////////////////

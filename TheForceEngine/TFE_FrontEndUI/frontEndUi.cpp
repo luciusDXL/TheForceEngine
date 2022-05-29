@@ -130,8 +130,7 @@ namespace TFE_FrontEndUI
 	static const char* c_renderer[] =
 	{
 		"Classic (Software)",
-		// TODO
-		//"Classic (Hardware)",
+		"Classic (Hardware)",
 	};
 
 	typedef void(*MenuItemSelected)();
@@ -1589,7 +1588,7 @@ namespace TFE_FrontEndUI
 
 		if (s_menuRetState != APP_STATE_MENU)
 		{
-			TFE_DarkForces::mission_render();
+			TFE_DarkForces::mission_render(s_rendererIndex);
 		}
 	}
 
@@ -1619,7 +1618,7 @@ namespace TFE_FrontEndUI
 
 		if (s_menuRetState != APP_STATE_MENU)
 		{
-			TFE_DarkForces::mission_render();
+			TFE_DarkForces::mission_render(s_rendererIndex);
 		}
 	}
 

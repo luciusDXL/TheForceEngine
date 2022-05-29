@@ -116,6 +116,8 @@ namespace TFE_RenderBackend
 	// virtual display
 	bool createVirtualDisplay(const VirtualDisplayInfo& vdispInfo);
 	void updateVirtualDisplay(const void* buffer, size_t size);
+	void bindVirtualDisplay();
+	void clearVirtualDisplay(f32* color);
 	void setPalette(const u32* palette);
 	void setColorCorrection(bool enabled, const ColorCorrection* color = nullptr);
 	bool getWidescreen();

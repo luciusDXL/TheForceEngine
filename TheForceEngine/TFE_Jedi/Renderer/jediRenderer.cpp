@@ -177,12 +177,13 @@ namespace TFE_Jedi
 		// Make sure the adjustedWidth is divisible by 4.
 		width = 4 * ((width + 3) >> 2);
 
+		TFE_SubRenderer subRenderer = s_rendererType == RENDERER_HARDWARE ? TSR_CLASSIC_GPU : (width == 320 && height == 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT;
+		vfb_setMode(subRenderer == TSR_CLASSIC_GPU ? VFB_RENDER_TRAGET : VFB_TEXTURE);
 		if (!vfb_setResolution(width, height))
 		{
 			return JFALSE;
 		}
 
-		TFE_SubRenderer subRenderer = s_rendererType == RENDERER_HARDWARE ? TSR_CLASSIC_GPU : (width == 320 && height == 200) ? TSR_CLASSIC_FIXED : TSR_CLASSIC_FLOAT;
 		if (s_subRenderer != subRenderer)
 		{
 			s_subRenderer = subRenderer;
@@ -247,6 +248,7 @@ namespace TFE_Jedi
 		delete s_sectorRenderer;
 		s_sectorRenderer = nullptr;
 
+		vfb_setMode(subRenderer == TSR_CLASSIC_GPU ? VFB_RENDER_TRAGET : VFB_TEXTURE);
 		switch (subRenderer)
 		{
 			case TSR_CLASSIC_FIXED:
@@ -331,6 +333,7 @@ namespace TFE_Jedi
 		else if (s_subRenderer == TSR_CLASSIC_GPU)
 		{
 			RClassic_GPU::computeSkyOffsets();
+			vfb_bindRenderTarget();
 		}
 
 		s_display = display;
@@ -371,6 +374,11 @@ namespace TFE_Jedi
 			TFE_ZONE("Sector Draw");
 			s_sectorRenderer->prepare();
 			s_sectorRenderer->draw(sector);
+		}
+
+		if (s_subRenderer == TSR_CLASSIC_GPU)
+		{
+			vfb_unbindRenderTarget();
 		}
 	}
 
