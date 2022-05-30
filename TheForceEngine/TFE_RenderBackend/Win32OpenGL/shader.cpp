@@ -22,8 +22,8 @@ namespace ShaderGL
 		"vtx_color", // ATTR_COLOR
 	};
 
-	static const s32 c_glslVersion = 130;
-	static const GLchar* c_glslVersionString = "#version 130\n";
+	static const s32 c_glslVersion[] = { 130, 330, 450 };
+	static const GLchar* c_glslVersionString[] = { "#version 130\n", "#version 330\n", "#version 450\n" };
 	static std::vector<char> s_buffers[2];
 	static std::string s_defineString;
 
@@ -49,14 +49,14 @@ namespace ShaderGL
 	}
 
 	// If you get an error please report on GitHub. You may try different GL context version or GLSL version.
-	bool CheckProgram(GLuint handle, const char* desc)
+	bool CheckProgram(GLuint handle, const char* desc, ShaderVersion version)
 	{
 		GLint status = 0, log_length = 0;
 		glGetProgramiv(handle, GL_LINK_STATUS, &status);
 		glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &log_length);
 		if ((GLboolean)status == GL_FALSE)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Shader", "Failed to link %s! (with GLSL '%s')\n", desc, c_glslVersionString);
+			TFE_System::logWrite(LOG_ERROR, "Shader", "Failed to link %s! (with GLSL '%s')\n", desc, c_glslVersionString[version]);
 		}
 
 		if (log_length > 1)
@@ -70,16 +70,17 @@ namespace ShaderGL
 	}
 }
 
-bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL, const char* defineString/* = nullptr*/)
+bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL, const char* defineString/* = nullptr*/, ShaderVersion version/* = SHADER_VER_COMPTABILE*/)
 {
 	// Create shaders
-	const GLchar* vertex_shader_with_version[3] = { ShaderGL::c_glslVersionString, defineString ? defineString : "", vertexShaderGLSL };
+	m_shaderVersion = version;
+	const GLchar* vertex_shader_with_version[3] = { ShaderGL::c_glslVersionString[m_shaderVersion], defineString ? defineString : "", vertexShaderGLSL };
 	u32 vertHandle = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertHandle, 3, vertex_shader_with_version, NULL);
 	glCompileShader(vertHandle);
 	if (!ShaderGL::CheckShader(vertHandle, "vertex shader")) { return false; }
 
-	const GLchar* fragment_shader_with_version[3] = { ShaderGL::c_glslVersionString, defineString ? defineString : "", fragmentShaderGLSL };
+	const GLchar* fragment_shader_with_version[3] = { ShaderGL::c_glslVersionString[m_shaderVersion], defineString ? defineString : "", fragmentShaderGLSL };
 	u32 fragHandle = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragHandle, 3, fragment_shader_with_version, NULL);
 	glCompileShader(fragHandle);
@@ -94,13 +95,14 @@ bool Shader::create(const char* vertexShaderGLSL, const char* fragmentShaderGLSL
 		glBindAttribLocation(m_gpuHandle, i, ShaderGL::c_shaderAttrName[i]);
 	}
 	glLinkProgram(m_gpuHandle);
-	if (!ShaderGL::CheckProgram(m_gpuHandle, "shader program")) { return false; }
+	if (!ShaderGL::CheckProgram(m_gpuHandle, "shader program", m_shaderVersion)) { return false; }
 
 	return m_gpuHandle != 0;
 }
 
-bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile, u32 defineCount/* = 0*/, ShaderDefine* defines/* = nullptr*/)
+bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile, u32 defineCount/* = 0*/, ShaderDefine* defines/* = nullptr*/, ShaderVersion version/* = SHADER_VER_COMPTABILE*/)
 {
+	m_shaderVersion = version;
 	ShaderGL::s_buffers[0].clear();
 	ShaderGL::s_buffers[1].clear();
 
@@ -126,7 +128,7 @@ bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile, 
 		ShaderGL::s_defineString += "\r\n";
 	}
 
-	return create(ShaderGL::s_buffers[0].data(), ShaderGL::s_buffers[1].data(), ShaderGL::s_defineString.c_str());
+	return create(ShaderGL::s_buffers[0].data(), ShaderGL::s_buffers[1].data(), ShaderGL::s_defineString.c_str(), m_shaderVersion);
 }
 
 void Shader::destroy()

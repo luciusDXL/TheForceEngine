@@ -22,6 +22,13 @@ enum ShaderVariableType
 	SVT_COUNT
 };
 
+enum ShaderVersion
+{
+	SHADER_VER_COMPTABILE = 0,	// Lowest support version.
+	SHADER_VER_STD,				// Standard, minimum requirement for GPU renderer.
+	SHADER_VER_COMPUTE,			// Shader version with compute support.
+};
+
 struct ShaderDefine
 {
 	std::string name;
@@ -31,10 +38,10 @@ struct ShaderDefine
 class Shader
 {
 public:
-	Shader() : m_gpuHandle(0) {}
+	Shader() : m_gpuHandle(0), m_shaderVersion(SHADER_VER_COMPTABILE) {}
 
-	bool create(const char* vertexShaderCode, const char* fragmentShaderCode, const char* defineString = nullptr);
-	bool load(const char* vertexShader, const char* fragmentShader, u32 defineCount = 0, ShaderDefine* defines = nullptr);
+	bool create(const char* vertexShaderCode, const char* fragmentShaderCode, const char* defineString = nullptr, ShaderVersion version = SHADER_VER_COMPTABILE);
+	bool load(const char* vertexShader, const char* fragmentShader, u32 defineCount = 0, ShaderDefine* defines = nullptr, ShaderVersion version = SHADER_VER_COMPTABILE);
 	void destroy();
 
 	void bind();
@@ -48,4 +55,5 @@ public:
 
 private:
 	u32 m_gpuHandle;
+	ShaderVersion m_shaderVersion;
 };

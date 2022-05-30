@@ -82,6 +82,7 @@ struct Mat3
 	{
 		struct { Vec3f m0, m1, m2; };
 		struct { Vec3f m[3]; };
+		f32 data[9];
 	};
 };
 
@@ -91,6 +92,7 @@ struct Mat4
 	{
 		struct { Vec4f m0, m1, m2, m3; };
 		struct { Vec4f m[4]; };
+		f32 data[16];
 	};
 };
 

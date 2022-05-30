@@ -821,6 +821,8 @@ echo ^)";
     <None Include="Documentation\markdown\Manual.md" />
     <None Include="Shaders\blit.frag" />
     <None Include="Shaders\blit.vert" />
+    <None Include="Shaders\gpu_render_wall.frag" />
+    <None Include="Shaders\gpu_render_wall.vert" />
     <None Include="Shaders\grid2d.frag" />
     <None Include="Shaders\grid2d.vert" />
     <None Include="Shaders\grid3d.frag" />
