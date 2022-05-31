@@ -76,6 +76,15 @@ struct Vec4i
 	};
 };
 
+struct Vec4ui
+{
+	union
+	{
+		struct { u32 x, y, z, w; };
+		u32 m[4];
+	};
+};
+
 struct Mat3
 {
 	union

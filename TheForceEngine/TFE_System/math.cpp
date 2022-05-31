@@ -40,6 +40,21 @@ namespace TFE_Math
 		return r;
 	}
 
+	Mat4 computeProjMatrixExplicit(f32 xScale, f32 yScale, f32 zNear, f32 zFar)
+	{
+		// Build a projection matrix.
+		const f32 zScale = zFar / (zNear - zFar);
+		const f32 wScale = zNear * zFar / (zNear - zFar);
+
+		Mat4 r;
+		r.m0 = { xScale, 0.0f, 0.0f, 0.0f };
+		r.m1 = { 0.0f, yScale, 0.0f, 0.0f };
+		r.m2 = { 0.0f, 0.0f, zScale, wScale };
+		r.m3 = { 0.0f, 0.0f,  -1.0f, 0.0f };
+
+		return r;
+	}
+
 	Mat4 computeInvProjMatrix(const Mat4& mtx)
 	{
 		const f32 xScale = mtx.m0.x;	// a
@@ -56,6 +71,32 @@ namespace TFE_Math
 		inv.m3.w = -zScale / (wScale * w2);
 
 		return inv;
+	}
+
+	Mat4 mulMatrix4(const Mat4& mtx0, const Mat4& mtx1)
+	{
+		Mat4 mtxOut;
+		mtxOut.data[0]  = mtx0.data[0]*mtx1.data[0] + mtx0.data[1]*mtx1.data[4] + mtx0.data[2]*mtx1.data[8]  + mtx0.data[3]*mtx1.data[12];
+		mtxOut.data[1]  = mtx0.data[0]*mtx1.data[1] + mtx0.data[1]*mtx1.data[5] + mtx0.data[2]*mtx1.data[9]  + mtx0.data[3]*mtx1.data[13];
+		mtxOut.data[2]  = mtx0.data[0]*mtx1.data[2] + mtx0.data[1]*mtx1.data[6] + mtx0.data[2]*mtx1.data[10] + mtx0.data[3]*mtx1.data[14];
+		mtxOut.data[3]  = mtx0.data[0]*mtx1.data[3] + mtx0.data[1]*mtx1.data[7] + mtx0.data[2]*mtx1.data[11] + mtx0.data[3]*mtx1.data[15];
+		
+		mtxOut.data[4]  = mtx0.data[4]*mtx1.data[0] + mtx0.data[5]*mtx1.data[4] + mtx0.data[6]*mtx1.data[8]  + mtx0.data[7]*mtx1.data[12];
+		mtxOut.data[5]  = mtx0.data[4]*mtx1.data[1] + mtx0.data[5]*mtx1.data[5] + mtx0.data[6]*mtx1.data[9]  + mtx0.data[7]*mtx1.data[13];
+		mtxOut.data[6]  = mtx0.data[4]*mtx1.data[2] + mtx0.data[5]*mtx1.data[6] + mtx0.data[6]*mtx1.data[10] + mtx0.data[7]*mtx1.data[14];
+		mtxOut.data[7]  = mtx0.data[4]*mtx1.data[3] + mtx0.data[5]*mtx1.data[7] + mtx0.data[6]*mtx1.data[11] + mtx0.data[7]*mtx1.data[15];
+
+		mtxOut.data[8]  = mtx0.data[8]*mtx1.data[0] + mtx0.data[9]*mtx1.data[4] + mtx0.data[10]*mtx1.data[8]  + mtx0.data[11]*mtx1.data[12];
+		mtxOut.data[9]  = mtx0.data[8]*mtx1.data[1] + mtx0.data[9]*mtx1.data[5] + mtx0.data[10]*mtx1.data[9]  + mtx0.data[11]*mtx1.data[13];
+		mtxOut.data[10] = mtx0.data[8]*mtx1.data[2] + mtx0.data[9]*mtx1.data[6] + mtx0.data[10]*mtx1.data[10] + mtx0.data[11]*mtx1.data[14];
+		mtxOut.data[11] = mtx0.data[8]*mtx1.data[3] + mtx0.data[9]*mtx1.data[7] + mtx0.data[10]*mtx1.data[11] + mtx0.data[11]*mtx1.data[15];
+
+		mtxOut.data[12] = mtx0.data[12]*mtx1.data[0] + mtx0.data[13]*mtx1.data[4] + mtx0.data[14]*mtx1.data[8]  + mtx0.data[15]*mtx1.data[12];
+		mtxOut.data[13] = mtx0.data[12]*mtx1.data[1] + mtx0.data[13]*mtx1.data[5] + mtx0.data[14]*mtx1.data[9]  + mtx0.data[15]*mtx1.data[13];
+		mtxOut.data[14] = mtx0.data[12]*mtx1.data[2] + mtx0.data[13]*mtx1.data[6] + mtx0.data[14]*mtx1.data[10] + mtx0.data[15]*mtx1.data[14];
+		mtxOut.data[15] = mtx0.data[12]*mtx1.data[3] + mtx0.data[13]*mtx1.data[7] + mtx0.data[14]*mtx1.data[11] + mtx0.data[15]*mtx1.data[15];
+		
+		return mtxOut;
 	}
 
 	void buildRotationMatrix(Vec3f angles, Vec3f* mat)

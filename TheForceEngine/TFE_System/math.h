@@ -131,7 +131,9 @@ namespace TFE_Math
 	Mat3 computeViewMatrix(const Vec3f* lookDir, const Vec3f* upDir);
 	Mat3 transpose(const Mat3& mtx);
 	Mat4 computeProjMatrix(f32 fovInRadians, f32 aspectRatio, f32 zNear, f32 zFar);
+	Mat4 computeProjMatrixExplicit(f32 xScale, f32 yScale, f32 zNear, f32 zFar);
 	Mat4 computeInvProjMatrix(const Mat4& mtx);
+	Mat4 mulMatrix4(const Mat4& mtx0, const Mat4& mtx1);
 
 	void buildRotationMatrix(Vec3f angles, Vec3f* mat);
 }

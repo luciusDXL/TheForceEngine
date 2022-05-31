@@ -910,6 +910,9 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderBackend\shaderBuffer.h">
+      <Filter>Source\TFE_RenderBackend</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1541,6 +1544,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderBackend\Win32OpenGL\shaderBuffer.cpp">
+      <Filter>Source\TFE_RenderBackend\Win32OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

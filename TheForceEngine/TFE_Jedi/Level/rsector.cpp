@@ -231,8 +231,6 @@ namespace TFE_Jedi
 			
 	JBool sector_moveWalls(RSector* sector, fixed16_16 delta, fixed16_16 dirX, fixed16_16 dirZ, u32 flags)
 	{
-		sector->dirtyFlags |= SDF_VERTICES;
-
 		fixed16_16 offsetX = mul16(delta, dirX);
 		fixed16_16 offsetZ = mul16(delta, dirZ);
 
@@ -255,6 +253,8 @@ namespace TFE_Jedi
 
 		if (!sectorBlocked)
 		{
+			sector->dirtyFlags |= SDF_VERTICES;
+
 			wall = sector->walls;
 			for (s32 i = 0; i < wallCount; i++, wall++)
 			{
@@ -264,6 +264,7 @@ namespace TFE_Jedi
 					RWall* mirror = wall->mirrorWall;
 					if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 					{
+						mirror->sector->dirtyFlags |= SDF_VERTICES;
 						sector_moveWallVertex(mirror, offsetX, offsetZ);
 					}
 				}
@@ -925,6 +926,8 @@ namespace TFE_Jedi
 		s32 cosAngle, sinAngle;
 		sinCosFixed(angle, &sinAngle, &cosAngle);
 
+		sector->dirtyFlags |= SDF_WALL_SHAPE;
+
 		s32 wallCount = sector->wallCount;
 		RWall* wall = sector->walls;
 		for (s32 i = 0; i < wallCount; i++, wall++)
@@ -936,11 +939,13 @@ namespace TFE_Jedi
 				RWall* mirror = wall->mirrorWall;
 				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 				{
+					mirror->sector->dirtyFlags |= SDF_WALL_SHAPE;
 					sector_rotateWall(mirror, cosAngle, sinAngle, centerX, centerZ);
 				}
 			}
 		}
 		sector_computeBounds(sector);
+		sector->dirtyFlags |= SDF_WALL_SHAPE;
 	}
 
 	void sector_rotateObj(SecObject* obj, angle14_32 deltaAngle, fixed16_16 cosdAngle, fixed16_16 sindAngle, fixed16_16 centerX, fixed16_16 centerZ)

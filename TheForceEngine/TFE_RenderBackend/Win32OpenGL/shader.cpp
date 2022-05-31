@@ -178,6 +178,18 @@ void Shader::setVariable(s32 id, ShaderVariableType type, const f32* data)
 	case SVT_VEC4:
 		glUniform4fv(id, 1, data);
 		break;
+	case SVT_ISCALAR:
+		glUniform1i(id, *((s32*)&data[0]));
+		break;
+	case SVT_IVEC2:
+		glUniform2iv(id, 1, (s32*)data);
+		break;
+	case SVT_IVEC3:
+		glUniform3iv(id, 1, (s32*)data);
+		break;
+	case SVT_IVEC4:
+		glUniform4iv(id, 1, (s32*)data);
+		break;
 	case SVT_MAT3x3:
 		glUniformMatrix3fv(id, 1, false, data);
 		break;

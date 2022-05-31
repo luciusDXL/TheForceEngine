@@ -10,6 +10,9 @@
 #include "../redgePair.h"
 #include "../rcommon.h"
 
+// TODO: FIx
+#include "../RClassic_Float/rclassicFloatSharedState.h"
+
 namespace TFE_Jedi
 {
 	Mat3  s_cameraMtx;
@@ -33,14 +36,16 @@ namespace RClassic_GPU
 	void computeCameraTransform(RSector* sector, f32 pitch, f32 yaw, f32 camX, f32 camY, f32 camZ)
 	{
 		s_cameraPos = { camX, camY, camZ };
-		s_cameraProj = TFE_Math::computeProjMatrix(120.0f * PI / 180.0f, 1.3333333f, 0.01f, 1000.0f);
+		s_cameraProj = TFE_Math::computeProjMatrixExplicit(2.0f*s_rcfltState.focalLength / f32(s_width),
+			2.0f*s_rcfltState.focalLenAspect / f32(s_height), 0.01f, 1000.0f);
 
-		yaw   = -yaw   / 16383.0f * 2.0f * PI;
-		pitch = -pitch*1.9f / 16383.0f * 2.0f * PI;
+		f32 sinYaw, cosYaw, sinPitch, cosPitch;
+		sinCosFlt(-yaw, &sinYaw, &cosYaw);
+		sinCosFlt(-pitch, &sinPitch, &cosPitch);
 
-		Vec3f lookDir = { sinf(yaw) * cosf(pitch), sinf(pitch), cosf(yaw) * cosf(pitch) };
-		Vec3f upDir = { 0.0f, -1.0f, 0.0f };
-		s_cameraMtx = TFE_Math::computeViewMatrix(&lookDir, &upDir);
+		s_cameraMtx.m0 = { cosYaw, 0.0f, sinYaw };
+		s_cameraMtx.m1 = { sinYaw * sinPitch, cosPitch, -cosYaw * sinPitch };
+		s_cameraMtx.m2 = { sinYaw * cosPitch, -sinPitch, -cosYaw * cosPitch };
 	}
 
 	void transformPointByCamera(vec3_float* worldPoint, vec3_float* viewPoint)
