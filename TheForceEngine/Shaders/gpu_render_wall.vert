@@ -44,13 +44,13 @@ void main()
 		if (partId == 1) // Top
 		{
 			float nextTop = texelFetch(Sectors, nextId).y;
-			float curTop = max(nextTop, SectorData2.y);
+			float curTop = min(SectorData2.x, max(nextTop, SectorData2.y));
 			vtx_pos.y = (vertexId < 2) ? SectorData2.y : curTop;
 		}
 		else if (partId == 2) // Bottom
 		{
 			float nextBot = texelFetch(Sectors, nextId).x;
-			float curBot = min(nextBot, SectorData2.x);
+			float curBot = max(SectorData2.y, min(nextBot, SectorData2.x));
 			vtx_pos.y = (vertexId < 2) ? curBot : SectorData2.x;
 		}
 

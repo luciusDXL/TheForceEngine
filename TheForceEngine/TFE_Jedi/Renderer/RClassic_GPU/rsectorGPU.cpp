@@ -388,15 +388,40 @@ namespace TFE_Jedi
 		return true;
 	}
 
-	static Vec4f s_frustum[6];
+	struct Frustum
+	{
+		u32 planeCount;
+		Vec4f planes[256];
+	};
+	static Frustum s_frustumStack[256];
+	static u32 s_frustumStackPtr = 0;
+
+	void frustumPush(Frustum& frustum)
+	{
+		s_frustumStack[s_frustumStackPtr] = frustum;
+		s_frustumStackPtr++;
+	}
+
+	Frustum* frustumPop()
+	{
+		s_frustumStackPtr--;
+		return &s_frustumStack[s_frustumStackPtr];
+	}
+
+	Frustum* frustumGetBack()
+	{
+		return &s_frustumStack[s_frustumStackPtr - 1];
+	}
 
 	bool sphereInFrustum(Vec3f pos, f32 radius)
 	{
 		pos = { pos.x - s_cameraPos.x, pos.y - s_cameraPos.y, pos.z - s_cameraPos.z };
+		Frustum* frustum = frustumGetBack();
 
-		for (s32 i = 0; i < 6; i++)
+		Vec4f* plane = frustum->planes;
+		for (s32 i = 0; i < frustum->planeCount; i++)
 		{
-			f32 dist = s_frustum[i].x * pos.x + s_frustum[i].y * pos.y + s_frustum[i].z * pos.z + s_frustum[i].w;
+			f32 dist = plane[i].x * pos.x + plane[i].y * pos.y + plane[i].z * pos.z + plane[i].w;
 			if (dist + radius < 0.0f)
 			{
 				return false;
@@ -530,20 +555,23 @@ namespace TFE_Jedi
 			}
 		};
 
+		Frustum frustum;
+		frustum.planeCount = 6;
 		for (s32 i = 0; i < 6; i++)
 		{
-			s_frustum[i] = planes[i];
+			frustum.planes[i] = planes[i];
 
-			f32 len = sqrtf(s_frustum[i].x*s_frustum[i].x + s_frustum[i].y*s_frustum[i].y + s_frustum[i].z*s_frustum[i].z);
+			f32 len = sqrtf(frustum.planes[i].x*frustum.planes[i].x + frustum.planes[i].y*frustum.planes[i].y + frustum.planes[i].z*frustum.planes[i].z);
 			if (len > FLT_EPSILON)
 			{
 				f32 scale = 1.0f / len;
-				s_frustum[i].x *= scale;
-				s_frustum[i].y *= scale;
-				s_frustum[i].z *= scale;
-				s_frustum[i].w *= scale;
+				frustum.planes[i].x *= scale;
+				frustum.planes[i].y *= scale;
+				frustum.planes[i].z *= scale;
+				frustum.planes[i].w *= scale;
 			}
 		}
+		frustumPush(frustum);
 	}
 
 	static RSector* s_drawList[4096];
@@ -551,7 +579,7 @@ namespace TFE_Jedi
 
 	void buildDrawList(RSector* sector)
 	{
-		// First build the camera frustum.
+		// First build the camera frustum and push it onto the stack.
 		buildFrustumFromCamera();
 
 		// Then build the draw list.
@@ -563,6 +591,7 @@ namespace TFE_Jedi
 
 		updateCachedSector(sector, uploadFlags);
 		addAdjoinSectors(sector, s_drawList, s_drawCount, level, uploadFlags);
+		frustumPop();
 
 		if (uploadFlags & UPLOAD_SECTORS)
 		{
