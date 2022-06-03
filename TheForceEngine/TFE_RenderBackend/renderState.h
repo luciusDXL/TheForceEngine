@@ -18,6 +18,8 @@ enum StateEnable
 	STATE_BLEND = (1 << 1),
 	STATE_DEPTH_TEST = (1 << 2),
 	STATE_DEPTH_WRITE = (1 << 3),
+	STATE_STENCIL_WRITE = (1 << 4),
+	STATE_STENCIL_TEST = (1 << 5),
 };
 
 enum StateBlendFactor
@@ -35,6 +37,7 @@ enum StateBlendFunc
 
 enum ColorMaskChannels
 {
+	CMASK_NONE = 0,
 	CMASK_RED = (1 << 0),
 	CMASK_GREEN = (1 << 1),
 	CMASK_BLUE = (1 << 2),
@@ -56,6 +59,19 @@ enum ComparisonFunction
 	CMP_COUNT
 };
 
+enum StencilOp
+{
+	OP_KEEP = 0,
+	OP_ZERO,
+	OP_INC,
+	OP_DEC,
+	OP_INVERT,
+	OP_REPLACE,
+	OP_INC_WRAP,
+	OP_DEC_WRAP,
+	OP_COUNT
+};
+
 namespace TFE_RenderState
 {
 	void clear();
@@ -63,6 +79,8 @@ namespace TFE_RenderState
 	void setStateEnable(bool enable, u32 stateFlags);
 	void setBlendMode(StateBlendFactor srcFactor, StateBlendFactor dstFactor, StateBlendFunc func = BLEND_FUNC_ADD);
 	void setDepthFunction(ComparisonFunction func);
+	void setStencilFunction(ComparisonFunction func, s32 ref, u32 mask = 0xffffffff);
+	void setStencilOp(StencilOp stencilFail, StencilOp depthFail, StencilOp depthStencilPass);
 	void setColorMask(u32 colorMask);
 	void setDepthBias(f32 factor = 0.0f, f32 bias = 0.0f);
 };

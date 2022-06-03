@@ -51,10 +51,12 @@ enum SectorDirtyFlags
 	SDF_VERTICES     = FLAG_BIT(2),
 	SDF_HEIGHTS      = FLAG_BIT(3),
 	SDF_WALL_SHAPE   = FLAG_BIT(4),
+	// Lighting
+	SDF_AMBIENT      = FLAG_BIT(5),
 	// Objects
-	SDF_CHANGE_OBJ   = FLAG_BIT(5),
+	SDF_CHANGE_OBJ   = FLAG_BIT(6),
 	// Initial setup.
-	SDF_INIT_SETUP   = FLAG_BIT(6),
+	SDF_INIT_SETUP   = FLAG_BIT(7),
 	// Wall change flags.
 	SDF_WALL_CHANGE = (SDF_INIT_SETUP | SDF_WALL_OFFSETS | SDF_WALL_SHAPE | SDF_HEIGHTS),
 	// Everything.

@@ -507,6 +507,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rsectorFloat.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rwallFloat.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\renderDebug.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rcommon.h" />
     <ClInclude Include="TFE_Jedi\Renderer\redgePair.h" />
@@ -741,6 +742,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rsectorFloat.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rwallFloat.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\renderDebug.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rcommon.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rscanline.cpp" />
@@ -833,6 +835,8 @@ echo ^)";
     <None Include="Shaders\line2d.vert" />
     <None Include="Shaders\line3d.frag" />
     <None Include="Shaders\line3d.vert" />
+    <None Include="Shaders\line3d_debug.frag" />
+    <None Include="Shaders\line3d_debug.vert" />
     <None Include="Shaders\overlay.frag" />
     <None Include="Shaders\overlay.vert" />
     <None Include="Shaders\tri2dColor.frag" />

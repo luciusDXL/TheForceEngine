@@ -666,6 +666,11 @@ namespace TFE_RenderBackend
 		glDrawElements(GL_TRIANGLES, triCount * 3, indexStride == 4 ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT, (void*)(iptr)(indexStart * indexStride));
 	}
 
+	void drawLines(u32 lineCount)
+	{
+		glDrawArrays(GL_LINES, 0, lineCount * 2);
+	}
+
 	// Setup the Post effect chain based on current settings.
 	// TODO: Move out of render backend since this should be independent of the backend.
 	void setupPostEffectChain(bool useDynamicTexture)

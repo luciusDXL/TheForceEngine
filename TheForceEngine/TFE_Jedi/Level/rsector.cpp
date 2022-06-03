@@ -280,6 +280,8 @@ namespace TFE_Jedi
 	{
 		RWall* wall = sector->walls;
 		s32 wallCount = sector->wallCount;
+
+		sector->dirtyFlags |= SDF_AMBIENT;
 		for (s32 i = 0; i < wallCount; i++, wall++)
 		{
 			if (wall->flags1 & WF1_CHANGE_WALL_LIGHT)

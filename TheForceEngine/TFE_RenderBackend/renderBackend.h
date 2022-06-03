@@ -153,4 +153,7 @@ namespace TFE_RenderBackend
 	// indexStride : index buffer stride in bytes.
 	// indexOffset : starting index.
 	void drawIndexedTriangles(u32 triCount, u32 indexStride, u32 indexStart = 0u);
+
+	// Generic line draw.
+	void drawLines(u32 lineCount);
 };

@@ -10,9 +10,7 @@ namespace
 		u32 handle = 0;
 		glGenRenderbuffers(1, &handle);
 		glBindRenderbuffer(GL_RENDERBUFFER, handle);
-		// GL_DEPTH_COMPONENT32 is not required to be supported
-		// though GL_DEPTH_COMPONENT24 and GL_DEPTH_COMPONENT32F are.
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 		glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 		return handle;
@@ -44,7 +42,7 @@ bool RenderTarget::create(TextureGpu* texture, bool depthBuffer)
 	if (depthBuffer)
 	{
 		m_depthBufferHandle = createDepthBuffer(texture->getWidth(), texture->getHeight());
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthBufferHandle);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, m_depthBufferHandle);
 	}
 
 	// Set the list of draw buffers.
@@ -70,7 +68,7 @@ void RenderTarget::bind()
 	glDepthRange(0.0f, 1.0f);
 }
 
-void RenderTarget::clear(const f32* color, f32 depth)
+void RenderTarget::clear(const f32* color, f32 depth, u8 stencil)
 {
 	if (color)
 		glClearColor(color[0], color[1], color[2], color[3]);
@@ -80,9 +78,10 @@ void RenderTarget::clear(const f32* color, f32 depth)
 	u32 clearFlags = GL_COLOR_BUFFER_BIT;
 	if (m_depthBufferHandle)
 	{
-		clearFlags |= GL_DEPTH_BUFFER_BIT;
-		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE);
+		clearFlags |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_STENCIL_WRITE);
 		glClearDepth(depth);
+		glClearStencil(stencil);
 	}
 
 	glClear(clearFlags);
@@ -95,6 +94,16 @@ void RenderTarget::clear(const f32* color, f32 depth)
 		 TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE);
 		 glClearDepth(depth);
 		 glClear(GL_DEPTH_BUFFER_BIT);
+	 }
+ }
+
+ void RenderTarget::clearStencil(u8 stencil)
+ {
+	 if (m_depthBufferHandle)
+	 {
+		 TFE_RenderState::setStateEnable(true, STATE_STENCIL_WRITE);
+		 glClearStencil(stencil);
+		 glClear(GL_STENCIL_BUFFER_BIT);
 	 }
  }
 

@@ -31,22 +31,54 @@ namespace TFE_RenderState
 		GL_ALWAYS,   //CMP_ALWAYS
 	};
 
+	static const GLenum c_stencilOp[] =
+	{
+		GL_KEEP,      // OP_KEEP
+		GL_ZERO,      // OP_ZERO
+		GL_INCR,      // OP_INC
+		GL_DECR,      // OP_DEC
+		GL_INVERT,    // OP_INVERT
+		GL_REPLACE,   // OP_REPLACE
+		GL_INCR_WRAP, // OP_INC_WRAP
+		GL_DECR_WRAP, // OP_DEC_WRAP
+	};
+
 	static u32 s_currentState;
 	static u32 s_depthFunc;
 	static u32 s_colorMask;
+
+	struct StencilFuncState
+	{
+		ComparisonFunction func;
+		s32 ref;
+		u32 mask;
+	};
+	struct StencilOpState
+	{
+		StencilOp stencilFail;
+		StencilOp depthFail;
+		StencilOp depthStencilPass;
+	};
+	StencilFuncState s_stencilFunc;
+	StencilOpState s_stencilOp;
 
 	void clear()
 	{
 		s_currentState = 0u;
 		s_colorMask = CMASK_ALL;
 		s_depthFunc = CMP_LEQUAL;
+		s_stencilFunc = { CMP_ALWAYS, 0, 0xffffffff };
+		s_stencilOp = { OP_KEEP, OP_KEEP, OP_KEEP };
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_BLEND);
 		glDisable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
 		glDepthMask(false);
-		glColorMask(true, true, true, true);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		setDepthBias(0.0f, 0.0f);
+		glStencilMask(0);
+		glStencilFunc(GL_ALWAYS, 0, 0xffffffff);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	}
 
 	void setStateEnable(bool enable, u32 stateFlags)
@@ -70,6 +102,14 @@ namespace TFE_RenderState
 			{
 				glDepthMask(true);
 			}
+			if (stateToChange & STATE_STENCIL_WRITE)
+			{
+				glStencilMask(0xffffffff);
+			}
+			if (stateToChange & STATE_STENCIL_TEST)
+			{
+				glEnable(GL_STENCIL_TEST);
+			}
 			s_currentState |= stateFlags;
 		}
 		else
@@ -91,6 +131,14 @@ namespace TFE_RenderState
 			{
 				glDepthMask(false);
 			}
+			if (stateToChange & STATE_STENCIL_WRITE)
+			{
+				glStencilMask(0);
+			}
+			if (stateToChange & STATE_STENCIL_TEST)
+			{
+				glDisable(GL_STENCIL_TEST);
+			}
 			s_currentState &= ~stateFlags;
 		}
 	}
@@ -109,12 +157,35 @@ namespace TFE_RenderState
 			s_depthFunc = func;
 		}
 	}
+	
+	void setStencilFunction(ComparisonFunction func, s32 ref, u32 mask)
+	{
+		if (func != s_stencilFunc.func || ref != s_stencilFunc.ref || mask != s_stencilFunc.mask)
+		{
+			s_stencilFunc.func = func;
+			s_stencilFunc.ref = ref;
+			s_stencilFunc.mask = mask;
+			glStencilFunc(c_comparisionFunc[func], ref, mask);
+		}
+	}
+
+	void setStencilOp(StencilOp stencilFail, StencilOp depthFail, StencilOp depthStencilPass)
+	{
+		if (stencilFail != s_stencilOp.stencilFail || depthFail != s_stencilOp.depthFail || depthStencilPass != s_stencilOp.depthStencilPass)
+		{
+			s_stencilOp.stencilFail = stencilFail;
+			s_stencilOp.depthFail = depthFail;
+			s_stencilOp.depthStencilPass = depthStencilPass;
+			glStencilOp(c_stencilOp[stencilFail], c_stencilOp[depthFail], c_stencilOp[depthStencilPass]);
+		}
+	}
 
 	void setColorMask(u32 colorMask)
 	{
 		if (colorMask != s_colorMask)
 		{
-			glColorMask((s_colorMask&CMASK_RED)!=0, (s_colorMask&CMASK_GREEN) != 0, (s_colorMask&CMASK_BLUE) != 0, (s_colorMask&CMASK_ALPHA) != 0);
+			glColorMask((colorMask&CMASK_RED)!=0 ? GL_TRUE : GL_FALSE,  (colorMask&CMASK_GREEN)!=0 ? GL_TRUE : GL_FALSE,
+				        (colorMask&CMASK_BLUE)!=0 ? GL_TRUE : GL_FALSE, (colorMask&CMASK_ALPHA)!=0 ? GL_TRUE : GL_FALSE);
 			s_colorMask = colorMask;
 		}
 	}

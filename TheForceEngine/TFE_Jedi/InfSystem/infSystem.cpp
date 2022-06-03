@@ -3164,6 +3164,11 @@ namespace TFE_Jedi
 		for (u32 i = 0; i < s_sectorCount; i++, sector++)
 		{
 			fixed16_16 newAmbient = intToFixed16(sector->flags3);
+			if (newAmbient != sector->ambient)
+			{
+				sector->dirtyFlags |= SDF_AMBIENT;
+			}
+
 			// Store the old value in flags3 so the lights can be toggled.
 			sector->flags3 = floor16(sector->ambient);
 			sector->ambient = newAmbient;
@@ -3570,11 +3575,13 @@ namespace TFE_Jedi
 	{
 		RSector* sector = elev->sector;
 		sector->ambient += delta;
+		sector->dirtyFlags |= SDF_AMBIENT;
 
 		Slave* child = (Slave*)allocator_getHead(elev->slaves);
 		while (child)
 		{
 			child->sector->ambient += delta;
+			child->sector->dirtyFlags |= SDF_AMBIENT;
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
 		return sector->ambient;

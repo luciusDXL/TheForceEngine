@@ -21,21 +21,43 @@ void main()
 	int vertexId  = gl_VertexID & 3;
 	int partIndex = quadId + SectorData.x;
 
-	// Fetch wall part data - this includes indices into the vertex data, partID (mid, top, bottom, etc.),
-	// the adjoined sector ID (to compute height values), and textureID.
-	uvec4 wall = texelFetch(SectorWalls, partIndex);
+	ivec2 vtxIdx;
+	int nextId, partId;
+	uvec4 wall = uvec4(0);
+	if (SectorData.y > 0) // Portal
+	{
+		vtxIdx = ivec2(SectorData.y - 1, SectorData.z);
+		nextId = SectorData.w;
+		partId = -1;
+	}
+	else // Everything else
+	{
+		// Fetch wall part data - this includes indices into the vertex data, partID (mid, top, bottom, etc.),
+		// the adjoined sector ID (to compute height values), and textureID.
+		wall = texelFetch(SectorWalls, partIndex);
 
-	// GLSL is really stubborn about uint vs int values, so pre-cast upfront
-	// to avoid hassles in the rest of the shader.
-	ivec2 vtxIdx = ivec2(wall.xy);
-	int partId = int(wall.z & 65535u);
-	int nextId = int(wall.z >> 16u);
+		// GLSL is really stubborn about uint vs int values, so pre-cast upfront
+		// to avoid hassles in the rest of the shader.
+		vtxIdx = ivec2(wall.xy);
+		partId = int(wall.z & 65535u);
+		nextId = int(wall.z >> 16u);
+	}
 	
 	// Generate the output position and uv for the vertex.
 	vec3 vtx_pos;
 	vec2 vtx_uv = vec2(0.0);
 	vec4 vtx_color = vec4(0.5, 0.5, 0.5, 1.0);
-	if (partId < 3)	// Wall
+	if (partId == -1) // Portal
+	{
+		vec2 nextHeight = texelFetch(Sectors, nextId).xy;
+		float curTop = min(SectorData2.x, max(nextHeight.y, SectorData2.y));
+		float curBot = max(SectorData2.y, min(nextHeight.x, SectorData2.x));
+
+		vec2 vtx  = texelFetch(SectorVertices, vtxIdx[vertexId & 1]).rg;
+		vtx_pos   = vec3(vtx.x, (vertexId < 2) ? curTop : curBot, vtx.y);
+		vtx_color = vec4(1.0, 0.0, 0.0, 1.0);
+	}
+	else if (partId < 3)	// Wall
 	{
 		vec2 vtx0 = texelFetch(SectorVertices, vtxIdx[0]).rg;
 		vec2 vtx  = texelFetch(SectorVertices, vtxIdx[vertexId & 1]).rg;
