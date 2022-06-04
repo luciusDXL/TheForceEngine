@@ -86,7 +86,7 @@ namespace TFE_DarkForces
 		}
 		else if (flyingActor->state == 2)
 		{
-			target->yaw   = random_next() & 0x3fff;
+			target->yaw   = random_next() & ANGLE_MASK;
 			target->pitch = obj->pitch;
 			target->roll  = obj->roll;
 			target->flags |= 4;

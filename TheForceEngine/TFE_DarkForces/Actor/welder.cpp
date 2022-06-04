@@ -365,7 +365,7 @@ namespace TFE_DarkForces
 				do
 				{
 					entity_yield(TASK_NO_DELAY);
-				} while ((local(obj)->yaw & 0x3fff) != (local(target)->yaw & 0x3fff) || msg != MSG_RUN_TASK);
+				} while ((local(obj)->yaw & ANGLE_MASK) != (local(target)->yaw & ANGLE_MASK) || msg != MSG_RUN_TASK);
 
 				spawnHitEffect(HEFFECT_EXP_NO_DMG, local(obj)->sector, local(obj)->posWS, local(obj));
 				local(physicsActor)->alive = JFALSE;

@@ -1129,7 +1129,7 @@ namespace TFE_DarkForces
 			else if (s_hitWallFlag == 4)
 			{
 				angle14_32 angleDiff = getAngleDifference(obj->yaw, s_projReflectOverrideYaw);
-				obj->yaw = (angleDiff + s_projReflectOverrideYaw) & 0x3fff;
+				obj->yaw = (angleDiff + s_projReflectOverrideYaw) & ANGLE_MASK;
 
 				if (projLogic->reflVariation)
 				{
@@ -1171,7 +1171,7 @@ namespace TFE_DarkForces
 				else if (s_hitWallFlag == 4)
 				{
 					angle14_32 angleDiff = getAngleDifference(obj->yaw, s_projReflectOverrideYaw);
-					obj->yaw = (angleDiff + s_projReflectOverrideYaw) & 0x3fff;
+					obj->yaw = (angleDiff + s_projReflectOverrideYaw) & ANGLE_MASK;
 
 					if (projLogic->reflVariation)
 					{
