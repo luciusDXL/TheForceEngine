@@ -2001,15 +2001,7 @@ namespace TFE_DarkForces
 		task_begin;
 		while (msg != MSG_FREE_TASK)
 		{
-			if (s_istate.objCollisionEnabled)
-			{
-				task_yield(TASK_NO_DELAY);
-			}
-			if (!s_istate.objCollisionEnabled)
-			{
-				task_yield(0x123);
-			}
-
+			entity_yield(TASK_NO_DELAY);
 			if (msg == MSG_RUN_TASK)
 			{
 				ActorLogic* actorLogic = (ActorLogic*)allocator_getHead(s_istate.actorLogics);
@@ -2079,6 +2071,8 @@ namespace TFE_DarkForces
 		task_end;
 	}
 
+	// This is really a list of bosses:
+	// TODO: Rename "physics" actor as appopriate.
 	void actorPhysicsTaskFunc(MessageType msg)
 	{
 		task_begin;
@@ -2124,7 +2118,10 @@ namespace TFE_DarkForces
 				phyObjPtr = (PhysicsActor**)list_getNext(s_physicsActors);
 			}
 			task_localBlockEnd;
-			task_yield(TASK_NO_DELAY);
+			do
+			{
+				entity_yield(TASK_NO_DELAY);
+			} while (msg != MSG_RUN_TASK);
 		}
 		task_end;
 	}

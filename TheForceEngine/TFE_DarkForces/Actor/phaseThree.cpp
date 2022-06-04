@@ -118,7 +118,7 @@ namespace TFE_DarkForces
 					// Wait for animation to finish.
 					do
 					{
-						task_yield(TASK_NO_DELAY);
+						entity_yield(TASK_NO_DELAY);
 					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
@@ -198,7 +198,7 @@ namespace TFE_DarkForces
 					// Wait for animation to finish.
 					do
 					{
-						task_yield(TASK_NO_DELAY);
+						entity_yield(TASK_NO_DELAY);
 					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
@@ -282,7 +282,7 @@ namespace TFE_DarkForces
 			// Wait for the animation to finish.
 			do
 			{
-				task_yield(0);
+				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (!(local(anim)->flags & 2) || msg != MSG_RUN_TASK);
@@ -308,7 +308,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
@@ -317,7 +317,7 @@ namespace TFE_DarkForces
 			{
 				if (!s_playerDying && phaseThree_updatePlayerPos(local(trooper)))
 				{
-					if (random(player_getSquaredDistance(local(obj))) <= FIXED(100) && local(obj)->yaw == local(target)->yaw)	// essentially <= (dist = 10)
+					if (playerDist(obj) <= FIXED(100) && local(obj)->yaw == local(target)->yaw)
 					{
 						local(physicsActor)->state = (random(100) > 40) ? P3STATE_FIRE_PLASMA : P3STATE_FIRE_MISSILES;
 						if (local(flying))
@@ -327,7 +327,7 @@ namespace TFE_DarkForces
 							actor_setAnimFrameRange(local(anim), 3, 3);
 							do
 							{
-								task_yield(0);
+								entity_yield(TASK_NO_DELAY);
 								s_curTrooper = local(trooper);
 								task_callTaskFunc(phaseThree_handleMsg);
 							} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
@@ -434,7 +434,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
@@ -520,7 +520,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
@@ -532,7 +532,7 @@ namespace TFE_DarkForces
 			// Wait for the animation to finish.
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK || !(local(anim)->flags&2));
@@ -561,7 +561,7 @@ namespace TFE_DarkForces
 			// Wait for the animation to finish.
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
@@ -601,7 +601,7 @@ namespace TFE_DarkForces
 		// Wait for the animation to finish.
 		do
 		{
-			task_yield(TASK_NO_DELAY);
+			entity_yield(TASK_NO_DELAY);
 			s_curTrooper = local(trooper);
 			task_callTaskFunc(phaseThree_handleMsg);
 		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
@@ -614,7 +614,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(29);
+				entity_yield(29);	// 0.2 seconds
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
@@ -642,7 +642,7 @@ namespace TFE_DarkForces
 		// Wait for the animation to finish.
 		do
 		{
-			task_yield(TASK_NO_DELAY);
+			entity_yield(TASK_NO_DELAY);
 			s_curTrooper = local(trooper);
 			task_callTaskFunc(phaseThree_handleMsg);
 		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
@@ -680,13 +680,13 @@ namespace TFE_DarkForces
 		// Wait for the animation to finish.
 		do
 		{
-			task_yield(TASK_NO_DELAY);
+			entity_yield(TASK_NO_DELAY);
 		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 		// Wait until the actor can die.
 		do
 		{
-			task_yield(TASK_NO_DELAY);
+			entity_yield(TASK_NO_DELAY);
 		} while (msg != MSG_RUN_TASK || !actor_canDie(local(physicsActor)));
 
 		task_localBlockBegin;
@@ -752,7 +752,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
@@ -887,7 +887,7 @@ namespace TFE_DarkForces
 				{
 					do
 					{
-						task_yield(145);
+						entity_yield(145);
 						s_curTrooper = local(trooper);
 						task_callTaskFunc(phaseThree_handleMsg);
 

@@ -153,6 +153,7 @@ namespace TFE_DarkForces
 	static JBool s_playerInWater = JFALSE;
 	static JBool s_limitStepHeight = JTRUE;
 	static JBool s_smallModeEnabled = JFALSE;
+	JBool s_aiActive = JTRUE;
 	// Currently playing sound effects.
 	static SoundEffectId s_crushSoundId = 0;
 	static SoundEffectId s_kyleScreamSoundId = 0;
@@ -802,6 +803,12 @@ namespace TFE_DarkForces
 	{
 		s_smallModeEnabled = ~s_smallModeEnabled;
 		hud_sendTextMessage(705);
+	}
+
+	void cheat_pauseAI()
+	{
+		s_aiActive = ~s_aiActive;
+		hud_sendTextMessage(706);
 	}
 
 	void cheat_postal()

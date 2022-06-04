@@ -3,6 +3,7 @@
 #include "generator.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
+#include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/util.h>
 #include <TFE_DarkForces/player.h>
@@ -52,15 +53,15 @@ namespace TFE_DarkForces
 		// Initial delay before it starts working.
 		do
 		{
-			task_yield(local(gen)->delay);
+			entity_yield(local(gen)->delay);
 		} while (msg != MSG_RUN_TASK);
 
 		while (1)
 		{
-			task_yield(local(gen)->interval);
+			entity_yield(local(gen)->interval);
 			while (local(gen)->numTerminate == 0 && msg == MSG_RUN_TASK)
 			{
-				task_yield(TASK_SLEEP);
+				entity_yield(TASK_SLEEP);
 			}
 
 			if (msg == MSG_FREE)

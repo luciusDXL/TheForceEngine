@@ -165,4 +165,15 @@ namespace TFE_DarkForces
 	extern SoundSourceId s_officerAlertSndSrc[OFFICER_ALERT_COUNT];
 	extern SoundSourceId s_stormAlertSndSrc[STORM_ALERT_COUNT];
 	extern SoundSourceId s_agentSndSrc[AGENTSND_COUNT];
+
+	extern JBool s_aiActive;
+	// Special yield macro for entities so that LAREDLITE works.
+	#define entity_yield(t) \
+	do \
+	{ \
+		task_yield(s_aiActive ? t : 290); \
+	} while (!s_aiActive);
+
+	// Helper macro to get local object distance from player
+	#define playerDist(obj) fixedSqrt(player_getSquaredDistance(local(obj)))
 }  // namespace TFE_DarkForces

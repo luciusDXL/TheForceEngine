@@ -149,7 +149,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TURRET_ATTACK_DELAY);
+				entity_yield(TURRET_ATTACK_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					msg = turret_handleDamage(msg, local(turret));
@@ -251,7 +251,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					msg = turret_handleDamage(msg, local(turret));
@@ -322,7 +322,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(145);
+				entity_yield(145);
 				if (msg == MSG_DAMAGE)
 				{
 					msg = turret_handleDamage(msg, local(turret));
@@ -406,7 +406,7 @@ namespace TFE_DarkForces
 				{
 					do
 					{
-						task_yield(TASK_NO_DELAY);
+						entity_yield(TASK_NO_DELAY);
 						msg = turret_handleMessages(msg, local(turret));
 					} while (msg != MSG_RUN_TASK);
 
@@ -425,7 +425,7 @@ namespace TFE_DarkForces
 			else if (local(physicsActor)->state == TURRETSTATE_DYING)
 			{
 				spawnHitEffect(HEFFECT_EXP_NO_DMG, local(obj)->sector, local(obj)->posWS, local(obj));
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				local(physicsActor)->alive = JFALSE;
 			}
 			else

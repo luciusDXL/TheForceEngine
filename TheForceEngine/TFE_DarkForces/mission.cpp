@@ -855,6 +855,7 @@ namespace TFE_DarkForces
 			} break;
 			case CHEAT_LAREDLITE:
 			{
+				cheat_pauseAI();
 			} break;
 			case CHEAT_LASECBASE:
 			{

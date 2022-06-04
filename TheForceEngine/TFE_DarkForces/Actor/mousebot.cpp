@@ -126,7 +126,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					msg = mousebot_handleExplosion(msg, local(mouseBot));
@@ -219,7 +219,7 @@ namespace TFE_DarkForces
 
 		while (1)
 		{
-			task_yield(TASK_NO_DELAY);
+			entity_yield(TASK_NO_DELAY);
 			if (msg == MSG_RUN_TASK && actor_canDie(&local(mouseBot)->actor))
 			{
 				break;
@@ -297,7 +297,7 @@ namespace TFE_DarkForces
 			local(obj) = local(mouseBot)->logic.obj;
 			while (local(actor)->state == MBSTATE_SLEEPING)
 			{
-				task_yield(145);
+				entity_yield(145);
 				if (msg == MSG_RUN_TASK)
 				{
 					// Wakeup if the player is visible.

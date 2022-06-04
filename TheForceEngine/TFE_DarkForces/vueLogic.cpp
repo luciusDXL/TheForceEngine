@@ -3,6 +3,7 @@
 #include "vueLogic.h"
 #include "time.h"
 #include <TFE_Game/igame.h>
+#include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
@@ -373,11 +374,11 @@ namespace TFE_DarkForces
 						if (local(vue)->flags & VUE_PAUSED)
 						{
 							local(pauseTick) = s_curTick;
-							task_yield(TASK_SLEEP);
+							entity_yield(TASK_SLEEP);
 
 							task_makeActive(task_getCurrent());
 							local(tick) += s_curTick - local(pauseTick);
-							task_yield(TASK_NO_DELAY);
+							entity_yield(TASK_NO_DELAY);
 						}
 						local(frame) = (VueFrame*)allocator_getNext(local(vue)->frames);
 					}
@@ -432,7 +433,7 @@ namespace TFE_DarkForces
 							local(obj)->posWS = local(frame)->offset;
 						task_localBlockEnd;
 
-						task_yield(TASK_NO_DELAY);
+						entity_yield(TASK_NO_DELAY);
 						if (msg == MSG_FREE_TASK) { break; }
 
 						Tick dt = s_curTick - local(tick);
@@ -450,7 +451,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				task_yield(TASK_SLEEP);
+				entity_yield(TASK_SLEEP);
 			}
 		}  // while (msg != MSG_FREE_TASK)
 

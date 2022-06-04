@@ -109,7 +109,7 @@ namespace TFE_DarkForces
 
 					do
 					{
-						task_yield(TASK_NO_DELAY);
+						entity_yield(TASK_NO_DELAY);
 					} while (!(local(anim)->flags & 2) || msg != MSG_RUN_TASK);
 
 					task_localBlockBegin;
@@ -195,7 +195,7 @@ namespace TFE_DarkForces
 
 					do
 					{
-						task_yield(TASK_NO_DELAY);
+						entity_yield(TASK_NO_DELAY);
 					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 					// Restore the animation.
@@ -332,7 +332,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -458,7 +458,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -525,7 +525,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -547,7 +547,7 @@ namespace TFE_DarkForces
 			// Wait for the animation to finish playing.
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -577,7 +577,7 @@ namespace TFE_DarkForces
 			// Wait for the actor to land.
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -601,7 +601,7 @@ namespace TFE_DarkForces
 			// Wait for the animation to finish playing.
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -648,7 +648,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -675,7 +675,7 @@ namespace TFE_DarkForces
 			// Wait for the animation to finish playing.
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -738,13 +738,13 @@ namespace TFE_DarkForces
 		// Wait for the death animation to finish.
 		do
 		{
-			task_yield(TASK_NO_DELAY);
+			entity_yield(TASK_NO_DELAY);
 		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 		// Then wait until we can actually die...
 		do
 		{
-			task_yield(TASK_NO_DELAY);
+			entity_yield(TASK_NO_DELAY);
 		} while (msg != MSG_RUN_TASK || !actor_canDie(local(physicsActor)));
 
 		task_localBlockBegin;
@@ -808,7 +808,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					s_curDragon = local(dragon);
@@ -939,7 +939,7 @@ namespace TFE_DarkForces
 				{
 					do
 					{
-						task_yield(145);
+						entity_yield(145);
 						s_curDragon = local(dragon);
 						task_callTaskFunc(kellDragon_handleMsg);
 

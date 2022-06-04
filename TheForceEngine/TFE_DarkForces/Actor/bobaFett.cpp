@@ -107,7 +107,7 @@ namespace TFE_DarkForces
 				// Wait for animation to finish.
 				do
 				{
-					task_yield(TASK_NO_DELAY);
+					entity_yield(TASK_NO_DELAY);
 				} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 				memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
@@ -165,7 +165,7 @@ namespace TFE_DarkForces
 				// Wait for animation to finish.
 				do
 				{
-					task_yield(TASK_NO_DELAY);
+					entity_yield(TASK_NO_DELAY);
 				} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 				memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
@@ -380,7 +380,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				s_curBobaFett = local(bobaFett);
 				task_callTaskFunc(bobaFett_handleMsg);
 			} while (msg != MSG_RUN_TASK);
@@ -553,7 +553,7 @@ namespace TFE_DarkForces
 		// Wait for the animation to finish.
 		do
 		{
-			task_yield(TASK_NO_DELAY);
+			entity_yield(TASK_NO_DELAY);
 		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 		task_localBlockBegin;
@@ -606,7 +606,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				s_curBobaFett = local(bobaFett);
 				task_callTaskFunc(bobaFett_handleMsg);
 			} while (msg != MSG_RUN_TASK);
@@ -680,7 +680,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(145);
+				entity_yield(145);
 				s_curBobaFett = local(bobaFett);
 				task_callTaskFunc(bobaFett_handleMsg);
 			} while (msg != MSG_RUN_TASK);

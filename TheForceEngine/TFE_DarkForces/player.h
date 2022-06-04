@@ -148,6 +148,7 @@ namespace TFE_DarkForces
 	void cheat_teleport();
 	void cheat_enableNoheightCheck();
 	void cheat_bugMode();
+	void cheat_pauseAI();
 	void cheat_postal();
 	void cheat_fullAmmo();
 	void cheat_unlock();

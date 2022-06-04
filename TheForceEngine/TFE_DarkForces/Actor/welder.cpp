@@ -120,7 +120,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(145);
+				entity_yield(145);
 				if (msg == MSG_DAMAGE)
 				{
 					msg = welder_handleDamage(msg, local(welder));
@@ -179,7 +179,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					msg = welder_handleDamage(msg, local(welder));
@@ -234,7 +234,7 @@ namespace TFE_DarkForces
 
 					do
 					{
-						task_yield(72);
+						entity_yield(72);
 						if (msg == MSG_DAMAGE)
 						{
 							msg = welder_handleDamage(msg, local(welder));
@@ -299,7 +299,7 @@ namespace TFE_DarkForces
 		{
 			do
 			{
-				task_yield(TASK_NO_DELAY);
+				entity_yield(TASK_NO_DELAY);
 				if (msg == MSG_DAMAGE)
 				{
 					msg = welder_handleDamage(msg, local(welder));
@@ -364,7 +364,7 @@ namespace TFE_DarkForces
 
 				do
 				{
-					task_yield(TASK_NO_DELAY);
+					entity_yield(TASK_NO_DELAY);
 				} while ((local(obj)->yaw & 0x3fff) != (local(target)->yaw & 0x3fff) || msg != MSG_RUN_TASK);
 
 				spawnHitEffect(HEFFECT_EXP_NO_DMG, local(obj)->sector, local(obj)->posWS, local(obj));
