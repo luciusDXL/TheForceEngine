@@ -42,7 +42,11 @@
 #define PROGRAM_ERROR   1
 #define PROGRAM_SUCCESS 0
 
+#ifndef _DEBUG
 #define INSTALL_CRASH_HANDLER 1
+#else
+#define INSTALL_CRASH_HANDLER 0
+#endif
 
 #pragma comment(lib, "SDL2main.lib")
 using namespace TFE_Input;

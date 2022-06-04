@@ -87,6 +87,7 @@ namespace TFE_Jedi
 
 	void renderDebug_addPolygon(s32 count, Vec3f* vtx, Vec4f color)
 	{
+		if (!s_debugEnable) { return; }
 		const u8 u8Color[] = { u8(color.x * 255.0f), u8(color.y * 255.0f), u8(color.z * 255.0f), u8(color.w * 255.0f) };
 		for (s32 i = 0; i < count; i++)
 		{

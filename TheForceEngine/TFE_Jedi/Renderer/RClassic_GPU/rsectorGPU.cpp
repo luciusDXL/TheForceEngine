@@ -29,23 +29,23 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
+	enum UploadFlags
+	{
+		UPLOAD_NONE     = 0,
+		UPLOAD_SECTORS  = FLAG_BIT(0),
+		UPLOAD_VERTICES = FLAG_BIT(1),
+		UPLOAD_WALLS    = FLAG_BIT(2),
+		UPLOAD_ALL      = UPLOAD_SECTORS | UPLOAD_VERTICES | UPLOAD_WALLS
+	};
+
 	Shader m_wallShader;
-	ShaderBuffer m_sectorVertices;
-	ShaderBuffer m_sectorWalls;
 	ShaderBuffer m_sectors;
+	ShaderBuffer m_drawListPos;
+	ShaderBuffer m_drawListData;
 	s32 m_cameraPosId;
 	s32 m_cameraViewId;
 	s32 m_cameraProjId;
-	s32 m_sectorDataId;
-	s32 m_sectorData2Id;
-	s32 m_sectorBoundsId;
 	Vec3f m_viewDir;
-
-	struct SectorVertex
-	{
-		f32 x, y, z;
-		f32 u, v;
-	};
 
 	struct WallSegment
 	{
@@ -72,174 +72,33 @@ namespace TFE_Jedi
 
 	struct GPUCachedSector
 	{
-		s32 vertexOffset;
-		s32 wallOffset;
-		s32 partCount;
-		s32 maxPartCount;
-
 		f32 floorHeight;
 		f32 ceilingHeight;
-
 		u64 builtFrame;
-		s32 portalSegCount;
-		s32 maxPortalSegCount;
-		WallSegment* portalSeg;
 	};
 
-	VertexBuffer m_vertexBuffer;
+	struct GPUSourceData
+	{
+		Vec4f* sectors;
+		u32 sectorSize;
+	};
+	
+	GPUSourceData s_gpuSourceData = { 0 };
+	Vec4f  s_displayListPos[1024];
+	Vec4ui s_displayListData[1024];
+	s32 s_displayListCount = 0;
+
 	IndexBuffer m_indexBuffer;
 	static GPUCachedSector* s_cachedSectors;
 	static bool s_enableDebug = true;
 	static u64 s_gpuFrame;
-
-	static const AttributeMapping c_sectorAttrMapping[] =
-	{
-		{ATTR_POS, ATYPE_FLOAT, 3, 0, false},
-		{ATTR_UV,  ATYPE_FLOAT, 2, 0, false},
-	};
-	static const u32 c_sectorAttrCount = TFE_ARRAYSIZE(c_sectorAttrMapping);
-
-	// Sector elements are generated in depth-first traversal order and are rendered as:
-	// 1. Portal -> Stencil Buffer (parentSectorIndex, adjoinIndex); write 'level' as the ref value, but only where 'level-1' exists.
-	// 2. Sector (sectorIndex); write only where 'level' exists.
-	struct SectorElement
-	{
-		s32 parentSectorIndex;	// -1 or index of the parent sector.
-		s32 adjoinIndex;		// -1 or index of the adjoin that we are viewing through, this belongs to the parent.
-		s32 sectorIndex;		// index of the sector to be rendered through the adjoin.
-		s32 level;				// 0 = top level
-	};
-	static SectorElement s_sectorElements[4096];
-	static s32 s_sectorElemCount;
-
-	static RSector* s_drawList[4096];
-	static s32 s_drawCount;
-
+		
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
 
-	/*****************************************
-	 First Steps:
-	 1. Render Target setup - DONE
-	 2. Initial Camera and test geo - DONE
-	 3. Draw Walls in current sector:
-		* Add TextureBuffer support to the backend - DONE
-		* Add UniformBuffer support to the backend.
-		* Add shader 330 support - DONE
-		* Upload sector data for one sector - DONE
-		* Render sector walls - DONE
-	 4. Draw Flats in current sector - DONE
-	 5. Draw Adjoin openings in current sector (top and bottom parts).
-
-	 Initial Sector Data (GPU):
-	 vec2 vertices[] - store all vertices in the level.
-
-	 struct WallData
-	 {
-		int2 indices;	// left and right indices.
-	 }
-
-	 struct Sector
-	 {
-		int2 geoOffsets;	// vertexOffset, wallOffset
-		vec2 heights;		// floor, ceiling
-		vec4 bounds;		// (min, max) XZ bounds.
-	 }
-	 *****************************************/
-
 	void TFE_Sectors_GPU::reset()
 	{
-	}
-
-	struct GPUSourceData
-	{
-		Vec2f* vertices;
-		Vec4ui* walls;
-		Vec4f* sectors;
-
-		u32 vertexSize;
-		u32 wallSize;
-		u32 sectorSize;
-	};
-	GPUSourceData s_gpuSourceData = { 0 };
-
-	void setupWalls(RSector* curSector)
-	{
-		GPUCachedSector* cachedSector = &s_cachedSectors[curSector->index];
-
-		s32 partCount = 0;
-		Vec4ui* dstWall = &s_gpuSourceData.walls[cachedSector->wallOffset];
-		const s32 ambient = floor16(curSector->ambient);
-		const RWall* srcWall = curSector->walls;
-		const u32 vertexBase = cachedSector->vertexOffset;
-		for (s32 w = 0; w < curSector->wallCount; w++, srcWall++)
-		{
-			u32 i0 = vertexBase + (u32)((u8*)srcWall->v0 - (u8*)curSector->verticesVS) / sizeof(vec2_fixed);
-			u32 i1 = vertexBase + (u32)((u8*)srcWall->v1 - (u8*)curSector->verticesVS) / sizeof(vec2_fixed);
-
-			if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector) // TODO: Fix transparent mid textures.
-			{
-				dstWall->x = i0;
-				dstWall->y = i1;
-				dstWall->z = 0;	// part = mid
-				dstWall->w = ambient < 31 ? min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient)) : 31;
-				dstWall++;
-				partCount++;
-			}
-			if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector)
-			{
-				dstWall->x = i0;
-				dstWall->y = i1;
-				dstWall->z = 1 | (srcWall->nextSector->index << 16u);	// part = top
-				dstWall->w = ambient < 31 ? min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient)) : 31;
-				dstWall++;
-				partCount++;
-			}
-			if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector)
-			{
-				dstWall->x = i0;
-				dstWall->y = i1;
-				dstWall->z = 2 | (srcWall->nextSector->index << 16u);	// part = bot
-				dstWall->w = ambient < 31 ? min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient)) : 31;
-				dstWall++;
-				partCount++;
-			}
-			// Add Floor
-			dstWall->x = i0;
-			dstWall->y = i1;
-			dstWall->z = 3;	// part = floor
-			dstWall->w = ambient;
-			dstWall++;
-			partCount++;
-
-			// Add Ceiling
-			dstWall->x = i0;
-			dstWall->y = i1;
-			dstWall->z = 4;	// part = ceiling
-			dstWall->w = ambient;
-			dstWall++;
-			partCount++;
-		}
-
-		// Floor Cap
-		dstWall->x = 0;
-		dstWall->y = 0;
-		dstWall->z = 5;	// part = floor cap
-		dstWall->w = ambient;
-		dstWall++;
-		partCount++;
-
-		// Ceiling Cap
-		dstWall->x = 0;
-		dstWall->y = 0;
-		dstWall->z = 6;	// part = ceiling cap
-		dstWall->w = ambient;
-		dstWall++;
-		partCount++;
-
-		cachedSector->partCount = partCount;
-		assert(partCount <= cachedSector->maxPartCount);
 	}
 
 	void TFE_Sectors_GPU::prepare()
@@ -254,15 +113,12 @@ namespace TFE_Jedi
 			m_cameraPosId = m_wallShader.getVariableId("CameraPos");
 			m_cameraViewId = m_wallShader.getVariableId("CameraView");
 			m_cameraProjId = m_wallShader.getVariableId("CameraProj");
-			m_sectorDataId = m_wallShader.getVariableId("SectorData");
-			m_sectorData2Id = m_wallShader.getVariableId("SectorData2");
-			m_sectorBoundsId = m_wallShader.getVariableId("SectorBounds");
+			
+			m_wallShader.bindTextureNameToSlot("Sectors", 0);
+			m_wallShader.bindTextureNameToSlot("DrawListPos", 1);
+			m_wallShader.bindTextureNameToSlot("DrawListData", 2);
 
-			m_wallShader.bindTextureNameToSlot("SectorVertices", 0);
-			m_wallShader.bindTextureNameToSlot("SectorWalls", 1);
-			m_wallShader.bindTextureNameToSlot("Sectors", 2);
-
-			// Handles up to 65536 quads.
+			// Handles up to 65536 sector quads in the view.
 			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * 65536);
 			u16* index = indices;
 			for (s32 q = 0; q < 65536; q++, index += 6)
@@ -281,92 +137,24 @@ namespace TFE_Jedi
 
 			// Let's just cache the current data.
 			s_cachedSectors = (GPUCachedSector*)level_alloc(sizeof(GPUCachedSector) * s_sectorCount);
-			s32 totalVertices = 0;
-			s32 totalWalls = 0;
-			for (s32 s = 0; s < s_sectorCount; s++)
-			{
-				s_cachedSectors[s].vertexOffset = totalVertices;
-				s_cachedSectors[s].wallOffset = totalWalls;
-				s_cachedSectors[s].builtFrame = 0;
-				// Pre-allocate enough space for all possible wall parts.
-				s32 maxWallCount = 0;
-				s32 maxPortalCount = 0;
-				for (s32 w = 0; w < s_sectors[s].wallCount; w++)
-				{
-					RWall* wall = &s_sectors[s].walls[w];
-					if (wall->nextSector)
-					{
-						maxWallCount += 2;	// top + bottom
-					}
-					maxWallCount += 3;		// mid + ceiling + floor
-					if (wall->signTex)
-					{
-						maxWallCount++;		// sign
-					}
-					if (wall->nextSector)
-					{
-						maxPortalCount++;
-					}
-				}
-				maxWallCount += 2;	// caps
-
-				s_cachedSectors[s].maxPortalSegCount = maxPortalCount * 2;
-				s_cachedSectors[s].portalSegCount = 0;
-				s_cachedSectors[s].portalSeg = (WallSegment*)level_alloc(sizeof(WallSegment) * (maxPortalCount * 2));
-				assert(s_cachedSectors[s].portalSeg || !maxPortalCount);
-				s_cachedSectors[s].maxPartCount = maxWallCount;
-				totalVertices += s_sectors[s].vertexCount;
-				totalWalls += maxWallCount;
-			}
-			s_gpuSourceData.vertexSize = sizeof(Vec2f) * totalVertices;
-			s_gpuSourceData.vertices = (Vec2f*)level_alloc(s_gpuSourceData.vertexSize);
-			memset(s_gpuSourceData.vertices, 0, s_gpuSourceData.vertexSize);
-
-			// Wall structure: { i0, i1, partId | sign | light offset, textureId }
-			s_gpuSourceData.wallSize = sizeof(Vec4ui) * totalWalls;
-			s_gpuSourceData.walls = (Vec4ui*)level_alloc(s_gpuSourceData.wallSize);
-			memset(s_gpuSourceData.walls, 0, s_gpuSourceData.wallSize);
+			memset(s_cachedSectors, 0, sizeof(GPUCachedSector) * s_sectorCount);
 
 			s_gpuSourceData.sectorSize = sizeof(Vec4f) * s_sectorCount;
 			s_gpuSourceData.sectors = (Vec4f*)level_alloc(s_gpuSourceData.sectorSize);
 			memset(s_gpuSourceData.sectors, 0, s_gpuSourceData.sectorSize);
 
-			Vec2f* vertex = s_gpuSourceData.vertices;
 			for (s32 s = 0; s < s_sectorCount; s++)
 			{
 				RSector* curSector = &s_sectors[s];
 				GPUCachedSector* cachedSector = &s_cachedSectors[s];
-				cachedSector->floorHeight = fixed16ToFloat(curSector->floorHeight);
+				cachedSector->floorHeight   = fixed16ToFloat(curSector->floorHeight);
 				cachedSector->ceilingHeight = fixed16ToFloat(curSector->ceilingHeight);
 
 				s_gpuSourceData.sectors[s].x = cachedSector->floorHeight;
 				s_gpuSourceData.sectors[s].y = cachedSector->ceilingHeight;
 				s_gpuSourceData.sectors[s].z = 0.0f;
 				s_gpuSourceData.sectors[s].w = 0.0f;
-
-				for (s32 v = 0; v < curSector->vertexCount; v++, vertex++)
-				{
-					vertex->x = fixed16ToFloat(curSector->verticesWS[v].x);
-					vertex->z = fixed16ToFloat(curSector->verticesWS[v].z);
-				}
-				setupWalls(curSector);
 			}
-
-			ShaderBufferDef bufferDefVertices =
-			{
-				2,				// 1, 2, 4 channels (R, RG, RGBA)
-				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-				BUF_CHANNEL_FLOAT
-			};
-			m_sectorVertices.create(totalVertices, bufferDefVertices, true, s_gpuSourceData.vertices);
-
-			ShaderBufferDef bufferDefWalls =
-			{
-				4,				// 1, 2, 4 channels (R, RG, RGBA)
-				sizeof(u32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-				BUF_CHANNEL_UINT
-			};
-			m_sectorWalls.create(totalWalls, bufferDefWalls, true, s_gpuSourceData.walls);
 
 			ShaderBufferDef bufferDefSectors =
 			{
@@ -375,6 +163,22 @@ namespace TFE_Jedi
 				BUF_CHANNEL_FLOAT
 			};
 			m_sectors.create(s_sectorCount, bufferDefSectors, true, s_gpuSourceData.sectors);
+
+			ShaderBufferDef bufferDefDrawListPos =
+			{
+				4,				// 1, 2, 4 channels (R, RG, RGBA)
+				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
+				BUF_CHANNEL_FLOAT
+			};
+			m_drawListPos.create(1024, bufferDefDrawListPos, true);
+
+			ShaderBufferDef bufferDefDrawListData =
+			{
+				4,				// 1, 2, 4 channels (R, RG, RGBA)
+				sizeof(u32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
+				BUF_CHANNEL_UINT
+			};
+			m_drawListData.create(1024, bufferDefDrawListData, true);
 		}
 		else
 		{
@@ -383,43 +187,14 @@ namespace TFE_Jedi
 
 		renderDebug_enable(s_enableDebug);
 	}
-
-	enum UploadFlags
-	{
-		UPLOAD_NONE = 0,
-		UPLOAD_SECTORS = FLAG_BIT(0),
-		UPLOAD_VERTICES = FLAG_BIT(1),
-		UPLOAD_WALLS = FLAG_BIT(2),
-		UPLOAD_ALL = UPLOAD_SECTORS | UPLOAD_VERTICES | UPLOAD_WALLS
-	};
-
+	
 	void updateCachedWalls(RSector* srcSector, u32 flags, u32& uploadFlags)
 	{
 		GPUCachedSector* cached = &s_cachedSectors[srcSector->index];
 		if (flags & (SDF_HEIGHTS | SDF_AMBIENT))
 		{
 			uploadFlags |= UPLOAD_WALLS;
-			setupWalls(srcSector);
 		}
-
-		if (flags & (SDF_WALL_SHAPE | SDF_VERTICES))
-		{
-			uploadFlags |= UPLOAD_VERTICES;
-			Vec2f* vertices = &s_gpuSourceData.vertices[cached->vertexOffset];
-			for (s32 i = 0; i < srcSector->vertexCount; i++)
-			{
-				vertices[i].x = fixed16ToFloat(srcSector->verticesWS[i].x);
-				vertices[i].z = fixed16ToFloat(srcSector->verticesWS[i].z);
-			}
-		}
-
-#if 0
-		for (s32 w = 0; w < srcSector->wallCount; w++)
-		{
-			RWall* srcWall = &srcSector->walls[w];
-			// TODO: SDF_HEIGHTS, SDF_WALL_OFFSETS - Handle texture offsets.
-		}
-#endif
 	}
 
 	void updateCachedSector(RSector* srcSector, u32& uploadFlags)
@@ -430,30 +205,17 @@ namespace TFE_Jedi
 		GPUCachedSector* cached = &s_cachedSectors[srcSector->index];
 		if (flags & SDF_HEIGHTS)
 		{
-			cached->floorHeight = fixed16ToFloat(srcSector->floorHeight);
+			cached->floorHeight   = fixed16ToFloat(srcSector->floorHeight);
 			cached->ceilingHeight = fixed16ToFloat(srcSector->ceilingHeight);
 			s_gpuSourceData.sectors[srcSector->index].x = cached->floorHeight;
 			s_gpuSourceData.sectors[srcSector->index].y = cached->ceilingHeight;
 			uploadFlags |= UPLOAD_SECTORS;
 		}
-		// TODO: Handle texture offsets.
 		updateCachedWalls(srcSector, flags, uploadFlags);
-		// Clear out dirty flags.
 		srcSector->dirtyFlags = SDF_NONE;
 	}
 
-	bool addSectorToList(RSector** list, s32& count, RSector* newSector)
-	{
-		if (count >= 4096) { return false; }
-
-		for (s32 i = 0; i < count; i++)
-		{
-			if (list[i] == newSector) { return false; }
-		}
-		list[count++] = newSector;
-		return true;
-	}
-
+	// TODO: Move to frustum module.
 	struct Frustum
 	{
 		u32 planeCount;
@@ -461,6 +223,15 @@ namespace TFE_Jedi
 	};
 	static Frustum s_frustumStack[256];
 	static u32 s_frustumStackPtr = 0;
+
+	void frustumCopy(const Frustum* src, Frustum* dst)
+	{
+		dst->planeCount = src->planeCount;
+		for (s32 i = 0; i < src->planeCount; i++)
+		{
+			dst->planes[i] = src->planes[i];
+		}
+	}
 
 	void frustumPush(Frustum& frustum)
 	{
@@ -642,11 +413,10 @@ namespace TFE_Jedi
 
 	// Build a new frustum such that each polygon edge becomes a plane that passes through
 	// the camera.
-	void computePortalFrustum(const Polygon* clippedPortal)
+	void computePortalFrustum(const Polygon* clippedPortal, Frustum* newFrustum)
 	{
 		s32 count = clippedPortal->vertexCount;
-		Frustum newFrustum;
-		newFrustum.planeCount = 0;
+		newFrustum->planeCount = 0;
 
 		// Sides.
 		for (s32 i = 0; i < count; i++)
@@ -660,7 +430,7 @@ namespace TFE_Jedi
 				continue;
 			}
 			N = TFE_Math::normalize(&N);
-			newFrustum.planes[newFrustum.planeCount++] = { N.x, N.y, N.z, 0.0f };
+			newFrustum->planes[newFrustum->planeCount++] = { N.x, N.y, N.z, 0.0f };
 		}
 
 		// Near plane.
@@ -670,11 +440,10 @@ namespace TFE_Jedi
 		Vec3f N = TFE_Math::cross(&S, &T);
 		N = TFE_Math::normalize(&N);
 		f32 d = -TFE_Math::dot(&N, &O);
-		newFrustum.planes[newFrustum.planeCount++] = { N.x, N.y, N.z, d };
-
-		frustumPush(newFrustum);
+		newFrustum->planes[newFrustum->planeCount++] = { N.x, N.y, N.z, d };
 	}
 
+	// TODO: Move to debug module.
 	Vec4f debug_interpolateVec4(Vec4f a, Vec4f b, f32 t)
 	{
 		Vec4f res;
@@ -722,7 +491,7 @@ namespace TFE_Jedi
 		return debug_interpolateVec4(colors[a], colors[b], t);
 	}
 
-	// Hacky...
+	// TODO: Move to debug module.
 	static s32 s_maxPortals = 4096;
 	static s32 s_maxWallSeg = 4096;
 	static s32 s_portalsTraversed;
@@ -775,6 +544,7 @@ namespace TFE_Jedi
 		}
 	}
 
+	// TODO: Move to S-Buffer module.
 	WallSegBuffer s_bufferPool[1024];
 	WallSegBuffer* s_bufferHead;
 	WallSegBuffer* s_bufferTail;
@@ -807,79 +577,8 @@ namespace TFE_Jedi
 		f32 value = coord.m[(1 + axis) & 1] * axisScale * 0.5f + 0.5f;
 		if (axis == 1 || axis == 2) { value = 1.0f - value; }
 
-		return fmodf(f32(axis) + value, 4.0f);	// this wraps around to 0.0 at 4.0
-	}
-
-	void testProjections()
-	{
-		Vec2f testCoords[] =
-		{
-			// +X
-			{ 1.0f,  0.0f },
-			{ 1.0f,  0.5f },
-			{ 1.0f, -0.5f },
-			{ 1.0f,  1.0f },
-			{ 1.0f, -1.0f },
-
-			// +Z
-			{  0.0f, 1.0f, },
-			{  0.5f, 1.0f, },
-			{ -0.5f, 1.0f, },
-			{  1.0f, 1.0f, },
-			{ -1.0f, 1.0f, },
-
-			// -X
-			{ -1.0f,  0.0f },
-			{ -1.0f,  0.5f },
-			{ -1.0f, -0.5f },
-			{ -1.0f,  1.0f },
-			{ -1.0f, -1.0f },
-
-			// -Z
-			{  0.0f, -1.0f, },
-			{  0.5f, -1.0f, },
-			{ -0.5f, -1.0f, },
-			{  1.0f, -1.0f, },
-			{ -1.0f, -1.0f, },
-		};
-
-		f32 expectedResults[] =
-		{
-			// +X
-			0.5f,  // { 1.0f,  0.0f },
-			0.75f, // { 1.0f,  0.5f },
-			0.25f, // { 1.0f, -0.5f },
-			1.0f,  // { 1.0f,  1.0f },
-			0.0f,  // { 1.0f, -1.0f },
-
-			// +Z
-			1.5f,  // {  0.0f, 1.0f, },
-			1.25f, // {  0.5f, 1.0f, },
-			1.75f, // { -0.5f, 1.0f, },
-			1.0f,  // {  1.0f, 1.0f, },
-			2.0f,  // { -1.0f, 1.0f, },
-
-			// -X
-			2.5f,  // { -1.0f,  0.0f },
-			2.25f, // { -1.0f,  0.5f },
-			2.75f, // { -1.0f, -0.5f },
-			2.0f,  // { -1.0f,  1.0f },
-			3.0f,  // { -1.0f, -1.0f },
-
-			// -Z
-			3.5f,  // {  0.0f, -1.0f, },
-			3.75f, // {  0.5f, -1.0f, },
-			3.25f, // { -0.5f, -1.0f, },
-			0.0f,  // {  1.0f, -1.0f, },
-			3.0f,  // { -1.0f, -1.0f, },
-		};
-
-		s_cameraPos = { 0.0f, 0.0f };
-		for (s32 i = 0; i < TFE_ARRAYSIZE(testCoords); i++)
-		{
-			const f32 result = projectToUnitSquare(testCoords[i]);
-			assert(fabsf(result - expectedResults[i]) < FLT_EPSILON);
-		}
+		// Switch the direction to match the wall direction.
+		return 4.0f - fmodf(f32(axis) + value, 4.0f);	// this wraps around to 0.0 at 4.0
 	}
 
 	WallSegBuffer* getBufferSeg(WallSegment* seg)
@@ -1095,6 +794,18 @@ namespace TFE_Jedi
 			}
 			cur = cur->next;
 		}
+
+		// Try to merge the head and tail because they might have been split on the modulo line.
+		if (s_bufferHead != s_bufferTail)
+		{
+			if (s_bufferHead->x0 == 0.0f && s_bufferTail->x1 == 4.0f && s_bufferHead->seg->id == s_bufferTail->seg->id)
+			{
+				s_bufferTail->x1 = s_bufferHead->x1 + 4.0f;
+				s_bufferTail->v1 = s_bufferHead->v1;
+				s_bufferHead = s_bufferHead->next;
+				s_bufferHead->prev = nullptr;
+			}
+		}
 	}
 
 	void mergePortalsInBuffer()
@@ -1126,7 +837,7 @@ namespace TFE_Jedi
 
 	bool segmentsOverlap(f32 ax0, f32 ax1, f32 bx0, f32 bx1)
 	{
-		return (ax1 > bx0 && ax0 < bx1) || (bx1 > ax0 && bx0 < ax1);// || (ax1 - 4.0f > bx0 && ax0 - 4.0f < bx1) || (bx1 - 4.0f > ax0 && bx0 - 4.0f < ax1);
+		return (ax1 > bx0 && ax0 < bx1) || (bx1 > ax0 && bx0 < ax1);
 	}
 			
 	void insertPortal(WallSegBuffer* portal)
@@ -1137,9 +848,6 @@ namespace TFE_Jedi
 			s_portalTail = portal;
 			return;
 		}
-		// Hack
-		//insertSegmentBefore(s_portalTail, portal, s_portalHead);
-		//return;
 
 		WallSegBuffer* cur = s_portalHead;
 		bool inserted = false;
@@ -1380,22 +1088,172 @@ namespace TFE_Jedi
 		// The new segment is to the right of everything.
 		insertSegmentAfter(s_bufferTail, getBufferSeg(seg), s_bufferTail);
 	}
+	
+	// TODO: Move to sector display list module.
+	void clearDisplayList()
+	{
+		s_displayListCount = 0;
+	}
+
+	void finishDisplayList()
+	{
+		if (!s_displayListCount) { return; }
+		m_drawListPos.update(s_displayListPos, sizeof(Vec4f) * s_displayListCount);
+		m_drawListData.update(s_displayListData, sizeof(Vec4ui) * s_displayListCount);
+	}
+
+	void addCapsToDisplayList(RSector* curSector)
+	{
+		// TODO: Constrain to portal frustum.
+		Vec4f pos   = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
+		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, (u32)floor16(curSector->ambient), 0u/*textureId*/ };
+
+		s_displayListPos[s_displayListCount]  = pos;
+		s_displayListData[s_displayListCount] = data;
+		s_displayListData[s_displayListCount].x = 5;	// part = floor cap;
+		s_displayListCount++;
+
+		s_displayListPos[s_displayListCount] = pos;
+		s_displayListData[s_displayListCount] = data;
+		s_displayListData[s_displayListCount].x = 6;	// part = ceiling cap;
+		s_displayListCount++;
+	}
+
+	void addSegToDisplayList(RSector* curSector, WallSegBuffer* wallSeg)
+	{
+		s32 wallId = wallSeg->seg->id;
+		RWall* srcWall = &curSector->walls[wallId];
+		s32 ambient = floor16(curSector->ambient);
+
+		Vec4f pos   = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
+		Vec4ui data = { (srcWall->nextSector ? u32(srcWall->nextSector->index)<<16u : 0u)/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
+			            ambient < 31 ? (u32)min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient)) : 31u/*ambient*/, 0u/*textureId*/ };
+
+		// Wall Flags.
+		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector) // TODO: Fix transparent mid textures.
+		{
+			s_displayListPos[s_displayListCount]  = pos;
+			s_displayListData[s_displayListCount] = data;
+			s_displayListData[s_displayListCount].x |= 0;	// part = mid;
+			s_displayListCount++;
+		}
+		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector)
+		{
+			s_displayListPos[s_displayListCount] = pos;
+			s_displayListData[s_displayListCount] = data;
+			s_displayListData[s_displayListCount].x |= 1;	// part = top;
+			s_displayListCount++;
+		}
+		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector)
+		{
+			s_displayListPos[s_displayListCount] = pos;
+			s_displayListData[s_displayListCount] = data;
+			s_displayListData[s_displayListCount].x |= 2;	// part = bottom;
+			s_displayListCount++;
+		}
+		// Add Floor
+		s_displayListPos[s_displayListCount] = pos;
+		s_displayListData[s_displayListCount] = data;
+		s_displayListData[s_displayListCount].x |= 3;	// part = floor;
+		s_displayListData[s_displayListCount].z = ambient;
+		s_displayListCount++;
+
+		// Add Ceiling
+		s_displayListPos[s_displayListCount] = pos;
+		s_displayListData[s_displayListCount] = data;
+		s_displayListData[s_displayListCount].x |= 4;	// part = floor;
+		s_displayListData[s_displayListCount].z = ambient;
+		s_displayListCount++;
+	}
+
+	struct Portal
+	{
+		Vec2f v0, v1;
+		f32 y0, y1;
+		RSector* next;
+		Frustum frustum;
+	};
+	static Portal s_portalList[2048];
+	static s32 s_portalListCount = 0;
+
+	void handleEdgeWrapping(f32& x0, f32& x1)
+	{
+		// Make sure the segment is the correct length.
+		if (fabsf(x1 - x0) > 2.0f)
+		{
+			if (x0 < 1.0f) { x0 += 4.0f; }
+			else { x1 += 4.0f; }
+		}
+		// Handle wrapping.
+		while (x0 < 0.0f || x1 < 0.0f)
+		{
+			x0 += 4.0f;
+			x1 += 4.0f;
+		}
+		while (x0 >= 4.0f && x1 >= 4.0f)
+		{
+			x0 = fmodf(x0, 4.0f);
+			x1 = fmodf(x1, 4.0f);
+		}
+	}
+
+	bool splitByRange(WallSegment* seg, Vec2f* range, Vec2f* points, s32 rangeCount)
+	{
+		// Clip a single segment against one or two ranges...
+		bool inside = false;
+		for (s32 r = 0; r < rangeCount; r++)
+		{
+			if (seg->x1 <= range[r].x || seg->x0 >= range[r].z)
+			{
+				continue;
+			}
+			inside = true;
+
+			if (seg->x0 < range[r].x && seg->x1 > range[r].x)
+			{
+				seg->v0 = clipSegment(seg->v0, seg->v1, points[0]);
+				seg->x0 = range[r].x;
+			}
+			else if (seg->x1 > range[r].z && seg->x0 < range[r].z)
+			{
+				seg->v1 = clipSegment(seg->v0, seg->v1, points[1]);
+				seg->x1 = range[r].z;
+			}
+		}
+
+		return inside;
+	}
 
 	// Build world-space wall segments.
-	void buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool debugDrawWallSegs)
+	void buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1)
 	{
-		static WallSegment solidSegments[1024];
-		static WallSegment portalSegments[1024];
+		static WallSegment wallSegments[2048];
 
-		u32 solid = 0, portal = 0;
+		u32 segCount = 0;
 		GPUCachedSector* cached = &s_cachedSectors[curSector->index];
-		// Already built this frame.
-		if (cached->builtFrame == s_gpuFrame)
-		{
-			return;
-		}
 		cached->builtFrame = s_gpuFrame;
-						
+
+		// Portal range, all segments must be clipped to this.
+		// The actual clip vertices are p0 and p1.
+		Vec2f range[2] = { 0 };
+		Vec2f points[2] = { p0, p1 };
+		s32 rangeCount = 0;
+		if (!initSector)
+		{
+			range[0].x = projectToUnitSquare(p0);
+			range[0].z = projectToUnitSquare(p1);
+			handleEdgeWrapping(range[0].x, range[0].z);
+			rangeCount = 1;
+
+			if (range[0].z > 4.0f)
+			{
+				range[1].x = 0.0f;
+				range[1].z = range[0].z - 4.0f;
+				range[0].z = 4.0f;
+				rangeCount = 2;
+			}
+		}
+			
 		// Build segments, skipping any backfacing walls or any that are outside of the camera frustum.
 		// Identify walls as solid or portals.
 		for (s32 w = 0; w < curSector->wallCount; w++)
@@ -1415,7 +1273,7 @@ namespace TFE_Jedi
 			f32 y0 = cached->ceilingHeight;
 			f32 y1 = cached->floorHeight;
 			f32 portalY0, portalY1;
-						
+
 			// Is the wall a portal or is it effectively solid?
 			bool isPortal = false;
 			if (next)
@@ -1424,8 +1282,8 @@ namespace TFE_Jedi
 				// heights and walls settings are handled correctly.
 				updateCachedSector(next, uploadFlags);
 
-				const fixed16_16 openTop = min(curSector->floorHeight,   max(curSector->ceilingHeight, next->ceilingHeight));
-				const fixed16_16 openBot = max(curSector->ceilingHeight, min(curSector->floorHeight,   next->floorHeight));
+				const fixed16_16 openTop = min(curSector->floorHeight, max(curSector->ceilingHeight, next->ceilingHeight));
+				const fixed16_16 openBot = max(curSector->ceilingHeight, min(curSector->floorHeight, next->floorHeight));
 				const fixed16_16 openSize = openBot - openTop;
 				portalY0 = fixed16ToFloat(openTop);
 				portalY1 = fixed16ToFloat(openBot);
@@ -1437,99 +1295,57 @@ namespace TFE_Jedi
 					const Vec3f maxPos = { max(x0, x1), max(portalY0, portalY1), max(z0, z1) };
 					const Vec3f diag = { maxPos.x - portalPos.x, maxPos.y - portalPos.y, maxPos.z - portalPos.z };
 					const f32 portalRadius = sqrtf(diag.x*diag.x + diag.y*diag.y + diag.z*diag.z);
-					if (!sphereInFrustum(portalPos, portalRadius, true))
-					{
-						continue;
-					}
 					isPortal = true;
+					// Cull the portal but potentially keep the edge.
+					if (!sphereInFrustum(portalPos, portalRadius, false))
+					{
+						isPortal = false;
+					}
 				}
 			}
 
-			// Only apply backfacing to portals.
-			// Is the wall facing towards the camera?
+			// Check if the wall is backfacing.
 			const Vec3f wallNormal = { -(z1 - z0), 0.0f, x1 - x0 };
-			if (isPortal)
+			const Vec3f cameraVec = { x0 - s_cameraPos.x, (y0 + y1)*0.5f - s_cameraPos.y, z0 - s_cameraPos.z };
+			if (wallNormal.x*cameraVec.x + wallNormal.y*cameraVec.y + wallNormal.z*cameraVec.z < 0.0f)
 			{
-				const Vec3f cameraVec = { x0 - s_cameraPos.x, (y0 + y1)*0.5f - s_cameraPos.y, z0 - s_cameraPos.z };
-				if (wallNormal.x*cameraVec.x + wallNormal.y*cameraVec.y + wallNormal.z*cameraVec.z < 0.0f)
-				{
-					continue;
-				}
+				continue;
 			}
 
 			// Is the wall inside the view frustum?
 			WallSegment* seg;
-			if (!isPortal)
+			Vec3f wallPos = { (x0 + x1) * 0.5f, (y0 + y1) * 0.5f, (z0 + z1) * 0.5f };
+			Vec3f maxPos = { max(x0, x1), max(y0, y1) + 200.0f, max(z0, z1) };	// account for floor and ceiling extensions, to do - a non-crappy way of handling this.
+			Vec3f diag = { maxPos.x - wallPos.x, maxPos.y - wallPos.y, maxPos.z - wallPos.z };
+			f32 portalRadius = sqrtf(diag.x*diag.x + diag.y*diag.y + diag.z*diag.z);
+			if (!sphereInFrustum(wallPos, portalRadius, false))
 			{
-				Vec3f wallPos = { (x0 + x1) * 0.5f, (y0 + y1) * 0.5f, (z0 + z1) * 0.5f };
-				Vec3f maxPos = { max(x0, x1), max(y0, y1), max(z0, z1) };
-				Vec3f diag = { maxPos.x - wallPos.x, maxPos.y - wallPos.y, maxPos.z - wallPos.z };
-				f32 portalRadius = sqrtf(diag.x*diag.x + diag.y*diag.y + diag.z*diag.z);
-				if (!sphereInFrustum(wallPos, portalRadius, true))
-				{
-					continue;
-				}
+				continue;
+			}
 
-				seg = &solidSegments[solid];
-				solid++;
-			}
-			else
-			{
-				seg = &portalSegments[portal];
-				portal++;
-			}
+			seg = &wallSegments[segCount];
+			segCount++;
 
 			seg->id = w;
+			seg->portal = isPortal;
 			seg->v0 = { x0, z0 };
 			seg->v1 = { x1, z1 };
-			seg->x0 = 4.0f - projectToUnitSquare(seg->v0);
-			seg->x1 = 4.0f - projectToUnitSquare(seg->v1);
+			seg->x0 = projectToUnitSquare(seg->v0);
+			seg->x1 = projectToUnitSquare(seg->v1);
 
 			// This means both vertices map to the same point on the unit square, in other words, the edge isn't actually visible.
 			if (fabsf(seg->x0 - seg->x1) < FLT_EPSILON)
 			{
-				if (isPortal) { portal--; }
-				else { solid--; }
+				segCount--;
 				continue;
 			}
 
-			// Make sure the segment is the correct length.
-			if (fabsf(seg->x1 - seg->x0) > 2.0f)
-			{
-				if (seg->x0 < 1.0f) { seg->x0 += 4.0f; }
-				else { seg->x1 += 4.0f; }
-			}
-			// Handle wrapping.
-			while (seg->x0 < 0.0f || seg->x1 < 0.0f)
-			{
-				seg->x0 += 4.0f;
-				seg->x1 += 4.0f;
-			}
-			while (seg->x0 >= 4.0f && seg->x1 >= 4.0f)
-			{
-				seg->x0 = fmodf(seg->x0, 4.0f);
-				seg->x1 = fmodf(seg->x1, 4.0f);
-			}
-			// For backfacing solid segments, we need to flip them.
-			// Note: portals should *never* be backfacing since they are discarded above.
-			if (seg->x0 > seg->x1)
-			{
-				if (!seg->portal)
-				{
-					std::swap(seg->x0, seg->x1);
-					std::swap(seg->v0, seg->v1);
-				}
-				else // back face culling.
-				{
-					continue;
-				}
-			}
+			// Project the edge.
+			handleEdgeWrapping(seg->x0, seg->x1);
 			// Check again for zero-length walls in case the fix-ups above caused it (for example, x0 = 0.0, x1 = 4.0).
-			if (fabsf(seg->x0 - seg->x1) < FLT_EPSILON || seg->x0 == seg->x1)
+			if (seg->x0 >= seg->x1 || seg->x1 - seg->x0 < FLT_EPSILON)
 			{
-				if (isPortal) { portal--; }
-				else { solid--; }
-
+				segCount--;
 				continue;
 			}
 			assert(seg->x1 - seg->x0 > 0.0f && seg->x1 - seg->x0 <= 2.0f);
@@ -1541,54 +1357,72 @@ namespace TFE_Jedi
 			seg->portalY0 = isPortal ? portalY0 : y0;
 			seg->portalY1 = isPortal ? portalY1 : y1;
 
-			// Create a duplicate segment when crossing the modolo boundary.
+			// Split segments that cross the modulo boundary.
 			if (seg->x1 > 4.0f)
 			{
 				const f32 sx1 = seg->x1;
 				const Vec2f sv1 = seg->v1;
-
+				
 				// Split the segment at the modulus border.
 				seg->v1 = clipSegment(seg->v0, seg->v1, { 1.0f + s_cameraPos.x, -1.0f + s_cameraPos.z });
 				seg->x1 = 4.0f;
-				s_wallSegGenerated++;
+				Vec2f newV1 = seg->v1;
+
+				if (!initSector && !splitByRange(seg, range, points, rangeCount))
+				{
+					// Out of the range, so cancel the segment.
+					segCount--;
+				}
+				else
+				{
+					s_wallSegGenerated++;
+				}
 				
 				if (s_wallSegGenerated < s_maxWallSeg)
 				{
 					WallSegment* seg2;
-					if (seg->portal)
-					{
-						seg2 = &portalSegments[portal];
-						portal++;
-					}
-					else
-					{
-						seg2 = &solidSegments[solid];
-						solid++;
-					}
+					seg2 = &wallSegments[segCount];
+					segCount++;
 
 					*seg2 = *seg;
 					seg2->x0 = 0.0f;
 					seg2->x1 = sx1 - 4.0f;
-					seg2->v0 = seg->v1;
+					seg2->v0 = newV1;
 					seg2->v1 = sv1;
+
+					if (!initSector && !splitByRange(seg2, range, points, rangeCount))
+					{
+						// Out of the range, so cancel the segment.
+						segCount--;
+					}
+					else
+					{
+						s_wallSegGenerated++;
+					}
 				}
 			}
-
-			assert(!seg->portal || next);
-			s_wallSegGenerated++;
+			else if (!initSector && !splitByRange(seg, range, points, rangeCount))
+			{
+				// Out of the range, so cancel the segment.
+				segCount--;
+			}
+			else
+			{
+				s_wallSegGenerated++;
+			}
 		}
 
 		// Next insert solid segments into the segment buffer one at a time.
 		s_bufferPoolCount = 0;
 		s_bufferHead = nullptr;
 		s_bufferTail = nullptr;
-		for (s32 i = 0; i < solid; i++)
+		for (s32 i = 0; i < segCount; i++)
 		{
-			insertSegmentIntoBuffer(&solidSegments[i]);
+			insertSegmentIntoBuffer(&wallSegments[i]);
 		}
 		mergeSegmentsInBuffer();
 
-		if (debugDrawWallSegs)
+		if (initSector)
 		{
 			WallSegBuffer* wallSeg = s_bufferHead;
 			while (wallSeg)
@@ -1598,65 +1432,50 @@ namespace TFE_Jedi
 				vtx[1] = { wallSeg->v1.x, wallSeg->seg->y0, wallSeg->v1.z };
 				vtx[2] = { wallSeg->v1.x, wallSeg->seg->y1, wallSeg->v1.z };
 				vtx[3] = { wallSeg->v0.x, wallSeg->seg->y1, wallSeg->v0.z };
-				renderDebug_addPolygon(4, vtx, { 1.0f, 0.0f, 1.0f, 1.0f });
+
+				Vec4f colorSolid  = { 1.0f, 0.0f, 1.0f, 1.0f };
+				Vec4f colorPortal = { 0.0f, 1.0f, 1.0f, 1.0f };
+
+				renderDebug_addPolygon(4, vtx, colorSolid);
+				if (wallSeg->seg->portal)
+				{
+					vtx[0].y = wallSeg->seg->portalY0;
+					vtx[1].y = wallSeg->seg->portalY0;
+					vtx[2].y = wallSeg->seg->portalY1;
+					vtx[3].y = wallSeg->seg->portalY1;
+					renderDebug_addPolygon(4, vtx, colorPortal);
+				}
 
 				wallSeg = wallSeg->next;
 			}
 		}
-
-		// Next insert portals into the segment list.
-		s_portalHead = nullptr;
-		s_portalTail = nullptr;
-		for (s32 i = 0; i < portal; i++)
+				
+		// Build the display list.
+		WallSegBuffer* wallSeg = s_bufferHead;
+		if (initSector) { clearDisplayList(); }
+		while (wallSeg)
 		{
-			insertPortalIntoBuffer(&portalSegments[i]);
+			addSegToDisplayList(curSector, wallSeg);
+			wallSeg = wallSeg->next;
 		}
-		mergePortalsInBuffer();
+		if (initSector) { addCapsToDisplayList(curSector); }
 
-		// Insert.
-		cached->portalSegCount = 0;
-		WallSegBuffer* portalSeg = s_portalHead;
-		while (portalSeg)
+		// Push portals onto the stack.
+		wallSeg = s_bufferHead;
+		while (wallSeg)
 		{
-			WallSegment* seg = &cached->portalSeg[cached->portalSegCount];
-			cached->portalSegCount++;
-			assert(cached->portalSegCount <= cached->maxPortalSegCount);
-
-			seg->id = portalSeg->seg->id;
-			seg->normal = portalSeg->seg->normal;
-			seg->portalY0 = portalSeg->seg->portalY0;
-			seg->portalY1 = portalSeg->seg->portalY1;
-			seg->v0 = portalSeg->v0;
-			seg->v1 = portalSeg->v1;
-			assert(portalSeg->seg->portal);
-
-			portalSeg = portalSeg->next;
-		}
-	}
-
-	void traverseAdjoin(RSector* curSector, RSector** drawList, s32& drawCount, s32& level, u32& uploadFlags)
-	{
-		//if (level >= 255)
-		if (level >= 64)
-		{
-			return;
-		}
-
-		// Build the world-space wall segments.
-		buildSectorWallSegments(curSector, uploadFlags, level == 0);
-
-		// Then loop through the portals and recurse.
-		GPUCachedSector* cached = &s_cachedSectors[curSector->index];
-		for (s32 p = 0; p < cached->portalSegCount; p++)
-		{
+			if (!wallSeg->seg->portal)
+			{
+				wallSeg = wallSeg->next;
+				continue;
+			}
 			if (s_portalsTraversed >= s_maxPortals)
 			{
 				break;
 			}
-			
-			WallSegment* portal = &cached->portalSeg[p];
 
-			RWall* wall = &curSector->walls[portal->id];
+			WallSegBuffer* portal = wallSeg;
+			RWall* wall = &curSector->walls[portal->seg->id];
 			RSector* next = wall->nextSector;
 			assert(next);
 
@@ -1664,160 +1483,60 @@ namespace TFE_Jedi
 			f32 x1 = portal->v1.x;
 			f32 z0 = portal->v0.z;
 			f32 z1 = portal->v1.z;
-			f32 y0 = portal->portalY0;
-			f32 y1 = portal->portalY1;
-
-			// Is the portal inside the view frustum?
-			Vec3f portalPos = { (x0 + x1) * 0.5f, (y0 + y1) * 0.5f, (z0 + z1) * 0.5f };
-			Vec3f maxPos = { max(x0, x1), max(y0, y1), max(z0, z1) };
-			Vec3f diag = { maxPos.x - portalPos.x, maxPos.y - portalPos.y, maxPos.z - portalPos.z };
-			f32 portalRadius = sqrtf(diag.x*diag.x + diag.y*diag.y + diag.z*diag.z);
-			if (!sphereInFrustum(portalPos, portalRadius, false))
-			{
-				continue;
-			}
-
+			f32 y0 = portal->seg->portalY0;
+			f32 y1 = portal->seg->portalY1;
+						
 			// Clip the portal by the current frustum, and return if it is culled.
 			Polygon clippedPortal;
-			if (!clipPortalToFrustum({ x0, y0, z0 }, { x1, y1, z1 }, &clippedPortal))
+			if (clipPortalToFrustum({ x0, y0, z0 }, { x1, y1, z1 }, &clippedPortal))
 			{
-				continue;
-			}
-			s_portalsTraversed++;
+				computePortalFrustum(&clippedPortal, &s_portalList[s_portalListCount].frustum);
+				
+				s_portalList[s_portalListCount].v0 = portal->v0;
+				s_portalList[s_portalListCount].v1 = portal->v1;
+				s_portalList[s_portalListCount].y0 = y0;
+				s_portalList[s_portalListCount].y1 = y1;
+				s_portalList[s_portalListCount].next = next;
 
-			// Debug
-			if (s_enableDebug)
-			{
 				s_portalsTraversed++;
-				if (s_portalsTraversed == s_maxPortals)
-				{
-					Vec4f curPortalColor = { 1.0f, 0.0f, 0.0f, 1.0f };
-					renderDebug_addPolygon(clippedPortal.vertexCount, clippedPortal.vtx, curPortalColor);
-				}
-				else
-				{
-					renderDebug_addPolygon(clippedPortal.vertexCount, clippedPortal.vtx, debug_getColorFromLevel(level));
-				}
+				s_portalListCount++;
 			}
-
-			// Add the sector to the list to draw.
-			addSectorToList(drawList, drawCount, next);
-			// Then compute the new frustum, and continue to traverse.
-			computePortalFrustum(&clippedPortal);
-			level++;
-
-			// Sector elements.
-			if (s_sectorElemCount < 4096)
-			{
-				s_sectorElements[s_sectorElemCount].parentSectorIndex = curSector->index;
-				s_sectorElements[s_sectorElemCount].adjoinIndex = portal->id;
-				s_sectorElements[s_sectorElemCount].sectorIndex = next->index;
-				s_sectorElements[s_sectorElemCount].level = level;
-				s_sectorElemCount++;
-			}
-
-			traverseAdjoin(next, drawList, drawCount, level, uploadFlags);
-
-			level--;
-			// Pop the frustum.
-			frustumPop();
+			wallSeg = wallSeg->next;
 		}
-
-	#if 0
-		for (s32 w = 0; w < curSector->wallCount; w++)
-		{
-			RWall* wall = &curSector->walls[w];
-			RSector* next = wall->nextSector;
-			if (next)
-			{
-				// Update any potential adjoins even if they are not traversed to make sure the
-				// heights and walls settings are handled correctly.
-				updateCachedSector(next, uploadFlags);
-
-				if (s_portalsTraversed >= s_maxPortals)
-				{
-					continue;
-				}
-
-				// Determine the size of the opening, if it is too small no traversal is necessary.
-				const fixed16_16 openTop = min(curSector->floorHeight,   max(curSector->ceilingHeight, next->ceilingHeight));
-				const fixed16_16 openBot = max(curSector->ceilingHeight, min(curSector->floorHeight, next->floorHeight));
-				const fixed16_16 openSize = openBot - openTop;
-				if (openSize > 0)
-				{
-					f32 x0 = fixed16ToFloat(wall->w0->x);
-					f32 x1 = fixed16ToFloat(wall->w1->x);
-					f32 z0 = fixed16ToFloat(wall->w0->z);
-					f32 z1 = fixed16ToFloat(wall->w1->z);
-					f32 y0 = fixed16ToFloat(openTop);
-					f32 y1 = fixed16ToFloat(openBot);
-
-					// Is the portal inside the view frustum?
-					Vec3f portalPos = { (x0 + x1) * 0.5f, (y0 + y1) * 0.5f, (z0 + z1) * 0.5f };
-					Vec3f maxPos = { max(x0, x1), max(y0, y1), max(z0, z1) };
-					Vec3f diag = { maxPos.x - portalPos.x, maxPos.y - portalPos.y, maxPos.z - portalPos.z };
-					f32 portalRadius = sqrtf(diag.x*diag.x + diag.y*diag.y + diag.z*diag.z);
-					if (!sphereInFrustum(portalPos, portalRadius, false))
-					{
-						continue;
-					}
-					// Is the portal facing towards the camera?
-					Vec3f portalNormal = { -(z1-z0), 0.0f, x1-x0 };
-					Vec3f cameraVec = { portalPos.x - s_cameraPos.x, portalPos.y - s_cameraPos.y, portalPos.z - s_cameraPos.z };
-					if (portalNormal.x * cameraVec.x + portalNormal.y * cameraVec.y + portalNormal.z * cameraVec.z < 0.0f)
-					{
-						continue;
-					}
-
-					// Clip the portal by the current frustum, and return if it is culled.
-					Polygon clippedPortal;
-					if (!clipPortalToFrustum({ x0, y0, z0 }, { x1, y1, z1 }, &clippedPortal))
-					{
-						continue;
-					}
-
-					// Debug
-					if (s_enableDebug)
-					{
-						s_portalsTraversed++;
-						if (s_portalsTraversed == s_maxPortals)
-						{
-							Vec4f curPortalColor = { 1.0f, 0.0f, 0.0f, 1.0f };
-							renderDebug_addPolygon(clippedPortal.vertexCount, clippedPortal.vtx, curPortalColor);
-						}
-						else
-						{
-							renderDebug_addPolygon(clippedPortal.vertexCount, clippedPortal.vtx, debug_getColorFromLevel(level));
-						}
-					}
-
-					// Add the sector to the list to draw.
-					addSectorToList(drawList, drawCount, next);
-					// Then compute the new frustum, and continue to traverse.
-					computePortalFrustum(&clippedPortal);
-					level++;
-
-					// Sector elements.
-					if (s_sectorElemCount < 4096)
-					{
-						s_sectorElements[s_sectorElemCount].parentSectorIndex = curSector->index;
-						s_sectorElements[s_sectorElemCount].adjoinIndex = w;
-						s_sectorElements[s_sectorElemCount].sectorIndex = next->index;
-						s_sectorElements[s_sectorElemCount].level = level;
-						s_sectorElemCount++;
-					}
-
-					traverseAdjoin(next, drawList, drawCount, level, uploadFlags);
-
-					level--;
-					// Pop the frustum.
-					frustumPop();
-				}
-			}
-		}
-	#endif
 	}
 
+	void traverseAdjoin(RSector* curSector, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
+	{
+		//if (level >= 255)
+		if (level >= 64)
+		{
+			return;
+		}
+
+		if (level == 0)
+		{
+			s_portalListCount = 0;
+		}
+
+		// Build the world-space wall segments.
+		s32 portalStart = s_portalListCount;
+		buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1);
+		s32 portalCount = s_portalListCount - portalStart;
+
+		Portal* portal = &s_portalList[portalStart];
+		for (s32 p = 0; p < portalCount; p++, portal++)
+		{
+			frustumPush(portal->frustum);
+			level++;
+
+			traverseAdjoin(portal->next, level, uploadFlags, portal->v0, portal->v1);
+
+			frustumPop();
+			level--;
+		}
+	}
+
+	// TODO: Move to math.
 	Mat4 transpose4(Mat4 mtx)
 	{
 		Mat4 out;
@@ -1830,6 +1549,7 @@ namespace TFE_Jedi
 	
 	// Builds a world-space frustum from the camera.
 	// We will need this for culling portals and clipping them.
+	// TODO: Move to frustum module.
 	void buildFrustumFromCamera()
 	{
 		Mat4 view4;
@@ -1839,7 +1559,7 @@ namespace TFE_Jedi
 		view4.m3 = { 0.0f,             0.0f,             0.0f,             1.0f };
 
 		// Scale the projection slightly, so the frustum is slightly bigger than needed (i.e. something like a guard band).
-		// This is done by exact clipping isn't actually necessary for rendering, clipping is only used for portal testing.
+		// This is done because exact frustum clipping isn't actually necessary for rendering, clipping is only used for portal testing.
 		f32 superScale = 0.98f;
 		Mat4 proj = s_cameraProj;
 		proj.m0.x *= superScale;
@@ -1851,8 +1571,6 @@ namespace TFE_Jedi
 
 		Mat4 viewProj = transpose4(TFE_Math::mulMatrix4(proj, view4));
 		m_viewDir = s_cameraMtx.m2;
-
-		// TODO: properly handle widening the frustum slightly to avoid clipping artifacts.
 
 		Vec4f planes[] =
 		{
@@ -1891,18 +1609,11 @@ namespace TFE_Jedi
 				viewProj.m2.w + viewProj.m2.z,
 				viewProj.m3.w + viewProj.m3.z
 			},
-			// Far
-			{ 
-				viewProj.m0.w - viewProj.m0.z,
-				viewProj.m1.w - viewProj.m1.z,
-				viewProj.m2.w - viewProj.m2.z,
-				viewProj.m3.w - viewProj.m3.z
-			}
 		};
 
 		Frustum frustum;
-		frustum.planeCount = 5;  // Ignore the far plane for now.
-		for (s32 i = 0; i < 6; i++)
+		frustum.planeCount = 5;
+		for (s32 i = 0; i < 5; i++)
 		{
 			frustum.planes[i] = planes[i];
 
@@ -1918,154 +1629,68 @@ namespace TFE_Jedi
 		}
 		frustumPush(frustum);
 	}
-		
-	void buildDrawList(RSector* sector)
+	
+	// TODO: Move to display list module.
+	bool buildDrawList(RSector* sector)
 	{
 		debug_update();
 
 		// First build the camera frustum and push it onto the stack.
 		buildFrustumFromCamera();
 
-		// Sector elements.
-		s_sectorElemCount = 1;
-		s_sectorElements[0].parentSectorIndex = -1;
-		s_sectorElements[0].adjoinIndex = -1;
-		s_sectorElements[0].sectorIndex = sector->index;
-		s_sectorElements[0].level = 0;
-
-		// Then build the draw list.
-		s_drawCount = 1;
-		s_drawList[0] = sector;
-
 		s32 level = 0;
 		u32 uploadFlags = UPLOAD_NONE;
 		s_portalsTraversed = 0;
 		s_wallSegGenerated = 0;
-				
+		Vec2f startView[] = { {0,0}, {0,0} };
+
 		updateCachedSector(sector, uploadFlags);
-		traverseAdjoin(sector, s_drawList, s_drawCount, level, uploadFlags);
+		traverseAdjoin(sector, level, uploadFlags, startView[0], startView[1]);
 		frustumPop();
+
+		finishDisplayList();
 
 		if (uploadFlags & UPLOAD_SECTORS)
 		{
 			m_sectors.update(s_gpuSourceData.sectors, s_gpuSourceData.sectorSize);
 		}
-		if (uploadFlags & UPLOAD_VERTICES)
-		{
-			m_sectorVertices.update(s_gpuSourceData.vertices, s_gpuSourceData.vertexSize);
-		}
-		if (uploadFlags & UPLOAD_WALLS)
-		{
-			m_sectorWalls.update(s_gpuSourceData.walls, s_gpuSourceData.wallSize);
-		}
-	}
 
-	void drawSector(RSector* curSector, GPUCachedSector* cachedSector)
-	{
-		s32 sectorData1[] = { cachedSector->wallOffset, 0, 0, 0 };
-		f32 sectorData2[] = { fixed16ToFloat(curSector->floorHeight), fixed16ToFloat(curSector->ceilingHeight), 0.0f, 0.0f };
-		f32 shaderBounds[] = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
-		m_wallShader.setVariable(m_sectorDataId, SVT_IVEC4, (f32*)sectorData1);
-		m_wallShader.setVariable(m_sectorData2Id, SVT_VEC4, sectorData2);
-		m_wallShader.setVariable(m_sectorBoundsId, SVT_VEC4, shaderBounds);
-
-		// Draw.
-		TFE_RenderBackend::drawIndexedTriangles(2 * cachedSector->partCount, sizeof(u16));
+		return s_displayListCount > 0;
 	}
 
 	void TFE_Sectors_GPU::draw(RSector* sector)
 	{
-		// testProjections();
-
 		// Build the draw list.
-		buildDrawList(sector);
+		if (!buildDrawList(sector))
+		{
+			return;
+		}
 
 		// State
 		TFE_RenderState::setStateEnable(false, STATE_BLEND);
-		TFE_RenderState::setStateEnable(true, STATE_DEPTH_TEST | STATE_CULLING);
+		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST | STATE_CULLING);
 
 		// Shader and buffers.
 		m_wallShader.bind();
 		m_indexBuffer.bind();
-		m_sectorVertices.bind(0);
-		m_sectorWalls.bind(1);
-		m_sectors.bind(2);
+		m_sectors.bind(0);
+		m_drawListPos.bind(1);
+		m_drawListData.bind(2);
 
 		// Camera
 		m_wallShader.setVariable(m_cameraPosId,  SVT_VEC3,   s_cameraPos.m);
 		m_wallShader.setVariable(m_cameraViewId, SVT_MAT3x3, s_cameraMtx.data);
 		m_wallShader.setVariable(m_cameraProjId, SVT_MAT4x4, s_cameraProj.data);
 				
-		// Draw Sectors.
-	#if 0
-		for (s32 s = 0; s < s_drawCount; s++)
-		{
-			RSector* curSector = s_drawList[s];
-			GPUCachedSector* cachedSector = &s_cachedSectors[curSector->index];
-
-			s32 sectorData1[] = { cachedSector->wallOffset, 0, 0, 0 };
-			f32 sectorData2[] = { fixed16ToFloat(curSector->floorHeight), fixed16ToFloat(curSector->ceilingHeight), 0.0f, 0.0f };
-			f32 shaderBounds[] = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
-			m_wallShader.setVariable(m_sectorDataId,  SVT_IVEC4, (f32*)sectorData1);
-			m_wallShader.setVariable(m_sectorData2Id, SVT_VEC4, sectorData2);
-			m_wallShader.setVariable(m_sectorBoundsId, SVT_VEC4, shaderBounds);
-
-			// Draw.
-			TFE_RenderBackend::drawIndexedTriangles(2 * cachedSector->partCount, sizeof(u16));
-		}
-	#endif	
-
-		TFE_RenderState::setStateEnable(true, STATE_STENCIL_TEST | STATE_STENCIL_WRITE);
-		TFE_RenderState::setStencilFunction(CMP_ALWAYS, 0);
-		TFE_RenderState::setStencilOp(OP_KEEP, OP_KEEP, OP_KEEP);
-				
-		// Draw sector fragments.
-		SectorElement* fragment = s_sectorElements;
-		for (s32 s = 0; s < s_sectorElemCount; s++, fragment++)
-		{
-			// For now just draw the sector - note this will generate a lot of overdraw...
-			RSector* curSector = &s_sectors[fragment->sectorIndex];
-			GPUCachedSector* cachedSector = &s_cachedSectors[curSector->index];
-
-			if (fragment->parentSectorIndex >= 0)
-			{
-				// First draw the adjoin portal to the stencil buffer.
-				TFE_RenderState::setStencilFunction(CMP_EQUAL, fragment->level - 1);
-				TFE_RenderState::setStencilOp(OP_KEEP, OP_KEEP, OP_INC);
-				TFE_RenderState::setColorMask(CMASK_NONE);
-				TFE_RenderState::setStateEnable(false, STATE_DEPTH_WRITE);
-				// Draw portal quad here.
-				RSector* parent = &s_sectors[fragment->parentSectorIndex];
-				GPUCachedSector* pCached = &s_cachedSectors[fragment->parentSectorIndex];
-				RWall* srcWall = &parent->walls[fragment->adjoinIndex];
-				s32 i0 = pCached->vertexOffset + (s32)((u8*)srcWall->v0 - (u8*)parent->verticesVS) / sizeof(vec2_fixed);
-				s32 i1 = pCached->vertexOffset + (s32)((u8*)srcWall->v1 - (u8*)parent->verticesVS) / sizeof(vec2_fixed);
-
-				s32 sectorData1[] = { pCached->wallOffset, 1 + i0, i1, curSector->index };
-				f32 sectorData2[] = { pCached->floorHeight, pCached->ceilingHeight, 0.0f, 0.0f };
-				m_wallShader.setVariable(m_sectorDataId, SVT_IVEC4, (f32*)sectorData1);
-				m_wallShader.setVariable(m_sectorData2Id, SVT_VEC4, sectorData2);
-				TFE_RenderBackend::drawIndexedTriangles(2, sizeof(u16));
-
-				// Then render the sector, reading from the stencil values.
-				TFE_RenderState::setColorMask(CMASK_ALL);
-				TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE);
-				TFE_RenderState::setStencilFunction(CMP_EQUAL, fragment->level);
-				TFE_RenderState::setStencilOp(OP_KEEP, OP_KEEP, OP_KEEP);
-			}
-			// Draw sector here.
-			drawSector(curSector, cachedSector);
-		}
+		// Draw the sector display list.
+		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount, sizeof(u16));
 
 		// Cleanup.
-		TFE_RenderState::setColorMask(CMASK_ALL);
-		TFE_RenderState::setStateEnable(false, STATE_STENCIL_TEST | STATE_STENCIL_WRITE);
-		TFE_RenderState::setStencilFunction(CMP_ALWAYS, 0);
-		TFE_RenderState::setStencilOp(OP_KEEP, OP_KEEP, OP_KEEP);
-
 		m_wallShader.unbind();
-		m_vertexBuffer.unbind();
 		m_indexBuffer.unbind();
+		m_sectors.unbind(0);
+		m_drawListPos.unbind(1);
+		m_drawListData.unbind(2);
 
 		// Debug
 		if (s_enableDebug)
