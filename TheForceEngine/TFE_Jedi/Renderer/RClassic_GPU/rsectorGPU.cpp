@@ -22,6 +22,7 @@
 #include "rclassicGPU.h"
 #include "rsectorGPU.h"
 #include "renderDebug.h"
+#include "frustum.h"
 #include "../rcommon.h"
 
 #define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
@@ -143,7 +144,7 @@ namespace TFE_Jedi
 			s_gpuSourceData.sectors = (Vec4f*)level_alloc(s_gpuSourceData.sectorSize);
 			memset(s_gpuSourceData.sectors, 0, s_gpuSourceData.sectorSize);
 
-			for (s32 s = 0; s < s_sectorCount; s++)
+			for (u32 s = 0; s < s_sectorCount; s++)
 			{
 				RSector* curSector = &s_sectors[s];
 				GPUCachedSector* cachedSector = &s_cachedSectors[s];
@@ -213,234 +214,6 @@ namespace TFE_Jedi
 		}
 		updateCachedWalls(srcSector, flags, uploadFlags);
 		srcSector->dirtyFlags = SDF_NONE;
-	}
-
-	// TODO: Move to frustum module.
-	struct Frustum
-	{
-		u32 planeCount;
-		Vec4f planes[256];
-	};
-	static Frustum s_frustumStack[256];
-	static u32 s_frustumStackPtr = 0;
-
-	void frustumCopy(const Frustum* src, Frustum* dst)
-	{
-		dst->planeCount = src->planeCount;
-		for (s32 i = 0; i < src->planeCount; i++)
-		{
-			dst->planes[i] = src->planes[i];
-		}
-	}
-
-	void frustumPush(Frustum& frustum)
-	{
-		s_frustumStack[s_frustumStackPtr] = frustum;
-		s_frustumStackPtr++;
-	}
-
-	Frustum* frustumPop()
-	{
-		s_frustumStackPtr--;
-		return &s_frustumStack[s_frustumStackPtr];
-	}
-
-	Frustum* frustumGetBack()
-	{
-		return &s_frustumStack[s_frustumStackPtr - 1];
-	}
-
-	Frustum* frustumGetFront()
-	{
-		return &s_frustumStack[0];
-	}
-
-	// useCamera: use the main camera frustum if true, otherwise use the current frustum.
-	bool sphereInFrustum(Vec3f pos, f32 radius, bool useCamera)
-	{
-		pos = { pos.x - s_cameraPos.x, pos.y - s_cameraPos.y, pos.z - s_cameraPos.z };
-		Frustum* frustum = useCamera ? frustumGetFront() : frustumGetBack();
-
-		Vec4f* plane = frustum->planes;
-		for (s32 i = 0; i < frustum->planeCount; i++)
-		{
-			f32 dist = plane[i].x * pos.x + plane[i].y * pos.y + plane[i].z * pos.z + plane[i].w;
-			if (dist + radius < 0.0f)
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/*
-	0 -> 1
-	^    V
-	3 <- 2
-	*/
-	struct Polygon
-	{
-		s32 vertexCount;
-		Vec3f vtx[256];
-	};
-
-	void createQuad(Vec3f corner0, Vec3f corner1, Polygon* poly)
-	{
-		for (s32 v = 0; v < 4; v++)
-		{
-			Vec3f pos;
-			pos.x = (v == 0 || v == 3) ? corner0.x : corner1.x;
-			pos.y = (v < 2) ? corner0.y : corner1.y;
-			pos.z = (v == 0 || v == 3) ? corner0.z : corner1.z;
-
-			poly->vtx[v] = pos;
-		}
-		poly->vertexCount = 4;
-	}
-
-	f32 planeDist(const Vec4f* plane, const Vec3f* pos)
-	{
-		return (pos->x - s_cameraPos.x) * plane->x + (pos->y - s_cameraPos.y) * plane->y + (pos->z - s_cameraPos.z) * plane->z + plane->w;
-	}
-
-	// A small epsilon value to make point vs. plane side determinations more robust to numerical error.
-	const f32 c_planeEps = 0.0001f;
-	const f32 c_minSqArea = FLT_EPSILON;
-
-	// Return false if the polygon is outside of the frustum, else true.
-	// This forms a quad from corner0, corner1 and clips against the "back" frustum on the stack.
-	// Returns false if the polygon is not inside the frustum, otherwise returns true with 'output' being the clipped polygon.
-	bool clipPortalToFrustum(Vec3f corner0, Vec3f corner1, Polygon* output)
-	{
-		Frustum* frustum = frustumGetBack();
-		s32 count = frustum->planeCount;
-		Vec4f* plane = frustum->planes;
-
-		Polygon poly[2];
-		Polygon* cur = &poly[0];
-		Polygon* next = &poly[1];
-		createQuad(corner0, corner1, cur);
-
-		f32 vtxDist[256];
-		for (s32 p = 0; p < count; p++, plane++)
-		{
-			s32 positive = 0, negative = 0;
-			next->vertexCount = 0;
-			assert(cur->vertexCount <= 256);
-
-			// Process the vertices.
-			for (s32 v = 0; v < cur->vertexCount; v++)
-			{
-				vtxDist[v] = planeDist(plane, &cur->vtx[v]);
-				if (vtxDist[v] >= c_planeEps)
-				{
-					positive++;
-				}
-				else if (vtxDist[v] <= -c_planeEps)
-				{
-					negative++;
-				}
-				else
-				{
-					// Point is on the plane.
-					vtxDist[v] = 0.0f;
-				}
-			}
-
-			// Return early or skip plane.
-			if (positive == cur->vertexCount)
-			{
-				// Nothing to clip, moving on.
-				continue;
-			}
-			else if (negative == cur->vertexCount)
-			{
-				// The entire polygon is behind the plane, we are done here.
-				return false;
-			}
-
-			// Process the edges.
-			for (s32 v = 0; v < cur->vertexCount; v++)
-			{
-				const s32 a = v;
-				const s32 b = (v + 1) % cur->vertexCount;
-
-				f32 d0 = vtxDist[a], d1 = vtxDist[b];
-				if (d0 < 0.0f && d1 < 0.0f)
-				{
-					// Cull the edge.
-					continue;
-				}
-				if (d0 >= 0.0f && d1 >= 0.0f)
-				{
-					// The edge does not need clipping.
-					next->vtx[next->vertexCount++] = cur->vtx[a];
-					continue;
-				}
-				// Calculate the edge intersection with the plane.
-				const f32 t = -d0 / (d1 - d0);
-				Vec3f intersect = { (1.0f - t)*cur->vtx[a].x + t * cur->vtx[b].x, (1.0f - t)*cur->vtx[a].y + t * cur->vtx[b].y,
-									(1.0f - t)*cur->vtx[a].z + t * cur->vtx[b].z };
-				if (d0 > 0.0f)
-				{
-					// The first vertex of the edge is inside and should be included.
-					next->vtx[next->vertexCount++] = cur->vtx[a];
-				}
-				// The intersection should be included.
-				if (t < 1.0f)
-				{
-					next->vtx[next->vertexCount++] = intersect;
-				}
-			}
-			// Swap polygons for the next plane.
-			std::swap(cur, next);
-			// If the new polygon has less than 3 vertices, than it has been culled.
-			if (cur->vertexCount < 3)
-			{
-				return false;
-			}
-		}
-
-		// Output the clipped polygon.
-		assert(cur->vertexCount <= 256);
-		output->vertexCount = cur->vertexCount;
-		for (s32 i = 0; i < output->vertexCount; i++)
-		{
-			output->vtx[i] = cur->vtx[i];
-		}
-		return true;
-	}
-
-	// Build a new frustum such that each polygon edge becomes a plane that passes through
-	// the camera.
-	void computePortalFrustum(const Polygon* clippedPortal, Frustum* newFrustum)
-	{
-		s32 count = clippedPortal->vertexCount;
-		newFrustum->planeCount = 0;
-
-		// Sides.
-		for (s32 i = 0; i < count; i++)
-		{
-			s32 e0 = i, e1 = (i + 1) % count;
-			Vec3f S = { clippedPortal->vtx[e0].x - s_cameraPos.x, clippedPortal->vtx[e0].y - s_cameraPos.y, clippedPortal->vtx[e0].z - s_cameraPos.z };
-			Vec3f T = { clippedPortal->vtx[e1].x - s_cameraPos.x, clippedPortal->vtx[e1].y - s_cameraPos.y, clippedPortal->vtx[e1].z - s_cameraPos.z };
-			Vec3f N = TFE_Math::cross(&S, &T);
-			if (TFE_Math::dot(&N, &N) <= 0.0f)
-			{
-				continue;
-			}
-			N = TFE_Math::normalize(&N);
-			newFrustum->planes[newFrustum->planeCount++] = { N.x, N.y, N.z, 0.0f };
-		}
-
-		// Near plane.
-		Vec3f O = { clippedPortal->vtx[0].x - s_cameraPos.x, clippedPortal->vtx[0].y - s_cameraPos.y, clippedPortal->vtx[0].z - s_cameraPos.z };
-		Vec3f S = { clippedPortal->vtx[1].x - clippedPortal->vtx[0].x, clippedPortal->vtx[1].y - clippedPortal->vtx[0].y, clippedPortal->vtx[1].z - clippedPortal->vtx[0].z };
-		Vec3f T = { clippedPortal->vtx[2].x - clippedPortal->vtx[0].x, clippedPortal->vtx[2].y - clippedPortal->vtx[0].y, clippedPortal->vtx[2].z - clippedPortal->vtx[0].z };
-		Vec3f N = TFE_Math::cross(&S, &T);
-		N = TFE_Math::normalize(&N);
-		f32 d = -TFE_Math::dot(&N, &O);
-		newFrustum->planes[newFrustum->planeCount++] = { N.x, N.y, N.z, d };
 	}
 
 	// TODO: Move to debug module.
@@ -1297,7 +1070,7 @@ namespace TFE_Jedi
 					const f32 portalRadius = sqrtf(diag.x*diag.x + diag.y*diag.y + diag.z*diag.z);
 					isPortal = true;
 					// Cull the portal but potentially keep the edge.
-					if (!sphereInFrustum(portalPos, portalRadius, false))
+					if (!frustum_sphereInside(portalPos, portalRadius))
 					{
 						isPortal = false;
 					}
@@ -1318,7 +1091,7 @@ namespace TFE_Jedi
 			Vec3f maxPos = { max(x0, x1), max(y0, y1) + 200.0f, max(z0, z1) };	// account for floor and ceiling extensions, to do - a non-crappy way of handling this.
 			Vec3f diag = { maxPos.x - wallPos.x, maxPos.y - wallPos.y, maxPos.z - wallPos.z };
 			f32 portalRadius = sqrtf(diag.x*diag.x + diag.y*diag.y + diag.z*diag.z);
-			if (!sphereInFrustum(wallPos, portalRadius, false))
+			if (!frustum_sphereInside(wallPos, portalRadius))
 			{
 				continue;
 			}
@@ -1416,7 +1189,7 @@ namespace TFE_Jedi
 		s_bufferPoolCount = 0;
 		s_bufferHead = nullptr;
 		s_bufferTail = nullptr;
-		for (s32 i = 0; i < segCount; i++)
+		for (u32 i = 0; i < segCount; i++)
 		{
 			insertSegmentIntoBuffer(&wallSegments[i]);
 		}
@@ -1488,9 +1261,9 @@ namespace TFE_Jedi
 						
 			// Clip the portal by the current frustum, and return if it is culled.
 			Polygon clippedPortal;
-			if (clipPortalToFrustum({ x0, y0, z0 }, { x1, y1, z1 }, &clippedPortal))
+			if (frustum_clipQuadToFrustum({ x0, y0, z0 }, { x1, y1, z1 }, &clippedPortal))
 			{
-				computePortalFrustum(&clippedPortal, &s_portalList[s_portalListCount].frustum);
+				frustum_buildFromPolygon(&clippedPortal, &s_portalList[s_portalListCount].frustum);
 				
 				s_portalList[s_portalListCount].v0 = portal->v0;
 				s_portalList[s_portalListCount].v1 = portal->v1;
@@ -1526,117 +1299,23 @@ namespace TFE_Jedi
 		Portal* portal = &s_portalList[portalStart];
 		for (s32 p = 0; p < portalCount; p++, portal++)
 		{
-			frustumPush(portal->frustum);
+			frustum_push(portal->frustum);
 			level++;
 
 			traverseAdjoin(portal->next, level, uploadFlags, portal->v0, portal->v1);
 
-			frustumPop();
+			frustum_pop();
 			level--;
 		}
 	}
-
-	// TODO: Move to math.
-	Mat4 transpose4(Mat4 mtx)
-	{
-		Mat4 out;
-		out.m0 = { mtx.m0.x, mtx.m1.x, mtx.m2.x, mtx.m3.x };
-		out.m1 = { mtx.m0.y, mtx.m1.y, mtx.m2.y, mtx.m3.y };
-		out.m2 = { mtx.m0.z, mtx.m1.z, mtx.m2.z, mtx.m3.z };
-		out.m3 = { mtx.m0.w, mtx.m1.w, mtx.m2.w, mtx.m3.w };
-		return out;
-	}
-	
-	// Builds a world-space frustum from the camera.
-	// We will need this for culling portals and clipping them.
-	// TODO: Move to frustum module.
-	void buildFrustumFromCamera()
-	{
-		Mat4 view4;
-		view4.m0 = { s_cameraMtx.m0.x, s_cameraMtx.m0.y, s_cameraMtx.m0.z, 0.0f };
-		view4.m1 = { s_cameraMtx.m1.x, s_cameraMtx.m1.y, s_cameraMtx.m1.z, 0.0f };
-		view4.m2 = { s_cameraMtx.m2.x, s_cameraMtx.m2.y, s_cameraMtx.m2.z, 0.0f };
-		view4.m3 = { 0.0f,             0.0f,             0.0f,             1.0f };
-
-		// Scale the projection slightly, so the frustum is slightly bigger than needed (i.e. something like a guard band).
-		// This is done because exact frustum clipping isn't actually necessary for rendering, clipping is only used for portal testing.
-		f32 superScale = 0.98f;
-		Mat4 proj = s_cameraProj;
-		proj.m0.x *= superScale;
-		proj.m1.y *= superScale;
-
-		// Move the near plane to 0, which is allowed since clipping is done in world space.
-		proj.m2.z = -1.0f;
-		proj.m2.w =  0.0f;
-
-		Mat4 viewProj = transpose4(TFE_Math::mulMatrix4(proj, view4));
-		m_viewDir = s_cameraMtx.m2;
-
-		Vec4f planes[] =
-		{
-			// Left
-			{
-				viewProj.m0.w + viewProj.m0.x,
-				viewProj.m1.w + viewProj.m1.x,
-				viewProj.m2.w + viewProj.m2.x,
-				viewProj.m3.w + viewProj.m3.x
-			},
-			// Right
-			{
-				viewProj.m0.w - viewProj.m0.x,
-				viewProj.m1.w - viewProj.m1.x,
-				viewProj.m2.w - viewProj.m2.x,
-				viewProj.m3.w - viewProj.m3.x
-			},
-			// Bottom
-			{
-				viewProj.m0.w + viewProj.m0.y,
-				viewProj.m1.w + viewProj.m1.y,
-				viewProj.m2.w + viewProj.m2.y,
-				viewProj.m3.w + viewProj.m3.y
-			},
-			// Top
-			{
-				viewProj.m0.w - viewProj.m0.y,
-				viewProj.m1.w - viewProj.m1.y,
-				viewProj.m2.w - viewProj.m2.y,
-				viewProj.m3.w - viewProj.m3.y
-			},
-			// Near
-			{
-				viewProj.m0.w + viewProj.m0.z,
-				viewProj.m1.w + viewProj.m1.z,
-				viewProj.m2.w + viewProj.m2.z,
-				viewProj.m3.w + viewProj.m3.z
-			},
-		};
-
-		Frustum frustum;
-		frustum.planeCount = 5;
-		for (s32 i = 0; i < 5; i++)
-		{
-			frustum.planes[i] = planes[i];
-
-			f32 len = sqrtf(frustum.planes[i].x*frustum.planes[i].x + frustum.planes[i].y*frustum.planes[i].y + frustum.planes[i].z*frustum.planes[i].z);
-			if (len > FLT_EPSILON)
-			{
-				f32 scale = 1.0f / len;
-				frustum.planes[i].x *= scale;
-				frustum.planes[i].y *= scale;
-				frustum.planes[i].z *= scale;
-				frustum.planes[i].w *= scale;
-			}
-		}
-		frustumPush(frustum);
-	}
-	
+		
 	// TODO: Move to display list module.
 	bool buildDrawList(RSector* sector)
 	{
 		debug_update();
 
 		// First build the camera frustum and push it onto the stack.
-		buildFrustumFromCamera();
+		frustum_buildFromCamera();
 
 		s32 level = 0;
 		u32 uploadFlags = UPLOAD_NONE;
@@ -1646,7 +1325,7 @@ namespace TFE_Jedi
 
 		updateCachedSector(sector, uploadFlags);
 		traverseAdjoin(sector, level, uploadFlags, startView[0], startView[1]);
-		frustumPop();
+		frustum_pop();
 
 		finishDisplayList();
 

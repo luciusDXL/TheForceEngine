@@ -23,6 +23,16 @@ namespace TFE_Math
 		return res;
 	}
 
+	Mat4 transpose4(Mat4 mtx)
+	{
+		Mat4 out;
+		out.m0 = { mtx.m0.x, mtx.m1.x, mtx.m2.x, mtx.m3.x };
+		out.m1 = { mtx.m0.y, mtx.m1.y, mtx.m2.y, mtx.m3.y };
+		out.m2 = { mtx.m0.z, mtx.m1.z, mtx.m2.z, mtx.m3.z };
+		out.m3 = { mtx.m0.w, mtx.m1.w, mtx.m2.w, mtx.m3.w };
+		return out;
+	}
+
 	Mat4 computeProjMatrix(f32 fovInRadians, f32 aspectRatio, f32 zNear, f32 zFar)
 	{
 		// Build a projection matrix.
