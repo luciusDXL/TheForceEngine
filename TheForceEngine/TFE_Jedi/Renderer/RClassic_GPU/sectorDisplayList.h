@@ -17,7 +17,7 @@ namespace TFE_Jedi
 	void sdisplayList_finish();
 
 	void sdisplayList_addCaps(RSector* curSector);
-	void sdisplayList_addSegment(RSector* curSector, WallSegBuffer* wallSeg);
+	void sdisplayList_addSegment(RSector* curSector, SegmentClipped* wallSeg);
 	void sdisplayList_draw();
 
 	s32  sdisplayList_getSize();

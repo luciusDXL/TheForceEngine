@@ -22,6 +22,7 @@
 #include "renderDebug.h"
 #include "debug.h"
 #include "frustum.h"
+#include "sbuffer.h"
 #include "sectorDisplayList.h"
 #include "../rcommon.h"
 
@@ -175,551 +176,6 @@ namespace TFE_Jedi
 		srcSector->dirtyFlags = SDF_NONE;
 	}
 		
-	// TODO: Move to S-Buffer module.
-	WallSegBuffer s_bufferPool[1024];
-	WallSegBuffer* s_bufferHead;
-	WallSegBuffer* s_bufferTail;
-	WallSegBuffer* s_portalHead;
-	WallSegBuffer* s_portalTail;
-	s32 s_bufferPoolCount = 0;
-
-	// Project a 2D coordinate onto the unit square centered around the camera.
-	// This returns back a single value where 0.5 = +x,0; 1.5 = 0,+z; 2.5 = -x,0; 3.5 = 0,-z
-	// This is done for fast camera relative overlap tests for segments on the XZ axis in a way that
-	// is independent of the camera orientation.
-	// Once done, segments can be tested for overlap simply by comparing these values - note some care
-	// must be taken to pitch the "shortest route" as 4.0 == 0.0
-	f32 projectToUnitSquare(Vec2f coord)
-	{
-		coord.x -= s_cameraPos.x;
-		coord.z -= s_cameraPos.z;
-
-		// Find the largest axis.
-		s32 axis = 0;
-		if (fabsf(coord.x) > fabsf(coord.z))
-		{
-			axis = coord.x < 0.0f ? 2 : 0;
-		}
-		else
-		{
-			axis = coord.z < 0.0f ? 3 : 1;
-		}
-		f32 axisScale = coord.m[axis & 1] != 0.0f ? 1.0f / fabsf(coord.m[axis & 1]) : 0.0f;
-		f32 value = coord.m[(1 + axis) & 1] * axisScale * 0.5f + 0.5f;
-		if (axis == 1 || axis == 2) { value = 1.0f - value; }
-
-		// Switch the direction to match the wall direction.
-		return 4.0f - fmodf(f32(axis) + value, 4.0f);	// this wraps around to 0.0 at 4.0
-	}
-
-	WallSegBuffer* getBufferSeg(WallSegment* seg)
-	{
-		if (s_bufferPoolCount >= 1024)
-		{
-			return nullptr;
-		}
-		WallSegBuffer* segBuffer = &s_bufferPool[s_bufferPoolCount];
-		segBuffer->prev = nullptr;
-		segBuffer->next = nullptr;
-		segBuffer->seg = seg;
-		if (seg)
-		{
-			segBuffer->x0 = seg->x0;
-			segBuffer->x1 = seg->x1;
-			segBuffer->v0 = seg->v0;
-			segBuffer->v1 = seg->v1;
-		}
-		s_bufferPoolCount++;
-		return segBuffer;
-	}
-
-	const f32 c_sideEps = 0.0001f;
-
-	// Returns true if 'w1' is in front of 'w0'
-	bool wallInFront(Vec2f w0left, Vec2f w0right, Vec3f w0nrml, Vec2f w1left, Vec2f w1right, Vec3f w1nrml)
-	{
-		// Are w1left and w1right both on the same side of w0nrml as the camera position?
-		const Vec2f left0   = { w1left.x  - w0left.x, w1left.z  - w0left.z };
-		const Vec2f right0  = { w1right.x - w0left.x, w1right.z - w0left.z };
-		const Vec2f camera0 = { s_cameraPos.x - w0left.x, s_cameraPos.z - w0left.z };
-		f32 sideLeft0   = w0nrml.x*left0.x  + w0nrml.z*left0.z;
-		f32 sideRight0  = w0nrml.x*right0.x + w0nrml.z*right0.z;
-		f32 cameraSide0 = w0nrml.x*camera0.x + w0nrml.z*camera0.z;
-
-		// Handle floating point precision.
-		if (fabsf(sideLeft0) < c_sideEps) { sideLeft0 = 0.0f; }
-		if (fabsf(sideRight0) < c_sideEps) { sideRight0 = 0.0f; }
-		if (fabsf(cameraSide0) < c_sideEps) { cameraSide0 = 0.0f; }
-
-		// both vertices of 'w1' are on the same side of 'w0'
-		// 'w1' is in front if the camera is on the same side.
-		if (sideLeft0 <= 0.0f && sideRight0 <= 0.0f)
-		{
-			return cameraSide0 <= 0.0f;
-		}
-		else if (sideLeft0 >= 0.0f && sideRight0 >= 0.0f)
-		{
-			return cameraSide0 >= 0.0f;
-		}
-
-		// Are w0left and w0right both on the same side of w1nrml as the camera position?
-		const Vec2f left1 = { w0left.x - w1left.x, w0left.z - w1left.z };
-		const Vec2f right1 = { w0right.x - w1left.x, w0right.z - w1left.z };
-		const Vec2f camera1 = { s_cameraPos.x - w1left.x, s_cameraPos.z - w1left.z };
-		f32 sideLeft1   = w1nrml.x*left1.x + w1nrml.z*left1.z;
-		f32 sideRight1  = w1nrml.x*right1.x + w1nrml.z*right1.z;
-		f32 cameraSide1 = w1nrml.x*camera1.x + w1nrml.z*camera1.z;
-
-		// Handle floating point precision.
-		if (fabsf(sideLeft1) < c_sideEps) { sideLeft1 = 0.0f; }
-		if (fabsf(sideRight1) < c_sideEps) { sideRight1 = 0.0f; }
-		if (fabsf(cameraSide1) < c_sideEps) { cameraSide1 = 0.0f; }
-
-		// both vertices of 'w0' are on the same side of 'w1'
-		// 'w0' is in front if the camera is on the same side.
-		if (sideLeft1 <= 0.0f && sideRight1 <= 0.0f)
-		{
-			return !(cameraSide1 <= 0.0f);
-		}
-		else if (sideLeft1 >= 0.0f && sideRight1 >= 0.0f)
-		{
-			return !(cameraSide1 >= 0.0f);
-		}
-
-		// If we still get here, just do a quick distance check.
-		f32 distSq0 = camera0.x*camera0.x + camera0.z*camera0.z;
-		f32 distSq1 = camera1.x*camera1.x + camera1.z*camera1.z;
-		return distSq1 < distSq0;
-	}
-
-	Vec2f clipSegment(Vec2f v0, Vec2f v1, Vec2f pointOnPlane)
-	{
-		Vec2f p1 = { pointOnPlane.x - s_cameraPos.x, pointOnPlane.z - s_cameraPos.z };
-		Vec2f planeNormal = { -p1.z, p1.x };
-		f32 lenSq = p1.x*p1.x + p1.z*p1.z;
-		f32 scale = (lenSq > FLT_EPSILON) ? 1.0f / sqrtf(lenSq) : 0.0f;
-
-		f32 d0 = ((v0.x - s_cameraPos.x)*planeNormal.x + (v0.z - s_cameraPos.z)*planeNormal.z) * scale;
-		f32 d1 = ((v1.x - s_cameraPos.x)*planeNormal.x + (v1.z - s_cameraPos.z)*planeNormal.z) * scale;
-		f32 t = -d0 / (d1 - d0);
-
-		Vec2f intersection;
-		intersection.x = (1.0f - t)*v0.x + t * v1.x;
-		intersection.z = (1.0f - t)*v0.z + t * v1.z;
-		return intersection;
-	}
-
-	void insertSegmentBefore(WallSegBuffer* cur, WallSegBuffer* seg, WallSegBuffer*& head = s_bufferHead);
-	void insertSegmentAfter(WallSegBuffer* cur, WallSegBuffer* seg, WallSegBuffer*& tail = s_bufferTail);
-	void deleteSegment(WallSegBuffer* cur, WallSegBuffer*& head = s_bufferHead, WallSegBuffer*& tail = s_bufferTail);
-	WallSegBuffer* mergeSegments(WallSegBuffer* a, WallSegBuffer* b, WallSegBuffer*& tail = s_bufferTail);
-
-	void insertSegmentBefore(WallSegBuffer* cur, WallSegBuffer* seg, WallSegBuffer*& head)
-	{
-		WallSegBuffer* curPrev = cur->prev;
-		if (curPrev)
-		{
-			curPrev->next = seg;
-		}
-		else
-		{
-			head = seg;
-		}
-		seg->prev = curPrev;
-		seg->next = cur;
-		cur->prev = seg;
-	}
-
-	void insertSegmentAfter(WallSegBuffer* cur, WallSegBuffer* seg, WallSegBuffer*& tail)
-	{
-		WallSegBuffer* curNext = cur->next;
-		if (curNext)
-		{
-			curNext->prev = seg;
-		}
-		else
-		{
-			tail = seg;
-		}
-		seg->next = curNext;
-		seg->prev = cur;
-		cur->next = seg;
-	}
-
-	void deleteSegment(WallSegBuffer* cur, WallSegBuffer*& head, WallSegBuffer*& tail)
-	{
-		WallSegBuffer* curPrev = cur->prev;
-		WallSegBuffer* curNext = cur->next;
-		if (curPrev)
-		{
-			curPrev->next = curNext;
-		}
-		else
-		{
-			head = curNext;
-		}
-
-		if (curNext)
-		{
-			curNext->prev = curPrev;
-		}
-		else
-		{
-			tail = curPrev;
-		}
-	}
-
-	WallSegBuffer* mergeSegments(WallSegBuffer* a, WallSegBuffer* b, WallSegBuffer*& tail)
-	{
-		a->next = b->next;
-		a->x1 = b->x1;
-		a->v1 = b->v1;
-
-		if (a->next)
-		{
-			a->next->prev = a;
-		}
-		else
-		{
-			s_bufferTail = a;
-		}
-		return a;
-	}
-
-	void swapSegments(WallSegBuffer* a, WallSegBuffer* b, WallSegBuffer*& head, WallSegBuffer*& tail)
-	{
-		WallSegBuffer* prev = a->prev;
-		WallSegBuffer* next = b->next;
-		b->prev = prev;
-		if (prev)
-		{
-			prev->next = b;
-		}
-		else
-		{
-			head = b;
-		}
-		b->next = a;
-		a->prev = b;
-		a->next = next;
-		if (next)
-		{
-			next->prev = a;
-		}
-		else
-		{
-			tail = a;
-		}
-	}
-
-	void mergeSegmentsInBuffer()
-	{
-		WallSegBuffer* cur = s_bufferHead;
-		while (cur)
-		{
-			WallSegBuffer* curNext = cur->next;
-			while (curNext && cur->x1 == curNext->x0 && cur->seg->id == curNext->seg->id)
-			{
-				cur = mergeSegments(cur, curNext, s_bufferTail);
-				curNext = cur->next;
-			}
-			cur = cur->next;
-		}
-
-		// Try to merge the head and tail because they might have been split on the modulo line.
-		if (s_bufferHead != s_bufferTail)
-		{
-			if (s_bufferHead->x0 == 0.0f && s_bufferTail->x1 == 4.0f && s_bufferHead->seg->id == s_bufferTail->seg->id)
-			{
-				s_bufferTail->x1 = s_bufferHead->x1 + 4.0f;
-				s_bufferTail->v1 = s_bufferHead->v1;
-				s_bufferHead = s_bufferHead->next;
-				s_bufferHead->prev = nullptr;
-			}
-		}
-	}
-
-	void mergePortalsInBuffer()
-	{
-		WallSegBuffer* cur = s_portalHead;
-		while (cur)
-		{
-			WallSegBuffer* curNext = cur->next;
-			while (curNext && cur->x1 == curNext->x0 && cur->seg->id == curNext->seg->id)
-			{
-				cur = mergeSegments(cur, curNext, s_portalTail);
-				curNext = cur->next;
-			}
-			cur = cur->next;
-		}
-
-		// Try to merge the head and tail because they might have been split on the modulo line.
-		if (s_portalHead != s_portalTail)
-		{
-			if (s_portalHead->x0 == 0.0f && s_portalTail->x1 == 4.0f && s_portalHead->seg->id == s_portalTail->seg->id)
-			{
-				s_portalTail->x1 = s_portalHead->x1 + 4.0f;
-				s_portalTail->v1 = s_portalHead->v1;
-				s_portalHead = s_portalHead->next;
-				s_portalHead->prev = nullptr;
-			}
-		}
-	}
-
-	bool segmentsOverlap(f32 ax0, f32 ax1, f32 bx0, f32 bx1)
-	{
-		return (ax1 > bx0 && ax0 < bx1) || (bx1 > ax0 && bx0 < ax1);
-	}
-			
-	void insertPortal(WallSegBuffer* portal)
-	{
-		if (!s_portalHead)
-		{
-			s_portalHead = portal;
-			s_portalTail = portal;
-			return;
-		}
-
-		WallSegBuffer* cur = s_portalHead;
-		bool inserted = false;
-		while (cur)
-		{
-			if (segmentsOverlap(portal->x0, portal->x1, cur->x0, cur->x1))
-			{
-				if (!inserted)
-				{
-					insertSegmentBefore(cur, portal, s_portalHead);
-					inserted = true;
-				}
-
-				bool curInFront = wallInFront(portal->v0, portal->v1, portal->seg->normal, cur->v0, cur->v1, cur->seg->normal);
-				if (curInFront)
-				{
-					// Make sure that portal is *after* cur
-					swapSegments(portal, cur, s_portalHead, s_portalTail);
-					cur = portal;
-				}
-			}
-			else if (portal->x1 <= cur->x0)
-			{
-				if (!inserted)
-				{
-					insertSegmentBefore(cur, portal, s_portalHead);
-				}
-				return;
-			}
-
-			cur = cur->next;
-		}
-		if (!inserted)
-		{
-			insertSegmentAfter(s_portalTail, portal, s_portalTail);
-		}
-	}
-
-	// Inserts portal segments into the buffer:
-	// * Clips portal segments against the solid segments, discard hidden parts.
-	// * A single span of space may hold multiple portals - but they are sorted front to back.
-	void insertPortalIntoBuffer(WallSegment* seg)
-	{
-		WallSegBuffer* cur = s_bufferHead;
-		while (cur)
-		{
-			// Do the segments overlap?
-			if (segmentsOverlap(seg->x0, seg->x1, cur->x0, cur->x1))
-			{
-				bool curInFront = wallInFront(seg->v0, seg->v1, seg->normal, cur->v0, cur->v1, cur->seg->normal);
-				if (curInFront)
-				{
-					// Seg can be discarded, which means we are done here.
-					if (seg->x0 >= cur->x0 && seg->x1 <= cur->x1) { return; }
-
-					// Clip the portal and insert.
-					s32 clipFlags = 0;
-					if (seg->x0 < cur->x0) { clipFlags |= 1; } // Seg sticks out of the left side and should be clipped.
-					if (seg->x1 > cur->x1) { clipFlags |= 2; } // Seg sticks out of the right side and should be clipped.
-
-					assert(clipFlags);
-					if (!clipFlags) { return; }
-
-					// If the left side needs to be clipped, it can be added without continue with loop.
-					if (clipFlags & 1)
-					{
-						WallSegBuffer* portal = getBufferSeg(seg);
-						portal->x1 = cur->x0;
-						portal->v1 = clipSegment(seg->v0, seg->v1, cur->v0);
-						insertPortal(portal);
-					}
-					// If the right side is clipped, then we must continue with the loop.
-					if (clipFlags & 2)
-					{
-						seg->x0 = cur->x1;
-						seg->v0 = clipSegment(seg->v0, seg->v1, cur->v1);
-					}
-					else
-					{
-						return;
-					}
-				}
-				else
-				{
-					if (seg->x1 > cur->x1)
-					{
-						// New segment that gets clipped by the edge of 'cur'.
-						WallSegBuffer* portal = getBufferSeg(seg);
-						portal->x1 = cur->x1;
-						portal->v1 = clipSegment(seg->v0, seg->v1, cur->v1);
-						insertPortal(portal);
-
-						// Left over part for the rest of the loop.
-						seg->x0 = portal->x1;
-						seg->v0 = portal->v1;
-					}
-					else  // Insert the full new segment.
-					{
-						insertPortal(getBufferSeg(seg));
-						return;
-					}
-				}
-			}
-			else if (seg->x1 <= cur->x0)  // Left
-			{
-				insertPortal(getBufferSeg(seg));
-				return;
-			}
-			cur = cur->next;
-		}
-		insertPortal(getBufferSeg(seg));
-	}
-		
-	// Inserts a solid segment into the buffer, which has the following properties:
-	// * Only keeps front segments.
-	// * Segments clip, so only one segment exists in any span of space.
-	// * This is basically an 'S-buffer' - but wrapping around the camera in world space.
-	void insertSegmentIntoBuffer(WallSegment* seg)
-	{
-		if (!s_bufferHead)
-		{
-			s_bufferHead = getBufferSeg(seg);
-			s_bufferTail = s_bufferHead;
-			return;
-		}
-
-		// Go through and see if there is an overlap.
-		WallSegBuffer* cur = s_bufferHead;
-		while (cur)
-		{
-			// Do the segments overlap?
-			if (segmentsOverlap(seg->x0, seg->x1, cur->x0, cur->x1))
-			{
-				bool curInFront = wallInFront(seg->v0, seg->v1, seg->normal, cur->v0, cur->v1, cur->seg->normal);
-				if (curInFront)
-				{
-					// Seg can be discarded, which means we are done here.
-					if (seg->x0 >= cur->x0 && seg->x1 <= cur->x1) { return; }
-
-					s32 clipFlags = 0;
-					if (seg->x0 < cur->x0) { clipFlags |= 1; } // Seg sticks out of the left side and should be clipped.
-					if (seg->x1 > cur->x1) { clipFlags |= 2; } // Seg sticks out of the right side and should be clipped.
-					if (!clipFlags) { return; }
-
-					// If the left side needs to be clipped, it can be added without continue with loop.
-					if (clipFlags & 1)
-					{
-						WallSegBuffer* newEntry = getBufferSeg(seg);
-						newEntry->x1 = cur->x0;
-						newEntry->v1 = clipSegment(seg->v0, seg->v1, cur->v0);
-
-						insertSegmentBefore(cur, newEntry, s_bufferHead);
-					}
-					// If the right side is clipped, then we must continue with the loop.
-					if (clipFlags & 2)
-					{
-						seg->x0 = cur->x1;
-						seg->v0 = clipSegment(seg->v0, seg->v1, cur->v1);
-					}
-					else
-					{
-						return;
-					}
-				}
-				else
-				{
-					s32 clipFlags = 0;
-					if (cur->x0 < seg->x0) { clipFlags |= 1; } // Current segment is partially on the left.
-					if (cur->x1 > seg->x1) { clipFlags |= 2; } // Current segment is partially on the right.
-					if (seg->x1 > cur->x1) { clipFlags |= 4; } // Create a new segment on the right side of the current segment.
-
-					// Save so the current segment can be modified.
-					const f32 curX1 = cur->x1;
-					const Vec2f curV1 = cur->v1;
-
-					if (clipFlags & 1)
-					{
-						// [cur | segEntry ...]
-						cur->x1 = seg->x0;
-						cur->v1 = clipSegment(cur->v0, cur->v1, seg->v0);
-					}
-					if (clipFlags & 2)
-					{
-						WallSegBuffer* segEntry = getBufferSeg(seg);
-						WallSegBuffer* curRight = getBufferSeg(cur->seg);
-						curRight->x0 = seg->x1;
-						curRight->v0 = clipSegment(cur->v0, curV1, seg->v1);
-						curRight->x1 = curX1;
-						curRight->v1 = curV1;
-
-						insertSegmentAfter(cur, segEntry, s_bufferTail);
-						insertSegmentAfter(segEntry, curRight, s_bufferTail);
-						if (!(clipFlags & 1))
-						{
-							deleteSegment(cur, s_bufferHead, s_bufferTail);
-						}
-						return;
-					}
-					else if (clipFlags & 4)
-					{
-						// New segment that gets clipped by the edge of 'cur'.
-						WallSegBuffer* segEntry = getBufferSeg(seg);
-						segEntry->x1 = curX1;
-						segEntry->v1 = clipSegment(seg->v0, seg->v1, curV1);
-
-						// Left over part for the rest of the loop.
-						seg->x0 = segEntry->x1;
-						seg->v0 = segEntry->v1;
-
-						insertSegmentAfter(cur, segEntry, s_bufferTail);
-						if (!(clipFlags & 1))
-						{
-							deleteSegment(cur, s_bufferHead, s_bufferTail);
-						}
-
-						// continue with loop...
-						cur = segEntry;
-					}
-					else  // Insert the full new segment.
-					{
-						insertSegmentAfter(cur, getBufferSeg(seg), s_bufferTail);
-						if (!(clipFlags & 1))
-						{
-							deleteSegment(cur, s_bufferHead, s_bufferTail);
-						}
-						return;
-					}
-				}
-			}
-			else if (seg->x1 <= cur->x0) // Left
-			{
-				insertSegmentBefore(cur, getBufferSeg(seg), s_bufferHead);
-				return;
-			}
-
-			cur = cur->next;
-		}
-		// The new segment is to the right of everything.
-		insertSegmentAfter(s_bufferTail, getBufferSeg(seg), s_bufferTail);
-	}
-	
 	struct Portal
 	{
 		Vec2f v0, v1;
@@ -729,59 +185,11 @@ namespace TFE_Jedi
 	};
 	static Portal s_portalList[2048];
 	static s32 s_portalListCount = 0;
-
-	void handleEdgeWrapping(f32& x0, f32& x1)
-	{
-		// Make sure the segment is the correct length.
-		if (fabsf(x1 - x0) > 2.0f)
-		{
-			if (x0 < 1.0f) { x0 += 4.0f; }
-			else { x1 += 4.0f; }
-		}
-		// Handle wrapping.
-		while (x0 < 0.0f || x1 < 0.0f)
-		{
-			x0 += 4.0f;
-			x1 += 4.0f;
-		}
-		while (x0 >= 4.0f && x1 >= 4.0f)
-		{
-			x0 = fmodf(x0, 4.0f);
-			x1 = fmodf(x1, 4.0f);
-		}
-	}
-
-	bool splitByRange(WallSegment* seg, Vec2f* range, Vec2f* points, s32 rangeCount)
-	{
-		// Clip a single segment against one or two ranges...
-		bool inside = false;
-		for (s32 r = 0; r < rangeCount; r++)
-		{
-			if (seg->x1 <= range[r].x || seg->x0 >= range[r].z)
-			{
-				continue;
-			}
-			inside = true;
-
-			if (seg->x0 < range[r].x && seg->x1 > range[r].x)
-			{
-				seg->v0 = clipSegment(seg->v0, seg->v1, points[0]);
-				seg->x0 = range[r].x;
-			}
-			else if (seg->x1 > range[r].z && seg->x0 < range[r].z)
-			{
-				seg->v1 = clipSegment(seg->v0, seg->v1, points[1]);
-				seg->x1 = range[r].z;
-			}
-		}
-
-		return inside;
-	}
-
+	
 	// Build world-space wall segments.
 	void buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1)
 	{
-		static WallSegment wallSegments[2048];
+		static Segment wallSegments[2048];
 
 		u32 segCount = 0;
 		GPUCachedSector* cached = &s_cachedSectors[curSector->index];
@@ -794,9 +202,9 @@ namespace TFE_Jedi
 		s32 rangeCount = 0;
 		if (!initSector)
 		{
-			range[0].x = projectToUnitSquare(p0);
-			range[0].z = projectToUnitSquare(p1);
-			handleEdgeWrapping(range[0].x, range[0].z);
+			range[0].x = sbuffer_projectToUnitSquare(p0);
+			range[0].z = sbuffer_projectToUnitSquare(p1);
+			sbuffer_handleEdgeWrapping(range[0].x, range[0].z);
 			rangeCount = 1;
 
 			if (range[0].z > 4.0f)
@@ -867,7 +275,7 @@ namespace TFE_Jedi
 			}
 
 			// Is the wall inside the view frustum?
-			WallSegment* seg;
+			Segment* seg;
 			Vec3f wallPos = { (x0 + x1) * 0.5f, (y0 + y1) * 0.5f, (z0 + z1) * 0.5f };
 			Vec3f maxPos = { max(x0, x1), max(y0, y1) + 200.0f, max(z0, z1) };	// account for floor and ceiling extensions, to do - a non-crappy way of handling this.
 			Vec3f diag = { maxPos.x - wallPos.x, maxPos.y - wallPos.y, maxPos.z - wallPos.z };
@@ -884,8 +292,8 @@ namespace TFE_Jedi
 			seg->portal = isPortal;
 			seg->v0 = { x0, z0 };
 			seg->v1 = { x1, z1 };
-			seg->x0 = projectToUnitSquare(seg->v0);
-			seg->x1 = projectToUnitSquare(seg->v1);
+			seg->x0 = sbuffer_projectToUnitSquare(seg->v0);
+			seg->x1 = sbuffer_projectToUnitSquare(seg->v1);
 
 			// This means both vertices map to the same point on the unit square, in other words, the edge isn't actually visible.
 			if (fabsf(seg->x0 - seg->x1) < FLT_EPSILON)
@@ -895,7 +303,7 @@ namespace TFE_Jedi
 			}
 
 			// Project the edge.
-			handleEdgeWrapping(seg->x0, seg->x1);
+			sbuffer_handleEdgeWrapping(seg->x0, seg->x1);
 			// Check again for zero-length walls in case the fix-ups above caused it (for example, x0 = 0.0, x1 = 4.0).
 			if (seg->x0 >= seg->x1 || seg->x1 - seg->x0 < FLT_EPSILON)
 			{
@@ -918,11 +326,11 @@ namespace TFE_Jedi
 				const Vec2f sv1 = seg->v1;
 				
 				// Split the segment at the modulus border.
-				seg->v1 = clipSegment(seg->v0, seg->v1, { 1.0f + s_cameraPos.x, -1.0f + s_cameraPos.z });
+				seg->v1 = sbuffer_clip(seg->v0, seg->v1, { 1.0f + s_cameraPos.x, -1.0f + s_cameraPos.z });
 				seg->x1 = 4.0f;
 				Vec2f newV1 = seg->v1;
 
-				if (!initSector && !splitByRange(seg, range, points, rangeCount))
+				if (!initSector && !sbuffer_splitByRange(seg, range, points, rangeCount))
 				{
 					// Out of the range, so cancel the segment.
 					segCount--;
@@ -934,7 +342,7 @@ namespace TFE_Jedi
 				
 				if (s_wallSegGenerated < s_maxWallSeg)
 				{
-					WallSegment* seg2;
+					Segment* seg2;
 					seg2 = &wallSegments[segCount];
 					segCount++;
 
@@ -944,7 +352,7 @@ namespace TFE_Jedi
 					seg2->v0 = newV1;
 					seg2->v1 = sv1;
 
-					if (!initSector && !splitByRange(seg2, range, points, rangeCount))
+					if (!initSector && !sbuffer_splitByRange(seg2, range, points, rangeCount))
 					{
 						// Out of the range, so cancel the segment.
 						segCount--;
@@ -955,7 +363,7 @@ namespace TFE_Jedi
 					}
 				}
 			}
-			else if (!initSector && !splitByRange(seg, range, points, rangeCount))
+			else if (!initSector && !sbuffer_splitByRange(seg, range, points, rangeCount))
 			{
 				// Out of the range, so cancel the segment.
 				segCount--;
@@ -967,43 +375,35 @@ namespace TFE_Jedi
 		}
 
 		// Next insert solid segments into the segment buffer one at a time.
-		s_bufferPoolCount = 0;
-		s_bufferHead = nullptr;
-		s_bufferTail = nullptr;
+		sbuffer_clear();
 		for (u32 i = 0; i < segCount; i++)
 		{
-			insertSegmentIntoBuffer(&wallSegments[i]);
+			sbuffer_insertSegment(&wallSegments[i]);
 		}
-		mergeSegmentsInBuffer();
+		sbuffer_mergeSegments();
 
 		if (initSector)
 		{
-			const WallSegBuffer* wallSeg = s_bufferHead;
-			while (wallSeg)
-			{
-				const WallSegment* seg = wallSeg->seg;
-				debug_addQuad(wallSeg->v0, wallSeg->v1, seg->y0, seg->y1, seg->portalY0, seg->portalY1, seg->portal);
-				wallSeg = wallSeg->next;
-			}
+			sbuffer_debugDisplay();
 		}
 
 		// Build the display list.
-		WallSegBuffer* wallSeg = s_bufferHead;
+		SegmentClipped* segment = sbuffer_get();
 		if (initSector) { sdisplayList_clear(); }
-		while (wallSeg)
+		while (segment)
 		{
-			sdisplayList_addSegment(curSector, wallSeg);
-			wallSeg = wallSeg->next;
+			sdisplayList_addSegment(curSector, segment);
+			segment = segment->next;
 		}
 		if (initSector) { sdisplayList_addCaps(curSector); }
 
 		// Push portals onto the stack.
-		wallSeg = s_bufferHead;
-		while (wallSeg)
+		segment = sbuffer_get();
+		while (segment)
 		{
-			if (!wallSeg->seg->portal)
+			if (!segment->seg->portal)
 			{
-				wallSeg = wallSeg->next;
+				segment = segment->next;
 				continue;
 			}
 			if (s_portalsTraversed >= s_maxPortals)
@@ -1011,7 +411,7 @@ namespace TFE_Jedi
 				break;
 			}
 
-			WallSegBuffer* portal = wallSeg;
+			SegmentClipped* portal = segment;
 			RWall* wall = &curSector->walls[portal->seg->id];
 			RSector* next = wall->nextSector;
 			assert(next);
@@ -1038,7 +438,7 @@ namespace TFE_Jedi
 				s_portalsTraversed++;
 				s_portalListCount++;
 			}
-			wallSeg = wallSeg->next;
+			segment = segment->next;
 		}
 	}
 

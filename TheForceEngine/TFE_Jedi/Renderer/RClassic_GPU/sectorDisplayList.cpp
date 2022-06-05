@@ -106,7 +106,7 @@ namespace TFE_Jedi
 		s_displayListCount++;
 	}
 
-	void sdisplayList_addSegment(RSector* curSector, WallSegBuffer* wallSeg)
+	void sdisplayList_addSegment(RSector* curSector, SegmentClipped* wallSeg)
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];

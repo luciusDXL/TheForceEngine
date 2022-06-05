@@ -1575,6 +1575,9 @@
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
