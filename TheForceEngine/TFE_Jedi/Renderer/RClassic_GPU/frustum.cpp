@@ -24,7 +24,6 @@ namespace TFE_Jedi
 {
 	// A small epsilon value to make point vs. plane side determinations more robust to numerical error.
 	const f32 c_planeEps = 0.0001f;
-	const f32 c_minSqArea = FLT_EPSILON;
 
 	static Frustum s_frustumStack[256];
 	static u32 s_frustumStackPtr = 0;

@@ -506,6 +506,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rsectorFloat.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rwallFloat.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\debug.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\frustum.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\renderDebug.h" />
@@ -742,6 +743,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\robj3d_float\robj3dFloat_TransformAndLighting.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rsectorFloat.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rwallFloat.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\debug.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\frustum.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\renderDebug.cpp" />

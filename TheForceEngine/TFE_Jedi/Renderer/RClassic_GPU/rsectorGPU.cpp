@@ -17,11 +17,10 @@
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
 
-#include <TFE_Input/input.h>
-
 #include "rclassicGPU.h"
 #include "rsectorGPU.h"
 #include "renderDebug.h"
+#include "debug.h"
 #include "frustum.h"
 #include "../rcommon.h"
 
@@ -215,108 +214,7 @@ namespace TFE_Jedi
 		updateCachedWalls(srcSector, flags, uploadFlags);
 		srcSector->dirtyFlags = SDF_NONE;
 	}
-
-	// TODO: Move to debug module.
-	Vec4f debug_interpolateVec4(Vec4f a, Vec4f b, f32 t)
-	{
-		Vec4f res;
-		res.x = a.x + t * (b.x - a.x);
-		res.y = a.y + t * (b.y - a.y);
-		res.z = a.z + t * (b.z - a.z);
-		res.w = a.w + t * (b.w - a.w);
-		return res;
-	}
-
-	Vec4f debug_getColorFromLevel(s32 level)
-	{
-		Vec4f colors[5] =
-		{
-			{ 0.0f, 1.0f, 0.0f, 1.0f }, // GREEN
-			{ 1.0f, 1.0f, 0.0f, 1.0f }, // YELLOW
-			{ 1.0f, 0.0f, 0.0f, 1.0f }, // RED
-			{ 1.0f, 0.0f, 1.0f, 1.0f }, // PURPLE
-			{ 0.0f, 0.0f, 1.0f, 1.0f }, // BLUE
-		};
-
-		f32 t = 0.0f;
-		s32 a = 0, b = 0;
-		if (level < 16)
-		{
-			t = f32(level) / 16.0f;
-			a = 0; b = 1;
-		}
-		else if (level < 32)
-		{
-			t = f32(level - 16) / 16.0f;
-			a = 1; b = 2;
-		}
-		else if (level < 64)
-		{
-			t = f32(level - 32) / 32.0f;
-			a = 2; b = 3;
-		}
-		else
-		{
-			t = f32(level - 64) / 190.0f;
-			a = 3; b = 4;
-		}
-
-		return debug_interpolateVec4(colors[a], colors[b], t);
-	}
-
-	// TODO: Move to debug module.
-	static s32 s_maxPortals = 4096;
-	static s32 s_maxWallSeg = 4096;
-	static s32 s_portalsTraversed;
-	static s32 s_wallSegGenerated;
-	void debug_update()
-	{
-		if (TFE_Input::keyPressed(KEY_LEFTBRACKET))
-		{
-			if (TFE_Input::getKeyModifierDown() == KEYMOD_SHIFT)
-			{
-				s_maxWallSeg = max(0, s_maxWallSeg - 1);
-			}
-			else
-			{
-				s_maxPortals = max(0, s_maxPortals - 1);
-			}
-		}
-		else if (TFE_Input::keyPressed(KEY_RIGHTBRACKET))
-		{
-			if (TFE_Input::getKeyModifierDown() == KEYMOD_SHIFT)
-			{
-				s_maxWallSeg = min(4096, s_maxWallSeg + 1);
-			}
-			else
-			{
-				s_maxPortals = min(4096, s_maxPortals + 1);
-			}
-		}
-		else if (TFE_Input::keyPressed(KEY_C))
-		{
-			if (TFE_Input::getKeyModifierDown() == KEYMOD_SHIFT)
-			{
-				s_maxWallSeg = 4096;
-			}
-			else
-			{
-				s_maxPortals = 4096;
-			}
-		}
-		else if (TFE_Input::keyPressed(KEY_V))
-		{
-			if (TFE_Input::getKeyModifierDown() == KEYMOD_SHIFT)
-			{
-				s_maxWallSeg = 0;
-			}
-			else
-			{
-				s_maxPortals = 0;
-			}
-		}
-	}
-
+		
 	// TODO: Move to S-Buffer module.
 	WallSegBuffer s_bufferPool[1024];
 	WallSegBuffer* s_bufferHead;
@@ -1197,32 +1095,15 @@ namespace TFE_Jedi
 
 		if (initSector)
 		{
-			WallSegBuffer* wallSeg = s_bufferHead;
+			const WallSegBuffer* wallSeg = s_bufferHead;
 			while (wallSeg)
 			{
-				Vec3f vtx[4];
-				vtx[0] = { wallSeg->v0.x, wallSeg->seg->y0, wallSeg->v0.z };
-				vtx[1] = { wallSeg->v1.x, wallSeg->seg->y0, wallSeg->v1.z };
-				vtx[2] = { wallSeg->v1.x, wallSeg->seg->y1, wallSeg->v1.z };
-				vtx[3] = { wallSeg->v0.x, wallSeg->seg->y1, wallSeg->v0.z };
-
-				Vec4f colorSolid  = { 1.0f, 0.0f, 1.0f, 1.0f };
-				Vec4f colorPortal = { 0.0f, 1.0f, 1.0f, 1.0f };
-
-				renderDebug_addPolygon(4, vtx, colorSolid);
-				if (wallSeg->seg->portal)
-				{
-					vtx[0].y = wallSeg->seg->portalY0;
-					vtx[1].y = wallSeg->seg->portalY0;
-					vtx[2].y = wallSeg->seg->portalY1;
-					vtx[3].y = wallSeg->seg->portalY1;
-					renderDebug_addPolygon(4, vtx, colorPortal);
-				}
-
+				const WallSegment* seg = wallSeg->seg;
+				debug_addQuad(wallSeg->v0, wallSeg->v1, seg->y0, seg->y1, seg->portalY0, seg->portalY1, seg->portal);
 				wallSeg = wallSeg->next;
 			}
 		}
-				
+
 		// Build the display list.
 		WallSegBuffer* wallSeg = s_bufferHead;
 		if (initSector) { clearDisplayList(); }
