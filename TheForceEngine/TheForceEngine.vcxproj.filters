@@ -922,6 +922,12 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\debug.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1564,6 +1570,9 @@
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\debug.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
   </ItemGroup>

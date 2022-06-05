@@ -22,6 +22,7 @@
 #include "renderDebug.h"
 #include "debug.h"
 #include "frustum.h"
+#include "sectorDisplayList.h"
 #include "../rcommon.h"
 
 #define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
@@ -40,36 +41,11 @@ namespace TFE_Jedi
 
 	Shader m_wallShader;
 	ShaderBuffer m_sectors;
-	ShaderBuffer m_drawListPos;
-	ShaderBuffer m_drawListData;
 	s32 m_cameraPosId;
 	s32 m_cameraViewId;
 	s32 m_cameraProjId;
 	Vec3f m_viewDir;
-
-	struct WallSegment
-	{
-		Vec3f normal;
-		Vec2f v0, v1;
-		f32 y0, y1;
-		f32 portalY0, portalY1;
-		bool portal;
-		s32 id;
-		// positions projected onto the camera plane, used for sorting and overlap tests.
-		f32 x0, x1;
-	};
-
-	struct WallSegBuffer
-	{
-		WallSegBuffer* prev;
-		WallSegBuffer* next;
-		WallSegment* seg;
-
-		// Adjusted values when segments need to be split.
-		f32 x0, x1;
-		Vec2f v0, v1;
-	};
-
+	
 	struct GPUCachedSector
 	{
 		f32 floorHeight;
@@ -84,10 +60,7 @@ namespace TFE_Jedi
 	};
 	
 	GPUSourceData s_gpuSourceData = { 0 };
-	Vec4f  s_displayListPos[1024];
-	Vec4ui s_displayListData[1024];
-	s32 s_displayListCount = 0;
-
+	
 	IndexBuffer m_indexBuffer;
 	static GPUCachedSector* s_cachedSectors;
 	static bool s_enableDebug = true;
@@ -163,22 +136,9 @@ namespace TFE_Jedi
 				BUF_CHANNEL_FLOAT
 			};
 			m_sectors.create(s_sectorCount, bufferDefSectors, true, s_gpuSourceData.sectors);
-
-			ShaderBufferDef bufferDefDrawListPos =
-			{
-				4,				// 1, 2, 4 channels (R, RG, RGBA)
-				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-				BUF_CHANNEL_FLOAT
-			};
-			m_drawListPos.create(1024, bufferDefDrawListPos, true);
-
-			ShaderBufferDef bufferDefDrawListData =
-			{
-				4,				// 1, 2, 4 channels (R, RG, RGBA)
-				sizeof(u32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-				BUF_CHANNEL_UINT
-			};
-			m_drawListData.create(1024, bufferDefDrawListData, true);
+						
+			// Initialize the display list with the GPU buffers.
+			sdisplayList_init(1, 2);
 		}
 		else
 		{
@@ -760,83 +720,6 @@ namespace TFE_Jedi
 		insertSegmentAfter(s_bufferTail, getBufferSeg(seg), s_bufferTail);
 	}
 	
-	// TODO: Move to sector display list module.
-	void clearDisplayList()
-	{
-		s_displayListCount = 0;
-	}
-
-	void finishDisplayList()
-	{
-		if (!s_displayListCount) { return; }
-		m_drawListPos.update(s_displayListPos, sizeof(Vec4f) * s_displayListCount);
-		m_drawListData.update(s_displayListData, sizeof(Vec4ui) * s_displayListCount);
-	}
-
-	void addCapsToDisplayList(RSector* curSector)
-	{
-		// TODO: Constrain to portal frustum.
-		Vec4f pos   = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
-		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, (u32)floor16(curSector->ambient), 0u/*textureId*/ };
-
-		s_displayListPos[s_displayListCount]  = pos;
-		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x = 5;	// part = floor cap;
-		s_displayListCount++;
-
-		s_displayListPos[s_displayListCount] = pos;
-		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x = 6;	// part = ceiling cap;
-		s_displayListCount++;
-	}
-
-	void addSegToDisplayList(RSector* curSector, WallSegBuffer* wallSeg)
-	{
-		s32 wallId = wallSeg->seg->id;
-		RWall* srcWall = &curSector->walls[wallId];
-		s32 ambient = floor16(curSector->ambient);
-
-		Vec4f pos   = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
-		Vec4ui data = { (srcWall->nextSector ? u32(srcWall->nextSector->index)<<16u : 0u)/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
-			            ambient < 31 ? (u32)min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient)) : 31u/*ambient*/, 0u/*textureId*/ };
-
-		// Wall Flags.
-		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector) // TODO: Fix transparent mid textures.
-		{
-			s_displayListPos[s_displayListCount]  = pos;
-			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= 0;	// part = mid;
-			s_displayListCount++;
-		}
-		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector)
-		{
-			s_displayListPos[s_displayListCount] = pos;
-			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= 1;	// part = top;
-			s_displayListCount++;
-		}
-		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector)
-		{
-			s_displayListPos[s_displayListCount] = pos;
-			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= 2;	// part = bottom;
-			s_displayListCount++;
-		}
-		// Add Floor
-		s_displayListPos[s_displayListCount] = pos;
-		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x |= 3;	// part = floor;
-		s_displayListData[s_displayListCount].z = ambient;
-		s_displayListCount++;
-
-		// Add Ceiling
-		s_displayListPos[s_displayListCount] = pos;
-		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x |= 4;	// part = floor;
-		s_displayListData[s_displayListCount].z = ambient;
-		s_displayListCount++;
-	}
-
 	struct Portal
 	{
 		Vec2f v0, v1;
@@ -1106,13 +989,13 @@ namespace TFE_Jedi
 
 		// Build the display list.
 		WallSegBuffer* wallSeg = s_bufferHead;
-		if (initSector) { clearDisplayList(); }
+		if (initSector) { sdisplayList_clear(); }
 		while (wallSeg)
 		{
-			addSegToDisplayList(curSector, wallSeg);
+			sdisplayList_addSegment(curSector, wallSeg);
 			wallSeg = wallSeg->next;
 		}
-		if (initSector) { addCapsToDisplayList(curSector); }
+		if (initSector) { sdisplayList_addCaps(curSector); }
 
 		// Push portals onto the stack.
 		wallSeg = s_bufferHead;
@@ -1190,8 +1073,7 @@ namespace TFE_Jedi
 		}
 	}
 		
-	// TODO: Move to display list module.
-	bool buildDrawList(RSector* sector)
+	bool buildDisplayList(RSector* sector)
 	{
 		debug_update();
 
@@ -1208,20 +1090,20 @@ namespace TFE_Jedi
 		traverseAdjoin(sector, level, uploadFlags, startView[0], startView[1]);
 		frustum_pop();
 
-		finishDisplayList();
+		sdisplayList_finish();
 
 		if (uploadFlags & UPLOAD_SECTORS)
 		{
 			m_sectors.update(s_gpuSourceData.sectors, s_gpuSourceData.sectorSize);
 		}
 
-		return s_displayListCount > 0;
+		return sdisplayList_getSize() > 0;
 	}
 
 	void TFE_Sectors_GPU::draw(RSector* sector)
 	{
 		// Build the draw list.
-		if (!buildDrawList(sector))
+		if (!buildDisplayList(sector))
 		{
 			return;
 		}
@@ -1234,8 +1116,6 @@ namespace TFE_Jedi
 		m_wallShader.bind();
 		m_indexBuffer.bind();
 		m_sectors.bind(0);
-		m_drawListPos.bind(1);
-		m_drawListData.bind(2);
 
 		// Camera
 		m_wallShader.setVariable(m_cameraPosId,  SVT_VEC3,   s_cameraPos.m);
@@ -1243,15 +1123,13 @@ namespace TFE_Jedi
 		m_wallShader.setVariable(m_cameraProjId, SVT_MAT4x4, s_cameraProj.data);
 				
 		// Draw the sector display list.
-		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount, sizeof(u16));
+		sdisplayList_draw();
 
 		// Cleanup.
 		m_wallShader.unbind();
 		m_indexBuffer.unbind();
 		m_sectors.unbind(0);
-		m_drawListPos.unbind(1);
-		m_drawListData.unbind(2);
-
+		
 		// Debug
 		if (s_enableDebug)
 		{
