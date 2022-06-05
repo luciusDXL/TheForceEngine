@@ -11,6 +11,8 @@
 namespace TFE_Jedi
 {
 	void sdisplayList_init(s32 posIndex, s32 dataIndex);
+	void sdisplayList_destroy();
+
 	void sdisplayList_clear();
 	void sdisplayList_finish();
 

@@ -26,6 +26,19 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
+	// Warning: these IDs must match the PartId used in the vertex shader.
+	enum SegmentPartID
+	{
+		SPARTID_WALL_MID = 0,
+		SPARTID_WALL_TOP,
+		SPARTID_WALL_BOT,
+		SPARTID_FLOOR,
+		SPARTID_CEILING,
+		SPARTID_FLOOR_CAP,
+		SPARTID_CEIL_CAP,
+		SPARTID_COUNT
+	};
+
 	static s32 s_displayListCount;
 	static Vec4f  s_displayListPos[1024];
 	static Vec4ui s_displayListData[1024];
@@ -58,11 +71,17 @@ namespace TFE_Jedi
 		sdisplayList_clear();
 	}
 
+	void sdisplayList_destroy()
+	{
+		s_displayListPosGPU.destroy();
+		s_displayListDataGPU.destroy();
+	}
+
 	void sdisplayList_clear()
 	{
 		s_displayListCount = 0;
 	}
-
+		
 	void sdisplayList_finish()
 	{
 		if (!s_displayListCount) { return; }
@@ -78,12 +97,12 @@ namespace TFE_Jedi
 
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x = 5;	// part = floor cap;
+		s_displayListData[s_displayListCount].x = SPARTID_FLOOR_CAP;
 		s_displayListCount++;
 
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x = 6;	// part = ceiling cap;
+		s_displayListData[s_displayListCount].x = SPARTID_CEIL_CAP;
 		s_displayListCount++;
 	}
 
@@ -102,34 +121,34 @@ namespace TFE_Jedi
 		{
 			s_displayListPos[s_displayListCount] = pos;
 			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= 0;	// part = mid;
+			s_displayListData[s_displayListCount].x |= SPARTID_WALL_MID;
 			s_displayListCount++;
 		}
 		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector)
 		{
 			s_displayListPos[s_displayListCount] = pos;
 			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= 1;	// part = top;
+			s_displayListData[s_displayListCount].x |= SPARTID_WALL_TOP;
 			s_displayListCount++;
 		}
 		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector)
 		{
 			s_displayListPos[s_displayListCount] = pos;
 			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= 2;	// part = bottom;
+			s_displayListData[s_displayListCount].x |= SPARTID_WALL_BOT;
 			s_displayListCount++;
 		}
 		// Add Floor
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x |= 3;	// part = floor;
+		s_displayListData[s_displayListCount].x |= SPARTID_FLOOR;
 		s_displayListData[s_displayListCount].z = ambient;
 		s_displayListCount++;
 
 		// Add Ceiling
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x |= 4;	// part = floor;
+		s_displayListData[s_displayListCount].x |= SPARTID_CEILING;
 		s_displayListData[s_displayListCount].z = ambient;
 		s_displayListCount++;
 	}
