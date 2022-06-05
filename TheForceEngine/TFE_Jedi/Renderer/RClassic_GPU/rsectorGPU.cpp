@@ -39,14 +39,7 @@ namespace TFE_Jedi
 		UPLOAD_WALLS    = FLAG_BIT(2),
 		UPLOAD_ALL      = UPLOAD_SECTORS | UPLOAD_VERTICES | UPLOAD_WALLS
 	};
-
-	Shader m_wallShader;
-	ShaderBuffer m_sectors;
-	s32 m_cameraPosId;
-	s32 m_cameraViewId;
-	s32 m_cameraProjId;
-	Vec3f m_viewDir;
-	
+			
 	struct GPUCachedSector
 	{
 		f32 floorHeight;
@@ -59,13 +52,31 @@ namespace TFE_Jedi
 		Vec4f* sectors;
 		u32 sectorSize;
 	};
-	
+
+	struct Portal
+	{
+		Vec2f v0, v1;
+		f32 y0, y1;
+		RSector* next;
+		Frustum frustum;
+	};
+		
 	GPUSourceData s_gpuSourceData = { 0 };
+
+	Shader m_wallShader;
+	ShaderBuffer m_sectors;
+	s32 m_cameraPosId;
+	s32 m_cameraViewId;
+	s32 m_cameraProjId;
+	Vec3f m_viewDir;
 	
 	IndexBuffer m_indexBuffer;
 	static GPUCachedSector* s_cachedSectors;
 	static bool s_enableDebug = true;
 	static u64 s_gpuFrame;
+
+	static Portal s_portalList[2048];
+	static s32 s_portalListCount = 0;
 		
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -175,17 +186,150 @@ namespace TFE_Jedi
 		updateCachedWalls(srcSector, flags, uploadFlags);
 		srcSector->dirtyFlags = SDF_NONE;
 	}
-		
-	struct Portal
+
+	s32 traversal_addPortals(RSector* curSector)
 	{
-		Vec2f v0, v1;
-		f32 y0, y1;
-		RSector* next;
-		Frustum frustum;
-	};
-	static Portal s_portalList[2048];
-	static s32 s_portalListCount = 0;
-	
+		// Add portals to the list to process for the sector.
+		SegmentClipped* segment = sbuffer_get();
+		s32 count = 0;
+		while (segment && s_portalsTraversed < s_maxPortals)
+		{
+			if (!segment->seg->portal)
+			{
+				segment = segment->next;
+				continue;
+			}
+			
+			SegmentClipped* portal = segment;
+			RWall* wall = &curSector->walls[portal->seg->id];
+			RSector* next = wall->nextSector;
+			assert(next);
+
+			Vec3f p0 = { portal->v0.x, portal->seg->portalY0, portal->v0.z };
+			Vec3f p1 = { portal->v1.x, portal->seg->portalY1, portal->v1.z };
+
+			// Clip the portal by the current frustum, and return if it is culled.
+			Polygon clippedPortal;
+			if (frustum_clipQuadToFrustum(p0, p1, &clippedPortal))
+			{
+				Portal* portalOut = &s_portalList[s_portalListCount];
+				s_portalListCount++;
+
+				frustum_buildFromPolygon(&clippedPortal, &portalOut->frustum);
+				portalOut->v0 = portal->v0;
+				portalOut->v1 = portal->v1;
+				portalOut->y0 = p0.y;
+				portalOut->y1 = p1.y;
+				portalOut->next = next;
+				assert(portalOut->next);
+
+				s_portalsTraversed++;
+				count++;
+			}
+			segment = segment->next;
+		}
+		return count;
+	}
+
+	void buildSegmentBuffer(bool initSector, RSector* curSector, u32 segCount, Segment* wallSegments)
+	{
+		// Next insert solid segments into the segment buffer one at a time.
+		sbuffer_clear();
+		for (u32 i = 0; i < segCount; i++)
+		{
+			sbuffer_insertSegment(&wallSegments[i]);
+		}
+		sbuffer_mergeSegments();
+
+		if (initSector)
+		{
+			sbuffer_debugDisplay();
+		}
+
+		// Build the display list.
+		SegmentClipped* segment = sbuffer_get();
+		if (initSector) { sdisplayList_clear(); }
+		while (segment)
+		{
+			sdisplayList_addSegment(curSector, segment);
+			segment = segment->next;
+		}
+		if (initSector) { sdisplayList_addCaps(curSector); }
+	}
+
+	bool createNewSegment(Segment* seg, s32 id, bool isPortal, Vec2f v0, Vec2f v1, Vec2f heights, Vec2f portalHeights, Vec3f normal)
+	{
+		seg->id = id;
+		seg->portal = isPortal;
+		seg->v0 = v0;
+		seg->v1 = v1;
+		seg->x0 = sbuffer_projectToUnitSquare(seg->v0);
+		seg->x1 = sbuffer_projectToUnitSquare(seg->v1);
+
+		// This means both vertices map to the same point on the unit square, in other words, the edge isn't actually visible.
+		if (fabsf(seg->x0 - seg->x1) < FLT_EPSILON)
+		{
+			return false;
+		}
+
+		// Project the edge.
+		sbuffer_handleEdgeWrapping(seg->x0, seg->x1);
+		// Check again for zero-length walls in case the fix-ups above caused it (for example, x0 = 0.0, x1 = 4.0).
+		if (seg->x0 >= seg->x1 || seg->x1 - seg->x0 < FLT_EPSILON)
+		{
+			return false;
+		}
+		assert(seg->x1 - seg->x0 > 0.0f && seg->x1 - seg->x0 <= 2.0f);
+
+		seg->normal = normal;
+		seg->portal = isPortal;
+		seg->y0 = heights.x;
+		seg->y1 = heights.z;
+		seg->portalY0 = isPortal ? portalHeights.x : heights.x;
+		seg->portalY1 = isPortal ? portalHeights.z : heights.z;
+		return true;
+	}
+
+	void splitSegment(bool initSector, Segment* segList, u32& segCount, Segment* seg, Vec2f* range, Vec2f* points, s32 rangeCount)
+	{
+		const f32 sx1 = seg->x1;
+		const Vec2f sv1 = seg->v1;
+
+		// Split the segment at the modulus border.
+		seg->v1 = sbuffer_clip(seg->v0, seg->v1, { 1.0f + s_cameraPos.x, -1.0f + s_cameraPos.z });
+		seg->x1 = 4.0f;
+		Vec2f newV1 = seg->v1;
+
+		if (!initSector && !sbuffer_splitByRange(seg, range, points, rangeCount))
+		{
+			segCount--;
+		}
+		else
+		{
+			s_wallSegGenerated++;
+		}
+
+		if (s_wallSegGenerated >= s_maxWallSeg) { return; }
+		Segment* seg2;
+		seg2 = &segList[segCount];
+		segCount++;
+
+		*seg2 = *seg;
+		seg2->x0 = 0.0f;
+		seg2->x1 = sx1 - 4.0f;
+		seg2->v0 = newV1;
+		seg2->v1 = sv1;
+
+		if (!initSector && !sbuffer_splitByRange(seg2, range, points, rangeCount))
+		{
+			segCount--;
+		}
+		else
+		{
+			s_wallSegGenerated++;
+		}
+	}
+		
 	// Build world-space wall segments.
 	void buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1)
 	{
@@ -234,7 +378,7 @@ namespace TFE_Jedi
 			const f32 z1 = fixed16ToFloat(wall->w1->z);
 			f32 y0 = cached->ceilingHeight;
 			f32 y1 = cached->floorHeight;
-			f32 portalY0, portalY1;
+			f32 portalY0 = y0, portalY1 = y1;
 
 			// Is the wall a portal or is it effectively solid?
 			bool isPortal = false;
@@ -285,83 +429,19 @@ namespace TFE_Jedi
 				continue;
 			}
 
+			// Add a new segment.
 			seg = &wallSegments[segCount];
+			Vec2f v0 = { x0, z0 }, v1 = { x1, z1 }, heights = { y0, y1 }, portalHeights = { portalY0, portalY1 };
+			if (!createNewSegment(seg, w, isPortal, v0, v1, heights, portalHeights, wallNormal))
+			{
+				continue;
+			}
 			segCount++;
-
-			seg->id = w;
-			seg->portal = isPortal;
-			seg->v0 = { x0, z0 };
-			seg->v1 = { x1, z1 };
-			seg->x0 = sbuffer_projectToUnitSquare(seg->v0);
-			seg->x1 = sbuffer_projectToUnitSquare(seg->v1);
-
-			// This means both vertices map to the same point on the unit square, in other words, the edge isn't actually visible.
-			if (fabsf(seg->x0 - seg->x1) < FLT_EPSILON)
-			{
-				segCount--;
-				continue;
-			}
-
-			// Project the edge.
-			sbuffer_handleEdgeWrapping(seg->x0, seg->x1);
-			// Check again for zero-length walls in case the fix-ups above caused it (for example, x0 = 0.0, x1 = 4.0).
-			if (seg->x0 >= seg->x1 || seg->x1 - seg->x0 < FLT_EPSILON)
-			{
-				segCount--;
-				continue;
-			}
-			assert(seg->x1 - seg->x0 > 0.0f && seg->x1 - seg->x0 <= 2.0f);
-
-			seg->normal = wallNormal;
-			seg->portal = isPortal;
-			seg->y0 = y0;
-			seg->y1 = y1;
-			seg->portalY0 = isPortal ? portalY0 : y0;
-			seg->portalY1 = isPortal ? portalY1 : y1;
 
 			// Split segments that cross the modulo boundary.
 			if (seg->x1 > 4.0f)
 			{
-				const f32 sx1 = seg->x1;
-				const Vec2f sv1 = seg->v1;
-				
-				// Split the segment at the modulus border.
-				seg->v1 = sbuffer_clip(seg->v0, seg->v1, { 1.0f + s_cameraPos.x, -1.0f + s_cameraPos.z });
-				seg->x1 = 4.0f;
-				Vec2f newV1 = seg->v1;
-
-				if (!initSector && !sbuffer_splitByRange(seg, range, points, rangeCount))
-				{
-					// Out of the range, so cancel the segment.
-					segCount--;
-				}
-				else
-				{
-					s_wallSegGenerated++;
-				}
-				
-				if (s_wallSegGenerated < s_maxWallSeg)
-				{
-					Segment* seg2;
-					seg2 = &wallSegments[segCount];
-					segCount++;
-
-					*seg2 = *seg;
-					seg2->x0 = 0.0f;
-					seg2->x1 = sx1 - 4.0f;
-					seg2->v0 = newV1;
-					seg2->v1 = sv1;
-
-					if (!initSector && !sbuffer_splitByRange(seg2, range, points, rangeCount))
-					{
-						// Out of the range, so cancel the segment.
-						segCount--;
-					}
-					else
-					{
-						s_wallSegGenerated++;
-					}
-				}
+				splitSegment(initSector, wallSegments, segCount, seg, range, points, rangeCount);
 			}
 			else if (!initSector && !sbuffer_splitByRange(seg, range, points, rangeCount))
 			{
@@ -374,75 +454,10 @@ namespace TFE_Jedi
 			}
 		}
 
-		// Next insert solid segments into the segment buffer one at a time.
-		sbuffer_clear();
-		for (u32 i = 0; i < segCount; i++)
-		{
-			sbuffer_insertSegment(&wallSegments[i]);
-		}
-		sbuffer_mergeSegments();
-
-		if (initSector)
-		{
-			sbuffer_debugDisplay();
-		}
-
-		// Build the display list.
-		SegmentClipped* segment = sbuffer_get();
-		if (initSector) { sdisplayList_clear(); }
-		while (segment)
-		{
-			sdisplayList_addSegment(curSector, segment);
-			segment = segment->next;
-		}
-		if (initSector) { sdisplayList_addCaps(curSector); }
-
-		// Push portals onto the stack.
-		segment = sbuffer_get();
-		while (segment)
-		{
-			if (!segment->seg->portal)
-			{
-				segment = segment->next;
-				continue;
-			}
-			if (s_portalsTraversed >= s_maxPortals)
-			{
-				break;
-			}
-
-			SegmentClipped* portal = segment;
-			RWall* wall = &curSector->walls[portal->seg->id];
-			RSector* next = wall->nextSector;
-			assert(next);
-
-			f32 x0 = portal->v0.x;
-			f32 x1 = portal->v1.x;
-			f32 z0 = portal->v0.z;
-			f32 z1 = portal->v1.z;
-			f32 y0 = portal->seg->portalY0;
-			f32 y1 = portal->seg->portalY1;
-						
-			// Clip the portal by the current frustum, and return if it is culled.
-			Polygon clippedPortal;
-			if (frustum_clipQuadToFrustum({ x0, y0, z0 }, { x1, y1, z1 }, &clippedPortal))
-			{
-				frustum_buildFromPolygon(&clippedPortal, &s_portalList[s_portalListCount].frustum);
-				
-				s_portalList[s_portalListCount].v0 = portal->v0;
-				s_portalList[s_portalListCount].v1 = portal->v1;
-				s_portalList[s_portalListCount].y0 = y0;
-				s_portalList[s_portalListCount].y1 = y1;
-				s_portalList[s_portalListCount].next = next;
-
-				s_portalsTraversed++;
-				s_portalListCount++;
-			}
-			segment = segment->next;
-		}
+		buildSegmentBuffer(initSector, curSector, segCount, wallSegments);
 	}
 
-	void traverseAdjoin(RSector* curSector, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
+	void traverseSector(RSector* curSector, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
 	{
 		//if (level >= 255)
 		if (level >= 64)
@@ -450,30 +465,25 @@ namespace TFE_Jedi
 			return;
 		}
 
-		if (level == 0)
-		{
-			s_portalListCount = 0;
-		}
-
 		// Build the world-space wall segments.
-		s32 portalStart = s_portalListCount;
 		buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1);
-		s32 portalCount = s_portalListCount - portalStart;
 
+		const s32 portalStart = s_portalListCount;
+		const s32 portalCount = traversal_addPortals(curSector);
 		Portal* portal = &s_portalList[portalStart];
 		for (s32 p = 0; p < portalCount; p++, portal++)
 		{
 			frustum_push(portal->frustum);
 			level++;
 
-			traverseAdjoin(portal->next, level, uploadFlags, portal->v0, portal->v1);
+			traverseSector(portal->next, level, uploadFlags, portal->v0, portal->v1);
 
 			frustum_pop();
 			level--;
 		}
 	}
 		
-	bool buildDisplayList(RSector* sector)
+	bool traverseScene(RSector* sector)
 	{
 		debug_update();
 
@@ -483,11 +493,12 @@ namespace TFE_Jedi
 		s32 level = 0;
 		u32 uploadFlags = UPLOAD_NONE;
 		s_portalsTraversed = 0;
+		s_portalListCount = 0;
 		s_wallSegGenerated = 0;
 		Vec2f startView[] = { {0,0}, {0,0} };
 
 		updateCachedSector(sector, uploadFlags);
-		traverseAdjoin(sector, level, uploadFlags, startView[0], startView[1]);
+		traverseSector(sector, level, uploadFlags, startView[0], startView[1]);
 		frustum_pop();
 
 		sdisplayList_finish();
@@ -503,7 +514,7 @@ namespace TFE_Jedi
 	void TFE_Sectors_GPU::draw(RSector* sector)
 	{
 		// Build the draw list.
-		if (!buildDisplayList(sector))
+		if (!traverseScene(sector))
 		{
 			return;
 		}
