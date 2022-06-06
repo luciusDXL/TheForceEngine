@@ -9,6 +9,7 @@ uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
 
 // in int gl_VertexID;
 out vec2 Frag_Uv;
+out vec3 Frag_Pos;
 out vec4 Frag_Color;
 void main()
 {
@@ -91,7 +92,6 @@ void main()
 			vtx_pos.y = (vertexId < 2) ? y0 : y1;
 		}
 
-		vtx_uv.xy = vtx.xy / vec2(8.0);
 		vtx_color.rgb = vec3(float(ambient) / 31.0);
 	}
 	else if (partId < 5)	// flat
@@ -118,6 +118,11 @@ void main()
 		vtx_color.rgb = vec3(float(ambient) / 31.0);
 		vtx_color.rg *= vec2(0.5 * float(flatIndex) + 0.4);
 
+		// Given the vertex position, compute the XZ position as the intersection between (camera->pos) and the plane at floor/ceiling height.
+		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
+		vtx_uv.x = planeHeight - CameraPos.y;
+		vtx_uv.y = 1.0;
+
 		zbias = -0.00005;
 	}
 	else // Cap
@@ -133,7 +138,14 @@ void main()
 		vtx_pos.y = (flatIndex==0) ? floorHeight + 200.0 : ceilHeight - 200.0;
 		vtx_color.rgb = vec3(float(ambient) / 31.0);
 		vtx_color.rg *= vec2(0.5 * float(flatIndex) + 0.4);
+
+		// Given the vertex position, compute the XZ position as the intersection between (camera->pos) and the plane at floor/ceiling height.
+		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
+		vtx_uv.x = planeHeight - CameraPos.y;
+		vtx_uv.y = 1.0;
 	}
+
+	Frag_Pos = vtx_pos - CameraPos;
 	
 	// Transform from world to view space.
     vec3 vpos = (vtx_pos - CameraPos) * CameraView;

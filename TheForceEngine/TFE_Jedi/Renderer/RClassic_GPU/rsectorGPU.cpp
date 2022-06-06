@@ -69,6 +69,7 @@ namespace TFE_Jedi
 	s32 m_cameraPosId;
 	s32 m_cameraViewId;
 	s32 m_cameraProjId;
+	s32 m_cameraDirId;
 	Vec3f m_viewDir;
 	
 	IndexBuffer m_indexBuffer;
@@ -82,6 +83,7 @@ namespace TFE_Jedi
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
+	extern Vec3f s_cameraDir;
 
 	void TFE_Sectors_GPU::reset()
 	{
@@ -96,9 +98,10 @@ namespace TFE_Jedi
 			// Load Shaders.
 			bool result = m_wallShader.load("Shaders/gpu_render_wall.vert", "Shaders/gpu_render_wall.frag", 0, nullptr, SHADER_VER_STD);
 			assert(result);
-			m_cameraPosId = m_wallShader.getVariableId("CameraPos");
+			m_cameraPosId  = m_wallShader.getVariableId("CameraPos");
 			m_cameraViewId = m_wallShader.getVariableId("CameraView");
 			m_cameraProjId = m_wallShader.getVariableId("CameraProj");
+			m_cameraDirId  = m_wallShader.getVariableId("CameraDir");
 			
 			m_wallShader.bindTextureNameToSlot("Sectors", 0);
 			m_wallShader.bindTextureNameToSlot("DrawListPos", 1);
@@ -525,6 +528,7 @@ namespace TFE_Jedi
 		m_wallShader.setVariable(m_cameraPosId,  SVT_VEC3,   s_cameraPos.m);
 		m_wallShader.setVariable(m_cameraViewId, SVT_MAT3x3, s_cameraMtx.data);
 		m_wallShader.setVariable(m_cameraProjId, SVT_MAT4x4, s_cameraProj.data);
+		m_wallShader.setVariable(m_cameraDirId,  SVT_VEC3,   s_cameraDir.m);
 				
 		// Draw the sector display list.
 		sdisplayList_draw();
