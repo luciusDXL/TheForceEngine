@@ -32,6 +32,9 @@ namespace TFE_Jedi
 	// Returns true if the sphere defined by {pos, radius} is fully or partially inside of the current frustum on the stack.
 	bool frustum_sphereInside(Vec3f pos, f32 radius);
 
+	// Returns true if the quad is in front of the near plane.
+	bool frustum_quadInside(const Vec3f v0, const Vec3f v1);
+
 	// This clips the quad formed from {corner0, corner1} against the current frustum on the stack.
 	// Returns false if the quad is outside of the frustum, else true.
 	bool frustum_clipQuadToFrustum(Vec3f corner0, Vec3f corner1, Polygon* output);

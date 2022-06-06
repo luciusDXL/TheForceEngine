@@ -116,7 +116,7 @@ namespace TFE_Jedi
 				seg->v0 = sbuffer_clip(seg->v0, seg->v1, points[0]);
 				seg->x0 = range[r].x;
 			}
-			else if (seg->x1 > range[r].z && seg->x0 < range[r].z)
+			if (seg->x1 > range[r].z && seg->x0 < range[r].z)
 			{
 				seg->v1 = sbuffer_clip(seg->v0, seg->v1, points[1]);
 				seg->x1 = range[r].z;

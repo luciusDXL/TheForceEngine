@@ -28,6 +28,8 @@ namespace TFE_Jedi
 		JBool columnOriented;
 	};
 
+	void screen_enableGPU(bool enable);
+
 	void screen_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color, u8* framebuffer);
 	void screen_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color, u8* framebuffer);
 	void screen_drawCircle(ScreenRect* rect, s32 x, s32 z, s32 r, s32 stepAngle, u8 color, u8* framebuffer);

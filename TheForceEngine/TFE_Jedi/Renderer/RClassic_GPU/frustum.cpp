@@ -88,6 +88,41 @@ namespace TFE_Jedi
 		}
 		return true;
 	}
+
+	bool frustum_quadInside(const Vec3f v0, const Vec3f v1)
+	{
+		const Frustum* frustum = frustum_getBack();
+		if (!frustum || frustum->planeCount < 1) { return true; }
+
+		Polygon poly;
+		frustum_createQuad(v0, v1, &poly);
+
+		const Vec4f* plane = frustum->planes;
+		for (u32 i = 0; i < frustum->planeCount; i++, plane++)
+		{
+			// Make the near plane test less aggressive.
+			const f32 eps = (i == frustum->planeCount - 1) ? -c_planeEps : c_planeEps;
+
+			// Are all vertices outside of this plane?
+			bool outside = true;
+			const Vec3f* vtx = poly.vtx;
+			for (u32 v = 0; v < 4; v++, vtx++)
+			{
+				const f32 dist = frustum_planeDistCameraRelative(plane, vtx);
+				if (dist >= eps)
+				{
+					outside = false;
+					break;
+				}
+			}
+
+			if (outside)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 				
 	bool frustum_clipQuadToFrustum(Vec3f corner0, Vec3f corner1, Polygon* output)
 	{
@@ -189,7 +224,7 @@ namespace TFE_Jedi
 		}
 		return true;
 	}
-
+		
 	void frustum_buildFromPolygon(const Polygon* polygon, Frustum* newFrustum)
 	{
 		s32 count = polygon->vertexCount;

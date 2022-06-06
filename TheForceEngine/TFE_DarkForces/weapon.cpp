@@ -1153,13 +1153,6 @@ namespace TFE_DarkForces
 				x += weapon->xOffset;
 				y += weapon->yOffset;
 			}
-
-		#if 0  // Low Detail
-			if (s_screenWidthFract < ONE_16)
-			{
-				y += 8;
-			}
-		#endif
 						
 			const u8* atten = RClassic_Fixed::computeLighting(weaponLightingZDist, 0);
 			TextureData* tex = weapon->frames[weapon->frame];

@@ -16,15 +16,23 @@ namespace TFE_Jedi
 	};
 
 	static u8 s_transColor = 0;
+	static bool s_gpuEnabled = false;
+
+	void screen_enableGPU(bool enable)
+	{
+		s_gpuEnabled = enable;
+	}
 
 	void screen_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color, u8* framebuffer)
 	{
 		if (x < rect->left || x > rect->right || z < rect->top || z > rect->bot) { return; }
+		if (s_gpuEnabled) { return; }
 		framebuffer[z*vfb_getStride()+x] = color;
 	}
 
 	void screen_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color, u8* framebuffer)
 	{
+		if (s_gpuEnabled) { return; }
 		if (!screen_clipLineToRect(rect, &x0, &z0, &x1, &z1))
 		{
 			return;
@@ -64,6 +72,7 @@ namespace TFE_Jedi
 
 	void screen_drawCircle(ScreenRect* rect, s32 x, s32 z, s32 r, s32 stepAngle, u8 color, u8* framebuffer)
 	{
+		if (s_gpuEnabled) { return; }
 		s32 rPixel = floor16(r + HALF_16);
 		s32 x1 = x + rPixel;
 		s32 x0 = x - rPixel;
@@ -320,6 +329,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output, JBool forceTransparency, JBool forceOpaque)
 	{
+		if (s_gpuEnabled) { return; }
 		s32 x1 = x0 + texture->width  - 1;
 		s32 y1 = y0 + texture->height - 1;
 
@@ -370,6 +380,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, const u8* atten, u8* output, JBool forceTransparency)
 	{
+		if (s_gpuEnabled) { return; }
 		s32 x1 = x0 + texture->width - 1;
 		s32 y1 = y0 + texture->height - 1;
 
@@ -544,6 +555,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output, JBool forceTransparency)
 	{
+		if (s_gpuEnabled) { return; }
 		ScreenImage image =
 		{
 			texture->width,
@@ -557,6 +569,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenIScale(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, s32 scale, u8* output)
 	{
+		if (s_gpuEnabled) { return; }
 		s32 x1 = x0 + (texture->width  - 1)*scale;
 		s32 y1 = y0 + (texture->height - 1)*scale;
 		s32 yPixelCount = y1 - y0 + 1;
@@ -581,6 +594,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreen(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, u8* output)
 	{
+		if (s_gpuEnabled) { return; }
 		s32 x1 = x0 + texture->width - 1;
 		s32 y1 = y0 + texture->height - 1;
 
@@ -653,6 +667,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output)
 	{
+		if (s_gpuEnabled) { return; }
 		s32 x1 = x0 + floor16(mul16(intToFixed16(texture->width - 1),  xScale));
 		s32 y1 = y0 + floor16(mul16(intToFixed16(texture->height - 1), yScale));
 		fixed16_16 u0 = 0, v1 = 0;
@@ -739,6 +754,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenLitScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, const u8* atten, u8* output, JBool forceTransparency)
 	{
+		if (s_gpuEnabled) { return; }
 		ScreenImage image = 
 		{
 			texture->width,
@@ -752,6 +768,7 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenLitScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, const u8* atten, u8* output)
 	{
+		if (s_gpuEnabled) { return; }
 		s32 x1 = x0 + floor16(mul16(intToFixed16(texture->width - 1), xScale));
 		s32 y1 = y0 + floor16(mul16(intToFixed16(texture->height - 1), yScale));
 		fixed16_16 u0 = 0, v1 = 0;

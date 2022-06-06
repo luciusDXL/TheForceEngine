@@ -4,6 +4,7 @@
 #include <TFE_Jedi/Level/level.h>
 #include "rcommon.h"
 #include "rsectorRender.h"
+#include "screenDraw.h"
 #include "RClassic_Fixed/rclassicFixedSharedState.h"
 #include "RClassic_Fixed/rclassicFixed.h"
 #include "RClassic_Fixed/rsectorFixed.h"
@@ -255,6 +256,7 @@ namespace TFE_Jedi
 			{
 				vfb_setResolution(320, 200);
 				s_sectorRenderer = new TFE_Sectors_Fixed();
+				screen_enableGPU(false);
 				RClassic_Fixed::setupInitCameraAndLights();
 			} break;
 			case TSR_CLASSIC_FLOAT:
@@ -263,6 +265,7 @@ namespace TFE_Jedi
 
 				u32 width, height;
 				vfb_getResolution(&width, &height);
+				screen_enableGPU(false);
 				RClassic_Float::setupInitCameraAndLights(width, height);
 			} break;
 			case TSR_CLASSIC_GPU:
@@ -271,6 +274,7 @@ namespace TFE_Jedi
 
 				u32 width, height;
 				vfb_getResolution(&width, &height);
+				screen_enableGPU(true);
 				RClassic_GPU::setupInitCameraAndLights(width, height);
 			} break;
 		}
@@ -318,8 +322,11 @@ namespace TFE_Jedi
 		}
 
 		// Clear the top pixel row.
-		memset(display, 0, s_width);
-		memset(display + (s_height - 1) * s_width, 0, s_width);
+		if (s_subRenderer != TSR_CLASSIC_GPU)
+		{
+			memset(display, 0, s_width);
+			memset(display + (s_height - 1) * s_width, 0, s_width);
+		}
 
 		s_drawFrame++;
 		if (s_subRenderer == TSR_CLASSIC_FIXED)
@@ -339,7 +346,10 @@ namespace TFE_Jedi
 		s_display = display;
 		s_colorMap = colormap;
 		s_lightSourceRamp = lightSourceRamp;
-		clear1dDepth();
+		if (s_subRenderer != TSR_CLASSIC_GPU)
+		{
+			clear1dDepth();
+		}
 
 		s_windowMinX_Pixels = s_minScreenX_Pixels;
 		s_windowMaxX_Pixels = s_maxScreenX_Pixels;
@@ -361,12 +371,15 @@ namespace TFE_Jedi
 		s_adjoinDepth = 1;
 		s_maxAdjoinDepth = 1;
 
-		for (s32 i = 0; i < s_width; i++)
+		if (s_subRenderer != TSR_CLASSIC_GPU)
 		{
-			s_columnTop[i] = s_minScreenY;
-			s_columnBot[i] = s_maxScreenY;
-			s_windowTop_all[i] = s_minScreenY;
-			s_windowBot_all[i] = s_maxScreenY;
+			for (s32 i = 0; i < s_width; i++)
+			{
+				s_columnTop[i] = s_minScreenY;
+				s_columnBot[i] = s_maxScreenY;
+				s_windowTop_all[i] = s_minScreenY;
+				s_windowBot_all[i] = s_maxScreenY;
+			}
 		}
 				
 		// Recursively draws sectors and their contents (sprites, 3D objects).
