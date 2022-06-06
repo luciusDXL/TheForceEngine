@@ -119,6 +119,7 @@ namespace TFE_RenderBackend
 	void bindVirtualDisplay();
 	void clearVirtualDisplay(f32* color);
 	void setPalette(const u32* palette);
+	const TextureGpu* getPaletteTexture();
 	void setColorCorrection(bool enabled, const ColorCorrection* color = nullptr);
 	bool getWidescreen();
 	bool getFrameBufferAsync();

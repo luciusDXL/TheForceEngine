@@ -64,12 +64,14 @@ namespace TFE_Jedi
 		
 	GPUSourceData s_gpuSourceData = { 0 };
 
+	TextureGpu* s_colormapTex;
 	Shader m_wallShader;
 	ShaderBuffer m_sectors;
 	s32 m_cameraPosId;
 	s32 m_cameraViewId;
 	s32 m_cameraProjId;
 	s32 m_cameraDirId;
+	s32 m_lightDataId;
 	Vec3f m_viewDir;
 	
 	IndexBuffer m_indexBuffer;
@@ -102,11 +104,14 @@ namespace TFE_Jedi
 			m_cameraViewId = m_wallShader.getVariableId("CameraView");
 			m_cameraProjId = m_wallShader.getVariableId("CameraProj");
 			m_cameraDirId  = m_wallShader.getVariableId("CameraDir");
+			m_lightDataId  = m_wallShader.getVariableId("LightData");
 			
 			m_wallShader.bindTextureNameToSlot("Sectors", 0);
 			m_wallShader.bindTextureNameToSlot("DrawListPos", 1);
 			m_wallShader.bindTextureNameToSlot("DrawListData", 2);
 			m_wallShader.bindTextureNameToSlot("DrawListPlanes", 3);
+			m_wallShader.bindTextureNameToSlot("Colormap", 4);
+			m_wallShader.bindTextureNameToSlot("Palette", 5);
 
 			// Handles up to 65536 sector quads in the view.
 			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * 65536);
@@ -156,6 +161,27 @@ namespace TFE_Jedi
 						
 			// Initialize the display list with the GPU buffers.
 			sdisplayList_init(1, 2, 3);
+
+			// Build the color map.
+			if (s_colorMap && s_lightSourceRamp)
+			{
+				u32 colormapData[256 * 32];
+				for (s32 i = 0; i < 256 * 32; i++)
+				{
+					u8* data = (u8*)&colormapData[i];
+					data[0] = s_colorMap[i];
+					if (i < 128)
+					{
+						data[1] = s_lightSourceRamp[i];
+					}
+					else
+					{
+						data[1] = 0;
+					}
+					data[2] = data[3] = 0;
+				}
+				s_colormapTex = TFE_RenderBackend::createTexture(256, 32, colormapData);
+			}
 		}
 		else
 		{
@@ -523,12 +549,17 @@ namespace TFE_Jedi
 		m_wallShader.bind();
 		m_indexBuffer.bind();
 		m_sectors.bind(0);
+		s_colormapTex->bind(4);
+		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
+		palette->bind(5);
 
-		// Camera
+		// Camera and lighting.
+		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, 0.0f };
 		m_wallShader.setVariable(m_cameraPosId,  SVT_VEC3,   s_cameraPos.m);
 		m_wallShader.setVariable(m_cameraViewId, SVT_MAT3x3, s_cameraMtx.data);
 		m_wallShader.setVariable(m_cameraProjId, SVT_MAT4x4, s_cameraProj.data);
 		m_wallShader.setVariable(m_cameraDirId,  SVT_VEC3,   s_cameraDir.m);
+		m_wallShader.setVariable(m_lightDataId,  SVT_VEC4,   lightData.m);
 				
 		// Draw the sector display list.
 		sdisplayList_draw();
@@ -537,6 +568,8 @@ namespace TFE_Jedi
 		m_wallShader.unbind();
 		m_indexBuffer.unbind();
 		m_sectors.unbind(0);
+		TextureGpu::clear(4);
+		TextureGpu::clear(5);
 		//TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
 		
 		// Debug

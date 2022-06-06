@@ -545,6 +545,11 @@ namespace TFE_RenderBackend
 		}
 	}
 
+	const TextureGpu* getPaletteTexture()
+	{
+		return s_palette->getTexture();
+	}
+
 	void setColorCorrection(bool enabled, const ColorCorrection* color/* = nullptr*/)
 	{
 		if (s_postEffectBlit->featureEnabled(BLIT_GPU_COLOR_CORRECTION) != enabled)

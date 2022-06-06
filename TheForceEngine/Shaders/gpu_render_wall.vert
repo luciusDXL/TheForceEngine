@@ -10,7 +10,7 @@ uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
 // in int gl_VertexID;
 out vec2 Frag_Uv;
 out vec3 Frag_Pos;
-out vec4 Frag_Color;
+flat out vec4 Frag_Color;
 void main()
 {
 	// We do our own vertex fetching and geometry expansion, so calculate the relevent values from the vertex ID.
@@ -92,7 +92,8 @@ void main()
 			vtx_pos.y = (vertexId < 2) ? y0 : y1;
 		}
 
-		vtx_color.rgb = vec3(float(ambient) / 31.0);
+		vtx_color.r = float(ambient);
+		vtx_color.g = 32.0;
 	}
 	else if (partId < 5)	// flat
 	{
@@ -115,8 +116,8 @@ void main()
 		}
 
 		vtx_pos  = vec3(vtx.x, (vertexId < 2) ? y0 : y1, vtx.y);
-		vtx_color.rgb = vec3(float(ambient) / 31.0);
-		vtx_color.rg *= vec2(0.5 * float(flatIndex) + 0.4);
+		vtx_color.r = float(ambient);
+		vtx_color.g = float(48 + 16*(1-flatIndex));
 
 		// Given the vertex position, compute the XZ position as the intersection between (camera->pos) and the plane at floor/ceiling height.
 		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
@@ -136,8 +137,10 @@ void main()
 		vtx_pos.x = positions[2*(vertexId&1)];
 		vtx_pos.z = positions[1+2*(vertexId/2)];
 		vtx_pos.y = (flatIndex==0) ? floorHeight + 200.0 : ceilHeight - 200.0;
-		vtx_color.rgb = vec3(float(ambient) / 31.0);
-		vtx_color.rg *= vec2(0.5 * float(flatIndex) + 0.4);
+		//vtx_color.rgb = vec3(float(ambient) / 31.0);
+		//vtx_color.rg *= vec2(0.5 * float(flatIndex) + 0.4);
+		vtx_color.r = float(ambient);
+		vtx_color.g = float(48 + 16*(1-flatIndex));
 
 		// Given the vertex position, compute the XZ position as the intersection between (camera->pos) and the plane at floor/ceiling height.
 		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
