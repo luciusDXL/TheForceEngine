@@ -60,6 +60,11 @@ void main()
 			float y0 = ceilHeight;
 			float y1 = floorHeight;
 
+			// Clamp quad vertices to the frustum upper and lower planes with the following requirements:
+			// 1. Both vertices must be on or below the plane, otherwise clipping is required (which is not done).
+			// 2. Only the non-anchor vertices can move.
+			// 3. The quad cannot turn inside-out.
+
 			// Bottom Plane
 			int index = max(0, (portalId - 1)*2);
 			vec4 plane = texelFetch(DrawListPlanes, index);
@@ -89,6 +94,7 @@ void main()
 				else if (dist.x < 0.0) { y0 = y0 - (y1 - y0) * dist.x / (dist.y - dist.x); }
 			}
 
+			// Compute final height value for this vertex.
 			vtx_pos.y = (vertexId < 2) ? y0 : y1;
 		}
 
@@ -102,7 +108,7 @@ void main()
 		float y1 = (flatIndex==0) ? floorHeight + 200.0 : ceilHeight;
 		vec2 vtx = (vertexId & 1)==0 ? positions.xy : positions.zw;
 
-		// Use the correct plane to properly clamp the floor/ceiling extrusions.
+		// Project flat extrusion to the upper or lower frustum plane.
 		int index = max(0, (portalId - 1)*2) + flatIndex;
 		vec4 plane = texelFetch(DrawListPlanes, index);
 		vec2 dist = vec2(dot(vec4(vtx.x, y0, vtx.y, 1.0), plane), dot(vec4(vtx.x, y1, vtx.y, 1.0), plane));
@@ -119,11 +125,12 @@ void main()
 		vtx_color.r = float(ambient);
 		vtx_color.g = float(48 + 16*(1-flatIndex));
 
-		// Given the vertex position, compute the XZ position as the intersection between (camera->pos) and the plane at floor/ceiling height.
+		// Store the relative plane height for the floor/ceiling projection in the fragment shader.
 		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
 		vtx_uv.x = planeHeight - CameraPos.y;
 		vtx_uv.y = 1.0;
 
+		// Add a small z bias to flats to avoid seams.
 		zbias = -0.00005;
 	}
 	else // Cap
@@ -131,14 +138,13 @@ void main()
 		int flatIndex = partId - 5;	// 0 = floor, 1 = ceiling.
 		if (flatIndex == 0)
 		{
+			// This flips the polygon orientation so backface culling works.
 			vertexId = (vertexId + 2) & 3;
 		}
 
 		vtx_pos.x = positions[2*(vertexId&1)];
 		vtx_pos.z = positions[1+2*(vertexId/2)];
 		vtx_pos.y = (flatIndex==0) ? floorHeight + 200.0 : ceilHeight - 200.0;
-		//vtx_color.rgb = vec3(float(ambient) / 31.0);
-		//vtx_color.rg *= vec2(0.5 * float(flatIndex) + 0.4);
 		vtx_color.r = float(ambient);
 		vtx_color.g = float(48 + 16*(1-flatIndex));
 
