@@ -20,6 +20,7 @@ enum StateEnable
 	STATE_DEPTH_WRITE = (1 << 3),
 	STATE_STENCIL_WRITE = (1 << 4),
 	STATE_STENCIL_TEST = (1 << 5),
+	STATE_WIREFRAME = (1 << 6),
 };
 
 enum StateBlendFactor

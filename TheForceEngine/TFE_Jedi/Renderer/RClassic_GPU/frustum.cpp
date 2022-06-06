@@ -333,6 +333,18 @@ namespace TFE_Jedi
 		frustum_push(frustum);
 	}
 
+	Vec4f frustum_calculatePlaneFromEdge(const Vec3f* edge)
+	{
+		Vec3f S = { edge[1].x - s_cameraPos.x, edge[1].y - s_cameraPos.y, edge[1].z - s_cameraPos.z };
+		Vec3f T = { edge[0].x - s_cameraPos.x, edge[0].y - s_cameraPos.y, edge[0].z - s_cameraPos.z };
+		Vec3f N = TFE_Math::cross(&S, &T);
+
+		N = TFE_Math::normalize(&N);
+		Vec4f plane = { N.x, N.y, N.z, -TFE_Math::dot(&N, &s_cameraPos) };
+
+		return plane;
+	}
+
 	////////////////////////////////////////////////
 	// Internal
 	////////////////////////////////////////////////

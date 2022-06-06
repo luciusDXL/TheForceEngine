@@ -10,7 +10,7 @@
 
 namespace TFE_Jedi
 {
-	void sdisplayList_init(s32 posIndex, s32 dataIndex);
+	void sdisplayList_init(s32 posIndex, s32 dataIndex, s32 planesIndex);
 	void sdisplayList_destroy();
 
 	void sdisplayList_clear();
@@ -18,6 +18,7 @@ namespace TFE_Jedi
 
 	void sdisplayList_addCaps(RSector* curSector);
 	void sdisplayList_addSegment(RSector* curSector, SegmentClipped* wallSeg);
+	void sdisplayList_addPortal(Vec3f p0, Vec3f p1);
 	void sdisplayList_draw();
 
 	s32  sdisplayList_getSize();

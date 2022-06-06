@@ -103,6 +103,7 @@ namespace TFE_Jedi
 			m_wallShader.bindTextureNameToSlot("Sectors", 0);
 			m_wallShader.bindTextureNameToSlot("DrawListPos", 1);
 			m_wallShader.bindTextureNameToSlot("DrawListData", 2);
+			m_wallShader.bindTextureNameToSlot("DrawListPlanes", 3);
 
 			// Handles up to 65536 sector quads in the view.
 			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * 65536);
@@ -151,7 +152,7 @@ namespace TFE_Jedi
 			m_sectors.create(s_sectorCount, bufferDefSectors, true, s_gpuSourceData.sectors);
 						
 			// Initialize the display list with the GPU buffers.
-			sdisplayList_init(1, 2);
+			sdisplayList_init(1, 2, 3);
 		}
 		else
 		{
@@ -459,6 +460,11 @@ namespace TFE_Jedi
 			level++;
 			s_portalsTraversed++;
 
+			// Add a portal to the display list.
+			Vec3f corner0 = { portal->v0.x, portal->y0, portal->v0.z };
+			Vec3f corner1 = { portal->v1.x, portal->y1, portal->v1.z };
+			sdisplayList_addPortal(corner0, corner1);
+
 			portal->wall->drawFrame = s_gpuFrame;
 			traverseSector(portal->next, level, uploadFlags, portal->v0, portal->v1);
 			portal->wall->drawFrame = 0;
@@ -527,6 +533,7 @@ namespace TFE_Jedi
 		m_wallShader.unbind();
 		m_indexBuffer.unbind();
 		m_sectors.unbind(0);
+		//TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
 		
 		// Debug
 		if (s_enableDebug)

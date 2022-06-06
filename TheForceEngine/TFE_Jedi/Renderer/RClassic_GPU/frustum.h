@@ -45,4 +45,7 @@ namespace TFE_Jedi
 
 	// Builds a world-space frustum from the camera.
 	void frustum_buildFromCamera();
+
+	// Build a single plane from an edge and the camera position.
+	Vec4f frustum_calculatePlaneFromEdge(const Vec3f* edge);
 }  // TFE_Jedi

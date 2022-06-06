@@ -110,6 +110,10 @@ namespace TFE_RenderState
 			{
 				glEnable(GL_STENCIL_TEST);
 			}
+			if (stateToChange & STATE_WIREFRAME)
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			}
 			s_currentState |= stateFlags;
 		}
 		else
@@ -138,6 +142,10 @@ namespace TFE_RenderState
 			if (stateToChange & STATE_STENCIL_TEST)
 			{
 				glDisable(GL_STENCIL_TEST);
+			}
+			if (stateToChange & STATE_WIREFRAME)
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			}
 			s_currentState &= ~stateFlags;
 		}

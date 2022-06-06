@@ -20,6 +20,7 @@
 #include <TFE_RenderBackend/shaderBuffer.h>
 
 #include "sectorDisplayList.h"
+#include "frustum.h"
 #include "../rcommon.h"
 
 using namespace TFE_RenderBackend;
@@ -40,14 +41,19 @@ namespace TFE_Jedi
 	};
 
 	static s32 s_displayListCount;
+	static s32 s_displayPlaneCount;
+	static s32 s_displayCurrentPortalId;
 	static Vec4f  s_displayListPos[1024];
 	static Vec4ui s_displayListData[1024];
+	static Vec4f  s_displayListPlanes[2048];
 	static ShaderBuffer s_displayListPosGPU;
 	static ShaderBuffer s_displayListDataGPU;
+	static ShaderBuffer s_displayListPlanesGPU;
 	static s32 s_posIndex;
 	static s32 s_dataIndex;
+	static s32 s_planesIndex;
 
-	void sdisplayList_init(s32 posIndex, s32 dataIndex)
+	void sdisplayList_init(s32 posIndex, s32 dataIndex, s32 planesIndex)
 	{
 		ShaderBufferDef bufferDefDisplayListPos =
 		{
@@ -65,8 +71,17 @@ namespace TFE_Jedi
 		};
 		s_displayListDataGPU.create(1024, bufferDefDisplayListData, true);
 
+		ShaderBufferDef bufferDefDisplayListPlanes =
+		{
+			4,				// 1, 2, 4 channels (R, RG, RGBA)
+			sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
+			BUF_CHANNEL_FLOAT
+		};
+		s_displayListPlanesGPU.create(2048, bufferDefDisplayListPlanes, true);
+
 		s_posIndex = posIndex;
 		s_dataIndex = dataIndex;
+		s_planesIndex = planesIndex;
 
 		sdisplayList_clear();
 	}
@@ -75,11 +90,14 @@ namespace TFE_Jedi
 	{
 		s_displayListPosGPU.destroy();
 		s_displayListDataGPU.destroy();
+		s_displayListPlanesGPU.destroy();
 	}
 
 	void sdisplayList_clear()
 	{
 		s_displayListCount = 0;
+		s_displayPlaneCount = 0;
+		s_displayCurrentPortalId = 0;
 	}
 		
 	void sdisplayList_finish()
@@ -87,6 +105,7 @@ namespace TFE_Jedi
 		if (!s_displayListCount) { return; }
 		s_displayListPosGPU.update(s_displayListPos, sizeof(Vec4f) * s_displayListCount);
 		s_displayListDataGPU.update(s_displayListData, sizeof(Vec4ui) * s_displayListCount);
+		s_displayListPlanesGPU.update(s_displayListPlanes, sizeof(Vec4f) * s_displayPlaneCount);
 	}
 
 	void sdisplayList_addCaps(RSector* curSector)
@@ -106,15 +125,39 @@ namespace TFE_Jedi
 		s_displayListCount++;
 	}
 
+	void sdisplayList_addPortal(Vec3f p0, Vec3f p1)
+	{
+		Vec4f* botPlane = &s_displayListPlanes[s_displayPlaneCount + 0];
+		Vec4f* topPlane = &s_displayListPlanes[s_displayPlaneCount + 1];
+		s_displayCurrentPortalId = 1 + (s_displayPlaneCount >> 1);
+		s_displayPlaneCount += 2;
+
+		const Vec3f botEdge[] =
+		{
+			{ p0.x, p1.y, p0.z },
+			{ p1.x, p1.y, p1.z },
+		};
+		const Vec3f topEdge[] =
+		{
+			{ p1.x, p0.y, p1.z },
+			{ p0.x, p0.y, p0.z },
+		};
+
+		*botPlane = frustum_calculatePlaneFromEdge(botEdge);
+		*topPlane = frustum_calculatePlaneFromEdge(topEdge);
+	}
+
 	void sdisplayList_addSegment(RSector* curSector, SegmentClipped* wallSeg)
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
-		s32 ambient = floor16(curSector->ambient);
-
+		s32 ambient = max(0, min(31, floor16(curSector->ambient)));
+		s32 segAmbient = ambient < 31 ? max(0, min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient))) : 31;
+		s32 portalId = s_displayCurrentPortalId;
+		
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		Vec4ui data = { (srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0u)/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
-						ambient < 31 ? (u32)min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient)) : 31u/*ambient*/, 0u/*textureId*/ };
+						u32(segAmbient | (portalId << 5)), 0u/*textureId*/ };
 
 		// Wall Flags.
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector) // TODO: Fix transparent mid textures.
@@ -142,14 +185,14 @@ namespace TFE_Jedi
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_FLOOR;
-		s_displayListData[s_displayListCount].z = ambient;
+		s_displayListData[s_displayListCount].z = u32(ambient | (portalId << 5));
 		s_displayListCount++;
 
 		// Add Ceiling
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_CEILING;
-		s_displayListData[s_displayListCount].z = ambient;
+		s_displayListData[s_displayListCount].z = u32(ambient | (portalId << 5));
 		s_displayListCount++;
 	}
 
@@ -162,10 +205,12 @@ namespace TFE_Jedi
 	{
 		s_displayListPosGPU.bind(s_posIndex);
 		s_displayListDataGPU.bind(s_dataIndex);
+		s_displayListPlanesGPU.bind(s_planesIndex);
 
 		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount, sizeof(u16));
 
 		s_displayListPosGPU.unbind(s_posIndex);
 		s_displayListDataGPU.unbind(s_dataIndex);
+		s_displayListPlanesGPU.unbind(s_planesIndex);
 	}
 }
