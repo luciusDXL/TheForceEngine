@@ -8,7 +8,7 @@ uniform sampler2D Textures;
 
 uniform isamplerBuffer TextureTable;
 
-in vec2 Frag_Uv;
+flat in vec4 Frag_Uv;
 flat in vec4 Frag_Color;
 flat in int Frag_TextureId;
 in vec3 Frag_Pos;
@@ -26,20 +26,25 @@ vec3 getAttenuatedColor(int baseColor, int light)
 	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
 }
 
-int imod(int x, int y)
+ivec2 imod(ivec2 x, ivec2 y)
 {
 	return x - (x/y)*y;
+}
+
+ivec2 wrapCoord(ivec2 uv, ivec2 edge)
+{
+	uv = imod(uv, edge);
+	uv.x += (uv.x < 0) ? edge.x : 0;
+	uv.y += (uv.y < 0) ? edge.y : 0;
+	return uv;
 }
 
 float sampleTexture(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec2 iuv = ivec2(floor(uv));
-	iuv.x = imod(iuv.x, sampleData.z);
-	iuv.y = imod(iuv.y, sampleData.w);
-	if (iuv.x < 0) iuv.x += sampleData.z;
-	if (iuv.y < 0) iuv.y += sampleData.w;
 
+	iuv = wrapCoord(iuv, sampleData.zw);
 	iuv = iuv + sampleData.xy;
 
 	return texelFetch(Textures, iuv, 0).r * 255.0;
@@ -54,6 +59,9 @@ void main()
 		uv.x = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
 		uv.y = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
 		uv *= 8.0;
+
+		// Texture Offset
+		uv += Frag_Uv.zw;
 	}
 	else if (Frag_Uv.y > 0.0) // Flat
 	{

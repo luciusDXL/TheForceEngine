@@ -160,25 +160,36 @@ namespace TFE_Jedi
 				wallCount += curSector->wallCount;
 			}
 
-			s_gpuSourceData.wallSize = sizeof(Vec4f) * wallCount;
+			s_gpuSourceData.wallSize = sizeof(Vec4f) * wallCount * 3;
 			s_gpuSourceData.walls = (Vec4f*)level_alloc(s_gpuSourceData.wallSize);
 			memset(s_gpuSourceData.walls, 0, s_gpuSourceData.wallSize);
 
-			for (s32 s = 0; s < s_sectorCount; s++)
+			for (u32 s = 0; s < s_sectorCount; s++)
 			{
 				RSector* curSector = &s_sectors[s];
 				GPUCachedSector* cachedSector = &s_cachedSectors[s];
 
-				Vec4f* wallData = &s_gpuSourceData.walls[cachedSector->wallStart];
+				Vec4f* wallData = &s_gpuSourceData.walls[cachedSector->wallStart*3];
 				const RWall* srcWall = curSector->walls;
-				for (s32 w = 0; w < curSector->wallCount; w++, wallData++, srcWall++)
+				for (s32 w = 0; w < curSector->wallCount; w++, wallData+=3, srcWall++)
 				{
-					wallData->x = fixed16ToFloat(srcWall->w0->x);
-					wallData->y = fixed16ToFloat(srcWall->w0->z);
+					wallData[0].x = fixed16ToFloat(srcWall->w0->x);
+					wallData[0].y = fixed16ToFloat(srcWall->w0->z);
 
 					Vec2f offset = { fixed16ToFloat(srcWall->w1->x) - wallData->x, fixed16ToFloat(srcWall->w1->z) - wallData->y };
-					wallData->z = fixed16ToFloat(srcWall->length) / sqrtf(offset.x*offset.x + offset.z*offset.z);
-					wallData->w = 0.0f;
+					wallData[0].z = fixed16ToFloat(srcWall->length) / sqrtf(offset.x*offset.x + offset.z*offset.z);
+					wallData[0].w = 0.0f;
+
+					// Texture offsets.
+					wallData[1].x = fixed16ToFloat(srcWall->midOffset.x);
+					wallData[1].y = fixed16ToFloat(srcWall->midOffset.z);
+					wallData[1].z = fixed16ToFloat(srcWall->signOffset.x);
+					wallData[1].w = fixed16ToFloat(srcWall->signOffset.z);
+
+					wallData[2].x = fixed16ToFloat(srcWall->botOffset.x);
+					wallData[2].y = fixed16ToFloat(srcWall->botOffset.z);
+					wallData[2].z = fixed16ToFloat(srcWall->topOffset.x);
+					wallData[2].w = fixed16ToFloat(srcWall->topOffset.z);
 				}
 			}
 
@@ -190,7 +201,7 @@ namespace TFE_Jedi
 			};
 			m_sectors.create(s_sectorCount*2, bufferDefSectors, true, s_gpuSourceData.sectors);
 
-			m_walls.create(wallCount, bufferDefSectors, true, s_gpuSourceData.walls);
+			m_walls.create(wallCount*3, bufferDefSectors, true, s_gpuSourceData.walls);
 
 			// Initialize the display list with the GPU buffers.
 			sdisplayList_init(2, 3, 4);
@@ -240,15 +251,26 @@ namespace TFE_Jedi
 		if (flags & (SDF_VERTICES | SDF_WALL_CHANGE | SDF_WALL_OFFSETS | SDF_WALL_SHAPE))
 		{
 			uploadFlags |= UPLOAD_WALLS;
-			Vec4f* wallData = &s_gpuSourceData.walls[cached->wallStart];
+			Vec4f* wallData = &s_gpuSourceData.walls[cached->wallStart*3];
 			const RWall* srcWall = srcSector->walls;
-			for (s32 w = 0; w < srcSector->wallCount; w++, wallData++, srcWall++)
+			for (s32 w = 0; w < srcSector->wallCount; w++, wallData+=3, srcWall++)
 			{
-				wallData->x = fixed16ToFloat(srcWall->w0->x);
-				wallData->y = fixed16ToFloat(srcWall->w0->z);
+				wallData[0].x = fixed16ToFloat(srcWall->w0->x);
+				wallData[0].y = fixed16ToFloat(srcWall->w0->z);
 
 				Vec2f offset = { fixed16ToFloat(srcWall->w1->x) - wallData->x, fixed16ToFloat(srcWall->w1->z) - wallData->y };
 				wallData->z = fixed16ToFloat(srcWall->length) / sqrtf(offset.x*offset.x + offset.z*offset.z);
+
+				// Texture offsets.
+				wallData[1].x = fixed16ToFloat(srcWall->midOffset.x);
+				wallData[1].y = fixed16ToFloat(srcWall->midOffset.z);
+				wallData[1].z = fixed16ToFloat(srcWall->signOffset.x);
+				wallData[1].w = fixed16ToFloat(srcWall->signOffset.z);
+
+				wallData[2].x = fixed16ToFloat(srcWall->botOffset.x);
+				wallData[2].y = fixed16ToFloat(srcWall->botOffset.z);
+				wallData[2].z = fixed16ToFloat(srcWall->topOffset.x);
+				wallData[2].w = fixed16ToFloat(srcWall->topOffset.z);
 			}
 		}
 	}

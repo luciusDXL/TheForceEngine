@@ -9,7 +9,7 @@ uniform usamplerBuffer DrawListData;
 uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
 
 // in int gl_VertexID;
-out vec2 Frag_Uv;
+flat out vec4 Frag_Uv;
 out vec3 Frag_Pos;
 out vec4 Texture_Data;
 flat out vec4 Frag_Color;
@@ -41,7 +41,7 @@ void main()
 	
 	// Generate the output position and uv for the vertex.
 	vec3 vtx_pos;
-	vec2 vtx_uv = vec2(0.0);
+	vec4 vtx_uv = vec4(0.0);
 	vec4 vtx_color = vec4(0.0, 0.0, sectorAmbient, 1.0);
 	vec4 texture_data = vec4(0.0);
 	float zbias = 0.0;
@@ -50,17 +50,21 @@ void main()
 		vec2 vtx = (vertexId & 1)==0 ? positions.xy : positions.zw;
 		vtx_pos = vec3(vtx.x, (vertexId < 2) ? ceilHeight : floorHeight, vtx.y);
 
+		float texBase = floorHeight;
 		if (partId == 1) // Top
 		{
 			float nextTop = texelFetch(Sectors, nextId*2).y;
 			float curTop = min(floorHeight, max(nextTop, ceilHeight));
 			vtx_pos.y = (vertexId < 2) ? ceilHeight : curTop;
+			vtx_uv.zw = texelFetch(Walls, wallId*3 + 2).zw;
+			texBase = nextTop;
 		}
 		else if (partId == 2) // Bottom
 		{
 			float nextBot = texelFetch(Sectors, nextId*2).x;
 			float curBot = max(ceilHeight, min(nextBot, floorHeight));
 			vtx_pos.y = (vertexId < 2) ? curBot : floorHeight;
+			vtx_uv.zw = texelFetch(Walls, wallId*3 + 2).xy;
 		}
 		else if (portalId > 0)  // Mid
 		{
@@ -103,10 +107,15 @@ void main()
 
 			// Compute final height value for this vertex.
 			vtx_pos.y = (vertexId < 2) ? y0 : y1;
+			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
+		}
+		else
+		{
+			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
 		}
 
-		texture_data = texelFetch(Walls, wallId);
-		vtx_uv.x = floorHeight;
+		texture_data = texelFetch(Walls, wallId*3);
+		vtx_uv.x = texBase;
 		vtx_uv.y = 2.0;
 
 		vtx_color.r = float(lightOffset);

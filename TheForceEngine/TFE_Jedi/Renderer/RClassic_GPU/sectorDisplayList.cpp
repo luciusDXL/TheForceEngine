@@ -192,7 +192,6 @@ namespace TFE_Jedi
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_FLOOR;
-		s_displayListData[s_displayListCount].z = portalId;
 		s_displayListData[s_displayListCount].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
 		s_displayListCount++;
 
@@ -200,7 +199,6 @@ namespace TFE_Jedi
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_CEILING;
-		s_displayListData[s_displayListCount].z = portalId;
 		s_displayListData[s_displayListCount].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
 		s_displayListCount++;
 	}
