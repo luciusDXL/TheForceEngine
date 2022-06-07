@@ -28,8 +28,8 @@ void main()
 	int partId   = int(data.x & 65535u);
 	int nextId   = int(data.x >> 16u);
 	int sectorId = int(data.y);
-	int ambient  = int(data.z & 31u);
-	int portalId = int(data.z >> 5u);	// used for looking up vertical planes.
+	int lightOffset = int(data.z & 63u) - 32;
+	int portalId = int(data.z >> 6u);	// used for looking up vertical planes.
 	int wallId   = int(data.w >> 16u);
 	Frag_TextureId = int(data.w & 65535u);
 
@@ -37,11 +37,12 @@ void main()
 	vec4 sectorData   = texelFetch(Sectors, sectorId*2);
 	float floorHeight = sectorData.x;
 	float ceilHeight  = sectorData.y;
+	float sectorAmbient = sectorData.z;
 	
 	// Generate the output position and uv for the vertex.
 	vec3 vtx_pos;
 	vec2 vtx_uv = vec2(0.0);
-	vec4 vtx_color = vec4(0.5, 0.5, 0.5, 1.0);
+	vec4 vtx_color = vec4(0.0, 0.0, sectorAmbient, 1.0);
 	vec4 texture_data = vec4(0.0);
 	float zbias = 0.0;
 	if (partId < 3)	// Wall
@@ -108,7 +109,7 @@ void main()
 		vtx_uv.x = floorHeight;
 		vtx_uv.y = 2.0;
 
-		vtx_color.r = float(ambient);
+		vtx_color.r = float(lightOffset);
 		vtx_color.g = 32.0;
 	}
 	else if (partId < 5)	// flat
@@ -132,7 +133,7 @@ void main()
 		}
 
 		vtx_pos  = vec3(vtx.x, (vertexId < 2) ? y0 : y1, vtx.y);
-		vtx_color.r = float(ambient);
+		vtx_color.r = 0.0;
 		vtx_color.g = float(48 + 16*(1-flatIndex));
 
 		// Store the relative plane height for the floor/ceiling projection in the fragment shader.
@@ -158,7 +159,7 @@ void main()
 		vtx_pos.x = positions[2*(vertexId&1)];
 		vtx_pos.z = positions[1+2*(vertexId/2)];
 		vtx_pos.y = (flatIndex==0) ? floorHeight + 200.0 : ceilHeight - 200.0;
-		vtx_color.r = float(ambient);
+		vtx_color.r = 0.0;
 		vtx_color.g = float(48 + 16*(1-flatIndex));
 
 		// Given the vertex position, compute the XZ position as the intersection between (camera->pos) and the plane at floor/ceiling height.

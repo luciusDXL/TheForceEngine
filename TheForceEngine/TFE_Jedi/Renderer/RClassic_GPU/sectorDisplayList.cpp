@@ -112,7 +112,7 @@ namespace TFE_Jedi
 	{
 		// TODO: Constrain to portal frustum.
 		Vec4f pos = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
-		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, (u32)floor16(curSector->ambient), 0u/*textureId*/ };
+		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, 0u, 0u/*textureId*/ };
 
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
@@ -153,15 +153,15 @@ namespace TFE_Jedi
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
-		s32 ambient = max(0, min(31, floor16(curSector->ambient)));
-		s32 segAmbient = ambient < 31 ? max(0, min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient))) : 31;
-		s32 portalId = s_displayCurrentPortalId;
-
+		u32 portalId  = u32(s_displayCurrentPortalId) << 6u;	// pre-shift.
 		u32 wallGpuId = u32(cached->wallStart + wallId) << 16u;
+		// Add 32 so the value is unsigned and easy to decode in the shader (just subtract 32).
+		// Values should never to larger than [-31,31] but clamp just in case (larger values would have no effect anyway).
+		u32 wallLight = u32(32 + clamp(floor16(srcWall->wallLight), -31, 31));
 		
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		Vec4ui data = { (srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0u)/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
-						u32(segAmbient | (portalId << 5)), 0u/*textureId*/ };
+						 wallLight | portalId, 0u/*textureId*/ };
 
 		// Wall Flags.
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector) // TODO: Fix transparent mid textures.
@@ -192,7 +192,7 @@ namespace TFE_Jedi
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_FLOOR;
-		s_displayListData[s_displayListCount].z = u32(ambient | (portalId << 5));
+		s_displayListData[s_displayListCount].z = portalId;
 		s_displayListData[s_displayListCount].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
 		s_displayListCount++;
 
@@ -200,7 +200,7 @@ namespace TFE_Jedi
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_CEILING;
-		s_displayListData[s_displayListCount].z = u32(ambient | (portalId << 5));
+		s_displayListData[s_displayListCount].z = portalId;
 		s_displayListData[s_displayListCount].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
 		s_displayListCount++;
 	}

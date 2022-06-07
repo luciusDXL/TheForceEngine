@@ -21,7 +21,7 @@ vec3 getAttenuatedColor(int baseColor, int light)
 	if (light < 31)
 	{
 		ivec2 uv = ivec2(color, light);
-		color = int(texelFetch(Colormap, uv, 0).r * 256.0);
+		color = int(texelFetch(Colormap, uv, 0).r * 255.0);
 	}
 	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
 }
@@ -42,21 +42,20 @@ float sampleTexture(int id, vec2 uv)
 
 	iuv = iuv + sampleData.xy;
 
-	return floor(texelFetch(Textures, iuv, 0).r * 256.0);
+	return texelFetch(Textures, iuv, 0).r * 255.0;
 }
 
 void main()
 {
     vec3 cameraRelativePos = Frag_Pos;
 	vec2 uv = vec2(0.0);
-	if (Frag_Uv.y > 1.5)
+	if (Frag_Uv.y > 1.5) // Wall
 	{
-		float s = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
-		float t = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
-		uv.x = s * 8.0;
-		uv.y = t * 8.0;
+		uv.x = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
+		uv.y = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
+		uv *= 8.0;
 	}
-	else if (Frag_Uv.y > 0.0)
+	else if (Frag_Uv.y > 0.0) // Flat
 	{
 		// Project onto the floor or ceiling plane.
 		float t = Frag_Uv.x / Frag_Pos.y;
@@ -65,14 +64,15 @@ void main()
 
 		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
-	else
+	else // Cap
 	{
 		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
 
 	float z = dot(cameraRelativePos, CameraDir);
-	float ambient   = Frag_Color.r;
-	float baseColor = Frag_Color.g;
+	float lightOffset   = Frag_Color.r;
+	float baseColor     = Frag_Color.g;
+	float sectorAmbient = Frag_Color.b;
 
 	// Camera light and world ambient.
 	float worldAmbient = floor(LightData.x + 0.5);
@@ -82,17 +82,18 @@ void main()
 	if (worldAmbient < 31.0 || cameraLightSource != 0.0)
 	{
 		float depthScaled = min(floor(z * 4.0), 127.0);
-		float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*256.0 + worldAmbient;
+		float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
 		if (lightSource > 0)
 		{
 			light += lightSource;
 		}
 	}
-	light = max(light, ambient);
+	light = max(light, sectorAmbient);
 
-	float scaledAmbient = ambient * 7.0 / 8.0;	// approx, should be sector ambient.
+	float minAmbient = sectorAmbient * 7.0 / 8.0;
 	float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
-	light = clamp(light - depthAtten, scaledAmbient, 31.0);
+	light = max(light - depthAtten, minAmbient) + lightOffset;
+	light = clamp(light, 0.0, 31.0);
 
 	// Use define.
 	baseColor = sampleTexture(Frag_TextureId, uv);

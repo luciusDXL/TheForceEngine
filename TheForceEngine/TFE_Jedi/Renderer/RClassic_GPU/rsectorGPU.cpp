@@ -149,7 +149,7 @@ namespace TFE_Jedi
 
 				s_gpuSourceData.sectors[s*2].x = cachedSector->floorHeight;
 				s_gpuSourceData.sectors[s*2].y = cachedSector->ceilingHeight;
-				s_gpuSourceData.sectors[s*2].z = 0.0f;
+				s_gpuSourceData.sectors[s*2].z = fixed16ToFloat(curSector->ambient);
 				s_gpuSourceData.sectors[s*2].w = 0.0f;
 
 				s_gpuSourceData.sectors[s*2 + 1].x = fixed16ToFloat(curSector->floorOffset.x);
@@ -259,12 +259,13 @@ namespace TFE_Jedi
 		if (!flags) { return; }  // Nothing to do.
 
 		GPUCachedSector* cached = &s_cachedSectors[srcSector->index];
-		if (flags & (SDF_HEIGHTS | SDF_FLAT_OFFSETS))
+		if (flags & (SDF_HEIGHTS | SDF_FLAT_OFFSETS | SDF_AMBIENT))
 		{
 			cached->floorHeight   = fixed16ToFloat(srcSector->floorHeight);
 			cached->ceilingHeight = fixed16ToFloat(srcSector->ceilingHeight);
 			s_gpuSourceData.sectors[srcSector->index*2].x = cached->floorHeight;
 			s_gpuSourceData.sectors[srcSector->index*2].y = cached->ceilingHeight;
+			s_gpuSourceData.sectors[srcSector->index*2].z = fixed16ToFloat(srcSector->ambient);
 
 			s_gpuSourceData.sectors[srcSector->index*2+1].x = fixed16ToFloat(srcSector->floorOffset.x);
 			s_gpuSourceData.sectors[srcSector->index*2+1].y = fixed16ToFloat(srcSector->floorOffset.z);
