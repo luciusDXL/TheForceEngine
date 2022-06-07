@@ -86,6 +86,7 @@ namespace TFE_Jedi
 		file.close();
 
 		TextureData* texture = (TextureData*)region_alloc(s_memoryRegion, sizeof(TextureData));
+		texture->textureId = 0;
 		const u8* data = s_buffer.data();
 		const u8* fheader = data;
 		data += 3;

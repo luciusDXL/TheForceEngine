@@ -3,6 +3,7 @@ uniform mat3 CameraView;
 uniform mat4 CameraProj;
 
 uniform samplerBuffer  Sectors;
+uniform samplerBuffer  Walls;
 uniform samplerBuffer  DrawListPos;
 uniform usamplerBuffer DrawListData;
 uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
@@ -10,7 +11,9 @@ uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
 // in int gl_VertexID;
 out vec2 Frag_Uv;
 out vec3 Frag_Pos;
+out vec4 Wall_Data;
 flat out vec4 Frag_Color;
+flat out int Frag_TextureId;
 void main()
 {
 	// We do our own vertex fetching and geometry expansion, so calculate the relevent values from the vertex ID.
@@ -22,11 +25,13 @@ void main()
 	uvec4 data = texelFetch(DrawListData, partIndex);
 
 	// Unpack part data.
-	int partId   = int(data.x & 0xffffu);
+	int partId   = int(data.x & 65535u);
 	int nextId   = int(data.x >> 16u);
 	int sectorId = int(data.y);
 	int ambient  = int(data.z & 31u);
 	int portalId = int(data.z >> 5u);	// used for looking up vertical planes.
+	int wallId   = int(data.w >> 16u);
+	Frag_TextureId = int(data.w & 65535u);
 
 	// Get the current sector heights.
 	vec4 sectorData   = texelFetch(Sectors, sectorId);
@@ -37,6 +42,7 @@ void main()
 	vec3 vtx_pos;
 	vec2 vtx_uv = vec2(0.0);
 	vec4 vtx_color = vec4(0.5, 0.5, 0.5, 1.0);
+	vec4 wall_data = vec4(0.0);
 	float zbias = 0.0;
 	if (partId < 3)	// Wall
 	{
@@ -97,6 +103,10 @@ void main()
 			// Compute final height value for this vertex.
 			vtx_pos.y = (vertexId < 2) ? y0 : y1;
 		}
+
+		wall_data = texelFetch(Walls, wallId);
+		vtx_uv.x = floorHeight;
+		vtx_uv.y = 2.0;
 
 		vtx_color.r = float(ambient);
 		vtx_color.g = 32.0;
@@ -164,4 +174,5 @@ void main()
 	// Write out the per-vertex uv and color.
 	Frag_Uv = vtx_uv;
 	Frag_Color = vtx_color;
+	Wall_Data = wall_data;
 }

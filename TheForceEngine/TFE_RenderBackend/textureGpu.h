@@ -12,6 +12,13 @@ enum MagFilter
 	MAG_FILTER_LINEAR,
 };
 
+enum TexFormat
+{
+	TEX_RGBA8 = 0,
+	TEX_R8,
+	TEX_COUNT
+};
+
 class TextureGpu
 {
 public:

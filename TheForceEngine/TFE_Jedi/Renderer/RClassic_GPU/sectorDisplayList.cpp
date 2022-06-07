@@ -117,11 +117,13 @@ namespace TFE_Jedi
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x = SPARTID_FLOOR_CAP;
+		s_displayListData[s_displayListCount].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
 		s_displayListCount++;
 
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x = SPARTID_CEIL_CAP;
+		s_displayListData[s_displayListCount].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
 		s_displayListCount++;
 	}
 
@@ -147,13 +149,15 @@ namespace TFE_Jedi
 		*topPlane = frustum_calculatePlaneFromEdge(topEdge);
 	}
 
-	void sdisplayList_addSegment(RSector* curSector, SegmentClipped* wallSeg)
+	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg)
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
 		s32 ambient = max(0, min(31, floor16(curSector->ambient)));
 		s32 segAmbient = ambient < 31 ? max(0, min(31, floor16(srcWall->wallLight) + floor16(curSector->ambient))) : 31;
 		s32 portalId = s_displayCurrentPortalId;
+
+		u32 wallGpuId = u32(cached->wallStart + wallId) << 16u;
 		
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		Vec4ui data = { (srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0u)/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
@@ -165,6 +169,7 @@ namespace TFE_Jedi
 			s_displayListPos[s_displayListCount] = pos;
 			s_displayListData[s_displayListCount] = data;
 			s_displayListData[s_displayListCount].x |= SPARTID_WALL_MID;
+			s_displayListData[s_displayListCount].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 			s_displayListCount++;
 		}
 		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector)
@@ -172,6 +177,7 @@ namespace TFE_Jedi
 			s_displayListPos[s_displayListCount] = pos;
 			s_displayListData[s_displayListCount] = data;
 			s_displayListData[s_displayListCount].x |= SPARTID_WALL_TOP;
+			s_displayListData[s_displayListCount].w = wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0);
 			s_displayListCount++;
 		}
 		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector)
@@ -179,6 +185,7 @@ namespace TFE_Jedi
 			s_displayListPos[s_displayListCount] = pos;
 			s_displayListData[s_displayListCount] = data;
 			s_displayListData[s_displayListCount].x |= SPARTID_WALL_BOT;
+			s_displayListData[s_displayListCount].w = wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0);
 			s_displayListCount++;
 		}
 		// Add Floor
@@ -186,6 +193,7 @@ namespace TFE_Jedi
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_FLOOR;
 		s_displayListData[s_displayListCount].z = u32(ambient | (portalId << 5));
+		s_displayListData[s_displayListCount].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
 		s_displayListCount++;
 
 		// Add Ceiling
@@ -193,6 +201,7 @@ namespace TFE_Jedi
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_CEILING;
 		s_displayListData[s_displayListCount].z = u32(ambient | (portalId << 5));
+		s_displayListData[s_displayListCount].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
 		s_displayListCount++;
 	}
 

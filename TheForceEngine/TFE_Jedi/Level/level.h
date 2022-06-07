@@ -55,6 +55,8 @@ namespace TFE_Jedi
 	JBool level_isGoalComplete(s32 goalIndex);
 
 	void level_addSound(const char* name, u32 freq, s32 priority);
+
+	TextureData** level_getTextures(s32* count);
 		
 	extern u32 s_sectorCount;
 	extern RSector* s_sectors;

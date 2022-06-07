@@ -24,6 +24,7 @@
 #include "frustum.h"
 #include "sbuffer.h"
 #include "sectorDisplayList.h"
+#include "texturePacker.h"
 #include "../rcommon.h"
 
 #define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
@@ -39,18 +40,13 @@ namespace TFE_Jedi
 		UPLOAD_WALLS    = FLAG_BIT(2),
 		UPLOAD_ALL      = UPLOAD_SECTORS | UPLOAD_VERTICES | UPLOAD_WALLS
 	};
-			
-	struct GPUCachedSector
-	{
-		f32 floorHeight;
-		f32 ceilingHeight;
-		u64 builtFrame;
-	};
-
+		
 	struct GPUSourceData
 	{
 		Vec4f* sectors;
+		Vec4f* walls;
 		u32 sectorSize;
+		u32 wallSize;
 	};
 
 	struct Portal
@@ -67,6 +63,7 @@ namespace TFE_Jedi
 	TextureGpu* s_colormapTex;
 	Shader m_wallShader;
 	ShaderBuffer m_sectors;
+	ShaderBuffer m_walls;
 	s32 m_cameraPosId;
 	s32 m_cameraViewId;
 	s32 m_cameraProjId;
@@ -107,11 +104,14 @@ namespace TFE_Jedi
 			m_lightDataId  = m_wallShader.getVariableId("LightData");
 			
 			m_wallShader.bindTextureNameToSlot("Sectors", 0);
-			m_wallShader.bindTextureNameToSlot("DrawListPos", 1);
-			m_wallShader.bindTextureNameToSlot("DrawListData", 2);
-			m_wallShader.bindTextureNameToSlot("DrawListPlanes", 3);
-			m_wallShader.bindTextureNameToSlot("Colormap", 4);
-			m_wallShader.bindTextureNameToSlot("Palette", 5);
+			m_wallShader.bindTextureNameToSlot("Walls", 1);
+			m_wallShader.bindTextureNameToSlot("DrawListPos", 2);
+			m_wallShader.bindTextureNameToSlot("DrawListData", 3);
+			m_wallShader.bindTextureNameToSlot("DrawListPlanes", 4);
+			m_wallShader.bindTextureNameToSlot("Colormap", 5);
+			m_wallShader.bindTextureNameToSlot("Palette", 6);
+			m_wallShader.bindTextureNameToSlot("Textures", 7);
+			m_wallShader.bindTextureNameToSlot("TextureTable", 8);
 
 			// Handles up to 65536 sector quads in the view.
 			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * 65536);
@@ -138,17 +138,43 @@ namespace TFE_Jedi
 			s_gpuSourceData.sectors = (Vec4f*)level_alloc(s_gpuSourceData.sectorSize);
 			memset(s_gpuSourceData.sectors, 0, s_gpuSourceData.sectorSize);
 
+			s32 wallCount = 0;
 			for (u32 s = 0; s < s_sectorCount; s++)
 			{
 				RSector* curSector = &s_sectors[s];
 				GPUCachedSector* cachedSector = &s_cachedSectors[s];
 				cachedSector->floorHeight   = fixed16ToFloat(curSector->floorHeight);
 				cachedSector->ceilingHeight = fixed16ToFloat(curSector->ceilingHeight);
+				cachedSector->wallStart = wallCount;
 
 				s_gpuSourceData.sectors[s].x = cachedSector->floorHeight;
 				s_gpuSourceData.sectors[s].y = cachedSector->ceilingHeight;
 				s_gpuSourceData.sectors[s].z = 0.0f;
 				s_gpuSourceData.sectors[s].w = 0.0f;
+
+				wallCount += curSector->wallCount;
+			}
+
+			s_gpuSourceData.wallSize = sizeof(Vec4f) * wallCount;
+			s_gpuSourceData.walls = (Vec4f*)level_alloc(s_gpuSourceData.wallSize);
+			memset(s_gpuSourceData.walls, 0, s_gpuSourceData.wallSize);
+
+			for (s32 s = 0; s < s_sectorCount; s++)
+			{
+				RSector* curSector = &s_sectors[s];
+				GPUCachedSector* cachedSector = &s_cachedSectors[s];
+
+				Vec4f* wallData = &s_gpuSourceData.walls[cachedSector->wallStart];
+				const RWall* srcWall = curSector->walls;
+				for (s32 w = 0; w < curSector->wallCount; w++, wallData++, srcWall++)
+				{
+					wallData->x = fixed16ToFloat(srcWall->w0->x);
+					wallData->y = fixed16ToFloat(srcWall->w0->z);
+
+					Vec2f offset = { fixed16ToFloat(srcWall->w1->x) - wallData->x, fixed16ToFloat(srcWall->w1->z) - wallData->y };
+					wallData->z = fixed16ToFloat(srcWall->length) / sqrtf(offset.x*offset.x + offset.z*offset.z);
+					wallData->w = 0.0f;
+				}
 			}
 
 			ShaderBufferDef bufferDefSectors =
@@ -158,9 +184,11 @@ namespace TFE_Jedi
 				BUF_CHANNEL_FLOAT
 			};
 			m_sectors.create(s_sectorCount, bufferDefSectors, true, s_gpuSourceData.sectors);
-						
+
+			m_walls.create(wallCount, bufferDefSectors, true, s_gpuSourceData.walls);
+
 			// Initialize the display list with the GPU buffers.
-			sdisplayList_init(1, 2, 3);
+			sdisplayList_init(2, 3, 4);
 
 			// Build the color map.
 			if (s_colorMap && s_lightSourceRamp)
@@ -182,6 +210,12 @@ namespace TFE_Jedi
 				}
 				s_colormapTex = TFE_RenderBackend::createTexture(256, 32, colormapData);
 			}
+
+			// Load textures into GPU memory.
+			if (texturepacker_init(4096, 4096))
+			{
+				texturepacker_packLevelTextures();
+			}
 		}
 		else
 		{
@@ -197,6 +231,20 @@ namespace TFE_Jedi
 		if (flags & (SDF_HEIGHTS | SDF_AMBIENT))
 		{
 			uploadFlags |= UPLOAD_WALLS;
+		}
+		if (flags & (SDF_VERTICES | SDF_WALL_CHANGE | SDF_WALL_OFFSETS | SDF_WALL_SHAPE))
+		{
+			uploadFlags |= UPLOAD_WALLS;
+			Vec4f* wallData = &s_gpuSourceData.walls[cached->wallStart];
+			const RWall* srcWall = srcSector->walls;
+			for (s32 w = 0; w < srcSector->wallCount; w++, wallData++, srcWall++)
+			{
+				wallData->x = fixed16ToFloat(srcWall->w0->x);
+				wallData->y = fixed16ToFloat(srcWall->w0->z);
+
+				Vec2f offset = { fixed16ToFloat(srcWall->w1->x) - wallData->x, fixed16ToFloat(srcWall->w1->z) - wallData->y };
+				wallData->z = fixed16ToFloat(srcWall->length) / sqrtf(offset.x*offset.x + offset.z*offset.z);
+			}
 		}
 	}
 
@@ -280,7 +328,7 @@ namespace TFE_Jedi
 			debug_addQuad(segment->v0, segment->v1, segment->seg->y0, segment->seg->y1,
 				          segment->seg->portalY0, segment->seg->portalY1, segment->seg->portal);
 
-			sdisplayList_addSegment(curSector, segment);
+			sdisplayList_addSegment(curSector, &s_cachedSectors[curSector->index], segment);
 			s_wallSegGenerated++;
 			segment = segment->next;
 		}
@@ -529,6 +577,10 @@ namespace TFE_Jedi
 		{
 			m_sectors.update(s_gpuSourceData.sectors, s_gpuSourceData.sectorSize);
 		}
+		if (uploadFlags & UPLOAD_WALLS)
+		{
+			m_walls.update(s_gpuSourceData.walls, s_gpuSourceData.wallSize);
+		}
 
 		return sdisplayList_getSize() > 0;
 	}
@@ -549,9 +601,17 @@ namespace TFE_Jedi
 		m_wallShader.bind();
 		m_indexBuffer.bind();
 		m_sectors.bind(0);
-		s_colormapTex->bind(4);
+		m_walls.bind(1);
+		s_colormapTex->bind(5);
+
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
-		palette->bind(5);
+		palette->bind(6);
+
+		const TextureGpu* textures = texturepacker_getTexture();
+		textures->bind(7);
+
+		ShaderBuffer* textureTable = texturepacker_getTable();
+		textureTable->bind(8);
 
 		// Camera and lighting.
 		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, 0.0f };
@@ -568,8 +628,9 @@ namespace TFE_Jedi
 		m_wallShader.unbind();
 		m_indexBuffer.unbind();
 		m_sectors.unbind(0);
-		TextureGpu::clear(4);
+		m_walls.unbind(1);
 		TextureGpu::clear(5);
+		TextureGpu::clear(6);
 		//TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
 		
 		// Debug

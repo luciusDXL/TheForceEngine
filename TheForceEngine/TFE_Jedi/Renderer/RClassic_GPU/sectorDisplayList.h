@@ -10,6 +10,15 @@
 
 namespace TFE_Jedi
 {
+	struct GPUCachedSector
+	{
+		f32 floorHeight;
+		f32 ceilingHeight;
+		u64 builtFrame;
+
+		s32 wallStart;
+	};
+
 	void sdisplayList_init(s32 posIndex, s32 dataIndex, s32 planesIndex);
 	void sdisplayList_destroy();
 
@@ -17,7 +26,7 @@ namespace TFE_Jedi
 	void sdisplayList_finish();
 
 	void sdisplayList_addCaps(RSector* curSector);
-	void sdisplayList_addSegment(RSector* curSector, SegmentClipped* wallSeg);
+	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg);
 	void sdisplayList_addPortal(Vec3f p0, Vec3f p1);
 	void sdisplayList_draw();
 

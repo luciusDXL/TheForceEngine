@@ -928,6 +928,9 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1576,6 +1579,9 @@
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
   </ItemGroup>

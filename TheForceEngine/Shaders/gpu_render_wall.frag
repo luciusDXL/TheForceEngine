@@ -4,36 +4,72 @@ uniform vec4 LightData;
 
 uniform sampler2D Colormap;	// The color map has full RGB pre-backed in.
 uniform sampler2D Palette;
+uniform sampler2D Textures;
+
+uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;
 flat in vec4 Frag_Color;
+flat in int Frag_TextureId;
 in vec3 Frag_Pos;
+in vec4 Wall_Data;
 out vec4 Out_Color;
 
-vec3 getAttenuatedColor(float baseColor, float light)
+vec3 getAttenuatedColor(int baseColor, int light)
 {
-	baseColor = floor(baseColor + 0.5);
-	light = floor(light + 0.5);
-
-	float color = baseColor/256.0;
-	if (light < 31.0)
+	int color = baseColor;
+	if (light < 31)
 	{
-		vec2 uv = vec2(color, light/32.0);
-		color = texture(Colormap, uv).r;
+		ivec2 uv = ivec2(color, light);
+		color = int(texelFetch(Colormap, uv, 0).r * 256.0);
 	}
-	return texture(Palette, vec2(color, 0.5)).rgb;
+	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
+}
+
+int imod(int x, int y)
+{
+	return x - (x/y)*y;
+}
+
+float sampleTexture(int id, vec2 uv)
+{
+	ivec4 sampleData = texelFetch(TextureTable, id);
+	ivec2 iuv = ivec2(floor(uv));
+	iuv.x = imod(iuv.x, sampleData.z);
+	iuv.y = imod(iuv.y, sampleData.w);
+	if (iuv.x < 0) iuv.x += sampleData.z;
+	if (iuv.y < 0) iuv.y += sampleData.w;
+
+	iuv = iuv + sampleData.xy;
+
+	return floor(texelFetch(Textures, iuv, 0).r * 256.0);
 }
 
 void main()
 {
     vec3 cameraRelativePos = Frag_Pos;
-	if (Frag_Uv.y > 0.0)
+	vec2 uv = vec2(0.0);
+	if (Frag_Uv.y > 1.5)
+	{
+		float s = length((Frag_Pos.xz + CameraPos.xz) - Wall_Data.xy) * Wall_Data.z;
+		float t = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
+		uv.x = s * 8.0;
+		uv.y = t * 8.0;
+	}
+	else if (Frag_Uv.y > 0.0)
 	{
 		// Project onto the floor or ceiling plane.
 		float t = Frag_Uv.x / Frag_Pos.y;
 		// Camera relative position on the plane, add CameraPos to get world space position.
 		cameraRelativePos = t*Frag_Pos;
+
+		uv = (cameraRelativePos.xz + CameraPos.xz) * 8.0;
 	}
+	else
+	{
+		uv = (cameraRelativePos.xz + CameraPos.xz) * 8.0;
+	}
+
 	float z = dot(cameraRelativePos, CameraDir);
 	float ambient   = Frag_Color.r;
 	float baseColor = Frag_Color.g;
@@ -58,6 +94,10 @@ void main()
 	float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
 	light = clamp(light - depthAtten, scaledAmbient, 31.0);
 
-	Out_Color.rgb = getAttenuatedColor(baseColor, light);
+	// Use define.
+	baseColor = sampleTexture(Frag_TextureId, uv);
+	// End
+
+	Out_Color.rgb = getAttenuatedColor(int(baseColor), int(light));
 	Out_Color.a = 1.0;
 }

@@ -117,7 +117,7 @@ namespace TFE_Jedi
 		s_controlSector = (RSector*)level_alloc(sizeof(RSector));
 		sector_clear(s_controlSector);
 	}
-
+		
 	JBool level_load(const char* levelName, u8 difficulty)
 	{
 		if (!levelName) { return JFALSE; }
@@ -139,7 +139,7 @@ namespace TFE_Jedi
 
 		return JTRUE;
 	}
-
+		
 	JBool level_loadGeometry(const char* levelName)
 	{
 		s_secretCount = 0;
@@ -250,6 +250,7 @@ namespace TFE_Jedi
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
 				TFE_Paths::getFilePath("default.bm", &filePath);
 				*texture = bitmap_load(&filePath, 1);
+				(*texture)->textureId = i;
 			}
 			else if (strcasecmp(textureName, "<NoTexture>") == 0)
 			{
@@ -275,6 +276,7 @@ namespace TFE_Jedi
 						return false;
 					}
 				}
+				tex->textureId = i;
 				*texture = tex;
 
 				// Setup an animated texture.
@@ -593,6 +595,12 @@ namespace TFE_Jedi
 		}
 
 		return true;
+	}
+
+	TextureData** level_getTextures(s32* count)
+	{
+		*count = s_textureCount;
+		return s_textures;
 	}
 
 	void level_freeAllAssets()

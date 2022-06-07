@@ -642,6 +642,13 @@ namespace TFE_RenderBackend
 		*height = texture->getHeight();
 	}
 
+	TextureGpu* createTexture(u32 width, u32 height, u32 channels)
+	{
+		TextureGpu* texture = new TextureGpu();
+		texture->create(width, height, channels);
+		return texture;
+	}
+
 	// Create a GPU version of a texture, assumes RGBA8 and returns a GPU handle.
 	TextureGpu* createTexture(u32 width, u32 height, const u32* data, MagFilter magFilter)
 	{

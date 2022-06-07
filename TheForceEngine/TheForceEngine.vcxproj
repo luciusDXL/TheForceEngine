@@ -513,6 +513,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rcommon.h" />
     <ClInclude Include="TFE_Jedi\Renderer\redgePair.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rlimits.h" />
@@ -752,6 +753,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rcommon.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rscanline.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rsectorRender.cpp" />
