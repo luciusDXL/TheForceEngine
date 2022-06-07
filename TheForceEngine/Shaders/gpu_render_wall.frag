@@ -63,11 +63,11 @@ void main()
 		// Camera relative position on the plane, add CameraPos to get world space position.
 		cameraRelativePos = t*Frag_Pos;
 
-		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy) * 8.0;
+		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
 	else
 	{
-		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy) * 8.0;
+		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
 
 	float z = dot(cameraRelativePos, CameraDir);
