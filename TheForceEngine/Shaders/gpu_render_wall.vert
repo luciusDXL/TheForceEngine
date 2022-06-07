@@ -11,7 +11,7 @@ uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
 // in int gl_VertexID;
 out vec2 Frag_Uv;
 out vec3 Frag_Pos;
-out vec4 Wall_Data;
+out vec4 Texture_Data;
 flat out vec4 Frag_Color;
 flat out int Frag_TextureId;
 void main()
@@ -34,7 +34,7 @@ void main()
 	Frag_TextureId = int(data.w & 65535u);
 
 	// Get the current sector heights.
-	vec4 sectorData   = texelFetch(Sectors, sectorId);
+	vec4 sectorData   = texelFetch(Sectors, sectorId*2);
 	float floorHeight = sectorData.x;
 	float ceilHeight  = sectorData.y;
 	
@@ -42,7 +42,7 @@ void main()
 	vec3 vtx_pos;
 	vec2 vtx_uv = vec2(0.0);
 	vec4 vtx_color = vec4(0.5, 0.5, 0.5, 1.0);
-	vec4 wall_data = vec4(0.0);
+	vec4 texture_data = vec4(0.0);
 	float zbias = 0.0;
 	if (partId < 3)	// Wall
 	{
@@ -51,13 +51,13 @@ void main()
 
 		if (partId == 1) // Top
 		{
-			float nextTop = texelFetch(Sectors, nextId).y;
+			float nextTop = texelFetch(Sectors, nextId*2).y;
 			float curTop = min(floorHeight, max(nextTop, ceilHeight));
 			vtx_pos.y = (vertexId < 2) ? ceilHeight : curTop;
 		}
 		else if (partId == 2) // Bottom
 		{
-			float nextBot = texelFetch(Sectors, nextId).x;
+			float nextBot = texelFetch(Sectors, nextId*2).x;
 			float curBot = max(ceilHeight, min(nextBot, floorHeight));
 			vtx_pos.y = (vertexId < 2) ? curBot : floorHeight;
 		}
@@ -104,7 +104,7 @@ void main()
 			vtx_pos.y = (vertexId < 2) ? y0 : y1;
 		}
 
-		wall_data = texelFetch(Walls, wallId);
+		texture_data = texelFetch(Walls, wallId);
 		vtx_uv.x = floorHeight;
 		vtx_uv.y = 2.0;
 
@@ -140,6 +140,9 @@ void main()
 		vtx_uv.x = planeHeight - CameraPos.y;
 		vtx_uv.y = 1.0;
 
+		vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
+		texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;
+
 		// Add a small z bias to flats to avoid seams.
 		zbias = -0.00005;
 	}
@@ -162,6 +165,9 @@ void main()
 		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
 		vtx_uv.x = planeHeight - CameraPos.y;
 		vtx_uv.y = 1.0;
+
+		vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
+		texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;
 	}
 
 	Frag_Pos = vtx_pos - CameraPos;
@@ -174,5 +180,5 @@ void main()
 	// Write out the per-vertex uv and color.
 	Frag_Uv = vtx_uv;
 	Frag_Color = vtx_color;
-	Wall_Data = wall_data;
+	Texture_Data = texture_data;
 }

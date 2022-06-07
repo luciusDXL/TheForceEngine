@@ -12,7 +12,7 @@ in vec2 Frag_Uv;
 flat in vec4 Frag_Color;
 flat in int Frag_TextureId;
 in vec3 Frag_Pos;
-in vec4 Wall_Data;
+in vec4 Texture_Data;
 out vec4 Out_Color;
 
 vec3 getAttenuatedColor(int baseColor, int light)
@@ -51,7 +51,7 @@ void main()
 	vec2 uv = vec2(0.0);
 	if (Frag_Uv.y > 1.5)
 	{
-		float s = length((Frag_Pos.xz + CameraPos.xz) - Wall_Data.xy) * Wall_Data.z;
+		float s = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
 		float t = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
 		uv.x = s * 8.0;
 		uv.y = t * 8.0;
@@ -63,11 +63,11 @@ void main()
 		// Camera relative position on the plane, add CameraPos to get world space position.
 		cameraRelativePos = t*Frag_Pos;
 
-		uv = (cameraRelativePos.xz + CameraPos.xz) * 8.0;
+		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy) * 8.0;
 	}
 	else
 	{
-		uv = (cameraRelativePos.xz + CameraPos.xz) * 8.0;
+		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy) * 8.0;
 	}
 
 	float z = dot(cameraRelativePos, CameraDir);

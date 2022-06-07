@@ -134,7 +134,7 @@ namespace TFE_Jedi
 			s_cachedSectors = (GPUCachedSector*)level_alloc(sizeof(GPUCachedSector) * s_sectorCount);
 			memset(s_cachedSectors, 0, sizeof(GPUCachedSector) * s_sectorCount);
 
-			s_gpuSourceData.sectorSize = sizeof(Vec4f) * s_sectorCount;
+			s_gpuSourceData.sectorSize = sizeof(Vec4f) * s_sectorCount * 2;
 			s_gpuSourceData.sectors = (Vec4f*)level_alloc(s_gpuSourceData.sectorSize);
 			memset(s_gpuSourceData.sectors, 0, s_gpuSourceData.sectorSize);
 
@@ -147,10 +147,15 @@ namespace TFE_Jedi
 				cachedSector->ceilingHeight = fixed16ToFloat(curSector->ceilingHeight);
 				cachedSector->wallStart = wallCount;
 
-				s_gpuSourceData.sectors[s].x = cachedSector->floorHeight;
-				s_gpuSourceData.sectors[s].y = cachedSector->ceilingHeight;
-				s_gpuSourceData.sectors[s].z = 0.0f;
-				s_gpuSourceData.sectors[s].w = 0.0f;
+				s_gpuSourceData.sectors[s*2].x = cachedSector->floorHeight;
+				s_gpuSourceData.sectors[s*2].y = cachedSector->ceilingHeight;
+				s_gpuSourceData.sectors[s*2].z = 0.0f;
+				s_gpuSourceData.sectors[s*2].w = 0.0f;
+
+				s_gpuSourceData.sectors[s*2 + 1].x = fixed16ToFloat(curSector->floorOffset.x);
+				s_gpuSourceData.sectors[s*2 + 1].y = fixed16ToFloat(curSector->floorOffset.z);
+				s_gpuSourceData.sectors[s*2 + 1].z = fixed16ToFloat(curSector->ceilOffset.x);
+				s_gpuSourceData.sectors[s*2 + 1].w = fixed16ToFloat(curSector->ceilOffset.z);
 
 				wallCount += curSector->wallCount;
 			}
@@ -183,7 +188,7 @@ namespace TFE_Jedi
 				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 				BUF_CHANNEL_FLOAT
 			};
-			m_sectors.create(s_sectorCount, bufferDefSectors, true, s_gpuSourceData.sectors);
+			m_sectors.create(s_sectorCount*2, bufferDefSectors, true, s_gpuSourceData.sectors);
 
 			m_walls.create(wallCount, bufferDefSectors, true, s_gpuSourceData.walls);
 
@@ -254,12 +259,18 @@ namespace TFE_Jedi
 		if (!flags) { return; }  // Nothing to do.
 
 		GPUCachedSector* cached = &s_cachedSectors[srcSector->index];
-		if (flags & SDF_HEIGHTS)
+		if (flags & (SDF_HEIGHTS | SDF_FLAT_OFFSETS))
 		{
 			cached->floorHeight   = fixed16ToFloat(srcSector->floorHeight);
 			cached->ceilingHeight = fixed16ToFloat(srcSector->ceilingHeight);
-			s_gpuSourceData.sectors[srcSector->index].x = cached->floorHeight;
-			s_gpuSourceData.sectors[srcSector->index].y = cached->ceilingHeight;
+			s_gpuSourceData.sectors[srcSector->index*2].x = cached->floorHeight;
+			s_gpuSourceData.sectors[srcSector->index*2].y = cached->ceilingHeight;
+
+			s_gpuSourceData.sectors[srcSector->index*2+1].x = fixed16ToFloat(srcSector->floorOffset.x);
+			s_gpuSourceData.sectors[srcSector->index*2+1].y = fixed16ToFloat(srcSector->floorOffset.z);
+			s_gpuSourceData.sectors[srcSector->index*2+1].z = fixed16ToFloat(srcSector->ceilOffset.x);
+			s_gpuSourceData.sectors[srcSector->index*2+1].w = fixed16ToFloat(srcSector->ceilOffset.z);
+
 			uploadFlags |= UPLOAD_SECTORS;
 		}
 		updateCachedWalls(srcSector, flags, uploadFlags);
