@@ -22,6 +22,8 @@
 #include "texturePacker.h"
 #include "../rcommon.h"
 
+#include <map>
+
 #define DEBUG_TEXTURE_ATLAS 0
 
 #if DEBUG_TEXTURE_ATLAS
@@ -54,6 +56,9 @@ namespace TFE_Jedi
 	static TextureGpu* s_texture = nullptr;
 	static s32 s_width  = 0;
 	static s32 s_height = 0;
+	static s32 s_texturesPacked = 0;
+
+	static std::map<TextureData*, s32> s_textureDataMap;
 
 #if DEBUG_TEXTURE_ATLAS
 	void debug_writeOutAtlas();
@@ -78,7 +83,7 @@ namespace TFE_Jedi
 			sizeof(s32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 			BUF_CHANNEL_INT
 		};
-		s_textureTableGPU.create(s_sectorCount, textureTableDef, true, nullptr);
+		s_textureTableGPU.create(1024, textureTableDef, true, nullptr);
 
 		return s_texture!=nullptr;
 	}
@@ -87,6 +92,7 @@ namespace TFE_Jedi
 	void texturepacker_destroy()
 	{
 		TFE_RenderBackend::freeTexture(s_texture);
+		s_textureTableGPU.destroy();
 		free(s_backingMemory);
 		free(s_textureTable);
 
@@ -153,10 +159,9 @@ namespace TFE_Jedi
 			s_nodes.push_back(cur->child[0]);
 			s_nodes.push_back(cur->child[1]);
 			
-			// Binary split.
-			s32 dw = cur->rect.z - tex->width;
-			s32 dh = cur->rect.w - tex->height;
-
+			// Binary split along the longest axis.
+			const s32 dw = cur->rect.z - tex->width;
+			const s32 dh = cur->rect.w - tex->height;
 			if (dw > dh)
 			{
 				cur->child[0]->rect = { cur->rect.x, cur->rect.y, tex->width, cur->rect.w };
@@ -173,73 +178,103 @@ namespace TFE_Jedi
 		}
 	}
 
+	void packNode(const Node* node, const TextureData* texData, Vec4i* tableEntry)
+	{
+		// Copy the texture into place.
+		const u8* srcImage = texData->image;
+		u8* output = &s_backingMemory[node->rect.y * s_width + node->rect.x];
+		for (s32 y = 0; y < texData->height; y++, output += s_width)
+		{
+			for (s32 x = 0; x < texData->width; x++)
+			{
+				output[x] = srcImage[x*texData->height + y];
+			}
+		}
+
+		// Copy the mapping into the texture table.
+		tableEntry->x = (s32)node->rect.x;
+		tableEntry->y = (s32)node->rect.y;
+		tableEntry->z = (s32)node->rect.z;
+		tableEntry->w = (s32)node->rect.w;
+	}
+
+	bool isTextureInMap(TextureData* tex)
+	{
+		return (s_textureDataMap.find(tex) != s_textureDataMap.end());
+	}
+
+	void insertTextureIntoMap(TextureData* tex, s32 id)
+	{
+		s_textureDataMap[tex] = id;
+	}
+
+	void insertTexture(TextureData* tex)
+	{
+		if (!tex || isTextureInMap(tex)) { return; }
+		insertTextureIntoMap(tex, s_texturesPacked);
+
+		Node* node = insertNode(s_root, tex);
+		assert(node && node->tex == tex);
+		if (node)
+		{
+			tex->textureId = s_texturesPacked;
+			packNode(node, tex, &s_textureTable[s_texturesPacked]);
+			s_texturesPacked++;
+		}
+	}
+
+	void insertAnimatedTextureFrames(AnimatedTexture* animTex)
+	{
+		if (!animTex) { return; }
+		for (s32 f = 0; f < animTex->count; f++)
+		{
+			insertTexture(animTex->frameList[f]);
+		}
+	}
+		
 	// Returns the number of textures and fills in a shader buffer with the offsets and sizes.
 	// Calling this will clear the existing atlas.
 	s32 texturepacker_packLevelTextures()
 	{
-		s32 textureCount = 0;
-		TextureData** textures = level_getTextures(&textureCount);
-		if (!textureCount || !textures) { return 0; }
-
 		s_nodes.clear();
 		s_root = nullptr;
 
-		const f32 uScale = 1.0f / f32(s_width);
-		const f32 vScale = 1.0f / f32(s_height);
-
-		// Insert the parent.
+		// Insert the parent that covers all of the available space.
 		insertNode(s_root, nullptr);
-		// Insert textures.
-		s32 texturesPacked = 0;
-		s32 animTextureCount = 0;
+
+		// Insert normal textures and signs.
+		s_texturesPacked = 0;
+		s32 textureCount = 0;
+		TextureData** textures = level_getTextures(&textureCount);
 		for (s32 i = 0; i < textureCount; i++)
 		{
 			// Animated texture
-			if (textures[i]->uvWidth == -2)
+			if (textures[i]->uvWidth == BM_ANIMATED_TEXTURE)
 			{
-				// Skip for now.
-
-				// Copy an empty rect.
-				s_textureTable[i].x = 0;
-				s_textureTable[i].y = 0;
-				s_textureTable[i].z = 0;
-				s_textureTable[i].w = 0;
-
-				animTextureCount++;
-				continue;
+				AnimatedTexture* animTex = (AnimatedTexture*)textures[i]->image;
+				insertAnimatedTextureFrames(animTex);
 			}
-
-			Node* node = insertNode(s_root, textures[i]);
-			assert(node);
-
-			if (node)
+			else
 			{
-				texturesPacked++;
-				
-				// Copy the texture into place.
-				const u8* srcImage = textures[i]->image;
-				u8* output = &s_backingMemory[node->rect.y * s_width + node->rect.x];
-				for (s32 y = 0; y < textures[i]->height; y++, output += s_width)
-				{
-					for (s32 x = 0; x < textures[i]->width; x++)
-					{
-						output[x] = srcImage[x*textures[i]->height + y];
-					}
-				}
-
-				// Copy the mapping into the texture table.
-				s_textureTable[i].x = (s32)node->rect.x;
-				s_textureTable[i].y = (s32)node->rect.y;
-				s_textureTable[i].z = (s32)node->rect.z;
-				s_textureTable[i].w = (s32)node->rect.w;
+				insertTexture(textures[i]);
 			}
 		}
+	
+		// Insert animated textures.
+		Allocator* animTextures = bitmap_getAnimatedTextures();
+		AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(animTextures);
+		while (animTex)
+		{
+			insertAnimatedTextureFrames(animTex);
+			animTex = (AnimatedTexture*)allocator_getNext(animTextures);
+		}
+
 	#if DEBUG_TEXTURE_ATLAS
 		debug_writeOutAtlas();
 	#endif
 
 		s_texture->update(s_backingMemory, s_width * s_height);
-		s_textureTableGPU.update(s_textureTable, sizeof(Vec4i) * textureCount);
+		s_textureTableGPU.update(s_textureTable, sizeof(Vec4i) * s_texturesPacked);
 
 		// Free nodes.
 		const size_t count = s_nodes.size();
@@ -250,7 +285,7 @@ namespace TFE_Jedi
 		}
 		s_nodes.clear();
 				
-		return texturesPacked;
+		return s_texturesPacked;
 	}
 
 	TextureGpu* texturepacker_getTexture()

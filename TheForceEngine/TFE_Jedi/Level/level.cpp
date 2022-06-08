@@ -250,7 +250,6 @@ namespace TFE_Jedi
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
 				TFE_Paths::getFilePath("default.bm", &filePath);
 				*texture = bitmap_load(&filePath, 1);
-				(*texture)->textureId = i;
 			}
 			else if (strcasecmp(textureName, "<NoTexture>") == 0)
 			{
@@ -276,7 +275,6 @@ namespace TFE_Jedi
 						return false;
 					}
 				}
-				tex->textureId = i;
 				*texture = tex;
 
 				// Setup an animated texture.

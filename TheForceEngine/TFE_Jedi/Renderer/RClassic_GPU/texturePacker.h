@@ -9,6 +9,8 @@
 #include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
 
+// TODO: Figure out incorrect texture in Ramsees Hed.
+
 namespace TFE_Jedi
 {
 	// Initialize the texture packer once, it is persistent across levels.
