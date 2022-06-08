@@ -88,6 +88,8 @@ namespace TFE_DarkForces
 	// Returns a collision object or nullptr if no object is hit.
 	SecObject* col_findObjectCollision(RSector* sector)
 	{
+		if (!s_aiActive) { return nullptr; }
+
 		fixed16_16 colWidth = s_colWidth;
 		if (s_objCollisionEnabled)
 		{

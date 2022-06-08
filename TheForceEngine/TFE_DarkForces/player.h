@@ -88,6 +88,7 @@ namespace TFE_DarkForces
 	extern JBool s_superCharge;
 	extern JBool s_superChargeHud;
 	extern JBool s_playerSecMoved;
+	extern JBool s_aiActive;
 	extern u32* s_playerInvSaved;
 	// Eye parameters
 	extern fixed16_16 s_playerHeight;
