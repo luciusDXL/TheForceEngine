@@ -692,6 +692,8 @@ namespace TFE_Jedi
 
 		// Draw the sector display list.
 		sdisplayList_draw(SECTOR_PASS_OPAQUE);
+		// TODO: Different shader to handle transparencies.
+		sdisplayList_draw(SECTOR_PASS_TRANS);
 
 		// Cleanup.
 		m_wallShader.unbind();

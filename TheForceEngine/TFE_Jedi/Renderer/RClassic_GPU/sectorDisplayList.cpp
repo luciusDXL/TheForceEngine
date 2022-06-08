@@ -182,7 +182,7 @@ namespace TFE_Jedi
 						 wallLight | portalId, 0u/*textureId*/ };
 
 		// Wall Flags.
-		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector) // TODO: Fix transparent mid textures.
+		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
 		{
 			s_displayListPos[s_displayListCount[0]] = pos;
 			s_displayListData[s_displayListCount[0]] = data;
@@ -190,6 +190,15 @@ namespace TFE_Jedi
 			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 			s_displayListCount[0]++;
 		}
+		else if (srcWall->midTex && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX)) // Transparent mid-texture.
+		{
+			s_displayListPos[s_displayListCount[1]] = pos;
+			s_displayListData[s_displayListCount[1]] = data;
+			s_displayListData[s_displayListCount[1]].x |= SPARTID_WALL_MID;
+			s_displayListData[s_displayListCount[1]].w = wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+			s_displayListCount[1]++;
+		}
+
 		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 		{
 			s_displayListPos[s_displayListCount[0]] = pos;
