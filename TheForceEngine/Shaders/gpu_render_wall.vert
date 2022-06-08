@@ -25,7 +25,9 @@ void main()
 	uvec4 data = texelFetch(DrawListData, partIndex);
 
 	// Unpack part data.
-	int partId   = int(data.x & 65535u);
+	bool sky = (data.x & 32768u) != 0u;
+	int partId = int(data.x & 32767u);
+
 	int nextId   = int(data.x >> 16u);
 	int sectorId = int(data.y);
 	int lightOffset = int(data.z & 63u) - 32;
@@ -116,7 +118,7 @@ void main()
 
 		texture_data = texelFetch(Walls, wallId*3);
 		vtx_uv.x = texBase;
-		vtx_uv.y = 2.0;
+		vtx_uv.y = sky ? 3.0 : 2.0;
 
 		vtx_color.r = float(lightOffset);
 		vtx_color.g = 32.0;
@@ -148,7 +150,7 @@ void main()
 		// Store the relative plane height for the floor/ceiling projection in the fragment shader.
 		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
 		vtx_uv.x = planeHeight - CameraPos.y;
-		vtx_uv.y = 1.0;
+		vtx_uv.y = sky ? 3.0 : 1.0;
 
 		vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 		texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;
@@ -174,7 +176,7 @@ void main()
 		// Given the vertex position, compute the XZ position as the intersection between (camera->pos) and the plane at floor/ceiling height.
 		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
 		vtx_uv.x = planeHeight - CameraPos.y;
-		vtx_uv.y = 1.0;
+		vtx_uv.y = sky ? 3.0 : 1.0;
 
 		vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 		texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;

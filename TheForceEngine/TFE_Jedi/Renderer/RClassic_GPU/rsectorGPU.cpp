@@ -69,6 +69,7 @@ namespace TFE_Jedi
 	s32 m_cameraProjId;
 	s32 m_cameraDirId;
 	s32 m_lightDataId;
+	s32 m_skyParallaxId;
 	Vec3f m_viewDir;
 	
 	IndexBuffer m_indexBuffer;
@@ -102,6 +103,7 @@ namespace TFE_Jedi
 			m_cameraProjId = m_wallShader.getVariableId("CameraProj");
 			m_cameraDirId  = m_wallShader.getVariableId("CameraDir");
 			m_lightDataId  = m_wallShader.getVariableId("LightData");
+			m_skyParallaxId = m_wallShader.getVariableId("SkyParallax");
 			
 			m_wallShader.bindTextureNameToSlot("Sectors", 0);
 			m_wallShader.bindTextureNameToSlot("Walls", 1);
@@ -654,7 +656,17 @@ namespace TFE_Jedi
 		m_wallShader.setVariable(m_cameraProjId, SVT_MAT4x4, s_cameraProj.data);
 		m_wallShader.setVariable(m_cameraDirId,  SVT_VEC3,   s_cameraDir.m);
 		m_wallShader.setVariable(m_lightDataId,  SVT_VEC4,   lightData.m);
-				
+
+		// Calculte the sky parallax.
+		fixed16_16 p0, p1;
+		TFE_Jedi::getSkyParallax(&p0, &p1);
+		f32 parallax[2] =
+		{
+			fixed16ToFloat(p0) * 0.25f,	// The values are scaled by 4 to convert from angle to fixed in the original code.
+			fixed16ToFloat(p1) * 0.25f 	// The values are scaled by 4 to convert from angle to fixed in the original code.
+		};
+		m_wallShader.setVariable(m_skyParallaxId, SVT_VEC2, parallax);
+
 		// Draw the sector display list.
 		sdisplayList_draw();
 

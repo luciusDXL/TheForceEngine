@@ -1,6 +1,7 @@
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
 uniform vec4 LightData;
+uniform vec2 SkyParallax;
 
 uniform sampler2D Colormap;	// The color map has full RGB pre-backed in.
 uniform sampler2D Palette;
@@ -31,6 +32,13 @@ ivec2 imod(ivec2 x, ivec2 y)
 	return x - (x/y)*y;
 }
 
+int wrapCoordScalar(int x, int edge)
+{
+	x = x - (x/edge)*edge;
+	x += (x < 0) ? edge : 0;
+	return x;
+}
+
 ivec2 wrapCoord(ivec2 uv, ivec2 edge)
 {
 	uv = imod(uv, edge);
@@ -39,22 +47,81 @@ ivec2 wrapCoord(ivec2 uv, ivec2 edge)
 	return uv;
 }
 
-float sampleTexture(int id, vec2 uv)
+float sampleTexture(int id, vec2 uv, bool sky)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec2 iuv = ivec2(floor(uv));
 
-	iuv = wrapCoord(iuv, sampleData.zw);
+	if (sky)
+	{
+		iuv.x = wrapCoordScalar(iuv.x, sampleData.z);
+		iuv.y = clamp(iuv.y, 0, sampleData.w - 1);
+		if (iuv.y == 0 || iuv.y == sampleData.w - 1)
+		{
+			// Single sample for the whole area.
+			iuv.xy = ivec2(sampleData.z/2, iuv.y);
+		}
+	}
+	else
+	{
+		iuv = wrapCoord(iuv, sampleData.zw);
+	}
 	iuv = iuv + sampleData.xy;
 
 	return texelFetch(Textures, iuv, 0).r * 255.0;
+}
+
+float sqr(float x)
+{
+	return x*x;
+}
+
+vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset)
+{
+	// Cylindrical
+	/*
+	float len = length(cameraVec.xz);
+	vec2 dir = cameraVec.xz;
+	vec2 uv = vec2(0.0);
+	if (len > 0.0)
+	{
+		float scale = 1.0 / len;
+		dir *= scale;
+
+		float dirY = cameraVec.y*scale;
+		
+		uv.x = -(atan(dir.y, dir.x)/1.57 + 1.0) * SkyParallax.x - texOffset.x;
+		uv.y = -dirY*0.7071 * SkyParallax.y + texOffset.y*0.5;
+	}
+	*/
+	// Spherical
+	float len = length(cameraVec);
+	vec3 dir = cameraVec;
+	vec2 uv = vec2(0.0);
+	if (len > 0.0)
+	{
+		float scale = 1.0 / len;
+		dir *= scale;
+
+		float horzAngle = atan(dir.z, dir.x) * 0.63662;
+		float vertAngle = asin(-dir.y) * 0.73848;
+
+		uv.x = -(horzAngle + 1.0) * SkyParallax.x - texOffset.x;
+		uv.y = SkyParallax.y*vertAngle + texOffset.y*0.5;
+	}
+	return uv;
 }
 
 void main()
 {
     vec3 cameraRelativePos = Frag_Pos;
 	vec2 uv = vec2(0.0);
-	if (Frag_Uv.y > 1.5) // Wall
+	bool sky = Frag_Uv.y > 2.5;
+	if (sky) // Sky
+	{
+		uv = calculateSkyProjection(cameraRelativePos, Texture_Data.xy);
+	}
+	else if (Frag_Uv.y > 1.5) // Wall
 	{
 		uv.x = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
 		uv.y = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
@@ -77,34 +144,41 @@ void main()
 		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
 
-	float z = dot(cameraRelativePos, CameraDir);
-	float lightOffset   = Frag_Color.r;
-	float baseColor     = Frag_Color.g;
-	float sectorAmbient = Frag_Color.b;
-
-	// Camera light and world ambient.
-	float worldAmbient = floor(LightData.x + 0.5);
-	float cameraLightSource = LightData.y;
-
 	float light = 0.0;
-	if (worldAmbient < 31.0 || cameraLightSource != 0.0)
+	float baseColor = Frag_Color.g;
+	if (!sky)
 	{
-		float depthScaled = min(floor(z * 4.0), 127.0);
-		float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
-		if (lightSource > 0)
-		{
-			light += lightSource;
-		}
-	}
-	light = max(light, sectorAmbient);
+		float z = dot(cameraRelativePos, CameraDir);
+		float lightOffset   = Frag_Color.r;
+		float sectorAmbient = Frag_Color.b;
 
-	float minAmbient = sectorAmbient * 7.0 / 8.0;
-	float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
-	light = max(light - depthAtten, minAmbient) + lightOffset;
-	light = clamp(light, 0.0, 31.0);
+		// Camera light and world ambient.
+		float worldAmbient = floor(LightData.x + 0.5);
+		float cameraLightSource = LightData.y;
+
+		if (worldAmbient < 31.0 || cameraLightSource != 0.0)
+		{
+			float depthScaled = min(floor(z * 4.0), 127.0);
+			float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
+			if (lightSource > 0)
+			{
+				light += lightSource;
+			}
+		}
+		light = max(light, sectorAmbient);
+
+		float minAmbient = sectorAmbient * 7.0 / 8.0;
+		float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
+		light = max(light - depthAtten, minAmbient) + lightOffset;
+		light = clamp(light, 0.0, 31.0);
+	}
+	else
+	{
+		light = 31.0;
+	}
 
 	// Use define.
-	baseColor = sampleTexture(Frag_TextureId, uv);
+	baseColor = sampleTexture(Frag_TextureId, uv, sky);
 	// End
 
 	Out_Color.rgb = getAttenuatedColor(int(baseColor), int(light));

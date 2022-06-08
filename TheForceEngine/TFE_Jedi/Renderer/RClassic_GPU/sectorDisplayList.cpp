@@ -37,6 +37,7 @@ namespace TFE_Jedi
 		SPARTID_CEILING,
 		SPARTID_FLOOR_CAP,
 		SPARTID_CEIL_CAP,
+		SPARTID_SKY = 32768,
 		SPARTID_COUNT
 	};
 
@@ -118,12 +119,14 @@ namespace TFE_Jedi
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x = SPARTID_FLOOR_CAP;
 		s_displayListData[s_displayListCount].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
+		if (curSector->flags1 & SEC_FLAGS1_PIT) { s_displayListData[s_displayListCount].x |= SPARTID_SKY; }
 		s_displayListCount++;
 
 		s_displayListPos[s_displayListCount] = pos;
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x = SPARTID_CEIL_CAP;
 		s_displayListData[s_displayListCount].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
+		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR) { s_displayListData[s_displayListCount].x |= SPARTID_SKY; }
 		s_displayListCount++;
 	}
 
@@ -193,6 +196,7 @@ namespace TFE_Jedi
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_FLOOR;
 		s_displayListData[s_displayListCount].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
+		if (curSector->flags1 & SEC_FLAGS1_PIT) { s_displayListData[s_displayListCount].x |= SPARTID_SKY; }
 		s_displayListCount++;
 
 		// Add Ceiling
@@ -200,6 +204,10 @@ namespace TFE_Jedi
 		s_displayListData[s_displayListCount] = data;
 		s_displayListData[s_displayListCount].x |= SPARTID_CEILING;
 		s_displayListData[s_displayListCount].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
+		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
+		{
+			s_displayListData[s_displayListCount].x |= SPARTID_SKY;
+		}
 		s_displayListCount++;
 	}
 
