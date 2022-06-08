@@ -510,9 +510,30 @@ namespace TFE_Jedi
 				// heights and walls settings are handled correctly.
 				updateCachedSector(next, uploadFlags);
 
-				const fixed16_16 openTop = min(curSector->floorHeight, max(curSector->ceilingHeight, next->ceilingHeight));
-				const fixed16_16 openBot = max(curSector->ceilingHeight, min(curSector->floorHeight, next->floorHeight));
-				const fixed16_16 openSize = openBot - openTop;
+				fixed16_16 openTop, openBot;
+				// Sky handling
+				// TODO: This isn't *quite* right, the top and bottom need to extend to the top/bot of the view frustum.
+				if (((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (next->flags1 & SEC_FLAGS1_EXT_ADJ)) && (next->flags1 & SEC_FLAGS1_EXTERIOR))
+				{
+					openTop = min(curSector->ceilingHeight, next->ceilingHeight);
+					y0 = fixed16ToFloat(openTop);
+				}
+				else
+				{
+					openTop = min(curSector->floorHeight, max(curSector->ceilingHeight, next->ceilingHeight));
+				}
+				if (((curSector->flags1 & SEC_FLAGS1_PIT) || (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ)) && (next->flags1 & SEC_FLAGS1_PIT))
+				{
+					openBot = max(curSector->floorHeight, next->floorHeight);
+					y1 = fixed16ToFloat(openBot);
+				}
+				else
+				{
+					openBot = max(curSector->ceilingHeight, min(curSector->floorHeight, next->floorHeight));
+				}
+				// TODO: Handle sectors with the "no walls" flag.
+
+				fixed16_16 openSize = openBot - openTop;
 				portalY0 = fixed16ToFloat(openTop);
 				portalY1 = fixed16ToFloat(openBot);
 

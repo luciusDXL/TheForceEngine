@@ -130,6 +130,14 @@ void main()
 		float y1 = (flatIndex==0) ? floorHeight + 200.0 : ceilHeight;
 		vec2 vtx = (vertexId & 1)==0 ? positions.xy : positions.zw;
 
+		if (sky && nextId < 32768)
+		{
+			// TODO: This isn't *quite* right, since the sky should be extended to the top/bot of the frustum.
+			vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
+			if (flatIndex == 0) { y0 = max(floorHeight, nextHeights.x); }
+			else { y1 = min(ceilHeight, nextHeights.y); }
+		}
+
 		// Project flat extrusion to the upper or lower frustum plane.
 		int index = max(0, (portalId - 1)*2) + flatIndex;
 		vec4 plane = texelFetch(DrawListPlanes, index);

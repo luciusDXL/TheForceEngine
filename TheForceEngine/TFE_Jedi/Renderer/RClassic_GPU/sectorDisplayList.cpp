@@ -161,9 +161,10 @@ namespace TFE_Jedi
 		// Add 32 so the value is unsigned and easy to decode in the shader (just subtract 32).
 		// Values should never to larger than [-31,31] but clamp just in case (larger values would have no effect anyway).
 		u32 wallLight = u32(32 + clamp(floor16(srcWall->wallLight), -31, 31));
+		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0xffff0000u;
 		
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
-		Vec4ui data = { (srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0u)/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
+		Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
 						 wallLight | portalId, 0u/*textureId*/ };
 
 		// Wall Flags.
@@ -175,7 +176,7 @@ namespace TFE_Jedi
 			s_displayListData[s_displayListCount].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 			s_displayListCount++;
 		}
-		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector)
+		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 		{
 			s_displayListPos[s_displayListCount] = pos;
 			s_displayListData[s_displayListCount] = data;
@@ -183,7 +184,7 @@ namespace TFE_Jedi
 			s_displayListData[s_displayListCount].w = wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0);
 			s_displayListCount++;
 		}
-		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector)
+		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 		{
 			s_displayListPos[s_displayListCount] = pos;
 			s_displayListData[s_displayListCount] = data;
