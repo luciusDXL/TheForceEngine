@@ -206,8 +206,8 @@ namespace TFE_Jedi
 			m_walls.create(wallCount*3, bufferDefSectors, true, s_gpuSourceData.walls);
 
 			// Initialize the display list with the GPU buffers.
-			s32 posIndex[]  = { 2, 0 };
-			s32 dataIndex[] = { 3, 0 };
+			s32 posIndex[]  = { 2, 2 };
+			s32 dataIndex[] = { 3, 3 };
 			sdisplayList_init(posIndex, dataIndex, 4);
 
 			// Build the color map.

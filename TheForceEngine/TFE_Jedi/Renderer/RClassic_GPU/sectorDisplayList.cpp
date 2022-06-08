@@ -117,8 +117,8 @@ namespace TFE_Jedi
 		{
 			if (!s_displayListCount[i]) { continue; }
 
-			s_displayListPosGPU[i].update(s_displayListPos, sizeof(Vec4f) * s_displayListCount[i]);
-			s_displayListDataGPU[i].update(s_displayListData, sizeof(Vec4ui) * s_displayListCount[i]);
+			s_displayListPosGPU[i].update(&s_displayListPos[i*1024], sizeof(Vec4f) * s_displayListCount[i]);
+			s_displayListDataGPU[i].update(&s_displayListData[i*1024], sizeof(Vec4ui) * s_displayListCount[i]);
 		}
 		s_displayListPlanesGPU.update(s_displayListPlanes, sizeof(Vec4f) * s_displayPlaneCount);
 	}
@@ -192,10 +192,10 @@ namespace TFE_Jedi
 		}
 		else if (srcWall->midTex && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX)) // Transparent mid-texture.
 		{
-			s_displayListPos[s_displayListCount[1]] = pos;
-			s_displayListData[s_displayListCount[1]] = data;
-			s_displayListData[s_displayListCount[1]].x |= SPARTID_WALL_MID;
-			s_displayListData[s_displayListCount[1]].w = wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+			s_displayListPos[s_displayListCount[1]+1024] = pos;
+			s_displayListData[s_displayListCount[1]+1024] = data;
+			s_displayListData[s_displayListCount[1]+1024].x |= SPARTID_WALL_MID;
+			s_displayListData[s_displayListCount[1]+1024].w = wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 			s_displayListCount[1]++;
 		}
 
@@ -246,12 +246,12 @@ namespace TFE_Jedi
 
 		s_displayListPosGPU[passId].bind(s_posIndex[passId]);
 		s_displayListDataGPU[passId].bind(s_dataIndex[passId]);
-		if (passId == 0) { s_displayListPlanesGPU.bind(s_planesIndex); }
+		s_displayListPlanesGPU.bind(s_planesIndex);
 
 		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount[passId], sizeof(u16));
 
-		s_displayListPosGPU[0].unbind(s_posIndex[0]);
-		s_displayListDataGPU[0].unbind(s_dataIndex[0]);
+		s_displayListPosGPU[passId].unbind(s_posIndex[passId]);
+		s_displayListDataGPU[passId].unbind(s_dataIndex[passId]);
 		s_displayListPlanesGPU.unbind(s_planesIndex);
 	}
 }
