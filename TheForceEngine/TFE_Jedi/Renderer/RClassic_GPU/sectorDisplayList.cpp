@@ -41,36 +41,42 @@ namespace TFE_Jedi
 		SPARTID_COUNT
 	};
 
-	static s32 s_displayListCount;
+	static s32 s_displayListCount[SECTOR_PASS_COUNT];
 	static s32 s_displayPlaneCount;
 	static s32 s_displayCurrentPortalId;
-	static Vec4f  s_displayListPos[1024];
-	static Vec4ui s_displayListData[1024];
+	static Vec4f  s_displayListPos[SECTOR_PASS_COUNT * 1024];
+	static Vec4ui s_displayListData[SECTOR_PASS_COUNT * 1024];
 	static Vec4f  s_displayListPlanes[2048];
-	static ShaderBuffer s_displayListPosGPU;
-	static ShaderBuffer s_displayListDataGPU;
+	static ShaderBuffer s_displayListPosGPU[SECTOR_PASS_COUNT];
+	static ShaderBuffer s_displayListDataGPU[SECTOR_PASS_COUNT];
 	static ShaderBuffer s_displayListPlanesGPU;
-	static s32 s_posIndex;
-	static s32 s_dataIndex;
+	static s32 s_posIndex[SECTOR_PASS_COUNT];
+	static s32 s_dataIndex[SECTOR_PASS_COUNT];
 	static s32 s_planesIndex;
 
-	void sdisplayList_init(s32 posIndex, s32 dataIndex, s32 planesIndex)
+	void sdisplayList_init(s32* posIndex, s32* dataIndex, s32 planesIndex)
 	{
-		ShaderBufferDef bufferDefDisplayListPos =
+		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
 		{
-			4,				// 1, 2, 4 channels (R, RG, RGBA)
-			sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-			BUF_CHANNEL_FLOAT
-		};
-		s_displayListPosGPU.create(1024, bufferDefDisplayListPos, true);
+			ShaderBufferDef bufferDefDisplayListPos =
+			{
+				4,				// 1, 2, 4 channels (R, RG, RGBA)
+				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
+				BUF_CHANNEL_FLOAT
+			};
+			s_displayListPosGPU[i].create(1024, bufferDefDisplayListPos, true);
 
-		ShaderBufferDef bufferDefDisplayListData =
-		{
-			4,				// 1, 2, 4 channels (R, RG, RGBA)
-			sizeof(u32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-			BUF_CHANNEL_UINT
-		};
-		s_displayListDataGPU.create(1024, bufferDefDisplayListData, true);
+			ShaderBufferDef bufferDefDisplayListData =
+			{
+				4,				// 1, 2, 4 channels (R, RG, RGBA)
+				sizeof(u32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
+				BUF_CHANNEL_UINT
+			};
+			s_displayListDataGPU[i].create(1024, bufferDefDisplayListData, true);
+
+			s_posIndex[i] = posIndex[i];
+			s_dataIndex[i] = dataIndex[i];
+		}
 
 		ShaderBufferDef bufferDefDisplayListPlanes =
 		{
@@ -79,9 +85,6 @@ namespace TFE_Jedi
 			BUF_CHANNEL_FLOAT
 		};
 		s_displayListPlanesGPU.create(2048, bufferDefDisplayListPlanes, true);
-
-		s_posIndex = posIndex;
-		s_dataIndex = dataIndex;
 		s_planesIndex = planesIndex;
 
 		sdisplayList_clear();
@@ -89,14 +92,20 @@ namespace TFE_Jedi
 
 	void sdisplayList_destroy()
 	{
-		s_displayListPosGPU.destroy();
-		s_displayListDataGPU.destroy();
+		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
+		{
+			s_displayListPosGPU[i].destroy();
+			s_displayListDataGPU[i].destroy();
+		}
 		s_displayListPlanesGPU.destroy();
 	}
 
 	void sdisplayList_clear()
 	{
-		s_displayListCount = 0;
+		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
+		{
+			s_displayListCount[i] = 0;
+		}
 		s_displayPlaneCount = 0;
 		s_displayCurrentPortalId = 0;
 	}
@@ -104,30 +113,35 @@ namespace TFE_Jedi
 	void sdisplayList_finish()
 	{
 		if (!s_displayListCount) { return; }
-		s_displayListPosGPU.update(s_displayListPos, sizeof(Vec4f) * s_displayListCount);
-		s_displayListDataGPU.update(s_displayListData, sizeof(Vec4ui) * s_displayListCount);
+		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
+		{
+			if (!s_displayListCount[i]) { continue; }
+
+			s_displayListPosGPU[i].update(s_displayListPos, sizeof(Vec4f) * s_displayListCount[i]);
+			s_displayListDataGPU[i].update(s_displayListData, sizeof(Vec4ui) * s_displayListCount[i]);
+		}
 		s_displayListPlanesGPU.update(s_displayListPlanes, sizeof(Vec4f) * s_displayPlaneCount);
 	}
 
 	void sdisplayList_addCaps(RSector* curSector)
 	{
-		// TODO: Constrain to portal frustum.
+		// TODO: Remove and replace with main frustum extrusion.
 		Vec4f pos = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
 		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, 0u, 0u/*textureId*/ };
 
-		s_displayListPos[s_displayListCount] = pos;
-		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x = SPARTID_FLOOR_CAP;
-		s_displayListData[s_displayListCount].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
-		if (curSector->flags1 & SEC_FLAGS1_PIT) { s_displayListData[s_displayListCount].x |= SPARTID_SKY; }
-		s_displayListCount++;
+		s_displayListPos[s_displayListCount[0]] = pos;
+		s_displayListData[s_displayListCount[0]] = data;
+		s_displayListData[s_displayListCount[0]].x = SPARTID_FLOOR_CAP;
+		s_displayListData[s_displayListCount[0]].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
+		if (curSector->flags1 & SEC_FLAGS1_PIT) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
+		s_displayListCount[0]++;
 
-		s_displayListPos[s_displayListCount] = pos;
-		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x = SPARTID_CEIL_CAP;
-		s_displayListData[s_displayListCount].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
-		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR) { s_displayListData[s_displayListCount].x |= SPARTID_SKY; }
-		s_displayListCount++;
+		s_displayListPos[s_displayListCount[0]] = pos;
+		s_displayListData[s_displayListCount[0]] = data;
+		s_displayListData[s_displayListCount[0]].x = SPARTID_CEIL_CAP;
+		s_displayListData[s_displayListCount[0]].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
+		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
+		s_displayListCount[0]++;
 	}
 
 	void sdisplayList_addPortal(Vec3f p0, Vec3f p1)
@@ -170,63 +184,65 @@ namespace TFE_Jedi
 		// Wall Flags.
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector) // TODO: Fix transparent mid textures.
 		{
-			s_displayListPos[s_displayListCount] = pos;
-			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= SPARTID_WALL_MID;
-			s_displayListData[s_displayListCount].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
-			s_displayListCount++;
+			s_displayListPos[s_displayListCount[0]] = pos;
+			s_displayListData[s_displayListCount[0]] = data;
+			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_MID;
+			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+			s_displayListCount[0]++;
 		}
 		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 		{
-			s_displayListPos[s_displayListCount] = pos;
-			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= SPARTID_WALL_TOP;
-			s_displayListData[s_displayListCount].w = wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0);
-			s_displayListCount++;
+			s_displayListPos[s_displayListCount[0]] = pos;
+			s_displayListData[s_displayListCount[0]] = data;
+			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_TOP;
+			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0);
+			s_displayListCount[0]++;
 		}
 		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 		{
-			s_displayListPos[s_displayListCount] = pos;
-			s_displayListData[s_displayListCount] = data;
-			s_displayListData[s_displayListCount].x |= SPARTID_WALL_BOT;
-			s_displayListData[s_displayListCount].w = wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0);
-			s_displayListCount++;
+			s_displayListPos[s_displayListCount[0]] = pos;
+			s_displayListData[s_displayListCount[0]] = data;
+			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_BOT;
+			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0);
+			s_displayListCount[0]++;
 		}
 		// Add Floor
-		s_displayListPos[s_displayListCount] = pos;
-		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x |= SPARTID_FLOOR;
-		s_displayListData[s_displayListCount].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
-		if (curSector->flags1 & SEC_FLAGS1_PIT) { s_displayListData[s_displayListCount].x |= SPARTID_SKY; }
-		s_displayListCount++;
+		s_displayListPos[s_displayListCount[0]] = pos;
+		s_displayListData[s_displayListCount[0]] = data;
+		s_displayListData[s_displayListCount[0]].x |= SPARTID_FLOOR;
+		s_displayListData[s_displayListCount[0]].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
+		if (curSector->flags1 & SEC_FLAGS1_PIT) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
+		s_displayListCount[0]++;
 
 		// Add Ceiling
-		s_displayListPos[s_displayListCount] = pos;
-		s_displayListData[s_displayListCount] = data;
-		s_displayListData[s_displayListCount].x |= SPARTID_CEILING;
-		s_displayListData[s_displayListCount].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
+		s_displayListPos[s_displayListCount[0]] = pos;
+		s_displayListData[s_displayListCount[0]] = data;
+		s_displayListData[s_displayListCount[0]].x |= SPARTID_CEILING;
+		s_displayListData[s_displayListCount[0]].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
 		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
-			s_displayListData[s_displayListCount].x |= SPARTID_SKY;
+			s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY;
 		}
-		s_displayListCount++;
+		s_displayListCount[0]++;
 	}
 
-	s32 sdisplayList_getSize()
+	s32 sdisplayList_getSize(SectorPass passId)
 	{
-		return s_displayListCount;
+		return s_displayListCount[passId];
 	}
 
-	void sdisplayList_draw()
+	void sdisplayList_draw(SectorPass passId)
 	{
-		s_displayListPosGPU.bind(s_posIndex);
-		s_displayListDataGPU.bind(s_dataIndex);
-		s_displayListPlanesGPU.bind(s_planesIndex);
+		if (!s_displayListCount[passId]) { return; }
 
-		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount, sizeof(u16));
+		s_displayListPosGPU[passId].bind(s_posIndex[passId]);
+		s_displayListDataGPU[passId].bind(s_dataIndex[passId]);
+		if (passId == 0) { s_displayListPlanesGPU.bind(s_planesIndex); }
 
-		s_displayListPosGPU.unbind(s_posIndex);
-		s_displayListDataGPU.unbind(s_dataIndex);
+		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount[passId], sizeof(u16));
+
+		s_displayListPosGPU[0].unbind(s_posIndex[0]);
+		s_displayListDataGPU[0].unbind(s_dataIndex[0]);
 		s_displayListPlanesGPU.unbind(s_planesIndex);
 	}
 }

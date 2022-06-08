@@ -10,6 +10,13 @@
 
 namespace TFE_Jedi
 {
+	enum SectorPass
+	{
+		SECTOR_PASS_OPAQUE = 0,
+		SECTOR_PASS_TRANS,
+		SECTOR_PASS_COUNT
+	};
+
 	struct GPUCachedSector
 	{
 		f32 floorHeight;
@@ -19,7 +26,7 @@ namespace TFE_Jedi
 		s32 wallStart;
 	};
 
-	void sdisplayList_init(s32 posIndex, s32 dataIndex, s32 planesIndex);
+	void sdisplayList_init(s32* posIndex, s32* dataIndex, s32 planesIndex);
 	void sdisplayList_destroy();
 
 	void sdisplayList_clear();
@@ -28,7 +35,7 @@ namespace TFE_Jedi
 	void sdisplayList_addCaps(RSector* curSector);
 	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg);
 	void sdisplayList_addPortal(Vec3f p0, Vec3f p1);
-	void sdisplayList_draw();
+	void sdisplayList_draw(SectorPass passId);
 
-	s32  sdisplayList_getSize();
+	s32  sdisplayList_getSize(SectorPass passId = SECTOR_PASS_OPAQUE);
 }  // TFE_Jedi

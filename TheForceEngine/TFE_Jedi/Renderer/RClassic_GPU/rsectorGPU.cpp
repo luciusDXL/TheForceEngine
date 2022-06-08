@@ -206,7 +206,9 @@ namespace TFE_Jedi
 			m_walls.create(wallCount*3, bufferDefSectors, true, s_gpuSourceData.walls);
 
 			// Initialize the display list with the GPU buffers.
-			sdisplayList_init(2, 3, 4);
+			s32 posIndex[]  = { 2, 0 };
+			s32 dataIndex[] = { 3, 0 };
+			sdisplayList_init(posIndex, dataIndex, 4);
 
 			// Build the color map.
 			if (s_colorMap && s_lightSourceRamp)
@@ -689,7 +691,7 @@ namespace TFE_Jedi
 		m_wallShader.setVariable(m_skyParallaxId, SVT_VEC2, parallax);
 
 		// Draw the sector display list.
-		sdisplayList_draw();
+		sdisplayList_draw(SECTOR_PASS_OPAQUE);
 
 		// Cleanup.
 		m_wallShader.unbind();
