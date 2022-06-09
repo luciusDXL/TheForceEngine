@@ -44,11 +44,16 @@ namespace TFE_Jedi
 		SPARTID_COUNT
 	};
 
+	enum Constants
+	{
+		MAX_DISP_ITEMS = 1024,
+	};
+
 	static s32 s_displayListCount[SECTOR_PASS_COUNT];
 	static s32 s_displayPlaneCount;
 	static s32 s_displayCurrentPortalId;
-	static Vec4f  s_displayListPos[SECTOR_PASS_COUNT * 1024];
-	static Vec4ui s_displayListData[SECTOR_PASS_COUNT * 1024];
+	static Vec4f  s_displayListPos[SECTOR_PASS_COUNT * MAX_DISP_ITEMS];
+	static Vec4ui s_displayListData[SECTOR_PASS_COUNT * MAX_DISP_ITEMS];
 	static Vec4f  s_displayListPlanes[2048];
 	static ShaderBuffer s_displayListPosGPU[SECTOR_PASS_COUNT];
 	static ShaderBuffer s_displayListDataGPU[SECTOR_PASS_COUNT];
@@ -67,7 +72,7 @@ namespace TFE_Jedi
 				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 				BUF_CHANNEL_FLOAT
 			};
-			s_displayListPosGPU[i].create(1024, bufferDefDisplayListPos, true);
+			s_displayListPosGPU[i].create(MAX_DISP_ITEMS, bufferDefDisplayListPos, true);
 
 			ShaderBufferDef bufferDefDisplayListData =
 			{
@@ -75,7 +80,7 @@ namespace TFE_Jedi
 				sizeof(u32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 				BUF_CHANNEL_UINT
 			};
-			s_displayListDataGPU[i].create(1024, bufferDefDisplayListData, true);
+			s_displayListDataGPU[i].create(MAX_DISP_ITEMS, bufferDefDisplayListData, true);
 
 			s_posIndex[i] = posIndex[i];
 			s_dataIndex[i] = dataIndex[i];
@@ -87,7 +92,7 @@ namespace TFE_Jedi
 			sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 			BUF_CHANNEL_FLOAT
 		};
-		s_displayListPlanesGPU.create(2048, bufferDefDisplayListPlanes, true);
+		s_displayListPlanesGPU.create(2*MAX_DISP_ITEMS, bufferDefDisplayListPlanes, true);
 		s_planesIndex = planesIndex;
 
 		sdisplayList_clear();
@@ -115,15 +120,18 @@ namespace TFE_Jedi
 		
 	void sdisplayList_finish()
 	{
-		if (!s_displayListCount) { return; }
 		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
 		{
 			if (!s_displayListCount[i]) { continue; }
 
-			s_displayListPosGPU[i].update(&s_displayListPos[i*1024], sizeof(Vec4f) * s_displayListCount[i]);
-			s_displayListDataGPU[i].update(&s_displayListData[i*1024], sizeof(Vec4ui) * s_displayListCount[i]);
+			s_displayListPosGPU[i].update(&s_displayListPos[i*MAX_DISP_ITEMS], sizeof(Vec4f) * s_displayListCount[i]);
+			s_displayListDataGPU[i].update(&s_displayListData[i*MAX_DISP_ITEMS], sizeof(Vec4ui) * s_displayListCount[i]);
 		}
-		s_displayListPlanesGPU.update(s_displayListPlanes, sizeof(Vec4f) * s_displayPlaneCount);
+
+		if (s_displayPlaneCount)
+		{
+			s_displayListPlanesGPU.update(s_displayListPlanes, sizeof(Vec4f) * s_displayPlaneCount);
+		}
 	}
 
 	void sdisplayList_addCaps(RSector* curSector)
@@ -195,10 +203,11 @@ namespace TFE_Jedi
 		}
 		else if (srcWall->midTex && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX)) // Transparent mid-texture.
 		{
-			s_displayListPos[s_displayListCount[1]+1024] = pos;
-			s_displayListData[s_displayListCount[1]+1024] = data;
-			s_displayListData[s_displayListCount[1]+1024].x |= SPARTID_WALL_MID;
-			s_displayListData[s_displayListCount[1]+1024].w = wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+			// Transparent items go into SECTOR_PASS_TRANS
+			s_displayListPos[s_displayListCount[1]  + MAX_DISP_ITEMS] = pos;
+			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS] = data;
+			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_MID;
+			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].w = wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 			s_displayListCount[1]++;
 		}
 
@@ -221,26 +230,27 @@ namespace TFE_Jedi
 
 		if (srcWall->signTex && *srcWall->signTex)
 		{
-			s_displayListPos[s_displayListCount[1] + 1024] = pos;
-			s_displayListData[s_displayListCount[1] + 1024] = data;
-			s_displayListData[s_displayListCount[1] + 1024].w = wallGpuId | (*srcWall->signTex)->textureId;
+			// Transparent items go into SECTOR_PASS_TRANS
+			s_displayListPos[s_displayListCount[1]  + MAX_DISP_ITEMS] = pos;
+			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS] = data;
+			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].w = wallGpuId | (*srcWall->signTex)->textureId;
 
 			// If there is a bottom texture, it goes there..
 			if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 			{
-				s_displayListData[s_displayListCount[1] + 1024].x |= SPARTID_WALL_BOT_SIGN;
+				s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_BOT_SIGN;
 				s_displayListCount[1]++;
 			}
 			// Otherwise if there is a top
 			else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 			{
-				s_displayListData[s_displayListCount[1] + 1024].x |= SPARTID_WALL_TOP_SIGN;
+				s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_TOP_SIGN;
 				s_displayListCount[1]++;
 			}
 			// And finally mid.
 			else if (srcWall->midTex)
 			{
-				s_displayListData[s_displayListCount[1] + 1024].x |= SPARTID_WALL_MID_SIGN;
+				s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_MID_SIGN;
 				s_displayListCount[1]++;
 			}
 		}
