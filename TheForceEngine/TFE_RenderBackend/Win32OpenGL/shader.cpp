@@ -66,6 +66,7 @@ namespace ShaderGL
 			glGetShaderInfoLog(handle, log_length, NULL, (GLchar*)buf.data());
 			TFE_System::logWrite(LOG_ERROR, "Shader", "Error: %s\n", buf.data());
 		}
+
 		return (GLboolean)status == GL_TRUE;
 	}
 }
@@ -155,6 +156,8 @@ s32 Shader::getVariableId(const char* name)
 void Shader::bindTextureNameToSlot(const char* texName, s32 slot)
 {
 	const s32 curSlot = glGetUniformLocation(m_gpuHandle, texName);
+	if (curSlot < 0 || slot < 0) { return; }
+
 	bind();
 	glUniform1i(curSlot, slot);
 	unbind();

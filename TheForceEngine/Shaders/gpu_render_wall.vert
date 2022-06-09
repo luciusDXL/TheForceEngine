@@ -47,12 +47,28 @@ void main()
 	vec4 vtx_color = vec4(0.0, 0.0, sectorAmbient, 1.0);
 	vec4 texture_data = vec4(0.0);
 	float zbias = 0.0;
+	#ifndef SECTOR_TRANSPARENT_PASS
 	if (partId < 3)	// Wall
+	#endif
 	{
 		vec2 vtx = (vertexId & 1)==0 ? positions.xy : positions.zw;
 		vtx_pos = vec3(vtx.x, (vertexId < 2) ? ceilHeight : floorHeight, vtx.y);
 
 		float texBase = floorHeight;
+	#ifdef SECTOR_TRANSPARENT_PASS
+		vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
+
+		if (nextId < 32768)
+		{
+			vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
+			float y0 = min(floorHeight, max(nextHeights.y, ceilHeight));
+			float y1 = max(ceilHeight, min(nextHeights.x, floorHeight));
+			texBase = y1;
+
+			// Compute final height value for this vertex.
+			vtx_pos.y = (vertexId < 2) ? y0 : y1;
+		}
+	#else  // !SECTOR_TRANSPARENT_PASS
 		if (partId == 1) // Top
 		{
 			float nextTop = texelFetch(Sectors, nextId*2).y;
@@ -73,48 +89,38 @@ void main()
 			float y0 = ceilHeight;
 			float y1 = floorHeight;
 
-			if (nextId < 32768) // This is a transparent mid-texture, TODO: Move this out of the main shader.
+			// Clamp quad vertices to the frustum upper and lower planes with the following requirements:
+			// 1. Both vertices must be on or below the plane, otherwise clipping is required (which is not done).
+			// 2. Only the non-anchor vertices can move.
+			// 3. The quad cannot turn inside-out.
+
+			// Bottom Plane
+			int index = max(0, (portalId - 1)*2);
+			vec4 plane = texelFetch(DrawListPlanes, index);
+			vec2 distLeft  = vec2(dot(vec4(positions.x, y0, positions.y, 1.0), plane),
+									dot(vec4(positions.x, y1, positions.y, 1.0), plane));
+			vec2 distRight = vec2(dot(vec4(positions.z, y0, positions.w, 1.0), plane),
+									dot(vec4(positions.z, y1, positions.w, 1.0), plane));
+
+			if (distLeft.y < 0.0 && distRight.y < 0.0)
 			{
-				vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
-				y0 = min(floorHeight, max(nextHeights.y, ceilHeight));
-				y1 = max(ceilHeight, min(nextHeights.x, floorHeight));
-				texBase = y1;
+				vec2 dist = (vertexId & 1)==0 ? distLeft : distRight;
+				if (dist.x < 0.0) { y1 = y0; }
+				else if (dist.y < 0.0) { y1 = y0 - (y1 - y0) * dist.x / (dist.y - dist.x); }
 			}
-			else
+
+			// Top Plane
+			plane = texelFetch(DrawListPlanes, index + 1);
+			distLeft  = vec2(dot(vec4(positions.x, y0, positions.y, 1.0), plane),
+								dot(vec4(positions.x, y1, positions.y, 1.0), plane));
+			distRight = vec2(dot(vec4(positions.z, y0, positions.w, 1.0), plane),
+								dot(vec4(positions.z, y1, positions.w, 1.0), plane));
+
+			if (distLeft.x < 0.0 && distRight.x < 0.0)
 			{
-				// Clamp quad vertices to the frustum upper and lower planes with the following requirements:
-				// 1. Both vertices must be on or below the plane, otherwise clipping is required (which is not done).
-				// 2. Only the non-anchor vertices can move.
-				// 3. The quad cannot turn inside-out.
-
-				// Bottom Plane
-				int index = max(0, (portalId - 1)*2);
-				vec4 plane = texelFetch(DrawListPlanes, index);
-				vec2 distLeft  = vec2(dot(vec4(positions.x, y0, positions.y, 1.0), plane),
-									  dot(vec4(positions.x, y1, positions.y, 1.0), plane));
-				vec2 distRight = vec2(dot(vec4(positions.z, y0, positions.w, 1.0), plane),
-									  dot(vec4(positions.z, y1, positions.w, 1.0), plane));
-
-				if (distLeft.y < 0.0 && distRight.y < 0.0)
-				{
-					vec2 dist = (vertexId & 1)==0 ? distLeft : distRight;
-					if (dist.x < 0.0) { y1 = y0; }
-					else if (dist.y < 0.0) { y1 = y0 - (y1 - y0) * dist.x / (dist.y - dist.x); }
-				}
-
-				// Top Plane
-				plane = texelFetch(DrawListPlanes, index + 1);
-				distLeft  = vec2(dot(vec4(positions.x, y0, positions.y, 1.0), plane),
-								 dot(vec4(positions.x, y1, positions.y, 1.0), plane));
-				distRight = vec2(dot(vec4(positions.z, y0, positions.w, 1.0), plane),
-								 dot(vec4(positions.z, y1, positions.w, 1.0), plane));
-
-				if (distLeft.x < 0.0 && distRight.x < 0.0)
-				{
-					vec2 dist = (vertexId & 1)==0 ? distLeft : distRight;
-					if (dist.y < 0.0) { y0 = y1; }
-					else if (dist.x < 0.0) { y0 = y0 - (y1 - y0) * dist.x / (dist.y - dist.x); }
-				}
+				vec2 dist = (vertexId & 1)==0 ? distLeft : distRight;
+				if (dist.y < 0.0) { y0 = y1; }
+				else if (dist.x < 0.0) { y0 = y0 - (y1 - y0) * dist.x / (dist.y - dist.x); }
 			}
 
 			// Compute final height value for this vertex.
@@ -123,18 +129,9 @@ void main()
 		}
 		else
 		{
-			if (nextId < 32768) // This is a transparent mid-texture, TODO: Move this out of the main shader.
-			{
-				vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
-				float y0 = min(floorHeight, max(nextHeights.y, ceilHeight));
-				float y1 = max(ceilHeight, min(nextHeights.x, floorHeight));
-				texBase = y1;
-
-				vtx_pos.y = (vertexId < 2) ? y0 : y1;
-			}
-
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
 		}
+	#endif  // !SECTOR_TRANSPARENT_PASS
 
 		texture_data = texelFetch(Walls, wallId*3);
 		vtx_uv.x = texBase;
@@ -143,6 +140,7 @@ void main()
 		vtx_color.r = float(lightOffset);
 		vtx_color.g = 32.0;
 	}
+	#ifndef SECTOR_TRANSPARENT_PASS
 	else if (partId < 5)	// flat
 	{
 		int flatIndex = partId - 3;	// 0 = floor, 1 = ceiling.
@@ -209,7 +207,8 @@ void main()
 		vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 		texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;
 	}
-
+	#endif  // !SECTOR_TRANSPARENT_PASS
+	
 	Frag_Pos = vtx_pos - CameraPos;
 	
 	// Transform from world to view space.

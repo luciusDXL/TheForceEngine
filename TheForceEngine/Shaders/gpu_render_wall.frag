@@ -181,6 +181,14 @@ void main()
 	baseColor = sampleTexture(Frag_TextureId, uv, sky);
 	// End
 
+	// Support transparent textures.
+	#ifdef SECTOR_TRANSPARENT_PASS
+	if (baseColor < 0.5)
+	{
+		discard;
+	}
+	#endif
+
 	Out_Color.rgb = getAttenuatedColor(int(baseColor), int(light));
 	Out_Color.a = 1.0;
 }

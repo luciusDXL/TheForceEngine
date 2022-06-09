@@ -61,15 +61,15 @@ namespace TFE_Jedi
 	GPUSourceData s_gpuSourceData = { 0 };
 
 	TextureGpu* s_colormapTex;
-	Shader m_wallShader;
+	Shader m_wallShader[SECTOR_PASS_COUNT];
 	ShaderBuffer m_sectors;
 	ShaderBuffer m_walls;
-	s32 m_cameraPosId;
-	s32 m_cameraViewId;
-	s32 m_cameraProjId;
-	s32 m_cameraDirId;
-	s32 m_lightDataId;
-	s32 m_skyParallaxId;
+	s32 m_cameraPosId[SECTOR_PASS_COUNT];
+	s32 m_cameraViewId[SECTOR_PASS_COUNT];
+	s32 m_cameraProjId[SECTOR_PASS_COUNT];
+	s32 m_cameraDirId[SECTOR_PASS_COUNT];
+	s32 m_lightDataId[SECTOR_PASS_COUNT];
+	s32 m_skyParallaxId[SECTOR_PASS_COUNT];
 	Vec3f m_viewDir;
 	
 	IndexBuffer m_indexBuffer;
@@ -85,6 +85,33 @@ namespace TFE_Jedi
 	extern Vec3f s_cameraPos;
 	extern Vec3f s_cameraDir;
 
+	bool loadShaderVariant(s32 index, s32 defineCount, ShaderDefine* defines)
+	{
+		if (!m_wallShader[index].load("Shaders/gpu_render_wall.vert", "Shaders/gpu_render_wall.frag", defineCount, defines, SHADER_VER_STD))
+		{
+			return false;
+		}
+
+		m_cameraPosId[index]   = m_wallShader[index].getVariableId("CameraPos");
+		m_cameraViewId[index]  = m_wallShader[index].getVariableId("CameraView");
+		m_cameraProjId[index]  = m_wallShader[index].getVariableId("CameraProj");
+		m_cameraDirId[index]   = m_wallShader[index].getVariableId("CameraDir");
+		m_lightDataId[index]   = m_wallShader[index].getVariableId("LightData");
+		m_skyParallaxId[index] = m_wallShader[index].getVariableId("SkyParallax");
+
+		m_wallShader[index].bindTextureNameToSlot("Sectors", 0);
+		m_wallShader[index].bindTextureNameToSlot("Walls", 1);
+		m_wallShader[index].bindTextureNameToSlot("DrawListPos", 2);
+		m_wallShader[index].bindTextureNameToSlot("DrawListData", 3);
+		m_wallShader[index].bindTextureNameToSlot("DrawListPlanes", 4);
+		m_wallShader[index].bindTextureNameToSlot("Colormap", 5);
+		m_wallShader[index].bindTextureNameToSlot("Palette", 6);
+		m_wallShader[index].bindTextureNameToSlot("Textures", 7);
+		m_wallShader[index].bindTextureNameToSlot("TextureTable", 8);
+
+		return true;
+	}
+
 	void TFE_Sectors_GPU::reset()
 	{
 	}
@@ -95,25 +122,15 @@ namespace TFE_Jedi
 		{
 			m_gpuInit = true;
 			s_gpuFrame = 1;
-			// Load Shaders.
-			bool result = m_wallShader.load("Shaders/gpu_render_wall.vert", "Shaders/gpu_render_wall.frag", 0, nullptr, SHADER_VER_STD);
+
+			// Load the opaque version of the shader.
+			bool result = loadShaderVariant(0, 0, nullptr);
 			assert(result);
-			m_cameraPosId  = m_wallShader.getVariableId("CameraPos");
-			m_cameraViewId = m_wallShader.getVariableId("CameraView");
-			m_cameraProjId = m_wallShader.getVariableId("CameraProj");
-			m_cameraDirId  = m_wallShader.getVariableId("CameraDir");
-			m_lightDataId  = m_wallShader.getVariableId("LightData");
-			m_skyParallaxId = m_wallShader.getVariableId("SkyParallax");
-			
-			m_wallShader.bindTextureNameToSlot("Sectors", 0);
-			m_wallShader.bindTextureNameToSlot("Walls", 1);
-			m_wallShader.bindTextureNameToSlot("DrawListPos", 2);
-			m_wallShader.bindTextureNameToSlot("DrawListData", 3);
-			m_wallShader.bindTextureNameToSlot("DrawListPlanes", 4);
-			m_wallShader.bindTextureNameToSlot("Colormap", 5);
-			m_wallShader.bindTextureNameToSlot("Palette", 6);
-			m_wallShader.bindTextureNameToSlot("Textures", 7);
-			m_wallShader.bindTextureNameToSlot("TextureTable", 8);
+
+			// Load the transparent version of the shader.
+			ShaderDefine defines[] = { "SECTOR_TRANSPARENT_PASS", "1" };
+			result = loadShaderVariant(1, TFE_ARRAYSIZE(defines), defines);
+			assert(result);
 
 			// Handles up to 65536 sector quads in the view.
 			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * 65536);
@@ -644,20 +661,11 @@ namespace TFE_Jedi
 		return sdisplayList_getSize() > 0;
 	}
 
-	void TFE_Sectors_GPU::draw(RSector* sector)
+	void drawPass(SectorPass pass)
 	{
-		// Build the draw list.
-		if (!traverseScene(sector))
-		{
-			return;
-		}
+		if (!sdisplayList_getSize(pass)) { return; }
 
-		// State
-		TFE_RenderState::setStateEnable(false, STATE_BLEND);
-		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST | STATE_CULLING);
-
-		// Shader and buffers.
-		m_wallShader.bind();
+		m_wallShader[pass].bind();
 		m_indexBuffer.bind();
 		m_sectors.bind(0);
 		m_walls.bind(1);
@@ -674,11 +682,11 @@ namespace TFE_Jedi
 
 		// Camera and lighting.
 		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, 0.0f };
-		m_wallShader.setVariable(m_cameraPosId,  SVT_VEC3,   s_cameraPos.m);
-		m_wallShader.setVariable(m_cameraViewId, SVT_MAT3x3, s_cameraMtx.data);
-		m_wallShader.setVariable(m_cameraProjId, SVT_MAT4x4, s_cameraProj.data);
-		m_wallShader.setVariable(m_cameraDirId,  SVT_VEC3,   s_cameraDir.m);
-		m_wallShader.setVariable(m_lightDataId,  SVT_VEC4,   lightData.m);
+		m_wallShader[pass].setVariable(m_cameraPosId[pass],  SVT_VEC3, s_cameraPos.m);
+		m_wallShader[pass].setVariable(m_cameraViewId[pass], SVT_MAT3x3, s_cameraMtx.data);
+		m_wallShader[pass].setVariable(m_cameraProjId[pass], SVT_MAT4x4, s_cameraProj.data);
+		m_wallShader[pass].setVariable(m_cameraDirId[pass],  SVT_VEC3, s_cameraDir.m);
+		m_wallShader[pass].setVariable(m_lightDataId[pass],  SVT_VEC4, lightData.m);
 
 		// Calculte the sky parallax.
 		fixed16_16 p0, p1;
@@ -688,20 +696,38 @@ namespace TFE_Jedi
 			fixed16ToFloat(p0) * 0.25f,	// The values are scaled by 4 to convert from angle to fixed in the original code.
 			fixed16ToFloat(p1) * 0.25f 	// The values are scaled by 4 to convert from angle to fixed in the original code.
 		};
-		m_wallShader.setVariable(m_skyParallaxId, SVT_VEC2, parallax);
+		m_wallShader[pass].setVariable(m_skyParallaxId[pass], SVT_VEC2, parallax);
 
 		// Draw the sector display list.
-		sdisplayList_draw(SECTOR_PASS_OPAQUE);
-		// TODO: Different shader to handle transparencies.
-		sdisplayList_draw(SECTOR_PASS_TRANS);
+		sdisplayList_draw(pass);
 
-		// Cleanup.
-		m_wallShader.unbind();
+		m_wallShader[pass].unbind();
+	}
+
+	void TFE_Sectors_GPU::draw(RSector* sector)
+	{
+		// Build the draw list.
+		if (!traverseScene(sector))
+		{
+			return;
+		}
+
+		// State
+		TFE_RenderState::setStateEnable(false, STATE_BLEND);
+		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST | STATE_CULLING);
+
+		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
+		{
+			drawPass(SectorPass(i));
+		}
+
+		// Cleanup
 		m_indexBuffer.unbind();
 		m_sectors.unbind(0);
 		m_walls.unbind(1);
 		TextureGpu::clear(5);
 		TextureGpu::clear(6);
+
 		//TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
 		
 		// Debug
