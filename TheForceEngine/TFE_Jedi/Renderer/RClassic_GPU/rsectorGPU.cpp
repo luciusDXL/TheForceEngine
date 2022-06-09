@@ -209,6 +209,23 @@ namespace TFE_Jedi
 					wallData[2].y = fixed16ToFloat(srcWall->botOffset.z);
 					wallData[2].z = fixed16ToFloat(srcWall->topOffset.x);
 					wallData[2].w = fixed16ToFloat(srcWall->topOffset.z);
+
+					// Now handle the sign offset.
+					if (srcWall->signTex)
+					{
+						if (srcWall->drawFlags & WDF_BOT)
+						{
+							wallData[1].z = wallData[2].x - wallData[1].z;
+						}
+						else if (srcWall->drawFlags & WDF_TOP)
+						{
+							wallData[1].z = wallData[2].z - wallData[1].z;
+						}
+						else
+						{
+							wallData[1].z = wallData[1].x - wallData[1].z;
+						}
+					}
 				}
 			}
 
@@ -292,6 +309,23 @@ namespace TFE_Jedi
 				wallData[2].y = fixed16ToFloat(srcWall->botOffset.z);
 				wallData[2].z = fixed16ToFloat(srcWall->topOffset.x);
 				wallData[2].w = fixed16ToFloat(srcWall->topOffset.z);
+
+				// Now handle the sign offset.
+				if (srcWall->signTex)
+				{
+					if (srcWall->drawFlags & WDF_BOT)
+					{
+						wallData[1].z = wallData[2].x - wallData[1].z;
+					}
+					else if (srcWall->drawFlags & WDF_TOP)
+					{
+						wallData[1].z = wallData[2].z - wallData[1].z;
+					}
+					else
+					{
+						wallData[1].z = wallData[1].x - wallData[1].z;
+					}
+				}
 			}
 		}
 	}

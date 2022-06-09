@@ -880,7 +880,7 @@ namespace RClassic_Float
 				// Handle the "sign texture" - a wall overlay.
 				if (signTex && uCoord >= signU0 && uCoord <= signU1)
 				{
-					f32 signYBase = y0F + (cachedWall->signOffset.z /  vCoordStep);
+					f32 signYBase = y0F + (cachedWall->signOffset.z / vCoordStep);
 					s32 y0 = max(floorFloat(signYBase - (f32(signTex->height) / vCoordStep) + 1.5f), top);
 					s32 y1 = min(floorFloat(signYBase + 0.5f), bot);
 					s_yPixelCount = y1 - y0 + 1;

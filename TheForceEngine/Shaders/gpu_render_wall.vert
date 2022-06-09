@@ -56,17 +56,49 @@ void main()
 
 		float texBase = floorHeight;
 	#ifdef SECTOR_TRANSPARENT_PASS
-		vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
-
-		if (nextId < 32768)
+		vtx_uv.y = 0.0;
+		if (partId == 7)  // Mid Sign
 		{
-			vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
-			float y0 = min(floorHeight, max(nextHeights.y, ceilHeight));
-			float y1 = max(ceilHeight, min(nextHeights.x, floorHeight));
-			texBase = y1;
+			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).zw;
+			// Add a small z bias to avoid issues with the wall when clamped.
+			zbias = -0.00005;
+		}
+		else if (partId == 8) // Top Sign
+		{
+			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).zw;
 
-			// Compute final height value for this vertex.
-			vtx_pos.y = (vertexId < 2) ? y0 : y1;
+			float nextTop = texelFetch(Sectors, nextId*2).y;
+			float curTop = min(floorHeight, max(nextTop, ceilHeight));
+			vtx_pos.y = (vertexId < 2) ? ceilHeight : curTop;
+			texBase = nextTop;
+			// Add a small z bias to avoid issues with the wall when clamped.
+			zbias = -0.00005;
+		}
+		else if (partId == 9) // Bottom Sign
+		{
+			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).zw;
+
+			float nextBot = texelFetch(Sectors, nextId*2).x;
+			float curBot = max(ceilHeight, min(nextBot, floorHeight));
+			vtx_pos.y = (vertexId < 2) ? curBot : floorHeight;
+			// Add a small z bias to avoid issues with the wall when clamped.
+			zbias = -0.00005;
+		}
+		else  // Transparent Mid-texture
+		{
+			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
+			vtx_uv.y = 2.0;
+
+			if (nextId < 32768)
+			{
+				vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
+				float y0 = min(floorHeight, max(nextHeights.y, ceilHeight));
+				float y1 = max(ceilHeight, min(nextHeights.x, floorHeight));
+				texBase = y1;
+
+				// Compute final height value for this vertex.
+				vtx_pos.y = (vertexId < 2) ? y0 : y1;
+			}
 		}
 	#else  // !SECTOR_TRANSPARENT_PASS
 		if (partId == 1) // Top
@@ -131,12 +163,13 @@ void main()
 		{
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
 		}
+
+		vtx_uv.y = sky ? 3.0 : 2.0;
 	#endif  // !SECTOR_TRANSPARENT_PASS
 
 		texture_data = texelFetch(Walls, wallId*3);
 		vtx_uv.x = texBase;
-		vtx_uv.y = sky ? 3.0 : 2.0;
-
+		
 		vtx_color.r = float(lightOffset);
 		vtx_color.g = 32.0;
 	}

@@ -37,6 +37,9 @@ namespace TFE_Jedi
 		SPARTID_CEILING,
 		SPARTID_FLOOR_CAP,
 		SPARTID_CEIL_CAP,
+		SPARTID_WALL_MID_SIGN,
+		SPARTID_WALL_TOP_SIGN,
+		SPARTID_WALL_BOT_SIGN,
 		SPARTID_SKY = 32768,
 		SPARTID_COUNT
 	};
@@ -215,6 +218,33 @@ namespace TFE_Jedi
 			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0);
 			s_displayListCount[0]++;
 		}
+
+		if (srcWall->signTex && *srcWall->signTex)
+		{
+			s_displayListPos[s_displayListCount[1] + 1024] = pos;
+			s_displayListData[s_displayListCount[1] + 1024] = data;
+			s_displayListData[s_displayListCount[1] + 1024].w = wallGpuId | (*srcWall->signTex)->textureId;
+
+			// If there is a bottom texture, it goes there..
+			if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
+			{
+				s_displayListData[s_displayListCount[1] + 1024].x |= SPARTID_WALL_BOT_SIGN;
+				s_displayListCount[1]++;
+			}
+			// Otherwise if there is a top
+			else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
+			{
+				s_displayListData[s_displayListCount[1] + 1024].x |= SPARTID_WALL_TOP_SIGN;
+				s_displayListCount[1]++;
+			}
+			// And finally mid.
+			else if (srcWall->midTex)
+			{
+				s_displayListData[s_displayListCount[1] + 1024].x |= SPARTID_WALL_MID_SIGN;
+				s_displayListCount[1]++;
+			}
+		}
+
 		// Add Floor
 		s_displayListPos[s_displayListCount[0]] = pos;
 		s_displayListData[s_displayListCount[0]] = data;

@@ -71,6 +71,18 @@ float sampleTexture(int id, vec2 uv, bool sky)
 	return texelFetch(Textures, iuv, 0).r * 255.0;
 }
 
+float sampleTextureClamp(int id, vec2 uv)
+{
+	ivec4 sampleData = texelFetch(TextureTable, id);
+	ivec2 iuv = ivec2(floor(uv));
+	if ( any(lessThan(iuv, ivec2(0))) || any(greaterThan(iuv, sampleData.zw-1)) )
+	{
+		return 0.0;
+	}
+	iuv += sampleData.xy;
+	return texelFetch(Textures, iuv, 0).r * 255.0;
+}
+
 float sqr(float x)
 {
 	return x*x;
@@ -117,6 +129,7 @@ void main()
     vec3 cameraRelativePos = Frag_Pos;
 	vec2 uv = vec2(0.0);
 	bool sky = Frag_Uv.y > 2.5;
+	bool sign = false;
 	if (sky) // Sky
 	{
 		uv = calculateSkyProjection(cameraRelativePos, Texture_Data.xy);
@@ -130,6 +143,18 @@ void main()
 		// Texture Offset
 		uv += Frag_Uv.zw;
 	}
+	#ifdef SECTOR_TRANSPARENT_PASS
+	else // Sign
+	{
+		uv.x = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
+		uv.y = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
+		uv *= 8.0;
+
+		// Texture Offset
+		uv += Frag_Uv.zw;
+		sign = true;
+	}
+	#else
 	else if (Frag_Uv.y > 0.0) // Flat
 	{
 		// Project onto the floor or ceiling plane.
@@ -143,6 +168,7 @@ void main()
 	{
 		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
+	#endif
 
 	float light = 0.0;
 	float baseColor = Frag_Color.g;
@@ -178,7 +204,16 @@ void main()
 	}
 
 	// Use define.
-	baseColor = sampleTexture(Frag_TextureId, uv, sky);
+	#ifdef SECTOR_TRANSPARENT_PASS
+	if (sign)
+	{
+		baseColor = sampleTextureClamp(Frag_TextureId, uv);
+	}
+	else
+	#endif
+	{
+		baseColor = sampleTexture(Frag_TextureId, uv, sky);
+	}
 	// End
 
 	// Support transparent textures.
