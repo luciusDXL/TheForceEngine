@@ -659,6 +659,7 @@ namespace TFE_RenderBackend
 
 	void freeTexture(TextureGpu* texture)
 	{
+		if (!texture) { return; }
 		delete texture;
 	}
 

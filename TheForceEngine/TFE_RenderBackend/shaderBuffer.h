@@ -27,7 +27,7 @@ struct ShaderBufferDef
 class ShaderBuffer
 {
 public:
-	ShaderBuffer() : m_stride(0), m_count(0), m_size(0) {}
+	ShaderBuffer() : m_stride(0), m_count(0), m_size(0), m_initialized(false) {}
 	~ShaderBuffer();
 
 	bool create(u32 count, const ShaderBufferDef& bufferDef, bool dynamic, void* initData = nullptr);
@@ -46,4 +46,5 @@ private:
 	u32 m_size;
 	u32 m_gpuHandle[2];
 	bool m_dynamic;
+	bool m_initialized;
 };

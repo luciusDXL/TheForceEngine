@@ -49,15 +49,7 @@ namespace TFE_Jedi
 
 	static std::vector<Node*> s_nodes;
 	static Node* s_root;
-	static ShaderBuffer s_textureTableGPU;
-	static Vec4i* s_textureTable;
-		
-	static u8* s_backingMemory = nullptr;
-	static TextureGpu* s_texture = nullptr;
-	static s32 s_width  = 0;
-	static s32 s_height = 0;
-	static s32 s_texturesPacked = 0;
-
+	static TexturePacker* s_texturePacker;
 	static std::map<TextureData*, s32> s_textureDataMap;
 
 #if DEBUG_TEXTURE_ATLAS
@@ -65,17 +57,34 @@ namespace TFE_Jedi
 #endif
 
 	// Initialize the texture packer once, it is persistent across levels.
-	bool texturepacker_init(s32 width, s32 height)
+	TexturePacker* texturepacker_init(s32 width, s32 height)
 	{
-		s_backingMemory = (u8*)malloc(width * height);
-		memset(s_backingMemory, 0, width * height);
-		if (!s_backingMemory) { return false; }
+		TexturePacker* texturePacker = (TexturePacker*)malloc(sizeof(TexturePacker));
+		if (!texturePacker) { return nullptr; }
 
-		s_textureTable = (Vec4i*)malloc(sizeof(Vec4i) * 1024);
+		texturePacker->backingMemory = (u8*)malloc(width * height);
+		if (!texturePacker->backingMemory)
+		{
+			texturepacker_destroy(texturePacker);
+			return nullptr;
+		}
+		memset(texturePacker->backingMemory, 0, width * height);
+		
+		texturePacker->textureTable = (Vec4i*)malloc(sizeof(Vec4i) * 1024);
+		if (!texturePacker->textureTable)
+		{
+			texturepacker_destroy(texturePacker);
+			return nullptr;
+		}
 
-		s_width = width;
-		s_height = height;
-		s_texture = TFE_RenderBackend::createTexture(width, height, 1);
+		texturePacker->width = width;
+		texturePacker->height = height;
+		texturePacker->texture = TFE_RenderBackend::createTexture(width, height, 1);
+		if (!texturePacker->texture)
+		{
+			texturepacker_destroy(texturePacker);
+			return nullptr;
+		}
 
 		ShaderBufferDef textureTableDef =
 		{
@@ -83,21 +92,19 @@ namespace TFE_Jedi
 			sizeof(s32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 			BUF_CHANNEL_INT
 		};
-		s_textureTableGPU.create(1024, textureTableDef, true, nullptr);
+		texturePacker->textureTableGPU.create(1024, textureTableDef, true, nullptr);
 
-		return s_texture!=nullptr;
+		return texturePacker;
 	}
 
 	// Free memory and GPU buffers. Note: GPU textures need to be persistent, so the level allocator will not be used.
-	void texturepacker_destroy()
+	void texturepacker_destroy(TexturePacker* texturePacker)
 	{
-		TFE_RenderBackend::freeTexture(s_texture);
-		s_textureTableGPU.destroy();
-		free(s_backingMemory);
-		free(s_textureTable);
-
-		s_texture = nullptr;
-		s_backingMemory = nullptr;
+		TFE_RenderBackend::freeTexture(texturePacker->texture);
+		texturePacker->textureTableGPU.destroy();
+		free(texturePacker->backingMemory);
+		free(texturePacker->textureTable);
+		free(texturePacker);
 	}
 		
 	bool textureFitsInNode(Node* cur, TextureData* tex)
@@ -118,7 +125,7 @@ namespace TFE_Jedi
 			newNode = new Node();
 			newNode->child[0] = nullptr;
 			newNode->child[1] = nullptr;
-			newNode->rect = {0u, 0u, (u32)s_width, (u32)s_height};
+			newNode->rect = {0u, 0u, (u32)s_texturePacker->width, (u32)s_texturePacker->height};
 			newNode->tex  = tex;
 			s_root = newNode;
 
@@ -182,8 +189,8 @@ namespace TFE_Jedi
 	{
 		// Copy the texture into place.
 		const u8* srcImage = texData->image;
-		u8* output = &s_backingMemory[node->rect.y * s_width + node->rect.x];
-		for (s32 y = 0; y < texData->height; y++, output += s_width)
+		u8* output = &s_texturePacker->backingMemory[node->rect.y * s_texturePacker->width + node->rect.x];
+		for (s32 y = 0; y < texData->height; y++, output += s_texturePacker->width)
 		{
 			for (s32 x = 0; x < texData->width; x++)
 			{
@@ -211,15 +218,15 @@ namespace TFE_Jedi
 	void insertTexture(TextureData* tex)
 	{
 		if (!tex || isTextureInMap(tex)) { return; }
-		insertTextureIntoMap(tex, s_texturesPacked);
+		insertTextureIntoMap(tex, s_texturePacker->texturesPacked);
 
 		Node* node = insertNode(s_root, tex);
 		assert(node && node->tex == tex);
 		if (node)
 		{
-			tex->textureId = s_texturesPacked;
-			packNode(node, tex, &s_textureTable[s_texturesPacked]);
-			s_texturesPacked++;
+			tex->textureId = s_texturePacker->texturesPacked;
+			packNode(node, tex, &s_texturePacker->textureTable[s_texturePacker->texturesPacked]);
+			s_texturePacker->texturesPacked++;
 		}
 	}
 
@@ -234,16 +241,19 @@ namespace TFE_Jedi
 		
 	// Returns the number of textures and fills in a shader buffer with the offsets and sizes.
 	// Calling this will clear the existing atlas.
-	s32 texturepacker_packLevelTextures()
+	s32 texturepacker_packLevelTextures(TexturePacker* texturePacker)
 	{
 		s_nodes.clear();
 		s_root = nullptr;
+		// Set the current packer.
+		// Note: this will note work correctly as-is if multithreaded.
+		s_texturePacker = texturePacker;
 
 		// Insert the parent that covers all of the available space.
 		insertNode(s_root, nullptr);
 
 		// Insert normal textures and signs.
-		s_texturesPacked = 0;
+		s_texturePacker->texturesPacked = 0;
 		s32 textureCount = 0;
 		TextureData** textures = level_getTextures(&textureCount);
 		for (s32 i = 0; i < textureCount; i++)
@@ -273,8 +283,8 @@ namespace TFE_Jedi
 		debug_writeOutAtlas();
 	#endif
 
-		s_texture->update(s_backingMemory, s_width * s_height);
-		s_textureTableGPU.update(s_textureTable, sizeof(Vec4i) * s_texturesPacked);
+		s_texturePacker->texture->update(s_texturePacker->backingMemory, s_texturePacker->width * s_texturePacker->height);
+		s_texturePacker->textureTableGPU.update(s_texturePacker->textureTable, sizeof(Vec4i) * s_texturePacker->texturesPacked);
 
 		// Free nodes.
 		const size_t count = s_nodes.size();
@@ -285,17 +295,7 @@ namespace TFE_Jedi
 		}
 		s_nodes.clear();
 				
-		return s_texturesPacked;
-	}
-
-	TextureGpu* texturepacker_getTexture()
-	{
-		return s_texture;
-	}
-
-	ShaderBuffer* texturepacker_getTable()
-	{
-		return &s_textureTableGPU;
+		return s_texturePacker->texturesPacked;
 	}
 
 #if DEBUG_TEXTURE_ATLAS
@@ -316,15 +316,15 @@ namespace TFE_Jedi
 	void debug_writeOutAtlas()
 	{
 		setupDebugPal(TFE_DarkForces::s_levelPalette);
-		u32* image = (u32*)malloc(s_width * s_height * sizeof(u32));
+		u32* image = (u32*)malloc(s_texturePacker->width * s_texturePacker->height * sizeof(u32));
 
-		const u32 count = s_width * s_height;
+		const u32 count = s_texturePacker->width * s_texturePacker->height;
 		for (u32 i = 0; i < count; i++)
 		{
-			image[i] = s_debugPal[s_backingMemory[i]];
+			image[i] = s_debugPal[s_texturePacker->backingMemory[i]];
 		}
 
-		TFE_Image::writeImage("Atlas.png", s_width, s_height, image);
+		TFE_Image::writeImage("Atlas.png", s_texturePacker->width, s_texturePacker->height, image);
 		free(image);
 	}
 #endif

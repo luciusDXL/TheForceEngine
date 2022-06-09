@@ -79,6 +79,9 @@ namespace TFE_Jedi
 
 	static Portal s_portalList[2048];
 	static s32 s_portalListCount = 0;
+
+	static TexturePacker* s_levelTextures = nullptr;
+	static TexturePacker* s_objectTextures = nullptr;
 		
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -266,9 +269,10 @@ namespace TFE_Jedi
 			}
 
 			// Load textures into GPU memory.
-			if (texturepacker_init(4096, 4096))
+			s_levelTextures = texturepacker_init(4096, 4096);
+			if (s_levelTextures)
 			{
-				texturepacker_packLevelTextures();
+				texturepacker_packLevelTextures(s_levelTextures);
 			}
 		}
 		else
@@ -708,10 +712,10 @@ namespace TFE_Jedi
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
 		palette->bind(6);
 
-		const TextureGpu* textures = texturepacker_getTexture();
+		const TextureGpu* textures = s_levelTextures->texture;
 		textures->bind(7);
 
-		ShaderBuffer* textureTable = texturepacker_getTable();
+		ShaderBuffer* textureTable = &s_levelTextures->textureTableGPU;
 		textureTable->bind(8);
 
 		// Camera and lighting.

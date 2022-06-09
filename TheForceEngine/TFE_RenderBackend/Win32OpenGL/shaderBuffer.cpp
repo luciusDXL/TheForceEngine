@@ -17,6 +17,7 @@ bool ShaderBuffer::create(u32 count, const ShaderBufferDef& bufferDef, bool dyna
 	{
 		return false;
 	}
+	m_initialized = true;
 
 	// Track shader buffer attributes.
 	m_bufferDef = bufferDef;
@@ -41,7 +42,10 @@ bool ShaderBuffer::create(u32 count, const ShaderBufferDef& bufferDef, bool dyna
 
 void ShaderBuffer::destroy()
 {
-	glDeleteBuffers(2, m_gpuHandle);
+	if (m_initialized)
+	{
+		glDeleteBuffers(2, m_gpuHandle);
+	}
 }
 
 void ShaderBuffer::update(const void* buffer, size_t size)
