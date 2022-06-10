@@ -207,7 +207,7 @@ namespace TFE_Jedi
 
 				s_gpuSourceData.sectors[s*2].x = cachedSector->floorHeight;
 				s_gpuSourceData.sectors[s*2].y = cachedSector->ceilingHeight;
-				s_gpuSourceData.sectors[s*2].z = fixed16ToFloat(curSector->ambient);
+				s_gpuSourceData.sectors[s*2].z = clamp(fixed16ToFloat(curSector->ambient), 0.0f, 31.0f);
 				s_gpuSourceData.sectors[s*2].w = 0.0f;
 
 				s_gpuSourceData.sectors[s*2 + 1].x = fixed16ToFloat(curSector->floorOffset.x);
@@ -385,7 +385,7 @@ namespace TFE_Jedi
 			cached->ceilingHeight = fixed16ToFloat(srcSector->ceilingHeight);
 			s_gpuSourceData.sectors[srcSector->index*2].x = cached->floorHeight;
 			s_gpuSourceData.sectors[srcSector->index*2].y = cached->ceilingHeight;
-			s_gpuSourceData.sectors[srcSector->index*2].z = fixed16ToFloat(srcSector->ambient);
+			s_gpuSourceData.sectors[srcSector->index*2].z = clamp(fixed16ToFloat(srcSector->ambient), 0.0f, 31.0f);
 
 			s_gpuSourceData.sectors[srcSector->index*2+1].x = fixed16ToFloat(srcSector->floorOffset.x);
 			s_gpuSourceData.sectors[srcSector->index*2+1].y = fixed16ToFloat(srcSector->floorOffset.z);
@@ -705,12 +705,12 @@ namespace TFE_Jedi
 							WaxView* view = WAX_ViewPtr(wax, anim, 31 - angleDiff);
 							// And finall the frame from the current sequence.
 							WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 31);
-							sprdisplayList_addFrame(wax, frame, posWS, curSector);
+							sprdisplayList_addFrame(wax, frame, posWS, curSector, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
 						}
 					}
 					else if (type == OBJ_TYPE_FRAME)
 					{
-						sprdisplayList_addFrame(obj->fme, obj->fme, posWS, curSector);
+						sprdisplayList_addFrame(obj->fme, obj->fme, posWS, curSector, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
 					}
 				}
 				else if (type == OBJ_TYPE_3D)
@@ -888,7 +888,6 @@ namespace TFE_Jedi
 		}
 
 		// Draw Sprites.
-		//TFE_RenderState::setStateEnable(false, STATE_CULLING);
 		drawSprites();
 
 		// Draw 3D Objects.

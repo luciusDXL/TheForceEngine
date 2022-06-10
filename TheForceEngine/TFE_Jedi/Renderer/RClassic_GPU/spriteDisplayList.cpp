@@ -78,14 +78,15 @@ namespace TFE_Jedi
 		s_displayListScaleOffsetGPU.update(&s_displayListScaleOffset, sizeof(Vec4f) * s_displayListCount);
 	}
 
-	void sprdisplayList_addFrame(void* basePtr, WaxFrame* frame, Vec3f posWS, RSector* curSector)
+	void sprdisplayList_addFrame(void* basePtr, WaxFrame* frame, Vec3f posWS, RSector* curSector, bool fullbright)
 	{
 		if (!basePtr || !frame) { return; }
 
 		const WaxCell* cell = WAX_CellPtr(basePtr, frame);
+		assert(cell->textureId >= 0 && cell->textureId < 1024);
 
 		s32 flip = frame->flip ? 1 : 0;
-		s32 ambient = floor16(curSector->ambient);
+		s32 ambient = fullbright ? MAX_LIGHT_LEVEL : clamp(floor16(curSector->ambient), 0, MAX_LIGHT_LEVEL);
 		s_displayListPosTexture[s_displayListCount] = { posWS.x, posWS.y, posWS.z, (f32)(cell->textureId | (ambient << 16) | (flip << 21)) };
 
 		const f32 widthWS  = fixed16ToFloat(frame->widthWS);

@@ -17,7 +17,7 @@ namespace TFE_Jedi
 	void sprdisplayList_clear();
 	void sprdisplayList_finish();
 
-	void sprdisplayList_addFrame(void* basePtr, WaxFrame* frame, Vec3f posWS, RSector* curSector);
+	void sprdisplayList_addFrame(void* basePtr, WaxFrame* frame, Vec3f posWS, RSector* curSector, bool fullbright);
 	void sprdisplayList_draw();
 
 	s32  sprdisplayList_getSize();
