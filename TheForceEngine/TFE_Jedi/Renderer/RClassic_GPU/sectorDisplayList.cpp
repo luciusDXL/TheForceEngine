@@ -191,7 +191,7 @@ namespace TFE_Jedi
 
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
-						 wallLight | flip | portalId, 0u/*textureId*/ };
+						 wallLight | portalId, 0u/*textureId*/ };
 
 		// Wall Flags.
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
@@ -201,6 +201,7 @@ namespace TFE_Jedi
 			s_displayListPos[s_displayListCount[0]] = pos;
 			s_displayListData[s_displayListCount[0]] = data;
 			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_MID;
+			s_displayListData[s_displayListCount[0]].z |= flip;
 			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 			s_displayListCount[0]++;
 		}
@@ -210,6 +211,7 @@ namespace TFE_Jedi
 			s_displayListPos[s_displayListCount[1]  + MAX_DISP_ITEMS] = pos;
 			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS] = data;
 			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_MID;
+			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].z |= flip;
 			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].w = wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
 			s_displayListCount[1]++;
 		}
@@ -219,6 +221,7 @@ namespace TFE_Jedi
 			s_displayListPos[s_displayListCount[0]] = pos;
 			s_displayListData[s_displayListCount[0]] = data;
 			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_TOP;
+			s_displayListData[s_displayListCount[0]].z |= flip;
 			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0);
 			s_displayListCount[0]++;
 		}
@@ -227,6 +230,7 @@ namespace TFE_Jedi
 			s_displayListPos[s_displayListCount[0]] = pos;
 			s_displayListData[s_displayListCount[0]] = data;
 			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_BOT;
+			s_displayListData[s_displayListCount[0]].z |= flip;
 			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0);
 			s_displayListCount[0]++;
 		}
