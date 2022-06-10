@@ -31,7 +31,8 @@ void main()
 	int nextId   = int(data.x >> 16u);
 	int sectorId = int(data.y);
 	int lightOffset = int(data.z & 63u) - 32;
-	int portalId = int(data.z >> 6u);	// used for looking up vertical planes.
+	bool flip    = (data.z & 64u) != 0u;
+	int portalId = int(data.z >> 7u);	// used for looking up vertical planes.
 	int wallId   = int(data.w >> 16u);
 	Frag_TextureId = int(data.w & 65535u);
 
@@ -44,7 +45,7 @@ void main()
 	// Generate the output position and uv for the vertex.
 	vec3 vtx_pos;
 	vec4 vtx_uv = vec4(0.0);
-	vec4 vtx_color = vec4(0.0, 0.0, sectorAmbient, 1.0);
+	vec4 vtx_color = vec4(0.0, 0.0, sectorAmbient, flip ? 1.0 : 0.0);
 	vec4 texture_data = vec4(0.0);
 	float zbias = 0.0;
 	#ifndef SECTOR_TRANSPARENT_PASS

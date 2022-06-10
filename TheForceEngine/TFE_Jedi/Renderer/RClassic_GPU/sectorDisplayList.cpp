@@ -181,20 +181,23 @@ namespace TFE_Jedi
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
-		u32 portalId  = u32(s_displayCurrentPortalId) << 6u;	// pre-shift.
+		u32 portalId  = u32(s_displayCurrentPortalId) << 7u;	// pre-shift.
 		u32 wallGpuId = u32(cached->wallStart + wallId) << 16u;
+		u32 flip = (((srcWall->flags1 & WF1_FLIP_HORIZ) != 0) ? 1 : 0) << 6u;
 		// Add 32 so the value is unsigned and easy to decode in the shader (just subtract 32).
 		// Values should never to larger than [-31,31] but clamp just in case (larger values would have no effect anyway).
 		u32 wallLight = u32(32 + clamp(floor16(srcWall->wallLight), -31, 31));
 		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0xffff0000u;
-		
+
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
-						 wallLight | portalId, 0u/*textureId*/ };
+						 wallLight | flip | portalId, 0u/*textureId*/ };
 
 		// Wall Flags.
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
 		{
+			assert(srcWall->midTex && *srcWall->midTex && (*srcWall->midTex)->textureId >= 0 && (*srcWall->midTex)->textureId < 1024);
+
 			s_displayListPos[s_displayListCount[0]] = pos;
 			s_displayListData[s_displayListCount[0]] = data;
 			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_MID;

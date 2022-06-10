@@ -47,7 +47,7 @@ ivec2 wrapCoord(ivec2 uv, ivec2 edge)
 	return uv;
 }
 
-float sampleTexture(int id, vec2 uv, bool sky)
+float sampleTexture(int id, vec2 uv, bool sky, bool flip)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec2 iuv = ivec2(floor(uv));
@@ -65,6 +65,10 @@ float sampleTexture(int id, vec2 uv, bool sky)
 	else
 	{
 		iuv = wrapCoord(iuv, sampleData.zw);
+		if (flip)
+		{
+			iuv.x = sampleData.z - iuv.x - 1;
+		}
 	}
 	iuv = iuv + sampleData.xy;
 
@@ -130,6 +134,7 @@ void main()
 	vec2 uv = vec2(0.0);
 	bool sky = Frag_Uv.y > 2.5;
 	bool sign = false;
+	bool flip = Frag_Color.a > 0.5;
 	if (sky) // Sky
 	{
 		uv = calculateSkyProjection(cameraRelativePos, Texture_Data.xy);
@@ -212,7 +217,7 @@ void main()
 	else
 	#endif
 	{
-		baseColor = sampleTexture(Frag_TextureId, uv, sky);
+		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip);
 	}
 	// End
 
