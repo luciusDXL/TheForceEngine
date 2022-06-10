@@ -113,7 +113,7 @@ namespace TFE_Sprite_Jedi
 
 		return true;
 	}
-
+		
 	JediWax* getWax(const char* name)
 	{
 		SpriteMap::iterator iSprite = s_sprites.find(name);
@@ -269,6 +269,24 @@ namespace TFE_Sprite_Jedi
 
 		s_sprites[name] = asset;
 		return asset;
+	}
+		
+	void getWaxList(std::vector<JediWax*>& list)
+	{
+		SpriteMap::iterator iSprite = s_sprites.begin();
+		for (; iSprite != s_sprites.end(); ++iSprite)
+		{
+			list.push_back(iSprite->second);
+		}
+	}
+
+	void getFrameList(std::vector<JediFrame*>& list)
+	{
+		FrameMap::iterator iFrame = s_frames.begin();
+		for (; iFrame != s_frames.end(); ++iFrame)
+		{
+			list.push_back(iFrame->second);
+		}
 	}
 
 	void freeAll()

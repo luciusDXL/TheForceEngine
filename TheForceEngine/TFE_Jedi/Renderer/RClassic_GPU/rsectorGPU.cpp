@@ -24,6 +24,7 @@
 #include "frustum.h"
 #include "sbuffer.h"
 #include "sectorDisplayList.h"
+#include "spriteDisplayList.h"
 #include "texturePacker.h"
 #include "../rcommon.h"
 
@@ -39,6 +40,11 @@ namespace TFE_Jedi
 		UPLOAD_VERTICES = FLAG_BIT(1),
 		UPLOAD_WALLS    = FLAG_BIT(2),
 		UPLOAD_ALL      = UPLOAD_SECTORS | UPLOAD_VERTICES | UPLOAD_WALLS
+	};
+
+	enum Constants
+	{
+		SPRITE_PASS = SECTOR_PASS_COUNT
 	};
 		
 	struct GPUSourceData
@@ -62,14 +68,16 @@ namespace TFE_Jedi
 
 	TextureGpu* s_colormapTex;
 	Shader m_wallShader[SECTOR_PASS_COUNT];
+	Shader m_spriteShader;
 	ShaderBuffer m_sectors;
 	ShaderBuffer m_walls;
-	s32 m_cameraPosId[SECTOR_PASS_COUNT];
-	s32 m_cameraViewId[SECTOR_PASS_COUNT];
-	s32 m_cameraProjId[SECTOR_PASS_COUNT];
-	s32 m_cameraDirId[SECTOR_PASS_COUNT];
-	s32 m_lightDataId[SECTOR_PASS_COUNT];
+	s32 m_cameraPosId[SECTOR_PASS_COUNT+1];
+	s32 m_cameraViewId[SECTOR_PASS_COUNT+1];
+	s32 m_cameraProjId[SECTOR_PASS_COUNT+1];
+	s32 m_cameraDirId[SECTOR_PASS_COUNT+1];
+	s32 m_lightDataId[SECTOR_PASS_COUNT+1];
 	s32 m_skyParallaxId[SECTOR_PASS_COUNT];
+	s32 m_cameraRightId;
 	Vec3f m_viewDir;
 	
 	IndexBuffer m_indexBuffer;
@@ -87,7 +95,32 @@ namespace TFE_Jedi
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
 	extern Vec3f s_cameraDir;
+	extern Vec3f s_cameraRight;
 
+	bool loadSpriteShader()
+	{
+		if (!m_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", 0, nullptr, SHADER_VER_STD))
+		{
+			return false;
+		}
+
+		m_cameraPosId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraPos");
+		m_cameraViewId[SPRITE_PASS]  = m_spriteShader.getVariableId("CameraView");
+		m_cameraRightId              = m_spriteShader.getVariableId("CameraRight");
+		m_cameraProjId[SPRITE_PASS]  = m_spriteShader.getVariableId("CameraProj");
+		m_cameraDirId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraDir");
+		m_lightDataId[SPRITE_PASS]   = m_spriteShader.getVariableId("LightData");
+
+		m_spriteShader.bindTextureNameToSlot("DrawListPosTexture",  0);
+		m_spriteShader.bindTextureNameToSlot("DrawListScaleOffset", 1);
+		m_spriteShader.bindTextureNameToSlot("Colormap",     2);
+		m_spriteShader.bindTextureNameToSlot("Palette",      3);
+		m_spriteShader.bindTextureNameToSlot("Textures",     4);
+		m_spriteShader.bindTextureNameToSlot("TextureTable", 5);
+
+		return true;
+	}
+	
 	bool loadShaderVariant(s32 index, s32 defineCount, ShaderDefine* defines)
 	{
 		if (!m_wallShader[index].load("Shaders/gpu_render_wall.vert", "Shaders/gpu_render_wall.frag", defineCount, defines, SHADER_VER_STD))
@@ -133,6 +166,9 @@ namespace TFE_Jedi
 			// Load the transparent version of the shader.
 			ShaderDefine defines[] = { "SECTOR_TRANSPARENT_PASS", "1" };
 			result = loadShaderVariant(1, TFE_ARRAYSIZE(defines), defines);
+			assert(result);
+
+			result = loadSpriteShader();
 			assert(result);
 
 			// Handles up to 65536 sector quads in the view.
@@ -247,6 +283,9 @@ namespace TFE_Jedi
 			s32 dataIndex[] = { 3, 3 };
 			sdisplayList_init(posIndex, dataIndex, 4);
 
+			// Sprite Shader and buffers...
+			sprdisplayList_init(0, 1);
+
 			// Build the color map.
 			if (s_colorMap && s_lightSourceRamp)
 			{
@@ -269,11 +308,11 @@ namespace TFE_Jedi
 			}
 
 			// Load textures into GPU memory.
-			s_levelTextures = texturepacker_init(4096, 4096);
-			if (s_levelTextures)
-			{
-				texturepacker_packLevelTextures(s_levelTextures);
-			}
+			if (!s_levelTextures) { s_levelTextures = texturepacker_init("LevelTextures", 4096, 4096); }
+			if (s_levelTextures)  { texturepacker_packLevelTextures(s_levelTextures); }
+
+			if (!s_objectTextures) { s_objectTextures = texturepacker_init("Objects", 4096, 4096); }
+			if (s_objectTextures)  { texturepacker_packObjectTextures(s_objectTextures); }
 		}
 		else
 		{
@@ -630,7 +669,58 @@ namespace TFE_Jedi
 
 		buildSegmentBuffer(initSector, curSector, segCount, wallSegments);
 	}
-		
+
+	void addSectorObjects(RSector* curSector)
+	{
+		SecObject** objIter = curSector->objectList;
+		for (s32 i = 0; i < curSector->objectCount; objIter++)
+		{
+			SecObject* obj = *objIter;
+			if (!obj) { continue; }
+			i++;
+
+			if (obj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
+			{
+				const s32 type = obj->type;
+				if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
+				{
+					Vec3f posWS = { fixed16ToFloat(obj->posWS.x), fixed16ToFloat(obj->posWS.y), fixed16ToFloat(obj->posWS.z) };
+
+					if (type == OBJ_TYPE_SPRITE)
+					{
+						f32 dx = s_cameraPos.x - posWS.x;
+						f32 dz = s_cameraPos.z - posWS.z;
+						angle14_16 angle = vec2ToAngle(dx, dz);
+
+						// Angles range from [0, 16384), divide by 512 to get 32 even buckets.
+						s32 angleDiff = (angle - obj->yaw) >> 9;
+						angleDiff &= 31;	// up to 32 views
+
+						// Get the animation based on the object state.
+						Wax* wax = obj->wax;
+						WaxAnim* anim = WAX_AnimPtr(wax, obj->anim & 31);
+						if (anim)
+						{
+							// Then get the Sequence from the angle difference.
+							WaxView* view = WAX_ViewPtr(wax, anim, 31 - angleDiff);
+							// And finall the frame from the current sequence.
+							WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 31);
+							sprdisplayList_addFrame(wax, frame, posWS, curSector);
+						}
+					}
+					else if (type == OBJ_TYPE_FRAME)
+					{
+						sprdisplayList_addFrame(obj->fme, obj->fme, posWS, curSector);
+					}
+				}
+				else if (type == OBJ_TYPE_3D)
+				{
+					// TODO
+				}
+			}
+		}
+	}
+
 	void traverseSector(RSector* curSector, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
 	{
 		//if (level >= 255)
@@ -642,6 +732,10 @@ namespace TFE_Jedi
 		// Build the world-space wall segments.
 		buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1);
 
+		// Determine which objects are visible and add them.
+		addSectorObjects(curSector);
+
+		// Traverse through visible portals.
 		const s32 portalStart = s_portalListCount;
 		const s32 portalCount = traversal_addPortals(curSector);
 		Portal* portal = &s_portalList[portalStart];
@@ -664,7 +758,7 @@ namespace TFE_Jedi
 			level--;
 		}
 	}
-				
+						
 	bool traverseScene(RSector* sector)
 	{
 		debug_update();
@@ -680,12 +774,14 @@ namespace TFE_Jedi
 		Vec2f startView[] = { {0,0}, {0,0} };
 
 		sdisplayList_clear();
+		sprdisplayList_clear();
 
 		updateCachedSector(sector, uploadFlags);
 		traverseSector(sector, level, uploadFlags, startView[0], startView[1]);
 		frustum_pop();
 
 		sdisplayList_finish();
+		sprdisplayList_finish();
 
 		if (uploadFlags & UPLOAD_SECTORS)
 		{
@@ -742,6 +838,38 @@ namespace TFE_Jedi
 		m_wallShader[pass].unbind();
 	}
 
+	void drawSprites()
+	{
+		if (!sprdisplayList_getSize()) { return; }
+
+		m_spriteShader.bind();
+		m_indexBuffer.bind();
+		s_colormapTex->bind(2);
+
+		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
+		palette->bind(3);
+
+		const TextureGpu* textures = s_objectTextures->texture;
+		textures->bind(4);
+
+		ShaderBuffer* textureTable = &s_objectTextures->textureTableGPU;
+		textureTable->bind(5);
+
+		// Camera and lighting.
+		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, 0.0f };
+		m_spriteShader.setVariable(m_cameraRightId, SVT_VEC3, s_cameraRight.m);
+		m_spriteShader.setVariable(m_cameraPosId[SPRITE_PASS],  SVT_VEC3, s_cameraPos.m);
+		m_spriteShader.setVariable(m_cameraViewId[SPRITE_PASS], SVT_MAT3x3, s_cameraMtx.data);
+		m_spriteShader.setVariable(m_cameraProjId[SPRITE_PASS], SVT_MAT4x4, s_cameraProj.data);
+		m_spriteShader.setVariable(m_cameraDirId[SPRITE_PASS],  SVT_VEC3, s_cameraDir.m);
+		m_spriteShader.setVariable(m_lightDataId[SPRITE_PASS],  SVT_VEC4, lightData.m);
+
+		// Draw the sector display list.
+		sprdisplayList_draw();
+
+		m_spriteShader.unbind();
+	}
+
 	void TFE_Sectors_GPU::draw(RSector* sector)
 	{
 		// Build the draw list.
@@ -758,6 +886,12 @@ namespace TFE_Jedi
 		{
 			drawPass(SectorPass(i));
 		}
+
+		// Draw Sprites.
+		//TFE_RenderState::setStateEnable(false, STATE_CULLING);
+		drawSprites();
+
+		// Draw 3D Objects.
 
 		// Cleanup
 		m_indexBuffer.unbind();

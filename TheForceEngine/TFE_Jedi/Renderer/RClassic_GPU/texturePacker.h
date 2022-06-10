@@ -27,14 +27,18 @@ namespace TFE_Jedi
 		s32 width = 0;
 		s32 height = 0;
 		s32 texturesPacked = 0;
+
+		// For debugging.
+		char name[64];
 	};
 
 	// Initialize the texture packer once, it is persistent across levels.
-	TexturePacker* texturepacker_init(s32 width, s32 height);
+	TexturePacker* texturepacker_init(const char* name, s32 width, s32 height);
 	// Free memory and GPU buffers. Note: GPU textures need to be persistent, so the level allocator will not be used.
 	void texturepacker_destroy(TexturePacker* texturePacker);
 
 	// Returns the number of textures and fills in a shader buffer with the offsets and sizes.
 	// Calling this will clear the existing atlas.
 	s32 texturepacker_packLevelTextures(TexturePacker* texturePacker);
+	s32 texturepacker_packObjectTextures(TexturePacker* texturePacker);
 }  // TFE_Jedi

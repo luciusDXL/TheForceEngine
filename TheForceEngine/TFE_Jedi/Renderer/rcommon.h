@@ -86,4 +86,7 @@ namespace TFE_Jedi
 	// Debug
 	extern s32 s_maxWallCount;
 	extern s32 s_maxDepthCount;
+
+	// Common functions
+	void sprite_decompressColumn(const u8* colData, u8* outBuffer, s32 height);
 }

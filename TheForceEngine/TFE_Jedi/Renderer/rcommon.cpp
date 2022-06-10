@@ -86,4 +86,32 @@ namespace TFE_Jedi
 
 	s32 s_drawnSpriteCount;
 	SecObject* s_drawnSprites[MAX_DRAWN_SPRITE_STORE];
+
+	//////////////////////////////////////////////////////////
+	// Common Functions
+	//////////////////////////////////////////////////////////
+	void sprite_decompressColumn(const u8* colData, u8* outBuffer, s32 height)
+	{
+		for (s32 y = 0, i = 0; y < height; )
+		{
+			u8 count = *colData;
+			colData++;
+
+			if (count & 0x80)
+			{
+				count &= 0x7f;
+				for (s32 r = 0; r < count; r++, y++)
+				{
+					outBuffer[y] = 0;
+				}
+			}
+			else
+			{
+				for (s32 r = 0; r < count; r++, y++, colData++)
+				{
+					outBuffer[y] = *colData;
+				}
+			}
+		}
+	}
 }

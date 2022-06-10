@@ -5,6 +5,7 @@
 // existing renderer.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <vector>
 
 // The original DOS code relied on 32-bit pointers and just swapped offsets for pointers at load time.
 // In order to keep the original data intact, the original 32-bit offsets are kept but pointer
@@ -25,7 +26,7 @@ struct WaxCell
 	s32 compressed;
 	s32 dataSize;
 	u32 columnOffset;
-	s32 pad1;
+	s32 textureId;		// TFE: Replace padding with textureID for the GPU renderer.
 };
 
 struct WaxFrame
@@ -90,4 +91,7 @@ namespace TFE_Sprite_Jedi
 	JediFrame* getFrame(const char* name);
 	JediWax*   getWax(const char* name);
 	void freeAll();
+
+	void getWaxList(std::vector<JediWax*>& list);
+	void getFrameList(std::vector<JediFrame*>& list);
 }
