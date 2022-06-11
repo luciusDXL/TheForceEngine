@@ -1767,5 +1767,11 @@
     <None Include="Shaders\gpu_render_modelHologram.vert">
       <Filter>Source\Shaders</Filter>
     </None>
+    <None Include="Shaders\gpu_render_modelSolid.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\gpu_render_modelSolid.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

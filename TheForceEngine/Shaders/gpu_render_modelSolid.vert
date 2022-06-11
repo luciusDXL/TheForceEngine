@@ -8,27 +8,28 @@ uniform vec3 ModelPos;
 
 // Vertex Data
 in vec3 vtx_pos;
+in vec3 vtx_nrm;
 in vec2 vtx_uv;
 in vec4 vtx_color;
 
+out vec2 Frag_Uv;
 flat out int Frag_Color;
+flat out int Frag_TextureId;
 void main()
 {
 	// Transform by the model matrix.
 	vec3 worldPos = vtx_pos * ModelMtx + ModelPos;
 
-	vec3 centerPos = (worldPos - CameraPos) * CameraView;
-	float scale = abs(0.5/200.0 * centerPos.z);
-	
-	// Expand the quad, aligned to the right vector and world up.
-	worldPos.xz -= vec2(scale) * CameraRight.xz;
-	worldPos.xz += vec2(2.0*scale) * CameraRight.xz * vtx_uv.xx;
-	worldPos.y  += scale - 2.0*scale * vtx_uv.y;
-
 	// Transform from world to view space.
     vec3 vpos = (worldPos - CameraPos) * CameraView;
 	gl_Position = vec4(vpos, 1.0) * CameraProj;
+
+	// UV Coorindates.
+	Frag_Uv = vtx_uv;
+
+	// TODO: Lighting
 	
 	// Write out the per-vertex uv and color.
-	Frag_Color  = int(floor(vtx_color.x * 255.0 + 0.5));
+	Frag_Color = int(floor(vtx_color.x * 255.0 + 0.5));
+	Frag_TextureId = int(floor(vtx_color.y * 255.0 + 0.5) + floor(vtx_color.z * 255.0 + 0.5)*256.0 + 0.5);
 }

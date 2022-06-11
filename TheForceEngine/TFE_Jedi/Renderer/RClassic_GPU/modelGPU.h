@@ -21,6 +21,4 @@ namespace TFE_Jedi
 
 	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform);
 	void model_drawList();
-
-	s32  model_getDrawListSize();
 }  // TFE_Jedi

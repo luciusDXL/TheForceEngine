@@ -35,6 +35,8 @@ namespace TFE_DarkForces
 
 namespace TFE_Jedi
 {
+	// TODO: Sort textures from largest to smallest before inserting.
+
 	struct Node
 	{
 		Node*  child[2] = { 0 };	// Binary tree.

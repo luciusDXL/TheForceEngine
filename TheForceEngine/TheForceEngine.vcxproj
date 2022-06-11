@@ -841,6 +841,8 @@ echo ^)";
     <None Include="Shaders\blit.vert" />
     <None Include="Shaders\gpu_render_modelHologram.frag" />
     <None Include="Shaders\gpu_render_modelHologram.vert" />
+    <None Include="Shaders\gpu_render_modelSolid.frag" />
+    <None Include="Shaders\gpu_render_modelSolid.vert" />
     <None Include="Shaders\gpu_render_sprite.frag" />
     <None Include="Shaders\gpu_render_sprite.vert" />
     <None Include="Shaders\gpu_render_wall.frag" />

@@ -877,7 +877,17 @@ namespace TFE_Jedi
 
 	void draw3d()
 	{
-		if (!model_getDrawListSize()) { return; }
+		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
+		palette->bind(0);
+
+		s_colormapTex->bind(1);
+
+		const TextureGpu* textures = s_objectTextures->texture;
+		textures->bind(2);
+
+		ShaderBuffer* textureTable = &s_objectTextures->textureTableGPU;
+		textureTable->bind(3);
+
 		model_drawList();
 	}
 
@@ -902,6 +912,7 @@ namespace TFE_Jedi
 		drawSprites();
 
 		// Draw 3D Objects.
+		TFE_RenderState::setStateEnable(false, STATE_CULLING);
 		draw3d();
 
 		// Cleanup
@@ -911,7 +922,7 @@ namespace TFE_Jedi
 		TextureGpu::clear(5);
 		TextureGpu::clear(6);
 
-		//TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
+		// TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
 		
 		// Debug
 		if (s_enableDebug)

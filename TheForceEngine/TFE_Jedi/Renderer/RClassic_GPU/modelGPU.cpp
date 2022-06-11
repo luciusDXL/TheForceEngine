@@ -23,6 +23,9 @@
 #include "frustum.h"
 #include "../rcommon.h"
 
+#include <map>
+#include <algorithm>
+
 using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
@@ -79,11 +82,11 @@ namespace TFE_Jedi
 	static s32 s_mgpu_lightDataId[MGPU_SHADER_COUNT];
 	static s32 s_mgpu_modelMtxId[MGPU_SHADER_COUNT];
 	static s32 s_mgpu_modelPosId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_cameraRightId;
+	static s32 s_mgpu_cameraRightId[MGPU_SHADER_COUNT];
 
 	static ModelGPU s_models[1024];
-	static ModelDraw s_modelDrawList[1024];
-	static s32 s_modelDrawListCount;
+	static ModelDraw s_modelDrawList[MGPU_SHADER_COUNT][1024];
+	static s32 s_modelDrawListCount[MGPU_SHADER_COUNT];
 	static s32 s_modelCount;
 
 	extern Mat3  s_cameraMtx;
@@ -92,25 +95,49 @@ namespace TFE_Jedi
 	extern Vec3f s_cameraDir;
 	extern Vec3f s_cameraRight;
 
-	bool model_init()
+	const char* c_vertexShaders[MGPU_SHADER_COUNT] = 
 	{
-		Shader* shader = &s_modelShaders[MGPU_SHADER_HOLOGRAM];
-		if (!shader->load("Shaders/gpu_render_modelHologram.vert", "Shaders/gpu_render_modelHologram.frag", 0, nullptr, SHADER_VER_STD))
+		"Shaders/gpu_render_modelSolid.vert",
+		"Shaders/gpu_render_modelHologram.vert",
+	};
+	const char* c_fragmentShaders[MGPU_SHADER_COUNT] =
+	{
+		"Shaders/gpu_render_modelSolid.frag",
+		"Shaders/gpu_render_modelHologram.frag",
+	};
+
+	bool model_buildShaderVariant(ModelShader variant)
+	{
+		Shader* shader = &s_modelShaders[variant];
+		if (!shader->load(c_vertexShaders[variant], c_fragmentShaders[variant], 0, nullptr, SHADER_VER_STD))
 		{
 			return false;
 		}
-		shader->getVariables();
 
-		s_mgpu_cameraPosId[MGPU_SHADER_HOLOGRAM]  = shader->getVariableId("CameraPos");
-		s_mgpu_cameraViewId[MGPU_SHADER_HOLOGRAM] = shader->getVariableId("CameraView");
-		s_mgpu_cameraProjId[MGPU_SHADER_HOLOGRAM] = shader->getVariableId("CameraProj");
-		s_mgpu_cameraDirId[MGPU_SHADER_HOLOGRAM]  = shader->getVariableId("CameraDir");
-		s_mgpu_modelMtxId[MGPU_SHADER_HOLOGRAM]   = shader->getVariableId("ModelMtx");
-		s_mgpu_modelPosId[MGPU_SHADER_HOLOGRAM]   = shader->getVariableId("ModelPos");
-		s_mgpu_cameraRightId = shader->getVariableId("CameraRight");
-
+		s_mgpu_cameraPosId[variant]   = shader->getVariableId("CameraPos");
+		s_mgpu_cameraViewId[variant]  = shader->getVariableId("CameraView");
+		s_mgpu_cameraProjId[variant]  = shader->getVariableId("CameraProj");
+		s_mgpu_cameraDirId[variant]   = shader->getVariableId("CameraDir");
+		s_mgpu_cameraRightId[variant] = shader->getVariableId("CameraRight");
+		s_mgpu_modelMtxId[variant]    = shader->getVariableId("ModelMtx");
+		s_mgpu_modelPosId[variant]    = shader->getVariableId("ModelPos");
+		s_mgpu_lightDataId[variant]   = shader->getVariableId("LightData");
+		
 		shader->bindTextureNameToSlot("Palette", 0);
+		shader->bindTextureNameToSlot("Colormap", 1);
+		shader->bindTextureNameToSlot("Textures", 2);
+		shader->bindTextureNameToSlot("TextureTable", 3);
 		return true;
+	}
+
+	bool model_init()
+	{
+		bool result = true;
+		for (s32 i = 0; i < MGPU_SHADER_COUNT; i++)
+		{
+			result = result && model_buildShaderVariant(ModelShader(i));
+		}
+		return result;
 	}
 
 	void model_destroy()
@@ -177,35 +204,227 @@ namespace TFE_Jedi
 			outIdx[5] = 3 + vidx;
 		}
 
-		s_models[s_modelCount].indexStart = curIdxSize;
+		s_models[s_modelCount].indexStart = (s32)curIdxSize;
 		s_models[s_modelCount].polyCount = model->vertexCount * 2;
 		s_models[s_modelCount].shader = MGPU_SHADER_HOLOGRAM;
 		model->drawId = s_modelCount;
 		s_modelCount++;
 	}
 
+	JediModel* s_curModel = nullptr;
+	s32* s_curIndexStart;
+	s32* s_curVertexStart;
+
+	struct CompositeVertex
+	{
+		u32  index;
+		vec3 pos;
+		vec2 uv;
+		vec3 nrml;
+		s32 textureId;
+		u8 color;
+	};
+	std::vector<CompositeVertex> s_modelVertexList;
+	std::map<u32, std::vector<u32>> s_modelVertexMap;
+	static s32 s_verticesMerged = 0;
+
 	void startModel(JediModel* model, s32* indexStart, s32* vertexStart)
 	{
+		s_curModel = model;
+		s_curIndexStart = indexStart;
+		s_curVertexStart = vertexStart;
+		s_modelVertexMap.clear();
+		s_modelVertexList.clear();
 	}
 
-	void addFlatPolygon(JmPolygon* poly)
+	void endModel()
 	{
+		// Create the entry.
+		s_models[s_modelCount].indexStart = *s_curIndexStart;
+		s_models[s_modelCount].polyCount = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
+		s_models[s_modelCount].shader = MGPU_SHADER_SOLID;
+		s_curModel->drawId = s_modelCount;
+		s_modelCount++;
+
+		// Add vertices.
+		const u32 vtxCount = (u32)s_modelVertexList.size();
+		const CompositeVertex* srcVtx = s_modelVertexList.data();
+
+		s_vertexData.resize((*s_curVertexStart) + vtxCount);
+		ModelVertex* outVtx = s_vertexData.data() + (*s_curVertexStart);
+		for (u32 v = 0; v < vtxCount; v++, outVtx++, srcVtx++)
+		{
+			outVtx->pos.x = fixed16ToFloat(srcVtx->pos.x);
+			outVtx->pos.y = fixed16ToFloat(srcVtx->pos.y);
+			outVtx->pos.z = fixed16ToFloat(srcVtx->pos.z);
+
+			outVtx->nrm.x = fixed16ToFloat(srcVtx->nrml.x);
+			outVtx->nrm.y = fixed16ToFloat(srcVtx->nrml.y);
+			outVtx->nrm.z = fixed16ToFloat(srcVtx->nrml.z);
+
+			outVtx->uv.x = fixed16ToFloat(srcVtx->uv.x);
+			outVtx->uv.z = fixed16ToFloat(srcVtx->uv.y);
+
+			u8* outColor = (u8*)&outVtx->color;
+			outColor[0] = srcVtx->color;
+			outColor[1] = srcVtx->textureId >= 0 ? srcVtx->textureId & 0xff : 0xff;
+			outColor[2] = srcVtx->textureId >= 0 ? (srcVtx->textureId >> 8) & 0xff : 0xff;
+			outColor[3] = 0;
+		}
+
+		*s_curIndexStart  = (s32)s_indexData.size();
+		*s_curVertexStart = (s32)s_vertexData.size();
 	}
 
-	void addGouraudPolygon(JmPolygon* poly)
+	u32 getVertexKey(vec3* pos)
 	{
+		return u32(floor16(pos->x) + floor16(pos->y)*256 + floor16(pos->z)*65536);
 	}
 
-	void addTexturePolygon(JmPolygon* poly)
+	bool isCompositeVtxEqual(const CompositeVertex* srcVtx, vec3* pos, vec2* uv, vec3* nrml, u8 color, s32 textureId)
 	{
+		if (srcVtx->pos.x != pos->x || srcVtx->pos.y != pos->y || srcVtx->pos.z != pos->z) { return false; }
+		if (srcVtx->nrml.x != nrml->x || srcVtx->nrml.y != nrml->y || srcVtx->nrml.z != nrml->z) { return false; }
+		if (srcVtx->uv.x != uv->x || srcVtx->uv.y != uv->y || srcVtx->textureId != textureId) { return false; }
+		return srcVtx->color == color;
 	}
 
-	void addGouraudTexturePolygon(JmPolygon* poly)
+	u32 getVertex(vec3* pos, vec2* uv, vec3* nrml, u8 color, s32 textureId)
 	{
+		// If the vertex already exists, then return it.
+		const u32 key = getVertexKey(pos);
+		bool keyFound = false;
+		std::map<u32, std::vector<u32>>::iterator iBucket = s_modelVertexMap.find(key);
+		if (iBucket != s_modelVertexMap.end())
+		{
+			keyFound = true;
+
+			std::vector<u32>& vtxList = iBucket->second;
+			const size_t count = vtxList.size();
+			const u32* listIndices = vtxList.data();
+			const CompositeVertex* listVtx = s_modelVertexList.data();
+			for (size_t i = 0; i < count; i++)
+			{
+				const CompositeVertex* vtx = &listVtx[listIndices[i]];
+				if (isCompositeVtxEqual(vtx, pos, uv, nrml, color, textureId))
+				{
+					s_verticesMerged++;
+					return vtx->index;
+				}
+			}
+		}
+
+		// Otherwise we need to add it.
+		const u32 newId = (u32)s_modelVertexList.size();
+
+		CompositeVertex newVtx;
+		newVtx.pos   = *pos;
+		newVtx.uv    = *uv;
+		newVtx.nrml  = *nrml;
+		newVtx.color = color;
+		newVtx.textureId = textureId;
+		newVtx.index = newId;
+
+		if (!keyFound)
+		{
+			std::vector<u32> newList;
+			newList.push_back(newId);
+			s_modelVertexMap[key] = newList;
+		}
+		else
+		{
+			s_modelVertexMap[key].push_back(newId);
+		}
+		s_modelVertexList.push_back(newVtx);
+
+		return newId;
 	}
 
-	void addPlanePolygon(JmPolygon* poly)
+	void addFlatTriangle(s32* indices, u8 color, vec2* uv, vec3* nrml, s32 textureId)
 	{
+		vec3* v0 = &s_curModel->vertices[indices[0]];
+		vec3* v1 = &s_curModel->vertices[indices[1]];
+		vec3* v2 = &s_curModel->vertices[indices[2]];
+
+		vec2 zero[3] = { 0 };
+		vec2* srcUV = uv ? uv : zero;
+
+		s_indexData.push_back(getVertex(v0, &srcUV[0], nrml, color, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v1, &srcUV[1], nrml, color, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v2, &srcUV[2], nrml, color, textureId) + (*s_curVertexStart));
+	}
+
+	void addFlatQuad(s32* indices, u8 color, vec2* uv, vec3* nrml, s32 textureId)
+	{
+		vec3* v0 = &s_curModel->vertices[indices[0]];
+		vec3* v1 = &s_curModel->vertices[indices[1]];
+		vec3* v2 = &s_curModel->vertices[indices[2]];
+		vec3* v3 = &s_curModel->vertices[indices[3]];
+
+		vec2 zero[4] = { 0 };
+		vec2* srcUV = uv ? uv : zero;
+
+		u32 outIndices[4];
+		outIndices[0] = getVertex(v0, &srcUV[0], nrml, color, textureId);
+		outIndices[1] = getVertex(v1, &srcUV[1], nrml, color, textureId);
+		outIndices[2] = getVertex(v2, &srcUV[2], nrml, color, textureId);
+		outIndices[3] = getVertex(v3, &srcUV[3], nrml, color, textureId);
+
+		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[1] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
+
+		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[3] + (*s_curVertexStart));
+	}
+
+	void addSmoothTriangle(s32* indices, u8 color, vec2* uv, s32 textureId)
+	{
+		vec3* v0 = &s_curModel->vertices[indices[0]];
+		vec3* v1 = &s_curModel->vertices[indices[1]];
+		vec3* v2 = &s_curModel->vertices[indices[2]];
+
+		vec3* n0 = &s_curModel->vertexNormals[indices[0]];
+		vec3* n1 = &s_curModel->vertexNormals[indices[1]];
+		vec3* n2 = &s_curModel->vertexNormals[indices[2]];
+
+		vec2 zero[3] = { 0 };
+		vec2* srcUV = uv ? uv : zero;
+
+		s_indexData.push_back(getVertex(v0, &srcUV[0], n0, color, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v1, &srcUV[1], n1, color, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v2, &srcUV[2], n2, color, textureId) + (*s_curVertexStart));
+	}
+
+	void addSmoothQuad(s32* indices, u8 color, vec2* uv, s32 textureId)
+	{
+		vec3* v0 = &s_curModel->vertices[indices[0]];
+		vec3* v1 = &s_curModel->vertices[indices[1]];
+		vec3* v2 = &s_curModel->vertices[indices[2]];
+		vec3* v3 = &s_curModel->vertices[indices[3]];
+
+		vec3* n0 = &s_curModel->vertexNormals[indices[0]];
+		vec3* n1 = &s_curModel->vertexNormals[indices[1]];
+		vec3* n2 = &s_curModel->vertexNormals[indices[2]];
+		vec3* n3 = &s_curModel->vertexNormals[indices[3]];
+
+		vec2 zero[4] = { 0 };
+		vec2* srcUV = uv ? uv : zero;
+
+		u32 outIndices[4];
+		outIndices[0] = getVertex(v0, &srcUV[0], n0, color, textureId);
+		outIndices[1] = getVertex(v1, &srcUV[1], n1, color, textureId);
+		outIndices[2] = getVertex(v2, &srcUV[2], n2, color, textureId);
+		outIndices[3] = getVertex(v3, &srcUV[3], n3, color, textureId);
+
+		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[1] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
+
+		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[3] + (*s_curVertexStart));
 	}
 
 	void model_loadLevelModels()
@@ -215,6 +434,7 @@ namespace TFE_Jedi
 		s_vertexData.clear();
 		s_indexData.clear();
 		s_modelCount = 0;
+		s_verticesMerged = 0;
 
 		std::vector<JediModel*> modelList;
 		TFE_Model_Jedi::getModelList(modelList);
@@ -236,36 +456,75 @@ namespace TFE_Jedi
 				switch (poly->shading)
 				{
 					case PSHADE_FLAT:
-						addFlatPolygon(poly);
-						break;
+					{
+						// Flat shaded polygon
+						if (poly->vertexCount == 3)
+						{
+							addFlatTriangle(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], -1);
+						}
+						else
+						{
+							addFlatQuad(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], -1);
+						}
+					} break;
 					case PSHADE_GOURAUD:
-						addGouraudPolygon(poly);
-						break;
+					{
+						// Smooth shaded polygon
+						if (poly->vertexCount == 3)
+						{
+							addSmoothTriangle(poly->indices, poly->color, poly->uv, -1);
+						}
+						else
+						{
+							addSmoothQuad(poly->indices, poly->color, poly->uv, -1);
+						}
+					} break;
 					case PSHADE_TEXTURE:
-						addTexturePolygon(poly);
-						break;
+					{
+						// Flat shaded textured polygon
+						if (poly->vertexCount == 3)
+						{
+							addFlatTriangle(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], poly->texture->textureId);
+						}
+						else
+						{
+							addFlatQuad(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], poly->texture->textureId);
+						}
+					} break;
 					case PSHADE_GOURAUD_TEXTURE:
-						addGouraudTexturePolygon(poly);
-						break;
+					{
+						// Smooth shaded textured polygon
+						if (poly->vertexCount == 3)
+						{
+							addSmoothTriangle(poly->indices, poly->color, poly->uv, poly->texture->textureId);
+						}
+						else
+						{
+							addSmoothQuad(poly->indices, poly->color, poly->uv, poly->texture->textureId);
+						}
+					} break;
 					case PSHADE_PLANE:
-						addPlanePolygon(poly);
+						// TODO
 						break;
 				};
 			}
+			endModel();
 		}
 
-		s_modelVertexBuffer.create(s_vertexData.size(), sizeof(ModelVertex), c_modelAttrCount, c_modelAttrMapping, false, s_vertexData.data());
-		s_modelIndexBuffer.create(s_indexData.size(), sizeof(u32), false, s_indexData.data());
+		s_modelVertexBuffer.create((u32)s_vertexData.size(), sizeof(ModelVertex), (u32)c_modelAttrCount, c_modelAttrMapping, false, s_vertexData.data());
+		s_modelIndexBuffer.create((u32)s_indexData.size(), sizeof(u32), false, s_indexData.data());
 	}
 
 	void model_drawListClear()
 	{
-		s_modelDrawListCount = 0;
+		for (s32 i = 0; i < MGPU_SHADER_COUNT; i++)
+		{
+			s_modelDrawListCount[i] = 0;
+		}
 	}
 
 	void model_drawListFinish()
 	{
-		if (!s_modelDrawListCount) { return; }
 		// Nothing to do yet...
 	}
 
@@ -277,9 +536,12 @@ namespace TFE_Jedi
 			return;
 		}
 
-		// TODO: Sort by shader.
-		ModelDraw* drawItem = &s_modelDrawList[s_modelDrawListCount];
-		s_modelDrawListCount++;
+		ModelGPU* modelGPU = &s_models[model->drawId];
+		ModelDraw* drawList = s_modelDrawList[modelGPU->shader];
+
+		s32* listCount = &s_modelDrawListCount[modelGPU->shader];
+		ModelDraw* drawItem = &drawList[*listCount];
+		(*listCount)++;
 
 		drawItem->modelId = model->drawId;
 		drawItem->posWS = posWS;
@@ -291,45 +553,44 @@ namespace TFE_Jedi
 
 	void model_drawList()
 	{
-		if (!s_modelDrawListCount) { return; }
-
-		// Setup shader and data, including vertex and index buffers.
-		Shader* shader = &s_modelShaders[MGPU_SHADER_HOLOGRAM];
-		shader->bind();
-
 		s_modelVertexBuffer.bind();
 		s_modelIndexBuffer.bind();
-
-		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
-		palette->bind(0);
-
-		// Camera and lighting.
 		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, 0.0f };
-		shader->setVariable(s_mgpu_cameraPosId[MGPU_SHADER_HOLOGRAM],  SVT_VEC3,   s_cameraPos.m);
-		shader->setVariable(s_mgpu_cameraViewId[MGPU_SHADER_HOLOGRAM], SVT_MAT3x3, s_cameraMtx.data);
-		shader->setVariable(s_mgpu_cameraProjId[MGPU_SHADER_HOLOGRAM], SVT_MAT4x4, s_cameraProj.data);
-		shader->setVariable(s_mgpu_cameraDirId[MGPU_SHADER_HOLOGRAM],  SVT_VEC3,   s_cameraDir.m);
-		shader->setVariable(s_mgpu_cameraRightId,                      SVT_VEC3,   s_cameraRight.m);
 
-		ModelDraw* drawItem = s_modelDrawList;
-		for (s32 i = 0; i < s_modelDrawListCount; i++, drawItem++)
+		for (s32 s = 0; s < MGPU_SHADER_COUNT; s++)
 		{
-			const ModelGPU* model = &s_models[drawItem->modelId];
+			ModelDraw* drawList = s_modelDrawList[s];
+			s32 listCount = s_modelDrawListCount[s];
+			if (!listCount) { continue; }
 
-			shader->setVariable(s_mgpu_modelPosId[MGPU_SHADER_HOLOGRAM], SVT_VEC3,   drawItem->posWS.m);
-			shader->setVariable(s_mgpu_modelMtxId[MGPU_SHADER_HOLOGRAM], SVT_MAT3x3, drawItem->transform);
-			TFE_RenderBackend::drawIndexedTriangles(model->polyCount, sizeof(u32), model->indexStart);
+			Shader* shader = &s_modelShaders[s];
+			shader->bind();
+
+			// Camera and lighting.
+			shader->setVariable(s_mgpu_cameraPosId[s],   SVT_VEC3,   s_cameraPos.m);
+			shader->setVariable(s_mgpu_cameraViewId[s],  SVT_MAT3x3, s_cameraMtx.data);
+			shader->setVariable(s_mgpu_cameraProjId[s],  SVT_MAT4x4, s_cameraProj.data);
+			shader->setVariable(s_mgpu_cameraDirId[s],   SVT_VEC3,   s_cameraDir.m);
+			shader->setVariable(s_mgpu_cameraRightId[s], SVT_VEC3,   s_cameraRight.m);
+			shader->setVariable(s_mgpu_lightDataId[s],   SVT_VEC4,   lightData.m);
+
+			ModelDraw* drawItem = drawList;
+			for (s32 i = 0; i < listCount; i++, drawItem++)
+			{
+				const ModelGPU* model = &s_models[drawItem->modelId];
+
+				shader->setVariable(s_mgpu_modelPosId[s], SVT_VEC3,   drawItem->posWS.m);
+				shader->setVariable(s_mgpu_modelMtxId[s], SVT_MAT3x3, drawItem->transform);
+				TFE_RenderBackend::drawIndexedTriangles(model->polyCount, sizeof(u32), model->indexStart);
+			}
 		}
 
 		// Cleanup
-		shader->unbind();
+		Shader::unbind();
 		s_modelVertexBuffer.unbind();
 		s_modelIndexBuffer.unbind();
 		TextureGpu::clear(0);
-	}
-
-	s32 model_getDrawListSize()
-	{
-		return s_modelDrawListCount;
+		TextureGpu::clear(1);
+		TextureGpu::clear(2);
 	}
 }
