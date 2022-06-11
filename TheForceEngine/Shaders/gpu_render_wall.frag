@@ -3,7 +3,7 @@ uniform vec3 CameraDir;
 uniform vec4 LightData;
 uniform vec2 SkyParallax;
 
-uniform sampler2D Colormap;	// The color map has full RGB pre-backed in.
+uniform sampler2D Colormap;
 uniform sampler2D Palette;
 uniform sampler2D Textures;
 

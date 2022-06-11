@@ -6,11 +6,22 @@ uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;
 in vec3 Frag_WorldPos;
-flat in int Frag_Color;
+flat in ivec2 Frag_Color;
 flat in int Frag_TextureId;
 flat in int Frag_TextureMode;
 
 out vec4 Out_Color;
+
+vec3 getAttenuatedColor(int baseColor, int light)
+{
+	int color = baseColor;
+	if (light < 31)
+	{
+		ivec2 uv = ivec2(color, light);
+		color = int(texelFetch(Colormap, uv, 0).r * 255.0);
+	}
+	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
+}
 
 ivec2 imod(ivec2 x, ivec2 y)
 {
@@ -38,7 +49,7 @@ float sampleTexture(int id, vec2 uv)
 
 void main()
 {
-	ivec2 palColor = ivec2(Frag_Color, 0);
+	int baseColor = Frag_Color.x;
 	if (Frag_TextureId < 65535) // 0xffff = no texture
 	{
 		vec2 uv = Frag_Uv;
@@ -49,16 +60,17 @@ void main()
 			uv.y = Frag_WorldPos.z * 8.0;
 		}
 
-		palColor.x = int(sampleTexture(Frag_TextureId, uv));
+		baseColor = int(sampleTexture(Frag_TextureId, uv));
 
 		#ifdef MODEL_TRANSPARENT_PASS
-		if (palColor.x == 0)
+		if (baseColor == 0)
 		{
 			discard;
 		}
 		#endif
 	}
+	int light = Frag_Color.y;
 
-	Out_Color.rgb = texelFetch(Palette, palColor, 0).rgb;
+	Out_Color.rgb = getAttenuatedColor(baseColor, light);
 	Out_Color.a = 1.0;
 }

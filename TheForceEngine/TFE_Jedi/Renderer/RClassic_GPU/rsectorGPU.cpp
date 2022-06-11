@@ -677,6 +677,7 @@ namespace TFE_Jedi
 	void addSectorObjects(RSector* curSector)
 	{
 		SecObject** objIter = curSector->objectList;
+		f32 ambient = fixed16ToFloat(curSector->ambient);
 		for (s32 i = 0; i < curSector->objectCount; objIter++)
 		{
 			SecObject* obj = *objIter;
@@ -719,7 +720,7 @@ namespace TFE_Jedi
 				else if (type == OBJ_TYPE_3D)
 				{
 					// For now just add...
-					model_add(obj->model, posWS, obj->transform);
+					model_add(obj->model, posWS, obj->transform, ambient);
 				}
 			}
 		}
