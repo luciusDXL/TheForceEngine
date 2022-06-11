@@ -55,6 +55,8 @@ public:
 	s32  getVariableId(const char* name);
 	void setVariable(s32 id, ShaderVariableType type, const f32* data);
 
+	s32  getVariables();
+
 	inline u32 getHandle() { return m_gpuHandle; }
 
 private:

@@ -934,6 +934,9 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\spriteDisplayList.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\modelGPU.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1590,6 +1593,9 @@
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\spriteDisplayList.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\modelGPU.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -1753,6 +1759,12 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\gpu_render_sprite.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\gpu_render_modelHologram.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\gpu_render_modelHologram.vert">
       <Filter>Source\Shaders</Filter>
     </None>
   </ItemGroup>

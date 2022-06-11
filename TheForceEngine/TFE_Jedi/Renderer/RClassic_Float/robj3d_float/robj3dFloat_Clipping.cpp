@@ -74,7 +74,7 @@ namespace RClassic_Float
 	#define CLIP_INTENSITY
 	#include "robj3dFloat_ClipFunc.h"
 
-	s32 clipPolygon(Polygon* polygon)
+	s32 clipPolygon(JmPolygon* polygon)
 	{
 		s32 polyVertexCount = 0;
 		if (polygon->shading == PSHADE_GOURAUD)

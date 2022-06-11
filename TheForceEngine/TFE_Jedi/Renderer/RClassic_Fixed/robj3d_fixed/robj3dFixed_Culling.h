@@ -10,7 +10,7 @@ namespace TFE_Jedi
 {
 	namespace RClassic_Fixed
 	{
-		extern Polygon* s_visPolygons[MAX_POLYGON_COUNT_3DO];
+		extern JmPolygon* s_visPolygons[MAX_POLYGON_COUNT_3DO];
 		s32 robj3d_backfaceCull(JediModel* model);
 	}
 }

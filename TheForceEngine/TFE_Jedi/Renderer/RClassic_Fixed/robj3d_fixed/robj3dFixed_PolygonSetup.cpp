@@ -16,7 +16,7 @@ namespace RClassic_Fixed
 	vec2_fixed s_polygonUv[POLY_MAX_VTX_COUNT];
 	fixed16_16 s_polygonIntensity[POLY_MAX_VTX_COUNT];
 
-	void robj3d_setupPolygon(Polygon* polygon)
+	void robj3d_setupPolygon(JmPolygon* polygon)
 	{
 		// Copy polygon vertices.
 		for (s32 v = 0; v < polygon->vertexCount; v++)

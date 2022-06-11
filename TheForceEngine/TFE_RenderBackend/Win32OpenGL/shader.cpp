@@ -56,7 +56,7 @@ namespace ShaderGL
 		glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &log_length);
 		if ((GLboolean)status == GL_FALSE)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Shader", "Failed to link %s! (with GLSL '%s')\n", desc, c_glslVersionString[version]);
+			TFE_System::logWrite(LOG_ERROR, "Shader", "Failed to link '%s' - with GLSL %s", desc, c_glslVersionString[version]);
 		}
 
 		if (log_length > 1)
@@ -151,6 +151,37 @@ void Shader::unbind()
 s32 Shader::getVariableId(const char* name)
 {
 	return glGetUniformLocation(m_gpuHandle, name);
+}
+
+// For debugging.
+s32 Shader::getVariables()
+{
+	s32 length;
+	s32 size;
+	GLenum type;
+	char name[256];
+
+	s32 count;
+	glGetProgramiv(m_gpuHandle, GL_ACTIVE_UNIFORMS, &count);
+	printf("Active Uniforms: %d\n", count);
+
+	for (s32 i = 0; i < count; i++)
+	{
+		glGetActiveUniform(m_gpuHandle, (GLuint)i, 256, &length, &size, &type, name);
+		printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
+	}
+
+	s32 attribCount;
+	glGetProgramiv(m_gpuHandle, GL_ACTIVE_ATTRIBUTES, &attribCount);
+	printf("Active Attributes: %d\n", attribCount);
+
+	for (s32 i = 0; i < attribCount; i++)
+	{
+		glGetActiveAttrib(m_gpuHandle, (GLuint)i, 256, &length, &size, &type, name);
+		printf("Attribute #%d Type: %u Name: %s\n", i, type, name);
+	}
+
+	return count;
 }
 
 void Shader::bindTextureNameToSlot(const char* texName, s32 slot)

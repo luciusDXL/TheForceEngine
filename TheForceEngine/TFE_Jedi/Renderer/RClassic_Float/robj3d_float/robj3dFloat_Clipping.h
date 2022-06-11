@@ -13,6 +13,6 @@ namespace TFE_Jedi
 {
 	namespace RClassic_Float
 	{
-		s32 clipPolygon(Polygon* polygon);
+		s32 clipPolygon(JmPolygon* polygon);
 	}
 }

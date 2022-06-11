@@ -19,7 +19,7 @@ namespace RClassic_Fixed
 	};
 
 	// List of potentially visible polygons (after backface culling).
-	Polygon* s_visPolygons[MAX_POLYGON_COUNT_3DO];
+	JmPolygon* s_visPolygons[MAX_POLYGON_COUNT_3DO];
 
 	s32 getPolygonFacing(const vec3_fixed* normal, const vec3_fixed* pos)
 	{
@@ -31,7 +31,7 @@ namespace RClassic_Fixed
 	{
 		vec3_fixed* polygonNormal = s_polygonNormalsVS;
 		s32 polygonCount = model->polygonCount;
-		Polygon* polygon = model->polygons;
+		JmPolygon* polygon = model->polygons;
 		for (s32 i = 0; i < polygonCount; i++, polygonNormal++, polygon++)
 		{
 			vec3_fixed* vertex = &s_verticesVS[polygon->indices[1]];
@@ -40,7 +40,7 @@ namespace RClassic_Fixed
 			polygonNormal->z -= vertex->z;
 		}
 
-		Polygon** visPolygon = s_visPolygons;
+		JmPolygon** visPolygon = s_visPolygons;
 		s32 visPolygonCount = 0;
 
 		polygon = model->polygons;

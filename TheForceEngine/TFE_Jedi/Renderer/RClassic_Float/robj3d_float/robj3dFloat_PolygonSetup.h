@@ -19,6 +19,6 @@ namespace TFE_Jedi
 		extern vec2_float s_polygonUv[POLY_MAX_VTX_COUNT];
 		extern f32 s_polygonIntensity[POLY_MAX_VTX_COUNT];
 
-		void robj3d_setupPolygon(Polygon* polygon);
+		void robj3d_setupPolygon(JmPolygon* polygon);
 	}
 }

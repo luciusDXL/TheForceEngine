@@ -40,13 +40,13 @@ namespace RClassic_Fixed
 		if (visPolygonCount < 1) { return; }
 
 		// Sort polygons from back to front.
-		qsort(s_visPolygons, visPolygonCount, sizeof(Polygon*), polygonSort);
+		qsort(s_visPolygons, visPolygonCount, sizeof(JmPolygon*), polygonSort);
 
 		// Draw polygons
-		Polygon** visPolygon = s_visPolygons;
+		JmPolygon** visPolygon = s_visPolygons;
 		for (s32 i = 0; i < visPolygonCount; i++, visPolygon++)
 		{
-			Polygon* polygon = *visPolygon;
+			JmPolygon* polygon = *visPolygon;
 			if (polygon->vertexCount <= 0) { continue; }
 
 			robj3d_setupPolygon(polygon);
@@ -105,8 +105,8 @@ namespace RClassic_Fixed
 
 	s32 polygonSort(const void* r0, const void* r1)
 	{
-		Polygon* p0 = *((Polygon**)r0);
-		Polygon* p1 = *((Polygon**)r1);
+		JmPolygon* p0 = *((JmPolygon**)r0);
+		JmPolygon* p1 = *((JmPolygon**)r1);
 		return p1->zAve - p0->zAve;
 	}
 

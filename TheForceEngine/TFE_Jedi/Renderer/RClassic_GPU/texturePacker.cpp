@@ -411,6 +411,19 @@ namespace TFE_Jedi
 			insertWaxFrame(frame[i], frame[i]);
 		}
 
+		// Insert 3DO textures.
+		std::vector<JediModel*> modelList;
+		TFE_Model_Jedi::getModelList(modelList);
+		const size_t modelCount = modelList.size();
+		JediModel** model = modelList.data();
+		for (size_t i = 0; i < modelCount; i++)
+		{
+			for (s32 t = 0; t < model[i]->textureCount; t++)
+			{
+				insertTexture(model[i]->textures[t]);
+			}
+		}
+
 #if DEBUG_TEXTURE_ATLAS
 		debug_writeOutAtlas();
 #endif

@@ -83,7 +83,7 @@ namespace TFE_Jedi_Object3d
 			s32 ncount = 0;
 			vec3* cnrm = model->polygonNormals;
 
-			const Polygon* polygon = model->polygons;
+			const JmPolygon* polygon = model->polygons;
 			for (s32 p = 0; p < model->polygonCount; p++, polygon++, cnrm++)
 			{
 				const s32 polyVtxCount = polygon->vertexCount;
@@ -179,7 +179,7 @@ namespace TFE_Model_Jedi
 		model->polygonNormals = (vec3*)malloc(model->polygonCount * sizeof(vec3));
 
 		vec3* polygonNormal = model->polygonNormals;
-		Polygon* polygon = model->polygons;
+		JmPolygon* polygon = model->polygons;
 		for (s32 i = 0; i < model->polygonCount; i++, polygon++, polygonNormal++)
 		{
 			vec3* v0 = &model->vertices[polygon->indices[0]];
@@ -214,6 +214,15 @@ namespace TFE_Model_Jedi
 		return model;
 	}
 
+	void getModelList(std::vector<JediModel*>& list)
+	{
+		ModelMap::iterator iModel = s_models.begin();
+		for (; iModel != s_models.end(); ++iModel)
+		{
+			list.push_back(iModel->second);
+		}
+	}
+
 	void freeAll()
 	{
 		ModelMap::iterator iModel = s_models.begin();
@@ -224,7 +233,7 @@ namespace TFE_Model_Jedi
 		s_models.clear();
 	}
 
-	void allocatePolygon(Polygon* polygon, s32 vertexCount)
+	void allocatePolygon(JmPolygon* polygon, s32 vertexCount)
 	{
 		s32* indices = (s32*)malloc(vertexCount * 4);
 
@@ -253,6 +262,7 @@ namespace TFE_Model_Jedi
 		model->textureCount = 0;
 		model->textures = 0;
 		model->radius = 0;
+		model->drawId = -1;	// invalid ID initially.
 
 		// Check to see if the name has an underscore.
 		// If so, set the "isBridge" field.
@@ -343,7 +353,7 @@ namespace TFE_Model_Jedi
 			assert(0);
 			return false;
 		}
-		model->polygons = (Polygon*)malloc(polygonCount * sizeof(Polygon));
+		model->polygons = (JmPolygon*)malloc(polygonCount * sizeof(JmPolygon));
 
 		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
@@ -373,6 +383,7 @@ namespace TFE_Model_Jedi
 			FilePath filePath;
 
 			model->textures = (TextureData**)malloc(textureCount * sizeof(TextureData*));
+			model->textureCount = textureCount;
 			TextureData** texture = model->textures;
 			for (s32 i = 0; i < textureCount; i++, texture++)
 			{
@@ -382,9 +393,10 @@ namespace TFE_Model_Jedi
 				char textureName[256];
 				if (sscanf(buffer, " TEXTURE: %s ", textureName) != 1)
 				{
-					TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' unable to parse TEXTURE: entry.", name);
-					assert(0);
-					return false;
+					TFE_System::logWrite(LOG_WARNING, "Object3D_Load", "'%s' unable to parse TEXTURE: entry.", name);
+					TFE_Paths::getFilePath("default.bm", &filePath);
+					*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
+					continue;
 				}
 
 				*texture = nullptr;
@@ -507,7 +519,7 @@ namespace TFE_Model_Jedi
 					b += vertexOffset;
 					c += vertexOffset;
 
-					Polygon* polygon = &model->polygons[model->polygonCount];
+					JmPolygon* polygon = &model->polygons[model->polygonCount];
 					allocatePolygon(polygon, 3);
 
 					polygon->index = model->polygonCount;
@@ -578,7 +590,7 @@ namespace TFE_Model_Jedi
 					c += vertexOffset;
 					d += vertexOffset;
 
-					Polygon* polygon = &model->polygons[model->polygonCount];
+					JmPolygon* polygon = &model->polygons[model->polygonCount];
 					allocatePolygon(polygon, 4);
 
 					polygon->index = model->polygonCount;
@@ -685,7 +697,7 @@ namespace TFE_Model_Jedi
 				s32 texQuadCount;
 				if (sscanf(buffer, " TEXTURE TRIANGLES %d", &texTriangleCount) == 1)
 				{
-					Polygon* polygon = &model->polygons[basePolygonCount];
+					JmPolygon* polygon = &model->polygons[basePolygonCount];
 					while (1)
 					{
 						buffer = parser.readLine(bufferPos, true);
@@ -714,7 +726,7 @@ namespace TFE_Model_Jedi
 				}
 				else if (sscanf(buffer, " TEXTURE QUADS %d", &texQuadCount) == 1)
 				{
-					Polygon* polygon = &model->polygons[basePolygonCount];
+					JmPolygon* polygon = &model->polygons[basePolygonCount];
 					while (1)
 					{
 						buffer = parser.readLine(bufferPos, true);

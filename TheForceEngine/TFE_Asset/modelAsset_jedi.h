@@ -37,7 +37,7 @@ struct vec3
 };
 
 // sizeof(Polygon) = 36
-struct Polygon
+struct JmPolygon
 {
 	s32 index;
 	s32 shading;
@@ -57,17 +57,19 @@ struct JediModel
 	s32 vertexCount;
 	vec3* vertices;
 	s32 polygonCount;
-	Polygon* polygons;
+	JmPolygon* polygons;
 	vec3* vertexNormals;
 	vec3* polygonNormals;
 	s32 flags;
 	s32 textureCount;
 	TextureData** textures;
 	s32 radius;
+	s32 drawId;		// TFE: Added for the GPU renderer.
 };
 
 namespace TFE_Model_Jedi
 {
 	JediModel* get(const char* name);
+	void getModelList(std::vector<JediModel*>& list);
 	void freeAll();
 }

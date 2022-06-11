@@ -19,6 +19,7 @@
 
 #include "rclassicGPU.h"
 #include "rsectorGPU.h"
+#include "modelGPU.h"
 #include "renderDebug.h"
 #include "debug.h"
 #include "frustum.h"
@@ -313,6 +314,9 @@ namespace TFE_Jedi
 
 			if (!s_objectTextures) { s_objectTextures = texturepacker_init("Objects", 4096, 4096); }
 			if (s_objectTextures)  { texturepacker_packObjectTextures(s_objectTextures); }
+
+			model_init();
+			model_loadLevelModels();
 		}
 		else
 		{
@@ -682,10 +686,9 @@ namespace TFE_Jedi
 			if (obj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
 			{
 				const s32 type = obj->type;
+				Vec3f posWS = { fixed16ToFloat(obj->posWS.x), fixed16ToFloat(obj->posWS.y), fixed16ToFloat(obj->posWS.z) };
 				if (type == OBJ_TYPE_SPRITE || type == OBJ_TYPE_FRAME)
 				{
-					Vec3f posWS = { fixed16ToFloat(obj->posWS.x), fixed16ToFloat(obj->posWS.y), fixed16ToFloat(obj->posWS.z) };
-
 					if (type == OBJ_TYPE_SPRITE)
 					{
 						f32 dx = s_cameraPos.x - posWS.x;
@@ -715,7 +718,8 @@ namespace TFE_Jedi
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
-					// TODO
+					// For now just add...
+					model_add(obj->model, posWS, obj->transform);
 				}
 			}
 		}
@@ -775,6 +779,7 @@ namespace TFE_Jedi
 
 		sdisplayList_clear();
 		sprdisplayList_clear();
+		model_drawListClear();
 
 		updateCachedSector(sector, uploadFlags);
 		traverseSector(sector, level, uploadFlags, startView[0], startView[1]);
@@ -870,6 +875,12 @@ namespace TFE_Jedi
 		m_spriteShader.unbind();
 	}
 
+	void draw3d()
+	{
+		if (!model_getDrawListSize()) { return; }
+		model_drawList();
+	}
+
 	void TFE_Sectors_GPU::draw(RSector* sector)
 	{
 		// Build the draw list.
@@ -891,6 +902,7 @@ namespace TFE_Jedi
 		drawSprites();
 
 		// Draw 3D Objects.
+		draw3d();
 
 		// Cleanup
 		m_indexBuffer.unbind();

@@ -14,6 +14,6 @@ namespace TFE_Jedi
 {
 	namespace RClassic_Fixed
 	{
-		void robj3d_drawPolygon(Polygon* polygon, s32 polyVertexCount, SecObject* obj, JediModel* model);
+		void robj3d_drawPolygon(JmPolygon* polygon, s32 polyVertexCount, SecObject* obj, JediModel* model);
 	}
 }
