@@ -155,6 +155,9 @@
     <Filter Include="Source\TFE_Jedi\Renderer\RClassic_GPU">
       <UniqueIdentifier>{3fef5522-8f9a-4a26-a141-f83545f982ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_RenderShared">
+      <UniqueIdentifier>{fa701b85-38b6-487e-a243-5b991d0a51ae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -937,6 +940,12 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\modelGPU.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\screenDrawGPU.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\lineDraw2d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1595,6 +1604,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\modelGPU.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\screenDrawGPU.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\lineDraw2d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

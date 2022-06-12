@@ -381,7 +381,7 @@ namespace TFE_Jedi
 	void blitTextureToScreenLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, const u8* atten, u8* output, JBool forceTransparency)
 	{
 		if (s_gpuEnabled) { return; }
-		s32 x1 = x0 + texture->width - 1;
+		s32 x1 = x0 + texture->width  - 1;
 		s32 y1 = y0 + texture->height - 1;
 
 		// Cull if outside of the draw rect.

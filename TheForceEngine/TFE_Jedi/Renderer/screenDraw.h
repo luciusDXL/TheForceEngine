@@ -28,6 +28,7 @@ namespace TFE_Jedi
 		JBool columnOriented;
 	};
 
+	// TODO: When GPU rendering is enabled, setup draw functions to pass through to GPU rendering.
 	void screen_enableGPU(bool enable);
 
 	void screen_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color, u8* framebuffer);

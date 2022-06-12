@@ -513,6 +513,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\renderDebug.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\screenDrawGPU.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\spriteDisplayList.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.h" />
@@ -550,6 +551,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\openGL_Caps.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\renderTarget.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\screenCapture.h" />
+    <ClInclude Include="TFE_RenderShared\lineDraw2d.h" />
     <ClInclude Include="TFE_Settings\gameSourceData.h" />
     <ClInclude Include="TFE_Settings\settings.h" />
     <ClInclude Include="TFE_Settings\windows\registry.h" />
@@ -755,6 +757,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\renderDebug.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rsectorGPU.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\screenDrawGPU.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\spriteDisplayList.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.cpp" />
@@ -784,6 +787,7 @@ echo ^)";
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\shaderBuffer.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\textureGpu.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\vertexBuffer.cpp" />
+    <ClCompile Include="TFE_RenderShared\lineDraw2d.cpp" />
     <ClCompile Include="TFE_Settings\settings.cpp" />
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />
