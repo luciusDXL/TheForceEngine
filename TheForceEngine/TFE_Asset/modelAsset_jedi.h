@@ -65,6 +65,7 @@ struct JediModel
 	TextureData** textures;
 	s32 radius;
 	s32 drawId;		// TFE: Added for the GPU renderer.
+	u32 drawFrame;	// TFE: Added for the GPU renderer.
 };
 
 namespace TFE_Model_Jedi

@@ -81,9 +81,8 @@ void main()
 
 		// Falloff
 		float falloff = floor(z / 16.0) + floor(z / 32.0);
-		light = max(light - falloff, scaledAmbient);
+		light = clamp(light - falloff, scaledAmbient, 31.0);
 	}
-	light = clamp(light, 0.0, 31.0);
 	
 	// Write out the per-vertex uv and color.
 	Frag_WorldPos = worldPos;

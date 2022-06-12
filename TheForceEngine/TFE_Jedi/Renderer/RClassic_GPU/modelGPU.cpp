@@ -96,13 +96,14 @@ namespace TFE_Jedi
 	static ModelDraw s_modelDrawList[MGPU_SHADER_COUNT][MGPU_MAX_3DO_PER_PASS];
 	static s32 s_modelDrawListCount[MGPU_SHADER_COUNT];
 	static s32 s_modelCount;
+	static s32 s_drawFrame;
 
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
 	extern Vec3f s_cameraDir;
 	extern Vec3f s_cameraRight;
-
+	
 	const char* c_vertexShaders[MGPU_SHADER_COUNT] = 
 	{
 		"Shaders/gpu_render_modelSolid.vert",
@@ -226,6 +227,7 @@ namespace TFE_Jedi
 		s_models[s_modelCount].polyCount = model->vertexCount * 2;
 		s_models[s_modelCount].shader = MGPU_SHADER_HOLOGRAM;
 		model->drawId = s_modelCount;
+		model->drawFrame = 0;
 		s_modelCount++;
 	}
 
@@ -268,6 +270,7 @@ namespace TFE_Jedi
 		s_models[s_modelCount].polyCount = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
 		s_models[s_modelCount].shader = s_modelTrans ? MGPU_SHADER_TRANS : MGPU_SHADER_SOLID;
 		s_curModel->drawId = s_modelCount;
+		s_curModel->drawFrame = 0;
 		s_modelCount++;
 
 		// Add vertices.
@@ -514,6 +517,7 @@ namespace TFE_Jedi
 		s_indexData.clear();
 		s_modelCount = 0;
 		s_verticesMerged = 0;
+		s_drawFrame = 1;
 
 		std::vector<JediModel*> modelList;
 		TFE_Model_Jedi::getModelList(modelList);
@@ -622,16 +626,17 @@ namespace TFE_Jedi
 
 	void model_drawListFinish()
 	{
-		// Nothing to do yet...
+		s_drawFrame++;
 	}
 
 	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient)
 	{
 		// Make sure the model has been assigned a GPU ID.
-		if (model->drawId < 0)
+		if (model->drawId < 0 || model->drawFrame == s_drawFrame)
 		{
 			return;
 		}
+		model->drawFrame = s_drawFrame;
 
 		ModelGPU* modelGPU = &s_models[model->drawId];
 		ModelDraw* drawList = s_modelDrawList[modelGPU->shader];

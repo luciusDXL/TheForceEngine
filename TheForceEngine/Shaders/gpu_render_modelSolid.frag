@@ -2,6 +2,10 @@ uniform sampler2D Palette;
 uniform sampler2D Colormap;
 uniform sampler2D Textures;
 
+uniform vec3 CameraPos;
+uniform vec3 CameraDir;
+uniform vec4 LightData;
+
 uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;
@@ -51,6 +55,7 @@ float sampleTexture(int id, vec2 uv)
 void main()
 {
 	int baseColor = Frag_Color;
+	int lightLevel = 31;
 	if (Frag_TextureId < 65535) // 0xffff = no texture
 	{
 		vec2 uv = Frag_Uv;
@@ -60,10 +65,31 @@ void main()
 			uv.x = Frag_WorldPos.x * 8.0;
 			uv.y = Frag_WorldPos.z * 8.0;
 
+			// Calculate Z value and scaled ambient.
+			float ambient = LightData.z;
+			float light = 0.0;
+			float scaledAmbient = ambient * 7.0 / 8.0;
+			float z = max(0.0, dot((Frag_WorldPos - CameraPos), CameraDir));
+
 			// Handle lighting in a similar way to sector floors and ceilings.
+			// Camera Light
+			float worldAmbient = LightData.x;
+			float cameraLightSource = LightData.y;
+			if (worldAmbient < 31.0 || cameraLightSource > 0.0)
+			{
+				float depthScaled = min(floor(z * 4.0), 127.0);
+				float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
+				if (lightSource > 0)
+				{
+					light += lightSource;
+				}
+			}
+			light = max(light, ambient);
 
+			// Falloff
+			float falloff = floor(z / 16.0) + floor(z / 32.0);
+			lightLevel = int(clamp(light - falloff, scaledAmbient, 31.0));
 		}
-
 		baseColor = int(sampleTexture(Frag_TextureId, uv));
 
 		#ifdef MODEL_TRANSPARENT_PASS
@@ -73,9 +99,12 @@ void main()
 		}
 		#endif
 	}
-	float dither = float(int(gl_FragCoord.x) + int(gl_FragCoord.y) & 1);
-	int light = int(Frag_Light + 0.5*dither);
+	if (Frag_TextureMode == 0)
+	{
+		float dither = float(int(gl_FragCoord.x) + int(gl_FragCoord.y) & 1);
+		lightLevel = int(Frag_Light + 0.5*dither);
+	}
 
-	Out_Color.rgb = getAttenuatedColor(baseColor, light);
+	Out_Color.rgb = getAttenuatedColor(baseColor, lightLevel);
 	Out_Color.a = 1.0;
 }

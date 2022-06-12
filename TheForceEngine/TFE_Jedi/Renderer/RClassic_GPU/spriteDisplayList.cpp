@@ -74,6 +74,8 @@ namespace TFE_Jedi
 	{
 		if (!s_displayListCount) { return; }
 
+		// TODO: Sort from back to front.
+
 		s_displayListPosTextureGPU.update(&s_displayListPosTexture, sizeof(Vec4f) * s_displayListCount);
 		s_displayListScaleOffsetGPU.update(&s_displayListScaleOffset, sizeof(Vec4f) * s_displayListCount);
 	}
@@ -113,6 +115,8 @@ namespace TFE_Jedi
 	void sprdisplayList_draw()
 	{
 		if (!s_displayListCount) { return; }
+		// TODO: Once sorting is done, turn off z-writing.
+		// This is to avoid z-fighting with overlapping sprites.
 
 		s_displayListPosTextureGPU.bind(s_posTextureIndex);
 		s_displayListScaleOffsetGPU.bind(s_scaleOffsetIndex);

@@ -788,6 +788,7 @@ namespace TFE_Jedi
 
 		sdisplayList_finish();
 		sprdisplayList_finish();
+		model_drawListFinish();
 
 		if (uploadFlags & UPLOAD_SECTORS)
 		{
@@ -909,13 +910,12 @@ namespace TFE_Jedi
 			drawPass(SectorPass(i));
 		}
 
-		// Draw Sprites.
-		drawSprites();
-
 		// Draw 3D Objects.
-		TFE_RenderState::setStateEnable(false, STATE_CULLING);
 		draw3d();
 
+		// Draw Sprites.
+		drawSprites();
+				
 		// Cleanup
 		m_indexBuffer.unbind();
 		m_sectors.unbind(0);
