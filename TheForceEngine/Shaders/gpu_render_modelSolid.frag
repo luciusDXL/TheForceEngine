@@ -62,11 +62,11 @@ void main()
 		if (Frag_TextureMode > 0)
 		{
 			// Sector flat style projection.
-			uv.x = Frag_WorldPos.x * 8.0;
-			uv.y = Frag_WorldPos.z * 8.0;
+			// TODO: Handle both floor and ceiling offsets instead of just floor.
+			uv.xy = (Frag_WorldPos.xz - LightData.zw) * vec2(-8.0, 8.0);
 
 			// Calculate Z value and scaled ambient.
-			float ambient = LightData.z;
+			float ambient = max(0.0, LightData.y > 32.0 ? LightData.y - 64.0 : LightData.y);
 			float light = 0.0;
 			float scaledAmbient = ambient * 7.0 / 8.0;
 			float z = max(0.0, dot((Frag_WorldPos - CameraPos), CameraDir));
@@ -74,7 +74,7 @@ void main()
 			// Handle lighting in a similar way to sector floors and ceilings.
 			// Camera Light
 			float worldAmbient = LightData.x;
-			float cameraLightSource = LightData.y;
+			float cameraLightSource = LightData.y > 63.0 ? 1.0 : 0.0;
 			if (worldAmbient < 31.0 || cameraLightSource > 0.0)
 			{
 				float depthScaled = min(floor(z * 4.0), 127.0);

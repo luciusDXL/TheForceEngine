@@ -63,6 +63,7 @@ namespace TFE_Jedi
 	{
 		s32 modelId;
 		Vec3f posWS;
+		Vec2f floorOffset;
 		f32 transform[9];
 		f32 ambient;
 	};
@@ -96,7 +97,6 @@ namespace TFE_Jedi
 	static ModelDraw s_modelDrawList[MGPU_SHADER_COUNT][MGPU_MAX_3DO_PER_PASS];
 	static s32 s_modelDrawListCount[MGPU_SHADER_COUNT];
 	static s32 s_modelCount;
-	static s32 s_drawFrame;
 
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -227,7 +227,6 @@ namespace TFE_Jedi
 		s_models[s_modelCount].polyCount = model->vertexCount * 2;
 		s_models[s_modelCount].shader = MGPU_SHADER_HOLOGRAM;
 		model->drawId = s_modelCount;
-		model->drawFrame = 0;
 		s_modelCount++;
 	}
 
@@ -270,7 +269,6 @@ namespace TFE_Jedi
 		s_models[s_modelCount].polyCount = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
 		s_models[s_modelCount].shader = s_modelTrans ? MGPU_SHADER_TRANS : MGPU_SHADER_SOLID;
 		s_curModel->drawId = s_modelCount;
-		s_curModel->drawFrame = 0;
 		s_modelCount++;
 
 		// Add vertices.
@@ -517,7 +515,6 @@ namespace TFE_Jedi
 		s_indexData.clear();
 		s_modelCount = 0;
 		s_verticesMerged = 0;
-		s_drawFrame = 1;
 
 		std::vector<JediModel*> modelList;
 		TFE_Model_Jedi::getModelList(modelList);
@@ -626,17 +623,15 @@ namespace TFE_Jedi
 
 	void model_drawListFinish()
 	{
-		s_drawFrame++;
 	}
 
-	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient)
+	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset)
 	{
 		// Make sure the model has been assigned a GPU ID.
-		if (model->drawId < 0 || model->drawFrame == s_drawFrame)
+		if (model->drawId < 0)
 		{
 			return;
 		}
-		model->drawFrame = s_drawFrame;
 
 		ModelGPU* modelGPU = &s_models[model->drawId];
 		ModelDraw* drawList = s_modelDrawList[modelGPU->shader];
@@ -655,6 +650,7 @@ namespace TFE_Jedi
 		drawItem->modelId = model->drawId;
 		drawItem->posWS = posWS;
 		drawItem->ambient = ambient;
+		drawItem->floorOffset = floorOffset;
 		for (s32 i = 0; i < 9; i++)
 		{
 			drawItem->transform[i] = fixed16ToFloat(transform[i]);
@@ -665,7 +661,7 @@ namespace TFE_Jedi
 	{
 		s_modelVertexBuffer.bind();
 		s_modelIndexBuffer.bind();
-		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, 0.0f };
+		Vec4f lightData = { f32(s_worldAmbient), 0.0f, 0.0f, 0.0f };
 
 		for (s32 s = 0; s < MGPU_SHADER_COUNT; s++)
 		{
@@ -691,7 +687,9 @@ namespace TFE_Jedi
 				shader->setVariable(s_mgpu_modelPosId[s], SVT_VEC3,   drawItem->posWS.m);
 				shader->setVariable(s_mgpu_modelMtxId[s], SVT_MAT3x3, drawItem->transform);
 
-				lightData.z = drawItem->ambient;
+				lightData.y = min(drawItem->ambient, 31.0f) + (s_cameraLightSource ? 64.0f : 0.0f);
+				lightData.z = drawItem->floorOffset.x;
+				lightData.w = drawItem->floorOffset.z;
 				shader->setVariable(s_mgpu_lightDataId[s], SVT_VEC4, lightData.m);
 
 				TFE_RenderBackend::drawIndexedTriangles(model->polyCount, sizeof(u32), model->indexStart);

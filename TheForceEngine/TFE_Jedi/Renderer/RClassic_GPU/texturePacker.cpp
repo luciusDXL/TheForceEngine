@@ -47,6 +47,7 @@ namespace TFE_Jedi
 	enum
 	{
 		TIGHT_FIT_PIXELS = 2,
+		MAX_TEXTURE_COUNT = 2048,
 	};
 
 	static std::vector<Node*> s_nodes;
@@ -73,7 +74,7 @@ namespace TFE_Jedi
 		}
 		memset(texturePacker->backingMemory, 0, width * height);
 		
-		texturePacker->textureTable = (Vec4i*)malloc(sizeof(Vec4i) * 1024);
+		texturePacker->textureTable = (Vec4i*)malloc(sizeof(Vec4i) * MAX_TEXTURE_COUNT);
 		if (!texturePacker->textureTable)
 		{
 			texturepacker_destroy(texturePacker);
@@ -95,7 +96,7 @@ namespace TFE_Jedi
 			sizeof(s32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 			BUF_CHANNEL_INT
 		};
-		texturePacker->textureTableGPU.create(1024, textureTableDef, true, nullptr);
+		texturePacker->textureTableGPU.create(MAX_TEXTURE_COUNT, textureTableDef, true, nullptr);
 
 		strncpy(texturePacker->name, name, 64);
 		return texturePacker;
@@ -271,6 +272,7 @@ namespace TFE_Jedi
 		assert(node && node->tex == tex);
 		if (node)
 		{
+			assert(s_texturePacker->texturesPacked < MAX_TEXTURE_COUNT);
 			tex->textureId = s_texturePacker->texturesPacked;
 			packNode(node, tex, &s_texturePacker->textureTable[s_texturePacker->texturesPacked]);
 			s_texturePacker->texturesPacked++;
@@ -289,6 +291,7 @@ namespace TFE_Jedi
 		assert(node && node->tex == cell);
 		if (node)
 		{
+			assert(s_texturePacker->texturesPacked < MAX_TEXTURE_COUNT);
 			cell->textureId = s_texturePacker->texturesPacked;
 			packNodeCell(node, basePtr, cell, &s_texturePacker->textureTable[s_texturePacker->texturesPacked]);
 			s_texturePacker->texturesPacked++;

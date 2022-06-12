@@ -1832,7 +1832,6 @@ namespace TFE_Jedi
 					if (value != 0xff)
 					{
 						IM_LOG_ERR("su unknown msg type 0x%x.", value);
-						assert(0);
 						return;
 					}
 					msgFuncIndex = IM_MID_EVENT;

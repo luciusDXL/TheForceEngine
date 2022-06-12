@@ -48,7 +48,7 @@ void main()
 	Frag_Uv = vtx_uv;
 
 	// Lighting
-	float ambient = LightData.z;
+	float ambient = max(0.0, LightData.y > 32.0 ? LightData.y - 64.0 : LightData.y);
 	float light = 0.0;
 	int textureMode = int(vtx_color.w * 255.0 + 0.5);
 	bool vertexLighting = (textureMode == 0);
@@ -67,7 +67,7 @@ void main()
 
 		// Camera Light
 		float worldAmbient = LightData.x;
-		float cameraLightSource = LightData.y;
+		float cameraLightSource = LightData.y > 63.0 ? 1.0 : 0.0;
 		if (worldAmbient < 31.0 || cameraLightSource > 0.0)
 		{
 			float depthScaled = min(floor(z * 4.0), 127.0);

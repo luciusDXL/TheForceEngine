@@ -678,8 +678,11 @@ namespace TFE_Jedi
 	{
 		SecObject** objIter = curSector->objectList;
 		f32 ambient = fixed16ToFloat(curSector->ambient);
+		Vec2f floorOffset = { fixed16ToFloat(curSector->floorOffset.x), fixed16ToFloat(curSector->floorOffset.z) };
 		for (s32 i = 0; i < curSector->objectCount; objIter++)
 		{
+			// TODO: Add an object draw frame.
+
 			SecObject* obj = *objIter;
 			if (!obj) { continue; }
 			i++;
@@ -719,8 +722,7 @@ namespace TFE_Jedi
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
-					// For now just add...
-					model_add(obj->model, posWS, obj->transform, ambient);
+					model_add(obj->model, posWS, obj->transform, ambient, floorOffset);
 				}
 			}
 		}
