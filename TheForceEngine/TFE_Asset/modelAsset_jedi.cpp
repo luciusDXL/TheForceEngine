@@ -423,8 +423,8 @@ namespace TFE_Model_Jedi
 			if (nextLine)
 			{
 				buffer = parser.readLine(bufferPos, true);
-				if (!buffer) { return false; }
 			}
+			if (!buffer) { break; }
 			nextLine = true;
 
 			char objName[32];
