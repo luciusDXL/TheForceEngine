@@ -50,7 +50,8 @@ void main()
 	// Lighting
 	float ambient = LightData.z;
 	float light = 0.0;
-	bool vertexLighting = vtx_color.w < 0.5;
+	int textureMode = int(vtx_color.w * 255.0 + 0.5);
+	bool vertexLighting = (textureMode == 0);
 	if (vertexLighting)
 	{
 		// Directional lights.
@@ -89,5 +90,5 @@ void main()
 	Frag_Color = int(vtx_color.x * 255.0 + 0.5);
 	Frag_Light = vertexLighting ? light : ambient;
 	Frag_TextureId = int(floor(vtx_color.y * 255.0 + 0.5) + floor(vtx_color.z * 255.0 + 0.5)*256.0 + 0.5);
-	Frag_TextureMode = int(vtx_color.w * 255.0 + 0.5);
+	Frag_TextureMode = textureMode;
 }

@@ -373,7 +373,7 @@ namespace TFE_Jedi
 
 		vec2 zero[3] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
-		vec3 nrmDir = { nrml->x - v0->x, nrml->y - v0->y, nrml->z - v0->z };
+		vec3 nrmDir = { nrml->x - v1->x, nrml->y - v1->y, nrml->z - v1->z };
 
 		s_indexData.push_back(getVertex(v0, &srcUV[0], &nrmDir, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
 		s_indexData.push_back(getVertex(v1, &srcUV[1], &nrmDir, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
@@ -386,7 +386,7 @@ namespace TFE_Jedi
 		vec3* v1 = &s_curModel->vertices[indices[1]];
 		vec3* v2 = &s_curModel->vertices[indices[2]];
 		vec3* v3 = &s_curModel->vertices[indices[3]];
-		vec3 nrmDir = { nrml->x - v0->x, nrml->y - v0->y, nrml->z - v0->z };
+		vec3 nrmDir = { nrml->x - v1->x, nrml->y - v1->y, nrml->z - v1->z };
 
 		vec2 zero[4] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
@@ -472,7 +472,7 @@ namespace TFE_Jedi
 
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
-		vec3 planeNrm = nrml->y - v0->y > 0 ? up : dn;
+		vec3 planeNrm = nrml->y - v1->y > 0 ? up : dn;
 
 		s_indexData.push_back(getVertex(v0, &uv, &planeNrm, 255, 1/*planeMode*/, textureId) + (*s_curVertexStart));
 		s_indexData.push_back(getVertex(v1, &uv, &planeNrm, 255, 1/*planeMode*/, textureId) + (*s_curVertexStart));
@@ -489,7 +489,7 @@ namespace TFE_Jedi
 
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
-		vec3 planeNrm = nrml->y - v0->y > 0 ? up : dn;
+		vec3 planeNrm = nrml->y - v1->y > 0 ? up : dn;
 
 		u32 outIndices[4];
 		outIndices[0] = getVertex(v0, &uv, &planeNrm, 255, 1/*planeMode*/, textureId);
