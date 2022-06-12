@@ -6,7 +6,8 @@ uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;
 in vec3 Frag_WorldPos;
-flat in ivec2 Frag_Color;
+noperspective in float Frag_Light;
+flat in int Frag_Color;
 flat in int Frag_TextureId;
 flat in int Frag_TextureMode;
 
@@ -49,7 +50,7 @@ float sampleTexture(int id, vec2 uv)
 
 void main()
 {
-	int baseColor = Frag_Color.x;
+	int baseColor = Frag_Color;
 	if (Frag_TextureId < 65535) // 0xffff = no texture
 	{
 		vec2 uv = Frag_Uv;
@@ -58,6 +59,9 @@ void main()
 			// Sector flat style projection.
 			uv.x = Frag_WorldPos.x * 8.0;
 			uv.y = Frag_WorldPos.z * 8.0;
+
+			// Handle lighting in a similar way to sector floors and ceilings.
+
 		}
 
 		baseColor = int(sampleTexture(Frag_TextureId, uv));
@@ -69,7 +73,8 @@ void main()
 		}
 		#endif
 	}
-	int light = Frag_Color.y;
+	float dither = float(int(gl_FragCoord.x) + int(gl_FragCoord.y) & 1);
+	int light = int(Frag_Light + 0.5*dither);
 
 	Out_Color.rgb = getAttenuatedColor(baseColor, light);
 	Out_Color.a = 1.0;

@@ -373,10 +373,11 @@ namespace TFE_Jedi
 
 		vec2 zero[3] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
+		vec3 nrmDir = { nrml->x - v0->x, nrml->y - v0->y, nrml->z - v0->z };
 
-		s_indexData.push_back(getVertex(v0, &srcUV[0], nrml, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v1, &srcUV[1], nrml, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v2, &srcUV[2], nrml, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v0, &srcUV[0], &nrmDir, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v1, &srcUV[1], &nrmDir, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v2, &srcUV[2], &nrmDir, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
 	}
 
 	void addFlatQuad(s32* indices, u8 color, vec2* uv, vec3* nrml, s32 textureId)
@@ -385,15 +386,16 @@ namespace TFE_Jedi
 		vec3* v1 = &s_curModel->vertices[indices[1]];
 		vec3* v2 = &s_curModel->vertices[indices[2]];
 		vec3* v3 = &s_curModel->vertices[indices[3]];
+		vec3 nrmDir = { nrml->x - v0->x, nrml->y - v0->y, nrml->z - v0->z };
 
 		vec2 zero[4] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
 
 		u32 outIndices[4];
-		outIndices[0] = getVertex(v0, &srcUV[0], nrml, color, 0/*planeMode*/, textureId);
-		outIndices[1] = getVertex(v1, &srcUV[1], nrml, color, 0/*planeMode*/, textureId);
-		outIndices[2] = getVertex(v2, &srcUV[2], nrml, color, 0/*planeMode*/, textureId);
-		outIndices[3] = getVertex(v3, &srcUV[3], nrml, color, 0/*planeMode*/, textureId);
+		outIndices[0] = getVertex(v0, &srcUV[0], &nrmDir, color, 0/*planeMode*/, textureId);
+		outIndices[1] = getVertex(v1, &srcUV[1], &nrmDir, color, 0/*planeMode*/, textureId);
+		outIndices[2] = getVertex(v2, &srcUV[2], &nrmDir, color, 0/*planeMode*/, textureId);
+		outIndices[3] = getVertex(v3, &srcUV[3], &nrmDir, color, 0/*planeMode*/, textureId);
 
 		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
 		s_indexData.push_back(outIndices[1] + (*s_curVertexStart));
@@ -414,12 +416,16 @@ namespace TFE_Jedi
 		vec3* n1 = &s_curModel->vertexNormals[indices[1]];
 		vec3* n2 = &s_curModel->vertexNormals[indices[2]];
 
+		vec3 nDir0 = { n0->x - v0->x, n0->y - v0->y, n0->z - v0->z };
+		vec3 nDir1 = { n1->x - v1->x, n1->y - v1->y, n1->z - v1->z };
+		vec3 nDir2 = { n2->x - v2->x, n2->y - v2->y, n2->z - v2->z };
+
 		vec2 zero[3] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
 
-		s_indexData.push_back(getVertex(v0, &srcUV[0], n0, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v1, &srcUV[1], n1, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v2, &srcUV[2], n2, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v0, &srcUV[0], &nDir0, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v1, &srcUV[1], &nDir1, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
+		s_indexData.push_back(getVertex(v2, &srcUV[2], &nDir2, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
 	}
 
 	void addSmoothQuad(s32* indices, u8 color, vec2* uv, s32 textureId)
@@ -434,14 +440,19 @@ namespace TFE_Jedi
 		vec3* n2 = &s_curModel->vertexNormals[indices[2]];
 		vec3* n3 = &s_curModel->vertexNormals[indices[3]];
 
+		vec3 nDir0 = { n0->x - v0->x, n0->y - v0->y, n0->z - v0->z };
+		vec3 nDir1 = { n1->x - v1->x, n1->y - v1->y, n1->z - v1->z };
+		vec3 nDir2 = { n2->x - v2->x, n2->y - v2->y, n2->z - v2->z };
+		vec3 nDir3 = { n3->x - v3->x, n3->y - v3->y, n3->z - v3->z };
+
 		vec2 zero[4] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
 
 		u32 outIndices[4];
-		outIndices[0] = getVertex(v0, &srcUV[0], n0, color, 0/*planeMode*/, textureId);
-		outIndices[1] = getVertex(v1, &srcUV[1], n1, color, 0/*planeMode*/, textureId);
-		outIndices[2] = getVertex(v2, &srcUV[2], n2, color, 0/*planeMode*/, textureId);
-		outIndices[3] = getVertex(v3, &srcUV[3], n3, color, 0/*planeMode*/, textureId);
+		outIndices[0] = getVertex(v0, &srcUV[0], &nDir0, color, 0/*planeMode*/, textureId);
+		outIndices[1] = getVertex(v1, &srcUV[1], &nDir1, color, 0/*planeMode*/, textureId);
+		outIndices[2] = getVertex(v2, &srcUV[2], &nDir2, color, 0/*planeMode*/, textureId);
+		outIndices[3] = getVertex(v3, &srcUV[3], &nDir3, color, 0/*planeMode*/, textureId);
 
 		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
 		s_indexData.push_back(outIndices[1] + (*s_curVertexStart));
@@ -461,7 +472,7 @@ namespace TFE_Jedi
 
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
-		vec3 planeNrm = nrml->y > 0 ? up : dn;
+		vec3 planeNrm = nrml->y - v0->y > 0 ? up : dn;
 
 		s_indexData.push_back(getVertex(v0, &uv, &planeNrm, 255, 1/*planeMode*/, textureId) + (*s_curVertexStart));
 		s_indexData.push_back(getVertex(v1, &uv, &planeNrm, 255, 1/*planeMode*/, textureId) + (*s_curVertexStart));
@@ -478,7 +489,7 @@ namespace TFE_Jedi
 
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
-		vec3 planeNrm = nrml->y > 0 ? up : dn;
+		vec3 planeNrm = nrml->y - v0->y > 0 ? up : dn;
 
 		u32 outIndices[4];
 		outIndices[0] = getVertex(v0, &uv, &planeNrm, 255, 1/*planeMode*/, textureId);
