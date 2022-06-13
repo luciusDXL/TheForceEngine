@@ -15,6 +15,7 @@
 
 #include "RClassic_GPU/rclassicGPU.h"
 #include "RClassic_GPU/rsectorGPU.h"
+#include "RClassic_GPU/screenDrawGPU.h"
 
 #include <TFE_System/profiler.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -202,6 +203,7 @@ namespace TFE_Jedi
 			{
 				s_sectorRenderer = new TFE_Sectors_Fixed();
 			}
+			screen_enableGPU(false);
 			RClassic_Fixed::changeResolution(width, height);
 		}
 		else if (s_rendererType == RENDERER_SOFTWARE)
@@ -210,6 +212,7 @@ namespace TFE_Jedi
 			{
 				s_sectorRenderer = new TFE_Sectors_Float();
 			}
+			screen_enableGPU(false);
 			RClassic_Float::changeResolution(width, height);
 		}
 		else
@@ -217,7 +220,9 @@ namespace TFE_Jedi
 			if (!s_sectorRenderer)
 			{
 				s_sectorRenderer = new TFE_Sectors_GPU();
+				screenGPU_init();
 			}
+			screen_enableGPU(true);
 			RClassic_GPU::changeResolution(width, height);
 		}
 		return JTRUE;
@@ -271,10 +276,11 @@ namespace TFE_Jedi
 			case TSR_CLASSIC_GPU:
 			{
 				s_sectorRenderer = new TFE_Sectors_GPU();
-
+				
 				u32 width, height;
 				vfb_getResolution(&width, &height);
 				screen_enableGPU(true);
+				screenGPU_init();
 				RClassic_GPU::setupInitCameraAndLights(width, height);
 			} break;
 		}
@@ -311,8 +317,8 @@ namespace TFE_Jedi
 		RClassic_Float::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
 		RClassic_GPU::computeCameraTransform(sector, f32(pitch), f32(yaw), fixed16ToFloat(camX), fixed16ToFloat(camY), fixed16ToFloat(camZ));
 	}
-
-	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp)
+		
+	void beginRender()
 	{
 		if (!s_sectorRenderer)
 		{
@@ -320,7 +326,22 @@ namespace TFE_Jedi
 			s_subRenderer = TSR_INVALID;
 			setSubRenderer(subRenderer);
 		}
+		if (s_subRenderer == TSR_CLASSIC_GPU)
+		{
+			vfb_bindRenderTarget();
+		}
+	}
 
+	void endRender()
+	{
+		if (s_subRenderer == TSR_CLASSIC_GPU)
+		{
+			vfb_unbindRenderTarget();
+		}
+	}
+
+	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp)
+	{
 		// Clear the top pixel row.
 		if (s_subRenderer != TSR_CLASSIC_GPU)
 		{
@@ -340,7 +361,6 @@ namespace TFE_Jedi
 		else if (s_subRenderer == TSR_CLASSIC_GPU)
 		{
 			RClassic_GPU::computeSkyOffsets();
-			vfb_bindRenderTarget();
 		}
 
 		s_display = display;
@@ -387,11 +407,6 @@ namespace TFE_Jedi
 			TFE_ZONE("Sector Draw");
 			s_sectorRenderer->prepare();
 			s_sectorRenderer->draw(sector);
-		}
-
-		if (s_subRenderer == TSR_CLASSIC_GPU)
-		{
-			vfb_unbindRenderTarget();
 		}
 	}
 

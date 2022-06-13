@@ -282,12 +282,15 @@ namespace TFE_DarkForces
 	{
 		u32 dispWidth, dispHeight;
 		vfb_getResolution(&dispWidth, &dispHeight);
+		screenDraw_beginLines(dispWidth, dispHeight);
 
 		s_mapXCenterInPixels = dispWidth/2 - 1;
 		s_mapZCenterInPixels = dispHeight/2 - 1;
 		s_mapFramebuffer = framebuffer;
 		automap_drawSectors();
 		s_pdaActive = JFALSE;
+
+		screenDraw_endLines();
 	}
 
 	s32 automap_getLayer()

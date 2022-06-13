@@ -12,9 +12,11 @@ namespace TFE_Jedi
 	void screenGPU_init();
 	void screenGPU_destroy();
 
+	void screenGPU_beginLines(u32 width, u32 height);
+	void screenGPU_endLines();
+
 	void screenGPU_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color);
 	void screenGPU_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color);
-	void screenGPU_drawCircle(ScreenRect* rect, s32 x, s32 z, s32 r, s32 stepAngle, u8 color);
 
 	void screenGPU_blitTexture(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, JBool forceTransparency=JFALSE, JBool forceOpaque=JFALSE);
 	void screenGPU_blitTextureLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8 lightLevel, JBool forceTransparency=JFALSE);

@@ -65,6 +65,10 @@ namespace TFE_Jedi
 	// Draw the scene to the passed in display using the colormap for shading.
 	void drawWorld(u8* display, RSector* sector, const u8* colormap, const u8* lightSourceRamp);
 
+	// Added for TFE so the GPU renderer knows the beginning and end of the drawing frame.
+	void beginRender();
+	void endRender();
+
 	JBool render_setResolution();
 	void renderer_setVisionEffect(s32 effect);
 	void renderer_setupCameraLight(JBool flatShading, JBool headlamp);

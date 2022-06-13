@@ -181,6 +181,8 @@ namespace TFE_Jedi
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
+		srcWall->seen = JTRUE;
+
 		u32 portalId  = u32(s_displayCurrentPortalId) << 7u;	// pre-shift.
 		u32 wallGpuId = u32(cached->wallStart + wallId) << 16u;
 		u32 flip = (((srcWall->flags1 & WF1_FLIP_HORIZ) != 0) ? 1 : 0) << 6u;

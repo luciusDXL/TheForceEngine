@@ -317,6 +317,8 @@ namespace TFE_DarkForces
 			TFE_Jedi::renderer_setLimits();
 
 			s_framebuffer = vfb_getCpuBuffer();
+			TFE_Jedi::beginRender();
+
 			updateScreensize();
 			drawWorld(s_framebuffer, s_playerEye->sector, s_levelColorMap, s_lightSourceRamp);
 			weapon_draw(s_framebuffer, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI));
@@ -326,6 +328,7 @@ namespace TFE_DarkForces
 			hud_drawMessage(s_framebuffer);
 			automap_resetScale();
 
+			TFE_Jedi::endRender();
 			vfb_swap();
 		}
 	}
@@ -343,6 +346,7 @@ namespace TFE_DarkForces
 
 			// Grab the current framebuffer in case in changed.
 			s_framebuffer = vfb_getCpuBuffer();
+			TFE_Jedi::beginRender();
 
 			// Handle delta time.
 			s_deltaTime = div16(intToFixed16(s_curTick - s_prevTick), FIXED(TICKS_PER_SECOND));
@@ -432,6 +436,7 @@ namespace TFE_DarkForces
 			}
 
 			// vgaSwapBuffers() in the DOS code.
+			TFE_Jedi::endRender();
 			vfb_swap();
 
 			// Pump tasks and look for any with a different ID.

@@ -170,7 +170,7 @@ namespace TFE_RenderShared
 		const f32 offsetX = -1.0f;
 		const f32 offsetY = -1.0f;
 
-		TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_TEST);
+		TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_TEST | STATE_DEPTH_WRITE);
 
 		// Enable blending.
 		TFE_RenderState::setStateEnable(true, STATE_BLEND);

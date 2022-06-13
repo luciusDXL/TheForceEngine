@@ -42,6 +42,7 @@ namespace TFE_Jedi
 	JBool vfb_setResolution(u32 width, u32 height);
 	void vfb_setPalette(const u32* palette);
 	void vfb_setMode(FramebufferMode mode = VFB_TEXTURE);
+	u32* vfb_getPalette();
 
 	////////////////////////////
 	// Get Scale Factors

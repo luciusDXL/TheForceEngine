@@ -735,6 +735,7 @@ namespace TFE_Jedi
 		{
 			return;
 		}
+		curSector->flags1 |= SEC_FLAGS1_RENDERED;
 
 		// Build the world-space wall segments.
 		buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1);

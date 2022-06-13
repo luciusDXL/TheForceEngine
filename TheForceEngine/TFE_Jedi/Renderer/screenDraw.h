@@ -30,6 +30,8 @@ namespace TFE_Jedi
 
 	// TODO: When GPU rendering is enabled, setup draw functions to pass through to GPU rendering.
 	void screen_enableGPU(bool enable);
+	void screenDraw_beginLines(u32 width, u32 height);
+	void screenDraw_endLines();
 
 	void screen_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color, u8* framebuffer);
 	void screen_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color, u8* framebuffer);

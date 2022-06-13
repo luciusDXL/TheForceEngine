@@ -2,6 +2,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/screenDrawGPU.h>
 
 #include "screenDraw.h"
 
@@ -23,20 +24,41 @@ namespace TFE_Jedi
 		s_gpuEnabled = enable;
 	}
 
+	void screenDraw_beginLines(u32 width, u32 height)
+	{
+		if (s_gpuEnabled)
+		{
+			screenGPU_beginLines(width, height);
+		}
+	}
+
+	void screenDraw_endLines()
+	{
+		if (s_gpuEnabled)
+		{
+			screenGPU_endLines();
+		}
+	}
+
 	void screen_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color, u8* framebuffer)
 	{
 		if (x < rect->left || x > rect->right || z < rect->top || z > rect->bot) { return; }
-		if (s_gpuEnabled) { return; }
+		if (s_gpuEnabled)
+		{
+			screenGPU_drawPoint(rect, x, z, color);
+			return;
+		}
 		framebuffer[z*vfb_getStride()+x] = color;
 	}
 
 	void screen_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color, u8* framebuffer)
 	{
-		if (s_gpuEnabled) { return; }
-		if (!screen_clipLineToRect(rect, &x0, &z0, &x1, &z1))
+		if (s_gpuEnabled)
 		{
+			screenGPU_drawLine(rect, x0, z0, x1, z1, color);
 			return;
 		}
+		if (!screen_clipLineToRect(rect, &x0, &z0, &x1, &z1)) { return; }
 
 		const u32 stride = vfb_getStride();
 		s32 x = x0, z = z0;
@@ -72,7 +94,6 @@ namespace TFE_Jedi
 
 	void screen_drawCircle(ScreenRect* rect, s32 x, s32 z, s32 r, s32 stepAngle, u8 color, u8* framebuffer)
 	{
-		if (s_gpuEnabled) { return; }
 		s32 rPixel = floor16(r + HALF_16);
 		s32 x1 = x + rPixel;
 		s32 x0 = x - rPixel;

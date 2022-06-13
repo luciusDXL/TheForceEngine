@@ -17,6 +17,8 @@ namespace TFE_Jedi
 	static s32 s_widescreenOffset = 0;
 	static bool s_widescreen = false;
 
+	static u32 s_palette[256];
+
 	static fixed16_16 s_xScale = ONE_16;
 	static fixed16_16 s_yScale = ONE_16;
 
@@ -118,9 +120,15 @@ namespace TFE_Jedi
 
 		return JTRUE;
 	}
+		
+	u32* vfb_getPalette()
+	{
+		return s_palette;
+	}
 
 	void vfb_setPalette(const u32* palette)
 	{
+		memcpy(s_palette, palette, sizeof(u32) * 256);
 		TFE_RenderBackend::setPalette(palette);
 	}
 
