@@ -82,7 +82,7 @@ namespace TFE_DarkForces
 	void weapon_playerWeaponTaskFunc(MessageType msg);
 	void weapon_handleOnAnimation(MessageType msg);
 	void weapon_prepareToFire();
-
+	
 	static WeaponFireFunc s_weaponFireFunc[WPN_COUNT] =
 	{
 		weaponFire_fist,			// WPN_FIST
@@ -630,6 +630,33 @@ namespace TFE_DarkForces
 			s_weaponDelaySeconary = delay;
 			s_canFireSecPtr = canFire;
 		}
+	}
+
+	s32 weapon_getTextures(TextureData** textures)
+	{
+		// Get the weapon count.
+		if (!textures)
+		{
+			s32 count = 2;
+			for (s32 i = 0; i < WPN_COUNT; i++)
+			{
+				count += s_playerWeaponList[i].frameCount;
+			}
+			return count;
+		}
+
+		// Get weapon textures.
+		s32 index = 0;
+		textures[index++] = s_rhand1;
+		textures[index++] = s_gasmaskTexture;
+		for (s32 i = 0; i < WPN_COUNT; i++)
+		{
+			for (s32 f = 0; f < s_playerWeaponList[i].frameCount; f++)
+			{
+				textures[index++] = s_playerWeaponList[i].frames[f];
+			}
+		}
+		return index;
 	}
 
 	void weapon_loadTextures()

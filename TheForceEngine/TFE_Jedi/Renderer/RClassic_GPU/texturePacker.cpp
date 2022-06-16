@@ -55,6 +55,10 @@ namespace TFE_Jedi
 	static TexturePacker* s_texturePacker;
 	static std::map<TextureData*, s32> s_textureDataMap;
 	static std::map<WaxCell*, s32> s_waxDataMap;
+	static std::vector<TextureInfo> s_texInfoPool;
+
+	static s32 s_usedTexels = 0;
+	static s32 s_totalTexels = 0;
 
 #if DEBUG_TEXTURE_ATLAS
 	void debug_writeOutAtlas();
@@ -189,7 +193,7 @@ namespace TFE_Jedi
 			return insertNode(cur->child[0], tex, width, height);
 		}
 	}
-
+		
 	void packNode(const Node* node, const TextureData* texData, Vec4i* tableEntry)
 	{
 		// Copy the texture into place.
@@ -202,6 +206,7 @@ namespace TFE_Jedi
 				output[x] = srcImage[x*texData->height + y];
 			}
 		}
+		s_usedTexels += texData->width * texData->height;
 
 		// Copy the mapping into the texture table.
 		tableEntry->x = (s32)node->rect.x;
@@ -235,6 +240,7 @@ namespace TFE_Jedi
 				output[y*s_texturePacker->width + x] = column[y];
 			}
 		}
+		s_usedTexels += cell->sizeX * cell->sizeY;
 
 		// Copy the mapping into the texture table.
 		tableEntry->x = (s32)node->rect.x;
@@ -267,9 +273,10 @@ namespace TFE_Jedi
 	{
 		if (!tex || isTextureInMap(tex)) { return; }
 		insertTextureIntoMap(tex, s_texturePacker->texturesPacked);
+		s_totalTexels += tex->width * tex->height;
 
 		Node* node = insertNode(s_root, tex, tex->width, tex->height);
-		assert(node && node->tex == tex);
+		assert(!node || node->tex == tex);
 		if (node)
 		{
 			assert(s_texturePacker->texturesPacked < MAX_TEXTURE_COUNT);
@@ -277,15 +284,20 @@ namespace TFE_Jedi
 			packNode(node, tex, &s_texturePacker->textureTable[s_texturePacker->texturesPacked]);
 			s_texturePacker->texturesPacked++;
 		}
+		else
+		{
+			tex->textureId = 0;
+		}
 	}
 
 	void insertWaxFrame(void* basePtr, WaxFrame* frame)
 	{
 		if (!basePtr || !frame) { return; }
-
+				
 		WaxCell* cell = WAX_CellPtr(basePtr, frame);
 		if (!cell || isWaxCellInMap(cell)) { return; }
 		insertWaxCellIntoMap(cell, s_texturePacker->texturesPacked);
+		s_totalTexels += cell->sizeX * cell->sizeY;
 
 		Node* node = insertNode(s_root, cell, cell->sizeX, cell->sizeY);
 		assert(node && node->tex == cell);
@@ -307,134 +319,121 @@ namespace TFE_Jedi
 		}
 	}
 		
-	// Returns the number of textures and fills in a shader buffer with the offsets and sizes.
-	// Calling this will clear the existing atlas.
-	s32 texturepacker_packLevelTextures(TexturePacker* texturePacker)
+	s32 textureSort(const void* a, const void* b)
 	{
-		s_nodes.clear();
-		s_root = nullptr;
-		// Set the current packer.
-		// Note: this will note work correctly as-is if multithreaded.
-		s_texturePacker = texturePacker;
-		s_textureDataMap.clear();
-
-		// Insert the parent that covers all of the available space.
-		insertNode(s_root, nullptr, 0, 0);
-
-		// Insert normal textures and signs.
-		s_texturePacker->texturesPacked = 0;
-		s32 textureCount = 0;
-		TextureData** textures = level_getTextures(&textureCount);
-		for (s32 i = 0; i < textureCount; i++)
-		{
-			// Animated texture
-			if (textures[i]->uvWidth == BM_ANIMATED_TEXTURE)
-			{
-				AnimatedTexture* animTex = (AnimatedTexture*)textures[i]->image;
-				insertAnimatedTextureFrames(animTex);
-			}
-			else
-			{
-				insertTexture(textures[i]);
-			}
-		}
-	
-		// Insert animated textures.
-		Allocator* animTextures = bitmap_getAnimatedTextures();
-		AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(animTextures);
-		while (animTex)
-		{
-			insertAnimatedTextureFrames(animTex);
-			animTex = (AnimatedTexture*)allocator_getNext(animTextures);
-		}
-
-	#if DEBUG_TEXTURE_ATLAS
-		debug_writeOutAtlas();
-	#endif
-
-		s_texturePacker->texture->update(s_texturePacker->backingMemory, s_texturePacker->width * s_texturePacker->height);
-		s_texturePacker->textureTableGPU.update(s_texturePacker->textureTable, sizeof(Vec4i) * s_texturePacker->texturesPacked);
-
-		// Free nodes.
-		const size_t count = s_nodes.size();
-		Node** nodes = s_nodes.data();
-		for (size_t i = 0; i < count; i++)
-		{
-			delete nodes[i];
-		}
-		s_nodes.clear();
-				
-		return s_texturePacker->texturesPacked;
+		const TextureInfo* texA = (TextureInfo*)a;
+		const TextureInfo* texB = (TextureInfo*)b;
+		if (texA->sortKey > texB->sortKey) { return -1; }
+		if (texA->sortKey < texB->sortKey) { return  1; }
+		return 0;
 	}
 
-	// Returns the number of textures and fills in a shader buffer with the offsets and sizes.
-	// Calling this will clear the existing atlas.
-	s32 texturepacker_packObjectTextures(TexturePacker* texturePacker)
+	s32 texturepacker_pack(TexturePacker* texturePacker, TextureListCallback getList)
 	{
+		if (!texturePacker || !getList) { return 0; }
+
+		// Pre-allocate the texture pool based on the maximum texture count.
+		if (s_texInfoPool.capacity() == 0)
+		{
+			s_texInfoPool.reserve(MAX_TEXTURE_COUNT);
+		}
+
 		s_nodes.clear();
 		s_root = nullptr;
 		// Set the current packer.
 		// Note: this will note work correctly as-is if multithreaded.
 		s_texturePacker = texturePacker;
+		s_texturePacker->texturesPacked = 0;
+		s_textureDataMap.clear();
 		s_waxDataMap.clear();
 
 		// Insert the parent that covers all of the available space.
 		insertNode(s_root, nullptr, 0, 0);
 
-		// Insert sprite frames.
-		s_texturePacker->texturesPacked = 0;
-		std::vector<JediWax*> waxList;
-		TFE_Sprite_Jedi::getWaxList(waxList);
-		const size_t waxCount = waxList.size();
-		JediWax** wax = waxList.data();
-		for (size_t i = 0; i < waxCount; i++)
+		// Get textures.
+		s_texInfoPool.clear();
+		if (getList(s_texInfoPool))
 		{
-			for (s32 animId = 0; animId < wax[i]->animCount; animId++)
+			const s32 count = (s32)s_texInfoPool.size();
+			TextureInfo* list = s_texInfoPool.data();
+			// 1. Calculate the perimeter.
+			for (s32 i = 0; i < count; i++)
 			{
-				WaxAnim* anim = WAX_AnimPtr(wax[i], animId);
-				if (!anim) { continue; }
-				for (s32 v = 0; v < 32; v++)
+				switch (list[i].type)
 				{
-					WaxView* view = WAX_ViewPtr(wax[i], anim, v);
-					if (!view) { continue; }
-					for (s32 f = 0; f < anim->frameCount; f++)
+					case TEXINFO_DF_TEXTURE_DATA:
 					{
-						WaxFrame* frame = WAX_FramePtr(wax[i], view, f);
-						insertWaxFrame(wax[i], frame);
-					}
+						if (list[i].texData->uvWidth == BM_ANIMATED_TEXTURE)
+						{
+							AnimatedTexture* animTex = (AnimatedTexture*)list[i].texData->image;
+							list[i].sortKey = animTex->frameList[0]->width + animTex->frameList[0]->height;
+						}
+						else
+						{
+							list[i].sortKey = list[i].texData->width * list[i].texData->height;
+						}
+					} break;
+					case TEXINFO_DF_ANIM_TEX:
+					{
+						list[i].sortKey = list[i].animTex->frameList[0]->width * list[i].animTex->frameList[0]->height;
+					} break;
+					case TEXINFO_DF_WAX_CELL:
+					{
+						WaxCell* cell = WAX_CellPtr(list[i].basePtr, list[i].frame);
+						list[i].sortKey = cell->sizeX * cell->sizeY;
+					} break;
 				}
 			}
-		}
-		
-		// Insert frames.
-		std::vector<JediFrame*> frameList;
-		TFE_Sprite_Jedi::getFrameList(frameList);
-		const size_t frameCount = frameList.size();
-		JediFrame** frame = frameList.data();
-		for (size_t i = 0; i < frameCount; i++)
-		{
-			insertWaxFrame(frame[i], frame[i]);
-		}
 
-		// Insert 3DO textures.
-		std::vector<JediModel*> modelList;
-		TFE_Model_Jedi::getModelList(modelList);
-		const size_t modelCount = modelList.size();
-		JediModel** model = modelList.data();
-		for (size_t i = 0; i < modelCount; i++)
-		{
-			for (s32 t = 0; t < model[i]->textureCount; t++)
+			// 2. Sort textures by perimeter from largest to smallest - simplified to w+h
+			std::qsort(list, size_t(count), sizeof(TextureInfo), textureSort);
+
+			// 3. Insert each texture into the tree.
+			s_usedTexels = 0;
+			s_totalTexels = 0;
+			for (s32 i = 0; i < count; i++)
 			{
-				insertTexture(model[i]->textures[t]);
+				switch (list[i].type)
+				{
+					case TEXINFO_DF_TEXTURE_DATA:
+					{
+						if (list[i].texData->uvWidth == BM_ANIMATED_TEXTURE)
+						{
+							AnimatedTexture* animTex = (AnimatedTexture*)list[i].texData->image;
+							insertAnimatedTextureFrames(animTex);
+						}
+						else
+						{
+							insertTexture(list[i].texData);
+						}
+					} break;
+					case TEXINFO_DF_ANIM_TEX:
+					{
+						insertAnimatedTextureFrames(list[i].animTex);
+					} break;
+					case TEXINFO_DF_WAX_CELL:
+					{
+						insertWaxFrame(list[i].basePtr, list[i].frame);
+					} break;
+				}
 			}
+
+			#if DEBUG_TEXTURE_ATLAS
+				debug_writeOutAtlas();
+			#endif
+
+			f64 utilization = 100.0 * f64(s_usedTexels) / f64(4096 * 4096);
+			if (s_totalTexels > s_usedTexels)
+			{
+				// Cannot fit everything into the atlas.
+				TFE_System::logWrite(LOG_WARNING, "TexturePacker", "Cannot pack all textures for '%s' into an atlas. Utilization: %f%%; Remaining texels: %d",
+					s_texturePacker->name, utilization, s_totalTexels - s_usedTexels);
+			}
+
+			// Pack the GPU data.
+			s_texturePacker->texture->update(s_texturePacker->backingMemory, s_texturePacker->width * s_texturePacker->height);
+			s_texturePacker->textureTableGPU.update(s_texturePacker->textureTable, sizeof(Vec4i) * s_texturePacker->texturesPacked);
 		}
-
-#if DEBUG_TEXTURE_ATLAS
-		debug_writeOutAtlas();
-#endif
-
-		s_texturePacker->texture->update(s_texturePacker->backingMemory, s_texturePacker->width * s_texturePacker->height);
-		s_texturePacker->textureTableGPU.update(s_texturePacker->textureTable, sizeof(Vec4i) * s_texturePacker->texturesPacked);
 
 		// Free nodes.
 		const size_t count = s_nodes.size();

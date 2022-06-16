@@ -350,7 +350,11 @@ namespace TFE_Jedi
 
 	void blitTextureToScreen(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8* output, JBool forceTransparency, JBool forceOpaque)
 	{
-		if (s_gpuEnabled) { return; }
+		if (s_gpuEnabled)
+		{
+			screenGPU_blitTexture(texture, rect, x0, y0);
+			return;
+		}
 		s32 x1 = x0 + texture->width  - 1;
 		s32 y1 = y0 + texture->height - 1;
 
@@ -401,7 +405,11 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, const u8* atten, u8* output, JBool forceTransparency)
 	{
-		if (s_gpuEnabled) { return; }
+		if (s_gpuEnabled)
+		{
+			screenGPU_blitTextureLit(texture, rect, x0, y0, 31);
+			return;
+		}
 		s32 x1 = x0 + texture->width  - 1;
 		s32 y1 = y0 + texture->height - 1;
 

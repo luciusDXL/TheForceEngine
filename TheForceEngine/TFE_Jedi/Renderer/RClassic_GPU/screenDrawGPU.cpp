@@ -45,7 +45,7 @@ namespace TFE_Jedi
 	{
 		u32 color32 = vfb_getPalette()[color];
 		u32 colors[] = { color32, color32 };
-		Vec2f vtx[] = { f32(x), f32(z), f32(x), f32(z) };
+		Vec2f vtx[] = { f32(x), f32(z), f32(x)+0.5f, f32(z)+0.5f };
 
 		TFE_RenderShared::lineDraw2d_addLine(1.5f, vtx, colors);
 	}

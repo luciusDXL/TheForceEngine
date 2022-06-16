@@ -181,6 +181,7 @@ namespace TFE_Jedi
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
+		// Mark only visible walls as being rendered.
 		srcWall->seen = JTRUE;
 
 		u32 portalId  = u32(s_displayCurrentPortalId) << 7u;	// pre-shift.

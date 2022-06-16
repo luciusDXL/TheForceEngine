@@ -8,6 +8,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Level/levelTextures.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 
@@ -310,10 +311,10 @@ namespace TFE_Jedi
 
 			// Load textures into GPU memory.
 			if (!s_levelTextures) { s_levelTextures = texturepacker_init("LevelTextures", 4096, 4096); }
-			if (s_levelTextures)  { texturepacker_packLevelTextures(s_levelTextures); }
+			if (s_levelTextures) { texturepacker_pack(s_levelTextures, level_getLevelTextures); }
 
 			if (!s_objectTextures) { s_objectTextures = texturepacker_init("Objects", 4096, 4096); }
-			if (s_objectTextures)  { texturepacker_packObjectTextures(s_objectTextures); }
+			if (s_objectTextures) { texturepacker_pack(s_objectTextures, level_getObjectTextures); }
 
 			model_init();
 			model_loadLevelModels();
@@ -735,6 +736,7 @@ namespace TFE_Jedi
 		{
 			return;
 		}
+		// Mark sector as being rendered for the automap.
 		curSector->flags1 |= SEC_FLAGS1_RENDERED;
 
 		// Build the world-space wall segments.

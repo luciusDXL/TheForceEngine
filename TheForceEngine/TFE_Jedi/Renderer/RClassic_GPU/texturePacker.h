@@ -9,10 +9,35 @@
 #include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
 
-// TODO: Figure out incorrect texture in Ramsees Hed.
+struct TextureData;
+struct AnimatedTexture;
+struct WaxFrame;
 
 namespace TFE_Jedi
 {
+	enum TextureInfoType
+	{
+		TEXINFO_DF_TEXTURE_DATA = 0,
+		TEXINFO_DF_ANIM_TEX,
+		TEXINFO_DF_WAX_CELL,
+		TEXINFO_COUNT
+	};
+
+	struct TextureInfo
+	{
+		TextureInfoType type;
+		union
+		{
+			TextureData* texData;
+			AnimatedTexture* animTex;
+			WaxFrame* frame;
+		};
+		void* basePtr = nullptr;	// used for WAX/Frame.
+		s32 sortKey = 0;			// Calculated by Texture Packer.
+	};
+	typedef std::vector<TextureInfo> TextureInfoList;
+	typedef bool(*TextureListCallback)(TextureInfoList& texList);
+
 	struct TexturePacker
 	{
 		// GPU resources
@@ -37,8 +62,7 @@ namespace TFE_Jedi
 	// Free memory and GPU buffers. Note: GPU textures need to be persistent, so the level allocator will not be used.
 	void texturepacker_destroy(TexturePacker* texturePacker);
 
-	// Returns the number of textures and fills in a shader buffer with the offsets and sizes.
-	// Calling this will clear the existing atlas.
-	s32 texturepacker_packLevelTextures(TexturePacker* texturePacker);
-	s32 texturepacker_packObjectTextures(TexturePacker* texturePacker);
+	// Pack textures of various types into a single texture atlas.
+	// The client must provide a 'getList' function to get a list of 'TextureInfo' (see above).
+	s32 texturepacker_pack(TexturePacker* texturePacker, TextureListCallback getList);
 }  // TFE_Jedi

@@ -131,7 +131,9 @@ using namespace TFE_Jedi_Object3d;
 namespace TFE_Model_Jedi
 {
 	typedef std::map<std::string, JediModel*> ModelMap;
+	typedef std::map<std::string, TextureData*> TextureMap;
 	static ModelMap s_models;
+	static TextureMap s_textures;
 	static std::vector<char> s_buffer;
 
 	static vec2 s_tmpVtx[MAX_VERTEX_COUNT_3DO];
@@ -231,6 +233,7 @@ namespace TFE_Model_Jedi
 			delete iModel->second;
 		}
 		s_models.clear();
+		s_textures.clear();
 	}
 
 	void allocatePolygon(JmPolygon* polygon, s32 vertexCount)
@@ -244,6 +247,17 @@ namespace TFE_Model_Jedi
 		polygon->vertexCount = vertexCount;
 		polygon->uv = nullptr;
 		polygon->indices = indices;
+	}
+
+	TextureData* getCachedTexture(const char* name)
+	{
+		TextureMap::iterator iTex = s_textures.find(name);
+		return (iTex != s_textures.end()) ? iTex->second : nullptr;
+	}
+
+	void addTextureToCache(const char* name, TextureData* tex)
+	{
+		s_textures[name] = tex;
 	}
 	
 	bool parseModel(JediModel* model, const char* name)
@@ -394,8 +408,14 @@ namespace TFE_Model_Jedi
 				if (sscanf(buffer, " TEXTURE: %s ", textureName) != 1)
 				{
 					TFE_System::logWrite(LOG_WARNING, "Object3D_Load", "'%s' unable to parse TEXTURE: entry.", name);
-					TFE_Paths::getFilePath("default.bm", &filePath);
-					*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
+
+					*texture = getCachedTexture("default.bm");
+					if (!(*texture))
+					{
+						TFE_Paths::getFilePath("default.bm", &filePath);
+						*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
+						addTextureToCache("default.bm", *texture);
+					}
 					continue;
 				}
 
@@ -404,12 +424,22 @@ namespace TFE_Model_Jedi
 				{
 					if (TFE_Paths::getFilePath(textureName, &filePath))
 					{
-						*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
+						*texture = getCachedTexture(textureName);
+						if (!(*texture))
+						{
+							*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
+							addTextureToCache(textureName, *texture);
+						}
 					}
 					if (!(*texture))
 					{
-						TFE_Paths::getFilePath("default.bm", &filePath);
-						*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
+						*texture = getCachedTexture("default.bm");
+						if (!(*texture))
+						{
+							TFE_Paths::getFilePath("default.bm", &filePath);
+							*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
+							addTextureToCache("default.bm", *texture);
+						}
 					}
 				}
 			}

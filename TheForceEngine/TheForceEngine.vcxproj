@@ -463,6 +463,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\InfSystem\infTypesInternal.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\message.h" />
     <ClInclude Include="TFE_Jedi\Level\level.h" />
+    <ClInclude Include="TFE_Jedi\Level\levelTextures.h" />
     <ClInclude Include="TFE_Jedi\Level\rfont.h" />
     <ClInclude Include="TFE_Jedi\Level\robject.h" />
     <ClInclude Include="TFE_Jedi\Level\roffscreenBuffer.h" />
@@ -713,6 +714,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\message.cpp" />
     <ClCompile Include="TFE_Jedi\Level\level.cpp" />
+    <ClCompile Include="TFE_Jedi\Level\levelTextures.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rfont.cpp" />
     <ClCompile Include="TFE_Jedi\Level\robject.cpp" />
     <ClCompile Include="TFE_Jedi\Level\roffscreenBuffer.cpp" />

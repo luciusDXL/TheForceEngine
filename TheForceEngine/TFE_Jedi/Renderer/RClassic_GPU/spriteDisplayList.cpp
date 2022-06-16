@@ -85,7 +85,7 @@ namespace TFE_Jedi
 		if (!basePtr || !frame) { return; }
 
 		const WaxCell* cell = WAX_CellPtr(basePtr, frame);
-		assert(cell->textureId >= 0 && cell->textureId < 1024);
+		assert(cell->textureId >= 0 && cell->textureId < 2048);
 
 		s32 flip = frame->flip ? 1 : 0;
 		s32 ambient = fullbright ? MAX_LIGHT_LEVEL : clamp(floor16(curSector->ambient), 0, MAX_LIGHT_LEVEL);
