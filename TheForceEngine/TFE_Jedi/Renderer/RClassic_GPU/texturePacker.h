@@ -38,20 +38,30 @@ namespace TFE_Jedi
 	typedef std::vector<TextureInfo> TextureInfoList;
 	typedef bool(*TextureListCallback)(TextureInfoList& texList);
 
+	struct TextureNode;
+
+	struct TexturePage
+	{
+		s32 textureCount;
+		u8* backingMemory = nullptr;
+		TextureNode* root = nullptr;
+	};
+
 	struct TexturePacker
 	{
 		// GPU resources
-		ShaderBuffer textureTableGPU;
-		TextureGpu* texture = nullptr;
+		ShaderBuffer textureTableGPU;	// full texture table, includes all pages.
+		TextureGpu* texture = nullptr;	// texture array, where each slice is a page.
 
 		// CPU memory, this is kept around so it can be used on multiple levels.
-		Vec4i* textureTable = nullptr;
-		u8* backingMemory = nullptr;
+		Vec4i* textureTable = nullptr;	// CPU memory for texture table.
+		TexturePage** pages = nullptr;	// CPU copy of texture pages.
 
 		// General Data
-		s32 width = 0;
+		s32 width = 0;					// Page dimensions.
 		s32 height = 0;
-		s32 texturesPacked = 0;
+		s32 texturesPacked = 0;			// Total textures packed over all pages.
+		s32 pageCount = 0;				// Number of texture pages.
 
 		// For debugging.
 		char name[64];
@@ -62,7 +72,13 @@ namespace TFE_Jedi
 	// Free memory and GPU buffers. Note: GPU textures need to be persistent, so the level allocator will not be used.
 	void texturepacker_destroy(TexturePacker* texturePacker);
 
+	// Begin the packing process, this clears out the texture packer.
+	bool texturepacker_begin(TexturePacker* texturePacker);
+	// Commit the final packing to GPU memory.
+	void texturepacker_commit();
+
 	// Pack textures of various types into a single texture atlas.
 	// The client must provide a 'getList' function to get a list of 'TextureInfo' (see above).
-	s32 texturepacker_pack(TexturePacker* texturePacker, TextureListCallback getList);
+	// Note this may be called multiple times on the same texture packer, new pages are created as needed.
+	s32 texturepacker_pack(TextureListCallback getList);
 }  // TFE_Jedi

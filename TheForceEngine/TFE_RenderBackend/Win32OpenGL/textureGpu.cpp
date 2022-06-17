@@ -67,11 +67,11 @@ bool TextureGpu::createArray(u32 width, u32 height, u32 layers, u32 channels)
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_gpuHandle);
 	if (channels == 1)
 	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 1, GL_R8, width, height, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, width, height, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 	}
 	else if (channels == 4)
 	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, width, height, layers, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, width, height, layers, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 	}
 	assert(glGetError() == GL_NO_ERROR);
 
@@ -79,8 +79,10 @@ bool TextureGpu::createArray(u32 width, u32 height, u32 layers, u32 channels)
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	assert(glGetError() == GL_NO_ERROR);
 	return true;
 }
 
@@ -111,9 +113,11 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFi
 	return true;
 }
 
-bool TextureGpu::update(const void* buffer, size_t size)
+bool TextureGpu::update(const void* buffer, size_t size, s32 layer)
 {
-	if (size < m_width * m_height * m_layers) { return false; }
+	s32 layerCount = layer < 0 ? m_layers : 1;
+	s32 layerIndex = layer < 0 ? 0 : layer;
+	if (size < m_width * m_height * layerCount) { return false; }
 
 	if (m_layers == 1)
 	{
@@ -124,7 +128,8 @@ bool TextureGpu::update(const void* buffer, size_t size)
 	else
 	{
 		glBindTexture(GL_TEXTURE_2D_ARRAY, m_gpuHandle);
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, m_width, m_height, m_layers, m_channels == 4 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, buffer);
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0/*level*/, 0/*xOffset*/, 0/*yOffset*/, layerIndex, m_width, m_height, layerCount,
+			m_channels == 4 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, buffer);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	}
 

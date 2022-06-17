@@ -5,7 +5,7 @@ uniform vec2 SkyParallax;
 
 uniform sampler2D Colormap;
 uniform sampler2D Palette;
-uniform sampler2D Textures;
+uniform sampler2DArray Textures;
 
 uniform isamplerBuffer TextureTable;
 
@@ -50,7 +50,9 @@ ivec2 wrapCoord(ivec2 uv, ivec2 edge)
 float sampleTexture(int id, vec2 uv, bool sky, bool flip)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec2 iuv = ivec2(floor(uv));
+	ivec3 iuv;
+	iuv.xy = ivec2(floor(uv));
+	iuv.z = 0;
 
 	if (sky)
 	{
@@ -64,13 +66,14 @@ float sampleTexture(int id, vec2 uv, bool sky, bool flip)
 	}
 	else
 	{
-		iuv = wrapCoord(iuv, sampleData.zw);
+		iuv.xy = wrapCoord(iuv.xy, sampleData.zw);
 		if (flip)
 		{
 			iuv.x = sampleData.z - iuv.x - 1;
 		}
 	}
-	iuv = iuv + sampleData.xy;
+	iuv.xy += (sampleData.xy & ivec2(4095));
+	iuv.z = sampleData.x >> 12;
 
 	return texelFetch(Textures, iuv, 0).r * 255.0;
 }
@@ -78,12 +81,17 @@ float sampleTexture(int id, vec2 uv, bool sky, bool flip)
 float sampleTextureClamp(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec2 iuv = ivec2(floor(uv));
-	if ( any(lessThan(iuv, ivec2(0))) || any(greaterThan(iuv, sampleData.zw-1)) )
+	ivec3 iuv;
+	iuv.xy = ivec2(floor(uv));
+	iuv.z = 0;
+
+	if ( any(lessThan(iuv.xy, ivec2(0))) || any(greaterThan(iuv.xy, sampleData.zw-1)) )
 	{
 		return 0.0;
 	}
-	iuv += sampleData.xy;
+	iuv.xy += (sampleData.xy & ivec2(4095));
+	iuv.z = sampleData.x >> 12;
+
 	return texelFetch(Textures, iuv, 0).r * 255.0;
 }
 

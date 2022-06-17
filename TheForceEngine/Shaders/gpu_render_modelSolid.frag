@@ -1,6 +1,6 @@
 uniform sampler2D Palette;
 uniform sampler2D Colormap;
-uniform sampler2D Textures;
+uniform sampler2DArray Textures;
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
@@ -44,10 +44,13 @@ ivec2 wrapCoord(ivec2 uv, ivec2 edge)
 float sampleTexture(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec2 iuv = ivec2(uv);
+	ivec3 iuv;
+	iuv.xy = ivec2(uv);
+	iuv.z = 0;
 
-	iuv = wrapCoord(iuv, sampleData.zw);
-	iuv = iuv + sampleData.xy;
+	iuv.xy = wrapCoord(iuv.xy, sampleData.zw);
+	iuv.xy += (sampleData.xy & ivec2(4095));
+	iuv.z = sampleData.x >> 12;
 
 	return texelFetch(Textures, iuv, 0).r * 255.0;
 }

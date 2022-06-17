@@ -90,9 +90,8 @@ namespace TFE_Jedi
 	static Portal s_portalList[2048];
 	static s32 s_portalListCount = 0;
 
-	static TexturePacker* s_levelTextures = nullptr;
-	static TexturePacker* s_objectTextures = nullptr;
-		
+	static TexturePacker* s_textures = nullptr;
+			
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
@@ -310,11 +309,14 @@ namespace TFE_Jedi
 			}
 
 			// Load textures into GPU memory.
-			if (!s_levelTextures) { s_levelTextures = texturepacker_init("LevelTextures", 4096, 4096); }
-			if (s_levelTextures) { texturepacker_pack(s_levelTextures, level_getLevelTextures); }
-
-			if (!s_objectTextures) { s_objectTextures = texturepacker_init("Objects", 4096, 4096); }
-			if (s_objectTextures) { texturepacker_pack(s_objectTextures, level_getObjectTextures); }
+			if (!s_textures) { s_textures = texturepacker_init("LevelTextures", 4096, 4096); }
+			if (s_textures)
+			{
+				texturepacker_begin(s_textures);
+				texturepacker_pack(level_getLevelTextures);
+				texturepacker_pack(level_getObjectTextures);
+				texturepacker_commit();
+			}
 
 			model_init();
 			model_loadLevelModels();
@@ -820,10 +822,10 @@ namespace TFE_Jedi
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
 		palette->bind(6);
 
-		const TextureGpu* textures = s_levelTextures->texture;
+		const TextureGpu* textures = s_textures->texture;
 		textures->bind(7);
 
-		ShaderBuffer* textureTable = &s_levelTextures->textureTableGPU;
+		ShaderBuffer* textureTable = &s_textures->textureTableGPU;
 		textureTable->bind(8);
 
 		// Camera and lighting.
@@ -861,10 +863,10 @@ namespace TFE_Jedi
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
 		palette->bind(3);
 
-		const TextureGpu* textures = s_objectTextures->texture;
+		const TextureGpu* textures = s_textures->texture;
 		textures->bind(4);
 
-		ShaderBuffer* textureTable = &s_objectTextures->textureTableGPU;
+		ShaderBuffer* textureTable = &s_textures->textureTableGPU;
 		textureTable->bind(5);
 
 		// Camera and lighting.
@@ -889,10 +891,10 @@ namespace TFE_Jedi
 
 		s_colormapTex->bind(1);
 
-		const TextureGpu* textures = s_objectTextures->texture;
+		const TextureGpu* textures = s_textures->texture;
 		textures->bind(2);
 
-		ShaderBuffer* textureTable = &s_objectTextures->textureTableGPU;
+		ShaderBuffer* textureTable = &s_textures->textureTableGPU;
 		textureTable->bind(3);
 
 		model_drawList();

@@ -649,10 +649,10 @@ namespace TFE_RenderBackend
 		return texture;
 	}
 
-	TextureGpu* createTextureArray(u32 width, u32 height, u32 channels, u32 layers)
+	TextureGpu* createTextureArray(u32 width, u32 height, u32 layers, u32 channels)
 	{
 		TextureGpu* texture = new TextureGpu();
-		texture->createArray(width, height, channels, layers);
+		texture->createArray(width, height, layers, channels);
 		return texture;
 	}
 

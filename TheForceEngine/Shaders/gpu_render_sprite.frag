@@ -5,7 +5,7 @@ uniform vec2 SkyParallax;
 
 uniform sampler2D Colormap;	// The color map has full RGB pre-backed in.
 uniform sampler2D Palette;
-uniform sampler2D Textures;
+uniform sampler2DArray Textures;
 
 uniform isamplerBuffer TextureTable;
 
@@ -30,12 +30,18 @@ vec3 getAttenuatedColor(int baseColor, int light)
 float sampleTextureClamp(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec2 iuv = ivec2(floor(uv * vec2(sampleData.zw)));
-	if ( any(lessThan(iuv, ivec2(0))) || any(greaterThan(iuv, sampleData.zw-1)) )
+	ivec3 iuv;
+	iuv.xy = ivec2(floor(uv * vec2(sampleData.zw)));
+	iuv.z = 0;
+
+	if ( any(lessThan(iuv.xy, ivec2(0))) || any(greaterThan(iuv.xy, sampleData.zw-1)) )
 	{
 		return 0.0;
 	}
-	iuv += sampleData.xy;
+
+	iuv.xy += (sampleData.xy & ivec2(4095));
+	iuv.z = sampleData.x >> 12;
+	
 	return texelFetch(Textures, iuv, 0).r * 255.0;
 }
 
