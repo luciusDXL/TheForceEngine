@@ -34,12 +34,14 @@ namespace RClassic_Fixed
 		}
 	}
 
+	u8 getLightLevelFromAtten(const u8* atten)
+	{
+		return u32(atten - s_colorMap) >> 8u;
+	}
+
 	const u8* computeLighting(fixed16_16 depth, s32 lightOffset)
 	{
-		if (s_sectorAmbient >= MAX_LIGHT_LEVEL)
-		{
-			return nullptr;
-		}
+		if (s_sectorAmbient >= MAX_LIGHT_LEVEL) { return nullptr; }
 		depth = max(depth, 0);
 		s32 light = 0;
 

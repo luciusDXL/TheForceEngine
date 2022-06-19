@@ -68,7 +68,7 @@ namespace TFE_Jedi
 		
 	GPUSourceData s_gpuSourceData = { 0 };
 
-	TextureGpu* s_colormapTex;
+	TextureGpu* s_colormapTex = nullptr;
 	Shader m_wallShader[SECTOR_PASS_COUNT];
 	Shader m_spriteShader;
 	ShaderBuffer m_sectors;
@@ -91,7 +91,7 @@ namespace TFE_Jedi
 	static s32 s_portalListCount = 0;
 
 	static TexturePacker* s_textures = nullptr;
-			
+				
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
@@ -769,6 +769,15 @@ namespace TFE_Jedi
 			frustum_pop();
 			level--;
 		}
+
+		if (s_flatLighting)
+		{
+			s_sectorAmbient = s_flatAmbient;
+		}
+		else
+		{
+			s_sectorAmbient = round16(curSector->ambient);
+		}
 	}
 						
 	bool traverseScene(RSector* sector)
@@ -937,6 +946,11 @@ namespace TFE_Jedi
 		{
 			renderDebug_draw();
 		}
+	}
+
+	TextureGpu* TFE_Sectors_GPU::getColormap()
+	{
+		return s_colormapTex;
 	}
 
 	void TFE_Sectors_GPU::subrendererChanged()

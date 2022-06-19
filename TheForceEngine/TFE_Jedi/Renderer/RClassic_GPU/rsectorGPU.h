@@ -7,6 +7,9 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include "../rsectorRender.h"
+#include "../textureInfo.h"
+
+class TextureGpu;
 
 namespace TFE_Jedi
 {
@@ -20,6 +23,8 @@ namespace TFE_Jedi
 		void prepare() override;
 		void draw(RSector* sector) override;
 		void subrendererChanged() override;
+
+		static TextureGpu* getColormap();
 
 	private:
 		bool m_gpuInit;

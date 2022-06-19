@@ -3,21 +3,95 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
+#include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderShared/lineDraw2d.h>
 
 #include "screenDrawGPU.h"
-
+#include "texturePacker.h"
+#include "rsectorGPU.h"
 
 namespace TFE_Jedi
 {
 	static bool s_initialized = false;
+
+	struct ScreenQuadVertex
+	{
+		Vec4f posUv;			// position (xy) and texture coordinates (zw)
+		u32 textureId_Color;	// packed: rg = textureId or 0xffff; b = color index; a = light level.
+	};
+
+	static const AttributeMapping c_quadAttrMapping[] =
+	{
+		{ATTR_POS,   ATYPE_FLOAT, 4, 0, false},
+		{ATTR_COLOR, ATYPE_UINT8, 4, 0, true}
+	};
+	static const u32 c_quadAttrCount = TFE_ARRAYSIZE(c_quadAttrMapping);
+
+	static VertexBuffer s_scrQuadVb;	// Dynamic vertex buffer.
+	static IndexBuffer  s_scrQuadIb;	// Static index buffer.
+	static Shader       s_scrQuadShader;
+	static TexturePacker* s_hudTextures = nullptr;
+	static ScreenQuadVertex* s_scrQuads = nullptr;
+
+	static s32 s_screenQuadCount = 0;
+	static s32 s_svScaleOffset = -1;
+	static u32 s_scrQuadsWidth;
+	static u32 s_scrQuadsHeight;
+
+	enum Constants
+	{
+		SCR_MAX_QUAD_COUNT = 4096,
+	};
+
+	bool screenGPU_loadShaders()
+	{
+		if (!s_scrQuadShader.load("Shaders/gpu_render_quad.vert", "Shaders/gpu_render_quad.frag", 0, nullptr, SHADER_VER_STD))
+		{
+			return false;
+		}
+
+		s_svScaleOffset = s_scrQuadShader.getVariableId("ScaleOffset");
+		if (s_svScaleOffset < 0)
+		{
+			return false;
+		}
+
+		s_scrQuadShader.bindTextureNameToSlot("Colormap",     0);
+		s_scrQuadShader.bindTextureNameToSlot("Palette",      1);
+		s_scrQuadShader.bindTextureNameToSlot("Textures",     2);
+		s_scrQuadShader.bindTextureNameToSlot("TextureTable", 3);
+
+		return true;
+	}
 
 	void screenGPU_init()
 	{
 		if (!s_initialized)
 		{
 			TFE_RenderShared::init();
+
+			// Create the index and vertex buffer for quads.
+			s_scrQuadVb.create(SCR_MAX_QUAD_COUNT * 4, sizeof(ScreenQuadVertex), c_quadAttrCount, c_quadAttrMapping, true);
+			u16 indices[SCR_MAX_QUAD_COUNT * 6];
+			u16* idx = indices;
+			for (s32 q = 0, vtx = 0; q < SCR_MAX_QUAD_COUNT; q++, idx += 6, vtx += 4)
+			{
+				idx[0] = vtx + 0;
+				idx[1] = vtx + 1;
+				idx[2] = vtx + 2;
+
+				idx[3] = vtx + 0;
+				idx[4] = vtx + 2;
+				idx[5] = vtx + 3;
+			}
+			s_scrQuadIb.create(SCR_MAX_QUAD_COUNT * 6, sizeof(u16), false, indices);
+			s_scrQuads = (ScreenQuadVertex*)malloc(sizeof(ScreenQuadVertex) * SCR_MAX_QUAD_COUNT * 4);
+			s_screenQuadCount = 0;
+
+			// Shaders and variables.
+			screenGPU_loadShaders();
 		}
 		s_initialized = true;
 	}
@@ -27,8 +101,69 @@ namespace TFE_Jedi
 		if (s_initialized)
 		{
 			TFE_RenderShared::destroy();
+			s_scrQuadVb.destroy();
+			s_scrQuadIb.destroy();
+			free(s_scrQuads);
+			texturepacker_destroy(s_hudTextures);
 		}
+		s_hudTextures = nullptr;
+		s_scrQuads = nullptr;
 		s_initialized = false;
+	}
+
+	void screenGPU_setHudTextureCallbacks(s32 count, TextureListCallback* callbacks)
+	{
+		if (count && !s_hudTextures)
+		{
+			s_hudTextures = texturepacker_init("HudTextures", 4096, 4096);
+			texturepacker_begin(s_hudTextures);
+			for (s32 i = 0; i < count; i++)
+			{
+				texturepacker_pack(callbacks[i]);
+			}
+			texturepacker_commit();
+		}
+	}
+		
+	void screenGPU_beginQuads(u32 width, u32 height)
+	{
+		s_screenQuadCount = 0;
+		s_scrQuadsWidth = width;
+		s_scrQuadsHeight = height;
+	}
+
+	void screenGPU_endQuads()
+	{
+		if (s_screenQuadCount)
+		{
+			s_scrQuadVb.update(s_scrQuads, sizeof(ScreenQuadVertex) * s_screenQuadCount * 4);
+			TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_TEST | STATE_DEPTH_WRITE | STATE_BLEND);
+			
+			s_scrQuadShader.bind();
+			s_scrQuadVb.bind();
+			s_scrQuadIb.bind();
+
+			// Bind Uniforms & Textures.
+			const f32 scaleX = 2.0f / f32(s_scrQuadsWidth);
+			const f32 scaleY = 2.0f / f32(s_scrQuadsHeight);
+			const f32 offsetX = -1.0f;
+			const f32 offsetY = -1.0f;
+
+			const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
+			s_scrQuadShader.setVariable(s_svScaleOffset, SVT_VEC4, scaleOffset);
+
+			const TextureGpu* palette  = TFE_RenderBackend::getPaletteTexture();
+			const TextureGpu* colormap = TFE_Sectors_GPU::getColormap();
+			colormap->bind(0);
+			palette->bind(1);
+			s_hudTextures->texture->bind(2);
+			s_hudTextures->textureTableGPU.bind(3);
+
+			TFE_RenderBackend::drawIndexedTriangles(2 * s_screenQuadCount, sizeof(u16));
+
+			s_scrQuadVb.unbind();
+			s_scrQuadShader.unbind();
+		}
 	}
 		
 	void screenGPU_beginLines(u32 width, u32 height)
@@ -68,12 +203,32 @@ namespace TFE_Jedi
 	}
 
 	// Scaled versions.
-	void screenGPU_blitTextureScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, JBool forceTransparency)
+	void screenGPU_blitTextureScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8 lightLevel, JBool forceTransparency)
 	{
-	}
+		if (s_screenQuadCount >= SCR_MAX_QUAD_COUNT)
+		{
+			return;
+		}
 
-	void screenGPU_blitTextureLitScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8 lightLevel, JBool forceTransparency)
-	{
+		s32 x1 = x0 + floor16(mul16(intToFixed16(texture->width - 1),  xScale));
+		s32 y1 = y0 + floor16(mul16(intToFixed16(texture->height - 1), yScale));
+		s32 textureId = texture->textureId;
+
+		u8 color = 0;
+		u32 textureId_Color = textureId | (u32(color) << 16u) | (u32(lightLevel) << 24u);
+
+		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
+		s_screenQuadCount++;
+				
+		quad[0].posUv = { f32(x0), f32(y0), 0.0f, 1.0f };
+		quad[1].posUv = { f32(x1), f32(y0), 1.0f, 1.0f };
+		quad[2].posUv = { f32(x1), f32(y1), 1.0f, 0.0f };
+		quad[3].posUv = { f32(x0), f32(y1), 0.0f, 0.0f };
+
+		quad[0].textureId_Color = textureId_Color;
+		quad[1].textureId_Color = textureId_Color;
+		quad[2].textureId_Color = textureId_Color;
+		quad[3].textureId_Color = textureId_Color;
 	}
 
 	void screenGPU_blitTexture(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0)

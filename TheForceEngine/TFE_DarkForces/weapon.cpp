@@ -7,6 +7,7 @@
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rlightingFixed.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
 
 namespace TFE_DarkForces
@@ -632,31 +633,27 @@ namespace TFE_DarkForces
 		}
 	}
 
-	s32 weapon_getTextures(TextureData** textures)
+	void weapon_addTexture(TextureInfoList& texList, TextureData* tex)
 	{
-		// Get the weapon count.
-		if (!textures)
-		{
-			s32 count = 2;
-			for (s32 i = 0; i < WPN_COUNT; i++)
-			{
-				count += s_playerWeaponList[i].frameCount;
-			}
-			return count;
-		}
+		TextureInfo texInfo = {};
+		texInfo.type = TEXINFO_DF_TEXTURE_DATA;
+		texInfo.texData = tex;
+		texList.push_back(texInfo);
+	}
 
+	bool weapon_getTextures(TextureInfoList& texList)
+	{
 		// Get weapon textures.
-		s32 index = 0;
-		textures[index++] = s_rhand1;
-		textures[index++] = s_gasmaskTexture;
+		weapon_addTexture(texList, s_rhand1);
+		weapon_addTexture(texList, s_gasmaskTexture);
 		for (s32 i = 0; i < WPN_COUNT; i++)
 		{
 			for (s32 f = 0; f < s_playerWeaponList[i].frameCount; f++)
 			{
-				textures[index++] = s_playerWeaponList[i].frames[f];
+				weapon_addTexture(texList, s_playerWeaponList[i].frames[f]);
 			}
 		}
-		return index;
+		return true;
 	}
 
 	void weapon_loadTextures()
@@ -713,6 +710,9 @@ namespace TFE_DarkForces
 			s_playerWeaponList[WPN_CANNON].frames[3] = loadWeaponTexture("assault4.bm");
 
 			s_weaponTexturesLoaded = JTRUE;
+
+			// TFE
+			TFE_Jedi::renderer_addHudTextureCallback(weapon_getTextures);
 		}
 	}
 

@@ -25,7 +25,7 @@
 
 #include <map>
 
-#define DEBUG_TEXTURE_ATLAS 0
+#define DEBUG_TEXTURE_ATLAS 1
 
 #if DEBUG_TEXTURE_ATLAS
 namespace TFE_DarkForces
@@ -131,6 +131,8 @@ namespace TFE_Jedi
 	// Free memory and GPU buffers. Note: GPU textures need to be persistent, so the level allocator will not be used.
 	void texturepacker_destroy(TexturePacker* texturePacker)
 	{
+		if (!texturePacker) { return; }
+
 		TFE_RenderBackend::freeTexture(texturePacker->texture);
 		texturePacker->textureTableGPU.destroy();
 		free(texturePacker->textureTable);

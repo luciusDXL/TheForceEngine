@@ -94,9 +94,6 @@ namespace TFE_DarkForces
 
 	void weapon_queueWeaponSwitch(s32 wpnId);
 
-	// Added for TFE.
-	s32 weapon_getTextures(TextureData** textures);
-
 	extern PlayerWeapon* s_curPlayerWeapon;
 	extern SoundSourceId s_superchargeCountdownSound;
 	extern Task* s_playerWeaponTask;

@@ -23,6 +23,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
+#include <TFE_Jedi/Renderer/textureInfo.h>
 
 enum TFE_SubRenderer
 {
@@ -77,6 +78,10 @@ namespace TFE_Jedi
 	// 2D
 	void blitTextureToScreen(TextureData* texture, s32 x0, s32 y0);
 	void clear3DView(u8* framebuffer);
+
+	// TFE
+	// Add a hud texture callback, these will be called when setting up the GPU renderer
+	void renderer_addHudTextureCallback(TextureListCallback hudTextureCallback);
 
 	extern s32 s_drawnSpriteCount;
 	extern SecObject* s_drawnSprites[];

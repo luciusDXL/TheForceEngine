@@ -4,10 +4,12 @@
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_System/memoryPool.h>
+#include <TFE_Jedi/Renderer/textureInfo.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_RenderBackend/textureGpu.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
+
 
 struct TextureData;
 struct AnimatedTexture;
@@ -15,29 +17,6 @@ struct WaxFrame;
 
 namespace TFE_Jedi
 {
-	enum TextureInfoType
-	{
-		TEXINFO_DF_TEXTURE_DATA = 0,
-		TEXINFO_DF_ANIM_TEX,
-		TEXINFO_DF_WAX_CELL,
-		TEXINFO_COUNT
-	};
-
-	struct TextureInfo
-	{
-		TextureInfoType type;
-		union
-		{
-			TextureData* texData;
-			AnimatedTexture* animTex;
-			WaxFrame* frame;
-		};
-		void* basePtr = nullptr;	// used for WAX/Frame.
-		s32 sortKey = 0;			// Calculated by Texture Packer.
-	};
-	typedef std::vector<TextureInfo> TextureInfoList;
-	typedef bool(*TextureListCallback)(TextureInfoList& texList);
-
 	struct TextureNode;
 
 	struct TexturePage

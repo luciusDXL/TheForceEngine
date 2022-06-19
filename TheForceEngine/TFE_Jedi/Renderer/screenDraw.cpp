@@ -3,6 +3,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/RClassic_GPU/screenDrawGPU.h>
+#include <TFE_Jedi/Renderer/RClassic_Fixed/rlightingFixed.h>
 
 #include "screenDraw.h"
 
@@ -37,6 +38,22 @@ namespace TFE_Jedi
 		if (s_gpuEnabled)
 		{
 			screenGPU_endLines();
+		}
+	}
+
+	void screenDraw_beginQuads(u32 width, u32 height)
+	{
+		if (s_gpuEnabled)
+		{
+			screenGPU_beginQuads(width, height);
+		}
+	}
+
+	void screenDraw_endQuads()
+	{
+		if (s_gpuEnabled)
+		{
+			screenGPU_endQuads();
 		}
 	}
 
@@ -584,7 +601,11 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output, JBool forceTransparency)
 	{
-		if (s_gpuEnabled) { return; }
+		if (s_gpuEnabled)
+		{
+			screenGPU_blitTextureScaled(texture, rect, x0, y0, xScale, yScale, 31);
+			return;
+		}
 		ScreenImage image =
 		{
 			texture->width,
@@ -696,7 +717,10 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenScaled(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output)
 	{
-		if (s_gpuEnabled) { return; }
+		if (s_gpuEnabled)
+		{
+			return;
+		}
 		s32 x1 = x0 + floor16(mul16(intToFixed16(texture->width - 1),  xScale));
 		s32 y1 = y0 + floor16(mul16(intToFixed16(texture->height - 1), yScale));
 		fixed16_16 u0 = 0, v1 = 0;
@@ -783,7 +807,12 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenLitScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, const u8* atten, u8* output, JBool forceTransparency)
 	{
-		if (s_gpuEnabled) { return; }
+		if (s_gpuEnabled)
+		{
+			u8 lightLevel = RClassic_Fixed::getLightLevelFromAtten(atten);
+			screenGPU_blitTextureScaled(texture, rect, x0, y0, xScale, yScale, lightLevel);
+			return;
+		}
 		ScreenImage image = 
 		{
 			texture->width,

@@ -28,6 +28,7 @@ namespace TFE_Jedi
 {
 	static bool s_init = false;
 	static TFE_SubRenderer s_subRenderer = TSR_CLASSIC_FIXED;
+	static std::vector<TextureListCallback> s_hudTextureCallbacks;
 	TFE_Sectors* s_sectorRenderer = nullptr;
 	RendererType s_rendererType = RENDERER_SOFTWARE;
 
@@ -47,6 +48,7 @@ namespace TFE_Jedi
 		RClassic_Float::resetState();
 		RClassic_GPU::resetState();
 		s_sectorRenderer = nullptr;
+		s_hudTextureCallbacks.clear();
 	}
 
 	void renderer_init()
@@ -128,6 +130,11 @@ namespace TFE_Jedi
 	void clear3DView(u8* framebuffer)
 	{
 		RClassic_Fixed::clear3DView(framebuffer);
+	}
+		
+	void renderer_addHudTextureCallback(TextureListCallback hudTextureCallback)
+	{
+		s_hudTextureCallbacks.push_back(hudTextureCallback);
 	}
 
 	void console_setSubRenderer(const std::vector<std::string>& args)
@@ -219,7 +226,9 @@ namespace TFE_Jedi
 		{
 			if (!s_sectorRenderer)
 			{
-				s_sectorRenderer = new TFE_Sectors_GPU();
+				TFE_Sectors_GPU* sectorRendererGpu = new TFE_Sectors_GPU();
+				screenGPU_setHudTextureCallbacks((s32)s_hudTextureCallbacks.size(), s_hudTextureCallbacks.data());
+				s_sectorRenderer = sectorRendererGpu;
 				screenGPU_init();
 			}
 			screen_enableGPU(true);
@@ -275,7 +284,9 @@ namespace TFE_Jedi
 			} break;
 			case TSR_CLASSIC_GPU:
 			{
-				s_sectorRenderer = new TFE_Sectors_GPU();
+				TFE_Sectors_GPU* sectorRendererGpu = new TFE_Sectors_GPU();
+				screenGPU_setHudTextureCallbacks((s32)s_hudTextureCallbacks.size(), s_hudTextureCallbacks.data());
+				s_sectorRenderer = sectorRendererGpu;
 				
 				u32 width, height;
 				vfb_getResolution(&width, &height);
@@ -329,6 +340,10 @@ namespace TFE_Jedi
 		if (s_subRenderer == TSR_CLASSIC_GPU)
 		{
 			vfb_bindRenderTarget();
+
+			u32 width, height;
+			vfb_getResolution(&width, &height);
+			screenDraw_beginQuads(width, height);
 		}
 	}
 
@@ -336,6 +351,7 @@ namespace TFE_Jedi
 	{
 		if (s_subRenderer == TSR_CLASSIC_GPU)
 		{
+			screenDraw_endQuads();
 			vfb_unbindRenderTarget();
 		}
 	}

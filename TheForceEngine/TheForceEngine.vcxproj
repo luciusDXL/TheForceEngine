@@ -527,6 +527,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\rwallRender.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rwallSegment.h" />
     <ClInclude Include="TFE_Jedi\Renderer\screenDraw.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\textureInfo.h" />
     <ClInclude Include="TFE_Jedi\Renderer\virtualFramebuffer.h" />
     <ClInclude Include="TFE_Jedi\Task\task.h" />
     <ClInclude Include="TFE_Jedi\Task\taskMacros.h" />
@@ -849,6 +850,8 @@ echo ^)";
     <None Include="Shaders\gpu_render_modelHologram.vert" />
     <None Include="Shaders\gpu_render_modelSolid.frag" />
     <None Include="Shaders\gpu_render_modelSolid.vert" />
+    <None Include="Shaders\gpu_render_quad.frag" />
+    <None Include="Shaders\gpu_render_quad.vert" />
     <None Include="Shaders\gpu_render_sprite.frag" />
     <None Include="Shaders\gpu_render_sprite.vert" />
     <None Include="Shaders\gpu_render_wall.frag" />

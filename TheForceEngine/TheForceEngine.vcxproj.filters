@@ -949,6 +949,9 @@
     <ClInclude Include="TFE_Jedi\Level\levelTextures.h">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\textureInfo.h">
+      <Filter>Source\TFE_Jedi\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1792,6 +1795,12 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\gpu_render_modelSolid.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\gpu_render_quad.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\gpu_render_quad.vert">
       <Filter>Source\Shaders</Filter>
     </None>
   </ItemGroup>
