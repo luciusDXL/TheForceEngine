@@ -12,6 +12,7 @@
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/screenDrawGPU.h>
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
@@ -54,8 +55,8 @@ namespace TFE_DarkForces
 	static JBool s_updateHudColors = JFALSE;
 
 	static u8 s_tempBuffer[256 * 3];
-	static u8 s_hudPalette[HUD_COLORS_COUNT * 3];
-	static u8 s_hudWorkPalette[HUD_COLORS_COUNT * 3];
+	static u8 s_hudPalette[HUD_COLORS_COUNT * 3 + 10];
+	static u8 s_hudWorkPalette[HUD_COLORS_COUNT * 3 + 10];
 	static s32 s_hudColorCount = 8;
 	static s32 s_hudPaletteIndex = 24;
 	
@@ -147,6 +148,40 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void hud_addTexture(TextureInfoList& texList, TextureData* tex)
+	{
+		TextureInfo texInfo = {};
+		texInfo.type = TEXINFO_DF_TEXTURE_DATA;
+		texInfo.texData = tex;
+		texList.push_back(texInfo);
+	}
+
+	void hud_addFont(TextureInfoList& texList, Font* font)
+	{
+		for (s32 i = font->minChar; i <= font->maxChar; i++)
+		{
+			hud_addTexture(texList, &font->glyphs[i - font->minChar]);
+		}
+	}
+
+	bool hud_getTextures(TextureInfoList& texList)
+	{
+		// First load the fonts.
+		hud_addFont(texList, s_hudFont);
+		hud_addFont(texList, s_hudMainAmmoFont);
+		hud_addFont(texList, s_hudSuperAmmoFont);
+		hud_addFont(texList, s_hudShieldFont);
+		hud_addFont(texList, s_hudHealthFont);
+
+		// Then load the images.
+		hud_addTexture(texList, s_hudStatusL);
+		hud_addTexture(texList, s_hudStatusR);
+		hud_addTexture(texList, s_hudLightOn);
+		hud_addTexture(texList, s_hudLightOff);
+		
+		return true;
+	}
+
 	void hud_loadGameMessages()
 	{
 		s_hudMessages.count = 0;
@@ -163,6 +198,9 @@ namespace TFE_DarkForces
 		{
 			s_hudFont = font_load(&filePath);
 		}
+
+		// TFE
+		TFE_Jedi::renderer_addHudTextureCallback(hud_getTextures);
 	}
 		
 	void hud_loadGraphics()
@@ -292,10 +330,318 @@ namespace TFE_DarkForces
 			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
 		}
 	}
+
+	void hud_drawStringGpu(Font* font, fixed16_16 x0, fixed16_16 y0, fixed16_16 xScale, fixed16_16 yScale, const char* str)
+	{
+		if (!font) { return; }
+
+		fixed16_16 x = x0;
+		fixed16_16 y = y0;
+		for (char c = *str; c != 0; )
+		{
+			if (c == '\n')
+			{
+				y += mul16(intToFixed16(font->height + font->vertSpacing), yScale);
+				x = x0;
+			}
+			else
+			{
+				if (c == ' ')
+				{
+					x += mul16(intToFixed16(font->width), xScale);
+				}
+				else if (c >= font->minChar && c <= font->maxChar)
+				{
+					s32 charIndex = c - font->minChar;
+					s32 offset = charIndex * 28;
+
+					TextureData* glyph = &font->glyphs[charIndex];
+					screenGPU_blitTextureScaled(glyph, nullptr, x, y, xScale, yScale, 31);
+					x += mul16(intToFixed16(glyph->width + font->horzSpacing), xScale);
+				}
+			}
+			str++;
+			c = *str;
+		}
+	}
+
+	void hud_drawGpu()
+	{
+		if (s_rightHudMove)
+		{
+			s_rightHudMove--;
+		}
+		if (s_leftHudMove)
+		{
+			s_leftHudMove--;
+		}
+
+		// 1. Draw the base.
+		TFE_Settings_Hud* hudSettings = TFE_Settings::getHudSettings();
+
+		// HUD scaling.
+		fixed16_16 xScale = vfb_getXScale();
+		fixed16_16 yScale = vfb_getYScale();
+		fixed16_16 hudScaleX = xScale;
+		fixed16_16 hudScaleY = yScale;
+		u32 dispWidth, dispHeight;
+		vfb_getResolution(&dispWidth, &dispHeight);
+
+		if (hudSettings->hudScale == TFE_HUDSCALE_SCALED)
+		{
+			hudScaleX = floatToFixed16(hudSettings->scale);
+			hudScaleY = floatToFixed16(hudSettings->scale);
+		}
+		else if (hudSettings->scale != 0)
+		{
+			hudScaleX = floatToFixed16(fixed16ToFloat(xScale) * hudSettings->scale);
+			hudScaleY = floatToFixed16(fixed16ToFloat(yScale) * hudSettings->scale);
+		}
+
+		fixed16_16 x0, x1;
+		if (hudSettings->hudPos == TFE_HUDPOS_4_3)
+		{
+			x0 = mul16(intToFixed16(260), xScale) + intToFixed16(vfb_getWidescreenOffset());
+			x1 = intToFixed16(vfb_getWidescreenOffset());
+		}
+		else
+		{
+			x0 = intToFixed16(dispWidth) - mul16(intToFixed16(s_cachedHudRight->width - 1), hudScaleX);
+			x1 = 0;
+		}
+		x0 -= intToFixed16(hudSettings->pixelOffset[0]);
+		x1 += intToFixed16(hudSettings->pixelOffset[0]);
+
+		fixed16_16 y0 = yScale + mul16(intToFixed16(c_hudVertAnimTable[s_rightHudVertAnim]), yScale);
+		fixed16_16 y1 = yScale + mul16(intToFixed16(c_hudVertAnimTable[s_leftHudVertAnim]),  yScale);
+		y0 += intToFixed16(hudSettings->pixelOffset[1]);
+		y1 += intToFixed16(hudSettings->pixelOffset[1]);
+
+		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, xScale, yScale, 31);
+		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, xScale, yScale, 31);
+		
+		if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0)
+		{
+			// TODO: Draw the backend.
+		}
+
+		// Energy
+		fixed16_16 energy = TFE_Jedi::abs(s_energy * 100);
+		s32 percent = round16(energy >> 1);
+		{
+			const s32 offset = 3 * 3 + 1;	// offset 3 color indices + 1 because we are only changing the green color.
+			// I think this should be < 5, since there are 5 pips.
+			// This actually overwrites memory in DOS, but here I just made the array larger.
+			for (s32 clrIndex = 0; clrIndex <= 5; clrIndex++)
+			{
+				if (percent > 20)
+				{
+					s_hudWorkPalette[3 * clrIndex + offset] = 58;
+					percent -= 20;
+				}
+				else
+				{
+					// Color value between [8, 58], where 8 @ 0% and 58 @ 20%
+					s_hudWorkPalette[3 * clrIndex + offset] = 8 + ((percent * 5) >> 1);
+					percent = 0;
+				}
+			}
+		}
+		s32 lifeCount = player_getLifeCount() % 10;
+		{
+			char lifeCountStr[8];
+			sprintf(lifeCountStr, "%1d", lifeCount);
+
+			fixed16_16 xPos = mul16(intToFixed16(52), hudScaleX) + x1;
+			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
+			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, lifeCountStr);
+			
+			s_rightHudShow = 4;
+		}
+		// Headlamp
+		{
+			fixed16_16 xPos = mul16(intToFixed16(19), hudScaleX) + x0;
+			fixed16_16 yPos = y0;
+			if (s_headlampActive)
+			{
+				screenGPU_blitTextureScaled(s_hudLightOn, nullptr, xPos, yPos, hudScaleX, hudScaleY, 31);
+			}
+			else
+			{
+				screenGPU_blitTextureScaled(s_hudLightOff, nullptr, xPos, yPos, hudScaleX, hudScaleY, 31);
+			}
+			s_rightHudShow = 4;
+		}
+		// Shields
+		{
+			char shieldStr[8];
+			if (s_playerInfo.shields == -1)
+			{
+				s_hudWorkPalette[0] = 55;
+				s_hudWorkPalette[1] = 55;
+				s_hudWorkPalette[3] = 55;
+				s_hudWorkPalette[4] = 55;
+
+				strcpy(shieldStr, "200");
+			}
+			else
+			{
+				s_hudWorkPalette[0] = 0;
+				s32 upperShields;
+				if (s_playerInfo.shields > 100)
+				{
+					upperShields = s_playerInfo.shields;
+				}
+				else
+				{
+					upperShields = 100;
+				}
+				upperShields -= 100;
+				u8 upperColor = 8 + (upperShields >> 1);
+				s_hudWorkPalette[1] = upperColor;
+
+				s_hudWorkPalette[3] = 0;
+				s32 lowerShields;
+				if (s_playerInfo.shields < 100)
+				{
+					lowerShields = s_playerInfo.shields;
+				}
+				else
+				{
+					lowerShields = 100;
+				}
+				s_hudWorkPalette[4] = 8 + (lowerShields >> 1);
+				sprintf(shieldStr, "%03d", s_playerInfo.shields);
+			}
+
+			fixed16_16 xPos = mul16(intToFixed16(15), hudScaleX) + x1;
+			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
+			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX, hudScaleY, shieldStr);
+		}
+		// Health
+		{
+			s32 health = min(100, s_playerInfo.health);
+			// 6: color 2, red channel, 7 = green channel
+			s_hudWorkPalette[6] = 8 + (health >> 1);
+			s_hudWorkPalette[7] = health * 63 / 400;
+
+			char healthStr[32];
+			sprintf(healthStr, "%03d", s_playerInfo.health);
+			fixed16_16 xPos = mul16(intToFixed16(33), hudScaleX) + x1;
+			fixed16_16 yPos = mul16(intToFixed16(26), hudScaleY) + y1;
+			hud_drawStringGpu(s_hudHealthFont, xPos, yPos, hudScaleX, hudScaleY, healthStr);
+
+			s_leftHudShow = 4;
+		}
+
+		if (s_forceHudPaletteUpdate || memcmp(s_hudPalette, s_hudWorkPalette, HUD_COLORS_COUNT * 3) != 0)
+		{
+			// Copy work palette into hud palette.
+			memcpy(s_hudPalette, s_hudWorkPalette, HUD_COLORS_COUNT * 3);
+			// Copy hud palette into the base palette, this will update next time render_setPalette() is called.
+			hud_updateBasePalette(s_hudPalette, HUD_COLORS_START, HUD_COLORS_COUNT);
+			// Copy the final 8 HUD colors to the loaded palette.
+			memcpy(s_levelPalette + HUD_COLORS_START * 3, s_hudPalette, HUD_COLORS_COUNT * 3);
+
+			s_forceHudPaletteUpdate = JFALSE;
+		}
+
+		s32 ammo0 = -1;
+		s32 ammo1 = -1;
+		PlayerWeapon* weapon = s_curPlayerWeapon;
+		if (weapon)
+		{
+			if (weapon->ammo)
+			{
+				ammo0 = *weapon->ammo;
+			}
+			if (weapon->secondaryAmmo)
+			{
+				ammo1 = *weapon->secondaryAmmo;
+			}
+		}
+
+		// Ammo readouts.
+		{
+			char str[32];
+			if (ammo0 < 0)
+			{
+				strcpy(str, ":::");
+			}
+			else
+			{
+				sprintf(str, "%03d", ammo0);
+			}
+			fixed16_16 xPos = mul16(intToFixed16(12), hudScaleX) + x0;
+			fixed16_16 yPos = mul16(intToFixed16(21), hudScaleY) + y0;
+			hud_drawStringGpu(s_superChargeHud ? s_hudSuperAmmoFont : s_hudMainAmmoFont, xPos, yPos, hudScaleX, hudScaleY, str);
+
+			// Draw a colored quad to hide single-pixel "leaking" from beneath.
+			xPos = mul16(intToFixed16(25), hudScaleX) + x0;
+			yPos = mul16(intToFixed16(12), hudScaleY) + y0;
+			fixed16_16 quadWidth  = mul16(intToFixed16(11), hudScaleX);
+			fixed16_16 quadHeight = mul16(intToFixed16(7),  hudScaleY);
+
+			screenGPU_drawColoredQuad(xPos, yPos, xPos + quadWidth, yPos + quadHeight, 0);
+
+			if (ammo1 < 0)
+			{
+				strcpy(str, "::");
+			}
+			else
+			{
+				sprintf(str, "%02d", ammo1);
+			}
+			hud_drawStringGpu(s_hudShieldFont, xPos, yPos, hudScaleX, hudScaleY, str);
+
+			s_rightHudShow = 4;
+		}
+
+		if (s_rightHudShow)
+		{
+			if (s_rightHudVertAnim > s_rightHudVertTarget)
+			{
+				s_rightHudVertAnim--;
+			}
+			else if (s_rightHudVertAnim < s_rightHudVertTarget)
+			{
+				s_rightHudVertAnim++;
+				s_rightHudMove = 4;
+			}
+			else if (s_rightHudShow)
+			{
+				s_rightHudShow--;
+			}
+		}
+		if (s_leftHudShow)
+		{
+			if (s_leftHudVertAnim > s_leftHudVertTarget)
+			{
+				s_leftHudVertAnim--;
+				s_leftHudMove = 4;
+			}
+			else if (s_leftHudVertAnim < s_leftHudVertTarget)
+			{
+				s_leftHudVertAnim++;
+				s_leftHudMove = 4;
+			}
+			else if (s_leftHudShow)
+			{
+				s_leftHudShow--;
+			}
+		}
+	}
 		
 	void hud_drawAndUpdate(u8* framebuffer)
 	{
 		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_UI);
+
+		// TFE Note: drawing the HUD when GPU rendering is enabled is a bit different, since we can just draw all of the items scaled.
+		if (TFE_Jedi::getSubRenderer() == TSR_CLASSIC_GPU)
+		{
+			hud_drawGpu();
+			return;
+		}
 
 		// Clear the 3D view while the HUD positions are being animated.
 		if (s_rightHudMove || s_leftHudMove)
@@ -321,6 +667,7 @@ namespace TFE_DarkForces
 				s_prevEnergy = percent;
 				const s32 offset = 3 * 3 + 1;	// offset 3 color indices + 1 because we are only changing the green color.
 				// I think this should be < 5, since there are 5 pips.
+				// This actually overwrites memory in DOS, but here I just made the array larger.
 				for (s32 clrIndex = 0; clrIndex <= 5; clrIndex++)
 				{
 					if (percent > 20)

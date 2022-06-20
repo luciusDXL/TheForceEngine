@@ -202,16 +202,38 @@ namespace TFE_Jedi
 	{
 	}
 
+	void screenGPU_drawColoredQuad(fixed16_16 x0, fixed16_16 y0, fixed16_16 x1, fixed16_16 y1, u8 color)
+	{
+		f32 fx0 = fixed16ToFloat(x0);
+		f32 fy0 = fixed16ToFloat(y0);
+		f32 fx1 = fixed16ToFloat(x1);
+		f32 fy1 = fixed16ToFloat(y1);
+		u32 textureId_Color = 0xffffu | (u32(color) << 16u) | (31u << 24u);
+
+		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
+		s_screenQuadCount++;
+
+		quad[0].posUv = { fx0, fy0, 0.0f, 1.0f };
+		quad[1].posUv = { fx1, fy0, 1.0f, 1.0f };
+		quad[2].posUv = { fx1, fy1, 1.0f, 0.0f };
+		quad[3].posUv = { fx0, fy1, 0.0f, 0.0f };
+
+		quad[0].textureId_Color = textureId_Color;
+		quad[1].textureId_Color = textureId_Color;
+		quad[2].textureId_Color = textureId_Color;
+		quad[3].textureId_Color = textureId_Color;
+	}
+
 	// Scaled versions.
-	void screenGPU_blitTextureScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8 lightLevel, JBool forceTransparency)
+	void screenGPU_blitTextureScaled(TextureData* texture, DrawRect* rect, fixed16_16 x0, fixed16_16 y0, fixed16_16 xScale, fixed16_16 yScale, u8 lightLevel, JBool forceTransparency)
 	{
 		if (s_screenQuadCount >= SCR_MAX_QUAD_COUNT)
 		{
 			return;
 		}
 
-		s32 x1 = x0 + floor16(mul16(intToFixed16(texture->width - 1),  xScale));
-		s32 y1 = y0 + floor16(mul16(intToFixed16(texture->height - 1), yScale));
+		fixed16_16 x1 = x0 + mul16(intToFixed16(texture->width),  xScale);
+		fixed16_16 y1 = y0 + mul16(intToFixed16(texture->height), yScale);
 		s32 textureId = texture->textureId;
 
 		u8 color = 0;
@@ -219,12 +241,20 @@ namespace TFE_Jedi
 
 		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
 		s_screenQuadCount++;
-				
-		quad[0].posUv = { f32(x0), f32(y0), 0.0f, 1.0f };
-		quad[1].posUv = { f32(x1), f32(y0), 1.0f, 1.0f };
-		quad[2].posUv = { f32(x1), f32(y1), 1.0f, 0.0f };
-		quad[3].posUv = { f32(x0), f32(y1), 0.0f, 0.0f };
 
+		f32 fx0 = fixed16ToFloat(x0);
+		f32 fy0 = fixed16ToFloat(y0);
+		f32 fx1 = fixed16ToFloat(x1);
+		f32 fy1 = fixed16ToFloat(y1);
+
+		f32 u0 = 0.0f, v0 = 0.0f;
+		f32 u1 = f32(texture->width);
+		f32 v1 = f32(texture->height);
+		quad[0].posUv = { fx0, fy0, u0, v1 };
+		quad[1].posUv = { fx1, fy0, u1, v1 };
+		quad[2].posUv = { fx1, fy1, u1, v0 };
+		quad[3].posUv = { fx0, fy1, u0, v0 };
+								  
 		quad[0].textureId_Color = textureId_Color;
 		quad[1].textureId_Color = textureId_Color;
 		quad[2].textureId_Color = textureId_Color;

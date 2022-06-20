@@ -603,7 +603,7 @@ namespace TFE_Jedi
 	{
 		if (s_gpuEnabled)
 		{
-			screenGPU_blitTextureScaled(texture, rect, x0, y0, xScale, yScale, 31);
+			screenGPU_blitTextureScaled(texture, rect, intToFixed16(x0), intToFixed16(y0), xScale, yScale, 31);
 			return;
 		}
 		ScreenImage image =
@@ -619,7 +619,11 @@ namespace TFE_Jedi
 
 	void blitTextureToScreenIScale(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, s32 scale, u8* output)
 	{
-		if (s_gpuEnabled) { return; }
+		if (s_gpuEnabled)
+		{
+			screenGPU_blitTextureScaled(texture, rect, intToFixed16(x0), intToFixed16(y0), intToFixed16(scale), intToFixed16(scale), 31);
+			return;
+		}
 		s32 x1 = x0 + (texture->width  - 1)*scale;
 		s32 y1 = y0 + (texture->height - 1)*scale;
 		s32 yPixelCount = y1 - y0 + 1;
@@ -810,7 +814,7 @@ namespace TFE_Jedi
 		if (s_gpuEnabled)
 		{
 			u8 lightLevel = RClassic_Fixed::getLightLevelFromAtten(atten);
-			screenGPU_blitTextureScaled(texture, rect, x0, y0, xScale, yScale, lightLevel);
+			screenGPU_blitTextureScaled(texture, rect, intToFixed16(x0), intToFixed16(y0), xScale, yScale, lightLevel);
 			return;
 		}
 		ScreenImage image = 

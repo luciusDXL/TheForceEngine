@@ -242,6 +242,11 @@ namespace TFE_Jedi
 		if (s_subRenderer == TSR_CLASSIC_FIXED) { RClassic_Fixed::setVisionEffect(effect); }
 	}
 
+	TFE_SubRenderer getSubRenderer()
+	{
+		return s_subRenderer;
+	}
+
 	JBool setSubRenderer(TFE_SubRenderer subRenderer/* = TSR_CLASSIC_FIXED*/)
 	{
 		if (subRenderer == TSR_HIGH_RESOLUTION)

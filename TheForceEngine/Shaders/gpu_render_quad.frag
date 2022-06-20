@@ -22,7 +22,7 @@ float sampleTextureClamp(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec3 iuv;
-	iuv.xy = ivec2(floor(uv * vec2(sampleData.zw)));
+	iuv.xy = ivec2(uv);
 	iuv.z = 0;
 
 	if ( any(lessThan(iuv.xy, ivec2(0))) || any(greaterThan(iuv.xy, sampleData.zw-1)) )
