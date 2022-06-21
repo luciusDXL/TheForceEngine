@@ -864,6 +864,7 @@ namespace TFE_Jedi
 	void drawSprites()
 	{
 		if (!sprdisplayList_getSize()) { return; }
+		TFE_RenderState::setStateEnable(false, STATE_DEPTH_WRITE);
 
 		m_spriteShader.bind();
 		m_indexBuffer.bind();
