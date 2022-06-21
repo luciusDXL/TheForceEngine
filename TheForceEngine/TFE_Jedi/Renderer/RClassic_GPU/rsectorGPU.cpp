@@ -769,15 +769,6 @@ namespace TFE_Jedi
 			frustum_pop();
 			level--;
 		}
-
-		if (s_flatLighting)
-		{
-			s_sectorAmbient = s_flatAmbient;
-		}
-		else
-		{
-			s_sectorAmbient = round16(curSector->ambient);
-		}
 	}
 						
 	bool traverseScene(RSector* sector)
@@ -805,6 +796,18 @@ namespace TFE_Jedi
 		sdisplayList_finish();
 		sprdisplayList_finish();
 		model_drawListFinish();
+
+		// Set the sector ambient for future lighting.
+		if (s_flatLighting)
+		{
+			s_sectorAmbient = s_flatAmbient;
+		}
+		else
+		{
+			s_sectorAmbient = round16(sector->ambient);
+		}
+		s_scaledAmbient = (s_sectorAmbient >> 1) + (s_sectorAmbient >> 2) + (s_sectorAmbient >> 3);
+		s_sectorAmbientFraction = s_sectorAmbient << 11;	// fraction of ambient compared to max.
 
 		if (uploadFlags & UPLOAD_SECTORS)
 		{
