@@ -221,7 +221,7 @@ namespace TFE_Jedi
 			return insertNode(cur->child[0], tex, width, height);
 		}
 	}
-		
+				
 	void packNode(const TextureNode* node, const TextureData* texData, Vec4i* tableEntry)
 	{
 		// Copy the texture into place.
@@ -232,6 +232,30 @@ namespace TFE_Jedi
 			for (s32 x = 0; x < texData->width; x++)
 			{
 				output[x] = srcImage[x*texData->height + y];
+			}
+		}
+		s_usedTexels += texData->width * texData->height;
+
+		// Copy the mapping into the texture table.
+		tableEntry->x = (s32)node->rect.x;
+		tableEntry->y = (s32)node->rect.y;
+		tableEntry->z = (s32)node->rect.z;
+		tableEntry->w = (s32)node->rect.w;
+
+		// Page the page index into the x offset.
+		tableEntry->x |= (s_currentPage << 12);
+	}
+
+	void packNodeDeltaTex(const TextureNode* node, const TextureData* texData, Vec4i* tableEntry)
+	{
+		// Copy the texture into place.
+		const u8* srcImage = texData->image;
+		u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[node->rect.y * s_texturePacker->width + node->rect.x];
+		for (s32 y = 0; y < texData->height; y++, output += s_texturePacker->width)
+		{
+			for (s32 x = 0; x < texData->width; x++)
+			{
+				output[x] = srcImage[(texData->height - y - 1)*texData->width + x];
 			}
 		}
 		s_usedTexels += texData->width * texData->height;
@@ -318,6 +342,25 @@ namespace TFE_Jedi
 		assert(node->tex == tex && s_texturePacker->texturesPacked < MAX_TEXTURE_COUNT);
 		tex->textureId = s_texturePacker->texturesPacked;
 		packNode(node, tex, &s_texturePacker->textureTable[s_texturePacker->texturesPacked]);
+		s_texturePacker->texturesPacked++;
+		return true;
+	}
+
+	bool insertDeltTexture(TextureData* tex)
+	{
+		if (!tex || isTextureInMap(tex)) { return true; }
+		TextureNode* node = insertNode(s_root, tex, tex->width, tex->height);
+		if (!node)
+		{
+			return false;
+		}
+
+		s_totalTexels += tex->width * tex->height;
+		insertTextureIntoMap(tex, s_texturePacker->texturesPacked);
+
+		assert(node->tex == tex && s_texturePacker->texturesPacked < MAX_TEXTURE_COUNT);
+		tex->textureId = s_texturePacker->texturesPacked;
+		packNodeDeltaTex(node, tex, &s_texturePacker->textureTable[s_texturePacker->texturesPacked]);
 		s_texturePacker->texturesPacked++;
 		return true;
 	}
@@ -450,6 +493,7 @@ namespace TFE_Jedi
 				switch (list[i].type)
 				{
 					case TEXINFO_DF_TEXTURE_DATA:
+					case TEXINFO_DF_DELT_TEX:
 					{
 						if (list[i].texData->uvWidth == BM_ANIMATED_TEXTURE)
 						{
@@ -516,6 +560,13 @@ namespace TFE_Jedi
 								{
 									s_unpackedTextures[s_unpackedBuffer].push_back(unpackedList[i]);
 								}
+							}
+						} break;
+						case TEXINFO_DF_DELT_TEX:
+						{
+							if (!insertDeltTexture(unpackedList[i]->texData))
+							{
+								s_unpackedTextures[s_unpackedBuffer].push_back(unpackedList[i]);
 							}
 						} break;
 						case TEXINFO_DF_ANIM_TEX:

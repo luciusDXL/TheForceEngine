@@ -6,6 +6,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include "../screenDraw.h"
+#include "../textureInfo.h"
 
 namespace TFE_Jedi
 {

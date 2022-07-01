@@ -111,3 +111,16 @@ void RenderTarget::unbind()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+void RenderTarget::copy(RenderTarget* dst, RenderTarget* src)
+{
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, src->m_gpuHandle);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst->m_gpuHandle);
+
+	glBlitFramebuffer(0, 0, src->getTexture()->getWidth(), src->getTexture()->getHeight(),	// src rect
+					  0, 0, dst->getTexture()->getWidth(), dst->getTexture()->getHeight(),	// dst rect
+					  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}

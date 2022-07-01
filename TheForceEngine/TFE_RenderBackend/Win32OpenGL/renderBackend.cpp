@@ -42,6 +42,9 @@ namespace TFE_RenderBackend
 	static RenderTarget* s_virtualRenderTarget = nullptr;
 	static ScreenCapture*  s_screenCapture = nullptr;
 
+	static RenderTarget* s_copyTarget = nullptr;
+	static RenderTarget* s_copySrc = nullptr;
+
 	static u32 s_virtualWidth, s_virtualHeight;
 	static u32 s_virtualWidthUi;
 	static u32 s_virtualWidth3d;
@@ -536,6 +539,19 @@ namespace TFE_RenderBackend
 		}
 	}
 
+	void copyToVirtualDisplay(RenderTargetHandle src)
+	{
+		RenderTarget::copy(s_virtualRenderTarget, (RenderTarget*)src);
+	}
+		
+	// If we copy right away, we'll get a partial frame.
+	// So wait until the end of the frame to copy.
+	void copyFromVirtualDisplay(RenderTargetHandle dst)
+	{
+		s_copyTarget = (RenderTarget*)dst;
+		s_copySrc = s_virtualRenderTarget;
+	}
+
 	void setPalette(const u32* palette)
 	{
 		if (palette && getGPUColorConvert())
@@ -594,6 +610,8 @@ namespace TFE_RenderBackend
 
 	void freeRenderTarget(RenderTargetHandle handle)
 	{
+		if (!handle) { return; }
+
 		RenderTarget* renderTarget = (RenderTarget*)handle;
 		delete renderTarget->getTexture();
 		delete renderTarget;
@@ -622,10 +640,23 @@ namespace TFE_RenderBackend
 		renderTarget->clearDepth(clearDepth);
 	}
 
+	void copyRenderTarget(RenderTargetHandle dst, RenderTargetHandle src)
+	{
+		if (!dst || !src) { return; }
+		RenderTarget::copy((RenderTarget*)dst, (RenderTarget*)src);
+	}
+
 	void unbindRenderTarget()
 	{
 		RenderTarget::unbind();
 		glViewport(0, 0, m_windowState.width, m_windowState.height);
+
+		if (s_copyTarget && s_copySrc)
+		{
+			RenderTarget::copy(s_copyTarget, s_copySrc);
+			s_copyTarget = nullptr;
+			s_copySrc = nullptr;
+		}
 	}
 
 	const TextureGpu* getRenderTargetTexture(RenderTargetHandle rtHandle)

@@ -12,6 +12,7 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_Input/inputMapping.h>
 #include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/screenDrawGPU.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -51,8 +52,11 @@ namespace TFE_DarkForces
 	static s32  s_buttonPressed;
 	static bool s_buttonHover;
 
+	static RenderTargetHandle s_renderTarget = nullptr;
+
 	void escMenu_resetCursor();
 	void escMenu_handleMousePosition();
+	bool escapeMenu_getTextures(TextureInfoList& texList);
 	EscapeMenuAction escapeMenu_updateUI();
 
 	extern void pauseLevelSound();
@@ -64,6 +68,13 @@ namespace TFE_DarkForces
 		s_framebufferCopy = nullptr;
 		s_framebuffer = nullptr;
 		s_escMenuOpen = JFALSE;
+		
+		// TFE: GPU Support.
+		if (s_renderTarget)
+		{
+			TFE_RenderBackend::freeRenderTarget(s_renderTarget);
+			s_renderTarget = nullptr;
+		}
 	}
 
 	void escapeMenu_open(u8* framebuffer, u8* palette)
@@ -83,30 +94,56 @@ namespace TFE_DarkForces
 			s_escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_escMenuFrames);
 			
 			TFE_Paths::removeLastArchive();
+
+			// TFE
+			TFE_Jedi::renderer_addHudTextureCallback(escapeMenu_getTextures);
 		}
 
 		u32 dispWidth, dispHeight;
 		vfb_getResolution(&dispWidth, &dispHeight);
-		if (s_framebufferCopy && (s_framebufferCopy->width != dispWidth || s_framebufferCopy->height != dispHeight))
-		{
-			freeOffScreenBuffer(s_framebufferCopy);
-			s_framebufferCopy = nullptr;
-		}
 
-		if (!s_framebufferCopy)
+		if (TFE_Jedi::getSubRenderer() == TSR_CLASSIC_GPU)
 		{
-			s_framebufferCopy = createOffScreenBuffer(dispWidth, dispHeight, OBF_NONE);
-		}
-		memcpy(s_framebufferCopy->image, framebuffer, s_framebufferCopy->size);
-		s_framebuffer = framebuffer;
+			// 1. Create a render target to hold the frame.
+			u32 prevWidth, prevHeight;
+			if (s_renderTarget)
+			{
+				TFE_RenderBackend::getRenderTargetDim(s_renderTarget, &prevWidth, &prevHeight);
+			}
 
-		// Post process to convert sceen capture to grayscale.
-		for (s32 i = 0; i < s_framebufferCopy->size; i++)
+			if (!s_renderTarget || prevWidth != dispWidth || prevHeight != dispHeight)
+			{
+				TFE_RenderBackend::freeRenderTarget(s_renderTarget);
+				s_renderTarget = TFE_RenderBackend::createRenderTarget(dispWidth, dispHeight);
+			}
+
+			// 2. Blit the current render target texture to the new render target with the grayscale filter applied.
+			// TODO: Apply the grayscale filter.
+			TFE_RenderBackend::copyFromVirtualDisplay(s_renderTarget);
+		}
+		else // Software renderer code.
 		{
-			u8 color = s_framebufferCopy->image[i];
-			u8* rgb = &palette[color * 3];
-			u8 luminance = ((rgb[1] >> 1) + (rgb[0] >> 2) + (rgb[2] >> 2)) >> 1;
-			s_framebufferCopy->image[i] = 63 - luminance;
+			if (s_framebufferCopy && (s_framebufferCopy->width != dispWidth || s_framebufferCopy->height != dispHeight))
+			{
+				freeOffScreenBuffer(s_framebufferCopy);
+				s_framebufferCopy = nullptr;
+			}
+
+			if (!s_framebufferCopy)
+			{
+				s_framebufferCopy = createOffScreenBuffer(dispWidth, dispHeight, OBF_NONE);
+			}
+			memcpy(s_framebufferCopy->image, framebuffer, s_framebufferCopy->size);
+			s_framebuffer = framebuffer;
+
+			// Post process to convert sceen capture to grayscale.
+			for (s32 i = 0; i < s_framebufferCopy->size; i++)
+			{
+				u8 color = s_framebufferCopy->image[i];
+				u8* rgb = &palette[color * 3];
+				u8 luminance = ((rgb[1] >> 1) + (rgb[0] >> 2) + (rgb[2] >> 2)) >> 1;
+				s_framebufferCopy->image[i] = 63 - luminance;
+			}
 		}
 
 		escMenu_resetCursor();
@@ -119,6 +156,69 @@ namespace TFE_DarkForces
 		return s_escMenuOpen;
 	}
 
+	void escapeMenu_addDeltFrame(TextureInfoList& texList, DeltFrame* frame)
+	{
+		TextureInfo texInfo = {};
+		texInfo.type = TEXINFO_DF_DELT_TEX;
+		texInfo.texData = &frame->texture;
+		texList.push_back(texInfo);
+	}
+
+	bool escapeMenu_getTextures(TextureInfoList& texList)
+	{
+		for (s32 i = 0; i < s_escMenuFrameCount; i++)
+		{
+			escapeMenu_addDeltFrame(texList, &s_escMenuFrames[i]);
+		}
+		escapeMenu_addDeltFrame(texList, &s_cursor);
+		return true;
+	}
+
+	void escapeMenu_drawGpu()
+	{
+		// TODO: Handle background.
+		u32 dispWidth, dispHeight;
+		vfb_getResolution(&dispWidth, &dispHeight);
+
+		const fixed16_16 xScale = vfb_getXScale();
+		const fixed16_16 yScale = vfb_getYScale();
+		const s32 xOffset = vfb_getWidescreenOffset();
+
+		// Draw the background and rebind the virtual display.
+		TFE_RenderBackend::unbindRenderTarget();
+		TFE_RenderBackend::copyToVirtualDisplay(s_renderTarget);
+		TFE_RenderBackend::bindVirtualDisplay();
+
+		screenGPU_blitTextureScaled(&s_escMenuFrames[0].texture, nullptr, intToFixed16(xOffset), 0, xScale, yScale, 31);
+
+		if (s_levelComplete)
+		{
+			// Attempt to clean up the button positions, note this is only a problem at non-vanilla resolutions.
+			fixed16_16 yOffset = (dispHeight == 200 || dispHeight == 400) ? 0 : round16(yScale / 2);
+
+			if (s_buttonPressed == ESC_BTN_ABORT && s_buttonHover)
+			{
+				screenGPU_blitTextureScaled(&s_escMenuFrames[3].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
+			}
+			else
+			{
+				screenGPU_blitTextureScaled(&s_escMenuFrames[4].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
+			}
+		}
+		if ((s_buttonPressed > ESC_BTN_ABORT || (s_buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_buttonHover)
+		{
+			// Attempt to clean up the button positions, note this is only a problem at non-vanilla resolutions.
+			fixed16_16 yOffset = (dispHeight == 200 || dispHeight == 400) ? 0 : round16(yScale / 2);
+			yOffset = min(yOffset, 3 - s_buttonPressed);
+
+			// Draw the highlight button
+			const s32 highlightIndices[] = { 1, 7, 9, 5 };
+			screenGPU_blitTextureScaled(&s_escMenuFrames[highlightIndices[s_buttonPressed]].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
+		}
+		// Draw the mouse.
+		screenGPU_blitTextureScaled(&s_cursor.texture, nullptr, intToFixed16(s_cursorPos.x), intToFixed16(s_cursorPos.z), xScale, yScale, 31);
+	}
+
 	EscapeMenuAction escapeMenu_update()
 	{
 		EscapeMenuAction action = escapeMenu_updateUI();
@@ -129,6 +229,13 @@ namespace TFE_DarkForces
 
 			// TFE
 			reticle_enable(true);
+		}
+
+		// TFE Note: handle GPU drawing differently, though the UI update is exactly the same.
+		if (TFE_Jedi::getSubRenderer() == TSR_CLASSIC_GPU)
+		{
+			escapeMenu_drawGpu();
+			return action;
 		}
 		
 		// Draw the screen capture.

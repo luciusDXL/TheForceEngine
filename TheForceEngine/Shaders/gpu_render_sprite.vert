@@ -38,7 +38,7 @@ void main()
 	vtx_pos.xz -= vec2(scaleOffset.x) * CameraRight.xz;
 	vtx_pos.xz += vec2(scaleOffset.z) * CameraRight.xz * float(vertexId&1);
 	vtx_pos.y = vtx_pos.y + scaleOffset.y - scaleOffset.w * float(1-(vertexId/2));
-	
+
 	// Relative position	
 	Frag_Pos = vtx_pos - CameraPos;
 	

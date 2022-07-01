@@ -117,6 +117,8 @@ namespace TFE_RenderBackend
 	bool createVirtualDisplay(const VirtualDisplayInfo& vdispInfo);
 	void updateVirtualDisplay(const void* buffer, size_t size);
 	void bindVirtualDisplay();
+	void copyToVirtualDisplay(RenderTargetHandle src);
+	void copyFromVirtualDisplay(RenderTargetHandle dst);
 	void clearVirtualDisplay(f32* color);
 	void setPalette(const u32* palette);
 	const TextureGpu* getPaletteTexture();
@@ -139,6 +141,7 @@ namespace TFE_RenderBackend
 	void bindRenderTarget(RenderTargetHandle handle);
 	void clearRenderTarget(RenderTargetHandle handle, const f32* clearColor, f32 clearDepth = 1.0f);
 	void clearRenderTargetDepth(RenderTargetHandle handle, f32 clearDepth = 1.0f);
+	void copyRenderTarget(RenderTargetHandle dst, RenderTargetHandle src);
 	void unbindRenderTarget();
 	const TextureGpu* getRenderTargetTexture(RenderTargetHandle rtHandle);
 	void getRenderTargetDim(RenderTargetHandle rtHandle, u32* width, u32* height);
