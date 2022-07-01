@@ -35,9 +35,6 @@
     <Filter Include="Source\TFE_FileSystem">
       <UniqueIdentifier>{6c511967-59a2-46a6-89ea-83c258bbab1d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_Settings">
-      <UniqueIdentifier>{ef6de83e-9331-4ec3-a8e7-1af08d047a9d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_Archive">
       <UniqueIdentifier>{7f0b8e84-1b30-41dc-8dd1-3af94a588ff1}</UniqueIdentifier>
     </Filter>
@@ -79,9 +76,6 @@
     </Filter>
     <Filter Include="Source\TFE_System\Threads\Win32">
       <UniqueIdentifier>{1389f658-d350-4b30-91ca-293ec673341e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_Settings\registry">
-      <UniqueIdentifier>{10925be4-50d6-4ecd-af01-46e353a79d4b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\TFE_PostProcess">
       <UniqueIdentifier>{17a1b5a3-c20e-4777-bd0e-2774b8180e3e}</UniqueIdentifier>
@@ -158,6 +152,24 @@
     <Filter Include="Source\TFE_RenderShared">
       <UniqueIdentifier>{fa701b85-38b6-487e-a243-5b991d0a51ae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_System\TFE_Settings">
+      <UniqueIdentifier>{ef6de83e-9331-4ec3-a8e7-1af08d047a9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_System\TFE_Settings\registry">
+      <UniqueIdentifier>{10925be4-50d6-4ecd-af01-46e353a79d4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript">
+      <UniqueIdentifier>{a70701f9-f711-4157-8ecd-e6719c505126}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\asmjit">
+      <UniqueIdentifier>{25515132-b7a7-4feb-ad47-5aa9d3be1d1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\asmjit\core">
+      <UniqueIdentifier>{0a45dbde-7cd4-4710-958d-36bce76ab258}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_ForceScript\asmjit\x86">
+      <UniqueIdentifier>{f83126e9-8bef-43c5-9c86-5a1c46a26708}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -230,7 +242,7 @@
       <Filter>Source\TFE_FileSystem</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Settings\settings.h">
-      <Filter>Source\TFE_Settings</Filter>
+      <Filter>Source\TFE_System\TFE_Settings</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Archive\archive.h">
       <Filter>Source\TFE_Archive</Filter>
@@ -368,10 +380,10 @@
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Settings\windows\registry.h">
-      <Filter>Source\TFE_Settings\registry</Filter>
+      <Filter>Source\TFE_System\TFE_Settings\registry</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Settings\gameSourceData.h">
-      <Filter>Source\TFE_Settings</Filter>
+      <Filter>Source\TFE_System\TFE_Settings</Filter>
     </ClInclude>
     <ClInclude Include="TFE_System\profiler.h">
       <Filter>Source\TFE_System</Filter>
@@ -952,6 +964,228 @@
     <ClInclude Include="TFE_Jedi\Renderer\textureInfo.h">
       <Filter>Source\TFE_Jedi\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_ForceScript\jit.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\value.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\vm.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\vmConfig.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\vmOps.h">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\asmjit.h">
+      <Filter>Source\TFE_ForceScript\asmjit</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\asmjit-scope-begin.h">
+      <Filter>Source\TFE_ForceScript\asmjit</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\asmjit-scope-end.h">
+      <Filter>Source\TFE_ForceScript\asmjit</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core.h">
+      <Filter>Source\TFE_ForceScript\asmjit</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86.h">
+      <Filter>Source\TFE_ForceScript\asmjit</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\api-build_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\api-config.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\archcommons.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\archtraits.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\assembler.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\builder.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\codebuffer.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\codeholder.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\codewriter_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\compiler.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\compilerdefs.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\constpool.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\cpuinfo.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\emithelper_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\emitter.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\emitterutils_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\environment.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\errorhandler.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\formatter.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\formatter_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\func.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\funcargscontext_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\globals.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\inst.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\jitallocator.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\jitruntime.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\logger.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\misc_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\operand.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\osutils.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\osutils_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\raassignment_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\rabuilders_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\radefs_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\ralocal_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\rapass_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\rastack_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\string.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\support.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\target.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\type.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\virtmem.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\zone.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\zonehash.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\zonelist.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\zonestack.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\zonestring.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\zonetree.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\core\zonevector.h">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86archtraits_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86assembler.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86builder.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86compiler.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86emithelper_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86emitter.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86formatter_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86func_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86globals.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instapi_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instdb.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86instdb_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86opcode_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86operand.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_ForceScript\asmjit\x86\x86rapass_p.h">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1000,7 +1234,7 @@
       <Filter>Source\TFE_FileSystem</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Settings\settings.cpp">
-      <Filter>Source\TFE_Settings</Filter>
+      <Filter>Source\TFE_System\TFE_Settings</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Archive\gobArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>
@@ -1120,7 +1354,7 @@
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Settings\windows\registry.cpp">
-      <Filter>Source\TFE_Settings\registry</Filter>
+      <Filter>Source\TFE_System\TFE_Settings\registry</Filter>
     </ClCompile>
     <ClCompile Include="TFE_System\profiler.cpp">
       <Filter>Source\TFE_System</Filter>
@@ -1619,6 +1853,156 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Level\levelTextures.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\jit.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\value.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\vm.cpp">
+      <Filter>Source\TFE_ForceScript</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\archtraits.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\assembler.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\builder.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\codeholder.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\codewriter.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\compiler.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\constpool.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\cpuinfo.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\emithelper.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\emitter.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\emitterutils.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\environment.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\errorhandler.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\formatter.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\func.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\funcargscontext.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\globals.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\inst.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\jitallocator.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\jitruntime.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\logger.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\operand.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\osutils.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\ralocal.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\rapass.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\rastack.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\string.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\support.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\target.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\type.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\virtmem.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\zone.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\zonehash.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\zonelist.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\zonestack.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\zonetree.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\core\zonevector.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\core</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86assembler.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86builder.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86compiler.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86emithelper.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86formatter.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86func.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86instapi.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86instdb.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86operand.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_ForceScript\asmjit\x86\x86rapass.cpp">
+      <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

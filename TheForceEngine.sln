@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28307.705
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TheForceEngine", "TheForceEngine\TheForceEngine.vcxproj", "{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fs", "fs\fs.vcxproj", "{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		BuildForRelease|x64 = BuildForRelease|x64
@@ -39,6 +41,26 @@ Global
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Release|x64.Build.0 = Release|x64
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Release|x86.ActiveCfg = Release|Win32
 		{31CD2991-9EF0-4AA9-AEEB-BA1194D2DAB4}.Release|x86.Build.0 = Release|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.BuildForRelease|x64.ActiveCfg = Release|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.BuildForRelease|x64.Build.0 = Release|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.BuildForRelease|x86.ActiveCfg = Release|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.BuildForRelease|x86.Build.0 = Release|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.clang_debug|x64.ActiveCfg = Release|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.clang_debug|x64.Build.0 = Release|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.clang_debug|x86.ActiveCfg = Release|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.clang_debug|x86.Build.0 = Release|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Debug|x64.ActiveCfg = Debug|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Debug|x64.Build.0 = Debug|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Debug|x86.ActiveCfg = Debug|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Debug|x86.Build.0 = Debug|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Profile|x64.ActiveCfg = Release|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Profile|x64.Build.0 = Release|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Profile|x86.ActiveCfg = Release|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Profile|x86.Build.0 = Release|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Release|x64.ActiveCfg = Release|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Release|x64.Build.0 = Release|x64
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Release|x86.ActiveCfg = Release|Win32
+		{7E8ED995-D72B-4E67-A617-C469CA5A3EB4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

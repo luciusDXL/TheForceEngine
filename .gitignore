@@ -48,6 +48,12 @@
 *.user
 *.ini
 
+# Other File Types
+*.aps
+*.ico
+*.bin
+*.tfs
+
 #Directories
 .vs/
 Internal/
@@ -57,6 +63,10 @@ TheForceEngine/Reference/
 TheForceEngine/LawMaker/
 TheForceEngine/Backup/
 TheForceEngine/VTune Profiler Results/
+TheForceEngine/glslang/
+TheForceEngine/Documentation/blog posts/
+BuildExes/
 Build/
 TheForceEngine/bug_reports/
 WDFuseCommonFiles/
+x64/Debug/

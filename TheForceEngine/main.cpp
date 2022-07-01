@@ -22,6 +22,7 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
+#include <TFE_ForceScript/vm.h>
 #include <algorithm>
 #include <time.h>
 #include <sys/types.h>
@@ -560,6 +561,11 @@ int main(int argc, char* argv[])
 
 	// Optional Reticle.
 	reticle_init();
+
+	// Test
+	#ifdef VM_ENABLE
+		TFE_ForceScript::test();
+	#endif
 
 	// Game loop
 	u32 frame = 0u;
