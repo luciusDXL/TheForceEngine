@@ -165,6 +165,7 @@ namespace TFE_Jedi
 		}
 
 		// Try to merge the head and tail because they might have been split on the modulo line.
+		/*
 		if (s_segClippedHead != s_segClippedTail)
 		{
 			if (s_segClippedHead->x0 == 0.0f && s_segClippedTail->x1 == 4.0f && s_segClippedHead->seg->id == s_segClippedTail->seg->id)
@@ -175,6 +176,7 @@ namespace TFE_Jedi
 				s_segClippedHead->prev = nullptr;
 			}
 		}
+		*/
 	}
 
 	void sbuffer_insertSegment(Segment* seg)
@@ -304,6 +306,254 @@ namespace TFE_Jedi
 	SegmentClipped* sbuffer_get()
 	{
 		return s_segClippedHead;
+	}
+
+	SegmentClipped* sbuffer_getClippedSeg(Segment* seg, SegmentClipped* dstSegs, s32 maxOutputSegs, s32& dstSegCount)
+	{
+		if (dstSegCount >= maxOutputSegs)
+		{
+			return nullptr;
+		}
+		SegmentClipped* segClipped = &dstSegs[dstSegCount];
+		segClipped->prev = nullptr;
+		segClipped->next = nullptr;
+		segClipped->seg = seg;
+		if (seg)
+		{
+			segClipped->x0 = seg->x0;
+			segClipped->x1 = seg->x1;
+			segClipped->v0 = seg->v0;
+			segClipped->v1 = seg->v1;
+		}
+		dstSegCount++;
+		return segClipped;
+	}
+
+	s32 sbuffer_convertToSegments(Vec2f v0, Vec2f v1, s32 id, s32 rangeCount, Vec2f* range, Vec2f* rangeSrc, Segment* segments)
+	{
+		s32 segCount = 1;
+		segments[0].v0 = v0;
+		segments[0].v1 = v1;
+		segments[0].id = id;
+		segments[0].normal = { -(v1.z - v0.z), v1.x - v0.x };
+		segments[0].x0 = sbuffer_projectToUnitSquare(segments[0].v0);
+		segments[0].x1 = sbuffer_projectToUnitSquare(segments[0].v1);
+
+		// This means both vertices map to the same point on the unit square, in other words, the edge isn't actually visible.
+		if (fabsf(segments[0].x0 - segments[0].x1) < FLT_EPSILON)
+		{
+			return 0;
+		}
+
+		// Project the edge.
+		sbuffer_handleEdgeWrapping(segments[0].x0, segments[0].x1);
+		// Check again for zero-length walls in case the fix-ups above caused it (for example, x0 = 0.0, x1 = 4.0).
+		if (segments[0].x0 >= segments[0].x1 || segments[0].x1 - segments[0].x0 < FLT_EPSILON)
+		{
+			return 0;
+		}
+		assert(segments[0].x1 - segments[0].x0 > 0.0f && segments[0].x1 - segments[0].x0 <= 2.0f);
+
+		// Split segments that cross the modulo boundary.
+		if (segments[0].x1 > 4.0f)
+		{
+			const f32 sx1 = segments[0].x1;
+			const Vec2f sv1 = segments[0].v1;
+
+			// Split the segment at the modulus border.
+			segments[0].v1 = sbuffer_clip(segments[0].v0, segments[0].v1, { 1.0f + s_cameraPos.x, -1.0f + s_cameraPos.z });
+			segments[0].x1 = 4.0f;
+			Vec2f newV1 = segments[0].v1;
+
+			s32 nextIndex = 1;
+			if (rangeCount && !sbuffer_splitByRange(&segments[0], range, rangeSrc, rangeCount))
+			{
+				segCount = 1;
+				nextIndex = 0;
+			}
+			else
+			{
+				segCount = 2;
+				segments[1] = segments[0];
+			}
+
+			segments[nextIndex].x0 = 0.0f;
+			segments[nextIndex].x1 = sx1 - 4.0f;
+			segments[nextIndex].v0 = newV1;
+			segments[nextIndex].v1 = sv1;
+			if (rangeCount && !sbuffer_splitByRange(&segments[nextIndex], range, rangeSrc, rangeCount))
+			{
+				segCount--;
+			}
+		}
+		else if (rangeCount)
+		{
+			if (!sbuffer_splitByRange(&segments[0], range, rangeSrc, rangeCount))
+			{
+				segCount = 0;
+			}
+		}
+
+		return segCount;
+	}
+
+	// Clips a segment to the buffer but does *not* update the s-buffer itself.
+	// The result will be zero or more output segments.
+	// TODO: Handle unique cases -
+	//   1. If clip rule returns false: check if either point of src segment is in front, if so than it *all* is otherwise *none* of it is.
+	//	 2. If clip rule returns true or not an adjoin: if "in front" test is inconclusive, clip the src and cur segment lines to determine part in front.
+	//      (This takes the place of the z-buffer test)
+	s32 sbuffer_clipSegmentToBuffer(Vec2f v0, Vec2f v1, s32 rangeCount, Vec2f* range, Vec2f* rangeSrc, s32 maxOutputSegs, SegmentClipped* dstSegs, SBufferClipRule clipRule)
+	{
+		// Invalid state.
+		if (!s_segClippedHead || !s_segClippedTail) { return 0; }
+
+		// Convert from a two positions to segments.
+		// Early return if no segments are generated.
+		Segment srcSeg[8] = { 0 };
+		const s32 srcSegCount = sbuffer_convertToSegments(v0, v1, 1, rangeCount, range, rangeSrc, srcSeg);
+		if (!srcSegCount) { return 0; }
+
+		s32 newSegCount = 0;
+		for (s32 s = 0; s < srcSegCount; s++)
+		{
+			Segment* seg = &srcSeg[srcSegCount - s - 1];
+
+			SegmentClipped* cur = s_segClippedHead;
+			bool addSegEnd = true;
+			while (cur)
+			{
+				// Do the segments overlap?
+				if (segmentsOverlap(seg->x0, seg->x1, cur->x0, cur->x1))
+				{
+					// Skip past adjoins that "fail" the clip rule.
+					if (cur->seg->portal && clipRule && !clipRule(cur->seg->id))
+					{
+						cur = cur->next;
+						continue;
+					}
+
+					// Otherwise clip the src segment as needed.
+					bool curInFront = segmentInFront(seg->v0, seg->v1, seg->normal, cur->v0, cur->v1, cur->seg->normal);
+					if (curInFront)
+					{
+						// Seg can be discarded, which means we are done here.
+						if (seg->x0 >= cur->x0 && seg->x1 <= cur->x1)
+						{
+							addSegEnd = false;
+							break;
+						}
+
+						s32 clipFlags = 0;
+						if (seg->x0 < cur->x0) { clipFlags |= 1; } // Seg sticks out of the left side and should be clipped.
+						if (seg->x1 > cur->x1) { clipFlags |= 2; } // Seg sticks out of the right side and should be clipped.
+						if (!clipFlags)
+						{
+							addSegEnd = false;
+							break;
+						}
+
+						// If the left side needs to be clipped, it can be added without continue with loop.
+						if (clipFlags & 1)
+						{
+							SegmentClipped* newEntry = sbuffer_getClippedSeg(seg, dstSegs, maxOutputSegs, newSegCount);
+							newEntry->x1 = cur->x0;
+							newEntry->v1 = sbuffer_clip(seg->v0, seg->v1, cur->v0);
+						}
+						// If the right side is clipped, then we must continue with the loop.
+						if (clipFlags & 2)
+						{
+							seg->x0 = cur->x1;
+							seg->v0 = sbuffer_clip(seg->v0, seg->v1, cur->v1);
+						}
+						else
+						{
+							addSegEnd = false;
+							break;
+						}
+					}
+					else
+					{
+						if (seg->x1 > cur->x1)
+						{
+							// New segment that gets clipped by the edge of 'cur'.
+							SegmentClipped* segEntry = sbuffer_getClippedSeg(seg, dstSegs, maxOutputSegs, newSegCount);
+							segEntry->x1 = cur->x1;
+							segEntry->v1 = sbuffer_clip(seg->v0, seg->v1, cur->v1);
+
+							// Left over part for the rest of the loop.
+							seg->x0 = segEntry->x1;
+							seg->v0 = segEntry->v1;
+						}
+						else  // Insert the full new segment.
+						{
+							sbuffer_getClippedSeg(seg, dstSegs, maxOutputSegs, newSegCount);
+							addSegEnd = false;
+							break;
+						}
+					}
+				}
+				else if (seg->x1 <= cur->x0) // Left
+				{
+					sbuffer_getClippedSeg(seg, dstSegs, maxOutputSegs, newSegCount);
+					addSegEnd = false;
+					break;
+				}
+
+				cur = cur->next;
+			}
+			// The new segment is to the right of everything.
+			if (addSegEnd)
+			{
+				sbuffer_getClippedSeg(seg, dstSegs, maxOutputSegs, newSegCount);
+			}
+		}
+
+		// Next attempt to merge the segments back together.
+		s32 segToDelete[16];
+		while (newSegCount > 1)
+		{
+			s32 segToDeleteCount = 0;
+
+			for (s32 i = 0; i < newSegCount && segToDeleteCount < 16; i++)
+			{
+				const s32 i0 = i, i1 = (i0 + 1) % newSegCount;
+				if (dstSegs[i0].x1 == dstSegs[i1].x0 || (dstSegs[i0].x1 == 4.0f && dstSegs[i1].x0 == 0.0f))
+				{
+					const f32 offset = (dstSegs[i0].x1 == 4.0f && dstSegs[i1].x0 == 0.0f) ? 4.0f : 0.0f;
+					dstSegs[i0].x1 = dstSegs[i1].x1 + offset;
+					dstSegs[i0].v1 = dstSegs[i1].v1;
+					if (offset > 0.0f)
+					{
+						// This will add delete 0, which should obviously be at the beginning...
+						for (s32 d = segToDeleteCount; d > 0; d--)
+						{
+							segToDelete[d] = segToDelete[d - 1];
+						}
+						segToDelete[0] = i1;
+						segToDeleteCount++;
+					}
+					else
+					{
+						segToDelete[segToDeleteCount++] = i1;
+					}
+					// Skip the next segment since it was just merged.
+					i++;
+				}
+			}
+
+			if (!segToDeleteCount) { break; }
+			for (s32 i = segToDeleteCount - 1; i >= 0; i--)
+			{
+				for (s32 s = segToDelete[i]; s < newSegCount - 1; s++)
+				{
+					dstSegs[s] = dstSegs[s + 1];
+				}
+				newSegCount--;
+			}
+		}
+
+		return newSegCount;
 	}
 
 	void sbuffer_debugDisplay()

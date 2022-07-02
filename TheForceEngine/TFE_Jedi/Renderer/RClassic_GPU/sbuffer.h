@@ -33,6 +33,10 @@ namespace TFE_Jedi
 		Vec2f v0, v1;
 	};
 
+	// Clip rule called on portal segments.
+	// Return true if the segment should clip the incoming segment.
+	typedef bool(*SBufferClipRule)(s32 id);
+
 	f32   sbuffer_projectToUnitSquare(Vec2f coord);
 	void  sbuffer_handleEdgeWrapping(f32& x0, f32& x1);
 	bool  sbuffer_splitByRange(Segment* seg, Vec2f* range, Vec2f* points, s32 rangeCount);
@@ -42,6 +46,11 @@ namespace TFE_Jedi
 	void sbuffer_mergeSegments();
 	void sbuffer_insertSegment(Segment* seg);
 	SegmentClipped* sbuffer_get();
+
+	// Clips a segment to the buffer but does *not* update the s-buffer itself.
+	// The result will be zero or more output segments.
+	// If no clip rule is passed in, assume all current segments clip the source segment.
+	s32 sbuffer_clipSegmentToBuffer(Vec2f v0, Vec2f v1, s32 rangeCount, Vec2f* range, Vec2f* rangeSrc, s32 maxOutputSegs, SegmentClipped* dstSegs, SBufferClipRule clipRule = nullptr);
 
 	void sbuffer_debugDisplay();
 }  // TFE_Jedi

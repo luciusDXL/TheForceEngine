@@ -31,7 +31,7 @@ float sampleTextureClamp(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec3 iuv;
-	iuv.xy = ivec2(floor(uv * vec2(sampleData.zw)));
+	iuv.xy = ivec2(uv);
 	iuv.z = 0;
 
 	if ( any(lessThan(iuv.xy, ivec2(0))) || any(greaterThan(iuv.xy, sampleData.zw-1)) )
@@ -77,11 +77,11 @@ void main()
 
 	// Sample the texture.
 	baseColor = sampleTextureClamp(Frag_TextureId, Frag_Uv);
-	if (baseColor < 0.5)
+	if (baseColor < 0.5 && LightData.w < 1.0)
 	{
 		discard;
 	}
 
-	Out_Color.rgb = getAttenuatedColor(int(baseColor), int(light));
+	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.8, 0.6) : getAttenuatedColor(int(baseColor), int(light));
 	Out_Color.a = 1.0;
 }

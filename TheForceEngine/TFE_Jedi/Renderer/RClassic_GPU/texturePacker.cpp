@@ -239,8 +239,8 @@ namespace TFE_Jedi
 		// Copy the mapping into the texture table.
 		tableEntry->x = (s32)node->rect.x;
 		tableEntry->y = (s32)node->rect.y;
-		tableEntry->z = (s32)node->rect.z;
-		tableEntry->w = (s32)node->rect.w;
+		tableEntry->z = (s32)texData->width;
+		tableEntry->w = (s32)texData->height;
 
 		// Page the page index into the x offset.
 		tableEntry->x |= (s_currentPage << 12);
@@ -263,8 +263,8 @@ namespace TFE_Jedi
 		// Copy the mapping into the texture table.
 		tableEntry->x = (s32)node->rect.x;
 		tableEntry->y = (s32)node->rect.y;
-		tableEntry->z = (s32)node->rect.z;
-		tableEntry->w = (s32)node->rect.w;
+		tableEntry->z = (s32)texData->width;
+		tableEntry->w = (s32)texData->height;
 
 		// Page the page index into the x offset.
 		tableEntry->x |= (s_currentPage << 12);
@@ -300,8 +300,8 @@ namespace TFE_Jedi
 		// Copy the mapping into the texture table.
 		tableEntry->x = (s32)node->rect.x;
 		tableEntry->y = (s32)node->rect.y;
-		tableEntry->z = (s32)node->rect.z;
-		tableEntry->w = (s32)node->rect.w;
+		tableEntry->z = (s32)cell->sizeX;
+		tableEntry->w = (s32)cell->sizeY;
 
 		// Page the page index into the x offset.
 		tableEntry->x |= (s_currentPage << 12);

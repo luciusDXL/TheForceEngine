@@ -237,6 +237,7 @@ void main()
 	}
 	#endif
 
-	Out_Color.rgb = getAttenuatedColor(int(baseColor), int(light));
+	// Enable solid color rendering for wireframe.
+	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColor(int(baseColor), int(light));
 	Out_Color.a = 1.0;
 }

@@ -18,6 +18,8 @@
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
 
+#include <TFE_FrontEndUI/console.h>
+
 #include "rclassicGPU.h"
 #include "rsectorGPU.h"
 #include "modelGPU.h"
@@ -89,8 +91,13 @@ namespace TFE_Jedi
 
 	static Portal s_portalList[2048];
 	static s32 s_portalListCount = 0;
+	static s32 s_rangeCount;
+	static Vec2f s_range[2];
+	static Vec2f s_rangeSrc[2];
 
 	static TexturePacker* s_textures = nullptr;
+
+	static bool s_showWireframe = false;
 				
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -100,10 +107,18 @@ namespace TFE_Jedi
 
 	bool loadSpriteShader()
 	{
+	#ifdef SPRITE_CPU_CLIPPING
 		if (!m_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", 0, nullptr, SHADER_VER_STD))
 		{
 			return false;
 		}
+	#else
+		ShaderDefine defines[] = { "SPRITE_GPU_CLIPPING", "1" };
+		if (!m_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", TFE_ARRAYSIZE(defines), defines, SHADER_VER_STD))
+		{
+			return false;
+		}
+	#endif
 
 		m_cameraPosId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraPos");
 		m_cameraViewId[SPRITE_PASS]  = m_spriteShader.getVariableId("CameraView");
@@ -112,12 +127,18 @@ namespace TFE_Jedi
 		m_cameraDirId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraDir");
 		m_lightDataId[SPRITE_PASS]   = m_spriteShader.getVariableId("LightData");
 
+	#ifdef SPRITE_CPU_CLIPPING
+		m_spriteShader.bindTextureNameToSlot("DrawListPosXZ_Texture", 0);
+		m_spriteShader.bindTextureNameToSlot("DrawListPosYU_Texture", 1);
+		m_spriteShader.bindTextureNameToSlot("DrawListTexId_Texture", 2);
+	#else
 		m_spriteShader.bindTextureNameToSlot("DrawListPosTexture",  0);
 		m_spriteShader.bindTextureNameToSlot("DrawListScaleOffset", 1);
-		m_spriteShader.bindTextureNameToSlot("Colormap",     2);
-		m_spriteShader.bindTextureNameToSlot("Palette",      3);
-		m_spriteShader.bindTextureNameToSlot("Textures",     4);
-		m_spriteShader.bindTextureNameToSlot("TextureTable", 5);
+	#endif
+		m_spriteShader.bindTextureNameToSlot("Colormap",     3);
+		m_spriteShader.bindTextureNameToSlot("Palette",      4);
+		m_spriteShader.bindTextureNameToSlot("Textures",     5);
+		m_spriteShader.bindTextureNameToSlot("TextureTable", 6);
 
 		return true;
 	}
@@ -157,6 +178,8 @@ namespace TFE_Jedi
 	{
 		if (!m_gpuInit)
 		{
+			CVAR_BOOL(s_showWireframe, "d_enableWireframe", CVFLAG_DO_NOT_SERIALIZE, "Enable wireframe rendering.");
+
 			m_gpuInit = true;
 			s_gpuFrame = 1;
 
@@ -285,7 +308,7 @@ namespace TFE_Jedi
 			sdisplayList_init(posIndex, dataIndex, 4);
 
 			// Sprite Shader and buffers...
-			sprdisplayList_init(0, 1);
+			sprdisplayList_init(0);
 
 			// Build the color map.
 			if (s_colorMap && s_lightSourceRamp)
@@ -459,6 +482,14 @@ namespace TFE_Jedi
 		}
 		sbuffer_mergeSegments();
 
+		// Verify that segments are inserted properly.
+		SegmentClipped* segmentTest = sbuffer_get();
+		while (segmentTest)
+		{
+			assert(segmentTest->x0 >= 0.0f && segmentTest->x1 <= 4.0f);
+			segmentTest = segmentTest->next;
+		}
+
 		// Build the display list.
 		SegmentClipped* segment = sbuffer_get();
 		while (segment && s_wallSegGenerated < s_maxWallSeg)
@@ -521,6 +552,10 @@ namespace TFE_Jedi
 		{
 			segCount--;
 		}
+		else
+		{
+			assert(seg->x0 >= 0.0f && seg->x1 <= 4.0f);
+		}
 
 		Segment* seg2;
 		seg2 = &segList[segCount];
@@ -536,8 +571,12 @@ namespace TFE_Jedi
 		{
 			segCount--;
 		}
+		else
+		{
+			assert(seg2->x0 >= 0.0f && seg2->x1 <= 4.0f);
+		}
 	}
-
+		
 	// Build world-space wall segments.
 	void buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1)
 	{
@@ -549,22 +588,22 @@ namespace TFE_Jedi
 
 		// Portal range, all segments must be clipped to this.
 		// The actual clip vertices are p0 and p1.
-		Vec2f range[2] = { 0 };
-		Vec2f points[2] = { p0, p1 };
-		s32 rangeCount = 0;
+		s_rangeSrc[0] = p0;
+		s_rangeSrc[1] = p1;
+		s_rangeCount = 0;
 		if (!initSector)
 		{
-			range[0].x = sbuffer_projectToUnitSquare(p0);
-			range[0].z = sbuffer_projectToUnitSquare(p1);
-			sbuffer_handleEdgeWrapping(range[0].x, range[0].z);
-			rangeCount = 1;
+			s_range[0].x = sbuffer_projectToUnitSquare(p0);
+			s_range[0].z = sbuffer_projectToUnitSquare(p1);
+			sbuffer_handleEdgeWrapping(s_range[0].x, s_range[0].z);
+			s_rangeCount = 1;
 
-			if (range[0].z > 4.0f)
+			if (s_range[0].z > 4.0f)
 			{
-				range[1].x = 0.0f;
-				range[1].z = range[0].z - 4.0f;
-				range[0].z = 4.0f;
-				rangeCount = 2;
+				s_range[1].x = 0.0f;
+				s_range[1].z = s_range[0].z - 4.0f;
+				s_range[0].z = 4.0f;
+				s_rangeCount = 2;
 			}
 		}
 			
@@ -665,17 +704,75 @@ namespace TFE_Jedi
 			// Split segments that cross the modulo boundary.
 			if (seg->x1 > 4.0f)
 			{
-				splitSegment(initSector, wallSegments, segCount, seg, range, points, rangeCount);
+				splitSegment(initSector, wallSegments, segCount, seg, s_range, s_rangeSrc, s_rangeCount);
 			}
-			else if (!initSector && !sbuffer_splitByRange(seg, range, points, rangeCount))
+			else if (!initSector && !sbuffer_splitByRange(seg, s_range, s_rangeSrc, s_rangeCount))
 			{
 				// Out of the range, so cancel the segment.
 				segCount--;
+			}
+			else
+			{
+				assert(seg->x0 >= 0.0f && seg->x1 <= 4.0f);
 			}
 		}
 
 		buildSegmentBuffer(initSector, curSector, segCount, wallSegments);
 	}
+
+#ifdef SPRITE_CPU_CLIPPING
+	static RSector* s_clipSector;
+
+	// Clip rule called on portal segments.
+	// Return true if the segment should clip the incoming segment.
+	bool clipRule(s32 id)
+	{
+		// for now always return false for adjoins.
+		id;
+		return true;
+	}
+
+	void clipSpriteToView(RSector* curSector, Vec3f posWS, WaxFrame* frame, void* basePtr, bool fullbright)
+	{
+		if (!frame) { return; }
+		s_clipSector = curSector;
+
+		// Compute the (x,z) extents of the frame.
+		const f32 widthWS  = fixed16ToFloat(frame->widthWS);
+		const f32 heightWS = fixed16ToFloat(frame->heightWS);
+		const f32 fOffsetX = fixed16ToFloat(frame->offsetX);
+		const f32 fOffsetY = fixed16ToFloat(frame->offsetY);
+
+		Vec3f corner0 = { posWS.x - s_cameraRight.x*fOffsetX,  posWS.y + fOffsetY,   posWS.z - s_cameraRight.z*fOffsetX };
+		Vec3f corner1 = { corner0.x + s_cameraRight.x*widthWS, corner0.y - heightWS, corner0.z + s_cameraRight.z*widthWS };
+		Vec2f points[] =
+		{
+			{ corner0.x, corner0.z },
+			{ corner1.x, corner1.z }
+		};
+		// Cull sprites outside of the view before clipping.
+		if (!frustum_quadInside(corner0, corner1)) { return; }
+
+		// Cull sprites too close to the camera.
+		const Vec3f relPos = { posWS.x - s_cameraPos.x, posWS.y - s_cameraPos.y, posWS.z - s_cameraPos.z };
+		const f32 z = relPos.x*s_cameraDir.x + relPos.y*s_cameraDir.y + relPos.z*s_cameraDir.z;
+		if (z < 1.0f) { return; }
+
+		// Clip against the current wall segments and the portal XZ extents.
+		SegmentClipped dstSegs[32];
+		const s32 segCount = sbuffer_clipSegmentToBuffer(points[0], points[1], s_rangeCount, s_range, s_rangeSrc, 32, dstSegs, clipRule);
+		if (!segCount) { return; }
+
+		// Decide which adjoin to use for vertical clipping.
+		// TODO
+
+		// Then add the segments to the list.
+		for (s32 s = 0; s < segCount; s++)
+		{
+			sprdisplayList_addFrame(basePtr, frame, points[0], points[1], dstSegs[s].v0, dstSegs[s].v1, posWS.y, curSector, fullbright);
+		}
+	}
+#endif
 
 	void addSectorObjects(RSector* curSector)
 	{
@@ -684,8 +781,6 @@ namespace TFE_Jedi
 		Vec2f floorOffset = { fixed16ToFloat(curSector->floorOffset.x), fixed16ToFloat(curSector->floorOffset.z) };
 		for (s32 i = 0; i < curSector->objectCount; objIter++)
 		{
-			// TODO: Add an object draw frame.
-
 			SecObject* obj = *objIter;
 			if (!obj) { continue; }
 			i++;
@@ -715,12 +810,20 @@ namespace TFE_Jedi
 							WaxView* view = WAX_ViewPtr(wax, anim, 31 - angleDiff);
 							// And finall the frame from the current sequence.
 							WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 31);
+						#ifndef SPRITE_CPU_CLIPPING
 							sprdisplayList_addFrame(wax, frame, posWS, curSector, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
+						#else
+							clipSpriteToView(curSector, posWS, frame, wax, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
+						#endif
 						}
 					}
 					else if (type == OBJ_TYPE_FRAME)
 					{
+					#ifndef SPRITE_CPU_CLIPPING
 						sprdisplayList_addFrame(obj->fme, obj->fme, posWS, curSector, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
+					#else
+						clipSpriteToView(curSector, posWS, obj->fme, obj->fme, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
+					#endif
 					}
 				}
 				else if (type == OBJ_TYPE_3D)
@@ -841,7 +944,7 @@ namespace TFE_Jedi
 		textureTable->bind(8);
 
 		// Camera and lighting.
-		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, 0.0f };
+		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, s_showWireframe ? 1.0f : 0.0f };
 		m_wallShader[pass].setVariable(m_cameraPosId[pass],  SVT_VEC3, s_cameraPos.m);
 		m_wallShader[pass].setVariable(m_cameraViewId[pass], SVT_MAT3x3, s_cameraMtx.data);
 		m_wallShader[pass].setVariable(m_cameraProjId[pass], SVT_MAT4x4, s_cameraProj.data);
@@ -868,22 +971,25 @@ namespace TFE_Jedi
 	{
 		if (!sprdisplayList_getSize()) { return; }
 		TFE_RenderState::setStateEnable(false, STATE_DEPTH_WRITE);
+#ifdef SPRITE_CPU_CLIPPING
+		TFE_RenderState::setStateEnable(false, STATE_DEPTH_TEST);
+#endif
 
 		m_spriteShader.bind();
 		m_indexBuffer.bind();
-		s_colormapTex->bind(2);
+		s_colormapTex->bind(3);
 
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
-		palette->bind(3);
+		palette->bind(4);
 
 		const TextureGpu* textures = s_textures->texture;
-		textures->bind(4);
+		textures->bind(5);
 
 		ShaderBuffer* textureTable = &s_textures->textureTableGPU;
-		textureTable->bind(5);
+		textureTable->bind(6);
 
 		// Camera and lighting.
-		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, 0.0f };
+		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, s_showWireframe ? 1.0f : 0.0f };
 		m_spriteShader.setVariable(m_cameraRightId, SVT_VEC3, s_cameraRight.m);
 		m_spriteShader.setVariable(m_cameraPosId[SPRITE_PASS],  SVT_VEC3, s_cameraPos.m);
 		m_spriteShader.setVariable(m_cameraViewId[SPRITE_PASS], SVT_MAT3x3, s_cameraMtx.data);
@@ -924,6 +1030,10 @@ namespace TFE_Jedi
 		// State
 		TFE_RenderState::setStateEnable(false, STATE_BLEND);
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST | STATE_CULLING);
+		if (s_showWireframe)
+		{
+			TFE_RenderState::setStateEnable(true, STATE_WIREFRAME);
+		}
 
 		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
 		{
@@ -943,7 +1053,7 @@ namespace TFE_Jedi
 		TextureGpu::clear(5);
 		TextureGpu::clear(6);
 
-		// TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
+		TFE_RenderState::setStateEnable(false, STATE_WIREFRAME);
 		
 		// Debug
 		if (s_enableDebug)
