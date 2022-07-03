@@ -397,6 +397,74 @@ namespace TFE_Jedi
 		return segCount;
 	}
 
+	// Returns the state of the overlap between 2 segments, whether they one is in front of the other or they are intersecting.
+	// Handle 3 cases:
+	// 1. Segment 0 is a seperating axis.
+	// 2. Segment 1 is a seperating axis.
+	// 3. Segment 0 and Segment 1 intersect.
+	// Case 1 & 2 can result in the seg0 or seg1 in front state.
+	// Case 3 always results in the intersect state.
+	enum SegmentOverlapState
+	{
+		SOS_SEG0_FRONT = 0,
+		SOS_SEG1_FRONT,
+		SOS_SEG_INTERSECT,
+	};
+
+	SegmentOverlapState getSegmentOverlapState(Vec2f w0left, Vec2f w0right, Vec3f w0nrml, Vec2f w1left, Vec2f w1right, Vec3f w1nrml)
+	{
+		// Are w1left and w1right both on the same side of w0nrml as the camera position?
+		const Vec2f left0 = { w1left.x - w0left.x, w1left.z - w0left.z };
+		const Vec2f right0 = { w1right.x - w0left.x, w1right.z - w0left.z };
+		const Vec2f camera0 = { s_cameraPos.x - w0left.x, s_cameraPos.z - w0left.z };
+		f32 sideLeft0 = w0nrml.x*left0.x + w0nrml.z*left0.z;
+		f32 sideRight0 = w0nrml.x*right0.x + w0nrml.z*right0.z;
+		f32 cameraSide0 = w0nrml.x*camera0.x + w0nrml.z*camera0.z;
+
+		// Handle floating point precision.
+		if (fabsf(sideLeft0) < c_sideEps) { sideLeft0 = 0.0f; }
+		if (fabsf(sideRight0) < c_sideEps) { sideRight0 = 0.0f; }
+		if (fabsf(cameraSide0) < c_sideEps) { cameraSide0 = 0.0f; }
+
+		// both vertices of 'w1' are on the same side of 'w0'
+		// 'w1' is in front if the camera is on the same side.
+		if (sideLeft0 <= 0.0f && sideRight0 <= 0.0f)
+		{
+			return cameraSide0 <= 0.0f ? SOS_SEG1_FRONT : SOS_SEG0_FRONT;
+		}
+		else if (sideLeft0 >= 0.0f && sideRight0 >= 0.0f)
+		{
+			return cameraSide0 >= 0.0f ? SOS_SEG1_FRONT : SOS_SEG0_FRONT;
+		}
+
+		// Are w0left and w0right both on the same side of w1nrml as the camera position?
+		const Vec2f left1 = { w0left.x - w1left.x, w0left.z - w1left.z };
+		const Vec2f right1 = { w0right.x - w1left.x, w0right.z - w1left.z };
+		const Vec2f camera1 = { s_cameraPos.x - w1left.x, s_cameraPos.z - w1left.z };
+		f32 sideLeft1 = w1nrml.x*left1.x + w1nrml.z*left1.z;
+		f32 sideRight1 = w1nrml.x*right1.x + w1nrml.z*right1.z;
+		f32 cameraSide1 = w1nrml.x*camera1.x + w1nrml.z*camera1.z;
+
+		// Handle floating point precision.
+		if (fabsf(sideLeft1) < c_sideEps) { sideLeft1 = 0.0f; }
+		if (fabsf(sideRight1) < c_sideEps) { sideRight1 = 0.0f; }
+		if (fabsf(cameraSide1) < c_sideEps) { cameraSide1 = 0.0f; }
+
+		// both vertices of 'w0' are on the same side of 'w1'
+		// 'w0' is in front if the camera is on the same side.
+		if (sideLeft1 <= 0.0f && sideRight1 <= 0.0f)
+		{
+			return cameraSide1 <= 0.0f ? SOS_SEG0_FRONT : SOS_SEG1_FRONT;
+		}
+		else if (sideLeft1 >= 0.0f && sideRight1 >= 0.0f)
+		{
+			return cameraSide1 >= 0.0f ? SOS_SEG0_FRONT : SOS_SEG1_FRONT;
+		}
+
+		// If we still get here, just do a quick distance check.
+		return SOS_SEG_INTERSECT;
+	}
+
 	// Clips a segment to the buffer but does *not* update the s-buffer itself.
 	// The result will be zero or more output segments.
 	// TODO: Handle unique cases -
@@ -426,16 +494,47 @@ namespace TFE_Jedi
 				// Do the segments overlap?
 				if (segmentsOverlap(seg->x0, seg->x1, cur->x0, cur->x1))
 				{
-					// Skip past adjoins that "fail" the clip rule.
+					SegmentOverlapState overlapState;
+
+					// "Failing" the clip rule means we treat it as an adjoin instead of a wall.
 					if (cur->seg->portal && clipRule && !clipRule(cur->seg->id))
 					{
-						cur = cur->next;
-						continue;
+						// Determine if any part of the segment, within the portal range is in front.
+						// If so then the *entire* segment is considered to be in front.
+						const Vec2f left0   = { seg->v0.x - cur->v0.x, seg->v0.z - cur->v0.z };
+						const Vec2f right0  = { seg->v1.x - cur->v0.x, seg->v1.z - cur->v0.z };
+						const Vec2f camera0 = { s_cameraPos.x - cur->v0.x, s_cameraPos.z - cur->v0.z };
+						const Vec3f& nrml = cur->seg->normal;
+						f32 sideLeft0   = nrml.x*left0.x   + nrml.z*left0.z;
+						f32 sideRight0  = nrml.x*right0.x  + nrml.z*right0.z;
+						f32 cameraSide0 = nrml.x*camera0.x + nrml.z*camera0.z;
+						
+						// Handle floating point precision.
+						if (fabsf(sideLeft0)   < c_sideEps) { sideLeft0   = 0.0f; }
+						if (fabsf(sideRight0)  < c_sideEps) { sideRight0  = 0.0f; }
+						if (fabsf(cameraSide0) < c_sideEps) { cameraSide0 = 0.0f; }
+
+						// TODO: This should be checking the overlap area only.
+						// i.e. if seg->x0 < cur->x0, clip to cur->x0 anid
+						//      if seg->x1 > cur->x1, clip to cur->x1.
+						// seg is "in front" of cur.
+						if (((sideLeft0 <= 0.0f || sideRight0 <= 0.0f) && cameraSide0 <= 0.0f) ||
+							((sideLeft0 >= 0.0f || sideRight0 >= 0.0f) && cameraSide0 >= 0.0f))
+						{
+							overlapState = SOS_SEG0_FRONT;
+						}
+						else // seg is "behind" cur.
+						{
+							overlapState = SOS_SEG1_FRONT;
+						}
+					}
+					else
+					{
+						overlapState = getSegmentOverlapState(seg->v0, seg->v1, seg->normal, cur->v0, cur->v1, cur->seg->normal);
 					}
 
 					// Otherwise clip the src segment as needed.
-					bool curInFront = segmentInFront(seg->v0, seg->v1, seg->normal, cur->v0, cur->v1, cur->seg->normal);
-					if (curInFront)
+					if (overlapState == SOS_SEG1_FRONT)
 					{
 						// Seg can be discarded, which means we are done here.
 						if (seg->x0 >= cur->x0 && seg->x1 <= cur->x1)
@@ -472,7 +571,7 @@ namespace TFE_Jedi
 							break;
 						}
 					}
-					else
+					else if (overlapState == SOS_SEG0_FRONT)
 					{
 						if (seg->x1 > cur->x1)
 						{
@@ -491,6 +590,10 @@ namespace TFE_Jedi
 							addSegEnd = false;
 							break;
 						}
+					}
+					else  // SOS_SEG_INTERSECT
+					{
+						// TODO: Determine where the intersect occurs and then split seg accordingly.
 					}
 				}
 				else if (seg->x1 <= cur->x0) // Left

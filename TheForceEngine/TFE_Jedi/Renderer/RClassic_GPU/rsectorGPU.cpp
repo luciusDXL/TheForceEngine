@@ -729,7 +729,7 @@ namespace TFE_Jedi
 	{
 		// for now always return false for adjoins.
 		id;
-		return true;
+		return false;
 	}
 
 	void clipSpriteToView(RSector* curSector, Vec3f posWS, WaxFrame* frame, void* basePtr, bool fullbright)
