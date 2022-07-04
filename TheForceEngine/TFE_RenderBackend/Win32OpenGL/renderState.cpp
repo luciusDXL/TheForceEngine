@@ -46,6 +46,7 @@ namespace TFE_RenderState
 	static u32 s_currentState;
 	static u32 s_depthFunc;
 	static u32 s_colorMask;
+	static s32 s_clipPlaneCount = 0;
 
 	struct StencilFuncState
 	{
@@ -79,6 +80,7 @@ namespace TFE_RenderState
 		glStencilMask(0);
 		glStencilFunc(GL_ALWAYS, 0, 0xffffffff);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		enableClipPlanes();
 	}
 
 	void setStateEnable(bool enable, u32 stateFlags)
@@ -209,6 +211,25 @@ namespace TFE_RenderState
 		{
 			glDisable(GL_POLYGON_OFFSET_FILL);
 			glPolygonOffset(0.0f, 0.0f);
+		}
+	}
+	
+	void enableClipPlanes(s32 count)
+	{
+		if (s_clipPlaneCount != count)
+		{
+			// Disable unused planes.
+			for (s32 p = count; p < s_clipPlaneCount; p++)
+			{
+				glDisable(GL_CLIP_DISTANCE0 + p);
+			}
+			// Enable new planes.
+			for (s32 p = 0; p < count; p++)
+			{
+				glEnable(GL_CLIP_DISTANCE0 + p);
+			}
+
+			s_clipPlaneCount = count;
 		}
 	}
 }

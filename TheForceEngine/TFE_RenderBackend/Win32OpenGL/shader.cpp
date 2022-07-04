@@ -132,6 +132,11 @@ bool Shader::load(const char* vertexShaderFile, const char* fragmentShaderFile, 
 	return create(ShaderGL::s_buffers[0].data(), ShaderGL::s_buffers[1].data(), ShaderGL::s_defineString.c_str(), m_shaderVersion);
 }
 
+void Shader::enableClipPlanes(s32 count)
+{
+	m_clipPlaneCount = count;
+}
+
 void Shader::destroy()
 {
 	glDeleteProgram(m_gpuHandle);
@@ -141,6 +146,7 @@ void Shader::destroy()
 void Shader::bind()
 {
 	glUseProgram(m_gpuHandle);
+	TFE_RenderState::enableClipPlanes(m_clipPlaneCount);
 }
 
 void Shader::unbind()

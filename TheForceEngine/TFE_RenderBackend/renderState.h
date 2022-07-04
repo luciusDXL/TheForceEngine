@@ -84,4 +84,5 @@ namespace TFE_RenderState
 	void setStencilOp(StencilOp stencilFail, StencilOp depthFail, StencilOp depthStencilPass);
 	void setColorMask(u32 colorMask);
 	void setDepthBias(f32 factor = 0.0f, f32 bias = 0.0f);
+	void enableClipPlanes(s32 count = 0);
 };
