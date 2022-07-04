@@ -49,15 +49,17 @@ namespace TFE_Jedi
 		MAX_DISP_ITEMS = 1024,
 	};
 
+	// TODO: factor out so the sprite, sector, and geometry passes can use it.
+	s32 s_displayCurrentPortalId;
+	ShaderBuffer s_displayListPlanesGPU;
+
 	static s32 s_displayListCount[SECTOR_PASS_COUNT];
 	static s32 s_displayPlaneCount;
-	static s32 s_displayCurrentPortalId;
 	static Vec4f  s_displayListPos[SECTOR_PASS_COUNT * MAX_DISP_ITEMS];
 	static Vec4ui s_displayListData[SECTOR_PASS_COUNT * MAX_DISP_ITEMS];
 	static Vec4f  s_displayListPlanes[2048];
 	static ShaderBuffer s_displayListPosGPU[SECTOR_PASS_COUNT];
 	static ShaderBuffer s_displayListDataGPU[SECTOR_PASS_COUNT];
-	static ShaderBuffer s_displayListPlanesGPU;
 	static s32 s_posIndex[SECTOR_PASS_COUNT];
 	static s32 s_dataIndex[SECTOR_PASS_COUNT];
 	static s32 s_planesIndex;
@@ -155,13 +157,8 @@ namespace TFE_Jedi
 		s_displayListCount[0]++;
 	}
 
-	void sdisplayList_addPortal(Vec3f p0, Vec3f p1)
+	void sdisplayList_addPortal(Vec3f p0, Vec3f p1, s32 parentPortalId)
 	{
-		Vec4f* botPlane = &s_displayListPlanes[s_displayPlaneCount + 0];
-		Vec4f* topPlane = &s_displayListPlanes[s_displayPlaneCount + 1];
-		s_displayCurrentPortalId = 1 + (s_displayPlaneCount >> 1);
-		s_displayPlaneCount += 2;
-
 		const Vec3f botEdge[] =
 		{
 			{ p0.x, p1.y, p0.z },
@@ -173,8 +170,31 @@ namespace TFE_Jedi
 			{ p0.x, p0.y, p0.z },
 		};
 
-		*botPlane = frustum_calculatePlaneFromEdge(botEdge);
-		*topPlane = frustum_calculatePlaneFromEdge(topEdge);
+		// Either use the planes generated from the new edges or keep the previous planes.
+		bool newPlaneBot = true, newPlaneTop = true;
+		Vec4f* prevBotPlane = nullptr;
+		Vec4f* prevTopPlane = nullptr;
+		if (parentPortalId)
+		{
+			prevBotPlane = &s_displayListPlanes[(parentPortalId - 1) * 2 + 0];
+			f32 side0 = botEdge[0].x*prevBotPlane->x + botEdge[0].y*prevBotPlane->y + botEdge[0].z*prevBotPlane->z + prevBotPlane->w;
+			f32 side1 = botEdge[1].x*prevBotPlane->x + botEdge[1].y*prevBotPlane->y + botEdge[1].z*prevBotPlane->z + prevBotPlane->w;
+			newPlaneBot = (side0 > 0.0f || side1 > 0.0f);
+
+			prevTopPlane = &s_displayListPlanes[(parentPortalId - 1) * 2 + 1];
+			side0 = topEdge[0].x*prevTopPlane->x + topEdge[0].y*prevTopPlane->y + topEdge[0].z*prevTopPlane->z + prevTopPlane->w;
+			side1 = topEdge[1].x*prevTopPlane->x + topEdge[1].y*prevTopPlane->y + topEdge[1].z*prevTopPlane->z + prevTopPlane->w;
+			newPlaneTop = (side0 > 0.0f || side1 > 0.0f);
+		}
+
+		// The new planes either match the parent or are created from the edges.
+		Vec4f* botPlane = &s_displayListPlanes[s_displayPlaneCount + 0];
+		Vec4f* topPlane = &s_displayListPlanes[s_displayPlaneCount + 1];
+		s_displayCurrentPortalId = 1 + (s_displayPlaneCount >> 1);
+		s_displayPlaneCount += 2;
+
+		*botPlane = newPlaneBot ? frustum_calculatePlaneFromEdge(botEdge) : *prevBotPlane;
+		*topPlane = newPlaneTop ? frustum_calculatePlaneFromEdge(topEdge) : *prevTopPlane;
 	}
 
 	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg)

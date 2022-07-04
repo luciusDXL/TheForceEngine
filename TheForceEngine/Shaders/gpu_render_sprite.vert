@@ -4,14 +4,11 @@ uniform mat3 CameraView;
 uniform mat4 CameraProj;
 
 uniform isamplerBuffer TextureTable;
-#ifdef SPRITE_GPU_CLIPPING
-	uniform samplerBuffer DrawListPosTexture;
-	uniform samplerBuffer DrawListScaleOffset;
-#else
-	uniform samplerBuffer DrawListPosXZ_Texture;
-	uniform samplerBuffer DrawListPosYU_Texture;
-	uniform isamplerBuffer DrawListTexId_Texture;
-#endif
+uniform samplerBuffer DrawListPosXZ_Texture;
+uniform samplerBuffer DrawListPosYU_Texture;
+uniform isamplerBuffer DrawListTexId_Texture;
+
+uniform samplerBuffer DrawListPlanes;	// Top and Bottom planes for each portal.
 
 // in int gl_VertexID;
 out vec2 Frag_Uv; // base uv coordinates (0 - 1)
@@ -24,33 +21,10 @@ void main()
 	int spriteIndex = gl_VertexID / 4;
 	int vertexId  = gl_VertexID & 3;
 	
-#ifdef SPRITE_GPU_CLIPPING
-	// Read part position and data.
-	vec4 posTexture  = texelFetch(DrawListPosTexture,  spriteIndex);
-	vec4 scaleOffset = texelFetch(DrawListScaleOffset, spriteIndex);
-
-	// Unpack sprite data.
-	uint tex_flags = uint(floor(posTexture.w + 0.5));
-	Frag_TextureId = int(tex_flags & 32767u);
-	vec2 texWidth = vec2(texelFetch(TextureTable, Frag_TextureId).zw);
-
-	vec4 texture_data = vec4(0.0);
-	vec2 vtx_uv = vec2(float(vertexId&1), float(1-(vertexId/2))) * texWidth;
-	if ((tex_flags & 2097152u) != 0u)
-	{
-		vtx_uv.x = texWidth.x - vtx_uv.x - 1.0;
-	}
-	texture_data.y = float((tex_flags >> 16u) & 31u);
-
-	// Expand the quad, aligned to the right vector and world up.
-	vec3 vtx_pos = posTexture.xyz;
-	vtx_pos.xz -= vec2(scaleOffset.x) * CameraRight.xz;
-	vtx_pos.xz += vec2(scaleOffset.z) * CameraRight.xz * float(vertexId&1);
-	vtx_pos.y = vtx_pos.y + scaleOffset.y - scaleOffset.w * float(1-(vertexId/2));
-#else
 	vec4 posTextureXZ = texelFetch(DrawListPosXZ_Texture, spriteIndex);
 	vec4 posTextureYU = texelFetch(DrawListPosYU_Texture, spriteIndex);
-	uint tex_flags = uint(texelFetch(DrawListTexId_Texture, spriteIndex).r);
+	uvec2 texPortalData = uvec2(texelFetch(DrawListTexId_Texture, spriteIndex).rg);
+	uint tex_flags = texPortalData.x;
 	Frag_TextureId = int(tex_flags & 32767u);
 
 	float u = float(vertexId&1);
@@ -66,7 +40,24 @@ void main()
 
 	vec4 texture_data = vec4(0.0);
 	texture_data.y = float((tex_flags >> 16u) & 31u);
-#endif
+
+	// Calculate vertical clipping.
+	uint topId = texPortalData.y & 65535u;
+	uint botId = texPortalData.y >> 16u;
+
+	vec2 clipDist = vec2(1.0, 1.0);
+	if (botId > 0u)
+	{
+		vec4 botPlane = texelFetch(DrawListPlanes, int(botId - 1u) * 2);
+		clipDist.x = dot(vec4(vtx_pos.xyz, 1.0), botPlane);
+	}
+	if (topId > 0u)
+	{
+		vec4 topPlane = texelFetch(DrawListPlanes, int(topId - 1u) * 2 + 1);
+		clipDist.y = dot(vec4(vtx_pos.xyz, 1.0), topPlane);
+	}
+	gl_ClipDistance[0] = clipDist.x;
+	gl_ClipDistance[1] = clipDist.y;
 
 	// Relative position
 	Frag_Pos = vtx_pos - CameraPos;

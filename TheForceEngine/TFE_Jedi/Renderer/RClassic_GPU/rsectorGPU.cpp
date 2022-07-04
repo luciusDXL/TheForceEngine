@@ -107,18 +107,11 @@ namespace TFE_Jedi
 
 	bool loadSpriteShader()
 	{
-	#ifdef SPRITE_CPU_CLIPPING
 		if (!m_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", 0, nullptr, SHADER_VER_STD))
 		{
 			return false;
 		}
-	#else
-		ShaderDefine defines[] = { "SPRITE_GPU_CLIPPING", "1" };
-		if (!m_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", TFE_ARRAYSIZE(defines), defines, SHADER_VER_STD))
-		{
-			return false;
-		}
-	#endif
+		m_spriteShader.enableClipPlanes(2);
 
 		m_cameraPosId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraPos");
 		m_cameraViewId[SPRITE_PASS]  = m_spriteShader.getVariableId("CameraView");
@@ -127,18 +120,15 @@ namespace TFE_Jedi
 		m_cameraDirId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraDir");
 		m_lightDataId[SPRITE_PASS]   = m_spriteShader.getVariableId("LightData");
 
-	#ifdef SPRITE_CPU_CLIPPING
 		m_spriteShader.bindTextureNameToSlot("DrawListPosXZ_Texture", 0);
 		m_spriteShader.bindTextureNameToSlot("DrawListPosYU_Texture", 1);
 		m_spriteShader.bindTextureNameToSlot("DrawListTexId_Texture", 2);
-	#else
-		m_spriteShader.bindTextureNameToSlot("DrawListPosTexture",  0);
-		m_spriteShader.bindTextureNameToSlot("DrawListScaleOffset", 1);
-	#endif
+
 		m_spriteShader.bindTextureNameToSlot("Colormap",     3);
 		m_spriteShader.bindTextureNameToSlot("Palette",      4);
 		m_spriteShader.bindTextureNameToSlot("Textures",     5);
 		m_spriteShader.bindTextureNameToSlot("TextureTable", 6);
+		m_spriteShader.bindTextureNameToSlot("DrawListPlanes", 7);
 
 		return true;
 	}
@@ -720,7 +710,6 @@ namespace TFE_Jedi
 		buildSegmentBuffer(initSector, curSector, segCount, wallSegments);
 	}
 
-#ifdef SPRITE_CPU_CLIPPING
 	static RSector* s_clipSector;
 	static Vec3f s_clipObjPos;
 
@@ -760,7 +749,7 @@ namespace TFE_Jedi
 		return false;
 	}
 
-	void clipSpriteToView(RSector* curSector, Vec3f posWS, WaxFrame* frame, void* basePtr, bool fullbright)
+	void clipSpriteToView(RSector* curSector, Vec3f posWS, WaxFrame* frame, void* basePtr, bool fullbright, s32 topPortal, s32 botPortal)
 	{
 		if (!frame) { return; }
 		s_clipSector = curSector;
@@ -792,19 +781,51 @@ namespace TFE_Jedi
 		const s32 segCount = sbuffer_clipSegmentToBuffer(points[0], points[1], s_rangeCount, s_range, s_rangeSrc, 32, dstSegs, clipRule);
 		if (!segCount) { return; }
 
-		// Decide which adjoin to use for vertical clipping.
-		// TODO
-
 		// Then add the segments to the list.
+		SpriteDrawFrame drawFrame =
+		{
+			basePtr, frame,
+			points[0], points[1],
+			points[0], points[1],	// clipped positions will be copied here.
+			posWS.y,
+			curSector,
+			fullbright,
+			topPortal, botPortal
+		};
 		for (s32 s = 0; s < segCount; s++)
 		{
-			sprdisplayList_addFrame(basePtr, frame, points[0], points[1], dstSegs[s].v0, dstSegs[s].v1, posWS.y, curSector, fullbright);
+			drawFrame.c0 = dstSegs[s].v0;
+			drawFrame.c1 = dstSegs[s].v1;
+			sprdisplayList_addFrame(&drawFrame);
 		}
 	}
-#endif
-
-	void addSectorObjects(RSector* curSector)
+		
+	void addSectorObjects(RSector* curSector, RSector* prevSector, s32 portalId, s32 prevPortalId)
 	{
+		// Decide how to clip objects.
+		// Which top and bottom edges are we going to use to clip objects?
+		s32 topPortal = portalId;
+		s32 botPortal = portalId;
+
+		if (prevSector)
+		{
+			fixed16_16 nextTop = curSector->ceilingHeight;
+			fixed16_16 curTop = min(prevSector->floorHeight, max(nextTop, prevSector->ceilingHeight));
+			f32 top = fixed16ToFloat(curTop);
+			if (top < s_cameraPos.y && prevSector && prevSector->ceilingHeight <= curSector->ceilingHeight)
+			{
+				topPortal = prevPortalId;
+			}
+
+			fixed16_16 nextBot = curSector->floorHeight;
+			fixed16_16 curBot = max(prevSector->ceilingHeight, min(nextBot, prevSector->floorHeight));
+			f32 bot = fixed16ToFloat(curBot);
+			if (bot > s_cameraPos.y && prevSector && prevSector->floorHeight >= curSector->floorHeight)
+			{
+				botPortal = prevPortalId;
+			}
+		}
+
 		SecObject** objIter = curSector->objectList;
 		f32 ambient = fixed16ToFloat(curSector->ambient);
 		Vec2f floorOffset = { fixed16ToFloat(curSector->floorOffset.x), fixed16ToFloat(curSector->floorOffset.z) };
@@ -839,20 +860,12 @@ namespace TFE_Jedi
 							WaxView* view = WAX_ViewPtr(wax, anim, 31 - angleDiff);
 							// And finall the frame from the current sequence.
 							WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 31);
-						#ifndef SPRITE_CPU_CLIPPING
-							sprdisplayList_addFrame(wax, frame, posWS, curSector, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
-						#else
-							clipSpriteToView(curSector, posWS, frame, wax, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
-						#endif
+							clipSpriteToView(curSector, posWS, frame, wax, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, topPortal, botPortal);
 						}
 					}
 					else if (type == OBJ_TYPE_FRAME)
 					{
-					#ifndef SPRITE_CPU_CLIPPING
-						sprdisplayList_addFrame(obj->fme, obj->fme, posWS, curSector, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
-					#else
-						clipSpriteToView(curSector, posWS, obj->fme, obj->fme, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0);
-					#endif
+						clipSpriteToView(curSector, posWS, obj->fme, obj->fme, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, topPortal, botPortal);
 					}
 				}
 				else if (type == OBJ_TYPE_3D)
@@ -863,23 +876,29 @@ namespace TFE_Jedi
 		}
 	}
 
-	void traverseSector(RSector* curSector, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
+	extern s32 s_displayCurrentPortalId;
+	static f32 s_minHeight, s_maxHeight;
+
+	void traverseSector(RSector* curSector, RSector* prevSector, s32 prevPortalId, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
 	{
 		//if (level >= 255)
 		if (level >= 64)
 		{
 			return;
 		}
+		
 		// Mark sector as being rendered for the automap.
 		curSector->flags1 |= SEC_FLAGS1_RENDERED;
-
+				
 		// Build the world-space wall segments.
 		buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1);
 
 		// Determine which objects are visible and add them.
-		addSectorObjects(curSector);
+		addSectorObjects(curSector, prevSector, s_displayCurrentPortalId, prevPortalId);
 
 		// Traverse through visible portals.
+		s32 parentPortalId = s_displayCurrentPortalId;
+
 		const s32 portalStart = s_portalListCount;
 		const s32 portalCount = traversal_addPortals(curSector);
 		Portal* portal = &s_portalList[portalStart];
@@ -892,10 +911,10 @@ namespace TFE_Jedi
 			// Add a portal to the display list.
 			Vec3f corner0 = { portal->v0.x, portal->y0, portal->v0.z };
 			Vec3f corner1 = { portal->v1.x, portal->y1, portal->v1.z };
-			sdisplayList_addPortal(corner0, corner1);
+			sdisplayList_addPortal(corner0, corner1, parentPortalId);
 
 			portal->wall->drawFrame = s_gpuFrame;
-			traverseSector(portal->next, level, uploadFlags, portal->v0, portal->v1);
+			traverseSector(portal->next, curSector, parentPortalId, level, uploadFlags, portal->v0, portal->v1);
 			portal->wall->drawFrame = 0;
 
 			frustum_pop();
@@ -922,7 +941,7 @@ namespace TFE_Jedi
 		model_drawListClear();
 
 		updateCachedSector(sector, uploadFlags);
-		traverseSector(sector, level, uploadFlags, startView[0], startView[1]);
+		traverseSector(sector, nullptr, 0, level, uploadFlags, startView[0], startView[1]);
 		frustum_pop();
 
 		sdisplayList_finish();
@@ -999,10 +1018,9 @@ namespace TFE_Jedi
 	void drawSprites()
 	{
 		if (!sprdisplayList_getSize()) { return; }
-		TFE_RenderState::setStateEnable(false, STATE_DEPTH_WRITE);
-#ifdef SPRITE_CPU_CLIPPING
+		// Enable depth writing but disable depth testing so sprites sort correctly with 3D objects.
+		TFE_RenderState::setStateEnable(true,  STATE_DEPTH_WRITE);
 		TFE_RenderState::setStateEnable(false, STATE_DEPTH_TEST);
-#endif
 
 		m_spriteShader.bind();
 		m_indexBuffer.bind();
@@ -1034,6 +1052,8 @@ namespace TFE_Jedi
 
 	void draw3d()
 	{
+		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
+
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
 		palette->bind(0);
 
@@ -1068,12 +1088,12 @@ namespace TFE_Jedi
 		{
 			drawPass(SectorPass(i));
 		}
+				
+		// Draw Sprites.
+		drawSprites();
 
 		// Draw 3D Objects.
 		draw3d();
-
-		// Draw Sprites.
-		drawSprites();
 				
 		// Cleanup
 		m_indexBuffer.unbind();

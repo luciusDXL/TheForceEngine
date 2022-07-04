@@ -131,9 +131,9 @@ void main()
 			int index = max(0, (portalId - 1)*2);
 			vec4 plane = texelFetch(DrawListPlanes, index);
 			vec2 distLeft  = vec2(dot(vec4(positions.x, y0, positions.y, 1.0), plane),
-									dot(vec4(positions.x, y1, positions.y, 1.0), plane));
+								  dot(vec4(positions.x, y1, positions.y, 1.0), plane));
 			vec2 distRight = vec2(dot(vec4(positions.z, y0, positions.w, 1.0), plane),
-									dot(vec4(positions.z, y1, positions.w, 1.0), plane));
+								  dot(vec4(positions.z, y1, positions.w, 1.0), plane));
 
 			if (distLeft.y < 0.0 && distRight.y < 0.0)
 			{
@@ -145,9 +145,9 @@ void main()
 			// Top Plane
 			plane = texelFetch(DrawListPlanes, index + 1);
 			distLeft  = vec2(dot(vec4(positions.x, y0, positions.y, 1.0), plane),
-								dot(vec4(positions.x, y1, positions.y, 1.0), plane));
+							 dot(vec4(positions.x, y1, positions.y, 1.0), plane));
 			distRight = vec2(dot(vec4(positions.z, y0, positions.w, 1.0), plane),
-								dot(vec4(positions.z, y1, positions.w, 1.0), plane));
+							 dot(vec4(positions.z, y1, positions.w, 1.0), plane));
 
 			if (distLeft.x < 0.0 && distRight.x < 0.0)
 			{
