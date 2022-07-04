@@ -722,13 +722,41 @@ namespace TFE_Jedi
 
 #ifdef SPRITE_CPU_CLIPPING
 	static RSector* s_clipSector;
+	static Vec3f s_clipObjPos;
 
 	// Clip rule called on portal segments.
-	// Return true if the segment should clip the incoming segment.
+	// Return true if the segment should clip the incoming segment like a regular wall.
 	bool clipRule(s32 id)
 	{
 		// for now always return false for adjoins.
-		id;
+		assert(id >= 0 && id < s_clipSector->wallCount);
+		RWall* wall = &s_clipSector->walls[id];
+		assert(wall->nextSector);	// we shouldn't get in here if nextSector is null.
+		if (!wall->nextSector)
+		{
+			return true;
+		}
+		
+		// next verify that there is an opening, if not then treat it as a regular wall.
+		RSector* next = wall->nextSector;
+		fixed16_16 opening = min(s_clipSector->floorHeight, next->floorHeight) - max(s_clipSector->ceilingHeight, next->ceilingHeight);
+		if (opening <= 0)
+		{
+			return true;
+		}
+
+		// if the camera is below the floor, treat it as a wall.
+		const f32 floorHeight = fixed16ToFloat(next->floorHeight);
+		if (s_cameraPos.y > floorHeight && s_clipObjPos.y <= floorHeight)
+		{
+			return true;
+		}
+		const f32 ceilHeight = fixed16ToFloat(next->ceilingHeight);
+		if (s_cameraPos.y < ceilHeight && s_clipObjPos.y >= ceilHeight)
+		{
+			return true;
+		}
+
 		return false;
 	}
 
@@ -736,6 +764,7 @@ namespace TFE_Jedi
 	{
 		if (!frame) { return; }
 		s_clipSector = curSector;
+		s_clipObjPos = posWS;
 
 		// Compute the (x,z) extents of the frame.
 		const f32 widthWS  = fixed16ToFloat(frame->widthWS);
