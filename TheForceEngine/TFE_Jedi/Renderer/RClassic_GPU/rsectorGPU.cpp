@@ -786,13 +786,15 @@ namespace TFE_Jedi
 		{
 			basePtr, frame,
 			points[0], points[1],
-			points[0], points[1],	// clipped positions will be copied here.
+			dstSegs[0].v0, dstSegs[0].v1,
 			posWS.y,
 			curSector,
 			fullbright,
 			topPortal, botPortal
 		};
-		for (s32 s = 0; s < segCount; s++)
+		sprdisplayList_addFrame(&drawFrame);
+
+		for (s32 s = 1; s < segCount; s++)
 		{
 			drawFrame.c0 = dstSegs[s].v0;
 			drawFrame.c1 = dstSegs[s].v1;

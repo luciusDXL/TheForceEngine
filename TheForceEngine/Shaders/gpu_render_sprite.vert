@@ -13,6 +13,7 @@ uniform samplerBuffer DrawListPlanes;	// Top and Bottom planes for each portal.
 // in int gl_VertexID;
 out vec2 Frag_Uv; // base uv coordinates (0 - 1)
 out vec3 Frag_Pos;     // camera relative position for lighting.
+out float gl_ClipDistance[2];
 flat out vec4 Texture_Data; // not much here yet.
 flat out int Frag_TextureId;
 void main()
