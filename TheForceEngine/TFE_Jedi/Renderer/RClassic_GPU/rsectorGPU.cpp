@@ -970,6 +970,8 @@ namespace TFE_Jedi
 	void drawPass(SectorPass pass)
 	{
 		if (!sdisplayList_getSize(pass)) { return; }
+		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
+		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
 
 		m_wallShader[pass].bind();
 		m_indexBuffer.bind();
@@ -1080,13 +1082,16 @@ namespace TFE_Jedi
 			TFE_RenderState::setStateEnable(true, STATE_WIREFRAME);
 		}
 
-		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
+		for (s32 i = 0; i < SECTOR_PASS_COUNT - 1; i++)
 		{
 			drawPass(SectorPass(i));
 		}
 				
 		// Draw Sprites.
 		drawSprites();
+
+		// Draw transparent pass.
+		drawPass(SECTOR_PASS_TRANS);
 
 		// Draw 3D Objects.
 		draw3d();
