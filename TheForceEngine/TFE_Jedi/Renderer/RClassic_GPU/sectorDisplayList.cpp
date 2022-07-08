@@ -140,7 +140,8 @@ namespace TFE_Jedi
 	{
 		// TODO: Remove and replace with main frustum extrusion.
 		Vec4f pos = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
-		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, 0u, 0u/*textureId*/ };
+		u32 portalId = u32(s_displayCurrentPortalId) << 7u;
+		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, portalId, 0u/*textureId*/ };
 
 		s_displayListPos[s_displayListCount[0]] = pos;
 		s_displayListData[s_displayListCount[0]] = data;
@@ -174,7 +175,7 @@ namespace TFE_Jedi
 		bool newPlaneBot = true, newPlaneTop = true;
 		Vec4f* prevBotPlane = nullptr;
 		Vec4f* prevTopPlane = nullptr;
-		if (parentPortalId)
+		if (parentPortalId > 0)
 		{
 			prevBotPlane = &s_displayListPlanes[(parentPortalId - 1) * 2 + 0];
 			f32 side0 = botEdge[0].x*prevBotPlane->x + botEdge[0].y*prevBotPlane->y + botEdge[0].z*prevBotPlane->z + prevBotPlane->w;
@@ -213,8 +214,8 @@ namespace TFE_Jedi
 		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0xffff0000u;
 
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
-		Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
-						 wallLight | portalId, 0u/*textureId*/ };
+		const Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
+				    		   wallLight | portalId, 0u/*textureId*/ };
 
 		// Wall Flags.
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
@@ -298,10 +299,7 @@ namespace TFE_Jedi
 		s_displayListData[s_displayListCount[0]] = data;
 		s_displayListData[s_displayListCount[0]].x |= SPARTID_CEILING;
 		s_displayListData[s_displayListCount[0]].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
-		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
-		{
-			s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY;
-		}
+		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
 		s_displayListCount[0]++;
 	}
 

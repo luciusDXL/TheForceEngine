@@ -139,6 +139,7 @@ namespace TFE_Jedi
 		{
 			return false;
 		}
+		m_wallShader[index].enableClipPlanes(2);
 
 		m_cameraPosId[index]   = m_wallShader[index].getVariableId("CameraPos");
 		m_cameraViewId[index]  = m_wallShader[index].getVariableId("CameraView");
@@ -472,14 +473,6 @@ namespace TFE_Jedi
 		}
 		sbuffer_mergeSegments();
 
-		// Verify that segments are inserted properly.
-		SegmentClipped* segmentTest = sbuffer_get();
-		while (segmentTest)
-		{
-			assert(segmentTest->x0 >= 0.0f && segmentTest->x1 <= 4.0f);
-			segmentTest = segmentTest->next;
-		}
-
 		// Build the display list.
 		SegmentClipped* segment = sbuffer_get();
 		while (segment && s_wallSegGenerated < s_maxWallSeg)
@@ -492,7 +485,7 @@ namespace TFE_Jedi
 			s_wallSegGenerated++;
 			segment = segment->next;
 		}
-		if (initSector) { sdisplayList_addCaps(curSector); }
+		sdisplayList_addCaps(curSector);
 	}
 
 	bool createNewSegment(Segment* seg, s32 id, bool isPortal, Vec2f v0, Vec2f v1, Vec2f heights, Vec2f portalHeights, Vec3f normal)
@@ -645,21 +638,21 @@ namespace TFE_Jedi
 				fixed16_16 openTop, openBot;
 				// Sky handling
 				// TODO: This isn't *quite* right, the top and bottom need to extend to the top/bot of the view frustum.
-				if (((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (next->flags1 & SEC_FLAGS1_EXT_ADJ)) && (next->flags1 & SEC_FLAGS1_EXTERIOR))
+				/*if (((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (next->flags1 & SEC_FLAGS1_EXT_ADJ)) && (next->flags1 & SEC_FLAGS1_EXTERIOR))
 				{
 					openTop = min(curSector->ceilingHeight, next->ceilingHeight);
 					y0 = fixed16ToFloat(openTop);
 				}
-				else
+				else*/
 				{
 					openTop = min(curSector->floorHeight, max(curSector->ceilingHeight, next->ceilingHeight));
 				}
-				if (((curSector->flags1 & SEC_FLAGS1_PIT) || (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ)) && (next->flags1 & SEC_FLAGS1_PIT))
+				/*if (((curSector->flags1 & SEC_FLAGS1_PIT) || (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ)) && (next->flags1 & SEC_FLAGS1_PIT))
 				{
 					openBot = max(curSector->floorHeight, next->floorHeight);
 					y1 = fixed16ToFloat(openBot);
 				}
-				else
+				else*/
 				{
 					openBot = max(curSector->ceilingHeight, min(curSector->floorHeight, next->floorHeight));
 				}
@@ -1020,9 +1013,9 @@ namespace TFE_Jedi
 	void drawSprites()
 	{
 		if (!sprdisplayList_getSize()) { return; }
-		// Enable depth writing but disable depth testing so sprites sort correctly with 3D objects.
-		TFE_RenderState::setStateEnable(true,  STATE_DEPTH_WRITE);
-		TFE_RenderState::setStateEnable(false, STATE_DEPTH_TEST);
+		// For some reason depth test is required to write, so set the comparison function to always instead.
+		TFE_RenderState::setStateEnable(true,  STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
+		TFE_RenderState::setDepthFunction(CMP_ALWAYS);
 
 		m_spriteShader.bind();
 		m_indexBuffer.bind();
@@ -1055,6 +1048,7 @@ namespace TFE_Jedi
 	void draw3d()
 	{
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
+		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
 
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
 		palette->bind(0);

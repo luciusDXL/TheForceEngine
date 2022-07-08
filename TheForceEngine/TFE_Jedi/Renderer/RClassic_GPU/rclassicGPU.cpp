@@ -39,7 +39,7 @@ namespace RClassic_GPU
 	{
 		s_cameraPos = { camX, camY, camZ };
 		s_cameraProj = TFE_Math::computeProjMatrixExplicit(2.0f*s_rcfltState.focalLength / f32(s_width),
-			2.0f*s_rcfltState.focalLenAspect / f32(s_height), 0.01f, 1000.0f);
+			2.0f*s_rcfltState.focalLenAspect / f32(s_height), 0.01f, 4096.0f);
 
 		f32 sinYaw, cosYaw, sinPitch, cosPitch;
 		sinCosFlt(-yaw, &sinYaw, &cosYaw);

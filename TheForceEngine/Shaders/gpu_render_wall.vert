@@ -9,6 +9,7 @@ uniform usamplerBuffer DrawListData;
 uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
 
 // in int gl_VertexID;
+out float gl_ClipDistance[2];
 flat out vec4 Frag_Uv;
 out vec3 Frag_Pos;
 out vec4 Texture_Data;
@@ -117,49 +118,6 @@ void main()
 			vtx_pos.y = (vertexId < 2) ? curBot : floorHeight;
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 2).xy;
 		}
-		else if (portalId > 0)  // Mid
-		{
-			float y0 = ceilHeight;
-			float y1 = floorHeight;
-
-			// Clamp quad vertices to the frustum upper and lower planes with the following requirements:
-			// 1. Both vertices must be on or below the plane, otherwise clipping is required (which is not done).
-			// 2. Only the non-anchor vertices can move.
-			// 3. The quad cannot turn inside-out.
-
-			// Bottom Plane
-			int index = max(0, (portalId - 1)*2);
-			vec4 plane = texelFetch(DrawListPlanes, index);
-			vec2 distLeft  = vec2(dot(vec4(positions.x, y0, positions.y, 1.0), plane),
-								  dot(vec4(positions.x, y1, positions.y, 1.0), plane));
-			vec2 distRight = vec2(dot(vec4(positions.z, y0, positions.w, 1.0), plane),
-								  dot(vec4(positions.z, y1, positions.w, 1.0), plane));
-
-			if (distLeft.y < 0.0 && distRight.y < 0.0)
-			{
-				vec2 dist = (vertexId & 1)==0 ? distLeft : distRight;
-				if (dist.x < 0.0) { y1 = y0; }
-				else if (dist.y < 0.0) { y1 = y0 - (y1 - y0) * dist.x / (dist.y - dist.x); }
-			}
-
-			// Top Plane
-			plane = texelFetch(DrawListPlanes, index + 1);
-			distLeft  = vec2(dot(vec4(positions.x, y0, positions.y, 1.0), plane),
-							 dot(vec4(positions.x, y1, positions.y, 1.0), plane));
-			distRight = vec2(dot(vec4(positions.z, y0, positions.w, 1.0), plane),
-							 dot(vec4(positions.z, y1, positions.w, 1.0), plane));
-
-			if (distLeft.x < 0.0 && distRight.x < 0.0)
-			{
-				vec2 dist = (vertexId & 1)==0 ? distLeft : distRight;
-				if (dist.y < 0.0) { y0 = y1; }
-				else if (dist.x < 0.0) { y0 = y0 - (y1 - y0) * dist.x / (dist.y - dist.x); }
-			}
-
-			// Compute final height value for this vertex.
-			vtx_pos.y = (vertexId < 2) ? y0 : y1;
-			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
-		}
 		else
 		{
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
@@ -177,9 +135,10 @@ void main()
 	#ifndef SECTOR_TRANSPARENT_PASS
 	else if (partId < 5)	// flat
 	{
+		float extrusion = 200.0;
 		int flatIndex = partId - 3;	// 0 = floor, 1 = ceiling.
-		float y0 = (flatIndex==0) ? floorHeight : ceilHeight - 200.0;
-		float y1 = (flatIndex==0) ? floorHeight + 200.0 : ceilHeight;
+		float y0 = (flatIndex==0) ? floorHeight : ceilHeight - extrusion;
+		float y1 = (flatIndex==0) ? floorHeight + extrusion : ceilHeight;
 		vec2 vtx = (vertexId & 1)==0 ? positions.xy : positions.zw;
 
 		if (sky && nextId < 32768)
@@ -196,11 +155,11 @@ void main()
 		vec2 dist = vec2(dot(vec4(vtx.x, y0, vtx.y, 1.0), plane), dot(vec4(vtx.x, y1, vtx.y, 1.0), plane));
 		if (flatIndex == 0 && portalId > 0)
 		{
-			y1 = max(y0, y0 - (y1 - y0) * dist.x / (dist.y - dist.x));
+			y1 = y0 - (y1 - y0) * min(0.0, dist.x / (dist.y - dist.x));
 		}
 		else if (portalId > 0)
 		{
-			y0 = min(y1, y0 - (y1 - y0) * dist.x / (dist.y - dist.x));
+			y0 = y0 - (y1 - y0) * max(0.0, dist.x / (dist.y - dist.x));
 		}
 
 		vtx_pos  = vec3(vtx.x, (vertexId < 2) ? y0 : y1, vtx.y);
@@ -220,6 +179,7 @@ void main()
 	}
 	else // Cap
 	{
+		float extrusion = 200.0;
 		int flatIndex = partId - 5;	// 0 = floor, 1 = ceiling.
 		if (flatIndex == 0)
 		{
@@ -229,7 +189,7 @@ void main()
 
 		vtx_pos.x = positions[2*(vertexId&1)];
 		vtx_pos.z = positions[1+2*(vertexId/2)];
-		vtx_pos.y = (flatIndex==0) ? floorHeight + 200.0 : ceilHeight - 200.0;
+		vtx_pos.y = (flatIndex==0) ? floorHeight + extrusion : ceilHeight - extrusion;
 		vtx_color.r = 0.0;
 		vtx_color.g = float(48 + 16*(1-flatIndex));
 
@@ -242,6 +202,18 @@ void main()
 		texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;
 	}
 	#endif  // !SECTOR_TRANSPARENT_PASS
+
+	// Clipping.
+	vec2 clipDist = vec2(1.0);
+	if (portalId > 0)
+	{
+		vec4 botPlane = texelFetch(DrawListPlanes, (portalId - 1)*2);
+		vec4 topPlane = texelFetch(DrawListPlanes, (portalId - 1)*2 + 1);
+		clipDist.x = dot(vec4(vtx_pos.xyz, 1.0), botPlane);
+		clipDist.y = dot(vec4(vtx_pos.xyz, 1.0), topPlane);
+	}
+	gl_ClipDistance[0] = clipDist.x;
+	gl_ClipDistance[1] = clipDist.y;
 	
 	Frag_Pos = vtx_pos - CameraPos;
 	
