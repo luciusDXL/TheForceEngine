@@ -176,7 +176,6 @@ namespace TFE_DarkForces
 	static JBool s_localMsgLoaded = JFALSE;
 	static JBool s_useJediPath = JFALSE;
 	static JBool s_hudModeStd = JTRUE;
-	static const char* s_launchLevelName = nullptr;
 	static GameMessages s_localMessages;
 	static GameMessages s_hotKeyMessages;
 	static TextureData* s_diskErrorImg = nullptr;
@@ -184,6 +183,7 @@ namespace TFE_DarkForces
 	static Font* s_mapNumFont = nullptr;
 	static SoundSourceId s_screenShotSndSrc = NULL_SOUND;
 	static BriefingList s_briefingList = { 0 };
+	static s32 s_startLevel = 0;
 
 	static Task* s_loadMissionTask = nullptr;
 	static CutsceneState* s_cutsceneList = nullptr;
@@ -197,9 +197,10 @@ namespace TFE_DarkForces
 	// Forward Declarations
 	/////////////////////////////////////////////
 	void printGameInfo();
-	void processCommandLineArgs(s32 argCount, const char* argv[]);
+	void processCommandLineArgs(s32 argCount, const char* argv[], char* startLevel);
 	void enableCutscenes(JBool enable);
 	void loadCustomGob(const char* gobName);
+	void setInitialLevel(const char* levelName);
 	s32  loadLocalMessages();
 	void buildSearchPaths();
 	void openGobFiles();
@@ -218,11 +219,13 @@ namespace TFE_DarkForces
 	// This part loads and sets up the game.
 	bool DarkForces::runGame(s32 argCount, const char* argv[])
 	{
+		char startLevel[TFE_MAX_PATH] = "";
+
 		bitmap_setAllocator(s_gameRegion);
 
 		printGameInfo();
 		buildSearchPaths();
-		processCommandLineArgs(argCount, argv);
+		processCommandLineArgs(argCount, argv, startLevel);
 		loadLocalMessages();
 		openGobFiles();
 
@@ -238,6 +241,9 @@ namespace TFE_DarkForces
 		lsystem_init();
 
 		renderer_init();
+
+		// Handle start level
+		setInitialLevel(startLevel);
 		
 		// TFE Specific
 		actorDebug_init();
@@ -383,16 +389,25 @@ namespace TFE_DarkForces
 		{
 			case GSTATE_STARTUP_CUTSCENES:
 			{
-				cutscene_play(10);
 				s_state = GSTATE_CUTSCENE;
 				s_invalidLevelIndex = JTRUE;
+				if (s_cutscenesEnabled && !s_startLevel)
+				{
+					cutscene_play(10);
+				}
+				else
+				{
+					startNextMode();
+				}
 			} break;
 			case GSTATE_AGENT_MENU:
 			{
-				if (!agentMenu_update(&s_levelIndex))
+				if (s_startLevel)
 				{
-					agent_updateAgentSavedData();
-				
+					s_abortLevel = JFALSE;
+					s_levelIndex = s_startLevel;
+					s_startLevel = 0;
+
 					s_invalidLevelIndex = JTRUE;
 					for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
 					{
@@ -407,6 +422,28 @@ namespace TFE_DarkForces
 					s_abortLevel = JFALSE;
 					agent_setNextLevelByIndex(s_levelIndex);
 					startNextMode();
+				}
+				else
+				{
+					if (!agentMenu_update(&s_levelIndex))
+					{
+						agent_updateAgentSavedData();
+
+						s_invalidLevelIndex = JTRUE;
+						for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
+						{
+							if (s_cutsceneData[i].levelIndex >= 0 && s_cutsceneData[i].levelIndex == s_levelIndex)
+							{
+								s_cutsceneIndex = i;
+								s_invalidLevelIndex = JFALSE;
+								break;
+							}
+						}
+
+						s_abortLevel = JFALSE;
+						agent_setNextLevelByIndex(s_levelIndex);
+						startNextMode();
+					}
 				}
 			} break;
 			case GSTATE_CUTSCENE:
@@ -529,7 +566,7 @@ namespace TFE_DarkForces
 			} break;
 			case GMODE_CUTSCENE:
 			{
-				if (cutscene_play(s_cutsceneData[s_cutsceneIndex].cutscene))
+				if (s_cutscenesEnabled && cutscene_play(s_cutsceneData[s_cutsceneIndex].cutscene))
 				{
 					s_state = GSTATE_CUTSCENE;
 				}
@@ -541,30 +578,33 @@ namespace TFE_DarkForces
 			} break;
 			case GMODE_BRIEFING:
 			{
-				// TODO: Check to see if cutscenes are disabled, if so we also skip the mission briefing.
-				const char* levelName = agent_getLevelName();
-				s32 briefingIndex = 0;
-				for (s32 i = 0; i < s_briefingList.count; i++)
+				BriefingInfo* brief = nullptr;
+				if (s_cutscenesEnabled)
 				{
-					if (strcasecmp(levelName, s_briefingList.briefing[i].mission) == 0)
+					const char* levelName = agent_getLevelName();
+					s32 briefingIndex = 0;
+					for (s32 i = 0; i < s_briefingList.count; i++)
 					{
-						briefingIndex = i;
-						break;
+						if (strcasecmp(levelName, s_briefingList.briefing[i].mission) == 0)
+						{
+							briefingIndex = i;
+							break;
+						}
+					}
+
+					s32 skill = (s32)s_agentData[s_agentId].difficulty;
+					brief = &s_briefingList.briefing[briefingIndex];
+					if (brief)
+					{
+						missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
+						s_state = GSTATE_BRIEFING;
 					}
 				}
 
-				s32 skill = (s32)s_agentData[s_agentId].difficulty;
-				BriefingInfo* brief = &s_briefingList.briefing[briefingIndex];
-				if (brief)
-				{
-					missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
-					s_state = GSTATE_BRIEFING;
-				}
-				else
+				if (!brief)
 				{
 					s_cutsceneIndex++;
 					startNextMode();
-					return;
 				}
 			}  break;
 			case GMODE_MISSION:
@@ -604,7 +644,7 @@ namespace TFE_DarkForces
 
 	// Note: not all command line arguments have been brought over from the DOS version.
 	// Many no longer make sense and in some cases will always be available (such as screenshots).
-	void processCommandLineArgs(s32 argCount, const char* argv[])
+	void processCommandLineArgs(s32 argCount, const char* argv[], char* startLevel)
 	{
 		for (s32 i = 0; i < argCount; i++)
 		{
@@ -620,7 +660,7 @@ namespace TFE_DarkForces
 				}
 				else if ((c == 'l' || c == 'L') && arg[2])
 				{
-					s_launchLevelName = arg + 2;
+					strcpy(startLevel, arg + 2);
 				}
 				else if (c == 'u' || c == 'U')
 				{
@@ -667,6 +707,14 @@ namespace TFE_DarkForces
 	void enableCutscenes(JBool enable)
 	{
 		s_cutscenesEnabled = enable;
+	}
+
+	void setInitialLevel(const char* levelName)
+	{
+		s_startLevel = 0;
+
+		if (!levelName || levelName[0] == 0) { return; }
+		s_startLevel = agent_getLevelIndexFromName(levelName);
 	}
 
 	void loadCustomGob(const char* gobName)

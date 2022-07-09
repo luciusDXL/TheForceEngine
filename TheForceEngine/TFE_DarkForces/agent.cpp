@@ -106,6 +106,18 @@ namespace TFE_DarkForces
 	{
 		return s_levelIndex;
 	}
+
+	s32 agent_getLevelIndexFromName(const char* name)
+	{
+		for (s32 i = 0; i < s_maxLevelIndex; i++)
+		{
+			if (!strcasecmp(s_levelGamePaths[i], name))
+			{
+				return i + 1;
+			}
+		}
+		return 0;
+	}
 		
 	const char* agent_getLevelName()
 	{

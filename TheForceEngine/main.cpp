@@ -63,6 +63,7 @@ static u32  s_displayHeight = s_baseWindowHeight;
 static u32  s_monitorWidth = 1280;
 static u32  s_monitorHeight = 720;
 static char s_screenshotTime[TFE_MAX_PATH];
+static s32  s_startupGame = -1;
 static IGame* s_curGame = nullptr;
 
 void parseOption(const char* name, const std::vector<const char*>& values, bool longName);
@@ -567,6 +568,12 @@ int main(int argc, char* argv[])
 		TFE_ForceScript::test();
 	#endif
 
+	// Start up the game and skip the title screen.
+	if (s_startupGame >= Game_Dark_Forces)
+	{
+		TFE_FrontEndUI::setAppState(APP_STATE_GAME);
+	}
+
 	// Game loop
 	u32 frame = 0u;
 	bool showPerf = false;
@@ -617,7 +624,7 @@ int main(int argc, char* argv[])
 			if (selectedMod && selectedMod[0] && appState == APP_STATE_GAME)
 			{
 				char* newArgs[16];
-				for (s32 i = 0; i < argc; i++)
+				for (s32 i = 0; i < argc && i < 15; i++)
 				{
 					newArgs[i] = argv[i];
 				}
@@ -754,7 +761,6 @@ int main(int argc, char* argv[])
 	return PROGRAM_SUCCESS;
 }
 
-// TODO: Implement the various options.
 void parseOption(const char* name, const std::vector<const char*>& values, bool longName)
 {
 	if (!longName)	// short names use the same style as the originals.
@@ -764,24 +770,10 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 			// -gDARK
 			const char* gameToLoad = &name[1];
 			TFE_System::logWrite(LOG_MSG, "CommandLine", "Game to load: %s", gameToLoad);
-		}
-		else if (name[0] == 'u')	// Load a custom archive.
-		{
-			// -uDARK.GOB
-			const char* archiveToLoad = &name[1];
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Archive to load: %s", archiveToLoad);
-		}
-		else if (name[0] == 'l')	// Directly load a level at medium difficulty.
-		{
-			// -lSECBASE
-			const char* levelToLoad = &name[1];
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Level to load: %s", levelToLoad);
-		}
-		else if (name[0] == 'c')	// Skip cutscenes and the title screen.
-		{
-			// -c
-			// disable cutscenes and title.
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Disable cutscenes and title screen.");
+			if (!strcasecmp(gameToLoad, "dark"))
+			{
+				s_startupGame = Game_Dark_Forces;
+			}
 		}
 	}
 	else  // long names use the more traditional style of arguments which allow for multiple values.
@@ -791,29 +783,10 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 			// --game DARK
 			const char* gameToLoad = values[0];
 			TFE_System::logWrite(LOG_MSG, "CommandLine", "Game to load: %s", gameToLoad);
-		}
-		else if (strcasecmp(name, "archive") == 0 && values.size() >= 1)	// Load a custom archive.
-		{
-			// --archive DARK.GOB
-			const char* archiveToLoad = values[0];
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Archive to load: %s", archiveToLoad);
-		}
-		else if (strcasecmp(name, "level") == 0 && values.size() >= 1)		// Directly load a level at medium difficulty.
-		{
-			// --level SECBASE
-			const char* levelToLoad = values[0];
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Level to load: %s", levelToLoad);
-		}
-		else if (strcasecmp(name, "warp") == 0 && values.size() >= 3)		// Warp to a specific Sector and Location.
-		{
-			// --warp 15 12.7 203.5
-			char* endPtr = nullptr;
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Warp: sectorID: %d, x: %0.2f, z: %0.2f", strtol(values[0], &endPtr, 10), strtof(values[1], &endPtr), strtof(values[2], &endPtr));
-		}
-		else if (strcasecmp(name, "nocutscenes") == 0)		// Skip cutscenes and the title screen.
-		{
-			// --nocutscenes
-			TFE_System::logWrite(LOG_MSG, "CommandLine", "Disable cutscenes and title screen.");
+			if (!strcasecmp(gameToLoad, "dark"))
+			{
+				s_startupGame = Game_Dark_Forces;
+			}
 		}
 	}
 }
