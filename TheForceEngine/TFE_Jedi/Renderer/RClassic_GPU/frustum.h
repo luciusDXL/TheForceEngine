@@ -48,4 +48,7 @@ namespace TFE_Jedi
 
 	// Build a single plane from an edge and the camera position.
 	Vec4f frustum_calculatePlaneFromEdge(const Vec3f* edge);
+
+	// Distance of pos from plane.
+	f32 frustum_planeDist(const Vec4f* plane, const Vec3f* pos);
 }  // TFE_Jedi

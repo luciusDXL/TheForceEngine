@@ -34,7 +34,6 @@ namespace TFE_Jedi
 
 	void frustum_createQuad(Vec3f corner0, Vec3f corner1, Polygon* poly);
 	f32 frustum_planeDist(const Vec4f* plane, const Vec3f* pos);
-	f32 frustum_planeDistCameraRelative(const Vec4f* plane, const Vec3f* pos);
 
 	void frustum_clearStack()
 	{
@@ -74,7 +73,6 @@ namespace TFE_Jedi
 
 	bool frustum_sphereInside(Vec3f pos, f32 radius)
 	{
-		pos = { pos.x - s_cameraPos.x, pos.y - s_cameraPos.y, pos.z - s_cameraPos.z };
 		Frustum* frustum = frustum_getBack();
 
 		Vec4f* plane = frustum->planes;
@@ -108,7 +106,7 @@ namespace TFE_Jedi
 			const Vec3f* vtx = poly.vtx;
 			for (u32 v = 0; v < 4; v++, vtx++)
 			{
-				const f32 dist = frustum_planeDistCameraRelative(plane, vtx);
+				const f32 dist = frustum_planeDist(plane, vtx);
 				if (dist >= eps)
 				{
 					outside = false;
@@ -145,7 +143,7 @@ namespace TFE_Jedi
 			// Process the vertices.
 			for (s32 v = 0; v < cur->vertexCount; v++)
 			{
-				vtxDist[v] = frustum_planeDistCameraRelative(plane, &cur->vtx[v]);
+				vtxDist[v] = frustum_planeDist(plane, &cur->vtx[v]);
 				if (vtxDist[v] >= c_planeEps)
 				{
 					positive++;
@@ -242,11 +240,12 @@ namespace TFE_Jedi
 				continue;
 			}
 			N = TFE_Math::normalize(&N);
-			newFrustum->planes[newFrustum->planeCount++] = { N.x, N.y, N.z, 0.0f };
+			f32 d = -TFE_Math::dot(&N, &s_cameraPos);
+			newFrustum->planes[newFrustum->planeCount++] = { N.x, N.y, N.z, d };
 		}
 
 		// Near plane.
-		Vec3f O = { polygon->vtx[0].x - s_cameraPos.x, polygon->vtx[0].y - s_cameraPos.y, polygon->vtx[0].z - s_cameraPos.z };
+		Vec3f O = { polygon->vtx[0].x, polygon->vtx[0].y, polygon->vtx[0].z };
 		Vec3f S = { polygon->vtx[1].x - polygon->vtx[0].x, polygon->vtx[1].y - polygon->vtx[0].y, polygon->vtx[1].z - polygon->vtx[0].z };
 		Vec3f T = { polygon->vtx[2].x - polygon->vtx[0].x, polygon->vtx[2].y - polygon->vtx[0].y, polygon->vtx[2].z - polygon->vtx[0].z };
 		Vec3f N = TFE_Math::cross(&S, &T);
@@ -329,6 +328,10 @@ namespace TFE_Jedi
 				frustum.planes[i].z *= scale;
 				frustum.planes[i].w *= scale;
 			}
+
+			assert(frustum.planes[i].w == 0.0f);
+			f32 d = -TFE_Math::dot((Vec3f*)frustum.planes[i].m, &s_cameraPos);
+			frustum.planes[i].w = d;
 		}
 		frustum_push(frustum);
 	}
@@ -345,19 +348,14 @@ namespace TFE_Jedi
 		return plane;
 	}
 
-	////////////////////////////////////////////////
-	// Internal
-	////////////////////////////////////////////////
 	f32 frustum_planeDist(const Vec4f* plane, const Vec3f* pos)
 	{
 		return plane->x*pos->x + plane->y*pos->y + plane->z*pos->z + plane->w;
 	}
 
-	f32 frustum_planeDistCameraRelative(const Vec4f* plane, const Vec3f* pos)
-	{
-		return (pos->x - s_cameraPos.x)*plane->x + (pos->y - s_cameraPos.y)*plane->y + (pos->z - s_cameraPos.z)*plane->z + plane->w;
-	}
-
+	////////////////////////////////////////////////
+	// Internal
+	////////////////////////////////////////////////
 	void frustum_createQuad(Vec3f corner0, Vec3f corner1, Polygon* poly)
 	{
 		for (s32 v = 0; v < 4; v++)
