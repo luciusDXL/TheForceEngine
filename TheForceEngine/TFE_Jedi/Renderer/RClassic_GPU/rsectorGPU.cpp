@@ -104,6 +104,7 @@ namespace TFE_Jedi
 	extern Vec3f s_cameraPos;
 	extern Vec3f s_cameraDir;
 	extern Vec3f s_cameraRight;
+	extern ShaderBuffer s_displayListPlanesGPU;
 
 	bool loadSpriteShader()
 	{
@@ -111,7 +112,7 @@ namespace TFE_Jedi
 		{
 			return false;
 		}
-		m_spriteShader.enableClipPlanes(2);
+		m_spriteShader.enableClipPlanes(6);
 
 		m_cameraPosId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraPos");
 		m_cameraViewId[SPRITE_PASS]  = m_spriteShader.getVariableId("CameraView");
@@ -139,7 +140,7 @@ namespace TFE_Jedi
 		{
 			return false;
 		}
-		m_wallShader[index].enableClipPlanes(2);
+		m_wallShader[index].enableClipPlanes(6);
 
 		m_cameraPosId[index]   = m_wallShader[index].getVariableId("CameraPos");
 		m_cameraViewId[index]  = m_wallShader[index].getVariableId("CameraView");
@@ -865,7 +866,9 @@ namespace TFE_Jedi
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
-					model_add(obj->model, posWS, obj->transform, ambient, floorOffset);
+					// TODO: Handle top and bottom portals...
+					u32 portalInfo = sdisplayList_getPackedPortalInfo(botPortal);
+					model_add(obj->model, posWS, obj->transform, ambient, floorOffset, portalInfo);
 				}
 			}
 		}
@@ -906,11 +909,12 @@ namespace TFE_Jedi
 			// Add a portal to the display list.
 			Vec3f corner0 = { portal->v0.x, portal->y0, portal->v0.z };
 			Vec3f corner1 = { portal->v1.x, portal->y1, portal->v1.z };
-			sdisplayList_addPortal(corner0, corner1, parentPortalId);
-
-			portal->wall->drawFrame = s_gpuFrame;
-			traverseSector(portal->next, curSector, parentPortalId, level, uploadFlags, portal->v0, portal->v1);
-			portal->wall->drawFrame = 0;
+			if (sdisplayList_addPortal(corner0, corner1, parentPortalId))
+			{
+				portal->wall->drawFrame = s_gpuFrame;
+				traverseSector(portal->next, curSector, parentPortalId, level, uploadFlags, portal->v0, portal->v1);
+				portal->wall->drawFrame = 0;
+			}
 
 			frustum_pop();
 			level--;
@@ -1062,6 +1066,8 @@ namespace TFE_Jedi
 
 		ShaderBuffer* textureTable = &s_textures->textureTableGPU;
 		textureTable->bind(3);
+
+		s_displayListPlanesGPU.bind(4);
 
 		model_drawList();
 	}

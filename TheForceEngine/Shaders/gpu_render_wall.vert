@@ -9,12 +9,19 @@ uniform usamplerBuffer DrawListData;
 uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
 
 // in int gl_VertexID;
-out float gl_ClipDistance[2];
+out float gl_ClipDistance[6];
 flat out vec4 Frag_Uv;
 out vec3 Frag_Pos;
 out vec4 Texture_Data;
 flat out vec4 Frag_Color;
 flat out int Frag_TextureId;
+
+void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
+{
+	portalCount  = (portalInfo >> 13u) & 7u;
+	portalOffset = portalInfo & 8191u;
+}
+
 void main()
 {
 	// We do our own vertex fetching and geometry expansion, so calculate the relevent values from the vertex ID.
@@ -33,7 +40,10 @@ void main()
 	int sectorId = int(data.y);
 	int lightOffset = int(data.z & 63u) - 32;
 	bool flip    = (data.z & 64u) != 0u;
-	int portalId = int(data.z >> 7u);	// used for looking up vertical planes.
+
+	uint portalOffset, portalCount;
+	unpackPortalInfo(data.z >> 7u, portalOffset, portalCount);
+
 	int wallId   = int(data.w >> 16u);
 	Frag_TextureId = int(data.w & 65535u);
 
@@ -149,19 +159,6 @@ void main()
 			else { y1 = min(ceilHeight, nextHeights.y); }
 		}
 
-		// Project flat extrusion to the upper or lower frustum plane.
-		int index = max(0, (portalId - 1)*2) + flatIndex;
-		vec4 plane = texelFetch(DrawListPlanes, index);
-		vec2 dist = vec2(dot(vec4(vtx.x, y0, vtx.y, 1.0), plane), dot(vec4(vtx.x, y1, vtx.y, 1.0), plane));
-		if (flatIndex == 0 && portalId > 0)
-		{
-			y1 = y0 - (y1 - y0) * min(0.0, dist.x / (dist.y - dist.x));
-		}
-		else if (portalId > 0)
-		{
-			y0 = y0 - (y1 - y0) * max(0.0, dist.x / (dist.y - dist.x));
-		}
-
 		vtx_pos  = vec3(vtx.x, (vertexId < 2) ? y0 : y1, vtx.y);
 		vtx_color.r = 0.0;
 		vtx_color.g = float(48 + 16*(1-flatIndex));
@@ -204,16 +201,15 @@ void main()
 	#endif  // !SECTOR_TRANSPARENT_PASS
 
 	// Clipping.
-	vec2 clipDist = vec2(1.0);
-	if (portalId > 0)
+	for (int i = 0; i < int(portalCount) && i < 6; i++)
 	{
-		vec4 botPlane = texelFetch(DrawListPlanes, (portalId - 1)*2);
-		vec4 topPlane = texelFetch(DrawListPlanes, (portalId - 1)*2 + 1);
-		clipDist.x = dot(vec4(vtx_pos.xyz, 1.0), botPlane);
-		clipDist.y = dot(vec4(vtx_pos.xyz, 1.0), topPlane);
+		vec4 plane = texelFetch(DrawListPlanes, int(portalOffset) + i);
+		gl_ClipDistance[i] = dot(vec4(vtx_pos.xyz, 1.0), plane);
 	}
-	gl_ClipDistance[0] = clipDist.x;
-	gl_ClipDistance[1] = clipDist.y;
+	for (int i = int(portalCount); i < 6; i++)
+	{
+		gl_ClipDistance[i] = 1.0;
+	}
 	
 	Frag_Pos = vtx_pos - CameraPos;
 	

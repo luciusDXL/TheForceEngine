@@ -38,6 +38,8 @@ namespace TFE_Jedi
 	// This clips the quad formed from {corner0, corner1} against the current frustum on the stack.
 	// Returns false if the quad is outside of the frustum, else true.
 	bool frustum_clipQuadToFrustum(Vec3f corner0, Vec3f corner1, Polygon* output);
+	// Clip quad to list of planes.
+	bool frustum_clipQuadToPlanes(s32 count, const Vec4f* plane, Vec3f corner0, Vec3f corner1, Polygon* output);
 
 	// Builds a new frustum such that each polygon edge becomes a plane that passes through the camera and
 	// the polygon plane defines the near plane.

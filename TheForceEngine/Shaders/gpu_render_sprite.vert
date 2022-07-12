@@ -8,14 +8,21 @@ uniform samplerBuffer DrawListPosXZ_Texture;
 uniform samplerBuffer DrawListPosYU_Texture;
 uniform isamplerBuffer DrawListTexId_Texture;
 
-uniform samplerBuffer DrawListPlanes;	// Top and Bottom planes for each portal.
+uniform samplerBuffer DrawListPlanes;
 
 // in int gl_VertexID;
 out vec2 Frag_Uv; // base uv coordinates (0 - 1)
 out vec3 Frag_Pos;     // camera relative position for lighting.
-out float gl_ClipDistance[2];
+out float gl_ClipDistance[6];
 flat out vec4 Texture_Data; // not much here yet.
 flat out int Frag_TextureId;
+
+void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
+{
+	portalCount  = (portalInfo >> 13u) & 7u;
+	portalOffset = portalInfo & 8191u;
+}
+
 void main()
 {
 	// We do our own vertex fetching and geometry expansion, so calculate the relevent values from the vertex ID.
@@ -46,19 +53,21 @@ void main()
 	uint topId = texPortalData.y & 65535u;
 	uint botId = texPortalData.y >> 16u;
 
-	vec2 clipDist = vec2(1.0, 1.0);
-	if (botId > 0u)
+	// For now just use the bottom id.
+	uint portalOffset, portalCount;
+	unpackPortalInfo(botId, portalOffset, portalCount);
+
+	// Clipping.
+	// TODO: Handle different top and bottom IDs.
+	for (int i = 0; i < int(portalCount) && i < 6; i++)
 	{
-		vec4 botPlane = texelFetch(DrawListPlanes, int(botId - 1u) * 2);
-		clipDist.x = dot(vec4(vtx_pos.xyz, 1.0), botPlane);
+		vec4 plane = texelFetch(DrawListPlanes, int(portalOffset) + i);
+		gl_ClipDistance[i] = dot(vec4(vtx_pos.xyz, 1.0), plane);
 	}
-	if (topId > 0u)
+	for (int i = int(portalCount); i < 6; i++)
 	{
-		vec4 topPlane = texelFetch(DrawListPlanes, int(topId - 1u) * 2 + 1);
-		clipDist.y = dot(vec4(vtx_pos.xyz, 1.0), topPlane);
+		gl_ClipDistance[i] = 1.0;
 	}
-	gl_ClipDistance[0] = clipDist.x;
-	gl_ClipDistance[1] = clipDist.y;
 
 	// Relative position
 	Frag_Pos = vtx_pos - CameraPos;

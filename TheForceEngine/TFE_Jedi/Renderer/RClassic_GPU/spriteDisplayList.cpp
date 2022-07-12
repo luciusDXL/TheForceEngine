@@ -20,6 +20,7 @@
 #include <TFE_RenderBackend/shaderBuffer.h>
 
 #include "spriteDisplayList.h"
+#include "sectorDisplayList.h"
 #include "frustum.h"
 #include "../rcommon.h"
 
@@ -133,12 +134,15 @@ namespace TFE_Jedi
 			u1 = len1 * lenExtScale * scaleU;
 		}
 
+		u32 topPortalInfo = sdisplayList_getPackedPortalInfo(drawFrame->topPortalId);
+		u32 botPortalInfo = sdisplayList_getPackedPortalInfo(drawFrame->botPortalId);
+
 		const f32 heightWS = fixed16ToFloat(drawFrame->frame->heightWS);
 		const f32 fOffsetY = fixed16ToFloat(drawFrame->frame->offsetY);
 		s_displayListPosXZTexture[0][s_displayListCount] = { drawFrame->c0.x, drawFrame->c0.z, drawFrame->c1.x, drawFrame->c1.z };
 		s_displayListPosYUTexture[0][s_displayListCount] = { drawFrame->posY + fOffsetY, drawFrame->posY + fOffsetY - heightWS, u0, u1 };
 		s_displayListTexIdTexture[0][s_displayListCount] = { cell->textureId | (ambient << 16),
-															 s32(u32(drawFrame->topPortalId) | (u32(drawFrame->botPortalId) << 16u)) };
+															 s32(topPortalInfo | (botPortalInfo << 16u)) };
 		s_displayListCount++;
 	}
 

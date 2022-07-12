@@ -7,8 +7,10 @@ uniform vec4 LightData;
 
 uniform mat3 ModelMtx;
 uniform vec3 ModelPos;
+uniform uvec2 PortalInfo;
 
 uniform sampler2D Colormap;
+uniform samplerBuffer DrawListPlanes;
 
 // Vertex Data
 in vec3 vtx_pos;
@@ -16,12 +18,19 @@ in vec3 vtx_nrm;
 in vec2 vtx_uv;
 in vec4 vtx_color;
 
+out float gl_ClipDistance[6];
 out vec2 Frag_Uv;
 out vec3 Frag_WorldPos;
 noperspective out float Frag_Light;
 flat out int Frag_Color;
 flat out int Frag_TextureId;
 flat out int Frag_TextureMode;
+
+void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
+{
+	portalCount  = (portalInfo >> 13u) & 7u;
+	portalOffset = portalInfo & 8191u;
+}
 
 float directionalLighting(vec3 nrm, float scale)
 {
@@ -46,6 +55,19 @@ void main()
 
 	// UV Coordinates.
 	Frag_Uv = vtx_uv;
+
+	// Clipping.
+	uint portalOffset, portalCount;
+	unpackPortalInfo(PortalInfo.x, portalOffset, portalCount);
+	for (int i = 0; i < int(portalCount) && i < 6; i++)
+	{
+		vec4 plane = texelFetch(DrawListPlanes, int(portalOffset) + i);
+		gl_ClipDistance[i] = dot(vec4(worldPos.xyz, 1.0), plane);
+	}
+	for (int i = int(portalCount); i < 6; i++)
+	{
+		gl_ClipDistance[i] = 1.0;
+	}
 
 	// Lighting
 	float ambient = max(0.0, LightData.y > 32.0 ? LightData.y - 64.0 : LightData.y);
@@ -83,7 +105,7 @@ void main()
 		float falloff = floor(z / 16.0) + floor(z / 32.0);
 		light = clamp(light - falloff, scaledAmbient, 31.0);
 	}
-	
+		
 	// Write out the per-vertex uv and color.
 	Frag_WorldPos = worldPos;
 	Frag_Color = int(vtx_color.x * 255.0 + 0.5);

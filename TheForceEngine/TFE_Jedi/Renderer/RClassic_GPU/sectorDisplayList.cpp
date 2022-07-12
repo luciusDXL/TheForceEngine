@@ -27,6 +27,9 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
+	// Pack portal info into a 16-bit value.
+	#define PACK_PORTAL_INFO(offset, count) (u32(offset) | u32(count) << 13u)
+
 	// Warning: these IDs must match the PartId used in the vertex shader.
 	enum SegmentPartID
 	{
@@ -47,6 +50,7 @@ namespace TFE_Jedi
 	enum Constants
 	{
 		MAX_DISP_ITEMS = 1024,
+		MAX_PORTAL_PLANES = 6,
 	};
 
 	// TODO: factor out so the sprite, sector, and geometry passes can use it.
@@ -55,14 +59,19 @@ namespace TFE_Jedi
 
 	static s32 s_displayListCount[SECTOR_PASS_COUNT];
 	static s32 s_displayPlaneCount;
+	static s32 s_displayPortalCount;
 	static Vec4f  s_displayListPos[SECTOR_PASS_COUNT * MAX_DISP_ITEMS];
 	static Vec4ui s_displayListData[SECTOR_PASS_COUNT * MAX_DISP_ITEMS];
-	static Vec4f  s_displayListPlanes[2048];
+	static Vec4f  s_displayListPlanes[MAX_PORTAL_PLANES * MAX_DISP_ITEMS];
 	static ShaderBuffer s_displayListPosGPU[SECTOR_PASS_COUNT];
 	static ShaderBuffer s_displayListDataGPU[SECTOR_PASS_COUNT];
 	static s32 s_posIndex[SECTOR_PASS_COUNT];
 	static s32 s_dataIndex[SECTOR_PASS_COUNT];
 	static s32 s_planesIndex;
+
+	u32 s_portalPlaneInfo[256];
+	static Frustum s_portalFrustumVert[256];
+	static s32 s_maxPlaneCount = 0;
 
 	void sdisplayList_init(s32* posIndex, s32* dataIndex, s32 planesIndex)
 	{
@@ -94,7 +103,7 @@ namespace TFE_Jedi
 			sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 			BUF_CHANNEL_FLOAT
 		};
-		s_displayListPlanesGPU.create(2*MAX_DISP_ITEMS, bufferDefDisplayListPlanes, true);
+		s_displayListPlanesGPU.create(MAX_PORTAL_PLANES*MAX_DISP_ITEMS, bufferDefDisplayListPlanes, true);
 		s_planesIndex = planesIndex;
 
 		sdisplayList_clear();
@@ -117,6 +126,7 @@ namespace TFE_Jedi
 			s_displayListCount[i] = 0;
 		}
 		s_displayPlaneCount = 0;
+		s_displayPortalCount = 0;
 		s_displayCurrentPortalId = 0;
 	}
 		
@@ -140,8 +150,8 @@ namespace TFE_Jedi
 	{
 		// TODO: Remove and replace with main frustum extrusion.
 		Vec4f pos = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
-		u32 portalId = u32(s_displayCurrentPortalId) << 7u;
-		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, portalId, 0u/*textureId*/ };
+		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
+		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, portalInfo, 0u/*textureId*/ };
 
 		s_displayListPos[s_displayListCount[0]] = pos;
 		s_displayListData[s_displayListCount[0]] = data;
@@ -158,7 +168,17 @@ namespace TFE_Jedi
 		s_displayListCount[0]++;
 	}
 
-	void sdisplayList_addPortal(Vec3f p0, Vec3f p1, s32 parentPortalId)
+	u32 sdisplayList_getPackedPortalInfo(s32 portalId)
+	{
+		s32 portalIndex = portalId - 1;
+		if (portalIndex < 0)
+		{
+			return 0;
+		}
+		return s_portalPlaneInfo[portalIndex];
+	}
+		
+	bool sdisplayList_addPortal(Vec3f p0, Vec3f p1, s32 parentPortalId)
 	{
 		const Vec3f botEdge[] =
 		{
@@ -170,32 +190,55 @@ namespace TFE_Jedi
 			{ p1.x, p0.y, p1.z },
 			{ p0.x, p0.y, p0.z },
 		};
-
-		// Either use the planes generated from the new edges or keep the previous planes.
-		bool newPlaneBot = true, newPlaneTop = true;
-		Vec4f* prevBotPlane = nullptr;
-		Vec4f* prevTopPlane = nullptr;
+		
 		if (parentPortalId > 0)
 		{
-			prevBotPlane = &s_displayListPlanes[(parentPortalId - 1) * 2 + 0];
-			f32 side0 = botEdge[0].x*prevBotPlane->x + botEdge[0].y*prevBotPlane->y + botEdge[0].z*prevBotPlane->z + prevBotPlane->w;
-			f32 side1 = botEdge[1].x*prevBotPlane->x + botEdge[1].y*prevBotPlane->y + botEdge[1].z*prevBotPlane->z + prevBotPlane->w;
-			newPlaneBot = (side0 > 0.0f || side1 > 0.0f);
-
-			prevTopPlane = &s_displayListPlanes[(parentPortalId - 1) * 2 + 1];
-			side0 = topEdge[0].x*prevTopPlane->x + topEdge[0].y*prevTopPlane->y + topEdge[0].z*prevTopPlane->z + prevTopPlane->w;
-			side1 = topEdge[1].x*prevTopPlane->x + topEdge[1].y*prevTopPlane->y + topEdge[1].z*prevTopPlane->z + prevTopPlane->w;
-			newPlaneTop = (side0 > 0.0f || side1 > 0.0f);
+			Polygon clipped;
+			s32 parentPortalIndex = parentPortalId - 1;
+			if (frustum_clipQuadToPlanes(s_portalFrustumVert[parentPortalIndex].planeCount, s_portalFrustumVert[parentPortalIndex].planes, botEdge[0], topEdge[0], &clipped))
+			{
+				// Build a new frustum.
+				u32& count = s_portalFrustumVert[s_displayPortalCount].planeCount;
+				Vec4f* plane = s_portalFrustumVert[s_displayPortalCount].planes;
+				count = 0;
+				for (s32 i = 0; i < clipped.vertexCount; i++)
+				{
+					const s32 a = i, b = (i + 1) % clipped.vertexCount;
+					if (fabsf(clipped.vtx[a].x - clipped.vtx[b].x) > FLT_EPSILON || fabsf(clipped.vtx[a].z - clipped.vtx[b].z) > FLT_EPSILON)
+					{
+						Vec3f edge[] = { clipped.vtx[a], clipped.vtx[b] };
+						plane[count++] = frustum_calculatePlaneFromEdge(edge);
+					}
+				}
+				s_maxPlaneCount = max(count, s_maxPlaneCount);
+				assert(s_maxPlaneCount <= 6);
+			}
+			else
+			{
+				return false;
+			}
 		}
+		else
+		{
+			s_portalFrustumVert[s_displayPortalCount].planeCount = 2;
+			s_portalFrustumVert[s_displayPortalCount].planes[0] = frustum_calculatePlaneFromEdge(botEdge);
+			s_portalFrustumVert[s_displayPortalCount].planes[1] = frustum_calculatePlaneFromEdge(topEdge);
+		}
+		s_portalPlaneInfo[s_displayPortalCount] = PACK_PORTAL_INFO(s_displayPlaneCount, min(6, s_portalFrustumVert[s_displayPortalCount].planeCount));
 
 		// The new planes either match the parent or are created from the edges.
-		Vec4f* botPlane = &s_displayListPlanes[s_displayPlaneCount + 0];
-		Vec4f* topPlane = &s_displayListPlanes[s_displayPlaneCount + 1];
-		s_displayCurrentPortalId = 1 + (s_displayPlaneCount >> 1);
-		s_displayPlaneCount += 2;
+		const Frustum* frust = &s_portalFrustumVert[s_displayPortalCount];
+		Vec4f* outPlanes = &s_displayListPlanes[s_displayPlaneCount];
+		for (s32 i = 0; i < frust->planeCount && i < 6; i++)
+		{
+			outPlanes[i] = frust->planes[i];
+			s_displayPlaneCount++;
+		}
 
-		*botPlane = newPlaneBot ? frustum_calculatePlaneFromEdge(botEdge) : *prevBotPlane;
-		*topPlane = newPlaneTop ? frustum_calculatePlaneFromEdge(topEdge) : *prevTopPlane;
+		s_displayCurrentPortalId = 1 + s_displayPortalCount;
+		s_displayPortalCount++;
+		
+		return true;
 	}
 
 	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg)
@@ -205,17 +248,17 @@ namespace TFE_Jedi
 		// Mark only visible walls as being rendered.
 		srcWall->seen = JTRUE;
 
-		u32 portalId  = u32(s_displayCurrentPortalId) << 7u;	// pre-shift.
 		u32 wallGpuId = u32(cached->wallStart + wallId) << 16u;
 		u32 flip = (((srcWall->flags1 & WF1_FLIP_HORIZ) != 0) ? 1 : 0) << 6u;
 		// Add 32 so the value is unsigned and easy to decode in the shader (just subtract 32).
 		// Values should never to larger than [-31,31] but clamp just in case (larger values would have no effect anyway).
 		u32 wallLight = u32(32 + clamp(floor16(srcWall->wallLight), -31, 31));
 		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0xffff0000u;
+		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
 
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		const Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
-				    		   wallLight | portalId, 0u/*textureId*/ };
+				    		   wallLight | portalInfo, 0u/*textureId*/ };
 
 		// Wall Flags.
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)

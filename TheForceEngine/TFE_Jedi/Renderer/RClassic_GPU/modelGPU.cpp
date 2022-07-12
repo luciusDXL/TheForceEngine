@@ -66,6 +66,7 @@ namespace TFE_Jedi
 		Vec2f floorOffset;
 		f32 transform[9];
 		f32 ambient;
+		u32 portalInfo;
 	};
 
 	static const AttributeMapping c_modelAttrMapping[] =
@@ -92,6 +93,7 @@ namespace TFE_Jedi
 	static s32 s_mgpu_modelMtxId[MGPU_SHADER_COUNT];
 	static s32 s_mgpu_modelPosId[MGPU_SHADER_COUNT];
 	static s32 s_mgpu_cameraRightId[MGPU_SHADER_COUNT];
+	static s32 s_mgpu_portalInfo[MGPU_SHADER_COUNT];
 
 	static ModelGPU s_models[MGPU_MAX_MODELS];
 	static ModelDraw s_modelDrawList[MGPU_SHADER_COUNT][MGPU_MAX_3DO_PER_PASS];
@@ -124,6 +126,7 @@ namespace TFE_Jedi
 		{
 			return false;
 		}
+		shader->enableClipPlanes(6);
 
 		s_mgpu_cameraPosId[variant]   = shader->getVariableId("CameraPos");
 		s_mgpu_cameraViewId[variant]  = shader->getVariableId("CameraView");
@@ -133,11 +136,13 @@ namespace TFE_Jedi
 		s_mgpu_modelMtxId[variant]    = shader->getVariableId("ModelMtx");
 		s_mgpu_modelPosId[variant]    = shader->getVariableId("ModelPos");
 		s_mgpu_lightDataId[variant]   = shader->getVariableId("LightData");
+		s_mgpu_portalInfo[variant]    = shader->getVariableId("PortalInfo");
 		
 		shader->bindTextureNameToSlot("Palette", 0);
 		shader->bindTextureNameToSlot("Colormap", 1);
 		shader->bindTextureNameToSlot("Textures", 2);
 		shader->bindTextureNameToSlot("TextureTable", 3);
+		shader->bindTextureNameToSlot("DrawListPlanes", 4);
 		return true;
 	}
 
@@ -625,7 +630,7 @@ namespace TFE_Jedi
 	{
 	}
 
-	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset)
+	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, u32 portalInfo)
 	{
 		// Make sure the model has been assigned a GPU ID.
 		if (model->drawId < 0)
@@ -651,6 +656,7 @@ namespace TFE_Jedi
 		drawItem->posWS = posWS;
 		drawItem->ambient = ambient;
 		drawItem->floorOffset = floorOffset;
+		drawItem->portalInfo = portalInfo;
 		for (s32 i = 0; i < 9; i++)
 		{
 			drawItem->transform[i] = fixed16ToFloat(transform[i]);
@@ -691,6 +697,9 @@ namespace TFE_Jedi
 				lightData.z = drawItem->floorOffset.x;
 				lightData.w = drawItem->floorOffset.z;
 				shader->setVariable(s_mgpu_lightDataId[s], SVT_VEC4, lightData.m);
+
+				u32 portalInfo[] = { drawItem->portalInfo, drawItem->portalInfo };
+				shader->setVariable(s_mgpu_portalInfo[s], SVT_UVEC2, (f32*)portalInfo);
 
 				TFE_RenderBackend::drawIndexedTriangles(model->polyCount, sizeof(u32), model->indexStart);
 			}

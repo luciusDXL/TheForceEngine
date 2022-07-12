@@ -121,13 +121,15 @@ namespace TFE_Jedi
 		}
 		return true;
 	}
-				
+						
 	bool frustum_clipQuadToFrustum(Vec3f corner0, Vec3f corner1, Polygon* output)
 	{
 		Frustum* frustum = frustum_getBack();
-		s32 count = frustum->planeCount;
-		Vec4f* plane = frustum->planes;
+		return frustum_clipQuadToPlanes(frustum->planeCount, frustum->planes, corner0, corner1, output);
+	}
 
+	bool frustum_clipQuadToPlanes(s32 count, const Vec4f* plane, Vec3f corner0, Vec3f corner1, Polygon* output)
+	{
 		Polygon poly[2];
 		Polygon* cur = &poly[0];
 		Polygon* next = &poly[1];

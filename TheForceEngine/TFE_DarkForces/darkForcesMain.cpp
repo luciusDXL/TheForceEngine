@@ -402,12 +402,22 @@ namespace TFE_DarkForces
 			} break;
 			case GSTATE_AGENT_MENU:
 			{
+				bool levelSelected = false;
 				if (s_startLevel)
 				{
 					s_abortLevel = JFALSE;
 					s_levelIndex = s_startLevel;
 					s_startLevel = 0;
+					levelSelected = true;
+				}
+				else if (!agentMenu_update(&s_levelIndex))
+				{
+					agent_updateAgentSavedData();
+					levelSelected = true;
+				}
 
+				if (levelSelected)
+				{
 					s_invalidLevelIndex = JTRUE;
 					for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
 					{
@@ -422,28 +432,6 @@ namespace TFE_DarkForces
 					s_abortLevel = JFALSE;
 					agent_setNextLevelByIndex(s_levelIndex);
 					startNextMode();
-				}
-				else
-				{
-					if (!agentMenu_update(&s_levelIndex))
-					{
-						agent_updateAgentSavedData();
-
-						s_invalidLevelIndex = JTRUE;
-						for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
-						{
-							if (s_cutsceneData[i].levelIndex >= 0 && s_cutsceneData[i].levelIndex == s_levelIndex)
-							{
-								s_cutsceneIndex = i;
-								s_invalidLevelIndex = JFALSE;
-								break;
-							}
-						}
-
-						s_abortLevel = JFALSE;
-						agent_setNextLevelByIndex(s_levelIndex);
-						startNextMode();
-					}
 				}
 			} break;
 			case GSTATE_CUTSCENE:
