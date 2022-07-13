@@ -129,7 +129,7 @@ namespace TFE_Jedi
 		s_displayPortalCount = 0;
 		s_displayCurrentPortalId = 0;
 	}
-		
+
 	void sdisplayList_finish()
 	{
 		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
@@ -342,7 +342,10 @@ namespace TFE_Jedi
 		s_displayListData[s_displayListCount[0]] = data;
 		s_displayListData[s_displayListCount[0]].x |= SPARTID_CEILING;
 		s_displayListData[s_displayListCount[0]].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
-		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
+		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
+		{
+			s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY;
+		}
 		s_displayListCount[0]++;
 	}
 

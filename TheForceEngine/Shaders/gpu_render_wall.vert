@@ -44,7 +44,7 @@ void main()
 	uint portalOffset, portalCount;
 	unpackPortalInfo(data.z >> 7u, portalOffset, portalCount);
 
-	int wallId   = int(data.w >> 16u);
+	int wallId = int(data.w >> 16u);
 	Frag_TextureId = int(data.w & 65535u);
 
 	// Get the current sector heights.

@@ -1216,6 +1216,14 @@ namespace TFE_DarkForces
 					x += vfb_getWidescreenOffset();
 				}
 
+				// TFE: Handle extended pitch limits.
+				fixed16_16 texHeight = floor16(mul16(intToFixed16(tex->height), yScale));
+				fixed16_16 y1 = y + texHeight;
+				if (y1 < dispHeight - 3)
+				{
+					y = dispHeight + 2 - texHeight;
+				}
+
 				if (atten && !s_weaponLight)
 				{
 					blitTextureToScreenLitScaled(tex, rect, x, y, xScale, yScale, atten, display, JTRUE);

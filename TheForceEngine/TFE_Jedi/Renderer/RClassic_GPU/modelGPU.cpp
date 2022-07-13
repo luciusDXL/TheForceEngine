@@ -138,10 +138,10 @@ namespace TFE_Jedi
 		s_mgpu_lightDataId[variant]   = shader->getVariableId("LightData");
 		s_mgpu_portalInfo[variant]    = shader->getVariableId("PortalInfo");
 		
-		shader->bindTextureNameToSlot("Palette", 0);
+		shader->bindTextureNameToSlot("Palette",  0);
 		shader->bindTextureNameToSlot("Colormap", 1);
 		shader->bindTextureNameToSlot("Textures", 2);
-		shader->bindTextureNameToSlot("TextureTable", 3);
+		shader->bindTextureNameToSlot("TextureTable",   3);
 		shader->bindTextureNameToSlot("DrawListPlanes", 4);
 		return true;
 	}
@@ -180,12 +180,12 @@ namespace TFE_Jedi
 		u32 icount = 6 * model->vertexCount;
 		u32 vidx = *vertexStart;
 		(*vertexStart) += vcount;
-		(*indexStart) += icount;
+		(*indexStart)  += icount;
 
 		const size_t curVtxSize = s_vertexData.size();
 		const size_t curIdxSize = s_indexData.size();
 		s_vertexData.resize(curVtxSize + vcount);
-		s_indexData.resize(curIdxSize + icount);
+		s_indexData.resize( curIdxSize + icount);
 
 		const vec3* srcVtx = model->vertices;
 		const u32 color = model->polygons[0].color;
@@ -229,7 +229,7 @@ namespace TFE_Jedi
 		}
 
 		s_models[s_modelCount].indexStart = (s32)curIdxSize;
-		s_models[s_modelCount].polyCount = model->vertexCount * 2;
+		s_models[s_modelCount].polyCount  = model->vertexCount * 2;
 		s_models[s_modelCount].shader = MGPU_SHADER_HOLOGRAM;
 		model->drawId = s_modelCount;
 		s_modelCount++;
@@ -258,12 +258,12 @@ namespace TFE_Jedi
 	{
 		if (s_modelCount >= MGPU_MAX_MODELS) { return false; }
 
-		s_curModel = model;
-		s_curIndexStart = indexStart;
+		s_curModel   = model;
+		s_modelTrans = false;
+		s_curIndexStart  = indexStart;
 		s_curVertexStart = vertexStart;
 		s_modelVertexMap.clear();
 		s_modelVertexList.clear();
-		s_modelTrans = false;
 		return true;
 	}
 
@@ -271,7 +271,7 @@ namespace TFE_Jedi
 	{
 		// Create the entry.
 		s_models[s_modelCount].indexStart = *s_curIndexStart;
-		s_models[s_modelCount].polyCount = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
+		s_models[s_modelCount].polyCount  = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
 		s_models[s_modelCount].shader = s_modelTrans ? MGPU_SHADER_TRANS : MGPU_SHADER_SOLID;
 		s_curModel->drawId = s_modelCount;
 		s_modelCount++;
@@ -313,9 +313,9 @@ namespace TFE_Jedi
 
 	bool isCompositeVtxEqual(const CompositeVertex* srcVtx, vec3* pos, vec2* uv, vec3* nrml, u8 color, u8 planeMode, s32 textureId)
 	{
-		if (srcVtx->pos.x != pos->x || srcVtx->pos.y != pos->y || srcVtx->pos.z != pos->z) { return false; }
+		if (srcVtx->pos.x  != pos->x  || srcVtx->pos.y  != pos->y  || srcVtx->pos.z  != pos->z)  { return false; }
 		if (srcVtx->nrml.x != nrml->x || srcVtx->nrml.y != nrml->y || srcVtx->nrml.z != nrml->z) { return false; }
-		if (srcVtx->uv.x != uv->x || srcVtx->uv.y != uv->y || srcVtx->textureId != textureId) { return false; }
+		if (srcVtx->uv.x   != uv->x   || srcVtx->uv.y   != uv->y   || srcVtx->textureId != textureId) { return false; }
 		return srcVtx->color == color && srcVtx->planeMode == planeMode;
 	}
 

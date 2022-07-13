@@ -56,12 +56,15 @@ float sampleTexture(int id, vec2 uv, bool sky, bool flip)
 
 	if (sky)
 	{
-		iuv.x = wrapCoordScalar(iuv.x, sampleData.z);
-		iuv.y = clamp(iuv.y, 0, sampleData.w - 1);
-		if (iuv.y == 0 || iuv.y == sampleData.w - 1)
+		if (abs(iuv.y) >= 9999)
 		{
-			// Single sample for the whole area.
-			iuv.xy = ivec2(sampleData.z/2, iuv.y);
+			// TODO: Single sample for the whole area.
+			iuv.xy = ivec2(sampleData.z/2, sampleData.w/2);
+		}
+		else
+		{
+			iuv.x = wrapCoordScalar(iuv.x, sampleData.z);
+			iuv.y = wrapCoordScalar(iuv.y, sampleData.w);
 		}
 	}
 	else
@@ -103,7 +106,6 @@ float sqr(float x)
 vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset)
 {
 	// Cylindrical
-	/*
 	float len = length(cameraVec.xz);
 	vec2 dir = cameraVec.xz;
 	vec2 uv = vec2(0.0);
@@ -115,9 +117,17 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset)
 		float dirY = cameraVec.y*scale;
 		
 		uv.x = -(atan(dir.y, dir.x)/1.57 + 1.0) * SkyParallax.x - texOffset.x;
-		uv.y = -dirY*0.7071 * SkyParallax.y + texOffset.y*0.5;
+
+		float dirScale = 0.7071 * max(256.0, SkyParallax.y);
+		float offset = (texOffset.y + 100.0);// * SkyParallax.y / 1024.0;
+
+		uv.y = -dirY * dirScale - offset;
+		if (abs(dirY) > 1.0)
+		{
+			uv.y = -sign(dirY) * dirScale - offset;
+		}
 	}
-	*/
+	/*
 	// Spherical
 	float len = length(cameraVec);
 	vec3 dir = cameraVec;
@@ -133,6 +143,7 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset)
 		uv.x = -(horzAngle + 1.0) * SkyParallax.x - texOffset.x;
 		uv.y = SkyParallax.y*vertAngle + texOffset.y*0.5;
 	}
+	*/
 	return uv;
 }
 

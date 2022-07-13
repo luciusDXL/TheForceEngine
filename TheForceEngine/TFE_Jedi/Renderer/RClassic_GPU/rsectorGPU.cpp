@@ -638,22 +638,21 @@ namespace TFE_Jedi
 
 				fixed16_16 openTop, openBot;
 				// Sky handling
-				// TODO: This isn't *quite* right, the top and bottom need to extend to the top/bot of the view frustum.
-				/*if (((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (next->flags1 & SEC_FLAGS1_EXT_ADJ)) && (next->flags1 & SEC_FLAGS1_EXTERIOR))
+				if ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (next->flags1 & SEC_FLAGS1_EXT_ADJ))
 				{
-					openTop = min(curSector->ceilingHeight, next->ceilingHeight);
+					openTop = curSector->ceilingHeight - intToFixed16(100);
 					y0 = fixed16ToFloat(openTop);
 				}
-				else*/
+				else
 				{
 					openTop = min(curSector->floorHeight, max(curSector->ceilingHeight, next->ceilingHeight));
 				}
-				/*if (((curSector->flags1 & SEC_FLAGS1_PIT) || (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ)) && (next->flags1 & SEC_FLAGS1_PIT))
+				if ((curSector->flags1 & SEC_FLAGS1_PIT) && (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 				{
-					openBot = max(curSector->floorHeight, next->floorHeight);
+					openBot = curSector->floorHeight + intToFixed16(100);
 					y1 = fixed16ToFloat(openBot);
 				}
-				else*/
+				else
 				{
 					openBot = max(curSector->ceilingHeight, min(curSector->floorHeight, next->floorHeight));
 				}
