@@ -264,13 +264,25 @@ namespace TFE_Jedi
 		// Wall Flags.
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
 		{
-			assert(srcWall->midTex && *srcWall->midTex && (*srcWall->midTex)->textureId >= 0 && (*srcWall->midTex)->textureId < 1024);
+			if (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
+			{
+				// For now use the ceiling texture.
+				// TODO: This should render *both* the ceiling and floor textures.
+				s_displayListPos[s_displayListCount[0]] = pos;
+				s_displayListData[s_displayListCount[0]] = data;
+				s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_MID | SPARTID_SKY;
+				s_displayListData[s_displayListCount[0]].w = wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0);
+			}
+			else
+			{
+				assert(srcWall->midTex && *srcWall->midTex && (*srcWall->midTex)->textureId >= 0 && (*srcWall->midTex)->textureId < 1024);
 
-			s_displayListPos[s_displayListCount[0]] = pos;
-			s_displayListData[s_displayListCount[0]] = data;
-			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_MID;
-			s_displayListData[s_displayListCount[0]].z |= flip;
-			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+				s_displayListPos[s_displayListCount[0]] = pos;
+				s_displayListData[s_displayListCount[0]] = data;
+				s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_MID;
+				s_displayListData[s_displayListCount[0]].z |= flip;
+				s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+			}
 			s_displayListCount[0]++;
 		}
 		else if (srcWall->midTex && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX)) // Transparent mid-texture.

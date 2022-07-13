@@ -129,6 +129,12 @@ void main()
 			vtx_pos.y = (vertexId < 2) ? curBot : floorHeight;
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 2).xy;
 		}
+		else if (sky)
+		{
+			int flatIndex = 1;
+			vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
+			texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;
+		}
 		else
 		{
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
@@ -137,7 +143,10 @@ void main()
 		vtx_uv.y = sky ? 3.0 : 2.0;
 	#endif  // !SECTOR_TRANSPARENT_PASS
 
-		texture_data = texelFetch(Walls, wallId*3);
+		if (partId != 0 || !sky)
+		{
+			texture_data = texelFetch(Walls, wallId*3);
+		}
 		vtx_uv.x = texBase;
 		
 		vtx_color.r = float(lightOffset);
