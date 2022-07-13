@@ -34,7 +34,8 @@ void main()
 
 	// Unpack part data.
 	bool sky = (data.x & 32768u) != 0u;
-	int partId = int(data.x & 32767u);
+	bool skyAdj = (data.x & 16384u) != 0u;
+	int partId = int(data.x & 16383u);
 
 	int nextId   = int(data.x >> 16u);
 	int sectorId = int(data.y);
@@ -151,12 +152,18 @@ void main()
 		float y1 = (flatIndex==0) ? floorHeight + extrusion : ceilHeight;
 		vec2 vtx = (vertexId & 1)==0 ? positions.xy : positions.zw;
 
-		if (sky && nextId < 32768)
+		// TODO: I think these can be removed entirely by adjusting the height offset on the CPU to match the extension offset.
+		// That would avoid having to rendering these parts at all.
+		if (skyAdj)
 		{
-			// TODO: This isn't *quite* right, since the sky should be extended to the top/bot of the frustum.
-			vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
-			if (flatIndex == 0) { y0 = max(floorHeight, nextHeights.x); }
-			else { y1 = min(ceilHeight, nextHeights.y); }
+			if (flatIndex == 0)
+			{
+				y0 += 100.0;
+			}
+			else // flatIndex == 1
+			{
+				y1 -= 100.0;
+			}
 		}
 
 		vtx_pos  = vec3(vtx.x, (vertexId < 2) ? y0 : y1, vtx.y);

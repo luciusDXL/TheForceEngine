@@ -43,6 +43,7 @@ namespace TFE_Jedi
 		SPARTID_WALL_MID_SIGN,
 		SPARTID_WALL_TOP_SIGN,
 		SPARTID_WALL_BOT_SIGN,
+		SPARTID_SKY_ADJ = 16384,
 		SPARTID_SKY = 32768,
 		SPARTID_COUNT
 	};
@@ -334,7 +335,14 @@ namespace TFE_Jedi
 		s_displayListData[s_displayListCount[0]] = data;
 		s_displayListData[s_displayListCount[0]].x |= SPARTID_FLOOR;
 		s_displayListData[s_displayListCount[0]].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
-		if (curSector->flags1 & SEC_FLAGS1_PIT) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
+		if (curSector->flags1 & SEC_FLAGS1_PIT)
+		{
+			s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY;
+			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
+			{
+				s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY_ADJ;
+			}
+		}
 		s_displayListCount[0]++;
 
 		// Add Ceiling
@@ -345,6 +353,10 @@ namespace TFE_Jedi
 		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
 			s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY;
+			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
+			{
+				s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY_ADJ;
+			}
 		}
 		s_displayListCount[0]++;
 	}
