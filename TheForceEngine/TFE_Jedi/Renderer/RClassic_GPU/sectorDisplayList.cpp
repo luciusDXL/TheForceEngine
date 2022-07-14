@@ -285,7 +285,7 @@ namespace TFE_Jedi
 			}
 			s_displayListCount[0]++;
 		}
-		else if (srcWall->midTex && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX)) // Transparent mid-texture.
+		else if (srcWall->midTex && (*srcWall->midTex) && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX)) // Transparent mid-texture.
 		{
 			// Transparent items go into SECTOR_PASS_TRANS
 			s_displayListPos[s_displayListCount[1]  + MAX_DISP_ITEMS] = pos;
@@ -335,7 +335,7 @@ namespace TFE_Jedi
 				s_displayListCount[1]++;
 			}
 			// And finally mid.
-			else if (srcWall->midTex)
+			else if (srcWall->midTex && srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
 			{
 				s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_MID_SIGN;
 				s_displayListCount[1]++;
