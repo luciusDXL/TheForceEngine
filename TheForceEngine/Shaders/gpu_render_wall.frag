@@ -103,29 +103,35 @@ float sqr(float x)
 	return x*x;
 }
 
-vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset)
+vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out float yLimit)
 {
 	// Cylindrical
 	float len = length(cameraVec.xz);
 	vec2 dir = cameraVec.xz;
 	vec2 uv = vec2(0.0);
+	fade = 0.0;
 	if (len > 0.0)
 	{
 		float scale = 1.0 / len;
 		dir *= scale;
 
 		float dirY = cameraVec.y*scale;
+		float dirScale = 0.7071 * 256.0;
+		float offsetY = texOffset.y + 100.0;	// Note 100 here maps the center line of the image (aka 200 / 2 = 100)
+		// Hack! TODO: Figure out why this seems to be true.
+		if (SkyParallax.y < 256.0)
+		{
+			offsetY += 50.0;
+		}
 		
 		uv.x = -(atan(dir.y, dir.x)/1.57 + 1.0) * SkyParallax.x - texOffset.x;
-
-		float dirScale = 0.7071 * max(256.0, SkyParallax.y);
-		float offset = (texOffset.y + 100.0);// * SkyParallax.y / 1024.0;
-
-		uv.y = -dirY * dirScale - offset;
+		uv.y = -dirY * dirScale - offsetY;
+		yLimit = -sign(dirY) * dirScale - offsetY;
 		if (abs(dirY) > 1.0)
 		{
-			uv.y = -sign(dirY) * dirScale - offset;
+			uv.y = yLimit;
 		}
+		fade = smoothstep(0.95, 1.0, abs(dirY));
 	}
 	/*
 	// Spherical
@@ -154,9 +160,11 @@ void main()
 	bool sky = Frag_Uv.y > 2.5;
 	bool sign = false;
 	bool flip = Frag_Color.a > 0.5;
+	float skyFade = 0.0;
+	float yLimit = 0.0;
 	if (sky) // Sky
 	{
-		uv = calculateSkyProjection(cameraRelativePos, Texture_Data.xy);
+		uv = calculateSkyProjection(cameraRelativePos, Texture_Data.xy, skyFade, yLimit);
 	}
 	else if (Frag_Uv.y > 1.5) // Wall
 	{
@@ -247,6 +255,24 @@ void main()
 		discard;
 	}
 	#endif
+
+	if (skyFade > 0.0)
+	{
+		// 4x4 Ordered Dither pattern.
+		mat4 bayerIndex = mat4(
+			vec4(00.0/16.0, 12.0/16.0, 03.0/16.0, 15.0/16.0),
+			vec4(08.0/16.0, 04.0/16.0, 11.0/16.0, 07.0/16.0),
+			vec4(02.0/16.0, 14.0/16.0, 01.0/16.0, 13.0/16.0),
+			vec4(10.0/16.0, 06.0/16.0, 09.0/16.0, 05.0/16.0));
+
+		ivec2 iuv = ivec2(uv * 2.0);
+		float rnd = bayerIndex[iuv.x&3][iuv.y&3];
+		
+		if (rnd < skyFade)
+		{
+			baseColor = sampleTexture(Frag_TextureId, vec2(256.0, yLimit), sky, flip);
+		}
+	}
 
 	// Enable solid color rendering for wireframe.
 	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColor(int(baseColor), int(light));
