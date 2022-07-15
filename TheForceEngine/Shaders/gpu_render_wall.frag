@@ -117,11 +117,12 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 #ifdef SKYMODE_VANILLA
 	if (len > 0.0)
 	{
-		float z = dot(normalize(CameraDir.xz), cameraVec.xz);
-		float dirY = SkyParam.y + gl_FragCoord.y * SkyParam.w;
-
-		float dx = (gl_FragCoord.x - SkyParam.z) / (SkyParam.z * 1.2);
+		// The camera direction and resolution parameters are used to derive
+		// the SkyParam values on the CPU.
+		// From there the screen pixel position is used in conjunction to compute the final coordinates.
+		float dx = (gl_FragCoord.x * SkyParam.z - 1.0) * 0.8333333;	// -> (x/z - 1) / 1.2, refactored to remove per-pixel divisions.
 		float dirX = SkyParam.x + atan(dx) * 256.0;
+		float dirY = SkyParam.y + gl_FragCoord.y * SkyParam.w;
 
 		uv.x =  dirX - texOffset.x;
 		uv.y = -dirY - texOffset.y;
@@ -129,26 +130,38 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 #else  // SKYMODE_CYLINDER
 	if (len > 0.0)
 	{
+		// Scale is derived from the XZ camera offset since we are looking for cylindrical distance
+		// rather than spherical.
 		float scale = 1.0 / len;
-		dir *= scale;
+		
+		// Projected Y position on cylinder infinitely far away.
+		// +/-1.0 maps to the top of the cylinder and 0.0 maps to the horizon.
+		float yCylinder = cameraVec.y*scale;
 
-		float dirY = cameraVec.y*scale;
+		// Scale from cylinder Y position to texels.
 		float dirScale = 0.7071 * 256.0;
+		// Offset to map from 0 -> 100 at the horizon line.
 		float offsetY = texOffset.y + 100.0;	// Note 100 here maps the center line of the image (aka 200 / 2 = 100)
+
 		// Hack! TODO: Figure out why this seems to be true.
 		if (SkyParallax.y < 256.0)
 		{
 			offsetY += 50.0;
 		}
 		
+		// Compute the X coordinate from the angle and scale by parallax.
+		dir *= scale;
 		uv.x = -(atan(dir.y, dir.x)/1.57 + 1.0) * SkyParallax.x - texOffset.x;
-		uv.y = -dirY * dirScale - offsetY;
-		yLimit = -sign(dirY) * dirScale - offsetY;
-		if (abs(dirY) > 1.0)
+		// The Y Coordinate is derived from the cylinder Y position and constant scale factor.
+		uv.y = -yCylinder * dirScale - offsetY;
+		// The limit is the Y coordinate when yCylinder = +/-1.0, which is used to lookup the top/bottom cap color.
+		yLimit = -sign(yCylinder) * dirScale - offsetY;
+		if (abs(yCylinder) > 1.0)
 		{
 			uv.y = yLimit;
 		}
-		fade = smoothstep(0.95, 1.0, abs(dirY));
+		// Compute a fade out value so we can fade from the current sky texels to a single color.
+		fade = smoothstep(0.95, 1.0, abs(yCylinder));
 	}
 #endif
 	return uv;

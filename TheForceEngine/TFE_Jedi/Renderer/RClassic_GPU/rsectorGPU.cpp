@@ -1023,8 +1023,8 @@ namespace TFE_Jedi
 			f32 skyParam[4] =
 			{
 				-4.0f * atan2f(s_cameraDir.z, s_cameraDir.x) / 6.283185f * parallax[0],
-				 4.0 * clamp(asinf(s_cameraDir.y), -0.785398f, 0.785398f) / 6.283185f * parallax[1],
-				 f32(dispWidth) * 0.5f,
+				 4.0f * clamp(asinf(s_cameraDir.y), -0.785398f, 0.785398f) / 6.283185f * parallax[1],
+				 1.0f / (f32(dispWidth) * 0.5f),
 				 200.0f / f32(dispHeight),
 			};
 			m_wallShader[pass].setVariable(m_skyParamId[pass], SVT_VEC4, skyParam);
