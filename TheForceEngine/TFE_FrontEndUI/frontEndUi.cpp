@@ -1348,6 +1348,7 @@ namespace TFE_FrontEndUI
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 		TFE_Settings_Window* window = TFE_Settings::getWindowSettings();
+		TFE_Settings_Game* game = TFE_Settings::getGameSettings();
 
 		//////////////////////////////////////////////////////
 		// Window Settings.
@@ -1444,61 +1445,16 @@ namespace TFE_FrontEndUI
 		}
 		else if (s_rendererIndex == 1)
 		{
-			static const char* c_colorDepth[] = { "8-bit", "True color" };
-			static const char* c_3d_object_sort[] = { "Software Sort", "Depth buffering" };
-			static const char* c_near_tex_filter[] = { "None", "Bilinear", "Sharp Bilinear" };
-			static const char* c_far_tex_filter[] = { "None", "Bilinear", "Trilinear", "Anisotropic" };
-			static const char* c_colormap_interp[] = { "None", "Quantized", "Linear", "Smooth" };
-			static const char* c_aa[] = { "None", "MSAA 2x", "MSAA 4x", "MSAA 8x" };
-
-			static s32 s_colorDepth = 1;
-			static s32 s_objectSort = 1;
-			static s32 s_nearTexFilter = 2;
-			static s32 s_farTexFilter = 3;
-			static s32 s_colormapInterp = 3;
-			static s32 s_msaa = 3;
-			static f32 s_filterSharpness = 0.8f;
-
 			const f32 comboOffset = floorf(170 * s_uiScale);
 
 			// Hardware
-			ImGui::LabelText("##ConfigLabel", "Color Depth"); ImGui::SameLine(comboOffset);
+			s32 s_pitchLimit = game->df_pitchLimit;
+			ImGui::LabelText("##ConfigLabel", "Pitch Limit"); ImGui::SameLine(comboOffset);
 			ImGui::SetNextItemWidth(196 * s_uiScale);
-			if (ImGui::Combo("##ColorDepth", &s_colorDepth, c_colorDepth, IM_ARRAYSIZE(c_colorDepth)))
+			if (ImGui::Combo("##PitchLimit", &s_pitchLimit, c_tfePitchLimit, IM_ARRAYSIZE(c_tfePitchLimit)))
 			{
-				if (s_colorDepth == 0) { s_nearTexFilter = 0; s_farTexFilter = 0; }
-				else { s_nearTexFilter = 2; s_farTexFilter = 3; }
+				game->df_pitchLimit = PitchLimit(s_pitchLimit);
 			}
-
-			if (s_colorDepth == 1)
-			{
-				ImGui::LabelText("##ConfigLabel", "Colormap Interpolation"); ImGui::SameLine(comboOffset);
-				ImGui::SetNextItemWidth(196 * s_uiScale);
-				ImGui::Combo("##ColormapInterp", &s_colormapInterp, c_colormap_interp, IM_ARRAYSIZE(c_colormap_interp));
-			}
-
-			ImGui::LabelText("##ConfigLabel", "3D Polygon Sorting"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196 * s_uiScale);
-			ImGui::Combo("##3DSort", &s_objectSort, c_3d_object_sort, IM_ARRAYSIZE(c_3d_object_sort));
-
-			ImGui::LabelText("##ConfigLabel", "Texture Filter Near"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196 * s_uiScale);
-			ImGui::Combo("##TexFilterNear", &s_nearTexFilter, c_near_tex_filter, IM_ARRAYSIZE(c_near_tex_filter));
-
-			if (s_nearTexFilter == 2)
-			{
-				ImGui::SetNextItemWidth(196 * s_uiScale);
-				ImGui::SliderFloat("Sharpness", &s_filterSharpness, 0.0f, 1.0f);
-				ImGui::Spacing();
-			}
-
-			ImGui::LabelText("##ConfigLabel", "Texture Filter Far"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196 * s_uiScale);
-			ImGui::Combo("##TexFilterFar", &s_farTexFilter, c_far_tex_filter, IM_ARRAYSIZE(c_far_tex_filter));
-
-			ImGui::LabelText("##ConfigLabel", "Anti-aliasing"); ImGui::SameLine(comboOffset);
-			ImGui::SetNextItemWidth(196 * s_uiScale);
-			ImGui::Combo("##MSAA", &s_msaa, c_aa, IM_ARRAYSIZE(c_aa));
 		}
 		ImGui::Separator();
 

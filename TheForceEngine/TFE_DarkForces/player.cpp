@@ -67,12 +67,19 @@ namespace TFE_DarkForces
 		PLAYER_MIN_EYE_DIST_FLOOR      = FIXED(2),
 		PLAYER_GRAVITY_ACCEL           = FIXED(150),
 
-		PITCH_LIMIT = 2047,
-
 		HEADLAMP_ENERGY_CONSUMPTION = 0x111,    // fraction of energy consumed per second = ~0.004
 		GASMASK_ENERGY_CONSUMPTION  = 0x444,    // fraction of energy consumed per second = ~0.0167
 		GOGGLES_ENERGY_CONSUMPTION  = 0x444,    // fraction of energy consumed per second = ~0.0167
 	};
+
+	static const s32 c_pitchLimits[] =
+	{
+		2047, // PITCH_VANILLA
+		2730, // PITCH_VANILLA_PLUS
+		3413, // PITCH_HIGH
+		4050, // PITCH_MAXIMUM
+	};
+	static s32 PITCH_LIMIT = c_pitchLimits[PITCH_VANILLA];
 
 	// Lower = Less sliding/stops faster,
 	// Higher = More sliding, takes longer to stop.
@@ -284,6 +291,19 @@ namespace TFE_DarkForces
 		s_reviveTick = 0;
 
 		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
+	}
+		
+	void player_setPitchLimit(PitchLimit limit)
+	{
+		if (limit < PITCH_VANILLA || limit > PITCH_COUNT)
+		{
+			PITCH_LIMIT = c_pitchLimits[PITCH_VANILLA];
+		}
+		else
+		{
+			PITCH_LIMIT = c_pitchLimits[limit];
+		}
+		s_playerPitch = clamp(s_playerPitch, -PITCH_LIMIT, PITCH_LIMIT);
 	}
 
 	void player_readInfo(u8* inv, s32* ammo)
@@ -1091,6 +1111,18 @@ namespace TFE_DarkForces
 			{
 				if (!s_gamePaused)
 				{
+					// TFE: Add pitch limit setting.
+					// Note that if running with the software renderer, it is always forced to the vanilla limit.
+					if (TFE_Jedi::getSubRenderer() == TFE_SubRenderer::TSR_CLASSIC_GPU)
+					{
+						TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+						player_setPitchLimit(gameSettings->df_pitchLimit);
+					}
+					else
+					{
+						player_setPitchLimit(PITCH_VANILLA);
+					}
+
 					handlePlayerMoveControls();
 					handlePlayerPhysics();
 					handlePlayerActions();

@@ -88,7 +88,7 @@ namespace TFE_Settings
 	bool init()
 	{
 		// Clear out game settings.
-		memset(&s_gameSettings, 0, sizeof(TFE_Settings_Game));
+		s_gameSettings = {};
 		for (u32 i = 0; i < Game_Count; i++)
 		{
 			strcpy(s_gameSettings.header[i].gameName, c_gameName[i]);
@@ -340,6 +340,7 @@ namespace TFE_Settings
 				writeKeyValue_Int(settings, "airControl", s_gameSettings.df_airControl);
 				writeKeyValue_Bool(settings, "fixBobaFettFireDir", s_gameSettings.df_fixBobaFettFireDir);
 				writeKeyValue_Bool(settings, "disableFightMusic", s_gameSettings.df_disableFightMusic);
+				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
 			}
 		}
 	}
@@ -704,6 +705,10 @@ namespace TFE_Settings
 		else if (strcasecmp("disableFightMusic", key) == 0)
 		{
 			s_gameSettings.df_disableFightMusic = parseBool(value);
+		}
+		else if (strcasecmp("pitchLimit", key) == 0)
+		{
+			s_gameSettings.df_pitchLimit = PitchLimit(parseInt(value));
 		}
 	}
 

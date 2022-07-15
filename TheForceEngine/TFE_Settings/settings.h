@@ -60,6 +60,15 @@ enum TFE_HudPosition
 	TFE_HUDPOS_4_3,			// Hud elements locked to 4:3 (even in widescreen).
 };
 
+enum PitchLimit
+{
+	PITCH_VANILLA = 0,
+	PITCH_VANILLA_PLUS,
+	PITCH_HIGH,
+	PITCH_MAXIMUM,
+	PITCH_COUNT
+};
+
 static const char* c_tfeHudScaleStrings[] =
 {
 	"Proportional",		// TFE_HUDSCALE_PROPORTIONAL
@@ -72,6 +81,13 @@ static const char* c_tfeHudPosStrings[] =
 	"4:3",		// TFE_HUDPOS_4_3
 };
 
+static const char* c_tfePitchLimit[] =
+{
+	"Vanilla  (45 degrees)",
+	"Vanilla+ (60 degrees)",
+	"High     (75 degrees)",
+	"Maximum"
+};
 
 struct TFE_Settings_Hud
 {
@@ -103,9 +119,9 @@ struct TFE_Game
 
 struct TFE_GameHeader
 {
-	char gameName[64];
-	char sourcePath[TFE_MAX_PATH];
-	char emulatorPath[TFE_MAX_PATH];
+	char gameName[64]="";
+	char sourcePath[TFE_MAX_PATH]="";
+	char emulatorPath[TFE_MAX_PATH]="";
 };
 
 struct TFE_Settings_Game
@@ -117,6 +133,7 @@ struct TFE_Settings_Game
 	bool df_fixBobaFettFireDir = false;	// By default, Boba Fett does not correctly check the angle difference between him and the player in
 										// one direction, enabling this will fix that.
 	bool df_disableFightMusic = false;	// Set to true to disable fight music and music transitions during gameplay.
+	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 
 namespace TFE_Settings
