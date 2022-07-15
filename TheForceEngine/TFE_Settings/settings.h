@@ -12,6 +12,19 @@
 #include <TFE_FileSystem/paths.h>
 #include "gameSourceData.h"
 
+enum SkyMode
+{
+	SKYMODE_VANILLA = 0,
+	SKYMODE_CYLINDER,
+	SKYMODE_COUNT
+};
+
+static const char* c_tfeSkyModeStrings[] =
+{
+	"Vanilla",		// SKYMODE_VANILLA
+	"Cylinder",		// SKYMODE_CYLINDER
+};
+
 struct TFE_Settings_Window
 {
 	s32 x = 0;
@@ -46,6 +59,9 @@ struct TFE_Settings_Graphics
 	f32  reticleBlue    = 0.25f;
 	f32  reticleOpacity = 1.00f;
 	f32  reticleScale   = 1.0f;
+
+	// Sky (Ignored when using the software renderer)
+	s32  skyMode = SKYMODE_CYLINDER;
 };
 
 enum TFE_HudScale

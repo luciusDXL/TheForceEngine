@@ -9,6 +9,10 @@ uniform sampler2DArray Textures;
 
 uniform isamplerBuffer TextureTable;
 
+#ifdef SKYMODE_VANILLA
+uniform vec4 SkyParam;	// xOffset, yOffset, xScale, yScale
+#endif
+
 flat in vec4 Frag_Uv;
 flat in vec4 Frag_Color;
 flat in int Frag_TextureId;
@@ -110,6 +114,19 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 	vec2 dir = cameraVec.xz;
 	vec2 uv = vec2(0.0);
 	fade = 0.0;
+#ifdef SKYMODE_VANILLA
+	if (len > 0.0)
+	{
+		float z = dot(normalize(CameraDir.xz), cameraVec.xz);
+		float dirY = SkyParam.y + gl_FragCoord.y * SkyParam.w;
+
+		float dx = (gl_FragCoord.x - SkyParam.z) / (SkyParam.z * 1.2);
+		float dirX = SkyParam.x + atan(dx) * 256.0;
+
+		uv.x =  dirX - texOffset.x;
+		uv.y = -dirY - texOffset.y;
+	}
+#else  // SKYMODE_CYLINDER
 	if (len > 0.0)
 	{
 		float scale = 1.0 / len;
@@ -133,23 +150,7 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 		}
 		fade = smoothstep(0.95, 1.0, abs(dirY));
 	}
-	/*
-	// Spherical
-	float len = length(cameraVec);
-	vec3 dir = cameraVec;
-	vec2 uv = vec2(0.0);
-	if (len > 0.0)
-	{
-		float scale = 1.0 / len;
-		dir *= scale;
-
-		float horzAngle = atan(dir.z, dir.x) * 0.63662;
-		float vertAngle = asin(-dir.y) * 0.73848;
-
-		uv.x = -(horzAngle + 1.0) * SkyParallax.x - texOffset.x;
-		uv.y = SkyParallax.y*vertAngle + texOffset.y*0.5;
-	}
-	*/
+#endif
 	return uv;
 }
 

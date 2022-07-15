@@ -11,6 +11,7 @@
 #include <TFE_Jedi/Level/levelTextures.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Settings/settings.h>
 
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
@@ -81,6 +82,7 @@ namespace TFE_Jedi
 	s32 m_cameraDirId[SECTOR_PASS_COUNT+1];
 	s32 m_lightDataId[SECTOR_PASS_COUNT+1];
 	s32 m_skyParallaxId[SECTOR_PASS_COUNT];
+	s32 m_skyParamId[SECTOR_PASS_COUNT];
 	s32 m_cameraRightId;
 	Vec3f m_viewDir;
 	
@@ -98,6 +100,7 @@ namespace TFE_Jedi
 	static TexturePacker* s_textures = nullptr;
 
 	static bool s_showWireframe = false;
+	static SkyMode s_skyMode = SKYMODE_CYLINDER;
 				
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -148,6 +151,7 @@ namespace TFE_Jedi
 		m_cameraDirId[index]   = m_wallShader[index].getVariableId("CameraDir");
 		m_lightDataId[index]   = m_wallShader[index].getVariableId("LightData");
 		m_skyParallaxId[index] = m_wallShader[index].getVariableId("SkyParallax");
+		m_skyParamId[index]    = m_wallShader[index].getVariableId("SkyParam");
 
 		m_wallShader[index].bindTextureNameToSlot("Sectors", 0);
 		m_wallShader[index].bindTextureNameToSlot("Walls", 1);
@@ -165,7 +169,7 @@ namespace TFE_Jedi
 	void TFE_Sectors_GPU::reset()
 	{
 	}
-
+		
 	void TFE_Sectors_GPU::prepare()
 	{
 		if (!m_gpuInit)
@@ -175,8 +179,11 @@ namespace TFE_Jedi
 			m_gpuInit = true;
 			s_gpuFrame = 1;
 
-			// Load the opaque version of the shader.
-			bool result = loadShaderVariant(0, 0, nullptr);
+			// Read the current graphics settings before compiling shaders.
+			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+			s_skyMode = SkyMode(graphics->skyMode);
+
+			bool result = updateBasePassShader();
 			assert(result);
 
 			// Load the transparent version of the shader.
@@ -1008,6 +1015,20 @@ namespace TFE_Jedi
 			fixed16ToFloat(p1) * 0.25f 	// The values are scaled by 4 to convert from angle to fixed in the original code.
 		};
 		m_wallShader[pass].setVariable(m_skyParallaxId[pass], SVT_VEC2, parallax);
+		if (m_skyParamId[pass] >= 0)
+		{
+			u32 dispWidth, dispHeight;
+			vfb_getResolution(&dispWidth, &dispHeight);
+
+			f32 skyParam[4] =
+			{
+				-4.0f * atan2f(s_cameraDir.z, s_cameraDir.x) / 6.283185f * parallax[0],
+				 4.0 * clamp(asinf(s_cameraDir.y), -0.785398f, 0.785398f) / 6.283185f * parallax[1],
+				 f32(dispWidth) * 0.5f,
+				 200.0f / f32(dispHeight),
+			};
+			m_wallShader[pass].setVariable(m_skyParamId[pass], SVT_VEC4, skyParam);
+		}
 
 		// Draw the sector display list.
 		sdisplayList_draw(pass);
@@ -1070,9 +1091,19 @@ namespace TFE_Jedi
 
 		model_drawList();
 	}
-
+		
 	void TFE_Sectors_GPU::draw(RSector* sector)
 	{
+		// Check to see if a rendering setting has changed
+		// (this may require a shader recompile)
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		if (graphics->skyMode != s_skyMode)
+		{
+			s_skyMode = SkyMode(graphics->skyMode);
+			bool result = updateBasePassShader();
+			assert(result);
+		}
+
 		// Build the draw list.
 		if (!traverseScene(sector))
 		{
@@ -1124,5 +1155,19 @@ namespace TFE_Jedi
 
 	void TFE_Sectors_GPU::subrendererChanged()
 	{
+	}
+
+	bool TFE_Sectors_GPU::updateBasePassShader()
+	{
+		// Load the opaque version of the shader.
+		ShaderDefine basePassdefines[1] = {};
+		s32 passPassDefineCount = 0;
+		if (s_skyMode == SKYMODE_VANILLA)
+		{
+			basePassdefines[0].name = "SKYMODE_VANILLA";
+			basePassdefines[0].value = "1";
+			passPassDefineCount = 1;
+		}
+		return loadShaderVariant(0, passPassDefineCount, basePassdefines);
 	}
 }

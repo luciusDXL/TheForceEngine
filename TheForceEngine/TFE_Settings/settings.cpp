@@ -299,6 +299,8 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "reticleBlue",    s_graphicsSettings.reticleBlue);
 		writeKeyValue_Float(settings, "reticleOpacity", s_graphicsSettings.reticleOpacity);
 		writeKeyValue_Float(settings, "reticleScale",   s_graphicsSettings.reticleScale);
+
+		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
 	}
 		
 	void writeHudSettings(FileStream& settings)
@@ -589,6 +591,10 @@ namespace TFE_Settings
 		else if (strcasecmp("reticleScale", key) == 0)
 		{
 			s_graphicsSettings.reticleScale = parseFloat(value);
+		}
+		else if (strcasecmp("skyMode", key) == 0)
+		{
+			s_graphicsSettings.skyMode = SkyMode(parseInt(value));
 		}
 	}
 

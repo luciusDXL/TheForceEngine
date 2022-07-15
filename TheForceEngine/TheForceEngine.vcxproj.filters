@@ -152,12 +152,6 @@
     <Filter Include="Source\TFE_RenderShared">
       <UniqueIdentifier>{fa701b85-38b6-487e-a243-5b991d0a51ae}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\TFE_System\TFE_Settings">
-      <UniqueIdentifier>{ef6de83e-9331-4ec3-a8e7-1af08d047a9d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source\TFE_System\TFE_Settings\registry">
-      <UniqueIdentifier>{10925be4-50d6-4ecd-af01-46e353a79d4b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\TFE_ForceScript">
       <UniqueIdentifier>{a70701f9-f711-4157-8ecd-e6719c505126}</UniqueIdentifier>
     </Filter>
@@ -169,6 +163,12 @@
     </Filter>
     <Filter Include="Source\TFE_ForceScript\asmjit\x86">
       <UniqueIdentifier>{f83126e9-8bef-43c5-9c86-5a1c46a26708}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Settings">
+      <UniqueIdentifier>{ef6de83e-9331-4ec3-a8e7-1af08d047a9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\TFE_Settings\registry">
+      <UniqueIdentifier>{10925be4-50d6-4ecd-af01-46e353a79d4b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -242,7 +242,7 @@
       <Filter>Source\TFE_FileSystem</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Settings\settings.h">
-      <Filter>Source\TFE_System\TFE_Settings</Filter>
+      <Filter>Source\TFE_Settings</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Archive\archive.h">
       <Filter>Source\TFE_Archive</Filter>
@@ -380,10 +380,10 @@
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Settings\windows\registry.h">
-      <Filter>Source\TFE_System\TFE_Settings\registry</Filter>
+      <Filter>Source\TFE_Settings\registry</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Settings\gameSourceData.h">
-      <Filter>Source\TFE_System\TFE_Settings</Filter>
+      <Filter>Source\TFE_Settings</Filter>
     </ClInclude>
     <ClInclude Include="TFE_System\profiler.h">
       <Filter>Source\TFE_System</Filter>
@@ -1234,7 +1234,7 @@
       <Filter>Source\TFE_FileSystem</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Settings\settings.cpp">
-      <Filter>Source\TFE_System\TFE_Settings</Filter>
+      <Filter>Source\TFE_Settings</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Archive\gobArchive.cpp">
       <Filter>Source\TFE_Archive</Filter>
@@ -1354,7 +1354,7 @@
       <Filter>Source\TFE_FrontEndUI</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Settings\windows\registry.cpp">
-      <Filter>Source\TFE_System\TFE_Settings\registry</Filter>
+      <Filter>Source\TFE_Settings\registry</Filter>
     </ClCompile>
     <ClCompile Include="TFE_System\profiler.cpp">
       <Filter>Source\TFE_System</Filter>

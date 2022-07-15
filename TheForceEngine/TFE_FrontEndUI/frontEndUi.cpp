@@ -1448,12 +1448,23 @@ namespace TFE_FrontEndUI
 			const f32 comboOffset = floorf(170 * s_uiScale);
 
 			// Hardware
+
+			// Pitch Limit
 			s32 s_pitchLimit = game->df_pitchLimit;
 			ImGui::LabelText("##ConfigLabel", "Pitch Limit"); ImGui::SameLine(comboOffset);
 			ImGui::SetNextItemWidth(196 * s_uiScale);
 			if (ImGui::Combo("##PitchLimit", &s_pitchLimit, c_tfePitchLimit, IM_ARRAYSIZE(c_tfePitchLimit)))
 			{
 				game->df_pitchLimit = PitchLimit(s_pitchLimit);
+			}
+
+			// Sky rendering mode.
+			s32 skyMode = graphics->skyMode;
+			ImGui::LabelText("##ConfigLabel", "Sky Render Mode"); ImGui::SameLine(comboOffset);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			if (ImGui::Combo("##SkyMode", &skyMode, c_tfeSkyModeStrings, IM_ARRAYSIZE(c_tfeSkyModeStrings)))
+			{
+				graphics->skyMode = SkyMode(skyMode);
 			}
 		}
 		ImGui::Separator();
