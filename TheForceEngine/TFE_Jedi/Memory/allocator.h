@@ -12,6 +12,7 @@ namespace TFE_Jedi
 	// Create and free an allocator.
 	Allocator* allocator_create(s32 allocSize, MemoryRegion* region = nullptr);
 	void allocator_free(Allocator* alloc);
+	bool allocator_validate(Allocator* alloc);
 
 	// Allocate and free individual items.
 	void* allocator_newItem(Allocator* alloc);

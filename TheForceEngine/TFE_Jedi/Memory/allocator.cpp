@@ -77,6 +77,11 @@ namespace TFE_Jedi
 		TFE_Memory::region_free(alloc->region, alloc);
 	}
 
+	bool allocator_validate(Allocator* alloc)
+	{
+		return alloc->self == alloc;
+	}
+
 	// Allocate and free individual items.
 	void* allocator_newItem(Allocator* alloc)
 	{

@@ -66,17 +66,20 @@ namespace TFE_DarkForces
 
 			if (msg == MSG_FREE)
 			{
+				Generator* gen = local(gen);
+				assert(gen && gen->entities && allocator_validate(gen->entities));
+
 				SecObject* entity = (SecObject*)s_msgEntity;
-				SecObject** entityList = (SecObject**)allocator_getHead(local(gen)->entities);
+				SecObject** entityList = (SecObject**)allocator_getHead(gen->entities);
 				while (entityList)
 				{
 					if (entity == *entityList)
 					{
-						allocator_deleteItem(local(gen)->entities, entityList);
-						local(gen)->aliveCount--;
+						allocator_deleteItem(gen->entities, entityList);
+						gen->aliveCount--;
 						break;
 					}
-					entityList = (SecObject**)allocator_getNext(local(gen)->entities);
+					entityList = (SecObject**)allocator_getNext(gen->entities);
 				}
 			}
 			else if (msg == MSG_MASTER_ON)
@@ -89,36 +92,41 @@ namespace TFE_DarkForces
 			}
 			else if (msg == MSG_RUN_TASK && (local(gen)->active & 1) && local(gen)->aliveCount < local(gen)->maxAlive)
 			{
+				Generator* gen = local(gen);
+				SecObject* obj = local(obj);
 				SecObject* spawn = allocateObject();
-				spawn->posWS = local(obj)->posWS;
-				spawn->yaw = random_next() & ANGLE_MASK;
+				assert(gen->numTerminate != 0);
+				spawn->posWS = obj->posWS;
+				spawn->yaw   = random_next() & ANGLE_MASK;
 				spawn->worldHeight = FIXED(7);
-				sector_addObject(local(obj)->sector, spawn);
+				sector_addObject(obj->sector, spawn);
+
+				assert(gen->entities && allocator_validate(gen->entities));
 
 				fixed16_16 dy = TFE_Jedi::abs(s_playerObject->posWS.y - spawn->posWS.y);
 				fixed16_16 dist = dy + distApprox(spawn->posWS.x, spawn->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
-				if (dist >= local(gen)->minDist && dist <= local(gen)->maxDist && !actor_canSeeObject(spawn, s_playerObject))
+				if (dist >= gen->minDist && dist <= gen->maxDist && !actor_canSeeObject(spawn, s_playerObject))
 				{
-					sprite_setData(spawn, local(gen)->wax);
-					obj_setEnemyLogic(spawn, local(gen)->type, nullptr);
+					sprite_setData(spawn, gen->wax);
+					obj_setEnemyLogic(spawn, gen->type, nullptr);
 					Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)spawn->logic);
 					ActorLogic* actorLogic = *((ActorLogic**)head);
 
 					actorLogic->flags &= ~1;
 					actorLogic->freeTask = task_getCurrent();
-					local(gen)->aliveCount++;
-					local(gen)->numTerminate--;
-					if (local(gen)->wanderTime == 0xffffffff)
+					gen->aliveCount++;
+					gen->numTerminate--;
+					if (gen->wanderTime == 0xffffffff)
 					{
 						s_actorState.curEnemyActor->timing.nextTick = 0xffffffff;
 					}
 					else
 					{
-						s32 randomWanderOffset = floor16(random(intToFixed16(local(gen)->wanderTime >> 1)));
-						s_actorState.curEnemyActor->timing.nextTick = s_curTick + local(gen)->wanderTime + floor16(randomWanderOffset);
+						s32 randomWanderOffset = floor16(random(intToFixed16(gen->wanderTime >> 1)));
+						s_actorState.curEnemyActor->timing.nextTick = s_curTick + gen->wanderTime + floor16(randomWanderOffset);
 					}
 
-					SecObject** entityPtr = (SecObject**)allocator_newItem(local(gen)->entities);
+					SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
 					*entityPtr = spawn;
 					actor_removeRandomCorpse();
 				}

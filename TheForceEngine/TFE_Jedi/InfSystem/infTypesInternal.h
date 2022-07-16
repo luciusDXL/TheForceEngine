@@ -109,19 +109,25 @@ namespace TFE_Jedi
 		u32 arg0;
 		u32 arg1;
 
-		s32 u20;
-		s32 u24;
-		s32 u28;
-		s32 u2c;
+		// Unused
+		// Some of these values are set, such as timer and time but are not referenced.
+		s32 arg2;
+		s32 arg3;
+		s32 arg4;
+		s32 arg5;
 
-		JBool u30;
-		s32 u34;
+		s32 timer;
+		s32 time;
+		// End Unused
+
 		JBool master;
 		TextureData* tex;
 		SoundSourceId soundId;
 		s32 state;
-		s32* u48;
+		char* text;	// This is also unreferenced - probably debug code.
 		u32 textId;
+
+		JBool deleted;
 	};
 
 	struct InfMessage
@@ -172,7 +178,7 @@ namespace TFE_Jedi
 		KeyItem key;
 		s32 fixedStep;
 		Tick nextTick;
-		s32 u1c;
+		Tick timer;
 		Allocator* stops;
 		Allocator* slaves;
 		Stop* nextStop;
@@ -185,9 +191,9 @@ namespace TFE_Jedi
 		SoundSourceId sound1;
 		SoundSourceId sound2;
 		SoundEffectId loopingSoundID;
-		s32 u54;
 		s32 updateFlags;
 		// TFE
 		fixed16_16 prevValue;
+		JBool deleted;
 	};
 }

@@ -78,7 +78,7 @@ namespace TFE_Jedi
 	void inf_handleTriggerMsg(InfTrigger* trigger);
 	
 	void deleteElevator(InfElevator* elev);
-	void deleteTrigger(InfTrigger* trigger);
+	void inf_deleteTrigger(InfTrigger* trigger);
 	JBool updateElevator(InfElevator* elev);
 	void elevHandleStopDelay(InfElevator* elev);
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
@@ -254,7 +254,7 @@ namespace TFE_Jedi
 		elev->trigMove = TRIGMOVE_HOLD;
 		elev->key = KEY_NONE;
 		elev->fixedStep = 0;
-		elev->u1c = -1;
+		elev->timer = 0xffffffff;
 		elev->stops = nullptr;
 		elev->slaves = nullptr;
 		elev->nextStop = nullptr;
@@ -265,6 +265,7 @@ namespace TFE_Jedi
 		elev->dirOrCenter.z = 0;
 		elev->flags = 0;
 		elev->loopingSoundID = NULL_SOUND;
+		elev->deleted = JFALSE;
 
 		elev->type = type;
 		elev->self = elev;
@@ -571,6 +572,7 @@ namespace TFE_Jedi
 			} break;
 		};
 
+		link->freeFunc = (InfFreeFunc)deleteElevator;
 		if (elev)
 		{
 			inf_gotoInitialStop(elev, 0);
@@ -1461,7 +1463,7 @@ namespace TFE_Jedi
 			elev->loopingSoundID = sound_maintain(elev->loopingSoundID, elev->sound1, sndPos);
 		}
 	}
-			
+
 	// Per frame update.
 	void inf_elevatorTaskFunc(MessageType msg)
 	{
@@ -1485,6 +1487,12 @@ namespace TFE_Jedi
 				taskCtx->elev = (InfElevator*)allocator_getHead(s_infElevators);
 				while (taskCtx->elev)
 				{
+					if (taskCtx->elev->deleted)
+					{
+						taskCtx->elev = (InfElevator*)allocator_getNext(s_infElevators);
+						continue;
+					}
+
 					taskCtx->elevDeleted = 0;
 					if ((taskCtx->elev->updateFlags & ELEV_MASTER_ON) && taskCtx->elev->nextTick < s_curTick)
 					{
@@ -1666,23 +1674,13 @@ namespace TFE_Jedi
 	void inf_triggerTaskLocal(MessageType msg)
 	{
 		InfTrigger* trigger = (InfTrigger*)s_msgTarget;
+		if (trigger->deleted) { return; }
 
 		switch (msg)
 		{
 			case MSG_FREE:
 			{
-				InfLink* link = trigger->link;
-				allocator_deleteItem(link->parent, link);
-				allocator_free(trigger->targets);
-
-				level_free(trigger);
-				s_triggerCount--;
-
-				if (s_triggerCount == 0)
-				{
-					task_free(s_infTriggerTask);
-					return;
-				}
+				inf_deleteTrigger(trigger);
 			} break;
 			case MSG_TRIGGER:
 			{
@@ -2567,6 +2565,8 @@ namespace TFE_Jedi
 	{
 		u32 event = s_msgEvent;
 		InfElevator* elev = (InfElevator*)s_msgTarget;
+		if (elev->deleted) { return; }
+
 		SecObject* entity = (SecObject*)s_msgEntity;
 		RSector* sector = elev->sector;
 		u32 arg1 = s_msgArg1;
@@ -2729,6 +2729,7 @@ namespace TFE_Jedi
 			case MSG_COMPLETE:
 			{
 				// Fill in the goal specified by 'arg1'
+				assert(arg1 < NUM_COMPLETE);
 				s_complete[0][arg1] = JTRUE;
 				// Move the elevator to the stop specified by 'arg1' if it is NOT holding.
 				if (elev->nextTick < s_curTick)
@@ -2763,13 +2764,13 @@ namespace TFE_Jedi
 	void infTriggerMsgFunc(MessageType msgType)
 	{
 		InfTrigger* trigger = (InfTrigger*)s_msgTarget;
+		if (trigger->deleted) { return; }
+
 		switch (msgType)
 		{
 			case MSG_FREE:
 			{
-				deleteTrigger(trigger);
-				// In the original code, it this was the last trigger the "task" would be deallocated.
-				// For TFE, this is just a callback so that is no longer necessary.
+				inf_deleteTrigger(trigger);
 			} break;
 			case MSG_TRIGGER:
 			{
@@ -2886,18 +2887,19 @@ namespace TFE_Jedi
 			if (elev == link->elev)
 			{
 				allocator_deleteItem(sector->infLink, link);
-				return;
+				break;
 			}
-
 			link = (InfLink*)allocator_getNext(sector->infLink);
 		}
 	}
 
 	void deleteElevator(InfElevator* elev)
 	{
+		assert(!elev->deleted);
 		if (elev->slaves)
 		{
 			allocator_free(elev->slaves);
+			elev->slaves = nullptr;
 		}
 		// Free the stops.
 		if (elev->stops)
@@ -2916,25 +2918,32 @@ namespace TFE_Jedi
 				stop = (Stop*)allocator_getNext(elev->stops);
 			}
 			allocator_free(elev->stops);
+			elev->stops = nullptr;
 		}
 		inf_deleteSectorElevatorLink(elev->sector, elev);
-		allocator_deleteItem(s_infElevators, elev);
+		elev->deleted = JTRUE;
+		//allocator_deleteItem(s_infElevators, elev);
 	}
 		
-	void deleteTrigger(InfTrigger* trigger)
+	void inf_deleteTrigger(InfTrigger* trigger)
 	{
+		assert(!trigger->deleted);
+
 		InfLink* link = trigger->link;
 		allocator_deleteItem(link->parent, link);
 		allocator_free(trigger->targets);
+		level_free(trigger->text);
+		trigger->targets = nullptr;
+		trigger->text = nullptr;
 
-		// TODO(Core Game Loop Release): what is trigger->u48?
-		if (trigger->u48)
-		{
-			level_free(trigger->u48);
-		}
-		level_free(trigger);
-		
+		// level_free(trigger);
+		trigger->deleted = JTRUE;
+
 		s_triggerCount--;
+		if (s_triggerCount == 0)
+		{
+			task_free(s_infTriggerTask);
+		}
 	}
 
 	void inf_stopAdjoinCommands(Stop* stop)
@@ -3082,7 +3091,7 @@ namespace TFE_Jedi
 			} break;
 		};
 	}
-		
+
 	void inf_stopHandleMessages(MessageType msg)
 	{
 		struct LocalContext
@@ -3118,12 +3127,13 @@ namespace TFE_Jedi
 						{
 							allocator_addRef(taskCtx->msgList);
 
+							inf_sendSectorMessage(taskCtx->sector, taskCtx->msg->msgType);
+
 							s_msgTarget = taskCtx->link->target;
 							s_msgEntity = nullptr;
-							s_msgArg1 = taskCtx->msg->arg1;
-							s_msgArg2 = taskCtx->msg->arg2;
+							s_msgArg1  = taskCtx->msg->arg1;
+							s_msgArg2  = taskCtx->msg->arg2;
 							s_msgEvent = taskCtx->msg->event;
-							inf_sendSectorMessage(taskCtx->sector, taskCtx->msg->msgType);
 							task_runLocal(taskCtx->link->task, taskCtx->msg->msgType);
 
 							if (msg != MSG_RUN_TASK)
@@ -3206,11 +3216,6 @@ namespace TFE_Jedi
 	///////////////////////////////////////////
 	// Trigger creation and setup
 	///////////////////////////////////////////
-	void inf_triggerFreeFunc(void* data)
-	{
-		// TODO(Core Game Loop Release)
-	}
-
 	// Creates a trigger and adds a link to the sector or wall where it is located.
 	// For example, if a player "nudges" a wall, then all of the wall's links will be
 	// cycled through, calling the "msgFunc" on each to determine what happens, which than
@@ -3290,20 +3295,20 @@ namespace TFE_Jedi
 				}
 			} break;
 		}
-		trigger->cmd = MSG_TRIGGER;
+		trigger->cmd    = MSG_TRIGGER;
 		trigger->event  = 0;
 		trigger->arg1   = 0;
-		trigger->u30    = JTRUE;
-		trigger->u34    = 21;
+		trigger->timer  = -1;
+		trigger->time   = 21;
 		trigger->master = JTRUE;
 		trigger->state  = 0;
-		trigger->u48    = nullptr;
+		trigger->text   = nullptr;
 		trigger->textId = 0;
 		trigger->link   = link;
 		trigger->type   = type;
 		if (link)
 		{
-			link->freeFunc = inf_triggerFreeFunc;
+			link->freeFunc = (InfFreeFunc)inf_deleteTrigger;
 		}
 
 		return trigger;

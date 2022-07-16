@@ -65,7 +65,7 @@ namespace WindowsRegistry
 	{
 		char steamPath[TFE_MAX_PATH];
 		if (!readStringFromRegistry(HKEY_CURRENT_USER, "Software\\Valve\\Steam", "SteamPath", steamPath) &&
-			!readStringFromRegistry(HKEY_LOCAL_MACHINE, "Software\\Valve\\Steam", "InstallPath", steamPath))
+			!readStringFromRegistry(HKEY_LOCAL_MACHINE,"Software\\Valve\\Steam", "InstallPath", steamPath))
 		{
 			return false;
 		}
