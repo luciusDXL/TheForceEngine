@@ -982,6 +982,7 @@ namespace TFE_DarkForces
 
 				proj->prevColObj = obj;
 				proj->prevObj = obj;
+				proj->excludeObj = obj;
 
 				SecObject* projObj = proj->logic.obj;
 				projObj->yaw = obj->yaw;
