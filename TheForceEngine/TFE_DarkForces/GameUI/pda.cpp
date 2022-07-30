@@ -697,7 +697,7 @@ namespace TFE_DarkForces
 				}
 			}
 
-			s32 secretPercentage = floor16(mul16(FIXED(100), div16(intToFixed16(s_secretsFound), intToFixed16(s_secretCount))));
+			s32 secretPercentage = s_secretCount ? floor16(mul16(FIXED(100), div16(intToFixed16(s_secretsFound), intToFixed16(s_secretCount)))) : 0;
 			lactor_setState(s_pdaArt, 30, 0);
 			lactorAnim_draw(s_pdaArt, &s_overlayRect, &s_overlayRect, 0, 0, JTRUE);
 
