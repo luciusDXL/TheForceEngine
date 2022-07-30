@@ -150,6 +150,7 @@ namespace TFE_DarkForces
 	static fixed16_16 s_distScale;
 	// Misc
 	static s32 s_levelAtten = 0;
+	static s32 s_prevCollisionFrameWall;
 	static Safe* s_curSafe = nullptr;
 	// Actions
 	static JBool s_playerUse = JFALSE;
@@ -1010,17 +1011,16 @@ namespace TFE_DarkForces
 
 	void player_changeSector(RSector* newSector)
 	{
-		if (newSector)
+		if (!newSector) { return; }
+
+		RSector* prevSector = s_playerObject->sector;
+		if (newSector != prevSector)
 		{
-			RSector* prevSector = s_playerObject->sector;
-			if (newSector != prevSector)
+			if (newSector->layer != prevSector->layer)
 			{
-				if (newSector->layer != prevSector->layer)
-				{
-					automap_setLayer(newSector->layer);
-				}
-				sector_addObject(newSector, s_playerObject);
+				automap_setLayer(newSector->layer);
 			}
+			sector_addObject(newSector, s_playerObject);
 		}
 	}
 
@@ -1132,14 +1132,6 @@ namespace TFE_DarkForces
 						handlePlayerDying();
 					}
 				}
-			}
-			else if (msg == MSG_DAMAGE)
-			{
-				// TODO(Core Game Loop Release)
-			}
-			else if (msg == MSG_EXPLOSION)
-			{
-				// TODO(Core Game Loop Release)
 			}
 						
 			s_prevPlayerTick = s_playerTick;
@@ -1993,8 +1985,7 @@ namespace TFE_DarkForces
 		}
 
 		weapon->rollOffset = -s_playerRoll / 13;
-		// TFE adds an extra offset to limit the gap at the bottom of the view.
-		weapon->pchOffset  = (s_playerPitch + (s_playerPitch < 0 ? 128 : 0)) / 64;
+		weapon->pchOffset  = s_playerPitch / 64;
 
 		// Handle camera lighting and night vision.
 		if (player->flags & OBJ_FLAG_EYE)
@@ -2101,8 +2092,6 @@ namespace TFE_DarkForces
 			s_healthDamageFx = max(ONE_16, min(FIXED(17), s_healthDamageFx));
 		}
 	}
-
-	static s32 s_prevCollisionFrameWall;
 
 	void handlePlayerUseAction()
 	{
@@ -2421,7 +2410,7 @@ namespace TFE_DarkForces
 		JBool retval = JFALSE;
 		switch (weaponIndex)
 		{
-		case 2:
+		case 2:	// WPN_PISTOL + 1
 			retval = s_playerInfo.itemPistol;
 			break;
 		case 3:
