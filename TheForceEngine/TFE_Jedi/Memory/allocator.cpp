@@ -141,6 +141,8 @@ namespace TFE_Jedi
 	// Random access.
 	s32 allocator_getCount(Allocator* alloc)
 	{
+		if (!alloc) { return 0; }
+
 		s32 count = 0;
 		AllocHeader* header = alloc->head;
 		while (header != ALLOC_INVALID_PTR)
@@ -149,6 +151,92 @@ namespace TFE_Jedi
 			header = header->next;
 		}
 		return count;
+	}
+		
+	s32 allocator_getCurPos(Allocator* alloc)
+	{
+		if (!alloc) { return -1; }
+
+		s32 index = 0;
+		AllocHeader* iter = alloc->iter;
+		AllocHeader* header = alloc->head;
+		while (header != ALLOC_INVALID_PTR)
+		{
+			if (header == iter)
+			{
+				return index;
+			}
+			index++;
+			header = header->next;
+		}
+		return -1;
+	}
+
+	void allocator_setPos(Allocator* alloc, s32 pos)
+	{
+		s32 index = 0;
+		AllocHeader* header = alloc->head;
+		while (header != ALLOC_INVALID_PTR)
+		{
+			if (index == pos)
+			{
+				alloc->iter = header;
+				break;
+			}
+			index++;
+			header = header->next;
+		}
+	}
+		
+	s32 allocator_getPrevPos(Allocator* alloc)
+	{
+		if (!alloc) { return -1; }
+
+		s32 index = 0;
+		AllocHeader* iterPrev = alloc->iterPrev;
+		AllocHeader* header = alloc->head;
+		while (header != ALLOC_INVALID_PTR)
+		{
+			if (header == iterPrev)
+			{
+				return index;
+			}
+			index++;
+			header = header->next;
+		}
+		return -1;
+	}
+
+	void allocator_setPrevPos(Allocator* alloc, s32 pos)
+	{
+		s32 index = 0;
+		AllocHeader* header = alloc->head;
+		while (header != ALLOC_INVALID_PTR)
+		{
+			if (index == pos)
+			{
+				alloc->iterPrev = header;
+				break;
+			}
+			index++;
+			header = header->next;
+		}
+	}
+
+	s32 allocator_getIndex(Allocator* alloc, void* item)
+	{
+		AllocHeader* header = alloc->head;
+		s32 index = 0;
+		while (header != ALLOC_INVALID_PTR)
+		{
+			if ((u8*)item == (u8*)header + sizeof(AllocHeader))
+			{
+				return index;
+			}
+			index++;
+			header = header->next;
+		}
+		return -1;
 	}
 
 	void* allocator_getByIndex(Allocator* alloc, s32 index)

@@ -63,6 +63,11 @@ namespace TFE_Jedi
 		s_textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
 	}
 
+	Allocator* bitmap_getAnimTextureAlloc()
+	{
+		return s_textureAnimAlloc;
+	}
+
 	MemoryRegion* bitmap_getAllocator()
 	{
 		return s_memoryRegion;

@@ -89,4 +89,5 @@ namespace TFE_Jedi
 
 	// Used for tools.
 	TextureData* bitmap_loadFromMemory(const u8* data, size_t size, u32 decompress);
+	Allocator* bitmap_getAnimTextureAlloc();
 }

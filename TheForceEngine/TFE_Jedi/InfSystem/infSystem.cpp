@@ -1,6 +1,7 @@
 #include <cstring>
 
 #include "infSystem.h"
+#include "infState.h"
 #include "message.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/dfKeywords.h>
@@ -40,35 +41,27 @@ namespace TFE_Jedi
 
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
 
-	// These need to be filled out somewhere.
-	static SoundSourceId s_moveCeilSound0 = NULL_SOUND;
-	static SoundSourceId s_moveCeilSound1 = NULL_SOUND;
-	static SoundSourceId s_moveCeilSound2 = NULL_SOUND;
-	static SoundSourceId s_moveFloorSound0 = NULL_SOUND;
-	static SoundSourceId s_moveFloorSound1 = NULL_SOUND;
-	static SoundSourceId s_moveFloorSound2 = NULL_SOUND;
-	static SoundSourceId s_doorSound = NULL_SOUND;
-	static SoundSourceId s_needKeySoundId = NULL_SOUND;
-	static SoundSourceId s_switchDefaultSndId = NULL_SOUND;
-	
-	// INF delta time in ticks.
-	static s32 s_triggerCount = 0;
-	static Allocator* s_infElevators = nullptr;
-	static Allocator* s_infTeleports = nullptr;
-	static Task* s_infElevTask = nullptr;
-	static Task* s_infTriggerTask = nullptr;
-	static Task* s_teleportTask = nullptr;
-	
+	// Long lived state - this is setup during game initialization and then left alone.
+	SoundSourceId s_moveCeilSound0 = NULL_SOUND;
+	SoundSourceId s_moveCeilSound1 = NULL_SOUND;
+	SoundSourceId s_moveCeilSound2 = NULL_SOUND;
+	SoundSourceId s_moveFloorSound0 = NULL_SOUND;
+	SoundSourceId s_moveFloorSound1 = NULL_SOUND;
+	SoundSourceId s_moveFloorSound2 = NULL_SOUND;
+	SoundSourceId s_doorSound = NULL_SOUND;
+	SoundSourceId s_needKeySoundId = NULL_SOUND;
+	SoundSourceId s_switchDefaultSndId = NULL_SOUND;
+
+	// Temporary state that does not need to be cleared or serialized.
 	static std::vector<char> s_buffer;
-	// Loading
 	static char s_infArg0[256];
 	static char s_infArg1[256];
 	static char s_infArg2[256];
 	static char s_infArg3[256];
 	static char s_infArg4[256];
 	static char s_infArgExtra[256];
-	static Stop* s_nextStop;
-		
+
+	// Forward Declarations.
 	void inf_elevatorTaskFunc(MessageType msg);
 	void inf_telelporterTaskFunc(MessageType msg);
 	void inf_triggerTaskFunc(MessageType msg);
@@ -76,8 +69,8 @@ namespace TFE_Jedi
 	void infElevatorMsgFunc(MessageType msgType);
 	void infTriggerMsgFunc(MessageType msgType);
 	void inf_handleTriggerMsg(InfTrigger* trigger);
-	
-	void deleteElevator(InfElevator* elev);
+
+	void inf_deleteElevator(InfElevator* elev);
 	void inf_deleteTrigger(InfTrigger* trigger);
 	JBool updateElevator(InfElevator* elev);
 	void elevHandleStopDelay(InfElevator* elev);
@@ -101,14 +94,6 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// API
 	/////////////////////////////////////////////////////
-	bool inf_init()
-	{
-		return false;
-	}
-
-	void inf_shutdown()
-	{
-	}
 
 	// No need to do the conversion ourselves like the DOS code did.
 	s32 strToInt(const char* str)
@@ -123,34 +108,25 @@ namespace TFE_Jedi
 		return strtoul(str, &endPtr, 10);
 	}
 
-	void inf_clearState()
-	{
-		s_infElevators   = nullptr;
-		s_infElevTask    = nullptr;
-		s_teleportTask   = nullptr;
-		s_infTeleports   = nullptr;
-		s_infTriggerTask = nullptr;
-		s_nextStop       = nullptr;
-		s_triggerCount   = 0;
-	}
-
 	void inf_createElevatorTask()
 	{
-		s_infElevators = allocator_create(sizeof(InfElevator));
-		s_infElevTask = createSubTask("elevator", inf_elevatorTaskFunc, inf_elevatorTaskLocal);
+		s_infSerState.infElevators = allocator_create(sizeof(InfElevator));
+		s_infState.infElevTask = createSubTask("elevator", inf_elevatorTaskFunc, inf_elevatorTaskLocal);
 	}
 
 	void inf_createTeleportTask()
 	{
-		s_teleportTask = createSubTask("teleporter", inf_telelporterTaskFunc, inf_teleporterTaskLocal);
-		task_setNextTick(s_teleportTask, TASK_SLEEP);
-		s_infTeleports = allocator_create(sizeof(Teleport));
+		s_infState.teleportTask = createSubTask("teleporter", inf_telelporterTaskFunc, inf_teleporterTaskLocal);
+		task_setNextTick(s_infState.teleportTask, TASK_SLEEP);
+		s_infSerState.infTeleports = allocator_create(sizeof(Teleport));
 	}
 
 	void inf_createTriggerTask()
 	{
-		s_infTriggerTask = createSubTask("trigger", inf_triggerTaskFunc, inf_triggerTaskLocal);
-		s_triggerCount = 0;
+		s_infState.infTriggerTask = createSubTask("trigger", inf_triggerTaskFunc, inf_triggerTaskLocal);
+		s_infSerState.activeTriggerCount = 0;
+		// TFE: create a trigger allocator to make tracking easier.
+		s_infSerState.infTriggers = allocator_create(sizeof(InfTrigger));
 	}
 
 	InfLink* allocateLink(Allocator* infLinks, InfElevator* elev)
@@ -162,7 +138,7 @@ namespace TFE_Jedi
 		link->freeFunc = nullptr;
 		link->elev = elev;
 		link->parent = infLinks;
-		link->task = s_infElevTask;
+		link->task = s_infState.infElevTask;
 
 		return link;
 	}
@@ -178,6 +154,8 @@ namespace TFE_Jedi
 
 	Stop* allocateStop(Allocator* stops)
 	{
+		s32 index = allocator_getCount(stops);
+
 		Stop* stop = (Stop*)allocator_newItem(stops);
 		stop->value = 0;
 		stop->delay = TICKS(4);	// 4 seconds.
@@ -185,7 +163,10 @@ namespace TFE_Jedi
 		stop->adjoinCmds = 0;
 		stop->pageId = 0;
 		stop->floorTex = nullptr;
-		stop->ceilTex = 0;
+		stop->ceilTex = nullptr;
+		stop->floorTexSecId = -1;
+		stop->ceilTexSecId = -1;
+		stop->index = index;
 
 		return stop;
 	}
@@ -231,7 +212,7 @@ namespace TFE_Jedi
 		
 		if (delay == IDELAY_TERMINATE)
 		{
-			deleteElevator(elev);
+			inf_deleteElevator(elev);
 			elev = nullptr;
 			return;
 		}
@@ -250,7 +231,7 @@ namespace TFE_Jedi
 		
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type)
 	{
-		InfElevator* elev = (InfElevator*)allocator_newItem(s_infElevators);
+		InfElevator* elev = (InfElevator*)allocator_newItem(s_infSerState.infElevators);
 		elev->trigMove = TRIGMOVE_HOLD;
 		elev->key = KEY_NONE;
 		elev->fixedStep = 0;
@@ -274,11 +255,6 @@ namespace TFE_Jedi
 		elev->sound0 = NULL_SOUND;
 		elev->sound1 = NULL_SOUND;
 		elev->sound2 = NULL_SOUND;
-
-		if (type > IELEV_CHANGE_WALL_LIGHT)
-		{
-			return elev;
-		}
 
 		switch (type)
 		{
@@ -572,7 +548,7 @@ namespace TFE_Jedi
 			} break;
 		};
 
-		link->freeFunc = (InfFreeFunc)deleteElevator;
+		link->freeFunc = (InfFreeFunc)inf_deleteElevator;
 		if (elev)
 		{
 			inf_gotoInitialStop(elev, 0);
@@ -588,16 +564,13 @@ namespace TFE_Jedi
 			elev->stops = allocator_create(sizeof(Stop));
 			stops = elev->stops;
 		}
+		s32 index = allocator_getCount(stops);
 		Stop* stop = (Stop*)allocator_newItem(stops);
 		memset(stop, 0, sizeof(Stop));
 
 		stop->value = value;
 		stop->delay = TICKS(4);	// default delay = 4 seconds.
-		// This is a slow operation so it is only included if TFE_INCLUDE_STOP_INDEX == 1
-		stop->index = -1;
-		#if TFE_INCLUDE_STOP_INDEX == 1
-			stop->index = allocator_getCount(stops) - 1;
-		#endif
+		stop->index = index;
 
 		return stop;
 	}
@@ -710,7 +683,7 @@ namespace TFE_Jedi
 
 	Teleport* inf_createTeleport(TeleportType type, RSector* sector)
 	{
-		Teleport* teleport = (Teleport*)allocator_newItem(s_infTeleports);
+		Teleport* teleport = (Teleport*)allocator_newItem(s_infSerState.infTeleports);
 		teleport->dstAngle[0] = 0;
 		teleport->dstAngle[1] = 0;
 		teleport->dstAngle[2] = 0;
@@ -728,7 +701,7 @@ namespace TFE_Jedi
 		link->entityMask = INF_ENTITY_ANY;
 		link->eventMask = INF_EVENT_ENTER_SECTOR;
 		link->teleport = teleport;
-		link->task = s_teleportTask;
+		link->task = s_infState.teleportTask;
 		link->parent = sector->infLink;
 
 		return teleport;
@@ -1417,10 +1390,6 @@ namespace TFE_Jedi
 		s_moveFloorSound2 = sound_load("elev2-3.voc", SOUND_PRIORITY_LOW3);
 		s_doorSound       = sound_load("door.voc", SOUND_PRIORITY_LOW3);
 		s_needKeySoundId  = sound_load("locked-1.voc", SOUND_PRIORITY_LOW3);
-	}
-
-	void inf_loadDefaultSwitchSound()
-	{
 		s_switchDefaultSndId = sound_load("switch3.voc", SOUND_PRIORITY_HIGH1);
 	}
 
@@ -1484,12 +1453,12 @@ namespace TFE_Jedi
 			}
 			else  // id == MSG_RUN_TASK
 			{
-				taskCtx->elev = (InfElevator*)allocator_getHead(s_infElevators);
+				taskCtx->elev = (InfElevator*)allocator_getHead(s_infSerState.infElevators);
 				while (taskCtx->elev)
 				{
 					if (taskCtx->elev->deleted)
 					{
-						taskCtx->elev = (InfElevator*)allocator_getNext(s_infElevators);
+						taskCtx->elev = (InfElevator*)allocator_getNext(s_infSerState.infElevators);
 						continue;
 					}
 
@@ -1525,7 +1494,7 @@ namespace TFE_Jedi
 								else if (delay == IDELAY_COMPLETE || delay == IDELAY_TERMINATE)
 								{
 									// delete the elevator, we're done here.
-									deleteElevator(taskCtx->elev);
+									inf_deleteElevator(taskCtx->elev);
 									taskCtx->elevDeleted = 1;
 									if (delay == IDELAY_COMPLETE)
 									{
@@ -1543,7 +1512,7 @@ namespace TFE_Jedi
 							if (!taskCtx->elevDeleted)
 							{
 								// Messages
-								s_nextStop = taskCtx->nextStop;
+								s_infState.nextStop = taskCtx->nextStop;
 								task_callTaskFunc(inf_stopHandleMessages);
 
 								task_localBlockBegin;
@@ -1581,7 +1550,7 @@ namespace TFE_Jedi
 					} // ((elev->updateFlags & ELEV_MASTER_ON) && elev->nextTick < s_curTick)
 
 					// Next elevator.
-					taskCtx->elev = (InfElevator*)allocator_getNext(s_infElevators);
+					taskCtx->elev = (InfElevator*)allocator_getNext(s_infSerState.infElevators);
 				} // while (elev)
 			}  // id == 0 (main elevator update loop)
 			task_yield(TASK_NO_DELAY);
@@ -1594,7 +1563,7 @@ namespace TFE_Jedi
 	{
 		if (msg == MSG_TRIGGER && s_msgEvent == INF_EVENT_ENTER_SECTOR)
 		{
-			task_makeActive(s_teleportTask);
+			task_makeActive(s_infState.teleportTask);
 		}
 		else
 		{
@@ -1621,7 +1590,7 @@ namespace TFE_Jedi
 			}
 			else
 			{
-				Teleport* teleport = (Teleport*)allocator_getHead(s_infTeleports);
+				Teleport* teleport = (Teleport*)allocator_getHead(s_infSerState.infTeleports);
 				while (teleport)
 				{
 					RSector* sector = teleport->sector;
@@ -1662,7 +1631,7 @@ namespace TFE_Jedi
 							}
 						}  // if (obj)
 					}  // for (s32 i = 0; i < objCount; objList++)
-					teleport = (Teleport*)allocator_getNext(s_infTeleports);
+					teleport = (Teleport*)allocator_getNext(s_infSerState.infTeleports);
 				}  // while (teleport)
 			}
 
@@ -2040,10 +2009,12 @@ namespace TFE_Jedi
 					if (s_infArg1[0] == 'C' || s_infArg1[0] == 'c')
 					{
 						stop->ceilTex = sector->ceilTex;
+						stop->ceilTexSecId = sector->index;
 					}
 					else
 					{
 						stop->floorTex = sector->floorTex;
+						stop->floorTexSecId = sector->index;
 					}
 				}
 			} break;
@@ -2755,7 +2726,7 @@ namespace TFE_Jedi
 	{
 		if (msgType == MSG_FREE)
 		{
-			deleteElevator((InfElevator*)s_msgTarget);
+			inf_deleteElevator((InfElevator*)s_msgTarget);
 			return;
 		}
 		infElevatorMessageInternal(msgType);
@@ -2893,7 +2864,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void deleteElevator(InfElevator* elev)
+	void inf_deleteElevator(InfElevator* elev)
 	{
 		assert(!elev->deleted);
 		if (elev->slaves)
@@ -2922,7 +2893,7 @@ namespace TFE_Jedi
 		}
 		inf_deleteSectorElevatorLink(elev->sector, elev);
 		elev->deleted = JTRUE;
-		//allocator_deleteItem(s_infElevators, elev);
+		//allocator_deleteItem(s_infSerState.infElevators, elev);
 	}
 		
 	void inf_deleteTrigger(InfTrigger* trigger)
@@ -2939,10 +2910,10 @@ namespace TFE_Jedi
 		// level_free(trigger);
 		trigger->deleted = JTRUE;
 
-		s_triggerCount--;
-		if (s_triggerCount == 0)
+		s_infSerState.activeTriggerCount--;
+		if (s_infSerState.activeTriggerCount == 0)
 		{
-			task_free(s_infTriggerTask);
+			task_free(s_infState.infTriggerTask);
 		}
 	}
 
@@ -3104,7 +3075,7 @@ namespace TFE_Jedi
 		};
 		task_begin_ctx;
 
-		taskCtx->msgList = s_nextStop->messages;
+		taskCtx->msgList = s_infState.nextStop->messages;
 		taskCtx->msg = (InfMessage*)allocator_getHead(taskCtx->msgList);
 		while (taskCtx->msg)
 		{
@@ -3222,14 +3193,15 @@ namespace TFE_Jedi
 	// sends the message to the appropriate "InfTrigger" or "InfElevator"
 	InfTrigger* inf_createTrigger(TriggerType type, InfTriggerObject obj)
 	{
-		InfTrigger* trigger = (InfTrigger*)level_alloc(sizeof(InfTrigger));
+		InfTrigger* trigger = (InfTrigger*)allocator_newItem(s_infSerState.infTriggers);
 		memset(trigger, 0, sizeof(InfTrigger));
-		s_triggerCount++;
+		s_infSerState.activeTriggerCount++;
 
 		InfLink* link = nullptr;
 		trigger->soundId = NULL_SOUND;
 		trigger->targets = allocator_create(sizeof(TriggerTarget));
 
+		void* parent = nullptr;
 		switch (type)
 		{
 			case ITRIGGER_WALL:
@@ -3244,8 +3216,10 @@ namespace TFE_Jedi
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
 				link->trigger = trigger;
-				link->task = s_infTriggerTask;
+				link->task = s_infState.infTriggerTask;
 				link->parent = wall->infLink;
+				// TFE
+				parent = wall;
 			} break;
 			case ITRIGGER_SECTOR:
 			{
@@ -3259,8 +3233,10 @@ namespace TFE_Jedi
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
 				link->trigger = trigger;
-				link->task = s_infTriggerTask;
+				link->task = s_infState.infTriggerTask;
 				link->parent = sector->infLink;
+				// TFE
+				parent = sector;
 			} break;
 			case ITRIGGER_SWITCH1:
 			case ITRIGGER_TOGGLE:
@@ -3276,7 +3252,7 @@ namespace TFE_Jedi
 				link->type = LTYPE_TRIGGER;
 				link->entityMask = INF_ENTITY_PLAYER;
 				link->eventMask = INF_EVENT_ANY;
-				link->task = s_infTriggerTask;
+				link->task = s_infState.infTriggerTask;
 				link->trigger = trigger;
 				link->parent = wall->infLink;
 				trigger->animTex = nullptr;
@@ -3293,6 +3269,9 @@ namespace TFE_Jedi
 					// Removes "cross line" events
 					link->eventMask &= ~(INF_EVENT_CROSS_LINE_FRONT | INF_EVENT_CROSS_LINE_BACK);
 				}
+
+				// TFE
+				parent = wall;
 			} break;
 		}
 		trigger->cmd    = MSG_TRIGGER;
@@ -3306,6 +3285,7 @@ namespace TFE_Jedi
 		trigger->textId = 0;
 		trigger->link   = link;
 		trigger->type   = type;
+		trigger->parent = parent;
 		if (link)
 		{
 			link->freeFunc = (InfFreeFunc)inf_deleteTrigger;

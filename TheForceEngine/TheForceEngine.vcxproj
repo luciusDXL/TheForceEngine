@@ -533,6 +533,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\IMuse\midiData.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infElevatorUpdateFunc.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infPublicTypes.h" />
+    <ClInclude Include="TFE_Jedi\InfSystem\infState.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infSystem.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\infTypesInternal.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\message.h" />
@@ -603,6 +604,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\screenDraw.h" />
     <ClInclude Include="TFE_Jedi\Renderer\textureInfo.h" />
     <ClInclude Include="TFE_Jedi\Renderer\virtualFramebuffer.h" />
+    <ClInclude Include="TFE_Jedi\Serialization\serialization.h" />
     <ClInclude Include="TFE_Jedi\Task\task.h" />
     <ClInclude Include="TFE_Jedi\Task\taskMacros.h" />
     <ClInclude Include="TFE_Memory\chunkedArray.h" />
@@ -836,6 +838,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\IMuse\imTrigger.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\imuse.cpp" />
     <ClCompile Include="TFE_Jedi\IMuse\midiData.cpp" />
+    <ClCompile Include="TFE_Jedi\InfSystem\infState.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\message.cpp" />
     <ClCompile Include="TFE_Jedi\Level\level.cpp" />
@@ -893,6 +896,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\rsectorRender.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\screenDraw.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\virtualFramebuffer.cpp" />
+    <ClCompile Include="TFE_Jedi\Serialization\serialization.cpp" />
     <ClCompile Include="TFE_Jedi\Task\task.cpp" />
     <ClCompile Include="TFE_Memory\chunkedArray.cpp" />
     <ClCompile Include="TFE_Memory\memoryRegion.cpp" />

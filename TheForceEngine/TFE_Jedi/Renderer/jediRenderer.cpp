@@ -47,8 +47,10 @@ namespace TFE_Jedi
 		RClassic_Fixed::resetState();
 		RClassic_Float::resetState();
 		RClassic_GPU::resetState();
-		s_sectorRenderer = nullptr;
 		s_hudTextureCallbacks.clear();
+
+		renderer_destroy();
+		s_init = false;
 	}
 
 	void renderer_init()
@@ -80,6 +82,8 @@ namespace TFE_Jedi
 	void renderer_destroy()
 	{
 		delete s_sectorRenderer;
+		s_sectorRenderer = nullptr;
+		s_subRenderer = TSR_INVALID;
 	}
 
 	void renderer_reset()

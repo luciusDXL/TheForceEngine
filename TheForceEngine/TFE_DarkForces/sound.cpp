@@ -91,6 +91,24 @@ namespace TFE_DarkForces
 		ImSetResourceCallback(nullptr);
 	}
 
+	s32 sound_getIndexFromId(SoundSourceId id)
+	{
+		if (!id) { return -1; }
+		GameSound* sound = getSoundPtr(id);
+		return allocator_getIndex(s_gameSoundList, sound);
+	}
+
+	SoundSourceId sound_getSoundFromIndex(s32 index, bool refCount)
+	{
+		GameSound* sound = (GameSound*)allocator_getByIndex(s_gameSoundList, index);
+		if (sound)
+		{
+			if (refCount) { sound->refCount++; }
+			return soundInstance((SoundSourceId)sound, 0);
+		}
+		return NULL_SOUND;
+	}
+
 	SoundSourceId sound_load(const char* fileName, u32 priority)
 	{
 		SoundSourceId newId = 0;

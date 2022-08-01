@@ -28,12 +28,15 @@ struct SecObject;
 
 namespace TFE_Jedi
 {
-	bool inf_init();
-	void inf_shutdown();
-	void inf_clearState();
+	// Setup
 	void inf_createElevatorTask();
 	void inf_createTeleportTask();
 	void inf_createTriggerTask();
+
+	// Serialization & State
+	void inf_clearState();
+	void inf_serialize(Stream* stream);
+	void inf_deserialize(Stream* stream);
 	
 	// ** Runtime API **
 	// Messages are the way entities and the player interact with the INF system during gameplay.
@@ -75,7 +78,6 @@ namespace TFE_Jedi
 
 	// Sounds
 	void inf_loadSounds();
-	void inf_loadDefaultSwitchSound();
 
 	InfElevator* inf_allocateSpecialElevator(RSector* sector, InfSpecialElevator type);
 	InfElevator* inf_allocateElevItem(RSector* sector, InfElevatorType type);

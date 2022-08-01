@@ -210,6 +210,7 @@ namespace TFE_DarkForces
 	void freeAllMidi();
 	void pauseLevelSound();
 	void resumeLevelSound();
+	void handleSerialization();
 
 	/////////////////////////////////////////////
 	// API
@@ -383,6 +384,10 @@ namespace TFE_DarkForces
 	****************************************************/
 	void DarkForces::loopGame()
 	{
+		// TFE: If serialization is requested, it should be done here - otherwise it will happen between the main loop and task update, which may be
+		// problematic.
+		handleSerialization();
+
 		updateTime();
 
 		switch (s_state)
@@ -959,7 +964,6 @@ namespace TFE_DarkForces
 		actor_loadSounds();
 		item_loadData();
 		player_init();
-		inf_loadDefaultSwitchSound();
 		actor_allocatePhysicsActorList();
 		loadCutsceneList();
 		projectile_startup();
@@ -1016,5 +1020,30 @@ namespace TFE_DarkForces
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load diskerr image.");
 		}
+	}
+
+	// TODO:
+	void handleSerialization()
+	{
+	#if 0  // Debugging/Testing.
+		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT))
+		{
+			FileStream stream;
+			if (stream.open("infState.bin", FileStream::MODE_WRITE))
+			{
+				inf_serialize(&stream);
+				stream.close();
+			}
+		}
+		else if (TFE_Input::keyPressed(KEY_F6) && TFE_Input::keyModDown(KEYMOD_ALT))
+		{
+			FileStream stream;
+			if (stream.open("infState.bin", FileStream::MODE_READ))
+			{
+				inf_deserialize(&stream);
+				stream.close();
+			}
+		}
+	#endif
 	}
 }

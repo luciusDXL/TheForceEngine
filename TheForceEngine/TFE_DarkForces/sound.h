@@ -69,4 +69,8 @@ namespace TFE_DarkForces
 	void sound_setPan(SoundEffectId soundId, s32 pan);
 	
 	void sound_pitchShift(SoundEffectId soundId, s32 shift);
+
+	// Get the sound data index from the id.
+	s32 sound_getIndexFromId(SoundSourceId id);
+	SoundSourceId sound_getSoundFromIndex(s32 index, bool refCount = true);
 }  // namespace TFE_Jedi

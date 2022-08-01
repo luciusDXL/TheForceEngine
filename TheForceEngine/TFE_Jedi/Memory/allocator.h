@@ -20,7 +20,12 @@ namespace TFE_Jedi
 
 	// Random access.
 	s32   allocator_getCount(Allocator* alloc);
+	s32   allocator_getIndex(Allocator* alloc, void* item);
 	void* allocator_getByIndex(Allocator* alloc, s32 index);
+	s32   allocator_getCurPos(Allocator* alloc);
+	s32   allocator_getPrevPos(Allocator* alloc);
+	void  allocator_setPos(Allocator* alloc, s32 pos);
+	void  allocator_setPrevPos(Allocator* alloc, s32 pos);
 
 	// Iteration
 	void* allocator_getHead(Allocator* alloc);

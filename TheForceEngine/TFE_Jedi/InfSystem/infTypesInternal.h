@@ -9,9 +9,6 @@ struct TextureData;
 struct AnimatedTexture;
 struct Allocator;
 
-// Set to 1 to enable the stop index for debugging.
-#define TFE_INCLUDE_STOP_INDEX 0
-
 namespace TFE_Jedi
 {
 	struct InfLink;
@@ -127,7 +124,9 @@ namespace TFE_Jedi
 		char* text;	// This is also unreferenced - probably debug code.
 		u32 textId;
 
+		// TFE
 		JBool deleted;
+		void* parent;
 	};
 
 	struct InfMessage
@@ -164,8 +163,9 @@ namespace TFE_Jedi
 		TextureData** floorTex;
 		TextureData** ceilTex;
 
-		// This will only be valid if TFE_INCLUDE_STOP_INDEX == 1
-		// Included for TFE debugging.
+		// TFE:
+		s32 floorTexSecId = -1;
+		s32 ceilTexSecId = -1;
 		s32 index = -1;
 	};
 

@@ -170,6 +170,9 @@
     <Filter Include="Source\TFE_Settings\registry">
       <UniqueIdentifier>{10925be4-50d6-4ecd-af01-46e353a79d4b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Jedi\Serialization">
+      <UniqueIdentifier>{c458c5bf-6010-4542-b51a-84494bbd00b1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -1186,6 +1189,12 @@
     <ClInclude Include="TFE_ForceScript\asmjit\x86\x86rapass_p.h">
       <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\InfSystem\infState.h">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Serialization\serialization.h">
+      <Filter>Source\TFE_Jedi\Serialization</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2003,6 +2012,12 @@
     </ClCompile>
     <ClCompile Include="TFE_ForceScript\asmjit\x86\x86rapass.cpp">
       <Filter>Source\TFE_ForceScript\asmjit\x86</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\InfSystem\infState.cpp">
+      <Filter>Source\TFE_Jedi\InfSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Serialization\serialization.cpp">
+      <Filter>Source\TFE_Jedi\Serialization</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
