@@ -98,11 +98,13 @@ namespace TFE_Jedi
 	{
 		if (TFE_Settings::getGraphicsSettings()->extendAjoinLimits)
 		{
+			s_maxSegCount = MAX_SEG_EXT;
 			s_maxAdjoinSegCount = MAX_ADJOIN_SEG_EXT;
 			s_maxAdjoinDepthRecursion = MAX_ADJOIN_DEPTH_EXT;
 		}
 		else
 		{
+			s_maxSegCount = MAX_SEG;
 			s_maxAdjoinSegCount = MAX_ADJOIN_SEG;
 			s_maxAdjoinDepthRecursion = MAX_ADJOIN_DEPTH;
 		}

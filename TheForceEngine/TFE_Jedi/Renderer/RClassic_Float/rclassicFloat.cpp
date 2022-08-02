@@ -199,6 +199,9 @@ namespace RClassic_Float
 	{
 		s_rcfltState.depth1d_all = nullptr;
 		s_rcfltState.skyTable = nullptr;
+
+		free(s_rcfltState.adjoinEdgeList);
+		s_rcfltState.adjoinEdgeList = nullptr;
 	}
 
 	void buildProjectionTables(s32 xc, s32 yc, s32 w, s32 h)
@@ -219,6 +222,12 @@ namespace RClassic_Float
 		s_rcfltState.depth1d_all = (f32*)game_realloc(s_rcfltState.depth1d_all, s_width * sizeof(f32) * (MAX_ADJOIN_DEPTH_EXT + 1));
 		s_windowTop_all = (s32*)game_realloc(s_windowTop_all, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH_EXT + 1));
 		s_windowBot_all = (s32*)game_realloc(s_windowBot_all, s_width * sizeof(s32) * (MAX_ADJOIN_DEPTH_EXT + 1));
+
+		// This table is giant with higher limits, so for now allocate directly from the heap (13 MB)
+		if (!s_rcfltState.adjoinEdgeList)
+		{
+			s_rcfltState.adjoinEdgeList = (EdgePairFloat*)malloc(sizeof(EdgePairFloat) * MAX_ADJOIN_SEG_EXT * MAX_ADJOIN_DEPTH_EXT);
+		}
 
 		memset(s_windowTop_all, s_minScreenY, s_width);
 		memset(s_windowBot_all, s_maxScreenY, s_width);

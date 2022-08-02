@@ -77,6 +77,7 @@ namespace TFE_Jedi
 	JBool s_flatLighting = JFALSE;
 
 	// Limits
+	s32 s_maxSegCount = MAX_SEG;
 	s32 s_maxAdjoinSegCount = MAX_ADJOIN_SEG;
 	s32 s_maxAdjoinDepthRecursion = MAX_ADJOIN_DEPTH;
 

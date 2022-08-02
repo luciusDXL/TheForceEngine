@@ -38,7 +38,7 @@ namespace RClassic_Float
 		
 	void flat_addEdges(s32 length, s32 x0, f32 dyFloor_dx, f32 yFloor, f32 dyCeil_dx, f32 yCeil)
 	{
-		if (s_flatCount < MAX_SEG && length > 0)
+		if (s_flatCount < s_maxSegCount && length > 0)
 		{
 			const f32 lengthFlt = f32(length - 1);
 

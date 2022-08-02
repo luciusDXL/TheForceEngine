@@ -295,7 +295,7 @@ namespace TFE_Jedi
 		}
 
 		RWallSegmentFloat* wallSegment = &s_rcfltState.wallSegListDst[s_curWallSeg];
-		s32 drawSegCnt = wall_mergeSort(wallSegment, MAX_SEG - s_curWallSeg, startWall, drawWallCount);
+		s32 drawSegCnt = wall_mergeSort(wallSegment, s_maxSegCount - s_curWallSeg, startWall, drawWallCount);
 		s_curWallSeg += drawSegCnt;
 
 		TFE_ZONE_BEGIN(wallQSort, "Wall QSort");

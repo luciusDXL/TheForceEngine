@@ -54,12 +54,12 @@ namespace TFE_Jedi
 
 		// Flats
 		EdgePairFloat* flatEdge;
-		EdgePairFloat  flatEdgeList[MAX_SEG];
+		EdgePairFloat  flatEdgeList[MAX_SEG_EXT];
 		EdgePairFloat* adjoinEdge;
-		EdgePairFloat  adjoinEdgeList[MAX_ADJOIN_SEG_EXT * MAX_ADJOIN_DEPTH_EXT];
+		EdgePairFloat* adjoinEdgeList;
 
-		RWallSegmentFloat   wallSegListDst[MAX_SEG];
-		RWallSegmentFloat   wallSegListSrc[MAX_SEG];
+		RWallSegmentFloat   wallSegListDst[MAX_SEG_EXT];
+		RWallSegmentFloat   wallSegListSrc[MAX_SEG_EXT];
 		RWallSegmentFloat** adjoinSegment;
 	};
 	extern RClassicFloatState s_rcfltState;

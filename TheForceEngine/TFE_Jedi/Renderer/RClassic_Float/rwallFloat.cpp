@@ -372,7 +372,7 @@ namespace RClassic_Float
 			wall->visible = 0;
 			return;
 		}
-		if (s_nextWall == MAX_SEG)
+		if (s_nextWall == s_maxSegCount)
 		{
 			TFE_System::logWrite(LOG_ERROR, "ClassicRenderer", "Wall_Process : Maximum processed walls exceeded!");
 			wall->visible = 0;

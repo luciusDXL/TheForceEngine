@@ -14,7 +14,7 @@ namespace TFE_Jedi
 	#define MAX_LIGHT_LEVEL (LIGHT_LEVELS-1)
 
 	// Extended Max Limits
-	#define MAX_ADJOIN_SEG_EXT   512 // Maximum number of adjoin segments with extended limits.
-	#define MAX_ADJOIN_DEPTH_EXT 255 // Maximum adjoin recursion depth with extended limits.
-
+	#define MAX_SEG_EXT	         2048 // Maximum number of wall segments with extended limits, this allows for ~1 wall/pixel column @1080p like vanilla @ 320x200
+	#define MAX_ADJOIN_SEG_EXT   1024 // Maximum number of adjoin segments with extended limits.
+	#define MAX_ADJOIN_DEPTH_EXT 255  // Maximum adjoin recursion depth with extended limits.
 }
