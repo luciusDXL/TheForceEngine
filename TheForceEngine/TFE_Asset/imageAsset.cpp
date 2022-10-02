@@ -1,16 +1,14 @@
 #include "imageAsset.h"
 #include <TFE_System/system.h>
-#include <TFE_Asset/assetSystem.h>
-#include <TFE_Archive/archive.h>
-#include <assert.h>
 #include <algorithm>
 #include <vector>
 #include <string>
 #include <map>
 
-#define IL_USE_PRAGMA_LIBS
-#include <IL/il.h>
-#include <IL/ilu.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image/stb_image_write.h"
 
 namespace TFE_Image
 {
@@ -21,47 +19,28 @@ namespace TFE_Image
 	void init()
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_Image::init");
-
-		// Initialize IL
-		ilInit();
-		iluInit();
-
-		// We want all images to be loaded in a consistent manner
-		ilEnable(IL_ORIGIN_SET);
-		ilOriginFunc(IL_ORIGIN_UPPER_LEFT);
 	}
 
 	void shutdown()
 	{
 		freeAll();
-		ilShutDown();
 	}
 
 	Image* loadFromMemory(const u8* buffer, size_t size)
 	{
 		Image* image = new Image;
 
-		// Now let's switch over to using devIL...
-		ILuint handle;
-
-		// In the next section, we load one image
-		ilGenImages(1, &handle);
-		ilBindImage(handle);
-		if (ilLoadL(IL_JPG, buffer, (ILuint)size) == IL_FALSE)
-		{
+		int n;
+		u8 *buf = stbi_load_from_memory(buffer, size, (int *) (&image->width),
+										(int *) (&image->height), &n, STBI_rgb_alpha);
+		if (buf == nullptr) {
+			// TODO: handle error.
 			return nullptr;
 		}
-		
-		// Let’s spy on it a little bit
-		image->width  = (u32)ilGetInteger(IL_IMAGE_WIDTH);  // getting image width
-		image->height = (u32)ilGetInteger(IL_IMAGE_HEIGHT); // and height
 
 		image->data = new u32[image->width * image->height];
-		// get the image data
-		ilCopyPixels(0, 0, 0, image->width, image->height, 1, IL_RGBA, IL_UNSIGNED_BYTE, image->data);
-
-		// Finally, clean the mess!
-		ilDeleteImages(1, &handle);
+		memcpy(image->data, buf, image->width * image->height * sizeof(u32));
+		stbi_image_free(buf);
 
 		return image;
 	}
@@ -76,29 +55,19 @@ namespace TFE_Image
 
 		Image* image = new Image;
 
-		// Now let's switch over to using devIL...
-		ILuint handle;
-
-		// In the next section, we load one image
-		ilGenImages(1, &handle);
-		ilBindImage(handle);
-		if (ilLoadImage(imagePath) == IL_FALSE)
+		int n;
+		// Always require all components in 4th parameter
+		u8 *buf = stbi_load(imagePath, (int *) (&image->width), (int *) (&image->height), &n,
+							STBI_rgb_alpha);
+		if (buf == nullptr)
 		{
 			// TODO: handle error.
-			// ILenum error = ilGetError();
 			return nullptr;
 		}
 
-		// Let’s spy on it a little bit
-		image->width  = (u32)ilGetInteger(IL_IMAGE_WIDTH);  // getting image width
-		image->height = (u32)ilGetInteger(IL_IMAGE_HEIGHT); // and height
-
 		image->data = new u32[image->width * image->height];
-		// get the image data
-		ilCopyPixels(0, 0, 0, image->width, image->height, 1, IL_RGBA, IL_UNSIGNED_BYTE, image->data);
-
-		// Finally, clean the mess!
-		ilDeleteImages(1, &handle);
+		memcpy(image->data, buf, image->width * image->height * sizeof(u32));
+		stbi_image_free(buf);
 
 		s_images[imagePath] = image;
 		return image;
@@ -138,15 +107,6 @@ namespace TFE_Image
 
 	void writeImage(const char* path, u32 width, u32 height, u32* pixelData)
 	{
-		ILuint handle;
-		ilGenImages(1, &handle);
-		ilBindImage(handle);
-
-		ilTexImage(width, height, 1, 4, IL_RGBA, IL_UNSIGNED_BYTE, (void*)pixelData);
-		ilSetData((void*)pixelData);
-		ilSaveImage(path);
-
-		ilBindImage(0);
-		ilDeleteImage(handle);
+		stbi_write_png(path, width, height, STBI_rgb_alpha, pixelData, 0);
 	}
 }
