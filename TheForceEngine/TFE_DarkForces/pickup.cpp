@@ -6,6 +6,7 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Task/task.h>
 
 using namespace TFE_Jedi;
@@ -195,9 +196,9 @@ namespace TFE_DarkForces
 		{
 			*pickup->item = JTRUE;
 			hud_sendTextMessage(pickup->msgId[0]);
-			if (s_completeSector)
+			if (s_levelState.completeSector)
 			{
-				message_sendToSector(s_completeSector, nullptr, 0, MSG_TRIGGER);
+				message_sendToSector(s_levelState.completeSector, nullptr, 0, MSG_TRIGGER);
 			}
 
 			switch (pickup->id)
@@ -277,9 +278,9 @@ namespace TFE_DarkForces
 			pickupInventory();
 			s_complete[1][6] = JTRUE;
 
-			if (s_completeSector)
+			if (s_levelState.completeSector)
 			{
-				message_sendToSector(s_completeSector, nullptr, 0, MSG_TRIGGER);
+				message_sendToSector(s_levelState.completeSector, nullptr, 0, MSG_TRIGGER);
 			}
 		}
 

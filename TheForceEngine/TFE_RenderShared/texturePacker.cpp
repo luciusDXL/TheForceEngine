@@ -10,22 +10,21 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/Renderer/rcommon.h>
 
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
+#include <TFE_RenderShared/texturePacker.h>
 
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Memory/chunkedArray.h>
 
-#include "texturePacker.h"
-#include "../rcommon.h"
-
 #include <map>
 
-#define DEBUG_TEXTURE_ATLAS 1
+#define DEBUG_TEXTURE_ATLAS 0
 
 #if DEBUG_TEXTURE_ATLAS
 namespace TFE_DarkForces
@@ -43,6 +42,7 @@ namespace TFE_Jedi
 		TextureNode*  child[2] = { 0 };	// Binary tree.
 		Vec4ui rect = { 0 };
 		void* tex = nullptr;
+		s32 pageId = 0;
 	};
 
 	enum
@@ -66,6 +66,12 @@ namespace TFE_Jedi
 	static s32 s_nodePoolIndex = 0;
 	static s32 s_unpackedBuffer = 0;
 	static s32 s_currentPage = 0;
+
+	// Global Packer
+	static const char* c_globalTexturePackerName = "GameTextures";
+	static const s32   c_globalPageWidth = 4096;
+	static const s32   c_globalPageReserveCount = 1;
+	static TexturePacker* s_globalTexturePacker = nullptr;
 
 	TextureNode* allocateNode();
 
@@ -97,6 +103,8 @@ namespace TFE_Jedi
 
 		// Initialize with one page.
 		texturePacker->pageCount = 1;
+		texturePacker->reservedPages = 0;
+		texturePacker->reservedTexturesPacked = 0;
 		texturePacker->pages = (TexturePage**)malloc(sizeof(TexturePage*) * MAX_TEXTURE_PAGES);
 		if (!texturePacker->pages)
 		{
@@ -142,6 +150,41 @@ namespace TFE_Jedi
 		}
 		free(texturePacker->pages);
 		free(texturePacker);
+	}
+		
+	void texturepacker_reserveCommitedPages(TexturePacker* texturePacker)
+	{
+		texturePacker->reservedPages = texturePacker->pageCount;
+		texturePacker->reservedTexturesPacked = texturePacker->texturesPacked;
+	}
+
+	bool texturepacker_hasReservedPages(TexturePacker* texturePacker)
+	{
+		return texturePacker->reservedPages > 0;
+	}
+
+	void texturepacker_discardUnreservedPages(TexturePacker* texturePacker)
+	{
+		if (!texturepacker_hasReservedPages(texturePacker)) { return; }
+		// Clear pages.
+		for (s32 p = 0; p < s_texturePacker->reservedPages; p++)
+		{
+			s_texturePacker->pages[p]->root = nullptr;
+		}
+		for (s32 p = s_texturePacker->reservedPages; p < s_texturePacker->pageCount; p++)
+		{
+			s_texturePacker->pages[p]->root = nullptr;
+			s_texturePacker->pages[p]->textureCount = 0;
+		}
+
+		TFE_Memory::chunkedArrayClear(s_nodePool);
+		s_textureDataMap.clear();
+		s_waxDataMap.clear();
+		s_texInfoPool.clear();
+
+		// Insert the parent that covers all of the available space.
+		s_texturePacker->pageCount = s_texturePacker->reservedPages;
+		s_texturePacker->texturesPacked = s_texturePacker->reservedTexturesPacked;
 	}
 		
 	bool textureFitsInNode(TextureNode* cur, u32 width, u32 height)
@@ -477,13 +520,13 @@ namespace TFE_Jedi
 		#endif
 	}
 
-	s32 texturepacker_pack(TextureListCallback getList)
+	s32 texturepacker_pack(TextureListCallback getList, AssetPool pool)
 	{
 		if (!getList) { return 0; }
 
 		// Get textures.
 		s_texInfoPool.clear();
-		if (getList(s_texInfoPool))
+		if (getList(s_texInfoPool, pool))
 		{
 			s32 count = (s32)s_texInfoPool.size();
 			TextureInfo* list = s_texInfoPool.data();
@@ -529,8 +572,26 @@ namespace TFE_Jedi
 			}
 
 			// 4. Insert each texture into the tree, adding pages as needed.
-			s_root = s_texturePacker->pages[0]->root;
-			s_currentPage = 0;
+			s_currentPage = s_texturePacker->reservedPages;
+			if (s_currentPage >= s_texturePacker->pageCount)
+			{
+				s_texturePacker->pages[s_texturePacker->pageCount] = allocateTexturePage(s_texturePacker->width, s_texturePacker->height);
+				s_texturePacker->pageCount++;
+
+				s_root = nullptr;
+				insertNode(nullptr, nullptr, 0, 0);
+				s_texturePacker->pages[s_currentPage]->root = s_root;
+			}
+			else
+			{
+				s_root = s_texturePacker->pages[s_currentPage]->root;
+				if (!s_root)
+				{
+					insertNode(nullptr, nullptr, 0, 0);
+					s_texturePacker->pages[s_currentPage]->root = s_root;
+				}
+			}
+
 			s_unpackedBuffer = 0;
 			while (!s_unpackedTextures[s_unpackedBuffer].empty())
 			{
@@ -650,4 +711,23 @@ namespace TFE_Jedi
 		free(image);
 	}
 #endif
+
+	///////////////////////////////////////////////////
+	// Global Texture Packer.
+	///////////////////////////////////////////////////
+	TexturePacker* texturepacker_getGlobal()
+	{
+		if (!s_globalTexturePacker)
+		{
+			s_globalTexturePacker = texturepacker_init(c_globalTexturePackerName, c_globalPageWidth, c_globalPageWidth);
+			texturepacker_begin(s_globalTexturePacker);
+		}
+		return s_globalTexturePacker;
+	}
+
+	void texturepacker_freeGlobal()
+	{
+		texturepacker_destroy(s_globalTexturePacker);
+		s_globalTexturePacker = nullptr;
+	}
 }

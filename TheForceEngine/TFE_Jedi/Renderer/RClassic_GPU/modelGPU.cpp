@@ -38,6 +38,7 @@ namespace TFE_Jedi
 		MGPU_SHADER_COUNT
 	};
 
+	// TODO: Remove max models and use dynamic allocation.
 	enum Constants
 	{
 		MGPU_MAX_MODELS = 1024,
@@ -63,9 +64,8 @@ namespace TFE_Jedi
 	{
 		s32 modelId;
 		Vec3f posWS;
-		Vec2f floorOffset;
+		Vec4f lightData;
 		f32 transform[9];
-		f32 ambient;
 		u32 portalInfo;
 	};
 
@@ -85,15 +85,19 @@ namespace TFE_Jedi
 	static std::vector<ModelVertex> s_vertexData;
 	static std::vector<u32> s_indexData;
 
-	static s32 s_mgpu_cameraPosId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_cameraViewId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_cameraProjId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_cameraDirId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_lightDataId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_modelMtxId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_modelPosId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_cameraRightId[MGPU_SHADER_COUNT];
-	static s32 s_mgpu_portalInfo[MGPU_SHADER_COUNT];
+	struct ShaderInputs
+	{
+		s32 cameraPosId;
+		s32 cameraViewId;
+		s32 cameraProjId;
+		s32 cameraDirId;
+		s32 lightDataId;
+		s32 modelMtxId;
+		s32 modelPosId;
+		s32 cameraRightId;
+		s32 portalInfo;
+	};
+	static ShaderInputs s_shaderInputs[MGPU_SHADER_COUNT];
 
 	static ModelGPU s_models[MGPU_MAX_MODELS];
 	static ModelDraw s_modelDrawList[MGPU_SHADER_COUNT][MGPU_MAX_3DO_PER_PASS];
@@ -119,6 +123,26 @@ namespace TFE_Jedi
 		"Shaders/gpu_render_modelSolid.frag",
 	};
 
+	// Building State.
+	JediModel* s_curModel = nullptr;
+	s32* s_curIndexStart;
+	s32* s_curVertexStart;
+
+	struct CompositeVertex
+	{
+		u32  index;
+		vec3 pos;
+		vec2 uv;
+		vec3 nrml;
+		s32 textureId;
+		u8 color;
+		u8 planeMode;
+	};
+	std::vector<CompositeVertex> s_modelVertexList;
+	std::map<u32, std::vector<u32>> s_modelVertexMap;
+	static s32 s_verticesMerged = 0;
+	static bool s_modelTrans = false;
+
 	bool model_buildShaderVariant(ModelShader variant, s32 defineCount, ShaderDefine* defines)
 	{
 		Shader* shader = &s_modelShaders[variant];
@@ -128,15 +152,15 @@ namespace TFE_Jedi
 		}
 		shader->enableClipPlanes(6);
 
-		s_mgpu_cameraPosId[variant]   = shader->getVariableId("CameraPos");
-		s_mgpu_cameraViewId[variant]  = shader->getVariableId("CameraView");
-		s_mgpu_cameraProjId[variant]  = shader->getVariableId("CameraProj");
-		s_mgpu_cameraDirId[variant]   = shader->getVariableId("CameraDir");
-		s_mgpu_cameraRightId[variant] = shader->getVariableId("CameraRight");
-		s_mgpu_modelMtxId[variant]    = shader->getVariableId("ModelMtx");
-		s_mgpu_modelPosId[variant]    = shader->getVariableId("ModelPos");
-		s_mgpu_lightDataId[variant]   = shader->getVariableId("LightData");
-		s_mgpu_portalInfo[variant]    = shader->getVariableId("PortalInfo");
+		s_shaderInputs[variant].cameraPosId   = shader->getVariableId("CameraPos");
+		s_shaderInputs[variant].cameraViewId  = shader->getVariableId("CameraView");
+		s_shaderInputs[variant].cameraProjId  = shader->getVariableId("CameraProj");
+		s_shaderInputs[variant].cameraDirId   = shader->getVariableId("CameraDir");
+		s_shaderInputs[variant].cameraRightId = shader->getVariableId("CameraRight");
+		s_shaderInputs[variant].modelMtxId    = shader->getVariableId("ModelMtx");
+		s_shaderInputs[variant].modelPosId    = shader->getVariableId("ModelPos");
+		s_shaderInputs[variant].lightDataId   = shader->getVariableId("LightData");
+		s_shaderInputs[variant].portalInfo    = shader->getVariableId("PortalInfo");
 		
 		shader->bindTextureNameToSlot("Palette",  0);
 		shader->bindTextureNameToSlot("Colormap", 1);
@@ -189,14 +213,14 @@ namespace TFE_Jedi
 
 		const vec3* srcVtx = model->vertices;
 		const u32 color = model->polygons[0].color;
+		const Vec3f nrm = { 0 };
 
 		ModelVertex* outVtx = s_vertexData.data() + curVtxSize;
 		u32* outIdx = s_indexData.data() + curIdxSize;
 		for (s32 v = 0; v < model->vertexCount; v++, outVtx += 4, vidx += 4, outIdx += 6)
 		{
 			Vec3f pos = { fixed16ToFloat(srcVtx[v].x), fixed16ToFloat(srcVtx[v].y), fixed16ToFloat(srcVtx[v].z) };
-			Vec3f nrm = { 0 };
-
+			
 			// Build a quad.
 			outVtx[0].pos = pos;
 			outVtx[0].nrm = nrm;
@@ -234,26 +258,7 @@ namespace TFE_Jedi
 		model->drawId = s_modelCount;
 		s_modelCount++;
 	}
-
-	JediModel* s_curModel = nullptr;
-	s32* s_curIndexStart;
-	s32* s_curVertexStart;
-
-	struct CompositeVertex
-	{
-		u32  index;
-		vec3 pos;
-		vec2 uv;
-		vec3 nrml;
-		s32 textureId;
-		u8 color;
-		u8 planeMode;
-	};
-	std::vector<CompositeVertex> s_modelVertexList;
-	std::map<u32, std::vector<u32>> s_modelVertexMap;
-	static s32 s_verticesMerged = 0;
-	static bool s_modelTrans = false;
-
+		
 	bool startModel(JediModel* model, s32* indexStart, s32* vertexStart)
 	{
 		if (s_modelCount >= MGPU_MAX_MODELS) { return false; }
@@ -381,9 +386,11 @@ namespace TFE_Jedi
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
 		vec3 nrmDir = { nrml->x - v1->x, nrml->y - v1->y, nrml->z - v1->z };
 
-		s_indexData.push_back(getVertex(v0, &srcUV[0], &nrmDir, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v1, &srcUV[1], &nrmDir, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v2, &srcUV[2], &nrmDir, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
+		const u8 planeMode = 0;
+		const s32 vertexStart = *s_curVertexStart;
+		s_indexData.push_back(getVertex(v0, &srcUV[0], &nrmDir, color, planeMode, textureId) + vertexStart);
+		s_indexData.push_back(getVertex(v1, &srcUV[1], &nrmDir, color, planeMode, textureId) + vertexStart);
+		s_indexData.push_back(getVertex(v2, &srcUV[2], &nrmDir, color, planeMode, textureId) + vertexStart);
 	}
 
 	void addFlatQuad(s32* indices, u8 color, vec2* uv, vec3* nrml, s32 textureId)
@@ -396,20 +403,22 @@ namespace TFE_Jedi
 
 		vec2 zero[4] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
+		const u8 planeMode = 0;
 
 		u32 outIndices[4];
-		outIndices[0] = getVertex(v0, &srcUV[0], &nrmDir, color, 0/*planeMode*/, textureId);
-		outIndices[1] = getVertex(v1, &srcUV[1], &nrmDir, color, 0/*planeMode*/, textureId);
-		outIndices[2] = getVertex(v2, &srcUV[2], &nrmDir, color, 0/*planeMode*/, textureId);
-		outIndices[3] = getVertex(v3, &srcUV[3], &nrmDir, color, 0/*planeMode*/, textureId);
+		outIndices[0] = getVertex(v0, &srcUV[0], &nrmDir, color, planeMode, textureId);
+		outIndices[1] = getVertex(v1, &srcUV[1], &nrmDir, color, planeMode, textureId);
+		outIndices[2] = getVertex(v2, &srcUV[2], &nrmDir, color, planeMode, textureId);
+		outIndices[3] = getVertex(v3, &srcUV[3], &nrmDir, color, planeMode, textureId);
 
-		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[1] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
+		const s32 vertexStart = *s_curVertexStart;
+		s_indexData.push_back(outIndices[0] + vertexStart);
+		s_indexData.push_back(outIndices[1] + vertexStart);
+		s_indexData.push_back(outIndices[2] + vertexStart);
 
-		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[3] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[0] + vertexStart);
+		s_indexData.push_back(outIndices[2] + vertexStart);
+		s_indexData.push_back(outIndices[3] + vertexStart);
 	}
 
 	void addSmoothTriangle(s32* indices, u8 color, vec2* uv, s32 textureId)
@@ -428,10 +437,12 @@ namespace TFE_Jedi
 
 		vec2 zero[3] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
+		const u8 planeMode = 0;
 
-		s_indexData.push_back(getVertex(v0, &srcUV[0], &nDir0, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v1, &srcUV[1], &nDir1, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v2, &srcUV[2], &nDir2, color, 0/*planeMode*/, textureId) + (*s_curVertexStart));
+		const s32 vertexStart = *s_curVertexStart;
+		s_indexData.push_back(getVertex(v0, &srcUV[0], &nDir0, color, planeMode, textureId) + vertexStart);
+		s_indexData.push_back(getVertex(v1, &srcUV[1], &nDir1, color, planeMode, textureId) + vertexStart);
+		s_indexData.push_back(getVertex(v2, &srcUV[2], &nDir2, color, planeMode, textureId) + vertexStart);
 	}
 
 	void addSmoothQuad(s32* indices, u8 color, vec2* uv, s32 textureId)
@@ -453,20 +464,22 @@ namespace TFE_Jedi
 
 		vec2 zero[4] = { 0 };
 		vec2* srcUV = (uv && textureId >= 0) ? uv : zero;
+		const u8 planeMode = 0;
 
 		u32 outIndices[4];
-		outIndices[0] = getVertex(v0, &srcUV[0], &nDir0, color, 0/*planeMode*/, textureId);
-		outIndices[1] = getVertex(v1, &srcUV[1], &nDir1, color, 0/*planeMode*/, textureId);
-		outIndices[2] = getVertex(v2, &srcUV[2], &nDir2, color, 0/*planeMode*/, textureId);
-		outIndices[3] = getVertex(v3, &srcUV[3], &nDir3, color, 0/*planeMode*/, textureId);
+		outIndices[0] = getVertex(v0, &srcUV[0], &nDir0, color, planeMode, textureId);
+		outIndices[1] = getVertex(v1, &srcUV[1], &nDir1, color, planeMode, textureId);
+		outIndices[2] = getVertex(v2, &srcUV[2], &nDir2, color, planeMode, textureId);
+		outIndices[3] = getVertex(v3, &srcUV[3], &nDir3, color, planeMode, textureId);
 
-		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[1] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
+		const s32 vertexStart = *s_curVertexStart;
+		s_indexData.push_back(outIndices[0] + vertexStart);
+		s_indexData.push_back(outIndices[1] + vertexStart);
+		s_indexData.push_back(outIndices[2] + vertexStart);
 
-		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[3] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[0] + vertexStart);
+		s_indexData.push_back(outIndices[2] + vertexStart);
+		s_indexData.push_back(outIndices[3] + vertexStart);
 	}
 
 	void addPlaneTriangle(s32* indices, vec3* nrml, s32 textureId)
@@ -479,10 +492,13 @@ namespace TFE_Jedi
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
 		vec3 planeNrm = nrml->y - v1->y > 0 ? up : dn;
+		const u8 planeMode = 1;
+		const u8 color = 255;
 
-		s_indexData.push_back(getVertex(v0, &uv, &planeNrm, 255, 1/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v1, &uv, &planeNrm, 255, 1/*planeMode*/, textureId) + (*s_curVertexStart));
-		s_indexData.push_back(getVertex(v2, &uv, &planeNrm, 255, 1/*planeMode*/, textureId) + (*s_curVertexStart));
+		const s32 vertexStart = *s_curVertexStart;
+		s_indexData.push_back(getVertex(v0, &uv, &planeNrm, color, planeMode, textureId) + vertexStart);
+		s_indexData.push_back(getVertex(v1, &uv, &planeNrm, color, planeMode, textureId) + vertexStart);
+		s_indexData.push_back(getVertex(v2, &uv, &planeNrm, color, planeMode, textureId) + vertexStart);
 	}
 
 	void addPlaneQuad(s32* indices, vec3* nrml, s32 textureId)
@@ -496,23 +512,26 @@ namespace TFE_Jedi
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
 		vec3 planeNrm = nrml->y - v1->y > 0 ? up : dn;
+		const u8 planeMode = 1;
+		const u8 color = 255;
 
 		u32 outIndices[4];
-		outIndices[0] = getVertex(v0, &uv, &planeNrm, 255, 1/*planeMode*/, textureId);
-		outIndices[1] = getVertex(v1, &uv, &planeNrm, 255, 1/*planeMode*/, textureId);
-		outIndices[2] = getVertex(v2, &uv, &planeNrm, 255, 1/*planeMode*/, textureId);
-		outIndices[3] = getVertex(v3, &uv, &planeNrm, 255, 1/*planeMode*/, textureId);
+		outIndices[0] = getVertex(v0, &uv, &planeNrm, color, planeMode, textureId);
+		outIndices[1] = getVertex(v1, &uv, &planeNrm, color, planeMode, textureId);
+		outIndices[2] = getVertex(v2, &uv, &planeNrm, color, planeMode, textureId);
+		outIndices[3] = getVertex(v3, &uv, &planeNrm, color, planeMode, textureId);
 
-		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[1] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
+		const s32 vertexStart = *s_curVertexStart;
+		s_indexData.push_back(outIndices[0] + vertexStart);
+		s_indexData.push_back(outIndices[1] + vertexStart);
+		s_indexData.push_back(outIndices[2] + vertexStart);
 
-		s_indexData.push_back(outIndices[0] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[2] + (*s_curVertexStart));
-		s_indexData.push_back(outIndices[3] + (*s_curVertexStart));
+		s_indexData.push_back(outIndices[0] + vertexStart);
+		s_indexData.push_back(outIndices[2] + vertexStart);
+		s_indexData.push_back(outIndices[3] + vertexStart);
 	}
 
-	void model_loadLevelModels()
+	void model_loadGpuModels()
 	{
 		s32 indexStart  = 0;
 		s32 vertexStart = 0;
@@ -521,97 +540,100 @@ namespace TFE_Jedi
 		s_modelCount = 0;
 		s_verticesMerged = 0;
 
-		std::vector<JediModel*> modelList;
-		TFE_Model_Jedi::getModelList(modelList);
-		const size_t modelCount = modelList.size();
-		JediModel** model = modelList.data();
-		for (size_t i = 0; i < modelCount; i++)
+		// For now handle both pools here.
+		for (s32 pool = 0; pool < POOL_COUNT; pool++)
 		{
-			if (model[i]->flags & MFLAG_DRAW_VERTICES)
+			const std::vector<JediModel*>& modelList = TFE_Model_Jedi::getModelList(AssetPool(pool));
+			const size_t modelCount = modelList.size();
+			JediModel*const* model = modelList.data();
+			for (size_t i = 0; i < modelCount; i++)
 			{
-				buildModelDrawVertices(model[i], &indexStart, &vertexStart);
-				continue;
-			}
-
-			// This model has solid polygons.
-			if (!startModel(model[i], &indexStart, &vertexStart))
-			{
-				// Too many unique models!
-				break;
-			}
-			for (s32 p = 0; p < model[i]->polygonCount; p++)
-			{
-				JmPolygon* poly = &model[i]->polygons[p];
-				if (poly->texture && (poly->texture->flags & OPACITY_TRANS) && poly->shading == PSHADE_PLANE)
+				if (model[i]->flags & MFLAG_DRAW_VERTICES)
 				{
-					s_modelTrans = true;
+					buildModelDrawVertices(model[i], &indexStart, &vertexStart);
+					continue;
 				}
 
-				switch (poly->shading)
+				// This model has solid polygons.
+				if (!startModel(model[i], &indexStart, &vertexStart))
 				{
-					case PSHADE_FLAT:
+					// Too many unique models!
+					break;
+				}
+				for (s32 p = 0; p < model[i]->polygonCount; p++)
+				{
+					JmPolygon* poly = &model[i]->polygons[p];
+					if (poly->texture && (poly->texture->flags & OPACITY_TRANS) && poly->shading == PSHADE_PLANE)
 					{
-						// Flat shaded polygon
-						if (poly->vertexCount == 3)
-						{
-							addFlatTriangle(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], -1);
-						}
-						else
-						{
-							addFlatQuad(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], -1);
-						}
-					} break;
-					case PSHADE_GOURAUD:
+						s_modelTrans = true;
+					}
+
+					switch (poly->shading)
 					{
-						// Smooth shaded polygon
-						if (poly->vertexCount == 3)
+						case PSHADE_FLAT:
 						{
-							addSmoothTriangle(poly->indices, poly->color, poly->uv, -1);
-						}
-						else
+							// Flat shaded polygon
+							if (poly->vertexCount == 3)
+							{
+								addFlatTriangle(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], -1);
+							}
+							else
+							{
+								addFlatQuad(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], -1);
+							}
+						} break;
+						case PSHADE_GOURAUD:
 						{
-							addSmoothQuad(poly->indices, poly->color, poly->uv, -1);
-						}
-					} break;
-					case PSHADE_TEXTURE:
-					{
-						// Flat shaded textured polygon
-						if (poly->vertexCount == 3)
+							// Smooth shaded polygon
+							if (poly->vertexCount == 3)
+							{
+								addSmoothTriangle(poly->indices, poly->color, poly->uv, -1);
+							}
+							else
+							{
+								addSmoothQuad(poly->indices, poly->color, poly->uv, -1);
+							}
+						} break;
+						case PSHADE_TEXTURE:
 						{
-							addFlatTriangle(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], poly->texture->textureId);
-						}
-						else
+							// Flat shaded textured polygon
+							if (poly->vertexCount == 3)
+							{
+								addFlatTriangle(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], poly->texture->textureId);
+							}
+							else
+							{
+								addFlatQuad(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], poly->texture->textureId);
+							}
+						} break;
+						case PSHADE_GOURAUD_TEXTURE:
 						{
-							addFlatQuad(poly->indices, poly->color, poly->uv, &model[i]->polygonNormals[p], poly->texture->textureId);
-						}
-					} break;
-					case PSHADE_GOURAUD_TEXTURE:
-					{
-						// Smooth shaded textured polygon
-						if (poly->vertexCount == 3)
+							// Smooth shaded textured polygon
+							if (poly->vertexCount == 3)
+							{
+								addSmoothTriangle(poly->indices, poly->color, poly->uv, poly->texture->textureId);
+							}
+							else
+							{
+								addSmoothQuad(poly->indices, poly->color, poly->uv, poly->texture->textureId);
+							}
+						} break;
+						case PSHADE_PLANE:
 						{
-							addSmoothTriangle(poly->indices, poly->color, poly->uv, poly->texture->textureId);
-						}
-						else
-						{
-							addSmoothQuad(poly->indices, poly->color, poly->uv, poly->texture->textureId);
-						}
-					} break;
-					case PSHADE_PLANE:
-					{
-						// "Plane" shaded textured polygon
-						if (poly->vertexCount == 3)
-						{
-							addPlaneTriangle(poly->indices, &model[i]->polygonNormals[p], poly->texture->textureId);
-						}
-						else
-						{
-							addPlaneQuad(poly->indices, &model[i]->polygonNormals[p], poly->texture->textureId);
-						}
-					} break;
-				};
+							// "Plane" shaded textured polygon
+							if (poly->vertexCount == 3)
+							{
+								addPlaneTriangle(poly->indices, &model[i]->polygonNormals[p], poly->texture->textureId);
+							}
+							else
+							{
+								addPlaneQuad(poly->indices, &model[i]->polygonNormals[p], poly->texture->textureId);
+							}
+						} break;
+					};
+				}
+				endModel();
 			}
-			endModel();
 		}
 
 		s_modelVertexBuffer.create((u32)s_vertexData.size(), sizeof(ModelVertex), (u32)c_modelAttrCount, c_modelAttrMapping, false, s_vertexData.data());
@@ -654,63 +676,60 @@ namespace TFE_Jedi
 
 		drawItem->modelId = model->drawId;
 		drawItem->posWS = posWS;
-		drawItem->ambient = ambient;
-		drawItem->floorOffset = floorOffset;
 		drawItem->portalInfo = portalInfo;
 		for (s32 i = 0; i < 9; i++)
 		{
 			drawItem->transform[i] = fixed16ToFloat(transform[i]);
 		}
+
+		drawItem->lightData =
+		{
+			f32(s_worldAmbient), min(ambient, 31.0f) + (s_cameraLightSource ? 64.0f : 0.0f),
+			floorOffset.x, floorOffset.z
+		};
 	}
 
 	void model_drawList()
 	{
+		// Bind the uber-vertex and index buffers. This holds geometry for *all* 3D models currently loaded.
 		s_modelVertexBuffer.bind();
 		s_modelIndexBuffer.bind();
-		Vec4f lightData = { f32(s_worldAmbient), 0.0f, 0.0f, 0.0f };
 
-		for (s32 s = 0; s < MGPU_SHADER_COUNT; s++)
+		Shader* shader = s_modelShaders;
+		for (s32 s = 0; s < MGPU_SHADER_COUNT; s++, shader++)
 		{
-			ModelDraw* drawList = s_modelDrawList[s];
 			s32 listCount = s_modelDrawListCount[s];
 			if (!listCount) { continue; }
 
-			Shader* shader = &s_modelShaders[s];
+			// Bind the shader and set per-frame shader variables.
 			shader->bind();
 
-			// Camera and lighting.
-			shader->setVariable(s_mgpu_cameraPosId[s],   SVT_VEC3,   s_cameraPos.m);
-			shader->setVariable(s_mgpu_cameraViewId[s],  SVT_MAT3x3, s_cameraMtx.data);
-			shader->setVariable(s_mgpu_cameraProjId[s],  SVT_MAT4x4, s_cameraProj.data);
-			shader->setVariable(s_mgpu_cameraDirId[s],   SVT_VEC3,   s_cameraDir.m);
-			shader->setVariable(s_mgpu_cameraRightId[s], SVT_VEC3,   s_cameraRight.m);
+			shader->setVariable(s_shaderInputs[s].cameraPosId,   SVT_VEC3,   s_cameraPos.m);
+			shader->setVariable(s_shaderInputs[s].cameraViewId,  SVT_MAT3x3, s_cameraMtx.data);
+			shader->setVariable(s_shaderInputs[s].cameraProjId,  SVT_MAT4x4, s_cameraProj.data);
+			shader->setVariable(s_shaderInputs[s].cameraDirId,   SVT_VEC3,   s_cameraDir.m);
+			shader->setVariable(s_shaderInputs[s].cameraRightId, SVT_VEC3,   s_cameraRight.m);
 			
-			ModelDraw* drawItem = drawList;
+			// Draw items in the current draw list (draw lists are bucketed by shader).
+			ModelDraw* drawItem = s_modelDrawList[s];
 			for (s32 i = 0; i < listCount; i++, drawItem++)
 			{
 				const ModelGPU* model = &s_models[drawItem->modelId];
+				const u32 portalInfo[] = { drawItem->portalInfo, drawItem->portalInfo };
 
-				shader->setVariable(s_mgpu_modelPosId[s], SVT_VEC3,   drawItem->posWS.m);
-				shader->setVariable(s_mgpu_modelMtxId[s], SVT_MAT3x3, drawItem->transform);
+				// Per-draw shader variables.
+				shader->setVariable(s_shaderInputs[s].modelPosId,  SVT_VEC3,   drawItem->posWS.m);
+				shader->setVariable(s_shaderInputs[s].modelMtxId,  SVT_MAT3x3, drawItem->transform);
+				shader->setVariable(s_shaderInputs[s].lightDataId, SVT_VEC4,   drawItem->lightData.m);
+				shader->setVariable(s_shaderInputs[s].portalInfo,  SVT_UVEC2,  (f32*)portalInfo);
 
-				lightData.y = min(drawItem->ambient, 31.0f) + (s_cameraLightSource ? 64.0f : 0.0f);
-				lightData.z = drawItem->floorOffset.x;
-				lightData.w = drawItem->floorOffset.z;
-				shader->setVariable(s_mgpu_lightDataId[s], SVT_VEC4, lightData.m);
-
-				u32 portalInfo[] = { drawItem->portalInfo, drawItem->portalInfo };
-				shader->setVariable(s_mgpu_portalInfo[s], SVT_UVEC2, (f32*)portalInfo);
-
+				// Draw the geometry (note a single vertex/index buffer is used, so this is just a count and start offset).
 				TFE_RenderBackend::drawIndexedTriangles(model->polyCount, sizeof(u32), model->indexStart);
 			}
 		}
 
 		// Cleanup
-		Shader::unbind();
 		s_modelVertexBuffer.unbind();
 		s_modelIndexBuffer.unbind();
-		TextureGpu::clear(0);
-		TextureGpu::clear(1);
-		TextureGpu::clear(2);
 	}
 }

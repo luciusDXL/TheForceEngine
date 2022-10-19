@@ -14,6 +14,7 @@
 #include <TFE_DarkForces/player.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
@@ -483,22 +484,22 @@ namespace TFE_DarkForces
 
 	void actor_removeRandomCorpse()
 	{
-		if (s_sectorCount <= 0)
+		if (s_levelState.sectorCount <= 0)
 		{
 			return;
 		}
-		s32 randomSect = floor16(random(intToFixed16(s_sectorCount - 1)));
+		s32 randomSect = floor16(random(intToFixed16(s_levelState.sectorCount - 1)));
 		RSector* sector;
-		for (u32 attempt = 0; attempt < s_sectorCount; attempt++, randomSect++)
+		for (u32 attempt = 0; attempt < s_levelState.sectorCount; attempt++, randomSect++)
 		{
-			if (randomSect >= (s32)s_sectorCount)
+			if (randomSect >= (s32)s_levelState.sectorCount)
 			{
-				sector = &s_sectors[0];
+				sector = &s_levelState.sectors[0];
 				randomSect = 0;
 			}
 			else
 			{
-				sector = &s_sectors[randomSect];
+				sector = &s_levelState.sectors[randomSect];
 			}
 
 			SecObject** objList = sector->objectList;
@@ -525,14 +526,14 @@ namespace TFE_DarkForces
 		{
 			if (obj->entityFlags & ETFLAG_GENERAL_MOHC)
 			{
-				if (s_mohcSector)
+				if (s_levelState.mohcSector)
 				{
-					message_sendToSector(s_mohcSector, nullptr, 0, MSG_TRIGGER);
+					message_sendToSector(s_levelState.mohcSector, nullptr, 0, MSG_TRIGGER);
 				}
 			}
-			else if (s_bossSector)
+			else if (s_levelState.bossSector)
 			{
-				message_sendToSector(s_bossSector, nullptr, 0, MSG_TRIGGER);
+				message_sendToSector(s_levelState.bossSector, nullptr, 0, MSG_TRIGGER);
 			}
 		}
 	}

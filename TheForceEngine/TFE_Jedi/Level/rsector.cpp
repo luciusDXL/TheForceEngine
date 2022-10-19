@@ -5,6 +5,7 @@
 #include "rwall.h"
 #include "robject.h"
 #include "level.h"
+#include "levelData.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_DarkForces/player.h>
@@ -467,8 +468,8 @@ namespace TFE_Jedi
 
 	void sector_changeGlobalLightLevel()
 	{
-		RSector* sector = s_sectors;
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		RSector* sector = s_levelState.sectors;
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
 			fixed16_16 newLightLevel = intToFixed16(sector->flags3);
 			sector->flags3 = floor16(sector->ambient);
@@ -482,12 +483,12 @@ namespace TFE_Jedi
 		fixed16_16 iz = dz;
 		fixed16_16 y = dy;
 		
-		RSector* sector = s_sectors;
+		RSector* sector = s_levelState.sectors;
 		RSector* foundSector = nullptr;
 		s32 sectorUnitArea = 0;
 		s32 prevSectorUnitArea = INT_MAX;
 
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
 			if (y >= sector->ceilingHeight && y <= sector->floorHeight)
 			{
@@ -521,12 +522,12 @@ namespace TFE_Jedi
 		fixed16_16 ix = dx;
 		fixed16_16 iz = dz;
 
-		RSector* sector = s_sectors;
+		RSector* sector = s_levelState.sectors;
 		RSector* foundSector = nullptr;
 		s32 sectorUnitArea = 0;
 		s32 prevSectorUnitArea = INT_MAX;
 
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
 			if (sector->layer == layer)
 			{

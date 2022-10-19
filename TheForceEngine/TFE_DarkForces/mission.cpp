@@ -22,6 +22,7 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
@@ -30,6 +31,7 @@
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/console.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_Input/inputMapping.h>
 
@@ -182,6 +184,10 @@ namespace TFE_DarkForces
 			TFE_Jedi::setSubRenderer(TSR_CLASSIC_FIXED);
 		}
 		automap_resetScale();
+
+		TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
+		TFE_Jedi::render_setResolution();
+		TFE_Jedi::renderer_setLimits();
 	}
 
 	void mission_startTaskFunc(MessageType msg)
@@ -251,13 +257,12 @@ namespace TFE_DarkForces
 
 					setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
 					automap_updateMapData(MAP_CENTER_PLAYER);
-					setSkyParallax(s_parallax0, s_parallax1);
+					setSkyParallax(s_levelState.parallax0, s_levelState.parallax1);
 					s_missionMode = MISSION_MODE_MAIN;
 					s_gamePaused = JFALSE;
 					mission_createRenderDisplay();
 					hud_startup();
-
-					// TFE
+										
 					reticle_enable(true);
 				}
 			}
@@ -519,7 +524,6 @@ namespace TFE_DarkForces
 		inf_createTriggerTask();
 		actor_createTask();
 		hitEffect_createTask();
-		// createIMuseTask();  <- this will wait until a later release.
 		level_clearData();
 		updateLogic_clearTask();
 		s_drawAutomap = JFALSE;
@@ -678,7 +682,7 @@ namespace TFE_DarkForces
 		}
 
 		// Allocate 256 colors * 32 light levels + 256, where the last 256 is so that the address can be rounded to the next 256 byte boundary.
-		u8* colorMapBase = (u8*)res_alloc(8576);
+		u8* colorMapBase = (u8*)level_alloc(8576);
 		u8* colorMap = colorMapBase;
 		*basePtr = colorMapBase;
 		if (size_t(colorMap) & 0xffu)

@@ -69,7 +69,11 @@ struct JediModel
 
 namespace TFE_Model_Jedi
 {
-	JediModel* get(const char* name);
-	void getModelList(std::vector<JediModel*>& list);
+	JediModel* get(const char* name, AssetPool pool = POOL_LEVEL);
+	const std::vector<JediModel*>& getModelList(AssetPool pool);
 	void freeAll();
+	void freeLevelData();
+
+	bool getModelIndex(JediModel* model, s32* index, AssetPool* pool);
+	JediModel* getModelByIndex(s32 index, AssetPool pool);
 }

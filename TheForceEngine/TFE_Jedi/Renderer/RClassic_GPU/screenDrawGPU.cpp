@@ -7,9 +7,9 @@
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderShared/lineDraw2d.h>
+#include <TFE_RenderShared/texturePacker.h>
 
 #include "screenDrawGPU.h"
-#include "texturePacker.h"
 #include "rsectorGPU.h"
 
 namespace TFE_Jedi
@@ -32,7 +32,6 @@ namespace TFE_Jedi
 	static VertexBuffer s_scrQuadVb;	// Dynamic vertex buffer.
 	static IndexBuffer  s_scrQuadIb;	// Static index buffer.
 	static Shader       s_scrQuadShader;
-	static TexturePacker* s_hudTextures = nullptr;
 	static ScreenQuadVertex* s_scrQuads = nullptr;
 
 	static s32 s_screenQuadCount = 0;
@@ -104,24 +103,25 @@ namespace TFE_Jedi
 			s_scrQuadVb.destroy();
 			s_scrQuadIb.destroy();
 			free(s_scrQuads);
-			texturepacker_destroy(s_hudTextures);
 		}
-		s_hudTextures = nullptr;
 		s_scrQuads = nullptr;
 		s_initialized = false;
 	}
 
 	void screenGPU_setHudTextureCallbacks(s32 count, TextureListCallback* callbacks)
 	{
-		if (count && !s_hudTextures)
+		if (count)
 		{
-			s_hudTextures = texturepacker_init("HudTextures", 4096, 4096);
-			texturepacker_begin(s_hudTextures);
-			for (s32 i = 0; i < count; i++)
+			TexturePacker* texturePacker = texturepacker_getGlobal();
+			if (!texturepacker_hasReservedPages(texturePacker))
 			{
-				texturepacker_pack(callbacks[i]);
+				for (s32 i = 0; i < count; i++)
+				{
+					texturepacker_pack(callbacks[i], POOL_GAME);
+				}
+				texturepacker_commit();
+				texturepacker_reserveCommitedPages(texturePacker);
 			}
-			texturepacker_commit();
 		}
 	}
 		
@@ -156,8 +156,10 @@ namespace TFE_Jedi
 			const TextureGpu* colormap = TFE_Sectors_GPU::getColormap();
 			colormap->bind(0);
 			palette->bind(1);
-			s_hudTextures->texture->bind(2);
-			s_hudTextures->textureTableGPU.bind(3);
+
+			TexturePacker* texturePacker = texturepacker_getGlobal();
+			texturePacker->texture->bind(2);
+			texturePacker->textureTableGPU.bind(3);
 
 			TFE_RenderBackend::drawIndexedTriangles(2 * s_screenQuadCount, sizeof(u16));
 

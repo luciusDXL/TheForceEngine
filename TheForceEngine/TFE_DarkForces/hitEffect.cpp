@@ -57,7 +57,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_SMALL_EXP] =
 		{
 			HEFFECT_SMALL_EXP,              // type
-			TFE_Sprite_Jedi::getWax("exptiny.wax"),
+			TFE_Sprite_Jedi::getWax("exptiny.wax", POOL_GAME),
 			0,                              // force
 			0,                              // damage
 			0,                              // explosiveRange
@@ -67,7 +67,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_THERMDET_EXP] =
 		{
 			HEFFECT_THERMDET_EXP,           // type
-			TFE_Sprite_Jedi::getWax("detexp.wax"),
+			TFE_Sprite_Jedi::getWax("detexp.wax", POOL_GAME),
 			FIXED(50),                      // force
 			FIXED(60),                      // damage
 			FIXED(30),                      // explosiveRange
@@ -77,7 +77,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_PLASMA_EXP] =
 		{
 			HEFFECT_PLASMA_EXP,	            // type
-			TFE_Sprite_Jedi::getWax("emisexp.wax"),
+			TFE_Sprite_Jedi::getWax("emisexp.wax", POOL_GAME),
 			0,                              // force
 			0,                              // damage
 			0,                              // explosiveRange
@@ -87,7 +87,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_MORTAR_EXP] =
 		{
 			HEFFECT_MORTAR_EXP,             // type
-			TFE_Sprite_Jedi::getWax("mortexp.wax"),
+			TFE_Sprite_Jedi::getWax("mortexp.wax", POOL_GAME),
 			FIXED(35),                      // force
 			FIXED(50),                      // damage
 			FIXED(40),                      // explosiveRange
@@ -97,7 +97,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_CONCUSSION] =
 		{
 			HEFFECT_CONCUSSION,             // type
-			TFE_Sprite_Jedi::getWax("concexp.wax"),
+			TFE_Sprite_Jedi::getWax("concexp.wax", POOL_GAME),
 			FIXED(30),                      // force
 			FIXED(30),                      // damage
 			FIXED(25),                      // explosiveRange
@@ -117,7 +117,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_MISSILE_EXP] =
 		{
 			HEFFECT_MISSILE_EXP,            // type
-			TFE_Sprite_Jedi::getWax("missexp.wax"),
+			TFE_Sprite_Jedi::getWax("missexp.wax", POOL_GAME),
 			FIXED(70),                      // force
 			FIXED(70),                      // damage
 			FIXED(40),                      // explosiveRange
@@ -127,7 +127,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_MISSILE_WEAK] =
 		{
 			HEFFECT_MISSILE_WEAK,           // type
-			TFE_Sprite_Jedi::getWax("missexp.wax"),
+			TFE_Sprite_Jedi::getWax("missexp.wax", POOL_GAME),
 			FIXED(50),                      // force
 			FIXED(25),                      // damage
 			FIXED(40),                      // explosiveRange
@@ -147,7 +147,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_CANNON_EXP] =
 		{
 			HEFFECT_CANNON_EXP,             // type
-			TFE_Sprite_Jedi::getWax("plasexp.wax"),
+			TFE_Sprite_Jedi::getWax("plasexp.wax", POOL_GAME),
 			0,                              // force
 			0,                              // damage
 			0,                              // explosiveRange
@@ -157,7 +157,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_REPEATER_EXP] =
 		{
 			HEFFECT_REPEATER_EXP,           // type
-			TFE_Sprite_Jedi::getWax("bullexp.wax"),
+			TFE_Sprite_Jedi::getWax("bullexp.wax", POOL_GAME),
 			0,                              // force
 			0,                              // damage
 			0,                              // explosiveRange
@@ -167,7 +167,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_LARGE_EXP] =
 		{
 			HEFFECT_LARGE_EXP,              // type
-			TFE_Sprite_Jedi::getWax("mineexp.wax"),
+			TFE_Sprite_Jedi::getWax("mineexp.wax", POOL_GAME),
 			FIXED(80),                      // force
 			FIXED(90),                      // damage
 			FIXED(45),                      // explosiveRange
@@ -197,7 +197,7 @@ namespace TFE_DarkForces
 		s_effectData[HEFFECT_SPLASH] =
 		{
 			HEFFECT_SPLASH,             // type
-			TFE_Sprite_Jedi::getWax("splash.wax"),
+			TFE_Sprite_Jedi::getWax("splash.wax", POOL_GAME),
 			0,                          // force
 			0,                          // damage
 			0,                          // explosiveRange
@@ -205,7 +205,7 @@ namespace TFE_DarkForces
 			sound_load("swim-in.voc", SOUND_PRIORITY_LOW3),  // soundEffect
 		};
 
-		s_genExplosion = TFE_Sprite_Jedi::getWax("genexp.wax");
+		s_genExplosion = TFE_Sprite_Jedi::getWax("genexp.wax", POOL_GAME);
 		// Different types of explosions that use the above animation.
 		s_effectData[HEFFECT_EXP_35] =
 		{

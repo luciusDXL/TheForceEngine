@@ -946,9 +946,6 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.h">
-      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\spriteDisplayList.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClInclude>
@@ -1194,6 +1191,12 @@
     </ClInclude>
     <ClInclude Include="TFE_Jedi\Serialization\serialization.h">
       <Filter>Source\TFE_Jedi\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\levelData.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_RenderShared\texturePacker.h">
+      <Filter>Source\TFE_RenderShared</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1845,9 +1848,6 @@
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sbuffer.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.cpp">
-      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\spriteDisplayList.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
@@ -2018,6 +2018,12 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Serialization\serialization.cpp">
       <Filter>Source\TFE_Jedi\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\levelData.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_RenderShared\texturePacker.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

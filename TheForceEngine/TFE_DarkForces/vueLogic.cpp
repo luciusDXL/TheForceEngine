@@ -7,6 +7,7 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_System/system.h>
@@ -389,7 +390,7 @@ namespace TFE_DarkForces
 							RSector* newSector = nullptr;
 
 							JBool useCollision = JFALSE;
-							if (local(vue)->sector && local(vue)->sector != s_controlSector)
+							if (local(vue)->sector && local(vue)->sector != s_levelState.controlSector)
 							{
 								useCollision = !local(searchForSector);
 							}
@@ -411,7 +412,7 @@ namespace TFE_DarkForces
 								}
 								if (wall)
 								{
-									newSector = s_controlSector;
+									newSector = s_levelState.controlSector;
 								}
 							}
 							else
@@ -419,7 +420,7 @@ namespace TFE_DarkForces
 								newSector = sector_which3D(local(frame)->offset.x, local(frame)->offset.y, local(frame)->offset.z);
 								if (!newSector)
 								{
-									newSector = s_controlSector;
+									newSector = s_levelState.controlSector;
 								}
 								local(searchForSector) = JFALSE;
 							}

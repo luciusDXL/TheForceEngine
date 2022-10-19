@@ -52,11 +52,12 @@ namespace TFE_Jedi
 	void renderer_setType(RendererType type = RENDERER_SOFTWARE);
 	void setupInitCameraAndLights();
 	void renderer_computeCameraTransform(RSector* sector, angle14_32 pitch, angle14_32 yaw, fixed16_16 camX, fixed16_16 camY, fixed16_16 camZ);
-
+		
 	// Set the current sub-renderer.
 	// Note that changing the sub-renderer at runtime may result in re-initialization of rendering data, causing a hitch.
 	JBool setSubRenderer(TFE_SubRenderer subRenderer = TSR_CLASSIC_FIXED);
 	TFE_SubRenderer getSubRenderer();
+	RendererType renderer_getType();
 
 	// Camera parameters: yaw, pitch, position (x, y, z)
 	//                    sectorId containing the camera.

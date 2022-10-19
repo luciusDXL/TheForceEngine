@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 
 		if (!obj->logic)
 		{
-			obj->logic = allocator_create(sizeof(Logic*));
+			obj->logic = allocator_create(sizeof(Logic**));
 		}
 		Logic** logicItem = (Logic**)allocator_newItem((Allocator*)obj->logic);
 		*logicItem = (Logic*)updateLogic;

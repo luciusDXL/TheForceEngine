@@ -55,14 +55,14 @@ void ShaderBuffer::update(const void* buffer, size_t size)
 	glBindBuffer(GL_TEXTURE_BUFFER, 0);
 }
 
-void ShaderBuffer::bind(s32 bindPoint)
+void ShaderBuffer::bind(s32 bindPoint) const
 {
 	if (bindPoint < 0) { return; }
 	glActiveTexture(GL_TEXTURE0 + bindPoint);
 	glBindTexture(GL_TEXTURE_BUFFER, m_gpuHandle[1]);
 }
 
-void ShaderBuffer::unbind(s32 bindPoint)
+void ShaderBuffer::unbind(s32 bindPoint) const
 {
 	if (bindPoint < 0) { return; }
 	glActiveTexture(GL_TEXTURE0 + bindPoint);

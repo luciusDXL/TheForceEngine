@@ -225,6 +225,8 @@ namespace TFE_Jedi
 
 	s32 allocator_getIndex(Allocator* alloc, void* item)
 	{
+		if (!item) { return -1; }
+
 		AllocHeader* header = alloc->head;
 		s32 index = 0;
 		while (header != ALLOC_INVALID_PTR)

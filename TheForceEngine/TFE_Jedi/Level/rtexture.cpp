@@ -8,6 +8,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Task/task.h>
+#include <unordered_map>
 
 using namespace TFE_DarkForces;
 using namespace TFE_Memory;
@@ -78,13 +79,95 @@ namespace TFE_Jedi
 		s_memoryRegion = allocator;
 	}
 
-	TextureData* bitmap_load(FilePath* filepath, u32 decompress)
+	struct LevelTexture
 	{
-		FileStream file;
-		if (!file.open(filepath, FileStream::MODE_READ))
+		std::string name;
+		TextureData* texture;
+	};
+	typedef std::vector<LevelTexture> TextureList;
+	typedef std::unordered_map<std::string, s32> TextureTable;
+
+	static std::vector<TextureData*> s_tempTextureList;
+	TextureList  s_textureList[POOL_COUNT];
+	TextureTable s_textureTable[POOL_COUNT];
+
+	// Added for TFE to clear out per-level texture data.
+	void bitmap_clearLevelData()
+	{
+		s_textureList[POOL_LEVEL].clear();
+		s_textureTable[POOL_LEVEL].clear();
+	}
+
+	void bitmap_clearAll()
+	{
+		for (s32 p = 0; p < POOL_COUNT; p++)
+		{
+			s_textureList[p].clear();
+			s_textureTable[p].clear();
+		}
+	}
+
+	bool bitmap_getTextureIndex(TextureData* tex, s32* index, AssetPool* pool)
+	{
+		for (s32 p = 0; p < POOL_COUNT; p++)
+		{
+			s32 count = (s32)s_textureList[p].size();
+			const LevelTexture* srcList = s_textureList[p].data();
+			for (s32 i = 0; i < count; i++)
+			{
+				if (srcList[i].texture == tex)
+				{
+					*index = i;
+					*pool = AssetPool(p);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	TextureData* bitmap_getTextureByIndex(s32 index, AssetPool pool)
+	{
+		return s_textureList[pool][index].texture;
+	}
+		
+	TextureData** bitmap_getTextures(s32* textureCount, AssetPool pool)
+	{
+		assert(textureCount);
+		s32 count = (s32)s_textureList[pool].size();
+		s_tempTextureList.resize(count);
+		TextureData** list = s_tempTextureList.data();
+		const LevelTexture* srcList = s_textureList[pool].data();
+		for (s32 i = 0; i < count; i++)
+		{
+			list[i] = srcList[i].texture;
+		}
+		*textureCount = count;
+		return list;
+	}
+
+	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool)
+	{
+		// TFE: Keep track of per-level texture state for serialization.
+		// This is also useful for handling per-level GPU texture mirrors.
+		TextureTable::iterator iTex = s_textureTable[pool].find(name);
+		if (iTex != s_textureTable[pool].end())
+		{
+			return s_textureList[pool][iTex->second].texture;
+		}
+
+		FilePath filepath;
+		if (!TFE_Paths::getFilePath(name, &filepath))
 		{
 			return nullptr;
 		}
+
+		FileStream file;
+		if (!file.open(&filepath, FileStream::MODE_READ))
+		{
+			return nullptr;
+		}
+
 		size_t size = file.getSize();
 		s_buffer.resize(size);
 		file.readBuffer(s_buffer.data(), (u32)size);
@@ -183,6 +266,11 @@ namespace TFE_Jedi
 			memcpy(texture->image, data, texture->dataSize);
 			data += texture->dataSize;
 		}
+
+		// Add the texture to the level texture cache if appropriate.
+		s32 index = (s32)s_textureList[pool].size();
+		s_textureList[pool].push_back({name, texture});
+		s_textureTable[pool][name] = index;
 
 		return texture;
 	}
@@ -320,9 +408,9 @@ namespace TFE_Jedi
 		anim->texPtr = texture;			// pointer to the texture pointer, allowing us to update that pointer later.
 		anim->baseFrame = tex;
 		anim->baseData = tex->image;
-		anim->frameList = (TextureData**)res_alloc(sizeof(TextureData**) * anim->count);
+		anim->frameList = (TextureData**)level_alloc(sizeof(TextureData**) * anim->count);
 		// Allocate frame memory here since load-in-place does not work because structure size changes.
-		TextureData* outFrames = (TextureData*)res_alloc(sizeof(TextureData) * anim->count);
+		TextureData* outFrames = (TextureData*)level_alloc(sizeof(TextureData) * anim->count);
 		assert(anim->frameList);
 
 		const u8* base = tex->image + 2;
@@ -338,7 +426,7 @@ namespace TFE_Jedi
 			}
 
 			// Allocate an image buffer since everything no longer fits nicely.
-			outFrames[i].image = (u8*)res_alloc(outFrames[i].width * outFrames[i].height);
+			outFrames[i].image = (u8*)level_alloc(outFrames[i].width * outFrames[i].height);
 			memcpy(outFrames[i].image, (u8*)frame + 0x1c, outFrames[i].width * outFrames[i].height);
 
 			// We have to make sure the structure offsets line up with DOS...

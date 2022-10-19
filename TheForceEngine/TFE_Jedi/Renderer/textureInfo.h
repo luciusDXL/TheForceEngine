@@ -49,5 +49,5 @@ namespace TFE_Jedi
 		s32 sortKey = 0;			// Calculated by Texture Packer.
 	};
 	typedef std::vector<TextureInfo> TextureInfoList;
-	typedef bool(*TextureListCallback)(TextureInfoList& texList);
+	typedef bool(*TextureListCallback)(TextureInfoList& texList, AssetPool pool);
 }

@@ -47,6 +47,9 @@ namespace TFE_Jedi
 	void  level_clearData();
 	void  level_freeAllAssets();
 
+	void level_serialize(Stream* stream);
+	void level_deserialize(Stream* stream);
+
 	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector);
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1);
 	void setSkyParallax(fixed16_16 parallax0, fixed16_16 parallax1);
@@ -55,21 +58,6 @@ namespace TFE_Jedi
 	JBool level_isGoalComplete(s32 goalIndex);
 
 	void level_addSound(const char* name, u32 freq, s32 priority);
-
-	TextureData** level_getTextures(s32* count);
 		
-	extern u32 s_sectorCount;
-	extern RSector* s_sectors;
-	extern RSector* s_bossSector;
-	extern RSector* s_mohcSector;
-	extern RSector* s_controlSector;
-	extern RSector* s_completeSector;
-	extern fixed16_16 s_parallax0;
-	extern fixed16_16 s_parallax1;
-
-	extern s32 s_minLayer;
-	extern s32 s_maxLayer;
-	extern s32 s_secretCount;
-
 	extern JBool s_complete[2][NUM_COMPLETE];
 }

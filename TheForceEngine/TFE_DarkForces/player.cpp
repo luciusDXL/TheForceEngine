@@ -18,6 +18,7 @@
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
 // Internal types need to be included in this case.
@@ -1679,10 +1680,10 @@ namespace TFE_DarkForces
 				// Remove the flag so the secret isn't counted twice.
 				newSector->flags1 &= ~SEC_FLAGS1_SECRET;
 				s_secretsFound++;
-				if (s_secretCount)
+				if (s_levelState.secretCount)
 				{
 					// 100.0 * found / count
-					fixed16_16 percentage = mul16(FIXED(100), div16(intToFixed16(s_secretsFound), intToFixed16(s_secretCount)));
+					fixed16_16 percentage = mul16(FIXED(100), div16(intToFixed16(s_secretsFound), intToFixed16(s_levelState.secretCount)));
 					s_secretsPercent = floor16(percentage);
 				}
 				else

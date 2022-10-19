@@ -136,7 +136,6 @@ namespace TFE_FrontEndUI
 	typedef void(*MenuItemSelected)();
 
 	static s32 s_resIndex = 0;
-	static s32 s_rendererIndex = 0;
 	static f32 s_uiScale = 1.0f;
 	static char* s_aboutDisplayStr = nullptr;
 	static char* s_manualDisplayStr = nullptr;
@@ -1430,11 +1429,9 @@ namespace TFE_FrontEndUI
 
 		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75 * s_uiScale);
 		ImGui::SetNextItemWidth(196 * s_uiScale);
-		ImGui::Combo("##Renderer", &s_rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
-		if (s_rendererIndex == 0)
+		ImGui::Combo("##Renderer", &graphics->rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
+		if (graphics->rendererIndex == 0)
 		{
-			static bool s_perspectiveCorrect = false;
-
 			bool prevAsync = graphics->asyncFramebuffer;
 			bool prevColorConvert = graphics->gpuColorConvert;
 
@@ -1443,7 +1440,7 @@ namespace TFE_FrontEndUI
 			ImGui::Checkbox("GPU Color Conversion", &graphics->gpuColorConvert);
 			ImGui::Checkbox("Extend Adjoin/Portal Limits", &graphics->extendAjoinLimits);
 		}
-		else if (s_rendererIndex == 1)
+		else if (graphics->rendererIndex == 1)
 		{
 			const f32 comboOffset = floorf(170 * s_uiScale);
 
@@ -1555,7 +1552,7 @@ namespace TFE_FrontEndUI
 
 		if (s_menuRetState != APP_STATE_MENU)
 		{
-			TFE_DarkForces::mission_render(s_rendererIndex);
+			TFE_DarkForces::mission_render(graphics->rendererIndex);
 		}
 	}
 
@@ -1585,7 +1582,8 @@ namespace TFE_FrontEndUI
 
 		if (s_menuRetState != APP_STATE_MENU)
 		{
-			TFE_DarkForces::mission_render(s_rendererIndex);
+			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+			TFE_DarkForces::mission_render(graphics->rendererIndex);
 		}
 	}
 

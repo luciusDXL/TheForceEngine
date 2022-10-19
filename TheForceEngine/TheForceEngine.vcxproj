@@ -538,6 +538,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\InfSystem\infTypesInternal.h" />
     <ClInclude Include="TFE_Jedi\InfSystem\message.h" />
     <ClInclude Include="TFE_Jedi\Level\level.h" />
+    <ClInclude Include="TFE_Jedi\Level\levelData.h" />
     <ClInclude Include="TFE_Jedi\Level\levelTextures.h" />
     <ClInclude Include="TFE_Jedi\Level\rfont.h" />
     <ClInclude Include="TFE_Jedi\Level\robject.h" />
@@ -592,7 +593,6 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\screenDrawGPU.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\spriteDisplayList.h" />
-    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rcommon.h" />
     <ClInclude Include="TFE_Jedi\Renderer\redgePair.h" />
     <ClInclude Include="TFE_Jedi\Renderer\rlimits.h" />
@@ -630,6 +630,7 @@ echo ^)";
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\renderTarget.h" />
     <ClInclude Include="TFE_RenderBackend\Win32OpenGL\screenCapture.h" />
     <ClInclude Include="TFE_RenderShared\lineDraw2d.h" />
+    <ClInclude Include="TFE_RenderShared\texturePacker.h" />
     <ClInclude Include="TFE_Settings\gameSourceData.h" />
     <ClInclude Include="TFE_Settings\settings.h" />
     <ClInclude Include="TFE_Settings\windows\registry.h" />
@@ -842,6 +843,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\InfSystem\infSystem.cpp" />
     <ClCompile Include="TFE_Jedi\InfSystem\message.cpp" />
     <ClCompile Include="TFE_Jedi\Level\level.cpp" />
+    <ClCompile Include="TFE_Jedi\Level\levelData.cpp" />
     <ClCompile Include="TFE_Jedi\Level\levelTextures.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rfont.cpp" />
     <ClCompile Include="TFE_Jedi\Level\robject.cpp" />
@@ -890,7 +892,6 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\screenDrawGPU.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\sectorDisplayList.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\spriteDisplayList.cpp" />
-    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\texturePacker.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rcommon.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rscanline.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\rsectorRender.cpp" />
@@ -919,6 +920,7 @@ echo ^)";
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\textureGpu.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\vertexBuffer.cpp" />
     <ClCompile Include="TFE_RenderShared\lineDraw2d.cpp" />
+    <ClCompile Include="TFE_RenderShared\texturePacker.cpp" />
     <ClCompile Include="TFE_Settings\settings.cpp" />
     <ClCompile Include="TFE_Settings\windows\registry.cpp" />
     <ClCompile Include="TFE_System\CrashHandler\crashHandlerWin32.cpp" />

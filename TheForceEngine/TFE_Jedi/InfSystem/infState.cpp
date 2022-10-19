@@ -5,11 +5,14 @@
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 
 using namespace TFE_DarkForces;
 
 namespace TFE_Jedi
 {
+	const s32 c_infStateVersion = 1;
+
 	// INF State
 	InfSerializableState s_infSerState = { };
 	InfState s_infState = { };
@@ -43,6 +46,9 @@ namespace TFE_Jedi
 		const s32 elevCount = allocator_getCount(s_infSerState.infElevators);
 		const s32 teleCount = allocator_getCount(s_infSerState.infTeleports);
 		const s32 trigCount = allocator_getCount(s_infSerState.infTriggers);
+
+		// Version
+		SERIALIZE(c_infStateVersion);
 
 		// Counts.
 		SERIALIZE(s_infSerState.activeTriggerCount);
@@ -288,6 +294,10 @@ namespace TFE_Jedi
 		inf_createTeleportTask();
 		inf_createTriggerTask();
 
+		// Version.
+		s32 infStateVersion;
+		DESERIALIZE(infStateVersion);
+
 		// Counts.
 		s32 elevCount, teleCount, trigCount;
 		DESERIALIZE(s_infSerState.activeTriggerCount);
@@ -440,7 +450,7 @@ namespace TFE_Jedi
 			Allocator* parent = nullptr;
 			RWall* triggerWall = nullptr;
 			InfLink* link = nullptr;
-			RSector* sector = parentSectorIndex >= 0 ? &s_sectors[parentSectorIndex] : nullptr;
+			RSector* sector = parentSectorIndex >= 0 ? &s_levelState.sectors[parentSectorIndex] : nullptr;
 
 			if (trigger->type == ITRIGGER_SECTOR && sector)
 			{
@@ -485,11 +495,11 @@ namespace TFE_Jedi
 				target->wall = nullptr;
 				if (wallIndex >= 0 && sectorIndex >= 0)
 				{
-					target->wall = &s_sectors[sectorIndex].walls[wallIndex];
+					target->wall = &s_levelState.sectors[sectorIndex].walls[wallIndex];
 				}
 				else if (sectorIndex >= 0)
 				{
-					target->sector = &s_sectors[sectorIndex];
+					target->sector = &s_levelState.sectors[sectorIndex];
 				}
 
 				DESERIALIZE(target->eventMask);
@@ -544,10 +554,9 @@ namespace TFE_Jedi
 			{
 				sectorIndex = msg->wall->sector->index;
 			}
-			assert(msg->sector || msg->wall);
-			SERIALIZE(sectorIndex);
-
 			s32 wallIndex = (msg->wall) ? msg->wall->id : -1;
+			// It is possible for both wallIndex and sectorIndex to be null.
+			SERIALIZE(sectorIndex);
 			SERIALIZE(wallIndex);
 
 			SERIALIZE(msg->msgType);
@@ -676,11 +685,11 @@ namespace TFE_Jedi
 
 		if (stop->floorTexSecId >= 0)
 		{
-			stop->floorTex = s_sectors[stop->floorTexSecId].floorTex;
+			stop->floorTex = s_levelState.sectors[stop->floorTexSecId].floorTex;
 		}
 		if (stop->ceilTexSecId >= 0)
 		{
-			stop->ceilTex = s_sectors[stop->ceilTexSecId].ceilTex;
+			stop->ceilTex = s_levelState.sectors[stop->ceilTexSecId].ceilTex;
 		}
 	}
 

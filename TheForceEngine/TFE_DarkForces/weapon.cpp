@@ -710,24 +710,17 @@ namespace TFE_DarkForces
 			s_playerWeaponList[WPN_CANNON].frames[3] = loadWeaponTexture("assault4.bm");
 
 			s_weaponTexturesLoaded = JTRUE;
-
-			// TFE
-			TFE_Jedi::renderer_addHudTextureCallback(weapon_getTextures);
 		}
 	}
 
 	TextureData* loadWeaponTexture(const char* texName)
 	{
-		FilePath filePath;
-		if (TFE_Paths::getFilePath(texName, &filePath))
-		{
-			return bitmap_load(&filePath, 0);
-		}
-		else
+		TextureData* weaponTex = bitmap_load(texName, 0, POOL_GAME);
+		if (!weaponTex)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Weapon", "Weapon_Startup: %s NOT FOUND.", texName);
 		}
-		return nullptr;
+		return weaponTex;
 	}
 
 	void weapon_setShooting(u32 secondaryFire)
@@ -1217,9 +1210,9 @@ namespace TFE_DarkForces
 				}
 
 				// TFE: Handle extended pitch limits.
-				fixed16_16 texHeight = floor16(mul16(intToFixed16(tex->height), yScale));
-				fixed16_16 y1 = y + texHeight;
-				if (y1 < dispHeight - 3)
+				s32 texHeight = floor16(mul16(intToFixed16(tex->height), yScale));
+				s32 y1 = y + texHeight;
+				if (y1 < s32(dispHeight) - 3)
 				{
 					y = dispHeight + 2 - texHeight;
 				}

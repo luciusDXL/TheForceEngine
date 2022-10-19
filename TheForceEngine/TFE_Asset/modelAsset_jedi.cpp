@@ -18,6 +18,11 @@
 
 using namespace TFE_Jedi;
 extern MemoryRegion* s_gameRegion;
+extern MemoryRegion* s_levelRegion;
+static MemoryRegion* s_memRegion;
+
+#define model_alloc(size) TFE_Memory::region_alloc(s_memRegion, size)
+#define model_free(ptr) TFE_Memory::region_free(s_memRegion, ptr)
 
 // Jedi code for processing models.
 // TODO: Move to the Jedi_ObjectRenderer (once it exists)?
@@ -65,7 +70,7 @@ namespace TFE_Jedi_Object3d
 		const s32 vertexCount = model->vertexCount;
 		const vec3* vertex = model->vertices;
 
-		model->vertexNormals = (vec3*)malloc(vertexCount * sizeof(vec3));
+		model->vertexNormals = (vec3*)model_alloc(vertexCount * sizeof(vec3));
 		vec3* outNormal = model->vertexNormals;
 		if (!outNormal)
 		{
@@ -131,19 +136,20 @@ using namespace TFE_Jedi_Object3d;
 namespace TFE_Model_Jedi
 {
 	typedef std::map<std::string, JediModel*> ModelMap;
+	typedef std::vector<JediModel*> ModelList;
 	typedef std::map<std::string, TextureData*> TextureMap;
-	static ModelMap s_models;
-	static TextureMap s_textures;
+	static ModelMap s_models[POOL_COUNT];
+	static ModelList s_modelList[POOL_COUNT];
 	static std::vector<char> s_buffer;
 
 	static vec2 s_tmpVtx[MAX_VERTEX_COUNT_3DO];
 
-	bool parseModel(JediModel* model, const char* name);
+	bool parseModel(JediModel* model, const char* name, AssetPool pool);
 
-	JediModel* get(const char* name)
+	JediModel* get(const char* name, AssetPool pool)
 	{
-		ModelMap::iterator iModel = s_models.find(name);
-		if (iModel != s_models.end())
+		ModelMap::iterator iModel = s_models[pool].find(name);
+		if (iModel != s_models[pool].end())
 		{
 			return iModel->second;
 		}
@@ -163,13 +169,15 @@ namespace TFE_Model_Jedi
 		s_buffer.resize(len);
 		file.readBuffer(s_buffer.data(), u32(len));
 		file.close();
-
-		JediModel* model = new JediModel;
+			
+		s_memRegion = (pool == POOL_GAME) ? s_gameRegion : s_levelRegion;
+		JediModel* model = (JediModel*)model_alloc(sizeof(JediModel));
+		memset(model, 0, sizeof(JediModel));
 
 		////////////////////////////////////////////////////////////////
 		// Load and parse the model.
 		////////////////////////////////////////////////////////////////
-		if (!parseModel(model, name))
+		if (!parseModel(model, name, pool))
 		{
 			return nullptr;
 		}
@@ -178,7 +186,7 @@ namespace TFE_Model_Jedi
 		// Post process the model.
 		////////////////////////////////////////////////////////////////
 		// Compute culling normals.
-		model->polygonNormals = (vec3*)malloc(model->polygonCount * sizeof(vec3));
+		model->polygonNormals = (vec3*)model_alloc(model->polygonCount * sizeof(vec3));
 
 		vec3* polygonNormal = model->polygonNormals;
 		JmPolygon* polygon = model->polygons;
@@ -212,69 +220,93 @@ namespace TFE_Model_Jedi
 
 		// TODO (maybe): Cache binary models to disk so they can be
 		// directly loaded, which will reduce load time.
-		s_models[name] = model;
+		s_models[pool][name] = model;
+		s_modelList[pool].push_back(model);
 		return model;
 	}
 
-	void getModelList(std::vector<JediModel*>& list)
+	bool getModelIndex(JediModel* model, s32* index, AssetPool* pool)
 	{
-		ModelMap::iterator iModel = s_models.begin();
-		for (; iModel != s_models.end(); ++iModel)
+		assert(index && pool);
+		if (!index || !pool) { return false; }
+
+		for (s32 p = 0; p < POOL_COUNT; p++)
 		{
-			list.push_back(iModel->second);
+			const size_t count = s_modelList[p].size();
+			JediModel** list = s_modelList[p].data();
+			for (size_t m = 0; m < count; m++)
+			{
+				if (list[m] == model)
+				{
+					*index = s32(m);
+					*pool = AssetPool(p);
+					return true;
+				}
+			}
 		}
+		return false;
+	}
+
+	JediModel* getModelByIndex(s32 index, AssetPool pool)
+	{
+		if (pool >= POOL_COUNT || index >= (s32)s_modelList[pool].size())
+		{
+			return nullptr;
+		}
+		return s_modelList[pool][index];
+	}
+
+	const std::vector<JediModel*>& getModelList(AssetPool pool)
+	{
+		return s_modelList[pool];
+	}
+
+	void freePool(AssetPool pool)
+	{
+		// Memory will get freed with the memory region automatically.
+		s_models[pool].clear();
+		s_modelList[pool].clear();
 	}
 
 	void freeAll()
 	{
-		ModelMap::iterator iModel = s_models.begin();
-		for (; iModel != s_models.end(); ++iModel)
+		for (s32 p = 0; p < POOL_COUNT; p++)
 		{
-			delete iModel->second;
+			freePool(AssetPool(p));
 		}
-		s_models.clear();
-		s_textures.clear();
+	}
+		
+	void freeLevelData()
+	{
+		freePool(POOL_LEVEL);
 	}
 
 	void allocatePolygon(JmPolygon* polygon, s32 vertexCount)
 	{
-		s32* indices = (s32*)malloc(vertexCount * 4);
-
 		polygon->texture = 0;
 		polygon->shading = PSHADE_FLAT;
 		polygon->index = 0;
 		polygon->p08 = 0;
 		polygon->vertexCount = vertexCount;
 		polygon->uv = nullptr;
-		polygon->indices = indices;
-	}
-
-	TextureData* getCachedTexture(const char* name)
-	{
-		TextureMap::iterator iTex = s_textures.find(name);
-		return (iTex != s_textures.end()) ? iTex->second : nullptr;
-	}
-
-	void addTextureToCache(const char* name, TextureData* tex)
-	{
-		s_textures[name] = tex;
+		polygon->indices = (s32*)model_alloc(vertexCount * sizeof(s32));
 	}
 	
-	bool parseModel(JediModel* model, const char* name)
+	bool parseModel(JediModel* model, const char* name, AssetPool pool)
 	{
 		if (s_buffer.empty()) { return false; }
 		const size_t len = s_buffer.size();
 
 		model->isBridge = 0;
 		model->vertexCount = 0;
-		model->vertices = 0;
+		model->vertices = nullptr;
 		model->polygonCount = 0;
-		model->polygons = 0;
+		model->polygons = nullptr;
 		model->vertexNormals = nullptr;
 		model->polygonNormals = nullptr;
 		model->flags = 0;
 		model->textureCount = 0;
-		model->textures = 0;
+		model->textures = nullptr;
 		model->radius = 0;
 		model->drawId = -1;	// invalid ID initially.
 
@@ -350,7 +382,7 @@ namespace TFE_Model_Jedi
 			assert(0);
 			return false;
 		}
-		model->vertices = (vec3*)malloc(vertexCount * sizeof(vec3));
+		model->vertices = (vec3*)model_alloc(vertexCount * sizeof(vec3));
 
 		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
@@ -367,7 +399,7 @@ namespace TFE_Model_Jedi
 			assert(0);
 			return false;
 		}
-		model->polygons = (JmPolygon*)malloc(polygonCount * sizeof(JmPolygon));
+		model->polygons = (JmPolygon*)model_alloc(polygonCount * sizeof(JmPolygon));
 
 		buffer = parser.readLine(bufferPos, true);
 		if (!buffer) { return false; }
@@ -390,13 +422,12 @@ namespace TFE_Model_Jedi
 		}
 
 		// Load textures.
-		MemoryRegion* memRegion = TFE_Jedi::bitmap_getAllocator();
-		TFE_Jedi::bitmap_setAllocator(s_gameRegion);
+		MemoryRegion* prevMemRegion = TFE_Jedi::bitmap_getAllocator();
+		TFE_Jedi::bitmap_setAllocator(s_memRegion);
+		model->textures = nullptr;
 		if (textureCount)
 		{
-			FilePath filePath;
-
-			model->textures = (TextureData**)malloc(textureCount * sizeof(TextureData*));
+			model->textures = (TextureData**)model_alloc(textureCount * sizeof(TextureData*));
 			model->textureCount = textureCount;
 			TextureData** texture = model->textures;
 			for (s32 i = 0; i < textureCount; i++, texture++)
@@ -408,43 +439,22 @@ namespace TFE_Model_Jedi
 				if (sscanf(buffer, " TEXTURE: %s ", textureName) != 1)
 				{
 					TFE_System::logWrite(LOG_WARNING, "Object3D_Load", "'%s' unable to parse TEXTURE: entry.", name);
-
-					*texture = getCachedTexture("default.bm");
-					if (!(*texture))
-					{
-						TFE_Paths::getFilePath("default.bm", &filePath);
-						*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
-						addTextureToCache("default.bm", *texture);
-					}
+					*texture = TFE_Jedi::bitmap_load("default.bm", 1, pool);
 					continue;
 				}
 
 				*texture = nullptr;
 				if (strcasecmp(textureName, "<NoTexture>"))
 				{
-					if (TFE_Paths::getFilePath(textureName, &filePath))
-					{
-						*texture = getCachedTexture(textureName);
-						if (!(*texture))
-						{
-							*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
-							addTextureToCache(textureName, *texture);
-						}
-					}
+					*texture = TFE_Jedi::bitmap_load(textureName, 1, pool);
 					if (!(*texture))
 					{
-						*texture = getCachedTexture("default.bm");
-						if (!(*texture))
-						{
-							TFE_Paths::getFilePath("default.bm", &filePath);
-							*texture = (TextureData*)TFE_Jedi::bitmap_load(&filePath, 1);
-							addTextureToCache("default.bm", *texture);
-						}
+						*texture = TFE_Jedi::bitmap_load("default.bm", 1, pool);
 					}
 				}
 			}
 		}
-		TFE_Jedi::bitmap_setAllocator(memRegion);
+		TFE_Jedi::bitmap_setAllocator(prevMemRegion);
 
 		bool nextLine = true;
 		s32 vertexOffset = 0;
@@ -740,7 +750,7 @@ namespace TFE_Model_Jedi
 							break;
 						}
 
-						polygon->uv   = (vec2*)malloc(sizeof(vec2) * 3);
+						polygon->uv   = (vec2*)model_alloc(sizeof(vec2) * 3);
 						fixed16_16 texWidth  = intToFixed16(texture->uvWidth);
 						fixed16_16 texHeight = intToFixed16(texture->uvHeight);
 
@@ -768,7 +778,7 @@ namespace TFE_Model_Jedi
 							nextLine = false;
 							break;
 						}
-						polygon->uv = (vec2*)malloc(sizeof(vec2) * 4);
+						polygon->uv = (vec2*)model_alloc(sizeof(vec2) * 4);
 						fixed16_16 texWidth = intToFixed16(texture->uvWidth);
 						fixed16_16 texHeight = intToFixed16(texture->uvHeight);
 

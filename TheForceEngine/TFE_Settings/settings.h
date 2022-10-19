@@ -50,6 +50,7 @@ struct TFE_Settings_Graphics
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;
 	f32   gamma = 1.0f;
+	s32   rendererIndex = 0;
 
 	// Reticle
 	bool reticleEnable  = false;

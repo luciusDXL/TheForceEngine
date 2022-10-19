@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include "level.h"
+#include "levelData.h"
 #include "rwall.h"
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
@@ -35,89 +36,15 @@ namespace TFE_Jedi
 	JBool s_complete[2][NUM_COMPLETE];
 	s32 s_completeNum[2][NUM_COMPLETE];
 		
-	struct AmbientSound
-	{
-		SoundSourceId soundId;
-		SoundEffectId instanceId;
-		vec3_fixed pos;
-	};
-
+	// Temp State.
 	static s32 s_dataIndex;
-	static s32 s_textureCount;
-
-	static s32 s_podCount = 0;
-	static s32 s_spriteCount = 0;
-	static s32 s_fmeCount = 0;
-	static s32 s_soundCount = 0;
-	static s32 s_objectCount = 0;
-
-	static TextureData** s_textures;
-	static Allocator* s_soundEmitters;
-	static Allocator* s_safeLoc;
-				
-	static JediModel** s_pods;
-	static JediWax** s_sprites;
-	static JediFrame** s_frames;
-	static SoundSourceId* s_soundIds;
-
-	static Allocator* s_ambientSounds = nullptr;
-	static Task* s_ambientSoundTask = nullptr;
-
-	static Task* s_soundEmitterTask;
-
 	static char s_readBuffer[256];
 	static std::vector<char> s_buffer;
-	
-	s32 s_minLayer;
-	s32 s_maxLayer;
-	s32 s_secretCount;
-	u32 s_sectorCount = 0;
-	RSector* s_bossSector = nullptr;
-	RSector* s_mohcSector = nullptr;
-	RSector* s_controlSector = nullptr;
-	RSector* s_completeSector = nullptr;
-	RSector* s_sectors = nullptr;
-
-	fixed16_16 s_parallax0;
-	fixed16_16 s_parallax1;
 
 	JBool level_loadGeometry(const char* levelName);
 	JBool level_loadObjects(const char* levelName, u8 difficulty);
 	JBool level_loadGoals(const char* levelName);
 
-	void level_clearData()
-	{
-		s_soundEmitters    = nullptr;
-		s_soundEmitterTask = nullptr;
-		s_safeLoc          = nullptr;
-		s_completeSector   = nullptr;
-		s_bossSector       = nullptr;
-		s_mohcSector       = nullptr;
-
-		s_sectors  = nullptr;
-		s_pods     = nullptr;
-		s_sprites  = nullptr;
-		s_frames   = nullptr;
-		s_soundIds = nullptr;
-		s_textures = nullptr;
-
-		s_ambientSounds = nullptr;
-		s_ambientSoundTask = nullptr;
-
-		s_secretCount  = 0;
-		s_sectorCount  = 0;
-		s_textureCount = 0;
-
-		s_podCount    = 0;
-		s_spriteCount = 0;
-		s_fmeCount    = 0;
-		s_soundCount  = 0;
-		s_objectCount = 0;
-
-		s_controlSector = (RSector*)level_alloc(sizeof(RSector));
-		sector_clear(s_controlSector);
-	}
-		
 	JBool level_load(const char* levelName, u8 difficulty)
 	{
 		if (!levelName) { return JFALSE; }
@@ -142,10 +69,10 @@ namespace TFE_Jedi
 		
 	JBool level_loadGeometry(const char* levelName)
 	{
-		s_secretCount = 0;
+		s_levelState.secretCount = 0;
 		s_dataIndex = 0;
-		s_minLayer = INT_MAX;
-		s_maxLayer = INT_MIN;
+		s_levelState.minLayer = INT_MAX;
+		s_levelState.maxLayer = INT_MIN;
 		message_free();
 
 		char levelPath[TFE_MAX_PATH];
@@ -193,8 +120,7 @@ namespace TFE_Jedi
 		}
 		
 		line = parser.readLine(bufferPos);
-		char name[256];
-		if (sscanf(line, "LEVELNAME %s", name) != 1)
+		if (sscanf(line, "LEVELNAME %s", s_readBuffer) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read level name.");
 			return false;
@@ -226,30 +152,29 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read parallax values.");
 			return false;
 		}
-		s_parallax0 = floatToFixed16(parallax0);
-		s_parallax1 = floatToFixed16(parallax1);
+		s_levelState.parallax0 = floatToFixed16(parallax0);
+		s_levelState.parallax1 = floatToFixed16(parallax1);
 
 		// Number of textures used by the level.
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, " TEXTURES %d", &s_textureCount) != 1)
+		if (sscanf(line, " TEXTURES %d", &s_levelIntState.textureCount) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture count.");
 			return false;
 		}
-		s_textures = (TextureData**)res_alloc(s_textureCount * sizeof(TextureData**));
-		memset(s_textures, 0, s_textureCount * sizeof(TextureData**));
+		s_levelIntState.textures = (TextureData**)level_alloc(s_levelIntState.textureCount * sizeof(TextureData**));
+		memset(s_levelIntState.textures, 0, s_levelIntState.textureCount * sizeof(TextureData**));
 
 		// Load Textures.
-		TextureData** texture = s_textures;
-		for (s32 i = 0; i < s_textureCount; i++, texture++)
+		TextureData** texture = s_levelIntState.textures;
+		for (s32 i = 0; i < s_levelIntState.textureCount; i++, texture++)
 		{
 			line = parser.readLine(bufferPos);
 			char textureName[256];
 			if (sscanf(line, " TEXTURE: %s ", textureName) != 1)
 			{
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture name.");
-				TFE_Paths::getFilePath("default.bm", &filePath);
-				*texture = bitmap_load(&filePath, 1);
+				*texture = bitmap_load("default.bm", 1);
 			}
 			else if (strcasecmp(textureName, "<NoTexture>") == 0)
 			{
@@ -257,17 +182,11 @@ namespace TFE_Jedi
 			}
 			else
 			{
-				TextureData* tex = nullptr;
-				if (TFE_Paths::getFilePath(textureName, &filePath))
-				{
-					tex = bitmap_load(&filePath, 1);
-				}
+				TextureData* tex = bitmap_load(textureName, 1);
 				if (!tex)
 				{
 					TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Could not open '%s', using 'default.bm' instead.", textureName);
-
-					TFE_Paths::getFilePath("default.bm", &filePath);
-					tex = bitmap_load(&filePath, 1);
+					tex = bitmap_load("default.bm", 1);
 					if (!tex)
 					{
 						TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "'default.bm' is not a valid BM file!");
@@ -287,17 +206,17 @@ namespace TFE_Jedi
 
 		// Load Sectors.
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, "NUMSECTORS %d", &s_sectorCount) != 1)
+		if (sscanf(line, "NUMSECTORS %d", &s_levelState.sectorCount) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector count.");
 			return false;
 		}
 
-		s_sectors = (RSector*)level_alloc(sizeof(RSector) * s_sectorCount);
-		memset(s_sectors, 0, sizeof(RSector) * s_sectorCount);
-		for (u32 i = 0; i < s_sectorCount; i++)
+		s_levelState.sectors = (RSector*)level_alloc(sizeof(RSector) * s_levelState.sectorCount);
+		memset(s_levelState.sectors, 0, sizeof(RSector) * s_levelState.sectorCount);
+		for (u32 i = 0; i < s_levelState.sectorCount; i++)
 		{
-			RSector* sector = &s_sectors[i];
+			RSector* sector = &s_levelState.sectors[i];
 			sector_clear(sector);
 			sector->index = i;
 
@@ -312,6 +231,7 @@ namespace TFE_Jedi
 			line = parser.readLine(bufferPos);
 			// Sectors missing a name are valid but do not get "addresses" - and thus cannot be
 			// used by the INF system (except in the case of doors and exploding walls, see the flags section below).
+			char name[256];
 			if (sscanf(line, " NAME %s", name) == 1)
 			{
 				// Add the sector "address" for later use by the INF system.
@@ -320,15 +240,15 @@ namespace TFE_Jedi
 				// Track special elevators.
 				if (!strcasecmp(name, "complete"))
 				{
-					s_completeSector = sector;
+					s_levelState.completeSector = sector;
 				}
 				else if (!strcasecmp(name, "boss"))
 				{
-					s_bossSector = sector;
+					s_levelState.bossSector = sector;
 				}
 				else if (!strcasecmp(name, "mohc"))
 				{
-					s_mohcSector = sector;
+					s_levelState.mohcSector = sector;
 				}
 			}
 
@@ -355,7 +275,7 @@ namespace TFE_Jedi
 			sector->floorTex = nullptr;
 			if (index != -1)
 			{
-				sector->floorTex = &s_textures[index];
+				sector->floorTex = &s_levelIntState.textures[index];
 			}
 			sector->floorOffset.x = floatToFixed16(offsetX);
 			sector->floorOffset.z = floatToFixed16(offsetZ);
@@ -380,7 +300,7 @@ namespace TFE_Jedi
 			sector->ceilTex = nullptr;
 			if (index != -1)
 			{
-				sector->ceilTex = &s_textures[index];
+				sector->ceilTex = &s_levelIntState.textures[index];
 			}
 			sector->ceilOffset.x = floatToFixed16(offsetX);
 			sector->ceilOffset.z = floatToFixed16(offsetZ);
@@ -424,7 +344,7 @@ namespace TFE_Jedi
 			// Add secrets.
 			if (sector->flags1 & SEC_FLAGS1_SECRET)
 			{
-				s_secretCount++;
+				s_levelState.secretCount++;
 			}
 
 			// Layer
@@ -434,8 +354,8 @@ namespace TFE_Jedi
 				TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector layer.");
 				return false;
 			}
-			s_minLayer = min(s_minLayer, sector->layer);
-			s_maxLayer = max(s_maxLayer, sector->layer);
+			s_levelState.minLayer = min(s_levelState.minLayer, sector->layer);
+			s_levelState.maxLayer = max(s_levelState.maxLayer, sector->layer);
 
 			// Vertices
 			line = parser.readLine(bufferPos);
@@ -513,7 +433,7 @@ namespace TFE_Jedi
 				wall->mirror = -1;
 				if (adjoin != -1)
 				{
-					wall->nextSector = &s_sectors[adjoin];
+					wall->nextSector = &s_levelState.sectors[adjoin];
 					if (mirror == -1)
 					{
 						TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Adjoining wall missing mirror.");
@@ -530,7 +450,7 @@ namespace TFE_Jedi
 				wall->midTex = nullptr;
 				if (midTex != -1)
 				{
-					wall->midTex = &s_textures[midTex];
+					wall->midTex = &s_levelIntState.textures[midTex];
 					wall->midOffset.x = floatToFixed16(midOffsetX) * 8;
 					wall->midOffset.z = floatToFixed16(midOffsetZ) * 8;
 				}
@@ -538,7 +458,7 @@ namespace TFE_Jedi
 				wall->topTex = nullptr;
 				if (topTex != -1)
 				{
-					wall->topTex = &s_textures[topTex];
+					wall->topTex = &s_levelIntState.textures[topTex];
 					wall->topOffset.x = floatToFixed16(topOffsetX) * 8;
 					wall->topOffset.z = floatToFixed16(topOffsetZ) * 8;
 				}
@@ -546,7 +466,7 @@ namespace TFE_Jedi
 				wall->botTex = nullptr;
 				if (botTex != -1)
 				{
-					wall->botTex = &s_textures[botTex];
+					wall->botTex = &s_levelIntState.textures[botTex];
 					wall->botOffset.x = floatToFixed16(botOffsetX) * 8;
 					wall->botOffset.z = floatToFixed16(botOffsetZ) * 8;
 				}
@@ -554,7 +474,7 @@ namespace TFE_Jedi
 				wall->signTex = nullptr;
 				if (signTex != -1)
 				{
-					wall->signTex = &s_textures[signTex];
+					wall->signTex = &s_levelIntState.textures[signTex];
 					wall->signOffset.x = floatToFixed16(signOffsetX) * 8;
 					wall->signOffset.z = floatToFixed16(signOffsetZ) * 8;
 				}
@@ -569,8 +489,8 @@ namespace TFE_Jedi
 		}
 
 		// Process sectors after load.
-		RSector* sector = s_sectors;
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		RSector* sector = s_levelState.sectors;
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
 			RWall* wall = sector->walls;
 			for (s32 w = 0; w < sector->wallCount; w++, wall++)
@@ -595,16 +515,10 @@ namespace TFE_Jedi
 		return true;
 	}
 
-	TextureData** level_getTextures(s32* count)
-	{
-		*count = s_textureCount;
-		return s_textures;
-	}
-
 	void level_freeAllAssets()
 	{
-		TFE_Sprite_Jedi::freeAll();
-		TFE_Model_Jedi::freeAll();
+		TFE_Sprite_Jedi::freeLevelData();
+		TFE_Model_Jedi::freeLevelData();
 	}
 
 	JBool level_isGoalComplete(s32 goalIndex)
@@ -702,11 +616,11 @@ namespace TFE_Jedi
 		while (msg != MSG_FREE_TASK)
 		{
 			task_localBlockBegin;
-			AmbientSound* ambientSound = (AmbientSound*)allocator_getHead(s_ambientSounds);
+			AmbientSound* ambientSound = (AmbientSound*)allocator_getHead(s_levelState.ambientSounds);
 			while (ambientSound)
 			{
 				ambientSound->instanceId = sound_maintain(ambientSound->instanceId, ambientSound->soundId, ambientSound->pos);
-				ambientSound = (AmbientSound*)allocator_getNext(s_ambientSounds);
+				ambientSound = (AmbientSound*)allocator_getNext(s_levelState.ambientSounds);
 			}
 			task_localBlockEnd;
 			task_yield(72);	// half a second.
@@ -716,12 +630,12 @@ namespace TFE_Jedi
 
 	void level_addAmbientSound(SoundSourceId soundId, vec3_fixed pos)
 	{
-		if (!s_ambientSounds)
+		if (!s_levelState.ambientSounds)
 		{
-			s_ambientSounds = allocator_create(sizeof(AmbientSound));
-			s_ambientSoundTask = createSubTask("AmbientSound", ambientSoundTaskFunc);
+			s_levelState.ambientSounds = allocator_create(sizeof(AmbientSound));
+			s_levelIntState.ambientSoundTask = createSubTask("AmbientSound", ambientSoundTaskFunc);
 		}
-		AmbientSound* ambientSound = (AmbientSound*)allocator_newItem(s_ambientSounds);
+		AmbientSound* ambientSound = (AmbientSound*)allocator_newItem(s_levelState.ambientSounds);
 		ambientSound->soundId = soundId;
 		ambientSound->instanceId = 0;
 		ambientSound->pos = pos;
@@ -778,23 +692,23 @@ namespace TFE_Jedi
 
 		while (line = parser.readLine(bufferPos))
 		{
-			if (sscanf(line, "PODS %d", &s_podCount) == 1)
+			if (sscanf(line, "PODS %d", &s_levelIntState.podCount) == 1)
 			{
-				s_pods = (JediModel**)res_alloc(sizeof(JediModel*)*s_podCount);
-				for (s32 p = 0; p < s_podCount; p++)
+				s_levelIntState.pods = (JediModel**)level_alloc(sizeof(JediModel*)*s_levelIntState.podCount);
+				for (s32 p = 0; p < s_levelIntState.podCount; p++)
 				{
 					line = parser.readLine(bufferPos);
-					s_pods[p] = nullptr;
+					s_levelIntState.pods[p] = nullptr;
 
 					if (line)
 					{
 						char podName[32];
 						if (sscanf(line, " POD: %s", podName) == 1)
 						{
-							s_pods[p] = TFE_Model_Jedi::get(podName);
-							if (!s_pods[p])
+							s_levelIntState.pods[p] = TFE_Model_Jedi::get(podName);
+							if (!s_levelIntState.pods[p])
 							{
-								s_pods[p] = TFE_Model_Jedi::get("default.3do");
+								s_levelIntState.pods[p] = TFE_Model_Jedi::get("default.3do");
 							}
 						}
 						else
@@ -804,23 +718,23 @@ namespace TFE_Jedi
 					}
 				}
 			}
-			else if (sscanf(line, "SPRS %d", &s_spriteCount) == 1)
+			else if (sscanf(line, "SPRS %d", &s_levelIntState.spriteCount) == 1)
 			{
-				s_sprites = (JediWax**)res_alloc(sizeof(JediWax*)*s_spriteCount);
-				for (s32 s = 0; s < s_spriteCount; s++)
+				s_levelIntState.sprites = (JediWax**)level_alloc(sizeof(JediWax*)*s_levelIntState.spriteCount);
+				for (s32 s = 0; s < s_levelIntState.spriteCount; s++)
 				{
 					line = parser.readLine(bufferPos);
-					s_sprites[s] = nullptr;
+					s_levelIntState.sprites[s] = nullptr;
 
 					if (line)
 					{
 						char name[32];
 						if (sscanf(line, " SPR: %s ", name) == 1)
 						{
-							s_sprites[s] = TFE_Sprite_Jedi::getWax(name);
-							if (!s_sprites[s])
+							s_levelIntState.sprites[s] = TFE_Sprite_Jedi::getWax(name);
+							if (!s_levelIntState.sprites[s])
 							{
-								s_sprites[s] = TFE_Sprite_Jedi::getWax("default.wax");
+								s_levelIntState.sprites[s] = TFE_Sprite_Jedi::getWax("default.wax");
 							}
 						}
 						else
@@ -830,23 +744,23 @@ namespace TFE_Jedi
 					}
 				}
 			}
-			else if (sscanf(line, "FMES %d", &s_fmeCount) == 1)
+			else if (sscanf(line, "FMES %d", &s_levelIntState.fmeCount) == 1)
 			{
-				s_frames = (JediFrame**)res_alloc(sizeof(JediFrame*)*s_fmeCount);
-				for (s32 f = 0; f < s_fmeCount; f++)
+				s_levelIntState.frames = (JediFrame**)level_alloc(sizeof(JediFrame*)*s_levelIntState.fmeCount);
+				for (s32 f = 0; f < s_levelIntState.fmeCount; f++)
 				{
 					line = parser.readLine(bufferPos);
-					s_frames[f] = nullptr;
+					s_levelIntState.frames[f] = nullptr;
 
 					if (line)
 					{
 						char name[32];
 						if (sscanf(line, " FME: %s ", name) == 1)
 						{
-							s_frames[f] = TFE_Sprite_Jedi::getFrame(name);
-							if (!s_frames[f])
+							s_levelIntState.frames[f] = TFE_Sprite_Jedi::getFrame(name);
+							if (!s_levelIntState.frames[f])
 							{
-								s_frames[f] = TFE_Sprite_Jedi::getFrame("default.fme");
+								s_levelIntState.frames[f] = TFE_Sprite_Jedi::getFrame("default.fme");
 							}
 						}
 						else
@@ -856,20 +770,20 @@ namespace TFE_Jedi
 					}
 				}
 			}
-			else if (sscanf(line, "SOUNDS %d", &s_soundCount) == 1)
+			else if (sscanf(line, "SOUNDS %d", &s_levelIntState.soundCount) == 1)
 			{
-				s_soundIds = (SoundSourceId*)res_alloc(sizeof(SoundSourceId)*s_soundCount);
-				for (s32 s = 0; s < s_soundCount; s++)
+				s_levelIntState.soundIds = (SoundSourceId*)level_alloc(sizeof(SoundSourceId)*s_levelIntState.soundCount);
+				for (s32 s = 0; s < s_levelIntState.soundCount; s++)
 				{
 					line = parser.readLine(bufferPos);
-					s_soundIds[s] = NULL_SOUND;
+					s_levelIntState.soundIds[s] = NULL_SOUND;
 
 					if (line)
 					{
 						char name[32];
 						if (sscanf(line, " SOUND: %s ", name) == 1)
 						{
-							s_soundIds[s] = sound_load(name, SOUND_PRIORITY_LOW2);
+							s_levelIntState.soundIds[s] = sound_load(name, SOUND_PRIORITY_LOW2);
 						}
 						else
 						{
@@ -878,9 +792,9 @@ namespace TFE_Jedi
 					}
 				}
 			}
-			else if (sscanf(line, "OBJECTS %d", &s_objectCount) == 1)
+			else if (sscanf(line, "OBJECTS %d", &s_levelIntState.objectCount) == 1)
 			{
-				s32 count = s_objectCount;
+				s32 count = s_levelIntState.objectCount;
 				JBool readNextLine = JTRUE;
 				for (s32 objIndex = 0; objIndex < count;)
 				{
@@ -934,18 +848,18 @@ namespace TFE_Jedi
 							case KW_3D:
 							{
 								sector_addObject(sector, obj);
-								obj3d_setData(obj, s_pods[s_dataIndex]);
+								obj3d_setData(obj, s_levelIntState.pods[s_dataIndex]);
 								obj3d_computeTransform(obj);
 							} break;
 							case KW_SPRITE:
 							{
 								sector_addObject(sector, obj);
-								sprite_setData(obj, s_sprites[s_dataIndex]);
+								sprite_setData(obj, s_levelIntState.sprites[s_dataIndex]);
 							} break;
 							case KW_FRAME:
 							{
 								sector_addObject(sector, obj);
-								frame_setData(obj, s_frames[s_dataIndex]);
+								frame_setData(obj, s_levelIntState.frames[s_dataIndex]);
 							} break;
 							case KW_SPIRIT:
 							{
@@ -954,17 +868,17 @@ namespace TFE_Jedi
 							} break;
 							case KW_SOUND:
 							{
-								level_addAmbientSound(s_soundIds[s_dataIndex], obj->posWS);
+								level_addAmbientSound(s_levelIntState.soundIds[s_dataIndex], obj->posWS);
 								freeObject(obj);
 								obj = nullptr;
 							} break;
 							case KW_SAFE:
 							{
-								if (!s_safeLoc)
+								if (!s_levelState.safeLoc)
 								{
-									s_safeLoc = allocator_create(sizeof(Safe));
+									s_levelState.safeLoc = allocator_create(sizeof(Safe));
 								}
-								Safe* safe = (Safe*)allocator_newItem(s_safeLoc);
+								Safe* safe = (Safe*)allocator_newItem(s_levelState.safeLoc);
 								safe->sector = sector;
 								safe->x = obj->posWS.x;
 								safe->z = obj->posWS.z;
@@ -988,11 +902,11 @@ namespace TFE_Jedi
 							readNextLine = object_parseSeq(obj, &parser, &bufferPos);
 							if (obj->entityFlags & ETFLAG_PLAYER)
 							{
-								if (!s_safeLoc)
+								if (!s_levelState.safeLoc)
 								{
-									s_safeLoc = allocator_create(sizeof(Safe));
+									s_levelState.safeLoc = allocator_create(sizeof(Safe));
 								}
-								Safe* safe = (Safe*)allocator_newItem(s_safeLoc);
+								Safe* safe = (Safe*)allocator_newItem(s_levelState.safeLoc);
 								safe->sector = obj->sector;
 								safe->x = obj->posWS.x;
 								safe->z = obj->posWS.z;
@@ -1010,31 +924,28 @@ namespace TFE_Jedi
 
 	Safe* level_getSafeFromSector(RSector* sector)
 	{
-		Safe* safe = (Safe*)allocator_getHead(s_safeLoc);
+		Safe* safe = (Safe*)allocator_getHead(s_levelState.safeLoc);
 		while (safe)
 		{
 			if (safe->sector == sector)
 			{
 				return safe;
 			}
-			else
-			{
-				safe = (Safe*)allocator_getNext(s_safeLoc);
-			}
+			safe = (Safe*)allocator_getNext(s_levelState.safeLoc);
 		}
 		return nullptr;
 	}
 		
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1)
 	{
-		*parallax0 = s_parallax0;
-		*parallax1 = s_parallax1;
+		*parallax0 = s_levelState.parallax0;
+		*parallax1 = s_levelState.parallax1;
 	}
 
 	void setSkyParallax(fixed16_16 parallax0, fixed16_16 parallax1)
 	{
-		s_parallax0 = parallax0;
-		s_parallax1 = parallax1;
+		s_levelState.parallax0 = parallax0;
+		s_levelState.parallax1 = parallax1;
 	}
 
 	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector)

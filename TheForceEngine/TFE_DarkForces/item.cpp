@@ -84,12 +84,12 @@ namespace TFE_DarkForces
 			const char* item = c_itemResoure[i];
 			if (strstr(item, ".WAX"))
 			{
-				s_itemData[i].wax = TFE_Sprite_Jedi::getWax(item);
+				s_itemData[i].wax = TFE_Sprite_Jedi::getWax(item, POOL_GAME);
 				s_itemData[i].isWax = JTRUE;
 			}
 			else
 			{
-				s_itemData[i].frame = TFE_Sprite_Jedi::getFrame(item);
+				s_itemData[i].frame = TFE_Sprite_Jedi::getFrame(item, POOL_GAME);
 				s_itemData[i].isWax = JFALSE;
 			}
 		}

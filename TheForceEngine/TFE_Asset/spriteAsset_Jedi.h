@@ -88,10 +88,17 @@ typedef WaxFrame JediFrame;
 
 namespace TFE_Sprite_Jedi
 {
-	JediFrame* getFrame(const char* name);
-	JediWax*   getWax(const char* name);
+	JediFrame* getFrame(const char* name, AssetPool pool = POOL_LEVEL);
+	JediWax*   getWax(const char* name, AssetPool pool = POOL_LEVEL);
 	void freeAll();
+	void freeLevelData();
 
-	void getWaxList(std::vector<JediWax*>& list);
-	void getFrameList(std::vector<JediFrame*>& list);
+	const std::vector<JediWax*>& getWaxList(AssetPool pool = POOL_LEVEL);
+	const std::vector<JediFrame*>& getFrameList(AssetPool pool = POOL_LEVEL);
+
+	bool getWaxIndex(JediWax* wax, s32* index, AssetPool* pool);
+	JediWax* getWaxByIndex(s32 index, AssetPool pool);
+
+	bool getFrameIndex(JediFrame* frame, s32* index, AssetPool* pool);
+	JediFrame* getFrameByIndex(s32 index, AssetPool pool);
 }

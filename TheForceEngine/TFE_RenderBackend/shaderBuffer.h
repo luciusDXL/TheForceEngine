@@ -34,8 +34,8 @@ public:
 	void destroy();
 
 	void update(const void* buffer, size_t size);
-	void bind(s32 bindPoint);
-	void unbind(s32 bindPoint);
+	void bind(s32 bindPoint) const;
+	void unbind(s32 bindPoint) const;
 
 	inline u32 getHandle() const { return m_gpuHandle[0]; }
 

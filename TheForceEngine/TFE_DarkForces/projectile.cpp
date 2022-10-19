@@ -105,19 +105,19 @@ namespace TFE_DarkForces
 	//////////////////////////////////////////////////////////////
 	void projectile_startup()
 	{
-		s_boltModel         = TFE_Model_Jedi::get("wrbolt.3do");
-		s_thermalDetProj    = TFE_Sprite_Jedi::getFrame("wdet.fme");
-		s_repeaterProj      = TFE_Sprite_Jedi::getFrame("bullet.fme");
-		s_plasmaProj        = TFE_Sprite_Jedi::getWax("wemiss.wax");
-		s_mortarProj        = TFE_Sprite_Jedi::getWax("wshell.wax");
-		s_landmineWpnFrame  = TFE_Sprite_Jedi::getFrame("wmine.fme");
-		s_cannonProj        = TFE_Sprite_Jedi::getWax("wplasma.wax");
-		s_missileProj       = TFE_Sprite_Jedi::getWax("wmsl.wax");
-		s_landmineFrame     = TFE_Sprite_Jedi::getFrame("wlmine.fme");
-		s_greenBoltModel    = TFE_Model_Jedi::get("wgbolt.3do");
-		s_probeProj         = TFE_Sprite_Jedi::getWax("widball.wax");
-		s_homingMissileProj = TFE_Sprite_Jedi::getWax("wdt3msl.wax");
-		s_bobafetBall       = TFE_Sprite_Jedi::getWax("bobaball.wax");
+		s_boltModel         = TFE_Model_Jedi::get("wrbolt.3do", POOL_GAME);
+		s_thermalDetProj    = TFE_Sprite_Jedi::getFrame("wdet.fme", POOL_GAME);
+		s_repeaterProj      = TFE_Sprite_Jedi::getFrame("bullet.fme", POOL_GAME);
+		s_plasmaProj        = TFE_Sprite_Jedi::getWax("wemiss.wax", POOL_GAME);
+		s_mortarProj        = TFE_Sprite_Jedi::getWax("wshell.wax", POOL_GAME);
+		s_landmineWpnFrame  = TFE_Sprite_Jedi::getFrame("wmine.fme", POOL_GAME);
+		s_cannonProj        = TFE_Sprite_Jedi::getWax("wplasma.wax", POOL_GAME);
+		s_missileProj       = TFE_Sprite_Jedi::getWax("wmsl.wax", POOL_GAME);
+		s_landmineFrame     = TFE_Sprite_Jedi::getFrame("wlmine.fme", POOL_GAME);
+		s_greenBoltModel    = TFE_Model_Jedi::get("wgbolt.3do", POOL_GAME);
+		s_probeProj         = TFE_Sprite_Jedi::getWax("widball.wax", POOL_GAME);
+		s_homingMissileProj = TFE_Sprite_Jedi::getWax("wdt3msl.wax", POOL_GAME);
+		s_bobafetBall       = TFE_Sprite_Jedi::getWax("bobaball.wax", POOL_GAME);
 
 		s_stdProjReflectSnd      = sound_load("boltref1.voc", SOUND_PRIORITY_LOW1);
 		s_thermalDetReflectSnd   = sound_load("thermal1.voc", SOUND_PRIORITY_LOW1);
@@ -1559,6 +1559,18 @@ namespace TFE_DarkForces
 		angle14_32 pitch = vertAngle + arcCosFixed(sinAngle, vertAngle);
 		proj->speed = div16(dist + dy, distOverSpd);
 		proj_setTransform(proj, pitch, obj->yaw);
+	}
+
+	// TFE: Serialization functionality.
+	s32 proj_getLogicIndex(ProjectileLogic* logic)
+	{
+		return allocator_getIndex(s_projectiles, logic);
+	}
+
+	ProjectileLogic* proj_getByLogicIndex(s32 index)
+	{
+		if (index < 0) { return nullptr; }
+		return (ProjectileLogic*)allocator_getByIndex(s_projectiles, index);
 	}
 		
 	// Returns JTRUE if the hit was properly handled, otherwise returns JFALSE.

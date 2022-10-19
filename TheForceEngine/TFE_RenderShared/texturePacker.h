@@ -41,6 +41,8 @@ namespace TFE_Jedi
 		s32 height = 0;
 		s32 texturesPacked = 0;			// Total textures packed over all pages.
 		s32 pageCount = 0;				// Number of texture pages.
+		s32 reservedPages = 0;			// Number of reserved pages.
+		s32 reservedTexturesPacked = 0;
 
 		// For debugging.
 		char name[64];
@@ -56,8 +58,17 @@ namespace TFE_Jedi
 	// Commit the final packing to GPU memory.
 	void texturepacker_commit();
 
+	// Reserved Pages
+	void texturepacker_reserveCommitedPages(TexturePacker* texturePacker);
+	bool texturepacker_hasReservedPages(TexturePacker* texturePacker);
+	void texturepacker_discardUnreservedPages(TexturePacker* texturePacker);
+
+	// Global Texture Packer.
+	TexturePacker* texturepacker_getGlobal();
+	void texturepacker_freeGlobal();
+
 	// Pack textures of various types into a single texture atlas.
 	// The client must provide a 'getList' function to get a list of 'TextureInfo' (see above).
 	// Note this may be called multiple times on the same texture packer, new pages are created as needed.
-	s32 texturepacker_pack(TextureListCallback getList);
+	s32 texturepacker_pack(TextureListCallback getList, AssetPool pool);
 }  // TFE_Jedi

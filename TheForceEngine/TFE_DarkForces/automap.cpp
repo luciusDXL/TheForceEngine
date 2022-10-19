@@ -3,6 +3,7 @@
 #include "hud.h"
 #include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Memory/list.h>
@@ -218,11 +219,11 @@ namespace TFE_DarkForces
 			} break;
 			case MAP_LAYER_UP:
 			{
-				s_mapLayer = min(s_maxLayer, s_mapLayer + 1);
+				s_mapLayer = min(s_levelState.maxLayer, s_mapLayer + 1);
 			} break;
 			case MAP_LAYER_DOWN:
 			{
-				s_mapLayer = max(s_minLayer, s_mapLayer - 1);
+				s_mapLayer = max(s_levelState.minLayer, s_mapLayer - 1);
 			} break;
 			case MAP_ENABLE_AUTOCENTER:
 			{
@@ -326,8 +327,8 @@ namespace TFE_DarkForces
 		s_mapTop   = s_scrTopScaled + s_mapZ0;
 
 		// Draw the sectors.
-		RSector* sector = s_sectors;
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		RSector* sector = s_levelState.sectors;
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
 			if (!s_mapShowAllLayers)
 			{

@@ -4,6 +4,7 @@
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -776,20 +777,20 @@ namespace TFE_Jedi
 
 	void TFE_Sectors_Float::allocateCachedData()
 	{
-		if (m_cachedSectorCount && m_cachedSectorCount != s_sectorCount)
+		if (m_cachedSectorCount && m_cachedSectorCount != s_levelState.sectorCount)
 		{
 			freeCachedData();
 		}
 
 		if (!m_cachedSectors)
 		{
-			m_cachedSectorCount = s_sectorCount;
+			m_cachedSectorCount = s_levelState.sectorCount;
 			m_cachedSectors = (SectorCached*)level_alloc(sizeof(SectorCached) * m_cachedSectorCount);
 			memset(m_cachedSectors, 0, sizeof(SectorCached) * m_cachedSectorCount);
 
 			for (u32 i = 0; i < m_cachedSectorCount; i++)
 			{
-				m_cachedSectors[i].sector = &s_sectors[i];
+				m_cachedSectors[i].sector = &s_levelState.sectors[i];
 				updateCachedSector(&m_cachedSectors[i], SDF_ALL);
 			}
 		}

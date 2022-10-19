@@ -5,6 +5,7 @@
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>
@@ -18,6 +19,7 @@
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
+#include <TFE_RenderShared/texturePacker.h>
 
 #include <TFE_FrontEndUI/console.h>
 
@@ -30,7 +32,6 @@
 #include "sbuffer.h"
 #include "sectorDisplayList.h"
 #include "spriteDisplayList.h"
-#include "texturePacker.h"
 #include "../rcommon.h"
 
 #define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
@@ -46,12 +47,11 @@ namespace TFE_Jedi
 		UPLOAD_WALLS    = FLAG_BIT(2),
 		UPLOAD_ALL      = UPLOAD_SECTORS | UPLOAD_VERTICES | UPLOAD_WALLS
 	};
-
 	enum Constants
 	{
 		SPRITE_PASS = SECTOR_PASS_COUNT
 	};
-		
+
 	struct GPUSourceData
 	{
 		Vec4f* sectors;
@@ -59,109 +59,112 @@ namespace TFE_Jedi
 		u32 sectorSize;
 		u32 wallSize;
 	};
-
 	struct Portal
 	{
 		Vec2f v0, v1;
-		f32 y0, y1;
+		f32   y0, y1;
 		RSector* next;
-		Frustum frustum;
-		RWall* wall;
+		Frustum  frustum;
+		RWall*   wall;
 	};
-		
-	GPUSourceData s_gpuSourceData = { 0 };
+	struct ShaderInputs
+	{
+		s32 cameraPosId;
+		s32 cameraViewId;
+		s32 cameraProjId;
+		s32 cameraDirId;
+		s32 lightDataId;
+	};
 
-	TextureGpu* s_colormapTex = nullptr;
-	Shader m_wallShader[SECTOR_PASS_COUNT];
-	Shader m_spriteShader;
-	ShaderBuffer m_sectors;
-	ShaderBuffer m_walls;
-	s32 m_cameraPosId[SECTOR_PASS_COUNT+1];
-	s32 m_cameraViewId[SECTOR_PASS_COUNT+1];
-	s32 m_cameraProjId[SECTOR_PASS_COUNT+1];
-	s32 m_cameraDirId[SECTOR_PASS_COUNT+1];
-	s32 m_lightDataId[SECTOR_PASS_COUNT+1];
-	s32 m_skyParallaxId[SECTOR_PASS_COUNT];
-	s32 m_skyParamId[SECTOR_PASS_COUNT];
-	s32 m_cameraRightId;
-	Vec3f m_viewDir;
-	
-	IndexBuffer m_indexBuffer;
+	static GPUSourceData s_gpuSourceData = { 0 };
+
+	static TextureGpu*  s_colormapTex = nullptr;
+	static ShaderBuffer s_sectorGpuBuffer;
+	static ShaderBuffer s_wallGpuBuffer;
+	static Shader s_spriteShader;
+	static Shader s_wallShader[SECTOR_PASS_COUNT];
+	static ShaderInputs s_shaderInputs[SECTOR_PASS_COUNT + 1];
+	static s32 s_skyParallaxId[SECTOR_PASS_COUNT];
+	static s32 s_skyParamId[SECTOR_PASS_COUNT];
+	static s32 s_cameraRightId;
+
+	static IndexBuffer s_indexBuffer;
 	static GPUCachedSector* s_cachedSectors;
 	static bool s_enableDebug = false;
-	static s32 s_gpuFrame;
 
-	static Portal s_portalList[2048];
+	static s32 s_gpuFrame;
 	static s32 s_portalListCount = 0;
 	static s32 s_rangeCount;
-	static Vec2f s_range[2];
-	static Vec2f s_rangeSrc[2];
 
-	static TexturePacker* s_textures = nullptr;
+	static Portal s_portalList[2048];
+	static Vec2f  s_range[2];
+	static Vec2f  s_rangeSrc[2];
 
 	static bool s_showWireframe = false;
 	static SkyMode s_skyMode = SKYMODE_CYLINDER;
-				
+	static RSector* s_clipSector;
+	static Vec3f s_clipObjPos;
+
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
 	extern Vec3f s_cameraDir;
 	extern Vec3f s_cameraRight;
 	extern ShaderBuffer s_displayListPlanesGPU;
-
+		
 	bool loadSpriteShader()
 	{
-		if (!m_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", 0, nullptr, SHADER_VER_STD))
+		if (!s_spriteShader.load("Shaders/gpu_render_sprite.vert", "Shaders/gpu_render_sprite.frag", 0, nullptr, SHADER_VER_STD))
 		{
 			return false;
 		}
-		m_spriteShader.enableClipPlanes(6);
+		s_spriteShader.enableClipPlanes(6);
 
-		m_cameraPosId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraPos");
-		m_cameraViewId[SPRITE_PASS]  = m_spriteShader.getVariableId("CameraView");
-		m_cameraRightId              = m_spriteShader.getVariableId("CameraRight");
-		m_cameraProjId[SPRITE_PASS]  = m_spriteShader.getVariableId("CameraProj");
-		m_cameraDirId[SPRITE_PASS]   = m_spriteShader.getVariableId("CameraDir");
-		m_lightDataId[SPRITE_PASS]   = m_spriteShader.getVariableId("LightData");
+		s_shaderInputs[SPRITE_PASS].cameraPosId  = s_spriteShader.getVariableId("CameraPos");
+		s_shaderInputs[SPRITE_PASS].cameraViewId = s_spriteShader.getVariableId("CameraView");
+		s_shaderInputs[SPRITE_PASS].cameraProjId = s_spriteShader.getVariableId("CameraProj");
+		s_shaderInputs[SPRITE_PASS].cameraDirId  = s_spriteShader.getVariableId("CameraDir");
+		s_shaderInputs[SPRITE_PASS].lightDataId  = s_spriteShader.getVariableId("LightData");
+		s_cameraRightId = s_spriteShader.getVariableId("CameraRight");
 
-		m_spriteShader.bindTextureNameToSlot("DrawListPosXZ_Texture", 0);
-		m_spriteShader.bindTextureNameToSlot("DrawListPosYU_Texture", 1);
-		m_spriteShader.bindTextureNameToSlot("DrawListTexId_Texture", 2);
+		s_spriteShader.bindTextureNameToSlot("DrawListPosXZ_Texture", 0);
+		s_spriteShader.bindTextureNameToSlot("DrawListPosYU_Texture", 1);
+		s_spriteShader.bindTextureNameToSlot("DrawListTexId_Texture", 2);
 
-		m_spriteShader.bindTextureNameToSlot("Colormap",     3);
-		m_spriteShader.bindTextureNameToSlot("Palette",      4);
-		m_spriteShader.bindTextureNameToSlot("Textures",     5);
-		m_spriteShader.bindTextureNameToSlot("TextureTable", 6);
-		m_spriteShader.bindTextureNameToSlot("DrawListPlanes", 7);
+		s_spriteShader.bindTextureNameToSlot("Colormap",       3);
+		s_spriteShader.bindTextureNameToSlot("Palette",        4);
+		s_spriteShader.bindTextureNameToSlot("Textures",       5);
+		s_spriteShader.bindTextureNameToSlot("TextureTable",   6);
+		s_spriteShader.bindTextureNameToSlot("DrawListPlanes", 7);
 
 		return true;
 	}
 	
 	bool loadShaderVariant(s32 index, s32 defineCount, ShaderDefine* defines)
 	{
-		if (!m_wallShader[index].load("Shaders/gpu_render_wall.vert", "Shaders/gpu_render_wall.frag", defineCount, defines, SHADER_VER_STD))
+		if (!s_wallShader[index].load("Shaders/gpu_render_wall.vert", "Shaders/gpu_render_wall.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;
 		}
-		m_wallShader[index].enableClipPlanes(6);
+		s_wallShader[index].enableClipPlanes(6);
 
-		m_cameraPosId[index]   = m_wallShader[index].getVariableId("CameraPos");
-		m_cameraViewId[index]  = m_wallShader[index].getVariableId("CameraView");
-		m_cameraProjId[index]  = m_wallShader[index].getVariableId("CameraProj");
-		m_cameraDirId[index]   = m_wallShader[index].getVariableId("CameraDir");
-		m_lightDataId[index]   = m_wallShader[index].getVariableId("LightData");
-		m_skyParallaxId[index] = m_wallShader[index].getVariableId("SkyParallax");
-		m_skyParamId[index]    = m_wallShader[index].getVariableId("SkyParam");
+		s_shaderInputs[index].cameraPosId  = s_wallShader[index].getVariableId("CameraPos");
+		s_shaderInputs[index].cameraViewId = s_wallShader[index].getVariableId("CameraView");
+		s_shaderInputs[index].cameraProjId = s_wallShader[index].getVariableId("CameraProj");
+		s_shaderInputs[index].cameraDirId  = s_wallShader[index].getVariableId("CameraDir");
+		s_shaderInputs[index].lightDataId  = s_wallShader[index].getVariableId("LightData");
+		s_skyParallaxId[index] = s_wallShader[index].getVariableId("SkyParallax");
+		s_skyParamId[index]    = s_wallShader[index].getVariableId("SkyParam");
 
-		m_wallShader[index].bindTextureNameToSlot("Sectors", 0);
-		m_wallShader[index].bindTextureNameToSlot("Walls", 1);
-		m_wallShader[index].bindTextureNameToSlot("DrawListPos", 2);
-		m_wallShader[index].bindTextureNameToSlot("DrawListData", 3);
-		m_wallShader[index].bindTextureNameToSlot("DrawListPlanes", 4);
-		m_wallShader[index].bindTextureNameToSlot("Colormap", 5);
-		m_wallShader[index].bindTextureNameToSlot("Palette", 6);
-		m_wallShader[index].bindTextureNameToSlot("Textures", 7);
-		m_wallShader[index].bindTextureNameToSlot("TextureTable", 8);
+		s_wallShader[index].bindTextureNameToSlot("Sectors",        0);
+		s_wallShader[index].bindTextureNameToSlot("Walls",          1);
+		s_wallShader[index].bindTextureNameToSlot("DrawListPos",    2);
+		s_wallShader[index].bindTextureNameToSlot("DrawListData",   3);
+		s_wallShader[index].bindTextureNameToSlot("DrawListPlanes", 4);
+		s_wallShader[index].bindTextureNameToSlot("Colormap",       5);
+		s_wallShader[index].bindTextureNameToSlot("Palette",        6);
+		s_wallShader[index].bindTextureNameToSlot("Textures",       7);
+		s_wallShader[index].bindTextureNameToSlot("TextureTable",   8);
 
 		return true;
 	}
@@ -208,21 +211,21 @@ namespace TFE_Jedi
 				index[4] = i + 3;
 				index[5] = i + 2;
 			}
-			m_indexBuffer.create(6 * 65536, sizeof(u16), false, (void*)indices);
+			s_indexBuffer.create(6 * 65536, sizeof(u16), false, (void*)indices);
 			level_free(indices);
 
 			// Let's just cache the current data.
-			s_cachedSectors = (GPUCachedSector*)level_alloc(sizeof(GPUCachedSector) * s_sectorCount);
-			memset(s_cachedSectors, 0, sizeof(GPUCachedSector) * s_sectorCount);
+			s_cachedSectors = (GPUCachedSector*)level_alloc(sizeof(GPUCachedSector) * s_levelState.sectorCount);
+			memset(s_cachedSectors, 0, sizeof(GPUCachedSector) * s_levelState.sectorCount);
 
-			s_gpuSourceData.sectorSize = sizeof(Vec4f) * s_sectorCount * 2;
+			s_gpuSourceData.sectorSize = sizeof(Vec4f) * s_levelState.sectorCount * 2;
 			s_gpuSourceData.sectors = (Vec4f*)level_alloc(s_gpuSourceData.sectorSize);
 			memset(s_gpuSourceData.sectors, 0, s_gpuSourceData.sectorSize);
 
 			s32 wallCount = 0;
-			for (u32 s = 0; s < s_sectorCount; s++)
+			for (u32 s = 0; s < s_levelState.sectorCount; s++)
 			{
-				RSector* curSector = &s_sectors[s];
+				RSector* curSector = &s_levelState.sectors[s];
 				GPUCachedSector* cachedSector = &s_cachedSectors[s];
 				cachedSector->floorHeight   = fixed16ToFloat(curSector->floorHeight);
 				cachedSector->ceilingHeight = fixed16ToFloat(curSector->ceilingHeight);
@@ -245,9 +248,9 @@ namespace TFE_Jedi
 			s_gpuSourceData.walls = (Vec4f*)level_alloc(s_gpuSourceData.wallSize);
 			memset(s_gpuSourceData.walls, 0, s_gpuSourceData.wallSize);
 
-			for (u32 s = 0; s < s_sectorCount; s++)
+			for (u32 s = 0; s < s_levelState.sectorCount; s++)
 			{
-				RSector* curSector = &s_sectors[s];
+				RSector* curSector = &s_levelState.sectors[s];
 				GPUCachedSector* cachedSector = &s_cachedSectors[s];
 
 				Vec4f* wallData = &s_gpuSourceData.walls[cachedSector->wallStart*3];
@@ -297,9 +300,8 @@ namespace TFE_Jedi
 				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 				BUF_CHANNEL_FLOAT
 			};
-			m_sectors.create(s_sectorCount*2, bufferDefSectors, true, s_gpuSourceData.sectors);
-
-			m_walls.create(wallCount*3, bufferDefSectors, true, s_gpuSourceData.walls);
+			s_sectorGpuBuffer.create(s_levelState.sectorCount*2, bufferDefSectors, true, s_gpuSourceData.sectors);
+			s_wallGpuBuffer.create(wallCount*3, bufferDefSectors, true, s_gpuSourceData.walls);
 
 			// Initialize the display list with the GPU buffers.
 			s32 posIndex[]  = { 2, 2 };
@@ -331,17 +333,17 @@ namespace TFE_Jedi
 			}
 
 			// Load textures into GPU memory.
-			if (!s_textures) { s_textures = texturepacker_init("LevelTextures", 4096, 4096); }
-			if (s_textures)
+			if (texturepacker_getGlobal())
 			{
-				texturepacker_begin(s_textures);
-				texturepacker_pack(level_getLevelTextures);
-				texturepacker_pack(level_getObjectTextures);
+				texturepacker_discardUnreservedPages(texturepacker_getGlobal());
+
+				texturepacker_pack(level_getLevelTextures, POOL_LEVEL);
+				texturepacker_pack(level_getObjectTextures, POOL_LEVEL);
 				texturepacker_commit();
 			}
 
 			model_init();
-			model_loadLevelModels();
+			model_loadGpuModels();
 		}
 		else
 		{
@@ -709,10 +711,7 @@ namespace TFE_Jedi
 
 		buildSegmentBuffer(initSector, curSector, segCount, wallSegments);
 	}
-
-	static RSector* s_clipSector;
-	static Vec3f s_clipObjPos;
-
+		
 	// Clip rule called on portal segments.
 	// Return true if the segment should clip the incoming segment like a regular wall.
 	bool clipRule(s32 id)
@@ -828,6 +827,8 @@ namespace TFE_Jedi
 			}
 		}
 
+		// Set portalForObjs[portalId] = portals[topPortal], portals[botPortal]
+
 		SecObject** objIter = curSector->objectList;
 		f32 ambient = fixed16ToFloat(curSector->ambient);
 		Vec2f floorOffset = { fixed16ToFloat(curSector->floorOffset.x), fixed16ToFloat(curSector->floorOffset.z) };
@@ -893,7 +894,7 @@ namespace TFE_Jedi
 		
 		// Mark sector as being rendered for the automap.
 		curSector->flags1 |= SEC_FLAGS1_RENDERED;
-				
+
 		// Build the world-space wall segments.
 		buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1);
 
@@ -967,11 +968,11 @@ namespace TFE_Jedi
 
 		if (uploadFlags & UPLOAD_SECTORS)
 		{
-			m_sectors.update(s_gpuSourceData.sectors, s_gpuSourceData.sectorSize);
+			s_sectorGpuBuffer.update(s_gpuSourceData.sectors, s_gpuSourceData.sectorSize);
 		}
 		if (uploadFlags & UPLOAD_WALLS)
 		{
-			m_walls.update(s_gpuSourceData.walls, s_gpuSourceData.wallSize);
+			s_wallGpuBuffer.update(s_gpuSourceData.walls, s_gpuSourceData.wallSize);
 		}
 
 		return sdisplayList_getSize() > 0;
@@ -980,60 +981,60 @@ namespace TFE_Jedi
 	void drawPass(SectorPass pass)
 	{
 		if (!sdisplayList_getSize(pass)) { return; }
+
+		TexturePacker* texturePacker = texturepacker_getGlobal();
+		const TextureGpu* palette  = TFE_RenderBackend::getPaletteTexture();
+		const TextureGpu* textures = texturePacker->texture;
+		const ShaderInputs* inputs = &s_shaderInputs[pass];
+		const ShaderBuffer* textureTable = &texturePacker->textureTableGPU;
+
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
 		TFE_RenderState::setDepthFunction(CMP_LEQUAL);
+		
+		Shader* shader = &s_wallShader[pass];
+		shader->bind();
 
-		m_wallShader[pass].bind();
-		m_indexBuffer.bind();
-		m_sectors.bind(0);
-		m_walls.bind(1);
+		s_indexBuffer.bind();
+		s_sectorGpuBuffer.bind(0);
+		s_wallGpuBuffer.bind(1);
 		s_colormapTex->bind(5);
-
-		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
 		palette->bind(6);
-
-		const TextureGpu* textures = s_textures->texture;
 		textures->bind(7);
-
-		ShaderBuffer* textureTable = &s_textures->textureTableGPU;
 		textureTable->bind(8);
 
 		// Camera and lighting.
-		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, s_showWireframe ? 1.0f : 0.0f };
-		m_wallShader[pass].setVariable(m_cameraPosId[pass],  SVT_VEC3, s_cameraPos.m);
-		m_wallShader[pass].setVariable(m_cameraViewId[pass], SVT_MAT3x3, s_cameraMtx.data);
-		m_wallShader[pass].setVariable(m_cameraProjId[pass], SVT_MAT4x4, s_cameraProj.data);
-		m_wallShader[pass].setVariable(m_cameraDirId[pass],  SVT_VEC3, s_cameraDir.m);
-		m_wallShader[pass].setVariable(m_lightDataId[pass],  SVT_VEC4, lightData.m);
+		const Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, s_showWireframe ? 1.0f : 0.0f };
+		shader->setVariable(inputs->cameraPosId,  SVT_VEC3,   s_cameraPos.m);
+		shader->setVariable(inputs->cameraViewId, SVT_MAT3x3, s_cameraMtx.data);
+		shader->setVariable(inputs->cameraProjId, SVT_MAT4x4, s_cameraProj.data);
+		shader->setVariable(inputs->cameraDirId,  SVT_VEC3,   s_cameraDir.m);
+		shader->setVariable(inputs->lightDataId,  SVT_VEC4,   lightData.m);
 
 		// Calculte the sky parallax.
 		fixed16_16 p0, p1;
 		TFE_Jedi::getSkyParallax(&p0, &p1);
-		f32 parallax[2] =
-		{
-			fixed16ToFloat(p0) * 0.25f,	// The values are scaled by 4 to convert from angle to fixed in the original code.
-			fixed16ToFloat(p1) * 0.25f 	// The values are scaled by 4 to convert from angle to fixed in the original code.
-		};
-		m_wallShader[pass].setVariable(m_skyParallaxId[pass], SVT_VEC2, parallax);
-		if (m_skyParamId[pass] >= 0)
+		// The values are scaled by 4 to convert from angle to fixed in the original code.
+		const f32 parallax[2] = { fixed16ToFloat(p0) * 0.25f, fixed16ToFloat(p1) * 0.25f };
+		shader->setVariable(s_skyParallaxId[pass], SVT_VEC2, parallax);
+		if (s_skyParamId[pass] >= 0)
 		{
 			u32 dispWidth, dispHeight;
 			vfb_getResolution(&dispWidth, &dispHeight);
 
-			f32 skyParam[4] =
+			const f32 fourOverTwoPi = 4.0f/6.283185f;	// 4 / 2pi
+			const f32 rad45 = 0.785398f;	// 45 degrees in radians.
+			const f32 skyParam[4] =
 			{
-				-4.0f * atan2f(s_cameraDir.z, s_cameraDir.x) / 6.283185f * parallax[0],
-				 4.0f * clamp(asinf(s_cameraDir.y), -0.785398f, 0.785398f) / 6.283185f * parallax[1],
+				-atan2f(s_cameraDir.z, s_cameraDir.x) * fourOverTwoPi * parallax[0],
+				 clamp(asinf(s_cameraDir.y), -rad45, rad45) * fourOverTwoPi * parallax[1],
 				 1.0f / (f32(dispWidth) * 0.5f),
 				 200.0f / f32(dispHeight),
 			};
-			m_wallShader[pass].setVariable(m_skyParamId[pass], SVT_VEC4, skyParam);
+			shader->setVariable(s_skyParamId[pass], SVT_VEC4, skyParam);
 		}
 
 		// Draw the sector display list.
 		sdisplayList_draw(pass);
-
-		m_wallShader[pass].unbind();
 	}
 
 	void drawSprites()
@@ -1043,32 +1044,33 @@ namespace TFE_Jedi
 		TFE_RenderState::setStateEnable(true,  STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
 		TFE_RenderState::setDepthFunction(CMP_ALWAYS);
 
-		m_spriteShader.bind();
-		m_indexBuffer.bind();
+		s_spriteShader.bind();
+		s_indexBuffer.bind();
 		s_colormapTex->bind(3);
 
 		const TextureGpu* palette = TFE_RenderBackend::getPaletteTexture();
 		palette->bind(4);
 
-		const TextureGpu* textures = s_textures->texture;
+		TexturePacker* texturePacker = texturepacker_getGlobal();
+		const TextureGpu* textures = texturePacker->texture;
 		textures->bind(5);
 
-		ShaderBuffer* textureTable = &s_textures->textureTableGPU;
+		ShaderBuffer* textureTable = &texturePacker->textureTableGPU;
 		textureTable->bind(6);
 
 		// Camera and lighting.
 		Vec4f lightData = { f32(s_worldAmbient), s_cameraLightSource ? 1.0f : 0.0f, 0.0f, s_showWireframe ? 1.0f : 0.0f };
-		m_spriteShader.setVariable(m_cameraRightId, SVT_VEC3, s_cameraRight.m);
-		m_spriteShader.setVariable(m_cameraPosId[SPRITE_PASS],  SVT_VEC3, s_cameraPos.m);
-		m_spriteShader.setVariable(m_cameraViewId[SPRITE_PASS], SVT_MAT3x3, s_cameraMtx.data);
-		m_spriteShader.setVariable(m_cameraProjId[SPRITE_PASS], SVT_MAT4x4, s_cameraProj.data);
-		m_spriteShader.setVariable(m_cameraDirId[SPRITE_PASS],  SVT_VEC3, s_cameraDir.m);
-		m_spriteShader.setVariable(m_lightDataId[SPRITE_PASS],  SVT_VEC4, lightData.m);
+		s_spriteShader.setVariable(s_cameraRightId, SVT_VEC3, s_cameraRight.m);
+		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].cameraPosId,  SVT_VEC3,   s_cameraPos.m);
+		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].cameraViewId, SVT_MAT3x3, s_cameraMtx.data);
+		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].cameraProjId, SVT_MAT4x4, s_cameraProj.data);
+		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].cameraDirId,  SVT_VEC3,   s_cameraDir.m);
+		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].lightDataId,  SVT_VEC4,   lightData.m);
 
 		// Draw the sector display list.
 		sprdisplayList_draw();
 
-		m_spriteShader.unbind();
+		s_spriteShader.unbind();
 	}
 
 	void draw3d()
@@ -1081,15 +1083,19 @@ namespace TFE_Jedi
 
 		s_colormapTex->bind(1);
 
-		const TextureGpu* textures = s_textures->texture;
+		TexturePacker* texturePacker = texturepacker_getGlobal();
+		const TextureGpu* textures = texturePacker->texture;
 		textures->bind(2);
 
-		ShaderBuffer* textureTable = &s_textures->textureTableGPU;
+		ShaderBuffer* textureTable = &texturePacker->textureTableGPU;
 		textureTable->bind(3);
 
 		s_displayListPlanesGPU.bind(4);
 
 		model_drawList();
+
+		// Cleanup
+		TextureGpu::clearSlots(3);
 	}
 		
 	void TFE_Sectors_GPU::draw(RSector* sector)
@@ -1133,9 +1139,9 @@ namespace TFE_Jedi
 		draw3d();
 				
 		// Cleanup
-		m_indexBuffer.unbind();
-		m_sectors.unbind(0);
-		m_walls.unbind(1);
+		s_indexBuffer.unbind();
+		s_sectorGpuBuffer.unbind(0);
+		s_wallGpuBuffer.unbind(1);
 		TextureGpu::clear(5);
 		TextureGpu::clear(6);
 

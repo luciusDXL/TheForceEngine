@@ -14,7 +14,7 @@ namespace TFE_Jedi
 	bool model_init();
 	void model_destroy();
 	// This needs to be called *after* texture packing is complete so that textureIds are already set.
-	void model_loadLevelModels();
+	void model_loadGpuModels();
 
 	void model_drawListClear();
 	void model_drawListFinish();

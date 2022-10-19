@@ -155,3 +155,12 @@ void TextureGpu::clear(u32 slot/* = 0*/)
 	glActiveTexture(GL_TEXTURE0 + slot);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
+
+void TextureGpu::clearSlots(u32 count, u32 start/* = 0*/)
+{
+	for (u32 i = 0; i < count; i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i + start);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+}

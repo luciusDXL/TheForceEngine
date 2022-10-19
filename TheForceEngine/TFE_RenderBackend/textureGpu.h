@@ -31,6 +31,7 @@ public:
 	bool update(const void* buffer, size_t size, s32 layer = -1);	// layer = -1 means update all layers, otherwise it is the layer index.
 	void bind(u32 slot = 0) const;
 	static void clear(u32 slot = 0);
+	static void clearSlots(u32 count, u32 start = 0);
 
 	u32  getWidth() const { return m_width; }
 	u32  getHeight() const { return m_height; }

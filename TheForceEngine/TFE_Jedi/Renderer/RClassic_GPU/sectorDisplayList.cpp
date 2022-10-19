@@ -230,7 +230,7 @@ namespace TFE_Jedi
 		// The new planes either match the parent or are created from the edges.
 		const Frustum* frust = &s_portalFrustumVert[s_displayPortalCount];
 		Vec4f* outPlanes = &s_displayListPlanes[s_displayPlaneCount];
-		for (s32 i = 0; i < frust->planeCount && i < 6; i++)
+		for (u32 i = 0; i < frust->planeCount && i < 6; i++)
 		{
 			outPlanes[i] = frust->planes[i];
 			s_displayPlaneCount++;

@@ -32,7 +32,8 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/audioSystem.h>
-#include <TFE_Asset/gmidAsset.h>
+#include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Archive/zipArchive.h>
 #include <TFE_Archive/gobMemoryArchive.h>
@@ -44,6 +45,9 @@
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <assert.h>
+
+// Add texture callbacks.
+#include <TFE_Jedi/Level/levelTextures.h>
 
 // Debugging
 #include <TFE_DarkForces/Actor/actorDebug.h>
@@ -247,7 +251,11 @@ namespace TFE_DarkForces
 		setInitialLevel(startLevel);
 		
 		// TFE Specific
+		escapeMenu_load();
 		actorDebug_init();
+		// Add texture callbacks.
+		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);
+		renderer_addHudTextureCallback(TFE_Jedi::level_getObjectTextures);
 
 		return true;
 	}
@@ -264,6 +272,7 @@ namespace TFE_DarkForces
 		briefingList_freeBuffer();
 		cutsceneList_freeBuffer();
 		lsystem_destroy();
+		bitmap_clearLevelData();
 
 		// Clear paths and archives.
 		TFE_Paths::clearSearchPaths();
@@ -285,7 +294,6 @@ namespace TFE_DarkForces
 		weapon_resetState();
 		renderer_resetState();
 		sound_close();
-		level_freeAllAssets();
 		agentMenu_resetState();
 		menu_resetState();
 		pda_resetState();
@@ -294,6 +302,10 @@ namespace TFE_DarkForces
 		lsystem_destroy();
 		// Free debug data
 		actorDebug_free();
+
+		// TFE
+		TFE_Sprite_Jedi::freeAll();
+		TFE_Model_Jedi::freeAll();
 	}
 
 	void DarkForces::pauseGame(bool pause)
@@ -492,6 +504,11 @@ namespace TFE_DarkForces
 					lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
 					pda_cleanup();
 
+					// Reset
+					TFE_Jedi::renderer_setType(RENDERER_SOFTWARE);
+					TFE_Jedi::render_setResolution();
+					TFE_Jedi::renderer_setLimits();
+
 					// TFE
 					reticle_enable(false);
 
@@ -509,8 +526,9 @@ namespace TFE_DarkForces
 					startNextMode();
 
 					region_clear(s_levelRegion);
-					region_clear(s_resRegion);
+					bitmap_clearLevelData();
 					bitmap_setAllocator(s_gameRegion);
+					level_freeAllAssets();
 				}
 			} break;
 		}
@@ -525,7 +543,6 @@ namespace TFE_DarkForces
 	void freeAllMidi()
 	{
 		gameMusic_stop();
-		TFE_GmidAsset::freeAll();
 	}
 
 	void pauseLevelSound()
@@ -604,7 +621,7 @@ namespace TFE_DarkForces
 			{
 				sound_levelStart();
 
-				bitmap_setAllocator(s_resRegion);
+				bitmap_setAllocator(s_levelRegion);
 				actor_clearState();
 				actorDebug_clear();
 
@@ -977,10 +994,7 @@ namespace TFE_DarkForces
 		renderer_setVisionEffect(0);
 		renderer_setupCameraLight(JFALSE, JFALSE);
 
-		if (TFE_Paths::getFilePath("wait.bm", &filePath))
-		{
-			s_loadScreen = TFE_Jedi::bitmap_load(&filePath, 1);
-		}
+		s_loadScreen = bitmap_load("wait.bm", 1, POOL_GAME);
 		if (TFE_Paths::getFilePath("wait.pal", &filePath))
 		{
 			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
@@ -1012,10 +1026,7 @@ namespace TFE_DarkForces
 		{
 			parseMessageFile(&s_hotKeyMessages, &filePath, 1);
 		}
-		if (TFE_Paths::getFilePath("diskerr.bm", &filePath))
-		{
-			s_diskErrorImg = bitmap_load(&filePath, 0);
-		}
+		s_diskErrorImg = bitmap_load("diskerr.bm", 0, POOL_GAME);
 		if (!s_diskErrorImg)
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load diskerr image.");
@@ -1029,6 +1040,11 @@ namespace TFE_DarkForces
 		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT))
 		{
 			FileStream stream;
+			if (stream.open("levelState.bin", FileStream::MODE_WRITE))
+			{
+				level_serialize(&stream);
+				stream.close();
+			}
 			if (stream.open("infState.bin", FileStream::MODE_WRITE))
 			{
 				inf_serialize(&stream);

@@ -352,7 +352,7 @@ namespace TFE_Jedi
 		{
 			return 0;
 		}
-		assert(segments[0].x1 - segments[0].x0 > 0.0f && segments[0].x1 - segments[0].x0 <= 2.0f);
+		assert(segments[0].x1 - segments[0].x0 > 0.0f);
 
 		// Split segments that cross the modulo boundary.
 		if (segments[0].x1 > 4.0f)

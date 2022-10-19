@@ -48,7 +48,7 @@ namespace TFE_Jedi
 		RClassic_Float::resetState();
 		RClassic_GPU::resetState();
 		s_hudTextureCallbacks.clear();
-
+				
 		renderer_destroy();
 		s_init = false;
 	}
@@ -114,6 +114,11 @@ namespace TFE_Jedi
 	{
 		s_rendererType = type;
 		render_setResolution();
+	}
+
+	RendererType renderer_getType()
+	{
+		return s_rendererType;
 	}
 
 	void setupInitCameraAndLights()

@@ -22,15 +22,19 @@ namespace TFE_Sprite_Jedi
 {
 	typedef std::map<std::string, JediFrame*> FrameMap;
 	typedef std::map<std::string, JediWax*> SpriteMap;
+	typedef std::vector<JediFrame*> FrameList;
+	typedef std::vector<JediWax*> SpriteList;
 
-	static FrameMap  s_frames;
-	static SpriteMap s_sprites;
+	static FrameMap   s_frames[POOL_COUNT];
+	static SpriteMap  s_sprites[POOL_COUNT];
+	static FrameList  s_frameList[POOL_COUNT];
+	static SpriteList s_spriteList[POOL_COUNT];
 	static std::vector<u8> s_buffer;
-		
-	JediFrame* getFrame(const char* name)
+
+	JediFrame* getFrame(const char* name, AssetPool pool)
 	{
-		FrameMap::iterator iFrame = s_frames.find(name);
-		if (iFrame != s_frames.end())
+		FrameMap::iterator iFrame = s_frames[pool].find(name);
+		if (iFrame != s_frames[pool].end())
 		{
 			return iFrame->second;
 		}
@@ -95,7 +99,8 @@ namespace TFE_Sprite_Jedi
 			}
 		}
 		
-		s_frames[name] = asset;
+		s_frames[pool][name] = asset;
+		s_frameList[pool].push_back(asset);
 		return asset;
 	}
 
@@ -114,10 +119,10 @@ namespace TFE_Sprite_Jedi
 		return true;
 	}
 		
-	JediWax* getWax(const char* name)
+	JediWax* getWax(const char* name, AssetPool pool)
 	{
-		SpriteMap::iterator iSprite = s_sprites.find(name);
-		if (iSprite != s_sprites.end())
+		SpriteMap::iterator iSprite = s_sprites[pool].find(name);
+		if (iSprite != s_sprites[pool].end())
 		{
 			return iSprite->second;
 		}
@@ -267,42 +272,108 @@ namespace TFE_Sprite_Jedi
 		}
 		asset->animCount = animIdx;
 
-		s_sprites[name] = asset;
+		s_sprites[pool][name] = asset;
+		s_spriteList[pool].push_back(asset);
 		return asset;
 	}
-		
-	void getWaxList(std::vector<JediWax*>& list)
+				
+	const std::vector<JediWax*>& getWaxList(AssetPool pool)
 	{
-		SpriteMap::iterator iSprite = s_sprites.begin();
-		for (; iSprite != s_sprites.end(); ++iSprite)
-		{
-			list.push_back(iSprite->second);
-		}
+		return s_spriteList[pool];
 	}
 
-	void getFrameList(std::vector<JediFrame*>& list)
+	const std::vector<JediFrame*>& getFrameList(AssetPool pool)
 	{
-		FrameMap::iterator iFrame = s_frames.begin();
-		for (; iFrame != s_frames.end(); ++iFrame)
+		return s_frameList[pool];
+	}
+
+	void freePool(AssetPool pool)
+	{
+		const size_t frameCount = s_frameList[pool].size();
+		JediFrame** frameList = s_frameList[pool].data();
+		for (size_t i = 0; i < frameCount; i++)
 		{
-			list.push_back(iFrame->second);
+			free(frameList[i]);
 		}
+		s_frames[pool].clear();
+		s_frameList[pool].clear();
+
+		const size_t waxCount = s_spriteList[pool].size();
+		JediWax** waxList = s_spriteList[pool].data();
+		for (size_t i = 0; i < waxCount; i++)
+		{
+			free(waxList[i]);
+		}
+		s_sprites[pool].clear();
+		s_spriteList[pool].clear();
 	}
 
 	void freeAll()
 	{
-		FrameMap::iterator iFrame = s_frames.begin();
-		for (; iFrame != s_frames.end(); ++iFrame)
+		for (s32 p = 0; p < POOL_COUNT; p++)
 		{
-			free(iFrame->second);
+			freePool(AssetPool(p));
 		}
-		s_frames.clear();
+	}
 
-		SpriteMap::iterator iSprite = s_sprites.begin();
-		for (; iSprite != s_sprites.end(); ++iSprite)
+	void freeLevelData()
+	{
+		freePool(POOL_LEVEL);
+	}
+
+	bool getWaxIndex(JediWax* wax, s32* index, AssetPool* pool)
+	{
+		for (s32 p = 0; p < POOL_COUNT; p++)
 		{
-			free(iSprite->second);
+			const size_t waxCount = s_spriteList[p].size();
+			JediWax** waxList = s_spriteList[p].data();
+			for (size_t i = 0; i < waxCount; i++)
+			{
+				if (waxList[i] == wax)
+				{
+					*index = s32(i);
+					*pool = AssetPool(p);
+					return true;
+				}
+			}
 		}
-		s_sprites.clear();
+		return false;
+	}
+
+	JediWax* getWaxByIndex(s32 index, AssetPool pool)
+	{
+		if (pool >= POOL_COUNT || index >= (s32)s_spriteList[pool].size())
+		{
+			return nullptr;
+		}
+		return s_spriteList[pool][index];
+	}
+
+	bool getFrameIndex(JediFrame* frame, s32* index, AssetPool* pool)
+	{
+		for (s32 p = 0; p < POOL_COUNT; p++)
+		{
+			const size_t frameCount = s_frameList[p].size();
+			JediFrame** frameList = s_frameList[p].data();
+			for (size_t i = 0; i < frameCount; i++)
+			{
+				if (frameList[i] == frame)
+				{
+					*index = s32(i);
+					*pool = AssetPool(p);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	JediFrame* getFrameByIndex(s32 index, AssetPool pool)
+	{
+		if (pool >= POOL_COUNT || index >= (s32)s_frameList[pool].size())
+		{
+			return nullptr;
+		}
+		return s_frameList[pool][index];
 	}
 }

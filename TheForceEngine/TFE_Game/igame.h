@@ -9,7 +9,6 @@
 
 extern MemoryRegion* s_gameRegion;
 extern MemoryRegion* s_levelRegion;
-extern MemoryRegion* s_resRegion;	// Region for level-specific resources.
 
 #define game_alloc(size) TFE_Memory::region_alloc(s_gameRegion, size)
 #define game_realloc(ptr, size) TFE_Memory::region_realloc(s_gameRegion, ptr, size)
@@ -18,10 +17,6 @@ extern MemoryRegion* s_resRegion;	// Region for level-specific resources.
 #define level_alloc(size) TFE_Memory::region_alloc(s_levelRegion, size)
 #define level_realloc(ptr, size) TFE_Memory::region_realloc(s_levelRegion, ptr, size)
 #define level_free(ptr) TFE_Memory::region_free(s_levelRegion, ptr)
-
-#define res_alloc(size) TFE_Memory::region_alloc(s_resRegion, size)
-#define res_realloc(ptr, size) TFE_Memory::region_realloc(s_resRegion, ptr, size)
-#define res_free(ptr) TFE_Memory::region_free(s_resRegion, ptr)
 
 struct IGame
 {

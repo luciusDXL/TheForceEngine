@@ -13,6 +13,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
@@ -3141,8 +3142,8 @@ namespace TFE_Jedi
 		
 	void inf_handleMsgLights()
 	{
-		RSector* sector = s_sectors;
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		RSector* sector = s_levelState.sectors;
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
 			fixed16_16 newAmbient = intToFixed16(sector->flags3);
 			if (newAmbient != sector->ambient)

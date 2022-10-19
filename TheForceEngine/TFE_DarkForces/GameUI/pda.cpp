@@ -23,8 +23,11 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 
 using namespace TFE_Jedi;
@@ -220,8 +223,21 @@ namespace TFE_DarkForces
 			// TFE
 			reticle_enable(true);
 
+			// Convert back to level rendering.
+			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+			if (TFE_Jedi::renderer_getType() == RENDERER_SOFTWARE && graphics->rendererIndex != RENDERER_SOFTWARE)
+			{
+				TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
+				TFE_Jedi::renderer_setLimits();
+			}
 			s_pdaOpen = JFALSE;
 			return;
+		}
+		else if (TFE_Jedi::renderer_getType() != RENDERER_SOFTWARE)
+		{
+			// Convert back to CPU rendering.
+			TFE_Jedi::renderer_setType(RENDERER_SOFTWARE);
+			TFE_Jedi::renderer_setLimits();
 		}
 		
 		tfe_updateLTime();
@@ -257,10 +273,10 @@ namespace TFE_DarkForces
 		// This allows the PDA border to overlay the map, briefing, and other "overlay" elements.
 		screenDraw_setTransColor(79);
 		menu_blitToScreen(nullptr, JTRUE/*transparent*/, JFALSE/*swap*/);
-		screenDraw_setTransColor(0);
-
+		
 		// Doing that we need to restore the transparent color before blitting the mouse cursor, otherwise its black edges will 
 		// show up incorrectly.
+		screenDraw_setTransColor(0);
 		menu_blitCursorScaled(s_cursorPos.x, s_cursorPos.z, vfb_getCpuBuffer());
 		vfb_swap();
 	}
@@ -697,7 +713,7 @@ namespace TFE_DarkForces
 				}
 			}
 
-			s32 secretPercentage = s_secretCount ? floor16(mul16(FIXED(100), div16(intToFixed16(s_secretsFound), intToFixed16(s_secretCount)))) : 0;
+			s32 secretPercentage = s_levelState.secretCount ? floor16(mul16(FIXED(100), div16(intToFixed16(s_secretsFound), intToFixed16(s_levelState.secretCount)))) : 0;
 			lactor_setState(s_pdaArt, 30, 0);
 			lactorAnim_draw(s_pdaArt, &s_overlayRect, &s_overlayRect, 0, 0, JTRUE);
 

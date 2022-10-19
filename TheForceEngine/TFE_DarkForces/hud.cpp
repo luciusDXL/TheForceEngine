@@ -164,7 +164,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	bool hud_getTextures(TextureInfoList& texList)
+	bool hud_getTextures(TextureInfoList& texList, AssetPool pool)
 	{
 		// First load the fonts.
 		hud_addFont(texList, s_hudFont);
@@ -172,13 +172,6 @@ namespace TFE_DarkForces
 		hud_addFont(texList, s_hudSuperAmmoFont);
 		hud_addFont(texList, s_hudShieldFont);
 		hud_addFont(texList, s_hudHealthFont);
-
-		// Then load the images.
-		hud_addTexture(texList, s_hudStatusL);
-		hud_addTexture(texList, s_hudStatusR);
-		hud_addTexture(texList, s_hudLightOn);
-		hud_addTexture(texList, s_hudLightOff);
-		
 		return true;
 	}
 
@@ -923,13 +916,12 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	TextureData* hud_loadTexture(const char* texFile)
 	{
-		FilePath filePath;
-		if (TFE_Paths::getFilePath(texFile, &filePath))
+		TextureData* hudTex = bitmap_load(texFile, 0, POOL_GAME);
+		if (!hudTex)
 		{
-			return bitmap_load(&filePath, 0);
+			TFE_System::logWrite(LOG_ERROR, "HUD", "Cannot load texture '%s'", texFile);
 		}
-		TFE_System::logWrite(LOG_ERROR, "HUD", "Cannot load texture '%s'", texFile);
-		return nullptr;
+		return hudTex;
 	}
 
 	Font* hud_loadFont(const char* fontFile)

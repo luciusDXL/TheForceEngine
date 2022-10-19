@@ -56,7 +56,7 @@ namespace TFE_DarkForces
 
 	void escMenu_resetCursor();
 	void escMenu_handleMousePosition();
-	bool escapeMenu_getTextures(TextureInfoList& texList);
+	bool escapeMenu_getTextures(TextureInfoList& texList, AssetPool pool);
 	EscapeMenuAction escapeMenu_updateUI();
 
 	extern void pauseLevelSound();
@@ -77,13 +77,8 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void escapeMenu_open(u8* framebuffer, u8* palette)
+	void escapeMenu_load()
 	{
-		// TFE
-		reticle_enable(false);
-
-		pauseLevelSound();
-		s_escMenuOpen = JTRUE;
 		if (!s_escMenuFrames)
 		{
 			FilePath filePath;
@@ -92,12 +87,21 @@ namespace TFE_DarkForces
 			TFE_Paths::addLocalArchive(archive);
 
 			s_escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_escMenuFrames);
-			
+
 			TFE_Paths::removeLastArchive();
 
 			// TFE
 			TFE_Jedi::renderer_addHudTextureCallback(escapeMenu_getTextures);
 		}
+	}
+
+	void escapeMenu_open(u8* framebuffer, u8* palette)
+	{
+		// TFE
+		reticle_enable(false);
+
+		pauseLevelSound();
+		s_escMenuOpen = JTRUE;
 
 		u32 dispWidth, dispHeight;
 		vfb_getResolution(&dispWidth, &dispHeight);
@@ -164,9 +168,9 @@ namespace TFE_DarkForces
 		texList.push_back(texInfo);
 	}
 
-	bool escapeMenu_getTextures(TextureInfoList& texList)
+	bool escapeMenu_getTextures(TextureInfoList& texList, AssetPool pool)
 	{
-		for (s32 i = 0; i < s_escMenuFrameCount; i++)
+		for (u32 i = 0; i < s_escMenuFrameCount; i++)
 		{
 			escapeMenu_addDeltFrame(texList, &s_escMenuFrames[i]);
 		}

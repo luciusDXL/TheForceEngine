@@ -23,50 +23,46 @@
 
 namespace TFE_Jedi
 {
-	bool level_getLevelTextures(TextureInfoList& textures)
+	bool level_getLevelTextures(TextureInfoList& textures, AssetPool pool)
 	{
 		s32 textureCount = 0;
-		TextureData** levelTextures = level_getTextures(&textureCount);
+		TextureData** levelTextures = bitmap_getTextures(&textureCount, pool);
 		for (s32 i = 0; i < textureCount; i++)
 		{
 			TextureInfo texInfo = {};
-			// Animated texture
-			if (levelTextures[i]->uvWidth == BM_ANIMATED_TEXTURE)
-			{
-				texInfo.type = TEXINFO_DF_ANIM_TEX;
-				texInfo.animTex = (AnimatedTexture*)levelTextures[i]->image;
-			}
-			else
+			if (levelTextures[i]->uvWidth != BM_ANIMATED_TEXTURE)
 			{
 				texInfo.type = TEXINFO_DF_TEXTURE_DATA;
 				texInfo.texData = levelTextures[i];
+				textures.push_back(texInfo);
 			}
-			textures.push_back(texInfo);
 		}
 
 		// Insert animated textures.
-		Allocator* animTextures = bitmap_getAnimatedTextures();
-		AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(animTextures);
-		while (animTex)
+		if (pool == POOL_LEVEL)
 		{
-			TextureInfo texInfo = {};
+			Allocator* animTextures = bitmap_getAnimatedTextures();
+			AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(animTextures);
+			while (animTex)
+			{
+				TextureInfo texInfo = {};
 
-			texInfo.type = TEXINFO_DF_ANIM_TEX;
-			texInfo.animTex = animTex;
-			textures.push_back(texInfo);
-			animTex = (AnimatedTexture*)allocator_getNext(animTextures);
+				texInfo.type = TEXINFO_DF_ANIM_TEX;
+				texInfo.animTex = animTex;
+				textures.push_back(texInfo);
+				animTex = (AnimatedTexture*)allocator_getNext(animTextures);
+			}
 		}
 
 		return !textures.empty();
 	}
 
-	bool level_getObjectTextures(TextureInfoList& textures)
+	bool level_getObjectTextures(TextureInfoList& textures, AssetPool pool)
 	{
 		// Insert sprite frames.
-		std::vector<JediWax*> waxList;
-		TFE_Sprite_Jedi::getWaxList(waxList);
+		const std::vector<JediWax*>& waxList = TFE_Sprite_Jedi::getWaxList(pool);
 		const size_t waxCount = waxList.size();
-		JediWax** wax = waxList.data();
+		JediWax*const* wax = waxList.data();
 		for (size_t i = 0; i < waxCount; i++)
 		{
 			for (s32 animId = 0; animId < wax[i]->animCount; animId++)
@@ -90,10 +86,9 @@ namespace TFE_Jedi
 		}
 
 		// Insert frames.
-		std::vector<JediFrame*> frameList;
-		TFE_Sprite_Jedi::getFrameList(frameList);
+		const std::vector<JediFrame*>& frameList = TFE_Sprite_Jedi::getFrameList(pool);
 		const size_t frameCount = frameList.size();
-		JediFrame** frame = frameList.data();
+		JediFrame*const* frame = frameList.data();
 		for (size_t i = 0; i < frameCount; i++)
 		{
 			TextureInfo texInfo = {};
@@ -101,22 +96,6 @@ namespace TFE_Jedi
 			texInfo.frame = frame[i];
 			texInfo.basePtr = frame[i];
 			textures.push_back(texInfo);
-		}
-
-		// Insert 3DO textures.
-		std::vector<JediModel*> modelList;
-		TFE_Model_Jedi::getModelList(modelList);
-		const size_t modelCount = modelList.size();
-		JediModel** model = modelList.data();
-		for (size_t i = 0; i < modelCount; i++)
-		{
-			for (s32 t = 0; t < model[i]->textureCount; t++)
-			{
-				TextureInfo texInfo = {};
-				texInfo.type = TEXINFO_DF_TEXTURE_DATA;
-				texInfo.texData = model[i]->textures[t];
-				textures.push_back(texInfo);
-			}
 		}
 
 		return !textures.empty();

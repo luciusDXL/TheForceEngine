@@ -82,10 +82,18 @@ namespace TFE_Jedi
 
 	void bitmap_setAllocator(MemoryRegion* allocator);
 	MemoryRegion* bitmap_getAllocator();
-	TextureData* bitmap_load(FilePath* filepath, u32 decompress);
+	void bitmap_clearLevelData();
+
+	// levelTexture bool was added for TFE to make serializing texture state easier.
+	// if levelTexture is false, then textures are not serialized and not cleared at level end.
+	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool = POOL_LEVEL);
 	void bitmap_setupAnimatedTexture(TextureData** texture);
 
 	Allocator* bitmap_getAnimatedTextures();
+	TextureData** bitmap_getTextures(s32* textureCount, AssetPool pool);
+
+	bool bitmap_getTextureIndex(TextureData* tex, s32* index, AssetPool* pool);
+	TextureData* bitmap_getTextureByIndex(s32 index, AssetPool pool);
 
 	// Used for tools.
 	TextureData* bitmap_loadFromMemory(const u8* data, size_t size, u32 decompress);

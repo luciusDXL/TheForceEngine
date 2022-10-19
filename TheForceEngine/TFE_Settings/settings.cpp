@@ -291,7 +291,7 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
 		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
 		writeKeyValue_Float(settings, "gamma", s_graphicsSettings.gamma);
-
+		
 		writeKeyValue_Bool(settings, "reticleEnable",   s_graphicsSettings.reticleEnable);
 		writeKeyValue_Int(settings,  "reticleIndex",    s_graphicsSettings.reticleIndex);
 		writeKeyValue_Float(settings, "reticleRed",     s_graphicsSettings.reticleRed);
@@ -300,6 +300,7 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "reticleOpacity", s_graphicsSettings.reticleOpacity);
 		writeKeyValue_Float(settings, "reticleScale",   s_graphicsSettings.reticleScale);
 
+		writeKeyValue_Int(settings, "renderer", s_graphicsSettings.rendererIndex);
 		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
 	}
 		
@@ -591,6 +592,10 @@ namespace TFE_Settings
 		else if (strcasecmp("reticleScale", key) == 0)
 		{
 			s_graphicsSettings.reticleScale = parseFloat(value);
+		}
+		else if (strcasecmp("renderer", key) == 0)
+		{
+			s_graphicsSettings.rendererIndex = parseInt(value);
 		}
 		else if (strcasecmp("skyMode", key) == 0)
 		{

@@ -1,4 +1,5 @@
 #include "collision.h"
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/robject.h>
@@ -454,9 +455,9 @@ namespace TFE_Jedi
 		fixed16_16 z1 = origin.z + radius;
 
 		fixed16_16 secHeightThreshold = origin.y - FIXED(2);
-		RSector* curSector = s_sectors;
+		RSector* curSector = s_levelState.sectors;
 
-		for (u32 i = 0; i < s_sectorCount; i++, curSector++)
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, curSector++)
 		{
 			///////////////////////////////////////////////
 			// These tests should only happen once I think,
@@ -529,8 +530,8 @@ namespace TFE_Jedi
 		const fixed16_16 z1 = origin.z + range;
 
 		const fixed16_16 secHeightThreshold = origin.y - FIXED(2);
-		RSector* sector = s_sectors;
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		RSector* sector = s_levelState.sectors;
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
 			// Checks the start sector, should be pulled out of the loop.
 			if (x0 > startSector->boundsMax.x || x1 < startSector->boundsMin.x || z0 > startSector->boundsMax.z || z1 < startSector->boundsMin.z)
@@ -589,8 +590,8 @@ namespace TFE_Jedi
 		const fixed16_16 z1 = origin.z + range;
 
 		const fixed16_16 secHeightThreshold = origin.y - FIXED(2);
-		RSector* sector = s_sectors;
-		for (u32 i = 0; i < s_sectorCount; i++, sector++)
+		RSector* sector = s_levelState.sectors;
+		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
 			// Checks the start sector, should be pulled out of the loop.
 			if (x0 > startSector->boundsMax.x || x1 < startSector->boundsMin.x || z0 > startSector->boundsMax.z || z1 < startSector->boundsMin.z)

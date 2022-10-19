@@ -115,6 +115,10 @@ namespace TFE_DarkForces
 	void proj_aimAtTarget(ProjectileLogic* proj, vec3_fixed target);
 	void proj_aimArcing(ProjectileLogic* proj, vec3_fixed target, fixed16_16 speed);
 
+	// TFE: Serialization functionality.
+	s32 proj_getLogicIndex(ProjectileLogic* logic);
+	ProjectileLogic* proj_getByLogicIndex(s32 index);
+
 	extern u32 s_hitWallFlag;
 	extern angle14_32 s_projReflectOverrideYaw;
 }  // namespace TFE_DarkForces

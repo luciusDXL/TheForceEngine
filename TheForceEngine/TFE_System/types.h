@@ -131,3 +131,10 @@ enum JediBool : u32
 
 // Move to math
 #define PI 3.14159265358979323846f
+
+enum AssetPool
+{
+	POOL_GAME = 0,
+	POOL_LEVEL,
+	POOL_COUNT
+};

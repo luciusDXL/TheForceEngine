@@ -79,14 +79,14 @@ namespace RClassic_Fixed
 	// to account for C vs ASM differences.
 	void drawScanline()
 	{
-		fixed16_16 V = s_scanlineV0;
 		fixed16_16 U = s_scanlineU0;
-		fixed16_16 dVdX = s_scanline_dVdX;
-		fixed16_16 dUdX = s_scanline_dUdX;
+		fixed16_16 V = s_scanlineV0;
+		const fixed16_16 dUdX = s_scanline_dUdX;
+		const fixed16_16 dVdX = s_scanline_dVdX;
 
 		// Note this produces a distorted mapping if the texture is not 64x64.
 		// This behavior matches the original.
-		u32 texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+		u32 texel = ((floor16(U) & 63)<<6) + (floor16(V) & 63);
 		texel &= s_ftexDataEnd;
 		U += dUdX;
 		V += dVdX;
@@ -94,7 +94,7 @@ namespace RClassic_Fixed
 		for (s32 i = s_scanlineWidth - 1; i >= 0; i--)
 		{
 			u8 c = s_scanlineLight[s_ftexImage[texel]];
-			texel = (floor16(U) & 63) * 64 + (floor16(V) & 63);
+			texel = ((floor16(U) & 63)<<6) + (floor16(V) & 63);
 			texel &= s_ftexDataEnd;
 			U += dUdX;
 			V += dVdX;
