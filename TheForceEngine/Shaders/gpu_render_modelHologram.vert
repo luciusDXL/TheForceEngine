@@ -10,6 +10,7 @@ uniform uvec2 PortalInfo;
 uniform samplerBuffer DrawListPlanes;
 
 // Vertex Data
+out float gl_ClipDistance[8];
 in vec3 vtx_pos;
 in vec2 vtx_uv;
 in vec4 vtx_color;
