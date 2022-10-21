@@ -21,6 +21,7 @@
 
 #include "spriteDisplayList.h"
 #include "sectorDisplayList.h"
+#include "objectPortalPlanes.h"
 #include "frustum.h"
 #include "../rcommon.h"
 
@@ -28,11 +29,6 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
-	enum Constants
-	{
-		MAX_DISP_ITEMS = 1024,
-	};
-
 	static s32 s_displayListCount;
 	static Vec4f s_displayListPosXZTexture[2][MAX_DISP_ITEMS];
 	static Vec4f s_displayListPosYUTexture[2][MAX_DISP_ITEMS];
@@ -134,15 +130,12 @@ namespace TFE_Jedi
 			u1 = len1 * lenExtScale * scaleU;
 		}
 
-		u32 topPortalInfo = sdisplayList_getPackedPortalInfo(drawFrame->topPortalId);
-		u32 botPortalInfo = sdisplayList_getPackedPortalInfo(drawFrame->botPortalId);
-
+		const u32 portalInfo = drawFrame->portalInfo;
 		const f32 heightWS = fixed16ToFloat(drawFrame->frame->heightWS);
 		const f32 fOffsetY = fixed16ToFloat(drawFrame->frame->offsetY);
 		s_displayListPosXZTexture[0][s_displayListCount] = { drawFrame->c0.x, drawFrame->c0.z, drawFrame->c1.x, drawFrame->c1.z };
 		s_displayListPosYUTexture[0][s_displayListCount] = { drawFrame->posY + fOffsetY, drawFrame->posY + fOffsetY - heightWS, u0, u1 };
-		s_displayListTexIdTexture[0][s_displayListCount] = { cell->textureId | (ambient << 16),
-															 s32(topPortalInfo | (botPortalInfo << 16u)) };
+		s_displayListTexIdTexture[0][s_displayListCount] = { cell->textureId | (ambient << 16), s32(portalInfo) };
 		s_displayListCount++;
 	}
 
@@ -158,14 +151,14 @@ namespace TFE_Jedi
 		s_displayListPosXZTextureGPU.bind(s_posXZTextureIndex);
 		s_displayListPosYUTextureGPU.bind(s_posYUTextureIndex);
 		s_displayListTexIdTextureGPU.bind(s_texIdTextureIndex);
-		s_displayListPlanesGPU.bind(s_planesIndex);
+		objectPortalPlanes_bind(s_planesIndex);
 
 		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount, sizeof(u16));
 
 		s_displayListPosXZTextureGPU.unbind(s_posXZTextureIndex);
 		s_displayListPosYUTextureGPU.unbind(s_posYUTextureIndex);
 		s_displayListTexIdTextureGPU.unbind(s_texIdTextureIndex);
-		s_displayListPlanesGPU.unbind(s_planesIndex);
+		objectPortalPlanes_unbind(s_planesIndex);
 	}
 
 	struct SpriteSortKey

@@ -45,11 +45,6 @@ namespace TFE_Jedi
 		SPARTID_COUNT
 	};
 
-	enum Constants
-	{
-		MAX_DISP_ITEMS = 1024,
-	};
-
 	// TODO: factor out so the sprite, sector, and geometry passes can use it.
 	s32 s_displayCurrentPortalId;
 	ShaderBuffer s_displayListPlanesGPU;
@@ -167,6 +162,7 @@ namespace TFE_Jedi
 		
 	u32 sdisplayList_getPlanesFromPortal(u32 portalId, u32 planeType, Vec4f* outPlanes)
 	{
+		if (portalId == 0) { return 0u; }
 		const u32 planeInfo = sdisplayList_getPackedPortalInfo(portalId);
 		const u32 count  = UNPACK_PORTAL_INFO_COUNT(planeInfo);
 		const u32 offset = UNPACK_PORTAL_INFO_OFFSET(planeInfo);

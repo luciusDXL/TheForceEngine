@@ -50,15 +50,11 @@ void main()
 	texture_data.y = float((tex_flags >> 16u) & 31u);
 
 	// Calculate vertical clipping.
-	uint topId = texPortalData.y & 65535u;
-	uint botId = texPortalData.y >> 16u;
-
-	// For now just use the bottom id.
+	uint portalInfo = texPortalData.y;
 	uint portalOffset, portalCount;
-	unpackPortalInfo(botId, portalOffset, portalCount);
+	unpackPortalInfo(portalInfo, portalOffset, portalCount);
 
 	// Clipping.
-	// TODO: Handle different top and bottom IDs.
 	for (int i = 0; i < int(portalCount) && i < 8; i++)
 	{
 		vec4 plane = texelFetch(DrawListPlanes, int(portalOffset) + i);

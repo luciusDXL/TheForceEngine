@@ -25,8 +25,7 @@ namespace TFE_Jedi
 		// Flags
 		bool fullbright;
 		// Portal data.
-		s32 topPortalId;
-		s32 botPortalId;
+		u32 portalInfo;
 	};
 
 	void sprdisplayList_init(s32 startIndex);

@@ -69,7 +69,7 @@ namespace TFE_Jedi
 			{
 				WaxAnim* anim = WAX_AnimPtr(wax[i], animId);
 				if (!anim) { continue; }
-				for (s32 v = 0; v < 32; v++)
+				for (s32 v = 0; v < WAX_MAX_VIEWS; v++)
 				{
 					WaxView* view = WAX_ViewPtr(wax[i], anim, v);
 					if (!view) { continue; }

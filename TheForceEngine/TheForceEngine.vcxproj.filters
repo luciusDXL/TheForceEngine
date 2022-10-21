@@ -1198,6 +1198,9 @@
     <ClInclude Include="TFE_RenderShared\texturePacker.h">
       <Filter>Source\TFE_RenderShared</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\objectPortalPlanes.h">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2024,6 +2027,9 @@
     </ClCompile>
     <ClCompile Include="TFE_RenderShared\texturePacker.cpp">
       <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\objectPortalPlanes.cpp">
+      <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

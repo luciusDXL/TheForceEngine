@@ -30,6 +30,7 @@
 #include "debug.h"
 #include "frustum.h"
 #include "sbuffer.h"
+#include "objectPortalPlanes.h"
 #include "sectorDisplayList.h"
 #include "spriteDisplayList.h"
 #include "../rcommon.h"
@@ -310,6 +311,7 @@ namespace TFE_Jedi
 
 			// Sprite Shader and buffers...
 			sprdisplayList_init(0);
+			objectPortalPlanes_init();
 
 			// Build the color map.
 			if (s_colorMap && s_lightSourceRamp)
@@ -748,7 +750,7 @@ namespace TFE_Jedi
 		return false;
 	}
 
-	void clipSpriteToView(RSector* curSector, Vec3f posWS, WaxFrame* frame, void* basePtr, bool fullbright, s32 topPortal, s32 botPortal)
+	void clipSpriteToView(RSector* curSector, Vec3f posWS, WaxFrame* frame, void* basePtr, bool fullbright, u32 portalInfo)
 	{
 		if (!frame) { return; }
 		s_clipSector = curSector;
@@ -789,7 +791,7 @@ namespace TFE_Jedi
 			posWS.y,
 			curSector,
 			fullbright,
-			topPortal, botPortal
+			portalInfo
 		};
 		sprdisplayList_addFrame(&drawFrame);
 
@@ -800,9 +802,6 @@ namespace TFE_Jedi
 			sprdisplayList_addFrame(&drawFrame);
 		}
 	}
-
-	// TODO: Move.
-	static s32 s_objectPlaneCount = 0;
 		
 	void addSectorObjects(RSector* curSector, RSector* prevSector, s32 portalId, s32 prevPortalId)
 	{
@@ -830,27 +829,24 @@ namespace TFE_Jedi
 			}
 		}
 
-		// TODO: Move into the object display list.
-		// * The object display list gets its own portal array.
-		// * The object display list gets its own portal info array.
-		// * Shaders then only need a single portal index, simplifying the shader code.
-		// Add custom portals here with new ID.
-		Vec4f outPlanes[MAX_PORTAL_PLANES*2];
-		u32 planeCount = 0;
-		if (topPortal == botPortal)
+		// Add the object portals.
+		u32 portalInfo = 0u;
+		if (topPortal || botPortal)
 		{
-			planeCount = sdisplayList_getPlanesFromPortal(topPortal, PLANE_TYPE_BOTH, outPlanes);
+			Vec4f outPlanes[MAX_PORTAL_PLANES * 2];
+			u32 planeCount = 0;
+			if (topPortal == botPortal)
+			{
+				planeCount = sdisplayList_getPlanesFromPortal(topPortal, PLANE_TYPE_BOTH, outPlanes);
+			}
+			else
+			{
+				planeCount  = sdisplayList_getPlanesFromPortal(topPortal, PLANE_TYPE_TOP, outPlanes);
+				planeCount += sdisplayList_getPlanesFromPortal(botPortal, PLANE_TYPE_BOT, outPlanes + planeCount);
+				planeCount = min(MAX_PORTAL_PLANES, planeCount);
+			}
+			portalInfo = objectPortalPlanes_add(planeCount, outPlanes);
 		}
-		else
-		{
-			planeCount  = sdisplayList_getPlanesFromPortal(topPortal, PLANE_TYPE_TOP, outPlanes);
-			planeCount += sdisplayList_getPlanesFromPortal(botPortal, PLANE_TYPE_BOT, outPlanes + planeCount);
-			planeCount = min(MAX_PORTAL_PLANES, planeCount);
-		}
-		u32 planeInfo = PACK_PORTAL_INFO(s_objectPlaneCount, planeCount);
-		s_objectPlaneCount++;
-		
-		// Set portalForObjs[portalId] = portals[topPortal], portals[botPortal]
 
 		SecObject** objIter = curSector->objectList;
 		f32 ambient = fixed16ToFloat(curSector->ambient);
@@ -886,18 +882,16 @@ namespace TFE_Jedi
 							WaxView* view = WAX_ViewPtr(wax, anim, 31 - angleDiff);
 							// And finall the frame from the current sequence.
 							WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 31);
-							clipSpriteToView(curSector, posWS, frame, wax, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, topPortal, botPortal);
+							clipSpriteToView(curSector, posWS, frame, wax, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, portalInfo);
 						}
 					}
 					else if (type == OBJ_TYPE_FRAME)
 					{
-						clipSpriteToView(curSector, posWS, obj->fme, obj->fme, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, topPortal, botPortal);
+						clipSpriteToView(curSector, posWS, obj->fme, obj->fme, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, portalInfo);
 					}
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
-					// TODO: Handle top and bottom portals...
-					u32 portalInfo = sdisplayList_getPackedPortalInfo(botPortal);
 					model_add(obj->model, posWS, obj->transform, ambient, floorOffset, portalInfo);
 				}
 			}
@@ -970,6 +964,7 @@ namespace TFE_Jedi
 		sdisplayList_clear();
 		sprdisplayList_clear();
 		model_drawListClear();
+		objectPortalPlanes_clear();
 
 		updateCachedSector(sector, uploadFlags);
 		traverseSector(sector, nullptr, 0, level, uploadFlags, startView[0], startView[1]);
@@ -978,6 +973,7 @@ namespace TFE_Jedi
 		sdisplayList_finish();
 		sprdisplayList_finish();
 		model_drawListFinish();
+		objectPortalPlanes_finish();
 
 		// Set the sector ambient for future lighting.
 		if (s_flatLighting)
@@ -1114,9 +1110,7 @@ namespace TFE_Jedi
 
 		ShaderBuffer* textureTable = &texturePacker->textureTableGPU;
 		textureTable->bind(3);
-
-		s_displayListPlanesGPU.bind(4);
-
+		objectPortalPlanes_bind(4);
 		model_drawList();
 
 		// Cleanup
