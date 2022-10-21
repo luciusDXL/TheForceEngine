@@ -511,6 +511,7 @@ namespace TFE_DarkForces
 
 	void lactor_setTime(LActor* actor, s32 start, s32 stop)
 	{
+		if (!actor) { return; }
 		actor->start = start;
 		actor->stop = stop;
 	}
