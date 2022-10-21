@@ -37,12 +37,12 @@ void main()
 	// Clipping.
 	uint portalOffset, portalCount;
 	unpackPortalInfo(PortalInfo.x, portalOffset, portalCount);
-	for (int i = 0; i < int(portalCount) && i < 6; i++)
+	for (int i = 0; i < int(portalCount) && i < 8; i++)
 	{
 		vec4 plane = texelFetch(DrawListPlanes, int(portalOffset) + i);
 		gl_ClipDistance[i] = dot(vec4(worldPos.xyz, 1.0), plane);
 	}
-	for (int i = int(portalCount); i < 6; i++)
+	for (int i = int(portalCount); i < 8; i++)
 	{
 		gl_ClipDistance[i] = 1.0;
 	}

@@ -9,7 +9,7 @@ uniform usamplerBuffer DrawListData;
 uniform samplerBuffer  DrawListPlanes;	// Top and Bottom planes for each portal.
 
 // in int gl_VertexID;
-out float gl_ClipDistance[6];
+out float gl_ClipDistance[8];
 flat out vec4 Frag_Uv;
 out vec3 Frag_Pos;
 out vec4 Texture_Data;
@@ -217,12 +217,12 @@ void main()
 	#endif  // !SECTOR_TRANSPARENT_PASS
 
 	// Clipping.
-	for (int i = 0; i < int(portalCount) && i < 6; i++)
+	for (int i = 0; i < int(portalCount) && i < 8; i++)
 	{
 		vec4 plane = texelFetch(DrawListPlanes, int(portalOffset) + i);
 		gl_ClipDistance[i] = dot(vec4(vtx_pos.xyz, 1.0), plane);
 	}
-	for (int i = int(portalCount); i < 6; i++)
+	for (int i = int(portalCount); i < 8; i++)
 	{
 		gl_ClipDistance[i] = 1.0;
 	}

@@ -27,9 +27,6 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
-	// Pack portal info into a 16-bit value.
-	#define PACK_PORTAL_INFO(offset, count) (u32(offset) | u32(count) << 13u)
-
 	// Warning: these IDs must match the PartId used in the vertex shader.
 	enum SegmentPartID
 	{
@@ -51,7 +48,6 @@ namespace TFE_Jedi
 	enum Constants
 	{
 		MAX_DISP_ITEMS = 1024,
-		MAX_PORTAL_PLANES = 6,
 	};
 
 	// TODO: factor out so the sprite, sector, and geometry passes can use it.
@@ -168,6 +164,33 @@ namespace TFE_Jedi
 		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
 		s_displayListCount[0]++;
 	}
+		
+	u32 sdisplayList_getPlanesFromPortal(u32 portalId, u32 planeType, Vec4f* outPlanes)
+	{
+		const u32 planeInfo = sdisplayList_getPackedPortalInfo(portalId);
+		const u32 count  = UNPACK_PORTAL_INFO_COUNT(planeInfo);
+		const u32 offset = UNPACK_PORTAL_INFO_OFFSET(planeInfo);
+		const Vec4f* planes = &s_displayListPlanes[offset];
+
+		if ((planeType & PLANE_TYPE_BOTH) == PLANE_TYPE_BOTH)
+		{
+			for (u32 i = 0; i < count; i++)
+			{
+				outPlanes[i] = planes[i];
+			}
+			return count;
+		}
+
+		u32 finalCount = 0;
+		for (u32 i = 0; i < count && finalCount < MAX_PORTAL_PLANES; i++)
+		{
+			if ((planes[i].y > 0.0f && (planeType & PLANE_TYPE_TOP)) || (planes[i].y < 0.0f && (planeType & PLANE_TYPE_BOT)))
+			{
+				outPlanes[finalCount++] = planes[i];
+			}
+		}
+		return finalCount;
+	}
 
 	u32 sdisplayList_getPackedPortalInfo(s32 portalId)
 	{
@@ -212,7 +235,7 @@ namespace TFE_Jedi
 					}
 				}
 				s_maxPlaneCount = max(count, s_maxPlaneCount);
-				assert(s_maxPlaneCount <= 6);
+				assert(s_maxPlaneCount <= MAX_PORTAL_PLANES);
 			}
 			else
 			{
@@ -225,12 +248,12 @@ namespace TFE_Jedi
 			s_portalFrustumVert[s_displayPortalCount].planes[0] = frustum_calculatePlaneFromEdge(botEdge);
 			s_portalFrustumVert[s_displayPortalCount].planes[1] = frustum_calculatePlaneFromEdge(topEdge);
 		}
-		s_portalPlaneInfo[s_displayPortalCount] = PACK_PORTAL_INFO(s_displayPlaneCount, min(6, s_portalFrustumVert[s_displayPortalCount].planeCount));
+		s_portalPlaneInfo[s_displayPortalCount] = PACK_PORTAL_INFO(s_displayPlaneCount, min(MAX_PORTAL_PLANES, s_portalFrustumVert[s_displayPortalCount].planeCount));
 
 		// The new planes either match the parent or are created from the edges.
 		const Frustum* frust = &s_portalFrustumVert[s_displayPortalCount];
 		Vec4f* outPlanes = &s_displayListPlanes[s_displayPlaneCount];
-		for (u32 i = 0; i < frust->planeCount && i < 6; i++)
+		for (u32 i = 0; i < frust->planeCount && i < MAX_PORTAL_PLANES; i++)
 		{
 			outPlanes[i] = frust->planes[i];
 			s_displayPlaneCount++;

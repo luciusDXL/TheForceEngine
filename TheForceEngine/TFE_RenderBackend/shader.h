@@ -59,6 +59,8 @@ public:
 	void bindTextureNameToSlot(const char* texName, s32 slot);
 	s32  getVariableId(const char* name);
 	void setVariable(s32 id, ShaderVariableType type, const f32* data);
+	void setVariable(s32 id, ShaderVariableType type, const s32* data);
+	void setVariable(s32 id, ShaderVariableType type, const u32* data);
 
 	s32  getVariables();
 

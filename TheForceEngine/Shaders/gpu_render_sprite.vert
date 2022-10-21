@@ -13,7 +13,7 @@ uniform samplerBuffer DrawListPlanes;
 // in int gl_VertexID;
 out vec2 Frag_Uv; // base uv coordinates (0 - 1)
 out vec3 Frag_Pos;     // camera relative position for lighting.
-out float gl_ClipDistance[6];
+out float gl_ClipDistance[8];
 flat out vec4 Texture_Data; // not much here yet.
 flat out int Frag_TextureId;
 
@@ -59,12 +59,12 @@ void main()
 
 	// Clipping.
 	// TODO: Handle different top and bottom IDs.
-	for (int i = 0; i < int(portalCount) && i < 6; i++)
+	for (int i = 0; i < int(portalCount) && i < 8; i++)
 	{
 		vec4 plane = texelFetch(DrawListPlanes, int(portalOffset) + i);
 		gl_ClipDistance[i] = dot(vec4(vtx_pos.xyz, 1.0), plane);
 	}
-	for (int i = int(portalCount); i < 6; i++)
+	for (int i = int(portalCount); i < 8; i++)
 	{
 		gl_ClipDistance[i] = 1.0;
 	}

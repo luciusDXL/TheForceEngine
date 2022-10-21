@@ -373,7 +373,7 @@ namespace TFE_DarkForces
 			ImJumpMidi(s_oldSong, 1 + s_transChunk, lptr[r] - 1, 4, 300, 1);
 			ImSetTrigger(s_oldSong, 0, MUSIC_CALLBACK(iMuseCallback2));
 		}
-		else if (size_t(marker) >= GAME_INVALID_TRIGGER && !strcmp(marker, "start new"))
+		else if (size_t(marker) >= GAME_INVALID_TRIGGER && !strcmp(marker, "start new")) // TFE: handle invalid integral markers from mods.
 		{
 			s_newSong = ImFindMidi(c_levelMusic[s_currentLevel - 1][s_currentState - 1]);
 			if (s_oldSong != s_newSong)
@@ -449,7 +449,7 @@ namespace TFE_DarkForces
 	char* parseEvent(char* ptr)
 	{
 		static char buf[32];
-		// Some mods have an invalid integral value here.
+		// TFE: Some mods have an invalid integral value here.
 		if (size_t(ptr) < GAME_INVALID_TRIGGER)
 		{
 			return nullptr;

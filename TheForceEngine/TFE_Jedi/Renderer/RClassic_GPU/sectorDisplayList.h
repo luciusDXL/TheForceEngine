@@ -10,11 +10,24 @@
 
 namespace TFE_Jedi
 {
+	// Pack portal info into a 16-bit value.
+	#define PACK_PORTAL_INFO(offset, count) (u32(offset) | u32(count) << 13u)
+	#define UNPACK_PORTAL_INFO_COUNT(info) (info >> 13u)
+	#define UNPACK_PORTAL_INFO_OFFSET(info) (info & ((1u << 13u) - 1u))
+
 	enum SectorPass
 	{
 		SECTOR_PASS_OPAQUE = 0,
 		SECTOR_PASS_TRANS,
 		SECTOR_PASS_COUNT
+	};
+
+	enum PlaneType
+	{
+		PLANE_TYPE_TOP = FLAG_BIT(0),
+		PLANE_TYPE_BOT = FLAG_BIT(1),
+		PLANE_TYPE_BOTH = PLANE_TYPE_TOP | PLANE_TYPE_BOT,
+		MAX_PORTAL_PLANES = 8,  // Minimum custom clipping plane limit for OpenGL 3.3
 	};
 
 	struct GPUCachedSector
@@ -40,4 +53,5 @@ namespace TFE_Jedi
 	s32  sdisplayList_getSize(SectorPass passId = SECTOR_PASS_OPAQUE);
 
 	u32 sdisplayList_getPackedPortalInfo(s32 portalId);
+	u32 sdisplayList_getPlanesFromPortal(u32 portalId, u32 planeType, Vec4f* outPlanes);
 }  // TFE_Jedi

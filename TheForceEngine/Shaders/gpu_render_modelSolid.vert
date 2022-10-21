@@ -18,7 +18,7 @@ in vec3 vtx_nrm;
 in vec2 vtx_uv;
 in vec4 vtx_color;
 
-out float gl_ClipDistance[6];
+out float gl_ClipDistance[8];
 out vec2 Frag_Uv;
 out vec3 Frag_WorldPos;
 noperspective out float Frag_Light;
@@ -59,12 +59,12 @@ void main()
 	// Clipping.
 	uint portalOffset, portalCount;
 	unpackPortalInfo(PortalInfo.x, portalOffset, portalCount);
-	for (int i = 0; i < int(portalCount) && i < 6; i++)
+	for (int i = 0; i < int(portalCount) && i < 8; i++)
 	{
 		vec4 plane = texelFetch(DrawListPlanes, int(portalOffset) + i);
 		gl_ClipDistance[i] = dot(vec4(worldPos.xyz, 1.0), plane);
 	}
-	for (int i = int(portalCount); i < 6; i++)
+	for (int i = int(portalCount); i < 8; i++)
 	{
 		gl_ClipDistance[i] = 1.0;
 	}

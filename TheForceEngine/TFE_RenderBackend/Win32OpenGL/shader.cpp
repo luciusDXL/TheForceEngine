@@ -6,6 +6,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <GL/glew.h>
+#include <assert.h>
 #include <vector>
 #include <string>
 
@@ -218,30 +219,6 @@ void Shader::setVariable(s32 id, ShaderVariableType type, const f32* data)
 	case SVT_VEC4:
 		glUniform4fv(id, 1, data);
 		break;
-	case SVT_ISCALAR:
-		glUniform1i(id, *((s32*)&data[0]));
-		break;
-	case SVT_IVEC2:
-		glUniform2iv(id, 1, (s32*)data);
-		break;
-	case SVT_IVEC3:
-		glUniform3iv(id, 1, (s32*)data);
-		break;
-	case SVT_IVEC4:
-		glUniform4iv(id, 1, (s32*)data);
-		break;
-	case SVT_USCALAR:
-		glUniform1ui(id, *((u32*)&data[0]));
-		break;
-	case SVT_UVEC2:
-		glUniform2uiv(id, 1, (u32*)data);
-		break;
-	case SVT_UVEC3:
-		glUniform3uiv(id, 1, (u32*)data);
-		break;
-	case SVT_UVEC4:
-		glUniform4uiv(id, 1, (u32*)data);
-		break;
 	case SVT_MAT3x3:
 		glUniformMatrix3fv(id, 1, false, data);
 		break;
@@ -251,5 +228,56 @@ void Shader::setVariable(s32 id, ShaderVariableType type, const f32* data)
 	case SVT_MAT4x4:
 		glUniformMatrix4fv(id, 1, false, data);
 		break;
+	default:
+		TFE_System::logWrite(LOG_ERROR, "Shader", "Mismatched parameter type.");
+		assert(0);
+	}
+}
+
+void Shader::setVariable(s32 id, ShaderVariableType type, const s32* data)
+{
+	if (id < 0) { return; }
+
+	switch (type)
+	{
+	case SVT_ISCALAR:
+		glUniform1i(id, *(&data[0]));
+		break;
+	case SVT_IVEC2:
+		glUniform2iv(id, 1, data);
+		break;
+	case SVT_IVEC3:
+		glUniform3iv(id, 1, data);
+		break;
+	case SVT_IVEC4:
+		glUniform4iv(id, 1, data);
+		break;
+	default:
+		TFE_System::logWrite(LOG_ERROR, "Shader", "Mismatched parameter type.");
+		assert(0);
+	}
+}
+
+void Shader::setVariable(s32 id, ShaderVariableType type, const u32* data)
+{
+	if (id < 0) { return; }
+
+	switch (type)
+	{
+	case SVT_USCALAR:
+		glUniform1ui(id, *(&data[0]));
+		break;
+	case SVT_UVEC2:
+		glUniform2uiv(id, 1, data);
+		break;
+	case SVT_UVEC3:
+		glUniform3uiv(id, 1, data);
+		break;
+	case SVT_UVEC4:
+		glUniform4uiv(id, 1, data);
+		break;
+	default:
+		TFE_System::logWrite(LOG_ERROR, "Shader", "Mismatched parameter type.");
+		assert(0);
 	}
 }

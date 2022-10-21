@@ -118,7 +118,7 @@ namespace TFE_Jedi
 		{
 			return false;
 		}
-		s_spriteShader.enableClipPlanes(6);
+		s_spriteShader.enableClipPlanes(MAX_PORTAL_PLANES);
 
 		s_shaderInputs[SPRITE_PASS].cameraPosId  = s_spriteShader.getVariableId("CameraPos");
 		s_shaderInputs[SPRITE_PASS].cameraViewId = s_spriteShader.getVariableId("CameraView");
@@ -146,7 +146,7 @@ namespace TFE_Jedi
 		{
 			return false;
 		}
-		s_wallShader[index].enableClipPlanes(6);
+		s_wallShader[index].enableClipPlanes(MAX_PORTAL_PLANES);
 
 		s_shaderInputs[index].cameraPosId  = s_wallShader[index].getVariableId("CameraPos");
 		s_shaderInputs[index].cameraViewId = s_wallShader[index].getVariableId("CameraView");
@@ -800,6 +800,9 @@ namespace TFE_Jedi
 			sprdisplayList_addFrame(&drawFrame);
 		}
 	}
+
+	// TODO: Move.
+	static s32 s_objectPlaneCount = 0;
 		
 	void addSectorObjects(RSector* curSector, RSector* prevSector, s32 portalId, s32 prevPortalId)
 	{
@@ -827,6 +830,26 @@ namespace TFE_Jedi
 			}
 		}
 
+		// TODO: Move into the object display list.
+		// * The object display list gets its own portal array.
+		// * The object display list gets its own portal info array.
+		// * Shaders then only need a single portal index, simplifying the shader code.
+		// Add custom portals here with new ID.
+		Vec4f outPlanes[MAX_PORTAL_PLANES*2];
+		u32 planeCount = 0;
+		if (topPortal == botPortal)
+		{
+			planeCount = sdisplayList_getPlanesFromPortal(topPortal, PLANE_TYPE_BOTH, outPlanes);
+		}
+		else
+		{
+			planeCount  = sdisplayList_getPlanesFromPortal(topPortal, PLANE_TYPE_TOP, outPlanes);
+			planeCount += sdisplayList_getPlanesFromPortal(botPortal, PLANE_TYPE_BOT, outPlanes + planeCount);
+			planeCount = min(MAX_PORTAL_PLANES, planeCount);
+		}
+		u32 planeInfo = PACK_PORTAL_INFO(s_objectPlaneCount, planeCount);
+		s_objectPlaneCount++;
+		
 		// Set portalForObjs[portalId] = portals[topPortal], portals[botPortal]
 
 		SecObject** objIter = curSector->objectList;
@@ -930,7 +953,9 @@ namespace TFE_Jedi
 						
 	bool traverseScene(RSector* sector)
 	{
+#if 0
 		debug_update();
+#endif
 
 		// First build the camera frustum and push it onto the stack.
 		frustum_buildFromCamera();

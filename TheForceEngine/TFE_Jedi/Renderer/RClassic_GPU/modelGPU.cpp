@@ -21,6 +21,7 @@
 
 #include "modelGPU.h"
 #include "frustum.h"
+#include "sectorDisplayList.h"
 #include "../rcommon.h"
 
 #include <map>
@@ -150,7 +151,7 @@ namespace TFE_Jedi
 		{
 			return false;
 		}
-		shader->enableClipPlanes(6);
+		shader->enableClipPlanes(MAX_PORTAL_PLANES);
 
 		s_shaderInputs[variant].cameraPosId   = shader->getVariableId("CameraPos");
 		s_shaderInputs[variant].cameraViewId  = shader->getVariableId("CameraView");
@@ -721,7 +722,7 @@ namespace TFE_Jedi
 				shader->setVariable(s_shaderInputs[s].modelPosId,  SVT_VEC3,   drawItem->posWS.m);
 				shader->setVariable(s_shaderInputs[s].modelMtxId,  SVT_MAT3x3, drawItem->transform);
 				shader->setVariable(s_shaderInputs[s].lightDataId, SVT_VEC4,   drawItem->lightData.m);
-				shader->setVariable(s_shaderInputs[s].portalInfo,  SVT_UVEC2,  (f32*)portalInfo);
+				shader->setVariable(s_shaderInputs[s].portalInfo,  SVT_UVEC2,  portalInfo);
 
 				// Draw the geometry (note a single vertex/index buffer is used, so this is just a count and start offset).
 				TFE_RenderBackend::drawIndexedTriangles(model->polyCount, sizeof(u32), model->indexStart);
