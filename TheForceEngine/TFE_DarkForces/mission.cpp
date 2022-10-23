@@ -227,24 +227,13 @@ namespace TFE_DarkForces
 					setScreenBrightness(ONE_16);
 					setScreenFxLevels(0, 0, 0);
 					setLuminanceMask(0, 0, 0);
-
-					char palName[TFE_MAX_PATH];
-					strcpy(palName, levelName);
-					strcat(palName, ".PAL");
-					FilePath filePath;
-					if (TFE_Paths::getFilePath(palName, &filePath))
-					{
-						FileStream::readContents(&filePath, s_levelPalette, 768);
-						// The "base palette" is adjusted by the hud colors, which is why it is a copy.
-						memcpy(s_basePalette, s_levelPalette, 768);
-						s_palModified = JTRUE;
-					}
-
+					
 					char colorMapName[TFE_MAX_PATH];
 					strcpy(colorMapName, levelName);
 					strcat(colorMapName, ".CMP");
 					s_levelColorMap = nullptr;
 
+					FilePath filePath;
 					if (TFE_Paths::getFilePath(colorMapName, &filePath))
 					{
 						s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);

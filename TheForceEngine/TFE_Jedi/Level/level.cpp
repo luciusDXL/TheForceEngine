@@ -24,6 +24,12 @@
 // TODO: Fix game dependency?
 #include <TFE_DarkForces/logic.h>
 
+namespace TFE_DarkForces
+{
+	extern u8 s_levelPalette[];
+	extern u8 s_basePalette[];
+	extern JBool s_palModified;
+}
 using namespace TFE_DarkForces;
 
 namespace TFE_Jedi
@@ -127,12 +133,26 @@ namespace TFE_Jedi
 		}
 
 		// This gets read here just to be overwritten later... so just ignore for now.
+		char palName[TFE_MAX_PATH];
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, "PALETTE %s", s_readBuffer) != 1)
+		if (sscanf(line, "PALETTE %s", palName) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read palette name.");
 			return false;
 		}
+
+		// Palette *IS* loaded from the level file.
+		if (TFE_Paths::getFilePath(palName, &filePath))
+		{
+			FileStream::readContents(&filePath, s_levelPalette, 768);
+		}
+		else if (TFE_Paths::getFilePath("default.pal", &filePath))
+		{
+			FileStream::readContents(&filePath, s_levelPalette, 768);
+		}
+		// The "base palette" is adjusted by the hud colors, which is why it is a copy.
+		memcpy(s_basePalette, s_levelPalette, 768);
+		s_palModified = JTRUE;
 		
 		// Another value that is ignored.
 		line = parser.readLine(bufferPos);
