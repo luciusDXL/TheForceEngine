@@ -71,7 +71,7 @@ namespace TFE_Jedi
 		{
 			ShaderBufferDef bufferDefDisplayListPos =
 			{
-				4,				// 1, 2, 4 channels (R, RG, RGBA)
+				4,				// channels (R, RG, RGBA)
 				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 				BUF_CHANNEL_FLOAT
 			};
@@ -140,7 +140,18 @@ namespace TFE_Jedi
 
 	void sdisplayList_addCaps(RSector* curSector)
 	{
-		// TODO: Remove and replace with main frustum extrusion.
+		// TODO: Triangulation seems to be required after all.
+		// Otherwise caps between sectors can interfere in some cases.
+		// Or clipping against visible sector edges is required at runtime in 2D.
+		// 1. Compute convex hull
+		// 2. *If* concave, send all 2D vertices and 2D edges.
+		// 3. In fragment shader, discard any fragments that are "outside".
+		// CON: No MSAA, slow fragment shader.
+
+		// Triangulation - if quads are generated, can use the same display list.
+		// Otherwise drawing caps must be done as a seperate pass, but can use the same portal info.
+		// Triangulation must be updated as sectors move/rotate, this includes changed sector and mirrored sectors.
+		
 		Vec4f pos = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
 		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
 		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, portalInfo, 0u/*textureId*/ };
@@ -232,6 +243,21 @@ namespace TFE_Jedi
 				}
 				s_maxPlaneCount = max(count, s_maxPlaneCount);
 				assert(s_maxPlaneCount <= MAX_PORTAL_PLANES);
+
+				// Add left and right planes if there is enough room...
+				// This is so that caps are properly clipped.
+				if (count <= 6)
+				{
+					for (s32 i = 0; i < clipped.vertexCount && count < MAX_PORTAL_PLANES; i++)
+					{
+						const s32 a = i, b = (i + 1) % clipped.vertexCount;
+						if (fabsf(clipped.vtx[a].x - clipped.vtx[b].x) <= FLT_EPSILON && fabsf(clipped.vtx[a].z - clipped.vtx[b].z) <= FLT_EPSILON)
+						{
+							Vec3f edge[] = { clipped.vtx[a], clipped.vtx[b] };
+							plane[count++] = frustum_calculatePlaneFromEdge(edge);
+						}
+					}
+				}
 			}
 			else
 			{
@@ -243,6 +269,23 @@ namespace TFE_Jedi
 			s_portalFrustumVert[s_displayPortalCount].planeCount = 2;
 			s_portalFrustumVert[s_displayPortalCount].planes[0] = frustum_calculatePlaneFromEdge(botEdge);
 			s_portalFrustumVert[s_displayPortalCount].planes[1] = frustum_calculatePlaneFromEdge(topEdge);
+
+			// Add left and right planes if there is enough room...
+			// This is so that caps are properly clipped.
+			const Vec3f leftEdge[] =
+			{
+				{ p0.x, p0.y, p0.z },
+				{ p0.x, p1.y, p0.z },
+			};
+			const Vec3f rightEdge[] =
+			{
+				{ p1.x, p1.y, p1.z },
+				{ p1.x, p0.y, p1.z },
+			};
+
+			s_portalFrustumVert[s_displayPortalCount].planeCount += 2;
+			s_portalFrustumVert[s_displayPortalCount].planes[2] = frustum_calculatePlaneFromEdge(leftEdge);
+			s_portalFrustumVert[s_displayPortalCount].planes[3] = frustum_calculatePlaneFromEdge(rightEdge);
 		}
 		s_portalPlaneInfo[s_displayPortalCount] = PACK_PORTAL_INFO(s_displayPlaneCount, min(MAX_PORTAL_PLANES, s_portalFrustumVert[s_displayPortalCount].planeCount));
 
