@@ -51,7 +51,17 @@ ivec2 wrapCoord(ivec2 uv, ivec2 edge)
 	return uv;
 }
 
-float sampleTexture(int id, vec2 uv, bool sky, bool flip)
+// Approximate the distortion that happens in software when floor and ceiling textures are not 64x64.
+ivec2 wrapCoordFlat(ivec2 uv, ivec2 edge)
+{
+	int coord = (uv.x & 63) * 64 + (uv.y & 63);
+	uv = wrapCoord(ivec2(coord/edge.y, coord), edge);
+	uv.x += (uv.x < 0) ? edge.x : 0;
+	uv.y += (uv.y < 0) ? edge.y : 0;
+	return uv;
+}
+
+float sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec3 iuv;
@@ -69,6 +79,14 @@ float sampleTexture(int id, vec2 uv, bool sky, bool flip)
 		{
 			iuv.x = wrapCoordScalar(iuv.x, sampleData.z);
 			iuv.y = wrapCoordScalar(iuv.y, sampleData.w);
+		}
+	}
+	else if (applyFlatWarp)
+	{
+		iuv.xy = wrapCoordFlat(iuv.xy, sampleData.zw);
+		if (flip)
+		{
+			iuv.x = sampleData.z - iuv.x - 1;
 		}
 	}
 	else
@@ -174,6 +192,7 @@ void main()
 	bool sky = Frag_Uv.y > 2.5;
 	bool sign = false;
 	bool flip = Frag_Color.a > 0.5;
+	bool applyFlatWarp = false;
 	float skyFade = 0.0;
 	float yLimit = 0.0;
 	if (sky) // Sky
@@ -208,10 +227,14 @@ void main()
 		// Camera relative position on the plane, add CameraPos to get world space position.
 		cameraRelativePos = t*Frag_Pos;
 
+		// Warp texture uvs for non-64x64 tiles.
+		applyFlatWarp = true;
 		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
 	else // Cap
 	{
+		// Warp texture uvs for non-64x64 tiles.
+		applyFlatWarp = true;
 		uv = (cameraRelativePos.xz + CameraPos.xz - Texture_Data.xy)*vec2(-8.0, 8.0);
 	}
 	#endif
@@ -258,7 +281,7 @@ void main()
 	else
 	#endif
 	{
-		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip);
+		baseColor = sampleTexture(Frag_TextureId, uv, sky, flip, applyFlatWarp);
 	}
 	// End
 
@@ -284,7 +307,7 @@ void main()
 		
 		if (rnd < skyFade)
 		{
-			baseColor = sampleTexture(Frag_TextureId, vec2(256.0, yLimit), sky, flip);
+			baseColor = sampleTexture(Frag_TextureId, vec2(256.0, yLimit), sky, flip, false);
 		}
 	}
 

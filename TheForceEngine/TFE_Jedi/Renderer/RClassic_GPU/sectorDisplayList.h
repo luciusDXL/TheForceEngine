@@ -27,6 +27,10 @@ namespace TFE_Jedi
 		PLANE_TYPE_TOP = FLAG_BIT(0),
 		PLANE_TYPE_BOT = FLAG_BIT(1),
 		PLANE_TYPE_BOTH = PLANE_TYPE_TOP | PLANE_TYPE_BOT,
+	};
+
+	enum Contants
+	{
 		MAX_PORTAL_PLANES = 8,  // Minimum custom clipping plane limit for OpenGL 3.3
 		MAX_DISP_ITEMS = 1024,
 	};
