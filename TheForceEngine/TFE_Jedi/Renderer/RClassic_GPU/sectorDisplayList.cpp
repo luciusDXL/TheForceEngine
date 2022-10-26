@@ -127,6 +127,7 @@ namespace TFE_Jedi
 		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
 		{
 			if (!s_displayListCount[i]) { continue; }
+			assert(s_displayListCount[i] <= MAX_DISP_ITEMS);
 
 			s_displayListPosGPU[i].update(&s_displayListPos[i*MAX_DISP_ITEMS], sizeof(Vec4f) * s_displayListCount[i]);
 			s_displayListDataGPU[i].update(&s_displayListData[i*MAX_DISP_ITEMS], sizeof(Vec4ui) * s_displayListCount[i]);
@@ -136,39 +137,6 @@ namespace TFE_Jedi
 		{
 			s_displayListPlanesGPU.update(s_displayListPlanes, sizeof(Vec4f) * s_displayPlaneCount);
 		}
-	}
-
-	void sdisplayList_addCaps(RSector* curSector)
-	{
-		// TODO: Triangulation seems to be required after all.
-		// Otherwise caps between sectors can interfere in some cases.
-		// Or clipping against visible sector edges is required at runtime in 2D.
-		// 1. Compute convex hull
-		// 2. *If* concave, send all 2D vertices and 2D edges.
-		// 3. In fragment shader, discard any fragments that are "outside".
-		// CON: No MSAA, slow fragment shader.
-
-		// Triangulation - if quads are generated, can use the same display list.
-		// Otherwise drawing caps must be done as a seperate pass, but can use the same portal info.
-		// Triangulation must be updated as sectors move/rotate, this includes changed sector and mirrored sectors.
-		
-		Vec4f pos = { fixed16ToFloat(curSector->boundsMin.x), fixed16ToFloat(curSector->boundsMin.z), fixed16ToFloat(curSector->boundsMax.x), fixed16ToFloat(curSector->boundsMax.z) };
-		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
-		Vec4ui data = { 0, (u32)curSector->index/*sectorId*/, portalInfo, 0u/*textureId*/ };
-
-		s_displayListPos[s_displayListCount[0]] = pos;
-		s_displayListData[s_displayListCount[0]] = data;
-		s_displayListData[s_displayListCount[0]].x = SPARTID_FLOOR_CAP;
-		s_displayListData[s_displayListCount[0]].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
-		if (curSector->flags1 & SEC_FLAGS1_PIT) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
-		s_displayListCount[0]++;
-
-		s_displayListPos[s_displayListCount[0]] = pos;
-		s_displayListData[s_displayListCount[0]] = data;
-		s_displayListData[s_displayListCount[0]].x = SPARTID_CEIL_CAP;
-		s_displayListData[s_displayListCount[0]].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
-		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR) { s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY; }
-		s_displayListCount[0]++;
 	}
 		
 	u32 sdisplayList_getPlanesFromPortal(u32 portalId, u32 planeType, Vec4f* outPlanes)
@@ -304,6 +272,21 @@ namespace TFE_Jedi
 		return true;
 	}
 
+	void addDisplayListItem(const Vec4f pos, const Vec4ui data, const SectorPass bufferIndex)
+	{
+		assert(s_displayListCount[bufferIndex] < MAX_DISP_ITEMS);
+		if (s_displayListCount[bufferIndex] >= MAX_DISP_ITEMS)
+		{
+			return;
+		}
+
+		const s32 index = s_displayListCount[bufferIndex] + MAX_DISP_ITEMS*bufferIndex;
+		s_displayListCount[bufferIndex]++;
+
+		s_displayListPos[index] = pos;
+		s_displayListData[index] = data;
+	}
+
 	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg)
 	{
 		s32 wallId = wallSeg->seg->id;
@@ -323,116 +306,102 @@ namespace TFE_Jedi
 		const Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
 				    		   wallLight | portalInfo, 0u/*textureId*/ };
 
-		// Wall Flags.
+		//////////////////////////////
+		// Mid
+		//////////////////////////////
 		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
 		{
 			if (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
 			{
 				// For now use the ceiling texture.
 				// TODO: This should render *both* the ceiling and floor textures.
-				s_displayListPos[s_displayListCount[0]] = pos;
-				s_displayListData[s_displayListCount[0]] = data;
-				s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_MID | SPARTID_SKY;
-				s_displayListData[s_displayListCount[0]].w = wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0);
+				addDisplayListItem(pos, {data.x | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
+					wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 			}
 			else
 			{
-				assert(srcWall->midTex && *srcWall->midTex && (*srcWall->midTex)->textureId >= 0 && (*srcWall->midTex)->textureId < 1024);
-
-				s_displayListPos[s_displayListCount[0]] = pos;
-				s_displayListData[s_displayListCount[0]] = data;
-				s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_MID;
-				s_displayListData[s_displayListCount[0]].z |= flip;
-				s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
+				addDisplayListItem(pos, {data.x | SPARTID_WALL_MID, data.y, data.z | flip,
+					wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 			}
-			s_displayListCount[0]++;
 		}
-		else if (srcWall->midTex && (*srcWall->midTex) && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX)) // Transparent mid-texture.
+		else if (srcWall->midTex && (*srcWall->midTex) && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
 		{
-			// Transparent items go into SECTOR_PASS_TRANS
-			s_displayListPos[s_displayListCount[1]  + MAX_DISP_ITEMS] = pos;
-			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS] = data;
-			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_MID;
-			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].z |= flip;
-			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].w = wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0);
-			s_displayListCount[1]++;
+			// Transparent mid-texture.
+			addDisplayListItem(pos, {data.x | SPARTID_WALL_MID, data.y, data.z | flip,
+				wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_TRANS);
 		}
 
+		//////////////////////////////
+		// Top and Bottom
+		//////////////////////////////
 		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 		{
-			s_displayListPos[s_displayListCount[0]] = pos;
-			s_displayListData[s_displayListCount[0]] = data;
-			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_TOP;
-			s_displayListData[s_displayListCount[0]].z |= flip;
-			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0);
-			s_displayListCount[0]++;
+			addDisplayListItem(pos, {data.x | SPARTID_WALL_TOP, data.y, data.z | flip,
+				wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
 		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 		{
-			s_displayListPos[s_displayListCount[0]] = pos;
-			s_displayListData[s_displayListCount[0]] = data;
-			s_displayListData[s_displayListCount[0]].x |= SPARTID_WALL_BOT;
-			s_displayListData[s_displayListCount[0]].z |= flip;
-			s_displayListData[s_displayListCount[0]].w = wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0);
-			s_displayListCount[0]++;
+			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT, data.y, data.z | flip,
+				wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
 
+		//////////////////////////////
+		// Sign
+		//////////////////////////////
 		if (srcWall->signTex && *srcWall->signTex)
 		{
-			// Transparent items go into SECTOR_PASS_TRANS
-			s_displayListPos[s_displayListCount[1]  + MAX_DISP_ITEMS] = pos;
-			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS] = data;
-			s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].w = wallGpuId | (*srcWall->signTex)->textureId;
+			const u32 signGpuId = wallGpuId | (*srcWall->signTex)->textureId;
 
 			// If there is a bottom texture, it goes there..
 			if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 			{
-				s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_BOT_SIGN;
-				s_displayListCount[1]++;
+				addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
 			// Otherwise if there is a top
 			else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 			{
-				s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_TOP_SIGN;
-				s_displayListCount[1]++;
+				addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
 			// And finally mid.
 			else if (srcWall->midTex && srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
 			{
-				s_displayListData[s_displayListCount[1] + MAX_DISP_ITEMS].x |= SPARTID_WALL_MID_SIGN;
-				s_displayListCount[1]++;
+				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
 		}
 
-		// Add Floor
-		s_displayListPos[s_displayListCount[0]] = pos;
-		s_displayListData[s_displayListCount[0]] = data;
-		s_displayListData[s_displayListCount[0]].x |= SPARTID_FLOOR;
-		s_displayListData[s_displayListCount[0]].w = curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0;
+		//////////////////////////////
+		// Flats
+		//////////////////////////////
+		u32 floorSkyFlags = 0u;
+		u32 ceilSkyFlags = 0u;
 		if (curSector->flags1 & SEC_FLAGS1_PIT)
 		{
-			s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY;
+			floorSkyFlags |= SPARTID_SKY;
 			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 			{
-				s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY_ADJ;
+				floorSkyFlags |= SPARTID_SKY_ADJ;
 			}
 		}
-		s_displayListCount[0]++;
-
-		// Add Ceiling
-		s_displayListPos[s_displayListCount[0]] = pos;
-		s_displayListData[s_displayListCount[0]] = data;
-		s_displayListData[s_displayListCount[0]].x |= SPARTID_CEILING;
-		s_displayListData[s_displayListCount[0]].w = curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0;
 		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
-			s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY;
+			ceilSkyFlags |= SPARTID_SKY;
 			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 			{
-				s_displayListData[s_displayListCount[0]].x |= SPARTID_SKY_ADJ;
+				ceilSkyFlags |= SPARTID_SKY_ADJ;
 			}
 		}
-		s_displayListCount[0]++;
+
+		// Floor
+		addDisplayListItem(pos, {data.x | SPARTID_FLOOR | floorSkyFlags, data.y, data.z,
+			curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+		addDisplayListItem(pos, { data.x | SPARTID_FLOOR_CAP | floorSkyFlags, data.y, data.z,
+			curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+
+		// Ceiling
+		addDisplayListItem(pos, { data.x | SPARTID_CEILING | ceilSkyFlags, data.y, data.z,
+			curSector->floorTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+		addDisplayListItem(pos, { data.x | SPARTID_CEIL_CAP | ceilSkyFlags, data.y, data.z,
+			curSector->floorTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
 	}
 
 	s32 sdisplayList_getSize(SectorPass passId)

@@ -179,6 +179,7 @@ namespace TFE_Jedi
 		if (!m_gpuInit)
 		{
 			CVAR_BOOL(s_showWireframe, "d_enableWireframe", CVFLAG_DO_NOT_SERIALIZE, "Enable wireframe rendering.");
+			TFE_COUNTER(s_wallSegGenerated, "Wall Segments");
 
 			m_gpuInit = true;
 			s_gpuFrame = 1;
@@ -497,7 +498,6 @@ namespace TFE_Jedi
 			s_wallSegGenerated++;
 			segment = segment->next;
 		}
-		sdisplayList_addCaps(curSector);
 	}
 
 	bool createNewSegment(Segment* seg, s32 id, bool isPortal, Vec2f v0, Vec2f v1, Vec2f heights, Vec2f portalHeights, Vec3f normal)
@@ -571,6 +571,13 @@ namespace TFE_Jedi
 			assert(seg2->x0 >= 0.0f && seg2->x1 <= 4.0f);
 		}
 	}
+
+	bool isWallBehindPlane(Vec2f w0, Vec2f w1, Vec2f p0, Vec2f p1)
+	{
+		const f32 side0 = (w0.x - p0.x)*(p1.z - p0.z) - (w0.z - p0.z)*(p1.x - p0.x);
+		const f32 side1 = (w1.x - p0.x)*(p1.z - p0.z) - (w1.z - p0.z)*(p1.x - p0.x);
+		return side0 <= 0.0f || side1 <= 0.0f;
+	}
 		
 	// Build world-space wall segments.
 	void buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1)
@@ -632,9 +639,8 @@ namespace TFE_Jedi
 				continue;
 			}
 
-			// Check if the wall is outside of the view frustum.
-			Vec3f qv0 = { x0, y0 - 200.0f, z0 }, qv1 = { x1, y1 + 200.0f, z1 };
-			if (!frustum_quadInside(qv0, qv1))
+			// Make sure the wall is on the correct side of the portal plane, if not in the initial sector.
+			if (!initSector && !isWallBehindPlane({ x0, z0 }, { x1, z1 }, p0, p1))
 			{
 				continue;
 			}
@@ -676,10 +682,6 @@ namespace TFE_Jedi
 				if (openSize > 0)
 				{
 					// Is the portal inside the view frustum?
-					const Vec3f portalPos = { (x0 + x1) * 0.5f, (portalY0 + portalY1) * 0.5f, (z0 + z1) * 0.5f };
-					const Vec3f maxPos = { max(x0, x1), max(portalY0, portalY1), max(z0, z1) };
-					const Vec3f diag = { maxPos.x - portalPos.x, maxPos.y - portalPos.y, maxPos.z - portalPos.z };
-					const f32 portalRadius = sqrtf(diag.x*diag.x + diag.y*diag.y + diag.z*diag.z);
 					// Cull the portal but potentially keep the edge.
 					Vec3f qv0 = { x0, portalY0, z0 }, qv1 = { x1, portalY1, z1 };
 					isPortal = frustum_quadInside(qv0, qv1);
@@ -880,7 +882,7 @@ namespace TFE_Jedi
 						{
 							// Then get the Sequence from the angle difference.
 							WaxView* view = WAX_ViewPtr(wax, anim, 31 - angleDiff);
-							// And finall the frame from the current sequence.
+							// And finally the frame from the current sequence.
 							WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 31);
 							clipSpriteToView(curSector, posWS, frame, wax, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, portalInfo);
 						}

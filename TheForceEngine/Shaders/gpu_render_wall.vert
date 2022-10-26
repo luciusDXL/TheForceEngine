@@ -193,20 +193,23 @@ void main()
 	else // Cap
 	{
 		float extrusion = 200.0;
+		vec3 vtx;
 		int flatIndex = partId - 5;	// 0 = floor, 1 = ceiling.
-		if (flatIndex == 0)
+	    vtx.y = (flatIndex==0) ? floorHeight + extrusion : ceilHeight - extrusion;
+		if ((flatIndex == 0 && vertexId < 2) || (flatIndex == 1 && vertexId >= 2))
 		{
-			// This flips the polygon orientation so backface culling works.
-			vertexId = (vertexId + 2) & 3;
+			vtx.xz = (vertexId & 1)==0 ? positions.xy : positions.zw;
 		}
-
-		vtx_pos.x = positions[2*(vertexId&1)];
-		vtx_pos.z = positions[1+2*(vertexId/2)];
-		vtx_pos.y = (flatIndex==0) ? floorHeight + extrusion : ceilHeight - extrusion;
+		else
+		{
+			// Projected position at infinity, clamped in y.
+			vtx.xz = CameraPos.xz;
+		}
+		vtx_pos  = vtx;
 		vtx_color.r = 0.0;
 		vtx_color.g = float(48 + 16*(1-flatIndex));
 
-		// Given the vertex position, compute the XZ position as the intersection between (camera->pos) and the plane at floor/ceiling height.
+		// Store the relative plane height for the floor/ceiling projection in the fragment shader.
 		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
 		vtx_uv.x = planeHeight - CameraPos.y;
 		vtx_uv.y = sky ? 3.0 : 1.0;
