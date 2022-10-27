@@ -527,7 +527,7 @@ namespace TFE_RenderBackend
 		}
 	}
 
-	void clearVirtualDisplay(f32* color)
+	void clearVirtualDisplay(f32* color, bool clearColor)
 	{
 		if (s_virtualDisplay)
 		{
@@ -535,7 +535,7 @@ namespace TFE_RenderBackend
 		}
 		else if (s_virtualRenderTarget)
 		{
-			s_virtualRenderTarget->clear(color, 1.0f);
+			s_virtualRenderTarget->clear(color, 1.0f, 0, clearColor);
 		}
 	}
 

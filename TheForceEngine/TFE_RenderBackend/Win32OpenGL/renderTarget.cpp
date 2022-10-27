@@ -68,14 +68,14 @@ void RenderTarget::bind()
 	glDepthRange(0.0f, 1.0f);
 }
 
-void RenderTarget::clear(const f32* color, f32 depth, u8 stencil)
+void RenderTarget::clear(const f32* color, f32 depth, u8 stencil, bool clearColor)
 {
 	if (color)
 		glClearColor(color[0], color[1], color[2], color[3]);
 	else
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-	u32 clearFlags = GL_COLOR_BUFFER_BIT;
+	u32 clearFlags = clearColor ? GL_COLOR_BUFFER_BIT : 0;
 	if (m_depthBufferHandle)
 	{
 		clearFlags |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;

@@ -171,13 +171,13 @@ namespace TFE_Jedi
 		}
 	}
 
-	void vfb_bindRenderTarget()
+	void vfb_bindRenderTarget(bool clearColor)
 	{
 		TFE_RenderBackend::bindVirtualDisplay();
 
 		// For now, in the future disable again (but clear depth).
 		f32 color[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		TFE_RenderBackend::clearVirtualDisplay(color);
+		TFE_RenderBackend::clearVirtualDisplay(color, clearColor);
 	}
 
 	void vfb_unbindRenderTarget()

@@ -5,6 +5,8 @@
 #include "../gameMusic.h"
 #include "../sound.h"
 #include "aiActor.h"
+#include "mousebot.h"
+#include "welder.h"
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/player.h>
@@ -66,6 +68,10 @@ namespace TFE_DarkForces
 		memset(&s_actorState, 0, sizeof(ActorState));
 		s_istate.objCollisionEnabled = JTRUE;
 		list_clear(s_physicsActors);
+
+		// Clear specific actor state.
+		mousebot_clear();
+		welder_clear();
 	}
 
 	void actor_loadSounds()

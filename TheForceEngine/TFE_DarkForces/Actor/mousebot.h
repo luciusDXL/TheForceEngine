@@ -10,4 +10,5 @@
 namespace TFE_DarkForces
 {
 	Logic* mousebot_setup(SecObject* obj, LogicSetupFunc* setupFunc);
+	void   mousebot_clear();
 }  // namespace TFE_DarkForces

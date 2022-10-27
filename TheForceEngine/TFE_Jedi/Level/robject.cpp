@@ -119,14 +119,14 @@ namespace TFE_Jedi
 		obj->fme = data;
 		obj->type = OBJ_TYPE_FRAME;
 		obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
-		WaxCell* cell = WAX_CellPtr(data, data);
+		WaxCell* cell = data ? WAX_CellPtr(data, data) : nullptr;
 
-		if (obj->worldWidth == -1)
+		if (obj->worldWidth == -1 && cell)
 		{
 			const fixed16_16 width = intToFixed16(TFE_Jedi::abs(cell->sizeX)/2);
 			obj->worldWidth = div16(width, SPRITE_SCALE_FIXED);
 		}
-		if (obj->worldHeight == -1)
+		if (obj->worldHeight == -1 && cell)
 		{
 			const fixed16_16 height = intToFixed16(TFE_Jedi::abs(cell->sizeY));
 			obj->worldHeight = div16(height, SPRITE_SCALE_FIXED);

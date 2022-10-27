@@ -25,6 +25,11 @@ namespace TFE_Jedi
 	// A small epsilon value to make point vs. plane side determinations more robust to numerical error.
 	const f32 c_planeEps = 0.0001f;
 
+	// When building the camera frustum, we instead build a "super frustum" that is slightly set backward and slightly larger
+	// in order to avoid precision issues when the camera is right on top of an adjoin.
+	const f32 c_superSidePlaneNormalScale = 0.98f;
+	const f32 c_superNearPlaneOffsetScale = 0.1f;
+
 	static Frustum s_frustumStack[256];
 	static u32 s_frustumStackPtr = 0;
 
@@ -95,11 +100,14 @@ namespace TFE_Jedi
 		Polygon poly;
 		frustum_createQuad(v0, v1, &poly);
 
+		const f32 nearPlaneEps = -c_planeEps * 10.0f;
+		const u32 nearPlaneIdx = frustum->planeCount - 1;
+
 		const Vec4f* plane = frustum->planes;
 		for (u32 i = 0; i < frustum->planeCount; i++, plane++)
 		{
 			// Make the near plane test less aggressive.
-			const f32 eps = (i == frustum->planeCount - 1) ? -c_planeEps : c_planeEps;
+			const f32 eps = (i == nearPlaneIdx) ? nearPlaneEps : c_planeEps;
 
 			// Are all vertices outside of this plane?
 			bool outside = true;
@@ -255,7 +263,7 @@ namespace TFE_Jedi
 		f32 d = -TFE_Math::dot(&N, &O);
 		newFrustum->planes[newFrustum->planeCount++] = { N.x, N.y, N.z, d };
 	}
-
+		
 	void frustum_buildFromCamera()
 	{
 		Mat4 view4;
@@ -266,10 +274,9 @@ namespace TFE_Jedi
 
 		// Scale the projection slightly, so the frustum is slightly bigger than needed (i.e. something like a guard band).
 		// This is done because exact frustum clipping isn't actually necessary for rendering, clipping is only used for portal testing.
-		f32 superScale = 0.98f;
 		Mat4 proj = s_cameraProj;
-		proj.m0.x *= superScale;
-		proj.m1.y *= superScale;
+		proj.m0.x *= c_superSidePlaneNormalScale;
+		proj.m1.y *= c_superSidePlaneNormalScale;
 
 		// Move the near plane to 0, which is allowed since clipping is done in world space.
 		proj.m2.z = -1.0f;
@@ -315,24 +322,44 @@ namespace TFE_Jedi
 			},
 		};
 
+		// Move the camera back slightly...
+		const f32 nearPlaneLen = sqrtf(planes[4].x*planes[4].x + planes[4].y*planes[4].y + planes[4].z*planes[4].z);
+		f32 nearPlaneOffsetScale = c_superNearPlaneOffsetScale;
+		if (nearPlaneLen > FLT_EPSILON)
+		{
+			nearPlaneOffsetScale /= nearPlaneLen;
+		}
+		Vec3f cameraPos = s_cameraPos;
+		cameraPos.x -= planes[4].x * nearPlaneOffsetScale;
+		cameraPos.y -= planes[4].y * nearPlaneOffsetScale;
+		cameraPos.z -= planes[4].z * nearPlaneOffsetScale;
+
 		Frustum frustum;
 		frustum.planeCount = TFE_ARRAYSIZE(planes);
 		for (u32 i = 0; i < frustum.planeCount; i++)
 		{
 			frustum.planes[i] = planes[i];
 
-			const f32 len = sqrtf(frustum.planes[i].x*frustum.planes[i].x + frustum.planes[i].y*frustum.planes[i].y + frustum.planes[i].z*frustum.planes[i].z);
-			if (len > FLT_EPSILON)
+			f32 scale = 1.0f;
+			if (i < frustum.planeCount - 1)
 			{
-				const f32 scale = 1.0f / len;
-				frustum.planes[i].x *= scale;
-				frustum.planes[i].y *= scale;
-				frustum.planes[i].z *= scale;
-				frustum.planes[i].w *= scale;
+				const f32 len = sqrtf(frustum.planes[i].x*frustum.planes[i].x + frustum.planes[i].y*frustum.planes[i].y + frustum.planes[i].z*frustum.planes[i].z);
+				if (len > FLT_EPSILON)
+				{
+					scale = 1.0f / len;
+					frustum.planes[i].x *= scale;
+					frustum.planes[i].y *= scale;
+					frustum.planes[i].z *= scale;
+					frustum.planes[i].w *= scale;
+				}
+			}
+			else if (nearPlaneLen > FLT_EPSILON)
+			{
+				scale = 1.0f / nearPlaneLen;
 			}
 
 			assert(frustum.planes[i].w == 0.0f);
-			f32 d = -TFE_Math::dot((Vec3f*)frustum.planes[i].m, &s_cameraPos);
+			f32 d = -TFE_Math::dot((Vec3f*)frustum.planes[i].m, &cameraPos);
 			frustum.planes[i].w = d;
 		}
 		frustum_push(frustum);

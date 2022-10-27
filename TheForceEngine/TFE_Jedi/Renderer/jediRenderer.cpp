@@ -355,7 +355,12 @@ namespace TFE_Jedi
 		}
 		if (s_subRenderer == TSR_CLASSIC_GPU)
 		{
-			vfb_bindRenderTarget();
+		#ifdef _DEBUG
+			// Clear the color in debug in order to make it easier to see artifacts.
+			vfb_bindRenderTarget(true);
+		#else
+			vfb_bindRenderTarget(false);
+		#endif
 
 			u32 width, height;
 			vfb_getResolution(&width, &height);

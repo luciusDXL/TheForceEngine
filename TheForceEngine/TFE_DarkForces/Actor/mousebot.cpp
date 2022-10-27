@@ -11,6 +11,7 @@
 #include <TFE_DarkForces/sound.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Asset/modelAsset_jedi.h>
+#include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
@@ -234,14 +235,23 @@ namespace TFE_DarkForces
 		{
 			// Create the dead version of the mousebot.
 			SecObject* newObj = allocateObject();
-			frame_setData(newObj, s_mouseBotRes.deadFrame);
+			if (newObj)
+			{
+				if (!s_mouseBotRes.deadFrame)
+				{
+					TFE_System::logWrite(LOG_ERROR, "MouseBot", "Missing asset - dead frame.");
+					// Attempt to load it now.
+					s_mouseBotRes.deadFrame = TFE_Sprite_Jedi::getFrame("dedmouse.fme");
+				}
 
-			newObj->frame = 0;
-			newObj->posWS = local(obj)->posWS;
-			newObj->entityFlags |= ETFLAG_CORPSE;
-			newObj->worldWidth = 0;
-			newObj->worldHeight = 0;
-			sector_addObject(local(sector), newObj);
+				frame_setData(newObj, s_mouseBotRes.deadFrame);
+				newObj->frame = 0;
+				newObj->posWS = local(obj)->posWS;
+				newObj->entityFlags |= ETFLAG_CORPSE;
+				newObj->worldWidth = 0;
+				newObj->worldHeight = 0;
+				sector_addObject(local(sector), newObj);
+			}
 
 			// Spawn a battery.
 			SecObject* item = item_create(ITEM_BATTERY);
@@ -331,6 +341,11 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(&mouseBot->logic);
 		level_free(mouseBot);
 		task_free(task);
+	}
+
+	void mousebot_clear()
+	{
+		s_mouseBotRes.deadFrame = nullptr;
 	}
 
 	Logic* mousebot_setup(SecObject* obj, LogicSetupFunc* setupFunc)

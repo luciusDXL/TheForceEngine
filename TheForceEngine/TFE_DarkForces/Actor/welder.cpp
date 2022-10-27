@@ -399,6 +399,11 @@ namespace TFE_DarkForces
 		task_free(welder->actor.actorTask);
 	}
 
+	void welder_clear()
+	{
+		s_welderSpark = nullptr;
+	}
+
 	Logic* welder_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		if (!s_welderSpark)

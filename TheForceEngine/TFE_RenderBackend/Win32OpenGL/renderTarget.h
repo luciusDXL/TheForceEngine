@@ -15,7 +15,7 @@ public:
 
 	bool create(TextureGpu* texture, bool depthBuffer);
 	void bind();
-	void clear(const f32* color, f32 depth, u8 stencil = 0);
+	void clear(const f32* color, f32 depth, u8 stencil = 0, bool clearColor = true);
 	void clearDepth(f32 depth);
 	void clearStencil(u8 stencil);
 	static void copy(RenderTarget* dst, RenderTarget* src);
