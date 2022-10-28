@@ -309,7 +309,7 @@ namespace TFE_Jedi
 		//////////////////////////////
 		// Mid
 		//////////////////////////////
-		if (srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
+		if (!srcWall->nextSector)
 		{
 			if (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
 			{

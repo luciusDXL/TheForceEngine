@@ -905,8 +905,7 @@ namespace TFE_Jedi
 
 	void traverseSector(RSector* curSector, RSector* prevSector, s32 prevPortalId, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
 	{
-		//if (level >= 255)
-		if (level >= 64)
+		if (level > 255)
 		{
 			return;
 		}
