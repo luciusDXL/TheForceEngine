@@ -411,6 +411,7 @@ namespace TFE_Jedi
 		if (s_subRenderer == TSR_CLASSIC_GPU)
 		{
 			screenDraw_endQuads();
+			screenDraw_endLines();
 			vfb_unbindRenderTarget();
 		}
 	}

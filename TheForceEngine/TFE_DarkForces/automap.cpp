@@ -290,8 +290,6 @@ namespace TFE_DarkForces
 		s_mapFramebuffer = framebuffer;
 		automap_drawSectors();
 		s_pdaActive = JFALSE;
-
-		screenDraw_endLines();
 	}
 
 	s32 automap_getLayer()
