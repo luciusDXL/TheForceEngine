@@ -165,6 +165,10 @@ namespace TFE_Jedi
 		light_transformDirLights();
 	}
 
+	void TFE_Sectors_Fixed::destroy()
+	{
+	}
+
 	void TFE_Sectors_Fixed::reset()
 	{
 	}

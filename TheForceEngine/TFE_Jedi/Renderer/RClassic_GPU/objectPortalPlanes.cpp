@@ -28,24 +28,31 @@ using namespace TFE_RenderBackend;
 namespace TFE_Jedi
 {
 	static u32 s_objectPlaneCount = 0;
-	static u32 s_objectPlaneInfo[MAX_DISP_ITEMS];
-	static Vec4f s_objectPlanes[MAX_PORTAL_PLANES * MAX_DISP_ITEMS];
-
+	static u32* s_objectPlaneInfo = nullptr;
+	static Vec4f* s_objectPlanes = nullptr;
 	static ShaderBuffer s_objectPlanesGPU;
 		
 	void objectPortalPlanes_init()
 	{
+		s_objectPlaneInfo = (u32*)malloc(sizeof(u32)*MAX_DISP_ITEMS);
+		s_objectPlanes = (Vec4f*)malloc(sizeof(Vec4f)*MAX_BUFFER_SIZE);
+
 		ShaderBufferDef bufferDefDisplayListPlanes =
 		{
 			4,				// 1, 2, 4 channels (R, RG, RGBA)
 			sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 			BUF_CHANNEL_FLOAT
 		};
-		s_objectPlanesGPU.create(MAX_PORTAL_PLANES*MAX_DISP_ITEMS, bufferDefDisplayListPlanes, true);
+		s_objectPlanesGPU.create(MAX_BUFFER_SIZE, bufferDefDisplayListPlanes, true);
 	}
 
 	void objectPortalPlanes_destroy()
 	{
+		free(s_objectPlaneInfo);
+		free(s_objectPlanes);
+		s_objectPlaneInfo = nullptr;
+		s_objectPlanes = nullptr;
+
 		s_objectPlaneCount = 0;
 		s_objectPlanesGPU.destroy();
 	}
@@ -75,7 +82,7 @@ namespace TFE_Jedi
 
 	u32 objectPortalPlanes_add(u32 count, const Vec4f* planes)
 	{
-		if (count < 1) { return 0; }
+		if (count < 1 || s_objectPlaneCount >= MAX_BUFFER_SIZE) { return 0; }
 		const u32 planeInfo = PACK_PORTAL_INFO(s_objectPlaneCount, count);
 		memcpy(&s_objectPlanes[s_objectPlaneCount], planes, sizeof(Vec4f) * count);
 		s_objectPlaneCount += count;

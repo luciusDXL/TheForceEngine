@@ -225,7 +225,7 @@ namespace TFE_DarkForces
 
 			// Convert back to level rendering.
 			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-			if (TFE_Jedi::renderer_getType() == RENDERER_SOFTWARE && graphics->rendererIndex != RENDERER_SOFTWARE)
+			if (graphics->rendererIndex != RENDERER_SOFTWARE)
 			{
 				TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
 				TFE_Jedi::renderer_setLimits();

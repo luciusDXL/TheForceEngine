@@ -46,27 +46,41 @@ namespace TFE_Jedi
 	};
 
 	// TODO: factor out so the sprite, sector, and geometry passes can use it.
-	s32 s_displayCurrentPortalId;
+	s32 s_displayCurrentPortalId = 0;
 	ShaderBuffer s_displayListPlanesGPU;
 
 	static s32 s_displayListCount[SECTOR_PASS_COUNT];
-	static s32 s_displayPlaneCount;
-	static s32 s_displayPortalCount;
-	static Vec4f  s_displayListPos[SECTOR_PASS_COUNT * MAX_DISP_ITEMS];
-	static Vec4ui s_displayListData[SECTOR_PASS_COUNT * MAX_DISP_ITEMS];
-	static Vec4f  s_displayListPlanes[MAX_PORTAL_PLANES * MAX_DISP_ITEMS];
+	static s32 s_displayPlaneCount  = 0;
+	static s32 s_displayPortalCount = 0;
+	static Vec4f*  s_displayListPos    = nullptr;
+	static Vec4ui* s_displayListData   = nullptr;
+	static Vec4f*  s_displayListPlanes = nullptr;
+	static u32*    s_portalPlaneInfo   = nullptr;
+	static Frustum* s_portalFrustumVert = nullptr;
+	// GPU Memory size = 32 * SECTOR_PASS_COUNT * MAX_DISP_ITEMS = 64 * MAX_DISP_ITEMS = 64 * 8192 = 512Kb; 64 * 65536 = 4Mb 
 	static ShaderBuffer s_displayListPosGPU[SECTOR_PASS_COUNT];
 	static ShaderBuffer s_displayListDataGPU[SECTOR_PASS_COUNT];
 	static s32 s_posIndex[SECTOR_PASS_COUNT];
 	static s32 s_dataIndex[SECTOR_PASS_COUNT];
-	static s32 s_planesIndex;
-
-	u32 s_portalPlaneInfo[256];
-	static Frustum s_portalFrustumVert[256];
+	static s32 s_planesIndex = -1;
 	static s32 s_maxPlaneCount = 0;
 
 	void sdisplayList_init(s32* posIndex, s32* dataIndex, s32 planesIndex)
 	{
+		TFE_COUNTER(s_displayPortalCount, "GPU Portal Count");
+		TFE_COUNTER(s_displayPlaneCount, "GPU Plane Count");
+		
+		// Allocate CPU buffers
+		// CPU Memory size = (32 * SECTOR_PASS_COUNT + 16 * MAX_PORTAL_PLANES) * MAX_DISP_ITEMS
+		//                 = 192 * MAX_DISP_ITEMS
+		//				   : MAX_DISP_ITEMS = 8192  = 192 * 8192  = 1.5Mb
+		//                 : MAX_DISP_ITEMS = 65536 = 192 * 65536 = 12Mb
+		s_displayListPos    = (Vec4f*)malloc(sizeof(Vec4f) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
+		s_displayListData   = (Vec4ui*)malloc(sizeof(Vec4ui) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
+		s_displayListPlanes = (Vec4f*)malloc(sizeof(Vec4f) * MAX_BUFFER_SIZE);
+		s_portalPlaneInfo   = (u32*)malloc(sizeof(u32) * MAX_DISP_ITEMS);
+		s_portalFrustumVert = (Frustum*)malloc(sizeof(Frustum) * MAX_DISP_ITEMS);
+
 		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
 		{
 			ShaderBufferDef bufferDefDisplayListPos =
@@ -95,7 +109,7 @@ namespace TFE_Jedi
 			sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
 			BUF_CHANNEL_FLOAT
 		};
-		s_displayListPlanesGPU.create(MAX_PORTAL_PLANES*MAX_DISP_ITEMS, bufferDefDisplayListPlanes, true);
+		s_displayListPlanesGPU.create(MAX_BUFFER_SIZE, bufferDefDisplayListPlanes, true);
 		s_planesIndex = planesIndex;
 
 		sdisplayList_clear();
@@ -103,6 +117,17 @@ namespace TFE_Jedi
 
 	void sdisplayList_destroy()
 	{
+		free(s_displayListPos);
+		free(s_displayListData);
+		free(s_displayListPlanes);
+		free(s_portalPlaneInfo);
+		free(s_portalFrustumVert);
+		s_displayListPos = nullptr;
+		s_displayListData = nullptr;
+		s_displayListPlanes = nullptr;
+		s_portalPlaneInfo = nullptr;
+		s_portalFrustumVert = nullptr;
+
 		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
 		{
 			s_displayListPosGPU[i].destroy();
@@ -255,20 +280,29 @@ namespace TFE_Jedi
 			s_portalFrustumVert[s_displayPortalCount].planes[2] = frustum_calculatePlaneFromEdge(leftEdge);
 			s_portalFrustumVert[s_displayPortalCount].planes[3] = frustum_calculatePlaneFromEdge(rightEdge);
 		}
-		s_portalPlaneInfo[s_displayPortalCount] = PACK_PORTAL_INFO(s_displayPlaneCount, min(MAX_PORTAL_PLANES, s_portalFrustumVert[s_displayPortalCount].planeCount));
 
-		// The new planes either match the parent or are created from the edges.
-		const Frustum* frust = &s_portalFrustumVert[s_displayPortalCount];
-		Vec4f* outPlanes = &s_displayListPlanes[s_displayPlaneCount];
-		for (u32 i = 0; i < frust->planeCount && i < MAX_PORTAL_PLANES; i++)
+		const u32 planeCount = min(MAX_PORTAL_PLANES, s_portalFrustumVert[s_displayPortalCount].planeCount);
+		if (s_displayPortalCount + planeCount < MAX_BUFFER_SIZE)
 		{
-			outPlanes[i] = frust->planes[i];
-			s_displayPlaneCount++;
-		}
+			s_portalPlaneInfo[s_displayPortalCount] = PACK_PORTAL_INFO(s_displayPlaneCount, planeCount);
 
-		s_displayCurrentPortalId = 1 + s_displayPortalCount;
-		s_displayPortalCount++;
-		
+			// The new planes either match the parent or are created from the edges.
+			const Frustum* frust = &s_portalFrustumVert[s_displayPortalCount];
+			Vec4f* outPlanes = &s_displayListPlanes[s_displayPlaneCount];
+			for (u32 i = 0; i < frust->planeCount && i < MAX_PORTAL_PLANES; i++)
+			{
+				outPlanes[i] = frust->planes[i];
+				s_displayPlaneCount++;
+			}
+
+			s_displayCurrentPortalId = 1 + s_displayPortalCount;
+			s_displayPortalCount++;
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_WARNING, "GPU Renderer", "Too many portal planes.");
+			assert(0);
+		}
 		return true;
 	}
 

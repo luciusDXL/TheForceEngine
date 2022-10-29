@@ -32,7 +32,8 @@ namespace TFE_Jedi
 	enum Contants
 	{
 		MAX_PORTAL_PLANES = 8,  // Minimum custom clipping plane limit for OpenGL 3.3
-		MAX_DISP_ITEMS = 8192,
+		MAX_DISP_ITEMS = 65536,
+		MAX_BUFFER_SIZE = 65536,
 	};
 
 	struct GPUCachedSector

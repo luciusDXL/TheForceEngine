@@ -29,10 +29,15 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
-	static s32 s_displayListCount;
-	static Vec4f s_displayListPosXZTexture[2][MAX_DISP_ITEMS];
-	static Vec4f s_displayListPosYUTexture[2][MAX_DISP_ITEMS];
-	static Vec2i s_displayListTexIdTexture[2][MAX_DISP_ITEMS];
+	enum
+	{
+		SPRITE_BUFFER_COUNT = 2,
+	};
+
+	static s32 s_displayListCount = 0;
+	static Vec4f* s_displayListPosXZTexture[SPRITE_BUFFER_COUNT] = { nullptr };
+	static Vec4f* s_displayListPosYUTexture[SPRITE_BUFFER_COUNT] = { nullptr };
+	static Vec2i* s_displayListTexIdTexture[SPRITE_BUFFER_COUNT] = { nullptr };
 	static ShaderBuffer s_displayListPosXZTextureGPU;
 	static ShaderBuffer s_displayListPosYUTextureGPU;
 	static ShaderBuffer s_displayListTexIdTextureGPU;
@@ -52,6 +57,13 @@ namespace TFE_Jedi
 
 	void sprdisplayList_init(s32 startIndex)
 	{
+		for (s32 i = 0; i < SPRITE_BUFFER_COUNT; i++)
+		{
+			s_displayListPosXZTexture[i] = (Vec4f*)malloc(sizeof(Vec4f*) * MAX_DISP_ITEMS);
+			s_displayListPosYUTexture[i] = (Vec4f*)malloc(sizeof(Vec4f*) * MAX_DISP_ITEMS);
+			s_displayListTexIdTexture[i] = (Vec2i*)malloc(sizeof(Vec2i*) * MAX_DISP_ITEMS);
+		}
+
 		ShaderBufferDef bufferDefDisplayList =
 		{
 			4,				// 1, 2, 4 channels (R, RG, RGBA)
@@ -80,6 +92,16 @@ namespace TFE_Jedi
 
 	void sprdisplayList_destroy()
 	{
+		for (s32 i = 0; i < SPRITE_BUFFER_COUNT; i++)
+		{
+			free(s_displayListPosXZTexture[i]);
+			free(s_displayListPosYUTexture[i]);
+			free(s_displayListTexIdTexture[i]);
+			s_displayListPosXZTexture[i] = nullptr;
+			s_displayListPosYUTexture[i] = nullptr;
+			s_displayListTexIdTexture[i] = nullptr;
+		}
+
 		s_displayListPosXZTextureGPU.destroy();
 		s_displayListPosYUTextureGPU.destroy();
 		s_displayListTexIdTextureGPU.destroy();
@@ -95,14 +117,19 @@ namespace TFE_Jedi
 		if (!s_displayListCount) { return; }
 		sprdisplayList_sort();
 
-		s_displayListPosXZTextureGPU.update(&s_displayListPosXZTexture[1], sizeof(Vec4f) * s_displayListCount);
-		s_displayListPosYUTextureGPU.update(&s_displayListPosYUTexture[1], sizeof(Vec4f) * s_displayListCount);
-		s_displayListTexIdTextureGPU.update(&s_displayListTexIdTexture[1], sizeof(Vec2i) * s_displayListCount);
+		s_displayListPosXZTextureGPU.update(s_displayListPosXZTexture[1], sizeof(Vec4f) * s_displayListCount);
+		s_displayListPosYUTextureGPU.update(s_displayListPosYUTexture[1], sizeof(Vec4f) * s_displayListCount);
+		s_displayListTexIdTextureGPU.update(s_displayListTexIdTexture[1], sizeof(Vec2i) * s_displayListCount);
 	}
 
 	void sprdisplayList_addFrame(const SpriteDrawFrame* const drawFrame)
 	{
 		if (!drawFrame->basePtr || !drawFrame->frame) { return; }
+		if (s_displayListCount >= MAX_DISP_ITEMS)
+		{
+			assert(0);
+			return;
+		}
 
 		const WaxCell* cell = WAX_CellPtr(drawFrame->basePtr, drawFrame->frame);
 		assert(cell->textureId >= 0 && cell->textureId < 32768);
@@ -180,13 +207,13 @@ namespace TFE_Jedi
 	void sprdisplayList_sort()
 	{
 		// Fill in the sort keys.
-		SpriteSortKey sortKey[MAX_DISP_ITEMS];
+		static SpriteSortKey sortKey[MAX_DISP_ITEMS];
 		for (s32 i = 0; i < s_displayListCount; i++)
 		{
 			sortKey[i].index = i;
 
-			Vec4f* posXZ = &s_displayListPosXZTexture[0][i];
-			Vec4f* posYU = &s_displayListPosYUTexture[0][i];
+			const Vec4f* posXZ = &s_displayListPosXZTexture[0][i];
+			const Vec4f* posYU = &s_displayListPosYUTexture[0][i];
 			Vec3f relPos = { posXZ->x - s_cameraPos.x, posYU->x - s_cameraPos.y, posXZ->y - s_cameraPos.z };
 			sortKey[i].key = relPos.x*s_cameraDir.x + relPos.y*s_cameraDir.y + relPos.z*s_cameraDir.z;
 		}

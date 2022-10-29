@@ -97,7 +97,7 @@ namespace TFE_Jedi
 	static s32 s_portalListCount = 0;
 	static s32 s_rangeCount;
 
-	static Portal s_portalList[2048];
+	static Portal* s_portalList = nullptr;
 	static Vec2f  s_range[2];
 	static Vec2f  s_rangeSrc[2];
 
@@ -111,6 +111,7 @@ namespace TFE_Jedi
 	extern Vec3f s_cameraPos;
 	extern Vec3f s_cameraDir;
 	extern Vec3f s_cameraRight;
+	extern s32   s_displayCurrentPortalId;
 	extern ShaderBuffer s_displayListPlanesGPU;
 		
 	bool loadSpriteShader()
@@ -141,8 +142,11 @@ namespace TFE_Jedi
 		return true;
 	}
 	
-	bool loadShaderVariant(s32 index, s32 defineCount, ShaderDefine* defines)
+	static bool loadShaderVariant(s32 index, s32 defineCount, ShaderDefine* defines)
 	{
+		// Destroy the existing shader so we aren't duplicating shaders if new settings are used.
+		s_wallShader[index].destroy();
+
 		if (!s_wallShader[index].load("Shaders/gpu_render_wall.vert", "Shaders/gpu_render_wall.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;
@@ -170,19 +174,45 @@ namespace TFE_Jedi
 		return true;
 	}
 
+	void TFE_Sectors_GPU::destroy()
+	{
+		free(s_portalList);
+		s_spriteShader.destroy();
+		s_wallShader[0].destroy();
+		s_wallShader[1].destroy();
+		s_indexBuffer.destroy();
+		s_sectorGpuBuffer.destroy();
+		s_wallGpuBuffer.destroy();
+		TFE_RenderBackend::freeTexture(s_colormapTex);
+		
+		s_portalList = nullptr;
+		s_cachedSectors = nullptr;
+		s_colormapTex = nullptr;
+
+		sdisplayList_destroy();
+		sprdisplayList_destroy();
+		objectPortalPlanes_destroy();
+		model_destroy();
+	}
+
 	void TFE_Sectors_GPU::reset()
 	{
+		m_levelInit = false;
 	}
-		
+	
 	void TFE_Sectors_GPU::prepare()
 	{
 		if (!m_gpuInit)
 		{
 			CVAR_BOOL(s_showWireframe, "d_enableWireframe", CVFLAG_DO_NOT_SERIALIZE, "Enable wireframe rendering.");
 			TFE_COUNTER(s_wallSegGenerated, "Wall Segments");
-
+			
 			m_gpuInit = true;
 			s_gpuFrame = 1;
+			if (!s_portalList)
+			{
+				s_portalList = (Portal*)malloc(sizeof(Portal) * MAX_DISP_ITEMS);
+			}
 
 			// Read the current graphics settings before compiling shaders.
 			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
@@ -200,9 +230,9 @@ namespace TFE_Jedi
 			assert(result);
 
 			// Handles up to 65536 sector quads in the view.
-			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * 65536);
+			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * MAX_DISP_ITEMS);
 			u16* index = indices;
-			for (s32 q = 0; q < 65536; q++, index += 6)
+			for (s32 q = 0; q < MAX_DISP_ITEMS; q++, index += 6)
 			{
 				const s32 i = q * 4;
 				index[0] = i + 0;
@@ -213,8 +243,22 @@ namespace TFE_Jedi
 				index[4] = i + 3;
 				index[5] = i + 2;
 			}
-			s_indexBuffer.create(6 * 65536, sizeof(u16), false, (void*)indices);
+			s_indexBuffer.create(6 * MAX_DISP_ITEMS, sizeof(u16), false, (void*)indices);
 			level_free(indices);
+
+			// Initialize the display list with the GPU buffers.
+			s32 posIndex[] = { 2, 2 };
+			s32 dataIndex[] = { 3, 3 };
+			sdisplayList_init(posIndex, dataIndex, 4);
+
+			// Sprite Shader and buffers...
+			sprdisplayList_init(0);
+			objectPortalPlanes_init();
+			model_init();
+		}
+		if (!m_levelInit)
+		{
+			m_levelInit = true;
 
 			// Let's just cache the current data.
 			s_cachedSectors = (GPUCachedSector*)level_alloc(sizeof(GPUCachedSector) * s_levelState.sectorCount);
@@ -229,19 +273,19 @@ namespace TFE_Jedi
 			{
 				RSector* curSector = &s_levelState.sectors[s];
 				GPUCachedSector* cachedSector = &s_cachedSectors[s];
-				cachedSector->floorHeight   = fixed16ToFloat(curSector->floorHeight);
+				cachedSector->floorHeight = fixed16ToFloat(curSector->floorHeight);
 				cachedSector->ceilingHeight = fixed16ToFloat(curSector->ceilingHeight);
 				cachedSector->wallStart = wallCount;
 
-				s_gpuSourceData.sectors[s*2].x = cachedSector->floorHeight;
-				s_gpuSourceData.sectors[s*2].y = cachedSector->ceilingHeight;
-				s_gpuSourceData.sectors[s*2].z = clamp(fixed16ToFloat(curSector->ambient), 0.0f, 31.0f);
-				s_gpuSourceData.sectors[s*2].w = 0.0f;
+				s_gpuSourceData.sectors[s * 2].x = cachedSector->floorHeight;
+				s_gpuSourceData.sectors[s * 2].y = cachedSector->ceilingHeight;
+				s_gpuSourceData.sectors[s * 2].z = clamp(fixed16ToFloat(curSector->ambient), 0.0f, 31.0f);
+				s_gpuSourceData.sectors[s * 2].w = 0.0f;
 
-				s_gpuSourceData.sectors[s*2 + 1].x = fixed16ToFloat(curSector->floorOffset.x);
-				s_gpuSourceData.sectors[s*2 + 1].y = fixed16ToFloat(curSector->floorOffset.z);
-				s_gpuSourceData.sectors[s*2 + 1].z = fixed16ToFloat(curSector->ceilOffset.x);
-				s_gpuSourceData.sectors[s*2 + 1].w = fixed16ToFloat(curSector->ceilOffset.z);
+				s_gpuSourceData.sectors[s * 2 + 1].x = fixed16ToFloat(curSector->floorOffset.x);
+				s_gpuSourceData.sectors[s * 2 + 1].y = fixed16ToFloat(curSector->floorOffset.z);
+				s_gpuSourceData.sectors[s * 2 + 1].z = fixed16ToFloat(curSector->ceilOffset.x);
+				s_gpuSourceData.sectors[s * 2 + 1].w = fixed16ToFloat(curSector->ceilOffset.z);
 
 				wallCount += curSector->wallCount;
 			}
@@ -255,9 +299,9 @@ namespace TFE_Jedi
 				RSector* curSector = &s_levelState.sectors[s];
 				GPUCachedSector* cachedSector = &s_cachedSectors[s];
 
-				Vec4f* wallData = &s_gpuSourceData.walls[cachedSector->wallStart*3];
+				Vec4f* wallData = &s_gpuSourceData.walls[cachedSector->wallStart * 3];
 				const RWall* srcWall = curSector->walls;
-				for (s32 w = 0; w < curSector->wallCount; w++, wallData+=3, srcWall++)
+				for (s32 w = 0; w < curSector->wallCount; w++, wallData += 3, srcWall++)
 				{
 					wallData[0].x = fixed16ToFloat(srcWall->w0->x);
 					wallData[0].y = fixed16ToFloat(srcWall->w0->z);
@@ -296,24 +340,37 @@ namespace TFE_Jedi
 				}
 			}
 
-			ShaderBufferDef bufferDefSectors =
+			if (m_prevSectorCount < s_levelState.sectorCount || m_prevWallCount < wallCount || !m_gpuBuffersAllocated)
 			{
-				4,				// 1, 2, 4 channels (R, RG, RGBA)
-				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-				BUF_CHANNEL_FLOAT
-			};
-			s_sectorGpuBuffer.create(s_levelState.sectorCount*2, bufferDefSectors, true, s_gpuSourceData.sectors);
-			s_wallGpuBuffer.create(wallCount*3, bufferDefSectors, true, s_gpuSourceData.walls);
+				// Recreate the GPU sector buffers so they are large enough to hold the new data.
+				if (m_gpuBuffersAllocated)
+				{
+					s_sectorGpuBuffer.destroy();
+					s_wallGpuBuffer.destroy();
+				}
 
-			// Initialize the display list with the GPU buffers.
-			s32 posIndex[]  = { 2, 2 };
-			s32 dataIndex[] = { 3, 3 };
-			sdisplayList_init(posIndex, dataIndex, 4);
+				ShaderBufferDef bufferDefSectors =
+				{
+					4,				// 1, 2, 4 channels (R, RG, RGBA)
+					sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
+					BUF_CHANNEL_FLOAT
+				};
+				s_sectorGpuBuffer.create(s_levelState.sectorCount * 2, bufferDefSectors, true, s_gpuSourceData.sectors);
+				s_wallGpuBuffer.create(wallCount * 3, bufferDefSectors, true, s_gpuSourceData.walls);
 
-			// Sprite Shader and buffers...
-			sprdisplayList_init(0);
-			objectPortalPlanes_init();
-
+				m_gpuBuffersAllocated = true;
+				m_prevSectorCount = s_levelState.sectorCount;
+				m_prevWallCount = wallCount;
+			}
+			else
+			{
+				// Update the GPU sector buffers since they are already large enough.
+				s_sectorGpuBuffer.update(s_gpuSourceData.sectors, s_gpuSourceData.sectorSize);
+				s_wallGpuBuffer.update(s_gpuSourceData.walls, s_gpuSourceData.wallSize);
+			}
+			m_prevSectorCount = s_levelState.sectorCount;
+			m_prevWallCount = wallCount;
+			
 			// Build the color map.
 			if (s_colorMap && s_lightSourceRamp)
 			{
@@ -332,6 +389,7 @@ namespace TFE_Jedi
 					}
 					data[2] = data[3] = 0;
 				}
+				TFE_RenderBackend::freeTexture(s_colormapTex);
 				s_colormapTex = TFE_RenderBackend::createTexture(256, 32, colormapData);
 			}
 
@@ -345,10 +403,9 @@ namespace TFE_Jedi
 				texturepacker_commit();
 			}
 
-			model_init();
 			model_loadGpuModels();
 		}
-		else
+ 		else
 		{
 			s_gpuFrame++;
 		}
@@ -899,13 +956,10 @@ namespace TFE_Jedi
 			}
 		}
 	}
-
-	extern s32 s_displayCurrentPortalId;
-	static f32 s_minHeight, s_maxHeight;
-
+		
 	void traverseSector(RSector* curSector, RSector* prevSector, s32 prevPortalId, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
 	{
-		if (level > 255)
+		if (level > MAX_ADJOIN_DEPTH_EXT)
 		{
 			return;
 		}

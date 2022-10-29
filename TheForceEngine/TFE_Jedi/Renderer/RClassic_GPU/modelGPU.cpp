@@ -541,6 +541,9 @@ namespace TFE_Jedi
 		s_modelCount = 0;
 		s_verticesMerged = 0;
 
+		s_modelVertexBuffer.destroy();
+		s_modelIndexBuffer.destroy();
+
 		// For now handle both pools here.
 		for (s32 pool = 0; pool < POOL_COUNT; pool++)
 		{

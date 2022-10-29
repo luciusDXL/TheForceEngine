@@ -140,7 +140,10 @@ void Shader::enableClipPlanes(s32 count)
 
 void Shader::destroy()
 {
-	glDeleteProgram(m_gpuHandle);
+	if (m_gpuHandle)
+	{
+		glDeleteProgram(m_gpuHandle);
+	}
 	m_gpuHandle = 0;
 }
 

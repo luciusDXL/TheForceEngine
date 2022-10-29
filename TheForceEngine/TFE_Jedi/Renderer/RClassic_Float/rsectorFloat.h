@@ -38,6 +38,7 @@ namespace TFE_Jedi
 		TFE_Sectors_Float() : m_cachedSectors(nullptr), m_cachedSectorCount(0) {}
 
 		// Sub-Renderer specific
+		void destroy() override;
 		void reset() override;
 		void prepare() override;
 		void draw(RSector* sector) override;

@@ -18,6 +18,7 @@ namespace TFE_Jedi
 	{
 	public:
 		// Sub-Renderer specific
+		void destroy() override;
 		void reset() override;
 		void prepare() override;
 		void draw(RSector* sector) override;

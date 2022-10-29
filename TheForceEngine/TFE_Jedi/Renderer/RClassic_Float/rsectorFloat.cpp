@@ -167,6 +167,10 @@ namespace TFE_Jedi
 		}
 	}
 
+	void TFE_Sectors_Float::destroy()
+	{
+	}
+
 	void TFE_Sectors_Float::reset()
 	{
 		m_cachedSectors = nullptr;

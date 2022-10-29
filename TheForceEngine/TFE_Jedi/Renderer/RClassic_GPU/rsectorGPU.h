@@ -16,9 +16,10 @@ namespace TFE_Jedi
 	class TFE_Sectors_GPU : public TFE_Sectors
 	{
 	public:
-		TFE_Sectors_GPU() : m_gpuInit(false) {}
+		TFE_Sectors_GPU() : m_gpuInit(false), m_levelInit(false), m_gpuBuffersAllocated(false), m_prevSectorCount(0), m_prevWallCount(0) {}
 
 		// Sub-Renderer specific
+		void destroy() override;
 		void reset() override;
 		void prepare() override;
 		void draw(RSector* sector) override;
@@ -27,9 +28,13 @@ namespace TFE_Jedi
 		static TextureGpu* getColormap();
 
 	private: 
-		bool updateBasePassShader();
+		static bool updateBasePassShader();
 	private:
 		bool m_gpuInit;
+		bool m_levelInit;
+		bool m_gpuBuffersAllocated;
+		s32  m_prevSectorCount;
+		s32  m_prevWallCount;
 
 	public:
 	};
