@@ -340,7 +340,7 @@ namespace TFE_Jedi
 				}
 			}
 
-			if (m_prevSectorCount < s_levelState.sectorCount || m_prevWallCount < wallCount || !m_gpuBuffersAllocated)
+			if (m_prevSectorCount < (s32)s_levelState.sectorCount || m_prevWallCount < wallCount || !m_gpuBuffersAllocated)
 			{
 				// Recreate the GPU sector buffers so they are large enough to hold the new data.
 				if (m_gpuBuffersAllocated)

@@ -210,6 +210,23 @@ namespace TFE_DarkForces
 	{
 		return s_pdaOpen;
 	}
+
+	void pda_close()
+	{
+		automap_updateMapData(MAP_ENABLE_AUTOCENTER);
+		s_pdaOpen = JFALSE;
+
+		// TFE
+		reticle_enable(true);
+
+		// Convert back to level rendering.
+		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		if (graphics->rendererIndex != RENDERER_SOFTWARE)
+		{
+			TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
+			TFE_Jedi::renderer_setLimits();
+		}
+	}
 			
 	void pda_update()
 	{
@@ -220,17 +237,7 @@ namespace TFE_DarkForces
 		
 		if (TFE_Input::keyPressed(KEY_F1) || TFE_Input::keyPressed(KEY_ESCAPE))
 		{
-			// TFE
-			reticle_enable(true);
-
-			// Convert back to level rendering.
-			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-			if (graphics->rendererIndex != RENDERER_SOFTWARE)
-			{
-				TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
-				TFE_Jedi::renderer_setLimits();
-			}
-			s_pdaOpen = JFALSE;
+			pda_close();
 			return;
 		}
 		else if (TFE_Jedi::renderer_getType() != RENDERER_SOFTWARE)
@@ -505,8 +512,7 @@ namespace TFE_DarkForces
 					} break;
 					case PDA_BTN_EXIT:
 					{
-						s_pdaOpen = JFALSE;
-						automap_updateMapData(MAP_ENABLE_AUTOCENTER);
+						pda_close();
 					} break;
 					case PDA_BTN_LAYERUP:
 					{
