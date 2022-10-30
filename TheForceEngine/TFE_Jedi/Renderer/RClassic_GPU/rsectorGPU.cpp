@@ -637,7 +637,7 @@ namespace TFE_Jedi
 	}
 		
 	// Build world-space wall segments.
-	void buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1)
+	bool buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1)
 	{
 		static Segment wallSegments[2048];
 
@@ -656,6 +656,12 @@ namespace TFE_Jedi
 			s_range[0].z = sbuffer_projectToUnitSquare(p1);
 			sbuffer_handleEdgeWrapping(s_range[0].x, s_range[0].z);
 			s_rangeCount = 1;
+
+			if (fabsf(s_range[0].x - s_range[0].z) < FLT_EPSILON)
+			{
+				sbuffer_clear();
+				return false;
+			}
 
 			if (s_range[0].z > 4.0f)
 			{
@@ -771,6 +777,7 @@ namespace TFE_Jedi
 		}
 
 		buildSegmentBuffer(initSector, curSector, segCount, wallSegments);
+		return true;
 	}
 		
 	// Clip rule called on portal segments.
@@ -968,7 +975,10 @@ namespace TFE_Jedi
 		curSector->flags1 |= SEC_FLAGS1_RENDERED;
 
 		// Build the world-space wall segments.
-		buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1);
+		if (!buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1))
+		{
+			return;
+		}
 
 		// Determine which objects are visible and add them.
 		addSectorObjects(curSector, prevSector, s_displayCurrentPortalId, prevPortalId);

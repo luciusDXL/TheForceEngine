@@ -335,7 +335,7 @@ namespace TFE_Jedi
 		segments[0].v0 = v0;
 		segments[0].v1 = v1;
 		segments[0].id = id;
-		segments[0].normal = { -(v1.z - v0.z), v1.x - v0.x };
+		segments[0].normal = { -(v1.z - v0.z), 0.0f, v1.x - v0.x };
 		segments[0].x0 = sbuffer_projectToUnitSquare(segments[0].v0);
 		segments[0].x1 = sbuffer_projectToUnitSquare(segments[0].v1);
 
@@ -476,7 +476,7 @@ namespace TFE_Jedi
 		// Invalid state.
 		if (!s_segClippedHead || !s_segClippedTail) { return 0; }
 
-		// Convert from a two positions to segments.
+		// Convert from positions to segments.
 		// Early return if no segments are generated.
 		Segment srcSeg[8] = { 0 };
 		const s32 srcSegCount = sbuffer_convertToSegments(v0, v1, 1, rangeCount, range, rangeSrc, srcSeg);
@@ -497,26 +497,38 @@ namespace TFE_Jedi
 					SegmentOverlapState overlapState;
 
 					// "Failing" the clip rule means we treat it as an adjoin instead of a wall.
-					if (cur->seg->portal && clipRule && !clipRule(cur->seg->id))
+					Segment* curSeg = cur->seg;
+					if (curSeg->portal && clipRule && !clipRule(curSeg->id))
 					{
+						// Clip seg to cur for testing which is in front.
+						f32   segX0 = seg->x0, segX1 = seg->x1;
+						Vec2f segV0 = seg->v0, segV1 = seg->v1;
+						if (seg->x0 < cur->x0)
+						{
+							segX0 = cur->x0;
+							segV0 = sbuffer_clip(seg->v0, seg->v1, cur->v0);
+						}
+						if (seg->x1 > cur->x1)
+						{
+							segX1 = cur->x1;
+							segV1 = sbuffer_clip(seg->v0, seg->v1, cur->v1);
+						}
+
 						// Determine if any part of the segment, within the portal range is in front.
 						// If so then the *entire* segment is considered to be in front.
-						const Vec2f left0   = { seg->v0.x - cur->v0.x, seg->v0.z - cur->v0.z };
-						const Vec2f right0  = { seg->v1.x - cur->v0.x, seg->v1.z - cur->v0.z };
+						const Vec2f left0 = { segV0.x - cur->v0.x, segV0.z - cur->v0.z };
+						const Vec2f right0 = { segV1.x - cur->v0.x, segV1.z - cur->v0.z };
 						const Vec2f camera0 = { s_cameraPos.x - cur->v0.x, s_cameraPos.z - cur->v0.z };
-						const Vec3f& nrml = cur->seg->normal;
-						f32 sideLeft0   = nrml.x*left0.x   + nrml.z*left0.z;
-						f32 sideRight0  = nrml.x*right0.x  + nrml.z*right0.z;
+						const Vec3f& nrml = curSeg->normal;
+						f32 sideLeft0 = nrml.x*left0.x + nrml.z*left0.z;
+						f32 sideRight0 = nrml.x*right0.x + nrml.z*right0.z;
 						f32 cameraSide0 = nrml.x*camera0.x + nrml.z*camera0.z;
-						
+
 						// Handle floating point precision.
-						if (fabsf(sideLeft0)   < c_sideEps) { sideLeft0   = 0.0f; }
-						if (fabsf(sideRight0)  < c_sideEps) { sideRight0  = 0.0f; }
+						if (fabsf(sideLeft0) < c_sideEps) { sideLeft0 = 0.0f; }
+						if (fabsf(sideRight0) < c_sideEps) { sideRight0 = 0.0f; }
 						if (fabsf(cameraSide0) < c_sideEps) { cameraSide0 = 0.0f; }
 
-						// TODO: This should be checking the overlap area only.
-						// i.e. if seg->x0 < cur->x0, clip to cur->x0 anid
-						//      if seg->x1 > cur->x1, clip to cur->x1.
 						// seg is "in front" of cur.
 						if (((sideLeft0 <= 0.0f || sideRight0 <= 0.0f) && cameraSide0 <= 0.0f) ||
 							((sideLeft0 >= 0.0f || sideRight0 >= 0.0f) && cameraSide0 >= 0.0f))
