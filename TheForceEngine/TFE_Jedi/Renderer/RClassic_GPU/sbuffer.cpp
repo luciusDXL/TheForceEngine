@@ -31,7 +31,12 @@ namespace TFE_Jedi
 	extern Vec3f s_cameraPos;
 	const f32 c_sideEps = 0.0001f;
 
-	SegmentClipped s_segClippedPool[1024];
+	enum
+	{
+		SEG_CLIP_POOL_SIZE = 8192
+	};
+
+	SegmentClipped s_segClippedPool[SEG_CLIP_POOL_SIZE];
 	SegmentClipped* s_segClippedHead;
 	SegmentClipped* s_segClippedTail;
 	s32 s_segClippedPoolCount = 0;
@@ -312,6 +317,8 @@ namespace TFE_Jedi
 	{
 		if (dstSegCount >= maxOutputSegs)
 		{
+			assert(0);
+			TFE_System::logWrite(LOG_ERROR, "SegBuffer", "Too many clipped segs allocated - max is %d", maxOutputSegs);
 			return nullptr;
 		}
 		SegmentClipped* segClipped = &dstSegs[dstSegCount];
@@ -744,8 +751,10 @@ namespace TFE_Jedi
 
 	SegmentClipped* sbuffer_getClippedSeg(Segment* seg)
 	{
-		if (s_segClippedPoolCount >= 1024)
+		if (s_segClippedPoolCount >= SEG_CLIP_POOL_SIZE)
 		{
+			assert(0);
+			TFE_System::logWrite(LOG_ERROR, "SegBuffer", "Too many clipped segs allocated - max is %d", SEG_CLIP_POOL_SIZE);
 			return nullptr;
 		}
 		SegmentClipped* segClipped = &s_segClippedPool[s_segClippedPoolCount];

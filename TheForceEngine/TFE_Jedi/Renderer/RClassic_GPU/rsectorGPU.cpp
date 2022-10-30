@@ -696,8 +696,8 @@ namespace TFE_Jedi
 
 			// Check if the wall is backfacing.
 			const Vec3f wallNormal = { -(z1 - z0), 0.0f, x1 - x0 };
-			const Vec3f cameraVec = { x0 - s_cameraPos.x, (y0 + y1)*0.5f - s_cameraPos.y, z0 - s_cameraPos.z };
-			if (wallNormal.x*cameraVec.x + wallNormal.y*cameraVec.y + wallNormal.z*cameraVec.z < 0.0f)
+			const Vec3f cameraVec = { x0 - s_cameraPos.x, 0.0f, z0 - s_cameraPos.z };
+			if (wallNormal.x*cameraVec.x + wallNormal.z*cameraVec.z < 0.0f)
 			{
 				continue;
 			}
@@ -712,6 +712,8 @@ namespace TFE_Jedi
 			bool isPortal = false;
 			if (next)
 			{
+				bool nextNoWall = (next->flags1 & SEC_FLAGS1_NOWALL_DRAW) != 0;
+
 				// Update any potential adjoins even if they are not traversed to make sure the
 				// heights and walls settings are handled correctly.
 				updateCachedSector(next, uploadFlags);
@@ -723,6 +725,11 @@ namespace TFE_Jedi
 					openTop = curSector->ceilingHeight - intToFixed16(100);
 					y0 = fixed16ToFloat(openTop);
 				}
+				else if (nextNoWall && (next->flags1 & SEC_FLAGS1_EXT_ADJ))
+				{
+					openTop = min(next->ceilingHeight, curSector->ceilingHeight);
+					y0 = fixed16ToFloat(openTop);
+				}
 				else
 				{
 					openTop = min(curSector->floorHeight, max(curSector->ceilingHeight, next->ceilingHeight));
@@ -732,12 +739,16 @@ namespace TFE_Jedi
 					openBot = curSector->floorHeight + intToFixed16(100);
 					y1 = fixed16ToFloat(openBot);
 				}
+				else if (nextNoWall && (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
+				{
+					openBot = max(next->floorHeight, curSector->floorHeight);
+					y1 = fixed16ToFloat(openTop);
+				}
 				else
 				{
 					openBot = max(curSector->ceilingHeight, min(curSector->floorHeight, next->floorHeight));
 				}
-				// TODO: Handle sectors with the "no walls" flag.
-
+				
 				fixed16_16 openSize = openBot - openTop;
 				portalY0 = fixed16ToFloat(openTop);
 				portalY1 = fixed16ToFloat(openBot);
@@ -844,8 +855,8 @@ namespace TFE_Jedi
 		if (z < 1.0f) { return; }
 
 		// Clip against the current wall segments and the portal XZ extents.
-		SegmentClipped dstSegs[32];
-		const s32 segCount = sbuffer_clipSegmentToBuffer(points[0], points[1], s_rangeCount, s_range, s_rangeSrc, 32, dstSegs, clipRule);
+		SegmentClipped dstSegs[1024];
+		const s32 segCount = sbuffer_clipSegmentToBuffer(points[0], points[1], s_rangeCount, s_range, s_rangeSrc, 1024, dstSegs, clipRule);
 		if (!segCount) { return; }
 
 		// Then add the segments to the list.

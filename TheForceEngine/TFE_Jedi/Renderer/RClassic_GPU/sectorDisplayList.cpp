@@ -358,6 +358,14 @@ namespace TFE_Jedi
 					wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 			}
 		}
+		else if ((curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) && ((srcWall->nextSector->flags1 & SEC_FLAGS1_EXTERIOR) || (srcWall->nextSector->flags1 & SEC_FLAGS1_PIT)))
+		{
+			// It appears to be a case where a wall is both an adjoin and "no wall" - but the no wall still gets rendered.
+			// For now use the ceiling texture.
+			// TODO: This should render *both* the ceiling and floor textures.
+			addDisplayListItem(pos, { data.x | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
+				wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+		}
 		else if (srcWall->midTex && (*srcWall->midTex) && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
 		{
 			// Transparent mid-texture.
@@ -411,7 +419,7 @@ namespace TFE_Jedi
 		if (curSector->flags1 & SEC_FLAGS1_PIT)
 		{
 			floorSkyFlags |= SPARTID_SKY;
-			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
+			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
 			{
 				floorSkyFlags |= SPARTID_SKY_ADJ;
 			}
@@ -419,7 +427,7 @@ namespace TFE_Jedi
 		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
 			ceilSkyFlags |= SPARTID_SKY;
-			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
+			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
 			{
 				ceilSkyFlags |= SPARTID_SKY_ADJ;
 			}
