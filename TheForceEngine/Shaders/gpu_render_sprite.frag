@@ -1,6 +1,7 @@
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
 uniform vec4 LightData;
+uniform vec4 GlobalLightData;	// x = flat lighting, y = flat light value.
 uniform vec2 SkyParallax;
 
 uniform sampler2D Colormap;	// The color map has full RGB pre-backed in.
@@ -52,28 +53,35 @@ void main()
 	float light = 0.0;
 	float baseColor = 0.0;
 
-	float z = dot(cameraRelativePos, CameraDir);
-	float sectorAmbient = float(Texture_Data.y);
-
-	// Camera light and world ambient.
-	float worldAmbient = floor(LightData.x + 0.5);
-	float cameraLightSource = LightData.y;
-
-	if (worldAmbient < 31.0 || cameraLightSource != 0.0)
+	if (GlobalLightData.x != 0.0)
 	{
-		float depthScaled = min(floor(z * 4.0), 127.0);
-		float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
-		if (lightSource > 0)
-		{
-			light += lightSource;
-		}
+		light = 31.0;
 	}
-	light = max(light, sectorAmbient);
+	else
+	{
+		float z = dot(cameraRelativePos, CameraDir);
+		float sectorAmbient = float(Texture_Data.y);
 
-	float minAmbient = sectorAmbient * 7.0 / 8.0;
-	float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
-	light = max(light - depthAtten, minAmbient);
-	light = clamp(light, 0.0, 31.0);
+		// Camera light and world ambient.
+		float worldAmbient = floor(LightData.x + 0.5);
+		float cameraLightSource = LightData.y;
+
+		if (worldAmbient < 31.0 || cameraLightSource != 0.0)
+		{
+			float depthScaled = min(floor(z * 4.0), 127.0);
+			float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
+			if (lightSource > 0)
+			{
+				light += lightSource;
+			}
+		}
+		light = max(light, sectorAmbient);
+
+		float minAmbient = sectorAmbient * 7.0 / 8.0;
+		float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
+		light = max(light - depthAtten, minAmbient);
+		light = clamp(light, 0.0, 31.0);
+	}
 
 	// Sample the texture.
 	baseColor = sampleTextureClamp(Frag_TextureId, Frag_Uv);

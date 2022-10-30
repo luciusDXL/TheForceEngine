@@ -75,6 +75,7 @@ namespace TFE_Jedi
 		s32 cameraProjId;
 		s32 cameraDirId;
 		s32 lightDataId;
+		s32 globalLightingId;
 	};
 
 	static GPUSourceData s_gpuSourceData = { 0 };
@@ -87,6 +88,7 @@ namespace TFE_Jedi
 	static ShaderInputs s_shaderInputs[SECTOR_PASS_COUNT + 1];
 	static s32 s_skyParallaxId[SECTOR_PASS_COUNT];
 	static s32 s_skyParamId[SECTOR_PASS_COUNT];
+	static s32 s_globalLightingId[SECTOR_PASS_COUNT];
 	static s32 s_cameraRightId;
 
 	static IndexBuffer s_indexBuffer;
@@ -127,6 +129,7 @@ namespace TFE_Jedi
 		s_shaderInputs[SPRITE_PASS].cameraProjId = s_spriteShader.getVariableId("CameraProj");
 		s_shaderInputs[SPRITE_PASS].cameraDirId  = s_spriteShader.getVariableId("CameraDir");
 		s_shaderInputs[SPRITE_PASS].lightDataId  = s_spriteShader.getVariableId("LightData");
+		s_shaderInputs[SPRITE_PASS].globalLightingId = s_spriteShader.getVariableId("GlobalLightData");
 		s_cameraRightId = s_spriteShader.getVariableId("CameraRight");
 
 		s_spriteShader.bindTextureNameToSlot("DrawListPosXZ_Texture", 0);
@@ -158,9 +161,10 @@ namespace TFE_Jedi
 		s_shaderInputs[index].cameraProjId = s_wallShader[index].getVariableId("CameraProj");
 		s_shaderInputs[index].cameraDirId  = s_wallShader[index].getVariableId("CameraDir");
 		s_shaderInputs[index].lightDataId  = s_wallShader[index].getVariableId("LightData");
+		s_shaderInputs[index].globalLightingId = s_wallShader[index].getVariableId("GlobalLightData");
 		s_skyParallaxId[index] = s_wallShader[index].getVariableId("SkyParallax");
 		s_skyParamId[index]    = s_wallShader[index].getVariableId("SkyParam");
-
+		
 		s_wallShader[index].bindTextureNameToSlot("Sectors",        0);
 		s_wallShader[index].bindTextureNameToSlot("Walls",          1);
 		s_wallShader[index].bindTextureNameToSlot("DrawListPos",    2);
@@ -925,9 +929,10 @@ namespace TFE_Jedi
 			portalInfo = objectPortalPlanes_add(planeCount, outPlanes);
 		}
 
+		const f32 ambient = (s_flatLighting) ? f32(s_flatAmbient) : fixed16ToFloat(curSector->ambient);
+		const Vec2f floorOffset = { fixed16ToFloat(curSector->floorOffset.x), fixed16ToFloat(curSector->floorOffset.z) };
+
 		SecObject** objIter = curSector->objectList;
-		f32 ambient = fixed16ToFloat(curSector->ambient);
-		Vec2f floorOffset = { fixed16ToFloat(curSector->floorOffset.x), fixed16ToFloat(curSector->floorOffset.z) };
 		for (s32 i = 0; i < curSector->objectCount; objIter++)
 		{
 			SecObject* obj = *objIter;
@@ -1130,6 +1135,12 @@ namespace TFE_Jedi
 			shader->setVariable(s_skyParamId[pass], SVT_VEC4, skyParam);
 		}
 
+		if (s_shaderInputs[pass].globalLightingId > 0)
+		{
+			const f32 globalLighting[] = { s_flatLighting ? 1.0f : 0.0f, (f32)s_flatAmbient, 0.0f, 0.0f };
+			shader->setVariable(s_shaderInputs[pass].globalLightingId, SVT_VEC4, globalLighting);
+		}
+
 		// Draw the sector display list.
 		sdisplayList_draw(pass);
 	}
@@ -1163,6 +1174,12 @@ namespace TFE_Jedi
 		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].cameraProjId, SVT_MAT4x4, s_cameraProj.data);
 		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].cameraDirId,  SVT_VEC3,   s_cameraDir.m);
 		s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].lightDataId,  SVT_VEC4,   lightData.m);
+
+		if (s_shaderInputs[SPRITE_PASS].globalLightingId > 0)
+		{
+			const f32 globalLighting[] = { s_flatLighting ? 1.0f : 0.0f, (f32)s_flatAmbient, 0.0f, 0.0f };
+			s_spriteShader.setVariable(s_shaderInputs[SPRITE_PASS].globalLightingId, SVT_VEC4, globalLighting);
+		}
 
 		// Draw the sector display list.
 		sprdisplayList_draw();

@@ -1,6 +1,7 @@
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
 uniform vec4 LightData;
+uniform vec4 GlobalLightData;	// x = flat lighting, y = flat light value.
 uniform vec2 SkyParallax;
 
 uniform sampler2D Colormap;
@@ -246,6 +247,11 @@ void main()
 		float z = dot(cameraRelativePos, CameraDir);
 		float lightOffset   = Frag_Color.r;
 		float sectorAmbient = Frag_Color.b;
+
+		if (GlobalLightData.x != 0.0)
+		{
+			sectorAmbient = GlobalLightData.y;
+		}
 
 		// Camera light and world ambient.
 		float worldAmbient = floor(LightData.x + 0.5);
