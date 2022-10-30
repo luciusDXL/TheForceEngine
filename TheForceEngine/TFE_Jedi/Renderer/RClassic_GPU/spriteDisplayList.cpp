@@ -239,7 +239,7 @@ namespace TFE_Jedi
 
 		//if (autoaim)
 		{
-			for (s32 i = s_displayListCount - 1; i > 0 && s_drawnSpriteCount < MAX_DRAWN_SPRITE_STORE; i--)
+			for (s32 i = s_displayListCount - 1; i >= 0 && s_drawnSpriteCount < MAX_DRAWN_SPRITE_STORE; i--)
 			{
 				s_drawnSprites[s_drawnSpriteCount++] = (SecObject*)s_displayListObjList[sortKey[i].index];
 			}
