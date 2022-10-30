@@ -145,7 +145,7 @@ namespace TFE_DarkForces
 	// step (proj->delta) is too large for the 'speed'.
 	void tfe_adjustWeaponCollisionSpeed(ProjectileLogic* proj)
 	{
-		fixed16_16 initSpeed = div16(vec3Length(proj->delta.x, proj->delta.y, proj->delta.z), s_deltaTime);
+		fixed16_16 initSpeed = div16(vec3Length(proj->delta.x, proj->delta.y, proj->delta.z), max(1, s_deltaTime));
 		proj->col_speed = proj->speed;
 		if (initSpeed > proj->speed)
 		{
