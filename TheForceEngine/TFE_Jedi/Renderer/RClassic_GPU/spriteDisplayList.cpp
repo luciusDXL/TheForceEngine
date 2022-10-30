@@ -29,6 +29,9 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
+	extern s32 s_drawnSpriteCount;
+	extern SecObject* s_drawnSprites[];
+
 	enum
 	{
 		SPRITE_BUFFER_COUNT = 2,
@@ -38,6 +41,7 @@ namespace TFE_Jedi
 	static Vec4f* s_displayListPosXZTexture[SPRITE_BUFFER_COUNT] = { nullptr };
 	static Vec4f* s_displayListPosYUTexture[SPRITE_BUFFER_COUNT] = { nullptr };
 	static Vec2i* s_displayListTexIdTexture[SPRITE_BUFFER_COUNT] = { nullptr };
+	static void** s_displayListObjList = { nullptr };
 	static ShaderBuffer s_displayListPosXZTextureGPU;
 	static ShaderBuffer s_displayListPosYUTextureGPU;
 	static ShaderBuffer s_displayListTexIdTextureGPU;
@@ -63,6 +67,7 @@ namespace TFE_Jedi
 			s_displayListPosYUTexture[i] = (Vec4f*)malloc(sizeof(Vec4f*) * MAX_DISP_ITEMS);
 			s_displayListTexIdTexture[i] = (Vec2i*)malloc(sizeof(Vec2i*) * MAX_DISP_ITEMS);
 		}
+		s_displayListObjList = (void**)malloc(sizeof(void**) * MAX_DISP_ITEMS);
 
 		ShaderBufferDef bufferDefDisplayList =
 		{
@@ -101,6 +106,8 @@ namespace TFE_Jedi
 			s_displayListPosYUTexture[i] = nullptr;
 			s_displayListTexIdTexture[i] = nullptr;
 		}
+		free(s_displayListObjList);
+		s_displayListObjList = nullptr;
 
 		s_displayListPosXZTextureGPU.destroy();
 		s_displayListPosYUTextureGPU.destroy();
@@ -163,6 +170,7 @@ namespace TFE_Jedi
 		s_displayListPosXZTexture[0][s_displayListCount] = { drawFrame->c0.x, drawFrame->c0.z, drawFrame->c1.x, drawFrame->c1.z };
 		s_displayListPosYUTexture[0][s_displayListCount] = { drawFrame->posY + fOffsetY, drawFrame->posY + fOffsetY - heightWS, u0, u1 };
 		s_displayListTexIdTexture[0][s_displayListCount] = { cell->textureId | (ambient << 16), s32(portalInfo) };
+		s_displayListObjList[s_displayListCount] = drawFrame->objPtr;
 		s_displayListCount++;
 	}
 
@@ -227,6 +235,14 @@ namespace TFE_Jedi
 			s_displayListPosXZTexture[1][i] = s_displayListPosXZTexture[0][sortKey[i].index];
 			s_displayListPosYUTexture[1][i] = s_displayListPosYUTexture[0][sortKey[i].index];
 			s_displayListTexIdTexture[1][i] = s_displayListTexIdTexture[0][sortKey[i].index];
+		}
+
+		//if (autoaim)
+		{
+			for (s32 i = s_displayListCount - 1; i > 0 && s_drawnSpriteCount < MAX_DRAWN_SPRITE_STORE; i--)
+			{
+				s_drawnSprites[s_drawnSpriteCount++] = (SecObject*)s_displayListObjList[sortKey[i].index];
+			}
 		}
 	}
 }

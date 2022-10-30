@@ -780,6 +780,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_disableFightMusic = disableFightMusic;
 		}
 
+		bool enableAutoaim = gameSettings->df_enableAutoaim;
+		if (ImGui::Checkbox("Enable Autoaim", &enableAutoaim))
+		{
+			gameSettings->df_enableAutoaim = enableAutoaim;
+		}
+
 		// File dialogs...
 		if (browseWinOpen >= 0)
 		{

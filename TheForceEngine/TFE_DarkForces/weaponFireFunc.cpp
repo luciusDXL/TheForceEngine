@@ -7,6 +7,8 @@
 #include "hitEffect.h"
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+// TFE
+#include <TFE_Settings/settings.h>
 
 namespace TFE_DarkForces
 {
@@ -2127,7 +2129,7 @@ namespace TFE_DarkForces
 
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation)
 	{
-		if (!s_drawnSpriteCount)
+		if (!s_drawnSpriteCount || !TFE_Settings::getGameSettings()->df_enableAutoaim)
 		{
 			return JFALSE;
 		}

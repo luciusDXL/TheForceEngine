@@ -831,7 +831,7 @@ namespace TFE_Jedi
 		return false;
 	}
 
-	void clipSpriteToView(RSector* curSector, Vec3f posWS, WaxFrame* frame, void* basePtr, bool fullbright, u32 portalInfo)
+	void clipSpriteToView(RSector* curSector, Vec3f posWS, WaxFrame* frame, void* basePtr, void* objPtr, bool fullbright, u32 portalInfo)
 	{
 		if (!frame) { return; }
 		s_clipSector = curSector;
@@ -866,7 +866,7 @@ namespace TFE_Jedi
 		// Then add the segments to the list.
 		SpriteDrawFrame drawFrame =
 		{
-			basePtr, frame,
+			basePtr, frame, objPtr,
 			points[0], points[1],
 			dstSegs[0].v0, dstSegs[0].v1,
 			posWS.y,
@@ -964,12 +964,12 @@ namespace TFE_Jedi
 							WaxView* view = WAX_ViewPtr(wax, anim, 31 - angleDiff);
 							// And finally the frame from the current sequence.
 							WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 31);
-							clipSpriteToView(curSector, posWS, frame, wax, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, portalInfo);
+							clipSpriteToView(curSector, posWS, frame, wax, obj, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, portalInfo);
 						}
 					}
 					else if (type == OBJ_TYPE_FRAME)
 					{
-						clipSpriteToView(curSector, posWS, obj->fme, obj->fme, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, portalInfo);
+						clipSpriteToView(curSector, posWS, obj->fme, obj->fme, obj, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, portalInfo);
 					}
 				}
 				else if (type == OBJ_TYPE_3D)

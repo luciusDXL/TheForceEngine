@@ -16,6 +16,7 @@ namespace TFE_Jedi
 		// Frame Data.
 		void* basePtr;
 		WaxFrame* frame;
+		void* objPtr;
 		// Position Data.
 		Vec2f v0, v1;		// base vertex positions
 		Vec2f c0, c1;		// clipped vertex positions.

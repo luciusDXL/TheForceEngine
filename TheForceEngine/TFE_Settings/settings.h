@@ -150,6 +150,7 @@ struct TFE_Settings_Game
 	bool df_fixBobaFettFireDir = false;	// By default, Boba Fett does not correctly check the angle difference between him and the player in
 										// one direction, enabling this will fix that.
 	bool df_disableFightMusic = false;	// Set to true to disable fight music and music transitions during gameplay.
+	bool df_enableAutoaim     = true;   // Set to true to enable autoaim, false to disable.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 
