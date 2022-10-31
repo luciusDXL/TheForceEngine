@@ -44,8 +44,12 @@ void ShaderBuffer::destroy()
 {
 	if (m_initialized)
 	{
-		glDeleteBuffers(2, m_gpuHandle);
+		if (m_gpuHandle[1]) { glDeleteTextures(1, &m_gpuHandle[1]); }
+		if (m_gpuHandle[0]) { glDeleteBuffers(1, &m_gpuHandle[0]); }
 	}
+	m_gpuHandle[0] = 0;
+	m_gpuHandle[1] = 0;
+	m_initialized = false;
 }
 
 void ShaderBuffer::update(const void* buffer, size_t size)

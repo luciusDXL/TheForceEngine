@@ -52,8 +52,11 @@ namespace TFE_Jedi
 
 		for (s32 i = 0; i < TSR_COUNT; i++)
 		{
-			s_sectorRendererCache[i]->destroy();
-			delete s_sectorRendererCache[i];
+			if (s_sectorRendererCache[i])
+			{
+				s_sectorRendererCache[i]->destroy();
+				delete s_sectorRendererCache[i];
+			}
 			s_sectorRendererCache[i] = nullptr;
 		}
 
