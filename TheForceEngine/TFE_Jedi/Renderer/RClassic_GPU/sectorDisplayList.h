@@ -51,7 +51,7 @@ namespace TFE_Jedi
 	void sdisplayList_clear();
 	void sdisplayList_finish();
 
-	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg);
+	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg, bool forceTreatAsSolid=false);
 	bool sdisplayList_addPortal(Vec3f p0, Vec3f p1, s32 parentPortalId);
 	void sdisplayList_draw(SectorPass passId);
 

@@ -321,7 +321,7 @@ namespace TFE_Jedi
 		s_displayListData[index] = data;
 	}
 
-	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg)
+	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg, bool forceTreatAsSolid)
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
@@ -343,9 +343,9 @@ namespace TFE_Jedi
 		//////////////////////////////
 		// Mid
 		//////////////////////////////
-		if (!srcWall->nextSector)
+		if (!srcWall->nextSector || forceTreatAsSolid)
 		{
-			if (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
+			if ((curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) || forceTreatAsSolid)
 			{
 				// For now use the ceiling texture.
 				// TODO: This should render *both* the ceiling and floor textures.
@@ -357,14 +357,6 @@ namespace TFE_Jedi
 				addDisplayListItem(pos, {data.x | SPARTID_WALL_MID, data.y, data.z | flip,
 					wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 			}
-		}
-		else if ((curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) && ((srcWall->nextSector->flags1 & SEC_FLAGS1_EXTERIOR) || (srcWall->nextSector->flags1 & SEC_FLAGS1_PIT)))
-		{
-			// It appears to be a case where a wall is both an adjoin and "no wall" - but the no wall still gets rendered.
-			// For now use the ceiling texture.
-			// TODO: This should render *both* the ceiling and floor textures.
-			addDisplayListItem(pos, { data.x | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
-				wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
 		else if (srcWall->midTex && (*srcWall->midTex) && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
 		{
@@ -381,10 +373,23 @@ namespace TFE_Jedi
 			addDisplayListItem(pos, {data.x | SPARTID_WALL_TOP, data.y, data.z | flip,
 				wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
+		// If there is an exterior adjoin, we only add an item if the current sector is *not* an exterior.
+		else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_EXTERIOR))
+		{
+			addDisplayListItem(pos, { data.x | SPARTID_SKY, data.y, data.z | flip,
+				wallGpuId | (srcWall->nextSector->ceilTex && *srcWall->nextSector->ceilTex ? (*srcWall->nextSector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+		}
+
 		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT, data.y, data.z | flip,
 				wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+		}
+		// If there is an exterior pit adjoin, we only add an item if the current sector is *not* a pit.
+		else if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_PIT))
+		{
+			addDisplayListItem(pos, { data.x | SPARTID_SKY, data.y, data.z | flip,
+				wallGpuId | (srcWall->nextSector->floorTex && *srcWall->nextSector->floorTex ? (*srcWall->nextSector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 
 		//////////////////////////////
@@ -419,6 +424,7 @@ namespace TFE_Jedi
 		if (curSector->flags1 & SEC_FLAGS1_PIT)
 		{
 			floorSkyFlags |= SPARTID_SKY;
+			// Special handling for the NoWall flag.
 			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
 			{
 				floorSkyFlags |= SPARTID_SKY_ADJ;
@@ -427,6 +433,7 @@ namespace TFE_Jedi
 		if (curSector->flags1 & SEC_FLAGS1_EXTERIOR)
 		{
 			ceilSkyFlags |= SPARTID_SKY;
+			// Special handling for the NoWall flag.
 			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
 			{
 				ceilSkyFlags |= SPARTID_SKY_ADJ;
@@ -441,9 +448,9 @@ namespace TFE_Jedi
 
 		// Ceiling
 		addDisplayListItem(pos, { data.x | SPARTID_CEILING | ceilSkyFlags, data.y, data.z,
-			curSector->floorTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+			curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
 		addDisplayListItem(pos, { data.x | SPARTID_CEIL_CAP | ceilSkyFlags, data.y, data.z,
-			curSector->floorTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+			curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
 	}
 
 	s32 sdisplayList_getSize(SectorPass passId)

@@ -347,16 +347,16 @@ namespace TFE_Jedi
 				if (len > FLT_EPSILON)
 				{
 					scale = 1.0f / len;
-					frustum.planes[i].x *= scale;
-					frustum.planes[i].y *= scale;
-					frustum.planes[i].z *= scale;
-					frustum.planes[i].w *= scale;
 				}
 			}
 			else if (nearPlaneLen > FLT_EPSILON)
 			{
 				scale = 1.0f / nearPlaneLen;
 			}
+			frustum.planes[i].x *= scale;
+			frustum.planes[i].y *= scale;
+			frustum.planes[i].z *= scale;
+			frustum.planes[i].w *= scale;
 
 			assert(frustum.planes[i].w == 0.0f);
 			f32 d = -TFE_Math::dot((Vec3f*)frustum.planes[i].m, &cameraPos);

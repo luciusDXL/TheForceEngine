@@ -537,7 +537,7 @@ namespace TFE_Jedi
 		return count;
 	}
 
-	void buildSegmentBuffer(bool initSector, RSector* curSector, u32 segCount, Segment* wallSegments)
+	void buildSegmentBuffer(bool initSector, RSector* curSector, u32 segCount, Segment* wallSegments, bool forceTreatAsSolid)
 	{
 		// Next insert solid segments into the segment buffer one at a time.
 		sbuffer_clear();
@@ -555,7 +555,7 @@ namespace TFE_Jedi
 			debug_addQuad(segment->v0, segment->v1, segment->seg->y0, segment->seg->y1,
 				          segment->seg->portalY0, segment->seg->portalY1, segment->seg->portal);
 
-			sdisplayList_addSegment(curSector, &s_cachedSectors[curSector->index], segment);
+			sdisplayList_addSegment(curSector, &s_cachedSectors[curSector->index], segment, forceTreatAsSolid);
 			s_wallSegGenerated++;
 			segment = segment->next;
 		}
@@ -639,13 +639,56 @@ namespace TFE_Jedi
 		const f32 side1 = (w1.x - p0.x)*(p1.z - p0.z) - (w1.z - p0.z)*(p1.x - p0.x);
 		return side0 <= 0.0f || side1 <= 0.0f;
 	}
+
+	static Segment s_wallSegments[2048];
+
+	void addPortalAsSky(RSector* curSector, RWall* wall)
+	{
+		u32 segCount = 0;
+		GPUCachedSector* cached = &s_cachedSectors[curSector->index];
+		cached->builtFrame = s_gpuFrame;
+
+		// Calculate the vertices.
+		const f32 x0 = fixed16ToFloat(wall->w0->x);
+		const f32 x1 = fixed16ToFloat(wall->w1->x);
+		const f32 z0 = fixed16ToFloat(wall->w0->z);
+		const f32 z1 = fixed16ToFloat(wall->w1->z);
+		f32 y0 = cached->ceilingHeight;
+		f32 y1 = cached->floorHeight;
+		f32 portalY0 = y0, portalY1 = y1;
+
+		// Add a new segment.
+		Segment* seg = &s_wallSegments[segCount];
+		const Vec3f wallNormal = { -(z1 - z0), 0.0f, x1 - x0 };
+		Vec2f v0 = { x0, z0 }, v1 = { x1, z1 }, heights = { y0, y1 }, portalHeights = { portalY0, portalY1 };
+		if (!createNewSegment(seg, wall->id, false, v0, v1, heights, portalHeights, wallNormal))
+		{
+			return;
+		}
+		segCount++;
+
+		// Split segments that cross the modulo boundary.
+		if (seg->x1 > 4.0f)
+		{
+			splitSegment(false, s_wallSegments, segCount, seg, s_range, s_rangeSrc, s_rangeCount);
+		}
+		else if (!sbuffer_splitByRange(seg, s_range, s_rangeSrc, s_rangeCount))
+		{
+			// Out of the range, so cancel the segment.
+			segCount--;
+		}
+		else
+		{
+			assert(seg->x0 >= 0.0f && seg->x1 <= 4.0f);
+		}
+
+		buildSegmentBuffer(false, curSector, segCount, s_wallSegments, true/*forceTreatAsSolid*/);
+	}
 		
 	// Build world-space wall segments.
-	bool buildSectorWallSegments(RSector* curSector, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1)
+	bool buildSectorWallSegments(RSector* curSector, RSector* prevSector, RWall* portalWall, u32& uploadFlags, bool initSector, Vec2f p0, Vec2f p1, u32& segCount)
 	{
-		static Segment wallSegments[2048];
-
-		u32 segCount = 0;
+		segCount = 0;
 		GPUCachedSector* cached = &s_cachedSectors[curSector->index];
 		cached->builtFrame = s_gpuFrame;
 
@@ -729,6 +772,8 @@ namespace TFE_Jedi
 					openTop = curSector->ceilingHeight - intToFixed16(100);
 					y0 = fixed16ToFloat(openTop);
 				}
+				// If the next sector has the "NoWall" flag AND this is an exterior adjoin - make the portal opening as large as the
+				// the larger sector.
 				else if (nextNoWall && (next->flags1 & SEC_FLAGS1_EXT_ADJ))
 				{
 					openTop = min(next->ceilingHeight, curSector->ceilingHeight);
@@ -738,11 +783,14 @@ namespace TFE_Jedi
 				{
 					openTop = min(curSector->floorHeight, max(curSector->ceilingHeight, next->ceilingHeight));
 				}
+
 				if ((curSector->flags1 & SEC_FLAGS1_PIT) && (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 				{
 					openBot = curSector->floorHeight + intToFixed16(100);
 					y1 = fixed16ToFloat(openBot);
 				}
+				// If the next sector has the "NoWall" flag AND this is an exterior adjoin - make the portal opening as large as the
+				// the larger sector.
 				else if (nextNoWall && (next->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 				{
 					openBot = max(next->floorHeight, curSector->floorHeight);
@@ -767,7 +815,7 @@ namespace TFE_Jedi
 			}
 
 			// Add a new segment.
-			Segment* seg = &wallSegments[segCount];
+			Segment* seg = &s_wallSegments[segCount];
 			Vec2f v0 = { x0, z0 }, v1 = { x1, z1 }, heights = { y0, y1 }, portalHeights = { portalY0, portalY1 };
 			if (!createNewSegment(seg, w, isPortal, v0, v1, heights, portalHeights, wallNormal))
 			{
@@ -778,7 +826,7 @@ namespace TFE_Jedi
 			// Split segments that cross the modulo boundary.
 			if (seg->x1 > 4.0f)
 			{
-				splitSegment(initSector, wallSegments, segCount, seg, s_range, s_rangeSrc, s_rangeCount);
+				splitSegment(initSector, s_wallSegments, segCount, seg, s_range, s_rangeSrc, s_rangeCount);
 			}
 			else if (!initSector && !sbuffer_splitByRange(seg, s_range, s_rangeSrc, s_rangeCount))
 			{
@@ -791,7 +839,7 @@ namespace TFE_Jedi
 			}
 		}
 
-		buildSegmentBuffer(initSector, curSector, segCount, wallSegments);
+		buildSegmentBuffer(initSector, curSector, segCount, s_wallSegments, false/*forceTreatAsSolid*/);
 		return true;
 	}
 		
@@ -980,7 +1028,7 @@ namespace TFE_Jedi
 		}
 	}
 		
-	void traverseSector(RSector* curSector, RSector* prevSector, s32 prevPortalId, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
+	void traverseSector(RSector* curSector, RSector* prevSector, RWall* portalWall, s32 prevPortalId, s32& level, u32& uploadFlags, Vec2f p0, Vec2f p1)
 	{
 		if (level > MAX_ADJOIN_DEPTH_EXT)
 		{
@@ -991,8 +1039,18 @@ namespace TFE_Jedi
 		curSector->flags1 |= SEC_FLAGS1_RENDERED;
 
 		// Build the world-space wall segments.
-		if (!buildSectorWallSegments(curSector, uploadFlags, level == 0, p0, p1))
+		u32 segCount = 0;
+		if (!buildSectorWallSegments(curSector, prevSector, portalWall, uploadFlags, level == 0, p0, p1, segCount))
 		{
+			return;
+		}
+
+		// There is a portal but the sector beyond is degenerate but has a sky.
+		// In this case the software renderer will still fill in the sky even though no walls are visible, so the GPU
+		// renderer needs to emulate the same behavior.
+		if (segCount == 0 && ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (curSector->flags1 & SEC_FLAGS1_PIT)))
+		{
+			addPortalAsSky(prevSector, portalWall);
 			return;
 		}
 
@@ -1017,7 +1075,7 @@ namespace TFE_Jedi
 			if (sdisplayList_addPortal(corner0, corner1, parentPortalId))
 			{
 				portal->wall->drawFrame = s_gpuFrame;
-				traverseSector(portal->next, curSector, parentPortalId, level, uploadFlags, portal->v0, portal->v1);
+				traverseSector(portal->next, curSector, portal->wall, parentPortalId, level, uploadFlags, portal->v0, portal->v1);
 				portal->wall->drawFrame = 0;
 			}
 
@@ -1048,7 +1106,7 @@ namespace TFE_Jedi
 		objectPortalPlanes_clear();
 
 		updateCachedSector(sector, uploadFlags);
-		traverseSector(sector, nullptr, 0, level, uploadFlags, startView[0], startView[1]);
+		traverseSector(sector, nullptr, nullptr, 0, level, uploadFlags, startView[0], startView[1]);
 		frustum_pop();
 
 		sdisplayList_finish();

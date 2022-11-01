@@ -52,15 +52,14 @@
 #pragma comment(lib, "SDL2main.lib")
 using namespace TFE_Input;
 
-// Replace with settings.
 static bool s_loop  = true;
-static f32  s_refreshRate = 0;
+static f32  s_refreshRate  = 0;
 static s32  s_displayIndex = 0;
-static u32  s_baseWindowWidth = 1280;
+static u32  s_baseWindowWidth  = 1280;
 static u32  s_baseWindowHeight = 720;
-static u32  s_displayWidth = s_baseWindowWidth;
+static u32  s_displayWidth  = s_baseWindowWidth;
 static u32  s_displayHeight = s_baseWindowHeight;
-static u32  s_monitorWidth = 1280;
+static u32  s_monitorWidth  = 1280;
 static u32  s_monitorHeight = 720;
 static char s_screenshotTime[TFE_MAX_PATH];
 static s32  s_startupGame = -1;
