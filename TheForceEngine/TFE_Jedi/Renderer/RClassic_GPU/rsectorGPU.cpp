@@ -353,12 +353,7 @@ namespace TFE_Jedi
 					s_wallGpuBuffer.destroy();
 				}
 
-				ShaderBufferDef bufferDefSectors =
-				{
-					4,				// 1, 2, 4 channels (R, RG, RGBA)
-					sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-					BUF_CHANNEL_FLOAT
-				};
+				const ShaderBufferDef bufferDefSectors = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
 				s_sectorGpuBuffer.create(s_levelState.sectorCount * 2, bufferDefSectors, true, s_gpuSourceData.sectors);
 				s_wallGpuBuffer.create(wallCount * 3, bufferDefSectors, true, s_gpuSourceData.walls);
 

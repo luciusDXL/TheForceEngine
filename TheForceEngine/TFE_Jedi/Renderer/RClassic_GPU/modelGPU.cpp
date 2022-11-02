@@ -195,9 +195,9 @@ namespace TFE_Jedi
 		}
 	}
 
-	void buildModelDrawVertices(JediModel* model, s32* indexStart, s32* vertexStart)
+	bool buildModelDrawVertices(JediModel* model, s32* indexStart, s32* vertexStart)
 	{
-		if (s_modelCount >= MGPU_MAX_MODELS) { return; }
+		if (s_modelCount >= MGPU_MAX_MODELS) { return false; }
 
 		// In this version, we render one quad per vertex.
 		// Store store 4 vertices per quad, but store corner in uv.
@@ -258,6 +258,8 @@ namespace TFE_Jedi
 		s_models[s_modelCount].shader = MGPU_SHADER_HOLOGRAM;
 		model->drawId = s_modelCount;
 		s_modelCount++;
+
+		return true;
 	}
 		
 	bool startModel(JediModel* model, s32* indexStart, s32* vertexStart)
@@ -554,7 +556,11 @@ namespace TFE_Jedi
 			{
 				if (model[i]->flags & MFLAG_DRAW_VERTICES)
 				{
-					buildModelDrawVertices(model[i], &indexStart, &vertexStart);
+					if (!buildModelDrawVertices(model[i], &indexStart, &vertexStart))
+					{
+						// Too many unique models!
+						break;
+					}
 					continue;
 				}
 

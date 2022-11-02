@@ -81,34 +81,18 @@ namespace TFE_Jedi
 		s_portalPlaneInfo   = (u32*)malloc(sizeof(u32) * MAX_DISP_ITEMS);
 		s_portalFrustumVert = (Frustum*)malloc(sizeof(Frustum) * MAX_DISP_ITEMS);
 
+		const ShaderBufferDef bufferDefDisplayListPos  = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
+		const ShaderBufferDef bufferDefDisplayListData = { 4, sizeof(u32), BUF_CHANNEL_UINT };
 		for (s32 i = 0; i < SECTOR_PASS_COUNT; i++)
 		{
-			ShaderBufferDef bufferDefDisplayListPos =
-			{
-				4,				// channels (R, RG, RGBA)
-				sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-				BUF_CHANNEL_FLOAT
-			};
 			s_displayListPosGPU[i].create(MAX_DISP_ITEMS, bufferDefDisplayListPos, true);
-
-			ShaderBufferDef bufferDefDisplayListData =
-			{
-				4,				// 1, 2, 4 channels (R, RG, RGBA)
-				sizeof(u32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-				BUF_CHANNEL_UINT
-			};
 			s_displayListDataGPU[i].create(MAX_DISP_ITEMS, bufferDefDisplayListData, true);
 
 			s_posIndex[i] = posIndex[i];
 			s_dataIndex[i] = dataIndex[i];
 		}
 
-		ShaderBufferDef bufferDefDisplayListPlanes =
-		{
-			4,				// 1, 2, 4 channels (R, RG, RGBA)
-			sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-			BUF_CHANNEL_FLOAT
-		};
+		const ShaderBufferDef bufferDefDisplayListPlanes = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
 		s_displayListPlanesGPU.create(MAX_BUFFER_SIZE, bufferDefDisplayListPlanes, true);
 		s_planesIndex = planesIndex;
 

@@ -69,18 +69,8 @@ namespace TFE_Jedi
 		}
 		s_displayListObjList = (void**)malloc(sizeof(void**) * MAX_DISP_ITEMS);
 
-		ShaderBufferDef bufferDefDisplayList =
-		{
-			4,				// 1, 2, 4 channels (R, RG, RGBA)
-			sizeof(f32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-			BUF_CHANNEL_FLOAT
-		};
-		ShaderBufferDef bufferDefTexDisplayList =
-		{
-			2,				// 1, 2, 4 channels (R, RG, RGBA)
-			sizeof(s32),	// 1, 2, 4 bytes (u8; s16,u16; s32,u32,f32)
-			BUF_CHANNEL_INT
-		};
+		const ShaderBufferDef bufferDefDisplayList = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
+		const ShaderBufferDef bufferDefTexDisplayList = { 2, sizeof(s32), BUF_CHANNEL_INT };
 
 		s_displayListPosXZTextureGPU.create(MAX_DISP_ITEMS, bufferDefDisplayList, true);
 		s_displayListPosYUTextureGPU.create(MAX_DISP_ITEMS, bufferDefDisplayList, true);

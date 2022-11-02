@@ -9,16 +9,22 @@
 
 namespace TFE_Jedi
 {
+	enum FrustumConstants
+	{
+		FRUSTUM_STACK_SIZE = 256,
+		FRUSTUM_PLANE_MAX  = 256,
+	};
+
 	struct Frustum
 	{
 		u32 planeCount;
-		Vec4f planes[256];
+		Vec4f planes[FRUSTUM_PLANE_MAX];
 	};
 
 	struct Polygon
 	{
 		s32 vertexCount;
-		Vec3f vtx[256];
+		Vec3f vtx[FRUSTUM_PLANE_MAX];
 	};
 
 	void frustum_copy(const Frustum* src, Frustum* dst);

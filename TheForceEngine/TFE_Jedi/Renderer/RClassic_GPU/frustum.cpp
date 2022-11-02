@@ -30,7 +30,7 @@ namespace TFE_Jedi
 	const f32 c_superSidePlaneNormalScale = 0.98f;
 	const f32 c_superNearPlaneOffsetScale = 0.1f;
 
-	static Frustum s_frustumStack[256];
+	static Frustum s_frustumStack[FRUSTUM_STACK_SIZE];
 	static u32 s_frustumStackPtr = 0;
 
 	extern Mat3  s_cameraMtx;
@@ -56,18 +56,27 @@ namespace TFE_Jedi
 
 	void frustum_push(Frustum& frustum)
 	{
+		if (s_frustumStackPtr >= FRUSTUM_STACK_SIZE)
+		{
+			TFE_System::logWrite(LOG_ERROR, "GPU Renderer", "Frustum stack is too deep.");
+			assert(0);
+			return;
+		}
+
 		frustum_copy(&frustum, &s_frustumStack[s_frustumStackPtr]);
 		s_frustumStackPtr++;
 	}
 
 	Frustum* frustum_pop()
 	{
+		if (s_frustumStackPtr < 1) { assert(0); return nullptr; }
 		s_frustumStackPtr--;
 		return &s_frustumStack[s_frustumStackPtr];
 	}
 
 	Frustum* frustum_getBack()
 	{
+		if (s_frustumStackPtr < 1) { assert(0); return nullptr; }
 		return &s_frustumStack[s_frustumStackPtr - 1];
 	}
 
@@ -143,12 +152,12 @@ namespace TFE_Jedi
 		Polygon* next = &poly[1];
 		frustum_createQuad(corner0, corner1, cur);
 
-		f32 vtxDist[256];
+		f32 vtxDist[FRUSTUM_PLANE_MAX];
 		for (s32 p = 0; p < count; p++, plane++)
 		{
 			s32 positive = 0, negative = 0;
 			next->vertexCount = 0;
-			assert(cur->vertexCount <= 256);
+			assert(cur->vertexCount <= FRUSTUM_PLANE_MAX);
 
 			// Process the vertices.
 			for (s32 v = 0; v < cur->vertexCount; v++)
@@ -224,7 +233,7 @@ namespace TFE_Jedi
 		}
 
 		// Output the clipped polygon.
-		assert(cur->vertexCount <= 256);
+		assert(cur->vertexCount <= FRUSTUM_PLANE_MAX);
 		output->vertexCount = cur->vertexCount;
 		for (s32 i = 0; i < output->vertexCount; i++)
 		{
