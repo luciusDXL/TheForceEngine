@@ -33,11 +33,11 @@ void main()
 	uvec4 data = texelFetch(DrawListData, partIndex);
 
 	// Unpack part data.
-	bool sky = (data.x & 32768u) != 0u;
-	bool skyAdj = (data.x & 16384u) != 0u;
-	int partId = int(data.x & 16383u);
+	bool sky = (data.x & 512u) != 0u;
+	bool skyAdj = (data.x & 256u) != 0u;
+	int partId = int(data.x & 255u);
 
-	int nextId   = int(data.x >> 16u);
+	int nextId   = int(data.x >> 10u);
 	int sectorId = int(data.y);
 	int lightOffset = int(data.z & 63u) - 32;
 	bool flip    = (data.z & 64u) != 0u;
@@ -53,6 +53,9 @@ void main()
 	float floorHeight = sectorData.x;
 	float ceilHeight  = sectorData.y;
 	float sectorAmbient = sectorData.z;
+	// Offset should not be required, but added just in case.
+	int wallStart = int(sectorData.w + 0.5);
+	wallId += wallStart;
 	
 	// Generate the output position and uv for the vertex.
 	vec3 vtx_pos;
@@ -102,7 +105,7 @@ void main()
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 1).xy;
 			vtx_uv.y = 2.0;
 
-			if (nextId < 32768)
+			if (nextId < 4194303)	//1<<22 - 1
 			{
 				vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
 				float y0 = min(floorHeight, max(nextHeights.y, ceilHeight));

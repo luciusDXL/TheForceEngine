@@ -284,7 +284,8 @@ namespace TFE_Jedi
 				s_gpuSourceData.sectors[s * 2].x = cachedSector->floorHeight;
 				s_gpuSourceData.sectors[s * 2].y = cachedSector->ceilingHeight;
 				s_gpuSourceData.sectors[s * 2].z = clamp(fixed16ToFloat(curSector->ambient), 0.0f, 31.0f);
-				s_gpuSourceData.sectors[s * 2].w = 0.0f;
+				s_gpuSourceData.sectors[s * 2].w = f32(cachedSector->wallStart);
+				assert(s32(s_gpuSourceData.sectors[s * 2].w) - cachedSector->wallStart == 0);
 
 				s_gpuSourceData.sectors[s * 2 + 1].x = fixed16ToFloat(curSector->floorOffset.x);
 				s_gpuSourceData.sectors[s * 2 + 1].y = fixed16ToFloat(curSector->floorOffset.z);
@@ -476,6 +477,7 @@ namespace TFE_Jedi
 			s_gpuSourceData.sectors[srcSector->index*2].x = cached->floorHeight;
 			s_gpuSourceData.sectors[srcSector->index*2].y = cached->ceilingHeight;
 			s_gpuSourceData.sectors[srcSector->index*2].z = clamp(fixed16ToFloat(srcSector->ambient), 0.0f, 31.0f);
+			// w = wallStart doesn't change.
 
 			s_gpuSourceData.sectors[srcSector->index*2+1].x = fixed16ToFloat(srcSector->floorOffset.x);
 			s_gpuSourceData.sectors[srcSector->index*2+1].y = fixed16ToFloat(srcSector->floorOffset.z);

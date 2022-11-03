@@ -28,6 +28,7 @@ using namespace TFE_RenderBackend;
 namespace TFE_Jedi
 {
 	// Warning: these IDs must match the PartId used in the vertex shader.
+	// Converting to 10-bits.
 	enum SegmentPartID
 	{
 		SPARTID_WALL_MID = 0,
@@ -40,8 +41,8 @@ namespace TFE_Jedi
 		SPARTID_WALL_MID_SIGN,
 		SPARTID_WALL_TOP_SIGN,
 		SPARTID_WALL_BOT_SIGN,
-		SPARTID_SKY_ADJ = 16384,
-		SPARTID_SKY = 32768,
+		SPARTID_SKY_ADJ = 256,
+		SPARTID_SKY = 512,
 		SPARTID_COUNT
 	};
 
@@ -219,7 +220,7 @@ namespace TFE_Jedi
 					}
 				}
 				s_maxPlaneCount = max(count, s_maxPlaneCount);
-				assert(s_maxPlaneCount <= MAX_PORTAL_PLANES);
+				assert(s_maxPlaneCount <= FRUSTUM_PLANE_MAX);
 
 				// Add left and right planes if there is enough room...
 				// This is so that caps are properly clipped.
@@ -273,7 +274,7 @@ namespace TFE_Jedi
 			// The new planes either match the parent or are created from the edges.
 			const Frustum* frust = &s_portalFrustumVert[s_displayPortalCount];
 			Vec4f* outPlanes = &s_displayListPlanes[s_displayPlaneCount];
-			for (u32 i = 0; i < frust->planeCount && i < MAX_PORTAL_PLANES; i++)
+			for (u32 i = 0; i < planeCount; i++)
 			{
 				outPlanes[i] = frust->planes[i];
 				s_displayPlaneCount++;
@@ -305,6 +306,13 @@ namespace TFE_Jedi
 		s_displayListData[index] = data;
 	}
 
+	/*********************************
+	Current GPU Renderer Limits:
+	* Walls - 65536 per sector   (because of wallGpuId)
+	          16.7M total due to storing wall start as a float.
+	* Textures (unique) - 16384  (because of texture packer)
+	* Sectors - 4M               (because of nextId, 0xfffffc00 = no sector)
+	**********************************/
 	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg, bool forceTreatAsSolid)
 	{
 		s32 wallId = wallSeg->seg->id;
@@ -312,12 +320,13 @@ namespace TFE_Jedi
 		// Mark only visible walls as being rendered.
 		srcWall->seen = JTRUE;
 
-		u32 wallGpuId = u32(cached->wallStart + wallId) << 16u;
+		// Limit 65536 walls **per sector**.
+		u32 wallGpuId = u32(wallId) << 16u;
 		u32 flip = (((srcWall->flags1 & WF1_FLIP_HORIZ) != 0) ? 1 : 0) << 6u;
 		// Add 32 so the value is unsigned and easy to decode in the shader (just subtract 32).
 		// Values should never to larger than [-31,31] but clamp just in case (larger values would have no effect anyway).
 		u32 wallLight = u32(32 + clamp(floor16(srcWall->wallLight), -31, 31));
-		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 16u : 0xffff0000u;
+		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 10u : 0xfffffc00;
 		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
 
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
