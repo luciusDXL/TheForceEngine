@@ -14,17 +14,18 @@ namespace TFE_DarkForces
 	{ 0, -1, -1, -1, 1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1 };
 
 	// Actor function for exploders (i.e. landmines and exploding barrels).
-	JBool sceneryLogicFunc(AiActor* aiActor, Actor* actor)
+	JBool sceneryLogicFunc(ActorModule* module, Actor* actor)
 	{
-		LogicAnimation* anim = &aiActor->enemy.anim;
-		SecObject* obj = aiActor->enemy.header.obj;
+		DamageModule* damageMod = (DamageModule*)module;
+		LogicAnimation* anim = &damageMod->enemy.anim;
+		SecObject* obj = damageMod->enemy.header.obj;
 
 		if (!(anim->flags & AFLAG_READY))
 		{
 			s_actorState.curAnimation = anim;
 			return JFALSE;
 		}
-		else if (aiActor->hp <= 0 && actor_getAnimationIndex(4) != -1)
+		else if (damageMod->hp <= 0 && actor_getAnimationIndex(4) != -1)
 		{
 			SecObject* newObj = allocateObject();
 			sprite_setData(newObj, obj->wax);
@@ -43,20 +44,21 @@ namespace TFE_DarkForces
 	// Actor message function for exploders, this is responsible for processing messages such as 
 	// projectile damage and explosions. For other AI message functions, it would also process
 	// "wake up" messages, but those messages are ignored for exploders.
-	JBool sceneryMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
+	JBool sceneryMsgFunc(s32 msg, ActorModule* module, Actor* actor)
 	{
 		JBool retValue = JFALSE;
-		LogicAnimation* anim = &aiActor->enemy.anim;
-		SecObject* obj = aiActor->enemy.header.obj;
+		DamageModule* damageMod = (DamageModule*)module;
+		LogicAnimation* anim = &damageMod->enemy.anim;
+		SecObject* obj = damageMod->enemy.header.obj;
 
 		if (msg == MSG_DAMAGE)
 		{
-			if (aiActor->hp > 0)
+			if (damageMod->hp > 0)
 			{
 				ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
-				aiActor->hp -= proj->dmg;
+				damageMod->hp -= proj->dmg;
 				JBool retValue;
-				if (aiActor->hp > 0)
+				if (damageMod->hp > 0)
 				{
 					retValue = JTRUE;
 				}
@@ -70,14 +72,14 @@ namespace TFE_DarkForces
 		}
 		else if (msg == MSG_EXPLOSION)
 		{
-			if (aiActor->hp <= 0)
+			if (damageMod->hp <= 0)
 			{
 				return JTRUE;
 			}
 
 			fixed16_16 dmg = s_msgArg1;
-			aiActor->hp -= dmg;
-			if (aiActor->hp > 0)
+			damageMod->hp -= dmg;
+			if (damageMod->hp > 0)
 			{
 				retValue = JTRUE;
 			}
@@ -93,17 +95,17 @@ namespace TFE_DarkForces
 
 	Logic* scenery_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
-		logic->flags &= ~(FLAG_BIT(0) | FLAG_BIT(2));
-		logic->animTable = s_sceneryAnimTable;
+		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
+		dispatch->flags &= ~(FLAG_BIT(0) | FLAG_BIT(2));
+		dispatch->animTable = s_sceneryAnimTable;
 
-		AiActor* aiActor = actor_createAiActor((Logic*)logic);
-		aiActor->enemy.header.func = sceneryLogicFunc;
-		aiActor->enemy.header.msgFunc = sceneryMsgFunc;
-		aiActor->enemy.anim.flags |= AFLAG_READY;
-		aiActor->hp = FIXED(1);
-		actor_addModule(logic, (ActorModule*)aiActor);
+		DamageModule* module = actor_createDamageModule(dispatch);
+		module->enemy.header.func = sceneryLogicFunc;
+		module->enemy.header.msgFunc = sceneryMsgFunc;
+		module->enemy.anim.flags |= AFLAG_READY;
+		module->hp = FIXED(1);
+		actor_addModule(dispatch, (ActorModule*)module);
 
-		return (Logic*)logic;
+		return (Logic*)dispatch;
 	}
 }  // namespace TFE_DarkForces

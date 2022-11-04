@@ -18,7 +18,7 @@ using namespace TFE_Jedi;
 using namespace TFE_DarkForces;
 
 struct Actor;
-struct AiActor;
+struct ActorModule;
 struct ActorTarget;
 struct Task;
 
@@ -28,9 +28,9 @@ enum LogicAnimFlags
 	AFLAG_READY  = FLAG_BIT(1),
 };
 
-typedef JBool(*ActorFunc)(AiActor*, Actor*);
-typedef JBool(*ActorMsgFunc)(s32 msg, AiActor*, Actor*);
-typedef void(*ActorAttribFunc)(AiActor* actor);
+typedef JBool(*ActorFunc)(ActorModule*, Actor*);
+typedef JBool(*ActorMsgFunc)(s32 msg, ActorModule*, Actor*);
+typedef void(*ActorAttribFunc)(ActorModule*);
 typedef u32(*ActorTargetFunc)(Actor*, ActorTarget*);
 typedef void(*ActorFreeFunc)(void*);
 
@@ -158,7 +158,7 @@ struct ActorSimple
 	angle14_32 approachVariation;
 };
 
-struct AiActor
+struct DamageModule
 {
 	ActorEnemy enemy;
 	fixed16_16 hp;

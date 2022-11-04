@@ -109,9 +109,9 @@ namespace TFE_DarkForces
 	void actor_createTask();
 
 	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc);
-	AiActor* actor_createAiActor(Logic* logic);
+	DamageModule* actor_createDamageModule(ActorDispatch* dispatch);
 	Actor* actor_create(Logic* logic);
-	void actor_addModule(ActorDispatch* logic, ActorModule* module);
+	void actor_addModule(ActorDispatch* dispatch, ActorModule* module);
 
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();

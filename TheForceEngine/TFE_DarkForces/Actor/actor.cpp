@@ -153,7 +153,7 @@ namespace TFE_DarkForces
 	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* logic = (ActorDispatch*)allocator_newItem(s_istate.actorLogics);
-		memset(logic->modules, 0, sizeof(AiActor*) * 6);
+		memset(logic->modules, 0, sizeof(ActorModule*) * 6);
 
 		logic->mover = nullptr;
 		logic->animTable = nullptr;
@@ -564,9 +564,10 @@ namespace TFE_DarkForces
 		return (ActorDispatch*)s_actorState.curLogic;
 	}
 
-	JBool defaultAiFunc(AiActor* aiActor, Actor* actor)
+	JBool defaultAiFunc(ActorModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &aiActor->enemy;
+		DamageModule* damageMod = (DamageModule*)module;
+		ActorEnemy* enemy = &damageMod->enemy;
 		SecObject* obj = enemy->header.obj;
 		RSector* sector = obj->sector;
 
@@ -580,7 +581,7 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 
-		if (aiActor->hp <= 0)
+		if (damageMod->hp <= 0)
 		{
 			if (!actor_onFloor())
 			{
@@ -591,14 +592,14 @@ namespace TFE_DarkForces
 				actor->updateTargetFunc(actor, &enemy->target);
 				return JFALSE;
 			}
-			spawnHitEffect(aiActor->dieEffect, sector, obj->posWS, obj);
+			spawnHitEffect(damageMod->dieEffect, sector, obj->posWS, obj);
 
 			// If the secHeight is <= 0, then it is not a water sector.
 			if (sector->secHeight - 1 < 0)
 			{
-				if (aiActor->itemDropId != ITEM_NONE)
+				if (damageMod->itemDropId != ITEM_NONE)
 				{
-					SecObject* item = item_create(aiActor->itemDropId);
+					SecObject* item = item_create(damageMod->itemDropId);
 					item->posWS = obj->posWS;
 					sector_addObject(sector, item);
 
@@ -647,30 +648,31 @@ namespace TFE_DarkForces
 		return 0xffffffff;
 	}
 
-	JBool defaultMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
+	JBool defaultMsgFunc(s32 msg, ActorModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &aiActor->enemy;
+		DamageModule* damageMod = (DamageModule*)module;
+		ActorEnemy* enemy = &damageMod->enemy;
 		SecObject* obj = enemy->header.obj;
 		RSector* sector = obj->sector;
 
 		if (msg == MSG_DAMAGE)
 		{
-			if (aiActor->hp > 0)
+			if (damageMod->hp > 0)
 			{
 				ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
 				fixed16_16 dmg = proj->dmg;
 				// Reduce damage by half if an enemy is shooting another enemy.
 				if (proj->prevObj)
 				{
-					u32 aiActorProj = proj->prevObj->entityFlags & ETFLAG_AI_ACTOR;
-					u32 aiActorCur = obj->entityFlags & ETFLAG_AI_ACTOR;
-					if (aiActorProj == aiActorCur)
+					u32 moduleProj = proj->prevObj->entityFlags & ETFLAG_AI_ACTOR;
+					u32 moduleCur = obj->entityFlags & ETFLAG_AI_ACTOR;
+					if (moduleProj == moduleCur)
 					{
 						dmg = proj->dmg >> 1;
 					}
 				}
-				aiActor->hp -= dmg;
-				if (aiActor->stopOnHit)
+				damageMod->hp -= dmg;
+				if (damageMod->stopOnHit)
 				{
 					enemy->target.flags |= 8;
 				}
@@ -678,13 +680,13 @@ namespace TFE_DarkForces
 				LogicAnimation* anim = &enemy->anim;
 				vec3_fixed pushVel;
 				computeDamagePushVelocity(proj, &pushVel);
-				if (aiActor->hp <= 0)
+				if (damageMod->hp <= 0)
 				{
 					ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 					actor_addVelocity(pushVel.x*4, pushVel.y*2, pushVel.z*4);
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
-					sound_playCued(aiActor->dieSndSrc, obj->posWS);
+					sound_playCued(damageMod->dieSndSrc, obj->posWS);
 					enemy->anim.flags |= 8;
 					if (proj->type == PROJ_PUNCH && obj->type == OBJ_TYPE_SPRITE)
 					{
@@ -705,8 +707,8 @@ namespace TFE_DarkForces
 					}
 
 					actor_addVelocity(pushVel.x*2, pushVel.y, pushVel.z*2);
-					sound_stop(aiActor->hurtSndID);
-					aiActor->hurtSndID = sound_playCued(aiActor->hurtSndSrc, obj->posWS);
+					sound_stop(damageMod->hurtSndID);
+					damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
 						actor_setupAnimation(12, anim);
@@ -723,12 +725,12 @@ namespace TFE_DarkForces
 		}
 		else if (msg == MSG_EXPLOSION)
 		{
-			if (aiActor->hp > 0)
+			if (damageMod->hp > 0)
 			{
 				fixed16_16 dmg   = s_msgArg1;
 				fixed16_16 force = s_msgArg2;
-				aiActor->hp -= dmg;
-				if (aiActor->stopOnHit)
+				damageMod->hp -= dmg;
+				if (damageMod->stopOnHit)
 				{
 					enemy->target.flags |= 8;
 				}
@@ -740,12 +742,12 @@ namespace TFE_DarkForces
 				vec3_fixed vel = { mul16(force, dir.x), mul16(force, dir.y), mul16(force, dir.z) };
 				LogicAnimation* anim = &enemy->anim;
 				ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
-				if (aiActor->hp <= 0)
+				if (damageMod->hp <= 0)
 				{
 					actor_addVelocity(vel.x, vel.y, vel.z);
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
-					sound_playCued(aiActor->dieSndSrc, obj->posWS);
+					sound_playCued(damageMod->dieSndSrc, obj->posWS);
 					enemy->target.flags |= 8;
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
@@ -755,8 +757,8 @@ namespace TFE_DarkForces
 				else
 				{
 					actor_addVelocity(vel.x>>1, vel.y>>1, vel.z>>1);
-					sound_stop(aiActor->hurtSndID);
-					aiActor->hurtSndID = sound_playCued(aiActor->hurtSndSrc, obj->posWS);
+					sound_stop(damageMod->hurtSndID);
+					damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
 						actor_setupAnimation(12, anim);
@@ -772,10 +774,10 @@ namespace TFE_DarkForces
 		}
 		else if (msg == MSG_TERMINAL_VEL || msg == MSG_CRUSH)
 		{
-			if (aiActor->hp > 0)
+			if (damageMod->hp > 0)
 			{
-				aiActor->hp = 0;
-				if (aiActor->stopOnHit)
+				damageMod->hp = 0;
+				if (damageMod->stopOnHit)
 				{
 					enemy->target.flags |= 8;
 				}
@@ -785,7 +787,7 @@ namespace TFE_DarkForces
 
 				actor_setDeathCollisionFlags();
 				sound_stop(logic->alertSndID);
-				sound_playCued(aiActor->dieSndSrc, obj->posWS);
+				sound_playCued(damageMod->dieSndSrc, obj->posWS);
 				enemy->anim.flags |= 8;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
@@ -796,33 +798,34 @@ namespace TFE_DarkForces
 
 		return JFALSE;
 	}
-	
-	AiActor* actor_createAiActor(Logic* logic)
-	{
-		AiActor* enemyActor = (AiActor*)level_alloc(sizeof(AiActor));
-		memset(enemyActor, 0, sizeof(AiActor));
 
-		ActorEnemy* enemy = &enemyActor->enemy;
-		actor_initEnemy(enemy, logic);
-		enemy->header.func  = defaultAiFunc;
+	DamageModule* actor_createDamageModule(ActorDispatch* dispatch)
+	{
+		DamageModule* damageMod = (DamageModule*)level_alloc(sizeof(DamageModule));
+		memset(damageMod, 0, sizeof(DamageModule));
+
+		ActorEnemy* enemy = &damageMod->enemy;
+		actor_initEnemy(enemy, (Logic*)dispatch);
+		enemy->header.func    = defaultAiFunc;
 		enemy->header.msgFunc = defaultMsgFunc;
 		enemy->header.nextTick = 0xffffffff;
 
 		// Default values.
-		enemyActor->hp = FIXED(4);
-		enemyActor->itemDropId = ITEM_NONE;
-		enemyActor->hurtSndSrc = NULL_SOUND;
-		enemyActor->dieSndSrc  = NULL_SOUND;
-		enemyActor->hurtSndID  = NULL_SOUND;
-		enemyActor->stopOnHit  = JTRUE;
-		enemyActor->dieEffect  = HEFFECT_NONE;
+		damageMod->hp = FIXED(4);
+		damageMod->itemDropId = ITEM_NONE;
+		damageMod->hurtSndSrc = NULL_SOUND;
+		damageMod->dieSndSrc  = NULL_SOUND;
+		damageMod->hurtSndID  = NULL_SOUND;
+		damageMod->stopOnHit  = JTRUE;
+		damageMod->dieEffect  = HEFFECT_NONE;
 
-		return enemyActor;
+		return damageMod;
 	}
 		
-	JBool defaultEnemyFunc(AiActor* aiActor, Actor* actor)
+	JBool defaultEnemyFunc(ActorModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &aiActor->enemy;
+		DamageModule* damageMod = (DamageModule*)module;
+		ActorEnemy* enemy = &damageMod->enemy;
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		SecObject* obj = enemy->header.obj;
 		LogicAnimation* anim = &enemy->anim;
@@ -1095,9 +1098,10 @@ namespace TFE_DarkForces
 		return enemy->timing.delay;
 	}
 
-	JBool defaultEnemyMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
+	JBool defaultEnemyMsgFunc(s32 msg, ActorModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &aiActor->enemy;
+		DamageModule* damageMod = (DamageModule*)module;
+		ActorEnemy* enemy = &damageMod->enemy;
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		if (msg == MSG_WAKEUP)
 		{
@@ -1121,9 +1125,9 @@ namespace TFE_DarkForces
 		return enemyActor;
 	}
 
-	JBool defaultSimpleActorFunc(AiActor* aiActor, Actor* actor)
+	JBool defaultSimpleActorFunc(ActorModule* module, Actor* actor)
 	{
-		ActorSimple* actorSimple = (ActorSimple*)aiActor;
+		ActorSimple* actorSimple = (ActorSimple*)module;
 		SecObject* obj = actorSimple->header.obj;
 
 		if (actorSimple->anim.state == 1)
@@ -1286,14 +1290,14 @@ namespace TFE_DarkForces
 		obj->frame = 0;
 	}
 
-	void actor_addModule(ActorDispatch* logic, ActorModule* module)
+	void actor_addModule(ActorDispatch* dispatch, ActorModule* module)
 	{
 		if (!module) { return; }
 		for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 		{
-			if (!logic->modules[i])
+			if (!dispatch->modules[i])
 			{
-				logic->modules[i] = module;
+				dispatch->modules[i] = module;
 				return;
 			}
 		}
@@ -1469,10 +1473,10 @@ namespace TFE_DarkForces
 		}
 	}
 
-	JBool defaultActorFunc(AiActor* aiActor, Actor* baseActor)
+	JBool defaultActorFunc(ActorModule* module, Actor* baseActor)
 	{
 		// This is really a regular actor...
-		Actor* actor = (Actor*)aiActor;
+		Actor* actor = (Actor*)module;
 		actor->physics.wall = nullptr;
 		actor->physics.u24 = 0;
 
@@ -1859,7 +1863,7 @@ namespace TFE_DarkForces
 			{
 				if (module->msgFunc)
 				{
-					Tick nextTick = module->msgFunc(msg, (AiActor*)module, (Actor*)actorLogic->mover);
+					Tick nextTick = module->msgFunc(msg, module, (Actor*)actorLogic->mover);
 					if (nextTick != 0xffffffff)
 					{
 						module->nextTick = nextTick;
@@ -2038,7 +2042,7 @@ namespace TFE_DarkForces
 							{
 								if (module->func && module->nextTick < s_curTick)
 								{
-									module->nextTick = module->func((AiActor*)module, (Actor*)actorLogic->mover);
+									module->nextTick = module->func(module, (Actor*)actorLogic->mover);
 								}
 							}
 						}
@@ -2052,7 +2056,7 @@ namespace TFE_DarkForces
 								if (func)
 								{
 									actor_handlePhysics((Actor*)mover, &actorLogic->vel);
-									func((AiActor*)mover, (Actor*)mover);
+									func(mover, (Actor*)mover);
 								}
 							}
 

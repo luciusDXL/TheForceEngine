@@ -22,11 +22,12 @@ namespace TFE_DarkForces
 	static const s32 s_sewerCreatureAnimTable[] =
 	{ -1, 1, 2, 3, 4, 5, 6, -1, -1, -1, -1, -1, -1, -1, 12, 13 };
 
-	u32 sewerCreatureDie(AiActor* aiActor, Actor* actor);
+	u32 sewerCreatureDie(DamageModule* module, Actor* actor);
 
-	JBool sewerCreatureAiFunc(AiActor* aiActor, Actor* actor)
+	JBool sewerCreatureAiFunc(ActorModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &aiActor->enemy;
+		DamageModule* damageMod = (DamageModule*)module;
+		ActorEnemy* enemy = &damageMod->enemy;
 		SecObject* obj = enemy->header.obj;
 		RSector* sector = obj->sector;
 		LogicAnimation* anim = &enemy->anim;
@@ -40,7 +41,7 @@ namespace TFE_DarkForces
 			actor->updateTargetFunc(actor, &enemy->target);
 			return 0;
 		}
-		else if (aiActor->hp > 0)
+		else if (damageMod->hp > 0)
 		{
 			return 0xffffffff;
 		}
@@ -64,16 +65,17 @@ namespace TFE_DarkForces
 		return 0;
 	}
 	
-	JBool sewerCreatureAiMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
+	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &aiActor->enemy;
+		DamageModule* damageMod = (DamageModule*)module;
+		ActorEnemy* enemy = &damageMod->enemy;
 		SecObject* obj = enemy->header.obj;
 		RSector* sector = obj->sector;
 		LogicAnimation* anim = &enemy->anim;
 
 		if (msg == MSG_DAMAGE)
 		{
-			if (aiActor->hp <= 0)
+			if (damageMod->hp <= 0)
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
@@ -84,19 +86,19 @@ namespace TFE_DarkForces
 			}
 
 			ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
-			aiActor->hp -= proj->dmg;
-			if (aiActor->hp <= 0)
+			damageMod->hp -= proj->dmg;
+			if (damageMod->hp <= 0)
 			{
-				return sewerCreatureDie(aiActor, actor);
+				return sewerCreatureDie(damageMod, actor);
 			}
 
-			sound_stop(aiActor->hurtSndID);
-			aiActor->hurtSndID = sound_playCued(aiActor->hurtSndSrc, obj->posWS);
+			sound_stop(damageMod->hurtSndID);
+			damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 			return 0xffffffff;
 		}
 		else if (msg == MSG_EXPLOSION)
 		{
-			if (aiActor->hp <= 0)
+			if (damageMod->hp <= 0)
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
@@ -107,21 +109,22 @@ namespace TFE_DarkForces
 			}
 
 			fixed16_16 dmg = s_msgArg1;
-			aiActor->hp -= dmg;
-			if (aiActor->hp > 0)
+			damageMod->hp -= dmg;
+			if (damageMod->hp > 0)
 			{
-				sound_stop(aiActor->hurtSndID);
-				aiActor->hurtSndID = sound_playCued(aiActor->hurtSndSrc, obj->posWS);
+				sound_stop(damageMod->hurtSndID);
+				damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 				return 0xffffffff;
 			}
-			return sewerCreatureDie(aiActor, actor);
+			return sewerCreatureDie(damageMod, actor);
 		}
 		return enemy->header.nextTick;
 	}
 
-	JBool sewerCreatureEnemyFunc(AiActor* aiActor, Actor* actor)
+	JBool sewerCreatureEnemyFunc(ActorModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &aiActor->enemy;
+		DamageModule* damageMod = (DamageModule*)module;
+		ActorEnemy* enemy = &damageMod->enemy;
 		SecObject* obj = enemy->header.obj;
 		RSector* sector = obj->sector;
 
@@ -232,19 +235,19 @@ namespace TFE_DarkForces
 		obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 		obj->entityFlags = ETFLAG_AI_ACTOR;
 
-		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
-		logic->alertSndSrc = s_alertSndSrc[ALERT_CREATURE];
-		logic->fov = ANGLE_MAX;
+		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
+		dispatch->alertSndSrc = s_alertSndSrc[ALERT_CREATURE];
+		dispatch->fov = ANGLE_MAX;
 
-		AiActor* aiActor = actor_createAiActor((Logic*)logic);
-		aiActor->enemy.header.func = sewerCreatureAiFunc;
-		aiActor->enemy.header.msgFunc = sewerCreatureAiMsgFunc;
-		aiActor->hp = FIXED(36);
-		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_CREATURE_HURT];
-		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_CREATURE_DIE];
-		actor_addModule(logic, (ActorModule*)aiActor);
+		DamageModule* module = actor_createDamageModule(dispatch);
+		module->enemy.header.func = sewerCreatureAiFunc;
+		module->enemy.header.msgFunc = sewerCreatureAiMsgFunc;
+		module->hp = FIXED(36);
+		module->hurtSndSrc = s_agentSndSrc[AGENTSND_CREATURE_HURT];
+		module->dieSndSrc = s_agentSndSrc[AGENTSND_CREATURE_DIE];
+		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
+		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
 		s_actorState.curEnemyActor = enemyActor;
 		enemyActor->header.func = sewerCreatureEnemyFunc;
 		enemyActor->timing.state0Delay = 1240;
@@ -254,19 +257,19 @@ namespace TFE_DarkForces
 		enemyActor->ua4 = FIXED(360);
 		enemyActor->attackSecSndSrc = s_agentSndSrc[AGENTSND_CREATURE2];
 		enemyActor->attackFlags = (enemyActor->attackFlags | 1) & 0xfffffffd;
-		actor_addModule(logic, (ActorModule*)enemyActor);
+		actor_addModule(dispatch, (ActorModule*)enemyActor);
 
-		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
+		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = 0x7fff;
 		actorSimple->target.speed = FIXED(18);
 		actorSimple->u3c = 58;
 		actorSimple->startDelay = 72;
 		actorSimple->anim.flags &= 0xfffffffe;
-		actor_addModule(logic, (ActorModule*)actorSimple);
+		actor_addModule(dispatch, (ActorModule*)actorSimple);
 
-		Actor* actor = actor_create((Logic*)logic);	// eax
-		logic->mover = (ActorModule*)actor;
-		logic->animTable = s_sewerCreatureAnimTable;
+		Actor* actor = actor_create((Logic*)dispatch);
+		dispatch->mover = (ActorModule*)actor;
+		dispatch->animTable = s_sewerCreatureAnimTable;
 		obj->entityFlags &= ~ETFLAG_SMART_OBJ;
 
 		actor->collisionFlags = (actor->collisionFlags | 1) & 0xfffffffd;
@@ -275,19 +278,19 @@ namespace TFE_DarkForces
 		actor->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
-		return (Logic*)logic;
+		return (Logic*)dispatch;
 	}
 
-	u32 sewerCreatureDie(AiActor* aiActor, Actor* actor)
+	u32 sewerCreatureDie(DamageModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &aiActor->enemy;
+		ActorEnemy* enemy = &module->enemy;
 		SecObject* obj = enemy->header.obj;
 		RSector* sector = obj->sector;
 
 		actor_setDeathCollisionFlags();
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		sound_stop(logic->alertSndID);
-		sound_playCued(aiActor->dieSndSrc, obj->posWS);
+		sound_playCued(module->dieSndSrc, obj->posWS);
 		enemy->target.flags |= 8;
 
 		if ((obj->anim == 1 || obj->anim == 6) && obj->type == OBJ_TYPE_SPRITE)

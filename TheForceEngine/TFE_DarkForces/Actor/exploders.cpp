@@ -12,15 +12,16 @@ namespace TFE_DarkForces
 	{ 0, -1, 1, 1, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
 
 	// Actor function for exploders (i.e. landmines and exploding barrels).
-	JBool exploderFunc(AiActor* aiActor, Actor* actor)
+	JBool exploderFunc(ActorModule* module, Actor* actor)
 	{
-		LogicAnimation* anim = &aiActor->enemy.anim;
+		DamageModule* damageMod = (DamageModule*)module;
+		LogicAnimation* anim = &damageMod->enemy.anim;
 		if (!(anim->flags & AFLAG_READY))
 		{
 			s_actorState.curAnimation = anim;
 			return JFALSE;
 		}
-		else if ((anim->flags & AFLAG_PLAYED) && aiActor->hp <= 0)
+		else if ((anim->flags & AFLAG_PLAYED) && damageMod->hp <= 0)
 		{
 			actor_kill();
 			return JFALSE;
@@ -31,20 +32,21 @@ namespace TFE_DarkForces
 	// Actor message function for exploders, this is responsible for processing messages such as 
 	// projectile damage and explosions. For other AI message functions, it would also process
 	// "wake up" messages, but those messages are ignored for exploders.
-	JBool exploderMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
+	JBool exploderMsgFunc(s32 msg, ActorModule* module, Actor* actor)
 	{
+		DamageModule* damageMod = (DamageModule*)module;
 		JBool retValue = JFALSE;
-		SecObject* obj = aiActor->enemy.header.obj;
-		LogicAnimation* anim = &aiActor->enemy.anim;
+		SecObject* obj = damageMod->enemy.header.obj;
+		LogicAnimation* anim = &damageMod->enemy.anim;
 
 		if (msg == MSG_DAMAGE)
 		{
-			if (aiActor->hp > 0)
+			if (damageMod->hp > 0)
 			{
 				ProjectileLogic* proj = (ProjectileLogic*)s_msgEntity;
-				aiActor->hp -= proj->dmg;
+				damageMod->hp -= proj->dmg;
 				JBool retValue;
-				if (aiActor->hp > 0)
+				if (damageMod->hp > 0)
 				{
 					retValue = JTRUE;
 				}
@@ -59,21 +61,21 @@ namespace TFE_DarkForces
 					actor_removeLogics(obj);
 
 					actor_setupAnimation(2/*animIndex*/, anim);
-					actor->updateTargetFunc(actor, &aiActor->enemy.target);
+					actor->updateTargetFunc(actor, &damageMod->enemy.target);
 					retValue = JFALSE;
 				}
 			}
 		}
 		else if (msg == MSG_EXPLOSION)
 		{
-			if (aiActor->hp <= 0)
+			if (damageMod->hp <= 0)
 			{
 				return JTRUE;
 			}
 
 			fixed16_16 dmg = s_msgArg1;
 			fixed16_16 force = s_msgArg2;
-			aiActor->hp -= dmg;
+			damageMod->hp -= dmg;
 
 			vec3_fixed pushDir;
 			vec3_fixed pos = { obj->posWS.x, obj->posWS.y - obj->worldHeight, obj->posWS.z };
@@ -81,7 +83,7 @@ namespace TFE_DarkForces
 
 			fixed16_16 pushX = mul16(force, pushDir.x);
 			fixed16_16 pushZ = mul16(force, pushDir.z);
-			if (aiActor->hp > 0)
+			if (damageMod->hp > 0)
 			{
 				actor_addVelocity(pushX >> 1, 0, pushZ >> 1);
 				return JTRUE;
@@ -122,56 +124,56 @@ namespace TFE_DarkForces
 
 	Logic* barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
+		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 
-		logic->flags &= 0xfffffffb;
-		logic->flags &= 0xfffffffe;
-		logic->animTable = s_mineBarrelAnimTable;
+		dispatch->flags &= 0xfffffffb;
+		dispatch->flags &= 0xfffffffe;
+		dispatch->animTable = s_mineBarrelAnimTable;
 
-		AiActor* aiActor = actor_createAiActor((Logic*)logic);
-		aiActor->enemy.header.func = exploderFunc;
-		aiActor->enemy.header.msgFunc = exploderMsgFunc;
-		aiActor->hp = FIXED(11);
-		aiActor->enemy.anim.flags |= AFLAG_READY;
-		actor_addModule(logic, (ActorModule*)aiActor);
+		DamageModule* module = actor_createDamageModule(dispatch);
+		module->enemy.header.func = exploderFunc;
+		module->enemy.header.msgFunc = exploderMsgFunc;
+		module->hp = FIXED(11);
+		module->enemy.anim.flags |= AFLAG_READY;
+		actor_addModule(dispatch, (ActorModule*)module);
 
-		Actor* actor = actor_create((Logic*)logic);
-		logic->mover = (ActorModule*)actor;
+		Actor* actor = actor_create((Logic*)dispatch);
+		dispatch->mover = (ActorModule*)actor;
 		actor->collisionFlags |= 1;
 		actor->physics.width = obj->worldWidth;
 		actor->target.flags = (actor->target.flags | 8) & 0xfffffff8;
 		actor->target.speed = 0;
 		actor->target.speedRotation = 0;
 
-		ActorTarget* target = &aiActor->enemy.target;
+		ActorTarget* target = &module->enemy.target;
 		target->flags = (target->flags | 8) & 0xfffffff8;
 		target->speed = 0;
 		target->speedRotation = 0;
 
-		return (Logic*)logic;
+		return (Logic*)dispatch;
 	}
 
 	Logic* landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* actorLogic = actor_createDispatch(obj, setupFunc);
-		actorLogic->flags &= ~4;
-		actorLogic->flags &= ~1;
-		actorLogic->animTable = s_mineBarrelAnimTable;
+		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
+		dispatch->flags &= ~4;
+		dispatch->flags &= ~1;
+		dispatch->animTable = s_mineBarrelAnimTable;
 
-		AiActor* aiActor = actor_createAiActor((Logic*)actorLogic);
-		aiActor->enemy.header.func = exploderFunc;
-		aiActor->enemy.header.msgFunc = exploderMsgFunc;
-		aiActor->enemy.anim.flags |= AFLAG_READY;
-		aiActor->hp = FIXED(20);
-		actor_addModule(actorLogic, (ActorModule*)aiActor);
+		DamageModule* module = actor_createDamageModule(dispatch);
+		module->enemy.header.func = exploderFunc;
+		module->enemy.header.msgFunc = exploderMsgFunc;
+		module->enemy.anim.flags |= AFLAG_READY;
+		module->hp = FIXED(20);
+		actor_addModule(dispatch, (ActorModule*)module);
 
-		Actor* actor = actor_create((Logic*)actorLogic);
-		actorLogic->mover = (ActorModule*)actor;
+		Actor* actor = actor_create((Logic*)dispatch);
+		dispatch->mover = (ActorModule*)actor;
 		actor->collisionFlags |= 1;
 		// This was cleared to 0 in createProjectile()
 		actor->physics.width = obj->worldWidth;
 
-		ActorTarget* target = &aiActor->enemy.target;
+		ActorTarget* target = &module->enemy.target;
 		target->flags = (target->flags | 8) & 0xfffffff8;
 		target->speed = 0;
 		target->speedRotation = 0;
@@ -180,9 +182,9 @@ namespace TFE_DarkForces
 		actor->target.speed = 0;
 		actor->target.speedRotation = 0;
 
-		actorLogic->flags &= ~1;
-		actorLogic->animTable = s_mineBarrelAnimTable;
+		dispatch->flags &= ~1;
+		dispatch->animTable = s_mineBarrelAnimTable;
 
-		return (Logic*)actorLogic;
+		return (Logic*)dispatch;
 	}
 }  // namespace TFE_DarkForces
