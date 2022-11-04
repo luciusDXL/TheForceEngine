@@ -139,7 +139,7 @@ struct Actor
 	u32 collisionFlags;
 };
 
-struct ActorSimple
+struct ThinkerModule
 {
 	ActorModule header;
 	ActorTarget target;

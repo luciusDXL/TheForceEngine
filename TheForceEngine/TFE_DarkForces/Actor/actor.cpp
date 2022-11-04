@@ -1125,60 +1125,60 @@ namespace TFE_DarkForces
 		return attackMod;
 	}
 
-	JBool defaultSimpleActorFunc(ActorModule* module, Actor* actor)
+	JBool defaultThinkerFunc(ActorModule* module, Actor* actor)
 	{
-		ActorSimple* actorSimple = (ActorSimple*)module;
-		SecObject* obj = actorSimple->header.obj;
+		ThinkerModule* thinkerMod = (ThinkerModule*)module;
+		SecObject* obj = thinkerMod->header.obj;
 
-		if (actorSimple->anim.state == 1)
+		if (thinkerMod->anim.state == 1)
 		{
-			ActorTarget* target = &actorSimple->target;
+			ActorTarget* target = &thinkerMod->target;
 			JBool arrivedAtTarget = actor_arrivedAtTarget(target, obj);
-			if (actorSimple->nextTick < s_curTick || arrivedAtTarget)
+			if (thinkerMod->nextTick < s_curTick || arrivedAtTarget)
 			{
 				if (arrivedAtTarget)
 				{
-					actorSimple->playerLastSeen = 0xffffffff;
+					thinkerMod->playerLastSeen = 0xffffffff;
 				}
-				actorSimple->anim.state = 2;
+				thinkerMod->anim.state = 2;
 			}
 			else
 			{
 				if (actorLogic_isStopFlagSet())
 				{
-					if (actorSimple->playerLastSeen != 0xffffffff)
+					if (thinkerMod->playerLastSeen != 0xffffffff)
 					{
-						actorSimple->nextTick = 0;
-						actorSimple->delay = actorSimple->startDelay;
-						actorSimple->playerLastSeen = 0xffffffff;
+						thinkerMod->nextTick = 0;
+						thinkerMod->delay = thinkerMod->startDelay;
+						thinkerMod->playerLastSeen = 0xffffffff;
 					}
 				}
 				else
 				{
-					actorSimple->playerLastSeen = s_curTick + 0x1111;
+					thinkerMod->playerLastSeen = s_curTick + 0x1111;
 				}
 
-				ActorTarget* target = &actorSimple->target;
+				ActorTarget* target = &thinkerMod->target;
 				if (actor_handleSteps(actor, target))
 				{
-					actor_changeDirFromCollision(actor, target, &actorSimple->prevColTick);
+					actor_changeDirFromCollision(actor, target, &thinkerMod->prevColTick);
 					if (!actorLogic_isStopFlagSet())
 					{
-						actorSimple->delay += 218;
-						if (actorSimple->delay > 1456)
+						thinkerMod->delay += 218;
+						if (thinkerMod->delay > 1456)
 						{
-							actorSimple->delay = 291;
+							thinkerMod->delay = 291;
 						}
-						actorSimple->nextTick = s_curTick + actorSimple->delay;
+						thinkerMod->nextTick = s_curTick + thinkerMod->delay;
 					}
 				}
 			}
 		}
-		else if (actorSimple->anim.state == 2)
+		else if (thinkerMod->anim.state == 2)
 		{
 			ActorDispatch* logic = actor_getCurrentLogic();
 			fixed16_16 targetX, targetZ;
-			if (actorSimple->playerLastSeen < s_curTick)
+			if (thinkerMod->playerLastSeen < s_curTick)
 			{
 				targetX = logic->lastPlayerPos.x;
 				targetZ = logic->lastPlayerPos.z;
@@ -1202,35 +1202,35 @@ namespace TFE_DarkForces
 			else
 			{
 				// Offset the target by the targetOffset.
-				targetOffset = actorSimple->targetOffset;
+				targetOffset = thinkerMod->targetOffset;
 			}
 
 			fixed16_16 dx = obj->posWS.x - targetX;
 			fixed16_16 dz = obj->posWS.z - targetZ;
 			angle14_32 angle = vec2ToAngle(dx, dz);
 
-			actorSimple->target.pos.x = targetX;
-			actorSimple->target.pos.z = targetZ;
-			actorSimple->target.flags = (actorSimple->target.flags | 1) & 0xfffffffd;
-			actor_offsetTarget(&actorSimple->target.pos.x, &actorSimple->target.pos.z, targetOffset, actorSimple->targetVariation, angle, actorSimple->approachVariation);
+			thinkerMod->target.pos.x = targetX;
+			thinkerMod->target.pos.z = targetZ;
+			thinkerMod->target.flags = (thinkerMod->target.flags | 1) & 0xfffffffd;
+			actor_offsetTarget(&thinkerMod->target.pos.x, &thinkerMod->target.pos.z, targetOffset, thinkerMod->targetVariation, angle, thinkerMod->approachVariation);
 
-			dx = actorSimple->target.pos.x - obj->posWS.x;
-			dz = actorSimple->target.pos.z - obj->posWS.z;
-			actorSimple->target.pitch = 0;
-			actorSimple->target.roll = 0;
-			actorSimple->target.yaw = vec2ToAngle(dx, dz);
-			actorSimple->target.flags |= 4;
+			dx = thinkerMod->target.pos.x - obj->posWS.x;
+			dz = thinkerMod->target.pos.z - obj->posWS.z;
+			thinkerMod->target.pitch = 0;
+			thinkerMod->target.roll = 0;
+			thinkerMod->target.yaw = vec2ToAngle(dx, dz);
+			thinkerMod->target.flags |= 4;
 
 			if (!(logic->flags & 2))
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setupAnimation(0, &actorSimple->anim);
+					actor_setupAnimation(0, &thinkerMod->anim);
 				}
 				logic->flags |= 2;
 			}
-			actorSimple->anim.state = 1;
-			actorSimple->nextTick = s_curTick + actorSimple->delay;
+			thinkerMod->anim.state = 1;
+			thinkerMod->nextTick = s_curTick + thinkerMod->delay;
 
 			if (obj->entityFlags & ETFLAG_REMOTE)
 			{
@@ -1243,40 +1243,40 @@ namespace TFE_DarkForces
 
 		if (obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setCurAnimation(&actorSimple->anim);
+			actor_setCurAnimation(&thinkerMod->anim);
 		}
-		actor->updateTargetFunc(actor, &actorSimple->target);
+		actor->updateTargetFunc(actor, &thinkerMod->target);
 		return 0;
 	}
 
-	ActorSimple* actor_createSimpleActor(Logic* logic)
+	ThinkerModule* actor_createThinkerModule(ActorDispatch* dispatch)
 	{
-		ActorSimple* actor = (ActorSimple*)level_alloc(sizeof(ActorSimple));
-		memset(actor, 0, sizeof(ActorSimple));
+		ThinkerModule* thinkerMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
+		memset(thinkerMod, 0, sizeof(ThinkerModule));
 
-		actor->target.speedRotation = 0;
-		actor->target.speed = FIXED(4);
-		actor->target.speedVert = FIXED(10);
-		actor->u3c = 72;
-		actor->nextTick = 0;
-		actor->playerLastSeen = 0xffffffff;
-		actor->anim.state = 2;
-		actor->delay = 728;	// ~5 seconds between decision points.
-		actor->anim.frameRate = 5;
-		actor->anim.frameCount = ONE_16;
+		thinkerMod->target.speedRotation = 0;
+		thinkerMod->target.speed = FIXED(4);
+		thinkerMod->target.speedVert = FIXED(10);
+		thinkerMod->u3c = 72;
+		thinkerMod->nextTick = 0;
+		thinkerMod->playerLastSeen = 0xffffffff;
+		thinkerMod->anim.state = 2;
+		thinkerMod->delay = 728;	// ~5 seconds between decision points.
+		thinkerMod->anim.frameRate = 5;
+		thinkerMod->anim.frameCount = ONE_16;
 
-		actor->anim.prevTick = 0;
-		actor->prevColTick = 0;
-		actor->target.flags = 0;
-		actor->anim.flags = 0;
+		thinkerMod->anim.prevTick = 0;
+		thinkerMod->prevColTick = 0;
+		thinkerMod->target.flags = 0;
+		thinkerMod->anim.flags = 0;
 
-		actor_initModule(&actor->header, logic);
-		actor->header.func = defaultSimpleActorFunc;
-		actor->targetOffset = FIXED(3);
-		actor->targetVariation = 0;
-		actor->approachVariation = 4096;	// 90 degrees.
+		actor_initModule((ActorModule*)thinkerMod, (Logic*)dispatch);
+		thinkerMod->header.func = defaultThinkerFunc;
+		thinkerMod->targetOffset = FIXED(3);
+		thinkerMod->targetVariation = 0;
+		thinkerMod->approachVariation = 4096;	// 90 degrees.
 
-		return actor;
+		return thinkerMod;
 	}
 
 	void actor_setupInitAnimation()

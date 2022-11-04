@@ -66,13 +66,13 @@ namespace TFE_DarkForces
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
-		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
-		actorSimple->target.speedRotation = HALF_16 - 1;
-		actorSimple->target.speed = FIXED(7);
-		actorSimple->u3c = 0;
-		actorSimple->anim.flags &= 0xfffffffe;
-		actorSimple->startDelay = TICKS(2);
-		actor_addModule(dispatch, (ActorModule*)actorSimple);
+		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
+		thinkerMod->target.speedRotation = HALF_16 - 1;
+		thinkerMod->target.speed = FIXED(7);
+		thinkerMod->u3c = 0;
+		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->startDelay = TICKS(2);
+		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		Actor* actor = actor_create((Logic*)dispatch);
 		dispatch->mover = (ActorModule*)actor;
@@ -106,13 +106,13 @@ namespace TFE_DarkForces
 		attackMod->attackPrimSndSrc = s_rifleSndSrc;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
-		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
-		actorSimple->target.speedRotation = HALF_16 - 1;
-		actorSimple->target.speed = FIXED(8);
-		actorSimple->u3c = 116;
-		actorSimple->anim.flags &= 0xfffffffe;
-		actorSimple->startDelay = TICKS(2);
-		actor_addModule(dispatch, (ActorModule*)actorSimple);
+		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
+		thinkerMod->target.speedRotation = HALF_16 - 1;
+		thinkerMod->target.speed = FIXED(8);
+		thinkerMod->u3c = 116;
+		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->startDelay = TICKS(2);
+		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		Actor* actor = actor_create((Logic*)dispatch);
 		dispatch->mover = (ActorModule*)actor;
@@ -146,13 +146,13 @@ namespace TFE_DarkForces
 		attackMod->attackPrimSndSrc = s_rifleSndSrc;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
-		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
-		actorSimple->target.speedRotation = HALF_16 - 1;
-		actorSimple->target.speed = FIXED(9);
-		actorSimple->u3c = 116;
-		actorSimple->anim.flags &= 0xfffffffe;
-		actorSimple->startDelay = TICKS(1);
-		actor_addModule(dispatch, (ActorModule*)actorSimple);
+		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
+		thinkerMod->target.speedRotation = HALF_16 - 1;
+		thinkerMod->target.speed = FIXED(9);
+		thinkerMod->u3c = 116;
+		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->startDelay = TICKS(1);
+		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		Actor* actor = actor_create((Logic*)dispatch);
 		dispatch->mover = (ActorModule*)actor;

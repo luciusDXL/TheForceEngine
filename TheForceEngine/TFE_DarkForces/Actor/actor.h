@@ -140,7 +140,7 @@ namespace TFE_DarkForces
 	angle14_32 actor_offsetTarget(fixed16_16* targetX, fixed16_16* targetZ, fixed16_16 targetOffset, fixed16_16 targetVariation, angle14_32 angle, angle14_32 angleVariation);
 
 	AttackModule* actor_createAttackModule(ActorDispatch* dispatch);
-	ActorSimple* actor_createSimpleActor(Logic* logic);
+	ThinkerModule* actor_createThinkerModule(ActorDispatch* dispatch);
 	void actor_setupInitAnimation();
 	void actor_setDeathCollisionFlags();
 

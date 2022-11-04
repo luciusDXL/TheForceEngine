@@ -51,12 +51,12 @@ namespace TFE_DarkForces
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
-		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
-		actorSimple->target.speedRotation = 0x7fff;
-		actorSimple->target.speed = FIXED(13);
-		actorSimple->anim.flags &= 0xfffffffe;
-		actorSimple->startDelay = TICKS(2);
-		actor_addModule(dispatch, (ActorModule*)actorSimple);
+		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
+		thinkerMod->target.speedRotation = 0x7fff;
+		thinkerMod->target.speed = FIXED(13);
+		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->startDelay = TICKS(2);
+		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		Actor* actor = actor_create((Logic*)dispatch);
 		dispatch->mover = (ActorModule*)actor;
@@ -89,12 +89,12 @@ namespace TFE_DarkForces
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
-		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
-		actorSimple->target.speedRotation = 0x7fff;
-		actorSimple->target.speed = FIXED(13);
-		actorSimple->anim.flags &= 0xfffffffe;
-		actorSimple->startDelay = TICKS(2);
-		actor_addModule(dispatch, (ActorModule*)actorSimple);
+		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
+		thinkerMod->target.speedRotation = 0x7fff;
+		thinkerMod->target.speed = FIXED(13);
+		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->startDelay = TICKS(2);
+		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		Actor* actor = actor_create((Logic*)dispatch);
 		dispatch->mover = (ActorModule*)actor;
@@ -129,14 +129,14 @@ namespace TFE_DarkForces
 		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffffd;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
-		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
-		actorSimple->approachVariation = 2730;
-		actorSimple->u3c = 0;
-		actorSimple->target.speedRotation = 0x3fff;
-		actorSimple->target.speed = FIXED(12);
-		actorSimple->anim.flags &= 0xfffffffe;
-		actorSimple->startDelay = TICKS(2);
-		actor_addModule(dispatch, (ActorModule*)actorSimple);
+		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
+		thinkerMod->approachVariation = 2730;
+		thinkerMod->u3c = 0;
+		thinkerMod->target.speedRotation = 0x3fff;
+		thinkerMod->target.speed = FIXED(12);
+		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->startDelay = TICKS(2);
+		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		Actor* actor = actor_create((Logic*)dispatch);
 		dispatch->mover = (ActorModule*)actor;
@@ -171,13 +171,13 @@ namespace TFE_DarkForces
 		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
-		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
-		actorSimple->target.speedRotation = 0x7fff;
-		actorSimple->target.speed = FIXED(9);
-		actorSimple->u3c = 0;
-		actorSimple->anim.flags &= 0xfffffffe;
-		actorSimple->startDelay = TICKS(2);
-		actor_addModule(dispatch, (ActorModule*)actorSimple);
+		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
+		thinkerMod->target.speedRotation = 0x7fff;
+		thinkerMod->target.speed = FIXED(9);
+		thinkerMod->u3c = 0;
+		thinkerMod->anim.flags &= 0xfffffffe;
+		thinkerMod->startDelay = TICKS(2);
+		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
 		Actor* actor = actor_create((Logic*)dispatch);
 		dispatch->mover = (ActorModule*)actor;
