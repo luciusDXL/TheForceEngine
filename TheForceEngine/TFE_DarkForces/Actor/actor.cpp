@@ -220,16 +220,7 @@ namespace TFE_DarkForces
 				}
 			}
 
-			if (module)
-			{
-				for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
-				{
-					if (!dispatch->modules[i])
-					{
-						dispatch->modules[i] = module;
-					}
-				}
-			}
+			actor_addModule(dispatch, module);
 			return JTRUE;
 		}
 		return JFALSE;
