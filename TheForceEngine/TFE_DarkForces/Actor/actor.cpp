@@ -23,7 +23,6 @@
 
 using namespace TFE_Jedi;
 
-struct Actor;
 struct ActorModule;
 
 namespace TFE_DarkForces

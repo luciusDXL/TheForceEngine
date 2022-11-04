@@ -17,7 +17,6 @@
 using namespace TFE_Jedi;
 using namespace TFE_DarkForces;
 
-struct Actor;
 struct ActorModule;
 struct MovementModule;
 struct ActorTarget;
