@@ -93,7 +93,7 @@ namespace TFE_DarkForces
 
 	Logic* scenery_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags &= ~(FLAG_BIT(0) | FLAG_BIT(2));
 		logic->animTable = s_sceneryAnimTable;
 
@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 		aiActor->enemy.header.msgFunc = sceneryMsgFunc;
 		aiActor->enemy.anim.flags |= AFLAG_READY;
 		aiActor->hp = FIXED(1);
-		actorLogic_addActor(logic, aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		return (Logic*)logic;
 	}

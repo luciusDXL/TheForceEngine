@@ -232,7 +232,7 @@ namespace TFE_DarkForces
 		obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 		obj->entityFlags = ETFLAG_AI_ACTOR;
 
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_CREATURE];
 		logic->fov = ANGLE_MAX;
 
@@ -242,7 +242,7 @@ namespace TFE_DarkForces
 		aiActor->hp = FIXED(36);
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_CREATURE_HURT];
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_CREATURE_DIE];
-		actorLogic_addActor(logic, (AiActor*)aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		s_actorState.curEnemyActor = enemyActor;
@@ -254,7 +254,7 @@ namespace TFE_DarkForces
 		enemyActor->ua4 = FIXED(360);
 		enemyActor->attackSecSndSrc = s_agentSndSrc[AGENTSND_CREATURE2];
 		enemyActor->attackFlags = (enemyActor->attackFlags | 1) & 0xfffffffd;
-		actorLogic_addActor(logic, (AiActor*)enemyActor);
+		actor_addModule(logic, (ActorModule*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0x7fff;
@@ -262,10 +262,10 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 58;
 		actorSimple->startDelay = 72;
 		actorSimple->anim.flags &= 0xfffffffe;
-		actorLogic_addActor(logic, (AiActor*)actorSimple);
+		actor_addModule(logic, (ActorModule*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);	// eax
-		logic->actor = actor;
+		logic->mover = (ActorModule*)actor;
 		logic->animTable = s_sewerCreatureAnimTable;
 		obj->entityFlags &= ~ETFLAG_SMART_OBJ;
 
@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 		RSector* sector = obj->sector;
 
 		actor_setDeathCollisionFlags();
-		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
+		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		sound_stop(logic->alertSndID);
 		sound_playCued(aiActor->dieSndSrc, obj->posWS);
 		enemy->target.flags |= 8;

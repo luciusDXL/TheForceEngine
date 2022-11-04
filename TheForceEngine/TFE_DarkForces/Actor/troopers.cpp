@@ -47,7 +47,7 @@ namespace TFE_DarkForces
 
 	Logic* officer_setup(SecObject* obj, LogicSetupFunc* setupFunc, KEYWORD logicId)
 	{
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags |= FLAG_BIT(4);	// Use Officer alert table.
 		logic->alertSndSrc = 0;
 
@@ -56,7 +56,7 @@ namespace TFE_DarkForces
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_STORM_HURT];
 		aiActor->dieSndSrc  = s_agentSndSrc[AGENTSND_STORM_DIE];
 		aiActor->itemDropId = officer_getItemDropId(logicId);
-		actorLogic_addActor(logic, aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
@@ -64,7 +64,7 @@ namespace TFE_DarkForces
 		enemyActor->attackPrimSndSrc = s_pistolSndSrc;
 
 		s_actorState.curEnemyActor = enemyActor;
-		actorLogic_addActor(logic, (AiActor*)enemyActor);
+		actor_addModule(logic, (ActorModule*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = HALF_16 - 1;
@@ -72,10 +72,10 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 0;
 		actorSimple->anim.flags &= 0xfffffffe;
 		actorSimple->startDelay = TICKS(2);
-		actorLogic_addActor(logic, (AiActor*)actorSimple);
+		actor_addModule(logic, (ActorModule*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
-		logic->actor = actor;
+		logic->mover = (ActorModule*)actor;
 		logic->animTable = s_officerAnimTable;
 		s_actorState.curLogic = (Logic*)logic;
 
@@ -88,7 +88,7 @@ namespace TFE_DarkForces
 
 	Logic* trooper_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
 		logic->alertSndSrc = 0;
 
@@ -97,14 +97,14 @@ namespace TFE_DarkForces
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_STORM_HURT];
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_STORM_DIE];
 		aiActor->itemDropId = ITEM_RIFLE;
-		actorLogic_addActor(logic, aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		s_actorState.curEnemyActor = enemyActor;
 		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
 		enemyActor->projType = PROJ_RIFLE_BOLT;
 		enemyActor->attackPrimSndSrc = s_rifleSndSrc;
-		actorLogic_addActor(logic, (AiActor*)enemyActor);
+		actor_addModule(logic, (ActorModule*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = HALF_16 - 1;
@@ -112,10 +112,10 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 116;
 		actorSimple->anim.flags &= 0xfffffffe;
 		actorSimple->startDelay = TICKS(2);
-		actorLogic_addActor(logic, (AiActor*)actorSimple);
+		actor_addModule(logic, (ActorModule*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
-		logic->actor = actor;
+		logic->mover = (ActorModule*)actor;
 		logic->animTable = s_troopAnimTable;
 		s_actorState.curLogic = (Logic*)logic;
 
@@ -128,7 +128,7 @@ namespace TFE_DarkForces
 
 	Logic* commando_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags |= FLAG_BIT(5);	// Use Stormtrooper alert table.
 		logic->alertSndSrc = 0;
 
@@ -137,14 +137,14 @@ namespace TFE_DarkForces
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_STORM_HURT];
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_STORM_DIE];
 		aiActor->itemDropId = ITEM_RIFLE;
-		actorLogic_addActor(logic, aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		s_actorState.curEnemyActor = enemyActor;
 		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
 		enemyActor->projType = PROJ_RIFLE_BOLT;
 		enemyActor->attackPrimSndSrc = s_rifleSndSrc;
-		actorLogic_addActor(logic, (AiActor*)enemyActor);
+		actor_addModule(logic, (ActorModule*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = HALF_16 - 1;
@@ -152,10 +152,10 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 116;
 		actorSimple->anim.flags &= 0xfffffffe;
 		actorSimple->startDelay = TICKS(1);
-		actorLogic_addActor(logic, (AiActor*)actorSimple);
+		actor_addModule(logic, (ActorModule*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
-		logic->actor = actor;
+		logic->mover = (ActorModule*)actor;
 		logic->animTable = s_commandoAnimTable;
 		s_actorState.curLogic = (Logic*)logic;
 

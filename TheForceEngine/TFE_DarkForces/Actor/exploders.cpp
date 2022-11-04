@@ -98,7 +98,7 @@ namespace TFE_DarkForces
 			proj2->hitEffectId = HEFFECT_EXP_INVIS;
 			proj2->duration = s_curTick + 36;
 
-			Dispatch* actorLogic = (Dispatch*)s_actorState.curLogic;
+			ActorDispatch* actorLogic = (ActorDispatch*)s_actorState.curLogic;
 			CollisionInfo colInfo = { 0 };
 			colInfo.obj = proj2->logic.obj;
 			colInfo.offsetY = 0;
@@ -122,7 +122,7 @@ namespace TFE_DarkForces
 
 	Logic* barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 
 		logic->flags &= 0xfffffffb;
 		logic->flags &= 0xfffffffe;
@@ -133,10 +133,10 @@ namespace TFE_DarkForces
 		aiActor->enemy.header.msgFunc = exploderMsgFunc;
 		aiActor->hp = FIXED(11);
 		aiActor->enemy.anim.flags |= AFLAG_READY;
-		actorLogic_addActor(logic, aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		Actor* actor = actor_create((Logic*)logic);
-		logic->actor = actor;
+		logic->mover = (ActorModule*)actor;
 		actor->collisionFlags |= 1;
 		actor->physics.width = obj->worldWidth;
 		actor->target.flags = (actor->target.flags | 8) & 0xfffffff8;
@@ -153,7 +153,7 @@ namespace TFE_DarkForces
 
 	Logic* landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		Dispatch* actorLogic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* actorLogic = actor_setupActorLogic(obj, setupFunc);
 		actorLogic->flags &= ~4;
 		actorLogic->flags &= ~1;
 		actorLogic->animTable = s_mineBarrelAnimTable;
@@ -163,10 +163,10 @@ namespace TFE_DarkForces
 		aiActor->enemy.header.msgFunc = exploderMsgFunc;
 		aiActor->enemy.anim.flags |= AFLAG_READY;
 		aiActor->hp = FIXED(20);
-		actorLogic_addActor(actorLogic, aiActor);
+		actor_addModule(actorLogic, (ActorModule*)aiActor);
 
 		Actor* actor = actor_create((Logic*)actorLogic);
-		actorLogic->actor = actor;
+		actorLogic->mover = (ActorModule*)actor;
 		actor->collisionFlags |= 1;
 		// This was cleared to 0 in createProjectile()
 		actor->physics.width = obj->worldWidth;

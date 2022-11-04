@@ -30,6 +30,7 @@ enum LogicAnimFlags
 
 typedef JBool(*ActorFunc)(AiActor*, Actor*);
 typedef JBool(*ActorMsgFunc)(s32 msg, AiActor*, Actor*);
+typedef void(*ActorAttribFunc)(AiActor* actor);
 typedef u32(*ActorTargetFunc)(Actor*, ActorTarget*);
 typedef void(*ActorFreeFunc)(void*);
 
@@ -53,6 +54,19 @@ struct ActorTiming
 	Tick state4Delay;
 	Tick state1Delay;
 	Tick nextTick;
+};
+
+// Was ActorHeader
+// "Plugin" in the original code
+struct ActorModule
+{
+	ActorFunc       func;
+	ActorMsgFunc    msgFunc;
+	ActorAttribFunc attribFunc;
+	ActorFreeFunc   freeFunc;
+
+	Tick nextTick;
+	SecObject* obj;
 };
 
 struct ActorHeader

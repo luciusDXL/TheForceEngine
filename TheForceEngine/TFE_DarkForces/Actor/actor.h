@@ -53,7 +53,7 @@ enum
 	OFFICER_ALERT_COUNT = 4,
 	STORM_ALERT_COUNT = 8,
 	ACTOR_MIN_VELOCITY = 0x1999,	// < 0.1
-	ACTOR_MAX_PLUGINS = 6,
+	ACTOR_MAX_MODULES = 6,
 };
 
 enum ActorCollisionFlags
@@ -61,20 +61,17 @@ enum ActorCollisionFlags
 	ACTORCOL_GRAVITY = FLAG_BIT(1),
 };
 
-struct DispatchPlugin
-{
-	
-};
-
 // Logic for 'actors' -
 // an Actor is something with animated 'actions' that can move around in the world.
 // The "Dispatch" logic is the core actor, so rename to match.
-struct Dispatch
+struct ActorDispatch
 {
 	Logic logic;
 
-	AiActor* aiActors[ACTOR_MAX_PLUGINS];
-	Actor* actor;
+	//AiActor* aiActors[ACTOR_MAX_MODULES];
+	//Actor* actor;
+	ActorModule* modules[ACTOR_MAX_MODULES];
+	ActorModule* mover;
 	const s32* animTable;
 
 	Tick delay;
@@ -113,10 +110,10 @@ namespace TFE_DarkForces
 	void actor_removePhysicsActorFromWorld(PhysicsActor* phyActor);
 	void actor_createTask();
 
-	Dispatch* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
+	ActorDispatch* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
 	AiActor* actor_createAiActor(Logic* logic);
 	Actor* actor_create(Logic* logic);
-	void actorLogic_addActor(Dispatch* logic, AiActor* aiActor);
+	void actor_addModule(ActorDispatch* logic, ActorModule* module);
 
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();

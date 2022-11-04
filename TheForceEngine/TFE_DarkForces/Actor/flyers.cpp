@@ -148,7 +148,7 @@ namespace TFE_DarkForces
 
 	Logic* intDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->fov = 0x4000;	// 360 degrees
 		logic->alertSndSrc = s_alertSndSrc[ALERT_INTDROID];
 
@@ -157,7 +157,7 @@ namespace TFE_DarkForces
 		aiActor->itemDropId = ITEM_POWER;
 		aiActor->stopOnHit = JFALSE;
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_SMALL_EXPLOSION];
-		actorLogic_addActor(logic, (AiActor*)aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		enemyActor->fireOffset.y = 9830;
@@ -168,7 +168,7 @@ namespace TFE_DarkForces
 		enemyActor->meleeDmg = FIXED(5);
 		enemyActor->attackFlags |= 3;
 		s_actorState.curEnemyActor = enemyActor;
-		actorLogic_addActor(logic, (AiActor*)enemyActor);
+		actor_addModule(logic, (ActorModule*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0;
@@ -176,17 +176,17 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 116;
 		actorSimple->anim.flags &= ~FLAG_BIT(0);
 		actorSimple->startDelay = TICKS(2);	// (145.5)*2
-		actorLogic_addActor(logic, (AiActor*)actorSimple);
+		actor_addModule(logic, (ActorModule*)actorSimple);
 
 		ActorFlyer* flyingActor = actor_createFlying((Logic*)logic);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->target.speed = FIXED(13);
 		flyingActor->target.speedVert = FIXED(10);
 		flyingActor->delay = 436;	// just shy of 3 seconds.
-		actorLogic_addActor(logic, (AiActor*)flyingActor);
+		actor_addModule(logic, (ActorModule*)flyingActor);
 				
 		Actor* actor = actor_create((Logic*)logic);
-		logic->actor = actor;
+		logic->mover = (ActorModule*)actor;
 		actor->collisionFlags = (actor->collisionFlags & 0xfffffff8) | 4;
 		actor->physics.yPos = FIXED(200);
 		actor->physics.width = obj->worldWidth;
@@ -200,7 +200,7 @@ namespace TFE_DarkForces
 
 	Logic* probeDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->fov = 0x4000;	// 360 degrees
 		logic->alertSndSrc = s_alertSndSrc[ALERT_PROBE];
 
@@ -210,7 +210,7 @@ namespace TFE_DarkForces
 		aiActor->stopOnHit = JFALSE;
 		aiActor->dieEffect = HEFFECT_EXP_35;
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_PROBE_ALM];
-		actorLogic_addActor(logic, (AiActor*)aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		enemyActor->fireOffset.y = -557056;
@@ -218,7 +218,7 @@ namespace TFE_DarkForces
 		enemyActor->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_12];
 		enemyActor->attackFlags = 2;
 		s_actorState.curEnemyActor = enemyActor;
-		actorLogic_addActor(logic, (AiActor*)enemyActor);
+		actor_addModule(logic, (ActorModule*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0;
@@ -226,17 +226,17 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 116;
 		actorSimple->anim.flags &= ~FLAG_BIT(0);
 		actorSimple->startDelay = TICKS(2);	// (145.5)*2
-		actorLogic_addActor(logic, (AiActor*)actorSimple);
+		actor_addModule(logic, (ActorModule*)actorSimple);
 
 		ActorFlyer* flyingActor = actor_createFlying((Logic*)logic);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->target.speed = FIXED(4);
 		flyingActor->target.speedVert = FIXED(2);
 		flyingActor->delay = 436;	// just shy of 3 seconds.
-		actorLogic_addActor(logic, (AiActor*)flyingActor);
+		actor_addModule(logic, (ActorModule*)flyingActor);
 
 		Actor* actor = actor_create((Logic*)logic);
-		logic->actor = actor;
+		logic->mover = (ActorModule*)actor;
 		actor->collisionFlags = (actor->collisionFlags & 0xfffffff8) | 4;
 		actor->physics.yPos = FIXED(200);
 		actor->physics.width = obj->worldWidth;
@@ -251,13 +251,13 @@ namespace TFE_DarkForces
 	Logic* remote_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_FLYING | ETFLAG_REMOTE;
-		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->fov = 0x4000;
 
 		AiActor* aiActor = actor_createAiActor((Logic*)logic);
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_TINY_EXPLOSION];
 		aiActor->hp = FIXED(9);
-		actorLogic_addActor(logic, aiActor);
+		actor_addModule(logic, (ActorModule*)aiActor);
 
 		ActorEnemy* enemy = actor_createEnemyActor((Logic*)logic);
 		enemy->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_13];
@@ -267,7 +267,7 @@ namespace TFE_DarkForces
 		enemy->fireOffset.y = 0x4000;	// 0.25 units.
 		enemy->maxDist = FIXED(50);
 		s_actorState.curEnemyActor = enemy;
-		actorLogic_addActor(logic, (AiActor*)enemy);
+		actor_addModule(logic, (ActorModule*)enemy);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0x7fff;
@@ -276,22 +276,22 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 436;
 		actorSimple->startDelay = 109;
 		actorSimple->targetOffset = FIXED(9);
-		actorLogic_addActor(logic, (AiActor*)actorSimple);
+		actor_addModule(logic, (ActorModule*)actorSimple);
 
 		ActorFlyer* flyingActor = actor_createFlying2((Logic*)logic);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->delay = 291;
-		actorLogic_addActor(logic, (AiActor*)flyingActor);
+		actor_addModule(logic, (ActorModule*)flyingActor);
 
 		flyingActor = actor_createFlying((Logic*)logic);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->target.speed = FIXED(13);
 		flyingActor->target.speedVert = FIXED(10);
 		flyingActor->delay = 291;
-		actorLogic_addActor(logic, (AiActor*)flyingActor);
+		actor_addModule(logic, (ActorModule*)flyingActor);
 
 		Actor* actor = actor_create((Logic*)logic);
-		logic->actor = actor;
+		logic->mover = (ActorModule*)actor;
 		actor->collisionFlags &= 0xfffffff8;
 		actor->collisionFlags |= 4;
 		actor->physics.yPos = FIXED(200);
