@@ -69,16 +69,6 @@ struct ActorModule
 	SecObject* obj;
 };
 
-struct ActorHeader
-{
-	ActorFunc func;
-	ActorMsgFunc msgFunc;
-	s32 u08;
-	ActorFreeFunc freeFunc;
-	Tick nextTick;
-	SecObject* obj;
-};
-
 struct ActorTarget
 {
 	vec3_fixed pos;
@@ -95,7 +85,7 @@ struct ActorTarget
 
 struct ActorEnemy
 {
-	ActorHeader header;
+	ActorModule header;
 	ActorTarget target;
 	ActorTiming timing;
 	LogicAnimation anim;
@@ -117,7 +107,7 @@ struct ActorEnemy
 
 struct ActorFlyer
 {
-	ActorHeader header;
+	ActorModule header;
 	ActorTarget target;
 
 	Tick delay;
@@ -138,7 +128,7 @@ struct ActorFlyer
 
 struct Actor
 {
-	ActorHeader   header;
+	ActorModule   header;
 	ActorTargetFunc updateTargetFunc;
 	CollisionInfo physics;
 	ActorTarget   target;
@@ -151,7 +141,7 @@ struct Actor
 
 struct ActorSimple
 {
-	ActorHeader header;
+	ActorModule header;
 	ActorTarget target;
 	
 	s32 u3c;

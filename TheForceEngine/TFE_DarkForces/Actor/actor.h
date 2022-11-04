@@ -68,8 +68,6 @@ struct ActorDispatch
 {
 	Logic logic;
 
-	//AiActor* aiActors[ACTOR_MAX_MODULES];
-	//Actor* actor;
 	ActorModule* modules[ACTOR_MAX_MODULES];
 	ActorModule* mover;
 	const s32* animTable;
@@ -117,7 +115,7 @@ namespace TFE_DarkForces
 
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();
-	void actor_initHeader(ActorHeader* header, Logic* logic);
+	void actor_initModule(ActorModule* module, Logic* logic);
 	JBool actor_canDie(PhysicsActor* phyActor);
 	JBool actor_handleSteps(Actor* actor, ActorTarget* target);
 	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj);

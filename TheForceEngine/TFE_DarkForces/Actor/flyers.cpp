@@ -115,7 +115,7 @@ namespace TFE_DarkForces
 		actor->u70 = 0;
 		actor->target.flags &= 0xfffffff0;
 		actor->u5c &= 0xfffffffe;
-		actor_initHeader(&actor->header, logic);
+		actor_initModule(&actor->header, logic);
 		actor->header.func = flyingActorFunc;
 		actor->delay = 145;
 
@@ -139,7 +139,7 @@ namespace TFE_DarkForces
 		actor->u5c &= ~1;
 		actor->nextTick = 0;
 		actor->u70 = 0;
-		actor_initHeader(&actor->header, logic);
+		actor_initModule(&actor->header, logic);
 
 		actor->header.func = flyingActorAiFunc2;
 		actor->delay = 145;	// 1 second.

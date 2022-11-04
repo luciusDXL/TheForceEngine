@@ -24,7 +24,7 @@
 using namespace TFE_Jedi;
 
 struct Actor;
-struct ActorHeader;
+struct ActorModule;
 
 namespace TFE_DarkForces
 {
@@ -230,19 +230,19 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	void actor_initHeader(ActorHeader* header, Logic* logic)
+	void actor_initModule(ActorModule* module, Logic* logic)
 	{
-		header->func = nullptr;
-		header->msgFunc = nullptr;
-		header->u08 = 0;
-		header->freeFunc = nullptr;
-		header->nextTick = 0;
-		header->obj = logic->obj;
+		module->func = nullptr;
+		module->msgFunc = nullptr;
+		module->attribFunc = nullptr;
+		module->freeFunc = nullptr;
+		module->nextTick = 0;
+		module->obj = logic->obj;
 	}
 
 	fixed16_16 actor_initEnemy(ActorEnemy* enemyActor, Logic* logic)
 	{
-		actor_initHeader(&enemyActor->header, logic);
+		actor_initModule(&enemyActor->header, logic);
 
 		enemyActor->target.speedRotation = 0;
 		enemyActor->target.speed = 0;
@@ -1266,7 +1266,7 @@ namespace TFE_DarkForces
 		actor->target.flags = 0;
 		actor->anim.flags = 0;
 
-		actor_initHeader(&actor->header, logic);
+		actor_initModule(&actor->header, logic);
 		actor->header.func = defaultSimpleActorFunc;
 		actor->targetOffset = FIXED(3);
 		actor->targetVariation = 0;
@@ -1625,7 +1625,7 @@ namespace TFE_DarkForces
 		Actor* actor = (Actor*)level_alloc(sizeof(Actor));
 		memset(actor, 0, sizeof(Actor));
 
-		actor_initHeader(&actor->header, logic);
+		actor_initModule(&actor->header, logic);
 		actor_setupSmartObj(actor);
 
 		actor->header.func = defaultActorFunc;
