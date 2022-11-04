@@ -1,6 +1,6 @@
 #include "scenery.h"
 #include "../logic.h"
-#include "aiActor.h"
+#include "actorModule.h"
 #include <TFE_DarkForces/projectile.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/sound.h>

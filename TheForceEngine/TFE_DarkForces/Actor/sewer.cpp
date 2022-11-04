@@ -1,5 +1,5 @@
 #include "sewer.h"
-#include "aiActor.h"
+#include "actorModule.h"
 #include "../logic.h"
 #include "../gameMusic.h"
 #include <TFE_DarkForces/player.h>

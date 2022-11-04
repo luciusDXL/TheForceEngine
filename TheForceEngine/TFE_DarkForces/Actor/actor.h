@@ -3,7 +3,7 @@
 // Dark Forces
 // Core Actor/AI functionality.
 //////////////////////////////////////////////////////////////////////
-#include "aiActor.h"
+#include "actorModule.h"
 #include "../sound.h"
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/logic.h>

@@ -1,7 +1,7 @@
 #include <cstring>
 
 #include "mousebot.h"
-#include "aiActor.h"
+#include "actorModule.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>

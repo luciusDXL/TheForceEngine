@@ -4,7 +4,7 @@
 #include "../logic.h"
 #include "../gameMusic.h"
 #include "../sound.h"
-#include "aiActor.h"
+#include "actorModule.h"
 #include "mousebot.h"
 #include "welder.h"
 #include <TFE_Game/igame.h>
