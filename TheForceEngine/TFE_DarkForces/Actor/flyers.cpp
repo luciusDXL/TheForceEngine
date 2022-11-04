@@ -173,7 +173,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = 0;
 		thinkerMod->target.speed = FIXED(6);
-		thinkerMod->u3c = 116;
+		thinkerMod->delay = 116;
 		thinkerMod->anim.flags &= ~FLAG_BIT(0);
 		thinkerMod->startDelay = TICKS(2);	// (145.5)*2
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
@@ -223,7 +223,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
 		thinkerMod->target.speedRotation = 0;
 		thinkerMod->target.speed = FIXED(6);
-		thinkerMod->u3c = 116;
+		thinkerMod->delay = 116;
 		thinkerMod->anim.flags &= ~FLAG_BIT(0);
 		thinkerMod->startDelay = TICKS(2);	// (145.5)*2
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
@@ -273,7 +273,7 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = 0x7fff;
 		thinkerMod->target.speed = FIXED(15);
 		thinkerMod->target.speedVert = FIXED(10);
-		thinkerMod->u3c = 436;
+		thinkerMod->delay = 436;
 		thinkerMod->startDelay = 109;
 		thinkerMod->targetOffset = FIXED(9);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);

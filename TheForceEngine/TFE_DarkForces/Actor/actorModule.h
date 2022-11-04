@@ -144,8 +144,8 @@ struct ThinkerModule
 	ActorModule header;
 	ActorTarget target;
 	
-	s32 u3c;
 	Tick delay;
+	Tick maxWalkTime;
 	Tick startDelay;
 	LogicAnimation anim;
 

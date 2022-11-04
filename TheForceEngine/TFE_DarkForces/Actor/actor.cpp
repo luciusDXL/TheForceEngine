@@ -1149,7 +1149,7 @@ namespace TFE_DarkForces
 					if (thinkerMod->playerLastSeen != 0xffffffff)
 					{
 						thinkerMod->nextTick = 0;
-						thinkerMod->delay = thinkerMod->startDelay;
+						thinkerMod->maxWalkTime = thinkerMod->startDelay;
 						thinkerMod->playerLastSeen = 0xffffffff;
 					}
 				}
@@ -1164,12 +1164,12 @@ namespace TFE_DarkForces
 					actor_changeDirFromCollision(actor, target, &thinkerMod->prevColTick);
 					if (!actorLogic_isStopFlagSet())
 					{
-						thinkerMod->delay += 218;
-						if (thinkerMod->delay > 1456)
+						thinkerMod->maxWalkTime += 218;
+						if (thinkerMod->maxWalkTime > 1456)
 						{
-							thinkerMod->delay = 291;
+							thinkerMod->maxWalkTime = 291;
 						}
-						thinkerMod->nextTick = s_curTick + thinkerMod->delay;
+						thinkerMod->nextTick = s_curTick + thinkerMod->maxWalkTime;
 					}
 				}
 			}
@@ -1230,7 +1230,7 @@ namespace TFE_DarkForces
 				logic->flags |= 2;
 			}
 			thinkerMod->anim.state = 1;
-			thinkerMod->nextTick = s_curTick + thinkerMod->delay;
+			thinkerMod->nextTick = s_curTick + thinkerMod->maxWalkTime;
 
 			if (obj->entityFlags & ETFLAG_REMOTE)
 			{
@@ -1257,11 +1257,11 @@ namespace TFE_DarkForces
 		thinkerMod->target.speedRotation = 0;
 		thinkerMod->target.speed = FIXED(4);
 		thinkerMod->target.speedVert = FIXED(10);
-		thinkerMod->u3c = 72;
+		thinkerMod->delay = 72;
 		thinkerMod->nextTick = 0;
 		thinkerMod->playerLastSeen = 0xffffffff;
 		thinkerMod->anim.state = 2;
-		thinkerMod->delay = 728;	// ~5 seconds between decision points.
+		thinkerMod->maxWalkTime = 728;	// ~5 seconds between decision points.
 		thinkerMod->anim.frameRate = 5;
 		thinkerMod->anim.frameCount = ONE_16;
 
