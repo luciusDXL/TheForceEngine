@@ -148,7 +148,7 @@ namespace TFE_DarkForces
 
 	Logic* intDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 		logic->fov = 0x4000;	// 360 degrees
 		logic->alertSndSrc = s_alertSndSrc[ALERT_INTDROID];
 
@@ -200,7 +200,7 @@ namespace TFE_DarkForces
 
 	Logic* probeDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 		logic->fov = 0x4000;	// 360 degrees
 		logic->alertSndSrc = s_alertSndSrc[ALERT_PROBE];
 
@@ -251,7 +251,7 @@ namespace TFE_DarkForces
 	Logic* remote_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		obj->entityFlags = ETFLAG_AI_ACTOR | ETFLAG_FLYING | ETFLAG_REMOTE;
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 		logic->fov = 0x4000;
 
 		AiActor* aiActor = actor_createAiActor((Logic*)logic);

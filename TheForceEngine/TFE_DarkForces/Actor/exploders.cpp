@@ -122,7 +122,7 @@ namespace TFE_DarkForces
 
 	Logic* barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 
 		logic->flags &= 0xfffffffb;
 		logic->flags &= 0xfffffffe;
@@ -153,7 +153,7 @@ namespace TFE_DarkForces
 
 	Logic* landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* actorLogic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* actorLogic = actor_createDispatch(obj, setupFunc);
 		actorLogic->flags &= ~4;
 		actorLogic->flags &= ~1;
 		actorLogic->animTable = s_mineBarrelAnimTable;

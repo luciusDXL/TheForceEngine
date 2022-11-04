@@ -232,7 +232,7 @@ namespace TFE_DarkForces
 		obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 		obj->entityFlags = ETFLAG_AI_ACTOR;
 
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_CREATURE];
 		logic->fov = ANGLE_MAX;
 

@@ -108,7 +108,7 @@ namespace TFE_DarkForces
 	void actor_removePhysicsActorFromWorld(PhysicsActor* phyActor);
 	void actor_createTask();
 
-	ActorDispatch* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
+	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc);
 	AiActor* actor_createAiActor(Logic* logic);
 	Actor* actor_create(Logic* logic);
 	void actor_addModule(ActorDispatch* logic, ActorModule* module);

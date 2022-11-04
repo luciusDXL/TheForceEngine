@@ -150,7 +150,7 @@ namespace TFE_DarkForces
 		s_istate.actorPhysicsTask = createSubTask("physics", actorPhysicsTaskFunc);
 	}
 
-	ActorDispatch* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc)
+	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* logic = (ActorDispatch*)allocator_newItem(s_istate.actorLogics);
 		memset(logic->modules, 0, sizeof(AiActor*) * 6);

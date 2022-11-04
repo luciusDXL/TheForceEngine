@@ -28,7 +28,7 @@ namespace TFE_DarkForces
 	
 	Logic* reeyees_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_REEYEE];
 
 		AiActor* module = actor_createAiActor((Logic*)logic);
@@ -71,7 +71,7 @@ namespace TFE_DarkForces
 
 	Logic* reeyees2_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_REEYEE];
 
 		AiActor* module = actor_createAiActor((Logic*)logic);
@@ -109,7 +109,7 @@ namespace TFE_DarkForces
 
 	Logic* gamor_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_GAMOR];
 
 		AiActor* module = actor_createAiActor((Logic*)logic);
@@ -151,7 +151,7 @@ namespace TFE_DarkForces
 
 	Logic* bossk_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = actor_setupActorLogic(obj, setupFunc);
+		ActorDispatch* logic = actor_createDispatch(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_BOSSK];
 
 		AiActor* aiActor = actor_createAiActor((Logic*)logic);
