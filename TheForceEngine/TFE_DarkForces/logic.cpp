@@ -154,8 +154,7 @@ namespace TFE_DarkForces
 				}
 				else if (logicId == KW_DISPATCH)
 				{
-					// TODO(Core Game Loop Release) - come back to this once the level is running
-					// Turn off dispatch collision for now, until this is setup correctly.
+					// Unused.
 				}
 				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
 				{

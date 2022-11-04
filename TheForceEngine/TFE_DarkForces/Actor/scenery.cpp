@@ -93,7 +93,7 @@ namespace TFE_DarkForces
 
 	Logic* scenery_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
+		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->flags &= ~(FLAG_BIT(0) | FLAG_BIT(2));
 		logic->animTable = s_sceneryAnimTable;
 

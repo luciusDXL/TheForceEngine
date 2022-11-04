@@ -145,14 +145,14 @@ namespace TFE_DarkForces
 		
 	void actor_createTask()
 	{
-		s_istate.actorLogics = allocator_create(sizeof(ActorLogic));
+		s_istate.actorLogics = allocator_create(sizeof(Dispatch));
 		s_istate.actorTask = createSubTask("actor", actorLogicTaskFunc, actorLogicMsgFunc);
 		s_istate.actorPhysicsTask = createSubTask("physics", actorPhysicsTaskFunc);
 	}
 
-	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc)
+	Dispatch* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorLogic* logic = (ActorLogic*)allocator_newItem(s_istate.actorLogics);
+		Dispatch* logic = (Dispatch*)allocator_newItem(s_istate.actorLogics);
 		memset(logic->aiActors, 0, sizeof(AiActor*) * 6);
 
 		logic->actor = nullptr;
@@ -161,7 +161,7 @@ namespace TFE_DarkForces
 		logic->alertSndSrc = NULL_SOUND;
 		logic->alertSndID = NULL_SOUND;
 		logic->fov = 9557;			// ~210 degrees
-		logic->nearDist = FIXED(20);
+		logic->awareRange = FIXED(20);
 		logic->vel = { 0, 0, 0 };
 		logic->freeTask = nullptr;
 		logic->flags = 4;
@@ -178,7 +178,7 @@ namespace TFE_DarkForces
 
 	JBool actorLogicSetupFunc(Logic* logic, KEYWORD key)
 	{
-		ActorLogic* actorLogic = (ActorLogic*)logic;
+		Dispatch* actorLogic = (Dispatch*)logic;
 		Logic* res = nullptr;
 
 		if (key == KW_PLUGIN)
@@ -217,7 +217,7 @@ namespace TFE_DarkForces
 
 			if (res)
 			{
-				for (s32 i = 0; i < ACTOR_MAX_AI; i++)
+				for (s32 i = 0; i < ACTOR_MAX_PLUGINS; i++)
 				{
 					if (!actorLogic->aiActors[i])
 					{
@@ -284,7 +284,7 @@ namespace TFE_DarkForces
 
 	void actor_setDeathCollisionFlags()
 	{
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 		Actor* actor = logic->actor;
 		actor->collisionFlags |= 2;
 		// Added to disable auto-aim when dying.
@@ -294,7 +294,7 @@ namespace TFE_DarkForces
 	// Returns JTRUE if the object is on the floor, or JFALSE is not on the floor or moving too fast.
 	JBool actor_onFloor()
 	{
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 		SecObject* obj = logic->logic.obj;
 		RSector* sector = obj->sector;
 
@@ -403,7 +403,7 @@ namespace TFE_DarkForces
 
 	JBool actorLogic_isStopFlagSet()
 	{
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 		return (logic->flags & 8) ? JTRUE : JFALSE;
 	}
 
@@ -546,7 +546,7 @@ namespace TFE_DarkForces
 
 	void actor_updatePlayerVisiblity(JBool playerVis, fixed16_16 posX, fixed16_16 posZ)
 	{
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 
 		// Update player visibility flag.
 		logic->flags &= ~8;
@@ -559,9 +559,9 @@ namespace TFE_DarkForces
 		}
 	}
 
-	ActorLogic* actor_getCurrentLogic()
+	Dispatch* actor_getCurrentLogic()
 	{
-		return (ActorLogic*)s_actorState.curLogic;
+		return (Dispatch*)s_actorState.curLogic;
 	}
 
 	JBool defaultAiFunc(AiActor* aiActor, Actor* actor)
@@ -680,7 +680,7 @@ namespace TFE_DarkForces
 				computeDamagePushVelocity(proj, &pushVel);
 				if (aiActor->hp <= 0)
 				{
-					ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+					Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 					actor_addVelocity(pushVel.x*4, pushVel.y*2, pushVel.z*4);
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
@@ -698,7 +698,7 @@ namespace TFE_DarkForces
 				else
 				{
 					// Keep the y velocity from accumulating forever.
-					ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+					Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 					if (logic->vel.y < 0)
 					{
 						pushVel.y = 0;
@@ -739,7 +739,7 @@ namespace TFE_DarkForces
 
 				vec3_fixed vel = { mul16(force, dir.x), mul16(force, dir.y), mul16(force, dir.z) };
 				LogicAnimation* anim = &enemy->anim;
-				ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+				Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 				if (aiActor->hp <= 0)
 				{
 					actor_addVelocity(vel.x, vel.y, vel.z);
@@ -781,7 +781,7 @@ namespace TFE_DarkForces
 				}
 
 				LogicAnimation* anim = &enemy->anim;
-				ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+				Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 
 				actor_setDeathCollisionFlags();
 				sound_stop(logic->alertSndID);
@@ -823,7 +823,7 @@ namespace TFE_DarkForces
 	JBool defaultEnemyFunc(AiActor* aiActor, Actor* actor)
 	{
 		ActorEnemy* enemy = &aiActor->enemy;
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 		SecObject* obj = enemy->header.obj;
 		LogicAnimation* anim = &enemy->anim;
 		s32 state = enemy->anim.state;
@@ -1098,7 +1098,7 @@ namespace TFE_DarkForces
 	JBool defaultEnemyMsgFunc(s32 msg, AiActor* aiActor, Actor* actor)
 	{
 		ActorEnemy* enemy = &aiActor->enemy;
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 		if (msg == MSG_WAKEUP)
 		{
 			enemy->timing.nextTick = s_curTick + enemy->timing.state1Delay;
@@ -1172,7 +1172,7 @@ namespace TFE_DarkForces
 		}
 		else if (actorSimple->anim.state == 2)
 		{
-			ActorLogic* logic = actor_getCurrentLogic();
+			Dispatch* logic = actor_getCurrentLogic();
 			fixed16_16 targetX, targetZ;
 			if (actorSimple->playerLastSeen < s_curTick)
 			{
@@ -1277,7 +1277,7 @@ namespace TFE_DarkForces
 
 	void actor_setupInitAnimation()
 	{
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 		logic->flags = (logic->flags | 1) & 0xfd;
 		logic->nextTick = s_curTick + logic->delay;
 
@@ -1286,10 +1286,10 @@ namespace TFE_DarkForces
 		obj->frame = 0;
 	}
 
-	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor, SubActorType type)
+	void actorLogic_addActor(Dispatch* logic, AiActor* aiActor, SubActorType type)
 	{
 		if (!aiActor) { return; }
-		for (s32 i = 0; i < ACTOR_MAX_AI; i++)
+		for (s32 i = 0; i < ACTOR_MAX_PLUGINS; i++)
 		{
 			if (!logic->aiActors[i])
 			{
@@ -1643,10 +1643,10 @@ namespace TFE_DarkForces
 
 	void actorLogicCleanupFunc(Logic* logic)
 	{
-		ActorLogic* actorLogic = (ActorLogic*)logic;
-		for (s32 i = 0; i < ACTOR_MAX_AI; i++)
+		Dispatch* actorLogic = (Dispatch*)logic;
+		for (s32 i = 0; i < ACTOR_MAX_PLUGINS; i++)
 		{
-			AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
+			AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_PLUGINS - 1 - i];
 			if (aiActor)
 			{
 				ActorHeader* header = &aiActor->enemy.header;
@@ -1715,7 +1715,7 @@ namespace TFE_DarkForces
 	// Get the animation index for the current 'action' from s_curLogic.
 	s32 actor_getAnimationIndex(s32 action)
 	{
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 		SecObject* obj = logic->logic.obj;
 		if ((obj->type & OBJ_TYPE_SPRITE) && logic->animTable)
 		{
@@ -1726,7 +1726,7 @@ namespace TFE_DarkForces
 
 	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim)
 	{
-		ActorLogic* actorLogic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* actorLogic = (Dispatch*)s_actorState.curLogic;
 		const s32* animTable = actorLogic->animTable;
 		SecObject* obj = actorLogic->logic.obj;
 
@@ -1843,7 +1843,7 @@ namespace TFE_DarkForces
 
 	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ)
 	{
-		ActorLogic* actorLogic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* actorLogic = (Dispatch*)s_actorState.curLogic;
 		actorLogic->vel.x += pushX;
 		actorLogic->vel.y += pushY;
 		actorLogic->vel.z += pushZ;
@@ -1851,12 +1851,12 @@ namespace TFE_DarkForces
 	
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic)
 	{
-		ActorLogic* actorLogic = (ActorLogic*)logic;
+		Dispatch* actorLogic = (Dispatch*)logic;
 		s_actorState.curLogic = (Logic*)logic;
 		SecObject* obj = s_actorState.curLogic->obj;
-		for (s32 i = 0; i < ACTOR_MAX_AI; i++)
+		for (s32 i = 0; i < ACTOR_MAX_PLUGINS; i++)
 		{
-			AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
+			AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_PLUGINS - 1 - i];
 			if (aiActor)
 			{
 				ActorHeader* header = &aiActor->enemy.header;
@@ -2012,7 +2012,7 @@ namespace TFE_DarkForces
 			entity_yield(TASK_NO_DELAY);
 			if (msg == MSG_RUN_TASK)
 			{
-				ActorLogic* actorLogic = (ActorLogic*)allocator_getHead(s_istate.actorLogics);
+				Dispatch* actorLogic = (Dispatch*)allocator_getHead(s_istate.actorLogics);
 				while (actorLogic)
 				{
 					SecObject* obj = actorLogic->logic.obj;
@@ -2022,7 +2022,7 @@ namespace TFE_DarkForces
 						if (actorLogic->nextTick < s_curTick)
 						{
 							actorLogic->nextTick = s_curTick + actorLogic->delay;
-							if (actor_isObjectVisible(obj, s_playerObject, actorLogic->fov, actorLogic->nearDist))
+							if (actor_isObjectVisible(obj, s_playerObject, actorLogic->fov, actorLogic->awareRange))
 							{
 								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
 								gameMusic_startFight();
@@ -2034,9 +2034,9 @@ namespace TFE_DarkForces
 					{
 						s_actorState.curLogic = (Logic*)actorLogic;
 						s_actorState.curAnimation = nullptr;
-						for (s32 i = 0; i < ACTOR_MAX_AI; i++)
+						for (s32 i = 0; i < ACTOR_MAX_PLUGINS; i++)
 						{
-							AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_AI - 1 - i];
+							AiActor* aiActor = actorLogic->aiActors[ACTOR_MAX_PLUGINS - 1 - i];
 							if (aiActor)
 							{
 								ActorHeader* header = &aiActor->enemy.header;
@@ -2072,7 +2072,7 @@ namespace TFE_DarkForces
 						}
 					}
 
-					actorLogic = (ActorLogic*)allocator_getNext(s_istate.actorLogics);
+					actorLogic = (Dispatch*)allocator_getNext(s_istate.actorLogics);
 				}
 			}
 		}

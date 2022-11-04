@@ -19,6 +19,12 @@ namespace OpenGL_Caps
 {
 	static u32 m_supportFlags = 0;
 	static u32 m_deviceTier = 0;
+	static s32 m_textureBufferMaxSize = 0;
+
+	enum SpecMinimum
+	{
+		GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN = 65536,
+	};
 
 	void queryCapabilities()
 	{
@@ -30,11 +36,14 @@ namespace OpenGL_Caps
 		if (GLEW_ARB_pixel_buffer_object)  { m_supportFlags |= CAP_NON_POW_2; }
 		if (GLEW_EXT_texture_array)        { m_supportFlags |= CAP_TEXTURE_ARRAY; }
 
-		if (GLEW_VERSION_4_5)
+		// Get texture buffer maximum size.
+		glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &m_textureBufferMaxSize);
+
+		if (GLEW_VERSION_4_5 && m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN)
 		{
 			m_deviceTier = DEV_TIER_3;
 		}
-		else if (GLEW_VERSION_3_3 && (m_supportFlags&CAP_3_3_FULL) == CAP_3_3_FULL)
+		else if (GLEW_VERSION_3_3 && (m_supportFlags&CAP_3_3_FULL) == CAP_3_3_FULL && m_textureBufferMaxSize >= GLSPEC_MAX_TEXTURE_BUFFER_SIZE_MIN)
 		{
 			m_deviceTier = DEV_TIER_2;
 		}
@@ -86,6 +95,11 @@ namespace OpenGL_Caps
 	bool deviceSupportsGpuRenderer()
 	{
 		return m_deviceTier > DEV_TIER_1;
+	}
+
+	s32 getMaxTextureBufferSize()
+	{
+		return m_textureBufferMaxSize;
 	}
 
 	u32 getDeviceTier()

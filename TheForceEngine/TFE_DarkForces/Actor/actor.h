@@ -53,7 +53,7 @@ enum
 	OFFICER_ALERT_COUNT = 4,
 	STORM_ALERT_COUNT = 8,
 	ACTOR_MIN_VELOCITY = 0x1999,	// < 0.1
-	ACTOR_MAX_AI = 6,
+	ACTOR_MAX_PLUGINS = 6,
 };
 
 enum ActorCollisionFlags
@@ -70,31 +70,39 @@ enum SubActorType
 	SAT_COUNT
 };
 
+struct DispatchPlugin
+{
+	
+};
+
 // Logic for 'actors' -
 // an Actor is something with animated 'actions' that can move around in the world.
-struct ActorLogic
+// The "Dispatch" logic is the core actor, so rename to match.
+struct Dispatch
 {
 	Logic logic;
 
-	AiActor* aiActors[ACTOR_MAX_AI];
+	AiActor* aiActors[ACTOR_MAX_PLUGINS];
 	Actor* actor;
 	const s32* animTable;
 
 	Tick delay;
 	Tick nextTick;
+
 	SoundSourceId alertSndSrc;
 	SoundEffectId alertSndID;
 
 	angle14_32 fov;
-	fixed16_16 nearDist;
+	fixed16_16 awareRange;
 
 	vec3_fixed vel;
 	vec2_fixed lastPlayerPos;
+
 	Task* freeTask;
 	u32 flags;
 
 	// Added for TFE, for debugging.
-	SubActorType type[ACTOR_MAX_AI];
+	SubActorType type[ACTOR_MAX_PLUGINS];
 };
 
 struct ActorState
@@ -117,10 +125,10 @@ namespace TFE_DarkForces
 	void actor_removePhysicsActorFromWorld(PhysicsActor* phyActor);
 	void actor_createTask();
 
-	ActorLogic* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
+	Dispatch* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
 	AiActor* actor_createAiActor(Logic* logic);
 	Actor* actor_create(Logic* logic);
-	void actorLogic_addActor(ActorLogic* logic, AiActor* aiActor, SubActorType type);
+	void actorLogic_addActor(Dispatch* logic, AiActor* aiActor, SubActorType type);
 
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();

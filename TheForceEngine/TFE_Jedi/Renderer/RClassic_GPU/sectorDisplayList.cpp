@@ -76,6 +76,8 @@ namespace TFE_Jedi
 		//                 = 192 * MAX_DISP_ITEMS
 		//				   : MAX_DISP_ITEMS = 8192  = 192 * 8192  = 1.5Mb
 		//                 : MAX_DISP_ITEMS = 65536 = 192 * 65536 = 12Mb
+		// TODO: Can increase the display list size here, up to ShaderBuffer::getMaxSize().
+		//       Or reduce size needed to 1 item per wall segment (instead of 5 - 7).
 		s_displayListPos    = (Vec4f*)malloc(sizeof(Vec4f) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
 		s_displayListData   = (Vec4ui*)malloc(sizeof(Vec4ui) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
 		s_displayListPlanes = (Vec4f*)malloc(sizeof(Vec4f) * MAX_BUFFER_SIZE);

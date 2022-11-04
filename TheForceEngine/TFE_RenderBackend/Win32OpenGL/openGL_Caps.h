@@ -28,4 +28,5 @@ namespace OpenGL_Caps
 	bool deviceSupportsGpuRenderer();
 
 	u32 getDeviceTier();
+	s32 getMaxTextureBufferSize();
 };

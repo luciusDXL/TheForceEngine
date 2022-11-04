@@ -110,7 +110,7 @@ namespace TFE_DarkForces
 					sprite_setData(spawn, gen->wax);
 					obj_setEnemyLogic(spawn, gen->type, nullptr);
 					Logic** head = (Logic**)allocator_getHead_noIterUpdate((Allocator*)spawn->logic);
-					ActorLogic* actorLogic = *((ActorLogic**)head);
+					Dispatch* actorLogic = *((Dispatch**)head);
 
 					actorLogic->flags &= ~1;
 					actorLogic->freeTask = task_getCurrent();

@@ -354,6 +354,16 @@ namespace TFE_Jedi
 					s_wallGpuBuffer.destroy();
 				}
 
+				const s32 maxBufferSize = ShaderBuffer::getMaxSize();
+				if (s_levelState.sectorCount * 2 > maxBufferSize)
+				{
+					TFE_System::logWrite(LOG_ERROR, "GPU Renderer", "Too many sectors, only %d is supported by your hardware.", maxBufferSize / 2);
+				}
+				else if (wallCount * 3 > maxBufferSize)
+				{
+					TFE_System::logWrite(LOG_ERROR, "GPU Renderer", "Too many walls, only %d is supported by your hardware.", maxBufferSize / 3);
+				}
+
 				const ShaderBufferDef bufferDefSectors = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
 				s_sectorGpuBuffer.create(s_levelState.sectorCount * 2, bufferDefSectors, true, s_gpuSourceData.sectors);
 				s_wallGpuBuffer.create(wallCount * 3, bufferDefSectors, true, s_gpuSourceData.walls);

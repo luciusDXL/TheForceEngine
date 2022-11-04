@@ -98,7 +98,7 @@ namespace TFE_DarkForces
 			proj2->hitEffectId = HEFFECT_EXP_INVIS;
 			proj2->duration = s_curTick + 36;
 
-			ActorLogic* actorLogic = (ActorLogic*)s_actorState.curLogic;
+			Dispatch* actorLogic = (Dispatch*)s_actorState.curLogic;
 			CollisionInfo colInfo = { 0 };
 			colInfo.obj = proj2->logic.obj;
 			colInfo.offsetY = 0;
@@ -122,7 +122,7 @@ namespace TFE_DarkForces
 
 	Logic* barrel_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
+		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
 
 		logic->flags &= 0xfffffffb;
 		logic->flags &= 0xfffffffe;
@@ -153,7 +153,7 @@ namespace TFE_DarkForces
 
 	Logic* landmine_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorLogic* actorLogic = actor_setupActorLogic(obj, setupFunc);
+		Dispatch* actorLogic = actor_setupActorLogic(obj, setupFunc);
 		actorLogic->flags &= ~4;
 		actorLogic->flags &= ~1;
 		actorLogic->animTable = s_mineBarrelAnimTable;

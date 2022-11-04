@@ -1,6 +1,7 @@
 #include <TFE_RenderBackend/shaderBuffer.h>
 #include <GL/glew.h>
 #include <memory.h>
+#include "openGL_Caps.h"
 
 GLenum getFormat(const ShaderBufferDef& bufferDef);
 
@@ -25,7 +26,7 @@ bool ShaderBuffer::create(u32 count, const ShaderBufferDef& bufferDef, bool dyna
 	m_count   = count;
 	m_size    = m_stride * m_count;
 	m_dynamic = dynamic;
-
+	
 	// Build the GPU buffer and copy the initial data.
 	glGenBuffers(1, &m_gpuHandle[0]);
 	glBindBuffer(GL_TEXTURE_BUFFER, m_gpuHandle[0]);
@@ -71,6 +72,11 @@ void ShaderBuffer::unbind(s32 bindPoint) const
 	if (bindPoint < 0) { return; }
 	glActiveTexture(GL_TEXTURE0 + bindPoint);
 	glBindTexture(GL_TEXTURE_BUFFER, 0);
+}
+
+s32 ShaderBuffer::getMaxSize()
+{
+	return OpenGL_Caps::getMaxTextureBufferSize();
 }
 
 GLenum getFormat(const ShaderBufferDef& bufferDef)

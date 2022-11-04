@@ -50,7 +50,7 @@ namespace TFE_DarkForces
 		if (actorObj)
 		{
 			Logic** logicList = (Logic**)allocator_getHead((Allocator*)actorObj->logic);
-			ActorLogic* baseLogic = (ActorLogic*)*logicList;
+			Dispatch* baseLogic = (Dispatch*)*logicList;
 
 			char res[256];
 			sprintf(res, "Actor Found: %s", task_getName(baseLogic->logic.task));
@@ -168,7 +168,7 @@ namespace TFE_DarkForces
 			   		
 		if (strcasecmp(taskName, "actor") == 0)
 		{
-			ActorLogic* actorLogic = (ActorLogic*)baseLogic;
+			Dispatch* actorLogic = (Dispatch*)baseLogic;
 			TFE_Console::addToHistory("---Standard Enemy---");
 
 			char res[256];

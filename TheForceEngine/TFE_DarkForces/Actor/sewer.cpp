@@ -232,7 +232,7 @@ namespace TFE_DarkForces
 		obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 		obj->entityFlags = ETFLAG_AI_ACTOR;
 
-		ActorLogic* logic = actor_setupActorLogic(obj, setupFunc);
+		Dispatch* logic = actor_setupActorLogic(obj, setupFunc);
 		logic->alertSndSrc = s_alertSndSrc[ALERT_CREATURE];
 		logic->fov = ANGLE_MAX;
 
@@ -285,7 +285,7 @@ namespace TFE_DarkForces
 		RSector* sector = obj->sector;
 
 		actor_setDeathCollisionFlags();
-		ActorLogic* logic = (ActorLogic*)s_actorState.curLogic;
+		Dispatch* logic = (Dispatch*)s_actorState.curLogic;
 		sound_stop(logic->alertSndID);
 		sound_playCued(aiActor->dieSndSrc, obj->posWS);
 		enemy->target.flags |= 8;

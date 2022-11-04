@@ -39,6 +39,8 @@ public:
 
 	inline u32 getHandle() const { return m_gpuHandle[0]; }
 
+	static s32 getMaxSize();
+
 private:
 	ShaderBufferDef m_bufferDef;
 	u32 m_stride;
