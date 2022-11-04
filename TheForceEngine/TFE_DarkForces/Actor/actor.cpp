@@ -33,7 +33,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	struct ActorInternalState
 	{
-		Allocator* actorLogics;
+		Allocator* actorDispatch;
 		Task* actorTask;
 		Task* actorPhysicsTask;
 		JBool objCollisionEnabled;
@@ -145,35 +145,35 @@ namespace TFE_DarkForces
 		
 	void actor_createTask()
 	{
-		s_istate.actorLogics = allocator_create(sizeof(ActorDispatch));
+		s_istate.actorDispatch = allocator_create(sizeof(ActorDispatch));
 		s_istate.actorTask = createSubTask("actor", actorLogicTaskFunc, actorLogicMsgFunc);
 		s_istate.actorPhysicsTask = createSubTask("physics", actorPhysicsTaskFunc);
 	}
 
 	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		ActorDispatch* logic = (ActorDispatch*)allocator_newItem(s_istate.actorLogics);
-		memset(logic->modules, 0, sizeof(ActorModule*) * 6);
+		ActorDispatch* dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
+		memset(dispatch->modules, 0, sizeof(ActorModule*) * 6);
 
-		logic->mover = nullptr;
-		logic->animTable = nullptr;
-		logic->delay = 72;			// Delay in ticks
-		logic->alertSndSrc = NULL_SOUND;
-		logic->alertSndID = NULL_SOUND;
-		logic->fov = 9557;			// ~210 degrees
-		logic->awareRange = FIXED(20);
-		logic->vel = { 0, 0, 0 };
-		logic->freeTask = nullptr;
-		logic->flags = 4;
+		dispatch->mover = nullptr;
+		dispatch->animTable = nullptr;
+		dispatch->delay = 72;			// Delay in ticks
+		dispatch->alertSndSrc = NULL_SOUND;
+		dispatch->alertSndID = NULL_SOUND;
+		dispatch->fov = 9557;			// ~210 degrees
+		dispatch->awareRange = FIXED(20);
+		dispatch->vel = { 0, 0, 0 };
+		dispatch->freeTask = nullptr;
+		dispatch->flags = 4;
 
-		obj_addLogic(obj, (Logic*)logic, s_istate.actorTask, actorLogicCleanupFunc);
+		obj_addLogic(obj, (Logic*)dispatch, s_istate.actorTask, actorLogicCleanupFunc);
 		if (setupFunc)
 		{
 			*setupFunc = actorLogicSetupFunc;
 		}
 
-		s_actorState.curLogic = (Logic*)logic;
-		return logic;
+		s_actorState.curLogic = (Logic*)dispatch;
+		return dispatch;
 	}
 
 	JBool actorLogicSetupFunc(Logic* logic, KEYWORD key)
@@ -1646,10 +1646,10 @@ namespace TFE_DarkForces
 
 	void actorLogicCleanupFunc(Logic* logic)
 	{
-		ActorDispatch* actorLogic = (ActorDispatch*)logic;
+		ActorDispatch* dispatch = (ActorDispatch*)logic;
 		for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 		{
-			ActorModule* module = actorLogic->modules[ACTOR_MAX_MODULES - 1 - i];
+			ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
 			if (module)
 			{
 				if (module->freeFunc)
@@ -1663,19 +1663,19 @@ namespace TFE_DarkForces
 			}
 		}
 
-		if (actorLogic->freeTask)
+		if (dispatch->freeTask)
 		{
-			s_msgEntity = actorLogic->logic.obj;
-			task_runAndReturn(actorLogic->freeTask, MSG_FREE);
+			s_msgEntity = dispatch->logic.obj;
+			task_runAndReturn(dispatch->freeTask, MSG_FREE);
 		}
 
-		ActorModule* mover = actorLogic->mover;
+		ActorModule* mover = dispatch->mover;
 		if (mover && mover->freeFunc)
 		{
 			mover->freeFunc(mover);
 		}
-		deleteLogicAndObject((Logic*)actorLogic);
-		allocator_deleteItem(s_istate.actorLogics, actorLogic);
+		deleteLogicAndObject((Logic*)dispatch);
+		allocator_deleteItem(s_istate.actorDispatch, dispatch);
 	}
 	
 	JBool actor_advanceAnimation(LogicAnimation* anim, SecObject* obj)
@@ -2013,17 +2013,17 @@ namespace TFE_DarkForces
 			entity_yield(TASK_NO_DELAY);
 			if (msg == MSG_RUN_TASK)
 			{
-				ActorDispatch* actorLogic = (ActorDispatch*)allocator_getHead(s_istate.actorLogics);
-				while (actorLogic)
+				ActorDispatch* dispatch = (ActorDispatch*)allocator_getHead(s_istate.actorDispatch);
+				while (dispatch)
 				{
-					SecObject* obj = actorLogic->logic.obj;
-					u32 flags = actorLogic->flags;
+					SecObject* obj = dispatch->logic.obj;
+					u32 flags = dispatch->flags;
 					if ((flags & 1) && (flags & 4))
 					{
-						if (actorLogic->nextTick < s_curTick)
+						if (dispatch->nextTick < s_curTick)
 						{
-							actorLogic->nextTick = s_curTick + actorLogic->delay;
-							if (actor_isObjectVisible(obj, s_playerObject, actorLogic->fov, actorLogic->awareRange))
+							dispatch->nextTick = s_curTick + dispatch->delay;
+							if (actor_isObjectVisible(obj, s_playerObject, dispatch->fov, dispatch->awareRange))
 							{
 								message_sendToObj(obj, MSG_WAKEUP, actor_hitEffectMsgFunc);
 								gameMusic_startFight();
@@ -2033,29 +2033,29 @@ namespace TFE_DarkForces
 					}
 					else
 					{
-						s_actorState.curLogic = (Logic*)actorLogic;
+						s_actorState.curLogic = (Logic*)dispatch;
 						s_actorState.curAnimation = nullptr;
 						for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 						{
-							ActorModule* module = actorLogic->modules[ACTOR_MAX_MODULES - 1 - i];
+							ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
 							if (module)
 							{
 								if (module->func && module->nextTick < s_curTick)
 								{
-									module->nextTick = module->func(module, (Actor*)actorLogic->mover);
+									module->nextTick = module->func(module, (Actor*)dispatch->mover);
 								}
 							}
 						}
 
-						if (s_actorState.curLogic && !(actorLogic->flags & 1))
+						if (s_actorState.curLogic && !(dispatch->flags & 1))
 						{
-							ActorModule* mover = actorLogic->mover;
+							ActorModule* mover = dispatch->mover;
 							if (mover)
 							{
 								ActorFunc func = mover->func;
 								if (func)
 								{
-									actor_handlePhysics((Actor*)mover, &actorLogic->vel);
+									actor_handlePhysics((Actor*)mover, &dispatch->vel);
 									func(mover, (Actor*)mover);
 								}
 							}
@@ -2072,7 +2072,7 @@ namespace TFE_DarkForces
 						}
 					}
 
-					actorLogic = (ActorDispatch*)allocator_getNext(s_istate.actorLogics);
+					dispatch = (ActorDispatch*)allocator_getNext(s_istate.actorDispatch);
 				}
 			}
 		}
