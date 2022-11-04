@@ -2022,7 +2022,7 @@ namespace TFE_DarkForces
 				while (dispatch)
 				{
 					SecObject* obj = dispatch->logic.obj;
-					u32 flags = dispatch->flags;
+					const u32 flags = dispatch->flags;
 					if ((flags & 1) && (flags & 4))
 					{
 						if (dispatch->nextTick < s_curTick)
@@ -2043,26 +2043,19 @@ namespace TFE_DarkForces
 						for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 						{
 							ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
-							if (module)
+							if (module && module->func && module->nextTick < s_curTick)
 							{
-								if (module->func && module->nextTick < s_curTick)
-								{
-									module->nextTick = module->func(module, dispatch->moveMod);
-								}
+								module->nextTick = module->func(module, dispatch->moveMod);
 							}
 						}
 
 						if (s_actorState.curLogic && !(dispatch->flags & 1))
 						{
 							MovementModule* moveMod = dispatch->moveMod;
-							if (moveMod)
+							if (moveMod && moveMod->header.func)
 							{
-								ActorFunc func = moveMod->header.func;
-								if (func)
-								{
-									actor_handlePhysics(moveMod, &dispatch->vel);
-									func((ActorModule*)moveMod, moveMod);
-								}
+								actor_handlePhysics(moveMod, &dispatch->vel);
+								moveMod->header.func((ActorModule*)moveMod, moveMod);
 							}
 
 							if ((obj->type & OBJ_TYPE_SPRITE) && s_actorState.curAnimation)
