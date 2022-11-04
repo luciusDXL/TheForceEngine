@@ -1249,9 +1249,8 @@ namespace TFE_DarkForces
 		return 0;
 	}
 
-	ThinkerModule* actor_createThinkerModule(ActorDispatch* dispatch)
+	void actor_thinkerModuleInit(ThinkerModule* thinkerMod)
 	{
-		ThinkerModule* thinkerMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
 		memset(thinkerMod, 0, sizeof(ThinkerModule));
 
 		thinkerMod->target.speedRotation = 0;
@@ -1269,8 +1268,14 @@ namespace TFE_DarkForces
 		thinkerMod->prevColTick = 0;
 		thinkerMod->target.flags = 0;
 		thinkerMod->anim.flags = 0;
+	}
 
+	ThinkerModule* actor_createThinkerModule(ActorDispatch* dispatch)
+	{
+		ThinkerModule* thinkerMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
+		actor_thinkerModuleInit(thinkerMod);
 		actor_initModule((ActorModule*)thinkerMod, (Logic*)dispatch);
+
 		thinkerMod->header.func = defaultThinkerFunc;
 		thinkerMod->targetOffset = FIXED(3);
 		thinkerMod->targetVariation = 0;

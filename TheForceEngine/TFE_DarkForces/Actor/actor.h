@@ -141,6 +141,7 @@ namespace TFE_DarkForces
 
 	AttackModule* actor_createAttackModule(ActorDispatch* dispatch);
 	ThinkerModule* actor_createThinkerModule(ActorDispatch* dispatch);
+	void actor_thinkerModuleInit(ThinkerModule* thinkerMod);
 	void actor_setupInitAnimation();
 	void actor_setDeathCollisionFlags();
 

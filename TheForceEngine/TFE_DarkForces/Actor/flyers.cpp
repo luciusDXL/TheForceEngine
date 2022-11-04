@@ -24,126 +24,100 @@ namespace TFE_DarkForces
 	static const s32 s_remoteAnimTable[] =
 	{ 0, 0, 2, 3, -1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1 };
 		
-	u32 flyingActorFunc(ActorModule* module, MovementModule* moveMod)
+	u32 flyingModuleFunc(ActorModule* module, MovementModule* moveMod)
 	{
-		ActorFlyer* flyingActor = (ActorFlyer*)module;
-		SecObject* obj = flyingActor->header.obj;
-		if (flyingActor->state == 0)
+		ThinkerModule* flyingMod = (ThinkerModule*)module;
+		SecObject* obj = flyingMod->header.obj;
+		if (flyingMod->anim.state == 0)
 		{
-			flyingActor->state = 2;
-			return s_curTick + random(flyingActor->delay);
+			flyingMod->anim.state = 2;
+			return s_curTick + random(flyingMod->delay);
 		}
-		else if (flyingActor->state == 1)
+		else if (flyingMod->anim.state == 1)
 		{
-			if (actor_handleSteps(moveMod, &flyingActor->target))
+			if (actor_handleSteps(moveMod, &flyingMod->target))
 			{
-				flyingActor->state = 0;
+				flyingMod->anim.state = 0;
 			}
 			SecObject* actorObj = moveMod->header.obj;
-			if (actor_arrivedAtTarget(&flyingActor->target, actorObj))
+			if (actor_arrivedAtTarget(&flyingMod->target, actorObj))
 			{
-				flyingActor->state = 0;
+				flyingMod->anim.state = 0;
 			}
 		}
-		else if (flyingActor->state == 2)
+		else if (flyingMod->anim.state == 2)
 		{
 			RSector* sector = obj->sector;
 			if (sector == s_playerObject->sector)
 			{
 				// Target a random height above or below the player y position: playerPosY - [-1.5, 6.5]
 				fixed16_16 heightChange = random(FIXED(5)) - 0x18000;	// rand(5) - 1.5
-				flyingActor->target.pos.y = s_eyePos.y - heightChange;
-				flyingActor->target.flags |= 2;
-				flyingActor->state = 1;
+				flyingMod->target.pos.y = s_eyePos.y - heightChange;
+				flyingMod->target.flags |= 2;
+				flyingMod->anim.state = 1;
 			}
 			else
 			{
-				flyingActor->state = 0;
+				flyingMod->anim.state = 0;
 			}
 		}
 
-		moveMod->updateTargetFunc(moveMod, &flyingActor->target);
+		moveMod->updateTargetFunc(moveMod, &flyingMod->target);
 		return 0;
 	}
 
-	u32 flyingActorAiFunc2(ActorModule* module, MovementModule* moveMod)
+	u32 flyingModuleFunc_Remote(ActorModule* module, MovementModule* moveMod)
 	{
-		ActorFlyer* flyingActor = (ActorFlyer*)module;
-		ActorTarget* target = &flyingActor->target;
-		SecObject* obj = flyingActor->header.obj;
+		ThinkerModule* flyingMod = (ThinkerModule*)module;
+		ActorTarget* target = &flyingMod->target;
+		SecObject* obj = flyingMod->header.obj;
 
-		if (flyingActor->state == 0)
+		if (flyingMod->anim.state == 0)
 		{
-			flyingActor->state = 2;
-			return s_curTick + random(flyingActor->delay);
+			flyingMod->anim.state = 2;
+			return s_curTick + random(flyingMod->delay);
 		}
-		else if (flyingActor->state == 1)
+		else if (flyingMod->anim.state == 1)
 		{
 			if (actor_arrivedAtTarget(target, obj))
 			{
-				flyingActor->state = 0;
+				flyingMod->anim.state = 0;
 			}
 		}
-		else if (flyingActor->state == 2)
+		else if (flyingMod->anim.state == 2)
 		{
 			target->yaw   = random_next() & ANGLE_MASK;
 			target->pitch = obj->pitch;
 			target->roll  = obj->roll;
 			target->flags |= 4;
-			flyingActor->state = 1;
+			flyingMod->anim.state = 1;
 		}
 
 		moveMod->updateTargetFunc(moveMod, target);
 		return 0;
 	}
 
-	ActorFlyer* actor_createFlying(Logic* logic)
+	ThinkerModule* actor_createFlyingModule(Logic* logic)
 	{
-		ActorFlyer* actor = (ActorFlyer*)level_alloc(sizeof(ActorFlyer));
+		ThinkerModule* flyingMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
+		actor_thinkerModuleInit(flyingMod);
+		actor_initModule((ActorModule*)flyingMod, logic);
 
-		actor->target.speedRotation = 0;
-		actor->target.speed = FIXED(4);
-		actor->target.speedVert = FIXED(10);
-		actor->delay = 72;
-		actor->u68 = 0;
-		actor->u6c = -1;
-		actor->state = 2;
-		actor->u40 = 728;
-		actor->width = 5;
-		actor->u4c = ONE_16;
-		actor->nextTick = 0;
-		actor->u70 = 0;
-		actor->target.flags &= 0xfffffff0;
-		actor->u5c &= 0xfffffffe;
-		actor_initModule(&actor->header, logic);
-		actor->header.func = flyingActorFunc;
-		actor->delay = 145;
+		flyingMod->header.func = flyingModuleFunc;
+		flyingMod->delay = 145;
 
-		return actor;
+		return flyingMod;
 	}
 
-	ActorFlyer* actor_createFlying2(Logic* logic)
+	ThinkerModule* actor_createFlyingModule_Remote(Logic* logic)
 	{
-		ActorFlyer* actor = (ActorFlyer*)level_alloc(sizeof(ActorFlyer));
-		actor->target.flags &= 0xfffffff0;
-		actor->target.speedRotation = 0;
-		actor->target.speed = FLAG_BIT(18);
-		actor->target.speedVert = FIXED(10);
-		actor->delay = 72;	// ~0.5 seconds
-		actor->u68 = 0;
-		actor->u6c = -1;
-		actor->state = 2;
-		actor->u40 = 728;
-		actor->width = 5;
-		actor->u4c = ONE_16;
-		actor->u5c &= ~1;
-		actor->nextTick = 0;
-		actor->u70 = 0;
-		actor_initModule(&actor->header, logic);
+		ThinkerModule* flyingMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
+		actor_thinkerModuleInit(flyingMod);
+		actor_initModule((ActorModule*)flyingMod, logic);
 
-		actor->header.func = flyingActorAiFunc2;
-		actor->delay = 145;	// 1 second.
-		return actor;
+		flyingMod->header.func = flyingModuleFunc_Remote;
+		flyingMod->delay = 145;	// 1 second.
+		return flyingMod;
 	}
 
 	Logic* intDroid_setup(SecObject* obj, LogicSetupFunc* setupFunc)
@@ -178,12 +152,12 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(2);	// (145.5)*2
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		ActorFlyer* flyingActor = actor_createFlying((Logic*)dispatch);
-		flyingActor->target.speedRotation = 0x7fff;
-		flyingActor->target.speed = FIXED(13);
-		flyingActor->target.speedVert = FIXED(10);
-		flyingActor->delay = 436;	// just shy of 3 seconds.
-		actor_addModule(dispatch, (ActorModule*)flyingActor);
+		ThinkerModule* flyingMod = actor_createFlyingModule((Logic*)dispatch);
+		flyingMod->target.speedRotation = 0x7fff;
+		flyingMod->target.speed = FIXED(13);
+		flyingMod->target.speedVert = FIXED(10);
+		flyingMod->delay = 436;	// just shy of 3 seconds.
+		actor_addModule(dispatch, (ActorModule*)flyingMod);
 				
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
@@ -228,12 +202,12 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(2);	// (145.5)*2
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		ActorFlyer* flyingActor = actor_createFlying((Logic*)dispatch);
-		flyingActor->target.speedRotation = 0x7fff;
-		flyingActor->target.speed = FIXED(4);
-		flyingActor->target.speedVert = FIXED(2);
-		flyingActor->delay = 436;	// just shy of 3 seconds.
-		actor_addModule(dispatch, (ActorModule*)flyingActor);
+		ThinkerModule* flyingMod = actor_createFlyingModule((Logic*)dispatch);
+		flyingMod->target.speedRotation = 0x7fff;
+		flyingMod->target.speed = FIXED(4);
+		flyingMod->target.speedVert = FIXED(2);
+		flyingMod->delay = 436;	// just shy of 3 seconds.
+		actor_addModule(dispatch, (ActorModule*)flyingMod);
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
@@ -278,17 +252,17 @@ namespace TFE_DarkForces
 		thinkerMod->targetOffset = FIXED(9);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		ActorFlyer* flyingActor = actor_createFlying2((Logic*)dispatch);
-		flyingActor->target.speedRotation = 0x7fff;
-		flyingActor->delay = 291;
-		actor_addModule(dispatch, (ActorModule*)flyingActor);
+		ThinkerModule* flyingMod = actor_createFlyingModule_Remote((Logic*)dispatch);
+		flyingMod->target.speedRotation = 0x7fff;
+		flyingMod->delay = 291;
+		actor_addModule(dispatch, (ActorModule*)flyingMod);
 
-		flyingActor = actor_createFlying((Logic*)dispatch);
-		flyingActor->target.speedRotation = 0x7fff;
-		flyingActor->target.speed = FIXED(13);
-		flyingActor->target.speedVert = FIXED(10);
-		flyingActor->delay = 291;
-		actor_addModule(dispatch, (ActorModule*)flyingActor);
+		flyingMod = actor_createFlyingModule((Logic*)dispatch);
+		flyingMod->target.speedRotation = 0x7fff;
+		flyingMod->target.speed = FIXED(13);
+		flyingMod->target.speedVert = FIXED(10);
+		flyingMod->delay = 291;
+		actor_addModule(dispatch, (ActorModule*)flyingMod);
 
 		MovementModule* moveMod = actor_createMovementModule(dispatch);
 		dispatch->moveMod = moveMod;
