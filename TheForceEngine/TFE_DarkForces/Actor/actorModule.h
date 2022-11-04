@@ -19,6 +19,7 @@ using namespace TFE_DarkForces;
 
 struct Actor;
 struct ActorModule;
+struct MovementModule;
 struct ActorTarget;
 struct Task;
 
@@ -28,10 +29,10 @@ enum LogicAnimFlags
 	AFLAG_READY  = FLAG_BIT(1),
 };
 
-typedef JBool(*ActorFunc)(ActorModule*, Actor*);
-typedef JBool(*ActorMsgFunc)(s32 msg, ActorModule*, Actor*);
+typedef JBool(*ActorFunc)(ActorModule*, MovementModule*);
+typedef JBool(*ActorMsgFunc)(s32 msg, ActorModule*, MovementModule*);
 typedef void(*ActorAttribFunc)(ActorModule*);
-typedef u32(*ActorTargetFunc)(Actor*, ActorTarget*);
+typedef u32(*ActorTargetFunc)(MovementModule*, ActorTarget*);
 typedef void(*ActorFreeFunc)(void*);
 
 struct LogicAnimation
@@ -126,7 +127,7 @@ struct ActorFlyer
 	s32 u70;
 };
 
-struct Actor
+struct MovementModule
 {
 	ActorModule   header;
 	ActorTargetFunc updateTargetFunc;
@@ -176,7 +177,7 @@ struct DamageModule
 
 struct PhysicsActor
 {
-	Actor actor;
+	MovementModule moveMod;
 	LogicAnimation anim;
 	PhysicsActor** parent;
 

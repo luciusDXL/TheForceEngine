@@ -14,7 +14,7 @@ namespace TFE_DarkForces
 	{ 0, -1, -1, -1, 1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1 };
 
 	// Actor function for exploders (i.e. landmines and exploding barrels).
-	JBool sceneryLogicFunc(ActorModule* module, Actor* actor)
+	JBool sceneryLogicFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		LogicAnimation* anim = &damageMod->attackMod.anim;
@@ -44,7 +44,7 @@ namespace TFE_DarkForces
 	// Actor message function for exploders, this is responsible for processing messages such as 
 	// projectile damage and explosions. For other AI message functions, it would also process
 	// "wake up" messages, but those messages are ignored for exploders.
-	JBool sceneryMsgFunc(s32 msg, ActorModule* module, Actor* actor)
+	JBool sceneryMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		JBool retValue = JFALSE;
 		DamageModule* damageMod = (DamageModule*)module;

@@ -74,13 +74,13 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_officerAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		actor->collisionFlags |= 1;
-		actor->physics.width = obj->worldWidth;
+		moveMod->collisionFlags |= 1;
+		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;
@@ -114,13 +114,13 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_troopAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		actor->collisionFlags |= 1;
-		actor->physics.width = obj->worldWidth;
+		moveMod->collisionFlags |= 1;
+		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;
@@ -154,13 +154,13 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(1);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_commandoAnimTable;
 		s_actorState.curLogic = (Logic*)dispatch;
 
-		actor->collisionFlags |= 1;
-		actor->physics.width = obj->worldWidth;
+		moveMod->collisionFlags |= 1;
+		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;

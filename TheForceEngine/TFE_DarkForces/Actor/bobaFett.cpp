@@ -225,7 +225,7 @@ namespace TFE_DarkForces
 	void bobaFett_handleVerticalMove(PhysicsActor* physicsActor, fixed16_16 yVelOffset, angle14_32 vertAngle, fixed16_16 yAccel, SoundSourceId soundSrc)
 	{
 		fixed16_16 yVelDelta, hVelDelta;
-		SecObject* obj = physicsActor->actor.header.obj;
+		SecObject* obj = physicsActor->moveMod.header.obj;
 		if (yVelOffset)
 		{
 			physicsActor->moveSndId = sound_maintain(physicsActor->moveSndId, soundSrc, obj->posWS);
@@ -260,7 +260,7 @@ namespace TFE_DarkForces
 
 	void bobaFett_handleFlying(PhysicsActor* physicsActor, BobaFettMoveState* moveState)
 	{
-		SecObject* obj = physicsActor->actor.header.obj;
+		SecObject* obj = physicsActor->moveMod.header.obj;
 
 		fixed16_16 dx = moveState->target.z - obj->posWS.z;
 		fixed16_16 dz = moveState->target.x - obj->posWS.x;
@@ -363,7 +363,7 @@ namespace TFE_DarkForces
 		local(bobaFett) = s_curBobaFett;
 		local(obj) = local(bobaFett)->logic.obj;
 		local(physicsActor) = &local(bobaFett)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 		local(moveState) = &local(bobaFett)->moveState;
 		
@@ -539,7 +539,7 @@ namespace TFE_DarkForces
 
 		local(obj) = s_curBobaFett->logic.obj;
 		local(physicsActor) = &s_curBobaFett->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags |= 8;
@@ -593,14 +593,14 @@ namespace TFE_DarkForces
 		local(bobaFett) = s_curBobaFett;
 		local(obj) = local(bobaFett)->logic.obj;
 		local(physicsActor) = &local(bobaFett)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		local(phase) = 0;
 		local(nextCheckForPlayerTick) = 0;
 		local(changeStateTick) = s_curTick + 8739;
 		local(nextChangePhaseTick) = s_curTick + 1456;
-		local(physicsActor)->actor.collisionFlags |= 4;
+		local(physicsActor)->moveMod.collisionFlags |= 4;
 
 		while (local(physicsActor)->state == BOBASTATE_SEARCH)
 		{
@@ -651,7 +651,7 @@ namespace TFE_DarkForces
 			}
 		}  // while (state == BOBASTATE_SEARCH)
 
-		local(physicsActor)->actor.collisionFlags |= 4;
+		local(physicsActor)->moveMod.collisionFlags |= 4;
 		task_end;
 	}
 
@@ -673,7 +673,7 @@ namespace TFE_DarkForces
 		local(bobaFett) = s_curBobaFett;
 		local(obj) = local(bobaFett)->logic.obj;
 		local(physicsActor) = &local(bobaFett)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		while (local(physicsActor)->state == BOBASTATE_DEFAULT)
@@ -719,7 +719,7 @@ namespace TFE_DarkForces
 		local(bobaFett) = (BobaFett*)task_getUserData();
 		local(obj) = local(bobaFett)->logic.obj;
 		local(physicsActor) = &local(bobaFett)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		while (local(physicsActor)->alive)
@@ -831,17 +831,17 @@ namespace TFE_DarkForces
 		bobaFett->logic.obj = obj;
 		actor_addPhysicsActorToWorld(physicsActor);
 
-		physicsActor->actor.header.obj  = obj;
-		physicsActor->actor.physics.obj = obj;
-		actor_setupSmartObj(&physicsActor->actor);
+		physicsActor->moveMod.header.obj  = obj;
+		physicsActor->moveMod.physics.obj = obj;
+		actor_setupSmartObj(&physicsActor->moveMod);
 
-		physicsActor->actor.physics.width = FIXED(2);
-		physicsActor->actor.physics.botOffset = 0;
+		physicsActor->moveMod.physics.width = FIXED(2);
+		physicsActor->moveMod.physics.botOffset = 0;
 
-		physicsActor->actor.collisionFlags &= 0xfffffff8;
-		physicsActor->actor.collisionFlags |= 6;
-		physicsActor->actor.physics.yPos = FIXED(9999);
-		physicsActor->actor.physics.height = obj->worldHeight;
+		physicsActor->moveMod.collisionFlags &= 0xfffffff8;
+		physicsActor->moveMod.collisionFlags |= 6;
+		physicsActor->moveMod.physics.yPos = FIXED(9999);
+		physicsActor->moveMod.physics.height = obj->worldHeight;
 
 		LogicAnimation* anim = &physicsActor->anim;
 		anim->frameRate = 5;
@@ -851,7 +851,7 @@ namespace TFE_DarkForces
 		anim->flags &= 0xfffffffe;
 		actor_setupAnimation2(obj, 5, anim);
 
-		ActorTarget* target = &physicsActor->actor.target;
+		ActorTarget* target = &physicsActor->moveMod.target;
 		target->speedRotation = 6826;
 
 		obj_addLogic(obj, (Logic*)bobaFett, task, bobaFettCleanupFunc);

@@ -131,8 +131,8 @@ namespace TFE_DarkForces
 
 		local(turret) = s_curTurret;
 		local(physicsActor) = &local(turret)->actor;
-		local(target) = &local(physicsActor)->actor.target;
-		local(obj) = local(physicsActor)->actor.header.obj;
+		local(target) = &local(physicsActor)->moveMod.target;
+		local(obj) = local(physicsActor)->moveMod.header.obj;
 		fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
 		fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
 		local(target)->yaw = vec2ToAngle(dx, dz) & ANGLE_MASK;
@@ -203,7 +203,7 @@ namespace TFE_DarkForces
 	{
 		Turret* turret = s_curTurret;
 		PhysicsActor* physicsActor = &turret->actor;
-		SecObject* obj = physicsActor->actor.header.obj;
+		SecObject* obj = physicsActor->moveMod.header.obj;
 
 		fixed16_16 mtx[9];
 		weapon_computeMatrix(mtx, -obj->pitch, -obj->yaw);
@@ -262,7 +262,7 @@ namespace TFE_DarkForces
 				}
 			} while (msg != MSG_RUN_TASK);
 
-			ActorTarget* target = &local(physicsActor)->actor.target;
+			ActorTarget* target = &local(physicsActor)->moveMod.target;
 			if (local(physicsActor)->state == TURRETSTATE_OUT_OF_CONTROL && target->yaw == local(obj)->yaw && target->pitch == local(obj)->pitch)
 			{
 				fixed16_16 mtx[9];
@@ -381,7 +381,7 @@ namespace TFE_DarkForces
 		task_begin_ctx;
 		local(turret) = (Turret*)task_getUserData();
 		local(physicsActor) = &local(turret)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(obj) = local(turret)->logic.obj;
 
 		while (local(physicsActor)->alive)
@@ -490,7 +490,7 @@ namespace TFE_DarkForces
 		PhysicsActor* physicsActor = &turret->actor;
 		actor_addPhysicsActorToWorld(physicsActor);
 
-		CollisionInfo* physics = &physicsActor->actor.physics;
+		CollisionInfo* physics = &physicsActor->moveMod.physics;
 		physics->obj    = obj;
 		physics->width  = obj->worldWidth;
 		physics->height = obj->worldHeight + HALF_16;
@@ -499,12 +499,12 @@ namespace TFE_DarkForces
 		physics->botOffset = 0;
 		physics->yPos = 0;
 
-		Actor* actor = &physicsActor->actor;
-		actor->header.obj = obj;
-		actor->delta = { 0, 0, 0 };
-		actor->collisionFlags &= 0xfffffff8;
+		MovementModule* moveMod = &physicsActor->moveMod;
+		moveMod->header.obj = obj;
+		moveMod->delta = { 0, 0, 0 };
+		moveMod->collisionFlags &= 0xfffffff8;
 
-		ActorTarget* target = &physicsActor->actor.target;
+		ActorTarget* target = &physicsActor->moveMod.target;
 		target->speed = 0;
 		target->flags &= 0xfffffff0;
 		target->speedRotation = TURRET_ROTATION_SPD;

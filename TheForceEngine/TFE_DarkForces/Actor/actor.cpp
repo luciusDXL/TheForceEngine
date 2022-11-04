@@ -155,7 +155,7 @@ namespace TFE_DarkForces
 		ActorDispatch* dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
 		memset(dispatch->modules, 0, sizeof(ActorModule*) * 6);
 
-		dispatch->mover = nullptr;
+		dispatch->moveMod = nullptr;
 		dispatch->animTable = nullptr;
 		dispatch->delay = 72;			// Delay in ticks
 		dispatch->alertSndSrc = NULL_SOUND;
@@ -285,8 +285,8 @@ namespace TFE_DarkForces
 	void actor_setDeathCollisionFlags()
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
-		Actor* actor = (Actor*)logic->mover;
-		actor->collisionFlags |= 2;
+		MovementModule* moveMod = logic->moveMod;
+		moveMod->collisionFlags |= 2;
 		// Added to disable auto-aim when dying.
 		logic->logic.obj->flags &= ~OBJ_FLAG_ENEMY;
 	}
@@ -366,17 +366,17 @@ namespace TFE_DarkForces
 	}
 
 	// returns JTRUE on collision else JFALSE.
-	JBool actor_handleSteps(Actor* actor, ActorTarget* target)
+	JBool actor_handleSteps(MovementModule* moveMod, ActorTarget* target)
 	{
-		SecObject* obj = actor->header.obj;
-		if (actor->physics.responseStep || actor->collisionWall)
+		SecObject* obj = moveMod->header.obj;
+		if (moveMod->physics.responseStep || moveMod->collisionWall)
 		{
-			if (!(actor->collisionFlags & 1))
+			if (!(moveMod->collisionFlags & 1))
 			{
-				RWall* wall = actor->physics.wall ? actor->physics.wall : actor->collisionWall;
+				RWall* wall = moveMod->physics.wall ? moveMod->physics.wall : moveMod->collisionWall;
 				if (!wall)
 				{
-					return actor->physics.collidedObj ? JTRUE : JFALSE;
+					return moveMod->physics.collidedObj ? JTRUE : JFALSE;
 				}
 
 				RSector* nextSector = wall->nextSector;
@@ -407,9 +407,9 @@ namespace TFE_DarkForces
 		return (logic->flags & 8) ? JTRUE : JFALSE;
 	}
 
-	void actor_changeDirFromCollision(Actor* actor, ActorTarget* target, Tick* prevColTick)
+	void actor_changeDirFromCollision(MovementModule* moveMod, ActorTarget* target, Tick* prevColTick)
 	{
-		SecObject* obj = actor->header.obj;
+		SecObject* obj = moveMod->header.obj;
 		Tick delta = Tick(s_curTick - (*prevColTick));
 		angle14_32 newAngle;
 		if (delta < 145)
@@ -418,15 +418,15 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			angle14_32 rAngle = actor->physics.responseAngle + (s_curTick & 0xff) - 128;
+			angle14_32 rAngle = moveMod->physics.responseAngle + (s_curTick & 0xff) - 128;
 			angle14_32 angleDiff = getAngleDifference(obj->yaw, rAngle) & 8191;
 			if (angleDiff > 4095)
 			{
-				newAngle = actor->physics.responseAngle - 8191;
+				newAngle = moveMod->physics.responseAngle - 8191;
 			}
 			else
 			{
-				newAngle = actor->physics.responseAngle;
+				newAngle = moveMod->physics.responseAngle;
 			}
 			newAngle &= ANGLE_MASK;
 		}
@@ -527,7 +527,7 @@ namespace TFE_DarkForces
 
 	void actor_handleBossDeath(PhysicsActor* physicsActor)
 	{
-		SecObject* obj = physicsActor->actor.header.obj;
+		SecObject* obj = physicsActor->moveMod.header.obj;
 		if (obj->flags & OBJ_FLAG_BOSS)
 		{
 			if (obj->entityFlags & ETFLAG_GENERAL_MOHC)
@@ -564,7 +564,7 @@ namespace TFE_DarkForces
 		return (ActorDispatch*)s_actorState.curLogic;
 	}
 
-	JBool defaultAiFunc(ActorModule* module, Actor* actor)
+	JBool defaultAiFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -577,7 +577,7 @@ namespace TFE_DarkForces
 			{
 				actor_setCurAnimation(&attackMod->anim);
 			}
-			actor->updateTargetFunc(actor, &attackMod->target);
+			moveMod->updateTargetFunc(moveMod, &attackMod->target);
 			return JFALSE;
 		}
 
@@ -589,7 +589,7 @@ namespace TFE_DarkForces
 				{
 					actor_setCurAnimation(&attackMod->anim);
 				}
-				actor->updateTargetFunc(actor, &attackMod->target);
+				moveMod->updateTargetFunc(moveMod, &attackMod->target);
 				return JFALSE;
 			}
 			spawnHitEffect(damageMod->dieEffect, sector, obj->posWS, obj);
@@ -648,7 +648,7 @@ namespace TFE_DarkForces
 		return 0xffffffff;
 	}
 
-	JBool defaultMsgFunc(s32 msg, ActorModule* module, Actor* actor)
+	JBool defaultMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -720,7 +720,7 @@ namespace TFE_DarkForces
 			{
 				actor_setCurAnimation(&attackMod->anim);
 			}
-			actor->updateTargetFunc(actor, &attackMod->target);
+			moveMod->updateTargetFunc(moveMod, &attackMod->target);
 			return JFALSE;
 		}
 		else if (msg == MSG_EXPLOSION)
@@ -769,7 +769,7 @@ namespace TFE_DarkForces
 			{
 				actor_setCurAnimation(&attackMod->anim);
 			}
-			actor->updateTargetFunc(actor, &attackMod->target);
+			moveMod->updateTargetFunc(moveMod, &attackMod->target);
 			return JFALSE;
 		}
 		else if (msg == MSG_TERMINAL_VEL || msg == MSG_CRUSH)
@@ -822,7 +822,7 @@ namespace TFE_DarkForces
 		return damageMod;
 	}
 		
-	JBool defaultEnemyFunc(ActorModule* module, Actor* actor)
+	JBool defaultEnemyFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -1094,11 +1094,11 @@ namespace TFE_DarkForces
 		{
 			actor_setCurAnimation(&attackMod->anim);
 		}
-		actor->updateTargetFunc(actor, &attackMod->target);
+		moveMod->updateTargetFunc(moveMod, &attackMod->target);
 		return attackMod->timing.delay;
 	}
 
-	JBool defaultEnemyMsgFunc(s32 msg, ActorModule* module, Actor* actor)
+	JBool defaultEnemyMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -1125,7 +1125,7 @@ namespace TFE_DarkForces
 		return attackMod;
 	}
 
-	JBool defaultThinkerFunc(ActorModule* module, Actor* actor)
+	JBool defaultThinkerFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		ThinkerModule* thinkerMod = (ThinkerModule*)module;
 		SecObject* obj = thinkerMod->header.obj;
@@ -1159,9 +1159,9 @@ namespace TFE_DarkForces
 				}
 
 				ActorTarget* target = &thinkerMod->target;
-				if (actor_handleSteps(actor, target))
+				if (actor_handleSteps(moveMod, target))
 				{
-					actor_changeDirFromCollision(actor, target, &thinkerMod->prevColTick);
+					actor_changeDirFromCollision(moveMod, target, &thinkerMod->prevColTick);
 					if (!actorLogic_isStopFlagSet())
 					{
 						thinkerMod->maxWalkTime += 218;
@@ -1245,7 +1245,7 @@ namespace TFE_DarkForces
 		{
 			actor_setCurAnimation(&thinkerMod->anim);
 		}
-		actor->updateTargetFunc(actor, &thinkerMod->target);
+		moveMod->updateTargetFunc(moveMod, &thinkerMod->target);
 		return 0;
 	}
 
@@ -1303,32 +1303,32 @@ namespace TFE_DarkForces
 		}
 	}
 
-	JBool actor_handleMovementAndCollision(Actor* actor)
+	JBool actor_handleMovementAndCollision(MovementModule* moveMod)
 	{
-		SecObject* obj = actor->header.obj;
+		SecObject* obj = moveMod->header.obj;
 		vec3_fixed desiredMove = { 0, 0, 0 };
 		vec3_fixed move = { 0, 0, 0 };
 
-		actor->collisionWall = nullptr;
-		if (!(actor->target.flags & 8))
+		moveMod->collisionWall = nullptr;
+		if (!(moveMod->target.flags & 8))
 		{
-			if (actor->target.flags & 1)
+			if (moveMod->target.flags & 1)
 			{
-				desiredMove.x = actor->target.pos.x - obj->posWS.x;
-				desiredMove.z = actor->target.pos.z - obj->posWS.z;
+				desiredMove.x = moveMod->target.pos.x - obj->posWS.x;
+				desiredMove.z = moveMod->target.pos.z - obj->posWS.z;
 			}
-			if (!(actor->collisionFlags & 1))
+			if (!(moveMod->collisionFlags & 1))
 			{
-				if (actor->target.flags & 2)
+				if (moveMod->target.flags & 2)
 				{
-					desiredMove.y = actor->target.pos.y - obj->posWS.y;
+					desiredMove.y = moveMod->target.pos.y - obj->posWS.y;
 				}
 			}
 			move.z = move.y = move.x = 0;
 			if (desiredMove.x | desiredMove.z)
 			{
 				fixed16_16 dirZ, dirX;
-				fixed16_16 frameMove = mul16(actor->target.speed, s_deltaTime);
+				fixed16_16 frameMove = mul16(moveMod->target.speed, s_deltaTime);
 				computeDirAndLength(desiredMove.x, desiredMove.z, &dirX, &dirZ);
 
 				if (desiredMove.x && dirX)
@@ -1346,7 +1346,7 @@ namespace TFE_DarkForces
 			}
 			if (desiredMove.y)
 			{
-				fixed16_16 deltaY = mul16(actor->target.speedVert, s_deltaTime);
+				fixed16_16 deltaY = mul16(moveMod->target.speedVert, s_deltaTime);
 				if (desiredMove.y < 0) { deltaY = -deltaY; }
 
 				fixed16_16 absDy = (desiredMove.y < 0) ? -desiredMove.y : desiredMove.y;
@@ -1354,11 +1354,11 @@ namespace TFE_DarkForces
 			}
 		}
 
-		if (actor->delta.y)
+		if (moveMod->delta.y)
 		{
-			move.y += actor->delta.y;
+			move.y += moveMod->delta.y;
 		}
-		CollisionInfo* physics = &actor->physics;
+		CollisionInfo* physics = &moveMod->physics;
 		fixed16_16 dirX, dirZ;
 		if (move.x | move.y | move.z)
 		{
@@ -1380,9 +1380,9 @@ namespace TFE_DarkForces
 					}
 				}
 				// Handles a single collision response + resolution step.
-				if (actor->collisionFlags & 4)
+				if (moveMod->collisionFlags & 4)
 				{
-					actor->collisionWall = wall;
+					moveMod->collisionWall = wall;
 					dirX = physics->responseDir.x;
 					dirZ = physics->responseDir.z;
 					handleCollisionResponseSimple(dirX, dirZ, &physics->offsetX, &physics->offsetZ);
@@ -1392,18 +1392,18 @@ namespace TFE_DarkForces
 		}
 
 		// Apply the per-frame delta computed from the actor's velocity.
-		if (actor->delta.x | actor->delta.z)
+		if (moveMod->delta.x | moveMod->delta.z)
 		{
 			physics->flags |= 1;
-			physics->offsetX = actor->delta.x;
+			physics->offsetX = moveMod->delta.x;
 			physics->offsetY = 0;
-			physics->offsetZ = actor->delta.z;
+			physics->offsetZ = moveMod->delta.z;
 			handleCollision(physics);
 
 			// Handles a single collision response + resolution step from velocity delta.
-			if ((actor->collisionFlags & 4) && physics->responseStep)
+			if ((moveMod->collisionFlags & 4) && physics->responseStep)
 			{
-				actor->collisionWall = physics->wall;
+				moveMod->collisionWall = physics->wall;
 				dirX = physics->responseDir.x;
 				dirZ = physics->responseDir.z;
 				handleCollisionResponseSimple(dirX, dirZ, &physics->offsetX, &physics->offsetZ);
@@ -1433,20 +1433,20 @@ namespace TFE_DarkForces
 		return change;
 	}
 
-	void actor_applyTransform(Actor* actor)
+	void actor_applyTransform(MovementModule* moveMod)
 	{
-		SecObject* obj = actor->header.obj;
-		if (actor->target.flags & 8)
+		SecObject* obj = moveMod->header.obj;
+		if (moveMod->target.flags & 8)
 		{
 			return;
 		}
 
-		const angle14_32 speedRotation = actor->target.speedRotation & 0xffff;
+		const angle14_32 speedRotation = moveMod->target.speedRotation & 0xffff;
 		if (speedRotation == 0)
 		{
-			obj->pitch = actor->target.pitch;
-			obj->yaw   = actor->target.yaw;
-			obj->roll  = actor->target.roll;
+			obj->pitch = moveMod->target.pitch;
+			obj->yaw   = moveMod->target.yaw;
+			obj->roll  = moveMod->target.roll;
 			if (obj->type & OBJ_TYPE_3D)
 			{
 				obj3d_computeTransform(obj);
@@ -1454,9 +1454,9 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			const angle14_32 pitchDiff = getAngleDifference(obj->pitch, actor->target.pitch);
-			const angle14_32 yawDiff   = getAngleDifference(obj->yaw,   actor->target.yaw);
-			const angle14_32 rollDiff  = getAngleDifference(obj->roll,  actor->target.roll);
+			const angle14_32 pitchDiff = getAngleDifference(obj->pitch, moveMod->target.pitch);
+			const angle14_32 yawDiff   = getAngleDifference(obj->yaw,   moveMod->target.yaw);
+			const angle14_32 rollDiff  = getAngleDifference(obj->roll,  moveMod->target.roll);
 			if (yawDiff | pitchDiff | rollDiff)
 			{
 				const fixed16_16 angularSpd = mul16(intToFixed16(speedRotation), s_deltaTime);
@@ -1473,79 +1473,79 @@ namespace TFE_DarkForces
 		}
 	}
 
-	JBool defaultActorFunc(ActorModule* module, Actor* baseActor)
+	JBool defaultActorFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		// This is really a regular actor...
 		Actor* actor = (Actor*)module;
-		actor->physics.wall = nullptr;
-		actor->physics.u24 = 0;
+		moveMod->physics.wall = nullptr;
+		moveMod->physics.u24 = 0;
 
-		if (actor->target.flags & 4)
+		if (moveMod->target.flags & 4)
 		{
-			actor_applyTransform(actor);
+			actor_applyTransform(moveMod);
 		}
 
-		if ((actor->target.flags & 1) || (actor->target.flags & 2) || actor->delta.x || actor->delta.y || actor->delta.z)
+		if ((moveMod->target.flags & 1) || (moveMod->target.flags & 2) || moveMod->delta.x || moveMod->delta.y || moveMod->delta.z)
 		{
-			actor_handleMovementAndCollision(actor);
+			actor_handleMovementAndCollision(moveMod);
 		}
-		actor->target.flags &= ~(1 | 2 | 4);
+		moveMod->target.flags &= ~(1 | 2 | 4);
 		return JFALSE;
 	}
 
 	// Updates the actor target with the passed in target based on the flags.
-	JBool defaultUpdateTargetFunc(Actor* actor, ActorTarget* target)
+	JBool defaultUpdateTargetFunc(MovementModule* moveMod, ActorTarget* target)
 	{
 		if (target->flags & 8)
 		{
-			actor->target.flags |= 8;
+			moveMod->target.flags |= 8;
 		}
 		else
 		{
-			actor->target.flags &= ~8;
+			moveMod->target.flags &= ~8;
 			if (target->flags & 1)
 			{
-				actor->target.pos.x = target->pos.x;
-				actor->target.pos.z = target->pos.z;
-				actor->target.speed = target->speed;
-				actor->target.flags |= 1;
+				moveMod->target.pos.x = target->pos.x;
+				moveMod->target.pos.z = target->pos.z;
+				moveMod->target.speed = target->speed;
+				moveMod->target.flags |= 1;
 			}
 			if (target->flags & 2)
 			{
-				actor->target.pos.y = target->pos.y;
-				actor->target.speedVert = target->speedVert;
-				actor->target.flags |= 2;
+				moveMod->target.pos.y = target->pos.y;
+				moveMod->target.speedVert = target->speedVert;
+				moveMod->target.flags |= 2;
 			}
 			if (target->flags & 4)
 			{
-				actor->target.pitch = target->pitch;
-				actor->target.yaw   = target->yaw;
-				actor->target.roll  = target->roll;
-				actor->target.speedRotation = target->speedRotation;
-				actor->target.flags |= 4;
+				moveMod->target.pitch = target->pitch;
+				moveMod->target.yaw   = target->yaw;
+				moveMod->target.roll  = target->roll;
+				moveMod->target.speedRotation = target->speedRotation;
+				moveMod->target.flags |= 4;
 			}
 		}
 		return JFALSE;
 	}
 
-	void actor_setupSmartObj(Actor* actor)
+	void actor_setupSmartObj(MovementModule* moveMod)
 	{
-		SecObject* obj = actor->header.obj;
+		SecObject* obj = moveMod->header.obj;
 
-		actor->physics.botOffset = 0x38000;	// 3.5
-		actor->physics.yPos = FIXED(4);
-		actor->physics.height = obj->worldHeight;
-		actor->physics.width = obj->worldWidth;
-		actor->physics.responseStep = JFALSE;
-		actor->target.speed = ONE_16;
-		actor->target.speedVert = ONE_16;
-		actor->target.speedRotation = FIXED(45);
-		actor->target.flags &= 0xf0;
-		actor->delta = { 0, 0, 0 };
-		actor->collisionWall = nullptr;
-		actor->u9c = 0;
+		moveMod->physics.botOffset = 0x38000;	// 3.5
+		moveMod->physics.yPos = FIXED(4);
+		moveMod->physics.height = obj->worldHeight;
+		moveMod->physics.width = obj->worldWidth;
+		moveMod->physics.responseStep = JFALSE;
+		moveMod->target.speed = ONE_16;
+		moveMod->target.speedVert = ONE_16;
+		moveMod->target.speedRotation = FIXED(45);
+		moveMod->target.flags &= 0xf0;
+		moveMod->delta = { 0, 0, 0 };
+		moveMod->collisionWall = nullptr;
+		moveMod->u9c = 0;
 
-		actor->collisionFlags = (actor->collisionFlags | 3) & 0xfffffffb;
+		moveMod->collisionFlags = (moveMod->collisionFlags | 3) & 0xfffffffb;
 		obj->entityFlags |= ETFLAG_SMART_OBJ;
 	}
 
@@ -1624,24 +1624,24 @@ namespace TFE_DarkForces
 		return JFALSE;
 	}
 
-	Actor* actor_create(Logic* logic)
+	MovementModule* actor_createMovementModule(ActorDispatch* dispatch)
 	{
-		Actor* actor = (Actor*)level_alloc(sizeof(Actor));
-		memset(actor, 0, sizeof(Actor));
+		MovementModule* moveMod = (MovementModule*)level_alloc(sizeof(MovementModule));
+		memset(moveMod, 0, sizeof(MovementModule));
 
-		actor_initModule(&actor->header, logic);
-		actor_setupSmartObj(actor);
+		actor_initModule((ActorModule*)moveMod, (Logic*)dispatch);
+		actor_setupSmartObj(moveMod);
 
-		actor->header.func = defaultActorFunc;
-		actor->header.freeFunc = nullptr;
-		actor->updateTargetFunc = defaultUpdateTargetFunc;
+		moveMod->header.func = defaultActorFunc;
+		moveMod->header.freeFunc = nullptr;
+		moveMod->updateTargetFunc = defaultUpdateTargetFunc;
 		// Overwrites width even though it was set in actor_setupSmartObj()
-		actor->physics.width = 0x18000;	// 1.5 units
-		actor->physics.wall = nullptr;
-		actor->physics.u24 = 0;
-		actor->physics.obj = actor->header.obj;
+		moveMod->physics.width = 0x18000;	// 1.5 units
+		moveMod->physics.wall = nullptr;
+		moveMod->physics.u24 = 0;
+		moveMod->physics.obj = moveMod->header.obj;
 
-		return actor;
+		return moveMod;
 	}
 
 	void actorLogicCleanupFunc(Logic* logic)
@@ -1669,10 +1669,10 @@ namespace TFE_DarkForces
 			task_runAndReturn(dispatch->freeTask, MSG_FREE);
 		}
 
-		ActorModule* mover = dispatch->mover;
-		if (mover && mover->freeFunc)
+		ActorModule* moveMod = (ActorModule*)dispatch->moveMod;
+		if (moveMod && moveMod->freeFunc)
 		{
-			mover->freeFunc(mover);
+			moveMod->freeFunc(moveMod);
 		}
 		deleteLogicAndObject((Logic*)dispatch);
 		allocator_deleteItem(s_istate.actorDispatch, dispatch);
@@ -1802,7 +1802,7 @@ namespace TFE_DarkForces
 
 	JBool actor_canDie(PhysicsActor* phyActor)
 	{
-		SecObject* obj = phyActor->actor.header.obj;
+		SecObject* obj = phyActor->moveMod.header.obj;
 		RSector* sector = obj->sector;
 		if (sector->secHeight <= 0 && obj->posWS.y <= sector->floorHeight)
 		{
@@ -1853,17 +1853,17 @@ namespace TFE_DarkForces
 	
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic)
 	{
-		ActorDispatch* actorLogic = (ActorDispatch*)logic;
+		ActorDispatch* dispatch = (ActorDispatch*)logic;
 		s_actorState.curLogic = (Logic*)logic;
 		SecObject* obj = s_actorState.curLogic->obj;
 		for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 		{
-			ActorModule* module = actorLogic->modules[ACTOR_MAX_MODULES - 1 - i];
+			ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
 			if (module)
 			{
 				if (module->msgFunc)
 				{
-					Tick nextTick = module->msgFunc(msg, module, (Actor*)actorLogic->mover);
+					Tick nextTick = module->msgFunc(msg, module, (MovementModule*)dispatch->moveMod);
 					if (nextTick != 0xffffffff)
 					{
 						module->nextTick = nextTick;
@@ -1874,27 +1874,27 @@ namespace TFE_DarkForces
 
 		if (msg == MSG_WAKEUP)
 		{
-			if (actorLogic->flags & 1)
+			if (dispatch->flags & 1)
 			{
 				gameMusic_startFight();
 			}
 
-			if ((actorLogic->flags & 4) && (actorLogic->flags & 1))
+			if ((dispatch->flags & 4) && (dispatch->flags & 1))
 			{
 				if (s_actorState.nextAlertTick < s_curTick)
 				{
-					if (actorLogic->flags & 16)  // Officer alert list.
+					if (dispatch->flags & 16)  // Officer alert list.
 					{
-						actorLogic->alertSndID = sound_playCued(s_officerAlertSndSrc[s_actorState.officerAlertIndex], obj->posWS);
+						dispatch->alertSndID = sound_playCued(s_officerAlertSndSrc[s_actorState.officerAlertIndex], obj->posWS);
 						s_actorState.officerAlertIndex++;
 						if (s_actorState.officerAlertIndex >= 4)
 						{
 							s_actorState.officerAlertIndex = 0;
 						}
 					}
-					else if (actorLogic->flags & 32)  // Storm trooper alert list
+					else if (dispatch->flags & 32)  // Storm trooper alert list
 					{
-						actorLogic->alertSndID = sound_playCued(s_stormAlertSndSrc[s_actorState.stormtrooperAlertIndex], obj->posWS);
+						dispatch->alertSndID = sound_playCued(s_stormAlertSndSrc[s_actorState.stormtrooperAlertIndex], obj->posWS);
 						s_actorState.stormtrooperAlertIndex++;
 						if (s_actorState.stormtrooperAlertIndex >= 8)
 						{
@@ -1903,20 +1903,20 @@ namespace TFE_DarkForces
 					}
 					else // Single alert.
 					{
-						actorLogic->alertSndID = sound_playCued(actorLogic->alertSndSrc, obj->posWS);
+						dispatch->alertSndID = sound_playCued(dispatch->alertSndSrc, obj->posWS);
 					}
 					s_actorState.nextAlertTick = s_curTick + 291;	// ~2 seconds between alerts
 				}
-				actorLogic->flags &= 0xfffffffe;
+				dispatch->flags &= 0xfffffffe;
 			}
 		}
 		else if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
 		{
-			if (actorLogic->flags & 1)
+			if (dispatch->flags & 1)
 			{
 				gameMusic_startFight();
 			}
-			actorLogic->flags &= ~1;
+			dispatch->flags &= ~1;
 			s_actorState.curAnimation = nullptr;
 		}
 	}
@@ -1926,18 +1926,18 @@ namespace TFE_DarkForces
 		message_sendToObj(obj, MSG_TERMINAL_VEL, actor_hitEffectMsgFunc);
 	}
 
-	void actor_handlePhysics(Actor* phyObj, vec3_fixed* vel)
+	void actor_handlePhysics(MovementModule* moveMod, vec3_fixed* vel)
 	{
-		SecObject* obj = phyObj->physics.obj;
+		SecObject* obj = moveMod->physics.obj;
 		assert(obj && obj->sector);
 
-		phyObj->delta = { 0, 0, 0 };
-		if (vel->x) { phyObj->delta.x = mul16(vel->x, s_deltaTime); }
-		if (vel->y) { phyObj->delta.y = mul16(vel->y, s_deltaTime); }
-		if (vel->z) { phyObj->delta.z = mul16(vel->z, s_deltaTime); }
+		moveMod->delta = { 0, 0, 0 };
+		if (vel->x) { moveMod->delta.x = mul16(vel->x, s_deltaTime); }
+		if (vel->y) { moveMod->delta.y = mul16(vel->y, s_deltaTime); }
+		if (vel->z) { moveMod->delta.z = mul16(vel->z, s_deltaTime); }
 
 		fixed16_16 friction = ONE_16 - s_deltaTime*2;
-		if (phyObj->collisionFlags & ACTORCOL_GRAVITY)
+		if (moveMod->collisionFlags & ACTORCOL_GRAVITY)
 		{
 			fixed16_16 ceilHeight, floorHeight;
 			sector_getObjFloorAndCeilHeight(obj->sector, obj->posWS.y, &floorHeight, &ceilHeight);
@@ -1953,7 +1953,7 @@ namespace TFE_DarkForces
 			if (vel->y < 0)
 			{
 				// Did the object hit the ceiling?
-				if (obj->posWS.y <= ceilHeight + phyObj->physics.height)
+				if (obj->posWS.y <= ceilHeight + moveMod->physics.height)
 				{
 					vertCollision = JTRUE;
 					hitCeiling = JTRUE;
@@ -2042,21 +2042,21 @@ namespace TFE_DarkForces
 							{
 								if (module->func && module->nextTick < s_curTick)
 								{
-									module->nextTick = module->func(module, (Actor*)dispatch->mover);
+									module->nextTick = module->func(module, (MovementModule*)dispatch->moveMod);
 								}
 							}
 						}
 
 						if (s_actorState.curLogic && !(dispatch->flags & 1))
 						{
-							ActorModule* mover = dispatch->mover;
-							if (mover)
+							MovementModule* moveMod = dispatch->moveMod;
+							if (moveMod)
 							{
-								ActorFunc func = mover->func;
+								ActorFunc func = moveMod->header.func;
 								if (func)
 								{
-									actor_handlePhysics((Actor*)mover, &dispatch->vel);
-									func(mover, (Actor*)mover);
+									actor_handlePhysics(moveMod, &dispatch->vel);
+									func((ActorModule*)moveMod, moveMod);
 								}
 							}
 
@@ -2091,25 +2091,25 @@ namespace TFE_DarkForces
 			while (phyObjPtr)
 			{
 				PhysicsActor* phyObj = *phyObjPtr;
-				phyObj->actor.physics.wall = nullptr;
-				phyObj->actor.physics.u24 = 0;
-				if (phyObj->actor.target.flags & 4)
+				phyObj->moveMod.physics.wall = nullptr;
+				phyObj->moveMod.physics.u24 = 0;
+				if (phyObj->moveMod.target.flags & 4)
 				{
-					actor_applyTransform(&phyObj->actor);
+					actor_applyTransform(&phyObj->moveMod);
 				}
-				actor_handlePhysics(&phyObj->actor, &phyObj->vel);
+				actor_handlePhysics(&phyObj->moveMod, &phyObj->vel);
 
-				if ((phyObj->actor.target.flags & 1) || (phyObj->actor.target.flags & 2) || phyObj->vel.x || phyObj->vel.y || phyObj->vel.z)
+				if ((phyObj->moveMod.target.flags & 1) || (phyObj->moveMod.target.flags & 2) || phyObj->vel.x || phyObj->vel.y || phyObj->vel.z)
 				{
-					actor_handleMovementAndCollision(&phyObj->actor);
-					CollisionInfo* physics = &phyObj->actor.physics;
+					actor_handleMovementAndCollision(&phyObj->moveMod);
+					CollisionInfo* physics = &phyObj->moveMod.physics;
 					if (physics->responseStep)
 					{
 						handleCollisionResponseSimple(physics->responseDir.x, physics->responseDir.z, &phyObj->vel.x, &phyObj->vel.z);
 					}
 				}
 
-				SecObject* obj = phyObj->actor.header.obj;
+				SecObject* obj = phyObj->moveMod.header.obj;
 				LogicAnimation* anim = &phyObj->anim;
 				if (obj->type & OBJ_TYPE_SPRITE)
 				{

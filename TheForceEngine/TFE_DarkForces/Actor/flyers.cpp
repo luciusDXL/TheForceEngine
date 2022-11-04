@@ -24,7 +24,7 @@ namespace TFE_DarkForces
 	static const s32 s_remoteAnimTable[] =
 	{ 0, 0, 2, 3, -1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1 };
 		
-	u32 flyingActorFunc(ActorModule* module, Actor* actor)
+	u32 flyingActorFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		ActorFlyer* flyingActor = (ActorFlyer*)module;
 		SecObject* obj = flyingActor->header.obj;
@@ -35,11 +35,11 @@ namespace TFE_DarkForces
 		}
 		else if (flyingActor->state == 1)
 		{
-			if (actor_handleSteps(actor, &flyingActor->target))
+			if (actor_handleSteps(moveMod, &flyingActor->target))
 			{
 				flyingActor->state = 0;
 			}
-			SecObject* actorObj = actor->header.obj;
+			SecObject* actorObj = moveMod->header.obj;
 			if (actor_arrivedAtTarget(&flyingActor->target, actorObj))
 			{
 				flyingActor->state = 0;
@@ -62,11 +62,11 @@ namespace TFE_DarkForces
 			}
 		}
 
-		actor->updateTargetFunc(actor, &flyingActor->target);
+		moveMod->updateTargetFunc(moveMod, &flyingActor->target);
 		return 0;
 	}
 
-	u32 flyingActorAiFunc2(ActorModule* module, Actor* actor)
+	u32 flyingActorAiFunc2(ActorModule* module, MovementModule* moveMod)
 	{
 		ActorFlyer* flyingActor = (ActorFlyer*)module;
 		ActorTarget* target = &flyingActor->target;
@@ -93,7 +93,7 @@ namespace TFE_DarkForces
 			flyingActor->state = 1;
 		}
 
-		actor->updateTargetFunc(actor, target);
+		moveMod->updateTargetFunc(moveMod, target);
 		return 0;
 	}
 
@@ -185,11 +185,11 @@ namespace TFE_DarkForces
 		flyingActor->delay = 436;	// just shy of 3 seconds.
 		actor_addModule(dispatch, (ActorModule*)flyingActor);
 				
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
-		actor->collisionFlags = (actor->collisionFlags & 0xfffffff8) | 4;
-		actor->physics.yPos = FIXED(200);
-		actor->physics.width = obj->worldWidth;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
+		moveMod->collisionFlags = (moveMod->collisionFlags & 0xfffffff8) | 4;
+		moveMod->physics.yPos = FIXED(200);
+		moveMod->physics.width = obj->worldWidth;
 
 		// Setup the animation.
 		dispatch->animTable = s_intDroidAnimTable;
@@ -235,11 +235,11 @@ namespace TFE_DarkForces
 		flyingActor->delay = 436;	// just shy of 3 seconds.
 		actor_addModule(dispatch, (ActorModule*)flyingActor);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
-		actor->collisionFlags = (actor->collisionFlags & 0xfffffff8) | 4;
-		actor->physics.yPos = FIXED(200);
-		actor->physics.width = obj->worldWidth;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
+		moveMod->collisionFlags = (moveMod->collisionFlags & 0xfffffff8) | 4;
+		moveMod->physics.yPos = FIXED(200);
+		moveMod->physics.width = obj->worldWidth;
 
 		// Setup the animation.
 		dispatch->animTable = s_probeDroidAnimTable;
@@ -290,14 +290,14 @@ namespace TFE_DarkForces
 		flyingActor->delay = 291;
 		actor_addModule(dispatch, (ActorModule*)flyingActor);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
-		actor->collisionFlags &= 0xfffffff8;
-		actor->collisionFlags |= 4;
-		actor->physics.yPos = FIXED(200);
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
+		moveMod->collisionFlags &= 0xfffffff8;
+		moveMod->collisionFlags |= 4;
+		moveMod->physics.yPos = FIXED(200);
 
 		// should be: 0xa7ec
-		actor->physics.width = obj->worldWidth >> 1;
+		moveMod->physics.width = obj->worldWidth >> 1;
 		obj->entityFlags &= 0xfffff7ff;
 		dispatch->animTable = s_remoteAnimTable;
 		actor_setupInitAnimation();

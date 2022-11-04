@@ -78,7 +78,7 @@ namespace TFE_DarkForces
 		local(trooper) = s_curTrooper;
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 		local(trooper)->noDeath = JTRUE;
 
@@ -145,7 +145,7 @@ namespace TFE_DarkForces
 		local(trooper) = s_curTrooper;
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 		local(trooper)->noDeath = JTRUE;
 
@@ -262,7 +262,7 @@ namespace TFE_DarkForces
 		local(trooper) = s_curTrooper;
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 		local(prevColTick) = 0;
 		local(target)->flags &= 0xfffffff7;
@@ -287,12 +287,12 @@ namespace TFE_DarkForces
 
 			local(target)->speed = FIXED(60);
 			local(flying) = JTRUE;
-			local(physicsActor)->actor.collisionFlags &= 0xfffffffc;
-			local(physicsActor)->actor.physics.yPos = FIXED(9999);
+			local(physicsActor)->moveMod.collisionFlags &= 0xfffffffc;
+			local(physicsActor)->moveMod.physics.yPos = FIXED(9999);
 		}
 		else
 		{
-			local(physicsActor)->actor.collisionFlags |= 3;
+			local(physicsActor)->moveMod.collisionFlags |= 3;
 			local(target)->speed = FIXED(15);
 			local(flying) = JFALSE;
 			local(anim)->flags &= 0xfffffffe;
@@ -327,8 +327,8 @@ namespace TFE_DarkForces
 								task_callTaskFunc(phaseTwo_handleMsg);
 							} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
-							local(physicsActor)->actor.collisionFlags |= 3;
-							local(physicsActor)->actor.physics.yPos = FIXED(9999);
+							local(physicsActor)->moveMod.collisionFlags |= 3;
+							local(physicsActor)->moveMod.physics.yPos = FIXED(9999);
 							local(target)->speed = FIXED(15);
 							local(target)->flags &= 0xfffffffd;
 							sound_stop(local(trooper)->rocketSndId);
@@ -344,10 +344,10 @@ namespace TFE_DarkForces
 			if (local(physicsActor)->state != P2STATE_CHARGE) { break; }
 
 			local(target)->flags &= 0xfffffff7;
-			if (actor_handleSteps(&local(physicsActor)->actor, local(target)))
+			if (actor_handleSteps(&local(physicsActor)->moveMod, local(target)))
 			{
 				// Change direction if the Trooper hits a wall or impassable ledge or drop.
-				actor_changeDirFromCollision(&local(physicsActor)->actor, local(target), &local(prevColTick));
+				actor_changeDirFromCollision(&local(physicsActor)->moveMod, local(target), &local(prevColTick));
 			}
 			else
 			{
@@ -399,7 +399,7 @@ namespace TFE_DarkForces
 		local(trooper) = s_curTrooper;
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim)   = &local(physicsActor)->anim;
 		local(odd)    = (s_curTick & 1) ? JFALSE : JTRUE;
 		local(anim)->flags &= 0xfffffffe;
@@ -436,7 +436,7 @@ namespace TFE_DarkForces
 			if (local(physicsActor)->state != P2STATE_WANDER) { break; }
 
 			task_localBlockBegin;
-			CollisionInfo* collisionInfo = &local(physicsActor)->actor.physics;
+			CollisionInfo* collisionInfo = &local(physicsActor)->moveMod.physics;
 			if (collisionInfo->wall || collisionInfo->collidedObj)
 			{
 				local(physicsActor)->state = P2STATE_CHARGE;
@@ -506,11 +506,11 @@ namespace TFE_DarkForces
 		local(trooper) = s_curTrooper;
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags &= 0xfffffffe;
-		local(physicsActor)->actor.collisionFlags |= 3;
+		local(physicsActor)->moveMod.collisionFlags |= 3;
 		while (local(physicsActor)->state == P2STATE_FIRE_MISSILES)
 		{
 			do
@@ -584,11 +584,11 @@ namespace TFE_DarkForces
 		local(trooper) = s_curTrooper;
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags &= 0xfffffffe;
-		local(physicsActor)->actor.collisionFlags |= 3;
+		local(physicsActor)->moveMod.collisionFlags |= 3;
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 1, local(anim));
@@ -661,7 +661,7 @@ namespace TFE_DarkForces
 		local(trooper) = s_curTrooper;
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags |= 8;
@@ -670,7 +670,7 @@ namespace TFE_DarkForces
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 2, local(anim));
-		local(physicsActor)->actor.collisionFlags |= 3;
+		local(physicsActor)->moveMod.collisionFlags |= 3;
 
 		// Wait for the animation to finish.
 		do
@@ -775,7 +775,7 @@ namespace TFE_DarkForces
 		local(trooper) = s_curTrooper;
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		local(updateTargetPos) = JTRUE;
@@ -790,7 +790,7 @@ namespace TFE_DarkForces
 
 		local(target)->flags &= 0xfffffff7;
 		local(target)->speed = FIXED(30);
-		local(physicsActor)->actor.collisionFlags &= 0xfffffffc;
+		local(physicsActor)->moveMod.collisionFlags &= 0xfffffffc;
 
 		while (local(physicsActor)->state == P2STATE_SEARCH || local(forceContinue))
 		{
@@ -851,9 +851,9 @@ namespace TFE_DarkForces
 				local(retargetTick) = s_curTick + local(delay);
 			}
 
-			if (actor_handleSteps(&local(physicsActor)->actor, local(target)))
+			if (actor_handleSteps(&local(physicsActor)->moveMod, local(target)))
 			{
-				actor_changeDirFromCollision(&local(physicsActor)->actor, local(target), &local(prevColTick));
+				actor_changeDirFromCollision(&local(physicsActor)->moveMod, local(target), &local(prevColTick));
 				local(delay) += 36;
 				local(forceContinue) = JTRUE;
 				if (local(delay) > 582)
@@ -887,7 +887,7 @@ namespace TFE_DarkForces
 		local(trooper) = (PhaseTwo*)task_getUserData();
 		local(obj) = local(trooper)->logic.obj;
 		local(physicsActor) = &local(trooper)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
 		while (local(physicsActor)->alive)
@@ -1020,14 +1020,14 @@ namespace TFE_DarkForces
 		trooper->logic.obj = obj;
 		actor_addPhysicsActorToWorld(physicsActor);
 
-		physicsActor->actor.header.obj = obj;
-		physicsActor->actor.physics.obj = obj;
-		actor_setupSmartObj(&physicsActor->actor);
+		physicsActor->moveMod.header.obj = obj;
+		physicsActor->moveMod.physics.obj = obj;
+		actor_setupSmartObj(&physicsActor->moveMod);
 
-		physicsActor->actor.collisionFlags |= 7;
-		physicsActor->actor.physics.yPos = FIXED(9999);
+		physicsActor->moveMod.collisionFlags |= 7;
+		physicsActor->moveMod.physics.yPos = FIXED(9999);
 
-		ActorTarget* target = &physicsActor->actor.target;
+		ActorTarget* target = &physicsActor->moveMod.target;
 		target->flags &= 0xfffffff0;
 		target->speed = FIXED(15);
 		target->speedVert = FIXED(10);

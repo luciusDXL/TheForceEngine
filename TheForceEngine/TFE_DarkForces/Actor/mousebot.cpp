@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 			MouseBot* mouseBot;
 			SecObject* obj;
 			PhysicsActor* phyActor;
-			Actor* actor;
+			MovementModule* moveMod;
 			CollisionInfo* colInfo;
 			Tick tick;
 
@@ -114,11 +114,11 @@ namespace TFE_DarkForces
 		local(mouseBot) = s_curMouseBot;
 		local(obj)      = local(mouseBot)->logic.obj;
 		local(phyActor) = &local(mouseBot)->actor;
-		local(actor)    = &local(phyActor)->actor;
-		local(colInfo)  = &local(actor)->physics;
+		local(moveMod)  = &local(phyActor)->moveMod;
+		local(colInfo)  = &local(moveMod)->physics;
 
-		local(actor)->target.pos = local(obj)->posWS;
-		local(actor)->target.yaw = local(obj)->yaw;
+		local(moveMod)->target.pos = local(obj)->posWS;
+		local(moveMod)->target.yaw = local(obj)->yaw;
 
 		local(tick) = s_curTick;
 		local(odd)  = JFALSE;
@@ -157,15 +157,15 @@ namespace TFE_DarkForces
 			}
 
 			angle14_32 yaw = local(obj)->yaw & ANGLE_MASK;
-			angle14_32 actorYaw = local(actor)->target.yaw & ANGLE_MASK;
+			angle14_32 actorYaw = local(moveMod)->target.yaw & ANGLE_MASK;
 			if (actorYaw == yaw)
 			{
 				local(odd) = (s_curTick & 1) ? JTRUE : JFALSE;
 				angle14_32 deltaYaw = random(16338);
-				local(actor)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);
+				local(moveMod)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);
 
-				local(actor)->target.speedRotation = random(0x3555) + 0x555;
-				local(actor)->target.flags |= 4;
+				local(moveMod)->target.speedRotation = random(0x3555) + 0x555;
+				local(moveMod)->target.flags |= 4;
 				local(flip) = JFALSE;
 			}
 
@@ -178,24 +178,24 @@ namespace TFE_DarkForces
 				}
 				if (local(odd))
 				{
-					local(actor)->target.yaw += 4096;
+					local(moveMod)->target.yaw += 4096;
 				}
 				else
 				{
-					local(actor)->target.yaw -= 4096;
+					local(moveMod)->target.yaw -= 4096;
 				}
-				local(actor)->target.speedRotation = random(0x3555);
+				local(moveMod)->target.speedRotation = random(0x3555);
 				local(flip) = ~local(flip);
 			}
 
 			fixed16_16 speed = local(flip) ? -FIXED(22) : FIXED(22);
 			fixed16_16 cosYaw, sinYaw;
 			sinCosFixed(local(obj)->yaw, &sinYaw, &cosYaw);
-			local(actor)->target.pos.x = local(obj)->posWS.x + mul16(sinYaw, speed);
-			local(actor)->target.pos.z = local(obj)->posWS.z + mul16(cosYaw, speed);
+			local(moveMod)->target.pos.x = local(obj)->posWS.x + mul16(sinYaw, speed);
+			local(moveMod)->target.pos.z = local(obj)->posWS.z + mul16(cosYaw, speed);
 
-			local(actor)->target.speed = FIXED(22);
-			local(actor)->target.flags |= 1;
+			local(moveMod)->target.speed = FIXED(22);
+			local(moveMod)->target.flags |= 1;
 		}
 		task_end;
 	}
@@ -205,17 +205,17 @@ namespace TFE_DarkForces
 		struct LocalContext
 		{
 			MouseBot* mouseBot;
-			Actor* actor;
+			MovementModule* moveMod;
 			SecObject* obj;
 			RSector* sector;
 		};
 		task_begin_ctx;
 		local(mouseBot) = s_curMouseBot;
 		local(obj)      = local(mouseBot)->logic.obj;
-		local(actor)    = &local(mouseBot)->actor.actor;
+		local(moveMod)  = &local(mouseBot)->actor.moveMod;
 		local(sector)   = local(obj)->sector;
 
-		local(actor)->target.flags |= 8;
+		local(moveMod)->target.flags |= 8;
 		sound_playCued(s_mouseBotRes.sound2, local(obj)->posWS);
 
 		while (1)
@@ -386,26 +386,26 @@ namespace TFE_DarkForces
 		physActor->hp = FIXED(10);
 		physActor->actorTask = mouseBotTask;
 		physActor->state = MBSTATE_SLEEPING;
-		physActor->actor.header.obj = obj;
-		physActor->actor.physics.obj = obj;
+		physActor->moveMod.header.obj = obj;
+		physActor->moveMod.physics.obj = obj;
 		actor_addPhysicsActorToWorld(physActor);
-		actor_setupSmartObj(&physActor->actor);
+		actor_setupSmartObj(&physActor->moveMod);
 
 		JediModel* model = obj->model;
 		fixed16_16 width = model->radius + ONE_16;
 		obj->worldWidth  = width;
 		obj->worldHeight = width >> 1;
 
-		physActor->actor.physics.botOffset = 0;
-		physActor->actor.physics.yPos = 0;
-		physActor->actor.collisionFlags = (physActor->actor.collisionFlags | 3) & 0xfffffffb;
-		physActor->actor.physics.height = obj->worldHeight + HALF_16;
-		physActor->actor.target.speed = FIXED(22);
-		physActor->actor.target.speedRotation = FIXED(3185);
-		physActor->actor.target.flags &= 0xfffffff0;
-		physActor->actor.target.pitch = obj->pitch;
-		physActor->actor.target.yaw   = obj->yaw;
-		physActor->actor.target.roll  = obj->roll;
+		physActor->moveMod.physics.botOffset = 0;
+		physActor->moveMod.physics.yPos = 0;
+		physActor->moveMod.collisionFlags = (physActor->moveMod.collisionFlags | 3) & 0xfffffffb;
+		physActor->moveMod.physics.height = obj->worldHeight + HALF_16;
+		physActor->moveMod.target.speed = FIXED(22);
+		physActor->moveMod.target.speedRotation = FIXED(3185);
+		physActor->moveMod.target.flags &= 0xfffffff0;
+		physActor->moveMod.target.pitch = obj->pitch;
+		physActor->moveMod.target.yaw   = obj->yaw;
+		physActor->moveMod.target.roll  = obj->roll;
 
 		obj_addLogic(obj, (Logic*)mouseBot, mouseBotTask, mouseBotLogicCleanupFunc);
 		if (setupFunc)

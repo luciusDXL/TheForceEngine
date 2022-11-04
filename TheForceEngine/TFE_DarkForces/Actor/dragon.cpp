@@ -98,7 +98,7 @@ namespace TFE_DarkForces
 				if (random(100) <= 20)
 				{
 					task_localBlockBegin;
-						ActorTarget* target = &local(physicsActor)->actor.target;
+						ActorTarget* target = &local(physicsActor)->moveMod.target;
 						target->flags |= 8;
 						memcpy(&local(tmpAnim), local(anim), sizeof(LogicAnimation) - 4);
 
@@ -116,7 +116,7 @@ namespace TFE_DarkForces
 						memcpy(local(anim), &local(tmpAnim), sizeof(LogicAnimation) - 4);
 						actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
 
-						ActorTarget* target = &local(physicsActor)->actor.target;
+						ActorTarget* target = &local(physicsActor)->moveMod.target;
 						target->flags &= 0xfffffff7;
 					task_localBlockEnd;
 				}
@@ -145,7 +145,7 @@ namespace TFE_DarkForces
 		local(obj) = local(dragon)->logic.obj;
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 
 		if (local(physicsActor)->alive)
 		{
@@ -312,7 +312,7 @@ namespace TFE_DarkForces
 		local(obj) = local(dragon)->logic.obj;
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(prevColTick) = 0;
 		local(yawAligned) = JFALSE;
 
@@ -389,9 +389,9 @@ namespace TFE_DarkForces
 			}
 
 			local(target)->flags &= 0xfffffff7;
-			if (actor_handleSteps(&local(physicsActor)->actor, local(target)))
+			if (actor_handleSteps(&local(physicsActor)->moveMod, local(target)))
 			{
-				actor_changeDirFromCollision(&local(physicsActor)->actor, local(target), &local(prevColTick));
+				actor_changeDirFromCollision(&local(physicsActor)->moveMod, local(target), &local(prevColTick));
 				local(dragon)->retreat = JTRUE;
 				local(target)->speedRotation = 11377;	// ~250 degrees per second.
 				local(dragon)->nextTick = s_curTick + 72;
@@ -441,7 +441,7 @@ namespace TFE_DarkForces
 		local(obj) = local(dragon)->logic.obj;
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim)->flags &= 0xfffffffe;
 
 		task_localBlockBegin;
@@ -519,7 +519,7 @@ namespace TFE_DarkForces
 		local(obj) = local(dragon)->logic.obj;
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		
 		while (local(physicsActor)->state == 3)
 		{
@@ -642,7 +642,7 @@ namespace TFE_DarkForces
 		local(obj) = local(dragon)->logic.obj;
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 
 		while (local(physicsActor)->state == 4)
 		{
@@ -726,7 +726,7 @@ namespace TFE_DarkForces
 		local(obj) = local(dragon)->logic.obj;
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 
 		local(target)->flags |= 8;
 		sound_playCued(s_kellSound3, local(obj)->posWS);
@@ -790,7 +790,7 @@ namespace TFE_DarkForces
 		local(obj) = local(dragon)->logic.obj;
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 
 		local(arrived) = JTRUE;
 		local(prevColTick) = 0;
@@ -874,9 +874,9 @@ namespace TFE_DarkForces
 				local(nextTick) = s_curTick + local(delay);
 			}
 
-			if (actor_handleSteps(&local(physicsActor)->actor, local(target)))
+			if (actor_handleSteps(&local(physicsActor)->moveMod, local(target)))
 			{
-				actor_changeDirFromCollision(&local(physicsActor)->actor, local(target), &local(prevColTick));
+				actor_changeDirFromCollision(&local(physicsActor)->moveMod, local(target), &local(prevColTick));
 
 				local(delay) += 72;
 				if (local(delay) > 1165) // ~8 seconds
@@ -1028,20 +1028,20 @@ namespace TFE_DarkForces
 		dragon->retreat = JFALSE;
 
 		actor_addPhysicsActorToWorld(physicsActor);
-		physicsActor->actor.header.obj = obj;
-		physicsActor->actor.physics.obj = obj;
-		actor_setupSmartObj(&physicsActor->actor);
+		physicsActor->moveMod.header.obj = obj;
+		physicsActor->moveMod.physics.obj = obj;
+		actor_setupSmartObj(&physicsActor->moveMod);
 
 		obj->flags |= OBJ_FLAG_MOVABLE;
 
-		CollisionInfo* physics = &physicsActor->actor.physics;
+		CollisionInfo* physics = &physicsActor->moveMod.physics;
 		physics->botOffset = 0x60000;
 		physics->yPos = 0x80000;
 		physics->width = obj->worldWidth;
-		physicsActor->actor.collisionFlags |= 7;
+		physicsActor->moveMod.collisionFlags |= 7;
 		physics->height = obj->worldHeight + HALF_16;
 
-		ActorTarget* target = &physicsActor->actor.target;
+		ActorTarget* target = &physicsActor->moveMod.target;
 		target->flags &= 0xfffffff0;
 		target->speedRotation = 43546;	// 956.8 degrees per second.
 		target->speed = FIXED(10);

@@ -22,9 +22,9 @@ namespace TFE_DarkForces
 	static const s32 s_sewerCreatureAnimTable[] =
 	{ -1, 1, 2, 3, 4, 5, 6, -1, -1, -1, -1, -1, -1, -1, 12, 13 };
 
-	u32 sewerCreatureDie(DamageModule* module, Actor* actor);
+	u32 sewerCreatureDie(DamageModule* module, MovementModule* moveMod);
 
-	JBool sewerCreatureAiFunc(ActorModule* module, Actor* actor)
+	JBool sewerCreatureAiFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -38,7 +38,7 @@ namespace TFE_DarkForces
 			{
 				actor_setCurAnimation(&attackMod->anim);
 			}
-			actor->updateTargetFunc(actor, &attackMod->target);
+			moveMod->updateTargetFunc(moveMod, &attackMod->target);
 			return 0;
 		}
 		else if (damageMod->hp > 0)
@@ -65,7 +65,7 @@ namespace TFE_DarkForces
 		return 0;
 	}
 	
-	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, Actor* actor)
+	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -81,7 +81,7 @@ namespace TFE_DarkForces
 				{
 					actor_setCurAnimation(&attackMod->anim);
 				}
-				actor->updateTargetFunc(actor, &attackMod->target);
+				moveMod->updateTargetFunc(moveMod, &attackMod->target);
 				return 0;
 			}
 
@@ -89,7 +89,7 @@ namespace TFE_DarkForces
 			damageMod->hp -= proj->dmg;
 			if (damageMod->hp <= 0)
 			{
-				return sewerCreatureDie(damageMod, actor);
+				return sewerCreatureDie(damageMod, moveMod);
 			}
 
 			sound_stop(damageMod->hurtSndID);
@@ -104,7 +104,7 @@ namespace TFE_DarkForces
 				{
 					actor_setCurAnimation(&attackMod->anim);
 				}
-				actor->updateTargetFunc(actor, &attackMod->target);
+				moveMod->updateTargetFunc(moveMod, &attackMod->target);
 				return 0;
 			}
 
@@ -116,12 +116,12 @@ namespace TFE_DarkForces
 				damageMod->hurtSndID = sound_playCued(damageMod->hurtSndSrc, obj->posWS);
 				return 0xffffffff;
 			}
-			return sewerCreatureDie(damageMod, actor);
+			return sewerCreatureDie(damageMod, moveMod);
 		}
 		return attackMod->header.nextTick;
 	}
 
-	JBool sewerCreatureEnemyFunc(ActorModule* module, Actor* actor)
+	JBool sewerCreatureEnemyFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -138,7 +138,7 @@ namespace TFE_DarkForces
 					obj->worldWidth = 0;
 					obj->posWS.y = sector->floorHeight + sector->secHeight;
 
-					actor->collisionFlags |= 1;
+					moveMod->collisionFlags |= 1;
 					attackMod->target.flags &= ~(1|2|4|8);
 					attackMod->anim.state = 1;
 					return s_curTick + random(attackMod->timing.delay);
@@ -161,7 +161,7 @@ namespace TFE_DarkForces
 				}
 
 				actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
-				actor->collisionFlags &= ~1;
+				moveMod->collisionFlags &= ~1;
 
 				obj->posWS.y = sector->floorHeight;
 				fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
@@ -226,7 +226,7 @@ namespace TFE_DarkForces
 		}
 
 		actor_setCurAnimation(&attackMod->anim);
-		actor->updateTargetFunc(actor, &attackMod->target);
+		moveMod->updateTargetFunc(moveMod, &attackMod->target);
 		return attackMod->timing.delay;
 	}
 
@@ -267,21 +267,21 @@ namespace TFE_DarkForces
 		thinkerMod->anim.flags &= 0xfffffffe;
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_sewerCreatureAnimTable;
 		obj->entityFlags &= ~ETFLAG_SMART_OBJ;
 
-		actor->collisionFlags = (actor->collisionFlags | 1) & 0xfffffffd;
-		actor->physics.yPos = 0;
-		actor->physics.botOffset = 0;
-		actor->physics.width = obj->worldWidth;
+		moveMod->collisionFlags = (moveMod->collisionFlags | 1) & 0xfffffffd;
+		moveMod->physics.yPos = 0;
+		moveMod->physics.botOffset = 0;
+		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;
 	}
 
-	u32 sewerCreatureDie(DamageModule* module, Actor* actor)
+	u32 sewerCreatureDie(DamageModule* module, MovementModule* moveMod)
 	{
 		AttackModule* attackMod = &module->attackMod;
 		SecObject* obj = attackMod->header.obj;
@@ -303,13 +303,13 @@ namespace TFE_DarkForces
 		}
 
 		obj->posWS.y = sector->floorHeight;
-		actor->collisionFlags &= 0xfffffffd;
+		moveMod->collisionFlags &= 0xfffffffd;
 
 		if (obj->type == OBJ_TYPE_SPRITE)
 		{
 			actor_setCurAnimation(&attackMod->anim);
 		}
-		actor->updateTargetFunc(actor, &attackMod->target);
+		moveMod->updateTargetFunc(moveMod, &attackMod->target);
 		return 0;
 	}
 }  // namespace TFE_DarkForces

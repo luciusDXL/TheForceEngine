@@ -69,7 +69,7 @@ struct ActorDispatch
 	Logic logic;
 
 	ActorModule* modules[ACTOR_MAX_MODULES];
-	ActorModule* mover;
+	MovementModule* moveMod;
 	const s32* animTable;
 
 	Tick delay;
@@ -110,14 +110,14 @@ namespace TFE_DarkForces
 
 	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc);
 	DamageModule* actor_createDamageModule(ActorDispatch* dispatch);
-	Actor* actor_create(Logic* logic);
+	MovementModule* actor_createMovementModule(ActorDispatch* dispatch);
 	void actor_addModule(ActorDispatch* dispatch, ActorModule* module);
 
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();
 	void actor_initModule(ActorModule* module, Logic* logic);
 	JBool actor_canDie(PhysicsActor* phyActor);
-	JBool actor_handleSteps(Actor* actor, ActorTarget* target);
+	JBool actor_handleSteps(MovementModule* moveMod, ActorTarget* target);
 	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj);
 	JBool actor_canSeeObjFromDist(SecObject* actorObj, SecObject* obj);
 	JBool actor_canSeeObject(SecObject* actorObj, SecObject* obj);
@@ -128,10 +128,10 @@ namespace TFE_DarkForces
 	void actor_setAnimFrameRange(LogicAnimation* anim, s32 startFrame, s32 endFrame);
 	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ);
 	void actor_removeLogics(SecObject* obj);
-	void actor_setupSmartObj(Actor* actor);
+	void actor_setupSmartObj(MovementModule* moveMod);
 	void actor_setCurAnimation(LogicAnimation* aiAnim);
 	void actor_updatePlayerVisiblity(JBool playerVis, fixed16_16 posX, fixed16_16 posZ);
-	void actor_changeDirFromCollision(Actor* actor, ActorTarget* target, Tick* prevColTick);
+	void actor_changeDirFromCollision(MovementModule* moveMod, ActorTarget* target, Tick* prevColTick);
 	void actor_jumpToTarget(PhysicsActor* physicsActor, SecObject* obj, vec3_fixed target, fixed16_16 speed, angle14_32 angleOffset);
 	void actor_leadTarget(ProjectileLogic* proj);
 	void actor_handleBossDeath(PhysicsActor* physicsActor);

@@ -58,12 +58,12 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_reeyeesAnimTable;
 
-		actor->collisionFlags |= 1;
-		actor->physics.width = obj->worldWidth;
+		moveMod->collisionFlags |= 1;
+		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;
@@ -96,12 +96,12 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_reeyeesAnimTable;
 
-		actor->collisionFlags |= 1;
-		actor->physics.width = obj->worldWidth;
+		moveMod->collisionFlags |= 1;
+		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;
@@ -138,12 +138,12 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_gamorAnimTable;
 
-		actor->collisionFlags |= 1;
-		actor->physics.width = obj->worldWidth;
+		moveMod->collisionFlags |= 1;
+		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;
@@ -179,12 +179,12 @@ namespace TFE_DarkForces
 		thinkerMod->startDelay = TICKS(2);
 		actor_addModule(dispatch, (ActorModule*)thinkerMod);
 
-		Actor* actor = actor_create((Logic*)dispatch);
-		dispatch->mover = (ActorModule*)actor;
+		MovementModule* moveMod = actor_createMovementModule(dispatch);
+		dispatch->moveMod = moveMod;
 		dispatch->animTable = s_bosskAnimTable;
 
-		actor->collisionFlags |= 1;
-		actor->physics.width = obj->worldWidth;
+		moveMod->collisionFlags |= 1;
+		moveMod->physics.width = obj->worldWidth;
 		actor_setupInitAnimation();
 
 		return (Logic*)dispatch;

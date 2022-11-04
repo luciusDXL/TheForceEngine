@@ -171,7 +171,7 @@ namespace TFE_DarkForces
 		local(welder) = s_curWelder;
 		local(obj) = local(welder)->logic.obj;
 		local(physicsActor) = &local(welder)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		local(sector) = local(obj)->sector;
 		local(attack) = JFALSE;
 
@@ -288,7 +288,7 @@ namespace TFE_DarkForces
 		local(welder) = s_curWelder;
 		local(obj) = local(welder)->logic.obj;
 		local(physicsActor) = &local(welder)->actor;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 
 		local(target)->yaw = local(welder)->yaw;
 		local(target)->pitch = local(welder)->pitch;
@@ -336,7 +336,7 @@ namespace TFE_DarkForces
 		local(welder) = (Welder*)task_getUserData();
 		local(physicsActor) = &local(welder)->actor;
 		local(obj) = local(welder)->logic.obj;
-		local(target) = &local(physicsActor)->actor.target;
+		local(target) = &local(physicsActor)->moveMod.target;
 		while (local(physicsActor)->alive)
 		{
 			msg = MSG_RUN_TASK;
@@ -453,12 +453,12 @@ namespace TFE_DarkForces
 		welder->hurtSndId = NULL_SOUND;
 		welder->sound2Id  = NULL_SOUND;
 		actor_addPhysicsActorToWorld(physicsActor);
-		CollisionInfo* physics = &physicsActor->actor.physics;
+		CollisionInfo* physics = &physicsActor->moveMod.physics;
 
-		ActorTarget* target = &physicsActor->actor.target;
+		ActorTarget* target = &physicsActor->moveMod.target;
 		obj->worldWidth  = FIXED(10);
 		obj->worldHeight = FIXED(4);
-		physicsActor->actor.header.obj = obj;
+		physicsActor->moveMod.header.obj = obj;
 		physics->obj = obj;
 		physics->width = obj->worldWidth;
 		physics->wall = nullptr;
@@ -467,8 +467,8 @@ namespace TFE_DarkForces
 		physics->yPos = 0;
 		physics->height = obj->worldHeight + HALF_16;
 
-		physicsActor->actor.delta = { 0, 0, 0 };
-		physicsActor->actor.collisionFlags &= 0xfffffff8;
+		physicsActor->moveMod.delta = { 0, 0, 0 };
+		physicsActor->moveMod.collisionFlags &= 0xfffffff8;
 
 		target->speed = 0;
 		target->speedRotation = 4551;	// ~100 degrees/second.
