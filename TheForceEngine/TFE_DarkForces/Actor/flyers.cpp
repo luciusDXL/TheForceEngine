@@ -271,7 +271,7 @@ namespace TFE_DarkForces
 		moveMod->physics.yPos = FIXED(200);
 
 		// should be: 0xa7ec
-		moveMod->physics.width = obj->worldWidth >> 1;
+		moveMod->physics.width = obj->worldWidth;
 		obj->entityFlags &= 0xfffff7ff;
 		dispatch->animTable = s_remoteAnimTable;
 		actor_setupInitAnimation();
