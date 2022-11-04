@@ -102,7 +102,7 @@ struct AttackModule
 	fixed16_16 minDist;
 	fixed16_16 maxDist;
 	fixed16_16 meleeDmg;
-	s32 ua4;
+	fixed16_16 meleeRate;
 	u32 attackFlags;
 };
 
@@ -115,7 +115,7 @@ struct MovementModule
 
 	vec3_fixed delta;
 	RWall* collisionWall;
-	s32 u9c;
+	u32 unused;	// member in structure but not actually used, other than being initialized.
 	u32 collisionFlags;
 };
 

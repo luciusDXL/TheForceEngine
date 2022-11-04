@@ -276,7 +276,7 @@ namespace TFE_DarkForces
 		attackMod->minDist = 0;
 		attackMod->maxDist = FIXED(160);
 		attackMod->meleeDmg = 0;
-		attackMod->ua4 = FIXED(230);
+		attackMod->meleeRate = FIXED(230);
 		attackMod->attackFlags = 10;
 
 		return attackMod->fireOffset.y;
@@ -1548,7 +1548,7 @@ namespace TFE_DarkForces
 		moveMod->target.flags &= 0xf0;
 		moveMod->delta = { 0, 0, 0 };
 		moveMod->collisionWall = nullptr;
-		moveMod->u9c = 0;
+		moveMod->unused = 0;
 
 		moveMod->collisionFlags = (moveMod->collisionFlags | 3) & 0xfffffffb;
 		obj->entityFlags |= ETFLAG_SMART_OBJ;

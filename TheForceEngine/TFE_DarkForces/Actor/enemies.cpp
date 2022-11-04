@@ -124,7 +124,7 @@ namespace TFE_DarkForces
 		attackMod->timing.state2Delay = 57;
 		attackMod->meleeRange = FIXED(13);
 		attackMod->meleeDmg = FIXED(40);
-		attackMod->ua4 = FIXED(360);
+		attackMod->meleeRate = FIXED(360);
 		attackMod->attackSecSndSrc = s_agentSndSrc[AGENTSND_AXE_1];
 		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffffd;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
