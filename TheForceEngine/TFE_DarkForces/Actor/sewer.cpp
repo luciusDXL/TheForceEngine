@@ -27,18 +27,18 @@ namespace TFE_DarkForces
 	JBool sewerCreatureAiFunc(ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		ActorEnemy* enemy = &damageMod->enemy;
-		SecObject* obj = enemy->header.obj;
+		AttackModule* attackMod = &damageMod->attackMod;
+		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
-		LogicAnimation* anim = &enemy->anim;
+		LogicAnimation* anim = &attackMod->anim;
 
 		if (!(anim->flags & 2))
 		{
 			if (obj->type == OBJ_TYPE_SPRITE)
 			{
-				actor_setCurAnimation(&enemy->anim);
+				actor_setCurAnimation(&attackMod->anim);
 			}
-			actor->updateTargetFunc(actor, &enemy->target);
+			actor->updateTargetFunc(actor, &attackMod->target);
 			return 0;
 		}
 		else if (damageMod->hp > 0)
@@ -68,10 +68,10 @@ namespace TFE_DarkForces
 	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		ActorEnemy* enemy = &damageMod->enemy;
-		SecObject* obj = enemy->header.obj;
+		AttackModule* attackMod = &damageMod->attackMod;
+		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
-		LogicAnimation* anim = &enemy->anim;
+		LogicAnimation* anim = &attackMod->anim;
 
 		if (msg == MSG_DAMAGE)
 		{
@@ -79,9 +79,9 @@ namespace TFE_DarkForces
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setCurAnimation(&enemy->anim);
+					actor_setCurAnimation(&attackMod->anim);
 				}
-				actor->updateTargetFunc(actor, &enemy->target);
+				actor->updateTargetFunc(actor, &attackMod->target);
 				return 0;
 			}
 
@@ -102,9 +102,9 @@ namespace TFE_DarkForces
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setCurAnimation(&enemy->anim);
+					actor_setCurAnimation(&attackMod->anim);
 				}
-				actor->updateTargetFunc(actor, &enemy->target);
+				actor->updateTargetFunc(actor, &attackMod->target);
 				return 0;
 			}
 
@@ -118,30 +118,30 @@ namespace TFE_DarkForces
 			}
 			return sewerCreatureDie(damageMod, actor);
 		}
-		return enemy->header.nextTick;
+		return attackMod->header.nextTick;
 	}
 
 	JBool sewerCreatureEnemyFunc(ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		ActorEnemy* enemy = &damageMod->enemy;
-		SecObject* obj = enemy->header.obj;
+		AttackModule* attackMod = &damageMod->attackMod;
+		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
 
-		switch (enemy->anim.state)
+		switch (attackMod->anim.state)
 		{
 			case 0:
 			{
-				if (enemy->anim.flags & 2)
+				if (attackMod->anim.flags & 2)
 				{
 					obj->flags &= ~OBJ_FLAG_NEEDS_TRANSFORM;
 					obj->worldWidth = 0;
 					obj->posWS.y = sector->floorHeight + sector->secHeight;
 
 					actor->collisionFlags |= 1;
-					enemy->target.flags &= ~(1|2|4|8);
-					enemy->anim.state = 1;
-					return s_curTick + random(enemy->timing.delay);
+					attackMod->target.flags &= ~(1|2|4|8);
+					attackMod->anim.state = 1;
+					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
 			case 1:
@@ -150,14 +150,14 @@ namespace TFE_DarkForces
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
-					enemy->anim.flags |= 2;
-					enemy->anim.state = 0;
-					if (s_curTick > enemy->timing.nextTick)
+					attackMod->anim.flags |= 2;
+					attackMod->anim.state = 0;
+					if (s_curTick > attackMod->timing.nextTick)
 					{
-						enemy->timing.delay = enemy->timing.state0Delay;
+						attackMod->timing.delay = attackMod->timing.state0Delay;
 						actor_setupInitAnimation();
 					}
-					return enemy->timing.delay;
+					return attackMod->timing.delay;
 				}
 
 				actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
@@ -166,68 +166,68 @@ namespace TFE_DarkForces
 				obj->posWS.y = sector->floorHeight;
 				fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
 				fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
-				if (dist <= enemy->meleeRange) 
+				if (dist <= attackMod->meleeRange)
 				{
-					enemy->anim.state = 2;
-					enemy->timing.delay = enemy->timing.state2Delay;
-					enemy->target.pos.x = obj->posWS.x;
-					enemy->target.pos.z = obj->posWS.z;
-					enemy->target.flags |= 1;
+					attackMod->anim.state = 2;
+					attackMod->timing.delay = attackMod->timing.state2Delay;
+					attackMod->target.pos.x = obj->posWS.x;
+					attackMod->target.pos.z = obj->posWS.z;
+					attackMod->target.flags |= 1;
 
 					fixed16_16 dx = s_eyePos.x - obj->posWS.x;
 					fixed16_16 dz = s_eyePos.z - obj->posWS.z;
-					enemy->target.yaw   = vec2ToAngle(dx, dz);
-					enemy->target.pitch = obj->pitch;
-					enemy->target.roll  = obj->roll;
-					enemy->target.flags |= 4;
+					attackMod->target.yaw   = vec2ToAngle(dx, dz);
+					attackMod->target.pitch = obj->pitch;
+					attackMod->target.roll  = obj->roll;
+					attackMod->target.flags |= 4;
 				}
 				else
 				{
-					enemy->anim.state = 0;
-					enemy->timing.delay = enemy->timing.state0Delay;
+					attackMod->anim.state = 0;
+					attackMod->timing.delay = attackMod->timing.state0Delay;
 				}
 
-				enemy->timing.nextTick = s_curTick + enemy->timing.state1Delay;
-				enemy->target.flags |= 8;
+				attackMod->timing.nextTick = s_curTick + attackMod->timing.state1Delay;
+				attackMod->target.flags |= 8;
 				obj->worldWidth = FIXED(3);
 				obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					if (enemy->anim.state == 2)  // Attack animation
+					if (attackMod->anim.state == 2)  // Attack animation
 					{
-						actor_setupAnimation(1, &enemy->anim);
+						actor_setupAnimation(1, &attackMod->anim);
 					}
 					else // Look around animation
 					{
-						actor_setupAnimation(14, &enemy->anim);
+						actor_setupAnimation(14, &attackMod->anim);
 					}
 				}
 			} break;
 			case 2:
 			{
-				if (enemy->anim.flags & 2)
+				if (attackMod->anim.flags & 2)
 				{
-					enemy->anim.state = 3;
-					sound_playCued(enemy->attackSecSndSrc, obj->posWS);
+					attackMod->anim.state = 3;
+					sound_playCued(attackMod->attackSecSndSrc, obj->posWS);
 
 					fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
 					fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
-					if (dist <= enemy->meleeRange)
+					if (dist <= attackMod->meleeRange)
 					{
-						player_applyDamage(enemy->meleeDmg, 0, JTRUE);
+						player_applyDamage(attackMod->meleeDmg, 0, JTRUE);
 					}
 				}
 			} break;
 			case 3:
 			{
-				actor_setupAnimation(6, &enemy->anim);
-				enemy->anim.state = 0;
+				actor_setupAnimation(6, &attackMod->anim);
+				attackMod->anim.state = 0;
 			} break;
 		}
 
-		actor_setCurAnimation(&enemy->anim);
-		actor->updateTargetFunc(actor, &enemy->target);
-		return enemy->timing.delay;
+		actor_setCurAnimation(&attackMod->anim);
+		actor->updateTargetFunc(actor, &attackMod->target);
+		return attackMod->timing.delay;
 	}
 
 	Logic* sewerCreature_setup(SecObject* obj, LogicSetupFunc* setupFunc)
@@ -240,24 +240,24 @@ namespace TFE_DarkForces
 		dispatch->fov = ANGLE_MAX;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
-		module->enemy.header.func = sewerCreatureAiFunc;
-		module->enemy.header.msgFunc = sewerCreatureAiMsgFunc;
+		module->attackMod.header.func = sewerCreatureAiFunc;
+		module->attackMod.header.msgFunc = sewerCreatureAiMsgFunc;
 		module->hp = FIXED(36);
 		module->hurtSndSrc = s_agentSndSrc[AGENTSND_CREATURE_HURT];
 		module->dieSndSrc = s_agentSndSrc[AGENTSND_CREATURE_DIE];
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		s_actorState.curEnemyActor = enemyActor;
-		enemyActor->header.func = sewerCreatureEnemyFunc;
-		enemyActor->timing.state0Delay = 1240;
-		enemyActor->timing.state2Delay = 1240;
-		enemyActor->meleeRange = FIXED(13);
-		enemyActor->meleeDmg = FIXED(20);
-		enemyActor->ua4 = FIXED(360);
-		enemyActor->attackSecSndSrc = s_agentSndSrc[AGENTSND_CREATURE2];
-		enemyActor->attackFlags = (enemyActor->attackFlags | 1) & 0xfffffffd;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		s_actorState.attackMod = attackMod;
+		attackMod->header.func = sewerCreatureEnemyFunc;
+		attackMod->timing.state0Delay = 1240;
+		attackMod->timing.state2Delay = 1240;
+		attackMod->meleeRange = FIXED(13);
+		attackMod->meleeDmg = FIXED(20);
+		attackMod->ua4 = FIXED(360);
+		attackMod->attackSecSndSrc = s_agentSndSrc[AGENTSND_CREATURE2];
+		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffffd;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = 0x7fff;
@@ -283,23 +283,23 @@ namespace TFE_DarkForces
 
 	u32 sewerCreatureDie(DamageModule* module, Actor* actor)
 	{
-		ActorEnemy* enemy = &module->enemy;
-		SecObject* obj = enemy->header.obj;
+		AttackModule* attackMod = &module->attackMod;
+		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
 
 		actor_setDeathCollisionFlags();
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		sound_stop(logic->alertSndID);
 		sound_playCued(module->dieSndSrc, obj->posWS);
-		enemy->target.flags |= 8;
+		attackMod->target.flags |= 8;
 
 		if ((obj->anim == 1 || obj->anim == 6) && obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setupAnimation(2, &enemy->anim);
+			actor_setupAnimation(2, &attackMod->anim);
 		}
 		else if (obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setupAnimation(3, &enemy->anim);
+			actor_setupAnimation(3, &attackMod->anim);
 		}
 
 		obj->posWS.y = sector->floorHeight;
@@ -307,9 +307,9 @@ namespace TFE_DarkForces
 
 		if (obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setCurAnimation(&enemy->anim);
+			actor_setCurAnimation(&attackMod->anim);
 		}
-		actor->updateTargetFunc(actor, &enemy->target);
+		actor->updateTargetFunc(actor, &attackMod->target);
 		return 0;
 	}
 }  // namespace TFE_DarkForces

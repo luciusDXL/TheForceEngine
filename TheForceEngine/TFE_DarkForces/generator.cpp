@@ -118,12 +118,12 @@ namespace TFE_DarkForces
 					gen->numTerminate--;
 					if (gen->wanderTime == 0xffffffff)
 					{
-						s_actorState.curEnemyActor->timing.nextTick = 0xffffffff;
+						s_actorState.attackMod->timing.nextTick = 0xffffffff;
 					}
 					else
 					{
 						s32 randomWanderOffset = floor16(random(intToFixed16(gen->wanderTime >> 1)));
-						s_actorState.curEnemyActor->timing.nextTick = s_curTick + gen->wanderTime + floor16(randomWanderOffset);
+						s_actorState.attackMod->timing.nextTick = s_curTick + gen->wanderTime + floor16(randomWanderOffset);
 					}
 
 					SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);

@@ -240,46 +240,46 @@ namespace TFE_DarkForces
 		module->obj = logic->obj;
 	}
 
-	fixed16_16 actor_initEnemy(ActorEnemy* enemyActor, Logic* logic)
+	fixed16_16 actor_initAttackModule(AttackModule* attackMod, Logic* logic)
 	{
-		actor_initModule(&enemyActor->header, logic);
+		actor_initModule(&attackMod->header, logic);
 
-		enemyActor->target.speedRotation = 0;
-		enemyActor->target.speed = 0;
-		enemyActor->target.speedVert = 0;
-		enemyActor->timing.delay = 218;
-		enemyActor->timing.state0Delay = 218;
-		enemyActor->timing.state2Delay = 0;
-		enemyActor->timing.state4Delay = 291;
-		enemyActor->timing.state1Delay = 43695;
-		enemyActor->anim.frameRate = 5;
-		enemyActor->anim.frameCount = ONE_16;
-		enemyActor->anim.prevTick = 0;
-		enemyActor->anim.state = 0;
-		enemyActor->fireSpread = FIXED(30);
-		enemyActor->state0NextTick = 0;
-		enemyActor->fireOffset.x = 0;
-		enemyActor->fireOffset.z = 0;
+		attackMod->target.speedRotation = 0;
+		attackMod->target.speed = 0;
+		attackMod->target.speedVert = 0;
+		attackMod->timing.delay = 218;
+		attackMod->timing.state0Delay = 218;
+		attackMod->timing.state2Delay = 0;
+		attackMod->timing.state4Delay = 291;
+		attackMod->timing.state1Delay = 43695;
+		attackMod->anim.frameRate = 5;
+		attackMod->anim.frameCount = ONE_16;
+		attackMod->anim.prevTick = 0;
+		attackMod->anim.state = 0;
+		attackMod->fireSpread = FIXED(30);
+		attackMod->state0NextTick = 0;
+		attackMod->fireOffset.x = 0;
+		attackMod->fireOffset.z = 0;
 
-		enemyActor->target.flags &= 0xfffffff0;
-		enemyActor->anim.flags |= 3;
-		enemyActor->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
+		attackMod->target.flags &= 0xfffffff0;
+		attackMod->anim.flags |= 3;
+		attackMod->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
-		SecObject* obj = enemyActor->header.obj;
+		SecObject* obj = attackMod->header.obj;
 		// world width and height was set from the sprite data.
-		enemyActor->fireOffset.y = -((TFE_Jedi::abs(obj->worldHeight) >> 1) + ONE_16);
+		attackMod->fireOffset.y = -((TFE_Jedi::abs(obj->worldHeight) >> 1) + ONE_16);
 
-		enemyActor->projType = PROJ_RIFLE_BOLT;
-		enemyActor->attackSecSndSrc = 0;
-		enemyActor->attackPrimSndSrc = 0;
-		enemyActor->meleeRange = 0;
-		enemyActor->minDist = 0;
-		enemyActor->maxDist = FIXED(160);
-		enemyActor->meleeDmg = 0;
-		enemyActor->ua4 = FIXED(230);
-		enemyActor->attackFlags = 10;
+		attackMod->projType = PROJ_RIFLE_BOLT;
+		attackMod->attackSecSndSrc = 0;
+		attackMod->attackPrimSndSrc = 0;
+		attackMod->meleeRange = 0;
+		attackMod->minDist = 0;
+		attackMod->maxDist = FIXED(160);
+		attackMod->meleeDmg = 0;
+		attackMod->ua4 = FIXED(230);
+		attackMod->attackFlags = 10;
 
-		return enemyActor->fireOffset.y;
+		return attackMod->fireOffset.y;
 	}
 
 	void actor_setDeathCollisionFlags()
@@ -567,17 +567,17 @@ namespace TFE_DarkForces
 	JBool defaultAiFunc(ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		ActorEnemy* enemy = &damageMod->enemy;
-		SecObject* obj = enemy->header.obj;
+		AttackModule* attackMod = &damageMod->attackMod;
+		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
 
-		if (!(enemy->anim.flags & 2))
+		if (!(attackMod->anim.flags & 2))
 		{
 			if (obj->type == OBJ_TYPE_SPRITE)
 			{
-				actor_setCurAnimation(&enemy->anim);
+				actor_setCurAnimation(&attackMod->anim);
 			}
-			actor->updateTargetFunc(actor, &enemy->target);
+			actor->updateTargetFunc(actor, &attackMod->target);
 			return JFALSE;
 		}
 
@@ -587,9 +587,9 @@ namespace TFE_DarkForces
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
-					actor_setCurAnimation(&enemy->anim);
+					actor_setCurAnimation(&attackMod->anim);
 				}
-				actor->updateTargetFunc(actor, &enemy->target);
+				actor->updateTargetFunc(actor, &attackMod->target);
 				return JFALSE;
 			}
 			spawnHitEffect(damageMod->dieEffect, sector, obj->posWS, obj);
@@ -651,8 +651,8 @@ namespace TFE_DarkForces
 	JBool defaultMsgFunc(s32 msg, ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		ActorEnemy* enemy = &damageMod->enemy;
-		SecObject* obj = enemy->header.obj;
+		AttackModule* attackMod = &damageMod->attackMod;
+		SecObject* obj = attackMod->header.obj;
 		RSector* sector = obj->sector;
 
 		if (msg == MSG_DAMAGE)
@@ -674,10 +674,10 @@ namespace TFE_DarkForces
 				damageMod->hp -= dmg;
 				if (damageMod->stopOnHit)
 				{
-					enemy->target.flags |= 8;
+					attackMod->target.flags |= 8;
 				}
 
-				LogicAnimation* anim = &enemy->anim;
+				LogicAnimation* anim = &attackMod->anim;
 				vec3_fixed pushVel;
 				computeDamagePushVelocity(proj, &pushVel);
 				if (damageMod->hp <= 0)
@@ -687,7 +687,7 @@ namespace TFE_DarkForces
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
 					sound_playCued(damageMod->dieSndSrc, obj->posWS);
-					enemy->anim.flags |= 8;
+					attackMod->anim.flags |= 8;
 					if (proj->type == PROJ_PUNCH && obj->type == OBJ_TYPE_SPRITE)
 					{
 						actor_setupAnimation(2, anim);
@@ -718,9 +718,9 @@ namespace TFE_DarkForces
 
 			if (obj->type == OBJ_TYPE_SPRITE)
 			{
-				actor_setCurAnimation(&enemy->anim);
+				actor_setCurAnimation(&attackMod->anim);
 			}
-			actor->updateTargetFunc(actor, &enemy->target);
+			actor->updateTargetFunc(actor, &attackMod->target);
 			return JFALSE;
 		}
 		else if (msg == MSG_EXPLOSION)
@@ -732,7 +732,7 @@ namespace TFE_DarkForces
 				damageMod->hp -= dmg;
 				if (damageMod->stopOnHit)
 				{
-					enemy->target.flags |= 8;
+					attackMod->target.flags |= 8;
 				}
 
 				vec3_fixed dir;
@@ -740,7 +740,7 @@ namespace TFE_DarkForces
 				computeExplosionPushDir(&pos, &dir);
 
 				vec3_fixed vel = { mul16(force, dir.x), mul16(force, dir.y), mul16(force, dir.z) };
-				LogicAnimation* anim = &enemy->anim;
+				LogicAnimation* anim = &attackMod->anim;
 				ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 				if (damageMod->hp <= 0)
 				{
@@ -748,7 +748,7 @@ namespace TFE_DarkForces
 					actor_setDeathCollisionFlags();
 					sound_stop(logic->alertSndID);
 					sound_playCued(damageMod->dieSndSrc, obj->posWS);
-					enemy->target.flags |= 8;
+					attackMod->target.flags |= 8;
 					if (obj->type == OBJ_TYPE_SPRITE)
 					{
 						actor_setupAnimation(3, anim);
@@ -767,9 +767,9 @@ namespace TFE_DarkForces
 			}
 			if (obj->type == OBJ_TYPE_SPRITE)
 			{
-				actor_setCurAnimation(&enemy->anim);
+				actor_setCurAnimation(&attackMod->anim);
 			}
-			actor->updateTargetFunc(actor, &enemy->target);
+			actor->updateTargetFunc(actor, &attackMod->target);
 			return JFALSE;
 		}
 		else if (msg == MSG_TERMINAL_VEL || msg == MSG_CRUSH)
@@ -779,16 +779,16 @@ namespace TFE_DarkForces
 				damageMod->hp = 0;
 				if (damageMod->stopOnHit)
 				{
-					enemy->target.flags |= 8;
+					attackMod->target.flags |= 8;
 				}
 
-				LogicAnimation* anim = &enemy->anim;
+				LogicAnimation* anim = &attackMod->anim;
 				ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 
 				actor_setDeathCollisionFlags();
 				sound_stop(logic->alertSndID);
 				sound_playCued(damageMod->dieSndSrc, obj->posWS);
-				enemy->anim.flags |= 8;
+				attackMod->anim.flags |= 8;
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
 					actor_setupAnimation(3, anim);
@@ -804,11 +804,11 @@ namespace TFE_DarkForces
 		DamageModule* damageMod = (DamageModule*)level_alloc(sizeof(DamageModule));
 		memset(damageMod, 0, sizeof(DamageModule));
 
-		ActorEnemy* enemy = &damageMod->enemy;
-		actor_initEnemy(enemy, (Logic*)dispatch);
-		enemy->header.func    = defaultAiFunc;
-		enemy->header.msgFunc = defaultMsgFunc;
-		enemy->header.nextTick = 0xffffffff;
+		AttackModule* attackMod = &damageMod->attackMod;
+		actor_initAttackModule(attackMod, (Logic*)dispatch);
+		attackMod->header.func    = defaultAiFunc;
+		attackMod->header.msgFunc = defaultMsgFunc;
+		attackMod->header.nextTick = 0xffffffff;
 
 		// Default values.
 		damageMod->hp = FIXED(4);
@@ -825,39 +825,39 @@ namespace TFE_DarkForces
 	JBool defaultEnemyFunc(ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		ActorEnemy* enemy = &damageMod->enemy;
+		AttackModule* attackMod = &damageMod->attackMod;
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
-		SecObject* obj = enemy->header.obj;
-		LogicAnimation* anim = &enemy->anim;
-		s32 state = enemy->anim.state;
+		SecObject* obj = attackMod->header.obj;
+		LogicAnimation* anim = &attackMod->anim;
+		s32 state = attackMod->anim.state;
 
 		switch (state)
 		{
 			case 0:
 			{
-				if (enemy->anim.flags & 2)
+				if (attackMod->anim.flags & 2)
 				{
-					enemy->anim.flags &= ~8;
-					enemy->anim.state = 1;
-					if (enemy->state0NextTick < s_curTick)
+					attackMod->anim.flags &= ~8;
+					attackMod->anim.state = 1;
+					if (attackMod->state0NextTick < s_curTick)
 					{
-						if (enemy->fireSpread)
+						if (attackMod->fireSpread)
 						{
-							enemy->fireSpread -= mul16(FIXED(2), s_deltaTime);
-							if (enemy->fireSpread < FIXED(9))
+							attackMod->fireSpread -= mul16(FIXED(2), s_deltaTime);
+							if (attackMod->fireSpread < FIXED(9))
 							{
-								enemy->fireSpread = FIXED(9);
+								attackMod->fireSpread = FIXED(9);
 							}
-							enemy->state0NextTick = s_curTick + 145;
+							attackMod->state0NextTick = s_curTick + 145;
 						}
 						else
 						{
-							enemy->state0NextTick = 0xffffffff;
+							attackMod->state0NextTick = 0xffffffff;
 						}
 					}
-					enemy->target.flags &= ~(1 | 2 | 3);
+					attackMod->target.flags &= ~(1 | 2 | 3);
 					// Next AI update.
-					return s_curTick + random(enemy->timing.delay);
+					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
 			case 1:
@@ -867,28 +867,28 @@ namespace TFE_DarkForces
 				{
 					if (s_curTick >= s_reviveTick)
 					{
-						enemy->anim.flags |= 2;
-						enemy->anim.state = 0;
-						return enemy->timing.delay;
+						attackMod->anim.flags |= 2;
+						attackMod->anim.state = 0;
+						return attackMod->timing.delay;
 					}
 				}
 
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
-					enemy->anim.flags |= 2;
-					enemy->anim.state = 0;
-					if (enemy->timing.nextTick < s_curTick)
+					attackMod->anim.flags |= 2;
+					attackMod->anim.state = 0;
+					if (attackMod->timing.nextTick < s_curTick)
 					{
-						enemy->timing.delay = enemy->timing.state0Delay;
+						attackMod->timing.delay = attackMod->timing.state0Delay;
 						actor_setupInitAnimation();
 					}
-					return enemy->timing.delay;
+					return attackMod->timing.delay;
 				}
 				else
 				{
 					actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
-					enemy->timing.nextTick = s_curTick + enemy->timing.state1Delay;
+					attackMod->timing.nextTick = s_curTick + attackMod->timing.state1Delay;
 					fixed16_16 dist = distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
 					fixed16_16 yDiff = TFE_Jedi::abs(obj->posWS.y - obj->worldHeight - s_eyePos.y);
 					angle14_32 vertAngle = vec2ToAngle(yDiff, dist);
@@ -896,83 +896,83 @@ namespace TFE_DarkForces
 					fixed16_16 baseYDiff = TFE_Jedi::abs(s_playerObject->posWS.y - obj->posWS.y);
 					dist += baseYDiff;
 
-					if (vertAngle < 2275 && dist <= enemy->maxDist)	// ~50 degrees
+					if (vertAngle < 2275 && dist <= attackMod->maxDist)	// ~50 degrees
 					{
-						if (enemy->attackFlags & 1)
+						if (attackMod->attackFlags & 1)
 						{
-							if (dist <= enemy->meleeRange)
+							if (dist <= attackMod->meleeRange)
 							{
-								enemy->anim.state = 2;
-								enemy->timing.delay = enemy->timing.state2Delay;
+								attackMod->anim.state = 2;
+								attackMod->timing.delay = attackMod->timing.state2Delay;
 							}
-							else if (!(enemy->attackFlags & 2) || dist < enemy->minDist)
+							else if (!(attackMod->attackFlags & 2) || dist < attackMod->minDist)
 							{
-								enemy->anim.flags |= 2;
-								enemy->anim.state = 0;
-								return enemy->timing.delay;
+								attackMod->anim.flags |= 2;
+								attackMod->anim.state = 0;
+								return attackMod->timing.delay;
 							}
 							else
 							{
-								enemy->anim.state = 4;
-								enemy->timing.delay = enemy->timing.state4Delay;
+								attackMod->anim.state = 4;
+								attackMod->timing.delay = attackMod->timing.state4Delay;
 							}
 						}
 						else
 						{
-							if (dist < enemy->minDist)
+							if (dist < attackMod->minDist)
 							{
-								enemy->anim.flags |= 2;
-								enemy->anim.state = 0;
-								return enemy->timing.delay;
+								attackMod->anim.flags |= 2;
+								attackMod->anim.state = 0;
+								return attackMod->timing.delay;
 							}
-							enemy->anim.state = 2;
-							enemy->timing.delay = enemy->timing.state4Delay;
+							attackMod->anim.state = 2;
+							attackMod->timing.delay = attackMod->timing.state4Delay;
 						}
 
 						if (obj->type == OBJ_TYPE_SPRITE)
 						{
-							if (enemy->anim.state == 2)
+							if (attackMod->anim.state == 2)
 							{
-								actor_setupAnimation(1, &enemy->anim);
+								actor_setupAnimation(1, &attackMod->anim);
 							}
 							else
 							{
-								actor_setupAnimation(7, &enemy->anim);
+								actor_setupAnimation(7, &attackMod->anim);
 							}
 						}
 
-						enemy->target.pos.x = obj->posWS.x;
-						enemy->target.pos.z = obj->posWS.z;
-						enemy->target.yaw   = vec2ToAngle(s_eyePos.x - obj->posWS.x, s_eyePos.z - obj->posWS.z);
-						enemy->target.pitch = obj->pitch;
-						enemy->target.roll  = obj->roll;
-						enemy->target.flags |= (1 | 4);
+						attackMod->target.pos.x = obj->posWS.x;
+						attackMod->target.pos.z = obj->posWS.z;
+						attackMod->target.yaw   = vec2ToAngle(s_eyePos.x - obj->posWS.x, s_eyePos.z - obj->posWS.z);
+						attackMod->target.pitch = obj->pitch;
+						attackMod->target.roll  = obj->roll;
+						attackMod->target.flags |= (1 | 4);
 					}
 					else
 					{
-						enemy->anim.flags |= 2;
-						enemy->anim.state = 0;
-						return enemy->timing.delay;
+						attackMod->anim.flags |= 2;
+						attackMod->anim.state = 0;
+						return attackMod->timing.delay;
 					}
 				}
 			} break;
 			case 2:
 			{
-				if (!(enemy->anim.flags & 2))
+				if (!(attackMod->anim.flags & 2))
 				{
 					break;
 				}
 
-				if (enemy->attackFlags & 1)	// Melee attack!
+				if (attackMod->attackFlags & 1)	// Melee attack!
 				{
-					enemy->anim.state = 3;
+					attackMod->anim.state = 3;
 					fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
 					fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
-					if (dist < enemy->meleeRange)
+					if (dist < attackMod->meleeRange)
 					{
-						sound_playCued(enemy->attackSecSndSrc, obj->posWS);
-						player_applyDamage(enemy->meleeDmg, 0, JTRUE);
-						if (enemy->attackFlags & 8)
+						sound_playCued(attackMod->attackSecSndSrc, obj->posWS);
+						player_applyDamage(attackMod->meleeDmg, 0, JTRUE);
+						if (attackMod->attackFlags & 8)
 						{
 							obj->flags |= OBJ_FLAG_FULLBRIGHT;
 						}
@@ -981,14 +981,14 @@ namespace TFE_DarkForces
 				}
 
 				// Ranged Attack!
-				if (enemy->attackFlags & 8)
+				if (attackMod->attackFlags & 8)
 				{
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
 				}
 
-				enemy->anim.state = 3;
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(enemy->projType, obj->sector, obj->posWS.x, enemy->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
-				sound_playCued(enemy->attackPrimSndSrc, obj->posWS);
+				attackMod->anim.state = 3;
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
+				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
 
 				proj->prevColObj = obj;
 				proj->prevObj = obj;
@@ -998,10 +998,10 @@ namespace TFE_DarkForces
 				projObj->yaw = obj->yaw;
 				
 				// Handle x and z fire offset.
-				if (enemy->fireOffset.x | enemy->fireOffset.z)
+				if (attackMod->fireOffset.x | attackMod->fireOffset.z)
 				{
-					proj->delta.x = enemy->fireOffset.x;
-					proj->delta.z = enemy->fireOffset.z;
+					proj->delta.x = attackMod->fireOffset.x;
+					proj->delta.z = attackMod->fireOffset.z;
 					proj_handleMovement(proj);
 				}
 
@@ -1009,16 +1009,16 @@ namespace TFE_DarkForces
 				vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
 				proj_aimAtTarget(proj, target);
 
-				if (enemy->fireSpread)
+				if (attackMod->fireSpread)
 				{
-					proj->vel.x += random(enemy->fireSpread*2) - enemy->fireSpread;
-					proj->vel.y += random(enemy->fireSpread*2) - enemy->fireSpread;
-					proj->vel.z += random(enemy->fireSpread*2) - enemy->fireSpread;
+					proj->vel.x += random(attackMod->fireSpread*2) - attackMod->fireSpread;
+					proj->vel.y += random(attackMod->fireSpread*2) - attackMod->fireSpread;
+					proj->vel.z += random(attackMod->fireSpread*2) - attackMod->fireSpread;
 				}
 			} break;
 			case 3:
 			{
-				if (enemy->attackFlags & 8)
+				if (attackMod->attackFlags & 8)
 				{
 					obj->flags &= ~OBJ_FLAG_FULLBRIGHT;
 				}
@@ -1027,56 +1027,56 @@ namespace TFE_DarkForces
 				{
 					actor_setupAnimation(6, anim);
 				}
-				enemy->anim.state = 0;
+				attackMod->anim.state = 0;
 			} break;
 			case 4:
 			{
-				if (!(enemy->anim.flags & 2))
+				if (!(attackMod->anim.flags & 2))
 				{
 					break;
 				}
-				if (enemy->attackFlags & 8)
+				if (attackMod->attackFlags & 8)
 				{
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
 				}
 
-				enemy->anim.state = 5;
-				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(enemy->projType, obj->sector, obj->posWS.x, enemy->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
-				sound_playCued(enemy->attackPrimSndSrc, obj->posWS);
+				attackMod->anim.state = 5;
+				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
+				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
 				proj->prevColObj = obj;
 				proj->excludeObj = obj;
 
 				SecObject* projObj = proj->logic.obj;
 				projObj->yaw = obj->yaw;
-				if (enemy->projType == PROJ_THERMAL_DET)
+				if (attackMod->projType == PROJ_THERMAL_DET)
 				{
 					proj->bounceCnt = 0;
 					proj->duration = 0xffffffff;
 					vec3_fixed target = { s_playerObject->posWS.x, s_eyePos.y + ONE_16, s_playerObject->posWS.z };
 					proj_aimArcing(proj, target, proj->speed);
 
-					if (enemy->fireOffset.x | enemy->fireOffset.z)
+					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
 					{
-						proj->delta.x = enemy->fireOffset.x;
-						proj->delta.z = enemy->fireOffset.z;
+						proj->delta.x = attackMod->fireOffset.x;
+						proj->delta.z = attackMod->fireOffset.z;
 						proj_handleMovement(proj);
 					}
 				}
 				else
 				{
-					if (enemy->fireOffset.x | enemy->fireOffset.z)
+					if (attackMod->fireOffset.x | attackMod->fireOffset.z)
 					{
-						proj->delta.x = enemy->fireOffset.x;
-						proj->delta.z = enemy->fireOffset.z;
+						proj->delta.x = attackMod->fireOffset.x;
+						proj->delta.z = attackMod->fireOffset.z;
 						proj_handleMovement(proj);
 					}
 					vec3_fixed target = { s_eyePos.x, s_eyePos.y + ONE_16, s_eyePos.z };
 					proj_aimAtTarget(proj, target);
-					if (enemy->fireSpread)
+					if (attackMod->fireSpread)
 					{
-						proj->vel.x += random(enemy->fireSpread*2) - enemy->fireSpread;
-						proj->vel.y += random(enemy->fireSpread*2) - enemy->fireSpread;
-						proj->vel.z += random(enemy->fireSpread*2) - enemy->fireSpread;
+						proj->vel.x += random(attackMod->fireSpread*2) - attackMod->fireSpread;
+						proj->vel.y += random(attackMod->fireSpread*2) - attackMod->fireSpread;
+						proj->vel.z += random(attackMod->fireSpread*2) - attackMod->fireSpread;
 					}
 				}
 			} break;
@@ -1086,43 +1086,43 @@ namespace TFE_DarkForces
 				{
 					actor_setupAnimation(8, anim);
 				}
-				enemy->anim.state = 0;
+				attackMod->anim.state = 0;
 			} break;
 		}
 
 		if (obj->type == OBJ_TYPE_SPRITE)
 		{
-			actor_setCurAnimation(&enemy->anim);
+			actor_setCurAnimation(&attackMod->anim);
 		}
-		actor->updateTargetFunc(actor, &enemy->target);
-		return enemy->timing.delay;
+		actor->updateTargetFunc(actor, &attackMod->target);
+		return attackMod->timing.delay;
 	}
 
 	JBool defaultEnemyMsgFunc(s32 msg, ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		ActorEnemy* enemy = &damageMod->enemy;
+		AttackModule* attackMod = &damageMod->attackMod;
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		if (msg == MSG_WAKEUP)
 		{
-			enemy->timing.nextTick = s_curTick + enemy->timing.state1Delay;
+			attackMod->timing.nextTick = s_curTick + attackMod->timing.state1Delay;
 		}
 		if (logic->flags & 1)
 		{
-			return enemy->timing.delay;
+			return attackMod->timing.delay;
 		}
 		return 0xffffffff;
 	}
 
-	ActorEnemy* actor_createEnemyActor(Logic* logic)
+	AttackModule* actor_createAttackModule(ActorDispatch* dispatch)
 	{
-		ActorEnemy* enemyActor = (ActorEnemy*)level_alloc(sizeof(ActorEnemy));
-		memset(enemyActor, 0, sizeof(ActorEnemy));
+		AttackModule* attackMod = (AttackModule*)level_alloc(sizeof(AttackModule));
+		memset(attackMod, 0, sizeof(AttackModule));
 
-		actor_initEnemy(enemyActor, logic);
-		enemyActor->header.func = defaultEnemyFunc;
-		enemyActor->header.msgFunc = defaultEnemyMsgFunc;
-		return enemyActor;
+		actor_initAttackModule(attackMod, (Logic*)dispatch);
+		attackMod->header.func = defaultEnemyFunc;
+		attackMod->header.msgFunc = defaultEnemyMsgFunc;
+		return attackMod;
 	}
 
 	JBool defaultSimpleActorFunc(ActorModule* module, Actor* actor)

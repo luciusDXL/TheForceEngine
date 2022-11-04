@@ -15,7 +15,7 @@ namespace TFE_DarkForces
 	JBool exploderFunc(ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		LogicAnimation* anim = &damageMod->enemy.anim;
+		LogicAnimation* anim = &damageMod->attackMod.anim;
 		if (!(anim->flags & AFLAG_READY))
 		{
 			s_actorState.curAnimation = anim;
@@ -36,8 +36,8 @@ namespace TFE_DarkForces
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		JBool retValue = JFALSE;
-		SecObject* obj = damageMod->enemy.header.obj;
-		LogicAnimation* anim = &damageMod->enemy.anim;
+		SecObject* obj = damageMod->attackMod.header.obj;
+		LogicAnimation* anim = &damageMod->attackMod.anim;
 
 		if (msg == MSG_DAMAGE)
 		{
@@ -61,7 +61,7 @@ namespace TFE_DarkForces
 					actor_removeLogics(obj);
 
 					actor_setupAnimation(2/*animIndex*/, anim);
-					actor->updateTargetFunc(actor, &damageMod->enemy.target);
+					actor->updateTargetFunc(actor, &damageMod->attackMod.target);
 					retValue = JFALSE;
 				}
 			}
@@ -131,10 +131,10 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
-		module->enemy.header.func = exploderFunc;
-		module->enemy.header.msgFunc = exploderMsgFunc;
+		module->attackMod.header.func = exploderFunc;
+		module->attackMod.header.msgFunc = exploderMsgFunc;
 		module->hp = FIXED(11);
-		module->enemy.anim.flags |= AFLAG_READY;
+		module->attackMod.anim.flags |= AFLAG_READY;
 		actor_addModule(dispatch, (ActorModule*)module);
 
 		Actor* actor = actor_create((Logic*)dispatch);
@@ -145,7 +145,7 @@ namespace TFE_DarkForces
 		actor->target.speed = 0;
 		actor->target.speedRotation = 0;
 
-		ActorTarget* target = &module->enemy.target;
+		ActorTarget* target = &module->attackMod.target;
 		target->flags = (target->flags | 8) & 0xfffffff8;
 		target->speed = 0;
 		target->speedRotation = 0;
@@ -161,9 +161,9 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
-		module->enemy.header.func = exploderFunc;
-		module->enemy.header.msgFunc = exploderMsgFunc;
-		module->enemy.anim.flags |= AFLAG_READY;
+		module->attackMod.header.func = exploderFunc;
+		module->attackMod.header.msgFunc = exploderMsgFunc;
+		module->attackMod.anim.flags |= AFLAG_READY;
 		module->hp = FIXED(20);
 		actor_addModule(dispatch, (ActorModule*)module);
 
@@ -173,7 +173,7 @@ namespace TFE_DarkForces
 		// This was cleared to 0 in createProjectile()
 		actor->physics.width = obj->worldWidth;
 
-		ActorTarget* target = &module->enemy.target;
+		ActorTarget* target = &module->attackMod.target;
 		target->flags = (target->flags | 8) & 0xfffffff8;
 		target->speed = 0;
 		target->speedRotation = 0;

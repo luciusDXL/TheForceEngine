@@ -58,13 +58,13 @@ namespace TFE_DarkForces
 		module->itemDropId = officer_getItemDropId(logicId);
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
-		enemyActor->projType = PROJ_PISTOL_BOLT;
-		enemyActor->attackPrimSndSrc = s_pistolSndSrc;
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
+		attackMod->projType = PROJ_PISTOL_BOLT;
+		attackMod->attackPrimSndSrc = s_pistolSndSrc;
 
-		s_actorState.curEnemyActor = enemyActor;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		s_actorState.attackMod = attackMod;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = HALF_16 - 1;
@@ -99,12 +99,12 @@ namespace TFE_DarkForces
 		module->itemDropId = ITEM_RIFLE;
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		s_actorState.curEnemyActor = enemyActor;
-		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
-		enemyActor->projType = PROJ_RIFLE_BOLT;
-		enemyActor->attackPrimSndSrc = s_rifleSndSrc;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		s_actorState.attackMod = attackMod;
+		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
+		attackMod->projType = PROJ_RIFLE_BOLT;
+		attackMod->attackPrimSndSrc = s_rifleSndSrc;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = HALF_16 - 1;
@@ -139,12 +139,12 @@ namespace TFE_DarkForces
 		module->itemDropId = ITEM_RIFLE;
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		s_actorState.curEnemyActor = enemyActor;
-		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
-		enemyActor->projType = PROJ_RIFLE_BOLT;
-		enemyActor->attackPrimSndSrc = s_rifleSndSrc;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		s_actorState.attackMod = attackMod;
+		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
+		attackMod->projType = PROJ_RIFLE_BOLT;
+		attackMod->attackPrimSndSrc = s_rifleSndSrc;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = HALF_16 - 1;

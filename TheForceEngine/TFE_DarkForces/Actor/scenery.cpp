@@ -17,8 +17,8 @@ namespace TFE_DarkForces
 	JBool sceneryLogicFunc(ActorModule* module, Actor* actor)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
-		LogicAnimation* anim = &damageMod->enemy.anim;
-		SecObject* obj = damageMod->enemy.header.obj;
+		LogicAnimation* anim = &damageMod->attackMod.anim;
+		SecObject* obj = damageMod->attackMod.header.obj;
 
 		if (!(anim->flags & AFLAG_READY))
 		{
@@ -48,8 +48,8 @@ namespace TFE_DarkForces
 	{
 		JBool retValue = JFALSE;
 		DamageModule* damageMod = (DamageModule*)module;
-		LogicAnimation* anim = &damageMod->enemy.anim;
-		SecObject* obj = damageMod->enemy.header.obj;
+		LogicAnimation* anim = &damageMod->attackMod.anim;
+		SecObject* obj = damageMod->attackMod.header.obj;
 
 		if (msg == MSG_DAMAGE)
 		{
@@ -100,9 +100,9 @@ namespace TFE_DarkForces
 		dispatch->animTable = s_sceneryAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
-		module->enemy.header.func = sceneryLogicFunc;
-		module->enemy.header.msgFunc = sceneryMsgFunc;
-		module->enemy.anim.flags |= AFLAG_READY;
+		module->attackMod.header.func = sceneryLogicFunc;
+		module->attackMod.header.msgFunc = sceneryMsgFunc;
+		module->attackMod.anim.flags |= AFLAG_READY;
 		module->hp = FIXED(1);
 		actor_addModule(dispatch, (ActorModule*)module);
 

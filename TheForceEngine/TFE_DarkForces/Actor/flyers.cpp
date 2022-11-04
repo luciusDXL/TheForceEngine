@@ -159,16 +159,16 @@ namespace TFE_DarkForces
 		module->dieSndSrc = s_agentSndSrc[AGENTSND_SMALL_EXPLOSION];
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		enemyActor->fireOffset.y = 9830;
-		enemyActor->projType = PROJ_PROBE_PROJ;
-		enemyActor->attackSecSndSrc = s_agentSndSrc[AGENTSND_INTSTUN];
-		enemyActor->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_11];
-		enemyActor->meleeRange = FIXED(30);
-		enemyActor->meleeDmg = FIXED(5);
-		enemyActor->attackFlags |= 3;
-		s_actorState.curEnemyActor = enemyActor;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		attackMod->fireOffset.y = 9830;
+		attackMod->projType = PROJ_PROBE_PROJ;
+		attackMod->attackSecSndSrc = s_agentSndSrc[AGENTSND_INTSTUN];
+		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_11];
+		attackMod->meleeRange = FIXED(30);
+		attackMod->meleeDmg = FIXED(5);
+		attackMod->attackFlags |= 3;
+		s_actorState.attackMod = attackMod;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = 0;
@@ -212,13 +212,13 @@ namespace TFE_DarkForces
 		module->dieSndSrc = s_agentSndSrc[AGENTSND_PROBE_ALM];
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		enemyActor->fireOffset.y = -557056;
-		enemyActor->projType = PROJ_RIFLE_BOLT;
-		enemyActor->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_12];
-		enemyActor->attackFlags = 2;
-		s_actorState.curEnemyActor = enemyActor;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		attackMod->fireOffset.y = -557056;
+		attackMod->projType = PROJ_RIFLE_BOLT;
+		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_12];
+		attackMod->attackFlags = 2;
+		s_actorState.attackMod = attackMod;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = 0;
@@ -259,15 +259,15 @@ namespace TFE_DarkForces
 		module->hp = FIXED(9);
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemy = actor_createEnemyActor((Logic*)dispatch);
-		enemy->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_13];
-		enemy->projType = PROJ_REMOTE_BOLT;
-		enemy->attackFlags &= 0xfffffffc;
-		enemy->attackFlags |= 2;
-		enemy->fireOffset.y = 0x4000;	// 0.25 units.
-		enemy->maxDist = FIXED(50);
-		s_actorState.curEnemyActor = enemy;
-		actor_addModule(dispatch, (ActorModule*)enemy);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_13];
+		attackMod->projType = PROJ_REMOTE_BOLT;
+		attackMod->attackFlags &= 0xfffffffc;
+		attackMod->attackFlags |= 2;
+		attackMod->fireOffset.y = 0x4000;	// 0.25 units.
+		attackMod->maxDist = FIXED(50);
+		s_actorState.attackMod = attackMod;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = 0x7fff;

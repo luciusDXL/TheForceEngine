@@ -83,7 +83,7 @@ struct ActorTarget
 	u32 flags;
 };
 
-struct ActorEnemy
+struct AttackModule
 {
 	ActorModule header;
 	ActorTarget target;
@@ -160,7 +160,7 @@ struct ActorSimple
 
 struct DamageModule
 {
-	ActorEnemy enemy;
+	AttackModule attackMod;
 	fixed16_16 hp;
 	ItemId itemDropId;
 

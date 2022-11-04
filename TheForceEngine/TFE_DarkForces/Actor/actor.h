@@ -92,7 +92,7 @@ struct ActorState
 {
 	LogicAnimation* curAnimation;
 	Logic* curLogic;
-	ActorEnemy* curEnemyActor;
+	AttackModule* attackMod;
 	Tick nextAlertTick;
 	u32 officerAlertIndex;
 	u32 stormtrooperAlertIndex;
@@ -139,7 +139,7 @@ namespace TFE_DarkForces
 
 	angle14_32 actor_offsetTarget(fixed16_16* targetX, fixed16_16* targetZ, fixed16_16 targetOffset, fixed16_16 targetVariation, angle14_32 angle, angle14_32 angleVariation);
 
-	ActorEnemy* actor_createEnemyActor(Logic* logic);
+	AttackModule* actor_createAttackModule(ActorDispatch* dispatch);
 	ActorSimple* actor_createSimpleActor(Logic* logic);
 	void actor_setupInitAnimation();
 	void actor_setDeathCollisionFlags();

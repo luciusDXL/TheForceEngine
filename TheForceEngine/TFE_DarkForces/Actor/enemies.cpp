@@ -38,18 +38,18 @@ namespace TFE_DarkForces
 		module->dieSndSrc = s_agentSndSrc[AGENTSND_REEYEE_3];
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		enemyActor->projType = PROJ_THERMAL_DET;
-		enemyActor->attackPrimSndSrc = 0;
-		enemyActor->attackSecSndSrc = 0;
-		enemyActor->timing.state4Delay = 436;
-		enemyActor->maxDist = FIXED(100);
-		enemyActor->meleeRange = FIXED(10);
-		enemyActor->meleeDmg = FIXED(15);
-		enemyActor->attackFlags = (enemyActor->attackFlags | 3) & 0xfffffff7;
-		enemyActor->minDist = s_reeyeeMinDist;
-		s_actorState.curEnemyActor = enemyActor;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		attackMod->projType = PROJ_THERMAL_DET;
+		attackMod->attackPrimSndSrc = 0;
+		attackMod->attackSecSndSrc = 0;
+		attackMod->timing.state4Delay = 436;
+		attackMod->maxDist = FIXED(100);
+		attackMod->meleeRange = FIXED(10);
+		attackMod->meleeDmg = FIXED(15);
+		attackMod->attackFlags = (attackMod->attackFlags | 3) & 0xfffffff7;
+		attackMod->minDist = s_reeyeeMinDist;
+		s_actorState.attackMod = attackMod;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = 0x7fff;
@@ -80,14 +80,14 @@ namespace TFE_DarkForces
 		module->dieSndSrc = s_agentSndSrc[AGENTSND_REEYEE_3];
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		enemyActor->attackSecSndSrc = 0;
-		enemyActor->maxDist = FIXED(100);
-		enemyActor->attackFlags = (enemyActor->attackFlags | 1) & 0xfffffff5;
-		enemyActor->meleeDmg = FIXED(15);
-		enemyActor->meleeRange = FIXED(10);
-		s_actorState.curEnemyActor = enemyActor;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		attackMod->attackSecSndSrc = 0;
+		attackMod->maxDist = FIXED(100);
+		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffff5;
+		attackMod->meleeDmg = FIXED(15);
+		attackMod->meleeRange = FIXED(10);
+		s_actorState.attackMod = attackMod;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = 0x7fff;
@@ -119,15 +119,15 @@ namespace TFE_DarkForces
 		module->hurtSndSrc = s_agentSndSrc[AGENTSND_GAMOR_2];
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		s_actorState.curEnemyActor = enemyActor;
-		enemyActor->timing.state2Delay = 57;
-		enemyActor->meleeRange = FIXED(13);
-		enemyActor->meleeDmg = FIXED(40);
-		enemyActor->ua4 = FIXED(360);
-		enemyActor->attackSecSndSrc = s_agentSndSrc[AGENTSND_AXE_1];
-		enemyActor->attackFlags = (enemyActor->attackFlags | 1) & 0xfffffffd;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		s_actorState.attackMod = attackMod;
+		attackMod->timing.state2Delay = 57;
+		attackMod->meleeRange = FIXED(13);
+		attackMod->meleeDmg = FIXED(40);
+		attackMod->ua4 = FIXED(360);
+		attackMod->attackSecSndSrc = s_agentSndSrc[AGENTSND_AXE_1];
+		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffffd;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->approachVariation = 2730;
@@ -161,15 +161,15 @@ namespace TFE_DarkForces
 		module->itemDropId = ITEM_CONCUSSION;
 		actor_addModule(dispatch, (ActorModule*)module);
 
-		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)dispatch);
-		s_actorState.curEnemyActor = enemyActor;
-		enemyActor->projType = PROJ_CONCUSSION;
-		enemyActor->maxDist = FIXED(100);
-		enemyActor->minDist = FIXED(10);
-		enemyActor->attackPrimSndSrc = s_concussion5SndSrc;
-		enemyActor->fireSpread = 0;
-		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
-		actor_addModule(dispatch, (ActorModule*)enemyActor);
+		AttackModule* attackMod = actor_createAttackModule(dispatch);
+		s_actorState.attackMod = attackMod;
+		attackMod->projType = PROJ_CONCUSSION;
+		attackMod->maxDist = FIXED(100);
+		attackMod->minDist = FIXED(10);
+		attackMod->attackPrimSndSrc = s_concussion5SndSrc;
+		attackMod->fireSpread = 0;
+		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
+		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)dispatch);
 		actorSimple->target.speedRotation = 0x7fff;
