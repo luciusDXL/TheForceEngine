@@ -157,7 +157,7 @@ namespace TFE_DarkForces
 		aiActor->itemDropId = ITEM_POWER;
 		aiActor->stopOnHit = JFALSE;
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_SMALL_EXPLOSION];
-		actorLogic_addActor(logic, (AiActor*)aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		enemyActor->fireOffset.y = 9830;
@@ -168,7 +168,7 @@ namespace TFE_DarkForces
 		enemyActor->meleeDmg = FIXED(5);
 		enemyActor->attackFlags |= 3;
 		s_actorState.curEnemyActor = enemyActor;
-		actorLogic_addActor(logic, (AiActor*)enemyActor, SAT_ENEMY);
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0;
@@ -176,14 +176,14 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 116;
 		actorSimple->anim.flags &= ~FLAG_BIT(0);
 		actorSimple->startDelay = TICKS(2);	// (145.5)*2
-		actorLogic_addActor(logic, (AiActor*)actorSimple, SAT_SIMPLE);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		ActorFlyer* flyingActor = actor_createFlying((Logic*)logic);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->target.speed = FIXED(13);
 		flyingActor->target.speedVert = FIXED(10);
 		flyingActor->delay = 436;	// just shy of 3 seconds.
-		actorLogic_addActor(logic, (AiActor*)flyingActor, SAT_FLYER);
+		actorLogic_addActor(logic, (AiActor*)flyingActor);
 				
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
@@ -210,7 +210,7 @@ namespace TFE_DarkForces
 		aiActor->stopOnHit = JFALSE;
 		aiActor->dieEffect = HEFFECT_EXP_35;
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_PROBE_ALM];
-		actorLogic_addActor(logic, (AiActor*)aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		enemyActor->fireOffset.y = -557056;
@@ -218,7 +218,7 @@ namespace TFE_DarkForces
 		enemyActor->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_12];
 		enemyActor->attackFlags = 2;
 		s_actorState.curEnemyActor = enemyActor;
-		actorLogic_addActor(logic, (AiActor*)enemyActor, SAT_ENEMY);
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0;
@@ -226,14 +226,14 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 116;
 		actorSimple->anim.flags &= ~FLAG_BIT(0);
 		actorSimple->startDelay = TICKS(2);	// (145.5)*2
-		actorLogic_addActor(logic, (AiActor*)actorSimple, SAT_SIMPLE);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		ActorFlyer* flyingActor = actor_createFlying((Logic*)logic);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->target.speed = FIXED(4);
 		flyingActor->target.speedVert = FIXED(2);
 		flyingActor->delay = 436;	// just shy of 3 seconds.
-		actorLogic_addActor(logic, (AiActor*)flyingActor, SAT_FLYER);
+		actorLogic_addActor(logic, (AiActor*)flyingActor);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
@@ -257,7 +257,7 @@ namespace TFE_DarkForces
 		AiActor* aiActor = actor_createAiActor((Logic*)logic);
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_TINY_EXPLOSION];
 		aiActor->hp = FIXED(9);
-		actorLogic_addActor(logic, aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, aiActor);
 
 		ActorEnemy* enemy = actor_createEnemyActor((Logic*)logic);
 		enemy->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_13];
@@ -267,7 +267,7 @@ namespace TFE_DarkForces
 		enemy->fireOffset.y = 0x4000;	// 0.25 units.
 		enemy->maxDist = FIXED(50);
 		s_actorState.curEnemyActor = enemy;
-		actorLogic_addActor(logic, (AiActor*)enemy, SAT_ENEMY);
+		actorLogic_addActor(logic, (AiActor*)enemy);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0x7fff;
@@ -276,19 +276,19 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 436;
 		actorSimple->startDelay = 109;
 		actorSimple->targetOffset = FIXED(9);
-		actorLogic_addActor(logic, (AiActor*)actorSimple, SAT_SIMPLE);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		ActorFlyer* flyingActor = actor_createFlying2((Logic*)logic);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->delay = 291;
-		actorLogic_addActor(logic, (AiActor*)flyingActor, SAT_FLYER);
+		actorLogic_addActor(logic, (AiActor*)flyingActor);
 
 		flyingActor = actor_createFlying((Logic*)logic);
 		flyingActor->target.speedRotation = 0x7fff;
 		flyingActor->target.speed = FIXED(13);
 		flyingActor->target.speedVert = FIXED(10);
 		flyingActor->delay = 291;
-		actorLogic_addActor(logic, (AiActor*)flyingActor, SAT_FLYER);
+		actorLogic_addActor(logic, (AiActor*)flyingActor);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;

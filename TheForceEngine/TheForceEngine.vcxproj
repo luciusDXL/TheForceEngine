@@ -359,7 +359,6 @@ echo ^)";
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
     <ClInclude Include="TFE_DarkForces\Actor\actor.h" />
-    <ClInclude Include="TFE_DarkForces\Actor\actorDebug.h" />
     <ClInclude Include="TFE_DarkForces\Actor\aiActor.h" />
     <ClInclude Include="TFE_DarkForces\Actor\bobaFett.h" />
     <ClInclude Include="TFE_DarkForces\Actor\dragon.h" />
@@ -698,7 +697,6 @@ echo ^)";
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\actor.cpp" />
-    <ClCompile Include="TFE_DarkForces\Actor\actorDebug.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\bobaFett.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\dragon.cpp" />
     <ClCompile Include="TFE_DarkForces\Actor\enemies.cpp" />

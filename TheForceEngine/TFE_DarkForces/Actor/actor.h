@@ -61,15 +61,6 @@ enum ActorCollisionFlags
 	ACTORCOL_GRAVITY = FLAG_BIT(1),
 };
 
-enum SubActorType
-{
-	SAT_AI_ACTOR = 0,
-	SAT_ENEMY,
-	SAT_SIMPLE,
-	SAT_FLYER,
-	SAT_COUNT
-};
-
 struct DispatchPlugin
 {
 	
@@ -100,9 +91,6 @@ struct Dispatch
 
 	Task* freeTask;
 	u32 flags;
-
-	// Added for TFE, for debugging.
-	SubActorType type[ACTOR_MAX_PLUGINS];
 };
 
 struct ActorState
@@ -128,7 +116,7 @@ namespace TFE_DarkForces
 	Dispatch* actor_setupActorLogic(SecObject* obj, LogicSetupFunc* setupFunc);
 	AiActor* actor_createAiActor(Logic* logic);
 	Actor* actor_create(Logic* logic);
-	void actorLogic_addActor(Dispatch* logic, AiActor* aiActor, SubActorType type);
+	void actorLogic_addActor(Dispatch* logic, AiActor* aiActor);
 
 	void actor_hitEffectMsgFunc(MessageType msg, void* logic);
 	void actor_kill();

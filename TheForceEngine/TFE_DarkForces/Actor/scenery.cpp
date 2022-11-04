@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 		aiActor->enemy.header.msgFunc = sceneryMsgFunc;
 		aiActor->enemy.anim.flags |= AFLAG_READY;
 		aiActor->hp = FIXED(1);
-		actorLogic_addActor(logic, aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, aiActor);
 
 		return (Logic*)logic;
 	}

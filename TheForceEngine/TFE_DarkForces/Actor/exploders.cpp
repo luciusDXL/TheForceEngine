@@ -133,7 +133,7 @@ namespace TFE_DarkForces
 		aiActor->enemy.header.msgFunc = exploderMsgFunc;
 		aiActor->hp = FIXED(11);
 		aiActor->enemy.anim.flags |= AFLAG_READY;
-		actorLogic_addActor(logic, aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, aiActor);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
@@ -163,7 +163,7 @@ namespace TFE_DarkForces
 		aiActor->enemy.header.msgFunc = exploderMsgFunc;
 		aiActor->enemy.anim.flags |= AFLAG_READY;
 		aiActor->hp = FIXED(20);
-		actorLogic_addActor(actorLogic, aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(actorLogic, aiActor);
 
 		Actor* actor = actor_create((Logic*)actorLogic);
 		actorLogic->actor = actor;

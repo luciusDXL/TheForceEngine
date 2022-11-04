@@ -36,7 +36,7 @@ namespace TFE_DarkForces
 		aiActor->itemDropId = ITEM_DETONATORS;
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_REEYEE_2];
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_REEYEE_3];
-		actorLogic_addActor(logic, (AiActor*)aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		enemyActor->projType = PROJ_THERMAL_DET;
@@ -49,14 +49,14 @@ namespace TFE_DarkForces
 		enemyActor->attackFlags = (enemyActor->attackFlags | 3) & 0xfffffff7;
 		enemyActor->minDist = s_reeyeeMinDist;
 		s_actorState.curEnemyActor = enemyActor;
-		actorLogic_addActor(logic, (AiActor*)enemyActor, SAT_ENEMY);
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0x7fff;
 		actorSimple->target.speed = FIXED(13);
 		actorSimple->anim.flags &= 0xfffffffe;
 		actorSimple->startDelay = TICKS(2);
-		actorLogic_addActor(logic, (AiActor*)actorSimple, SAT_SIMPLE);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
@@ -78,7 +78,7 @@ namespace TFE_DarkForces
 		aiActor->hp = FIXED(36);
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_REEYEE_2];
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_REEYEE_3];
-		actorLogic_addActor(logic, (AiActor*)aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		enemyActor->attackSecSndSrc = 0;
@@ -87,14 +87,14 @@ namespace TFE_DarkForces
 		enemyActor->meleeDmg = FIXED(15);
 		enemyActor->meleeRange = FIXED(10);
 		s_actorState.curEnemyActor = enemyActor;
-		actorLogic_addActor(logic, (AiActor*)enemyActor, SAT_ENEMY);
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0x7fff;
 		actorSimple->target.speed = FIXED(13);
 		actorSimple->anim.flags &= 0xfffffffe;
 		actorSimple->startDelay = TICKS(2);
-		actorLogic_addActor(logic, (AiActor*)actorSimple, SAT_SIMPLE);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
@@ -117,7 +117,7 @@ namespace TFE_DarkForces
 		aiActor->stopOnHit = JFALSE;
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_GAMOR_1];
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_GAMOR_2];
-		actorLogic_addActor(logic, (AiActor*)aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		s_actorState.curEnemyActor = enemyActor;
@@ -127,7 +127,7 @@ namespace TFE_DarkForces
 		enemyActor->ua4 = FIXED(360);
 		enemyActor->attackSecSndSrc = s_agentSndSrc[AGENTSND_AXE_1];
 		enemyActor->attackFlags = (enemyActor->attackFlags | 1) & 0xfffffffd;
-		actorLogic_addActor(logic, (AiActor*)enemyActor, SAT_ENEMY);
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->approachVariation = 2730;
@@ -136,7 +136,7 @@ namespace TFE_DarkForces
 		actorSimple->target.speed = FIXED(12);
 		actorSimple->anim.flags &= 0xfffffffe;
 		actorSimple->startDelay = TICKS(2);
-		actorLogic_addActor(logic, (AiActor*)actorSimple, SAT_SIMPLE);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;
@@ -159,7 +159,7 @@ namespace TFE_DarkForces
 		aiActor->dieSndSrc = s_agentSndSrc[AGENTSND_BOSSK_DIE];
 		aiActor->hurtSndSrc = s_agentSndSrc[AGENTSND_BOSSK_3];
 		aiActor->itemDropId = ITEM_CONCUSSION;
-		actorLogic_addActor(logic, (AiActor*)aiActor, SAT_AI_ACTOR);
+		actorLogic_addActor(logic, (AiActor*)aiActor);
 
 		ActorEnemy* enemyActor = actor_createEnemyActor((Logic*)logic);
 		s_actorState.curEnemyActor = enemyActor;
@@ -169,7 +169,7 @@ namespace TFE_DarkForces
 		enemyActor->attackPrimSndSrc = s_concussion5SndSrc;
 		enemyActor->fireSpread = 0;
 		enemyActor->attackFlags = (enemyActor->attackFlags & 0xfffffffc) | 2;
-		actorLogic_addActor(logic, (AiActor*)enemyActor, SAT_ENEMY);
+		actorLogic_addActor(logic, (AiActor*)enemyActor);
 
 		ActorSimple* actorSimple = actor_createSimpleActor((Logic*)logic);
 		actorSimple->target.speedRotation = 0x7fff;
@@ -177,7 +177,7 @@ namespace TFE_DarkForces
 		actorSimple->u3c = 0;
 		actorSimple->anim.flags &= 0xfffffffe;
 		actorSimple->startDelay = TICKS(2);
-		actorLogic_addActor(logic, (AiActor*)actorSimple, SAT_SIMPLE);
+		actorLogic_addActor(logic, (AiActor*)actorSimple);
 
 		Actor* actor = actor_create((Logic*)logic);
 		logic->actor = actor;

@@ -49,9 +49,6 @@
 // Add texture callbacks.
 #include <TFE_Jedi/Level/levelTextures.h>
 
-// Debugging
-#include <TFE_DarkForces/Actor/actorDebug.h>
-
 using namespace TFE_Memory;
 
 namespace TFE_DarkForces
@@ -252,7 +249,6 @@ namespace TFE_DarkForces
 		
 		// TFE Specific
 		escapeMenu_load();
-		actorDebug_init();
 		// Add texture callbacks.
 		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);
 		renderer_addHudTextureCallback(TFE_Jedi::level_getObjectTextures);
@@ -300,8 +296,6 @@ namespace TFE_DarkForces
 		escapeMenu_resetState();
 		vue_resetState();
 		lsystem_destroy();
-		// Free debug data
-		actorDebug_free();
 
 		// TFE
 		TFE_Sprite_Jedi::freeAll();
@@ -623,7 +617,6 @@ namespace TFE_DarkForces
 
 				bitmap_setAllocator(s_levelRegion);
 				actor_clearState();
-				actorDebug_clear();
 
 				task_reset();
 				inf_clearState();
