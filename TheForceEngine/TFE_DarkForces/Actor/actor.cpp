@@ -1868,7 +1868,7 @@ namespace TFE_DarkForces
 			{
 				if (module->msgFunc)
 				{
-					Tick nextTick = module->msgFunc(msg, module, (MovementModule*)dispatch->moveMod);
+					Tick nextTick = module->msgFunc(msg, module, dispatch->moveMod);
 					if (nextTick != 0xffffffff)
 					{
 						module->nextTick = nextTick;
@@ -2047,7 +2047,7 @@ namespace TFE_DarkForces
 							{
 								if (module->func && module->nextTick < s_curTick)
 								{
-									module->nextTick = module->func(module, (MovementModule*)dispatch->moveMod);
+									module->nextTick = module->func(module, dispatch->moveMod);
 								}
 							}
 						}

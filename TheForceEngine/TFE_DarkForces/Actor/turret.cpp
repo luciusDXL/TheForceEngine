@@ -138,7 +138,7 @@ namespace TFE_DarkForces
 		local(target)->yaw = vec2ToAngle(dx, dz) & ANGLE_MASK;
 
 		fixed16_16 dist = distApprox(local(obj)->posWS.x, local(obj)->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
-		angle14_32 aimPitch = vec2ToAngle(-(local(obj)->posWS.y - (s_eyePos.y + ONE_16)), dist);
+		angle14_32 aimPitch = vec2ToAngle(local(obj)->posWS.y - (s_eyePos.y + ONE_16), dist);
 		angle14_32 pitchDiff = TFE_Jedi::clamp(getAngleDifference(local(turret)->pitch, aimPitch), -TURRET_PITCH_RANGE, TURRET_PITCH_RANGE);
 		local(target)->pitch = (local(turret)->pitch + pitchDiff) & ANGLE_MASK;
 		local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
@@ -183,8 +183,7 @@ namespace TFE_DarkForces
 
 					local(target)->yaw = yaw & ANGLE_MASK;
 					dist = distApprox(local(obj)->posWS.x, local(obj)->posWS.z, s_playerObject->posWS.x, s_playerObject->posWS.z);
-					dy = local(obj)->posWS.y - (s_eyePos.y + ONE_16);
-					angle14_32 pitch = vec2ToAngle(-dy, dist);
+					angle14_32 pitch = vec2ToAngle(local(obj)->posWS.y - (s_eyePos.y + ONE_16), dist);
 					angle14_32 pitchDiff = clamp(getAngleDifference(local(turret)->pitch, pitch), -TURRET_PITCH_RANGE, TURRET_PITCH_RANGE);
 					local(target)->pitch = (local(turret)->pitch + pitchDiff) & ANGLE_MASK;
 					local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
@@ -218,7 +217,9 @@ namespace TFE_DarkForces
 		sound_playCued(s_turretRes.sound1, pos);
 
 		proj->prevColObj = obj;
+		proj->prevObj = obj;
 		proj->excludeObj = obj;
+
 		SecObject* projObj = proj->logic.obj;
 		projObj->pitch = obj->pitch;
 		projObj->yaw = obj->yaw;
