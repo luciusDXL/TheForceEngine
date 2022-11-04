@@ -154,7 +154,7 @@ namespace TFE_DarkForces
 				}
 				else if (logicId == KW_DISPATCH)
 				{
-					// Unused.
+					newLogic = (Logic*)actor_createDispatch(obj, &setupFunc);
 				}
 				else if ((logicId >= KW_BATTERY && logicId <= KW_AUTOGUN) || logicId == KW_ITEM)
 				{

@@ -58,6 +58,9 @@ namespace TFE_DarkForces
 	void actorPhysicsTaskFunc(MessageType msg);
 	void actorLogicCleanupFunc(Logic* logic);
 	u32  actorLogicSetupFunc(Logic* logic, KEYWORD key);
+
+	extern ThinkerModule* actor_createFlyingModule(Logic* logic);
+	extern ThinkerModule* actor_createFlyingModule_Remote(Logic* logic);
 	
 	///////////////////////////////////////////
 	// API Implementation
@@ -175,11 +178,11 @@ namespace TFE_DarkForces
 		s_actorState.curLogic = (Logic*)dispatch;
 		return dispatch;
 	}
-
+		
 	JBool actorLogicSetupFunc(Logic* logic, KEYWORD key)
 	{
-		ActorDispatch* actorLogic = (ActorDispatch*)logic;
-		Logic* res = nullptr;
+		ActorDispatch* dispatch = (ActorDispatch*)logic;
+		ActorModule* module = nullptr;
 
 		if (key == KW_PLUGIN)
 		{
@@ -190,42 +193,44 @@ namespace TFE_DarkForces
 			{
 				case KW_MOVER:
 				{
-					// TODO
-					// actorLogic->actor = actor_create(logic);
+					dispatch->moveMod = actor_createMovementModule(dispatch);
 				} break;
 				case KW_SHAKER:
 				{
-					// TODO
-					// res = (Logic*)gameObj_create(logic);
+					module = (ActorModule*)actor_createAttackModule(dispatch);
 				} break;
 				case KW_THINKER:
 				{
-					if (thinkerType < KW_FOLLOW_Y)
+					if (thinkerType == KW_FOLLOW_Y)
 					{
-						// TODO
-					}
-					else if (thinkerType == KW_FOLLOW_Y)
-					{
-						// TODO
+						module = (ActorModule*)actor_createFlyingModule((Logic*)dispatch);
 					}
 					else if (thinkerType == KW_RANDOM_YAW)
 					{
-						// TODO
+						module = (ActorModule*)actor_createFlyingModule_Remote((Logic*)dispatch);
+					}
+					else if (thinkerType != KW_FOLLOW)
+					{
+						return JFALSE;
 					}
 				} break;
+				default:
+				{
+					return JFALSE;
+				}
 			}
 
-			if (res)
+			if (module)
 			{
 				for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 				{
-					if (!actorLogic->modules[i])
+					if (!dispatch->modules[i])
 					{
-						actorLogic->modules[i] = (ActorModule*)res;
-						return JTRUE;
+						dispatch->modules[i] = module;
 					}
 				}
 			}
+			return JTRUE;
 		}
 		return JFALSE;
 	}
@@ -316,26 +321,17 @@ namespace TFE_DarkForces
 
 	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj)
 	{
-		if (target->flags & 1)
+		if ((target->flags & 1) && (target->pos.x != obj->posWS.x || target->pos.z != obj->posWS.z))
 		{
-			if (target->pos.x != obj->posWS.x || target->pos.z != obj->posWS.z)
-			{
-				return JFALSE;
-			}
+			return JFALSE;
 		}
-		if (target->flags & 2)
+		if ((target->flags & 2) && (target->pos.y != obj->posWS.y))
 		{
-			if (target->pos.y != obj->posWS.y)
-			{
-				return JFALSE;
-			}
+			return JFALSE;
 		}
-		if (target->flags & 4)
+		if ((target->flags & 4) && (target->yaw != obj->yaw || target->pitch != obj->pitch || target->roll != obj->roll))
 		{
-			if (target->yaw != obj->yaw || target->pitch != obj->pitch || target->roll == obj->roll)
-			{
-				return JFALSE;
-			}
+			return JFALSE;
 		}
 		return JTRUE;
 	}
@@ -564,7 +560,7 @@ namespace TFE_DarkForces
 		return (ActorDispatch*)s_actorState.curLogic;
 	}
 
-	JBool defaultAiFunc(ActorModule* module, MovementModule* moveMod)
+	JBool defaultDamageFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -648,7 +644,7 @@ namespace TFE_DarkForces
 		return 0xffffffff;
 	}
 
-	JBool defaultMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	JBool defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -806,8 +802,8 @@ namespace TFE_DarkForces
 
 		AttackModule* attackMod = &damageMod->attackMod;
 		actor_initAttackModule(attackMod, (Logic*)dispatch);
-		attackMod->header.func    = defaultAiFunc;
-		attackMod->header.msgFunc = defaultMsgFunc;
+		attackMod->header.func    = defaultDamageFunc;
+		attackMod->header.msgFunc = defaultDamageMsgFunc;
 		attackMod->header.nextTick = 0xffffffff;
 
 		// Default values.
@@ -822,7 +818,7 @@ namespace TFE_DarkForces
 		return damageMod;
 	}
 		
-	JBool defaultEnemyFunc(ActorModule* module, MovementModule* moveMod)
+	JBool defaultAttackFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -1098,7 +1094,7 @@ namespace TFE_DarkForces
 		return attackMod->timing.delay;
 	}
 
-	JBool defaultEnemyMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
+	JBool defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;
 		AttackModule* attackMod = &damageMod->attackMod;
@@ -1120,8 +1116,8 @@ namespace TFE_DarkForces
 		memset(attackMod, 0, sizeof(AttackModule));
 
 		actor_initAttackModule(attackMod, (Logic*)dispatch);
-		attackMod->header.func = defaultEnemyFunc;
-		attackMod->header.msgFunc = defaultEnemyMsgFunc;
+		attackMod->header.func = defaultAttackFunc;
+		attackMod->header.msgFunc = defaultAttackMsgFunc;
 		return attackMod;
 	}
 
@@ -1480,8 +1476,6 @@ namespace TFE_DarkForces
 
 	JBool defaultActorFunc(ActorModule* module, MovementModule* moveMod)
 	{
-		// This is really a regular actor...
-		Actor* actor = (Actor*)module;
 		moveMod->physics.wall = nullptr;
 		moveMod->physics.u24 = 0;
 
@@ -1864,15 +1858,12 @@ namespace TFE_DarkForces
 		for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
 		{
 			ActorModule* module = dispatch->modules[ACTOR_MAX_MODULES - 1 - i];
-			if (module)
+			if (module && module->msgFunc)
 			{
-				if (module->msgFunc)
+				const Tick nextTick = module->msgFunc(msg, module, dispatch->moveMod);
+				if (nextTick != 0xffffffff)
 				{
-					Tick nextTick = module->msgFunc(msg, module, dispatch->moveMod);
-					if (nextTick != 0xffffffff)
-					{
-						module->nextTick = nextTick;
-					}
+					module->nextTick = nextTick;
 				}
 			}
 		}

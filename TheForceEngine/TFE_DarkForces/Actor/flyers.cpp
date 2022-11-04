@@ -96,7 +96,7 @@ namespace TFE_DarkForces
 		moveMod->updateTargetFunc(moveMod, target);
 		return 0;
 	}
-
+	
 	ThinkerModule* actor_createFlyingModule(Logic* logic)
 	{
 		ThinkerModule* flyingMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
