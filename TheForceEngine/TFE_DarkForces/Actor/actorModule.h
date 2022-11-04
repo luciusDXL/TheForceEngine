@@ -1,7 +1,7 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////
 // Dark Forces
-// AI Actor structures.
+// AI Actor structures - see actor.h for a full explaination.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
 #include <TFE_DarkForces/time.h>
@@ -57,8 +57,6 @@ struct ActorTiming
 	Tick nextTick;
 };
 
-// Was ActorHeader
-// "Plugin" in the original code
 struct ActorModule
 {
 	ActorFunc       func;
