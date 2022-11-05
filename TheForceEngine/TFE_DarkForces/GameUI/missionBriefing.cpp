@@ -110,6 +110,16 @@ namespace TFE_DarkForces
 		s_palette = lpalette_load(palette);
 		lpalette_setScreenPal(s_palette);
 
+		if (!s_menuActor)
+		{
+			menu_closeResourceArchive();
+			s_briefingOpen = JFALSE;
+			s_skill = 1;
+			vfb_forceToBlack();
+			lcanvas_clear();
+			return;
+		}
+
 		s16 state_btn_index = 600;
 		s16 button_index = 0;
 		s16 slider_index = 0;
@@ -117,7 +127,8 @@ namespace TFE_DarkForces
 		s16 overlay_state = -1;
 			   
 		// Buttons
-		for (s32 i = 0; i < s_menuActor->arraySize; i++)
+		const s32 count = s_menuActor ? s_menuActor->arraySize : 0;
+		for (s32 i = 0; i < count; i++)
 		{
 			LRect rect;
 			lactor_setState(s_menuActor, i, 0);

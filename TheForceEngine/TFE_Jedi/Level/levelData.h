@@ -46,9 +46,13 @@ namespace TFE_Jedi
 		s32 maxLayer = 0;
 		s32 secretCount = 0;
 		u32 sectorCount = 0;
+		s32 textureCount = 0;
 		fixed16_16 parallax0 = 0;
 		fixed16_16 parallax1 = 0;
 		RSector* sectors = nullptr;
+
+		// Texture list
+		TextureData** textures = nullptr;
 
 		// Gameplay sector pointers.
 		RSector* bossSector = nullptr;
@@ -70,9 +74,7 @@ namespace TFE_Jedi
 		s32 fmeCount = 0;
 		s32 soundCount = 0;
 		s32 objectCount = 0;
-		s32 textureCount = 0;
-
-		TextureData** textures = nullptr;
+		
 		JediModel** pods = nullptr;
 		JediWax**   sprites = nullptr;
 		JediFrame** frames = nullptr;

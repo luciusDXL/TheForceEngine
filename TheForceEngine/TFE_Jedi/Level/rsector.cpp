@@ -385,6 +385,64 @@ namespace TFE_Jedi
 		}
 	}
 
+	void sector_growObjectList(RSector* sector)
+	{
+		s32 objectCapacity = sector->objectCapacity;
+		if (sector->objectCount >= objectCapacity)
+		{
+			SecObject** list;
+			if (!objectCapacity)
+			{
+				list = (SecObject**)level_alloc(sizeof(SecObject*) * 5);
+				sector->objectList = list;
+			}
+			else
+			{
+				sector->objectList = (SecObject**)level_realloc(sector->objectList, sizeof(SecObject*) * (objectCapacity + 5));
+				list = sector->objectList + objectCapacity;
+			}
+			memset(list, 0, sizeof(SecObject*) * 5);
+			sector->objectCapacity += 5;
+		}
+	}
+
+	void sector_addObjectToList(RSector* sector, SecObject* obj)
+	{
+		// Then add the object to the first free slot.
+		// Note that this scheme is optimized for deletion rather than addition.
+		SecObject** list = sector->objectList;
+		for (s32 i = 0; i < sector->objectCapacity; i++, list++)
+		{
+			if (!(*list))
+			{
+				*list = obj;
+				obj->index = i;
+				obj->sector = sector;
+				sector->objectCount++;
+				break;
+			}
+		}
+	}
+
+	// Skips some of the checks and does not send messages.
+	// Used for serialization.
+	void sector_addObjectDirect(RSector* sector, SecObject* obj)
+	{
+		sector->dirtyFlags |= SDF_CHANGE_OBJ;
+
+		// The sector containing the player has a special flag.
+		if (obj->entityFlags & ETFLAG_PLAYER)
+		{
+			sector->flags1 |= SEC_FLAGS1_PLAYER;
+		}
+
+		// Grow the object list if necessary.
+		sector_growObjectList(sector);
+
+		// Then add the object to the first free slot.
+		sector_addObjectToList(sector, obj);
+	}
+
 	void sector_addObject(RSector* sector, SecObject* obj)
 	{
 		if (sector != obj->sector)
@@ -408,39 +466,10 @@ namespace TFE_Jedi
 			}
 
 			// Grow the object list if necessary.
-			s32 objCount = sector->objectCount;
-			s32 objectCapacity = sector->objectCapacity;
-			if (objCount == objectCapacity)
-			{
-				SecObject** list;
-				if (!objectCapacity)
-				{
-					list = (SecObject**)level_alloc(sizeof(SecObject*) * 5);
-					sector->objectList = list;
-				}
-				else
-				{
-					sector->objectList = (SecObject**)level_realloc(sector->objectList, sizeof(SecObject*) * (objectCapacity + 5));
-					list = sector->objectList + objectCapacity;
-				}
-				memset(list, 0, sizeof(SecObject*) * 5);
-				sector->objectCapacity += 5;
-			}
+			sector_growObjectList(sector);
 
 			// Then add the object to the first free slot.
-			// Note that this scheme is optimized for deletion rather than addition.
-			SecObject** list = sector->objectList;
-			for (s32 i = 0; i < sector->objectCapacity; i++, list++)
-			{
-				if (!(*list))
-				{
-					*list = obj;
-					obj->index = i;
-					obj->sector = sector;
-					sector->objectCount++;
-					break;
-				}
-			}
+			sector_addObjectToList(sector, obj);
 		}
 	}
 

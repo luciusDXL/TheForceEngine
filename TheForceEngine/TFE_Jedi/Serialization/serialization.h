@@ -11,6 +11,8 @@
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/rtexture.h>
 
+struct AnimatedTexture;
+
 namespace TFE_Jedi
 {
 	// This will generate an signed 32-bit index from a pointer, given a base pointer (start of an array, for example) and size of each element.

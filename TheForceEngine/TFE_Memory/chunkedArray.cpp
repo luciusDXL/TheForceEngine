@@ -202,6 +202,12 @@ namespace TFE_Memory
 		return arr->elemCount;
 	}
 
+	u32 chunkedArrayCount(ChunkedArray* arr)
+	{
+		if (!arr) { return 0; }
+		return arr->elemCount - arr->freeSlotCount;
+	}
+
 	void* chunkedArrayGet(ChunkedArray* arr, u32 index)
 	{
 		u32 chunkId = index / arr->elemPerChunk;

@@ -2,7 +2,9 @@
 #include "level.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/logic.h>
+#include <TFE_Memory/chunkedArray.h>
 
 namespace TFE_Jedi
 {
@@ -12,7 +14,7 @@ namespace TFE_Jedi
 
 	SecObject* allocateObject()
 	{
-		SecObject* obj = (SecObject*)level_alloc(sizeof(SecObject));
+		SecObject* obj = objData_allocFromArray();
 		obj->yaw = 0;
 		obj->pitch = 0;
 		obj->roll = 0;
@@ -28,6 +30,7 @@ namespace TFE_Jedi
 		obj->entityFlags = ETFLAG_NONE;
 		obj->flags = OBJ_FLAG_NEEDS_TRANSFORM | OBJ_FLAG_MOVABLE;
 		obj->self = obj;
+		obj->serializeIndex = 0;
 		return obj;
 	}
 
@@ -49,7 +52,7 @@ namespace TFE_Jedi
 
 		allocator_free((Allocator*)obj->logic);
 		sector_removeObject(obj);
-		level_free(obj);
+		objData_freeToArray(obj);
 
 		s_freeObjLock = JFALSE;
 	}

@@ -150,8 +150,9 @@ namespace TFE_Jedi
 	void sector_adjustTextureMirrorOffsets_Floor(RSector* sector, fixed16_16 floorDelta);
 
 	void sector_addObject(RSector* sector, SecObject* obj);
+	void sector_addObjectDirect(RSector* sector, SecObject* obj);
 	void sector_removeObject(SecObject* obj);
-
+	
 	RSector* sector_which3D(fixed16_16 dx, fixed16_16 dy, fixed16_16 dz);
 	RSector* sector_which3D_Map(fixed16_16 dx, fixed16_16 dz, s32 layer);
 	bool sector_pointInside(RSector* sector, fixed16_16 x, fixed16_16 z);

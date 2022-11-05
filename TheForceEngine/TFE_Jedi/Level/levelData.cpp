@@ -4,6 +4,7 @@
 #include "levelData.h"
 #include "rsector.h"
 #include "rwall.h"
+#include "robjData.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 
@@ -21,18 +22,14 @@ namespace TFE_Jedi
 	void level_serializeSector(Stream* stream, RSector* sector);
 	void level_serializeSafe(Stream* stream, Safe* safe);
 	void level_serializeAmbientSound(Stream* stream, AmbientSound* sound);
-
 	void level_serializeWall(Stream* stream, RWall* wall, RSector* sector);
-	void level_serializeObject(Stream* stream, SecObject* obj);
-	void level_serializeLogics(Stream* stream, SecObject* obj);
-
+	void level_serializeTextureList(Stream* stream);
+	
 	void level_deserializeSector(Stream* stream, RSector* sector);
 	void level_deserializeSafe(Stream* stream, Safe* safe);
 	void level_deserializeAmbientSound(Stream* stream, AmbientSound* sound);
-
 	void level_deserializeWall(Stream* stream, RWall* wall, RSector* sector);
-	void level_deserializeObject(Stream* stream, SecObject* obj);
-	void level_deserializeLogics(Stream* stream, SecObject* obj);
+	void level_deserializeTextureList(Stream* stream);
 
 	/////////////////////////////////////////////
 	// Implementation
@@ -44,6 +41,8 @@ namespace TFE_Jedi
 
 		s_levelState.controlSector = (RSector*)level_alloc(sizeof(RSector));
 		sector_clear(s_levelState.controlSector);
+
+		objData_clear();
 	}
 		
 	void level_serialize(Stream* stream)
@@ -56,6 +55,9 @@ namespace TFE_Jedi
 		SERIALIZE(s_levelState.sectorCount);
 		SERIALIZE(s_levelState.parallax0);
 		SERIALIZE(s_levelState.parallax1);
+
+		// This is needed because level textures are pointers to the list itself, rather than the texture.
+		level_serializeTextureList(stream);
 
 		RSector* sector = s_levelState.sectors;
 		for (u32 s = 0; s < s_levelState.sectorCount; s++, sector++)
@@ -86,6 +88,9 @@ namespace TFE_Jedi
 			level_serializeAmbientSound(stream, sound);
 			sound = (AmbientSound*)allocator_getNext(s_levelState.ambientSounds);
 		}
+
+		// Serialize objects.
+		objData_serialize(stream);
 	}
 
 	void level_deserialize(Stream* stream)
@@ -100,6 +105,9 @@ namespace TFE_Jedi
 		DESERIALIZE(s_levelState.sectorCount);
 		DESERIALIZE(s_levelState.parallax0);
 		DESERIALIZE(s_levelState.parallax1);
+
+		// This is needed because level textures are pointers to the list itself, rather than the texture.
+		level_deserializeTextureList(stream);
 
 		s_levelState.sectors = (RSector*)level_alloc(sizeof(RSector) * s_levelState.sectorCount);
 		RSector* sector = s_levelState.sectors;
@@ -139,11 +147,56 @@ namespace TFE_Jedi
 				level_deserializeAmbientSound(stream, sound);
 			}
 		}
-	}
 
+		// Objects
+		objData_deserialize(stream);
+	}
+		
 	/////////////////////////////////////////////
 	// Internal - Serialize
 	/////////////////////////////////////////////
+	void level_serializeTextureList(Stream* stream)
+	{
+		SERIALIZE(s_levelState.textureCount);
+		for (s32 i = 0; i < s_levelState.textureCount; i++)
+		{
+			serialize_writeTexturePtr(stream, s_levelState.textures[i]);
+		}
+	}
+
+	void level_deserializeTextureList(Stream* stream)
+	{
+		DESERIALIZE(s_levelState.textureCount);
+		s_levelState.textures = (TextureData**)level_alloc(s_levelState.textureCount * sizeof(TextureData**));
+		for (s32 i = 0; i < s_levelState.textureCount; i++)
+		{
+			s_levelState.textures[i] = serialize_readTexturePtr(stream);
+		}
+	}
+
+	void level_writeTexturePointer(Stream* stream, TextureData** texData)
+	{
+		s32 index = -1;
+		if (!texData)
+		{
+			SERIALIZE(index);
+			return;
+		}
+
+		size_t offset = size_t(texData - s_levelState.textures) / sizeof(TextureData**);
+		index = s32(offset);
+		SERIALIZE(index);
+	}
+
+	TextureData** level_readTexturePointer(Stream* stream)
+	{
+		s32 index;
+		DESERIALIZE(index);
+		if (index < 0) { return nullptr; }
+
+		return &s_levelState.textures[index];
+	}
+
 	void level_serializeSector(Stream* stream, RSector* sector)
 	{
 		SERIALIZE(sector->id);
@@ -173,22 +226,12 @@ namespace TFE_Jedi
 		SERIALIZE(sector->colMinHeight);
 		// infLink will be set when the INF system is serialized.
 
-		serialize_writeTexturePtr(stream, sector->floorTex ? *sector->floorTex : nullptr);
-		serialize_writeTexturePtr(stream, sector->ceilTex  ? *sector->ceilTex  : nullptr);
+		level_writeTexturePointer(stream, sector->floorTex);
+		level_writeTexturePointer(stream, sector->ceilTex);
 		SERIALIZE(sector->floorOffset);
 		SERIALIZE(sector->ceilOffset);
 
-		SERIALIZE(sector->objectCount);
-		s32 idx = 0;
-		for (s32 i = 0; i < sector->objectCapacity && idx < sector->objectCount; i++)
-		{
-			SecObject* obj = sector->objectList[i];
-			if (!obj) { continue; }
-
-			level_serializeObject(stream, obj);
-			idx++;
-		}
-		assert(idx == sector->objectCount);
+		// Objects are serialized seperately.
 
 		SERIALIZE(sector->collisionFrame);
 		SERIALIZE(sector->startWall);
@@ -237,10 +280,10 @@ namespace TFE_Jedi
 		SERIALIZE(i1);
 		// viewspace vertices need not be saved.
 
-		serialize_writeTexturePtr(stream, wall->topTex ? *wall->topTex : nullptr);
-		serialize_writeTexturePtr(stream, wall->midTex ? *wall->midTex : nullptr);
-		serialize_writeTexturePtr(stream, wall->botTex ? *wall->botTex : nullptr);
-		serialize_writeTexturePtr(stream, wall->signTex ? *wall->signTex : nullptr);
+		level_writeTexturePointer(stream, wall->topTex);
+		level_writeTexturePointer(stream, wall->midTex);
+		level_writeTexturePointer(stream, wall->botTex);
+		level_writeTexturePointer(stream, wall->signTex);
 
 		SERIALIZE(wall->texelLength);
 		SERIALIZE(wall->topTexelHeight);
@@ -266,83 +309,6 @@ namespace TFE_Jedi
 		SERIALIZE(wall->worldPos0);
 		SERIALIZE(wall->wallLight);
 		SERIALIZE(wall->angle);
-	}
-
-	void level_serializeObject(Stream* stream, SecObject* obj)
-	{
-		SERIALIZE(obj->type);
-		SERIALIZE(obj->entityFlags);
-
-		// This will be -1 if projectileLogic == null.
-		s32 projLogicId = proj_getLogicIndex((ProjectileLogic*)obj->projectileLogic);
-		SERIALIZE(projLogicId);
-
-		SERIALIZE(obj->posWS);
-		// posVS is calculated at runtime.
-		SERIALIZE(obj->worldWidth);
-		SERIALIZE(obj->worldHeight);
-		SERIALIZE_BUF(obj->transform, 9 * sizeof(fixed16_16));
-
-		// Serialize data based on type.
-		switch (obj->type)
-		{
-			case OBJ_TYPE_SPIRIT:
-			{
-				// Nothing to serialize.
-			} break;
-			case OBJ_TYPE_SPRITE:
-			{
-				serialize_writeWaxPtr(stream, obj->wax);
-			} break;
-			case OBJ_TYPE_FRAME:
-			{
-				serialize_writeFramePtr(stream, obj->fme);
-			} break;
-			case OBJ_TYPE_3D:
-			{
-				serialize_write3doPtr(stream, obj->model);
-			} break;
-		}
-
-		SERIALIZE(obj->frame);
-		SERIALIZE(obj->anim);
-		serialization_writeSectorPtr(stream, obj->sector);
-		level_serializeLogics(stream, obj);
-
-		SERIALIZE(obj->flags);
-		SERIALIZE(obj->pitch);
-		SERIALIZE(obj->yaw);
-		SERIALIZE(obj->roll);
-		SERIALIZE(obj->index);
-	}
-
-	void level_serializeLogics(Stream* stream, SecObject* obj)
-	{
-		s32 logicCount = allocator_getCount((Allocator*)obj->logic);
-		SERIALIZE(logicCount);
-		if (!logicCount) { return; }
-		
-		Logic** logicList = (Logic**)allocator_getHead((Allocator*)obj->logic);
-		while (logicList)
-		{
-			Logic* logic = *logicList;
-			if (!logic) { continue; }
-
-			// TODO: Logic code is a bit of a mess and needs to be untangled or annotated to continue.
-			/*
-			struct Logic
-			{
-				RSector* sector;
-				s32 u04;
-				SecObject* obj;
-				Logic** parent;
-				Task* task;
-				LogicCleanupFunc cleanupFunc;
-			};
-			*/
-
-			logicList = (Logic**)allocator_getNext((Allocator*)obj->logic);
-		}
 	}
 
 	/////////////////////////////////////////////
@@ -383,35 +349,15 @@ namespace TFE_Jedi
 		// infLink will be set when the INF system is serialized.
 		sector->infLink = nullptr;
 
-		TextureData* floorTex = serialize_readTexturePtr(stream);
-		TextureData* ceilTex  = serialize_readTexturePtr(stream);
-		sector->floorTex = floorTex ? &floorTex : nullptr;
-		sector->ceilTex  = ceilTex ? &ceilTex : nullptr;
-
+		sector->floorTex = level_readTexturePointer(stream);
+		sector->ceilTex  = level_readTexturePointer(stream);
 		DESERIALIZE(sector->floorOffset);
 		DESERIALIZE(sector->ceilOffset);
 
-		DESERIALIZE(sector->objectCount);
-		SecObject** list = nullptr;
-		sector->objectCapacity = 5 * ((sector->objectCount + 4) / 5);
-		if (sector->objectCapacity)
-		{
-			list = (SecObject**)level_alloc(sizeof(SecObject*) * sector->objectCapacity);
-		}
-		sector->objectList = list;
-				
-		for (s32 i = 0; i < sector->objectCount; i++)
-		{
-			sector->objectList[i] = allocateObject();
-			SecObject* obj = sector->objectList[i];
-			
-			// level_deserializeObject(stream, obj);
-			obj->index = i;
-		}
-		for (s32 i = sector->objectCount; i < sector->objectCapacity; i++)
-		{
-			sector->objectList[i] = nullptr;
-		}
+		// Objects are handled seperately and added to the sector later, so just initialize the object data.
+		sector->objectCount = 0;
+		sector->objectCapacity = 0;
+		sector->objectList = nullptr;
 
 		DESERIALIZE(sector->collisionFrame);
 		DESERIALIZE(sector->startWall);
@@ -470,14 +416,10 @@ namespace TFE_Jedi
 		wall->v0 = &sector->verticesVS[i0];
 		wall->v1 = &sector->verticesVS[i1];
 
-		TextureData* topTex = serialize_readTexturePtr(stream);
-		TextureData* midTex = serialize_readTexturePtr(stream);
-		TextureData* botTex = serialize_readTexturePtr(stream);
-		TextureData* signTex = serialize_readTexturePtr(stream);
-		wall->topTex = topTex ? &topTex : nullptr;
-		wall->midTex = midTex ? &midTex : nullptr;
-		wall->botTex = botTex ? &botTex : nullptr;
-		wall->signTex = signTex ? &signTex : nullptr;
+		wall->topTex  = level_readTexturePointer(stream);
+		wall->midTex  = level_readTexturePointer(stream);
+		wall->botTex  = level_readTexturePointer(stream);
+		wall->signTex = level_readTexturePointer(stream);
 
 		DESERIALIZE(wall->texelLength);
 		DESERIALIZE(wall->topTexelHeight);
@@ -504,78 +446,5 @@ namespace TFE_Jedi
 		DESERIALIZE(wall->worldPos0);
 		DESERIALIZE(wall->wallLight);
 		DESERIALIZE(wall->angle);
-	}
-
-	void level_deserializeObject(Stream* stream, SecObject* obj)
-	{
-		DESERIALIZE(obj->type);
-		DESERIALIZE(obj->entityFlags);
-
-		s32 projLogicId;
-		DESERIALIZE(projLogicId);
-		obj->projectileLogic = proj_getByLogicIndex(projLogicId);
-
-		DESERIALIZE(obj->posWS);
-		// posVS is calculated at runtime.
-		DESERIALIZE(obj->worldWidth);
-		DESERIALIZE(obj->worldHeight);
-		DESERIALIZE_BUF(obj->transform, 9 * sizeof(fixed16_16));
-
-		// Serialize data based on type.
-		switch (obj->type)
-		{
-			case OBJ_TYPE_SPIRIT:
-			{
-				// Nothing to serialize.
-			} break;
-			case OBJ_TYPE_SPRITE:
-			{
-				obj->wax = serialize_readWaxPtr(stream);
-			} break;
-			case OBJ_TYPE_FRAME:
-			{
-				obj->fme = serialize_readFramePtr(stream);
-			} break;
-			case OBJ_TYPE_3D:
-			{
-				obj->model = serialize_read3doPtr(stream);
-			} break;
-		}
-
-		DESERIALIZE(obj->frame);
-		DESERIALIZE(obj->anim);
-		obj->sector = serialization_readSectorPtr(stream);
-		level_deserializeLogics(stream, obj);
-
-		DESERIALIZE(obj->flags);
-		DESERIALIZE(obj->pitch);
-		DESERIALIZE(obj->yaw);
-		DESERIALIZE(obj->roll);
-		DESERIALIZE(obj->index);
-	}
-
-	void level_deserializeLogics(Stream* stream, SecObject* obj)
-	{
-		s32 logicCount;
-		DESERIALIZE(logicCount);
-		obj->logic = nullptr;
-		if (!logicCount) { return; }
-
-		obj->logic = allocator_create(sizeof(Logic**));
-		for (s32 i = 0; i < logicCount; i++)
-		{
-			// TODO: Logic code is a bit of a mess and needs to be untangled or annotated to continue.
-			/*
-			struct Logic
-			{
-				RSector* sector;
-				s32 u04;
-				SecObject* obj;
-				Logic** parent;
-				Task* task;
-				LogicCleanupFunc cleanupFunc;
-			};
-			*/
-		}
 	}
 }

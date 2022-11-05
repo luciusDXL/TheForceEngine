@@ -83,8 +83,6 @@ namespace TFE_DarkForces
 		if (key == KW_EYE)
 		{
 			player_setupEyeObject(obj);
-			//setCameraOffset(0, 0, 0);
-			//setCameraAngleOffset(0, 0, 0);
 		}
 		else if (key == KW_BOSS)
 		{

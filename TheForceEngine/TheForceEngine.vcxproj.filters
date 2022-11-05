@@ -1198,6 +1198,9 @@
     <ClInclude Include="TFE_DarkForces\Actor\actorModule.h">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Jedi\Level\robjData.h">
+      <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2024,6 +2027,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\objectPortalPlanes.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Jedi\Level\robjData.cpp">
+      <Filter>Source\TFE_Jedi\Level</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

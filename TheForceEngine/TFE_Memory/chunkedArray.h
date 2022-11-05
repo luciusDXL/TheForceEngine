@@ -22,6 +22,7 @@ namespace TFE_Memory
 	void freeToChunkedArray(ChunkedArray* arr, void* ptr);
 
 	u32 chunkedArraySize(ChunkedArray* arr);
+	u32 chunkedArrayCount(ChunkedArray* arr);
 	void* chunkedArrayGet(ChunkedArray* arr, u32 index);
 
 	void serialize(ChunkedArray* arr, FileStream* file);

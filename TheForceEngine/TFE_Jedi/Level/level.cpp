@@ -177,17 +177,17 @@ namespace TFE_Jedi
 
 		// Number of textures used by the level.
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, " TEXTURES %d", &s_levelIntState.textureCount) != 1)
+		if (sscanf(line, " TEXTURES %d", &s_levelState.textureCount) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture count.");
 			return false;
 		}
-		s_levelIntState.textures = (TextureData**)level_alloc(s_levelIntState.textureCount * sizeof(TextureData**));
-		memset(s_levelIntState.textures, 0, s_levelIntState.textureCount * sizeof(TextureData**));
+		s_levelState.textures = (TextureData**)level_alloc(s_levelState.textureCount * sizeof(TextureData**));
+		memset(s_levelState.textures, 0, s_levelState.textureCount * sizeof(TextureData**));
 
 		// Load Textures.
-		TextureData** texture = s_levelIntState.textures;
-		for (s32 i = 0; i < s_levelIntState.textureCount; i++, texture++)
+		TextureData** texture = s_levelState.textures;
+		for (s32 i = 0; i < s_levelState.textureCount; i++, texture++)
 		{
 			line = parser.readLine(bufferPos);
 			char textureName[256];
@@ -295,7 +295,7 @@ namespace TFE_Jedi
 			sector->floorTex = nullptr;
 			if (index != -1)
 			{
-				sector->floorTex = &s_levelIntState.textures[index];
+				sector->floorTex = &s_levelState.textures[index];
 			}
 			sector->floorOffset.x = floatToFixed16(offsetX);
 			sector->floorOffset.z = floatToFixed16(offsetZ);
@@ -320,7 +320,7 @@ namespace TFE_Jedi
 			sector->ceilTex = nullptr;
 			if (index != -1)
 			{
-				sector->ceilTex = &s_levelIntState.textures[index];
+				sector->ceilTex = &s_levelState.textures[index];
 			}
 			sector->ceilOffset.x = floatToFixed16(offsetX);
 			sector->ceilOffset.z = floatToFixed16(offsetZ);
@@ -470,7 +470,7 @@ namespace TFE_Jedi
 				wall->midTex = nullptr;
 				if (midTex != -1)
 				{
-					wall->midTex = &s_levelIntState.textures[midTex];
+					wall->midTex = &s_levelState.textures[midTex];
 					wall->midOffset.x = floatToFixed16(midOffsetX) * 8;
 					wall->midOffset.z = floatToFixed16(midOffsetZ) * 8;
 				}
@@ -478,7 +478,7 @@ namespace TFE_Jedi
 				wall->topTex = nullptr;
 				if (topTex != -1)
 				{
-					wall->topTex = &s_levelIntState.textures[topTex];
+					wall->topTex = &s_levelState.textures[topTex];
 					wall->topOffset.x = floatToFixed16(topOffsetX) * 8;
 					wall->topOffset.z = floatToFixed16(topOffsetZ) * 8;
 				}
@@ -486,7 +486,7 @@ namespace TFE_Jedi
 				wall->botTex = nullptr;
 				if (botTex != -1)
 				{
-					wall->botTex = &s_levelIntState.textures[botTex];
+					wall->botTex = &s_levelState.textures[botTex];
 					wall->botOffset.x = floatToFixed16(botOffsetX) * 8;
 					wall->botOffset.z = floatToFixed16(botOffsetZ) * 8;
 				}
@@ -494,7 +494,7 @@ namespace TFE_Jedi
 				wall->signTex = nullptr;
 				if (signTex != -1)
 				{
-					wall->signTex = &s_levelIntState.textures[signTex];
+					wall->signTex = &s_levelState.textures[signTex];
 					wall->signOffset.x = floatToFixed16(signOffsetX) * 8;
 					wall->signOffset.z = floatToFixed16(signOffsetZ) * 8;
 				}

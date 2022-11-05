@@ -524,6 +524,8 @@ namespace TFE_DarkForces
 
 	void lactor_setState(LActor* actor, s16 state, s16 stateFract)
 	{
+		if (!actor) { return; }
+
 		LActorType* type = lactor_findType(actor->resType);
 		if (type && type->stateFunc)
 		{
