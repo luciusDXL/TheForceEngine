@@ -36,7 +36,8 @@ namespace TFE_DarkForces
 		TURRET_HP            = FIXED(60),  // Starting HP.
 		TURRET_WIDTH         = FIXED(3),
 		TURRET_HEIGHT        =-FIXED(2),
-		TURRET_FIRE_Z_OFFSET = 0x4ccc,	   // ~0.3
+		//TURRET_FIRE_Z_OFFSET = 19660,	   // ~0.3
+		TURRET_FIRE_Z_OFFSET = 98300,	   // ~1.5  -- TODO: This seems to be required for mods like Dark Tide 4, but I'm not sure why.
 		TURRET_YAW_TOLERANCE = 3185,	   // How close the turret aim has to be in order to fire.
 		TURRET_PITCH_RANGE   = 1820,	   // How much pitch can deviate from the current value when aiming (+/- 40 degrees)
 		TURRET_MAX_DIST      = FIXED(140), // Maximum distance that the turret will shoot the player.
@@ -279,11 +280,11 @@ namespace TFE_DarkForces
 
 				proj->prevColObj = local(obj);
 				proj->excludeObj = local(obj);
-				proj_setTransform(proj, -local(obj)->pitch, local(obj)->yaw);
+				proj_setTransform(proj, local(obj)->pitch, local(obj)->yaw);
 
 				// Set a new random target.
 				target->yaw   = random(ANGLE_MAX);
-				target->pitch = random(TURRET_PITCH_RANGE) & ANGLE_MASK;
+				target->pitch = (-random(TURRET_PITCH_RANGE)) & ANGLE_MASK;
 				target->flags = (target->flags | 4) & 0xfffffffe;
 				target->speedRotation = TURRET_OUT_OF_CONTROL_ROTATE_SPD;
 			}
