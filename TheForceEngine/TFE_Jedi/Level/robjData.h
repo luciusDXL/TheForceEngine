@@ -111,10 +111,6 @@ namespace TFE_Jedi
 	void objData_serialize(Stream* stream);
 	void objData_deserialize(Stream* stream);
 
-	// These are only valid after deserializing, otherwise they will return null.
-	SecObject* objData_getPlayerEye();
-	SecObject* objData_getPlayer();
-
 	// Used for downstream serialization, to get the object from the serialized object ID.
 	SecObject* objData_getObjectBySerializationId(u32 id);
 }

@@ -8,6 +8,13 @@
 #include <TFE_Memory/chunkedArray.h>
 #include <TFE_System/system.h>
 
+// Required for serialization.
+namespace TFE_DarkForces
+{
+	extern void logic_serialize(Logic* logic, Stream* stream);
+	extern Logic* logic_deserialize(Logic** parent, Stream* stream);
+}
+
 namespace TFE_Jedi
 {
 	const u32 c_objStateVersion = 1;
@@ -16,8 +23,6 @@ namespace TFE_Jedi
 	struct SectorObjectData
 	{
 		ChunkedArray* objectList = nullptr;
-		SecObject* playerEye = nullptr;
-		SecObject* player = nullptr;
 	};
 	static SectorObjectData s_objData = {};
 		
@@ -43,24 +48,11 @@ namespace TFE_Jedi
 			TFE_Memory::freeToChunkedArray(s_objData.objectList, obj);
 		}
 	}
-		
-	SecObject* objData_getPlayerEye()
-	{
-		return s_objData.playerEye;
-	}
-
-	SecObject* objData_getPlayer()
-	{
-		return s_objData.player;
-	}
 
 	void objData_serializeObject(SecObject* obj, Stream* stream)
 	{
 		SERIALIZE(obj->type);
 		SERIALIZE(obj->entityFlags);
-
-		// TODO: Handle obj->projectileLogic.
-
 		SERIALIZE(obj->posWS);
 		// obj->posVS is derived at runtime.
 
@@ -89,8 +81,6 @@ namespace TFE_Jedi
 		SERIALIZE(obj->anim);
 		serialization_writeSectorPtr(stream, obj->sector);
 
-		// TODO: Handle obj->logic
-
 		SERIALIZE(obj->flags);
 		SERIALIZE(obj->pitch);
 		SERIALIZE(obj->yaw);
@@ -105,10 +95,6 @@ namespace TFE_Jedi
 		obj->self = obj;
 		DESERIALIZE(obj->type);
 		DESERIALIZE(obj->entityFlags);
-
-		// TODO: Handle obj->projectileLogic.
-		obj->projectileLogic = nullptr;
-
 		DESERIALIZE(obj->posWS);
 		// obj->posVS is derived at runtime.
 
@@ -142,9 +128,6 @@ namespace TFE_Jedi
 		DESERIALIZE(obj->anim);
 		obj->sector = serialization_readSectorPtr(stream);
 
-		// TODO: Handle obj->logic
-		obj->logic = nullptr;
-
 		DESERIALIZE(obj->flags);
 		DESERIALIZE(obj->pitch);
 		DESERIALIZE(obj->yaw);
@@ -161,16 +144,13 @@ namespace TFE_Jedi
 		assert(obj->serializeIndex == id);
 		return (obj->serializeIndex == id) ? obj : nullptr;
 	}
-
+		
 	void objData_serialize(Stream* stream)
 	{
 		// Data version.
 		SERIALIZE(c_objStateVersion);
 
 		u32 writeCount = 0;
-		size_t writeCountLoc = stream->getLoc();
-		SERIALIZE(writeCount);
-
 		ChunkedArray* list = s_objData.objectList;
 		if (!list || TFE_Memory::chunkedArraySize(list) < 1)
 		{
@@ -178,22 +158,47 @@ namespace TFE_Jedi
 			return;
 		}
 
+		// Assign IDs
 		const u32 size = TFE_Memory::chunkedArraySize(list);
 		SecObject* obj = (SecObject*)TFE_Memory::chunkedArrayGet(list, 0);
 		for (u32 i = 0; i < size; i++, obj++)
 		{
 			// Skip deleted objects.
 			if (!obj->self) { continue; }
-			// Write the object to the stream.
 			obj->serializeIndex = writeCount;  // So downstream serialization passes have an object ID to use.
-			objData_serializeObject(obj, stream);
 			writeCount++;
 		}
-		// Fix-up the write count.
-		size_t endLoc = stream->getLoc();
-		stream->seek((u32)writeCountLoc);
+
+		// Write objects.
 		SERIALIZE(writeCount);
-		stream->seek((u32)endLoc);
+		obj = (SecObject*)TFE_Memory::chunkedArrayGet(list, 0);
+		for (u32 i = 0; i < size; i++, obj++)
+		{
+			// Skip deleted objects.
+			if (!obj->self) { continue; }
+			// Write the object to the stream.
+			objData_serializeObject(obj, stream);
+
+			u32 logicCount = allocator_getCount((Allocator*)obj->logic);
+			SERIALIZE(logicCount);
+			if (!logicCount) { continue; }
+
+			Logic** logicList = (Logic**)allocator_getHead((Allocator*)obj->logic);
+			while (logicList)
+			{
+				Logic* logic = *logicList;
+				if (logic)
+				{
+					TFE_DarkForces::logic_serialize(logic, stream);
+				}
+				else
+				{
+					s32 invalidLogic = -1;
+					SERIALIZE(invalidLogic);
+				}
+				logicList = (Logic**)allocator_getNext((Allocator*)obj->logic);
+			};
+		}
 	}
 
 	void objData_deserialize(Stream* stream)
@@ -211,8 +216,6 @@ namespace TFE_Jedi
 		{
 			TFE_Memory::chunkedArrayClear(s_objData.objectList);
 		}
-		s_objData.player = nullptr;
-		s_objData.playerEye = nullptr;
 
 		for (u32 i = 0; i < count; i++)
 		{
@@ -222,21 +225,29 @@ namespace TFE_Jedi
 			if (obj->sector)
 			{
 				sector_addObjectDirect(obj->sector, obj);
-				// Grab the player info now so we don't have to loop through this when deserializing player data.
-				// Technically there should be a separation between the object and game data - but the flags are
-				// here anyway...
-				if (obj->flags & OBJ_FLAG_EYE)
-				{
-					s_objData.playerEye = obj;
-				}
-				else if (obj->entityFlags & ETFLAG_PLAYER)
-				{
-					s_objData.player = obj;
-				}
 			}
 			else
 			{
 				TFE_System::logWrite(LOG_ERROR, "Game Load", "Object [%d] has no sector.", i);
+			}
+
+			u32 logicCount;
+			DESERIALIZE(logicCount);
+			obj->logic = nullptr;
+			if (!logicCount) { continue; }
+
+			obj->logic = allocator_create(sizeof(Logic**));
+			for (u32 i = 0; i < logicCount; i++)
+			{
+				Logic** logicItem = (Logic**)allocator_newItem((Allocator*)obj->logic);
+				Logic* logic = TFE_DarkForces::logic_deserialize(logicItem, stream);
+				*logicItem = logic;
+
+				obj->projectileLogic = nullptr;
+				if (logic->type == LOGIC_PROJECTILE)
+				{
+					obj->projectileLogic = logic;
+				}
 			}
 		}
 	}
