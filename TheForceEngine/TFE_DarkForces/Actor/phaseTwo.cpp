@@ -695,7 +695,7 @@ namespace TFE_DarkForces
 				corpse->posWS = local(obj)->posWS;
 				corpse->worldWidth = 0;
 				corpse->worldHeight = 0;
-				corpse->entityFlags |= (ETFLAG_CORPSE | ETFLAG_16384);
+				corpse->entityFlags |= (ETFLAG_CORPSE | ETFLAG_KEEP_CORPSE);
 				sector_addObject(sector, corpse);
 
 				// Create Plasma pickup

@@ -605,8 +605,7 @@ namespace TFE_DarkForces
 				corpse->posWS = local(obj)->posWS;
 				corpse->worldWidth = 0;
 				corpse->worldHeight = 0;
-				// TODO: Break this apart.
-				corpse->entityFlags |= (0x42 << 8);
+				corpse->entityFlags |= (ETFLAG_CORPSE | ETFLAG_KEEP_CORPSE);
 				sector_addObject(sector, corpse);
 			}
 			local(physicsActor)->alive = JFALSE;

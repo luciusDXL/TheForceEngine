@@ -500,7 +500,7 @@ namespace TFE_DarkForces
 				SecObject* obj = objList[idx];
 				if (obj)
 				{
-					if ((obj->entityFlags & ETFLAG_CORPSE) && !(obj->entityFlags & ETFLAG_CAN_WAKE) && !actor_canSeeObject(obj, s_playerObject))
+					if ((obj->entityFlags & ETFLAG_CORPSE) && !(obj->entityFlags & ETFLAG_KEEP_CORPSE) && !actor_canSeeObject(obj, s_playerObject))
 					{
 						freeObject(obj);
 						return;
