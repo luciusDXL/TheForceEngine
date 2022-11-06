@@ -37,6 +37,10 @@ namespace TFE_DarkForces
 	void pickup_createTask();
 	// Called when the player respawns.
 	void pickupSupercharge();
+
+	// Serialization
+	void pickupLogic_serialize(Logic* logic, Stream* stream);
+	Logic* pickupLogic_deserialize(Stream* stream);
 	
 	extern u32 s_playerDying;
 	extern Task* s_superchargeTask;

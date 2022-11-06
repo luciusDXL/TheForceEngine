@@ -16,4 +16,8 @@ namespace TFE_DarkForces
 	Logic* obj_createVueLogic(SecObject* obj, LogicSetupFunc* setupFunc);
 
 	void vue_resetState();
+
+	// Serialization
+	void vueLogic_serialize(Logic* logic, Stream* stream);
+	Logic* vueLogic_deserialize(Stream* stream);
 }  // namespace TFE_DarkForces

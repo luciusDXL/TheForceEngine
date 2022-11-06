@@ -12,6 +12,7 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
 
@@ -97,8 +98,16 @@ namespace TFE_DarkForces
 	ProjectileHitType landMineUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType arcingProjectileUpdateFunc(ProjectileLogic* logic);
 	ProjectileHitType homingMissileProjectileUpdateFunc(ProjectileLogic* logic);
-
+	   
 	void projectileTaskFunc(MessageType msg);
+
+	static ProjectileFunc c_projUpdateFunc[] =
+	{
+		stdProjectileUpdateFunc,
+		landMineUpdateFunc,
+		arcingProjectileUpdateFunc,
+		homingMissileProjectileUpdateFunc
+	};
 
 	//////////////////////////////////////////////////////////////
 	// API Implementation
@@ -1571,6 +1580,115 @@ namespace TFE_DarkForces
 	{
 		if (index < 0) { return nullptr; }
 		return (ProjectileLogic*)allocator_getByIndex(s_projectiles, index);
+	}
+
+	// Serialization
+	void projLogic_serialize(Logic* logic, Stream* stream)
+	{
+		ProjectileLogic* proj = (ProjectileLogic*)logic;
+		SERIALIZE(proj->type);
+		SERIALIZE(proj->dmg);
+		SERIALIZE(proj->falloffAmt);
+		SERIALIZE(proj->nextFalloffTick);
+		SERIALIZE(proj->dmgFalloffDelta);
+		SERIALIZE(proj->minDmg);
+
+		SERIALIZE(proj->projForce);
+		SERIALIZE(proj->delta);
+		SERIALIZE(proj->vel);
+		SERIALIZE(proj->speed);
+		SERIALIZE(proj->col_speed);
+		SERIALIZE(proj->dir);
+		SERIALIZE(proj->horzBounciness);
+		SERIALIZE(proj->vertBounciness);
+
+		s32 prevColObjId = proj->prevColObj ? proj->prevColObj->serializeIndex : -1;
+		s32 prevObjId    = proj->prevObj    ? proj->prevObj->serializeIndex    : -1;
+		s32 excludeObjId = proj->excludeObj ? proj->excludeObj->serializeIndex : -1;
+		SERIALIZE(prevColObjId);
+		SERIALIZE(prevObjId);
+		SERIALIZE(excludeObjId);
+
+		SERIALIZE(proj->duration);
+		SERIALIZE(proj->homingAngleSpd);
+		SERIALIZE(proj->bounceCnt);
+		SERIALIZE(proj->reflVariation);
+
+		// proj->flightSndId = 0
+		serialization_writeDfSound(stream, proj->flightSndId);
+		serialization_writeDfSound(stream, proj->cameraPassSnd);
+		serialization_writeDfSound(stream, proj->reflectSnd);
+
+		s32 projUpdateFuncId = -1;
+		if (proj->updateFunc)
+		{
+			for (s32 i = 0; i < TFE_ARRAYSIZE(c_projUpdateFunc); i++)
+			{
+				if (proj->updateFunc == c_projUpdateFunc[i])
+				{
+					projUpdateFuncId = i;
+					break;
+				}
+			}
+		}
+		SERIALIZE(projUpdateFuncId);
+
+		SERIALIZE(proj->reflectEffectId);
+		SERIALIZE(proj->hitEffectId);
+		SERIALIZE(proj->flags);
+	}
+
+	Logic* projLogic_deserialize(Stream* stream)
+	{
+		ProjectileLogic* proj = (ProjectileLogic*)allocator_newItem(s_projectiles);
+
+		DESERIALIZE(proj->type);
+		DESERIALIZE(proj->dmg);
+		DESERIALIZE(proj->falloffAmt);
+		DESERIALIZE(proj->nextFalloffTick);
+		DESERIALIZE(proj->dmgFalloffDelta);
+		DESERIALIZE(proj->minDmg);
+
+		DESERIALIZE(proj->projForce);
+		DESERIALIZE(proj->delta);
+		DESERIALIZE(proj->vel);
+		DESERIALIZE(proj->speed);
+		DESERIALIZE(proj->col_speed);
+		DESERIALIZE(proj->dir);
+		DESERIALIZE(proj->horzBounciness);
+		DESERIALIZE(proj->vertBounciness);
+
+		s32 prevColObjId, prevObjId, excludeObjId;
+		DESERIALIZE(prevColObjId);
+		DESERIALIZE(prevObjId);
+		DESERIALIZE(excludeObjId);
+		proj->prevColObj = (prevColObjId >= 0) ? objData_getObjectBySerializationId(prevColObjId) : nullptr;
+		proj->prevObj    = (prevObjId >= 0) ? objData_getObjectBySerializationId(prevObjId) : nullptr;
+		proj->excludeObj = (excludeObjId >= 0) ? objData_getObjectBySerializationId(excludeObjId) : nullptr;
+
+		DESERIALIZE(proj->duration);
+		DESERIALIZE(proj->homingAngleSpd);
+		DESERIALIZE(proj->bounceCnt);
+		DESERIALIZE(proj->reflVariation);
+
+		proj->flightSndId = 0;
+		serialization_readDfSound(stream, &proj->flightSndId);
+		serialization_readDfSound(stream, &proj->cameraPassSnd);
+		serialization_readDfSound(stream, &proj->reflectSnd);
+
+		s32 projUpdateFuncId;
+		DESERIALIZE(projUpdateFuncId);
+		proj->updateFunc = (projUpdateFuncId >= 0) ? c_projUpdateFunc[projUpdateFuncId] : nullptr;
+
+		DESERIALIZE(proj->reflectEffectId);
+		DESERIALIZE(proj->hitEffectId);
+		DESERIALIZE(proj->flags);
+
+		proj->logic.task = s_projectileTask;
+		proj->logic.cleanupFunc = projectileLogicCleanupFunc;
+		task_makeActive(s_projectileTask);
+		
+		return (Logic*)proj;
 	}
 		
 	// Returns JTRUE if the hit was properly handled, otherwise returns JFALSE.

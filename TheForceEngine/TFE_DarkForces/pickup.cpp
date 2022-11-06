@@ -8,6 +8,7 @@
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
 
@@ -759,6 +760,210 @@ namespace TFE_DarkForces
 		}
 		return newValue;
 	}
+		
+	// Serialization
+	void pickupLogic_serialize(Logic* logic, Stream* stream)
+	{
+		Pickup* pickup = (Pickup*)logic;
+		SERIALIZE(pickup->id);
+		SERIALIZE(pickup->index);
+		SERIALIZE(pickup->type);
+		// item and value need to be setup based on type.
+		SERIALIZE(pickup->amount);
+		SERIALIZE_BUF(pickup->msgId, sizeof(pickup->msgId[0]) * 2);
+		SERIALIZE(pickup->maxAmount);
+	}
+
+	Logic* pickupLogic_deserialize(Stream* stream)
+	{
+		Pickup* pickup = (Pickup*)level_alloc(sizeof(Pickup));
+		DESERIALIZE(pickup->id);
+		DESERIALIZE(pickup->index);
+		DESERIALIZE(pickup->type);
+		DESERIALIZE(pickup->amount);
+		DESERIALIZE_BUF(pickup->msgId, sizeof(pickup->msgId[0]) * 2);
+		DESERIALIZE(pickup->maxAmount);
+
+		pickup->item = nullptr;
+		pickup->value = nullptr;
+		pickup->logic.task = s_pickupTask;
+		pickup->logic.cleanupFunc = pickup_cleanupFunc;
+
+		switch (pickup->id)
+		{
+			case ITEM_PLANS:
+			{
+				pickup->item = &s_playerInfo.itemPlans;
+			} break;
+			case ITEM_PHRIK:
+			{
+				pickup->item = &s_playerInfo.itemPhrik;
+			} break;
+			case ITEM_NAVA:
+			{
+				pickup->item = &s_playerInfo.itemNava;
+			} break;
+			case ITEM_DT_WEAPON:
+			{
+				pickup->item = &s_playerInfo.itemDtWeapon;
+			} break;
+			case ITEM_DATATAPE:
+			{
+				pickup->item = &s_playerInfo.itemDatatape;
+			} break;
+			// WEAPONS
+			case ITEM_RIFLE:
+			{
+				pickup->item = &s_playerInfo.itemRifle;
+				pickup->value = &s_playerInfo.ammoEnergy;
+			} break;
+			case ITEM_AUTOGUN:
+			{
+				pickup->item = &s_playerInfo.itemAutogun;
+				pickup->value = &s_playerInfo.ammoPower;
+			} break;
+			case ITEM_MORTAR:
+			{
+				pickup->item = &s_playerInfo.itemMortar;
+				pickup->value = &s_playerInfo.ammoShell;
+			} break;
+			case ITEM_FUSION:
+			{
+				pickup->item = &s_playerInfo.itemFusion;
+				pickup->value = &s_playerInfo.ammoPower;
+			} break;
+			case ITEM_CONCUSSION:
+			{
+				pickup->item = &s_playerInfo.itemConcussion;
+				pickup->value = &s_playerInfo.ammoPower;
+			} break;
+			case ITEM_CANNON:
+			{
+				pickup->item = &s_playerInfo.itemCannon;
+				pickup->value = &s_playerInfo.ammoPlasma;
+			} break;
+			case ITEM_ENERGY:
+			{
+				pickup->value = &s_playerInfo.ammoEnergy;
+			} break;
+			case ITEM_POWER:
+			{
+				pickup->value = &s_playerInfo.ammoPower;
+			} break;
+			case ITEM_PLASMA:
+			{
+				pickup->value = &s_playerInfo.ammoPlasma;
+			} break;
+			case ITEM_DETONATOR:
+			{
+				pickup->value = &s_playerInfo.ammoDetonator;
+			} break;
+			case ITEM_DETONATORS:
+			{
+				pickup->value = &s_playerInfo.ammoDetonator;
+			} break;
+			case ITEM_SHELL:
+			{
+				pickup->value = &s_playerInfo.ammoShell;
+			} break;
+			case ITEM_SHELLS:
+			{
+				pickup->value = &s_playerInfo.ammoShell;
+			} break;
+			case ITEM_MINE:
+			{
+				pickup->value = &s_playerInfo.ammoMine;
+			} break;
+			case ITEM_MINES:
+			{
+				pickup->value = &s_playerInfo.ammoMine;
+			} break;
+			case ITEM_MISSILE:
+			{
+				pickup->value = &s_playerInfo.ammoMissile;
+			} break;
+			case ITEM_MISSILES:
+			{
+				pickup->value = &s_playerInfo.ammoMissile;
+			} break;
+			case ITEM_SHIELD:
+			{
+				pickup->value = &s_playerInfo.shields;
+			} break;
+			case ITEM_RED_KEY:
+			{
+				pickup->item = &s_playerInfo.itemRedKey;
+			} break;
+			case ITEM_YELLOW_KEY:
+			{
+				pickup->item = &s_playerInfo.itemYellowKey;
+			} break;
+			case ITEM_BLUE_KEY:
+			{
+				pickup->item = &s_playerInfo.itemBlueKey;
+			} break;
+			case ITEM_GOGGLES:
+			{
+				pickup->item = &s_playerInfo.itemGoggles;
+				pickup->value = &s_energy;
+			} break;
+			case ITEM_CLEATS:
+			{
+				pickup->item = &s_playerInfo.itemCleats;
+			} break;
+			case ITEM_MASK:
+			{
+				pickup->item = &s_playerInfo.itemMask;
+				pickup->value = &s_energy;
+			} break;
+			case ITEM_BATTERY:
+			{
+				pickup->value = &s_energy;
+			} break;
+			case ITEM_CODE1:
+			{
+				pickup->item = &s_playerInfo.itemCode1;
+			} break;
+			case ITEM_CODE2:
+			{
+				pickup->item = &s_playerInfo.itemCode2;
+			} break;
+			case ITEM_CODE3:
+			{
+				pickup->item = &s_playerInfo.itemCode3;
+			} break;
+			case ITEM_CODE4:
+			{
+				pickup->item = &s_playerInfo.itemCode4;
+			} break;
+			case ITEM_CODE5:
+			{
+				pickup->item = &s_playerInfo.itemCode5;
+			} break;
+			case ITEM_CODE6:
+			{
+				pickup->item = &s_playerInfo.itemCode6;
+			} break;
+			case ITEM_CODE7:
+			{
+				pickup->item = &s_playerInfo.itemCode7;
+			} break;
+			case ITEM_CODE8:
+			{
+				pickup->item = &s_playerInfo.itemCode8;
+			} break;
+			case ITEM_CODE9:
+			{
+				pickup->item = &s_playerInfo.itemCode9;
+			} break;
+			case ITEM_MEDKIT:
+			{
+				pickup->value = &s_playerInfo.health;
+			} break;
+		}
+
+		return (Logic*)pickup;
+	}
 
 	//////////////////////////////////////////////////////////////
 	// Internal Implementation
@@ -907,5 +1112,4 @@ namespace TFE_DarkForces
 			s_playerInfo.ammoMissile   = pickup_addToValue(s_playerInfo.ammoMissile,   0,  20);
 		}
 	}
-
 }  // TFE_DarkForces

@@ -434,15 +434,19 @@ namespace TFE_DarkForces
 			} break;
 			case LOGIC_PICKUP:
 			{
+				pickupLogic_serialize(logic, stream);
 			} break;
 			case LOGIC_PLAYER:
 			{
+				playerLogic_serialize(logic, stream);
 			} break;
 			case LOGIC_PROJECTILE:
 			{
+				projLogic_serialize(logic, stream);
 			} break;
 			case LOGIC_VUE:
 			{
+				vueLogic_serialize(logic, stream);
 			} break;
 			default:
 			{
@@ -504,15 +508,19 @@ namespace TFE_DarkForces
 			} break;
 			case LOGIC_PICKUP:
 			{
+				logic = pickupLogic_deserialize(stream);
 			} break;
 			case LOGIC_PLAYER:
 			{
+				logic = playerLogic_deserialize(stream);
 			} break;
 			case LOGIC_PROJECTILE:
 			{
+				logic = projLogic_deserialize(stream);
 			} break;
 			case LOGIC_VUE:
 			{
+				logic = vueLogic_deserialize(stream);
 			} break;
 			default:
 			{

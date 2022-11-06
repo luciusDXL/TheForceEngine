@@ -21,6 +21,7 @@
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
@@ -34,6 +35,8 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
+	const u32 c_playerDataVersion = 1;
+
 	enum PlayerConstants
 	{
 		PLAYER_HEIGHT                  = 0x5cccc,	  // 5.8 units
@@ -2532,4 +2535,272 @@ namespace TFE_DarkForces
 			s_playerSector = s_playerObject->sector;
 		}
 	}
+		
+	// Serialization
+	void playerLogic_serialize(Logic* logic, Stream* stream)
+	{
+		SERIALIZE(c_playerDataVersion);
+
+		PlayerLogic* playerLogic = (PlayerLogic*)logic;
+		assert(playerLogic == &s_playerLogic);
+
+		SERIALIZE(playerLogic->dir);
+		SERIALIZE(playerLogic->move);
+		SERIALIZE(playerLogic->stepHeight);
+
+		SERIALIZE(s_externalYawSpd);
+		SERIALIZE(s_playerPitch);
+		SERIALIZE(s_playerRoll);
+		SERIALIZE(s_forwardSpd);
+		SERIALIZE(s_strafeSpd);
+		SERIALIZE(s_maxMoveDist);
+		SERIALIZE(s_playerStopAccel);
+		SERIALIZE(s_minEyeDistFromFloor);
+		SERIALIZE(s_postLandVel);
+		SERIALIZE(s_landUpVel);
+		SERIALIZE(s_playerVelX);
+		SERIALIZE(s_playerUpVel);
+		SERIALIZE(s_playerUpVel2);
+		SERIALIZE(s_playerVelZ);
+		SERIALIZE(s_externalVelX);
+		SERIALIZE(s_externalVelZ);
+		SERIALIZE(s_playerCrouchSpd);
+		SERIALIZE(s_playerSpeedAve);
+		SERIALIZE(s_prevDistFromFloor);
+		SERIALIZE(s_wpnSin);
+		SERIALIZE(s_wpnCos);
+		SERIALIZE(s_moveDirX);
+		SERIALIZE(s_moveDirZ);
+		SERIALIZE(s_dist);
+		SERIALIZE(s_distScale);
+
+		SERIALIZE(s_levelAtten);
+		SERIALIZE(s_prevCollisionFrameWall);
+		// Store safe sector, derive the safe itself from it on load.
+		serialization_writeSectorPtr(stream, s_curSafe->sector);
+
+		SERIALIZE(s_playerUse);
+		SERIALIZE(s_playerActionUse);
+		SERIALIZE(s_playerPrimaryFire);
+		SERIALIZE(s_playerSecFire);
+		SERIALIZE(s_playerJumping);
+		SERIALIZE(s_playerInWater);
+		SERIALIZE(s_limitStepHeight);
+		SERIALIZE(s_smallModeEnabled);
+		SERIALIZE(s_aiActive);
+		// Clear sound effects - s_crushSoundId, s_kyleScreamSoundId
+		SERIALIZE(s_playerPos);
+		SERIALIZE(s_playerObjHeight);
+		SERIALIZE(s_playerObjPitch);
+		SERIALIZE(s_playerObjYaw);
+		serialization_writeSectorPtr(stream, s_playerObjSector);
+
+		// Save wall data.
+		serialization_writeSectorPtr(stream, s_playerSlideWall ? s_playerSlideWall->sector : nullptr);
+		s32 wallId = s_playerSlideWall ? s_playerSlideWall->id : -1;
+		SERIALIZE(wallId);
+
+		SERIALIZE(s_playerInfo);
+		SERIALIZE(s_energy);
+		SERIALIZE(s_lifeCount);
+		SERIALIZE(s_playerLight);
+		SERIALIZE(s_headwaveVerticalOffset);
+		SERIALIZE(s_onFloor);
+		SERIALIZE(s_weaponLight);
+		SERIALIZE(s_baseAtten);
+		SERIALIZE(s_gravityAccel);
+		SERIALIZE(s_invincibility);
+		SERIALIZE(s_weaponFiring);
+		SERIALIZE(s_weaponFiringSec);
+		SERIALIZE(s_wearingCleats);
+		SERIALIZE(s_wearingGasmask);
+		SERIALIZE(s_nightvisionActive);
+		SERIALIZE(s_headlampActive);
+		SERIALIZE(s_superCharge);
+		SERIALIZE(s_superChargeHud);
+		SERIALIZE(s_playerSecMoved);
+
+		s32 invSavedSize = 0;
+		if (s_playerInvSaved)
+		{
+			invSavedSize = s32((size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo);
+			assert(invSavedSize == 140);
+		}
+		if (invSavedSize)
+		{
+			SERIALIZE_BUF(s_playerInvSaved, invSavedSize);
+		}
+
+		serialization_writeSectorPtr(stream, s_playerSector);
+		s32 playerObjId = s_playerObject ? s_playerObject->serializeIndex : -1;
+		s32 playerEyeId = s_playerEye ? s_playerEye->serializeIndex : -1;
+		SERIALIZE(playerObjId);
+		SERIALIZE(playerEyeId);
+		SERIALIZE(s_eyePos);
+		SERIALIZE(s_pitch);
+		SERIALIZE(s_yaw);
+		SERIALIZE(s_roll);
+		SERIALIZE(s_playerEyeFlags);
+		SERIALIZE(s_playerTick);
+		SERIALIZE(s_prevPlayerTick);
+		SERIALIZE(s_nextShieldDmgTick);
+		SERIALIZE(s_reviveTick);
+		SERIALIZE(s_nextPainSndTick);
+
+		SERIALIZE(s_playerYPos);
+		SERIALIZE(s_camOffset);
+		SERIALIZE(s_camOffsetPitch);
+		SERIALIZE(s_camOffsetYaw);
+		SERIALIZE(s_camOffsetRoll);
+		SERIALIZE(s_playerYaw);
+
+		SERIALIZE(s_itemUnknown1);
+		SERIALIZE(s_itemUnknown2);
+
+		SERIALIZE(s_playerHeight);
+		SERIALIZE(s_playerRun);
+		SERIALIZE(s_jumpScale);
+		SERIALIZE(s_playerSlow);
+		SERIALIZE(s_onMovingSurface);
+	}
+
+	Logic* playerLogic_deserialize(Stream* stream)
+	{
+		u32 version;
+		DESERIALIZE(version);
+				
+		PlayerLogic* playerLogic = &s_playerLogic;
+		DESERIALIZE(playerLogic->dir);
+		DESERIALIZE(playerLogic->move);
+		DESERIALIZE(playerLogic->stepHeight);
+		
+		DESERIALIZE(playerLogic->dir);
+		DESERIALIZE(playerLogic->move);
+		DESERIALIZE(playerLogic->stepHeight);
+
+		DESERIALIZE(s_externalYawSpd);
+		DESERIALIZE(s_playerPitch);
+		DESERIALIZE(s_playerRoll);
+		DESERIALIZE(s_forwardSpd);
+		DESERIALIZE(s_strafeSpd);
+		DESERIALIZE(s_maxMoveDist);
+		DESERIALIZE(s_playerStopAccel);
+		DESERIALIZE(s_minEyeDistFromFloor);
+		DESERIALIZE(s_postLandVel);
+		DESERIALIZE(s_landUpVel);
+		DESERIALIZE(s_playerVelX);
+		DESERIALIZE(s_playerUpVel);
+		DESERIALIZE(s_playerUpVel2);
+		DESERIALIZE(s_playerVelZ);
+		DESERIALIZE(s_externalVelX);
+		DESERIALIZE(s_externalVelZ);
+		DESERIALIZE(s_playerCrouchSpd);
+		DESERIALIZE(s_playerSpeedAve);
+		DESERIALIZE(s_prevDistFromFloor);
+		DESERIALIZE(s_wpnSin);
+		DESERIALIZE(s_wpnCos);
+		DESERIALIZE(s_moveDirX);
+		DESERIALIZE(s_moveDirZ);
+		DESERIALIZE(s_dist);
+		DESERIALIZE(s_distScale);
+
+		DESERIALIZE(s_levelAtten);
+		DESERIALIZE(s_prevCollisionFrameWall);
+		RSector* safeSector = serialization_readSectorPtr(stream);
+		s_curSafe = level_getSafeFromSector(safeSector);
+
+		DESERIALIZE(s_playerUse);
+		DESERIALIZE(s_playerActionUse);
+		DESERIALIZE(s_playerPrimaryFire);
+		DESERIALIZE(s_playerSecFire);
+		DESERIALIZE(s_playerJumping);
+		DESERIALIZE(s_playerInWater);
+		DESERIALIZE(s_limitStepHeight);
+		DESERIALIZE(s_smallModeEnabled);
+		DESERIALIZE(s_aiActive);
+		s_crushSoundId = 0;
+		s_kyleScreamSoundId = 0;
+		DESERIALIZE(s_playerPos);
+		DESERIALIZE(s_playerObjHeight);
+		DESERIALIZE(s_playerObjPitch);
+		DESERIALIZE(s_playerObjYaw);
+		s_playerObjSector = serialization_readSectorPtr(stream);
+
+		// Save wall data.
+		RSector* slideWallSector = serialization_readSectorPtr(stream);
+		s32 wallId;
+		DESERIALIZE(wallId);
+		s_playerSlideWall = slideWallSector ? &slideWallSector->walls[wallId] : nullptr;
+
+		DESERIALIZE(s_playerInfo);
+		DESERIALIZE(s_energy);
+		DESERIALIZE(s_lifeCount);
+		DESERIALIZE(s_playerLight);
+		DESERIALIZE(s_headwaveVerticalOffset);
+		DESERIALIZE(s_onFloor);
+		DESERIALIZE(s_weaponLight);
+		DESERIALIZE(s_baseAtten);
+		DESERIALIZE(s_gravityAccel);
+		DESERIALIZE(s_invincibility);
+		DESERIALIZE(s_weaponFiring);
+		DESERIALIZE(s_weaponFiringSec);
+		DESERIALIZE(s_wearingCleats);
+		DESERIALIZE(s_wearingGasmask);
+		DESERIALIZE(s_nightvisionActive);
+		DESERIALIZE(s_headlampActive);
+		DESERIALIZE(s_superCharge);
+		DESERIALIZE(s_superChargeHud);
+		DESERIALIZE(s_playerSecMoved);
+
+		s32 invSavedSize;
+		DESERIALIZE(invSavedSize);
+		s_playerInvSaved = nullptr;
+		if (invSavedSize)
+		{
+			s_playerInvSaved = (u32*)level_alloc(invSavedSize);
+			DESERIALIZE_BUF(s_playerInvSaved, invSavedSize);
+		}
+
+		s_playerSector = serialization_readSectorPtr(stream);
+		s32 playerObjId, playerEyeId;
+		DESERIALIZE(playerObjId);
+		DESERIALIZE(playerEyeId);
+		s_playerObject = objData_getObjectBySerializationId(playerObjId);
+		s_playerEye = objData_getObjectBySerializationId(playerEyeId);
+
+		DESERIALIZE(s_eyePos);
+		DESERIALIZE(s_pitch);
+		DESERIALIZE(s_yaw);
+		DESERIALIZE(s_roll);
+		DESERIALIZE(s_playerEyeFlags);
+		DESERIALIZE(s_playerTick);
+		DESERIALIZE(s_prevPlayerTick);
+		DESERIALIZE(s_nextShieldDmgTick);
+		DESERIALIZE(s_reviveTick);
+		DESERIALIZE(s_nextPainSndTick);
+
+		DESERIALIZE(s_playerYPos);
+		DESERIALIZE(s_camOffset);
+		DESERIALIZE(s_camOffsetPitch);
+		DESERIALIZE(s_camOffsetYaw);
+		DESERIALIZE(s_camOffsetRoll);
+		DESERIALIZE(s_playerYaw);
+
+		DESERIALIZE(s_itemUnknown1);
+		DESERIALIZE(s_itemUnknown2);
+
+		DESERIALIZE(s_playerHeight);
+		DESERIALIZE(s_playerRun);
+		DESERIALIZE(s_jumpScale);
+		DESERIALIZE(s_playerSlow);
+		DESERIALIZE(s_onMovingSurface);
+
+		s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
+		task_makeActive(s_playerTask);
+		playerLogic->logic.task = s_playerTask;
+		playerLogic->logic.cleanupFunc = playerLogicCleanupFunc;
+
+		return (Logic*)playerLogic;
+	}
+
 }  // TFE_DarkForces

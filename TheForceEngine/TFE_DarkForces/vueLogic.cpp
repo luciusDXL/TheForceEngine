@@ -13,6 +13,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
 
@@ -75,6 +76,57 @@ namespace TFE_DarkForces
 
 		obj_addLogic(obj, (Logic*)vueLogic, LOGIC_VUE, task, vueLogicCleanupFunc);
 		*setupFunc = vueLogicSetupFunc;
+
+		return (Logic*)vueLogic;
+	}
+
+	// Serialization
+	void vueLogic_serialize(Logic* logic, Stream* stream)
+	{
+		VueLogic* vueLogic = (VueLogic*)logic;
+
+		// Frames
+		s32 frameCount = allocator_getCount(vueLogic->frames);
+		SERIALIZE(frameCount);
+		VueFrame* frame = (VueFrame*)allocator_getHead(vueLogic->frames);
+		while (frame)
+		{
+			SERIALIZE((*frame));
+			frame = (VueFrame*)allocator_getNext(vueLogic->frames);
+		}
+		SERIALIZE(vueLogic->isCamera);
+		SERIALIZE(vueLogic->frameDelay);
+		serialization_writeSectorPtr(stream, vueLogic->sector);
+		SERIALIZE(vueLogic->flags);
+	}
+
+	Logic* vueLogic_deserialize(Stream* stream)
+	{
+		VueLogic* vueLogic = (VueLogic*)level_alloc(sizeof(VueLogic));
+		
+		s32 frameCount;
+		DESERIALIZE(frameCount);
+		vueLogic->frames = nullptr;
+		if (frameCount)
+		{
+			vueLogic->frames = allocator_create(sizeof(VueFrame));
+			for (s32 i = 0; i < frameCount; i++)
+			{
+				VueFrame* frame = (VueFrame*)allocator_newItem(vueLogic->frames);
+				DESERIALIZE((*frame));
+			}
+		}
+		DESERIALIZE(vueLogic->isCamera);
+		DESERIALIZE(vueLogic->frameDelay);
+		vueLogic->sector = serialization_readSectorPtr(stream);
+		DESERIALIZE(vueLogic->flags);
+
+		Task* task = createSubTask("vueLogic", vueLogicTaskFunc);
+		vueLogic->task = task;
+		task_setUserData(task, vueLogic);
+
+		vueLogic->logic.task = task;
+		vueLogic->logic.cleanupFunc = vueLogicCleanupFunc;
 
 		return (Logic*)vueLogic;
 	}

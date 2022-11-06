@@ -9,10 +9,12 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_FileSystem/stream.h>
 #include "sound.h"
 #include "time.h"
 
 struct ProjectileLogic;
+struct Logic;
 
 namespace TFE_DarkForces
 {
@@ -155,4 +157,8 @@ namespace TFE_DarkForces
 	void cheat_unlock();
 	void cheat_maxout();
 	void cheat_godMode();
+
+	// Serialization
+	void playerLogic_serialize(Logic* logic, Stream* stream);
+	Logic* playerLogic_deserialize(Stream* stream);
 }  // namespace TFE_DarkForces

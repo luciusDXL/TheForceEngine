@@ -93,8 +93,6 @@ namespace TFE_DarkForces
 		HitEffectID reflectEffectId;
 		HitEffectID hitEffectId;          // The effect to play when the projectile hits a solid surface.
 		u32 flags;
-		s32 ua0;
-		s32 ua4;
 	};
 
 	// Startup the projectile system.
@@ -118,6 +116,10 @@ namespace TFE_DarkForces
 	// TFE: Serialization functionality.
 	s32 proj_getLogicIndex(ProjectileLogic* logic);
 	ProjectileLogic* proj_getByLogicIndex(s32 index);
+
+	// Serialization
+	void projLogic_serialize(Logic* logic, Stream* stream);
+	Logic* projLogic_deserialize(Stream* stream);
 
 	extern u32 s_hitWallFlag;
 	extern angle14_32 s_projReflectOverrideYaw;
