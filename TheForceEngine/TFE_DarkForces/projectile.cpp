@@ -168,7 +168,7 @@ namespace TFE_DarkForces
 		projLogic->vel.z   = 0;
 		projLogic->minDmg  = 0;
 
-		obj_addLogic(projObj, (Logic*)projLogic, s_projectileTask, projectileLogicCleanupFunc);
+		obj_addLogic(projObj, (Logic*)projLogic, LOGIC_PROJECTILE, s_projectileTask, projectileLogicCleanupFunc);
 		
 		switch (type)
 		{

@@ -893,7 +893,7 @@ namespace TFE_DarkForces
 		anim->flags &= 0xfffffffe;
 
 		actor_setupAnimation2(obj, 5, anim);
-		obj_addLogic(obj, (Logic*)trooper, task, phaseOneCleanupFunc);
+		obj_addLogic(obj, (Logic*)trooper, LOGIC_PHASE_ONE, task, phaseOneCleanupFunc);
 
 		if (setupFunc)
 		{

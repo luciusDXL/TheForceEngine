@@ -73,7 +73,7 @@ namespace TFE_DarkForces
 		vueLogic->task = task;
 		task_setUserData(task, vueLogic);
 
-		obj_addLogic(obj, (Logic*)vueLogic, task, vueLogicCleanupFunc);
+		obj_addLogic(obj, (Logic*)vueLogic, LOGIC_VUE, task, vueLogicCleanupFunc);
 		*setupFunc = vueLogicSetupFunc;
 
 		return (Logic*)vueLogic;

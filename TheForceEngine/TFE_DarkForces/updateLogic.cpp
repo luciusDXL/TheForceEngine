@@ -6,6 +6,7 @@
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
 
@@ -108,10 +109,51 @@ namespace TFE_DarkForces
 		*logicItem = (Logic*)updateLogic;
 
 		updateLogic->logic.obj = obj;
+		updateLogic->logic.type = LOGIC_UPDATE;
 		updateLogic->logic.parent = logicItem;
 		updateLogic->logic.cleanupFunc = updateLogicCleanupFunc;
 		updateLogic->logic.task = s_logicUpdateTask;
 		obj->flags &= ~OBJ_FLAG_MOVABLE;
+
+		return (Logic*)updateLogic;
+	}
+
+	// Serialization
+	void updateLogic_serialize(Logic* logic, Stream* stream)
+	{
+		UpdateLogic* updateLogic = (UpdateLogic*)logic;
+		SERIALIZE(updateLogic->xVel);
+		SERIALIZE(updateLogic->yVel);
+		SERIALIZE(updateLogic->zVel);
+		SERIALIZE(updateLogic->pitchRate);
+		SERIALIZE(updateLogic->yawRate);
+		SERIALIZE(updateLogic->rollRate);
+		SERIALIZE(updateLogic->flags);
+	}
+
+	Logic* updateLogic_deserialize(Stream* stream)
+	{
+		if (!s_logicUpdateList)
+		{
+			s_logicUpdateList = allocator_create(sizeof(UpdateLogic));
+		}
+		if (!s_logicUpdateTask)
+		{
+			s_logicUpdateTask = createTask("update logic", updateLogicTaskFunc);
+		}
+
+		UpdateLogic* updateLogic = (UpdateLogic*)allocator_newItem(s_logicUpdateList);
+		DESERIALIZE(updateLogic->xVel);
+		DESERIALIZE(updateLogic->yVel);
+		DESERIALIZE(updateLogic->zVel);
+		DESERIALIZE(updateLogic->pitchRate);
+		DESERIALIZE(updateLogic->yawRate);
+		DESERIALIZE(updateLogic->rollRate);
+		DESERIALIZE(updateLogic->flags);
+
+		updateLogic->pad16 = 0;
+		updateLogic->logic.task = s_logicUpdateTask;
+		updateLogic->logic.cleanupFunc = updateLogicCleanupFunc;
 
 		return (Logic*)updateLogic;
 	}

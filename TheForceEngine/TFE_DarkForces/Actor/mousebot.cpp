@@ -407,7 +407,7 @@ namespace TFE_DarkForces
 		physActor->moveMod.target.yaw   = obj->yaw;
 		physActor->moveMod.target.roll  = obj->roll;
 
-		obj_addLogic(obj, (Logic*)mouseBot, mouseBotTask, mouseBotLogicCleanupFunc);
+		obj_addLogic(obj, (Logic*)mouseBot, LOGIC_MOUSEBOT, mouseBotTask, mouseBotLogicCleanupFunc);
 		if (setupFunc)
 		{
 			*setupFunc = nullptr;

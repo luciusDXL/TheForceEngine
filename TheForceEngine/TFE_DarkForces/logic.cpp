@@ -11,8 +11,10 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/Level/rwall.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/generator.h>
 #include <TFE_DarkForces/random.h>
+#include <TFE_System/system.h>
 
 // Regular Enemies
 #include <TFE_DarkForces/Actor/exploders.h>
@@ -46,7 +48,7 @@ namespace TFE_DarkForces
 
 	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc);
 
-	void obj_addLogic(SecObject* obj, Logic* logic, Task* task, LogicCleanupFunc cleanupFunc)
+	void obj_addLogic(SecObject* obj, Logic* logic, LogicType type, Task* task, LogicCleanupFunc cleanupFunc)
 	{
 		if (!obj->logic)
 		{
@@ -56,6 +58,7 @@ namespace TFE_DarkForces
 		Logic** logicItem = (Logic**)allocator_newItem((Allocator*)obj->logic);
 		*logicItem = logic;
 		logic->obj = obj;
+		logic->type = type;
 		logic->parent = logicItem;
 		logic->task = task;
 		logic->cleanupFunc = cleanupFunc;
@@ -311,8 +314,7 @@ namespace TFE_DarkForces
 			} break;
 		}
 
-		// Fallthrough returns null.
-		// TODO: Add an assert or error once all of the cases are handled.
+		TFE_System::logWrite(LOG_ERROR, "Logic", "Unknown logic type - %d.", logicId);
 		return nullptr;
 	}
 
@@ -379,5 +381,153 @@ namespace TFE_DarkForces
 		obj_setEnemyLogic(spawn, type, nullptr);
 
 		return spawn;
+	}
+
+	void logic_serialize(Logic* logic, Stream* stream)
+	{
+		s32 objIndex = logic->obj ? logic->obj->serializeIndex : -1;
+		SERIALIZE(logic->type);
+		SERIALIZE(objIndex);
+
+		switch (logic->type)
+		{
+			// AI
+			case LOGIC_DISPATCH:
+			{
+			} break;
+			case LOGIC_BOBA_FETT:
+			{
+			} break;
+			case LOGIC_DRAGON:
+			{
+			} break;
+			case LOGIC_MOUSEBOT:
+			{
+			} break;
+			case LOGIC_PHASE_ONE:
+			{
+			} break;
+			case LOGIC_PHASE_TWO:
+			{
+			} break;
+			case LOGIC_PHASE_THREE:
+			{
+			} break;
+			case LOGIC_TURRET:
+			{
+			} break;
+			case LOGIC_WELDER:
+			{
+			} break;
+			// General
+			case LOGIC_ANIM:
+			{
+				animLogic_serialize(logic, stream);
+			} break;
+			case LOGIC_UPDATE:
+			{
+				updateLogic_serialize(logic, stream);
+			} break;
+			case LOGIC_GENERATOR:
+			{
+				generatorLogic_serialize(logic, stream);
+			} break;
+			case LOGIC_PICKUP:
+			{
+			} break;
+			case LOGIC_PLAYER:
+			{
+			} break;
+			case LOGIC_PROJECTILE:
+			{
+			} break;
+			case LOGIC_VUE:
+			{
+			} break;
+			default:
+			{
+				TFE_System::logWrite(LOG_ERROR, "Logic", "Serialize - invalid logic type: %d.", logic->type);
+			}
+		}
+	}
+
+	Logic* logic_deserialize(Logic** parent, Stream* stream)
+	{
+		s32 objIndex;
+		LogicType type;
+		Logic* logic = nullptr;
+		DESERIALIZE(type);
+		DESERIALIZE(objIndex);
+
+		switch (type)
+		{
+			// AI
+			case LOGIC_DISPATCH:
+			{
+			} break;
+			case LOGIC_BOBA_FETT:
+			{
+			} break;
+			case LOGIC_DRAGON:
+			{
+			} break;
+			case LOGIC_MOUSEBOT:
+			{
+			} break;
+			case LOGIC_PHASE_ONE:
+			{
+			} break;
+			case LOGIC_PHASE_TWO:
+			{
+			} break;
+			case LOGIC_PHASE_THREE:
+			{
+			} break;
+			case LOGIC_TURRET:
+			{
+			} break;
+			case LOGIC_WELDER:
+			{
+			} break;
+			// General
+			case LOGIC_ANIM:
+			{
+				logic = animLogic_deserialize(stream);
+			} break;
+			case LOGIC_UPDATE:
+			{
+				logic = updateLogic_deserialize(stream);
+			} break;
+			case LOGIC_GENERATOR:
+			{
+				logic = generatorLogic_deserialize(stream);
+			} break;
+			case LOGIC_PICKUP:
+			{
+			} break;
+			case LOGIC_PLAYER:
+			{
+			} break;
+			case LOGIC_PROJECTILE:
+			{
+			} break;
+			case LOGIC_VUE:
+			{
+			} break;
+			default:
+			{
+				TFE_System::logWrite(LOG_ERROR, "Logic", "Serialize - invalid logic type: %d.", logic->type);
+			}
+		}
+
+		if (logic)
+		{
+			logic->type = type;
+			logic->parent = parent;
+			// TODO
+			// logic->obj = 
+		}
+
+		return logic;
 	}
 }  // TFE_DarkForces

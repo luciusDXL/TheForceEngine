@@ -355,7 +355,7 @@ namespace TFE_Jedi
 				}
 
 				const s32 maxBufferSize = ShaderBuffer::getMaxSize();
-				if (s_levelState.sectorCount * 2 > maxBufferSize)
+				if ((s32)s_levelState.sectorCount * 2 > maxBufferSize)
 				{
 					TFE_System::logWrite(LOG_ERROR, "GPU Renderer", "Too many sectors, only %d is supported by your hardware.", maxBufferSize / 2);
 				}

@@ -2,6 +2,7 @@
 #include "time.h"
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/InfSystem/message.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
 
@@ -115,7 +116,7 @@ namespace TFE_DarkForces
 		SpriteAnimLogic* anim = (SpriteAnimLogic*)allocator_newItem(s_spriteAnimList);
 		const WaxAnim* waxAnim = WAX_AnimPtr(obj->wax, 0);
 
-		obj_addLogic(obj, (Logic*)anim, s_spriteAnimTask, spriteAnimLogicCleanupFunc);
+		obj_addLogic(obj, (Logic*)anim, LOGIC_ANIM, s_spriteAnimTask, spriteAnimLogicCleanupFunc);
 
 		anim->firstFrame = 0;
 		anim->lastFrame = waxAnim->frameCount - 1;
@@ -127,6 +128,62 @@ namespace TFE_DarkForces
 		obj->frame = 0;
 		obj->anim = 0;
 		task_makeActive(s_spriteAnimTask);
+
+		return (Logic*)anim;
+	}
+
+	// TODO: Find a better way of handling the complete task.
+	extern Task* s_hitEffectTask;
+
+	void animLogic_serialize(Logic* logic, Stream* stream)
+	{
+		SpriteAnimLogic* anim = (SpriteAnimLogic*)logic;
+		SERIALIZE(anim->firstFrame);
+		SERIALIZE(anim->lastFrame);
+		SERIALIZE(anim->loopCount);
+		SERIALIZE(anim->delay);
+		SERIALIZE(anim->nextTick);
+
+		// For now, we know the only complete task is s_hitEffectTask.
+		s32 completeTaskId = 0;
+		if (anim->completeTask == s_hitEffectTask)
+		{
+			completeTaskId = 1;
+		}
+		assert(!anim->completeTask || anim->completeTask == s_hitEffectTask);
+		SERIALIZE(completeTaskId);
+	}
+
+	Logic* animLogic_deserialize(Stream* stream)
+	{
+		// Create an allocator if one is not already setup.
+		if (!s_spriteAnimTask)
+		{
+			s_spriteAnimTask = createTask("sprite animation", spriteAnimLogicFunc);
+		}
+		if (!s_spriteAnimList)
+		{
+			s_spriteAnimList = allocator_create(sizeof(SpriteAnimLogic));
+		}
+		task_makeActive(s_spriteAnimTask);
+
+		s32 completeTaskId;
+		SpriteAnimLogic* anim = (SpriteAnimLogic*)allocator_newItem(s_spriteAnimList);
+		DESERIALIZE(anim->firstFrame);
+		DESERIALIZE(anim->lastFrame);
+		DESERIALIZE(anim->loopCount);
+		DESERIALIZE(anim->delay);
+		DESERIALIZE(anim->nextTick);
+		DESERIALIZE(completeTaskId);
+		anim->logic.task = s_spriteAnimTask;
+		anim->logic.cleanupFunc = spriteAnimLogicCleanupFunc;
+
+		assert(completeTaskId == 0 || completeTaskId == 1);
+		anim->completeTask = nullptr;
+		if (completeTaskId == 1)
+		{
+			anim->completeTask = s_hitEffectTask;
+		}
 
 		return (Logic*)anim;
 	}

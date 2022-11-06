@@ -178,7 +178,7 @@ namespace TFE_DarkForces
 	// Shared State
 	///////////////////////////////////////////
 	PlayerInfo s_playerInfo = { 0 };
-	PlayerLogic s_playerLogic = { 0 };
+	PlayerLogic s_playerLogic = {};
 	fixed16_16 s_energy = 2 * ONE_16;
 	s32 s_lifeCount;
 	s32 s_playerLight = 0;
@@ -588,7 +588,7 @@ namespace TFE_DarkForces
 	void player_setupObject(SecObject* obj)
 	{
 		s_playerObject = obj;
-		obj_addLogic(obj, (Logic*)&s_playerLogic, s_playerTask, playerLogicCleanupFunc);
+		obj_addLogic(obj, (Logic*)&s_playerLogic, LOGIC_PLAYER, s_playerTask, playerLogicCleanupFunc);
 
 		s_playerObject->entityFlags|= ETFLAG_PLAYER;
 		s_playerObject->flags      |= OBJ_FLAG_MOVABLE;

@@ -1053,7 +1053,7 @@ namespace TFE_DarkForces
 		anim->prevTick = 0;
 		actor_setupAnimation2(obj, 5, anim);
 
-		obj_addLogic(obj, &dragon->logic, task, kellDragonCleanupFunc);
+		obj_addLogic(obj, &dragon->logic, LOGIC_DRAGON, task, kellDragonCleanupFunc);
 		if (setupFunc)
 		{
 			*setupFunc = nullptr;

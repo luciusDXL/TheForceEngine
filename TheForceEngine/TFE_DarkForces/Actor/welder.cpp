@@ -476,7 +476,7 @@ namespace TFE_DarkForces
 		target->pitch = obj->pitch;
 		target->yaw   = obj->yaw;
 		target->roll  = obj->roll;
-		obj_addLogic(obj, &welder->logic, task, welderCleanupFunc);
+		obj_addLogic(obj, &welder->logic, LOGIC_WELDER, task, welderCleanupFunc);
 
 		if (setupFunc)
 		{

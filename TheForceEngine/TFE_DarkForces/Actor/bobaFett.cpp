@@ -854,7 +854,7 @@ namespace TFE_DarkForces
 		ActorTarget* target = &physicsActor->moveMod.target;
 		target->speedRotation = 6826;
 
-		obj_addLogic(obj, (Logic*)bobaFett, task, bobaFettCleanupFunc);
+		obj_addLogic(obj, (Logic*)bobaFett, LOGIC_BOBA_FETT, task, bobaFettCleanupFunc);
 
 		if (setupFunc)
 		{

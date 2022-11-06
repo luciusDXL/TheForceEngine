@@ -168,7 +168,7 @@ namespace TFE_DarkForces
 		dispatch->freeTask = nullptr;
 		dispatch->flags = 4;
 
-		obj_addLogic(obj, (Logic*)dispatch, s_istate.actorTask, actorLogicCleanupFunc);
+		obj_addLogic(obj, (Logic*)dispatch, LOGIC_DISPATCH, s_istate.actorTask, actorLogicCleanupFunc);
 		if (setupFunc)
 		{
 			*setupFunc = actorLogicSetupFunc;

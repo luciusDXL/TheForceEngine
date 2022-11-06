@@ -16,6 +16,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
 
@@ -231,8 +232,77 @@ namespace TFE_DarkForces
 
 		Task* task = createSubTask("Generator", generatorTaskFunc);
 		task_setUserData(task, generator);
-		obj_addLogic(obj, (Logic*)generator, task, generatorLogicCleanupFunc);
+		obj_addLogic(obj, (Logic*)generator, LOGIC_GENERATOR, task, generatorLogicCleanupFunc);
 
 		return (Logic*)generator;
+	}
+
+	// Serialization
+	void generatorLogic_serialize(Logic* logic, Stream* stream)
+	{
+		Generator* gen = (Generator*)logic;
+		SERIALIZE(gen->type);
+		SERIALIZE(gen->delay);
+		SERIALIZE(gen->interval);
+		SERIALIZE(gen->maxAlive);
+		SERIALIZE(gen->minDist);
+		SERIALIZE(gen->maxDist);
+
+		s32 count = allocator_getCount(gen->entities);
+		SERIALIZE(count);
+		if (count)
+		{
+			SecObject** entityList = (SecObject**)allocator_getHead(gen->entities);
+			while (entityList)
+			{
+				SecObject* obj = *entityList;
+				s32 entityId = (obj) ? obj->serializeIndex : -1;
+				SERIALIZE(entityId);
+				entityList = (SecObject**)allocator_getNext(gen->entities);
+			}
+		}
+
+		SERIALIZE(gen->aliveCount);
+		SERIALIZE(gen->numTerminate);
+		SERIALIZE(gen->wanderTime);
+		serialize_writeWaxPtr(stream, gen->wax);
+		SERIALIZE(gen->active);
+	}
+
+	Logic* generatorLogic_deserialize(Stream* stream)
+	{
+		Generator* gen = (Generator*)level_alloc(sizeof(Generator));
+		gen->entities = allocator_create(sizeof(SecObject**));
+
+		DESERIALIZE(gen->type);
+		DESERIALIZE(gen->delay);
+		DESERIALIZE(gen->interval);
+		DESERIALIZE(gen->maxAlive);
+		DESERIALIZE(gen->minDist);
+		DESERIALIZE(gen->maxDist);
+				
+		s32 count;
+		DESERIALIZE(count);
+		for (s32 i = 0; i < count; i++)
+		{
+			u32 id;
+			DESERIALIZE(id);
+
+			SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
+			*entityPtr = objData_getObjectBySerializationId(id);
+		}
+
+		DESERIALIZE(gen->aliveCount);
+		DESERIALIZE(gen->numTerminate);
+		DESERIALIZE(gen->wanderTime);
+		gen->wax = serialize_readWaxPtr(stream);
+		DESERIALIZE(gen->active);
+
+		Task* task = createSubTask("Generator", generatorTaskFunc);
+		task_setUserData(task, gen);
+		gen->logic.task = task;
+		gen->logic.cleanupFunc = generatorLogicCleanupFunc;
+
+		return (Logic*)gen;
 	}
 }  // TFE_DarkForces

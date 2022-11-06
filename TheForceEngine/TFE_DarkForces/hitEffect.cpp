@@ -34,8 +34,8 @@ namespace TFE_DarkForces
 	static SoundSourceId s_concussionExplodeSnd;
 	static EffectData s_effectData[HEFFECT_COUNT];
 	static Allocator* s_hitEffects;
-	static Task* s_hitEffectTask = nullptr;
 
+	Task* s_hitEffectTask = nullptr;
 	vec3_fixed s_explodePos;
 	EffectData* s_curEffectData = nullptr;
 

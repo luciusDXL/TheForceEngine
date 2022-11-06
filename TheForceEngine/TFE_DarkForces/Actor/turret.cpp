@@ -513,7 +513,7 @@ namespace TFE_DarkForces
 		target->pitch = obj->pitch;
 		target->yaw   = obj->yaw;
 		target->roll  = obj->roll;
-		obj_addLogic(obj, (Logic*)turret, turretTask, turretCleanupFunc);
+		obj_addLogic(obj, (Logic*)turret, LOGIC_TURRET, turretTask, turretCleanupFunc);
 		
 		if (setupFunc)
 		{
