@@ -383,6 +383,14 @@ namespace TFE_DarkForces
 		return spawn;
 	}
 
+	///////////////////////////////////////////////////
+	// Logic Serialization
+	// TODO: It probably makes sense to move this to
+	// its own file at some point.
+	///////////////////////////////////////////////////
+
+	// Stubbed serialization functions
+	// TODO: These should be removed once the system is complete.
 	void unimplementedLogic_serialize(Logic* logic, Stream* stream)
 	{
 		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented serialization, type %d", logic->type);
@@ -393,7 +401,8 @@ namespace TFE_DarkForces
 		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented deserialization.");
 		return nullptr;
 	}
-
+		
+	// Type -> Serialization function tables.
 	typedef void(*LogicSerializationFunc)(Logic*, Stream*);
 	typedef Logic*(*LogicDeserializationFunc)(Stream*);
 
@@ -439,6 +448,7 @@ namespace TFE_DarkForces
 		nullptr,                        // LOGIC_UNKNOWN,
 	};
 
+	// Root serialization functions for Logics.
 	void logic_serialize(Logic* logic, Stream* stream)
 	{
 		SERIALIZE(logic->type);
