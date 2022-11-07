@@ -12,7 +12,7 @@
 namespace TFE_DarkForces
 {
 	extern void logic_serialize(Logic* logic, Stream* stream);
-	extern Logic* logic_deserialize(Logic** parent, Stream* stream);
+	extern Logic* logic_deserialize(Stream* stream);
 }
 
 namespace TFE_Jedi
@@ -244,10 +244,15 @@ namespace TFE_Jedi
 			obj->logic = allocator_create(sizeof(Logic**));
 			for (u32 i = 0; i < logicCount; i++)
 			{
+				Logic* logic = TFE_DarkForces::logic_deserialize(stream);
+				if (!logic) { continue; }
+
 				Logic** logicItem = (Logic**)allocator_newItem((Allocator*)obj->logic);
-				Logic* logic = TFE_DarkForces::logic_deserialize(logicItem, stream);
+				logic->parent = logicItem;
+				logic->obj = obj;
 				*logicItem = logic;
 
+				// Handle projectiles.
 				obj->projectileLogic = nullptr;
 				if (logic->type == LOGIC_PROJECTILE)
 				{

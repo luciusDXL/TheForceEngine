@@ -184,7 +184,7 @@ namespace TFE_DarkForces
 
 		return JTRUE;
 	}
-	
+
 	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc)
 	{
 		obj->flags |= OBJ_FLAG_ENEMY;
@@ -383,159 +383,97 @@ namespace TFE_DarkForces
 		return spawn;
 	}
 
+	void unimplementedLogic_serialize(Logic* logic, Stream* stream)
+	{
+		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented serialization, type %d", logic->type);
+	}
+
+	Logic* unimplementedLogic_deserialize(Stream* stream)
+	{
+		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented deserialization.");
+		return nullptr;
+	}
+
+	typedef void(*LogicSerializationFunc)(Logic*, Stream*);
+	typedef Logic*(*LogicDeserializationFunc)(Stream*);
+
+	LogicSerializationFunc c_serFn[] =
+	{
+		unimplementedLogic_serialize, // LOGIC_DISPATCH
+		unimplementedLogic_serialize, // LOGIC_BOBA_FETT,
+		unimplementedLogic_serialize, // LOGIC_DRAGON,
+		unimplementedLogic_serialize, // LOGIC_MOUSEBOT,
+		unimplementedLogic_serialize, // LOGIC_PHASE_ONE,
+		unimplementedLogic_serialize, // LOGIC_PHASE_TWO,
+		unimplementedLogic_serialize, // LOGIC_PHASE_THREE,
+		unimplementedLogic_serialize, // LOGIC_TURRET,
+		unimplementedLogic_serialize, // LOGIC_WELDER,
+		animLogic_serialize,          // LOGIC_ANIM,
+		updateLogic_serialize,        // LOGIC_UPDATE,
+		generatorLogic_serialize,     // LOGIC_GENERATOR,
+		pickupLogic_serialize,        // LOGIC_PICKUP,
+		playerLogic_serialize,        // LOGIC_PLAYER,
+		projLogic_serialize,          // LOGIC_PROJECTILE,
+		vueLogic_serialize,           // LOGIC_VUE,
+		nullptr,                      // LOGIC_UNKNOWN,
+	};
+
+	LogicDeserializationFunc c_deserFn[] =
+	{
+		unimplementedLogic_deserialize, // LOGIC_DISPATCH
+		unimplementedLogic_deserialize, // LOGIC_BOBA_FETT,
+		unimplementedLogic_deserialize, // LOGIC_DRAGON,
+		unimplementedLogic_deserialize, // LOGIC_MOUSEBOT,
+		unimplementedLogic_deserialize, // LOGIC_PHASE_ONE,
+		unimplementedLogic_deserialize, // LOGIC_PHASE_TWO,
+		unimplementedLogic_deserialize, // LOGIC_PHASE_THREE,
+		unimplementedLogic_deserialize, // LOGIC_TURRET,
+		unimplementedLogic_deserialize, // LOGIC_WELDER,
+		animLogic_deserialize,          // LOGIC_ANIM,
+		updateLogic_deserialize,        // LOGIC_UPDATE,
+		generatorLogic_deserialize,     // LOGIC_GENERATOR,
+		pickupLogic_deserialize,        // LOGIC_PICKUP,
+		playerLogic_deserialize,        // LOGIC_PLAYER,
+		projLogic_deserialize,          // LOGIC_PROJECTILE,
+		vueLogic_deserialize,           // LOGIC_VUE,
+		nullptr,                        // LOGIC_UNKNOWN,
+	};
+
 	void logic_serialize(Logic* logic, Stream* stream)
 	{
-		s32 objIndex = logic->obj ? logic->obj->serializeIndex : -1;
 		SERIALIZE(logic->type);
-		SERIALIZE(objIndex);
 
-		switch (logic->type)
+		const u32 index = logic->type < LOGIC_UNKNOWN ? logic->type : LOGIC_UNKNOWN;
+		if (c_serFn[index])
 		{
-			// AI
-			case LOGIC_DISPATCH:
-			{
-			} break;
-			case LOGIC_BOBA_FETT:
-			{
-			} break;
-			case LOGIC_DRAGON:
-			{
-			} break;
-			case LOGIC_MOUSEBOT:
-			{
-			} break;
-			case LOGIC_PHASE_ONE:
-			{
-			} break;
-			case LOGIC_PHASE_TWO:
-			{
-			} break;
-			case LOGIC_PHASE_THREE:
-			{
-			} break;
-			case LOGIC_TURRET:
-			{
-			} break;
-			case LOGIC_WELDER:
-			{
-			} break;
-			// General
-			case LOGIC_ANIM:
-			{
-				animLogic_serialize(logic, stream);
-			} break;
-			case LOGIC_UPDATE:
-			{
-				updateLogic_serialize(logic, stream);
-			} break;
-			case LOGIC_GENERATOR:
-			{
-				generatorLogic_serialize(logic, stream);
-			} break;
-			case LOGIC_PICKUP:
-			{
-				pickupLogic_serialize(logic, stream);
-			} break;
-			case LOGIC_PLAYER:
-			{
-				playerLogic_serialize(logic, stream);
-			} break;
-			case LOGIC_PROJECTILE:
-			{
-				projLogic_serialize(logic, stream);
-			} break;
-			case LOGIC_VUE:
-			{
-				vueLogic_serialize(logic, stream);
-			} break;
-			default:
-			{
-				TFE_System::logWrite(LOG_ERROR, "Logic", "Serialize - invalid logic type: %d.", logic->type);
-			}
+			c_serFn[index](logic, stream);
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_ERROR, "Logic", "Serialize - invalid logic type: %d.", logic->type);
 		}
 	}
 
-	Logic* logic_deserialize(Logic** parent, Stream* stream)
+	Logic* logic_deserialize(Stream* stream)
 	{
-		s32 objIndex;
 		LogicType type;
 		Logic* logic = nullptr;
 		DESERIALIZE(type);
-		DESERIALIZE(objIndex);
 
-		switch (type)
+		const u32 index = type < LOGIC_UNKNOWN ? type : LOGIC_UNKNOWN;
+		if (c_deserFn[index])
 		{
-			// AI
-			case LOGIC_DISPATCH:
-			{
-			} break;
-			case LOGIC_BOBA_FETT:
-			{
-			} break;
-			case LOGIC_DRAGON:
-			{
-			} break;
-			case LOGIC_MOUSEBOT:
-			{
-			} break;
-			case LOGIC_PHASE_ONE:
-			{
-			} break;
-			case LOGIC_PHASE_TWO:
-			{
-			} break;
-			case LOGIC_PHASE_THREE:
-			{
-			} break;
-			case LOGIC_TURRET:
-			{
-			} break;
-			case LOGIC_WELDER:
-			{
-			} break;
-			// General
-			case LOGIC_ANIM:
-			{
-				logic = animLogic_deserialize(stream);
-			} break;
-			case LOGIC_UPDATE:
-			{
-				logic = updateLogic_deserialize(stream);
-			} break;
-			case LOGIC_GENERATOR:
-			{
-				logic = generatorLogic_deserialize(stream);
-			} break;
-			case LOGIC_PICKUP:
-			{
-				logic = pickupLogic_deserialize(stream);
-			} break;
-			case LOGIC_PLAYER:
-			{
-				logic = playerLogic_deserialize(stream);
-			} break;
-			case LOGIC_PROJECTILE:
-			{
-				logic = projLogic_deserialize(stream);
-			} break;
-			case LOGIC_VUE:
-			{
-				logic = vueLogic_deserialize(stream);
-			} break;
-			default:
-			{
-				TFE_System::logWrite(LOG_ERROR, "Logic", "Serialize - invalid logic type: %d.", logic->type);
-			}
+			logic = c_deserFn[index](stream);
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_ERROR, "Logic", "Deserialize - invalid logic type: %d.", type);
 		}
 
 		if (logic)
 		{
 			logic->type = type;
-			logic->parent = parent;
-			// TODO
-			// logic->obj = 
 		}
-
 		return logic;
 	}
 }  // TFE_DarkForces

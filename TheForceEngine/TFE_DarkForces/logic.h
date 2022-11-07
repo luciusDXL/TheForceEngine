@@ -16,7 +16,7 @@ typedef void(*LogicCleanupFunc)(Logic*);
 typedef JBool(*LogicSetupFunc)(Logic*, KEYWORD);
 
 // Added for TFE to help with serialization.
-enum LogicType
+enum LogicType : u32
 {
 	// AI
 	LOGIC_DISPATCH = 0,
@@ -58,7 +58,7 @@ namespace TFE_DarkForces
 	SecObject* logic_spawnEnemy(const char* waxName, const char* typeName);
 
 	void logic_serialize(Logic* logic, Stream* stream);
-	Logic* logic_deserialize(Logic** parent, Stream* stream);
+	Logic* logic_deserialize(Stream* stream);
 
 	// Shared variables used for loading.
 	extern char s_objSeqArg0[];
