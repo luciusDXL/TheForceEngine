@@ -252,6 +252,7 @@ namespace TFE_DarkForces
 		SERIALIZE(count);
 		if (count)
 		{
+			allocator_saveIter(gen->entities);
 			SecObject** entityList = (SecObject**)allocator_getHead(gen->entities);
 			while (entityList)
 			{
@@ -260,6 +261,7 @@ namespace TFE_DarkForces
 				SERIALIZE(entityId);
 				entityList = (SecObject**)allocator_getNext(gen->entities);
 			}
+			allocator_restoreIter(gen->entities);
 		}
 
 		SERIALIZE(gen->aliveCount);

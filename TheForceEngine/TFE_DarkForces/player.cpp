@@ -2626,6 +2626,7 @@ namespace TFE_DarkForces
 			invSavedSize = s32((size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo);
 			assert(invSavedSize == 140);
 		}
+		SERIALIZE(invSavedSize);
 		if (invSavedSize)
 		{
 			SERIALIZE_BUF(s_playerInvSaved, invSavedSize);
@@ -2670,10 +2671,6 @@ namespace TFE_DarkForces
 		DESERIALIZE(version);
 				
 		PlayerLogic* playerLogic = &s_playerLogic;
-		DESERIALIZE(playerLogic->dir);
-		DESERIALIZE(playerLogic->move);
-		DESERIALIZE(playerLogic->stepHeight);
-		
 		DESERIALIZE(playerLogic->dir);
 		DESERIALIZE(playerLogic->move);
 		DESERIALIZE(playerLogic->stepHeight);

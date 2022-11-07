@@ -34,6 +34,8 @@ namespace TFE_Jedi
 	void* allocator_getTail_noIterUpdate(Allocator* alloc);
 	void* allocator_getNext(Allocator* alloc);
 	void* allocator_getPrev(Allocator* alloc);
+	void allocator_saveIter(Allocator* alloc);
+	void allocator_restoreIter(Allocator* alloc);
 
 	// Ref counting.
 	void allocator_addRef(Allocator* alloc);

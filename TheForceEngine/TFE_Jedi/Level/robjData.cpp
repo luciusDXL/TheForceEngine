@@ -160,9 +160,10 @@ namespace TFE_Jedi
 
 		// Assign IDs
 		const u32 size = TFE_Memory::chunkedArraySize(list);
-		SecObject* obj = (SecObject*)TFE_Memory::chunkedArrayGet(list, 0);
-		for (u32 i = 0; i < size; i++, obj++)
+		for (u32 i = 0; i < size; i++)
 		{
+			SecObject* obj = (SecObject*)TFE_Memory::chunkedArrayGet(list, i);
+
 			// Skip deleted objects.
 			if (!obj->self) { continue; }
 			obj->serializeIndex = writeCount;  // So downstream serialization passes have an object ID to use.
@@ -171,9 +172,10 @@ namespace TFE_Jedi
 
 		// Write objects.
 		SERIALIZE(writeCount);
-		obj = (SecObject*)TFE_Memory::chunkedArrayGet(list, 0);
-		for (u32 i = 0; i < size; i++, obj++)
+		for (u32 i = 0; i < size; i++)
 		{
+			SecObject* obj = (SecObject*)TFE_Memory::chunkedArrayGet(list, i);
+
 			// Skip deleted objects.
 			if (!obj->self) { continue; }
 			// Write the object to the stream.
