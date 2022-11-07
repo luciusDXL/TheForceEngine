@@ -71,23 +71,27 @@ namespace TFE_Jedi
 		// The control sector is just a dummy sector, no need to save anything.
 		// Sound emitter isn't actually used.
 
-		s32 safeCount = allocator_getCount(s_levelState.safeLoc);
-		SERIALIZE(safeCount);
-		Safe* safe = (Safe*)allocator_getHead(s_levelState.safeLoc);
-		while (safe)
-		{
-			level_serializeSafe(stream, safe);
-			safe = (Safe*)allocator_getNext(s_levelState.safeLoc);
-		}
+		allocator_saveIter(s_levelState.safeLoc);
+			s32 safeCount = allocator_getCount(s_levelState.safeLoc);
+			SERIALIZE(safeCount);
+			Safe* safe = (Safe*)allocator_getHead(s_levelState.safeLoc);
+			while (safe)
+			{
+				level_serializeSafe(stream, safe);
+				safe = (Safe*)allocator_getNext(s_levelState.safeLoc);
+			}
+		allocator_restoreIter(s_levelState.safeLoc);
 
-		s32 ambientSoundCount = allocator_getCount(s_levelState.ambientSounds);
-		SERIALIZE(ambientSoundCount);
-		AmbientSound* sound = (AmbientSound*)allocator_getHead(s_levelState.ambientSounds);
-		while (sound)
-		{
-			level_serializeAmbientSound(stream, sound);
-			sound = (AmbientSound*)allocator_getNext(s_levelState.ambientSounds);
-		}
+		allocator_saveIter(s_levelState.ambientSounds);
+			s32 ambientSoundCount = allocator_getCount(s_levelState.ambientSounds);
+			SERIALIZE(ambientSoundCount);
+			AmbientSound* sound = (AmbientSound*)allocator_getHead(s_levelState.ambientSounds);
+			while (sound)
+			{
+				level_serializeAmbientSound(stream, sound);
+				sound = (AmbientSound*)allocator_getNext(s_levelState.ambientSounds);
+			}
+		allocator_restoreIter(s_levelState.ambientSounds);
 
 		// Serialize objects.
 		objData_serialize(stream);

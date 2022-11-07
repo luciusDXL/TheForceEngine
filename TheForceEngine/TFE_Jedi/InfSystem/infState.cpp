@@ -57,6 +57,7 @@ namespace TFE_Jedi
 		SERIALIZE(trigCount);
 
 		// Elevators.
+		allocator_saveIter(s_infSerState.infElevators);
 		InfElevator* elev = (InfElevator*)allocator_getHead(s_infSerState.infElevators);
 		while (elev)
 		{
@@ -79,16 +80,18 @@ namespace TFE_Jedi
 				InfLink* elevLink = nullptr;
 				if (sector->infLink)
 				{
-					InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
-					while (link)
-					{
-						if (link->type == LTYPE_SECTOR && link->elev == elev)
+					allocator_saveIter(sector->infLink);
+						InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+						while (link)
 						{
-							elevLink = link;
-							break;
+							if (link->type == LTYPE_SECTOR && link->elev == elev)
+							{
+								elevLink = link;
+								break;
+							}
+							link = (InfLink*)allocator_getNext(sector->infLink);
 						}
-						link = (InfLink*)allocator_getNext(sector->infLink);
-					}
+					allocator_restoreIter(sector->infLink);
 				}
 				if (elevLink)
 				{
@@ -109,24 +112,28 @@ namespace TFE_Jedi
 				SERIALIZE(stopPrev);
 
 				// Stops
-				s32 stopCount = allocator_getCount(elev->stops);
-				SERIALIZE(stopCount);
-				Stop* stop = (Stop*)allocator_getHead(elev->stops);
-				while (stop)
-				{
-					inf_serializeStop(stream, stop);
-					stop = (Stop*)allocator_getNext(elev->stops);
-				}
+				allocator_saveIter(elev->stops);
+					s32 stopCount = allocator_getCount(elev->stops);
+					SERIALIZE(stopCount);
+					Stop* stop = (Stop*)allocator_getHead(elev->stops);
+					while (stop)
+					{
+						inf_serializeStop(stream, stop);
+						stop = (Stop*)allocator_getNext(elev->stops);
+					}
+				allocator_restoreIter(elev->stops);
 
 				// Slaves
-				s32 slaveCount = allocator_getCount(elev->slaves);
-				SERIALIZE(slaveCount);
-				Slave* slave = (Slave*)allocator_getHead(elev->slaves);
-				while (slave)
-				{
-					inf_serializeSlave(stream, slave);
-					slave = (Slave*)allocator_getNext(elev->slaves);
-				}
+				allocator_saveIter(elev->slaves);
+					s32 slaveCount = allocator_getCount(elev->slaves);
+					SERIALIZE(slaveCount);
+					Slave* slave = (Slave*)allocator_getHead(elev->slaves);
+					while (slave)
+					{
+						inf_serializeSlave(stream, slave);
+						slave = (Slave*)allocator_getNext(elev->slaves);
+					}
+				allocator_restoreIter(elev->slaves);
 
 				// Next Stop
 				s32 stopIndex = elev->nextStop ? elev->nextStop->index : -1;
@@ -148,8 +155,10 @@ namespace TFE_Jedi
 			}
 			elev = (InfElevator*)allocator_getNext(s_infSerState.infElevators);
 		}
+		allocator_restoreIter(s_infSerState.infElevators);
 
 		// Teleports
+		allocator_saveIter(s_infSerState.infTeleports);
 		Teleport* teleport = (Teleport*)allocator_getHead(s_infSerState.infTeleports);
 		while (teleport)
 		{
@@ -164,16 +173,18 @@ namespace TFE_Jedi
 			RSector* sector = teleport->sector;
 			if (sector->infLink)
 			{
-				InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
-				while (link)
-				{
-					if (link->type == LTYPE_TELEPORT && link->teleport == teleport)
+				allocator_saveIter(sector->infLink);
+					InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+					while (link)
 					{
-						teleportLink = link;
-						break;
+						if (link->type == LTYPE_TELEPORT && link->teleport == teleport)
+						{
+							teleportLink = link;
+							break;
+						}
+						link = (InfLink*)allocator_getNext(sector->infLink);
 					}
-					link = (InfLink*)allocator_getNext(sector->infLink);
-				}
+				allocator_restoreIter(sector->infLink);
 			}
 			if (teleportLink)
 			{
@@ -189,8 +200,10 @@ namespace TFE_Jedi
 
 			teleport = (Teleport*)allocator_getNext(s_infSerState.infTeleports);
 		}
+		allocator_restoreIter(s_infSerState.infTeleports);
 
 		// Triggers
+		allocator_saveIter(s_infSerState.infTriggers);
 		InfTrigger* trigger = (InfTrigger*)allocator_getHead(s_infSerState.infTriggers);
 		while (trigger)
 		{
@@ -222,33 +235,35 @@ namespace TFE_Jedi
 				serialize_writeAnimatedTexturePtr(stream, trigger->animTex);
 
 				// targets
-				s32 targetCount = allocator_getCount(trigger->targets);
-				SERIALIZE(targetCount);
-				TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
-				while (target)
-				{
-					s32 sectorIndex = -1;
-					if (target->sector)
+				allocator_saveIter(trigger->targets);
+					s32 targetCount = allocator_getCount(trigger->targets);
+					SERIALIZE(targetCount);
+					TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
+					while (target)
 					{
-						sectorIndex = target->sector->index;
-					}
-					else if (target->wall && target->wall->sector)
-					{
-						sectorIndex = target->wall->sector->index;
-					}
+						s32 sectorIndex = -1;
+						if (target->sector)
+						{
+							sectorIndex = target->sector->index;
+						}
+						else if (target->wall && target->wall->sector)
+						{
+							sectorIndex = target->wall->sector->index;
+						}
 
-					s32 wallIndex = -1;
-					if (target->wall)
-					{
-						wallIndex = target->wall->id;
+						s32 wallIndex = -1;
+						if (target->wall)
+						{
+							wallIndex = target->wall->id;
+						}
+
+						SERIALIZE(sectorIndex);
+						SERIALIZE(wallIndex);
+						SERIALIZE(target->eventMask);
+
+						target = (TriggerTarget*)allocator_getNext(trigger->targets);
 					}
-
-					SERIALIZE(sectorIndex);
-					SERIALIZE(wallIndex);
-					SERIALIZE(target->eventMask);
-
-					target = (TriggerTarget*)allocator_getNext(trigger->targets);
-				}
+				allocator_restoreIter(trigger->targets);
 
 				SERIALIZE(trigger->cmd);
 				SERIALIZE(trigger->event);
@@ -281,6 +296,7 @@ namespace TFE_Jedi
 
 			trigger = (InfTrigger*)allocator_getNext(s_infSerState.infTriggers);
 		}
+		allocator_restoreIter(s_infSerState.infTriggers);
 	}
 
 	void inf_deserialize(Stream* stream)

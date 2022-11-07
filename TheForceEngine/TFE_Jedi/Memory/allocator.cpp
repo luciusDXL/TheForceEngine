@@ -264,12 +264,14 @@ namespace TFE_Jedi
 	// Iteration
 	void allocator_saveIter(Allocator* alloc)
 	{
+		if (!alloc) { return; }
 		alloc->iterPrevSave = alloc->iterPrev;
 		alloc->iterSave = alloc->iter;
 	}
 
 	void allocator_restoreIter(Allocator* alloc)
 	{
+		if (!alloc) { return; }
 		alloc->iterPrev = alloc->iterPrevSave;
 		alloc->iter = alloc->iterSave;
 	}

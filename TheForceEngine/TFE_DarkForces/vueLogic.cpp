@@ -89,12 +89,12 @@ namespace TFE_DarkForces
 		s32 frameCount = allocator_getCount(vueLogic->frames);
 		SERIALIZE(frameCount);
 		allocator_saveIter(vueLogic->frames);
-		VueFrame* frame = (VueFrame*)allocator_getHead(vueLogic->frames);
-		while (frame)
-		{
-			SERIALIZE((*frame));
-			frame = (VueFrame*)allocator_getNext(vueLogic->frames);
-		}
+			VueFrame* frame = (VueFrame*)allocator_getHead(vueLogic->frames);
+			while (frame)
+			{
+				SERIALIZE((*frame));
+				frame = (VueFrame*)allocator_getNext(vueLogic->frames);
+			}
 		allocator_restoreIter(vueLogic->frames);
 		SERIALIZE(vueLogic->isCamera);
 		SERIALIZE(vueLogic->frameDelay);

@@ -253,14 +253,14 @@ namespace TFE_DarkForces
 		if (count)
 		{
 			allocator_saveIter(gen->entities);
-			SecObject** entityList = (SecObject**)allocator_getHead(gen->entities);
-			while (entityList)
-			{
-				SecObject* obj = *entityList;
-				s32 entityId = (obj) ? obj->serializeIndex : -1;
-				SERIALIZE(entityId);
-				entityList = (SecObject**)allocator_getNext(gen->entities);
-			}
+				SecObject** entityList = (SecObject**)allocator_getHead(gen->entities);
+				while (entityList)
+				{
+					SecObject* obj = *entityList;
+					s32 entityId = (obj) ? obj->serializeIndex : -1;
+					SERIALIZE(entityId);
+					entityList = (SecObject**)allocator_getNext(gen->entities);
+				}
 			allocator_restoreIter(gen->entities);
 		}
 

@@ -155,6 +155,7 @@ namespace TFE_Jedi
 		if (!list || TFE_Memory::chunkedArraySize(list) < 1)
 		{
 			// No objects, so just write out 0 for the count.
+			SERIALIZE(writeCount);
 			return;
 		}
 
@@ -185,21 +186,23 @@ namespace TFE_Jedi
 			SERIALIZE(logicCount);
 			if (!logicCount) { continue; }
 
-			Logic** logicList = (Logic**)allocator_getHead((Allocator*)obj->logic);
-			while (logicList)
-			{
-				Logic* logic = *logicList;
-				if (logic)
+			allocator_saveIter((Allocator*)obj->logic);
+				Logic** logicList = (Logic**)allocator_getHead((Allocator*)obj->logic);
+				while (logicList)
 				{
-					TFE_DarkForces::logic_serialize(logic, stream);
+					Logic* logic = *logicList;
+					if (logic)
+					{
+						TFE_DarkForces::logic_serialize(logic, stream);
+					}
+					else
+					{
+						s32 invalidLogic = -1;
+						SERIALIZE(invalidLogic);
+					}
+					logicList = (Logic**)allocator_getNext((Allocator*)obj->logic);
 				}
-				else
-				{
-					s32 invalidLogic = -1;
-					SERIALIZE(invalidLogic);
-				}
-				logicList = (Logic**)allocator_getNext((Allocator*)obj->logic);
-			};
+			allocator_restoreIter((Allocator*)obj->logic);
 		}
 	}
 
