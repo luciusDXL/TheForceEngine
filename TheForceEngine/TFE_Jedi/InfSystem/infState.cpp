@@ -27,6 +27,7 @@ namespace TFE_Jedi
 	void inf_serializeStop(Stream* stream, Stop* stop);
 	void inf_serializeSlave(Stream* stream, Slave* slave);
 	void inf_serializeLink(Stream* stream, InfLink* link, Allocator* parent);
+	void inf_serializeFixupLinks();
 
 	void inf_computeElevValuePointer(InfElevator* elev);
 	extern void inf_deleteElevator(InfElevator* elev);
@@ -536,6 +537,12 @@ namespace TFE_Jedi
 				inf_serializeTrigger(stream, trigger);
 			}
 		}
+
+		// Fixup
+		if (serialization_getMode() == SMODE_READ)
+		{
+			inf_serializeFixupLinks();
+		}
 	}
 
 	/////////////////////////////////////////////
@@ -685,6 +692,55 @@ namespace TFE_Jedi
 		SERIALIZE(InfState_InitVersion, slave->value, 0);
 	}
 
+	void inf_serializeFixupLink(InfLink* link)
+	{
+		const s32 index = link->serializeIndex;
+		switch (link->type)
+		{
+			case LTYPE_SECTOR:
+			{
+				link->elev = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, index);
+			} break;
+			case LTYPE_TRIGGER:
+			{
+				link->trigger = (InfTrigger*)allocator_getByIndex(s_infSerState.infTriggers, index);
+			} break;
+			case LTYPE_TELEPORT:
+			{
+				link->teleport = (Teleport*)allocator_getByIndex(s_infSerState.infTeleports, index);
+			} break;
+		}
+	}
+
+	void inf_serializeFixupLinks()
+	{
+		RSector* sector = s_levelState.sectors;
+		for (s32 s = 0; s < s_levelState.sectorCount; s++, sector++)
+		{
+			allocator_saveIter(sector->infLink);
+			InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+			while (link)
+			{
+				inf_serializeFixupLink(link);
+				link = (InfLink*)allocator_getNext(sector->infLink);
+			}
+			allocator_restoreIter(sector->infLink);
+
+			s32 wallCount = sector->wallCount;
+			RWall* wall = sector->walls;
+			for (s32 w = 0; w < wallCount; w++, wall++)
+			{
+				link = (InfLink*)allocator_getHead(wall->infLink);
+				while (link)
+				{
+					inf_serializeFixupLink(link);
+					link = (InfLink*)allocator_getNext(wall->infLink);
+				}
+				allocator_restoreIter(wall->infLink);
+			}
+		}
+	}
+
 	void inf_serializeLink(Stream* stream, InfLink* link, Allocator* parent)
 	{
 		SERIALIZE(InfState_InitVersion, link->type, LTYPE_SECTOR);
@@ -711,25 +767,24 @@ namespace TFE_Jedi
 		SERIALIZE(InfState_InitVersion, index, -1);
 		if (serialization_getMode() == SMODE_READ)
 		{
-			// TODO: This doesn't work because indices can point to items not yet created.
-			// So we need to save the index and do a fix-up pass at the end.
+			link->serializeIndex = index;
 			switch (link->type)
 			{
 				case LTYPE_SECTOR:
 				{
-					link->elev = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, index);
+					link->elev = nullptr;
 					link->task = s_infState.infElevTask;
 					link->freeFunc = (InfFreeFunc)inf_deleteElevator;
 				} break;
 				case LTYPE_TRIGGER:
 				{
-					link->trigger = (InfTrigger*)allocator_getByIndex(s_infSerState.infTriggers, index);
+					link->trigger = nullptr;
 					link->task = s_infState.infTriggerTask;
 					link->freeFunc = (InfFreeFunc)inf_deleteTrigger;
 				} break;
 				case LTYPE_TELEPORT:
 				{
-					link->teleport = (Teleport*)allocator_getByIndex(s_infSerState.infTeleports, index);
+					link->teleport = nullptr;
 					link->task = s_infState.teleportTask;
 					link->freeFunc = nullptr;
 				} break;

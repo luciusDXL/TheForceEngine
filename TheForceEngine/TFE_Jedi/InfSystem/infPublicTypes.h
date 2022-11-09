@@ -93,5 +93,7 @@ namespace TFE_Jedi
 		u32 entityMask;				// The entity mask (as above).
 		Allocator* parent;			// The parent list of links.
 		InfFreeFunc freeFunc;		// The function to use to free the link.
+		// TFE:
+		s32 serializeIndex;			// An index used to fix up pointers after all of the data is loaded.
 	};
 }
