@@ -118,8 +118,7 @@ namespace TFE_DarkForces
 	ProjectileLogic* proj_getByLogicIndex(s32 index);
 
 	// Serialization
-	void projLogic_serialize(Logic* logic, Stream* stream);
-	Logic* projLogic_deserialize(Stream* stream);
+	void projLogic_serialize(Logic*& logic, Stream* stream);
 
 	extern u32 s_hitWallFlag;
 	extern angle14_32 s_projReflectOverrideYaw;

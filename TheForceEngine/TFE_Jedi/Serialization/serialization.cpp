@@ -9,154 +9,138 @@ using namespace TFE_Memory;
 
 namespace TFE_Jedi
 {
-	void serialization_writeDfSound(Stream* stream, SoundSourceId id)
+	// Asset IDs from pool + index.
+	#define GEN_ID(index, pool) (index) | ((pool) << 24)
+	#define ID_GET_INDEX(id) ((id) & 0xffffff)
+	#define ID_GET_POOL(id) AssetPool((id) >> 24)
+
+	u32 s_sVersion = 0;
+	SerializationMode s_sMode = SMODE_UNKNOWN;
+		
+	void serialization_serializeDfSound(Stream* stream, u32 version, SoundSourceId* id)
 	{
-		s32 soundDataId = sound_getIndexFromId(id);
-		SERIALIZE(soundDataId);
+		s32 soundDataId = -1;
+		if (s_sMode == SMODE_WRITE)
+		{
+			soundDataId = sound_getIndexFromId(*id);
+		}
+		SERIALIZE(version, soundDataId, -1);
+		if (s_sMode == SMODE_READ)
+		{
+			*id = (soundDataId < 0) ? NULL_SOUND : sound_getSoundFromIndex(soundDataId, false);
+		}
 	}
 
-	void serialization_readDfSound(Stream* stream, SoundSourceId* id)
+	void serialization_serializeSectorPtr(Stream* stream, u32 version, RSector*& sector)
 	{
-		s32 soundDataId;
-		DESERIALIZE(soundDataId);
-		*id = (soundDataId < 0) ? NULL_SOUND : sound_getSoundFromIndex(soundDataId, false);
+		s32 sectorIndex = -1;
+		if (s_sMode == SMODE_WRITE && sector)
+		{
+			sectorIndex = sector->index;
+		}
+		SERIALIZE(version, sectorIndex, -1);
+		if (s_sMode == SMODE_READ)
+		{
+			sector = sectorIndex < 0 ? nullptr : &s_levelState.sectors[sectorIndex];
+		}
 	}
 		
-	void serialization_writeSectorPtr(Stream* stream, RSector* sector)
-	{
-		s32 sectorIndex = sector ? sector->index : -1;
-		SERIALIZE(sectorIndex);
-	}
-
-	RSector* serialization_readSectorPtr(Stream* stream)
-	{
-		s32 sectorIndex;
-		DESERIALIZE(sectorIndex);
-		return sectorIndex < 0 ? nullptr : &s_levelState.sectors[sectorIndex];
-	}
-		
-	void serialize_writeAnimatedTexturePtr(Stream* stream, AnimatedTexture* animTex)
+	void serialization_serializeAnimatedTexturePtr(Stream* stream, u32 version, AnimatedTexture*& animTex)
 	{
 		s32 index = -1;
-		Allocator* animTexAlloc = bitmap_getAnimTextureAlloc();
-		if (animTex && animTexAlloc)
+		if (s_sMode == SMODE_WRITE && animTex)
 		{
-			index = allocator_getIndex(animTexAlloc, animTex);
+			Allocator* animTexAlloc = bitmap_getAnimTextureAlloc();
+			if (animTexAlloc)
+			{
+				index = allocator_getIndex(animTexAlloc, animTex);
+			}
 		}
-		SERIALIZE(index);
-	}
-
-	AnimatedTexture* serialize_readAnimatedTexturePtr(Stream* stream)
-	{
-		s32 index;
-		DESERIALIZE(index);
-
-		AnimatedTexture* animTex = nullptr;
-		Allocator* animTexAlloc = bitmap_getAnimTextureAlloc();
-		if (animTexAlloc && index >= 0)
+		SERIALIZE(version, index, -1);
+		if (s_sMode == SMODE_READ)
 		{
-			animTex = (AnimatedTexture*)allocator_getByIndex(animTexAlloc, index);
+			animTex = nullptr;
+			Allocator* animTexAlloc = bitmap_getAnimTextureAlloc();
+			if (animTexAlloc && index >= 0)
+			{
+				animTex = (AnimatedTexture*)allocator_getByIndex(animTexAlloc, index);
+			}
 		}
-		return animTex;
-	}
-	
-	void serialize_writeTexturePtr(Stream* stream, TextureData* texture)
-	{
-		if (!texture)
-		{
-			s32 id = -1;
-			SERIALIZE(id);
-			return;
-		}
-
-		s32 index;
-		AssetPool pool;
-		bool foundTex = bitmap_getTextureIndex(texture, &index, &pool);
-
-		s32 id = (foundTex) ? (index | (pool << 16)) : -1;
-		SERIALIZE(id);
-	}
-
-	TextureData* serialize_readTexturePtr(Stream* stream)
-	{
-		s32 id;
-		DESERIALIZE(id);
-		if (id < 0)
-		{
-			return nullptr;
-		}
-		return bitmap_getTextureByIndex(id & 0xffff, AssetPool(id >> 16));
 	}
 		
-	void serialize_write3doPtr(Stream* stream, JediModel* model)
+	void serialization_serializeTexturePtr(Stream* stream, u32 version, TextureData*& texture)
 	{
-		if (!model)
+		s32 id = -1;
+		if (s_sMode == SMODE_WRITE && texture)
 		{
-			s32 id = -1;
-			SERIALIZE(id);
-			return;
+			s32 index;
+			AssetPool pool;
+			if (bitmap_getTextureIndex(texture, &index, &pool))
+			{
+				id = GEN_ID(index, pool);
+			}
 		}
-
-		s32 index;
-		AssetPool pool;
-		bool foundModel = TFE_Model_Jedi::getModelIndex(model, &index, &pool);
-
-		s32 id = (foundModel) ? (index | (pool << 16)) : -1;
-		SERIALIZE(id);
-	}
-
-	JediModel* serialize_read3doPtr(Stream* stream)
-	{
-		s32 id;
-		DESERIALIZE(id);
-		return id < 0 ? nullptr : TFE_Model_Jedi::getModelByIndex(id & 0xffff, AssetPool(id >> 16));
-	}
-		
-	void serialize_writeWaxPtr(Stream* stream, JediWax* wax)
-	{
-		if (!wax)
+		SERIALIZE(version, id, -1);
+		if (s_sMode == SMODE_READ)
 		{
-			s32 id = -1;
-			SERIALIZE(id);
-			return;
+			texture = (id < 0) ? nullptr :  bitmap_getTextureByIndex(ID_GET_INDEX(id), ID_GET_POOL(id));
 		}
-
-		s32 index;
-		AssetPool pool;
-		bool foundWax = TFE_Sprite_Jedi::getWaxIndex(wax, &index, &pool);
-
-		s32 id = (foundWax) ? (index | (pool << 16)) : -1;
-		SERIALIZE(id);
 	}
 
-	JediWax* serialize_readWaxPtr(Stream* stream)
+	void serialization_serialize3doPtr(Stream* stream, u32 version, JediModel*& model)
 	{
-		s32 id;
-		DESERIALIZE(id);
-		return id < 0 ? nullptr : TFE_Sprite_Jedi::getWaxByIndex(id & 0xffff, AssetPool(id >> 16));
-	}
-
-	void serialize_writeFramePtr(Stream* stream, JediFrame* frame)
-	{
-		if (!frame)
+		s32 id = -1;
+		if (s_sMode == SMODE_WRITE && model)
 		{
-			s32 id = -1;
-			SERIALIZE(id);
-			return;
+			s32 index;
+			AssetPool pool;
+			if (TFE_Model_Jedi::getModelIndex(model, &index, &pool))
+			{
+				id = GEN_ID(index, pool);
+			}
 		}
-
-		s32 index;
-		AssetPool pool;
-		bool foundFrame = TFE_Sprite_Jedi::getFrameIndex(frame, &index, &pool);
-
-		s32 id = (foundFrame) ? (index | (pool << 16)) : -1;
-		SERIALIZE(id);
+		SERIALIZE(version, id, -1);
+		if (s_sMode == SMODE_READ)
+		{
+			model = (id < 0) ? nullptr : TFE_Model_Jedi::getModelByIndex(ID_GET_INDEX(id), ID_GET_POOL(id));
+		}
 	}
 
-	JediFrame* serialize_readFramePtr(Stream* stream)
+	void serialization_serializeWaxPtr(Stream* stream, u32 version, JediWax*& wax)
 	{
-		s32 id;
-		DESERIALIZE(id);
-		return id < 0 ? nullptr : TFE_Sprite_Jedi::getFrameByIndex(id & 0xffff, AssetPool(id >> 16));
+		s32 id = -1;
+		if (s_sMode == SMODE_WRITE && wax)
+		{
+			s32 index;
+			AssetPool pool;
+			if (TFE_Sprite_Jedi::getWaxIndex(wax, &index, &pool))
+			{
+				id = GEN_ID(index, pool);
+			}
+		}
+		SERIALIZE(version, id, -1);
+		if (s_sMode == SMODE_READ)
+		{
+			wax = (id < 0) ? nullptr : TFE_Sprite_Jedi::getWaxByIndex(ID_GET_INDEX(id), ID_GET_POOL(id));
+		}
+	}
+
+	void serialization_serializeFramePtr(Stream* stream, u32 version, JediFrame*& frame)
+	{
+		s32 id = -1;
+		if (s_sMode == SMODE_WRITE && frame)
+		{
+			s32 index;
+			AssetPool pool;
+			if (TFE_Sprite_Jedi::getFrameIndex(frame, &index, &pool))
+			{
+				id = GEN_ID(index, pool);
+			}
+		}
+		SERIALIZE(version, id, -1);
+		if (s_sMode == SMODE_READ)
+		{
+			frame = (id < 0) ? nullptr : TFE_Sprite_Jedi::getFrameByIndex(ID_GET_INDEX(id), ID_GET_POOL(id));
+		}
 	}
 }

@@ -17,6 +17,5 @@ namespace TFE_DarkForces
 	Logic* obj_setUpdate(SecObject* obj, LogicSetupFunc* setupFunc);
 
 	// Serialization
-	void updateLogic_serialize(Logic* logic, Stream* stream);
-	Logic* updateLogic_deserialize(Stream* stream);
+	void updateLogic_serialize(Logic*& logic, Stream* stream);
 }  // namespace TFE_DarkForces

@@ -81,56 +81,56 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void vueLogic_serialize(Logic* logic, Stream* stream)
+	void vueLogic_serialize(Logic*& logic, Stream* stream)
 	{
-		VueLogic* vueLogic = (VueLogic*)logic;
-
-		// Frames
-		s32 frameCount = allocator_getCount(vueLogic->frames);
-		SERIALIZE(frameCount);
-		allocator_saveIter(vueLogic->frames);
-			VueFrame* frame = (VueFrame*)allocator_getHead(vueLogic->frames);
-			while (frame)
-			{
-				SERIALIZE((*frame));
-				frame = (VueFrame*)allocator_getNext(vueLogic->frames);
-			}
-		allocator_restoreIter(vueLogic->frames);
-		SERIALIZE(vueLogic->isCamera);
-		SERIALIZE(vueLogic->frameDelay);
-		serialization_writeSectorPtr(stream, vueLogic->sector);
-		SERIALIZE(vueLogic->flags);
-	}
-
-	Logic* vueLogic_deserialize(Stream* stream)
-	{
-		VueLogic* vueLogic = (VueLogic*)level_alloc(sizeof(VueLogic));
-		
-		s32 frameCount;
-		DESERIALIZE(frameCount);
-		vueLogic->frames = nullptr;
-		if (frameCount)
+		VueLogic* vueLogic;
+		if (serialization_getMode() == SMODE_WRITE)
 		{
+			vueLogic = (VueLogic*)logic;
+		}
+		else
+		{
+			vueLogic = (VueLogic*)level_alloc(sizeof(VueLogic));
+			logic = (Logic*)vueLogic;
+
+			Task* task = createSubTask("vueLogic", vueLogicTaskFunc);
+			vueLogic->task = task;
+			task_setUserData(task, vueLogic);
+
+			vueLogic->logic.task = task;
+			vueLogic->logic.cleanupFunc = vueLogicCleanupFunc;
+		}
+
+		s32 frameCount;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			// Frames
+			frameCount = allocator_getCount(vueLogic->frames);
+			SERIALIZE(ObjState_InitVersion, frameCount, 0);
+			allocator_saveIter(vueLogic->frames);
+				VueFrame* frame = (VueFrame*)allocator_getHead(vueLogic->frames);
+				while (frame)
+				{
+					SERIALIZE(ObjState_InitVersion, (*frame), { 0 });
+					frame = (VueFrame*)allocator_getNext(vueLogic->frames);
+				}
+			allocator_restoreIter(vueLogic->frames);
+		}
+		else
+		{
+			SERIALIZE(ObjState_InitVersion, frameCount, 0);
 			vueLogic->frames = allocator_create(sizeof(VueFrame));
 			for (s32 i = 0; i < frameCount; i++)
 			{
 				VueFrame* frame = (VueFrame*)allocator_newItem(vueLogic->frames);
-				DESERIALIZE((*frame));
+				SERIALIZE(ObjState_InitVersion, (*frame), { 0 });
 			}
 		}
-		DESERIALIZE(vueLogic->isCamera);
-		DESERIALIZE(vueLogic->frameDelay);
-		vueLogic->sector = serialization_readSectorPtr(stream);
-		DESERIALIZE(vueLogic->flags);
 
-		Task* task = createSubTask("vueLogic", vueLogicTaskFunc);
-		vueLogic->task = task;
-		task_setUserData(task, vueLogic);
-
-		vueLogic->logic.task = task;
-		vueLogic->logic.cleanupFunc = vueLogicCleanupFunc;
-
-		return (Logic*)vueLogic;
+		SERIALIZE(ObjState_InitVersion, vueLogic->isCamera, 0);
+		SERIALIZE(ObjState_InitVersion, vueLogic->frameDelay, 0);
+		serialization_serializeSectorPtr(stream, ObjState_InitVersion, vueLogic->sector);
+		SERIALIZE(ObjState_InitVersion, vueLogic->flags, 0);
 	}
 
 	void loadVueFile(Allocator* vueList, char* transformName, TFE_Parser* parser)

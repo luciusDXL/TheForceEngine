@@ -36,6 +36,5 @@ namespace TFE_DarkForces
 	void setSpriteAnimation(Task* spriteAnimTask, Allocator* spriteAnimAlloc);
 
 	// Serialization
-	void animLogic_serialize(Logic* logic, Stream* stream);
-	Logic* animLogic_deserialize(Stream* stream);
+	void animLogic_serialize(Logic*& logic, Stream* stream);
 }  // namespace TFE_DarkForces

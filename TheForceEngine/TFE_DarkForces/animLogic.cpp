@@ -135,57 +135,60 @@ namespace TFE_DarkForces
 	// TODO: Find a better way of handling the complete task.
 	extern Task* s_hitEffectTask;
 
-	void animLogic_serialize(Logic* logic, Stream* stream)
+	void animLogic_serialize(Logic*& logic, Stream* stream)
 	{
-		SpriteAnimLogic* anim = (SpriteAnimLogic*)logic;
-		SERIALIZE(anim->firstFrame);
-		SERIALIZE(anim->lastFrame);
-		SERIALIZE(anim->loopCount);
-		SERIALIZE(anim->delay);
-		SERIALIZE(anim->nextTick);
+		SpriteAnimLogic* anim = nullptr;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			anim = (SpriteAnimLogic*)logic;
+		}
+		else
+		{
+
+			// Create an allocator if one is not already setup.
+			if (!s_spriteAnimTask)
+			{
+				s_spriteAnimTask = createTask("sprite animation", spriteAnimLogicFunc);
+			}
+			if (!s_spriteAnimList)
+			{
+				s_spriteAnimList = allocator_create(sizeof(SpriteAnimLogic));
+			}
+			task_makeActive(s_spriteAnimTask);
+
+			anim = (SpriteAnimLogic*)allocator_newItem(s_spriteAnimList);
+			logic = (Logic*)anim;
+		}
+		SERIALIZE(ObjState_InitVersion, anim->firstFrame, 0);
+		SERIALIZE(ObjState_InitVersion, anim->lastFrame, 0);
+		SERIALIZE(ObjState_InitVersion, anim->loopCount, 0);
+		SERIALIZE(ObjState_InitVersion, anim->delay, 0);
+		SERIALIZE(ObjState_InitVersion, anim->nextTick, 0);
 
 		// For now, we know the only complete task is s_hitEffectTask.
 		s32 completeTaskId = 0;
-		if (anim->completeTask == s_hitEffectTask)
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			completeTaskId = 1;
+			if (anim->completeTask == s_hitEffectTask)
+			{
+				completeTaskId = 1;
+			}
+			assert(!anim->completeTask || anim->completeTask == s_hitEffectTask);
 		}
-		assert(!anim->completeTask || anim->completeTask == s_hitEffectTask);
-		SERIALIZE(completeTaskId);
-	}
+		SERIALIZE(ObjState_InitVersion, completeTaskId, 0);
 
-	Logic* animLogic_deserialize(Stream* stream)
-	{
-		// Create an allocator if one is not already setup.
-		if (!s_spriteAnimTask)
+		if (serialization_getMode() == SMODE_READ)
 		{
-			s_spriteAnimTask = createTask("sprite animation", spriteAnimLogicFunc);
-		}
-		if (!s_spriteAnimList)
-		{
-			s_spriteAnimList = allocator_create(sizeof(SpriteAnimLogic));
-		}
-		task_makeActive(s_spriteAnimTask);
+			anim->logic.task = s_spriteAnimTask;
+			anim->logic.cleanupFunc = spriteAnimLogicCleanupFunc;
 
-		s32 completeTaskId;
-		SpriteAnimLogic* anim = (SpriteAnimLogic*)allocator_newItem(s_spriteAnimList);
-		DESERIALIZE(anim->firstFrame);
-		DESERIALIZE(anim->lastFrame);
-		DESERIALIZE(anim->loopCount);
-		DESERIALIZE(anim->delay);
-		DESERIALIZE(anim->nextTick);
-		DESERIALIZE(completeTaskId);
-		anim->logic.task = s_spriteAnimTask;
-		anim->logic.cleanupFunc = spriteAnimLogicCleanupFunc;
-
-		assert(completeTaskId == 0 || completeTaskId == 1);
-		anim->completeTask = nullptr;
-		if (completeTaskId == 1)
-		{
-			anim->completeTask = s_hitEffectTask;
+			assert(completeTaskId == 0 || completeTaskId == 1);
+			anim->completeTask = nullptr;
+			if (completeTaskId == 1)
+			{
+				anim->completeTask = s_hitEffectTask;
+			}
 		}
-
-		return (Logic*)anim;
 	}
 
 	void setAnimCompleteTask(SpriteAnimLogic* logic, Task* completeTask)

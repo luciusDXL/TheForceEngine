@@ -11,7 +11,11 @@ using namespace TFE_DarkForces;
 
 namespace TFE_Jedi
 {
-	const s32 c_infStateVersion = 1;
+	enum InfStateVersion : u32
+	{
+		InfState_InitVersion = 1,
+		InfState_CurVersion = InfState_InitVersion,
+	};
 
 	// INF State
 	InfSerializableState s_infSerState = { };
@@ -22,11 +26,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////
 	void inf_serializeStop(Stream* stream, Stop* stop);
 	void inf_serializeSlave(Stream* stream, Slave* slave);
-	void inf_serializeLink(Stream* stream, InfLink* link);
-
-	void inf_deserializeStop(Stream* stream, Stop* stop);
-	void inf_deserializeSlave(Stream* stream, Slave* slave);
-	void inf_deserializeLink(Stream* stream, InfLink* link, Allocator* parent);
+	void inf_serializeLink(Stream* stream, InfLink* link, Allocator* parent);
 
 	void inf_computeElevValuePointer(InfElevator* elev);
 	extern void inf_deleteElevator(InfElevator* elev);
@@ -40,313 +40,65 @@ namespace TFE_Jedi
 		s_infSerState = { 0 };
 		s_infState = { 0 };
 	}
-		
-	void inf_serialize(Stream* stream)
+
+	void inf_serializeElevator(Stream* stream, InfElevator* elev)
 	{
-		const s32 elevCount = allocator_getCount(s_infSerState.infElevators);
-		const s32 teleCount = allocator_getCount(s_infSerState.infTeleports);
-		const s32 trigCount = allocator_getCount(s_infSerState.infTriggers);
-
-		// Version
-		SERIALIZE(c_infStateVersion);
-
-		// Counts.
-		SERIALIZE(s_infSerState.activeTriggerCount);
-		SERIALIZE(elevCount);
-		SERIALIZE(teleCount);
-		SERIALIZE(trigCount);
-
-		// Elevators.
-		allocator_saveIter(s_infSerState.infElevators);
-		InfElevator* elev = (InfElevator*)allocator_getHead(s_infSerState.infElevators);
-		while (elev)
+		SERIALIZE(InfState_InitVersion, elev->deleted, 0);
+		if (elev->deleted)
 		{
-			s32 del = elev->deleted ? 1 : 0;
-			SERIALIZE(del);
-			if (!del)
+			if (serialization_getMode() == SMODE_READ)
 			{
-				RSector* sector = elev->sector;
-
-				SERIALIZE(elev->type);
-				SERIALIZE(elev->trigMove);
-				serialization_writeSectorPtr(stream, sector);
-
-				SERIALIZE(elev->key);
-				SERIALIZE(elev->fixedStep);
-				SERIALIZE(elev->nextTick);
-				SERIALIZE(elev->timer);
-
-				// Matching sector link.
-				InfLink* elevLink = nullptr;
-				if (sector->infLink)
-				{
-					allocator_saveIter(sector->infLink);
-						InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
-						while (link)
-						{
-							if (link->type == LTYPE_SECTOR && link->elev == elev)
-							{
-								elevLink = link;
-								break;
-							}
-							link = (InfLink*)allocator_getNext(sector->infLink);
-						}
-					allocator_restoreIter(sector->infLink);
-				}
-				if (elevLink)
-				{
-					serialization_writeSectorPtr(stream, sector);
-					inf_serializeLink(stream, elevLink);
-				}
-				else
-				{
-					assert(0);
-					s32 linkSectorIndex = -1;
-					SERIALIZE(linkSectorIndex);
-				}
-
-				// Serialize the current stop allocator position.
-				s32 stopPos  = allocator_getCurPos(elev->stops);
-				s32 stopPrev = allocator_getPrevPos(elev->stops);
-				SERIALIZE(stopPos);
-				SERIALIZE(stopPrev);
-
-				// Stops
-				allocator_saveIter(elev->stops);
-					s32 stopCount = allocator_getCount(elev->stops);
-					SERIALIZE(stopCount);
-					Stop* stop = (Stop*)allocator_getHead(elev->stops);
-					while (stop)
-					{
-						inf_serializeStop(stream, stop);
-						stop = (Stop*)allocator_getNext(elev->stops);
-					}
-				allocator_restoreIter(elev->stops);
-
-				// Slaves
-				allocator_saveIter(elev->slaves);
-					s32 slaveCount = allocator_getCount(elev->slaves);
-					SERIALIZE(slaveCount);
-					Slave* slave = (Slave*)allocator_getHead(elev->slaves);
-					while (slave)
-					{
-						inf_serializeSlave(stream, slave);
-						slave = (Slave*)allocator_getNext(elev->slaves);
-					}
-				allocator_restoreIter(elev->slaves);
-
-				// Next Stop
-				s32 stopIndex = elev->nextStop ? elev->nextStop->index : -1;
-				SERIALIZE(stopIndex);
-
-				SERIALIZE(elev->speed);
-				// elev->value: this can be derived from the type - the actual value will be saved with the associated sector data.
-				SERIALIZE(elev->iValue);
-				SERIALIZE(elev->dirOrCenter);
-				SERIALIZE(elev->flags);
-
-				serialization_writeDfSound(stream, elev->sound0);
-				serialization_writeDfSound(stream, elev->sound1);
-				serialization_writeDfSound(stream, elev->sound2);
-				// elev->loopingSoundID is not serialized, the sound will resume on the next update.
-
-				SERIALIZE(elev->updateFlags);
-				SERIALIZE(elev->prevValue);
+				memset(elev, 0, sizeof(InfElevator));
 			}
-			elev = (InfElevator*)allocator_getNext(s_infSerState.infElevators);
+			return;
 		}
-		allocator_restoreIter(s_infSerState.infElevators);
 
-		// Teleports
-		allocator_saveIter(s_infSerState.infTeleports);
-		Teleport* teleport = (Teleport*)allocator_getHead(s_infSerState.infTeleports);
-		while (teleport)
+		const vec2_fixed def = { 0 };
+		if (serialization_getMode() == SMODE_READ)
 		{
-			serialization_writeSectorPtr(stream, teleport->sector);
-			serialization_writeSectorPtr(stream, teleport->target);
-			SERIALIZE(teleport->type);
-			SERIALIZE(teleport->dstPosition);
-			SERIALIZE_BUF(teleport->dstAngle, 3 * sizeof(angle14_16));
+			elev->deleted = JFALSE;
+			elev->self = elev;
+		}
 
-			// Matching sector link.
-			InfLink* teleportLink = nullptr;
-			RSector* sector = teleport->sector;
+		RSector* sector = elev->sector;
+		SERIALIZE(InfState_InitVersion, elev->type, IELEV_COUNT);
+		SERIALIZE(InfState_InitVersion, elev->trigMove, TRIGMOVE_HOLD);
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, sector);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			elev->sector = sector;
+		}
+
+		SERIALIZE(InfState_InitVersion, elev->key, KEY_NONE);
+		SERIALIZE(InfState_InitVersion, elev->fixedStep, 0);
+		SERIALIZE(InfState_InitVersion, elev->nextTick, 0);
+		SERIALIZE(InfState_InitVersion, elev->timer, 0);
+
+		// Matching sector link.
+		InfLink* elevLink = nullptr;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
 			if (sector->infLink)
 			{
 				allocator_saveIter(sector->infLink);
-					InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
-					while (link)
+				InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+				while (link)
+				{
+					if (link->type == LTYPE_SECTOR && link->elev == elev)
 					{
-						if (link->type == LTYPE_TELEPORT && link->teleport == teleport)
-						{
-							teleportLink = link;
-							break;
-						}
-						link = (InfLink*)allocator_getNext(sector->infLink);
+						elevLink = link;
+						serialization_serializeSectorPtr(stream, InfState_InitVersion, sector);
+						break;
 					}
+					link = (InfLink*)allocator_getNext(sector->infLink);
+				}
 				allocator_restoreIter(sector->infLink);
 			}
-			if (teleportLink)
-			{
-				serialization_writeSectorPtr(stream, sector);
-				inf_serializeLink(stream, teleportLink);
-			}
-			else
-			{
-				assert(0);
-				s32 linkSectorIndex = -1;
-				SERIALIZE(linkSectorIndex);
-			}
-
-			teleport = (Teleport*)allocator_getNext(s_infSerState.infTeleports);
 		}
-		allocator_restoreIter(s_infSerState.infTeleports);
-
-		// Triggers
-		allocator_saveIter(s_infSerState.infTriggers);
-		InfTrigger* trigger = (InfTrigger*)allocator_getHead(s_infSerState.infTriggers);
-		while (trigger)
+		else
 		{
-			SERIALIZE(trigger->deleted);
-			if (!trigger->deleted)
-			{
-				SERIALIZE(trigger->type);
-
-				// Inf Link
-				s32 parentSectorIndex = -1;
-				s32 parentWallIndex = -1;
-				if (trigger->type == ITRIGGER_SECTOR)
-				{
-					RSector* sector = (RSector*)trigger->parent;
-					parentSectorIndex = sector->index;
-				}
-				else
-				{
-					RWall* wall = (RWall*)trigger->parent;
-					parentSectorIndex = wall->sector->index;
-					parentWallIndex = wall->id;
-				}
-				SERIALIZE(parentSectorIndex);
-				SERIALIZE(parentWallIndex);
-
-				inf_serializeLink(stream, trigger->link);
-
-				// Animated Texture
-				serialize_writeAnimatedTexturePtr(stream, trigger->animTex);
-
-				// targets
-				allocator_saveIter(trigger->targets);
-					s32 targetCount = allocator_getCount(trigger->targets);
-					SERIALIZE(targetCount);
-					TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
-					while (target)
-					{
-						s32 sectorIndex = -1;
-						if (target->sector)
-						{
-							sectorIndex = target->sector->index;
-						}
-						else if (target->wall && target->wall->sector)
-						{
-							sectorIndex = target->wall->sector->index;
-						}
-
-						s32 wallIndex = -1;
-						if (target->wall)
-						{
-							wallIndex = target->wall->id;
-						}
-
-						SERIALIZE(sectorIndex);
-						SERIALIZE(wallIndex);
-						SERIALIZE(target->eventMask);
-
-						target = (TriggerTarget*)allocator_getNext(trigger->targets);
-					}
-				allocator_restoreIter(trigger->targets);
-
-				SERIALIZE(trigger->cmd);
-				SERIALIZE(trigger->event);
-				SERIALIZE(trigger->arg0);
-				SERIALIZE(trigger->arg1);
-				// Skip unused.
-				SERIALIZE(trigger->master);
-
-				// trigger->tex
-				s32 frameIndex = -1;
-				AnimatedTexture* animTex = trigger->animTex;
-				if (trigger->tex && animTex)
-				{
-					// Which frame is it currently on?
-					for (s32 f = 0; f < animTex->count; f++)
-					{
-						if (trigger->tex == animTex->frameList[f])
-						{
-							frameIndex = f;
-							break;
-						}
-					}
-				}
-				SERIALIZE(frameIndex);
-
-				serialization_writeDfSound(stream, trigger->soundId);
-				SERIALIZE(trigger->state);
-				SERIALIZE(trigger->textId);
-			}
-
-			trigger = (InfTrigger*)allocator_getNext(s_infSerState.infTriggers);
-		}
-		allocator_restoreIter(s_infSerState.infTriggers);
-	}
-
-	void inf_deserialize(Stream* stream)
-	{
-		// Clear state.
-		s_infState = { 0 };
-		s_infSerState = { 0 };
-
-		// Tasks and allocators.
-		inf_createElevatorTask();
-		inf_createTeleportTask();
-		inf_createTriggerTask();
-
-		// Version.
-		s32 infStateVersion;
-		DESERIALIZE(infStateVersion);
-
-		// Counts.
-		s32 elevCount, teleCount, trigCount;
-		DESERIALIZE(s_infSerState.activeTriggerCount);
-		DESERIALIZE(elevCount);
-		DESERIALIZE(teleCount);
-		DESERIALIZE(trigCount);
-
-		// Elevators
-		for (s32 i = 0; i < elevCount; i++)
-		{
-			InfElevator* elev = (InfElevator*)allocator_newItem(s_infSerState.infElevators);
-			s32 del;
-			DESERIALIZE(del);
-			if (del)
-			{
-				memset(elev, 0, sizeof(InfElevator));
-				elev->deleted = JTRUE;
-				continue;
-			}
-			elev->deleted = JFALSE;
-			elev->self = elev;
-
-			DESERIALIZE(elev->type);
-			DESERIALIZE(elev->trigMove);
-			elev->sector = serialization_readSectorPtr(stream);
-
-			DESERIALIZE(elev->key);
-			DESERIALIZE(elev->fixedStep);
-			DESERIALIZE(elev->nextTick);
-			DESERIALIZE(elev->timer);
-
-			// Matching sector link.
-			RSector* linkSector = serialization_readSectorPtr(stream);
+			RSector* linkSector;
+			serialization_serializeSectorPtr(stream, InfState_InitVersion, linkSector);
 			if (linkSector)
 			{
 				if (!linkSector->infLink)
@@ -354,23 +106,47 @@ namespace TFE_Jedi
 					linkSector->infLink = allocator_create(sizeof(InfLink));
 				}
 				Allocator* parent = linkSector->infLink;
-				InfLink* link = (InfLink*)allocator_newItem(parent);
-				inf_deserializeLink(stream, link, parent);
+				elevLink = (InfLink*)allocator_newItem(parent);
 			}
+		}
+		if (elevLink)
+		{
+			inf_serializeLink(stream, elevLink, sector->infLink);
+		}
 
-			// Serialize the current stop allocator position.
-			s32 stopPos, stopPrev;
-			DESERIALIZE(stopPos);
-			DESERIALIZE(stopPrev);
-			
-			// Stops
-			s32 stopCount;
-			DESERIALIZE(stopCount);
+		// Serialize the current stop allocator position.
+		s32 stopPos, stopPrev;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			stopPos = allocator_getCurPos(elev->stops);
+			stopPrev = allocator_getPrevPos(elev->stops);
+		}
+		SERIALIZE(InfState_InitVersion, stopPos, -1);
+		SERIALIZE(InfState_InitVersion, stopPrev, -1);
+
+		// Stops
+		s32 stopCount;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(elev->stops);
+			stopCount = allocator_getCount(elev->stops);
+			SERIALIZE(InfState_InitVersion, stopCount, 0);
+			Stop* stop = (Stop*)allocator_getHead(elev->stops);
+			while (stop)
+			{
+				inf_serializeStop(stream, stop);
+				stop = (Stop*)allocator_getNext(elev->stops);
+			}
+			allocator_restoreIter(elev->stops);
+		}
+		else
+		{
+			SERIALIZE(InfState_InitVersion, stopCount, 0);
 			elev->stops = allocator_create(sizeof(Stop));
 			for (s32 s = 0; s < stopCount; s++)
 			{
 				Stop* stop = (Stop*)allocator_newItem(elev->stops);
-				inf_deserializeStop(stream, stop);
+				inf_serializeStop(stream, stop);
 			}
 
 			// Set stop position.
@@ -382,54 +158,112 @@ namespace TFE_Jedi
 			{
 				allocator_setPrevPos(elev->stops, stopPrev);
 			}
+		}
 
-			// Slaves
-			s32 slaveCount;
-			DESERIALIZE(slaveCount);
+		// Slaves
+		s32 slaveCount;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(elev->slaves);
+			slaveCount = allocator_getCount(elev->slaves);
+			SERIALIZE(InfState_InitVersion, slaveCount, 0);
+			Slave* slave = (Slave*)allocator_getHead(elev->slaves);
+			while (slave)
+			{
+				inf_serializeSlave(stream, slave);
+				slave = (Slave*)allocator_getNext(elev->slaves);
+			}
+			allocator_restoreIter(elev->slaves);
+		}
+		else
+		{
+			SERIALIZE(InfState_InitVersion, slaveCount, 0);
 			elev->slaves = allocator_create(sizeof(Slave));
 			for (s32 s = 0; s < slaveCount; s++)
 			{
 				Slave* slave = (Slave*)allocator_newItem(elev->slaves);
-				inf_deserializeSlave(stream, slave);
+				inf_serializeSlave(stream, slave);
 			}
-
-			// Next Stop
-			s32 stopIndex;
-			DESERIALIZE(stopIndex);
-			elev->nextStop = (stopIndex < 0) ? nullptr : (Stop*)allocator_getByIndex(elev->stops, stopIndex);
-
-			DESERIALIZE(elev->speed);
-			DESERIALIZE(elev->iValue);
-			DESERIALIZE(elev->dirOrCenter);
-			DESERIALIZE(elev->flags);
-
-			// Compute the elev->value pointer.
-			inf_computeElevValuePointer(elev);
-
-			serialization_readDfSound(stream, &elev->sound0);
-			serialization_readDfSound(stream, &elev->sound1);
-			serialization_readDfSound(stream, &elev->sound2);
-			// elev->loopingSoundID is not serialized, the sound will resume on the next update.
-			elev->loopingSoundID = NULL_SOUND;
-			
-			DESERIALIZE(elev->updateFlags);
-			DESERIALIZE(elev->prevValue);
 		}
 
-		// Teleports
-		for (s32 i = 0; i < teleCount; i++)
+		// Next Stop
+		s32 stopIndex;
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			Teleport* teleport = (Teleport*)allocator_newItem(s_infSerState.infTeleports);
+			stopIndex = elev->nextStop ? elev->nextStop->index : -1;
+		}
+		SERIALIZE(InfState_InitVersion, stopIndex, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			elev->nextStop = (stopIndex < 0) ? nullptr : (Stop*)allocator_getByIndex(elev->stops, stopIndex);
+		}
 
-			teleport->sector = serialization_readSectorPtr(stream);
-			teleport->target = serialization_readSectorPtr(stream);
-			DESERIALIZE(teleport->type);
-			DESERIALIZE(teleport->dstPosition);
-			DESERIALIZE_BUF(teleport->dstAngle, 3 * sizeof(angle14_16));
+		SERIALIZE(InfState_InitVersion, elev->speed, 0);
+		SERIALIZE(InfState_InitVersion, elev->iValue, 0);
+		SERIALIZE(InfState_InitVersion, elev->dirOrCenter, def);
+		SERIALIZE(InfState_InitVersion, elev->flags, 0);
+		// Compute the elev->value pointer.
+		if (serialization_getMode() == SMODE_READ)
+		{
+			inf_computeElevValuePointer(elev);
+		}
 
-			// Matching sector link.
-			RSector* linkSector = serialization_readSectorPtr(stream);
-			assert(linkSector);
+		serialization_serializeDfSound(stream, InfState_InitVersion, &elev->sound0);
+		serialization_serializeDfSound(stream, InfState_InitVersion, &elev->sound1);
+		serialization_serializeDfSound(stream, InfState_InitVersion, &elev->sound2);
+
+		if (serialization_getMode() == SMODE_READ)
+		{
+			// elev->loopingSoundID is not serialized, the sound will resume on the next update.
+			elev->loopingSoundID = NULL_SOUND;
+		}
+
+		SERIALIZE(InfState_InitVersion, elev->updateFlags, 0);
+		SERIALIZE(InfState_InitVersion, elev->prevValue, 0);
+	}
+
+	void inf_serializeTeleport(Stream* stream, Teleport* teleport)
+	{
+		const vec3_fixed def = { 0 };
+
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, teleport->sector);
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, teleport->target);
+		SERIALIZE(InfState_InitVersion, teleport->type, TELEPORT_BASIC);
+		SERIALIZE(InfState_InitVersion, teleport->dstPosition, def);
+		SERIALIZE_BUF(InfState_InitVersion, teleport->dstAngle, 3 * sizeof(angle14_16));
+
+		// Matching sector link.
+		InfLink* teleportLink = nullptr;
+		RSector* sector = teleport->sector;
+		RSector* linkSector = nullptr;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			if (sector->infLink)
+			{
+				allocator_saveIter(sector->infLink);
+				InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+				while (link)
+				{
+					if (link->type == LTYPE_TELEPORT && link->teleport == teleport)
+					{
+						teleportLink = link;
+						linkSector = sector;
+						break;
+					}
+					link = (InfLink*)allocator_getNext(sector->infLink);
+				}
+				allocator_restoreIter(sector->infLink);
+			}
+			serialization_serializeSectorPtr(stream, InfState_InitVersion, linkSector);
+			if (linkSector)
+			{
+				inf_serializeLink(stream, teleportLink, linkSector->infLink);
+			}
+		}
+		else  // SMODE_READ
+		{
+			RSector* linkSector;
+			serialization_serializeSectorPtr(stream, InfState_InitVersion, linkSector);
 			if (linkSector)
 			{
 				if (!linkSector->infLink)
@@ -438,48 +272,94 @@ namespace TFE_Jedi
 				}
 				Allocator* parent = linkSector->infLink;
 				InfLink* link = (InfLink*)allocator_newItem(parent);
-				inf_deserializeLink(stream, link, parent);
+				inf_serializeLink(stream, link, parent);
 			}
 		}
+	}
 
-		// Triggers
-		for (s32 i = 0; i < trigCount; i++)
+	void inf_serializeTarget(Stream* stream, TriggerTarget* target)
+	{
+		RSector* targetSector = nullptr;
+		s32 wallIndex = -1;
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			InfTrigger* trigger = (InfTrigger*)allocator_newItem(s_infSerState.infTriggers);
-
-			s32 del;
-			DESERIALIZE(del);
-			if (del)
+			if (target->sector)
 			{
-				memset(trigger, 0, sizeof(InfTrigger));
-				trigger->deleted = JTRUE;
-				continue;
+				targetSector = target->sector;
 			}
-			trigger->deleted = JFALSE;
-
-			DESERIALIZE(trigger->type);
-
-			// InfLink
-			s32 parentSectorIndex, parentWallIndex;
-			DESERIALIZE(parentSectorIndex);
-			DESERIALIZE(parentWallIndex);
-			Allocator* parent = nullptr;
-			RWall* triggerWall = nullptr;
-			InfLink* link = nullptr;
-			RSector* sector = parentSectorIndex >= 0 ? &s_levelState.sectors[parentSectorIndex] : nullptr;
-
-			if (trigger->type == ITRIGGER_SECTOR && sector)
+			else if (target->wall && target->wall->sector)
 			{
-				if (!sector->infLink)
+				targetSector = target->wall->sector;
+			}
+			if (target->wall)
+			{
+				wallIndex = target->wall->id;
+			}
+		}
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, targetSector);
+		SERIALIZE(InfState_InitVersion, wallIndex, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			target->sector = nullptr;
+			target->wall = nullptr;
+			if (wallIndex >= 0 && targetSector)
+			{
+				target->wall = &targetSector->walls[wallIndex];
+			}
+			else if (targetSector)
+			{
+				target->sector = targetSector;
+			}
+		}
+		SERIALIZE(InfState_InitVersion, target->eventMask, 0);
+	}
+
+	void inf_serializeTrigger(Stream* stream, InfTrigger* trigger)
+	{
+		SERIALIZE(InfState_InitVersion, trigger->deleted, 0);
+		if (trigger->deleted) { return; }
+
+		SERIALIZE(InfState_InitVersion, trigger->type, ITRIGGER_WALL);
+
+		// Inf Link
+		s32 parentWallIndex = -1;
+		RSector* parentSector = nullptr;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			if (trigger->type == ITRIGGER_SECTOR)
+			{
+				parentSector = (RSector*)trigger->parent;
+			}
+			else
+			{
+				RWall* wall = (RWall*)trigger->parent;
+				parentSector = wall->sector;
+				parentWallIndex = wall->id;
+			}
+		}
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, parentSector);
+		SERIALIZE(InfState_InitVersion, parentWallIndex, -1);
+		InfLink* link = nullptr;
+		Allocator* parent = nullptr;
+		RWall* triggerWall = nullptr;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			link = trigger->link;
+		}
+		else  // SMODE_READ
+		{
+			if (trigger->type == ITRIGGER_SECTOR && parentSector)
+			{
+				if (!parentSector->infLink)
 				{
-					sector->infLink = allocator_create(sizeof(InfLink));
+					parentSector->infLink = allocator_create(sizeof(InfLink));
 				}
-				parent = sector->infLink;
-				link = (InfLink*)allocator_newItem(sector->infLink);
+				parent = parentSector->infLink;
+				link = (InfLink*)allocator_newItem(parentSector->infLink);
 			}
-			else if (sector && parentWallIndex >= 0)
+			else if (parentSector && parentWallIndex >= 0)
 			{
-				RWall* wall = &sector->walls[parentWallIndex];
+				RWall* wall = &parentSector->walls[parentWallIndex];
 				if (!wall->infLink)
 				{
 					wall->infLink = allocator_create(sizeof(InfLink));
@@ -489,48 +369,65 @@ namespace TFE_Jedi
 				link = (InfLink*)allocator_newItem(wall->infLink);
 			}
 			trigger->link = link;
-			inf_deserializeLink(stream, link, parent);
+		}
+		inf_serializeLink(stream, trigger->link, parent);
 
-			// Animated texture.
-			trigger->animTex = serialize_readAnimatedTexturePtr(stream);
+		// Animated Texture
+		serialization_serializeAnimatedTexturePtr(stream, InfState_InitVersion, trigger->animTex);
 
-			// targets
+		// targets
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(trigger->targets);
+				s32 targetCount = allocator_getCount(trigger->targets);
+				SERIALIZE(InfState_InitVersion, targetCount, 0);
+				TriggerTarget* target = (TriggerTarget*)allocator_getHead(trigger->targets);
+				while (target)
+				{
+					inf_serializeTarget(stream, target);
+					target = (TriggerTarget*)allocator_getNext(trigger->targets);
+				}
+			allocator_restoreIter(trigger->targets);
+		}
+		else  // SMODE_READ
+		{
 			s32 targetCount;
-			DESERIALIZE(targetCount);
+			SERIALIZE(InfState_InitVersion, targetCount, 0);
 			trigger->targets = allocator_create(sizeof(TriggerTarget));
-			for (s32 t = 0; t < targetCount; t++)
+			for (s32 i = 0; i < targetCount; i++)
 			{
 				TriggerTarget* target = (TriggerTarget*)allocator_newItem(trigger->targets);
-
-				s32 sectorIndex;
-				s32 wallIndex;
-				DESERIALIZE(sectorIndex);
-				DESERIALIZE(wallIndex);
-
-				target->sector = nullptr;
-				target->wall = nullptr;
-				if (wallIndex >= 0 && sectorIndex >= 0)
-				{
-					target->wall = &s_levelState.sectors[sectorIndex].walls[wallIndex];
-				}
-				else if (sectorIndex >= 0)
-				{
-					target->sector = &s_levelState.sectors[sectorIndex];
-				}
-
-				DESERIALIZE(target->eventMask);
+				inf_serializeTarget(stream, target);
 			}
+		}
 
-			DESERIALIZE(trigger->cmd);
-			DESERIALIZE(trigger->event);
-			DESERIALIZE(trigger->arg0);
-			DESERIALIZE(trigger->arg1);
-			// Skip unused.
-			DESERIALIZE(trigger->master);
+		SERIALIZE(InfState_InitVersion, trigger->cmd, MSG_RUN_TASK);
+		SERIALIZE(InfState_InitVersion, trigger->event, 0);
+		SERIALIZE(InfState_InitVersion, trigger->arg0, 0);
+		SERIALIZE(InfState_InitVersion, trigger->arg1, 0);
+		SERIALIZE(InfState_InitVersion, trigger->master, 0);
 
-			// trigger->tex
-			s32 frameIndex;
-			DESERIALIZE(frameIndex);
+		// trigger->tex
+		s32 frameIndex = -1;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			AnimatedTexture* animTex = trigger->animTex;
+			if (trigger->tex && animTex)
+			{
+				// Which frame is it currently on?
+				for (s32 f = 0; f < animTex->count; f++)
+				{
+					if (trigger->tex == animTex->frameList[f])
+					{
+						frameIndex = f;
+						break;
+					}
+				}
+			}
+		}
+		SERIALIZE(InfState_InitVersion, frameIndex, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
 			AnimatedTexture* animTex = trigger->animTex;
 			if (animTex && frameIndex >= 0)
 			{
@@ -540,216 +437,318 @@ namespace TFE_Jedi
 					triggerWall->signTex = &trigger->tex;
 				}
 			}
+		}
 
-			serialization_readDfSound(stream, &trigger->soundId);
-			DESERIALIZE(trigger->state);
-			DESERIALIZE(trigger->textId);
+		serialization_serializeDfSound(stream, InfState_InitVersion, &trigger->soundId);
+		SERIALIZE(InfState_InitVersion, trigger->state, 0);
+		SERIALIZE(InfState_InitVersion, trigger->textId, 0);
+	}
+		
+	void inf_serialize(Stream* stream)
+	{
+		if (serialization_getMode() == SMODE_READ)
+		{
+			// Clear state.
+			s_infState = { 0 };
+			s_infSerState = { 0 };
+
+			// Tasks and allocators.
+			inf_createElevatorTask();
+			inf_createTeleportTask();
+			inf_createTriggerTask();
+		}
+
+		SERIALIZE_VERSION(InfState_CurVersion);
+		
+		s32 elevCount, teleCount, trigCount;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			elevCount = allocator_getCount(s_infSerState.infElevators);
+			teleCount = allocator_getCount(s_infSerState.infTeleports);
+			trigCount = allocator_getCount(s_infSerState.infTriggers);
+		}
+		// Counts.
+		SERIALIZE(InfState_InitVersion, s_infSerState.activeTriggerCount, 0);
+		SERIALIZE(InfState_InitVersion, elevCount, 0);
+		SERIALIZE(InfState_InitVersion, teleCount, 0);
+		SERIALIZE(InfState_InitVersion, trigCount, 0);
+
+		// Elevators.
+		const vec2_fixed def = { 0 };
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(s_infSerState.infElevators);
+			InfElevator* elev = (InfElevator*)allocator_getHead(s_infSerState.infElevators);
+			while (elev)
+			{
+				inf_serializeElevator(stream, elev);
+				elev = (InfElevator*)allocator_getNext(s_infSerState.infElevators);
+			}
+			allocator_restoreIter(s_infSerState.infElevators);
+		}
+		else // Read
+		{
+			for (s32 i = 0; i < elevCount; i++)
+			{
+				InfElevator* elev = (InfElevator*)allocator_newItem(s_infSerState.infElevators);
+				inf_serializeElevator(stream, elev);
+			}
+		}
+
+		// Teleports
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(s_infSerState.infTeleports);
+			Teleport* teleport = (Teleport*)allocator_getHead(s_infSerState.infTeleports);
+			while (teleport)
+			{
+				inf_serializeTeleport(stream, teleport);
+				teleport = (Teleport*)allocator_getNext(s_infSerState.infTeleports);
+			}
+			allocator_restoreIter(s_infSerState.infTeleports);
+		}
+		else  // SMODE_READ
+		{
+			for (s32 i = 0; i < teleCount; i++)
+			{
+				Teleport* teleport = (Teleport*)allocator_newItem(s_infSerState.infTeleports);
+				inf_serializeTeleport(stream, teleport);
+			}
+		}
+
+		// Triggers
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(s_infSerState.infTriggers);
+			InfTrigger* trigger = (InfTrigger*)allocator_getHead(s_infSerState.infTriggers);
+			while (trigger)
+			{
+				inf_serializeTrigger(stream, trigger);
+				trigger = (InfTrigger*)allocator_getNext(s_infSerState.infTriggers);
+			}
+			allocator_restoreIter(s_infSerState.infTriggers);
+		}
+		else  // SMODE_READ
+		{
+			for (s32 i = 0; i < teleCount; i++)
+			{
+				InfTrigger* trigger = (InfTrigger*)allocator_newItem(s_infSerState.infTriggers);
+				inf_serializeTrigger(stream, trigger);
+			}
 		}
 	}
 
 	/////////////////////////////////////////////
 	// Internal - Serialize
 	/////////////////////////////////////////////
-	void inf_serializeStop(Stream* stream, Stop* stop)
+	void inf_serializeMessage(Stream* stream, InfMessage* msg)
 	{
-		SERIALIZE(stop->value);
-		SERIALIZE(stop->delay);
-
-		// Messages
-		s32 msgCount = allocator_getCount(stop->messages);
-		SERIALIZE(msgCount);
-		InfMessage* msg = (InfMessage*)allocator_getHead(stop->messages);
-		while (msg)
+		RSector* sector = nullptr;
+		s32 wallIndex = -1;
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			s32 sectorIndex = -1;
 			if (msg->sector)
 			{
-				sectorIndex = msg->sector->index;
+				sector = msg->sector;
 			}
-			else if (msg->wall && msg->wall->sector)
+			else if (msg->wall)
 			{
-				sectorIndex = msg->wall->sector->index;
+				sector = msg->wall->sector;
 			}
-			s32 wallIndex = (msg->wall) ? msg->wall->id : -1;
-			// It is possible for both wallIndex and sectorIndex to be null.
-			SERIALIZE(sectorIndex);
-			SERIALIZE(wallIndex);
+			wallIndex = (msg->wall) ? msg->wall->id : -1;
+		}
+		// It is possible for both wallIndex and sectorIndex to be null.
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, sector);
+		SERIALIZE(InfState_InitVersion, wallIndex, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			msg->wall = nullptr;
+			msg->sector = nullptr;
+			if (wallIndex >= 0)
+			{
+				msg->wall = sector ? &sector->walls[wallIndex] : nullptr;
+			}
+			else
+			{
+				msg->sector = sector;
+			}
+		}
 
-			SERIALIZE(msg->msgType);
-			SERIALIZE(msg->event);
-			SERIALIZE(msg->arg1);
-			SERIALIZE(msg->arg2);
+		SERIALIZE(InfState_InitVersion, msg->msgType, MSG_COUNT);
+		SERIALIZE(InfState_InitVersion, msg->event, 0);
+		SERIALIZE(InfState_InitVersion, msg->arg1, 0);
+		SERIALIZE(InfState_InitVersion, msg->arg2, 0);
+	}
 
-			msg = (InfMessage*)allocator_getNext(stop->messages);
+	void inf_serializeAdjoin(Stream* stream, Stop* stop, AdjoinCmd* adjCmd)
+	{
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, adjCmd->sector0);
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, adjCmd->sector1);
+
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			SERIALIZE(InfState_InitVersion, adjCmd->wall0->id, 0);
+			SERIALIZE(InfState_InitVersion, adjCmd->wall1->id, 0);
+		}
+		else // SMODE_READ
+		{
+			s32 wall0Id, wall1Id;
+			SERIALIZE(InfState_InitVersion, wall0Id, 0);
+			SERIALIZE(InfState_InitVersion, wall1Id, 0);
+			adjCmd->wall0 = &adjCmd->sector0->walls[wall0Id];
+			adjCmd->wall1 = &adjCmd->sector1->walls[wall1Id];
+		}
+	}
+
+	void inf_serializeStop(Stream* stream, Stop* stop)
+	{
+		SERIALIZE(InfState_InitVersion, stop->value, 0);
+		SERIALIZE(InfState_InitVersion, stop->delay, 0);
+
+		// Messages
+		s32 msgCount;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			msgCount = allocator_getCount(stop->messages);
+		}
+		SERIALIZE(InfState_InitVersion, msgCount, 0);
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(stop->messages);
+			InfMessage* msg = (InfMessage*)allocator_getHead(stop->messages);
+			while (msg)
+			{
+				inf_serializeMessage(stream, msg);
+				msg = (InfMessage*)allocator_getNext(stop->messages);
+			}
+			allocator_restoreIter(stop->messages);
+		}
+		else // SMODE_READ
+		{
+			stop->messages = allocator_create(sizeof(InfMessage));
+			for (s32 m = 0; m < msgCount; m++)
+			{
+				InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
+				inf_serializeMessage(stream, msg);
+			}
 		}
 
 		// Adjoin Commands
-		s32 adjCount = allocator_getCount(stop->adjoinCmds);
-		SERIALIZE(adjCount);
-		AdjoinCmd* adjCmd = (AdjoinCmd*)allocator_getHead(stop->adjoinCmds);
-		while (adjCmd)
+		s32 adjCount;
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			serialization_writeSectorPtr(stream, adjCmd->sector0);
-			serialization_writeSectorPtr(stream, adjCmd->sector1);
-			SERIALIZE(adjCmd->wall0->id);
-			SERIALIZE(adjCmd->wall1->id);
-			adjCmd = (AdjoinCmd*)allocator_getNext(stop->adjoinCmds);
+			adjCount = allocator_getCount(stop->adjoinCmds);
+		}
+		SERIALIZE(InfState_InitVersion, adjCount, 0);
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(stop->adjoinCmds);
+			AdjoinCmd* adjCmd = (AdjoinCmd*)allocator_getHead(stop->adjoinCmds);
+			while (adjCmd)
+			{
+				inf_serializeAdjoin(stream, stop, adjCmd);
+				adjCmd = (AdjoinCmd*)allocator_getNext(stop->adjoinCmds);
+			}
+			allocator_restoreIter(stop->adjoinCmds);
+		}
+		else  // SMODE_READ
+		{
+			stop->adjoinCmds = allocator_create(sizeof(AdjoinCmd));
+			for (s32 a = 0; a < adjCount; a++)
+			{
+				AdjoinCmd* adjCmd = (AdjoinCmd*)allocator_newItem(stop->adjoinCmds);
+				inf_serializeAdjoin(stream, stop, adjCmd);
+			}
 		}
 
-		serialization_writeDfSound(stream, stop->pageId);
+		serialization_serializeDfSound(stream, InfState_InitVersion, &stop->pageId);
+		SERIALIZE(InfState_InitVersion, stop->floorTexSecId, -1);
+		SERIALIZE(InfState_InitVersion, stop->ceilTexSecId, -1);
+		SERIALIZE(InfState_InitVersion, stop->index, -1);
 
-		SERIALIZE(stop->floorTexSecId);
-		SERIALIZE(stop->ceilTexSecId);
-		SERIALIZE(stop->index);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			if (stop->floorTexSecId >= 0)
+			{
+				stop->floorTex = s_levelState.sectors[stop->floorTexSecId].floorTex;
+			}
+			if (stop->ceilTexSecId >= 0)
+			{
+				stop->ceilTex = s_levelState.sectors[stop->ceilTexSecId].ceilTex;
+			}
+		}
 	}
 
 	void inf_serializeSlave(Stream* stream, Slave* slave)
 	{
-		serialization_writeSectorPtr(stream, slave->sector);
-		SERIALIZE(slave->value);
+		serialization_serializeSectorPtr(stream, InfState_InitVersion, slave->sector);
+		SERIALIZE(InfState_InitVersion, slave->value, 0);
 	}
 
-	void inf_serializeLink(Stream* stream, InfLink* link)
+	void inf_serializeLink(Stream* stream, InfLink* link, Allocator* parent)
 	{
-		SERIALIZE(link->type);
+		SERIALIZE(InfState_InitVersion, link->type, LTYPE_SECTOR);
 		// Task function is derived from the type.
 		s32 index = -1;
-		switch (link->type)
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			case LTYPE_SECTOR:
+			switch (link->type)
 			{
-				index = allocator_getIndex(s_infSerState.infElevators, link->elev);
-			} break;
-			case LTYPE_TRIGGER:
-			{
-				index = allocator_getIndex(s_infSerState.infTriggers, link->trigger);
-			} break;
-			case LTYPE_TELEPORT:
-			{
-				index = allocator_getIndex(s_infSerState.infTeleports, link->teleport);
-			} break;
+				case LTYPE_SECTOR:
+				{
+					index = allocator_getIndex(s_infSerState.infElevators, link->elev);
+				} break;
+				case LTYPE_TRIGGER:
+				{
+					index = allocator_getIndex(s_infSerState.infTriggers, link->trigger);
+				} break;
+				case LTYPE_TELEPORT:
+				{
+					index = allocator_getIndex(s_infSerState.infTeleports, link->teleport);
+				} break;
+			}
 		}
-		SERIALIZE(index);
-		SERIALIZE(link->eventMask);
-		SERIALIZE(link->entityMask);
-		// link->parent will be computed on load 
-		// link->task will be computed on load
-		// link->freeFunc will be computed on load.
+		SERIALIZE(InfState_InitVersion, index, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			// TODO: This doesn't work because indices can point to items not yet created.
+			// So we need to save the index and do a fix-up pass at the end.
+			switch (link->type)
+			{
+				case LTYPE_SECTOR:
+				{
+					link->elev = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, index);
+					link->task = s_infState.infElevTask;
+					link->freeFunc = (InfFreeFunc)inf_deleteElevator;
+				} break;
+				case LTYPE_TRIGGER:
+				{
+					link->trigger = (InfTrigger*)allocator_getByIndex(s_infSerState.infTriggers, index);
+					link->task = s_infState.infTriggerTask;
+					link->freeFunc = (InfFreeFunc)inf_deleteTrigger;
+				} break;
+				case LTYPE_TELEPORT:
+				{
+					link->teleport = (Teleport*)allocator_getByIndex(s_infSerState.infTeleports, index);
+					link->task = s_infState.teleportTask;
+					link->freeFunc = nullptr;
+				} break;
+			}
+		}
+
+		SERIALIZE(InfState_InitVersion, link->eventMask, 0);
+		SERIALIZE(InfState_InitVersion, link->entityMask, 0);
+
+		if (serialization_getMode() == SMODE_READ)
+		{
+			link->parent = parent;
+		}
 	}
 
 
 	/////////////////////////////////////////////
 	// Internal - Deserialize
 	/////////////////////////////////////////////
-	void inf_deserializeStop(Stream* stream, Stop* stop)
-	{
-		DESERIALIZE(stop->value);
-		DESERIALIZE(stop->delay);
-
-		// Messages
-		s32 msgCount;
-		DESERIALIZE(msgCount);
-		stop->messages = allocator_create(sizeof(InfMessage));
-		for (s32 m = 0; m < msgCount; m++)
-		{
-			InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
-
-			RSector* sector = serialization_readSectorPtr(stream);
-			s32 wallIndex;
-			DESERIALIZE(wallIndex);
-
-			msg->wall = nullptr;
-			msg->sector = nullptr;
-			if (wallIndex >= 0)
-			{
-				msg->wall = &sector->walls[wallIndex];
-			}
-			else
-			{
-				msg->sector = sector;
-			}
-
-			DESERIALIZE(msg->msgType);
-			DESERIALIZE(msg->event);
-			DESERIALIZE(msg->arg1);
-			DESERIALIZE(msg->arg2);
-		}
-
-		// Adjoin Commands
-		s32 adjCount;
-		DESERIALIZE(adjCount);
-		stop->adjoinCmds = allocator_create(sizeof(AdjoinCmd));
-
-		for (s32 a = 0; a < adjCount; a++)
-		{
-			AdjoinCmd* adjCmd = (AdjoinCmd*)allocator_newItem(stop->adjoinCmds);
-
-			adjCmd->sector0 = serialization_readSectorPtr(stream);
-			adjCmd->sector1 = serialization_readSectorPtr(stream);
-			s32 wall0Id, wall1Id;
-			DESERIALIZE(wall0Id);
-			DESERIALIZE(wall1Id);
-			adjCmd->wall0 = &adjCmd->sector0->walls[wall0Id];
-			adjCmd->wall1 = &adjCmd->sector1->walls[wall1Id];
-		}
-
-		serialization_readDfSound(stream, &stop->pageId);
-
-		DESERIALIZE(stop->floorTexSecId);
-		DESERIALIZE(stop->ceilTexSecId);
-		DESERIALIZE(stop->index);
-
-		if (stop->floorTexSecId >= 0)
-		{
-			stop->floorTex = s_levelState.sectors[stop->floorTexSecId].floorTex;
-		}
-		if (stop->ceilTexSecId >= 0)
-		{
-			stop->ceilTex = s_levelState.sectors[stop->ceilTexSecId].ceilTex;
-		}
-	}
-
-	void inf_deserializeSlave(Stream* stream, Slave* slave)
-	{
-		slave->sector = serialization_readSectorPtr(stream);
-		DESERIALIZE(slave->value);
-	}
-
-	void inf_deserializeLink(Stream* stream, InfLink* link, Allocator* parent)
-	{
-		DESERIALIZE(link->type);
-
-		// Task function is derived from the type.
-		s32 index;
-		DESERIALIZE(index);
-		switch (link->type)
-		{
-			case LTYPE_SECTOR:
-			{
-				link->elev = (InfElevator*)allocator_getByIndex(s_infSerState.infElevators, index);
-				link->task = s_infState.infElevTask;
-				link->freeFunc = (InfFreeFunc)inf_deleteElevator;
-			} break;
-			case LTYPE_TRIGGER:
-			{
-				link->trigger = (InfTrigger*)allocator_getByIndex(s_infSerState.infTriggers, index);
-				link->task = s_infState.infTriggerTask;
-				link->freeFunc = (InfFreeFunc)inf_deleteTrigger;
-			} break;
-			case LTYPE_TELEPORT:
-			{
-				link->teleport = (Teleport*)allocator_getByIndex(s_infSerState.infTeleports, index);
-				link->task = s_infState.teleportTask;
-				link->freeFunc = nullptr;
-			} break;
-		}
-
-		DESERIALIZE(link->eventMask);
-		DESERIALIZE(link->entityMask);
-
-		link->parent = parent;
-	}
-
 	void inf_computeElevValuePointer(InfElevator* elev)
 	{
 		RSector* sector = elev->sector;

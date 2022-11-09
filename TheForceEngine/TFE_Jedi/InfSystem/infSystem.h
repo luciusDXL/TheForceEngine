@@ -36,7 +36,6 @@ namespace TFE_Jedi
 	// Serialization & State
 	void inf_clearState();
 	void inf_serialize(Stream* stream);
-	void inf_deserialize(Stream* stream);
 	
 	// ** Runtime API **
 	// Messages are the way entities and the player interact with the INF system during gameplay.

@@ -1583,44 +1583,71 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void projLogic_serialize(Logic* logic, Stream* stream)
+	void projLogic_serialize(Logic*& logic, Stream* stream)
 	{
-		ProjectileLogic* proj = (ProjectileLogic*)logic;
-		SERIALIZE(proj->type);
-		SERIALIZE(proj->dmg);
-		SERIALIZE(proj->falloffAmt);
-		SERIALIZE(proj->nextFalloffTick);
-		SERIALIZE(proj->dmgFalloffDelta);
-		SERIALIZE(proj->minDmg);
+		ProjectileLogic* proj;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			proj = (ProjectileLogic*)logic;
+		}
+		else
+		{
+			proj = (ProjectileLogic*)allocator_newItem(s_projectiles);
+			logic = (Logic*)proj;
 
-		SERIALIZE(proj->projForce);
-		SERIALIZE(proj->delta);
-		SERIALIZE(proj->vel);
-		SERIALIZE(proj->speed);
-		SERIALIZE(proj->col_speed);
-		SERIALIZE(proj->dir);
-		SERIALIZE(proj->horzBounciness);
-		SERIALIZE(proj->vertBounciness);
+			proj->logic.task = s_projectileTask;
+			proj->logic.cleanupFunc = projectileLogicCleanupFunc;
+			task_makeActive(s_projectileTask);
+		}
+		SERIALIZE(ObjState_InitVersion, proj->type, PROJ_COUNT);
+		SERIALIZE(ObjState_InitVersion, proj->dmg, 0);
+		SERIALIZE(ObjState_InitVersion, proj->falloffAmt, 0);
+		SERIALIZE(ObjState_InitVersion, proj->nextFalloffTick, 0);
+		SERIALIZE(ObjState_InitVersion, proj->dmgFalloffDelta, 0);
+		SERIALIZE(ObjState_InitVersion, proj->minDmg, 0);
 
-		s32 prevColObjId = proj->prevColObj ? proj->prevColObj->serializeIndex : -1;
-		s32 prevObjId    = proj->prevObj    ? proj->prevObj->serializeIndex    : -1;
-		s32 excludeObjId = proj->excludeObj ? proj->excludeObj->serializeIndex : -1;
-		SERIALIZE(prevColObjId);
-		SERIALIZE(prevObjId);
-		SERIALIZE(excludeObjId);
+		const vec3_fixed def = { 0 };
+		SERIALIZE(ObjState_InitVersion, proj->projForce, 0);
+		SERIALIZE(ObjState_InitVersion, proj->delta, def);
+		SERIALIZE(ObjState_InitVersion, proj->vel, def);
+		SERIALIZE(ObjState_InitVersion, proj->speed, 0);
+		SERIALIZE(ObjState_InitVersion, proj->col_speed, 0);
+		SERIALIZE(ObjState_InitVersion, proj->dir, def);
+		SERIALIZE(ObjState_InitVersion, proj->horzBounciness, 0);
+		SERIALIZE(ObjState_InitVersion, proj->vertBounciness, 0);
 
-		SERIALIZE(proj->duration);
-		SERIALIZE(proj->homingAngleSpd);
-		SERIALIZE(proj->bounceCnt);
-		SERIALIZE(proj->reflVariation);
+		s32 prevColObjId, prevObjId, excludeObjId;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			prevColObjId = proj->prevColObj ? proj->prevColObj->serializeIndex : -1;
+			prevObjId    = proj->prevObj    ? proj->prevObj->serializeIndex    : -1;
+			excludeObjId = proj->excludeObj ? proj->excludeObj->serializeIndex : -1;
+		}
+		SERIALIZE(ObjState_InitVersion, prevColObjId, -1);
+		SERIALIZE(ObjState_InitVersion, prevObjId, -1);
+		SERIALIZE(ObjState_InitVersion, excludeObjId, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			proj->prevColObj = (prevColObjId >= 0) ? objData_getObjectBySerializationId(prevColObjId) : nullptr;
+			proj->prevObj    = (prevObjId >= 0)    ? objData_getObjectBySerializationId(prevObjId)    : nullptr;
+			proj->excludeObj = (excludeObjId >= 0) ? objData_getObjectBySerializationId(excludeObjId) : nullptr;
+		}
 
-		// proj->flightSndId = 0
-		serialization_writeDfSound(stream, proj->flightSndId);
-		serialization_writeDfSound(stream, proj->cameraPassSnd);
-		serialization_writeDfSound(stream, proj->reflectSnd);
+		SERIALIZE(ObjState_InitVersion, proj->duration, 0);
+		SERIALIZE(ObjState_InitVersion, proj->homingAngleSpd, 0);
+		SERIALIZE(ObjState_InitVersion, proj->bounceCnt, 0);
+		SERIALIZE(ObjState_InitVersion, proj->reflVariation, 0);
+
+		if (serialization_getMode() == SMODE_READ)
+		{
+			proj->flightSndId = 0;
+		}
+		serialization_serializeDfSound(stream, ObjState_InitVersion, &proj->flightSndId);
+		serialization_serializeDfSound(stream, ObjState_InitVersion, &proj->cameraPassSnd);
+		serialization_serializeDfSound(stream, ObjState_InitVersion, &proj->reflectSnd);
 
 		s32 projUpdateFuncId = -1;
-		if (proj->updateFunc)
+		if (serialization_getMode() == SMODE_WRITE && proj->updateFunc)
 		{
 			for (s32 i = 0; i < TFE_ARRAYSIZE(c_projUpdateFunc); i++)
 			{
@@ -1631,64 +1658,15 @@ namespace TFE_DarkForces
 				}
 			}
 		}
-		SERIALIZE(projUpdateFuncId);
+		SERIALIZE(ObjState_InitVersion, projUpdateFuncId, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			proj->updateFunc = (projUpdateFuncId >= 0) ? c_projUpdateFunc[projUpdateFuncId] : nullptr;
+		}
 
-		SERIALIZE(proj->reflectEffectId);
-		SERIALIZE(proj->hitEffectId);
-		SERIALIZE(proj->flags);
-	}
-
-	Logic* projLogic_deserialize(Stream* stream)
-	{
-		ProjectileLogic* proj = (ProjectileLogic*)allocator_newItem(s_projectiles);
-
-		DESERIALIZE(proj->type);
-		DESERIALIZE(proj->dmg);
-		DESERIALIZE(proj->falloffAmt);
-		DESERIALIZE(proj->nextFalloffTick);
-		DESERIALIZE(proj->dmgFalloffDelta);
-		DESERIALIZE(proj->minDmg);
-
-		DESERIALIZE(proj->projForce);
-		DESERIALIZE(proj->delta);
-		DESERIALIZE(proj->vel);
-		DESERIALIZE(proj->speed);
-		DESERIALIZE(proj->col_speed);
-		DESERIALIZE(proj->dir);
-		DESERIALIZE(proj->horzBounciness);
-		DESERIALIZE(proj->vertBounciness);
-
-		s32 prevColObjId, prevObjId, excludeObjId;
-		DESERIALIZE(prevColObjId);
-		DESERIALIZE(prevObjId);
-		DESERIALIZE(excludeObjId);
-		proj->prevColObj = (prevColObjId >= 0) ? objData_getObjectBySerializationId(prevColObjId) : nullptr;
-		proj->prevObj    = (prevObjId >= 0) ? objData_getObjectBySerializationId(prevObjId) : nullptr;
-		proj->excludeObj = (excludeObjId >= 0) ? objData_getObjectBySerializationId(excludeObjId) : nullptr;
-
-		DESERIALIZE(proj->duration);
-		DESERIALIZE(proj->homingAngleSpd);
-		DESERIALIZE(proj->bounceCnt);
-		DESERIALIZE(proj->reflVariation);
-
-		proj->flightSndId = 0;
-		serialization_readDfSound(stream, &proj->flightSndId);
-		serialization_readDfSound(stream, &proj->cameraPassSnd);
-		serialization_readDfSound(stream, &proj->reflectSnd);
-
-		s32 projUpdateFuncId;
-		DESERIALIZE(projUpdateFuncId);
-		proj->updateFunc = (projUpdateFuncId >= 0) ? c_projUpdateFunc[projUpdateFuncId] : nullptr;
-
-		DESERIALIZE(proj->reflectEffectId);
-		DESERIALIZE(proj->hitEffectId);
-		DESERIALIZE(proj->flags);
-
-		proj->logic.task = s_projectileTask;
-		proj->logic.cleanupFunc = projectileLogicCleanupFunc;
-		task_makeActive(s_projectileTask);
-		
-		return (Logic*)proj;
+		SERIALIZE(ObjState_InitVersion, proj->reflectEffectId, HEFFECT_NONE);
+		SERIALIZE(ObjState_InitVersion, proj->hitEffectId, HEFFECT_NONE);
+		SERIALIZE(ObjState_InitVersion, proj->flags, 0);
 	}
 		
 	// Returns JTRUE if the hit was properly handled, otherwise returns JFALSE.

@@ -119,43 +119,38 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void updateLogic_serialize(Logic* logic, Stream* stream)
+	void updateLogic_serialize(Logic*& logic, Stream* stream)
 	{
-		UpdateLogic* updateLogic = (UpdateLogic*)logic;
-		SERIALIZE(updateLogic->xVel);
-		SERIALIZE(updateLogic->yVel);
-		SERIALIZE(updateLogic->zVel);
-		SERIALIZE(updateLogic->pitchRate);
-		SERIALIZE(updateLogic->yawRate);
-		SERIALIZE(updateLogic->rollRate);
-		SERIALIZE(updateLogic->flags);
-	}
-
-	Logic* updateLogic_deserialize(Stream* stream)
-	{
-		if (!s_logicUpdateList)
+		UpdateLogic* updateLogic;
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			s_logicUpdateList = allocator_create(sizeof(UpdateLogic));
+			updateLogic = (UpdateLogic*)logic;
 		}
-		if (!s_logicUpdateTask)
+		else
 		{
-			s_logicUpdateTask = createTask("update logic", updateLogicTaskFunc);
+			if (!s_logicUpdateList)
+			{
+				s_logicUpdateList = allocator_create(sizeof(UpdateLogic));
+			}
+			if (!s_logicUpdateTask)
+			{
+				s_logicUpdateTask = createTask("update logic", updateLogicTaskFunc);
+			}
+
+			updateLogic = (UpdateLogic*)allocator_newItem(s_logicUpdateList);
+			logic = (Logic*)updateLogic;
+
+			updateLogic->pad16 = 0;
+			updateLogic->logic.task = s_logicUpdateTask;
+			updateLogic->logic.cleanupFunc = updateLogicCleanupFunc;
 		}
-
-		UpdateLogic* updateLogic = (UpdateLogic*)allocator_newItem(s_logicUpdateList);
-		DESERIALIZE(updateLogic->xVel);
-		DESERIALIZE(updateLogic->yVel);
-		DESERIALIZE(updateLogic->zVel);
-		DESERIALIZE(updateLogic->pitchRate);
-		DESERIALIZE(updateLogic->yawRate);
-		DESERIALIZE(updateLogic->rollRate);
-		DESERIALIZE(updateLogic->flags);
-
-		updateLogic->pad16 = 0;
-		updateLogic->logic.task = s_logicUpdateTask;
-		updateLogic->logic.cleanupFunc = updateLogicCleanupFunc;
-
-		return (Logic*)updateLogic;
+		SERIALIZE(ObjState_InitVersion, updateLogic->xVel, 0);
+		SERIALIZE(ObjState_InitVersion, updateLogic->yVel, 0);
+		SERIALIZE(ObjState_InitVersion, updateLogic->zVel, 0);
+		SERIALIZE(ObjState_InitVersion, updateLogic->pitchRate, 0);
+		SERIALIZE(ObjState_InitVersion, updateLogic->yawRate, 0);
+		SERIALIZE(ObjState_InitVersion, updateLogic->rollRate, 0);
+		SERIALIZE(ObjState_InitVersion, updateLogic->flags, 0);
 	}
 
 	void updateLogicTaskFunc(MessageType msg)

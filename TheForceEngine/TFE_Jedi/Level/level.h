@@ -48,7 +48,6 @@ namespace TFE_Jedi
 	void  level_freeAllAssets();
 
 	void level_serialize(Stream* stream);
-	void level_deserialize(Stream* stream);
 
 	void setObjPos_AddToSector(SecObject* obj, s32 x, s32 y, s32 z, RSector* sector);
 	void getSkyParallax(fixed16_16* parallax0, fixed16_16* parallax1);

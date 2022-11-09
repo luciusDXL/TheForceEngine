@@ -762,32 +762,10 @@ namespace TFE_DarkForces
 	}
 		
 	// Serialization
-	void pickupLogic_serialize(Logic* logic, Stream* stream)
+	void pickupLogic_setItemValue(Pickup* pickup)
 	{
-		Pickup* pickup = (Pickup*)logic;
-		SERIALIZE(pickup->id);
-		SERIALIZE(pickup->index);
-		SERIALIZE(pickup->type);
-		// item and value need to be setup based on type.
-		SERIALIZE(pickup->amount);
-		SERIALIZE_BUF(pickup->msgId, sizeof(pickup->msgId[0]) * 2);
-		SERIALIZE(pickup->maxAmount);
-	}
-
-	Logic* pickupLogic_deserialize(Stream* stream)
-	{
-		Pickup* pickup = (Pickup*)level_alloc(sizeof(Pickup));
-		DESERIALIZE(pickup->id);
-		DESERIALIZE(pickup->index);
-		DESERIALIZE(pickup->type);
-		DESERIALIZE(pickup->amount);
-		DESERIALIZE_BUF(pickup->msgId, sizeof(pickup->msgId[0]) * 2);
-		DESERIALIZE(pickup->maxAmount);
-
 		pickup->item = nullptr;
 		pickup->value = nullptr;
-		pickup->logic.task = s_pickupTask;
-		pickup->logic.cleanupFunc = pickup_cleanupFunc;
 
 		switch (pickup->id)
 		{
@@ -961,8 +939,34 @@ namespace TFE_DarkForces
 				pickup->value = &s_playerInfo.health;
 			} break;
 		}
+	}
 
-		return (Logic*)pickup;
+	void pickupLogic_serialize(Logic*& logic, Stream* stream)
+	{
+		Pickup* pickup;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			pickup = (Pickup*)logic;
+		}
+		else
+		{
+			pickup = (Pickup*)level_alloc(sizeof(Pickup));
+			logic = (Logic*)pickup;
+		}
+		SERIALIZE(ObjState_InitVersion, pickup->id, ITEM_NONE);
+		SERIALIZE(ObjState_InitVersion, pickup->index, 0);
+		SERIALIZE(ObjState_InitVersion, pickup->type, ITYPE_NONE);
+		// item and value need to be setup based on type.
+		SERIALIZE(ObjState_InitVersion, pickup->amount, 0);
+		SERIALIZE_BUF(ObjState_InitVersion, pickup->msgId, sizeof(pickup->msgId[0]) * 2);
+		SERIALIZE(ObjState_InitVersion, pickup->maxAmount, 0);
+
+		if (serialization_getMode() == SMODE_READ)
+		{
+			pickup->logic.task = s_pickupTask;
+			pickup->logic.cleanupFunc = pickup_cleanupFunc;
+			pickupLogic_setItemValue(pickup);
+		}
 	}
 
 	//////////////////////////////////////////////////////////////

@@ -35,8 +35,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Constants
 	///////////////////////////////////////////
-	const u32 c_playerDataVersion = 1;
-
 	enum PlayerConstants
 	{
 		PLAYER_HEIGHT                  = 0x5cccc,	  // 5.8 units
@@ -2537,267 +2535,177 @@ namespace TFE_DarkForces
 	}
 		
 	// Serialization
-	void playerLogic_serialize(Logic* logic, Stream* stream)
+	void playerLogic_serialize(Logic*& logic, Stream* stream)
 	{
-		SERIALIZE(c_playerDataVersion);
+		PlayerLogic* playerLogic;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			playerLogic = (PlayerLogic*)logic;
+		}
+		else
+		{
+			playerLogic = &s_playerLogic;
+			logic = (Logic*)playerLogic;
 
-		PlayerLogic* playerLogic = (PlayerLogic*)logic;
+			s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
+			task_makeActive(s_playerTask);
+			playerLogic->logic.task = s_playerTask;
+			playerLogic->logic.cleanupFunc = playerLogicCleanupFunc;
+		}
 		assert(playerLogic == &s_playerLogic);
 
-		SERIALIZE(playerLogic->dir);
-		SERIALIZE(playerLogic->move);
-		SERIALIZE(playerLogic->stepHeight);
+		const vec2_fixed defV2 = { 0 };
+		const vec3_fixed defV3 = { 0 };
+		SERIALIZE(ObjState_InitVersion, playerLogic->dir, defV2);
+		SERIALIZE(ObjState_InitVersion, playerLogic->move, defV3);
+		SERIALIZE(ObjState_InitVersion, playerLogic->stepHeight, 0);
 
-		SERIALIZE(s_externalYawSpd);
-		SERIALIZE(s_playerPitch);
-		SERIALIZE(s_playerRoll);
-		SERIALIZE(s_forwardSpd);
-		SERIALIZE(s_strafeSpd);
-		SERIALIZE(s_maxMoveDist);
-		SERIALIZE(s_playerStopAccel);
-		SERIALIZE(s_minEyeDistFromFloor);
-		SERIALIZE(s_postLandVel);
-		SERIALIZE(s_landUpVel);
-		SERIALIZE(s_playerVelX);
-		SERIALIZE(s_playerUpVel);
-		SERIALIZE(s_playerUpVel2);
-		SERIALIZE(s_playerVelZ);
-		SERIALIZE(s_externalVelX);
-		SERIALIZE(s_externalVelZ);
-		SERIALIZE(s_playerCrouchSpd);
-		SERIALIZE(s_playerSpeedAve);
-		SERIALIZE(s_prevDistFromFloor);
-		SERIALIZE(s_wpnSin);
-		SERIALIZE(s_wpnCos);
-		SERIALIZE(s_moveDirX);
-		SERIALIZE(s_moveDirZ);
-		SERIALIZE(s_dist);
-		SERIALIZE(s_distScale);
+		SERIALIZE(ObjState_InitVersion, s_externalYawSpd, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerPitch, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerRoll, 0);
+		SERIALIZE(ObjState_InitVersion, s_forwardSpd, 0);
+		SERIALIZE(ObjState_InitVersion, s_strafeSpd, 0);
+		SERIALIZE(ObjState_InitVersion, s_maxMoveDist, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerStopAccel, 0);
+		SERIALIZE(ObjState_InitVersion, s_minEyeDistFromFloor, 0);
+		SERIALIZE(ObjState_InitVersion, s_postLandVel, 0);
+		SERIALIZE(ObjState_InitVersion, s_landUpVel, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerVelX, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerUpVel, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerUpVel2, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerVelZ, 0);
+		SERIALIZE(ObjState_InitVersion, s_externalVelX, 0);
+		SERIALIZE(ObjState_InitVersion, s_externalVelZ, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerCrouchSpd, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerSpeedAve, 0);
+		SERIALIZE(ObjState_InitVersion, s_prevDistFromFloor, 0);
+		SERIALIZE(ObjState_InitVersion, s_wpnSin, 0);
+		SERIALIZE(ObjState_InitVersion, s_wpnCos, 0);
+		SERIALIZE(ObjState_InitVersion, s_moveDirX, 0);
+		SERIALIZE(ObjState_InitVersion, s_moveDirZ, 0);
+		SERIALIZE(ObjState_InitVersion, s_dist, 0);
+		SERIALIZE(ObjState_InitVersion, s_distScale, 0);
 
-		SERIALIZE(s_levelAtten);
-		SERIALIZE(s_prevCollisionFrameWall);
+		SERIALIZE(ObjState_InitVersion, s_levelAtten, 0);
+		SERIALIZE(ObjState_InitVersion, s_prevCollisionFrameWall, 0);
+
 		// Store safe sector, derive the safe itself from it on load.
-		serialization_writeSectorPtr(stream, s_curSafe->sector);
+		RSector* safeSector = nullptr;
+		if (serialization_getMode() == SMODE_WRITE) { safeSector = s_curSafe->sector; }
+		serialization_serializeSectorPtr(stream, ObjState_InitVersion, safeSector);
+		if (serialization_getMode() == SMODE_READ) 	{ s_curSafe = level_getSafeFromSector(safeSector); }
+		
+		SERIALIZE(ObjState_InitVersion, s_playerUse, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerActionUse, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerPrimaryFire, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerSecFire, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerJumping, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerInWater, 0);
+		SERIALIZE(ObjState_InitVersion, s_limitStepHeight, 0);
+		SERIALIZE(ObjState_InitVersion, s_smallModeEnabled, 0);
+		SERIALIZE(ObjState_InitVersion, s_aiActive, 0);
 
-		SERIALIZE(s_playerUse);
-		SERIALIZE(s_playerActionUse);
-		SERIALIZE(s_playerPrimaryFire);
-		SERIALIZE(s_playerSecFire);
-		SERIALIZE(s_playerJumping);
-		SERIALIZE(s_playerInWater);
-		SERIALIZE(s_limitStepHeight);
-		SERIALIZE(s_smallModeEnabled);
-		SERIALIZE(s_aiActive);
 		// Clear sound effects - s_crushSoundId, s_kyleScreamSoundId
-		SERIALIZE(s_playerPos);
-		SERIALIZE(s_playerObjHeight);
-		SERIALIZE(s_playerObjPitch);
-		SERIALIZE(s_playerObjYaw);
-		serialization_writeSectorPtr(stream, s_playerObjSector);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			s_crushSoundId = 0;
+			s_kyleScreamSoundId = 0;
+		}
+
+		SERIALIZE(ObjState_InitVersion, s_playerPos, defV3);
+		SERIALIZE(ObjState_InitVersion, s_playerObjHeight, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerObjPitch, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerObjYaw, 0);
+		serialization_serializeSectorPtr(stream, ObjState_InitVersion, s_playerObjSector);
 
 		// Save wall data.
-		serialization_writeSectorPtr(stream, s_playerSlideWall ? s_playerSlideWall->sector : nullptr);
-		s32 wallId = s_playerSlideWall ? s_playerSlideWall->id : -1;
-		SERIALIZE(wallId);
+		RSector* slideWallSector = nullptr;
+		s32 wallId = -1;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			slideWallSector = s_playerSlideWall ? s_playerSlideWall->sector : nullptr;
+			wallId = s_playerSlideWall ? s_playerSlideWall->id : -1;
+		}
+		serialization_serializeSectorPtr(stream, ObjState_InitVersion, slideWallSector);
+		SERIALIZE(ObjState_InitVersion, wallId, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			s_playerSlideWall = slideWallSector ? &slideWallSector->walls[wallId] : nullptr;
+		}
 
-		SERIALIZE(s_playerInfo);
-		SERIALIZE(s_energy);
-		SERIALIZE(s_lifeCount);
-		SERIALIZE(s_playerLight);
-		SERIALIZE(s_headwaveVerticalOffset);
-		SERIALIZE(s_onFloor);
-		SERIALIZE(s_weaponLight);
-		SERIALIZE(s_baseAtten);
-		SERIALIZE(s_gravityAccel);
-		SERIALIZE(s_invincibility);
-		SERIALIZE(s_weaponFiring);
-		SERIALIZE(s_weaponFiringSec);
-		SERIALIZE(s_wearingCleats);
-		SERIALIZE(s_wearingGasmask);
-		SERIALIZE(s_nightvisionActive);
-		SERIALIZE(s_headlampActive);
-		SERIALIZE(s_superCharge);
-		SERIALIZE(s_superChargeHud);
-		SERIALIZE(s_playerSecMoved);
+		SERIALIZE(ObjState_InitVersion, s_playerInfo, { 0 });
+		SERIALIZE(ObjState_InitVersion, s_energy, 0);
+		SERIALIZE(ObjState_InitVersion, s_lifeCount, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerLight, 0);
+		SERIALIZE(ObjState_InitVersion, s_headwaveVerticalOffset, 0);
+		SERIALIZE(ObjState_InitVersion, s_onFloor, 0);
+		SERIALIZE(ObjState_InitVersion, s_weaponLight, 0);
+		SERIALIZE(ObjState_InitVersion, s_baseAtten, 0);
+		SERIALIZE(ObjState_InitVersion, s_gravityAccel, 0);
+		SERIALIZE(ObjState_InitVersion, s_invincibility, 0);
+		SERIALIZE(ObjState_InitVersion, s_weaponFiring, 0);
+		SERIALIZE(ObjState_InitVersion, s_weaponFiringSec, 0);
+		SERIALIZE(ObjState_InitVersion, s_wearingCleats, 0);
+		SERIALIZE(ObjState_InitVersion, s_wearingGasmask, 0);
+		SERIALIZE(ObjState_InitVersion, s_nightvisionActive, 0);
+		SERIALIZE(ObjState_InitVersion, s_headlampActive, 0);
+		SERIALIZE(ObjState_InitVersion, s_superCharge, 0);
+		SERIALIZE(ObjState_InitVersion, s_superChargeHud, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerSecMoved, 0);
 
 		s32 invSavedSize = 0;
-		if (s_playerInvSaved)
+		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)
 		{
 			invSavedSize = s32((size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo);
 			assert(invSavedSize == 140);
 		}
-		SERIALIZE(invSavedSize);
+		SERIALIZE(ObjState_InitVersion, invSavedSize, 0);
 		if (invSavedSize)
 		{
-			SERIALIZE_BUF(s_playerInvSaved, invSavedSize);
+			SERIALIZE_BUF(ObjState_InitVersion, s_playerInvSaved, invSavedSize);
 		}
 
-		serialization_writeSectorPtr(stream, s_playerSector);
-		s32 playerObjId = s_playerObject ? s_playerObject->serializeIndex : -1;
-		s32 playerEyeId = s_playerEye ? s_playerEye->serializeIndex : -1;
-		SERIALIZE(playerObjId);
-		SERIALIZE(playerEyeId);
-		SERIALIZE(s_eyePos);
-		SERIALIZE(s_pitch);
-		SERIALIZE(s_yaw);
-		SERIALIZE(s_roll);
-		SERIALIZE(s_playerEyeFlags);
-		SERIALIZE(s_playerTick);
-		SERIALIZE(s_prevPlayerTick);
-		SERIALIZE(s_nextShieldDmgTick);
-		SERIALIZE(s_reviveTick);
-		SERIALIZE(s_nextPainSndTick);
+		serialization_serializeSectorPtr(stream, ObjState_InitVersion, s_playerSector);
 
-		SERIALIZE(s_playerYPos);
-		SERIALIZE(s_camOffset);
-		SERIALIZE(s_camOffsetPitch);
-		SERIALIZE(s_camOffsetYaw);
-		SERIALIZE(s_camOffsetRoll);
-		SERIALIZE(s_playerYaw);
-
-		SERIALIZE(s_itemUnknown1);
-		SERIALIZE(s_itemUnknown2);
-
-		SERIALIZE(s_playerHeight);
-		SERIALIZE(s_playerRun);
-		SERIALIZE(s_jumpScale);
-		SERIALIZE(s_playerSlow);
-		SERIALIZE(s_onMovingSurface);
-	}
-
-	Logic* playerLogic_deserialize(Stream* stream)
-	{
-		u32 version;
-		DESERIALIZE(version);
-				
-		PlayerLogic* playerLogic = &s_playerLogic;
-		DESERIALIZE(playerLogic->dir);
-		DESERIALIZE(playerLogic->move);
-		DESERIALIZE(playerLogic->stepHeight);
-
-		DESERIALIZE(s_externalYawSpd);
-		DESERIALIZE(s_playerPitch);
-		DESERIALIZE(s_playerRoll);
-		DESERIALIZE(s_forwardSpd);
-		DESERIALIZE(s_strafeSpd);
-		DESERIALIZE(s_maxMoveDist);
-		DESERIALIZE(s_playerStopAccel);
-		DESERIALIZE(s_minEyeDistFromFloor);
-		DESERIALIZE(s_postLandVel);
-		DESERIALIZE(s_landUpVel);
-		DESERIALIZE(s_playerVelX);
-		DESERIALIZE(s_playerUpVel);
-		DESERIALIZE(s_playerUpVel2);
-		DESERIALIZE(s_playerVelZ);
-		DESERIALIZE(s_externalVelX);
-		DESERIALIZE(s_externalVelZ);
-		DESERIALIZE(s_playerCrouchSpd);
-		DESERIALIZE(s_playerSpeedAve);
-		DESERIALIZE(s_prevDistFromFloor);
-		DESERIALIZE(s_wpnSin);
-		DESERIALIZE(s_wpnCos);
-		DESERIALIZE(s_moveDirX);
-		DESERIALIZE(s_moveDirZ);
-		DESERIALIZE(s_dist);
-		DESERIALIZE(s_distScale);
-
-		DESERIALIZE(s_levelAtten);
-		DESERIALIZE(s_prevCollisionFrameWall);
-		RSector* safeSector = serialization_readSectorPtr(stream);
-		s_curSafe = level_getSafeFromSector(safeSector);
-
-		DESERIALIZE(s_playerUse);
-		DESERIALIZE(s_playerActionUse);
-		DESERIALIZE(s_playerPrimaryFire);
-		DESERIALIZE(s_playerSecFire);
-		DESERIALIZE(s_playerJumping);
-		DESERIALIZE(s_playerInWater);
-		DESERIALIZE(s_limitStepHeight);
-		DESERIALIZE(s_smallModeEnabled);
-		DESERIALIZE(s_aiActive);
-		s_crushSoundId = 0;
-		s_kyleScreamSoundId = 0;
-		DESERIALIZE(s_playerPos);
-		DESERIALIZE(s_playerObjHeight);
-		DESERIALIZE(s_playerObjPitch);
-		DESERIALIZE(s_playerObjYaw);
-		s_playerObjSector = serialization_readSectorPtr(stream);
-
-		// Save wall data.
-		RSector* slideWallSector = serialization_readSectorPtr(stream);
-		s32 wallId;
-		DESERIALIZE(wallId);
-		s_playerSlideWall = slideWallSector ? &slideWallSector->walls[wallId] : nullptr;
-
-		DESERIALIZE(s_playerInfo);
-		DESERIALIZE(s_energy);
-		DESERIALIZE(s_lifeCount);
-		DESERIALIZE(s_playerLight);
-		DESERIALIZE(s_headwaveVerticalOffset);
-		DESERIALIZE(s_onFloor);
-		DESERIALIZE(s_weaponLight);
-		DESERIALIZE(s_baseAtten);
-		DESERIALIZE(s_gravityAccel);
-		DESERIALIZE(s_invincibility);
-		DESERIALIZE(s_weaponFiring);
-		DESERIALIZE(s_weaponFiringSec);
-		DESERIALIZE(s_wearingCleats);
-		DESERIALIZE(s_wearingGasmask);
-		DESERIALIZE(s_nightvisionActive);
-		DESERIALIZE(s_headlampActive);
-		DESERIALIZE(s_superCharge);
-		DESERIALIZE(s_superChargeHud);
-		DESERIALIZE(s_playerSecMoved);
-
-		s32 invSavedSize;
-		DESERIALIZE(invSavedSize);
-		s_playerInvSaved = nullptr;
-		if (invSavedSize)
+		s32 playerObjId = -1, playerEyeId = -1;
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			s_playerInvSaved = (u32*)level_alloc(invSavedSize);
-			DESERIALIZE_BUF(s_playerInvSaved, invSavedSize);
+			playerObjId = s_playerObject ? s_playerObject->serializeIndex : -1;
+			playerEyeId = s_playerEye ? s_playerEye->serializeIndex : -1;
+		}
+		SERIALIZE(ObjState_InitVersion, playerObjId, -1);
+		SERIALIZE(ObjState_InitVersion, playerEyeId, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			s_playerObject = playerObjId < 0 ? nullptr : objData_getObjectBySerializationId(playerObjId);
+			s_playerEye    = playerEyeId < 0 ? nullptr : objData_getObjectBySerializationId(playerEyeId);
 		}
 
-		s_playerSector = serialization_readSectorPtr(stream);
-		s32 playerObjId, playerEyeId;
-		DESERIALIZE(playerObjId);
-		DESERIALIZE(playerEyeId);
-		s_playerObject = objData_getObjectBySerializationId(playerObjId);
-		s_playerEye = objData_getObjectBySerializationId(playerEyeId);
+		SERIALIZE(ObjState_InitVersion, s_eyePos, defV3);
+		SERIALIZE(ObjState_InitVersion, s_pitch, 0);
+		SERIALIZE(ObjState_InitVersion, s_yaw, 0);
+		SERIALIZE(ObjState_InitVersion, s_roll, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerEyeFlags, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerTick, 0);
+		SERIALIZE(ObjState_InitVersion, s_prevPlayerTick, 0);
+		SERIALIZE(ObjState_InitVersion, s_nextShieldDmgTick, 0);
+		SERIALIZE(ObjState_InitVersion, s_reviveTick, 0);
+		SERIALIZE(ObjState_InitVersion, s_nextPainSndTick, 0);
 
-		DESERIALIZE(s_eyePos);
-		DESERIALIZE(s_pitch);
-		DESERIALIZE(s_yaw);
-		DESERIALIZE(s_roll);
-		DESERIALIZE(s_playerEyeFlags);
-		DESERIALIZE(s_playerTick);
-		DESERIALIZE(s_prevPlayerTick);
-		DESERIALIZE(s_nextShieldDmgTick);
-		DESERIALIZE(s_reviveTick);
-		DESERIALIZE(s_nextPainSndTick);
+		SERIALIZE(ObjState_InitVersion, s_playerYPos, 0);
+		SERIALIZE(ObjState_InitVersion, s_camOffset, defV3);
+		SERIALIZE(ObjState_InitVersion, s_camOffsetPitch, 0);
+		SERIALIZE(ObjState_InitVersion, s_camOffsetYaw, 0);
+		SERIALIZE(ObjState_InitVersion, s_camOffsetRoll, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerYaw, 0);
 
-		DESERIALIZE(s_playerYPos);
-		DESERIALIZE(s_camOffset);
-		DESERIALIZE(s_camOffsetPitch);
-		DESERIALIZE(s_camOffsetYaw);
-		DESERIALIZE(s_camOffsetRoll);
-		DESERIALIZE(s_playerYaw);
+		SERIALIZE(ObjState_InitVersion, s_itemUnknown1, 0);
+		SERIALIZE(ObjState_InitVersion, s_itemUnknown2, 0);
 
-		DESERIALIZE(s_itemUnknown1);
-		DESERIALIZE(s_itemUnknown2);
-
-		DESERIALIZE(s_playerHeight);
-		DESERIALIZE(s_playerRun);
-		DESERIALIZE(s_jumpScale);
-		DESERIALIZE(s_playerSlow);
-		DESERIALIZE(s_onMovingSurface);
-
-		s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
-		task_makeActive(s_playerTask);
-		playerLogic->logic.task = s_playerTask;
-		playerLogic->logic.cleanupFunc = playerLogicCleanupFunc;
-
-		return (Logic*)playerLogic;
+		SERIALIZE(ObjState_InitVersion, s_playerHeight, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerRun, 0);
+		SERIALIZE(ObjState_InitVersion, s_jumpScale, 0);
+		SERIALIZE(ObjState_InitVersion, s_playerSlow, 0);
+		SERIALIZE(ObjState_InitVersion, s_onMovingSurface, 0);
 	}
-
 }  // TFE_DarkForces

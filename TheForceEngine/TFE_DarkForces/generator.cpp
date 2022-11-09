@@ -238,73 +238,68 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void generatorLogic_serialize(Logic* logic, Stream* stream)
+	void generatorLogic_serialize(Logic*& logic, Stream* stream)
 	{
-		Generator* gen = (Generator*)logic;
-		SERIALIZE(gen->type);
-		SERIALIZE(gen->delay);
-		SERIALIZE(gen->interval);
-		SERIALIZE(gen->maxAlive);
-		SERIALIZE(gen->minDist);
-		SERIALIZE(gen->maxDist);
-
-		s32 count = allocator_getCount(gen->entities);
-		SERIALIZE(count);
-		if (count)
+		Generator* gen;
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			allocator_saveIter(gen->entities);
-				SecObject** entityList = (SecObject**)allocator_getHead(gen->entities);
-				while (entityList)
-				{
-					SecObject* obj = *entityList;
-					s32 entityId = (obj) ? obj->serializeIndex : -1;
-					SERIALIZE(entityId);
-					entityList = (SecObject**)allocator_getNext(gen->entities);
-				}
-			allocator_restoreIter(gen->entities);
+			gen = (Generator*)logic;
+		}
+		else
+		{
+			gen = (Generator*)level_alloc(sizeof(Generator));
+			gen->entities = allocator_create(sizeof(SecObject**));
+			logic = (Logic*)gen;
+
+			Task* task = createSubTask("Generator", generatorTaskFunc);
+			task_setUserData(task, gen);
+			gen->logic.task = task;
+			gen->logic.cleanupFunc = generatorLogicCleanupFunc;
 		}
 
-		SERIALIZE(gen->aliveCount);
-		SERIALIZE(gen->numTerminate);
-		SERIALIZE(gen->wanderTime);
-		serialize_writeWaxPtr(stream, gen->wax);
-		SERIALIZE(gen->active);
-	}
+		SERIALIZE(ObjState_InitVersion, gen->type, KW_UNKNOWN);
+		SERIALIZE(ObjState_InitVersion, gen->delay, 0);
+		SERIALIZE(ObjState_InitVersion, gen->interval, 0);
+		SERIALIZE(ObjState_InitVersion, gen->maxAlive, 0);
+		SERIALIZE(ObjState_InitVersion, gen->minDist, 0);
+		SERIALIZE(ObjState_InitVersion, gen->maxDist, 0);
 
-	Logic* generatorLogic_deserialize(Stream* stream)
-	{
-		Generator* gen = (Generator*)level_alloc(sizeof(Generator));
-		gen->entities = allocator_create(sizeof(SecObject**));
-
-		DESERIALIZE(gen->type);
-		DESERIALIZE(gen->delay);
-		DESERIALIZE(gen->interval);
-		DESERIALIZE(gen->maxAlive);
-		DESERIALIZE(gen->minDist);
-		DESERIALIZE(gen->maxDist);
-				
-		s32 count;
-		DESERIALIZE(count);
-		for (s32 i = 0; i < count; i++)
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			u32 id;
-			DESERIALIZE(id);
+			s32 count = allocator_getCount(gen->entities);
+			SERIALIZE(ObjState_InitVersion, count, 0);
+			if (count)
+			{
+				allocator_saveIter(gen->entities);
+					SecObject** entityList = (SecObject**)allocator_getHead(gen->entities);
+					while (entityList)
+					{
+						SecObject* obj = *entityList;
+						s32 entityId = (obj) ? obj->serializeIndex : -1;
+						SERIALIZE(ObjState_InitVersion, entityId, -1);
+						entityList = (SecObject**)allocator_getNext(gen->entities);
+					}
+				allocator_restoreIter(gen->entities);
+			}
+		}
+		else
+		{
+			s32 count;
+			SERIALIZE(ObjState_InitVersion, count, 0);
+			for (s32 i = 0; i < count; i++)
+			{
+				u32 id;
+				SERIALIZE(ObjState_InitVersion, id, -1);
 
-			SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
-			*entityPtr = objData_getObjectBySerializationId(id);
+				SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
+				*entityPtr = objData_getObjectBySerializationId(id);
+			}
 		}
 
-		DESERIALIZE(gen->aliveCount);
-		DESERIALIZE(gen->numTerminate);
-		DESERIALIZE(gen->wanderTime);
-		gen->wax = serialize_readWaxPtr(stream);
-		DESERIALIZE(gen->active);
-
-		Task* task = createSubTask("Generator", generatorTaskFunc);
-		task_setUserData(task, gen);
-		gen->logic.task = task;
-		gen->logic.cleanupFunc = generatorLogicCleanupFunc;
-
-		return (Logic*)gen;
+		SERIALIZE(ObjState_InitVersion, gen->aliveCount, 0);
+		SERIALIZE(ObjState_InitVersion, gen->numTerminate, 0);
+		SERIALIZE(ObjState_InitVersion, gen->wanderTime, 0);
+		serialization_serializeWaxPtr(stream, ObjState_InitVersion, gen->wax);
+		SERIALIZE(ObjState_InitVersion, gen->active, 0);
 	}
 }  // TFE_DarkForces

@@ -391,22 +391,15 @@ namespace TFE_DarkForces
 
 	// Stubbed serialization functions
 	// TODO: These should be removed once the system is complete.
-	void unimplementedLogic_serialize(Logic* logic, Stream* stream)
+	void unimplementedLogic_serialize(Logic*& logic, Stream* stream)
 	{
-		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented serialization, type %d", logic->type);
-	}
-
-	Logic* unimplementedLogic_deserialize(Stream* stream)
-	{
-		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented deserialization.");
-		return nullptr;
+		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented serialization.");
 	}
 		
 	// Type -> Serialization function tables.
-	typedef void(*LogicSerializationFunc)(Logic*, Stream*);
-	typedef Logic*(*LogicDeserializationFunc)(Stream*);
+	typedef void(*LogicSerializationFunc)(Logic*&, Stream*);
 
-	LogicSerializationFunc c_serFn[] =
+	LogicSerializationFunc c_serializeFn[] =
 	{
 		unimplementedLogic_serialize, // LOGIC_DISPATCH
 		unimplementedLogic_serialize, // LOGIC_BOBA_FETT,
@@ -427,63 +420,25 @@ namespace TFE_DarkForces
 		nullptr,                      // LOGIC_UNKNOWN,
 	};
 
-	LogicDeserializationFunc c_deserFn[] =
-	{
-		unimplementedLogic_deserialize, // LOGIC_DISPATCH
-		unimplementedLogic_deserialize, // LOGIC_BOBA_FETT,
-		unimplementedLogic_deserialize, // LOGIC_DRAGON,
-		unimplementedLogic_deserialize, // LOGIC_MOUSEBOT,
-		unimplementedLogic_deserialize, // LOGIC_PHASE_ONE,
-		unimplementedLogic_deserialize, // LOGIC_PHASE_TWO,
-		unimplementedLogic_deserialize, // LOGIC_PHASE_THREE,
-		unimplementedLogic_deserialize, // LOGIC_TURRET,
-		unimplementedLogic_deserialize, // LOGIC_WELDER,
-		animLogic_deserialize,          // LOGIC_ANIM,
-		updateLogic_deserialize,        // LOGIC_UPDATE,
-		generatorLogic_deserialize,     // LOGIC_GENERATOR,
-		pickupLogic_deserialize,        // LOGIC_PICKUP,
-		playerLogic_deserialize,        // LOGIC_PLAYER,
-		projLogic_deserialize,          // LOGIC_PROJECTILE,
-		vueLogic_deserialize,           // LOGIC_VUE,
-		nullptr,                        // LOGIC_UNKNOWN,
-	};
-
 	// Root serialization functions for Logics.
-	void logic_serialize(Logic* logic, Stream* stream)
-	{
-		SERIALIZE(logic->type);
-
-		const u32 index = logic->type < LOGIC_UNKNOWN ? logic->type : LOGIC_UNKNOWN;
-		if (c_serFn[index])
-		{
-			c_serFn[index](logic, stream);
-		}
-		else
-		{
-			TFE_System::logWrite(LOG_ERROR, "Logic", "Serialize - invalid logic type: %d.", logic->type);
-		}
-	}
-
-	Logic* logic_deserialize(Stream* stream)
+	void logic_serialize(Logic*& logic, Stream* stream)
 	{
 		LogicType type;
-		Logic* logic = nullptr;
-		DESERIALIZE(type);
-
-		const u32 index = type < LOGIC_UNKNOWN ? type : LOGIC_UNKNOWN;
-		if (c_deserFn[index])
+		if (serialization_getMode() == SMODE_WRITE)
 		{
-			logic = c_deserFn[index](stream);
+			type = logic->type;
+		}
+
+		SERIALIZE(ObjState_InitVersion, type, LOGIC_UNKNOWN);
+		const u32 index = type < LOGIC_UNKNOWN ? type : LOGIC_UNKNOWN;
+
+		if (c_serializeFn[index])
+		{
+			c_serializeFn[index](logic, stream);
 		}
 		else
 		{
-			TFE_System::logWrite(LOG_ERROR, "Logic", "Deserialize - invalid logic type: %d.", type);
+			TFE_System::logWrite(LOG_ERROR, "Logic", "Serialize - invalid logic type: %d.", type);
 		}
-
-		if (logic)
-		{
-			logic->type = type;
-		}
-		return logic;
 	}
 }  // TFE_DarkForces

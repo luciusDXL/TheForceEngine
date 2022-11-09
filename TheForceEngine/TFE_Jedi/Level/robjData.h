@@ -55,6 +55,12 @@ enum EntityTypeFlags
 	ETFLAG_NONE = 0,
 };
 
+enum ObjStateVersion : u32
+{
+	ObjState_InitVersion = 1,
+	ObjState_CurVersion = ObjState_InitVersion,
+};
+
 #define SPRITE_SCALE_FIXED FIXED(10)
 
 struct SecObject
@@ -109,7 +115,6 @@ namespace TFE_Jedi
 	void objData_freeToArray(SecObject* obj);
 
 	void objData_serialize(Stream* stream);
-	void objData_deserialize(Stream* stream);
 
 	// Used for downstream serialization, to get the object from the serialized object ID.
 	SecObject* objData_getObjectBySerializationId(u32 id);

@@ -57,8 +57,7 @@ namespace TFE_DarkForces
 	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc);
 	SecObject* logic_spawnEnemy(const char* waxName, const char* typeName);
 
-	void logic_serialize(Logic* logic, Stream* stream);
-	Logic* logic_deserialize(Stream* stream);
+	void logic_serialize(Logic*& logic, Stream* stream);
 
 	// Shared variables used for loading.
 	extern char s_objSeqArg0[];
