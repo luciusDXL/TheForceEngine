@@ -675,6 +675,8 @@ namespace TFE_Jedi
 
 		if (serialization_getMode() == SMODE_READ)
 		{
+			stop->floorTex = nullptr;
+			stop->ceilTex  = nullptr;
 			if (stop->floorTexSecId >= 0)
 			{
 				stop->floorTex = s_levelState.sectors[stop->floorTexSecId].floorTex;

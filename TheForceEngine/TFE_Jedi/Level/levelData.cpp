@@ -187,6 +187,7 @@ namespace TFE_Jedi
 
 		if (serialization_getMode() == SMODE_READ)
 		{
+			assert(index >= -1 && index < s_levelState.textureCount);
 			texData = (index < 0) ? nullptr : &s_levelState.textures[index];
 		}
 	}
