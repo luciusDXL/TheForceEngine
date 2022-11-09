@@ -427,10 +427,10 @@ namespace TFE_Jedi
 			}
 		}
 		SERIALIZE(InfState_InitVersion, frameIndex, -1);
-		if (serialization_getMode() == SMODE_READ)
+		if (serialization_getMode() == SMODE_READ && frameIndex >= 0)
 		{
 			AnimatedTexture* animTex = trigger->animTex;
-			if (animTex && frameIndex >= 0)
+			if (animTex)
 			{
 				trigger->tex = animTex->frameList[frameIndex];
 				if (triggerWall)
@@ -531,7 +531,7 @@ namespace TFE_Jedi
 		}
 		else  // SMODE_READ
 		{
-			for (s32 i = 0; i < teleCount; i++)
+			for (s32 i = 0; i < trigCount; i++)
 			{
 				InfTrigger* trigger = (InfTrigger*)allocator_newItem(s_infSerState.infTriggers);
 				inf_serializeTrigger(stream, trigger);

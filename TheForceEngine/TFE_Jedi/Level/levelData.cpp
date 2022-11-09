@@ -174,8 +174,14 @@ namespace TFE_Jedi
 		s32 index = -1;
 		if (serialization_getMode() == SMODE_WRITE && texData)
 		{
-			size_t offset = size_t(texData - s_levelState.textures) / sizeof(TextureData**);
+			ptrdiff_t offset = (ptrdiff_t(texData) - ptrdiff_t(s_levelState.textures)) / (ptrdiff_t)sizeof(TextureData**);
+			if (offset < 0 || offset >= s_levelState.textureCount)
+			{
+				// This is probably a sign texture - so let the INF System handle it.
+				offset = -1;
+			}
 			index = s32(offset);
+			assert(index < 0 || s_levelState.textures[index] == *texData);
 		}
 		SERIALIZE(LevelState_InitVersion, index, -1);
 
@@ -297,6 +303,10 @@ namespace TFE_Jedi
 		// mirrorWall will be computed from mirror.
 		SERIALIZE(LevelState_InitVersion, wall->drawFlags, 0);
 		SERIALIZE(LevelState_InitVersion, wall->mirror, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			wall->mirrorWall = nullptr;
+		}
 		
 		// worldspace vertices.
 		s32 i0, i1;
