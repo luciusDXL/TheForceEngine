@@ -10,6 +10,7 @@
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
 
@@ -79,6 +80,38 @@ namespace TFE_DarkForces
 	void automap_drawSector(RSector* sector);
 	void automap_drawPlayer(s32 layer);
 	void automap_drawSectors();
+
+	void automap_serialize(Stream* stream)
+	{
+		SERIALIZE(SaveVersionInit, s_screenScale, 0xc000);
+		SERIALIZE(SaveVersionInit, s_scrLeftScaled, 0);
+		SERIALIZE(SaveVersionInit, s_scrRightScaled, 0);
+		SERIALIZE(SaveVersionInit, s_scrTopScaled, 0);
+		SERIALIZE(SaveVersionInit, s_scrBotScaled, 0);
+
+		SERIALIZE(SaveVersionInit, s_automapAutoCenter, JTRUE);
+		SERIALIZE(SaveVersionInit, s_mapXCenterInPixels, 159);
+		SERIALIZE(SaveVersionInit, s_mapZCenterInPixels, 99);
+
+		SERIALIZE(SaveVersionInit, s_mapTop, 0);
+		SERIALIZE(SaveVersionInit, s_mapLeft, 0);
+		SERIALIZE(SaveVersionInit, s_mapRight, 0);
+		SERIALIZE(SaveVersionInit, s_mapBot, 0);
+		SERIALIZE(SaveVersionInit, s_mapShowSectorMode, 0);
+		SERIALIZE(SaveVersionInit, s_mapShowAllLayers, JFALSE);
+
+		SERIALIZE(SaveVersionInit, s_mapPrevPlayerX, 0);
+		SERIALIZE(SaveVersionInit, s_mapPrevPlayerZ, 0);
+
+		SERIALIZE(SaveVersionInit, s_pdaActive, JFALSE);
+		SERIALIZE(SaveVersionInit, s_drawAutomap, JFALSE);
+		SERIALIZE(SaveVersionInit, s_automapCanTeleport, JFALSE);
+		SERIALIZE(SaveVersionInit, s_mapX0, 0);
+		SERIALIZE(SaveVersionInit, s_mapX1, 0);
+		SERIALIZE(SaveVersionInit, s_mapZ0, 0);
+		SERIALIZE(SaveVersionInit, s_mapZ1, 0);
+		SERIALIZE(SaveVersionInit, s_mapLayer, 0);
+	}
 
 	// _computeScreenBounds() and computeScaledScreenBounds() in the original source:
 	// computeScaledScreenBounds() calls _computeScreenBounds() - so merged here.

@@ -1,10 +1,16 @@
 #include "random.h"
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
 	// TODO(Core Game Loop Release): Figure out what this value is at program start up. The value here is from when the program was already running.
 	// This should cause the random numbers to match up between TFE and DOS.
 	static u32 s_seed = 0xf444bb3b;
+
+	void random_serialize(Stream* stream)
+	{
+		SERIALIZE(SaveVersionInit, s_seed, 0xf444bb3b);
+	}
 
 	s32 random_next()
 	{

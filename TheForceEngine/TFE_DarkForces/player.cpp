@@ -2547,8 +2547,12 @@ namespace TFE_DarkForces
 			playerLogic = &s_playerLogic;
 			logic = (Logic*)playerLogic;
 
-			s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
-			task_makeActive(s_playerTask);
+			// TODO: Properly clear out tasks...
+			if (!s_playerTask)
+			{
+				s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
+				task_makeActive(s_playerTask);
+			}
 			playerLogic->logic.task = s_playerTask;
 			playerLogic->logic.cleanupFunc = playerLogicCleanupFunc;
 		}

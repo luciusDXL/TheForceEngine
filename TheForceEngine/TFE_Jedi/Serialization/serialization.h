@@ -17,6 +17,12 @@ struct AnimatedTexture;
 
 namespace TFE_Jedi
 {
+	enum SaveVersion : u32
+	{
+		SaveVersionInit = 1,
+		SaveVersionCur = SaveVersionInit,
+	};
+
 	enum SerializationMode
 	{
 		SMODE_WRITE = 0,

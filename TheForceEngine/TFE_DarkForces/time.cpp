@@ -1,5 +1,8 @@
 #include "time.h"
 #include <TFE_System/system.h>
+#include <TFE_Jedi/Serialization/serialization.h>
+
+using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
@@ -8,8 +11,19 @@ namespace TFE_DarkForces
 	static f64 s_timeAccum = 0.0;
 	fixed16_16 s_deltaTime;
 	fixed16_16 s_frameTicks[13] = { 0 };
-
 	JBool s_pauseTimeUpdate = JFALSE;
+
+	void time_serialize(Stream* stream)
+	{
+		SERIALIZE_VERSION(SaveVersionInit);
+
+		SERIALIZE(SaveVersionInit, s_curTick, 0);
+		SERIALIZE(SaveVersionInit, s_prevTick, 0);
+		SERIALIZE(SaveVersionInit, s_timeAccum, 0.0);
+		SERIALIZE(SaveVersionInit, s_deltaTime, 0);
+		SERIALIZE_BUF(SaveVersionInit, s_frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(s_frameTicks));
+		SERIALIZE(SaveVersionInit, s_pauseTimeUpdate, JFALSE);
+	}
 
 	Tick time_frameRateToDelay(u32 frameRate)
 	{

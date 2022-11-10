@@ -258,7 +258,7 @@ namespace TFE_DarkForces
 	{
 		ImStopAllSounds();
 	}
-		
+
 	SoundEffectId sound_maintain(SoundEffectId idInstance, SoundSourceId idSound, vec3_fixed pos)
 	{
 		if (idSound)
