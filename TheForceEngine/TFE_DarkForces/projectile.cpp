@@ -1642,7 +1642,7 @@ namespace TFE_DarkForces
 		{
 			proj->flightSndId = 0;
 		}
-		serialization_serializeDfSound(stream, ObjState_InitVersion, &proj->flightSndId);
+		serialization_serializeDfSound(stream, ObjState_InitVersion, &proj->flightSndSource);
 		serialization_serializeDfSound(stream, ObjState_InitVersion, &proj->cameraPassSnd);
 		serialization_serializeDfSound(stream, ObjState_InitVersion, &proj->reflectSnd);
 

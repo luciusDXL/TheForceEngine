@@ -123,6 +123,12 @@ namespace TFE_DarkForces
 
 	void weapon_serialize(Stream* stream)
 	{
+		SERIALIZE(SaveVersionInit, s_weaponAnimState, { 0 });
+		SERIALIZE(SaveVersionInit, s_prevWeapon, 0);
+		SERIALIZE(SaveVersionInit, s_curWeapon, 0);
+		SERIALIZE(SaveVersionInit, s_nextWeapon, 0);
+		SERIALIZE(SaveVersionInit, s_lastWeapon, 0);
+
 		SERIALIZE(SaveVersionInit, s_switchWeapons, JFALSE);
 		SERIALIZE(SaveVersionInit, s_queWeaponSwitch, JFALSE);
 		SERIALIZE(SaveVersionInit, s_weaponAutoMount2, JFALSE);
@@ -144,6 +150,18 @@ namespace TFE_DarkForces
 			{
 				s_curPlayerWeapon = &s_playerWeaponList[curWpnIndex];
 			}
+		}
+
+		if (s_curPlayerWeapon)
+		{
+			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->frame, 0);
+			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->flags, 0);
+			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->rollOffset, 0);
+			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->pchOffset, 0);
+			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->xWaveOffset, 0);
+			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->yWaveOffset, 0);
+			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->xOffset, 0);
+			SERIALIZE(SaveVersionInit, s_curPlayerWeapon->yOffset, 0);
 		}
 	}
 

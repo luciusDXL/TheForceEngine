@@ -79,7 +79,7 @@ namespace TFE_Jedi
 		InfLink* elevLink = nullptr;
 		if (serialization_getMode() == SMODE_WRITE)
 		{
-			if (sector->infLink)
+			if (sector && sector->infLink)
 			{
 				allocator_saveIter(sector->infLink);
 				InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
@@ -88,13 +88,14 @@ namespace TFE_Jedi
 					if (link->type == LTYPE_SECTOR && link->elev == elev)
 					{
 						elevLink = link;
-						serialization_serializeSectorPtr(stream, InfState_InitVersion, sector);
 						break;
 					}
 					link = (InfLink*)allocator_getNext(sector->infLink);
 				}
 				allocator_restoreIter(sector->infLink);
 			}
+			RSector* linkSector = elevLink ? sector : nullptr;
+			serialization_serializeSectorPtr(stream, InfState_InitVersion, linkSector);
 		}
 		else
 		{
