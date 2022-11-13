@@ -7,6 +7,7 @@
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 // TODO: dependency on JediRenderer, this should be refactored...
 #include <TFE_Jedi/Renderer/rlimits.h>
 //
@@ -24,11 +25,14 @@ namespace TFE_Sprite_Jedi
 	typedef std::map<std::string, JediWax*> SpriteMap;
 	typedef std::vector<JediFrame*> FrameList;
 	typedef std::vector<JediWax*> SpriteList;
+	typedef std::vector<std::string> NameList;
 
 	static FrameMap   s_frames[POOL_COUNT];
 	static SpriteMap  s_sprites[POOL_COUNT];
 	static FrameList  s_frameList[POOL_COUNT];
 	static SpriteList s_spriteList[POOL_COUNT];
+	static NameList s_frameNames[POOL_COUNT];
+	static NameList s_spriteNames[POOL_COUNT];
 	static std::vector<u8> s_buffer;
 
 	JediFrame* getFrame(const char* name, AssetPool pool)
@@ -101,6 +105,7 @@ namespace TFE_Sprite_Jedi
 		
 		s_frames[pool][name] = asset;
 		s_frameList[pool].push_back(asset);
+		s_frameNames[pool].push_back(name);
 		return asset;
 	}
 
@@ -117,6 +122,68 @@ namespace TFE_Sprite_Jedi
 		s_cellOffsets.push_back(offset);
 
 		return true;
+	}
+
+	void sprite_serializeSpritesAndFrames(Stream* stream)
+	{
+		const bool modeWrite = serialization_getMode() == SMODE_WRITE;
+
+		if (!modeWrite)
+		{
+			freeLevelData();
+		}
+
+		s32 frameCount, spriteCount;
+		if (modeWrite)
+		{
+			frameCount = (s32)s_frameNames[POOL_LEVEL].size();
+			spriteCount = (s32)s_spriteNames[POOL_LEVEL].size();
+		}
+		SERIALIZE(SaveVersionInit, frameCount, 0);
+		SERIALIZE(SaveVersionInit, spriteCount, 0);
+
+		std::string* frameNames  = s_frameNames[POOL_LEVEL].data();
+		std::string* spriteNames = s_spriteNames[POOL_LEVEL].data();
+		std::string name;
+		for (s32 i = 0; i < frameCount; i++)
+		{
+			u8 size;
+			if (modeWrite)
+			{
+				size = (u8)frameNames[i].length();
+			}
+			SERIALIZE(SaveVersionInit, size, 0);
+
+			if (!modeWrite)
+			{
+				name.resize(size);
+			}
+			SERIALIZE_BUF(SaveVersionInit, modeWrite ? &frameNames[i][0] : &name[0], size);
+
+			if (serialization_getMode() == SMODE_READ)
+			{
+				getFrame(name.c_str(), POOL_LEVEL);
+			}
+		}
+		for (s32 i = 0; i < spriteCount; i++)
+		{
+			u8 size;
+			if (modeWrite)
+			{
+				size = (u8)spriteNames[i].length();
+			}
+			SERIALIZE(SaveVersionInit, size, 0);
+			if (!modeWrite)
+			{
+				name.resize(size);
+			}
+			SERIALIZE_BUF(SaveVersionInit, modeWrite ? &spriteNames[i][0] : &name[0], size);
+
+			if (serialization_getMode() == SMODE_READ)
+			{
+				getWax(name.c_str(), POOL_LEVEL);
+			}
+		}
 	}
 		
 	JediWax* getWax(const char* name, AssetPool pool)
@@ -274,6 +341,7 @@ namespace TFE_Sprite_Jedi
 
 		s_sprites[pool][name] = asset;
 		s_spriteList[pool].push_back(asset);
+		s_spriteNames[pool].push_back(name);
 		return asset;
 	}
 				
@@ -297,6 +365,7 @@ namespace TFE_Sprite_Jedi
 		}
 		s_frames[pool].clear();
 		s_frameList[pool].clear();
+		s_frameNames[pool].clear();
 
 		const size_t waxCount = s_spriteList[pool].size();
 		JediWax** waxList = s_spriteList[pool].data();
@@ -306,6 +375,7 @@ namespace TFE_Sprite_Jedi
 		}
 		s_sprites[pool].clear();
 		s_spriteList[pool].clear();
+		s_spriteNames[pool].clear();
 	}
 
 	void freeAll()

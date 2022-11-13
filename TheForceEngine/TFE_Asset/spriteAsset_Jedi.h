@@ -5,6 +5,7 @@
 // existing renderer.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <TFE_FileSystem/stream.h>
 #include <vector>
 
 // The original DOS code relied on 32-bit pointers and just swapped offsets for pointers at load time.
@@ -101,4 +102,6 @@ namespace TFE_Sprite_Jedi
 
 	bool getFrameIndex(JediFrame* frame, s32* index, AssetPool* pool);
 	JediFrame* getFrameByIndex(s32 index, AssetPool pool);
+
+	void sprite_serializeSpritesAndFrames(Stream* stream);
 }

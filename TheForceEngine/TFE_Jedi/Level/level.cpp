@@ -565,12 +565,12 @@ namespace TFE_Jedi
 		strcat(levelPath, ".GOL");
 				
 		FilePath filePath;
+		FileStream file;
 		if (!TFE_Paths::getFilePath(levelPath, &filePath))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot find level goals '%s'.", levelName);
 			return JFALSE;
 		}
-		FileStream file;
 		if (!file.open(&filePath, FileStream::MODE_READ))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot open level goals '%s'.", levelName);

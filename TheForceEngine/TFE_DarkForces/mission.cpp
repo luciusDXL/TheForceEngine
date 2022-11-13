@@ -69,6 +69,8 @@ namespace TFE_DarkForces
 	JBool s_screenFxChanged = JFALSE;
 	JBool s_lumMaskChanged = JFALSE;
 
+	JBool s_loadingFromSave = JFALSE;
+
 	s32 s_flashFxLevel = 0;
 	s32 s_healthFxLevel = 0;
 	s32 s_shieldFxLevel = 0;
@@ -101,7 +103,6 @@ namespace TFE_DarkForces
 	void setPalette(u8* pal);
 	void blitLoadingScreen();
 	void displayLoadingScreen();
-	void mission_setupTasks();
 	u8*  color_loadMap(FilePath* path, u8* lightRamp, u8** basePtr);
 
 	void setScreenBrightness(fixed16_16 brightness);
@@ -190,71 +191,90 @@ namespace TFE_DarkForces
 		TFE_Jedi::renderer_setLimits();
 	}
 
+	void mission_setLoadingFromSave()
+	{
+		s_loadingFromSave = JTRUE;
+	}
+
 	void mission_startTaskFunc(MessageType msg)
 	{
 		task_begin;
 		{
-			mission_createDisplay();
-
 			// TFE-specific
 			CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
 			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 8 units away in the player direction. Example: spawnEnemy offcfin.wax i_officer");
 
 			// Make sure the loading screen is displayed for at least 1 second.
-			displayLoadingScreen();
-			task_yield(MIN_LOAD_TIME);
+			if (!s_loadingFromSave)
+			{
+				mission_createDisplay();
+				displayLoadingScreen();
+				task_yield(MIN_LOAD_TIME);
 
-			s_prevTick = s_curTick;
-			s_playerTick = s_curTick;
+				s_prevTick = s_curTick;
+				s_playerTick = s_curTick;
+			}
 			s_mainTask = createTask("main task", mission_mainTaskFunc);
 
 			s_invalidLevelIndex = JFALSE;
 			s_levelComplete = JFALSE;
 			s_exitLevel = JFALSE;
 
-			s_missionMode = MISSION_MODE_LOAD_START;
-			mission_setupTasks();
-			displayLoadingScreen();
-
-			// Add a yield here, so the loading screen is shown immediately.
-			task_yield(TASK_NO_DELAY);
-			s_loadingScreenStart = s_curTick;
+			if (!s_loadingFromSave)
 			{
-				const char* levelName = agent_getLevelName();
-				// For now always load medium difficulty since it cannot be selected.
-				if (level_load(levelName, s_agentData[s_agentId].difficulty))
+				s_missionMode = MISSION_MODE_LOAD_START;
+				mission_setupTasks();
+			
+				displayLoadingScreen();
+
+				// Add a yield here, so the loading screen is shown immediately.
+				task_yield(TASK_NO_DELAY);
+				s_loadingScreenStart = s_curTick;
 				{
-					setScreenBrightness(ONE_16);
-					setScreenFxLevels(0, 0, 0);
-					setLuminanceMask(0, 0, 0);
-					
-					char colorMapName[TFE_MAX_PATH];
-					strcpy(colorMapName, levelName);
-					strcat(colorMapName, ".CMP");
-					s_levelColorMap = nullptr;
-
-					FilePath filePath;
-					if (TFE_Paths::getFilePath(colorMapName, &filePath))
+					const char* levelName = agent_getLevelName();
+					// For now always load medium difficulty since it cannot be selected.
+					if (level_load(levelName, s_agentData[s_agentId].difficulty))
 					{
-						s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
-					}
-					else if (TFE_Paths::getFilePath("DEFAULT.CMP", &filePath))
-					{
-						TFE_System::logWrite(LOG_WARNING, "mission_startTaskFunc", "USING DEFAULT.CMP");
-						s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
-					}
+						setScreenBrightness(ONE_16);
+						setScreenFxLevels(0, 0, 0);
+						setLuminanceMask(0, 0, 0);
 
-					setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
-					automap_updateMapData(MAP_CENTER_PLAYER);
-					setSkyParallax(s_levelState.parallax0, s_levelState.parallax1);
-					s_missionMode = MISSION_MODE_MAIN;
-					s_gamePaused = JFALSE;
-					mission_createRenderDisplay();
-					hud_startup();
-										
-					reticle_enable(true);
+						char colorMapName[TFE_MAX_PATH];
+						strcpy(colorMapName, levelName);
+						strcat(colorMapName, ".CMP");
+						s_levelColorMap = nullptr;
+
+						FilePath filePath;
+						if (TFE_Paths::getFilePath(colorMapName, &filePath))
+						{
+							s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+						}
+						else if (TFE_Paths::getFilePath("DEFAULT.CMP", &filePath))
+						{
+							TFE_System::logWrite(LOG_WARNING, "mission_startTaskFunc", "USING DEFAULT.CMP");
+							s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+						}
+
+						setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
+						automap_updateMapData(MAP_CENTER_PLAYER);
+						setSkyParallax(s_levelState.parallax0, s_levelState.parallax1);
+						s_missionMode = MISSION_MODE_MAIN;
+						s_gamePaused = JFALSE;
+						mission_createRenderDisplay();
+						hud_startup();
+
+						reticle_enable(true);
+					}
 				}
 			}
+			else // Loading from save.
+			{
+				s_missionMode = MISSION_MODE_MAIN;
+				mission_createRenderDisplay();
+				hud_startup();
+				reticle_enable(true);
+			}
+			s_loadingFromSave = JFALSE;
 			TFE_Input::clearAccumulatedMouseMove();
 		}
 		// Sleep until we are done with the main task.
@@ -498,14 +518,13 @@ namespace TFE_DarkForces
 	{
 		setSpriteAnimation(nullptr, nullptr);
 		bitmap_setupAnimationTask();
-		// resetFrameData();		// TODO(Core Game Loop Release)
 		hud_startup();
 		hud_clearMessage();
 		automap_computeScreenBounds();
 		weapon_clearFireRate();
 		weapon_createPlayerWeaponTask();
 		projectile_createTask();
-		player_createController();
+		player_createController(s_loadingFromSave ? JFALSE : JTRUE);
 		inf_createElevatorTask();
 		player_clearEyeObject();
 		pickup_createTask();

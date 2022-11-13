@@ -22,6 +22,7 @@ namespace TFE_DarkForces
 		MISSION_MODE_LOAD_START = 3,	// set right as loading starts.
 	};
 		
+	void mission_setLoadingFromSave();
 	void mission_startTaskFunc(MessageType msg);
 	void mission_setLoadMissionTask(Task* task);
 	void mission_exitLevel();
@@ -35,6 +36,8 @@ namespace TFE_DarkForces
 	void disableNightvision();
 
 	void mission_render(s32 rendererIndex = 0);
+
+	void mission_setupTasks();
 		
 	extern JBool s_gamePaused;
 	extern GameMissionMode s_missionMode;

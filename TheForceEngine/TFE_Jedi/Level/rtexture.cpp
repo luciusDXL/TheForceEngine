@@ -8,6 +8,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <unordered_map>
 
 using namespace TFE_DarkForces;
@@ -130,6 +131,48 @@ namespace TFE_Jedi
 	{
 		return s_textureList[pool][index].texture;
 	}
+
+	// Serialize only level textures.
+	void bitmap_serializeLevelTextures(Stream* stream)
+	{
+		s32 count = 0;
+		LevelTexture* list = nullptr;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			count = (s32)s_textureList[POOL_LEVEL].size();
+		}
+		SERIALIZE(SaveVersionInit, count, 0);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			s_textureList[POOL_LEVEL].resize(count);
+			s_textureTable[POOL_LEVEL].clear();
+		}
+		list = s_textureList[POOL_LEVEL].data();
+
+		for (s32 i = 0; i < count; i++, list++)
+		{
+			// Assume names are less than 256 characters.
+			u8 length = 0;
+			if (serialization_getMode() == SMODE_WRITE)
+			{
+				length = (u8)list->name.length();
+			}
+			SERIALIZE(SaveVersionInit, length, 0);
+			if (serialization_getMode() == SMODE_READ)
+			{
+				list->name.resize(length);
+			}
+			SERIALIZE_BUF(SaveVersionInit, &list->name[0], length);
+
+			// If reading, we need to load the texture now.
+			if (serialization_getMode() == SMODE_READ)
+			{
+				const char* name = list->name.c_str();
+				list->texture = bitmap_load(name, 1, POOL_LEVEL, false);
+				s_textureTable[POOL_LEVEL][name] = i;
+			}
+		}
+	}
 		
 	TextureData** bitmap_getTextures(s32* textureCount, AssetPool pool)
 	{
@@ -146,7 +189,7 @@ namespace TFE_Jedi
 		return list;
 	}
 
-	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool)
+	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool, bool addToCache)
 	{
 		// TFE: Keep track of per-level texture state for serialization.
 		// This is also useful for handling per-level GPU texture mirrors.
@@ -268,9 +311,12 @@ namespace TFE_Jedi
 		}
 
 		// Add the texture to the level texture cache if appropriate.
-		s32 index = (s32)s_textureList[pool].size();
-		s_textureList[pool].push_back({name, texture});
-		s_textureTable[pool][name] = index;
+		if (addToCache)
+		{
+			s32 index = (s32)s_textureList[pool].size();
+			s_textureList[pool].push_back({ name, texture });
+			s_textureTable[pool][name] = index;
+		}
 
 		return texture;
 	}

@@ -665,7 +665,7 @@ namespace TFE_Jedi
 	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, u32 portalInfo)
 	{
 		// Make sure the model has been assigned a GPU ID.
-		if (model->drawId < 0)
+		if (!model || model->drawId < 0)
 		{
 			return;
 		}

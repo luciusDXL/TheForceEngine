@@ -6,6 +6,7 @@
 #include "rwall.h"
 #include "robjData.h"
 #include <TFE_Game/igame.h>
+#include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 
 // TODO: coupling between Dark Forces and Jedi.
@@ -75,9 +76,16 @@ namespace TFE_Jedi
 		SERIALIZE(LevelState_InitVersion, s_levelState.parallax0, 0);
 		SERIALIZE(LevelState_InitVersion, s_levelState.parallax1, 0);
 
+		/////////////////////////////////////
+		// Serialize asset names
+		/////////////////////////////////////
+		bitmap_serializeLevelTextures(stream);
+		TFE_Sprite_Jedi::sprite_serializeSpritesAndFrames(stream);
+		TFE_Model_Jedi::serializeModels(stream);
+
 		// This is needed because level textures are pointers to the list itself, rather than the texture.
 		level_serializeTextureList(stream);
-
+				
 		if (serialization_getMode() == SMODE_READ)
 		{
 			s_levelState.sectors = (RSector*)level_alloc(sizeof(RSector) * s_levelState.sectorCount);
@@ -166,6 +174,10 @@ namespace TFE_Jedi
 		for (s32 i = 0; i < s_levelState.textureCount; i++)
 		{
 			serialization_serializeTexturePtr(stream, LevelState_InitVersion, s_levelState.textures[i]);
+			if (serialization_getMode() == SMODE_READ && s_levelState.textures[i]->uvWidth == BM_ANIMATED_TEXTURE)
+			{
+				bitmap_setupAnimatedTexture(&s_levelState.textures[i]);
+			}
 		}
 	}
 

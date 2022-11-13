@@ -9,6 +9,7 @@
 
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 // TODO: dependency on JediRenderer, this should be refactored...
 #include <TFE_Jedi/Renderer/rlimits.h>
 
@@ -138,8 +139,10 @@ namespace TFE_Model_Jedi
 	typedef std::map<std::string, JediModel*> ModelMap;
 	typedef std::vector<JediModel*> ModelList;
 	typedef std::map<std::string, TextureData*> TextureMap;
+	typedef std::vector<std::string> NameList;
 	static ModelMap s_models[POOL_COUNT];
 	static ModelList s_modelList[POOL_COUNT];
+	static NameList s_modelNames[POOL_COUNT];
 	static std::vector<char> s_buffer;
 
 	static vec2 s_tmpVtx[MAX_VERTEX_COUNT_3DO];
@@ -222,6 +225,7 @@ namespace TFE_Model_Jedi
 		// directly loaded, which will reduce load time.
 		s_models[pool][name] = model;
 		s_modelList[pool].push_back(model);
+		s_modelNames[pool].push_back(name);
 		return model;
 	}
 
@@ -266,6 +270,42 @@ namespace TFE_Model_Jedi
 		// Memory will get freed with the memory region automatically.
 		s_models[pool].clear();
 		s_modelList[pool].clear();
+		s_modelNames[pool].clear();
+	}
+
+	void serializeModels(Stream* stream)
+	{
+		bool modeWrite = serialization_getMode() == SMODE_WRITE;
+		if (!modeWrite)
+		{
+			freePool(POOL_LEVEL);
+		}
+
+		s32 count = (s32)s_modelNames[POOL_LEVEL].size();
+		SERIALIZE(SaveVersionInit, count, 0);
+
+		std::string* names = s_modelNames[POOL_LEVEL].data();
+		std::string name;
+		for (s32 i = 0; i < count; i++)
+		{
+			u8 size;
+			if (modeWrite)
+			{
+				size = (u8)names[i].length();
+			}
+			SERIALIZE(SaveVersionInit, size, 0);
+
+			if (!modeWrite)
+			{
+				name.resize(size);
+			}
+			SERIALIZE_BUF(SaveVersionInit, modeWrite ? &names[i][0] : &name[0], size);
+
+			if (!modeWrite)
+			{
+				get(name.c_str(), POOL_LEVEL);
+			}
+		}
 	}
 
 	void freeAll()
@@ -275,7 +315,7 @@ namespace TFE_Model_Jedi
 			freePool(AssetPool(p));
 		}
 	}
-		
+	
 	void freeLevelData()
 	{
 		freePool(POOL_LEVEL);

@@ -132,7 +132,7 @@ namespace TFE_DarkForces
 	void player_readInfo(u8* inv, s32* ammo);
 	void player_writeInfo(u8* inv, s32* ammo);
 	void player_clearEyeObject();
-	void player_createController();
+	void player_createController(JBool clearData = JTRUE);
 	void player_setupObject(SecObject* obj);
 	void player_setupEyeObject(SecObject* obj);
 	void player_revive();

@@ -86,7 +86,7 @@ namespace TFE_Jedi
 
 	// levelTexture bool was added for TFE to make serializing texture state easier.
 	// if levelTexture is false, then textures are not serialized and not cleared at level end.
-	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool = POOL_LEVEL);
+	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool = POOL_LEVEL, bool addToCache = true);
 	void bitmap_setupAnimatedTexture(TextureData** texture);
 
 	Allocator* bitmap_getAnimatedTextures();
@@ -98,4 +98,7 @@ namespace TFE_Jedi
 	// Used for tools.
 	TextureData* bitmap_loadFromMemory(const u8* data, size_t size, u32 decompress);
 	Allocator* bitmap_getAnimTextureAlloc();
+
+	// Serialization.
+	void bitmap_serializeLevelTextures(Stream* stream);
 }

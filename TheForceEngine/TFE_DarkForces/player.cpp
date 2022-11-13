@@ -423,10 +423,11 @@ namespace TFE_DarkForces
 		}
 	}
 		
-	void player_createController()
+	void player_createController(JBool clearData)
 	{
 		s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
 		task_setNextTick(s_playerTask, TASK_SLEEP);
+		if (!clearData) { return; }
 
 		// Clear out inventory items that the player shouldn't start a level with, such as objectives and keys
 		s_playerInfo.itemPlans    = JFALSE;
@@ -2547,12 +2548,9 @@ namespace TFE_DarkForces
 			playerLogic = &s_playerLogic;
 			logic = (Logic*)playerLogic;
 
-			// TODO: Properly clear out tasks...
-			if (!s_playerTask)
-			{
-				s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
-				task_makeActive(s_playerTask);
-			}
+			s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
+			task_makeActive(s_playerTask);
+
 			playerLogic->logic.task = s_playerTask;
 			playerLogic->logic.cleanupFunc = playerLogicCleanupFunc;
 		}
