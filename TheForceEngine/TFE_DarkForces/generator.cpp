@@ -288,11 +288,12 @@ namespace TFE_DarkForces
 			SERIALIZE(ObjState_InitVersion, count, 0);
 			for (s32 i = 0; i < count; i++)
 			{
-				u32 id;
-				SERIALIZE(ObjState_InitVersion, id, -1);
+				s32 entityId;
+				SERIALIZE(ObjState_InitVersion, entityId, -1);
+				if (entityId < 0) { continue; }
 
 				SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
-				*entityPtr = objData_getObjectBySerializationId(id);
+				*entityPtr = objData_getObjectBySerializationId(entityId);
 			}
 		}
 

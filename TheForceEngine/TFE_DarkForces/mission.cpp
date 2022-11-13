@@ -214,6 +214,27 @@ namespace TFE_DarkForces
 		setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
 	}
 
+	void mission_serialize(Stream* stream)
+	{
+		SERIALIZE(SaveVersionInit, s_palModified, JTRUE);
+		SERIALIZE(SaveVersionInit, s_canChangePal, JTRUE);
+		SERIALIZE(SaveVersionInit, s_screenFxEnabled, JTRUE);
+		SERIALIZE(SaveVersionInit, s_screenBrightnessEnabled, JTRUE);
+		SERIALIZE_BUF(SaveVersionInit, s_luminanceMask, 3 * sizeof(JBool));
+		SERIALIZE(SaveVersionInit, s_updateHudColors, JFALSE);
+		SERIALIZE(SaveVersionInit, s_screenBrightnessChanged, JFALSE);
+		SERIALIZE(SaveVersionInit, s_screenFxChanged, JFALSE);
+		SERIALIZE(SaveVersionInit, s_lumMaskChanged, JFALSE);
+
+		SERIALIZE(SaveVersionInit, s_flashFxLevel, 0);
+		SERIALIZE(SaveVersionInit, s_healthFxLevel, 0);
+		SERIALIZE(SaveVersionInit, s_shieldFxLevel, 0);
+		SERIALIZE(SaveVersionInit, s_screenBrightness, ONE_16);
+
+		SERIALIZE(SaveVersionInit, s_visionFxCountdown, 0);
+		SERIALIZE(SaveVersionInit, s_visionFxEndCountdown, 0);
+	}
+
 	void mission_serializeColorMap(Stream* stream)
 	{
 		u8 length = 0;

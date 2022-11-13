@@ -38,6 +38,7 @@ namespace TFE_DarkForces
 	void mission_render(s32 rendererIndex = 0);
 
 	void mission_setupTasks();
+	void mission_serialize(Stream* stream);
 	void mission_serializeColorMap(Stream* stream);
 		
 	extern JBool s_gamePaused;
