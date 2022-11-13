@@ -54,6 +54,9 @@ namespace TFE_DarkForces
 	void hitEffect_createTask();
 	void hitEffect_clearState();
 
+	// Serialization
+	void hitEffect_serializeTasks(Stream* stream);
+
 	// Spawn a new hit effect at location (x,y,z) in 'sector'.
 	// The ExcludeObj field is used to avoid effecting a specific object during wakeup or explosions.
 	void spawnHitEffect(HitEffectID hitEffectId, RSector* sector, vec3_fixed pos, SecObject* excludeObj);

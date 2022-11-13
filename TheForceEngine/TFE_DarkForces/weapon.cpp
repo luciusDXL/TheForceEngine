@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
@@ -118,6 +119,32 @@ namespace TFE_DarkForces
 		s_fireFrame = 0;
 		s_curPlayerWeapon = nullptr;
 		s_playerWeaponTask = nullptr;
+	}
+
+	void weapon_serialize(Stream* stream)
+	{
+		SERIALIZE(SaveVersionInit, s_switchWeapons, JFALSE);
+		SERIALIZE(SaveVersionInit, s_queWeaponSwitch, JFALSE);
+		SERIALIZE(SaveVersionInit, s_weaponAutoMount2, JFALSE);
+		SERIALIZE(SaveVersionInit, s_secondaryFire, JFALSE);
+		SERIALIZE(SaveVersionInit, s_weaponOffAnim, JFALSE);
+		SERIALIZE(SaveVersionInit, s_isShooting, JFALSE);
+		SERIALIZE(SaveVersionInit, s_fireFrame, 0);
+
+		s32 curWpnIndex = -1;
+		if (serialization_getMode() == SMODE_WRITE && s_curPlayerWeapon)
+		{
+			curWpnIndex = PTR_INDEX_S32(s_curPlayerWeapon, s_playerWeaponList, sizeof(PlayerWeapon));
+		}
+		SERIALIZE(SaveVersionInit, curWpnIndex, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			s_curPlayerWeapon = nullptr;
+			if (curWpnIndex >= 0)
+			{
+				s_curPlayerWeapon = &s_playerWeaponList[curWpnIndex];
+			}
+		}
 	}
 
 	void weapon_startup()

@@ -7,6 +7,7 @@
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Task/task.h>
 
@@ -261,6 +262,20 @@ namespace TFE_DarkForces
 		hitEffect_clearState();
 		s_hitEffects = allocator_create(sizeof(HitEffect));
 		s_hitEffectTask = createSubTask("hitEffects", hitEffectTaskFunc);
+	}
+
+	void hitEffect_serializeTasks(Stream* stream)
+	{
+		u8 hasTask = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			hasTask = s_hitEffectTask ? 1 : 0;
+		}
+		SERIALIZE(SaveVersionInit, hasTask, 0);
+		if (hasTask && s_hitEffectTask)
+		{
+			task_serializeState(stream, s_hitEffectTask);
+		}
 	}
 		
 	////////////////////////////////////////////////////////////////////////

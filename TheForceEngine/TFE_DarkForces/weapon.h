@@ -94,6 +94,9 @@ namespace TFE_DarkForces
 
 	void weapon_queueWeaponSwitch(s32 wpnId);
 
+	// Serialization
+	void weapon_serialize(Stream* stream);
+
 	extern PlayerWeapon* s_curPlayerWeapon;
 	extern SoundSourceId s_superchargeCountdownSound;
 	extern Task* s_playerWeaponTask;
