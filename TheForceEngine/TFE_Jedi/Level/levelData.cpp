@@ -174,7 +174,7 @@ namespace TFE_Jedi
 		for (s32 i = 0; i < s_levelState.textureCount; i++)
 		{
 			serialization_serializeTexturePtr(stream, LevelState_InitVersion, s_levelState.textures[i]);
-			if (serialization_getMode() == SMODE_READ && s_levelState.textures[i]->uvWidth == BM_ANIMATED_TEXTURE)
+			if (serialization_getMode() == SMODE_READ && s_levelState.textures[i] && s_levelState.textures[i]->uvWidth == BM_ANIMATED_TEXTURE)
 			{
 				bitmap_setupAnimatedTexture(&s_levelState.textures[i]);
 			}

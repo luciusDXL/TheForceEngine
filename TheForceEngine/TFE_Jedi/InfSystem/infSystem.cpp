@@ -1719,7 +1719,7 @@ namespace TFE_Jedi
 	// This is used so that switches are only activated if directly hit.
 	void inf_wallSendMessageAtPos(RWall* hitWall, SecObject* obj, u32 evt, fixed16_16 paramPos, fixed16_16 yPos)
 	{
-		if (hitWall->signTex)
+		if (hitWall->signTex && *hitWall->signTex)
 		{
 			fixed16_16 baseHeight = 0;
 			fixed16_16 uOffset = 0;
