@@ -57,6 +57,7 @@ namespace TFE_Jedi
 	JBool level_isGoalComplete(s32 goalIndex);
 
 	void level_addSound(const char* name, u32 freq, s32 priority);
+	void level_loadPalette();
 		
 	extern JBool s_complete[2][NUM_COMPLETE];
 }

@@ -72,6 +72,23 @@ namespace TFE_Jedi
 
 		return JTRUE;
 	}
+
+	void level_loadPalette()
+	{
+		// Palette *IS* loaded from the level file.
+		FilePath filePath;
+		if (TFE_Paths::getFilePath(s_levelState.levelPaletteName, &filePath))
+		{
+			FileStream::readContents(&filePath, s_levelPalette, 768);
+		}
+		else if (TFE_Paths::getFilePath("default.pal", &filePath))
+		{
+			FileStream::readContents(&filePath, s_levelPalette, 768);
+		}
+		// The "base palette" is adjusted by the hud colors, which is why it is a copy.
+		memcpy(s_basePalette, s_levelPalette, 768);
+		s_palModified = JTRUE;
+	}
 		
 	JBool level_loadGeometry(const char* levelName)
 	{
@@ -133,26 +150,14 @@ namespace TFE_Jedi
 		}
 
 		// This gets read here just to be overwritten later... so just ignore for now.
-		char palName[TFE_MAX_PATH];
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, "PALETTE %s", palName) != 1)
+		if (sscanf(line, "PALETTE %s", s_levelState.levelPaletteName) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read palette name.");
 			return false;
 		}
 
-		// Palette *IS* loaded from the level file.
-		if (TFE_Paths::getFilePath(palName, &filePath))
-		{
-			FileStream::readContents(&filePath, s_levelPalette, 768);
-		}
-		else if (TFE_Paths::getFilePath("default.pal", &filePath))
-		{
-			FileStream::readContents(&filePath, s_levelPalette, 768);
-		}
-		// The "base palette" is adjusted by the hud colors, which is why it is a copy.
-		memcpy(s_basePalette, s_levelPalette, 768);
-		s_palModified = JTRUE;
+		level_loadPalette();
 		
 		// Another value that is ignored.
 		line = parser.readLine(bufferPos);

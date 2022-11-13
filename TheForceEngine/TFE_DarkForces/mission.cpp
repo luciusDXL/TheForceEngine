@@ -29,6 +29,7 @@
 #include <TFE_Jedi/Renderer/rcommon.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Settings/settings.h>
@@ -196,6 +197,40 @@ namespace TFE_DarkForces
 		s_loadingFromSave = JTRUE;
 	}
 
+	char s_colormapName[TFE_MAX_PATH] = { 0 };
+
+	void mission_loadColormap()
+	{
+		FilePath filePath;
+		if (TFE_Paths::getFilePath(s_colormapName, &filePath))
+		{
+			s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+		}
+		else if (TFE_Paths::getFilePath("DEFAULT.CMP", &filePath))
+		{
+			TFE_System::logWrite(LOG_WARNING, "mission_startTaskFunc", "USING DEFAULT.CMP");
+			s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
+		}
+		setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
+	}
+
+	void mission_serializeColorMap(Stream* stream)
+	{
+		u8 length = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			length = (u8)strlen(s_colormapName);
+		}
+		SERIALIZE(SaveVersionInit, length, 0);
+		SERIALIZE_BUF(SaveVersionInit, s_colormapName, length);
+		s_colormapName[length] = 0;
+
+		if (serialization_getMode() == SMODE_READ)
+		{
+			mission_loadColormap();
+		}
+	}
+
 	void mission_startTaskFunc(MessageType msg)
 	{
 		task_begin;
@@ -239,23 +274,11 @@ namespace TFE_DarkForces
 						setScreenFxLevels(0, 0, 0);
 						setLuminanceMask(0, 0, 0);
 
-						char colorMapName[TFE_MAX_PATH];
-						strcpy(colorMapName, levelName);
-						strcat(colorMapName, ".CMP");
+						strcpy(s_colormapName, levelName);
+						strcat(s_colormapName, ".CMP");
 						s_levelColorMap = nullptr;
 
-						FilePath filePath;
-						if (TFE_Paths::getFilePath(colorMapName, &filePath))
-						{
-							s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
-						}
-						else if (TFE_Paths::getFilePath("DEFAULT.CMP", &filePath))
-						{
-							TFE_System::logWrite(LOG_WARNING, "mission_startTaskFunc", "USING DEFAULT.CMP");
-							s_levelColorMap = color_loadMap(&filePath, s_levelLightRamp, &s_levelColorMapBasePtr);
-						}
-
-						setCurrentColorMap(s_levelColorMap, s_levelLightRamp);
+						mission_loadColormap();
 						automap_updateMapData(MAP_CENTER_PLAYER);
 						setSkyParallax(s_levelState.parallax0, s_levelState.parallax1);
 						s_missionMode = MISSION_MODE_MAIN;

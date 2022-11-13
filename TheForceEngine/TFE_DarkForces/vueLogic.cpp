@@ -52,6 +52,21 @@ namespace TFE_DarkForces
 		u32 flags;
 	};
 
+	// Make sure this is local to the current file.
+	namespace
+	{
+		struct LocalContext
+		{
+			VueLogic* vue;
+			JBool searchForSector;
+			SecObject* obj;
+			VueFrame* frame;
+			Tick tick;
+			Tick pauseTick;
+			s32 prevFrame;
+		};
+	}
+
 	static char* s_workBuffer = nullptr;
 	static size_t s_workBufferSize = 0;
 
@@ -78,6 +93,45 @@ namespace TFE_DarkForces
 		*setupFunc = vueLogicSetupFunc;
 
 		return (Logic*)vueLogic;
+	}
+		
+	void vueLogic_serializeTaskLocalMemory(Stream* stream, void* userData, void* mem)
+	{
+		VueLogic* self = (VueLogic*)userData;
+		LocalContext* locals = (LocalContext*)mem;
+		bool modeWrite = serialization_getMode() == SMODE_WRITE;
+		if (!modeWrite)
+		{
+			locals->vue = self;
+		}
+		SERIALIZE(SaveVersionInit, locals->searchForSector, 0);
+		s32 objIndex = -1;
+		if (modeWrite)
+		{
+			objIndex = locals->obj->serializeIndex;
+		}
+		SERIALIZE(SaveVersionInit, objIndex, -1);
+		if (!modeWrite)
+		{
+			locals->obj = nullptr;
+			if (objIndex >= 0)
+			{
+				locals->obj = objData_getObjectBySerializationId(objIndex);
+			}
+		}
+		s32 index = -1;
+		if (modeWrite && self->frames && locals->frame)
+		{
+			index = allocator_getIndex(self->frames, locals->frame);
+		}
+		SERIALIZE(SaveVersionInit, index, -1);
+		if (!modeWrite)
+		{
+			locals->frame = (VueFrame*)allocator_getByIndex(self->frames, index);
+		}
+		SERIALIZE(SaveVersionInit, locals->tick, 0);
+		SERIALIZE(SaveVersionInit, locals->pauseTick, 0);
+		SERIALIZE(SaveVersionInit, locals->prevFrame, 0);
 	}
 
 	// Serialization
@@ -131,6 +185,8 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, vueLogic->frameDelay, 0);
 		serialization_serializeSectorPtr(stream, ObjState_InitVersion, vueLogic->sector);
 		SERIALIZE(ObjState_InitVersion, vueLogic->flags, 0);
+
+		task_serializeState(stream, vueLogic->logic.task, vueLogic, vueLogic_serializeTaskLocalMemory);
 	}
 
 	void loadVueFile(Allocator* vueList, char* transformName, TFE_Parser* parser)
@@ -385,16 +441,6 @@ namespace TFE_DarkForces
 
 	void vueLogicTaskFunc(MessageType msg)
 	{
-		struct LocalContext
-		{
-			VueLogic* vue;
-			JBool searchForSector;
-			SecObject* obj;
-			VueFrame* frame;
-			Tick tick;
-			Tick pauseTick;
-			s32 prevFrame;
-		};
 		task_begin_ctx;
 
 		local(vue) = (VueLogic*)task_getUserData();

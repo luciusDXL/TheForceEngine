@@ -64,6 +64,9 @@ namespace TFE_Jedi
 		Allocator* soundEmitters = nullptr;
 		Allocator* safeLoc = nullptr;
 		Allocator* ambientSounds = nullptr;
+
+		// TFE
+		char levelPaletteName[256];
 	};
 	
 	// State that should be reset.

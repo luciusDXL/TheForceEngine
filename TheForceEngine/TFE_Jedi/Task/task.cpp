@@ -6,6 +6,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Game/igame.h>
 #include <TFE_System/profiler.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <stdarg.h>
 #include <tuple>
 #include <vector>
@@ -61,7 +62,6 @@ struct Task
 
 	// Timing.
 	Tick nextTick;
-	s32 activeIndex;
 };
 
 namespace TFE_Jedi
@@ -184,6 +184,30 @@ namespace TFE_Jedi
 		newTask->nextTick = s_curTick;
 
 		return newTask;
+	}
+	
+	void task_serializeState(Stream* stream, Task* task, void* userData, LocalMemorySerCallback localMemCallback)
+	{
+		SERIALIZE(SaveVersionInit, task->context.ip[0], 0);
+		SERIALIZE(SaveVersionInit, task->context.stackSize[0], 0);
+		SERIALIZE(SaveVersionInit, task->nextTick, 0);
+		if (serialization_getMode() == SMODE_READ && !task->context.stackMem)
+		{
+			task->context.stackMem = (u8*)allocFromChunkedArray(s_stackBlocks);
+			memset(task->context.stackMem, 0, sizeof(u32) * TASK_MAX_LEVELS);
+			task->context.stackOffset = 0;
+			task->context.stackPtr[0] = task->context.stackMem;
+		}
+		SERIALIZE(SaveVersionInit, task->context.stackOffset, 0);
+		if (localMemCallback)
+		{
+			localMemCallback(stream, userData, task->context.stackPtr[0]);
+		}
+		else
+		{
+			// This only works with relocatable state.
+			SERIALIZE_BUF(SaveVersionInit, task->context.stackPtr[0], task->context.stackSize[0]);
+		}
 	}
 
 	Task* task_getCurrent()

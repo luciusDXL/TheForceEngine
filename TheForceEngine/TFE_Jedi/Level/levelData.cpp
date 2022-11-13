@@ -60,6 +60,23 @@ namespace TFE_Jedi
 			}
 		}
 	}
+
+	void level_serializePalette(Stream* stream)
+	{
+		u8 length = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			length = (u8)strlen(s_levelState.levelPaletteName);
+		}
+		SERIALIZE(SaveVersionInit, length, 0);
+		SERIALIZE_BUF(SaveVersionInit, s_levelState.levelPaletteName, length);
+		s_levelState.levelPaletteName[length] = 0;
+
+		if (serialization_getMode() == SMODE_READ)
+		{
+			level_loadPalette();
+		}
+	}
 		
 	void level_serialize(Stream* stream)
 	{
@@ -79,6 +96,7 @@ namespace TFE_Jedi
 		/////////////////////////////////////
 		// Serialize asset names
 		/////////////////////////////////////
+		level_serializePalette(stream);
 		bitmap_serializeLevelTextures(stream);
 		TFE_Sprite_Jedi::sprite_serializeSpritesAndFrames(stream);
 		TFE_Model_Jedi::serializeModels(stream);

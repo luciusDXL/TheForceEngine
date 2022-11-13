@@ -24,6 +24,7 @@ enum TaskDelay
 	TASK_SLEEP = 0xffffffff,
 	TASK_NO_DELAY = 0,
 };
+typedef void(*LocalMemorySerCallback)(Stream* stream, void* userData, void* mem);
 
 ////////////////////////////////////////////////////////////////////////
 // Task System API
@@ -33,6 +34,14 @@ namespace TFE_Jedi
 	Task* createTask(const char* name, TaskFunc func, JBool framebreak = JFALSE, TaskFunc localRunFunc = nullptr);
 	// Create a "subtask" under the current task. All sub-tasks under a main task are executed *before* that main task.
 	Task* createSubTask(const char* name, TaskFunc func, TaskFunc localRunFunc = nullptr);
+
+	// Serialize task state, such as local memory.
+	// This currently assumes "simple" use cases - it does not unwind recursions yet.
+	// On load, the task should be created as normal first and then have its state serialized.
+	// If local task function state includes pointers or other non-pod data, a local memory serialization callback
+	// needs to be provided and the state be properly serialized by the client. The callback should properly handle
+	// both saving and loading. See vueLogic_serializeTaskLocalMemory() in TFE_DarkForces/vueLogic.cpp for an example.
+	void task_serializeState(Stream* stream, Task* task, void* userData, LocalMemorySerCallback localMemCallback);
 
 	Task* task_getCurrent();
 
