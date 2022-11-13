@@ -1662,6 +1662,8 @@ namespace TFE_DarkForces
 		if (serialization_getMode() == SMODE_READ)
 		{
 			proj->updateFunc = (projUpdateFuncId >= 0) ? c_projUpdateFunc[projUpdateFuncId] : nullptr;
+			// There is at least one projectile, so make sure the task is running.
+			task_makeActive(s_projectileTask);
 		}
 
 		SERIALIZE(ObjState_InitVersion, proj->reflectEffectId, HEFFECT_NONE);

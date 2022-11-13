@@ -41,6 +41,10 @@ namespace TFE_DarkForces
 	void pickupInventory();
 	void pickupItem(MessageType msg);
 
+	void gasmaskTaskFunc(MessageType msg);
+	void invincibilityTaskFunc(MessageType msg);
+	void superchargeTaskFunc(MessageType msg);
+
 	//////////////////////////////////////////////////////////////
 	// API Implementation
 	//////////////////////////////////////////////////////////////
@@ -941,6 +945,49 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void pickupLogic_serializeTasks(Stream* stream)
+	{
+		enum PickupTasks
+		{
+			PT_GASMASK = FLAG_BIT(0),
+			PT_INV = FLAG_BIT(1),
+			PT_SUPERCHARGE = FLAG_BIT(2),
+		};
+
+		u8 pickupTasks = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			pickupTasks |= s_gasmaskTask ? PT_GASMASK : 0;
+			pickupTasks |= s_invincibilityTask ? PT_INV : 0;
+			pickupTasks |= s_superCharge ? PT_SUPERCHARGE : 0;
+		}
+		SERIALIZE(SaveVersionInit, pickupTasks, 0);
+		if (pickupTasks & PT_GASMASK)
+		{
+			if (serialization_getMode() == SMODE_READ)
+			{
+				s_gasmaskTask = createSubTask("gasmask", gasmaskTaskFunc);
+			}
+			task_serializeState(stream, s_gasmaskTask);
+		}
+		if (pickupTasks & PT_INV)
+		{
+			if (serialization_getMode() == SMODE_READ)
+			{
+				s_invincibilityTask = createSubTask("invincibility", invincibilityTaskFunc);
+			}
+			task_serializeState(stream, s_invincibilityTask);
+		}
+		if (pickupTasks & PT_SUPERCHARGE)
+		{
+			if (serialization_getMode() == SMODE_READ)
+			{
+				s_superchargeTask = createSubTask("supercharge", superchargeTaskFunc);
+			}
+			task_serializeState(stream, s_superchargeTask);
+		}
+	}
+
 	void pickupLogic_serialize(Logic*& logic, Stream* stream)
 	{
 		Pickup* pickup;
@@ -995,7 +1042,7 @@ namespace TFE_DarkForces
 
 		task_end;
 	}
-
+		
 	void invincibilityTaskFunc(MessageType msg)
 	{
 		struct LocalContext
