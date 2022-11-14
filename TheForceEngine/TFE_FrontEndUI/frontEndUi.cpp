@@ -52,6 +52,7 @@ namespace TFE_FrontEndUI
 	{
 		CONFIG_ABOUT = 0,
 		CONFIG_GAME,
+		CONFIG_LOAD,
 		CONFIG_INPUT,
 		CONFIG_GRAPHICS,
 		CONFIG_HUD,
@@ -63,6 +64,7 @@ namespace TFE_FrontEndUI
 	{
 		"About",
 		"Game Settings",
+		"Load",
 		"Input",
 		"Graphics",
 		"Hud",
@@ -167,6 +169,7 @@ namespace TFE_FrontEndUI
 
 	void configAbout();
 	void configGame();
+	void configLoad();
 	void configInput();
 	void configGraphics();
 	void configHud();
@@ -554,6 +557,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Load", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_LOAD;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			if (ImGui::Button("Input", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_INPUT;
@@ -624,6 +633,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_GAME:
 				configGame();
+				break;
+			case CONFIG_LOAD:
+				configLoad();
 				break;
 			case CONFIG_INPUT:
 				configInput();
@@ -849,6 +861,14 @@ namespace TFE_FrontEndUI
 
 			if (ImGui::Button("OK", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
 			ImGui::EndPopup();
+		}
+	}
+
+	void configLoad()
+	{
+		if (ImGui::Button("Load Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
+		{
+			s_appState = APP_STATE_LOAD;
 		}
 	}
 

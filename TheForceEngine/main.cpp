@@ -322,6 +322,44 @@ void setAppState(AppState newState, int argc, char* argv[])
 			newState = APP_STATE_NO_GAME_DATA;
 		}
 		break;
+	case APP_STATE_LOAD:
+		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+		{
+			newState = APP_STATE_GAME;
+			TFE_FrontEndUI::setAppState(APP_STATE_GAME);
+
+			TFE_Game* gameInfo = TFE_Settings::getGame();
+			if (!s_curGame || gameInfo->id != s_curGame->id)
+			{
+				if (s_curGame)
+				{
+					freeGame(s_curGame);
+					s_curGame = nullptr;
+				}
+				s_curGame = createGame(gameInfo->id);
+				if (!s_curGame)
+				{
+					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
+					newState = APP_STATE_CANNOT_RUN;
+				}
+				else if (!s_curGame->serializeGameState("quicksave.tfe", false))
+				{
+					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
+					freeGame(s_curGame);
+					s_curGame = nullptr;
+					newState = APP_STATE_CANNOT_RUN;
+				}
+				else
+				{
+					TFE_Input::enableRelativeMode(true);
+				}
+			}
+		}
+		else
+		{
+			newState = APP_STATE_NO_GAME_DATA;
+		}
+		break;
 	case APP_STATE_GAME:
 		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 		{
@@ -339,7 +377,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
 					newState = APP_STATE_CANNOT_RUN;
 				}
-				else if (!s_curGame->runGame(argc, (const char**)argv))
+				else if (!s_curGame->runGame(argc, (const char**)argv, nullptr))
 				{
 					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
 					freeGame(s_curGame);

@@ -74,6 +74,7 @@ namespace TFE_Jedi
 	void task_setDefaults();
 	void task_setMinStepInterval(f64 minIntervalInSec);
 
+	void task_updateTime();
 	s32 task_getCount();
 }
 ////////////////////////////////////////////////////////////////////////

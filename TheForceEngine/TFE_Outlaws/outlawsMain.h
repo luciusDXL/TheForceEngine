@@ -10,7 +10,7 @@ namespace TFE_Outlaws
 {
 	struct Outlaws : IGame
 	{
-		bool runGame(s32 argCount, const char* argv[]) override;
+		bool runGame(s32 argCount, const char* argv[], Stream* stream) override;
 		void pauseGame(bool pause) override;
 		void exitGame() override;
 	};

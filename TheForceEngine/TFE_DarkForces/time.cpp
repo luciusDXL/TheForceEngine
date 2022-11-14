@@ -15,14 +15,11 @@ namespace TFE_DarkForces
 
 	void time_serialize(Stream* stream)
 	{
-		SERIALIZE_VERSION(SaveVersionInit);
-
 		SERIALIZE(SaveVersionInit, s_curTick, 0);
 		SERIALIZE(SaveVersionInit, s_prevTick, 0);
 		SERIALIZE(SaveVersionInit, s_timeAccum, 0.0);
 		SERIALIZE(SaveVersionInit, s_deltaTime, 0);
 		SERIALIZE_BUF(SaveVersionInit, s_frameTicks, sizeof(fixed16_16) * TFE_ARRAYSIZE(s_frameTicks));
-		SERIALIZE(SaveVersionInit, s_pauseTimeUpdate, JFALSE);
 	}
 
 	Tick time_frameRateToDelay(u32 frameRate)

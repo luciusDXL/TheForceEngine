@@ -2,7 +2,7 @@
 
 namespace TFE_Outlaws
 {
-	bool Outlaws::runGame(s32 argCount, const char* argv[])
+	bool Outlaws::runGame(s32 argCount, const char* argv[], Stream* stream)
 	{
 		// STUB
 		return false;

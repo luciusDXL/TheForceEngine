@@ -2,6 +2,7 @@
 
 #include "darkForcesMain.h"
 #include "agent.h"
+#include "automap.h"
 #include "config.h"
 #include "briefingList.h"
 #include "gameMessage.h"
@@ -10,7 +11,9 @@
 #include "item.h"
 #include "mission.h"
 #include "player.h"
+#include "pickup.h"
 #include "projectile.h"
+#include "random.h"
 #include "time.h"
 #include "weapon.h"
 #include "vueLogic.h"
@@ -44,6 +47,7 @@
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/IMuse/imuse.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <assert.h>
 
 // Add texture callbacks.
@@ -56,6 +60,8 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// Constants
 	/////////////////////////////////////////////
+	const char* c_quickSaveName = "quicksave.tfe";
+
 	static const char* c_gobFileNames[] =
 	{
 		"DARK.GOB",
@@ -169,14 +175,25 @@ namespace TFE_DarkForces
 		// Game flow end (restart).
 		{ -1, GMODE_END, -1 }
 	};
-	
+			
 	/////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////
-	static JBool s_cutscenesEnabled = JTRUE;
-	static JBool s_localMsgLoaded = JFALSE;
-	static JBool s_useJediPath = JFALSE;
-	static JBool s_hudModeStd = JTRUE;
+	struct RunGameState
+	{
+		s32 argCount = 0;
+		char* args[64];
+
+		JBool cutscenesEnabled = JTRUE;
+		JBool localMsgLoaded   = JFALSE;
+		s32   startLevel       = 0;
+		GameState state        = GSTATE_STARTUP_CUTSCENES;
+		s32   levelIndex;
+		s32   cutsceneIndex;
+		JBool abortLevel;
+	};
+	static RunGameState s_runGameState;
+
 	static GameMessages s_localMessages;
 	static GameMessages s_hotKeyMessages;
 	static TextureData* s_diskErrorImg = nullptr;
@@ -184,15 +201,10 @@ namespace TFE_DarkForces
 	static Font* s_mapNumFont = nullptr;
 	static SoundSourceId s_screenShotSndSrc = NULL_SOUND;
 	static BriefingList s_briefingList = { 0 };
-	static s32 s_startLevel = 0;
-
+	static JBool s_gameStarted = JFALSE;
+	
 	static Task* s_loadMissionTask = nullptr;
 	static CutsceneState* s_cutsceneList = nullptr;
-
-	static GameState s_state = GSTATE_STARTUP_CUTSCENES;
-	static s32 s_levelIndex;
-	static s32 s_cutsceneIndex;
-	static JBool s_abortLevel;
 		
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -211,7 +223,7 @@ namespace TFE_DarkForces
 	void freeAllMidi();
 	void pauseLevelSound();
 	void resumeLevelSound();
-	void handleSerialization();
+	void handleQuickSave(DarkForces* game);
 
 	/////////////////////////////////////////////
 	// API
@@ -219,10 +231,46 @@ namespace TFE_DarkForces
 		
 	// This is the equivalent of the initial part of main() in Dark Forces DOS.
 	// This part loads and sets up the game.
-	bool DarkForces::runGame(s32 argCount, const char* argv[])
+	bool DarkForces::runGame(s32 argCount, const char* argv[], Stream* stream)
 	{
-		char startLevel[TFE_MAX_PATH] = "";
+		if (!stream)
+		{
+			// Normal start.
+			s_runGameState.argCount = min(64, argCount);
+			for (s32 i = 0; i < s_runGameState.argCount; i++)
+			{
+				if (i == 0)
+				{
+					// No need to store the executable path, just put in a dummy value so everything else works as-is.
+					s_runGameState.args[i] = (char*)game_alloc(strlen("ExeName") + 1);
+					strcpy(s_runGameState.args[i], "ExeName");
+				}
+				else
+				{
+					s_runGameState.args[i] = (char*)game_alloc(strlen(argv[i + 1]) + 1);
+					strcpy(s_runGameState.args[i], argv[i + 1]);
+				}
+			}
+		}
+		else
+		{
+			// Start from save game.
+			SERIALIZE(SaveVersionInit, s_runGameState.argCount, 0);
+			for (s32 i = 0; i < s_runGameState.argCount; i++)
+			{
+				u32 length;
+				SERIALIZE(SaveVersionInit, length, 0);
 
+				s_runGameState.args[i] = (char*)game_alloc(length + 1);
+				SERIALIZE_BUF(SaveVersionInit, s_runGameState.args[i], length);
+				s_runGameState.args[i][length] = 0;
+			}
+
+			argCount = s_runGameState.argCount;
+			argv = (const char**)s_runGameState.args;
+		}
+
+		char startLevel[TFE_MAX_PATH] = "";
 		bitmap_setAllocator(s_gameRegion);
 
 		printGameInfo();
@@ -253,9 +301,22 @@ namespace TFE_DarkForces
 		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);
 		renderer_addHudTextureCallback(TFE_Jedi::level_getObjectTextures);
 
+		// Deserialize.
+		if (stream)
+		{
+			SERIALIZE(SaveVersionInit, s_runGameState.cutscenesEnabled, JTRUE);
+			SERIALIZE(SaveVersionInit, s_runGameState.localMsgLoaded, JFALSE);
+			SERIALIZE(SaveVersionInit, s_runGameState.startLevel, 0);
+			SERIALIZE(SaveVersionInit, s_runGameState.state, GSTATE_STARTUP_CUTSCENES);
+			SERIALIZE(SaveVersionInit, s_runGameState.levelIndex, 0);
+			SERIALIZE(SaveVersionInit, s_runGameState.cutsceneIndex, 0);
+			SERIALIZE(SaveVersionInit, s_runGameState.abortLevel, 0);
+		}
+
+		s_gameStarted = JTRUE;
 		return true;
 	}
-		
+
 	void DarkForces::exitGame()
 	{
 		freeAllMidi();
@@ -282,9 +343,8 @@ namespace TFE_DarkForces
 
 		// TFE Specific
 		// Reset state
-		s_state = GSTATE_STARTUP_CUTSCENES;
-		s_localMsgLoaded = JFALSE;
-		s_hudModeStd = JTRUE;
+		s_runGameState.state = GSTATE_STARTUP_CUTSCENES;
+		s_runGameState.localMsgLoaded = JFALSE;
 		s_screenShotSndSrc = NULL_SOUND;
 		s_loadMissionTask = nullptr;
 		weapon_resetState();
@@ -300,6 +360,7 @@ namespace TFE_DarkForces
 		// TFE
 		TFE_Sprite_Jedi::freeAll();
 		TFE_Model_Jedi::freeAll();
+		s_gameStarted = JFALSE;
 	}
 
 	void DarkForces::pauseGame(bool pause)
@@ -392,17 +453,17 @@ namespace TFE_DarkForces
 	{
 		// TFE: If serialization is requested, it should be done here - otherwise it will happen between the main loop and task update, which may be
 		// problematic.
-		handleSerialization();
+		handleQuickSave(this);
 
 		updateTime();
 
-		switch (s_state)
+		switch (s_runGameState.state)
 		{
 			case GSTATE_STARTUP_CUTSCENES:
 			{
-				s_state = GSTATE_CUTSCENE;
+				s_runGameState.state = GSTATE_CUTSCENE;
 				s_invalidLevelIndex = JTRUE;
-				if (s_cutscenesEnabled && !s_startLevel)
+				if (s_runGameState.cutscenesEnabled && !s_runGameState.startLevel)
 				{
 					cutscene_play(10);
 				}
@@ -414,14 +475,14 @@ namespace TFE_DarkForces
 			case GSTATE_AGENT_MENU:
 			{
 				bool levelSelected = false;
-				if (s_startLevel)
+				if (s_runGameState.startLevel)
 				{
-					s_abortLevel = JFALSE;
-					s_levelIndex = s_startLevel;
-					s_startLevel = 0;
+					s_runGameState.abortLevel = JFALSE;
+					s_runGameState.levelIndex = s_runGameState.startLevel;
+					s_runGameState.startLevel = 0;
 					levelSelected = true;
 				}
-				else if (!agentMenu_update(&s_levelIndex))
+				else if (!agentMenu_update(&s_runGameState.levelIndex))
 				{
 					agent_updateAgentSavedData();
 					levelSelected = true;
@@ -432,16 +493,16 @@ namespace TFE_DarkForces
 					s_invalidLevelIndex = JTRUE;
 					for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
 					{
-						if (s_cutsceneData[i].levelIndex >= 0 && s_cutsceneData[i].levelIndex == s_levelIndex)
+						if (s_cutsceneData[i].levelIndex >= 0 && s_cutsceneData[i].levelIndex == s_runGameState.levelIndex)
 						{
-							s_cutsceneIndex = i;
+							s_runGameState.cutsceneIndex = i;
 							s_invalidLevelIndex = JFALSE;
 							break;
 						}
 					}
 
-					s_abortLevel = JFALSE;
-					agent_setNextLevelByIndex(s_levelIndex);
+					s_runGameState.abortLevel = JFALSE;
+					agent_setNextLevelByIndex(s_runGameState.levelIndex);
 					startNextMode();
 				}
 			} break;
@@ -449,10 +510,10 @@ namespace TFE_DarkForces
 			{
 				if (!cutscene_update())
 				{
-					s_cutsceneIndex++;
-					if (s_cutsceneData[s_cutsceneIndex].nextGameMode == GMODE_END)
+					s_runGameState.cutsceneIndex++;
+					if (s_cutsceneData[s_runGameState.cutsceneIndex].nextGameMode == GMODE_END)
 					{
-						s_state = GSTATE_AGENT_MENU;
+						s_runGameState.state = GSTATE_AGENT_MENU;
 						s_invalidLevelIndex = JTRUE;
 					}
 					else
@@ -474,12 +535,12 @@ namespace TFE_DarkForces
 					if (abort)
 					{
 						s_invalidLevelIndex = JTRUE;
-						s_cutsceneIndex--;
+						s_runGameState.cutsceneIndex--;
 					}
 					else
 					{
 						s_agentData[s_agentId].difficulty = skill;
-						s_cutsceneIndex++;
+						s_runGameState.cutsceneIndex++;
 					}
 					startNextMode();
 				}
@@ -508,12 +569,12 @@ namespace TFE_DarkForces
 
 					if (!s_levelComplete)
 					{
-						s_abortLevel = JTRUE;
-						s_cutsceneIndex--;
+						s_runGameState.abortLevel = JTRUE;
+						s_runGameState.cutsceneIndex--;
 					}
 					else
 					{
-						s_cutsceneIndex++;
+						s_runGameState.cutsceneIndex++;
 						handleLevelComplete();
 					}
 					
@@ -553,37 +614,37 @@ namespace TFE_DarkForces
 
 	void startNextMode()
 	{
-		if (s_invalidLevelIndex || s_abortLevel)
+		if (s_invalidLevelIndex || s_runGameState.abortLevel)
 		{
-			s_state = GSTATE_AGENT_MENU;
+			s_runGameState.state = GSTATE_AGENT_MENU;
 			return;
 		}
 
-		GameMode mode = s_cutsceneData[s_cutsceneIndex].nextGameMode;
+		GameMode mode = s_cutsceneData[s_runGameState.cutsceneIndex].nextGameMode;
 		switch (mode)
 		{
 			case GMODE_END:
 			{
-				s_cutsceneIndex = 0;
+				s_runGameState.cutsceneIndex = 0;
 				s_invalidLevelIndex = JTRUE;
 				startNextMode();
 			} break;
 			case GMODE_CUTSCENE:
 			{
-				if (s_cutscenesEnabled && cutscene_play(s_cutsceneData[s_cutsceneIndex].cutscene))
+				if (s_runGameState.cutscenesEnabled && cutscene_play(s_cutsceneData[s_runGameState.cutsceneIndex].cutscene))
 				{
-					s_state = GSTATE_CUTSCENE;
+					s_runGameState.state = GSTATE_CUTSCENE;
 				}
 				else
 				{
-					s_cutsceneIndex++;
+					s_runGameState.cutsceneIndex++;
 					startNextMode();
 				}
 			} break;
 			case GMODE_BRIEFING:
 			{
 				BriefingInfo* brief = nullptr;
-				if (s_cutscenesEnabled)
+				if (s_runGameState.cutscenesEnabled)
 				{
 					const char* levelName = agent_getLevelName();
 					s32 briefingIndex = 0;
@@ -601,13 +662,13 @@ namespace TFE_DarkForces
 					if (brief)
 					{
 						missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
-						s_state = GSTATE_BRIEFING;
+						s_runGameState.state = GSTATE_BRIEFING;
 					}
 				}
 
 				if (!brief)
 				{
-					s_cutsceneIndex++;
+					s_runGameState.cutsceneIndex++;
 					startNextMode();
 				}
 			}  break;
@@ -632,7 +693,7 @@ namespace TFE_DarkForces
 				// The load mission task should begin immediately once the Task System updates,
 				// so launchCurrentTask() is not required here.
 				// In the original, the task system would simply loop here.
-				s_state = GSTATE_MISSION;
+				s_runGameState.state = GSTATE_MISSION;
 			}
 		}
 	}
@@ -709,15 +770,15 @@ namespace TFE_DarkForces
 
 	void enableCutscenes(JBool enable)
 	{
-		s_cutscenesEnabled = enable;
+		s_runGameState.cutscenesEnabled = enable;
 	}
 
 	void setInitialLevel(const char* levelName)
 	{
-		s_startLevel = 0;
+		s_runGameState.startLevel = 0;
 
 		if (!levelName || levelName[0] == 0) { return; }
-		s_startLevel = agent_getLevelIndexFromName(levelName);
+		s_runGameState.startLevel = agent_getLevelIndexFromName(levelName);
 	}
 
 	void loadCustomGob(const char* gobName)
@@ -901,7 +962,7 @@ namespace TFE_DarkForces
 
 	s32 loadLocalMessages()
 	{
-		if (s_localMsgLoaded)
+		if (s_runGameState.localMsgLoaded)
 		{
 			return 1;
 		}
@@ -1026,33 +1087,141 @@ namespace TFE_DarkForces
 		}
 	}
 
-	// TODO:
-	void handleSerialization()
+	void startMissionFromSave(s32 levelIndex)
 	{
-	#if 0  // Debugging/Testing.
+		// We have returned from the mission tasks.
+		renderer_reset();
+		gameMusic_stop();
+		sound_levelStop();
+		agent_levelEndTask();
+		lmusic_reset();	// Fix a Dark Forces bug where music won't play when entering a cutscene again without restarting.
+		pda_cleanup();
+		reticle_enable(true);
+
+		region_clear(s_levelRegion);
+		bitmap_clearLevelData();
+		level_freeAllAssets();
+
+		// Next
+		sound_levelStart();
+
+		bitmap_setAllocator(s_levelRegion);
+		actor_clearState();
+
+		task_reset();
+		inf_clearState();
+		mission_setLoadingFromSave();	// This tells the mission system that this is loading from a save.
+		s_loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
+		mission_setLoadMissionTask(s_loadMissionTask);
+		gameMusic_start(levelIndex);
+		agent_setLevelComplete(JFALSE);
+
+		s_runGameState.state = GSTATE_MISSION;
+		mission_setupTasks();
+	}
+
+	void serializeLoopState(Stream* stream, DarkForces* game)
+	{
+		if (s_gameStarted)
+		{
+			SERIALIZE(SaveVersionInit, s_runGameState.argCount, 0);
+			for (s32 i = 0; i < s_runGameState.argCount; i++)
+			{
+				u32 length = 0;
+				if (serialization_getMode() == SMODE_WRITE)
+				{
+					length = (u32)strlen(s_runGameState.args[i]);
+				}
+				SERIALIZE(SaveVersionInit, length, 0);
+				if (serialization_getMode() == SMODE_READ)
+				{
+					s_runGameState.args[i] = (char*)game_alloc(length + 1);
+				}
+				SERIALIZE_BUF(SaveVersionInit, s_runGameState.args[i], length);
+				s_runGameState.args[i][length] = 0;
+			}
+
+			SERIALIZE(SaveVersionInit, s_runGameState.cutscenesEnabled, JTRUE);
+			SERIALIZE(SaveVersionInit, s_runGameState.localMsgLoaded, JFALSE);
+			SERIALIZE(SaveVersionInit, s_runGameState.startLevel, 0);
+			SERIALIZE(SaveVersionInit, s_runGameState.state, GSTATE_STARTUP_CUTSCENES);
+			SERIALIZE(SaveVersionInit, s_runGameState.levelIndex, 0);
+			SERIALIZE(SaveVersionInit, s_runGameState.cutsceneIndex, 0);
+			SERIALIZE(SaveVersionInit, s_runGameState.abortLevel, 0);
+		}
+		else  // We need to start the game.
+		{
+			game->runGame(0, nullptr, stream);
+		}
+	}
+
+	void serializeVersion(Stream* stream)
+	{
+		SERIALIZE_VERSION(SaveVersionInit);
+	}
+
+	bool DarkForces::serializeGameState(const char* filename, bool writeState)
+	{
+		if (!FileUtil::directoryExits("Saves"))
+		{
+			FileUtil::makeDirectory("Saves");
+		}
+
+		// Build the path.
+		char filePath[TFE_MAX_PATH];
+		sprintf(filePath, "Saves/%s", filename);
+
+		FileStream stream;
+		if (stream.open(filePath, writeState ? FileStream::MODE_WRITE : FileStream::MODE_READ))
+		{
+			time_pause(JTRUE);
+			if (writeState)
+			{
+				serialization_setMode(SMODE_WRITE);
+			}
+			else
+			{
+				serialization_setMode(SMODE_READ);
+			}
+
+			serializeVersion(&stream);
+			serializeLoopState(&stream, this);
+			if (!writeState)
+			{
+				startMissionFromSave(s_runGameState.levelIndex);
+			}
+			time_serialize(&stream);
+			random_serialize(&stream);
+			automap_serialize(&stream);
+			hitEffect_serializeTasks(&stream);
+			weapon_serialize(&stream);
+			mission_serializeColorMap(&stream);
+			level_serialize(&stream);
+			inf_serialize(&stream);
+			pickupLogic_serializeTasks(&stream);
+			mission_serialize(&stream);
+
+			stream.close();
+			time_pause(JFALSE);
+			if (!writeState)
+			{
+				task_updateTime();
+				mission_pause(JFALSE);
+			}
+		}
+
+		return true;
+	}
+
+	void handleQuickSave(DarkForces* game)
+	{
 		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT))
 		{
-			FileStream stream;
-			if (stream.open("levelState.bin", FileStream::MODE_WRITE))
-			{
-				level_serialize(&stream);
-				stream.close();
-			}
-			if (stream.open("infState.bin", FileStream::MODE_WRITE))
-			{
-				inf_serialize(&stream);
-				stream.close();
-			}
+			game->serializeGameState(c_quickSaveName, /*writeState*/true);
 		}
 		else if (TFE_Input::keyPressed(KEY_F6) && TFE_Input::keyModDown(KEYMOD_ALT))
 		{
-			FileStream stream;
-			if (stream.open("infState.bin", FileStream::MODE_READ))
-			{
-				inf_deserialize(&stream);
-				stream.close();
-			}
+			game->serializeGameState(c_quickSaveName, /*writeState*/false);
 		}
-	#endif
 	}
 }

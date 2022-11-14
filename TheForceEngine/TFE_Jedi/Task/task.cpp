@@ -526,6 +526,11 @@ namespace TFE_Jedi
 		return JTRUE;
 	}
 
+	void task_updateTime()
+	{
+		s_prevTime = TFE_System::getTime();
+	}
+
 	// Called once per frame to run all of the tasks.
 	// Returns JFALSE if it cannot be run due to the time interval.
 	JBool task_run()
