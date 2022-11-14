@@ -50,6 +50,7 @@ namespace TFE_Jedi
 			if (serialization_getMode() == SMODE_READ)
 			{
 				memset(elev, 0, sizeof(InfElevator));
+				elev->deleted = JTRUE;
 			}
 			return;
 		}

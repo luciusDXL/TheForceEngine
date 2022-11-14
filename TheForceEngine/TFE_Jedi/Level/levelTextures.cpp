@@ -30,7 +30,7 @@ namespace TFE_Jedi
 		for (s32 i = 0; i < textureCount; i++)
 		{
 			TextureInfo texInfo = {};
-			if (levelTextures[i]->uvWidth != BM_ANIMATED_TEXTURE)
+			if (levelTextures[i] && levelTextures[i]->uvWidth != BM_ANIMATED_TEXTURE)
 			{
 				texInfo.type = TEXINFO_DF_TEXTURE_DATA;
 				texInfo.texData = levelTextures[i];

@@ -2547,8 +2547,6 @@ namespace TFE_DarkForces
 		{
 			playerLogic = &s_playerLogic;
 			logic = (Logic*)playerLogic;
-
-			s_playerTask = createTask("player control", playerControlTaskFunc, JFALSE, playerControlMsgFunc);
 			task_makeActive(s_playerTask);
 
 			playerLogic->logic.task = s_playerTask;
@@ -2661,9 +2659,17 @@ namespace TFE_DarkForces
 			invSavedSize = s32((size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo);
 			assert(invSavedSize == 140);
 		}
+		else if (serialization_getMode() == SMODE_READ)
+		{
+			s_playerInvSaved = nullptr;
+		}
 		SERIALIZE(ObjState_InitVersion, invSavedSize, 0);
 		if (invSavedSize)
 		{
+			if (serialization_getMode() == SMODE_READ)
+			{
+				s_playerInvSaved = (u32*)level_alloc(invSavedSize);
+			}
 			SERIALIZE_BUF(ObjState_InitVersion, s_playerInvSaved, invSavedSize);
 		}
 

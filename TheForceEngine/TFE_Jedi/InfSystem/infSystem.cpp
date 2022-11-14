@@ -566,12 +566,8 @@ namespace TFE_Jedi
 			stops = elev->stops;
 		}
 		s32 index = allocator_getCount(stops);
-		Stop* stop = (Stop*)allocator_newItem(stops);
-		memset(stop, 0, sizeof(Stop));
-
+		Stop* stop = allocateStop(stops);
 		stop->value = value;
-		stop->delay = TICKS(4);	// default delay = 4 seconds.
-		stop->index = index;
 
 		return stop;
 	}

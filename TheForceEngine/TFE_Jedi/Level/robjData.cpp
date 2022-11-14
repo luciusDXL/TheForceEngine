@@ -207,7 +207,7 @@ namespace TFE_Jedi
 				if (!logicCount) { continue; }
 
 				obj->logic = allocator_create(sizeof(Logic**));
-				for (u32 i = 0; i < logicCount; i++)
+				for (u32 l = 0; l < logicCount; l++)
 				{
 					Logic* logic = nullptr;
 					TFE_DarkForces::logic_serialize(logic, stream);

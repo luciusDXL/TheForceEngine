@@ -247,8 +247,8 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					s_runGameState.args[i] = (char*)game_alloc(strlen(argv[i + 1]) + 1);
-					strcpy(s_runGameState.args[i], argv[i + 1]);
+					s_runGameState.args[i] = (char*)game_alloc(strlen(argv[i]) + 1);
+					strcpy(s_runGameState.args[i], argv[i]);
 				}
 			}
 		}
@@ -454,9 +454,8 @@ namespace TFE_DarkForces
 		// TFE: If serialization is requested, it should be done here - otherwise it will happen between the main loop and task update, which may be
 		// problematic.
 		handleQuickSave(this);
-
 		updateTime();
-
+				
 		switch (s_runGameState.state)
 		{
 			case GSTATE_STARTUP_CUTSCENES:
@@ -1215,13 +1214,23 @@ namespace TFE_DarkForces
 
 	void handleQuickSave(DarkForces* game)
 	{
-		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT))
+		// Hacky code to avoid double-loads or double-saves.
+		// TODO: Fix.
+		static s32 lastKey = -1;
+				
+		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT) && lastKey == -1)
 		{
 			game->serializeGameState(c_quickSaveName, /*writeState*/true);
+			lastKey = 0;
 		}
-		else if (TFE_Input::keyPressed(KEY_F6) && TFE_Input::keyModDown(KEYMOD_ALT))
+		else if (TFE_Input::keyPressed(KEY_F6) && TFE_Input::keyModDown(KEYMOD_ALT) && lastKey == -1)
 		{
 			game->serializeGameState(c_quickSaveName, /*writeState*/false);
+			lastKey = 1;
+		}
+		else
+		{
+			lastKey = -1;
 		}
 	}
 }
