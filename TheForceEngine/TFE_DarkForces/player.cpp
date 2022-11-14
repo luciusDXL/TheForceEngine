@@ -1052,10 +1052,11 @@ namespace TFE_DarkForces
 		s_playerSecFire = JFALSE;
 		s_playerPrimaryFire = JFALSE;
 
-		if (inputMapping_getActionState(IADF_JUMP) || inputMapping_getActionState(IADF_MENU_TOGGLE))
+		if (inputMapping_getActionState(IADF_JUMP) || inputMapping_getActionState(IADF_MENU_TOGGLE) || inputMapping_getActionState(IADF_USE))
 		{
 			inputMapping_removeState(IADF_JUMP);
 			inputMapping_removeState(IADF_MENU_TOGGLE);
+			inputMapping_removeState(IADF_USE);
 
 			if (s_lifeCount != 0 && s_curSafe)
 			{
