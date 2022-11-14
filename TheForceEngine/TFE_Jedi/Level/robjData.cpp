@@ -109,8 +109,8 @@ namespace TFE_Jedi
 	SecObject* objData_getObjectBySerializationId(u32 id)
 	{
 		SecObject* obj = (SecObject*)TFE_Memory::chunkedArrayGet(s_objData.objectList, id);
-		assert(obj->serializeIndex == id);
-		return (obj->serializeIndex == id) ? obj : nullptr;
+		// The object may have been deleted later.
+		return (obj && obj->serializeIndex == id) ? obj : nullptr;
 	}
 		
 	void objData_serialize(Stream* stream)

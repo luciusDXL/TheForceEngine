@@ -213,6 +213,8 @@ namespace TFE_Memory
 		u32 chunkId = index / arr->elemPerChunk;
 		u32 elemId = index - chunkId*arr->elemPerChunk;
 		assert(chunkId < arr->chunkCount);
+		// Range checking.
+		if (chunkId >= arr->chunkCount) { return nullptr; }
 		return arr->chunks[chunkId] + elemId*arr->elemSize;
 	}
 
