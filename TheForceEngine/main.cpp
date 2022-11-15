@@ -313,7 +313,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 	case APP_STATE_MENU:
 		break;
 	case APP_STATE_EDITOR:
-		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+		if (validatePath())
 		{
 			//renderer->changeResolution(640, 480, false, TFE_Settings::getGraphicsSettings()->asyncFramebuffer, false);
 			// TFE_GameUi::updateUiResolution();
@@ -325,8 +325,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 		}
 		break;
 	case APP_STATE_LOAD:
-		validatePath();
-		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+		if (validatePath())
 		{
 			newState = APP_STATE_GAME;
 			TFE_FrontEndUI::setAppState(APP_STATE_GAME);
@@ -361,8 +360,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 		}
 		break;
 	case APP_STATE_GAME:
-		validatePath();
-		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
+		if (validatePath())
 		{
 			TFE_Game* gameInfo = TFE_Settings::getGame();
 			if (!s_curGame || gameInfo->id != s_curGame->id)
@@ -481,11 +479,13 @@ void generateScreenshotTime()
 
 bool validatePath()
 {
+	if (!TFE_Paths::hasPath(PATH_SOURCE_DATA)) { return false; }
+
 	char testFile[TFE_MAX_PATH];
 	// if (game->id == Game_Dark_Forces)
 	{
 		sprintf(testFile, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
-		if (TFE_Paths::hasPath(PATH_SOURCE_DATA) && !FileUtil::exists(testFile))
+		if (!FileUtil::exists(testFile))
 		{
 			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s'", TFE_Paths::getPath(PATH_SOURCE_DATA));
 			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
@@ -624,7 +624,7 @@ int main(int argc, char* argv[])
 	#endif
 
 	// Start up the game and skip the title screen.
-	if (s_startupGame >= Game_Dark_Forces)
+	if (s_startupGame >= Game_Dark_Forces && validatePath())
 	{
 		TFE_FrontEndUI::setAppState(APP_STATE_GAME);
 	}
