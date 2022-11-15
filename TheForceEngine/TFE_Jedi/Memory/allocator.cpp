@@ -180,6 +180,7 @@ namespace TFE_Jedi
 	{
 		s32 index = 0;
 		AllocHeader* header = alloc->head;
+		alloc->iter = ALLOC_INVALID_PTR;
 		while (header != ALLOC_INVALID_PTR)
 		{
 			if (index == pos)
@@ -274,6 +275,11 @@ namespace TFE_Jedi
 		if (!alloc) { return; }
 		alloc->iterPrev = alloc->iterPrevSave;
 		alloc->iter = alloc->iterSave;
+	}
+
+	void* allocator_getIter(Allocator* alloc)
+	{
+		return (u8*)alloc->iter + sizeof(AllocHeader);
 	}
 
 	void* allocator_getHead(Allocator* alloc)

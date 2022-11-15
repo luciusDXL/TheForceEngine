@@ -208,6 +208,7 @@ namespace TFE_Jedi
 			if (offset < 0 || offset >= s_levelState.textureCount)
 			{
 				// This is probably a sign texture - so let the INF System handle it.
+				// TODO: This doesn't always work, some signs are wrong and plain constantly animating textures are missing.
 				offset = -1;
 			}
 			index = s32(offset);

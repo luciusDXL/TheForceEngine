@@ -58,6 +58,12 @@ namespace TFE_DarkForces
 	void sound_stop(SoundEffectId sourceId);
 	void sound_stopAll();
 
+	// Let the sound system now where the level sounds start...
+	void sound_setLevelStart();
+
+	// Serialization
+	void sound_serializeLevelSounds(Stream* stream);
+
 	// Load a sound source from disk.
 	SoundSourceId sound_load(const char* sound, u32 priority = SOUND_PRIORITY_MED0);
 	void sound_free(SoundSourceId id);

@@ -1379,6 +1379,7 @@ namespace TFE_Jedi
 	// Sounds
 	void inf_loadSounds()
 	{
+		// Default sounds.
 		s_moveCeilSound0  = sound_load("door2-1.voc", SOUND_PRIORITY_LOW3);
 		s_moveCeilSound1  = sound_load("door2-2.voc", SOUND_PRIORITY_LOW3);
 		s_moveCeilSound2  = sound_load("door2-3.voc", SOUND_PRIORITY_LOW3);
@@ -1388,6 +1389,16 @@ namespace TFE_Jedi
 		s_doorSound       = sound_load("door.voc", SOUND_PRIORITY_LOW3);
 		s_needKeySoundId  = sound_load("locked-1.voc", SOUND_PRIORITY_LOW3);
 		s_switchDefaultSndId = sound_load("switch3.voc", SOUND_PRIORITY_HIGH1);
+		// Precache common sounds
+		sound_load("door1-1.voc", SOUND_PRIORITY_LOW3);
+		sound_load("door1-2.voc", SOUND_PRIORITY_LOW3);
+		sound_load("door1-3.voc", SOUND_PRIORITY_LOW3);
+		sound_load("elev1-1.voc", SOUND_PRIORITY_LOW3);
+		sound_load("elev1-2.voc", SOUND_PRIORITY_LOW3);
+		sound_load("elev1-3.voc", SOUND_PRIORITY_LOW3);
+		sound_load("elev3-1.voc", SOUND_PRIORITY_LOW3);
+		sound_load("elev3-2.voc", SOUND_PRIORITY_LOW3);
+		sound_load("elev3-3.voc", SOUND_PRIORITY_LOW3);
 	}
 
 	void inf_elevatorTaskLocal(MessageType msg)

@@ -322,6 +322,7 @@ namespace TFE_DarkForces
 		}
 
 		s_sharedState.gameStarted = JTRUE;
+		sound_setLevelStart();
 		return true;
 	}
 
@@ -1104,7 +1105,6 @@ namespace TFE_DarkForces
 
 		// Next
 		sound_levelStart();
-
 		bitmap_setAllocator(s_levelRegion);
 		actor_clearState();
 
@@ -1190,6 +1190,7 @@ namespace TFE_DarkForces
 			{
 				startMissionFromSave(s_runGameState.levelIndex);
 			}
+			sound_serializeLevelSounds(&stream);
 			time_serialize(&stream);
 			random_serialize(&stream);
 			automap_serialize(&stream);

@@ -683,6 +683,8 @@ namespace TFE_Jedi
 	void texturepacker_reset()
 	{
 		TexturePacker* texturePacker = s_globalTexturePacker;
+		if (!texturePacker) { return; }
+
 		texturePacker->pageCount = 1;
 		texturePacker->reservedPages = 0;
 		texturePacker->reservedTexturesPacked = 0;

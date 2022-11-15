@@ -11,6 +11,7 @@
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/time.h>
 
 namespace TFE_DarkForces
@@ -46,10 +47,14 @@ namespace TFE_DarkForces
 	static s32 s_instance = 1;
 	s32 s_lastMaintainVolume;
 
+	static s32 s_soundLevelStart = -1;
+
 	SoundEffectId soundInstance(SoundSourceId soundId, s32 instance);
 	GameSound* getSoundPtr(SoundSourceId id);
 	void soundCalculateCue(GameSound* sound, fixed16_16 x, fixed16_16 y, fixed16_16 z, s32* vol, s32* pan);
 	u8* sound_getResource(SoundEffectId id);
+	void sound_alwaysFree(GameSound* sound);
+	void sound_clearLevelSounds();
 
 	// Called at game startup and shutdown.
 	void sound_open(MemoryRegion* memRegion)
@@ -72,6 +77,7 @@ namespace TFE_DarkForces
 		s_gameSoundList = nullptr;
 		s_instance = 0;
 		ImTerminate();
+		s_soundLevelStart = -1;
 	}
 
 	// Called at level startup and shutdown.
@@ -83,6 +89,9 @@ namespace TFE_DarkForces
 
 		ImSetResourceCallback(sound_getResource);
 		s_instance = 1;
+
+		// Unload any existing level sounds.
+		sound_clearLevelSounds();
 	}
 
 	void sound_levelStop()
@@ -107,6 +116,60 @@ namespace TFE_DarkForces
 			return soundInstance((SoundSourceId)sound, 0);
 		}
 		return NULL_SOUND;
+	}
+		
+	void sound_setLevelStart()
+	{
+		s_soundLevelStart = allocator_getCount(s_gameSoundList);
+	}
+
+	void sound_serializeLevelSounds(Stream* stream)
+	{
+		s32 count;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			count = max(0, allocator_getCount(s_gameSoundList) - s_soundLevelStart);
+		}
+		SERIALIZE(SaveVersionInit, count, 0);
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			allocator_saveIter(s_gameSoundList);
+			allocator_setPos(s_gameSoundList, s_soundLevelStart);
+			GameSound* sound = (GameSound*)allocator_getIter(s_gameSoundList);
+			while (sound)
+			{
+				u8 length = (u8)strlen(sound->name);
+				SERIALIZE(SaveVersionInit, length, 0);
+				SERIALIZE_BUF(SaveVersionInit, sound->name, length);
+				sound = (GameSound*)allocator_getNext(s_gameSoundList);
+			}
+			allocator_restoreIter(s_gameSoundList);
+		}
+		else
+		{
+			sound_clearLevelSounds();
+			for (s32 i = 0; i < count; i++)
+			{
+				u8 length;
+				char name[32];
+				SERIALIZE(SaveVersionInit, length, 0);
+				SERIALIZE_BUF(SaveVersionInit, name, length);
+				name[length] = 0;
+				sound_load(name);
+			}
+		}
+	}
+
+	void sound_clearLevelSounds()
+	{
+		if (s_soundLevelStart < 0) { return; }
+		allocator_setPos(s_gameSoundList, s_soundLevelStart);
+		GameSound* sound = (GameSound*)allocator_getIter(s_gameSoundList);
+		while (sound)
+		{
+			sound_alwaysFree(sound);
+			sound = (GameSound*)allocator_getNext(s_gameSoundList);
+		}
 	}
 
 	SoundSourceId sound_load(const char* fileName, u32 priority)
@@ -158,6 +221,19 @@ namespace TFE_DarkForces
 				sound->data = nullptr;
 				allocator_deleteItem(s_gameSoundList, sound);
 			}
+		}
+	}
+
+	void sound_alwaysFree(GameSound* sound)
+	{
+		if (sound)
+		{
+			if (sound->data)
+			{
+				game_free(sound->data);
+			}
+			sound->data = nullptr;
+			allocator_deleteItem(s_gameSoundList, sound);
 		}
 	}
 

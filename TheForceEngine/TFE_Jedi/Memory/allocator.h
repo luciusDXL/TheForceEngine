@@ -28,6 +28,7 @@ namespace TFE_Jedi
 	void  allocator_setPrevPos(Allocator* alloc, s32 pos);
 
 	// Iteration
+	void* allocator_getIter(Allocator* alloc);
 	void* allocator_getHead(Allocator* alloc);
 	void* allocator_getTail(Allocator* alloc);
 	void* allocator_getHead_noIterUpdate(Allocator* alloc);
