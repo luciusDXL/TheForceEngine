@@ -30,6 +30,12 @@ namespace TFE_DarkForces
 		s32 mark;
 		char name[13];
 	};
+	struct SoundState
+	{
+		Allocator* gameSoundList = nullptr;
+		s32 instance = 0;
+		s32 soundLevelStart = -1;
+	};
 
 	#define MAX_LEVEL_SOUNDS 300
 	#define CUE_RING1 FIXED(30)
@@ -41,13 +47,10 @@ namespace TFE_DarkForces
 	static const s64 c_soundIdMask = 0xffffffffffffll;	// (1 << 48) - 1
 	static const s64 c_soundInstanceShift = 48ll;
 	static const s32 c_soundInstanceMask = 0x7fff;
-
-	static s32 s_tPan[32] = { 00,-06,-12,-18,-24,-30,-36,-42,-48,-42,-36,-30,-24,-18,-12,-06,00,06,12,18,24,30,36,42,48,42,36,30,24,18,12,06 };
-	static Allocator* s_gameSoundList = nullptr;
-	static s32 s_instance = 1;
+	static const s32 s_tPan[32] = { 00,-06,-12,-18,-24,-30,-36,-42,-48,-42,-36,-30,-24,-18,-12,-06,00,06,12,18,24,30,36,42,48,42,36,30,24,18,12,06 };
+	
+	static SoundState s_state = {};
 	s32 s_lastMaintainVolume;
-
-	static s32 s_soundLevelStart = -1;
 
 	SoundEffectId soundInstance(SoundSourceId soundId, s32 instance);
 	GameSound* getSoundPtr(SoundSourceId id);
@@ -59,8 +62,8 @@ namespace TFE_DarkForces
 	// Called at game startup and shutdown.
 	void sound_open(MemoryRegion* memRegion)
 	{
-		s_gameSoundList = allocator_create(sizeof(GameSound), s_gameRegion);
-		s_instance = 0;
+		s_state = {};
+		s_state.gameSoundList = allocator_create(sizeof(GameSound), s_gameRegion);
 		ImInitialize(memRegion);
 		
 		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
@@ -73,11 +76,9 @@ namespace TFE_DarkForces
 	void sound_close()
 	{
 		sound_levelStop();
-		allocator_free(s_gameSoundList);
-		s_gameSoundList = nullptr;
-		s_instance = 0;
+		allocator_free(s_state.gameSoundList);
 		ImTerminate();
-		s_soundLevelStart = -1;
+		s_state = {};
 	}
 
 	// Called at level startup and shutdown.
@@ -88,7 +89,7 @@ namespace TFE_DarkForces
 		TFE_MidiPlayer::setVolume(soundSettings->musicVolume);
 
 		ImSetResourceCallback(sound_getResource);
-		s_instance = 1;
+		s_state.instance = 1;
 
 		// Unload any existing level sounds.
 		sound_clearLevelSounds();
@@ -104,12 +105,12 @@ namespace TFE_DarkForces
 	{
 		if (!id) { return -1; }
 		GameSound* sound = getSoundPtr(id);
-		return allocator_getIndex(s_gameSoundList, sound);
+		return allocator_getIndex(s_state.gameSoundList, sound);
 	}
 
 	SoundSourceId sound_getSoundFromIndex(s32 index, bool refCount)
 	{
-		GameSound* sound = (GameSound*)allocator_getByIndex(s_gameSoundList, index);
+		GameSound* sound = (GameSound*)allocator_getByIndex(s_state.gameSoundList, index);
 		if (sound)
 		{
 			if (refCount) { sound->refCount++; }
@@ -120,7 +121,7 @@ namespace TFE_DarkForces
 		
 	void sound_setLevelStart()
 	{
-		s_soundLevelStart = allocator_getCount(s_gameSoundList);
+		s_state.soundLevelStart = allocator_getCount(s_state.gameSoundList);
 	}
 
 	void sound_serializeLevelSounds(Stream* stream)
@@ -128,22 +129,22 @@ namespace TFE_DarkForces
 		s32 count;
 		if (serialization_getMode() == SMODE_WRITE)
 		{
-			count = max(0, allocator_getCount(s_gameSoundList) - s_soundLevelStart);
+			count = max(0, allocator_getCount(s_state.gameSoundList) - s_state.soundLevelStart);
 		}
 		SERIALIZE(SaveVersionInit, count, 0);
 		if (serialization_getMode() == SMODE_WRITE)
 		{
-			allocator_saveIter(s_gameSoundList);
-			allocator_setPos(s_gameSoundList, s_soundLevelStart);
-			GameSound* sound = (GameSound*)allocator_getIter(s_gameSoundList);
+			allocator_saveIter(s_state.gameSoundList);
+			allocator_setPos(s_state.gameSoundList, s_state.soundLevelStart);
+			GameSound* sound = (GameSound*)allocator_getIter(s_state.gameSoundList);
 			while (sound)
 			{
 				u8 length = (u8)strlen(sound->name);
 				SERIALIZE(SaveVersionInit, length, 0);
 				SERIALIZE_BUF(SaveVersionInit, sound->name, length);
-				sound = (GameSound*)allocator_getNext(s_gameSoundList);
+				sound = (GameSound*)allocator_getNext(s_state.gameSoundList);
 			}
-			allocator_restoreIter(s_gameSoundList);
+			allocator_restoreIter(s_state.gameSoundList);
 		}
 		else
 		{
@@ -162,20 +163,20 @@ namespace TFE_DarkForces
 
 	void sound_clearLevelSounds()
 	{
-		if (s_soundLevelStart < 0) { return; }
-		allocator_setPos(s_gameSoundList, s_soundLevelStart);
-		GameSound* sound = (GameSound*)allocator_getIter(s_gameSoundList);
+		if (s_state.soundLevelStart < 0) { return; }
+		allocator_setPos(s_state.gameSoundList, s_state.soundLevelStart);
+		GameSound* sound = (GameSound*)allocator_getIter(s_state.gameSoundList);
 		while (sound)
 		{
 			sound_alwaysFree(sound);
-			sound = (GameSound*)allocator_getNext(s_gameSoundList);
+			sound = (GameSound*)allocator_getNext(s_state.gameSoundList);
 		}
 	}
 
 	SoundSourceId sound_load(const char* fileName, u32 priority)
 	{
-		SoundSourceId newId = 0;
-		GameSound* sound = (GameSound*)allocator_getHead(s_gameSoundList);
+		SoundSourceId newId = NULL_SOUND;
+		GameSound* sound = (GameSound*)allocator_getHead(s_state.gameSoundList);
 		while (sound)
 		{
 			if (!strcasecmp(fileName, sound->name))
@@ -183,14 +184,14 @@ namespace TFE_DarkForces
 				sound->refCount++;
 				return soundInstance((SoundSourceId)sound, 0);
 			}
-			sound = (GameSound*)allocator_getNext(s_gameSoundList);
+			sound = (GameSound*)allocator_getNext(s_state.gameSoundList);
 		}
 
 		u32 size = 0;
 		u8* data = readVocFileData(fileName, &size);
 		if (data)
 		{
-			sound = (GameSound*)allocator_newItem(s_gameSoundList);
+			sound = (GameSound*)allocator_newItem(s_state.gameSoundList);
 			sound->id = (SoundSourceId)sound;
 			sound->time = s_curTick;
 			sound->data = data;
@@ -219,7 +220,7 @@ namespace TFE_DarkForces
 					game_free(sound->data);
 				}
 				sound->data = nullptr;
-				allocator_deleteItem(s_gameSoundList, sound);
+				allocator_deleteItem(s_state.gameSoundList, sound);
 			}
 		}
 	}
@@ -233,7 +234,7 @@ namespace TFE_DarkForces
 				game_free(sound->data);
 			}
 			sound->data = nullptr;
-			allocator_deleteItem(s_gameSoundList, sound);
+			allocator_deleteItem(s_state.gameSoundList, sound);
 		}
 	}
 
@@ -272,7 +273,7 @@ namespace TFE_DarkForces
 		if (!id) { return 0; }
 
 		GameSound* sound = getSoundPtr(id);
-		SoundEffectId idInstance = soundInstance(sound->id, s_instance++);
+		SoundEffectId idInstance = soundInstance(sound->id, s_state.instance++);
 
 		if (!sound->data)
 		{
@@ -408,15 +409,16 @@ namespace TFE_DarkForces
 		
 	SoundEffectId soundInstance(SoundSourceId soundId, s32 instance)
 	{
-		SoundEffectId id = soundId - (SoundEffectId)s_gameSoundList;
-		assert(id <= c_soundIdMask);
+		SoundEffectId id = soundId;
+		assert(id >= 0 && id <= c_soundIdMask);
 		id |= s64(instance & c_soundInstanceMask) << c_soundInstanceShift;
 		return id;
 	}
 
 	GameSound* getSoundPtr(SoundSourceId id)
 	{
-		return (GameSound*)((u8*)s_gameSoundList + (id & c_soundIdMask));
+		assert((id & c_soundIdMask) >= 0);
+		return (GameSound*)((u8*)(id & c_soundIdMask));
 	}
 
 	u8* sound_getResource(SoundEffectId id)

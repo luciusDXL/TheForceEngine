@@ -20,6 +20,12 @@ namespace TFE_Jedi
 	static u8 s_transColor = 0;
 	static bool s_gpuEnabled = false;
 
+	void screen_clear()
+	{
+		s_transColor = 0;
+		s_gpuEnabled = false;
+	}
+
 	void screen_enableGPU(bool enable)
 	{
 		s_gpuEnabled = enable;

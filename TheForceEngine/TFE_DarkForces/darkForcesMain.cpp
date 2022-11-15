@@ -192,8 +192,6 @@ namespace TFE_DarkForces
 		s32   cutsceneIndex    = 0;
 		JBool abortLevel       = JFALSE;
 	};
-	static RunGameState s_runGameState;
-
 	struct SharedGameState
 	{
 		GameMessages localMessages = {};
@@ -208,7 +206,8 @@ namespace TFE_DarkForces
 		Task* loadMissionTask = nullptr;
 		CutsceneState* cutsceneList = nullptr;
 	};
-	static SharedGameState s_sharedState;
+	static RunGameState   s_runGameState = {};
+	static SharedGameState s_sharedState = {};
 				
 	/////////////////////////////////////////////
 	// Forward Declarations
@@ -237,10 +236,6 @@ namespace TFE_DarkForces
 	// This part loads and sets up the game.
 	bool DarkForces::runGame(s32 argCount, const char* argv[], Stream* stream)
 	{
-		// Reset state on startup.
-		s_sharedState = {};
-		s_runGameState = {};
-
 		if (!stream)
 		{
 			// Normal start.
@@ -350,7 +345,6 @@ namespace TFE_DarkForces
 		actor_exitState();
 		weapon_resetState();
 		renderer_resetState();
-		sound_close();
 		agentMenu_resetState();
 		menu_resetState();
 		pda_resetState();
@@ -363,6 +357,10 @@ namespace TFE_DarkForces
 		TFE_Model_Jedi::freeAll();
 		reticle_enable(false);
 		texturepacker_reset();
+
+		// Reset state.
+		s_sharedState = {};
+		s_runGameState = {};
 	}
 
 	void DarkForces::pauseGame(bool pause)

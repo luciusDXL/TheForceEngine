@@ -284,6 +284,7 @@ namespace TFE_DarkForces
 		s_kyleScreamSoundSource          = sound_load("fall.voc",     SOUND_PRIORITY_MED4);
 		s_playerShieldHitSoundSource     = sound_load("shield1.voc",  SOUND_PRIORITY_MED5);
 
+		s_playerInfo = { 0 }; // Make sure this is clear...
 		s_playerInfo.ammoEnergy  = pickup_addToValue(0, 100, 999);
 		s_playerInfo.ammoPower   = pickup_addToValue(0, 100, 999);
 		s_playerInfo.ammoPlasma  = pickup_addToValue(0, 100, 999);

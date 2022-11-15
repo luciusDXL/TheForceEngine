@@ -49,6 +49,7 @@ namespace TFE_Jedi
 		RClassic_Float::resetState();
 		RClassic_GPU::resetState();
 		s_hudTextureCallbacks.clear();
+		screen_clear();
 
 		for (s32 i = 0; i < TSR_COUNT; i++)
 		{
