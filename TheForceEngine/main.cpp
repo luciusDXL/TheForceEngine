@@ -520,6 +520,18 @@ int main(int argc, char* argv[])
 	TFE_Paths::setPath(PATH_SOURCE_DATA, gameHeader->sourcePath);
 	TFE_Paths::setPath(PATH_EMULATOR, gameHeader->emulatorPath);
 
+	// Validate the current game path.
+	char testFile[TFE_MAX_PATH];
+	// if (game->id == Game_Dark_Forces)
+	{
+		sprintf(testFile, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
+		if (TFE_Paths::hasPath(PATH_SOURCE_DATA) && !FileUtil::exists(testFile))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s'", TFE_Paths::getPath(PATH_SOURCE_DATA));
+			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
+		}
+	}
+
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM));
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM_DATA));
 	TFE_System::logWrite(LOG_MSG, "Paths", "User Documents: \"%s\"", TFE_Paths::getPath(PATH_USER_DOCUMENTS));
