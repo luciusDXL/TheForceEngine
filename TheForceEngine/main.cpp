@@ -67,6 +67,7 @@ static s32  s_startupGame = -1;
 static IGame* s_curGame = nullptr;
 
 void parseOption(const char* name, const std::vector<const char*>& values, bool longName);
+bool validatePath();
 
 void handleEvent(SDL_Event& Event)
 {
@@ -324,6 +325,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 		}
 		break;
 	case APP_STATE_LOAD:
+		validatePath();
 		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 		{
 			newState = APP_STATE_GAME;
@@ -359,6 +361,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 		}
 		break;
 	case APP_STATE_GAME:
+		validatePath();
 		if (TFE_Paths::hasPath(PATH_SOURCE_DATA))
 		{
 			TFE_Game* gameInfo = TFE_Settings::getGame();
@@ -476,6 +479,21 @@ void generateScreenshotTime()
 	}
 }
 
+bool validatePath()
+{
+	char testFile[TFE_MAX_PATH];
+	// if (game->id == Game_Dark_Forces)
+	{
+		sprintf(testFile, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
+		if (TFE_Paths::hasPath(PATH_SOURCE_DATA) && !FileUtil::exists(testFile))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s'", TFE_Paths::getPath(PATH_SOURCE_DATA));
+			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
+		}
+	}
+	return TFE_Paths::hasPath(PATH_SOURCE_DATA);
+}
+
 int main(int argc, char* argv[])
 {
 	#if INSTALL_CRASH_HANDLER
@@ -521,16 +539,7 @@ int main(int argc, char* argv[])
 	TFE_Paths::setPath(PATH_EMULATOR, gameHeader->emulatorPath);
 
 	// Validate the current game path.
-	char testFile[TFE_MAX_PATH];
-	// if (game->id == Game_Dark_Forces)
-	{
-		sprintf(testFile, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
-		if (TFE_Paths::hasPath(PATH_SOURCE_DATA) && !FileUtil::exists(testFile))
-		{
-			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s'", TFE_Paths::getPath(PATH_SOURCE_DATA));
-			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
-		}
-	}
+	validatePath();
 
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Path: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM));
 	TFE_System::logWrite(LOG_MSG, "Paths", "Program Data: \"%s\"",   TFE_Paths::getPath(PATH_PROGRAM_DATA));
