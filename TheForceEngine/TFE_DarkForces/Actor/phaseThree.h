@@ -10,5 +10,6 @@
 namespace TFE_DarkForces
 {
 	void phaseThree_exit();
+	void phaseThree_precache();
 	Logic* phaseThree_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

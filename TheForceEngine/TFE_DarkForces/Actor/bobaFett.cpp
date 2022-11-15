@@ -71,6 +71,15 @@ namespace TFE_DarkForces
 		s_shared = {};
 	}
 
+	void bobaFett_precache()
+	{
+		s_shared.boba1SndID = sound_load("boba-1.voc", SOUND_PRIORITY_MED5);
+		s_shared.boba3SndID = sound_load("boba-3.voc", SOUND_PRIORITY_LOW0);
+		s_shared.boba2SndID = sound_load("boba-2.voc", SOUND_PRIORITY_LOW0);
+		s_shared.boba4SndID = sound_load("boba-4.voc", SOUND_PRIORITY_MED5);
+		s_shared.bobaRocket2SndID = sound_load("rocket-2.voc", SOUND_PRIORITY_LOW5);
+	}
+
 	void bobaFett_handleDamage(MessageType msg)
 	{
 		struct LocalContext
@@ -785,30 +794,9 @@ namespace TFE_DarkForces
 		level_free(bobaFett);
 		task_free(physicsActor->actorTask);
 	}
-
+		
 	Logic* bobaFett_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_shared.boba1SndID)
-		{
-			s_shared.boba1SndID = sound_load("boba-1.voc", SOUND_PRIORITY_MED5);
-		}
-		if (!s_shared.boba3SndID)
-		{
-			s_shared.boba3SndID = sound_load("boba-3.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.boba2SndID)
-		{
-			s_shared.boba2SndID = sound_load("boba-2.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.boba4SndID)
-		{
-			s_shared.boba4SndID = sound_load("boba-4.voc", SOUND_PRIORITY_MED5);
-		}
-		if (!s_shared.bobaRocket2SndID)
-		{
-			s_shared.bobaRocket2SndID = sound_load("rocket-2.voc", SOUND_PRIORITY_LOW5);
-		}
-
 		BobaFett* bobaFett = (BobaFett*)level_alloc(sizeof(BobaFett));
 		memset(bobaFett, 0, sizeof(BobaFett));
 

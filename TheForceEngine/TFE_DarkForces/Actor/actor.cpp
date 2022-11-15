@@ -142,6 +142,16 @@ namespace TFE_DarkForces
 		s_agentSndSrc[AGENTSND_TINY_EXPLOSION]  = sound_load("ex-tiny1.voc", SOUND_PRIORITY_MED5);
 
 		sound_setBaseVolume(s_agentSndSrc[AGENTSND_REMOTE_2], 40);
+
+		// Pre-cache all sounds, to make sure sound order is consistent.
+		bobaFett_precache();
+		kellDragon_precache();
+		mousebot_precache();
+		phaseOne_precache();
+		phaseTwo_precache();
+		phaseThree_precache();
+		turret_precache();
+		welder_precache();
 	}
 
 	void actor_allocatePhysicsActorList()

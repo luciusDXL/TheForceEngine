@@ -49,6 +49,15 @@ namespace TFE_DarkForces
 		s_shared = {};
 	}
 
+	void phaseOne_precache()
+	{
+		s_shared.phase1aSndID = sound_load("phase1a.voc", SOUND_PRIORITY_MED5);
+		s_shared.phase1bSndID = sound_load("phase1b.voc", SOUND_PRIORITY_LOW0);
+		s_shared.phase1SwordSndID = sound_load("sword-1.voc", SOUND_PRIORITY_LOW0);
+		s_shared.phase1ReflectSndID = sound_load("bigrefl1.voc", SOUND_PRIORITY_LOW0);
+		s_shared.phase1cSndID = sound_load("phase1c.voc", SOUND_PRIORITY_MED5);
+	}
+
 	JBool phaseOne_canSeePlayer(PhaseOne* trooper)
 	{
 		if (actor_canSeeObject(trooper->logic.obj, s_playerObject))
@@ -837,28 +846,6 @@ namespace TFE_DarkForces
 
 	Logic* phaseOne_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_shared.phase1aSndID)
-		{
-			s_shared.phase1aSndID = sound_load("phase1a.voc", SOUND_PRIORITY_MED5);
-		}
-		if (!s_shared.phase1bSndID)
-		{
-			s_shared.phase1bSndID = sound_load("phase1b.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.phase1SwordSndID)
-		{
-			s_shared.phase1SwordSndID = sound_load("sword-1.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.phase1ReflectSndID)
-		{
-			s_shared.phase1ReflectSndID = sound_load("bigrefl1.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.phase1cSndID)
-		{
-			s_shared.phase1cSndID = sound_load("phase1c.voc", SOUND_PRIORITY_MED5);
-		}
-		// setSoundEffectVolume(s_phase1cSndID, 100);
-
 		PhaseOne* trooper = (PhaseOne*)level_alloc(sizeof(PhaseOne));
 		memset(trooper, 0, sizeof(PhaseOne));
 

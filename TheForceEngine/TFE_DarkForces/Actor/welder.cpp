@@ -60,6 +60,15 @@ namespace TFE_DarkForces
 		s_shared = {};
 	}
 
+	void welder_precache()
+	{
+		s_shared.weld2SoundSrcId = sound_load("weld-2.voc", SOUND_PRIORITY_MED5);
+		s_shared.weld1SoundSrcId = sound_load("weld-1.voc", SOUND_PRIORITY_MED5);
+		s_shared.weldSparkSoundSrcId = sound_load("weldsht1.voc", SOUND_PRIORITY_LOW0);
+		s_shared.weldHurtSoundSrcId = sound_load("weldhrt.voc", SOUND_PRIORITY_LOW0);
+		s_shared.weldDieSoundSrcId = sound_load("weld-die.voc", SOUND_PRIORITY_MED5);
+	}
+
 	MessageType welder_handleDamage(MessageType msg, Welder* welder)
 	{
 		PhysicsActor* physicsActor = &welder->actor;
@@ -419,27 +428,7 @@ namespace TFE_DarkForces
 		{
 			s_welderSpark = TFE_Sprite_Jedi::getWax("spark.wax");
 		}
-		if (!s_shared.weld2SoundSrcId)
-		{
-			s_shared.weld2SoundSrcId = sound_load("weld-2.voc", SOUND_PRIORITY_MED5);
-		}
-		if (!s_shared.weld1SoundSrcId)
-		{
-			s_shared.weld1SoundSrcId = sound_load("weld-1.voc", SOUND_PRIORITY_MED5);
-		}
-		if (!s_shared.weldSparkSoundSrcId)
-		{
-			s_shared.weldSparkSoundSrcId = sound_load("weldsht1.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.weldHurtSoundSrcId)
-		{
-			s_shared.weldHurtSoundSrcId = sound_load("weldhrt.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.weldDieSoundSrcId)
-		{
-			s_shared.weldDieSoundSrcId = sound_load("weld-die.voc", SOUND_PRIORITY_MED5);
-		}
-
+		
 		Welder* welder = (Welder*)level_alloc(sizeof(Welder));
 		memset(welder, 0, sizeof(Welder));
 

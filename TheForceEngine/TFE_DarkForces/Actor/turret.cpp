@@ -73,6 +73,11 @@ namespace TFE_DarkForces
 		s_turretRes = {};
 	}
 
+	void turret_precache()
+	{
+		s_turretRes.sound1 = sound_load("TURRET-1.VOC", SOUND_PRIORITY_MED2);
+	}
+
 	MessageType turret_handleDamage(MessageType msg, Turret* turret)
 	{
 		PhysicsActor* physicsActor = &turret->actor;
@@ -467,11 +472,6 @@ namespace TFE_DarkForces
 
 	Logic* turret_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_turretRes.sound1)
-		{
-			s_turretRes.sound1 = sound_load("TURRET-1.VOC", SOUND_PRIORITY_MED2);
-		}
-
 		Turret* turret = (Turret*)level_alloc(sizeof(Turret));
 		memset(turret, 0, sizeof(Turret));
 

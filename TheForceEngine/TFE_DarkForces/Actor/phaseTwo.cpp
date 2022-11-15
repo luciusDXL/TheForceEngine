@@ -59,6 +59,14 @@ namespace TFE_DarkForces
 		s_shared = {};
 	}
 
+	void phaseTwo_precache()
+	{
+		s_shared.phase2aSndID = sound_load("phase2a.voc", SOUND_PRIORITY_MED5);
+		s_shared.phase2bSndID = sound_load("phase2b.voc", SOUND_PRIORITY_LOW0);
+		s_shared.phase2RocketSndID = sound_load("rocket-1.voc", SOUND_PRIORITY_HIGH0);
+		s_shared.phase2cSndID = sound_load("phase2c.voc", SOUND_PRIORITY_HIGH1);
+	}
+
 	JBool phaseTwo_updatePlayerPos(PhaseTwo* trooper)
 	{
 		if (actor_canSeeObject(trooper->logic.obj, s_playerObject))
@@ -987,24 +995,6 @@ namespace TFE_DarkForces
 
 	Logic* phaseTwo_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_shared.phase2aSndID)
-		{
-			s_shared.phase2aSndID = sound_load("phase2a.voc", SOUND_PRIORITY_MED5);
-		}
-		if (!s_shared.phase2bSndID)
-		{
-			s_shared.phase2bSndID = sound_load("phase2b.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.phase2RocketSndID)
-		{
-			s_shared.phase2RocketSndID = sound_load("rocket-1.voc", SOUND_PRIORITY_HIGH0);
-		}
-		if (!s_shared.phase2cSndID)
-		{
-			s_shared.phase2cSndID = sound_load("phase2c.voc", SOUND_PRIORITY_HIGH1);
-		}
-		// setSoundEffectVolume(s_phase2cSndID, 100);
-
 		PhaseTwo* trooper = (PhaseTwo*)level_alloc(sizeof(PhaseTwo));
 		memset(trooper, 0, sizeof(PhaseTwo));
 

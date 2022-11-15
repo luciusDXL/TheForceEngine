@@ -10,5 +10,6 @@
 namespace TFE_DarkForces
 {
 	void bobaFett_exit();
+	void bobaFett_precache();
 	Logic* bobaFett_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

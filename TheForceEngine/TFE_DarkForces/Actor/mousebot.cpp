@@ -353,23 +353,18 @@ namespace TFE_DarkForces
 		s_mouseBotRes = {};
 	}
 
+	void mousebot_precache()
+	{
+		s_mouseBotRes.sound0 = sound_load("eeek-1.voc", SOUND_PRIORITY_MED5);
+		s_mouseBotRes.sound1 = sound_load("eeek-2.voc", SOUND_PRIORITY_LOW0);
+		s_mouseBotRes.sound2 = sound_load("eeek-3.voc", SOUND_PRIORITY_MED5);
+	}
+
 	Logic* mousebot_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		if (!s_mouseBotRes.deadFrame)
 		{
 			s_mouseBotRes.deadFrame = TFE_Sprite_Jedi::getFrame("dedmouse.fme");
-		}
-		if (!s_mouseBotRes.sound0)
-		{
-			s_mouseBotRes.sound0 = sound_load("eeek-1.voc", SOUND_PRIORITY_MED5);
-		}
-		if (!s_mouseBotRes.sound1)
-		{
-			s_mouseBotRes.sound1 = sound_load("eeek-2.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_mouseBotRes.sound2)
-		{
-			s_mouseBotRes.sound2 = sound_load("eeek-3.voc", SOUND_PRIORITY_MED5);
 		}
 
 		MouseBot* mouseBot = (MouseBot*)level_alloc(sizeof(MouseBot));

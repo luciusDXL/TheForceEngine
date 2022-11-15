@@ -10,5 +10,6 @@
 namespace TFE_DarkForces
 {
 	void kellDragon_exit();
+	void kellDragon_precache();
 	Logic* kellDragon_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

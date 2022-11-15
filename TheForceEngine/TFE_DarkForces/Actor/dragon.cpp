@@ -69,6 +69,15 @@ namespace TFE_DarkForces
 		s_shared = {};
 	}
 
+	void kellDragon_precache()
+	{
+		s_shared.kellSound0 = sound_load("kell-1.voc", SOUND_PRIORITY_MED5);
+		s_shared.kellSound2 = sound_load("kell-8.voc", SOUND_PRIORITY_LOW0);
+		s_shared.kellSound4 = sound_load("kell-5.voc", SOUND_PRIORITY_LOW0);
+		s_shared.kellSound1 = sound_load("kelljump.voc", SOUND_PRIORITY_LOW0);
+		s_shared.kellSound3 = sound_load("kell-7.voc", SOUND_PRIORITY_MED5);
+	}
+
 	void kellDragon_handleDamage(MessageType msg)
 	{
 		struct LocalContext
@@ -993,27 +1002,6 @@ namespace TFE_DarkForces
 
 	Logic* kellDragon_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_shared.kellSound0)
-		{
-			s_shared.kellSound0 = sound_load("kell-1.voc", SOUND_PRIORITY_MED5);
-		}
-		if (!s_shared.kellSound2)
-		{
-			s_shared.kellSound2 = sound_load("kell-8.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.kellSound4)
-		{
-			s_shared.kellSound4 = sound_load("kell-5.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.kellSound1)
-		{
-			s_shared.kellSound1 = sound_load("kelljump.voc", SOUND_PRIORITY_LOW0);
-		}
-		if (!s_shared.kellSound3)
-		{
-			s_shared.kellSound3 = sound_load("kell-7.voc", SOUND_PRIORITY_MED5);
-		}
-
 		KellDragon* dragon = (KellDragon*)level_alloc(sizeof(KellDragon));
 		memset(dragon, 0, sizeof(KellDragon));
 
