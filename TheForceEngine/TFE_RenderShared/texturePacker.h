@@ -58,6 +58,9 @@ namespace TFE_Jedi
 	// Commit the final packing to GPU memory.
 	void texturepacker_commit();
 
+	// Reset the texture packer for new games.
+	void texturepacker_reset();
+
 	// Reserved Pages
 	void texturepacker_reserveCommitedPages(TexturePacker* texturePacker);
 	bool texturepacker_hasReservedPages(TexturePacker* texturePacker);

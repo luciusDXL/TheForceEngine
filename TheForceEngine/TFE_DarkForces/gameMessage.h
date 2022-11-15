@@ -16,8 +16,8 @@ namespace TFE_DarkForces
 	};
 	struct GameMessages
 	{
-		s32 count;
-		GameMessage* msgList;
+		s32 count = 0;
+		GameMessage* msgList = nullptr;
 	};
 
 	void gameMessage_freeBuffer();

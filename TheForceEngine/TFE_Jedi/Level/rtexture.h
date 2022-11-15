@@ -83,6 +83,7 @@ namespace TFE_Jedi
 	void bitmap_setAllocator(MemoryRegion* allocator);
 	MemoryRegion* bitmap_getAllocator();
 	void bitmap_clearLevelData();
+	void bitmap_clearAll();
 
 	// levelTexture bool was added for TFE to make serializing texture state easier.
 	// if levelTexture is false, then textures are not serialized and not cleared at level end.

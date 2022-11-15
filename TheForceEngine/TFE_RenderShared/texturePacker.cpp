@@ -39,7 +39,7 @@ namespace TFE_Jedi
 
 	struct TextureNode
 	{
-		TextureNode*  child[2] = { 0 };	// Binary tree.
+		TextureNode* child[2] = { 0 };	// Binary tree.
 		Vec4ui rect = { 0 };
 		void* tex = nullptr;
 		s32 pageId = 0;
@@ -60,6 +60,7 @@ namespace TFE_Jedi
 	static std::vector<TextureInfo> s_texInfoPool;
 	static std::vector<TextureInfo*> s_unpackedTextures[2];
 	static ChunkedArray* s_nodePool = nullptr;
+	static MemoryRegion* s_texturePackerRegion = nullptr;
 
 	static s32 s_usedTexels = 0;
 	static s32 s_totalTexels = 0;
@@ -89,7 +90,7 @@ namespace TFE_Jedi
 		page->textureCount = 0;
 		return page;
 	}
-
+				
 	// Initialize the texture packer once, it is persistent across levels.
 	TexturePacker* texturepacker_init(const char* name, s32 width, s32 height)
 	{
@@ -98,7 +99,8 @@ namespace TFE_Jedi
 
 		if (!s_nodePool)
 		{
-			s_nodePool = TFE_Memory::createChunkedArray(sizeof(TextureNode), 256, 1, s_gameRegion);
+			s_texturePackerRegion = TFE_Memory::region_create("game", 8 * 1024 * 1024);
+			s_nodePool = TFE_Memory::createChunkedArray(sizeof(TextureNode), 256, 1, s_texturePackerRegion);
 		}
 
 		// Initialize with one page.
@@ -150,6 +152,9 @@ namespace TFE_Jedi
 		}
 		free(texturePacker->pages);
 		free(texturePacker);
+
+		TFE_Memory::region_destroy(s_texturePackerRegion);
+		s_texturePackerRegion = nullptr;
 	}
 		
 	void texturepacker_reserveCommitedPages(TexturePacker* texturePacker)
@@ -673,6 +678,27 @@ namespace TFE_Jedi
 			}
 		}
 		return s_texturePacker->texturesPacked;
+	}
+
+	void texturepacker_reset()
+	{
+		TexturePacker* texturePacker = s_globalTexturePacker;
+		texturePacker->pageCount = 1;
+		texturePacker->reservedPages = 0;
+		texturePacker->reservedTexturesPacked = 0;
+
+		s_usedTexels = 0;
+		s_totalTexels = 0;
+		s_nodePoolIndex = 0;
+		s_unpackedBuffer = 0;
+		s_currentPage = 0;
+
+		TFE_Memory::chunkedArrayClear(s_nodePool);
+		s_textureDataMap.clear();
+		s_waxDataMap.clear();
+		s_texInfoPool.clear();
+
+		texturepacker_begin(s_globalTexturePacker);
 	}
 
 #if DEBUG_TEXTURE_ATLAS

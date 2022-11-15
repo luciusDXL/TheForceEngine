@@ -41,15 +41,24 @@ namespace TFE_DarkForces
 		angle14_16 pitch;
 	};
 
-	static Wax* s_welderSpark = nullptr;
-	static SoundSourceId s_weld2SoundSrcId     = NULL_SOUND;
-	static SoundSourceId s_weld1SoundSrcId     = NULL_SOUND;
-	static SoundSourceId s_weldSparkSoundSrcId = NULL_SOUND;
-	static SoundSourceId s_weldHurtSoundSrcId  = NULL_SOUND;
-	static SoundSourceId s_weldDieSoundSrcId   = NULL_SOUND;
+	struct WelderShared
+	{
+		SoundSourceId weld2SoundSrcId = NULL_SOUND;
+		SoundSourceId weld1SoundSrcId = NULL_SOUND;
+		SoundSourceId weldSparkSoundSrcId = NULL_SOUND;
+		SoundSourceId weldHurtSoundSrcId = NULL_SOUND;
+		SoundSourceId weldDieSoundSrcId = NULL_SOUND;
+		s32 welderNum = 0;
+	};
 
+	static Wax* s_welderSpark = nullptr;
 	static Welder* s_curWelder = nullptr;
-	static s32 s_welderNum = 0;
+	static WelderShared s_shared = {};
+
+	void welder_exit()
+	{
+		s_shared = {};
+	}
 
 	MessageType welder_handleDamage(MessageType msg, Welder* welder)
 	{
@@ -70,7 +79,7 @@ namespace TFE_DarkForces
 				{
 					sound_stop(welder->hurtSndId);
 				}
-				welder->hurtSndId = sound_playCued(s_weldHurtSoundSrcId, obj->posWS);
+				welder->hurtSndId = sound_playCued(s_shared.weldHurtSoundSrcId, obj->posWS);
 				msg = MSG_DAMAGE;
 			}
 		}
@@ -96,7 +105,7 @@ namespace TFE_DarkForces
 				{
 					sound_stop(welder->hurtSndId);
 				}
-				welder->hurtSndId = sound_playCued(s_weldHurtSoundSrcId, obj->posWS);
+				welder->hurtSndId = sound_playCued(s_shared.weldHurtSoundSrcId, obj->posWS);
 				msg = MSG_EXPLOSION;
 			}
 		}
@@ -197,7 +206,7 @@ namespace TFE_DarkForces
 				sound_stop(local(welder)->sound2Id);
 				if (local(attack))
 				{
-					sound_playCued(s_weld1SoundSrcId, local(obj)->posWS);
+					sound_playCued(s_shared.weld1SoundSrcId, local(obj)->posWS);
 				}
 				local(dy) = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
 				local(dist) = local(dy) + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
@@ -221,7 +230,7 @@ namespace TFE_DarkForces
 
 						SpriteAnimLogic* animLogic = (SpriteAnimLogic*)obj_setSpriteAnim(spark);
 						setupAnimationFromLogic(animLogic, 0, 0, 0xffffffff, 1);
-						sound_playCued(s_weldSparkSoundSrcId, spark->posWS);
+						sound_playCued(s_shared.weldSparkSoundSrcId, spark->posWS);
 
 						spark->worldWidth = 0;
 						local(dy) = TFE_Jedi::abs(armTipY - s_playerObject->posWS.y);
@@ -256,7 +265,7 @@ namespace TFE_DarkForces
 					{
 						local(target)->flags |= 4;
 						local(attack) = JTRUE;
-						local(welder)->sound2Id = sound_playCued(s_weld2SoundSrcId, local(obj)->posWS);
+						local(welder)->sound2Id = sound_playCued(s_shared.weld2SoundSrcId, local(obj)->posWS);
 					}
 					else
 					{
@@ -293,7 +302,7 @@ namespace TFE_DarkForces
 		local(target)->yaw = local(welder)->yaw;
 		local(target)->pitch = local(welder)->pitch;
 		local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
-		local(welder)->sound2Id = sound_playCued(s_weld2SoundSrcId, local(obj)->posWS);
+		local(welder)->sound2Id = sound_playCued(s_shared.weld2SoundSrcId, local(obj)->posWS);
 
 		while (local(physicsActor)->state == WSTATE_RESET)
 		{
@@ -314,7 +323,7 @@ namespace TFE_DarkForces
 			if (local(target)->yaw == local(obj)->yaw)
 			{
 				sound_stop(local(welder)->sound2Id);
-				sound_playCued(s_weld1SoundSrcId, local(obj)->posWS);
+				sound_playCued(s_shared.weld1SoundSrcId, local(obj)->posWS);
 				local(physicsActor)->state = WSTATE_DEFAULT;
 			}
 		}  // while (state == WSTATE_RESET)
@@ -356,7 +365,7 @@ namespace TFE_DarkForces
 			{
 				local(target)->flags |= 8;
 				sound_stop(local(welder)->sound2Id);
-				sound_playCued(s_weldDieSoundSrcId, local(obj)->posWS);
+				sound_playCued(s_shared.weldDieSoundSrcId, local(obj)->posWS);
 
 				local(target)->pitch = 64171 & ANGLE_MASK;
 				local(target)->yaw = local(obj)->yaw;
@@ -410,25 +419,25 @@ namespace TFE_DarkForces
 		{
 			s_welderSpark = TFE_Sprite_Jedi::getWax("spark.wax");
 		}
-		if (!s_weld2SoundSrcId)
+		if (!s_shared.weld2SoundSrcId)
 		{
-			s_weld2SoundSrcId = sound_load("weld-2.voc", SOUND_PRIORITY_MED5);
+			s_shared.weld2SoundSrcId = sound_load("weld-2.voc", SOUND_PRIORITY_MED5);
 		}
-		if (!s_weld1SoundSrcId)
+		if (!s_shared.weld1SoundSrcId)
 		{
-			s_weld1SoundSrcId = sound_load("weld-1.voc", SOUND_PRIORITY_MED5);
+			s_shared.weld1SoundSrcId = sound_load("weld-1.voc", SOUND_PRIORITY_MED5);
 		}
-		if (!s_weldSparkSoundSrcId)
+		if (!s_shared.weldSparkSoundSrcId)
 		{
-			s_weldSparkSoundSrcId = sound_load("weldsht1.voc", SOUND_PRIORITY_LOW0);
+			s_shared.weldSparkSoundSrcId = sound_load("weldsht1.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_weldHurtSoundSrcId)
+		if (!s_shared.weldHurtSoundSrcId)
 		{
-			s_weldHurtSoundSrcId = sound_load("weldhrt.voc", SOUND_PRIORITY_LOW0);
+			s_shared.weldHurtSoundSrcId = sound_load("weldhrt.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_weldDieSoundSrcId)
+		if (!s_shared.weldDieSoundSrcId)
 		{
-			s_weldDieSoundSrcId = sound_load("weld-die.voc", SOUND_PRIORITY_MED5);
+			s_shared.weldDieSoundSrcId = sound_load("weld-die.voc", SOUND_PRIORITY_MED5);
 		}
 
 		Welder* welder = (Welder*)level_alloc(sizeof(Welder));
@@ -436,8 +445,8 @@ namespace TFE_DarkForces
 
 		// Give the name of the task a number so I can tell them apart when debugging.
 		char name[32];
-		sprintf(name, "Welder%d", s_welderNum);
-		s_welderNum++;
+		sprintf(name, "Welder%d", s_shared.welderNum);
+		s_shared.welderNum++;
 		Task* task = createSubTask(name, welderTaskFunc);
 		task_setUserData(task, welder);
 

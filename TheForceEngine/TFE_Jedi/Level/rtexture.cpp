@@ -22,10 +22,26 @@ namespace TFE_Jedi
 		DF_ANIM_ID = 2,
 	};
 
+	struct LevelTexture
+	{
+		std::string name;
+		TextureData* texture;
+	};
+	typedef std::vector<LevelTexture> TextureList;
+	typedef std::unordered_map<std::string, s32> TextureTable;
+		
+	struct TextureState
+	{
+		Allocator*    textureAnimAlloc = nullptr;
+		Task*         textureAnimTask = nullptr;
+		MemoryRegion* memoryRegion = nullptr;
+	};
+	static TextureState s_texState = {};
 	static std::vector<u8> s_buffer;
-	static Allocator* s_textureAnimAlloc = nullptr;
-	static Task* s_textureAnimTask = nullptr;
-	static MemoryRegion* s_memoryRegion = nullptr;
+	static std::vector<TextureData*> s_tempTextureList;
+
+	static TextureList  s_textureList[POOL_COUNT];
+	static TextureTable s_textureTable[POOL_COUNT];
 
 	void decompressColumn_Type1(const u8* src, u8* dst, s32 pixelCount);
 	void decompressColumn_Type2(const u8* src, u8* dst, s32 pixelCount);
@@ -61,37 +77,25 @@ namespace TFE_Jedi
 
 	void bitmap_setupAnimationTask()
 	{
-		s_textureAnimTask = createSubTask("texture animation", textureAnimationTaskFunc);
-		s_textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
+		s_texState.textureAnimTask = createSubTask("texture animation", textureAnimationTaskFunc);
+		s_texState.textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
 	}
 
 	Allocator* bitmap_getAnimTextureAlloc()
 	{
-		return s_textureAnimAlloc;
+		return s_texState.textureAnimAlloc;
 	}
 
 	MemoryRegion* bitmap_getAllocator()
 	{
-		return s_memoryRegion;
+		return s_texState.memoryRegion;
 	}
 
 	void bitmap_setAllocator(MemoryRegion* allocator)
 	{
-		s_memoryRegion = allocator;
+		s_texState.memoryRegion = allocator;
 	}
-
-	struct LevelTexture
-	{
-		std::string name;
-		TextureData* texture;
-	};
-	typedef std::vector<LevelTexture> TextureList;
-	typedef std::unordered_map<std::string, s32> TextureTable;
-
-	static std::vector<TextureData*> s_tempTextureList;
-	TextureList  s_textureList[POOL_COUNT];
-	TextureTable s_textureTable[POOL_COUNT];
-
+		
 	// Added for TFE to clear out per-level texture data.
 	void bitmap_clearLevelData()
 	{
@@ -101,6 +105,7 @@ namespace TFE_Jedi
 
 	void bitmap_clearAll()
 	{
+		s_texState = {};
 		for (s32 p = 0; p < POOL_COUNT; p++)
 		{
 			s_textureList[p].clear();
@@ -216,7 +221,7 @@ namespace TFE_Jedi
 		file.readBuffer(s_buffer.data(), (u32)size);
 		file.close();
 
-		TextureData* texture = (TextureData*)region_alloc(s_memoryRegion, sizeof(TextureData));
+		TextureData* texture = (TextureData*)region_alloc(s_texState.memoryRegion, sizeof(TextureData));
 		const u8* data = s_buffer.data();
 		const u8* fheader = data;
 		data += 3;
@@ -253,7 +258,7 @@ namespace TFE_Jedi
 			if (decompress & 1)
 			{
 				texture->dataSize = texture->width * texture->height;
-				texture->image = (u8*)region_alloc(s_memoryRegion, texture->dataSize);
+				texture->image = (u8*)region_alloc(s_texState.memoryRegion, texture->dataSize);
 
 				const u8* inBuffer = data;
 				data += inSize;
@@ -285,11 +290,11 @@ namespace TFE_Jedi
 			else
 			{
 				texture->dataSize = inSize;
-				texture->image = (u8*)region_alloc(s_memoryRegion, texture->dataSize);
+				texture->image = (u8*)region_alloc(s_texState.memoryRegion, texture->dataSize);
 				memcpy(texture->image, data, texture->dataSize);
 				data += texture->dataSize;
 
-				texture->columns = (u32*)region_alloc(s_memoryRegion, texture->width * sizeof(u32));
+				texture->columns = (u32*)region_alloc(s_texState.memoryRegion, texture->width * sizeof(u32));
 				memcpy(texture->columns, data, texture->width * sizeof(u32));
 				data += texture->width * sizeof(u32);
 			}
@@ -305,7 +310,7 @@ namespace TFE_Jedi
 			data += 12;
 
 			// Allocate and read the BM image.
-			texture->image = (u8*)region_alloc(s_memoryRegion, texture->dataSize);
+			texture->image = (u8*)region_alloc(s_texState.memoryRegion, texture->dataSize);
 			memcpy(texture->image, data, texture->dataSize);
 			data += texture->dataSize;
 		}
@@ -427,7 +432,7 @@ namespace TFE_Jedi
 
 	Allocator* bitmap_getAnimatedTextures()
 	{
-		return s_textureAnimAlloc;
+		return s_texState.textureAnimAlloc;
 	}
 
 	void bitmap_setupAnimatedTexture(TextureData** texture)
@@ -446,7 +451,7 @@ namespace TFE_Jedi
 		
 		// In the original DOS code, this is directly set to pointers. But since TFE is compiled as 64-bit, pointers are not the correct size.
 		u32* textureOffsets = (u32*)(tex->image + 2);
-		AnimatedTexture* anim = (AnimatedTexture*)allocator_newItem(s_textureAnimAlloc);
+		AnimatedTexture* anim = (AnimatedTexture*)allocator_newItem(s_texState.textureAnimAlloc);
 
 		// 64 bit pointers are larger than the offsets, so we have to allocate more space (for now).
 		anim->frame = 0;
@@ -505,7 +510,7 @@ namespace TFE_Jedi
 		{
 			// No persistent state is required.
 			{
-				AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(s_textureAnimAlloc);
+				AnimatedTexture* animTex = (AnimatedTexture*)allocator_getHead(s_texState.textureAnimAlloc);
 				while (animTex)
 				{
 					if (animTex->nextTick < s_curTick)
@@ -524,7 +529,7 @@ namespace TFE_Jedi
 						*animTex->texPtr = animTex->frameList[animTex->frame];
 						animTex->nextTick += animTex->delay;
 					}
-					animTex = (AnimatedTexture*)allocator_getNext(s_textureAnimAlloc);
+					animTex = (AnimatedTexture*)allocator_getNext(s_texState.textureAnimAlloc);
 				}
 			}
 			task_yield(TASK_NO_DELAY);

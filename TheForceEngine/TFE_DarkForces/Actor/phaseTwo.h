@@ -9,5 +9,6 @@
 
 namespace TFE_DarkForces
 {
+	void phaseTwo_exit();
 	Logic* phaseTwo_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

@@ -39,6 +39,16 @@ namespace TFE_DarkForces
 		fixed16_16 speed;
 	};
 
+	struct DragonShared
+	{
+		SoundSourceId kellSound0 = NULL_SOUND;
+		SoundSourceId kellSound1 = NULL_SOUND;
+		SoundSourceId kellSound2 = NULL_SOUND;
+		SoundSourceId kellSound3 = NULL_SOUND;
+		SoundSourceId kellSound4 = NULL_SOUND;
+		s32 dragonNum = 0;
+	};
+
 	static const fixed16_16 s_kellDragon_NearDist = FIXED(25);
 	static const fixed16_16 s_kellDragon_MedDist  = FIXED(45);
 	static const fixed16_16 s_kellDragon_FarDist  = FIXED(60);
@@ -50,15 +60,14 @@ namespace TFE_DarkForces
 		{  8, FIXED(16) },
 		{ 10, FIXED(24) },
 	};
-
-	static SoundSourceId s_kellSound0 = NULL_SOUND;
-	static SoundSourceId s_kellSound1 = NULL_SOUND;
-	static SoundSourceId s_kellSound2 = NULL_SOUND;
-	static SoundSourceId s_kellSound3 = NULL_SOUND;
-	static SoundSourceId s_kellSound4 = NULL_SOUND;
-
+	   
 	static KellDragon* s_curDragon = nullptr;
-	static s32 s_dragonNum = 0;
+	static DragonShared s_shared = {};
+
+	void kellDragon_exit()
+	{
+		s_shared = {};
+	}
 
 	void kellDragon_handleDamage(MessageType msg)
 	{
@@ -93,7 +102,7 @@ namespace TFE_DarkForces
 			else
 			{
 				sound_stop(local(dragon)->painSndId);
-				local(dragon)->painSndId = sound_playCued(s_kellSound2, local(obj)->posWS);
+				local(dragon)->painSndId = sound_playCued(s_shared.kellSound2, local(obj)->posWS);
 
 				if (random(100) <= 20)
 				{
@@ -179,7 +188,7 @@ namespace TFE_DarkForces
 				local(physicsActor)->vel.z = local(vel).z >> 1;
 
 				sound_stop(local(dragon)->painSndId);
-				local(dragon)->painSndId = sound_playCued(s_kellSound2, local(obj)->posWS);
+				local(dragon)->painSndId = sound_playCued(s_shared.kellSound2, local(obj)->posWS);
 
 				if (random(100) <= 20)
 				{
@@ -542,7 +551,7 @@ namespace TFE_DarkForces
 			local(anim)->flags |= 1;
 			actor_setupAnimation2(local(obj), 9, local(anim));
 			local(anim)->frameRate = 8;
-			sound_playCued(s_kellSound1, local(obj)->posWS);
+			sound_playCued(s_shared.kellSound1, local(obj)->posWS);
 
 			// Wait for the animation to finish playing.
 			do
@@ -596,7 +605,7 @@ namespace TFE_DarkForces
 			local(physicsActor)->vel.z = 0;
 			actor_setupAnimation2(local(obj), 11, local(anim));
 			local(anim)->frameRate = 8;
-			sound_playCued(s_kellSound4, local(obj)->posWS);
+			sound_playCued(s_shared.kellSound4, local(obj)->posWS);
 
 			// Wait for the animation to finish playing.
 			do
@@ -688,7 +697,7 @@ namespace TFE_DarkForces
 				}
 			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
-			sound_playCued(s_kellSound4, local(obj)->posWS);
+			sound_playCued(s_shared.kellSound4, local(obj)->posWS);
 			fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
 			fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
 			if (dist <= FIXED(20))
@@ -729,7 +738,7 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->moveMod.target;
 
 		local(target)->flags |= 8;
-		sound_playCued(s_kellSound3, local(obj)->posWS);
+		sound_playCued(s_shared.kellSound3, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 2, local(anim));
@@ -953,7 +962,7 @@ namespace TFE_DarkForces
 					if (local(physicsActor)->state == 0 && kellDragon_canSeePlayer(local(dragon)))
 					{
 						SecObject* obj = local(dragon)->logic.obj;
-						sound_playCued(s_kellSound0, obj->posWS);
+						sound_playCued(s_shared.kellSound0, obj->posWS);
 						local(physicsActor)->state = 1;
 					}
 				}  // while (state == 0)
@@ -984,25 +993,25 @@ namespace TFE_DarkForces
 
 	Logic* kellDragon_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_kellSound0)
+		if (!s_shared.kellSound0)
 		{
-			s_kellSound0 = sound_load("kell-1.voc", SOUND_PRIORITY_MED5);
+			s_shared.kellSound0 = sound_load("kell-1.voc", SOUND_PRIORITY_MED5);
 		}
-		if (!s_kellSound2)
+		if (!s_shared.kellSound2)
 		{
-			s_kellSound2 = sound_load("kell-8.voc", SOUND_PRIORITY_LOW0);
+			s_shared.kellSound2 = sound_load("kell-8.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_kellSound4)
+		if (!s_shared.kellSound4)
 		{
-			s_kellSound4 = sound_load("kell-5.voc", SOUND_PRIORITY_LOW0);
+			s_shared.kellSound4 = sound_load("kell-5.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_kellSound1)
+		if (!s_shared.kellSound1)
 		{
-			s_kellSound1 = sound_load("kelljump.voc", SOUND_PRIORITY_LOW0);
+			s_shared.kellSound1 = sound_load("kelljump.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_kellSound3)
+		if (!s_shared.kellSound3)
 		{
-			s_kellSound3 = sound_load("kell-7.voc", SOUND_PRIORITY_MED5);
+			s_shared.kellSound3 = sound_load("kell-7.voc", SOUND_PRIORITY_MED5);
 		}
 
 		KellDragon* dragon = (KellDragon*)level_alloc(sizeof(KellDragon));
@@ -1010,8 +1019,8 @@ namespace TFE_DarkForces
 
 		// Give the name of the task a number so I can tell them apart when debugging.
 		char name[32];
-		sprintf(name, "KellDragon%d", s_dragonNum);
-		s_dragonNum++;
+		sprintf(name, "KellDragon%d", s_shared.dragonNum);
+		s_shared.dragonNum++;
 		Task* task = createSubTask(name, kellDragonTaskFunc);
 		task_setUserData(task, dragon);
 

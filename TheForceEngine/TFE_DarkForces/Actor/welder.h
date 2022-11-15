@@ -11,4 +11,5 @@ namespace TFE_DarkForces
 {
 	Logic* welder_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 	void welder_clear();
+	void welder_exit();
 }  // namespace TFE_DarkForces

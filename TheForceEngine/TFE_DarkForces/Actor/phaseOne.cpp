@@ -30,14 +30,24 @@ namespace TFE_DarkForces
 		JBool canDamage;
 	};
 
-	static SoundSourceId s_phase1aSndID       = NULL_SOUND;
-	static SoundSourceId s_phase1bSndID       = NULL_SOUND;
-	static SoundSourceId s_phase1cSndID       = NULL_SOUND;
-	static SoundSourceId s_phase1SwordSndID   = NULL_SOUND;
-	static SoundSourceId s_phase1ReflectSndID = NULL_SOUND;
-
+	struct PhaseOneShared
+	{
+		SoundSourceId phase1aSndID = NULL_SOUND;
+		SoundSourceId phase1bSndID = NULL_SOUND;
+		SoundSourceId phase1cSndID = NULL_SOUND;
+		SoundSourceId phase1SwordSndID = NULL_SOUND;
+		SoundSourceId phase1ReflectSndID = NULL_SOUND;
+		s32 trooperNum = 0;
+	};
+		
 	static PhaseOne* s_curTrooper = nullptr;
-	static s32 s_trooperNum = 0;
+	static PhaseOneShared s_shared = {};
+
+	void phaseOne_exit()
+	{
+		s_curTrooper = nullptr;
+		s_shared = {};
+	}
 
 	JBool phaseOne_canSeePlayer(PhaseOne* trooper)
 	{
@@ -89,7 +99,7 @@ namespace TFE_DarkForces
 
 					// Handle reflection.
 					sound_stop(local(trooper)->reflectSndId);
-					local(trooper)->reflectSndId = sound_playCued(s_phase1ReflectSndID, local(obj)->posWS);
+					local(trooper)->reflectSndId = sound_playCued(s_shared.phase1ReflectSndID, local(obj)->posWS);
 					local(anim)->flags |= 1;
 					actor_setupAnimation2(local(obj), 13, local(anim));
 				task_localBlockEnd;
@@ -129,7 +139,7 @@ namespace TFE_DarkForces
 				else
 				{
 					sound_stop(local(trooper)->hitSndId);
-					local(trooper)->hitSndId = sound_playCued(s_phase1bSndID, local(obj)->posWS);
+					local(trooper)->hitSndId = sound_playCued(s_shared.phase1bSndID, local(obj)->posWS);
 					if (random(100) <= 20)
 					{
 						local(target)->flags |= 8;
@@ -225,7 +235,7 @@ namespace TFE_DarkForces
 				local(physicsActor)->vel = { local(vel).x >> 1, local(vel).y >> 1, local(vel).z >> 1 };
 
 				sound_stop(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = sound_playCued(s_phase1bSndID, local(obj)->posWS);
+				local(trooper)->hitSndId = sound_playCued(s_shared.phase1bSndID, local(obj)->posWS);
 
 				if (random(100) <= 20)
 				{
@@ -541,7 +551,7 @@ namespace TFE_DarkForces
 			} while (msg != MSG_RUN_TASK || !(local(anim)->flags&2));
 
 			// Attempt to attack.
-			sound_playCued(s_phase1SwordSndID, local(obj)->posWS);
+			sound_playCued(s_shared.phase1SwordSndID, local(obj)->posWS);
 			fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
 			fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, local(obj)->posWS.x, local(obj)->posWS.z);
 			if (dist <= FIXED(15))
@@ -577,7 +587,7 @@ namespace TFE_DarkForces
 		local(anim) = &local(physicsActor)->anim;
 
 		local(target)->flags |= 8;
-		sound_playCued(s_phase1cSndID, local(obj)->posWS);
+		sound_playCued(s_shared.phase1cSndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 2, local(anim));
@@ -794,7 +804,7 @@ namespace TFE_DarkForces
 
 					if (local(physicsActor)->state == 0 && phaseOne_canSeePlayer(local(trooper)))
 					{
-						sound_playCued(s_phase1aSndID, local(obj)->posWS);
+						sound_playCued(s_shared.phase1aSndID, local(obj)->posWS);
 						local(physicsActor)->state = 1;
 					}
 				}  // while (state == 0)
@@ -827,25 +837,25 @@ namespace TFE_DarkForces
 
 	Logic* phaseOne_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_phase1aSndID)
+		if (!s_shared.phase1aSndID)
 		{
-			s_phase1aSndID = sound_load("phase1a.voc", SOUND_PRIORITY_MED5);
+			s_shared.phase1aSndID = sound_load("phase1a.voc", SOUND_PRIORITY_MED5);
 		}
-		if (!s_phase1bSndID)
+		if (!s_shared.phase1bSndID)
 		{
-			s_phase1bSndID = sound_load("phase1b.voc", SOUND_PRIORITY_LOW0);
+			s_shared.phase1bSndID = sound_load("phase1b.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_phase1SwordSndID)
+		if (!s_shared.phase1SwordSndID)
 		{
-			s_phase1SwordSndID = sound_load("sword-1.voc", SOUND_PRIORITY_LOW0);
+			s_shared.phase1SwordSndID = sound_load("sword-1.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_phase1ReflectSndID)
+		if (!s_shared.phase1ReflectSndID)
 		{
-			s_phase1ReflectSndID = sound_load("bigrefl1.voc", SOUND_PRIORITY_LOW0);
+			s_shared.phase1ReflectSndID = sound_load("bigrefl1.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_phase1cSndID)
+		if (!s_shared.phase1cSndID)
 		{
-			s_phase1cSndID = sound_load("phase1c.voc", SOUND_PRIORITY_MED5);
+			s_shared.phase1cSndID = sound_load("phase1c.voc", SOUND_PRIORITY_MED5);
 		}
 		// setSoundEffectVolume(s_phase1cSndID, 100);
 
@@ -856,8 +866,8 @@ namespace TFE_DarkForces
 
 		// Give the name of the task a number so I can tell them apart when debugging.
 		char name[32];
-		sprintf(name, "PhaseOne%d", s_trooperNum);
-		s_trooperNum++;
+		sprintf(name, "PhaseOne%d", s_shared.trooperNum);
+		s_shared.trooperNum++;
 		Task* task = createSubTask(name, phaseOneTaskFunc);
 		task_setUserData(task, trooper);
 

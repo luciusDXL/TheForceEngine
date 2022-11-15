@@ -63,6 +63,7 @@ namespace TFE_Jedi
 		s_sectorRenderer = nullptr;
 		s_subRenderer = TSR_INVALID;
 		s_init = false;
+		vfb_setMode();
 	}
 
 	TFE_Sectors* renderer_getSectorRenderer(TFE_SubRenderer renderer)

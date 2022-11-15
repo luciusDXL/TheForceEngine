@@ -9,5 +9,6 @@
 
 namespace TFE_DarkForces
 {
+	void turret_exit();
 	Logic* turret_setup(SecObject* obj, LogicSetupFunc* setupFunc);
 }  // namespace TFE_DarkForces

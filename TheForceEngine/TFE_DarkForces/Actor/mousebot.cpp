@@ -28,10 +28,10 @@ namespace TFE_DarkForces
 
 	struct MouseBotResources
 	{
-		WaxFrame* deadFrame;
-		SoundSourceId sound0;
-		SoundSourceId sound1;
-		SoundSourceId sound2;
+		WaxFrame* deadFrame  = nullptr;
+		SoundSourceId sound0 = NULL_SOUND;
+		SoundSourceId sound1 = NULL_SOUND;
+		SoundSourceId sound2 = NULL_SOUND;
 	};
 	struct MouseBot
 	{
@@ -346,6 +346,11 @@ namespace TFE_DarkForces
 	void mousebot_clear()
 	{
 		s_mouseBotRes.deadFrame = nullptr;
+	}
+
+	void mousebot_exit()
+	{
+		s_mouseBotRes = {};
 	}
 
 	Logic* mousebot_setup(SecObject* obj, LogicSetupFunc* setupFunc)

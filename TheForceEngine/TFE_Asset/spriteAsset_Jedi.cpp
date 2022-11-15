@@ -31,8 +31,8 @@ namespace TFE_Sprite_Jedi
 	static SpriteMap  s_sprites[POOL_COUNT];
 	static FrameList  s_frameList[POOL_COUNT];
 	static SpriteList s_spriteList[POOL_COUNT];
-	static NameList s_frameNames[POOL_COUNT];
-	static NameList s_spriteNames[POOL_COUNT];
+	static NameList   s_frameNames[POOL_COUNT];
+	static NameList   s_spriteNames[POOL_COUNT];
 	static std::vector<u8> s_buffer;
 
 	JediFrame* getFrame(const char* name, AssetPool pool)

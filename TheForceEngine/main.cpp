@@ -18,6 +18,7 @@
 #include <TFE_System/system.h>
 #include <TFE_System/CrashHandler/crashHandler.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_RenderShared/texturePacker.h>
 #include <TFE_Asset/paletteAsset.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Ui/ui.h>
@@ -329,30 +330,27 @@ void setAppState(AppState newState, int argc, char* argv[])
 			TFE_FrontEndUI::setAppState(APP_STATE_GAME);
 
 			TFE_Game* gameInfo = TFE_Settings::getGame();
-			if (!s_curGame || gameInfo->id != s_curGame->id)
+			if (s_curGame)
 			{
-				if (s_curGame)
-				{
-					freeGame(s_curGame);
-					s_curGame = nullptr;
-				}
-				s_curGame = createGame(gameInfo->id);
-				if (!s_curGame)
-				{
-					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
-					newState = APP_STATE_CANNOT_RUN;
-				}
-				else if (!s_curGame->serializeGameState("quicksave.tfe", false))
-				{
-					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
-					freeGame(s_curGame);
-					s_curGame = nullptr;
-					newState = APP_STATE_CANNOT_RUN;
-				}
-				else
-				{
-					TFE_Input::enableRelativeMode(true);
-				}
+				freeGame(s_curGame);
+				s_curGame = nullptr;
+			}
+			s_curGame = createGame(gameInfo->id);
+			if (!s_curGame)
+			{
+				TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
+				newState = APP_STATE_CANNOT_RUN;
+			}
+			else if (!s_curGame->serializeGameState("quicksave.tfe", false))
+			{
+				TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
+				freeGame(s_curGame);
+				s_curGame = nullptr;
+				newState = APP_STATE_CANNOT_RUN;
+			}
+			else
+			{
+				TFE_Input::enableRelativeMode(true);
 			}
 		}
 		else
@@ -788,6 +786,7 @@ int main(int argc, char* argv[])
 	TFE_Palette::freeAll();
 	TFE_RenderBackend::updateSettings();
 	TFE_Settings::shutdown();
+	TFE_Jedi::texturepacker_freeGlobal();
 	TFE_RenderBackend::destroy();
 	SDL_Quit();
 		

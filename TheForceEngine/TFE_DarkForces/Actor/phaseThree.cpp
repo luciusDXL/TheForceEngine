@@ -47,13 +47,23 @@ namespace TFE_DarkForces
 		JBool noDeath;
 	};
 
-	static SoundSourceId s_phase3aSndID = NULL_SOUND;
-	static SoundSourceId s_phase3bSndID = NULL_SOUND;
-	static SoundSourceId s_phase3cSndID = NULL_SOUND;
-	static SoundSourceId s_phase3RocketSndID = NULL_SOUND;
+	struct PhaseThreeShared
+	{
+		SoundSourceId phase3aSndID = NULL_SOUND;
+		SoundSourceId phase3bSndID = NULL_SOUND;
+		SoundSourceId phase3cSndID = NULL_SOUND;
+		SoundSourceId phase3RocketSndID = NULL_SOUND;
+		s32 trooperNum = 0;
+	};
 
 	static PhaseThree* s_curTrooper = nullptr;
-	static s32 s_trooperNum = 0;
+	static PhaseThreeShared s_shared = {};
+
+	void phaseThree_exit()
+	{
+		s_curTrooper = nullptr;
+		s_shared = {};
+	}
 
 	JBool phaseThree_updatePlayerPos(PhaseThree* trooper)
 	{
@@ -103,7 +113,7 @@ namespace TFE_DarkForces
 			else
 			{
 				sound_stop(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = sound_playCued(s_phase3bSndID, local(obj)->posWS);
+				local(trooper)->hitSndId = sound_playCued(s_shared.phase3bSndID, local(obj)->posWS);
 
 				if (random(100) <= 10)
 				{
@@ -183,7 +193,7 @@ namespace TFE_DarkForces
 				local(physicsActor)->vel = { local(vel).x >> 1, local(vel).y >> 1, local(vel).z >> 1 };
 
 				sound_stop(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = sound_playCued(s_phase3bSndID, local(obj)->posWS);
+				local(trooper)->hitSndId = sound_playCued(s_shared.phase3bSndID, local(obj)->posWS);
 
 				if (random(100) <= 10)
 				{
@@ -274,7 +284,7 @@ namespace TFE_DarkForces
 
 		if (random(100) <= 40)
 		{
-			local(trooper)->rocketSndId = sound_playCued(s_phase3RocketSndID, local(obj)->posWS);
+			local(trooper)->rocketSndId = sound_playCued(s_shared.phase3RocketSndID, local(obj)->posWS);
 			local(anim)->flags |= 1;
 			actor_setupAnimation2(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 0, 1);
@@ -671,7 +681,7 @@ namespace TFE_DarkForces
 
 		local(target)->flags |= 8;
 		sound_stop(local(trooper)->rocketSndId);
-		sound_playCued(s_phase3cSndID, local(obj)->posWS);
+		sound_playCued(s_shared.phase3cSndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 2, local(anim));
@@ -901,7 +911,7 @@ namespace TFE_DarkForces
 
 					if (local(physicsActor)->state == 0 && phaseThree_updatePlayerPos(local(trooper)))
 					{
-						sound_playCued(s_phase3aSndID, local(obj)->posWS);
+						sound_playCued(s_shared.phase3aSndID, local(obj)->posWS);
 						local(physicsActor)->state = P3STATE_CHARGE;
 					}
 				}  // while (state == P3STATE_DEFAULT)
@@ -934,26 +944,26 @@ namespace TFE_DarkForces
 
 	Logic* phaseThree_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_phase3aSndID)
+		if (!s_shared.phase3aSndID)
 		{
-			s_phase3aSndID = sound_load("phase3a.voc", SOUND_PRIORITY_MED5);
-			assert(s_phase3aSndID);
+			s_shared.phase3aSndID = sound_load("phase3a.voc", SOUND_PRIORITY_MED5);
+			assert(s_shared.phase3aSndID);
 		}
-		if (!s_phase3bSndID)
+		if (!s_shared.phase3bSndID)
 		{
-			s_phase3bSndID = sound_load("phase3b.voc", SOUND_PRIORITY_LOW0);
-			assert(s_phase3bSndID);
+			s_shared.phase3bSndID = sound_load("phase3b.voc", SOUND_PRIORITY_LOW0);
+			assert(s_shared.phase3bSndID);
 		}
-		if (!s_phase3RocketSndID)
+		if (!s_shared.phase3RocketSndID)
 		{
-			s_phase3RocketSndID = sound_load("rocket-1.voc", SOUND_PRIORITY_HIGH0);
-			assert(s_phase3RocketSndID);
+			s_shared.phase3RocketSndID = sound_load("rocket-1.voc", SOUND_PRIORITY_HIGH0);
+			assert(s_shared.phase3RocketSndID);
 		}
-		if (!s_phase3cSndID)
+		if (!s_shared.phase3cSndID)
 		{
-			s_phase3cSndID = sound_load("phase3c.voc", SOUND_PRIORITY_HIGH5);
-			sound_setBaseVolume(s_phase3cSndID, 120);
-			assert(s_phase3cSndID);
+			s_shared.phase3cSndID = sound_load("phase3c.voc", SOUND_PRIORITY_HIGH5);
+			sound_setBaseVolume(s_shared.phase3cSndID, 120);
+			assert(s_shared.phase3cSndID);
 		}
 		// setSoundEffectVolume(s_phase3cSndID, 120);
 
@@ -964,8 +974,8 @@ namespace TFE_DarkForces
 
 		// Give the name of the task a number so I can tell them apart when debugging.
 		char name[32];
-		sprintf(name, "PhaseThree%d", s_trooperNum);
-		s_trooperNum++;
+		sprintf(name, "PhaseThree%d", s_shared.trooperNum);
+		s_shared.trooperNum++;
 		Task* task = createSubTask(name, phaseThreeTaskFunc);
 		task_setUserData(task, trooper);
 

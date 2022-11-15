@@ -6,7 +6,13 @@
 #include "../sound.h"
 #include "actorModule.h"
 #include "mousebot.h"
+#include "dragon.h"
+#include "bobaFett.h"
 #include "welder.h"
+#include "turret.h"
+#include "phaseOne.h"
+#include "phaseTwo.h"
+#include "phaseThree.h"
 #include <TFE_Game/igame.h>
 #include <TFE_DarkForces/random.h>
 #include <TFE_DarkForces/player.h>
@@ -74,6 +80,19 @@ namespace TFE_DarkForces
 		// Clear specific actor state.
 		mousebot_clear();
 		welder_clear();
+	}
+
+	void actor_exitState()
+	{
+		actor_clearState();
+		phaseOne_exit();
+		phaseTwo_exit();
+		phaseThree_exit();
+		bobaFett_exit();
+		kellDragon_exit();
+		mousebot_exit();
+		turret_exit();
+		welder_exit();
 	}
 
 	void actor_loadSounds()

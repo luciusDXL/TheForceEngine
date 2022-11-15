@@ -42,13 +42,22 @@ namespace TFE_DarkForces
 		JBool noDeath;
 	};
 
-	static SoundSourceId s_phase2aSndID = NULL_SOUND;
-	static SoundSourceId s_phase2bSndID = NULL_SOUND;
-	static SoundSourceId s_phase2cSndID = NULL_SOUND;
-	static SoundSourceId s_phase2RocketSndID = NULL_SOUND;
-
+	struct PhaseThreeShared
+	{
+		SoundSourceId phase2aSndID = NULL_SOUND;
+		SoundSourceId phase2bSndID = NULL_SOUND;
+		SoundSourceId phase2cSndID = NULL_SOUND;
+		SoundSourceId phase2RocketSndID = NULL_SOUND;
+		s32 trooperNum = 0;
+	};
+	static PhaseThreeShared s_shared = {};
 	static PhaseTwo* s_curTrooper = nullptr;
-	static s32 s_trooperNum = 0;
+
+	void phaseTwo_exit()
+	{
+		s_curTrooper = nullptr;
+		s_shared = {};
+	}
 
 	JBool phaseTwo_updatePlayerPos(PhaseTwo* trooper)
 	{
@@ -98,7 +107,7 @@ namespace TFE_DarkForces
 			else
 			{
 				sound_stop(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = sound_playCued(s_phase2bSndID, local(obj)->posWS);
+				local(trooper)->hitSndId = sound_playCued(s_shared.phase2bSndID, local(obj)->posWS);
 
 				if (random(100) <= 10)
 				{
@@ -178,7 +187,7 @@ namespace TFE_DarkForces
 				local(physicsActor)->vel = { local(vel).x >> 1, local(vel).y >> 1, local(vel).z >> 1 };
 
 				sound_stop(local(trooper)->hitSndId);
-				local(trooper)->hitSndId = sound_playCued(s_phase2bSndID, local(obj)->posWS);
+				local(trooper)->hitSndId = sound_playCued(s_shared.phase2bSndID, local(obj)->posWS);
 
 				if (random(100) <= 10)
 				{
@@ -269,7 +278,7 @@ namespace TFE_DarkForces
 
 		if (random(100) <= 40)
 		{
-			local(trooper)->rocketSndId = sound_playCued(s_phase2RocketSndID, local(obj)->posWS);
+			local(trooper)->rocketSndId = sound_playCued(s_shared.phase2RocketSndID, local(obj)->posWS);
 			local(anim)->flags |= 1;
 			actor_setupAnimation2(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 0, 2);
@@ -666,7 +675,7 @@ namespace TFE_DarkForces
 
 		local(target)->flags |= 8;
 		sound_stop(local(trooper)->rocketSndId);
-		sound_playCued(s_phase2cSndID, local(obj)->posWS);
+		sound_playCued(s_shared.phase2cSndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		actor_setupAnimation2(local(obj), 2, local(anim));
@@ -945,7 +954,7 @@ namespace TFE_DarkForces
 
 					if (local(physicsActor)->state == 0 && phaseTwo_updatePlayerPos(local(trooper)))
 					{
-						sound_playCued(s_phase2aSndID, local(obj)->posWS);
+						sound_playCued(s_shared.phase2aSndID, local(obj)->posWS);
 						local(physicsActor)->state = P2STATE_CHARGE;
 					}
 				}  // while (state == P2STATE_DEFAULT)
@@ -978,21 +987,21 @@ namespace TFE_DarkForces
 
 	Logic* phaseTwo_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_phase2aSndID)
+		if (!s_shared.phase2aSndID)
 		{
-			s_phase2aSndID = sound_load("phase2a.voc", SOUND_PRIORITY_MED5);
+			s_shared.phase2aSndID = sound_load("phase2a.voc", SOUND_PRIORITY_MED5);
 		}
-		if (!s_phase2bSndID)
+		if (!s_shared.phase2bSndID)
 		{
-			s_phase2bSndID = sound_load("phase2b.voc", SOUND_PRIORITY_LOW0);
+			s_shared.phase2bSndID = sound_load("phase2b.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_phase2RocketSndID)
+		if (!s_shared.phase2RocketSndID)
 		{
-			s_phase2RocketSndID = sound_load("rocket-1.voc", SOUND_PRIORITY_HIGH0);
+			s_shared.phase2RocketSndID = sound_load("rocket-1.voc", SOUND_PRIORITY_HIGH0);
 		}
-		if (!s_phase2cSndID)
+		if (!s_shared.phase2cSndID)
 		{
-			s_phase2cSndID = sound_load("phase2c.voc", SOUND_PRIORITY_HIGH1);
+			s_shared.phase2cSndID = sound_load("phase2c.voc", SOUND_PRIORITY_HIGH1);
 		}
 		// setSoundEffectVolume(s_phase2cSndID, 100);
 
@@ -1003,8 +1012,8 @@ namespace TFE_DarkForces
 
 		// Give the name of the task a number so I can tell them apart when debugging.
 		char name[32];
-		sprintf(name, "PhaseTwo%d", s_trooperNum);
-		s_trooperNum++;
+		sprintf(name, "PhaseTwo%d", s_shared.trooperNum);
+		s_shared.trooperNum++;
 		Task* task = createSubTask(name, phaseTwoTaskFunc);
 		task_setUserData(task, trooper);
 

@@ -52,15 +52,24 @@ namespace TFE_DarkForces
 		SoundEffectId hitSndId;
 	};
 
-	static SoundSourceId s_boba1SndID = NULL_SOUND;
-	static SoundSourceId s_boba3SndID = NULL_SOUND;
-	static SoundSourceId s_boba2SndID = NULL_SOUND;
-	static SoundSourceId s_boba4SndID = NULL_SOUND;
-	static SoundSourceId s_bobaRocket2SndID = NULL_SOUND;
+	struct BobaFettShared
+	{
+		SoundSourceId boba1SndID = NULL_SOUND;
+		SoundSourceId boba3SndID = NULL_SOUND;
+		SoundSourceId boba2SndID = NULL_SOUND;
+		SoundSourceId boba4SndID = NULL_SOUND;
+		SoundSourceId bobaRocket2SndID = NULL_SOUND;
+		s32 bobaFettNum = 0;
+	};
 
 	static BobaFett* s_curBobaFett = nullptr;
-	static s32 s_bobaFettNum = 0;
+	static BobaFettShared s_shared = {};
 	extern s32 s_lastMaintainVolume;
+
+	void bobaFett_exit()
+	{
+		s_shared = {};
+	}
 
 	void bobaFett_handleDamage(MessageType msg)
 	{
@@ -95,7 +104,7 @@ namespace TFE_DarkForces
 			else
 			{
 				sound_stop(local(bobaFett)->hitSndId);
-				local(bobaFett)->hitSndId = sound_playCued(s_boba3SndID, local(obj)->posWS);
+				local(bobaFett)->hitSndId = sound_playCued(s_shared.boba3SndID, local(obj)->posWS);
 
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
@@ -153,7 +162,7 @@ namespace TFE_DarkForces
 			else
 			{
 				sound_stop(local(bobaFett)->hitSndId);
-				local(bobaFett)->hitSndId = sound_playCued(s_boba3SndID, local(obj)->posWS);
+				local(bobaFett)->hitSndId = sound_playCued(s_shared.boba3SndID, local(obj)->posWS);
 
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
@@ -481,7 +490,7 @@ namespace TFE_DarkForces
 						proj->prevColObj = local(obj);
 						proj->excludeObj = local(obj);
 
-						sound_playCued(s_boba2SndID, local(obj)->posWS);
+						sound_playCued(s_shared.boba2SndID, local(obj)->posWS);
 						SecObject* projObj = proj->logic.obj;
 						projObj->yaw = angle;
 						actor_leadTarget(proj);
@@ -495,7 +504,7 @@ namespace TFE_DarkForces
 						proj->prevColObj = local(obj);
 						proj->excludeObj = local(obj);
 
-						sound_playCued(s_boba2SndID, local(obj)->posWS);
+						sound_playCued(s_shared.boba2SndID, local(obj)->posWS);
 						SecObject* projObj = proj->logic.obj;
 						projObj->yaw = angle;
 						proj_aimAtTarget(proj, s_playerObject->posWS);
@@ -544,7 +553,7 @@ namespace TFE_DarkForces
 
 		local(target)->flags |= 8;
 		sound_stop(local(physicsActor)->moveSndId);
-		sound_playCued(s_boba4SndID, local(obj)->posWS);
+		sound_playCued(s_shared.boba4SndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
 		local(anim)->frameRate = 8;
@@ -696,7 +705,7 @@ namespace TFE_DarkForces
 
 			if (actor_canSeeObject(local(obj), s_playerObject))
 			{
-				sound_playCued(s_boba1SndID, local(obj)->posWS);
+				sound_playCued(s_shared.boba1SndID, local(obj)->posWS);
 				local(physicsActor)->state = BOBASTATE_SEARCH;
 				actor_setupAnimation2(local(obj), 0, local(anim));
 			}
@@ -779,25 +788,25 @@ namespace TFE_DarkForces
 
 	Logic* bobaFett_setup(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
-		if (!s_boba1SndID)
+		if (!s_shared.boba1SndID)
 		{
-			s_boba1SndID = sound_load("boba-1.voc", SOUND_PRIORITY_MED5);
+			s_shared.boba1SndID = sound_load("boba-1.voc", SOUND_PRIORITY_MED5);
 		}
-		if (!s_boba3SndID)
+		if (!s_shared.boba3SndID)
 		{
-			s_boba3SndID = sound_load("boba-3.voc", SOUND_PRIORITY_LOW0);
+			s_shared.boba3SndID = sound_load("boba-3.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_boba2SndID)
+		if (!s_shared.boba2SndID)
 		{
-			s_boba2SndID = sound_load("boba-2.voc", SOUND_PRIORITY_LOW0);
+			s_shared.boba2SndID = sound_load("boba-2.voc", SOUND_PRIORITY_LOW0);
 		}
-		if (!s_boba4SndID)
+		if (!s_shared.boba4SndID)
 		{
-			s_boba4SndID = sound_load("boba-4.voc", SOUND_PRIORITY_MED5);
+			s_shared.boba4SndID = sound_load("boba-4.voc", SOUND_PRIORITY_MED5);
 		}
-		if (!s_bobaRocket2SndID)
+		if (!s_shared.bobaRocket2SndID)
 		{
-			s_bobaRocket2SndID = sound_load("rocket-2.voc", SOUND_PRIORITY_LOW5);
+			s_shared.bobaRocket2SndID = sound_load("rocket-2.voc", SOUND_PRIORITY_LOW5);
 		}
 
 		BobaFett* bobaFett = (BobaFett*)level_alloc(sizeof(BobaFett));
@@ -807,8 +816,8 @@ namespace TFE_DarkForces
 
 		// Give the name of the task a number so I can tell them apart when debugging.
 		char name[32];
-		sprintf(name, "BobaFett%d", s_bobaFettNum);
-		s_bobaFettNum++;
+		sprintf(name, "BobaFett%d", s_shared.bobaFettNum);
+		s_shared.bobaFettNum++;
 		Task* task = createSubTask(name, bobaFettTaskFunc);
 		task_setUserData(task, bobaFett);
 
@@ -826,7 +835,7 @@ namespace TFE_DarkForces
 		bobaFett->moveState.vertAngleRange = ONE_16;
 		bobaFett->moveState.vertAngle = 0;
 		bobaFett->moveState.yVelOffset = 0;
-		bobaFett->moveState.soundSrc   = s_bobaRocket2SndID;
+		bobaFett->moveState.soundSrc   = s_shared.bobaRocket2SndID;
 		bobaFett->moveState.accel = 0;
 		bobaFett->logic.obj = obj;
 		actor_addPhysicsActorToWorld(physicsActor);

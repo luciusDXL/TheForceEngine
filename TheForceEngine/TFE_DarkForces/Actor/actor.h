@@ -129,6 +129,7 @@ struct ActorState
 namespace TFE_DarkForces
 {
 	void actor_clearState();
+	void actor_exitState();
 
 	void actor_loadSounds();
 	void actor_allocatePhysicsActorList();

@@ -188,6 +188,8 @@ namespace TFE_Memory
 
 	void chunkedArrayClear(ChunkedArray* arr)
 	{
+		if (!arr) { return; }
+
 		arr->elemCount = 0;
 		arr->freeSlotCount = 0;
 		for (u32 i = 0; i < arr->chunkCount; i++)

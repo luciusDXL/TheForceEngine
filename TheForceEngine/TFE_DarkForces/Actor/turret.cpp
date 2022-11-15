@@ -52,7 +52,7 @@ namespace TFE_DarkForces
 	
 	struct TurretResources
 	{
-		SoundSourceId sound1;
+		SoundSourceId sound1 = NULL_SOUND;
 	};
 	struct Turret
 	{
@@ -64,9 +64,14 @@ namespace TFE_DarkForces
 		Tick nextTick;
 	};
 
-	static TurretResources s_turretRes = { 0 };
+	static TurretResources s_turretRes = {};
 	static Turret* s_curTurret;
 	static s32 s_turretNum = 0;
+
+	void turret_exit()
+	{
+		s_turretRes = {};
+	}
 
 	MessageType turret_handleDamage(MessageType msg, Turret* turret)
 	{

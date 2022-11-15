@@ -182,30 +182,34 @@ namespace TFE_DarkForces
 	struct RunGameState
 	{
 		s32 argCount = 0;
-		char* args[64];
+		char* args[64] = { 0 };
 
 		JBool cutscenesEnabled = JTRUE;
 		JBool localMsgLoaded   = JFALSE;
 		s32   startLevel       = 0;
 		GameState state        = GSTATE_STARTUP_CUTSCENES;
-		s32   levelIndex;
-		s32   cutsceneIndex;
-		JBool abortLevel;
+		s32   levelIndex       = 0;
+		s32   cutsceneIndex    = 0;
+		JBool abortLevel       = JFALSE;
 	};
 	static RunGameState s_runGameState;
 
-	static GameMessages s_localMessages;
-	static GameMessages s_hotKeyMessages;
-	static TextureData* s_diskErrorImg = nullptr;
-	static Font* s_swFont1 = nullptr;
-	static Font* s_mapNumFont = nullptr;
-	static SoundSourceId s_screenShotSndSrc = NULL_SOUND;
-	static BriefingList s_briefingList = { 0 };
-	static JBool s_gameStarted = JFALSE;
-	
-	static Task* s_loadMissionTask = nullptr;
-	static CutsceneState* s_cutsceneList = nullptr;
-		
+	struct SharedGameState
+	{
+		GameMessages localMessages = {};
+		GameMessages hotKeyMessages = {};
+		TextureData* diskErrorImg = nullptr;
+		Font* swFont1 = nullptr;
+		Font* mapNumFont = nullptr;
+		SoundSourceId screenShotSndSrc = NULL_SOUND;
+		BriefingList  briefingList = { 0 };
+		JBool gameStarted = JFALSE;
+
+		Task* loadMissionTask = nullptr;
+		CutsceneState* cutsceneList = nullptr;
+	};
+	static SharedGameState s_sharedState;
+				
 	/////////////////////////////////////////////
 	// Forward Declarations
 	/////////////////////////////////////////////
@@ -233,6 +237,10 @@ namespace TFE_DarkForces
 	// This part loads and sets up the game.
 	bool DarkForces::runGame(s32 argCount, const char* argv[], Stream* stream)
 	{
+		// Reset state on startup.
+		s_sharedState = {};
+		s_runGameState = {};
+
 		if (!stream)
 		{
 			// Normal start.
@@ -313,7 +321,7 @@ namespace TFE_DarkForces
 			SERIALIZE(SaveVersionInit, s_runGameState.abortLevel, 0);
 		}
 
-		s_gameStarted = JTRUE;
+		s_sharedState.gameStarted = JTRUE;
 		return true;
 	}
 
@@ -321,16 +329,12 @@ namespace TFE_DarkForces
 	{
 		freeAllMidi();
 
-		s_localMessages.count = 0;
-		s_localMessages.msgList = nullptr;
-		s_hotKeyMessages.count = 0;
-		s_hotKeyMessages.msgList = nullptr;
 		gameMessage_freeBuffer();
 		briefingList_freeBuffer();
 		cutsceneList_freeBuffer();
 		lsystem_destroy();
-		bitmap_clearLevelData();
-
+		bitmap_clearAll();
+		
 		// Clear paths and archives.
 		TFE_Paths::clearSearchPaths();
 		TFE_Paths::clearLocalArchives();
@@ -338,15 +342,11 @@ namespace TFE_DarkForces
 
 		// Sound is destroyed after the task system.
 		sound_close();
-
 		config_shutdown();
 
 		// TFE Specific
 		// Reset state
-		s_runGameState.state = GSTATE_STARTUP_CUTSCENES;
-		s_runGameState.localMsgLoaded = JFALSE;
-		s_screenShotSndSrc = NULL_SOUND;
-		s_loadMissionTask = nullptr;
+		actor_exitState();
 		weapon_resetState();
 		renderer_resetState();
 		sound_close();
@@ -360,7 +360,8 @@ namespace TFE_DarkForces
 		// TFE
 		TFE_Sprite_Jedi::freeAll();
 		TFE_Model_Jedi::freeAll();
-		s_gameStarted = JFALSE;
+		reticle_enable(false);
+		texturepacker_reset();
 	}
 
 	void DarkForces::pauseGame(bool pause)
@@ -590,8 +591,8 @@ namespace TFE_DarkForces
 
 	void loadCutsceneList()
 	{
-		s_cutsceneList = cutsceneList_load("cutscene.lst");
-		cutscene_init(s_cutsceneList);
+		s_sharedState.cutsceneList = cutsceneList_load("cutscene.lst");
+		cutscene_init(s_sharedState.cutsceneList);
 	}
 	
 	void freeAllMidi()
@@ -647,9 +648,9 @@ namespace TFE_DarkForces
 				{
 					const char* levelName = agent_getLevelName();
 					s32 briefingIndex = 0;
-					for (s32 i = 0; i < s_briefingList.count; i++)
+					for (s32 i = 0; i < s_sharedState.briefingList.count; i++)
 					{
-						if (strcasecmp(levelName, s_briefingList.briefing[i].mission) == 0)
+						if (strcasecmp(levelName, s_sharedState.briefingList.briefing[i].mission) == 0)
 						{
 							briefingIndex = i;
 							break;
@@ -657,7 +658,7 @@ namespace TFE_DarkForces
 					}
 
 					s32 skill = (s32)s_agentData[s_agentId].difficulty;
-					brief = &s_briefingList.briefing[briefingIndex];
+					brief = &s_sharedState.briefingList.briefing[briefingIndex];
 					if (brief)
 					{
 						missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
@@ -680,8 +681,8 @@ namespace TFE_DarkForces
 
 				task_reset();
 				inf_clearState();
-				s_loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
-				mission_setLoadMissionTask(s_loadMissionTask);
+				s_sharedState.loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
+				mission_setLoadMissionTask(s_sharedState.loadMissionTask);
 
 				s32 levelIndex = agent_getLevelIndex();
 				gameMusic_start(levelIndex);
@@ -968,7 +969,7 @@ namespace TFE_DarkForces
 
 		FilePath path;
 		TFE_Paths::getFilePath("local.msg", &path);
-		return parseMessageFile(&s_localMessages, &path, 0);
+		return parseMessageFile(&s_sharedState.localMessages, &path, 0);
 	}
 
 	void buildSearchPaths()
@@ -1018,10 +1019,10 @@ namespace TFE_DarkForces
 	void loadMapNumFont()
 	{
 		FilePath filePath;
-		s_mapNumFont = nullptr;
+		s_sharedState.mapNumFont = nullptr;
 		if (TFE_Paths::getFilePath("map-nums.fnt", &filePath))
 		{
-			s_mapNumFont = font_load(&filePath);
+			s_sharedState.mapNumFont = font_load(&filePath);
 		}
 	}
 				
@@ -1042,7 +1043,7 @@ namespace TFE_DarkForces
 
 		FilePath filePath;
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);
-		s_swFont1 = font_load(&filePath);
+		s_sharedState.swFont1 = font_load(&filePath);
 
 		renderer_setVisionEffect(0);
 		renderer_setupCameraLight(JFALSE, JFALSE);
@@ -1058,8 +1059,8 @@ namespace TFE_DarkForces
 		}
 
 		weapon_enableAutomount(s_config.wpnAutoMount);
-		s_screenShotSndSrc = sound_load("scrshot.voc", SOUND_PRIORITY_HIGH0);
-		sound_setBaseVolume(s_screenShotSndSrc, 127);
+		s_sharedState.screenShotSndSrc = sound_load("scrshot.voc", SOUND_PRIORITY_HIGH0);
+		sound_setBaseVolume(s_sharedState.screenShotSndSrc, 127);
 	}
 
 	void loadAgentAndLevelData()
@@ -1069,7 +1070,7 @@ namespace TFE_DarkForces
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load level list.");
 		}
-		if (!parseBriefingList(&s_briefingList, "briefing.lst"))
+		if (!parseBriefingList(&s_sharedState.briefingList, "briefing.lst"))
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load briefing list.");
 		}
@@ -1077,10 +1078,10 @@ namespace TFE_DarkForces
 		FilePath filePath;
 		if (TFE_Paths::getFilePath("hotkeys.msg", &filePath))
 		{
-			parseMessageFile(&s_hotKeyMessages, &filePath, 1);
+			parseMessageFile(&s_sharedState.hotKeyMessages, &filePath, 1);
 		}
-		s_diskErrorImg = bitmap_load("diskerr.bm", 0, POOL_GAME);
-		if (!s_diskErrorImg)
+		s_sharedState.diskErrorImg = bitmap_load("diskerr.bm", 0, POOL_GAME);
+		if (!s_sharedState.diskErrorImg)
 		{
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load diskerr image.");
 		}
@@ -1110,8 +1111,8 @@ namespace TFE_DarkForces
 		task_reset();
 		inf_clearState();
 		mission_setLoadingFromSave();	// This tells the mission system that this is loading from a save.
-		s_loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
-		mission_setLoadMissionTask(s_loadMissionTask);
+		s_sharedState.loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
+		mission_setLoadMissionTask(s_sharedState.loadMissionTask);
 		gameMusic_start(levelIndex);
 		agent_setLevelComplete(JFALSE);
 
@@ -1121,7 +1122,7 @@ namespace TFE_DarkForces
 
 	void serializeLoopState(Stream* stream, DarkForces* game)
 	{
-		if (s_gameStarted)
+		if (s_sharedState.gameStarted)
 		{
 			SERIALIZE(SaveVersionInit, s_runGameState.argCount, 0);
 			for (s32 i = 0; i < s_runGameState.argCount; i++)
