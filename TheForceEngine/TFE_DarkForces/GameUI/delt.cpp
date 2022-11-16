@@ -208,6 +208,7 @@ namespace TFE_DarkForces
 		frame->texture.dataSize = frame->texture.width * frame->texture.height;
 		frame->texture.logSizeY = 0;
 		frame->texture.flags = OPACITY_TRANS;
+		frame->texture.textureId = 0;
 		
 		frame->offsetX = header.offsetX;
 		frame->offsetY = header.offsetY;

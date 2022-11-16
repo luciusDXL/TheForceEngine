@@ -24,8 +24,6 @@ using namespace TFE_Input;
 
 namespace TFE_DarkForces
 {
-	static JBool s_escMenuOpen = JFALSE;
-
 	enum EscapeButtons
 	{
 		ESC_BTN_ABORT,
@@ -42,17 +40,24 @@ namespace TFE_DarkForces
 		{64, 99},	// ESC_RETURN
 	};
 	static const Vec2i c_escButtonDim = { 96, 16 };
-	static u32 s_escMenuFrameCount;
-	static DeltFrame* s_escMenuFrames = nullptr;
-	static OffScreenBuffer* s_framebufferCopy = nullptr;
-	static u8* s_framebuffer = nullptr;
 
-	static Vec2i s_cursorPosAccum;
-	static Vec2i s_cursorPos;
-	static s32  s_buttonPressed;
-	static bool s_buttonHover;
+	struct EscapeMenuState
+	{
+		JBool escMenuOpen = JFALSE;
 
-	static RenderTargetHandle s_renderTarget = nullptr;
+		u32 escMenuFrameCount = 0;
+		DeltFrame* escMenuFrames = nullptr;
+		OffScreenBuffer* framebufferCopy = nullptr;
+		u8* framebuffer = nullptr;
+
+		Vec2i cursorPosAccum = { 0 };
+		Vec2i cursorPos = { 0 };
+		s32   buttonPressed = -1;
+		bool  buttonHover = false;
+
+		RenderTargetHandle renderTarget = nullptr;
+	};
+	static EscapeMenuState s_emState = {};
 
 	void escMenu_resetCursor();
 	void escMenu_handleMousePosition();
@@ -64,30 +69,25 @@ namespace TFE_DarkForces
 
 	void escapeMenu_resetState()
 	{
-		s_escMenuFrames = nullptr;
-		s_framebufferCopy = nullptr;
-		s_framebuffer = nullptr;
-		s_escMenuOpen = JFALSE;
-		
 		// TFE: GPU Support.
-		if (s_renderTarget)
+		if (s_emState.renderTarget)
 		{
-			TFE_RenderBackend::freeRenderTarget(s_renderTarget);
-			s_renderTarget = nullptr;
+			TFE_RenderBackend::freeRenderTarget(s_emState.renderTarget);
 		}
+
+		// Clear State.
+		s_emState = {};
 	}
 
 	void escapeMenu_load()
 	{
-		if (!s_escMenuFrames)
+		if (!s_emState.escMenuFrames)
 		{
 			FilePath filePath;
 			if (!TFE_Paths::getFilePath("MENU.LFD", &filePath)) { return; }
 			Archive* archive = Archive::getArchive(ARCHIVE_LFD, "MENU", filePath.path);
 			TFE_Paths::addLocalArchive(archive);
-
-			s_escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_escMenuFrames);
-
+			s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
 			TFE_Paths::removeLastArchive();
 
 			// TFE
@@ -101,7 +101,7 @@ namespace TFE_DarkForces
 		reticle_enable(false);
 
 		pauseLevelSound();
-		s_escMenuOpen = JTRUE;
+		s_emState.escMenuOpen = JTRUE;
 
 		u32 dispWidth, dispHeight;
 		vfb_getResolution(&dispWidth, &dispHeight);
@@ -110,54 +110,54 @@ namespace TFE_DarkForces
 		{
 			// 1. Create a render target to hold the frame.
 			u32 prevWidth, prevHeight;
-			if (s_renderTarget)
+			if (s_emState.renderTarget)
 			{
-				TFE_RenderBackend::getRenderTargetDim(s_renderTarget, &prevWidth, &prevHeight);
+				TFE_RenderBackend::getRenderTargetDim(s_emState.renderTarget, &prevWidth, &prevHeight);
 			}
 
-			if (!s_renderTarget || prevWidth != dispWidth || prevHeight != dispHeight)
+			if (!s_emState.renderTarget || prevWidth != dispWidth || prevHeight != dispHeight)
 			{
-				TFE_RenderBackend::freeRenderTarget(s_renderTarget);
-				s_renderTarget = TFE_RenderBackend::createRenderTarget(dispWidth, dispHeight);
+				TFE_RenderBackend::freeRenderTarget(s_emState.renderTarget);
+				s_emState.renderTarget = TFE_RenderBackend::createRenderTarget(dispWidth, dispHeight);
 			}
 
 			// 2. Blit the current render target texture to the new render target with the grayscale filter applied.
 			// TODO: Apply the grayscale filter.
-			TFE_RenderBackend::copyFromVirtualDisplay(s_renderTarget);
+			TFE_RenderBackend::copyFromVirtualDisplay(s_emState.renderTarget);
 		}
 		else // Software renderer code.
 		{
-			if (s_framebufferCopy && (s_framebufferCopy->width != dispWidth || s_framebufferCopy->height != dispHeight))
+			if (s_emState.framebufferCopy && (s_emState.framebufferCopy->width != dispWidth || s_emState.framebufferCopy->height != dispHeight))
 			{
-				freeOffScreenBuffer(s_framebufferCopy);
-				s_framebufferCopy = nullptr;
+				freeOffScreenBuffer(s_emState.framebufferCopy);
+				s_emState.framebufferCopy = nullptr;
 			}
 
-			if (!s_framebufferCopy)
+			if (!s_emState.framebufferCopy)
 			{
-				s_framebufferCopy = createOffScreenBuffer(dispWidth, dispHeight, OBF_NONE);
+				s_emState.framebufferCopy = createOffScreenBuffer(dispWidth, dispHeight, OBF_NONE);
 			}
-			memcpy(s_framebufferCopy->image, framebuffer, s_framebufferCopy->size);
-			s_framebuffer = framebuffer;
+			memcpy(s_emState.framebufferCopy->image, framebuffer, s_emState.framebufferCopy->size);
+			s_emState.framebuffer = framebuffer;
 
 			// Post process to convert sceen capture to grayscale.
-			for (s32 i = 0; i < s_framebufferCopy->size; i++)
+			for (s32 i = 0; i < s_emState.framebufferCopy->size; i++)
 			{
-				u8 color = s_framebufferCopy->image[i];
+				u8 color = s_emState.framebufferCopy->image[i];
 				u8* rgb = &palette[color * 3];
 				u8 luminance = ((rgb[1] >> 1) + (rgb[0] >> 2) + (rgb[2] >> 2)) >> 1;
-				s_framebufferCopy->image[i] = 63 - luminance;
+				s_emState.framebufferCopy->image[i] = 63 - luminance;
 			}
 		}
 
 		escMenu_resetCursor();
-		s_buttonPressed = -1;
-		s_buttonHover = false;
+		s_emState.buttonPressed = -1;
+		s_emState.buttonHover = false;
 	}
 
 	JBool escapeMenu_isOpen()
 	{
-		return s_escMenuOpen;
+		return s_emState.escMenuOpen;
 	}
 
 	void escapeMenu_addDeltFrame(TextureInfoList& texList, DeltFrame* frame)
@@ -170,9 +170,9 @@ namespace TFE_DarkForces
 
 	bool escapeMenu_getTextures(TextureInfoList& texList, AssetPool pool)
 	{
-		for (u32 i = 0; i < s_escMenuFrameCount; i++)
+		for (u32 i = 0; i < s_emState.escMenuFrameCount; i++)
 		{
-			escapeMenu_addDeltFrame(texList, &s_escMenuFrames[i]);
+			escapeMenu_addDeltFrame(texList, &s_emState.escMenuFrames[i]);
 		}
 		escapeMenu_addDeltFrame(texList, &s_cursor);
 		return true;
@@ -190,37 +190,37 @@ namespace TFE_DarkForces
 
 		// Draw the background and rebind the virtual display.
 		TFE_RenderBackend::unbindRenderTarget();
-		TFE_RenderBackend::copyToVirtualDisplay(s_renderTarget);
+		TFE_RenderBackend::copyToVirtualDisplay(s_emState.renderTarget);
 		TFE_RenderBackend::bindVirtualDisplay();
 
-		screenGPU_blitTextureScaled(&s_escMenuFrames[0].texture, nullptr, intToFixed16(xOffset), 0, xScale, yScale, 31);
+		screenGPU_blitTextureScaled(&s_emState.escMenuFrames[0].texture, nullptr, intToFixed16(xOffset), 0, xScale, yScale, 31);
 
 		if (s_levelComplete)
 		{
 			// Attempt to clean up the button positions, note this is only a problem at non-vanilla resolutions.
 			fixed16_16 yOffset = (dispHeight == 200 || dispHeight == 400) ? 0 : round16(yScale / 2);
 
-			if (s_buttonPressed == ESC_BTN_ABORT && s_buttonHover)
+			if (s_emState.buttonPressed == ESC_BTN_ABORT && s_emState.buttonHover)
 			{
-				screenGPU_blitTextureScaled(&s_escMenuFrames[3].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
+				screenGPU_blitTextureScaled(&s_emState.escMenuFrames[3].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
 			}
 			else
 			{
-				screenGPU_blitTextureScaled(&s_escMenuFrames[4].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
+				screenGPU_blitTextureScaled(&s_emState.escMenuFrames[4].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
 			}
 		}
-		if ((s_buttonPressed > ESC_BTN_ABORT || (s_buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_buttonHover)
+		if ((s_emState.buttonPressed > ESC_BTN_ABORT || (s_emState.buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_emState.buttonHover)
 		{
 			// Attempt to clean up the button positions, note this is only a problem at non-vanilla resolutions.
 			fixed16_16 yOffset = (dispHeight == 200 || dispHeight == 400) ? 0 : round16(yScale / 2);
-			yOffset = min(yOffset, 3 - s_buttonPressed);
+			yOffset = min(yOffset, 3 - s_emState.buttonPressed);
 
 			// Draw the highlight button
 			const s32 highlightIndices[] = { 1, 7, 9, 5 };
-			screenGPU_blitTextureScaled(&s_escMenuFrames[highlightIndices[s_buttonPressed]].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
+			screenGPU_blitTextureScaled(&s_emState.escMenuFrames[highlightIndices[s_emState.buttonPressed]].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
 		}
 		// Draw the mouse.
-		screenGPU_blitTextureScaled(&s_cursor.texture, nullptr, intToFixed16(s_cursorPos.x), intToFixed16(s_cursorPos.z), xScale, yScale, 31);
+		screenGPU_blitTextureScaled(&s_cursor.texture, nullptr, intToFixed16(s_emState.cursorPos.x), intToFixed16(s_emState.cursorPos.z), xScale, yScale, 31);
 	}
 
 	EscapeMenuAction escapeMenu_update()
@@ -228,7 +228,7 @@ namespace TFE_DarkForces
 		EscapeMenuAction action = escapeMenu_updateUI();
 		if (action != ESC_CONTINUE)
 		{
-			s_escMenuOpen = JFALSE;
+			s_emState.escMenuOpen = JFALSE;
 			resumeLevelSound();
 
 			// TFE
@@ -249,30 +249,30 @@ namespace TFE_DarkForces
 
 		if (dispWidth == 320 && dispHeight == 200)
 		{
-			hud_drawElementToScreen(s_framebufferCopy, drawRect, 0, 0, s_framebuffer);
+			hud_drawElementToScreen(s_emState.framebufferCopy, drawRect, 0, 0, s_emState.framebuffer);
 			// Draw the menu background.
-			blitDeltaFrame(&s_escMenuFrames[0], 0, 0, s_framebuffer);
+			blitDeltaFrame(&s_emState.escMenuFrames[0], 0, 0, s_emState.framebuffer);
 
 			if (s_levelComplete)
 			{
-				if (s_buttonPressed == ESC_BTN_ABORT && s_buttonHover)
+				if (s_emState.buttonPressed == ESC_BTN_ABORT && s_emState.buttonHover)
 				{
-					blitDeltaFrame(&s_escMenuFrames[3], 0, 0, s_framebuffer);
+					blitDeltaFrame(&s_emState.escMenuFrames[3], 0, 0, s_emState.framebuffer);
 				}
 				else
 				{
-					blitDeltaFrame(&s_escMenuFrames[4], 0, 0, s_framebuffer);
+					blitDeltaFrame(&s_emState.escMenuFrames[4], 0, 0, s_emState.framebuffer);
 				}
 			}
-			if ((s_buttonPressed > ESC_BTN_ABORT || (s_buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_buttonHover)
+			if ((s_emState.buttonPressed > ESC_BTN_ABORT || (s_emState.buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_emState.buttonHover)
 			{
 				// Draw the highlight button
 				const s32 highlightIndices[] = { 1, 7, 9, 5 };
-				blitDeltaFrame(&s_escMenuFrames[highlightIndices[s_buttonPressed]], 0, 0, s_framebuffer);
+				blitDeltaFrame(&s_emState.escMenuFrames[highlightIndices[s_emState.buttonPressed]], 0, 0, s_emState.framebuffer);
 			}
 
 			// Draw the mouse.
-			blitDeltaFrame(&s_cursor, s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+			blitDeltaFrame(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, s_emState.framebuffer);
 		}
 		else
 		{
@@ -280,37 +280,37 @@ namespace TFE_DarkForces
 			const fixed16_16 yScale = vfb_getYScale();
 			const s32 xOffset = vfb_getWidescreenOffset();
 
-			hud_drawElementToScreen(s_framebufferCopy, drawRect, 0, 0, s_framebuffer);
+			hud_drawElementToScreen(s_emState.framebufferCopy, drawRect, 0, 0, s_emState.framebuffer);
 			// Draw the menu background.
-			blitDeltaFrameScaled(&s_escMenuFrames[0], xOffset, 0, xScale, yScale, s_framebuffer);
+			blitDeltaFrameScaled(&s_emState.escMenuFrames[0], xOffset, 0, xScale, yScale, s_emState.framebuffer);
 
 			if (s_levelComplete)
 			{
 				// Attempt to clean up the button positions, note this is only a problem at non-vanilla resolutions.
 				fixed16_16 yOffset = (dispHeight == 200 || dispHeight == 400) ? 0 : round16(yScale / 2);
 
-				if (s_buttonPressed == ESC_BTN_ABORT && s_buttonHover)
+				if (s_emState.buttonPressed == ESC_BTN_ABORT && s_emState.buttonHover)
 				{
-					blitDeltaFrameScaled(&s_escMenuFrames[3], xOffset, yOffset, xScale, yScale, s_framebuffer);
+					blitDeltaFrameScaled(&s_emState.escMenuFrames[3], xOffset, yOffset, xScale, yScale, s_emState.framebuffer);
 				}
 				else
 				{
-					blitDeltaFrameScaled(&s_escMenuFrames[4], xOffset, yOffset, xScale, yScale, s_framebuffer);
+					blitDeltaFrameScaled(&s_emState.escMenuFrames[4], xOffset, yOffset, xScale, yScale, s_emState.framebuffer);
 				}
 			}
-			if ((s_buttonPressed > ESC_BTN_ABORT || (s_buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_buttonHover)
+			if ((s_emState.buttonPressed > ESC_BTN_ABORT || (s_emState.buttonPressed == ESC_BTN_ABORT && !s_levelComplete)) && s_emState.buttonHover)
 			{
 				// Attempt to clean up the button positions, note this is only a problem at non-vanilla resolutions.
 				fixed16_16 yOffset = (dispHeight == 200 || dispHeight == 400) ? 0 : round16(yScale / 2);
-				yOffset = min(yOffset, 3 - s_buttonPressed);
+				yOffset = min(yOffset, 3 - s_emState.buttonPressed);
 
 				// Draw the highlight button
 				const s32 highlightIndices[] = { 1, 7, 9, 5 };
-				blitDeltaFrameScaled(&s_escMenuFrames[highlightIndices[s_buttonPressed]], xOffset, yOffset, xScale, yScale, s_framebuffer);
+				blitDeltaFrameScaled(&s_emState.escMenuFrames[highlightIndices[s_emState.buttonPressed]], xOffset, yOffset, xScale, yScale, s_emState.framebuffer);
 			}
 
 			// Draw the mouse.
-			blitDeltaFrameScaled(&s_cursor, s_cursorPos.x, s_cursorPos.z, xScale, yScale, s_framebuffer);
+			blitDeltaFrameScaled(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, xScale, yScale, s_emState.framebuffer);
 		}
 		return action;
 	}
@@ -366,11 +366,11 @@ namespace TFE_DarkForces
 		if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED)
 		{
 			action = ESC_RETURN;
-			s_escMenuOpen = JFALSE;
+			s_emState.escMenuOpen = JFALSE;
 		}
 
-		s32 x = s_cursorPos.x;
-		s32 z = s_cursorPos.z;
+		s32 x = s_emState.cursorPos.x;
+		s32 z = s_emState.cursorPos.z;
 
 		// Move into "UI space"
 		fixed16_16 xScale = vfb_getXScale();
@@ -380,37 +380,37 @@ namespace TFE_DarkForces
 
 		if (TFE_Input::mousePressed(MBUTTON_LEFT))
 		{
-			s_buttonPressed = -1;
+			s_emState.buttonPressed = -1;
 			for (u32 i = 0; i < ESC_BTN_COUNT; i++)
 			{
 				if (x >= c_escButtons[i].x && x < c_escButtons[i].x + c_escButtonDim.x &&
 					z >= c_escButtons[i].z && z < c_escButtons[i].z + c_escButtonDim.z)
 				{
-					s_buttonPressed = s32(i);
-					s_buttonHover = true;
+					s_emState.buttonPressed = s32(i);
+					s_emState.buttonHover = true;
 					break;
 				}
 			}
 		}
-		else if (TFE_Input::mouseDown(MBUTTON_LEFT) && s_buttonPressed >= 0)
+		else if (TFE_Input::mouseDown(MBUTTON_LEFT) && s_emState.buttonPressed >= 0)
 		{
 			// Verify that the mouse is still over the button.
-			if (x >= c_escButtons[s_buttonPressed].x && x < c_escButtons[s_buttonPressed].x + c_escButtonDim.x &&
-				z >= c_escButtons[s_buttonPressed].z && z < c_escButtons[s_buttonPressed].z + c_escButtonDim.z)
+			if (x >= c_escButtons[s_emState.buttonPressed].x && x < c_escButtons[s_emState.buttonPressed].x + c_escButtonDim.x &&
+				z >= c_escButtons[s_emState.buttonPressed].z && z < c_escButtons[s_emState.buttonPressed].z + c_escButtonDim.z)
 			{
-				s_buttonHover = true;
+				s_emState.buttonHover = true;
 			}
 			else
 			{
-				s_buttonHover = false;
+				s_emState.buttonHover = false;
 			}
 		}
 		else
 		{
-			action = escapeMenu_handleAction(action, (s_buttonPressed >= ESC_BTN_ABORT && s_buttonHover) ? s_buttonPressed : -1);
+			action = escapeMenu_handleAction(action, (s_emState.buttonPressed >= ESC_BTN_ABORT && s_emState.buttonHover) ? s_emState.buttonPressed : -1);
 			// Reset.
-			s_buttonPressed = -1;
-			s_buttonHover = false;
+			s_emState.buttonPressed = -1;
+			s_emState.buttonHover = false;
 		}
 
 		return action;
@@ -427,9 +427,9 @@ namespace TFE_DarkForces
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		s_cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
-		s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-		s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
+		s_emState.cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
+		s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
+		s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
 	}
 
 	void escMenu_handleMousePosition()
@@ -451,17 +451,17 @@ namespace TFE_DarkForces
 		dx = (dx * uiScale) / 100;
 		dy = (dy * uiScale) / 100;
 
-		s_cursorPosAccum.x = clamp(s_cursorPosAccum.x + dx, 0, displayInfo.width);
-		s_cursorPosAccum.z = clamp(s_cursorPosAccum.z + dy, 0, displayInfo.height);
+		s_emState.cursorPosAccum.x = clamp(s_emState.cursorPosAccum.x + dx, 0, displayInfo.width);
+		s_emState.cursorPosAccum.z = clamp(s_emState.cursorPosAccum.z + dy, 0, displayInfo.height);
 		if (displayInfo.width >= displayInfo.height)
 		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
+			s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
+			s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
 		}
 		else
 		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
+			s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
+			s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
 		}
 	}
 }

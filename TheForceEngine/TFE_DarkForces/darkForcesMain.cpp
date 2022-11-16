@@ -299,6 +299,7 @@ namespace TFE_DarkForces
 		setInitialLevel(startLevel);
 		
 		// TFE Specific
+		agentMenu_load();
 		escapeMenu_load();
 		// Add texture callbacks.
 		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);

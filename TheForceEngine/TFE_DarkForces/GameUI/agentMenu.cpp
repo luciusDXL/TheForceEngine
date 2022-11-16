@@ -433,8 +433,8 @@ namespace TFE_DarkForces
 
 		setPalette();
 	}
-		
-	void agentMenu_startup()
+
+	void agentMenu_load()
 	{
 		FilePath filePath;
 		if (!TFE_Paths::getFilePath("AGENTMNU.LFD", &filePath)) { return; }
@@ -446,7 +446,10 @@ namespace TFE_DarkForces
 		s_agentDlgCount = getFramesFromAnim("agentdlg.anim", &s_agentDlgFrames);
 		getFrameFromDelt("cursor.delt", &s_cursor);
 		TFE_Paths::removeLastArchive();
-
+	}
+		
+	void agentMenu_startup()
+	{
 		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
 			if (!s_agentData[i].name[0])
