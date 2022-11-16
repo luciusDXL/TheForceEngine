@@ -1185,12 +1185,12 @@ namespace TFE_DarkForces
 
 			serializeVersion(&stream);
 			serializeLoopState(&stream, this);
+			time_serialize(&stream);
 			if (!writeState)
 			{
 				startMissionFromSave(s_runGameState.levelIndex);
 			}
 			sound_serializeLevelSounds(&stream);
-			time_serialize(&stream);
 			random_serialize(&stream);
 			automap_serialize(&stream);
 			hitEffect_serializeTasks(&stream);
