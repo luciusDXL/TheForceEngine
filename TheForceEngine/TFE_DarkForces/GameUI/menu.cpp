@@ -25,7 +25,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
-	static JBool s_loaded = JFALSE;
 	static LfdArchive s_archive;
 
 	Vec2i s_cursorPosAccum;
@@ -38,16 +37,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void menu_init()
 	{
-		if (s_loaded) { return; }
-
-		FilePath filePath;
-		if (!TFE_Paths::getFilePath("AGENTMNU.LFD", &filePath)) { return; }
-		Archive* archive = Archive::getArchive(ARCHIVE_LFD, "AGENTMNU", filePath.path);
-		TFE_Paths::addLocalArchive(archive);
-		getFrameFromDelt("cursor.delt", &s_cursor);
-		TFE_Paths::removeLastArchive();
-
-		s_loaded = JTRUE;
 	}
 
 	void menu_destroy()
@@ -57,7 +46,6 @@ namespace TFE_DarkForces
 
 	void menu_resetState()
 	{
-		s_loaded = JFALSE;
 		delt_resetState();
 	}
 	
