@@ -30,6 +30,7 @@
 #include <TFE_Game/reticle.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>
+#include <TFE_System/tfeMessage.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/filestream.h>
@@ -1213,6 +1214,20 @@ namespace TFE_DarkForces
 		return true;
 	}
 
+	void saveGame(DarkForces* game, const char* fileName)
+	{
+		// Write the save message.
+		const char* msg = TFE_System::getMessage(TFE_MSG_SAVE);
+		if (msg)
+		{
+			char fullMsg[TFE_MAX_PATH];
+			sprintf(fullMsg, "%s [%s]", msg, fileName);
+			hud_sendTextMessage(fullMsg, 0);
+		}
+		// Save.
+		game->serializeGameState(fileName, /*writeState*/true);
+	}
+
 	void handleQuickSave(DarkForces* game)
 	{
 		// Hacky code to avoid double-loads or double-saves.
@@ -1221,12 +1236,12 @@ namespace TFE_DarkForces
 				
 		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT) && lastKey == -1)
 		{
-			game->serializeGameState(c_quickSaveName, /*writeState*/true);
+			saveGame(game, c_quickSaveName);
 			lastKey = 0;
 		}
 		else if (TFE_Input::keyPressed(KEY_F6) && TFE_Input::keyModDown(KEYMOD_ALT) && lastKey == -1)
 		{
-			game->serializeGameState(c_quickSaveName, /*writeState*/false);
+			TFE_System::postQuickloadRequest();
 			lastKey = 1;
 		}
 		else

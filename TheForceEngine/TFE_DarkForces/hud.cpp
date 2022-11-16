@@ -136,6 +136,23 @@ namespace TFE_DarkForces
 		TFE_Console::addToHistory(msgText);
 	}
 
+	void hud_sendTextMessage(const char* msg, s32 priority)
+	{
+		// Only display the message if it is the same or lower priority than the current message.
+		if (!msg || priority > s_hudMsgPriority)
+		{
+			return;
+		}
+		strCopyAndZero(s_hudMessage, msg, 80);
+
+		s_hudMsgExpireTick = s_curTick + ((priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
+		s_hudCurrentMsgId  = 0;
+		s_hudMsgPriority   = priority;
+
+		// TFE specific
+		TFE_Console::addToHistory(msg);
+	}
+
 	void hud_clearMessage()
 	{
 		s_hudMessage[0] = 0;

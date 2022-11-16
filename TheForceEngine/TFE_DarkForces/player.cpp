@@ -28,6 +28,10 @@
 #include <TFE_Jedi/Renderer/RClassic_Fixed/rclassicFixed.h>
 #include <TFE_Audio/audioSystem.h>
 
+// TFE
+#include <TFE_System/tfeMessage.h>
+#include <TFE_Settings/settings.h>
+
 using namespace TFE_Input;
 
 namespace TFE_DarkForces
@@ -260,6 +264,8 @@ namespace TFE_DarkForces
 	void handlePlayerPhysics();
 	void handlePlayerActions();
 	void handlePlayerScreenFx();
+
+	void tfe_showSecretFoundMsg();
 
 	// TFE
 	void player_warp(const ConsoleArgList& args);
@@ -1681,6 +1687,9 @@ namespace TFE_DarkForces
 
 			if (newSector->flags1 & SEC_FLAGS1_SECRET)
 			{
+				// If enabled, show the secret found message.
+				tfe_showSecretFoundMsg();
+
 				// Remove the flag so the secret isn't counted twice.
 				newSector->flags1 &= ~SEC_FLAGS1_SECRET;
 				s_secretsFound++;
@@ -2717,5 +2726,19 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, s_jumpScale, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerSlow, 0);
 		SERIALIZE(ObjState_InitVersion, s_onMovingSurface, 0);
+	}
+
+	// TFE Specific
+	void tfe_showSecretFoundMsg()
+	{
+		TFE_Settings_Game* settings = TFE_Settings::getGameSettings();
+		if (settings->df_showSecretFoundMsg)
+		{
+			const char* msg = TFE_System::getMessage(TFE_MSG_SECRET);
+			if (msg)
+			{
+				hud_sendTextMessage(msg, 0);
+			}
+		}
 	}
 }  // TFE_DarkForces

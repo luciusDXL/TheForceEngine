@@ -798,6 +798,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_enableAutoaim = enableAutoaim;
 		}
 
+		bool showSecretMsg = gameSettings->df_showSecretFoundMsg;
+		if (ImGui::Checkbox("Show Secret Found Message", &showSecretMsg))
+		{
+			gameSettings->df_showSecretFoundMsg = showSecretMsg;
+		}
+
 		// File dialogs...
 		if (browseWinOpen >= 0)
 		{

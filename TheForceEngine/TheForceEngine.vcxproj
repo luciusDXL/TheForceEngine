@@ -641,6 +641,7 @@ echo ^)";
     <ClInclude Include="TFE_System\parser.h" />
     <ClInclude Include="TFE_System\profiler.h" />
     <ClInclude Include="TFE_System\system.h" />
+    <ClInclude Include="TFE_System\tfeMessage.h" />
     <ClInclude Include="TFE_System\Threads\mutex.h" />
     <ClInclude Include="TFE_System\Threads\signal.h" />
     <ClInclude Include="TFE_System\Threads\thread.h" />
@@ -932,6 +933,7 @@ echo ^)";
     <ClCompile Include="TFE_System\parser.cpp" />
     <ClCompile Include="TFE_System\profiler.cpp" />
     <ClCompile Include="TFE_System\system.cpp" />
+    <ClCompile Include="TFE_System\tfeMessage.cpp" />
     <ClCompile Include="TFE_System\Threads\Win32\mutexWin32.cpp" />
     <ClCompile Include="TFE_System\Threads\Win32\signalWin32.cpp" />
     <ClCompile Include="TFE_System\Threads\Win32\threadWin32.cpp" />

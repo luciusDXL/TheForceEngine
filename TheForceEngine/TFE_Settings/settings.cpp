@@ -344,6 +344,7 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "fixBobaFettFireDir", s_gameSettings.df_fixBobaFettFireDir);
 				writeKeyValue_Bool(settings, "disableFightMusic", s_gameSettings.df_disableFightMusic);
 				writeKeyValue_Bool(settings, "enableAutoaim", s_gameSettings.df_enableAutoaim);
+				writeKeyValue_Bool(settings, "showSecretFoundMsg", s_gameSettings.df_showSecretFoundMsg);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
 			}
 		}
@@ -721,6 +722,10 @@ namespace TFE_Settings
 		else if (strcasecmp("enableAutoaim", key) == 0)
 		{
 			s_gameSettings.df_enableAutoaim = parseBool(value);
+		}
+		else if (strcasecmp("showSecretFoundMsg", key) == 0)
+		{
+			s_gameSettings.df_showSecretFoundMsg = parseBool(value);
 		}
 		else if (strcasecmp("pitchLimit", key) == 0)
 		{

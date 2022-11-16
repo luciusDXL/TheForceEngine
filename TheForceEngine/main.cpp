@@ -17,6 +17,7 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_System/CrashHandler/crashHandler.h>
+#include <TFE_System/tfeMessage.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_RenderShared/texturePacker.h>
 #include <TFE_Asset/paletteAsset.h>
@@ -521,6 +522,12 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 
+	if (!TFE_System::loadMessages("UI_Text/TfeMessages.txt"))
+	{
+		TFE_System::logWrite(LOG_ERROR, "Main", "Cannot load TFE messages.");
+		return PROGRAM_ERROR;
+	}
+
 	// Initialize settings so that the paths can be read.
 	if (!TFE_Settings::init())
 	{
@@ -659,6 +666,11 @@ int main(int argc, char* argv[])
 		inputMapping_updateInput();
 
 		AppState appState = TFE_FrontEndUI::update();
+		if (TFE_System::quickloadPosted())
+		{
+			appState = APP_STATE_LOAD;
+		}
+
 		if (appState == APP_STATE_QUIT)
 		{
 			s_loop = false;
@@ -813,6 +825,7 @@ int main(int argc, char* argv[])
 		
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");
 	TFE_System::logClose();
+	TFE_System::freeMessages();
 	return PROGRAM_SUCCESS;
 }
 

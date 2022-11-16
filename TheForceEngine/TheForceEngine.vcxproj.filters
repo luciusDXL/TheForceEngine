@@ -1201,6 +1201,9 @@
     <ClInclude Include="TFE_Jedi\Level\robjData.h">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_System\tfeMessage.h">
+      <Filter>Source\TFE_System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2030,6 +2033,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Jedi\Level\robjData.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_System\tfeMessage.cpp">
+      <Filter>Source\TFE_System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
