@@ -1,5 +1,6 @@
 #include "flyers.h"
 #include "actorModule.h"
+#include "animTables.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -17,13 +18,6 @@
 
 namespace TFE_DarkForces
 {
-	static const s32 s_intDroidAnimTable[] =
-	{ 0, 1, 2, 3, 4, 5, -1, 7, -1, -1, -1, -1, 12, -1, -1, -1 };
-	static const s32 s_probeDroidAnimTable[] = 
-	{ 0, 1, 2, 3, 4, 5, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
-	static const s32 s_remoteAnimTable[] =
-	{ 0, 0, 2, 3, -1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1 };
-		
 	u32 flyingModuleFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		ThinkerModule* flyingMod = (ThinkerModule*)module;

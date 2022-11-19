@@ -1,5 +1,6 @@
 #include "troopers.h"
 #include "actorModule.h"
+#include "animTables.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -17,13 +18,6 @@
 
 namespace TFE_DarkForces
 {
-	static const s32 s_officerAnimTable[] =
-	{ 0, 6, 2, 3, 4, 5,  1, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
-	static const s32 s_troopAnimTable[] =
-	{ 0, 1, 3, 2, 4, 5, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
-	static const s32 s_commandoAnimTable[] =
-	{ 0, 1, 2, 3, 4, 5,  6, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
-
 	ItemId officer_getItemDropId(KEYWORD logicId)
 	{
 		switch (logicId)

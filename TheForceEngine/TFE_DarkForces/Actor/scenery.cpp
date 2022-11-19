@@ -1,6 +1,7 @@
 #include "scenery.h"
 #include "../logic.h"
 #include "actorModule.h"
+#include "animTables.h"
 #include <TFE_DarkForces/projectile.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/sound.h>
@@ -10,9 +11,6 @@
 
 namespace TFE_DarkForces
 {
-	static s32 s_sceneryAnimTable[] =
-	{ 0, -1, -1, -1, 1, 0, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1 };
-
 	// Actor function for exploders (i.e. landmines and exploding barrels).
 	JBool sceneryLogicFunc(ActorModule* module, MovementModule* moveMod)
 	{

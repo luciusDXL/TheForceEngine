@@ -1,6 +1,7 @@
 #include "exploders.h"
 #include "../logic.h"
 #include "actorModule.h"
+#include "animTables.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/Memory/list.h>
@@ -8,9 +9,6 @@
 
 namespace TFE_DarkForces
 {
-	static s32 s_mineBarrelAnimTable[] =
-	{ 0, -1, 1, 1, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
-
 	// Actor function for exploders (i.e. landmines and exploding barrels).
 	JBool exploderFunc(ActorModule* module, MovementModule* moveMod)
 	{

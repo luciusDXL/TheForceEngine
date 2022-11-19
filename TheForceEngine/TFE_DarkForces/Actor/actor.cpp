@@ -4,6 +4,7 @@
 #include "../logic.h"
 #include "../gameMusic.h"
 #include "../sound.h"
+#include "animTables.h"
 #include "actorModule.h"
 #include "mousebot.h"
 #include "dragon.h"
@@ -26,10 +27,9 @@
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
-
-struct ActorModule;
 
 namespace TFE_DarkForces
 {
@@ -181,6 +181,43 @@ namespace TFE_DarkForces
 		s_istate.actorPhysicsTask = createSubTask("physics", actorPhysicsTaskFunc);
 	}
 
+	void actorDispatch_serialize(Logic*& logic, Stream* stream)
+	{
+		ActorDispatch* dispatch = nullptr;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			dispatch = (ActorDispatch*)logic;
+		}
+		else
+		{
+			dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
+			memset(dispatch->modules, 0, sizeof(ActorModule*) * 6);
+			logic = (Logic*)dispatch;
+		}
+		s_actorState.curLogic = (Logic*)dispatch;
+
+		serialization_serializeDfSound(stream, SaveVersionInit, &dispatch->alertSndSrc);
+		SERIALIZE(SaveVersionInit, dispatch->delay, 72);
+		SERIALIZE(SaveVersionInit, dispatch->fov, 9557);			// ~210 degrees
+		SERIALIZE(SaveVersionInit, dispatch->awareRange, FIXED(20));
+		SERIALIZE(SaveVersionInit, dispatch->vel, {0});
+		SERIALIZE(SaveVersionInit, dispatch->flags, 4);
+		// Animation Table.
+		s32 animTableIndex = -1;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			animTableIndex = animTables_getIndex(dispatch->animTable);
+		}
+		SERIALIZE(SaveVersionInit, animTableIndex, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			dispatch->animTable = animTables_getTable(animTableIndex);
+			dispatch->alertSndID = NULL_SOUND;
+		}
+
+		// TODO
+	}
+
 	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc)
 	{
 		ActorDispatch* dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
@@ -197,7 +234,10 @@ namespace TFE_DarkForces
 		dispatch->freeTask = nullptr;
 		dispatch->flags = 4;
 
-		obj_addLogic(obj, (Logic*)dispatch, LOGIC_DISPATCH, s_istate.actorTask, actorLogicCleanupFunc);
+		if (obj)
+		{
+			obj_addLogic(obj, (Logic*)dispatch, LOGIC_DISPATCH, s_istate.actorTask, actorLogicCleanupFunc);
+		}
 		if (setupFunc)
 		{
 			*setupFunc = actorLogicSetupFunc;

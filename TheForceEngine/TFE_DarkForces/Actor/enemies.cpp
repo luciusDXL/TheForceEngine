@@ -1,5 +1,6 @@
 #include "enemies.h"
 #include "actorModule.h"
+#include "animTables.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -17,13 +18,6 @@
 
 namespace TFE_DarkForces
 {
-	static const s32 s_reeyeesAnimTable[] =
-	{ 0, 1, 2, 3, 4, 5, -1, 7, 8, -1, -1, -1, 12, -1, -1, -1 };
-	static const s32 s_bosskAnimTable[] =
-	{ 0, 1, 2, 3, 4, 5, 6, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
-	static s32 s_gamorAnimTable[] =
-	{ 0, 1, 2, 3, 4, 5, -1, -1, -1, -1, -1, -1, 12, -1, -1, -1 };
-
 	static const s32 s_reeyeeMinDist = FIXED(30);
 	
 	Logic* reeyees_setup(SecObject* obj, LogicSetupFunc* setupFunc)

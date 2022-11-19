@@ -1,5 +1,6 @@
 #include "sewer.h"
 #include "actorModule.h"
+#include "animTables.h"
 #include "../logic.h"
 #include "../gameMusic.h"
 #include <TFE_DarkForces/player.h>
@@ -19,9 +20,6 @@
 
 namespace TFE_DarkForces
 {
-	static const s32 s_sewerCreatureAnimTable[] =
-	{ -1, 1, 2, 3, 4, 5, 6, -1, -1, -1, -1, -1, -1, -1, 12, 13 };
-
 	u32 sewerCreatureDie(DamageModule* module, MovementModule* moveMod);
 
 	JBool sewerCreatureAiFunc(ActorModule* module, MovementModule* moveMod)

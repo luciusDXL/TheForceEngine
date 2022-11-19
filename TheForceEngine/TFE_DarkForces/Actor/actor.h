@@ -89,6 +89,16 @@ enum ActorCollisionFlags
 	ACTORCOL_GRAVITY = FLAG_BIT(1),
 };
 
+// Forward Declarations.
+struct ActorModule;
+struct MovementModule;
+struct AttackModule;
+struct DamageModule;
+struct ThinkerModule;
+struct LogicAnimation;
+struct PhysicsActor;
+struct ActorTarget;
+
 // Logic for 'actors' -
 // an Actor is something with animated 'actions' that can move around in the world.
 // The "Dispatch" logic is the core actor, so rename to match.
