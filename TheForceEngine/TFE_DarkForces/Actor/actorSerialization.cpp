@@ -307,7 +307,14 @@ namespace TFE_DarkForces
 
 	void actor_serializeAttackModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
-		AttackModule* attackMod;
+		AttackModule* attackMod = nullptr;
+		s32 funcIdx = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			attackMod = (AttackModule*)mod;
+			funcIdx = attackMod->header.func == defaultAttackFunc ? 0 : 1;
+		}
+		SERIALIZE(SaveVersionInit, funcIdx, 0);
 		if (serialization_getMode() == SMODE_READ)
 		{
 			attackMod = (AttackModule*)level_alloc(sizeof(AttackModule));
@@ -315,18 +322,18 @@ namespace TFE_DarkForces
 			memset(attackMod, 0, sizeof(AttackModule));
 			actor_initModule(mod, (Logic*)dispatch);
 			
-			attackMod->header.func = defaultAttackFunc;
+			attackMod->header.func = funcIdx == 0 ? defaultAttackFunc : sewerCreatureEnemyFunc;
 			attackMod->header.freeFunc = nullptr;
 			attackMod->header.msgFunc = defaultAttackMsgFunc;
 			attackMod->header.type = ACTMOD_ATTACK;
 		}
-		else
+		else if (attackMod)
 		{
-			attackMod = (AttackModule*)mod;
-			assert(attackMod->header.func == defaultAttackFunc);
+			assert(attackMod->header.func == defaultAttackFunc || attackMod->header.func == sewerCreatureEnemyFunc);
 			assert(attackMod->header.msgFunc == defaultAttackMsgFunc);
 			assert(attackMod->header.freeFunc == nullptr);
 		}
+		assert(attackMod);
 
 		actor_serializeAttackModuleBase(stream, attackMod, dispatch);
 	}

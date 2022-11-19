@@ -70,4 +70,7 @@ namespace TFE_DarkForces
 	JBool exploderMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
 	JBool sewerCreatureAiFunc(ActorModule* module, MovementModule* moveMod);
 	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+
+	// Alternate Attack function.
+	JBool sewerCreatureEnemyFunc(ActorModule* module, MovementModule* moveMod);
 }  // namespace TFE_DarkForces
