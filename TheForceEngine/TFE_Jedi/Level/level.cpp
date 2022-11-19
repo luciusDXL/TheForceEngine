@@ -540,6 +540,10 @@ namespace TFE_Jedi
 			sector->dirtyFlags = SDF_ALL;
 		}
 
+		// Setup the control sector.
+		s_levelState.controlSector->id = s_levelState.sectorCount;
+		s_levelState.controlSector->index = s_levelState.controlSector->id;
+
 		return true;
 	}
 

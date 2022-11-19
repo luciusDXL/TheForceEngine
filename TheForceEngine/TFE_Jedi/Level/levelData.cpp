@@ -112,6 +112,8 @@ namespace TFE_Jedi
 		if (serialization_getMode() == SMODE_READ)
 		{
 			s_levelState.sectors = (RSector*)level_alloc(sizeof(RSector) * s_levelState.sectorCount);
+			s_levelState.controlSector->id = s_levelState.sectorCount;
+			s_levelState.controlSector->index = s_levelState.controlSector->id;
 		}
 		RSector* sector = s_levelState.sectors;
 		for (u32 s = 0; s < s_levelState.sectorCount; s++, sector++)

@@ -39,10 +39,17 @@ namespace TFE_Jedi
 			sectorIndex = sector->index;
 		}
 		SERIALIZE(version, sectorIndex, -1);
-		assert(sectorIndex == -1 || (sectorIndex >= 0 && sectorIndex < s_levelState.sectorCount));
+		assert(sectorIndex == -1 || (sectorIndex >= 0 && sectorIndex <= s_levelState.sectorCount));
 		if (s_sMode == SMODE_READ)
 		{
-			sector = sectorIndex < 0 ? nullptr : &s_levelState.sectors[sectorIndex];
+			if (sectorIndex == s_levelState.sectorCount)
+			{
+				sector = s_levelState.controlSector;
+			}
+			else
+			{
+				sector = sectorIndex < 0 ? nullptr : &s_levelState.sectors[sectorIndex];
+			}
 		}
 	}
 		
