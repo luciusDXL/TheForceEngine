@@ -446,13 +446,10 @@ namespace TFE_DarkForces
 		MonitorInfo monitorInfo;
 		TFE_RenderBackend::getCurrentMonitorInfo(&monitorInfo);
 
-		// Scale the mouse delta based on monitor resolution.
-		s32 uiScale = max(100, 100 * monitorInfo.h / 1080);
-		dx = (dx * uiScale) / 100;
-		dy = (dy * uiScale) / 100;
+		s32 mx, my;
+		TFE_Input::getMousePos(&mx, &my);
+		s_emState.cursorPosAccum = { mx, my };
 
-		s_emState.cursorPosAccum.x = clamp(s_emState.cursorPosAccum.x + dx, 0, displayInfo.width);
-		s_emState.cursorPosAccum.z = clamp(s_emState.cursorPosAccum.z + dy, 0, displayInfo.height);
 		if (displayInfo.width >= displayInfo.height)
 		{
 			s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);

@@ -54,9 +54,6 @@ namespace TFE_DarkForces
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		MonitorInfo monitorInfo;
-		TFE_RenderBackend::getCurrentMonitorInfo(&monitorInfo);
-
 		LRect bounds;
 		lcanvas_getBounds(&bounds);
 		s32 width  = bounds.right  - bounds.left;
@@ -68,8 +65,6 @@ namespace TFE_DarkForces
 
 		if (displayInfo.width >= displayInfo.height)
 		{
-			
-
 			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
 			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
 		}
