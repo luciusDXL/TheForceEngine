@@ -135,7 +135,7 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void vueLogic_serialize(Logic*& logic, Stream* stream)
+	void vueLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		VueLogic* vueLogic;
 		if (serialization_getMode() == SMODE_WRITE)

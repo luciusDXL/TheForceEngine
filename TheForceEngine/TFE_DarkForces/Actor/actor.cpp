@@ -186,7 +186,8 @@ namespace TFE_DarkForces
 		dispatch->alertSndID = NULL_SOUND;
 		dispatch->fov = 9557;			// ~210 degrees
 		dispatch->awareRange = FIXED(20);
-		dispatch->vel = { 0, 0, 0 };
+		dispatch->vel = { 0 };
+		dispatch->lastPlayerPos = { 0 };
 		dispatch->freeTask = nullptr;
 		dispatch->flags = 4;
 

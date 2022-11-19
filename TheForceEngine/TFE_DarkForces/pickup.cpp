@@ -988,7 +988,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void pickupLogic_serialize(Logic*& logic, Stream* stream)
+	void pickupLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		Pickup* pickup;
 		if (serialization_getMode() == SMODE_WRITE)

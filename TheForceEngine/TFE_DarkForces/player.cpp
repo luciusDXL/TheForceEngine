@@ -2551,7 +2551,7 @@ namespace TFE_DarkForces
 	}
 		
 	// Serialization
-	void playerLogic_serialize(Logic*& logic, Stream* stream)
+	void playerLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		PlayerLogic* playerLogic;
 		if (serialization_getMode() == SMODE_WRITE)

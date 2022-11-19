@@ -119,7 +119,7 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void updateLogic_serialize(Logic*& logic, Stream* stream)
+	void updateLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		UpdateLogic* updateLogic;
 		if (serialization_getMode() == SMODE_WRITE)

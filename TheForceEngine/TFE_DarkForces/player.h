@@ -159,5 +159,5 @@ namespace TFE_DarkForces
 	void cheat_godMode();
 
 	// Serialization
-	void playerLogic_serialize(Logic*& logic, Stream* stream);
+	void playerLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 }  // namespace TFE_DarkForces

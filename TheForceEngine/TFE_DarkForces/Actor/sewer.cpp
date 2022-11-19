@@ -21,7 +21,7 @@
 namespace TFE_DarkForces
 {
 	u32 sewerCreatureDie(DamageModule* module, MovementModule* moveMod);
-
+		
 	JBool sewerCreatureAiFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		DamageModule* damageMod = (DamageModule*)module;

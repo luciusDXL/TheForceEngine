@@ -30,6 +30,7 @@
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_System/system.h>
 
 using namespace TFE_Jedi;
 
@@ -40,9 +41,14 @@ namespace TFE_DarkForces
 	void actor_serializeWall(Stream* stream, RWall*& wall);
 	void actor_serializeCollisionInfo(Stream* stream, CollisionInfo* colInfo);
 	void actor_serializeTarget(Stream* stream, ActorTarget* target);
-	void actor_serializeMovementModule(Stream* stream, MovementModule*& moveMod, ActorDispatch* dispatch);
+	void actor_serializeMovementModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeAttackModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeDamageModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeThinkerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeFlyerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeFlyerRemoteModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
 
-	void actorDispatch_serialize(Logic*& logic, Stream* stream)
+	void actorDispatch_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		ActorDispatch* dispatch = nullptr;
 		if (serialization_getMode() == SMODE_WRITE)
@@ -52,11 +58,13 @@ namespace TFE_DarkForces
 		else
 		{
 			dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
-			memset(dispatch->modules, 0, sizeof(ActorModule*) * 6);
+			memset(dispatch->modules, 0, sizeof(ActorModule*) * ACTOR_MAX_MODULES);
 
 			logic = (Logic*)dispatch;
 			logic->task = s_istate.actorTask;
 			logic->cleanupFunc = actorLogicCleanupFunc;
+			// This is needed for the modules.
+			logic->obj = obj;
 		}
 		s_actorState.curLogic = (Logic*)dispatch;
 
@@ -80,10 +88,74 @@ namespace TFE_DarkForces
 			dispatch->animTable = animTables_getTable(animTableIndex);
 		}
 
-		actor_serializeMovementModule(stream, dispatch->moveMod, dispatch);
-		// TODO:
-		// ActorModule* modules[ACTOR_MAX_MODULES];
-		// Task* freeTask;
+		u8 hasMoveMod = dispatch->moveMod ? 1 : 0;
+		ActorModule* moveMod = nullptr;
+		SERIALIZE(SaveVersionInit, hasMoveMod, 0);
+		if (hasMoveMod)
+		{
+			moveMod = (ActorModule*)dispatch->moveMod;
+			actor_serializeMovementModule(stream, moveMod, dispatch);
+		}
+		if (serialization_getMode() == SMODE_READ)
+		{
+			dispatch->moveMod = (MovementModule*)moveMod;
+		}
+		s32 moduleCount = 0;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			for (s32 i = 0; i < ACTOR_MAX_MODULES; i++)
+			{
+				if (!dispatch->modules[i]) { break; }
+				moduleCount++;
+			}
+		}
+		SERIALIZE(SaveVersionInit, moduleCount, 0);
+		for (s32 i = 0; i < moduleCount; i++)
+		{
+			ActorModule* mod = dispatch->modules[i];
+			ActorModuleType type;
+			if (serialization_getMode() == SMODE_WRITE)
+			{
+				type = mod->type;
+			}
+			SERIALIZE(SaveVersionInit, type, ACTMOD_COUNT);
+			switch (type)
+			{
+				case ACTMOD_MOVE:
+					actor_serializeMovementModule(stream, dispatch->modules[i], dispatch);
+					break;
+				case ACTMOD_ATTACK:
+					actor_serializeAttackModule(stream, dispatch->modules[i], dispatch);
+					break;
+				case ACTMOD_DAMAGE:
+					actor_serializeDamageModule(stream, dispatch->modules[i], dispatch);
+					break;
+				case ACTMOD_THINKER:
+					actor_serializeThinkerModule(stream, dispatch->modules[i], dispatch);
+					break;
+				case ACTMOD_FLYER:
+					actor_serializeFlyerModule(stream, dispatch->modules[i], dispatch);
+					break;
+				case ACTMOD_FLYER_REMOTE:
+					actor_serializeFlyerRemoteModule(stream, dispatch->modules[i], dispatch);
+					break;
+				default:
+					TFE_System::logWrite(LOG_ERROR, "Actor", "Actor serialization failed - unknown module %d.", type);
+					assert(0);
+			}
+			if (serialization_getMode() == SMODE_READ && dispatch->modules[i])
+			{
+				dispatch->modules[i]->type = type;
+			}
+		}
+		if (serialization_getMode() == SMODE_READ)
+		{
+			dispatch->freeTask = nullptr;
+		}
+		else
+		{
+			assert(!dispatch->freeTask);
+		}
 	}
 		
 	void actor_serializeObject(Stream* stream, SecObject*& obj)
@@ -96,7 +168,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, objId, -1);
 		if (serialization_getMode() == SMODE_READ)
 		{
-			obj = objData_getObjectBySerializationId(objId);
+			obj = objId >= 0 ? objData_getObjectBySerializationId(objId) : nullptr;
 		}
 	}
 
@@ -164,13 +236,37 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void actor_serializeMovementModule(Stream* stream, MovementModule*& moveMod, ActorDispatch* dispatch)
+	void actor_serializeTiming(Stream* stream, ActorTiming* timing)
 	{
+		SERIALIZE(SaveVersionInit, timing->delay, 0);
+		SERIALIZE(SaveVersionInit, timing->state0Delay, 0);
+		SERIALIZE(SaveVersionInit, timing->state2Delay, 0);
+		SERIALIZE(SaveVersionInit, timing->state4Delay, 0);
+		SERIALIZE(SaveVersionInit, timing->state1Delay, 0);
+		SERIALIZE(SaveVersionInit, timing->nextTick, 0);
+	}
+
+	void actor_serializeLogicAnim(Stream* stream, LogicAnimation* anim)
+	{
+		SERIALIZE(SaveVersionInit, anim->frameRate, 0);
+		SERIALIZE(SaveVersionInit, anim->frameCount, 0);
+		SERIALIZE(SaveVersionInit, anim->prevTick, 0);
+		SERIALIZE(SaveVersionInit, anim->frame, 0);
+		SERIALIZE(SaveVersionInit, anim->startFrame, 0);
+		SERIALIZE(SaveVersionInit, anim->flags, 0);
+		SERIALIZE(SaveVersionInit, anim->animId, 0);
+		SERIALIZE(SaveVersionInit, anim->state, 0);
+	}
+
+	void actor_serializeMovementModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	{
+		MovementModule* moveMod;
 		if (serialization_getMode() == SMODE_READ)
 		{
 			moveMod = (MovementModule*)level_alloc(sizeof(MovementModule));
 			memset(moveMod, 0, sizeof(MovementModule));
 			actor_initModule((ActorModule*)moveMod, (Logic*)dispatch);
+			mod = (ActorModule*)moveMod;
 
 			moveMod->header.func = defaultActorFunc;
 			moveMod->header.freeFunc = nullptr;
@@ -179,6 +275,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
+			moveMod = (MovementModule*)mod;
 			assert(moveMod->header.func == defaultActorFunc);
 			assert(moveMod->header.freeFunc == nullptr);
 			assert(moveMod->updateTargetFunc == defaultUpdateTargetFunc);
@@ -189,5 +286,192 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, moveMod->delta, {0});
 		actor_serializeWall(stream, moveMod->collisionWall);
 		SERIALIZE(SaveVersionInit, moveMod->collisionFlags, 0);
+	}
+
+	void actor_serializeAttackModuleBase(Stream* stream, AttackModule* attackMod, ActorDispatch* dispatch)
+	{
+		actor_serializeTarget(stream, &attackMod->target);
+		actor_serializeTiming(stream, &attackMod->timing);
+		actor_serializeLogicAnim(stream, &attackMod->anim);
+		SERIALIZE(SaveVersionInit, attackMod->fireSpread, 0);
+		SERIALIZE(SaveVersionInit, attackMod->state0NextTick, 0);
+		SERIALIZE(SaveVersionInit, attackMod->fireOffset, { 0 });
+		SERIALIZE(SaveVersionInit, attackMod->projType, PROJ_COUNT);
+		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackSecSndSrc);
+		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackPrimSndSrc);
+		SERIALIZE(SaveVersionInit, attackMod->meleeRange, 0);
+		SERIALIZE(SaveVersionInit, attackMod->minDist, 0);
+		SERIALIZE(SaveVersionInit, attackMod->maxDist, 0);
+		SERIALIZE(SaveVersionInit, attackMod->meleeDmg, 0);
+		SERIALIZE(SaveVersionInit, attackMod->meleeRate, 0);
+		SERIALIZE(SaveVersionInit, attackMod->attackFlags, 0);
+	}
+
+	void actor_serializeAttackModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	{
+		AttackModule* attackMod;
+		if (serialization_getMode() == SMODE_READ)
+		{
+			attackMod = (AttackModule*)level_alloc(sizeof(AttackModule));
+			mod = (ActorModule*)attackMod;
+			memset(attackMod, 0, sizeof(AttackModule));
+			actor_initModule(mod, (Logic*)dispatch);
+			
+			attackMod->header.func = defaultAttackFunc;
+			attackMod->header.freeFunc = nullptr;
+			attackMod->header.msgFunc = defaultAttackMsgFunc;
+			attackMod->header.type = ACTMOD_ATTACK;
+		}
+		else
+		{
+			attackMod = (AttackModule*)mod;
+			assert(attackMod->header.func == defaultAttackFunc);
+			assert(attackMod->header.msgFunc == defaultAttackMsgFunc);
+			assert(attackMod->header.freeFunc == nullptr);
+		}
+
+		actor_serializeAttackModuleBase(stream, attackMod, dispatch);
+	}
+
+	const ActorFunc c_actorDamageFunc[] = 
+	{
+		defaultDamageFunc,
+		sceneryLogicFunc,
+		exploderFunc,
+		sewerCreatureAiFunc,
+	};
+
+	const ActorMsgFunc c_actorDamageMsgFunc[] =
+	{
+		defaultDamageMsgFunc,
+		sceneryMsgFunc,
+		exploderMsgFunc,
+		sewerCreatureAiMsgFunc,
+	};
+
+	s32 actor_getDamageFuncIndex(ActorFunc func)
+	{
+		for (s32 i = 0; i < TFE_ARRAYSIZE(c_actorDamageFunc); i++)
+		{
+			if (c_actorDamageFunc[i] == func) { return i; }
+		}
+		return -1;
+	}
+
+	s32 actor_getDamageMsgFuncIndex(ActorMsgFunc func)
+	{
+		for (s32 i = 0; i < TFE_ARRAYSIZE(c_actorDamageMsgFunc); i++)
+		{
+			if (c_actorDamageMsgFunc[i] == func) { return i; }
+		}
+		return -1;
+	}
+
+	ActorFunc actor_getDamageFunc(s32 index)
+	{
+		if (index < 0 || index >= TFE_ARRAYSIZE(c_actorDamageFunc)) { return nullptr; }
+		return c_actorDamageFunc[index];
+	}
+
+	ActorMsgFunc actor_getDamageMsgFunc(s32 index)
+	{
+		if (index < 0 || index >= TFE_ARRAYSIZE(c_actorDamageMsgFunc)) { return nullptr; }
+		return c_actorDamageMsgFunc[index];
+	}
+
+	void actor_serializeDamageModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	{
+		DamageModule* damageMod = nullptr;
+		s32 dmgFuncIndex = -1, dmgFuncMsgIndex = -1;
+		if (serialization_getMode() == SMODE_WRITE)
+		{
+			damageMod = (DamageModule*)mod;
+			dmgFuncIndex = actor_getDamageFuncIndex(damageMod->attackMod.header.func);
+			dmgFuncMsgIndex = actor_getDamageMsgFuncIndex(damageMod->attackMod.header.msgFunc);
+			assert(dmgFuncIndex >= 0 && dmgFuncMsgIndex >= 0);
+		}
+		SERIALIZE(SaveVersionInit, dmgFuncIndex, -1);
+		SERIALIZE(SaveVersionInit, dmgFuncMsgIndex, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			damageMod = (DamageModule*)level_alloc(sizeof(DamageModule));
+			mod = (ActorModule*)damageMod;
+			memset(damageMod, 0, sizeof(DamageModule));
+			actor_initModule(mod, (Logic*)dispatch);
+
+			damageMod->attackMod.header.func = actor_getDamageFunc(dmgFuncIndex);
+			damageMod->attackMod.header.msgFunc = actor_getDamageMsgFunc(dmgFuncMsgIndex);
+			damageMod->attackMod.header.freeFunc = nullptr;
+			damageMod->attackMod.header.type = ACTMOD_DAMAGE;
+			assert(damageMod->attackMod.header.func && damageMod->attackMod.header.msgFunc);
+		}
+		assert(damageMod);
+
+		actor_serializeAttackModuleBase(stream, &damageMod->attackMod, dispatch);
+		SERIALIZE(SaveVersionInit, damageMod->hp, 0);
+		SERIALIZE(SaveVersionInit, damageMod->itemDropId, ITEM_AUTOGUN);
+		serialization_serializeDfSound(stream, SaveVersionInit, &damageMod->hurtSndSrc);
+		serialization_serializeDfSound(stream, SaveVersionInit, &damageMod->dieSndSrc);
+		SERIALIZE(SaveVersionInit, damageMod->stopOnHit, JFALSE);
+		SERIALIZE(SaveVersionInit, damageMod->dieEffect, HEFFECT_CANNON_EXP);
+	}
+		
+	void actor_serializeThinkerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	{
+		ThinkerModule* thinkerMod;
+		if (serialization_getMode() == SMODE_READ)
+		{
+			thinkerMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
+			mod = (ActorModule*)thinkerMod;
+			memset(thinkerMod, 0, sizeof(ThinkerModule));
+			actor_initModule(mod, (Logic*)dispatch);
+
+			thinkerMod->header.func = defaultThinkerFunc;
+			thinkerMod->header.type = ACTMOD_THINKER;
+		}
+		else
+		{
+			thinkerMod = (ThinkerModule*)mod;
+			assert(thinkerMod->header.func == defaultThinkerFunc || thinkerMod->header.func == flyingModuleFunc
+				|| thinkerMod->header.func == flyingModuleFunc_Remote);
+			assert(thinkerMod->header.msgFunc == nullptr);
+			assert(thinkerMod->header.freeFunc == nullptr);
+		}
+
+		actor_serializeTarget(stream, &thinkerMod->target);
+		SERIALIZE(SaveVersionInit, thinkerMod->delay, 0);
+		SERIALIZE(SaveVersionInit, thinkerMod->maxWalkTime, 0);
+		SERIALIZE(SaveVersionInit, thinkerMod->startDelay, 0);
+		actor_serializeLogicAnim(stream, &thinkerMod->anim);
+
+		SERIALIZE(SaveVersionInit, thinkerMod->nextTick, 0);
+		SERIALIZE(SaveVersionInit, thinkerMod->playerLastSeen, 0);
+		SERIALIZE(SaveVersionInit, thinkerMod->prevColTick, 0);
+
+		SERIALIZE(SaveVersionInit, thinkerMod->targetOffset, 0);
+		SERIALIZE(SaveVersionInit, thinkerMod->targetVariation, 0);
+		SERIALIZE(SaveVersionInit, thinkerMod->approachVariation, 0);
+	}
+		
+	void actor_serializeFlyerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	{
+		actor_serializeThinkerModule(stream, mod, dispatch);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			ThinkerModule* thinkerMod = (ThinkerModule*)mod;
+			thinkerMod->header.func = flyingModuleFunc;
+			thinkerMod->header.type = ACTMOD_FLYER;
+		}
+	}
+
+	void actor_serializeFlyerRemoteModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
+	{
+		actor_serializeThinkerModule(stream, mod, dispatch);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			ThinkerModule* thinkerMod = (ThinkerModule*)mod;
+			thinkerMod->header.func = flyingModuleFunc_Remote;
+			thinkerMod->header.type = ACTMOD_FLYER_REMOTE;
+		}
 	}
 }  // namespace TFE_DarkForces

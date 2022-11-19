@@ -1583,7 +1583,7 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void projLogic_serialize(Logic*& logic, Stream* stream)
+	void projLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		ProjectileLogic* proj;
 		if (serialization_getMode() == SMODE_WRITE)

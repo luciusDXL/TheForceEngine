@@ -167,7 +167,7 @@ namespace TFE_Jedi
 						Logic* logic = *logicList;
 						if (logic)
 						{
-							TFE_DarkForces::logic_serialize(logic, stream);
+							TFE_DarkForces::logic_serialize(logic, obj, stream);
 						}
 						else
 						{
@@ -215,7 +215,7 @@ namespace TFE_Jedi
 				for (u32 l = 0; l < logicCount; l++)
 				{
 					Logic* logic = nullptr;
-					TFE_DarkForces::logic_serialize(logic, stream);
+					TFE_DarkForces::logic_serialize(logic, obj, stream);
 					if (!logic) { continue; }
 
 					Logic** logicItem = (Logic**)allocator_newItem((Allocator*)obj->logic);

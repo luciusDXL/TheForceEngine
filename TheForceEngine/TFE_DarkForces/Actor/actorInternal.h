@@ -55,4 +55,19 @@ namespace TFE_DarkForces
 	void actorLogicCleanupFunc(Logic* logic);
 	JBool defaultActorFunc(ActorModule* module, MovementModule* moveMod);
 	JBool defaultUpdateTargetFunc(MovementModule* moveMod, ActorTarget* target);
+	JBool defaultAttackFunc(ActorModule* module, MovementModule* moveMod);
+	JBool defaultAttackMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	JBool defaultDamageFunc(ActorModule* module, MovementModule* moveMod);
+	JBool defaultDamageMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	JBool defaultThinkerFunc(ActorModule* module, MovementModule* moveMod);
+	JBool flyingModuleFunc(ActorModule* module, MovementModule* moveMod);
+	JBool flyingModuleFunc_Remote(ActorModule* module, MovementModule* moveMod);
+
+	// Alternate Damage functions
+	JBool sceneryLogicFunc(ActorModule* module, MovementModule* moveMod);
+	JBool sceneryMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	JBool exploderFunc(ActorModule* module, MovementModule* moveMod);
+	JBool exploderMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
+	JBool sewerCreatureAiFunc(ActorModule* module, MovementModule* moveMod);
+	JBool sewerCreatureAiMsgFunc(s32 msg, ActorModule* module, MovementModule* moveMod);
 }  // namespace TFE_DarkForces

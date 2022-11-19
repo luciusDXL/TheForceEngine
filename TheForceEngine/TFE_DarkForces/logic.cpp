@@ -7,6 +7,7 @@
 #include "animLogic.h"
 #include "vueLogic.h"
 #include "projectile.h"
+#include <TFE_DarkForces/Actor/actorSerialization.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Collision/collision.h>
@@ -391,17 +392,17 @@ namespace TFE_DarkForces
 
 	// Stubbed serialization functions
 	// TODO: These should be removed once the system is complete.
-	void unimplementedLogic_serialize(Logic*& logic, Stream* stream)
+	void unimplementedLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented serialization.");
 	}
 		
 	// Type -> Serialization function tables.
-	typedef void(*LogicSerializationFunc)(Logic*&, Stream*);
+	typedef void(*LogicSerializationFunc)(Logic*&, SecObject* obj, Stream*);
 
 	LogicSerializationFunc c_serializeFn[] =
 	{
-		unimplementedLogic_serialize, // LOGIC_DISPATCH
+		actorDispatch_serialize,      // LOGIC_DISPATCH
 		unimplementedLogic_serialize, // LOGIC_BOBA_FETT,
 		unimplementedLogic_serialize, // LOGIC_DRAGON,
 		unimplementedLogic_serialize, // LOGIC_MOUSEBOT,
@@ -421,7 +422,7 @@ namespace TFE_DarkForces
 	};
 
 	// Root serialization functions for Logics.
-	void logic_serialize(Logic*& logic, Stream* stream)
+	void logic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		LogicType type;
 		if (serialization_getMode() == SMODE_WRITE)
@@ -434,7 +435,7 @@ namespace TFE_DarkForces
 
 		if (c_serializeFn[index])
 		{
-			c_serializeFn[index](logic, stream);
+			c_serializeFn[index](logic, obj, stream);
 		}
 		else
 		{

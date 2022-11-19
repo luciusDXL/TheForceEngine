@@ -39,5 +39,5 @@
 
 namespace TFE_DarkForces
 {
-	void actorDispatch_serialize(Logic*& logic, Stream* stream);
+	void actorDispatch_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 }  // namespace TFE_DarkForces

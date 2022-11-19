@@ -238,7 +238,7 @@ namespace TFE_DarkForces
 	}
 
 	// Serialization
-	void generatorLogic_serialize(Logic*& logic, Stream* stream)
+	void generatorLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		Generator* gen;
 		if (serialization_getMode() == SMODE_WRITE)

@@ -18,7 +18,7 @@
 
 namespace TFE_DarkForces
 {
-	u32 flyingModuleFunc(ActorModule* module, MovementModule* moveMod)
+	JBool flyingModuleFunc(ActorModule* module, MovementModule* moveMod)
 	{
 		ThinkerModule* flyingMod = (ThinkerModule*)module;
 		SecObject* obj = flyingMod->header.obj;
@@ -57,10 +57,10 @@ namespace TFE_DarkForces
 		}
 
 		moveMod->updateTargetFunc(moveMod, &flyingMod->target);
-		return 0;
+		return JFALSE;
 	}
 
-	u32 flyingModuleFunc_Remote(ActorModule* module, MovementModule* moveMod)
+	JBool flyingModuleFunc_Remote(ActorModule* module, MovementModule* moveMod)
 	{
 		ThinkerModule* flyingMod = (ThinkerModule*)module;
 		ActorTarget* target = &flyingMod->target;
@@ -88,7 +88,7 @@ namespace TFE_DarkForces
 		}
 
 		moveMod->updateTargetFunc(moveMod, target);
-		return 0;
+		return JFALSE;
 	}
 	
 	ThinkerModule* actor_createFlyingModule(Logic* logic)
