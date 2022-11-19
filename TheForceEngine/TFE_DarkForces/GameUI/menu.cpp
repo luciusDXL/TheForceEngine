@@ -62,18 +62,14 @@ namespace TFE_DarkForces
 		s32 width  = bounds.right  - bounds.left;
 		s32 height = bounds.bottom - bounds.top;
 
-		s32 dx, dy;
-		TFE_Input::getAccumulatedMouseMove(&dx, &dy);
+		s32 mx, my;
+		TFE_Input::getMousePos(&mx, &my);
+		s_cursorPosAccum = { 12*mx/10, my };	// Account for 320x200 in 4:3 scaling.
 
-		// Scale the mouse delta based on monitor resolution.
-		s32 uiScale = max(100, 100 * monitorInfo.h / 1080);
-		dx = (dx * uiScale) / 100;
-		dy = (dy * uiScale) / 100;
-
-		s_cursorPosAccum.x = clamp(s_cursorPosAccum.x + dx, 0, displayInfo.width);
-		s_cursorPosAccum.z = clamp(s_cursorPosAccum.z + dy, 0, displayInfo.height);
 		if (displayInfo.width >= displayInfo.height)
 		{
+			
+
 			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
 			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
 		}
