@@ -171,7 +171,7 @@ namespace TFE_DarkForces
 		automap_updateMapData(MAP_CENTER_PLAYER);
 		automap_updateMapData(MAP_ENABLE_AUTOCENTER);
 		automap_resetScale();
-		ltime_setFrameRate(20);
+		ltime_setFrameRate(10);
 
 		TFE_Input::endFrame();
 	}
