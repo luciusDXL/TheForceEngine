@@ -814,12 +814,13 @@ namespace TFE_DarkForces
 	{
 		DamageModule* damageMod = (DamageModule*)level_alloc(sizeof(DamageModule));
 		memset(damageMod, 0, sizeof(DamageModule));
-
+		
 		AttackModule* attackMod = &damageMod->attackMod;
 		actor_initAttackModule(attackMod, (Logic*)dispatch);
 		attackMod->header.func    = defaultDamageFunc;
 		attackMod->header.msgFunc = defaultDamageMsgFunc;
 		attackMod->header.nextTick = 0xffffffff;
+		attackMod->header.type = ACTMOD_DAMAGE;
 
 		// Default values.
 		damageMod->hp = FIXED(4);
@@ -1129,8 +1130,9 @@ namespace TFE_DarkForces
 	{
 		AttackModule* attackMod = (AttackModule*)level_alloc(sizeof(AttackModule));
 		memset(attackMod, 0, sizeof(AttackModule));
-
+		
 		actor_initAttackModule(attackMod, (Logic*)dispatch);
+		attackMod->header.type = ACTMOD_ATTACK;
 		attackMod->header.func = defaultAttackFunc;
 		attackMod->header.msgFunc = defaultAttackMsgFunc;
 		return attackMod;
@@ -1286,8 +1288,9 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
 		actor_thinkerModuleInit(thinkerMod);
 		actor_initModule((ActorModule*)thinkerMod, (Logic*)dispatch);
-
+		
 		thinkerMod->header.func = defaultThinkerFunc;
+		thinkerMod->header.type = ACTMOD_THINKER;
 		thinkerMod->targetOffset = FIXED(3);
 		thinkerMod->targetVariation = 0;
 		thinkerMod->approachVariation = 4096;	// 90 degrees.
@@ -1642,12 +1645,13 @@ namespace TFE_DarkForces
 	{
 		MovementModule* moveMod = (MovementModule*)level_alloc(sizeof(MovementModule));
 		memset(moveMod, 0, sizeof(MovementModule));
-
+		
 		actor_initModule((ActorModule*)moveMod, (Logic*)dispatch);
 		actor_setupSmartObj(moveMod);
 
 		moveMod->header.func = defaultActorFunc;
 		moveMod->header.freeFunc = nullptr;
+		moveMod->header.type = ACTMOD_MOVE;
 		moveMod->updateTargetFunc = defaultUpdateTargetFunc;
 		// Overwrites width even though it was set in actor_setupSmartObj()
 		moveMod->physics.width = 0x18000;	// 1.5 units

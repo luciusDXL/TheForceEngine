@@ -174,6 +174,7 @@ namespace TFE_DarkForces
 
 			moveMod->header.func = defaultActorFunc;
 			moveMod->header.freeFunc = nullptr;
+			moveMod->header.type = ACTMOD_MOVE;
 			moveMod->updateTargetFunc = defaultUpdateTargetFunc;
 		}
 		else

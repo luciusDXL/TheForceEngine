@@ -56,8 +56,21 @@ struct ActorTiming
 	Tick nextTick;
 };
 
+enum ActorModuleType
+{
+	ACTMOD_MOVE = 0,
+	ACTMOD_ATTACK,
+	ACTMOD_DAMAGE,
+	ACTMOD_THINKER,
+	ACTMOD_FLYER,
+	ACTMOD_FLYER_REMOTE,
+	ACTMOD_COUNT
+};
+
 struct ActorModule
 {
+	ActorModuleType type;
+
 	ActorFunc       func;
 	ActorMsgFunc    msgFunc;
 	ActorAttribFunc attribFunc;

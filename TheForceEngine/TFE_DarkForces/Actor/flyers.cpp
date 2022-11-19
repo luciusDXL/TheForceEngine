@@ -96,6 +96,7 @@ namespace TFE_DarkForces
 		ThinkerModule* flyingMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
 		actor_thinkerModuleInit(flyingMod);
 		actor_initModule((ActorModule*)flyingMod, logic);
+		flyingMod->header.type = ACTMOD_FLYER;
 
 		flyingMod->header.func = flyingModuleFunc;
 		flyingMod->delay = 145;
@@ -108,6 +109,7 @@ namespace TFE_DarkForces
 		ThinkerModule* flyingMod = (ThinkerModule*)level_alloc(sizeof(ThinkerModule));
 		actor_thinkerModuleInit(flyingMod);
 		actor_initModule((ActorModule*)flyingMod, logic);
+		flyingMod->header.type = ACTMOD_FLYER_REMOTE;
 
 		flyingMod->header.func = flyingModuleFunc_Remote;
 		flyingMod->delay = 145;	// 1 second.
