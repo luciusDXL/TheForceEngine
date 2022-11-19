@@ -1230,23 +1230,24 @@ namespace TFE_DarkForces
 
 	void handleQuickSave(DarkForces* game)
 	{
-		// Hacky code to avoid double-loads or double-saves.
-		// TODO: Fix.
-		static s32 lastKey = -1;
-				
-		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT) && lastKey == -1)
+		// Make extra sure these don't double save/load.
+		static s32 lastKey = 0;
+		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT) && !lastKey)
 		{
+			// Saves can happen immediately.
 			saveGame(game, c_quickSaveName);
-			lastKey = 0;
+			lastKey = 1;
 		}
-		else if (TFE_Input::keyPressed(KEY_F6) && TFE_Input::keyModDown(KEYMOD_ALT) && lastKey == -1)
+		else if (TFE_Input::keyPressed(KEY_F6) && TFE_Input::keyModDown(KEYMOD_ALT) && !lastKey)
 		{
+			// But loads exit the game and start it up again with the requested commandline/mods.
+			// This this posts a request which gets handled next frame.
 			TFE_System::postQuickloadRequest();
 			lastKey = 1;
 		}
 		else
 		{
-			lastKey = -1;
+			lastKey = 0;
 		}
 	}
 }

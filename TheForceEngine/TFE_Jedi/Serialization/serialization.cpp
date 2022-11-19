@@ -39,6 +39,7 @@ namespace TFE_Jedi
 			sectorIndex = sector->index;
 		}
 		SERIALIZE(version, sectorIndex, -1);
+		assert(sectorIndex == -1 || (sectorIndex >= 0 && sectorIndex < s_levelState.sectorCount));
 		if (s_sMode == SMODE_READ)
 		{
 			sector = sectorIndex < 0 ? nullptr : &s_levelState.sectors[sectorIndex];
@@ -81,9 +82,10 @@ namespace TFE_Jedi
 			}
 		}
 		SERIALIZE(version, id, -1);
+		assert(id >= 0);
 		if (s_sMode == SMODE_READ)
 		{
-			texture = (id < 0) ? nullptr :  bitmap_getTextureByIndex(ID_GET_INDEX(id), ID_GET_POOL(id));
+			texture = (id < 0) ? nullptr : bitmap_getTextureByIndex(ID_GET_INDEX(id), ID_GET_POOL(id));
 		}
 	}
 

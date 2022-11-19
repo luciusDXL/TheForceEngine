@@ -320,8 +320,15 @@ namespace TFE_Jedi
 	void inf_serializeTrigger(Stream* stream, InfTrigger* trigger)
 	{
 		SERIALIZE(InfState_InitVersion, trigger->deleted, 0);
-		if (trigger->deleted) { return; }
-
+		if (trigger->deleted)
+		{
+			if (serialization_getMode() == SMODE_READ)
+			{
+				memset(trigger, 0, sizeof(InfTrigger));
+				trigger->deleted = JTRUE;
+			}
+			return;
+		}
 		SERIALIZE(InfState_InitVersion, trigger->type, ITRIGGER_WALL);
 
 		// Inf Link
@@ -332,16 +339,23 @@ namespace TFE_Jedi
 			if (trigger->type == ITRIGGER_SECTOR)
 			{
 				parentSector = (RSector*)trigger->parent;
+				assert(parentSector && parentSector->id == parentSector->index);
 			}
 			else
 			{
 				RWall* wall = (RWall*)trigger->parent;
 				parentSector = wall->sector;
 				parentWallIndex = wall->id;
+				assert(parentSector && parentSector->id == parentSector->index && parentWallIndex >= 0 && parentWallIndex < parentSector->wallCount);
 			}
 		}
 		serialization_serializeSectorPtr(stream, InfState_InitVersion, parentSector);
 		SERIALIZE(InfState_InitVersion, parentWallIndex, -1);
+		if (serialization_getMode() == SMODE_READ)
+		{
+			assert(parentSector && parentSector->id == parentSector->index);
+			trigger->parent = (trigger->type == ITRIGGER_SECTOR) ? (void*)parentSector : (void*)&parentSector->walls[parentWallIndex];
+		}
 		InfLink* link = nullptr;
 		Allocator* parent = nullptr;
 		RWall* triggerWall = nullptr;
@@ -426,19 +440,30 @@ namespace TFE_Jedi
 						break;
 					}
 				}
+				assert(frameIndex >= 0);
 			}
 		}
 		SERIALIZE(InfState_InitVersion, frameIndex, -1);
-		if (serialization_getMode() == SMODE_READ && frameIndex >= 0)
+		if (serialization_getMode() == SMODE_READ)
 		{
-			AnimatedTexture* animTex = trigger->animTex;
-			if (animTex)
+			if (frameIndex >= 0)
 			{
-				trigger->tex = animTex->frameList[frameIndex];
-				if (triggerWall)
+				AnimatedTexture* animTex = trigger->animTex;
+				assert(animTex);
+				if (animTex)
 				{
-					triggerWall->signTex = &trigger->tex;
+					assert(frameIndex < animTex->count);
+					trigger->tex = animTex->frameList[frameIndex];
+					if (triggerWall)
+					{
+						triggerWall->signTex = &trigger->tex;
+					}
 				}
+			}
+			else
+			{
+				assert(!trigger->animTex);
+				trigger->animTex = nullptr;
 			}
 		}
 

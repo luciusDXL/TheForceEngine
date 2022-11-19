@@ -187,12 +187,13 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read texture count.");
 			return false;
 		}
-		s_levelState.textures = (TextureData**)level_alloc(s_levelState.textureCount * sizeof(TextureData**));
-		memset(s_levelState.textures, 0, s_levelState.textureCount * sizeof(TextureData**));
+		s_levelState.textures = (TextureData**)level_alloc(2 * s_levelState.textureCount * sizeof(TextureData**));
+		memset(s_levelState.textures, 0, 2 * s_levelState.textureCount * sizeof(TextureData**));
 
 		// Load Textures.
 		TextureData** texture = s_levelState.textures;
-		for (s32 i = 0; i < s_levelState.textureCount; i++, texture++)
+		TextureData** texBase = s_levelState.textures + s_levelState.textureCount;
+		for (s32 i = 0; i < s_levelState.textureCount; i++, texture++, texBase++)
 		{
 			line = parser.readLine(bufferPos);
 			char textureName[256];
@@ -220,11 +221,13 @@ namespace TFE_Jedi
 					}
 				}
 				*texture = tex;
+				// This version never gets modified, so serialization is simpler.
+				*texBase = tex;
 
 				// Setup an animated texture.
 				if (tex->uvWidth == BM_ANIMATED_TEXTURE)
 				{
-					bitmap_setupAnimatedTexture(texture);
+					bitmap_setupAnimatedTexture(texture, i);
 				}
 			}
 		}

@@ -35,6 +35,7 @@ namespace TFE_Jedi
 		Allocator*    textureAnimAlloc = nullptr;
 		Task*         textureAnimTask = nullptr;
 		MemoryRegion* memoryRegion = nullptr;
+		s32           animTexIndex = 0;
 	};
 	static TextureState s_texState = {};
 	static std::vector<u8> s_buffer;
@@ -79,6 +80,7 @@ namespace TFE_Jedi
 	{
 		s_texState.textureAnimTask = createSubTask("texture animation", textureAnimationTaskFunc);
 		s_texState.textureAnimAlloc = allocator_create(sizeof(AnimatedTexture));
+		s_texState.animTexIndex = 0;
 	}
 
 	Allocator* bitmap_getAnimTextureAlloc()
@@ -323,6 +325,10 @@ namespace TFE_Jedi
 			s_textureTable[pool][name] = index;
 		}
 
+		texture->animIndex = -1;
+		texture->frameIdx = -1;
+		texture->animPtr = nullptr;
+
 		return texture;
 	}
 
@@ -435,10 +441,10 @@ namespace TFE_Jedi
 		return s_texState.textureAnimAlloc;
 	}
 
-	void bitmap_setupAnimatedTexture(TextureData** texture)
+	AnimatedTexture* bitmap_createAnimatedTexture(TextureData** texture, s32 index, u8& frameRate)
 	{
 		TextureData* tex = *texture;
-		u8 frameRate = tex->image[0];
+		frameRate = tex->image[0];
 		u8 animatedId = tex->image[1];
 
 		// if animatedId != DF_ANIM_ID, then this is not a properly setup animated texture.
@@ -446,9 +452,9 @@ namespace TFE_Jedi
 		{
 			TFE_System::logWrite(LOG_WARNING, "bitmap_setupAnimatedTexture", "Invalid animatedId %u, should be %u.", animatedId, DF_ANIM_ID);
 			tex->uvWidth = 0;
-			return;
+			return nullptr;
 		}
-		
+
 		// In the original DOS code, this is directly set to pointers. But since TFE is compiled as 64-bit, pointers are not the correct size.
 		u32* textureOffsets = (u32*)(tex->image + 2);
 		AnimatedTexture* anim = (AnimatedTexture*)allocator_newItem(s_texState.textureAnimAlloc);
@@ -483,9 +489,20 @@ namespace TFE_Jedi
 			// We have to make sure the structure offsets line up with DOS...
 			outFrames[i].flags = *((u8*)frame + 0x18);
 			outFrames[i].compressed = *((u8*)frame + 0x19);
+			outFrames[i].animIndex = index;
+			outFrames[i].frameIdx = i;
+			outFrames[i].animPtr = anim;
 
 			anim->frameList[i] = &outFrames[i];
 		}
+		return anim;
+	}
+
+	void bitmap_setupAnimatedTexture(TextureData** texture, s32 index)
+	{
+		u8 frameRate;
+		AnimatedTexture* anim = bitmap_createAnimatedTexture(texture, index, frameRate);
+		TextureData* tex = *texture;
 
 		if (frameRate)
 		{
@@ -499,7 +516,11 @@ namespace TFE_Jedi
 			anim->nextTick = 0xffffffff;
 			// The "image" is really the animation.
 			tex->image = (u8*)anim;
+			tex->animIndex = index;
+			tex->frameIdx = -1;
+			tex->animPtr = nullptr; // This is set to NULL since it is handled in the INF serialization.
 		}
+		s_texState.animTexIndex++;
 	}
 		
 	// Per frame animated texture update.

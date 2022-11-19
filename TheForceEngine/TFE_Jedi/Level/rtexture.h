@@ -53,6 +53,11 @@ struct TextureData
 	u8 flags;
 	u8 compressed; // 0 = not compressed, 1 = compressed (RLE), 2 = compressed (RLE0)
 	u8 pad3[2];
+
+	// TFE
+	s32 animIndex = -1;
+	s32 frameIdx = 0;
+	void* animPtr = nullptr;
 };
 #pragma pack(pop)
 
@@ -88,7 +93,7 @@ namespace TFE_Jedi
 	// levelTexture bool was added for TFE to make serializing texture state easier.
 	// if levelTexture is false, then textures are not serialized and not cleared at level end.
 	TextureData* bitmap_load(const char* name, u32 decompress, AssetPool pool = POOL_LEVEL, bool addToCache = true);
-	void bitmap_setupAnimatedTexture(TextureData** texture);
+	void bitmap_setupAnimatedTexture(TextureData** texture, s32 index);
 
 	Allocator* bitmap_getAnimatedTextures();
 	TextureData** bitmap_getTextures(s32* textureCount, AssetPool pool);

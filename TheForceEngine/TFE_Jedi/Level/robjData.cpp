@@ -52,6 +52,10 @@ namespace TFE_Jedi
 		{
 			obj->self = obj;
 		}
+		else
+		{
+			assert(obj && obj->sector && obj->sector->id == obj->sector->index);
+		}
 
 		const vec3_fixed def = { 0 };
 		SERIALIZE(ObjState_InitVersion, obj->type, ObjectType::OBJ_TYPE_SPIRIT);
@@ -91,6 +95,7 @@ namespace TFE_Jedi
 		SERIALIZE(ObjState_InitVersion, obj->frame, 0);
 		SERIALIZE(ObjState_InitVersion, obj->anim, 0);
 		serialization_serializeSectorPtr(stream, ObjState_InitVersion, obj->sector);
+		assert(obj && obj->sector && obj->sector->id == obj->sector->index);
 
 		SERIALIZE(ObjState_InitVersion, obj->flags, 0);
 		SERIALIZE(ObjState_InitVersion, obj->pitch, 0);

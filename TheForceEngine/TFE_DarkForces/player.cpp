@@ -1105,7 +1105,11 @@ namespace TFE_DarkForces
 	void playerControlTaskFunc(MessageType msg)
 	{
 		task_begin;
-		s_curSafe = level_getSafeFromSector(s_playerObject->sector);
+		if (!s_curSafe)
+		{
+			s_curSafe = level_getSafeFromSector(s_playerObject->sector);
+		}
+
 		s_playerPos.x = s_playerObject->posWS.x;
 		s_playerPos.y = s_playerObject->posWS.y;
 		s_playerPos.z = s_playerObject->posWS.z;
@@ -2602,9 +2606,11 @@ namespace TFE_DarkForces
 
 		// Store safe sector, derive the safe itself from it on load.
 		RSector* safeSector = nullptr;
-		if (serialization_getMode() == SMODE_WRITE) { safeSector = s_curSafe->sector; }
+		if (serialization_getMode() == SMODE_WRITE) { safeSector = s_curSafe ? s_curSafe->sector : nullptr; }
 		serialization_serializeSectorPtr(stream, ObjState_InitVersion, safeSector);
-		if (serialization_getMode() == SMODE_READ) 	{ s_curSafe = level_getSafeFromSector(safeSector); }
+		if (serialization_getMode() == SMODE_READ) 	{ s_curSafe = safeSector ? level_getSafeFromSector(safeSector) : nullptr; }
+		// There should always be a safe the level start always acts as one.
+		assert(s_curSafe);
 		
 		SERIALIZE(ObjState_InitVersion, s_playerUse, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerActionUse, 0);
