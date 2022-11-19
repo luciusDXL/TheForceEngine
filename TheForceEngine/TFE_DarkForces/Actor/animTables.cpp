@@ -54,6 +54,7 @@ namespace TFE_DarkForces
 	// Serialization helpers.
 	s32 animTables_getIndex(const s32* table)
 	{
+		if (!table) { return -1; }
 		for (s32 i = 0; i < s_animTableCount; i++)
 		{
 			if (s_animTables[i] == table)
@@ -61,6 +62,7 @@ namespace TFE_DarkForces
 				return i;
 			}
 		}
+		assert(0);
 		return -1;
 	}
 

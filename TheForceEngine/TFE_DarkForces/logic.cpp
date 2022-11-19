@@ -436,10 +436,13 @@ namespace TFE_DarkForces
 		if (c_serializeFn[index])
 		{
 			c_serializeFn[index](logic, obj, stream);
+			if (logic) { logic->type = type; }
 		}
 		else
 		{
 			TFE_System::logWrite(LOG_ERROR, "Logic", "Serialize - invalid logic type: %d.", type);
+			if (logic) { logic->type = LOGIC_UNKNOWN; }
+			assert(0);
 		}
 	}
 }  // TFE_DarkForces

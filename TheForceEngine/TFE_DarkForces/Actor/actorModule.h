@@ -56,7 +56,7 @@ struct ActorTiming
 	Tick nextTick;
 };
 
-enum ActorModuleType
+enum ActorModuleType : u32
 {
 	ACTMOD_MOVE = 0,
 	ACTMOD_ATTACK,
@@ -64,7 +64,8 @@ enum ActorModuleType
 	ACTMOD_THINKER,
 	ACTMOD_FLYER,
 	ACTMOD_FLYER_REMOTE,
-	ACTMOD_COUNT
+	ACTMOD_COUNT,
+	ACTMOD_INVALID = ACTMOD_COUNT
 };
 
 struct ActorModule

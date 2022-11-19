@@ -36,6 +36,8 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
+	typedef void(*ActorModuleSerializeFn)(Stream*, ActorModule*&, ActorDispatch*);
+
 	// Forward Declarations
 	void actor_serializeObject(Stream* stream, SecObject*& obj);
 	void actor_serializeWall(Stream* stream, RWall*& wall);
@@ -48,6 +50,17 @@ namespace TFE_DarkForces
 	void actor_serializeFlyerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
 	void actor_serializeFlyerRemoteModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
 
+	static const ActorModuleSerializeFn c_moduleSerFn[]=
+	{
+		actor_serializeMovementModule,    // ACTMOD_MOVE
+		actor_serializeAttackModule,      // ACTMOD_ATTACK
+		actor_serializeDamageModule,      // ACTMOD_DAMAGE
+		actor_serializeThinkerModule,     // ACTMOD_THINKER
+		actor_serializeFlyerModule,       // ACTMOD_FLYER
+		actor_serializeFlyerRemoteModule, // ACTMOD_FLYER_REMOTE
+		nullptr,						  // ACTMOD_INVALID
+	};
+	   
 	void actorDispatch_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
 		ActorDispatch* dispatch = nullptr;
@@ -58,7 +71,7 @@ namespace TFE_DarkForces
 		else
 		{
 			dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
-			memset(dispatch->modules, 0, sizeof(ActorModule*) * ACTOR_MAX_MODULES);
+			memset(dispatch, 0, sizeof(ActorDispatch));
 
 			logic = (Logic*)dispatch;
 			logic->task = s_istate.actorTask;
@@ -66,7 +79,6 @@ namespace TFE_DarkForces
 			// This is needed for the modules.
 			logic->obj = obj;
 		}
-		s_actorState.curLogic = (Logic*)dispatch;
 
 		serialization_serializeDfSound(stream, SaveVersionInit, &dispatch->alertSndSrc);
 		SERIALIZE(SaveVersionInit, dispatch->delay, 72);
@@ -87,19 +99,19 @@ namespace TFE_DarkForces
 		{
 			dispatch->animTable = animTables_getTable(animTableIndex);
 		}
-
+		// Movement module.
 		u8 hasMoveMod = dispatch->moveMod ? 1 : 0;
-		ActorModule* moveMod = nullptr;
+		ActorModule* moveMod = (serialization_getMode() == SMODE_WRITE) ? (ActorModule*)dispatch->moveMod : nullptr;
 		SERIALIZE(SaveVersionInit, hasMoveMod, 0);
 		if (hasMoveMod)
 		{
-			moveMod = (ActorModule*)dispatch->moveMod;
 			actor_serializeMovementModule(stream, moveMod, dispatch);
 		}
 		if (serialization_getMode() == SMODE_READ)
 		{
 			dispatch->moveMod = (MovementModule*)moveMod;
 		}
+		// Module list.
 		s32 moduleCount = 0;
 		if (serialization_getMode() == SMODE_WRITE)
 		{
@@ -118,30 +130,16 @@ namespace TFE_DarkForces
 			{
 				type = mod->type;
 			}
-			SERIALIZE(SaveVersionInit, type, ACTMOD_COUNT);
-			switch (type)
+			SERIALIZE(SaveVersionInit, type, ACTMOD_INVALID);
+			type = type < ACTMOD_INVALID ? type : ACTMOD_INVALID;
+			if (c_moduleSerFn[type])
 			{
-				case ACTMOD_MOVE:
-					actor_serializeMovementModule(stream, dispatch->modules[i], dispatch);
-					break;
-				case ACTMOD_ATTACK:
-					actor_serializeAttackModule(stream, dispatch->modules[i], dispatch);
-					break;
-				case ACTMOD_DAMAGE:
-					actor_serializeDamageModule(stream, dispatch->modules[i], dispatch);
-					break;
-				case ACTMOD_THINKER:
-					actor_serializeThinkerModule(stream, dispatch->modules[i], dispatch);
-					break;
-				case ACTMOD_FLYER:
-					actor_serializeFlyerModule(stream, dispatch->modules[i], dispatch);
-					break;
-				case ACTMOD_FLYER_REMOTE:
-					actor_serializeFlyerRemoteModule(stream, dispatch->modules[i], dispatch);
-					break;
-				default:
-					TFE_System::logWrite(LOG_ERROR, "Actor", "Actor serialization failed - unknown module %d.", type);
-					assert(0);
+				c_moduleSerFn[type](stream, dispatch->modules[i], dispatch);
+			}
+			else
+			{
+				TFE_System::logWrite(LOG_ERROR, "Actor", "Actor serialization failed - unknown module %d.", type);
+				assert(0);
 			}
 			if (serialization_getMode() == SMODE_READ && dispatch->modules[i])
 			{
@@ -268,17 +266,17 @@ namespace TFE_DarkForces
 			actor_initModule((ActorModule*)moveMod, (Logic*)dispatch);
 			mod = (ActorModule*)moveMod;
 
-			moveMod->header.func = defaultActorFunc;
-			moveMod->header.freeFunc = nullptr;
 			moveMod->header.type = ACTMOD_MOVE;
+			moveMod->header.func = defaultActorFunc;
 			moveMod->updateTargetFunc = defaultUpdateTargetFunc;
+			moveMod->header.freeFunc = nullptr;
 		}
 		else
 		{
 			moveMod = (MovementModule*)mod;
 			assert(moveMod->header.func == defaultActorFunc);
-			assert(moveMod->header.freeFunc == nullptr);
 			assert(moveMod->updateTargetFunc == defaultUpdateTargetFunc);
+			assert(moveMod->header.freeFunc == nullptr);
 		}
 
 		actor_serializeCollisionInfo(stream, &moveMod->physics);
@@ -295,7 +293,7 @@ namespace TFE_DarkForces
 		actor_serializeLogicAnim(stream, &attackMod->anim);
 		SERIALIZE(SaveVersionInit, attackMod->fireSpread, 0);
 		SERIALIZE(SaveVersionInit, attackMod->state0NextTick, 0);
-		SERIALIZE(SaveVersionInit, attackMod->fireOffset, { 0 });
+		SERIALIZE(SaveVersionInit, attackMod->fireOffset, {0});
 		SERIALIZE(SaveVersionInit, attackMod->projType, PROJ_COUNT);
 		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackSecSndSrc);
 		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackPrimSndSrc);
