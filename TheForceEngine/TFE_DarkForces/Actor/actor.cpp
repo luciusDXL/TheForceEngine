@@ -1,6 +1,7 @@
 #include <cstring>
 
 #include "actor.h"
+#include "actorInternal.h"
 #include "../logic.h"
 #include "../gameMusic.h"
 #include "../sound.h"
@@ -36,15 +37,8 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Internal State
 	///////////////////////////////////////////
-	struct ActorInternalState
-	{
-		Allocator* actorDispatch;
-		Task* actorTask;
-		Task* actorPhysicsTask;
-		JBool objCollisionEnabled;
-	};
-	static ActorInternalState s_istate = { 0 };
-	static List* s_physicsActors = nullptr;
+	ActorInternalState s_istate = { 0 };
+	List* s_physicsActors = nullptr;
 
 	///////////////////////////////////////////
 	// Shared State
@@ -61,7 +55,6 @@ namespace TFE_DarkForces
 	void actorLogicTaskFunc(MessageType msg);
 	void actorLogicMsgFunc(MessageType msg);
 	void actorPhysicsTaskFunc(MessageType msg);
-	void actorLogicCleanupFunc(Logic* logic);
 	u32  actorLogicSetupFunc(Logic* logic, KEYWORD key);
 
 	extern ThinkerModule* actor_createFlyingModule(Logic* logic);
@@ -179,43 +172,6 @@ namespace TFE_DarkForces
 		s_istate.actorDispatch = allocator_create(sizeof(ActorDispatch));
 		s_istate.actorTask = createSubTask("actor", actorLogicTaskFunc, actorLogicMsgFunc);
 		s_istate.actorPhysicsTask = createSubTask("physics", actorPhysicsTaskFunc);
-	}
-
-	void actorDispatch_serialize(Logic*& logic, Stream* stream)
-	{
-		ActorDispatch* dispatch = nullptr;
-		if (serialization_getMode() == SMODE_WRITE)
-		{
-			dispatch = (ActorDispatch*)logic;
-		}
-		else
-		{
-			dispatch = (ActorDispatch*)allocator_newItem(s_istate.actorDispatch);
-			memset(dispatch->modules, 0, sizeof(ActorModule*) * 6);
-			logic = (Logic*)dispatch;
-		}
-		s_actorState.curLogic = (Logic*)dispatch;
-
-		serialization_serializeDfSound(stream, SaveVersionInit, &dispatch->alertSndSrc);
-		SERIALIZE(SaveVersionInit, dispatch->delay, 72);
-		SERIALIZE(SaveVersionInit, dispatch->fov, 9557);			// ~210 degrees
-		SERIALIZE(SaveVersionInit, dispatch->awareRange, FIXED(20));
-		SERIALIZE(SaveVersionInit, dispatch->vel, {0});
-		SERIALIZE(SaveVersionInit, dispatch->flags, 4);
-		// Animation Table.
-		s32 animTableIndex = -1;
-		if (serialization_getMode() == SMODE_WRITE)
-		{
-			animTableIndex = animTables_getIndex(dispatch->animTable);
-		}
-		SERIALIZE(SaveVersionInit, animTableIndex, -1);
-		if (serialization_getMode() == SMODE_READ)
-		{
-			dispatch->animTable = animTables_getTable(animTableIndex);
-			dispatch->alertSndID = NULL_SOUND;
-		}
-
-		// TODO
 	}
 
 	ActorDispatch* actor_createDispatch(SecObject* obj, LogicSetupFunc* setupFunc)

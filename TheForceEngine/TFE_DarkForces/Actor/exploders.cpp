@@ -107,7 +107,7 @@ namespace TFE_DarkForces
 			colInfo.botOffset = ONE_16;
 			colInfo.yPos = FIXED(9999);
 			colInfo.height = ONE_16;
-			colInfo.u1c = 0;
+			colInfo.unused = 0;
 			colInfo.width = colInfo.obj->worldWidth;
 			handleCollision(&colInfo);
 
