@@ -37,19 +37,6 @@ using namespace TFE_Jedi;
 namespace TFE_DarkForces
 {
 	typedef void(*ActorModuleSerializeFn)(Stream*, ActorModule*&, ActorDispatch*);
-
-	// Forward Declarations
-	void actor_serializeObject(Stream* stream, SecObject*& obj);
-	void actor_serializeWall(Stream* stream, RWall*& wall);
-	void actor_serializeCollisionInfo(Stream* stream, CollisionInfo* colInfo);
-	void actor_serializeTarget(Stream* stream, ActorTarget* target);
-	void actor_serializeMovementModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeAttackModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeDamageModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeThinkerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeFlyerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-	void actor_serializeFlyerRemoteModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
-
 	static const ActorModuleSerializeFn c_moduleSerFn[]=
 	{
 		actor_serializeMovementModule,    // ACTMOD_MOVE
@@ -233,7 +220,7 @@ namespace TFE_DarkForces
 			target->pad = 0;
 		}
 	}
-
+		
 	void actor_serializeTiming(Stream* stream, ActorTiming* timing)
 	{
 		SERIALIZE(SaveVersionInit, timing->delay, 0);
@@ -268,14 +255,14 @@ namespace TFE_DarkForces
 
 			moveMod->header.type = ACTMOD_MOVE;
 			moveMod->header.func = defaultActorFunc;
-			moveMod->updateTargetFunc = defaultUpdateTargetFunc;
 			moveMod->header.freeFunc = nullptr;
+			moveMod->updateTargetFunc = defaultUpdateTargetFunc;
 		}
 		else
 		{
 			moveMod = (MovementModule*)mod;
-			assert(moveMod->header.func == defaultActorFunc);
-			assert(moveMod->updateTargetFunc == defaultUpdateTargetFunc);
+			assert(moveMod->header.func == defaultActorFunc || !moveMod->header.func);
+			assert(moveMod->updateTargetFunc == defaultUpdateTargetFunc || !moveMod->updateTargetFunc);
 			assert(moveMod->header.freeFunc == nullptr);
 		}
 

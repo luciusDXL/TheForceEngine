@@ -2,6 +2,7 @@
 
 #include "mousebot.h"
 #include "actorModule.h"
+#include "actorSerialization.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -16,6 +17,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
@@ -358,6 +360,68 @@ namespace TFE_DarkForces
 		s_mouseBotRes.sound0 = sound_load("eeek-1.voc", SOUND_PRIORITY_MED5);
 		s_mouseBotRes.sound1 = sound_load("eeek-2.voc", SOUND_PRIORITY_LOW0);
 		s_mouseBotRes.sound2 = sound_load("eeek-3.voc", SOUND_PRIORITY_MED5);
+	}
+
+	void mousebot_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	{
+		MouseBot* mouseBot = nullptr;
+		PhysicsActor* physActor = nullptr;
+		bool write = serialization_getMode() == SMODE_WRITE;
+		if (write)
+		{
+			mouseBot = (MouseBot*)logic;
+			physActor = &mouseBot->actor;
+		}
+		else
+		{
+			mouseBot = (MouseBot*)level_alloc(sizeof(MouseBot));
+			memset(mouseBot, 0, sizeof(MouseBot));
+			logic = (Logic*)mouseBot;
+
+			// Resources
+			if (!s_mouseBotRes.deadFrame)
+			{
+				s_mouseBotRes.deadFrame = TFE_Sprite_Jedi::getFrame("dedmouse.fme");
+			}
+
+			// Task
+			char name[32];
+			sprintf(name, "mouseBot%d", s_mouseNum);
+			s_mouseNum++;
+
+			Task* mouseBotTask = createSubTask(name, mouseBotTaskFunc, mouseBotLocalMsgFunc);
+			task_setUserData(mouseBotTask, mouseBot);
+
+			logic->task = mouseBotTask;
+			logic->cleanupFunc = mouseBotLogicCleanupFunc;
+			logic->type = LOGIC_MOUSEBOT;
+			// This is needed for the modules.
+			logic->obj = obj;
+
+			// Create
+			physActor = &mouseBot->actor;
+			physActor->actorTask = mouseBotTask;
+		}
+		ActorModule* mod = (ActorModule*)&physActor->moveMod;
+		actor_serializeMovementModule(stream, mod, (ActorDispatch*)logic);
+		actor_serializeLogicAnim(stream, &physActor->anim);
+		if (!write)
+		{
+			// Clear out functions, the mousebot handles all of this internally.
+			physActor->moveMod.header.func = nullptr;
+			physActor->moveMod.header.freeFunc = nullptr;
+			physActor->moveMod.updateTargetFunc = nullptr;
+
+			actor_addPhysicsActorToWorld(physActor);
+
+			physActor->moveMod.header.obj = obj;
+			physActor->moveMod.physics.obj = obj;
+		}
+		SERIALIZE(SaveVersionInit, physActor->vel, { 0 });
+		SERIALIZE(SaveVersionInit, physActor->lastPlayerPos, { 0 });
+		SERIALIZE(SaveVersionInit, physActor->alive, JTRUE);
+		SERIALIZE(SaveVersionInit, physActor->hp, FIXED(10));
+		SERIALIZE(SaveVersionInit, physActor->state, MBSTATE_SLEEPING);
 	}
 
 	Logic* mousebot_setup(SecObject* obj, LogicSetupFunc* setupFunc)

@@ -40,4 +40,19 @@
 namespace TFE_DarkForces
 {
 	void actorDispatch_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+
+	// Helper Functions
+	void actor_serializeObject(Stream* stream, SecObject*& obj);
+	void actor_serializeWall(Stream* stream, RWall*& wall);
+	void actor_serializeCollisionInfo(Stream* stream, CollisionInfo* colInfo);
+	void actor_serializeTarget(Stream* stream, ActorTarget* target);
+	void actor_serializeMovementModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeAttackModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeDamageModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeThinkerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeFlyerModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+	void actor_serializeFlyerRemoteModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch);
+
+	void actor_serializeTiming(Stream* stream, ActorTiming* timing);
+	void actor_serializeLogicAnim(Stream* stream, LogicAnimation* anim);
 }  // namespace TFE_DarkForces

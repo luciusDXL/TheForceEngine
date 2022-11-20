@@ -14,4 +14,6 @@ namespace TFE_DarkForces
 	void mousebot_clear();
 	void mousebot_exit();
 	void mousebot_precache();
+
+	void mousebot_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 }  // namespace TFE_DarkForces
