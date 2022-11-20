@@ -61,7 +61,7 @@ namespace TFE_Jedi
 			elev->deleted = JFALSE;
 			elev->self = elev;
 		}
-
+				
 		RSector* sector = elev->sector;
 		SERIALIZE(InfState_InitVersion, elev->type, IELEV_COUNT);
 		SERIALIZE(InfState_InitVersion, elev->trigMove, TRIGMOVE_HOLD);
@@ -474,18 +474,6 @@ namespace TFE_Jedi
 		
 	void inf_serialize(Stream* stream)
 	{
-		if (serialization_getMode() == SMODE_READ)
-		{
-			// Clear state.
-			s_infState = { 0 };
-			s_infSerState = { 0 };
-
-			// Tasks and allocators.
-			inf_createElevatorTask();
-			inf_createTeleportTask();
-			inf_createTriggerTask();
-		}
-
 		SERIALIZE_VERSION(InfState_CurVersion);
 		
 		s32 elevCount, teleCount, trigCount;
