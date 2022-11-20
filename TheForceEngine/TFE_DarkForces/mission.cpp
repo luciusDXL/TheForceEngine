@@ -225,6 +225,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, s_screenBrightnessChanged, JFALSE);
 		SERIALIZE(SaveVersionInit, s_screenFxChanged, JFALSE);
 		SERIALIZE(SaveVersionInit, s_lumMaskChanged, JFALSE);
+		SERIALIZE(SaveVersionInit, s_levelComplete, JFALSE);
 
 		SERIALIZE(SaveVersionInit, s_flashFxLevel, 0);
 		SERIALIZE(SaveVersionInit, s_healthFxLevel, 0);
@@ -269,11 +270,11 @@ namespace TFE_DarkForces
 
 				s_prevTick = s_curTick;
 				s_playerTick = s_curTick;
+				s_levelComplete = JFALSE;
 			}
 			s_mainTask = createTask("main task", mission_mainTaskFunc);
 
 			s_invalidLevelIndex = JFALSE;
-			s_levelComplete = JFALSE;
 			s_exitLevel = JFALSE;
 
 			if (!s_loadingFromSave)
