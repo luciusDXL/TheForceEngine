@@ -104,12 +104,12 @@ namespace TFE_Jedi
 			serialization_serializeSectorPtr(stream, InfState_InitVersion, linkSector);
 			if (linkSector)
 			{
+				assert(linkSector == sector);
 				if (!linkSector->infLink)
 				{
 					linkSector->infLink = allocator_create(sizeof(InfLink));
 				}
-				Allocator* parent = linkSector->infLink;
-				elevLink = (InfLink*)allocator_newItem(parent);
+				elevLink = (InfLink*)allocator_newItem(linkSector->infLink);
 			}
 		}
 		if (elevLink)
@@ -133,6 +133,8 @@ namespace TFE_Jedi
 		{
 			allocator_saveIter(elev->stops);
 			stopCount = allocator_getCount(elev->stops);
+			assert(!elev->stops || stopCount);
+
 			SERIALIZE(InfState_InitVersion, stopCount, 0);
 			Stop* stop = (Stop*)allocator_getHead(elev->stops);
 			while (stop)
@@ -145,7 +147,7 @@ namespace TFE_Jedi
 		else
 		{
 			SERIALIZE(InfState_InitVersion, stopCount, 0);
-			elev->stops = allocator_create(sizeof(Stop));
+			elev->stops = stopCount ? allocator_create(sizeof(Stop)) : nullptr;
 			for (s32 s = 0; s < stopCount; s++)
 			{
 				Stop* stop = (Stop*)allocator_newItem(elev->stops);
@@ -155,10 +157,12 @@ namespace TFE_Jedi
 			// Set stop position.
 			if (stopPos >= 0)
 			{
+				assert(stopCount);
 				allocator_setPos(elev->stops, stopPos);
 			}
 			if (stopPrev >= 0)
 			{
+				assert(stopCount);
 				allocator_setPrevPos(elev->stops, stopPrev);
 			}
 		}
@@ -362,6 +366,7 @@ namespace TFE_Jedi
 		if (serialization_getMode() == SMODE_WRITE)
 		{
 			link = trigger->link;
+			assert(link->type == LTYPE_TRIGGER);
 		}
 		else  // SMODE_READ
 		{
@@ -735,24 +740,25 @@ namespace TFE_Jedi
 		for (s32 s = 0; s < s_levelState.sectorCount; s++, sector++)
 		{
 			allocator_saveIter(sector->infLink);
-			InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
-			while (link)
-			{
-				inf_serializeFixupLink(link);
-				link = (InfLink*)allocator_getNext(sector->infLink);
-			}
+				InfLink* link = (InfLink*)allocator_getHead(sector->infLink);
+				while (link)
+				{
+					inf_serializeFixupLink(link);
+					link = (InfLink*)allocator_getNext(sector->infLink);
+				}
 			allocator_restoreIter(sector->infLink);
 
 			s32 wallCount = sector->wallCount;
 			RWall* wall = sector->walls;
 			for (s32 w = 0; w < wallCount; w++, wall++)
 			{
-				link = (InfLink*)allocator_getHead(wall->infLink);
-				while (link)
-				{
-					inf_serializeFixupLink(link);
-					link = (InfLink*)allocator_getNext(wall->infLink);
-				}
+				allocator_saveIter(wall->infLink);
+					link = (InfLink*)allocator_getHead(wall->infLink);
+					while (link)
+					{
+						inf_serializeFixupLink(link);
+						link = (InfLink*)allocator_getNext(wall->infLink);
+					}
 				allocator_restoreIter(wall->infLink);
 			}
 		}
