@@ -225,7 +225,6 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, s_screenBrightnessChanged, JFALSE);
 		SERIALIZE(SaveVersionInit, s_screenFxChanged, JFALSE);
 		SERIALIZE(SaveVersionInit, s_lumMaskChanged, JFALSE);
-		SERIALIZE(SaveVersionInit, s_levelComplete, JFALSE);
 
 		SERIALIZE(SaveVersionInit, s_flashFxLevel, 0);
 		SERIALIZE(SaveVersionInit, s_healthFxLevel, 0);

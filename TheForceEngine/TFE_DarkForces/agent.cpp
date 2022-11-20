@@ -10,6 +10,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <assert.h>
 
 namespace TFE_DarkForces
@@ -28,10 +29,107 @@ namespace TFE_DarkForces
 	char** s_levelSrcPaths;
 
 	static Task* s_levelEndTask = nullptr;
+
+	void agent_writeSavedData(s32 agentId, LevelSaveData* saveData);
+	void agent_readSavedData(s32 agentId, LevelSaveData* levelData);
 		
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
+	void agent_checkNameLen(u8& nameLen)
+	{
+		if (nameLen >= 32)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Agent", "Agent load - name is too long: %d / 32", nameLen);
+			assert(0);
+			nameLen = 31;
+		}
+	}
+
+	void agent_serialize(Stream* stream)
+	{
+		bool write = serialization_getMode() == SMODE_WRITE;
+
+		SERIALIZE(SaveVersionInit, s_levelComplete, JFALSE);
+		SERIALIZE(SaveVersionInit, s_invalidLevelIndex, JFALSE);
+		SERIALIZE(SaveVersionInit, s_maxLevelIndex, JFALSE);
+		SERIALIZE(SaveVersionInit, s_levelIndex, JFALSE);
+
+		// Agent.
+		char name[32] = { 0 };
+		u8 agentNameLen = 0;
+		if (write)
+		{
+			strcpy(name, s_agentData[s_agentId].name);
+			agentNameLen = (u8)strlen(name);
+			agent_checkNameLen(agentNameLen);
+		}
+		SERIALIZE(SaveVersionInit, agentNameLen, 0);
+		if (!write)
+		{
+			agent_checkNameLen(agentNameLen);
+		}
+		SERIALIZE_BUF(SaveVersionInit, name, agentNameLen);
+		name[agentNameLen] = 0;
+
+		// Agent data.
+		LevelSaveData data;
+		if (write)
+		{
+			agent_readSavedData(s_agentId, &data);
+		}
+		SERIALIZE(SaveVersionInit, data, { 0 });
+
+		// Find the agent.
+		if (!write)
+		{
+			s_agentId = -1;
+			// First get the count.
+			s32 agentCount = 0;
+			for (s32 i = 0; i < 14; i++)
+			{
+				if (!s_agentData[i].name[0]) { break; }
+				agentCount++;
+			}
+			// Next find the agent, if it exists.
+			for (s32 i = 0; i < agentCount; i++)
+			{
+				if (strcmp(s_agentData[i].name, name) == 0)
+				{
+					s_agentId = i;
+					break;
+				}
+			}
+			// If the agent doesn't exist, create it.
+			if (s_agentId < 0)
+			{
+				if (agentCount < 14)
+				{
+					// Create a new agent.
+					s_agentData[agentCount] = data.agentData;
+					s_agentId = agentCount;
+					agent_writeSavedData(s_agentId, &data);
+				}
+				else
+				{
+					TFE_System::logWrite(LOG_ERROR, "Agent", "Too many agents - cannot create a new agent from save.");
+					assert(0);
+					s_agentId = 0;
+				}
+			}
+			else
+			{
+				// Check the agent and make sure it will work...
+				if (s_agentData[s_agentId].nextMission < data.agentData.nextMission)
+				{
+					TFE_System::logWrite(LOG_WARNING, "Agent", "The agent in the save file has completed more levels than the local agent, updating.");
+					s_agentData[s_agentId] = data.agentData;
+					agent_writeSavedData(s_agentId, &data);
+				}
+			}
+		}
+	}
+
 	s32 agent_loadData()
 	{
 		FileStream file;
@@ -140,6 +238,7 @@ namespace TFE_DarkForces
 		{
 			s_levelIndex = index;
 			s_agentData[s_agentId].selectedMission = index;
+			s_agentData[s_agentId].nextMission = max(s_agentData[s_agentId].nextMission, index);
 		}
 	}
 
@@ -176,6 +275,18 @@ namespace TFE_DarkForces
 		memcpy(saveData.ammo, ammo, sizeof(s32)*10);
 
 		agent_writeAgentConfigData(&file, agentId, &saveData);
+		file.close();
+	}
+
+	void agent_writeSavedData(s32 agentId, LevelSaveData* saveData)
+	{
+		FileStream file;
+		if (!openDarkPilotConfig(&file))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
+			return;
+		}
+		agent_writeAgentConfigData(&file, agentId, saveData);
 		file.close();
 	}
 
@@ -314,6 +425,18 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
+	void agent_readSavedData(s32 agentId, LevelSaveData* levelData)
+	{
+		FileStream file;
+		if (!openDarkPilotConfig(&file))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Agent", "Cannot open DarkPilo.cfg");
+			return;
+		}
+		agent_readConfigData(&file, agentId, levelData);
+		file.close();
+	}
+
 	void agent_readSavedDataForLevel(s32 agentId, s32 levelIndex)
 	{
 		FileStream file;
@@ -364,24 +487,40 @@ namespace TFE_DarkForces
 
 		// TFE uses its own local copy of the save game data to avoid corrupting existing data.
 		// If this copy does not exist, then copy it.
+		char documentsPath[TFE_MAX_PATH];
 		char programDataPath[TFE_MAX_PATH];
 		char sourcePath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_PROGRAM_DATA, "DARKPILO.CFG", programDataPath);
-		if (!FileUtil::exists(programDataPath))
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "DARKPILO.CFG", documentsPath);
+		if (!FileUtil::exists(documentsPath))
 		{
-			TFE_Paths::appendPath(PATH_SOURCE_DATA, "DARKPILO.CFG", sourcePath);
-			if (FileUtil::exists(sourcePath))
+			// First check in /ProgramData since that is where the previous version stored it.
+			TFE_Paths::appendPath(PATH_PROGRAM_DATA, "DARKPILO.CFG", programDataPath);
+			if (FileUtil::exists(programDataPath))
 			{
-				FileUtil::copyFile(sourcePath, programDataPath);
+				TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "'DARKPILO.CFG' copied from '%s' to '%s', ProgramData/ will no longer be used and can be deleted.",
+					programDataPath, documentsPath);
+				FileUtil::copyFile(programDataPath, documentsPath);
+				// Cleanup after TFE.
+				FileUtil::deleteFile(programDataPath);
 			}
 			else
 			{
-				TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
-				createDarkPilotConfig(programDataPath);
+				// Then try the source data path.
+				TFE_Paths::appendPath(PATH_SOURCE_DATA, "DARKPILO.CFG", sourcePath);
+				if (FileUtil::exists(sourcePath))
+				{
+					FileUtil::copyFile(sourcePath, documentsPath);
+				}
+				else
+				{
+					// Finally generate a new one.
+					TFE_System::logWrite(LOG_WARNING, "DarkForcesMain", "Cannot find 'DARKPILO.CFG' at '%s'. Creating a new file for save data.", sourcePath);
+					createDarkPilotConfig(documentsPath);
+				}
 			}
 		}
 		// Then try opening the file.
-		if (!file->open(programDataPath, FileStream::MODE_READWRITE))
+		if (!file->open(documentsPath, FileStream::MODE_READWRITE))
 		{
 			return JFALSE;
 		}

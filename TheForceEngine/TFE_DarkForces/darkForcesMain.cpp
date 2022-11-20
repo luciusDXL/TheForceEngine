@@ -1114,7 +1114,6 @@ namespace TFE_DarkForces
 		s_sharedState.loadMissionTask = createTask("start mission", mission_startTaskFunc, JTRUE);
 		mission_setLoadMissionTask(s_sharedState.loadMissionTask);
 		gameMusic_start(levelIndex);
-		agent_setLevelComplete(JFALSE);
 
 		s_runGameState.state = GSTATE_MISSION;
 		mission_setupTasks();
@@ -1162,14 +1161,17 @@ namespace TFE_DarkForces
 
 	bool DarkForces::serializeGameState(const char* filename, bool writeState)
 	{
-		if (!FileUtil::directoryExits("Saves"))
+		char savePath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "Saves/", savePath);
+
+		if (!FileUtil::directoryExits(savePath))
 		{
-			FileUtil::makeDirectory("Saves");
+			FileUtil::makeDirectory(savePath);
 		}
 
 		// Build the path.
 		char filePath[TFE_MAX_PATH];
-		sprintf(filePath, "Saves/%s", filename);
+		sprintf(filePath, "%s%s", savePath, filename);
 
 		FileStream stream;
 		if (stream.open(filePath, writeState ? FileStream::MODE_WRITE : FileStream::MODE_READ))
@@ -1186,6 +1188,7 @@ namespace TFE_DarkForces
 
 			serializeVersion(&stream);
 			serializeLoopState(&stream, this);
+			agent_serialize(&stream);
 			time_serialize(&stream);
 			if (!writeState)
 			{
