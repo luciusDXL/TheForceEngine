@@ -89,7 +89,6 @@ namespace TFE_Jedi
 			}
 		}
 		SERIALIZE(version, id, -1);
-		assert(id >= 0);
 		if (s_sMode == SMODE_READ)
 		{
 			texture = (id < 0) ? nullptr : bitmap_getTextureByIndex(ID_GET_INDEX(id), ID_GET_POOL(id));

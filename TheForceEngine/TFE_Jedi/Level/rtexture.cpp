@@ -498,10 +498,12 @@ namespace TFE_Jedi
 		return anim;
 	}
 
-	void bitmap_setupAnimatedTexture(TextureData** texture, s32 index)
+	bool bitmap_setupAnimatedTexture(TextureData** texture, s32 index)
 	{
 		u8 frameRate;
 		AnimatedTexture* anim = bitmap_createAnimatedTexture(texture, index, frameRate);
+		if (!anim) { return false; }
+
 		TextureData* tex = *texture;
 
 		if (frameRate)
@@ -521,6 +523,7 @@ namespace TFE_Jedi
 			tex->animPtr = nullptr; // This is set to NULL since it is handled in the INF serialization.
 		}
 		s_texState.animTexIndex++;
+		return true;
 	}
 		
 	// Per frame animated texture update.

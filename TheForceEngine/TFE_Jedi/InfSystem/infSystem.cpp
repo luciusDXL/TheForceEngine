@@ -1049,8 +1049,6 @@ namespace TFE_Jedi
 		if (argCount > 2)
 		{
 			KEYWORD subTypeId = getKeywordIndex(s_infArg1);
-			assert(subTypeId != KW_UNKNOWN);
-							
 			switch (subTypeId)
 			{
 				case KW_SWITCH1:
