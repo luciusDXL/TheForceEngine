@@ -727,7 +727,7 @@ namespace TFE_DarkForces
 	u8* color_loadMap(FilePath* path, u8* lightRamp, u8** basePtr)
 	{
 		FileStream file;
-		if (!file.open(path, FileStream::MODE_READ))
+		if (!file.open(path, Stream::MODE_READ))
 		{
 			TFE_System::logWrite(LOG_ERROR, "color_loadMap", "Error loading color map.");
 			return nullptr;

@@ -218,6 +218,11 @@ namespace TFE_RenderBackend
 		s_screenCapture->update();
 	}
 
+	void captureScreenToMemory(u32* mem)
+	{
+		s_screenCapture->captureFrontBufferToMemory(mem);
+	}
+
 	void queueScreenshot(const char* screenshotPath)
 	{
 		strcpy(s_screenshotPath, screenshotPath);

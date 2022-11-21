@@ -300,7 +300,7 @@ namespace TFE_DarkForces
 			}
 		}
 		FileStream file;
-		if (!file.open(&path, FileStream::MODE_READ))
+		if (!file.open(&path, Stream::MODE_READ))
 		{
 			return nullptr;
 		}

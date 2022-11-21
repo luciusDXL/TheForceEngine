@@ -109,7 +109,7 @@ namespace TFE_Jedi
 			return false;
 		}
 		FileStream file;
-		if (!file.open(&filePath, FileStream::MODE_READ))
+		if (!file.open(&filePath, Stream::MODE_READ))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot open level geometry '%s'.", levelName);
 			return false;
@@ -583,7 +583,7 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot find level goals '%s'.", levelName);
 			return JFALSE;
 		}
-		if (!file.open(&filePath, FileStream::MODE_READ))
+		if (!file.open(&filePath, Stream::MODE_READ))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGoals", "Cannot open level goals '%s'.", levelName);
 			return JFALSE;
@@ -693,7 +693,7 @@ namespace TFE_Jedi
 			return false;
 		}
 		FileStream file;
-		if (!file.open(&filePath, FileStream::MODE_READ))
+		if (!file.open(&filePath, Stream::MODE_READ))
 		{
 			TFE_System::logWrite(LOG_ERROR, "Level Load", "Cannot open level objects '%s'.", levelName);
 			return false;

@@ -55,7 +55,7 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 		FileStream file;
-		file.open(&filePath, FileStream::MODE_READ);
+		file.open(&filePath, Stream::MODE_READ);
 		size_t size = file.getSize();
 		u8* buffer = getTempBuffer(size);
 		file.readBuffer(buffer, (u32)size);
@@ -86,7 +86,7 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 		FileStream file;
-		file.open(&filePath, FileStream::MODE_READ);
+		file.open(&filePath, Stream::MODE_READ);
 		size_t size = file.getSize();
 		u8* buffer = getTempBuffer(size);
 		file.readBuffer(buffer, (u32)size);
@@ -118,7 +118,7 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 		FileStream file;
-		file.open(&filePath, FileStream::MODE_READ);
+		file.open(&filePath, Stream::MODE_READ);
 		size_t size = file.getSize();
 		u8* buffer = getTempBuffer(size);
 		file.readBuffer(buffer, (u32)size);

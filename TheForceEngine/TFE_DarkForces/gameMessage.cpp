@@ -19,7 +19,7 @@ namespace TFE_DarkForces
 	s32 parseMessageFile(GameMessages* messages, const FilePath* path, s32 mode)
 	{
 		FileStream file;
-		if (!file.open(path, FileStream::MODE_READ)) { return 0; }
+		if (!file.open(path, Stream::MODE_READ)) { return 0; }
 
 		size_t size = file.getSize();
 		s_buffer = (char*)game_realloc(s_buffer, size);

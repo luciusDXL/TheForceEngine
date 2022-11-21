@@ -22,7 +22,7 @@ namespace TFE_DarkForces
 		if (!TFE_Paths::getFilePath(filename, &path)) { return 0; }
 
 		FileStream file;
-		if (!file.open(&path, FileStream::MODE_READ)) { return 0; }
+		if (!file.open(&path, Stream::MODE_READ)) { return 0; }
 
 		size_t size = file.getSize();
 		s_buffer = (char*)game_realloc(s_buffer, size);

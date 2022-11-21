@@ -33,7 +33,7 @@ namespace TFE_System
 		char logPath[TFE_MAX_PATH];
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, filename, logPath);
 
-		return s_logFile.open(logPath, FileStream::MODE_WRITE);
+		return s_logFile.open(logPath, Stream::MODE_WRITE);
 	}
 
 	void logClose()

@@ -94,6 +94,12 @@ bool ScreenCapture::changeBufferCount(u32 newBufferCount, bool forceRealloc/* = 
 	return m_bufferCount;
 }
 
+void ScreenCapture::captureFrontBufferToMemory(u32* mem)
+{
+	glReadBuffer(GL_FRONT);
+	glReadPixels(0, 0, m_width, m_height, GL_RGBA, GL_UNSIGNED_BYTE, mem);
+}
+
 void ScreenCapture::update(bool flush)
 {
 	// Automatically capture frames when recording.

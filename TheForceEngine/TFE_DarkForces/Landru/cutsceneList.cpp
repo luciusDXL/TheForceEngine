@@ -32,7 +32,7 @@ namespace TFE_DarkForces
 		}
 
 		FileStream file;
-		if (!file.open(&filePath, FileStream::MODE_READ)) { return nullptr; }
+		if (!file.open(&filePath, Stream::MODE_READ)) { return nullptr; }
 
 		size_t size = file.getSize();
 		s_buffer = (char*)game_realloc(s_buffer, size);

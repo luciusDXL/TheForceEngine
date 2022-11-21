@@ -50,7 +50,7 @@ namespace TFE_Sprite_Jedi
 			return nullptr;
 		}
 		FileStream file;
-		if (!file.open(&filePath, FileStream::MODE_READ))
+		if (!file.open(&filePath, Stream::MODE_READ))
 		{
 			return nullptr;
 		}
@@ -201,7 +201,7 @@ namespace TFE_Sprite_Jedi
 			return nullptr;
 		}
 		FileStream file;
-		if (!file.open(&filePath, FileStream::MODE_READ))
+		if (!file.open(&filePath, Stream::MODE_READ))
 		{
 			return nullptr;
 		}

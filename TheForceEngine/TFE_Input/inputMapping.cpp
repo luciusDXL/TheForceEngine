@@ -171,7 +171,7 @@ namespace TFE_Input
 
 		sprintf(fullPath, "%s%s", path, c_inputRemappingName);
 		FileStream file;
-		if (!file.open(fullPath, FileStream::MODE_WRITE))
+		if (!file.open(fullPath, Stream::MODE_WRITE))
 		{
 			return false;
 		}
@@ -202,7 +202,7 @@ namespace TFE_Input
 
 		sprintf(fullPath, "%s%s", path, c_inputRemappingName);
 		FileStream file;
-		if (!file.open(fullPath, FileStream::MODE_READ))
+		if (!file.open(fullPath, Stream::MODE_READ))
 		{
 			return false;
 		}

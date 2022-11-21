@@ -152,7 +152,7 @@ namespace TFE_DarkForces
 		FilePath fontPath;
 		FileStream file;
 		if (!TFE_Paths::getFilePath(fontFile, &fontPath)) { return JFALSE; }
-		if (!file.open(&fontPath, FileStream::MODE_READ)) { return JFALSE; }
+		if (!file.open(&fontPath, Stream::MODE_READ)) { return JFALSE; }
 
 		LFont* font = lfont_alloc(id);
 		file.read(&font->firstChar);

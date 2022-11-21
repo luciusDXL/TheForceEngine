@@ -148,7 +148,7 @@ namespace TFE_Settings
 	bool readFromDisk()
 	{
 		FileStream settings;
-		if (settings.open(s_settingsPath, FileStream::MODE_READ))
+		if (settings.open(s_settingsPath, Stream::MODE_READ))
 		{
 			const size_t len = settings.getSize();
 			s_iniBuffer.resize(len + 1);
@@ -167,7 +167,7 @@ namespace TFE_Settings
 	bool writeToDisk()
 	{
 		FileStream settings;
-		if (settings.open(s_settingsPath, FileStream::MODE_WRITE))
+		if (settings.open(s_settingsPath, Stream::MODE_WRITE))
 		{
 			writeWindowSettings(settings);
 			writeGraphicsSettings(settings);

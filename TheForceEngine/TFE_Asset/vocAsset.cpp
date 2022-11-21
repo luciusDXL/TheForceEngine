@@ -31,7 +31,7 @@ namespace TFE_VocAsset
 		}
 
 		FileStream vocAsset;
-		if (!vocAsset.open(&filePath, FileStream::MODE_READ))
+		if (!vocAsset.open(&filePath, Stream::MODE_READ))
 		{
 			return false;
 		}

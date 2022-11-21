@@ -213,7 +213,7 @@ namespace TFE_Jedi
 		}
 
 		FileStream file;
-		if (!file.open(&filepath, FileStream::MODE_READ))
+		if (!file.open(&filepath, Stream::MODE_READ))
 		{
 			return nullptr;
 		}

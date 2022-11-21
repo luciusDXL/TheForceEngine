@@ -18,7 +18,7 @@ bool LabArchive::create(const char *archivePath)
 
 bool LabArchive::open(const char *archivePath)
 {
-	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_READ);
+	m_archiveOpen = m_file.open(archivePath, Stream::MODE_READ);
 	m_curFile = -1;
 	m_fileOffset = 0;
 	if (!m_archiveOpen) { return false; }
@@ -53,7 +53,7 @@ bool LabArchive::openFile(const char *file)
 {
 	if (!m_archiveOpen) { return false; }
 
-	m_file.open(m_archivePath, FileStream::MODE_READ);
+	m_file.open(m_archivePath, Stream::MODE_READ);
 	m_curFile = -1;
 	m_fileOffset = 0;
 
@@ -85,7 +85,7 @@ bool LabArchive::openFile(u32 index)
 
 	m_curFile = s32(index);
 	m_fileOffset = 0;
-	m_file.open(m_archivePath, FileStream::MODE_READ);
+	m_file.open(m_archivePath, Stream::MODE_READ);
 	m_file.seek(m_entries[m_curFile].dataOffset);
 	return true;
 }

@@ -54,7 +54,7 @@ namespace TFE_GIF
 		MsfGifResult result = msf_gif_end(&s_gifState);
 		
 		FileStream file;
-		if (!file.open(s_path, FileStream::MODE_WRITE))
+		if (!file.open(s_path, Stream::MODE_WRITE))
 		{
 			msf_gif_free(result);
 			return false;

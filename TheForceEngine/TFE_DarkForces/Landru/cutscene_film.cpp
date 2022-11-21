@@ -359,7 +359,7 @@ namespace TFE_DarkForces
 		if (TFE_Paths::getFilePath(filmName, &resPath))
 		{
 			FileStream file;
-			file.open(&resPath, FileStream::MODE_READ);
+			file.open(&resPath, Stream::MODE_READ);
 
 			s16 version;
 			s16 cellCount;

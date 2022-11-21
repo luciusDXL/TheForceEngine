@@ -1,36 +1,39 @@
 #pragma once
 #include <TFE_FileSystem/stream.h>
-#include <TFE_FileSystem/paths.h>
 
-////////////////////////////////////////////////////
-// TODO: FileStream directly accesses arhive data.
-////////////////////////////////////////////////////
-
-class Archive;
-
-class FileStream : public Stream
+class MemoryStream : public Stream
 {
 public:
-	FileStream();
-	~FileStream();
+	MemoryStream();
+	~MemoryStream();
 
-	bool exists(const char* filename);
-	bool open(const char* filename, AccessMode mode);
-	bool open(const FilePath* filePath, AccessMode mode);
+	// Load the memory stream from pre-existing memory.
+	// This makes a copy, so the original memory can be freed.
+	// This will fail if size == 0 or mem == nullptr.
+	// This will also reset the memory stream.
+	bool load(size_t size, const void* const mem);
+	// Pre-allocate stream memory, this assumes that the client will call
+	// data() to get the pointer and then fill it in.
+	bool allocate(size_t size);
+	// Get the data so it can be saved or used elsewhere.
+	// Note the client should not modify the pointer or memory.
+	const void* const data() const;
+	// Writeable data pointer.
+	void* data();
+
+	// This clears out the size, address, mode, etc. so the stream can be re-used,
+	// but does not free memory.
+	void clear();
+
+	// Standard stream access.
+	bool open(AccessMode mode);
 	void close();
-
-	static u32 readContents(const char* filePath, void** output);
-	static u32 readContents(const char* filePath, void* output, size_t size);
-	static u32 readContents(const FilePath* filePath, void** output);
-	static u32 readContents(const FilePath* filePath, void* output, size_t size);
-	
+			
 	//derived functions.
 	bool seek(s32 offset, Origin origin=ORIGIN_START) override;
 	size_t getLoc() override;
 	size_t getSize() override;
 	bool   isOpen()  const;
-
-	void flush();
 
 	void read(s8*  ptr, u32 count=1) override { readType(ptr, count); }
 	void read(u8*  ptr, u32 count=1) override { readType(ptr, count); }
@@ -73,8 +76,12 @@ private:
 	template <>
 	void writeType<std::string>(const std::string* ptr, u32 count);
 
+	void resizeBuffer(size_t newSize);
+
 private:
-	FILE*    m_file;
-	Archive* m_archive;
+	u8* m_memory;
+	size_t m_size;
+	size_t m_capacity;
+	size_t m_addr;
 	AccessMode m_mode;
 };

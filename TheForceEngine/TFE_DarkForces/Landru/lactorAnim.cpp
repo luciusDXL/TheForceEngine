@@ -85,7 +85,7 @@ namespace TFE_DarkForces
 		if (TFE_Paths::getFilePath(animName, &path))
 		{
 			FileStream file;
-			file.open(&path, FileStream::MODE_READ);
+			file.open(&path, Stream::MODE_READ);
 
 			s16 animCount;
 			file.read(&animCount);

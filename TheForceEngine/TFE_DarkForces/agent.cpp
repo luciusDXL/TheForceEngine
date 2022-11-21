@@ -345,7 +345,7 @@ namespace TFE_DarkForces
 		}
 		char* buffer = nullptr;
 		FileStream file;
-		if (!file.open(&filePath, FileStream::MODE_READ))
+		if (!file.open(&filePath, Stream::MODE_READ))
 		{
 			return JFALSE;
 		}
@@ -458,7 +458,7 @@ namespace TFE_DarkForces
 	JBool createDarkPilotConfig(const char* path)
 	{
 		FileStream darkPilot;
-		if (!darkPilot.open(path, FileStream::MODE_WRITE))
+		if (!darkPilot.open(path, Stream::MODE_WRITE))
 		{
 			return JFALSE;
 		}
@@ -520,7 +520,7 @@ namespace TFE_DarkForces
 			}
 		}
 		// Then try opening the file.
-		if (!file->open(documentsPath, FileStream::MODE_READWRITE))
+		if (!file->open(documentsPath, Stream::MODE_READWRITE))
 		{
 			return JFALSE;
 		}

@@ -679,7 +679,7 @@ namespace TFE_FrontEndUI
 			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
 
 			FileStream file;
-			if (file.open(path, FileStream::MODE_READ))
+			if (file.open(path, Stream::MODE_READ))
 			{
 				const size_t len = file.getSize();
 				s_manualDisplayStr = new char[len + 1];
@@ -704,7 +704,7 @@ namespace TFE_FrontEndUI
 			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
 
 			FileStream file;
-			if (file.open(path, FileStream::MODE_READ))
+			if (file.open(path, Stream::MODE_READ))
 			{
 				const size_t len = file.getSize();
 				s_creditsDisplayStr = new char[len + 1];
@@ -729,7 +729,7 @@ namespace TFE_FrontEndUI
 			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
 
 			FileStream file;
-			if (file.open(path, FileStream::MODE_READ))
+			if (file.open(path, Stream::MODE_READ))
 			{
 				const size_t len = file.getSize();
 				s_aboutDisplayStr = new char[len + 1];

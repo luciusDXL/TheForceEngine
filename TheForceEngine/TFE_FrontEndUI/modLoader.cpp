@@ -517,7 +517,7 @@ namespace TFE_FrontEndUI
 			sprintf(fullPath, "%s%s", path, textFileName);
 
 			FileStream textFile;
-			if (!textFile.open(fullPath, FileStream::MODE_READ))
+			if (!textFile.open(fullPath, Stream::MODE_READ))
 			{
 				return false;
 			}

@@ -45,7 +45,7 @@ namespace TFE_DarkForces
 		FilePath filePath;
 		FileStream file;
 		if (!TFE_Paths::getFilePath("cutmuse.txt", &filePath)) { return; }
-		if (!file.open(&filePath, FileStream::MODE_READ)) { return; }
+		if (!file.open(&filePath, Stream::MODE_READ)) { return; }
 
 		size_t size = file.getSize();
 		char* buffer = (char*)landru_alloc(size);

@@ -12,7 +12,7 @@ GobArchive::~GobArchive()
 
 bool GobArchive::create(const char *archivePath)
 {
-	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_WRITE);
+	m_archiveOpen = m_file.open(archivePath, Stream::MODE_WRITE);
 	m_curFile = -1;
 	m_fileOffset = 0;
 	if (!m_archiveOpen) { return false; }
@@ -38,7 +38,7 @@ bool GobArchive::create(const char *archivePath)
 
 bool GobArchive::open(const char *archivePath)
 {
-	m_archiveOpen = m_file.open(archivePath, FileStream::MODE_READ);
+	m_archiveOpen = m_file.open(archivePath, Stream::MODE_READ);
 	m_curFile = -1;
 	if (!m_archiveOpen) { return false; }
 
@@ -69,7 +69,7 @@ bool GobArchive::openFile(const char *file)
 {
 	if (!m_archiveOpen) { return false; }
 
-	m_file.open(m_archivePath, FileStream::MODE_READ);
+	m_file.open(m_archivePath, Stream::MODE_READ);
 	m_curFile = -1;
 	m_fileOffset = 0;
 
@@ -101,7 +101,7 @@ bool GobArchive::openFile(u32 index)
 
 	m_curFile = s32(index);
 	m_fileOffset = 0;
-	m_file.open(m_archivePath, FileStream::MODE_READ);
+	m_file.open(m_archivePath, Stream::MODE_READ);
 	m_file.seek(m_fileList.entries[m_curFile].IX);
 	return true;
 }
@@ -225,7 +225,7 @@ size_t GobArchive::getFileLength(u32 index)
 void GobArchive::addFile(const char* fileName, const char* filePath)
 {
 	FileStream file;
-	if (!file.open(filePath, FileStream::MODE_READ))
+	if (!file.open(filePath, Stream::MODE_READ))
 	{
 		return;
 	}
@@ -245,7 +245,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 
 	// Read all of the file data.
 	std::vector<std::vector<u8>> fileData(m_fileList.MASTERN);
-	if (m_file.open(m_archivePath, FileStream::MODE_READ))
+	if (m_file.open(m_archivePath, Stream::MODE_READ))
 	{
 		for (s32 f = 0; f < m_fileList.MASTERN - 1; f++)
 		{
@@ -261,7 +261,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 	}
 
 	// Now write the new file.
-	if (m_file.open(m_archivePath, FileStream::MODE_WRITE))
+	if (m_file.open(m_archivePath, Stream::MODE_WRITE))
 	{
 		m_file.writeBuffer(&m_header, sizeof(GOB_Header_t));
 		for (s32 f = 0; f < m_fileList.MASTERN; f++)

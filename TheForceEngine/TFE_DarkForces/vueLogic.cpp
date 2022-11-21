@@ -318,7 +318,7 @@ namespace TFE_DarkForces
 		FileStream file;
 		size_t size = 0;
 		char* buffer = nullptr;
-		if (file.open(filePath, FileStream::MODE_READ))
+		if (file.open(filePath, Stream::MODE_READ))
 		{
 			size = file.getSize();
 			buffer = allocateWorkBuffer(size);

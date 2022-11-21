@@ -1194,7 +1194,7 @@ namespace TFE_Jedi
 			return JFALSE;
 		}
 		FileStream file;
-		if (!file.open(&filePath, FileStream::MODE_READ))
+		if (!file.open(&filePath, Stream::MODE_READ))
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot open level INF '%s'.", levelPath);
 			return JFALSE;

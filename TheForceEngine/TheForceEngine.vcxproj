@@ -435,6 +435,7 @@ echo ^)";
     <ClInclude Include="TFE_DarkForces\weaponFireFunc.h" />
     <ClInclude Include="TFE_FileSystem\filestream.h" />
     <ClInclude Include="TFE_FileSystem\fileutil.h" />
+    <ClInclude Include="TFE_FileSystem\memorystream.h" />
     <ClInclude Include="TFE_FileSystem\paths.h" />
     <ClInclude Include="TFE_FileSystem\stream.h" />
     <ClInclude Include="TFE_ForceScript\asmjit\asmjit-scope-begin.h" />
@@ -775,6 +776,7 @@ echo ^)";
     <ClCompile Include="TFE_DarkForces\weaponFireFunc.cpp" />
     <ClCompile Include="TFE_FileSystem\filestream.cpp" />
     <ClCompile Include="TFE_FileSystem\fileutil.cpp" />
+    <ClCompile Include="TFE_FileSystem\memorystream.cpp" />
     <ClCompile Include="TFE_FileSystem\paths.cpp" />
     <ClCompile Include="TFE_ForceScript\asmjit\core\archtraits.cpp" />
     <ClCompile Include="TFE_ForceScript\asmjit\core\assembler.cpp" />

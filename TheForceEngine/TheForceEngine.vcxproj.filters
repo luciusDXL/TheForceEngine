@@ -1213,6 +1213,9 @@
     <ClInclude Include="TFE_DarkForces\Actor\actorInternal.h">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_FileSystem\memorystream.h">
+      <Filter>Source\TFE_FileSystem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2051,6 +2054,9 @@
     </ClCompile>
     <ClCompile Include="TFE_DarkForces\Actor\actorSerialization.cpp">
       <Filter>Source\TFE_DarkForces\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_FileSystem\memorystream.cpp">
+      <Filter>Source\TFE_FileSystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

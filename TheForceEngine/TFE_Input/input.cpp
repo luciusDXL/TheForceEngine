@@ -344,7 +344,7 @@ namespace TFE_Input
 	bool loadKeyNames(const char* path)
 	{
 		FileStream file;
-		if (!file.open(path, FileStream::MODE_READ))
+		if (!file.open(path, Stream::MODE_READ))
 		{
 			return false;
 		}

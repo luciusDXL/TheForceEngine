@@ -6,8 +6,9 @@
 #include <stdarg.h>
 
 //Work buffers for handling special cases like std::string without allocating memory (beyond what the strings needs itself).
-static u32  s_workBufferU32[1024];		//4k buffer.
-static char s_workBufferChar[32768];	//32k buffer.
+// TODO: This should be put in a shared place.
+extern u32  s_workBufferU32[1024];		//4k buffer.
+extern char s_workBufferChar[32768];	//32k buffer.
 
 FileStream::FileStream() : Stream()
 {
@@ -29,7 +30,7 @@ bool FileStream::exists(const char* filename)
 	return res;
 }
 
-bool FileStream::open(const char* filename, FileMode mode)
+bool FileStream::open(const char* filename, AccessMode mode)
 {
 	const char* modeStrings[] = { "rb", "wb", "rb+" };
 	m_file = fopen(filename, modeStrings[mode]);
@@ -38,12 +39,12 @@ bool FileStream::open(const char* filename, FileMode mode)
 	return m_file != nullptr;
 }
 
-bool FileStream::open(const FilePath* filePath, FileMode mode)
+bool FileStream::open(const FilePath* filePath, AccessMode mode)
 {
 	if (filePath->archive)
 	{
 		// Note: this currently only supports reading.
-		assert(mode == FileStream::MODE_READ);
+		assert(mode == Stream::MODE_READ);
 
 		if (filePath->index < 0) { return false; }
 		m_mode = mode;
@@ -144,7 +145,7 @@ u32 FileStream::readContents(const FilePath* filePath, void* output, size_t size
 }
 
 //derived from Stream
-bool FileStream::seek(u32 offset, Origin origin/*=ORIGIN_START*/)
+bool FileStream::seek(s32 offset, Origin origin/*=ORIGIN_START*/)
 {
 	const s32 forigin[] = { SEEK_SET, SEEK_END, SEEK_CUR };
 	if (m_file)

@@ -1123,7 +1123,7 @@ namespace TFE_Jedi
 			return IM_NULL_SOUNDID;
 		}
 		FileStream file;
-		if (!file.open(&filePath, FileStream::MODE_READ))
+		if (!file.open(&filePath, Stream::MODE_READ))
 		{
 			IM_LOG_ERR("Cannot open midi file '%s'.", midiFile);
 			return IM_NULL_SOUNDID;

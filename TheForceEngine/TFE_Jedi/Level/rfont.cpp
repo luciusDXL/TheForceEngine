@@ -16,7 +16,7 @@ namespace TFE_Jedi
 	Font* font_load(FilePath* filePath)
 	{
 		FileStream file;
-		if (!file.open(filePath, FileStream::MODE_READ))
+		if (!file.open(filePath, Stream::MODE_READ))
 		{
 			TFE_System::logWrite(LOG_ERROR, "Font", "Failed to open font.");
 			return nullptr;

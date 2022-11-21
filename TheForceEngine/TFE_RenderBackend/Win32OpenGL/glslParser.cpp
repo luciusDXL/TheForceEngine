@@ -66,7 +66,7 @@ namespace GLSLParser
 		TFE_Paths::appendPath(PATH_PROGRAM, fileName, filePath);
 
 		FileStream file;
-		if (!file.open(filePath, FileStream::MODE_READ)) { return false; }
+		if (!file.open(filePath, Stream::MODE_READ)) { return false; }
 
 		const u32 fileSize = (u32)file.getSize();
 		std::vector<char> tempBuffer;

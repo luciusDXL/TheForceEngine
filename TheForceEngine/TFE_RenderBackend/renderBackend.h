@@ -100,6 +100,7 @@ namespace TFE_RenderBackend
 	void queueScreenshot(const char* screenshotPath);
 	void startGifRecording(const char* path);
 	void stopGifRecording();
+	void captureScreenToMemory(u32* mem);
 
 	void resize(s32 width, s32 height);
 	s32  getDisplayCount();

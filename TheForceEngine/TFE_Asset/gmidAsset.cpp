@@ -35,7 +35,7 @@ namespace TFE_GmidAsset
 		}
 
 		FileStream gmidAsset;
-		if (!gmidAsset.open(&filePath, FileStream::MODE_READ))
+		if (!gmidAsset.open(&filePath, Stream::MODE_READ))
 		{
 			return nullptr;
 		}

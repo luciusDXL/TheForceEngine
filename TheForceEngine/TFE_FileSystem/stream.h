@@ -13,11 +13,20 @@ public:
 		ORIGIN_CURRENT,
 		ORIGIN_COUNT
 	};
+
+	enum AccessMode
+	{
+		MODE_READ = 0,		//read-only  (will fail if the file doesn't exist)
+		MODE_WRITE,			//write      (will overwrite the file)
+		MODE_READWRITE,		//read-write (will create a new file if it doesn't exist, the file can be read from and written to).
+		MODE_COUNT,
+		MODE_INVALID = MODE_COUNT
+	};
 public:
 	Stream()  {};
 	~Stream() {};
 
-	virtual bool seek(u32 offset, Origin origin=ORIGIN_START)=0;
+	virtual bool seek(s32 offset, Origin origin=ORIGIN_START)=0;
 	virtual size_t getLoc()=0;
 	virtual size_t getSize()=0;
 
