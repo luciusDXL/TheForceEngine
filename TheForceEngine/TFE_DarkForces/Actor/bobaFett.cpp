@@ -2,6 +2,7 @@
 
 #include "bobaFett.h"
 #include "actorModule.h"
+#include "actorSerialization.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -18,6 +19,7 @@
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_Settings/settings.h>
 
 namespace TFE_DarkForces
@@ -793,6 +795,75 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(&bobaFett->logic);
 		level_free(bobaFett);
 		task_free(physicsActor->actorTask);
+	}
+
+	void bobaFett_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	{
+		BobaFett* bobaFett = nullptr;
+		bool write = serialization_getMode() == SMODE_WRITE;
+		PhysicsActor* physicsActor = nullptr;
+		Task* bobaFettTask = nullptr;
+		if (write)
+		{
+			bobaFett = (BobaFett*)logic;
+			physicsActor = &bobaFett->actor;
+		}
+		else
+		{
+			bobaFett = (BobaFett*)level_alloc(sizeof(BobaFett));
+			memset(bobaFett, 0, sizeof(BobaFett));
+			physicsActor = &bobaFett->actor;
+			logic = (Logic*)bobaFett;
+
+			// Task
+			char name[32];
+			sprintf(name, "BobaFett%d", s_shared.bobaFettNum);
+			s_shared.bobaFettNum++;
+
+			bobaFettTask = createSubTask(name, bobaFettTaskFunc);
+			task_setUserData(bobaFettTask, bobaFett);
+
+			// Logic
+			logic->task = bobaFettTask;
+			logic->cleanupFunc = bobaFettCleanupFunc;
+			logic->type = LOGIC_BOBA_FETT;
+			logic->obj = obj;
+		}
+		actor_serializeMovementModuleBase(stream, &physicsActor->moveMod);
+		actor_serializeLogicAnim(stream, &physicsActor->anim);
+		if (!write)
+		{
+			// Clear out functions, the mousebot handles all of this internally.
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.header.func = nullptr;
+			physicsActor->moveMod.header.freeFunc = nullptr;
+			physicsActor->moveMod.header.attribFunc = nullptr;
+			physicsActor->moveMod.header.msgFunc = nullptr;
+			physicsActor->moveMod.header.type = ACTMOD_MOVE;
+			physicsActor->moveMod.updateTargetFunc = nullptr;
+
+			actor_addPhysicsActorToWorld(physicsActor);
+
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.physics.obj = obj;
+			physicsActor->actorTask = bobaFettTask;
+
+			bobaFett->hitSndId = NULL_SOUND;
+			bobaFett->unused = 0;
+			bobaFett->moveState.soundSrc = s_shared.bobaRocket2SndID;
+		}
+		SERIALIZE(SaveVersionInit, physicsActor->vel, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->lastPlayerPos, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->alive, JTRUE);
+		SERIALIZE(SaveVersionInit, physicsActor->hp, FIXED(200));
+		SERIALIZE(SaveVersionInit, physicsActor->state, BOBASTATE_DEFAULT);
+
+		SERIALIZE(SaveVersionInit, bobaFett->moveState.target, { 0 });
+		SERIALIZE(SaveVersionInit, bobaFett->moveState.yAccel, 0);
+		SERIALIZE(SaveVersionInit, bobaFett->moveState.vertAngleRange, 0);
+		SERIALIZE(SaveVersionInit, bobaFett->moveState.vertAngle, 0);
+		SERIALIZE(SaveVersionInit, bobaFett->moveState.yVelOffset, 0);
+		SERIALIZE(SaveVersionInit, bobaFett->moveState.accel, 0);
 	}
 		
 	Logic* bobaFett_setup(SecObject* obj, LogicSetupFunc* setupFunc)

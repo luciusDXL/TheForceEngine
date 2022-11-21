@@ -389,36 +389,27 @@ namespace TFE_DarkForces
 	// TODO: It probably makes sense to move this to
 	// its own file at some point.
 	///////////////////////////////////////////////////
-
-	// Stubbed serialization functions
-	// TODO: These should be removed once the system is complete.
-	void unimplementedLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
-	{
-		TFE_System::logWrite(LOG_MSG, "Logic", "Unimplemented serialization.");
-	}
-		
 	// Type -> Serialization function tables.
 	typedef void(*LogicSerializationFunc)(Logic*&, SecObject* obj, Stream*);
-
 	LogicSerializationFunc c_serializeFn[] =
 	{
 		actorDispatch_serialize,      // LOGIC_DISPATCH
-		unimplementedLogic_serialize, // LOGIC_BOBA_FETT,
-		kellDragon_serialize,         // LOGIC_DRAGON,
-		mousebot_serialize,           // LOGIC_MOUSEBOT,
-		phaseOne_serialize,           // LOGIC_PHASE_ONE,
-		phaseTwo_serialize,           // LOGIC_PHASE_TWO,
-		phaseThree_serialize,         // LOGIC_PHASE_THREE,
-		turret_serialize,             // LOGIC_TURRET,
-		welder_serialize,             // LOGIC_WELDER,
-		animLogic_serialize,          // LOGIC_ANIM,
-		updateLogic_serialize,        // LOGIC_UPDATE,
-		generatorLogic_serialize,     // LOGIC_GENERATOR,
-		pickupLogic_serialize,        // LOGIC_PICKUP,
-		playerLogic_serialize,        // LOGIC_PLAYER,
-		projLogic_serialize,          // LOGIC_PROJECTILE,
-		vueLogic_serialize,           // LOGIC_VUE,
-		nullptr,                      // LOGIC_UNKNOWN,
+		bobaFett_serialize,           // LOGIC_BOBA_FETT
+		kellDragon_serialize,         // LOGIC_DRAGON
+		mousebot_serialize,           // LOGIC_MOUSEBOT
+		phaseOne_serialize,           // LOGIC_PHASE_ONE
+		phaseTwo_serialize,           // LOGIC_PHASE_TWO
+		phaseThree_serialize,         // LOGIC_PHASE_THREE
+		turret_serialize,             // LOGIC_TURRET
+		welder_serialize,             // LOGIC_WELDER
+		animLogic_serialize,          // LOGIC_ANIM
+		updateLogic_serialize,        // LOGIC_UPDATE
+		generatorLogic_serialize,     // LOGIC_GENERATOR
+		pickupLogic_serialize,        // LOGIC_PICKUP
+		playerLogic_serialize,        // LOGIC_PLAYER
+		projLogic_serialize,          // LOGIC_PROJECTILE
+		vueLogic_serialize,           // LOGIC_VUE
+		nullptr,                      // LOGIC_UNKNOWN
 	};
 
 	// Root serialization functions for Logics.
