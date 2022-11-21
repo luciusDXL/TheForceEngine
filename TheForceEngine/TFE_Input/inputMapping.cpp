@@ -7,10 +7,17 @@
 
 namespace TFE_Input
 {
+	enum InputVersion
+	{
+		INPUT_INIT_VER = 0x00010000,
+		INPUT_ADD_QUICKSAVE = 0x00020001,
+		INPUT_CUR_VERSION = INPUT_ADD_QUICKSAVE
+	};
+
 	static const char* c_inputRemappingName = "tfe_input_remapping.bin";
 	static const char  c_inputRemappingHdr[4] = { 'T', 'F', 'E', 0 };
-	static const u32   c_inputRemappingVersion = 0x00010000;
-
+	static const u32   c_inputRemappingVersion = INPUT_CUR_VERSION;
+		
 	static InputBinding s_defaultKeyboardBinds[] =
 	{
 		// System
@@ -74,6 +81,10 @@ namespace TFE_Input
 		{ IADF_WEAPON_10,       ITYPE_KEYBOARD, KEY_0 },
 		{ IADF_PRIMARY_FIRE,    ITYPE_MOUSE, MBUTTON_LEFT },
 		{ IADF_SECONDARY_FIRE,  ITYPE_MOUSE, MBUTTON_RIGHT },
+
+		// Saving
+		{ IAS_QUICK_SAVE, ITYPE_KEYBOARD, KEY_F5, KEYMOD_ALT },
+		{ IAS_QUICK_LOAD, ITYPE_KEYBOARD, KEY_F6, KEYMOD_ALT },
 	};
 
 	static InputBinding s_defaultControllerBinds[] =
@@ -200,7 +211,7 @@ namespace TFE_Input
 		u32 version;
 		file.readBuffer(hdr, 4);
 		file.read(&version);
-		if (memcmp(hdr, c_inputRemappingHdr, 4) != 0 || version != c_inputRemappingVersion)
+		if (memcmp(hdr, c_inputRemappingHdr, 4) != 0)
 		{
 			file.close();
 			return false;
@@ -220,6 +231,13 @@ namespace TFE_Input
 		file.read(s_inputConfig.mouseSensitivity, 2);
 
 		file.close();
+
+		if (version < INPUT_ADD_QUICKSAVE)
+		{
+			inputMapping_addBinding(&s_defaultKeyboardBinds[IAS_QUICK_SAVE]);
+			inputMapping_addBinding(&s_defaultKeyboardBinds[IAS_QUICK_LOAD]);
+		}
+
 		return true;
 	}
 

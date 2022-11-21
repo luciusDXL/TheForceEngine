@@ -28,6 +28,7 @@
 #include <TFE_DarkForces/Landru/cutsceneList.h>
 #include <TFE_DarkForces/Actor/actor.h>
 #include <TFE_Game/reticle.h>
+#include <TFE_Input/inputMapping.h>
 #include <TFE_Memory/memoryRegion.h>
 #include <TFE_System/system.h>
 #include <TFE_System/tfeMessage.h>
@@ -55,6 +56,7 @@
 #include <TFE_Jedi/Level/levelTextures.h>
 
 using namespace TFE_Memory;
+using namespace TFE_Input;
 
 namespace TFE_DarkForces
 {
@@ -1235,13 +1237,13 @@ namespace TFE_DarkForces
 	{
 		// Make extra sure these don't double save/load.
 		static s32 lastKey = 0;
-		if (TFE_Input::keyPressed(KEY_F5) && TFE_Input::keyModDown(KEYMOD_ALT) && !lastKey)
+		if (inputMapping_getActionState(IAS_QUICK_SAVE) == STATE_PRESSED && !lastKey)
 		{
 			// Saves can happen immediately.
 			saveGame(game, c_quickSaveName);
 			lastKey = 1;
 		}
-		else if (TFE_Input::keyPressed(KEY_F6) && TFE_Input::keyModDown(KEYMOD_ALT) && !lastKey)
+		else if (inputMapping_getActionState(IAS_QUICK_LOAD) == STATE_PRESSED && !lastKey)
 		{
 			// But loads exit the game and start it up again with the requested commandline/mods.
 			// This this posts a request which gets handled next frame.

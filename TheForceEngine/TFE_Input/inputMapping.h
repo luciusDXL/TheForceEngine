@@ -73,6 +73,10 @@ namespace TFE_Input
 		IADF_PRIMARY_FIRE,
 		IADF_SECONDARY_FIRE,
 
+		// Saving
+		IAS_QUICK_SAVE,
+		IAS_QUICK_LOAD,
+
 		IA_COUNT,
 		IAS_COUNT = IAS_SYSTEM_MENU + 1,
 	};

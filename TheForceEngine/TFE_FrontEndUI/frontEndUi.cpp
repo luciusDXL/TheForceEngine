@@ -1189,6 +1189,8 @@ namespace TFE_FrontEndUI
 
 				inputMapping("Console Toggle", IAS_CONSOLE);
 				inputMapping("System Menu", IAS_SYSTEM_MENU);
+				inputMapping("Quick Save",  IAS_QUICK_SAVE);
+				inputMapping("Quick Load",  IAS_QUICK_LOAD);
 
 				ImGui::Separator();
 
