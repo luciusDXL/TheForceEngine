@@ -2,6 +2,7 @@
 
 #include "phaseOne.h"
 #include "actorModule.h"
+#include "actorSerialization.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -17,6 +18,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
@@ -842,6 +844,69 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(&trooper->logic);
 		level_free(trooper);
 		task_free(physicsActor->actorTask);
+	}
+
+	void phaseOne_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	{
+		PhaseOne* trooper = nullptr;
+		bool write = serialization_getMode() == SMODE_WRITE;
+		PhysicsActor* physicsActor = nullptr;
+		Task* trooperTask = nullptr;
+		if (write)
+		{
+			trooper = (PhaseOne*)logic;
+			physicsActor = &trooper->actor;
+		}
+		else
+		{
+			trooper = (PhaseOne*)level_alloc(sizeof(PhaseOne));
+			memset(trooper, 0, sizeof(PhaseOne));
+			physicsActor = &trooper->actor;
+			logic = (Logic*)trooper;
+
+			// Task
+			char name[32];
+			sprintf(name, "PhaseOne%d", s_shared.trooperNum);
+			s_shared.trooperNum++;
+
+			trooperTask = createSubTask(name, phaseOneTaskFunc);
+			task_setUserData(trooperTask, trooper);
+
+			// Logic
+			logic->task = trooperTask;
+			logic->cleanupFunc = phaseOneCleanupFunc;
+			logic->type = LOGIC_PHASE_ONE;
+			logic->obj = obj;
+		}
+		actor_serializeMovementModuleBase(stream, &physicsActor->moveMod);
+		actor_serializeLogicAnim(stream, &physicsActor->anim);
+		if (!write)
+		{
+			// Clear out functions, the mousebot handles all of this internally.
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.header.func = nullptr;
+			physicsActor->moveMod.header.freeFunc = nullptr;
+			physicsActor->moveMod.header.attribFunc = nullptr;
+			physicsActor->moveMod.header.msgFunc = nullptr;
+			physicsActor->moveMod.header.type = ACTMOD_MOVE;
+			physicsActor->moveMod.updateTargetFunc = nullptr;
+
+			actor_addPhysicsActorToWorld(physicsActor);
+
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.physics.obj = obj;
+			physicsActor->actorTask = trooperTask;
+
+			trooper->hitSndId = NULL_SOUND;
+			trooper->reflectSndId = NULL_SOUND;
+		}
+		SERIALIZE(SaveVersionInit, physicsActor->vel, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->lastPlayerPos, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->alive, JTRUE);
+		SERIALIZE(SaveVersionInit, physicsActor->hp, FIXED(180));
+		SERIALIZE(SaveVersionInit, physicsActor->state, 0);
+
+		SERIALIZE(SaveVersionInit, trooper->canDamage, JFALSE);
 	}
 
 	Logic* phaseOne_setup(SecObject* obj, LogicSetupFunc* setupFunc)
