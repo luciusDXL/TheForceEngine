@@ -1235,24 +1235,27 @@ namespace TFE_DarkForces
 
 	void handleQuickSave(DarkForces* game)
 	{
+		// Check to see if a save request has been posted by the UI.
+		bool quickSavePosted = TFE_System::quicksavePosted();
+
 		// Make extra sure these don't double save/load.
-		static s32 lastKey = 0;
-		if (inputMapping_getActionState(IAS_QUICK_SAVE) == STATE_PRESSED && !lastKey)
+		static s32 lastState = 0;
+		if ((inputMapping_getActionState(IAS_QUICK_SAVE) == STATE_PRESSED || quickSavePosted) && !lastState)
 		{
 			// Saves can happen immediately.
 			saveGame(game, c_quickSaveName);
-			lastKey = 1;
+			lastState = 1;
 		}
-		else if (inputMapping_getActionState(IAS_QUICK_LOAD) == STATE_PRESSED && !lastKey)
+		else if (inputMapping_getActionState(IAS_QUICK_LOAD) == STATE_PRESSED && !lastState)
 		{
 			// But loads exit the game and start it up again with the requested commandline/mods.
 			// This this posts a request which gets handled next frame.
 			TFE_System::postQuickloadRequest();
-			lastKey = 1;
+			lastState = 1;
 		}
 		else
 		{
-			lastKey = 0;
+			lastState = 0;
 		}
 	}
 }

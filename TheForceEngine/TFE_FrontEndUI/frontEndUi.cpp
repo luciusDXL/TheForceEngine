@@ -52,6 +52,7 @@ namespace TFE_FrontEndUI
 	{
 		CONFIG_ABOUT = 0,
 		CONFIG_GAME,
+		CONFIG_SAVE,
 		CONFIG_LOAD,
 		CONFIG_INPUT,
 		CONFIG_GRAPHICS,
@@ -64,6 +65,7 @@ namespace TFE_FrontEndUI
 	{
 		"About",
 		"Game Settings",
+		"Save",
 		"Load",
 		"Input",
 		"Graphics",
@@ -169,6 +171,7 @@ namespace TFE_FrontEndUI
 
 	void configAbout();
 	void configGame();
+	void configSave();
 	void configLoad();
 	void configInput();
 	void configGraphics();
@@ -557,6 +560,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("Save", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_SAVE;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			if (ImGui::Button("Load", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_LOAD;
@@ -633,6 +642,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_GAME:
 				configGame();
+				break;
+			case CONFIG_SAVE:
+				configSave();
 				break;
 			case CONFIG_LOAD:
 				configLoad();
@@ -870,11 +882,25 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	void configSave()
+	{
+		if (ImGui::Button("Save Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
+		{
+			TFE_System::postQuicksaveRequest();
+			s_subUI = FEUI_NONE;
+			s_appState = s_menuRetState;
+			TFE_Input::enableRelativeMode(s_relativeMode);
+		}
+	}
+
 	void configLoad()
 	{
 		if (ImGui::Button("Load Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
 		{
-			s_appState = APP_STATE_LOAD;
+			TFE_System::postQuickloadRequest();
+			s_subUI = FEUI_NONE;
+			s_appState = s_menuRetState;
+			TFE_Input::enableRelativeMode(s_relativeMode);
 		}
 	}
 

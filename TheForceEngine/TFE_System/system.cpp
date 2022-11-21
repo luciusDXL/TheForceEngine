@@ -36,6 +36,7 @@ namespace TFE_System
 	static bool s_resetStartTime = false;
 	static bool s_quitMessagePosted = false;
 	static bool s_systemUiRequestPosted = false;
+	static bool s_quicksavePosted = false;
 	static bool s_quickloadPosted = false;
 
 	static s32 s_missedFrameCount = 0;
@@ -227,6 +228,11 @@ namespace TFE_System
 		s_systemUiRequestPosted = true;
 	}
 
+	void postQuicksaveRequest()
+	{
+		s_quicksavePosted = true;
+	}
+
 	void postQuickloadRequest()
 	{
 		s_quickloadPosted = true;
@@ -242,6 +248,13 @@ namespace TFE_System
 		bool systemUiPostReq = s_systemUiRequestPosted;
 		s_systemUiRequestPosted = false;
 		return systemUiPostReq;
+	}
+
+	bool quicksavePosted()
+	{
+		bool posted = s_quicksavePosted;
+		s_quicksavePosted = false;
+		return posted;
 	}
 
 	bool quickloadPosted()
