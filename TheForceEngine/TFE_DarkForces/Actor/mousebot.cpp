@@ -392,24 +392,25 @@ namespace TFE_DarkForces
 			Task* mouseBotTask = createSubTask(name, mouseBotTaskFunc, mouseBotLocalMsgFunc);
 			task_setUserData(mouseBotTask, mouseBot);
 
+			// Logic
 			logic->task = mouseBotTask;
 			logic->cleanupFunc = mouseBotLogicCleanupFunc;
 			logic->type = LOGIC_MOUSEBOT;
-			// This is needed for the modules.
 			logic->obj = obj;
-
-			// Create
 			physActor = &mouseBot->actor;
 			physActor->actorTask = mouseBotTask;
 		}
-		ActorModule* mod = (ActorModule*)&physActor->moveMod;
-		actor_serializeMovementModule(stream, mod, (ActorDispatch*)logic);
+		actor_serializeMovementModuleBase(stream, &physActor->moveMod);
 		actor_serializeLogicAnim(stream, &physActor->anim);
 		if (!write)
 		{
 			// Clear out functions, the mousebot handles all of this internally.
+			physActor->moveMod.header.obj = obj;
 			physActor->moveMod.header.func = nullptr;
 			physActor->moveMod.header.freeFunc = nullptr;
+			physActor->moveMod.header.attribFunc = nullptr;
+			physActor->moveMod.header.msgFunc = nullptr;
+			physActor->moveMod.header.type = ACTMOD_MOVE;
 			physActor->moveMod.updateTargetFunc = nullptr;
 
 			actor_addPhysicsActorToWorld(physActor);

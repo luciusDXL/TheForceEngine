@@ -55,4 +55,5 @@ namespace TFE_DarkForces
 
 	void actor_serializeTiming(Stream* stream, ActorTiming* timing);
 	void actor_serializeLogicAnim(Stream* stream, LogicAnimation* anim);
+	void actor_serializeMovementModuleBase(Stream* stream, MovementModule* moveMod);
 }  // namespace TFE_DarkForces

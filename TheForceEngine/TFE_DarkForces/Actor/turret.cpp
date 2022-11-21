@@ -2,6 +2,7 @@
 
 #include "turret.h"
 #include "actorModule.h"
+#include "actorSerialization.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -17,6 +18,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
@@ -468,6 +470,66 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(&turret->logic);
 		level_free(turret);
 		task_free(task);
+	}
+
+	void turret_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	{
+		Turret* turret = nullptr;
+		bool write = serialization_getMode() == SMODE_WRITE;
+		PhysicsActor* physicsActor;
+		if (write)
+		{
+			turret = (Turret*)logic;
+			physicsActor = &turret->actor;
+		}
+		else
+		{
+			turret = (Turret*)level_alloc(sizeof(Turret));
+			memset(turret, 0, sizeof(Turret));
+			physicsActor = &turret->actor;
+			logic = (Logic*)turret;
+						
+			// Task
+			char name[32];
+			sprintf(name, "turret%d", s_turretNum);
+			s_turretNum++;
+
+			Task* turretTask = createSubTask(name, turretTaskFunc, turretLocalMsgFunc);
+			task_setUserData(turretTask, turret);
+
+			// Logic
+			logic->task = turretTask;
+			logic->cleanupFunc = turretCleanupFunc;
+			logic->type = LOGIC_TURRET;
+			logic->obj = obj;
+		}
+		actor_serializeMovementModuleBase(stream, &physicsActor->moveMod);
+		actor_serializeLogicAnim(stream, &physicsActor->anim);
+		if (!write)
+		{
+			// Clear out functions, the mousebot handles all of this internally.
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.header.func = nullptr;
+			physicsActor->moveMod.header.freeFunc = nullptr;
+			physicsActor->moveMod.header.attribFunc = nullptr;
+			physicsActor->moveMod.header.msgFunc = nullptr;
+			physicsActor->moveMod.header.type = ACTMOD_MOVE;
+			physicsActor->moveMod.updateTargetFunc = nullptr;
+
+			actor_addPhysicsActorToWorld(physicsActor);
+
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.physics.obj = obj;
+		}
+		SERIALIZE(SaveVersionInit, physicsActor->vel, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->lastPlayerPos, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->alive, JTRUE);
+		SERIALIZE(SaveVersionInit, physicsActor->hp, TURRET_HP);
+		SERIALIZE(SaveVersionInit, physicsActor->state, TURRETSTATE_DEFAULT);
+
+		SERIALIZE(SaveVersionInit, turret->pitch, 0);
+		SERIALIZE(SaveVersionInit, turret->yaw, 0);
+		SERIALIZE(SaveVersionInit, turret->nextTick, 0);
 	}
 
 	Logic* turret_setup(SecObject* obj, LogicSetupFunc* setupFunc)

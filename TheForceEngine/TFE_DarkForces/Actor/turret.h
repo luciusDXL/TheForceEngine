@@ -12,4 +12,5 @@ namespace TFE_DarkForces
 	void turret_exit();
 	void turret_precache();
 	Logic* turret_setup(SecObject* obj, LogicSetupFunc* setupFunc);
+	void turret_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 }  // namespace TFE_DarkForces

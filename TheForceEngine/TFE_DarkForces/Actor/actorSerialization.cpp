@@ -243,6 +243,15 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, anim->state, 0);
 	}
 
+	void actor_serializeMovementModuleBase(Stream* stream, MovementModule* moveMod)
+	{
+		actor_serializeCollisionInfo(stream, &moveMod->physics);
+		actor_serializeTarget(stream, &moveMod->target);
+		SERIALIZE(SaveVersionInit, moveMod->delta, { 0 });
+		actor_serializeWall(stream, moveMod->collisionWall);
+		SERIALIZE(SaveVersionInit, moveMod->collisionFlags, 0);
+	}
+
 	void actor_serializeMovementModule(Stream* stream, ActorModule*& mod, ActorDispatch* dispatch)
 	{
 		MovementModule* moveMod;
@@ -265,12 +274,7 @@ namespace TFE_DarkForces
 			assert(moveMod->updateTargetFunc == defaultUpdateTargetFunc || !moveMod->updateTargetFunc);
 			assert(moveMod->header.freeFunc == nullptr);
 		}
-
-		actor_serializeCollisionInfo(stream, &moveMod->physics);
-		actor_serializeTarget(stream, &moveMod->target);
-		SERIALIZE(SaveVersionInit, moveMod->delta, {0});
-		actor_serializeWall(stream, moveMod->collisionWall);
-		SERIALIZE(SaveVersionInit, moveMod->collisionFlags, 0);
+		actor_serializeMovementModuleBase(stream, moveMod);
 	}
 
 	void actor_serializeAttackModuleBase(Stream* stream, AttackModule* attackMod, ActorDispatch* dispatch)

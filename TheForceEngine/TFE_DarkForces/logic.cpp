@@ -409,7 +409,7 @@ namespace TFE_DarkForces
 		unimplementedLogic_serialize, // LOGIC_PHASE_ONE,
 		unimplementedLogic_serialize, // LOGIC_PHASE_TWO,
 		unimplementedLogic_serialize, // LOGIC_PHASE_THREE,
-		unimplementedLogic_serialize, // LOGIC_TURRET,
+		turret_serialize,             // LOGIC_TURRET,
 		unimplementedLogic_serialize, // LOGIC_WELDER,
 		animLogic_serialize,          // LOGIC_ANIM,
 		updateLogic_serialize,        // LOGIC_UPDATE,
