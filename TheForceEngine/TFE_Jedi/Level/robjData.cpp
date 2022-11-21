@@ -5,6 +5,7 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/logic.h>
+#include <TFE_DarkForces/generator.h>
 #include <TFE_Memory/chunkedArray.h>
 #include <TFE_System/system.h>
 
@@ -116,6 +117,11 @@ namespace TFE_Jedi
 		SecObject* obj = (SecObject*)TFE_Memory::chunkedArrayGet(s_objData.objectList, id);
 		// The object may have been deleted later.
 		return (obj && obj->serializeIndex == id) ? obj : nullptr;
+	}
+
+	SecObject* objData_getObjectBySerializationId_NoValidation(u32 id)
+	{
+		return (SecObject*)TFE_Memory::chunkedArrayGet(s_objData.objectList, id);
 	}
 		
 	void objData_serialize(Stream* stream)
@@ -230,6 +236,25 @@ namespace TFE_Jedi
 						obj->projectileLogic = logic;
 					}
 				}
+			}
+
+			// Fix-up generator references.
+			for (u32 i = 0; i < writeCount; i++)
+			{
+				SecObject* obj = (SecObject*)TFE_Memory::chunkedArrayGet(s_objData.objectList, i);
+
+				allocator_saveIter((Allocator*)obj->logic);
+					Logic** logicPtr = (Logic**)allocator_getHead((Allocator*)obj->logic);
+					while (logicPtr)
+					{
+						Logic* logic = *logicPtr;
+						if (logic->type == LOGIC_GENERATOR)
+						{
+							TFE_DarkForces::generatorLogic_fixup(logic);
+						}
+						logicPtr = (Logic**)allocator_getNext((Allocator*)obj->logic);
+					}
+				allocator_restoreIter((Allocator*)obj->logic);
 			}
 		}
 	}

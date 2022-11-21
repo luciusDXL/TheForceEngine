@@ -237,6 +237,38 @@ namespace TFE_DarkForces
 		return (Logic*)generator;
 	}
 
+	// Fixup
+	void generatorLogic_fixup(Logic* logic)
+	{
+		Generator* gen = (Generator*)logic;
+		allocator_saveIter(gen->entities);
+			SecObject** entityList = (SecObject**)allocator_getHead(gen->entities);
+			while (entityList)
+			{
+				SecObject* obj = *entityList;
+				if (obj && obj->logic)
+				{
+					// Now find the dispatch logic and link it back to the generator.
+					allocator_saveIter((Allocator*)obj->logic);
+						Logic** logicPtr = (Logic**)allocator_getHead((Allocator*)obj->logic);
+						while (logicPtr)
+						{
+							Logic* logic = *logicPtr;
+							if (logic->type == LOGIC_DISPATCH)
+							{
+								ActorDispatch* actorLogic = (ActorDispatch*)logic;
+								actorLogic->freeTask = gen->logic.task;
+								break;
+							}
+							logicPtr = (Logic**)allocator_getNext((Allocator*)obj->logic);
+						}
+					allocator_restoreIter((Allocator*)obj->logic);
+				}
+				entityList = (SecObject**)allocator_getNext(gen->entities);
+			}
+		allocator_restoreIter(gen->entities);
+	}
+
 	// Serialization
 	void generatorLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream)
 	{
@@ -293,7 +325,7 @@ namespace TFE_DarkForces
 				if (entityId < 0) { continue; }
 
 				SecObject** entityPtr = (SecObject**)allocator_newItem(gen->entities);
-				*entityPtr = objData_getObjectBySerializationId(entityId);
+				*entityPtr = objData_getObjectBySerializationId_NoValidation(entityId);
 			}
 		}
 

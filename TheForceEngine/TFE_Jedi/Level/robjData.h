@@ -118,4 +118,5 @@ namespace TFE_Jedi
 
 	// Used for downstream serialization, to get the object from the serialized object ID.
 	SecObject* objData_getObjectBySerializationId(u32 id);
+	SecObject* objData_getObjectBySerializationId_NoValidation(u32 id);
 }

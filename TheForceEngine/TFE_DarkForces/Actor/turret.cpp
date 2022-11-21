@@ -476,7 +476,8 @@ namespace TFE_DarkForces
 	{
 		Turret* turret = nullptr;
 		bool write = serialization_getMode() == SMODE_WRITE;
-		PhysicsActor* physicsActor;
+		PhysicsActor* physicsActor = nullptr;
+		Task* turretTask = nullptr;
 		if (write)
 		{
 			turret = (Turret*)logic;
@@ -494,7 +495,7 @@ namespace TFE_DarkForces
 			sprintf(name, "turret%d", s_turretNum);
 			s_turretNum++;
 
-			Task* turretTask = createSubTask(name, turretTaskFunc, turretLocalMsgFunc);
+			turretTask = createSubTask(name, turretTaskFunc, turretLocalMsgFunc);
 			task_setUserData(turretTask, turret);
 
 			// Logic
@@ -520,6 +521,7 @@ namespace TFE_DarkForces
 
 			physicsActor->moveMod.header.obj = obj;
 			physicsActor->moveMod.physics.obj = obj;
+			physicsActor->actorTask = turretTask;
 		}
 		SERIALIZE(SaveVersionInit, physicsActor->vel, { 0 });
 		SERIALIZE(SaveVersionInit, physicsActor->lastPlayerPos, { 0 });

@@ -366,6 +366,7 @@ namespace TFE_DarkForces
 	{
 		MouseBot* mouseBot = nullptr;
 		PhysicsActor* physActor = nullptr;
+		Task* mouseBotTask = nullptr;
 		bool write = serialization_getMode() == SMODE_WRITE;
 		if (write)
 		{
@@ -389,7 +390,7 @@ namespace TFE_DarkForces
 			sprintf(name, "mouseBot%d", s_mouseNum);
 			s_mouseNum++;
 
-			Task* mouseBotTask = createSubTask(name, mouseBotTaskFunc, mouseBotLocalMsgFunc);
+			mouseBotTask = createSubTask(name, mouseBotTaskFunc, mouseBotLocalMsgFunc);
 			task_setUserData(mouseBotTask, mouseBot);
 
 			// Logic
@@ -398,7 +399,6 @@ namespace TFE_DarkForces
 			logic->type = LOGIC_MOUSEBOT;
 			logic->obj = obj;
 			physActor = &mouseBot->actor;
-			physActor->actorTask = mouseBotTask;
 		}
 		actor_serializeMovementModuleBase(stream, &physActor->moveMod);
 		actor_serializeLogicAnim(stream, &physActor->anim);
@@ -417,6 +417,7 @@ namespace TFE_DarkForces
 
 			physActor->moveMod.header.obj = obj;
 			physActor->moveMod.physics.obj = obj;
+			physActor->actorTask = mouseBotTask;
 		}
 		SERIALIZE(SaveVersionInit, physActor->vel, { 0 });
 		SERIALIZE(SaveVersionInit, physActor->lastPlayerPos, { 0 });

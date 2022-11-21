@@ -428,7 +428,8 @@ namespace TFE_DarkForces
 	{
 		Welder* welder = nullptr;
 		bool write = serialization_getMode() == SMODE_WRITE;
-		PhysicsActor* physicsActor;
+		PhysicsActor* physicsActor = nullptr;
+		Task* welderTask = nullptr;
 		if (write)
 		{
 			welder = (Welder*)logic;
@@ -452,7 +453,7 @@ namespace TFE_DarkForces
 			sprintf(name, "Welder%d", s_shared.welderNum);
 			s_shared.welderNum++;
 
-			Task* welderTask = createSubTask(name, welderTaskFunc);
+			welderTask = createSubTask(name, welderTaskFunc);
 			task_setUserData(welderTask, welder);
 
 			// Logic
@@ -478,6 +479,7 @@ namespace TFE_DarkForces
 
 			physicsActor->moveMod.header.obj = obj;
 			physicsActor->moveMod.physics.obj = obj;
+			physicsActor->actorTask = welderTask;
 
 			welder->hurtSndId = NULL_SOUND;
 			welder->sound2Id = NULL_SOUND;

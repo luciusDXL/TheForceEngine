@@ -135,11 +135,8 @@ namespace TFE_DarkForces
 		}
 		if (serialization_getMode() == SMODE_READ)
 		{
+			// This will be filled in a fixup pass if needed.
 			dispatch->freeTask = nullptr;
-		}
-		else
-		{
-			assert(!dispatch->freeTask);
 		}
 	}
 		

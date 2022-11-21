@@ -17,4 +17,5 @@ namespace TFE_DarkForces
 
 	// Serialization
 	void generatorLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
+	void generatorLogic_fixup(Logic* logic);
 }  // namespace TFE_DarkForces
