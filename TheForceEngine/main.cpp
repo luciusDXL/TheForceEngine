@@ -665,6 +665,10 @@ int main(int argc, char* argv[])
 		TFE_Input::setMousePos(mouseAbsX, mouseAbsY);
 		inputMapping_updateInput();
 
+		// Can we save?
+		TFE_FrontEndUI::setCanSave(s_curGame ? s_curGame->canSave() : false);
+
+		// Update the System UI.
 		AppState appState = TFE_FrontEndUI::update();
 		if (TFE_System::quickloadPosted())
 		{

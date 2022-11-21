@@ -392,6 +392,11 @@ namespace TFE_DarkForces
 		}
 	}
 
+	bool DarkForces::canSave()
+	{
+		return s_runGameState.state == GSTATE_MISSION;
+	}
+
 	/**********The basic structure of the Dark Forces main loop is as follows:***************
 	while (1)  // <- This will be replaced by the function call from the main TFE loop.
 	{
@@ -1240,7 +1245,7 @@ namespace TFE_DarkForces
 
 		// Make extra sure these don't double save/load.
 		static s32 lastState = 0;
-		if ((inputMapping_getActionState(IAS_QUICK_SAVE) == STATE_PRESSED || quickSavePosted) && !lastState)
+		if ((inputMapping_getActionState(IAS_QUICK_SAVE) == STATE_PRESSED || quickSavePosted) && !lastState && game->canSave())
 		{
 			// Saves can happen immediately.
 			saveGame(game, c_quickSaveName);

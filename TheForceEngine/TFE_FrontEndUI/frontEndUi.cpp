@@ -156,6 +156,7 @@ namespace TFE_FrontEndUI
 
 	static bool s_consoleActive = false;
 	static bool s_relativeMode;
+	static bool s_canSave = false;
 
 	static UiImage s_logoGpuImage;
 	static UiImage s_titleGpuImage;
@@ -884,7 +885,17 @@ namespace TFE_FrontEndUI
 
 	void configSave()
 	{
-		if (ImGui::Button("Save Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
+		if (!s_canSave)
+		{
+			ImGui::LabelText("###Msg", "Cannot save the game at this time.");
+			if (ImGui::Button("Return", ImVec2(120.0f*s_uiScale, 0.0f)))
+			{
+				s_subUI = FEUI_NONE;
+				s_appState = s_menuRetState;
+				TFE_Input::enableRelativeMode(s_relativeMode);
+			}
+		}
+		else if (ImGui::Button("Save Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
 		{
 			TFE_System::postQuicksaveRequest();
 			s_subUI = FEUI_NONE;
@@ -1774,6 +1785,16 @@ namespace TFE_FrontEndUI
 	ImFont* getDialogFont()
 	{
 		return s_dialogFont;
+	}
+
+	void setCanSave(bool canSave)
+	{
+		s_canSave = canSave;
+	}
+
+	bool getCanSave()
+	{
+		return s_canSave;
 	}
 
 	void setState(AppState state)

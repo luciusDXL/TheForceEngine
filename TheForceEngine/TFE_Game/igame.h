@@ -25,6 +25,7 @@ struct IGame
 	virtual void pauseGame(bool pause) = 0;
 	virtual void loopGame() {};
 	virtual bool serializeGameState(const char* filename, bool writeState) { return false; };
+	virtual bool canSave() { return false; }
 		
 	GameID id;
 };

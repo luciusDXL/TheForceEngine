@@ -55,5 +55,8 @@ namespace TFE_FrontEndUI
 	void  clearMenuState();
 	ImFont* getDialogFont();
 
+	void setCanSave(bool canSave);
+	bool getCanSave();
+
 	void toggleProfilerView();
 }

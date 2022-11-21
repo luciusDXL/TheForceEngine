@@ -15,6 +15,7 @@ namespace TFE_DarkForces
 		void exitGame() override;
 		void loopGame() override;
 		bool serializeGameState(const char* filename, bool writeState) override;
+		bool canSave() override;
 	};
 
 	extern void saveLevelStatus();
