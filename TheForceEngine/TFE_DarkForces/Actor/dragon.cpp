@@ -2,6 +2,7 @@
 
 #include "dragon.h"
 #include "actorModule.h"
+#include "actorSerialization.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -17,6 +18,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
@@ -998,6 +1000,72 @@ namespace TFE_DarkForces
 		deleteLogicAndObject(logic);
 		level_free(dragon);
 		task_free(dragon->actor.actorTask);
+	}
+
+	void kellDragon_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	{
+		KellDragon* dragon = nullptr;
+		bool write = serialization_getMode() == SMODE_WRITE;
+		PhysicsActor* physicsActor = nullptr;
+		Task* dragonTask = nullptr;
+		if (write)
+		{
+			dragon = (KellDragon*)logic;
+			physicsActor = &dragon->actor;
+		}
+		else
+		{
+			dragon = (KellDragon*)level_alloc(sizeof(KellDragon));
+			memset(dragon, 0, sizeof(KellDragon));
+			physicsActor = &dragon->actor;
+			logic = (Logic*)dragon;
+
+			// Task
+			char name[32];
+			sprintf(name, "KellDragon%d", s_shared.dragonNum);
+			s_shared.dragonNum++;
+
+			dragonTask = createSubTask(name, kellDragonTaskFunc);
+			task_setUserData(dragonTask, dragon);
+
+			// Logic
+			logic->task = dragonTask;
+			logic->cleanupFunc = kellDragonCleanupFunc;
+			logic->type = LOGIC_DRAGON;
+			logic->obj = obj;
+		}
+		actor_serializeMovementModuleBase(stream, &physicsActor->moveMod);
+		actor_serializeLogicAnim(stream, &physicsActor->anim);
+		if (!write)
+		{
+			// Clear out functions, the mousebot handles all of this internally.
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.header.func = nullptr;
+			physicsActor->moveMod.header.freeFunc = nullptr;
+			physicsActor->moveMod.header.attribFunc = nullptr;
+			physicsActor->moveMod.header.msgFunc = nullptr;
+			physicsActor->moveMod.header.type = ACTMOD_MOVE;
+			physicsActor->moveMod.updateTargetFunc = nullptr;
+
+			actor_addPhysicsActorToWorld(physicsActor);
+
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.physics.obj = obj;
+			physicsActor->actorTask = dragonTask;
+
+			dragon->painSndId = NULL_SOUND;
+			dragon->pad = 0;
+		}
+		SERIALIZE(SaveVersionInit, physicsActor->vel, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->lastPlayerPos, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->alive, JTRUE);
+		SERIALIZE(SaveVersionInit, physicsActor->hp, FIXED(180));
+		SERIALIZE(SaveVersionInit, physicsActor->state, 0);
+
+		SERIALIZE(SaveVersionInit, dragon->animIndex, 0);
+		SERIALIZE(SaveVersionInit, dragon->painLevel, 0);
+		SERIALIZE(SaveVersionInit, dragon->retreat, JFALSE);
+		SERIALIZE(SaveVersionInit, dragon->nextTick, 0);
 	}
 
 	Logic* kellDragon_setup(SecObject* obj, LogicSetupFunc* setupFunc)

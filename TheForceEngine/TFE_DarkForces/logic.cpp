@@ -404,7 +404,7 @@ namespace TFE_DarkForces
 	{
 		actorDispatch_serialize,      // LOGIC_DISPATCH
 		unimplementedLogic_serialize, // LOGIC_BOBA_FETT,
-		unimplementedLogic_serialize, // LOGIC_DRAGON,
+		kellDragon_serialize,         // LOGIC_DRAGON,
 		mousebot_serialize,           // LOGIC_MOUSEBOT,
 		unimplementedLogic_serialize, // LOGIC_PHASE_ONE,
 		unimplementedLogic_serialize, // LOGIC_PHASE_TWO,
