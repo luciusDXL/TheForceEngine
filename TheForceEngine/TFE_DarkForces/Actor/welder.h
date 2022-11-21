@@ -10,6 +10,7 @@
 namespace TFE_DarkForces
 {
 	Logic* welder_setup(SecObject* obj, LogicSetupFunc* setupFunc);
+	void welder_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 	void welder_clear();
 	void welder_exit();
 	void welder_precache();

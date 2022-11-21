@@ -2,6 +2,7 @@
 
 #include "welder.h"
 #include "actorModule.h"
+#include "actorSerialization.h"
 #include "../logic.h"
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/hitEffect.h>
@@ -18,6 +19,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 
 namespace TFE_DarkForces
 {
@@ -420,6 +422,73 @@ namespace TFE_DarkForces
 	void welder_clear()
 	{
 		s_welderSpark = nullptr;
+	}
+
+	void welder_serialize(Logic*& logic, SecObject* obj, Stream* stream)
+	{
+		Welder* welder = nullptr;
+		bool write = serialization_getMode() == SMODE_WRITE;
+		PhysicsActor* physicsActor;
+		if (write)
+		{
+			welder = (Welder*)logic;
+			physicsActor = &welder->actor;
+		}
+		else
+		{
+			welder = (Welder*)level_alloc(sizeof(Welder));
+			memset(welder, 0, sizeof(Welder));
+			physicsActor = &welder->actor;
+			logic = (Logic*)welder;
+
+			// Resources
+			if (!s_welderSpark)
+			{
+				s_welderSpark = TFE_Sprite_Jedi::getWax("spark.wax");
+			}
+
+			// Task
+			char name[32];
+			sprintf(name, "Welder%d", s_shared.welderNum);
+			s_shared.welderNum++;
+
+			Task* welderTask = createSubTask(name, welderTaskFunc);
+			task_setUserData(welderTask, welder);
+
+			// Logic
+			logic->task = welderTask;
+			logic->cleanupFunc = welderCleanupFunc;
+			logic->type = LOGIC_WELDER;
+			logic->obj = obj;
+		}
+		actor_serializeMovementModuleBase(stream, &physicsActor->moveMod);
+		actor_serializeLogicAnim(stream, &physicsActor->anim);
+		if (!write)
+		{
+			// Clear out functions, the mousebot handles all of this internally.
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.header.func = nullptr;
+			physicsActor->moveMod.header.freeFunc = nullptr;
+			physicsActor->moveMod.header.attribFunc = nullptr;
+			physicsActor->moveMod.header.msgFunc = nullptr;
+			physicsActor->moveMod.header.type = ACTMOD_MOVE;
+			physicsActor->moveMod.updateTargetFunc = nullptr;
+
+			actor_addPhysicsActorToWorld(physicsActor);
+
+			physicsActor->moveMod.header.obj = obj;
+			physicsActor->moveMod.physics.obj = obj;
+
+			welder->hurtSndId = NULL_SOUND;
+			welder->sound2Id = NULL_SOUND;
+		}
+		SERIALIZE(SaveVersionInit, physicsActor->vel, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->lastPlayerPos, { 0 });
+		SERIALIZE(SaveVersionInit, physicsActor->alive, JTRUE);
+		SERIALIZE(SaveVersionInit, physicsActor->hp, FIXED(130));
+		SERIALIZE(SaveVersionInit, physicsActor->state, WSTATE_DEFAULT);
+		SERIALIZE(SaveVersionInit, welder->pitch, 0);
+		SERIALIZE(SaveVersionInit, welder->yaw, 0);
 	}
 
 	Logic* welder_setup(SecObject* obj, LogicSetupFunc* setupFunc)
