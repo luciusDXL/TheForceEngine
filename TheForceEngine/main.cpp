@@ -619,6 +619,7 @@ int main(int argc, char* argv[])
 	TFE_FrontEndUI::init();
 	game_init();
 	inputMapping_startup();
+	TFE_SaveSystem::init();
 
 	// Uncomment to test memory region allocator.
 	// TFE_Memory::region_test();
@@ -832,6 +833,7 @@ int main(int argc, char* argv[])
 	TFE_Settings::shutdown();
 	TFE_Jedi::texturepacker_freeGlobal();
 	TFE_RenderBackend::destroy();
+	TFE_SaveSystem::destroy();
 	SDL_Quit();
 		
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Ended.");

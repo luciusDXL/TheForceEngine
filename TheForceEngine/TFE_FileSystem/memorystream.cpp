@@ -149,7 +149,7 @@ void MemoryStream::writeBuffer(const void* ptr, u32 size, u32 count)
 	{
 		const u32 totalSize = size * count;
 		resizeBuffer(m_addr + totalSize);
-		memcpy(m_memory, ptr, totalSize);
+		memcpy(m_memory + m_addr, ptr, totalSize);
 		// Step
 		m_addr += totalSize;
 	}

@@ -898,7 +898,7 @@ namespace TFE_FrontEndUI
 		}
 		else if (ImGui::Button("Save Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
 		{
-			TFE_SaveSystem::postSaveRequest(TFE_SaveSystem::c_quickSaveName);
+			TFE_SaveSystem::postSaveRequest(TFE_SaveSystem::c_quickSaveName, "Quicksave");
 			s_subUI = FEUI_NONE;
 			s_appState = s_menuRetState;
 			TFE_Input::enableRelativeMode(s_relativeMode);

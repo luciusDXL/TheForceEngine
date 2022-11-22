@@ -42,6 +42,8 @@ namespace TFE_System
 	f64 convertFromTicksToSeconds(u64 ticks);
 	f64 microsecondsToSeconds(f64 mu);
 
+	void getDateTimeString(char* output);
+
 	// Log
 	bool logOpen(const char* filename);
 	void logClose();

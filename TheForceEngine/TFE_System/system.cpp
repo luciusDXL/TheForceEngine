@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h> 
 #include <algorithm>
 
 #ifdef _WIN32
@@ -176,6 +177,13 @@ namespace TFE_System
 	f64 microsecondsToSeconds(f64 mu)
 	{
 		return mu / 1000000.0;
+	}
+
+	void getDateTimeString(char* output)
+	{
+		time_t _tm = time(NULL);
+		struct tm* curtime = localtime(&_tm);
+		strcpy(output, asctime(curtime));
 	}
 
 	bool osShellExecute(const char* pathToExe, const char* exeDir, const char* param, bool waitForCompletion)
