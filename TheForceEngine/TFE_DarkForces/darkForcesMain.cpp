@@ -63,8 +63,6 @@ namespace TFE_DarkForces
 	/////////////////////////////////////////////
 	// Constants
 	/////////////////////////////////////////////
-	const char* c_quickSaveName = "quicksave.tfe";
-
 	static const char* c_gobFileNames[] =
 	{
 		"DARK.GOB",
@@ -460,9 +458,6 @@ namespace TFE_DarkForces
 	****************************************************/
 	void DarkForces::loopGame()
 	{
-		// TFE: If serialization is requested, it should be done here - otherwise it will happen between the main loop and task update, which may be
-		// problematic.
-		handleQuickSave(this);
 		updateTime();
 				
 		switch (s_runGameState.state)
@@ -867,7 +862,7 @@ namespace TFE_DarkForces
 						char lfdPath[TFE_MAX_PATH];
 						sprintf(lfdPath, "%sdfbrief.lfd", tempPath);
 						FileStream file;
-						if (file.open(lfdPath, FileStream::MODE_WRITE))
+						if (file.open(lfdPath, Stream::MODE_WRITE))
 						{
 							file.writeBuffer(buffer, bufferLen);
 							file.close();
@@ -888,7 +883,7 @@ namespace TFE_DarkForces
 						char lfdPath[TFE_MAX_PATH];
 						sprintf(lfdPath, "%scutscenes%d.lfd", tempPath, i);
 						FileStream file;
-						if (file.open(lfdPath, FileStream::MODE_WRITE))
+						if (file.open(lfdPath, Stream::MODE_WRITE))
 						{
 							file.writeBuffer(buffer, bufferLen);
 							file.close();
@@ -1168,9 +1163,21 @@ namespace TFE_DarkForces
 
 	bool DarkForces::serializeGameState(const char* filename, bool writeState)
 	{
-		char savePath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "Saves/", savePath);
+		if (writeState)
+		{
+			// Write the save message.
+			const char* msg = TFE_System::getMessage(TFE_MSG_SAVE);
+			if (msg)
+			{
+				char fullMsg[TFE_MAX_PATH];
+				sprintf(fullMsg, "%s [%s]", msg, filename);
+				hud_sendTextMessage(fullMsg, 0);
+			}
+		}
 
+		// Create the save directory if it doesn't exist.
+		char savePath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "Saves/Dark Forces/", savePath);
 		if (!FileUtil::directoryExits(savePath))
 		{
 			FileUtil::makeDirectory(savePath);
@@ -1180,8 +1187,9 @@ namespace TFE_DarkForces
 		char filePath[TFE_MAX_PATH];
 		sprintf(filePath, "%s%s", savePath, filename);
 
+		// Serialize the game state to the file.
 		FileStream stream;
-		if (stream.open(filePath, writeState ? FileStream::MODE_WRITE : FileStream::MODE_READ))
+		if (stream.open(filePath, writeState ? Stream::MODE_WRITE : Stream::MODE_READ))
 		{
 			time_pause(JTRUE);
 			if (writeState)
@@ -1222,45 +1230,5 @@ namespace TFE_DarkForces
 		}
 
 		return true;
-	}
-
-	void saveGame(DarkForces* game, const char* fileName)
-	{
-		// Write the save message.
-		const char* msg = TFE_System::getMessage(TFE_MSG_SAVE);
-		if (msg)
-		{
-			char fullMsg[TFE_MAX_PATH];
-			sprintf(fullMsg, "%s [%s]", msg, fileName);
-			hud_sendTextMessage(fullMsg, 0);
-		}
-		// Save.
-		game->serializeGameState(fileName, /*writeState*/true);
-	}
-
-	void handleQuickSave(DarkForces* game)
-	{
-		// Check to see if a save request has been posted by the UI.
-		bool quickSavePosted = TFE_System::quicksavePosted();
-
-		// Make extra sure these don't double save/load.
-		static s32 lastState = 0;
-		if ((inputMapping_getActionState(IAS_QUICK_SAVE) == STATE_PRESSED || quickSavePosted) && !lastState && game->canSave())
-		{
-			// Saves can happen immediately.
-			saveGame(game, c_quickSaveName);
-			lastState = 1;
-		}
-		else if (inputMapping_getActionState(IAS_QUICK_LOAD) == STATE_PRESSED && !lastState)
-		{
-			// But loads exit the game and start it up again with the requested commandline/mods.
-			// This this posts a request which gets handled next frame.
-			TFE_System::postQuickloadRequest();
-			lastState = 1;
-		}
-		else
-		{
-			lastState = 0;
-		}
 	}
 }

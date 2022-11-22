@@ -19,6 +19,7 @@
 #include <TFE_System/CrashHandler/crashHandler.h>
 #include <TFE_System/tfeMessage.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_RenderShared/texturePacker.h>
 #include <TFE_Asset/paletteAsset.h>
 #include <TFE_Asset/imageAsset.h>
@@ -29,6 +30,10 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
+
+// Temp
+#include <TFE_RenderBackend/renderBackend.h>
+#include <TFE_Asset/imageAsset.h>
 
 // Replace with music system
 #include <TFE_Audio/midiPlayer.h>
@@ -343,7 +348,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 				TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
 				newState = APP_STATE_CANNOT_RUN;
 			}
-			else if (!s_curGame->serializeGameState("quicksave.tfe", false))
+			else if (!s_curGame->serializeGameState(c_quickSaveName, false))
 			{
 				TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
 				freeGame(s_curGame);
@@ -493,6 +498,64 @@ bool validatePath()
 		}
 	}
 	return TFE_Paths::hasPath(PATH_SOURCE_DATA);
+}
+
+void handleSaveScreenshot()
+{
+#if 0
+	// Test...
+	// Hacktastic.
+	static u32 mem[1920 * 1080];
+	s32 w = 1920, h = 1080;
+	TFE_RenderBackend::captureScreenToMemory(mem);
+
+	// Test.
+	// Downsample.
+	s32 scale = h / 256;
+	s32 newWidth = w / scale, newHeight = h / scale;
+
+	static u32 output[1920 * 1080];
+	const u32 *src = mem;
+	u32* dst = output;
+	for (s32 y = 0, rY = 0; y < newHeight; y++, rY += scale)
+	{
+		for (s32 x = 0, rX = 0; x < newWidth; x++, rX += scale)
+		{
+			dst[x] = src[rX];
+		}
+		dst += newWidth;
+		src += w * scale;
+	}
+
+	TFE_Image::writeImage("TestCapture.png", newWidth, newHeight, output);
+#endif
+}
+
+void handleQuickSave(IGame* game)
+{
+	// Check to see if a save request has been posted by the UI.
+	bool quickSavePosted = TFE_System::quicksavePosted();
+	if (!game) { return; }
+
+	// Make extra sure these don't double save/load.
+	static s32 lastState = 0;
+	if ((inputMapping_getActionState(IAS_QUICK_SAVE) == STATE_PRESSED || quickSavePosted) && !lastState && game->canSave())
+	{
+		// Saves can happen immediately.
+		game->serializeGameState(c_quickSaveName, true);
+		lastState = 1;
+	}
+	else if (inputMapping_getActionState(IAS_QUICK_LOAD) == STATE_PRESSED && !lastState)
+	{
+		// But loads exit the game and start it up again with the requested commandline/mods.
+		// This this posts a request which gets handled next frame.
+		TFE_System::postQuickloadRequest();
+		lastState = 1;
+	}
+	else
+	{
+		lastState = 0;
+	}
 }
 
 int main(int argc, char* argv[])
@@ -772,6 +835,7 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
+				handleQuickSave(s_curGame);
 				s_curGame->loopGame();
 				endInputFrame = TFE_Jedi::task_run() != 0;
 			}
