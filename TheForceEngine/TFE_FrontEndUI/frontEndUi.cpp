@@ -6,6 +6,7 @@
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_Game/reticle.h>
+#include <TFE_Game/saveSystem.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
@@ -897,7 +898,7 @@ namespace TFE_FrontEndUI
 		}
 		else if (ImGui::Button("Save Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
 		{
-			TFE_System::postQuicksaveRequest();
+			TFE_SaveSystem::postSaveRequest(TFE_SaveSystem::c_quickSaveName);
 			s_subUI = FEUI_NONE;
 			s_appState = s_menuRetState;
 			TFE_Input::enableRelativeMode(s_relativeMode);
@@ -908,7 +909,7 @@ namespace TFE_FrontEndUI
 	{
 		if (ImGui::Button("Load Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
 		{
-			TFE_System::postQuickloadRequest();
+			TFE_SaveSystem::postLoadRequest(TFE_SaveSystem::c_quickSaveName);
 			s_subUI = FEUI_NONE;
 			s_appState = s_menuRetState;
 			TFE_Input::enableRelativeMode(s_relativeMode);

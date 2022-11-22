@@ -15,8 +15,6 @@ struct AnimatedTexture;
 
 namespace TFE_Jedi
 {
-	static const char* c_quickSaveName = "quicksave.tfe";
-
 	enum SaveVersion : u32
 	{
 		SaveVersionInit = 1,

@@ -519,6 +519,7 @@ echo ^)";
     <ClInclude Include="TFE_FrontEndUI\profilerView.h" />
     <ClInclude Include="TFE_Game\igame.h" />
     <ClInclude Include="TFE_Game\reticle.h" />
+    <ClInclude Include="TFE_Game\saveSystem.h" />
     <ClInclude Include="TFE_Input\input.h" />
     <ClInclude Include="TFE_Input\inputEnum.h" />
     <ClInclude Include="TFE_Input\inputMapping.h" />
@@ -835,6 +836,7 @@ echo ^)";
     <ClCompile Include="TFE_FrontEndUI\profilerView.cpp" />
     <ClCompile Include="TFE_Game\igame.cpp" />
     <ClCompile Include="TFE_Game\reticle.cpp" />
+    <ClCompile Include="TFE_Game\saveSystem.cpp" />
     <ClCompile Include="TFE_Input\input.cpp" />
     <ClCompile Include="TFE_Input\inputMapping.cpp" />
     <ClCompile Include="TFE_Jedi\Collision\collision.cpp" />

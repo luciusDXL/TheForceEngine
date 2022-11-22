@@ -1216,6 +1216,9 @@
     <ClInclude Include="TFE_FileSystem\memorystream.h">
       <Filter>Source\TFE_FileSystem</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Game\saveSystem.h">
+      <Filter>Source\TFE_Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2057,6 +2060,9 @@
     </ClCompile>
     <ClCompile Include="TFE_FileSystem\memorystream.cpp">
       <Filter>Source\TFE_FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Game\saveSystem.cpp">
+      <Filter>Source\TFE_Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

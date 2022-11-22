@@ -60,12 +60,6 @@ namespace TFE_System
 	void postSystemUiRequest();
 	bool systemUiRequestPosted();
 
-	void postQuickloadRequest();
-	bool quickloadPosted();
-
-	void postQuicksaveRequest();
-	bool quicksavePosted();
-
 	const char* getVersionString();
 
 	extern f64 c_gameTimeScale;
