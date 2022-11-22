@@ -6,6 +6,7 @@
 
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/imageAsset.h>
+#include <assert.h>
 
 using namespace TFE_Input;
 
@@ -46,20 +47,22 @@ namespace TFE_SaveSystem
 		}
 		TFE_RenderBackend::captureScreenToMemory(s_imageBuffer[0]);
 
-		// Downsample.
-		s32 scale = displayInfo.height / 256;
-		s32 newWidth = displayInfo.width / scale, newHeight = displayInfo.height / scale;
-		s32 offset = 0;
-		// Clamp the output image size.
-		if (newHeight > 512)
+		// Scale and crop the image to fit inside 426 x 240 (widescreen).
+		s64 scale = SAVE_IMAGE_HEIGHT * 65536 / displayInfo.height;
+		s64 invScale = displayInfo.height * 65536 / SAVE_IMAGE_HEIGHT;
+		s32 scaledWidth = (displayInfo.width * scale) >> 16ll;
+		s32 newWidth = SAVE_IMAGE_WIDTH, newHeight = SAVE_IMAGE_HEIGHT;
+
+		s32 dstOffset = 0;
+		s32 srcOffset = 0;
+		if (scaledWidth < newWidth)
 		{
-			newHeight = 512;
+			dstOffset = (newWidth - scaledWidth) / 2;
 		}
-		if (newWidth > 512)
+		else if (scaledWidth > newWidth)
 		{
-			offset = (newWidth - 512) / 2;
-			offset *= scale;
-			newWidth = 512;
+			srcOffset = (scaledWidth - newWidth) / 2;
+			srcOffset = srcOffset * invScale;
 		}
 
 		size_t newSize = newWidth * newHeight * 4;
@@ -69,16 +72,20 @@ namespace TFE_SaveSystem
 			s_imageBufferSize[1] = newSize;
 		}
 
-		const u32 *src = s_imageBuffer[0] + offset;
+		const u32 *src;
 		u32* dst = s_imageBuffer[1];
-		for (s32 y = 0, rY = 0; y < newHeight; y++, rY += scale)
+		memset(dst, 0, newWidth * newHeight * 4);
+
+		s64 u  = srcOffset, v = 0;
+		s64 du = invScale, dv = invScale;
+		for (s32 y = 0; y < newHeight; y++, v += dv, dst += newWidth)
 		{
-			for (s32 x = 0, rX = 0; x < newWidth; x++, rX += scale)
+			u = srcOffset;
+			src = &s_imageBuffer[0][(v >> 16ll) * displayInfo.width];
+			for (s32 x = dstOffset; x < newWidth - dstOffset; x++, u += du)
 			{
-				dst[x] = src[rX];
+				dst[x] = src[u >> 16ll];
 			}
-			dst += newWidth;
-			src += displayInfo.width * scale;
 		}
 
 		// Save to memory.
@@ -133,15 +140,10 @@ namespace TFE_SaveSystem
 		}
 		stream->readBuffer(s_imageBuffer[2], pngSize);
 
-		const u32 maxSize = 512 * 512;
-		if (maxSize > s_imageBufferSize[1])
-		{
-			s_imageBuffer[1] = (u32*)realloc(s_imageBuffer[1], maxSize);
-			s_imageBufferSize[1] = maxSize;
-		}
-		header->image = { 0 };
-		header->image.data = (u32*)s_imageBuffer[1];
-		TFE_Image::readImageFromMemory(&header->image, pngSize, s_imageBuffer[2]);
+		Image image = { 0 };
+		image.data = header->imageData;
+		TFE_Image::readImageFromMemory(&image, pngSize, s_imageBuffer[2]);
+		assert(image.width == SAVE_IMAGE_WIDTH && image.height == SAVE_IMAGE_HEIGHT);
 	}
 
 	void init()

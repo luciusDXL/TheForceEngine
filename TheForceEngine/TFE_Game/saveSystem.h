@@ -11,6 +11,8 @@ namespace TFE_SaveSystem
 	enum SaveSystemConst
 	{
 		SAVE_MAX_NAME_LEN = 64,
+		SAVE_IMAGE_WIDTH  = 426,
+		SAVE_IMAGE_HEIGHT = 240,
 	};
 	struct SaveHeader
 	{
@@ -18,7 +20,7 @@ namespace TFE_SaveSystem
 		char dateTime[256];
 		char levelName[256];
 		char modNames[256];
-		Image image;
+		u32  imageData[SAVE_IMAGE_WIDTH * SAVE_IMAGE_HEIGHT];
 	};
 
 	void init();
