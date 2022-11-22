@@ -5,6 +5,7 @@
 // This holds one or more players, handles input updates, etc.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_Game/igame.h>
+#include <TFE_FileSystem/stream.h>
 
 namespace TFE_DarkForces
 {
@@ -14,7 +15,7 @@ namespace TFE_DarkForces
 		void pauseGame(bool pause) override;
 		void exitGame() override;
 		void loopGame() override;
-		bool serializeGameState(const char* filename, bool writeState) override;
+		bool serializeGameState(Stream* stream, const char* filename, bool writeState) override;
 		bool canSave() override;
 	};
 

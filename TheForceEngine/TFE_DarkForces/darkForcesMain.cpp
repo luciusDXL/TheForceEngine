@@ -1161,9 +1161,10 @@ namespace TFE_DarkForces
 		SERIALIZE_VERSION(SaveVersionInit);
 	}
 
-	bool DarkForces::serializeGameState(const char* filename, bool writeState)
+	bool DarkForces::serializeGameState(Stream* stream, const char* filename, bool writeState)
 	{
-		if (writeState)
+		if (!stream) { return false; }
+		if (writeState && filename)
 		{
 			// Write the save message.
 			const char* msg = TFE_System::getMessage(TFE_MSG_SAVE);
@@ -1175,60 +1176,41 @@ namespace TFE_DarkForces
 			}
 		}
 
-		// Create the save directory if it doesn't exist.
-		char savePath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "Saves/Dark Forces/", savePath);
-		if (!FileUtil::directoryExits(savePath))
+		time_pause(JTRUE);
+		if (writeState)
 		{
-			FileUtil::makeDirectory(savePath);
+			serialization_setMode(SMODE_WRITE);
+		}
+		else
+		{
+			serialization_setMode(SMODE_READ);
 		}
 
-		// Build the path.
-		char filePath[TFE_MAX_PATH];
-		sprintf(filePath, "%s%s", savePath, filename);
-
-		// Serialize the game state to the file.
-		FileStream stream;
-		if (stream.open(filePath, writeState ? Stream::MODE_WRITE : Stream::MODE_READ))
+		serializeVersion(stream);
+		serializeLoopState(stream, this);
+		agent_serialize(stream);
+		time_serialize(stream);
+		if (!writeState)
 		{
-			time_pause(JTRUE);
-			if (writeState)
-			{
-				serialization_setMode(SMODE_WRITE);
-			}
-			else
-			{
-				serialization_setMode(SMODE_READ);
-			}
-
-			serializeVersion(&stream);
-			serializeLoopState(&stream, this);
-			agent_serialize(&stream);
-			time_serialize(&stream);
-			if (!writeState)
-			{
-				startMissionFromSave(s_runGameState.levelIndex);
-			}
-			sound_serializeLevelSounds(&stream);
-			random_serialize(&stream);
-			automap_serialize(&stream);
-			hitEffect_serializeTasks(&stream);
-			weapon_serialize(&stream);
-			mission_serializeColorMap(&stream);
-			level_serialize(&stream);
-			inf_serialize(&stream);
-			pickupLogic_serializeTasks(&stream);
-			mission_serialize(&stream);
-
-			stream.close();
-			time_pause(JFALSE);
-			if (!writeState)
-			{
-				task_updateTime();
-				mission_pause(JFALSE);
-			}
+			startMissionFromSave(s_runGameState.levelIndex);
 		}
+		sound_serializeLevelSounds(stream);
+		random_serialize(stream);
+		automap_serialize(stream);
+		hitEffect_serializeTasks(stream);
+		weapon_serialize(stream);
+		mission_serializeColorMap(stream);
+		level_serialize(stream);
+		inf_serialize(stream);
+		pickupLogic_serializeTasks(stream);
+		mission_serialize(stream);
 
+		time_pause(JFALSE);
+		if (!writeState)
+		{
+			task_updateTime();
+			mission_pause(JFALSE);
+		}
 		return true;
 	}
 }

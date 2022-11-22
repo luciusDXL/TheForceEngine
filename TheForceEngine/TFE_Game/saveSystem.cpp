@@ -1,6 +1,8 @@
 #include "saveSystem.h"
 #include <TFE_Input/inputMapping.h>
 #include <TFE_System/system.h>
+#include <TFE_Settings/gameSourceData.h>
+#include <TFE_FileSystem/fileutil.h>
 
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/imageAsset.h>
@@ -15,20 +17,39 @@ namespace TFE_SaveSystem
 		SF_REQ_SAVE,
 		SF_REQ_LOAD,
 	};
+
 	static SaveRequest s_req = SF_REQ_NONE;
 	static char s_reqFilename[TFE_MAX_PATH];
+	static char s_gameSavePath[TFE_MAX_PATH];
+	static IGame* s_game = nullptr;
 
-	bool saveGame(IGame* game, const char* filename)
+	bool saveGame(const char* filename)
 	{
-		bool ret = game->serializeGameState(filename, true);
+		char filePath[TFE_MAX_PATH];
+		sprintf(filePath, "%s%s", s_gameSavePath, filename);
 
+		bool ret = false;
+		FileStream stream;
+		if (stream.open(filePath, Stream::MODE_WRITE))
+		{
+			ret = s_game->serializeGameState(&stream, filename, true);
+			stream.close();
+		}
 		return ret;
 	}
 
-	bool loadGame(IGame* game, const char* filename)
+	bool loadGame(const char* filename)
 	{
-		bool ret = game->serializeGameState(filename, false);
+		char filePath[TFE_MAX_PATH];
+		sprintf(filePath, "%s%s", s_gameSavePath, filename);
 
+		bool ret = false;
+		FileStream stream;
+		if (stream.open(filePath, Stream::MODE_READ))
+		{
+			ret = s_game->serializeGameState(&stream, filename, false);
+			stream.close();
+		}
 		return ret;
 	}
 		
@@ -63,21 +84,34 @@ namespace TFE_SaveSystem
 		}
 		return nullptr;
 	}
+		
+	void setCurrentGame(IGame* game)
+	{
+		s_game = game;
+		char relativePath[TFE_MAX_PATH];
+		sprintf(relativePath, "Saves/%s/", TFE_Settings::c_gameName[s_game->id]);
 
-	void update(IGame* game)
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, relativePath, s_gameSavePath);
+		if (!FileUtil::directoryExits(s_gameSavePath))
+		{
+			FileUtil::makeDirectory(s_gameSavePath);
+		}
+	}
+
+	void update()
 	{
 		static s32 lastState = 0;
 		const char* saveFilename = saveRequestFilename();
 
-		bool canSave = !lastState && game->canSave();
+		bool canSave = !lastState && s_game->canSave();
 		if (saveFilename && canSave)
 		{
-			saveGame(game, saveFilename);
+			saveGame(saveFilename);
 			lastState = 1;
 		}
 		else if (inputMapping_getActionState(IAS_QUICK_SAVE) == STATE_PRESSED && canSave)
 		{
-			saveGame(game, c_quickSaveName);
+			saveGame(c_quickSaveName);
 			lastState = 1;
 		}
 		else if (inputMapping_getActionState(IAS_QUICK_LOAD) == STATE_PRESSED && !lastState)

@@ -340,12 +340,13 @@ void setAppState(AppState newState, int argc, char* argv[])
 				s_curGame = nullptr;
 			}
 			s_curGame = createGame(gameInfo->id);
+			TFE_SaveSystem::setCurrentGame(s_curGame);
 			if (!s_curGame)
 			{
 				TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
 				newState = APP_STATE_CANNOT_RUN;
 			}
-			else if (!TFE_SaveSystem::loadGame(s_curGame, s_loadRequestFilename))
+			else if (!TFE_SaveSystem::loadGame(s_loadRequestFilename))
 			{
 				TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot run game '%s'.", gameInfo->game);
 				freeGame(s_curGame);
@@ -375,6 +376,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 					s_curGame = nullptr;
 				}
 				s_curGame = createGame(gameInfo->id);
+				TFE_SaveSystem::setCurrentGame(s_curGame);
 				if (!s_curGame)
 				{
 					TFE_System::logWrite(LOG_ERROR, "AppMain", "Cannot create game '%s'.", gameInfo->game);
@@ -776,7 +778,7 @@ int main(int argc, char* argv[])
 			}
 			else
 			{
-				TFE_SaveSystem::update(s_curGame);
+				TFE_SaveSystem::update();
 				s_curGame->loopGame();
 				endInputFrame = TFE_Jedi::task_run() != 0;
 			}

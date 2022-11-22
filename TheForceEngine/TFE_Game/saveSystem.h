@@ -8,9 +8,10 @@ namespace TFE_SaveSystem
 {
 	static const char* c_quickSaveName = "quicksave.tfe";
 
-	void update(IGame* game);
-	bool saveGame(IGame* game, const char* filename);
-	bool loadGame(IGame* game, const char* filename);
+	void setCurrentGame(IGame* game);
+	void update();
+	bool saveGame(const char* filename);
+	bool loadGame(const char* filename);
 
 	void postLoadRequest(const char* filename);
 	void postSaveRequest(const char* filename);
