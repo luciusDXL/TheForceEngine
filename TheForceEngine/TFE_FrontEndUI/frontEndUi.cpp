@@ -183,6 +183,9 @@ namespace TFE_FrontEndUI
 	void manual();
 	void credits();
 
+	void configLoadBegin();
+	void configSaveBegin();
+
 	void menuItem_Start();
 	void menuItem_Manual();
 	void menuItem_Credits();
@@ -565,12 +568,14 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("Save", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_SAVE;
+				configSaveBegin();
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
 			if (ImGui::Button("Load", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_LOAD;
+				configLoadBegin();
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
@@ -905,14 +910,34 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	static std::vector<TFE_SaveSystem::SaveHeader> s_saveDir;
+	static TextureGpu* s_saveImageView = nullptr;
+	static s32 s_selectedSave = 0;
+
+	void configLoadBegin()
+	{
+		if (!s_saveImageView)
+		{
+			s_saveImageView = TFE_RenderBackend::createTexture(TFE_SaveSystem::SAVE_IMAGE_WIDTH, TFE_SaveSystem::SAVE_IMAGE_HEIGHT, 4);
+		}
+		TFE_SaveSystem::populateSaveDirectory(s_saveDir);
+
+		if (!s_saveDir.empty())
+		{
+			s_saveImageView->update(s_saveDir[0].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+			s_selectedSave = 0;
+		}
+	}
+
+	void configSaveBegin()
+	{
+	}
+
 	void configLoad()
 	{
-		if (ImGui::Button("Load Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
+		if (!s_saveDir.empty())
 		{
-			TFE_SaveSystem::postLoadRequest(TFE_SaveSystem::c_quickSaveName);
-			s_subUI = FEUI_NONE;
-			s_appState = s_menuRetState;
-			TFE_Input::enableRelativeMode(s_relativeMode);
+			ImGui::Image(TFE_RenderBackend::getGpuPtr(s_saveImageView), ImVec2((f32)TFE_SaveSystem::SAVE_IMAGE_WIDTH, (f32)TFE_SaveSystem::SAVE_IMAGE_HEIGHT));
 		}
 	}
 

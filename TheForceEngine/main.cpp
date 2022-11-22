@@ -642,6 +642,10 @@ int main(int argc, char* argv[])
 		TFE_FrontEndUI::setAppState(APP_STATE_GAME);
 	}
 
+	// Try to set the game right away, so the load menu works.
+	TFE_Game* gameInfo = TFE_Settings::getGame();
+	TFE_SaveSystem::setCurrentGame(gameInfo->id);
+
 	// Game loop
 	u32 frame = 0u;
 	bool showPerf = false;

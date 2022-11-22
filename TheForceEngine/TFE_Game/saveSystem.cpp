@@ -31,8 +31,8 @@ namespace TFE_SaveSystem
 	static char s_gameSavePath[TFE_MAX_PATH];
 	static IGame* s_game = nullptr;
 
-	static u32* s_imageBuffer[3] = { nullptr, nullptr, nullptr };
-	static size_t s_imageBufferSize[3] = { 0 };
+	static u32* s_imageBuffer[2] = { nullptr, nullptr };
+	static size_t s_imageBufferSize[2] = { 0 };
 
 	void saveHeader(Stream* stream, const char* saveName)
 	{
@@ -130,20 +130,36 @@ namespace TFE_SaveSystem
 		stream->readBuffer(header->dateTime, len);
 		header->dateTime[len] = 0;
 
-		// Image.
+		// Image, re-use buffer 0 for the PNG.
 		u32 pngSize;
 		stream->read(&pngSize);
-		if (pngSize > s_imageBufferSize[2])
+		if (pngSize > s_imageBufferSize[0])
 		{
-			s_imageBuffer[2] = (u32*)realloc(s_imageBuffer[2], pngSize);
-			s_imageBufferSize[2] = pngSize;
+			s_imageBuffer[0] = (u32*)realloc(s_imageBuffer[0], pngSize);
+			s_imageBufferSize[0] = pngSize;
 		}
-		stream->readBuffer(s_imageBuffer[2], pngSize);
+		stream->readBuffer(s_imageBuffer[0], pngSize);
 
 		Image image = { 0 };
 		image.data = header->imageData;
-		TFE_Image::readImageFromMemory(&image, pngSize, s_imageBuffer[2]);
+		TFE_Image::readImageFromMemory(&image, pngSize, s_imageBuffer[0]);
 		assert(image.width == SAVE_IMAGE_WIDTH && image.height == SAVE_IMAGE_HEIGHT);
+	}
+
+	void populateSaveDirectory(std::vector<SaveHeader>& dir)
+	{
+		dir.clear();
+		FileList fileList;
+		FileUtil::readDirectory(s_gameSavePath, "tfe", fileList);
+		size_t saveCount = fileList.size();
+		dir.resize(saveCount);
+
+		const std::string* filenames = fileList.data();
+		SaveHeader* headers = dir.data();
+		for (size_t i = 0; i < saveCount; i++)
+		{
+			loadGameHeader(filenames[i].c_str(), &headers[i]);
+		}
 	}
 
 	void init()
@@ -152,7 +168,7 @@ namespace TFE_SaveSystem
 
 	void destroy()
 	{
-		for (s32 i = 0; i < 3; i++)
+		for (s32 i = 0; i < 2; i++)
 		{
 			free(s_imageBuffer[i]);
 			s_imageBufferSize[i] = 0;
@@ -240,18 +256,23 @@ namespace TFE_SaveSystem
 		}
 		return nullptr;
 	}
-		
-	void setCurrentGame(IGame* game)
+
+	void setCurrentGame(GameID id)
 	{
-		s_game = game;
 		char relativePath[TFE_MAX_PATH];
-		sprintf(relativePath, "Saves/%s/", TFE_Settings::c_gameName[s_game->id]);
+		sprintf(relativePath, "Saves/%s/", TFE_Settings::c_gameName[id]);
 
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, relativePath, s_gameSavePath);
 		if (!FileUtil::directoryExits(s_gameSavePath))
 		{
 			FileUtil::makeDirectory(s_gameSavePath);
 		}
+	}
+		
+	void setCurrentGame(IGame* game)
+	{
+		s_game = game;
+		setCurrentGame(game->id);
 	}
 
 	void update()

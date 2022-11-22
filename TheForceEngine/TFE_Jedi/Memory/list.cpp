@@ -116,6 +116,8 @@ namespace TFE_Jedi
 
 	void list_clear(List* list)
 	{
+		if (!list) { return; }
+
 		s32 size = list->step * list->capacity + sizeof(List);
 		u8* end = (u8*)list + size;
 		list->end = end - list->step;

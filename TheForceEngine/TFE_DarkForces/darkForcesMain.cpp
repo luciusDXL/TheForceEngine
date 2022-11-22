@@ -227,7 +227,6 @@ namespace TFE_DarkForces
 	void freeAllMidi();
 	void pauseLevelSound();
 	void resumeLevelSound();
-	void handleQuickSave(DarkForces* game);
 
 	/////////////////////////////////////////////
 	// API

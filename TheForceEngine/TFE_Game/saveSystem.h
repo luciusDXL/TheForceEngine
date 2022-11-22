@@ -27,6 +27,7 @@ namespace TFE_SaveSystem
 	void destroy();
 
 	void setCurrentGame(IGame* game);
+	void setCurrentGame(GameID id);
 	void update();
 	bool saveGame(const char* filename, const char* saveName);
 	bool loadGame(const char* filename);
@@ -37,4 +38,6 @@ namespace TFE_SaveSystem
 	void postSaveRequest(const char* filename, const char* saveName);
 	const char* loadRequestFilename();
 	const char* saveRequestFilename();
+
+	void populateSaveDirectory(std::vector<SaveHeader>& dir);
 }
