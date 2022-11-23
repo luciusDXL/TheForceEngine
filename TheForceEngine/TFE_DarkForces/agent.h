@@ -47,6 +47,7 @@ namespace TFE_DarkForces
 #pragma pack(pop)
 
 	void agent_serialize(Stream* stream);
+	void agent_restartEndLevelTask();
 	s32 agent_loadData();
 	JBool agent_loadLevelList(const char* fileName);
 	void  agent_updateAgentSavedData();

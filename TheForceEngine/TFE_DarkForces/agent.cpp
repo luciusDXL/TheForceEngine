@@ -47,6 +47,15 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void agent_restartEndLevelTask()
+	{
+		// Add the level complete task.
+		if (s_levelComplete)
+		{
+			agent_createLevelEndTask();
+		}
+	}
+
 	void agent_serialize(Stream* stream)
 	{
 		bool write = serialization_getMode() == SMODE_WRITE;
@@ -55,7 +64,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, s_invalidLevelIndex, JFALSE);
 		SERIALIZE(SaveVersionInit, s_maxLevelIndex, JFALSE);
 		SERIALIZE(SaveVersionInit, s_levelIndex, JFALSE);
-
+				
 		// Agent.
 		char name[64] = { 0 };
 		u8 agentNameLen = 0;

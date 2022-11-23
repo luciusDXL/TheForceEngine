@@ -1235,6 +1235,11 @@ namespace TFE_DarkForces
 		pickupLogic_serializeTasks(stream);
 		mission_serialize(stream);
 
+		if (!writeState)
+		{
+			agent_restartEndLevelTask();
+		}
+
 		time_pause(JFALSE);
 		if (!writeState)
 		{
