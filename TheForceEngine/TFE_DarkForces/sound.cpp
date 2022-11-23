@@ -142,6 +142,7 @@ namespace TFE_DarkForces
 				u8 length = (u8)strlen(sound->name);
 				SERIALIZE(SaveVersionInit, length, 0);
 				SERIALIZE_BUF(SaveVersionInit, sound->name, length);
+				SERIALIZE(SaveVersionInit, sound->priority, 64);
 				sound = (GameSound*)allocator_getNext(s_state.gameSoundList);
 			}
 			allocator_restoreIter(s_state.gameSoundList);
@@ -151,12 +152,14 @@ namespace TFE_DarkForces
 			sound_clearLevelSounds();
 			for (s32 i = 0; i < count; i++)
 			{
+				u32 priority;
 				u8 length;
 				char name[32];
 				SERIALIZE(SaveVersionInit, length, 0);
 				SERIALIZE_BUF(SaveVersionInit, name, length);
+				SERIALIZE(SaveVersionInit, priority, 64);
 				name[length] = 0;
-				sound_load(name);
+				sound_load(name, priority);
 			}
 		}
 	}

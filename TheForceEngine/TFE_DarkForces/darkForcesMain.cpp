@@ -1214,7 +1214,7 @@ namespace TFE_DarkForces
 		time_serialize(stream);
 		if (!writeState)
 		{
-			startMissionFromSave(s_runGameState.levelIndex);
+			startMissionFromSave(agent_getLevelIndex());
 		}
 		sound_serializeLevelSounds(stream);
 		random_serialize(stream);

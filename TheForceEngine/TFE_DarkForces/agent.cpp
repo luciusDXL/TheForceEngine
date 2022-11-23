@@ -24,6 +24,7 @@ namespace TFE_DarkForces
 	s32 s_maxLevelIndex;
 	s32 s_levelIndex = -1;	// This is actually s_levelIndex2 in the RE code.
 	s32 s_agentId = 0;
+	s32 s_headerSize = (s32)sizeof(PilotConfigHeader);
 	char** s_levelDisplayNames;
 	char** s_levelGamePaths;
 	char** s_levelSrcPaths;
@@ -154,19 +155,15 @@ namespace TFE_DarkForces
 		return agentReadCount;
 	}
 
-	void agent_updateLevelStats()
+	void agent_levelComplete()
 	{
+		s_levelComplete = JTRUE;
+
 		s32 curLevel = s_agentData[s_agentId].selectedMission + 1;
 		if (curLevel > s_agentData[s_agentId].nextMission)
 		{
 			s_agentData[s_agentId].nextMission = curLevel;
 		}
-	}
-
-	void agent_levelComplete()
-	{
-		s_levelComplete = JTRUE;
-		agent_updateLevelStats();
 	}
 		
 	void levelEndTaskFunc(MessageType msg)
@@ -243,11 +240,10 @@ namespace TFE_DarkForces
 		{
 			s_levelIndex = index;
 			s_agentData[s_agentId].selectedMission = index;
-			s_agentData[s_agentId].nextMission = max(s_agentData[s_agentId].nextMission, index);
 		}
 	}
 
-	void agent_createNewAgent(s32 agentId, AgentData* data)
+	void agent_createNewAgent(s32 agentId, AgentData* data, const char* name)
 	{
 		FileStream file;
 		if (!openDarkPilotConfig(&file))
@@ -257,27 +253,25 @@ namespace TFE_DarkForces
 		}
 
 		LevelSaveData saveData;
-		agent_readConfigData(&file, agentId, &saveData);
+		memset(&saveData, 0, sizeof(LevelSaveData));
+		memset(data, 0, sizeof(AgentData));
+
+		saveData.inv[0]  = 0xff;
+		saveData.inv[2]  = 0xff;
+		saveData.inv[6]  = 0xff;
+		saveData.inv[30] = WPN_PISTOL;
+		saveData.inv[31] = 3;
+
+		saveData.ammo[0] = 100;
+		saveData.ammo[7] = 100;
+		saveData.ammo[8] = 100;
+		saveData.ammo[9] = FIXED(2);
+
+		strCopyAndZero(data->name, name, 32);
+		data->difficulty = 1;
+		data->nextMission = 1;
+		data->selectedMission = 1;
 		memcpy(&saveData.agentData, data, sizeof(AgentData));
-
-		u8 inv[32] = { 0 };
-		inv[0]  = 0xff;
-		inv[2]  = 0xff;
-		inv[6]  = 0xff;
-		inv[30] = WPN_PISTOL;
-		inv[31] = 3;
-
-		s32 ammo[10] = { 0 };
-		ammo[0] = 100;
-		ammo[7] = 100;
-		ammo[8] = 100;
-		ammo[9] = FIXED(2);
-
-		memset(saveData.inv,  0, 32*14);
-		memset(saveData.ammo, 0, sizeof(s32)*10*14);
-
-		memcpy(saveData.inv, inv, 32);
-		memcpy(saveData.ammo, ammo, sizeof(s32)*10);
 
 		agent_writeAgentConfigData(&file, agentId, &saveData);
 		file.close();
@@ -406,8 +400,7 @@ namespace TFE_DarkForces
 	{
 		const s32 dataSize = (s32)sizeof(LevelSaveData);
 
-		// Note the extra 5 is from the 5 byte header.
-		s32 offset = 5 + agentId * dataSize;
+		s32 offset = s_headerSize + agentId * dataSize;
 		if (!file->seek(offset))
 		{
 			return JFALSE;
@@ -421,7 +414,7 @@ namespace TFE_DarkForces
 
 	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, const LevelSaveData* saveData)
 	{
-		s32 fileOffset = agentId*sizeof(LevelSaveData) + 5;
+		s32 fileOffset = agentId*sizeof(LevelSaveData) + s_headerSize;
 		if (!file->seek(fileOffset))
 		{
 			return JFALSE;
@@ -468,14 +461,18 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 
-		u8 header[] = { 'P', 'C', 'F', 0x12, 0x0e };
+		PilotConfigHeader header =
+		{
+			{'P', 'C', 'F'},	// signature.
+			0x12,				// version used by Dark Forces.
+			14,					// maximum number of agents.
+		};
+		darkPilot.writeBuffer(&header, s_headerSize);
 		LevelSaveData clearData = { 0 };
-		darkPilot.write(header, 5);
 		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
 			darkPilot.writeBuffer(&clearData, sizeof(LevelSaveData));
 		}
-				
 		darkPilot.close();
 		return JTRUE;
 	}
