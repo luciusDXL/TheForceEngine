@@ -57,11 +57,13 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, s_levelIndex, JFALSE);
 
 		// Agent.
-		char name[32] = { 0 };
+		char name[64] = { 0 };
 		u8 agentNameLen = 0;
 		if (write)
 		{
 			strcpy(name, s_agentData[s_agentId].name);
+			name[32] = 0;	// Just in case.
+
 			agentNameLen = (u8)strlen(name);
 			agent_checkNameLen(agentNameLen);
 		}
@@ -527,9 +529,9 @@ namespace TFE_DarkForces
 			return JFALSE;
 		}
 		// Then verify the file.
-		u8 buffer[5];
-		file->readBuffer(buffer, 5);
-		if (buffer[3] == 0x12 && buffer[4] == 0x0e && strncasecmp((char*)buffer, "PCF", 3) == 0)
+		PilotConfigHeader header;
+		file->readBuffer(&header, sizeof(PilotConfigHeader));
+		if (header.version == 0x12 && header.count == 14 && strncasecmp(header.signature, "PCF", 3) == 0)
 		{
 			return JTRUE;
 		}
