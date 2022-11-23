@@ -58,6 +58,7 @@ namespace TFE_DarkForces
 	s32   agent_getLevelIndex();
 	s32   agent_getLevelIndexFromName(const char* name);
 	const char* agent_getLevelName();
+	const char* agent_getLevelDisplayName();
 
 	void  agent_setLevelComplete(JBool complete);
 	JBool agent_getLevelComplete();

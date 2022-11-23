@@ -222,6 +222,11 @@ namespace TFE_DarkForces
 		return s_levelGamePaths[s_levelIndex - 1];
 	}
 
+	const char* agent_getLevelDisplayName()
+	{
+		return s_levelDisplayNames[s_levelIndex - 1];
+	}
+
 	void  agent_setLevelComplete(JBool complete)
 	{
 		s_levelComplete = complete;

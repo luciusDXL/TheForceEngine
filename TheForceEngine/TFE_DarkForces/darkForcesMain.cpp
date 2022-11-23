@@ -206,6 +206,7 @@ namespace TFE_DarkForces
 
 		Task* loadMissionTask = nullptr;
 		CutsceneState* cutsceneList = nullptr;
+		char customGobName[256] = "";
 	};
 	static RunGameState   s_runGameState = {};
 	static SharedGameState s_sharedState = {};
@@ -392,6 +393,24 @@ namespace TFE_DarkForces
 	bool DarkForces::canSave()
 	{
 		return s_runGameState.state == GSTATE_MISSION;
+	}
+
+	void DarkForces::getLevelName(char* name)
+	{
+		const char* levelName = agent_getLevelDisplayName();
+		if (levelName)
+		{
+			strcpy(name, levelName);
+		}
+		else
+		{
+			name[0] = 0;
+		}
+	}
+
+	void DarkForces::getModList(char* modList)
+	{
+		strcpy(modList, s_sharedState.customGobName);
 	}
 
 	/**********The basic structure of the Dark Forces main loop is as follows:***************
@@ -712,6 +731,8 @@ namespace TFE_DarkForces
 	// Many no longer make sense and in some cases will always be available (such as screenshots).
 	void processCommandLineArgs(s32 argCount, const char* argv[], char* startLevel)
 	{
+		s_sharedState.customGobName[0] = 0;
+
 		for (s32 i = 0; i < argCount; i++)
 		{
 			const char* arg = argv[i];
@@ -791,6 +812,8 @@ namespace TFE_DarkForces
 		char briefingName[TFE_MAX_PATH];
 		s32 lfdCount = 0;
 		s32 briefingIndex = -1;
+
+		strcpy(s_sharedState.customGobName, gobName);
 
 		if (TFE_Paths::getFilePath(gobName, &archivePath))
 		{

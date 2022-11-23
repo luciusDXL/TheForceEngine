@@ -737,7 +737,7 @@ namespace TFE_Jedi
 	void inf_serializeFixupLinks()
 	{
 		RSector* sector = s_levelState.sectors;
-		for (s32 s = 0; s < s_levelState.sectorCount; s++, sector++)
+		for (u32 s = 0; s < s_levelState.sectorCount; s++, sector++)
 		{
 			allocator_saveIter(sector->infLink);
 				InfLink* link = (InfLink*)allocator_getHead(sector->infLink);

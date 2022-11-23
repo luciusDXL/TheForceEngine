@@ -30,6 +30,7 @@ namespace TFE_SaveSystem
 	static char s_reqSavename[TFE_MAX_PATH];
 	static char s_gameSavePath[TFE_MAX_PATH];
 	static IGame* s_game = nullptr;
+	static s32 s_saveDelay = 0;
 
 	static u32* s_imageBuffer[2] = { nullptr, nullptr };
 	static size_t s_imageBufferSize[2] = { 0 };
@@ -50,11 +51,11 @@ namespace TFE_SaveSystem
 		// Scale and crop the image to fit inside 426 x 240 (widescreen).
 		s64 scale = SAVE_IMAGE_HEIGHT * 65536 / displayInfo.height;
 		s64 invScale = displayInfo.height * 65536 / SAVE_IMAGE_HEIGHT;
-		s32 scaledWidth = (displayInfo.width * scale) >> 16ll;
+		s32 scaledWidth = s32((displayInfo.width * scale) >> 16ll);
 		s32 newWidth = SAVE_IMAGE_WIDTH, newHeight = SAVE_IMAGE_HEIGHT;
 
 		s32 dstOffset = 0;
-		s32 srcOffset = 0;
+		s64 srcOffset = 0;
 		if (scaledWidth < newWidth)
 		{
 			dstOffset = (newWidth - scaledWidth) / 2;
@@ -108,6 +109,20 @@ namespace TFE_SaveSystem
 		stream->write(&len);
 		stream->writeBuffer(timeDate, len);
 
+		// Level Name
+		char levelName[256];
+		s_game->getLevelName(levelName);
+		len = (u8)strlen(levelName);
+		stream->write(&len);
+		stream->writeBuffer(levelName, len);
+
+		// Mod List
+		char modList[256];
+		s_game->getModList(modList);
+		len = (u8)strlen(modList);
+		stream->write(&len);
+		stream->writeBuffer(modList, len);
+
 		// Image.
 		stream->write(&pngSize);
 		stream->writeBuffer(png, pngSize);
@@ -129,6 +144,16 @@ namespace TFE_SaveSystem
 		stream->read(&len);
 		stream->readBuffer(header->dateTime, len);
 		header->dateTime[len] = 0;
+
+		// Level Name
+		stream->read(&len);
+		stream->readBuffer(header->levelName, len);
+		header->levelName[len] = 0;
+
+		// Mod List
+		stream->read(&len);
+		stream->readBuffer(header->modNames, len);
+		header->modNames[len] = 0;
 
 		// Image, re-use buffer 0 for the PNG.
 		u32 pngSize;
@@ -218,6 +243,7 @@ namespace TFE_SaveSystem
 		if (stream.open(filePath, Stream::MODE_READ))
 		{
 			loadHeader(&stream, header);
+			strcpy(header->fileName, filename);
 			stream.close();
 			ret = true;
 		}
@@ -230,11 +256,12 @@ namespace TFE_SaveSystem
 		strcpy(s_reqFilename, filename);
 	}
 
-	void postSaveRequest(const char* filename, const char* saveName)
+	void postSaveRequest(const char* filename, const char* saveName, s32 delay)
 	{
 		s_req = SF_REQ_SAVE;
 		strcpy(s_reqFilename, filename);
 		strcpy(s_reqSavename, saveName);
+		s_saveDelay = delay;
 	}
 
 	const char* loadRequestFilename()
@@ -249,12 +276,25 @@ namespace TFE_SaveSystem
 
 	const char* saveRequestFilename()
 	{
-		if (s_req == SF_REQ_SAVE)
+		if (s_req == SF_REQ_SAVE && s_saveDelay <= 0)
 		{
 			s_req = SF_REQ_NONE;
 			return s_reqFilename;
 		}
+		if (s_saveDelay > 0) { s_saveDelay--; }
 		return nullptr;
+	}
+
+	void getSaveFilenameFromIndex(s32 index, char* name)
+	{
+		if (index == 0)
+		{
+			strcpy(name, c_quickSaveName);
+		}
+		else
+		{
+			sprintf(name, "save%03d.tfe", index - 1);
+		}
 	}
 
 	void setCurrentGame(GameID id)
@@ -277,6 +317,8 @@ namespace TFE_SaveSystem
 
 	void update()
 	{
+		if (!s_game) { return; }
+
 		static s32 lastState = 0;
 		const char* saveFilename = saveRequestFilename();
 

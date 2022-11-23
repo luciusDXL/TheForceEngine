@@ -52,7 +52,7 @@ namespace TFE_Jedi
 	void level_serializeFixupMirrors()
 	{
 		RSector* sector = s_levelState.sectors;
-		for (s32 s = 0; s < s_levelState.sectorCount; s++, sector++)
+		for (u32 s = 0; s < s_levelState.sectorCount; s++, sector++)
 		{
 			s32 wallCount = sector->wallCount;
 			RWall* wall = sector->walls;

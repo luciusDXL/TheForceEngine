@@ -84,7 +84,7 @@ namespace TFE_Input
 
 		// Saving
 		{ IAS_QUICK_SAVE, ITYPE_KEYBOARD, KEY_F5, KEYMOD_ALT },
-		{ IAS_QUICK_LOAD, ITYPE_KEYBOARD, KEY_F6, KEYMOD_ALT },
+		{ IAS_QUICK_LOAD, ITYPE_KEYBOARD, KEY_F9, KEYMOD_ALT },
 	};
 
 	static InputBinding s_defaultControllerBinds[] =

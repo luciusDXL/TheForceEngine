@@ -210,7 +210,7 @@ namespace TFE_Image
 
 	ILint ILAPIENTRY iTell(ILHANDLE Handle)
 	{
-		return s_memStream.getLoc();
+		return (ILint)s_memStream.getLoc();
 	}
 	
 	//////////////////////////////////////////////////////

@@ -183,8 +183,7 @@ namespace TFE_FrontEndUI
 	void manual();
 	void credits();
 
-	void configLoadBegin();
-	void configSaveBegin();
+	void configSaveLoadBegin(bool save);
 
 	void menuItem_Start();
 	void menuItem_Manual();
@@ -542,7 +541,7 @@ namespace TFE_FrontEndUI
 		else if (s_subUI == FEUI_CONFIG)
 		{
 			bool active = true;
-			const u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+			u32 window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings;
 
 			TFE_Input::clearAccumulatedMouseMove();
@@ -568,14 +567,14 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("Save", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_SAVE;
-				configSaveBegin();
+				configSaveLoadBegin(true);
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
 			if (ImGui::Button("Load", sideBarButtonSize))
 			{
 				s_configTab = CONFIG_LOAD;
-				configLoadBegin();
+				configSaveLoadBegin(false);
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
@@ -631,6 +630,12 @@ namespace TFE_FrontEndUI
 			if (s_configTab >= CONFIG_INPUT)
 			{
 				tabWidth = s32(414*s_uiScale);
+			}
+
+			// Avoid annoying scrollbars...
+			if (s_configTab == CONFIG_SAVE || s_configTab == CONFIG_LOAD)
+			{
+				window_flags |= ImGuiWindowFlags_NoScrollbar;
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(160.0f*s_uiScale, 0.0f));
@@ -889,6 +894,171 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	static std::vector<TFE_SaveSystem::SaveHeader> s_saveDir;
+	static TextureGpu* s_saveImageView = nullptr;
+	static s32 s_selectedSave = -1;
+	static s32 s_selectedSaveSlot = -1;
+	static bool s_hasQuicksave = false;
+
+	void configSaveLoadBegin(bool save)
+	{
+		s_selectedSave = max(0, s_selectedSaveSlot - (save ? 1 : 0));
+
+		if (!s_saveImageView)
+		{
+			s_saveImageView = TFE_RenderBackend::createTexture(TFE_SaveSystem::SAVE_IMAGE_WIDTH, TFE_SaveSystem::SAVE_IMAGE_HEIGHT, 4);
+		}
+		TFE_SaveSystem::populateSaveDirectory(s_saveDir);
+		s_hasQuicksave = (!s_saveDir.empty() && strcasecmp(s_saveDir[0].saveName, "Quicksave") == 0);
+
+		if (!s_saveDir.empty() && (s_selectedSave > 0 || !save))
+		{
+			s_saveImageView->update(s_saveDir[s_selectedSave].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+		}
+		else
+		{
+			u32 zero[TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT];
+			memset(zero, 0, sizeof(u32) * TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT);
+			s_saveImageView->update(zero, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+		}
+	}
+
+	void saveLoadDialog(bool save)
+	{
+		f32 leftColumn = 256.0f*s_uiScale;
+		f32 rightColumn = leftColumn + ((f32)TFE_SaveSystem::SAVE_IMAGE_WIDTH + 32.0f)*s_uiScale;
+		const s32 listOffset = save ? 1 : 0;
+
+		// Left Column
+		ImGui::SetNextWindowPos(ImVec2(leftColumn, 256.0f*s_uiScale));
+		ImGui::BeginChild("##ImageAndInfo");
+		{
+			// Image
+			ImVec2 size((f32)TFE_SaveSystem::SAVE_IMAGE_WIDTH, (f32)TFE_SaveSystem::SAVE_IMAGE_HEIGHT);
+			size.x *= s_uiScale;
+			size.y *= s_uiScale;
+
+			ImGui::Image(TFE_RenderBackend::getGpuPtr(s_saveImageView), size,
+				ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1), ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+
+			// Info
+			size.y = 140 * s_uiScale;
+			ImGui::BeginChild("##InfoWithBorder", size, true, ImGuiWindowFlags_NoScrollbar);
+			{
+				if (!s_saveDir.empty() && (s_selectedSave > 0 || !save))
+				{
+					ImGui::PushFont(s_dialogFont);
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+					char textBuffer[TFE_MAX_PATH];
+					sprintf(textBuffer, "Game: Dark Forces\nTime: %s\nLevel: %s\nMods: %s\n", s_saveDir[s_selectedSave - listOffset].dateTime,
+						s_saveDir[s_selectedSave - listOffset].levelName, s_saveDir[s_selectedSave - listOffset].modNames);
+					ImGui::InputTextMultiline("##Info", textBuffer, strlen(textBuffer) + 1, size, ImGuiInputTextFlags_ReadOnly);
+
+					ImGui::PopFont();
+					ImGui::PopStyleColor();
+				}
+				else
+				{
+					ImGui::PushFont(s_dialogFont);
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+					char textBuffer[TFE_MAX_PATH];
+					sprintf(textBuffer, "Game: Dark Forces\nTime:\n\nLevel:\nMods:\n");
+					ImGui::InputTextMultiline("##Info", textBuffer, strlen(textBuffer) + 1, size, ImGuiInputTextFlags_ReadOnly);
+
+					ImGui::PopFont();
+					ImGui::PopStyleColor();
+				}
+			}
+			ImGui::EndChild();
+		}
+		ImGui::EndChild();
+
+		// Right Column
+		ImGui::SetNextWindowPos(ImVec2(rightColumn, 64.0f*s_uiScale));
+		ImGui::BeginChild("##FileList", ImVec2(1024.0f*s_uiScale, 1000.0f*s_uiScale), true);
+		{
+			const size_t count = s_saveDir.size() + size_t(listOffset);
+			const TFE_SaveSystem::SaveHeader* header = s_saveDir.data();
+			char newSave[] = "<Create Save>";
+			ImVec2 buttonSize(998.0f*s_uiScale, floorf(20 * s_uiScale + 0.5f));
+			ImGui::PushFont(s_dialogFont);
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+			s32 prevSelected = s_selectedSave;
+			for (size_t i = 0; i < count; i++)
+			{
+				bool selected = i == s_selectedSave;
+				const char* saveName;
+				if (save && i == 0)
+				{
+					saveName = newSave;
+				}
+				else
+				{
+					saveName = header[i - listOffset].saveName;
+				}
+
+				if (ImGui::Selectable(saveName, selected, ImGuiSelectableFlags_None, buttonSize))
+				{
+					s_selectedSave = s32(i);
+					s_selectedSaveSlot = s_selectedSave - listOffset;
+					char fileName[TFE_MAX_PATH];
+					if (save)
+					{
+						char saveName[256];
+						if (s_selectedSave == 0)
+						{
+							s_selectedSaveSlot = (s32)s_saveDir.size();
+							// If no quicksave exists, skip over it when generating the name.
+							const s32 saveIndex = s_selectedSaveSlot + (s_hasQuicksave ? 0 : 1);
+							TFE_SaveSystem::getSaveFilenameFromIndex(saveIndex, fileName);
+							sprintf(saveName, "Save %003u", s_selectedSaveSlot - (s_hasQuicksave ? 1 : 0));
+						}
+						else
+						{
+							strcpy(fileName, s_saveDir[s_selectedSaveSlot].fileName);
+							strcpy(saveName, s_saveDir[s_selectedSaveSlot].saveName);
+						}
+						TFE_SaveSystem::postSaveRequest(fileName, saveName, 3);
+					}
+					else
+					{
+						TFE_SaveSystem::postLoadRequest(s_saveDir[s_selectedSaveSlot].fileName);
+					}
+
+					s_subUI = FEUI_NONE;
+					s_appState = s_menuRetState;
+					TFE_Input::enableRelativeMode(s_relativeMode);
+				}
+				else if (ImGui::IsItemHovered() || ImGui::IsItemClicked())
+				{
+					s_selectedSave = s32(i);
+				}
+			}
+			if (prevSelected != s_selectedSave)
+			{
+				s32 index = s_selectedSave - listOffset;
+				if (index >= 0)
+				{
+					s_saveImageView->update(s_saveDir[s_selectedSave - listOffset].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+				}
+				else
+				{
+					u32 zero[TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT];
+					memset(zero, 0, sizeof(u32) * TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT);
+					s_saveImageView->update(zero, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+				}
+			}
+			prevSelected = s_selectedSave;
+
+			ImGui::PopFont();
+			ImGui::PopStyleColor();
+		}
+		ImGui::EndChild();
+		s_selectedSaveSlot = s_selectedSave - listOffset;
+	}
+
 	void configSave()
 	{
 		if (!s_canSave)
@@ -901,44 +1071,15 @@ namespace TFE_FrontEndUI
 				TFE_Input::enableRelativeMode(s_relativeMode);
 			}
 		}
-		else if (ImGui::Button("Save Quicksave", ImVec2(120.0f*s_uiScale, 0.0f)))
+		else
 		{
-			TFE_SaveSystem::postSaveRequest(TFE_SaveSystem::c_quickSaveName, "Quicksave");
-			s_subUI = FEUI_NONE;
-			s_appState = s_menuRetState;
-			TFE_Input::enableRelativeMode(s_relativeMode);
+			saveLoadDialog(true);
 		}
-	}
-
-	static std::vector<TFE_SaveSystem::SaveHeader> s_saveDir;
-	static TextureGpu* s_saveImageView = nullptr;
-	static s32 s_selectedSave = 0;
-
-	void configLoadBegin()
-	{
-		if (!s_saveImageView)
-		{
-			s_saveImageView = TFE_RenderBackend::createTexture(TFE_SaveSystem::SAVE_IMAGE_WIDTH, TFE_SaveSystem::SAVE_IMAGE_HEIGHT, 4);
-		}
-		TFE_SaveSystem::populateSaveDirectory(s_saveDir);
-
-		if (!s_saveDir.empty())
-		{
-			s_saveImageView->update(s_saveDir[0].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
-			s_selectedSave = 0;
-		}
-	}
-
-	void configSaveBegin()
-	{
 	}
 
 	void configLoad()
 	{
-		if (!s_saveDir.empty())
-		{
-			ImGui::Image(TFE_RenderBackend::getGpuPtr(s_saveImageView), ImVec2((f32)TFE_SaveSystem::SAVE_IMAGE_WIDTH, (f32)TFE_SaveSystem::SAVE_IMAGE_HEIGHT));
-		}
+		saveLoadDialog(false);
 	}
 
 	static const char* c_axisBinding[]=

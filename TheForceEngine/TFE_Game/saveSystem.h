@@ -16,6 +16,7 @@ namespace TFE_SaveSystem
 	};
 	struct SaveHeader
 	{
+		char fileName[256];
 		char saveName[SAVE_MAX_NAME_LEN];
 		char dateTime[256];
 		char levelName[256];
@@ -35,9 +36,11 @@ namespace TFE_SaveSystem
 	bool loadGameHeader(const char* filename, SaveHeader* header);
 
 	void postLoadRequest(const char* filename);
-	void postSaveRequest(const char* filename, const char* saveName);
+	void postSaveRequest(const char* filename, const char* saveName, s32 delay = 0);
 	const char* loadRequestFilename();
 	const char* saveRequestFilename();
+
+	void getSaveFilenameFromIndex(s32 index, char* name);
 
 	void populateSaveDirectory(std::vector<SaveHeader>& dir);
 }
