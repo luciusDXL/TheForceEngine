@@ -2707,7 +2707,7 @@ namespace TFE_Jedi
 			{
 				// Fill in the goal specified by 'arg1'
 				assert(arg1 < NUM_COMPLETE);
-				s_complete[0][arg1] = JTRUE;
+				s_levelState.complete[0][arg1] = JTRUE;
 				// Move the elevator to the stop specified by 'arg1' if it is NOT holding.
 				if (elev->nextTick < s_curTick)
 				{

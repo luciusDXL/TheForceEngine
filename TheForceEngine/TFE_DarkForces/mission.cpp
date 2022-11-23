@@ -305,7 +305,7 @@ namespace TFE_DarkForces
 						s_missionMode = MISSION_MODE_MAIN;
 						s_gamePaused = JFALSE;
 						mission_createRenderDisplay();
-						hud_startup();
+						hud_startup(JFALSE);
 
 						reticle_enable(true);
 					}
@@ -315,7 +315,7 @@ namespace TFE_DarkForces
 			{
 				s_missionMode = MISSION_MODE_MAIN;
 				mission_createRenderDisplay();
-				hud_startup();
+				hud_startup(JTRUE);
 				reticle_enable(true);
 			}
 			s_loadingFromSave = JFALSE;
@@ -562,7 +562,7 @@ namespace TFE_DarkForces
 	{
 		setSpriteAnimation(nullptr, nullptr);
 		bitmap_setupAnimationTask();
-		hud_startup();
+		hud_startup(JFALSE);
 		hud_clearMessage();
 		automap_computeScreenBounds();
 		weapon_clearFireRate();

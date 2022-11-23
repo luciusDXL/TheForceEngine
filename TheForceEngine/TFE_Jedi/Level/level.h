@@ -34,13 +34,6 @@ struct Safe
 	s16 pad;
 };
 
-enum GoalConstants
-{
-	COMPL_TRIG = 0,
-	COMPL_ITEM = 1,
-	NUM_COMPLETE = 10,
-};
-
 namespace TFE_Jedi
 {
 	JBool level_load(const char* levelName, u8 difficulty);
@@ -58,6 +51,4 @@ namespace TFE_Jedi
 
 	void level_addSound(const char* name, u32 freq, s32 priority);
 	void level_loadPalette();
-		
-	extern JBool s_complete[2][NUM_COMPLETE];
 }

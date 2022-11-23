@@ -39,9 +39,7 @@ namespace TFE_Jedi
 		DF_LEVEL_VERSION_MAJOR = 2,
 		DF_LEVEL_VERSION_MINOR = 1,
 	};
-	JBool s_complete[2][NUM_COMPLETE];
-	s32 s_completeNum[2][NUM_COMPLETE];
-		
+			
 	// Temp State.
 	static s32 s_dataIndex;
 	static char s_readBuffer[256];
@@ -58,11 +56,11 @@ namespace TFE_Jedi
 		// Clear just in case.
 		for (s32 i = 0; i < NUM_COMPLETE; i++)
 		{
-			s_completeNum[COMPL_TRIG][i] = -1;
-			s_completeNum[COMPL_ITEM][i] = -1;
+			s_levelState.completeNum[COMPL_TRIG][i] = -1;
+			s_levelState.completeNum[COMPL_ITEM][i] = -1;
 
-			s_complete[COMPL_TRIG][i] = JFALSE;
-			s_complete[COMPL_ITEM][i] = JFALSE;
+			s_levelState.complete[COMPL_TRIG][i] = JFALSE;
+			s_levelState.complete[COMPL_ITEM][i] = JFALSE;
 		}
 
 		if (!level_loadGeometry(levelName)) { return JFALSE; }
@@ -557,14 +555,14 @@ namespace TFE_Jedi
 	{
 		for (s32 i = 0; i < NUM_COMPLETE; i++)
 		{
-			if (s_completeNum[COMPL_TRIG][i] == goalIndex)
+			if (s_levelState.completeNum[COMPL_TRIG][i] == goalIndex)
 			{
-				return s_complete[COMPL_TRIG][i];
+				return s_levelState.complete[COMPL_TRIG][i];
 			}
 
-			if (s_completeNum[COMPL_ITEM][i] == goalIndex)
+			if (s_levelState.completeNum[COMPL_ITEM][i] == goalIndex)
 			{
-				return s_complete[COMPL_ITEM][i];
+				return s_levelState.complete[COMPL_ITEM][i];
 			}
 		}
 		return JFALSE;
@@ -626,11 +624,11 @@ namespace TFE_Jedi
 				{
 					if (strcasecmp(type, "ITEM:") == 0)
 					{
-						s_completeNum[COMPL_ITEM][typeNum] = goalNum;
+						s_levelState.completeNum[COMPL_ITEM][typeNum] = goalNum;
 					}
 					else if (strcasecmp(type, "TRIG:") == 0)
 					{
-						s_completeNum[COMPL_TRIG][typeNum] = goalNum;
+						s_levelState.completeNum[COMPL_TRIG][typeNum] = goalNum;
 					}
 				}
 			}

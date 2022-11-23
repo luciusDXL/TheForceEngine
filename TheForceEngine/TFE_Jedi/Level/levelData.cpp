@@ -13,6 +13,11 @@
 using namespace TFE_DarkForces;
 #include <TFE_DarkForces/projectile.h>
 
+namespace TFE_DarkForces
+{
+	extern s32 s_secretsFound;
+}
+
 namespace TFE_Jedi
 {
 	enum LevelStateVersion : u32
@@ -28,7 +33,7 @@ namespace TFE_Jedi
 
 	LevelState s_levelState = {};
 	LevelInternalState s_levelIntState = {};
-
+	
 	void level_serializeSector(Stream* stream, RSector* sector);
 	void level_serializeSafe(Stream* stream, Safe* safe);
 	void level_serializeAmbientSound(Stream* stream, AmbientSound* sound);
@@ -97,6 +102,10 @@ namespace TFE_Jedi
 		SERIALIZE(LevelState_InitVersion, s_levelState.sectorCount, 0);
 		SERIALIZE(LevelState_InitVersion, s_levelState.parallax0, 0);
 		SERIALIZE(LevelState_InitVersion, s_levelState.parallax1, 0);
+		SERIALIZE(LevelState_InitVersion, TFE_DarkForces::s_secretsFound, 0);
+
+		SERIALIZE_BUF(LevelState_InitVersion, s_levelState.complete, sizeof(JBool) * 2 * NUM_COMPLETE);
+		SERIALIZE_BUF(LevelState_InitVersion, s_levelState.completeNum, sizeof(s32) * 2 * NUM_COMPLETE);
 
 		/////////////////////////////////////
 		// Serialize asset names

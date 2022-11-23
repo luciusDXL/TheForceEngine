@@ -2603,7 +2603,7 @@ namespace TFE_DarkForces
 
 		SERIALIZE(ObjState_InitVersion, s_levelAtten, 0);
 		SERIALIZE(ObjState_InitVersion, s_prevCollisionFrameWall, 0);
-
+		
 		// Store safe sector, derive the safe itself from it on load.
 		RSector* safeSector = nullptr;
 		if (serialization_getMode() == SMODE_WRITE) { safeSector = s_curSafe ? s_curSafe->sector : nullptr; }

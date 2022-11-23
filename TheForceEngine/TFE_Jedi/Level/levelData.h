@@ -31,6 +31,13 @@ struct Task;
 
 namespace TFE_Jedi
 {
+	enum GoalConstants
+	{
+		COMPL_TRIG = 0,
+		COMPL_ITEM = 1,
+		NUM_COMPLETE = 10,
+	};
+
 	struct AmbientSound
 	{
 		SoundSourceId soundId;
@@ -50,6 +57,10 @@ namespace TFE_Jedi
 		fixed16_16 parallax0 = 0;
 		fixed16_16 parallax1 = 0;
 		RSector* sectors = nullptr;
+
+		// Goals
+		JBool complete[2][NUM_COMPLETE] = { JFALSE };
+		s32 completeNum[2][NUM_COMPLETE] = { 0 };
 
 		// Texture list
 		TextureData** textures = nullptr;

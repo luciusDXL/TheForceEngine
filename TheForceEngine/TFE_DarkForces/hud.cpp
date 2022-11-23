@@ -295,7 +295,7 @@ namespace TFE_DarkForces
 		s_showData = ~s_showData;
 	}
 
-	void hud_startup()
+	void hud_startup(JBool fromSave)
 	{
 		// Reset cached values.
 		s_prevEnergy = 0;
@@ -307,7 +307,10 @@ namespace TFE_DarkForces
 		s_prevSuperchageHud  = JFALSE;
 		s_prevHeadlampActive = JFALSE;
 
-		s_secretsFound = 0;
+		if (!fromSave)
+		{
+			s_secretsFound = 0;
+		}
 		s_secretsPercent = 0;
 
 		hud_initAnimation();
