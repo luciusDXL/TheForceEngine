@@ -327,7 +327,7 @@ namespace TFE_DarkForces
 	{
 		if (s_sharedState.gameStarted)
 		{
-			agent_updateAgentSavedData();
+			saveLevelStatus();
 		}
 		freeAllMidi();
 

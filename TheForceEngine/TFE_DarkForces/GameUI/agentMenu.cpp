@@ -450,6 +450,7 @@ namespace TFE_DarkForces
 		
 	void agentMenu_startup()
 	{
+		s_agentCount = 0;
 		for (s32 i = 0; i < MAX_AGENT_COUNT; i++)
 		{
 			if (!s_agentData[i].name[0])
@@ -457,6 +458,11 @@ namespace TFE_DarkForces
 				break;
 			}
 			s_agentCount++;
+		}
+		// Clear out extra data.
+		for (s32 i = s_agentCount; i < MAX_AGENT_COUNT; i++)
+		{
+			memset(&s_agentData[i], 0, sizeof(AgentData));
 		}
 
 		if (s_agentCount > 0)
