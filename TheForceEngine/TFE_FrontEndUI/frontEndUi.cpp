@@ -154,6 +154,7 @@ namespace TFE_FrontEndUI
 	static ImFont* s_dialogFont;
 	static SubUI s_subUI;
 	static ConfigTab s_configTab;
+	static bool s_saveLoadSetupRequired = true;
 
 	static bool s_consoleActive = false;
 	static bool s_relativeMode;
@@ -635,7 +636,7 @@ namespace TFE_FrontEndUI
 			// Avoid annoying scrollbars...
 			if (s_configTab == CONFIG_SAVE || s_configTab == CONFIG_LOAD)
 			{
-				window_flags |= ImGuiWindowFlags_NoScrollbar;
+				window_flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 			}
 
 			ImGui::SetNextWindowPos(ImVec2(160.0f*s_uiScale, 0.0f));
@@ -894,11 +895,69 @@ namespace TFE_FrontEndUI
 		}
 	}
 
+	///////////////////////////////////////////////////////////////////////////////
+	// Save / Load UI
+	///////////////////////////////////////////////////////////////////////////////
 	static std::vector<TFE_SaveSystem::SaveHeader> s_saveDir;
 	static TextureGpu* s_saveImageView = nullptr;
 	static s32 s_selectedSave = -1;
 	static s32 s_selectedSaveSlot = -1;
 	static bool s_hasQuicksave = false;
+
+	static char s_newSaveName[256];
+	static char s_fileName[TFE_MAX_PATH];
+	static char s_saveGameConfirmMsg[TFE_MAX_PATH];
+	static bool s_popupOpen = false;
+	static bool s_popupSetFocus = false;
+
+	void clearSaveImage()
+	{
+		u32 zero[TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT];
+		memset(zero, 0, sizeof(u32) * TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT);
+		s_saveImageView->update(zero, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+	}
+
+	void updateSaveImage(s32 index)
+	{
+		s_saveImageView->update(s_saveDir[index].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+	}
+
+	void openSaveNameEditPopup(const char* prevName)
+	{
+		if (prevName[0] == 0)
+		{
+			sprintf(s_saveGameConfirmMsg, "Create New Save?###SaveConfirm");
+		}
+		else
+		{
+			sprintf(s_saveGameConfirmMsg, "Overwrite Save '%s'?###SaveConfirm", prevName);
+		}
+
+		ImGui::OpenPopup(s_saveGameConfirmMsg);
+		s_popupOpen = true;
+		s_popupSetFocus = true;
+	}
+
+	void closeSaveNameEditPopup()
+	{
+		s_popupOpen = false;
+		s_popupSetFocus = false;
+		ImGui::CloseCurrentPopup();
+	}
+
+	void saveConfirmed()
+	{
+		s_saveLoadSetupRequired = true;
+		TFE_SaveSystem::postSaveRequest(s_fileName, s_newSaveName, 3);
+		closeSaveNameEditPopup();
+	}
+
+	void exitLoadSaveMenu()
+	{
+		s_subUI = FEUI_NONE;
+		s_appState = s_menuRetState;
+		TFE_Input::enableRelativeMode(s_relativeMode);
+	}
 
 	void configSaveLoadBegin(bool save)
 	{
@@ -913,18 +972,25 @@ namespace TFE_FrontEndUI
 
 		if (!s_saveDir.empty() && (s_selectedSave > 0 || !save))
 		{
-			s_saveImageView->update(s_saveDir[s_selectedSave].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+			updateSaveImage(s_selectedSave);
 		}
 		else
 		{
-			u32 zero[TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT];
-			memset(zero, 0, sizeof(u32) * TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT);
-			s_saveImageView->update(zero, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+			clearSaveImage();
 		}
-	}
 
+		s_popupOpen = false;
+		s_saveLoadSetupRequired = false;
+		s_popupSetFocus = false;
+	}
+		
 	void saveLoadDialog(bool save)
 	{
+		if (s_saveLoadSetupRequired)
+		{
+			configSaveLoadBegin(save);
+		}
+
 		f32 leftColumn = 256.0f*s_uiScale;
 		f32 rightColumn = leftColumn + ((f32)TFE_SaveSystem::SAVE_IMAGE_WIDTH + 32.0f)*s_uiScale;
 		const s32 listOffset = save ? 1 : 0;
@@ -943,7 +1009,7 @@ namespace TFE_FrontEndUI
 
 			// Info
 			size.y = 140 * s_uiScale;
-			ImGui::BeginChild("##InfoWithBorder", size, true, ImGuiWindowFlags_NoScrollbar);
+			ImGui::BeginChild("##InfoWithBorder", size, true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 			{
 				if (!s_saveDir.empty() && (s_selectedSave > 0 || !save))
 				{
@@ -1001,37 +1067,55 @@ namespace TFE_FrontEndUI
 
 				if (ImGui::Selectable(saveName, selected, ImGuiSelectableFlags_None, buttonSize))
 				{
-					s_selectedSave = s32(i);
-					s_selectedSaveSlot = s_selectedSave - listOffset;
-					char fileName[TFE_MAX_PATH];
-					if (save)
+					if (!s_popupOpen)
 					{
-						char saveName[256];
-						if (s_selectedSave == 0)
+						s_selectedSave = s32(i);
+						s_selectedSaveSlot = s_selectedSave - listOffset;
+						bool shouldExit = false;
+						if (save)
 						{
-							s_selectedSaveSlot = (s32)s_saveDir.size();
-							// If no quicksave exists, skip over it when generating the name.
-							const s32 saveIndex = s_selectedSaveSlot + (s_hasQuicksave ? 0 : 1);
-							TFE_SaveSystem::getSaveFilenameFromIndex(saveIndex, fileName);
-							sprintf(saveName, "Save %003u", s_selectedSaveSlot - (s_hasQuicksave ? 1 : 0));
+							if (s_selectedSave == 0)
+							{
+								s_selectedSaveSlot = (s32)s_saveDir.size();
+								// If no quicksave exists, skip over it when generating the name.
+								const s32 saveIndex = s_selectedSaveSlot + (s_hasQuicksave ? 0 : 1);
+								TFE_SaveSystem::getSaveFilenameFromIndex(saveIndex, s_fileName);
+
+								s_newSaveName[0] = 0;
+								openSaveNameEditPopup(s_newSaveName);
+							}
+							else
+							{
+								strcpy(s_fileName, s_saveDir[s_selectedSaveSlot].fileName);
+								strcpy(s_newSaveName, s_saveDir[s_selectedSaveSlot].saveName);
+
+								// You cannot change the quick save name.
+								if (s_selectedSaveSlot != 0)
+								{
+									openSaveNameEditPopup(s_newSaveName);
+								}
+								else
+								{
+									// Just save inline.
+									shouldExit = true;
+									s_saveLoadSetupRequired = true;
+									TFE_SaveSystem::postSaveRequest(s_fileName, s_newSaveName, 3);
+								}
+							}
 						}
 						else
 						{
-							strcpy(fileName, s_saveDir[s_selectedSaveSlot].fileName);
-							strcpy(saveName, s_saveDir[s_selectedSaveSlot].saveName);
+							TFE_SaveSystem::postLoadRequest(s_saveDir[s_selectedSaveSlot].fileName);
+							shouldExit = true;
 						}
-						TFE_SaveSystem::postSaveRequest(fileName, saveName, 3);
-					}
-					else
-					{
-						TFE_SaveSystem::postLoadRequest(s_saveDir[s_selectedSaveSlot].fileName);
-					}
 
-					s_subUI = FEUI_NONE;
-					s_appState = s_menuRetState;
-					TFE_Input::enableRelativeMode(s_relativeMode);
+						if (shouldExit)
+						{
+							exitLoadSaveMenu();
+						}
+					}
 				}
-				else if (ImGui::IsItemHovered() || ImGui::IsItemClicked())
+				else if ((ImGui::IsItemHovered() || ImGui::IsItemClicked()) && !s_popupOpen)
 				{
 					s_selectedSave = s32(i);
 				}
@@ -1041,16 +1125,47 @@ namespace TFE_FrontEndUI
 				s32 index = s_selectedSave - listOffset;
 				if (index >= 0)
 				{
-					s_saveImageView->update(s_saveDir[s_selectedSave - listOffset].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+					updateSaveImage(s_selectedSave - listOffset);
 				}
 				else
 				{
-					u32 zero[TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT];
-					memset(zero, 0, sizeof(u32) * TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT);
-					s_saveImageView->update(zero, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
+					clearSaveImage();
 				}
 			}
 			prevSelected = s_selectedSave;
+
+			if (ImGui::BeginPopupModal(s_saveGameConfirmMsg, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+			{
+				bool shouldExit = false;
+				if (s_popupSetFocus)
+				{
+					ImGui::SetKeyboardFocusHere();
+					s_popupSetFocus = false;
+				}
+				ImGui::SetNextItemWidth(768 * s_uiScale);
+				if (ImGui::InputText("###SaveNameText", s_newSaveName, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					shouldExit = true;
+					saveConfirmed();
+				}
+				if (ImGui::Button("OK", ImVec2(120, 0)))
+				{
+					shouldExit = true;
+					saveConfirmed();
+				}
+				ImGui::SameLine(0.0f, 32.0f);
+				if (ImGui::Button("Cancel", ImVec2(120, 0)))
+				{
+					shouldExit = false;
+					closeSaveNameEditPopup();
+				}
+				ImGui::EndPopup();
+
+				if (shouldExit)
+				{
+					exitLoadSaveMenu();
+				}
+			}
 
 			ImGui::PopFont();
 			ImGui::PopStyleColor();
@@ -1066,9 +1181,7 @@ namespace TFE_FrontEndUI
 			ImGui::LabelText("###Msg", "Cannot save the game at this time.");
 			if (ImGui::Button("Return", ImVec2(120.0f*s_uiScale, 0.0f)))
 			{
-				s_subUI = FEUI_NONE;
-				s_appState = s_menuRetState;
-				TFE_Input::enableRelativeMode(s_relativeMode);
+				exitLoadSaveMenu();
 			}
 		}
 		else
@@ -1909,7 +2022,7 @@ namespace TFE_FrontEndUI
 	{
 		s_subUI = FEUI_CONFIG;
 		s_configTab = CONFIG_GAME;
-
+		
 		pickCurrentResolution();
 	}
 
