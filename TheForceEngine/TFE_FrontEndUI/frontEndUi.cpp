@@ -991,12 +991,16 @@ namespace TFE_FrontEndUI
 			configSaveLoadBegin(save);
 		}
 
-		f32 leftColumn = 256.0f*s_uiScale;
+		// Create the current display info to adjust menu sizes.
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		f32 leftColumn = displayInfo.width < 1200 ? 196.0f*s_uiScale : 256.0f*s_uiScale;
 		f32 rightColumn = leftColumn + ((f32)TFE_SaveSystem::SAVE_IMAGE_WIDTH + 32.0f)*s_uiScale;
 		const s32 listOffset = save ? 1 : 0;
 
 		// Left Column
-		ImGui::SetNextWindowPos(ImVec2(leftColumn, 256.0f*s_uiScale));
+		ImGui::SetNextWindowPos(ImVec2(leftColumn, floorf(displayInfo.height * 0.25f)));
 		ImGui::BeginChild("##ImageAndInfo");
 		{
 			// Image
@@ -1042,13 +1046,20 @@ namespace TFE_FrontEndUI
 		ImGui::EndChild();
 
 		// Right Column
+		f32 rwidth  = 1024.0f * s_uiScale;
+		if (rightColumn + rwidth > displayInfo.width - 64.0f)
+		{
+			rwidth = displayInfo.width - 64.0f - rightColumn;
+		}
+
+		f32 rheight = displayInfo.height - 80.0f;
 		ImGui::SetNextWindowPos(ImVec2(rightColumn, 64.0f*s_uiScale));
-		ImGui::BeginChild("##FileList", ImVec2(1024.0f*s_uiScale, 1000.0f*s_uiScale), true);
+		ImGui::BeginChild("##FileList", ImVec2(rwidth, rheight), true);
 		{
 			const size_t count = s_saveDir.size() + size_t(listOffset);
 			const TFE_SaveSystem::SaveHeader* header = s_saveDir.data();
 			char newSave[] = "<Create Save>";
-			ImVec2 buttonSize(998.0f*s_uiScale, floorf(20 * s_uiScale + 0.5f));
+			ImVec2 buttonSize(rwidth - 2.0f, floorf(20 * s_uiScale + 0.5f));
 			ImGui::PushFont(s_dialogFont);
 			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 			s32 prevSelected = s_selectedSave;
