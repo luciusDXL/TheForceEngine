@@ -299,6 +299,13 @@ namespace TFE_SaveSystem
 
 	void setCurrentGame(GameID id)
 	{
+		char relativeBasePath[TFE_MAX_PATH];
+		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "Saves/", relativeBasePath);
+		if (!FileUtil::directoryExits(s_gameSavePath))
+		{
+			FileUtil::makeDirectory(relativeBasePath);
+		}
+
 		char relativePath[TFE_MAX_PATH];
 		sprintf(relativePath, "Saves/%s/", TFE_Settings::c_gameName[id]);
 
