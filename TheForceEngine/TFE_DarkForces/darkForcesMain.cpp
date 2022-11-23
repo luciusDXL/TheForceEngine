@@ -325,6 +325,10 @@ namespace TFE_DarkForces
 
 	void DarkForces::exitGame()
 	{
+		if (s_sharedState.gameStarted)
+		{
+			agent_updateAgentSavedData();
+		}
 		freeAllMidi();
 
 		gameMessage_freeBuffer();
@@ -387,6 +391,10 @@ namespace TFE_DarkForces
 		if (s_levelComplete)
 		{
 			handleLevelComplete();
+		}
+		else
+		{
+			agent_updateAgentSavedData();
 		}
 	}
 
