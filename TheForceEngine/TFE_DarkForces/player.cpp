@@ -816,6 +816,14 @@ namespace TFE_DarkForces
 			s_playerEye->posWS.x = s_mapX0;
 			s_playerEye->posWS.z = s_mapZ0;
 			s_playerEye->posWS.y = sector->floorHeight;
+			s_playerObject->posWS = s_playerEye->posWS;
+			s_playerPos = s_playerEye->posWS;
+			s_playerYPos = sector->floorHeight;
+			
+			// Reset gravity.
+			s_playerUpVel2 = 0;
+			s_playerUpVel  = 0;
+
 			sector_addObject(sector, s_playerEye);
 			s_playerSector = sector;
 
