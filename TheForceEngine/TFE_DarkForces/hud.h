@@ -20,6 +20,7 @@ namespace TFE_DarkForces
 
 	void hud_loadGameMessages();
 	void hud_loadGraphics();
+	void hud_reset();
 
 	void hud_startup(JBool fromSave);
 	void hud_initAnimation();

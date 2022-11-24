@@ -212,7 +212,15 @@ namespace TFE_DarkForces
 		// TFE
 		TFE_Jedi::renderer_addHudTextureCallback(hud_getTextures);
 	}
-		
+
+	void hud_reset()
+	{
+		freeOffScreenBuffer(s_cachedHudLeft);
+		freeOffScreenBuffer(s_cachedHudRight);
+		s_cachedHudLeft = nullptr;
+		s_cachedHudRight = nullptr;
+	}
+
 	void hud_loadGraphics()
 	{
 		s_hudStatusL       = hud_loadTexture("StatusLf.bm");

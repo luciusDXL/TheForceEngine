@@ -75,6 +75,9 @@ namespace TFE_DarkForces
 			TFE_RenderBackend::freeRenderTarget(s_emState.renderTarget);
 		}
 
+		// Free memory
+		freeOffScreenBuffer(s_emState.framebufferCopy);
+
 		// Clear State.
 		s_emState = {};
 	}

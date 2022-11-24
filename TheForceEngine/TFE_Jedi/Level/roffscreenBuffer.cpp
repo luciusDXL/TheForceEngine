@@ -7,6 +7,8 @@
 namespace TFE_Jedi
 {
 	static u8 s_workBuffer[256];
+	#define system_alloc(x) malloc(x)
+	#define system_free(x) free(x)
 
 	OffScreenBuffer* createOffScreenBuffer(s32 width, s32 height, u32 flags)
 	{
@@ -17,14 +19,16 @@ namespace TFE_Jedi
 		buffer->height = height;
 		buffer->flags  = flags;
 		buffer->size   = size;
-		buffer->image  = (u8*)game_alloc(size);
+		// This needs to go through the system allocator since it can be very large.
+		buffer->image  = (u8*)system_alloc(size);
 
 		return buffer;
 	}
 
 	void freeOffScreenBuffer(OffScreenBuffer* buffer)
 	{
-		game_free(buffer->image);
+		if (!buffer) { return; }
+		system_free(buffer->image);
 		game_free(buffer);
 	}
 

@@ -360,6 +360,7 @@ namespace TFE_DarkForces
 		escapeMenu_resetState();
 		vue_resetState();
 		lsystem_destroy();
+		hud_reset();
 
 		// TFE
 		TFE_Sprite_Jedi::freeAll();
