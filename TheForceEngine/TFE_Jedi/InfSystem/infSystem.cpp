@@ -1213,6 +1213,18 @@ namespace TFE_Jedi
 
 		const char* line;
 		line = parser.readLine(bufferPos);
+
+		// Keep looping until the version is found.
+		while (strncasecmp(line, "INF", 3) != 0 && line)
+		{
+			line = parser.readLine(bufferPos);
+		}
+		if (!line)
+		{
+			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Cannot find INF version.");
+			return JFALSE;
+		}
+
 		f32 version;
 		if (sscanf(line, "INF %f", &version) != 1)
 		{
