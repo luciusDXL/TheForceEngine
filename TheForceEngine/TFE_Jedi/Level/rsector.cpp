@@ -15,6 +15,11 @@
 // TODO: Find a better way to handle this.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 
+namespace TFE_DarkForces
+{
+	extern u32 s_playerDying;
+}
+
 using namespace TFE_DarkForces;
 
 namespace TFE_Jedi
@@ -454,12 +459,12 @@ namespace TFE_Jedi
 			{
 				sector_removeObject(obj);
 			}
-			
-			// TODO(Core Game Loop Release): Sending this message is skipped for the player if 'pickupFlags' is set to a specific value, I need to look into this more.
-			// Send a message to the INF system that the object entered the sector.
-			message_sendToSector(sector, obj, INF_EVENT_ENTER_SECTOR, MSG_TRIGGER);
 
 			// The sector containing the player has a special flag.
+			if (!((obj->entityFlags & ETFLAG_PLAYER) && s_playerDying))
+			{
+				message_sendToSector(sector, obj, INF_EVENT_ENTER_SECTOR, MSG_TRIGGER);
+			}
 			if (obj->entityFlags & ETFLAG_PLAYER)
 			{
 				sector->flags1 |= SEC_FLAGS1_PLAYER;
@@ -486,11 +491,12 @@ namespace TFE_Jedi
 		objList[obj->index] = nullptr;
 		sector->objectCount--;
 
-		// Handle the player leaving.
-		// TODO(Core Game Loop Release): The original had additional flags to look into.
-		if (obj->entityFlags & ETFLAG_PLAYER)
+		if (!((obj->entityFlags & ETFLAG_PLAYER) && s_playerDying))
 		{
 			message_sendToSector(sector, obj, INF_EVENT_LEAVE_SECTOR, MSG_TRIGGER);
+		}
+		if (obj->entityFlags & ETFLAG_PLAYER)
+		{
 			sector->flags1 &= ~SEC_FLAGS1_PLAYER;
 		}
 	}
