@@ -123,6 +123,7 @@ namespace TFE_DarkForces
 
 	void executeCheat(CheatID cheatID);
 	extern void resumeLevelSound();
+	extern void skipToLevelNextScene(s32 index);
 
 	/////////////////////////////////////////////
 	// API Implementation
@@ -857,8 +858,6 @@ namespace TFE_DarkForces
 			s_gasmaskTask = createSubTask("gasmask", gasmaskTaskFunc);
 		}
 	}
-
-	extern void skipToLevelNextScene(s32 index);
 
 	void cheat_gotoLevel(s32 index)
 	{
