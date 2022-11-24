@@ -218,6 +218,7 @@ namespace TFE_Jedi
 				if (!logicCount) { continue; }
 
 				obj->logic = allocator_create(sizeof(Logic**));
+				obj->projectileLogic = nullptr;
 				for (u32 l = 0; l < logicCount; l++)
 				{
 					Logic* logic = nullptr;
@@ -230,7 +231,6 @@ namespace TFE_Jedi
 					*logicItem = logic;
 
 					// Handle projectiles.
-					obj->projectileLogic = nullptr;
 					if (logic->type == LOGIC_PROJECTILE)
 					{
 						obj->projectileLogic = logic;
