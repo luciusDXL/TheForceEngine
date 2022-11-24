@@ -228,7 +228,8 @@ namespace TFE_Jedi
 			SecObject* obj = *objectList;
 			if (obj)
 			{
-				maxObjHeight = max(maxObjHeight, obj->worldHeight + ONE_16);
+				fixed16_16 h = sector->floorHeight - obj->posWS.y + obj->worldHeight + ONE_16;
+				maxObjHeight = max(maxObjHeight, h);
 				count--;
 			}
 		}

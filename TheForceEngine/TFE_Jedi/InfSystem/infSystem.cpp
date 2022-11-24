@@ -38,7 +38,8 @@ namespace TFE_Jedi
 		DELAY_SLEEP = 0xffffffff,
 	};
 
-	const fixed16_16 c_verticalElevCrushThres = 0x3000;	// 0x4000 in the original code, reduced to account for higher framerate.
+	const fixed16_16 c_verticalElevCrushThres  = 0x3000;	// 0x4000 in the original code, reduced to account for higher framerate.
+	const fixed16_16 c_verticalElevCrushThres2 = 0x1000;
 
 	typedef union { RSector* sector; RWall* wall; } InfTriggerObject;
 
@@ -3367,7 +3368,7 @@ namespace TFE_Jedi
 					maxObjHeight = sector_getMaxObjectHeight(sector);
 					if (maxObjHeight)
 					{
-						maxObjHeight += c_verticalElevCrushThres;
+						maxObjHeight += c_verticalElevCrushThres2;
 
 						// If the height between floor and ceiling is too small for the tallest object AND
 						// If the floor is moving up or the ceiling is moving down and this is NOT a crushing sector.
