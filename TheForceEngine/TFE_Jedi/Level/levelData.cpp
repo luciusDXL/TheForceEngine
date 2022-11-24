@@ -6,6 +6,7 @@
 #include "rwall.h"
 #include "robjData.h"
 #include <TFE_Game/igame.h>
+#include <TFE_System/system.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 
@@ -383,6 +384,13 @@ namespace TFE_Jedi
 		if (serialization_getMode() == SMODE_READ)
 		{
 			wall->mirrorWall = nullptr;
+			// Fix-up next sector if needed.
+			if (wall->mirror < 0 && wall->nextSector)
+			{
+				TFE_System::logWrite(LOG_WARNING, "LevelData",
+					"Wall %d of sector %d has 'nextSector = %d' but no 'mirror' - clearing out the next sector.", wall->id, sector->id, wall->nextSector->id);
+				wall->nextSector = nullptr;
+			}
 		}
 		
 		// worldspace vertices.

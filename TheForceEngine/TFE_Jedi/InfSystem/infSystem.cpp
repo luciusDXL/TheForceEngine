@@ -2920,9 +2920,11 @@ namespace TFE_Jedi
 
 				wall0->nextSector = sector1;
 				wall0->mirrorWall = wall1;
+				wall0->mirror = wall0->mirrorWall->id;
 
 				wall1->nextSector = sector0;
 				wall1->mirrorWall = wall0;
+				wall1->mirror = wall1->mirrorWall->id;
 
 				sector_setupWallDrawFlags(sector0);
 				sector_setupWallDrawFlags(sector1);
