@@ -237,6 +237,9 @@ namespace TFE_DarkForces
 	// This part loads and sets up the game.
 	bool DarkForces::runGame(s32 argCount, const char* argv[], Stream* stream)
 	{
+		// TFE: Initially disable the reticle.
+		reticle_enable(false);
+
 		if (!stream)
 		{
 			// Normal start.
