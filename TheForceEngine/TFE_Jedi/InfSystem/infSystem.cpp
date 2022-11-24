@@ -86,6 +86,7 @@ namespace TFE_Jedi
 	void inf_stopAdjoinCommands(Stop* stop);
 	void inf_stopHandleMessages(MessageType msg);
 	void inf_handleMsgLights();
+	void inf_elevatorStart(InfElevator* elev);
 	vec3_fixed inf_getElevSoundPos(InfElevator* elev);
 
 	void inf_teleporterTaskLocal(MessageType msg);
@@ -1506,7 +1507,6 @@ namespace TFE_Jedi
 								u32 delay = taskCtx->nextStop->delay;
 								if (delay == IDELAY_HOLD)
 								{
-									taskCtx->elev->trigMove = TRIGMOVE_HOLD;
 									taskCtx->elev->nextTick = DELAY_SLEEP;
 								}
 								else if (delay == IDELAY_COMPLETE || delay == IDELAY_TERMINATE)
@@ -2375,40 +2375,36 @@ namespace TFE_Jedi
 		return (targetPos == pos && elev->nextStop) ? JTRUE : JFALSE;
 	}
 
+	void inf_elevatorStart(InfElevator* elev)
+	{
+		if (!(elev->updateFlags & ELEV_MOVING))
+		{
+			if (elev->nextStop && *elev->value != elev->nextStop->value)
+			{
+				vec3_fixed pos = inf_getElevSoundPos(elev);
+				sound_playCued(elev->sound0, pos);
+			}
+			elev->nextTick = s_curTick;
+			elev->updateFlags |= ELEV_MOVING;
+		}
+	}
+
 	void inf_elevHandleTriggerMsg(InfElevator* elev, u32 evt)
 	{
 		switch (elev->trigMove)
 		{
 			case TRIGMOVE_CONT:
 			{
-				if (!(elev->updateFlags & ELEV_MOVING))
-				{
-					// If the elevator is not already at the next stop, play the start sound.
-					if (elev->nextStop && *elev->value != elev->nextStop->value)
-					{
-						// Get the sound location.
-						vec3_fixed pos = inf_getElevSoundPos(elev);
-						sound_playCued(elev->sound0, pos);
-					}
-
-					// Update the next time so the elevator will move on the next update.
-					elev->nextTick = s_curTick;
-					elev->updateFlags |= ELEV_MOVING;
-				}
+				inf_elevatorStart(elev);
 			} break;
 			case TRIGMOVE_LAST:
 			{
 				// Goto the last stop.
 				elev->nextStop = inf_advanceStops(elev->stops, -1, 0);
-				if (elev->nextStop && *elev->value != elev->nextStop->value)
+				if (*elev->value != elev->nextStop->value)
 				{
-					// Get the sound location.
-					vec3_fixed pos = inf_getElevSoundPos(elev);
-					sound_playCued(elev->sound0, pos);
+					inf_elevatorStart(elev);
 				}
-				// Update the next time so the elevator will move on the next update.
-				elev->nextTick = s_curTick;
-				elev->updateFlags |= ELEV_MOVING;
 			} break;
 			case TRIGMOVE_PREV:
 			{
@@ -2417,16 +2413,7 @@ namespace TFE_Jedi
 					elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
 				}
 				elev->nextStop = inf_advanceStops(elev->stops, 0, -1);
-				if (!(elev->updateFlags & ELEV_MOVING))
-				{
-					if (elev->nextStop && *elev->value != elev->nextStop->value)
-					{
-						vec3_fixed pos = inf_getElevSoundPos(elev);
-						sound_playCued(elev->sound0, pos);
-					}
-					elev->nextTick = s_curTick;
-					elev->updateFlags |= ELEV_MOVING;
-				}
+				inf_elevatorStart(elev);
 			} break;
 			case TRIGMOVE_NEXT:
 			default:
@@ -2435,16 +2422,7 @@ namespace TFE_Jedi
 				{
 					elev->nextStop = inf_advanceStops(elev->stops, 0, 1);
 				}
-				if (!(elev->updateFlags & ELEV_MOVING))
-				{
-					if (elev->nextStop && *elev->value != elev->nextStop->value)
-					{
-						vec3_fixed pos = inf_getElevSoundPos(elev);
-						sound_playCued(elev->sound0, pos);
-					}
-					elev->nextTick = s_curTick;
-					elev->updateFlags |= ELEV_MOVING;
-				}
+				inf_elevatorStart(elev);
 			}
 		}
 
@@ -2726,16 +2704,7 @@ namespace TFE_Jedi
 					elev->nextStop = inf_advanceStops(elev->stops, arg1, 0);
 				}
 				// Play the sound effect, update the flags, update the next update time if NOT moving.
-				if (!(elev->updateFlags & ELEV_MOVING))
-				{
-					if (*elev->value != elev->nextStop->value)
-					{
-						vec3_fixed pos = inf_getElevSoundPos(elev);
-						sound_playCued(elev->sound0, pos);
-					}
-					elev->nextTick = s_curTick;
-					elev->updateFlags |= ELEV_MOVING;
-				}
+				inf_elevatorStart(elev);
 			} break;
 		}
 	}
