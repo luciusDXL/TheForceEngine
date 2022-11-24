@@ -994,7 +994,7 @@ namespace TFE_Jedi
 			if (!obj) { continue; }
 			i++;
 
-			if (obj->flags & OBJ_FLAG_NEEDS_TRANSFORM)
+			if ((obj->flags & OBJ_FLAG_NEEDS_TRANSFORM) && obj->ptr)
 			{
 				const s32 type = obj->type;
 				Vec3f posWS = { fixed16ToFloat(obj->posWS.x), fixed16ToFloat(obj->posWS.y), fixed16ToFloat(obj->posWS.z) };
