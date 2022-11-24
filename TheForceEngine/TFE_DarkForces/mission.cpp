@@ -858,11 +858,15 @@ namespace TFE_DarkForces
 		}
 	}
 
+	extern void skipToLevelNextScene(s32 index);
+
 	void cheat_gotoLevel(s32 index)
 	{
 		agent_setNextLevelByIndex(index);
 		s_levelComplete = JTRUE;
 		s_exitLevel = JTRUE;
+
+		skipToLevelNextScene(index + 1);
 	}
 
 	void cheat_levelSkip()

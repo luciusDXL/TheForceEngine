@@ -416,6 +416,22 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void skipToLevelNextScene(s32 index)
+	{
+		if (!index) { return; }
+
+		s_invalidLevelIndex = JTRUE;
+		for (s32 i = 0; i < TFE_ARRAYSIZE(s_cutsceneData); i++)
+		{
+			if (s_cutsceneData[i].levelIndex >= 0 && s_cutsceneData[i].levelIndex == index && s_cutsceneData[i].nextGameMode == GMODE_BRIEFING)
+			{
+				s_runGameState.cutsceneIndex = i - 1;
+				s_invalidLevelIndex = JFALSE;
+				break;
+			}
+		}
+	}
+
 	void DarkForces::getModList(char* modList)
 	{
 		strcpy(modList, s_sharedState.customGobName);
