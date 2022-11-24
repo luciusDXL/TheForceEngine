@@ -601,7 +601,7 @@ namespace TFE_DarkForces
 				fixed16_16 adp = TFE_Jedi::abs(dp);
 				if (adp <= s_colWidth)
 				{
-					fixed16_16 paramPos = mul16(dx, wall->wallDir.z) + mul16(dz, wall->wallDir.x);
+					fixed16_16 paramPos = TFE_Jedi::abs(mul16(dx, wall->wallDir.z) + mul16(dz, wall->wallDir.x));
 					if (paramPos > length)
 					{
 						if (paramPos + s_colWidth > length + s_colDoubleRadius)
