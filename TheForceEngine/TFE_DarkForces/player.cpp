@@ -440,6 +440,7 @@ namespace TFE_DarkForces
 		s_playerInfo.itemPlans    = JFALSE;
 		s_playerInfo.itemPhrik    = JFALSE;
 		s_playerInfo.itemNava     = JFALSE;
+		s_playerInfo.itemDatatape = JFALSE;
 		s_playerInfo.itemUnused   = JFALSE;
 		s_playerInfo.itemDtWeapon = JFALSE;
 		s_playerInfo.itemCode1    = JFALSE;
