@@ -556,11 +556,11 @@ namespace TFE_DarkForces
 				s_fadeLockTime = -1;
 				s_fadeLockEnd  = -1;
 				s_fadeTime = 0;
-				ltime_setFrameRate(s_baseRate);
+				ltime_setFrameDelay(s_baseRate);
 				return JTRUE;
 			}
 			// Fading occurs at a higher framerate.
-			ltime_setFrameRate(4);
+			ltime_setFrameDelay(4);
 		}
 		return JFALSE;
 	}

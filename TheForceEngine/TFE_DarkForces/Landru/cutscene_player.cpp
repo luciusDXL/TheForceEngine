@@ -76,7 +76,7 @@ namespace TFE_DarkForces
 	{
 		fps = clamp(fps, MIN_FPS, MAX_FPS);
 		s_frameDelay = c_frameRateDelay[fps - MIN_FPS];
-		ltime_setFrameRate(s_frameDelay);
+		ltime_setFrameDelay(s_frameDelay);
 	}
 	
 	JBool cutscene_loadCallback(Film* film, FilmObject* obj)

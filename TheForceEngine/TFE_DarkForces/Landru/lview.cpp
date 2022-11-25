@@ -177,7 +177,7 @@ namespace TFE_DarkForces
 		
 	void lview_update(s32 time)
 	{
-		ltime_often();
+		ltime_checkTimeElapsed();
 		lview_move();
 		cutsceneFilm_updateFilms(time);
 		lactor_update(time);
@@ -185,7 +185,7 @@ namespace TFE_DarkForces
 
 	void lview_updateCallback(s32 time)
 	{
-		ltime_often();
+		ltime_checkTimeElapsed();
 		cutsceneFilm_updateCallbacks(time);
 		lactor_updateCallbacks(time);
 		lactor_updateZPlanes();

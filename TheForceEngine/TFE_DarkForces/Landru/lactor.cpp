@@ -203,7 +203,7 @@ namespace TFE_DarkForces
 				while (curActor)
 				{
 					// This might not be needed in TFE.
-					ltime_often();
+					ltime_checkTimeElapsed();
 
 					if (curActor->drawFunc && lactor_isVisible(curActor))
 					{

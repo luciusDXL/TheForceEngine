@@ -166,7 +166,7 @@ namespace TFE_DarkForces
 		s_framebuffer = ldraw_getBitmap();
 		lcanvas_getBounds(&s_viewBounds);
 
-		ltime_setFrameRate(20);
+		ltime_setFrameDelay(20);
 	}
 
 	void missionBriefing_cleanup()

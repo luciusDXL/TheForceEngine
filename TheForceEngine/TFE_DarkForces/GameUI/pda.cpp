@@ -92,6 +92,9 @@ namespace TFE_DarkForces
 	static LRect s_overlayRect;
 	static u8* s_framebuffer;
 
+	static JBool s_frameReady = true;
+	static Vec2i s_mouseAccum = { 0 };
+
 	static PdaMode s_pdaMode = PDA_MODE_MAP;
 	static s32 s_simulatePressed = -1;
 		
@@ -110,6 +113,7 @@ namespace TFE_DarkForces
 	{
 		// TFE
 		reticle_enable(false);
+		s_mouseAccum = { 0 };
 
 		pauseLevelSound();
 		if (!s_pdaLoaded)
@@ -171,7 +175,7 @@ namespace TFE_DarkForces
 		automap_updateMapData(MAP_CENTER_PLAYER);
 		automap_updateMapData(MAP_ENABLE_AUTOCENTER);
 		automap_resetScale();
-		ltime_setFrameRate(10);
+		ltime_setFrameDelay(10);
 
 		TFE_Input::endFrame();
 	}
@@ -248,6 +252,7 @@ namespace TFE_DarkForces
 		}
 		
 		tfe_updateLTime();
+		s_frameReady = ltime_isFrameReady();
 
 		// Input
 		pda_handleInput();
@@ -291,11 +296,30 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Internal Implementation
 	///////////////////////////////////////////
+	void pda_handleMouseAccum(s32* wdx, s32* wdy)
+	{
+		if (!s_frameReady)
+		{
+			s_mouseAccum.x += *wdx;
+			s_mouseAccum.z += *wdy;
+			*wdx += s_mouseAccum.x;
+			*wdy += s_mouseAccum.z;
+		}
+		else
+		{
+			*wdx += s_mouseAccum.x;
+			*wdy += s_mouseAccum.z;
+			s_mouseAccum = { 0 };
+		}
+	}
+
 	void pda_handleButtons()
 	{
 		// Add support for mouse wheel scrolling.
 		s32 wdx, wdy;
 		TFE_Input::getMouseWheel(&wdx, &wdy);
+		// Ensure that mouse movements are not lost between updates.
+		pda_handleMouseAccum(&wdx, &wdy);
 
 		if (TFE_Input::mousePressed(MBUTTON_LEFT) || s_simulatePressed >= 0 || wdy)
 		{
@@ -317,7 +341,7 @@ namespace TFE_DarkForces
 				}
 			}
 						
-			if (s_pdaMode == PDA_MODE_MAP && (s_buttonPressed || wdy) && ltime_isFrameReady())
+			if (s_pdaMode == PDA_MODE_MAP && (s_buttonPressed || wdy) && s_frameReady)
 			{
 				// Add support for mouse wheel scrolling.
 				if (wdy < 0)
@@ -371,7 +395,7 @@ namespace TFE_DarkForces
 					} break;
 				}
 			}
-			else if (s_pdaMode == PDA_MODE_BRIEF && (s_buttonPressed || wdy) && ltime_isFrameReady())
+			else if (s_pdaMode == PDA_MODE_BRIEF && (s_buttonPressed || wdy) && s_frameReady)
 			{
 				// Add support for mouse wheel scrolling.
 				if (wdy > 0) // up
@@ -430,7 +454,7 @@ namespace TFE_DarkForces
 				s_buttonHover = JFALSE;
 			}
 
-			if (s_buttonHover && s_pdaMode == PDA_MODE_MAP && ltime_isFrameReady())
+			if (s_buttonHover && s_pdaMode == PDA_MODE_MAP && s_frameReady)
 			{
 				switch (s_buttonPressed)
 				{
@@ -460,7 +484,7 @@ namespace TFE_DarkForces
 					} break;
 				}
 			}
-			else if (s_buttonHover && s_pdaMode == PDA_MODE_BRIEF && ltime_isFrameReady())
+			else if (s_buttonHover && s_pdaMode == PDA_MODE_BRIEF && s_frameReady)
 			{
 				switch (s_buttonPressed)
 				{

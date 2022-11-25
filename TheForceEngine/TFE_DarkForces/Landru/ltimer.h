@@ -16,11 +16,10 @@ namespace TFE_DarkForces
 
 	// Landru timer API.
 	void ltime_init();
-	void ltime_setFrameRate(u16 delay);
+	void ltime_setFrameDelay(u16 delay);
 	u16  ltime_getDelay();
 	LTick ltime_elapsed();
 	JBool ltime_checkTimeElapsed();
-	JBool ltime_often();
 	LTick ltime_curTick();
 
 	// This is also altered from DOS to return JTRUE when the frame is ready instead of 
