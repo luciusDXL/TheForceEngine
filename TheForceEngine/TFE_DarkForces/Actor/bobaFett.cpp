@@ -120,7 +120,7 @@ namespace TFE_DarkForces
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
-				local(anim)->flags |= 1;
+				local(anim)->flags |= AFLAG_PLAYED;
 				local(anim)->frameRate = 6;
 				actor_setupBossAnimation(local(obj), 12, local(anim));
 
@@ -128,7 +128,7 @@ namespace TFE_DarkForces
 				do
 				{
 					entity_yield(TASK_NO_DELAY);
-				} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+				} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 				memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
 				actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
@@ -178,7 +178,7 @@ namespace TFE_DarkForces
 				// Save Animation
 				memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
-				local(anim)->flags |= 1;
+				local(anim)->flags |= AFLAG_PLAYED;
 				local(anim)->frameRate = 6;
 				actor_setupBossAnimation(local(obj), 12, local(anim));
 
@@ -186,7 +186,7 @@ namespace TFE_DarkForces
 				do
 				{
 					entity_yield(TASK_NO_DELAY);
-				} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+				} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 				memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
 				actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
@@ -566,7 +566,7 @@ namespace TFE_DarkForces
 		sound_stop(local(physicsActor)->moveSndId);
 		sound_playCued(s_shared.boba4SndID, local(obj)->posWS);
 
-		local(anim)->flags |= 1;
+		local(anim)->flags |= AFLAG_PLAYED;
 		local(anim)->frameRate = 8;
 		actor_setupBossAnimation(local(obj), 2, local(anim));
 
@@ -574,7 +574,7 @@ namespace TFE_DarkForces
 		do
 		{
 			entity_yield(TASK_NO_DELAY);
-		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 		task_localBlockBegin;
 			SecObject* corpse = allocateObject();

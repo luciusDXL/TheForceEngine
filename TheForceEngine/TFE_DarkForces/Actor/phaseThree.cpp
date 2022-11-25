@@ -133,14 +133,14 @@ namespace TFE_DarkForces
 					// Save Animation
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
-					local(anim)->flags |= 1;
+					local(anim)->flags |= AFLAG_PLAYED;
 					actor_setupBossAnimation(local(obj), 10, local(anim));
 
 					// Wait for animation to finish.
 					do
 					{
 						entity_yield(TASK_NO_DELAY);
-					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
 					actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
@@ -220,7 +220,7 @@ namespace TFE_DarkForces
 					do
 					{
 						entity_yield(TASK_NO_DELAY);
-					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
 					actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
@@ -296,7 +296,7 @@ namespace TFE_DarkForces
 		if (random(100) <= 40)
 		{
 			local(trooper)->rocketSndId = sound_playCued(s_shared.phase3RocketSndID, local(obj)->posWS);
-			local(anim)->flags |= 1;
+			local(anim)->flags |= AFLAG_PLAYED;
 			actor_setupBossAnimation(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 0, 1);
 
@@ -306,7 +306,7 @@ namespace TFE_DarkForces
 				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
-			} while (!(local(anim)->flags & 2) || msg != MSG_RUN_TASK);
+			} while (!(local(anim)->flags & AFLAG_READY) || msg != MSG_RUN_TASK);
 
 			actor_setupBossAnimation(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 2, 2);
@@ -321,7 +321,7 @@ namespace TFE_DarkForces
 			local(physicsActor)->moveMod.collisionFlags |= 3;
 			local(target)->speed = FIXED(25);
 			local(flying) = JFALSE;
-			local(anim)->flags &= (~1);
+			local(anim)->flags &= ~AFLAG_PLAYED;
 			actor_setupBossAnimation(local(obj), 0, local(anim));
 		}
 
@@ -344,7 +344,7 @@ namespace TFE_DarkForces
 						local(physicsActor)->state = (random(100) > 40) ? P3STATE_FIRE_PLASMA : P3STATE_FIRE_MISSILES;
 						if (local(flying))
 						{
-							local(anim)->flags |= 1;
+							local(anim)->flags |= AFLAG_PLAYED;
 							actor_setupBossAnimation(local(obj), 13, local(anim));
 							actor_setAnimFrameRange(local(anim), 3, 3);
 							do
@@ -352,7 +352,7 @@ namespace TFE_DarkForces
 								entity_yield(TASK_NO_DELAY);
 								s_curTrooper = local(trooper);
 								task_callTaskFunc(phaseThree_handleMsg);
-							} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+							} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 							local(physicsActor)->moveMod.collisionFlags |= 3;
 							local(physicsActor)->moveMod.physics.yPos = FIXED(9999);
@@ -406,7 +406,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		local(anim)->flags |= 2;
+		local(anim)->flags |= AFLAG_READY;
 		task_end;
 	}
 
@@ -429,7 +429,7 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim)   = &local(physicsActor)->anim;
 		local(odd)    = (s_curTick & 1) ? JFALSE : JTRUE;
-		local(anim)->flags &= (~1);
+		local(anim)->flags &= ~AFLAG_PLAYED;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 
 		task_localBlockBegin;
@@ -513,7 +513,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		local(anim)->flags |= 2;
+		local(anim)->flags |= AFLAG_READY;
 		task_end;
 	}
 		
@@ -547,7 +547,7 @@ namespace TFE_DarkForces
 			} while (msg != MSG_RUN_TASK);
 			if (local(physicsActor)->state != P3STATE_FIRE_MISSILES) { break; }
 
-			local(anim)->flags |= 1;
+			local(anim)->flags |= AFLAG_PLAYED;
 			actor_setupBossAnimation(local(obj), 11, local(anim));
 
 			// Wait for the animation to finish.
@@ -556,7 +556,7 @@ namespace TFE_DarkForces
 				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
-			} while (msg != MSG_RUN_TASK || !(local(anim)->flags&2));
+			} while (msg != MSG_RUN_TASK || !(local(anim)->flags&AFLAG_READY));
 
 			// Attempt to attack.
 			task_localBlockBegin;
@@ -576,7 +576,7 @@ namespace TFE_DarkForces
 					proj_setTransform(proj, 0, projObj->yaw);
 				}
 
-				local(anim)->flags |= 1;
+				local(anim)->flags |= AFLAG_PLAYED;
 				actor_setupBossAnimation(local(obj), 12, local(anim));
 			task_localBlockEnd;
 
@@ -586,7 +586,7 @@ namespace TFE_DarkForces
 				entity_yield(TASK_NO_DELAY);
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
-			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 			local(obj)->flags &= ~OBJ_FLAG_FULLBRIGHT;
 			local(physicsActor)->state = P3STATE_WANDER;
@@ -617,7 +617,7 @@ namespace TFE_DarkForces
 		local(target)->flags &= ~TARGET_MOVE_XZ;
 		local(physicsActor)->moveMod.collisionFlags |= 3;
 
-		local(anim)->flags |= 1;
+		local(anim)->flags |= AFLAG_PLAYED;
 		actor_setupBossAnimation(local(obj), 1, local(anim));
 
 		// Wait for the animation to finish.
@@ -626,7 +626,7 @@ namespace TFE_DarkForces
 			entity_yield(TASK_NO_DELAY);
 			s_curTrooper = local(trooper);
 			task_callTaskFunc(phaseThree_handleMsg);
-		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 		local(shotCount) = random(20) + 1;
 		local(obj)->flags |= OBJ_FLAG_FULLBRIGHT;
@@ -658,7 +658,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		local(anim)->flags |= 1;
+		local(anim)->flags |= AFLAG_PLAYED;
 		actor_setupBossAnimation(local(obj), 6, local(anim));
 
 		// Wait for the animation to finish.
@@ -667,7 +667,7 @@ namespace TFE_DarkForces
 			entity_yield(TASK_NO_DELAY);
 			s_curTrooper = local(trooper);
 			task_callTaskFunc(phaseThree_handleMsg);
-		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 		local(obj)->flags &= ~OBJ_FLAG_FULLBRIGHT;
 		task_end;
@@ -695,7 +695,7 @@ namespace TFE_DarkForces
 		sound_stop(local(trooper)->rocketSndId);
 		sound_playCued(s_shared.phase3DieSndID, local(obj)->posWS);
 
-		local(anim)->flags |= 1;
+		local(anim)->flags |= AFLAG_PLAYED;
 		actor_setupBossAnimation(local(obj), 2, local(anim));
 		local(physicsActor)->moveMod.collisionFlags |= 3;	// ground, gravity
 
@@ -703,7 +703,7 @@ namespace TFE_DarkForces
 		do
 		{
 			entity_yield(TASK_NO_DELAY);
-		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 		// Wait until the actor can die.
 		do
@@ -762,7 +762,7 @@ namespace TFE_DarkForces
 		local(nextTick) = s_curTick + 4369;
 		local(delay) = 72;
 
-		local(anim)->flags &= (~1);
+		local(anim)->flags &= ~AFLAG_PLAYED;
 		local(forceContinue) = JFALSE;
 		actor_setupBossAnimation(local(obj), 13, local(anim));
 
@@ -847,7 +847,7 @@ namespace TFE_DarkForces
 			}
 		}  // while (state == 6 || forceContinue)
 
-		local(anim)->flags |= 2;
+		local(anim)->flags |= AFLAG_READY;
 		task_end;
 	}
 

@@ -122,7 +122,7 @@ namespace TFE_DarkForces
 						target->flags |= 8;
 						memcpy(&local(tmpAnim), local(anim), sizeof(LogicAnimation) - 4);
 
-						local(anim)->flags |= 1;
+						local(anim)->flags |= AFLAG_PLAYED;
 						actor_setupBossAnimation(local(obj), 12, local(anim));
 						local(anim)->frameRate = 8;
 					task_localBlockEnd;
@@ -130,7 +130,7 @@ namespace TFE_DarkForces
 					do
 					{
 						entity_yield(TASK_NO_DELAY);
-					} while (!(local(anim)->flags & 2) || msg != MSG_RUN_TASK);
+					} while (!(local(anim)->flags & AFLAG_READY) || msg != MSG_RUN_TASK);
 
 					task_localBlockBegin;
 						memcpy(local(anim), &local(tmpAnim), sizeof(LogicAnimation) - 4);
@@ -209,14 +209,14 @@ namespace TFE_DarkForces
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					// Set the animation to 12.
-					local(anim)->flags |= 1;
+					local(anim)->flags |= AFLAG_PLAYED;
 					actor_setupBossAnimation(local(obj), 12, local(anim));
 					local(anim)->frameRate = 8;
 
 					do
 					{
 						entity_yield(TASK_NO_DELAY);
-					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 					// Restore the animation.
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
@@ -336,7 +336,7 @@ namespace TFE_DarkForces
 		local(prevColTick) = 0;
 		local(yawAligned) = JFALSE;
 
-		local(anim)->flags &= 0xfffffffe;
+		local(anim)->flags &= ~AFLAG_PLAYED;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 
 		task_localBlockBegin;
@@ -441,7 +441,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		local(anim)->flags |= 2;
+		local(anim)->flags |= AFLAG_READY;
 		task_end;
 	}
 
@@ -462,7 +462,7 @@ namespace TFE_DarkForces
 		local(physicsActor) = &local(dragon)->actor;
 		local(anim) = &local(physicsActor)->anim;
 		local(target) = &local(physicsActor)->moveMod.target;
-		local(anim)->flags &= 0xfffffffe;
+		local(anim)->flags &= ~AFLAG_PLAYED;
 
 		task_localBlockBegin;
 			actor_setupBossAnimation(local(obj), 0, local(anim));
@@ -519,7 +519,7 @@ namespace TFE_DarkForces
 			}
 		}  // while (state == 2)
 
-		local(anim)->flags |= 2;
+		local(anim)->flags |= AFLAG_READY;
 		task_end;
 	}
 
@@ -559,7 +559,7 @@ namespace TFE_DarkForces
 			} while (msg != MSG_RUN_TASK);
 			if (local(physicsActor)->state != 3) { break; }
 
-			local(anim)->flags |= 1;
+			local(anim)->flags |= AFLAG_PLAYED;
 			actor_setupBossAnimation(local(obj), 9, local(anim));
 			local(anim)->frameRate = 8;
 			sound_playCued(s_shared.kellSound1, local(obj)->posWS);
@@ -578,7 +578,7 @@ namespace TFE_DarkForces
 					s_curDragon = local(dragon);
 					task_callTaskFunc(kellDragon_handleExplosion);
 				}
-			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 			
 			task_localBlockBegin;
 				local(target)->pos.x = s_playerObject->posWS.x;
@@ -632,7 +632,7 @@ namespace TFE_DarkForces
 					s_curDragon = local(dragon);
 					task_callTaskFunc(kellDragon_handleExplosion);
 				}
-			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 			// Bite!
 			fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
@@ -688,7 +688,7 @@ namespace TFE_DarkForces
 				break;
 			}
 
-			local(anim)->flags |= 1;
+			local(anim)->flags |= AFLAG_PLAYED;
 			actor_setupBossAnimation(local(obj), 1, local(anim));
 			local(anim)->frameRate = 8;
 
@@ -706,7 +706,7 @@ namespace TFE_DarkForces
 					s_curDragon = local(dragon);
 					task_callTaskFunc(kellDragon_handleExplosion);
 				}
-			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+			} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 			sound_playCued(s_shared.kellSound4, local(obj)->posWS);
 			fixed16_16 dy = TFE_Jedi::abs(local(obj)->posWS.y - s_playerObject->posWS.y);
@@ -751,7 +751,7 @@ namespace TFE_DarkForces
 		local(target)->flags |= TARGET_FREEZE;
 		sound_playCued(s_shared.kellSound3, local(obj)->posWS);
 
-		local(anim)->flags |= 1;
+		local(anim)->flags |= AFLAG_PLAYED;
 		actor_setupBossAnimation(local(obj), 2, local(anim));
 		local(anim)->frameRate = 8;
 
@@ -759,7 +759,7 @@ namespace TFE_DarkForces
 		do
 		{
 			entity_yield(TASK_NO_DELAY);
-		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
+		} while (msg != MSG_RUN_TASK || !(local(anim)->flags & AFLAG_READY));
 
 		// Then wait until we can actually die...
 		do
@@ -819,7 +819,7 @@ namespace TFE_DarkForces
 		local(delay) = 72;
 		local(speedRotation) = local(target)->speedRotation;
 
-		local(anim)->flags &= 0xfffffffe;
+		local(anim)->flags &= ~AFLAG_PLAYED;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
 		local(target)->flags &= ~TARGET_FREEZE;
 		local(target)->speedRotation = 0x3000;
