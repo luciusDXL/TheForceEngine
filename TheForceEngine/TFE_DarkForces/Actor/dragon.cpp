@@ -1113,7 +1113,7 @@ namespace TFE_DarkForces
 
 		LogicAnimation* anim = &physicsActor->anim;
 		anim->frameRate = 5;
-		anim->flags = (anim->flags | 2) & 0xfffffffe;
+		anim->flags = (anim->flags | AFLAG_READY) & (~AFLAG_PLAYED);
 		anim->frameCount = ONE_16;
 		anim->prevTick = 0;
 		actor_setupBossAnimation(obj, 5, anim);

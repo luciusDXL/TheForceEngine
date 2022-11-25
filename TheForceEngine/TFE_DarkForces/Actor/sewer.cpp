@@ -30,7 +30,7 @@ namespace TFE_DarkForces
 		RSector* sector = obj->sector;
 		LogicAnimation* anim = &attackMod->anim;
 
-		if (!(anim->flags & 2))
+		if (!(anim->flags & AFLAG_READY))
 		{
 			if (obj->type == OBJ_TYPE_SPRITE)
 			{

@@ -951,8 +951,8 @@ namespace TFE_DarkForces
 		anim->frameRate = 5;
 		anim->frameCount = ONE_16;
 		anim->prevTick = 0;
-		anim->flags |= 2;
-		anim->flags &= 0xfffffffe;
+		anim->flags |= AFLAG_READY;
+		anim->flags &= (~AFLAG_PLAYED);
 
 		actor_setupBossAnimation(obj, 5, anim);
 		obj_addLogic(obj, (Logic*)trooper, LOGIC_PHASE_ONE, task, phaseOneCleanupFunc);

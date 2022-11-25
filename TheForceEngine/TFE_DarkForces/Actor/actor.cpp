@@ -1779,7 +1779,7 @@ namespace TFE_DarkForces
 
 	void actor_setupBossAnimation(SecObject* obj, s32 animId, LogicAnimation* anim)
 	{
-		anim->flags |= 2;
+		anim->flags |= AFLAG_READY;
 		if (obj->type == OBJ_TYPE_SPRITE)
 		{
 			// In DOS there is no check but for some reason it doesn't crash with an animId that is too large.
@@ -1800,7 +1800,7 @@ namespace TFE_DarkForces
 				{
 					anim->frameRate = 12;
 				}
-				anim->flags &= ~2;
+				anim->flags &= ~AFLAG_READY;
 			}
 		}
 	}
@@ -2122,7 +2122,7 @@ namespace TFE_DarkForces
 				LogicAnimation* anim = &phyObj->anim;
 				if (obj->type & OBJ_TYPE_SPRITE)
 				{
-					if (!(anim->flags & 2))
+					if (!(anim->flags & AFLAG_READY))
 					{
 						obj->anim = anim->animId;
 						if (actor_advanceAnimation(anim, obj))
