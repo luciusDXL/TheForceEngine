@@ -91,6 +91,8 @@ namespace TFE_Jedi
 		
 	void level_serialize(Stream* stream)
 	{
+		bool debug = serialization_getMode() == SMODE_WRITE;
+
 		if (serialization_getMode() == SMODE_READ)
 		{
 			level_clearData();
@@ -215,7 +217,10 @@ namespace TFE_Jedi
 		{
 			serialization_serializeTexturePtr(stream, LevelState_InitVersion, texBase[i]);
 			// texBase[] remains unmodified for serialization, whereas textures[] can be modified with animated textures.
-			textures[i] = texBase[i];
+			if (read)
+			{
+				textures[i] = texBase[i];
+			}
 			if (read && s_levelState.textures[i] && s_levelState.textures[i]->uvWidth == BM_ANIMATED_TEXTURE)
 			{
 				bitmap_setupAnimatedTexture(&s_levelState.textures[i], i);

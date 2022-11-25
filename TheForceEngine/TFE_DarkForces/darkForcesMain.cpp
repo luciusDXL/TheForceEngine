@@ -1200,7 +1200,7 @@ namespace TFE_DarkForces
 			SERIALIZE(SaveVersionInit, s_runGameState.cutsceneIndex, 0);
 			SERIALIZE(SaveVersionInit, s_runGameState.abortLevel, 0);
 		}
-		else  // We need to start the game.
+		else if (serialization_getMode() == SMODE_READ)  // We need to start the game.
 		{
 			game->runGame(0, nullptr, stream);
 		}
