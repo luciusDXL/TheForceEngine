@@ -137,7 +137,7 @@ namespace TFE_DarkForces
 					obj->posWS.y = sector->floorHeight + sector->secHeight;
 
 					moveMod->collisionFlags |= 1;
-					attackMod->target.flags &= ~(1|2|4|8);
+					attackMod->target.flags &= ~TARGET_ALL;
 					attackMod->anim.state = 1;
 					return s_curTick + random(attackMod->timing.delay);
 				}
@@ -170,14 +170,14 @@ namespace TFE_DarkForces
 					attackMod->timing.delay = attackMod->timing.state2Delay;
 					attackMod->target.pos.x = obj->posWS.x;
 					attackMod->target.pos.z = obj->posWS.z;
-					attackMod->target.flags |= 1;
+					attackMod->target.flags |= TARGET_MOVE_XZ;
 
 					fixed16_16 dx = s_eyePos.x - obj->posWS.x;
 					fixed16_16 dz = s_eyePos.z - obj->posWS.z;
 					attackMod->target.yaw   = vec2ToAngle(dx, dz);
 					attackMod->target.pitch = obj->pitch;
 					attackMod->target.roll  = obj->roll;
-					attackMod->target.flags |= 4;
+					attackMod->target.flags |= TARGET_MOVE_ROT;
 				}
 				else
 				{
@@ -186,7 +186,7 @@ namespace TFE_DarkForces
 				}
 
 				attackMod->timing.nextTick = s_curTick + attackMod->timing.state1Delay;
-				attackMod->target.flags |= 8;
+				attackMod->target.flags |= TARGET_FREEZE;
 				obj->worldWidth = FIXED(3);
 				obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
 				if (obj->type == OBJ_TYPE_SPRITE)
@@ -289,7 +289,7 @@ namespace TFE_DarkForces
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		sound_stop(logic->alertSndID);
 		sound_playCued(module->dieSndSrc, obj->posWS);
-		attackMod->target.flags |= 8;
+		attackMod->target.flags |= TARGET_FREEZE;
 
 		if ((obj->anim == 1 || obj->anim == 6) && obj->type == OBJ_TYPE_SPRITE)
 		{

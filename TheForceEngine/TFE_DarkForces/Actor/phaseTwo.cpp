@@ -127,7 +127,7 @@ namespace TFE_DarkForces
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					local(anim)->flags |= 1;
-					actor_setupAnimation2(local(obj), 12, local(anim));
+					actor_setupBossAnimation(local(obj), 12, local(anim));
 
 					// Wait for animation to finish.
 					do
@@ -136,7 +136,7 @@ namespace TFE_DarkForces
 					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
-					actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
+					actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
 					local(target)->flags &= 0xfffffff7;
 				}
 				msg = MSG_DAMAGE;
@@ -207,7 +207,7 @@ namespace TFE_DarkForces
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					local(anim)->flags |= 1;
-					actor_setupAnimation2(local(obj), 12, local(anim));
+					actor_setupBossAnimation(local(obj), 12, local(anim));
 
 					// Wait for animation to finish.
 					do
@@ -216,7 +216,7 @@ namespace TFE_DarkForces
 					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
-					actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
+					actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
 					local(target)->flags &= 0xfffffff7;
 				}
 				msg = MSG_EXPLOSION;
@@ -290,7 +290,7 @@ namespace TFE_DarkForces
 		{
 			local(trooper)->rocketSndId = sound_playCued(s_shared.phase2RocketSndID, local(obj)->posWS);
 			local(anim)->flags |= 1;
-			actor_setupAnimation2(local(obj), 13, local(anim));
+			actor_setupBossAnimation(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 0, 2);
 
 			// Wait for the animation to finish.
@@ -301,7 +301,7 @@ namespace TFE_DarkForces
 				task_callTaskFunc(phaseTwo_handleMsg);
 			} while (!(local(anim)->flags & 2) || msg != MSG_RUN_TASK);
 
-			actor_setupAnimation2(local(obj), 13, local(anim));
+			actor_setupBossAnimation(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 3, 3);
 
 			local(target)->speed = FIXED(60);
@@ -315,7 +315,7 @@ namespace TFE_DarkForces
 			local(target)->speed = FIXED(15);
 			local(flying) = JFALSE;
 			local(anim)->flags &= 0xfffffffe;
-			actor_setupAnimation2(local(obj), 0, local(anim));
+			actor_setupBossAnimation(local(obj), 0, local(anim));
 		}
 
 		while (local(physicsActor)->state == P2STATE_CHARGE)
@@ -337,7 +337,7 @@ namespace TFE_DarkForces
 						if (local(flying))
 						{
 							local(anim)->flags |= 1;
-							actor_setupAnimation2(local(obj), 13, local(anim));
+							actor_setupBossAnimation(local(obj), 13, local(anim));
 							actor_setAnimFrameRange(local(anim), 4, 4);
 							do
 							{
@@ -422,7 +422,7 @@ namespace TFE_DarkForces
 		local(anim)   = &local(physicsActor)->anim;
 		local(odd)    = (s_curTick & 1) ? JFALSE : JTRUE;
 		local(anim)->flags &= 0xfffffffe;
-		actor_setupAnimation2(local(obj), 0, local(anim));
+		actor_setupBossAnimation(local(obj), 0, local(anim));
 
 		task_localBlockBegin;
 			fixed16_16 dx = local(obj)->posWS.x - s_playerObject->posWS.x;
@@ -541,7 +541,7 @@ namespace TFE_DarkForces
 			if (local(physicsActor)->state != P2STATE_FIRE_MISSILES) { break; }
 
 			local(anim)->flags |= 1;
-			actor_setupAnimation2(local(obj), 1, local(anim));
+			actor_setupBossAnimation(local(obj), 1, local(anim));
 
 			// Wait for the animation to finish.
 			do
@@ -569,7 +569,7 @@ namespace TFE_DarkForces
 				proj_aimAtTarget(proj, target);
 
 				local(anim)->flags |= 1;
-				actor_setupAnimation2(local(obj), 6, local(anim));
+				actor_setupBossAnimation(local(obj), 6, local(anim));
 			task_localBlockEnd;
 
 			// Wait for the animation to finish.
@@ -610,7 +610,7 @@ namespace TFE_DarkForces
 		local(physicsActor)->moveMod.collisionFlags |= 3;
 
 		local(anim)->flags |= 1;
-		actor_setupAnimation2(local(obj), 1, local(anim));
+		actor_setupBossAnimation(local(obj), 1, local(anim));
 
 		// Wait for the animation to finish.
 		do
@@ -651,7 +651,7 @@ namespace TFE_DarkForces
 		}
 
 		local(anim)->flags |= 1;
-		actor_setupAnimation2(local(obj), 6, local(anim));
+		actor_setupBossAnimation(local(obj), 6, local(anim));
 
 		// Wait for the animation to finish.
 		do
@@ -688,7 +688,7 @@ namespace TFE_DarkForces
 		sound_playCued(s_shared.phase2cSndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
-		actor_setupAnimation2(local(obj), 2, local(anim));
+		actor_setupBossAnimation(local(obj), 2, local(anim));
 		local(physicsActor)->moveMod.collisionFlags |= 3;
 
 		// Wait for the animation to finish.
@@ -805,7 +805,7 @@ namespace TFE_DarkForces
 
 		local(anim)->flags &= 0xfffffffe;
 		local(forceContinue) = JFALSE;
-		actor_setupAnimation2(local(obj), 13, local(anim));
+		actor_setupBossAnimation(local(obj), 13, local(anim));
 
 		local(target)->flags &= 0xfffffff7;
 		local(target)->speed = FIXED(30);
@@ -1104,7 +1104,7 @@ namespace TFE_DarkForces
 		anim->flags |= 2;
 		anim->flags &= 0xfffffffe;
 
-		actor_setupAnimation2(obj, 5, anim);
+		actor_setupBossAnimation(obj, 5, anim);
 		obj_addLogic(obj, (Logic*)trooper, LOGIC_PHASE_TWO, task, phaseTwoCleanupFunc);
 
 		if (setupFunc)

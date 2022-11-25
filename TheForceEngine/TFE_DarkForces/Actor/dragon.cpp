@@ -123,7 +123,7 @@ namespace TFE_DarkForces
 						memcpy(&local(tmpAnim), local(anim), sizeof(LogicAnimation) - 4);
 
 						local(anim)->flags |= 1;
-						actor_setupAnimation2(local(obj), 12, local(anim));
+						actor_setupBossAnimation(local(obj), 12, local(anim));
 						local(anim)->frameRate = 8;
 					task_localBlockEnd;
 
@@ -134,7 +134,7 @@ namespace TFE_DarkForces
 
 					task_localBlockBegin;
 						memcpy(local(anim), &local(tmpAnim), sizeof(LogicAnimation) - 4);
-						actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
+						actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
 
 						ActorTarget* target = &local(physicsActor)->moveMod.target;
 						target->flags &= 0xfffffff7;
@@ -210,7 +210,7 @@ namespace TFE_DarkForces
 
 					// Set the animation to 12.
 					local(anim)->flags |= 1;
-					actor_setupAnimation2(local(obj), 12, local(anim));
+					actor_setupBossAnimation(local(obj), 12, local(anim));
 					local(anim)->frameRate = 8;
 
 					do
@@ -220,7 +220,7 @@ namespace TFE_DarkForces
 
 					// Restore the animation.
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
-					actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
+					actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
 					local(target)->flags &= 0xfffffff7;
 				}
 				msg = MSG_EXPLOSION;
@@ -337,7 +337,7 @@ namespace TFE_DarkForces
 		local(yawAligned) = JFALSE;
 
 		local(anim)->flags &= 0xfffffffe;
-		actor_setupAnimation2(local(obj), 0, local(anim));
+		actor_setupBossAnimation(local(obj), 0, local(anim));
 
 		task_localBlockBegin;
 			s32 baseAnimIndex = (random(100) <= 60) ? 3 : 0;
@@ -465,7 +465,7 @@ namespace TFE_DarkForces
 		local(anim)->flags &= 0xfffffffe;
 
 		task_localBlockBegin;
-			actor_setupAnimation2(local(obj), 0, local(anim));
+			actor_setupBossAnimation(local(obj), 0, local(anim));
 			s32 baseAnimIndex = (random(100) <= 60) ? 3 : 0;
 			if (kellDragon_setAnimIndex(local(dragon), baseAnimIndex))
 			{
@@ -560,7 +560,7 @@ namespace TFE_DarkForces
 			if (local(physicsActor)->state != 3) { break; }
 
 			local(anim)->flags |= 1;
-			actor_setupAnimation2(local(obj), 9, local(anim));
+			actor_setupBossAnimation(local(obj), 9, local(anim));
 			local(anim)->frameRate = 8;
 			sound_playCued(s_shared.kellSound1, local(obj)->posWS);
 
@@ -614,7 +614,7 @@ namespace TFE_DarkForces
 			local(target)->flags |= 8;
 			local(physicsActor)->vel.x = 0;
 			local(physicsActor)->vel.z = 0;
-			actor_setupAnimation2(local(obj), 11, local(anim));
+			actor_setupBossAnimation(local(obj), 11, local(anim));
 			local(anim)->frameRate = 8;
 			sound_playCued(s_shared.kellSound4, local(obj)->posWS);
 
@@ -689,7 +689,7 @@ namespace TFE_DarkForces
 			}
 
 			local(anim)->flags |= 1;
-			actor_setupAnimation2(local(obj), 1, local(anim));
+			actor_setupBossAnimation(local(obj), 1, local(anim));
 			local(anim)->frameRate = 8;
 
 			// Wait for the animation to finish playing.
@@ -752,7 +752,7 @@ namespace TFE_DarkForces
 		sound_playCued(s_shared.kellSound3, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
-		actor_setupAnimation2(local(obj), 2, local(anim));
+		actor_setupBossAnimation(local(obj), 2, local(anim));
 		local(anim)->frameRate = 8;
 
 		// Wait for the death animation to finish.
@@ -820,7 +820,7 @@ namespace TFE_DarkForces
 		local(speedRotation) = local(target)->speedRotation;
 
 		local(anim)->flags &= 0xfffffffe;
-		actor_setupAnimation2(local(obj), 0, local(anim));
+		actor_setupBossAnimation(local(obj), 0, local(anim));
 		local(target)->flags &= 0xfffffff7;
 		local(target)->speedRotation = 0x3000;
 
@@ -1116,7 +1116,7 @@ namespace TFE_DarkForces
 		anim->flags = (anim->flags | 2) & 0xfffffffe;
 		anim->frameCount = ONE_16;
 		anim->prevTick = 0;
-		actor_setupAnimation2(obj, 5, anim);
+		actor_setupBossAnimation(obj, 5, anim);
 
 		obj_addLogic(obj, &dragon->logic, LOGIC_DRAGON, task, kellDragonCleanupFunc);
 		if (setupFunc)

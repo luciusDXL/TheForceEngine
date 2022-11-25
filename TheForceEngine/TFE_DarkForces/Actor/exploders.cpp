@@ -139,7 +139,7 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		moveMod->collisionFlags |= 1;
 		moveMod->physics.width = obj->worldWidth;
-		moveMod->target.flags = (moveMod->target.flags | 8) & 0xfffffff8;
+		moveMod->target.flags = (moveMod->target.flags | TARGET_FREEZE) & (~TARGET_ALL_MOVE);
 		moveMod->target.speed = 0;
 		moveMod->target.speedRotation = 0;
 
@@ -176,7 +176,7 @@ namespace TFE_DarkForces
 		target->speed = 0;
 		target->speedRotation = 0;
 
-		moveMod->target.flags = 8;
+		moveMod->target.flags = TARGET_FREEZE;
 		moveMod->target.speed = 0;
 		moveMod->target.speedRotation = 0;
 

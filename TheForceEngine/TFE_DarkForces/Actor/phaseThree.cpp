@@ -53,7 +53,7 @@ namespace TFE_DarkForces
 	{
 		SoundSourceId phase3aSndID = NULL_SOUND;
 		SoundSourceId phase3bSndID = NULL_SOUND;
-		SoundSourceId phase3cSndID = NULL_SOUND;
+		SoundSourceId phase3DieSndID = NULL_SOUND;
 		SoundSourceId phase3RocketSndID = NULL_SOUND;
 		s32 trooperNum = 0;
 	};
@@ -72,8 +72,8 @@ namespace TFE_DarkForces
 		s_shared.phase3aSndID = sound_load("phase3a.voc", SOUND_PRIORITY_MED5);
 		s_shared.phase3bSndID = sound_load("phase3b.voc", SOUND_PRIORITY_LOW0);
 		s_shared.phase3RocketSndID = sound_load("rocket-1.voc", SOUND_PRIORITY_HIGH0);
-		s_shared.phase3cSndID = sound_load("phase3c.voc", SOUND_PRIORITY_HIGH5);
-		sound_setBaseVolume(s_shared.phase3cSndID, 120);
+		s_shared.phase3DieSndID = sound_load("phase3c.voc", SOUND_PRIORITY_HIGH5);
+		sound_setBaseVolume(s_shared.phase3DieSndID, 120);
 	}
 
 	JBool phaseThree_updatePlayerPos(PhaseThree* trooper)
@@ -128,13 +128,13 @@ namespace TFE_DarkForces
 
 				if (random(100) <= 10)
 				{
-					local(target)->flags |= 8;
+					local(target)->flags |= TARGET_FREEZE;
 
 					// Save Animation
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					local(anim)->flags |= 1;
-					actor_setupAnimation2(local(obj), 10, local(anim));
+					actor_setupBossAnimation(local(obj), 10, local(anim));
 
 					// Wait for animation to finish.
 					do
@@ -143,8 +143,8 @@ namespace TFE_DarkForces
 					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
-					actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
-					local(target)->flags &= 0xfffffff7;
+					actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
+					local(target)->flags &= ~TARGET_FREEZE;
 				}
 				msg = MSG_DAMAGE;
 				task_setMessage(msg);
@@ -208,13 +208,13 @@ namespace TFE_DarkForces
 
 				if (random(100) <= 10)
 				{
-					local(target)->flags |= 8;
+					local(target)->flags |= TARGET_FREEZE;
 
 					// Save Animation
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
 
 					local(anim)->flags |= 1;
-					actor_setupAnimation2(local(obj), 10, local(anim));
+					actor_setupBossAnimation(local(obj), 10, local(anim));
 
 					// Wait for animation to finish.
 					do
@@ -223,8 +223,8 @@ namespace TFE_DarkForces
 					} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
-					actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
-					local(target)->flags &= 0xfffffff7;
+					actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
+					local(target)->flags &= ~TARGET_FREEZE;
 				}
 				msg = MSG_EXPLOSION;
 				task_setMessage(msg);
@@ -291,13 +291,13 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 		local(prevColTick) = 0;
-		local(target)->flags &= 0xfffffff7;
+		local(target)->flags &= ~TARGET_FREEZE;
 
 		if (random(100) <= 40)
 		{
 			local(trooper)->rocketSndId = sound_playCued(s_shared.phase3RocketSndID, local(obj)->posWS);
 			local(anim)->flags |= 1;
-			actor_setupAnimation2(local(obj), 13, local(anim));
+			actor_setupBossAnimation(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 0, 1);
 
 			// Wait for the animation to finish.
@@ -308,12 +308,12 @@ namespace TFE_DarkForces
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (!(local(anim)->flags & 2) || msg != MSG_RUN_TASK);
 
-			actor_setupAnimation2(local(obj), 13, local(anim));
+			actor_setupBossAnimation(local(obj), 13, local(anim));
 			actor_setAnimFrameRange(local(anim), 2, 2);
 
 			local(target)->speed = FIXED(70);
 			local(flying) = JTRUE;
-			local(physicsActor)->moveMod.collisionFlags &= 0xfffffffc;
+			local(physicsActor)->moveMod.collisionFlags &= (~3);
 			local(physicsActor)->moveMod.physics.yPos = FIXED(9999);
 		}
 		else
@@ -321,8 +321,8 @@ namespace TFE_DarkForces
 			local(physicsActor)->moveMod.collisionFlags |= 3;
 			local(target)->speed = FIXED(25);
 			local(flying) = JFALSE;
-			local(anim)->flags &= 0xfffffffe;
-			actor_setupAnimation2(local(obj), 0, local(anim));
+			local(anim)->flags &= (~1);
+			actor_setupBossAnimation(local(obj), 0, local(anim));
 		}
 
 		while (local(physicsActor)->state == P3STATE_CHARGE)
@@ -333,6 +333,7 @@ namespace TFE_DarkForces
 				s_curTrooper = local(trooper);
 				task_callTaskFunc(phaseThree_handleMsg);
 			} while (msg != MSG_RUN_TASK);
+			if (local(physicsActor)->state != P3STATE_CHARGE) { break; }
 			
 			if (random(100) <= 10)
 			{
@@ -344,7 +345,7 @@ namespace TFE_DarkForces
 						if (local(flying))
 						{
 							local(anim)->flags |= 1;
-							actor_setupAnimation2(local(obj), 13, local(anim));
+							actor_setupBossAnimation(local(obj), 13, local(anim));
 							actor_setAnimFrameRange(local(anim), 3, 3);
 							do
 							{
@@ -356,7 +357,7 @@ namespace TFE_DarkForces
 							local(physicsActor)->moveMod.collisionFlags |= 3;
 							local(physicsActor)->moveMod.physics.yPos = FIXED(9999);
 							local(target)->speed = FIXED(25);
-							local(target)->flags &= 0xfffffffd;
+							local(target)->flags &= ~TARGET_MOVE_Y;
 							sound_stop(local(trooper)->rocketSndId);
 						}
 					}
@@ -369,7 +370,7 @@ namespace TFE_DarkForces
 			}
 			if (local(physicsActor)->state != P3STATE_CHARGE) { break; }
 
-			local(target)->flags &= 0xfffffff7;
+			local(target)->flags &= ~TARGET_FREEZE;
 			if (actor_handleSteps(&local(physicsActor)->moveMod, local(target)))
 			{
 				// Change direction if the Trooper hits a wall or impassable ledge or drop.
@@ -389,18 +390,18 @@ namespace TFE_DarkForces
 				}
 
 				local(target)->speedRotation = 0x3000;
-				local(target)->flags |= 4;
+				local(target)->flags |= TARGET_MOVE_ROT;
 
 				fixed16_16 sinYaw, cosYaw;
 				sinCosFixed(local(obj)->yaw, &sinYaw, &cosYaw);
 				local(target)->pos.x = local(obj)->posWS.x + mul16(sinYaw, FIXED(25));
 				local(target)->pos.z = local(obj)->posWS.z + mul16(cosYaw, FIXED(25));
-				local(target)->flags |= 1;
+				local(target)->flags |= TARGET_MOVE_XZ;
 
 				if (local(flying))
 				{
 					local(target)->pos.y = s_playerObject->posWS.y - FIXED(2);
-					local(target)->flags |= 2;
+					local(target)->flags |= TARGET_MOVE_Y;
 				}
 			}
 		}
@@ -428,8 +429,8 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim)   = &local(physicsActor)->anim;
 		local(odd)    = (s_curTick & 1) ? JFALSE : JTRUE;
-		local(anim)->flags &= 0xfffffffe;
-		actor_setupAnimation2(local(obj), 0, local(anim));
+		local(anim)->flags &= (~1);
+		actor_setupBossAnimation(local(obj), 0, local(anim));
 
 		task_localBlockBegin;
 			fixed16_16 dx = local(obj)->posWS.x - s_playerObject->posWS.x;
@@ -440,15 +441,15 @@ namespace TFE_DarkForces
 			fixed16_16 sinYaw, cosYaw;
 			sinCosFixed(moveAngle, &sinYaw, &cosYaw);
 
-			local(target)->flags &= 0xfffffff7;
+			local(target)->flags &= ~TARGET_FREEZE;
 			local(target)->pos.x = s_playerObject->posWS.x + mul16(FIXED(100), sinYaw);
 			local(target)->pos.z = s_playerObject->posWS.z + mul16(FIXED(100), cosYaw);
-			local(target)->flags |= 1;
+			local(target)->flags |= TARGET_MOVE_XZ;
 
 			angle14_32 targetAngle = local(odd) ? angle - 4323 : angle + 4323;
 			local(target)->yaw = targetAngle;
 			local(target)->speedRotation = 0;
-			local(target)->flags |= 4;
+			local(target)->flags |= TARGET_MOVE_ROT;
 		task_localBlockEnd;
 
 		while (local(physicsActor)->state == P3STATE_WANDER)
@@ -500,15 +501,14 @@ namespace TFE_DarkForces
 					fixed16_16 sinYaw, cosYaw;
 					sinCosFixed(angleMove, &sinYaw, &cosYaw);
 
-					local(target)->flags &= 0xfffffff7;
+					local(target)->flags &= ~TARGET_FREEZE;
 					local(target)->pos.x = s_playerObject->posWS.x + mul16(FIXED(100), sinYaw);
 					local(target)->pos.z = s_playerObject->posWS.z + mul16(FIXED(100), cosYaw);
-					local(target)->flags |= 1;
+					local(target)->flags |= TARGET_MOVE_XZ;
 
-					angle14_32 angleTarget = local(odd) ? (angle - 4096) : (angle + 4096);
-					local(target)->yaw = angleTarget;
-					// local(target)->speedRotation = 0;
-					local(target)->flags |= 4;
+					local(target)->yaw = local(odd) ? (angle - 4096) : (angle + 4096);
+					local(target)->speedRotation = 0;	// was commented out?
+					local(target)->flags |= TARGET_MOVE_ROT;
 				}
 			}
 		}
@@ -535,7 +535,7 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
-		local(target)->flags &= 0xfffffffe;
+		local(target)->flags &= ~TARGET_MOVE_XZ;
 		local(physicsActor)->moveMod.collisionFlags |= 3;
 		while (local(physicsActor)->state == P3STATE_FIRE_MISSILES)
 		{
@@ -548,7 +548,7 @@ namespace TFE_DarkForces
 			if (local(physicsActor)->state != P3STATE_FIRE_MISSILES) { break; }
 
 			local(anim)->flags |= 1;
-			actor_setupAnimation2(local(obj), 11, local(anim));
+			actor_setupBossAnimation(local(obj), 11, local(anim));
 
 			// Wait for the animation to finish.
 			do
@@ -569,6 +569,7 @@ namespace TFE_DarkForces
 					ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_HOMING_MISSILE, local(obj)->sector, local(obj)->posWS.x, local(obj)->posWS.y - FIXED(11), local(obj)->posWS.z, local(obj));
 					proj->prevColObj = local(obj);
 					proj->excludeObj = local(obj);
+					proj->prevObj = local(obj);
 
 					SecObject* projObj = proj->logic.obj;
 					projObj->yaw = local(target)->yaw + c_phaseThreeMissileOffsets[i];
@@ -576,7 +577,7 @@ namespace TFE_DarkForces
 				}
 
 				local(anim)->flags |= 1;
-				actor_setupAnimation2(local(obj), 12, local(anim));
+				actor_setupBossAnimation(local(obj), 12, local(anim));
 			task_localBlockEnd;
 
 			// Wait for the animation to finish.
@@ -613,11 +614,11 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
-		local(target)->flags &= 0xfffffffe;
+		local(target)->flags &= ~TARGET_MOVE_XZ;
 		local(physicsActor)->moveMod.collisionFlags |= 3;
 
 		local(anim)->flags |= 1;
-		actor_setupAnimation2(local(obj), 1, local(anim));
+		actor_setupBossAnimation(local(obj), 1, local(anim));
 
 		// Wait for the animation to finish.
 		do
@@ -629,7 +630,7 @@ namespace TFE_DarkForces
 
 		local(shotCount) = random(20) + 1;
 		local(obj)->flags |= OBJ_FLAG_FULLBRIGHT;
-		local(target)->flags |= 8;
+		local(target)->flags |= TARGET_FREEZE;
 
 		while (local(physicsActor)->state == P3STATE_FIRE_PLASMA)
 		{
@@ -658,7 +659,7 @@ namespace TFE_DarkForces
 		}
 
 		local(anim)->flags |= 1;
-		actor_setupAnimation2(local(obj), 6, local(anim));
+		actor_setupBossAnimation(local(obj), 6, local(anim));
 
 		// Wait for the animation to finish.
 		do
@@ -690,13 +691,13 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
-		local(target)->flags |= 8;
+		local(target)->flags |= TARGET_FREEZE;
 		sound_stop(local(trooper)->rocketSndId);
-		sound_playCued(s_shared.phase3cSndID, local(obj)->posWS);
+		sound_playCued(s_shared.phase3DieSndID, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
-		actor_setupAnimation2(local(obj), 2, local(anim));
-		local(physicsActor)->moveMod.collisionFlags |= 3;
+		actor_setupBossAnimation(local(obj), 2, local(anim));
+		local(physicsActor)->moveMod.collisionFlags |= 3;	// ground, gravity
 
 		// Wait for the animation to finish.
 		do
@@ -761,13 +762,13 @@ namespace TFE_DarkForces
 		local(nextTick) = s_curTick + 4369;
 		local(delay) = 72;
 
-		local(anim)->flags &= 0xfffffffe;
+		local(anim)->flags &= (~1);
 		local(forceContinue) = JFALSE;
-		actor_setupAnimation2(local(obj), 13, local(anim));
+		actor_setupBossAnimation(local(obj), 13, local(anim));
 
-		local(target)->flags &= 0xfffffff7;
+		local(target)->flags &= ~TARGET_FREEZE;
 		local(target)->speed = FIXED(30);
-		local(physicsActor)->moveMod.collisionFlags &= 0xfffffffc;
+		local(physicsActor)->moveMod.collisionFlags &= (~3);
 
 		while (local(physicsActor)->state == P3STATE_SEARCH || local(forceContinue))
 		{
@@ -811,6 +812,7 @@ namespace TFE_DarkForces
 					targetX = s_eyePos.x;
 					targetZ = s_eyePos.z;
 				}
+				// This is a copy-paste bug in the original code, it really should be the min of dx and dz.
 				fixed16_16 dx = TFE_Jedi::abs(s_playerObject->posWS.x - local(obj)->posWS.x);
 				fixed16_16 offset = dx >> 2;
 				angle14_32 angle = vec2ToAngle(local(obj)->posWS.x - targetX, local(obj)->posWS.z - targetZ);
@@ -818,12 +820,12 @@ namespace TFE_DarkForces
 				local(target)->pos.x = targetX;
 				local(target)->pos.z = targetZ;
 				actor_offsetTarget(&local(target)->pos.x, &local(target)->pos.z, offset, offset >> 1, angle, 0xfff);
-				local(target)->flags |= 1;
+				local(target)->flags |= TARGET_MOVE_XZ;
 
 				local(target)->yaw    = vec2ToAngle(local(target)->pos.x - local(obj)->posWS.x, local(target)->pos.z - local(obj)->posWS.z);
 				local(target)->pitch  = 0;
 				local(target)->roll   = 0;
-				local(target)->flags |= 4;
+				local(target)->flags |= TARGET_MOVE_ROT;
 
 				local(retargetTick) = s_curTick + local(delay);
 			}
@@ -920,7 +922,7 @@ namespace TFE_DarkForces
 						}
 					} while (msg != MSG_RUN_TASK);
 
-					if (local(physicsActor)->state == 0 && phaseThree_updatePlayerPos(local(trooper)))
+					if (local(physicsActor)->state == P3STATE_DEFAULT && phaseThree_updatePlayerPos(local(trooper)))
 					{
 						sound_playCued(s_shared.phase3aSndID, local(obj)->posWS);
 						local(physicsActor)->state = P3STATE_CHARGE;
@@ -1050,7 +1052,7 @@ namespace TFE_DarkForces
 		physicsActor->moveMod.physics.yPos = FIXED(9999);
 
 		ActorTarget* target = &physicsActor->moveMod.target;
-		target->flags &= 0xfffffff0;
+		target->flags &= ~TARGET_ALL;
 		target->speed = FIXED(25);
 		target->speedVert = FIXED(10);
 		target->speedRotation = 0x3000;
@@ -1062,7 +1064,7 @@ namespace TFE_DarkForces
 		anim->flags |= 2;
 		anim->flags &= 0xfffffffe;
 
-		actor_setupAnimation2(obj, 3, anim);
+		actor_setupBossAnimation(obj, 3, anim);
 		obj_addLogic(obj, (Logic*)trooper, LOGIC_PHASE_THREE, task, phaseThreeCleanupFunc);
 
 		if (setupFunc)

@@ -122,7 +122,7 @@ namespace TFE_DarkForces
 
 				local(anim)->flags |= 1;
 				local(anim)->frameRate = 6;
-				actor_setupAnimation2(local(obj), 12, local(anim));
+				actor_setupBossAnimation(local(obj), 12, local(anim));
 
 				// Wait for animation to finish.
 				do
@@ -131,7 +131,7 @@ namespace TFE_DarkForces
 				} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 				memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
-				actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
+				actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
 
 				msg = MSG_DAMAGE;
 				task_setMessage(msg);
@@ -180,7 +180,7 @@ namespace TFE_DarkForces
 
 				local(anim)->flags |= 1;
 				local(anim)->frameRate = 6;
-				actor_setupAnimation2(local(obj), 12, local(anim));
+				actor_setupBossAnimation(local(obj), 12, local(anim));
 
 				// Wait for animation to finish.
 				do
@@ -189,7 +189,7 @@ namespace TFE_DarkForces
 				} while (msg != MSG_RUN_TASK || !(local(anim)->flags & 2));
 
 				memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
-				actor_setupAnimation2(local(obj), local(anim)->animId, local(anim));
+				actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
 
 				msg = MSG_EXPLOSION;
 				task_setMessage(msg);
@@ -568,7 +568,7 @@ namespace TFE_DarkForces
 
 		local(anim)->flags |= 1;
 		local(anim)->frameRate = 8;
-		actor_setupAnimation2(local(obj), 2, local(anim));
+		actor_setupBossAnimation(local(obj), 2, local(anim));
 
 		// Wait for the animation to finish.
 		do
@@ -718,7 +718,7 @@ namespace TFE_DarkForces
 			{
 				sound_playCued(s_shared.boba1SndID, local(obj)->posWS);
 				local(physicsActor)->state = BOBASTATE_SEARCH;
-				actor_setupAnimation2(local(obj), 0, local(anim));
+				actor_setupBossAnimation(local(obj), 0, local(anim));
 			}
 		}  // while (state == BOBASTATE_DEFAULT)
 		task_end;
@@ -917,7 +917,7 @@ namespace TFE_DarkForces
 		anim->prevTick = 0;
 		anim->flags |= 2;
 		anim->flags &= 0xfffffffe;
-		actor_setupAnimation2(obj, 5, anim);
+		actor_setupBossAnimation(obj, 5, anim);
 
 		ActorTarget* target = &physicsActor->moveMod.target;
 		target->speedRotation = 6826;

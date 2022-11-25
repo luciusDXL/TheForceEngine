@@ -47,7 +47,7 @@ namespace TFE_DarkForces
 				// Target a random height above or below the player y position: playerPosY - [-1.5, 6.5]
 				fixed16_16 heightChange = random(FIXED(5)) - 0x18000;	// rand(5) - 1.5
 				flyingMod->target.pos.y = s_eyePos.y - heightChange;
-				flyingMod->target.flags |= 2;
+				flyingMod->target.flags |= TARGET_MOVE_Y;
 				flyingMod->anim.state = 1;
 			}
 			else

@@ -615,7 +615,7 @@ namespace TFE_DarkForces
 				projLogic->dmgFalloffDelta = ONE_16;
 
 				projLogic->projForce = ONE_16;
-				projLogic->speed = FIXED(58);
+				projLogic->speed = FIXED(58) / 2; // try slowing them down...; the value is correct according to the code, but they are slower in DOS.
 				projLogic->horzBounciness = 58982;	// 0.9
 				projLogic->vertBounciness = 58982;
 				projLogic->bounceCnt = 0;
@@ -907,7 +907,7 @@ namespace TFE_DarkForces
 		SecObject* targetObj  = s_playerObject;
 		fixed16_16 dt = s_deltaTime;
 
-		angle14_32 homingAngleSpd = projLogic->homingAngleSpd & 0xffff;
+		angle14_32 homingAngleSpd = projLogic->homingAngleSpd;
 		// Target near the head/upper chest.
 		fixed16_16 yTarget = targetObj->posWS.y - targetObj->worldHeight + ONE_16;
 		angle14_32 homingAngleDelta = mul16(homingAngleSpd, dt);

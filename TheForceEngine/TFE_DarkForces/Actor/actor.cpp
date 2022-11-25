@@ -282,7 +282,7 @@ namespace TFE_DarkForces
 		attackMod->fireOffset.x = 0;
 		attackMod->fireOffset.z = 0;
 
-		attackMod->target.flags &= 0xfffffff0;
+		attackMod->target.flags &= ~TARGET_ALL;
 		attackMod->anim.flags |= 3;
 		attackMod->timing.nextTick = s_curTick + 0x4446;	// ~120 seconds
 
@@ -337,15 +337,15 @@ namespace TFE_DarkForces
 
 	JBool actor_arrivedAtTarget(ActorTarget* target, SecObject* obj)
 	{
-		if ((target->flags & 1) && (target->pos.x != obj->posWS.x || target->pos.z != obj->posWS.z))
+		if ((target->flags & TARGET_MOVE_XZ) && (target->pos.x != obj->posWS.x || target->pos.z != obj->posWS.z))
 		{
 			return JFALSE;
 		}
-		if ((target->flags & 2) && (target->pos.y != obj->posWS.y))
+		if ((target->flags & TARGET_MOVE_Y) && (target->pos.y != obj->posWS.y))
 		{
 			return JFALSE;
 		}
-		if ((target->flags & 4) && (target->yaw != obj->yaw || target->pitch != obj->pitch || target->roll != obj->roll))
+		if ((target->flags & TARGET_MOVE_ROT) && (target->yaw != obj->yaw || target->pitch != obj->pitch || target->roll != obj->roll))
 		{
 			return JFALSE;
 		}
@@ -448,7 +448,7 @@ namespace TFE_DarkForces
 		target->pos.x = obj->posWS.x + (dirX << 7);
 		target->pos.z = obj->posWS.z + (dirZ << 7);
 
-		target->flags = (target->flags | 5) & 0xfffffffd;
+		target->flags = (target->flags | TARGET_MOVE_XZ | TARGET_MOVE_ROT) & (~TARGET_MOVE_Y);
 		target->yaw   = newAngle;
 		target->pitch = 0;
 		target->roll  = 0;
@@ -686,7 +686,7 @@ namespace TFE_DarkForces
 				damageMod->hp -= dmg;
 				if (damageMod->stopOnHit)
 				{
-					attackMod->target.flags |= 8;
+					attackMod->target.flags |= TARGET_FREEZE;
 				}
 
 				LogicAnimation* anim = &attackMod->anim;
@@ -744,7 +744,7 @@ namespace TFE_DarkForces
 				damageMod->hp -= dmg;
 				if (damageMod->stopOnHit)
 				{
-					attackMod->target.flags |= 8;
+					attackMod->target.flags |= TARGET_FREEZE;
 				}
 
 				vec3_fixed dir;
@@ -791,7 +791,7 @@ namespace TFE_DarkForces
 				damageMod->hp = 0;
 				if (damageMod->stopOnHit)
 				{
-					attackMod->target.flags |= 8;
+					attackMod->target.flags |= TARGET_FREEZE;
 				}
 
 				LogicAnimation* anim = &attackMod->anim;
@@ -868,7 +868,7 @@ namespace TFE_DarkForces
 							attackMod->state0NextTick = 0xffffffff;
 						}
 					}
-					attackMod->target.flags &= ~(1 | 2 | 3);
+					attackMod->target.flags &= ~TARGET_ALL_MOVE;
 					// Next AI update.
 					return s_curTick + random(attackMod->timing.delay);
 				}
@@ -959,7 +959,7 @@ namespace TFE_DarkForces
 						attackMod->target.yaw   = vec2ToAngle(s_eyePos.x - obj->posWS.x, s_eyePos.z - obj->posWS.z);
 						attackMod->target.pitch = obj->pitch;
 						attackMod->target.roll  = obj->roll;
-						attackMod->target.flags |= (1 | 4);
+						attackMod->target.flags |= (TARGET_MOVE_XZ | TARGET_MOVE_ROT);
 					}
 					else
 					{
@@ -1225,7 +1225,7 @@ namespace TFE_DarkForces
 
 			thinkerMod->target.pos.x = targetX;
 			thinkerMod->target.pos.z = targetZ;
-			thinkerMod->target.flags = (thinkerMod->target.flags | 1) & 0xfffffffd;
+			thinkerMod->target.flags = (thinkerMod->target.flags | TARGET_MOVE_XZ) & (~TARGET_MOVE_Y);
 			actor_offsetTarget(&thinkerMod->target.pos.x, &thinkerMod->target.pos.z, targetOffset, thinkerMod->targetVariation, angle, thinkerMod->approachVariation);
 
 			dx = thinkerMod->target.pos.x - obj->posWS.x;
@@ -1233,7 +1233,7 @@ namespace TFE_DarkForces
 			thinkerMod->target.pitch = 0;
 			thinkerMod->target.roll = 0;
 			thinkerMod->target.yaw = vec2ToAngle(dx, dz);
-			thinkerMod->target.flags |= 4;
+			thinkerMod->target.flags |= TARGET_MOVE_ROT;
 
 			if (!(logic->flags & 2))
 			{
@@ -1330,16 +1330,16 @@ namespace TFE_DarkForces
 		vec3_fixed move = { 0, 0, 0 };
 
 		moveMod->collisionWall = nullptr;
-		if (!(moveMod->target.flags & 8))
+		if (!(moveMod->target.flags & TARGET_FREEZE))
 		{
-			if (moveMod->target.flags & 1)
+			if (moveMod->target.flags & TARGET_MOVE_XZ)
 			{
 				desiredMove.x = moveMod->target.pos.x - obj->posWS.x;
 				desiredMove.z = moveMod->target.pos.z - obj->posWS.z;
 			}
 			if (!(moveMod->collisionFlags & 1))
 			{
-				if (moveMod->target.flags & 2)
+				if (moveMod->target.flags & TARGET_MOVE_Y)
 				{
 					desiredMove.y = moveMod->target.pos.y - obj->posWS.y;
 				}
@@ -1456,7 +1456,7 @@ namespace TFE_DarkForces
 	void actor_applyTransform(MovementModule* moveMod)
 	{
 		SecObject* obj = moveMod->header.obj;
-		if (moveMod->target.flags & 8)
+		if (moveMod->target.flags & TARGET_FREEZE)
 		{
 			return;
 		}
@@ -1498,16 +1498,16 @@ namespace TFE_DarkForces
 		moveMod->physics.wall = nullptr;
 		moveMod->physics.u24 = 0;
 
-		if (moveMod->target.flags & 4)
+		if (moveMod->target.flags & TARGET_MOVE_ROT)
 		{
 			actor_applyTransform(moveMod);
 		}
 
-		if ((moveMod->target.flags & 1) || (moveMod->target.flags & 2) || moveMod->delta.x || moveMod->delta.y || moveMod->delta.z)
+		if ((moveMod->target.flags & TARGET_MOVE_XZ) || (moveMod->target.flags & TARGET_MOVE_Y) || moveMod->delta.x || moveMod->delta.y || moveMod->delta.z)
 		{
 			actor_handleMovementAndCollision(moveMod);
 		}
-		moveMod->target.flags &= ~(1 | 2 | 4);
+		moveMod->target.flags &= ~TARGET_ALL_MOVE;
 		return JFALSE;
 	}
 
@@ -1520,27 +1520,27 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			moveMod->target.flags &= ~8;
-			if (target->flags & 1)
+			moveMod->target.flags &= ~TARGET_FREEZE;
+			if (target->flags & TARGET_MOVE_XZ)
 			{
 				moveMod->target.pos.x = target->pos.x;
 				moveMod->target.pos.z = target->pos.z;
 				moveMod->target.speed = target->speed;
-				moveMod->target.flags |= 1;
+				moveMod->target.flags |= TARGET_MOVE_XZ;
 			}
-			if (target->flags & 2)
+			if (target->flags & TARGET_MOVE_Y)
 			{
 				moveMod->target.pos.y = target->pos.y;
 				moveMod->target.speedVert = target->speedVert;
-				moveMod->target.flags |= 2;
+				moveMod->target.flags |= TARGET_MOVE_Y;
 			}
-			if (target->flags & 4)
+			if (target->flags & TARGET_MOVE_ROT)
 			{
 				moveMod->target.pitch = target->pitch;
 				moveMod->target.yaw   = target->yaw;
 				moveMod->target.roll  = target->roll;
 				moveMod->target.speedRotation = target->speedRotation;
-				moveMod->target.flags |= 4;
+				moveMod->target.flags |= TARGET_MOVE_ROT;
 			}
 		}
 		return JFALSE;
@@ -1558,7 +1558,7 @@ namespace TFE_DarkForces
 		moveMod->target.speed = ONE_16;
 		moveMod->target.speedVert = ONE_16;
 		moveMod->target.speedRotation = FIXED(45);
-		moveMod->target.flags &= 0xf0;
+		moveMod->target.flags &= ~TARGET_ALL;
 		moveMod->delta = { 0, 0, 0 };
 		moveMod->collisionWall = nullptr;
 		moveMod->unused = 0;
@@ -1777,7 +1777,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void actor_setupAnimation2(SecObject* obj, s32 animId, LogicAnimation* anim)
+	void actor_setupBossAnimation(SecObject* obj, s32 animId, LogicAnimation* anim)
 	{
 		anim->flags |= 2;
 		if (obj->type == OBJ_TYPE_SPRITE)
@@ -2102,13 +2102,13 @@ namespace TFE_DarkForces
 				PhysicsActor* phyObj = *phyObjPtr;
 				phyObj->moveMod.physics.wall = nullptr;
 				phyObj->moveMod.physics.u24 = 0;
-				if (phyObj->moveMod.target.flags & 4)
+				if (phyObj->moveMod.target.flags & TARGET_MOVE_ROT)
 				{
 					actor_applyTransform(&phyObj->moveMod);
 				}
 				actor_handlePhysics(&phyObj->moveMod, &phyObj->vel);
 
-				if ((phyObj->moveMod.target.flags & 1) || (phyObj->moveMod.target.flags & 2) || phyObj->vel.x || phyObj->vel.y || phyObj->vel.z)
+				if ((phyObj->moveMod.target.flags & TARGET_MOVE_XZ) || (phyObj->moveMod.target.flags & TARGET_MOVE_Y) || phyObj->vel.x || phyObj->vel.y || phyObj->vel.z)
 				{
 					actor_handleMovementAndCollision(&phyObj->moveMod);
 					CollisionInfo* physics = &phyObj->moveMod.physics;

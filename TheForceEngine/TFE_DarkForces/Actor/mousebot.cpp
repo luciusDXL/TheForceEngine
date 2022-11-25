@@ -167,7 +167,7 @@ namespace TFE_DarkForces
 				local(moveMod)->target.yaw = local(odd) ? (local(obj)->yaw + deltaYaw) : (local(obj)->yaw - deltaYaw);
 
 				local(moveMod)->target.speedRotation = random(0x3555) + 0x555;
-				local(moveMod)->target.flags |= 4;
+				local(moveMod)->target.flags |= TARGET_MOVE_ROT;
 				local(flip) = JFALSE;
 			}
 
@@ -197,7 +197,7 @@ namespace TFE_DarkForces
 			local(moveMod)->target.pos.z = local(obj)->posWS.z + mul16(cosYaw, speed);
 
 			local(moveMod)->target.speed = FIXED(22);
-			local(moveMod)->target.flags |= 1;
+			local(moveMod)->target.flags |= TARGET_MOVE_XZ;
 		}
 		task_end;
 	}
@@ -217,7 +217,7 @@ namespace TFE_DarkForces
 		local(moveMod)  = &local(mouseBot)->actor.moveMod;
 		local(sector)   = local(obj)->sector;
 
-		local(moveMod)->target.flags |= 8;
+		local(moveMod)->target.flags |= TARGET_FREEZE;
 		sound_playCued(s_mouseBotRes.sound2, local(obj)->posWS);
 
 		while (1)
@@ -468,7 +468,7 @@ namespace TFE_DarkForces
 		physActor->moveMod.physics.height = obj->worldHeight + HALF_16;
 		physActor->moveMod.target.speed = FIXED(22);
 		physActor->moveMod.target.speedRotation = FIXED(3185);
-		physActor->moveMod.target.flags &= 0xfffffff0;
+		physActor->moveMod.target.flags &= ~TARGET_ALL;
 		physActor->moveMod.target.pitch = obj->pitch;
 		physActor->moveMod.target.yaw   = obj->yaw;
 		physActor->moveMod.target.roll  = obj->roll;

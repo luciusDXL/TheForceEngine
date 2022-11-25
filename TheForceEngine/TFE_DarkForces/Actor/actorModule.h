@@ -68,6 +68,16 @@ enum ActorModuleType : u32
 	ACTMOD_INVALID = ACTMOD_COUNT
 };
 
+enum TargetFlags
+{
+	TARGET_MOVE_XZ  = FLAG_BIT(0),
+	TARGET_MOVE_Y   = FLAG_BIT(1),
+	TARGET_MOVE_ROT = FLAG_BIT(2),
+	TARGET_FREEZE   = FLAG_BIT(3),
+	TARGET_ALL_MOVE = TARGET_MOVE_XZ | TARGET_MOVE_Y | TARGET_MOVE_ROT,
+	TARGET_ALL      = TARGET_ALL_MOVE | TARGET_FREEZE
+};
+
 struct ActorModule
 {
 	ActorModuleType type;

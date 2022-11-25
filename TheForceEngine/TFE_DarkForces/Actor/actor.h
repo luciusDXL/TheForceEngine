@@ -163,7 +163,7 @@ namespace TFE_DarkForces
 
 	s32 actor_getAnimationIndex(s32 action);
 	void actor_setupAnimation(s32 animIdx, LogicAnimation* aiAnim);
-	void actor_setupAnimation2(SecObject* obj, s32 animId, LogicAnimation* anim);
+	void actor_setupBossAnimation(SecObject* obj, s32 animId, LogicAnimation* anim);
 	void actor_setAnimFrameRange(LogicAnimation* anim, s32 startFrame, s32 endFrame);
 	void actor_addVelocity(fixed16_16 pushX, fixed16_16 pushY, fixed16_16 pushZ);
 	void actor_removeLogics(SecObject* obj);
