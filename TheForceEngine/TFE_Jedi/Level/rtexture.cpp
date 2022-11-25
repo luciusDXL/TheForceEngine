@@ -248,6 +248,7 @@ namespace TFE_Jedi
 		texture->flags = readByte(data);
 		texture->logSizeY = readByte(data);
 		texture->compressed = readByte(data);
+		texture->animSetup = 0;
 		// value is ignored.
 		data++;
 		
@@ -358,6 +359,7 @@ namespace TFE_Jedi
 		texture->flags = readByte(data);
 		texture->logSizeY = readByte(data);
 		texture->compressed = readByte(data);
+		texture->animSetup = 0;
 		// value is ignored.
 		data++;
 
@@ -492,6 +494,7 @@ namespace TFE_Jedi
 			outFrames[i].animIndex = index;
 			outFrames[i].frameIdx = i;
 			outFrames[i].animPtr = anim;
+			outFrames[i].animSetup = 1;
 
 			anim->frameList[i] = &outFrames[i];
 		}
@@ -500,6 +503,18 @@ namespace TFE_Jedi
 
 	bool bitmap_setupAnimatedTexture(TextureData** texture, s32 index)
 	{
+		if ((*texture)->animSetup)
+		{
+			// If it is already animated, then setup.
+			AnimatedTexture* anim = (AnimatedTexture*)(*texture)->animPtr;
+			if (anim && anim->count)
+			{
+				*texture = anim->frameList[0];
+			}
+			return true;
+		}
+		(*texture)->animSetup = 1;
+
 		u8 frameRate;
 		AnimatedTexture* anim = bitmap_createAnimatedTexture(texture, index, frameRate);
 		if (!anim) { return false; }

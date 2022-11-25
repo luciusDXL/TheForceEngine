@@ -43,7 +43,7 @@ struct TextureData
 
 	u8 logSizeY;	// logSizeY = log2(SizeY)
 					// logSizeY = 0 for weapons
-	u8 pad1;
+	u8 animSetup;	// Added for TFE, a flag indicating that the animated texture has already been setup.
 	u16 textureId;	// Added for TFE, replaces u8 pad1[3];
 
 	u8* image;		// Image data.
