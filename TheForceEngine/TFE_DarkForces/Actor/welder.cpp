@@ -274,13 +274,13 @@ namespace TFE_DarkForces
 
 					if (local(target)->yaw != local(obj)->yaw || local(target)->pitch != local(obj)->pitch)
 					{
-						local(target)->flags |= 4;
+						local(target)->flags |= TARGET_MOVE_ROT;
 						local(attack) = JTRUE;
 						local(welder)->sound2Id = sound_playCued(s_shared.weld2SoundSrcId, local(obj)->posWS);
 					}
 					else
 					{
-						local(target)->flags &= 0xfffffffb;
+						local(target)->flags &= ~TARGET_MOVE_ROT;
 						local(attack) = JFALSE;
 					}
 				}
@@ -312,7 +312,7 @@ namespace TFE_DarkForces
 
 		local(target)->yaw = local(welder)->yaw;
 		local(target)->pitch = local(welder)->pitch;
-		local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
+		local(target)->flags = (local(target)->flags | TARGET_MOVE_ROT) & (~TARGET_MOVE_XZ);
 		local(welder)->sound2Id = sound_playCued(s_shared.weld2SoundSrcId, local(obj)->posWS);
 
 		while (local(physicsActor)->state == WSTATE_RESET)
@@ -374,13 +374,13 @@ namespace TFE_DarkForces
 			}
 			else if (local(physicsActor)->state == WSTATE_DYING)
 			{
-				local(target)->flags |= 8;
+				local(target)->flags |= TARGET_FREEZE;
 				sound_stop(local(welder)->sound2Id);
 				sound_playCued(s_shared.weldDieSoundSrcId, local(obj)->posWS);
 
 				local(target)->pitch = 64171 & ANGLE_MASK;
 				local(target)->yaw = local(obj)->yaw;
-				local(target)->flags |= 4;
+				local(target)->flags |= TARGET_MOVE_ROT;
 
 				do
 				{

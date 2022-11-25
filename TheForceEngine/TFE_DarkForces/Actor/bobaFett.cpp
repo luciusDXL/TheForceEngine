@@ -414,7 +414,7 @@ namespace TFE_DarkForces
 				if (local(phase) == 0 || local(phase) == 5)
 				{
 					local(target)->yaw = angle;
-					local(target)->flags |= 4;
+					local(target)->flags |= TARGET_MOVE_ROT;
 
 					fixed16_16 sinYaw, cosYaw;
 					sinCosFixed(local(obj)->yaw, &sinYaw, &cosYaw);
@@ -562,7 +562,7 @@ namespace TFE_DarkForces
 		local(target) = &local(physicsActor)->moveMod.target;
 		local(anim) = &local(physicsActor)->anim;
 
-		local(target)->flags |= 8;
+		local(target)->flags |= TARGET_FREEZE;
 		sound_stop(local(physicsActor)->moveSndId);
 		sound_playCued(s_shared.boba4SndID, local(obj)->posWS);
 

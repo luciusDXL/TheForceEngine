@@ -203,7 +203,7 @@ namespace TFE_DarkForces
 
 				if (random(100) <= 20)
 				{
-					local(target)->flags |= 8;
+					local(target)->flags |= TARGET_FREEZE;
 
 					// Save the animation.
 					memcpy(&local(tmp), local(anim), sizeof(LogicAnimation) - 4);
@@ -221,7 +221,7 @@ namespace TFE_DarkForces
 					// Restore the animation.
 					memcpy(local(anim), &local(tmp), sizeof(LogicAnimation) - 4);
 					actor_setupBossAnimation(local(obj), local(anim)->animId, local(anim));
-					local(target)->flags &= 0xfffffff7;
+					local(target)->flags &= ~TARGET_FREEZE;
 				}
 				msg = MSG_EXPLOSION;
 			}
@@ -408,7 +408,7 @@ namespace TFE_DarkForces
 				local(target)->speed = s_kellDragonAnim[local(dragon)->animIndex].speed;
 			}
 
-			local(target)->flags &= 0xfffffff7;
+			local(target)->flags &= ~TARGET_FREEZE;
 			if (actor_handleSteps(&local(physicsActor)->moveMod, local(target)))
 			{
 				actor_changeDirFromCollision(&local(physicsActor)->moveMod, local(target), &local(prevColTick));
@@ -501,13 +501,13 @@ namespace TFE_DarkForces
 				fixed16_16 sinYaw, cosYaw;
 				sinCosFixed(local(target)->yaw, &sinYaw, &cosYaw);
 
-				local(target)->flags |= 4;
+				local(target)->flags |= TARGET_MOVE_ROT;
 				local(target)->speedRotation = 0;
 
 				fixed16_16 animSpeed = s_kellDragonAnim[local(dragon)->animIndex].speed;
 				local(target)->pos.x = local(obj)->posWS.x + mul16(sinYaw, animSpeed);
 				local(target)->pos.z = local(obj)->posWS.z + mul16(cosYaw, animSpeed);
-				local(target)->flags |= 1;
+				local(target)->flags |= TARGET_MOVE_XZ;
 
 				local(dragon)->retreat = JTRUE;
 				local(dragon)->nextTick = s_curTick + 72;
@@ -583,13 +583,13 @@ namespace TFE_DarkForces
 			task_localBlockBegin;
 				local(target)->pos.x = s_playerObject->posWS.x;
 				local(target)->pos.z = s_playerObject->posWS.z;
-				local(target)->flags |= 1;
+				local(target)->flags |= TARGET_MOVE_XZ;
 
 				fixed16_16 dx = s_playerObject->posWS.x - local(obj)->posWS.x;
 				fixed16_16 dz = s_playerObject->posWS.z - local(obj)->posWS.z;
 				local(target)->yaw = vec2ToAngle(dx, dz);
 				local(obj)->yaw = local(target)->yaw;
-				local(target)->flags |= 4;
+				local(target)->flags |= TARGET_MOVE_ROT;
 
 				actor_jumpToTarget(local(physicsActor), local(obj), s_playerObject->posWS, FIXED(100), -455);
 			task_localBlockEnd;
@@ -611,7 +611,7 @@ namespace TFE_DarkForces
 			} while (msg != MSG_RUN_TASK || local(physicsActor)->vel.y != 0);
 
 			// Remove any excess horizontal velocity and setup the next animation.
-			local(target)->flags |= 8;
+			local(target)->flags |= TARGET_FREEZE;
 			local(physicsActor)->vel.x = 0;
 			local(physicsActor)->vel.z = 0;
 			actor_setupBossAnimation(local(obj), 11, local(anim));
@@ -726,7 +726,7 @@ namespace TFE_DarkForces
 			}
 		}
 
-		local(target)->flags &= 0xfffffff7;
+		local(target)->flags &= ~TARGET_FREEZE;
 		task_end;
 	}
 
@@ -748,7 +748,7 @@ namespace TFE_DarkForces
 		local(anim) = &local(physicsActor)->anim;
 		local(target) = &local(physicsActor)->moveMod.target;
 
-		local(target)->flags |= 8;
+		local(target)->flags |= TARGET_FREEZE;
 		sound_playCued(s_shared.kellSound3, local(obj)->posWS);
 
 		local(anim)->flags |= 1;
@@ -821,7 +821,7 @@ namespace TFE_DarkForces
 
 		local(anim)->flags &= 0xfffffffe;
 		actor_setupBossAnimation(local(obj), 0, local(anim));
-		local(target)->flags &= 0xfffffff7;
+		local(target)->flags &= ~TARGET_FREEZE;
 		local(target)->speedRotation = 0x3000;
 
 		while (local(physicsActor)->state == 6)
@@ -882,14 +882,14 @@ namespace TFE_DarkForces
 				local(target)->pos.x = target.x;
 				local(target)->pos.z = target.z;
 				actor_offsetTarget(&local(target)->pos.x, &local(target)->pos.z, absDx>>2, absDx>>3, angleToTarget, 0xfff);
-				local(target)->flags |= 1;
+				local(target)->flags |= TARGET_MOVE_XZ;
 
 				dxTarget = local(target)->pos.x - local(obj)->posWS.x;
 				dzTarget = local(target)->pos.z - local(obj)->posWS.z;
 				local(target)->pitch = 0;
 				local(target)->roll  = 0;
 				local(target)->yaw   = vec2ToAngle(dxTarget, dzTarget);
-				local(target)->flags |= 4;
+				local(target)->flags |= TARGET_MOVE_ROT;
 
 				local(nextTick) = s_curTick + local(delay);
 			}

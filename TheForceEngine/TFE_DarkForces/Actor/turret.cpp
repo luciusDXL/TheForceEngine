@@ -154,7 +154,7 @@ namespace TFE_DarkForces
 		angle14_32 aimPitch = vec2ToAngle(local(obj)->posWS.y - (s_eyePos.y + ONE_16), dist);
 		angle14_32 pitchDiff = TFE_Jedi::clamp(getAngleDifference(local(turret)->pitch, aimPitch), -TURRET_PITCH_RANGE, TURRET_PITCH_RANGE);
 		local(target)->pitch = (local(turret)->pitch + pitchDiff) & ANGLE_MASK;
-		local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
+		local(target)->flags = (local(target)->flags | TARGET_MOVE_ROT) & (~TARGET_MOVE_XZ);
 
 		task_localBlockEnd;
 		local(turret)->nextTick = s_curTick + TURRET_ATTACK_TRANS;
@@ -199,7 +199,7 @@ namespace TFE_DarkForces
 					angle14_32 pitch = vec2ToAngle(local(obj)->posWS.y - (s_eyePos.y + ONE_16), dist);
 					angle14_32 pitchDiff = clamp(getAngleDifference(local(turret)->pitch, pitch), -TURRET_PITCH_RANGE, TURRET_PITCH_RANGE);
 					local(target)->pitch = (local(turret)->pitch + pitchDiff) & ANGLE_MASK;
-					local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
+					local(target)->flags = (local(target)->flags | TARGET_MOVE_ROT) & (~TARGET_MOVE_XZ);
 					local(turret)->nextTick = s_curTick + TURRET_ATTACK_TRANS;
 				}
 				else if (s_curTick >= local(turret)->nextTick)
@@ -414,7 +414,7 @@ namespace TFE_DarkForces
 			{
 				local(target)->yaw = local(turret)->yaw;
 				local(target)->pitch = local(turret)->pitch;
-				local(target)->flags = (local(target)->flags | 4) & 0xfffffffe;
+				local(target)->flags = (local(target)->flags | TARGET_MOVE_ROT) & (~TARGET_MOVE_XZ);
 
 				while (local(physicsActor)->state == TURRETSTATE_AIMING)
 				{
