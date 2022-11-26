@@ -282,6 +282,11 @@ namespace TFE_Jedi
 		return (u8*)alloc->iter + sizeof(AllocHeader);
 	}
 
+	void allocator_setIter(Allocator* alloc, void* iter)
+	{
+		alloc->iter = (AllocHeader*)((u8*)iter - sizeof(AllocHeader));
+	}
+
 	void* allocator_getHead(Allocator* alloc)
 	{
 		if (!alloc) { return nullptr; }

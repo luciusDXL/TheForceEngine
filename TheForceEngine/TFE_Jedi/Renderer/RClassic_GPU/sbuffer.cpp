@@ -64,6 +64,11 @@ namespace TFE_Jedi
 	{
 		coord.x -= s_cameraPos.x;
 		coord.z -= s_cameraPos.z;
+		// Handle the singularity.
+		if (fabsf(coord.x) < FLT_EPSILON && fabsf(coord.z) < FLT_EPSILON)
+		{
+			return 0.0f;
+		}
 
 		// Find the largest axis.
 		s32 axis = 0;
@@ -351,7 +356,7 @@ namespace TFE_Jedi
 		{
 			return 0;
 		}
-
+		
 		// Project the edge.
 		sbuffer_handleEdgeWrapping(segments[0].x0, segments[0].x1);
 		// Check again for zero-length walls in case the fix-ups above caused it (for example, x0 = 0.0, x1 = 4.0).

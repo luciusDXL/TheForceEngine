@@ -2275,9 +2275,14 @@ namespace TFE_Jedi
 				s_msgTarget = link->target;
 				s_msgEvent = evt;
 
-				allocator_addRef(infLink);
-				task_runLocal(link->task, msgType);
-				allocator_release(infLink);
+				// Handle recursion gracefully.
+				void* iter = allocator_getIter(infLink);
+				{
+					allocator_addRef(infLink);
+					task_runLocal(link->task, msgType);
+					allocator_release(infLink);
+				}
+				allocator_setIter(infLink, iter);
 			}
 			link = (InfLink*)allocator_getNext(infLink);
 		}
