@@ -190,6 +190,10 @@ namespace TFE_Jedi
 					AmbientSound* sound = (AmbientSound*)allocator_newItem(s_levelState.ambientSounds);
 					level_serializeAmbientSound(stream, sound);
 				}
+				if (!s_levelIntState.ambientSoundTask)
+				{
+					s_levelIntState.ambientSoundTask = createSubTask("AmbientSound", ambientSoundTaskFunc);
+				}
 			}
 
 			level_serializeFixupMirrors();

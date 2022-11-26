@@ -80,12 +80,13 @@ namespace TFE_Jedi
 		{
 			axis = coord.z < 0.0f ? 3 : 1;
 		}
-		f32 axisScale = coord.m[axis & 1] != 0.0f ? 1.0f / fabsf(coord.m[axis & 1]) : 0.0f;
+		const f32 axisScale = coord.m[axis & 1] != 0.0f ? 1.0f / fabsf(coord.m[axis & 1]) : 0.0f;
 		f32 value = coord.m[(1 + axis) & 1] * axisScale * 0.5f + 0.5f;
 		if (axis == 1 || axis == 2) { value = 1.0f - value; }
 
 		// Switch the direction to match the wall direction.
 		f32 projection = 4.0f - fmodf(f32(axis) + value, 4.0f);	// this wraps around to 0.0 at 4.0
+		// This zero checks above should catch singularities, but since this causes crashes I want to be extra sure. :)
 		if (!std::isfinite(projection))
 		{
 			projection = 0.0f;

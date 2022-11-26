@@ -23,6 +23,7 @@
 #include <TFE_DarkForces/sound.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
+#include <TFE_Jedi/InfSystem/message.h>
 #include "rsector.h"
 
 struct Safe
@@ -51,4 +52,6 @@ namespace TFE_Jedi
 
 	void level_addSound(const char* name, u32 freq, s32 priority);
 	void level_loadPalette();
+
+	void ambientSoundTaskFunc(MessageType msg);
 }
