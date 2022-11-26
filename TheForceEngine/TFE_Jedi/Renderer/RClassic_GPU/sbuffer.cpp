@@ -85,7 +85,12 @@ namespace TFE_Jedi
 		if (axis == 1 || axis == 2) { value = 1.0f - value; }
 
 		// Switch the direction to match the wall direction.
-		return 4.0f - fmodf(f32(axis) + value, 4.0f);	// this wraps around to 0.0 at 4.0
+		f32 projection = 4.0f - fmodf(f32(axis) + value, 4.0f);	// this wraps around to 0.0 at 4.0
+		if (!std::isfinite(projection))
+		{
+			projection = 0.0f;
+		}
+		return projection;
 	}
 
 	void sbuffer_handleEdgeWrapping(f32& x0, f32& x1)
