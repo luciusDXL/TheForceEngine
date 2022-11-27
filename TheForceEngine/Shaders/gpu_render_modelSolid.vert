@@ -76,34 +76,41 @@ void main()
 	bool vertexLighting = (textureMode == 0);
 	if (vertexLighting)
 	{
-		// Directional lights.
-		vec3 nrm = vtx_nrm * ModelMtx;
-		float ambientScale = floor(ambient * 2048.0) / 65536.0;	// ambient / 32, but quantizing the same way the software renderer does.
-
-		float dirLighting = directionalLighting(nrm, ambientScale);
-		light += dirLighting;
-		
-		// Calculate Z value and scaled ambient.
-		float scaledAmbient = ambient * 7.0 / 8.0;
-		float z = max(0.0, dot((worldPos - CameraPos), CameraDir));
-
-		// Camera Light
-		float worldAmbient = LightData.x;
-		float cameraLightSource = LightData.y > 63.0 ? 1.0 : 0.0;
-		if (worldAmbient < 31.0 || cameraLightSource > 0.0)
+		if (ambient < 31.0)
 		{
-			float depthScaled = min(floor(z * 4.0), 127.0);
-			float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
-			if (lightSource > 0)
-			{
-				light += lightSource;
-			}
-		}
-		light = max(light, ambient);
+			// Directional lights.
+			vec3 nrm = vtx_nrm * ModelMtx;
+			float ambientScale = floor(ambient * 2048.0) / 65536.0;	// ambient / 32, but quantizing the same way the software renderer does.
 
-		// Falloff
-		float falloff = floor(z / 16.0) + floor(z / 32.0);
-		light = clamp(light - falloff, scaledAmbient, 31.0);
+			float dirLighting = directionalLighting(nrm, ambientScale);
+			light += dirLighting;
+		
+			// Calculate Z value and scaled ambient.
+			float scaledAmbient = ambient * 7.0 / 8.0;
+			float z = max(0.0, dot((worldPos - CameraPos), CameraDir));
+
+			// Camera Light
+			float worldAmbient = LightData.x;
+			float cameraLightSource = LightData.y > 63.0 ? 1.0 : 0.0;
+			if (worldAmbient < 31.0 || cameraLightSource > 0.0)
+			{
+				float depthScaled = min(floor(z * 4.0), 127.0);
+				float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
+				if (lightSource > 0)
+				{
+					light += lightSource;
+				}
+			}
+			light = max(light, ambient);
+
+			// Falloff
+			float falloff = floor(z / 16.0) + floor(z / 32.0);
+			light = clamp(light - falloff, scaledAmbient, 31.0);
+		}
+		else
+		{
+			light = 31.0;
+		}
 	}
 		
 	// Write out the per-vertex uv and color.

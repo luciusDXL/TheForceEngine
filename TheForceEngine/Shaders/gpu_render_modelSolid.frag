@@ -70,28 +70,31 @@ void main()
 
 			// Calculate Z value and scaled ambient.
 			float ambient = max(0.0, LightData.y > 32.0 ? LightData.y - 64.0 : LightData.y);
-			float light = 0.0;
-			float scaledAmbient = ambient * 7.0 / 8.0;
-			float z = max(0.0, dot((Frag_WorldPos - CameraPos), CameraDir));
-
-			// Handle lighting in a similar way to sector floors and ceilings.
-			// Camera Light
-			float worldAmbient = LightData.x;
-			float cameraLightSource = LightData.y > 63.0 ? 1.0 : 0.0;
-			if (worldAmbient < 31.0 || cameraLightSource > 0.0)
+			if (ambient < 31.0)
 			{
-				float depthScaled = min(floor(z * 4.0), 127.0);
-				float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
-				if (lightSource > 0)
-				{
-					light += lightSource;
-				}
-			}
-			light = max(light, ambient);
+				float light = 0.0;
+				float scaledAmbient = ambient * 7.0 / 8.0;
+				float z = max(0.0, dot((Frag_WorldPos - CameraPos), CameraDir));
 
-			// Falloff
-			float falloff = floor(z / 16.0) + floor(z / 32.0);
-			lightLevel = int(clamp(light - falloff, scaledAmbient, 31.0));
+				// Handle lighting in a similar way to sector floors and ceilings.
+				// Camera Light
+				float worldAmbient = LightData.x;
+				float cameraLightSource = LightData.y > 63.0 ? 1.0 : 0.0;
+				if (worldAmbient < 31.0 || cameraLightSource > 0.0)
+				{
+					float depthScaled = min(floor(z * 4.0), 127.0);
+					float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
+					if (lightSource > 0)
+					{
+						light += lightSource;
+					}
+				}
+				light = max(light, ambient);
+
+				// Falloff
+				float falloff = floor(z / 16.0) + floor(z / 32.0);
+				lightLevel = int(clamp(light - falloff, scaledAmbient, 31.0));
+			}
 		}
 		baseColor = int(sampleTexture(Frag_TextureId, uv));
 
