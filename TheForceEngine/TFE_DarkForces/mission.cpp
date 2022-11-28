@@ -120,6 +120,7 @@ namespace TFE_DarkForces
 	void applyLuminanceFilter(u8* pal, JBool lumRedMask, JBool lumGreenMask, JBool lumBlueMask);
 	void applyScreenFxToPalette(u8* pal, s32 healthFxLevel, s32 shieldFxLevel, s32 flashFxLevel);
 	void applyScreenBrightness(u8* pal, s32 brightness);
+	void blankScreen();
 
 	void executeCheat(CheatID cheatID);
 	extern void resumeLevelSound();
@@ -391,10 +392,12 @@ namespace TFE_DarkForces
 			vfb_swap();
 		}
 	}
-
+		
 	void mission_mainTaskFunc(MessageType msg)
 	{
 		task_begin;
+		blankScreen();
+
 		while (msg != MSG_FREE_TASK)
 		{
 			// This means it is time to abort, we are done with this level.
@@ -433,22 +436,20 @@ namespace TFE_DarkForces
 			if (!escapeMenu_isOpen() && !pda_isOpen())
 			{
 				handleGeneralInput();
-				handlePaletteFx();
 				if (s_drawAutomap)
 				{
 					automap_draw(s_framebuffer);
 				}
 				hud_drawAndUpdate(s_framebuffer);
 				hud_drawMessage(s_framebuffer);
-			}
-			else
-			{
-				setPalette(s_escMenuPalette);
+				handlePaletteFx();
 			}
 			
 			// Move this out of handleGeneralInput so that the HUD is properly copied.
 			if (escapeMenu_isOpen())
 			{
+				setPalette(s_escMenuPalette);
+
 				EscapeMenuAction action = escapeMenu_update();
 				if (action == ESC_RETURN || action == ESC_CONFIG)
 				{
@@ -623,9 +624,7 @@ namespace TFE_DarkForces
 		JBool useFramePal   = JFALSE;
 		JBool updateBasePal = JFALSE;
 		JBool copiedPalette = JFALSE;
-
 		if (!s_canChangePal) { return; }
-		if (!s_lumMaskChanged && !s_screenFxChanged && !s_screenBrightnessChanged && !s_updateHudColors && !s_palModified) { return; }
 
 		if (s_luminanceMask[0] || s_luminanceMask[1] || s_luminanceMask[2])
 		{
@@ -1334,6 +1333,14 @@ namespace TFE_DarkForces
 			color = mul16(color, brightness) + HALF_16;
 			pal[2] = floor16(color);
 		}
+	}
+
+	void blankScreen()
+	{
+		u32 zero[256] = { 0 };
+		// Make sure both buffers are cleared out to avoid flashes.
+		vfb_setPalette(zero);
+		vfb_setPalette(zero);
 	}
 
 }  // TFE_DarkForces

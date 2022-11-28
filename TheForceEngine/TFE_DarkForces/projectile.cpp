@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 	// Task
 	static Task* s_projectileTask = nullptr;
 
-	u32 s_hitWallFlag;
+	WallHitFlag s_hitWallFlag = WH_IGNORE;
 	angle14_32 s_projReflectOverrideYaw = 0;
 
 	//////////////////////////////////////////////////////////////
@@ -1044,6 +1044,24 @@ namespace TFE_DarkForces
 		obj->pitch += random(2 * projLogic->reflVariation) - projLogic->reflVariation;
 	}
 
+	void proj_reflect(SecObject* obj, ProjectileLogic* projLogic)
+	{
+		angle14_32 angleDiff = getAngleDifference(obj->yaw, s_projReflectOverrideYaw);
+		obj->yaw = (angleDiff + s_projReflectOverrideYaw) & ANGLE_MASK;
+
+		if (projLogic->reflVariation)
+		{
+			obj->yaw += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
+			obj->pitch += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
+		}
+		projLogic->prevColObj = nullptr;
+		projLogic->excludeObj = nullptr;
+		proj_setTransform(projLogic, obj->pitch, obj->yaw);
+		sound_playCued(projLogic->reflectSnd, obj->posWS);
+
+		projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
+	}
+
 	// Handle projectile movement.
 	// Returns 0 if it moved without hitting anything.
 	ProjectileHitType proj_handleMovement(ProjectileLogic* projLogic)
@@ -1080,81 +1098,65 @@ namespace TFE_DarkForces
 				projLogic->delta.x = 0;
 				projLogic->delta.y = 0;
 				projLogic->delta.z = 0;
-
-				if (!envHit)
-				{
-					return PHIT_NONE;
-				}
-
-				obj->posWS.y = s_projNextPosY;
-				collision_moveObj(obj, s_projNextPosX - obj->posWS.x, s_projNextPosZ - obj->posWS.z);
-				if (!s_hitWall)
-				{
-					return (s_hitWater) ? PHIT_WATER : PHIT_SOLID;
-				}
-				s_hitWallFlag = (s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) ? 1 : 2;
-
-				vec2_fixed* w0 = s_hitWall->w0;
-				fixed16_16 len = vec2Length(s_projNextPosX - w0->x, s_projNextPosZ - w0->z);
-				inf_wallAndMirrorSendMessageAtPos(s_hitWall, obj, INF_EVENT_SHOOT_LINE, len, s_projNextPosY);
-				return (s_hitWallFlag == 1) ? PHIT_SKY : PHIT_SOLID;
 			}
-
-			if (projLogic->type == PROJ_PUNCH)
+			else
 			{
-				vec3_fixed effectPos = { s_colObjAdjX, s_colObjAdjY, s_colObjAdjZ };
-				spawnHitEffect(projLogic->hitEffectId, obj->sector, effectPos, projLogic->excludeObj);
-			}
-			s_hitWallFlag = 2;
-			if (s_colHitObj->entityFlags & ETFLAG_PROJECTILE)
-			{
-				s_hitWallFlag = 0;
-				Logic** objLogicPtr = (Logic**)allocator_getHead((Allocator*)s_colHitObj->logic);
-				if (objLogicPtr)
+				if (projLogic->type == PROJ_PUNCH)
 				{
-					ProjectileLogic* objLogic = (ProjectileLogic*)*objLogicPtr;
-					// PROJ_HOMING_MISSILE can be destroyed by shooting it with a different type of projectile.
-					if (projLogic->type != objLogic->type && objLogic->type == PROJ_HOMING_MISSILE)
+					vec3_fixed effectPos = { s_colObjAdjX, s_colObjAdjY, s_colObjAdjZ };
+					spawnHitEffect(projLogic->hitEffectId, obj->sector, effectPos, projLogic->excludeObj);
+				}
+				s_hitWallFlag = WH_STDEXP;
+				if (s_colHitObj->entityFlags & ETFLAG_PROJECTILE)
+				{
+					s_hitWallFlag = WH_IGNORE;
+					Logic** objLogicPtr = (Logic**)allocator_getHead((Allocator*)s_colHitObj->logic);
+					if (objLogicPtr)
 					{
-						s_hitWallFlag = 2;
-						objLogic->duration = 0;
+						ProjectileLogic* objLogic = (ProjectileLogic*)*objLogicPtr;
+						// PROJ_HOMING_MISSILE can be destroyed by shooting it with a different type of projectile.
+						if (projLogic->type != objLogic->type && objLogic->type == PROJ_HOMING_MISSILE)
+						{
+							s_hitWallFlag = WH_STDEXP;
+							objLogic->duration = 0;
+						}
+					}
+				}
+				else if (projLogic->dmg)
+				{
+					s_msgEntity = projLogic;
+					message_sendToObj(s_colHitObj, MSG_DAMAGE, nullptr);
+				}
+
+				switch (s_hitWallFlag)
+				{
+					case WH_IGNORE:
+					{
+						// Do nothing, this will proceed to the next section.
+					} break;
+					case WH_NOEXP:
+					{
+						return PHIT_SKY;
+					} break;
+					case WH_STDEXP:
+					case WH_CUSTEXP:	// CUSTEXP is not actually used but is included for completeness.
+					{
+						return PHIT_SOLID;
+					} break;
+					case WH_BOUNCE:
+					{
+						proj_reflect(obj, projLogic);
+						return PHIT_NONE;
+					} break;
+					default:
+					{
+						return PHIT_SOLID;
 					}
 				}
 			}
-			if (projLogic->dmg)
-			{
-				s_msgEntity = projLogic;
-				message_sendToObj(s_colHitObj, MSG_DAMAGE, nullptr);
-			}
-
-			if (s_hitWallFlag <= 1)	// s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW
-			{
-				return PHIT_SKY;
-			}
-			else if (s_hitWallFlag <= 3 || s_hitWallFlag > 4)  // !(s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
-			{
-				return PHIT_SOLID;
-			}
-			else if (s_hitWallFlag == 4)
-			{
-				angle14_32 angleDiff = getAngleDifference(obj->yaw, s_projReflectOverrideYaw);
-				obj->yaw = (angleDiff + s_projReflectOverrideYaw) & ANGLE_MASK;
-
-				if (projLogic->reflVariation)
-				{
-					obj->yaw   += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
-					obj->pitch += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
-				}
-				projLogic->prevColObj = nullptr;
-				projLogic->excludeObj = nullptr;
-				proj_setTransform(projLogic, obj->pitch, obj->yaw);
-				sound_playCued(projLogic->reflectSnd, obj->posWS);
-
-				projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
-				return PHIT_NONE;
-			}
 		}
-		else if (envHit)
+
+		if (envHit)
 		{
 			obj->posWS.y = s_projNextPosY;
 			fixed16_16 dz = s_projNextPosZ - obj->posWS.z;
@@ -1163,37 +1165,28 @@ namespace TFE_DarkForces
 
 			if (s_hitWall)
 			{
-				s_hitWallFlag = (s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) ? 1 : 2;
-
+				s_hitWallFlag = (s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) ? WH_NOEXP : WH_STDEXP;
+				
 				vec2_fixed* w0 = s_hitWall->w0;
 				fixed16_16 paramPos = vec2Length(s_projNextPosX - w0->x, s_projNextPosZ - w0->z);
 				inf_wallAndMirrorSendMessageAtPos(s_hitWall, projLogic->logic.obj, INF_EVENT_SHOOT_LINE, paramPos, s_projNextPosY);
 
-				if (s_hitWallFlag <= 1)	// s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW
+				switch (s_hitWallFlag)
 				{
-					return PHIT_SKY;
-				}
-				else if (s_hitWallFlag <= 3 || s_hitWallFlag > 4)  // !(s_projSector->flags1 & SEC_FLAGS1_NOWALL_DRAW)
-				{
-					return PHIT_SOLID;
-				}
-				else if (s_hitWallFlag == 4)
-				{
-					angle14_32 angleDiff = getAngleDifference(obj->yaw, s_projReflectOverrideYaw);
-					obj->yaw = (angleDiff + s_projReflectOverrideYaw) & ANGLE_MASK;
-
-					if (projLogic->reflVariation)
+					case WH_IGNORE:
+					case WH_NOEXP:
 					{
-						obj->yaw += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
-						obj->pitch += random(projLogic->reflVariation * 2) - projLogic->reflVariation;
-					}
-					projLogic->prevColObj = nullptr;
-					projLogic->excludeObj = nullptr;
-					proj_setTransform(projLogic, obj->pitch, obj->yaw);
-					sound_playCued(projLogic->reflectSnd, obj->posWS);
-
-					projLogic->flags |= PROJFLAG_CAMERA_PASS_SOUND;
-					return PHIT_NONE;
+						return PHIT_SKY;
+					} break;
+					case WH_STDEXP:
+					{
+						return PHIT_SOLID;
+					} break;
+					case WH_BOUNCE:
+					{
+						proj_reflect(obj, projLogic);
+						return PHIT_NONE;
+					} break;
 				}
 			}
 			return s_hitWater ? PHIT_WATER : PHIT_SOLID;
@@ -1310,7 +1303,7 @@ namespace TFE_DarkForces
 					if (s_projNextPosY < s_projSector->ceilingHeight)
 					{
 						s_hitWall = wall;
-						s_hitWallFlag = 1;
+						s_hitWallFlag = WH_NOEXP;
 						return JTRUE;
 					}
 					projLogic->speed = mul16(projLogic->speed, projLogic->horzBounciness);
@@ -1339,7 +1332,7 @@ namespace TFE_DarkForces
 					if (s_projNextPosY < s_projSector->ceilingHeight)
 					{
 						s_hitWall = wall;
-						s_hitWallFlag = 1;
+						s_hitWallFlag = WH_NOEXP;
 						return JTRUE;
 					}
 					s32 count = projLogic->bounceCnt;

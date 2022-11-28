@@ -48,6 +48,16 @@ namespace TFE_DarkForces
 		PHIT_OUT_OF_RANGE = 5,
 		PHIT_WATER        = 6,
 	};
+
+	enum WallHitFlag
+	{
+		WH_IGNORE = 0,
+		WH_NOEXP,
+		WH_STDEXP,
+		WH_CUSTEXP,
+		WH_BOUNCE,
+		WM_COUNT
+	};
 		
 	enum ProjectileFlags
 	{
@@ -120,6 +130,6 @@ namespace TFE_DarkForces
 	// Serialization
 	void projLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 
-	extern u32 s_hitWallFlag;
+	extern WallHitFlag s_hitWallFlag;
 	extern angle14_32 s_projReflectOverrideYaw;
 }  // namespace TFE_DarkForces

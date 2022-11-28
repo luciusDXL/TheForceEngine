@@ -959,48 +959,39 @@ namespace TFE_Jedi
 		for (; s_colObjCount > 0; s_colObjList++)
 		{
 			SecObject* obj = *s_colObjList;
-			if (obj)
-			{
-				s_colObjCount--;
-				if (!(obj->entityFlags & s_collision_excludeEntityFlags) && obj != s_colObjPrev && obj->worldWidth && !(obj->entityFlags & ETFLAG_PICKUP))
-				{
-					if (obj->worldHeight >= 0)
-					{
-						if (s_colObjMinY > obj->posWS.y || obj->posWS.y - obj->worldHeight > s_colObjMaxY)
-						{
-							continue;
-						}
-					}
-					else
-					{
-						// Since height < 0, this is the same as y + abs(height), i.e. this is hanging from the ceiling.
-						if (obj->posWS.y > s_colObjMaxY || obj->posWS.y - obj->worldHeight < s_colObjMinY)
-						{
-							continue;
-						}
-					}
-					s_colObjOffsetX = obj->posWS.x - s_colObjX0;
-					s_colObjOffsetZ = obj->posWS.z - s_colObjZ0;
-					s_colWallV0.x = mul16(s_colObjOffsetX, s_colObjDirZ) - mul16(s_colObjOffsetZ, s_colObjDirX);
-					if (TFE_Jedi::abs(s_colWallV0.x) > obj->worldWidth) { continue; }
-					s_colWallV0.z = mul16(s_colObjOffsetX, s_colObjDirX) + mul16(s_colObjOffsetZ, s_colObjDirZ);
+			if (!obj) { continue; }
 
-					fixed16_16 pathRadius = s_colObjMove + obj->worldWidth;
-					// the projectile hasn't move far enough to hit the object.
-					if (pathRadius < s_colWallV0.z)
-					{
-						continue;
-					}
-					// the projectile is past the object far enough that it doesn't hit.
-					if (-obj->worldWidth > s_colWallV0.z)
-					{
-						continue;
-					}
-					s_colObjOverlap = s_colWallV0.z - obj->worldWidth;
-					s_colObjList++;
-					s_colObjCount--;
-					return obj;
+			s_colObjCount--;
+			if (!obj->worldWidth || obj == s_colObjPrev) { continue; }
+
+			if (!(obj->entityFlags & s_collision_excludeEntityFlags) && !(obj->entityFlags & ETFLAG_PICKUP))
+			{
+				// Check height overlap.
+				if (obj->worldHeight >= 0 && (s_colObjMinY > obj->posWS.y || obj->posWS.y - obj->worldHeight > s_colObjMaxY))
+				{
+					continue;
 				}
+				else if (obj->worldHeight < 0 && (obj->posWS.y > s_colObjMaxY || obj->posWS.y - obj->worldHeight < s_colObjMinY))
+				{
+					// Since height < 0, this is the same as y + abs(height), i.e. this is hanging from the ceiling.
+					continue;
+				}
+
+				s_colObjOffsetX = obj->posWS.x - s_colObjX0;
+				s_colObjOffsetZ = obj->posWS.z - s_colObjZ0;
+				s_colWallV0.x = mul16(s_colObjOffsetX, s_colObjDirZ) - mul16(s_colObjOffsetZ, s_colObjDirX);
+				if (TFE_Jedi::abs(s_colWallV0.x) > obj->worldWidth) { continue; }
+
+				s_colWallV0.z = mul16(s_colObjOffsetX, s_colObjDirX) + mul16(s_colObjOffsetZ, s_colObjDirZ);
+
+				fixed16_16 pathRadius = s_colObjMove + obj->worldWidth;
+				// the projectile hasn't move far enough to hit the object.
+				if (pathRadius < s_colWallV0.z) { continue; }
+				// the projectile is past the object far enough that it doesn't hit.
+				if (-obj->worldWidth > s_colWallV0.z) { continue; }
+
+				s_colObjOverlap = s_colWallV0.z - obj->worldWidth;
+				return obj;
 			}
 		}
 		return nullptr;

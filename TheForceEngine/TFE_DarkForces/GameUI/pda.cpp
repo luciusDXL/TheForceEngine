@@ -103,6 +103,7 @@ namespace TFE_DarkForces
 	void pda_drawMapButtons();
 	void pdaDrawBriefingButtons();
 	void pda_drawOverlay();
+	void pda_clearToBlack();
 
 	extern void pauseLevelSound();
 		
@@ -214,9 +215,13 @@ namespace TFE_DarkForces
 	{
 		return s_pdaOpen;
 	}
-
+		
 	void pda_close()
 	{
+		// Clear the screen to black during the palette transition.
+		pda_clearToBlack();
+
+		// Reset automap
 		automap_updateMapData(MAP_ENABLE_AUTOCENTER);
 		s_pdaOpen = JFALSE;
 
@@ -774,5 +779,15 @@ namespace TFE_DarkForces
 			lcanvas_clearClipRect();
 			menu_blitToScreen(nullptr, JFALSE);
 		}
+	}
+
+	void pda_clearToBlack()
+	{
+		u32 outWidth, outHeight;
+		vfb_getResolution(&outWidth, &outHeight);
+		memset(vfb_getCpuBuffer(), 0, outWidth * outHeight);
+
+		u32 palette[256] = { 0 };
+		vfb_setPalette(palette);
 	}
 }

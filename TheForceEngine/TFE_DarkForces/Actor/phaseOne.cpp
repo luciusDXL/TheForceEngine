@@ -102,7 +102,7 @@ namespace TFE_DarkForces
 					SecObject* projObj = proj->logic.obj;
 					s_projReflectOverrideYaw = projObj->yaw + 0x1000;
 					local(target)->flags |= TARGET_FREEZE;
-					s_hitWallFlag = 4;
+					s_hitWallFlag = WH_BOUNCE;
 
 					// Save Animation.
 					local(restoreAnim) = JTRUE;
