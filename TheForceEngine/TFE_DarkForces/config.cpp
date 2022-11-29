@@ -11,6 +11,7 @@ namespace TFE_DarkForces
 		JFALSE, // mouseTurnEnabled
 		JTRUE,  // mouseLookEnabled
 		JFALSE, // superShield
+		JTRUE,  // showUI
 	};
 
 	void config_startup()

@@ -1126,7 +1126,7 @@ namespace TFE_DarkForces
 
 			if (inputMapping_getActionState(IADF_HUD_TOGGLE) == STATE_PRESSED)
 			{
-				hud_setupToggleAnim1(JFALSE);
+				s_config.showUI = hud_setupToggleAnim1(JFALSE);
 			}
 
 			if (inputMapping_getActionState(IADF_HOLSTER_WEAPON) == STATE_PRESSED)

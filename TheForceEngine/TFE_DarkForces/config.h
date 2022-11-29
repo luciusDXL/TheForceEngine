@@ -16,6 +16,7 @@ namespace TFE_DarkForces
 		JBool mouseTurnEnabled;
 		JBool mouseLookEnabled;
 		JBool superShield;
+		JBool showUI;
 	};
 
 	void config_startup();

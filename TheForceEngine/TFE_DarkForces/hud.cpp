@@ -1,6 +1,7 @@
 #include "hud.h"
 #include "time.h"
 #include "automap.h"
+#include "config.h"
 #include "gameMessage.h"
 #include "mission.h"
 #include "util.h"
@@ -269,7 +270,7 @@ namespace TFE_DarkForces
 		s_leftHudShow = 4;
 	}
 		
-	void hud_setupToggleAnim1(JBool enable)
+	JBool hud_setupToggleAnim1(JBool enable)
 	{
 		if (enable)
 		{
@@ -296,6 +297,7 @@ namespace TFE_DarkForces
 			s_leftHudMove = 4;
 			s_rightHudMove = 4;
 		}
+		return s_leftHudVertTarget == 0 ? JTRUE : JFALSE;
 	}
 
 	void hud_toggleDataDisplay()
@@ -322,7 +324,10 @@ namespace TFE_DarkForces
 		s_secretsPercent = 0;
 
 		hud_initAnimation();
-		hud_setupToggleAnim1(JTRUE);
+		if (s_config.showUI)
+		{
+			hud_setupToggleAnim1(JTRUE);
+		}
 		offscreenBuffer_drawTexture(s_cachedHudRight, s_hudLightOff, 19, 0);
 	}
 		

@@ -24,8 +24,8 @@ namespace TFE_DarkForces
 
 	void hud_startup(JBool fromSave);
 	void hud_initAnimation();
-	void hud_setupToggleAnim1(JBool enable);
 	void hud_toggleDataDisplay();
+	JBool hud_setupToggleAnim1(JBool enable);
 
 	void hud_drawMessage(u8* framebuffer);
 	void hud_drawAndUpdate(u8* framebuffer);
