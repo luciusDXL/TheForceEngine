@@ -215,10 +215,10 @@ namespace TFE_Jedi
 				u32 logicCount;
 				SERIALIZE(ObjState_InitVersion, logicCount, 0);
 				obj->logic = nullptr;
+				obj->projectileLogic = nullptr;
 				if (!logicCount) { continue; }
 
 				obj->logic = allocator_create(sizeof(Logic**));
-				obj->projectileLogic = nullptr;
 				for (u32 l = 0; l < logicCount; l++)
 				{
 					Logic* logic = nullptr;

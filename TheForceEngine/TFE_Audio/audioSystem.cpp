@@ -97,9 +97,19 @@ namespace TFE_Audio
 			s_sources[i].slot = i;
 		}
 
-		bool res = TFE_AudioDevice::init();
-		res |= TFE_AudioDevice::startOutput(audioCallback, nullptr, 2u, 11025u);
-		return res;
+		bool audDev = TFE_AudioDevice::init();
+		if (!audDev)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio device.");
+		}
+
+		bool audStream = TFE_AudioDevice::startOutput(audioCallback, nullptr, 2u, 11025u);
+		if (!audStream)
+		{
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio stream.");
+		}
+
+		return audDev && audStream;
 	}
 
 	void shutdown()
