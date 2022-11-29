@@ -38,12 +38,12 @@ namespace TFE_DarkForces
 
 	s32  automap_getLayer();
 	void automap_setLayer(s32 layer);
-	void automap_disableTeleport();
-	void automap_enableTeleport();
+	void automap_disableLock();
+	void automap_enableLock();
 
 	extern JBool s_pdaActive;
 	extern JBool s_drawAutomap;
-	extern JBool s_automapCanTeleport;
+	extern JBool s_automapLocked;
 	extern TFE_Jedi::fixed16_16 s_mapX0;
 	extern TFE_Jedi::fixed16_16 s_mapX1;
 	extern TFE_Jedi::fixed16_16 s_mapZ0;

@@ -1180,11 +1180,11 @@ namespace TFE_DarkForces
 
 				if (inputMapping_getActionState(IADF_MAP_ENABLE_SCROLL))
 				{
-					automap_disableTeleport();
+					automap_disableLock();
 				}
 				else
 				{
-					automap_enableTeleport();
+					automap_enableLock();
 				}
 
 				if (inputMapping_getActionState(IADF_MAP_ZOOM_IN))
@@ -1211,7 +1211,7 @@ namespace TFE_DarkForces
 					hud_sendTextMessage(msgId);
 				}
 
-				if (!s_automapCanTeleport)
+				if (!s_automapLocked)
 				{
 					if (inputMapping_getActionState(IADF_MAP_SCROLL_UP))
 					{
@@ -1230,6 +1230,10 @@ namespace TFE_DarkForces
 						automap_updateMapData(MAP_MOVE1_RIGHT);
 					}
 				}
+			}
+			else
+			{
+				automap_enableLock();
 			}
 		}
 

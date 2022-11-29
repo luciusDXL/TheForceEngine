@@ -300,6 +300,8 @@ namespace TFE_DarkForces
 		s_energy = FIXED(2);
 		s_reviveTick = 0;
 
+		s_automapLocked = JTRUE;
+
 		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
 	}
 		
@@ -1208,26 +1210,29 @@ namespace TFE_DarkForces
 		}
 
 		// Controls
-		if (inputMapping_getActionState(IADF_FORWARD))
+		if (s_automapLocked)
 		{
-			fixed16_16 speed = mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
-			s_forwardSpd = max(speed, s_forwardSpd);
-		}
-		else if (inputMapping_getActionState(IADF_BACKWARD))
-		{
-			fixed16_16 speed = -mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
-			s_forwardSpd = min(speed, s_forwardSpd);
-		}
-		else if (inputMapping_getAnalogAxis(AA_MOVE))
-		{
-			fixed16_16 speed = mul16(mul16(PLAYER_FORWARD_SPEED, s_deltaTime), floatToFixed16(clamp(inputMapping_getAnalogAxis(AA_MOVE), -1.0f, 1.0f)));
-			if (speed < 0)
+			if (inputMapping_getActionState(IADF_FORWARD))
 			{
+				fixed16_16 speed = mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
+				s_forwardSpd = max(speed, s_forwardSpd);
+			}
+			else if (inputMapping_getActionState(IADF_BACKWARD))
+			{
+				fixed16_16 speed = -mul16(PLAYER_FORWARD_SPEED, s_deltaTime);
 				s_forwardSpd = min(speed, s_forwardSpd);
 			}
-			else
+			else if (inputMapping_getAnalogAxis(AA_MOVE))
 			{
-				s_forwardSpd = max(speed, s_forwardSpd);
+				fixed16_16 speed = mul16(mul16(PLAYER_FORWARD_SPEED, s_deltaTime), floatToFixed16(clamp(inputMapping_getAnalogAxis(AA_MOVE), -1.0f, 1.0f)));
+				if (speed < 0)
+				{
+					s_forwardSpd = min(speed, s_forwardSpd);
+				}
+				else
+				{
+					s_forwardSpd = max(speed, s_forwardSpd);
+				}
 			}
 		}
 
@@ -1271,84 +1276,87 @@ namespace TFE_DarkForces
 		//////////////////////////////////////////
 		// Pitch and Roll controls.
 		//////////////////////////////////////////
-		if (inputMapping_getActionState(IADF_TURN_LT))
+		if (s_automapLocked)
 		{
-			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
-			fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
-			dYaw <<= s_playerRun;		// double for "run"
-			dYaw >>= s_playerSlow;		// half for "slow"
-
-			s_playerYaw -= dYaw;
-			s_playerYaw &= ANGLE_MASK;
-		}
-		else if (inputMapping_getActionState(IADF_TURN_RT))
-		{
-			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
-			fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
-			dYaw <<= s_playerRun;		// double for "run"
-			dYaw >>= s_playerSlow;		// half for "slow"
-
-			s_playerYaw += dYaw;
-			s_playerYaw &= ANGLE_MASK;
-		}
-		else if (inputMapping_getAnalogAxis(AA_LOOK_HORZ))
-		{
-			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_TURN_SPD, s_deltaTime), floatToFixed16(inputMapping_getAnalogAxis(AA_LOOK_HORZ)));
-			s_playerYaw += turnSpeed;
-			s_playerYaw &= ANGLE_MASK;
-		}
-
-		if (inputMapping_getActionState(IADF_LOOK_UP))
-		{
-			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
-			fixed16_16 dPitch = mul16(turnSpeed, s_deltaTime);
-			dPitch <<= s_playerRun;		// double for "run"
-			dPitch >>= s_playerSlow;	// half for "slow"
-			s_playerPitch = clamp(s_playerPitch + dPitch, -PITCH_LIMIT, PITCH_LIMIT);
-		}
-		else if (inputMapping_getActionState(IADF_LOOK_DN))
-		{
-			fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
-			fixed16_16 dPitch = mul16(turnSpeed, s_deltaTime);
-			dPitch <<= s_playerRun;		// double for "run"
-			dPitch >>= s_playerSlow;	// half for "slow"
-			s_playerPitch = clamp(s_playerPitch - dPitch, -PITCH_LIMIT, PITCH_LIMIT);
-		}
-		else if (inputMapping_getAnalogAxis(AA_LOOK_VERT))
-		{
-			fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_PITCH_SPD, s_deltaTime), floatToFixed16(inputMapping_getAnalogAxis(AA_LOOK_VERT)));
-			// Counteract the tan() call later in the delta in order to make the movement perceptually linear.
-			turnSpeed = (fixed16_16)floatToFixed16(atanf((f32)fixed16ToFloat(turnSpeed) / 2047.0f * PI) / PI * 2047.0f);
-
-			s_playerPitch = clamp(s_playerPitch + turnSpeed, -PITCH_LIMIT, PITCH_LIMIT);
-		}
-
-		if (inputMapping_getActionState(IADF_CENTER_VIEW))
-		{
-			s_playerPitch = 0;
-			s_playerRoll  = 0;
-		}
-
-		if (inputMapping_getActionState(IADF_STRAFE_RT))
-		{
-			fixed16_16 speed = mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
-			s_strafeSpd = max(speed, s_strafeSpd);
-		}
-		else if (inputMapping_getActionState(IADF_STRAFE_LT))
-		{
-			fixed16_16 speed = -mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
-			s_strafeSpd = min(speed, s_strafeSpd);
-		}
-		else if (inputMapping_getAnalogAxis(AA_STRAFE))
-		{
-			fixed16_16 speed = mul16(mul16(PLAYER_STRAFE_SPEED, s_deltaTime), floatToFixed16(clamp(inputMapping_getAnalogAxis(AA_STRAFE), -1.0f, 1.0f)));
-			if (speed < 0)
+			if (inputMapping_getActionState(IADF_TURN_LT))
 			{
+				fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
+				fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
+				dYaw <<= s_playerRun;		// double for "run"
+				dYaw >>= s_playerSlow;		// half for "slow"
+
+				s_playerYaw -= dYaw;
+				s_playerYaw &= ANGLE_MASK;
+			}
+			else if (inputMapping_getActionState(IADF_TURN_RT))
+			{
+				fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
+				fixed16_16 dYaw = mul16(turnSpeed, s_deltaTime);
+				dYaw <<= s_playerRun;		// double for "run"
+				dYaw >>= s_playerSlow;		// half for "slow"
+
+				s_playerYaw += dYaw;
+				s_playerYaw &= ANGLE_MASK;
+			}
+			else if (inputMapping_getAnalogAxis(AA_LOOK_HORZ))
+			{
+				fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_TURN_SPD, s_deltaTime), floatToFixed16(inputMapping_getAnalogAxis(AA_LOOK_HORZ)));
+				s_playerYaw += turnSpeed;
+				s_playerYaw &= ANGLE_MASK;
+			}
+
+			if (inputMapping_getActionState(IADF_LOOK_UP))
+			{
+				fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
+				fixed16_16 dPitch = mul16(turnSpeed, s_deltaTime);
+				dPitch <<= s_playerRun;		// double for "run"
+				dPitch >>= s_playerSlow;	// half for "slow"
+				s_playerPitch = clamp(s_playerPitch + dPitch, -PITCH_LIMIT, PITCH_LIMIT);
+			}
+			else if (inputMapping_getActionState(IADF_LOOK_DN))
+			{
+				fixed16_16 turnSpeed = PLAYER_KB_TURN_SPD;	// angle units per second.
+				fixed16_16 dPitch = mul16(turnSpeed, s_deltaTime);
+				dPitch <<= s_playerRun;		// double for "run"
+				dPitch >>= s_playerSlow;	// half for "slow"
+				s_playerPitch = clamp(s_playerPitch - dPitch, -PITCH_LIMIT, PITCH_LIMIT);
+			}
+			else if (inputMapping_getAnalogAxis(AA_LOOK_VERT))
+			{
+				fixed16_16 turnSpeed = mul16(mul16(PLAYER_CONTROLLER_PITCH_SPD, s_deltaTime), floatToFixed16(inputMapping_getAnalogAxis(AA_LOOK_VERT)));
+				// Counteract the tan() call later in the delta in order to make the movement perceptually linear.
+				turnSpeed = (fixed16_16)floatToFixed16(atanf((f32)fixed16ToFloat(turnSpeed) / 2047.0f * PI) / PI * 2047.0f);
+
+				s_playerPitch = clamp(s_playerPitch + turnSpeed, -PITCH_LIMIT, PITCH_LIMIT);
+			}
+
+			if (inputMapping_getActionState(IADF_CENTER_VIEW))
+			{
+				s_playerPitch = 0;
+				s_playerRoll = 0;
+			}
+
+			if (inputMapping_getActionState(IADF_STRAFE_RT))
+			{
+				fixed16_16 speed = mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
+				s_strafeSpd = max(speed, s_strafeSpd);
+			}
+			else if (inputMapping_getActionState(IADF_STRAFE_LT))
+			{
+				fixed16_16 speed = -mul16(PLAYER_STRAFE_SPEED, s_deltaTime);
 				s_strafeSpd = min(speed, s_strafeSpd);
 			}
-			else
+			else if (inputMapping_getAnalogAxis(AA_STRAFE))
 			{
-				s_strafeSpd = max(speed, s_strafeSpd);
+				fixed16_16 speed = mul16(mul16(PLAYER_STRAFE_SPEED, s_deltaTime), floatToFixed16(clamp(inputMapping_getAnalogAxis(AA_STRAFE), -1.0f, 1.0f)));
+				if (speed < 0)
+				{
+					s_strafeSpd = min(speed, s_strafeSpd);
+				}
+				else
+				{
+					s_strafeSpd = max(speed, s_strafeSpd);
+				}
 			}
 		}
 

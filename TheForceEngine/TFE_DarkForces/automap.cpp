@@ -63,7 +63,7 @@ namespace TFE_DarkForces
 	
 	JBool s_pdaActive = JFALSE;
 	JBool s_drawAutomap = JFALSE;
-	JBool s_automapCanTeleport = JFALSE;
+	JBool s_automapLocked = JTRUE;
 	fixed16_16 s_mapX0;
 	fixed16_16 s_mapX1;
 	fixed16_16 s_mapZ0;
@@ -105,7 +105,7 @@ namespace TFE_DarkForces
 
 		SERIALIZE(SaveVersionInit, s_pdaActive, JFALSE);
 		SERIALIZE(SaveVersionInit, s_drawAutomap, JFALSE);
-		SERIALIZE(SaveVersionInit, s_automapCanTeleport, JFALSE);
+		SERIALIZE(SaveVersionInit, s_automapLocked, JTRUE);
 		SERIALIZE(SaveVersionInit, s_mapX0, 0);
 		SERIALIZE(SaveVersionInit, s_mapX1, 0);
 		SERIALIZE(SaveVersionInit, s_mapZ0, 0);
@@ -296,15 +296,15 @@ namespace TFE_DarkForces
 		}
 	}
 				
-	void automap_disableTeleport()
+	void automap_disableLock()
 	{
-		s_automapCanTeleport = JFALSE;
+		s_automapLocked = JFALSE;
 		automap_updateMapData(MAP_DISABLE_AUTOCENTER);  // This splits out map position 0 and 1.
 	}
 
-	void automap_enableTeleport()
+	void automap_enableLock()
 	{
-		s_automapCanTeleport = JTRUE;
+		s_automapLocked = JTRUE;
 	}
 
 	void automap_setPdaActive(JBool enable)
