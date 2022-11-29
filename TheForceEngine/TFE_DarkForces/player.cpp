@@ -1892,6 +1892,10 @@ namespace TFE_DarkForces
 			fixed16_16 maxMove = (s_playerInWater) ? FIXED(25) : FIXED(32);
 			s_maxMoveDist = maxMove - dH * 4;
 		}
+		else
+		{
+			s_maxMoveDist = (s_playerInWater) ? FIXED(25) : FIXED(32);
+		}
 
 		// Headwave
 		s32 xWpnWaveOffset = 0;
