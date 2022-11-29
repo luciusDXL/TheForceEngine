@@ -1229,7 +1229,7 @@ namespace TFE_DarkForces
 			u32 dispWidth, dispHeight;
 			vfb_getResolution(&dispWidth, &dispHeight);
 
-			if (dispWidth == 320 && dispHeight == 200)
+			if (dispWidth == 320 && dispHeight == 200 && TFE_Jedi::getSubRenderer() != TSR_CLASSIC_GPU)
 			{
 				if (atten && !s_weaponLight)
 				{
