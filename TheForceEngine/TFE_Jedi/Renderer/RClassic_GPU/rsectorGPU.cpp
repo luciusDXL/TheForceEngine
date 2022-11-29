@@ -108,6 +108,8 @@ namespace TFE_Jedi
 	static RSector* s_clipSector;
 	static Vec3f s_clipObjPos;
 
+	static JBool s_flushCache = JFALSE;
+
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
@@ -197,13 +199,21 @@ namespace TFE_Jedi
 		sprdisplayList_destroy();
 		objectPortalPlanes_destroy();
 		model_destroy();
+
+		s_flushCache = JFALSE;
 	}
 
 	void TFE_Sectors_GPU::reset()
 	{
 		m_levelInit = false;
+		s_flushCache = JFALSE;
 	}
-	
+
+	void TFE_Sectors_GPU::flushCache()
+	{
+		s_flushCache = JTRUE;
+	}
+		
 	void TFE_Sectors_GPU::prepare()
 	{
 		if (!m_gpuInit)
@@ -417,9 +427,18 @@ namespace TFE_Jedi
 		}
  		else
 		{
+			if (s_flushCache)
+			{
+				for (s32 i = 0; i < s_levelState.sectorCount; i++)
+				{
+					RSector* sector = &s_levelState.sectors[i];
+					sector->dirtyFlags = SDF_ALL;
+				}
+			}
 			s_gpuFrame++;
 		}
 
+		s_flushCache = JFALSE;
 		renderDebug_enable(s_enableDebug);
 	}
 	

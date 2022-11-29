@@ -285,6 +285,7 @@ namespace TFE_Jedi
 				TFE_Sectors_GPU* sectorRendererGpu = (TFE_Sectors_GPU*)renderer_getSectorRenderer(TSR_CLASSIC_GPU);
 				screenGPU_setHudTextureCallbacks((s32)s_hudTextureCallbacks.size(), s_hudTextureCallbacks.data());
 				s_sectorRenderer = sectorRendererGpu;
+				sectorRendererGpu->flushCache();
 				screenGPU_init();
 			}
 			screen_enableGPU(true);

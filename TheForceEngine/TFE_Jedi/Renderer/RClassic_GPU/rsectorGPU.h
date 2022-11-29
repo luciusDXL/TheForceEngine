@@ -25,6 +25,8 @@ namespace TFE_Jedi
 		void draw(RSector* sector) override;
 		void subrendererChanged() override;
 
+		void flushCache();
+
 		static TextureGpu* getColormap();
 
 	private: 
