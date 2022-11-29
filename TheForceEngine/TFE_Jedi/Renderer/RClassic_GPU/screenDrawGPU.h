@@ -5,6 +5,7 @@
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include "../screenDraw.h"
 #include "../textureInfo.h"
 
@@ -15,6 +16,10 @@ namespace TFE_Jedi
 
 	void screenGPU_beginLines(u32 width, u32 height);
 	void screenGPU_endLines();
+
+	void screenGPU_beginImageQuads(u32 width, u32 height);
+	void screenGPU_endImageQuads();
+	void screenGPU_addImageQuad(s32 x0, s32 z0, s32 x1, s32 z1, TextureGpu* texture);
 
 	void screenGPU_beginQuads(u32 width, u32 height);
 	void screenGPU_endQuads();

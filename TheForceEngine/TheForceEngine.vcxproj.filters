@@ -1219,6 +1219,9 @@
     <ClInclude Include="TFE_Game\saveSystem.h">
       <Filter>Source\TFE_Game</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_RenderShared\quadDraw2d.h">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2064,6 +2067,9 @@
     <ClCompile Include="TFE_Game\saveSystem.cpp">
       <Filter>Source\TFE_Game</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_RenderShared\quadDraw2d.cpp">
+      <Filter>Source\TFE_RenderShared</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2245,6 +2251,12 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\gpu_render_quad.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\quad2d.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\quad2d.vert">
       <Filter>Source\Shaders</Filter>
     </None>
   </ItemGroup>

@@ -23,6 +23,7 @@ namespace TFE_DarkForces
 
 	// Opens the escape menu, which sets up the background.
 	void escapeMenu_open(u8* framebuffer, u8* palette);
+	void escapeMenu_close();
 
 	// Returns JTRUE if the escape menu is open.
 	JBool escapeMenu_isOpen();

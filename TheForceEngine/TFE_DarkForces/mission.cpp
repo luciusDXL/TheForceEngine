@@ -462,6 +462,7 @@ namespace TFE_DarkForces
 					{
 						TFE_System::postSystemUiRequest();
 					}
+					blankScreen();
 				}
 				else if (action == ESC_ABORT_OR_NEXT)
 				{

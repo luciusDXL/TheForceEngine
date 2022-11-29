@@ -112,7 +112,7 @@ namespace TFE_DarkForces
 		if (TFE_Jedi::getSubRenderer() == TSR_CLASSIC_GPU)
 		{
 			// 1. Create a render target to hold the frame.
-			u32 prevWidth, prevHeight;
+			u32 prevWidth = 0, prevHeight = 0;
 			if (s_emState.renderTarget)
 			{
 				TFE_RenderBackend::getRenderTargetDim(s_emState.renderTarget, &prevWidth, &prevHeight);
@@ -158,6 +158,15 @@ namespace TFE_DarkForces
 		s_emState.buttonHover = false;
 	}
 
+	void escapeMenu_close()
+	{
+		s_emState.escMenuOpen = JFALSE;
+		resumeLevelSound();
+
+		// TFE
+		reticle_enable(true);
+	}
+
 	JBool escapeMenu_isOpen()
 	{
 		return s_emState.escMenuOpen;
@@ -191,11 +200,10 @@ namespace TFE_DarkForces
 		const fixed16_16 yScale = vfb_getYScale();
 		const s32 xOffset = vfb_getWidescreenOffset();
 
-		// Draw the background and rebind the virtual display.
-		TFE_RenderBackend::unbindRenderTarget();
-		TFE_RenderBackend::copyToVirtualDisplay(s_emState.renderTarget);
-		TFE_RenderBackend::bindVirtualDisplay();
+		// Draw the background.
+		screenGPU_addImageQuad(0, 0, dispWidth, dispHeight, (TextureGpu*)TFE_RenderBackend::getRenderTargetTexture(s_emState.renderTarget));
 
+		// Draw the menu.
 		screenGPU_blitTextureScaled(&s_emState.escMenuFrames[0].texture, nullptr, intToFixed16(xOffset), 0, xScale, yScale, 31);
 
 		if (s_levelComplete)

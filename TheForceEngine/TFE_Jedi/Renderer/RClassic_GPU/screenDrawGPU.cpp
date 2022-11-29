@@ -7,6 +7,7 @@
 #include <TFE_RenderBackend/vertexBuffer.h>
 #include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderShared/lineDraw2d.h>
+#include <TFE_RenderShared/quadDraw2d.h>
 #include <TFE_RenderShared/texturePacker.h>
 
 #include "screenDrawGPU.h"
@@ -70,6 +71,7 @@ namespace TFE_Jedi
 		if (!s_initialized)
 		{
 			TFE_RenderShared::init();
+			TFE_RenderShared::quadInit();
 
 			// Create the index and vertex buffer for quads.
 			s_scrQuadVb.create(SCR_MAX_QUAD_COUNT * 4, sizeof(ScreenQuadVertex), c_quadAttrCount, c_quadAttrMapping, true);
@@ -100,6 +102,7 @@ namespace TFE_Jedi
 		if (s_initialized)
 		{
 			TFE_RenderShared::destroy();
+			TFE_RenderShared::quadDestroy();
 			s_scrQuadVb.destroy();
 			s_scrQuadIb.destroy();
 			free(s_scrQuads);
@@ -176,6 +179,23 @@ namespace TFE_Jedi
 	void screenGPU_endLines()
 	{
 		TFE_RenderShared::lineDraw2d_drawLines();
+	}
+		
+	void screenGPU_beginImageQuads(u32 width, u32 height)
+	{
+		TFE_RenderShared::quadDraw2d_begin(width, height);
+	}
+
+	void screenGPU_endImageQuads()
+	{
+		TFE_RenderShared::quadDraw2d_draw();
+	}
+
+	void screenGPU_addImageQuad(s32 x0, s32 z0, s32 x1, s32 z1, TextureGpu* texture)
+	{
+		u32 colors[] = { 0xffffffff, 0xffffffff };
+		Vec2f vtx[] = { f32(x0), f32(z0), f32(x1), f32(z1) };
+		TFE_RenderShared::quadDraw2d_add(vtx, colors, texture);
 	}
 
 	void screenGPU_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color)

@@ -51,6 +51,7 @@ namespace TFE_Jedi
 	{
 		if (s_gpuEnabled)
 		{
+			screenGPU_beginImageQuads(width, height);
 			screenGPU_beginQuads(width, height);
 		}
 	}
@@ -59,6 +60,7 @@ namespace TFE_Jedi
 	{
 		if (s_gpuEnabled)
 		{
+			screenGPU_endImageQuads();
 			screenGPU_endQuads();
 		}
 	}
