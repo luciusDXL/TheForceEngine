@@ -198,6 +198,32 @@ namespace TFE_Jedi
 
 	void screenGPU_blitTexture(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, JBool forceTransparency, JBool forceOpaque)
 	{
+		if (s_screenQuadCount >= SCR_MAX_QUAD_COUNT)
+		{
+			return;
+		}
+
+		u32 textureId_Color = texture->textureId;
+		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
+		s_screenQuadCount++;
+
+		f32 fx0 = f32(x0);
+		f32 fy0 = f32(y0);
+		f32 fx1 = f32(x0 + texture->width);
+		f32 fy1 = f32(y0 + texture->height);
+
+		f32 u0 = 0.0f, v0 = 0.0f;
+		f32 u1 = f32(texture->width);
+		f32 v1 = f32(texture->height);
+		quad[0].posUv = { fx0, fy0, u0, v1 };
+		quad[1].posUv = { fx1, fy0, u1, v1 };
+		quad[2].posUv = { fx1, fy1, u1, v0 };
+		quad[3].posUv = { fx0, fy1, u0, v0 };
+
+		quad[0].textureId_Color = textureId_Color;
+		quad[1].textureId_Color = textureId_Color;
+		quad[2].textureId_Color = textureId_Color;
+		quad[3].textureId_Color = textureId_Color;
 	}
 
 	void screenGPU_blitTextureLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8 lightLevel, JBool forceTransparency)
