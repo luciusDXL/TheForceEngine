@@ -614,16 +614,18 @@ namespace TFE_Jedi
 
 		if (serialization_getMode() == SMODE_WRITE)
 		{
-			SERIALIZE(InfState_InitVersion, adjCmd->wall0->id, 0);
-			SERIALIZE(InfState_InitVersion, adjCmd->wall1->id, 0);
+			s32 id0 = adjCmd->wall0 ? adjCmd->wall0->id : -1;
+			s32 id1 = adjCmd->wall1 ? adjCmd->wall1->id : -1;
+			SERIALIZE(InfState_InitVersion, id0, 0);
+			SERIALIZE(InfState_InitVersion, id1, 0);
 		}
 		else // SMODE_READ
 		{
 			s32 wall0Id, wall1Id;
 			SERIALIZE(InfState_InitVersion, wall0Id, 0);
 			SERIALIZE(InfState_InitVersion, wall1Id, 0);
-			adjCmd->wall0 = &adjCmd->sector0->walls[wall0Id];
-			adjCmd->wall1 = &adjCmd->sector1->walls[wall1Id];
+			adjCmd->wall0 = wall0Id >= 0 ? &adjCmd->sector0->walls[wall0Id] : nullptr;
+			adjCmd->wall1 = wall1Id >= 0 ? &adjCmd->sector1->walls[wall1Id] : nullptr;
 		}
 	}
 

@@ -2011,8 +2011,11 @@ namespace TFE_Jedi
 					s32 wallIndex0 = strToInt(s_infArg2);
 					s32 wallIndex1 = strToInt(s_infArg4);
 
-					adjoinCmd->wall0 = &sector0->walls[wallIndex0];
-					adjoinCmd->wall1 = &sector1->walls[wallIndex1];
+					// DT 4 bug with adjoin commands - handle invalid wall indices.
+					assert(sector0 && wallIndex0 >= 0 && wallIndex0 < sector0->wallCount);
+					assert(sector1 && wallIndex1 >= 0 && wallIndex1 < sector1->wallCount);
+					adjoinCmd->wall0 = (sector0 && wallIndex0 >= 0 && wallIndex0 < sector0->wallCount) ? &sector0->walls[wallIndex0] : nullptr;
+					adjoinCmd->wall1 = (sector1 && wallIndex1 >= 0 && wallIndex1 < sector1->wallCount) ? &sector1->walls[wallIndex1] : nullptr;
 					adjoinCmd->sector0 = sector0;
 					adjoinCmd->sector1 = sector1;
 				}
@@ -2923,13 +2926,19 @@ namespace TFE_Jedi
 				RSector* sector0 = cmd->sector0;
 				RSector* sector1 = cmd->sector1;
 
-				wall0->nextSector = sector1;
-				wall0->mirrorWall = wall1;
-				wall0->mirror = wall0->mirrorWall->id;
-
-				wall1->nextSector = sector0;
-				wall1->mirrorWall = wall0;
-				wall1->mirror = wall1->mirrorWall->id;
+				// TFE: Handle mods with invalid adjoin wall IDs.
+				if (wall0)
+				{
+					wall0->nextSector = sector1;
+					wall0->mirrorWall = wall1;
+					wall0->mirror = wall0->mirrorWall ? wall0->mirrorWall->id : -1;
+				}
+				if (wall1)
+				{
+					wall1->nextSector = sector0;
+					wall1->mirrorWall = wall0;
+					wall1->mirror = wall1->mirrorWall ? wall1->mirrorWall->id : -1;
+				}
 
 				sector_setupWallDrawFlags(sector0);
 				sector_setupWallDrawFlags(sector1);

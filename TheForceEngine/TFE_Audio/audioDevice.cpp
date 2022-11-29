@@ -52,7 +52,7 @@ namespace TFE_AudioDevice
 		RtAudio::StreamParameters  outParam;
 		RtAudio::StreamParameters  inParam;
 		RtAudio::StreamParameters* param[2] = { NULL, NULL };
-		TFE_System::logWrite(LOG_MSG, "Audio", "Starting up audio stream for device '%s'.", s_OutputInfo.name.c_str());
+		TFE_System::logWrite(LOG_MSG, "Audio", "Starting up audio stream for device '%s', id %u.", s_OutputInfo.name.c_str(), s_outputDevice);
 
 		outParam.deviceId = s_outputDevice;
 		outParam.nChannels = channels;
