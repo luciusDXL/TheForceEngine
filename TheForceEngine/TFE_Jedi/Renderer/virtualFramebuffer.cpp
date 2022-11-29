@@ -56,6 +56,7 @@ namespace TFE_Jedi
 
 			s_xScale = ONE_16;
 			s_yScale = ONE_16;
+			s_widescreenOffset = 0;
 		}
 		else
 		{

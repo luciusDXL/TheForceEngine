@@ -1794,12 +1794,9 @@ namespace TFE_FrontEndUI
 		ImGui::Combo("##Renderer", &graphics->rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
 		if (graphics->rendererIndex == 0)
 		{
-			bool prevAsync = graphics->asyncFramebuffer;
-			bool prevColorConvert = graphics->gpuColorConvert;
-
 			// Software
-			ImGui::Checkbox("Async Framebuffer", &graphics->asyncFramebuffer);
-			ImGui::Checkbox("GPU Color Conversion", &graphics->gpuColorConvert);
+			graphics->asyncFramebuffer = true;
+			graphics->gpuColorConvert = true;
 			ImGui::Checkbox("Extend Adjoin/Portal Limits", &graphics->extendAjoinLimits);
 		}
 		else if (graphics->rendererIndex == 1)
