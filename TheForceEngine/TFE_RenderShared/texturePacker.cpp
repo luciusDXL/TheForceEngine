@@ -559,8 +559,8 @@ namespace TFE_Jedi
 					} break;
 					case TEXINFO_DF_WAX_CELL:
 					{
-						WaxCell* cell = WAX_CellPtr(list[i].basePtr, list[i].frame);
-						list[i].sortKey = cell->sizeX * cell->sizeY;
+						WaxCell* cell = list[i].frame ? WAX_CellPtr(list[i].basePtr, list[i].frame) : nullptr;
+						list[i].sortKey = cell ? cell->sizeX * cell->sizeY : 0;
 					} break;
 				}
 			}

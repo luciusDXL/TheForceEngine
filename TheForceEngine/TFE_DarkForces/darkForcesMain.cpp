@@ -863,7 +863,13 @@ namespace TFE_DarkForces
 						const char* zext = &name[nameLen - 3];
 						if (strcasecmp(zext, "gob") == 0)
 						{
-							gobIndex = i;
+							// Avoid MacOS references, they aren't real files.
+							char gobFileName[TFE_MAX_PATH];
+							FileUtil::getFileNameFromPath(name, gobFileName, true);
+							if (gobFileName[0] != '.' || gobFileName[1] != '_')
+							{
+								gobIndex = i;
+							}
 						}
 						else if (strcasecmp(zext, "lfd") == 0 && lfdCount < MAX_MOD_LFD)
 						{

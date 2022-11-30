@@ -1,5 +1,6 @@
 #pragma once
 #include "fileutil.h"
+#include "filestream.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -14,17 +15,17 @@ namespace FileUtil
 {
 	void readDirectory(const char* dir, const char* ext, FileList& fileList)
 	{
-		char searchStr[512];
-		_finddata_t cmfFile;
+		char searchStr[TFE_MAX_PATH];
+		_finddata_t fileInfo;
 
 		sprintf(searchStr, "%s*.%s", dir, ext);
-		intptr_t hFile = _findfirst(searchStr, &cmfFile);
+		intptr_t hFile = _findfirst(searchStr, &fileInfo);
 		if (hFile != -1)
 		{
 			do
 			{
-				fileList.push_back( string(cmfFile.name) );
-			} while ( _findnext(hFile, &cmfFile) == 0 );
+				fileList.push_back( string(fileInfo.name) );
+			} while ( _findnext(hFile, &fileInfo) == 0 );
 			_findclose(hFile);
 		}
 	}
@@ -75,7 +76,7 @@ namespace FileUtil
 
 	void getCurrentDirectory(char* dir)
 	{
-		GetCurrentDirectoryA(512, dir);
+		GetCurrentDirectoryA(TFE_MAX_PATH, dir);
 	}
 
 	void getExecutionDirectory(char* dir)
