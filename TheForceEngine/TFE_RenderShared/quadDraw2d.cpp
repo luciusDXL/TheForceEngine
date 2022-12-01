@@ -102,6 +102,8 @@ namespace TFE_RenderShared
 
 	void quadDraw2d_add(u32 count, const Vec2f* quads, const u32* quadColors, TextureGpu* texture)
 	{
+		if (!s_vertices) { return; }
+
 		s_quadDraw[s_quadDrawCount].texture = texture;
 		s_quadDraw[s_quadDrawCount].offset = s_quadCount;
 		s_quadDraw[s_quadDrawCount].count = count;

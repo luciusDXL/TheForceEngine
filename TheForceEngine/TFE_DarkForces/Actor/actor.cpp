@@ -1782,16 +1782,17 @@ namespace TFE_DarkForces
 		anim->flags |= AFLAG_READY;
 		if (obj->type == OBJ_TYPE_SPRITE)
 		{
+			const Wax* wax = obj->wax;
 			// In DOS there is no check but for some reason it doesn't crash with an animId that is too large.
 			// On Windows this crashes if animId is too large, so clamp.
-			animId = obj->wax ? min(animId, obj->wax->animCount - 1) : -1;
+			animId = wax ? min(animId, wax->animCount - 1) : -1;
 
 			anim->prevTick = 0;
 			anim->animId = animId;
 			anim->startFrame = 0;
 			if (animId != -1)
 			{
-				WaxAnim* waxAnim = WAX_AnimPtr(obj->wax, animId);
+				WaxAnim* waxAnim = WAX_AnimPtr(wax, animId);
 				assert(waxAnim);
 
 				anim->frameCount = intToFixed16(waxAnim->frameCount);
