@@ -1784,7 +1784,7 @@ namespace TFE_DarkForces
 		{
 			// In DOS there is no check but for some reason it doesn't crash with an animId that is too large.
 			// On Windows this crashes if animId is too large, so clamp.
-			animId = min(animId, obj->wax->animCount - 1);
+			animId = obj->wax ? min(animId, obj->wax->animCount - 1) : -1;
 
 			anim->prevTick = 0;
 			anim->animId = animId;

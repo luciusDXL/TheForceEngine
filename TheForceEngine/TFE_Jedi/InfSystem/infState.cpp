@@ -454,7 +454,6 @@ namespace TFE_Jedi
 			if (frameIndex >= 0)
 			{
 				AnimatedTexture* animTex = trigger->animTex;
-				assert(animTex);
 				if (animTex)
 				{
 					assert(frameIndex < animTex->count);
