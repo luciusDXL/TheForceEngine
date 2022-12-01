@@ -423,6 +423,7 @@ namespace TFE_DarkForces
 
 	void lpalette_setScreenPal(LPalette* pal)
 	{
+		if (!pal) { return; }
 		lpalette_setVideoPal(pal, pal->start, pal->len, pal->start);
 		lpalette_copy(s_screenPal, pal, pal->start, pal->len, pal->start);
 	}

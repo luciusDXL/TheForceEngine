@@ -296,7 +296,7 @@ namespace TFE_DarkForces
 
 	void lfont_drawText(const char* text, u8* bitmap/* = nullptr*/)
 	{
-		if (!s_curFont) { return; }
+		if (!s_curFont || !text) { return; }
 
 		u8* widthArray = s_curFont->widthArray;
 		u8* data = s_curFont->data;

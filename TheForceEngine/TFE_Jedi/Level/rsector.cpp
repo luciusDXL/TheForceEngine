@@ -1268,15 +1268,12 @@ namespace TFE_Jedi
 			}
 
 			RSector* newSector = sector_which3D(obj->posWS.x, obj->posWS.y, obj->posWS.z);
-			if (newSector != obj->sector)
+			if (newSector)
 			{
-				if (obj->entityFlags & (ETFLAG_CORPSE | ETFLAG_PICKUP))
+				if (newSector != obj->sector && (obj->entityFlags & (ETFLAG_CORPSE | ETFLAG_PICKUP)))
 				{
 					obj->posWS.y = newSector->colSecHeight;
 				}
-			}
-			if (newSector)
-			{
 				sector_addObject(newSector, obj);
 			}
 		}

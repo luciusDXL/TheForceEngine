@@ -58,8 +58,22 @@ void TFE_Parser::convertToUpperCase(bool enable)
 	m_convertToUppercase = enable;
 }
 
+bool TFE_Parser::isComment(const char* buffer)
+{
+	const size_t commentCount = m_commentStrings.size();
+	const std::string* comments = m_commentStrings.data();
+	for (size_t c = 0; c < commentCount; c++)
+	{
+		if (strncmp(comments[c].c_str(), buffer, comments[c].length()) == 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 // Read the next non-comment/whitespace line.
-const char* TFE_Parser::readLine(size_t& bufferPos, bool skipLeadingWhitespace)
+const char* TFE_Parser::readLine(size_t& bufferPos, bool skipLeadingWhitespace, bool commentOnlyAtBeginning)
 {
 	if (bufferPos >= m_bufferLen || m_bufferLen < 1) { return nullptr; }
 
@@ -99,15 +113,9 @@ const char* TFE_Parser::readLine(size_t& bufferPos, bool skipLeadingWhitespace)
 			else if (!inComment && !m_blockComment)
 			{
 				// is this the beginning of a comment?
-				const size_t commentCount = m_commentStrings.size();
-				const std::string* comments = m_commentStrings.data();
-				for (size_t c = 0; c < commentCount; c++)
+				if (!commentOnlyAtBeginning)
 				{
-					if (strncmp(comments[c].c_str(), m_buffer + i, comments[c].length()) == 0)
-					{
-						inComment = true;
-						break;
-					}
+					inComment = isComment(m_buffer + i);
 				}
 
 				// if not in a comment, go ahead and add to the line.
@@ -134,6 +142,11 @@ const char* TFE_Parser::readLine(size_t& bufferPos, bool skipLeadingWhitespace)
 			// Content is any non-white space character.
 			if (!isWhitespace(s_line[i]))
 			{
+				// Is this a comment?
+				if (commentOnlyAtBeginning && isComment(&s_line[i]))
+				{
+					break;
+				}
 				if (skip < 0) { skip = s32(i); }
 				lineHasContent = true;
 				break;

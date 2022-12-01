@@ -395,11 +395,20 @@ namespace TFE_DarkForces
 			char* gamePath    = strtok(nullptr, ", \t\n\r");
 			char* srcPath     = strtok(nullptr, ", \t\n\r");
 
-			if (displayName[0] && gamePath[0])
+			s_levelDisplayNames[i] = nullptr;
+			s_levelGamePaths[i] = nullptr;
+			s_levelSrcPaths[i] = nullptr;
+
+			if (displayName && gamePath)
 			{
-				s_levelDisplayNames[i] = copyAndAllocateString(displayName);
-				s_levelGamePaths[i]    = copyAndAllocateString(gamePath);
-				s_levelSrcPaths[i]     = nullptr;
+				if (displayName[0])
+				{
+					s_levelDisplayNames[i] = copyAndAllocateString(displayName);
+				}
+				if (gamePath[0])
+				{
+					s_levelGamePaths[i] = copyAndAllocateString(gamePath);
+				}
 			}
 		}
 

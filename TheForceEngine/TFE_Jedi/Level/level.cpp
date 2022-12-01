@@ -120,9 +120,7 @@ namespace TFE_Jedi
 		TFE_Parser parser;
 		size_t bufferPos = 0;
 		parser.init(s_buffer.data(), s_buffer.size());
-		parser.enableBlockComments();
 		parser.addCommentString("#");
-		parser.addCommentString("//");
 		parser.convertToUpperCase(true);
 
 		// Only use the parser "read line" functionality and otherwise read in the same was as the DOS code.
@@ -254,7 +252,8 @@ namespace TFE_Jedi
 				return false;
 			}
 
-			line = parser.readLine(bufferPos);
+			// Allow names to have '#' in them.
+			line = parser.readLine(bufferPos, false, true);
 			// Sectors missing a name are valid but do not get "addresses" - and thus cannot be
 			// used by the INF system (except in the case of doors and exploding walls, see the flags section below).
 			char name[256];
