@@ -369,6 +369,8 @@ namespace TFE_Jedi
 				wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
 		// If there is an exterior adjoin, we only add an item if the current sector is *not* an exterior.
+		// This causes a wall to render as sky in DT 2, but disabling leaves a gap.
+		// Clearly the quad bottom is calculated incorrectly.
 		else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_EXTERIOR))
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_SKY, data.y, data.z | flip,

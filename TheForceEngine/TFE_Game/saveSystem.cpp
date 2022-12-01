@@ -98,7 +98,9 @@ namespace TFE_SaveSystem
 		stream->write(&version);
 
 		// Save Name.
-		u8 len = (u8)strlen(saveName);
+		size_t saveNameLen = strlen(saveName);
+		if (saveNameLen > SAVE_MAX_NAME_LEN - 1) { saveNameLen = SAVE_MAX_NAME_LEN - 1; }
+		u8 len = (u8)saveNameLen;
 		stream->write(&len);
 		stream->writeBuffer(saveName, len);
 
@@ -139,6 +141,8 @@ namespace TFE_SaveSystem
 		stream->read(&len);
 		stream->readBuffer(header->saveName, len);
 		header->saveName[len] = 0;
+		// Fix existing invalid save names.
+		header->saveName[SAVE_MAX_NAME_LEN - 1] = 0;
 
 		// Time and Date of Save.
 		stream->read(&len);
