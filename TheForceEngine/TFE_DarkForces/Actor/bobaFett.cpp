@@ -24,10 +24,6 @@
 
 namespace TFE_DarkForces
 {
-	// During two of the three attack phases, Boba Fett doesn't actively try to face the player.
-	// By setting this to 1, Boba Fett will always try to face the player while doing his attack patterns.
-	#define BOBA_FACE_PLAYER 0
-
 	enum BobaFettStates
 	{
 		BOBASTATE_DEFAULT         = 0,
@@ -54,6 +50,12 @@ namespace TFE_DarkForces
 		SEARCH_FIND = 0,
 		SEARCH_RAND,
 		SEARCH_CONTINUE
+	};
+
+	enum Timing : u32
+	{
+		SHOOT_DELAY_RANGE_VANILLA = 291,
+		SHOOT_DELAY_RANGE_ENH = 145,
 	};
 
 	struct BobaFettMoveState
@@ -413,7 +415,8 @@ namespace TFE_DarkForces
 		local(moveState) = &local(bobaFett)->moveState;
 		
 		local(phase) = ATTACK_NEWMODE;
-		local(nextAimedShotTick) = s_curTick + floor16(random(FIXED(291)));
+		local(nextAimedShotTick) = s_curTick +
+			floor16(random(FIXED(TFE_Settings::getGameSettings()->df_bobaFettFacePlayer ? SHOOT_DELAY_RANGE_ENH : SHOOT_DELAY_RANGE_VANILLA)));
 		local(nextChangeHeightTick) = 0;
 		local(nextShootTick) = 0;
 		local(nextPhaseChangeTick) = 0;
@@ -463,10 +466,12 @@ namespace TFE_DarkForces
 				}
 				else if (local(phase) == ATTACK_CIRCLE || local(phase) == ATTACK_CIRCLE1)
 				{
-				#if BOBA_FACE_PLAYER
-					local(target)->yaw = angle;
-					local(target)->flags |= TARGET_MOVE_ROT;
-				#endif
+					// TFE: Optional feature.
+					if (TFE_Settings::getGameSettings()->df_bobaFettFacePlayer)
+					{
+						local(target)->yaw = angle;
+						local(target)->flags |= TARGET_MOVE_ROT;
+					}
 
 					if (local(phase) == ATTACK_CIRCLE)
 					{
@@ -483,15 +488,18 @@ namespace TFE_DarkForces
 				}
 				else if (local(phase) == ATTACK_FIGURE8 || local(phase) == ATTACK_FIGURE8_1)
 				{
-				#if BOBA_FACE_PLAYER
-					local(target)->yaw = angle;
-					local(target)->flags |= TARGET_MOVE_ROT;
-				#endif
+					// TFE: Optional feature.
+					if (TFE_Settings::getGameSettings()->df_bobaFettFacePlayer)
+					{
+						local(target)->yaw = angle;
+						local(target)->flags |= TARGET_MOVE_ROT;
+					}
 
 					if (local(phase) == ATTACK_FIGURE8)
 					{
 						local(nextPhaseChangeTick) = s_curTick + 2184;
-						local(nextSwapAccelTick)   = s_curTick + 291;
+						local(nextSwapAccelTick)   = s_curTick +
+							(TFE_Settings::getGameSettings()->df_bobaFettFacePlayer ? SHOOT_DELAY_RANGE_ENH : SHOOT_DELAY_RANGE_VANILLA);
 						local(phase) = ATTACK_FIGURE8_1;
 						local(accel) = FIXED(50);
 					}
@@ -505,7 +513,8 @@ namespace TFE_DarkForces
 					if (local(nextSwapAccelTick) < s_curTick)
 					{
 						local(accel) = -local(accel);
-						local(nextSwapAccelTick) = s_curTick + 291;
+						local(nextSwapAccelTick) = s_curTick +
+							(TFE_Settings::getGameSettings()->df_bobaFettFacePlayer ? SHOOT_DELAY_RANGE_ENH : SHOOT_DELAY_RANGE_VANILLA);
 					}
 				}
 				else if (local(phase) == ATTACK_NEWMODE)
@@ -527,7 +536,7 @@ namespace TFE_DarkForces
 				{
 					if (local(nextAimedShotTick) < s_curTick && actor_canSeeObject(local(obj), s_playerObject))
 					{
-						local(nextAimedShotTick) = s_curTick + floor16(random(FIXED(291)));
+						local(nextAimedShotTick) = s_curTick + floor16(random(FIXED(TFE_Settings::getGameSettings()->df_bobaFettFacePlayer ? SHOOT_DELAY_RANGE_ENH : SHOOT_DELAY_RANGE_VANILLA)));
 						ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_BOBAFET_BALL, local(obj)->sector, local(obj)->posWS.x, local(obj)->posWS.y - FIXED(4), local(obj)->posWS.z, local(obj));
 						proj->prevColObj = local(obj);
 						proj->excludeObj = local(obj);

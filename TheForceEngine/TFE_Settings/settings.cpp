@@ -341,7 +341,7 @@ namespace TFE_Settings
 			if (i == Game_Dark_Forces)
 			{
 				writeKeyValue_Int(settings, "airControl", s_gameSettings.df_airControl);
-				writeKeyValue_Bool(settings, "fixBobaFettFireDir", s_gameSettings.df_fixBobaFettFireDir);
+				writeKeyValue_Bool(settings, "bobaFettFacePlayer", s_gameSettings.df_bobaFettFacePlayer);
 				writeKeyValue_Bool(settings, "disableFightMusic", s_gameSettings.df_disableFightMusic);
 				writeKeyValue_Bool(settings, "enableAutoaim", s_gameSettings.df_enableAutoaim);
 				writeKeyValue_Bool(settings, "showSecretFoundMsg", s_gameSettings.df_showSecretFoundMsg);
@@ -711,9 +711,9 @@ namespace TFE_Settings
 		{
 			s_gameSettings.df_airControl = std::min(std::max(parseInt(value), 0), 8);
 		}
-		else if (strcasecmp("fixBobaFettFireDir", key) == 0)
+		else if (strcasecmp("bobaFettFacePlayer", key) == 0)
 		{
-			s_gameSettings.df_fixBobaFettFireDir = parseBool(value);
+			s_gameSettings.df_bobaFettFacePlayer = parseBool(value);
 		}
 		else if (strcasecmp("disableFightMusic", key) == 0)
 		{

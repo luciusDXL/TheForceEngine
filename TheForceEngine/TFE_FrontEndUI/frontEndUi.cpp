@@ -829,6 +829,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_showSecretFoundMsg = showSecretMsg;
 		}
 
+		bool bobaFettFacePlayer = gameSettings->df_bobaFettFacePlayer;
+		if (ImGui::Checkbox("Boba Fett Face Player Fix", &bobaFettFacePlayer))
+		{
+			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
+		}
+
 		// File dialogs...
 		if (browseWinOpen >= 0)
 		{
