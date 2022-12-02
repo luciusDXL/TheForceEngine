@@ -424,7 +424,16 @@ namespace TFE_Input
 		return count;
 	}
 
-	InputBinding* inputMapping_getBindindByIndex(u32 index)
+	void inputMapping_removeBinding(u32 index)
+	{
+		for (u32 i = index; i < s_inputConfig.bindCount; i++)
+		{
+			s_inputConfig.binds[i] = s_inputConfig.binds[i + 1];
+		}
+		s_inputConfig.bindCount--;
+	}
+
+	InputBinding* inputMapping_getBindingByIndex(u32 index)
 	{
 		return &s_inputConfig.binds[index];
 	}

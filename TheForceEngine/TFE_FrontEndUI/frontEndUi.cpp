@@ -1272,7 +1272,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", name); ImGui::SameLine(132*s_uiScale);
 		if (count >= 1)
 		{
-			InputBinding* binding = inputMapping_getBindindByIndex(indices[0]);
+			InputBinding* binding = inputMapping_getBindingByIndex(indices[0]);
 			getBindingString(binding, inputName1);
 			strcat(inputName1, "##Input1");
 			strcat(inputName1, name);
@@ -1284,7 +1284,7 @@ namespace TFE_FrontEndUI
 
 		if (count >= 2)
 		{
-			InputBinding* binding = inputMapping_getBindindByIndex(indices[1]);
+			InputBinding* binding = inputMapping_getBindingByIndex(indices[1]);
 			getBindingString(binding, inputName2);
 			strcat(inputName2, "##Input2");
 			strcat(inputName2, name);
@@ -1511,6 +1511,10 @@ namespace TFE_FrontEndUI
 			{
 				ImGui::Spacing();
 
+				ImGui::LabelText("##ConfigLabel", "Set: left click and press button.");
+				ImGui::LabelText("##ConfigLabel", "  (hold key mod before the click)");
+				ImGui::LabelText("##ConfigLabel", "Repeat binding to clear.");
+
 				ImGui::PushFont(s_dialogFont);
 				ImGui::LabelText("##ConfigLabel", "System");
 				ImGui::PopFont();
@@ -1608,13 +1612,15 @@ namespace TFE_FrontEndUI
 
 					InputBinding* binding;
 					InputBinding newBinding;
+					bool existingBinding = true;
 					if (s_keySlot >= count)
 					{
 						binding = &newBinding;
+						existingBinding = false;
 					}
 					else
 					{
-						binding = inputMapping_getBindindByIndex(indices[s_keySlot]);
+						binding = inputMapping_getBindingByIndex(indices[s_keySlot]);
 					}
 
 					bool setBinding = false;
@@ -1622,61 +1628,102 @@ namespace TFE_FrontEndUI
 					{
 						setBinding = true;
 
-						memset(binding, 0, sizeof(InputBinding));
-						binding->action = InputAction(s_keyIndex);
-						binding->keyCode = key;
-						binding->keyMod = s_keyMod;
-						binding->type = ITYPE_KEYBOARD;
+						if (existingBinding && binding->action == InputAction(s_keyIndex) && binding->keyCode == key
+							&& binding->keyMod == s_keyMod && binding->type == ITYPE_KEYBOARD)
+						{
+							inputMapping_removeBinding(indices[s_keySlot]);
+						}
+						else
+						{
+							memset(binding, 0, sizeof(InputBinding));
+							binding->action = InputAction(s_keyIndex);
+							binding->keyCode = key;
+							binding->keyMod = s_keyMod;
+							binding->type = ITYPE_KEYBOARD;
+						}
 					}
 					else if (ctrlBtn != CONTROLLER_BUTTON_UNKNOWN)
 					{
 						setBinding = true;
-
-						memset(binding, 0, sizeof(InputBinding));
-						binding->action = InputAction(s_keyIndex);
-						binding->ctrlBtn = ctrlBtn;
-						binding->type = ITYPE_CONTROLLER;
+						if (existingBinding && binding->action == InputAction(s_keyIndex) && binding->ctrlBtn == ctrlBtn
+							&& binding->type == ITYPE_CONTROLLER)
+						{
+							inputMapping_removeBinding(indices[s_keySlot]);
+						}
+						else
+						{
+							memset(binding, 0, sizeof(InputBinding));
+							binding->action = InputAction(s_keyIndex);
+							binding->ctrlBtn = ctrlBtn;
+							binding->type = ITYPE_CONTROLLER;
+						}
 					}
 					else if (mouseBtn != MBUTTON_UNKNOWN)
 					{
 						setBinding = true;
 
-						memset(binding, 0, sizeof(InputBinding));
-						binding->action = InputAction(s_keyIndex);
-						binding->mouseBtn = mouseBtn;
-						binding->type = ITYPE_MOUSE;
+						if (existingBinding && binding->action == InputAction(s_keyIndex) && binding->mouseBtn == mouseBtn
+							&& binding->type == ITYPE_MOUSE)
+						{
+							inputMapping_removeBinding(indices[s_keySlot]);
+						}
+						else
+						{
+							memset(binding, 0, sizeof(InputBinding));
+							binding->action = InputAction(s_keyIndex);
+							binding->mouseBtn = mouseBtn;
+							binding->type = ITYPE_MOUSE;
+						}
 					}
 					else if (ctrlAnalog != AXIS_UNKNOWN)
 					{
 						setBinding = true;
 
-						memset(binding, 0, sizeof(InputBinding));
-						binding->action = InputAction(s_keyIndex);
-						binding->axis = ctrlAnalog;
-						binding->type = ITYPE_CONTROLLER_AXIS;
+						if (existingBinding && binding->action == InputAction(s_keyIndex) && binding->axis == ctrlAnalog
+							&& binding->type == ITYPE_CONTROLLER_AXIS)
+						{
+							inputMapping_removeBinding(indices[s_keySlot]);
+						}
+						else
+						{
+							memset(binding, 0, sizeof(InputBinding));
+							binding->action = InputAction(s_keyIndex);
+							binding->axis = ctrlAnalog;
+							binding->type = ITYPE_CONTROLLER_AXIS;
+						}
 					}
 					else if (wdx || wdy)
 					{
 						setBinding = true;
-
-						memset(binding, 0, sizeof(InputBinding));
-						binding->action = InputAction(s_keyIndex);
-						binding->type = ITYPE_MOUSEWHEEL;
+						MouseWheel mw;
 						if (wdx < 0)
 						{
-							binding->mouseWheel = MOUSEWHEEL_LEFT;
+							mw = MOUSEWHEEL_LEFT;
 						}
 						else if (wdx > 0)
 						{
-							binding->mouseWheel = MOUSEWHEEL_RIGHT;
+							mw = MOUSEWHEEL_RIGHT;
 						}
 						else if (wdy > 0)
 						{
-							binding->mouseWheel = MOUSEWHEEL_UP;
+							mw = MOUSEWHEEL_UP;
 						}
 						else if (wdy < 0)
 						{
-							binding->mouseWheel = MOUSEWHEEL_DOWN;
+							mw = MOUSEWHEEL_DOWN;
+						}
+
+						if (existingBinding && binding->action == InputAction(s_keyIndex) && binding->mouseWheel == mw
+							&& binding->type == ITYPE_MOUSEWHEEL)
+						{
+							inputMapping_removeBinding(indices[s_keySlot]);
+						}
+						else
+						{
+							memset(binding, 0, sizeof(InputBinding));
+							binding->action = InputAction(s_keyIndex);
+							binding->type = ITYPE_MOUSEWHEEL;
+							binding->mouseWheel = mw;
 						}
 					}
 
