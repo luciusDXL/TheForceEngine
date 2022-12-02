@@ -1154,7 +1154,7 @@ namespace TFE_FrontEndUI
 					s_popupSetFocus = false;
 				}
 				ImGui::SetNextItemWidth(768 * s_uiScale);
-				if (ImGui::InputText("###SaveNameText", s_newSaveName, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+				if (ImGui::InputText("###SaveNameText", s_newSaveName, TFE_SaveSystem::SAVE_MAX_NAME_LEN, ImGuiInputTextFlags_EnterReturnsTrue))
 				{
 					shouldExit = true;
 					saveConfirmed();
