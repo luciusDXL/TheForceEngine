@@ -443,8 +443,8 @@ namespace TFE_DarkForces
 		y0 += intToFixed16(hudSettings->pixelOffset[1]);
 		y1 += intToFixed16(hudSettings->pixelOffset[1]);
 
-		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, xScale, yScale, 31);
-		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, xScale, yScale, 31);
+		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 31);
+		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 31);
 		
 		if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0)
 		{

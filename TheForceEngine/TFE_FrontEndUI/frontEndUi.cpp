@@ -1978,13 +1978,19 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
-		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f");
+		ImGui::SliderFloat("Scale", &hud->scale, 0.0f, 15.0f, "%.2f"); ImGui::SameLine(0.0f, 32.0f*s_uiScale);
+		ImGui::SetNextItemWidth(128 * s_uiScale);
+		ImGui::InputFloat("##HudScaleText", &hud->scale, 0.01f, 0.1f, 2);
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
-		ImGui::SliderInt("Offset X", &hud->pixelOffset[0], -512, 512);
+		ImGui::SliderInt("Offset X", &hud->pixelOffset[0], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
+		ImGui::SetNextItemWidth(128 * s_uiScale);
+		ImGui::InputInt("##HudOffsetXText", &hud->pixelOffset[0], 1, 10);
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
-		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512);
+		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
+		ImGui::SetNextItemWidth(128 * s_uiScale);
+		ImGui::InputInt("##HudOffsetYText", &hud->pixelOffset[1], 1, 10);
 
 		if (s_menuRetState != APP_STATE_MENU)
 		{
