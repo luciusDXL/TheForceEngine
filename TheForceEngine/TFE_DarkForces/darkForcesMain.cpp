@@ -24,6 +24,7 @@
 #include "GameUI/pda.h"
 #include "Landru/lsystem.h"
 #include "Landru/lmusic.h"
+#include "Landru/cutscene_film.h"
 #include <TFE_DarkForces/Landru/cutscene.h>
 #include <TFE_DarkForces/Landru/cutsceneList.h>
 #include <TFE_DarkForces/Actor/actor.h>
@@ -337,6 +338,7 @@ namespace TFE_DarkForces
 		gameMessage_freeBuffer();
 		briefingList_freeBuffer();
 		cutsceneList_freeBuffer();
+		cutsceneFilm_reset();
 		lsystem_destroy();
 		bitmap_clearAll();
 		
@@ -361,7 +363,7 @@ namespace TFE_DarkForces
 		vue_resetState();
 		lsystem_destroy();
 		hud_reset();
-
+		
 		// TFE
 		TFE_Sprite_Jedi::freeAll();
 		TFE_Model_Jedi::freeAll();

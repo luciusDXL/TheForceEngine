@@ -19,9 +19,13 @@ using namespace TFE_Jedi;
 
 namespace TFE_DarkForces
 {
-	static Film* s_firstFilm = nullptr;
-	static FadeType s_filmFade = ftype_noFade;
-	static FadeColorType s_filmColorFade = fcolorType_noColorFade;
+	struct FilmState
+	{
+		Film* firstFilm = nullptr;
+		FadeType filmFade = ftype_noFade;
+		FadeColorType filmColorFade = fcolorType_noColorFade;
+	};
+	static FilmState s_filmState = {};
 
 	LActor* cutsceneFilm_cloneActor(u32 type, const char* name);
 	LSound* cutsceneFilm_cloneSound(u32 type, const char* name);
@@ -43,6 +47,11 @@ namespace TFE_DarkForces
 	void cutsceneFilm_clearFade();
 	void cutsceneFilm_startFade(JBool paletteChange);
 	JBool cutsceneFilm_isFading();
+
+	void cutsceneFilm_reset()
+	{
+		s_filmState = {};
+	}
 
 	Film* cutsceneFilm_allocate()
 	{
@@ -791,31 +800,31 @@ namespace TFE_DarkForces
 				
 	void cutsceneFilm_setFade(s16 fade, s16 colorFade)
 	{
-		s_filmFade = (FadeType)fade;
-		s_filmColorFade = (FadeColorType)colorFade;
+		s_filmState.filmFade = (FadeType)fade;
+		s_filmState.filmColorFade = (FadeColorType)colorFade;
 	}
 
 	void cutsceneFilm_clearFade()
 	{
-		s_filmFade = ftype_noFade;
-		s_filmColorFade = fcolorType_noColorFade;
+		s_filmState.filmFade = ftype_noFade;
+		s_filmState.filmColorFade = fcolorType_noColorFade;
 	}
 
 	void cutsceneFilm_startFade(JBool paletteChange)
 	{
 		s16 lock = 1;
-		if (s_filmColorFade == fcolorType_paletteColorFade && s_filmFade <= ftype_longSnapFade)
+		if (s_filmState.filmColorFade == fcolorType_paletteColorFade && s_filmState.filmFade <= ftype_longSnapFade)
 		{
 			lock = 0;
 		}
 
-		lfade_startFull(s_filmFade, s_filmColorFade, paletteChange, 0, lock);
+		lfade_startFull(s_filmState.filmFade, s_filmState.filmColorFade, paletteChange, 0, lock);
 		cutsceneFilm_clearFade();
 	}
 
 	JBool cutsceneFilm_isFading()
 	{
-		return (s_filmFade == ftype_noFade && s_filmColorFade == fcolorType_noColorFade) ? JFALSE : JTRUE;
+		return (s_filmState.filmFade == ftype_noFade && s_filmState.filmColorFade == fcolorType_noColorFade) ? JFALSE : JTRUE;
 	}
 
 	void cutsceneFilm_stepActor(Film* film, FilmObject* filmObj, u8* data)
@@ -942,7 +951,7 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_updateCallbacks(s32 time)
 	{
-		Film* film = s_firstFilm;
+		Film* film = s_filmState.firstFilm;
 		while (film)
 		{
 			if (film->callback)
@@ -981,7 +990,7 @@ namespace TFE_DarkForces
 	
 	void cutsceneFilm_updateFilms(s32 time)
 	{
-		Film* film = s_firstFilm;
+		Film* film = s_filmState.firstFilm;
 		while (film)
 		{
 			if (film->start == time)
@@ -1034,7 +1043,7 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_drawFilms(JBool refresh)
 	{
-		Film* film = s_firstFilm;
+		Film* film = s_filmState.firstFilm;
 		for (s32 i = 0; i < LVIEW_COUNT; i++)
 		{
 			LRect rect;
@@ -1067,7 +1076,7 @@ namespace TFE_DarkForces
 
 	void cutsceneFilm_add(Film* film)
 	{
-		Film* curFilm = s_firstFilm;
+		Film* curFilm = s_filmState.firstFilm;
 		Film* lastFilm = nullptr;
 		while (curFilm && curFilm->zplane > film->zplane)
 		{
@@ -1078,7 +1087,7 @@ namespace TFE_DarkForces
 		film->next = curFilm;
 		if (!lastFilm)
 		{
-			s_firstFilm = film;
+			s_filmState.firstFilm = film;
 		}
 		else
 		{
@@ -1090,7 +1099,7 @@ namespace TFE_DarkForces
 	{
 		if (!film) { return; }
 
-		Film* curFilm = s_firstFilm;
+		Film* curFilm = s_filmState.firstFilm;
 		Film* lastFilm = nullptr;
 		while (curFilm && curFilm != film)
 		{
@@ -1102,7 +1111,7 @@ namespace TFE_DarkForces
 		{
 			if (!lastFilm)
 			{
-				s_firstFilm = curFilm->next;
+				s_filmState.firstFilm = curFilm->next;
 			}
 			else
 			{
