@@ -185,6 +185,7 @@ namespace TFE_FrontEndUI
 	void credits();
 
 	void configSaveLoadBegin(bool save);
+	void renderBackground();
 
 	void menuItem_Start();
 	void menuItem_Manual();
@@ -675,6 +676,7 @@ namespace TFE_FrontEndUI
 				configSound();
 				break;
 			};
+			renderBackground();
 
 			ImGui::End();
 		}
@@ -1757,7 +1759,7 @@ namespace TFE_FrontEndUI
 		ImGui::PopStyleVar();
 		ImGui::SetCursorPosY(yNext + (s_inputMappingOpen ? inputMappingHeight : 29.0f*s_uiScale));
 	}
-
+		
 	void configGraphics()
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
@@ -1961,11 +1963,6 @@ namespace TFE_FrontEndUI
 			ImGui::SetNextItemWidth(196*s_uiScale);
 			ImGui::SliderFloat("Intensity", &s_bloomIntensity, 0.0f, 1.0f);
 		}
-
-		if (s_menuRetState != APP_STATE_MENU)
-		{
-			TFE_DarkForces::mission_render(graphics->rendererIndex);
-		}
 	}
 
 	void configHud()
@@ -1997,12 +1994,6 @@ namespace TFE_FrontEndUI
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputInt("##HudOffsetYText", &hud->pixelOffset[1], 1, 10);
-
-		if (s_menuRetState != APP_STATE_MENU)
-		{
-			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
-			TFE_DarkForces::mission_render(graphics->rendererIndex);
-		}
 	}
 
 	// Uses a percentage slider (0 - 100%) to adjust a floating point value (0.0 - 1.0).
@@ -2045,6 +2036,12 @@ namespace TFE_FrontEndUI
 			{
 				ImSetDigitalChannelCount(8);
 			}
+		}
+
+		bool disableSoundInMenus = sound->disableSoundInMenus;
+		if (ImGui::Checkbox("Disable Sound in Menus", &disableSoundInMenus))
+		{
+			sound->disableSoundInMenus = disableSoundInMenus;
 		}
 
 		TFE_Audio::setVolume(sound->soundFxVolume);
@@ -2152,5 +2149,14 @@ namespace TFE_FrontEndUI
 	void clearMenuState()
 	{
 		s_subUI = FEUI_NONE;
+	}
+
+	void renderBackground()
+	{
+		if (s_menuRetState != APP_STATE_MENU)
+		{
+			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+			TFE_DarkForces::mission_render(graphics->rendererIndex);
+		}
 	}
 }

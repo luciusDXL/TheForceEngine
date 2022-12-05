@@ -379,6 +379,12 @@ namespace TFE_DarkForces
 	{
 		mission_pause(pause ? JTRUE : JFALSE);
 	}
+
+	void DarkForces::pauseSound(bool pause)
+	{
+		if (pause) { pauseLevelSound(); }
+		else { resumeLevelSound(); }
+	}
 		
 	void handleLevelComplete()
 	{

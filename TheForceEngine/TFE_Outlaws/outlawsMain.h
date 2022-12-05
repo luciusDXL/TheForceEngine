@@ -12,6 +12,7 @@ namespace TFE_Outlaws
 	{
 		bool runGame(s32 argCount, const char* argv[], Stream* stream) override;
 		void pauseGame(bool pause) override;
+		void pauseSound(bool pause) override;
 		void exitGame() override;
 	};
 }

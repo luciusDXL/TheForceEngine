@@ -23,6 +23,7 @@ struct IGame
 	virtual bool runGame(s32 argCount, const char* argv[], Stream* stream) = 0;
 	virtual void exitGame() = 0;
 	virtual void pauseGame(bool pause) = 0;
+	virtual void pauseSound(bool pause) = 0;
 	virtual void loopGame() {};
 	virtual bool serializeGameState(Stream* stream, const char* filename, bool writeState) { return false; };
 	virtual bool canSave() { return false; }

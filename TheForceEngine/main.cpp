@@ -301,6 +301,7 @@ bool sdlInit()
 }
 
 static AppState s_curState = APP_STATE_UNINIT;
+static bool s_soundPaused = false;
 
 void setAppState(AppState newState, int argc, char* argv[])
 {
@@ -721,7 +722,7 @@ int main(int argc, char* argv[])
 
 		TFE_Ui::begin();
 		TFE_System::update();
-						
+
 		// Update
 		if (TFE_FrontEndUI::uiControlsEnabled() && task_canRun())
 		{
@@ -751,11 +752,31 @@ int main(int argc, char* argv[])
 				inputMapping_clearKeyBinding(KEY_ESCAPE);
 
 				s_curState = TFE_FrontEndUI::menuReturn();
+
+				if ((s_soundPaused || TFE_Settings::getSoundSettings()->disableSoundInMenus) && s_curGame)
+				{
+					s_curGame->pauseSound(false);
+					s_soundPaused = false;
+				}
 			}
 			else if (toggleSystemMenu)
 			{
 				TFE_FrontEndUI::enableConfigMenu();
 				TFE_FrontEndUI::setMenuReturnState(s_curState);
+
+				if (TFE_Settings::getSoundSettings()->disableSoundInMenus && s_curGame)
+				{
+					s_curGame->pauseSound(true);
+					s_soundPaused = true;
+				}
+			}
+			else if (s_soundPaused && !TFE_FrontEndUI::isConfigMenuOpen())
+			{
+				if (s_curGame)
+				{
+					s_curGame->pauseSound(false);
+				}
+				s_soundPaused = false;
 			}
 		}
 

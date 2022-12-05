@@ -13,6 +13,7 @@ namespace TFE_DarkForces
 	{
 		bool runGame(s32 argCount, const char* argv[], Stream* stream) override;
 		void pauseGame(bool pause) override;
+		void pauseSound(bool pause) override;
 		void exitGame() override;
 		void loopGame() override;
 		bool serializeGameState(Stream* stream, const char* filename, bool writeState) override;

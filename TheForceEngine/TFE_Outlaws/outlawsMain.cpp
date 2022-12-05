@@ -13,6 +13,11 @@ namespace TFE_Outlaws
 		// STUB
 	}
 
+	void Outlaws::pauseSound(bool pause)
+	{
+		// STUB
+	}
+
 	void Outlaws::exitGame()
 	{
 		// STUB
