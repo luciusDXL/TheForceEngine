@@ -1519,9 +1519,12 @@ namespace TFE_FrontEndUI
 			{
 				ImGui::Spacing();
 
-				ImGui::LabelText("##ConfigLabel", "Set: left click and press button.");
-				ImGui::LabelText("##ConfigLabel", "  (hold key mod before the click)");
-				ImGui::LabelText("##ConfigLabel", "Repeat binding to clear.");
+				ImGui::LabelText("##ConfigLabel", "Set: Left click and press key/button");
+				ImGui::LabelText("##ConfigLabel", " Hold key modifier before the click");
+				ImGui::LabelText("##ConfigLabel", " Key modifiers: Shift, Ctrl, Alt");
+				ImGui::LabelText("##ConfigLabel", "Clear: Repeat binding");
+
+				ImGui::Separator();
 
 				ImGui::PushFont(s_dialogFont);
 				ImGui::LabelText("##ConfigLabel", "System");

@@ -21,6 +21,19 @@ namespace TFE_Math
 		return (x > 0) && (x & (x - 1)) == 0;
 	}
 
+	inline u32 log2(u32 x)
+	{
+		if (x == 0 || x == 1) { return 0; }
+
+		u32 l2 = 0;
+		while (x > 1)
+		{
+			l2++;
+			x >>= 1;
+		}
+		return l2;
+	}
+
 	inline u32 nextPow2(u32 x)
 	{
 		if (x == 0) { return 0; }

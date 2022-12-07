@@ -1060,6 +1060,10 @@ namespace TFE_DarkForces
 
 		sprintf(path, "%sMods/", programDir);
 		TFE_Paths::addAbsoluteSearchPath(path);
+
+		// Add the adjustable HUD.
+		sprintf(path, "%sMods/TFE/AdjustableHud", programDir);
+		TFE_Paths::addAbsoluteSearchPath(path);
 	}
 
 	void openGobFiles()

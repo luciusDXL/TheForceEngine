@@ -9,6 +9,7 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_System/math.h>
 #include <unordered_map>
 
 using namespace TFE_DarkForces;
@@ -539,6 +540,51 @@ namespace TFE_Jedi
 		}
 		s_texState.animTexIndex++;
 		return true;
+	}
+
+	void bitmap_write(const char* filePath, u16 width, u16 height, u8* image, u8 flags)
+	{
+		const u32 pixelCount = u32(width) * u32(height);
+
+		FileStream bmFile;
+		if (bmFile.open(filePath, Stream::MODE_WRITE))
+		{
+			char fheader[3] = { 'B', 'M', ' ' };
+			bmFile.writeBuffer(fheader, 3);
+
+			u8 version = DF_BM_VERSION;
+			bmFile.write(&version);
+
+			u8 logSizeY = TFE_Math::log2(height);
+			u8 compressed = 0;
+			u8 unused = 0;
+			bmFile.write(&width);
+			bmFile.write(&height);
+			bmFile.write(&width);		// uvWidth
+			bmFile.write(&height);		// uvHeight
+			bmFile.write(&flags);
+			bmFile.write(&logSizeY);
+			bmFile.write(&compressed);
+			bmFile.write(&unused);
+			bmFile.write(&pixelCount);	// dataSize
+
+			u8 padding[12] = { 0 };
+			bmFile.writeBuffer(padding, 12);
+
+			// Image data.
+			bmFile.writeBuffer(image, pixelCount);
+			bmFile.close();
+		}
+	}
+
+	void bitmap_writeOpaque(const char* filePath, u16 width, u16 height, u8* image)
+	{
+		bitmap_write(filePath, width, height, image, 0);
+	}
+
+	void bitmap_writeTransparent(const char* filePath, u16 width, u16 height, u8* image)
+	{
+		bitmap_write(filePath, width, height, image, OPACITY_TRANS);
 	}
 		
 	// Per frame animated texture update.

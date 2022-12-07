@@ -18,6 +18,11 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
 
+#define TFE_CONVERT_CAPS 0
+#if TFE_CONVERT_CAPS
+#include <TFE_Asset/imageAsset.h>
+#endif
+
 namespace TFE_DarkForces
 {
 	///////////////////////////////////////////
@@ -65,6 +70,8 @@ namespace TFE_DarkForces
 	static TextureData* s_hudStatusR  = nullptr;
 	static TextureData* s_hudLightOn  = nullptr;
 	static TextureData* s_hudLightOff = nullptr;
+	static TextureData* s_hudCapLeft  = nullptr;
+	static TextureData* s_hudCapRight = nullptr;
 	static Font* s_hudMainAmmoFont    = nullptr;
 	static Font* s_hudSuperAmmoFont   = nullptr;
 	static Font* s_hudShieldFont      = nullptr;
@@ -112,6 +119,9 @@ namespace TFE_DarkForces
 	void getCameraXZ(fixed16_16* x, fixed16_16* z);
 	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, char* msg, u8* framebuffer);
 	void hud_drawString(OffScreenBuffer* elem, Font* font, s32 x0, s32 y0, const char* str);
+#if TFE_CONVERT_CAPS
+	void hud_convertCapsToBM();
+#endif
 
 	///////////////////////////////////////////
 	// API Implementation
@@ -221,7 +231,7 @@ namespace TFE_DarkForces
 		s_cachedHudLeft = nullptr;
 		s_cachedHudRight = nullptr;
 	}
-
+		
 	void hud_loadGraphics()
 	{
 		s_hudStatusL       = hud_loadTexture("StatusLf.bm");
@@ -248,6 +258,15 @@ namespace TFE_DarkForces
 		{
 			offscreenBuffer_drawTexture(s_cachedHudRight, s_hudStatusR, 0, 0);
 		}
+
+		#if TFE_CONVERT_CAPS
+			hud_convertCapsToBM();
+		#endif
+
+		// TFE:
+		// Load the caps
+		s_hudCapLeft  = hud_loadTexture("HudStatusLeftAddon.bm");
+		s_hudCapRight = hud_loadTexture("HudStatusRightAddon.bm");
 	}
 		
 	void hud_updateBasePalette(u8* srcBuffer, s32 offset, s32 count)
@@ -445,10 +464,10 @@ namespace TFE_DarkForces
 
 		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 31);
 		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 31);
-		
 		if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0)
 		{
-			// TODO: Draw the backend.
+			screenGPU_blitTextureScaled(s_hudCapLeft,  nullptr, x1 - mul16(intToFixed16(s_hudCapLeft->width - 1), hudScaleX), y1, hudScaleX, hudScaleY, 31);
+			screenGPU_blitTextureScaled(s_hudCapRight, nullptr, x0 + mul16(intToFixed16(s_hudStatusR->width), hudScaleX), y1, hudScaleX, hudScaleY, 31);
 		}
 
 		// Energy
@@ -939,7 +958,12 @@ namespace TFE_DarkForces
 
 			if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0)
 			{
-				// TODO: Draw the backend.
+				DrawRect rect = { screenRect->left, screenRect->top, screenRect->right, screenRect->bot };
+				s32 y0Scaled = (dispHeight == 200) ? y0 : floor16(intToFixed16(y0) + mul16(ONE_16, hudScaleY));
+				s32 y1Scaled = (dispHeight == 200) ? y1 : floor16(intToFixed16(y1) + mul16(ONE_16, hudScaleY));
+
+				blitTextureToScreenScaled(s_hudCapLeft,  &rect, floor16(intToFixed16(x1) - mul16(intToFixed16(s_hudCapLeft->width - 1), hudScaleX)), y1Scaled, hudScaleX, hudScaleY, framebuffer);
+				blitTextureToScreenScaled(s_hudCapRight, &rect, floor16(intToFixed16(x0) + mul16(intToFixed16(s_hudStatusR->width - 1), hudScaleX)), y0Scaled, hudScaleX, hudScaleY, framebuffer);
 			}
 		}
 	}
@@ -1176,4 +1200,108 @@ namespace TFE_DarkForces
 		};
 		blitTextureToScreenScaled(&image, (DrawRect*)rect, x0, y0, xScale, yScale, framebuffer);
 	}
+
+	// This should not be enabled in released builds - it is only kept in case the images need to be regenerated.
+#if TFE_CONVERT_CAPS
+	u8 hud_findColorInPalette(u32 color, u32 colorCount, const u8* colors, const u8* palette)
+	{
+		// Transparent.
+		if ((color >> 24) < 16)
+		{
+			return 0;
+		}
+
+		s32 srcR = color & 0xff;
+		s32 srcG = (color >> 8) & 0xff;
+		s32 srcB = (color >> 16) & 0xff;
+		s32 colorDist = INT_MAX;
+		s32 match = -1;
+		for (u32 i = 0; i < colorCount; i++)
+		{
+			s32 dstR = CONV_6bitTo8bit(palette[colors[i] * 3 + 0]);
+			s32 dstG = CONV_6bitTo8bit(palette[colors[i] * 3 + 1]);
+			s32 dstB = CONV_6bitTo8bit(palette[colors[i] * 3 + 2]);
+			s32 distApprox = TFE_Jedi::abs(srcR - dstR) + TFE_Jedi::abs(srcG - dstG) + TFE_Jedi::abs(srcB - dstB);
+			if (distApprox < colorDist)
+			{
+				colorDist = distApprox;
+				match = colors[i];
+			}
+		}
+		assert(colorDist < 4);
+		return match >= 0 ? match : 0;
+	}
+
+	void hud_convertPngToBM(const char* path, const char* name, u32 colorCount, const u8* colors, const u8* palette)
+	{
+		char srcPath[TFE_MAX_PATH];
+		char dstPath[TFE_MAX_PATH];
+		sprintf(srcPath, "%sTFE/AdjustableHud/%s.png", path, name);
+		sprintf(dstPath, "%sTFE/AdjustableHud/%s.bm", path, name);
+
+		Image* srcImage = TFE_Image::get(srcPath);
+		if (!srcImage) { return; }
+
+		u32 pixelCount = srcImage->width * srcImage->height;
+		u8* output = (u8*)malloc(pixelCount);
+		const u32* input = srcImage->data;
+		// Convert to column format.
+		for (u32 y = 0; y < srcImage->height; y++)
+		{
+			for (u32 x = 0; x < srcImage->width; x++)
+			{
+				output[x*srcImage->height + y] = hud_findColorInPalette(input[(srcImage->height - y - 1)*srcImage->width + x], colorCount, colors, palette);
+			}
+		}
+
+		bitmap_writeTransparent(dstPath, u16(srcImage->width), u16(srcImage->height), output);
+		free(output);
+	}
+
+	void hud_convertCapsToBM()
+	{
+		// First make sure the colors match, so grab all colors used by the original HUD backgrounds.
+		u8 colorMap[256] = { 0 };
+		u8 colors[256];
+		u8 colorCount = 0;
+		const u8* image = s_hudStatusL->image;
+		for (s32 i = 0; i < s_hudStatusL->dataSize; i++)
+		{
+			if (image[i] == 0) { continue; }
+			if (colorMap[image[i]] == 0)
+			{
+				colorMap[image[i]] = 1;
+				colors[colorCount++] = image[i];
+			}
+		}
+
+		image = s_hudStatusR->image;
+		for (s32 i = 0; i < s_hudStatusR->dataSize; i++)
+		{
+			if (image[i] == 0) { continue; }
+			if (colorMap[image[i]] == 0)
+			{
+				colorMap[image[i]] = 1;
+				colors[colorCount++] = image[i];
+			}
+		}
+
+		// Load default palette.
+		FilePath filePath;
+		u8 pal[768];
+		if (TFE_Paths::getFilePath("SECBASE.PAL", &filePath))
+		{
+			FileStream::readContents(&filePath, pal, 768);
+		}
+
+		// Next load the true-color images.
+		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
+		char programDirModDir[TFE_MAX_PATH];
+		sprintf(programDirModDir, "%sMods/", programDir);
+		TFE_Paths::fixupPathAsDirectory(programDirModDir);
+
+		hud_convertPngToBM(programDirModDir, "HudStatusLeftAddon", colorCount, colors, pal);
+		hud_convertPngToBM(programDirModDir, "HudStatusRightAddon", colorCount, colors, pal);
+	}
+#endif
 }  // TFE_DarkForces

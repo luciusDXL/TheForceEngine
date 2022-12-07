@@ -107,4 +107,7 @@ namespace TFE_Jedi
 
 	// Serialization.
 	void bitmap_serializeLevelTextures(Stream* stream);
+
+	void bitmap_writeOpaque(const char* filePath, u16 width, u16 height, u8* image);
+	void bitmap_writeTransparent(const char* filePath, u16 width, u16 height, u8* image);
 }
