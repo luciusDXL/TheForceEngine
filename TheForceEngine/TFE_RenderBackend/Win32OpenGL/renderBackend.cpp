@@ -43,7 +43,6 @@ namespace TFE_RenderBackend
 	static ScreenCapture*  s_screenCapture = nullptr;
 
 	static RenderTarget* s_copyTarget = nullptr;
-	static RenderTarget* s_copySrc = nullptr;
 
 	static u32 s_virtualWidth, s_virtualHeight;
 	static u32 s_virtualWidthUi;
@@ -549,12 +548,9 @@ namespace TFE_RenderBackend
 		RenderTarget::copy(s_virtualRenderTarget, (RenderTarget*)src);
 	}
 		
-	// If we copy right away, we'll get a partial frame.
-	// So wait until the end of the frame to copy.
-	void copyFromVirtualDisplay(RenderTargetHandle dst)
+	void copyBackbufferToRenderTarget(RenderTargetHandle dst)
 	{
 		s_copyTarget = (RenderTarget*)dst;
-		s_copySrc = s_virtualRenderTarget;
 	}
 
 	void setPalette(const u32* palette)
@@ -656,11 +652,10 @@ namespace TFE_RenderBackend
 		RenderTarget::unbind();
 		glViewport(0, 0, m_windowState.width, m_windowState.height);
 
-		if (s_copyTarget && s_copySrc)
+		if (s_copyTarget)
 		{
-			RenderTarget::copy(s_copyTarget, s_copySrc);
+			RenderTarget::copyBackbufferToTarget(s_copyTarget);
 			s_copyTarget = nullptr;
-			s_copySrc = nullptr;
 		}
 	}
 

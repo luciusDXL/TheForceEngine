@@ -119,7 +119,7 @@ namespace TFE_RenderBackend
 	void updateVirtualDisplay(const void* buffer, size_t size);
 	void bindVirtualDisplay();
 	void copyToVirtualDisplay(RenderTargetHandle src);
-	void copyFromVirtualDisplay(RenderTargetHandle dst);
+	void copyBackbufferToRenderTarget(RenderTargetHandle dst);
 	void clearVirtualDisplay(f32* color, bool clearColor=true);
 	void setPalette(const u32* palette);
 	const TextureGpu* getPaletteTexture();

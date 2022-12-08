@@ -1,5 +1,6 @@
 #include "renderTarget.h"
 #include <TFE_RenderBackend/renderState.h>
+#include <TFE_RenderBackend/renderBackend.h>
 #include <GL/glew.h>
 #include <assert.h>
 
@@ -122,5 +123,20 @@ void RenderTarget::copy(RenderTarget* dst, RenderTarget* src)
 					  GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+}
+
+void RenderTarget::copyBackbufferToTarget(RenderTarget* dst)
+{
+	glReadBuffer(GL_BACK);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst->m_gpuHandle);
+
+	DisplayInfo displayInfo;
+	TFE_RenderBackend::getDisplayInfo(&displayInfo);
+	
+	glBlitFramebuffer(0, displayInfo.height, displayInfo.width, 0,	// src rect
+		0, 0, dst->getTexture()->getWidth(), dst->getTexture()->getHeight(),	// dst rect
+		GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }

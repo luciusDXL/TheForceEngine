@@ -19,6 +19,7 @@ public:
 	void clearDepth(f32 depth);
 	void clearStencil(u8 stencil);
 	static void copy(RenderTarget* dst, RenderTarget* src);
+	static void copyBackbufferToTarget(RenderTarget* dst);
 	static void unbind();
 
 	inline const TextureGpu* getTexture() const { return m_texture; }

@@ -62,6 +62,7 @@ namespace TFE_DarkForces
 	void escMenu_resetCursor();
 	void escMenu_handleMousePosition();
 	bool escapeMenu_getTextures(TextureInfoList& texList, AssetPool pool);
+	void escapeMenu_draw(JBool drawMouse, JBool drawBackground);
 	EscapeMenuAction escapeMenu_updateUI();
 
 	extern void pauseLevelSound();
@@ -98,16 +99,14 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void escapeMenu_open(u8* framebuffer, u8* palette)
+	void escapeMenu_copyBackground(u8* framebuffer, u8* palette)
 	{
-		// TFE
-		reticle_enable(false);
-
-		pauseLevelSound();
-		s_emState.escMenuOpen = JTRUE;
-
 		u32 dispWidth, dispHeight;
 		vfb_getResolution(&dispWidth, &dispHeight);
+
+		// Draw the menu background, so it can be grayed out as well.
+		s_emState.framebuffer = framebuffer;
+		escapeMenu_draw(JFALSE, JFALSE);
 
 		if (TFE_Jedi::getSubRenderer() == TSR_CLASSIC_GPU)
 		{
@@ -124,9 +123,12 @@ namespace TFE_DarkForces
 				s_emState.renderTarget = TFE_RenderBackend::createRenderTarget(dispWidth, dispHeight);
 			}
 
-			// 2. Blit the current render target texture to the new render target with the grayscale filter applied.
-			// TODO: Apply the grayscale filter.
-			TFE_RenderBackend::copyFromVirtualDisplay(s_emState.renderTarget);
+			// 2. Blit current frame to the new render target.
+			TFE_Jedi::endRender();
+			TFE_RenderBackend::swap(true);
+
+			TFE_RenderBackend::copyBackbufferToRenderTarget(s_emState.renderTarget);
+			TFE_RenderBackend::unbindRenderTarget();
 		}
 		else // Software renderer code.
 		{
@@ -152,6 +154,17 @@ namespace TFE_DarkForces
 				s_emState.framebufferCopy->image[i] = 63 - luminance;
 			}
 		}
+	}
+
+	void escapeMenu_open(u8* framebuffer, u8* palette)
+	{
+		// TFE
+		reticle_enable(false);
+
+		pauseLevelSound();
+		s_emState.escMenuOpen = JTRUE;
+
+		escapeMenu_copyBackground(framebuffer, palette);
 
 		escMenu_resetCursor();
 		s_emState.buttonPressed = -1;
@@ -190,9 +203,8 @@ namespace TFE_DarkForces
 		return true;
 	}
 
-	void escapeMenu_drawGpu()
+	void escapeMenu_drawGpu(JBool drawMouse, JBool drawBackground)
 	{
-		// TODO: Handle background.
 		u32 dispWidth, dispHeight;
 		vfb_getResolution(&dispWidth, &dispHeight);
 
@@ -201,7 +213,10 @@ namespace TFE_DarkForces
 		const s32 xOffset = vfb_getWidescreenOffset();
 
 		// Draw the background.
-		screenGPU_addImageQuad(0, 0, dispWidth, dispHeight, (TextureGpu*)TFE_RenderBackend::getRenderTargetTexture(s_emState.renderTarget));
+		if (drawBackground)
+		{
+			screenGPU_addImageQuad(0, 0, dispWidth, dispHeight, (TextureGpu*)TFE_RenderBackend::getRenderTargetTexture(s_emState.renderTarget));
+		}
 
 		// Draw the menu.
 		screenGPU_blitTextureScaled(&s_emState.escMenuFrames[0].texture, nullptr, intToFixed16(xOffset), 0, xScale, yScale, 31);
@@ -231,28 +246,21 @@ namespace TFE_DarkForces
 			screenGPU_blitTextureScaled(&s_emState.escMenuFrames[highlightIndices[s_emState.buttonPressed]].texture, nullptr, intToFixed16(xOffset), yOffset, xScale, yScale, 31);
 		}
 		// Draw the mouse.
-		screenGPU_blitTextureScaled(&s_cursor.texture, nullptr, intToFixed16(s_emState.cursorPos.x), intToFixed16(s_emState.cursorPos.z), xScale, yScale, 31);
+		if (drawMouse)
+		{
+			screenGPU_blitTextureScaled(&s_cursor.texture, nullptr, intToFixed16(s_emState.cursorPos.x), intToFixed16(s_emState.cursorPos.z), xScale, yScale, 31);
+		}
 	}
 
-	EscapeMenuAction escapeMenu_update()
+	void escapeMenu_draw(JBool drawMouse, JBool drawBackground)
 	{
-		EscapeMenuAction action = escapeMenu_updateUI();
-		if (action != ESC_CONTINUE)
-		{
-			s_emState.escMenuOpen = JFALSE;
-			resumeLevelSound();
-
-			// TFE
-			reticle_enable(true);
-		}
-
 		// TFE Note: handle GPU drawing differently, though the UI update is exactly the same.
 		if (TFE_Jedi::getSubRenderer() == TSR_CLASSIC_GPU)
 		{
-			escapeMenu_drawGpu();
-			return action;
+			escapeMenu_drawGpu(drawMouse, drawBackground);
+			return;
 		}
-		
+
 		// Draw the screen capture.
 		ScreenRect* drawRect = vfb_getScreenRect(VFB_RECT_UI);
 		u32 dispWidth, dispHeight;
@@ -260,7 +268,10 @@ namespace TFE_DarkForces
 
 		if (dispWidth == 320 && dispHeight == 200)
 		{
-			hud_drawElementToScreen(s_emState.framebufferCopy, drawRect, 0, 0, s_emState.framebuffer);
+			if (drawBackground)
+			{
+				hud_drawElementToScreen(s_emState.framebufferCopy, drawRect, 0, 0, s_emState.framebuffer);
+			}
 			// Draw the menu background.
 			blitDeltaFrame(&s_emState.escMenuFrames[0], 0, 0, s_emState.framebuffer);
 
@@ -291,7 +302,10 @@ namespace TFE_DarkForces
 			const fixed16_16 yScale = vfb_getYScale();
 			const s32 xOffset = vfb_getWidescreenOffset();
 
-			hud_drawElementToScreen(s_emState.framebufferCopy, drawRect, 0, 0, s_emState.framebuffer);
+			if (drawBackground)
+			{
+				hud_drawElementToScreen(s_emState.framebufferCopy, drawRect, 0, 0, s_emState.framebuffer);
+			}
 			// Draw the menu background.
 			blitDeltaFrameScaled(&s_emState.escMenuFrames[0], xOffset, 0, xScale, yScale, s_emState.framebuffer);
 
@@ -321,8 +335,26 @@ namespace TFE_DarkForces
 			}
 
 			// Draw the mouse.
-			blitDeltaFrameScaled(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, xScale, yScale, s_emState.framebuffer);
+			if (drawMouse)
+			{
+				blitDeltaFrameScaled(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, xScale, yScale, s_emState.framebuffer);
+			}
 		}
+	}
+
+	EscapeMenuAction escapeMenu_update()
+	{
+		EscapeMenuAction action = escapeMenu_updateUI();
+		if (action != ESC_CONTINUE)
+		{
+			s_emState.escMenuOpen = JFALSE;
+			resumeLevelSound();
+
+			// TFE
+			reticle_enable(true);
+		}
+
+		escapeMenu_draw(JTRUE, JTRUE);
 		return action;
 	}
 
