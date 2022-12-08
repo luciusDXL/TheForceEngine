@@ -540,7 +540,15 @@ namespace TFE_DarkForces
 				{
 					actionPressed = CONFIRM_YES;
 				}
-				if (TFE_Input::keyPressed(KEY_N))
+				else if (TFE_Input::keyPressed(KEY_N))
+				{
+					actionPressed = CONFIRM_NO;
+				}
+				else if (TFE_Input::keyPressed(KEY_RETURN))
+				{
+					actionPressed = s_emState.confirmState == CONFIRM_STATE_NEXT ? CONFIRM_YES : CONFIRM_NO;
+				}
+				else if (TFE_Input::keyPressed(KEY_ESCAPE))
 				{
 					actionPressed = CONFIRM_NO;
 				}
