@@ -1096,6 +1096,11 @@ namespace TFE_DarkForces
 			s_sharedState.mapNumFont = font_load(&filePath);
 		}
 	}
+
+	Font* getMapNumFont()
+	{
+		return s_sharedState.mapNumFont;
+	}
 				
 	void gameStartup()
 	{

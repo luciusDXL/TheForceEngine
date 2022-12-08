@@ -23,4 +23,5 @@ struct Font
 namespace TFE_Jedi
 {
 	Font* font_load(FilePath* filePath);
+	s32 font_getStringLength(Font* font, const char *str);
 }

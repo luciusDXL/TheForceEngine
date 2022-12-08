@@ -13,6 +13,29 @@ namespace TFE_Jedi
 		FNT_VERSION = 0x15,
 	};
 
+	s32 font_getStringLength(Font* font, const char *str)
+	{
+		if (!font) { return 0; }
+
+		char c = *str;
+		s32 len = 0;
+		while (c)
+		{
+			if (c <= 32)
+			{
+				len += font->width;
+			}
+			else
+			{
+				s32 index = s32(c) - s32(font->minChar);
+				len += font->glyphs[index].width + font->horzSpacing;
+			}
+			str++;
+			c = *str;
+		}
+		return len;
+	}
+
 	Font* font_load(FilePath* filePath)
 	{
 		FileStream file;

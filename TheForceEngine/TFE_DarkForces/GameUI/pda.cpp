@@ -26,6 +26,7 @@
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
@@ -106,6 +107,9 @@ namespace TFE_DarkForces
 	void pda_clearToBlack();
 
 	extern void pauseLevelSound();
+	// From DarkForcesMain
+	// TODO: Refactor.
+	extern Font* getMapNumFont();
 		
 	///////////////////////////////////////////
 	// API Implementation
@@ -236,6 +240,55 @@ namespace TFE_DarkForces
 			TFE_Jedi::renderer_setLimits();
 		}
 	}
+
+	// Simplified font drawing which assumes 320x200.
+	// Does not handle clipping to avoid code duplication.
+	void pda_drawFontGlyph(TextureData* glyph, s32 x0, s32 y0, u8* framebuffer)
+	{
+		u8* col = glyph->image;
+		for (s32 x = x0; x < x0 + glyph->width; x++, col += glyph->height)
+		{
+			u8* output = framebuffer + x + y0*320;
+
+			// columns
+			for (s32 y = y0; y < y0 + glyph->height; y++, output += 320)
+			{
+				u8 color = col[glyph->height - y + y0 - 1];
+				if (color) { *output = color; }
+			}
+		}
+	}
+
+	void pda_displayFontString(Font* font, s32 x, s32 y, char* msg)
+	{
+		if (!font) { return; }
+
+		u8* framebuffer = ldraw_getBitmap();
+
+		s32 xi = x;
+		s32 x0 = x;
+		for (char c = *msg; c != 0;)
+		{
+			if (c == '\n')
+			{
+				xi = x0;
+				y += font->height + font->vertSpacing;
+			}
+			else if (c == ' ')
+			{
+				xi += font->width;
+			}
+			else if (c >= font->minChar && c <= font->maxChar)
+			{
+				s32 charIndex = c - font->minChar;
+				TextureData* glyph = &font->glyphs[charIndex];
+				pda_drawFontGlyph(glyph, xi, y, framebuffer);
+				xi += font->horzSpacing + glyph->width;
+			}
+			msg++;
+			c = *msg;
+		}
+	}
 			
 	void pda_update()
 	{
@@ -280,6 +333,18 @@ namespace TFE_DarkForces
 		if (s_pdaMode == PDA_MODE_MAP)
 		{
 			pda_drawMapButtons();
+
+			// Draw the floor number
+			Font* mapNumFont = getMapNumFont();
+			if (mapNumFont)
+			{
+				char str[10];
+				_itoa(automap_getLayer(), str, 10);
+				if (str[0] == '-') str[0] = ':';
+
+				s32 leftAdj = font_getStringLength(mapNumFont, str) / 2;
+				pda_displayFontString(mapNumFont, 275 - leftAdj, 127, str);
+			}
 		}
 		else if (s_pdaMode == PDA_MODE_BRIEF)
 		{
