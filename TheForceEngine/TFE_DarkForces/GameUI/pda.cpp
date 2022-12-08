@@ -105,6 +105,7 @@ namespace TFE_DarkForces
 	void pdaDrawBriefingButtons();
 	void pda_drawOverlay();
 	void pda_clearToBlack();
+	void pda_displayFontString(Font* font, s32 x, s32 y, char* msg);
 
 	extern void pauseLevelSound();
 	// From DarkForcesMain
@@ -240,55 +241,6 @@ namespace TFE_DarkForces
 			TFE_Jedi::renderer_setLimits();
 		}
 	}
-
-	// Simplified font drawing which assumes 320x200.
-	// Does not handle clipping to avoid code duplication.
-	void pda_drawFontGlyph(TextureData* glyph, s32 x0, s32 y0, u8* framebuffer)
-	{
-		u8* col = glyph->image;
-		for (s32 x = x0; x < x0 + glyph->width; x++, col += glyph->height)
-		{
-			u8* output = framebuffer + x + y0*320;
-
-			// columns
-			for (s32 y = y0; y < y0 + glyph->height; y++, output += 320)
-			{
-				u8 color = col[glyph->height - y + y0 - 1];
-				if (color) { *output = color; }
-			}
-		}
-	}
-
-	void pda_displayFontString(Font* font, s32 x, s32 y, char* msg)
-	{
-		if (!font) { return; }
-
-		u8* framebuffer = ldraw_getBitmap();
-
-		s32 xi = x;
-		s32 x0 = x;
-		for (char c = *msg; c != 0;)
-		{
-			if (c == '\n')
-			{
-				xi = x0;
-				y += font->height + font->vertSpacing;
-			}
-			else if (c == ' ')
-			{
-				xi += font->width;
-			}
-			else if (c >= font->minChar && c <= font->maxChar)
-			{
-				s32 charIndex = c - font->minChar;
-				TextureData* glyph = &font->glyphs[charIndex];
-				pda_drawFontGlyph(glyph, xi, y, framebuffer);
-				xi += font->horzSpacing + glyph->width;
-			}
-			msg++;
-			c = *msg;
-		}
-	}
 			
 	void pda_update()
 	{
@@ -340,8 +292,9 @@ namespace TFE_DarkForces
 			{
 				char str[10];
 				_itoa(automap_getLayer(), str, 10);
-				if (str[0] == '-') str[0] = ':';
-
+				// This shows up as an 'S' in the font.
+				if (str[0] == '-') { str[0] = ':'; }
+				// In TFE the map covers the whole screen, so no additional offset is needed.
 				s32 leftAdj = font_getStringLength(mapNumFont, str) / 2;
 				pda_displayFontString(mapNumFont, 275 - leftAdj, 127, str);
 			}
@@ -854,5 +807,54 @@ namespace TFE_DarkForces
 
 		u32 palette[256] = { 0 };
 		vfb_setPalette(palette);
+	}
+
+	// Simplified font drawing which assumes 320x200.
+	// Does not handle clipping to avoid code duplication.
+	void pda_drawFontGlyph(TextureData* glyph, s32 x0, s32 y0, u8* framebuffer)
+	{
+		u8* col = glyph->image;
+		for (s32 x = x0; x < x0 + glyph->width; x++, col += glyph->height)
+		{
+			u8* output = framebuffer + x + y0 * 320;
+
+			// columns
+			for (s32 y = y0; y < y0 + glyph->height; y++, output += 320)
+			{
+				u8 color = col[glyph->height - y + y0 - 1];
+				if (color) { *output = color; }
+			}
+		}
+	}
+
+	void pda_displayFontString(Font* font, s32 x, s32 y, char* msg)
+	{
+		if (!font) { return; }
+
+		u8* framebuffer = ldraw_getBitmap();
+
+		s32 xi = x;
+		s32 x0 = x;
+		for (char c = *msg; c != 0;)
+		{
+			if (c == '\n')
+			{
+				xi = x0;
+				y += font->height + font->vertSpacing;
+			}
+			else if (c == ' ')
+			{
+				xi += font->width;
+			}
+			else if (c >= font->minChar && c <= font->maxChar)
+			{
+				s32 charIndex = c - font->minChar;
+				TextureData* glyph = &font->glyphs[charIndex];
+				pda_drawFontGlyph(glyph, xi, y, framebuffer);
+				xi += font->horzSpacing + glyph->width;
+			}
+			msg++;
+			c = *msg;
+		}
 	}
 }
