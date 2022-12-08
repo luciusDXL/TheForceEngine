@@ -24,6 +24,8 @@
 #include "rclassicGPU.h"
 #include "../rcommon.h"
 
+#include <cmath>
+
 using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi

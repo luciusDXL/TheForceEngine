@@ -6,6 +6,8 @@
 #include <TFE_System/types.h>
 #include <TFE_Jedi/Level/rtexture.h>
 
+struct ScreenRect;
+
 namespace TFE_DarkForces
 {
 	struct DeltFrame
@@ -26,4 +28,6 @@ namespace TFE_DarkForces
 
 	void blitDeltaFrame(DeltFrame* frame, s32 x, s32 y, u8* framebuffer);
 	void blitDeltaFrameScaled(DeltFrame* frame, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* framebuffer);
+
+	void getDeltaFrameRect(DeltFrame* frame, ScreenRect* rect);
 }

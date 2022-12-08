@@ -180,7 +180,7 @@ namespace TFE_RenderShared
 		s_vertexBuffer.bind();
 		u32 indexSizeType = s_indexBuffer.bind();
 
-		for (s32 i = 0; i < s_quadDrawCount; i++)
+		for (u32 i = 0; i < s_quadDrawCount; i++)
 		{
 			QuadDraw* draw = &s_quadDraw[i];
 			s_quadDraw[i].texture->bind();

@@ -429,7 +429,7 @@ namespace TFE_Jedi
 		{
 			if (s_flushCache)
 			{
-				for (s32 i = 0; i < s_levelState.sectorCount; i++)
+				for (u32 i = 0; i < s_levelState.sectorCount; i++)
 				{
 					RSector* sector = &s_levelState.sectors[i];
 					sector->dirtyFlags = SDF_ALL;

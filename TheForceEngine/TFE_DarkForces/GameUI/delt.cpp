@@ -129,6 +129,33 @@ namespace TFE_DarkForces
 		return JTRUE;
 	}
 
+	void getDeltaFrameRect(DeltFrame* frame, ScreenRect* rect)
+	{
+		rect->left = INT_MAX;
+		rect->top = INT_MAX;
+		rect->right = -INT_MAX;
+		rect->bot = -INT_MAX;
+
+		u8* srcTexels = frame->texture.image;
+		s32 w = frame->texture.width;
+		s32 h = frame->texture.height;
+
+		for (s32 y = 0; y < h; y++)
+		{
+			for (s32 x = 0; x < w; x++)
+			{
+				if (srcTexels[x])
+				{
+					rect->left = min(x, rect->left);
+					rect->top  = min(y, rect->top);
+					rect->right = max(x, rect->right);
+					rect->bot   = max(y, rect->bot);
+				}
+			}
+			srcTexels += w;
+		}
+	}
+
 	void blitDeltaFrame(DeltFrame* frame, s32 x0, s32 y0, u8* framebuffer)
 	{
 		u8* output = &framebuffer[y0 * 320];
