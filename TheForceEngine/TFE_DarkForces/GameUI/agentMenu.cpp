@@ -174,6 +174,10 @@ namespace TFE_DarkForces
 			assert(0);	// This shouldn't happen.
 			s_selectedMission = 0;
 		}
+		else if (s_selectedMission >= s_maxLevelIndex)
+		{
+			s_selectedMission = max(0, s_maxLevelIndex - 1);
+		}
 
 		const s32 x = s_cursorPos.x;
 		const s32 z = s_cursorPos.z;
