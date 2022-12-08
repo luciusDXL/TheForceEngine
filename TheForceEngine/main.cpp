@@ -340,6 +340,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 				freeGame(s_curGame);
 				s_curGame = nullptr;
 			}
+			s_soundPaused = false;
 			s_curGame = createGame(gameInfo->id);
 			TFE_SaveSystem::setCurrentGame(s_curGame);
 			if (!s_curGame)
@@ -371,6 +372,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 			TFE_Game* gameInfo = TFE_Settings::getGame();
 			if (!s_curGame || gameInfo->id != s_curGame->id)
 			{
+				s_soundPaused = false;
 				if (s_curGame)
 				{
 					freeGame(s_curGame);
@@ -700,6 +702,7 @@ int main(int argc, char* argv[])
 					freeGame(s_curGame);
 					s_curGame = nullptr;
 				}
+				s_soundPaused = false;
 				appState = APP_STATE_MENU;
 			}
 
@@ -843,6 +846,7 @@ int main(int argc, char* argv[])
 		freeGame(s_curGame);
 		s_curGame = nullptr;
 	}
+	s_soundPaused = false;
 	game_destroy();
 	reticle_destroy();
 	inputMapping_shutdown();

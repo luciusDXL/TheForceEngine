@@ -370,6 +370,9 @@ namespace TFE_DarkForces
 		reticle_enable(false);
 		texturepacker_reset();
 
+		TFE_MidiPlayer::resume();
+		TFE_Audio::resume();
+
 		// Reset state.
 		s_sharedState = {};
 		s_runGameState = {};

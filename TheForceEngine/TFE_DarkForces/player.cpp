@@ -2369,6 +2369,10 @@ namespace TFE_DarkForces
 			{
 				s_playerInfo.selectedWeapon = WPN_CANNON;
 			}
+			if (inputMapping_getActionState(IADF_WPN_PREV) == STATE_PRESSED)
+			{
+				s_playerInfo.selectedWeapon = WPN_COUNT;
+			}
 
 			s32 selectedWpn = s_playerInfo.selectedWeapon;
 			if (selectedWpn != -1)
@@ -2379,7 +2383,7 @@ namespace TFE_DarkForces
 					if (s_playerWeaponTask)
 					{
 						// Change weapon
-						s_msgArg1 = selectedWpn;
+						s_msgArg1 = selectedWpn < WPN_COUNT ? selectedWpn : -1;
 						task_runAndReturn(s_playerWeaponTask, MSG_SWITCH_WPN);
 
 						if (s_playerInfo.curWeapon > s_playerInfo.maxWeapon)
