@@ -2768,7 +2768,7 @@ namespace TFE_DarkForces
 			const char* msg = TFE_System::getMessage(TFE_MSG_SECRET);
 			if (msg)
 			{
-				hud_sendTextMessage(msg, 0);
+				hud_sendTextMessage(msg, 1);	// high priority.
 			}
 		}
 	}
