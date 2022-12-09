@@ -276,7 +276,7 @@ namespace TFE_MidiPlayer
 		{
 			const u8 instr   = arg1;
 			const u8 channel = type & 0x0f;
-			if (msgType == MID_NOTE_OFF)
+			if (msgType == MID_NOTE_OFF || (msgType == MID_NOTE_ON && arg2 == 0))	// note on + velocity = 0 is the same as note off.
 			{
 				s_instrOn[instr].channelMask  &= ~(1 << channel);
 				s_instrOn[instr].time[channel] = 0.0;
