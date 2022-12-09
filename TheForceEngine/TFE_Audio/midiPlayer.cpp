@@ -228,16 +228,33 @@ namespace TFE_MidiPlayer
 
 	void stopAllNotes()
 	{
+		// Some devices don't support "all notes off" - so do it manually.
+		for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
+		{
+			// Skip any instruments not being used.
+			if (!s_instrOn[i].channelMask) { continue; }
+
+			// Look for used channels.
+			for (u32 c = 0; c < MIDI_CHANNEL_COUNT; c++)
+			{
+				const u32 channelMask = 1u << c;
+				if (s_instrOn[i].channelMask & channelMask)
+				{
+					// Turn off the note.
+					TFE_MidiDevice::sendMessage(MID_NOTE_OFF | c, i);
+
+					// Reset the instrument channel information.
+					s_instrOn[i].channelMask &= ~channelMask;
+					s_instrOn[i].time[c] = 0.0;
+				}
+			}
+		}
+
+		// Just in case
 		for (u32 c = 0; c < MIDI_CHANNEL_COUNT; c++)
 		{
 			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + c, MID_ALL_NOTES_OFF);
-			// Some devices don't seem to support "all notes off" - so do it manually.
-			for (u32 n = 0; n < MIDI_INSTRUMENT_COUNT; n++)
-			{
-				sendMessageDirect(MID_NOTE_OFF | c, n);
-			}
 		}
-		// Reset instrument data.
 		memset(s_instrOn, 0, sizeof(Instrument) * MIDI_INSTRUMENT_COUNT);
 		s_curNoteTime = 0.0;
 	}
