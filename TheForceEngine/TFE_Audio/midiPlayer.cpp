@@ -228,9 +228,14 @@ namespace TFE_MidiPlayer
 
 	void stopAllNotes()
 	{
-		for (u32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
+		for (u32 c = 0; c < MIDI_CHANNEL_COUNT; c++)
 		{
-			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + i, MID_ALL_NOTES_OFF);
+			TFE_MidiDevice::sendMessage(MID_CONTROL_CHANGE + c, MID_ALL_NOTES_OFF);
+			// Some devices don't seem to support "all notes off" - so do it manually.
+			for (u32 n = 0; n < MIDI_INSTRUMENT_COUNT; n++)
+			{
+				sendMessageDirect(MID_NOTE_OFF | c, n);
+			}
 		}
 		// Reset instrument data.
 		memset(s_instrOn, 0, sizeof(Instrument) * MIDI_INSTRUMENT_COUNT);
