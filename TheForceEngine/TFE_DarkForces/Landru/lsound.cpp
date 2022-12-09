@@ -289,10 +289,10 @@ namespace TFE_DarkForces
 		else
 		{
 			char fileName[TFE_MAX_PATH];
-			sprintf(fileName, "%s.VOC", name);
+			sprintf(fileName, "%s.VOIC", name);	// Prefer the version of a sound from the LFD.
 			if (!TFE_Paths::getFilePath(fileName, &path))
 			{
-				sprintf(fileName, "%s.VOIC", name);
+				sprintf(fileName, "%s.VOC", name);
 				if (!TFE_Paths::getFilePath(fileName, &path))
 				{
 					return nullptr;
