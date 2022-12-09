@@ -10,6 +10,13 @@
 #include <assert.h>
 
 using namespace TFE_Jedi;
+#define SHOW_MUSIC_MSG 0
+
+#if SHOW_MUSIC_MSG
+#define LMUSIC_MSG(fmt, ...) TFE_System::logWrite(LOG_MSG, "Landru Music", fmt, __VA_ARGS__)
+#else
+#define LMUSIC_MSG(fmt, ...)
+#endif
 
 namespace TFE_DarkForces
 {
@@ -129,7 +136,7 @@ namespace TFE_DarkForces
 
 		if (s_curSeq != oldSeq)
 		{
-			TFE_System::logWrite(LOG_MSG, "Landru Music", "Set Seq %lu...", newSeq);
+			LMUSIC_MSG("Set Seq %lu...", newSeq);
 			ImStopAllSounds();
 			ImUnloadAll();
 			s_curCuePoint = 0;		// Reset cue point on sequence change.
@@ -207,7 +214,7 @@ namespace TFE_DarkForces
 					else if (oldChunk == '1' || (oldMeasure == 0 && newMeasure == 0))
 					{
 						// This is in the original code as a printf
-						TFE_System::logWrite(LOG_MSG, "Landru Music", "oc: %d om: %d ", ImGetParam(oldSound, midiChunk), ImGetParam(oldSound, midiMeasure));
+						LMUSIC_MSG("oc: %d om: %d ", ImGetParam(oldSound, midiChunk), ImGetParam(oldSound, midiMeasure));
 						ImSoundId newSound = ImFindMidi(newTitle);
 						if (oldSound != newSound)
 						{
@@ -220,7 +227,7 @@ namespace TFE_DarkForces
 						{
 							// This will take the next '1' value jump (this is used to break out of loops, etc.).
 							ImSetHook(oldSound, 1);
-							TFE_System::logWrite(LOG_MSG, "Landru Music", "jump hook 1 set... %d", newCuePoint);
+							LMUSIC_MSG("jump hook 1 set... %d", newCuePoint);
 						}
 					}
 					else  // If current pos < X or in a different chunk, jump to Y.
@@ -231,16 +238,16 @@ namespace TFE_DarkForces
 							ImStopSound(oldSound);
 							ImStartSound(newSound, 64);
 							ImSetHook(oldSound, 0);
-							TFE_System::logWrite(LOG_MSG, "Landru Music", "Switch files old: 0x%x new: 0x%x", oldSound, newSound);
+							LMUSIC_MSG("Switch files old: 0x%x new: 0x%x", oldSound, newSound);
 						}
 						else
 						{
 							if (ImGetParam(oldSound, midiChunk) < oldChunk ||
 							   (ImGetParam(oldSound, midiChunk) == oldChunk && ImGetParam(oldSound, midiMeasure) < oldMeasure))
 							{
-								TFE_System::logWrite(LOG_MSG, "Landru Music", "oc: %d om: %d ", oldChunk, oldMeasure);
-								TFE_System::logWrite(LOG_MSG, "Landru Music", "cc: %d cm: %d ", ImGetParam(oldSound, midiChunk), ImGetParam(oldSound, midiMeasure));
-								TFE_System::logWrite(LOG_MSG, "Landru Music", "nc: %d nm: %d ", newChunk, newMeasure);
+								LMUSIC_MSG("oc: %d om: %d ", oldChunk, oldMeasure);
+								LMUSIC_MSG("cc: %d cm: %d ", ImGetParam(oldSound, midiChunk), ImGetParam(oldSound, midiMeasure));
+								LMUSIC_MSG("nc: %d nm: %d ", newChunk, newMeasure);
 								ImJumpMidi(newSound, newChunk, newMeasure, 1, 0, 0);
 								ImSetHook(oldSound, 0);
 							}

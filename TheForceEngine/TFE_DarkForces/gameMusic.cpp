@@ -8,6 +8,14 @@
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
 
+#define SHOW_GAME_MUSIC_MSG 0
+
+#if SHOW_GAME_MUSIC_MSG
+#define GMUSIC_MSG(fmt, ...) TFE_System::logWrite(LOG_MSG, "Music", fmt, __VA_ARGS__)
+#else
+#define GMUSIC_MSG(fmt, ...)
+#endif
+
 namespace TFE_DarkForces
 {
 	// Internally, iMuse stores opcodes as integers (ptrdiff_t in TFE, so it is big enough to hold a pointer).
@@ -348,13 +356,13 @@ namespace TFE_DarkForces
 			else
 			{
 				// Reset the trigger.
-				TFE_System::logWrite(LOG_MSG, "Music", "Punt!...");
+				GMUSIC_MSG("Punt!...");
 				ImSetTrigger(s_oldSong, 0, MUSIC_CALLBACK(iMuseCallback1));
 			}
 		}
 		else
 		{
-			TFE_System::logWrite(LOG_MSG, "Music", "Callback1 got bogus marker...");
+			GMUSIC_MSG("Callback1 got bogus marker...");
 		}
 	}
 		
@@ -369,7 +377,7 @@ namespace TFE_DarkForces
 			while (lptr[count]) { count++; }
 			s32 r = gameMusic_random(0, count - 1);
 
-			TFE_System::logWrite(LOG_MSG, "Music", "trans%lu=%lu...", s_oldState, lptr[r]);
+			GMUSIC_MSG("trans%lu=%lu...", s_oldState, lptr[r]);
 			ImJumpMidi(s_oldSong, 1 + s_transChunk, lptr[r] - 1, 4, 300, 1);
 			ImSetTrigger(s_oldSong, 0, MUSIC_CALLBACK(iMuseCallback2));
 		}
@@ -385,7 +393,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				TFE_System::logWrite(LOG_MSG, "Music", "Reset position!...");
+				GMUSIC_MSG("Reset position!...");
 				ImJumpMidi(s_newSong, 1, s_savedMeasure, s_savedBeat, 300, 1);
 			}
 		}
@@ -414,7 +422,7 @@ namespace TFE_DarkForces
 			}
 			s_stateEntrances[s_currentState] = lptr[r];
 
-			TFE_System::logWrite(LOG_MSG, "Music", "entry%lu=%lu...", s_currentState, lptr[r]);
+			GMUSIC_MSG("entry%lu=%lu...", s_currentState, lptr[r]);
 			ImJumpMidi(s_newSong, 1, lptr[r] - 1, 4, 400, 0);
 		}
 		else if (strcmp(marker, "clear callback"))	// Keep going until the "clear callback" marker is set.

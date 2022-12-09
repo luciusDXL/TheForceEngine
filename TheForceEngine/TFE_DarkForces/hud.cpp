@@ -132,6 +132,8 @@ namespace TFE_DarkForces
 		// Only display the message if it is the same or lower priority than the current message.
 		if (!msg || msg->priority > s_hudMsgPriority)
 		{
+			// Always write the message to the console
+			if (msg && msg->text) { TFE_Console::addToHistory(msg->text); }
 			return;
 		}
 
@@ -152,6 +154,8 @@ namespace TFE_DarkForces
 		// Only display the message if it is the same or lower priority than the current message.
 		if (!msg || priority > s_hudMsgPriority)
 		{
+			// Always write the message to the console
+			if (msg) { TFE_Console::addToHistory(msg); }
 			return;
 		}
 		strCopyAndZero(s_hudMessage, msg, 80);
