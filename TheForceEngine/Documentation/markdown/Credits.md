@@ -5,7 +5,7 @@ I believe that I have captured all of the individual contributors and dependenci
   * luciusDXL (me) - Principle Developer / Project Lead (the only fulltime developer for now).
   * Azamat H. Hackimov - Fixed VS 2019 Compilation issues.
   * Matthew Gilmore - Contributed to Linux support and testing.
-
+ 
   * Craig Yates - TFE Logo design. Minimalist title screen design.
   * Pawel "Dzierzan" Dzierzanowski - Adjustable Hud mod (built-in).
   * Bela Lugosi is cold (and dead) - Thorough testing and very cool test levels that are now used internally to provide regression testing.
@@ -16,7 +16,7 @@ The Force Engine would not be where it is today without the tireless efforts of 
   * Pawel "Dzierzan" Dzierzanowski
   * DatMaxNub
   * Karjala
-
+ 
   * AAS
   * Aros
   * Bela Lugosi is cold (and dead)
@@ -102,8 +102,8 @@ RtMidi (Core Midi Hardware I/O)
   * License: Custom
 
 **Other**
-  * https://github.com/kuba--/zip
+  * [https://github.com/kuba--/zip](https://github.com/kuba--/zip)
   * License: Unlicense
 
-  * https://github.com/notnullnotvoid/msf_gif
+  * [https://github.com/notnullnotvoid/msf_gif](https://github.com/notnullnotvoid/msf_gif)
   * License: MIT
