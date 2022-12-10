@@ -461,8 +461,7 @@ namespace RClassic_Float
 				for (s32 n = 0; n < outIndex && segHidden == 0; n++, sortedSeg++)
 				{
 					// Trivially skip segments that do not overlap in screenspace.
-					JBool segOverlap = (newSeg->wallX0 <= sortedSeg->wallX1 && sortedSeg->wallX0 <= newSeg->wallX1) ? JTRUE : JFALSE;
-					if (!segOverlap) { continue; }
+					if (!(newSeg->wallX0 <= sortedSeg->wallX1 && sortedSeg->wallX0 <= newSeg->wallX1)) { continue; }
 
 					WallCached* outSrcWall = sortedSeg->srcWall;
 					WallCached* newSrcWall = newSeg->srcWall;
@@ -488,10 +487,10 @@ namespace RClassic_Float
 						else if (newV0->z < outV0->z)
 						{
 							side = FRONT;
-							if ((segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0 ||		// (outV0, 0) does NOT cross (newV0, newV1)
-								 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0) &&	// (outV1, 0) does NOT cross (newV0, newV1)
-								(segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||		// (newV0, 0) crosses (outV0, outV1)
-								 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0))		// (newV1, 0) crosses (outV0, outV1)
+							if ((segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) ||	// (outV0, 0) does NOT cross (newV0, newV1)
+								 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z)) &&	// (outV1, 0) does NOT cross (newV0, newV1)
+								(!segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) ||	// (newV0, 0) crosses (outV0, outV1)
+								 !segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z)))	// (newV1, 0) crosses (outV0, outV1)
 							{
 								side = BACK;
 							}
@@ -499,10 +498,10 @@ namespace RClassic_Float
 						else  // newV0->z >= outV0->z
 						{
 							side = BACK;
-							if ((segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) != 0 ||		// (newV0, 0) does NOT cross (outV0, outV1)
-								 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) != 0) &&	// (newV1, 0) does NOT cross (outV0, outV1)
-								(segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) == 0 ||		// (outV0, 0) crosses (newV0, newV1)
-								 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) == 0))		// (outV1, 0) crosses (newV0, newV1)
+							if ((segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) ||	// (newV0, 0) does NOT cross (outV0, outV1)
+								 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z)) &&	// (newV1, 0) does NOT cross (outV0, outV1)
+								(!segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) ||	// (outV0, 0) crosses (newV0, newV1)
+								 !segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z)))	// (outV1, 0) crosses (newV0, newV1)
 							{
 								side = FRONT;
 							}
@@ -564,118 +563,113 @@ namespace RClassic_Float
 							}
 						}
 					}
-					else  // (newSeg->wallX0 > sortedSeg->wallX0 || newSeg->wallX1 < sortedSeg->wallX1)
+					else if (newSeg->wallX0 >= sortedSeg->wallX0 && newSeg->wallX1 <= sortedSeg->wallX1)
 					{
-						if (newSeg->wallX0 >= sortedSeg->wallX0 && newSeg->wallX1 <= sortedSeg->wallX1)
+						if (newMaxZ < outMinZ || newMinZ > outMaxZ)
 						{
-							if (newMaxZ < outMinZ || newMinZ > outMaxZ)
-							{
-								side = (newV0->z < outV0->z) ? FRONT : BACK;
-							}
-							else if (newV0->z < outV0->z)
-							{
-								side = FRONT;
-								if ((segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0 ||
-									 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0) &&
-									(segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||
-									 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0))
-								{
-									side = BACK;
-								}
-							}
-							else  // (newV0->z >= outV0->z)
+							side = (newV0->z < outV0->z) ? FRONT : BACK;
+						}
+						else if (newV0->z < outV0->z)
+						{
+							side = FRONT;
+							if ((segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) ||
+								 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z)) &&
+								(!segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) ||
+								 !segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z)))
 							{
 								side = BACK;
-								if ((segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) != 0 ||
-									 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) != 0) &&
-									(segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) == 0 ||
-									 segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) == 0))
-								{
-									side = FRONT;
-								}
 							}
-
-							if (side == BACK)
+						}
+						else  // (newV0->z >= outV0->z)
+						{
+							side = BACK;
+							if ((segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) ||
+								 segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z)) &&
+								(!segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) ||
+								 !segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z)))
 							{
-								// The new segment is hidden behind the 'sortedSeg' and can be discarded.
+								side = FRONT;
+							}
+						}
+
+						if (side == BACK)
+						{
+							// The new segment is hidden behind the 'sortedSeg' and can be discarded.
+							segHidden = 0xffff;
+							break;
+						}
+						// side == FRONT
+						else if (newSeg->wallX0 > sortedSeg->wallX0 && newSeg->wallX1 <= sortedSeg->wallX1)
+						{
+							if (splitWallCount == MAX_SPLIT_WALLS)
+							{
+								TFE_System::logWrite(LOG_ERROR, "RendererClassic", "Wall_MergeSort : Maximum split walls exceeded!");
 								segHidden = 0xffff;
 								break;
 							}
-							// side == FRONT
-							else if (newSeg->wallX0 > sortedSeg->wallX0 && newSeg->wallX1 <= sortedSeg->wallX1)
+							else
 							{
-								if (splitWallCount == MAX_SPLIT_WALLS)
-								{
-									TFE_System::logWrite(LOG_ERROR, "RendererClassic", "Wall_MergeSort : Maximum split walls exceeded!");
-									segHidden = 0xffff;
-									break;
-								}
-								else
-								{
-									// Split sortedSeg into 2 and insert newSeg in between.
-									// { sortedSeg | newSeg | splitWall (from sortedSeg) }
-									RWallSegmentFloat* splitWall = &splitWalls[splitWallCount];
-									splitWallCount++;
+								// Split sortedSeg into 2 and insert newSeg in between.
+								// { sortedSeg | newSeg | splitWall (from sortedSeg) }
+								RWallSegmentFloat* splitWall = &splitWalls[splitWallCount];
+								splitWallCount++;
 
-									*splitWall = *sortedSeg;
-									splitWall->wallX0 = newSeg->wallX1 + 1;
-									sortedSeg->wallX1 = newSeg->wallX0 - 1;
-								}
-							}
-							else if (newSeg->wallX0 > sortedSeg->wallX0)
-							{
-								sortedSeg->wallX1 = newSeg->wallX0 - 1;
-							}
-							else  // (newSeg->wallX0 <= sortedSeg->wallX0)
-							{
-								sortedSeg->wallX0 = newSeg->wallX1 + 1;
-							}
-						}
-						// (newSeg->wallX0 < sortedSeg->wallX0 || newSeg->wallX1 > sortedSeg->wallX1)
-						else if (newSeg->wallX1 >= sortedSeg->wallX0 && newSeg->wallX1 <= sortedSeg->wallX1)
-						{
-							if (newMinZ > outMaxZ)
-							{
-								if (newV1->z >= outV0->z)
-								{
-									newSeg->wallX1 = sortedSeg->wallX0 - 1;
-								}
-								else
-								{
-									sortedSeg->wallX0 = newSeg->wallX1 + 1;
-								}
-							}
-							else if (segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||
-								     segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0)
-							{
-								newSeg->wallX1 = sortedSeg->wallX0 - 1;
-							}
-							// Is this real?
-							else
-							{
-								sortedSeg->wallX0 = newSeg->wallX1 + 1;
-							}
-						}
-						else if (newMaxZ < outMinZ || newMinZ > outMaxZ)
-						{
-							if (newV0->z >= outV1->z)
-							{
-								newSeg->wallX0 = sortedSeg->wallX1 + 1;
-							}
-							else
-							{
+								*splitWall = *sortedSeg;
+								splitWall->wallX0 = newSeg->wallX1 + 1;
 								sortedSeg->wallX1 = newSeg->wallX0 - 1;
 							}
 						}
-						else if (segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) == 0 ||
-							     segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z) != 0)
-						{
-							newSeg->wallX0 = sortedSeg->wallX1 + 1;
-						}
-						else
+						else if (newSeg->wallX0 > sortedSeg->wallX0)
 						{
 							sortedSeg->wallX1 = newSeg->wallX0 - 1;
 						}
+						else  // (newSeg->wallX0 <= sortedSeg->wallX0)
+						{
+							sortedSeg->wallX0 = newSeg->wallX1 + 1;
+						}
+					}
+					else if (newSeg->wallX1 >= sortedSeg->wallX0 && newSeg->wallX1 < sortedSeg->wallX1)
+					{
+						if (newMaxZ < outMinZ || newMinZ > outMaxZ)
+						{
+							if (newV1->z < outV0->z)
+							{
+								sortedSeg->wallX0 = newSeg->wallX1 + 1;
+							}
+							else
+							{
+								newSeg->wallX1 = sortedSeg->wallX0 - 1;
+							}
+						}
+						else if (segmentCrossesLine(newV1->x, newV1->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) ||
+								 !segmentCrossesLine(outV0->x, outV0->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z))
+						{
+							sortedSeg->wallX0 = newSeg->wallX1 + 1;
+						}
+						else
+						{
+							newSeg->wallX1 = sortedSeg->wallX0 - 1;
+						}
+					}
+					else if (newMaxZ < outMinZ || newMinZ > outMaxZ)
+					{
+						if (newV0->z < outV1->z)
+						{
+							sortedSeg->wallX1 = newSeg->wallX0 - 1;
+						}
+						else
+						{
+							newSeg->wallX0 = sortedSeg->wallX1 + 1;
+						}
+					}
+					else if (segmentCrossesLine(newV0->x, newV0->z, 0, 0, outV0->x, outV0->z, outV1->x, outV1->z) ||
+							 !segmentCrossesLine(outV1->x, outV1->z, 0, 0, newV0->x, newV0->z, newV1->x, newV1->z))
+					{
+						sortedSeg->wallX1 = newSeg->wallX0 - 1;
+					}
+					else
+					{
+						newSeg->wallX0 = sortedSeg->wallX1 + 1;
 					}
 				} // for (s32 n = 0; n < outIndex && segHidden == 0; n++, sortedSeg++)
 
