@@ -373,9 +373,11 @@ namespace TFE_DarkForces
 			fixed16_16 x, z;
 			getCameraXZ(&x, &z);
 
+			s32 xOffset = floor16(div16(intToFixed16(vfb_getWidescreenOffset()), vfb_getXScale()));
+
 			char dataStr[64];
 			sprintf(dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
-			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164, 10, dataStr, framebuffer);
+			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 10, dataStr, framebuffer);
 			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
 		}
 	}
@@ -1065,33 +1067,31 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			// Round to the nearest integer scale
-			s32 yScale = floor16(vfb_getYScale());
-			s32 xScale = yScale;
+			fixed16_16 xScale = vfb_getXScale();
+			fixed16_16 yScale = vfb_getYScale();
 
-			s32 xi = x * xScale;
-			s32 x0 = x;
-			y *= yScale;
+			fixed16_16 xf = mul16(intToFixed16(x), xScale);
+			fixed16_16 yf = mul16(intToFixed16(y), yScale);
+			fixed16_16 x0 = xf;
 
-			s32 fWidth = font->width * xScale;
+			fixed16_16 fWidth = mul16(intToFixed16(font->width), xScale);
 			for (char c = *msg; c != 0;)
 			{
 				if (c == '\n')
 				{
-					xi = x0;
-					y += (font->height + font->vertSpacing) * yScale;
+					xf = x0;
+					yf += mul16(intToFixed16(font->height + font->vertSpacing), yScale);
 				}
 				else if (c == ' ')
 				{
-					xi += fWidth;
+					xf += fWidth;
 				}
 				else if (c >= font->minChar && c <= font->maxChar)
 				{
 					s32 charIndex = c - font->minChar;
 					TextureData* glyph = &font->glyphs[charIndex];
-					blitTextureToScreenIScale(glyph, rect, xi, y, yScale, framebuffer);
-
-					xi += (font->horzSpacing + glyph->width)*xScale;
+					blitTextureToScreenScaledText(glyph, rect, floor16(xf), floor16(yf), xScale, yScale, framebuffer);
+					xf += mul16(intToFixed16(font->horzSpacing + glyph->width), xScale);
 				}
 				msg++;
 				c = *msg;

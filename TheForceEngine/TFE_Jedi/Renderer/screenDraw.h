@@ -46,6 +46,7 @@ namespace TFE_Jedi
 
 	// Scaled versions.
 	void blitTextureToScreenScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output, JBool forceTransparency = JFALSE);
+	void blitTextureToScreenScaledText(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, u8* output, JBool forceTransparency = JFALSE);
 	void blitTextureToScreenLitScaled(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, fixed16_16 xScale, fixed16_16 yScale, const u8* atten, u8* output, JBool forceTransparency = JFALSE);
 
 	void blitTextureToScreen(ScreenImage* texture, DrawRect* rect, s32 x0, s32 y0, u8* output);
