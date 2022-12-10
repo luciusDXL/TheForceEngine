@@ -461,16 +461,16 @@ namespace TFE_DarkForces
 			x1 = 0;
 		}
 		x0 -= intToFixed16(hudSettings->pixelOffset[0]);
-		x1 += intToFixed16(hudSettings->pixelOffset[0]);
+		x1 += intToFixed16(hudSettings->pixelOffset[1]);
 
 		fixed16_16 y0 = yScale + mul16(intToFixed16(c_hudVertAnimTable[s_rightHudVertAnim]), yScale);
 		fixed16_16 y1 = yScale + mul16(intToFixed16(c_hudVertAnimTable[s_leftHudVertAnim]),  yScale);
-		y0 += intToFixed16(hudSettings->pixelOffset[1]);
-		y1 += intToFixed16(hudSettings->pixelOffset[1]);
+		y0 += intToFixed16(hudSettings->pixelOffset[2]);
+		y1 += intToFixed16(hudSettings->pixelOffset[2]);
 
 		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 31);
 		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 31);
-		if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0)
+		if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0)
 		{
 			screenGPU_blitTextureScaled(s_hudCapLeft,  nullptr, x1 - mul16(intToFixed16(s_hudCapLeft->width - 1), hudScaleX), y1, hudScaleX, hudScaleY, 31);
 			screenGPU_blitTextureScaled(s_hudCapRight, nullptr, x0 + mul16(intToFixed16(s_hudStatusR->width), hudScaleX), y1, hudScaleX, hudScaleY, 31);
@@ -952,17 +952,17 @@ namespace TFE_DarkForces
 				x1 = 0;
 			}
 			x0 -= hudSettings->pixelOffset[0];
-			x1 += hudSettings->pixelOffset[0];
+			x1 += hudSettings->pixelOffset[1];
 
 			s32 y0 = floor16(yScale + mul16(intToFixed16(c_hudVertAnimTable[s_rightHudVertAnim]), yScale));
 			s32 y1 = floor16(yScale + mul16(intToFixed16(c_hudVertAnimTable[s_leftHudVertAnim]), yScale));
-			y0 += hudSettings->pixelOffset[1];
-			y1 += hudSettings->pixelOffset[1];
+			y0 += hudSettings->pixelOffset[2];
+			y1 += hudSettings->pixelOffset[2];
 
 			hud_drawElementToScreenScaled(s_cachedHudRight, screenRect, x0, y0, hudScaleX, hudScaleY, framebuffer);
 			hud_drawElementToScreenScaled(s_cachedHudLeft,  screenRect, x1, y1, hudScaleX, hudScaleY, framebuffer);
 
-			if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0)
+			if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0)
 			{
 				DrawRect rect = { screenRect->left, screenRect->top, screenRect->right, screenRect->bot };
 				s32 y0Scaled = (dispHeight == 200) ? y0 : floor16(intToFixed16(y0) + mul16(ONE_16, hudScaleY));

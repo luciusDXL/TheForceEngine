@@ -1994,14 +1994,19 @@ namespace TFE_FrontEndUI
 		ImGui::InputFloat("##HudScaleText", &hud->scale, 0.01f, 0.1f, 2);
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
-		ImGui::SliderInt("Offset X", &hud->pixelOffset[0], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
+		ImGui::SliderInt("Offset Lt", &hud->pixelOffset[0], -512, 512); ImGui::SameLine(0.0f, 3.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
-		ImGui::InputInt("##HudOffsetXText", &hud->pixelOffset[0], 1, 10);
+		ImGui::InputInt("##HudOffsetX0Text", &hud->pixelOffset[0], 1, 10);
+
+		ImGui::SetNextItemWidth(196 * s_uiScale);
+		ImGui::SliderInt("Offset Rt", &hud->pixelOffset[1], -512, 512); ImGui::SameLine(0.0f, 3.0f*s_uiScale);
+		ImGui::SetNextItemWidth(128 * s_uiScale);
+		ImGui::InputInt("##HudOffsetX1Text", &hud->pixelOffset[1], 1, 10);
 
 		ImGui::SetNextItemWidth(196*s_uiScale);
-		ImGui::SliderInt("Offset Y", &hud->pixelOffset[1], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
+		ImGui::SliderInt("Offset Y", &hud->pixelOffset[2], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
-		ImGui::InputInt("##HudOffsetYText", &hud->pixelOffset[1], 1, 10);
+		ImGui::InputInt("##HudOffsetYText", &hud->pixelOffset[2], 1, 10);
 	}
 
 	// Uses a percentage slider (0 - 100%) to adjust a floating point value (0.0 - 1.0).

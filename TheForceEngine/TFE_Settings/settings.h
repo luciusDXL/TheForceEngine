@@ -116,7 +116,7 @@ struct TFE_Settings_Hud
 	// Scale of the HUD, ignored if HudScale is TFE_HUDSCALE_PROPORTIONAL.
 	f32 scale = 1.0f;
 	// Pixel offset from the left hud corner, right is (-leftX, leftY)
-	s32 pixelOffset[2] = { 0 };
+	s32 pixelOffset[3] = { 0 };
 };
 
 struct TFE_Settings_Sound

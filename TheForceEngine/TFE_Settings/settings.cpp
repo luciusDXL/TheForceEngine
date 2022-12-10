@@ -310,8 +310,9 @@ namespace TFE_Settings
 		writeKeyValue_String(settings, "hudScale", c_tfeHudScaleStrings[s_hudSettings.hudScale]);
 		writeKeyValue_String(settings, "hudPos", c_tfeHudPosStrings[s_hudSettings.hudPos]);
 		writeKeyValue_Float(settings, "scale", s_hudSettings.scale);
-		writeKeyValue_Int(settings, "pixelOffsetX", s_hudSettings.pixelOffset[0]);
-		writeKeyValue_Int(settings, "pixelOffsetY", s_hudSettings.pixelOffset[1]);
+		writeKeyValue_Int(settings, "pixelOffsetLeft", s_hudSettings.pixelOffset[0]);
+		writeKeyValue_Int(settings, "pixelOffsetRight", s_hudSettings.pixelOffset[1]);
+		writeKeyValue_Int(settings, "pixelOffsetY", s_hudSettings.pixelOffset[2]);
 	}
 
 	void writeSoundSettings(FileStream& settings)
@@ -634,13 +635,17 @@ namespace TFE_Settings
 		{
 			s_hudSettings.scale = parseFloat(value);
 		}
-		else if (strcasecmp("pixelOffsetX", key) == 0)
+		else if (strcasecmp("pixelOffsetLeft", key) == 0)
 		{
 			s_hudSettings.pixelOffset[0] = parseInt(value);
 		}
-		else if (strcasecmp("pixelOffsetY", key) == 0)
+		else if (strcasecmp("pixelOffsetRight", key) == 0)
 		{
 			s_hudSettings.pixelOffset[1] = parseInt(value);
+		}
+		else if (strcasecmp("pixelOffsetY", key) == 0)
+		{
+			s_hudSettings.pixelOffset[2] = parseInt(value);
 		}
 	}
 
