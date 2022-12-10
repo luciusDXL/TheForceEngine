@@ -488,7 +488,7 @@ namespace TFE_DarkForces
 					resumeLevelSound();
 				}
 			}
-			else if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED && !s_playerDying)
+			else if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED && !s_playerDying && !TFE_FrontEndUI::isConsoleOpen())
 			{
 				escapeMenu_open(s_framebuffer, s_basePalette);
 				s_gamePaused = JTRUE;

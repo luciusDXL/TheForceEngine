@@ -355,6 +355,11 @@ namespace TFE_FrontEndUI
 		return TFE_Console::isOpen();
 	}
 
+	bool isConsoleAnimating()
+	{
+		return TFE_Console::isAnimating();
+	}
+
 	void logToConsole(const char* str)
 	{
 		TFE_Console::addToHistory(str);

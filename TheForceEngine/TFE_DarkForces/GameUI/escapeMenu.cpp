@@ -579,7 +579,7 @@ namespace TFE_DarkForces
 	{
 		EscapeMenuAction action = ESC_CONTINUE;
 		escMenu_handleMousePosition();
-		if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED)
+		if (inputMapping_getActionState(IADF_MENU_TOGGLE) == STATE_PRESSED || TFE_Input::keyPressed(KEY_ESCAPE))
 		{
 			action = ESC_RETURN;
 			s_emState.escMenuOpen = JFALSE;

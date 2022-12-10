@@ -44,6 +44,7 @@ namespace TFE_FrontEndUI
 
 	bool isConfigMenuOpen();
 	bool isConsoleOpen();
+	bool isConsoleAnimating();
 	void logToConsole(const char* str);
 	bool uiControlsEnabled();
 

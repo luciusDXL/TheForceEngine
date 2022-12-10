@@ -618,6 +618,11 @@ namespace TFE_Console
 		return s_height > 0.0f || s_anim > 0.0f;
 	}
 
+	bool isAnimating()
+	{
+		return s_anim != 0.0f;
+	}
+
 	void startOpen()
 	{
 		s_anim = 1.0f;

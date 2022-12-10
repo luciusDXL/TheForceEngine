@@ -105,6 +105,7 @@ namespace TFE_Console
 
 	void update();
 	bool isOpen();
+	bool isAnimating();
 	void startOpen();
 	void startClose();
 	   
