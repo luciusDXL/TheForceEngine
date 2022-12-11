@@ -245,14 +245,13 @@ namespace RClassic_Float
 		s32 xMid   = s_screenXMid;
 		f32 xScale = s_rcfltState.nearPlaneHalfLen * 2.0f / f32(s_width);
 		s_rcfltState.skyTable[0] = 0;
+
+		const f32 tanScale = 1.0f / (2.0f * PI);
 		for (s32 i = 0, x = 0; x < s_width; i++, x++)
 		{
-			f32 xOffset = f32(x - xMid);
-			f32 angleFractF = atanf(xOffset * xScale) * 2607.595f;
-			f32 angleFract =  angleFractF / 16384.0f;
-
+			const f32 offset = atanf(f32(x - xMid) * xScale) * tanScale;
 			// This intentionally overflows when x = 0 and becomes 0...
-			s_rcfltState.skyTable[1 + i] = angleFract * parallaxFlt;
+			s_rcfltState.skyTable[1 + i] = offset * parallaxFlt;
 		}
 	}
 
