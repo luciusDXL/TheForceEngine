@@ -561,6 +561,7 @@ namespace TFE_DarkForces
 						}
 					}
 
+					lmusic_reset();
 					s_runGameState.abortLevel = JFALSE;
 					agent_setNextLevelByIndex(s_runGameState.levelIndex);
 					startNextMode();

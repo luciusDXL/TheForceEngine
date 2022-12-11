@@ -221,7 +221,7 @@ namespace TFE_DarkForces
 							ImStopSound(oldSound);
 							ImStartSound(newSound, 64);
 							ImSetHook(oldSound, 0);
-							TFE_System::logWrite(LOG_WARNING, "Landru Music", "jhk foulup: old: %d new: %d", oldSound, newSound);
+							LMUSIC_MSG("jhk foulup: old: %d new: %d", oldSound, newSound);
 						}
 						else
 						{
