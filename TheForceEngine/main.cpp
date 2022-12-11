@@ -737,6 +737,7 @@ int main(int argc, char* argv[])
 				inputMapping_clearKeyBinding(KEY_ESCAPE);
 				if (s_curGame)
 				{
+					s_curGame->pauseGame(false);
 					TFE_Input::enableRelativeMode(true);
 				}
 			}

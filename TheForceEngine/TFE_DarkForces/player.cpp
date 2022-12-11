@@ -895,7 +895,7 @@ namespace TFE_DarkForces
 		if (s_playerEye)
 		{
 			s_eyePos.x = s_playerEye->posWS.x + s_camOffset.x;
-			s_eyePos.y = s_playerEye->posWS.y - (s_playerEye->worldHeight + s_camOffset.y);
+			s_eyePos.y = s_playerEye->posWS.y + s_camOffset.y - s_playerEye->worldHeight;
 			s_eyePos.z = s_playerEye->posWS.z + s_camOffset.z;
 
 			s_pitch = s_playerEye->pitch + s_camOffsetPitch;

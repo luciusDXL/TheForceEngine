@@ -279,7 +279,7 @@ namespace TFE_DarkForces
 			rotateVectorM3x3(&inVec, &outVec, mtx);
 
 			fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
-			fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+			fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 			fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
 
 			JBool targetFound = computeAutoaim(xPos, yPos, zPos, s_playerObject->pitch, s_playerObject->yaw, s_curPlayerWeapon->variation & 0xffff);
@@ -321,7 +321,7 @@ namespace TFE_DarkForces
 				}
 
 				ProjectileLogic* projLogic;
-				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 				projLogic = (ProjectileLogic*)createProjectile(PROJ_PISTOL_BOLT, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 				projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 				projLogic->prevColObj = s_playerObject;
@@ -463,7 +463,7 @@ namespace TFE_DarkForces
 			rotateVectorM3x3(&inVec, &outVec, mtx);
 
 			fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
-			fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+			fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 			fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
 
 			JBool targetFound = computeAutoaim(xPos, yPos, zPos, s_playerObject->pitch, s_playerObject->yaw, s_curPlayerWeapon->variation & 0xffff);
@@ -505,7 +505,7 @@ namespace TFE_DarkForces
 				}
 
 				ProjectileLogic* projLogic;
-				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 				projLogic = (ProjectileLogic*)createProjectile(PROJ_RIFLE_BOLT, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 				projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 				projLogic->prevColObj = s_playerObject;
@@ -657,7 +657,7 @@ namespace TFE_DarkForces
 				collision_effectObjectsInRangeXZ(s_playerObject->sector, s_curPlayerWeapon->wakeupRange, origin, hitEffectWakeupFunc, s_playerObject, ETFLAG_AI_ACTOR);
 			}
 
-			fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+			fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 			ProjectileLogic* proj = (ProjectileLogic*)createProjectile(PROJ_THERMAL_DET, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 			proj->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 			proj->prevColObj = s_playerObject;
@@ -835,7 +835,7 @@ namespace TFE_DarkForces
 						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -3, 500);
 					}
 					
-					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 					ProjectileLogic* proj[3];
 					for (s32 i = 0; i < 3; i++)
 					{
@@ -957,7 +957,7 @@ namespace TFE_DarkForces
 				rotateVectorM3x3(&inVec, &outVec, mtx);
 
 				fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
-				fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 				fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
 
 				s32 baseVariation = s_curPlayerWeapon->variation & 0xffff;
@@ -996,7 +996,7 @@ namespace TFE_DarkForces
 						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -1, 500);
 					}
 
-					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 					ProjectileLogic* projLogic = (ProjectileLogic*)createProjectile(PROJ_REPEATER, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 					projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 					projLogic->prevColObj = s_playerObject;
@@ -1152,7 +1152,7 @@ namespace TFE_DarkForces
 						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -8, 500);
 					}
 
-					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 					ProjectileLogic* proj[4];
 					for (s32 i = 0; i < 4; i++)
 					{
@@ -1283,7 +1283,7 @@ namespace TFE_DarkForces
 					rotateVectorM3x3(&inVec, &outVec, mtx);
 
 					fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
-					fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+					fixed16_16 yPos = outVec.y + s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 					fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
 
 					s32 baseVariation = s_curPlayerWeapon->variation & 0xffff;
@@ -1305,7 +1305,7 @@ namespace TFE_DarkForces
 						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPower, -1, 500);
 					}
 
-					fixed16_16 yPlayerPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+					fixed16_16 yPlayerPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 					ProjectileLogic* projLogic = (ProjectileLogic*)createProjectile(PROJ_PLASMA, s_playerObject->sector, s_playerObject->posWS.x, yPlayerPos, s_playerObject->posWS.z, s_playerObject);
 					projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 					projLogic->prevColObj = s_playerObject;
@@ -1489,7 +1489,7 @@ namespace TFE_DarkForces
 				}
 
 				ProjectileLogic* projLogic;
-				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 				projLogic = (ProjectileLogic*)createProjectile(PROJ_MORTAR, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 				projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 				projLogic->prevColObj = s_playerObject;
@@ -1698,7 +1698,7 @@ namespace TFE_DarkForces
 			rotateVectorM3x3(&inVec, &outVec, mtx);
 
 			fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
-			fixed16_16 yPos = s_playerObject->posWS.y + outVec.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+			fixed16_16 yPos = s_playerObject->posWS.y + outVec.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 			fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
 
 			s32 baseVariation = s_curPlayerWeapon->variation & 0xffff;
@@ -1739,7 +1739,7 @@ namespace TFE_DarkForces
 				}
 
 				ProjectileLogic* projLogic;
-				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 				projLogic = (ProjectileLogic*)createProjectile(PROJ_CONCUSSION, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 				projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 				projLogic->prevColObj = s_playerObject;
@@ -1872,7 +1872,7 @@ namespace TFE_DarkForces
 				rotateVectorM3x3(&inVec, &outVec, mtx);
 
 				fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
-				fixed16_16 yPos = s_playerObject->posWS.y + outVec.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				fixed16_16 yPos = s_playerObject->posWS.y + outVec.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 				fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
 
 				s32 baseVariation = s_curPlayerWeapon->variation & 0xffff;
@@ -1907,7 +1907,7 @@ namespace TFE_DarkForces
 						*s_curPlayerWeapon->secondaryAmmo = pickup_addToValue(s_playerInfo.ammoMissile, -1, 20);
 					}
 
-					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 					ProjectileLogic* projLogic = (ProjectileLogic*)createProjectile(PROJ_MISSILE, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 					projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 					projLogic->prevColObj = s_playerObject;
@@ -2007,7 +2007,7 @@ namespace TFE_DarkForces
 				rotateVectorM3x3(&inVec, &outVec, mtx);
 
 				fixed16_16 xPos = s_playerObject->posWS.x + outVec.x;
-				fixed16_16 yPos = s_playerObject->posWS.y + outVec.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+				fixed16_16 yPos = s_playerObject->posWS.y + outVec.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 				fixed16_16 zPos = s_playerObject->posWS.z + outVec.z;
 
 				s32 baseVariation = s_curPlayerWeapon->variation & 0xffff;
@@ -2041,7 +2041,7 @@ namespace TFE_DarkForces
 						*s_curPlayerWeapon->ammo = pickup_addToValue(s_playerInfo.ammoPlasma, -1, 400);
 					}
 
-					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight - s_headwaveVerticalOffset;
+					fixed16_16 yPos = s_playerObject->posWS.y - s_playerObject->worldHeight + s_headwaveVerticalOffset;
 					ProjectileLogic* projLogic = (ProjectileLogic*)createProjectile(PROJ_CANNON, s_playerObject->sector, s_playerObject->posWS.x, yPos, s_playerObject->posWS.z, s_playerObject);
 					projLogic->flags &= ~PROJFLAG_CAMERA_PASS_SOUND;
 					projLogic->prevColObj = s_playerObject;
