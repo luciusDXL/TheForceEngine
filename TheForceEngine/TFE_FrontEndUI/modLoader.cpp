@@ -23,6 +23,7 @@
 // Game
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <map>
 
 using namespace TFE_Input;
 
@@ -149,6 +150,54 @@ namespace TFE_FrontEndUI
 			for (size_t z = 0; z < count; z++)
 			{
 				s_readQueue.push_back({ QREAD_ZIP, modPaths[i], zipList[z] });
+			}
+		}
+
+		// De-dup the read queue since mods can come from different directories.
+		std::map<std::string, s32> nameMap;
+		std::vector<QueuedRead>::iterator iEntry = s_readQueue.begin();
+		for (; iEntry != s_readQueue.end();)
+		{
+			std::string modDirOrZip;
+			// If this is a zip file, we already have the file name.
+			if (iEntry->type == QREAD_ZIP)
+			{
+				modDirOrZip = iEntry->fileName;
+			}
+			// If this is a directory, then extract after the last slash.
+			else if (iEntry->path.length())  // QREAD_DIR
+			{
+				size_t len = modDirOrZip.length();
+				const char* str = modDirOrZip.data();
+				s32 slashIndex = -1;
+				for (size_t i = 0; i < len - 1; i++)
+				{
+					if ((str[i] == '/' || str[i] == '\\') && (str[i+1] != '/' && str[i+1] != '\\'))
+					{
+						slashIndex = s32(i);
+					}
+				}
+				if (slashIndex >= 0)
+				{
+					modDirOrZip = &iEntry->path[slashIndex + 1];
+				}
+				else
+				{
+					modDirOrZip = iEntry->path;
+				}
+			}
+
+			std::map<std::string, s32>::iterator iExistingEntry = nameMap.find(modDirOrZip);
+			if (iExistingEntry != nameMap.end())
+			{
+				// This already exists and should be removed.
+				iEntry = s_readQueue.erase(iEntry);
+			}
+			else
+			{
+				// Add it to the map.
+				nameMap[modDirOrZip] = 1;
+				++iEntry;
 			}
 		}
 	}
