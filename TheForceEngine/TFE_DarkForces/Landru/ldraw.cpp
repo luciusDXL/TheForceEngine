@@ -86,6 +86,7 @@ namespace TFE_DarkForces
 			srcImage += sizeof(s16) * 3;
 
 			const JBool rle = (sizeAndType & 1) ? JTRUE : JFALSE;
+			const JBool skipCol = xStart >= stride ? JTRUE : JFALSE;
 			s32 pixelCount = (sizeAndType >> 1) & 0x3fff;
 			u8* dstImage = &framebuffer[yStart*stride + xStart];
 
@@ -98,9 +99,17 @@ namespace TFE_DarkForces
 					if (!(count & 1)) // direct
 					{
 						count >>= 1;
-						for (s32 p = 0; p < count; p++, dstImage++, srcImage++)
+						if (skipCol)
 						{
-							*dstImage = *srcImage;
+							dstImage += count;
+							srcImage += count;
+						}
+						else
+						{
+							for (s32 p = 0; p < count; p++, dstImage++, srcImage++)
+							{
+								*dstImage = *srcImage;
+							}
 						}
 						pixelCount -= count;
 					}
@@ -108,18 +117,33 @@ namespace TFE_DarkForces
 					{
 						count >>= 1;
 						const u8 pixel = *srcImage; srcImage++;
-						for (s32 p = 0; p < count; p++, dstImage++)
+						if (skipCol)
 						{
-							*dstImage = pixel;
+							dstImage += count;
+						}
+						else
+						{
+							for (s32 p = 0; p < count; p++, dstImage++)
+							{
+								*dstImage = pixel;
+							}
 						}
 						pixelCount -= count;
 					}
 				}
 				else
 				{
-					for (s32 p = 0; p < pixelCount; p++, dstImage++, srcImage++)
+					if (skipCol)
 					{
-						*dstImage = *srcImage;
+						dstImage += pixelCount;
+						srcImage += pixelCount;
+					}
+					else
+					{
+						for (s32 p = 0; p < pixelCount; p++, dstImage++, srcImage++)
+						{
+							*dstImage = *srcImage;
+						}
 					}
 					pixelCount = 0;
 				}
