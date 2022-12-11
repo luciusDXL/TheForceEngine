@@ -86,7 +86,7 @@ namespace TFE_DarkForces
 			srcImage += sizeof(s16) * 3;
 
 			const JBool rle = (sizeAndType & 1) ? JTRUE : JFALSE;
-			const JBool skipCol = xStart >= stride ? JTRUE : JFALSE;
+			const JBool skipCol = (xStart < 0 || xStart >= stride) ? JTRUE : JFALSE;
 			s32 pixelCount = (sizeAndType >> 1) & 0x3fff;
 			u8* dstImage = &framebuffer[yStart*stride + xStart];
 
