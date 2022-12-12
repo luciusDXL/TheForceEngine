@@ -167,6 +167,8 @@ namespace TFE_FrontEndUI
 			// If this is a directory, then extract after the last slash.
 			else if (iEntry->path.length())  // QREAD_DIR
 			{
+				modDirOrZip = iEntry->path;
+
 				size_t len = modDirOrZip.length();
 				const char* str = modDirOrZip.data();
 				s32 slashIndex = -1;
@@ -180,10 +182,6 @@ namespace TFE_FrontEndUI
 				if (slashIndex >= 0)
 				{
 					modDirOrZip = &iEntry->path[slashIndex + 1];
-				}
-				else
-				{
-					modDirOrZip = iEntry->path;
 				}
 			}
 

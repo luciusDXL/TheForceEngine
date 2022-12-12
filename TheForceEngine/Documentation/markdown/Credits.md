@@ -19,7 +19,6 @@ The Force Engine would not be where it is today without the tireless efforts of 
  
   * AAS
   * Aros
-  * Bela Lugosi is cold (and dead)
   * Blackbird
   * BPzeBanshee
   * chaos7040
