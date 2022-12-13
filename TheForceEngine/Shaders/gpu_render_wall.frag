@@ -150,7 +150,8 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 	if (len > 0.0)
 	{
 	    // Camera Yaw - this matches the vanilla case, but calculates it per-pixel.
-		float cameraYaw = fract(-atan(dir.y, dir.x) / 6.283185 + 0.25);
+		float oneOverTwoPi = 1.0 / 6.283185;
+		float cameraYaw = fract(-atan(dir.y, dir.x) * oneOverTwoPi + 0.25);
 		cameraYaw = cameraYaw < 0.0 ? cameraYaw + 1.0 : cameraYaw;
 		uv.x = cameraYaw*SkyParallax.x + texOffset.x;
 		
@@ -168,7 +169,7 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 		
 		// Cylinder top and bottom coordinates.
 		// These are based on the pitch scaling in the original projection + 200 units to the bottom.
-		float yTop = -pitchScale * SkyParallax.y / 6.283185;
+		float yTop = -pitchScale * SkyParallax.y * oneOverTwoPi;
 		float yBot = -yTop + 200.0;
 		
 		// Clamp just shy of the edges to avoid artifacts.
@@ -179,7 +180,7 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 		// Calculate the final uv coordinate, this is the same as the vanilla projection.
 		uv.y = -(yCylinder + texOffset.y);
 		
-		// yLimit is used for sampling to make sure the tzfsop and bottom are a solid color.
+		// yLimit is used for sampling to make sure the top and bottom are a solid color.
 		// TODO: In the future, cap colors can be chosen per sky texture on the CPU and passed in.
 		yLimit = mix(yTop, yBot, v < 0.5 ? eps : 1.0-eps);
 		yLimit = -(yLimit + texOffset.y);
