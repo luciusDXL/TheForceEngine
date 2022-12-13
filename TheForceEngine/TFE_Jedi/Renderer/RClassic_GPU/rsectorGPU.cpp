@@ -35,6 +35,9 @@
 #include "spriteDisplayList.h"
 #include "../rcommon.h"
 
+// TODO: FIx
+#include "../RClassic_Float/rclassicFloatSharedState.h"
+
 #define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
 using namespace TFE_RenderBackend;
 
@@ -77,6 +80,12 @@ namespace TFE_Jedi
 		s32 lightDataId;
 		s32 globalLightingId;
 	};
+	struct ShaderSkyInputs
+	{
+		s32 skyParallaxId;
+		s32 skyParam0Id;
+		s32 skyParam1Id;
+	};
 
 	static GPUSourceData s_gpuSourceData = { 0 };
 
@@ -86,9 +95,7 @@ namespace TFE_Jedi
 	static Shader s_spriteShader;
 	static Shader s_wallShader[SECTOR_PASS_COUNT];
 	static ShaderInputs s_shaderInputs[SECTOR_PASS_COUNT + 1];
-	static s32 s_skyParallaxId[SECTOR_PASS_COUNT];
-	static s32 s_skyParamId[SECTOR_PASS_COUNT];
-	static s32 s_globalLightingId[SECTOR_PASS_COUNT];
+	static ShaderSkyInputs s_shaderSkyInputs[SECTOR_PASS_COUNT];
 	static s32 s_cameraRightId;
 
 	static IndexBuffer s_indexBuffer;
@@ -164,8 +171,10 @@ namespace TFE_Jedi
 		s_shaderInputs[index].cameraDirId  = s_wallShader[index].getVariableId("CameraDir");
 		s_shaderInputs[index].lightDataId  = s_wallShader[index].getVariableId("LightData");
 		s_shaderInputs[index].globalLightingId = s_wallShader[index].getVariableId("GlobalLightData");
-		s_skyParallaxId[index] = s_wallShader[index].getVariableId("SkyParallax");
-		s_skyParamId[index]    = s_wallShader[index].getVariableId("SkyParam");
+
+		s_shaderSkyInputs[index].skyParallaxId = s_wallShader[index].getVariableId("SkyParallax");
+		s_shaderSkyInputs[index].skyParam0Id = s_wallShader[index].getVariableId("SkyParam0");
+		s_shaderSkyInputs[index].skyParam1Id = s_wallShader[index].getVariableId("SkyParam1");
 		
 		s_wallShader[index].bindTextureNameToSlot("Sectors",        0);
 		s_wallShader[index].bindTextureNameToSlot("Walls",          1);
@@ -1172,6 +1181,7 @@ namespace TFE_Jedi
 		const TextureGpu* palette  = TFE_RenderBackend::getPaletteTexture();
 		const TextureGpu* textures = texturePacker->texture;
 		const ShaderInputs* inputs = &s_shaderInputs[pass];
+		const ShaderSkyInputs* skyInputs = &s_shaderSkyInputs[pass];
 		const ShaderBuffer* textureTable = &texturePacker->textureTableGPU;
 
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST);
@@ -1200,23 +1210,36 @@ namespace TFE_Jedi
 		fixed16_16 p0, p1;
 		TFE_Jedi::getSkyParallax(&p0, &p1);
 		// The values are scaled by 4 to convert from angle to fixed in the original code.
-		const f32 parallax[2] = { fixed16ToFloat(p0) * 0.25f, fixed16ToFloat(p1) * 0.25f };
-		shader->setVariable(s_skyParallaxId[pass], SVT_VEC2, parallax);
-		if (s_skyParamId[pass] >= 0)
+		const f32 parallax[2] = { fixed16ToFloat(p0), fixed16ToFloat(p1) };
+		shader->setVariable(skyInputs->skyParallaxId, SVT_VEC2, parallax);
+		if (skyInputs->skyParam0Id >= 0)
 		{
 			u32 dispWidth, dispHeight;
 			vfb_getResolution(&dispWidth, &dispHeight);
 
-			const f32 fourOverTwoPi = 4.0f/6.283185f;	// 4 / 2pi
+			// Compute the camera yaw from the camera direction and rotate it 90 degrees.
+			// This generates a value from 0 to 1.
+			f32 cameraYaw = fmodf(-atan2f(s_cameraDir.z, s_cameraDir.x) / (2.0f*PI) + 0.25f, 1.0f);
+			cameraYaw = cameraYaw < 0.0f ? cameraYaw + 1.0f : cameraYaw;
+
+			f32 cameraPitch = asinf(s_cameraDir.y);
+
+			const f32 oneOverTwoPi = 1.0f / 6.283185f;
 			const f32 rad45 = 0.785398f;	// 45 degrees in radians.
-			const f32 skyParam[4] =
+			const f32 skyParam0[4] =
 			{
-				-atan2f(s_cameraDir.z, s_cameraDir.x) * fourOverTwoPi * parallax[0],
-				 clamp(asinf(s_cameraDir.y), -rad45, rad45) * fourOverTwoPi * parallax[1],
-				 1.0f / (f32(dispWidth) * 0.5f),
-				 200.0f / f32(dispHeight),
+				cameraYaw * parallax[0],
+				clamp(cameraPitch, -rad45, rad45) * parallax[1] * oneOverTwoPi,
+				parallax[0] * oneOverTwoPi,
+				200.0f / f32(dispHeight),
 			};
-			shader->setVariable(s_skyParamId[pass], SVT_VEC4, skyParam);
+			const f32 skyParam1[2] =
+			{
+			   -s_rcfltState.nearPlaneHalfLen,
+				s_rcfltState.nearPlaneHalfLen * 2.0f / f32(dispWidth),
+			};
+			shader->setVariable(skyInputs->skyParam0Id, SVT_VEC4, skyParam0);
+			shader->setVariable(skyInputs->skyParam1Id, SVT_VEC2, skyParam1);
 		}
 
 		if (s_shaderInputs[pass].globalLightingId > 0)

@@ -11,7 +11,8 @@ uniform sampler2DArray Textures;
 uniform isamplerBuffer TextureTable;
 
 #ifdef SKYMODE_VANILLA
-uniform vec4 SkyParam;	// xOffset, yOffset, xScale, yScale
+uniform vec4 SkyParam0;	// xOffset, yOffset, xScale, yScale
+uniform vec2 SkyParam1;	// atan(xScale, xOffset)
 #endif
 
 flat in vec4 Frag_Uv;
@@ -136,51 +137,55 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 #ifdef SKYMODE_VANILLA
 	if (len > 0.0)
 	{
-		// The camera direction and resolution parameters are used to derive
-		// the SkyParam values on the CPU.
-		// From there the screen pixel position is used in conjunction to compute the final coordinates.
-		float dx = (gl_FragCoord.x * SkyParam.z - 1.0) * 0.8333333;	// -> (x/z - 1) / 1.2, refactored to remove per-pixel divisions.
-		float dirX = SkyParam.x + atan(dx) * 256.0;
-		float dirY = SkyParam.y + gl_FragCoord.y * SkyParam.w;
+		// dir = offset + x|y * scale
+		// where x = arcTan(offset + xPixel * scale)
+		// and   y = yPixel
+		vec2 xy  = vec2(atan(SkyParam1.x + gl_FragCoord.x*SkyParam1.y), gl_FragCoord.y);
+		vec2 dir = SkyParam0.xy + xy*SkyParam0.zw;
 
-		uv.x =  dirX - texOffset.x;
-		uv.y = -dirY - texOffset.y;
+		uv.x =  (dir.x + texOffset.x);
+		uv.y = -(dir.y + texOffset.y);
 	}
 #else  // SKYMODE_CYLINDER
 	if (len > 0.0)
 	{
-		// Scale is derived from the XZ camera offset since we are looking for cylindrical distance
-		// rather than spherical.
-		float scale = 1.0 / len;
+	    // Camera Yaw - this matches the vanilla case, but calculates it per-pixel.
+		float cameraYaw = fract(-atan(dir.y, dir.x) / 6.283185 + 0.25);
+		cameraYaw = cameraYaw < 0.0 ? cameraYaw + 1.0 : cameraYaw;
+		uv.x = cameraYaw*SkyParallax.x + texOffset.x;
 		
-		// Projected Y position on cylinder infinitely far away.
-		// +/-1.0 maps to the top of the cylinder and 0.0 maps to the horizon.
-		float yCylinder = cameraVec.y*scale;
-
-		// Scale from cylinder Y position to texels.
-		float dirScale = 0.7071 * 256.0;
-		// Offset to map from 0 -> 100 at the horizon line.
-		float offsetY = texOffset.y + 100.0;	// Note 100 here maps the center line of the image (aka 200 / 2 = 100)
-
-		// Hack! TODO: Figure out why this seems to be true.
-		if (SkyParallax.y < 256.0)
+		// Handle vertical.
+		float pitchScale = 0.785398;	// 45 degrees in radians.
+		// Cylindrical projection, replaces pitch in the vanilla projection.
+		float skyPitch = pitchScale * cameraVec.y / len;
+		
+		// Hack to try and get parallax < 1024 to look ok, despite the fact that there is no clean mapping to 3d.
+		// Using the vanilla projection, it just moves up and down slower but stays the same size.
+		if (SkyParallax.y < 1024.0)
 		{
-			offsetY += 50.0;
+			skyPitch *= 1.5;
 		}
 		
-		// Compute the X coordinate from the angle and scale by parallax.
-		dir *= scale;
-		uv.x = -(atan(dir.y, dir.x)/1.57 + 1.0) * SkyParallax.x - texOffset.x;
-		// The Y Coordinate is derived from the cylinder Y position and constant scale factor.
-		uv.y = -yCylinder * dirScale - offsetY;
-		// The limit is the Y coordinate when yCylinder = +/-1.0, which is used to lookup the top/bottom cap color.
-		yLimit = -sign(yCylinder) * dirScale - offsetY;
-		if (abs(yCylinder) > 1.0)
-		{
-			uv.y = yLimit;
-		}
-		// Compute a fade out value so we can fade from the current sky texels to a single color.
-		fade = smoothstep(0.95, 1.0, abs(yCylinder));
+		// Cylinder top and bottom coordinates.
+		// These are based on the pitch scaling in the original projection + 200 units to the bottom.
+		float yTop = -pitchScale * SkyParallax.y / 6.283185;
+		float yBot = -yTop + 200.0;
+		
+		// Clamp just shy of the edges to avoid artifacts.
+		float eps = 1.0 / 256.0;
+		float v = clamp(skyPitch*0.5 + 0.5, eps, 1.0-eps);
+		// Interpolate between the top and bottom of the cylinder based vertical cylindrical projection.
+		float yCylinder = mix(yTop, yBot, v);
+		// Calculate the final uv coordinate, this is the same as the vanilla projection.
+		uv.y = -(yCylinder + texOffset.y);
+		
+		// yLimit is used for sampling to make sure the tzfsop and bottom are a solid color.
+		// TODO: In the future, cap colors can be chosen per sky texture on the CPU and passed in.
+		yLimit = mix(yTop, yBot, v < 0.5 ? eps : 1.0-eps);
+		yLimit = -(yLimit + texOffset.y);
+		// Compute a "fade" value, which is an ordered dither between the sampled color and cap color.
+		// This is done since we are working in 8-bit color, so a proper blend isn't possible without lookup tables.
+		fade = smoothstep(0.95, 1.0, abs(skyPitch));
 	}
 #endif
 	return uv;
