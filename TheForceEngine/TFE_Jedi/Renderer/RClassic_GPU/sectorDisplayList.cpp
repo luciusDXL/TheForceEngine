@@ -373,7 +373,7 @@ namespace TFE_Jedi
 		// Clearly the quad bottom is calculated incorrectly.
 		else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_EXTERIOR))
 		{
-			addDisplayListItem(pos, { data.x | SPARTID_SKY, data.y, data.z | flip,
+			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP | SPARTID_SKY, data.y, data.z | flip,
 				wallGpuId | (srcWall->nextSector->ceilTex && *srcWall->nextSector->ceilTex ? (*srcWall->nextSector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 
@@ -385,7 +385,7 @@ namespace TFE_Jedi
 		// If there is an exterior pit adjoin, we only add an item if the current sector is *not* a pit.
 		else if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_PIT))
 		{
-			addDisplayListItem(pos, { data.x | SPARTID_SKY, data.y, data.z | flip,
+			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT | SPARTID_SKY, data.y, data.z | flip,
 				wallGpuId | (srcWall->nextSector->floorTex && *srcWall->nextSector->floorTex ? (*srcWall->nextSector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 

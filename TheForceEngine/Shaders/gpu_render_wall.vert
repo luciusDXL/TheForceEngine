@@ -124,6 +124,12 @@ void main()
 			vtx_pos.y = (vertexId < 2) ? ceilHeight : curTop;
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 2).zw;
 			texBase = nextTop;
+
+			if (sky)
+			{
+				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
+				texture_data.xy = sectorTexOffsets.zw;
+			}
 		}
 		else if (partId == 2) // Bottom
 		{
@@ -131,6 +137,12 @@ void main()
 			float curBot = max(ceilHeight, min(nextBot, floorHeight));
 			vtx_pos.y = (vertexId < 2) ? curBot : floorHeight;
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 2).xy;
+
+			if (sky)
+			{
+				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
+				texture_data.xy = sectorTexOffsets.xy;
+			}
 		}
 		else if (sky)
 		{
@@ -146,7 +158,7 @@ void main()
 		vtx_uv.y = sky ? 3.0 : 2.0;
 	#endif  // !SECTOR_TRANSPARENT_PASS
 
-		if (partId != 0 || !sky)
+		if (!sky)
 		{
 			texture_data = texelFetch(Walls, wallId*3);
 		}
