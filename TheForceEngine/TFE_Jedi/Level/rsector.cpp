@@ -840,16 +840,12 @@ namespace TFE_Jedi
 			if (obj)
 			{
 				i++;
-				if (((obj->entityFlags & ETFLAG_PICKUP) || (obj->entityFlags & ETFLAG_CAN_WAKE) || (obj->entityFlags & ETFLAG_AI_ACTOR)) && !(obj->entityFlags & ETFLAG_PROJECTILE) && !(obj->entityFlags & ETFLAG_CORPSE))
-				{
-					continue;
-				}
-				if ((obj->entityFlags & ETFLAG_PLAYER) || obj == s_playerObject || obj == s_playerEye || obj->entityFlags == 0)
-				{
-					continue;
-				}
 
-				if (freeCount < 128)
+				JBool canRemove = (obj->entityFlags & ETFLAG_CORPSE) != 0;
+				canRemove |= ((obj->entityFlags & ETFLAG_PICKUP) && !(obj->flags & OBJ_FLAG_MISSION));
+				canRemove |= (obj->entityFlags & ETFLAG_PROJECTILE) != 0;
+
+				if (canRemove && freeCount < 128)
 				{
 					freeList[freeCount++] = obj;
 				}
