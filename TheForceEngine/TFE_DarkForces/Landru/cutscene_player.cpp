@@ -135,7 +135,7 @@ namespace TFE_DarkForces
 				s_scene = SCENE_EXIT;
 				return;
 			}
-			TFE_Paths::addLocalArchive(lfd);
+			TFE_Paths::addLocalArchiveToFront(lfd);
 
 			char name[16];
 			CutsceneState* scene = &s_playSeq[s_playId];
@@ -168,7 +168,7 @@ namespace TFE_DarkForces
 			lview_setUpdateFunc(lcutscenePlayer_endView);
 
 			// Close the archive.
-			TFE_Paths::removeLastArchive();
+			TFE_Paths::removeFirstArchive();
 			delete lfd;
 					   			
 			// Text Crawl handling

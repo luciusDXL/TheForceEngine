@@ -242,6 +242,16 @@ namespace TFE_Paths
 
 		addSearchPath(fullPath);
 	}
+		
+	void addLocalArchiveToFront(Archive* archive)
+	{
+		s_localArchives.insert(s_localArchives.begin(), archive);
+	}
+
+	void removeFirstArchive()
+	{
+		s_localArchives.erase(s_localArchives.begin());
+	}
 
 	void addLocalArchive(Archive* archive)
 	{
