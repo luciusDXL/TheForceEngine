@@ -122,12 +122,18 @@ void main()
 	#else  // !SECTOR_TRANSPARENT_PASS
 		if (partId == 1) // Top
 		{
-			float nextTop = texelFetch(Sectors, nextId*2).y;
+			vec2 nextTopBot = texelFetch(Sectors, nextId*2).xy;
+			float nextTop = nextTopBot.y;
+			// Make sure the texture offsets are correct.
+			texBase = nextTop;
+			// Handle the case where the floor is higher than the ceiling.
+			// Such as in one of the cell blocks in Detention Center.
+			nextTop = min(nextTopBot.x, nextTop);
+
 			float curTop = min(floorHeight, max(nextTop, ceilHeight));
 			vtx_pos.y = (vertexId < 2) ? ceilHeight : curTop;
 			vtx_uv.zw = texelFetch(Walls, wallId*3 + 2).zw;
-			texBase = nextTop;
-
+			
 			if (sky)
 			{
 				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
