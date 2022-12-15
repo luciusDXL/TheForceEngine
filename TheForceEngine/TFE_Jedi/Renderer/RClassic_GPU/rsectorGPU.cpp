@@ -672,7 +672,7 @@ namespace TFE_Jedi
 	{
 		const f32 side0 = (w0.x - p0.x)*(p1.z - p0.z) - (w0.z - p0.z)*(p1.x - p0.x);
 		const f32 side1 = (w1.x - p0.x)*(p1.z - p0.z) - (w1.z - p0.z)*(p1.x - p0.x);
-		return side0 <= 0.0f || side1 <= 0.0f;
+		return side0 <= 0.01f || side1 <= 0.01f;
 	}
 
 	static Segment s_wallSegments[2048];
