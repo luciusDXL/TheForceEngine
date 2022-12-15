@@ -115,6 +115,9 @@ void main()
 				// Compute final height value for this vertex.
 				vtx_pos.y = (vertexId < 2) ? y0 : y1;
 			}
+
+			// Add a small z bias to nudge the mid-texture to show on top of objects in the sector being covered.
+			zbias = -0.00005;
 		}
 	#else  // !SECTOR_TRANSPARENT_PASS
 		if (partId == 1) // Top
