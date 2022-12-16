@@ -480,7 +480,7 @@ namespace TFE_Jedi
 			outFrames[i] = *frame;
 
 			// Somehow this doesn't crash in DOS...
-			if (frame->width >= 32768 || frame->height >= 32768)
+			if (frame->width >= 16384 || frame->height >= 16384)
 			{
 				outFrames[i] = outFrames[0];
 			}
