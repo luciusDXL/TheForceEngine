@@ -40,6 +40,7 @@ namespace TFE_DarkForces
 		TURRET_HEIGHT        =-FIXED(2),
 		//TURRET_FIRE_Z_OFFSET = 19660,	   // ~0.3
 		TURRET_FIRE_Z_OFFSET = 98300,	   // ~1.5  -- TODO: This seems to be required for mods like Dark Tide 4, but I'm not sure why.
+		TURRET_FIRE_ZMAX_OFFSET = 294900,   // ~1.5 * 3
 		TURRET_YAW_TOLERANCE = 3185,	   // How close the turret aim has to be in order to fire.
 		TURRET_PITCH_RANGE   = 1820,	   // How much pitch can deviate from the current value when aiming (+/- 40 degrees)
 		TURRET_MAX_DIST      = FIXED(140), // Maximum distance that the turret will shoot the player.
@@ -50,6 +51,8 @@ namespace TFE_DarkForces
 		TURRET_ACCURACY_OFFSET = FIXED(5), // These is generally TURRET_ACCURACY_RAND/2
 		TURRET_ROTATION_SPD  = 7736,       // ~170 degrees per second.
 		TURRET_OUT_OF_CONTROL_ROTATE_SPD = 12288,   // ~270 degrees per second - the rotation speed when the turret is out of control.
+
+		TURRET_OVERLAP_MIN = FIXED(5),
 	};
 	
 	struct TurretResources
@@ -210,6 +213,32 @@ namespace TFE_DarkForces
 		}
 		task_end;
 	}
+
+	fixed16_16 turret_getZOffset(SecObject* srcObj)
+	{
+		RSector* sector = srcObj->sector;
+		for (s32 i = 0, objIdx = 0; i < sector->objectCapacity && objIdx < sector->objectCount; i++)
+		{
+			SecObject* obj = sector->objectList[i];
+			if (obj)
+			{
+				const JBool isOverlapping3D = obj->type == OBJ_TYPE_3D && obj->worldWidth > TURRET_OVERLAP_MIN && !obj->projectileLogic;
+				if (obj != srcObj && isOverlapping3D)
+				{
+					// Hack to make AT-ST turrets work in the Dark Tide mods.
+					// TODO: DOS shouldn't work in this case, figure out why it does (probably related to low framerate and cycles setting).
+					const fixed16_16 dx = obj->posWS.x - srcObj->posWS.x;
+					const fixed16_16 dz = obj->posWS.z - srcObj->posWS.z;
+					if (dx < ONE_16 && dz < ONE_16)
+					{
+						return TURRET_FIRE_ZMAX_OFFSET;
+					}
+				}
+				objIdx++;
+			}
+		}
+		return TURRET_FIRE_Z_OFFSET;
+	}
 		
 	void turrent_handleFiringState(MessageType msg)
 	{
@@ -221,7 +250,7 @@ namespace TFE_DarkForces
 		weapon_computeMatrix(mtx, -obj->pitch, -obj->yaw);
 
 		RSector* sector = obj->sector;
-		vec3_fixed inVec = { 0, 0, TURRET_FIRE_Z_OFFSET };
+		vec3_fixed inVec = { 0, 0, turret_getZOffset(obj) };
 		vec3_fixed outVec;
 		rotateVectorM3x3(&inVec, &outVec, mtx);
 
