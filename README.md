@@ -18,6 +18,9 @@ Full support for Dark Forces has been completed. You can play through the entire
 ## Current Release
 The current release only supports Dark Forces. All weapons, AI, items, and all other systems function, including IMuse. You can play through Dark Forces from beginning to end and even play Dark Forces mods. As with any project of this nature, there may be bugs and system specific issues. If you run into any bugs that cannot be reproduced in the DOS version, please post them on the forums or GitHub.
 
+## Crossplatform
+After version 1.0, one of the next big things to tackle is official Linux and Mac support. I expect proper support to become available early in 2023.
+
 ## Minimum Requirements
 * Windows 7, 64 bit.
 * OpenGL 3.3
