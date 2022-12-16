@@ -844,6 +844,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_showSecretFoundMsg = showSecretMsg;
 		}
 
+		bool autorun = gameSettings->df_autorun;
+		if (ImGui::Checkbox("Autorun", &autorun))
+		{
+			gameSettings->df_autorun = autorun;
+		}
+
 		bool bobaFettFacePlayer = gameSettings->df_bobaFettFacePlayer;
 		if (ImGui::Checkbox("Boba Fett Face Player Fix", &bobaFettFacePlayer))
 		{

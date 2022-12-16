@@ -152,6 +152,7 @@ struct TFE_Settings_Game
 	bool df_disableFightMusic  = false;	// Set to true to disable fight music and music transitions during gameplay.
 	bool df_enableAutoaim      = true;  // Set to true to enable autoaim, false to disable.
 	bool df_showSecretFoundMsg = true;  // Show a message when the player finds a secret.
+	bool df_autorun = false;			// Run by default instead of walk.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 

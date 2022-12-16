@@ -1176,6 +1176,8 @@ namespace TFE_DarkForces
 
 	void handlePlayerMoveControls()
 	{
+		TFE_Settings_Game* settings = TFE_Settings::getGameSettings();
+
 		s_externalYawSpd = 0;
 		s_forwardSpd = 0;
 		s_strafeSpd = 0;
@@ -1236,13 +1238,29 @@ namespace TFE_DarkForces
 			}
 		}
 
-		if (inputMapping_getActionState(IADF_RUN))
+		if (settings->df_autorun) // TFE: Optional feature.
 		{
-			s_playerRun |= 1;
+			s_playerRun = 1;
+			if (inputMapping_getActionState(IADF_RUN))
+			{
+				s_playerRun = 0;
+			}
+			else if (inputMapping_getActionState(IADF_SLOW))
+			{
+				s_playerSlow |= 1;
+				s_playerRun = 0;
+			}
 		}
-		else if (inputMapping_getActionState(IADF_SLOW))
+		else // Normal vanilla behavior.
 		{
-			s_playerSlow |= 1;
+			if (inputMapping_getActionState(IADF_RUN))
+			{
+				s_playerRun |= 1;
+			}
+			else if (inputMapping_getActionState(IADF_SLOW))
+			{
+				s_playerSlow |= 1;
+			}
 		}
 
 		s32 crouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
