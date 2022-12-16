@@ -123,12 +123,11 @@ void main()
 		if (partId == 1) // Top
 		{
 			vec2 nextTopBot = texelFetch(Sectors, nextId*2).xy;
-			float nextTop = nextTopBot.y;
 			// Make sure the texture offsets are correct.
-			texBase = nextTop;
+			texBase = nextTopBot.y;
 			// Handle the case where the floor is higher than the ceiling.
 			// Such as in one of the cell blocks in Detention Center.
-			nextTop = min(nextTopBot.x, nextTop);
+			float nextTop = min(nextTopBot.x, nextTopBot.y);
 
 			float curTop = min(floorHeight, max(nextTop, ceilHeight));
 			vtx_pos.y = (vertexId < 2) ? ceilHeight : curTop;
@@ -136,7 +135,7 @@ void main()
 			
 			if (sky)
 			{
-				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
+				vec4 sectorTexOffsets = texelFetch(Sectors, nextId*2+1);
 				texture_data.xy = sectorTexOffsets.zw;
 			}
 		}
@@ -149,7 +148,7 @@ void main()
 
 			if (sky)
 			{
-				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
+				vec4 sectorTexOffsets = texelFetch(Sectors, nextId*2+1);
 				texture_data.xy = sectorTexOffsets.xy;
 			}
 		}
