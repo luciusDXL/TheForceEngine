@@ -19,6 +19,6 @@ Full support for Dark Forces has been completed. You can play through the entire
 The current release only supports Dark Forces. All weapons, AI, items, and all other systems function, including IMuse. You can play through Dark Forces from beginning to end and even play Dark Forces mods. As with any project of this nature, there may be bugs and system specific issues. If you run into any bugs that cannot be reproduced in the DOS version, please post them on the forums or GitHub.
 
 ## Minimum Requirements
-Windows 7, 64 bit.
-OpenGL 3.3
+* Windows 7, 64 bit.
+* OpenGL 3.3
 Note that there are plans to lower the requirements for using the classic software renderer in the future. However, the minimum requirements for GPU Renderer support are here to stay. For now only OpenGL is supported, which might limit the use of some older Intel integrated GPUs that would otherwise be capable. There are near-term plans to add DirectX 10/11, Vulkan, and maybe Metal render backends which should enable more GPUs to run the engine efficiently.
