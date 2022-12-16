@@ -550,8 +550,9 @@ namespace TFE_Jedi
 			Vec3f p1 = { portal->v1.x, portal->seg->portalY1, portal->v1.z };
 
 			// Clip the portal by the current frustum, and return if it is culled.
+			// Note that the near plane is ignored since portals can overlap and intersect in vanilla.
 			Polygon clippedPortal;
-			if (frustum_clipQuadToFrustum(p0, p1, &clippedPortal))
+			if (frustum_clipQuadToFrustum(p0, p1, &clippedPortal, true/*ignoreNearPlane*/))
 			{
 				Portal* portalOut = &s_portalList[s_portalListCount];
 				s_portalListCount++;
@@ -668,7 +669,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	bool isWallBehindPlane(Vec2f w0, Vec2f w1, Vec2f p0, Vec2f p1)
+	bool isWallInFrontOfPlane(Vec2f w0, Vec2f w1, Vec2f p0, Vec2f p1)
 	{
 		const f32 side0 = (w0.x - p0.x)*(p1.z - p0.z) - (w0.z - p0.z)*(p1.x - p0.x);
 		const f32 side1 = (w1.x - p0.x)*(p1.z - p0.z) - (w1.z - p0.z)*(p1.x - p0.x);
@@ -785,7 +786,7 @@ namespace TFE_Jedi
 			}
 
 			// Make sure the wall is on the correct side of the portal plane, if not in the initial sector.
-			if (!initSector && !isWallBehindPlane({ x0, z0 }, { x1, z1 }, p0, p1))
+			if (!initSector && !isWallInFrontOfPlane({ x0, z0 }, { x1, z1 }, p0, p1))
 			{
 				continue;
 			}
@@ -1083,7 +1084,9 @@ namespace TFE_Jedi
 		// There is a portal but the sector beyond is degenerate but has a sky.
 		// In this case the software renderer will still fill in the sky even though no walls are visible, so the GPU
 		// renderer needs to emulate the same behavior.
-		if (segCount == 0 && ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (curSector->flags1 & SEC_FLAGS1_PIT)))
+		JBool canTreatPortalAsSky = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (curSector->flags1 & SEC_FLAGS1_PIT)) &&
+			prevSector && ((prevSector->flags1 & SEC_FLAGS1_EXTERIOR) && (prevSector->flags1 & SEC_FLAGS1_PIT));
+		if (segCount == 0 && canTreatPortalAsSky)
 		{
 			addPortalAsSky(prevSector, portalWall);
 			return;

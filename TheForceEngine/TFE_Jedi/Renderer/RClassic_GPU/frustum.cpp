@@ -139,10 +139,11 @@ namespace TFE_Jedi
 		return true;
 	}
 						
-	bool frustum_clipQuadToFrustum(Vec3f corner0, Vec3f corner1, Polygon* output)
+	bool frustum_clipQuadToFrustum(Vec3f corner0, Vec3f corner1, Polygon* output, bool ignoreNearPlane)
 	{
 		Frustum* frustum = frustum_getBack();
-		return frustum_clipQuadToPlanes(frustum->planeCount, frustum->planes, corner0, corner1, output);
+		const s32 count = frustum->planeCount - (ignoreNearPlane ? 1 : 0);
+		return frustum_clipQuadToPlanes(count, frustum->planes, corner0, corner1, output);
 	}
 
 	bool frustum_clipQuadToPlanes(s32 count, const Vec4f* plane, Vec3f corner0, Vec3f corner1, Polygon* output)
