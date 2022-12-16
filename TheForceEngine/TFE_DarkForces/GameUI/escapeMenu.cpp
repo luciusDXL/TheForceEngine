@@ -65,7 +65,7 @@ namespace TFE_DarkForces
 		CONFIRM_YES,
 		CONFIRM_BTN_COUNT
 	};
-	static const Vec2i c_escButtons[ESC_BTN_COUNT] =
+	static Vec2i c_escButtons[ESC_BTN_COUNT] =
 	{
 		{64, 35},	// ESC_ABORT
 		{64, 55},	// ESC_CONFIG
@@ -73,7 +73,6 @@ namespace TFE_DarkForces
 		{64, 99},	// ESC_RETURN
 	};
 	static const Vec2i c_escButtonDim = { 96, 16 };
-
 	static Vec4i s_confirmButtonRange[4];
 
 	struct EscapeMenuState
@@ -146,6 +145,16 @@ namespace TFE_DarkForces
 				s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
 				s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.anim", &s_emState.confirmMenuFrames);
 			TFE_Paths::removeLastArchive();
+
+			// Adjust button ranges since different languages seem to move the menu around for some reason...
+			Vec4i range = getButtonRange(s_emState.escMenuFrames, 0);
+			s32 dx = range.x - 36;
+			s32 dy = range.y - 25;
+			for (s32 i = 0; i < ESC_BTN_COUNT; i++)
+			{
+				c_escButtons[i].x += dx;
+				c_escButtons[i].z += dy;
+			}
 
 			// Get confirmation button positions.
 			s_confirmButtonRange[0] = getButtonRange(s_emState.confirmMenuFrames, CONFIRM_NEXT_NOBTN_DOWN);
