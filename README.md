@@ -21,4 +21,5 @@ The current release only supports Dark Forces. All weapons, AI, items, and all o
 ## Minimum Requirements
 * Windows 7, 64 bit.
 * OpenGL 3.3
+
 Note that there are plans to lower the requirements for using the classic software renderer in the future. However, the minimum requirements for GPU Renderer support are here to stay. For now only OpenGL is supported, which might limit the use of some older Intel integrated GPUs that would otherwise be capable. There are near-term plans to add DirectX 10/11, Vulkan, and maybe Metal render backends which should enable more GPUs to run the engine efficiently.
