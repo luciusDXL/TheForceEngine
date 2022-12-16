@@ -135,7 +135,7 @@ namespace TFE_FrontEndUI
 	static const char* c_renderer[] =
 	{
 		"Classic (Software)",
-		"Classic (Hardware)",
+		"GPU / OpenGL",
 	};
 
 	typedef void(*MenuItemSelected)();
@@ -155,6 +155,7 @@ namespace TFE_FrontEndUI
 	static SubUI s_subUI;
 	static ConfigTab s_configTab;
 	static bool s_saveLoadSetupRequired = true;
+	static bool s_bindingPopupOpen = false;
 
 	static bool s_consoleActive = false;
 	static bool s_relativeMode;
@@ -1335,7 +1336,7 @@ namespace TFE_FrontEndUI
 
 	bool uiControlsEnabled()
 	{
-		return (!ImGui::IsPopupOpen("##ChangeBinding") && s_configTab != CONFIG_INPUT) || s_subUI == FEUI_NONE;
+		return (!s_bindingPopupOpen || s_configTab != CONFIG_INPUT) || s_subUI == FEUI_NONE;
 	}
 
 	void configInput()
@@ -1620,7 +1621,10 @@ namespace TFE_FrontEndUI
 								
 				if (ImGui::BeginPopupModal("##ChangeBinding", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 				{
+					s_bindingPopupOpen = true;
+
 					ImGui::Text("Press a key, controller button or mouse button.");
+					ImGui::Text("(To clear, repeat the current binding)");
 
 					KeyboardCode key = TFE_Input::getKeyPressed();
 					Button ctrlBtn = TFE_Input::getControllerButtonPressed();
@@ -1763,6 +1767,10 @@ namespace TFE_FrontEndUI
 					}
 
 					ImGui::EndPopup();
+				}
+				else
+				{
+					s_bindingPopupOpen = false;
 				}
 			}
 		}
