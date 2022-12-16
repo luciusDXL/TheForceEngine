@@ -9,6 +9,7 @@
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
 #include <TFE_DarkForces/player.h>
+#include <TFE_DarkForces/projectile.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/InfSystem/message.h>
@@ -843,7 +844,10 @@ namespace TFE_Jedi
 
 				JBool canRemove = (obj->entityFlags & ETFLAG_CORPSE) != 0;
 				canRemove |= ((obj->entityFlags & ETFLAG_PICKUP) && !(obj->flags & OBJ_FLAG_MISSION));
-				canRemove |= (obj->entityFlags & ETFLAG_PROJECTILE) != 0;
+
+				const u32 projType = (obj->projectileLogic) ? ((TFE_DarkForces::ProjectileLogic*)obj->projectileLogic)->type : (0);
+				const JBool isLandMine = projType == PROJ_LAND_MINE || projType == PROJ_LAND_MINE_PROX || projType == PROJ_LAND_MINE_PLACED;
+				canRemove |= ((obj->entityFlags & ETFLAG_PROJECTILE) && isLandMine);
 
 				if (canRemove && freeCount < 128)
 				{
