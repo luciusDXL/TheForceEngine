@@ -5,6 +5,17 @@
 * [Discord](https://discord.gg/hpsJnY9)
 * [Project Structure](ProjectStructure.md)
 
+## Current Features
+* Full Dark Forces support, including mods. Outlaws support is coming in version 2.0.
+* Mod Loader - simply place your mods in the Mods/ directory as zip files or directories.
+* High Resolution and Widescreen support - when using 320x200 you get the original software renderer. TFE also includes a floating-point software renderer which supports widescreen, including ultrawide, and much higher resolutions.
+* GPU Renderer with perspective correct pitch - play at much higher resolutions with improved performance.
+* Extended Limits - TFE, by default, will support much higher limits than the original game which removes most of the HOM (Hall of Mirrors) issues in advanced mods.
+* Full input binding, mouse sensitivity adjustment, and controller support. Note, however, that menus currently require the mouse.
+* Optional Quality of Life improvements, such as full mouselook, aiming reticle, improved Boba Fett AI, autorun, and more.
+* A new save system that works seamlessly with the exiting checkpoint and lives system. You can ignore it entirely, use it just as an exit save so you don't have to play long user levels in one sitting, or full save and load with quicksaves like Doom or Duke Nukem 3D.
+* Optional and quality of life features, even mouselook, can be disabled if you want the original experience. Play in 320x200, turn the mouse mode (Input menu) to Menus only or horizontal, and enable the Classic (software) renderer - and it will look and play just like DOS, but with a higher framerate and without needing to adjust cycles in DosBox.
+
 ## About
 The Force Engine is a project with the goal to reverse engineer and rebuild the Jedi Engine for modern systems and the games that used that engine - Dark Forces and Outlaws. The project will include modern, built-in tools, such as a level editor and will make it easy to play Dark Forces and Outlaws on modern systems as well as the many community mods designed to work with the original games.
 
