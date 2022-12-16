@@ -342,10 +342,30 @@ namespace TFE_Jedi
 		{
 			if ((curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) || forceTreatAsSolid)
 			{
-				// For now use the ceiling texture.
-				// TODO: This should render *both* the ceiling and floor textures.
-				addDisplayListItem(pos, {data.x | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
-					wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+				// If the floor and ceiling textures are different, split into two.
+				// Since no next sector is required, this is treated as a solid wall, the space is re-used as flags to differeniate between the three cases:
+				// (0) Both above and below the horizon using the same texture (the ceiling).
+				// (1) Below the horizon line, using the floor texture.
+				// (2) Above the horizon line, using the ceiling texture.
+				if (curSector->floorTex == curSector->ceilTex)
+				{
+					// Above AND below the horizon line (single quad).
+					u32 flags = 0;
+					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
+						wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+				}
+				else
+				{
+					// Below the horizon line.
+					u32 flags = 1 << 10;
+					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
+						wallGpuId | (curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+
+					// Above the horizon line.
+					flags = 2 << 10;
+					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
+						wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+				}
 			}
 			else
 			{

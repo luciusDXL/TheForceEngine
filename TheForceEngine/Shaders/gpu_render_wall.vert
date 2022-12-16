@@ -152,9 +152,22 @@ void main()
 				texture_data.xy = sectorTexOffsets.xy;
 			}
 		}
-		else if (sky)
+		else if (sky) // Mid-sky
 		{
+			// We re-use the nextId to hold flags.
 			int flatIndex = 1;
+
+			// There may be a different texture for the floor and ceiling, if so it is split at the horizon line => camera Y position.
+			// This case will generate two quads instead of one.
+			if (nextId == 1)	// floor
+			{
+				vtx_pos.y = (vertexId >= 2) ? vtx_pos.y : CameraPos.y;
+				flatIndex = 0;
+			}
+			else if (nextId == 2)	// ceiling
+			{
+				vtx_pos.y = (vertexId < 2) ? vtx_pos.y : CameraPos.y;
+			}
 			vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 			texture_data.xy = (flatIndex == 0) ? sectorTexOffsets.xy : sectorTexOffsets.zw;
 		}
