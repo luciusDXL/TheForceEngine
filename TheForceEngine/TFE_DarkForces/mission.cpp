@@ -322,6 +322,9 @@ namespace TFE_DarkForces
 			}
 			s_loadingFromSave = JFALSE;
 			TFE_Input::clearAccumulatedMouseMove();
+
+			s_flatLighting = JFALSE;
+			s_nightvisionActive = JFALSE;
 		}
 		// Sleep until we are done with the main task.
 		task_yield(TASK_SLEEP);
