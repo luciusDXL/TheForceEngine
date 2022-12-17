@@ -684,7 +684,7 @@ namespace TFE_DarkForces
 					}
 				}
 				damageMod->hp -= dmg;
-				if (damageMod->stopOnHit)
+				if (damageMod->stopOnHit || damageMod->hp <= 0)
 				{
 					attackMod->target.flags |= TARGET_FREEZE;
 				}
@@ -742,7 +742,7 @@ namespace TFE_DarkForces
 				fixed16_16 dmg   = s_msgArg1;
 				fixed16_16 force = s_msgArg2;
 				damageMod->hp -= dmg;
-				if (damageMod->stopOnHit)
+				if (damageMod->stopOnHit || damageMod->hp <= 0)
 				{
 					attackMod->target.flags |= TARGET_FREEZE;
 				}
@@ -789,7 +789,7 @@ namespace TFE_DarkForces
 			if (damageMod->hp > 0)
 			{
 				damageMod->hp = 0;
-				if (damageMod->stopOnHit)
+				if (damageMod->stopOnHit || damageMod->hp <= 0)
 				{
 					attackMod->target.flags |= TARGET_FREEZE;
 				}
