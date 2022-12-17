@@ -3449,7 +3449,7 @@ namespace TFE_Jedi
 		sector->dirtyFlags |= SDF_VERTICES;
 
 		JBool halfStep = JFALSE;
-		if (abs(delta) < HALF_16)
+		if (abs(delta) < ONE_16)
 		{
 			// This is a minor hack to allow slow moving rotating sectors to work at up to 144Hz.
 			// Basically it allows slowly rotating elevators to work at 2x the framerate by rounding in halves - yielding similar
