@@ -304,6 +304,8 @@ namespace TFE_Paths
 		Archive** archive = s_localArchives.data();
 		for (size_t i = 0; i < archiveCount; i++, archive++)
 		{
+			if (!(*archive)) { continue; }	// Avoid crashing if an archive is null.
+
 			u32 index = (*archive)->getFileIndex(fileName);
 			if (index != INVALID_FILE)
 			{

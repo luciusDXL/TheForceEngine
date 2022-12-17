@@ -159,8 +159,9 @@ namespace TFE_DarkForces
 			s_film = cutsceneFilm_load(name, &rect, 0, 0, 0, cutscene_loadCallback);
 			if (!s_film)
 			{
-				TFE_Paths::removeLastArchive();
+				TFE_Paths::removeFirstArchive();
 				delete lfd;
+
 				s_scene = SCENE_EXIT;
 				TFE_System::logWrite(LOG_ERROR, "CutscenePlayer", "Unable to load all items in cutscene '%s'.", name);
 				return;
