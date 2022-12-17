@@ -265,6 +265,7 @@ namespace TFE_DarkForces
 			// Make sure the loading screen is displayed for at least 1 second.
 			if (!s_loadingFromSave)
 			{
+				time_pause(JFALSE);
 				mission_createDisplay();
 				displayLoadingScreen();
 				task_yield(MIN_LOAD_TIME);
@@ -325,6 +326,8 @@ namespace TFE_DarkForces
 
 			s_flatLighting = JFALSE;
 			s_nightvisionActive = JFALSE;
+			s_gamePaused = JFALSE;
+			escapeMenu_resetLevel();
 		}
 		// Sleep until we are done with the main task.
 		task_yield(TASK_SLEEP);

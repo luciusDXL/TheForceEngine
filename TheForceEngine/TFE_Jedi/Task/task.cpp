@@ -215,7 +215,7 @@ namespace TFE_Jedi
 		return s_curTask;
 	}
 
-	void  task_pause(JBool pause, Task* pauseRunTask)
+	void task_pause(JBool pause, Task* pauseRunTask)
 	{
 		s_taskSystemPaused = pause;
 		s_taskPauseTask = pauseRunTask;
@@ -268,6 +268,9 @@ namespace TFE_Jedi
 		s_curTask = &s_rootTask;
 		s_taskCount = 0;
 		s_frameActiveTaskCount = 0;
+
+		s_taskSystemPaused = JFALSE;
+		s_taskPauseTask = nullptr;
 	}
 
 	void task_freeAll()
@@ -295,6 +298,7 @@ namespace TFE_Jedi
 		s_prevTime = 0.0;
 		s_minIntervalInSec = 0.0;
 		s_frameActiveTaskCount = 0;
+		s_taskSystemPaused = JFALSE;
 		s_taskPauseTask = nullptr;
 	}
 

@@ -237,6 +237,11 @@ namespace TFE_DarkForces
 		s_emState.confirmState = CONFIRM_STATE_NONE;
 	}
 
+	void escapeMenu_resetLevel()
+	{
+		s_emState.escMenuOpen = JFALSE;
+	}
+
 	void escapeMenu_close()
 	{
 		s_emState.escMenuOpen = JFALSE;
