@@ -789,10 +789,7 @@ namespace TFE_DarkForces
 			if (damageMod->hp > 0)
 			{
 				damageMod->hp = 0;
-				if (damageMod->stopOnHit || damageMod->hp <= 0)
-				{
-					attackMod->target.flags |= TARGET_FREEZE;
-				}
+				attackMod->target.flags |= TARGET_FREEZE;
 
 				LogicAnimation* anim = &attackMod->anim;
 				ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
@@ -1207,10 +1204,9 @@ namespace TFE_DarkForces
 			if (!actorLogic_isStopFlagSet())
 			{
 				// Offset the target by |dx| / 4
+				// This is obviously a typo and bug in the DOS code and should be min(|dx|, |dz|)
+				// but the original code is min(|dx|, |dx|) => |dx|
 				fixed16_16 dx = TFE_Jedi::abs(s_playerObject->posWS.x - obj->posWS.x);
-				// Note: there is a bug in the original DOS code -
-				// it was supposed to used dx or dz, whichever is *larger* - but both sides of the conditional
-				// use dx.
 				targetOffset = dx >> 2;
 			}
 			else
@@ -1234,7 +1230,7 @@ namespace TFE_DarkForces
 			thinkerMod->target.roll = 0;
 			thinkerMod->target.yaw = vec2ToAngle(dx, dz);
 			thinkerMod->target.flags |= TARGET_MOVE_ROT;
-
+						
 			if (!(logic->flags & 2))
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
@@ -1967,35 +1963,36 @@ namespace TFE_DarkForces
 
 			JBool vertCollision = JFALSE;
 			JBool hitCeiling = JFALSE;
-			if (vel->y < 0)
+			// Did the object hit the ceiling?
+			if (vel->y < 0 && obj->posWS.y <= ceilHeight + moveMod->physics.height)
 			{
-				// Did the object hit the ceiling?
-				if (obj->posWS.y <= ceilHeight + moveMod->physics.height)
-				{
-					vertCollision = JTRUE;
-					hitCeiling = JTRUE;
-				}
+				vertCollision = JTRUE;
+				hitCeiling = JTRUE;
 			}
+			// Or the floor?
 			else if (obj->posWS.y >= floorHeight)
 			{
-				// Did it hit the floor?
 				vertCollision = JTRUE;
 				hitCeiling = JFALSE;
+			}
+
+			// Die once falling fast enough.
+			if (vel->y > FIXED(160))
+			{
+				actor_sendTerminalVelMsg(obj);
 			}
 			
 			if (vertCollision)
 			{
-				// Collision with floor or ceiling.
-				if (vel->y > FIXED(160))
-				{
-					actor_sendTerminalVelMsg(obj);
-				}
-
 				// Clear out the yVel if the object hits the floor or ceiling.
 				if ((hitCeiling && vel->y < 0) || (!hitCeiling && vel->y >= 0))
 				{
 					vel->y = 0;
 				}
+			}
+			else if (vel->y < 0 || obj->posWS.y < floorHeight)
+			{
+				friction = ONE_16 - s_deltaTime / 2;
 			}
 		}
 		else
