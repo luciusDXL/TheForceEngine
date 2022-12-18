@@ -459,7 +459,7 @@ namespace TFE_Jedi
 		}
 
 		// In the original DOS code, this is directly set to pointers. But since TFE is compiled as 64-bit, pointers are not the correct size.
-		u32* textureOffsets = (u32*)(tex->image + 2);
+		const u32* textureOffsets = (u32*)(tex->image + 2);
 		AnimatedTexture* anim = (AnimatedTexture*)allocator_newItem(s_texState.textureAnimAlloc);
 
 		// 64 bit pointers are larger than the offsets, so we have to allocate more space (for now).
@@ -496,6 +496,7 @@ namespace TFE_Jedi
 			outFrames[i].frameIdx = i;
 			outFrames[i].animPtr = anim;
 			outFrames[i].animSetup = 1;
+			outFrames[i].columns = nullptr;
 
 			anim->frameList[i] = &outFrames[i];
 		}
