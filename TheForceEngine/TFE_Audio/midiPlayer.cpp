@@ -78,7 +78,8 @@ namespace TFE_MidiPlayer
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_MidiPlayer::init");
 
 		bool res = TFE_MidiDevice::init();
-		TFE_MidiDevice::selectDevice(0);
+		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
+		TFE_MidiDevice::selectDevice(soundSettings->midiPort);
 		s_runMusicThread.store(true);
 
 		MUTEX_INITIALIZE(&s_mutex);
@@ -92,7 +93,6 @@ namespace TFE_MidiPlayer
 		CCMD("setMusicVolume", setMusicVolumeConsole, 1, "Sets the music volume, range is 0.0 to 1.0");
 		CCMD("getMusicVolume", getMusicVolumeConsole, 0, "Get the current music volume where 0 = silent, 1 = maximum.");
 
-		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
 		setVolume(soundSettings->musicVolume);
 		setMaximumNoteLength();
 

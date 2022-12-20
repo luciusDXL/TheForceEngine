@@ -910,5 +910,11 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 				s_startupGame = Game_Dark_Forces;
 			}
 		}
+		else if (strcasecmp(name, "midi") == 0 && values.size() >= 1) // Directly load a game, skipping the titlescreen.
+		{
+			const char* midiDev = values[0];
+			TFE_System::logWrite(LOG_MSG, "CommandLine", "Selected midi device: %s", midiDev);
+			TFE_Settings::getSoundSettings()->midiPort = atoi(midiDev);
+		}	
 	}
 }

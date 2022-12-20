@@ -29,6 +29,16 @@ namespace TFE_MidiDevice
 		s_midiout->setErrorCallback(midiErrorCallback);
 		s_openPort = -1;
 
+		u32 device_count = getDeviceCount();
+		for (u32 i = 0; i < device_count; i++)
+		{
+			auto buffer = new char[255];
+			getDeviceName(i, buffer, 255);
+			auto deviceName = std::string(buffer);
+			std::string logString = "Midi Device " + std::to_string(i) + ": " + deviceName;
+			TFE_System::logWrite(LOG_MSG, "Startup", logString.c_str());
+		}
+
 		return true;
 	}
 
