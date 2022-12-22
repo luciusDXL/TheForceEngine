@@ -5,6 +5,8 @@
 * [Discord](https://discord.gg/hpsJnY9)
 * [Project Structure](ProjectStructure.md)
 
+**A purchased copy of the original game is required and is not provided by The Force Engine.** The documentation - https://theforceengine.github.io/Documentation.html - has information on how to legally purchase Dark Forces. TFE is **not** a remaster, it is essentially a source port designed to run the *original* game natively on modern systems with quality of life improvements and optional enhancements. Dark Forces and Outlaws are owned by Disney and are still active, commercial products. The IP is owned solely by Disney.
+
 ## Current Features
 * Full Dark Forces support, including mods. Outlaws support is coming in version 2.0.
 * Mod Loader - simply place your mods in the Mods/ directory as zip files or directories.
