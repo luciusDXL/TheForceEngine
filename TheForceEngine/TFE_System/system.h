@@ -66,3 +66,36 @@ namespace TFE_System
 
 	extern f64 c_gameTimeScale;
 }
+
+// _strlwr() / _strupr() do not exist on Linux
+#ifndef _strlwr
+#include <ctype.h>
+static inline void _strlwr(char *c)
+{
+	while (*c) {
+		*c = tolower(*c);
+		c++;
+	}
+}
+#endif
+
+#ifndef _strupr
+#include <ctype.h>
+static inline void _strupr(char *c)
+{
+	while (*c) {
+		*c = toupper(*c);
+		c++;
+	}
+}
+#endif
+
+// strcpy_s is windows-ism
+#ifndef strcpy_s
+#define strcpy_s(dest, len, src) strncpy(dest, src, len)
+#endif
+
+// sprintf_s is a windows-ism
+#ifndef sprintf_s
+#define sprintf_s snprintf
+#endif
