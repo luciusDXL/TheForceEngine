@@ -171,6 +171,26 @@ namespace TFE_FrontEndUI
 
 	static MenuItemSelected s_menuItemselected[7];
 
+	static const char* c_axisBinding[] =
+	{
+		"X Left Axis",
+		"Y Left Axis",
+		"X Right Axis",
+		"Y Right Axis",
+	};
+
+	static const char* c_mouseMode[] =
+	{
+		"Menus Only",
+		"Horizontal Turning",
+		"Mouselook"
+	};
+
+	static InputConfig* s_inputConfig = nullptr;
+	static bool s_controllerWinOpen = true;
+	static bool s_mouseWinOpen = true;
+	static bool s_inputMappingOpen = true;
+
 	// Mod Support
 	static char s_selectedModCmd[TFE_MAX_PATH] = "";
 
@@ -400,8 +420,10 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 	}
 
-	void draw(bool drawFrontEnd, bool noGameData)
+	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults)
 	{
+		const u32 windowInvisFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings;
+
 		DisplayInfo display;
 		TFE_RenderBackend::getDisplayInfo(&display);
 		u32 w = display.width;
@@ -425,6 +447,12 @@ namespace TFE_FrontEndUI
 			s_drawNoGameDataMsg = true;
 			pickCurrentResolution();
 		}
+		else if (setDefaults)
+		{
+			s_subUI = FEUI_NONE;
+			s_appState = APP_STATE_SET_DEFAULTS;
+			pickCurrentResolution();
+		}
 		if (!drawFrontEnd) { return; }
 
 		if (s_subUI == FEUI_NONE)
@@ -433,7 +461,6 @@ namespace TFE_FrontEndUI
 			s_relativeMode = false;
 
 			const f32 windowPadding = 16.0f;	// required padding so that a window completely holds a control without clipping.
-			const u32 windowInvisFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings;
 
 			const s32 logoScale = 2160;	// logo and title are authored for 2160p so it looks good at high resolutions, such as 1440p and 4k.
 			const s32 posScale = 1080;	// positions are at 1080p so must be scaled for different resolutions.
@@ -472,35 +499,113 @@ namespace TFE_FrontEndUI
 			ImGui::End();
 			ImGui::PopFont();
 
-			s32 menuHeight = (textHeight + 24) * 7 + 4;
-
-			// Main Menu
-			ImGui::PushFont(s_menuFont);
-
-			bool active = true;
-			ImGui::SetNextWindowPos(ImVec2(f32((w - textWidth - 24) / 2), f32(h - menuHeight - topOffset)));
-			ImGui::SetNextWindowSize(ImVec2((f32)textWidth + 24, f32(menuHeight)));
-			ImGui::Begin("##MainMenu", &active, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
-				ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
-
-			ImVec2 textSize = ImVec2(f32(textWidth), f32(textHeight));
-			for (s32 i = 0; i < 7; i++)
+			if (s_appState == APP_STATE_SET_DEFAULTS)
 			{
-				// Disable the editor for now.
-				// Remove this out once it is working again.
-				if (s_menuItemselected[i] == menuItem_Editor)
-				{
-					ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize,
-						ImVec2(0,0), ImVec2(1,1), ImVec2(0,0), ImVec2(1,1), -1, ImVec4(0,0,0,0), ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
-				}
-				else if (ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize))
-				{
-					s_menuItemselected[i]();
-				}
-			}
+				DisplayInfo displayInfo;
+				TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-			ImGui::End();
-			ImGui::PopFont();
+				bool active = true;
+				ImGui::PushFont(s_dialogFont);
+				ImGui::SetNextWindowPos(ImVec2(max(0.0f, (displayInfo.width - 1280.0f * s_uiScale) * 0.5f), max(0.0f, (displayInfo.height - 200.0f * s_uiScale) * 0.5f)));
+				ImGui::SetNextWindowSize(ImVec2(1280.0f * s_uiScale, 200.0f * s_uiScale));
+				ImGui::Begin("Select Default Settings", &active, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
+
+				ImGui::LabelText("##ConfigLabel", "Please select the appropriate defaults.");
+				ImGui::Separator();
+				ImGui::LabelText("##ConfigLabel", "Modern:  Play in high resolution, widescreen, and use modern controls.");
+				ImGui::LabelText("##ConfigLabel", "Vanilla: Play using the original resolution and controls.");
+				ImGui::Separator();
+
+				s_inputConfig = inputMapping_get();
+				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+				TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+								
+				ImGui::SetCursorPosX(1280.0f * s_uiScale * 0.5f - 128.0f*s_uiScale);
+				if (ImGui::Button("Modern"))
+				{
+					// Controls
+					s_inputConfig->mouseMode = MMODE_LOOK;
+					// Game
+					gameSettings->df_showSecretFoundMsg = true;
+					gameSettings->df_bobaFettFacePlayer = true;
+					// Graphics
+					graphicsSettings->rendererIndex = RENDERER_HARDWARE;
+					graphicsSettings->skyMode = SKYMODE_CYLINDER;
+					graphicsSettings->widescreen = true;
+					graphicsSettings->gameResolution.x = displayInfo.width;
+					graphicsSettings->gameResolution.z = displayInfo.height;
+					// Reticle.
+					graphicsSettings->reticleEnable = true;
+					graphicsSettings->reticleIndex = 4;
+					graphicsSettings->reticleRed = 0.25f;
+					graphicsSettings->reticleGreen = 1.0f;
+					graphicsSettings->reticleBlue = 0.25f;
+					graphicsSettings->reticleOpacity = 1.0f;
+					graphicsSettings->reticleScale = 0.5f;
+
+					reticle_setShape(graphicsSettings->reticleIndex);
+					reticle_setScale(graphicsSettings->reticleScale);
+					reticle_setColor(&graphicsSettings->reticleRed);
+					// Now go to the menu.
+					TFE_Settings::writeToDisk();
+					inputMapping_serialize();
+					s_appState = APP_STATE_MENU;
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Vanilla"))
+				{
+					// Controls
+					s_inputConfig->mouseMode = MMODE_TURN;
+					// Game
+					gameSettings->df_showSecretFoundMsg = false;
+					gameSettings->df_bobaFettFacePlayer = false;
+					// Graphics
+					graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
+					graphicsSettings->widescreen = false;
+					graphicsSettings->gameResolution.x = 320;
+					graphicsSettings->gameResolution.z = 200;
+					// Reticle.
+					graphicsSettings->reticleEnable = false;
+					// Now go to the menu.
+					TFE_Settings::writeToDisk();
+					inputMapping_serialize();
+					s_appState = APP_STATE_MENU;
+				}
+				ImGui::End();
+				ImGui::PopFont();
+			}
+			else
+			{
+				s32 menuHeight = (textHeight + 24) * 7 + 4;
+
+				// Main Menu
+				ImGui::PushFont(s_menuFont);
+
+				bool active = true;
+				ImGui::SetNextWindowPos(ImVec2(f32((w - textWidth - 24) / 2), f32(h - menuHeight - topOffset)));
+				ImGui::SetNextWindowSize(ImVec2((f32)textWidth + 24, f32(menuHeight)));
+				ImGui::Begin("##MainMenu", &active, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
+					ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
+
+				ImVec2 textSize = ImVec2(f32(textWidth), f32(textHeight));
+				for (s32 i = 0; i < 7; i++)
+				{
+					// Disable the editor for now.
+					// Remove this out once it is working again.
+					if (s_menuItemselected[i] == menuItem_Editor)
+					{
+						ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize,
+							ImVec2(0,0), ImVec2(1,1), ImVec2(0,0), ImVec2(1,1), -1, ImVec4(0,0,0,0), ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+					}
+					else if (ImGui::ImageAnimButton(s_buttonNormal[i].image, s_buttonSelected[i].image, textSize))
+					{
+						s_menuItemselected[i]();
+					}
+				}
+
+				ImGui::End();
+				ImGui::PopFont();
+			}
 		}
 		else if (s_subUI == FEUI_MANUAL)
 		{
@@ -1254,27 +1359,7 @@ namespace TFE_FrontEndUI
 	{
 		saveLoadDialog(false);
 	}
-
-	static const char* c_axisBinding[]=
-	{
-		"X Left Axis",
-		"Y Left Axis",
-		"X Right Axis",
-		"Y Right Axis",
-	};
-
-	static const char* c_mouseMode[] =
-	{
-		"Menus Only",
-		"Horizontal Turning",
-		"Mouselook"
-	};
-
-	static InputConfig* s_inputConfig = nullptr;
-	static bool s_controllerWinOpen = true;
-	static bool s_mouseWinOpen = true;
-	static bool s_inputMappingOpen = true;
-
+		
 	void getBindingString(InputBinding* binding, char* inputName)
 	{
 		if (binding->type == ITYPE_KEYBOARD)

@@ -28,12 +28,12 @@ static const char* c_tfeSkyModeStrings[] =
 struct TFE_Settings_Window
 {
 	s32 x = 0;
-	s32 y = 0;
+	s32 y = 64;
 	u32 width = 1280;
 	u32 height = 720;
 	u32 baseWidth = 1280;
 	u32 baseHeight = 720;
-	bool fullscreen = false;
+	bool fullscreen = true;
 };
 
 struct TFE_Settings_Graphics

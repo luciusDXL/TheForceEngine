@@ -317,6 +317,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 	switch (newState)
 	{
 	case APP_STATE_MENU:
+	case APP_STATE_SET_DEFAULTS:
 		break;
 	case APP_STATE_EDITOR:
 		if (validatePath())
@@ -644,7 +645,11 @@ int main(int argc, char* argv[])
 	#endif
 
 	// Start up the game and skip the title screen.
-	if (s_startupGame >= Game_Dark_Forces && validatePath())
+	if (firstRun)
+	{
+		TFE_FrontEndUI::setAppState(APP_STATE_SET_DEFAULTS);
+	}
+	else if (s_startupGame >= Game_Dark_Forces && validatePath())
 	{
 		TFE_FrontEndUI::setAppState(APP_STATE_GAME);
 	}
@@ -832,7 +837,7 @@ int main(int argc, char* argv[])
 		{
 			TFE_RenderBackend::clearWindow();
 		}
-		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_NO_GAME_DATA);
+		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA || s_curState == APP_STATE_SET_DEFAULTS, s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_SET_DEFAULTS);
 
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
 		if (s_curState == APP_STATE_EDITOR)

@@ -19,6 +19,7 @@ enum AppState
 	APP_STATE_NO_GAME_DATA,
 	APP_STATE_CANNOT_RUN,
 	APP_STATE_EXIT_TO_MENU,
+	APP_STATE_SET_DEFAULTS,
 	APP_STATE_COUNT,
 	APP_STATE_UNINIT = APP_STATE_COUNT
 };
@@ -32,7 +33,7 @@ namespace TFE_FrontEndUI
 	void shutdown();
 
 	AppState update();
-	void draw(bool drawFrontEnd = true, bool noGameData = false);
+	void draw(bool drawFrontEnd = true, bool noGameData = false, bool setDefaults = false);
 
 	void setAppState(AppState state);
 	void enableConfigMenu();
