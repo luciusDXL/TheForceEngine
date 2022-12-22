@@ -38,6 +38,9 @@ public:
 	const char* getFileName(u32 index) override;
 	size_t getFileLength(u32 index) override;
 
+	// Validation
+	static bool validate(const char *archivePath, s32 minFileCount = 1);
+
 	// Edit
 	void addFile(const char* fileName, const char* filePath) override;
 

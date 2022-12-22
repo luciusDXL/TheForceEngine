@@ -81,7 +81,7 @@ namespace TFE_Settings
 	void parseOutlawsSettings(const char* key, const char* value);
 	void parseCVars(const char* key, const char* value);
 	void checkGameData();
-
+		
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
 	//////////////////////////////////////////////////////////////////////////////////
@@ -113,16 +113,56 @@ namespace TFE_Settings
 		for (u32 gameId = 0; gameId < Game_Count; gameId++)
 		{
 			const size_t sourcePathLen = strlen(s_gameSettings.header[gameId].sourcePath);
-			bool pathValid = sourcePathLen && FileUtil::directoryExits(s_gameSettings.header[gameId].sourcePath);
+			bool pathValid = sourcePathLen && validatePath(s_gameSettings.header[gameId].sourcePath, c_validationFile[gameId]);
+
+			// First check locally, and then check the registry.
+			if (!pathValid && gameId == Game_Dark_Forces)	// Only Dark Forces for now.
+			{
+				// First try the local path.
+				char localPath[TFE_MAX_PATH];
+				TFE_Paths::appendPath(PATH_PROGRAM, "DARK.GOB", localPath);
+
+				FileStream file;
+				if (file.open(localPath, Stream::MODE_READ))
+				{
+					if (file.getSize() > 1)
+					{
+						strcpy(s_gameSettings.header[gameId].sourcePath, TFE_Paths::getPath(PATH_PROGRAM));
+						FileUtil::fixupPath(s_gameSettings.header[gameId].sourcePath);
+						pathValid = true;
+					}
+					file.close();
+				}
+
+				// Then try local/Games/Dark Forces/
+				if (!pathValid)
+				{
+					char gamePath[TFE_MAX_PATH];
+					sprintf(gamePath, "%sGames/Dark Forces/", TFE_Paths::getPath(PATH_PROGRAM));
+					FileUtil::fixupPath(gamePath);
+
+					sprintf(localPath, "%sDARK.GOB", gamePath);
+					if (file.open(localPath, Stream::MODE_READ))
+					{
+						if (file.getSize() > 1)
+						{
+							strcpy(s_gameSettings.header[gameId].sourcePath, gamePath);
+							pathValid = true;
+						}
+						file.close();
+					}
+				}
+			}
+
 #ifdef _WIN32
-			// First try looking through the registry.
+			// Next try looking through the registry.
 			if (!pathValid)
 			{
-				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamLocalPath[gameId], s_gameSettings.header[gameId].sourcePath);
+				pathValid = WindowsRegistry::getSteamPathFromRegistry(c_steamProductId[gameId], c_steamLocalPath[gameId], c_steamLocalSubPath[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
 
 				if (!pathValid)
 				{
-					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], s_gameSettings.header[gameId].sourcePath);
+					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
 				}
 			}
 #endif
@@ -785,5 +825,22 @@ namespace TFE_Settings
 			value[strlen(value) - 1] = 0;
 			TFE_Console::addSerializedCVarString(key, value);
 		}
+	}
+
+	bool validatePath(const char* path, const char* sentinel)
+	{
+		if (!FileUtil::directoryExits(path)) { return false; }
+
+		char sentinelPath[TFE_MAX_PATH];
+		sprintf(sentinelPath, "%s%s", path, sentinel);
+		FileStream file;
+		if (!file.open(sentinelPath, Stream::MODE_READ))
+		{
+			return false;
+		}
+		bool valid = file.getSize() > 1;
+		file.close();
+
+		return valid;
 	}
 }

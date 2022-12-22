@@ -4,6 +4,7 @@
 #include <TFE_System/types.h>
 #include <TFE_System/profiler.h>
 #include <TFE_Memory/memoryRegion.h>
+#include <TFE_Archive/gobArchive.h>
 #include <TFE_Game/igame.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_Game/reticle.h>
@@ -56,6 +57,7 @@
 using namespace TFE_Input;
 
 static bool s_loop  = true;
+static bool s_nullAudioDevice = false;
 static f32  s_refreshRate  = 0;
 static s32  s_displayIndex = 0;
 static u32  s_baseWindowWidth  = 1280;
@@ -493,8 +495,9 @@ bool validatePath()
 	char testFile[TFE_MAX_PATH];
 	// if (game->id == Game_Dark_Forces)
 	{
+		// Does DARK.GOB exist?
 		sprintf(testFile, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
-		if (!FileUtil::exists(testFile))
+		if (!FileUtil::exists(testFile) || !GobArchive::validate(testFile, 130))
 		{
 			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s'", TFE_Paths::getPath(PATH_SOURCE_DATA));
 			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
@@ -614,7 +617,7 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 	TFE_FrontEndUI::initConsole();
-	TFE_Audio::init();
+	TFE_Audio::init(s_nullAudioDevice);
 	TFE_MidiPlayer::init();
 	TFE_Polygon::init();
 	TFE_Image::init();
@@ -897,6 +900,11 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 				s_startupGame = Game_Dark_Forces;
 			}
 		}
+		else if (strcasecmp(name, "nosound") == 0)
+		{
+			// -noaudio
+			s_nullAudioDevice = true;
+		}
 	}
 	else  // long names use the more traditional style of arguments which allow for multiple values.
 	{
@@ -909,6 +917,11 @@ void parseOption(const char* name, const std::vector<const char*>& values, bool 
 			{
 				s_startupGame = Game_Dark_Forces;
 			}
+		}
+		else if (strcasecmp(name, "nosound") == 0)
+		{
+			// --noaudio
+			s_nullAudioDevice = true;
 		}
 	}
 }

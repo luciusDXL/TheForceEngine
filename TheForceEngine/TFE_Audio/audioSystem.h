@@ -55,7 +55,7 @@ namespace TFE_Audio
 	static const f32 c_clipDistance = 140.0f;
 
 	// functions
-	bool init();
+	bool init(bool useNullDevice=false);
 	void shutdown();
 	void stopAllSounds();
 

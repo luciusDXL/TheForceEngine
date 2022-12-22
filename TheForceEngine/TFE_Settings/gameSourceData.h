@@ -29,6 +29,25 @@ namespace TFE_Settings
 		"outlaws/",				// Game_Outlaws
 	};
 
+	static const char* c_steamLocalSubPath[Game_Count] =
+	{
+		"Game/",	// Game_Dark_Forces
+		"/",		// Game_Outlaws
+	};
+
+	static const u32 c_steamProductId[Game_Count] =
+	{
+		32400,					// Game_Dark_Forces
+		559620,					// Game_Outlaws
+	};
+
+	// A file that should be checked to double-check the found path actually works.
+	static const char* c_validationFile[Game_Count] =
+	{
+		"DARK.GOB",				// Game_Dark_Forces
+		"OUTLAWS.LAB",			// Game_Outlaws
+	};
+
 	static const char* c_darkForcesLocations[] =
 	{
 		// C drive

@@ -171,4 +171,6 @@ namespace TFE_Settings
 	TFE_Game* getGame();
 	TFE_GameHeader* getGameHeader(const char* gameName);
 	TFE_Settings_Game* getGameSettings();
+
+	bool validatePath(const char* path, const char* sentinel);
 }

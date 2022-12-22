@@ -59,6 +59,7 @@ namespace TFE_Audio
 	static SoundSource s_sources[MAX_SOUND_SOURCES];
 	static Mutex s_mutex;
 	static bool s_paused = false;
+	static bool s_nullDevice = false;
 
 	static AudioThreadCallback s_audioThreadCallback = nullptr;
 
@@ -73,12 +74,10 @@ namespace TFE_Audio
 	static s32 s_soundIterAve = 0;
 #endif
 
-	bool init()
+	bool init(bool useNullDevice/*=false*/)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_AudioSystem::init");
 		s_sourceCount = 0u;
-
-		MUTEX_INITIALIZE(&s_mutex);
 
 		CCMD("setSoundVolume", setSoundVolumeConsole, 1, "Sets the sound volume, range is 0.0 to 1.0");
 		CCMD("getSoundVolume", getSoundVolumeConsole, 0, "Get the current sound volume.");
@@ -97,24 +96,32 @@ namespace TFE_Audio
 			s_sources[i].slot = i;
 		}
 
-		bool audDev = TFE_AudioDevice::init();
+		bool audDev = TFE_AudioDevice::init(256u, -1, useNullDevice);
 		if (!audDev)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio device.");
+			s_nullDevice = true;
+			return false;
 		}
 
 		bool audStream = TFE_AudioDevice::startOutput(audioCallback, nullptr, 2u, 11025u);
 		if (!audStream)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio stream.");
+			s_nullDevice = true;
+			return false;
 		}
 
-		return audDev && audStream;
+		MUTEX_INITIALIZE(&s_mutex);
+		s_nullDevice = false;
+		return true;
 	}
 
 	void shutdown()
 	{
 		TFE_System::logWrite(LOG_MSG, "Audio", "Shutdown");
+		if (s_nullDevice) { return; }
+
 		stopAllSounds();
 
 		TFE_AudioDevice::destroy();
@@ -123,6 +130,8 @@ namespace TFE_Audio
 
 	void stopAllSounds()
 	{
+		if (s_nullDevice) { return; }
+
 		MUTEX_LOCK(&s_mutex);
 		s_sourceCount = 0u;
 		memset(s_sources, 0, sizeof(SoundSource) * MAX_SOUND_SOURCES);
@@ -155,6 +164,8 @@ namespace TFE_Audio
 		
 	void setAudioThreadCallback(AudioThreadCallback callback)
 	{
+		if (s_nullDevice) { return; }
+
 		MUTEX_LOCK(&s_mutex);
 		s_audioThreadCallback = callback;
 		MUTEX_UNLOCK(&s_mutex);
@@ -162,11 +173,13 @@ namespace TFE_Audio
 
 	void lock()
 	{
+		if (s_nullDevice) { return; }
 		MUTEX_LOCK(&s_mutex);
 	}
 
 	void unlock()
 	{
+		if (s_nullDevice) { return; }
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
@@ -174,7 +187,7 @@ namespace TFE_Audio
 	// Note that looping one shots are valid.
 	bool playOneShot(SoundType type, f32 volume, const SoundBuffer* buffer, bool looping, SoundFinishedCallback finishedCallback, void* cbUserData, s32 cbArg)
 	{
-		if (!buffer) { return false; }
+		if (!buffer || s_nullDevice) { return false; }
 
 		MUTEX_LOCK(&s_mutex);
 		// Find the first inactive source.
@@ -217,7 +230,7 @@ namespace TFE_Audio
 	// Sound source that the client holds onto.
 	SoundSource* createSoundSource(SoundType type, f32 volume, const SoundBuffer* buffer, SoundFinishedCallback callback, void* userData)
 	{
-		if (!buffer) { return nullptr; }
+		if (!buffer || s_nullDevice) { return nullptr; }
 		assert(volume >= 0.0f && volume <= 1.0f);
 
 		MUTEX_LOCK(&s_mutex);
@@ -256,11 +269,13 @@ namespace TFE_Audio
 	s32 getSourceSlot(SoundSource* source)
 	{
 		if (!source) { return -1; }
-		return source->slot;
+		return s_nullDevice ? -1 : source->slot;
 	}
 
 	SoundSource* getSourceFromSlot(s32 slot)
 	{
+		if (s_nullDevice) { return nullptr; }
+
 		if (slot < 0 || slot >= MAX_SOUND_SOURCES)
 		{
 			return nullptr;
@@ -275,7 +290,7 @@ namespace TFE_Audio
 
 	void playSource(SoundSource* source, bool looping)
 	{
-		if (!source || (source->flags & SND_FLAG_PLAYING))
+		if (!source || (source->flags & SND_FLAG_PLAYING) || s_nullDevice)
 		{
 			return;
 		}
@@ -289,7 +304,7 @@ namespace TFE_Audio
 
 	void stopSource(SoundSource* source)
 	{
-		if (!source) { return; }
+		if (!source || s_nullDevice) { return; }
 		MUTEX_LOCK(&s_mutex);
 			source->flags &= ~SND_FLAG_PLAYING;
 		MUTEX_UNLOCK(&s_mutex);
@@ -297,7 +312,7 @@ namespace TFE_Audio
 	
 	void freeSource(SoundSource* source)
 	{
-		if (!source) { return; }
+		if (!source || s_nullDevice) { return; }
 		MUTEX_LOCK(&s_mutex);
 			source->flags &= ~SND_FLAG_PLAYING;
 			source->flags &= ~SND_FLAG_ACTIVE;
@@ -307,12 +322,14 @@ namespace TFE_Audio
 
 	void setSourceVolume(SoundSource* source, f32 volume)
 	{
+		if (s_nullDevice) { return; }
 		source->volume = std::max(0.0f, std::min(1.0f, volume));
 	}
 
 	// This will restart the sound and change the buffer.
 	void setSourceBuffer(SoundSource* source, const SoundBuffer* buffer)
 	{
+		if (s_nullDevice) { return; }
 		MUTEX_LOCK(&s_mutex);
 			source->sampleIndex = 0u;
 			source->buffer = buffer;
@@ -321,11 +338,13 @@ namespace TFE_Audio
 
 	bool isSourcePlaying(SoundSource* source)
 	{
+		if (s_nullDevice) { return false; }
 		return (source->flags & SND_FLAG_PLAYING) != 0u;
 	}
 
 	f32 getSourceVolume(SoundSource* source)
 	{
+		if (s_nullDevice) { return 0.0f; }
 		return source->volume;
 	}
 

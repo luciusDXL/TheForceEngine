@@ -36,6 +36,35 @@ bool GobArchive::create(const char *archivePath)
 	return true;
 }
 
+bool GobArchive::validate(const char *archivePath, s32 minFileCount)
+{
+	FileStream file;
+	if (!file.open(archivePath, Stream::MODE_READ))
+	{
+		return false;
+	}
+
+	// Read the directory.
+	GOB_Header_t header;
+	long MASTERN;
+	if (file.readBuffer(&header, sizeof(GOB_Header_t)) != sizeof(GOB_Header_t))
+	{
+		file.close();
+		return false;
+	}
+	file.seek(header.MASTERX);
+
+	file.readBuffer(&MASTERN, sizeof(long));
+	if (MASTERN < minFileCount)
+	{
+		file.close();
+		return false;
+	}
+
+	file.close();
+	return true;
+}
+
 bool GobArchive::open(const char *archivePath)
 {
 	m_archiveOpen = m_file.open(archivePath, Stream::MODE_READ);

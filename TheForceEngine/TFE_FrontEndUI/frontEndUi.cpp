@@ -160,6 +160,7 @@ namespace TFE_FrontEndUI
 	static bool s_consoleActive = false;
 	static bool s_relativeMode;
 	static bool s_canSave = false;
+	static bool s_drawNoGameDataMsg = false;
 
 	static UiImage s_logoGpuImage;
 	static UiImage s_titleGpuImage;
@@ -225,6 +226,7 @@ namespace TFE_FrontEndUI
 		s_menuRetState = APP_STATE_MENU;
 		s_subUI = FEUI_NONE;
 		s_relativeMode = false;
+		s_drawNoGameDataMsg = false;
 
 		s_uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
 
@@ -323,6 +325,7 @@ namespace TFE_FrontEndUI
 	AppState menuReturn()
 	{
 		s_subUI = FEUI_NONE;
+		s_drawNoGameDataMsg = false;
 		s_appState = s_menuRetState;
 		TFE_Settings::writeToDisk();
 		TFE_Input::enableRelativeMode(s_relativeMode);
@@ -419,6 +422,7 @@ namespace TFE_FrontEndUI
 			s_subUI = FEUI_CONFIG;
 			s_configTab = CONFIG_GAME;
 			s_appState = APP_STATE_MENU;
+			s_drawNoGameDataMsg = true;
 			pickCurrentResolution();
 		}
 		if (!drawFrontEnd) { return; }
@@ -621,6 +625,7 @@ namespace TFE_FrontEndUI
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
 				s_subUI = FEUI_NONE;
+				s_drawNoGameDataMsg = false;
 				s_appState = s_menuRetState;
 				TFE_Settings::writeToDisk();
 				TFE_Input::enableRelativeMode(s_relativeMode);
@@ -631,6 +636,7 @@ namespace TFE_FrontEndUI
 				s_menuRetState = APP_STATE_MENU;
 
 				s_subUI = FEUI_NONE;
+				s_drawNoGameDataMsg = false;
 				s_appState = APP_STATE_EXIT_TO_MENU;
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
@@ -784,6 +790,11 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Game Source Data");
 		ImGui::PopFont();
 
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.25f, 1.0f, 0.25f, 1.0f));
+		ImGui::LabelText("##ConfigLabel", "The path should contain the source game exe or gob/lab files.");
+		ImGui::PopStyleColor();
+		ImGui::Spacing();
+
 		ImGui::Text("Dark Forces:"); ImGui::SameLine(100*s_uiScale);
 		ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024); ImGui::SameLine();
 		if (ImGui::Button("Browse##DarkForces"))
@@ -856,6 +867,16 @@ namespace TFE_FrontEndUI
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
 		}
 
+		if (s_drawNoGameDataMsg)
+		{
+			ImGui::Separator();
+			ImGui::PushFont(s_dialogFont);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.25, 0.25, 1.0f));
+			ImGui::LabelText("##ConfigLabel", "Game Source Data cannot be found, please update the game source path above.");
+			ImGui::PopStyleColor();
+			ImGui::PopFont();
+		}
+
 		// File dialogs...
 		if (browseWinOpen >= 0)
 		{
@@ -863,13 +884,13 @@ namespace TFE_FrontEndUI
 			char filePath[TFE_MAX_PATH];
 			const char* games[]=
 			{
-				"Select DARK.EXE or DARK.GOB",
-				"Select OUTLAWS.EXE or OUTLAWS.LAB"
+				"Select DARK.GOB",
+				"Select OUTLAWS.LAB"
 			};
 			const std::vector<std::string> filters[]=
 			{
-				{ "Executable", "*.exe", "GOB Archive", "*.gob" },
-				{ "Executable", "*.exe", "LAB Archive", "*.lab" },
+				{ "GOB Archive", "*.gob", "Executable", "*.exe" },
+				{ "LAB Archive", "*.lab", "Executable", "*.exe" },
 			};
 
 			FileResult res = TFE_Ui::openFileDialog(games[browseWinOpen], DEFAULT_PATH, filters[browseWinOpen]);
@@ -983,6 +1004,7 @@ namespace TFE_FrontEndUI
 	{
 		s_subUI = FEUI_NONE;
 		s_appState = s_menuRetState;
+		s_drawNoGameDataMsg = false;
 		TFE_Input::enableRelativeMode(s_relativeMode);
 	}
 
@@ -2183,6 +2205,7 @@ namespace TFE_FrontEndUI
 	void clearMenuState()
 	{
 		s_subUI = FEUI_NONE;
+		s_drawNoGameDataMsg = false;
 	}
 
 	void renderBackground()

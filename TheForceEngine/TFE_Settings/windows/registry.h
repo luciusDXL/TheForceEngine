@@ -13,6 +13,6 @@
 
 namespace WindowsRegistry
 {
-	bool getGogPathFromRegistry(const char* productId, char* outPath);
-	bool getSteamPathFromRegistry(const char* localPath, char* outPath);
+	bool getGogPathFromRegistry(const char* productId, const char* fileToValidate, char* outPath);
+	bool getSteamPathFromRegistry(u32 productId, const char* localPath, const char* localSubPath, const char* fileToValidate, char* outPath);
 }
