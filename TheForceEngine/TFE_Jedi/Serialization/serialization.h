@@ -33,7 +33,7 @@ namespace TFE_Jedi
 
 	// This will generate an signed 32-bit index from a pointer, given a base pointer (start of an array, for example) and size of each element.
 	// Note this will produce invalid results if index > INT_MAX (~2 billion).
-	#define PTR_INDEX_S32(ptr, base, stride)   s32((ptrdiff_t(ptr) - ptrdiff_t(base)) / stride)
+	#define PTR_INDEX_S32(ptr, base, stride)   s32((std::ptrdiff_t(ptr) - std::ptrdiff_t(base)) / stride)
 	#define INDEX_PTR_S32(index, base, stride) ((u8*)base + index * stride)
 
 	#define SERIALIZE_VERSION(curVer) \
