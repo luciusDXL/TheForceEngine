@@ -1,6 +1,6 @@
-#pragma once
 #include "memorystream.h"
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -167,9 +167,7 @@ void MemoryStream::writeString(const char* fmt, ...)
 	writeBuffer(tmpStr, (u32)len);
 }
 
-//internal
-template <>	//template specialization for the string type since it has to be handled differently.
-void MemoryStream::readType<std::string>(std::string* ptr, u32 count)
+void MemoryStream::readStringType(std::string* ptr, u32 count)
 {
 	assert(count <= 256);
 	//first read the length.
@@ -186,14 +184,7 @@ void MemoryStream::readType<std::string>(std::string* ptr, u32 count)
 	}
 }
 
-template <typename T>
-void MemoryStream::readType(T* ptr, u32 count)
-{
-	readBuffer(ptr, sizeof(T), count);
-}
-
-template <>	//template specialization for the string type since it has to be handled differently.
-void MemoryStream::writeType<std::string>(const std::string* ptr, u32 count)
+void MemoryStream::writeStringType(const std::string* ptr, u32 count)
 {
 	assert(m_memory);
 	assert(count <= 256);
@@ -209,13 +200,6 @@ void MemoryStream::writeType<std::string>(const std::string* ptr, u32 count)
 	{
 		writeBuffer(ptr[s].data(), 1, s_workBufferU32[s]);
 	}
-}
-
-template <typename T>
-void MemoryStream::writeType(const T* ptr, u32 count)
-{
-	assert(m_memory);
-	writeBuffer(ptr, sizeof(T), count);
 }
 
 void MemoryStream::resizeBuffer(size_t newSize)
