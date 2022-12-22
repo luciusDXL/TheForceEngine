@@ -7,6 +7,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
+#include <cstring>
 
 #define SHOW_GAME_MUSIC_MSG 0
 

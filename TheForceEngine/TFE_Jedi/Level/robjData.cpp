@@ -8,6 +8,7 @@
 #include <TFE_DarkForces/generator.h>
 #include <TFE_Memory/chunkedArray.h>
 #include <TFE_System/system.h>
+#include <cstring>
 
 // Required for serialization.
 namespace TFE_DarkForces
