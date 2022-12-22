@@ -5,6 +5,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_System/parser.h>
+#include <TFE_System/system.h>
 #include <assert.h>
 #include <algorithm>
 #include <vector>
@@ -85,7 +86,7 @@ namespace TFE_Settings
 	//////////////////////////////////////////////////////////////////////////////////
 	// Implementation
 	//////////////////////////////////////////////////////////////////////////////////
-	bool init()
+	bool init(bool& firstRun)
 	{
 		// Clear out game settings.
 		s_gameSettings = {};
@@ -96,8 +97,17 @@ namespace TFE_Settings
 		strcpy(s_game.game, s_gameSettings.header[0].gameName);
 
 		TFE_Paths::appendPath(PATH_USER_DOCUMENTS, "settings.ini", s_settingsPath);
-		if (FileUtil::exists(s_settingsPath)) { return readFromDisk(); }
+		if (FileUtil::exists(s_settingsPath))
+		{
+			firstRun = false;
+			if (readFromDisk())
+			{
+				return true;
+			}
+			TFE_System::logWrite(LOG_WARNING, "Settings", "Cannot parse 'settings.ini' - recreating it.");
+		}
 
+		firstRun = true;
 		checkGameData();
 		return writeToDisk();
 	}

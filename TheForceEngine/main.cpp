@@ -540,7 +540,8 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialize settings so that the paths can be read.
-	if (!TFE_Settings::init())
+	bool firstRun;
+	if (!TFE_Settings::init(firstRun))
 	{
 		TFE_System::logWrite(LOG_ERROR, "Main", "Cannot load settings.");
 		return PROGRAM_ERROR;

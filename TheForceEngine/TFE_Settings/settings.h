@@ -158,7 +158,7 @@ struct TFE_Settings_Game
 
 namespace TFE_Settings
 {
-	bool init();
+	bool init(bool& firstRun);
 	void shutdown();
 
 	bool writeToDisk();
