@@ -1,4 +1,4 @@
-#include "imlist.h"
+#include "imList.h"
 #include "imuse.h"
 #include <TFE_System/system.h>
 
@@ -8,7 +8,7 @@ namespace TFE_Jedi
 	{
 		if (!item || item->next || item->prev)
 		{
-			IM_LOG_ERR("List arg err when adding");
+			IM_LOG_ERR("List arg err when adding", NULL);
 			return imArgErr;
 		}
 
@@ -29,7 +29,7 @@ namespace TFE_Jedi
 		ImList* curItem = *list;
 		if (!item || !curItem)
 		{
-			IM_LOG_ERR("List arg err when removing.");
+			IM_LOG_ERR("List arg err when removing.", NULL);
 			return imArgErr;
 		}
 		while (curItem && item != curItem)
@@ -38,7 +38,7 @@ namespace TFE_Jedi
 		}
 		if (!curItem)
 		{
-			IM_LOG_ERR("Item not on list.");
+			IM_LOG_ERR("Item not on list.", NULL);
 			return imNotFound;
 		}
 
