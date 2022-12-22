@@ -581,7 +581,7 @@ namespace TFE_Console
 			for (s32 i = start; i >= 0 && y > -s_fontSize; i--, y -= s_fontSize)
 			{
 				ImGui::SetCursorPosY(f32(y));
-				ImGui::TextColored(ImVec4(s_history[i].color.x, s_history[i].color.y, s_history[i].color.z, s_history[i].color.w), s_history[i].text.c_str());
+				ImGui::TextColored(ImVec4(s_history[i].color.x, s_history[i].color.y, s_history[i].color.z, s_history[i].color.w), "%s", s_history[i].text.c_str());
 			}
 
 			ImGui::SetKeyboardFocusHere();

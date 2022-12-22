@@ -336,7 +336,7 @@ namespace TFE_Jedi
 				soundId = ImOpenMidi(name);
 				if (!soundId)
 				{
-					IM_LOG_ERR("Host couldn't load sound");
+					IM_LOG_ERR("%s", "Host couldn't load sound");
 					return imFail;
 				}
 
@@ -348,7 +348,7 @@ namespace TFE_Jedi
 			}
 		}
 
-		IM_LOG_ERR("Sound List FULL!");
+		IM_LOG_ERR("%s", "Sound List FULL!");
 		return imFail;
 	}
 
@@ -479,7 +479,7 @@ namespace TFE_Jedi
 		u8* data = ImInternalGetSoundData(soundId);
 		if (!data)
 		{
-			IM_LOG_ERR("null sound addr in StartSound()");
+			IM_LOG_ERR("%s", "null sound addr in StartSound()");
 			return imFail;
 		}
 
@@ -773,7 +773,7 @@ namespace TFE_Jedi
 		{
 			if (ImSetSequence(&s_imSoundNextState, sndData, chunk))
 			{
-				IM_LOG_ERR("sq jump to invalid chunk.");
+				IM_LOG_ERR("%s", "sq jump to invalid chunk.");
 				ImMidiUnlock();
 				return imFail;
 			}
@@ -782,7 +782,7 @@ namespace TFE_Jedi
 		ImAdvanceMidi(&s_imSoundNextState, sndData, s_jumpMidiCmdFunc);
 		if (s_imEndOfTrack)
 		{
-			IM_LOG_WRN("sq jump to invalid ms:bt:tk...");
+			IM_LOG_WRN("sq jump to invalid ms:bt:tk...", NULL);
 			ImMidiUnlock();
 			return imFail;
 		}
@@ -878,7 +878,7 @@ namespace TFE_Jedi
 		if (!channel->outChannelCount)
 		{
 			// This should never be hit.
-			IM_LOG_ERR("Sound channel has 0 output channels.");
+			IM_LOG_ERR("%s", "Sound channel has 0 output channels.");
 		}
 		s32 partTrim   = channel->partTrim   + 1;
 		s32 partVolume = channel->partVolume + 1;
@@ -1080,7 +1080,7 @@ namespace TFE_Jedi
 				return midiPlayer;
 			}
 		}
-		IM_LOG_WRN("no spare players");
+		IM_LOG_WRN("no spare players", NULL);
 		return nullptr;
 	}
 		
@@ -1715,7 +1715,7 @@ namespace TFE_Jedi
 				ImAdvanceMidi(playerData, sndData, s_midiCmdFunc);
 				return;
 			}
-			IM_LOG_ERR("sq int handler got null addr");
+			IM_LOG_ERR("%s", "sq int handler got null addr");
 			assert(0);
 			// TODO: ERROR handling
 		}
@@ -1884,7 +1884,7 @@ namespace TFE_Jedi
 			// Make sure all "note off" events have been captured. If uncaptured notes still exist, we have to turn them off manually.
 			if (s_curInstrumentCount)
 			{
-				IM_LOG_WRN("su couldn't find all note-offs...");
+				IM_LOG_WRN("su couldn't find all note-offs...", NULL);
 				for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 				{
 					if (!s_curMidiInstrumentMask[i]) { continue; }
@@ -2057,7 +2057,7 @@ namespace TFE_Jedi
 			ImSustainedSound* sound = s_imFreeSustainedSounds;
 			if (!sound)
 			{
-				IM_LOG_ERR("su unable to alloc Sustain...");
+				IM_LOG_ERR("%s", "su unable to alloc Sustain...");
 				return;
 			}
 			IM_LIST_REM(s_imFreeSustainedSounds,   sound);
@@ -2461,17 +2461,17 @@ namespace TFE_Jedi
 		IM_LOG_MSG("MIDI engine....");
 		if (ImInitializeSlots(initData) != imSuccess)
 		{
-			IM_LOG_ERR("SL: MIDI driver init failed...");
+			IM_LOG_ERR("%s", "SL: MIDI driver init failed...");
 			return imFail;
 		}
 		if (ImInitializeSustain() != imSuccess)
 		{
-			IM_LOG_ERR("SL: MIDI driver init failed...");
+			IM_LOG_ERR("%s", "SL: MIDI driver init failed...");
 			return imFail;
 		}
 		if (ImInitializePlayers() != imSuccess)
 		{
-			IM_LOG_ERR("SL: MIDI driver init failed...");
+			IM_LOG_ERR("%s", "SL: MIDI driver init failed...");
 			return imFail;
 		}
 

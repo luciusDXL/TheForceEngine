@@ -175,7 +175,7 @@ namespace TFE_Jedi
 		}
 
 		// If we get here, no free fader was found, so return an error.
-		IM_LOG_WRN("fd unable to alloc fade.");
+		IM_LOG_WRN("fd unable to alloc fade.", NULL);
 		return imAllocErr;
 	}
 
