@@ -13,6 +13,7 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/time.h>
+#include <TFE_System/system.h>
 
 namespace TFE_DarkForces
 {
