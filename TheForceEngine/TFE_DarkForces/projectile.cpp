@@ -1402,7 +1402,9 @@ namespace TFE_DarkForces
 		{
 			SecObject* obj = projLogic->logic.obj;
 			// fraction of the path where the path hits the floor.
-			fixed16_16 u = div16(y0FloorHeight - obj->posWS.y, projLogic->delta.y);
+			assert(projLogic->delta.y != 0);
+			fixed16_16 dy = projLogic->delta.y == 0 ? 1 : projLogic->delta.y;	// avoid possible divide-by-zero.
+			fixed16_16 u = div16(y0FloorHeight - obj->posWS.y, dy);
 			s_projNextPosX = obj->posWS.x + mul16(projLogic->delta.x, u);
 			s_projNextPosY = y0FloorHeight;
 			s_projNextPosZ = obj->posWS.z + mul16(projLogic->delta.z, u);
@@ -1417,7 +1419,9 @@ namespace TFE_DarkForces
 		{
 			SecObject* obj = projLogic->logic.obj;
 			// fraction of the path where the path hits the floor.
-			fixed16_16 u = div16(y0CeilHeight - obj->posWS.y, projLogic->delta.y);
+			assert(projLogic->delta.y != 0);
+			fixed16_16 dy = projLogic->delta.y == 0 ? 1 : projLogic->delta.y;	// avoid possible divide-by-zero.
+			fixed16_16 u = div16(y0CeilHeight - obj->posWS.y, dy);
 			s_projNextPosX = obj->posWS.x + mul16(projLogic->delta.x, u);
 			s_projNextPosY = y0CeilHeight;
 			s_projNextPosZ = obj->posWS.z + mul16(projLogic->delta.z, u);
@@ -1549,17 +1553,19 @@ namespace TFE_DarkForces
 
 	void proj_aimArcing(ProjectileLogic* proj, vec3_fixed target, fixed16_16 speed)
 	{
+		assert(speed != 0);
+
 		SecObject* obj = proj->logic.obj;
 		fixed16_16 dist = distApprox(obj->posWS.x, obj->posWS.z, target.x, target.z);
-		fixed16_16 distOverSpd = div16(dist, speed);
+		fixed16_16 distOverSpd = speed ? div16(dist, speed) : dist;
 		fixed16_16 gravityHalfDistOverSpd = mul16(FIXED(120), distOverSpd >> 1);
 
 		fixed16_16 dy = obj->posWS.y - target.y;
 		angle14_32 vertAngle = vec2ToAngle(dy, dist);
 
-		fixed16_16 sinAngle = div16(gravityHalfDistOverSpd, speed);
+		fixed16_16 sinAngle = speed ? div16(gravityHalfDistOverSpd, speed) : gravityHalfDistOverSpd;
 		angle14_32 pitch = vertAngle + arcCosFixed(sinAngle, vertAngle);
-		proj->speed = div16(dist + dy, distOverSpd);
+		proj->speed = distOverSpd ? div16(dist + dy, distOverSpd) : (dist + dy);
 		proj_setTransform(proj, pitch, obj->yaw);
 	}
 
