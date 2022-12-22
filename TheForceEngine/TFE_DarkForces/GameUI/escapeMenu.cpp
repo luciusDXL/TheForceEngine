@@ -290,7 +290,24 @@ namespace TFE_DarkForces
 		// Draw the background.
 		if (drawBackground)
 		{
-			screenGPU_addImageQuad(0, 0, dispWidth, dispHeight, (TextureGpu*)TFE_RenderBackend::getRenderTargetTexture(s_emState.renderTarget));
+			if (xOffset)
+			{
+				screenGPU_addImageQuad(0, 0, dispWidth, dispHeight, (TextureGpu*)TFE_RenderBackend::getRenderTargetTexture(s_emState.renderTarget));
+			}
+			else
+			{
+				// Adjust the UV coordinates to stretch 4:3 to the full size.
+				DisplayInfo displayInfo;
+				TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+				s32 offsetWidth = displayInfo.height * 4 / 3;
+				s32 imgOffset = (displayInfo.width - offsetWidth) / 2;
+
+				f32 offset = f32(imgOffset) / f32(displayInfo.width);
+				f32 u0 = offset;
+				f32 u1 = 1.0f - offset;
+				screenGPU_addImageQuad(0, 0, dispWidth, dispHeight, u0, u1, (TextureGpu*)TFE_RenderBackend::getRenderTargetTexture(s_emState.renderTarget));
+			}
 		}
 
 		// Draw the menu.

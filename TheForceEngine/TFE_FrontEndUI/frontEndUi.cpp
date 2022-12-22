@@ -506,12 +506,22 @@ namespace TFE_FrontEndUI
 
 				bool active = true;
 				ImGui::PushFont(s_dialogFont);
-				ImGui::SetNextWindowPos(ImVec2(max(0.0f, (displayInfo.width - 1280.0f * s_uiScale) * 0.5f), max(0.0f, (displayInfo.height - 200.0f * s_uiScale) * 0.5f)));
-				ImGui::SetNextWindowSize(ImVec2(1280.0f * s_uiScale, 200.0f * s_uiScale));
+				ImGui::SetNextWindowPos(ImVec2(max(0.0f, (displayInfo.width - 1280.0f * s_uiScale) * 0.5f), max(0.0f, (displayInfo.height - 300.0f * s_uiScale) * 0.5f)));
+				ImGui::SetNextWindowSize(ImVec2(1280.0f * s_uiScale, 300.0f * s_uiScale));
 				ImGui::Begin("Select Default Settings", &active, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 
 				ImGui::LabelText("##ConfigLabel", "Please select the appropriate defaults.");
+				ImGui::PopFont();
+
+				ImGui::PushFont(s_versionFont);
+				ImGui::LabelText("##ConfigLabel", "Note that individual settings, such as crosshair pattern, can be changed using");
+				ImGui::LabelText("##ConfigLabel", "  Settings/Configuration at any time.");
+				ImGui::LabelText("##ConfigLabel", "This only sets the settings to defaults which can be changed later.");
+				ImGui::PopFont();
+
 				ImGui::Separator();
+				ImGui::PushFont(s_dialogFont);
+
 				ImGui::LabelText("##ConfigLabel", "Modern:  Play in high resolution, widescreen, and use modern controls.");
 				ImGui::LabelText("##ConfigLabel", "Vanilla: Play using the original resolution and controls.");
 				ImGui::Separator();
@@ -1951,6 +1961,7 @@ namespace TFE_FrontEndUI
 			graphics->gameResolution.x = displayInfo.width;
 			graphics->gameResolution.z = displayInfo.height;
 			graphics->widescreen = true;
+			widescreen = true;
 		}
 		else if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim) + 1)
 		{
@@ -1970,6 +1981,27 @@ namespace TFE_FrontEndUI
 		if (widescreen != graphics->widescreen)
 		{
 			graphics->widescreen = widescreen;
+			if (s_resIndex == TFE_ARRAYSIZE(c_resolutionDim) && !widescreen)
+			{
+				// Find the closest match.
+				s32 height = graphics->gameResolution.z;
+				s32 diff = INT_MAX;
+				s32 index = -1;
+				for (s32 i = 0; i < TFE_ARRAYSIZE(c_resolutionDim); i++)
+				{
+					s32 curDiff = TFE_Jedi::abs(height - c_resolutionDim[i].z);
+					if (c_resolutionDim[i].z <= height && curDiff < diff)
+					{
+						index = i;
+						diff = curDiff;
+					}
+				}
+				if (index >= 0)
+				{
+					graphics->gameResolution = c_resolutionDim[index];
+					s_resIndex = index;
+				}
+			}
 		}
 		ImGui::Separator();
 
@@ -2196,7 +2228,7 @@ namespace TFE_FrontEndUI
 		const size_t count = TFE_ARRAYSIZE(c_resolutionDim);
 		for (size_t i = 0; i < count; i++)
 		{
-			if (graphics->gameResolution.x == c_resolutionDim[i].x && graphics->gameResolution.z == c_resolutionDim[i].z)
+			if (graphics->gameResolution.z == c_resolutionDim[i].z)
 			{
 				s_resIndex = s32(i);
 				return;

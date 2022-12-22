@@ -198,6 +198,13 @@ namespace TFE_Jedi
 		TFE_RenderShared::quadDraw2d_add(vtx, colors, texture);
 	}
 
+	void screenGPU_addImageQuad(s32 x0, s32 z0, s32 x1, s32 z1, f32 u0, f32 u1, TextureGpu* texture)
+	{
+		u32 colors[] = { 0xffffffff, 0xffffffff };
+		Vec2f vtx[] = { f32(x0), f32(z0), f32(x1), f32(z1) };
+		TFE_RenderShared::quadDraw2d_add(vtx, colors, u0, u1, texture);
+	}
+
 	void screenGPU_drawPoint(ScreenRect* rect, s32 x, s32 z, u8 color)
 	{
 		u32 color32 = vfb_getPalette()[color];

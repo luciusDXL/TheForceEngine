@@ -100,7 +100,7 @@ namespace TFE_RenderShared
 		s_quadDrawCount = 0;
 	}
 
-	void quadDraw2d_add(u32 count, const Vec2f* quads, const u32* quadColors, TextureGpu* texture)
+	void quadDraw2d_add(u32 count, const Vec2f* quads, const u32* quadColors, f32 u0, f32 u1, TextureGpu* texture)
 	{
 		if (!s_vertices) { return; }
 
@@ -131,10 +131,10 @@ namespace TFE_RenderShared
 			vert[2].pos.z = y1;
 			vert[3].pos.z = y1;
 
-			vert[0].uv.x = 0.0f;
-			vert[1].uv.x = 1.0f;
-			vert[2].uv.x = 1.0f;
-			vert[3].uv.x = 0.0f;
+			vert[0].uv.x = u0;
+			vert[1].uv.x = u1;
+			vert[2].uv.x = u1;
+			vert[3].uv.x = u0;
 
 			vert[0].uv.z = 0.0f;
 			vert[1].uv.z = 0.0f;
@@ -151,7 +151,12 @@ namespace TFE_RenderShared
 
 	void quadDraw2d_add(const Vec2f* vertices, const u32* colors, TextureGpu* texture)
 	{
-		quadDraw2d_add(1, vertices, colors, texture);
+		quadDraw2d_add(1, vertices, colors, 0.0f, 1.0f, texture);
+	}
+
+	void quadDraw2d_add(const Vec2f* vertices, const u32* colors, f32 u0, f32 u1, TextureGpu* texture)
+	{
+		quadDraw2d_add(1, vertices, colors, u0, u1, texture);
 	}
 
 	void quadDraw2d_draw()
