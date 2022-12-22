@@ -28,7 +28,7 @@ bool GobArchive::create(const char *archivePath)
 	m_fileList.entries = nullptr;
 
 	m_file.writeBuffer(&m_header, sizeof(GOB_Header_t));
-	m_file.writeBuffer(&m_fileList.MASTERN, sizeof(long));
+	m_file.writeBuffer(&m_fileList.MASTERN, sizeof(u32));
 
 	strcpy(m_archivePath, archivePath);
 	m_file.close();
@@ -75,7 +75,7 @@ bool GobArchive::open(const char *archivePath)
 	m_file.readBuffer(&m_header, sizeof(GOB_Header_t));
 	m_file.seek(m_header.MASTERX);
 
-	m_file.readBuffer(&m_fileList.MASTERN, sizeof(long));
+	m_file.readBuffer(&m_fileList.MASTERN, sizeof(u32));
 	m_fileList.entries = new GOB_Entry_t[m_fileList.MASTERN];
 	m_file.readBuffer(m_fileList.entries, sizeof(GOB_Entry_t), m_fileList.MASTERN);
 
@@ -259,7 +259,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 		return;
 	}
 	const size_t len = file.getSize();
-	const long newId = m_fileList.MASTERN;
+	const u32 newId = m_fileList.MASTERN;
 	m_fileList.MASTERN++;
 	GOB_Entry_t* newEntries = new GOB_Entry_t[m_fileList.MASTERN];
 	memcpy(newEntries, m_fileList.entries, sizeof(GOB_Entry_t) * newId);
@@ -268,7 +268,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 	GOB_Entry_t* newFile = &m_fileList.entries[newId];
 	memset(newFile, 0, sizeof(GOB_Entry_t));
 	newFile->IX  = newId > 0 ? m_fileList.entries[newId - 1].IX + m_fileList.entries[newId - 1].LEN : sizeof(GOB_Header_t);
-	newFile->LEN = long(len);
+	newFile->LEN = u32(len);
 	strcpy(newFile->NAME, fileName);
 	m_header.MASTERX += newFile->LEN;
 
@@ -298,7 +298,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 			m_file.writeBuffer(fileData[f].data(), m_fileList.entries[f].LEN);
 		}
 		assert(m_file.getLoc() == m_header.MASTERX);
-		m_file.writeBuffer(&m_fileList.MASTERN, sizeof(long));
+		m_file.writeBuffer(&m_fileList.MASTERN, sizeof(u32));
 		m_file.writeBuffer(m_fileList.entries, sizeof(GOB_Entry_t), m_fileList.MASTERN);
 		m_file.close();
 	}
