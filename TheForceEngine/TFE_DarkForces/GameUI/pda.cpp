@@ -291,7 +291,8 @@ namespace TFE_DarkForces
 			if (mapNumFont)
 			{
 				char str[10];
-				_itoa(automap_getLayer(), str, 10);
+				memset(str, 0, 10);	// just to be safe
+				snprintf(str, 10, "%d", automap_getLayer());
 				// This shows up as an 'S' in the font.
 				if (str[0] == '-') { str[0] = ':'; }
 				// In TFE the map covers the whole screen, so no additional offset is needed.
