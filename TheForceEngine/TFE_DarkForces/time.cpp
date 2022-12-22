@@ -1,6 +1,7 @@
 #include "time.h"
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <cstring>
 
 using namespace TFE_Jedi;
 
