@@ -98,6 +98,9 @@ namespace TFE_DarkForces
 
 	static PdaMode s_pdaMode = PDA_MODE_MAP;
 	static s32 s_simulatePressed = -1;
+
+	static s32 s_briefingMaxY;
+	static s16 s_briefY;
 		
 	void pda_handleInput();
 	void pda_drawCommonButtons();
