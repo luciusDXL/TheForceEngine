@@ -1,7 +1,7 @@
-#pragma once
 #include "filestream.h"
 #include <TFE_Archive/archive.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -248,9 +248,7 @@ void FileStream::flush()
 	}
 }
 
-//internal
-template <>	//template specialization for the string type since it has to be handled differently.
-void FileStream::readType<std::string>(std::string* ptr, u32 count)
+void FileStream::readString(std::string* ptr, u32 count)
 {
 	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
 	assert(count <= 256);
@@ -268,15 +266,7 @@ void FileStream::readType<std::string>(std::string* ptr, u32 count)
 	}
 }
 
-template <typename T>
-void FileStream::readType(T* ptr, u32 count)
-{
-	assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
-	readBuffer(ptr, sizeof(T), count);
-}
-
-template <>	//template specialization for the string type since it has to be handled differently.
-void FileStream::writeType<std::string>(const std::string* ptr, u32 count)
+void FileStream::writeString(const std::string* ptr, u32 count)
 {
 	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
 	assert(m_file);	// TODO: Add Archive support.
@@ -293,12 +283,4 @@ void FileStream::writeType<std::string>(const std::string* ptr, u32 count)
 	{
 		fwrite(ptr[s].data(), 1, s_workBufferU32[s], m_file);
 	}
-}
-
-template <typename T>
-void FileStream::writeType(const T* ptr, u32 count)
-{
-	assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
-	assert(m_file);	// TODO: Add Archive support.
-	fwrite(ptr, sizeof(T), count, m_file);
 }
