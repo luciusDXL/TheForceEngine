@@ -8,7 +8,8 @@
 #include <TFE_System/system.h>
 #include <TFE_Audio/midi.h>
 #include <TFE_Audio/audioSystem.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 
 namespace TFE_Jedi
 {
@@ -103,7 +104,7 @@ namespace TFE_Jedi
 		IM_DBG_MSG("TRACKS module...");
 		if (initData->waveMixCount <= 0 || initData->waveMixCount > 16)
 		{
-			IM_LOG_ERR("TR: waveMixCount NULL or too big, defaulting to 4...");
+			IM_LOG_ERR("TR: waveMixCount NULL or too big, defaulting to 4...", NULL);
 			initData->waveMixCount = 4;
 		}
 		s_imWaveMixCount = initData->waveMixCount;
@@ -472,7 +473,7 @@ namespace TFE_Jedi
 					{
 						sound->mailbox = 8;
 					}
-					IM_LOG_ERR("null sound addr in SeekToNextChunk()...");
+					IM_LOG_ERR("null sound addr in SeekToNextChunk()...", NULL);
 					return imFail;
 				}
 			}
