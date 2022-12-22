@@ -70,3 +70,6 @@ Build/
 TheForceEngine/bug_reports/
 WDFuseCommonFiles/
 x64/Debug/
+
+# Linux
+TheForceEngine/tfelnx

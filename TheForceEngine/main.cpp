@@ -453,6 +453,7 @@ void parseCommandLine(s32 argc, char* argv[])
 
 void generateScreenshotTime()
 {
+#ifdef _WIN32
 	__time64_t time;
 	_time64(&time);
 	const char* timeString = _ctime64(&time);
@@ -461,6 +462,11 @@ void generateScreenshotTime()
 		strcpy(s_screenshotTime, timeString);
 	}
 
+#else
+	time_t tt = time(NULL);
+	memset(s_screenshotTime, 0, 1024);
+	strcpy(s_screenshotTime, ctime(&tt));
+#endif
 	// Replace ':' with '_'
 	size_t len = strlen(s_screenshotTime);
 	for (size_t i = 0; i < len; i++)
