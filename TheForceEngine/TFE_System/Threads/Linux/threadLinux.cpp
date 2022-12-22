@@ -1,5 +1,6 @@
+#include <TFE_System/system.h>
+#include <pthread.h>
 #include "threadLinux.h"
-#include "../../log.h"
 
 ThreadLinux::ThreadLinux(const char* name, ThreadFunc func, void* userData) : Thread(name, func, userData)
 {
@@ -10,38 +11,41 @@ ThreadLinux::~ThreadLinux()
 {
 	if (m_handle)
 	{
-        //terminate the thread.
 		pthread_cancel(m_handle);
+		m_handle = 0;
 	}
 }
 
-bool ThreadLinux::run()
+bool ThreadLinux::run(void)
 {
-	s32 res = pthread_create(&m_handle, NULL, m_func, m_userData);
+	int res = pthread_create(&m_handle, NULL, m_func, m_userData);
 	//create the thread.
-	if (res == 0)
+	if (res != 0)
 	{
-		//setThreadName(m_win32Handle, m_name);
-	}
-	else
-	{
-        m_handle = 0;
-		LOG( LOG_ERROR, "Thread \"%s\" cannot be run", m_name );
+		m_handle = 0;
+		TFE_System::logWrite( LOG_ERROR, "Thread \"%s\" cannot be run", m_name );
 	}
 
 	return (res == 0);
 }
 
-void ThreadLinux::pause()
+void ThreadLinux::pause(void)
 {
 	if (!m_handle) { return; }
 	//to-do.
 }
 
-void ThreadLinux::resume()
+void ThreadLinux::resume(void)
 {
 	if (!m_handle) { return; }
 	//to-do.
+}
+
+void ThreadLinux::waitOnExit(void)
+{
+	pthread_cancel(m_handle);
+	m_handle = 0;
+	m_isRunning = false;
 }
 
 //factory
