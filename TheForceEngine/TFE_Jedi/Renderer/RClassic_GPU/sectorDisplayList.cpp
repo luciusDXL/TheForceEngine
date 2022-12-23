@@ -41,6 +41,11 @@ namespace TFE_Jedi
 		SPARTID_WALL_MID_SIGN,
 		SPARTID_WALL_TOP_SIGN,
 		SPARTID_WALL_BOT_SIGN,
+		SPARTID_MASK = 63,
+
+		// Flags
+		SPARTID_SIGN_FULLBRIGHT = 64,
+		SPARTID_SIGN_OPAQUE = 128,
 		SPARTID_SKY_ADJ = 256,
 		SPARTID_SKY = 512,
 		SPARTID_COUNT
@@ -415,21 +420,30 @@ namespace TFE_Jedi
 		if (srcWall->signTex && *srcWall->signTex)
 		{
 			const u32 signGpuId = wallGpuId | (*srcWall->signTex)->textureId;
-
+			u32 signFlags = 0;
+			if (srcWall->flags1 & WF1_ILLUM_SIGN)
+			{
+				signFlags |= SPARTID_SIGN_FULLBRIGHT;
+			}
+			if (!((*srcWall->signTex)->flags & OPACITY_TRANS))
+			{
+				signFlags |= SPARTID_SIGN_OPAQUE;
+			}
+			
 			// If there is a bottom texture, it goes there..
 			if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 			{
-				addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
+				addDisplayListItem(pos, { data.x | signFlags | SPARTID_WALL_BOT_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
 			// Otherwise if there is a top
 			else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 			{
-				addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
+				addDisplayListItem(pos, { data.x | signFlags | SPARTID_WALL_TOP_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
 			// And finally mid.
 			else if (srcWall->midTex && srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
 			{
-				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
+				addDisplayListItem(pos, { data.x | signFlags | SPARTID_WALL_MID_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
 		}
 

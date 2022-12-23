@@ -15,6 +15,7 @@ out vec3 Frag_Pos;
 out vec4 Texture_Data;
 flat out vec4 Frag_Color;
 flat out int Frag_TextureId;
+flat out int Frag_Flags;
 
 void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
 {
@@ -35,11 +36,14 @@ void main()
 	// Unpack part data.
 	bool sky = (data.x & 512u) != 0u;
 	bool skyAdj = (data.x & 256u) != 0u;
-	int partId = int(data.x & 255u);
+	bool fullbright = (data.x & 64u) != 0u;
+	bool opaque = (data.x & 128u) != 0u;
+	int partId = int(data.x & 63u);
 
 	int nextId   = int(data.x >> 10u);
 	int sectorId = int(data.y);
 	int lightOffset = int(data.z & 63u) - 32;
+	int flags = (fullbright ? 1 : 0) | (opaque ? 2 : 0);
 	bool flip    = (data.z & 64u) != 0u;
 
 	uint portalOffset, portalCount;
@@ -277,4 +281,5 @@ void main()
 	Frag_Uv = vtx_uv;
 	Frag_Color = vtx_color;
 	Texture_Data = texture_data;
+	Frag_Flags = flags;
 }

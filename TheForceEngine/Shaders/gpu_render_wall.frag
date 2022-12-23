@@ -18,6 +18,7 @@ uniform vec2 SkyParam1;	// atan(xScale, xOffset)
 flat in vec4 Frag_Uv;
 flat in vec4 Frag_Color;
 flat in int Frag_TextureId;
+flat in int Frag_Flags;
 in vec3 Frag_Pos;
 in vec4 Texture_Data;
 out vec4 Out_Color;
@@ -105,7 +106,7 @@ float sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
 	return texelFetch(Textures, iuv, 0).r * 255.0;
 }
 
-float sampleTextureClamp(int id, vec2 uv)
+float sampleTextureClamp(int id, vec2 uv, bool opaque)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec3 iuv;
@@ -119,7 +120,9 @@ float sampleTextureClamp(int id, vec2 uv)
 	iuv.xy += (sampleData.xy & ivec2(4095));
 	iuv.z = sampleData.x >> 12;
 
-	return texelFetch(Textures, iuv, 0).r * 255.0;
+	float value = texelFetch(Textures, iuv, 0).r * 255.0;
+	if (opaque) { value = max(0.75, value); }	// avoid clipping if opaque.
+	return value;
 }
 
 float sqr(float x)
@@ -202,6 +205,10 @@ void main()
 	bool applyFlatWarp = false;
 	float skyFade = 0.0;
 	float yLimit = 0.0;
+
+	bool fullbright = (Frag_Flags & 1) != 0;
+	bool opaque = (Frag_Flags & 2) != 0;
+
 	if (sky) // Sky
 	{
 		uv = calculateSkyProjection(cameraRelativePos, Texture_Data.xy, skyFade, yLimit);
@@ -248,7 +255,7 @@ void main()
 
 	float light = 31.0;
 	float baseColor = Frag_Color.g;
-	if (!sky)
+	if (!sky && !fullbright)
 	{
 		float z = dot(cameraRelativePos, CameraDir);
 		float lightOffset   = Frag_Color.r;
@@ -287,7 +294,7 @@ void main()
 	#ifdef SECTOR_TRANSPARENT_PASS
 	if (sign)
 	{
-		baseColor = sampleTextureClamp(Frag_TextureId, uv);
+		baseColor = sampleTextureClamp(Frag_TextureId, uv, opaque);
 	}
 	else
 	#endif
