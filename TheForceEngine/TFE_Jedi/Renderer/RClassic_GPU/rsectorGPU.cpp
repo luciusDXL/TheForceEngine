@@ -121,6 +121,7 @@ namespace TFE_Jedi
 	extern Mat4  s_cameraProj;
 	extern Vec3f s_cameraPos;
 	extern Vec3f s_cameraDir;
+	extern Vec3f s_cameraDirXZ;
 	extern Vec3f s_cameraRight;
 	extern s32   s_displayCurrentPortalId;
 	extern ShaderBuffer s_displayListPlanesGPU;
@@ -938,9 +939,20 @@ namespace TFE_Jedi
 		if (!frustum_quadInside(corner0, corner1)) { return; }
 
 		// Cull sprites too close to the camera.
-		const Vec3f relPos = { posWS.x - s_cameraPos.x, posWS.y - s_cameraPos.y, posWS.z - s_cameraPos.z };
-		const f32 z = relPos.x*s_cameraDir.x + relPos.y*s_cameraDir.y + relPos.z*s_cameraDir.z;
-		if (z < 1.0f) { return; }
+		// 2D culling to match the software.
+		if (s_cameraDirXZ.x != 0.0f || s_cameraDirXZ.z != 0.0f)
+		{
+			const Vec2f relPos = { posWS.x - s_cameraPos.x, posWS.z - s_cameraPos.z };
+			const f32 z = relPos.x*s_cameraDirXZ.x + relPos.z*s_cameraDirXZ.z;
+			if (z < 1.0f) { return; }
+		}
+		// Fallback to 3D culling if necessary.
+		else
+		{
+			const Vec3f relPos = { posWS.x - s_cameraPos.x, posWS.y - s_cameraPos.y, posWS.z - s_cameraPos.z };
+			const f32 z = relPos.x*s_cameraDir.x + relPos.y*s_cameraDir.y + relPos.z*s_cameraDir.z;
+			if (z < 1.0f) { return; }
+		}
 
 		// Clip against the current wall segments and the portal XZ extents.
 		SegmentClipped dstSegs[1024];
@@ -1137,6 +1149,20 @@ namespace TFE_Jedi
 		s_portalListCount = 0;
 		s_wallSegGenerated = 0;
 		Vec2f startView[] = { {0,0}, {0,0} };
+
+		// Compute an XZ direction for sprite culling.
+		const f32 cameraDirMag = s_cameraDir.x*s_cameraDir.x + s_cameraDir.z*s_cameraDir.z;
+		if (cameraDirMag > FLT_EPSILON)
+		{
+			const f32 scale = 1.0f / sqrtf(cameraDirMag);
+			s_cameraDirXZ.x = s_cameraDir.x * scale;
+			s_cameraDirXZ.z = s_cameraDir.z * scale;
+		}
+		else
+		{
+			s_cameraDirXZ.x = 0.0f;
+			s_cameraDirXZ.z = 0.0f;
+		}
 
 		sdisplayList_clear();
 		sprdisplayList_clear();

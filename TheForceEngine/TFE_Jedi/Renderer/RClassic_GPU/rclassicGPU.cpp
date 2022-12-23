@@ -19,6 +19,7 @@ namespace TFE_Jedi
 	Mat4  s_cameraProj;
 	Vec3f s_cameraPos;
 	Vec3f s_cameraDir;
+	Vec3f s_cameraDirXZ;
 	Vec3f s_cameraRight;
 	
 namespace RClassic_GPU
