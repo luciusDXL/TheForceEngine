@@ -404,11 +404,9 @@ namespace TFE_DarkForces
 
 	void hitEffectExplodeFunc(SecObject* obj)
 	{
-		u32 flags = (obj->entityFlags & ETFLAG_AI_ACTOR) | (ETFLAG_SCENERY | ETFLAG_LANDMINE | ETFLAG_LANDMINE_WPN | ETFLAG_PLAYER);
-		// Since 'or' sets the zero flag and a non-zero literal value is used, this conditional should *never* hit.
-		if (!flags)
+		const u32 flags = ETFLAG_AI_ACTOR | ETFLAG_SCENERY | ETFLAG_LANDMINE | ETFLAG_LANDMINE_WPN | ETFLAG_PLAYER;
+		if (!(obj->entityFlags & flags))
 		{
-			assert(0);
 			return;
 		}
 
@@ -417,11 +415,10 @@ namespace TFE_DarkForces
 		// This triggers when an explosive is hit with an explosion.
 		if ((obj->entityFlags & ETFLAG_LANDMINE) || (obj->entityFlags & ETFLAG_LANDMINE_WPN))
 		{
-			if (approxDist >= EXPLOSION_TRIGGER_DIST)
+			if (approxDist < EXPLOSION_TRIGGER_DIST)
 			{
-				return;
+				triggerLandMine((ProjectileLogic*)obj->projectileLogic, (obj->entityFlags & ETFLAG_LANDMINE) ? 87 : 145);
 			}
-			triggerLandMine((ProjectileLogic*)obj->projectileLogic, (obj->entityFlags & ETFLAG_LANDMINE) ? 87 : 145);
 		}
 		else
 		{

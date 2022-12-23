@@ -985,7 +985,7 @@ namespace TFE_DarkForces
 			}
 
 			playHitSound = JTRUE;
-			if (s_curEffectData->type == HEFFECT_SMALL_EXP)
+			if (s_curEffectData->type == HEFFECT_THERMDET_EXP)
 			{
 				shieldDmg = s_msgArg1 >> 1;
 			}
