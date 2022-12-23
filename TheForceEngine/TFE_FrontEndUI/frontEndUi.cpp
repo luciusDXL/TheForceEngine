@@ -514,9 +514,9 @@ namespace TFE_FrontEndUI
 				ImGui::PopFont();
 
 				ImGui::PushFont(s_versionFont);
-				ImGui::LabelText("##ConfigLabel", "Note that individual settings, such as crosshair pattern, can be changed using");
+				ImGui::LabelText("##ConfigLabel", "Note that individual settings, (crosshair pattern, pitch limits, etc.), can be changed using");
 				ImGui::LabelText("##ConfigLabel", "  Settings/Configuration at any time.");
-				ImGui::LabelText("##ConfigLabel", "This only sets the settings to defaults which can be changed later.");
+				ImGui::LabelText("##ConfigLabel", "Individual settings can be changed at anytime.");
 				ImGui::PopFont();
 
 				ImGui::Separator();
