@@ -49,7 +49,7 @@ namespace RClassic_Fixed
 		if (s_worldAmbient < MAX_LIGHT_LEVEL || s_cameraLightSource)
 		{
 			s32 depthScaled = min(s32(depth >> LIGHT_SCALE), 127);
-			s32 lightSource = MAX_LIGHT_LEVEL - s_lightSourceRamp[depthScaled] + s_worldAmbient;
+			s32 lightSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
 			if (lightSource > 0)
 			{
 				light += lightSource;

@@ -83,7 +83,7 @@ void main()
 				if (worldAmbient < 31.0 || cameraLightSource > 0.0)
 				{
 					float depthScaled = min(floor(z * 4.0), 127.0);
-					float lightSource = 31.0 - texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient;
+					float lightSource = 31.0 - (texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient);
 					if (lightSource > 0)
 					{
 						light += lightSource;
