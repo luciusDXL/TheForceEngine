@@ -154,6 +154,8 @@ namespace TFE_Input
 		s_inputConfig.axis[AA_MOVE] = AXIS_LEFT_Y;
 		s_inputConfig.ctrlSensitivity[0] = 1.0f;
 		s_inputConfig.ctrlSensitivity[1] = 1.0f;
+		s_inputConfig.ctrlDeadzone[0] = 0.1f;
+		s_inputConfig.ctrlDeadzone[1] = 0.1f;
 
 		// Mouse
 		s_inputConfig.mouseFlags = 0;
