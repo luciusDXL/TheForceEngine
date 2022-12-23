@@ -1480,7 +1480,7 @@ namespace TFE_FrontEndUI
 		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
-		if (ImGui::BeginChild("Controller Options", ImVec2(390.0f*s_uiScale, (s_controllerWinOpen ? 400.0f : 29.0f)*s_uiScale), true, window_flags))
+		if (ImGui::BeginChild("Controller Options", ImVec2(390.0f*s_uiScale, (s_controllerWinOpen ? 480.0f : 29.0f)*s_uiScale), true, window_flags))
 		{
 			if (ImGui::Button("Controller Options", ImVec2(370.0f*s_uiScale, 0.0f)))
 			{
@@ -1536,6 +1536,18 @@ namespace TFE_FrontEndUI
 				ImGui::SetNextItemWidth(64*s_uiScale);
 				ImGui::InputFloat("##RightSensitivityInput", &s_inputConfig->ctrlSensitivity[1]);
 
+				ImGui::LabelText("##ConfigLabel", "Left Deadzone");
+				ImGui::SetNextItemWidth(196 * s_uiScale);
+				ImGui::SliderFloat("##LeftDeadzone", &s_inputConfig->ctrlDeadzone[0], 0.0f, 0.5f); ImGui::SameLine(220 * s_uiScale);
+				ImGui::SetNextItemWidth(64 * s_uiScale);
+				ImGui::InputFloat("##LeftDeadzoneInput", &s_inputConfig->ctrlDeadzone[0]);
+
+				ImGui::LabelText("##ConfigLabel", "Right Deadzone");
+				ImGui::SetNextItemWidth(196 * s_uiScale);
+				ImGui::SliderFloat("##RightDeadzone", &s_inputConfig->ctrlDeadzone[1], 0.0f, 0.5f); ImGui::SameLine(220 * s_uiScale);
+				ImGui::SetNextItemWidth(64 * s_uiScale);
+				ImGui::InputFloat("##RightDeadzoneInput", &s_inputConfig->ctrlDeadzone[1]);
+
 				ImGui::Separator();
 
 				ImGui::PushFont(s_dialogFont);
@@ -1562,7 +1574,7 @@ namespace TFE_FrontEndUI
 				if (invertRightVert) { s_inputConfig->controllerFlags |=  CFLAG_INVERT_RIGHT_VERT; }
 				                else { s_inputConfig->controllerFlags &= ~CFLAG_INVERT_RIGHT_VERT; }
 
-				yNext += 400.0f*s_uiScale;
+				yNext += 480.0f*s_uiScale;
 			}
 			else
 			{
@@ -1571,7 +1583,7 @@ namespace TFE_FrontEndUI
 		}
 		else
 		{
-			yNext += (s_controllerWinOpen ? 400.0f : 29.0f)*s_uiScale;
+			yNext += (s_controllerWinOpen ? 480.0f : 29.0f)*s_uiScale;
 			ImGui::PopStyleVar();
 		}
 		ImGui::EndChild();

@@ -156,6 +156,7 @@ namespace TFE_Input
 		u32 controllerFlags;	// see ControllerFlags.
 		Axis axis[AA_COUNT];	// axis mapping.
 		f32 ctrlSensitivity[2];	// left/right sensitivity.
+		f32 ctrlDeadzone[2];	// left/right sensitivity.
 
 		// Mouse
 		u32 mouseFlags;			// see MouseFlags.

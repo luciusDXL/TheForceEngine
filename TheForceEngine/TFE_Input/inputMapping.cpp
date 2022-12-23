@@ -9,9 +9,10 @@ namespace TFE_Input
 {
 	enum InputVersion
 	{
-		INPUT_INIT_VER = 0x00010000,
+		INPUT_INIT_VER      = 0x00010000,
 		INPUT_ADD_QUICKSAVE = 0x00020001,
-		INPUT_CUR_VERSION = INPUT_ADD_QUICKSAVE
+		INPUT_ADD_DEADZONE  = 0x00020002,
+		INPUT_CUR_VERSION   = INPUT_ADD_DEADZONE
 	};
 
 	static const char* c_inputRemappingName = "tfe_input_remapping.bin";
@@ -187,6 +188,11 @@ namespace TFE_Input
 		file.writeBuffer(s_inputConfig.axis, sizeof(Axis), AA_COUNT);
 		file.write(s_inputConfig.ctrlSensitivity, 2);
 
+		// version: INPUT_ADD_DEADZONE
+		{
+			file.write(s_inputConfig.ctrlDeadzone, 2);
+		}
+
 		file.write(&s_inputConfig.mouseFlags);
 		file.writeBuffer(&s_inputConfig.mouseMode, sizeof(MouseMode));
 		file.write(s_inputConfig.mouseSensitivity, 2);
@@ -225,6 +231,16 @@ namespace TFE_Input
 		file.read(&s_inputConfig.controllerFlags);
 		file.readBuffer(s_inputConfig.axis, sizeof(Axis), AA_COUNT);
 		file.read(s_inputConfig.ctrlSensitivity, 2);
+
+		if (version >= INPUT_ADD_DEADZONE)
+		{
+			file.read(s_inputConfig.ctrlDeadzone, 2);
+		}
+		else
+		{
+			s_inputConfig.ctrlDeadzone[0] = 0.1f;
+			s_inputConfig.ctrlDeadzone[1] = 0.1f;
+		}
 
 		file.read(&s_inputConfig.mouseFlags);
 		file.readBuffer(&s_inputConfig.mouseMode, sizeof(MouseMode));
@@ -391,7 +407,23 @@ namespace TFE_Input
 		{
 			axisValue = -axisValue;
 		}
-		axisValue *= s_inputConfig.ctrlSensitivity[mappedAxis < AXIS_RIGHT_X ? 0 : 1];
+
+		const f32 sensitivity = s_inputConfig.ctrlSensitivity[mappedAxis < AXIS_RIGHT_X ? 0 : 1];
+		f32 deadzone = s_inputConfig.ctrlDeadzone[mappedAxis < AXIS_RIGHT_X ? 0 : 1];
+		if (fabsf(axisValue) <= deadzone)
+		{
+			axisValue = 0.0f;
+		}
+		else if (deadzone > FLT_EPSILON)
+		{
+			deadzone *= ((axisValue < 0.0f) ? -1.0f : 1.0f);
+			// sensitivity is adjusted by the new range, so larger deadzones don't decrease the maximum output.
+			axisValue = (axisValue - deadzone) * sensitivity / (1.0f - fabsf(deadzone));
+		}
+		else
+		{
+			axisValue = axisValue * sensitivity;
+		}
 
 		return axisValue;
 	}

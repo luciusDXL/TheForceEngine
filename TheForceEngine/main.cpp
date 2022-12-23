@@ -187,19 +187,20 @@ void handleEvent(SDL_Event& Event)
 		} break;
 		case SDL_CONTROLLERAXISMOTION:
 		{
+			// Axis are now handled interally so the deadzone can be changed.
+			if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
+			{ TFE_Input::setAxis(AXIS_LEFT_X, f32(Event.caxis.value) / 32768.0f); }
+			else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
+			{ TFE_Input::setAxis(AXIS_LEFT_Y, -f32(Event.caxis.value) / 32768.0f); }
+
+			if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
+			{ TFE_Input::setAxis(AXIS_RIGHT_X, f32(Event.caxis.value) / 32768.0f); }
+			else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
+			{ TFE_Input::setAxis(AXIS_RIGHT_Y, -f32(Event.caxis.value) / 32768.0f); }
+
 			const s32 deadzone = 3200;
 			if ((Event.caxis.value < -deadzone) || (Event.caxis.value > deadzone))
 			{
-				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-				{ TFE_Input::setAxis(AXIS_LEFT_X, f32(Event.caxis.value) / 32768.0f); }
-				else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
-				{ TFE_Input::setAxis(AXIS_LEFT_Y, -f32(Event.caxis.value) / 32768.0f); }
-
-				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
-				{ TFE_Input::setAxis(AXIS_RIGHT_X, f32(Event.caxis.value) / 32768.0f); }
-				else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
-				{ TFE_Input::setAxis(AXIS_RIGHT_Y, -f32(Event.caxis.value) / 32768.0f); }
-
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
 				{ TFE_Input::setAxis(AXIS_LEFT_TRIGGER, f32(Event.caxis.value) / 32768.0f); }
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
@@ -207,16 +208,6 @@ void handleEvent(SDL_Event& Event)
 			}
 			else
 			{
-				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTX)
-				{ TFE_Input::setAxis(AXIS_LEFT_X, 0.0f); }
-				else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_LEFTY)
-				{ TFE_Input::setAxis(AXIS_LEFT_Y, 0.0f); }
-
-				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTX)
-				{ TFE_Input::setAxis(AXIS_RIGHT_X, 0.0f); }
-				else if (Event.caxis.axis == SDL_CONTROLLER_AXIS_RIGHTY)
-				{ TFE_Input::setAxis(AXIS_RIGHT_Y, 0.0f); }
-
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT)
 				{ TFE_Input::setAxis(AXIS_LEFT_TRIGGER, 0.0f); }
 				if (Event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
