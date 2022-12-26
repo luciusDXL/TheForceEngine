@@ -138,7 +138,8 @@ void handleEvent(SDL_Event& Event)
 				TFE_Input::setKeyUp(KeyboardCode(Event.key.keysym.scancode));
 
 				// Fullscreen toggle.
-				if (code == KeyboardCode::KEY_F11)
+				bool altHeld = TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT);
+				if (code == KeyboardCode::KEY_F11 || (code == KeyboardCode::KEY_RETURN && altHeld))
 				{
 					windowSettings->fullscreen = !windowSettings->fullscreen;
 					TFE_RenderBackend::enableFullscreen(windowSettings->fullscreen);
@@ -156,7 +157,7 @@ void handleEvent(SDL_Event& Event)
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
 				}
-				else if (code == KeyboardCode::KEY_F2 && (TFE_Input::keyDown(KEY_LALT) || TFE_Input::keyDown(KEY_RALT)))
+				else if (code == KeyboardCode::KEY_F2 && altHeld)
 				{
 					static u64 _gifIndex = 0;
 					static bool _recording = false;
