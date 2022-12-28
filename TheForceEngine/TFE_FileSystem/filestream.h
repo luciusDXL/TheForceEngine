@@ -42,7 +42,7 @@ public:
 	void read(u64* ptr, u32 count=1) override { readType(ptr, count); }
 	void read(f32* ptr, u32 count=1) override { readType(ptr, count); }
 	void read(f64* ptr, u32 count=1) override { readType(ptr, count); }
-	void read(std::string* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(std::string* ptr, u32 count=1) override { readTypeStr(ptr, count); }
 	u32  readBuffer(void* ptr, u32 size, u32 count=1) override;
 
 	void write(const s8*  ptr, u32 count=1)  override { writeType(ptr, count); }
@@ -55,7 +55,7 @@ public:
 	void write(const u64* ptr, u32 count=1)  override { writeType(ptr, count); }
 	void write(const f32* ptr, u32 count=1) override { writeType(ptr, count); }
 	void write(const f64* ptr, u32 count=1) override { writeType(ptr, count); }
-	void write(const std::string* ptr, u32 count=1) override { writeType(ptr, count); }
+	void write(const std::string* ptr, u32 count=1) override { writeTypeStr(ptr, count); }
 	void writeBuffer(const void* ptr, u32 size, u32 count=1) override;
 
 	void writeString(const char* fmt, ...) override;
@@ -64,14 +64,12 @@ private:
 	template <typename T>
 	void readType(T* ptr, u32 count);
 
-	template <>
-	void readType<std::string>(std::string* ptr, u32 count);
+	void readTypeStr(std::string* ptr, u32 count);
 
 	template <typename T>
 	void writeType(const T* ptr, u32 count);
 
-	template <>
-	void writeType<std::string>(const std::string* ptr, u32 count);
+	void writeTypeStr(const std::string* ptr, u32 count);
 
 private:
 	FILE*    m_file;

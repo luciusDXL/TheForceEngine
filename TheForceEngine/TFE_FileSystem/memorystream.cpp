@@ -168,8 +168,7 @@ void MemoryStream::writeString(const char* fmt, ...)
 }
 
 //internal
-template <>	//template specialization for the string type since it has to be handled differently.
-void MemoryStream::readType<std::string>(std::string* ptr, u32 count)
+void MemoryStream::readTypeStr(std::string* ptr, u32 count)
 {
 	assert(count <= 256);
 	//first read the length.
@@ -192,8 +191,7 @@ void MemoryStream::readType(T* ptr, u32 count)
 	readBuffer(ptr, sizeof(T), count);
 }
 
-template <>	//template specialization for the string type since it has to be handled differently.
-void MemoryStream::writeType<std::string>(const std::string* ptr, u32 count)
+void MemoryStream::writeTypeStr(const std::string* ptr, u32 count)
 {
 	assert(m_memory);
 	assert(count <= 256);
