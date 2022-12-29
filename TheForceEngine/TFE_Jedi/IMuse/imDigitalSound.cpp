@@ -57,7 +57,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////////////
-	atomic_s32 s_digitalPause = 0;
+	atomic_s32 s_digitalPause;
 
 	static ImWaveSound* s_imWaveSoundList = nullptr;
 	static ImWaveSound  s_imWaveSound[MAX_SOUND_CHANNELS];
