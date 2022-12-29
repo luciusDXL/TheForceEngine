@@ -2242,7 +2242,6 @@ namespace TFE_FrontEndUI
 		}
 		MIDI_Devices = &MIDI_DevicesStr[0];
 		
-		static s32 s_currentMidiDeviceIndex;
 		ImGui::LabelText("##ConfigLabel", "MIDI Device");
 		ImGui::LabelText("##ConfigLabel", "# of devices: %i", TFE_MidiDevice::getDeviceCount());
 		ImGui::SetNextItemWidth(512.0f);
