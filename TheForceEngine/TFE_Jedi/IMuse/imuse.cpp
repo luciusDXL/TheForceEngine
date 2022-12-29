@@ -145,9 +145,9 @@ namespace TFE_Jedi
 	// Internal State
 	/////////////////////////////////////////////////////
 	// These need to be updated across threads.
-	atomic_s32 s_imPause = 0;
-	atomic_s32 s_midiPaused = 0;
-	atomic_s32 s_midiLock = 0;
+	atomic_s32 s_imPause;
+	atomic_s32 s_midiPaused;
+	atomic_s32 s_midiLock;
 
 	static iMuseInitData s_imInitData = { 0, IM_WAVE_11kHz, 8, 6944 };
 
