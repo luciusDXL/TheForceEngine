@@ -4,7 +4,7 @@ struct GMidiAsset;
 
 namespace TFE_MidiPlayer
 {
-	bool init();
+	bool init(int devIndex);
 	void destroy();
 	
 	///////////////////////////////////////////////////////////

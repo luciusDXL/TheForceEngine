@@ -374,6 +374,7 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "cutsceneMusicVolume", s_soundSettings.cutsceneMusicVolume);
 		writeKeyValue_Bool(settings, "use16Channels", s_soundSettings.use16Channels);
 		writeKeyValue_Bool(settings, "disableSoundInMenus", s_soundSettings.disableSoundInMenus);
+		writeKeyValue_Int(settings, "midiDevice", s_soundSettings.midiDevice);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -725,6 +726,10 @@ namespace TFE_Settings
 		else if (strcasecmp("disableSoundInMenus", key) == 0)
 		{
 			s_soundSettings.disableSoundInMenus = parseBool(value);
+		}
+		else if (strcasecmp("midiDevice", key) == 0)
+		{
+			s_soundSettings.midiDevice = parseInt(value);
 		}
 	}
 

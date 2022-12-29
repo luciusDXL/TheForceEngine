@@ -3,6 +3,7 @@
 #include "profilerView.h"
 #include "modLoader.h"
 #include <TFE_Audio/audioSystem.h>
+#include <TFE_Audio/midiDevice.h>
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_Game/reticle.h>
@@ -2231,6 +2232,26 @@ namespace TFE_FrontEndUI
 
 		TFE_Audio::setVolume(sound->soundFxVolume);
 		TFE_MidiPlayer::setVolume(sound->musicVolume);
+
+		int MIDI_DeviceCount = TFE_MidiDevice::getDeviceCount();
+		const char* MIDI_Devices;
+		std::string MIDI_DevicesStr;
+		
+		for (int i = 0; i < MIDI_DeviceCount; i++) {
+			MIDI_DevicesStr += TFE_MidiDevice::getDeviceNameStr(i) + '\0';
+		}
+		MIDI_Devices = &MIDI_DevicesStr[0];
+		
+		static s32 s_currentMidiDeviceIndex;
+		ImGui::LabelText("##ConfigLabel", "MIDI Device");
+		ImGui::LabelText("##ConfigLabel", "# of devices: %i", TFE_MidiDevice::getDeviceCount());
+		ImGui::SetNextItemWidth(512.0f);
+		static int MIDI_CurrentDevIndex = TFE_Settings::getSoundSettings()->midiDevice;
+
+
+		if (ImGui::Combo("##MIDI Device", &MIDI_CurrentDevIndex, MIDI_Devices, IM_ARRAYSIZE(MIDI_Devices))) {
+			sound->midiDevice = MIDI_CurrentDevIndex;
+		}
 	}
 
 	void pickCurrentResolution()

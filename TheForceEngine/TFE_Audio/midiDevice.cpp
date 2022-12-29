@@ -58,6 +58,11 @@ namespace TFE_MidiDevice
 		buffer[copyLength] = 0;
 	}
 
+	std::string getDeviceNameStr(u32 index) {
+		if (index > getDeviceCount()) { return ""; }
+		std::string name = s_midiout->getPortName(index);
+		return name;
+	}
 	void selectDevice(u32 index)
 	{
 		if (!s_midiout) { return; }

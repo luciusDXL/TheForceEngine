@@ -1,5 +1,6 @@
 #pragma once
 #include <TFE_System/types.h>
+#include <string>
 
 namespace TFE_MidiDevice
 {
@@ -8,6 +9,7 @@ namespace TFE_MidiDevice
 
 	u32  getDeviceCount();
 	void getDeviceName(u32 index, char* buffer, u32 maxLength);
+	std::string getDeviceNameStr(u32 index);
 	void selectDevice(u32 index);
 
 	void sendMessage(const u8* msg, u32 size);

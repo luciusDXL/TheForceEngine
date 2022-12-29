@@ -127,6 +127,7 @@ struct TFE_Settings_Sound
 	f32 cutsceneMusicVolume = 1.0f;
 	bool use16Channels = false;
 	bool disableSoundInMenus = false;
+	u32 midiDevice = 0;
 };
 
 struct TFE_Game
