@@ -53,5 +53,7 @@ namespace TFE_Jedi
 	void level_addSound(const char* name, u32 freq, s32 priority);
 	void level_loadPalette();
 
+	void level_updateSecretPercent();
+
 	void ambientSoundTaskFunc(MessageType msg);
 }

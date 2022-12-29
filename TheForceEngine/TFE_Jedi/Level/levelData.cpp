@@ -17,6 +17,7 @@ using namespace TFE_DarkForces;
 namespace TFE_DarkForces
 {
 	extern s32 s_secretsFound;
+	extern s32 s_secretsPercent;
 }
 
 namespace TFE_Jedi
@@ -88,6 +89,21 @@ namespace TFE_Jedi
 			level_loadPalette();
 		}
 	}
+
+	void level_updateSecretPercent()
+	{
+		if (s_levelState.secretCount)
+		{
+			// 100.0 * found / count
+			fixed16_16 percentage = mul16(FIXED(100), div16(intToFixed16(s_secretsFound), intToFixed16(s_levelState.secretCount)));
+			s_secretsPercent = floor16(percentage);
+		}
+		else
+		{
+			s_secretsPercent = 100;
+		}
+		s_secretsPercent = max(0, min(100, s_secretsPercent));
+	}
 		
 	void level_serialize(Stream* stream)
 	{
@@ -126,6 +142,8 @@ namespace TFE_Jedi
 			s_levelState.sectors = (RSector*)level_alloc(sizeof(RSector) * s_levelState.sectorCount);
 			s_levelState.controlSector->id = s_levelState.sectorCount;
 			s_levelState.controlSector->index = s_levelState.controlSector->id;
+
+			level_updateSecretPercent();
 		}
 		RSector* sector = s_levelState.sectors;
 		for (u32 s = 0; s < s_levelState.sectorCount; s++, sector++)

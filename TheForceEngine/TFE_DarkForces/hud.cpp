@@ -343,8 +343,8 @@ namespace TFE_DarkForces
 		if (!fromSave)
 		{
 			s_secretsFound = 0;
+			s_secretsPercent = 0;
 		}
-		s_secretsPercent = 0;
 
 		hud_initAnimation();
 		if (s_config.showUI)
