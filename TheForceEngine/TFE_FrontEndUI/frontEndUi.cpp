@@ -2199,6 +2199,8 @@ namespace TFE_FrontEndUI
 		*floatValue = clamp(f32(percValue) * 0.01f, 0.0f, 1.0f);
 	}
 
+
+	static bool MIDI_ShowDevChangeAlert;
 	void configSound()
 	{
 		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
@@ -2242,6 +2244,8 @@ namespace TFE_FrontEndUI
 		}
 		MIDI_Devices = &MIDI_DevicesStr[0];
 		
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
 		ImGui::LabelText("##ConfigLabel", "MIDI Device");
 		ImGui::LabelText("##ConfigLabel", "# of devices: %i", TFE_MidiDevice::getDeviceCount());
 		ImGui::SetNextItemWidth(512.0f);
@@ -2250,7 +2254,15 @@ namespace TFE_FrontEndUI
 
 		if (ImGui::Combo("##MIDI Device", &MIDI_CurrentDevIndex, MIDI_Devices, IM_ARRAYSIZE(MIDI_Devices))) {
 			sound->midiDevice = MIDI_CurrentDevIndex;
+			MIDI_ShowDevChangeAlert = true;
 		}
+
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.78f, 0.75f, 0.12f, 1.0f));
+		if(MIDI_ShowDevChangeAlert)
+			ImGui::TextWrapped("WARNING: You must restart the game for the changes to the active MIDI device to take effect.");
+		ImGui::PopStyleColor();
 	}
 
 	void pickCurrentResolution()
