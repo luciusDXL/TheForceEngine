@@ -124,7 +124,7 @@ namespace TFE_Jedi
 			player->marker = marker;
 
 			IM_DBG_MSG("Set Marker: %d", marker);
-			ImSetSoundTrigger(player->soundId, (void*)marker);
+			ImSetSoundTrigger(player->soundId, reinterpret_cast<void*>(marker));
 		}
 		else if (value == 1)
 		{
