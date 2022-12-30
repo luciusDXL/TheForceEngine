@@ -37,6 +37,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void menu_init()
 	{
+		TFE_Input::enableRelativeMode(false);
 	}
 
 	void menu_destroy()
@@ -47,6 +48,38 @@ namespace TFE_DarkForces
 	void menu_resetState()
 	{
 		delt_resetState();
+	}
+
+	// Get bounds of menu in display coordinates
+	static LRect menu_getDisplayRect()
+	{
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
+		s32 canvasWidth = bounds.right - bounds.left;
+		s32 canvasHeight = bounds.bottom - bounds.top;
+
+		ScreenRect* uiRect = vfb_getScreenRect(VFB_RECT_UI);
+		fixed16_16 xScale = vfb_getXScale();
+		fixed16_16 yScale = vfb_getYScale();
+
+		s32 virtualWidth = floor16(mul16(intToFixed16(320), xScale));
+		s32 offset = max(0, ((uiRect->right - uiRect->left + 1) - virtualWidth) / 2);
+
+		s32 right = offset + virtualWidth * displayInfo.width / canvasWidth;
+		s32 bot = displayInfo.height;
+
+		LRect result;
+		lrect_set(&result, offset, 0, right, bot);
+		return result;
+	}
+
+	// Smoothly interpolate a value in range x0..x1 to a new value in range y0..y1.
+	static s32 interpolate(s32 value, s32 x0, s32 x1, s32 y0, s32 y1)
+	{
+		return y0 + (value - x0) * (y1 - y0) / (x1 - x0);
 	}
 	
 	void menu_handleMousePosition()
@@ -59,8 +92,14 @@ namespace TFE_DarkForces
 		s32 width  = bounds.right  - bounds.left;
 		s32 height = bounds.bottom - bounds.top;
 
+		LRect displayRect = menu_getDisplayRect();
+
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
+		TFE_System::logWrite(LOG_MSG, "Menu", "Native mouse pos %d, %d", mx, my);
+		TFE_System::logWrite(LOG_MSG, "Menu", "canvas bounds %d, %d, %d, %d", bounds.left, bounds.top, bounds.right, bounds.bottom);
+		TFE_System::logWrite(LOG_MSG, "Menu", "Menu display rect %d, %d, %d, %d", displayRect.left, displayRect.top, displayRect.right, displayRect.bottom);
+#if 0
 		s_cursorPosAccum = { 12*mx/10, my };	// Account for 320x200 in 4:3 scaling.
 
 		if (displayInfo.width >= displayInfo.height)
@@ -73,6 +112,13 @@ namespace TFE_DarkForces
 			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
 			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
 		}
+#else
+		s_cursorPosAccum = {
+			interpolate(mx, displayRect.left, displayRect.right, bounds.left, bounds.right),
+			interpolate(my, displayRect.top, displayRect.bottom, bounds.top, bounds.bottom),
+		};
+		s_cursorPos = s_cursorPosAccum;
+#endif
 	}
 
 	void menu_resetCursor()
