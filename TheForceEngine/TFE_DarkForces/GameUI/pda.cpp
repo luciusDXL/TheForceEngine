@@ -407,6 +407,7 @@ namespace TFE_DarkForces
 						if (s_buttonPressed == s_simulatePressed)
 						{
 							automap_updateMapData(MAP_LAYER_UP);
+							s_simulatePressed = 0;
 						}
 					} break;
 					case PDA_BTN_LAYERDOWN:
@@ -414,6 +415,7 @@ namespace TFE_DarkForces
 						if (s_buttonPressed == s_simulatePressed)
 						{
 							automap_updateMapData(MAP_LAYER_DOWN);
+							s_simulatePressed = 0;
 						}
 					} break;
 				}
@@ -625,11 +627,11 @@ namespace TFE_DarkForces
 
 			if (TFE_Input::keyPressed(KEY_LEFTBRACKET))
 			{
-				s_simulatePressed = PDA_BTN_LAYERUP;
+				s_simulatePressed = PDA_BTN_LAYERDOWN;
 			}
 			else if (TFE_Input::keyPressed(KEY_RIGHTBRACKET))
 			{
-				s_simulatePressed = PDA_BTN_LAYERDOWN;
+				s_simulatePressed = PDA_BTN_LAYERUP;
 			}
 		}
 		else if (s_pdaMode == PDA_MODE_BRIEF)
