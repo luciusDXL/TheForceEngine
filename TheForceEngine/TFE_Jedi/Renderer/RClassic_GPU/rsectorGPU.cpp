@@ -1020,7 +1020,7 @@ namespace TFE_Jedi
 			{
 				planeCount  = sdisplayList_getPlanesFromPortal(topPortal, PLANE_TYPE_TOP, outPlanes);
 				planeCount += sdisplayList_getPlanesFromPortal(botPortal, PLANE_TYPE_BOT, outPlanes + planeCount);
-				planeCount = min(MAX_PORTAL_PLANES, planeCount);
+				planeCount = min((s32)MAX_PORTAL_PLANES, (s32)planeCount);
 			}
 			portalInfo = objectPortalPlanes_add(planeCount, outPlanes);
 		}

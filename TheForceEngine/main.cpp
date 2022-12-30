@@ -260,8 +260,8 @@ bool sdlInit()
 
 		windowSettings->x = mInfo.x;
 		windowSettings->y = mInfo.y + 32;
-		windowSettings->width  = min(windowSettings->width,  mInfo.w);
-		windowSettings->height = min(windowSettings->height, mInfo.h);
+		windowSettings->width  = min((s32)windowSettings->width,  mInfo.w);
+		windowSettings->height = min((s32)windowSettings->height, mInfo.h);
 		windowSettings->baseWidth  = windowSettings->width;
 		windowSettings->baseHeight = windowSettings->height;
 		TFE_Settings::writeToDisk();

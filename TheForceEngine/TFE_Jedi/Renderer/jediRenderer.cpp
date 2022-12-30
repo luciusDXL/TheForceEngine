@@ -171,8 +171,8 @@ namespace TFE_Jedi
 	{
 		u32 dispWidth, dispHeight;
 		vfb_getResolution(&dispWidth, &dispHeight);
-		dispWidth  = max(dispWidth,  320);
-		dispHeight = max(dispHeight, 200);
+		dispWidth  = max((s32)dispWidth,  320);
+		dispHeight = max((s32)dispHeight, 200);
 
 		RClassic_Fixed::setupInitCameraAndLights();
 		RClassic_Float::setupInitCameraAndLights(dispWidth, dispHeight);

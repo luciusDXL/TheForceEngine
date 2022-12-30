@@ -41,7 +41,7 @@ struct RegionAllocHeader
 	u8  free;
 	u8  bin;
 	u8  pad8[2];
-	u64 pad; // pad to 16 bytes.
+	u32 pad4[2];	// pad to 16 bytes.
 };
 
 // free structure is larger than header, because it fits within the
@@ -54,6 +54,9 @@ struct AllocHeaderFree
 	u8  pad8[2];
 	AllocHeaderFree* binNext;
 	AllocHeaderFree* binPrev;
+#if (__SIZEOF_POINTER__ == 4)
+	u32 _pad32[2];	// the above assumes 64bit ptrs, pad 32bit if necessary
+#endif
 };
 
 struct MemoryBlock
