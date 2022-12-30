@@ -121,6 +121,8 @@ namespace TFE_Jedi
 		if (!alloc) { return; }
 
 		AllocHeader* header = (AllocHeader*)((u8*)item - sizeof(AllocHeader));
+		if (header == ALLOC_INVALID_PTR)
+			return;
 		AllocHeader* prev = header->prev;
 		AllocHeader* next = header->next;
 
@@ -331,6 +333,8 @@ namespace TFE_Jedi
 		}
 
 		iter = alloc->head;
+		if (iter == ALLOC_INVALID_PTR)
+			return nullptr;
 		alloc->iter = iter;
 		alloc->iterPrev = iter;
 		return (u8*)iter + sizeof(AllocHeader);
