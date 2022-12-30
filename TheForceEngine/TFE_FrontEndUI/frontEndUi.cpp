@@ -2252,7 +2252,7 @@ namespace TFE_FrontEndUI
 		static int MIDI_CurrentDevIndex = TFE_Settings::getSoundSettings()->midiDevice;
 
 
-		if (ImGui::Combo("##MIDI Device", &MIDI_CurrentDevIndex, MIDI_Devices, IM_ARRAYSIZE(MIDI_Devices))) {
+		if (ImGui::Combo("##MIDI Device", &MIDI_CurrentDevIndex, MIDI_Devices, MIDI_DeviceCount)) {
 			sound->midiDevice = MIDI_CurrentDevIndex;
 			MIDI_ShowDevChangeAlert = true;
 		}
