@@ -1654,7 +1654,7 @@ namespace TFE_FrontEndUI
 			yNext += (s_controllerWinOpen ? 250.0f : 29.0f)*s_uiScale;
 			ImGui::PopStyleVar();
 		}
-		ImGui::End();
+		ImGui::EndChild();
 		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
 		f32 inputMappingHeight = 1516.0f*s_uiScale;
@@ -1916,7 +1916,7 @@ namespace TFE_FrontEndUI
 		{
 			ImGui::PopStyleVar();
 		}
-		ImGui::End();
+		ImGui::EndChild();
 		ImGui::PopStyleVar();
 		ImGui::SetCursorPosY(yNext + (s_inputMappingOpen ? inputMappingHeight : 29.0f*s_uiScale));
 	}
