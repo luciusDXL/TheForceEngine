@@ -37,7 +37,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void menu_init()
 	{
-		TFE_Input::enableRelativeMode(false);
 	}
 
 	void menu_destroy()
@@ -96,29 +95,12 @@ namespace TFE_DarkForces
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
-		TFE_System::logWrite(LOG_MSG, "Menu", "Native mouse pos %d, %d", mx, my);
-		TFE_System::logWrite(LOG_MSG, "Menu", "canvas bounds %d, %d, %d, %d", bounds.left, bounds.top, bounds.right, bounds.bottom);
-		TFE_System::logWrite(LOG_MSG, "Menu", "Menu display rect %d, %d, %d, %d", displayRect.left, displayRect.top, displayRect.right, displayRect.bottom);
-#if 0
-		s_cursorPosAccum = { 12*mx/10, my };	// Account for 320x200 in 4:3 scaling.
 
-		if (displayInfo.width >= displayInfo.height)
-		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
-		}
-		else
-		{
-			s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
-			s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
-		}
-#else
 		s_cursorPosAccum = {
 			interpolate(mx, displayRect.left, displayRect.right, bounds.left, bounds.right),
 			interpolate(my, displayRect.top, displayRect.bottom, bounds.top, bounds.bottom),
 		};
 		s_cursorPos = s_cursorPosAccum;
-#endif
 	}
 
 	void menu_resetCursor()
@@ -137,6 +119,8 @@ namespace TFE_DarkForces
 
 	u8* menu_startupDisplay()
 	{
+		TFE_Input::enableRelativeMode(false);
+		TFE_Input::enableOSCursor(false); // Cursor will be drawn by us
 		vfb_setResolution(320, 200);
 		return vfb_getCpuBuffer();
 	}

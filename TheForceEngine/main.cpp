@@ -654,6 +654,7 @@ int main(int argc, char* argv[])
 	u32 frame = 0u;
 	bool showPerf = false;
 	bool relativeMode = false;
+	bool osCursorVisible = true;
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
@@ -664,6 +665,17 @@ int main(int argc, char* argv[])
 		{
 			relativeMode = enableRelative;
 			SDL_SetRelativeMouseMode(relativeMode ? SDL_TRUE : SDL_FALSE);
+
+			// XXX: When relative mode is disabled, SDL will show the OS cursor.
+			// This line causes the OS cursor to be hidden again if it should be invisible.
+			osCursorVisible = true;
+		}
+
+		bool enableOSCursor = TFE_Input::osCursorEnabled();
+		if (osCursorVisible != enableOSCursor)
+		{
+			osCursorVisible = enableOSCursor;
+			SDL_ShowCursor(osCursorVisible ? 1 : 0);
 		}
 
 		// System events

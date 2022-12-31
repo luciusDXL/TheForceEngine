@@ -117,6 +117,9 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void pda_start(const char* levelName)
 	{
+		TFE_Input::enableRelativeMode(false);
+		TFE_Input::enableOSCursor(false); // Cursor will be drawn by us
+
 		// TFE
 		reticle_enable(false);
 		s_mouseAccum = { 0 };
@@ -240,6 +243,9 @@ namespace TFE_DarkForces
 			TFE_Jedi::renderer_setType(RendererType(graphics->rendererIndex));
 			TFE_Jedi::renderer_setLimits();
 		}
+
+		TFE_Input::enableRelativeMode(true);
+		TFE_Input::enableOSCursor(false);
 	}
 			
 	void pda_update()

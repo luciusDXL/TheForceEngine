@@ -32,6 +32,7 @@ namespace TFE_Input
 	s32 s_mousePos[2] = { 0 };
 
 	bool s_relativeMode = false;
+	bool s_osCursorEnabled = true;
 
 	static const char* const* s_controllerAxisNames;
 	static const char* const* s_controllerButtonNames;
@@ -139,6 +140,11 @@ namespace TFE_Input
 	void enableRelativeMode(bool enable)
 	{
 		s_relativeMode = enable;
+	}
+
+	void enableOSCursor(bool enable)
+	{
+		s_osCursorEnabled = enable;
 	}
 	
 	// Buffered Input
@@ -328,6 +334,11 @@ namespace TFE_Input
 	bool relativeModeEnabled()
 	{
 		return s_relativeMode;
+	}
+
+	bool osCursorEnabled()
+	{
+		return s_osCursorEnabled;
 	}
 
 	// Buffered Input
