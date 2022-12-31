@@ -35,8 +35,7 @@ namespace TFE_Input
 	void setRelativeMousePos(s32 x, s32 y);
 	void setMousePos(s32 x, s32 y);
 
-	void enableRelativeMode(bool enable);
-	void enableOSCursor(bool enable);
+	void setMouseCursorMode(MouseCursorMode mode);
 
 	// Buffered Input
 	void setBufferedInput(const char* text);
@@ -55,8 +54,7 @@ namespace TFE_Input
 	bool keyModDown(KeyModifier keyMod);
 	bool mouseDown(MouseButton button);
 	bool mousePressed(MouseButton button);
-	bool relativeModeEnabled();
-	bool osCursorEnabled();
+	MouseCursorMode getMouseCursorMode();
 	void clearKeyPressed(KeyboardCode key);
 	void clearAccumulatedMouseMove();
 	// Buffered Input

@@ -143,7 +143,7 @@ namespace TFE_DarkForces
 		// Close the console so the cheat can be executed.
 		TFE_FrontEndUI::toggleConsole();
 		mission_pause(JFALSE);
-		TFE_Input::enableRelativeMode(true);
+		TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 	}
 
 	void console_spawnEnemy(const ConsoleArgList& args)

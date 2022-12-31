@@ -119,8 +119,7 @@ namespace TFE_DarkForces
 
 	u8* menu_startupDisplay()
 	{
-		TFE_Input::enableRelativeMode(false);
-		TFE_Input::enableOSCursor(false); // Cursor will be drawn by us
+		TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
 		vfb_setResolution(320, 200);
 		return vfb_getCpuBuffer();
 	}

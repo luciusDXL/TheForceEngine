@@ -158,7 +158,7 @@ namespace TFE_FrontEndUI
 	static bool s_bindingPopupOpen = false;
 
 	static bool s_consoleActive = false;
-	static bool s_relativeMode;
+	static MouseCursorMode s_oldMouseCursorMode = MCURSORMODE_OS;
 	static bool s_canSave = false;
 	static bool s_drawNoGameDataMsg = false;
 
@@ -245,7 +245,7 @@ namespace TFE_FrontEndUI
 		s_appState = APP_STATE_MENU;
 		s_menuRetState = APP_STATE_MENU;
 		s_subUI = FEUI_NONE;
-		s_relativeMode = false;
+		s_oldMouseCursorMode = MCURSORMODE_OS;
 		s_drawNoGameDataMsg = false;
 
 		s_uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
@@ -327,8 +327,8 @@ namespace TFE_FrontEndUI
 	{
 		s_appState = APP_STATE_MENU;
 		s_subUI = FEUI_CONFIG;
-		s_relativeMode = TFE_Input::relativeModeEnabled();
-		TFE_Input::enableRelativeMode(false);
+		s_oldMouseCursorMode = TFE_Input::getMouseCursorMode();
+		TFE_Input::setMouseCursorMode(MCURSORMODE_OS);
 		pickCurrentResolution();
 	}
 
@@ -348,7 +348,7 @@ namespace TFE_FrontEndUI
 		s_drawNoGameDataMsg = false;
 		s_appState = s_menuRetState;
 		TFE_Settings::writeToDisk();
-		TFE_Input::enableRelativeMode(s_relativeMode);
+		TFE_Input::setMouseCursorMode(s_oldMouseCursorMode);
 		inputMapping_serialize();
 
 		return s_appState;
@@ -458,7 +458,6 @@ namespace TFE_FrontEndUI
 		if (s_subUI == FEUI_NONE)
 		{
 			s_menuRetState = APP_STATE_MENU;
-			s_relativeMode = false;
 
 			const f32 windowPadding = 16.0f;	// required padding so that a window completely holds a control without clipping.
 
@@ -743,7 +742,7 @@ namespace TFE_FrontEndUI
 				s_drawNoGameDataMsg = false;
 				s_appState = s_menuRetState;
 				TFE_Settings::writeToDisk();
-				TFE_Input::enableRelativeMode(s_relativeMode);
+				TFE_Input::setMouseCursorMode(s_oldMouseCursorMode);
 				inputMapping_serialize();
 			}
 			if (s_menuRetState != APP_STATE_MENU && ImGui::Button("Exit to Menu", sideBarButtonSize))
@@ -1120,7 +1119,7 @@ namespace TFE_FrontEndUI
 		s_subUI = FEUI_NONE;
 		s_appState = s_menuRetState;
 		s_drawNoGameDataMsg = false;
-		TFE_Input::enableRelativeMode(s_relativeMode);
+		TFE_Input::setMouseCursorMode(s_oldMouseCursorMode);
 	}
 
 	void configSaveLoadBegin(bool save)

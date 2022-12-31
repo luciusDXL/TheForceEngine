@@ -735,8 +735,7 @@ namespace TFE_DarkForces
 			}  break;
 			case GMODE_MISSION:
 			{
-				TFE_Input::enableRelativeMode(true);
-				TFE_Input::enableOSCursor(false);
+				TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 
 				sound_levelStart();
 

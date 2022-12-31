@@ -223,8 +223,7 @@ namespace TFE_DarkForces
 
 	void escapeMenu_open(u8* framebuffer, u8* palette)
 	{
-		TFE_Input::enableRelativeMode(false);
-		TFE_Input::enableOSCursor(false); // Cursor will be drawn by us
+		TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
 
 		// TFE
 		reticle_enable(false);
@@ -253,8 +252,7 @@ namespace TFE_DarkForces
 		// TFE
 		reticle_enable(true);
 
-		TFE_Input::enableRelativeMode(true);
-		TFE_Input::enableOSCursor(false);
+		TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 	}
 
 	JBool escapeMenu_isOpen()

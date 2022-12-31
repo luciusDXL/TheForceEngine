@@ -352,7 +352,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 			}
 			else
 			{
-				TFE_Input::enableRelativeMode(true);
+				TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 			}
 		}
 		else
@@ -389,7 +389,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 				}
 				else
 				{
-					TFE_Input::enableRelativeMode(true);
+					TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 				}
 			}
 		}
@@ -653,29 +653,19 @@ int main(int argc, char* argv[])
 	// Game loop
 	u32 frame = 0u;
 	bool showPerf = false;
-	bool relativeMode = false;
-	bool osCursorVisible = true;
+	MouseCursorMode mouseCursorMode = MCURSORMODE_OS;
 	TFE_System::logWrite(LOG_MSG, "Progam Flow", "The Force Engine Game Loop Started");
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
 		TFE_FRAME_BEGIN();
-		
-		bool enableRelative = TFE_Input::relativeModeEnabled();
-		if (enableRelative != relativeMode)
-		{
-			relativeMode = enableRelative;
-			SDL_SetRelativeMouseMode(relativeMode ? SDL_TRUE : SDL_FALSE);
 
-			// XXX: When relative mode is disabled, SDL will show the OS cursor.
-			// This line causes the OS cursor to be hidden again if it should be invisible.
-			osCursorVisible = true;
-		}
-
-		bool enableOSCursor = TFE_Input::osCursorEnabled();
-		if (osCursorVisible != enableOSCursor)
+		MouseCursorMode newMouseCursorMode = TFE_Input::getMouseCursorMode();
+		if (newMouseCursorMode != mouseCursorMode)
 		{
-			osCursorVisible = enableOSCursor;
-			SDL_ShowCursor(osCursorVisible ? 1 : 0);
+			mouseCursorMode = newMouseCursorMode;
+			SDL_SetRelativeMouseMode(mouseCursorMode == MCURSORMODE_RELATIVE ? SDL_TRUE : SDL_FALSE);
+			// FIXME: This doesn't work; the OS cursor is visible in absolute mode for some reason.
+			SDL_ShowCursor(mouseCursorMode == MCURSORMODE_OS ? 1 : 0);
 		}
 
 		// System events
@@ -751,7 +741,7 @@ int main(int argc, char* argv[])
 				if (s_curGame)
 				{
 					s_curGame->pauseGame(false);
-					TFE_Input::enableRelativeMode(true);
+					TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
 				}
 			}
 			else if (inputMapping_getActionState(IAS_CONSOLE) == STATE_PRESSED)
@@ -760,7 +750,7 @@ int main(int argc, char* argv[])
 				if (s_curGame)
 				{
 					s_curGame->pauseGame(isOpening);
-					TFE_Input::enableRelativeMode(!isOpening);
+					TFE_Input::setMouseCursorMode(!isOpening ? MCURSORMODE_RELATIVE : MCURSORMODE_OS);
 				}
 			}
 			else if (TFE_Input::keyPressed(KEY_F9) && TFE_Input::keyDown(KEY_LALT))
