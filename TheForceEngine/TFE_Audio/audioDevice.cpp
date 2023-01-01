@@ -1,6 +1,10 @@
 #include "audioDevice.h"
 #include <TFE_System/system.h>
-#include "RtAudio.h"
+#ifdef __linux__
+ #include <rtaudio/RtAudio.h>
+#else
+ #include "RtAudio.h"
+#endif
 
 //This system uses "RtAudio" as the low level, cross platform interface to the Audio system.
 //https://www.music.mcgill.ca/~gary/rtaudio/

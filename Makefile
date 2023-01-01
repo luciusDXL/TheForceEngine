@@ -4,7 +4,7 @@
 CC	=	gcc
 CXX	=	g++
 LD	=	g++
-CXXFLAGS=	-O2 -pipe -I./TheForceEngine -I/usr/include/SDL2 -I/usr/include/rtaudio -I/usr/include/rtmidi
+CXXFLAGS=	-O2 -pipe -I./TheForceEngine -I/usr/include/SDL2
 LDFLAGS	=	-lpthread -lOpenGL -lGLEW -lSDL2 -lIL -lILU -lrtaudio -lrtmidi -lasound
 
 ARCH	=	TheForceEngine/TFE_Archive/archive.o		\

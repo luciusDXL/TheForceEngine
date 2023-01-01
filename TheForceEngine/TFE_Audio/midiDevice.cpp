@@ -1,7 +1,11 @@
 #include <cstring>
 
 #include "midiDevice.h"
-#include "RtMidi.h"
+#ifdef __linux__
+ #include <rtmidi/RtMidi.h>
+#else
+ #include "RtMidi.h"
+#endif
 #include <TFE_System/system.h>
 #include <algorithm>
 
