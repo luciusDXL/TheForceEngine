@@ -2254,14 +2254,16 @@ namespace TFE_FrontEndUI
 
 		if (ImGui::Combo("##MIDI Device", &MIDI_CurrentDevIndex, MIDI_Devices, MIDI_DeviceCount)) {
 			sound->midiDevice = MIDI_CurrentDevIndex;
+			TFE_MidiPlayer::destroy();
+			TFE_MidiPlayer::init(MIDI_CurrentDevIndex);
 			MIDI_ShowDevChangeAlert = true;
 		}
 
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.78f, 0.75f, 0.12f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.17f, 0.68f, 1.0f, 1.0f));
 		if(MIDI_ShowDevChangeAlert)
-			ImGui::TextWrapped("WARNING: You must restart the game for the changes to the active MIDI device to take effect.");
+			ImGui::TextWrapped("NOTE: MIDI Instruments may be incorrect until the game is restarted.");
 		ImGui::PopStyleColor();
 	}
 
