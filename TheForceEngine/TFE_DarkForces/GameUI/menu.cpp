@@ -55,23 +55,23 @@ namespace TFE_DarkForces
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		LRect bounds;
-		lcanvas_getBounds(&bounds);
-		s32 canvasWidth = bounds.right - bounds.left;
-		s32 canvasHeight = bounds.bottom - bounds.top;
-
-		ScreenRect* uiRect = vfb_getScreenRect(VFB_RECT_UI);
-		fixed16_16 xScale = vfb_getXScale();
-		fixed16_16 yScale = vfb_getYScale();
-
-		s32 virtualWidth = floor16(mul16(intToFixed16(320), xScale));
-		s32 offset = max(0, ((uiRect->right - uiRect->left + 1) - virtualWidth) / 2);
-
-		s32 right = offset + virtualWidth * displayInfo.width / canvasWidth;
-		s32 bot = displayInfo.height;
-
+		// Assume the display rect is a 4:3 rectangle centered in the display frame.
+		// FIXME: This assumption might not be reliable in all scenarios.
 		LRect result;
-		lrect_set(&result, offset, 0, right, bot);
+		if (displayInfo.height * 4 < displayInfo.width * 3)
+		{
+			// Display is wider than 4:3; Use pillarboxing
+			s32 displayedWidth = displayInfo.height * 4 / 3;
+			s32 left = (displayInfo.width - displayedWidth) / 2;
+			lrect_set(&result, left, 0, left + displayedWidth, displayInfo.height);
+		}
+		else
+		{
+			// Display is taller than 4:3; Use letterboxing
+			s32 displayedHeight = displayInfo.width * 3 / 4;
+			s32 top = (displayInfo.height - displayedHeight) / 2;
+			lrect_set(&result, 0, top, displayInfo.width, top + displayedHeight);
+		}
 		return result;
 	}
 
@@ -126,6 +126,13 @@ namespace TFE_DarkForces
 
 	void menu_blitCursor(s32 x, s32 y, u8* framebuffer)
 	{
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
+		if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom)
+		{
+			return;
+		}
+
 		blitDeltaFrame(&s_cursor, x, y, framebuffer);
 	}
 
