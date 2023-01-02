@@ -35,7 +35,7 @@ namespace RClassic_Fixed
 	static const u8* s_columnLight;
 	static u8* s_texImage;
 	static u8* s_columnOut;
-	static u8  s_workBuffer[1024];
+	static u8  s_workBuffer[WAX_DECOMPRESS_SIZE];
 
 	s32 segmentCrossesLine(fixed16_16 ax0, fixed16_16 ay0, fixed16_16 ax1, fixed16_16 ay1, fixed16_16 bx0, fixed16_16 by0, fixed16_16 bx1, fixed16_16 by1);
 	fixed16_16 solveForZ_Numerator(RWallSegmentFixed* wallSegment);
