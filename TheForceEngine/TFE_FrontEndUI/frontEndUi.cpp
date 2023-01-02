@@ -2246,8 +2246,7 @@ namespace TFE_FrontEndUI
 		
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
-		ImGui::LabelText("##ConfigLabel", "MIDI Device");
-		ImGui::LabelText("##ConfigLabel", "# of devices: %i", TFE_MidiDevice::getDeviceCount());
+		ImGui::LabelText("##ConfigLabel", "MIDI Output Device");
 		ImGui::SetNextItemWidth(512.0f);
 		static int MIDI_CurrentDevIndex = TFE_Settings::getSoundSettings()->midiDevice;
 
