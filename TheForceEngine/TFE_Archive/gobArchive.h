@@ -11,7 +11,7 @@ class GobArchive : public Archive
 public:
 	friend GobMemoryArchive;
 public:
-	GobArchive() : m_archiveOpen(false), m_curFile(-1) {}
+	GobArchive() : Archive(ARCHIVE_GOB), m_archiveOpen(false), m_curFile(-1) {}
 	~GobArchive() override;
 
 	// Archive

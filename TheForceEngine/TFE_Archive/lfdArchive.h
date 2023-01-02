@@ -12,7 +12,7 @@
 class LfdArchive : public Archive
 {
 public:
-	LfdArchive() : m_archiveOpen(false), m_curFile(-1) {}
+	LfdArchive() : Archive(ARCHIVE_LFD), m_archiveOpen(false), m_curFile(-1) {}
 	~LfdArchive() override;
 
 	// Archive

@@ -31,6 +31,8 @@ public:
 	
 	// Public Archive API
 public:
+	Archive() : m_type(ARCHIVE_UNKNOWN) {}
+	Archive(ArchiveType type) : m_type(type) {}
 	virtual ~Archive() {}
 
 	// Archive
