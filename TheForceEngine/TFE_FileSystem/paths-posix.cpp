@@ -16,10 +16,10 @@ namespace TFE_Paths
 		std::string realPath;
 	};
 
-	std::string s_paths[PATH_COUNT];
-	std::deque<Archive*> s_localArchives;
-	std::deque<std::string> s_searchPaths;
-	std::deque<FileMapping> s_fileMappings;
+	static std::string s_paths[PATH_COUNT];
+	static std::deque<Archive*> s_localArchives;
+	static std::deque<std::string> s_searchPaths;
+	static std::deque<FileMapping> s_fileMappings;
 
 	void setPath(TFE_PathType pathType, const char* path)
 	{
