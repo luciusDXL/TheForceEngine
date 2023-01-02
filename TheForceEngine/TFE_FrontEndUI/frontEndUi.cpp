@@ -749,6 +749,7 @@ namespace TFE_FrontEndUI
 			}
 			if (s_menuRetState != APP_STATE_MENU && ImGui::Button("Exit to Menu", sideBarButtonSize))
 			{
+				MIDI_ShowDevChangeAlert = false;
 				s_menuRetState = APP_STATE_MENU;
 
 				s_subUI = FEUI_NONE;
@@ -2200,7 +2201,6 @@ namespace TFE_FrontEndUI
 	}
 
 
-	static bool MIDI_ShowDevChangeAlert;
 	void configSound()
 	{
 		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
@@ -2253,10 +2253,13 @@ namespace TFE_FrontEndUI
 
 
 		if (ImGui::Combo("##MIDI Device", &MIDI_CurrentDevIndex, MIDI_Devices, MIDI_DeviceCount)) {
-			sound->midiDevice = MIDI_CurrentDevIndex;
-			TFE_MidiPlayer::destroy();
-			TFE_MidiPlayer::init(MIDI_CurrentDevIndex);
-			MIDI_ShowDevChangeAlert = true;
+			if (MIDI_CurrentDevIndex != TFE_Settings::getSoundSettings()->midiDevice) {
+				sound->midiDevice = MIDI_CurrentDevIndex;
+				TFE_MidiPlayer::destroy();
+				TFE_MidiPlayer::init(MIDI_CurrentDevIndex);
+				if(s_menuRetState != APP_STATE_MENU)
+					MIDI_ShowDevChangeAlert = true;
+			}
 		}
 
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));

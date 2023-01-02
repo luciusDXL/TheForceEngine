@@ -28,6 +28,8 @@ struct ImFont;
 
 namespace TFE_FrontEndUI
 {
+	static bool MIDI_ShowDevChangeAlert;
+
 	void init();
 	void initConsole();
 	void shutdown();
