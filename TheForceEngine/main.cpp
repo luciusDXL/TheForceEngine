@@ -36,6 +36,8 @@
 // Replace with music system
 #include <TFE_Audio/midiPlayer.h>
 
+#include "TFE_Ui/imGUI/imgui.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
@@ -669,9 +671,11 @@ int main(int argc, char* argv[])
 		{
 			mouseCursorMode = newMouseCursorMode;
 			SDL_SetRelativeMouseMode(mouseCursorMode == MCURSORMODE_RELATIVE ? SDL_TRUE : SDL_FALSE);
-			// FIXME: This doesn't work; the OS cursor is visible in absolute mode for some reason.
-			SDL_ShowCursor(mouseCursorMode == MCURSORMODE_OS ? 1 : 0);
+			SDL_ShowCursor(mouseCursorMode == MCURSORMODE_OS ? SDL_ENABLE : SDL_DISABLE);
 		}
+
+		// ImGui requires the cursor state to be set every frame, or else it will show the cursor by default.
+		ImGui::SetMouseCursor(mouseCursorMode == MCURSORMODE_OS ? ImGuiMouseCursor_Arrow : ImGuiMouseCursor_None);
 
 		// System events
 		SDL_Event event;
