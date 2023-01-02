@@ -117,7 +117,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void pda_start(const char* levelName)
 	{
-		TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
+		TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
 
 		// TFE
 		reticle_enable(false);
