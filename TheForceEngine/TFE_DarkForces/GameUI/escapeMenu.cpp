@@ -1,5 +1,7 @@
 #include <cstring>
 
+#include <SDL.h>
+
 #include "escapeMenu.h"
 #include "delt.h"
 #include "uiDraw.h"
@@ -718,9 +720,18 @@ namespace TFE_DarkForces
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		s_emState.cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
+		s_emState.cursorPosAccum = { (s32)displayInfo.width / 2, (s32)displayInfo.height / 2 };
 		s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
 		s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
+
+		// FIXME: this doesn't center the cursor correctly
+		SDL_WarpMouseInWindow(NULL, s_emState.cursorPos.x, s_emState.cursorPos.z);
+	}
+
+	// Smoothly interpolate a value in range x0..x1 to a new value in range y0..y1.
+	static s32 interpolate(s32 value, s32 x0, s32 x1, s32 y0, s32 y1)
+	{
+		return y0 + (value - x0) * (y1 - y0) / (x1 - x0);
 	}
 
 	void escMenu_handleMousePosition()
@@ -740,16 +751,9 @@ namespace TFE_DarkForces
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
 		s_emState.cursorPosAccum = { mx, my };
-
-		if (displayInfo.width >= displayInfo.height)
-		{
-			s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
-			s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
-		}
-		else
-		{
-			s_emState.cursorPos.x = clamp(s_emState.cursorPosAccum.x * (s32)width / (s32)displayInfo.width, 0, (s32)width - 3);
-			s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)width / (s32)displayInfo.width, 0, (s32)height - 3);
-		}
+		s_emState.cursorPos = {
+			interpolate(mx, 0, displayInfo.width, 0, width),
+			interpolate(my, 0, displayInfo.height, 0, height),
+		};
 	}
 }

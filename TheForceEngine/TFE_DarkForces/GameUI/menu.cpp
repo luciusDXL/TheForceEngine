@@ -1,5 +1,7 @@
 #include <cstring>
 
+#include <SDL.h>
+
 #include "menu.h"
 #include "delt.h"
 #include "uiDraw.h"
@@ -112,9 +114,18 @@ namespace TFE_DarkForces
 		DisplayInfo displayInfo;
 		TFE_RenderBackend::getDisplayInfo(&displayInfo);
 
-		s_cursorPosAccum = { (s32)displayInfo.width >> 1, (s32)displayInfo.height >> 1 };
+		s_cursorPosAccum = { (s32)displayInfo.width / 2, (s32)displayInfo.height / 2 };
 		s_cursorPos.x = clamp(s_cursorPosAccum.x * (s32)height / (s32)displayInfo.height, 0, (s32)width - 3);
 		s_cursorPos.z = clamp(s_cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
+
+		LRect bounds;
+		lcanvas_getBounds(&bounds);
+
+		LRect displayRect = menu_getDisplayRect();
+		SDL_WarpMouseInWindow(NULL,
+			interpolate(s_cursorPos.x, bounds.left, bounds.right, displayRect.left, displayRect.right),
+			interpolate(s_cursorPos.z, bounds.top, bounds.bottom, displayRect.top, displayRect.bottom)
+		);
 	}
 
 	u8* menu_startupDisplay()
