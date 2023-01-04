@@ -9,6 +9,7 @@
 #include <TFE_DarkForces/util.h>
 #include <TFE_DarkForces/hud.h>
 #include <TFE_DarkForces/config.h>
+#include <TFE_DarkForces/Landru/lrect.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_Settings/settings.h>
@@ -728,6 +729,33 @@ namespace TFE_DarkForces
 		SDL_WarpMouseInWindow(NULL, s_emState.cursorPos.x, s_emState.cursorPos.z);
 	}
 
+	// Get bounds of menu in display coordinates
+	static LRect escMenu_getDisplayRect()
+	{
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		// Assume the display rect is a 4:3 rectangle centered in the display frame.
+		// FIXME: This assumption might not be reliable in all scenarios.
+		// This will probably break in widescreen mode. Where is the function to get the actual display rect??
+		LRect result;
+		if (displayInfo.height * 4 < displayInfo.width * 3)
+		{
+			// Display is wider than 4:3; Use pillarboxing
+			s32 displayedWidth = displayInfo.height * 4 / 3;
+			s32 left = (displayInfo.width - displayedWidth) / 2;
+			lrect_set(&result, left, 0, left + displayedWidth, displayInfo.height);
+		}
+		else
+		{
+			// Display is taller than 4:3; Use letterboxing
+			s32 displayedHeight = displayInfo.width * 3 / 4;
+			s32 top = (displayInfo.height - displayedHeight) / 2;
+			lrect_set(&result, 0, top, displayInfo.width, top + displayedHeight);
+		}
+		return result;
+	}
+
 	// Smoothly interpolate a value in range x0..x1 to a new value in range y0..y1.
 	static s32 interpolate(s32 value, s32 x0, s32 x1, s32 y0, s32 y1)
 	{
@@ -748,12 +776,14 @@ namespace TFE_DarkForces
 		MonitorInfo monitorInfo;
 		TFE_RenderBackend::getCurrentMonitorInfo(&monitorInfo);
 
+		LRect displayRect = escMenu_getDisplayRect();
+
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
 		s_emState.cursorPosAccum = { mx, my };
 		s_emState.cursorPos = {
-			interpolate(mx, 0, displayInfo.width, 0, width),
-			interpolate(my, 0, displayInfo.height, 0, height),
+			interpolate(mx, displayRect.left, displayRect.right, 0, width),
+			interpolate(my, displayRect.top, displayRect.bottom, 0, height),
 		};
 	}
 }
