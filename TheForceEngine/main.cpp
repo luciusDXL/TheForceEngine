@@ -682,6 +682,7 @@ int main(int argc, char* argv[])
 		while (SDL_PollEvent(&event)) { handleEvent(event); }
 
 		// Handle mouse state.
+		TFE_Input::setMouseInWindow(SDL_GetMouseFocus() == TFE_Ui::getSDLWindow());
 		s32 mouseX, mouseY;
 		s32 mouseAbsX, mouseAbsY;
 		u32 state = SDL_GetRelativeMouseState(&mouseX, &mouseY);

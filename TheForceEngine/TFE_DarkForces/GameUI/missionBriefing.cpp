@@ -420,7 +420,10 @@ namespace TFE_DarkForces
 		lactorDelt_draw(s_briefActor, &rect, &s_missionTextRect, x, y, JTRUE);
 		lcanvas_clearClipRect();
 
-		menu_blitCursor(s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+		if (TFE_Input::isMouseInWindow())
+		{
+			menu_blitCursor(s_cursorPos.x, s_cursorPos.z, s_framebuffer);
+		}
 		menu_blitToScreen();
 		return JTRUE;
 	}

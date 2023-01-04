@@ -316,7 +316,10 @@ namespace TFE_DarkForces
 		// Doing that we need to restore the transparent color before blitting the mouse cursor, otherwise its black edges will 
 		// show up incorrectly.
 		screenDraw_setTransColor(0);
-		menu_blitCursorScaled(s_cursorPos.x, s_cursorPos.z, vfb_getCpuBuffer());
+		if (TFE_Input::isMouseInWindow())
+		{
+			menu_blitCursorScaled(s_cursorPos.x, s_cursorPos.z, vfb_getCpuBuffer());
+		}
 		vfb_swap();
 	}
 	

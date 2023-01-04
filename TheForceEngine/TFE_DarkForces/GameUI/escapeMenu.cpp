@@ -368,7 +368,7 @@ namespace TFE_DarkForces
 		}
 
 		// Draw the mouse.
-		if (drawMouse)
+		if (drawMouse && TFE_Input::isMouseInWindow())
 		{
 			screenGPU_blitTextureScaled(&s_cursor.texture, nullptr, intToFixed16(s_emState.cursorPos.x), intToFixed16(s_emState.cursorPos.z), xScale, yScale, 31);
 		}
@@ -438,8 +438,11 @@ namespace TFE_DarkForces
 				blitDeltaFrame(&s_emState.confirmMenuFrames[s_emState.buttonPressed == CONFIRM_NO ? CONFIRM_QUIT_NOBTN_DOWN : CONFIRM_QUIT_NOBTN_UP], 0, 0, s_emState.framebuffer);
 			}
 
-			// Draw the mouse.
-			blitDeltaFrame(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, s_emState.framebuffer);
+			if (drawMouse && TFE_Input::isMouseInWindow())
+			{
+				// Draw the mouse.
+				blitDeltaFrame(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, s_emState.framebuffer);
+			}
 		}
 		else
 		{
@@ -503,7 +506,7 @@ namespace TFE_DarkForces
 			}
 
 			// Draw the mouse.
-			if (drawMouse)
+			if (drawMouse && TFE_Input::isMouseInWindow())
 			{
 				blitDeltaFrameScaled(&s_cursor, s_emState.cursorPos.x, s_emState.cursorPos.z, xScale, yScale, s_emState.framebuffer);
 			}

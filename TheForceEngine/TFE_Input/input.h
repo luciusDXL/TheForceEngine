@@ -32,6 +32,7 @@ namespace TFE_Input
 	void setMouseButtonUp(MouseButton button);
 	void setMouseWheel(s32 dx, s32 dy);
 
+	void setMouseInWindow(bool mouseInWindow);
 	void setRelativeMousePos(s32 x, s32 y);
 	void setMousePos(s32 x, s32 y);
 
@@ -45,6 +46,7 @@ namespace TFE_Input
 	f32 getAxis(Axis axis);
 	void getMouseMove(s32* x, s32* y);
 	void getAccumulatedMouseMove(s32* x, s32* y);
+	bool isMouseInWindow();
 	void getMousePos(s32* x, s32* y);
 	void getMouseWheel(s32* dx, s32* dy);
 	bool buttonDown(Button button);
