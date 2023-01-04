@@ -266,13 +266,17 @@ namespace TFE_MidiPlayer
 	{
 		u8 msg[] = { type, arg1, arg2 };
 		u8 msgType = (type & 0xf0);
+		u8 len;
+
+		len = (msgType == MID_PROGRAM_CHANGE) ? 2 : 3;
+
 		if (msgType == MID_CONTROL_CHANGE && arg1 == MID_VOLUME_MSB)
 		{
 			const s32 channelIndex = type & 0x0f;
 			s_channelSrcVolume[channelIndex] = arg2;
 			msg[2] = u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled);
 		}
-		TFE_MidiDevice::sendMessage(msg, 3);
+		TFE_MidiDevice::sendMessage(msg, len);
 
 		// Record currently playing instruments and the note-on times.
 		if (msgType == MID_NOTE_OFF || msgType == MID_NOTE_ON)
