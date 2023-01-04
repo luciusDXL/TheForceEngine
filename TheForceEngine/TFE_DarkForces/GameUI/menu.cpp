@@ -19,6 +19,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
 #include <TFE_Jedi/Renderer/screenDraw.h>
+#include <TFE_Ui/ui.h>
 
 using namespace TFE_Jedi;
 
@@ -50,38 +51,6 @@ namespace TFE_DarkForces
 	{
 		delt_resetState();
 	}
-
-	// Get bounds of menu in display coordinates
-	static LRect menu_getDisplayRect()
-	{
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
-		// Assume the display rect is a 4:3 rectangle centered in the display frame.
-		// FIXME: This assumption might not be reliable in all scenarios.
-		LRect result;
-		if (displayInfo.height * 4 < displayInfo.width * 3)
-		{
-			// Display is wider than 4:3; Use pillarboxing
-			s32 displayedWidth = displayInfo.height * 4 / 3;
-			s32 left = (displayInfo.width - displayedWidth) / 2;
-			lrect_set(&result, left, 0, left + displayedWidth, displayInfo.height);
-		}
-		else
-		{
-			// Display is taller than 4:3; Use letterboxing
-			s32 displayedHeight = displayInfo.width * 3 / 4;
-			s32 top = (displayInfo.height - displayedHeight) / 2;
-			lrect_set(&result, 0, top, displayInfo.width, top + displayedHeight);
-		}
-		return result;
-	}
-
-	// Smoothly interpolate a value in range x0..x1 to a new value in range y0..y1.
-	static s32 interpolate(s32 value, s32 x0, s32 x1, s32 y0, s32 y1)
-	{
-		return y0 + (value - x0) * (y1 - y0) / (x1 - x0);
-	}
 	
 	void menu_handleMousePosition()
 	{
@@ -93,7 +62,7 @@ namespace TFE_DarkForces
 		s32 width  = bounds.right  - bounds.left;
 		s32 height = bounds.bottom - bounds.top;
 
-		LRect displayRect = menu_getDisplayRect();
+		LRect displayRect = TFE_RenderBackend::calcDisplayRect();
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);
@@ -121,8 +90,8 @@ namespace TFE_DarkForces
 		LRect bounds;
 		lcanvas_getBounds(&bounds);
 
-		LRect displayRect = menu_getDisplayRect();
-		SDL_WarpMouseInWindow(NULL,
+		LRect displayRect = TFE_RenderBackend::calcDisplayRect();
+		SDL_WarpMouseInWindow(TFE_Ui::getSDLWindow(),
 			interpolate(s_cursorPos.x, bounds.left, bounds.right, displayRect.left, displayRect.right),
 			interpolate(s_cursorPos.z, bounds.top, bounds.bottom, displayRect.top, displayRect.bottom)
 		);

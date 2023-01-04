@@ -21,6 +21,7 @@
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
 #include <TFE_System/system.h>
+#include <TFE_Ui/ui.h>
 
 using namespace TFE_Jedi;
 using namespace TFE_Input;
@@ -729,40 +730,7 @@ namespace TFE_DarkForces
 		s_emState.cursorPos.z = clamp(s_emState.cursorPosAccum.z * (s32)height / (s32)displayInfo.height, 0, (s32)height - 3);
 
 		// FIXME: this doesn't center the cursor correctly
-		SDL_WarpMouseInWindow(NULL, s_emState.cursorPos.x, s_emState.cursorPos.z);
-	}
-
-	// Get bounds of menu in display coordinates
-	static LRect escMenu_getDisplayRect()
-	{
-		DisplayInfo displayInfo;
-		TFE_RenderBackend::getDisplayInfo(&displayInfo);
-
-		// Assume the display rect is a 4:3 rectangle centered in the display frame.
-		// FIXME: This assumption might not be reliable in all scenarios.
-		// This will probably break in widescreen mode. Where is the function to get the actual display rect??
-		LRect result;
-		if (displayInfo.height * 4 < displayInfo.width * 3)
-		{
-			// Display is wider than 4:3; Use pillarboxing
-			s32 displayedWidth = displayInfo.height * 4 / 3;
-			s32 left = (displayInfo.width - displayedWidth) / 2;
-			lrect_set(&result, left, 0, left + displayedWidth, displayInfo.height);
-		}
-		else
-		{
-			// Display is taller than 4:3; Use letterboxing
-			s32 displayedHeight = displayInfo.width * 3 / 4;
-			s32 top = (displayInfo.height - displayedHeight) / 2;
-			lrect_set(&result, 0, top, displayInfo.width, top + displayedHeight);
-		}
-		return result;
-	}
-
-	// Smoothly interpolate a value in range x0..x1 to a new value in range y0..y1.
-	static s32 interpolate(s32 value, s32 x0, s32 x1, s32 y0, s32 y1)
-	{
-		return y0 + (value - x0) * (y1 - y0) / (x1 - x0);
+		SDL_WarpMouseInWindow(TFE_Ui::getSDLWindow(), s_emState.cursorPos.x, s_emState.cursorPos.z);
 	}
 
 	void escMenu_handleMousePosition()
@@ -779,7 +747,7 @@ namespace TFE_DarkForces
 		MonitorInfo monitorInfo;
 		TFE_RenderBackend::getCurrentMonitorInfo(&monitorInfo);
 
-		LRect displayRect = escMenu_getDisplayRect();
+		LRect displayRect = TFE_RenderBackend::calcDisplayRect();
 
 		s32 mx, my;
 		TFE_Input::getMousePos(&mx, &my);

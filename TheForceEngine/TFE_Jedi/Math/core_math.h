@@ -57,6 +57,12 @@ namespace TFE_Jedi
 		b = tmp;
 	}
 
+	// Smoothly interpolate a value in range x0..x1 to a new value in range y0..y1.
+	inline s32 interpolate(s32 value, s32 x0, s32 x1, s32 y0, s32 y1)
+	{
+		return y0 + (value - x0) * (y1 - y0) / (x1 - x0);
+	}
+
 	inline s32 sign(s32 x)
 	{
 		return x < 0 ? -1 : 1;

@@ -722,9 +722,7 @@ namespace TFE_RenderBackend
 		glDrawArrays(GL_LINES, 0, lineCount * 2);
 	}
 
-	// Setup the Post effect chain based on current settings.
-	// TODO: Move out of render backend since this should be independent of the backend.
-	void setupPostEffectChain(bool useDynamicTexture)
+	TFE_DarkForces::LRect calcDisplayRect()
 	{
 		s32 x = 0, y = 0;
 		s32 w = m_windowState.width;
@@ -753,6 +751,22 @@ namespace TFE_RenderBackend
 			// letterbox
 			y = std::max(0, ((s32)m_windowState.height - h) / 2);
 		}
+
+		TFE_DarkForces::LRect result;
+		TFE_DarkForces::lrect_set(&result, x, y, x + w, y + h);
+		return result;
+	}
+
+	// Setup the Post effect chain based on current settings.
+	// TODO: Move out of render backend since this should be independent of the backend.
+	void setupPostEffectChain(bool useDynamicTexture)
+	{
+		TFE_DarkForces::LRect displayRect = calcDisplayRect();
+		s32 x = displayRect.left;
+		s32 y = displayRect.top;
+		s32 w = displayRect.right - displayRect.left;
+		s32 h = displayRect.bottom - displayRect.top;
+
 		TFE_PostProcess::clearEffectStack();
 
 		if (useDynamicTexture)
