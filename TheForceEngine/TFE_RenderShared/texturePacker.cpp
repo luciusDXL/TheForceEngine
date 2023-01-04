@@ -324,7 +324,7 @@ namespace TFE_Jedi
 		u8* image = (compressed == 1) ? imageData + (cell->sizeX * sizeof(u32)) : imageData;
 		u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[node->rect.y*s_texturePacker->width + node->rect.x];
 
-		u8 columnWorkBuffer[1024];
+		u8 columnWorkBuffer[WAX_DECOMPRESS_SIZE];
 		const u32* columnOffset = (u32*)((u8*)basePtr + cell->columnOffset);
 		for (s32 x = 0; x < cell->sizeX; x++)
 		{

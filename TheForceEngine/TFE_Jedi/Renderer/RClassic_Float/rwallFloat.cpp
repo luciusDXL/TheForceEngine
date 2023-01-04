@@ -36,7 +36,7 @@ namespace RClassic_Float
 	static const u8* s_columnLight;
 	static u8* s_texImage;
 	static u8* s_columnOut;
-	static u8  s_workBuffer[1024];
+	static u8  s_workBuffer[WAX_DECOMPRESS_SIZE];
 
 	s32 segmentCrossesLine(f32 ax0, f32 ay0, f32 ax1, f32 ay1, f32 bx0, f32 by0, f32 bx1, f32 by1);
 	f32 solveForZ_Numerator(RWallSegmentFloat* wallSegment);

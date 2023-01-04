@@ -17,6 +17,7 @@
 #define WAX_MAX_ANIM 32
 #define WAX_MAX_VIEWS 32
 #define WAX_MAX_FRAMES 32
+#define WAX_DECOMPRESS_SIZE 1024
 
 #pragma pack(push)
 #pragma pack(1)
