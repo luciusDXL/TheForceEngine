@@ -355,7 +355,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 			}
 			else
 			{
-				TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
+				TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
 			}
 		}
 		else
@@ -392,7 +392,7 @@ void setAppState(AppState newState, int argc, char* argv[])
 				}
 				else
 				{
-					TFE_Input::setMouseCursorMode(MCURSORMODE_RELATIVE);
+					TFE_Input::setMouseCursorMode(MCURSORMODE_ABSOLUTE);
 				}
 			}
 		}
