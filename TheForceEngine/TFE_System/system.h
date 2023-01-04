@@ -4,6 +4,7 @@
 // System functionality, such as timers and logging.
 //////////////////////////////////////////////////////////////////////
 
+#include <ctype.h>
 #include "types.h"
 
 #define TFE_MAJOR_VERSION 0
@@ -67,35 +68,28 @@ namespace TFE_System
 	extern f64 c_gameTimeScale;
 }
 
-// _strlwr() / _strupr() do not exist on Linux
-#ifndef _strlwr
-#include <ctype.h>
-static inline void _strlwr(char *c)
+// _strlwr/_strupr exist on Windows; roll our own
+// and use them throghout. This works on Windows
+// and Linux/unix-like.
+static inline void __strlwr(char *c)
 {
 	while (*c) {
 		*c = tolower(*c);
 		c++;
 	}
 }
-#endif
 
-#ifndef _strupr
-#include <ctype.h>
-static inline void _strupr(char *c)
+static inline void __strupr(char *c)
 {
 	while (*c) {
 		*c = toupper(*c);
 		c++;
 	}
 }
-#endif
 
-// strcpy_s is windows-ism
-#ifndef strcpy_s
+#ifdef __linux__
+
 #define strcpy_s(dest, len, src) strncpy(dest, src, len)
-#endif
-
-// sprintf_s is a windows-ism
-#ifndef sprintf_s
 #define sprintf_s snprintf
+
 #endif

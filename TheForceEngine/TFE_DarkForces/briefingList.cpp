@@ -79,10 +79,10 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				_strlwr(mission);
-				_strlwr(archive);
-				_strlwr(bgAnim);
-				_strlwr(palette);
+				__strlwr(mission);
+				__strlwr(archive);
+				__strlwr(bgAnim);
+				__strlwr(palette);
 
 				strcpy(info->mission, mission);
 				strcpy(info->archive, archive);
