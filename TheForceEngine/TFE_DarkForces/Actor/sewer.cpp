@@ -254,7 +254,7 @@ namespace TFE_DarkForces
 		attackMod->meleeDmg = FIXED(20);
 		attackMod->meleeRate = FIXED(360);
 		attackMod->attackSecSndSrc = s_agentSndSrc[AGENTSND_CREATURE2];
-		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffffd;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_RANGED, ATTFLAG_MELEE);
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);

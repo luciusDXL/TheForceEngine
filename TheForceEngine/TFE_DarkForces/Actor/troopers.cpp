@@ -53,7 +53,7 @@ namespace TFE_DarkForces
 		actor_addModule(dispatch, (ActorModule*)module);
 
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
-		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_MELEE, ATTFLAG_RANGED);
 		attackMod->projType = PROJ_PISTOL_BOLT;
 		attackMod->attackPrimSndSrc = s_pistolSndSrc;
 
@@ -95,7 +95,7 @@ namespace TFE_DarkForces
 
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		s_actorState.attackMod = attackMod;
-		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_MELEE, ATTFLAG_RANGED);
 		attackMod->projType = PROJ_RIFLE_BOLT;
 		attackMod->attackPrimSndSrc = s_rifleSndSrc;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
@@ -135,7 +135,7 @@ namespace TFE_DarkForces
 
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		s_actorState.attackMod = attackMod;
-		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_MELEE, ATTFLAG_RANGED);
 		attackMod->projType = PROJ_RIFLE_BOLT;
 		attackMod->attackPrimSndSrc = s_rifleSndSrc;
 		actor_addModule(dispatch, (ActorModule*)attackMod);

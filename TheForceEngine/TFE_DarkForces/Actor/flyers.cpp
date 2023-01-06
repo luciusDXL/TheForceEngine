@@ -136,7 +136,7 @@ namespace TFE_DarkForces
 		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_11];
 		attackMod->meleeRange = FIXED(30);
 		attackMod->meleeDmg = FIXED(5);
-		attackMod->attackFlags |= 3;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, 0, ATTFLAG_MELEE | ATTFLAG_RANGED);
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
@@ -186,7 +186,7 @@ namespace TFE_DarkForces
 		attackMod->fireOffset.y = -557056;
 		attackMod->projType = PROJ_RIFLE_BOLT;
 		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_12];
-		attackMod->attackFlags = 2;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_MELEE, ATTFLAG_RANGED);
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
@@ -232,8 +232,7 @@ namespace TFE_DarkForces
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_13];
 		attackMod->projType = PROJ_REMOTE_BOLT;
-		attackMod->attackFlags &= 0xfffffffc;
-		attackMod->attackFlags |= 2;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_MELEE, ATTFLAG_RANGED);
 		attackMod->fireOffset.y = 0x4000;	// 0.25 units.
 		attackMod->maxDist = FIXED(50);
 		s_actorState.attackMod = attackMod;

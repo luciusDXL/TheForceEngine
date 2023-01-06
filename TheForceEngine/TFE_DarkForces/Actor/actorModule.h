@@ -78,6 +78,16 @@ enum TargetFlags
 	TARGET_ALL      = TARGET_ALL_MOVE | TARGET_FREEZE
 };
 
+enum AttackFlags
+{
+	ATTFLAG_NONE      = 0,
+	ATTFLAG_MELEE     = FLAG_BIT(0), // Has melee attacks
+	ATTFLAG_RANGED    = FLAG_BIT(1), // Has ranged attacks
+	ATTFLAG_LIT_MELEE = FLAG_BIT(2), // Lights up when melee attacks
+	ATTFLAG_LIT_RNG   = FLAG_BIT(3), // Lights up when range attacks
+	ATTFLAG_ALL       = ATTFLAG_MELEE | ATTFLAG_RANGED | ATTFLAG_LIT_MELEE | ATTFLAG_LIT_RNG
+};
+
 struct ActorModule
 {
 	ActorModuleType type;
@@ -124,7 +134,7 @@ struct AttackModule
 	fixed16_16 maxDist;
 	fixed16_16 meleeDmg;
 	fixed16_16 meleeRate;
-	u32 attackFlags;
+	u32 attackFlags;		// see AttackFlags above.
 };
 
 struct MovementModule

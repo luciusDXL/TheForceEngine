@@ -298,7 +298,7 @@ namespace TFE_DarkForces
 		attackMod->maxDist = FIXED(160);
 		attackMod->meleeDmg = 0;
 		attackMod->meleeRate = FIXED(230);
-		attackMod->attackFlags = 10;
+		attackMod->attackFlags = ATTFLAG_RANGED | ATTFLAG_LIT_RNG;
 
 		return attackMod->fireOffset.y;
 	}
@@ -908,14 +908,14 @@ namespace TFE_DarkForces
 
 					if (vertAngle < 2275 && dist <= attackMod->maxDist)	// ~50 degrees
 					{
-						if (attackMod->attackFlags & 1)
+						if (attackMod->attackFlags & ATTFLAG_MELEE)
 						{
 							if (dist <= attackMod->meleeRange)
 							{
 								attackMod->anim.state = 2;
 								attackMod->timing.delay = attackMod->timing.state2Delay;
 							}
-							else if (!(attackMod->attackFlags & 2) || dist < attackMod->minDist)
+							else if (!(attackMod->attackFlags & ATTFLAG_RANGED) || dist < attackMod->minDist)
 							{
 								attackMod->anim.flags |= 2;
 								attackMod->anim.state = 0;
@@ -973,7 +973,7 @@ namespace TFE_DarkForces
 					break;
 				}
 
-				if (attackMod->attackFlags & 1)	// Melee attack!
+				if (attackMod->attackFlags & ATTFLAG_MELEE)
 				{
 					attackMod->anim.state = 3;
 					fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
@@ -982,7 +982,7 @@ namespace TFE_DarkForces
 					{
 						sound_playCued(attackMod->attackSecSndSrc, obj->posWS);
 						player_applyDamage(attackMod->meleeDmg, 0, JTRUE);
-						if (attackMod->attackFlags & 8)
+						if (attackMod->attackFlags & ATTFLAG_LIT_MELEE)
 						{
 							obj->flags |= OBJ_FLAG_FULLBRIGHT;
 						}
@@ -991,7 +991,7 @@ namespace TFE_DarkForces
 				}
 
 				// Ranged Attack!
-				if (attackMod->attackFlags & 8)
+				if (attackMod->attackFlags & ATTFLAG_LIT_RNG)
 				{
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
 				}
@@ -1028,7 +1028,7 @@ namespace TFE_DarkForces
 			} break;
 			case 3:
 			{
-				if (attackMod->attackFlags & 8)
+				if (attackMod->attackFlags & ATTFLAG_LIT_RNG)
 				{
 					obj->flags &= ~OBJ_FLAG_FULLBRIGHT;
 				}
@@ -1045,7 +1045,7 @@ namespace TFE_DarkForces
 				{
 					break;
 				}
-				if (attackMod->attackFlags & 8)
+				if (attackMod->attackFlags & ATTFLAG_LIT_RNG)
 				{
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
 				}
