@@ -398,7 +398,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				_strupr(s_objSeqArg2);
+				__strupr(s_objSeqArg2);
 				if (strstr(s_objSeqArg2, "CAMERA"))
 				{
 					isCamera = 1;
@@ -417,7 +417,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				_strupr(s_objSeqArg2);
+				__strupr(s_objSeqArg2);
 				if (strstr(s_objSeqArg2, "CAMERA"))
 				{
 					isCamera = 1;
