@@ -36,7 +36,7 @@ namespace TFE_DarkForces
 		attackMod->projType = PROJ_THERMAL_DET;
 		attackMod->attackPrimSndSrc = 0;
 		attackMod->attackSecSndSrc = 0;
-		attackMod->timing.state4Delay = 436;
+		attackMod->timing.rangedDelay = 436;
 		attackMod->maxDist = FIXED(100);
 		attackMod->meleeRange = FIXED(10);
 		attackMod->meleeDmg = FIXED(15);
@@ -115,7 +115,7 @@ namespace TFE_DarkForces
 
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		s_actorState.attackMod = attackMod;
-		attackMod->timing.state2Delay = 57;
+		attackMod->timing.meleeDelay = 57;
 		attackMod->meleeRange = FIXED(13);
 		attackMod->meleeDmg = FIXED(40);
 		attackMod->meleeRate = FIXED(360);

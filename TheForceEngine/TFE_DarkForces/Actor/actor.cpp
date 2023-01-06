@@ -269,16 +269,16 @@ namespace TFE_DarkForces
 		attackMod->target.speed = 0;
 		attackMod->target.speedVert = 0;
 		attackMod->timing.delay = 218;
-		attackMod->timing.state0Delay = 218;
-		attackMod->timing.state2Delay = 0;
-		attackMod->timing.state4Delay = 291;
-		attackMod->timing.state1Delay = 43695;
+		attackMod->timing.searchDelay = 218;
+		attackMod->timing.meleeDelay = 0;
+		attackMod->timing.rangedDelay = 291;
+		attackMod->timing.losDelay = 43695;
 		attackMod->anim.frameRate = 5;
 		attackMod->anim.frameCount = ONE_16;
 		attackMod->anim.prevTick = 0;
-		attackMod->anim.state = 0;
+		attackMod->anim.state = STATE_DELAY;
 		attackMod->fireSpread = FIXED(30);
-		attackMod->state0NextTick = 0;
+		attackMod->accuracyNextTick = 0;
 		attackMod->fireOffset.x = 0;
 		attackMod->fireOffset.z = 0;
 
@@ -843,13 +843,16 @@ namespace TFE_DarkForces
 
 		switch (state)
 		{
-			case 0:
+			case STATE_DELAY:
 			{
 				if (attackMod->anim.flags & 2)
 				{
-					attackMod->anim.flags &= ~8;
-					attackMod->anim.state = 1;
-					if (attackMod->state0NextTick < s_curTick)
+					// Clear attack based lighting.
+					obj->flags &= ~OBJ_FLAG_FULLBRIGHT;
+					attackMod->anim.state = STATE_ANIMATEATTACK;
+
+					// Update the shooting accuracy.
+					if (attackMod->accuracyNextTick < s_curTick)
 					{
 						if (attackMod->fireSpread)
 						{
@@ -858,11 +861,11 @@ namespace TFE_DarkForces
 							{
 								attackMod->fireSpread = FIXED(9);
 							}
-							attackMod->state0NextTick = s_curTick + 145;
+							attackMod->accuracyNextTick = s_curTick + 145;
 						}
 						else
 						{
-							attackMod->state0NextTick = 0xffffffff;
+							attackMod->accuracyNextTick = 0xffffffff;
 						}
 					}
 					attackMod->target.flags &= ~TARGET_ALL_MOVE;
@@ -870,7 +873,7 @@ namespace TFE_DarkForces
 					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
-			case 1:
+			case STATE_ANIMATEATTACK:
 			{
 				gameMusic_sustainFight();
 				if (s_playerDying)
@@ -878,7 +881,7 @@ namespace TFE_DarkForces
 					if (s_curTick >= s_reviveTick)
 					{
 						attackMod->anim.flags |= 2;
-						attackMod->anim.state = 0;
+						attackMod->anim.state = STATE_DELAY;
 						return attackMod->timing.delay;
 					}
 				}
@@ -887,10 +890,10 @@ namespace TFE_DarkForces
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
 					attackMod->anim.flags |= 2;
-					attackMod->anim.state = 0;
+					attackMod->anim.state = STATE_DELAY;
 					if (attackMod->timing.nextTick < s_curTick)
 					{
-						attackMod->timing.delay = attackMod->timing.state0Delay;
+						attackMod->timing.delay = attackMod->timing.searchDelay;
 						actor_setupInitAnimation();
 					}
 					return attackMod->timing.delay;
@@ -898,7 +901,7 @@ namespace TFE_DarkForces
 				else
 				{
 					actor_updatePlayerVisiblity(JTRUE, s_eyePos.x, s_eyePos.z);
-					attackMod->timing.nextTick = s_curTick + attackMod->timing.state1Delay;
+					attackMod->timing.nextTick = s_curTick + attackMod->timing.losDelay;
 					fixed16_16 dist = distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
 					fixed16_16 yDiff = TFE_Jedi::abs(obj->posWS.y - obj->worldHeight - s_eyePos.y);
 					angle14_32 vertAngle = vec2ToAngle(yDiff, dist);
@@ -912,19 +915,19 @@ namespace TFE_DarkForces
 						{
 							if (dist <= attackMod->meleeRange)
 							{
-								attackMod->anim.state = 2;
-								attackMod->timing.delay = attackMod->timing.state2Delay;
+								attackMod->anim.state = STATE_FIRE1;
+								attackMod->timing.delay = attackMod->timing.meleeDelay;
 							}
 							else if (!(attackMod->attackFlags & ATTFLAG_RANGED) || dist < attackMod->minDist)
 							{
 								attackMod->anim.flags |= 2;
-								attackMod->anim.state = 0;
+								attackMod->anim.state = STATE_DELAY;
 								return attackMod->timing.delay;
 							}
 							else
 							{
-								attackMod->anim.state = 4;
-								attackMod->timing.delay = attackMod->timing.state4Delay;
+								attackMod->anim.state = STATE_FIRE2;
+								attackMod->timing.delay = attackMod->timing.rangedDelay;
 							}
 						}
 						else
@@ -932,16 +935,16 @@ namespace TFE_DarkForces
 							if (dist < attackMod->minDist)
 							{
 								attackMod->anim.flags |= 2;
-								attackMod->anim.state = 0;
+								attackMod->anim.state = STATE_DELAY;
 								return attackMod->timing.delay;
 							}
-							attackMod->anim.state = 2;
-							attackMod->timing.delay = attackMod->timing.state4Delay;
+							attackMod->anim.state = STATE_FIRE1;
+							attackMod->timing.delay = attackMod->timing.rangedDelay;
 						}
 
 						if (obj->type == OBJ_TYPE_SPRITE)
 						{
-							if (attackMod->anim.state == 2)
+							if (attackMod->anim.state == STATE_FIRE1)
 							{
 								actor_setupAnimation(1, &attackMod->anim);
 							}
@@ -961,12 +964,12 @@ namespace TFE_DarkForces
 					else
 					{
 						attackMod->anim.flags |= 2;
-						attackMod->anim.state = 0;
+						attackMod->anim.state = STATE_DELAY;
 						return attackMod->timing.delay;
 					}
 				}
 			} break;
-			case 2:
+			case STATE_FIRE1:
 			{
 				if (!(attackMod->anim.flags & 2))
 				{
@@ -975,7 +978,7 @@ namespace TFE_DarkForces
 
 				if (attackMod->attackFlags & ATTFLAG_MELEE)
 				{
-					attackMod->anim.state = 3;
+					attackMod->anim.state = STATE_ANIMATE1;
 					fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
 					fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
 					if (dist < attackMod->meleeRange)
@@ -996,7 +999,7 @@ namespace TFE_DarkForces
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
 				}
 
-				attackMod->anim.state = 3;
+				attackMod->anim.state = STATE_ANIMATE1;
 				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
 				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
 
@@ -1026,20 +1029,15 @@ namespace TFE_DarkForces
 					proj->vel.z += random(attackMod->fireSpread*2) - attackMod->fireSpread;
 				}
 			} break;
-			case 3:
+			case STATE_ANIMATE1:
 			{
-				if (attackMod->attackFlags & ATTFLAG_LIT_RNG)
-				{
-					obj->flags &= ~OBJ_FLAG_FULLBRIGHT;
-				}
-
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
 					actor_setupAnimation(6, anim);
 				}
-				attackMod->anim.state = 0;
+				attackMod->anim.state = STATE_DELAY;
 			} break;
-			case 4:
+			case STATE_FIRE2:
 			{
 				if (!(attackMod->anim.flags & 2))
 				{
@@ -1050,7 +1048,7 @@ namespace TFE_DarkForces
 					obj->flags |= OBJ_FLAG_FULLBRIGHT;
 				}
 
-				attackMod->anim.state = 5;
+				attackMod->anim.state = STATE_ANIMATE2;
 				ProjectileLogic* proj = (ProjectileLogic*)createProjectile(attackMod->projType, obj->sector, obj->posWS.x, attackMod->fireOffset.y + obj->posWS.y, obj->posWS.z, obj);
 				sound_playCued(attackMod->attackPrimSndSrc, obj->posWS);
 				proj->prevColObj = obj;
@@ -1090,13 +1088,13 @@ namespace TFE_DarkForces
 					}
 				}
 			} break;
-			case 5:
+			case STATE_ANIMATE2:
 			{
 				if (obj->type == OBJ_TYPE_SPRITE)
 				{
 					actor_setupAnimation(8, anim);
 				}
-				attackMod->anim.state = 0;
+				attackMod->anim.state = STATE_DELAY;
 			} break;
 		}
 
@@ -1115,7 +1113,7 @@ namespace TFE_DarkForces
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		if (msg == MSG_WAKEUP)
 		{
-			attackMod->timing.nextTick = s_curTick + attackMod->timing.state1Delay;
+			attackMod->timing.nextTick = s_curTick + attackMod->timing.losDelay;
 		}
 		if (logic->flags & 1)
 		{
@@ -1151,7 +1149,7 @@ namespace TFE_DarkForces
 				{
 					thinkerMod->playerLastSeen = 0xffffffff;
 				}
-				thinkerMod->anim.state = 2;
+				thinkerMod->anim.state = STATE_FIRE1;
 			}
 			else
 			{
@@ -1239,7 +1237,7 @@ namespace TFE_DarkForces
 				}
 				logic->flags |= 2;
 			}
-			thinkerMod->anim.state = 1;
+			thinkerMod->anim.state = STATE_ANIMATEATTACK;
 			thinkerMod->nextTick = s_curTick + thinkerMod->maxWalkTime;
 
 			if (obj->entityFlags & ETFLAG_REMOTE)
@@ -1269,7 +1267,7 @@ namespace TFE_DarkForces
 		thinkerMod->delay = 72;
 		thinkerMod->nextTick = 0;
 		thinkerMod->playerLastSeen = 0xffffffff;
-		thinkerMod->anim.state = 2;
+		thinkerMod->anim.state = STATE_FIRE1;
 		thinkerMod->maxWalkTime = 728;	// ~5 seconds between decision points.
 		thinkerMod->anim.frameRate = 5;
 		thinkerMod->anim.frameCount = ONE_16;

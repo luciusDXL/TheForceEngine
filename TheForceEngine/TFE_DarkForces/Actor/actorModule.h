@@ -28,6 +28,17 @@ enum LogicAnimFlags
 	AFLAG_READY  = FLAG_BIT(1),
 };
 
+enum LogicAnimState : u32
+{
+	STATE_DELAY = 0u,
+	STATE_ANIMATEATTACK,
+	STATE_FIRE1,
+	STATE_ANIMATE1,
+	STATE_FIRE2,
+	STATE_ANIMATE2,
+	STATE_COUNT
+};
+
 typedef JBool(*ActorFunc)(ActorModule*, MovementModule*);
 typedef JBool(*ActorMsgFunc)(s32 msg, ActorModule*, MovementModule*);
 typedef void(*ActorAttribFunc)(ActorModule*);
@@ -43,16 +54,16 @@ struct LogicAnimation
 	fixed16_16 startFrame;
 	u32 flags;
 	s32 animId;
-	s32 state;
+	LogicAnimState state;
 };
 
 struct ActorTiming
 {
 	Tick delay;
-	Tick state0Delay;
-	Tick state2Delay;
-	Tick state4Delay;
-	Tick state1Delay;
+	Tick searchDelay;
+	Tick meleeDelay;
+	Tick rangedDelay;
+	Tick losDelay;		// time to search for line of sight (LOS).
 	Tick nextTick;
 };
 
@@ -123,7 +134,7 @@ struct AttackModule
 	LogicAnimation anim;
 
 	fixed16_16 fireSpread;
-	Tick state0NextTick;
+	Tick accuracyNextTick;
 	vec3_fixed fireOffset;
 
 	ProjectileType projType;
