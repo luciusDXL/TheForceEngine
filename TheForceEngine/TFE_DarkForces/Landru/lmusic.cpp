@@ -7,7 +7,8 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 
 using namespace TFE_Jedi;
 #define SHOW_MUSIC_MSG 0

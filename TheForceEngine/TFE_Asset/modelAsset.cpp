@@ -4,9 +4,10 @@
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Archive/archive.h>
 #include <TFE_System/parser.h>
-#include <assert.h>
-#include <map>
 #include <algorithm>
+#include <cassert>
+#include <cstring>
+#include <map>
 
 namespace TFE_Model
 {

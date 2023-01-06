@@ -30,6 +30,8 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 
+#include <climits>
+
 using namespace TFE_Input;
 
 namespace TFE_FrontEndUI

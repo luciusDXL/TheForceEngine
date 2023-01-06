@@ -4,7 +4,8 @@
 #include "lview.h"
 #include "ltimer.h"
 #include <TFE_Game/igame.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 
 namespace TFE_DarkForces
 {

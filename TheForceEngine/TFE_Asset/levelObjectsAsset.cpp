@@ -4,8 +4,9 @@
 #include <TFE_Archive/archive.h>
 #include <TFE_System/parser.h>
 #include <TFE_FileSystem/filestream.h>
-#include <assert.h>
 #include <algorithm>
+#include <cassert>
+#include <cstring>
 
 namespace TFE_LevelObjects
 {
