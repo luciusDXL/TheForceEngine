@@ -7,6 +7,7 @@
 #include <TFE_System/system.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_System/parser.h>
+#include <cstring>
 
 #define SHOW_GAME_MUSIC_MSG 0
 
@@ -20,7 +21,7 @@ namespace TFE_DarkForces
 {
 	// Internally, iMuse stores opcodes as integers (ptrdiff_t in TFE, so it is big enough to hold a pointer).
 	// So this macro is a nice way of signifying the intent in the code.
-	#define MUSIC_CALLBACK(c) ptrdiff_t(c)
+	#define MUSIC_CALLBACK(c) std::ptrdiff_t(c)
 	#define GAME_INVALID_TRIGGER 16
 
 	enum MusicConstants

@@ -4,6 +4,7 @@
 #include "gobArchive.h"
 #include <assert.h>
 #include <algorithm>
+#include <vector>
 
 GobArchive::~GobArchive()
 {

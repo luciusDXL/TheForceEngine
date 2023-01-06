@@ -6,6 +6,7 @@
 // regions.
 //////////////////////////////////////////////////////////////////////
 #include <TFE_System/types.h>
+#include <climits>
 #include "lrect.h"
 
 namespace TFE_DarkForces
