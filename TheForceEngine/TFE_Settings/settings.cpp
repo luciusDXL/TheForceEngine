@@ -14,6 +14,10 @@
 #include "windows/registry.h"
 #endif
 
+#ifdef __linux__
+#include "linux/defpaths.h"
+#endif
+
 namespace TFE_Settings
 {
 	//////////////////////////////////////////////////////////////////////////////////
@@ -174,6 +178,13 @@ namespace TFE_Settings
 				{
 					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
 				}
+			}
+#endif
+#ifdef __linux__
+			if (!pathValid)
+			{
+				pathValid = LinuxDefPaths::getSteamPath(c_steamProductId[gameId], c_steamLocalSubPath[gameId],
+									c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
 			}
 #endif
 			// If the registry approach fails, just try looking in the various hardcoded paths.
