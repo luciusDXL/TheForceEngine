@@ -1734,7 +1734,7 @@ namespace TFE_DarkForces
 	{
 		ActorDispatch* logic = (ActorDispatch*)s_actorState.curLogic;
 		SecObject* obj = logic->logic.obj;
-		if ((obj->type & OBJ_TYPE_SPRITE) && logic->animTable)
+		if (obj->type == OBJ_TYPE_SPRITE && logic->animTable)
 		{
 			return logic->animTable[action];
 		}
