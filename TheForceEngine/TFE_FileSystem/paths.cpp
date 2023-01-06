@@ -206,7 +206,7 @@ namespace TFE_Paths
 	{
 		char fileNameLC[TFE_MAX_PATH];
 		strcpy(fileNameLC, fileName);
-		_strlwr(fileNameLC);
+		__strlwr(fileNameLC);
 
 		char filePathFixed[TFE_MAX_PATH];
 		strcpy(filePathFixed, filePath);

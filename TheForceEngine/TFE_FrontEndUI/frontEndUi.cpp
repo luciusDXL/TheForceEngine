@@ -1427,28 +1427,28 @@ namespace TFE_FrontEndUI
 		{
 			if (binding->keyMod)
 			{
-				sprintf_s(inputName, 64, "%s + %s", TFE_Input::getKeyboardModifierName(binding->keyMod), TFE_Input::getKeyboardName(binding->keyCode));
+				snprintf(inputName, 64, "%s + %s", TFE_Input::getKeyboardModifierName(binding->keyMod), TFE_Input::getKeyboardName(binding->keyCode));
 			}
 			else
 			{
-				strcpy_s(inputName, 64, TFE_Input::getKeyboardName(binding->keyCode));
+				strncpy(inputName, TFE_Input::getKeyboardName(binding->keyCode), 64);
 			}
 		}
 		else if (binding->type == ITYPE_MOUSE)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getMouseButtonName(binding->mouseBtn));
+			strncpy(inputName, TFE_Input::getMouseButtonName(binding->mouseBtn), 64);
 		}
 		else if (binding->type == ITYPE_MOUSEWHEEL)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getMouseWheelName(binding->mouseWheel));
+			strncpy(inputName, TFE_Input::getMouseWheelName(binding->mouseWheel), 64);
 		}
 		else if (binding->type == ITYPE_CONTROLLER)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getControllButtonName(binding->ctrlBtn));
+			strncpy(inputName, TFE_Input::getControllButtonName(binding->ctrlBtn), 64);
 		}
 		else if (binding->type == ITYPE_CONTROLLER_AXIS)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getControllerAxisName(binding->axis));
+			strncpy(inputName, TFE_Input::getControllerAxisName(binding->axis), 64);
 		}
 	}
 
@@ -2273,7 +2273,7 @@ namespace TFE_FrontEndUI
 		s32 percValue = s32((*floatValue) * 100.0f);
 
 		char sliderId[256];
-		sprintf_s(sliderId, 256, "##%s", labelText);
+		snprintf(sliderId, 256, "##%s", labelText);
 		ImGui::SliderInt(sliderId, &percValue, 0, 100, "%d%%");
 		*floatValue = clamp(f32(percValue) * 0.01f, 0.0f, 1.0f);
 	}

@@ -640,6 +640,6 @@ namespace TFE_DarkForces
 	{
 		pal->resType = resType;
 		strcpy(pal->name, name);
-		_strlwr(pal->name);
+		__strlwr(pal->name);
 	}
 }
