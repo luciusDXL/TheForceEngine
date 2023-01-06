@@ -3,6 +3,7 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/textureGpu.h>
+#include <TFE_FileSystem/paths.h>
 #include "imGUI/imgui.h"
 #include "imGUI/imgui_markdown.h"
 
@@ -32,17 +33,25 @@ namespace TFE_Markdown
 
 	bool init(f32 baseFontSize)
 	{
+		char fp[TFE_MAX_PATH];
+
 		ImGuiIO& io = ImGui::GetIO();
 
-		s_baseFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans.ttf", baseFontSize);
+		sprintf(fp, "Fonts/DroidSans.ttf");
+		TFE_Paths::mapSystemPath(fp);
+		s_baseFont = io.Fonts->AddFontFromFileTTF(fp, baseFontSize);
+
+
+		sprintf(fp, "Fonts/DroidSans-Bold.ttf");
+		TFE_Paths::mapSystemPath(fp);
 		// Bold
-		s_mdConfig.boldFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans-Bold.ttf", baseFontSize);
+		s_mdConfig.boldFont = io.Fonts->AddFontFromFileTTF(fp, baseFontSize);
 		// Heading H1
-		s_mdConfig.headingFormats[0].font = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans-Bold.ttf", baseFontSize * 2);
+		s_mdConfig.headingFormats[0].font = io.Fonts->AddFontFromFileTTF(fp, baseFontSize * 2);
 		// Heading H2
-		s_mdConfig.headingFormats[1].font = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans-Bold.ttf", baseFontSize * 5/3);
+		s_mdConfig.headingFormats[1].font = io.Fonts->AddFontFromFileTTF(fp, baseFontSize * 5/3);
 		// Heading H3
-		s_mdConfig.headingFormats[2].font = io.Fonts->AddFontFromFileTTF("Fonts/DroidSans-Bold.ttf", baseFontSize * 4/3);
+		s_mdConfig.headingFormats[2].font = io.Fonts->AddFontFromFileTTF(fp, baseFontSize * 4/3);
 
 		return true;
 	}

@@ -42,17 +42,20 @@
 *.app
 
 # Text Files
-*.txt
 *.log
 *.tlog
 *.user
 *.ini
+*.patch
+*.orig
+*.rej
 
 # Other File Types
 *.aps
 *.ico
 *.bin
 *.tfs
+*~
 
 #Directories
 .vs/
@@ -70,3 +73,7 @@ Build/
 TheForceEngine/bug_reports/
 WDFuseCommonFiles/
 x64/Debug/
+CMakeFiles/
+
+# Linux
+TheForceEngine/tfelnx

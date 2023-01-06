@@ -34,6 +34,8 @@ namespace TFE_Paths
 	bool setUserDocumentsPath(const char* append);
 	// Platform specific executable path.
 	bool setProgramPath();
+	// find a relative path in a TFE system directory. true if mapping was done.
+	bool mapSystemPath(char *path);
 	
 	const char* getPath(TFE_PathType pathType);
 	bool hasPath(TFE_PathType pathType);

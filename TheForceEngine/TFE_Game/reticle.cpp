@@ -4,7 +4,9 @@
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
+#include <TFE_FileSystem/paths.h>
 #include <algorithm>
+#include <cstring>
 
 enum
 {
@@ -29,7 +31,10 @@ bool reticle_init()
 	s_settings = TFE_Settings::getGraphicsSettings();
 
 	char imagePath[TFE_MAX_PATH];
-	TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, "UI_Images/ReticleAtlas.png", imagePath, TFE_MAX_PATH);
+	sprintf(imagePath, "UI_Images/ReticleAtlas.png");
+	if (!TFE_Paths::mapSystemPath(imagePath)) {
+		TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, "UI_Images/ReticleAtlas.png", imagePath, TFE_MAX_PATH);
+	}
 
 	Image* image = TFE_Image::get(imagePath);
 	if (!image)
