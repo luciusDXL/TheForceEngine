@@ -221,7 +221,7 @@ namespace TFE_FrontEndUI
 	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
-		s32 columns = max(1, (dispInfo.width - s32(16*uiScale)) / s32(268*uiScale));
+		s32 columns = max(1, (s32)((dispInfo.width - s32(16*uiScale)) / s32(268*uiScale)));
 
 		f32 y = ImGui::GetCursorPosY();
 		ImDrawList* drawList = ImGui::GetWindowDrawList();

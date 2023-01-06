@@ -923,7 +923,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				s32 elapsedFrames = min(s_weaponAnimState.frameCount, elapsed / s_weaponAnimState.ticksPerFrame);
+				s32 elapsedFrames = min((s32)s_weaponAnimState.frameCount, (s32)(elapsed / s_weaponAnimState.ticksPerFrame));
 				s_curPlayerWeapon->xOffset += s_weaponAnimState.xSpeed * elapsedFrames;
 				s_curPlayerWeapon->yOffset += s_weaponAnimState.ySpeed * elapsedFrames;
 				s_weaponAnimState.frameCount -= elapsedFrames;

@@ -11,6 +11,7 @@ public:
 	virtual bool run();
 	virtual void pause();
 	virtual void resume();
+	virtual void waitOnExit(void);
 
 protected:
 	pthread_t m_handle;

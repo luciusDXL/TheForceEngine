@@ -57,7 +57,7 @@ namespace TFE_System
 		#ifdef _WIN32
 			OutputDebugStringA(s_workStr);
 		#else
-			printf(s_workStr);
+			fprintf(stderr, "%s", s_workStr);
 		#endif
 	}
 
@@ -90,7 +90,7 @@ namespace TFE_System
 		#ifdef _WIN32
 			OutputDebugStringA(s_workStr);
 		#else
-			printf(s_workStr);
+			fprintf(stderr, "%s", s_workStr);
 		#endif
 		//Critical log messages also act as asserts in the debugger.
 		if (type == LOG_CRITICAL)

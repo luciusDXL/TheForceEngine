@@ -63,7 +63,9 @@ namespace GLSLParser
 	bool parseFile(const char* fileName, std::vector<char>& outputBuffer)
 	{
 		char filePath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(PATH_PROGRAM, fileName, filePath);
+		strcpy(filePath, fileName);
+		if (!TFE_Paths::mapSystemPath(filePath))
+			TFE_Paths::appendPath(PATH_PROGRAM, fileName, filePath);
 
 		FileStream file;
 		if (!file.open(filePath, Stream::MODE_READ)) { return false; }

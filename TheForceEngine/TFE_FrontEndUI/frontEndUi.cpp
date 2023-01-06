@@ -235,7 +235,11 @@ namespace TFE_FrontEndUI
 	bool loadGpuImage(const char* localPath, UiImage* uiImage)
 	{
 		char imagePath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
+		strcpy(imagePath, localPath);
+		if (!TFE_Paths::mapSystemPath(imagePath)) {
+			memset(imagePath, 0, TFE_MAX_PATH);
+			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
+		}
 		Image* image = TFE_Image::get(imagePath);
 		if (image)
 		{
@@ -262,14 +266,18 @@ namespace TFE_FrontEndUI
 		s_subUI = FEUI_NONE;
 		s_relativeMode = false;
 		s_drawNoGameDataMsg = false;
+		char fontpath[TFE_MAX_PATH];
+
+		sprintf(fontpath, "%s", "Fonts/DroidSansMono.ttf");
+		TFE_Paths::mapSystemPath(fontpath);
 
 		s_uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
 
 		ImGuiIO& io = ImGui::GetIO();
-		s_menuFont    = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(32*s_uiScale + 0.5f));
-		s_versionFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(16*s_uiScale + 0.5f));
-		s_titleFont   = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(48*s_uiScale + 0.5f));
-		s_dialogFont  = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(20*s_uiScale + 0.5f));
+		s_menuFont    = io.Fonts->AddFontFromFileTTF(fontpath, floorf(32*s_uiScale + 0.5f));
+		s_versionFont = io.Fonts->AddFontFromFileTTF(fontpath, floorf(16*s_uiScale + 0.5f));
+		s_titleFont   = io.Fonts->AddFontFromFileTTF(fontpath, floorf(48*s_uiScale + 0.5f));
+		s_dialogFont  = io.Fonts->AddFontFromFileTTF(fontpath, floorf(20*s_uiScale + 0.5f));
 
 		if (!loadGpuImage("UI_Images/TFE_TitleLogo.png", &s_logoGpuImage))
 		{
