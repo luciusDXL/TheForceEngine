@@ -86,10 +86,3 @@ static inline void __strupr(char *c)
 		c++;
 	}
 }
-
-#ifdef __linux__
-
-#define strcpy_s(dest, len, src) strncpy(dest, src, len)
-#define sprintf_s snprintf
-
-#endif
