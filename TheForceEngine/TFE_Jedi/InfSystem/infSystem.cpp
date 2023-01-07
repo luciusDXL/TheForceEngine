@@ -64,6 +64,9 @@ namespace TFE_Jedi
 	static char s_infArg4[256];
 	static char s_infArgExtra[256];
 
+	// DOS hack... this is required since elevators with an invalid delay use the previous valid delay.
+	static Tick s_prevStopDelay = 0;
+
 	// Forward Declarations.
 	void inf_elevatorTaskFunc(MessageType msg);
 	void inf_telelporterTaskFunc(MessageType msg);
@@ -869,7 +872,6 @@ namespace TFE_Jedi
 			{
 				TFE_System::logWrite(LOG_WARNING, "INF", "Unknown elevator command - '%s'.", id);
 			}
-
 			seqEnd = inf_parseElevatorCommand(argCount, action, linkAlloc, seqEnd, elev, initStopIndex, link);
 		} // while (!seqEnd)
 
@@ -1882,7 +1884,7 @@ namespace TFE_Jedi
 				*type = defType;
 		}
 	}
-
+		
 	bool inf_parseElevatorCommand(s32 argCount, KEYWORD action, Allocator* linkAlloc, bool seqEnd, InfElevator*& elev, s32& initStopIndex, InfLink*& link)
 	{
 		char* endPtr;
@@ -1949,7 +1951,7 @@ namespace TFE_Jedi
 				}
 
 				// Delay is optional, if not specified each elevator has its own default.
-				Tick delay = 0;
+				Tick delay;
 				// Numeric
 				if ((s_infArg1[0] >= '0' && s_infArg1[0] <= '9') || s_infArg1[0] == '-' || s_infArg1[0] == '.')
 				{
@@ -1969,6 +1971,11 @@ namespace TFE_Jedi
 				{
 					delay = IDELAY_COMPLETE;
 				}
+				else
+				{
+					delay = s_prevStopDelay;
+				}
+				s_prevStopDelay = delay;
 
 				inf_setStopDelay(stop, delay);
 			} break;
