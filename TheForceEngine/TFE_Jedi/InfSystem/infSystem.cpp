@@ -1926,7 +1926,7 @@ namespace TFE_Jedi
 					{
 						// Rotation stop values need to be converted to angles.
 						value = strtof(s_infArg0, &endPtr);
-						stopValue = s32(value * 16383.0f / 360.0f);
+						stopValue = s16(value * 45.5111f);
 						stopValue = floatToFixed16(f32(stopValue));
 					}
 				}
