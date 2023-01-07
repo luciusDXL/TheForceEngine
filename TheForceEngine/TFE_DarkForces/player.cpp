@@ -269,6 +269,7 @@ namespace TFE_DarkForces
 
 	// TFE
 	void player_warp(const ConsoleArgList& args);
+	void player_sector(const ConsoleArgList& args);
 		
 	///////////////////////////////////////////
 	// API Implentation
@@ -303,8 +304,9 @@ namespace TFE_DarkForces
 		s_automapLocked = JTRUE;
 
 		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
+		CCMD_NOREPEAT("sector", player_sector, 0, "Get the current sector ID.");
 	}
-		
+
 	void player_setPitchLimit(PitchLimit limit)
 	{
 		if (limit < PITCH_VANILLA || limit > PITCH_COUNT)
@@ -2580,6 +2582,21 @@ namespace TFE_DarkForces
 
 			sector_addObject(sector, s_playerObject);
 			s_playerSector = s_playerObject->sector;
+		}
+	}
+
+	void player_sector(const ConsoleArgList& args)
+	{
+		RSector* sector = s_playerObject->sector;
+		if (sector)
+		{
+			char sectorIdStr[256];
+			sprintf(sectorIdStr, "Sector ID: %d", sector->id);
+			TFE_Console::addToHistory(sectorIdStr);
+		}
+		else
+		{
+			TFE_Console::addToHistory("Invalid sector");
 		}
 	}
 		

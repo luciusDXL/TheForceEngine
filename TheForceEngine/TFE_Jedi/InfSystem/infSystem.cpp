@@ -647,7 +647,6 @@ namespace TFE_Jedi
 			{
 				stop = (Stop*)allocator_getNext(elev->stops);
 			}
-			assert(stop);
 		}
 		return stop;
 	}
@@ -2064,32 +2063,31 @@ namespace TFE_Jedi
 			{
 				s32 stopId = strToInt(s_infArg0);
 				Stop* stop = inf_getStopByIndex(elev, stopId);
-				if (!stop)
+				if (stop)
 				{
-					return seqEnd;
-				}
-				if (!stop->messages)
-				{
-					stop->messages = allocator_create(sizeof(InfMessage));
-				}
+					if (!stop->messages)
+					{
+						stop->messages = allocator_create(sizeof(InfMessage));
+					}
 
-				InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
-				RSector* targetSector;
-				RWall* targetWall;
-				inf_getMessageTarget(s_infArg1, &targetSector, &targetWall);
-				msg->sector = targetSector;
-				msg->wall = targetWall;
+					InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
+					RSector* targetSector;
+					RWall* targetWall;
+					inf_getMessageTarget(s_infArg1, &targetSector, &targetWall);
+					msg->sector = targetSector;
+					msg->wall = targetWall;
 
-				msg->msgType = MSG_TRIGGER;
-				msg->event = INF_EVENT_NONE;
-				if (argCount >= 5)
-				{
-					msg->event = strToUInt(s_infArg3);
-				}
+					msg->msgType = MSG_TRIGGER;
+					msg->event = INF_EVENT_NONE;
+					if (argCount >= 5)
+					{
+						msg->event = strToUInt(s_infArg3);
+					}
 
-				if (argCount > 3)
-				{
-					inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, MSG_TRIGGER);
+					if (argCount > 3)
+					{
+						inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, MSG_TRIGGER);
+					}
 				}
 			} break;
 			case KW_EVENT_MASK:
