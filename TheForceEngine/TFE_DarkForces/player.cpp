@@ -46,7 +46,7 @@ namespace TFE_DarkForces
 		PLAYER_PICKUP_ADJ              = 0x18000,	  // 1.5 units
 		PLAYER_SIZE_SMALL              = 0x4ccc,	  // 0.3 units
 		PLAYER_STEP                    = 0x38000,	  // 3.5 units
-		PLAYER_INF_STEP                = FIXED(9999),
+		PLAYER_INF_STEP                = COL_INFINITY,
 		PLAYER_HEADWAVE_VERT_SPD       = 0xc000,	  // 0.75   units/sec.
 		PLAYER_HEADWAVE_VERT_WATER_SPD = 0x3000,	  // 0.1875 units/sec.
 		PLAYER_DMG_FLOOR_LOW           = FIXED(5),	  // Low  damage floors apply  5 dmg/sec.
@@ -1676,7 +1676,7 @@ namespace TFE_DarkForces
 			s_playerVelX = 0;
 			s_playerVelZ = 0;
 		}
-		s_playerSector = s_nextSector;
+		s_playerSector = s_colMinSector;
 
 		if (s_externalVelX || s_externalVelZ)
 		{
@@ -1777,7 +1777,7 @@ namespace TFE_DarkForces
 			// Handle player land event - this both plays a sound effect and sends an INF message.
 			if (s_prevDistFromFloor)
 			{
-				if (s_nextSector->secHeight - 1 >= 0)
+				if (s_colMinSector->secHeight - 1 >= 0)
 				{
 					// Second height is below ground, so this is liquid.
 					sound_play(s_landSplashSound);
@@ -1787,7 +1787,7 @@ namespace TFE_DarkForces
 					// Second height is at or above ground.
 					sound_play(s_landSolidSound);
 				}
-				message_sendToSector(s_nextSector, player, INF_EVENT_LAND, MSG_TRIGGER);
+				message_sendToSector(s_colMinSector, player, INF_EVENT_LAND, MSG_TRIGGER);
 
 				// 's_playerUpVel' determines how much the view collapses to the ground based on hit velocity.
 				if (s_playerUpVel < PLAYER_LAND_VEL_CHANGE)
@@ -2020,8 +2020,8 @@ namespace TFE_DarkForces
 		}
 
 		// Clamp the height if needed.
-		fixed16_16 yTop = player->posWS.y - s_colMinHeight;
-		fixed16_16 yBot = player->posWS.y - s_colMaxHeight + 0x4000;
+		fixed16_16 yTop = player->posWS.y - s_colExtCeilHeight;
+		fixed16_16 yBot = player->posWS.y - s_colExtFloorHeight + 0x4000;
 		if (player->worldHeight - s_camOffset.y > yTop)
 		{
 			player->worldHeight = yTop + s_camOffset.y;

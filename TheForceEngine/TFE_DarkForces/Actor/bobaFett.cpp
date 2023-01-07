@@ -948,7 +948,7 @@ namespace TFE_DarkForces
 
 		physicsActor->moveMod.collisionFlags &= 0xfffffff8;
 		physicsActor->moveMod.collisionFlags |= 6;
-		physicsActor->moveMod.physics.yPos = FIXED(9999);
+		physicsActor->moveMod.physics.yPos = COL_INFINITY;
 		physicsActor->moveMod.physics.height = obj->worldHeight;
 
 		LogicAnimation* anim = &physicsActor->anim;

@@ -1,5 +1,6 @@
 #include "rwall.h"
 #include "rsector.h"
+#include <TFE_Jedi/Collision/collision.h>
 
 namespace TFE_Jedi
 {
@@ -154,8 +155,8 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			*topRes = FIXED(9999);
-			*botRes = -FIXED(9999);
+			*topRes = COL_INFINITY;
+			*botRes = -COL_INFINITY;
 		}
 	}
 } // namespace TFE_Jedi

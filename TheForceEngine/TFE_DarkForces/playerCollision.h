@@ -30,10 +30,11 @@ namespace TFE_DarkForces
 	extern fixed16_16 s_colCurLowestFloor;
 	extern fixed16_16 s_colCurHighestCeil;
 	extern fixed16_16 s_colCurBot;
-	extern fixed16_16 s_colMinHeight;
-	extern fixed16_16 s_colMaxHeight;
+	extern fixed16_16 s_colExtCeilHeight;
+	extern fixed16_16 s_colExtFloorHeight;
 
-	extern RSector* s_nextSector;
+	extern RSector* s_colMinSector;
+	extern RSector* s_colMaxSector;
 	extern RWall* s_colWall0;
 	extern vec2_fixed s_colResponseDir;
 	extern JBool s_colResponseStep;

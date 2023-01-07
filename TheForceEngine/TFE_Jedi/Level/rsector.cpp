@@ -175,9 +175,9 @@ namespace TFE_Jedi
 		}
 
 		sector->colFloorHeight = floorHeight;
-		sector->colCeilHeight = ceilHeight;
-		sector->colSecHeight = secHeight;
-		sector->colMinHeight = ceilHeight;
+		sector->colCeilHeight  = ceilHeight;
+		sector->colSecHeight   = secHeight;
+		sector->colSecCeilHeight = ceilHeight;
 	}
 
 	void sector_computeBounds(RSector* sector)
@@ -1012,7 +1012,7 @@ namespace TFE_Jedi
 			{
 				obj,
 				offsetX, offsetY, offsetZ,
-				0, FIXED(9999), height, 0,
+				0, COL_INFINITY, height, 0,
 				0, 0, 0,	// to be filled in later.
 				obj->worldWidth,
 			};
@@ -1255,7 +1255,7 @@ namespace TFE_Jedi
 			{
 				obj,
 				offsetX, 0, offsetZ,
-				0, FIXED(9999), height, 0,
+				0, COL_INFINITY, height, 0,
 				0, 0, 0,	// to be filled in later.
 				obj->worldWidth,
 			};

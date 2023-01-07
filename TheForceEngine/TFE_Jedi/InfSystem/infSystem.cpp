@@ -14,6 +14,7 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
+#include <TFE_Jedi/Collision/collision.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
@@ -361,8 +362,8 @@ namespace TFE_Jedi
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_FLOOR);
 				link = inf_addElevatorToSector(elev, sector);
 
-				fixed16_16 maxFloor = -FIXED(9999);
-				fixed16_16 minFloor = FIXED(9999);
+				fixed16_16 maxFloor = -COL_INFINITY;
+				fixed16_16 minFloor =  COL_INFINITY;
 				s32 wallCount = sector->wallCount;
 				RWall* wall = sector->walls;
 				for (s32 i = 0; i < wallCount; i++, wall++)
@@ -731,7 +732,14 @@ namespace TFE_Jedi
 		const char* line;
 
 		MessageAddress* msgAddr = message_getAddress(itemName);
+		// This means the level is most likely broken. But better to write an error and return than crash.
+		if (!msgAddr)
+		{
+			return false;
+		}
+
 		RSector* sector = msgAddr->sector;
+		assert(sector);
 		KEYWORD itemSubclass = getKeywordIndex(s_infArg1);
 
 		InfElevator* elev = nullptr;

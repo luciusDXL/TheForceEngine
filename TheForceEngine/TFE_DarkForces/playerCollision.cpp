@@ -42,17 +42,11 @@ namespace TFE_DarkForces
 	fixed16_16 s_colHeight;
 	fixed16_16 s_colDoubleRadius;
 	fixed16_16 s_colHeightBase;
-	fixed16_16 s_colMaxBaseHeight;
-	fixed16_16 s_colMinBaseHeight;
+	fixed16_16 s_colRealFloorHeight;
+	fixed16_16 s_colRealCeilHeight;
 	fixed16_16 s_colBottom;
 	fixed16_16 s_colTop;
 	fixed16_16 s_colY1;
-	fixed16_16 s_colBaseFloorHeight;
-	fixed16_16 s_colBaseCeilHeight;
-	fixed16_16 s_colFloorHeight;
-	fixed16_16 s_colCeilHeight;
-	fixed16_16 s_colCurFloor;
-	fixed16_16 s_colCurCeil;
 	fixed16_16 s_colCurTop;
 	angle14_32 s_colResponseAngle;
 	vec2_fixed s_colResponsePos;
@@ -68,14 +62,15 @@ namespace TFE_DarkForces
 	fixed16_16 s_colCurLowestFloor;
 	fixed16_16 s_colCurHighestCeil;
 	fixed16_16 s_colCurBot;
-	fixed16_16 s_colMinHeight;
-	fixed16_16 s_colMaxHeight;
+	fixed16_16 s_colExtCeilHeight;
+	fixed16_16 s_colExtFloorHeight;
 	
 	fixed16_16 s_colWidth;
 	fixed16_16 s_colDstPosX;
 	fixed16_16 s_colDstPosY;
 	fixed16_16 s_colDstPosZ;
-	RSector* s_nextSector;
+	RSector* s_colMaxSector;
+	RSector* s_colMinSector;
 	RWall* s_colWall0;
 	JBool s_colResponseStep;
 	JBool s_objCollisionEnabled = JTRUE;
@@ -219,61 +214,44 @@ namespace TFE_DarkForces
 
 	// Get the "feature" to collide against, such as an object or wall.
 	// Returns JFALSE if collision else JTRUE
-	u32 col_getCollisionFeature(RSector* sector, u32 passability)
+	u32 col_getCollisionFeature(RSector* sector, JBool ignore)
 	{
-		s_colBaseFloorHeight = sector->floorHeight;
-		s_colBaseCeilHeight  = sector->ceilingHeight;
-		s_colFloorHeight     = sector->colFloorHeight;
-		s_colCeilHeight      = sector->colCeilHeight;
+		fixed16_16 realFloorHeight = sector->floorHeight;
+		fixed16_16 realCeilHeight  = sector->ceilingHeight;
+		fixed16_16 extFloorHeight  = sector->colFloorHeight;
+		fixed16_16 extCeilHeight   = sector->colCeilHeight;
+		fixed16_16 curFloor, curCeil;
 
 		if (sector->secHeight < 0 && s_colDstPosY > sector->colSecHeight)
 		{
-			s_colCurFloor = s_colFloorHeight;
-			s_colCurCeil = s_colBaseFloorHeight + sector->secHeight;
+			curFloor = extFloorHeight;
+			curCeil  = realFloorHeight + sector->secHeight;
 		}
 		else
 		{
-			s_colCurFloor = sector->colSecHeight;
-			s_colCurCeil  = sector->colMinHeight;	// why not sector->colCeilHeight?
+			curFloor = sector->colSecHeight;
+			curCeil  = sector->colSecCeilHeight;
 		}
 
-		if (s_colMaxBaseHeight >= s_colBaseFloorHeight)
-		{
-			s_colMaxBaseHeight = s_colBaseFloorHeight;
-		}
-		if (s_colMinBaseHeight <= s_colBaseCeilHeight)
-		{
-			s_colMinBaseHeight = s_colBaseCeilHeight;
-		}
-		if (s_colMaxHeight >= s_colFloorHeight)
-		{
-			s_colMaxHeight = s_colFloorHeight;
-		}
-		if (s_colMinHeight <= s_colCeilHeight)
-		{
-			s_colMinHeight = s_colCeilHeight;
-		}
-		if (s_colCurLowestFloor >= s_colCurFloor)
-		{
-			s_colCurLowestFloor = s_colCurFloor;
-		}
-		if (s_colCurHighestCeil <= s_colCurCeil)
-		{
-			s_colCurHighestCeil = s_colCurCeil;
-		}
+		s_colRealFloorHeight = min(realFloorHeight, s_colRealFloorHeight);
+		s_colRealCeilHeight  = max(realCeilHeight, s_colRealCeilHeight);
+		s_colExtFloorHeight  = min(extFloorHeight, s_colExtFloorHeight);
+		s_colExtCeilHeight   = max(extCeilHeight, s_colExtCeilHeight);
+		s_colCurLowestFloor  = min(curFloor, s_colCurLowestFloor);
+		s_colCurHighestCeil  = max(curCeil,  s_colCurHighestCeil);
 
-		if (s_colCurCeil > s_colCurTop)
+		if (s_colCurHighestCeil > s_colCurTop)
 		{
-			s_colCurTop = s_colCurCeil;
-			// s_2c865c = sector;
+			s_colCurTop = s_colCurHighestCeil;
+			s_colMaxSector = sector;
 		}
 		if (s_colCurLowestFloor < s_colCurBot)
 		{
 			s_colCurBot = s_colCurLowestFloor;
-			s_nextSector = sector;
+			s_colMinSector = sector;
 		}
 
-		if (passability == PASS_ALWAYS_WALK || (s_colCurBot >= s_colBottom && s_colCurTop <= s_colTop && TFE_Jedi::abs(s_colCurBot - s_colCurTop) >= s_colHeight && s_colCurFloor <= s_colY1))
+		if (ignore || (s_colCurBot >= s_colBottom && s_colCurTop <= s_colTop && TFE_Jedi::abs(s_colCurBot - s_colCurTop) >= s_colHeight && curFloor <= s_colY1))
 		{
 			s_collidedObj = col_findObjectCollision(sector);
 			if (s_collidedObj)
@@ -317,7 +295,7 @@ namespace TFE_DarkForces
 							fixed16_16 srcY = s_colSrcPosY;
 							fixed16_16 secHeight = next->colSecHeight;
 							// If the path starts *above* the second height and then ends at or *below* it.
-							if (srcY <= secHeight && s_colY1 >= secHeight && s_colTop > next->colMinHeight)
+							if (srcY <= secHeight && s_colY1 >= secHeight && s_colTop > next->colSecCeilHeight)
 							{
 								sideTest = JFALSE;
 							}
@@ -361,7 +339,7 @@ namespace TFE_DarkForces
 									s_colWallCollided = wall;
 									return JFALSE;
 								}
-								if (s_colTop < next->colMinHeight)
+								if (s_colTop < next->colSecCeilHeight)
 								{
 									s_colWallCollided = wall;
 									return JFALSE;
@@ -370,8 +348,8 @@ namespace TFE_DarkForces
 							// Check to see if this sector has already been tested this "collision frame"
 							if (s_collisionFrameSector != next->collisionFrame)
 							{
-								u32 passability = ((wall->flags3 & (WF3_ALWAYS_WALK | WF3_SOLID_WALL)) == WF3_ALWAYS_WALK) ? PASS_ALWAYS_WALK : PASS_DEFAULT;
-								if (!col_getCollisionFeature(next, passability))
+								JBool ignore = (wall->flags3 & (WF3_ALWAYS_WALK | WF3_SOLID_WALL)) == WF3_ALWAYS_WALK ? JTRUE : JFALSE;
+								if (!col_getCollisionFeature(next, ignore))
 								{
 									if (!s_colWallCollided) { s_colWallCollided = wall; }
 									return JFALSE;
@@ -395,29 +373,21 @@ namespace TFE_DarkForces
 	// Returns JFALSE if there was a collision.
 	JBool col_computeCollisionResponse(RSector* sector)
 	{
-		fixed16_16 mx =  FIXED(9999);
-		fixed16_16 mn = -FIXED(9999);
-		//s_28262c = mx;
-		//s_282630 = -mn;
-		fixed16_16 mx2 = mx;
-		fixed16_16 mn2 = mn;
-		s_colMaxBaseHeight = mx;
-		
-		s_colMinBaseHeight = mn;
-		s_colMaxHeight = mx;
-		s_colMinHeight = mn;
-		s_colCurLowestFloor = mx;
-		s_colCurHighestCeil = mn;
-
-		s_colCurBot = mx;
-		s_colCurTop = mn;
+		s_colRealFloorHeight =  COL_INFINITY;
+		s_colRealCeilHeight  = -COL_INFINITY;
+		s_colExtFloorHeight  =  COL_INFINITY;
+		s_colExtCeilHeight   = -COL_INFINITY;
+		s_colCurLowestFloor  =  COL_INFINITY;
+		s_colCurHighestCeil  = -COL_INFINITY;
+		s_colCurBot =  COL_INFINITY;
+		s_colCurTop = -COL_INFINITY;
 
 		s_collisionFrameSector++;
 		s_colWallCollided = nullptr;
 		s_colDoubleRadius = s_colWidth + s_colWidth;
 		s_colResponseStep = JFALSE;
 		// Is there a collision?
-		if (!col_getCollisionFeature(sector, PASS_ALWAYS_WALK))
+		if (!col_getCollisionFeature(sector, JFALSE))
 		{
 			s_colWall0 = s_colWallCollided;
 			if (s_colWall0)
@@ -482,8 +452,8 @@ namespace TFE_DarkForces
 		s_colSrcPosZ = obj->posWS.z;
 		s_colTop = obj->posWS.y - obj->worldHeight - ONE_16;
 
-		s_colY1 = FIXED(9999);
-		s_colHeight = obj->worldHeight + ONE_16;
+		s_colY1 = COL_INFINITY;
+		s_colHeight = obj->worldHeight + HALF_16;	// this is 1.0 is DOS, but needs to be lowered in TFE due to framerate differences.
 		RSector* sector = obj->sector;
 
 		s_colWall0 = nullptr;

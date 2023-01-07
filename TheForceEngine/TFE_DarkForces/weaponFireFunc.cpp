@@ -14,7 +14,7 @@ namespace TFE_DarkForces
 {
 	enum WeaponFireConst
 	{
-		MAX_AUTOAIM_DIST = FIXED(9999),
+		MAX_AUTOAIM_DIST = COL_INFINITY,
 	};
 
 	static SoundEffectId s_punchSwingSndId = 0;

@@ -619,7 +619,7 @@ namespace TFE_DarkForces
 					{
 						item,	// obj
 						FIXED(2), 0, FIXED(2),	// offset
-						ONE_16, FIXED(9999), ONE_16, 0,	// botOffset, yPos, height, u1c
+						ONE_16, COL_INFINITY, ONE_16, 0,	// botOffset, yPos, height, u1c
 						nullptr, 0, nullptr,
 						item->worldWidth, 0,
 						JFALSE,

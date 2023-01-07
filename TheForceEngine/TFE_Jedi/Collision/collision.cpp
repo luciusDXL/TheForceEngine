@@ -22,17 +22,11 @@ namespace TFE_DarkForces
 	extern fixed16_16 s_colHeight;
 	extern fixed16_16 s_colDoubleRadius;
 	extern fixed16_16 s_colHeightBase;
-	extern fixed16_16 s_colMaxBaseHeight;
-	extern fixed16_16 s_colMinBaseHeight;
+	extern fixed16_16 s_colRealFloorHeight;
+	extern fixed16_16 s_colRealCeilHeight;
 	extern fixed16_16 s_colBottom;
 	extern fixed16_16 s_colTop;
 	extern fixed16_16 s_colY1;
-	extern fixed16_16 s_colBaseFloorHeight;
-	extern fixed16_16 s_colBaseCeilHeight;
-	extern fixed16_16 s_colFloorHeight;
-	extern fixed16_16 s_colCeilHeight;
-	extern fixed16_16 s_colCurFloor;
-	extern fixed16_16 s_colCurCeil;
 	extern fixed16_16 s_colCurTop;
 	extern angle14_32 s_colResponseAngle;
 	extern vec2_fixed s_colResponsePos;
@@ -56,7 +50,7 @@ namespace TFE_Jedi
 		fixed16_16 z1;
 	};
 
-	static const fixed16_16 c_maxCollisionDist = FIXED(9999);
+	static const fixed16_16 c_maxCollisionDist = COL_INFINITY;
 	static const fixed16_16 c_minTraversableOpening = HALF_16;
 
 	enum IntersectionResult
@@ -688,7 +682,7 @@ namespace TFE_Jedi
 		fixed16_16 bot = s_hcolSrcPos.y - colInfo->botOffset;
 
 		colInfo->responseStep = JFALSE;
-		fixed16_16 yMax = (colInfo->flags & 1) ? (s_hcolSrcPos.y + FIXED(9999)) : (s_hcolSrcPos.y + colInfo->yPos);
+		fixed16_16 yMax = (colInfo->flags & 1) ? (s_hcolSrcPos.y + COL_INFINITY) : (s_hcolSrcPos.y + colInfo->yPos);
 		colInfo->flags &= ~1;
 
 		// Cross walls until the collision path hits something solid.

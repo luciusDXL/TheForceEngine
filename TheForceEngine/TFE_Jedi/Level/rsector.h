@@ -95,7 +95,7 @@ struct RSector
 	fixed16_16 colFloorHeight;
 	fixed16_16 colCeilHeight;
 	fixed16_16 colSecHeight;
-	fixed16_16 colMinHeight;
+	fixed16_16 colSecCeilHeight;
 
 	// INF
 	Allocator* infLink;
