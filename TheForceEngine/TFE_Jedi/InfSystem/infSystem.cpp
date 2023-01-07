@@ -639,23 +639,17 @@ namespace TFE_Jedi
 
 	Stop* inf_getStopByIndex(InfElevator* elev, s32 index)
 	{
-		Allocator* stops = elev->stops;
-		if (!stops)
+		Stop* stop = nullptr;
+		if (elev->stops)
 		{
-			return nullptr;
-		}
-
-		Stop* stop = (Stop*)allocator_getHead(stops);
-		while (stop)
-		{
-			index--;
-			if (index == -1)
+			stop = (Stop*)allocator_getHead(elev->stops);
+			while (index--)
 			{
-				return stop;
+				stop = (Stop*)allocator_getNext(elev->stops);
 			}
-			stop = (Stop*)allocator_getNext(stops);
+			assert(stop);
 		}
-		return nullptr;
+		return stop;
 	}
 
 	void inf_addSlave(InfElevator* elev, fixed16_16 value, RSector* sector)
