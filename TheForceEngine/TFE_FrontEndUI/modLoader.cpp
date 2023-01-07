@@ -636,6 +636,40 @@ namespace TFE_FrontEndUI
 			}
 		}
 
+		// Second pass - look for "name": - JSon syntax.
+		const char* jsonName = "\"name\":";
+		bufferPos = 0;
+		size_t nameLen = strlen(jsonName);
+		while (!foundTitle)
+		{
+			const char* line = parser.readLine(bufferPos, true);
+			if (!line)
+			{
+				break;
+			}
+			if (strncasecmp(jsonName, line, nameLen) == 0)
+			{
+				size_t lineLen = strlen(line);
+				for (size_t c = nameLen + 1; c < lineLen && !foundTitle; c++)
+				{
+					if (line[c] == '\"')
+					{
+						for (size_t c2 = c + 1; c2 < lineLen; c2++)
+						{
+							if (line[c2] == '\"')
+							{
+								// Found it.
+								memcpy(name, &line[c + 1], c2 - c - 1);
+								name[c2 - c - 1] = 0;
+								foundTitle = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
 		if (!foundTitle)
 		{
 			// Looking for "Title" failed, try reading the first 'valid' line.
@@ -681,9 +715,11 @@ namespace TFE_FrontEndUI
 			{
 				name[lastValid + 1] = 0;
 			}
-			return true;
+			if (lastValid && name[0] != '/')
+			{
+				return true;
+			}
 		}
-
 		return false;
 	}
 
