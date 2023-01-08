@@ -259,7 +259,7 @@ namespace TFE_DarkForces
 				else if (!s_lastSelectedAgent && s_agentId >= 0 && s_agentData[s_agentId].nextMission > 1)
 				{
 					s_selectedMission++;
-					if (s_selectedMission > s_agentData[s_agentId].nextMission - 1) { s_selectedMission = 0; }
+					if (s_selectedMission > s_agentData[s_agentId].nextMission - 1 || s_selectedMission == 14) { s_selectedMission = 0; }
 				}
 			}
 			else if (TFE_Input::bufferedKeyDown(KEY_UP))
