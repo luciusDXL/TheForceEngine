@@ -7,6 +7,21 @@
 
 namespace TFE_AudioDevice
 {
+	static const char* c_audioErrorType[] =
+	{
+		"WARNING",           /*!< A non-critical error. */
+		"DEBUG_WARNING",     /*!< A non-critical error which might be useful for debugging. */
+		"UNSPECIFIED",       /*!< The default, unspecified error type. */
+		"NO_DEVICES_FOUND",  /*!< No devices found on system. */
+		"INVALID_DEVICE",    /*!< An invalid device ID was specified. */
+		"MEMORY_ERROR",      /*!< An error occured during memory allocation. */
+		"INVALID_PARAMETER", /*!< An invalid parameter was specified to a function. */
+		"INVALID_USE",       /*!< The function was called incorrectly. */
+		"DRIVER_ERROR",      /*!< A system driver error occured. */
+		"SYSTEM_ERROR",      /*!< A system error occured. */
+		"THREAD_ERROR"       /*!< A thread error occured. */
+	};
+
 	static RtAudio* s_device = NULL;
 	static u32 s_outputDevice;
 	static u32 s_inputDevice;
@@ -40,9 +55,9 @@ namespace TFE_AudioDevice
 		{
 			s_device = new RtAudio();
 		}
-		catch(...)
+		catch(RtAudioError& error)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot initialize the audio system.");
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot initialize the audio system. Error: '%s', type: '%s'", error.getMessage().c_str(), c_audioErrorType[error.getType()]);
 			s_device = nullptr;
 		}
 		if (!s_device) { return false; }
@@ -104,12 +119,15 @@ namespace TFE_AudioDevice
 		try
 		{
 			s_defaultOutputDeviceId = s_device->getDefaultOutputDevice();
+			TFE_System::logWrite(LOG_MSG, "Audio", "Default Audio Output ID: %u.", s_defaultOutputDeviceId);
 
 			s_outputDeviceList.clear();
 			u32 deviceCount = s_device->getDeviceCount();
+			TFE_System::logWrite(LOG_MSG, "Audio", "Device Count: %u.", deviceCount);
 			for (u32 i = 0; i < deviceCount; i++)
 			{
 				RtAudio::DeviceInfo srcInfo = s_device->getDeviceInfo(i);
+				TFE_System::logWrite(LOG_MSG, "Audio", "Device: '%s', ID: %u, Output Channel Count: %u.", srcInfo.name.c_str(), i, srcInfo.outputChannels);
 				if (srcInfo.outputChannels < 2)
 				{
 					continue;
@@ -118,16 +136,16 @@ namespace TFE_AudioDevice
 			}
 			return !s_outputDeviceList.empty();
 		}
-		catch (...)
+		catch (RtAudioError& error)
 		{
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot query audio output devices.");
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot query audio output devices. Error: '%s', type: '%s'", error.getMessage().c_str(), c_audioErrorType[error.getType()]);
 		}
 		return false;
 	}
 
 	void errorCallback(RtAudioError::Type type, const std::string &errorText)
 	{
-		TFE_System::logWrite(LOG_ERROR, "Audio Device", "%s", errorText.c_str());
+		TFE_System::logWrite(LOG_ERROR, "Audio Device", "Error: '%s', type: '%s'", errorText.c_str(), c_audioErrorType[type]);
 	}
 
 	bool startOutput(StreamCallback callback, void* userData, u32 channels, u32 sampleRate)
@@ -153,9 +171,10 @@ namespace TFE_AudioDevice
 			s_device->startStream();
 			s_streamStarted = true;
 		}
-		catch (...)
+		catch (RtAudioError& error)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio stream for output device %u.", s_outputDevice);
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Error: '%s', type: '%s'", error.getMessage().c_str(), c_audioErrorType[error.getType()]);
 			s_streamStarted = false;
 			return false;
 		}
