@@ -1070,7 +1070,7 @@ namespace TFE_Jedi
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
-					model_add(obj->model, posWS, obj->transform, ambient, floorOffset, portalInfo);
+					model_add(obj, obj->model, posWS, obj->transform, ambient, floorOffset, portalInfo);
 				}
 			}
 		}

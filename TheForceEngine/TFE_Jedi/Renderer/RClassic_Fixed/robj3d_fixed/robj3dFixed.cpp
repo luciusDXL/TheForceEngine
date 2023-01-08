@@ -15,6 +15,9 @@
 namespace TFE_Jedi
 {
 
+extern s32 s_drawnObjCount;
+extern SecObject* s_drawnObj[];
+
 namespace RClassic_Fixed
 {
 	void robj3d_projectVertices(vec3_fixed* pos, s32 count, vec3_fixed* out);
@@ -44,6 +47,7 @@ namespace RClassic_Fixed
 
 		// Draw polygons
 		JmPolygon** visPolygon = s_visPolygons;
+		JBool drawn = JFALSE;
 		for (s32 i = 0; i < visPolygonCount; i++, visPolygon++)
 		{
 			JmPolygon* polygon = *visPolygon;
@@ -54,12 +58,18 @@ namespace RClassic_Fixed
 			s32 polyVertexCount = clipPolygon(polygon);
 			// Cull the polygon if not enough vertices survive clipping.
 			if (polyVertexCount < 3) { continue; }
+			drawn = JTRUE;
 
 			// Project the resulting vertices.
 			robj3d_projectVertices(s_polygonVerticesVS, polyVertexCount, s_polygonVerticesProj);
 
 			// Draw polygon based on its shading mode.
 			robj3d_drawPolygon(polygon, polyVertexCount, obj, model);
+		}
+
+		if (drawn && s_drawnObjCount < MAX_DRAWN_OBJ_STORE)
+		{
+			s_drawnObj[s_drawnObjCount++] = obj;
 		}
 	}
 		

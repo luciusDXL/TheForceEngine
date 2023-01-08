@@ -462,7 +462,7 @@ namespace TFE_Jedi
 		s_flatCount  = 0;
 		s_nextWall   = 0;
 		s_curWallSeg = 0;
-		s_drawnSpriteCount = 0;
+		s_drawnObjCount = 0;
 
 		s_prevSector = nullptr;
 		s_sectorIndex = 0;

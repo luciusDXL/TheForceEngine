@@ -19,6 +19,6 @@ namespace TFE_Jedi
 	void model_drawListClear();
 	void model_drawListFinish();
 
-	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, u32 portalInfo);
+	void model_add(void* obj, JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, u32 portalInfo);
 	void model_drawList();
 }  // TFE_Jedi

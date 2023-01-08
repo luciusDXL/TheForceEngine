@@ -2129,21 +2129,21 @@ namespace TFE_DarkForces
 
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation)
 	{
-		if (!s_drawnSpriteCount || !TFE_Settings::getGameSettings()->df_enableAutoaim)
+		if (!s_drawnObjCount || !TFE_Settings::getGameSettings()->df_enableAutoaim)
 		{
 			return JFALSE;
 		}
 		fixed16_16 closest = MAX_AUTOAIM_DIST;
-		s32 count = s_drawnSpriteCount;
+		s32 count = s_drawnObjCount;
 		for (s32 i = 0; i < count; i++)
 		{
-			SecObject* obj = s_drawnSprites[i];
-			if (obj && (obj->flags & OBJ_FLAG_ENEMY))
+			SecObject* obj = s_drawnObj[i];
+			if (obj && (obj->flags & OBJ_FLAG_AIM))
 			{
 				fixed16_16 dx = obj->posWS.x - xPos;
 				fixed16_16 dz = obj->posWS.z - zPos;
 
-				fixed16_16 top = obj->posWS.y - (obj->worldHeight >> 1) - (obj->worldHeight >> 2);
+				fixed16_16 top = obj->posWS.y - ((obj->worldHeight >> 1) + (obj->worldHeight >> 2));
 				fixed16_16 dy = top - yPos;
 
 				angle14_32 angle = vec2ToAngle(dx, dz) & ANGLE_MASK;
@@ -2152,8 +2152,9 @@ namespace TFE_DarkForces
 				{
 					continue;
 				}
+
 				fixed16_16 dist = computeDirAndLength(dx, dz, &s_autoAimDirX, &s_autoAimDirZ);
-				if (dist > 0 && dist < closest)
+				if (dist < closest)
 				{
 					closest = dist;
 					s_weaponFireYaw = angle;

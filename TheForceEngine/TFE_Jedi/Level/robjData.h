@@ -24,7 +24,7 @@ enum ObjectType
 enum ObjectFlags
 {
 	OBJ_FLAG_NONE = 0,
-	OBJ_FLAG_ENEMY           = FLAG_BIT(0),  // Enemy Unit
+	OBJ_FLAG_AIM             = FLAG_BIT(0),  // An object that can be aimed at.
 	OBJ_FLAG_EYE             = FLAG_BIT(1),  // Eye
 	OBJ_FLAG_NEEDS_TRANSFORM = FLAG_BIT(2),  // Object needs to be transformed and rendered.
 	OBJ_FLAG_FULLBRIGHT      = FLAG_BIT(3),  // Rendered as fullbright (not lit).

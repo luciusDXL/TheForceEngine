@@ -31,6 +31,9 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
+	extern s32 s_drawnObjCount;
+	extern SecObject* s_drawnObj[];
+
 	enum ModelShader
 	{
 		MGPU_SHADER_SOLID = 0,
@@ -68,6 +71,7 @@ namespace TFE_Jedi
 		Vec4f lightData;
 		f32 transform[9];
 		u32 portalInfo;
+		void* obj;
 	};
 
 	static const AttributeMapping c_modelAttrMapping[] =
@@ -662,7 +666,7 @@ namespace TFE_Jedi
 	{
 	}
 
-	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, u32 portalInfo)
+	void model_add(void* obj, JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, u32 portalInfo)
 	{
 		// Make sure the model has been assigned a GPU ID.
 		if (!model || model->drawId < 0)
@@ -687,6 +691,7 @@ namespace TFE_Jedi
 		drawItem->modelId = model->drawId;
 		drawItem->posWS = posWS;
 		drawItem->portalInfo = portalInfo;
+		drawItem->obj = obj;
 		for (s32 i = 0; i < 9; i++)
 		{
 			drawItem->transform[i] = fixed16ToFloat(transform[i]);
@@ -735,6 +740,11 @@ namespace TFE_Jedi
 
 				// Draw the geometry (note a single vertex/index buffer is used, so this is just a count and start offset).
 				TFE_RenderBackend::drawIndexedTriangles(model->polyCount, sizeof(u32), model->indexStart);
+
+				if (s_drawnObjCount < MAX_DRAWN_OBJ_STORE)
+				{
+					s_drawnObj[s_drawnObjCount++] = (SecObject*)drawItem->obj;
+				}
 			}
 		}
 

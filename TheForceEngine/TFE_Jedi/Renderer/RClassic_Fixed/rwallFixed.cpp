@@ -2328,9 +2328,9 @@ namespace RClassic_Fixed
 			}
 		}
 
-		if (drawn && s_drawnSpriteCount < MAX_DRAWN_SPRITE_STORE)
+		if (drawn && s_drawnObjCount < MAX_DRAWN_OBJ_STORE)
 		{
-			s_drawnSprites[s_drawnSpriteCount++] = obj;
+			s_drawnObj[s_drawnObjCount++] = obj;
 		}
 	}
 }  // RClassic_Fixed

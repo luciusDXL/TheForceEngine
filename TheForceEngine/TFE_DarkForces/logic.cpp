@@ -188,7 +188,7 @@ namespace TFE_DarkForces
 
 	Logic* obj_setEnemyLogic(SecObject* obj, KEYWORD logicId, LogicSetupFunc* setupFunc)
 	{
-		obj->flags |= OBJ_FLAG_ENEMY;
+		obj->flags |= OBJ_FLAG_AIM;
 
 		switch (logicId)
 		{
@@ -309,7 +309,7 @@ namespace TFE_DarkForces
 			} break;
 			case KW_SCENERY:
 			{
-				obj->flags &= ~OBJ_FLAG_ENEMY;
+				obj->flags &= ~OBJ_FLAG_AIM;
 				obj->entityFlags = ETFLAG_SCENERY;
 				return scenery_setup(obj, setupFunc);
 			} break;

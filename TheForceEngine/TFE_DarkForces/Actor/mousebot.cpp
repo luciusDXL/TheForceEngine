@@ -443,7 +443,7 @@ namespace TFE_DarkForces
 		Task* mouseBotTask = createSubTask(name, mouseBotTaskFunc, mouseBotLocalMsgFunc);
 		task_setUserData(mouseBotTask, mouseBot);
 
-		obj->flags &= ~OBJ_FLAG_ENEMY;
+		obj->flags &= ~OBJ_FLAG_AIM;
 		obj->entityFlags = ETFLAG_AI_ACTOR;
 		mouseBot->logic.obj = obj;
 

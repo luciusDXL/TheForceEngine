@@ -604,7 +604,7 @@ namespace TFE_DarkForces
 					sprite_setData(projObj, s_homingMissileProj);
 				}
 				obj_setSpriteAnim(projObj);
-				projObj->flags |= OBJ_FLAG_ENEMY;
+				projObj->flags |= OBJ_FLAG_AIM;
 
 				projLogic->flags |= PROJFLAG_EXPLODE;
 				projLogic->type = PROJ_HOMING_MISSILE;

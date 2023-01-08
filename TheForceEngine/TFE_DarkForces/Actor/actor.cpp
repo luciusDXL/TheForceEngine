@@ -309,7 +309,7 @@ namespace TFE_DarkForces
 		MovementModule* moveMod = logic->moveMod;
 		moveMod->collisionFlags |= 2;
 		// Added to disable auto-aim when dying.
-		logic->logic.obj->flags &= ~OBJ_FLAG_ENEMY;
+		logic->logic.obj->flags &= ~OBJ_FLAG_AIM;
 	}
 
 	// Returns JTRUE if the object is on the floor, or JFALSE is not on the floor or moving too fast.
