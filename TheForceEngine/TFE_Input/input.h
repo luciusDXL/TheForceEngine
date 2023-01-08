@@ -51,7 +51,7 @@ namespace TFE_Input
 	bool buttonPressed(Button button);
 	bool keyDown(KeyboardCode key);
 	bool keyPressed(KeyboardCode key);
-	bool keyModDown(KeyModifier keyMod);
+	bool keyModDown(KeyModifier keyMod, bool allowAltOnNone = false);
 	bool mouseDown(MouseButton button);
 	bool mousePressed(MouseButton button);
 	bool relativeModeEnabled();

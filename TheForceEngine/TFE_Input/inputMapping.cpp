@@ -293,6 +293,11 @@ namespace TFE_Input
 		}
 	}
 
+	bool inputMapping_isMovementAction(InputAction action)
+	{
+		return action >= IADF_FORWARD && action <= IADF_LOOK_DN;
+	}
+
 	void inputMapping_updateInput()
 	{
 		for (u32 i = 0; i < s_inputConfig.bindCount; i++)
@@ -302,7 +307,9 @@ namespace TFE_Input
 			{
 				case ITYPE_KEYBOARD:
 				{
-					if (TFE_Input::keyModDown(bind->keyMod))
+					const bool keyIsMod = bind->keyMod == bind->keyCode || bind->keyMod == KEYMOD_NONE;
+					const bool keyIsAlt = bind->keyCode == KEY_LALT || bind->keyCode == KEY_RALT;
+					if (TFE_Input::keyModDown(bind->keyMod, inputMapping_isMovementAction(bind->action)) || (keyIsMod && keyIsAlt))
 					{
 						if (TFE_Input::keyPressed(bind->keyCode))
 						{
@@ -316,7 +323,7 @@ namespace TFE_Input
 				} break;
 				case ITYPE_MOUSE:
 				{
-					if (TFE_Input::keyModDown(bind->keyMod))
+					if (TFE_Input::keyModDown(bind->keyMod, inputMapping_isMovementAction(bind->action)))
 					{
 						if (TFE_Input::mousePressed(bind->mouseBtn))
 						{

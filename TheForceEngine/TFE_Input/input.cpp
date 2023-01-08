@@ -290,13 +290,13 @@ namespace TFE_Input
 		return KEYMOD_NONE;
 	}
 		
-	bool keyModDown(KeyModifier keyMod)
+	bool keyModDown(KeyModifier keyMod, bool allowAltOnNone)
 	{
 		switch (keyMod)
 		{
 			case KEYMOD_NONE:
 			{
-				return !keyDown(KEY_LALT) && !keyDown(KEY_RALT);
+				return allowAltOnNone || (!keyDown(KEY_LALT) && !keyDown(KEY_RALT));
 			} break;
 			case KEYMOD_ALT:
 			{
