@@ -1024,7 +1024,7 @@ namespace TFE_Jedi
 				fixed16_16 dstPosX = floatToFixed16(strtof(s_infArg0, &endPtr));
 				fixed16_16 dstPosY = floatToFixed16(strtof(s_infArg1, &endPtr));
 				fixed16_16 dstPosZ = floatToFixed16(strtof(s_infArg2, &endPtr));
-				angle14_16 yaw = s16(strtof(s_infArg3, &endPtr) * 360.0f / 16383.0f);
+				angle14_16 yaw = floatToAngle(strtof(s_infArg3, &endPtr));
 
 				inf_setTeleportDestPosition(teleport, dstPosX, dstPosY, dstPosZ);
 				inf_setTeleportDestAngle(teleport, 0, yaw, 0);
@@ -1908,7 +1908,7 @@ namespace TFE_Jedi
 						// This is a bug (in the original code):
 						// This will always evaluate to 0 because strtof('@') = 0
 						value = strtof(s_infArg0, &endPtr);
-						stopValue = s32(value * 16383.0f / 360.0f);
+						stopValue = floatToAngle(value);
 						stopValue = floatToFixed16(f32(stopValue));
 					}
 				}
@@ -1926,7 +1926,7 @@ namespace TFE_Jedi
 					{
 						// Rotation stop values need to be converted to angles.
 						value = strtof(s_infArg0, &endPtr);
-						stopValue = s16(value * 45.5111f);
+						stopValue = floatToAngle(value);
 						stopValue = floatToFixed16(f32(stopValue));
 					}
 				}
@@ -1979,7 +1979,7 @@ namespace TFE_Jedi
 					f32 value = strtof(s_infArg0, &endPtr);
 					// 360 degrees is split into 16384 angular units.
 					// Speed is in angular units.
-					s32 speed = s32(value * 16383.0f / 360.0f);
+					s32 speed = floatToAngle(value);
 					// Then speed is converted to a fixed point value, essentially 14.16 fixed point.
 					elev->speed = intToFixed16(speed & 0xffff);
 				}
@@ -1997,7 +1997,7 @@ namespace TFE_Jedi
 			case KW_ANGLE:
 			{
 				f32 value = strtof(s_infArg0, &endPtr);
-				s32 angle = s32(value * 16383.0f / 360.0f);
+				s32 angle = floatToAngle(value);
 				inf_setDirFromAngle(elev, angle);
 			} break;
 			case KW_ADJOIN:
@@ -2055,7 +2055,7 @@ namespace TFE_Jedi
 				if (argCount > 2)
 				{
 					f32 value = strtof(s_infArg1, &endPtr);
-					slaveValue = s32(value * 16383.0f / 360.0f);
+					slaveValue = floatToAngle(value);
 				}
 				inf_addSlave(elev, slaveValue, msgAddr->sector);
 			} break;
