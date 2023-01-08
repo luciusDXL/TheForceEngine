@@ -82,7 +82,7 @@ namespace TFE_Jedi
 	void elevHandleStopDelay(InfElevator* elev);
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
 	bool inf_parseElevatorCommand(s32 argCount, KEYWORD action, Allocator* linkAlloc, bool seqEnd, InfElevator*& elev, s32& initStopIndex, InfLink*& link);
-	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, MessageType defType);
+	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, bool elevator = false);
 	void inf_setWallBits(RWall* wall);
 	void inf_clearWallBits(RWall* wall);
 
@@ -940,7 +940,7 @@ namespace TFE_Jedi
 				} break;
 				case KW_MESSAGE:
 				{
-					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_TRIGGER);
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2);
 				} break;
 				case KW_EVENT_MASK:
 				{
@@ -1176,7 +1176,7 @@ namespace TFE_Jedi
 				} break;
 				case KW_MESSAGE:
 				{
-					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_TRIGGER);
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2);
 				} break;
 			}  // switch (itemId)
 		}  // while (!seqEnd)
@@ -1821,7 +1821,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Internal
 	/////////////////////////////////////////////////////
-	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, MessageType defType)
+	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, bool elevator)
 	{
 		const KEYWORD msgId = getKeywordIndex(infArg0);
 
@@ -1844,9 +1844,6 @@ namespace TFE_Jedi
 			case KW_MASTER_OFF:
 				*type = MSG_MASTER_OFF;
 				break;
-			case KW_DONE:
-				*type = MSG_DONE;
-				break;
 			case KW_SET_BITS:
 				*type = MSG_SET_BITS;
 				*arg1 = strToUInt(infArg1);
@@ -1867,14 +1864,27 @@ namespace TFE_Jedi
 			case KW_LIGHTS:
 				*type = MSG_LIGHTS;
 				break;
-			case KW_WAKEUP:
-				*type = MSG_WAKEUP;
-				break;
 			case KW_M_TRIGGER:
-				*type = MSG_TRIGGER;
-				break;
 			default:
-				*type = defType;
+				if (elevator)
+				{
+					// Elevators can use a few additional message types, but these are treated as M_TRIGGER for either trigger type.
+					switch (msgId)
+					{
+						case KW_DONE:
+							*type = MSG_DONE;
+							break;
+						case KW_WAKEUP:
+							*type = MSG_WAKEUP;
+							break;
+						default:
+							*type = MSG_TRIGGER;
+					}
+				}
+				else // Trigger
+				{
+					*type = MSG_TRIGGER;
+				}
 		}
 	}
 		
@@ -2086,7 +2096,7 @@ namespace TFE_Jedi
 
 					if (argCount > 3)
 					{
-						inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, MSG_TRIGGER);
+						inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, true);
 					}
 				}
 			} break;
