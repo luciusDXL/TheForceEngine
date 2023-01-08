@@ -44,10 +44,9 @@ namespace TFE_AudioDevice
 		{
 			s_device = new RtAudio();
 		}
-		catch(RtAudioError e)
+		catch(...)
 		{
-			const std::string errmsg = e.getMessage();
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot initialize the audio system. '%s'", errmsg.c_str());
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot initialize the audio system.");
 			s_device = nullptr;
 		}
 		if (!s_device) { return false; }
@@ -123,10 +122,9 @@ namespace TFE_AudioDevice
 			}
 			return !s_outputDeviceList.empty();
 		}
-		catch (RtAudioError e)
+		catch (...)
 		{
-			const std::string msg = e.getMessage();
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot query audio output devices. '%s'", msg.c_str());
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot query audio output devices.");
 		}
 		return false;
 	}
@@ -159,10 +157,9 @@ namespace TFE_AudioDevice
 			s_device->startStream();
 			s_streamStarted = true;
 		}
-		catch (RtAudioError e)
+		catch (...)
 		{
-			const std::string msg = e.getMessage();
-			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio stream for output device %u: '%s'", s_outputDevice, msg.c_str());
+			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio stream for output device %u.", s_outputDevice);
 			s_streamStarted = false;
 			return false;
 		}
