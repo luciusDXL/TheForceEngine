@@ -360,6 +360,7 @@ namespace TFE_DarkForces
 					{
 						s_buttonPressed = s32(i);
 						s_buttonHover = JTRUE;
+						s_simulatePressed = 0;
 						break;
 					}
 				}
@@ -369,6 +370,7 @@ namespace TFE_DarkForces
 				{
 					s_buttonPressed = s32(i);
 					s_buttonHover = JTRUE;
+					if (i == s_simulatePressed) { s_simulatePressed = 0; }
 					break;
 				}
 			}
