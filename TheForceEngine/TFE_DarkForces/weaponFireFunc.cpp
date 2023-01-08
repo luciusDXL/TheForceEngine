@@ -2152,12 +2152,16 @@ namespace TFE_DarkForces
 					continue;
 				}
 
-				fixed16_16 dist = computeDirAndLength(dx, dz, &s_autoAimDirX, &s_autoAimDirZ);
+				fixed16_16 dirX, dirZ;
+				fixed16_16 dist = computeDirAndLength(dx, dz, &dirX, &dirZ);
 				if (dist < closest)
 				{
 					closest = dist;
 					s_weaponFireYaw = angle;
 					s_weaponFirePitch = vec2ToAngle(-dy, dist) & ANGLE_MASK;
+
+					s_autoAimDirX = dirX;
+					s_autoAimDirZ = dirZ;
 				}
 			}
 		}
