@@ -1027,6 +1027,7 @@ namespace TFE_Jedi
 
 		const f32 ambient = (s_flatLighting) ? f32(s_flatAmbient) : fixed16ToFloat(curSector->ambient);
 		const Vec2f floorOffset = { fixed16ToFloat(curSector->floorOffset.x), fixed16ToFloat(curSector->floorOffset.z) };
+		const Vec2f ceilOffset = { fixed16ToFloat(curSector->ceilOffset.x), fixed16ToFloat(curSector->ceilOffset.z) };
 
 		SecObject** objIter = curSector->objectList;
 		for (s32 i = 0; i < curSector->objectCount; objIter++)
@@ -1070,7 +1071,7 @@ namespace TFE_Jedi
 				}
 				else if (type == OBJ_TYPE_3D)
 				{
-					model_add(obj, obj->model, posWS, obj->transform, ambient, floorOffset, portalInfo);
+					model_add(obj, obj->model, posWS, obj->transform, ambient, floorOffset, ceilOffset, portalInfo);
 				}
 			}
 		}

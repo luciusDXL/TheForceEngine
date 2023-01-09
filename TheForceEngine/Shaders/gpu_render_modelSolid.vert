@@ -3,7 +3,7 @@ uniform vec3 CameraRight;
 uniform vec3 CameraDir;
 uniform mat3 CameraView;
 uniform mat4 CameraProj;
-uniform vec4 LightData;
+uniform vec2 LightData;
 
 uniform mat3 ModelMtx;
 uniform vec3 ModelPos;

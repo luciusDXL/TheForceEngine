@@ -4,7 +4,8 @@ uniform sampler2DArray Textures;
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
-uniform vec4 LightData;
+uniform vec2 LightData;
+uniform vec4 TextureOffsets;
 
 uniform isamplerBuffer TextureTable;
 
@@ -65,8 +66,13 @@ void main()
 		if (Frag_TextureMode > 0)
 		{
 			// Sector flat style projection.
-			// TODO: Handle both floor and ceiling offsets instead of just floor.
-			uv.xy = (Frag_WorldPos.xz - LightData.zw) * vec2(-8.0, 8.0);
+			// TODO: Handle non-flat polygons with this projection...
+			vec2 offset = TextureOffsets.xy;
+			if (Frag_WorldPos.y < CameraPos.y)
+			{
+				offset = TextureOffsets.zw;
+			}
+			uv.xy = (Frag_WorldPos.xz - offset) * vec2(-8.0, 8.0);
 
 			// Calculate Z value and scaled ambient.
 			float ambient = max(0.0, LightData.y > 32.0 ? LightData.y - 64.0 : LightData.y);
