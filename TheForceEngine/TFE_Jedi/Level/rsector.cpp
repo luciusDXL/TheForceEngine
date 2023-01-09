@@ -205,31 +205,25 @@ namespace TFE_Jedi
 		sector->boundsMax.x = maxX;
 		sector->boundsMin.z = minZ;
 		sector->boundsMax.z = maxZ;
-
-		// Setup when needed.
-		//s_minX = minX;
-		//s_maxX = maxX;
-		//s_minZ = minZ;
-		//s_maxZ = maxZ;
 	}
 
 	fixed16_16 sector_getMaxObjectHeight(RSector* sector)
 	{
 		s32 maxObjHeight = 0;
-		s32 count = sector->objectCount;
 		SecObject** objectList = sector->objectList;
-
-		if (!sector->objectCount)
-		{
-			return 0;
-		}
-
-		for (; count > 0; objectList++)
+		for (s32 count = sector->objectCount; count > 0; objectList++)
 		{
 			SecObject* obj = *objectList;
 			if (obj)
 			{
-				maxObjHeight = max(maxObjHeight, obj->worldHeight + ONE_16);
+				fixed16_16 height = obj->worldHeight;
+				// Hack to fix max. object height being too large.
+				if (obj->type == OBJ_TYPE_FRAME)
+				{
+					height = (height * 3) >> 2;	// 3/4 height.
+				}
+
+				maxObjHeight = max(maxObjHeight, height + ONE_16);
 				count--;
 			}
 		}
@@ -828,7 +822,6 @@ namespace TFE_Jedi
 
 	void sector_removeCorpses(RSector* sector)
 	{
-		//s_infCurSector = sector;
 		SecObject* obj = nullptr;
 		s32 objectCount = sector->objectCount;
 
