@@ -255,6 +255,38 @@ namespace TFE_Jedi
 
 	void screenGPU_blitTextureLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8 lightLevel, JBool forceTransparency)
 	{
+		if (s_screenQuadCount >= SCR_MAX_QUAD_COUNT)
+		{
+			return;
+		}
+
+		fixed16_16 x1 = x0 + intToFixed16(texture->width);
+		fixed16_16 y1 = y0 + intToFixed16(texture->height);
+		s32 textureId = texture->textureId;
+
+		u8 color = 0;
+		u32 textureId_Color = textureId | (u32(color) << 16u) | (u32(lightLevel) << 24u);
+
+		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
+		s_screenQuadCount++;
+
+		f32 fx0 = fixed16ToFloat(x0);
+		f32 fy0 = fixed16ToFloat(y0);
+		f32 fx1 = fixed16ToFloat(x1);
+		f32 fy1 = fixed16ToFloat(y1);
+
+		f32 u0 = 0.0f, v0 = 0.0f;
+		f32 u1 = f32(texture->width);
+		f32 v1 = f32(texture->height);
+		quad[0].posUv = { fx0, fy0, u0, v1 };
+		quad[1].posUv = { fx1, fy0, u1, v1 };
+		quad[2].posUv = { fx1, fy1, u1, v0 };
+		quad[3].posUv = { fx0, fy1, u0, v0 };
+
+		quad[0].textureId_Color = textureId_Color;
+		quad[1].textureId_Color = textureId_Color;
+		quad[2].textureId_Color = textureId_Color;
+		quad[3].textureId_Color = textureId_Color;
 	}
 
 	void screenGPU_drawColoredQuad(fixed16_16 x0, fixed16_16 y0, fixed16_16 x1, fixed16_16 y1, u8 color)
