@@ -2782,6 +2782,27 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, s_jumpScale, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerSlow, 0);
 		SERIALIZE(ObjState_InitVersion, s_onMovingSurface, 0);
+
+		// Handle the player saving as they die and then reloading...
+		if (serialization_getMode() == SMODE_READ)
+		{
+			fixed16_16 health = intToFixed16(s_playerInfo.health);
+			health += s_playerInfo.healthFract;
+
+			if (health < ONE_16)
+			{
+				s_playerInfo.healthFract = 0;
+				// We could just set the health to 0 here...
+				s_playerInfo.health = pickup_addToValue(0, 0, 100);
+				if (s_gasSectorTask)
+				{
+					task_free(s_gasSectorTask);
+				}
+				s_gasSectorTask = nullptr;
+				s_playerDying = JTRUE;
+				s_reviveTick = s_curTick + 436;
+			}
+		}
 	}
 
 	// TFE Specific
