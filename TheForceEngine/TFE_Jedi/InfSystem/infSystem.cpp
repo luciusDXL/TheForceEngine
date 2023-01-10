@@ -1262,7 +1262,7 @@ namespace TFE_Jedi
 		// Then loop through all of the items and parse their classes.
 		if (itemCount > MAX_INF_ITEMS)
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Too many INF items - skipping extra items.");
+			TFE_System::logWrite(LOG_WARNING, "level_loadINF", "Too many INF items - skipping extra items.");
 			itemCount = MAX_INF_ITEMS;
 		}
 
@@ -1282,7 +1282,7 @@ namespace TFE_Jedi
 				line = parser.readLine(bufferPos);
 				if (!line)
 				{
-					TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Hit the end of INF '%s' before parsing all items: %d/%d", levelName, i, itemCount);
+					TFE_System::logWrite(LOG_WARNING, "level_loadINF", "Hit the end of INF '%s' before parsing all items: %d/%d", levelName, i, itemCount);
 					return JTRUE;
 				}
 				continue;
