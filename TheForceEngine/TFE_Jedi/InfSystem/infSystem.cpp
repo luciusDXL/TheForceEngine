@@ -731,6 +731,7 @@ namespace TFE_Jedi
 		// This means the level is most likely broken. But better to write an error and return than crash.
 		if (!msgAddr)
 		{
+			parser.readLine(bufferPos);
 			return false;
 		}
 
@@ -875,8 +876,12 @@ namespace TFE_Jedi
 	bool parseSectorTrigger(TFE_Parser& parser, size_t& bufferPos, s32 argCount, const char* itemName)
 	{
 		MessageAddress* msgAddr = message_getAddress(itemName);
-		assert(msgAddr);
-		RSector* sector = msgAddr ? msgAddr->sector : nullptr;
+		if (!msgAddr)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+		RSector* sector = msgAddr->sector;
 
 		// The original code is a bit strange here.
 		// Since this is a sector trigger, all of the different types behave exactly the same, though there are multiple
@@ -984,6 +989,12 @@ namespace TFE_Jedi
 	bool parseTeleport(TFE_Parser& parser, size_t& bufferPos, const char* itemName)
 	{
 		MessageAddress* msgAddr = message_getAddress(itemName);
+		if (!msgAddr)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+
 		RSector* sector = msgAddr->sector;
 
 		KEYWORD type = getKeywordIndex(s_infArg1);
@@ -1046,6 +1057,12 @@ namespace TFE_Jedi
 		assert(typeId != KW_UNKNOWN);
 
 		MessageAddress* msgAddr = message_getAddress(name);
+		if (!msgAddr)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+
 		RSector* sector = msgAddr->sector;
 		RWall* wall = &sector->walls[num];
 
