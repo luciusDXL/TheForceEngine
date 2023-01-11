@@ -497,7 +497,7 @@ namespace TFE_Jedi
 		vec3* v0 = &s_curModel->vertices[indices[0]];
 		vec3* v1 = &s_curModel->vertices[indices[1]];
 		vec3* v2 = &s_curModel->vertices[indices[2]];
-		vec2 uv = { 0 };
+		vec2 uv = { v0->y, 0.0f };	// Store vertex 0 y to determine the plane Y in the shader.
 
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
@@ -517,7 +517,7 @@ namespace TFE_Jedi
 		vec3* v1 = &s_curModel->vertices[indices[1]];
 		vec3* v2 = &s_curModel->vertices[indices[2]];
 		vec3* v3 = &s_curModel->vertices[indices[3]];
-		vec2 uv = { 0 };
+		vec2 uv = { v0->y, 0.0f };	// Store vertex 0 y to determine the plane Y in the shader.
 
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };

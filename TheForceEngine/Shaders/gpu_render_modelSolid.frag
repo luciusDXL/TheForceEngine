@@ -12,6 +12,7 @@ uniform isamplerBuffer TextureTable;
 in vec2 Frag_Uv;
 in vec3 Frag_WorldPos;
 noperspective in float Frag_Light;
+flat in float Frag_ModelY;
 flat in int Frag_Color;
 flat in int Frag_TextureId;
 flat in int Frag_TextureMode;
@@ -67,12 +68,17 @@ void main()
 		{
 			// Sector flat style projection.
 			// TODO: Handle non-flat polygons with this projection...
+			float planeY = uv.x + Frag_ModelY;
 			vec2 offset = TextureOffsets.xy;
-			if (Frag_WorldPos.y < CameraPos.y)
+			if (planeY < CameraPos.y)
 			{
 				offset = TextureOffsets.zw;
 			}
-			uv.xy = (Frag_WorldPos.xz - offset) * vec2(-8.0, 8.0);
+
+			// Intersect the eye with the plane at planeY.
+			float t = (planeY - CameraPos.y) / (Frag_WorldPos.y - CameraPos.y);
+			vec2 posXZ = CameraPos.xz + t*(Frag_WorldPos.xz - CameraPos.xz);
+			uv.xy = (posXZ - offset) * vec2(-8.0, 8.0);
 
 			// Calculate Z value and scaled ambient.
 			float ambient = max(0.0, LightData.y > 32.0 ? LightData.y - 64.0 : LightData.y);

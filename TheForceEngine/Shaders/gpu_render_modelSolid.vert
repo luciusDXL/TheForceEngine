@@ -22,6 +22,7 @@ out float gl_ClipDistance[8];
 out vec2 Frag_Uv;
 out vec3 Frag_WorldPos;
 noperspective out float Frag_Light;
+flat out float Frag_ModelY;
 flat out int Frag_Color;
 flat out int Frag_TextureId;
 flat out int Frag_TextureMode;
@@ -114,6 +115,7 @@ void main()
 	}
 		
 	// Write out the per-vertex uv and color.
+	Frag_ModelY = ModelPos.y;
 	Frag_WorldPos = worldPos;
 	Frag_Color = int(vtx_color.x * 255.0 + 0.5);
 	Frag_Light = vertexLighting ? light : ambient;
