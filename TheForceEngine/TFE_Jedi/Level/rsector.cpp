@@ -216,14 +216,7 @@ namespace TFE_Jedi
 			SecObject* obj = *objectList;
 			if (obj)
 			{
-				fixed16_16 height = obj->worldHeight;
-				// Hack to fix max. object height being too large.
-				if (obj->type == OBJ_TYPE_FRAME)
-				{
-					height = (height * 3) >> 2;	// 3/4 height.
-				}
-
-				maxObjHeight = max(maxObjHeight, height + ONE_16);
+				maxObjHeight = max(maxObjHeight, obj->worldHeight + ONE_16);
 				count--;
 			}
 		}

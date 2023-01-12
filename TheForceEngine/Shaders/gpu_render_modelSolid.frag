@@ -67,7 +67,6 @@ void main()
 		if (Frag_TextureMode > 0)
 		{
 			// Sector flat style projection.
-			// TODO: Handle non-flat polygons with this projection...
 			float planeY = uv.x + Frag_ModelY;
 			vec2 offset = TextureOffsets.xy;
 			if (planeY < CameraPos.y)

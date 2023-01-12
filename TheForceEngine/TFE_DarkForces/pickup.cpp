@@ -371,6 +371,7 @@ namespace TFE_DarkForces
 		obj_addLogic(obj, (Logic*)pickup, LOGIC_PICKUP, s_pickupTask, pickup_cleanupFunc);
 
 		obj->entityFlags |= ETFLAG_PICKUP;
+		obj->worldHeight = 16384;	// 0.25
 
 		// Setup the pickup based on the ItemId.
 		pickup->id = id;
