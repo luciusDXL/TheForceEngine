@@ -336,6 +336,8 @@ namespace TFE_Jedi
 		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 10u : 0xfffffc00;
 		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
 
+		const bool noWallDraw = (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) != 0;
+
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		const Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
 				    		   wallLight | portalInfo, 0u/*textureId*/ };
@@ -345,7 +347,7 @@ namespace TFE_Jedi
 		//////////////////////////////
 		if (!srcWall->nextSector || forceTreatAsSolid)
 		{
-			if ((curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) || forceTreatAsSolid)
+			if (noWallDraw || forceTreatAsSolid)
 			{
 				// If the floor and ceiling textures are different, split into two.
 				// Since no next sector is required, this is treated as a solid wall, the space is re-used as flags to differeniate between the three cases:
@@ -388,10 +390,15 @@ namespace TFE_Jedi
 		//////////////////////////////
 		// Top and Bottom
 		//////////////////////////////
-		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
+		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !noWallDraw)
 		{
 			addDisplayListItem(pos, {data.x | SPARTID_WALL_TOP, data.y, data.z | flip,
 				wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+		}
+		else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && noWallDraw)
+		{
+			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP | SPARTID_SKY, data.y, data.z | flip,
+				wallGpuId | (srcWall->sector->ceilTex && *srcWall->sector->ceilTex ? (*srcWall->sector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 		else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_EXTERIOR))
 		{
@@ -399,10 +406,15 @@ namespace TFE_Jedi
 				wallGpuId | (srcWall->nextSector->ceilTex && *srcWall->nextSector->ceilTex ? (*srcWall->nextSector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 
-		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
+		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !noWallDraw)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT, data.y, data.z | flip,
 				wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+		}
+		else if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && noWallDraw)
+		{
+			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT | SPARTID_SKY, data.y, data.z | flip,
+				wallGpuId | (srcWall->sector->floorTex && *srcWall->sector->floorTex ? (*srcWall->sector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 		// If there is an exterior pit adjoin, we only add an item if the current sector is *not* a pit.
 		else if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_PIT))
