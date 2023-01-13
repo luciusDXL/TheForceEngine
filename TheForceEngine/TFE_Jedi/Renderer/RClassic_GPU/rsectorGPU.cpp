@@ -816,6 +816,11 @@ namespace TFE_Jedi
 					openTop = min(next->ceilingHeight, curSector->ceilingHeight);
 					y0 = fixed16ToFloat(openTop);
 				}
+				else if (!(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (next->flags1 & SEC_FLAGS1_EXTERIOR))
+				{
+					openTop = min(next->ceilingHeight, curSector->ceilingHeight);
+					y0 = fixed16ToFloat(openTop);
+				}
 				else
 				{
 					openTop = min(curSector->floorHeight, max(curSector->ceilingHeight, next->ceilingHeight));
