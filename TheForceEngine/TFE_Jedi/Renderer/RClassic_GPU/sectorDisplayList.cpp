@@ -337,7 +337,7 @@ namespace TFE_Jedi
 		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 10u : 0xfffffc00;
 		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
 
-		const bool noWallDraw = (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) != 0;
+		const bool noWallDraw = (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) && ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (curSector->flags1 & SEC_FLAGS1_PIT));
 		bool noTop = false;
 
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
