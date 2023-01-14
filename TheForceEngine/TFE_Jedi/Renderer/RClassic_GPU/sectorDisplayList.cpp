@@ -41,9 +41,10 @@ namespace TFE_Jedi
 		SPARTID_WALL_MID_SIGN,
 		SPARTID_WALL_TOP_SIGN,
 		SPARTID_WALL_BOT_SIGN,
-		SPARTID_MASK = 31,
+		SPARTID_MASK = 15,
 
 		// Flags
+		SPARTID_STRETCH_TO_TOP = 16,
 		SPARTID_STRETCH = 32,
 		SPARTID_FULLBRIGHT = 64,
 		SPARTID_OPAQUE = 128,
@@ -325,6 +326,7 @@ namespace TFE_Jedi
 	{
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
+		RSector* nextSector = srcWall->nextSector;
 		// Mark only visible walls as being rendered.
 		srcWall->seen = JTRUE;
 
@@ -334,25 +336,34 @@ namespace TFE_Jedi
 		// Add 32 so the value is unsigned and easy to decode in the shader (just subtract 32).
 		// Values should never to larger than [-31,31] but clamp just in case (larger values would have no effect anyway).
 		u32 wallLight = u32(32 + clamp(floor16(srcWall->wallLight), -31, 31));
-		u32 nextId = srcWall->nextSector ? u32(srcWall->nextSector->index) << 10u : 0xfffffc00;
+		u32 nextId = nextSector ? u32(nextSector->index) << 10u : 0xfffffc00;
 		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
 
 		const bool noWallDraw = (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) && ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (curSector->flags1 & SEC_FLAGS1_PIT));
 		bool noTop = false;
+		bool stretchToTop = false;
 
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		const Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
 				    		   wallLight | portalInfo, 0u/*textureId*/ };
 
-		if (!(srcWall->sector->flags1 & SEC_FLAGS1_EXTERIOR) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && srcWall->sector->ceilingHeight < srcWall->nextSector->ceilingHeight)
+		if (nextSector)
 		{
-			noTop = true;
+			if (!(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && curSector->ceilingHeight < nextSector->ceilingHeight)
+			{
+				noTop = true;
+			}
+			if ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (curSector->flags1 & SEC_FLAGS1_EXT_ADJ) && (srcWall->flags1 & WF1_ADJ_MID_TEX) &&
+				(nextSector->flags1 & SEC_FLAGS1_EXTERIOR))
+			{
+				stretchToTop = true;
+			}
 		}
 
 		//////////////////////////////
 		// Mid
 		//////////////////////////////
-		if (!srcWall->nextSector || forceTreatAsSolid)
+		if (!nextSector || forceTreatAsSolid)
 		{
 			if (noWallDraw || forceTreatAsSolid)
 			{
@@ -387,13 +398,19 @@ namespace TFE_Jedi
 					wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 			}
 		}
-		else if (srcWall->midTex && (*srcWall->midTex) && srcWall->nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
+		else if (srcWall->midTex && (*srcWall->midTex) && nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
 		{
 			// Funky stretching adjoins...
-			if (!(srcWall->sector->flags1 & SEC_FLAGS1_EXTERIOR) && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && srcWall->sector->ceilingHeight < srcWall->nextSector->ceilingHeight)
+			if (!(srcWall->sector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && srcWall->sector->ceilingHeight < nextSector->ceilingHeight)
 			{
 				// Transparent mid-texture.
 				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID | SPARTID_STRETCH, data.y, data.z | flip,
+					wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_TRANS);
+			}
+			else if (stretchToTop)
+			{
+				// Transparent mid-texture.
+				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID | SPARTID_STRETCH_TO_TOP, data.y, data.z | flip,
 					wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_TRANS);
 			}
 			else
@@ -407,37 +424,37 @@ namespace TFE_Jedi
 		//////////////////////////////
 		// Top and Bottom
 		//////////////////////////////
-		if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !noWallDraw && !noTop)
+		if ((srcWall->drawFlags & WDF_TOP) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !noWallDraw && !noTop)
 		{
 			addDisplayListItem(pos, {data.x | SPARTID_WALL_TOP, data.y, data.z | flip,
 				wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
-		else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && noWallDraw && !noTop)
+		else if ((srcWall->drawFlags & WDF_TOP) && nextSector && noWallDraw && !noTop)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP | SPARTID_SKY, data.y, data.z | flip,
 				wallGpuId | (srcWall->sector->ceilTex && *srcWall->sector->ceilTex ? (*srcWall->sector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
-		else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && !noTop)
+		else if ((srcWall->drawFlags & WDF_TOP) && nextSector && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && !noTop)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP | SPARTID_SKY, data.y, data.z | flip,
-				wallGpuId | (srcWall->nextSector->ceilTex && *srcWall->nextSector->ceilTex ? (*srcWall->nextSector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+				wallGpuId | (nextSector->ceilTex && *nextSector->ceilTex ? (*nextSector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 
-		if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !noWallDraw)
+		if ((srcWall->drawFlags & WDF_BOT) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !noWallDraw)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT, data.y, data.z | flip,
 				wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
-		else if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && noWallDraw)
+		else if ((srcWall->drawFlags & WDF_BOT) && nextSector && noWallDraw)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT | SPARTID_SKY, data.y, data.z | flip,
 				wallGpuId | (srcWall->sector->floorTex && *srcWall->sector->floorTex ? (*srcWall->sector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 		// If there is an exterior pit adjoin, we only add an item if the current sector is *not* a pit.
-		else if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_PIT))
+		else if ((srcWall->drawFlags & WDF_BOT) && nextSector && (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_PIT))
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT | SPARTID_SKY, data.y, data.z | flip,
-				wallGpuId | (srcWall->nextSector->floorTex && *srcWall->nextSector->floorTex ? (*srcWall->nextSector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+				wallGpuId | (nextSector->floorTex && *nextSector->floorTex ? (*nextSector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 
 		//////////////////////////////
@@ -457,17 +474,17 @@ namespace TFE_Jedi
 			}
 			
 			// If there is a bottom texture, it goes there..
-			if ((srcWall->drawFlags & WDF_BOT) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
+			if ((srcWall->drawFlags & WDF_BOT) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 			{
 				addDisplayListItem(pos, { signFlags | SPARTID_WALL_BOT_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
 			// Otherwise if there is a top
-			else if ((srcWall->drawFlags & WDF_TOP) && srcWall->nextSector && !(srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
+			else if ((srcWall->drawFlags & WDF_TOP) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 			{
 				addDisplayListItem(pos, { signFlags | SPARTID_WALL_TOP_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
 			// And finally mid.
-			else if (srcWall->midTex && srcWall->drawFlags == WDF_MIDDLE && !srcWall->nextSector)
+			else if (srcWall->midTex && srcWall->drawFlags == WDF_MIDDLE && !nextSector)
 			{
 				addDisplayListItem(pos, { signFlags | SPARTID_WALL_MID_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
 			}
@@ -482,7 +499,7 @@ namespace TFE_Jedi
 		{
 			floorSkyFlags |= SPARTID_SKY;
 			// Special handling for the NoWall flag.
-			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
+			if (nextSector && (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
 			{
 				floorSkyFlags |= SPARTID_SKY_ADJ;
 			}
@@ -491,7 +508,7 @@ namespace TFE_Jedi
 		{
 			ceilSkyFlags |= SPARTID_SKY;
 			// Special handling for the NoWall flag.
-			if (srcWall->nextSector && (srcWall->nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
+			if (nextSector && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
 			{
 				ceilSkyFlags |= SPARTID_SKY_ADJ;
 			}

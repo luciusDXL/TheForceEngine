@@ -40,7 +40,8 @@ void main()
 	bool fullbright = (data.x & 64u) != 0u;
 	bool opaque = (data.x & 128u) != 0u;
 	bool stretch = (data.x & 32u) != 0u;
-	int partId = int(data.x & 31u);
+	bool stretchToTop = (data.x & 16u) != 0u;
+	int partId = int(data.x & 15u);
 
 	int nextId   = int(data.x >> 10u);
 	int sectorId = int(data.y);
@@ -115,7 +116,20 @@ void main()
 			if (nextId < 4194303)	//1<<22 - 1
 			{
 				vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
-				float y0 = stretch ? min(floorHeight, ceilHeight) : min(floorHeight, max(nextHeights.y, ceilHeight));
+				float y0;
+				if (stretchToTop)
+				{
+					// Top of the frustum when looking forward.
+					float d = length((positions.xy+positions.zw)*0.5 - CameraPos.xz) * 0.625;
+					// Scale when looking up by view[1][1] which is 1.0 when looking straight and tends toward 0.0 as looking up or down.
+					d /= CameraView[1].y;
+					// Clamp to the maximum top.
+					y0 = CameraPos.y - min(100, d);
+				}
+				else
+				{
+					y0 = stretch ? min(floorHeight, ceilHeight) : min(floorHeight, max(nextHeights.y, ceilHeight));
+				}
 				float y1 = max(ceilHeight, min(nextHeights.x, floorHeight));
 				texBase = y1;
 
