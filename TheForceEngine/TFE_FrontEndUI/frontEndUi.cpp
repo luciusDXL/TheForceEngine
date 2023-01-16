@@ -476,6 +476,7 @@ namespace TFE_FrontEndUI
 
 			// Title
 			bool titleActive = true;
+			const f32 titleLeft = f32((w + logoWidth - titleWidth) / 2);
 			ImGui::SetNextWindowSize(ImVec2(logoWidth + windowPadding, logoHeight + windowPadding));
 			ImGui::SetNextWindowPos(ImVec2(f32((w - logoWidth - titleWidth) / 2), (f32)topOffset));
 			ImGui::Begin("##Logo", &titleActive, windowInvisFlags);
@@ -483,7 +484,7 @@ namespace TFE_FrontEndUI
 			ImGui::End();
 
 			ImGui::SetNextWindowSize(ImVec2(titleWidth + windowPadding, titleWidth + windowPadding));
-			ImGui::SetNextWindowPos(ImVec2(f32((w + logoWidth - titleWidth) / 2), (f32)topOffset + (logoHeight - titleHeight) / 2));
+			ImGui::SetNextWindowPos(ImVec2(titleLeft, (f32)topOffset + (logoHeight - titleHeight) / 2));
 			ImGui::Begin("##Title", &titleActive, windowInvisFlags);
 			ImGui::Image(s_titleGpuImage.image, ImVec2((f32)titleWidth, (f32)titleHeight));
 			ImGui::End();
@@ -493,7 +494,9 @@ namespace TFE_FrontEndUI
 			sprintf(versionText, "Version %s", TFE_System::getVersionString());
 			const f32 stringWidth = s_versionFont->CalcTextSizeA(s_versionFont->FontSize, 1024.0f, 0.0f, versionText).x;
 
-			ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - s_versionFont->FontSize*2.0f, f32(h) - s_versionFont->FontSize*4.0f));
+			// Make the version fit within the same area as the title.
+			f32 rightEdge = titleLeft + titleWidth;
+			ImGui::SetNextWindowPos(ImVec2(rightEdge - stringWidth - s_versionFont->FontSize*2.0f, f32(h) - s_versionFont->FontSize*4.0f));
 			ImGui::Begin("##Version", &titleActive, windowInvisFlags);
 			ImGui::Text(versionText);
 			ImGui::End();
