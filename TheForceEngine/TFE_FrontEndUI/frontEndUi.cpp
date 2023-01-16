@@ -166,10 +166,10 @@ namespace TFE_FrontEndUI
 	static UiImage s_titleGpuImage;
 	static UiImage s_gradientImage;
 
-	static UiImage s_buttonNormal[7];
-	static UiImage s_buttonSelected[7];
+	static UiImage s_buttonNormal[8];
+	static UiImage s_buttonSelected[8];
 
-	static MenuItemSelected s_menuItemselected[7];
+	static MenuItemSelected s_menuItemselected[8];
 
 	static const char* c_axisBinding[] =
 	{
@@ -210,6 +210,7 @@ namespace TFE_FrontEndUI
 	void renderBackground();
 
 	void menuItem_Start();
+	void menuItem_Load();
 	void menuItem_Manual();
 	void menuItem_Credits();
 	void menuItem_Settings();
@@ -272,18 +273,20 @@ namespace TFE_FrontEndUI
 		bool buttonsLoaded = true;
 		buttonsLoaded &= loadGpuImage("UI_Images/TFE_StartNormal.png", &s_buttonNormal[0]);
 		buttonsLoaded &= loadGpuImage("UI_Images/TFE_StartSelected.png", &s_buttonSelected[0]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualNormal.png", &s_buttonNormal[1]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualSelected.png", &s_buttonSelected[1]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsNormal.png", &s_buttonNormal[2]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsSelected.png", &s_buttonSelected[2]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsNormal.png", &s_buttonNormal[3]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsSelected.png", &s_buttonSelected[3]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsNormal.png", &s_buttonNormal[4]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsSelected.png", &s_buttonSelected[4]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorNormal.png", &s_buttonNormal[5]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorSelected.png", &s_buttonSelected[5]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitNormal.png", &s_buttonNormal[6]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitSelected.png", &s_buttonSelected[6]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_LoadNormal.png", &s_buttonNormal[1]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_LoadSelected.png", &s_buttonSelected[1]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualNormal.png", &s_buttonNormal[2]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualSelected.png", &s_buttonSelected[2]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsNormal.png", &s_buttonNormal[3]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsSelected.png", &s_buttonSelected[3]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsNormal.png", &s_buttonNormal[4]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsSelected.png", &s_buttonSelected[4]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsNormal.png", &s_buttonNormal[5]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsSelected.png", &s_buttonSelected[5]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorNormal.png", &s_buttonNormal[6]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorSelected.png", &s_buttonSelected[6]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitNormal.png", &s_buttonNormal[7]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitSelected.png", &s_buttonSelected[7]);
 		if (!buttonsLoaded)
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load title screen button images.");
@@ -291,12 +294,13 @@ namespace TFE_FrontEndUI
 				
 		// Setup menu item callbacks
 		s_menuItemselected[0] = menuItem_Start;
-		s_menuItemselected[1] = menuItem_Manual;
-		s_menuItemselected[2] = menuItem_Credits;
-		s_menuItemselected[3] = menuItem_Settings;
-		s_menuItemselected[4] = menuItem_Mods;
-		s_menuItemselected[5] = menuItem_Editor;
-		s_menuItemselected[6] = menuItem_Exit;
+		s_menuItemselected[1] = menuItem_Load;
+		s_menuItemselected[2] = menuItem_Manual;
+		s_menuItemselected[3] = menuItem_Credits;
+		s_menuItemselected[4] = menuItem_Settings;
+		s_menuItemselected[5] = menuItem_Mods;
+		s_menuItemselected[6] = menuItem_Editor;
+		s_menuItemselected[7] = menuItem_Exit;
 	}
 
 	void shutdown()
@@ -601,7 +605,7 @@ namespace TFE_FrontEndUI
 					ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
 
 				ImVec2 textSize = ImVec2(f32(textWidth), f32(textHeight));
-				for (s32 i = 0; i < 7; i++)
+				for (s32 i = 0; i < 8; i++)
 				{
 					// Disable the editor for now.
 					// Remove this out once it is working again.
@@ -2258,6 +2262,14 @@ namespace TFE_FrontEndUI
 	void menuItem_Start()
 	{
 		s_appState = APP_STATE_GAME;
+	}
+
+	void menuItem_Load()
+	{
+		s_subUI = FEUI_CONFIG;
+		s_configTab = CONFIG_LOAD;
+
+		pickCurrentResolution();
 	}
 
 	void menuItem_Manual()
