@@ -1612,7 +1612,7 @@ namespace TFE_DarkForces
 		// Up to 4 iterations, to handle sliding on walls.
 		for (s32 collisionIter = 4; collisionIter != 0; collisionIter--)
 		{
-			if (!handlePlayerCollision(&s_playerLogic))
+			if (!handlePlayerCollision(&s_playerLogic, s_playerUpVel))
 			{
 				if (s_playerLogic.move.x || s_playerLogic.move.y)
 				{
@@ -1672,7 +1672,7 @@ namespace TFE_DarkForces
 		{
 			s_colDstPosX = player->posWS.x;
 			s_colDstPosZ = player->posWS.z;
-			col_computeCollisionResponse(player->sector);
+			col_computeCollisionResponse(player->sector, s_playerUpVel);
 			s_playerLogic.move.x = 0;
 			s_playerLogic.move.z = 0;
 			s_playerVelX = 0;

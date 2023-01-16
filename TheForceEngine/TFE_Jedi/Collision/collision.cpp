@@ -212,7 +212,7 @@ namespace TFE_Jedi
 		if (secHeight < 0)
 		{
 			floorHeight = sector->floorHeight + secHeight;
-			if (floorHeight >= -FIXED(2))	// <- TODO: This seems hacky and will require further testing.
+			if (floorHeight >= -COL_SEC_HEIGHT_OFFSET)
 			{
 				ceilHeight = curSector->ceilingHeight;
 			}
@@ -272,7 +272,7 @@ namespace TFE_Jedi
 				if (nextSecHeight < 0)
 				{
 					floorHeight = nextSector->floorHeight + nextSecHeight;
-					if (floorHeight >= -FIXED(2))	// <- TODO: This seems hacky and will require further testing.
+					if (floorHeight >= -COL_SEC_HEIGHT_OFFSET)
 					{
 						ceilHeight = nextSector->ceilingHeight;
 					}
@@ -385,7 +385,7 @@ namespace TFE_Jedi
 
 	void sector_calculateFloor(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight)
 	{
-		y -= FIXED(2);	// adjust the y value to handle second heights.
+		y -= COL_SEC_HEIGHT_OFFSET;	// adjust the y value to handle second heights.
 		if (sector->secHeight < 0 && y > sector->floorHeight + sector->secHeight)
 		{
 			*floorHeight = sector->floorHeight;
@@ -448,7 +448,7 @@ namespace TFE_Jedi
 		fixed16_16 y1 = origin.y + radius;
 		fixed16_16 z1 = origin.z + radius;
 
-		fixed16_16 secHeightThreshold = origin.y - FIXED(2);
+		fixed16_16 secHeightThreshold = origin.y - COL_SEC_HEIGHT_OFFSET;
 		RSector* curSector = s_levelState.sectors;
 
 		for (u32 i = 0; i < s_levelState.sectorCount; i++, curSector++)
@@ -523,7 +523,7 @@ namespace TFE_Jedi
 		const fixed16_16 y1 = origin.y + range;
 		const fixed16_16 z1 = origin.z + range;
 
-		const fixed16_16 secHeightThreshold = origin.y - FIXED(2);
+		const fixed16_16 secHeightThreshold = origin.y - COL_SEC_HEIGHT_OFFSET;
 		RSector* sector = s_levelState.sectors;
 		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
@@ -583,7 +583,7 @@ namespace TFE_Jedi
 		const fixed16_16 y1 = origin.y + range;
 		const fixed16_16 z1 = origin.z + range;
 
-		const fixed16_16 secHeightThreshold = origin.y - FIXED(2);
+		const fixed16_16 secHeightThreshold = origin.y - COL_SEC_HEIGHT_OFFSET;
 		RSector* sector = s_levelState.sectors;
 		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
@@ -765,7 +765,7 @@ namespace TFE_Jedi
 				s_colObject.wall = wall;
 			}
 
-			if (!col_computeCollisionResponse(curSector))
+			if (!col_computeCollisionResponse(curSector, 0))
 			{
 				colWall = s_colWall0;
 				colObj = s_collidedObj;

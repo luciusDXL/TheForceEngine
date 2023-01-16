@@ -214,7 +214,7 @@ namespace TFE_DarkForces
 
 	// Get the "feature" to collide against, such as an object or wall.
 	// Returns JFALSE if collision else JTRUE
-	u32 col_getCollisionFeature(RSector* sector, JBool ignore)
+	u32 col_getCollisionFeature(RSector* sector, JBool ignore, fixed16_16 yVel)
 	{
 		fixed16_16 realFloorHeight = sector->floorHeight;
 		fixed16_16 realCeilHeight  = sector->ceilingHeight;
@@ -222,7 +222,11 @@ namespace TFE_DarkForces
 		fixed16_16 extCeilHeight   = sector->colCeilHeight;
 		fixed16_16 curFloor, curCeil;
 
-		if (sector->secHeight < 0 && s_colDstPosY > sector->colSecHeight)
+		// Allows the player to "climb" second heights when jumping.
+		// Note that always setting the offset will allow players to climb second heights when not jumping as well.
+		fixed16_16 secHeightOffset = yVel < 0 ? COL_SEC_HEIGHT_OFFSET : 0;
+
+		if (sector->secHeight < 0 && s_colDstPosY > sector->colSecHeight + secHeightOffset)
 		{
 			curFloor = extFloorHeight;
 			curCeil  = realFloorHeight + sector->secHeight;
@@ -348,13 +352,14 @@ namespace TFE_DarkForces
 							// Check to see if this sector has already been tested this "collision frame"
 							if (s_collisionFrameSector != next->collisionFrame)
 							{
-								JBool ignore = (wall->flags3 & (WF3_ALWAYS_WALK | WF3_SOLID_WALL)) == WF3_ALWAYS_WALK ? JTRUE : JFALSE;
-								if (!col_getCollisionFeature(next, ignore))
+								JBool nextIgnore = (wall->flags3 & (WF3_ALWAYS_WALK | WF3_SOLID_WALL)) == WF3_ALWAYS_WALK ? JTRUE : JFALSE;
+								if (!col_getCollisionFeature(next, nextIgnore, yVel))
 								{
 									if (!s_colWallCollided) { s_colWallCollided = wall; }
 									return JFALSE;
 								}
 							}
+							continue;
 						}
 						else  // !canPass
 						{
@@ -371,7 +376,7 @@ namespace TFE_DarkForces
 	}
 
 	// Returns JFALSE if there was a collision.
-	JBool col_computeCollisionResponse(RSector* sector)
+	JBool col_computeCollisionResponse(RSector* sector, fixed16_16 yVel)
 	{
 		s_colRealFloorHeight =  COL_INFINITY;
 		s_colRealCeilHeight  = -COL_INFINITY;
@@ -387,7 +392,7 @@ namespace TFE_DarkForces
 		s_colDoubleRadius = s_colWidth + s_colWidth;
 		s_colResponseStep = JFALSE;
 		// Is there a collision?
-		if (!col_getCollisionFeature(sector, JFALSE))
+		if (!col_getCollisionFeature(sector, JFALSE, yVel))
 		{
 			s_colWall0 = s_colWallCollided;
 			if (s_colWall0)
@@ -432,7 +437,7 @@ namespace TFE_DarkForces
 	}
 
 	// Returns JTRUE in the case of a collision, otherwise returns JFALSE.
-	JBool handlePlayerCollision(PlayerLogic* playerLogic)
+	JBool handlePlayerCollision(PlayerLogic* playerLogic, fixed16_16 yVel)
 	{
 		s_curPlayerLogic = playerLogic;
 		SecObject* obj = playerLogic->logic.obj;
@@ -463,7 +468,7 @@ namespace TFE_DarkForces
 		s_colDstPosZ = obj->posWS.z + playerLogic->move.z;
 
 		// If there was no collision, return false.
-		if (col_computeCollisionResponse(sector))
+		if (col_computeCollisionResponse(sector, yVel))
 		{
 			return JFALSE;
 		}

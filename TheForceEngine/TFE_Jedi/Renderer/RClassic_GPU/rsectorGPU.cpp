@@ -816,6 +816,7 @@ namespace TFE_Jedi
 					openTop = min(next->ceilingHeight, curSector->ceilingHeight);
 					y0 = fixed16ToFloat(openTop);
 				}
+				// If the current sector is adjoined to an exterior, then use the current sector ceiling height for the adjoin top.
 				else if (!(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (next->flags1 & SEC_FLAGS1_EXTERIOR))
 				{
 					openTop = min(curSector->floorHeight, curSector->ceilingHeight);

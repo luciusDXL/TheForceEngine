@@ -1202,7 +1202,7 @@ namespace TFE_Jedi
 	void sector_getObjFloorAndCeilHeight(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight)
 	{
 		fixed16_16 secHeight = sector->secHeight;
-		fixed16_16 bottom = y - FIXED(2);
+		fixed16_16 bottom = y - COL_SEC_HEIGHT_OFFSET;
 		if (secHeight < 0)
 		{
 			fixed16_16 height = sector->floorHeight + sector->secHeight;
