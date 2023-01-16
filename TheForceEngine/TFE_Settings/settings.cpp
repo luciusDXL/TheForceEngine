@@ -26,6 +26,7 @@ namespace TFE_Settings
 	static TFE_Settings_Graphics s_graphicsSettings = {};
 	static TFE_Settings_Hud s_hudSettings = {};
 	static TFE_Settings_Sound s_soundSettings = {};
+	static TFE_Settings_System s_systemSettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings = {};
 	static char s_lineBuffer[LINEBUF_LEN];
@@ -37,6 +38,7 @@ namespace TFE_Settings
 		SECTION_GRAPHICS,
 		SECTION_HUD,
 		SECTION_SOUND,
+		SECTION_SYSTEM,
 		SECTION_GAME,
 		SECTION_DARK_FORCES,
 		SECTION_OUTLAWS,
@@ -52,6 +54,7 @@ namespace TFE_Settings
 		"Graphics",
 		"Hud",
 		"Sound",
+		"System",
 		"Game",
 		"Dark_Forces",
 		"Outlaws",
@@ -66,6 +69,7 @@ namespace TFE_Settings
 	void writeGraphicsSettings(FileStream& settings);
 	void writeHudSettings(FileStream& settings);
 	void writeSoundSettings(FileStream& settings);
+	void writeSystemSettings(FileStream& settings);
 	void writeGameSettings(FileStream& settings);
 	void writePerGameSettings(FileStream& settings);
 	void writeCVars(FileStream& settings);
@@ -77,6 +81,7 @@ namespace TFE_Settings
 	void parseGraphicsSettings(const char* key, const char* value);
 	void parseHudSettings(const char* key, const char* value);
 	void parseSoundSettings(const char* key, const char* value);
+	void parseSystemSettings(const char* key, const char* value);
 	void parseGame(const char* key, const char* value);
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
@@ -223,6 +228,7 @@ namespace TFE_Settings
 			writeGraphicsSettings(settings);
 			writeHudSettings(settings);
 			writeSoundSettings(settings);
+			writeSystemSettings(settings);
 			writeGameSettings(settings);
 			writePerGameSettings(settings);
 			writeCVars(settings);
@@ -252,6 +258,11 @@ namespace TFE_Settings
 	TFE_Settings_Sound* getSoundSettings()
 	{
 		return &s_soundSettings;
+	}
+
+	TFE_Settings_System* getSystemSettings()
+	{
+		return &s_systemSettings;
 	}
 
 	TFE_Game* getGame()
@@ -376,6 +387,13 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "disableSoundInMenus", s_soundSettings.disableSoundInMenus);
 	}
 
+	void writeSystemSettings(FileStream& settings)
+	{
+		writeHeader(settings, c_sectionNames[SECTION_SYSTEM]);
+		writeKeyValue_Bool(settings, "gameExitsToMenu",   s_systemSettings.gameQuitExitsToMenu);
+		writeKeyValue_Bool(settings, "returnToModLoader", s_systemSettings.returnToModLoader);
+	}
+
 	void writeGameSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_GAME]);
@@ -496,6 +514,9 @@ namespace TFE_Settings
 					break;
 				case SECTION_SOUND:
 					parseSoundSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
+				case SECTION_SYSTEM:
+					parseSystemSettings(tokens[0].c_str(), tokens[1].c_str());
 					break;
 				case SECTION_GAME:
 					parseGame(tokens[0].c_str(), tokens[1].c_str());
@@ -725,6 +746,18 @@ namespace TFE_Settings
 		else if (strcasecmp("disableSoundInMenus", key) == 0)
 		{
 			s_soundSettings.disableSoundInMenus = parseBool(value);
+		}
+	}
+
+	void parseSystemSettings(const char* key, const char* value)
+	{
+		if (strcasecmp("gameExitsToMenu", key) == 0)
+		{
+			s_systemSettings.gameQuitExitsToMenu = parseBool(value);
+		}
+		else if (strcasecmp("returnToModLoader", key) == 0)
+		{
+			s_systemSettings.returnToModLoader = parseBool(value);
 		}
 	}
 

@@ -359,14 +359,15 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 	}
 
-	void modLoader_selectionUI()
+	bool modLoader_selectionUI()
 	{
+		bool stayOpen = true;
 		f32 uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
 
 		// Load in the mod data a few at a time so to limit waiting for loading.
 		readFromQueue(1);
 		clearSelectedMod();
-		if (s_mods.empty()) { return; }
+		if (s_mods.empty()) { return stayOpen; }
 
 		ImGui::Separator();
 		ImGui::PushFont(getDialogFont());
@@ -480,7 +481,7 @@ namespace TFE_FrontEndUI
 			ImGui::PopStyleColor(3);
 
 			ImGui::SetCursorPos(ImVec2(cursor.x + 90*uiScale, cursor.y + 360*uiScale));
-			if (ImGui::Button("CANCEL", ImVec2(128*uiScale, 32*uiScale)))
+			if (ImGui::Button("CANCEL", ImVec2(128*uiScale, 32*uiScale)) || TFE_Input::keyPressed(KEY_ESCAPE))
 			{
 				open = false;
 			}
@@ -509,6 +510,11 @@ namespace TFE_FrontEndUI
 				}
 			}
 		}
+		else if (TFE_Input::keyPressed(KEY_ESCAPE))
+		{
+			stayOpen = false;
+		}
+		return stayOpen;
 	}
 
 	void fixupName(char* name)

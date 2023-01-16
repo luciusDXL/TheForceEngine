@@ -234,6 +234,8 @@ namespace TFE_System
 		s_systemUiRequestPosted = true;
 	}
 
+
+
 	bool quitMessagePosted()
 	{
 		return s_quitMessagePosted;

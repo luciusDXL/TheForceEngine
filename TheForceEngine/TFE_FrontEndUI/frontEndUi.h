@@ -40,6 +40,7 @@ namespace TFE_FrontEndUI
 	AppState menuReturn();
 	void setMenuReturnState(AppState state);
 	bool toggleConsole();
+	void exitToMenu();
 
 	bool shouldClearScreen();
 

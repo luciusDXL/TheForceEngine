@@ -59,6 +59,7 @@ namespace TFE_FrontEndUI
 		CONFIG_GRAPHICS,
 		CONFIG_HUD,
 		CONFIG_SOUND,
+		CONFIG_SYSTEM,
 		CONFIG_COUNT
 	};
 
@@ -72,6 +73,7 @@ namespace TFE_FrontEndUI
 		"Graphics",
 		"Hud",
 		"Sound",
+		"System",
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -154,6 +156,7 @@ namespace TFE_FrontEndUI
 	static ImFont* s_dialogFont;
 	static SubUI s_subUI;
 	static ConfigTab s_configTab;
+	static bool s_modLoaded = false;
 	static bool s_saveLoadSetupRequired = true;
 	static bool s_bindingPopupOpen = false;
 
@@ -202,6 +205,7 @@ namespace TFE_FrontEndUI
 	void configGraphics();
 	void configHud();
 	void configSound();
+	void configSystem();
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -422,6 +426,25 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::End();
 		ImGui::PopFont();
+	}
+
+	void exitToMenu()
+	{
+		s_menuRetState = APP_STATE_MENU;
+		s_drawNoGameDataMsg = false;
+		s_appState = APP_STATE_EXIT_TO_MENU;
+		s_selectedModCmd[0] = 0;
+		s_relativeMode = false;
+		TFE_Input::enableRelativeMode(s_relativeMode);
+
+		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
+		{
+			menuItem_Mods();
+		}
+		else
+		{
+			s_subUI = FEUI_NONE;
+		}
 	}
 
 	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults)
@@ -675,7 +698,11 @@ namespace TFE_FrontEndUI
 			}
 			else
 			{
-				modLoader_selectionUI();
+				if (!modLoader_selectionUI())
+				{
+					s_subUI = FEUI_NONE;
+					modLoader_cleanupResources();
+				}
 			}
 			ImGui::End();
 		}
@@ -743,6 +770,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("System", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_SYSTEM;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
@@ -770,7 +803,7 @@ namespace TFE_FrontEndUI
 
 			// adjust the width based on tab.
 			s32 tabWidth = w - s32(160*s_uiScale);
-			if (s_configTab >= CONFIG_INPUT)
+			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM)
 			{
 				tabWidth = s32(414*s_uiScale);
 			}
@@ -815,6 +848,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_SOUND:
 				configSound();
+				break;
+			case CONFIG_SYSTEM:
+				configSystem();
 				break;
 			};
 			renderBackground();
@@ -2240,6 +2276,22 @@ namespace TFE_FrontEndUI
 		TFE_MidiPlayer::setVolume(sound->musicVolume);
 	}
 
+	void configSystem()
+	{
+		ImGui::LabelText("##ConfigLabel", "System Settings");
+		TFE_Settings_System* system = TFE_Settings::getSystemSettings();
+		bool gameQuitExitsToMenu = system->gameQuitExitsToMenu;
+		bool returnToModLoader   = system->returnToModLoader;
+		if (ImGui::Checkbox("Game Exit Returns to TFE Menu", &gameQuitExitsToMenu))
+		{
+			system->gameQuitExitsToMenu = gameQuitExitsToMenu;
+		}
+		if (ImGui::Checkbox("Returns to Mod Loader when a mod is loaded", &returnToModLoader))
+		{
+			system->returnToModLoader = returnToModLoader;
+		}
+	}
+
 	void pickCurrentResolution()
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
@@ -2262,6 +2314,7 @@ namespace TFE_FrontEndUI
 	void menuItem_Start()
 	{
 		s_appState = APP_STATE_GAME;
+		s_modLoaded = false;
 	}
 
 	void menuItem_Load()
@@ -2293,6 +2346,7 @@ namespace TFE_FrontEndUI
 	void menuItem_Mods()
 	{
 		s_subUI = FEUI_MODS;
+		s_modLoaded = true;
 		modLoader_read();
 	}
 

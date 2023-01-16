@@ -156,6 +156,12 @@ struct TFE_Settings_Game
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 
+struct TFE_Settings_System
+{
+	bool gameQuitExitsToMenu = true;	// Quitting from the game returns to the main menu instead.
+	bool returnToModLoader = true;		// Return to the Mod Loader if running a mod.
+};
+
 namespace TFE_Settings
 {
 	bool init(bool& firstRun);
@@ -168,6 +174,7 @@ namespace TFE_Settings
 	TFE_Settings_Graphics* getGraphicsSettings();
 	TFE_Settings_Hud* getHudSettings();
 	TFE_Settings_Sound* getSoundSettings();
+	TFE_Settings_System* getSystemSettings();
 	TFE_Game* getGame();
 	TFE_GameHeader* getGameHeader(const char* gameName);
 	TFE_Settings_Game* getGameSettings();
