@@ -158,7 +158,7 @@ void main()
 			
 			if (sky)
 			{
-				vec4 sectorTexOffsets = texelFetch(Sectors, nextId*2+1);
+				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 				texture_data.xy = sectorTexOffsets.zw;
 			}
 		}
@@ -171,7 +171,7 @@ void main()
 
 			if (sky)
 			{
-				vec4 sectorTexOffsets = texelFetch(Sectors, nextId*2+1);
+				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 				texture_data.xy = sectorTexOffsets.xy;
 			}
 		}

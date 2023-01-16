@@ -53,6 +53,11 @@ namespace TFE_Jedi
 		SPARTID_COUNT
 	};
 
+	// Threshold were matching vertices are too far apart between an adjoin segment and its associated mirror.
+	// Used to determine when adjoins are bad for "no wall" setups (which auto-heal the issue in software due to the way the no wall segments are drawn).
+	// This value is probably *much* bigger than it should be, but I don't want to accidentally break cases where the adjoin/mirror is split intentionally.
+	#define BAD_ADJOIN_THRES 4194304	// FIXED(64)
+
 	// TODO: factor out so the sprite, sector, and geometry passes can use it.
 	s32 s_displayCurrentPortalId = 0;
 	ShaderBuffer s_displayListPlanesGPU;
@@ -314,7 +319,7 @@ namespace TFE_Jedi
 		s_displayListPos[index] = pos;
 		s_displayListData[index] = data;
 	}
-
+		
 	/*********************************
 	Current GPU Renderer Limits:
 	* Walls - 65536 per sector   (because of wallGpuId)
@@ -339,6 +344,7 @@ namespace TFE_Jedi
 		u32 nextId = nextSector ? u32(nextSector->index) << 10u : 0xfffffc00;
 		u32 portalInfo = sdisplayList_getPackedPortalInfo(s_displayCurrentPortalId) << 7u;
 
+		assert(srcWall->sector == curSector);
 		const bool noWallDraw = (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW) && ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) || (curSector->flags1 & SEC_FLAGS1_PIT));
 		bool noTop = false;
 		bool stretchToTop = false;
@@ -357,6 +363,27 @@ namespace TFE_Jedi
 				(nextSector->flags1 & SEC_FLAGS1_EXTERIOR))
 			{
 				stretchToTop = true;
+			}
+
+			// At least one mod has a "no wall" scenario where an invalid adjoin is causing a gap to show up in a sky.
+			// In software, this is handled because of the way "no wall" drawing works.
+			// For GPU Rendering, we have to manually check if the adjoin is valid.
+			if ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (curSector->flags1 & SEC_FLAGS1_NOWALL_DRAW))
+			{
+				// Check to see if the next sector is valid.
+				if (srcWall->mirrorWall)
+				{
+					fixed16_16 dx = TFE_Jedi::abs(srcWall->w0->x - srcWall->mirrorWall->w1->x);
+					fixed16_16 dz = TFE_Jedi::abs(srcWall->w0->z - srcWall->mirrorWall->w1->z);
+					if (dx > BAD_ADJOIN_THRES || dz > BAD_ADJOIN_THRES)
+					{
+						nextSector = nullptr;
+					}
+				}
+				else
+				{
+					nextSector = nullptr;
+				}
 			}
 		}
 
@@ -401,7 +428,7 @@ namespace TFE_Jedi
 		else if (srcWall->midTex && (*srcWall->midTex) && nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
 		{
 			// Funky stretching adjoins...
-			if (!(srcWall->sector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && srcWall->sector->ceilingHeight < nextSector->ceilingHeight)
+			if (!(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (nextSector->flags1 & SEC_FLAGS1_EXTERIOR) && curSector->ceilingHeight < nextSector->ceilingHeight)
 			{
 				// Transparent mid-texture.
 				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID | SPARTID_STRETCH, data.y, data.z | flip,
@@ -432,7 +459,7 @@ namespace TFE_Jedi
 		else if ((srcWall->drawFlags & WDF_TOP) && nextSector && noWallDraw && !noTop)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP | SPARTID_SKY, data.y, data.z | flip,
-				wallGpuId | (srcWall->sector->ceilTex && *srcWall->sector->ceilTex ? (*srcWall->sector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+				wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 		else if ((srcWall->drawFlags & WDF_TOP) && nextSector && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && !noTop)
 		{
@@ -448,7 +475,7 @@ namespace TFE_Jedi
 		else if ((srcWall->drawFlags & WDF_BOT) && nextSector && noWallDraw)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT | SPARTID_SKY, data.y, data.z | flip,
-				wallGpuId | (srcWall->sector->floorTex && *srcWall->sector->floorTex ? (*srcWall->sector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+				wallGpuId | (curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
 		}
 		// If there is an exterior pit adjoin, we only add an item if the current sector is *not* a pit.
 		else if ((srcWall->drawFlags & WDF_BOT) && nextSector && (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_PIT))
