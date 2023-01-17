@@ -173,6 +173,7 @@ namespace TFE_FrontEndUI
 	static UiImage s_buttonSelected[8];
 
 	static MenuItemSelected s_menuItemselected[8];
+	static const size_t s_menuItemCount = TFE_ARRAYSIZE(s_menuItemselected);
 
 	static const char* c_axisBinding[] =
 	{
@@ -616,7 +617,7 @@ namespace TFE_FrontEndUI
 			}
 			else
 			{
-				s32 menuHeight = (textHeight + 24) * 7 + 4;
+				s32 menuHeight = (textHeight + 24) * s_menuItemCount + 4;
 
 				// Main Menu
 				ImGui::PushFont(s_menuFont);
@@ -628,7 +629,7 @@ namespace TFE_FrontEndUI
 					ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
 
 				ImVec2 textSize = ImVec2(f32(textWidth), f32(textHeight));
-				for (s32 i = 0; i < 8; i++)
+				for (s32 i = 0; i < s_menuItemCount; i++)
 				{
 					// Disable the editor for now.
 					// Remove this out once it is working again.
