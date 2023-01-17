@@ -379,7 +379,7 @@ namespace TFE_Jedi
 	{
 		if (s_gpuEnabled)
 		{
-			screenGPU_blitTexture(texture, rect, x0, y0);
+			screenGPU_blitTextureLit(texture, rect, intToFixed16(x0), intToFixed16(y0), 31);
 			return;
 		}
 		s32 x1 = x0 + texture->width  - 1;
@@ -434,7 +434,8 @@ namespace TFE_Jedi
 	{
 		if (s_gpuEnabled)
 		{
-			screenGPU_blitTextureLit(texture, rect, x0, y0, 31);
+			u8 lightLevel = RClassic_Fixed::getLightLevelFromAtten(atten);
+			screenGPU_blitTextureLit(texture, rect, intToFixed16(x0), intToFixed16(y0), lightLevel);
 			return;
 		}
 		s32 x1 = x0 + texture->width  - 1;

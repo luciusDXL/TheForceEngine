@@ -21,7 +21,7 @@ namespace TFE_FrontEndUI
 
 	void modLoader_read();
 	void modLoader_cleanupResources();
-	void modLoader_selectionUI();
+	bool modLoader_selectionUI();
 
 	ViewMode modLoader_getViewMode();
 }

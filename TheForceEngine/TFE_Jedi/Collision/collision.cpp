@@ -22,17 +22,11 @@ namespace TFE_DarkForces
 	extern fixed16_16 s_colHeight;
 	extern fixed16_16 s_colDoubleRadius;
 	extern fixed16_16 s_colHeightBase;
-	extern fixed16_16 s_colMaxBaseHeight;
-	extern fixed16_16 s_colMinBaseHeight;
+	extern fixed16_16 s_colRealFloorHeight;
+	extern fixed16_16 s_colRealCeilHeight;
 	extern fixed16_16 s_colBottom;
 	extern fixed16_16 s_colTop;
 	extern fixed16_16 s_colY1;
-	extern fixed16_16 s_colBaseFloorHeight;
-	extern fixed16_16 s_colBaseCeilHeight;
-	extern fixed16_16 s_colFloorHeight;
-	extern fixed16_16 s_colCeilHeight;
-	extern fixed16_16 s_colCurFloor;
-	extern fixed16_16 s_colCurCeil;
 	extern fixed16_16 s_colCurTop;
 	extern angle14_32 s_colResponseAngle;
 	extern vec2_fixed s_colResponsePos;
@@ -56,7 +50,7 @@ namespace TFE_Jedi
 		fixed16_16 z1;
 	};
 
-	static const fixed16_16 c_maxCollisionDist = FIXED(9999);
+	static const fixed16_16 c_maxCollisionDist = COL_INFINITY;
 	static const fixed16_16 c_minTraversableOpening = HALF_16;
 
 	enum IntersectionResult
@@ -218,7 +212,7 @@ namespace TFE_Jedi
 		if (secHeight < 0)
 		{
 			floorHeight = sector->floorHeight + secHeight;
-			if (floorHeight >= -FIXED(2))	// <- TODO: This seems hacky and will require further testing.
+			if (floorHeight >= -COL_SEC_HEIGHT_OFFSET)
 			{
 				ceilHeight = curSector->ceilingHeight;
 			}
@@ -278,7 +272,7 @@ namespace TFE_Jedi
 				if (nextSecHeight < 0)
 				{
 					floorHeight = nextSector->floorHeight + nextSecHeight;
-					if (floorHeight >= -FIXED(2))	// <- TODO: This seems hacky and will require further testing.
+					if (floorHeight >= -COL_SEC_HEIGHT_OFFSET)
 					{
 						ceilHeight = nextSector->ceilingHeight;
 					}
@@ -391,7 +385,7 @@ namespace TFE_Jedi
 
 	void sector_calculateFloor(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight)
 	{
-		y -= FIXED(2);	// adjust the y value to handle second heights.
+		y -= COL_SEC_HEIGHT_OFFSET;	// adjust the y value to handle second heights.
 		if (sector->secHeight < 0 && y > sector->floorHeight + sector->secHeight)
 		{
 			*floorHeight = sector->floorHeight;
@@ -454,7 +448,7 @@ namespace TFE_Jedi
 		fixed16_16 y1 = origin.y + radius;
 		fixed16_16 z1 = origin.z + radius;
 
-		fixed16_16 secHeightThreshold = origin.y - FIXED(2);
+		fixed16_16 secHeightThreshold = origin.y - COL_SEC_HEIGHT_OFFSET;
 		RSector* curSector = s_levelState.sectors;
 
 		for (u32 i = 0; i < s_levelState.sectorCount; i++, curSector++)
@@ -529,7 +523,7 @@ namespace TFE_Jedi
 		const fixed16_16 y1 = origin.y + range;
 		const fixed16_16 z1 = origin.z + range;
 
-		const fixed16_16 secHeightThreshold = origin.y - FIXED(2);
+		const fixed16_16 secHeightThreshold = origin.y - COL_SEC_HEIGHT_OFFSET;
 		RSector* sector = s_levelState.sectors;
 		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
@@ -589,7 +583,7 @@ namespace TFE_Jedi
 		const fixed16_16 y1 = origin.y + range;
 		const fixed16_16 z1 = origin.z + range;
 
-		const fixed16_16 secHeightThreshold = origin.y - FIXED(2);
+		const fixed16_16 secHeightThreshold = origin.y - COL_SEC_HEIGHT_OFFSET;
 		RSector* sector = s_levelState.sectors;
 		for (u32 i = 0; i < s_levelState.sectorCount; i++, sector++)
 		{
@@ -688,7 +682,7 @@ namespace TFE_Jedi
 		fixed16_16 bot = s_hcolSrcPos.y - colInfo->botOffset;
 
 		colInfo->responseStep = JFALSE;
-		fixed16_16 yMax = (colInfo->flags & 1) ? (s_hcolSrcPos.y + FIXED(9999)) : (s_hcolSrcPos.y + colInfo->yPos);
+		fixed16_16 yMax = (colInfo->flags & 1) ? (s_hcolSrcPos.y + COL_INFINITY) : (s_hcolSrcPos.y + colInfo->yPos);
 		colInfo->flags &= ~1;
 
 		// Cross walls until the collision path hits something solid.
@@ -771,7 +765,7 @@ namespace TFE_Jedi
 				s_colObject.wall = wall;
 			}
 
-			if (!col_computeCollisionResponse(curSector))
+			if (!col_computeCollisionResponse(curSector, 0))
 			{
 				colWall = s_colWall0;
 				colObj = s_collidedObj;

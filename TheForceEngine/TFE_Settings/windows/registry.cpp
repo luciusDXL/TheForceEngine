@@ -125,7 +125,7 @@ namespace WindowsRegistry
 			acfData = (char*)malloc(len + 1);
 			if (acfData)
 			{
-				acf.readBuffer(acfData, len);
+				acf.readBuffer(acfData, (u32)len);
 				acfData[len] = 0;
 			}
 			acf.close();
@@ -139,7 +139,7 @@ namespace WindowsRegistry
 			vdfData = (char*)malloc(len + 1);
 			if (vdfData)
 			{
-				vdf.readBuffer(vdfData, len);
+				vdf.readBuffer(vdfData, (u32)len);
 				vdfData[len] = 0;
 			}
 			vdf.close();

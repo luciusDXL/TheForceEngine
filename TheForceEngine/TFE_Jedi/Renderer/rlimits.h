@@ -3,7 +3,7 @@
 
 namespace TFE_Jedi
 {
-	#define MAX_DRAWN_SPRITE_STORE 32 // Maximum number of drawn sprites stored for future reference (like autoaim).
+	#define MAX_DRAWN_OBJ_STORE 32 // Maximum number of drawn sprites stored for future reference (like autoaim).
 	#define MAX_SEG				384 // Maximum number of wall segments visible in the frame.
 	#define MAX_ADJOIN_SEG		128 // Maximum number of adjoin segements visible in the frame.
 	#define MAX_SPLIT_WALLS		 40 // Maximum number of times walls can be split in a sector.

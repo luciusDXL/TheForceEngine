@@ -26,6 +26,7 @@ namespace TFE_Settings
 	static TFE_Settings_Graphics s_graphicsSettings = {};
 	static TFE_Settings_Hud s_hudSettings = {};
 	static TFE_Settings_Sound s_soundSettings = {};
+	static TFE_Settings_System s_systemSettings = {};
 	static TFE_Game s_game = {};
 	static TFE_Settings_Game s_gameSettings = {};
 	static char s_lineBuffer[LINEBUF_LEN];
@@ -37,6 +38,7 @@ namespace TFE_Settings
 		SECTION_GRAPHICS,
 		SECTION_HUD,
 		SECTION_SOUND,
+		SECTION_SYSTEM,
 		SECTION_GAME,
 		SECTION_DARK_FORCES,
 		SECTION_OUTLAWS,
@@ -52,6 +54,7 @@ namespace TFE_Settings
 		"Graphics",
 		"Hud",
 		"Sound",
+		"System",
 		"Game",
 		"Dark_Forces",
 		"Outlaws",
@@ -66,6 +69,7 @@ namespace TFE_Settings
 	void writeGraphicsSettings(FileStream& settings);
 	void writeHudSettings(FileStream& settings);
 	void writeSoundSettings(FileStream& settings);
+	void writeSystemSettings(FileStream& settings);
 	void writeGameSettings(FileStream& settings);
 	void writePerGameSettings(FileStream& settings);
 	void writeCVars(FileStream& settings);
@@ -77,6 +81,7 @@ namespace TFE_Settings
 	void parseGraphicsSettings(const char* key, const char* value);
 	void parseHudSettings(const char* key, const char* value);
 	void parseSoundSettings(const char* key, const char* value);
+	void parseSystemSettings(const char* key, const char* value);
 	void parseGame(const char* key, const char* value);
 	void parseDark_ForcesSettings(const char* key, const char* value);
 	void parseOutlawsSettings(const char* key, const char* value);
@@ -223,6 +228,7 @@ namespace TFE_Settings
 			writeGraphicsSettings(settings);
 			writeHudSettings(settings);
 			writeSoundSettings(settings);
+			writeSystemSettings(settings);
 			writeGameSettings(settings);
 			writePerGameSettings(settings);
 			writeCVars(settings);
@@ -252,6 +258,11 @@ namespace TFE_Settings
 	TFE_Settings_Sound* getSoundSettings()
 	{
 		return &s_soundSettings;
+	}
+
+	TFE_Settings_System* getSystemSettings()
+	{
+		return &s_systemSettings;
 	}
 
 	TFE_Game* getGame()
@@ -337,6 +348,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "perspectiveCorrect3DO", s_graphicsSettings.perspectiveCorrectTexturing);
 		writeKeyValue_Bool(settings, "extendAjoinLimits", s_graphicsSettings.extendAjoinLimits);
 		writeKeyValue_Bool(settings, "vsync", s_graphicsSettings.vsync);
+		writeKeyValue_Int(settings, "frameRateLimit", s_graphicsSettings.frameRateLimit);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
 		writeKeyValue_Float(settings, "saturation", s_graphicsSettings.saturation);
@@ -372,8 +384,17 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "musicVolume", s_soundSettings.musicVolume);
 		writeKeyValue_Float(settings, "cutsceneSoundFxVolume", s_soundSettings.cutsceneSoundFxVolume);
 		writeKeyValue_Float(settings, "cutsceneMusicVolume", s_soundSettings.cutsceneMusicVolume);
+		writeKeyValue_Int(settings, "audioDevice", s_soundSettings.audioDevice);
+		writeKeyValue_Int(settings, "midiDevice", s_soundSettings.midiDevice);
 		writeKeyValue_Bool(settings, "use16Channels", s_soundSettings.use16Channels);
 		writeKeyValue_Bool(settings, "disableSoundInMenus", s_soundSettings.disableSoundInMenus);
+	}
+
+	void writeSystemSettings(FileStream& settings)
+	{
+		writeHeader(settings, c_sectionNames[SECTION_SYSTEM]);
+		writeKeyValue_Bool(settings, "gameExitsToMenu",   s_systemSettings.gameQuitExitsToMenu);
+		writeKeyValue_Bool(settings, "returnToModLoader", s_systemSettings.returnToModLoader);
 	}
 
 	void writeGameSettings(FileStream& settings)
@@ -497,6 +518,9 @@ namespace TFE_Settings
 				case SECTION_SOUND:
 					parseSoundSettings(tokens[0].c_str(), tokens[1].c_str());
 					break;
+				case SECTION_SYSTEM:
+					parseSystemSettings(tokens[0].c_str(), tokens[1].c_str());
+					break;
 				case SECTION_GAME:
 					parseGame(tokens[0].c_str(), tokens[1].c_str());
 					break;
@@ -603,6 +627,10 @@ namespace TFE_Settings
 		else if (strcasecmp("vsync", key) == 0)
 		{
 			s_graphicsSettings.vsync = parseBool(value);
+		}
+		else if (strcasecmp("frameRateLimit", key) == 0)
+		{
+			s_graphicsSettings.frameRateLimit = parseInt(value);
 		}
 		else if (strcasecmp("brightness", key) == 0)
 		{
@@ -718,6 +746,14 @@ namespace TFE_Settings
 		{
 			s_soundSettings.cutsceneMusicVolume = parseFloat(value);
 		}
+		else if (strcasecmp("audioDevice", key) == 0)
+		{
+			s_soundSettings.audioDevice = parseInt(value);
+		}
+		else if (strcasecmp("midiDevice", key) == 0)
+		{
+			s_soundSettings.midiDevice = parseInt(value);
+		}
 		else if (strcasecmp("use16Channels", key) == 0)
 		{
 			s_soundSettings.use16Channels = parseBool(value);
@@ -725,6 +761,18 @@ namespace TFE_Settings
 		else if (strcasecmp("disableSoundInMenus", key) == 0)
 		{
 			s_soundSettings.disableSoundInMenus = parseBool(value);
+		}
+	}
+
+	void parseSystemSettings(const char* key, const char* value)
+	{
+		if (strcasecmp("gameExitsToMenu", key) == 0)
+		{
+			s_systemSettings.gameQuitExitsToMenu = parseBool(value);
+		}
+		else if (strcasecmp("returnToModLoader", key) == 0)
+		{
+			s_systemSettings.returnToModLoader = parseBool(value);
 		}
 	}
 

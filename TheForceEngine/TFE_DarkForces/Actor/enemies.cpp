@@ -36,11 +36,11 @@ namespace TFE_DarkForces
 		attackMod->projType = PROJ_THERMAL_DET;
 		attackMod->attackPrimSndSrc = 0;
 		attackMod->attackSecSndSrc = 0;
-		attackMod->timing.state4Delay = 436;
+		attackMod->timing.rangedDelay = 436;
 		attackMod->maxDist = FIXED(100);
 		attackMod->meleeRange = FIXED(10);
 		attackMod->meleeDmg = FIXED(15);
-		attackMod->attackFlags = (attackMod->attackFlags | 3) & 0xfffffff7;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_LIT_RNG, ATTFLAG_MELEE | ATTFLAG_RANGED);
 		attackMod->minDist = s_reeyeeMinDist;
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
@@ -77,7 +77,7 @@ namespace TFE_DarkForces
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		attackMod->attackSecSndSrc = 0;
 		attackMod->maxDist = FIXED(100);
-		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffff5;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_RANGED | ATTFLAG_LIT_RNG, ATTFLAG_MELEE);
 		attackMod->meleeDmg = FIXED(15);
 		attackMod->meleeRange = FIXED(10);
 		s_actorState.attackMod = attackMod;
@@ -115,12 +115,12 @@ namespace TFE_DarkForces
 
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		s_actorState.attackMod = attackMod;
-		attackMod->timing.state2Delay = 57;
+		attackMod->timing.meleeDelay = 57;
 		attackMod->meleeRange = FIXED(13);
 		attackMod->meleeDmg = FIXED(40);
 		attackMod->meleeRate = FIXED(360);
 		attackMod->attackSecSndSrc = s_agentSndSrc[AGENTSND_AXE_1];
-		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffffd;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_RANGED, ATTFLAG_MELEE);
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);
@@ -162,7 +162,7 @@ namespace TFE_DarkForces
 		attackMod->minDist = FIXED(10);
 		attackMod->attackPrimSndSrc = s_concussion5SndSrc;
 		attackMod->fireSpread = 0;
-		attackMod->attackFlags = (attackMod->attackFlags & 0xfffffffc) | 2;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_MELEE, ATTFLAG_RANGED);
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);

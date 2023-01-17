@@ -4,7 +4,7 @@ struct GMidiAsset;
 
 namespace TFE_MidiPlayer
 {
-	bool init();
+	bool init(s32 midiDeviceIndex);
 	void destroy();
 	
 	///////////////////////////////////////////////////////////

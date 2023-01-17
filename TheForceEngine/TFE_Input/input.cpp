@@ -54,19 +54,13 @@ namespace TFE_Input
 	////////////////////////////////////////////////////////
 	void endFrame()
 	{
-		for (u32 i = 0; i < CONTROLLER_BUTTON_COUNT; i++)
-		{
-			s_buttonPressed[i] = 0;
-		}
-		for (u32 i = 0; i < MBUTTON_COUNT; i++)
-		{
-			s_mousePressed[i] = 0;
-		}
 		s_mouseWheel[0] = 0;
 		s_mouseWheel[1] = 0;
-		memset(s_keyPressed, 0, KEY_COUNT);
-		memset(s_bufferedKey, 0, KEY_COUNT);
-		memset(s_bufferedText, 0, BUFFERED_TEXT_LEN);
+		memset(s_buttonPressed, 0, CONTROLLER_BUTTON_COUNT);
+		memset(s_mousePressed,  0, MBUTTON_COUNT);
+		memset(s_keyPressed,    0, KEY_COUNT);
+		memset(s_bufferedKey,   0, KEY_COUNT);
+		memset(s_bufferedText,  0, BUFFERED_TEXT_LEN);
 	}
 
 	// Set, from the OS
@@ -301,13 +295,13 @@ namespace TFE_Input
 		return KEYMOD_NONE;
 	}
 		
-	bool keyModDown(KeyModifier keyMod)
+	bool keyModDown(KeyModifier keyMod, bool allowAltOnNone)
 	{
 		switch (keyMod)
 		{
 			case KEYMOD_NONE:
 			{
-				return !keyDown(KEY_LALT) && !keyDown(KEY_RALT);
+				return allowAltOnNone || (!keyDown(KEY_LALT) && !keyDown(KEY_RALT));
 			} break;
 			case KEYMOD_ALT:
 			{

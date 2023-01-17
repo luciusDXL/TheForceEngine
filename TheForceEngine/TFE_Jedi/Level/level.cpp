@@ -127,7 +127,7 @@ namespace TFE_Jedi
 		const char* line;
 		line = parser.readLine(bufferPos);
 		s32 versionMajor, versionMinor;
-		if (sscanf(line, "LEV %d.%d", &versionMajor, &versionMinor) != 2)
+		if (sscanf(line, " LEV %d.%d", &versionMajor, &versionMinor) != 2)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read version.");
 			return false;
@@ -139,7 +139,7 @@ namespace TFE_Jedi
 		}
 		
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, "LEVELNAME %s", s_readBuffer) != 1)
+		if (sscanf(line, " LEVELNAME %s", s_readBuffer) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read level name.");
 			return false;
@@ -147,7 +147,7 @@ namespace TFE_Jedi
 
 		// This gets read here just to be overwritten later... so just ignore for now.
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, "PALETTE %s", s_levelState.levelPaletteName) != 1)
+		if (sscanf(line, " PALETTE %s", s_levelState.levelPaletteName) != 1)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read palette name.");
 			return false;
@@ -157,7 +157,7 @@ namespace TFE_Jedi
 		
 		// Another value that is ignored.
 		line = parser.readLine(bufferPos);
-		if (sscanf(line, "MUSIC %s", s_readBuffer) != 1)
+		if (sscanf(line, " MUSIC %s", s_readBuffer) != 1)
 		{
 			TFE_System::logWrite(LOG_WARNING, "level_loadGeometry", "Cannot read music name.");
 		}
@@ -168,7 +168,7 @@ namespace TFE_Jedi
 
 		// Sky Parallax.
 		f32 parallax0, parallax1;
-		if (sscanf(line, "PARALLAX %f %f", &parallax0, &parallax1) != 2)
+		if (sscanf(line, " PARALLAX %f %f", &parallax0, &parallax1) != 2)
 		{
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read parallax values.");
 			return false;

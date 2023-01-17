@@ -175,9 +175,9 @@ namespace TFE_Jedi
 		}
 
 		sector->colFloorHeight = floorHeight;
-		sector->colCeilHeight = ceilHeight;
-		sector->colSecHeight = secHeight;
-		sector->colMinHeight = ceilHeight;
+		sector->colCeilHeight  = ceilHeight;
+		sector->colSecHeight   = secHeight;
+		sector->colSecCeilHeight = ceilHeight;
 	}
 
 	void sector_computeBounds(RSector* sector)
@@ -205,26 +205,13 @@ namespace TFE_Jedi
 		sector->boundsMax.x = maxX;
 		sector->boundsMin.z = minZ;
 		sector->boundsMax.z = maxZ;
-
-		// Setup when needed.
-		//s_minX = minX;
-		//s_maxX = maxX;
-		//s_minZ = minZ;
-		//s_maxZ = maxZ;
 	}
 
 	fixed16_16 sector_getMaxObjectHeight(RSector* sector)
 	{
 		s32 maxObjHeight = 0;
-		s32 count = sector->objectCount;
 		SecObject** objectList = sector->objectList;
-
-		if (!sector->objectCount)
-		{
-			return 0;
-		}
-
-		for (; count > 0; objectList++)
+		for (s32 count = sector->objectCount; count > 0; objectList++)
 		{
 			SecObject* obj = *objectList;
 			if (obj)
@@ -828,7 +815,6 @@ namespace TFE_Jedi
 
 	void sector_removeCorpses(RSector* sector)
 	{
-		//s_infCurSector = sector;
 		SecObject* obj = nullptr;
 		s32 objectCount = sector->objectCount;
 
@@ -1012,7 +998,7 @@ namespace TFE_Jedi
 			{
 				obj,
 				offsetX, offsetY, offsetZ,
-				0, FIXED(9999), height, 0,
+				0, COL_INFINITY, height, 0,
 				0, 0, 0,	// to be filled in later.
 				obj->worldWidth,
 			};
@@ -1216,7 +1202,7 @@ namespace TFE_Jedi
 	void sector_getObjFloorAndCeilHeight(RSector* sector, fixed16_16 y, fixed16_16* floorHeight, fixed16_16* ceilHeight)
 	{
 		fixed16_16 secHeight = sector->secHeight;
-		fixed16_16 bottom = y - FIXED(2);
+		fixed16_16 bottom = y - COL_SEC_HEIGHT_OFFSET;
 		if (secHeight < 0)
 		{
 			fixed16_16 height = sector->floorHeight + sector->secHeight;
@@ -1255,7 +1241,7 @@ namespace TFE_Jedi
 			{
 				obj,
 				offsetX, 0, offsetZ,
-				0, FIXED(9999), height, 0,
+				0, COL_INFINITY, height, 0,
 				0, 0, 0,	// to be filled in later.
 				obj->worldWidth,
 			};

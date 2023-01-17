@@ -91,7 +91,11 @@ namespace TFE_DarkForces
 
 		if (!menu_openResourceArchive(archive))
 		{
-			return;
+			// Try the dfbrief.lfd file.
+			if (!menu_openResourceArchive("dfbrief.lfd"))
+			{
+				return;
+			}
 		}
 
 		// Mission specific text and images.

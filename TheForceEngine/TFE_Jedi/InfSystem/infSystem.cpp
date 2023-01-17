@@ -14,6 +14,7 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
+#include <TFE_Jedi/Collision/collision.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
@@ -63,6 +64,9 @@ namespace TFE_Jedi
 	static char s_infArg4[256];
 	static char s_infArgExtra[256];
 
+	// DOS hack... this is required since elevators with an invalid delay use the previous valid delay.
+	static Tick s_prevStopDelay = 0;
+
 	// Forward Declarations.
 	void inf_elevatorTaskFunc(MessageType msg);
 	void inf_telelporterTaskFunc(MessageType msg);
@@ -78,7 +82,7 @@ namespace TFE_Jedi
 	void elevHandleStopDelay(InfElevator* elev);
 	Stop* inf_advanceStops(Allocator* stops, s32 absoluteStop, s32 relativeStop);
 	bool inf_parseElevatorCommand(s32 argCount, KEYWORD action, Allocator* linkAlloc, bool seqEnd, InfElevator*& elev, s32& initStopIndex, InfLink*& link);
-	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, MessageType defType);
+	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, bool elevator = false);
 	void inf_setWallBits(RWall* wall);
 	void inf_clearWallBits(RWall* wall);
 
@@ -361,8 +365,8 @@ namespace TFE_Jedi
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_FLOOR);
 				link = inf_addElevatorToSector(elev, sector);
 
-				fixed16_16 maxFloor = -FIXED(9999);
-				fixed16_16 minFloor = FIXED(9999);
+				fixed16_16 maxFloor = -COL_INFINITY;
+				fixed16_16 minFloor =  COL_INFINITY;
 				s32 wallCount = sector->wallCount;
 				RWall* wall = sector->walls;
 				for (s32 i = 0; i < wallCount; i++, wall++)
@@ -635,23 +639,16 @@ namespace TFE_Jedi
 
 	Stop* inf_getStopByIndex(InfElevator* elev, s32 index)
 	{
-		Allocator* stops = elev->stops;
-		if (!stops)
+		Stop* stop = nullptr;
+		if (elev->stops)
 		{
-			return nullptr;
-		}
-
-		Stop* stop = (Stop*)allocator_getHead(stops);
-		while (stop)
-		{
-			index--;
-			if (index == -1)
+			stop = (Stop*)allocator_getHead(elev->stops);
+			while (index--)
 			{
-				return stop;
+				stop = (Stop*)allocator_getNext(elev->stops);
 			}
-			stop = (Stop*)allocator_getNext(stops);
 		}
-		return nullptr;
+		return stop;
 	}
 
 	void inf_addSlave(InfElevator* elev, fixed16_16 value, RSector* sector)
@@ -731,7 +728,15 @@ namespace TFE_Jedi
 		const char* line;
 
 		MessageAddress* msgAddr = message_getAddress(itemName);
+		// This means the level is most likely broken. But better to write an error and return than crash.
+		if (!msgAddr)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+
 		RSector* sector = msgAddr->sector;
+		assert(sector);
 		KEYWORD itemSubclass = getKeywordIndex(s_infArg1);
 
 		InfElevator* elev = nullptr;
@@ -861,7 +866,6 @@ namespace TFE_Jedi
 			{
 				TFE_System::logWrite(LOG_WARNING, "INF", "Unknown elevator command - '%s'.", id);
 			}
-
 			seqEnd = inf_parseElevatorCommand(argCount, action, linkAlloc, seqEnd, elev, initStopIndex, link);
 		} // while (!seqEnd)
 
@@ -872,8 +876,12 @@ namespace TFE_Jedi
 	bool parseSectorTrigger(TFE_Parser& parser, size_t& bufferPos, s32 argCount, const char* itemName)
 	{
 		MessageAddress* msgAddr = message_getAddress(itemName);
-		assert(msgAddr);
-		RSector* sector = msgAddr ? msgAddr->sector : nullptr;
+		if (!msgAddr)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+		RSector* sector = msgAddr->sector;
 
 		// The original code is a bit strange here.
 		// Since this is a sector trigger, all of the different types behave exactly the same, though there are multiple
@@ -937,7 +945,7 @@ namespace TFE_Jedi
 				} break;
 				case KW_MESSAGE:
 				{
-					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_TRIGGER);
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2);
 				} break;
 				case KW_EVENT_MASK:
 				{
@@ -981,6 +989,12 @@ namespace TFE_Jedi
 	bool parseTeleport(TFE_Parser& parser, size_t& bufferPos, const char* itemName)
 	{
 		MessageAddress* msgAddr = message_getAddress(itemName);
+		if (!msgAddr)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+
 		RSector* sector = msgAddr->sector;
 
 		KEYWORD type = getKeywordIndex(s_infArg1);
@@ -1021,7 +1035,7 @@ namespace TFE_Jedi
 				fixed16_16 dstPosX = floatToFixed16(strtof(s_infArg0, &endPtr));
 				fixed16_16 dstPosY = floatToFixed16(strtof(s_infArg1, &endPtr));
 				fixed16_16 dstPosZ = floatToFixed16(strtof(s_infArg2, &endPtr));
-				angle14_16 yaw = s16(strtof(s_infArg3, &endPtr) * 360.0f / 16383.0f);
+				angle14_16 yaw = floatToAngle(strtof(s_infArg3, &endPtr));
 
 				inf_setTeleportDestPosition(teleport, dstPosX, dstPosY, dstPosZ);
 				inf_setTeleportDestAngle(teleport, 0, yaw, 0);
@@ -1043,6 +1057,12 @@ namespace TFE_Jedi
 		assert(typeId != KW_UNKNOWN);
 
 		MessageAddress* msgAddr = message_getAddress(name);
+		if (!msgAddr)
+		{
+			parser.readLine(bufferPos);
+			return false;
+		}
+
 		RSector* sector = msgAddr->sector;
 		RWall* wall = &sector->walls[num];
 
@@ -1173,7 +1193,7 @@ namespace TFE_Jedi
 				} break;
 				case KW_MESSAGE:
 				{
-					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2, MSG_TRIGGER);
+					inf_parseMessage(&trigger->cmd, &trigger->arg0, &trigger->arg1, nullptr, s_infArg0, s_infArg1, s_infArg2);
 				} break;
 			}  // switch (itemId)
 		}  // while (!seqEnd)
@@ -1259,7 +1279,7 @@ namespace TFE_Jedi
 		// Then loop through all of the items and parse their classes.
 		if (itemCount > MAX_INF_ITEMS)
 		{
-			TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Too many INF items - skipping extra items.");
+			TFE_System::logWrite(LOG_WARNING, "level_loadINF", "Too many INF items - skipping extra items.");
 			itemCount = MAX_INF_ITEMS;
 		}
 
@@ -1279,7 +1299,7 @@ namespace TFE_Jedi
 				line = parser.readLine(bufferPos);
 				if (!line)
 				{
-					TFE_System::logWrite(LOG_ERROR, "level_loadINF", "Hit the end of INF '%s' before parsing all items: %d/%d", levelName, i, itemCount);
+					TFE_System::logWrite(LOG_WARNING, "level_loadINF", "Hit the end of INF '%s' before parsing all items: %d/%d", levelName, i, itemCount);
 					return JTRUE;
 				}
 				continue;
@@ -1818,7 +1838,7 @@ namespace TFE_Jedi
 	/////////////////////////////////////////////////////
 	// Internal
 	/////////////////////////////////////////////////////
-	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, MessageType defType)
+	void inf_parseMessage(MessageType* type, u32* arg1, u32* arg2, u32* evt, const char* infArg0, const char* infArg1, const char* infArg2, bool elevator)
 	{
 		const KEYWORD msgId = getKeywordIndex(infArg0);
 
@@ -1841,9 +1861,6 @@ namespace TFE_Jedi
 			case KW_MASTER_OFF:
 				*type = MSG_MASTER_OFF;
 				break;
-			case KW_DONE:
-				*type = MSG_DONE;
-				break;
 			case KW_SET_BITS:
 				*type = MSG_SET_BITS;
 				*arg1 = strToUInt(infArg1);
@@ -1864,17 +1881,30 @@ namespace TFE_Jedi
 			case KW_LIGHTS:
 				*type = MSG_LIGHTS;
 				break;
-			case KW_WAKEUP:
-				*type = MSG_WAKEUP;
-				break;
 			case KW_M_TRIGGER:
-				*type = MSG_TRIGGER;
-				break;
 			default:
-				*type = defType;
+				if (elevator)
+				{
+					// Elevators can use a few additional message types, but these are treated as M_TRIGGER for either trigger type.
+					switch (msgId)
+					{
+						case KW_DONE:
+							*type = MSG_DONE;
+							break;
+						case KW_WAKEUP:
+							*type = MSG_WAKEUP;
+							break;
+						default:
+							*type = MSG_TRIGGER;
+					}
+				}
+				else // Trigger
+				{
+					*type = MSG_TRIGGER;
+				}
 		}
 	}
-
+		
 	bool inf_parseElevatorCommand(s32 argCount, KEYWORD action, Allocator* linkAlloc, bool seqEnd, InfElevator*& elev, s32& initStopIndex, InfLink*& link)
 	{
 		char* endPtr;
@@ -1905,7 +1935,7 @@ namespace TFE_Jedi
 						// This is a bug (in the original code):
 						// This will always evaluate to 0 because strtof('@') = 0
 						value = strtof(s_infArg0, &endPtr);
-						stopValue = s32(value * 16383.0f / 360.0f);
+						stopValue = floatToAngle(value);
 						stopValue = floatToFixed16(f32(stopValue));
 					}
 				}
@@ -1923,7 +1953,7 @@ namespace TFE_Jedi
 					{
 						// Rotation stop values need to be converted to angles.
 						value = strtof(s_infArg0, &endPtr);
-						stopValue = s32(value * 16383.0f / 360.0f);
+						stopValue = floatToAngle(value);
 						stopValue = floatToFixed16(f32(stopValue));
 					}
 				}
@@ -1941,7 +1971,7 @@ namespace TFE_Jedi
 				}
 
 				// Delay is optional, if not specified each elevator has its own default.
-				Tick delay = 0;
+				Tick delay;
 				// Numeric
 				if ((s_infArg1[0] >= '0' && s_infArg1[0] <= '9') || s_infArg1[0] == '-' || s_infArg1[0] == '.')
 				{
@@ -1961,6 +1991,11 @@ namespace TFE_Jedi
 				{
 					delay = IDELAY_COMPLETE;
 				}
+				else
+				{
+					delay = s_prevStopDelay;
+				}
+				s_prevStopDelay = delay;
 
 				inf_setStopDelay(stop, delay);
 			} break;
@@ -1971,7 +2006,7 @@ namespace TFE_Jedi
 					f32 value = strtof(s_infArg0, &endPtr);
 					// 360 degrees is split into 16384 angular units.
 					// Speed is in angular units.
-					s32 speed = s32(value * 16383.0f / 360.0f);
+					s32 speed = floatToAngle(value);
 					// Then speed is converted to a fixed point value, essentially 14.16 fixed point.
 					elev->speed = intToFixed16(speed & 0xffff);
 				}
@@ -1989,7 +2024,7 @@ namespace TFE_Jedi
 			case KW_ANGLE:
 			{
 				f32 value = strtof(s_infArg0, &endPtr);
-				s32 angle = s32(value * 16383.0f / 360.0f);
+				s32 angle = floatToAngle(value);
 				inf_setDirFromAngle(elev, angle);
 			} break;
 			case KW_ADJOIN:
@@ -2047,7 +2082,7 @@ namespace TFE_Jedi
 				if (argCount > 2)
 				{
 					f32 value = strtof(s_infArg1, &endPtr);
-					slaveValue = s32(value * 16383.0f / 360.0f);
+					slaveValue = floatToAngle(value);
 				}
 				inf_addSlave(elev, slaveValue, msgAddr->sector);
 			} break;
@@ -2055,32 +2090,31 @@ namespace TFE_Jedi
 			{
 				s32 stopId = strToInt(s_infArg0);
 				Stop* stop = inf_getStopByIndex(elev, stopId);
-				if (!stop)
+				if (stop)
 				{
-					return seqEnd;
-				}
-				if (!stop->messages)
-				{
-					stop->messages = allocator_create(sizeof(InfMessage));
-				}
+					if (!stop->messages)
+					{
+						stop->messages = allocator_create(sizeof(InfMessage));
+					}
 
-				InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
-				RSector* targetSector;
-				RWall* targetWall;
-				inf_getMessageTarget(s_infArg1, &targetSector, &targetWall);
-				msg->sector = targetSector;
-				msg->wall = targetWall;
+					InfMessage* msg = (InfMessage*)allocator_newItem(stop->messages);
+					RSector* targetSector;
+					RWall* targetWall;
+					inf_getMessageTarget(s_infArg1, &targetSector, &targetWall);
+					msg->sector = targetSector;
+					msg->wall = targetWall;
 
-				msg->msgType = MSG_TRIGGER;
-				msg->event = INF_EVENT_NONE;
-				if (argCount >= 5)
-				{
-					msg->event = strToUInt(s_infArg3);
-				}
+					msg->msgType = MSG_TRIGGER;
+					msg->event = INF_EVENT_NONE;
+					if (argCount >= 5)
+					{
+						msg->event = strToUInt(s_infArg3);
+					}
 
-				if (argCount > 3)
-				{
-					inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, MSG_TRIGGER);
+					if (argCount > 3)
+					{
+						inf_parseMessage(&msg->msgType, &msg->arg1, &msg->arg2, &msg->event, s_infArg2, s_infArg3, s_infArg4, true);
+					}
 				}
 			} break;
 			case KW_EVENT_MASK:

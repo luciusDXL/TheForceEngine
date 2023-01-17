@@ -105,7 +105,7 @@ namespace TFE_DarkForces
 			colInfo.offsetX = mul16(actorLogic->vel.x, 0x4000);
 			colInfo.offsetZ = mul16(actorLogic->vel.z, 0x4000);
 			colInfo.botOffset = ONE_16;
-			colInfo.yPos = FIXED(9999);
+			colInfo.yPos = COL_INFINITY;
 			colInfo.height = ONE_16;
 			colInfo.unused = 0;
 			colInfo.width = colInfo.obj->worldWidth;
@@ -124,8 +124,7 @@ namespace TFE_DarkForces
 	{
 		ActorDispatch* dispatch = actor_createDispatch(obj, setupFunc);
 
-		dispatch->flags &= 0xfffffffb;
-		dispatch->flags &= 0xfffffffe;
+		dispatch->flags &= ~(1 | 4);
 		dispatch->animTable = s_mineBarrelAnimTable;
 
 		DamageModule* module = actor_createDamageModule(dispatch);
@@ -139,12 +138,12 @@ namespace TFE_DarkForces
 		dispatch->moveMod = moveMod;
 		moveMod->collisionFlags |= 1;
 		moveMod->physics.width = obj->worldWidth;
-		moveMod->target.flags = (moveMod->target.flags | TARGET_FREEZE) & (~TARGET_ALL_MOVE);
+		moveMod->target.flags = (moveMod->target.flags & ~TARGET_ALL_MOVE) | TARGET_FREEZE;
 		moveMod->target.speed = 0;
 		moveMod->target.speedRotation = 0;
 
 		ActorTarget* target = &module->attackMod.target;
-		target->flags = (target->flags | 8) & 0xfffffff8;
+		target->flags = (target->flags & ~TARGET_ALL_MOVE) | TARGET_FREEZE;
 		target->speed = 0;
 		target->speedRotation = 0;
 

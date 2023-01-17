@@ -712,7 +712,7 @@ namespace RClassic_Float
 	{
 		if (!srcWall->wall->signTex) { return nullptr; }
 
-		TextureData* signTex = *srcWall->wall->signTex;
+		TextureData* signTex = srcWall->wall->signTex ? *srcWall->wall->signTex : nullptr;
 		*signU0 = 0; *signU1 = 0;
 		*signFullbright = nullptr; *signLit = nullptr;
 		if (signTex)
@@ -915,7 +915,7 @@ namespace RClassic_Float
 
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
-		TextureData* texture = *srcWall->midTex;
+		TextureData* texture = srcWall->midTex ? *srcWall->midTex : nullptr;
 
 		f32 z0 = wallSegment->z0;
 		f32 yC0 = edge->yCeil0;
@@ -1108,7 +1108,7 @@ namespace RClassic_Float
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
 		RSector* nextSector = srcWall->nextSector;
-		TextureData* tex = *srcWall->botTex;
+		TextureData* tex = srcWall->botTex ? *srcWall->botTex : nullptr;
 		if (!tex) { return; }
 
 		f32 z0 = wallSegment->z0;
@@ -1344,7 +1344,7 @@ namespace RClassic_Float
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
 		RSector* next = srcWall->nextSector;
-		TextureData* texture = *srcWall->topTex;
+		TextureData* texture = srcWall->topTex ? *srcWall->topTex : nullptr;
 		if (!texture) { return; }
 
 		f32 z0 = wallSegment->z0;
@@ -1562,7 +1562,7 @@ namespace RClassic_Float
 
 		RWall* srcWall = cachedWall->wall;
 		RSector* sector = srcWall->sector;
-		TextureData* topTex = *srcWall->topTex;
+		TextureData* topTex = srcWall->topTex ? *srcWall->topTex : nullptr;
 
 		f32 z0 = wallSegment->z0;
 		f32 z1 = wallSegment->z1;
@@ -1732,7 +1732,7 @@ namespace RClassic_Float
 
 		f32 yF0 = next_fProj0;
 		f32 yF1 = fProj0;
-		TextureData* botTex = *srcWall->botTex;
+		TextureData* botTex = srcWall->botTex ? *srcWall->botTex : nullptr;
 		f0_pixel = roundFloat(next_fProj0);
 		f1_pixel = roundFloat(next_fProj1);
 
@@ -1868,7 +1868,9 @@ namespace RClassic_Float
 		if (s_wallMaxCeilY < s_windowMinY_Pixels) { return; }
 		TFE_ZONE("Draw Sky");
 
-		TextureData* texture = *sector->ceilTex;
+		TextureData* texture = sector->ceilTex ? *sector->ceilTex : nullptr;
+		if (!texture) { return; }
+
 		f32 heightScale;
 		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
 		// However with higher resolutions this must be scaled to look the same.
@@ -1916,7 +1918,8 @@ namespace RClassic_Float
 	void wall_drawSkyTopNoWall(RSector* sector)
 	{
 		TFE_ZONE("Draw Sky");
-		const TextureData* texture = *sector->ceilTex;
+		const TextureData* texture = sector->ceilTex ? *sector->ceilTex : nullptr;
+		if (!texture) { return; }
 
 		f32 heightScale;
 		f32 vCoordStep;
@@ -1969,7 +1972,9 @@ namespace RClassic_Float
 		if (s_wallMinFloorY > s_windowMaxY_Pixels) { return; }
 		TFE_ZONE("Draw Sky");
 
-		TextureData* texture = *sector->floorTex;
+		TextureData* texture = sector->floorTex ? *sector->floorTex : nullptr;
+		if (!texture) { return; }
+
 		f32 heightScale;
 		f32 vCoordStep;
 		// In the original code (at the original 200p resolution) the sky is setup to step exactly one texel per vertical pixel
@@ -2017,7 +2022,8 @@ namespace RClassic_Float
 	void wall_drawSkyBottomNoWall(RSector* sector)
 	{
 		TFE_ZONE("Draw Sky");
-		const TextureData* texture = *sector->floorTex;
+		const TextureData* texture = sector->floorTex ? *sector->floorTex : nullptr;
+		if (!texture) { return; }
 
 		f32 heightScale;
 		f32 vCoordStep;
@@ -2376,9 +2382,9 @@ namespace RClassic_Float
 			}
 		}
 
-		if (drawn && s_drawnSpriteCount < MAX_DRAWN_SPRITE_STORE)
+		if (drawn && s_drawnObjCount < MAX_DRAWN_OBJ_STORE)
 		{
-			s_drawnSprites[s_drawnSpriteCount++] = obj;
+			s_drawnObj[s_drawnObjCount++] = obj;
 		}
 	}
 }  // RClassic_Float

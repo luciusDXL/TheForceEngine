@@ -221,10 +221,10 @@ namespace TFE_DarkForces
 	void actor_serializeTiming(Stream* stream, ActorTiming* timing)
 	{
 		SERIALIZE(SaveVersionInit, timing->delay, 0);
-		SERIALIZE(SaveVersionInit, timing->state0Delay, 0);
-		SERIALIZE(SaveVersionInit, timing->state2Delay, 0);
-		SERIALIZE(SaveVersionInit, timing->state4Delay, 0);
-		SERIALIZE(SaveVersionInit, timing->state1Delay, 0);
+		SERIALIZE(SaveVersionInit, timing->searchDelay, 0);
+		SERIALIZE(SaveVersionInit, timing->meleeDelay,  0);
+		SERIALIZE(SaveVersionInit, timing->rangedDelay, 0);
+		SERIALIZE(SaveVersionInit, timing->losDelay, 0);
 		SERIALIZE(SaveVersionInit, timing->nextTick, 0);
 	}
 
@@ -237,7 +237,7 @@ namespace TFE_DarkForces
 		SERIALIZE(SaveVersionInit, anim->startFrame, 0);
 		SERIALIZE(SaveVersionInit, anim->flags, 0);
 		SERIALIZE(SaveVersionInit, anim->animId, 0);
-		SERIALIZE(SaveVersionInit, anim->state, 0);
+		SERIALIZE(SaveVersionInit, anim->state, STATE_DELAY);
 	}
 
 	void actor_serializeMovementModuleBase(Stream* stream, MovementModule* moveMod)
@@ -280,7 +280,7 @@ namespace TFE_DarkForces
 		actor_serializeTiming(stream, &attackMod->timing);
 		actor_serializeLogicAnim(stream, &attackMod->anim);
 		SERIALIZE(SaveVersionInit, attackMod->fireSpread, 0);
-		SERIALIZE(SaveVersionInit, attackMod->state0NextTick, 0);
+		SERIALIZE(SaveVersionInit, attackMod->accuracyNextTick, 0);
 		SERIALIZE(SaveVersionInit, attackMod->fireOffset, {0});
 		SERIALIZE(SaveVersionInit, attackMod->projType, PROJ_COUNT);
 		serialization_serializeDfSound(stream, SaveVersionInit, &attackMod->attackSecSndSrc);

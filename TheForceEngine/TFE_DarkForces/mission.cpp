@@ -480,7 +480,14 @@ namespace TFE_DarkForces
 				else if (action == ESC_QUIT)
 				{
 					saveLevelStatus();
-					TFE_System::postQuitMessage();
+					if (TFE_Settings::getSystemSettings()->gameQuitExitsToMenu)
+					{
+						TFE_FrontEndUI::exitToMenu();
+					}
+					else
+					{
+						TFE_System::postQuitMessage();
+					}
 				}
 			}
 			else if (pda_isOpen())

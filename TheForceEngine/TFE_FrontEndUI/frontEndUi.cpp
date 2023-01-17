@@ -4,12 +4,14 @@
 #include "modLoader.h"
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
+#include <TFE_Audio/midiDevice.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_System/frameLimiter.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -48,7 +50,7 @@ namespace TFE_FrontEndUI
 		FEUI_MODS,
 		FEUI_COUNT
 	};
-
+	
 	enum ConfigTab
 	{
 		CONFIG_ABOUT = 0,
@@ -59,7 +61,13 @@ namespace TFE_FrontEndUI
 		CONFIG_GRAPHICS,
 		CONFIG_HUD,
 		CONFIG_SOUND,
+		CONFIG_SYSTEM,
 		CONFIG_COUNT
+	};
+
+	enum
+	{
+		MAX_AUDIO_OUTPUTS = 16
 	};
 
 	const char* c_configLabels[] =
@@ -72,6 +80,7 @@ namespace TFE_FrontEndUI
 		"Graphics",
 		"Hud",
 		"Sound",
+		"System",
 	};
 
 	static const Vec2i c_resolutionDim[] =
@@ -154,6 +163,7 @@ namespace TFE_FrontEndUI
 	static ImFont* s_dialogFont;
 	static SubUI s_subUI;
 	static ConfigTab s_configTab;
+	static bool s_modLoaded = false;
 	static bool s_saveLoadSetupRequired = true;
 	static bool s_bindingPopupOpen = false;
 
@@ -166,10 +176,11 @@ namespace TFE_FrontEndUI
 	static UiImage s_titleGpuImage;
 	static UiImage s_gradientImage;
 
-	static UiImage s_buttonNormal[7];
-	static UiImage s_buttonSelected[7];
+	static UiImage s_buttonNormal[8];
+	static UiImage s_buttonSelected[8];
 
-	static MenuItemSelected s_menuItemselected[7];
+	static MenuItemSelected s_menuItemselected[8];
+	static const size_t s_menuItemCount = TFE_ARRAYSIZE(s_menuItemselected);
 
 	static const char* c_axisBinding[] =
 	{
@@ -202,6 +213,7 @@ namespace TFE_FrontEndUI
 	void configGraphics();
 	void configHud();
 	void configSound();
+	void configSystem();
 	void pickCurrentResolution();
 	void manual();
 	void credits();
@@ -210,6 +222,7 @@ namespace TFE_FrontEndUI
 	void renderBackground();
 
 	void menuItem_Start();
+	void menuItem_Load();
 	void menuItem_Manual();
 	void menuItem_Credits();
 	void menuItem_Settings();
@@ -272,18 +285,20 @@ namespace TFE_FrontEndUI
 		bool buttonsLoaded = true;
 		buttonsLoaded &= loadGpuImage("UI_Images/TFE_StartNormal.png", &s_buttonNormal[0]);
 		buttonsLoaded &= loadGpuImage("UI_Images/TFE_StartSelected.png", &s_buttonSelected[0]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualNormal.png", &s_buttonNormal[1]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualSelected.png", &s_buttonSelected[1]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsNormal.png", &s_buttonNormal[2]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsSelected.png", &s_buttonSelected[2]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsNormal.png", &s_buttonNormal[3]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsSelected.png", &s_buttonSelected[3]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsNormal.png", &s_buttonNormal[4]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsSelected.png", &s_buttonSelected[4]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorNormal.png", &s_buttonNormal[5]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorSelected.png", &s_buttonSelected[5]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitNormal.png", &s_buttonNormal[6]);
-		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitSelected.png", &s_buttonSelected[6]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_LoadNormal.png", &s_buttonNormal[1]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_LoadSelected.png", &s_buttonSelected[1]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualNormal.png", &s_buttonNormal[2]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ManualSelected.png", &s_buttonSelected[2]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsNormal.png", &s_buttonNormal[3]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_CreditsSelected.png", &s_buttonSelected[3]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsNormal.png", &s_buttonNormal[4]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_SettingsSelected.png", &s_buttonSelected[4]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsNormal.png", &s_buttonNormal[5]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ModsSelected.png", &s_buttonSelected[5]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorNormal.png", &s_buttonNormal[6]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_EditorSelected.png", &s_buttonSelected[6]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitNormal.png", &s_buttonNormal[7]);
+		buttonsLoaded &= loadGpuImage("UI_Images/TFE_ExitSelected.png", &s_buttonSelected[7]);
 		if (!buttonsLoaded)
 		{
 			TFE_System::logWrite(LOG_ERROR, "SystemUI", "Cannot load title screen button images.");
@@ -291,12 +306,13 @@ namespace TFE_FrontEndUI
 				
 		// Setup menu item callbacks
 		s_menuItemselected[0] = menuItem_Start;
-		s_menuItemselected[1] = menuItem_Manual;
-		s_menuItemselected[2] = menuItem_Credits;
-		s_menuItemselected[3] = menuItem_Settings;
-		s_menuItemselected[4] = menuItem_Mods;
-		s_menuItemselected[5] = menuItem_Editor;
-		s_menuItemselected[6] = menuItem_Exit;
+		s_menuItemselected[1] = menuItem_Load;
+		s_menuItemselected[2] = menuItem_Manual;
+		s_menuItemselected[3] = menuItem_Credits;
+		s_menuItemselected[4] = menuItem_Settings;
+		s_menuItemselected[5] = menuItem_Mods;
+		s_menuItemselected[6] = menuItem_Editor;
+		s_menuItemselected[7] = menuItem_Exit;
 	}
 
 	void shutdown()
@@ -420,6 +436,25 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 	}
 
+	void exitToMenu()
+	{
+		s_menuRetState = APP_STATE_MENU;
+		s_drawNoGameDataMsg = false;
+		s_appState = APP_STATE_EXIT_TO_MENU;
+		s_selectedModCmd[0] = 0;
+		s_relativeMode = false;
+		TFE_Input::enableRelativeMode(s_relativeMode);
+
+		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
+		{
+			menuItem_Mods();
+		}
+		else
+		{
+			s_subUI = FEUI_NONE;
+		}
+	}
+
 	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults)
 	{
 		const u32 windowInvisFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings;
@@ -475,6 +510,7 @@ namespace TFE_FrontEndUI
 
 			// Title
 			bool titleActive = true;
+			const f32 titleLeft = f32((w + logoWidth - titleWidth) / 2);
 			ImGui::SetNextWindowSize(ImVec2(logoWidth + windowPadding, logoHeight + windowPadding));
 			ImGui::SetNextWindowPos(ImVec2(f32((w - logoWidth - titleWidth) / 2), (f32)topOffset));
 			ImGui::Begin("##Logo", &titleActive, windowInvisFlags);
@@ -482,7 +518,7 @@ namespace TFE_FrontEndUI
 			ImGui::End();
 
 			ImGui::SetNextWindowSize(ImVec2(titleWidth + windowPadding, titleWidth + windowPadding));
-			ImGui::SetNextWindowPos(ImVec2(f32((w + logoWidth - titleWidth) / 2), (f32)topOffset + (logoHeight - titleHeight) / 2));
+			ImGui::SetNextWindowPos(ImVec2(titleLeft, (f32)topOffset + (logoHeight - titleHeight) / 2));
 			ImGui::Begin("##Title", &titleActive, windowInvisFlags);
 			ImGui::Image(s_titleGpuImage.image, ImVec2((f32)titleWidth, (f32)titleHeight));
 			ImGui::End();
@@ -492,7 +528,9 @@ namespace TFE_FrontEndUI
 			sprintf(versionText, "Version %s", TFE_System::getVersionString());
 			const f32 stringWidth = s_versionFont->CalcTextSizeA(s_versionFont->FontSize, 1024.0f, 0.0f, versionText).x;
 
-			ImGui::SetNextWindowPos(ImVec2(f32(w) - stringWidth - s_versionFont->FontSize*2.0f, f32(h) - s_versionFont->FontSize*4.0f));
+			// Make the version fit within the same area as the title.
+			f32 rightEdge = titleLeft + titleWidth;
+			ImGui::SetNextWindowPos(ImVec2(rightEdge - stringWidth - s_versionFont->FontSize*2.0f, f32(h) - s_versionFont->FontSize*4.0f));
 			ImGui::Begin("##Version", &titleActive, windowInvisFlags);
 			ImGui::Text(versionText);
 			ImGui::End();
@@ -585,7 +623,7 @@ namespace TFE_FrontEndUI
 			}
 			else
 			{
-				s32 menuHeight = (textHeight + 24) * 7 + 4;
+				s32 menuHeight = (textHeight + 24) * s_menuItemCount + 4;
 
 				// Main Menu
 				ImGui::PushFont(s_menuFont);
@@ -597,7 +635,7 @@ namespace TFE_FrontEndUI
 					ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBackground);
 
 				ImVec2 textSize = ImVec2(f32(textWidth), f32(textHeight));
-				for (s32 i = 0; i < 7; i++)
+				for (s32 i = 0; i < s_menuItemCount; i++)
 				{
 					// Disable the editor for now.
 					// Remove this out once it is working again.
@@ -667,7 +705,11 @@ namespace TFE_FrontEndUI
 			}
 			else
 			{
-				modLoader_selectionUI();
+				if (!modLoader_selectionUI())
+				{
+					s_subUI = FEUI_NONE;
+					modLoader_cleanupResources();
+				}
 			}
 			ImGui::End();
 		}
@@ -735,6 +777,12 @@ namespace TFE_FrontEndUI
 				TFE_Settings::writeToDisk();
 				inputMapping_serialize();
 			}
+			if (ImGui::Button("System", sideBarButtonSize))
+			{
+				s_configTab = CONFIG_SYSTEM;
+				TFE_Settings::writeToDisk();
+				inputMapping_serialize();
+			}
 			ImGui::Separator();
 			if (ImGui::Button("Return", sideBarButtonSize))
 			{
@@ -762,7 +810,7 @@ namespace TFE_FrontEndUI
 
 			// adjust the width based on tab.
 			s32 tabWidth = w - s32(160*s_uiScale);
-			if (s_configTab >= CONFIG_INPUT)
+			if (s_configTab >= CONFIG_INPUT && s_configTab < CONFIG_SYSTEM)
 			{
 				tabWidth = s32(414*s_uiScale);
 			}
@@ -807,6 +855,9 @@ namespace TFE_FrontEndUI
 				break;
 			case CONFIG_SOUND:
 				configSound();
+				break;
+			case CONFIG_SYSTEM:
+				configSystem();
 				break;
 			};
 			renderBackground();
@@ -2023,6 +2074,35 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Rendering");
 		ImGui::PopFont();
 
+		// Frame Rate Limiter.
+		s32 frameRateLimit = graphics->frameRateLimit;
+		bool limitEnable = frameRateLimit != 0;
+		ImGui::Checkbox("Frame Rate Limit Enable", &limitEnable);
+
+		if (limitEnable)
+		{
+			if (frameRateLimit < 30)
+			{
+				frameRateLimit = 74;
+			}
+			ImGui::LabelText("##ConfigLabel", "Maximum Framerate:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			ImGui::SliderInt("##FPSLimitSlider", &frameRateLimit, 30, 360, "%d");
+			ImGui::SetNextItemWidth(128 * s_uiScale);
+			ImGui::InputInt("##FPSLimitEdit", &frameRateLimit, 1, 10);
+		}
+		else
+		{
+			frameRateLimit = 0;
+		}
+
+		if (frameRateLimit != graphics->frameRateLimit)
+		{
+			graphics->frameRateLimit = frameRateLimit;
+			TFE_System::frameLimiter_set(frameRateLimit);
+		}
+		ImGui::Separator();
+
 		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75 * s_uiScale);
 		ImGui::SetNextItemWidth(196 * s_uiScale);
 		ImGui::Combo("##Renderer", &graphics->rendererIndex, c_renderer, IM_ARRAYSIZE(c_renderer));
@@ -2200,6 +2280,53 @@ namespace TFE_FrontEndUI
 	void configSound()
 	{
 		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
+		ImGui::LabelText("##ConfigLabel", "Audio Output");
+
+		const char* outputAudioNames[MAX_AUDIO_OUTPUTS];
+		char outputMidiNames[MAX_AUDIO_OUTPUTS][256];
+		{
+			s32 outputCount = 0, curOutput = 0;
+			const OutputDeviceInfo* outputInfo = TFE_Audio::getOutputDeviceList(outputCount, curOutput);
+			outputCount = min(MAX_AUDIO_OUTPUTS, outputCount);
+			for (s32 i = 0; i < outputCount; i++)
+			{
+				outputAudioNames[i] = outputInfo[i].name.c_str();
+			}
+
+			ImGui::LabelText("##ConfigLabel", "Audio Device:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::SetNextItemWidth(256 * s_uiScale);
+			ImGui::Combo("##Audio Output", &curOutput, outputAudioNames, outputCount);
+
+			if (ImGui::Button("Reset Audio Output"))
+			{
+				curOutput = -1;
+			}
+			TFE_Audio::selectDevice(curOutput);
+			sound->audioDevice = curOutput;
+		}
+		ImGui::Separator();
+		{
+			s32 outputCount = 0, curOutput = 0;
+			outputCount = min(MAX_AUDIO_OUTPUTS, TFE_MidiDevice::getDeviceCount());
+			for (s32 i = 0; i < outputCount; i++)
+			{
+				TFE_MidiDevice::getDeviceName(i, outputMidiNames[i], 256);
+			}
+
+			ImGui::LabelText("##ConfigLabel", "Midi Device:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::SetNextItemWidth(256 * s_uiScale);
+			ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
+
+			if (ImGui::Button("Reset Midi Output"))
+			{
+				curOutput = -1;
+			}
+			TFE_MidiDevice::selectDevice(u32(curOutput));
+			sound->midiDevice = curOutput;
+		}
+
+		ImGui::Separator();
+
 		ImGui::LabelText("##ConfigLabel", "Sound Volume");
 		labelSliderPercent(&sound->soundFxVolume, "Game SoundFX");
 		labelSliderPercent(&sound->musicVolume,   "Game Music");
@@ -2232,6 +2359,22 @@ namespace TFE_FrontEndUI
 		TFE_MidiPlayer::setVolume(sound->musicVolume);
 	}
 
+	void configSystem()
+	{
+		ImGui::LabelText("##ConfigLabel", "System Settings");
+		TFE_Settings_System* system = TFE_Settings::getSystemSettings();
+		bool gameQuitExitsToMenu = system->gameQuitExitsToMenu;
+		bool returnToModLoader   = system->returnToModLoader;
+		if (ImGui::Checkbox("Game Exit Returns to TFE Menu", &gameQuitExitsToMenu))
+		{
+			system->gameQuitExitsToMenu = gameQuitExitsToMenu;
+		}
+		if (ImGui::Checkbox("Returns to Mod Loader when a mod is loaded", &returnToModLoader))
+		{
+			system->returnToModLoader = returnToModLoader;
+		}
+	}
+
 	void pickCurrentResolution()
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
@@ -2254,6 +2397,15 @@ namespace TFE_FrontEndUI
 	void menuItem_Start()
 	{
 		s_appState = APP_STATE_GAME;
+		s_modLoaded = false;
+	}
+
+	void menuItem_Load()
+	{
+		s_subUI = FEUI_CONFIG;
+		s_configTab = CONFIG_LOAD;
+
+		pickCurrentResolution();
 	}
 
 	void menuItem_Manual()
@@ -2277,6 +2429,7 @@ namespace TFE_FrontEndUI
 	void menuItem_Mods()
 	{
 		s_subUI = FEUI_MODS;
+		s_modLoaded = true;
 		modLoader_read();
 	}
 

@@ -130,7 +130,7 @@ namespace TFE_SaveSystem
 		stream->writeBuffer(png, pngSize);
 	}
 
-	void loadHeader(Stream* stream, SaveHeader* header)
+	void loadHeader(Stream* stream, SaveHeader* header, const char* fileName)
 	{
 		// Master version.
 		u32 version;
@@ -143,6 +143,12 @@ namespace TFE_SaveSystem
 		header->saveName[len] = 0;
 		// Fix existing invalid save names.
 		header->saveName[SAVE_MAX_NAME_LEN - 1] = 0;
+
+		// Handle the case when there is no save name.
+		if (header->saveName[0] == 0 || header->saveName[0] == ' ')
+		{
+			FileUtil::getFileNameFromPath(fileName, header->saveName);
+		}
 
 		// Time and Date of Save.
 		stream->read(&len);
@@ -230,7 +236,7 @@ namespace TFE_SaveSystem
 		if (stream.open(filePath, Stream::MODE_READ))
 		{
 			SaveHeader header;
-			loadHeader(&stream, &header);
+			loadHeader(&stream, &header, filename);
 			ret = s_game->serializeGameState(&stream, filename, false);
 			stream.close();
 		}
@@ -246,7 +252,7 @@ namespace TFE_SaveSystem
 		FileStream stream;
 		if (stream.open(filePath, Stream::MODE_READ))
 		{
-			loadHeader(&stream, header);
+			loadHeader(&stream, header, filename);
 			strcpy(header->fileName, filename);
 			stream.close();
 			ret = true;

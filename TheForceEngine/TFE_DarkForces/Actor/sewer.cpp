@@ -128,7 +128,7 @@ namespace TFE_DarkForces
 
 		switch (attackMod->anim.state)
 		{
-			case 0:
+			case STATE_DELAY:
 			{
 				if (attackMod->anim.flags & 2)
 				{
@@ -138,21 +138,21 @@ namespace TFE_DarkForces
 
 					moveMod->collisionFlags |= 1;
 					attackMod->target.flags &= ~TARGET_ALL;
-					attackMod->anim.state = 1;
+					attackMod->anim.state = STATE_ANIMATEATTACK;
 					return s_curTick + random(attackMod->timing.delay);
 				}
 			} break;
-			case 1:
+			case STATE_ANIMATEATTACK:
 			{
 				gameMusic_sustainFight();
 				if (!actor_canSeeObjFromDist(obj, s_playerObject))
 				{
 					actor_updatePlayerVisiblity(JFALSE, 0, 0);
 					attackMod->anim.flags |= 2;
-					attackMod->anim.state = 0;
+					attackMod->anim.state = STATE_DELAY;
 					if (s_curTick > attackMod->timing.nextTick)
 					{
-						attackMod->timing.delay = attackMod->timing.state0Delay;
+						attackMod->timing.delay = attackMod->timing.searchDelay;
 						actor_setupInitAnimation();
 					}
 					return attackMod->timing.delay;
@@ -166,8 +166,8 @@ namespace TFE_DarkForces
 				fixed16_16 dist = dy + distApprox(s_playerObject->posWS.x, s_playerObject->posWS.z, obj->posWS.x, obj->posWS.z);
 				if (dist <= attackMod->meleeRange)
 				{
-					attackMod->anim.state = 2;
-					attackMod->timing.delay = attackMod->timing.state2Delay;
+					attackMod->anim.state = STATE_FIRE1;
+					attackMod->timing.delay = attackMod->timing.meleeDelay;
 					attackMod->target.pos.x = obj->posWS.x;
 					attackMod->target.pos.z = obj->posWS.z;
 					attackMod->target.flags |= TARGET_MOVE_XZ;
@@ -181,11 +181,11 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					attackMod->anim.state = 0;
-					attackMod->timing.delay = attackMod->timing.state0Delay;
+					attackMod->anim.state = STATE_DELAY;
+					attackMod->timing.delay = attackMod->timing.searchDelay;
 				}
 
-				attackMod->timing.nextTick = s_curTick + attackMod->timing.state1Delay;
+				attackMod->timing.nextTick = s_curTick + attackMod->timing.losDelay;
 				attackMod->target.flags |= TARGET_FREEZE;
 				obj->worldWidth = FIXED(3);
 				obj->flags |= OBJ_FLAG_NEEDS_TRANSFORM;
@@ -201,11 +201,11 @@ namespace TFE_DarkForces
 					}
 				}
 			} break;
-			case 2:
+			case STATE_FIRE1:
 			{
 				if (attackMod->anim.flags & 2)
 				{
-					attackMod->anim.state = 3;
+					attackMod->anim.state = STATE_ANIMATE1;
 					sound_playCued(attackMod->attackSecSndSrc, obj->posWS);
 
 					fixed16_16 dy = TFE_Jedi::abs(obj->posWS.y - s_playerObject->posWS.y);
@@ -216,10 +216,10 @@ namespace TFE_DarkForces
 					}
 				}
 			} break;
-			case 3:
+			case STATE_ANIMATE1:
 			{
 				actor_setupAnimation(6, &attackMod->anim);
-				attackMod->anim.state = 0;
+				attackMod->anim.state = STATE_DELAY;
 			} break;
 		}
 
@@ -248,13 +248,13 @@ namespace TFE_DarkForces
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		s_actorState.attackMod = attackMod;
 		attackMod->header.func = sewerCreatureEnemyFunc;
-		attackMod->timing.state0Delay = 1240;
-		attackMod->timing.state2Delay = 1240;
+		attackMod->timing.searchDelay = 1240;
+		attackMod->timing.meleeDelay = 1240;
 		attackMod->meleeRange = FIXED(13);
 		attackMod->meleeDmg = FIXED(20);
 		attackMod->meleeRate = FIXED(360);
 		attackMod->attackSecSndSrc = s_agentSndSrc[AGENTSND_CREATURE2];
-		attackMod->attackFlags = (attackMod->attackFlags | 1) & 0xfffffffd;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_RANGED, ATTFLAG_MELEE);
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
 		ThinkerModule* thinkerMod = actor_createThinkerModule(dispatch);

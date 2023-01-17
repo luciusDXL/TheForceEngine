@@ -359,14 +359,15 @@ namespace TFE_FrontEndUI
 		ImGui::PopFont();
 	}
 
-	void modLoader_selectionUI()
+	bool modLoader_selectionUI()
 	{
+		bool stayOpen = true;
 		f32 uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
 
 		// Load in the mod data a few at a time so to limit waiting for loading.
 		readFromQueue(1);
 		clearSelectedMod();
-		if (s_mods.empty()) { return; }
+		if (s_mods.empty()) { return stayOpen; }
 
 		ImGui::Separator();
 		ImGui::PushFont(getDialogFont());
@@ -480,7 +481,7 @@ namespace TFE_FrontEndUI
 			ImGui::PopStyleColor(3);
 
 			ImGui::SetCursorPos(ImVec2(cursor.x + 90*uiScale, cursor.y + 360*uiScale));
-			if (ImGui::Button("CANCEL", ImVec2(128*uiScale, 32*uiScale)))
+			if (ImGui::Button("CANCEL", ImVec2(128*uiScale, 32*uiScale)) || TFE_Input::keyPressed(KEY_ESCAPE))
 			{
 				open = false;
 			}
@@ -509,6 +510,11 @@ namespace TFE_FrontEndUI
 				}
 			}
 		}
+		else if (TFE_Input::keyPressed(KEY_ESCAPE))
+		{
+			stayOpen = false;
+		}
+		return stayOpen;
 	}
 
 	void fixupName(char* name)
@@ -636,6 +642,40 @@ namespace TFE_FrontEndUI
 			}
 		}
 
+		// Second pass - look for "name": - JSon syntax.
+		const char* jsonName = "\"name\":";
+		bufferPos = 0;
+		size_t nameLen = strlen(jsonName);
+		while (!foundTitle)
+		{
+			const char* line = parser.readLine(bufferPos, true);
+			if (!line)
+			{
+				break;
+			}
+			if (strncasecmp(jsonName, line, nameLen) == 0)
+			{
+				size_t lineLen = strlen(line);
+				for (size_t c = nameLen + 1; c < lineLen && !foundTitle; c++)
+				{
+					if (line[c] == '\"')
+					{
+						for (size_t c2 = c + 1; c2 < lineLen; c2++)
+						{
+							if (line[c2] == '\"')
+							{
+								// Found it.
+								memcpy(name, &line[c + 1], c2 - c - 1);
+								name[c2 - c - 1] = 0;
+								foundTitle = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+
 		if (!foundTitle)
 		{
 			// Looking for "Title" failed, try reading the first 'valid' line.
@@ -681,9 +721,11 @@ namespace TFE_FrontEndUI
 			{
 				name[lastValid + 1] = 0;
 			}
-			return true;
+			if (lastValid && name[0] != '/')
+			{
+				return true;
+			}
 		}
-
 		return false;
 	}
 

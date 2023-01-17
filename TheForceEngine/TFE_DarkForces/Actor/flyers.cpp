@@ -24,22 +24,22 @@ namespace TFE_DarkForces
 		SecObject* obj = flyingMod->header.obj;
 		if (flyingMod->anim.state == 0)
 		{
-			flyingMod->anim.state = 2;
+			flyingMod->anim.state = STATE_FIRE1;
 			return s_curTick + random(flyingMod->delay);
 		}
 		else if (flyingMod->anim.state == 1)
 		{
 			if (actor_handleSteps(moveMod, &flyingMod->target))
 			{
-				flyingMod->anim.state = 0;
+				flyingMod->anim.state = STATE_DELAY;
 			}
 			SecObject* actorObj = moveMod->header.obj;
 			if (actor_arrivedAtTarget(&flyingMod->target, actorObj))
 			{
-				flyingMod->anim.state = 0;
+				flyingMod->anim.state = STATE_DELAY;
 			}
 		}
-		else if (flyingMod->anim.state == 2)
+		else if (flyingMod->anim.state == STATE_FIRE1)
 		{
 			RSector* sector = obj->sector;
 			if (sector == s_playerObject->sector)
@@ -48,11 +48,11 @@ namespace TFE_DarkForces
 				fixed16_16 heightChange = random(FIXED(5)) - 0x18000;	// rand(5) - 1.5
 				flyingMod->target.pos.y = s_eyePos.y - heightChange;
 				flyingMod->target.flags |= TARGET_MOVE_Y;
-				flyingMod->anim.state = 1;
+				flyingMod->anim.state = STATE_ANIMATEATTACK;
 			}
 			else
 			{
-				flyingMod->anim.state = 0;
+				flyingMod->anim.state = STATE_DELAY;
 			}
 		}
 
@@ -68,14 +68,14 @@ namespace TFE_DarkForces
 
 		if (flyingMod->anim.state == 0)
 		{
-			flyingMod->anim.state = 2;
+			flyingMod->anim.state = STATE_FIRE1;
 			return s_curTick + random(flyingMod->delay);
 		}
 		else if (flyingMod->anim.state == 1)
 		{
 			if (actor_arrivedAtTarget(target, obj))
 			{
-				flyingMod->anim.state = 0;
+				flyingMod->anim.state = STATE_DELAY;
 			}
 		}
 		else if (flyingMod->anim.state == 2)
@@ -84,7 +84,7 @@ namespace TFE_DarkForces
 			target->pitch = obj->pitch;
 			target->roll  = obj->roll;
 			target->flags |= 4;
-			flyingMod->anim.state = 1;
+			flyingMod->anim.state = STATE_ANIMATEATTACK;
 		}
 
 		moveMod->updateTargetFunc(moveMod, target);
@@ -136,7 +136,7 @@ namespace TFE_DarkForces
 		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_11];
 		attackMod->meleeRange = FIXED(30);
 		attackMod->meleeDmg = FIXED(5);
-		attackMod->attackFlags |= 3;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, 0, ATTFLAG_MELEE | ATTFLAG_RANGED);
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
@@ -186,7 +186,7 @@ namespace TFE_DarkForces
 		attackMod->fireOffset.y = -557056;
 		attackMod->projType = PROJ_RIFLE_BOLT;
 		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_12];
-		attackMod->attackFlags = 2;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_MELEE, ATTFLAG_RANGED);
 		s_actorState.attackMod = attackMod;
 		actor_addModule(dispatch, (ActorModule*)attackMod);
 
@@ -232,8 +232,7 @@ namespace TFE_DarkForces
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		attackMod->attackPrimSndSrc = s_agentSndSrc[AGENTSND_PROBFIRE_13];
 		attackMod->projType = PROJ_REMOTE_BOLT;
-		attackMod->attackFlags &= 0xfffffffc;
-		attackMod->attackFlags |= 2;
+		FLAGS_CLEAR_SET(attackMod->attackFlags, ATTFLAG_MELEE, ATTFLAG_RANGED);
 		attackMod->fireOffset.y = 0x4000;	// 0.25 units.
 		attackMod->maxDist = FIXED(50);
 		s_actorState.attackMod = attackMod;

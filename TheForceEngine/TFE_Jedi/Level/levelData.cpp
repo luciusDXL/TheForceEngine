@@ -336,7 +336,7 @@ namespace TFE_Jedi
 		SERIALIZE(LevelState_InitVersion, sector->colFloorHeight, 0);
 		SERIALIZE(LevelState_InitVersion, sector->colCeilHeight, 0);
 		SERIALIZE(LevelState_InitVersion, sector->colSecHeight, 0);
-		SERIALIZE(LevelState_InitVersion, sector->colMinHeight, 0);
+		SERIALIZE(LevelState_InitVersion, sector->colSecCeilHeight, 0);
 
 		// infLink will be set when the INF system is serialized.
 		if (serialization_getMode() == SMODE_READ)

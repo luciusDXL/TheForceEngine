@@ -361,12 +361,23 @@ namespace TFE_DarkForces
 				LRect buttonRect;
 				lactorAnim_getFrame(s_pdaArt, &buttonRect);
 
-				if ((s_cursorPos.x >= buttonRect.left && s_cursorPos.x < buttonRect.right &&
-					s_cursorPos.z >= buttonRect.top && s_cursorPos.z < buttonRect.bottom) ||
-					i == s_simulatePressed)
+				if (!TFE_Input::mousePressed(MBUTTON_LEFT))
+				{
+					if (i == s_simulatePressed)
+					{
+						s_buttonPressed = s32(i);
+						s_buttonHover = JTRUE;
+						s_simulatePressed = 0;
+						break;
+					}
+				}
+				else if ((s_cursorPos.x >= buttonRect.left && s_cursorPos.x < buttonRect.right &&
+					      s_cursorPos.z >= buttonRect.top && s_cursorPos.z < buttonRect.bottom) ||
+					      i == s_simulatePressed)
 				{
 					s_buttonPressed = s32(i);
 					s_buttonHover = JTRUE;
+					if (i == s_simulatePressed) { s_simulatePressed = 0; }
 					break;
 				}
 			}

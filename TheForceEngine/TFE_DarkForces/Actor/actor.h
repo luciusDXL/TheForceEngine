@@ -136,6 +136,11 @@ struct ActorState
 	u32 stormtrooperAlertIndex;
 };
 
+// Clear and set flags in a visually simple way.
+#define FLAGS_CLEAR_SET(flags, flagsToClear, flagsToSet) \
+flags &= ~(flagsToClear);	\
+flags |=  (flagsToSet)
+
 namespace TFE_DarkForces
 {
 	void actor_clearState();

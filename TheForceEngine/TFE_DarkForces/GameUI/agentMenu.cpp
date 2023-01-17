@@ -5,6 +5,7 @@
 #include "delt.h"
 #include "menu.h"
 #include "uiDraw.h"
+#include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_DarkForces/agent.h>
 #include <TFE_DarkForces/util.h>
 #include <TFE_DarkForces/Landru/lcanvas.h>
@@ -164,7 +165,14 @@ namespace TFE_DarkForces
 		{
 			if (updateQuitConfirmDlg())
 			{
-				TFE_System::postQuitMessage();
+				if (TFE_Settings::getSystemSettings()->gameQuitExitsToMenu)
+				{
+					TFE_FrontEndUI::exitToMenu();
+				}
+				else
+				{
+					TFE_System::postQuitMessage();
+				}
 			}
 			return;
 		}
@@ -259,7 +267,7 @@ namespace TFE_DarkForces
 				else if (!s_lastSelectedAgent && s_agentId >= 0 && s_agentData[s_agentId].nextMission > 1)
 				{
 					s_selectedMission++;
-					if (s_selectedMission > s_agentData[s_agentId].nextMission - 1) { s_selectedMission = 0; }
+					if (s_selectedMission > s_agentData[s_agentId].nextMission - 1 || s_selectedMission == 14) { s_selectedMission = 0; }
 				}
 			}
 			else if (TFE_Input::bufferedKeyDown(KEY_UP))

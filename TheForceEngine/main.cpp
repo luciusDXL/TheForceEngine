@@ -19,7 +19,7 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_System/system.h>
 #include <TFE_System/CrashHandler/crashHandler.h>
-// #include <TFE_System/frameLimiter.h>
+#include <TFE_System/frameLimiter.h>
 #include <TFE_System/tfeMessage.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_RenderShared/texturePacker.h>
@@ -614,8 +614,8 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 	TFE_FrontEndUI::initConsole();
-	TFE_Audio::init(s_nullAudioDevice);
-	TFE_MidiPlayer::init();
+	TFE_Audio::init(s_nullAudioDevice, TFE_Settings::getSoundSettings()->audioDevice);
+	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiDevice);
 	TFE_Polygon::init();
 	TFE_Image::init();
 	TFE_Palette::createDefault256();
@@ -653,8 +653,8 @@ int main(int argc, char* argv[])
 	TFE_Game* gameInfo = TFE_Settings::getGame();
 	TFE_SaveSystem::setCurrentGame(gameInfo->id);
 
-	// Test
-	// TFE_System::frameLimiter_set(72.0);
+	// Setup the framelimiter.
+	TFE_System::frameLimiter_set(graphics->frameRateLimit);
 
 	// Game loop
 	u32 frame = 0u;
@@ -664,7 +664,7 @@ int main(int argc, char* argv[])
 	while (s_loop && !TFE_System::quitMessagePosted())
 	{
 		TFE_FRAME_BEGIN();
-		// TFE_System::frameLimiter_begin();
+		TFE_System::frameLimiter_begin();
 
 		MouseCursorMode newMouseCursorMode = TFE_Input::getMouseCursorMode();
 		if (newMouseCursorMode != mouseCursorMode)
@@ -853,7 +853,7 @@ int main(int argc, char* argv[])
 		TFE_RenderBackend::swap(swap);
 
 		// Handle framerate limiter.
-		// TFE_System::frameLimiter_end();
+		TFE_System::frameLimiter_end();
 
 		// Clear transitory input state.
 		if (endInputFrame)

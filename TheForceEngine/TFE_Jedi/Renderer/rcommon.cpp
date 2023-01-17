@@ -85,8 +85,8 @@ namespace TFE_Jedi
 	s32 s_maxWallCount;
 	s32 s_maxDepthCount;
 
-	s32 s_drawnSpriteCount;
-	SecObject* s_drawnSprites[MAX_DRAWN_SPRITE_STORE];
+	s32 s_drawnObjCount;
+	SecObject* s_drawnObj[MAX_DRAWN_OBJ_STORE];
 
 	//////////////////////////////////////////////////////////
 	// Common Functions

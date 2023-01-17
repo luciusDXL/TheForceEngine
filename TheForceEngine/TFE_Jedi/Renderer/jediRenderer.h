@@ -85,6 +85,6 @@ namespace TFE_Jedi
 	// Add a hud texture callback, these will be called when setting up the GPU renderer
 	void renderer_addHudTextureCallback(TextureListCallback hudTextureCallback);
 
-	extern s32 s_drawnSpriteCount;
-	extern SecObject* s_drawnSprites[];
+	extern s32 s_drawnObjCount;
+	extern SecObject* s_drawnObj[];
 }

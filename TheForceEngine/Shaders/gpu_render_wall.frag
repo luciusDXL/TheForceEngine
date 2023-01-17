@@ -17,6 +17,7 @@ uniform vec2 SkyParam1;	// atan(xScale, xOffset)
 
 flat in vec4 Frag_Uv;
 flat in vec4 Frag_Color;
+flat in float Frag_Scale;
 flat in int Frag_TextureId;
 flat in int Frag_Flags;
 in vec3 Frag_Pos;
@@ -216,7 +217,7 @@ void main()
 	else if (Frag_Uv.y > 1.5) // Wall
 	{
 		uv.x = length((Frag_Pos.xz + CameraPos.xz) - Texture_Data.xy) * Texture_Data.z;
-		uv.y = Frag_Uv.x - Frag_Pos.y - CameraPos.y;
+		uv.y = (Frag_Uv.x - Frag_Pos.y - CameraPos.y) * Frag_Scale;
 		uv *= 8.0;
 
 		// Texture Offset

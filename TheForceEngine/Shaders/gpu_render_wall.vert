@@ -14,6 +14,7 @@ flat out vec4 Frag_Uv;
 out vec3 Frag_Pos;
 out vec4 Texture_Data;
 flat out vec4 Frag_Color;
+flat out float Frag_Scale;
 flat out int Frag_TextureId;
 flat out int Frag_Flags;
 
@@ -38,13 +39,16 @@ void main()
 	bool skyAdj = (data.x & 256u) != 0u;
 	bool fullbright = (data.x & 64u) != 0u;
 	bool opaque = (data.x & 128u) != 0u;
-	int partId = int(data.x & 63u);
+	bool stretch = (data.x & 32u) != 0u;
+	bool stretchToTop = (data.x & 16u) != 0u;
+	int partId = int(data.x & 15u);
 
 	int nextId   = int(data.x >> 10u);
 	int sectorId = int(data.y);
 	int lightOffset = int(data.z & 63u) - 32;
 	int flags = (fullbright ? 1 : 0) | (opaque ? 2 : 0);
 	bool flip    = (data.z & 64u) != 0u;
+	float scale = 1.0;
 
 	uint portalOffset, portalCount;
 	unpackPortalInfo(data.z >> 7u, portalOffset, portalCount);
@@ -112,9 +116,24 @@ void main()
 			if (nextId < 4194303)	//1<<22 - 1
 			{
 				vec2 nextHeights = texelFetch(Sectors, nextId*2).xy;
-				float y0 = min(floorHeight, max(nextHeights.y, ceilHeight));
+				float y0;
+				if (stretchToTop)
+				{
+					// Top of the frustum when looking forward.
+					float d = length((positions.xy+positions.zw)*0.5 - CameraPos.xz) * 0.625;
+					// Scale when looking up by view[1][1] which is 1.0 when looking straight and tends toward 0.0 as looking up or down.
+					d /= CameraView[1].y;
+					// Clamp to the maximum top.
+					y0 = CameraPos.y - min(100, d);
+				}
+				else
+				{
+					y0 = stretch ? min(floorHeight, ceilHeight) : min(floorHeight, max(nextHeights.y, ceilHeight));
+				}
 				float y1 = max(ceilHeight, min(nextHeights.x, floorHeight));
 				texBase = y1;
+
+				scale = abs((min(floorHeight, max(nextHeights.y, ceilHeight)) - y1) / (y0 - y1));
 
 				// Compute final height value for this vertex.
 				vtx_pos.y = (vertexId < 2) ? y0 : y1;
@@ -139,7 +158,7 @@ void main()
 			
 			if (sky)
 			{
-				vec4 sectorTexOffsets = texelFetch(Sectors, nextId*2+1);
+				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 				texture_data.xy = sectorTexOffsets.zw;
 			}
 		}
@@ -152,7 +171,7 @@ void main()
 
 			if (sky)
 			{
-				vec4 sectorTexOffsets = texelFetch(Sectors, nextId*2+1);
+				vec4 sectorTexOffsets = texelFetch(Sectors, sectorId*2+1);
 				texture_data.xy = sectorTexOffsets.xy;
 			}
 		}
@@ -282,4 +301,5 @@ void main()
 	Frag_Color = vtx_color;
 	Texture_Data = texture_data;
 	Frag_Flags = flags;
+	Frag_Scale = scale;
 }

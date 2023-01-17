@@ -74,6 +74,9 @@ struct ColObject
 
 typedef void(*CollisionEffectFunc)(SecObject*);
 
+#define COL_INFINITY FIXED(9999)
+#define COL_SEC_HEIGHT_OFFSET FIXED(2)
+
 namespace TFE_Jedi
 {
 	void collision_getHitPoint(fixed16_16* x, fixed16_16* z);

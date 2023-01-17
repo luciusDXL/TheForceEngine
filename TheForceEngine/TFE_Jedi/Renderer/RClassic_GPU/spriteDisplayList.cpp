@@ -29,8 +29,8 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
-	extern s32 s_drawnSpriteCount;
-	extern SecObject* s_drawnSprites[];
+	extern s32 s_drawnObjCount;
+	extern SecObject* s_drawnObj[];
 
 	enum
 	{
@@ -229,9 +229,9 @@ namespace TFE_Jedi
 
 		//if (autoaim)
 		{
-			for (s32 i = s_displayListCount - 1; i >= 0 && s_drawnSpriteCount < MAX_DRAWN_SPRITE_STORE; i--)
+			for (s32 i = s_displayListCount - 1; i >= 0 && s_drawnObjCount < MAX_DRAWN_OBJ_STORE; i--)
 			{
-				s_drawnSprites[s_drawnSpriteCount++] = (SecObject*)s_displayListObjList[sortKey[i].index];
+				s_drawnObj[s_drawnObjCount++] = (SecObject*)s_displayListObjList[sortKey[i].index];
 			}
 		}
 	}

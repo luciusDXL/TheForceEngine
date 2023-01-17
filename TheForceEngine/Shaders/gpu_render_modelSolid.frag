@@ -4,13 +4,15 @@ uniform sampler2DArray Textures;
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
-uniform vec4 LightData;
+uniform vec2 LightData;
+uniform vec4 TextureOffsets;
 
 uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;
 in vec3 Frag_WorldPos;
 noperspective in float Frag_Light;
+flat in float Frag_ModelY;
 flat in int Frag_Color;
 flat in int Frag_TextureId;
 flat in int Frag_TextureMode;
@@ -65,8 +67,17 @@ void main()
 		if (Frag_TextureMode > 0)
 		{
 			// Sector flat style projection.
-			// TODO: Handle both floor and ceiling offsets instead of just floor.
-			uv.xy = (Frag_WorldPos.xz - LightData.zw) * vec2(-8.0, 8.0);
+			float planeY = uv.x + Frag_ModelY;
+			vec2 offset = TextureOffsets.xy;
+			if (planeY < CameraPos.y)
+			{
+				offset = TextureOffsets.zw;
+			}
+
+			// Intersect the eye with the plane at planeY.
+			float t = (planeY - CameraPos.y) / (Frag_WorldPos.y - CameraPos.y);
+			vec2 posXZ = CameraPos.xz + t*(Frag_WorldPos.xz - CameraPos.xz);
+			uv.xy = (posXZ - offset) * vec2(-8.0, 8.0);
 
 			// Calculate Z value and scaled ambient.
 			float ambient = max(0.0, LightData.y > 32.0 ? LightData.y - 64.0 : LightData.y);

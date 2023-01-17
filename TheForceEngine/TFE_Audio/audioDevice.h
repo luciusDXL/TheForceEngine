@@ -1,6 +1,8 @@
 #pragma once
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
+#include "audioOutput.h"
+#include <string>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN 1
@@ -29,4 +31,10 @@ namespace TFE_AudioDevice
 
 	bool startOutput(StreamCallback callback, void* userData = 0, u32 channels = 2, u32 sampleRate = 44100);
 	void stopOutput();
+
+	s32 getDefaultOutputDevice();
+	s32 getOutputDeviceId();
+	s32 getOutputDeviceCount();
+
+	const OutputDeviceInfo* getOutputDeviceList(s32& count, s32& curOutput);
 };

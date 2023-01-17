@@ -28,6 +28,17 @@ enum LogicAnimFlags
 	AFLAG_READY  = FLAG_BIT(1),
 };
 
+enum LogicAnimState : u32
+{
+	STATE_DELAY = 0u,
+	STATE_ANIMATEATTACK,
+	STATE_FIRE1,
+	STATE_ANIMATE1,
+	STATE_FIRE2,
+	STATE_ANIMATE2,
+	STATE_COUNT
+};
+
 typedef JBool(*ActorFunc)(ActorModule*, MovementModule*);
 typedef JBool(*ActorMsgFunc)(s32 msg, ActorModule*, MovementModule*);
 typedef void(*ActorAttribFunc)(ActorModule*);
@@ -43,16 +54,16 @@ struct LogicAnimation
 	fixed16_16 startFrame;
 	u32 flags;
 	s32 animId;
-	s32 state;
+	LogicAnimState state;
 };
 
 struct ActorTiming
 {
 	Tick delay;
-	Tick state0Delay;
-	Tick state2Delay;
-	Tick state4Delay;
-	Tick state1Delay;
+	Tick searchDelay;
+	Tick meleeDelay;
+	Tick rangedDelay;
+	Tick losDelay;		// time to search for line of sight (LOS).
 	Tick nextTick;
 };
 
@@ -76,6 +87,16 @@ enum TargetFlags
 	TARGET_FREEZE   = FLAG_BIT(3),
 	TARGET_ALL_MOVE = TARGET_MOVE_XZ | TARGET_MOVE_Y | TARGET_MOVE_ROT,
 	TARGET_ALL      = TARGET_ALL_MOVE | TARGET_FREEZE
+};
+
+enum AttackFlags
+{
+	ATTFLAG_NONE      = 0,
+	ATTFLAG_MELEE     = FLAG_BIT(0), // Has melee attacks
+	ATTFLAG_RANGED    = FLAG_BIT(1), // Has ranged attacks
+	ATTFLAG_LIT_MELEE = FLAG_BIT(2), // Lights up when melee attacks
+	ATTFLAG_LIT_RNG   = FLAG_BIT(3), // Lights up when range attacks
+	ATTFLAG_ALL       = ATTFLAG_MELEE | ATTFLAG_RANGED | ATTFLAG_LIT_MELEE | ATTFLAG_LIT_RNG
 };
 
 struct ActorModule
@@ -113,7 +134,7 @@ struct AttackModule
 	LogicAnimation anim;
 
 	fixed16_16 fireSpread;
-	Tick state0NextTick;
+	Tick accuracyNextTick;
 	vec3_fixed fireOffset;
 
 	ProjectileType projType;
@@ -124,7 +145,7 @@ struct AttackModule
 	fixed16_16 maxDist;
 	fixed16_16 meleeDmg;
 	fixed16_16 meleeRate;
-	u32 attackFlags;
+	u32 attackFlags;		// see AttackFlags above.
 };
 
 struct MovementModule

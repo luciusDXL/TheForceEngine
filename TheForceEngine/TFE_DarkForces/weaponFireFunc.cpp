@@ -14,7 +14,7 @@ namespace TFE_DarkForces
 {
 	enum WeaponFireConst
 	{
-		MAX_AUTOAIM_DIST = FIXED(9999),
+		MAX_AUTOAIM_DIST = COL_INFINITY,
 	};
 
 	static SoundEffectId s_punchSwingSndId = 0;
@@ -2129,35 +2129,39 @@ namespace TFE_DarkForces
 
 	JBool computeAutoaim(fixed16_16 xPos, fixed16_16 yPos, fixed16_16 zPos, angle14_32 pitch, angle14_32 yaw, s32 variation)
 	{
-		if (!s_drawnSpriteCount || !TFE_Settings::getGameSettings()->df_enableAutoaim)
+		if (!s_drawnObjCount || !TFE_Settings::getGameSettings()->df_enableAutoaim)
 		{
 			return JFALSE;
 		}
 		fixed16_16 closest = MAX_AUTOAIM_DIST;
-		s32 count = s_drawnSpriteCount;
-		for (s32 i = 0; i < count; i++)
+		for (s32 i = 0; i < s_drawnObjCount; i++)
 		{
-			SecObject* obj = s_drawnSprites[i];
-			if (obj && (obj->flags & OBJ_FLAG_ENEMY))
+			SecObject* obj = s_drawnObj[i];
+			if (obj && (obj->flags & OBJ_FLAG_AIM))
 			{
+				const fixed16_16 height = (obj->worldHeight >> 1) + (obj->worldHeight >> 2);	// 3/4 object height.
+
 				fixed16_16 dx = obj->posWS.x - xPos;
+				fixed16_16 dy = obj->posWS.y - height - yPos;
 				fixed16_16 dz = obj->posWS.z - zPos;
-
-				fixed16_16 top = obj->posWS.y - (obj->worldHeight >> 1) - (obj->worldHeight >> 2);
-				fixed16_16 dy = top - yPos;
-
+				
 				angle14_32 angle = vec2ToAngle(dx, dz) & ANGLE_MASK;
 				angle14_32 yawDelta = (angle - yaw) & ANGLE_MASK;
 				if (yawDelta > 227 && yawDelta < 16111)
 				{
 					continue;
 				}
-				fixed16_16 dist = computeDirAndLength(dx, dz, &s_autoAimDirX, &s_autoAimDirZ);
-				if (dist > 0 && dist < closest)
+
+				fixed16_16 dirX, dirZ;
+				fixed16_16 dist = computeDirAndLength(dx, dz, &dirX, &dirZ);
+				if (dist < closest)
 				{
 					closest = dist;
 					s_weaponFireYaw = angle;
 					s_weaponFirePitch = vec2ToAngle(-dy, dist) & ANGLE_MASK;
+
+					s_autoAimDirX = dirX;
+					s_autoAimDirZ = dirZ;
 				}
 			}
 		}

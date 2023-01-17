@@ -1,6 +1,7 @@
 #pragma once
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
+#include "audioOutput.h"
 
 // Source data type. The sound data will be converted to float time during mixing.
 enum SoundDataType
@@ -55,9 +56,10 @@ namespace TFE_Audio
 	static const f32 c_clipDistance = 140.0f;
 
 	// functions
-	bool init(bool useNullDevice=false);
+	bool init(bool useNullDevice=false, s32 outputId=-1);
 	void shutdown();
 	void stopAllSounds();
+	void selectDevice(s32 id);
 
 	void setVolume(f32 volume);
 	f32  getVolume();
@@ -68,6 +70,7 @@ namespace TFE_Audio
 	void unlock();
 
 	void setAudioThreadCallback(AudioThreadCallback callback = nullptr);
+	const OutputDeviceInfo* getOutputDeviceList(s32& count, s32& curOutput);
 
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 	// Note that looping one shots are valid though may generate too many sound sources if not used carefully.

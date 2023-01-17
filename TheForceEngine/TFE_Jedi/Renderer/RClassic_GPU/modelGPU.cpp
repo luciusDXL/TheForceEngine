@@ -31,6 +31,9 @@ using namespace TFE_RenderBackend;
 
 namespace TFE_Jedi
 {
+	extern s32 s_drawnObjCount;
+	extern SecObject* s_drawnObj[];
+
 	enum ModelShader
 	{
 		MGPU_SHADER_SOLID = 0,
@@ -65,9 +68,11 @@ namespace TFE_Jedi
 	{
 		s32 modelId;
 		Vec3f posWS;
-		Vec4f lightData;
+		Vec2f lightData;
+		Vec4f textureOffsets;
 		f32 transform[9];
 		u32 portalInfo;
+		void* obj;
 	};
 
 	static const AttributeMapping c_modelAttrMapping[] =
@@ -93,6 +98,7 @@ namespace TFE_Jedi
 		s32 cameraProjId;
 		s32 cameraDirId;
 		s32 lightDataId;
+		s32 textureOffsetId;
 		s32 modelMtxId;
 		s32 modelPosId;
 		s32 cameraRightId;
@@ -161,6 +167,7 @@ namespace TFE_Jedi
 		s_shaderInputs[variant].modelMtxId    = shader->getVariableId("ModelMtx");
 		s_shaderInputs[variant].modelPosId    = shader->getVariableId("ModelPos");
 		s_shaderInputs[variant].lightDataId   = shader->getVariableId("LightData");
+		s_shaderInputs[variant].textureOffsetId = shader->getVariableId("TextureOffsets");
 		s_shaderInputs[variant].portalInfo    = shader->getVariableId("PortalInfo");
 		
 		shader->bindTextureNameToSlot("Palette",  0);
@@ -490,7 +497,7 @@ namespace TFE_Jedi
 		vec3* v0 = &s_curModel->vertices[indices[0]];
 		vec3* v1 = &s_curModel->vertices[indices[1]];
 		vec3* v2 = &s_curModel->vertices[indices[2]];
-		vec2 uv = { 0 };
+		vec2 uv = { v0->y, 0 };	// Store vertex 0 y to determine the plane Y in the shader.
 
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
@@ -510,7 +517,7 @@ namespace TFE_Jedi
 		vec3* v1 = &s_curModel->vertices[indices[1]];
 		vec3* v2 = &s_curModel->vertices[indices[2]];
 		vec3* v3 = &s_curModel->vertices[indices[3]];
-		vec2 uv = { 0 };
+		vec2 uv = { v0->y, 0 };	// Store vertex 0 y to determine the plane Y in the shader.
 
 		const vec3 up = { 0,  ONE_16, 0 };
 		const vec3 dn = { 0, -ONE_16, 0 };
@@ -662,7 +669,7 @@ namespace TFE_Jedi
 	{
 	}
 
-	void model_add(JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, u32 portalInfo)
+	void model_add(void* obj, JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, Vec2f ceilOffset, u32 portalInfo)
 	{
 		// Make sure the model has been assigned a GPU ID.
 		if (!model || model->drawId < 0)
@@ -687,6 +694,7 @@ namespace TFE_Jedi
 		drawItem->modelId = model->drawId;
 		drawItem->posWS = posWS;
 		drawItem->portalInfo = portalInfo;
+		drawItem->obj = obj;
 		for (s32 i = 0; i < 9; i++)
 		{
 			drawItem->transform[i] = fixed16ToFloat(transform[i]);
@@ -694,8 +702,12 @@ namespace TFE_Jedi
 
 		drawItem->lightData =
 		{
-			f32(s_worldAmbient), min(ambient, 31.0f) + (s_cameraLightSource ? 64.0f : 0.0f),
-			floorOffset.x, floorOffset.z
+			f32(s_worldAmbient), min(ambient, 31.0f) + (s_cameraLightSource ? 64.0f : 0.0f)
+		};
+		drawItem->textureOffsets =
+		{
+			floorOffset.x, floorOffset.z,
+			ceilOffset.x, ceilOffset.z,
 		};
 	}
 
@@ -730,11 +742,17 @@ namespace TFE_Jedi
 				// Per-draw shader variables.
 				shader->setVariable(s_shaderInputs[s].modelPosId,  SVT_VEC3,   drawItem->posWS.m);
 				shader->setVariable(s_shaderInputs[s].modelMtxId,  SVT_MAT3x3, drawItem->transform);
-				shader->setVariable(s_shaderInputs[s].lightDataId, SVT_VEC4,   drawItem->lightData.m);
+				shader->setVariable(s_shaderInputs[s].lightDataId, SVT_VEC2,   drawItem->lightData.m);
+				shader->setVariable(s_shaderInputs[s].textureOffsetId, SVT_VEC4, drawItem->textureOffsets.m);
 				shader->setVariable(s_shaderInputs[s].portalInfo,  SVT_UVEC2,  portalInfo);
 
 				// Draw the geometry (note a single vertex/index buffer is used, so this is just a count and start offset).
 				TFE_RenderBackend::drawIndexedTriangles(model->polyCount, sizeof(u32), model->indexStart);
+
+				if (s_drawnObjCount < MAX_DRAWN_OBJ_STORE)
+				{
+					s_drawnObj[s_drawnObjCount++] = (SecObject*)drawItem->obj;
+				}
 			}
 		}
 

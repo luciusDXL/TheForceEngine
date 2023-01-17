@@ -46,6 +46,7 @@ struct TFE_Settings_Graphics
 	bool  perspectiveCorrectTexturing = false;
 	bool  extendAjoinLimits = true;
 	bool  vsync = true;
+	s32   frameRateLimit = 0;
 	f32   brightness = 1.0f;
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;
@@ -125,6 +126,8 @@ struct TFE_Settings_Sound
 	f32 musicVolume = 1.0f;
 	f32 cutsceneSoundFxVolume = 0.9f;
 	f32 cutsceneMusicVolume = 1.0f;
+	s32 audioDevice = -1;
+	s32 midiDevice = -1;
 	bool use16Channels = false;
 	bool disableSoundInMenus = false;
 };
@@ -156,6 +159,12 @@ struct TFE_Settings_Game
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 
+struct TFE_Settings_System
+{
+	bool gameQuitExitsToMenu = true;	// Quitting from the game returns to the main menu instead.
+	bool returnToModLoader = true;		// Return to the Mod Loader if running a mod.
+};
+
 namespace TFE_Settings
 {
 	bool init(bool& firstRun);
@@ -168,6 +177,7 @@ namespace TFE_Settings
 	TFE_Settings_Graphics* getGraphicsSettings();
 	TFE_Settings_Hud* getHudSettings();
 	TFE_Settings_Sound* getSoundSettings();
+	TFE_Settings_System* getSystemSettings();
 	TFE_Game* getGame();
 	TFE_GameHeader* getGameHeader(const char* gameName);
 	TFE_Settings_Game* getGameSettings();
