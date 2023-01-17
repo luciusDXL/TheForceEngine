@@ -63,11 +63,6 @@ namespace TFE_AudioDevice
 	static u32  s_audioFrameSize;
 	static bool s_streamStarted;
 
-	struct OutputDeviceInfo
-	{
-		std::string name;
-		u32 id;
-	};
 	static std::vector<OutputDeviceInfo> s_outputDeviceList;
 	static u32 s_defaultOutputDeviceId;
 
@@ -148,6 +143,16 @@ namespace TFE_AudioDevice
 		s_audioFrameSize = audioFrameSize;
 
 		return true;
+	}
+
+	s32 getOutputDeviceId()
+	{
+		return s_outputDevice;
+	}
+
+	s32 getOutputDeviceCount()
+	{
+		return (s32)s_outputDeviceList.size();
 	}
 
 	void destroy()
@@ -234,5 +239,12 @@ namespace TFE_AudioDevice
 			s_device->stopStream();
 			s_streamStarted = false;
 		}
+	}
+
+	const OutputDeviceInfo* getOutputDeviceList(s32& count, s32& curOutput)
+	{
+		count = s32(s_outputDeviceList.size());
+		curOutput = s32(s_outputDevice);
+		return s_outputDeviceList.data();
 	}
 }

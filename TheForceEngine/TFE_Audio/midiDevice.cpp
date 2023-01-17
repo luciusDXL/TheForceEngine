@@ -58,11 +58,16 @@ namespace TFE_MidiDevice
 		buffer[copyLength] = 0;
 	}
 
-	void selectDevice(u32 index)
+	bool selectDevice(s32 index)
 	{
-		if (!s_midiout) { return; }
-		s_midiout->openPort(index);
-		s_openPort = (s32)index;
+		if (!s_midiout) { return false; }
+		if (index != s_openPort && index >= 0 && index < getDeviceCount())
+		{
+			s_midiout->openPort(index);
+			s_openPort = (s32)index;
+			return true;
+		}
+		return false;
 	}
 
 	void sendMessage(const u8* msg, u32 size)

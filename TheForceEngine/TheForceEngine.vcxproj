@@ -351,6 +351,7 @@ echo ^)";
     <ClInclude Include="TFE_Asset\vocAsset.h" />
     <ClInclude Include="TFE_Asset\vueAsset.h" />
     <ClInclude Include="TFE_Audio\audioDevice.h" />
+    <ClInclude Include="TFE_Audio\audioOutput.h" />
     <ClInclude Include="TFE_Audio\audioSystem.h" />
     <ClInclude Include="TFE_Audio\midi.h" />
     <ClInclude Include="TFE_Audio\midiDevice.h" />

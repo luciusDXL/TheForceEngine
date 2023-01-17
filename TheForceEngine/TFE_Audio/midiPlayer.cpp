@@ -73,12 +73,15 @@ namespace TFE_MidiPlayer
 	void setMusicVolumeConsole(const ConsoleArgList& args);
 	void getMusicVolumeConsole(const ConsoleArgList& args);
 
-	bool init()
+	bool init(s32 midiDeviceIndex)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_MidiPlayer::init");
 
 		bool res = TFE_MidiDevice::init();
-		TFE_MidiDevice::selectDevice(0);
+		if (!TFE_MidiDevice::selectDevice(midiDeviceIndex))
+		{
+			TFE_MidiDevice::selectDevice(0);
+		}
 		s_runMusicThread.store(true);
 
 		MUTEX_INITIALIZE(&s_mutex);

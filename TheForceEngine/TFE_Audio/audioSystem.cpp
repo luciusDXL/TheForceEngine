@@ -74,7 +74,7 @@ namespace TFE_Audio
 	static s32 s_soundIterAve = 0;
 #endif
 
-	bool init(bool useNullDevice/*=false*/)
+	bool init(bool useNullDevice/*=false*/, s32 outputId/*=0*/)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_AudioSystem::init");
 		s_sourceCount = 0u;
@@ -96,7 +96,7 @@ namespace TFE_Audio
 			s_sources[i].slot = i;
 		}
 
-		bool audDev = TFE_AudioDevice::init(256u, -1, useNullDevice);
+		bool audDev = TFE_AudioDevice::init(256u, outputId, useNullDevice);
 		if (!audDev)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio device.");
@@ -142,6 +142,15 @@ namespace TFE_Audio
 		MUTEX_UNLOCK(&s_mutex);
 	}
 
+	void selectDevice(s32 id)
+	{
+		if (id != TFE_AudioDevice::getOutputDeviceId() && id >= 0 && id < TFE_AudioDevice::getOutputDeviceCount())
+		{
+			shutdown();
+			init(false, id);
+		}
+	}
+
 	void setVolume(f32 volume)
 	{
 		s_soundFxVolume = volume;
@@ -169,6 +178,11 @@ namespace TFE_Audio
 		MUTEX_LOCK(&s_mutex);
 		s_audioThreadCallback = callback;
 		MUTEX_UNLOCK(&s_mutex);
+	}
+
+	const OutputDeviceInfo* getOutputDeviceList(s32& count, s32& curOutput)
+	{
+		return TFE_AudioDevice::getOutputDeviceList(count, curOutput);
 	}
 
 	void lock()

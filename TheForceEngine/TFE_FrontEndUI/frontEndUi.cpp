@@ -4,6 +4,7 @@
 #include "modLoader.h"
 #include <TFE_Audio/audioSystem.h>
 #include <TFE_Audio/midiPlayer.h>
+#include <TFE_Audio/midiDevice.h>
 #include <TFE_DarkForces/config.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Game/saveSystem.h>
@@ -48,7 +49,7 @@ namespace TFE_FrontEndUI
 		FEUI_MODS,
 		FEUI_COUNT
 	};
-
+	
 	enum ConfigTab
 	{
 		CONFIG_ABOUT = 0,
@@ -61,6 +62,11 @@ namespace TFE_FrontEndUI
 		CONFIG_SOUND,
 		CONFIG_SYSTEM,
 		CONFIG_COUNT
+	};
+
+	enum
+	{
+		MAX_AUDIO_OUTPUTS = 16
 	};
 
 	const char* c_configLabels[] =
@@ -2245,6 +2251,45 @@ namespace TFE_FrontEndUI
 	void configSound()
 	{
 		TFE_Settings_Sound* sound = TFE_Settings::getSoundSettings();
+		ImGui::LabelText("##ConfigLabel", "Audio Output");
+
+		const char* outputAudioNames[MAX_AUDIO_OUTPUTS];
+		char outputMidiNames[MAX_AUDIO_OUTPUTS][256];
+		{
+			s32 outputCount = 0, curOutput = 0;
+			const OutputDeviceInfo* outputInfo = TFE_Audio::getOutputDeviceList(outputCount, curOutput);
+			outputCount = min(MAX_AUDIO_OUTPUTS, outputCount);
+			for (s32 i = 0; i < outputCount; i++)
+			{
+				outputAudioNames[i] = outputInfo[i].name.c_str();
+			}
+
+			ImGui::LabelText("##ConfigLabel", "Audio Device:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::SetNextItemWidth(256 * s_uiScale);
+			ImGui::Combo("##Audio Output", &curOutput, outputAudioNames, outputCount);
+
+			TFE_Audio::selectDevice(curOutput);
+			sound->audioDevice = curOutput;
+		}
+
+		{
+			s32 outputCount = 0, curOutput = 0;
+			outputCount = min(MAX_AUDIO_OUTPUTS, TFE_MidiDevice::getDeviceCount());
+			for (s32 i = 0; i < outputCount; i++)
+			{
+				TFE_MidiDevice::getDeviceName(i, outputMidiNames[i], 256);
+			}
+
+			ImGui::LabelText("##ConfigLabel", "Midi Device:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::SetNextItemWidth(256 * s_uiScale);
+			ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
+
+			TFE_MidiDevice::selectDevice(u32(curOutput));
+			sound->midiDevice = curOutput;
+		}
+
+		ImGui::Separator();
+
 		ImGui::LabelText("##ConfigLabel", "Sound Volume");
 		labelSliderPercent(&sound->soundFxVolume, "Game SoundFX");
 		labelSliderPercent(&sound->musicVolume,   "Game Music");

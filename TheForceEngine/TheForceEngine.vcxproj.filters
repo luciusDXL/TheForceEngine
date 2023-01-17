@@ -1222,6 +1222,9 @@
     <ClInclude Include="TFE_System\frameLimiter.h">
       <Filter>Source\TFE_System</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Audio\audioOutput.h">
+      <Filter>Source\TFE_Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

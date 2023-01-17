@@ -612,8 +612,8 @@ int main(int argc, char* argv[])
 		return PROGRAM_ERROR;
 	}
 	TFE_FrontEndUI::initConsole();
-	TFE_Audio::init(s_nullAudioDevice);
-	TFE_MidiPlayer::init();
+	TFE_Audio::init(s_nullAudioDevice, TFE_Settings::getSoundSettings()->audioDevice);
+	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiDevice);
 	TFE_Polygon::init();
 	TFE_Image::init();
 	TFE_Palette::createDefault256();

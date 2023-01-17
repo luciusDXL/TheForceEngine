@@ -383,6 +383,8 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "musicVolume", s_soundSettings.musicVolume);
 		writeKeyValue_Float(settings, "cutsceneSoundFxVolume", s_soundSettings.cutsceneSoundFxVolume);
 		writeKeyValue_Float(settings, "cutsceneMusicVolume", s_soundSettings.cutsceneMusicVolume);
+		writeKeyValue_Int(settings, "audioDevice", s_soundSettings.audioDevice);
+		writeKeyValue_Int(settings, "midiDevice", s_soundSettings.midiDevice);
 		writeKeyValue_Bool(settings, "use16Channels", s_soundSettings.use16Channels);
 		writeKeyValue_Bool(settings, "disableSoundInMenus", s_soundSettings.disableSoundInMenus);
 	}
@@ -738,6 +740,14 @@ namespace TFE_Settings
 		else if (strcasecmp("cutsceneMusicVolume", key) == 0)
 		{
 			s_soundSettings.cutsceneMusicVolume = parseFloat(value);
+		}
+		else if (strcasecmp("audioDevice", key) == 0)
+		{
+			s_soundSettings.audioDevice = parseInt(value);
+		}
+		else if (strcasecmp("midiDevice", key) == 0)
+		{
+			s_soundSettings.midiDevice = parseInt(value);
 		}
 		else if (strcasecmp("use16Channels", key) == 0)
 		{
