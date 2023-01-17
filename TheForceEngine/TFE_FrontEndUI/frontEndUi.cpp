@@ -11,6 +11,7 @@
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_System/frameLimiter.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_FileSystem/fileutil.h>
 #include <TFE_FileSystem/paths.h>
@@ -2073,6 +2074,35 @@ namespace TFE_FrontEndUI
 		ImGui::PushFont(s_dialogFont);
 		ImGui::LabelText("##ConfigLabel", "Rendering");
 		ImGui::PopFont();
+
+		// Frame Rate Limiter.
+		s32 frameRateLimit = graphics->frameRateLimit;
+		bool limitEnable = frameRateLimit != 0;
+		ImGui::Checkbox("Frame Rate Limit Enable", &limitEnable);
+
+		if (limitEnable)
+		{
+			if (frameRateLimit < 30)
+			{
+				frameRateLimit = 74;
+			}
+			ImGui::LabelText("##ConfigLabel", "Maximum Framerate:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			ImGui::SliderInt("##FPSLimitSlider", &frameRateLimit, 30, 360, "%d");
+			ImGui::SetNextItemWidth(128 * s_uiScale);
+			ImGui::InputInt("##FPSLimitEdit", &frameRateLimit, 1, 10);
+		}
+		else
+		{
+			frameRateLimit = 0;
+		}
+
+		if (frameRateLimit != graphics->frameRateLimit)
+		{
+			graphics->frameRateLimit = frameRateLimit;
+			TFE_System::frameLimiter_set(frameRateLimit);
+		}
+		ImGui::Separator();
 
 		ImGui::LabelText("##ConfigLabel", "Renderer:"); ImGui::SameLine(75 * s_uiScale);
 		ImGui::SetNextItemWidth(196 * s_uiScale);

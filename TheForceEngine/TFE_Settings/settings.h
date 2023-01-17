@@ -46,6 +46,7 @@ struct TFE_Settings_Graphics
 	bool  perspectiveCorrectTexturing = false;
 	bool  extendAjoinLimits = true;
 	bool  vsync = true;
+	s32   frameRateLimit = 0;
 	f32   brightness = 1.0f;
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;
