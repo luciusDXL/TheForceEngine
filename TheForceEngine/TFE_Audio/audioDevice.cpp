@@ -145,6 +145,11 @@ namespace TFE_AudioDevice
 		return true;
 	}
 
+	s32 getDefaultOutputDevice()
+	{
+		return s_device->getDefaultOutputDevice();
+	}
+
 	s32 getOutputDeviceId()
 	{
 		return s_outputDevice;

@@ -74,7 +74,7 @@ namespace TFE_Audio
 	static s32 s_soundIterAve = 0;
 #endif
 
-	bool init(bool useNullDevice/*=false*/, s32 outputId/*=0*/)
+	bool init(bool useNullDevice/*=false*/, s32 outputId/*=-1*/)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_AudioSystem::init");
 		s_sourceCount = 0u;
@@ -144,6 +144,11 @@ namespace TFE_Audio
 
 	void selectDevice(s32 id)
 	{
+		if (id < 0)
+		{
+			id = TFE_AudioDevice::getDefaultOutputDevice();
+		}
+
 		if (id != TFE_AudioDevice::getOutputDeviceId() && id >= 0 && id < TFE_AudioDevice::getOutputDeviceCount())
 		{
 			shutdown();

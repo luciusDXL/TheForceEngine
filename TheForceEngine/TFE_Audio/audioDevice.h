@@ -32,6 +32,7 @@ namespace TFE_AudioDevice
 	bool startOutput(StreamCallback callback, void* userData = 0, u32 channels = 2, u32 sampleRate = 44100);
 	void stopOutput();
 
+	s32 getDefaultOutputDevice();
 	s32 getOutputDeviceId();
 	s32 getOutputDeviceCount();
 

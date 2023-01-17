@@ -2298,10 +2298,14 @@ namespace TFE_FrontEndUI
 			ImGui::SetNextItemWidth(256 * s_uiScale);
 			ImGui::Combo("##Audio Output", &curOutput, outputAudioNames, outputCount);
 
+			if (ImGui::Button("Reset Audio Output"))
+			{
+				curOutput = -1;
+			}
 			TFE_Audio::selectDevice(curOutput);
 			sound->audioDevice = curOutput;
 		}
-
+		ImGui::Separator();
 		{
 			s32 outputCount = 0, curOutput = 0;
 			outputCount = min(MAX_AUDIO_OUTPUTS, TFE_MidiDevice::getDeviceCount());
@@ -2314,6 +2318,10 @@ namespace TFE_FrontEndUI
 			ImGui::SetNextItemWidth(256 * s_uiScale);
 			ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
 
+			if (ImGui::Button("Reset Midi Output"))
+			{
+				curOutput = -1;
+			}
 			TFE_MidiDevice::selectDevice(u32(curOutput));
 			sound->midiDevice = curOutput;
 		}

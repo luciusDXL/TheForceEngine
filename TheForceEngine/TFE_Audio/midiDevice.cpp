@@ -61,6 +61,10 @@ namespace TFE_MidiDevice
 	bool selectDevice(s32 index)
 	{
 		if (!s_midiout) { return false; }
+		if (index < 0)
+		{
+			index = 0;
+		}
 		if (index != s_openPort && index >= 0 && index < getDeviceCount())
 		{
 			s_midiout->openPort(index);
