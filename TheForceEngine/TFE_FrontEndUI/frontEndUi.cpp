@@ -442,8 +442,7 @@ namespace TFE_FrontEndUI
 		s_drawNoGameDataMsg = false;
 		s_appState = APP_STATE_EXIT_TO_MENU;
 		s_selectedModCmd[0] = 0;
-		s_relativeMode = false;
-		TFE_Input::enableRelativeMode(s_relativeMode);
+		TFE_Input::setMouseCursorMode(MCURSORMODE_OS);
 
 		if (TFE_Settings::getSystemSettings()->returnToModLoader && s_modLoaded)
 		{
