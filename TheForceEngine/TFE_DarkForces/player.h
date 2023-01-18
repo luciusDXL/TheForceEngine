@@ -160,6 +160,8 @@ namespace TFE_DarkForces
 
 	// New TFE Cheats
 	void cheat_fly();
+	void cheat_noclip();
+	void cheat_tester();
 
 	// Serialization
 	void playerLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);

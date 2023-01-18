@@ -482,7 +482,7 @@ namespace TFE_DarkForces
 	// Attempts to move the player. Note that collision detection has already occured accounting for step height,
 	// objects, collision reponse, etc.. So this is a more basic collision detection function to validate the
 	// results and fire off INF_EVENT_CROSS_LINE_XXX events as needed.
-	JBool playerMove()
+	JBool playerMove(JBool alwaysMove)
 	{
 		SecObject* player = s_playerObject;
 		fixed16_16 ceilHeight;
@@ -503,7 +503,7 @@ namespace TFE_DarkForces
 			RSector* adjoinSector = wall->nextSector;
 			// If the player collides with a wall, nextSector will be set to null, which means that the movement is not applied.
 			nextSector = nullptr;
-			if (adjoinSector && !(wall->flags3&WF3_SOLID_WALL))
+			if (adjoinSector && (!(wall->flags3&WF3_SOLID_WALL) || alwaysMove))
 			{
 				if (!s_playerDying)
 				{
@@ -517,6 +517,11 @@ namespace TFE_DarkForces
 				// Current floor is lower than the adjoining sector, meaning there is a lower wall part.
 				finalFloorHeight = min(floorHeight, finalFloorHeight);
 				wall = collision_pathWallCollision(adjoinSector);
+				// Handle the no clip cheat.
+				if (alwaysMove && wall && !wall->nextSector)
+				{
+					wall = nullptr;
+				}
 			}
 			else
 			{
@@ -524,26 +529,40 @@ namespace TFE_DarkForces
 			}
 		}
 		// nextSector will be null if the collision failed, in which case we don't move the player and return false.
-		if (nextSector)
+		if (nextSector || alwaysMove)
 		{
 			fixed16_16 stepLimit = player->posWS.y - s_curPlayerLogic->stepHeight;
 			fixed16_16 topLimit = player->posWS.y - player->worldHeight - ONE_16;
 			// If the player cannot fit, then again we don't move the player and return false.
-			if (finalFloorHeight >= stepLimit && finalCeilHeight <= topLimit)
+			if ((finalFloorHeight >= stepLimit && finalCeilHeight <= topLimit) || alwaysMove)
 			{
 				// The collision was a success!
 				// Move the player, change sectors if needed and adjust the map layer.
 				player->posWS.x += s_curPlayerLogic->move.x;
 				player->posWS.z += s_curPlayerLogic->move.z;
 
-				RSector* curSector = player->sector;
-				if (nextSector != curSector)
+				if (alwaysMove)
 				{
-					if (nextSector->layer != curSector->layer)
+					if (nextSector && !sector_pointInsideDF(nextSector, player->posWS.x, player->posWS.z))
 					{
-						automap_setLayer(nextSector->layer);
+						nextSector = nullptr;
 					}
-					sector_addObject(nextSector, player);
+					if (!nextSector)
+					{
+						nextSector = sector_which3D(player->posWS.x, player->posWS.y, player->posWS.z);
+					}
+				}
+				if (nextSector)
+				{
+					RSector* curSector = player->sector;
+					if (nextSector != curSector)
+					{
+						if (nextSector->layer != curSector->layer)
+						{
+							automap_setLayer(nextSector->layer);
+						}
+						sector_addObject(nextSector, player);
+					}
 				}
 				return JTRUE;
 			}

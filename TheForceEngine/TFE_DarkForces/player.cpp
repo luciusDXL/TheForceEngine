@@ -204,6 +204,7 @@ namespace TFE_DarkForces
 	JBool s_superChargeHud= JFALSE;
 	JBool s_playerSecMoved = JFALSE;
 	JBool s_flyMode = JFALSE;
+	JBool s_noclip = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
 
 	RSector* s_playerSector = nullptr;
@@ -523,6 +524,7 @@ namespace TFE_DarkForces
 		s_nextShieldDmgTick = 0;
 		s_invincibility = 0;
 		s_flyMode = JFALSE;
+		s_noclip = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
 		s_playerInfo.shields = max(100, s_playerInfo.shields);
@@ -899,9 +901,40 @@ namespace TFE_DarkForces
 	{
 		// Write the cheat message.
 		const char* msg = TFE_System::getMessage(TFE_MSG_FLYMODE);
-		if (msg) { hud_sendTextMessage(msg, 0); }
+		if (msg) { hud_sendTextMessage(msg, 1); }
 
 		s_flyMode = ~s_flyMode;
+	}
+
+	void cheat_noclip()
+	{
+		// Write the cheat message.
+		const char* msg = TFE_System::getMessage(TFE_MSG_NOCLIP);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+
+		s_noclip = ~s_noclip;
+	}
+
+	void cheat_tester()
+	{
+		// Write the cheat message.
+		const char* msg = TFE_System::getMessage(TFE_MSG_TESTER);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+
+		if (s_noclip)
+		{
+			if (s_invincibility == -2) { s_invincibility = 0; }
+			s_aiActive = JTRUE;
+			s_noclip = JFALSE;
+			s_flyMode = JFALSE;
+		}
+		else
+		{
+			s_invincibility = -2;
+			s_aiActive = JFALSE;
+			s_noclip = JTRUE;
+			s_flyMode = JTRUE;
+		}
 	}
 
 	void player_setupCamera()
@@ -1116,6 +1149,7 @@ namespace TFE_DarkForces
 				s_invincibilityTask = nullptr;
 				s_invincibility = 0;
 				s_flyMode = JFALSE;
+				s_noclip = JFALSE;
 				player_clearSuperCharge();
 			}
 			else
@@ -1281,7 +1315,7 @@ namespace TFE_DarkForces
 		s32 crouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
 		if (s_flyMode)
 		{
-			if (!s_onFloor && crouch)
+			if ((!s_onFloor || s_noclip) && crouch)
 			{
 				fixed16_16 speed = -(PLAYER_JUMP_IMPULSE << s_jumpScale);
 				s_playerUpVel = speed;
@@ -1292,6 +1326,7 @@ namespace TFE_DarkForces
 				s_playerUpVel = 0;
 				s_playerUpVel2 = 0;
 			}
+			s_playerCrouchSpd = 0;
 		}
 
 		if (s_onFloor & crouch)
@@ -1649,31 +1684,48 @@ namespace TFE_DarkForces
 		fixed16_16 slideDirZ = 0;
 		s_playerSlideWall = nullptr;
 		// Up to 4 iterations, to handle sliding on walls.
-		for (s32 collisionIter = 4; collisionIter != 0; collisionIter--)
+		if (s_noclip)
 		{
-			if (!handlePlayerCollision(&s_playerLogic, s_playerUpVel))
+			if (s_playerLogic.move.x || s_playerLogic.move.y)
 			{
-				if (s_playerLogic.move.x || s_playerLogic.move.y)
+				moved = JTRUE;
+			}
+			if (s_playerSector)
+			{
+				s_colCurLowestFloor = s_playerSector->floorHeight;
+				s_colCurHighestCeil = s_playerSector->ceilingHeight;
+				s_colExtFloorHeight = s_playerSector->colFloorHeight;
+				s_colExtCeilHeight = s_playerSector->colCeilHeight;
+			}
+		}
+		else
+		{
+			for (s32 collisionIter = 4; collisionIter != 0; collisionIter--)
+			{
+				if (!handlePlayerCollision(&s_playerLogic, s_playerUpVel))
 				{
-					moved = JTRUE;
+					if (s_playerLogic.move.x || s_playerLogic.move.y)
+					{
+						moved = JTRUE;
+					}
+					break;
 				}
-				break;
-			}
-						
-			// Determine if a collision response is required.
-			collided = JTRUE;
-			if (!s_colResponseStep)
-			{
-				break;
-			}
-			prevResponseStep = s_colResponseStep;
 
-			if (s_colWall0)
-			{
-				s_playerSlideWall = s_colWall0;
+				// Determine if a collision response is required.
+				collided = JTRUE;
+				if (!s_colResponseStep)
+				{
+					break;
+				}
+				prevResponseStep = s_colResponseStep;
+
+				if (s_colWall0)
+				{
+					s_playerSlideWall = s_colWall0;
+				}
+				slideDirX = s_colResponseDir.x;
+				slideDirZ = s_colResponseDir.z;
 			}
-			slideDirX = s_colResponseDir.x;
-			slideDirZ = s_colResponseDir.z;
 		}
 
 		// If the player moved after collision, handle that here.
@@ -1698,12 +1750,16 @@ namespace TFE_DarkForces
 
 			// If this fails, the system will treat it as if the player didn't move (see below).
 			// However, it should succeed since the original collision detection did.
-			moved = playerMove();
+			moved = playerMove(s_noclip);
 			if (moved)
 			{
 				s_colWidth += PLAYER_PICKUP_ADJ;	// s_colWidth + 1.5
 				playerHandleCollisionFunc(player->sector, collision_checkPickups, nullptr);
 				s_colWidth -= PLAYER_PICKUP_ADJ;
+				if (s_noclip)
+				{
+					s_colMinSector = player->sector;
+				}
 			}
 		}
 
@@ -1811,7 +1867,7 @@ namespace TFE_DarkForces
 		s_playerLogic.move.y = s_playerYPos - player->posWS.y;
 		player->posWS.y = s_playerYPos;
 
-		if (s_playerYPos >= s_colCurLowestFloor)
+		if (s_playerYPos >= s_colCurLowestFloor && (!s_noclip || !s_flyMode))
 		{
 			if (s_kyleScreamSoundId)
 			{
@@ -1866,7 +1922,7 @@ namespace TFE_DarkForces
 		else
 		{
 			fixed16_16 playerTop = s_playerYPos - player->worldHeight - ONE_16;
-			if (playerTop < s_colCurHighestCeil)
+			if (playerTop < s_colCurHighestCeil && (!s_noclip || !s_flyMode))
 			{
 				fixed16_16 yVel = max(0, s_playerUpVel2);
 				s_playerUpVel = yVel;
@@ -1925,10 +1981,13 @@ namespace TFE_DarkForces
 			player->worldHeight = minDistToFloor;
 		}
 		// Make sure eye height is clamped.
-		player->worldHeight = min(eyeHeight, player->worldHeight);
+		if (!s_noclip || !s_flyMode)
+		{
+			player->worldHeight = min(eyeHeight, player->worldHeight);
+		}
 
 		// Crushing Damage.
-		if (player->worldHeight < minEyeDistFromFloor)
+		if (player->worldHeight < minEyeDistFromFloor && (!s_noclip || !s_flyMode))
 		{
 			if (!s_crushSoundId)
 			{
@@ -2052,27 +2111,33 @@ namespace TFE_DarkForces
 		}
 
 		// Double check the player Y position against the floor and ceiling.
-		if (player->posWS.y > s_colCurLowestFloor)
+		if (!s_noclip || !s_flyMode)
 		{
-			s_playerYPos = s_colCurLowestFloor;
-			player->posWS.y = s_colCurLowestFloor;
-		}
-		if (player->posWS.y < s_colCurHighestCeil)
-		{
-			s_playerYPos = s_colCurHighestCeil;
-			player->posWS.y = s_colCurHighestCeil;
+			if (player->posWS.y > s_colCurLowestFloor)
+			{
+				s_playerYPos = s_colCurLowestFloor;
+				player->posWS.y = s_colCurLowestFloor;
+			}
+			if (player->posWS.y < s_colCurHighestCeil)
+			{
+				s_playerYPos = s_colCurHighestCeil;
+				player->posWS.y = s_colCurHighestCeil;
+			}
 		}
 
 		// Clamp the height if needed.
 		fixed16_16 yTop = player->posWS.y - s_colExtCeilHeight;
 		fixed16_16 yBot = player->posWS.y - s_colExtFloorHeight + 0x4000;
-		if (player->worldHeight - s_camOffset.y > yTop)
+		if (!s_noclip || !s_flyMode)
 		{
-			player->worldHeight = yTop + s_camOffset.y;
-		}
-		if (player->worldHeight - s_camOffset.y < yBot)
-		{
-			player->worldHeight = yBot + s_camOffset.y;
+			if (player->worldHeight - s_camOffset.y > yTop)
+			{
+				player->worldHeight = yTop + s_camOffset.y;
+			}
+			if (player->worldHeight - s_camOffset.y < yBot)
+			{
+				player->worldHeight = yBot + s_camOffset.y;
+			}
 		}
 
 		weapon->rollOffset = -s_playerRoll / 13;

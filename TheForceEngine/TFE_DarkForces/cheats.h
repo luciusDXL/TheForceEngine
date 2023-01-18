@@ -38,6 +38,8 @@ namespace TFE_DarkForces
 		CHEAT_LAMAXOUT,
 		// New Cheats for TFE.
 		CHEAT_LAFLY,
+		CHEAT_LANOCLIP,
+		CHEAT_LATESTER,
 		CHEAT_COUNT
 	};
 

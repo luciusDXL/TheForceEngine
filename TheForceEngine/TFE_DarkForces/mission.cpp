@@ -182,6 +182,8 @@ namespace TFE_DarkForces
 	CHEAT_CMD(LAUNLOCK);
 	CHEAT_CMD(LAMAXOUT);
 	CHEAT_CMD(LAFLY);
+	CHEAT_CMD(LANOCLIP);
+	CHEAT_CMD(LATESTER);
 
 	void console_spawnEnemy(const ConsoleArgList& args)
 	{
@@ -324,6 +326,8 @@ namespace TFE_DarkForces
 			console_LAUNLOCK,	// CHEAT_LAUNLOCK,
 			console_LAMAXOUT,	// CHEAT_LAMAXOUT,
 			console_LAFLY,		// CHEAT_LAFLY,
+			console_LANOCLIP,	// CHEAT_LANOCLIP,
+			console_LATESTER,	// CHEAT_LATESTER,
 		};
 
 		CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
@@ -1094,6 +1098,14 @@ namespace TFE_DarkForces
 			case CHEAT_LAFLY:
 			{
 				cheat_fly();
+			} break;
+			case CHEAT_LANOCLIP:
+			{
+				cheat_noclip();
+			} break;
+			case CHEAT_LATESTER:
+			{
+				cheat_tester();
 			} break;
 		}
 	}

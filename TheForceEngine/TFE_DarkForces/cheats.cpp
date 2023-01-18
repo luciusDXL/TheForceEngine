@@ -40,6 +40,8 @@ namespace TFE_DarkForces
 		"MAXOUT",
 		// New Cheats for TFE.
 		"FLY",
+		"NOCLIP",
+		"TESTER",
 	};
 
 	char s_cheatString[32] = { 0 };
