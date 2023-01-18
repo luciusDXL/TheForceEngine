@@ -323,7 +323,7 @@ namespace TFE_Input
 				} break;
 				case ITYPE_MOUSE:
 				{
-					if (TFE_Input::keyModDown(bind->keyMod, inputMapping_isMovementAction(bind->action)))
+					if (TFE_Input::keyModDown(bind->keyMod, true))
 					{
 						if (TFE_Input::mousePressed(bind->mouseBtn))
 						{
