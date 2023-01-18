@@ -107,6 +107,12 @@ namespace TFE_DarkForces
 		return CHEAT_NONE;
 	}
 
+	const char* cheat_getStringFromID(CheatID id)
+	{
+		if (id <= CHEAT_NONE || id >= CHEAT_COUNT) { return nullptr; }
+		return c_cheatStrings[id - 1];
+	}
+
 	void cheat_clearData()
 	{
 		s_cheatInputCount = 0;

@@ -41,6 +41,7 @@ namespace TFE_DarkForces
 
 	CheatID cheat_getID();
 	CheatID cheat_getIDFromString(const char* cheatStr);
+	const char* cheat_getStringFromID(CheatID id);
 	void cheat_clearData();
 
 	extern char s_cheatString[32];

@@ -146,6 +146,42 @@ namespace TFE_DarkForces
 		TFE_Input::enableRelativeMode(true);
 	}
 
+#define CHEAT_CMD(c) \
+	void console_##c (const ConsoleArgList& args)\
+	{	\
+		s_queuedCheatID = CHEAT_##c ;	\
+		TFE_FrontEndUI::toggleConsole(); \
+		mission_pause(JFALSE); \
+		TFE_Input::enableRelativeMode(true); \
+	}
+	CHEAT_CMD(LACDS);
+	CHEAT_CMD(LANTFH);
+	CHEAT_CMD(LAPOGO);
+	CHEAT_CMD(LARANDY);
+	CHEAT_CMD(LAIMLAME);
+	CHEAT_CMD(LAPOSTAL);
+	CHEAT_CMD(LADATA);
+	CHEAT_CMD(LABUG);
+	CHEAT_CMD(LAREDLITE);
+	CHEAT_CMD(LASECBASE);
+	CHEAT_CMD(LATALAY);
+	CHEAT_CMD(LASEWERS);
+	CHEAT_CMD(LATESTBASE);
+	CHEAT_CMD(LAGROMAS);
+	CHEAT_CMD(LADTENTION);
+	CHEAT_CMD(LARAMSHAD);
+	CHEAT_CMD(LAROBOTICS);
+	CHEAT_CMD(LANARSHADA);
+	CHEAT_CMD(LAJABSHIP);
+	CHEAT_CMD(LAIMPCITY);
+	CHEAT_CMD(LAFUELSTAT);
+	CHEAT_CMD(LAEXECUTOR);
+	CHEAT_CMD(LAARC);
+	CHEAT_CMD(LASKIP);
+	CHEAT_CMD(LABRADY);
+	CHEAT_CMD(LAUNLOCK);
+	CHEAT_CMD(LAMAXOUT);
+
 	void console_spawnEnemy(const ConsoleArgList& args)
 	{
 		if (args.size() < 3) { return; }
@@ -254,12 +290,59 @@ namespace TFE_DarkForces
 		}
 	}
 
+	void mission_addCheatCommands()
+	{
+		TFE_Console::ConsoleFunc cheatFunc[] =
+		{
+			nullptr,			// CHEAT_NONE = 0,
+			console_LACDS,		// CHEAT_LACDS,
+			console_LANTFH,		// CHEAT_LANTFH,
+			console_LAPOGO,		// CHEAT_LAPOGO,
+			console_LARANDY,	// CHEAT_LARANDY,
+			console_LAIMLAME,	// CHEAT_LAIMLAME,
+			console_LAPOSTAL,	// CHEAT_LAPOSTAL,
+			console_LADATA,		// CHEAT_LADATA,
+			console_LABUG,		// CHEAT_LABUG,
+			console_LAREDLITE,	// CHEAT_LAREDLITE,
+			console_LASECBASE,	// CHEAT_LASECBASE,
+			console_LATALAY,	// CHEAT_LATALAY,
+			console_LASEWERS,	// CHEAT_LASEWERS,
+			console_LATESTBASE, // CHEAT_LATESTBASE,
+			console_LAGROMAS,	// CHEAT_LAGROMAS,
+			console_LADTENTION, // CHEAT_LADTENTION,
+			console_LARAMSHAD,	// CHEAT_LARAMSHAD,
+			console_LAROBOTICS, // CHEAT_LAROBOTICS,
+			console_LANARSHADA, // CHEAT_LANARSHADA,
+			console_LAJABSHIP,	// CHEAT_LAJABSHIP,
+			console_LAIMPCITY,	// CHEAT_LAIMPCITY,
+			console_LAFUELSTAT, // CHEAT_LAFUELSTAT,
+			console_LAEXECUTOR, // CHEAT_LAEXECUTOR,
+			console_LAARC,		// CHEAT_LAARC,
+			console_LASKIP,		// CHEAT_LASKIP,
+			console_LABRADY,	// CHEAT_LABRADY,
+			console_LAUNLOCK,	// CHEAT_LAUNLOCK,
+			console_LAMAXOUT,	// CHEAT_LAMAXOUT
+		};
+
+		CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
+		for (u32 i = CHEAT_NONE + 1; i < CHEAT_COUNT; i++)
+		{
+			const char* str = cheat_getStringFromID(CheatID(i));
+			// Add "LA" to the beginning.
+			char finalStr[256];
+			sprintf(finalStr, "LA%s", str);
+			char helpMsg[256];
+			sprintf(helpMsg, "Activate the %s cheat.", finalStr);
+			CCMD(finalStr, cheatFunc[i], 0, helpMsg);
+		}
+	}
+
 	void mission_startTaskFunc(MessageType msg)
 	{
 		task_begin;
 		{
 			// TFE-specific
-			CCMD("cheat", console_cheat, 1, "Enter a Dark Forces cheat code as a string, example: cheat lacds");
+			mission_addCheatCommands();
 			CCMD("spawnEnemy", console_spawnEnemy, 2, "spawnEnemy(waxName, enemyTypeName) - spawns an enemy 8 units away in the player direction. Example: spawnEnemy offcfin.wax i_officer");
 
 			// Make sure the loading screen is displayed for at least 1 second.
