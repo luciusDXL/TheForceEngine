@@ -925,15 +925,15 @@ namespace TFE_DarkForces
 		{
 			if (s_invincibility == -2) { s_invincibility = 0; }
 			s_aiActive = JTRUE;
-			s_noclip = JFALSE;
-			s_flyMode = JFALSE;
+			s_noclip   = JFALSE;
+			s_flyMode  = JFALSE;
 		}
 		else
 		{
 			s_invincibility = -2;
 			s_aiActive = JFALSE;
-			s_noclip = JTRUE;
-			s_flyMode = JTRUE;
+			s_noclip   = JTRUE;
+			s_flyMode  = JTRUE;
 		}
 	}
 

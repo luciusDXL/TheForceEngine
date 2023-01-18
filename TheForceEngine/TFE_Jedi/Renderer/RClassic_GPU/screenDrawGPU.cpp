@@ -209,9 +209,26 @@ namespace TFE_Jedi
 	{
 		u32 color32 = vfb_getPalette()[color];
 		u32 colors[] = { color32, color32 };
-		Vec2f vtx[] = { f32(x), f32(z), f32(x)+0.5f, f32(z)+0.5f };
 
-		TFE_RenderShared::lineDraw2d_addLine(1.5f, vtx, colors);
+		// Draw a diamond shape
+		f32 size = max(f32(s_scrQuadsHeight / 400), 0.5f);
+		const Vec2f vtx[]=
+		{
+			// left
+			f32(x-size), f32(z),
+			// middle
+			f32(x), f32(z+size),
+			// right
+			f32(x+size), f32(z),
+			// bottom
+			f32(x), f32(z-size),
+			// left
+			f32(x-size), f32(z),
+		};
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[0], colors);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[1], colors);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[2], colors);
+		TFE_RenderShared::lineDraw2d_addLine(1.5f, &vtx[3], colors);
 	}
 
 	void screenGPU_drawLine(ScreenRect* rect, s32 x0, s32 z0, s32 x1, s32 z1, u8 color)
