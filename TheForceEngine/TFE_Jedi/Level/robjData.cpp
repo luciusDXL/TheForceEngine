@@ -8,6 +8,7 @@
 #include <TFE_DarkForces/generator.h>
 #include <TFE_Memory/chunkedArray.h>
 #include <TFE_System/system.h>
+#include <cstring>
 
 // Required for serialization.
 namespace TFE_DarkForces
@@ -190,7 +191,7 @@ namespace TFE_Jedi
 			SERIALIZE(ObjState_InitVersion, writeCount, 0);
 			if (!s_objData.objectList)
 			{
-				const u32 initChunkCount = max(1, (writeCount + 255) >> 8);
+				const u32 initChunkCount = (u32)(s32)max((s32)1, (s32)((writeCount + 255) >> 8));
 				s_objData.objectList = TFE_Memory::createChunkedArray(sizeof(SecObject), 256, initChunkCount, s_levelRegion);
 			}
 			else

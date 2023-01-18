@@ -1,6 +1,7 @@
 #pragma once
 #include <TFE_FileSystem/stream.h>
 #include <TFE_FileSystem/paths.h>
+#include <cassert>
 
 ////////////////////////////////////////////////////
 // TODO: FileStream directly accesses arhive data.
@@ -42,7 +43,7 @@ public:
 	void read(u64* ptr, u32 count=1) override { readType(ptr, count); }
 	void read(f32* ptr, u32 count=1) override { readType(ptr, count); }
 	void read(f64* ptr, u32 count=1) override { readType(ptr, count); }
-	void read(std::string* ptr, u32 count=1) override { readType(ptr, count); }
+	void read(std::string* ptr, u32 count=1) override { readString(ptr, count); }
 	u32  readBuffer(void* ptr, u32 size, u32 count=1) override;
 
 	void write(const s8*  ptr, u32 count=1)  override { writeType(ptr, count); }
@@ -55,23 +56,29 @@ public:
 	void write(const u64* ptr, u32 count=1)  override { writeType(ptr, count); }
 	void write(const f32* ptr, u32 count=1) override { writeType(ptr, count); }
 	void write(const f64* ptr, u32 count=1) override { writeType(ptr, count); }
-	void write(const std::string* ptr, u32 count=1) override { writeType(ptr, count); }
+	void write(const std::string* ptr, u32 count=1) override { writeString(ptr, count); }
 	void writeBuffer(const void* ptr, u32 size, u32 count=1) override;
 
 	void writeString(const char* fmt, ...) override;
 
 private:
 	template <typename T>
-	void readType(T* ptr, u32 count);
-
-	template <>
-	void readType<std::string>(std::string* ptr, u32 count);
+	void readType(T* ptr, u32 count)
+	{
+		assert(m_mode == MODE_READ || m_mode == MODE_READWRITE);
+		readBuffer(ptr, sizeof(T), count);
+	}
 
 	template <typename T>
-	void writeType(const T* ptr, u32 count);
+	void writeType(const T* ptr, u32 count)
+	{
+		assert(m_mode == MODE_WRITE || m_mode == MODE_READWRITE);
+		assert(m_file);	// TODO: Add Archive support.
+		fwrite(ptr, sizeof(T), count, m_file);
+	}
 
-	template <>
-	void writeType<std::string>(const std::string* ptr, u32 count);
+	void readString(std::string* ptr, u32 count);
+	void writeString(const std::string* ptr, u32 count);
 
 private:
 	FILE*    m_file;

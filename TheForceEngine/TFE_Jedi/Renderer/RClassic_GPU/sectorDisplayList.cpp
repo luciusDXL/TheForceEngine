@@ -233,7 +233,7 @@ namespace TFE_Jedi
 						plane[count++] = frustum_calculatePlaneFromEdge(edge);
 					}
 				}
-				s_maxPlaneCount = max(count, s_maxPlaneCount);
+				s_maxPlaneCount = max((s32)count, (s32)s_maxPlaneCount);
 				assert(s_maxPlaneCount <= FRUSTUM_PLANE_MAX);
 
 				// Add left and right planes if there is enough room...
@@ -280,7 +280,7 @@ namespace TFE_Jedi
 			s_portalFrustumVert[s_displayPortalCount].planes[3] = frustum_calculatePlaneFromEdge(rightEdge);
 		}
 
-		const u32 planeCount = min(MAX_PORTAL_PLANES, s_portalFrustumVert[s_displayPortalCount].planeCount);
+		const u32 planeCount = min((s32)MAX_PORTAL_PLANES, (s32)(s_portalFrustumVert[s_displayPortalCount].planeCount));
 		if (s_displayPortalCount + planeCount < MAX_BUFFER_SIZE)
 		{
 			s_portalPlaneInfo[s_displayPortalCount] = PACK_PORTAL_INFO(s_displayPlaneCount, planeCount);

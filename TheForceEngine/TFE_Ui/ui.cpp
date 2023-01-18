@@ -43,7 +43,10 @@ bool init(void* window, void* context, s32 uiScale)
 	}
 	else
 	{
-		io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", f32(13 * s_uiScale / 100));
+		char fp[TFE_MAX_PATH];
+		sprintf(fp, "Fonts/DroidSansMono.ttf");
+		TFE_Paths::mapSystemPath(fp);
+		io.Fonts->AddFontFromFileTTF(fp, f32(13 * s_uiScale / 100));
 	}
 	
 	TFE_Markdown::init(f32(16 * s_uiScale / 100));

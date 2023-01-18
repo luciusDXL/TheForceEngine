@@ -1,7 +1,8 @@
 #include "tfeMessage.h"
 #include "parser.h"
 #include <TFE_FileSystem/filestream.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 
 namespace TFE_System
 {

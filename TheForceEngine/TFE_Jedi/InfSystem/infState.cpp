@@ -6,6 +6,7 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
+#include <cstring>
 
 using namespace TFE_DarkForces;
 

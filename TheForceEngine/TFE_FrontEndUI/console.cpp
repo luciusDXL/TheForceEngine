@@ -60,11 +60,15 @@ namespace TFE_Console
 
 	bool init()
 	{
+		char fontpath[TFE_MAX_PATH];
 		s32 scale = TFE_Ui::getUiScale();
 		s_fontSize = (scale * 20) / 100;
 
+		sprintf(fontpath, "Fonts/DroidSansMono.ttf");
+		TFE_Paths::mapSystemPath(fontpath);
+
 		ImGuiIO& io = ImGui::GetIO();
-		s_consoleFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", (f32)s_fontSize);
+		s_consoleFont = io.Fonts->AddFontFromFileTTF(fontpath, (f32)s_fontSize);
 		s_height = 0.0f;
 		s_anim = 0.0f;
 		s_historyIndex = -1;
@@ -581,7 +585,7 @@ namespace TFE_Console
 			for (s32 i = start; i >= 0 && y > -s_fontSize; i--, y -= s_fontSize)
 			{
 				ImGui::SetCursorPosY(f32(y));
-				ImGui::TextColored(ImVec4(s_history[i].color.x, s_history[i].color.y, s_history[i].color.z, s_history[i].color.w), s_history[i].text.c_str());
+				ImGui::TextColored(ImVec4(s_history[i].color.x, s_history[i].color.y, s_history[i].color.z, s_history[i].color.w), "%s", s_history[i].text.c_str());
 			}
 
 			ImGui::SetKeyboardFocusHere();

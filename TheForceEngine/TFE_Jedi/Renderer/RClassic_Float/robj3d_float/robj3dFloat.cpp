@@ -36,7 +36,7 @@ namespace RClassic_Float
 			// Scale the points based on the resolution ratio.
 			u32 width, height;
 			vfb_getResolution(&width, &height);
-			const s32 scale = (s32)max(1, height / 200);
+			const s32 scale = max(1, (s32)(height / 200));
 
 			// If the MFLAG_DRAW_VERTICES flag is set, draw all vertices as points. 
 			robj3d_drawVertices(model->vertexCount, s_verticesVS, model->polygons[0].color, scale);
