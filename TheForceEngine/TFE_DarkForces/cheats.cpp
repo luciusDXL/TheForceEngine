@@ -38,6 +38,8 @@ namespace TFE_DarkForces
 		"BRADY",
 		"UNLOCK",
 		"MAXOUT",
+		// New Cheats for TFE.
+		"FLY",
 	};
 
 	char s_cheatString[32] = { 0 };

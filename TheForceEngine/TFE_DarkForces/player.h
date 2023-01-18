@@ -158,6 +158,9 @@ namespace TFE_DarkForces
 	void cheat_maxout();
 	void cheat_godMode();
 
+	// New TFE Cheats
+	void cheat_fly();
+
 	// Serialization
 	void playerLogic_serialize(Logic*& logic, SecObject* obj, Stream* stream);
 }  // namespace TFE_DarkForces

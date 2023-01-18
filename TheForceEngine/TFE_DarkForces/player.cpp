@@ -203,6 +203,7 @@ namespace TFE_DarkForces
 	JBool s_superCharge   = JFALSE;
 	JBool s_superChargeHud= JFALSE;
 	JBool s_playerSecMoved = JFALSE;
+	JBool s_flyMode = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
 
 	RSector* s_playerSector = nullptr;
@@ -521,6 +522,7 @@ namespace TFE_DarkForces
 		s_gasSectorTask     = nullptr;
 		s_nextShieldDmgTick = 0;
 		s_invincibility = 0;
+		s_flyMode = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
 		s_playerInfo.shields = max(100, s_playerInfo.shields);
@@ -878,7 +880,7 @@ namespace TFE_DarkForces
 		giveAllInventoryAndHealth();
 		hud_sendTextMessage(710);
 	}
-
+		
 	void cheat_godMode()
 	{
 		if (!s_invincibility)
@@ -890,6 +892,16 @@ namespace TFE_DarkForces
 			s_invincibility = 0;
 		}
 		hud_sendTextMessage(702);
+	}
+
+	// New TFE Cheats.
+	void cheat_fly()
+	{
+		// Write the cheat message.
+		const char* msg = TFE_System::getMessage(TFE_MSG_FLYMODE);
+		if (msg) { hud_sendTextMessage(msg, 0); }
+
+		s_flyMode = ~s_flyMode;
 	}
 
 	void player_setupCamera()
@@ -1103,6 +1115,7 @@ namespace TFE_DarkForces
 				}
 				s_invincibilityTask = nullptr;
 				s_invincibility = 0;
+				s_flyMode = JFALSE;
 				player_clearSuperCharge();
 			}
 			else
@@ -1266,6 +1279,21 @@ namespace TFE_DarkForces
 		}
 
 		s32 crouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
+		if (s_flyMode)
+		{
+			if (!s_onFloor && crouch)
+			{
+				fixed16_16 speed = -(PLAYER_JUMP_IMPULSE << s_jumpScale);
+				s_playerUpVel = speed;
+				s_playerUpVel2 = speed;
+			}
+			else if (s_playerUpVel > 0)
+			{
+				s_playerUpVel = 0;
+				s_playerUpVel2 = 0;
+			}
+		}
+
 		if (s_onFloor & crouch)
 		{
 			fixed16_16 speed = PLAYER_CROUCH_SPEED;
@@ -1281,6 +1309,12 @@ namespace TFE_DarkForces
 			if (!s_onFloor || wasJumping)
 			{
 				s_playerJumping = wasJumping;
+				if (s_flyMode)
+				{
+					fixed16_16 speed = PLAYER_JUMP_IMPULSE << s_jumpScale;
+					s_playerUpVel = speed;
+					s_playerUpVel2 = speed;
+				}
 			}
 			else
 			{
@@ -1291,6 +1325,11 @@ namespace TFE_DarkForces
 				s_playerUpVel  = speed;
 				s_playerUpVel2 = speed;
 			}
+		}
+		else if (s_flyMode && s_playerUpVel < 0)
+		{
+			s_playerUpVel = 0;
+			s_playerUpVel2 = 0;
 		}
 
 		//////////////////////////////////////////
@@ -1395,7 +1434,7 @@ namespace TFE_DarkForces
 		}
 
 		// Reduce the players ability to adjust the velocity while they have vertical velocity.
-		if (s_playerUpVel)
+		if (s_playerUpVel && !s_flyMode)
 		{
 			// TFE specific
 			const s32 airControl = 8 - TFE_Settings::getGameSettings()->df_airControl;
@@ -1763,7 +1802,10 @@ namespace TFE_DarkForces
 		// Gravity.
 		fixed16_16 gravityAccelDt = mul16(s_gravityAccel, s_deltaTime);
 		// This happens in an interrupt in the original DOS code.
-		s_playerUpVel2 += gravityAccelDt;
+		if (!s_flyMode)
+		{
+			s_playerUpVel2 += gravityAccelDt;
+		}
 		s_playerUpVel  = s_playerUpVel2;
 		s_playerYPos += mul16(s_playerUpVel, s_deltaTime);
 		s_playerLogic.move.y = s_playerYPos - player->posWS.y;
@@ -2719,6 +2761,7 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, s_superCharge, 0);
 		SERIALIZE(ObjState_InitVersion, s_superChargeHud, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerSecMoved, 0);
+		SERIALIZE(ObjState_FlyModeAdded, s_flyMode, JFALSE);
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)

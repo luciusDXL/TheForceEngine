@@ -36,6 +36,8 @@ namespace TFE_DarkForces
 		CHEAT_LABRADY,
 		CHEAT_LAUNLOCK,
 		CHEAT_LAMAXOUT,
+		// New Cheats for TFE.
+		CHEAT_LAFLY,
 		CHEAT_COUNT
 	};
 

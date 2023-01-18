@@ -58,7 +58,8 @@ enum EntityTypeFlags
 enum ObjStateVersion : u32
 {
 	ObjState_InitVersion = 1,
-	ObjState_CurVersion = ObjState_InitVersion,
+	ObjState_FlyModeAdded = 2,
+	ObjState_CurVersion = ObjState_FlyModeAdded,
 };
 
 #define SPRITE_SCALE_FIXED FIXED(10)

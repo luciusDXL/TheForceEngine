@@ -1,2 +1,3 @@
 "Game Saved."          // TFE_MSG_SAVE
 "You found a secret!"  // TFE_MSG_SECRET
+"Fly mode activated."  // TFE_MSG_FLYMODE

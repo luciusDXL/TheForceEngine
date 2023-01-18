@@ -13,6 +13,7 @@ enum TFE_Message
 {
 	TFE_MSG_SAVE = 0,
 	TFE_MSG_SECRET,
+	TFE_MSG_FLYMODE,
 	TFE_MSG_COUNT
 };
 
