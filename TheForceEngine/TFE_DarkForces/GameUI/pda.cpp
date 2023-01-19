@@ -667,7 +667,7 @@ namespace TFE_DarkForces
 	void pda_drawButton(PdaButton id)
 	{
 		s32 pressed = 0;
-		if ((s_buttonHover && id == s_buttonPressed) || (id == s_pdaMode))
+		if ((s_buttonHover && id == s_buttonPressed) || (id == (PdaButton)s_pdaMode))
 		{
 			pressed = 1;
 		}
