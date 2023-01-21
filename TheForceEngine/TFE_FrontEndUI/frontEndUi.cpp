@@ -1065,8 +1065,8 @@ namespace TFE_FrontEndUI
 			};
 			const std::vector<std::string> filters[]=
 			{
-				{ "GOB Archive", "*.gob", "Executable", "*.exe" },
-				{ "LAB Archive", "*.lab", "Executable", "*.exe" },
+				{ "GOB Archive", "*.GOB *.gob", "Executable", "*.EXE *.exe" },
+				{ "LAB Archive", "*.LAB *.lab", "Executable", "*.EXE *.exe" },
 			};
 
 			FileResult res = TFE_Ui::openFileDialog(games[browseWinOpen], DEFAULT_PATH, filters[browseWinOpen]);
