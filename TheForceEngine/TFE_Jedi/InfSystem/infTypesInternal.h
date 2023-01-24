@@ -62,6 +62,9 @@ namespace TFE_Jedi
 		INF_EFLAG_MOVE_SECHT = FLAG_BIT(1),	// Move on second height.
 		INF_EFLAG_MOVE_CEIL  = FLAG_BIT(2),	// Move on ceiling (head has to be close enough?)
 		INF_EFLAG_DOOR       = FLAG_BIT(3),	// This is a door auto-created from the sector flag.
+		// New TFE Flags - TODO: Implement them.
+		INF_EFLAG_ROTATE_FLOOR = FLAG_BIT(4),	// Rotate the floor if the sector rotates.
+		INF_EFLAG_ROTATE_CEIL  = FLAG_BIT(5),	// Rotate the ceiling if the sector rotates.
 	};
 
 	enum KeyItem

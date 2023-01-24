@@ -3518,7 +3518,7 @@ namespace TFE_Jedi
 			}
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
-		sector_rotateWalls(elev->sector, centerX, centerZ, angleInt);
+		sector_rotateWalls(elev->sector, centerX, centerZ, angleInt, elev->flags);
 
 		// The original DOS code was deltaInt = floor16(delta);
 		// But this code allows for half steps to be taken when needed at high framerates without modifying the
@@ -3529,7 +3529,7 @@ namespace TFE_Jedi
 		child = (Slave*)allocator_getHead(elev->slaves);
 		while (child)
 		{
-			sector_rotateWalls(child->sector, centerX, centerZ, angleInt + child->value);
+			sector_rotateWalls(child->sector, centerX, centerZ, angleInt + child->value, elev->flags);
 			sector_rotateObjects(child->sector, deltaInt, centerX, centerZ, elev->flags);
 			child = (Slave*)allocator_getNext(elev->slaves);
 		}
