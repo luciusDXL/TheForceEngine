@@ -383,6 +383,11 @@ namespace TFE_DarkForces
 		mission_pause(pause ? JTRUE : JFALSE);
 	}
 
+	bool DarkForces::isPaused()
+	{
+		return s_gamePaused;
+	}
+
 	void DarkForces::pauseSound(bool pause)
 	{
 		if (pause) { pauseLevelSound(); }

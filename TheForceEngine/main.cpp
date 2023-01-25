@@ -801,11 +801,6 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		if (showPerf)
-		{
-			//TFE_Editor::showPerf(frame);
-		}
-
 		const bool isConsoleOpen = TFE_FrontEndUI::isConsoleOpen();
 		bool endInputFrame = true;
 		if (s_curState == APP_STATE_EDITOR)
@@ -834,7 +829,12 @@ int main(int argc, char* argv[])
 		{
 			TFE_RenderBackend::clearWindow();
 		}
-		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA || s_curState == APP_STATE_SET_DEFAULTS, s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_SET_DEFAULTS);
+
+		bool drawFps = s_curGame && graphics->showFps;
+		if (s_curGame) { drawFps = drawFps && (!s_curGame->isPaused()); }
+
+		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA || s_curState == APP_STATE_SET_DEFAULTS,
+			s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_SET_DEFAULTS, drawFps);
 
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
 		if (s_curState == APP_STATE_EDITOR)

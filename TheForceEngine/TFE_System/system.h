@@ -35,6 +35,7 @@ namespace TFE_System
 	//     In other words an entire frame operates on a single instance of time.
 	// Return the delta time.
 	f64 getDeltaTime();
+	f64 getDeltaTimeRaw();
 	// Get the absolute time since the last start time.
 	f64 getTime();
 

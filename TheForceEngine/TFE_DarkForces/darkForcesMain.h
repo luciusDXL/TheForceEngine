@@ -18,6 +18,7 @@ namespace TFE_DarkForces
 		void loopGame() override;
 		bool serializeGameState(Stream* stream, const char* filename, bool writeState) override;
 		bool canSave() override;
+		bool isPaused() override;
 		void getLevelName(char* name) override;
 		void getModList(char* modList) override;
 	};

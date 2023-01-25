@@ -31,6 +31,7 @@ namespace TFE_System
 	static f64 s_refreshRate;
 	
 	static f64 s_dt = 1.0 / 60.0;		// This is just to handle the first frame, so any reasonable value will work.
+	static f64 s_dtRaw = 1.0 / 60.0;
 	static const f64 c_maxDt = 0.05;	// 20 fps
 
 	static bool s_synced = false;
@@ -143,6 +144,7 @@ namespace TFE_System
 			}
 		}
 
+		s_dtRaw = dt;
 		// Next make sure that if the current fps is too low, that the game just slows down.
 		// This avoids the "spiral of death" when using fixed time steps and avoids issues
 		// during loading spikes.
@@ -155,6 +157,11 @@ namespace TFE_System
 	f64 getDeltaTime()
 	{
 		return s_dt;
+	}
+
+	f64 getDeltaTimeRaw()
+	{
+		return s_dtRaw;
 	}
 
 	// Get time since "start time"

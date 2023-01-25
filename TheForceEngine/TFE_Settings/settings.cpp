@@ -348,6 +348,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "perspectiveCorrect3DO", s_graphicsSettings.perspectiveCorrectTexturing);
 		writeKeyValue_Bool(settings, "extendAjoinLimits", s_graphicsSettings.extendAjoinLimits);
 		writeKeyValue_Bool(settings, "vsync", s_graphicsSettings.vsync);
+		writeKeyValue_Bool(settings, "show_fps", s_graphicsSettings.showFps);
 		writeKeyValue_Int(settings, "frameRateLimit", s_graphicsSettings.frameRateLimit);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
@@ -627,6 +628,10 @@ namespace TFE_Settings
 		else if (strcasecmp("vsync", key) == 0)
 		{
 			s_graphicsSettings.vsync = parseBool(value);
+		}
+		else if (strcasecmp("show_fps", key) == 0)
+		{
+			s_graphicsSettings.showFps = parseBool(value);
 		}
 		else if (strcasecmp("frameRateLimit", key) == 0)
 		{

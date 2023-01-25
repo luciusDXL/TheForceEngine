@@ -455,7 +455,37 @@ namespace TFE_FrontEndUI
 		}
 	}
 
-	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults)
+	void drawFps(s32 windowWidth)
+	{
+		const u32 windowFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings;
+		static f64 _fpsAve = 0.0;
+
+		// Calculate the window size.
+		ImFont* fpsFont = s_versionFont;
+		ImVec2 size = fpsFont->CalcTextSizeA(fpsFont->FontSize, 1024.0f, 0.0f, "FPS: 99999");
+		f32 width  = size.x + 8.0f;
+		f32 height = size.y + 8.0f;
+
+		// Get the raw delta time.
+		const f64 dt = TFE_System::getDeltaTimeRaw();
+		// Adjust the exponential average based on the frame time - this is because the standard of deviation is much higher as frame times get really small.
+		const f64 expAve = dt >= 1.0 / 144.0 ? 0.95 : 0.999;
+		// Compute the current fps from the delta time.
+		const f64 curFps = 1.0f / dt;
+		// Compute the exponential average based on the curFPS and the running average.
+		const f64 aveFps = _fpsAve != 0.0 ? curFps * (1.0 - expAve) + _fpsAve * expAve : curFps;
+		_fpsAve = aveFps;
+
+		ImGui::PushFont(fpsFont);
+		ImGui::SetNextWindowSize(ImVec2(width, height));
+		ImGui::SetNextWindowPos(ImVec2(windowWidth - width, 0.0f));
+		ImGui::Begin("##FPS", nullptr, windowFlags);
+		ImGui::Text("FPS: %d", s32(aveFps + 0.5));
+		ImGui::End();
+		ImGui::PopFont();
+	}
+
+	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults, bool showFps)
 	{
 		const u32 windowInvisFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings;
 
@@ -488,7 +518,11 @@ namespace TFE_FrontEndUI
 			s_appState = APP_STATE_SET_DEFAULTS;
 			pickCurrentResolution();
 		}
-		if (!drawFrontEnd) { return; }
+		if (!drawFrontEnd)
+		{
+			if (showFps) { drawFps(w); }
+			return;
+		}
 
 		if (s_subUI == FEUI_NONE)
 		{
@@ -1985,6 +2019,7 @@ namespace TFE_FrontEndUI
 		bool fullscreen = window->fullscreen;
 		bool windowed = !fullscreen;
 		bool vsync = TFE_System::getVSync();
+		bool showFps = graphics->showFps;
 		if (ImGui::Checkbox("Fullscreen", &fullscreen))
 		{
 			windowed = !fullscreen;
@@ -1997,6 +2032,11 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Windowed", &windowed))
 		{
 			fullscreen = !windowed;
+		}
+		ImGui::SameLine();
+		if (ImGui::Checkbox("Show FPS", &showFps))
+		{
+			graphics->showFps = showFps;
 		}
 		if (fullscreen != window->fullscreen)
 		{
