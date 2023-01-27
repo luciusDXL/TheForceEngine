@@ -60,13 +60,13 @@ namespace TFE_Jedi
 
 	struct ModelDraw
 	{
-		s32 modelId;
 		Vec3f posWS;
 		Vec2f lightData;
 		Vec4f textureOffsets;
 		f32 transform[9];
 		u32 portalInfo;
-		void* obj;
+		void *modelId;
+		void *obj;
 	};
 
 	static const AttributeMapping c_modelAttrMapping[] =
@@ -257,7 +257,7 @@ namespace TFE_Jedi
 		mgpu->indexStart = (s32)curIdxSize;
 		mgpu->polyCount = model->vertexCount * 2;
 		mgpu->shader = MGPU_SHADER_HOLOGRAM;
-		model->drawId = s_models.size();
+		model->drawId = (void *)mgpu;
 		s_models.push_back(mgpu);
 
 		return true;
@@ -284,7 +284,7 @@ namespace TFE_Jedi
 		mgpu->indexStart = *s_curIndexStart;
 		mgpu->polyCount = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
 		mgpu->shader = s_modelTrans ? MGPU_SHADER_TRANS : MGPU_SHADER_SOLID;
-		s_curModel->drawId = s_models.size();	// step 1
+		s_curModel->drawId = (void *)mgpu;	// step 1
 		s_models.push_back(mgpu);		// step 2
 
 		// Add vertices.
@@ -670,12 +670,12 @@ namespace TFE_Jedi
 	void model_add(void* obj, JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, Vec2f ceilOffset, u32 portalInfo)
 	{
 		// Make sure the model has been assigned a GPU ID.
-		if (!model || model->drawId < 0)
+		if (!model || !model->drawId)
 		{
 			return;
 		}
 
-		ModelGPU* modelGPU = s_models[model->drawId];
+		ModelGPU* modelGPU = (ModelGPU *)model->drawId;
 		ModelDraw *drawItem = new ModelDraw;
 		if (!drawItem)
 			return;
@@ -727,7 +727,7 @@ namespace TFE_Jedi
 			for (auto it = s_modelDrawList[s].begin(); it != s_modelDrawList[s].end(); it++)
 			{
 				ModelDraw *drawItem = *it;
-				const ModelGPU* model = s_models[drawItem->modelId];
+				const ModelGPU *model = (ModelGPU *)drawItem->modelId;
 				const u32 portalInfo[] = { drawItem->portalInfo, drawItem->portalInfo };
 
 				// Per-draw shader variables.

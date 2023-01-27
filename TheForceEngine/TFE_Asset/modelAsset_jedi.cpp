@@ -348,7 +348,7 @@ namespace TFE_Model_Jedi
 		model->textureCount = 0;
 		model->textures = nullptr;
 		model->radius = 0;
-		model->drawId = -1;	// invalid ID initially.
+		model->drawId = nullptr;	// invalid ID initially.
 
 		// Check to see if the name has an underscore.
 		// If so, set the "isBridge" field.
