@@ -100,7 +100,6 @@ namespace TFE_Jedi
 	};
 	static ShaderInputs s_shaderInputs[MGPU_SHADER_COUNT];
 
-	static std::vector<ModelGPU*> s_models;
 	static std::vector<ModelDraw*> s_modelDrawList[MGPU_SHADER_COUNT];
 
 	extern Mat3  s_cameraMtx;
@@ -141,6 +140,15 @@ namespace TFE_Jedi
 	std::map<u32, std::vector<u32>> s_modelVertexMap;
 	static s32 s_verticesMerged = 0;
 	static bool s_modelTrans = false;
+
+	static ModelGPU *newModelGPU(void)
+	{
+		ModelGPU *mgpu = (ModelGPU *)malloc(sizeof(*mgpu));
+		if (!mgpu)
+			return nullptr;
+		memset(mgpu, 0, sizeof(*mgpu));
+		return mgpu;
+	}
 
 	bool model_buildShaderVariant(ModelShader variant, s32 defineCount, ShaderDefine* defines)
 	{
@@ -250,15 +258,13 @@ namespace TFE_Jedi
 			outIdx[5] = 3 + vidx;
 		}
 
-		ModelGPU *mgpu = new ModelGPU;
+		ModelGPU *mgpu = newModelGPU();
 		if (!mgpu)
 			return false;
-		memset(mgpu, 0, sizeof(*mgpu));
 		mgpu->indexStart = (s32)curIdxSize;
 		mgpu->polyCount = model->vertexCount * 2;
 		mgpu->shader = MGPU_SHADER_HOLOGRAM;
 		model->drawId = (void *)mgpu;
-		s_models.push_back(mgpu);
 
 		return true;
 	}
@@ -277,15 +283,13 @@ namespace TFE_Jedi
 	void endModel()
 	{
 		// Create the entry.
-		ModelGPU *mgpu = new ModelGPU;
+		ModelGPU *mgpu = newModelGPU();
 		if (!mgpu)
 			return;
-		memset(mgpu, 0, sizeof(*mgpu));
 		mgpu->indexStart = *s_curIndexStart;
 		mgpu->polyCount = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
 		mgpu->shader = s_modelTrans ? MGPU_SHADER_TRANS : MGPU_SHADER_SOLID;
-		s_curModel->drawId = (void *)mgpu;	// step 1
-		s_models.push_back(mgpu);		// step 2
+		s_curModel->drawId = (void *)mgpu;
 
 		// Add vertices.
 		const u32 vtxCount = (u32)s_modelVertexList.size();
@@ -544,8 +548,6 @@ namespace TFE_Jedi
 		s_vertexData.clear();
 		s_indexData.clear();
 		s_verticesMerged = 0;
-		std::for_each(s_models.begin(), s_models.end(), [](ModelGPU *m){ delete m;});
-		s_models.clear();
 
 		s_modelVertexBuffer.destroy();
 		s_modelIndexBuffer.destroy();
