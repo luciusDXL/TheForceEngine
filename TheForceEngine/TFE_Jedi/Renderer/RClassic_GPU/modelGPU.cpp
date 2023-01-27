@@ -24,8 +24,9 @@
 #include "sectorDisplayList.h"
 #include "../rcommon.h"
 
-#include <map>
 #include <algorithm>
+#include <map>
+#include <vector>
 
 using namespace TFE_RenderBackend;
 
@@ -40,13 +41,6 @@ namespace TFE_Jedi
 		MGPU_SHADER_HOLOGRAM,
 		MGPU_SHADER_TRANS,
 		MGPU_SHADER_COUNT
-	};
-
-	// TODO: Remove max models and use dynamic allocation.
-	enum Constants
-	{
-		MGPU_MAX_MODELS = 1024,
-		MGPU_MAX_3DO_PER_PASS = 512,
 	};
 
 	struct ModelVertex
@@ -106,10 +100,8 @@ namespace TFE_Jedi
 	};
 	static ShaderInputs s_shaderInputs[MGPU_SHADER_COUNT];
 
-	static ModelGPU s_models[MGPU_MAX_MODELS];
-	static ModelDraw s_modelDrawList[MGPU_SHADER_COUNT][MGPU_MAX_3DO_PER_PASS];
-	static s32 s_modelDrawListCount[MGPU_SHADER_COUNT];
-	static s32 s_modelCount;
+	static std::vector<ModelGPU*> s_models;
+	static std::vector<ModelDraw*> s_modelDrawList[MGPU_SHADER_COUNT];
 
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -204,8 +196,6 @@ namespace TFE_Jedi
 
 	bool buildModelDrawVertices(JediModel* model, s32* indexStart, s32* vertexStart)
 	{
-		if (s_modelCount >= MGPU_MAX_MODELS) { return false; }
-
 		// In this version, we render one quad per vertex.
 		// Store store 4 vertices per quad, but store corner in uv.
 		u32 vcount = 4 * model->vertexCount;
@@ -260,19 +250,21 @@ namespace TFE_Jedi
 			outIdx[5] = 3 + vidx;
 		}
 
-		s_models[s_modelCount].indexStart = (s32)curIdxSize;
-		s_models[s_modelCount].polyCount  = model->vertexCount * 2;
-		s_models[s_modelCount].shader = MGPU_SHADER_HOLOGRAM;
-		model->drawId = s_modelCount;
-		s_modelCount++;
+		ModelGPU *mgpu = new ModelGPU;
+		if (!mgpu)
+			return false;
+		memset(mgpu, 0, sizeof(*mgpu));
+		mgpu->indexStart = (s32)curIdxSize;
+		mgpu->polyCount = model->vertexCount * 2;
+		mgpu->shader = MGPU_SHADER_HOLOGRAM;
+		model->drawId = s_models.size();
+		s_models.push_back(mgpu);
 
 		return true;
 	}
 		
 	bool startModel(JediModel* model, s32* indexStart, s32* vertexStart)
 	{
-		if (s_modelCount >= MGPU_MAX_MODELS) { return false; }
-
 		s_curModel   = model;
 		s_modelTrans = false;
 		s_curIndexStart  = indexStart;
@@ -285,11 +277,15 @@ namespace TFE_Jedi
 	void endModel()
 	{
 		// Create the entry.
-		s_models[s_modelCount].indexStart = *s_curIndexStart;
-		s_models[s_modelCount].polyCount  = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
-		s_models[s_modelCount].shader = s_modelTrans ? MGPU_SHADER_TRANS : MGPU_SHADER_SOLID;
-		s_curModel->drawId = s_modelCount;
-		s_modelCount++;
+		ModelGPU *mgpu = new ModelGPU;
+		if (!mgpu)
+			return;
+		memset(mgpu, 0, sizeof(*mgpu));
+		mgpu->indexStart = *s_curIndexStart;
+		mgpu->polyCount = ((s32)s_indexData.size() - (*s_curIndexStart)) / 3;
+		mgpu->shader = s_modelTrans ? MGPU_SHADER_TRANS : MGPU_SHADER_SOLID;
+		s_curModel->drawId = s_models.size();	// step 1
+		s_models.push_back(mgpu);		// step 2
 
 		// Add vertices.
 		const u32 vtxCount = (u32)s_modelVertexList.size();
@@ -547,8 +543,9 @@ namespace TFE_Jedi
 		s32 vertexStart = 0;
 		s_vertexData.clear();
 		s_indexData.clear();
-		s_modelCount = 0;
 		s_verticesMerged = 0;
+		std::for_each(s_models.begin(), s_models.end(), [](ModelGPU *m){ delete m;});
+		s_models.clear();
 
 		s_modelVertexBuffer.destroy();
 		s_modelIndexBuffer.destroy();
@@ -661,7 +658,8 @@ namespace TFE_Jedi
 	{
 		for (s32 i = 0; i < MGPU_SHADER_COUNT; i++)
 		{
-			s_modelDrawListCount[i] = 0;
+			std::for_each(s_modelDrawList[i].begin(), s_modelDrawList[i].end(), [](ModelDraw *m){ delete m;});
+			s_modelDrawList[i].clear();
 		}
 	}
 
@@ -677,19 +675,12 @@ namespace TFE_Jedi
 			return;
 		}
 
-		ModelGPU* modelGPU = &s_models[model->drawId];
-		ModelDraw* drawList = s_modelDrawList[modelGPU->shader];
-
-		s32* listCount = &s_modelDrawListCount[modelGPU->shader];
-		if ((*listCount) >= MGPU_MAX_3DO_PER_PASS)
-		{
-			// Too many objects in a single pass!
-			assert(0);
+		ModelGPU* modelGPU = s_models[model->drawId];
+		ModelDraw *drawItem = new ModelDraw;
+		if (!drawItem)
 			return;
-		}
-
-		ModelDraw* drawItem = &drawList[*listCount];
-		(*listCount)++;
+		memset(drawItem, 0, sizeof(*drawItem));
+		s_modelDrawList[modelGPU->shader].push_back(drawItem);
 
 		drawItem->modelId = model->drawId;
 		drawItem->posWS = posWS;
@@ -720,7 +711,7 @@ namespace TFE_Jedi
 		Shader* shader = s_modelShaders;
 		for (s32 s = 0; s < MGPU_SHADER_COUNT; s++, shader++)
 		{
-			s32 listCount = s_modelDrawListCount[s];
+			s32 listCount = s_modelDrawList[s].size();
 			if (!listCount) { continue; }
 
 			// Bind the shader and set per-frame shader variables.
@@ -733,10 +724,10 @@ namespace TFE_Jedi
 			shader->setVariable(s_shaderInputs[s].cameraRightId, SVT_VEC3,   s_cameraRight.m);
 			
 			// Draw items in the current draw list (draw lists are bucketed by shader).
-			ModelDraw* drawItem = s_modelDrawList[s];
-			for (s32 i = 0; i < listCount; i++, drawItem++)
+			for (auto it = s_modelDrawList[s].begin(); it != s_modelDrawList[s].end(); it++)
 			{
-				const ModelGPU* model = &s_models[drawItem->modelId];
+				ModelDraw *drawItem = *it;
+				const ModelGPU* model = s_models[drawItem->modelId];
 				const u32 portalInfo[] = { drawItem->portalInfo, drawItem->portalInfo };
 
 				// Per-draw shader variables.
