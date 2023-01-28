@@ -271,8 +271,13 @@ namespace TFE_Model_Jedi
 		s_models[pool].clear();
 		
 		// free the memory of each models' drawId object
-		std::for_each(s_modelList[pool].begin(), s_modelList[pool].end(),
-				[](JediModel *m){ if (m->drawId) free(m->drawId); });
+		const size_t count = s_modelList[pool].size();
+		JediModel** models = s_modelList[pool].data();
+		for (size_t i = 0; i < count; i++)
+		{
+			free(models[i]->drawId);
+		}
+
 		s_modelList[pool].clear();
 		s_modelNames[pool].clear();
 	}

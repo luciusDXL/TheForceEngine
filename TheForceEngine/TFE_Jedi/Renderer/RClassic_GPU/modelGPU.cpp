@@ -65,8 +65,8 @@ namespace TFE_Jedi
 		Vec4f textureOffsets;
 		f32 transform[9];
 		u32 portalInfo;
-		void *modelId;
-		void *obj;
+		void* modelId;
+		void* obj;
 	};
 
 	static const AttributeMapping c_modelAttrMapping[] =
@@ -132,22 +132,25 @@ namespace TFE_Jedi
 		u8 planeMode;
 	};
 
+	typedef std::map<u32, std::vector<u32>> ModelVertexMap;
+	typedef std::vector<CompositeVertex> CompositeVertexList;
+
 	// Building state.
-	struct ModelBuildCtx {
+	struct ModelBuildCtx
+	{
 		JediModel *model;
 		s32 *curIndexStart;
 		s32 *curVertexStart;
 		bool modelTrans;
-		std::map<u32, std::vector<u32>> modelVertexMap;
-		std::vector<CompositeVertex> modelVertexList;
+		ModelVertexMap modelVertexMap;
+		CompositeVertexList modelVertexList;
 	};
 
 	static ModelGPU *newModelGPU(void)
 	{
-		ModelGPU *mgpu = (ModelGPU *)malloc(sizeof(*mgpu));
-		if (!mgpu)
-			return nullptr;
-		memset(mgpu, 0, sizeof(*mgpu));
+		ModelGPU* mgpu = (ModelGPU *)malloc(sizeof(ModelGPU));
+		if (!mgpu) { return nullptr; }
+		memset(mgpu, 0, sizeof(ModelGPU));
 		return mgpu;
 	}
 
@@ -259,9 +262,9 @@ namespace TFE_Jedi
 			outIdx[5] = 3 + vidx;
 		}
 
-		ModelGPU *mgpu = newModelGPU();
-		if (!mgpu)
-			return false;
+		ModelGPU* mgpu = newModelGPU();
+		if (!mgpu) { return false; }
+
 		mgpu->indexStart = (s32)curIdxSize;
 		mgpu->polyCount = model->vertexCount * 2;
 		mgpu->shader = MGPU_SHADER_HOLOGRAM;
@@ -283,16 +286,16 @@ namespace TFE_Jedi
 	static void endModel(struct ModelBuildCtx *ctx)
 	{
 		// Create the entry.
-		ModelGPU *mgpu = newModelGPU();
-		if (!mgpu)
-			return;
+		ModelGPU* mgpu = newModelGPU();
+		if (!mgpu) { return; } 
+
 		mgpu->indexStart = *(ctx->curIndexStart);
 		mgpu->polyCount = ((s32)s_indexData.size() - (*(ctx->curIndexStart))) / 3;
 		mgpu->shader = ctx->modelTrans ? MGPU_SHADER_TRANS : MGPU_SHADER_SOLID;
 		ctx->model->drawId = (void *)mgpu;
 
 		// Add vertices.
-		const u32 vtxCount = ctx->modelVertexList.size();
+		const u32 vtxCount = (u32)ctx->modelVertexList.size();
 		const CompositeVertex* srcVtx = ctx->modelVertexList.data();
 
 		s_vertexData.resize((*(ctx->curVertexStart)) + vtxCount);
@@ -339,7 +342,7 @@ namespace TFE_Jedi
 		// If the vertex already exists, then return it.
 		const u32 key = getVertexKey(pos);
 		bool keyFound = false;
-		std::map<u32, std::vector<u32>>::iterator iBucket = ctx->modelVertexMap.find(key);
+		ModelVertexMap::iterator iBucket = ctx->modelVertexMap.find(key);
 		if (iBucket != ctx->modelVertexMap.end())
 		{
 			keyFound = true;
@@ -385,7 +388,7 @@ namespace TFE_Jedi
 		return newId;
 	}
 
-	static void addFlatTriangle(struct ModelBuildCtx *ctx, s32* indices, u8 color, vec2* uv, vec3* nrml, s32 textureId)
+	static void addFlatTriangle(ModelBuildCtx *ctx, s32* indices, u8 color, vec2* uv, vec3* nrml, s32 textureId)
 	{
 		vec3* v0 = &ctx->model->vertices[indices[0]];
 		vec3* v1 = &ctx->model->vertices[indices[1]];
@@ -402,7 +405,7 @@ namespace TFE_Jedi
 		s_indexData.push_back(getVertex(ctx, v2, &srcUV[2], &nrmDir, color, planeMode, textureId) + vertexStart);
 	}
 
-	static void addFlatQuad(struct ModelBuildCtx *ctx, s32* indices, u8 color, vec2* uv, vec3* nrml, s32 textureId)
+	static void addFlatQuad(ModelBuildCtx *ctx, s32* indices, u8 color, vec2* uv, vec3* nrml, s32 textureId)
 	{
 		vec3* v0 = &ctx->model->vertices[indices[0]];
 		vec3* v1 = &ctx->model->vertices[indices[1]];
@@ -430,7 +433,7 @@ namespace TFE_Jedi
 		s_indexData.push_back(outIndices[3] + vertexStart);
 	}
 
-	static void addSmoothTriangle(struct ModelBuildCtx *ctx, s32* indices, u8 color, vec2* uv, s32 textureId)
+	static void addSmoothTriangle(ModelBuildCtx *ctx, s32* indices, u8 color, vec2* uv, s32 textureId)
 	{
 		vec3* v0 = &ctx->model->vertices[indices[0]];
 		vec3* v1 = &ctx->model->vertices[indices[1]];
@@ -454,7 +457,7 @@ namespace TFE_Jedi
 		s_indexData.push_back(getVertex(ctx, v2, &srcUV[2], &nDir2, color, planeMode, textureId) + vertexStart);
 	}
 
-	static void addSmoothQuad(struct ModelBuildCtx *ctx, s32* indices, u8 color, vec2* uv, s32 textureId)
+	static void addSmoothQuad(ModelBuildCtx *ctx, s32* indices, u8 color, vec2* uv, s32 textureId)
 	{
 		vec3* v0 = &ctx->model->vertices[indices[0]];
 		vec3* v1 = &ctx->model->vertices[indices[1]];
@@ -491,7 +494,7 @@ namespace TFE_Jedi
 		s_indexData.push_back(outIndices[3] + vertexStart);
 	}
 
-	static void addPlaneTriangle(struct ModelBuildCtx *ctx, s32* indices, vec3* nrml, s32 textureId)
+	static void addPlaneTriangle(ModelBuildCtx *ctx, s32* indices, vec3* nrml, s32 textureId)
 	{
 		vec3* v0 = &ctx->model->vertices[indices[0]];
 		vec3* v1 = &ctx->model->vertices[indices[1]];
@@ -510,7 +513,7 @@ namespace TFE_Jedi
 		s_indexData.push_back(getVertex(ctx, v2, &uv, &planeNrm, color, planeMode, textureId) + vertexStart);
 	}
 
-	static void addPlaneQuad(struct ModelBuildCtx *ctx, s32* indices, vec3* nrml, s32 textureId)
+	static void addPlaneQuad(ModelBuildCtx *ctx, s32* indices, vec3* nrml, s32 textureId)
 	{
 		vec3* v0 = &(ctx->model)->vertices[indices[0]];
 		vec3* v1 = &(ctx->model)->vertices[indices[1]];
@@ -542,7 +545,7 @@ namespace TFE_Jedi
 
 	void model_loadGpuModels()
 	{
-		struct ModelBuildCtx ctx;
+		ModelBuildCtx ctx;
 		s32 indexStart  = 0;
 		s32 vertexStart = 0;
 		s_vertexData.clear();
@@ -647,7 +650,7 @@ namespace TFE_Jedi
 			}
 		}
 
-		s_modelVertexBuffer.create((u32)s_vertexData.size(), sizeof(ModelVertex), (u32)c_modelAttrCount, c_modelAttrMapping, false, s_vertexData.data());
+		s_modelVertexBuffer.create((u32)s_vertexData.size(), sizeof(ModelVertex), c_modelAttrCount, c_modelAttrMapping, false, s_vertexData.data());
 		s_modelIndexBuffer.create((u32)s_indexData.size(), sizeof(u32), false, s_indexData.data());
 	}
 
@@ -673,9 +676,9 @@ namespace TFE_Jedi
 		}
 
 		ModelGPU* modelGPU = (ModelGPU *)model->drawId;
-		ModelDraw *drawItem = new ModelDraw;
-		if (!drawItem)
-			return;
+		ModelDraw* drawItem = new ModelDraw;
+		if (!drawItem) { return; }
+
 		memset(drawItem, 0, sizeof(*drawItem));
 		s_modelDrawList[modelGPU->shader].push_back(drawItem);
 
@@ -708,8 +711,9 @@ namespace TFE_Jedi
 		Shader* shader = s_modelShaders;
 		for (s32 s = 0; s < MGPU_SHADER_COUNT; s++, shader++)
 		{
-			if (s_modelDrawList[s].empty())
-				continue;
+			const size_t listCount = s_modelDrawList[s].size();
+			ModelDraw** drawList = s_modelDrawList[s].data();
+			if (!listCount) { continue; }
 
 			// Bind the shader and set per-frame shader variables.
 			shader->bind();
@@ -721,9 +725,9 @@ namespace TFE_Jedi
 			shader->setVariable(s_shaderInputs[s].cameraRightId, SVT_VEC3,   s_cameraRight.m);
 			
 			// Draw items in the current draw list (draw lists are bucketed by shader).
-			for (auto it = s_modelDrawList[s].begin(); it != s_modelDrawList[s].end(); it++)
+			for (size_t i = 0; i < listCount; i++)
 			{
-				ModelDraw *drawItem = *it;
+				ModelDraw* drawItem = drawList[i];
 				const ModelGPU *model = (ModelGPU *)drawItem->modelId;
 				const u32 portalInfo[] = { drawItem->portalInfo, drawItem->portalInfo };
 
