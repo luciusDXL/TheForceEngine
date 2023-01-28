@@ -307,7 +307,7 @@ namespace TFE_Input
 			{
 				case ITYPE_KEYBOARD:
 				{
-					const bool keyIsMod = (int)bind->keyMod == (int)bind->keyCode || bind->keyMod == KEYMOD_NONE;
+					const bool keyIsMod = (s32)bind->keyMod == (s32)bind->keyCode || bind->keyMod == KEYMOD_NONE;
 					const bool keyIsAlt = bind->keyCode == KEY_LALT || bind->keyCode == KEY_RALT;
 					if (TFE_Input::keyModDown(bind->keyMod, inputMapping_isMovementAction(bind->action)) || (keyIsMod && keyIsAlt))
 					{

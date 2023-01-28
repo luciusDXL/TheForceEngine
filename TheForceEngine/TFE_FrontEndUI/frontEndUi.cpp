@@ -2358,7 +2358,7 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 		{
 			s32 outputCount = 0, curOutput = 0;
-			outputCount = min(MAX_AUDIO_OUTPUTS, TFE_MidiDevice::getDeviceCount());
+			outputCount = min(MAX_AUDIO_OUTPUTS, (s32)TFE_MidiDevice::getDeviceCount());
 			for (s32 i = 0; i < outputCount; i++)
 			{
 				TFE_MidiDevice::getDeviceName(i, outputMidiNames[i], 256);
