@@ -861,7 +861,7 @@ namespace TFE_DarkForces
 
 	void enableHeadlamp()
 	{
-		if (s_energy)
+		if (s_batteryPower)
 		{
 			s_headlampActive = JTRUE;
 			hud_sendTextMessage(13);
@@ -892,7 +892,7 @@ namespace TFE_DarkForces
 	{
 		if (!s_playerInfo.itemGoggles) { return; }
 
-		if (!s_energy)
+		if (!s_batteryPower)
 		{
 			hud_sendTextMessage(11);
 			sound_play(s_nightVisionDeactiveSoundSource);
@@ -941,7 +941,7 @@ namespace TFE_DarkForces
 	{
 		if (!s_playerInfo.itemMask) { return; }
 
-		if (!s_energy)
+		if (!s_batteryPower)
 		{
 			hud_sendTextMessage(11);
 			s_wearingGasmask = JFALSE;

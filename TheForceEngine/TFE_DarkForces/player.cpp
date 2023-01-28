@@ -184,7 +184,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	PlayerInfo s_playerInfo = { 0 };
 	PlayerLogic s_playerLogic = {};
-	fixed16_16 s_energy = 2 * ONE_16;
+	fixed16_16 s_batteryPower = 2 * ONE_16;
 	s32 s_lifeCount;
 	s32 s_playerLight = 0;
 	s32 s_headwaveVerticalOffset;
@@ -300,7 +300,7 @@ namespace TFE_DarkForces
 		s_playerInfo.shields     = pickup_addToValue(0, 100, 200);
 		s_playerInfo.health      = pickup_addToValue(0, 100, 100);
 		s_playerInfo.healthFract = 0;
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 		s_reviveTick = 0;
 
 		s_automapLocked = JTRUE;
@@ -375,7 +375,7 @@ namespace TFE_DarkForces
 		s_playerInfo.ammoMissile   = ammo[6];
 		s_playerInfo.shields = ammo[7];
 		s_playerInfo.health  = ammo[8];
-		s_energy = ammo[9];
+		s_batteryPower = ammo[9];
 	}
 
 	void player_writeInfo(u8* inv, s32* ammo)
@@ -424,7 +424,7 @@ namespace TFE_DarkForces
 		ammo[6] = s_playerInfo.ammoMissile;
 		ammo[7] = s_playerInfo.shields;
 		ammo[8] = s_playerInfo.health;
-		ammo[9] = s_energy;
+		ammo[9] = s_batteryPower;
 	}
 
 	void player_setNextWeapon(s32 nextWpn)
@@ -531,7 +531,7 @@ namespace TFE_DarkForces
 		// The player starts a new level with full health and energy.
 		s_playerInfo.health = 100;
 		s_playerInfo.healthFract = 0;
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 
 		s_wearingGasmask    = JFALSE;
 		s_wearingCleats     = JFALSE;
@@ -710,7 +710,7 @@ namespace TFE_DarkForces
 		s_playerInfo.ammoMine = 30;
 		s_playerInfo.ammoMissile = 20;
 
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 		weapon_fixupAnim();
 	}
 
@@ -740,7 +740,7 @@ namespace TFE_DarkForces
 		{
 			s_playerInfo.ammoMissile = 20;
 		}
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 		weapon_fixupAnim();
 	}
 
@@ -787,7 +787,7 @@ namespace TFE_DarkForces
 		s_playerInfo.ammoMissile = 20;
 		s_playerInfo.ammoPlasma = 400;
 		s_playerInfo.ammoMine = 30;
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 
 		weapon_fixupAnim();
 	}
@@ -2153,8 +2153,8 @@ namespace TFE_DarkForces
 			s32 headlamp = 0;
 			if (s_headlampActive)
 			{
-				fixed16_16 energy = min(ONE_16, s_energy);
-				headlamp = floor16(mul16(energy, FIXED(64)));
+				fixed16_16 batteryPower = min(ONE_16, s_batteryPower);
+				headlamp = floor16(mul16(batteryPower, FIXED(64)));
 				headlamp = min(MAX_LIGHT_LEVEL, headlamp);
 			}
 			s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
@@ -2331,24 +2331,24 @@ namespace TFE_DarkForces
 				
 	void handlePlayerActions()
 	{
-		if (s_energy)
+		if (s_batteryPower)
 		{
 			if (s_headlampActive)
 			{
-				fixed16_16 energyDelta = mul16(HEADLAMP_ENERGY_CONSUMPTION, s_deltaTime);
-				s_energy -= energyDelta;
+				fixed16_16 powerDelta = mul16(HEADLAMP_ENERGY_CONSUMPTION, s_deltaTime);
+				s_batteryPower -= powerDelta;
 			}
 			if (s_wearingGasmask)
 			{
-				fixed16_16 energyDelta = mul16(GASMASK_ENERGY_CONSUMPTION, s_deltaTime);
-				s_energy -= energyDelta;
+				fixed16_16 powerDelta = mul16(GASMASK_ENERGY_CONSUMPTION, s_deltaTime);
+				s_batteryPower -= powerDelta;
 			}
 			if (s_nightvisionActive)
 			{
-				fixed16_16 energyDelta = mul16(GOGGLES_ENERGY_CONSUMPTION, s_deltaTime);
-				s_energy -= energyDelta;
+				fixed16_16 powerDelta = mul16(GOGGLES_ENERGY_CONSUMPTION, s_deltaTime);
+				s_batteryPower -= powerDelta;
 			}
-			if (s_energy <= 0)
+			if (s_batteryPower <= 0)
 			{
 				if (s_nightvisionActive)
 				{
@@ -2371,7 +2371,7 @@ namespace TFE_DarkForces
 						s_gasmaskTask = nullptr;
 					}
 				}
-				s_energy = 0;
+				s_batteryPower = 0;
 			}
 		}
 		if (s_playerUse)
@@ -2808,7 +2808,7 @@ namespace TFE_DarkForces
 		}
 
 		SERIALIZE(ObjState_InitVersion, s_playerInfo, { 0 });
-		SERIALIZE(ObjState_InitVersion, s_energy, 0);
+		SERIALIZE(ObjState_InitVersion, s_batteryPower, 0);
 		SERIALIZE(ObjState_InitVersion, s_lifeCount, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerLight, 0);
 		SERIALIZE(ObjState_InitVersion, s_headwaveVerticalOffset, 0);

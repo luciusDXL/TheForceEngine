@@ -612,7 +612,7 @@ namespace TFE_DarkForces
 			{
 				pickup->type = ITYPE_KEY_ITEM;
 				pickup->item = &s_playerInfo.itemGoggles;
-				pickup->value = &s_energy;
+				pickup->value = &s_batteryPower;
 				pickup->msgId[0] = 303;
 				pickup->amount = ONE_16;
 				pickup->maxAmount = 2 * ONE_16;
@@ -627,7 +627,7 @@ namespace TFE_DarkForces
 			{
 				pickup->type = ITYPE_KEY_ITEM;
 				pickup->item = &s_playerInfo.itemMask;
-				pickup->value = &s_energy;
+				pickup->value = &s_batteryPower;
 				pickup->msgId[0] = 305;
 				pickup->amount = ONE_16;
 				pickup->maxAmount = 2 * ONE_16;
@@ -635,7 +635,7 @@ namespace TFE_DarkForces
 			case ITEM_BATTERY:
 			{
 				pickup->type = ITYPE_AMMO;
-				pickup->value = &s_energy;
+				pickup->value = &s_batteryPower;
 				pickup->msgId[0] = 211;
 				pickup->amount = ONE_16;
 				pickup->maxAmount = 2 * ONE_16;
@@ -888,7 +888,7 @@ namespace TFE_DarkForces
 			case ITEM_GOGGLES:
 			{
 				pickup->item = &s_playerInfo.itemGoggles;
-				pickup->value = &s_energy;
+				pickup->value = &s_batteryPower;
 			} break;
 			case ITEM_CLEATS:
 			{
@@ -897,11 +897,11 @@ namespace TFE_DarkForces
 			case ITEM_MASK:
 			{
 				pickup->item = &s_playerInfo.itemMask;
-				pickup->value = &s_energy;
+				pickup->value = &s_batteryPower;
 			} break;
 			case ITEM_BATTERY:
 			{
-				pickup->value = &s_energy;
+				pickup->value = &s_batteryPower;
 			} break;
 			case ITEM_CODE1:
 			{
