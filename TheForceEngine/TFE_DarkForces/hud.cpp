@@ -17,6 +17,7 @@
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
+#include <cstring>
 
 #define TFE_CONVERT_CAPS 0
 #if TFE_CONVERT_CAPS

@@ -11,7 +11,7 @@
 class ScreenCapture
 {
 public:
-	ScreenCapture() : m_bufferCount(0), m_writeBuffer(0), m_readIndex(nullptr), m_stagingBuffers(nullptr), m_frame(0), m_readCount(0), m_recordingFrame(0) {}
+	ScreenCapture() : m_bufferCount(0), m_writeBuffer(0), m_readIndex(nullptr), m_stagingBuffers(nullptr), m_frame(0), m_readCount(0), m_recordingFrame(0), m_captures(0) {}
 	~ScreenCapture();
 
 	bool create(u32 width, u32 height, u32 bufferCount);

@@ -12,7 +12,7 @@
 class LfdArchive : public Archive
 {
 public:
-	LfdArchive() : m_archiveOpen(false), m_curFile(-1) {}
+	LfdArchive() : Archive(ARCHIVE_LFD), m_archiveOpen(false), m_curFile(-1) {}
 	~LfdArchive() override;
 
 	// Archive
@@ -50,19 +50,19 @@ private:
 	{
 		char TYPE[4];
 		char NAME[8];
-		long LENGTH;		//length of the file.
+		u32 LENGTH;		//length of the file.
 	} LFD_Entry_t;
 
 	typedef struct
 	{
 		char NAME[16];
-		long LENGTH;		//length of the file.
-		long IX;
+		u32 LENGTH;		//length of the file.
+		u32 IX;
 	} LFD_EntryFinal_t;
 
 	typedef struct
 	{
-		long MASTERN;	//num files
+		u32 MASTERN;	//num files
 		LFD_EntryFinal_t *entries;
 	} LFD_Index_t;
 

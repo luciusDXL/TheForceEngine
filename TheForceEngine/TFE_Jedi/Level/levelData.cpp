@@ -255,7 +255,7 @@ namespace TFE_Jedi
 		u32 texIndex = 0u;
 		if (serialization_getMode() == SMODE_WRITE && texData && *texData)
 		{
-			ptrdiff_t offset = (ptrdiff_t(texData) - ptrdiff_t(s_levelState.textures)) / (ptrdiff_t)sizeof(TextureData**);
+			std::ptrdiff_t offset = (std::ptrdiff_t(texData) - std::ptrdiff_t(s_levelState.textures)) / (std::ptrdiff_t)sizeof(TextureData**);
 			if ((*texData)->animIndex >= 0)
 			{
 				const u8 frameIndex = (*texData)->frameIdx < 0 ? 0xfff : (u8)(*texData)->frameIdx;

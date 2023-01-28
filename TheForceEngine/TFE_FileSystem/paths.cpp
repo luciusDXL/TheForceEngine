@@ -112,6 +112,14 @@ namespace TFE_Paths
 		return true;
 	}
 
+	bool mapSystemPath(char* path)
+	{
+		// on windows, all of TFE's support files (Shaders, Fonts, ...)
+		// are located where TFE binary is installed, which is the default
+		// search location for relative paths.
+		return false;  // no mapping was done.
+	}
+
 	const char* getPath(TFE_PathType pathType)
 	{
 		return s_paths[pathType].c_str();
@@ -206,7 +214,7 @@ namespace TFE_Paths
 	{
 		char fileNameLC[TFE_MAX_PATH];
 		strcpy(fileNameLC, fileName);
-		_strlwr(fileNameLC);
+		__strlwr(fileNameLC);
 
 		char filePathFixed[TFE_MAX_PATH];
 		strcpy(filePathFixed, filePath);

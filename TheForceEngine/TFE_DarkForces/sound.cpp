@@ -13,6 +13,7 @@
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <TFE_DarkForces/time.h>
+#include <TFE_System/system.h>
 
 namespace TFE_DarkForces
 {
@@ -198,7 +199,7 @@ namespace TFE_DarkForces
 			sound->id = (SoundSourceId)sound;
 			sound->time = s_curTick;
 			sound->data = data;
-			strcpy_s(sound->name, 13, fileName);
+			strncpy(sound->name, fileName, 13);
 			sound->priority = priority;
 			sound->size = size;
 			sound->volume = 127;

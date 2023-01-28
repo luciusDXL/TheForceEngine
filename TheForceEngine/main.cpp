@@ -29,6 +29,7 @@
 #include <TFE_FrontEndUI/frontEndUi.h>
 #include <TFE_ForceScript/vm.h>
 #include <algorithm>
+#include <cinttypes>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
@@ -153,7 +154,7 @@ void handleEvent(SDL_Event& Event)
 					TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
 										
 					char screenshotPath[TFE_MAX_PATH];
-					sprintf(screenshotPath, "%stfe_screenshot_%s_%llu.jpg", screenshotDir, s_screenshotTime, _screenshotIndex);
+					sprintf(screenshotPath, "%stfe_screenshot_%s_%" PRIu64 ".jpg", screenshotDir, s_screenshotTime, _screenshotIndex);
 					_screenshotIndex++;
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
@@ -169,7 +170,7 @@ void handleEvent(SDL_Event& Event)
 						TFE_Paths::appendPath(TFE_PathType::PATH_USER_DOCUMENTS, "Screenshots/", screenshotDir);
 
 						char gifPath[TFE_MAX_PATH];
-						sprintf(gifPath, "%stfe_gif_%s_%llu.gif", screenshotDir, s_screenshotTime, _gifIndex);
+						sprintf(gifPath, "%stfe_gif_%s_%" PRIu64 ".gif", screenshotDir, s_screenshotTime, _gifIndex);
 						_gifIndex++;
 
 						TFE_RenderBackend::startGifRecording(gifPath);
@@ -261,8 +262,8 @@ bool sdlInit()
 
 		windowSettings->x = mInfo.x;
 		windowSettings->y = mInfo.y + 32;
-		windowSettings->width  = min(windowSettings->width,  mInfo.w);
-		windowSettings->height = min(windowSettings->height, mInfo.h);
+		windowSettings->width  = min((s32)windowSettings->width,  mInfo.w);
+		windowSettings->height = min((s32)windowSettings->height, mInfo.h);
 		windowSettings->baseWidth  = windowSettings->width;
 		windowSettings->baseHeight = windowSettings->height;
 		TFE_Settings::writeToDisk();
@@ -454,6 +455,7 @@ void parseCommandLine(s32 argc, char* argv[])
 
 void generateScreenshotTime()
 {
+#ifdef _WIN32
 	__time64_t time;
 	_time64(&time);
 	const char* timeString = _ctime64(&time);
@@ -462,6 +464,11 @@ void generateScreenshotTime()
 		strcpy(s_screenshotTime, timeString);
 	}
 
+#else
+	time_t tt = time(NULL);
+	memset(s_screenshotTime, 0, 1024);
+	strcpy(s_screenshotTime, ctime(&tt));
+#endif
 	// Replace ':' with '_'
 	size_t len = strlen(s_screenshotTime);
 	for (size_t i = 0; i < len; i++)

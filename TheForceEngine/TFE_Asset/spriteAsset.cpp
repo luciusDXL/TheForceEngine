@@ -2,8 +2,9 @@
 #include <TFE_System/system.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_Archive/archive.h>
-#include <assert.h>
 #include <algorithm>
+#include <cassert>
+#include <cstring>
 #include <vector>
 #include <string>
 #include <map>

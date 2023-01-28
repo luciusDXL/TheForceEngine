@@ -124,7 +124,7 @@ namespace TFE_Jedi
 			player->marker = marker;
 
 			IM_DBG_MSG("Set Marker: %d", marker);
-			ImSetSoundTrigger(player->soundId, (void*)marker);
+			ImSetSoundTrigger(player->soundId, reinterpret_cast<void*>(marker));
 		}
 		else if (value == 1)
 		{
@@ -151,14 +151,14 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			IM_LOG_ERR("mp got bad sysex msg...");
+			IM_LOG_ERR("%s", "mp got bad sysex msg...");
 		}
 	}
 
 	void ImMidiPressure(ImMidiPlayer* player, u8 channel, u8 arg1, u8 arg2)
 	{
 		// Not used by Dark Forces.
-		IM_LOG_ERR("ImMidiPressure() unimplemented.");
+		IM_LOG_ERR("%s", "ImMidiPressure() unimplemented.");
 		assert(0);
 	}
 

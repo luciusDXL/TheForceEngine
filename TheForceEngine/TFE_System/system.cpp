@@ -17,6 +17,9 @@
 #include <synchapi.h>
 #undef min
 #undef max
+#elif defined __linux__
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 namespace TFE_System
@@ -228,6 +231,17 @@ namespace TFE_System
 	void sleep(u32 sleepDeltaMS)
 	{
 		Sleep(sleepDeltaMS);
+	}
+#elif defined __linux__
+	void sleep(u32 sleepDeltaMS)
+	{
+		struct timespec ts = {0, 0};
+		while (sleepDeltaMS >= 1000) {
+			ts.tv_sec += 1;
+			sleepDeltaMS -= 1000;
+		}
+		ts.tv_nsec = sleepDeltaMS * 1000000;
+		nanosleep(&ts, NULL);
 	}
 #endif
 

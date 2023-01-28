@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <cstring>
 
 using namespace TFE_Jedi;
 

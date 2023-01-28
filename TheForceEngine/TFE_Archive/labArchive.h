@@ -7,7 +7,7 @@
 class LabArchive : public Archive
 {
 public:
-	LabArchive() : m_archiveOpen(false), m_curFile(-1) {}
+	LabArchive() : Archive(ARCHIVE_LAB), m_archiveOpen(false), m_curFile(-1) {}
 	~LabArchive() override;
 
 	// Archive

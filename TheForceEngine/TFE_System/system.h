@@ -4,6 +4,7 @@
 // System functionality, such as timers and logging.
 //////////////////////////////////////////////////////////////////////
 
+#include <ctype.h>
 #include "types.h"
 
 #define TFE_MAJOR_VERSION 0
@@ -66,4 +67,23 @@ namespace TFE_System
 	const char* getVersionString();
 
 	extern f64 c_gameTimeScale;
+}
+
+// _strlwr/_strupr exist on Windows; roll our own
+// and use them throghout. This works on Windows
+// and Linux/unix-like.
+static inline void __strlwr(char *c)
+{
+	while (*c) {
+		*c = tolower(*c);
+		c++;
+	}
+}
+
+static inline void __strupr(char *c)
+{
+	while (*c) {
+		*c = toupper(*c);
+		c++;
+	}
 }

@@ -62,7 +62,7 @@ namespace TFE_Jedi
 				return imSuccess;
 			}
 		}
-		IM_LOG_WRN("tr unable to alloc trigger.");
+		IM_LOG_WRN("tr unable to alloc trigger.", NULL);
 		return imAllocErr;
 	}
 
@@ -143,7 +143,7 @@ namespace TFE_Jedi
 			}
 		}
 
-		IM_LOG_WRN("tr unable to alloc deferred cmd.");
+		IM_LOG_WRN("tr unable to alloc deferred cmd.", NULL);
 		return imAllocErr;
 	}
 		
@@ -183,7 +183,7 @@ namespace TFE_Jedi
 			if (trigger->marker)
 			{
 				// trigger->marker is never non-zero when running Dark Forces.
-				IM_LOG_ERR("trigger->marker should always be 0 in Dark Forces.");
+				IM_LOG_ERR("%s", "trigger->marker should always be 0 in Dark Forces.");
 				assert(0);
 			}
 			// Execute the matching trigger.
@@ -205,7 +205,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			IM_LOG_ERR("Unimplemented deferred command.");
+			IM_LOG_ERR("%s", "Unimplemented deferred command.");
 			assert(0);
 		}
 	}
@@ -218,7 +218,7 @@ namespace TFE_Jedi
 			// This is not used by Dark Forces.
 			// In the original code, this passed in all 10 parameters.
 			// ImProcessCommand(trigger->opcode, *arg0, *arg1, *arg2);
-			IM_LOG_ERR("Unimplemented trigger opcode.");
+			IM_LOG_ERR("%s", "Unimplemented trigger opcode.");
 			assert(0);
 		}
 		else

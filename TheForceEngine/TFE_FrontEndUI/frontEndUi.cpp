@@ -30,6 +30,8 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 
+#include <climits>
+
 using namespace TFE_Input;
 
 namespace TFE_FrontEndUI
@@ -233,7 +235,11 @@ namespace TFE_FrontEndUI
 	bool loadGpuImage(const char* localPath, UiImage* uiImage)
 	{
 		char imagePath[TFE_MAX_PATH];
-		TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
+		strcpy(imagePath, localPath);
+		if (!TFE_Paths::mapSystemPath(imagePath)) {
+			memset(imagePath, 0, TFE_MAX_PATH);
+			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
+		}
 		Image* image = TFE_Image::get(imagePath);
 		if (image)
 		{
@@ -260,14 +266,18 @@ namespace TFE_FrontEndUI
 		s_subUI = FEUI_NONE;
 		s_relativeMode = false;
 		s_drawNoGameDataMsg = false;
+		char fontpath[TFE_MAX_PATH];
+
+		sprintf(fontpath, "%s", "Fonts/DroidSansMono.ttf");
+		TFE_Paths::mapSystemPath(fontpath);
 
 		s_uiScale = (f32)TFE_Ui::getUiScale() * 0.01f;
 
 		ImGuiIO& io = ImGui::GetIO();
-		s_menuFont    = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(32*s_uiScale + 0.5f));
-		s_versionFont = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(16*s_uiScale + 0.5f));
-		s_titleFont   = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(48*s_uiScale + 0.5f));
-		s_dialogFont  = io.Fonts->AddFontFromFileTTF("Fonts/DroidSansMono.ttf", floorf(20*s_uiScale + 0.5f));
+		s_menuFont    = io.Fonts->AddFontFromFileTTF(fontpath, floorf(32*s_uiScale + 0.5f));
+		s_versionFont = io.Fonts->AddFontFromFileTTF(fontpath, floorf(16*s_uiScale + 0.5f));
+		s_titleFont   = io.Fonts->AddFontFromFileTTF(fontpath, floorf(48*s_uiScale + 0.5f));
+		s_dialogFont  = io.Fonts->AddFontFromFileTTF(fontpath, floorf(20*s_uiScale + 0.5f));
 
 		if (!loadGpuImage("UI_Images/TFE_TitleLogo.png", &s_logoGpuImage))
 		{
@@ -567,7 +577,7 @@ namespace TFE_FrontEndUI
 			f32 rightEdge = titleLeft + titleWidth;
 			ImGui::SetNextWindowPos(ImVec2(rightEdge - stringWidth - s_versionFont->FontSize*2.0f, f32(h) - s_versionFont->FontSize*4.0f));
 			ImGui::Begin("##Version", &titleActive, windowInvisFlags);
-			ImGui::Text(versionText);
+			ImGui::Text("%s", versionText);
 			ImGui::End();
 			ImGui::PopFont();
 
@@ -1089,8 +1099,8 @@ namespace TFE_FrontEndUI
 			};
 			const std::vector<std::string> filters[]=
 			{
-				{ "GOB Archive", "*.gob", "Executable", "*.exe" },
-				{ "LAB Archive", "*.lab", "Executable", "*.exe" },
+				{ "GOB Archive", "*.GOB *.gob", "Executable", "*.EXE *.exe" },
+				{ "LAB Archive", "*.LAB *.lab", "Executable", "*.EXE *.exe" },
 			};
 
 			FileResult res = TFE_Ui::openFileDialog(games[browseWinOpen], DEFAULT_PATH, filters[browseWinOpen]);
@@ -1461,28 +1471,28 @@ namespace TFE_FrontEndUI
 		{
 			if (binding->keyMod)
 			{
-				sprintf_s(inputName, 64, "%s + %s", TFE_Input::getKeyboardModifierName(binding->keyMod), TFE_Input::getKeyboardName(binding->keyCode));
+				snprintf(inputName, 64, "%s + %s", TFE_Input::getKeyboardModifierName(binding->keyMod), TFE_Input::getKeyboardName(binding->keyCode));
 			}
 			else
 			{
-				strcpy_s(inputName, 64, TFE_Input::getKeyboardName(binding->keyCode));
+				strncpy(inputName, TFE_Input::getKeyboardName(binding->keyCode), 64);
 			}
 		}
 		else if (binding->type == ITYPE_MOUSE)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getMouseButtonName(binding->mouseBtn));
+			strncpy(inputName, TFE_Input::getMouseButtonName(binding->mouseBtn), 64);
 		}
 		else if (binding->type == ITYPE_MOUSEWHEEL)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getMouseWheelName(binding->mouseWheel));
+			strncpy(inputName, TFE_Input::getMouseWheelName(binding->mouseWheel), 64);
 		}
 		else if (binding->type == ITYPE_CONTROLLER)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getControllButtonName(binding->ctrlBtn));
+			strncpy(inputName, TFE_Input::getControllButtonName(binding->ctrlBtn), 64);
 		}
 		else if (binding->type == ITYPE_CONTROLLER_AXIS)
 		{
-			strcpy_s(inputName, 64, TFE_Input::getControllerAxisName(binding->axis));
+			strncpy(inputName, TFE_Input::getControllerAxisName(binding->axis), 64);
 		}
 	}
 
@@ -1498,7 +1508,7 @@ namespace TFE_FrontEndUI
 		char inputName1[256] = "##Input1";
 		char inputName2[256] = "##Input2";
 
-		ImGui::LabelText("##ConfigLabel", name); ImGui::SameLine(132*s_uiScale);
+		ImGui::LabelText("##ConfigLabel", "%s", name); ImGui::SameLine(132*s_uiScale);
 		if (count >= 1)
 		{
 			InputBinding* binding = inputMapping_getBindingByIndex(indices[0]);
@@ -1736,7 +1746,7 @@ namespace TFE_FrontEndUI
 			yNext += (s_controllerWinOpen ? 250.0f : 29.0f)*s_uiScale;
 			ImGui::PopStyleVar();
 		}
-		ImGui::End();
+		ImGui::EndChild();
 		ImGui::SetNextWindowPos(ImVec2(165.0f*s_uiScale, yNext - scroll));
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, { 0.0f, 0.0f });
 		f32 inputMappingHeight = 1516.0f*s_uiScale;
@@ -1998,7 +2008,7 @@ namespace TFE_FrontEndUI
 		{
 			ImGui::PopStyleVar();
 		}
-		ImGui::End();
+		ImGui::EndChild();
 		ImGui::PopStyleVar();
 		ImGui::SetCursorPosY(yNext + (s_inputMappingOpen ? inputMappingHeight : 29.0f*s_uiScale));
 	}
@@ -2308,12 +2318,12 @@ namespace TFE_FrontEndUI
 		assert(floatValue && labelText);
 		if (!floatValue || !labelText) { return; }
 
-		ImGui::LabelText("##Label", labelText);
+		ImGui::LabelText("##Label", "%s", labelText);
 		ImGui::SameLine(f32(128 * s_uiScale));
 		s32 percValue = s32((*floatValue) * 100.0f);
 
 		char sliderId[256];
-		sprintf_s(sliderId, 256, "##%s", labelText);
+		snprintf(sliderId, 256, "##%s", labelText);
 		ImGui::SliderInt(sliderId, &percValue, 0, 100, "%d%%");
 		*floatValue = clamp(f32(percValue) * 0.01f, 0.0f, 1.0f);
 	}
