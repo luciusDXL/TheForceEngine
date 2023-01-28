@@ -708,8 +708,8 @@ namespace TFE_Jedi
 		Shader* shader = s_modelShaders;
 		for (s32 s = 0; s < MGPU_SHADER_COUNT; s++, shader++)
 		{
-			s32 listCount = s_modelDrawList[s].size();
-			if (!listCount) { continue; }
+			if (s_modelDrawList[s].empty())
+				continue;
 
 			// Bind the shader and set per-frame shader variables.
 			shader->bind();
