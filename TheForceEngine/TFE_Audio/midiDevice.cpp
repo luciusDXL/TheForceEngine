@@ -38,7 +38,7 @@ namespace TFE_MidiDevice
 
 	void destroy()
 	{
-		if (s_openPort >= 0)
+		if (s_openPort > 0)
 		{
 			s_midiout->closePort();
 		}
@@ -50,16 +50,23 @@ namespace TFE_MidiDevice
 	// Returns the number of devices.
 	u32 getDeviceCount()
 	{
-		return s_midiout ? s_midiout->getPortCount() : 0;
+		return 1 + (s_midiout ? s_midiout->getPortCount() : 0);
 	}
 
 	void getDeviceName(u32 index, char* buffer, u32 maxLength)
 	{
-		if (index >= getDeviceCount()) { return; }
-		const std::string& name = s_midiout->getPortName(index);
-		const u32 copyLength = std::min((u32)name.length(), maxLength - 1);
-		strncpy(buffer, s_midiout->getPortName(index).c_str(), copyLength);
-		buffer[copyLength] = 0;
+		if (index > getDeviceCount()) { return; }
+		if (index == 0)
+		{
+			strcpy(buffer, "MIDI Output Disabled");
+		}
+		else
+		{
+			const std::string& name = s_midiout->getPortName(index - 1);
+			const u32 copyLength = std::min((u32)name.length(), maxLength - 1);
+			strncpy(buffer, s_midiout->getPortName(index).c_str(), copyLength);
+			buffer[copyLength] = 0;
+		}
 	}
 
 	bool selectDevice(s32 index)
@@ -67,12 +74,17 @@ namespace TFE_MidiDevice
 		if (!s_midiout) { return false; }
 		if (index < 0)
 		{
-			index = 0;
+			index = getDeviceCount() > 1 ? 1 : 0;
 		}
-		if (index != s_openPort && index >= 0 && index < getDeviceCount())
+		if (index == 0)
 		{
-			s_midiout->openPort(index);
-			s_openPort = (s32)index;
+			s_openPort = 0;
+			return true;
+		}
+		else if (index != s_openPort && index > 0 && index < getDeviceCount())
+		{
+			s_midiout->openPort(index - 1);
+			s_openPort = index;
 			return true;
 		}
 		return false;
@@ -80,12 +92,12 @@ namespace TFE_MidiDevice
 
 	void sendMessage(const u8* msg, u32 size)
 	{
-		if (s_midiout) { s_midiout->sendMessage(msg, (size_t)size); }
+		if (s_openPort > 0) { s_midiout->sendMessage(msg, (size_t)size); }
 	}
 
 	void sendMessage(u8 arg0, u8 arg1, u8 arg2)
 	{
 		const u8 msg[3] = { arg0, arg1, arg2 };
-		if (s_midiout) { s_midiout->sendMessage(msg, 3); }
+		if (s_openPort > 0) { s_midiout->sendMessage(msg, 3); }
 	}
 }

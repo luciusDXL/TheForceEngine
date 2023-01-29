@@ -2346,14 +2346,18 @@ namespace TFE_FrontEndUI
 
 			ImGui::LabelText("##ConfigLabel", "Audio Device:"); ImGui::SameLine(150 * s_uiScale);
 			ImGui::SetNextItemWidth(256 * s_uiScale);
-			ImGui::Combo("##Audio Output", &curOutput, outputAudioNames, outputCount);
+			bool b = ImGui::Combo("##Audio Output", &curOutput, outputAudioNames, outputCount);
 
 			if (ImGui::Button("Reset Audio Output"))
 			{
 				curOutput = -1;
+				b = true;
 			}
-			TFE_Audio::selectDevice(curOutput);
-			sound->audioDevice = curOutput;
+			if (b)
+			{
+				TFE_Audio::selectDevice(curOutput);
+				sound->audioDevice = curOutput;
+			}
 		}
 		ImGui::Separator();
 		{
@@ -2366,14 +2370,18 @@ namespace TFE_FrontEndUI
 
 			ImGui::LabelText("##ConfigLabel", "Midi Device:"); ImGui::SameLine(150 * s_uiScale);
 			ImGui::SetNextItemWidth(256 * s_uiScale);
-			ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
+			bool b = ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
 
 			if (ImGui::Button("Reset Midi Output"))
 			{
 				curOutput = -1;
+				b = true;
 			}
-			TFE_MidiDevice::selectDevice(u32(curOutput));
-			sound->midiDevice = curOutput;
+			if (b)
+			{
+				TFE_MidiDevice::selectDevice(curOutput);
+				sound->midiDevice = curOutput;
+			}
 		}
 
 		ImGui::Separator();
