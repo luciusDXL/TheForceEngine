@@ -4,7 +4,6 @@ set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
 project(TheForceEngine
-	VERSION 1.0.1
 	HOMEPAGE_URL "https://theforceengine.github.io"
 	DESCRIPTION "Modern 'Jedi Engine' replacement supporting Dark Forces, mods, and in the future Outlaws."
 	)
@@ -48,8 +47,8 @@ elseif(LINUX)
 	set_target_properties(tfe PROPERTIES OUTPUT_NAME "tfelnx")
 	find_package(PkgConfig REQUIRED)
 	find_package(Threads REQUIRED)
-	pkg_check_modules(RTAUDIO REQUIRED rtaudio>=4.0.0)
-	pkg_check_modules(RTMIDI REQUIRED rtmidi>=4.0.0)
+	pkg_check_modules(RTAUDIO REQUIRED rtaudio>=5.2.0)
+	pkg_check_modules(RTMIDI REQUIRED rtmidi>=5.0.0)
 	pkg_check_modules(SDL2 REQUIRED sdl2)
 	pkg_check_modules(GLEW REQUIRED glew)
 	pkg_check_modules(IL REQUIRED IL)
