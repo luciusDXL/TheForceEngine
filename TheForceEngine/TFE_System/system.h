@@ -4,6 +4,7 @@
 // System functionality, such as timers and logging.
 //////////////////////////////////////////////////////////////////////
 
+#include <ctype.h>
 #include "types.h"
 
 #define TFE_MAJOR_VERSION 0
@@ -35,6 +36,7 @@ namespace TFE_System
 	//     In other words an entire frame operates on a single instance of time.
 	// Return the delta time.
 	f64 getDeltaTime();
+	f64 getDeltaTimeRaw();
 	// Get the absolute time since the last start time.
 	f64 getTime();
 
@@ -65,4 +67,23 @@ namespace TFE_System
 	const char* getVersionString();
 
 	extern f64 c_gameTimeScale;
+}
+
+// _strlwr/_strupr exist on Windows; roll our own
+// and use them throghout. This works on Windows
+// and Linux/unix-like.
+static inline void __strlwr(char *c)
+{
+	while (*c) {
+		*c = tolower(*c);
+		c++;
+	}
+}
+
+static inline void __strupr(char *c)
+{
+	while (*c) {
+		*c = toupper(*c);
+		c++;
+	}
 }

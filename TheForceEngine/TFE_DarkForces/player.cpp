@@ -184,7 +184,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	PlayerInfo s_playerInfo = { 0 };
 	PlayerLogic s_playerLogic = {};
-	fixed16_16 s_energy = 2 * ONE_16;
+	fixed16_16 s_batteryPower = 2 * ONE_16;
 	s32 s_lifeCount;
 	s32 s_playerLight = 0;
 	s32 s_headwaveVerticalOffset;
@@ -203,6 +203,8 @@ namespace TFE_DarkForces
 	JBool s_superCharge   = JFALSE;
 	JBool s_superChargeHud= JFALSE;
 	JBool s_playerSecMoved = JFALSE;
+	JBool s_flyMode = JFALSE;
+	JBool s_noclip = JFALSE;
 	u32*  s_playerInvSaved = nullptr;
 
 	RSector* s_playerSector = nullptr;
@@ -298,7 +300,7 @@ namespace TFE_DarkForces
 		s_playerInfo.shields     = pickup_addToValue(0, 100, 200);
 		s_playerInfo.health      = pickup_addToValue(0, 100, 100);
 		s_playerInfo.healthFract = 0;
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 		s_reviveTick = 0;
 
 		s_automapLocked = JTRUE;
@@ -373,7 +375,7 @@ namespace TFE_DarkForces
 		s_playerInfo.ammoMissile   = ammo[6];
 		s_playerInfo.shields = ammo[7];
 		s_playerInfo.health  = ammo[8];
-		s_energy = ammo[9];
+		s_batteryPower = ammo[9];
 	}
 
 	void player_writeInfo(u8* inv, s32* ammo)
@@ -422,7 +424,7 @@ namespace TFE_DarkForces
 		ammo[6] = s_playerInfo.ammoMissile;
 		ammo[7] = s_playerInfo.shields;
 		ammo[8] = s_playerInfo.health;
-		ammo[9] = s_energy;
+		ammo[9] = s_batteryPower;
 	}
 
 	void player_setNextWeapon(s32 nextWpn)
@@ -521,13 +523,15 @@ namespace TFE_DarkForces
 		s_gasSectorTask     = nullptr;
 		s_nextShieldDmgTick = 0;
 		s_invincibility = 0;
+		s_flyMode = JFALSE;
+		s_noclip = JFALSE;
 
 		// The player will always start a level with at least 100 shields, though if they have more it carries over.
 		s_playerInfo.shields = max(100, s_playerInfo.shields);
 		// The player starts a new level with full health and energy.
 		s_playerInfo.health = 100;
 		s_playerInfo.healthFract = 0;
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 
 		s_wearingGasmask    = JFALSE;
 		s_wearingCleats     = JFALSE;
@@ -706,7 +710,7 @@ namespace TFE_DarkForces
 		s_playerInfo.ammoMine = 30;
 		s_playerInfo.ammoMissile = 20;
 
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 		weapon_fixupAnim();
 	}
 
@@ -736,7 +740,7 @@ namespace TFE_DarkForces
 		{
 			s_playerInfo.ammoMissile = 20;
 		}
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 		weapon_fixupAnim();
 	}
 
@@ -783,7 +787,7 @@ namespace TFE_DarkForces
 		s_playerInfo.ammoMissile = 20;
 		s_playerInfo.ammoPlasma = 400;
 		s_playerInfo.ammoMine = 30;
-		s_energy = FIXED(2);
+		s_batteryPower = FIXED(2);
 
 		weapon_fixupAnim();
 	}
@@ -878,7 +882,7 @@ namespace TFE_DarkForces
 		giveAllInventoryAndHealth();
 		hud_sendTextMessage(710);
 	}
-
+		
 	void cheat_godMode()
 	{
 		if (!s_invincibility)
@@ -890,6 +894,47 @@ namespace TFE_DarkForces
 			s_invincibility = 0;
 		}
 		hud_sendTextMessage(702);
+	}
+
+	// New TFE Cheats.
+	void cheat_fly()
+	{
+		// Write the cheat message.
+		const char* msg = TFE_System::getMessage(TFE_MSG_FLYMODE);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+
+		s_flyMode = ~s_flyMode;
+	}
+
+	void cheat_noclip()
+	{
+		// Write the cheat message.
+		const char* msg = TFE_System::getMessage(TFE_MSG_NOCLIP);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+
+		s_noclip = ~s_noclip;
+	}
+
+	void cheat_tester()
+	{
+		// Write the cheat message.
+		const char* msg = TFE_System::getMessage(TFE_MSG_TESTER);
+		if (msg) { hud_sendTextMessage(msg, 1); }
+
+		if (s_noclip)
+		{
+			if (s_invincibility == -2) { s_invincibility = 0; }
+			s_aiActive = JTRUE;
+			s_noclip   = JFALSE;
+			s_flyMode  = JFALSE;
+		}
+		else
+		{
+			s_invincibility = -2;
+			s_aiActive = JFALSE;
+			s_noclip   = JTRUE;
+			s_flyMode  = JTRUE;
+		}
 	}
 
 	void player_setupCamera()
@@ -1103,6 +1148,8 @@ namespace TFE_DarkForces
 				}
 				s_invincibilityTask = nullptr;
 				s_invincibility = 0;
+				s_flyMode = JFALSE;
+				s_noclip = JFALSE;
 				player_clearSuperCharge();
 			}
 			else
@@ -1266,6 +1313,22 @@ namespace TFE_DarkForces
 		}
 
 		s32 crouch = inputMapping_getActionState(IADF_CROUCH) ? 1 : 0;
+		if (s_flyMode)
+		{
+			if ((!s_onFloor || s_noclip) && crouch)
+			{
+				fixed16_16 speed = -(PLAYER_JUMP_IMPULSE << s_jumpScale);
+				s_playerUpVel = speed;
+				s_playerUpVel2 = speed;
+			}
+			else if (s_playerUpVel > 0)
+			{
+				s_playerUpVel = 0;
+				s_playerUpVel2 = 0;
+			}
+			s_playerCrouchSpd = 0;
+		}
+
 		if (s_onFloor & crouch)
 		{
 			fixed16_16 speed = PLAYER_CROUCH_SPEED;
@@ -1281,6 +1344,12 @@ namespace TFE_DarkForces
 			if (!s_onFloor || wasJumping)
 			{
 				s_playerJumping = wasJumping;
+				if (s_flyMode)
+				{
+					fixed16_16 speed = PLAYER_JUMP_IMPULSE << s_jumpScale;
+					s_playerUpVel = speed;
+					s_playerUpVel2 = speed;
+				}
 			}
 			else
 			{
@@ -1291,6 +1360,11 @@ namespace TFE_DarkForces
 				s_playerUpVel  = speed;
 				s_playerUpVel2 = speed;
 			}
+		}
+		else if (s_flyMode && s_playerUpVel < 0)
+		{
+			s_playerUpVel = 0;
+			s_playerUpVel2 = 0;
 		}
 
 		//////////////////////////////////////////
@@ -1395,7 +1469,7 @@ namespace TFE_DarkForces
 		}
 
 		// Reduce the players ability to adjust the velocity while they have vertical velocity.
-		if (s_playerUpVel)
+		if (s_playerUpVel && !s_flyMode)
 		{
 			// TFE specific
 			const s32 airControl = 8 - TFE_Settings::getGameSettings()->df_airControl;
@@ -1610,31 +1684,48 @@ namespace TFE_DarkForces
 		fixed16_16 slideDirZ = 0;
 		s_playerSlideWall = nullptr;
 		// Up to 4 iterations, to handle sliding on walls.
-		for (s32 collisionIter = 4; collisionIter != 0; collisionIter--)
+		if (s_noclip)
 		{
-			if (!handlePlayerCollision(&s_playerLogic, s_playerUpVel))
+			if (s_playerLogic.move.x || s_playerLogic.move.y)
 			{
-				if (s_playerLogic.move.x || s_playerLogic.move.y)
+				moved = JTRUE;
+			}
+			if (s_playerSector)
+			{
+				s_colCurLowestFloor = s_playerSector->floorHeight;
+				s_colCurHighestCeil = s_playerSector->ceilingHeight;
+				s_colExtFloorHeight = s_playerSector->colFloorHeight;
+				s_colExtCeilHeight = s_playerSector->colCeilHeight;
+			}
+		}
+		else
+		{
+			for (s32 collisionIter = 4; collisionIter != 0; collisionIter--)
+			{
+				if (!handlePlayerCollision(&s_playerLogic, s_playerUpVel))
 				{
-					moved = JTRUE;
+					if (s_playerLogic.move.x || s_playerLogic.move.y)
+					{
+						moved = JTRUE;
+					}
+					break;
 				}
-				break;
-			}
-						
-			// Determine if a collision response is required.
-			collided = JTRUE;
-			if (!s_colResponseStep)
-			{
-				break;
-			}
-			prevResponseStep = s_colResponseStep;
 
-			if (s_colWall0)
-			{
-				s_playerSlideWall = s_colWall0;
+				// Determine if a collision response is required.
+				collided = JTRUE;
+				if (!s_colResponseStep)
+				{
+					break;
+				}
+				prevResponseStep = s_colResponseStep;
+
+				if (s_colWall0)
+				{
+					s_playerSlideWall = s_colWall0;
+				}
+				slideDirX = s_colResponseDir.x;
+				slideDirZ = s_colResponseDir.z;
 			}
-			slideDirX = s_colResponseDir.x;
-			slideDirZ = s_colResponseDir.z;
 		}
 
 		// If the player moved after collision, handle that here.
@@ -1659,12 +1750,16 @@ namespace TFE_DarkForces
 
 			// If this fails, the system will treat it as if the player didn't move (see below).
 			// However, it should succeed since the original collision detection did.
-			moved = playerMove();
+			moved = playerMove(s_noclip);
 			if (moved)
 			{
 				s_colWidth += PLAYER_PICKUP_ADJ;	// s_colWidth + 1.5
 				playerHandleCollisionFunc(player->sector, collision_checkPickups, nullptr);
 				s_colWidth -= PLAYER_PICKUP_ADJ;
+				if (s_noclip)
+				{
+					s_colMinSector = player->sector;
+				}
 			}
 		}
 
@@ -1763,13 +1858,16 @@ namespace TFE_DarkForces
 		// Gravity.
 		fixed16_16 gravityAccelDt = mul16(s_gravityAccel, s_deltaTime);
 		// This happens in an interrupt in the original DOS code.
-		s_playerUpVel2 += gravityAccelDt;
+		if (!s_flyMode)
+		{
+			s_playerUpVel2 += gravityAccelDt;
+		}
 		s_playerUpVel  = s_playerUpVel2;
 		s_playerYPos += mul16(s_playerUpVel, s_deltaTime);
 		s_playerLogic.move.y = s_playerYPos - player->posWS.y;
 		player->posWS.y = s_playerYPos;
 
-		if (s_playerYPos >= s_colCurLowestFloor)
+		if (s_playerYPos >= s_colCurLowestFloor && (!s_noclip || !s_flyMode))
 		{
 			if (s_kyleScreamSoundId)
 			{
@@ -1824,7 +1922,7 @@ namespace TFE_DarkForces
 		else
 		{
 			fixed16_16 playerTop = s_playerYPos - player->worldHeight - ONE_16;
-			if (playerTop < s_colCurHighestCeil)
+			if (playerTop < s_colCurHighestCeil && (!s_noclip || !s_flyMode))
 			{
 				fixed16_16 yVel = max(0, s_playerUpVel2);
 				s_playerUpVel = yVel;
@@ -1883,10 +1981,13 @@ namespace TFE_DarkForces
 			player->worldHeight = minDistToFloor;
 		}
 		// Make sure eye height is clamped.
-		player->worldHeight = min(eyeHeight, player->worldHeight);
+		if (!s_noclip || !s_flyMode)
+		{
+			player->worldHeight = min(eyeHeight, player->worldHeight);
+		}
 
 		// Crushing Damage.
-		if (player->worldHeight < minEyeDistFromFloor)
+		if (player->worldHeight < minEyeDistFromFloor && (!s_noclip || !s_flyMode))
 		{
 			if (!s_crushSoundId)
 			{
@@ -2010,27 +2111,33 @@ namespace TFE_DarkForces
 		}
 
 		// Double check the player Y position against the floor and ceiling.
-		if (player->posWS.y > s_colCurLowestFloor)
+		if (!s_noclip || !s_flyMode)
 		{
-			s_playerYPos = s_colCurLowestFloor;
-			player->posWS.y = s_colCurLowestFloor;
-		}
-		if (player->posWS.y < s_colCurHighestCeil)
-		{
-			s_playerYPos = s_colCurHighestCeil;
-			player->posWS.y = s_colCurHighestCeil;
+			if (player->posWS.y > s_colCurLowestFloor)
+			{
+				s_playerYPos = s_colCurLowestFloor;
+				player->posWS.y = s_colCurLowestFloor;
+			}
+			if (player->posWS.y < s_colCurHighestCeil)
+			{
+				s_playerYPos = s_colCurHighestCeil;
+				player->posWS.y = s_colCurHighestCeil;
+			}
 		}
 
 		// Clamp the height if needed.
 		fixed16_16 yTop = player->posWS.y - s_colExtCeilHeight;
 		fixed16_16 yBot = player->posWS.y - s_colExtFloorHeight + 0x4000;
-		if (player->worldHeight - s_camOffset.y > yTop)
+		if (!s_noclip || !s_flyMode)
 		{
-			player->worldHeight = yTop + s_camOffset.y;
-		}
-		if (player->worldHeight - s_camOffset.y < yBot)
-		{
-			player->worldHeight = yBot + s_camOffset.y;
+			if (player->worldHeight - s_camOffset.y > yTop)
+			{
+				player->worldHeight = yTop + s_camOffset.y;
+			}
+			if (player->worldHeight - s_camOffset.y < yBot)
+			{
+				player->worldHeight = yBot + s_camOffset.y;
+			}
 		}
 
 		weapon->rollOffset = -s_playerRoll / 13;
@@ -2046,8 +2153,8 @@ namespace TFE_DarkForces
 			s32 headlamp = 0;
 			if (s_headlampActive)
 			{
-				fixed16_16 energy = min(ONE_16, s_energy);
-				headlamp = floor16(mul16(energy, FIXED(64)));
+				fixed16_16 batteryPower = min(ONE_16, s_batteryPower);
+				headlamp = floor16(mul16(batteryPower, FIXED(64)));
 				headlamp = min(MAX_LIGHT_LEVEL, headlamp);
 			}
 			s32 atten = max(headlamp, s_weaponLight + s_levelAtten);
@@ -2224,24 +2331,24 @@ namespace TFE_DarkForces
 				
 	void handlePlayerActions()
 	{
-		if (s_energy)
+		if (s_batteryPower)
 		{
 			if (s_headlampActive)
 			{
-				fixed16_16 energyDelta = mul16(HEADLAMP_ENERGY_CONSUMPTION, s_deltaTime);
-				s_energy -= energyDelta;
+				fixed16_16 powerDelta = mul16(HEADLAMP_ENERGY_CONSUMPTION, s_deltaTime);
+				s_batteryPower -= powerDelta;
 			}
 			if (s_wearingGasmask)
 			{
-				fixed16_16 energyDelta = mul16(GASMASK_ENERGY_CONSUMPTION, s_deltaTime);
-				s_energy -= energyDelta;
+				fixed16_16 powerDelta = mul16(GASMASK_ENERGY_CONSUMPTION, s_deltaTime);
+				s_batteryPower -= powerDelta;
 			}
 			if (s_nightvisionActive)
 			{
-				fixed16_16 energyDelta = mul16(GOGGLES_ENERGY_CONSUMPTION, s_deltaTime);
-				s_energy -= energyDelta;
+				fixed16_16 powerDelta = mul16(GOGGLES_ENERGY_CONSUMPTION, s_deltaTime);
+				s_batteryPower -= powerDelta;
 			}
-			if (s_energy <= 0)
+			if (s_batteryPower <= 0)
 			{
 				if (s_nightvisionActive)
 				{
@@ -2264,7 +2371,7 @@ namespace TFE_DarkForces
 						s_gasmaskTask = nullptr;
 					}
 				}
-				s_energy = 0;
+				s_batteryPower = 0;
 			}
 		}
 		if (s_playerUse)
@@ -2701,7 +2808,7 @@ namespace TFE_DarkForces
 		}
 
 		SERIALIZE(ObjState_InitVersion, s_playerInfo, { 0 });
-		SERIALIZE(ObjState_InitVersion, s_energy, 0);
+		SERIALIZE(ObjState_InitVersion, s_batteryPower, 0);
 		SERIALIZE(ObjState_InitVersion, s_lifeCount, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerLight, 0);
 		SERIALIZE(ObjState_InitVersion, s_headwaveVerticalOffset, 0);
@@ -2719,6 +2826,7 @@ namespace TFE_DarkForces
 		SERIALIZE(ObjState_InitVersion, s_superCharge, 0);
 		SERIALIZE(ObjState_InitVersion, s_superChargeHud, 0);
 		SERIALIZE(ObjState_InitVersion, s_playerSecMoved, 0);
+		SERIALIZE(ObjState_FlyModeAdded, s_flyMode, JFALSE);
 
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)

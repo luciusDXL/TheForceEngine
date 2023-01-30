@@ -945,12 +945,13 @@ namespace TFE_Jedi
 		}
 	}
 
-	void sector_rotateWalls(RSector* sector, fixed16_16 centerX, fixed16_16 centerZ, angle14_32 angle)
+	void sector_rotateWalls(RSector* sector, fixed16_16 centerX, fixed16_16 centerZ, angle14_32 angle, u32 rotateFlags)
 	{
 		s32 cosAngle, sinAngle;
 		sinCosFixed(angle, &sinAngle, &cosAngle);
 
 		sector->dirtyFlags |= SDF_WALL_SHAPE;
+		// TODO: (TFE) Handle rotateFlags for floor and ceiling texture rotation.
 
 		s32 wallCount = sector->wallCount;
 		RWall* wall = sector->walls;

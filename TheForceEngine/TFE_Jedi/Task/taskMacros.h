@@ -43,7 +43,7 @@
 	} while (0)
 
 #define taskCtx ((LocalContext*)ctxGet())
-#define local(x) ((LocalContext*)ctxGet())-> ## x
+#define local(x) ((LocalContext*)ctxGet())->x
 
 #define task_waitWhileIdNotZero(ticks) \
 	do \

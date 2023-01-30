@@ -20,7 +20,7 @@ namespace TFE_DarkForces
 
 	JBool handlePlayerCollision(PlayerLogic* playerLogic, fixed16_16 yVel);
 	JBool col_computeCollisionResponse(RSector* sector, fixed16_16 yVel);
-	JBool playerMove();
+	JBool playerMove(JBool alwaysMove);
 		
 	extern fixed16_16 s_colWidth;
 	extern fixed16_16 s_colDstPosX;

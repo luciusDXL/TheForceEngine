@@ -4,7 +4,8 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/virtualFramebuffer.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 #include <map>
 
 using namespace TFE_Jedi;

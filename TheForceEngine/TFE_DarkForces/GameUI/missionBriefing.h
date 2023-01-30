@@ -19,8 +19,4 @@ namespace TFE_DarkForces
 	void  missionBriefing_start(const char* archive, const char* bgAnim, const char* mission, const char* palette, s32 skill);
 	void  missionBriefing_cleanup();
 	JBool missionBriefing_update(s32* skill, JBool* abort);
-
-	extern s16 s_briefY;
-	extern s32 s_briefingMaxY;
-	extern LRect s_overlayRect;
 }

@@ -36,11 +36,16 @@ namespace TFE_DarkForces
 		CHEAT_LABRADY,
 		CHEAT_LAUNLOCK,
 		CHEAT_LAMAXOUT,
+		// New Cheats for TFE.
+		CHEAT_LAFLY,
+		CHEAT_LANOCLIP,
+		CHEAT_LATESTER,
 		CHEAT_COUNT
 	};
 
 	CheatID cheat_getID();
 	CheatID cheat_getIDFromString(const char* cheatStr);
+	const char* cheat_getStringFromID(CheatID id);
 	void cheat_clearData();
 
 	extern char s_cheatString[32];

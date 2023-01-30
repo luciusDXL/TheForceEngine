@@ -27,9 +27,10 @@ struct IGame
 	virtual void loopGame() {};
 	virtual bool serializeGameState(Stream* stream, const char* filename, bool writeState) { return false; };
 	virtual bool canSave() { return false; }
+	virtual bool isPaused() { return false; }
 	virtual void getLevelName(char* name) {};
 	virtual void getModList(char* modList) {};
-		
+
 	GameID id;
 };
 

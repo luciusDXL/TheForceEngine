@@ -55,6 +55,7 @@ namespace TFE_Jedi
 	{
 		SPRITE_PASS = SECTOR_PASS_COUNT
 	};
+	static const f32 c_wallPlaneEps = 0.1f;	// was 0.01f
 
 	struct GPUSourceData
 	{
@@ -109,6 +110,7 @@ namespace TFE_Jedi
 	static Portal* s_portalList = nullptr;
 	static Vec2f  s_range[2];
 	static Vec2f  s_rangeSrc[2];
+	static Segment s_wallSegments[2048];
 
 	static bool s_showWireframe = false;
 	static SkyMode s_skyMode = SKYMODE_CYLINDER;
@@ -669,16 +671,14 @@ namespace TFE_Jedi
 			assert(seg2->x0 >= 0.0f && seg2->x1 <= 4.0f);
 		}
 	}
-
+		
 	bool isWallInFrontOfPlane(Vec2f w0, Vec2f w1, Vec2f p0, Vec2f p1)
 	{
 		const f32 side0 = (w0.x - p0.x)*(p1.z - p0.z) - (w0.z - p0.z)*(p1.x - p0.x);
 		const f32 side1 = (w1.x - p0.x)*(p1.z - p0.z) - (w1.z - p0.z)*(p1.x - p0.x);
-		return side0 <= 0.01f || side1 <= 0.01f;
+		return side0 <= c_wallPlaneEps || side1 <= c_wallPlaneEps;
 	}
-
-	static Segment s_wallSegments[2048];
-
+		
 	void addPortalAsSky(RSector* curSector, RWall* wall)
 	{
 		u32 segCount = 0;
@@ -1026,7 +1026,7 @@ namespace TFE_Jedi
 			{
 				planeCount  = sdisplayList_getPlanesFromPortal(topPortal, PLANE_TYPE_TOP, outPlanes);
 				planeCount += sdisplayList_getPlanesFromPortal(botPortal, PLANE_TYPE_BOT, outPlanes + planeCount);
-				planeCount = min(MAX_PORTAL_PLANES, planeCount);
+				planeCount = min((s32)MAX_PORTAL_PLANES, (s32)planeCount);
 			}
 			portalInfo = objectPortalPlanes_add(planeCount, outPlanes);
 		}

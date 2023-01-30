@@ -1,3 +1,4 @@
+#include <climits>
 #include <cstring>
 
 #include "delt.h"

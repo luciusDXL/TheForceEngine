@@ -221,7 +221,7 @@ namespace TFE_FrontEndUI
 	{
 		DisplayInfo dispInfo;
 		TFE_RenderBackend::getDisplayInfo(&dispInfo);
-		s32 columns = max(1, (dispInfo.width - s32(16*uiScale)) / s32(268*uiScale));
+		s32 columns = max(1, (s32)((dispInfo.width - s32(16*uiScale)) / s32(268*uiScale)));
 
 		f32 y = ImGui::GetCursorPosY();
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -262,7 +262,7 @@ namespace TFE_FrontEndUI
 				// Limit the name to 36 characters to avoid going into the next cell.
 				if (s_mods[i].name.length() <= 36)
 				{
-					ImGui::LabelText("###Label", s_mods[i].name.c_str());
+					ImGui::LabelText("###Label", "%s", s_mods[i].name.c_str());
 				}
 				else
 				{
@@ -272,7 +272,7 @@ namespace TFE_FrontEndUI
 					name[34] = '.';
 					name[35] = '.';
 					name[36] = 0;
-					ImGui::LabelText("###Label", name);
+					ImGui::LabelText("###Label", "%s", name);
 				}
 			}
 			y += 232*uiScale;
@@ -313,7 +313,7 @@ namespace TFE_FrontEndUI
 					name[36] = 0;
 				}
 
-				ImGui::LabelText("###", name);
+				ImGui::LabelText("###", "%s", name);
 			}
 		}
 		ImGui::PopFont();
@@ -353,7 +353,7 @@ namespace TFE_FrontEndUI
 					name[36] = 0;
 				}
 
-				ImGui::LabelText("###", name);
+				ImGui::LabelText("###", "%s", name);
 			}
 		}
 		ImGui::PopFont();
@@ -451,7 +451,7 @@ namespace TFE_FrontEndUI
 			ImGui::PushFont(getDialogFont());
 			ImGui::SetCursorPosX(cursor.x + (320 + 70)*uiScale);
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.9f, 1.0f, 1.0f));
-			ImGui::LabelText("###", s_mods[s_selectedMod].name.c_str());
+			ImGui::LabelText("###", "%s", s_mods[s_selectedMod].name.c_str());
 			ImGui::PopStyleColor();
 
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
@@ -491,7 +491,7 @@ namespace TFE_FrontEndUI
 			ImGui::SetCursorPos(ImVec2(cursor.x + 328*uiScale, cursor.y + 30*uiScale));
 			ImGui::BeginChild("###Mod Info Text", ImVec2(f32(infoWidth - 344*uiScale), f32(infoHeight - 68*uiScale)), true, ImGuiWindowFlags_NoBringToFrontOnFocus);
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 0.75f));
-			ImGui::TextWrapped(s_mods[s_selectedMod].text.c_str());
+			ImGui::TextWrapped("%s", s_mods[s_selectedMod].text.c_str());
 			ImGui::PopStyleColor();
 			ImGui::EndChild();
 

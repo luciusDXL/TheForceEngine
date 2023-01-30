@@ -38,6 +38,10 @@ namespace TFE_DarkForces
 		"BRADY",
 		"UNLOCK",
 		"MAXOUT",
+		// New Cheats for TFE.
+		"FLY",
+		"NOCLIP",
+		"TESTER",
 	};
 
 	char s_cheatString[32] = { 0 };
@@ -105,6 +109,12 @@ namespace TFE_DarkForces
 			cheat_clearData();
 		}
 		return CHEAT_NONE;
+	}
+
+	const char* cheat_getStringFromID(CheatID id)
+	{
+		if (id <= CHEAT_NONE || id >= CHEAT_COUNT) { return nullptr; }
+		return c_cheatStrings[id - 1];
 	}
 
 	void cheat_clearData()

@@ -121,6 +121,10 @@ namespace TFE_RenderBackend
 			uiScale = 150;
 		}
 
+	#ifndef _WIN32
+		SDL_SetWindowFullscreen(window, windowed ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP);
+	#endif
+
 		TFE_Ui::init(window, context, uiScale);
 		return window;
 	}
@@ -374,6 +378,9 @@ namespace TFE_RenderBackend
 
 			SDL_SetWindowSize((SDL_Window*)m_window, m_windowState.monitorWidth, m_windowState.monitorHeight);
 			SDL_SetWindowPosition((SDL_Window*)m_window, s_displayBounds[displayIndex].x, s_displayBounds[displayIndex].y);
+		#ifndef _WIN32
+			SDL_SetWindowFullscreen((SDL_Window*)m_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+		#endif
 
 			m_windowState.width  = m_windowState.monitorWidth;
 			m_windowState.height = m_windowState.monitorHeight;
@@ -382,6 +389,9 @@ namespace TFE_RenderBackend
 		{
 			m_windowState.flags &= ~WINFLAG_FULLSCREEN;
 
+		#ifndef _WIN32
+			SDL_SetWindowFullscreen((SDL_Window*)m_window, 0);
+		#endif
 			SDL_RestoreWindow((SDL_Window*)m_window);
 			SDL_SetWindowResizable((SDL_Window*)m_window, SDL_TRUE);
 			SDL_SetWindowBordered((SDL_Window*)m_window, SDL_TRUE);

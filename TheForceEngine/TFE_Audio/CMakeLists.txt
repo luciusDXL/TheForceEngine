@@ -1,0 +1,7 @@
+file(GLOB SOURCES "*.cpp")
+if(LINUX)
+	# we use the system libraries on Linux
+	list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/RtAudio.cpp")
+	list(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/RtMidi.cpp")
+endif()
+target_sources(tfe PRIVATE ${SOURCES})

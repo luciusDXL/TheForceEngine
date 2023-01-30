@@ -45,6 +45,16 @@ namespace TFE_Jedi
 		return a > b ? a : b;
 	}
 
+	inline u32 min(u32 a, u32 b)
+	{
+		return a < b ? a : b;
+	}
+
+	inline u32 max(u32 a, u32 b)
+	{
+		return a > b ? a : b;
+	}
+
 	inline s32 clamp(s32 x, s32 a, s32 b)
 	{
 		return min(max(x, a), b);
@@ -226,6 +236,16 @@ namespace TFE_Jedi
 	}
 
 	inline f32 max(f32 a, f32 b)
+	{
+		return a > b ? a : b;
+	}
+
+	inline f64 min(f64 a, f64 b)
+	{
+		return a < b ? a : b;
+	}
+
+	inline f64 max(f64 a, f64 b)
 	{
 		return a > b ? a : b;
 	}

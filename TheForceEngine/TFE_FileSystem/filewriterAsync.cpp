@@ -1,4 +1,3 @@
-#pragma once
 #include "filewriterAsync.h"
 #include <assert.h>
 #include <stdio.h>

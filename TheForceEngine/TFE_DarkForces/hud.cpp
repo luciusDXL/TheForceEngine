@@ -17,6 +17,7 @@
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Level/roffscreenBuffer.h>
+#include <cstring>
 
 #define TFE_CONVERT_CAPS 0
 #if TFE_CONVERT_CAPS
@@ -89,7 +90,7 @@ namespace TFE_DarkForces
 	static s32 s_leftHudMove;
 	static JBool s_forceHudPaletteUpdate = JFALSE;
 
-	static s32 s_prevEnergy = 0;
+	static s32 s_prevBatteryPower = 0;
 	static s32 s_prevLifeCount = 0;
 	static s32 s_prevShields = 0;
 	static s32 s_prevHealth = 0;
@@ -331,7 +332,7 @@ namespace TFE_DarkForces
 	void hud_startup(JBool fromSave)
 	{
 		// Reset cached values.
-		s_prevEnergy = 0;
+		s_prevBatteryPower = 0;
 		s_prevLifeCount = 0;
 		s_prevShields = 0;
 		s_prevHealth = 0;
@@ -477,8 +478,8 @@ namespace TFE_DarkForces
 		}
 
 		// Energy
-		fixed16_16 energy = TFE_Jedi::abs(s_energy * 100);
-		s32 percent = round16(energy >> 1);
+		fixed16_16 batteryPower = TFE_Jedi::abs(s_batteryPower * 100);
+		s32 percent = round16(batteryPower >> 1);
 		{
 			const s32 offset = 3 * 3 + 1;	// offset 3 color indices + 1 because we are only changing the green color.
 			// I think this should be < 5, since there are 5 pips.
@@ -711,11 +712,11 @@ namespace TFE_DarkForces
 		// Go ahead and just update the HUD every frame, there are already checks to see if each item changed.
 		//if (s_leftHudShow || s_rightHudShow)
 		{
-			fixed16_16 energy = TFE_Jedi::abs(s_energy * 100);
-			s32 percent = round16(energy >> 1);
-			if (s_prevEnergy != percent)  // True when energy ticks down.
+			fixed16_16 batteryPower = TFE_Jedi::abs(s_batteryPower * 100);
+			s32 percent = round16(batteryPower >> 1);
+			if (s_prevBatteryPower != percent)  // True when energy ticks down.
 			{
-				s_prevEnergy = percent;
+				s_prevBatteryPower = percent;
 				const s32 offset = 3 * 3 + 1;	// offset 3 color indices + 1 because we are only changing the green color.
 				// I think this should be < 5, since there are 5 pips.
 				// This actually overwrites memory in DOS, but here I just made the array larger.

@@ -17,6 +17,9 @@
 #include <synchapi.h>
 #undef min
 #undef max
+#elif defined __linux__
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 namespace TFE_System
@@ -31,6 +34,7 @@ namespace TFE_System
 	static f64 s_refreshRate;
 	
 	static f64 s_dt = 1.0 / 60.0;		// This is just to handle the first frame, so any reasonable value will work.
+	static f64 s_dtRaw = 1.0 / 60.0;
 	static const f64 c_maxDt = 0.05;	// 20 fps
 
 	static bool s_synced = false;
@@ -143,6 +147,7 @@ namespace TFE_System
 			}
 		}
 
+		s_dtRaw = dt;
 		// Next make sure that if the current fps is too low, that the game just slows down.
 		// This avoids the "spiral of death" when using fixed time steps and avoids issues
 		// during loading spikes.
@@ -155,6 +160,11 @@ namespace TFE_System
 	f64 getDeltaTime()
 	{
 		return s_dt;
+	}
+
+	f64 getDeltaTimeRaw()
+	{
+		return s_dtRaw;
 	}
 
 	// Get time since "start time"
@@ -221,6 +231,17 @@ namespace TFE_System
 	void sleep(u32 sleepDeltaMS)
 	{
 		Sleep(sleepDeltaMS);
+	}
+#elif defined __linux__
+	void sleep(u32 sleepDeltaMS)
+	{
+		struct timespec ts = {0, 0};
+		while (sleepDeltaMS >= 1000) {
+			ts.tv_sec += 1;
+			sleepDeltaMS -= 1000;
+		}
+		ts.tv_nsec = sleepDeltaMS * 1000000;
+		nanosleep(&ts, NULL);
 	}
 #endif
 

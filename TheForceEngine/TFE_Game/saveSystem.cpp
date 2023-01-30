@@ -6,7 +6,8 @@
 
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/imageAsset.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 
 using namespace TFE_Input;
 

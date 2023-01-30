@@ -269,6 +269,15 @@ namespace TFE_Model_Jedi
 	{
 		// Memory will get freed with the memory region automatically.
 		s_models[pool].clear();
+		
+		// free the memory of each models' drawId object
+		const size_t count = s_modelList[pool].size();
+		JediModel** models = s_modelList[pool].data();
+		for (size_t i = 0; i < count; i++)
+		{
+			free(models[i]->drawId);
+		}
+
 		s_modelList[pool].clear();
 		s_modelNames[pool].clear();
 	}
@@ -348,7 +357,7 @@ namespace TFE_Model_Jedi
 		model->textureCount = 0;
 		model->textures = nullptr;
 		model->radius = 0;
-		model->drawId = -1;	// invalid ID initially.
+		model->drawId = nullptr;	// invalid ID initially.
 
 		// Check to see if the name has an underscore.
 		// If so, set the "isBridge" field.

@@ -14,6 +14,10 @@
 #include "windows/registry.h"
 #endif
 
+#ifdef __linux__
+#include "linux/steamlnx.h"
+#endif
+
 namespace TFE_Settings
 {
 	//////////////////////////////////////////////////////////////////////////////////
@@ -179,6 +183,13 @@ namespace TFE_Settings
 				{
 					pathValid = WindowsRegistry::getGogPathFromRegistry(c_gogProductId[gameId], c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
 				}
+			}
+#endif
+#ifdef __linux__
+			if (!pathValid)
+			{
+				pathValid = LinuxSteam::getSteamPath(c_steamProductId[gameId], c_steamLocalSubPath[gameId],
+								     c_validationFile[gameId], s_gameSettings.header[gameId].sourcePath);
 			}
 #endif
 			// If the registry approach fails, just try looking in the various hardcoded paths.
@@ -348,6 +359,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "perspectiveCorrect3DO", s_graphicsSettings.perspectiveCorrectTexturing);
 		writeKeyValue_Bool(settings, "extendAjoinLimits", s_graphicsSettings.extendAjoinLimits);
 		writeKeyValue_Bool(settings, "vsync", s_graphicsSettings.vsync);
+		writeKeyValue_Bool(settings, "show_fps", s_graphicsSettings.showFps);
 		writeKeyValue_Int(settings, "frameRateLimit", s_graphicsSettings.frameRateLimit);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
@@ -627,6 +639,10 @@ namespace TFE_Settings
 		else if (strcasecmp("vsync", key) == 0)
 		{
 			s_graphicsSettings.vsync = parseBool(value);
+		}
+		else if (strcasecmp("show_fps", key) == 0)
+		{
+			s_graphicsSettings.showFps = parseBool(value);
 		}
 		else if (strcasecmp("frameRateLimit", key) == 0)
 		{

@@ -1,7 +1,11 @@
 #include <cstring>
 
 #include "midiDevice.h"
-#include "RtMidi.h"
+#ifdef __linux__
+ #include <rtmidi/RtMidi.h>
+#else
+ #include "RtMidi.h"
+#endif
 #include <TFE_System/system.h>
 #include <algorithm>
 
@@ -51,7 +55,7 @@ namespace TFE_MidiDevice
 
 	void getDeviceName(u32 index, char* buffer, u32 maxLength)
 	{
-		if (index > getDeviceCount()) { return; }
+		if (index >= getDeviceCount()) { return; }
 		const std::string& name = s_midiout->getPortName(index);
 		const u32 copyLength = std::min((u32)name.length(), maxLength - 1);
 		strncpy(buffer, s_midiout->getPortName(index).c_str(), copyLength);

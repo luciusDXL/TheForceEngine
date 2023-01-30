@@ -5,7 +5,7 @@
 class ZipArchive : public Archive
 {
 public:
-	ZipArchive() : m_entryCount(0), m_curFile(INVALID_FILE), m_entries(nullptr), m_fileHandle(nullptr) {}
+	ZipArchive() : Archive(ARCHIVE_ZIP), m_entryCount(0), m_curFile(INVALID_FILE), m_entries(nullptr), m_fileHandle(nullptr) {}
 	~ZipArchive() override;
 
 	// Archive
