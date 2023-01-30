@@ -152,7 +152,7 @@ namespace TFE_DarkForces
 		s_queuedCheatID = CHEAT_##c ;	\
 		TFE_FrontEndUI::toggleConsole(); \
 		mission_pause(JFALSE); \
-		TFE_Input::enableRelativeMode(true); \
+		TFE_Input:setMouseCursorMode(MCURSORMODE_RELATIVE); \
 	}
 	CHEAT_CMD(LACDS);
 	CHEAT_CMD(LANTFH);
