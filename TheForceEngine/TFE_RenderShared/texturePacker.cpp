@@ -78,19 +78,22 @@ namespace TFE_Jedi
 	void debug_writeOutAtlas();
 #endif
 
-	TexturePage* allocateTexturePage(s32 width, s32 height)
+	TexturePage* allocateTexturePage(s32 width, s32 height, u32 flags)
 	{
+		const u32 pageColorDepth = (flags&TexturePackerFlags_TrueColor) ? 4 : 1;
+		const u32 pageSize = width * height * pageColorDepth;
+
 		TexturePage* page = (TexturePage*)malloc(sizeof(TexturePage));
 		memset(page, 0, sizeof(TexturePage));
-		page->backingMemory = (u8*)malloc(width * height);
-		memset(page->backingMemory, 0, width * height);
+		page->backingMemory = (u8*)malloc(pageSize);
+		memset(page->backingMemory, 0, pageSize);
 		page->root = nullptr;
 		page->textureCount = 0;
 		return page;
 	}
 				
 	// Initialize the texture packer once, it is persistent across levels.
-	TexturePacker* texturepacker_init(const char* name, s32 width, s32 height)
+	TexturePacker* texturepacker_init(const char* name, s32 width, s32 height, u32 flags)
 	{
 		TexturePacker* texturePacker = (TexturePacker*)malloc(sizeof(TexturePacker));
 		if (!texturePacker) { return nullptr; }
@@ -102,6 +105,7 @@ namespace TFE_Jedi
 		}
 
 		// Initialize with one page.
+		texturePacker->flags = flags;
 		texturePacker->pageCount = 1;
 		texturePacker->reservedPages = 0;
 		texturePacker->reservedTexturesPacked = 0;
@@ -111,7 +115,7 @@ namespace TFE_Jedi
 			texturepacker_destroy(texturePacker);
 			return nullptr;
 		}
-		texturePacker->pages[0] = allocateTexturePage(width, height);
+		texturePacker->pages[0] = allocateTexturePage(width, height, texturePacker->flags);
 
 		texturePacker->textureTable = (Vec4i*)malloc(sizeof(Vec4i) * MAX_TEXTURE_COUNT);	// 256Kb (count can be up to 64K).
 		if (!texturePacker->textureTable)
@@ -272,12 +276,32 @@ namespace TFE_Jedi
 	{
 		// Copy the texture into place.
 		const u8* srcImage = texData->image;
-		u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[node->rect.y * s_texturePacker->width + node->rect.x];
-		for (s32 y = 0; y < texData->height; y++, output += s_texturePacker->width)
+		if (s_texturePacker->flags & TexturePackerFlags_TrueColor)
 		{
-			for (s32 x = 0; x < texData->width; x++)
+			u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[(node->rect.y * s_texturePacker->width + node->rect.x) * 4];
+			const u32 stride = s_texturePacker->width * 4;
+			for (s32 y = 0; y < texData->height; y++, output += stride)
 			{
-				output[x] = srcImage[x*texData->height + y];
+				for (s32 x = 0, x4 = 0; x < texData->width; x++, x4 += 4)
+				{
+					// TODO: Convert from palette to true-color.
+					const u8 srcColor = srcImage[x*texData->height + y];
+					output[x4 + 0] = srcColor;
+					output[x4 + 1] = srcColor;
+					output[x4 + 2] = srcColor;
+					output[x4 + 3] = 0xff;
+				}
+			}
+		}
+		else
+		{
+			u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[node->rect.y * s_texturePacker->width + node->rect.x];
+			for (s32 y = 0; y < texData->height; y++, output += s_texturePacker->width)
+			{
+				for (s32 x = 0; x < texData->width; x++)
+				{
+					output[x] = srcImage[x*texData->height + y];
+				}
 			}
 		}
 		s_usedTexels += texData->width * texData->height;
@@ -296,12 +320,31 @@ namespace TFE_Jedi
 	{
 		// Copy the texture into place.
 		const u8* srcImage = texData->image;
-		u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[node->rect.y * s_texturePacker->width + node->rect.x];
-		for (s32 y = 0; y < texData->height; y++, output += s_texturePacker->width)
+		if (s_texturePacker->flags & TexturePackerFlags_TrueColor)
 		{
-			for (s32 x = 0; x < texData->width; x++)
+			u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[(node->rect.y * s_texturePacker->width + node->rect.x) << 2];
+			const u32 stride = s_texturePacker->width << 2;
+			for (s32 y = 0; y < texData->height; y++, output += stride)
 			{
-				output[x] = srcImage[(texData->height - y - 1)*texData->width + x];
+				for (s32 x = 0, x4 = 0; x < texData->width; x++, x4+=4)
+				{
+					const u8 srcColor = srcImage[(texData->height - y - 1)*texData->width + x];
+					output[x4 + 0] = srcColor;
+					output[x4 + 1] = srcColor;
+					output[x4 + 2] = srcColor;
+					output[x4 + 3] = 0xff;
+				}
+			}
+		}
+		else
+		{
+			u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[node->rect.y * s_texturePacker->width + node->rect.x];
+			for (s32 y = 0; y < texData->height; y++, output += s_texturePacker->width)
+			{
+				for (s32 x = 0; x < texData->width; x++)
+				{
+					output[x] = srcImage[(texData->height - y - 1)*texData->width + x];
+				}
 			}
 		}
 		s_usedTexels += texData->width * texData->height;
@@ -322,23 +365,52 @@ namespace TFE_Jedi
 		const s32 compressed = cell->compressed;
 		u8* imageData = (u8*)cell + sizeof(WaxCell);
 		u8* image = (compressed == 1) ? imageData + (cell->sizeX * sizeof(u32)) : imageData;
-		u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[node->rect.y*s_texturePacker->width + node->rect.x];
-
-		u8 columnWorkBuffer[WAX_DECOMPRESS_SIZE];
-		const u32* columnOffset = (u32*)((u8*)basePtr + cell->columnOffset);
-		for (s32 x = 0; x < cell->sizeX; x++)
+		if (s_texturePacker->flags & TexturePackerFlags_TrueColor)
 		{
-			u8* column = (u8*)image + columnOffset[x];
-			if (compressed)
-			{
-				const u8* colPtr = (u8*)cell + columnOffset[x];
-				sprite_decompressColumn(colPtr, columnWorkBuffer, cell->sizeY);
-				column = columnWorkBuffer;
-			}
+			u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[(node->rect.y*s_texturePacker->width + node->rect.x) << 2];
 
-			for (s32 y = 0; y < cell->sizeY; y++)
+			u8 columnWorkBuffer[WAX_DECOMPRESS_SIZE];
+			const u32* columnOffset = (u32*)((u8*)basePtr + cell->columnOffset);
+			for (s32 x = 0; x < cell->sizeX; x++)
 			{
-				output[y*s_texturePacker->width + x] = column[y];
+				u8* column = (u8*)image + columnOffset[x];
+				if (compressed)
+				{
+					const u8* colPtr = (u8*)cell + columnOffset[x];
+					sprite_decompressColumn(colPtr, columnWorkBuffer, cell->sizeY);
+					column = columnWorkBuffer;
+				}
+
+				for (s32 y = 0; y < cell->sizeY; y++)
+				{
+					s32 index = (y * s_texturePacker->width + x) << 2;
+					output[index + 0] = column[y];
+					output[index + 1] = column[y];
+					output[index + 2] = column[y];
+					output[index + 3] = 0xff;
+				}
+			}
+		}
+		else
+		{
+			u8* output = &s_texturePacker->pages[s_currentPage]->backingMemory[node->rect.y*s_texturePacker->width + node->rect.x];
+
+			u8 columnWorkBuffer[WAX_DECOMPRESS_SIZE];
+			const u32* columnOffset = (u32*)((u8*)basePtr + cell->columnOffset);
+			for (s32 x = 0; x < cell->sizeX; x++)
+			{
+				u8* column = (u8*)image + columnOffset[x];
+				if (compressed)
+				{
+					const u8* colPtr = (u8*)cell + columnOffset[x];
+					sprite_decompressColumn(colPtr, columnWorkBuffer, cell->sizeY);
+					column = columnWorkBuffer;
+				}
+
+				for (s32 y = 0; y < cell->sizeY; y++)
+				{
+					output[y*s_texturePacker->width + x] = column[y];
+				}
 			}
 		}
 		s_usedTexels += cell->sizeX * cell->sizeY;
@@ -499,6 +571,7 @@ namespace TFE_Jedi
 		s_texturePacker->textureTableGPU.update(s_texturePacker->textureTable, sizeof(Vec4i) * s_texturePacker->texturesPacked);
 
 		// Create the texture if one doesn't exist or we need more layers.
+		const u32 channels = (s_texturePacker->flags & TexturePackerFlags_TrueColor) ? 4 : 1;
 		if (!s_texturePacker->texture || s_texturePacker->pageCount > (s32)s_texturePacker->texture->getLayers())
 		{
 			if (s_texturePacker->texture)
@@ -506,11 +579,11 @@ namespace TFE_Jedi
 				TFE_RenderBackend::freeTexture(s_texturePacker->texture);
 			}
 			// Allocate at least 2 layers.
-			s_texturePacker->texture = TFE_RenderBackend::createTextureArray(s_texturePacker->width, s_texturePacker->height, max(2, s_texturePacker->pageCount), 1);
+			s_texturePacker->texture = TFE_RenderBackend::createTextureArray(s_texturePacker->width, s_texturePacker->height, max(2, s_texturePacker->pageCount), channels);
 		}
 
 		// Then update each page.
-		const size_t size = s_texturePacker->width * s_texturePacker->height;
+		const size_t size = s_texturePacker->width * s_texturePacker->height * channels;
 		for (s32 p = 0; p < s_texturePacker->pageCount; p++)
 		{
 			TexturePage* page = s_texturePacker->pages[p];
@@ -578,7 +651,7 @@ namespace TFE_Jedi
 			s_currentPage = s_texturePacker->reservedPages;
 			if (s_currentPage >= s_texturePacker->pageCount)
 			{
-				s_texturePacker->pages[s_texturePacker->pageCount] = allocateTexturePage(s_texturePacker->width, s_texturePacker->height);
+				s_texturePacker->pages[s_texturePacker->pageCount] = allocateTexturePage(s_texturePacker->width, s_texturePacker->height, s_texturePacker->flags);
 				s_texturePacker->pageCount++;
 
 				s_root = nullptr;
@@ -656,7 +729,7 @@ namespace TFE_Jedi
 					s_currentPage++;
 					if (s_currentPage >= s_texturePacker->pageCount)
 					{
-						s_texturePacker->pages[s_texturePacker->pageCount] = allocateTexturePage(s_texturePacker->width, s_texturePacker->height);
+						s_texturePacker->pages[s_texturePacker->pageCount] = allocateTexturePage(s_texturePacker->width, s_texturePacker->height, s_texturePacker->flags);
 						s_texturePacker->pageCount++;
 
 						s_root = nullptr;
@@ -745,7 +818,7 @@ namespace TFE_Jedi
 	{
 		if (!s_globalTexturePacker)
 		{
-			s_globalTexturePacker = texturepacker_init(c_globalTexturePackerName, c_globalPageWidth, c_globalPageWidth);
+			s_globalTexturePacker = texturepacker_init(c_globalTexturePackerName, c_globalPageWidth, c_globalPageWidth, TexturePackerFlags_None);
 			texturepacker_begin(s_globalTexturePacker);
 		}
 		return s_globalTexturePacker;

@@ -19,6 +19,12 @@ namespace TFE_Jedi
 {
 	struct TextureNode;
 
+	enum
+	{
+		TexturePackerFlags_None = 0,
+		TexturePackerFlags_TrueColor = FLAG_BIT(0),
+	};
+
 	struct TexturePage
 	{
 		s32 textureCount;
@@ -37,6 +43,7 @@ namespace TFE_Jedi
 		TexturePage** pages = nullptr;	// CPU copy of texture pages.
 
 		// General Data
+		u32 flags = TexturePackerFlags_None;
 		s32 width = 0;					// Page dimensions.
 		s32 height = 0;
 		s32 texturesPacked = 0;			// Total textures packed over all pages.
@@ -49,7 +56,7 @@ namespace TFE_Jedi
 	};
 
 	// Initialize the texture packer once, it is persistent across levels.
-	TexturePacker* texturepacker_init(const char* name, s32 width, s32 height);
+	TexturePacker* texturepacker_init(const char* name, s32 width, s32 height, u32 flags/*TexturePackerFlags_*/);
 	// Free memory and GPU buffers. Note: GPU textures need to be persistent, so the level allocator will not be used.
 	void texturepacker_destroy(TexturePacker* texturePacker);
 
