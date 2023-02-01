@@ -31,11 +31,37 @@ Full support for Dark Forces has been completed. You can play through the entire
 ## Current Release
 The current release only supports Dark Forces. All weapons, AI, items, and all other systems function, including IMuse. You can play through Dark Forces from beginning to end and even play Dark Forces mods. As with any project of this nature, there may be bugs and system specific issues. If you run into any bugs that cannot be reproduced in the DOS version, please post them on the forums or GitHub.
 
-## Cross-platform Support
-After version 1.0, one of the next big things to tackle is official Linux and Mac support. I expect proper support to become available early in 2023.
-
 ## Minimum Requirements
+### Windows
 * Windows 7, 64 bit.
 * OpenGL 3.3
+
+### Linux
+#### General Notes
+Runtime data like Savegames, Configuration, Mods, ... are by default stored at __${HOME}/.local/share/TheForceEngine/__.
+This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
+
+#### Required Libraries
+* [SDL2](TheForceEngine/TFE_FrontEndUI/frontEndUi.cpp) 2.24 or higher
+* [devIL](https://openil.sourceforge.net)
+* [RtAudio](https://www.music.mcgill.ca/~gary/rtaudio/) 5.2.0 or higher
+* [RtMidi](https://www.music.mcgill.ca/~gary/rtmidi/) 5.0.0 or higher
+* [GLEW](http://glew.sourceforge.net/) 2.2.0
+* OpenGL 3.3 capable driver (latest [mesa](https://www.mesa3d.org) or nvidia proprietary driver recommended)
+
+#### Recommended Tools
+##### Building from Source
+* [CMake](https://cmake.org) 3.12 or higher to build the source.
+* GCC-11 and newer or equivalent clang version.
+
+##### Running TFE
+* "KDialog" for file dialog on KDE Plasma Desktop Environment
+* "zenity" for file dialog on all other desktop environments
+* "TiMidity++" or "FluidSynth" software synthesizer for glorious MIDI Music.
+	* __timidity -iA --sequencer-ports=1__
+	* __fluidsynth -s -L2 /path/to/preferred/soundfont.sf2__
+* or external MIDI Hardware.
+
+
 
 Note that there are plans to lower the requirements for using the classic software renderer in the future. However, the minimum requirements for GPU Renderer support are here to stay. For now only OpenGL is supported, which might limit the use of some older Intel integrated GPUs that would otherwise be capable. There are near-term plans to add DirectX 10/11, Vulkan, and maybe Metal render backends which should enable more GPUs to run the engine efficiently.
