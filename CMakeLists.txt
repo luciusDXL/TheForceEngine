@@ -30,6 +30,8 @@ if(WIN32)
         set(CMAKE_INSTALL_LIBDIR ".")
         set(CMAKE_INSTALL_DATADIR ".")
 else()
+	set(TFE_ICONDIR "/usr/local/share/icons/hicolor")
+	set(TFE_DESKTOPDIR "/usr/local/share/applications")
 	# tweak DATADIR to end up with ./share/TheForceEngine/
         set(CMAKE_INSTALL_DATADIR "share/${PROJECT_NAME}"
                 CACHE PATH "Read-only architecture-independent data"
@@ -103,3 +105,13 @@ install(DIRECTORY
           GROUP_READ GROUP_EXECUTE GROUP_WRITE
           WORLD_READ WORLD_EXECUTE
 )
+
+# Linux .desktop files
+if(LINUX)
+	install(
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.desktop" DESTINATION "${TFE_DESKTOPDIR}"
+	)
+	install(
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.png" DESTINATION "${TFE_ICONDIR}/256x256/apps"
+	)
+endif()
