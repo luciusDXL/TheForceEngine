@@ -1076,7 +1076,7 @@ namespace TFE_DarkForces
 			fixed16_16 x0 = xf;
 
 			fixed16_16 fWidth = mul16(intToFixed16(font->width), xScale);
-			for (char c = *msg; c != 0;)
+			for (unsigned char c = *(unsigned char *)msg; c != 0;)
 			{
 				if (c == '\n')
 				{
@@ -1095,7 +1095,7 @@ namespace TFE_DarkForces
 					xf += mul16(intToFixed16(font->horzSpacing + glyph->width), xScale);
 				}
 				msg++;
-				c = *msg;
+				c = *(unsigned char *)msg;
 			}
 		}
 	}
