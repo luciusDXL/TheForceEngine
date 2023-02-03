@@ -226,10 +226,7 @@ namespace FileUtil
 
 	bool exists(const char *path)
 	{
-		struct stat st;
-		int ret = stat(path, &st);
-
-		return ret ? (errno != ENOENT) : true;
+		return existsNoCase(path);
 	}
 
 	// Linux filesystems are case-sensitive; try to open the
