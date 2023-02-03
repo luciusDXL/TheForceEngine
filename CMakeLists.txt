@@ -66,6 +66,7 @@ elseif(LINUX)
 				${RTAUDIO_LIBRARIES}
 				${RTMIDI_LIBRARIES}
 	)
+	
 	# set up build directory to be able to run TFE immediately: symlink
 	# the necessary support file directories into the build env.
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Documentation)
