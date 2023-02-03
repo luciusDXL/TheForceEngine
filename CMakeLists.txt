@@ -39,7 +39,6 @@ include(GNUInstallDirs)
 
 
 add_executable(tfe)
-target_include_directories(tfe PRIVATE TheForceEngine)
 
 if(WIN32)
 	set_target_properties(tfe PROPERTIES OUTPUT_NAME "TheForceEngine")
@@ -55,6 +54,7 @@ elseif(LINUX)
 	pkg_check_modules(ILU REQUIRED ILU)
 	set(OpenGL_GL_PREFERENCE GLVND)
 	find_package(OpenGL REQUIRED)
+	target_include_directories(tfe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 	target_include_directories(tfe PRIVATE ${SDL2_INCLUDE_DIRS})
 	target_link_libraries(tfe PRIVATE
 				${OPENGL_LIBRARIES}
@@ -73,7 +73,11 @@ elseif(LINUX)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Shaders)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Images)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Text)
+	include(CreateGitVersionH.cmake)
+	create_git_version_h()
 endif()
+
+target_include_directories(tfe PRIVATE TheForceEngine)
 
 add_subdirectory(TheForceEngine/)
 
