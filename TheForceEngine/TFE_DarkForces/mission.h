@@ -47,5 +47,5 @@ namespace TFE_DarkForces
 	extern u8 s_loadingScreenPal[];
 	extern u8 s_levelPalette[];
 	extern u8 s_basePalette[];
-	extern u8 s_escMenuPalette[];
+	extern u32 s_escMenuPalette[];
 }  // namespace TFE_DarkForces

@@ -134,16 +134,18 @@ namespace TFE_DarkForces
 		return range;
 	}
 			
-	void escapeMenu_load()
+	void escapeMenu_load(u32* escMenuPalette)
 	{
 		if (!s_emState.escMenuFrames)
 		{
 			FilePath filePath;
 			if (!TFE_Paths::getFilePath("MENU.LFD", &filePath)) { return; }
 			Archive* archive = Archive::getArchive(ARCHIVE_LFD, "MENU", filePath.path);
+			u8 palbuffer[768];
 			TFE_Paths::addLocalArchive(archive);
 				s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
 				s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.anim", &s_emState.confirmMenuFrames);
+				loadPaletteFromPltt("menu.pltt", palbuffer);
 			TFE_Paths::removeLastArchive();
 
 			// Adjust button ranges since different languages seem to move the menu around for some reason...
@@ -165,6 +167,13 @@ namespace TFE_DarkForces
 			
 			// TFE
 			TFE_Jedi::renderer_addHudTextureCallback(escapeMenu_getTextures);
+			// convert palette to argb entries
+			memset(escMenuPalette, 0, 256 * sizeof(u32));
+			u8* pb = palbuffer;
+			for (u32 i = 0; i < 256; i++, pb += 3)
+			{
+				escMenuPalette[i] = 0xffu << 24 | ((u32)pb[0]) | ((u32)(pb[1]) << 8) | ((u32)pb[2] << 16);
+			}
 		}
 	}
 
