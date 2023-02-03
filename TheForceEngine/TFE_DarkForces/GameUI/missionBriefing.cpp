@@ -47,6 +47,7 @@ namespace TFE_DarkForces
 	static LActor* s_menuActor = nullptr;
 	static LPalette* s_palette = nullptr;
 	static u8* s_framebuffer = nullptr;
+	static LangHotkeys* s_langKeys;
 
 	s16 s_briefY;
 	s32 s_briefingMaxY;
@@ -81,8 +82,10 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// API Implementation
 	///////////////////////////////////////////
-	void missionBriefing_start(const char* archive, const char* bgAnim, const char* mission, const char* palette, s32 skill)
+	void missionBriefing_start(const char* archive, const char* bgAnim, const char* mission, const char* palette, s32 skill, LangHotkeys* langKeys)
 	{
+		s_langKeys = langKeys;
+
 		menu_init();
 		menu_startupDisplay();
 
@@ -353,23 +356,23 @@ namespace TFE_DarkForces
 			}
 		}
 
-		if (TFE_Input::keyPressed(KEY_E))
+		if (TFE_Input::keyPressed(s_langKeys->k_easy))
 		{
 			s_keyPressed = BRIEF_BTN_EASY;
 			s_skill = 0;
 		}
-		else if (TFE_Input::keyPressed(KEY_M))
+		else if (TFE_Input::keyPressed(s_langKeys->k_med))
 		{
 			s_keyPressed = BRIEF_BTN_MEDIUM;
 			s_skill = 1;
 		}
-		else if (TFE_Input::keyPressed(KEY_H))
+		else if (TFE_Input::keyPressed(s_langKeys->k_hard))
 		{
 			s_keyPressed = BRIEF_BTN_HARD;
 			s_skill = 2;
 		}
 
-		if (TFE_Input::keyPressed(KEY_C) || TFE_Input::keyPressed(KEY_ESCAPE))
+		if (TFE_Input::keyPressed(s_langKeys->k_canc) || TFE_Input::keyPressed(KEY_ESCAPE))
 		{
 			*abort = JTRUE;
 			exitBriefing = JTRUE;

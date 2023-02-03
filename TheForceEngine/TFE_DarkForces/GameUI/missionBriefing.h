@@ -5,6 +5,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <TFE_System/types.h>
+#include <TFE_DarkForces/util.h>
 #include <TFE_DarkForces/Landru/lrect.h>
 
 namespace TFE_DarkForces
@@ -16,7 +17,7 @@ namespace TFE_DarkForces
 		BRIEF_PAGE_SCROLL = BRIEF_LINE_SCROLL * 10,
 	};
 
-	void  missionBriefing_start(const char* archive, const char* bgAnim, const char* mission, const char* palette, s32 skill);
+	void  missionBriefing_start(const char* archive, const char* bgAnim, const char* mission, const char* palette, s32 skill, LangHotkeys* langKeys);
 	void  missionBriefing_cleanup();
 	JBool missionBriefing_update(s32* skill, JBool* abort);
 }

@@ -22,4 +22,5 @@ namespace TFE_DarkForces
 
 	void gameMessage_freeBuffer();
 	s32 parseMessageFile(GameMessages* messages, const FilePath* path, s32 mode);
+	GameMessage* getGameMessage(GameMessages* messages, s32 msgId);
 }  // TFE_DarkForces

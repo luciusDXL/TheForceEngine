@@ -177,7 +177,7 @@ namespace TFE_DarkForces
 		// Game flow end (restart).
 		{ -1, GMODE_END, -1 }
 	};
-			
+
 	/////////////////////////////////////////////
 	// Internal State
 	/////////////////////////////////////////////
@@ -208,6 +208,7 @@ namespace TFE_DarkForces
 		Task* loadMissionTask = nullptr;
 		CutsceneState* cutsceneList = nullptr;
 		char customGobName[256] = "";
+		LangHotkeys langKeys;
 	};
 	static RunGameState   s_runGameState = {};
 	static SharedGameState s_sharedState = {};
@@ -304,8 +305,8 @@ namespace TFE_DarkForces
 		setInitialLevel(startLevel);
 		
 		// TFE Specific
-		agentMenu_load();
-		escapeMenu_load();
+		agentMenu_load(&s_sharedState.langKeys);
+		escapeMenu_load(&s_sharedState.langKeys);
 		// Add texture callbacks.
 		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);
 		renderer_addHudTextureCallback(TFE_Jedi::level_getObjectTextures);
@@ -727,7 +728,7 @@ namespace TFE_DarkForces
 					brief = &s_sharedState.briefingList.briefing[briefingIndex];
 					if (brief)
 					{
-						missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill);
+						missionBriefing_start(brief->archive, brief->bgAnim, levelName, brief->palette, skill, &s_sharedState.langKeys);
 						s_runGameState.state = GSTATE_BRIEFING;
 					}
 				}
@@ -1110,6 +1111,41 @@ namespace TFE_DarkForces
 	{
 		return s_sharedState.mapNumFont;
 	}
+
+	static void parseKey(GameMessages* msgs, u32 keyId, KeyboardCode* dest, KeyboardCode dflt)
+	{
+		GameMessage* m = getGameMessage(msgs, keyId);
+		unsigned char c;
+
+		*dest = dflt;
+		if (m)
+		{
+			c = toupper(m->text[0]);
+			if ((c >= 'A') && (c <= 'Z'))
+			{
+				*dest = (KeyboardCode)((u32)(KEY_A) + (c - 'A'));
+			}
+		}
+	}
+
+	static void loadLangHotkeys(void)
+	{
+		GameMessages msgs;
+		FilePath fp;
+
+		TFE_Paths::getFilePath("HOTKEYS.MSG", &fp);
+		parseMessageFile(&msgs, &fp, 1);
+		parseKey(&msgs, 160, &s_sharedState.langKeys.k_yes,   KEY_Y);
+		parseKey(&msgs, 350, &s_sharedState.langKeys.k_quit,  KEY_Q);
+		parseKey(&msgs, 330, &s_sharedState.langKeys.k_cont,  KEY_R);
+		parseKey(&msgs, 340, &s_sharedState.langKeys.k_conf,  KEY_C);
+		parseKey(&msgs, 110, &s_sharedState.langKeys.k_agdel, KEY_R);
+		parseKey(&msgs, 130, &s_sharedState.langKeys.k_begin, KEY_B);
+		parseKey(&msgs, 240, &s_sharedState.langKeys.k_easy,  KEY_E);
+		parseKey(&msgs, 250, &s_sharedState.langKeys.k_med,   KEY_M);
+		parseKey(&msgs, 260, &s_sharedState.langKeys.k_hard,  KEY_H);
+		parseKey(&msgs, 230, &s_sharedState.langKeys.k_canc,  KEY_C);
+	}
 				
 	void gameStartup()
 	{
@@ -1125,6 +1161,7 @@ namespace TFE_DarkForces
 		projectile_startup();
 		hitEffect_startup();
 		weapon_startup();
+		loadLangHotkeys();
 
 		FilePath filePath;
 		TFE_Paths::getFilePath("swfont1.fnt", &filePath);
