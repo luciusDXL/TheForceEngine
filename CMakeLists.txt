@@ -66,7 +66,6 @@ elseif(LINUX)
 				${RTAUDIO_LIBRARIES}
 				${RTMIDI_LIBRARIES}
 	)
-	configure_file("${CMAKE_SOURCE_DIR}/TheForceEngine/${CMAKE_PROJECT_NAME}.desktop.in" "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.desktop")
 	# set up build directory to be able to run TFE immediately: symlink
 	# the necessary support file directories into the build env.
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Documentation)
@@ -108,7 +107,7 @@ install(DIRECTORY
 # Linux .desktop files
 if(LINUX)
 	install(
-		FILES "${CMAKE_BINARY_DIR}/TheForceEngine.desktop" DESTINATION "share/applications"
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.desktop" DESTINATION "share/applications"
 	)
 	install(
 		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.png" DESTINATION "${TFE_ICONDIR}/256x256/apps"

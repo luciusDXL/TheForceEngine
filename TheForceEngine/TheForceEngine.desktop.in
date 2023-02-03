@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=${CMAKE_PROJECT_NAME}
-Comment=${CMAKE_PROJECT_DESCRIPTION}
-Categories=Game;Shooter
-Exec=tfelnx
-Path=${CMAKE_INSTALL_FULL_BINDIR}
-Icon=TheForceEngine
-StartupWMClass=tfelnx
