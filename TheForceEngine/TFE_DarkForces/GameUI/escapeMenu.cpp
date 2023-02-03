@@ -74,6 +74,7 @@ namespace TFE_DarkForces
 	};
 	static const Vec2i c_escButtonDim = { 96, 16 };
 	static Vec4i s_confirmButtonRange[4];
+	static u8 s_escMenuPalette[768];
 
 	struct EscapeMenuState
 	{
@@ -144,6 +145,7 @@ namespace TFE_DarkForces
 			TFE_Paths::addLocalArchive(archive);
 				s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
 				s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.anim", &s_emState.confirmMenuFrames);
+			loadPaletteFromPltt("menu.pltt", s_escMenuPalette);
 			TFE_Paths::removeLastArchive();
 
 			// Adjust button ranges since different languages seem to move the menu around for some reason...
@@ -219,6 +221,19 @@ namespace TFE_DarkForces
 				s_emState.framebufferCopy->image[i] = 63 - luminance;
 			}
 		}
+	}
+
+	static void setPalette(u8 *pal)
+	{
+		// Update the palette.
+		u32 palette[256];
+		u32* outColor = palette;
+		u8* srcColor = pal;
+		for (s32 i = 0; i < 256; i++, outColor++, srcColor += 3)
+		{
+			*outColor = u32(srcColor[0]) | (u32(srcColor[1]) << 8u) | (u32(srcColor[2]) << 16u) | (0xffu << 24u);
+		}
+		vfb_setPalette(palette);
 	}
 
 	void escapeMenu_open(u8* framebuffer, u8* palette)
@@ -369,6 +384,8 @@ namespace TFE_DarkForces
 
 	void escapeMenu_draw(JBool drawMouse, JBool drawBackground)
 	{
+		setPalette(s_escMenuPalette);
+
 		// TFE Note: handle GPU drawing differently, though the UI update is exactly the same.
 		if (TFE_Jedi::getSubRenderer() == TSR_CLASSIC_GPU)
 		{
