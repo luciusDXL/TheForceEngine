@@ -1,3 +1,3 @@
 #pragma once
 
-#include "gitVersion.h"
+#include <gitVersion.h>
