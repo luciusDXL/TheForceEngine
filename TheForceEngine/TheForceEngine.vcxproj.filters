@@ -1225,6 +1225,9 @@
     <ClInclude Include="TFE_Audio\audioOutput.h">
       <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
+    <ClInclude Include="Shaders\lighting.h">
+      <Filter>Source\Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

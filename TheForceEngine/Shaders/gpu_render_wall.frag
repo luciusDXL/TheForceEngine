@@ -1,3 +1,7 @@
+// #ifdef DYNAMIC_LIGHTING
+#include "Shaders/lighting.h"
+// #endif
+
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
 uniform vec4 LightData;
@@ -20,6 +24,9 @@ flat in vec4 Frag_Color;
 flat in float Frag_Scale;
 flat in int Frag_TextureId;
 flat in int Frag_Flags;
+// #ifdef DYNAMIC_LIGHTING
+flat in vec3 Frag_Normal;
+// #endif
 in vec3 Frag_Pos;
 in vec4 Texture_Data;
 out vec4 Out_Color;
@@ -33,6 +40,33 @@ vec3 getAttenuatedColor(int baseColor, int light)
 		color = int(texelFetch(Colormap, uv, 0).r * 255.0);
 	}
 	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
+}
+
+vec3 getAttenuatedColorBlend(float baseColor, float light)
+{
+	int color = int(baseColor);
+	if (light < 31)
+	{
+		int l0 = int(light);
+		int l1 = min(31, l0 + 1);
+		float blendFactor = fract(light);
+
+		ivec4 uv = ivec4(color, l0, color, l1);
+		int color0 = int(texelFetch(Colormap, uv.xy, 0).r * 255.0);
+		int color1 = int(texelFetch(Colormap, uv.zw, 0).r * 255.0);
+
+		vec3 value0 = texelFetch(Palette, ivec2(color0, 0), 0).rgb;
+		vec3 value1 = texelFetch(Palette, ivec2(color1, 0), 0).rgb;
+		return mix(value0, value1, blendFactor);
+		//return vec3(light/31.0);
+	}
+	//return vec3(1.0);
+	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
+}
+
+vec3 fmod(vec3 x, vec3 y)
+{
+	return x - floor(x/y)*y;
 }
 
 ivec2 imod(ivec2 x, ivec2 y)
@@ -126,11 +160,6 @@ float sampleTextureClamp(int id, vec2 uv, bool opaque)
 	return value;
 }
 
-float sqr(float x)
-{
-	return x*x;
-}
-
 vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out float yLimit)
 {
 	// Cylindrical
@@ -199,6 +228,7 @@ vec2 calculateSkyProjection(vec3 cameraVec, vec2 texOffset, out float fade, out 
 void main()
 {
     vec3 cameraRelativePos = Frag_Pos;
+	vec3 lightPos = Frag_Pos + CameraPos.xyz;
 	vec2 uv = vec2(0.0);
 	bool sky = Frag_Uv.y > 2.5;
 	bool sign = false;
@@ -241,6 +271,7 @@ void main()
 		float t = Frag_Uv.x / Frag_Pos.y;
 		// Camera relative position on the plane, add CameraPos to get world space position.
 		cameraRelativePos = t*Frag_Pos;
+		lightPos = cameraRelativePos + CameraPos.xyz;
 
 		// Warp texture uvs for non-64x64 tiles.
 		applyFlatWarp = true;
@@ -275,8 +306,37 @@ void main()
 			light = 0.0;
 			if (worldAmbient < 31.0 || cameraLightSource != 0.0)
 			{
+				float depthScaled = min(z * 4.0, 127.0);
+				float base = floor(depthScaled);
+
+				// Cubic
+				float d0 = max(0.0, base - 1.0);
+				float d1 = base;
+				float d2 = min(127.0, base + 1.0);
+				float d3 = min(127.0, base + 2.0);
+				float blendFactor = fract(depthScaled);
+				
+				float lightSource0 = 31.0 - (texture(Colormap, vec2(d0/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
+				float lightSource1 = 31.0 - (texture(Colormap, vec2(d1/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
+				float lightSource2 = 31.0 - (texture(Colormap, vec2(d2/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
+				float lightSource3 = 31.0 - (texture(Colormap, vec2(d3/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
+
+				float lightSource = cubicInterpolation(lightSource0, lightSource1, lightSource2, lightSource3, blendFactor);
+				
+				/* // Linear
+				float d0 = base;
+				float d1 = min(127.0, base + 1.0);
+				float blendFactor = fract(depthScaled);
+				float lightSource0 = 31.0 - (texture(Colormap, vec2(d0/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
+				float lightSource1 = 31.0 - (texture(Colormap, vec2(d1/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
+				float lightSource = mix(lightSource0, lightSource1, blendFactor);
+				*/
+
+				/* // Point
 				float depthScaled = min(floor(z * 4.0), 127.0);
 				float lightSource = 31.0 - (texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient);
+				*/
+
 				if (lightSource > 0)
 				{
 					light += lightSource;
@@ -285,7 +345,10 @@ void main()
 			light = max(light, sectorAmbient);
 
 			float minAmbient = sectorAmbient * 7.0 / 8.0;
-			float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
+			//float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
+			// Smooth out the attenuation.
+			float depthAtten = z * 0.09375;
+			//light = max(light - depthAtten, minAmbient) + lightOffset;
 			light = max(light - depthAtten, minAmbient) + lightOffset;
 			light = clamp(light, 0.0, 31.0);
 		}
@@ -331,6 +394,26 @@ void main()
 	}
 
 	// Enable solid color rendering for wireframe.
-	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColor(int(baseColor), int(light));
+	//Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColor(int(baseColor), int(light));
+	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColorBlend(baseColor, light);
 	Out_Color.a = 1.0;
+
+	// Optional dynamic lighting.
+	if (!sky)
+	{
+		vec3 albedo = texelFetch(Palette, ivec2(baseColor, 0), 0).rgb;
+		Out_Color.rgb = handleLighting(albedo, lightPos, Frag_Normal, CameraPos, Out_Color.rgb);
+
+		float d = max(abs(lightPos.x - CameraPos.x), abs(lightPos.z - CameraPos.z)) / 16.0;
+		float mip = log2(max(1.0, d));
+		float scale = pow(2.0, floor(mip) + 3.0);
+		
+		ivec3 cellId = ivec3((lightPos - CameraPos + vec3(1024.0)) / scale);
+		int grid = (cellId.x + cellId.z) & 1;
+		Out_Color.rgb = grid == 0 ? vec3(0.5, 0.5, 1.0) : vec3(1.0, 1.0, 1.0);
+		if (fract(mip) > 0.95)
+		{
+			Out_Color.rgb = vec3(1.0, 0.0, 0.0);
+		}
+	}
 }

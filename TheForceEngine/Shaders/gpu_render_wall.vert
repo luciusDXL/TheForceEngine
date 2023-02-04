@@ -17,6 +17,9 @@ flat out vec4 Frag_Color;
 flat out float Frag_Scale;
 flat out int Frag_TextureId;
 flat out int Frag_Flags;
+// #ifdef DYNAMIC_LIGHTING
+flat out vec3 Frag_Normal;
+// #endif
 
 void unpackPortalInfo(uint portalInfo, out uint portalOffset, out uint portalCount)
 {
@@ -64,6 +67,10 @@ void main()
 	// Offset should not be required, but added just in case.
 	int wallStart = int(sectorData.w + 0.5);
 	wallId += wallStart;
+
+	// #ifdef DYNAMIC_LIGHTING
+	vec3 normal = vec3(0.0, -1.0, 0.0);
+	// #endif
 	
 	// Generate the output position and uv for the vertex.
 	vec3 vtx_pos;
@@ -77,6 +84,10 @@ void main()
 	{
 		vec2 vtx = (vertexId & 1)==0 ? positions.xy : positions.zw;
 		vtx_pos = vec3(vtx.x, (vertexId < 2) ? ceilHeight : floorHeight, vtx.y);
+
+		// #ifdef DYNAMIC_LIGHTING
+		normal = vec3(positions.w - positions.y, 0.0, -(positions.z - positions.x));
+		// #endif
 
 		float texBase = floorHeight;
 	#ifdef SECTOR_TRANSPARENT_PASS
@@ -220,6 +231,10 @@ void main()
 		float y1 = (flatIndex==0) ? floorHeight + extrusion : ceilHeight;
 		vec2 vtx = (vertexId & 1)==0 ? positions.xy : positions.zw;
 
+		// #ifdef DYNAMIC_LIGHTING
+		normal = (flatIndex==0) ? vec3(0.0, -1.0, 0.0) : vec3(0.0, 1.0, 0.0);
+		// #endif
+
 		// TODO: I think these can be removed entirely by adjusting the height offset on the CPU to match the extension offset.
 		// That would avoid having to rendering these parts at all.
 		if (skyAdj)
@@ -268,6 +283,10 @@ void main()
 		vtx_color.r = 0.0;
 		vtx_color.g = float(48 + 16*(1-flatIndex));
 
+		// #ifdef DYNAMIC_LIGHTING
+		normal = (flatIndex==0) ? vec3(0.0, -1.0, 0.0) : vec3(0.0, 1.0, 0.0);
+		// #endif
+
 		// Store the relative plane height for the floor/ceiling projection in the fragment shader.
 		float planeHeight = (flatIndex==0) ? floorHeight : ceilHeight;
 		vtx_uv.x = planeHeight - CameraPos.y;
@@ -302,4 +321,8 @@ void main()
 	Texture_Data = texture_data;
 	Frag_Flags = flags;
 	Frag_Scale = scale;
+
+	// #ifdef DYNAMIC_LIGHTING
+	Frag_Normal = normalize(normal);
+	// #endif
 }

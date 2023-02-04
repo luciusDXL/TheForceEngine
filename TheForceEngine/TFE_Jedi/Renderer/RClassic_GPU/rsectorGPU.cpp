@@ -407,13 +407,34 @@ namespace TFE_Jedi
 			if (s_colorMap && s_lightSourceRamp)
 			{
 				u32 colormapData[256 * 32];
+				f32 filter0[128];
+				f32 filter1[128];
+				for (s32 i = 0; i < 128; i++)
+				{
+					filter0[i] = f32(s_lightSourceRamp[i]);
+				}
+				// 2 passes...
+				for (s32 i = 0; i < 128; i++)
+				{
+					filter1[i] = (filter0[max(0, i - 1)] + filter0[min(127, i + 1)]) * 0.5f;
+				}
+				for (s32 i = 0; i < 128; i++)
+				{
+					filter0[i] = (filter1[max(0, i - 1)] + filter1[min(127, i + 1)]) * 0.5f;
+				}
+				for (s32 i = 0; i < 128; i++)
+				{
+					filter0[i] = max(0.0f, min(31.0f, filter0[i]));
+				}
+
 				for (s32 i = 0; i < 256 * 32; i++)
 				{
 					u8* data = (u8*)&colormapData[i];
 					data[0] = s_colorMap[i];
 					if (i < 128)
 					{
-						data[1] = s_lightSourceRamp[i];
+						data[1] = u8(filter0[i] * 8.23f);
+						//data[1] = s_lightSourceRamp[i];
 					}
 					else
 					{
@@ -421,6 +442,7 @@ namespace TFE_Jedi
 					}
 					data[2] = data[3] = 0;
 				}
+
 				TFE_RenderBackend::freeTexture(s_colormapTex);
 				s_colormapTex = TFE_RenderBackend::createTexture(256, 32, colormapData);
 			}
