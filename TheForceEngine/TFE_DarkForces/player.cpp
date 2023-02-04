@@ -158,6 +158,7 @@ namespace TFE_DarkForces
 	static s32 s_levelAtten = 0;
 	static s32 s_prevCollisionFrameWall;
 	static Safe* s_curSafe = nullptr;
+	static s32 s_footstepNumber;
 	// Actions
 	static JBool s_playerUse = JFALSE;
 	static JBool s_playerActionUse = JFALSE;
@@ -171,8 +172,10 @@ namespace TFE_DarkForces
 	// Currently playing sound effects.
 	static SoundEffectId s_crushSoundId = 0;
 	static SoundEffectId s_kyleScreamSoundId = 0;
+	static SoundEffectId s_swimmingSoundId = 0;
 	// Position and orientation.
 	static vec3_fixed s_playerPos;
+	static vec3_fixed s_lastFootstepPos;
 	static fixed16_16 s_playerObjHeight;
 	static angle14_32 s_playerObjPitch;
 	static angle14_32 s_playerObjYaw;
@@ -244,6 +247,12 @@ namespace TFE_DarkForces
 	SoundSourceId s_playerHealthHitSoundSource;
 	SoundSourceId s_kyleScreamSoundSource;
 	SoundSourceId s_playerShieldHitSoundSource;
+	SoundSourceId s_cleatStep1SoundSource;
+	SoundSourceId s_cleatStep2SoundSource;
+	SoundSourceId s_cleatStep3SoundSource;
+	SoundSourceId s_cleatStep4SoundSource;
+	SoundSourceId s_swimSoundSource;
+	SoundSourceId s_swimStopSoundSource;
 
 	fixed16_16 s_playerHeight;
 	// Speed Modifiers
@@ -266,6 +275,7 @@ namespace TFE_DarkForces
 	void handlePlayerPhysics();
 	void handlePlayerActions();
 	void handlePlayerScreenFx();
+	void handlePlayerMovementSounds();
 
 	void tfe_showSecretFoundMsg();
 
@@ -292,6 +302,12 @@ namespace TFE_DarkForces
 		s_playerHealthHitSoundSource     = sound_load("health1.voc",  SOUND_PRIORITY_HIGH4);
 		s_kyleScreamSoundSource          = sound_load("fall.voc",     SOUND_PRIORITY_MED4);
 		s_playerShieldHitSoundSource     = sound_load("shield1.voc",  SOUND_PRIORITY_MED5);
+		s_cleatStep1SoundSource			 = sound_load("cleat1.voc",	  SOUND_PRIORITY_MED2);
+		s_cleatStep2SoundSource			 = sound_load("cleat2.voc",	  SOUND_PRIORITY_MED2);
+		s_cleatStep3SoundSource			 = sound_load("cleat3.voc",   SOUND_PRIORITY_MED2);
+		s_cleatStep4SoundSource			 = sound_load("cleat4.voc",   SOUND_PRIORITY_MED2);
+		s_swimSoundSource				 = sound_load("swim.voc",	  SOUND_PRIORITY_MED2);
+		s_swimStopSoundSource			 = sound_load("swim-out.voc", SOUND_PRIORITY_MED2);
 
 		s_playerInfo = { 0 }; // Make sure this is clear...
 		s_playerInfo.ammoEnergy  = pickup_addToValue(0, 100, 999);
@@ -496,6 +512,11 @@ namespace TFE_DarkForces
 		s_externalVelZ = 0;
 		s_playerCrouchSpd = 0;
 		s_playerSpeedAve = 0;
+
+		s_lastFootstepPos.x = 0;
+		s_lastFootstepPos.y = 0;
+		s_lastFootstepPos.z = 0;
+		s_footstepNumber = 0;
 
 		s_weaponLight    = 0;
 		s_levelAtten     = 0;
@@ -1180,6 +1201,10 @@ namespace TFE_DarkForces
 		s_playerTick = s_curTick;
 		s_prevPlayerTick  = s_curTick;
 
+		s_lastFootstepPos.x = s_playerObject->posWS.x;
+		s_lastFootstepPos.y = s_playerObject->posWS.y;
+		s_lastFootstepPos.z = s_playerObject->posWS.z;
+
 		while (msg != MSG_FREE_TASK)
 		{
 			if (msg == MSG_RUN_TASK)
@@ -1202,6 +1227,7 @@ namespace TFE_DarkForces
 					handlePlayerPhysics();
 					handlePlayerActions();
 					handlePlayerScreenFx();
+					handlePlayerMovementSounds();
 					if (s_playerDying)
 					{
 						handlePlayerDying();
@@ -1353,7 +1379,10 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				sound_play(s_jumpSoundSource);
+				if (!s_playerInWater)
+				{
+					sound_play(s_jumpSoundSource);
+				}
 
 				fixed16_16 speed = PLAYER_JUMP_IMPULSE << s_jumpScale;
 				s_playerJumping = JTRUE;
@@ -2174,6 +2203,78 @@ namespace TFE_DarkForces
 		s_prevDistFromFloor = max(distFromFloor, s_prevDistFromFloor);
 	}
 
+	void handlePlayerMovementSounds()
+	{
+		fixed16_16 pHeight = s_playerObject->posWS.y;
+		fixed16_16 fHeight = s_playerObject->sector->floorHeight;
+		s32 distFromLastFootstep = distApprox(s_lastFootstepPos.x, s_lastFootstepPos.z, s_playerObject->posWS.x, s_playerObject->posWS.z) / 65536;
+
+		// In water
+		if (s_playerInWater && (pHeight - fHeight) >= FIXED(3) && s_playerSpeedAve > FIXED(8))
+		{
+			// player is in water deeper than 3dfu and moving
+			if (!s_swimmingSoundId)
+			{
+				s_swimmingSoundId = sound_play(s_swimSoundSource);
+			}
+		}
+		else
+		{
+			// stop swimming sound
+			if (s_swimmingSoundId)
+			{
+				sound_stop(s_swimmingSoundId);
+				sound_play(s_swimStopSoundSource);
+				s_swimmingSoundId = NULL_SOUND;
+			}
+		}
+
+		// Not in water
+		if (s_playerSector->secHeight - 1 < 0)
+		{
+			// play next footstep sound if player has moved 16 units and is on the floor; reset lastFootstepPos
+			// TODO set a constant for footstep distance
+			if (distFromLastFootstep >= 16 && s_onFloor)
+			{
+				s_footstepNumber++;
+				if (s_footstepNumber > 3)
+				{
+					s_footstepNumber = 0;
+				}
+
+				if (s_wearingCleats)
+				{
+					switch (s_footstepNumber)
+					{
+					case 0:
+					{
+						sound_play(s_cleatStep1SoundSource);
+					} break;
+					case 1:
+					{
+						sound_play(s_cleatStep2SoundSource);
+					} break;
+					case 2:
+					{
+						sound_play(s_cleatStep3SoundSource);
+					} break;
+					case 3:
+					{
+						sound_play(s_cleatStep4SoundSource);
+					} break;
+					}
+				}
+				else
+				{
+					// we could put code here for normal (non cleat) footsteps
+				}
+
+				s_lastFootstepPos.x = s_playerObject->posWS.x;
+				s_lastFootstepPos.z = s_playerObject->posWS.z;
+			}
+		}
+	}
+	
 	void player_applyDamage(fixed16_16 healthDmg, fixed16_16 shieldDmg, JBool playHitSound)
 	{
 		fixed16_16 shields = intToFixed16(s_playerInfo.shields);
@@ -2564,7 +2665,7 @@ namespace TFE_DarkForces
 		}
 		task_end;
 	}
-		
+	
 	JBool player_hasWeapon(s32 weaponIndex)
 	{
 		JBool retval = JFALSE;
