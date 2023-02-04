@@ -2210,7 +2210,7 @@ namespace TFE_DarkForces
 		s32 distFromLastFootstep = distApprox(s_lastFootstepPos.x, s_lastFootstepPos.z, s_playerObject->posWS.x, s_playerObject->posWS.z) / 65536;
 
 		// In water
-		if (s_playerInWater && (pHeight - fHeight) >= FIXED(3) && s_playerSpeedAve > FIXED(8))
+		if (s_playerSector->secHeight - 1 >= 0 && (pHeight - fHeight) >= FIXED(3) && s_playerSpeedAve > FIXED(8))
 		{
 			// player is in water deeper than 3dfu and moving
 			if (!s_swimmingSoundId)
