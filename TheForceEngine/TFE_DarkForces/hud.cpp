@@ -113,7 +113,6 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
-	GameMessage* hud_getMessage(GameMessages* messages, s32 msgId);
 	TextureData* hud_loadTexture(const char* texFile);
 	Font* hud_loadFont(const char* fontFile);
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode);
@@ -129,7 +128,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void hud_sendTextMessage(s32 msgId)
 	{
-		GameMessage* msg = hud_getMessage(&s_hudMessages, msgId);
+		GameMessage* msg = getGameMessage(&s_hudMessages, msgId);
 		// Only display the message if it is the same or lower priority than the current message.
 		if (!msg || msg->priority > s_hudMsgPriority)
 		{
@@ -999,21 +998,6 @@ namespace TFE_DarkForces
 		return nullptr;
 	}
 
-	GameMessage* hud_getMessage(GameMessages* messages, s32 msgId)
-	{
-		s32 count = messages->count;
-		GameMessage* msg = messages->msgList;
-
-		for (s32 i = 0; i < count; i++, msg++)
-		{
-			if (msgId == msg->id)
-			{
-				return msg;
-			}
-		}
-		return nullptr;
-	}
-		
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode)
 	{
 		memcpy(dst, src, count * 3);

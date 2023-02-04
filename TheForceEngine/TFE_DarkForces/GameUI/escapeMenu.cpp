@@ -95,6 +95,7 @@ namespace TFE_DarkForces
 		ConfirmState confirmState = CONFIRM_STATE_NONE;
 
 		RenderTargetHandle renderTarget = nullptr;
+		LangHotkeys* langKeys;
 	};
 	static EscapeMenuState s_emState = {};
 
@@ -134,8 +135,9 @@ namespace TFE_DarkForces
 		return range;
 	}
 			
-	void escapeMenu_load()
+	void escapeMenu_load(LangHotkeys* langKeys)
 	{
+		s_emState.langKeys = langKeys;
 		if (!s_emState.escMenuFrames)
 		{
 			FilePath filePath;
@@ -533,15 +535,15 @@ namespace TFE_DarkForces
 				{
 					actionPressed = ESC_BTN_ABORT;
 				}
-				if (TFE_Input::keyPressed(KEY_C))
+				if (TFE_Input::keyPressed(s_emState.langKeys->k_conf))
 				{
 					actionPressed = ESC_BTN_CONFIG;
 				}
-				if (TFE_Input::keyPressed(KEY_Q))
+				if (TFE_Input::keyPressed(s_emState.langKeys->k_quit))
 				{
 					actionPressed = ESC_BTN_QUIT;
 				}
-				if (TFE_Input::keyPressed(KEY_R))
+				if (TFE_Input::keyPressed(s_emState.langKeys->k_cont))
 				{
 					actionPressed = ESC_BTN_RETURN;
 				}
@@ -567,7 +569,7 @@ namespace TFE_DarkForces
 		{
 			if (actionPressed < 0)
 			{
-				if (TFE_Input::keyPressed(KEY_Y))
+				if (TFE_Input::keyPressed(s_emState.langKeys->k_yes))
 				{
 					actionPressed = CONFIRM_YES;
 				}

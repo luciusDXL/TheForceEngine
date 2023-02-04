@@ -4,6 +4,7 @@
 // UI code will not be available until future releases.
 //////////////////////////////////////////////////////////////////////
 
+#include <TFE_DarkForces/util.h>
 #include <TFE_System/types.h>
 
 enum EscapeMenuAction
@@ -19,7 +20,7 @@ enum EscapeMenuAction
 namespace TFE_DarkForces
 {
 	// Preload.
-	void escapeMenu_load();
+	void escapeMenu_load(LangHotkeys* hotkeys);
 
 	// Opens the escape menu, which sets up the background.
 	void escapeMenu_open(u8* framebuffer, u8* palette);
