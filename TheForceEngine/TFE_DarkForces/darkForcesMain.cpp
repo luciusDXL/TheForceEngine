@@ -306,7 +306,7 @@ namespace TFE_DarkForces
 		
 		// TFE Specific
 		agentMenu_load(&s_sharedState.langKeys);
-		escapeMenu_load(&s_sharedState.langKeys);
+		escapeMenu_load(&s_sharedState.langKeys, s_escMenuPalette);
 		// Add texture callbacks.
 		renderer_addHudTextureCallback(TFE_Jedi::level_getLevelTextures);
 		renderer_addHudTextureCallback(TFE_Jedi::level_getObjectTextures);
@@ -1174,10 +1174,6 @@ namespace TFE_DarkForces
 		if (TFE_Paths::getFilePath("wait.pal", &filePath))
 		{
 			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
-		}
-		if (TFE_Paths::getFilePath("secbase.pal", &filePath))
-		{
-			FileStream::readContents(&filePath, s_escMenuPalette, 768);
 		}
 
 		weapon_enableAutomount(s_config.wpnAutoMount);

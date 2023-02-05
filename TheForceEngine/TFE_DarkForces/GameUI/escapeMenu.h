@@ -19,8 +19,8 @@ enum EscapeMenuAction
 
 namespace TFE_DarkForces
 {
-	// Preload.
-	void escapeMenu_load(LangHotkeys* hotkeys);
+	// Preload: keys to use(in), palette data to use(out)
+	void escapeMenu_load(LangHotkeys* hotkeys, u32* escMenuPalette);
 
 	// Opens the escape menu, which sets up the background.
 	void escapeMenu_open(u8* framebuffer, u8* palette);

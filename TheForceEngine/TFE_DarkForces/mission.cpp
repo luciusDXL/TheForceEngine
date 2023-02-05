@@ -55,8 +55,8 @@ namespace TFE_DarkForces
 	u8 s_loadingScreenPal[768];
 	u8 s_levelPalette[768];
 	u8 s_basePalette[768];
-	u8 s_escMenuPalette[768];
 	u8 s_framePalette[768];
+	u32 s_escMenuPalette[256];	// RGB
 
 	// Move these to color?
 	JBool s_palModified = JTRUE;
@@ -543,7 +543,7 @@ namespace TFE_DarkForces
 			// Move this out of handleGeneralInput so that the HUD is properly copied.
 			if (escapeMenu_isOpen())
 			{
-				setPalette(s_escMenuPalette);
+				vfb_setPalette(s_escMenuPalette);
 
 				EscapeMenuAction action = escapeMenu_update();
 				if (action == ESC_RETURN || action == ESC_CONFIG)
