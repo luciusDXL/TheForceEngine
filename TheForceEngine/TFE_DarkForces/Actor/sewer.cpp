@@ -248,8 +248,8 @@ namespace TFE_DarkForces
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		s_actorState.attackMod = attackMod;
 		attackMod->header.func = sewerCreatureEnemyFunc;
-		attackMod->timing.searchDelay = 1240;
-		attackMod->timing.meleeDelay = 1240;
+		attackMod->timing.searchDelay = 1165;
+		attackMod->timing.meleeDelay = 1165;
 		attackMod->meleeRange = FIXED(13);
 		attackMod->meleeDmg = FIXED(20);
 		attackMod->meleeRate = FIXED(360);
