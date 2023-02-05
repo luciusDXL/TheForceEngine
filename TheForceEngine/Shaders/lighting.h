@@ -103,3 +103,38 @@ vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambie
 	// linear -> gamma.
 	return pow(colorLinear, invGamma);
 }
+
+int getLightClusterId(vec3 posWS, vec3 cameraPos)
+{
+	vec2 offset = abs(posWS.xz - cameraPos.xz);
+
+	float d = max(offset.x, offset.y) / 16.0;
+	float mip = log2(max(1.0, d));
+	float scale = pow(2.0, floor(mip) + 3.0);
+
+	// This is the minimum corner for the current mip-level.
+	vec2 clusterOffset = vec2(scale * 4.0);
+	// This generates a clusterAddr such that x : [0, 7] and z : [0, 7]
+	ivec2 clusterAddr = ivec2((posWS.xz - cameraPos.xz + clusterOffset) / scale);
+	// This generates a final ID ranging from [0, 63]
+	int clusterId = clusterAddr.x + clusterAddr.y*8;
+
+	int mipIndex = int(mip);
+	if (mipIndex >= 1)
+	{
+		// In larger mips, the center 4x4 is the previous mip.
+		// So those Ids need to be adjusted.
+		if (clusterAddr.y >= 6)
+		{
+			clusterId = 32 + (clusterAddr.y - 6)*8 + clusterAddr.x;
+		}
+		else if (clusterAddr.y >= 2)
+		{
+			clusterId = 16 + (clusterAddr.y - 2)*4 + ((clusterAddr.x < 2) ? clusterAddr.x : clusterAddr.x - 4);
+		}
+		// Finally linearlize the ID factoring in the current mip.
+		clusterId += 64 + (mipIndex - 1)*48;
+	}
+
+	return clusterId;
+}

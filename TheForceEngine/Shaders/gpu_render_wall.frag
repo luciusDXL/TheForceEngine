@@ -404,16 +404,7 @@ void main()
 		vec3 albedo = texelFetch(Palette, ivec2(baseColor, 0), 0).rgb;
 		Out_Color.rgb = handleLighting(albedo, lightPos, Frag_Normal, CameraPos, Out_Color.rgb);
 
-		float d = max(abs(lightPos.x - CameraPos.x), abs(lightPos.z - CameraPos.z)) / 16.0;
-		float mip = log2(max(1.0, d));
-		float scale = pow(2.0, floor(mip) + 3.0);
-		
-		ivec3 cellId = ivec3((lightPos - CameraPos + vec3(1024.0)) / scale);
-		int grid = (cellId.x + cellId.z) & 1;
-		Out_Color.rgb = grid == 0 ? vec3(0.5, 0.5, 1.0) : vec3(1.0, 1.0, 1.0);
-		if (fract(mip) > 0.95)
-		{
-			Out_Color.rgb = vec3(1.0, 0.0, 0.0);
-		}
+		int clusterId = getLightClusterId(lightPos, CameraPos);
+		Out_Color.rgb = vec3(float(1-((clusterId/64)&1)), float(clusterId & 63) / 64.0, float((clusterId/64)&1));
 	}
 }
