@@ -1077,6 +1077,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
 		}
 
+		bool showGearup = gameSettings->df_showgearup;
+		if (ImGui::Checkbox("Show Gearup animation if available", &showGearup))
+		{
+			gameSettings->df_showgearup = showGearup;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();

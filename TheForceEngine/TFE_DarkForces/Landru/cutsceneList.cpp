@@ -68,8 +68,9 @@ namespace TFE_DarkForces
 			return nullptr;
 		}
 
-		CutsceneState* items = (CutsceneState*)game_alloc((count + 1) * sizeof(CutsceneState));
-		memset(items, 0, (count + 1) * sizeof(CutsceneState));
+		// allocate 1 more for list terminator and 1 for optional "GEARUP.LFD" animation
+		CutsceneState* items = (CutsceneState*)game_alloc((count + 2) * sizeof(CutsceneState));
+		memset(items, 0, (count + 2) * sizeof(CutsceneState));
 		if (!items)
 		{
 			TFE_System::logWrite(LOG_ERROR, "LoadList", "Cannot allocate %d list items.", count + 1);

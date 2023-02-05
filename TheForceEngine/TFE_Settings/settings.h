@@ -158,6 +158,7 @@ struct TFE_Settings_Game
 	bool df_showSecretFoundMsg = true;  // Show a message when the player finds a secret.
 	bool df_autorun = false;			// Run by default instead of walk.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
+	bool df_showgearup = false;		// play the "GEARUP.LFD" animation at mission start if available.
 };
 
 struct TFE_Settings_System

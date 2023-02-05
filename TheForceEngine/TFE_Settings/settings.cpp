@@ -432,6 +432,7 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "showSecretFoundMsg", s_gameSettings.df_showSecretFoundMsg);
 				writeKeyValue_Bool(settings, "autorun", s_gameSettings.df_autorun);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
+				writeKeyValue_Bool(settings, "showGearup", s_gameSettings.df_showgearup);
 			}
 		}
 	}
@@ -859,6 +860,10 @@ namespace TFE_Settings
 		else if (strcasecmp("pitchLimit", key) == 0)
 		{
 			s_gameSettings.df_pitchLimit = PitchLimit(parseInt(value));
+		}
+		else if (strcasecmp("showGearup", key) == 0)
+		{
+			s_gameSettings.df_showgearup = parseBool(value);
 		}
 	}
 

@@ -15,6 +15,7 @@
 #include "projectile.h"
 #include "random.h"
 #include "time.h"
+#include "util.h"
 #include "weapon.h"
 #include "vueLogic.h"
 #include "GameUI/menu.h"
@@ -51,6 +52,7 @@
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/IMuse/imuse.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 #include <assert.h>
 
 // Add texture callbacks.
@@ -75,6 +77,7 @@ namespace TFE_DarkForces
 	enum GameConstants
 	{
 		MAX_MOD_LFD = 16,
+		GRUP = 3792,		// cutscene-ID for GEARUP.LFD
 	};
 	   
 	enum GameState
@@ -101,51 +104,60 @@ namespace TFE_DarkForces
 		GameMode nextGameMode;
 		s32 cutscene;
 	};
-		
+
 	static CutsceneData s_cutsceneData[] =
 	{
 		{ 1,  GMODE_CUTSCENE, 100 },
 		{ 1,  GMODE_BRIEFING,   0 },
+		{ 1,  GMODE_CUTSCENE,GRUP },
 		{ 1,  GMODE_MISSION,	0 },
 		{ 1,  GMODE_CUTSCENE, 150 },
 
 		{ 2,  GMODE_CUTSCENE, 200 },
 		{ 2,  GMODE_BRIEFING,   0 },
+		{ 2,  GMODE_CUTSCENE,GRUP },
 		{ 2,  GMODE_MISSION,    0 },
 		{ 2,  GMODE_CUTSCENE, 250 },
 
 		{ 3,  GMODE_CUTSCENE, 300 },
 		{ 3,  GMODE_BRIEFING,   0 },
+		{ 3,  GMODE_CUTSCENE,GRUP },
 		{ 3,  GMODE_MISSION,	0 },
 		{ 3,  GMODE_CUTSCENE, 350 },
 
 		{ 4,  GMODE_CUTSCENE, 400 },
 		{ 4,  GMODE_BRIEFING,   0 },
+		{ 3,  GMODE_CUTSCENE,GRUP },
 		{ 4,  GMODE_MISSION,    0 },
 		{ 4,  GMODE_CUTSCENE, 450 },
 
 		{ 5,  GMODE_CUTSCENE, 500 },
 		{ 5,  GMODE_BRIEFING,	0 },
+		{ 5,  GMODE_CUTSCENE,GRUP },
 		{ 5,  GMODE_MISSION,	0 },
 		{ 5,  GMODE_CUTSCENE, 550 },
 
 		{ 6,  GMODE_CUTSCENE, 600 },
 		{ 6,  GMODE_BRIEFING,	0 },
+		{ 6,  GMODE_CUTSCENE,GRUP },
 		{ 6,  GMODE_MISSION,	0 },
 		{ 6,  GMODE_CUTSCENE, 650 },
 
 		{ 7,  GMODE_CUTSCENE, 700 },
 		{ 7,  GMODE_BRIEFING,	0 },
+		{ 7,  GMODE_CUTSCENE,GRUP },
 		{ 7,  GMODE_MISSION,	0 },
 		{ 7,  GMODE_CUTSCENE, 750 },
 
 		{ 8,  GMODE_CUTSCENE, 800 },
 		{ 8,  GMODE_BRIEFING,	0 },
+		{ 8,  GMODE_CUTSCENE,GRUP },
 		{ 8,  GMODE_MISSION, 	0 },
 		{ 8,  GMODE_CUTSCENE, 850 },
 
 		{ 9,  GMODE_CUTSCENE, 900 },
 		{ 9,  GMODE_BRIEFING,	0 },
+		{ 9,  GMODE_CUTSCENE,GRUP },
 		{ 9,  GMODE_MISSION,	0 },
 		{ 9,  GMODE_CUTSCENE, 950 },
 
@@ -156,11 +168,13 @@ namespace TFE_DarkForces
 
 		{ 11, GMODE_CUTSCENE,1100 },
 		{ 11, GMODE_BRIEFING,	0 },
+		{ 11, GMODE_CUTSCENE,GRUP },
 		{ 11, GMODE_MISSION,	0 },
 		{ 11, GMODE_CUTSCENE,1150 },
 
 		{ 12, GMODE_CUTSCENE,1200 },
 		{ 12, GMODE_BRIEFING,	0 },
+		{ 12, GMODE_CUTSCENE,GRUP },
 		{ 12, GMODE_MISSION,	0 },
 		{ 12, GMODE_CUTSCENE,1250 },
 
@@ -656,9 +670,29 @@ namespace TFE_DarkForces
 		}
 	}
 
+	static void addGearupLFD(CutsceneState* cslist)
+	{
+		FilePath fp;
+		CutsceneState* item = cslist;
+		if (!TFE_Paths::getFilePath("GEARUP.LFD", &fp)) { return; }
+		// find the reserved but unused slot
+		while (item->id != 0) { item++; }
+
+		// add new entry.
+		snprintf(item->archive, 14, "%s\0", "GEARUP.LFD");
+		snprintf(item->scene, 10, "%s\0", "gearup");
+		item->id = GRUP;
+		item->nextId = 0;
+		item->skip = 0;
+		item->speed = 6;
+		item->music = 0;
+		item->volume = 127;
+	}
+
 	void loadCutsceneList()
 	{
 		s_sharedState.cutsceneList = cutsceneList_load("cutscene.lst");
+		addGearupLFD(s_sharedState.cutsceneList);
 		cutscene_init(s_sharedState.cutsceneList);
 	}
 	
@@ -698,7 +732,16 @@ namespace TFE_DarkForces
 			} break;
 			case GMODE_CUTSCENE:
 			{
-				if (s_runGameState.cutscenesEnabled && cutscene_play(s_cutsceneData[s_runGameState.cutsceneIndex].cutscene))
+				s32 csid = s_cutsceneData[s_runGameState.cutsceneIndex].cutscene;
+				if (!s_runGameState.cutscenesEnabled ||
+				    ((csid == GRUP) && (TFE_Settings::getGameSettings()->df_showgearup == false)))
+				{
+					s_runGameState.cutsceneIndex++;
+					startNextMode();
+					break;
+				}
+
+				if (cutscene_play(csid))
 				{
 					s_runGameState.state = GSTATE_CUTSCENE;
 				}
