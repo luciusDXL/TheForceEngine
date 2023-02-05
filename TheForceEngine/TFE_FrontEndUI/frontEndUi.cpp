@@ -2334,7 +2334,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Audio Output");
 
 		const char* outputAudioNames[MAX_AUDIO_OUTPUTS];
-		char outputMidiNames[MAX_AUDIO_OUTPUTS][256];
+		char outputMidiNames[MAX_AUDIO_OUTPUTS * 256];
 		{
 			s32 outputCount = 0, curOutput = 0;
 			const OutputDeviceInfo* outputInfo = TFE_Audio::getOutputDeviceList(outputCount, curOutput);
@@ -2359,9 +2359,12 @@ namespace TFE_FrontEndUI
 		{
 			s32 outputCount = 0, curOutput = 0;
 			outputCount = min(MAX_AUDIO_OUTPUTS, (s32)TFE_MidiDevice::getDeviceCount());
+			char* midiList = outputMidiNames;
+			memset(outputMidiNames, 0, 256 * MAX_AUDIO_OUTPUTS);
 			for (s32 i = 0; i < outputCount; i++)
 			{
-				TFE_MidiDevice::getDeviceName(i, outputMidiNames[i], 256);
+				TFE_MidiDevice::getDeviceName(i, midiList, 256);
+				midiList += strlen(midiList) + 1;	// +1 as imgui entry divider
 			}
 
 			ImGui::LabelText("##ConfigLabel", "Midi Device:"); ImGui::SameLine(150 * s_uiScale);

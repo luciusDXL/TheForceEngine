@@ -71,6 +71,7 @@ namespace TFE_MidiDevice
 		}
 		if (index != s_openPort && index >= 0 && index < getDeviceCount())
 		{
+			s_midiout->closePort();
 			s_midiout->openPort(index);
 			s_openPort = (s32)index;
 			return true;
