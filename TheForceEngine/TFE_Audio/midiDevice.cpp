@@ -79,6 +79,11 @@ namespace TFE_MidiDevice
 		return false;
 	}
 
+	u32 getActiveDevice(void)
+	{
+		return s_openPort > 0 ? s_openPort : 0;
+	}
+
 	void sendMessage(const u8* msg, u32 size)
 	{
 		if (s_midiout) { s_midiout->sendMessage(msg, (size_t)size); }
