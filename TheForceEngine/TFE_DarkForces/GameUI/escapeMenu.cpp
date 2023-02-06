@@ -141,7 +141,7 @@ namespace TFE_DarkForces
 		s_emState.langKeys = langKeys;
 		if (!s_emState.escMenuFrames)
 		{
-			u8 paletteBuffer[768];
+			u8 paletteBuffer[768] = { 0 };
 
 			FilePath filePath;
 			if (!TFE_Paths::getFilePath("MENU.LFD", &filePath)) { return; }
