@@ -1752,21 +1752,24 @@ namespace TFE_DarkForces
 			aiAnim->animId = animTable[animIdx];
 			aiAnim->startFrame = 0;
 			aiAnim->frame = 0;
-			if (aiAnim->animId != -1)
+			assert(obj->wax);
+			if (aiAnim->animId != -1 && obj->wax)
 			{
 				// In DOS there is no check but for some reason it doesn't crash.
 				// On Windows this crashes if animId is too large, so clamp.
 				s32 animId = min(aiAnim->animId, obj->wax->animCount - 1);
 				WaxAnim* anim = WAX_AnimPtr(obj->wax, animId);
 				assert(anim);
-
-				aiAnim->frameCount = intToFixed16(anim->frameCount);
-				aiAnim->frameRate  = anim->frameRate;
-				if (anim->frameRate >= 12)
+				if (anim)
 				{
-					aiAnim->frameRate = 12;
+					aiAnim->frameCount = intToFixed16(anim->frameCount);
+					aiAnim->frameRate  = anim->frameRate;
+					if (anim->frameRate >= 12)
+					{
+						aiAnim->frameRate = 12;
+					}
+					aiAnim->flags &= ~AFLAG_READY;
 				}
-				aiAnim->flags &= ~AFLAG_READY;
 			}
 		}
 	}
