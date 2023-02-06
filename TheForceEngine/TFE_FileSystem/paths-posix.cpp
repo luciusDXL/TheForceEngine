@@ -1,5 +1,5 @@
 #include <cstring>
-
+#include <cassert>
 #include "paths.h"
 #include "fileutil.h"
 #include "filestream.h"
@@ -100,7 +100,10 @@ namespace TFE_Paths
 
 	bool setUserDocumentsPath(const char *append)
 	{
-		setTFEPath(append, PATH_USER_DOCUMENTS);
+		// ensure SetProgramDataPath() was called before
+		assert(!s_paths[PATH_PROGRAM_DATA].empty());
+
+		s_paths[PATH_USER_DOCUMENTS] = s_paths[PATH_PROGRAM_DATA];
 		s_systemPaths.push_back(getPath(PATH_USER_DOCUMENTS));
 		// set cwd to user documents path, because Dear ImGUI drops
 		// its ini file at the cwd, we don't want it to litter somewhere
