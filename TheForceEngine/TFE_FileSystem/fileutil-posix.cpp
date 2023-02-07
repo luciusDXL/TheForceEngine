@@ -17,8 +17,10 @@ namespace FileUtil
 {
 	void readDirectory(const char *dir, const char *ext, FileList& fileList)
 	{
+		char buf[PATH_MAX];
 		struct dirent *de;
-		int el, dl;
+		struct stat st;
+		int el, dl, ret;
 		char *dn;
 		DIR *d;
 
@@ -32,9 +34,12 @@ namespace FileUtil
 		while (NULL != (de = readdir(d))) {
 			dn = de->d_name;
 			dl = strlen(dn);
-			// only regular files and symlinks accepted
-			if ((de->d_type != DT_REG) && (de->d_type != DT_LNK))
+			memset(buf, 0, PATH_MAX);
+			snprintf(buf, PATH_MAX - 1, "%s%s", dir, de->d_name);
+			ret = stat(buf, &st);
+			if (ret || !S_ISREG(st.st_mode))
 				continue;
+			
 			// skip dotfiles, dotdirs, too short and files without extensions.
 			if ((dl < (el + 2)) || (dn[0] == '.'))
 				continue;
@@ -53,7 +58,8 @@ namespace FileUtil
 	{
 		char *dn, fp[PATH_MAX];
 		struct dirent *de;
-		int l1, l2;
+		struct stat st;
+		int l1, l2, ret;
 		DIR *d;
 
 		d = opendir(dir);
@@ -63,16 +69,17 @@ namespace FileUtil
 		}
 		l1 = strlen(dir);
 		while (NULL != (de = readdir(d))) {
-			if (de->d_type != DT_DIR)
-				continue;
-
 			dn = de->d_name;
+			memset(fp, 0, PATH_MAX);
+			snprintf(fp, PATH_MAX - 2, "%s%s", dir, dn);
+			ret = stat(fp, &st);
+			if (ret || !S_ISDIR(st.st_mode))
+				continue;
+					
 			if (!strcmp(dn, ".") || !strcmp(dn, ".."))
 				continue;
 
-			l2 = l1 + strlen(dn) + 1;
-			memset(fp, 0, PATH_MAX);
-			snprintf(fp, l2, "%s%s/", dir, dn);
+			strcat(fp, "/");
 			dirList.push_back(string(fp));
 		}
 		closedir(d);
@@ -218,9 +225,9 @@ namespace FileUtil
 	{
 		struct stat st;
 		int ret = stat(path, &st);
-		if (ret < 0)
+		if (ret != 0)
 			return false;
-
+		
 		return (st.st_mode & S_IFDIR) != 0;
 	}
 
@@ -237,7 +244,9 @@ namespace FileUtil
 	{
 		char *fncopy, *dn, *fn;
 		char *result = NULL;
-		int ol, dl, fl, nfl;
+		char buf[PATH_MAX];
+		int ol, dl, fl, nfl, ret;
+		struct stat st;
 		struct dirent *de;
 		DIR *dir;
 
@@ -269,7 +278,10 @@ namespace FileUtil
 
 		while (NULL != (de = readdir(dir)))
 		{
-			if (de->d_type != DT_REG)
+			memset(buf, 0, PATH_MAX);
+			snprintf(buf, PATH_MAX - 2, "%s/%s", dn, de->d_name);
+			ret = stat(buf, &st);
+			if ((ret != 0) || (!S_ISREG(st.st_mode)))
 				continue;
 
 			nfl = strlen(de->d_name);
