@@ -65,14 +65,6 @@ __make__
 __sudo make install__  
 if no additional parameters were added to cmake, files will be installed in /usr/local/bin, /usr/local/share/TheForceEngine/
 
-##### How to Build
-* mkdir tfe-build
-* cd tfe-build
-* cmake -S /path/to/tfe/source/root
-* make
-* sudo make install
-* tfelnx to run
-
 ##### Running TFE
 * "KDialog" for file dialog on KDE Plasma Desktop Environment
 * "zenity" for file dialog on all other desktop environments
