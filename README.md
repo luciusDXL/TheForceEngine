@@ -54,6 +54,14 @@ This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 * [CMake](https://cmake.org) 3.12 or higher to build the source.
 * GCC-11 and newer or equivalent clang version.
 
+##### How to Build
+* mkdir tfe-build
+* cd tfe-build
+* cmake -S /path/to/tfe/source/root
+* make
+* sudo make install
+* tfelnx to run
+
 ##### Running TFE
 * "KDialog" for file dialog on KDE Plasma Desktop Environment
 * "zenity" for file dialog on all other desktop environments
