@@ -2299,16 +2299,22 @@ namespace TFE_FrontEndUI
 		ImGui::SliderInt("Offset Lt", &hud->pixelOffset[0], -512, 512); ImGui::SameLine(0.0f, 3.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputInt("##HudOffsetX0Text", &hud->pixelOffset[0], 1, 10);
-
+		
 		ImGui::SetNextItemWidth(196 * s_uiScale);
 		ImGui::SliderInt("Offset Rt", &hud->pixelOffset[1], -512, 512); ImGui::SameLine(0.0f, 3.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputInt("##HudOffsetX1Text", &hud->pixelOffset[1], 1, 10);
-
+		
 		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[2], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputInt("##HudOffsetYText", &hud->pixelOffset[2], 1, 10);
+
+		// Clamp pixel offsets to avoid fixed-point overflow.
+		const s32 maxOffset = 16383;
+		hud->pixelOffset[0] = clamp(hud->pixelOffset[0], -maxOffset, maxOffset);
+		hud->pixelOffset[1] = clamp(hud->pixelOffset[1], -maxOffset, maxOffset);
+		hud->pixelOffset[2] = clamp(hud->pixelOffset[2], -maxOffset, maxOffset);
 	}
 
 	// Uses a percentage slider (0 - 100%) to adjust a floating point value (0.0 - 1.0).
