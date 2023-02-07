@@ -30,6 +30,7 @@ if(WIN32)
         set(CMAKE_INSTALL_LIBDIR ".")
         set(CMAKE_INSTALL_DATADIR ".")
 else()
+	set(TFE_ICONDIR "share/icons/hicolor")
 	# tweak DATADIR to end up with ./share/TheForceEngine/
         set(CMAKE_INSTALL_DATADIR "share/${PROJECT_NAME}"
                 CACHE PATH "Read-only architecture-independent data"
@@ -65,7 +66,7 @@ elseif(LINUX)
 				${RTAUDIO_LIBRARIES}
 				${RTMIDI_LIBRARIES}
 	)
-
+	
 	# set up build directory to be able to run TFE immediately: symlink
 	# the necessary support file directories into the build env.
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Documentation)
@@ -107,3 +108,13 @@ install(DIRECTORY
           GROUP_READ GROUP_EXECUTE GROUP_WRITE
           WORLD_READ WORLD_EXECUTE
 )
+
+# Linux .desktop files
+if(LINUX)
+	install(
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.desktop" DESTINATION "share/applications"
+	)
+	install(
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.png" DESTINATION "${TFE_ICONDIR}/256x256/apps"
+	)
+endif()
