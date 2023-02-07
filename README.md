@@ -32,16 +32,20 @@ Full support for Dark Forces has been completed. You can play through the entire
 The current release only supports Dark Forces. All weapons, AI, items, and all other systems function, including IMuse. You can play through Dark Forces from beginning to end and even play Dark Forces mods. As with any project of this nature, there may be bugs and system specific issues. If you run into any bugs that cannot be reproduced in the DOS version, please post them on the forums or GitHub.
 
 ## Minimum Requirements
-### Windows
-* Windows 7, 64 bit.
 * OpenGL 3.3
+* Windows 7, 64 bit / modern Linux Distro.
 
-### Linux
-#### General Notes
+Note that there are plans to lower the requirements for using the classic software renderer in the future. However, the minimum requirements for GPU Renderer support are here to stay. For now only OpenGL is supported, which might limit the use of some older Intel integrated GPUs that would otherwise be capable. There are near-term plans to add DirectX 10/11, Vulkan, and maybe Metal render backends which should enable more GPUs to run the engine efficiently.
+
+## Windows
+The release package includes the Windows binary and all of the data needed to run. If you want to compile yourself, use the Visual Studio solution provided.
+
+## Linux
+### General Notes
 Runtime data like Savegames, Configuration, Mods, ... are by default stored at __${HOME}/.local/share/TheForceEngine/__.
 This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 
-#### Required Libraries
+### Required Libraries
 * [SDL2](TheForceEngine/TFE_FrontEndUI/frontEndUi.cpp) 2.24 or higher
 * [devIL](https://openil.sourceforge.net)
 * [RtAudio](https://www.music.mcgill.ca/~gary/rtaudio/) 5.2.0 or higher
@@ -49,30 +53,26 @@ This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 * [GLEW](http://glew.sourceforge.net/) 2.2.0
 * OpenGL 3.3 capable driver (latest [mesa](https://www.mesa3d.org) or nvidia proprietary driver recommended)
 
+### Building from Source
 #### Recommended Tools
-##### Building from Source
 * [CMake](https://cmake.org) 3.12 or higher to build the source.
 * GCC-11 and newer or equivalent clang version.
-* How to build
-	* unpack the source or fetch from github
-	* create a build directory and chdir into it:
+#### How to build
+* unpack the source or fetch from github
+* create a build directory and chdir into it:
 __mkdir tfe-build; cd tfe-build__
-	* run CMake in the build directory:
+* run CMake in the build directory:
 __cmake -S /path/to/tfe-source/__
-	* build it:
+* build it:
 __make__
-	* install it:
+* install it:
 __sudo make install__  
 if no additional parameters were added to cmake, files will be installed in /usr/local/bin, /usr/local/share/TheForceEngine/
 
-##### Running TFE
+#### Running TFE
 * "KDialog" for file dialog on KDE Plasma Desktop Environment
 * "zenity" for file dialog on all other desktop environments
 * "TiMidity++" or "FluidSynth" software synthesizer for glorious MIDI Music.
 	* __timidity -iA --sequencer-ports=1__
 	* __fluidsynth -s -L2 /path/to/preferred/soundfont.sf2__
 * or external MIDI Hardware.
-
-
-
-Note that there are plans to lower the requirements for using the classic software renderer in the future. However, the minimum requirements for GPU Renderer support are here to stay. For now only OpenGL is supported, which might limit the use of some older Intel integrated GPUs that would otherwise be capable. There are near-term plans to add DirectX 10/11, Vulkan, and maybe Metal render backends which should enable more GPUs to run the engine efficiently.
