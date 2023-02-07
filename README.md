@@ -58,16 +58,16 @@ This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 * [CMake](https://cmake.org) 3.12 or higher to build the source.
 * GCC-11 and newer or equivalent clang version.
 #### How to build
-* unpack the source or fetch from github
-* create a build directory and chdir into it:
+* Unpack the source or fetch from github
+* Create a build directory and chdir into it:
 __mkdir tfe-build; cd tfe-build__
-* run CMake in the build directory:
+* Run CMake in the build directory:
 __cmake -S /path/to/tfe-source/__
-* build it:
+* Build it:
 __make__
-* install it:
+* Install it:
 __sudo make install__  
-if no additional parameters were added to cmake, files will be installed in /usr/local/bin, /usr/local/share/TheForceEngine/
+* If no additional parameters were added to CMake, files will be installed in __/usr/local/bin__, __/usr/local/share/TheForceEngine/__
 
 #### Running TFE
 * "KDialog" for file dialog on KDE Plasma Desktop Environment
