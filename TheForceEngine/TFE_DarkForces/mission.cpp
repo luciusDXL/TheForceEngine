@@ -543,8 +543,6 @@ namespace TFE_DarkForces
 			// Move this out of handleGeneralInput so that the HUD is properly copied.
 			if (escapeMenu_isOpen())
 			{
-				setPalette(s_escMenuPalette);
-
 				EscapeMenuAction action = escapeMenu_update();
 				if (action == ESC_RETURN || action == ESC_CONFIG)
 				{

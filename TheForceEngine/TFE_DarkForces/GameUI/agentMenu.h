@@ -4,6 +4,7 @@
 // UI code will not be available until future releases.
 //////////////////////////////////////////////////////////////////////
 
+#include <TFE_DarkForces/util.h>
 #include <TFE_System/types.h>
 
 namespace TFE_DarkForces
@@ -12,7 +13,7 @@ namespace TFE_DarkForces
 	// levelIndex will hold the selected level index (1 - 14).
 	JBool agentMenu_update(s32* levelIndex);
 
-	void agentMenu_load();
+	void agentMenu_load(LangHotkeys* hotkeys);
 
 	// Reset Presistent State.
 	void agentMenu_resetState();

@@ -79,6 +79,7 @@ namespace TFE_DarkForces
 	static u32 s_agentDlgCount;
 	
 	static char s_newAgentName[32];
+	static LangHotkeys* s_langKeys;
 
 	///////////////////////////////////////////
 	// Forward Declarations
@@ -239,17 +240,17 @@ namespace TFE_DarkForces
 				s_buttonPressed = AGENT_NEW;
 				s_buttonHover = JTRUE;
 			}
-			else if (TFE_Input::keyPressed(KEY_R))
+			else if (TFE_Input::keyPressed(s_langKeys->k_agdel))
 			{
 				s_buttonPressed = AGENT_REMOVE;
 				s_buttonHover = JTRUE;
 			}
-			else if (TFE_Input::keyPressed(KEY_D))
+			else if (TFE_Input::keyPressed(KEY_D))	// DOS
 			{
 				s_buttonPressed = AGENT_EXIT;
 				s_buttonHover = JTRUE;
 			}
-			else if (TFE_Input::keyPressed(KEY_B) || TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_KP_ENTER))
+			else if (TFE_Input::keyPressed(s_langKeys->k_begin) || TFE_Input::keyPressed(KEY_RETURN) || TFE_Input::keyPressed(KEY_KP_ENTER))
 			{
 				s_buttonPressed = AGENT_BEGIN;
 				s_buttonHover = JTRUE;
@@ -446,7 +447,7 @@ namespace TFE_DarkForces
 		setPalette();
 	}
 
-	void agentMenu_load()
+	void agentMenu_load(LangHotkeys* langKeys)
 	{
 		FilePath filePath;
 		if (!TFE_Paths::getFilePath("AGENTMNU.LFD", &filePath)) { return; }
@@ -458,6 +459,8 @@ namespace TFE_DarkForces
 		s_agentDlgCount = getFramesFromAnim("agentdlg.anim", &s_agentDlgFrames);
 		getFrameFromDelt("cursor.delt", &s_cursor);
 		TFE_Paths::removeLastArchive();
+		
+		s_langKeys = langKeys;
 	}
 		
 	void agentMenu_startup()
@@ -654,7 +657,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			if (TFE_Input::keyPressed(KEY_Y))
+			if (TFE_Input::keyPressed(s_langKeys->k_yes))
 			{
 				agentMenu_removeAgent(s_agentId);
 				s_removeAgentDlg = false;
@@ -721,7 +724,7 @@ namespace TFE_DarkForces
 		else
 		{
 			// Activate button 's_escButtonPressed'
-			if (TFE_Input::keyPressed(KEY_Y))
+			if (TFE_Input::keyPressed(s_langKeys->k_yes))
 			{
 				quit = JTRUE;
 				s_quitConfirmDlg = JFALSE;

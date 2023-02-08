@@ -115,7 +115,7 @@ namespace TFE_DarkForces
 
 		AttackModule* attackMod = actor_createAttackModule(dispatch);
 		s_actorState.attackMod = attackMod;
-		attackMod->timing.meleeDelay = 57;
+		attackMod->timing.meleeDelay = 233;	// 1.6 seconds
 		attackMod->meleeRange = FIXED(13);
 		attackMod->meleeDmg = FIXED(40);
 		attackMod->meleeRate = FIXED(360);

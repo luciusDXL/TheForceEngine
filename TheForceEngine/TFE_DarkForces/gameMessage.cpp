@@ -118,4 +118,19 @@ namespace TFE_DarkForces
 		}  // for (s32 i = 0; i < msgCount; i++, msg++)
 		return 1;
 	}
+	
+	GameMessage* getGameMessage(GameMessages* messages, s32 msgId)
+	{
+		s32 count = messages->count;
+		GameMessage* msg = messages->msgList;
+
+		for (s32 i = 0; i < count; i++, msg++)
+		{
+			if (msgId == msg->id)
+			{
+				return msg;
+			}
+		}
+		return nullptr;
+	}
 }  // TFE_DarkForces

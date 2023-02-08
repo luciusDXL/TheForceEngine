@@ -51,7 +51,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	static GameMessages s_hudMessages;
 	static Font* s_hudFont;
-	static char s_hudMessage[80];
+	static u8 s_hudMessage[80];
 	static s32 s_hudCurrentMsgId = 0;
 	static s32 s_hudMsgPriority = HUD_LOWEST_PRIORITY;
 	static Tick s_hudMsgExpireTick;
@@ -113,12 +113,11 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	// Forward Declarations
 	///////////////////////////////////////////
-	GameMessage* hud_getMessage(GameMessages* messages, s32 msgId);
 	TextureData* hud_loadTexture(const char* texFile);
 	Font* hud_loadFont(const char* fontFile);
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode);
 	void getCameraXZ(fixed16_16* x, fixed16_16* z);
-	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, char* msg, u8* framebuffer);
+	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, u8* msg, u8* framebuffer);
 	void hud_drawString(OffScreenBuffer* elem, Font* font, s32 x0, s32 y0, const char* str);
 #if TFE_CONVERT_CAPS
 	void hud_convertCapsToBM();
@@ -129,7 +128,7 @@ namespace TFE_DarkForces
 	///////////////////////////////////////////
 	void hud_sendTextMessage(s32 msgId)
 	{
-		GameMessage* msg = hud_getMessage(&s_hudMessages, msgId);
+		GameMessage* msg = getGameMessage(&s_hudMessages, msgId);
 		// Only display the message if it is the same or lower priority than the current message.
 		if (!msg || msg->priority > s_hudMsgPriority)
 		{
@@ -140,7 +139,7 @@ namespace TFE_DarkForces
 
 		const char* msgText = msg->text;
 		if (!msgText[0]) { return; }
-		strCopyAndZero(s_hudMessage, msgText, 80);
+		strCopyAndZero((char*)s_hudMessage, msgText, 80);
 
 		s_hudMsgExpireTick = s_curTick + ((msg->priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
 		s_hudCurrentMsgId  = msgId;
@@ -159,7 +158,7 @@ namespace TFE_DarkForces
 			if (msg) { TFE_Console::addToHistory(msg); }
 			return;
 		}
-		strCopyAndZero(s_hudMessage, msg, 80);
+		strCopyAndZero((char*)s_hudMessage, msg, 80);
 
 		s_hudMsgExpireTick = s_curTick + ((priority <= HUD_HIGH_PRIORITY) ? HUD_MSG_LONG_DUR : HUD_MSG_SHORT_DUR);
 		s_hudCurrentMsgId  = 0;
@@ -376,8 +375,8 @@ namespace TFE_DarkForces
 
 			s32 xOffset = floor16(div16(intToFixed16(vfb_getWidescreenOffset()), vfb_getXScale()));
 
-			char dataStr[64];
-			sprintf(dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
+			u8 dataStr[64];
+			sprintf((char*)dataStr, "X:%04d Y:%.1f Z:%04d H:%.1f S:%d%%", floor16(x), -fixed16ToFloat(s_playerEye->posWS.y), floor16(z), fixed16ToFloat(s_playerEye->worldHeight), s_secretsPercent);
 			displayHudMessage(s_hudFont, (DrawRect*)vfb_getScreenRect(VFB_RECT_UI), 164 + xOffset, 10, dataStr, framebuffer);
 			// s_screenDirtyRight[s_curFrameBufferIdx] = JTRUE;
 		}
@@ -471,7 +470,8 @@ namespace TFE_DarkForces
 
 		screenGPU_blitTextureScaled(s_hudStatusR, nullptr, x0, y0, hudScaleX, hudScaleY, 31);
 		screenGPU_blitTextureScaled(s_hudStatusL, nullptr, x1, y1, hudScaleX, hudScaleY, 31);
-		if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0)
+		if ((hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0) && 
+			s_hudCapLeft && s_hudCapRight)
 		{
 			screenGPU_blitTextureScaled(s_hudCapLeft,  nullptr, x1 - mul16(intToFixed16(s_hudCapLeft->width - 1), hudScaleX), y1, hudScaleX, hudScaleY, 31);
 			screenGPU_blitTextureScaled(s_hudCapRight, nullptr, x0 + mul16(intToFixed16(s_hudStatusR->width), hudScaleX), y1, hudScaleX, hudScaleY, 31);
@@ -963,7 +963,8 @@ namespace TFE_DarkForces
 			hud_drawElementToScreenScaled(s_cachedHudRight, screenRect, x0, y0, hudScaleX, hudScaleY, framebuffer);
 			hud_drawElementToScreenScaled(s_cachedHudLeft,  screenRect, x1, y1, hudScaleX, hudScaleY, framebuffer);
 
-			if (hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0)
+			if ((hudSettings->hudPos == TFE_HUDPOS_4_3 || hudSettings->pixelOffset[0] > 0 || hudSettings->pixelOffset[1] > 0) &&
+				s_hudCapLeft && s_hudCapRight)
 			{
 				DrawRect rect = { screenRect->left, screenRect->top, screenRect->right, screenRect->bot };
 				s32 y0Scaled = (dispHeight == 200) ? y0 : floor16(intToFixed16(y0) + mul16(ONE_16, hudScaleY));
@@ -999,21 +1000,6 @@ namespace TFE_DarkForces
 		return nullptr;
 	}
 
-	GameMessage* hud_getMessage(GameMessages* messages, s32 msgId)
-	{
-		s32 count = messages->count;
-		GameMessage* msg = messages->msgList;
-
-		for (s32 i = 0; i < count; i++, msg++)
-		{
-			if (msgId == msg->id)
-			{
-				return msg;
-			}
-		}
-		return nullptr;
-	}
-		
 	void copyIntoPalette(u8* dst, u8* src, s32 count, s32 mode)
 	{
 		memcpy(dst, src, count * 3);
@@ -1033,7 +1019,7 @@ namespace TFE_DarkForces
 		}
 	}
 
-	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, char* msg, u8* framebuffer)
+	void displayHudMessage(Font* font, DrawRect* rect, s32 x, s32 y, u8* msg, u8* framebuffer)
 	{
 		if (!font || !rect || !framebuffer) { return; }
 		u32 dispWidth, dispHeight;
@@ -1043,7 +1029,7 @@ namespace TFE_DarkForces
 		{
 			s32 xi = x;
 			s32 x0 = x;
-			for (char c = *msg; c != 0;)
+			for (u8 c = *msg; c != 0;)
 			{
 				if (c == '\n')
 				{
@@ -1076,7 +1062,7 @@ namespace TFE_DarkForces
 			fixed16_16 x0 = xf;
 
 			fixed16_16 fWidth = mul16(intToFixed16(font->width), xScale);
-			for (char c = *msg; c != 0;)
+			for (u8 c = *msg; c != 0;)
 			{
 				if (c == '\n')
 				{
