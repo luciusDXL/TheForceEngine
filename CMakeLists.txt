@@ -40,11 +40,9 @@ include(GNUInstallDirs)
 
 
 add_executable(tfe)
+set_target_properties(tfe PROPERTIES OUTPUT_NAME "TheForceEngine")
 
-if(WIN32)
-	set_target_properties(tfe PROPERTIES OUTPUT_NAME "TheForceEngine")
-elseif(LINUX)
-	set_target_properties(tfe PROPERTIES OUTPUT_NAME "tfelnx")
+if(LINUX)
 	find_package(PkgConfig REQUIRED)
 	find_package(Threads REQUIRED)
 	pkg_check_modules(RTAUDIO REQUIRED rtaudio>=5.2.0)
