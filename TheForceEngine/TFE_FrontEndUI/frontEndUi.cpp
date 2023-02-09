@@ -620,6 +620,7 @@ namespace TFE_FrontEndUI
 					// Game
 					gameSettings->df_showSecretFoundMsg = true;
 					gameSettings->df_bobaFettFacePlayer = true;
+					gameSettings->df_movementSounds = true;
 					// Graphics
 					graphicsSettings->rendererIndex = RENDERER_HARDWARE;
 					graphicsSettings->skyMode = SKYMODE_CYLINDER;
@@ -651,6 +652,7 @@ namespace TFE_FrontEndUI
 					// Game
 					gameSettings->df_showSecretFoundMsg = false;
 					gameSettings->df_bobaFettFacePlayer = false;
+					gameSettings->df_movementSounds = false;
 					// Graphics
 					graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 					graphicsSettings->widescreen = false;
@@ -1075,6 +1077,12 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Boba Fett Face Player Fix", &bobaFettFacePlayer))
 		{
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
+		}
+
+		bool movementSounds = gameSettings->df_movementSounds;
+		if (ImGui::Checkbox("Ice Cleat and Swimming Sound Effects", &movementSounds))
+		{
+			gameSettings->df_movementSounds = movementSounds;
 		}
 
 		if (s_drawNoGameDataMsg)

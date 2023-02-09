@@ -1379,7 +1379,7 @@ namespace TFE_DarkForces
 			}
 			else
 			{
-				if (!s_playerInWater)
+				if (!s_playerInWater || !(TFE_Settings::getGameSettings()->df_movementSounds))
 				{
 					sound_play(s_jumpSoundSource);
 				}
@@ -2205,6 +2205,8 @@ namespace TFE_DarkForces
 
 	void handlePlayerMovementSounds()
 	{
+		TFE_Settings_Game* settings = TFE_Settings::getGameSettings();
+		
 		fixed16_16 pHeight = s_playerObject->posWS.y;
 		fixed16_16 fHeight = s_playerObject->sector->floorHeight;
 		s32 distFromLastFootstep = distApprox(s_lastFootstepPos.x, s_lastFootstepPos.z, s_playerObject->posWS.x, s_playerObject->posWS.z) / 65536;
@@ -2213,9 +2215,16 @@ namespace TFE_DarkForces
 		if (s_playerSector->secHeight - 1 >= 0 && (pHeight - fHeight) >= FIXED(3) && s_playerSpeedAve > FIXED(8))
 		{
 			// player is in water deeper than 3dfu and moving
-			if (!s_swimmingSoundId)
+			if (!s_swimmingSoundId && settings->df_movementSounds)
 			{
 				s_swimmingSoundId = sound_play(s_swimSoundSource);
+			}
+
+			// immediately stop sound if player switches setting off
+			if (s_swimmingSoundId && !settings->df_movementSounds) 
+			{
+				sound_stop(s_swimmingSoundId);
+				s_swimmingSoundId = NULL_SOUND;
 			}
 		}
 		else
@@ -2224,8 +2233,9 @@ namespace TFE_DarkForces
 			if (s_swimmingSoundId)
 			{
 				sound_stop(s_swimmingSoundId);
-				sound_play(s_swimStopSoundSource);
 				s_swimmingSoundId = NULL_SOUND;
+
+				if (settings->df_movementSounds) sound_play(s_swimStopSoundSource);
 			}
 		}
 
@@ -2234,7 +2244,7 @@ namespace TFE_DarkForces
 		{
 			// play next footstep sound if player has moved 16 units and is on the floor; reset lastFootstepPos
 			// TODO set a constant for footstep distance
-			if (distFromLastFootstep >= 16 && s_onFloor)
+			if (distFromLastFootstep >= 16 && s_onFloor && settings->df_movementSounds)
 			{
 				s_footstepNumber++;
 				if (s_footstepNumber > 3)
