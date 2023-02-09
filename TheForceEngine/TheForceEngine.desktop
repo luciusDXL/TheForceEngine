@@ -3,6 +3,6 @@ Type=Application
 Name=The Force Engine
 Comment=Modern 'Jedi Engine' replacement supporting Dark Forces, mods, and in the future Outlaws.
 Categories=Game;ActionGame;Shooter
-Exec= tfelnx
+Exec=theforceengine
 Icon=TheForceEngine
 StartupWMClass=tfelnx
