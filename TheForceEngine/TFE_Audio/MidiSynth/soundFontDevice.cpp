@@ -1,4 +1,4 @@
-#include "tinySoundFontDevice.h"
+#include "soundFontDevice.h"
 #include <TFE_Audio/midi.h>
 #include <TFE_Audio/midiDeviceState.h>
 #include <TFE_FileSystem/filestream.h>
@@ -12,20 +12,20 @@ namespace TFE_Audio
 {
 	enum Constants
 	{
-		TSF_MAX_VOICES   = 512,
-		TSF_DRUM_CHANNEL = 9,
-		TSF_DRUM_BANK    = 128,
-		TSF_SAMPLE_RATE  = 44100,
+		SFD_MAX_VOICES   = 512,
+		SFD_DRUM_CHANNEL = 9,
+		SFD_DRUM_BANK    = 128,
+		SFD_SAMPLE_RATE  = 44100,
 	};
-	static const char* c_TSF_Name = "SF2 Synthesized Midi";
+	static const char* c_SFD_Name = "SF2 Synthesized Midi";
 	static const char* c_defaultOutput = "Roland SC-55";
 
-	TinySoundFontDevice::~TinySoundFontDevice()
+	SoundFontDevice::~SoundFontDevice()
 	{
 		exit();
 	}
 
-	u32 TinySoundFontDevice::getOutputCount()
+	u32 SoundFontDevice::getOutputCount()
 	{
 		if (m_outputs.empty())
 		{
@@ -45,7 +45,7 @@ namespace TFE_Audio
 		return (u32)m_outputs.size();
 	}
 
-	void TinySoundFontDevice::getOutputName(s32 index, char* buffer, u32 maxLength)
+	void SoundFontDevice::getOutputName(s32 index, char* buffer, u32 maxLength)
 	{
 		if (index < 0 || index >= (s32)getOutputCount())
 		{
@@ -56,7 +56,7 @@ namespace TFE_Audio
 		buffer[strlen(name)] = 0;
 	}
 
-	bool TinySoundFontDevice::selectOutput(s32 index)
+	bool SoundFontDevice::selectOutput(s32 index)
 	{
 		u32 outputCount = getOutputCount();
 		if (index < 0 || index >= (s32)outputCount)
@@ -80,17 +80,17 @@ namespace TFE_Audio
 			m_outputId = index;
 
 			exit();
-			res = beginStream(outputName, TSF_SAMPLE_RATE);
+			res = beginStream(outputName, SFD_SAMPLE_RATE);
 		}
 		return res;
 	}
 
-	s32 TinySoundFontDevice::getActiveOutput(void)
+	s32 SoundFontDevice::getActiveOutput(void)
 	{
 		return m_outputId;
 	}
 
-	bool TinySoundFontDevice::beginStream(const char* soundFont, s32 sampleRate)
+	bool SoundFontDevice::beginStream(const char* soundFont, s32 sampleRate)
 	{
 		getOutputCount();
 
@@ -103,7 +103,7 @@ namespace TFE_Audio
 		{
 			// Set the SoundFont rendering output mode
 			tsf_set_output(m_soundFont, TSF_STEREO_INTERLEAVED, sampleRate, 0);
-			tsf_set_max_voices(m_soundFont, TSF_MAX_VOICES);
+			tsf_set_max_voices(m_soundFont, SFD_MAX_VOICES);
 			// pre-allocate channels, clear programs or set them to the stored values.
 			const PresetNumber* presetNumbers = midiState_getPresets();
 			for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
@@ -114,16 +114,16 @@ namespace TFE_Audio
 				}
 				else
 				{
-					tsf_channel_set_presetnumber(m_soundFont, i, 0, i == TSF_DRUM_CHANNEL);
+					tsf_channel_set_presetnumber(m_soundFont, i, 0, i == SFD_DRUM_CHANNEL);
 				}
 			}
 			// Set the drum bank.
-			tsf_channel_set_bank_preset(m_soundFont, TSF_DRUM_CHANNEL, TSF_DRUM_BANK, 0);
+			tsf_channel_set_bank_preset(m_soundFont, SFD_DRUM_CHANNEL, SFD_DRUM_BANK, 0);
 		}
 		return m_soundFont != nullptr;
 	}
 
-	void TinySoundFontDevice::exit()
+	void SoundFontDevice::exit()
 	{
 		if (m_soundFont)
 		{
@@ -135,37 +135,37 @@ namespace TFE_Audio
 		}
 	}
 
-	void TinySoundFontDevice::reset()
+	void SoundFontDevice::reset()
 	{
 		if (!m_soundFont) { return; }
 		tsf_reset(m_soundFont);
 	}
 		
-	const char* TinySoundFontDevice::getName()
+	const char* SoundFontDevice::getName()
 	{
-		return c_TSF_Name;
+		return c_SFD_Name;
 	}
 
-	bool TinySoundFontDevice::render(f32* buffer, u32 sampleCount)
+	bool SoundFontDevice::render(f32* buffer, u32 sampleCount)
 	{
 		if (!m_soundFont) { return false; }
 		tsf_render_float(m_soundFont, buffer, sampleCount);
 		return true;
 	}
 
-	bool TinySoundFontDevice::canRender()
+	bool SoundFontDevice::canRender()
 	{
 		return m_soundFont != nullptr;
 	}
 
-	void TinySoundFontDevice::setVolume(f32 volume)
+	void SoundFontDevice::setVolume(f32 volume)
 	{
 		if (!m_soundFont) { return; }
 		tsf_set_volume(m_soundFont, volume);
 	}
 
 	// Raw midi commands.
-	void TinySoundFontDevice::message(u8 type, u8 arg1, u8 arg2)
+	void SoundFontDevice::message(u8 type, u8 arg1, u8 arg2)
 	{
 		if (!m_soundFont) { return; }
 		const u8 msgType = type & 0xf0;
@@ -183,9 +183,9 @@ namespace TFE_Audio
 			tsf_channel_midi_control(m_soundFont, channel, arg1, arg2);
 			break;
 		case MID_PROGRAM_CHANGE:
-			tsf_channel_set_presetnumber(m_soundFont, channel, arg1, channel == TSF_DRUM_CHANNEL ? 1 : 0);
+			tsf_channel_set_presetnumber(m_soundFont, channel, arg1, channel == SFD_DRUM_CHANNEL ? 1 : 0);
 			// Save the presets so they can be restored if the device or output is changed.
-			midiState_setPreset(channel, arg1, channel == TSF_DRUM_CHANNEL ? 1 : 0);
+			midiState_setPreset(channel, arg1, channel == SFD_DRUM_CHANNEL ? 1 : 0);
 			break;
 		case MID_PITCH_BEND:
 			tsf_channel_set_pitchwheel(m_soundFont, channel, (s32(arg2) << 7) | s32(arg1));
@@ -193,12 +193,12 @@ namespace TFE_Audio
 		}
 	}
 
-	void TinySoundFontDevice::message(const u8* msg, u32 len)
+	void SoundFontDevice::message(const u8* msg, u32 len)
 	{
 		message(msg[0], msg[1], len >= 2 ? msg[2] : 0);
 	}
 
-	void TinySoundFontDevice::noteAllOff()
+	void SoundFontDevice::noteAllOff()
 	{
 		if (!m_soundFont) { return; }
 		tsf_note_off_all(m_soundFont);

@@ -7,11 +7,11 @@ struct tsf;
 
 namespace TFE_Audio
 {
-	class TinySoundFontDevice : public MidiDevice
+	class SoundFontDevice : public MidiDevice
 	{
 	public:
-		TinySoundFontDevice() : m_soundFont(nullptr), m_outputId(-1) {}
-		~TinySoundFontDevice() override;
+		SoundFontDevice() : m_soundFont(nullptr), m_outputId(-1) {}
+		~SoundFontDevice() override;
 
 		MidiDeviceType getType() override { return MIDI_TYPE_SF2; }
 

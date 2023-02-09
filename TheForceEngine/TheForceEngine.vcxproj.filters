@@ -1228,9 +1228,6 @@
     <ClInclude Include="TFE_Audio\MidiSynth\tsf.h">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Audio\MidiSynth\tinySoundFontDevice.h">
-      <Filter>Source\TFE_Audio\MidiSynth</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Audio\systemMidiDevice.h">
       <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
@@ -1242,6 +1239,9 @@
     </ClInclude>
     <ClInclude Include="TFE_Audio\midiDeviceState.h">
       <Filter>Source\TFE_Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\MidiSynth\soundFontDevice.h">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2091,9 +2091,6 @@
     <ClCompile Include="TFE_System\frameLimiter.cpp">
       <Filter>Source\TFE_System</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Audio\MidiSynth\tinySoundFontDevice.cpp">
-      <Filter>Source\TFE_Audio\MidiSynth</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_Audio\systemMidiDevice.cpp">
       <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
@@ -2102,6 +2099,9 @@
     </ClCompile>
     <ClCompile Include="TFE_Audio\midiDeviceState.cpp">
       <Filter>Source\TFE_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Audio\MidiSynth\soundFontDevice.cpp">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

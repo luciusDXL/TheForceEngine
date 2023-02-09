@@ -358,7 +358,7 @@ echo ^)";
     <ClInclude Include="TFE_Audio\midiDevice.h" />
     <ClInclude Include="TFE_Audio\midiDeviceState.h" />
     <ClInclude Include="TFE_Audio\midiPlayer.h" />
-    <ClInclude Include="TFE_Audio\MidiSynth\tinySoundFontDevice.h" />
+    <ClInclude Include="TFE_Audio\MidiSynth\soundFontDevice.h" />
     <ClInclude Include="TFE_Audio\MidiSynth\tsf.h" />
     <ClInclude Include="TFE_Audio\RtAudio.h" />
     <ClInclude Include="TFE_Audio\RtMidi.h" />
@@ -709,7 +709,7 @@ echo ^)";
     <ClCompile Include="TFE_Audio\audioSystem.cpp" />
     <ClCompile Include="TFE_Audio\midiDeviceState.cpp" />
     <ClCompile Include="TFE_Audio\midiPlayer.cpp" />
-    <ClCompile Include="TFE_Audio\MidiSynth\tinySoundFontDevice.cpp" />
+    <ClCompile Include="TFE_Audio\MidiSynth\soundFontDevice.cpp" />
     <ClCompile Include="TFE_Audio\RtAudio.cpp" />
     <ClCompile Include="TFE_Audio\RtMidi.cpp" />
     <ClCompile Include="TFE_Audio\systemMidiDevice.cpp" />

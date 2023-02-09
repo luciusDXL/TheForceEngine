@@ -8,7 +8,7 @@
 #include <TFE_System/Threads/thread.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
-#include <TFE_Audio/MidiSynth/tinySoundFontDevice.h>
+#include <TFE_Audio/MidiSynth/soundFontDevice.h>
 #include <algorithm>
 #include <assert.h>
 
@@ -77,6 +77,7 @@ namespace TFE_MidiPlayer
 	TFE_THREADRET midiUpdateFunc(void* userData);
 	void stopAllNotes();
 	void changeVolume();
+	void allocateMidiDevice(MidiDeviceType type);
 
 	// Console Functions
 	void setMusicVolumeConsole(const ConsoleArgList& args);
@@ -89,59 +90,13 @@ namespace TFE_MidiPlayer
 		"",						// MIDI_TYPE_COUNT,
 	};
 
-	void setDeviceType(MidiDeviceType type)
-	{
-		delete s_midiDevice;
-		if (type == MIDI_TYPE_DEVICE)
-		{
-			s_midiDevice = new SystemMidiDevice();
-		}
-		else if (type == MIDI_TYPE_SF2)
-		{
-			s_midiDevice = new TinySoundFontDevice();
-		}
-		else
-		{
-			TFE_System::logWrite(LOG_ERROR, "Midi", "Invalid midi type selected: %d", (s32)type);
-		}
-
-		if (s_midiDevice)
-		{
-			if (!s_midiDevice->selectOutput(-1))	// -1 will select the default.
-			{
-				TFE_System::logWrite(LOG_ERROR, "Midi", "Cannot select midi output.");
-			}
-		}
-	}
-
-	MidiDeviceType getDeviceType()
-	{
-		if (s_midiDevice)
-		{
-			return s_midiDevice->getType();
-		}
-		return MIDI_TYPE_DEFAULT;
-	}
-		
 	bool init(s32 midiDeviceIndex, MidiDeviceType type)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_MidiPlayer::init");
 		midiState_clearPresets();
 
 		bool res = false;
-		s_midiDevice = nullptr;
-		if (type == MIDI_TYPE_DEVICE)
-		{
-			s_midiDevice = new SystemMidiDevice();
-		}
-		else if (type == MIDI_TYPE_SF2)
-		{
-			s_midiDevice = new TinySoundFontDevice();
-		}
-		else
-		{
-			TFE_System::logWrite(LOG_ERROR, "Midi", "Invalid midi type selected: %d", (s32)type);
-		}
+		allocateMidiDevice(type);
 
 		if (s_midiDevice)
 		{
@@ -200,6 +155,27 @@ namespace TFE_MidiPlayer
 	const char* getMidiDeviceTypeName(MidiDeviceType type)
 	{
 		return c_midiDeviceTypes[type];
+	}
+
+	void setDeviceType(MidiDeviceType type)
+	{
+		allocateMidiDevice(type);
+		if (s_midiDevice)
+		{
+			if (!s_midiDevice->selectOutput(-1))	// -1 will select the default.
+			{
+				TFE_System::logWrite(LOG_ERROR, "Midi", "Cannot select midi output.");
+			}
+		}
+	}
+
+	MidiDeviceType getDeviceType()
+	{
+		if (s_midiDevice)
+		{
+			return s_midiDevice->getType();
+		}
+		return MIDI_TYPE_DEFAULT;
 	}
 
 	//////////////////////////////////////////////////
@@ -543,5 +519,22 @@ namespace TFE_MidiPlayer
 		char res[256];
 		sprintf(res, "Sound Volume: %2.3f", s_masterVolume);
 		TFE_Console::addToHistory(res);
+	}
+
+	void allocateMidiDevice(MidiDeviceType type)
+	{
+		delete s_midiDevice;
+		if (type == MIDI_TYPE_DEVICE)
+		{
+			s_midiDevice = new SystemMidiDevice();
+		}
+		else if (type == MIDI_TYPE_SF2)
+		{
+			s_midiDevice = new SoundFontDevice();
+		}
+		else
+		{
+			TFE_System::logWrite(LOG_ERROR, "Midi", "Invalid midi type selected: %d", (s32)type);
+		}
 	}
 }

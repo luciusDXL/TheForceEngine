@@ -2425,11 +2425,13 @@ namespace TFE_FrontEndUI
 			if (hasChanged)
 			{
 				TFE_Audio::pause();
+				TFE_MidiPlayer::pauseThread();
 
 				device->selectOutput(curOutput);
 				sound->midiType = (s32)device->getType();
 				sound->midiOutput = device->getActiveOutput();
 
+				TFE_MidiPlayer::resumeThread();
 				TFE_Audio::resume();
 			}
 		}
