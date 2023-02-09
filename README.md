@@ -74,9 +74,15 @@ __sudo make install__
 * If no additional parameters were added to CMake, files will be installed in __/usr/local/bin__, __/usr/local/share/TheForceEngine/__
 
 #### Running TFE
+##### External application dependencies
 * "KDialog" for file dialog on KDE Plasma Desktop Environment
 * "zenity" for file dialog on all other desktop environments
 * "TiMidity++" or "FluidSynth" software synthesizer for glorious MIDI Music.
-	* __timidity -iA --sequencer-ports=1__
-	* __fluidsynth -s -L2 /path/to/preferred/soundfont.sf2__
 * or external MIDI Hardware.
+
+##### Launch
+* Start your preferred MIDI Software Synthesizer first:
+	* __timidity -iA --sequencer-ports=1__
+	* __fluidsynth -s -L2 -m alsa_seq /path/to/soundfont.sf2__
+* Start the Engine by clicking on the __"The Force Engine"__ Desktop icon or by running  __"theforceengine"__ in a shell.
+
