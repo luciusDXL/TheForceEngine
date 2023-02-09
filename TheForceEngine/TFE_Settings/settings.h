@@ -10,6 +10,7 @@
 
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
+#include <TFE_Audio/midiDevice.h>
 #include "gameSourceData.h"
 
 enum SkyMode
@@ -127,8 +128,9 @@ struct TFE_Settings_Sound
 	f32 musicVolume = 1.0f;
 	f32 cutsceneSoundFxVolume = 0.9f;
 	f32 cutsceneMusicVolume = 1.0f;
-	s32 audioDevice = -1;
-	s32 midiDevice = -1;
+	s32 audioDevice = -1;			// Use the audio device default.
+	s32 midiOutput  = -1;			// Use the midi type default.
+	s32 midiType = MIDI_TYPE_DEFAULT;
 	bool use16Channels = false;
 	bool disableSoundInMenus = false;
 };

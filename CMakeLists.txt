@@ -73,6 +73,7 @@ elseif(LINUX)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Fonts)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Mods)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Shaders)
+	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/SoundFonts)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Images)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Text)
 	include(CreateGitVersionH.cmake)
@@ -98,6 +99,7 @@ install(DIRECTORY
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Text"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Images"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Shaders"
+	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/SoundFonts"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Fonts"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Mods"
 	DESTINATION "${CMAKE_INSTALL_DATADIR}"

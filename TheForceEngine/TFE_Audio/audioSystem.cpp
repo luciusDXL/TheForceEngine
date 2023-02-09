@@ -2,6 +2,7 @@
 
 #include "audioSystem.h"
 #include "audioDevice.h"
+#include "midiPlayer.h"
 #include <TFE_System/system.h>
 #include <TFE_System/math.h>
 #include <TFE_Settings/settings.h>
@@ -52,6 +53,15 @@ namespace TFE_Audio
 	static const f32 c_channelLimit  = 1.0f;
 	static const f32 c_soundHeadroom = 0.7f;
 
+	enum
+	{
+		AUDIO_FREQ = 44100,
+		AUDIO_CHANNEL_COUNT = 2,
+		AUDIO_FRAME_SIZE = 1024,
+		AUDIO_CALLBACK_BUFFER_SIZE = 256,	// 256
+		BUFFERED_SILENT_FRAME_COUNT = 16,
+	};
+
 	// Client volume controls, ranging from [0, 1]
 	static f32 s_soundFxVolume = 1.0f;
 
@@ -60,7 +70,9 @@ namespace TFE_Audio
 	static Mutex s_mutex;
 	static bool s_paused = false;
 	static bool s_nullDevice = false;
+	static volatile s32 s_silentAudioFrames = 0;
 
+	static AudioUpsampleFilter s_upsampleFilter = AUF_DEFAULT;
 	static AudioThreadCallback s_audioThreadCallback = nullptr;
 
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData);
@@ -96,7 +108,7 @@ namespace TFE_Audio
 			s_sources[i].slot = i;
 		}
 
-		bool audDev = TFE_AudioDevice::init(256u, outputId, useNullDevice);
+		bool audDev = TFE_AudioDevice::init(AUDIO_FRAME_SIZE, outputId, useNullDevice);
 		if (!audDev)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio device.");
@@ -104,7 +116,7 @@ namespace TFE_Audio
 			return false;
 		}
 
-		bool audStream = TFE_AudioDevice::startOutput(audioCallback, nullptr, 2u, 11025u);
+		bool audStream = TFE_AudioDevice::startOutput(audioCallback, nullptr, AUDIO_CHANNEL_COUNT, AUDIO_FREQ);
 		if (!audStream)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Audio", "Cannot start audio stream.");
@@ -155,6 +167,16 @@ namespace TFE_Audio
 			init(false, id);
 		}
 	}
+		
+	void setUpsampleFilter(AudioUpsampleFilter filter)
+	{
+		s_upsampleFilter = filter;
+	}
+
+	AudioUpsampleFilter getUpsampleFilter()
+	{
+		return s_upsampleFilter;
+	}
 
 	void setVolume(f32 volume)
 	{
@@ -174,6 +196,14 @@ namespace TFE_Audio
 	void resume()
 	{
 		s_paused = false;
+	}
+
+	// Really the buffered audio will continue to process so time advances properly.
+	// But for 'BUFFERED_SILENT_FRAME_COUNT' audio will be silent.
+	// This allows the buffered data to be consumed without audio hitches.
+	void bufferedAudioClear()
+	{
+		s_silentAudioFrames = BUFFERED_SILENT_FRAME_COUNT;
 	}
 		
 	void setAudioThreadCallback(AudioThreadCallback callback)
@@ -411,7 +441,7 @@ namespace TFE_Audio
 
 		return sampleValue * c_scale[type] + c_offset[type];
 	}
-
+			
 	// Audio callback
 	s32 audioCallback(void *outputBuffer, void* inputBuffer, u32 bufferSize, f64 streamTime, u32 status, void* userData)
 	{
@@ -422,13 +452,27 @@ namespace TFE_Audio
 	#endif
 
 		// First clear samples
-		memset(buffer, 0, sizeof(f32)*bufferSize*2);
+		memset(buffer, 0, sizeof(f32)*bufferSize*AUDIO_CHANNEL_COUNT);
 			   
 		MUTEX_LOCK(&s_mutex);
 		// Then call the audio thread callback
 		if (s_audioThreadCallback && !s_paused)
 		{
-			s_audioThreadCallback(buffer, bufferSize, s_soundFxVolume * c_soundHeadroom);
+			f32 callbackBuffer[(AUDIO_CALLBACK_BUFFER_SIZE + 1)*AUDIO_CHANNEL_COUNT];	// 256 stereo + 1 for oversampling.
+			s_audioThreadCallback(callbackBuffer, AUDIO_CALLBACK_BUFFER_SIZE, s_soundFxVolume * c_soundHeadroom);
+			// The audio buffer is 1/4 as large as it should be.
+			// This means that in-between samples must be interpolated.
+			if (!s_silentAudioFrames)
+			{
+				if (s_upsampleFilter == AUF_NONE)
+				{
+					upsample4x_point(buffer, callbackBuffer, AUDIO_CALLBACK_BUFFER_SIZE*AUDIO_CHANNEL_COUNT);
+				}
+				else if (s_upsampleFilter == AUF_LINEAR)
+				{
+					upsample4x_linear(buffer, callbackBuffer, AUDIO_CALLBACK_BUFFER_SIZE*AUDIO_CHANNEL_COUNT);
+				}
+			}
 		}
 
 		// Then loop through the sources.
@@ -500,7 +544,14 @@ namespace TFE_Audio
 		cleanupSources();
 		MUTEX_UNLOCK(&s_mutex);
 
-		// Finally handle out of range audio samples.
+		// Handle midi synthesis results.
+		if (!s_paused)
+		{
+			TFE_MidiPlayer::synthesizeMidi((f32*)outputBuffer, bufferSize, !s_silentAudioFrames);
+		}
+		if (s_silentAudioFrames > 0) { s_silentAudioFrames--; }
+
+		// Handle out of range audio samples.
 		buffer = (f32*)outputBuffer;
 		for (u32 i = 0; i < bufferSize; i++, buffer += 2)
 		{

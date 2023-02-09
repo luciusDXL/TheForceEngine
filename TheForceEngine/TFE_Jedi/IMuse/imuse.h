@@ -102,6 +102,8 @@ enum iMuseErrorCode
 	imIllegalErr     = -7
 };
 
+#define IM_AUDIO_OVERSAMPLE 2
+
 namespace TFE_Jedi
 {
 	////////////////////////////////////////////////////

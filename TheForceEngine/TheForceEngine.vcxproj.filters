@@ -173,6 +173,9 @@
     <Filter Include="Source\TFE_Jedi\Serialization">
       <UniqueIdentifier>{c458c5bf-6010-4542-b51a-84494bbd00b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\TFE_Audio\MidiSynth">
+      <UniqueIdentifier>{92bc3a8b-84cf-4313-928e-cad926435b95}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -345,9 +348,6 @@
     </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\frontEndUi.h">
       <Filter>Source\TFE_FrontEndUI</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Audio\midiDevice.h">
-      <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Audio\RtMidi.h">
       <Filter>Source\TFE_Audio</Filter>
@@ -1225,6 +1225,24 @@
     <ClInclude Include="TFE_Audio\audioOutput.h">
       <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Audio\MidiSynth\tsf.h">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\MidiSynth\tinySoundFontDevice.h">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\systemMidiDevice.h">
+      <Filter>Source\TFE_Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\midiDevice.h">
+      <Filter>Source\TFE_Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\audioFilters.h">
+      <Filter>Source\TFE_Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\midiDeviceState.h">
+      <Filter>Source\TFE_Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -1367,9 +1385,6 @@
     </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\frontEndUi.cpp">
       <Filter>Source\TFE_FrontEndUI</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Audio\midiDevice.cpp">
-      <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Audio\RtMidi.cpp">
       <Filter>Source\TFE_Audio</Filter>
@@ -2075,6 +2090,18 @@
     </ClCompile>
     <ClCompile Include="TFE_System\frameLimiter.cpp">
       <Filter>Source\TFE_System</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Audio\MidiSynth\tinySoundFontDevice.cpp">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Audio\systemMidiDevice.cpp">
+      <Filter>Source\TFE_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Audio\audioFilters.cpp">
+      <Filter>Source\TFE_Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Audio\midiDeviceState.cpp">
+      <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

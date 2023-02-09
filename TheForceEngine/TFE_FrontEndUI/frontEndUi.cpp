@@ -28,11 +28,13 @@
 #include <TFE_Ui/imGUI/imgui.h>
 // Game
 #include <TFE_DarkForces/mission.h>
+#include <TFE_DarkForces/gameMusic.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 
 #include <climits>
 
 using namespace TFE_Input;
+using namespace TFE_Audio;
 
 namespace TFE_FrontEndUI
 {
@@ -2341,6 +2343,7 @@ namespace TFE_FrontEndUI
 
 		const char* outputAudioNames[MAX_AUDIO_OUTPUTS];
 		char outputMidiNames[MAX_AUDIO_OUTPUTS * 256];
+		char outputMidiTypeNames[MIDI_TYPE_COUNT * 256];
 		{
 			s32 outputCount = 0, curOutput = 0;
 			const OutputDeviceInfo* outputInfo = TFE_Audio::getOutputDeviceList(outputCount, curOutput);
@@ -2363,13 +2366,48 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::Separator();
 		{
-			s32 outputCount = 0, curOutput = TFE_MidiDevice::getActiveDevice();
-			outputCount = min(MAX_AUDIO_OUTPUTS, (s32)TFE_MidiDevice::getDeviceCount());
+			// Select between types.
+			MidiDevice* device = TFE_MidiPlayer::getMidiDevice();
+
+			s32 typeCount = MIDI_TYPE_COUNT;
+			s32 curType = (s32)device->getType();
+			char* typeList = outputMidiTypeNames;
+			memset(outputMidiTypeNames, 0, 256 * MIDI_TYPE_COUNT);
+			for (s32 i = 0; i < typeCount; i++)
+			{
+				strcpy(typeList, TFE_MidiPlayer::getMidiDeviceTypeName(MidiDeviceType(i)));
+				typeList += strlen(typeList) + 1;	// +1 as imgui entry divider
+			}
+
+			ImGui::LabelText("##ConfigLabel", "Midi Device Type:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::SetNextItemWidth(256 * s_uiScale);
+			if (ImGui::Combo("##Midi Type", &curType, (const char*)outputMidiTypeNames, typeCount))
+			{
+				TFE_Audio::pause();
+				TFE_MidiPlayer::pauseThread();
+
+				TFE_MidiPlayer::setDeviceType(MidiDeviceType(curType));
+				device = TFE_MidiPlayer::getMidiDevice();
+				if (device)
+				{
+					sound->midiType = (s32)device->getType();
+					sound->midiOutput = device->getActiveOutput();
+				}
+
+				TFE_MidiPlayer::resumeThread();
+				TFE_Audio::resume();
+			}
+
+			//////////////////////////////
+			device = TFE_MidiPlayer::getMidiDevice();
+
+			s32 outputCount = 0, curOutput = device->getActiveOutput();
+			outputCount = min(MAX_AUDIO_OUTPUTS, (s32)device->getOutputCount());
 			char* midiList = outputMidiNames;
 			memset(outputMidiNames, 0, 256 * MAX_AUDIO_OUTPUTS);
 			for (s32 i = 0; i < outputCount; i++)
 			{
-				TFE_MidiDevice::getDeviceName(i, midiList, 256);
+				device->getOutputName(i, midiList, 256);
 				midiList += strlen(midiList) + 1;	// +1 as imgui entry divider
 			}
 
@@ -2378,13 +2416,21 @@ namespace TFE_FrontEndUI
 			bool hasChanged = ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
 			if (ImGui::Button("Reset Midi Output"))
 			{
+				TFE_MidiPlayer::setDeviceType(MIDI_TYPE_DEFAULT);
+				device = TFE_MidiPlayer::getMidiDevice();
+
 				curOutput = -1;
 				hasChanged = true;
 			}
 			if (hasChanged)
 			{
-				TFE_MidiDevice::selectDevice(u32(curOutput));
-				sound->midiDevice = TFE_MidiDevice::getActiveDevice();
+				TFE_Audio::pause();
+
+				device->selectOutput(curOutput);
+				sound->midiType = (s32)device->getType();
+				sound->midiOutput = device->getActiveOutput();
+
+				TFE_Audio::resume();
 			}
 		}
 

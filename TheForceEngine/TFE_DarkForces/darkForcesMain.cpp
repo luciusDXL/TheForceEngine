@@ -679,6 +679,11 @@ namespace TFE_DarkForces
 		TFE_Audio::resume();
 	}
 
+	void clearBufferedSound()
+	{
+		TFE_Audio::bufferedAudioClear();
+	}
+
 	void startNextMode()
 	{
 		if (s_invalidLevelIndex || s_runGameState.abortLevel)
