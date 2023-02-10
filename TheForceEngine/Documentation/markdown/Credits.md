@@ -2,9 +2,11 @@
 I believe that I have captured all of the individual contributors and dependencies. That said, if you think I am using your work and you are not listed below, or would rather be listed differently, please let me know so that it can be corrected. Any mistakes in this regard are not intentional and will be fixed as soon as possible.
 
 ## Individual Contributors
-  * luciusDXL (me) - Principle Developer / Project Lead (the only fulltime developer for now).
+  * luciusDXL (me) - Principle Developer / Project Lead.
   * Azamat H. Hackimov - Fixed VS 2019 Compilation issues.
+  * Manuel Lauss - Most of the Linux support contributions, other contributions.
   * Matthew Gilmore - Contributed to Linux support and testing.
+  * RC2225 (Tim) - Contributed to Linux support.
  
   * Craig Yates - TFE Logo design. Minimalist title screen design.
   * Pawel "Dzierzan" Dzierzanowski - Adjustable Hud mod (built-in).
@@ -99,6 +101,14 @@ RtAudio (Core Audio I/O)
 RtMidi (Core Midi Hardware I/O)
   * [https://www.music.mcgill.ca/~gary/rtmidi/](https://www.music.mcgill.ca/~gary/rtmidi/)
   * License: Custom
+
+TinySoundFont
+  * [https://github.com/schellingb/TinySoundFont](https://github.com/schellingb/TinySoundFont)
+  * License: MIT
+
+Nuked-OPL3
+  * https://github.com/nukeykt/Nuked-OPL3
+  * License: GPL 2.1
 
 **Other**
   * [https://github.com/kuba--/zip](https://github.com/kuba--/zip)

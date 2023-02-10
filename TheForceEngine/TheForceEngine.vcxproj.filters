@@ -1243,6 +1243,18 @@
     <ClInclude Include="TFE_Audio\MidiSynth\soundFontDevice.h">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_Audio\MidiSynth\opl3.h">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\MidiSynth\opl3_reg.h">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\MidiSynth\fm4Opl3Device.h">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_Audio\MidiSynth\fm4Tables.h">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2101,6 +2113,12 @@
       <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Audio\MidiSynth\soundFontDevice.cpp">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Audio\MidiSynth\opl3.c">
+      <Filter>Source\TFE_Audio\MidiSynth</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_Audio\MidiSynth\fm4Opl3Device.cpp">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClCompile>
   </ItemGroup>

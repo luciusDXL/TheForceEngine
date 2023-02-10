@@ -4,9 +4,9 @@
 
 enum MidiDeviceType
 {
-	MIDI_TYPE_DEVICE = 0,	// System midi device (hardware, midi server, GM midi on Windows).
+	MIDI_TYPE_SYSTEM = 0,	// System midi device (hardware, midi server, GM midi on Windows).
 	MIDI_TYPE_SF2,			// Use the Sound Font 2 (SF2) midi synthesizer.
-	//MIDI_TYPE_OPL3,		// Use OPL3 emulation (like DosBox).
+	MIDI_TYPE_OPL3,			// Use OPL3 emulation (like DosBox).
 	MIDI_TYPE_COUNT,
 	MIDI_TYPE_DEFAULT = MIDI_TYPE_SF2
 };

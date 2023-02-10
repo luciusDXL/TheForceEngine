@@ -12,7 +12,7 @@ namespace TFE_Audio
 		SystemMidiDevice();
 		~SystemMidiDevice() override;
 
-		MidiDeviceType getType() override { return MIDI_TYPE_DEVICE; }
+		MidiDeviceType getType() override { return MIDI_TYPE_SYSTEM; }
 
 		void exit() override;
 		void reset() override;

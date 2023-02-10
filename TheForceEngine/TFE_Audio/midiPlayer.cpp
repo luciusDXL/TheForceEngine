@@ -9,6 +9,7 @@
 #include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Audio/MidiSynth/soundFontDevice.h>
+#include <TFE_Audio/MidiSynth/fm4Opl3Device.h>
 #include <algorithm>
 #include <assert.h>
 
@@ -85,9 +86,9 @@ namespace TFE_MidiPlayer
 
 	static const char* c_midiDeviceTypes[] =
 	{
-		"System Midi",			// MIDI_TYPE_DEVICE = 0,	// System midi device (hardware, midi server, GM midi on Windows).
-		"SF2 Synthesized Midi", // MIDI_TYPE_SF2,			// Use the Sound Font 2 (SF2) midi synthesizer.
-		"",						// MIDI_TYPE_COUNT,
+		"System Midi",			// MIDI_TYPE_SYSTEM
+		"SF2 Synthesized Midi", // MIDI_TYPE_SF2
+		"OPL3 Synthesized Midi",// MIDI_TYPE_OPL3
 	};
 
 	bool init(s32 midiDeviceIndex, MidiDeviceType type)
@@ -524,17 +525,21 @@ namespace TFE_MidiPlayer
 	void allocateMidiDevice(MidiDeviceType type)
 	{
 		delete s_midiDevice;
-		if (type == MIDI_TYPE_DEVICE)
+		s_midiDevice = nullptr;
+
+		switch (type)
 		{
-			s_midiDevice = new SystemMidiDevice();
-		}
-		else if (type == MIDI_TYPE_SF2)
-		{
-			s_midiDevice = new SoundFontDevice();
-		}
-		else
-		{
-			TFE_System::logWrite(LOG_ERROR, "Midi", "Invalid midi type selected: %d", (s32)type);
+			case MIDI_TYPE_SYSTEM:
+				s_midiDevice = new SystemMidiDevice();
+				break;
+			case MIDI_TYPE_SF2:
+				s_midiDevice = new SoundFontDevice();
+				break;
+			case MIDI_TYPE_OPL3:
+				s_midiDevice = new Fm4Opl3Device();
+				break;
+			default:
+				TFE_System::logWrite(LOG_ERROR, "Midi", "Invalid midi type selected: %d", (s32)type);
 		}
 	}
 }
