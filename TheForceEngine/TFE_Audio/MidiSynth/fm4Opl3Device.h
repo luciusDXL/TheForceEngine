@@ -10,13 +10,12 @@ namespace TFE_Audio
 	class Fm4Opl3Device : public MidiDevice
 	{
 	public:
-		Fm4Opl3Device() : m_streamActive(false), m_voiceHead(nullptr) {}
+		Fm4Opl3Device() : m_streamActive(false), m_volume(1.0f), m_volumeScaled(1.0f), m_voiceHead(nullptr) {}
 		~Fm4Opl3Device() override;
 
 		MidiDeviceType getType() override { return MIDI_TYPE_OPL3; }
 
 		void exit() override;
-		void reset() override;
 		bool hasGlobalVolumeCtrl() override { return true; }
 		const char* getName() override;
 
@@ -87,6 +86,8 @@ namespace TFE_Audio
 		};
 
 		bool m_streamActive;
+		f32  m_volume;
+		f32  m_volumeScaled;
 		Fm4Channel m_channels[MIDI_CHANNEL_COUNT];
 		Fm4Voice m_voices[FM4_VoiceCount];
 		Fm4Voice* m_voiceHead;

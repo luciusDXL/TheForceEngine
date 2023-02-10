@@ -134,12 +134,6 @@ namespace TFE_Audio
 			tsf_close(soundFont);
 		}
 	}
-
-	void SoundFontDevice::reset()
-	{
-		if (!m_soundFont) { return; }
-		tsf_reset(m_soundFont);
-	}
 		
 	const char* SoundFontDevice::getName()
 	{

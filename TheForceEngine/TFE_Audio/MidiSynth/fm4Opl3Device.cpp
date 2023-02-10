@@ -79,6 +79,7 @@ namespace TFE_Audio
 			m_channels[i].pitch = FM4_PitchCenter;
 		}
 		memset(m_registers, 0, FM4_RegisterCount * FM4_OutCount);
+		m_volumeScaled = m_volume * c_outputScale;
 		m_streamActive = true;
 	}
 
@@ -86,10 +87,6 @@ namespace TFE_Audio
 	{
 		s_fmChip = { 0 };
 		m_streamActive = false;
-	}
-
-	void Fm4Opl3Device::reset()
-	{
 	}
 		
 	const char* Fm4Opl3Device::getName()
@@ -108,8 +105,8 @@ namespace TFE_Audio
 
 			s16 left  = clamp(s32(buf[0] * FM4_PostAmp), INT16_MIN, INT16_MAX);
 			s16 right = clamp(s32(buf[1] * FM4_PostAmp), INT16_MIN, INT16_MAX);
-			*buffer++ = f32(left)  * c_outputScale;
-			*buffer++ = f32(right) * c_outputScale;
+			*buffer++ = f32(left)  * m_volumeScaled;
+			*buffer++ = f32(right) * m_volumeScaled;
 		}
 		return true;
 	}
@@ -121,7 +118,8 @@ namespace TFE_Audio
 
 	void Fm4Opl3Device::setVolume(f32 volume)
 	{
-		if (!m_streamActive) { return; }
+		m_volume = volume;
+		m_volumeScaled = m_volume * c_outputScale;
 	}
 
 	// Raw midi commands.

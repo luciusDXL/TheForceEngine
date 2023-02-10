@@ -16,7 +16,6 @@ namespace TFE_Audio
 		MidiDeviceType getType() override { return MIDI_TYPE_SF2; }
 
 		void exit() override;
-		void reset() override;
 		bool hasGlobalVolumeCtrl() override { return true; }
 		const char* getName() override;
 

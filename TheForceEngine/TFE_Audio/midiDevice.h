@@ -22,7 +22,6 @@ namespace TFE_Audio
 		virtual MidiDeviceType getType() = 0;
 
 		virtual void exit() = 0;
-		virtual void reset() = 0;
 		virtual bool hasGlobalVolumeCtrl() = 0;
 		virtual const char* getName() = 0;
 

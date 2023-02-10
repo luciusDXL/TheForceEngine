@@ -55,10 +55,6 @@ namespace TFE_Audio
 		m_outputId = -1;
 	}
 
-	void SystemMidiDevice::reset()
-	{
-	}
-
 	const char* SystemMidiDevice::getName()
 	{
 		return c_SystemMidi_Name;

@@ -15,7 +15,6 @@ namespace TFE_Audio
 		MidiDeviceType getType() override { return MIDI_TYPE_SYSTEM; }
 
 		void exit() override;
-		void reset() override;
 		// The system device does not have proper global volume control.
 		bool hasGlobalVolumeCtrl() override { return false; }
 		const char* getName() override;
