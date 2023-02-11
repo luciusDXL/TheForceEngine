@@ -2305,16 +2305,22 @@ namespace TFE_FrontEndUI
 		ImGui::SliderInt("Offset Lt", &hud->pixelOffset[0], -512, 512); ImGui::SameLine(0.0f, 3.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputInt("##HudOffsetX0Text", &hud->pixelOffset[0], 1, 10);
-
+		
 		ImGui::SetNextItemWidth(196 * s_uiScale);
 		ImGui::SliderInt("Offset Rt", &hud->pixelOffset[1], -512, 512); ImGui::SameLine(0.0f, 3.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputInt("##HudOffsetX1Text", &hud->pixelOffset[1], 1, 10);
-
+		
 		ImGui::SetNextItemWidth(196*s_uiScale);
 		ImGui::SliderInt("Offset Y", &hud->pixelOffset[2], -512, 512); ImGui::SameLine(0.0f, 10.0f*s_uiScale);
 		ImGui::SetNextItemWidth(128 * s_uiScale);
 		ImGui::InputInt("##HudOffsetYText", &hud->pixelOffset[2], 1, 10);
+
+		// Clamp pixel offsets to avoid fixed-point overflow.
+		const s32 maxOffset = 16383;
+		hud->pixelOffset[0] = clamp(hud->pixelOffset[0], -maxOffset, maxOffset);
+		hud->pixelOffset[1] = clamp(hud->pixelOffset[1], -maxOffset, maxOffset);
+		hud->pixelOffset[2] = clamp(hud->pixelOffset[2], -maxOffset, maxOffset);
 	}
 
 	// Uses a percentage slider (0 - 100%) to adjust a floating point value (0.0 - 1.0).
@@ -2340,7 +2346,7 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Audio Output");
 
 		const char* outputAudioNames[MAX_AUDIO_OUTPUTS];
-		char outputMidiNames[MAX_AUDIO_OUTPUTS][256];
+		char outputMidiNames[MAX_AUDIO_OUTPUTS * 256];
 		{
 			s32 outputCount = 0, curOutput = 0;
 			const OutputDeviceInfo* outputInfo = TFE_Audio::getOutputDeviceList(outputCount, curOutput);
@@ -2363,23 +2369,29 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::Separator();
 		{
-			s32 outputCount = 0, curOutput = 0;
+			s32 outputCount = 0, curOutput = TFE_MidiDevice::getActiveDevice();
 			outputCount = min(MAX_AUDIO_OUTPUTS, (s32)TFE_MidiDevice::getDeviceCount());
+			char* midiList = outputMidiNames;
+			memset(outputMidiNames, 0, 256 * MAX_AUDIO_OUTPUTS);
 			for (s32 i = 0; i < outputCount; i++)
 			{
-				TFE_MidiDevice::getDeviceName(i, outputMidiNames[i], 256);
+				TFE_MidiDevice::getDeviceName(i, midiList, 256);
+				midiList += strlen(midiList) + 1;	// +1 as imgui entry divider
 			}
 
 			ImGui::LabelText("##ConfigLabel", "Midi Device:"); ImGui::SameLine(150 * s_uiScale);
 			ImGui::SetNextItemWidth(256 * s_uiScale);
-			ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
-
+			bool hasChanged = ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
 			if (ImGui::Button("Reset Midi Output"))
 			{
 				curOutput = -1;
+				hasChanged = true;
 			}
-			TFE_MidiDevice::selectDevice(u32(curOutput));
-			sound->midiDevice = curOutput;
+			if (hasChanged)
+			{
+				TFE_MidiDevice::selectDevice(u32(curOutput));
+				sound->midiDevice = TFE_MidiDevice::getActiveDevice();
+			}
 		}
 
 		ImGui::Separator();

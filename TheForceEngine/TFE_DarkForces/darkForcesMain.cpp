@@ -1218,10 +1218,6 @@ namespace TFE_DarkForces
 		{
 			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
 		}
-		if (TFE_Paths::getFilePath("secbase.pal", &filePath))
-		{
-			FileStream::readContents(&filePath, s_escMenuPalette, 768);
-		}
 
 		weapon_enableAutomount(s_config.wpnAutoMount);
 		s_sharedState.screenShotSndSrc = sound_load("scrshot.voc", SOUND_PRIORITY_HIGH0);
