@@ -1,3 +1,15 @@
+///////////////////////////////////////////////////////////////
+// The low-level driver code that interfaces with the OPL3
+// device (virtual device in this case) was reverse-engineered
+// from the iMuse driver interface code.
+//
+// I moved the driver level code into the OPL3 device instead
+// of as part of iMuse for several reasons:
+// * The OPL3 device can be handled using the same abstraction
+//   as the SF2 and System midi devices.
+// * It avoids the need to add addition complexity to the iMuse
+//   library in TFE, which is already quite large.
+///////////////////////////////////////////////////////////////
 #include "fm4Opl3Device.h"
 #include "fm4Tables.h"
 #include "opl3.h"
@@ -5,6 +17,7 @@
 #include <TFE_Audio/midi.h>
 #include <TFE_Audio/midiDeviceState.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Jedi/IMuse/imList.h>
 #include <algorithm>
 #include <assert.h>
 
@@ -23,7 +36,7 @@ namespace TFE_Audio
 		FM4_PitchCenter = 0x2000,
 	};
 	const f32 c_outputScale = 1.0f / 32768.0f;
-	
+		
 	static const char* c_Opl3_Name = "OPL3";
 	static const char* c_Output_Name = "FM4 Driver";
 
@@ -62,23 +75,49 @@ namespace TFE_Audio
 		return 0;
 	}
 
+	void Fm4Opl3Device::fm4_reset()
+	{
+		// Reset instruments.
+		for (s32 i = 0; i < 256; i++)
+		{
+			fm4_sendOutput(FM4_OutLeft,  i, 0, true);
+			fm4_sendOutput(FM4_OutRight, i, 0, true);
+		}
+		fm4_sendOutput(FM4_OutRight, OPL3_KBD_SPLIT_REGISTER, OPL3_KEYBOARD_SPLIT, true);
+		fm4_sendOutput(FM4_OutRight, OPL3_PERCUSSION_REGISTER, 0x00, true);
+		fm4_sendOutput(FM4_OutRight, OPL3_MODE_REGISTER, OPL3_ENABLE, true);
+	}
+
 	void Fm4Opl3Device::beginStream(s32 sampleRate)
 	{
 		assert(!m_streamActive);
 		OPL3_Reset(&s_fmChip, sampleRate);
+		fm4_reset();
+
 		// Initialize channels
 		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
 			m_channels[i].priority = 0;
 			m_channels[i].noteReq = 1;
-			m_channels[i].u08 = 0;
-			m_channels[i].u0c = 0;
+			m_channels[i].refCount = 0;
+			m_channels[i].port = 0;
 			m_channels[i].timbre = 0;
 			m_channels[i].volume = 0x7f;
 			m_channels[i].pan = 64;
 			m_channels[i].pitch = FM4_PitchCenter;
 		}
 		memset(m_registers, 0, FM4_RegisterCount * FM4_OutCount);
+
+		// Initialize the voice list.
+		m_voiceList.active = nullptr;
+		m_voiceList.free   = nullptr;
+		memset(m_voices, 0, sizeof(Fm4Voice) * FM4_VoiceCount);
+		for (s32 i = 0; i < FM4_VoiceCount; i++)
+		{
+			m_voices[i].id = i;
+			IM_LIST_ADD(m_voiceList.free, &m_voices[i]);
+		}
+
 		m_volumeScaled = m_volume * c_outputScale;
 		m_streamActive = true;
 	}
@@ -138,12 +177,12 @@ namespace TFE_Audio
 			fm4_noteOn(channel, arg1, arg2);
 			break;
 		case MID_CONTROL_CHANGE:
-			fm4_programChange(channel, arg1);
-			break;
-		case MID_PROGRAM_CHANGE:
 			fm4_controlChange(channel, arg1, arg2);
 			// Save the presets so they can be restored if the device or output is changed.
 			midiState_setPreset(channel, arg1, channel == FM4_DrumChannel ? 1 : 0);
+			break;
+		case MID_PROGRAM_CHANGE:
+			fm4_programChange(channel, arg1);
 			break;
 		case MID_PITCH_BEND:
 			// No-op
@@ -159,25 +198,56 @@ namespace TFE_Audio
 	void Fm4Opl3Device::noteAllOff()
 	{
 		if (!m_streamActive) { return; }
+
+		Fm4Voice* voice = m_voiceList.active;
+		while (voice)
+		{
+			Fm4Voice* next = voice->next;
+
+			fm4_voiceOff(voice->id);
+			IM_LIST_REM(m_voiceList.active, voice);
+			IM_LIST_ADD(m_voiceList.free, voice);
+
+			voice = next;
+		}
+
+		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
+		{
+			m_channels[i].refCount = 0;
+			m_channels[i].noteReq = 1;
+		}
 	}
 		
 	/////////////////////////////////////////////
 	// Low-level driver implementation.
 	/////////////////////////////////////////////
+	void Fm4Opl3Device::fm4_setVoiceVolume(s32 voice, s32 volume)
+	{
+		s32 rightLevel = m_noteOutput[voice * 10 + 4];
+		s32 newVolume  = ((rightLevel + 1) * volume) >> 7;
+		s32 vel = s_fmVelocityMapping[newVolume];
+
+		s32 offset = s_fmVoiceToRegMappingOp2[voice];
+		fm4_sendOutput(FM4_OutRight, offset + OPL3_KSL_LEVEL, (s_fmMaxVolume[offset] | 0x3f) - vel);
+	}
+
 	void Fm4Opl3Device::fm4_controlChange(s32 channelId, s32 arg1, s32 arg2)
 	{
 		Fm4Channel* channel = &m_channels[channelId];
-		Fm4Voice* voice = m_voiceHead->next;
+		Fm4Voice* voice = m_voiceList.active;
 		switch (arg1)
 		{
 			case MID_VOLUME_MSB:
 			{
 				channel->volume = arg2;
-				if (!voice)
+				while (voice)
 				{
-					return;
+					if (voice->channelId == channelId)
+					{
+						fm4_setVoiceVolume(voice->id, arg2);
+					}
+					voice = voice->next;
 				}
-				// TODO - more code here.
 			} break;
 			case MID_PAN_MSB:
 			{
@@ -199,23 +269,128 @@ namespace TFE_Audio
 		m_channels[channelId].timbre = timbre;
 	}
 
-	void Fm4Opl3Device::fm4_noteOn(s32 channel, s32 key, s32 velocity)
+	void Fm4Opl3Device::fm4_noteOn(s32 channelId, s32 key, s32 velocity)
 	{
-		// TODO
+		Fm4Channel* channel = &m_channels[channelId];
+		if (channelId == FM4_DrumChannel)
+		{
+			channel->timbre = fm4_panToDrumTimbre(channel->pan);
+			if (channel->timbre >= 128)
+			{
+				channel->pitch = FM4_PitchCenter;
+			}
+		}
+
+		Fm4Voice* voice = fm4_allocVoice(channel);
+		if (!voice) { return; }
+		voice->channel = channel;
+		voice->channelId = channelId;
+		voice->key = key;
+
+		channel->refCount++;
+		channel->port = channel->refCount > channel->noteReq ? 1 : 0;
+		fm4_voiceOn(voice->id, channelId, key, velocity, channel->timbre, channel->volume, channel->pan, channel->pitch);
 	}
 
-	void Fm4Opl3Device::fm4_noteOff(s32 channel, s32 key)
+	void Fm4Opl3Device::fm4_noteOff(s32 channelId, s32 key)
 	{
-		// TODO
+		Fm4Voice* voice = m_voiceList.active;
+		while (voice)
+		{
+			if (channelId == voice->channelId && voice->key == key)
+			{
+				fm4_voiceOff(voice->id);
+				m_channels[channelId].refCount--;
+				m_channels[channelId].port = m_channels[channelId].refCount > m_channels[channelId].noteReq ? 1 : 0;
+
+				IM_LIST_REM(m_voiceList.active, voice);
+				IM_LIST_ADD(m_voiceList.free, voice);
+				break;
+			}
+			voice = voice->next;
+		}
 	}
 
-	void Fm4Opl3Device::fm4_sendOutput(FmOutputChannel outChannel, u16 reg, u8 value)
+	s32 Fm4Opl3Device::fm4_panToDrumTimbre(s32 pan)
 	{
-		const u32 regIndex = reg + (outChannel >> 1)*FM4_RegisterCount;
-		if (m_registers[regIndex] == value) { return; }
+		return (s8)s_fmPanToDrumTimbre[pan] + 128;
+	}
+
+	Fm4Opl3Device::Fm4Voice* Fm4Opl3Device::fm4_allocVoice(Fm4Channel* channel)
+	{
+		Fm4Voice* voice = m_voiceList.free;
+		Fm4Voice* newVoice = nullptr;
+		while (voice)
+		{
+			Fm4Voice* next = voice->next;
+			if (next)
+			{
+				voice = next;
+			}
+			else
+			{
+				IM_LIST_REM(m_voiceList.free, voice);
+				newVoice = voice;
+				break;
+			}
+		}
+
+		if (!newVoice)
+		{
+			Fm4Voice* bestChoice = &m_voiceTemp;
+			bestChoice->channel = channel;
+			voice = m_voiceList.active;
+
+			while (voice)
+			{
+				Fm4Channel* vchannel = voice->channel;
+				Fm4Channel* bchannel = bestChoice->channel;
+
+				if (vchannel->port == bchannel->port)
+				{
+					if (bchannel->priority >= vchannel->priority)
+					{
+						bestChoice = voice;
+					}
+				}
+				else if (vchannel->port)
+				{
+					bestChoice = voice;
+				}
+				voice = voice->next;
+			}
+
+			if (bestChoice != &m_voiceTemp)
+			{
+				fm4_voiceOff(bestChoice->id);
+				m_channels[bestChoice->channelId].refCount--;
+				m_channels[bestChoice->channelId].port = m_channels[bestChoice->channelId].refCount > m_channels[bestChoice->channelId].noteReq ? 1 : 0;
+
+				IM_LIST_REM(m_voiceList.active, bestChoice);
+				newVoice = bestChoice;
+			}
+		}
+
+		if (newVoice)
+		{
+			IM_LIST_ADD(m_voiceList.active, newVoice);
+		}
+		return newVoice;
+	}
+
+	void Fm4Opl3Device::fm4_voiceOff(s32 voice)
+	{
+		fm4_sendOutput(FM4_OutRight, voice + OPL3_KEYON_BLOCK, s_fmVoicePitchRight[voice] & 0xffdf);
+		fm4_sendOutput(FM4_OutLeft,  voice + OPL3_KEYON_BLOCK, s_fmVoicePitchLeft[voice]  & 0xffdf);
+	}
+
+	void Fm4Opl3Device::fm4_sendOutput(s32 port, u16 reg, u8 value, bool force)
+	{
+		const u32 regIndex = reg + ((port <= 2 ? port : 0) >> 1)*FM4_RegisterCount;
+		if (m_registers[regIndex] == value && !force) { return; }
 		m_registers[regIndex] = value;
 
-		const u16 outReg = u16(FM4_Port + reg + outChannel);
+		const u16 outReg = u16(reg + ((port&2) << 7));
 		OPL3_WriteRegBuffered(&s_fmChip, outReg, value);
 	}
 
@@ -235,8 +410,8 @@ namespace TFE_Audio
 
 	void Fm4Opl3Device::fm4_setVoiceDelta(s32 voice, s32 l0, s32 l1, s32 l2, s32 l3)
 	{
-		s32 offOp1 = OPL3_KSL_LEVEL + s_fmPortToRegMappingOp1[voice];
-		s32 offOp2 = OPL3_KSL_LEVEL + s_fmPortToRegMappingOp2[voice];
+		s32 offOp1 = OPL3_KSL_LEVEL + s_fmVoiceToRegMappingOp1[voice];
+		s32 offOp2 = OPL3_KSL_LEVEL + s_fmVoiceToRegMappingOp2[voice];
 
 		s32 delta0 = m_registers[offOp1] - l0;
 		s32 delta1 = m_registers[offOp2] - l1;
@@ -254,23 +429,23 @@ namespace TFE_Audio
 
 	void Fm4Opl3Device::fm4_setVoiceTimbre(FmOutputChannel outChannel, s32 voice, TimbreBank* bank)
 	{
-		s32 offOp1 = s_fmPortToRegMappingOp1[voice];
-		s32 offOp2 = s_fmPortToRegMappingOp2[voice];
+		s32 offOp1 = s_fmVoiceToRegMappingOp1[voice];
+		s32 offOp2 = s_fmVoiceToRegMappingOp2[voice];
 		fm4_sendOutput(outChannel, OPL3_KSL_LEVEL + offOp1, OPL3_TOTAL_LEVEL_MASK);
 		fm4_sendOutput(outChannel, OPL3_KSL_LEVEL + offOp2, OPL3_TOTAL_LEVEL_MASK);
 
 		// Op1
 		fm4_sendOutput(outChannel, OPL3_ENABLE_WAVE_SELECT + offOp1, bank->op1.waveEnable);
 		fm4_sendOutput(outChannel, OPL3_KSL_LEVEL          + offOp1, bank->op1.level | OPL3_TOTAL_LEVEL_MASK);
-		fm4_sendOutput(outChannel, OPL3_ATTACK_DECAY       + offOp1, ~s32(bank->op1.attackDelay));
-		fm4_sendOutput(outChannel, OPL3_SUSTAIN_RELEASE    + offOp1, ~s32(bank->op1.sustainRelease));
+		fm4_sendOutput(outChannel, OPL3_ATTACK_DECAY       + offOp1, (~u32(bank->op1.attackDelay))&0xffu);
+		fm4_sendOutput(outChannel, OPL3_SUSTAIN_RELEASE    + offOp1, (~u32(bank->op1.sustainRelease))&0xffu);
 		fm4_sendOutput(outChannel, OPL3_WAVE_SELECT        + offOp1, bank->op1.waveSelect);
 
 		// Op2
 		fm4_sendOutput(outChannel, OPL3_ENABLE_WAVE_SELECT + offOp2, bank->op2.waveEnable);
 		fm4_sendOutput(outChannel, OPL3_KSL_LEVEL          + offOp2, bank->op2.level | OPL3_TOTAL_LEVEL_MASK);
-		fm4_sendOutput(outChannel, OPL3_ATTACK_DECAY       + offOp2, ~s32(bank->op2.attackDelay));
-		fm4_sendOutput(outChannel, OPL3_SUSTAIN_RELEASE    + offOp2, ~s32(bank->op2.sustainRelease));
+		fm4_sendOutput(outChannel, OPL3_ATTACK_DECAY       + offOp2, (~u32(bank->op2.attackDelay))&0xffu);
+		fm4_sendOutput(outChannel, OPL3_SUSTAIN_RELEASE    + offOp2, (~u32(bank->op2.sustainRelease))&0xffu);
 		fm4_sendOutput(outChannel, OPL3_WAVE_SELECT        + offOp2, bank->op2.waveSelect);
 
 		fm4_sendOutput(outChannel, OPL3_FEEDBACK_CONNECTION + voice, bank->feedback | (outChannel == FM4_OutRight ? OPL3_VOICE_TO_RIGHT : OPL3_VOICE_TO_LEFT));
@@ -302,7 +477,7 @@ namespace TFE_Audio
 		return &bank[timbre];
 	}
 
-	void Fm4Opl3Device::fm4_processNoteOn(s32 voice, s32 channelId, s32 key, s32 velocity, s32 timbre, s32 volume, s32 pan, s32 pitch)
+	void Fm4Opl3Device::fm4_voiceOn(s32 voice, s32 channelId, s32 key, s32 velocity, s32 timbre, s32 volume, s32 pan, s32 pitch)
 	{
 		// Remap velocity.
 		velocity = s_fmVelocityMapping[velocity >> 1] * 2;
