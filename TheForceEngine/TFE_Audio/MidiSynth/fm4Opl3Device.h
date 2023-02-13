@@ -22,7 +22,7 @@ namespace TFE_Audio
 	class Fm4Opl3Device : public MidiDevice
 	{
 	public:
-		Fm4Opl3Device() : m_streamActive(false), m_volume(1.0f), m_volumeScaled(1.0f) {}
+		Fm4Opl3Device() : m_streamActive(false), m_volume(1.0f), m_volumeScaled(1.0f), m_fmVoicePitchRight(nullptr), m_fmVoicePitchLeft(nullptr) {}
 		~Fm4Opl3Device() override;
 
 		MidiDeviceType getType() override { return MIDI_TYPE_OPL3; }
@@ -123,7 +123,7 @@ namespace TFE_Audio
 		u8  m_registers[FM4_RegisterCount * FM4_OutCount];
 		s32 m_noteOutput[FM4_VoiceCount * FM4_NoteOutputCount];
 
-		u8 m_fmVoicePitchRight[FM4_VoiceCount];
-		u8 m_fmVoicePitchLeft[FM4_VoiceCount];
+		u8* m_fmVoicePitchRight;
+		u8* m_fmVoicePitchLeft;
 	};
 };

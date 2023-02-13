@@ -107,8 +107,8 @@ namespace TFE_Audio
 			m_channels[i].pitch = FM4_PitchCenter;
 		}
 		memset(m_registers, 0, FM4_RegisterCount * FM4_OutCount);
-		memset(m_fmVoicePitchRight, 0, FM4_VoiceCount);
-		memset(m_fmVoicePitchLeft, 0, FM4_VoiceCount);
+		m_fmVoicePitchRight = &m_registers[OPL3_KEYON_BLOCK];
+		m_fmVoicePitchLeft  = &m_registers[OPL3_KEYON_BLOCK + FM4_RegisterCount];
 
 		// Initialize the voice list.
 		m_voiceList.active = nullptr;
@@ -407,10 +407,6 @@ namespace TFE_Audio
 		fm4_sendOutput(FM4_OutRight, voice + OPL3_KEYON_BLOCK, pitchHi);
 		fm4_sendOutput(FM4_OutLeft,  voice + OPL3_FNUM_LOW,    pitchLo);
 		fm4_sendOutput(FM4_OutLeft,  voice + OPL3_KEYON_BLOCK, pitchHi);
-
-		// TODO: Figure out where this should really be set...
-		m_fmVoicePitchRight[voice] = pitchHi;
-		m_fmVoicePitchLeft[voice]  = pitchHi;
 	}
 
 	void Fm4Opl3Device::fm4_setVoiceDelta(s32 voice, s32 l0, s32 l1, s32 l2, s32 l3)
