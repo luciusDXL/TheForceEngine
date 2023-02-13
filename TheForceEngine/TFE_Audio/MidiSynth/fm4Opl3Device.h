@@ -103,7 +103,7 @@ namespace TFE_Audio
 		void fm4_setVoicePitch(s32 voice, s32 key, s32 pitchOffset);
 		void fm4_setVoiceDelta(s32 voice, s32 l0, s32 l1, s32 l2, s32 l3);
 		void fm4_setVoiceTimbre(FmOutputChannel outChannel, s32 voice, TimbreBank* bank);
-		s32  fm4_panToDrumTimbre(s32 pan);
+		s32  fm4_keyToDrumTimbre(s32 pan);
 		s32  fm4_timbreToLevel(FmOutputChannel outChannel, s32 timbre, s32 remapIndex);
 		TimbreBank* fm4_getBankPtr(FmOutputChannel outChannel, s32 timbre);
 

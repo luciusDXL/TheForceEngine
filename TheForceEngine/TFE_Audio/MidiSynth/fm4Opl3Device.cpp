@@ -276,7 +276,7 @@ namespace TFE_Audio
 		Fm4Channel* channel = &m_channels[channelId];
 		if (channelId == FM4_DrumChannel)
 		{
-			channel->timbre = fm4_panToDrumTimbre(key);
+			channel->timbre = fm4_keyToDrumTimbre(key);
 			if (channel->timbre >= 128)
 			{
 				channel->pitch = FM4_PitchCenter;
@@ -313,7 +313,7 @@ namespace TFE_Audio
 		}
 	}
 
-	s32 Fm4Opl3Device::fm4_panToDrumTimbre(s32 key)
+	s32 Fm4Opl3Device::fm4_keyToDrumTimbre(s32 key)
 	{
 		return (s8)s_fmPanToDrumTimbre[key] + 128;
 	}
@@ -454,7 +454,7 @@ namespace TFE_Audio
 
 	s32 Fm4Opl3Device::fm4_timbreToLevel(FmOutputChannel outChannel, s32 timbre, s32 remapIndex)
 	{
-		const TimbreBank* bank = (outChannel == FM4_OutRight) ? s_timbreBanksRight : s_timbreBanksLeft;
+		const TimbreBank* bank = fm4_getBankPtr(outChannel, timbre);
 		if (timbre < 0xa7)
 		{
 			if (remapIndex <= 0x1b)
