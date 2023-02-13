@@ -83,7 +83,7 @@ namespace TFE_DarkForces
 			target->yaw   = random_next() & ANGLE_MASK;
 			target->pitch = obj->pitch;
 			target->roll  = obj->roll;
-			target->flags |= 4;
+			target->flags |= TARGET_MOVE_ROT;
 			flyingMod->anim.state = STATE_ANIMATEATTACK;
 		}
 

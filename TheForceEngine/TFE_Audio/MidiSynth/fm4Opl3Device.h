@@ -109,6 +109,8 @@ namespace TFE_Audio
 
 		void fm4_voiceOn(s32 voice, s32 channelId, s32 key, s32 velocity, s32 timbre, s32 volume, s32 pan, s32 pitch);
 		void fm4_voiceOff(s32 voice);
+
+		void fm4_voiceOnSide(FmOutputChannel outChannel, s32 voice, s32 timbre, s32 velocity, s32 volume, s32* output, s32& v0, s32& v1);
 	
 		bool m_streamActive;
 		f32  m_volume;
@@ -120,5 +122,8 @@ namespace TFE_Audio
 
 		u8  m_registers[FM4_RegisterCount * FM4_OutCount];
 		s32 m_noteOutput[FM4_VoiceCount * FM4_NoteOutputCount];
+
+		u8 m_fmVoicePitchRight[FM4_VoiceCount];
+		u8 m_fmVoicePitchLeft[FM4_VoiceCount];
 	};
 };
