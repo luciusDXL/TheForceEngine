@@ -34,6 +34,10 @@ namespace TFE_Audio
 		FM4_SampleRate  = 44100,
 		FM4_DrumChannel = 9,
 		FM4_PitchCenter = 0x2000,
+		FM4_MaxAtten = 0x3f,
+		FM4_TimbreCount = 167,
+		FM4_BankRemapMax = 27,
+		FM4_BankCenter = 68,
 	};
 	enum NoteOutputId
 	{
@@ -122,6 +126,7 @@ namespace TFE_Audio
 		memset(m_registers, 0, FM4_RegisterCount * FM4_OutCount);
 		m_fmVoicePitchRight = &m_registers[OPL3_KEYON_BLOCK];
 		m_fmVoicePitchLeft  = &m_registers[OPL3_KEYON_BLOCK + FM4_RegisterCount];
+		m_fmVoiceLevel      = &m_registers[OPL3_KSL_LEVEL];
 
 		// Initialize the voice list.
 		m_voiceList.active = nullptr;
@@ -238,12 +243,14 @@ namespace TFE_Audio
 	/////////////////////////////////////////////
 	void Fm4Opl3Device::fm4_setVoiceVolume(s32 voice, s32 volume)
 	{
-		s32 rightLevel = m_noteOutput[voice*FM4_NoteOutputCount + OUT_LEVEL_RIGHT];
-		s32 newVolume  = ((rightLevel + 1) * volume) >> 7;
-		s32 vel = s_fmVelocityMapping[newVolume];
-
-		s32 offset = s_fmVoiceToRegMappingOp2[voice];
-		fm4_sendOutput(FM4_OutRight, offset + OPL3_KSL_LEVEL, (s_fmMaxVolume[offset] | 0x3f) - vel);
+		const s32 rightLevel = m_noteOutput[voice*FM4_NoteOutputCount + OUT_LEVEL_RIGHT];
+		const s32 fullVolume = s_fmVelocityToVolumeMapping[((rightLevel + 1) * volume) >> 7];
+		const s32 offset = s_fmVoiceOperators[0][voice];
+		// The new level factors in the previous level.
+		const s32 prevLevel = m_fmVoiceLevel[offset];
+		const s32 newLevel  = (prevLevel | FM4_MaxAtten) - fullVolume;
+		// This will update m_fmVoiceLevel[offset] to the new level since m_fmVoiceLevel is a pointer into the register array.
+		fm4_sendOutput(FM4_OutRight, offset + OPL3_KSL_LEVEL, newLevel);
 	}
 
 	void Fm4Opl3Device::fm4_controlChange(s32 channelId, s32 arg1, s32 arg2)
@@ -328,7 +335,7 @@ namespace TFE_Audio
 
 	s32 Fm4Opl3Device::fm4_keyToDrumTimbre(s32 key)
 	{
-		return (s8)s_fmPanToDrumTimbre[key] + 128;
+		return (s8)s_fmKeyToDrumTimbre[key] + 128;
 	}
 
 	Fm4Opl3Device::Fm4Voice* Fm4Opl3Device::fm4_allocVoice(Fm4Channel* channel)
@@ -411,10 +418,10 @@ namespace TFE_Audio
 
 	void Fm4Opl3Device::fm4_setVoicePitch(s32 voice, s32 key, s32 pitchOffset)
 	{
-		u8  tone    = s_fmTone[key + (pitchOffset >> 8) - 7] + ((pitchOffset >> 4) & 0x0f);
-		s32 pitch   = s_fmPitch[tone];
-		s32 pitchLo = pitch & 0xff;
-		s32 pitchHi = ((m_fmVoicePitchRight[voice] & 0x20) | (s_fmKeyPitch[key] << 2)) + (pitch >> 8);
+		u8  freqIndex = s_fmKeyPitchToFreqIndex[key + (pitchOffset >> 8) - 7] + ((pitchOffset >> 4) & 0x0f);
+		s32 pitch     = s_fmFreqIndexToPitch[freqIndex];
+		s32 pitchLo   = pitch & 0xff;
+		s32 pitchHi   = ((m_fmVoicePitchRight[voice] & 0x20) | (s_fmKeyPitchHi[key] << 2)) + (pitch >> 8);
 
 		fm4_sendOutput(FM4_OutRight, voice + OPL3_FNUM_LOW,    pitchLo);
 		fm4_sendOutput(FM4_OutRight, voice + OPL3_KEYON_BLOCK, pitchHi);
@@ -424,8 +431,8 @@ namespace TFE_Audio
 
 	void Fm4Opl3Device::fm4_setVoiceDelta(s32 voice, s32 l0, s32 l1, s32 l2, s32 l3)
 	{
-		const s32 offOp1 = OPL3_KSL_LEVEL + s_fmVoiceToRegMappingOp1[voice];
-		const s32 offOp2 = OPL3_KSL_LEVEL + s_fmVoiceToRegMappingOp2[voice];
+		const s32 offOp1 = OPL3_KSL_LEVEL + s_fmVoiceOperators[0][voice];
+		const s32 offOp2 = OPL3_KSL_LEVEL + s_fmVoiceOperators[1][voice];
 
 		const s32 delta0 = m_registers[offOp1] - l0;
 		const s32 delta1 = m_registers[offOp2] - l1;
@@ -443,8 +450,8 @@ namespace TFE_Audio
 
 	void Fm4Opl3Device::fm4_setVoiceTimbre(FmOutputChannel outChannel, s32 voice, TimbreBank* bank)
 	{
-		s32 offOp1 = s_fmVoiceToRegMappingOp1[voice];
-		s32 offOp2 = s_fmVoiceToRegMappingOp2[voice];
+		s32 offOp1 = s_fmVoiceOperators[0][voice];
+		s32 offOp2 = s_fmVoiceOperators[1][voice];
 		fm4_sendOutput(outChannel, OPL3_KSL_LEVEL + offOp1, OPL3_TOTAL_LEVEL_MASK);
 		fm4_sendOutput(outChannel, OPL3_KSL_LEVEL + offOp2, OPL3_TOTAL_LEVEL_MASK);
 
@@ -467,17 +474,17 @@ namespace TFE_Audio
 
 	s32 Fm4Opl3Device::fm4_timbreToLevel(FmOutputChannel outChannel, s32 timbre, s32 remapIndex)
 	{
-		const TimbreBank* bank = fm4_getBankPtr(outChannel, timbre);
-		if (timbre < 0xa7)
+		if (timbre < FM4_TimbreCount)
 		{
-			if (remapIndex <= 0x1b)
+			const TimbreBank* bank = fm4_getBankPtr(outChannel, timbre);
+			if (remapIndex <= FM4_BankRemapMax)
 			{
 				s32 offset = s_fmBankAdjust[remapIndex].offset;
 				s32 div    = s_fmBankAdjust[remapIndex].div;
 				s32 mask   = s_fmBankAdjust[remapIndex].mask;
 				return (bank[timbre].data[offset] & mask) >> div;
 			}
-			else if (remapIndex == 0x44)
+			else if (remapIndex == FM4_BankCenter)
 			{
 				return bank[timbre].centerLevel;
 			}
@@ -487,6 +494,7 @@ namespace TFE_Audio
 
 	TimbreBank* Fm4Opl3Device::fm4_getBankPtr(FmOutputChannel outChannel, s32 timbre)
 	{
+		assert(timbre < FM4_TimbreCount);
 		TimbreBank* bank = (outChannel == FM4_OutRight) ? s_timbreBanksRight : s_timbreBanksLeft;
 		return &bank[timbre];
 	}
@@ -495,23 +503,23 @@ namespace TFE_Audio
 	{
 		const s32 offset = (outChannel == FM4_OutRight) ? 0 : 1;
 
-		output[OUT_TIMBRE0_RIGHT+offset] = fm4_timbreToLevel(outChannel, timbre, 0x1a);
-		output[OUT_TIMBRE1_RIGHT+offset] = (fm4_timbreToLevel(outChannel, timbre, 0x44) << 2) - 1;
+		output[OUT_TIMBRE0_RIGHT+offset] =  fm4_timbreToLevel(outChannel, timbre, FM4_BankRemapMax-1);
+		output[OUT_TIMBRE1_RIGHT+offset] = (fm4_timbreToLevel(outChannel, timbre, FM4_BankCenter) << 2) - 1;
 
 		v1  = ((fm4_timbreToLevel(outChannel, timbre, 1) + 1) * velocity) >> 6;
 		v1 += fm4_timbreToLevel(outChannel, timbre, 0);
-		v1  = min(v1, 0x3f);
+		v1  = min(v1, FM4_MaxAtten);
 		output[OUT_LEVEL_RIGHT+offset] = v1;
 
 		v0  = ((fm4_timbreToLevel(outChannel, timbre, 14) + 1) * velocity) >> 6;
 		v0 += fm4_timbreToLevel(outChannel, timbre, 13);
-		v0  = min(v0, 0x3f);
+		v0  = min(v0, FM4_MaxAtten);
 		output[OUT_LEVEL2_RIGHT+offset] = v0;
 
-		v1 = s_fmVelocityMapping[((v1 + 1) * volume) >> 7];
+		v1 = s_fmVelocityToVolumeMapping[((v1 + 1) * volume) >> 7];
 		if (output[2+offset] == 1)
 		{
-			v0 = s_fmVelocityMapping[((v0 + 1) * volume) >> 7];
+			v0 = s_fmVelocityToVolumeMapping[((v0 + 1) * volume) >> 7];
 		}
 		TimbreBank* bankPtr = fm4_getBankPtr(outChannel, timbre);
 		fm4_setVoiceTimbre(outChannel, voice, bankPtr);
@@ -520,7 +528,7 @@ namespace TFE_Audio
 	void Fm4Opl3Device::fm4_voiceOn(s32 voice, s32 channelId, s32 key, s32 velocity, s32 timbre, s32 volume, s32 pan, s32 pitch)
 	{
 		// Remap velocity.
-		velocity = s_fmVelocityMapping[velocity >> 1] * 2;
+		velocity = s_fmVelocityToVolumeMapping[velocity >> 1] * 2;
 
 		s32* output = &m_noteOutput[voice * FM4_NoteOutputCount];
 		output[OUT_CHANNELID] = channelId;
