@@ -2387,7 +2387,7 @@ namespace TFE_FrontEndUI
 				typeList += strlen(typeList) + 1;	// +1 as imgui entry divider
 			}
 
-			ImGui::LabelText("##ConfigLabel", "Midi Device Type:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::LabelText("##ConfigLabel", "Midi Device:"); ImGui::SameLine(150 * s_uiScale);
 			ImGui::SetNextItemWidth(256 * s_uiScale);
 			if (ImGui::Combo("##Midi Type", &curType, (const char*)outputMidiTypeNames, typeCount))
 			{
@@ -2421,7 +2421,7 @@ namespace TFE_FrontEndUI
 				midiList += strlen(midiList) + 1;	// +1 as imgui entry divider
 			}
 
-			ImGui::LabelText("##ConfigLabel", "Midi Device:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::LabelText("##ConfigLabel", "Midi Output:"); ImGui::SameLine(150 * s_uiScale);
 			ImGui::SetNextItemWidth(256 * s_uiScale);
 			bool hasChanged = ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
 			if (ImGui::Button("Reset Midi Output"))
