@@ -273,7 +273,7 @@ namespace TFE_MidiPlayer
 			// Stereo samples -> actual samples.
 			const s32 linearSampleCount = (s32)stereoSampleCount * 2;
 			// Make sure the sample buffer is large enough, this should only happen once.
-			if (linearSampleCount > (s32)s_sampleBuffer.size())
+			if (linearSampleCount > (s32)s_sampleBuffer.size() || !s_sampleBufferPtr)
 			{
 				s_sampleBuffer.resize(linearSampleCount);
 				s_sampleBufferPtr = s_sampleBuffer.data();
@@ -332,11 +332,11 @@ namespace TFE_MidiPlayer
 	//////////////////////////////////////////////////
 	void changeVolume()
 	{
-		if (s_midiDevice->hasGlobalVolumeCtrl())
+		if (s_midiDevice && s_midiDevice->hasGlobalVolumeCtrl())
 		{
 			s_midiDevice->setVolume(s_masterVolumeScaled);
 		}
-		else
+		else if (s_midiDevice)
 		{
 			for (u32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 			{
@@ -360,7 +360,7 @@ namespace TFE_MidiPlayer
 				if (s_instrOn[i].channelMask & channelMask)
 				{
 					// Turn off the note.
-					s_midiDevice->message(MID_NOTE_OFF | c, i);
+					if (s_midiDevice) { s_midiDevice->message(MID_NOTE_OFF | c, i); }
 
 					// Reset the instrument channel information.
 					s_instrOn[i].channelMask &= ~channelMask;
@@ -369,7 +369,7 @@ namespace TFE_MidiPlayer
 			}
 		}
 
-		s_midiDevice->noteAllOff();
+		if (s_midiDevice) { s_midiDevice->noteAllOff(); }
 		memset(s_instrOn, 0, sizeof(Instrument) * MIDI_INSTRUMENT_COUNT);
 		s_curNoteTime = 0.0;
 	}
@@ -382,13 +382,13 @@ namespace TFE_MidiPlayer
 
 		len = (msgType == MID_PROGRAM_CHANGE) ? 2 : 3;
 
-		if (msgType == MID_CONTROL_CHANGE && arg1 == MID_VOLUME_MSB && !s_midiDevice->hasGlobalVolumeCtrl())
+		if (msgType == MID_CONTROL_CHANGE && arg1 == MID_VOLUME_MSB && s_midiDevice && !s_midiDevice->hasGlobalVolumeCtrl())
 		{
 			const s32 channelIndex = type & 0x0f;
 			s_channelSrcVolume[channelIndex] = arg2;
 			msg[2] = u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled * c_systemBoost);
 		}
-		s_midiDevice->message(msg, len);
+		if (s_midiDevice) { s_midiDevice->message(msg, len); }
 
 		// Record currently playing instruments and the note-on times.
 		if (msgType == MID_NOTE_OFF || msgType == MID_NOTE_ON)
