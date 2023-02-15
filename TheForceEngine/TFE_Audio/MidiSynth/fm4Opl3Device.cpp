@@ -16,6 +16,7 @@
 #include <TFE_Audio/midi.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/IMuse/imList.h>
+#include <cstring>
 #include <algorithm>
 #include <assert.h>
 
