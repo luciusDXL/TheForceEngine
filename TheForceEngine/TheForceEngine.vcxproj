@@ -356,12 +356,10 @@ echo ^)";
     <ClInclude Include="TFE_Audio\audioSystem.h" />
     <ClInclude Include="TFE_Audio\midi.h" />
     <ClInclude Include="TFE_Audio\midiDevice.h" />
-    <ClInclude Include="TFE_Audio\midiDeviceState.h" />
     <ClInclude Include="TFE_Audio\midiPlayer.h" />
     <ClInclude Include="TFE_Audio\MidiSynth\fm4Opl3Device.h" />
     <ClInclude Include="TFE_Audio\MidiSynth\fm4Tables.h" />
     <ClInclude Include="TFE_Audio\MidiSynth\opl3.h" />
-    <ClInclude Include="TFE_Audio\MidiSynth\opl3_reg.h" />
     <ClInclude Include="TFE_Audio\MidiSynth\soundFontDevice.h" />
     <ClInclude Include="TFE_Audio\MidiSynth\tsf.h" />
     <ClInclude Include="TFE_Audio\RtAudio.h" />
@@ -711,7 +709,6 @@ echo ^)";
     <ClCompile Include="TFE_Audio\audioDevice.cpp" />
     <ClCompile Include="TFE_Audio\audioFilters.cpp" />
     <ClCompile Include="TFE_Audio\audioSystem.cpp" />
-    <ClCompile Include="TFE_Audio\midiDeviceState.cpp" />
     <ClCompile Include="TFE_Audio\midiPlayer.cpp" />
     <ClCompile Include="TFE_Audio\MidiSynth\fm4Opl3Device.cpp" />
     <ClCompile Include="TFE_Audio\MidiSynth\opl3.c" />

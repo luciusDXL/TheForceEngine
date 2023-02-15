@@ -6,6 +6,7 @@
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/midiDevice.h>
 #include <TFE_DarkForces/config.h>
+#include <TFE_Game/igame.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -185,6 +186,8 @@ namespace TFE_FrontEndUI
 
 	static MenuItemSelected s_menuItemselected[8];
 	static const size_t s_menuItemCount = TFE_ARRAYSIZE(s_menuItemselected);
+
+	static IGame* s_game = nullptr;
 
 	static const char* c_axisBinding[] =
 	{
@@ -495,6 +498,11 @@ namespace TFE_FrontEndUI
 		ImGui::Text("FPS: %d", s32(aveFps + 0.5));
 		ImGui::End();
 		ImGui::PopFont();
+	}
+		
+	void setCurrentGame(IGame* game)
+	{
+		s_game = game;
 	}
 
 	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults, bool showFps)
@@ -2393,9 +2401,11 @@ namespace TFE_FrontEndUI
 					sound->midiType = (s32)device->getType();
 					sound->midiOutput = device->getActiveOutput();
 				}
-
+				
 				TFE_MidiPlayer::resumeThread();
 				TFE_Audio::resume();
+
+				if (s_game) { s_game->restartMusic(); }
 			}
 
 			//////////////////////////////
@@ -2433,6 +2443,8 @@ namespace TFE_FrontEndUI
 
 				TFE_MidiPlayer::resumeThread();
 				TFE_Audio::resume();
+
+				if (s_game) { s_game->restartMusic(); }
 			}
 		}
 

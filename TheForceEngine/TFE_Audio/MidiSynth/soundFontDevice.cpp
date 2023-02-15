@@ -1,6 +1,5 @@
 #include "soundFontDevice.h"
 #include <TFE_Audio/midi.h>
-#include <TFE_Audio/midiDeviceState.h>
 #include <TFE_FileSystem/filestream.h>
 #include <algorithm>
 #include <assert.h>
@@ -105,17 +104,9 @@ namespace TFE_Audio
 			tsf_set_output(m_soundFont, TSF_STEREO_INTERLEAVED, sampleRate, 0);
 			tsf_set_max_voices(m_soundFont, SFD_MAX_VOICES);
 			// pre-allocate channels, clear programs or set them to the stored values.
-			const PresetNumber* presetNumbers = midiState_getPresets();
 			for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 			{
-				if (presetNumbers[i].arg1 != 0 || presetNumbers[i].drums != 0)
-				{
-					tsf_channel_set_presetnumber(m_soundFont, i, presetNumbers[i].arg1, presetNumbers[i].drums);
-				}
-				else
-				{
-					tsf_channel_set_presetnumber(m_soundFont, i, 0, i == SFD_DRUM_CHANNEL);
-				}
+				tsf_channel_set_presetnumber(m_soundFont, i, 0, i == SFD_DRUM_CHANNEL);
 			}
 			// Set the drum bank.
 			tsf_channel_set_bank_preset(m_soundFont, SFD_DRUM_CHANNEL, SFD_DRUM_BANK, 0);
@@ -178,8 +169,6 @@ namespace TFE_Audio
 			break;
 		case MID_PROGRAM_CHANGE:
 			tsf_channel_set_presetnumber(m_soundFont, channel, arg1, channel == SFD_DRUM_CHANNEL ? 1 : 0);
-			// Save the presets so they can be restored if the device or output is changed.
-			midiState_setPreset(channel, arg1, channel == SFD_DRUM_CHANNEL ? 1 : 0);
 			break;
 		case MID_PITCH_BEND:
 			tsf_channel_set_pitchwheel(m_soundFont, channel, (s32(arg2) << 7) | s32(arg1));

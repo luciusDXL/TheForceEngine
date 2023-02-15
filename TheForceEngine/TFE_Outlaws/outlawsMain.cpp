@@ -18,6 +18,11 @@ namespace TFE_Outlaws
 		// STUB
 	}
 
+	void Outlaws::restartMusic()
+	{
+		// STUB
+	}
+
 	void Outlaws::exitGame()
 	{
 		// STUB

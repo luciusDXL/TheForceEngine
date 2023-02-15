@@ -49,14 +49,26 @@ namespace TFE_Audio
 		{
 			FM4_VoiceCount = 9,
 			FM4_RegisterCount = 256,
-			FM4_NoteOutputCount = 10,
 		};
-
 		enum FmOutputChannel
 		{
 			FM4_OutRight = 0,
 			FM4_OutLeft,
 			FM4_OutCount,
+		};
+		enum NoteOutputId
+		{
+			NoteChannelId = 0,
+			NoteKey,
+			NoteTimbre0_Right,
+			NoteTimbre0_Left,
+			NoteLevelRight,
+			NoteLevelLeft,
+			NoteLevel2Right,
+			NoteLevel2Left,
+			NoteTimbre1_Right,
+			NoteTimbre1_Left,
+			NoteOut_Count
 		};
 
 		struct Fm4Channel
@@ -98,7 +110,7 @@ namespace TFE_Audio
 		Fm4Voice* fm4_allocVoice(Fm4Channel* channel);
 
 		void fm4_reset();
-		void fm4_sendOutput(s32 port, u16 reg, u8 value, bool force = false);
+		void fm4_sendOutput(s32 port, u16 reg, u8 value);
 		void fm4_setVoiceVolume(s32 voice, s32 volume);
 		void fm4_setVoicePitch(s32 voice, s32 key, s32 pitchOffset);
 		void fm4_setVoiceDelta(s32 voice, s32 l0, s32 l1, s32 l2, s32 l3);
@@ -123,7 +135,7 @@ namespace TFE_Audio
 		Fm4VoiceList m_voiceList;
 
 		u8  m_registers[FM4_RegisterCount * FM4_OutCount];
-		s32 m_noteOutput[FM4_VoiceCount * FM4_NoteOutputCount];
+		s32 m_noteOutput[FM4_VoiceCount * NoteOut_Count];
 
 		u8* m_fmVoicePitchRight;
 		u8* m_fmVoicePitchLeft;

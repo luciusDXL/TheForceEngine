@@ -1237,16 +1237,10 @@
     <ClInclude Include="TFE_Audio\audioFilters.h">
       <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Audio\midiDeviceState.h">
-      <Filter>Source\TFE_Audio</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_Audio\MidiSynth\soundFontDevice.h">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Audio\MidiSynth\opl3.h">
-      <Filter>Source\TFE_Audio\MidiSynth</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_Audio\MidiSynth\opl3_reg.h">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClInclude>
     <ClInclude Include="TFE_Audio\MidiSynth\fm4Opl3Device.h">
@@ -2107,9 +2101,6 @@
       <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Audio\audioFilters.cpp">
-      <Filter>Source\TFE_Audio</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_Audio\midiDeviceState.cpp">
       <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
     <ClCompile Include="TFE_Audio\MidiSynth\soundFontDevice.cpp">

@@ -1,7 +1,6 @@
 #include "midiPlayer.h"
 #include "midiDevice.h"
 #include "audioDevice.h"
-#include "midiDeviceState.h"
 #include "systemMidiDevice.h"
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_System/system.h>
@@ -52,6 +51,7 @@ namespace TFE_MidiPlayer
 	};
 		
 	static const f32 c_musicVolumeScale = 0.75f;
+	static const f32 c_systemBoost = 2.0f;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 	static Thread* s_thread = nullptr;
@@ -94,7 +94,6 @@ namespace TFE_MidiPlayer
 	bool init(s32 midiDeviceIndex, MidiDeviceType type)
 	{
 		TFE_System::logWrite(LOG_MSG, "Startup", "TFE_MidiPlayer::init");
-		midiState_clearPresets();
 
 		bool res = false;
 		allocateMidiDevice(type);
@@ -341,7 +340,7 @@ namespace TFE_MidiPlayer
 		{
 			for (u32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 			{
-				s_midiDevice->message(MID_CONTROL_CHANGE + i, MID_VOLUME_MSB, u8(s_channelSrcVolume[i] * s_masterVolumeScaled));
+				s_midiDevice->message(MID_CONTROL_CHANGE + i, MID_VOLUME_MSB, u8(s_channelSrcVolume[i] * s_masterVolumeScaled * c_systemBoost));
 			}
 		}
 	}
@@ -387,7 +386,7 @@ namespace TFE_MidiPlayer
 		{
 			const s32 channelIndex = type & 0x0f;
 			s_channelSrcVolume[channelIndex] = arg2;
-			msg[2] = u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled);
+			msg[2] = u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled * c_systemBoost);
 		}
 		s_midiDevice->message(msg, len);
 

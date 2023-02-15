@@ -190,12 +190,16 @@ namespace TFE_Audio
 
 	void pause()
 	{
+		MUTEX_LOCK(&s_mutex);
 		s_paused = true;
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	void resume()
 	{
+		MUTEX_LOCK(&s_mutex);
 		s_paused = false;
+		MUTEX_UNLOCK(&s_mutex);
 	}
 
 	// Really the buffered audio will continue to process so time advances properly.
@@ -542,14 +546,14 @@ namespace TFE_Audio
 		}
 		// Cleanup sound sources while we are still in the mutex.
 		cleanupSources();
-		MUTEX_UNLOCK(&s_mutex);
-
+		
 		// Handle midi synthesis results.
 		if (!s_paused)
 		{
 			TFE_MidiPlayer::synthesizeMidi((f32*)outputBuffer, bufferSize, !s_silentAudioFrames);
 		}
 		if (s_silentAudioFrames > 0) { s_silentAudioFrames--; }
+		MUTEX_UNLOCK(&s_mutex);
 
 		// Handle out of range audio samples.
 		buffer = (f32*)outputBuffer;
