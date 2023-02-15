@@ -55,8 +55,8 @@ namespace TFE_Audio
 		enum FmOutputChannel
 		{
 			FM4_OutRight = 0,
-			FM4_OutLeft  = 2,
-			FM4_OutCount = 2,
+			FM4_OutLeft,
+			FM4_OutCount,
 		};
 
 		struct Fm4Channel
@@ -111,6 +111,8 @@ namespace TFE_Audio
 		void fm4_voiceOff(s32 voice);
 
 		void fm4_voiceOnSide(FmOutputChannel outChannel, s32 voice, s32 timbre, s32 velocity, s32 volume, s32* output, s32& v0, s32& v1);
+		void fm4_setVoiceVolumeSide(FmOutputChannel outChannel, s32 voice, s32 offset, s32 volume);
+		s32  fm4_getVelocityToVolumeMapping(s32 velocity);
 	
 		bool m_streamActive;
 		f32  m_volume;
