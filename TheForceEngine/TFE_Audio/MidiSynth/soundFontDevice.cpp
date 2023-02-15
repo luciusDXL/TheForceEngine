@@ -46,10 +46,7 @@ namespace TFE_Audio
 
 	void SoundFontDevice::getOutputName(s32 index, char* buffer, u32 maxLength)
 	{
-		if (index < 0 || index >= (s32)getOutputCount())
-		{
-			return;
-		}
+		if (index < 0 || index >= (s32)getOutputCount()) { return; }
 		const char* name = m_outputs[index].c_str();
 		strncpy(buffer, name, maxLength);
 		buffer[strlen(name)] = 0;

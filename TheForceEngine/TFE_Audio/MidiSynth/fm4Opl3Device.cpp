@@ -456,7 +456,7 @@ namespace TFE_Audio
 
 	void Fm4Opl3Device::fm4_setVoicePitch(s32 voice, s32 key, s32 pitchOffset)
 	{
-		s32 index     = key + (pitchOffset >> 8) - 7;
+		s32 index     = max(0, key + (pitchOffset >> 8) - 7);
 		u8  freqIndex = s_fmKeyPitchToFreqIndex[index] + ((pitchOffset >> 4) & 0x0f);
 		s32 pitch     = s_fmFreqIndexToPitch[freqIndex];
 		s32 pitchLo   = pitch & 0xff;
@@ -542,8 +542,8 @@ namespace TFE_Audio
 	{
 		const s32 offset = outChannel;
 
-		output[NoteTimbre0_Right +offset] =  fm4_timbreToLevel(outChannel, timbre, FM4_BankRemapMax-1);
-		output[NoteTimbre1_Right +offset] = (fm4_timbreToLevel(outChannel, timbre, FM4_BankCenter) << 2) - 1;
+		output[NoteTimbre0_Right+offset] =  fm4_timbreToLevel(outChannel, timbre, FM4_BankRemapMax-1);
+		output[NoteTimbre1_Right+offset] = (fm4_timbreToLevel(outChannel, timbre, FM4_BankCenter) << 2) - 1;
 
 		v1  = ((fm4_timbreToLevel(outChannel, timbre, 1) + 1) * velocity) >> 6;
 		v1 += fm4_timbreToLevel(outChannel, timbre, 0);

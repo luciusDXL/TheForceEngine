@@ -462,7 +462,7 @@ namespace TFE_Audio
 		// Then call the audio thread callback
 		if (s_audioThreadCallback && !s_paused)
 		{
-			f32 callbackBuffer[(AUDIO_CALLBACK_BUFFER_SIZE + 1)*AUDIO_CHANNEL_COUNT];	// 256 stereo + 1 for oversampling.
+			static f32 callbackBuffer[(AUDIO_CALLBACK_BUFFER_SIZE + 2)*AUDIO_CHANNEL_COUNT];	// 256 stereo + oversampling.
 			s_audioThreadCallback(callbackBuffer, AUDIO_CALLBACK_BUFFER_SIZE, s_soundFxVolume * c_soundHeadroom);
 			// The audio buffer is 1/4 as large as it should be.
 			// This means that in-between samples must be interpolated.
