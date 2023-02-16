@@ -63,7 +63,7 @@ namespace TFE_Audio
 		FM4_BankRemapMax = 27,
 		FM4_BankCenter = 68,
 	};
-	const f32 c_outputScale = 2.0f / 32768.0f;	// slight volume boost to compete with other midi outputs.
+	const f32 c_outputScale = 1.5f / 32768.0f;	// slight volume boost to compete with other midi outputs.
 
 	static const char* c_Opl3_Name = "OPL3";
 	static const char* c_Output_Name = "FM4 Driver";

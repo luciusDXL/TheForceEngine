@@ -111,11 +111,11 @@ namespace TFE_Audio
 	bool SystemMidiDevice::selectOutput(s32 index)
 	{
 		if (!m_midiout) { return false; }
-		if (index < 0)
+		if (index < 0 || index >= (s32)getOutputCount())
 		{
 			index = 0;
 		}
-		if (index != m_outputId && index >= 0 && index < (s32)getOutputCount())
+		if (index != m_outputId && index < (s32)getOutputCount())
 		{
 			m_midiout->closePort();
 			m_midiout->openPort(index);
@@ -125,7 +125,6 @@ namespace TFE_Audio
 				u8 msg[2] = { u8(MID_PROGRAM_CHANGE | i), 0 };
 				message(msg, 2);
 			}
-
 			return true;
 		}
 		return false;

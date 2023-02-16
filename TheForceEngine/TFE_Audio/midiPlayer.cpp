@@ -51,7 +51,6 @@ namespace TFE_MidiPlayer
 	};
 		
 	static const f32 c_musicVolumeScale = 0.75f;
-	static const f32 c_systemBoost = 2.0f;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
 	static Thread* s_thread = nullptr;
@@ -340,7 +339,7 @@ namespace TFE_MidiPlayer
 		{
 			for (u32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 			{
-				s_midiDevice->message(MID_CONTROL_CHANGE + i, MID_VOLUME_MSB, u8(s_channelSrcVolume[i] * s_masterVolumeScaled * c_systemBoost));
+				s_midiDevice->message(MID_CONTROL_CHANGE + i, MID_VOLUME_MSB, u8(s_channelSrcVolume[i] * s_masterVolumeScaled));
 			}
 		}
 	}
@@ -386,7 +385,7 @@ namespace TFE_MidiPlayer
 		{
 			const s32 channelIndex = type & 0x0f;
 			s_channelSrcVolume[channelIndex] = arg2;
-			msg[2] = u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled * c_systemBoost);
+			msg[2] = u8(s_channelSrcVolume[channelIndex] * s_masterVolumeScaled);
 		}
 		if (s_midiDevice) { s_midiDevice->message(msg, len); }
 
