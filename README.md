@@ -7,7 +7,7 @@
 
 **A purchased copy of the original game is required and is not provided by The Force Engine.** The documentation - https://theforceengine.github.io/Documentation.html - has information on how to legally purchase Dark Forces. TFE is **not** a remaster, it is essentially a source port designed to run the *original* game natively on modern systems with quality of life improvements and optional enhancements. Dark Forces and Outlaws are owned by Disney and are still active, commercial products. The IP is owned solely by Disney.
 
-**Linux is now supported but it requires additional setup.** For now, you will need to compile from source in order to run Linux. You will also need to setup your own midi server, assuming you don't have a midi hardware. <ins>Version 1.10 will have integrated midi synthesis options</ins>, which will remove the midi server requirement. For more information, see the **Linux** section below.
+**Linux is now supported but it requires additional setup.** For now, you will need to compile from source in order to run Linux. See the **Linux** section below.
 
 In addition, a Flatpak/snap (or similar) package is planned for version 1.10, alleviating the need to manually compile the project. Think of version 1.08 as "Linux Early Access." If you don't want to compile the code or setup a midi server, it might be better to use Windows for now or wait for version 1.10.
 
