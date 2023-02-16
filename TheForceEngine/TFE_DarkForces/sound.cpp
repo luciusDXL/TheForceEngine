@@ -86,8 +86,8 @@ namespace TFE_DarkForces
 	void sound_levelStart()
 	{
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
-		TFE_Audio::setVolume(soundSettings->soundFxVolume);
-		TFE_MidiPlayer::setVolume(soundSettings->musicVolume);
+		TFE_Audio::setVolume(soundSettings->soundFxVolume * soundSettings->masterVolume);
+		TFE_MidiPlayer::setVolume(soundSettings->musicVolume * soundSettings->masterVolume);
 
 		ImSetResourceCallback(sound_getResource);
 		s_state.instance = 1;

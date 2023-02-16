@@ -124,6 +124,7 @@ struct TFE_Settings_Hud
 
 struct TFE_Settings_Sound
 {
+	f32 masterVolume = 1.0f;
 	f32 soundFxVolume = 0.75f;
 	f32 musicVolume = 1.0f;
 	f32 cutsceneSoundFxVolume = 0.9f;

@@ -33,8 +33,8 @@ namespace TFE_DarkForces
 	{
 		if (!s_enabled || !s_playSeq) { return JFALSE; }
 		TFE_Settings_Sound* soundSettings = TFE_Settings::getSoundSettings();
-		TFE_Audio::setVolume(soundSettings->cutsceneSoundFxVolume);
-		TFE_MidiPlayer::setVolume(soundSettings->cutsceneMusicVolume);
+		TFE_Audio::setVolume(soundSettings->cutsceneSoundFxVolume * soundSettings->masterVolume);
+		TFE_MidiPlayer::setVolume(soundSettings->cutsceneMusicVolume * soundSettings->masterVolume);
 
 		// Search for the requested scene.
 		s32 found = 0;

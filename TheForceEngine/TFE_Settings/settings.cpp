@@ -392,6 +392,7 @@ namespace TFE_Settings
 	void writeSoundSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_SOUND]);
+		writeKeyValue_Float(settings, "masterVolume", s_soundSettings.masterVolume);
 		writeKeyValue_Float(settings, "soundFxVolume", s_soundSettings.soundFxVolume);
 		writeKeyValue_Float(settings, "musicVolume", s_soundSettings.musicVolume);
 		writeKeyValue_Float(settings, "cutsceneSoundFxVolume", s_soundSettings.cutsceneSoundFxVolume);
@@ -747,7 +748,11 @@ namespace TFE_Settings
 
 	void parseSoundSettings(const char* key, const char* value)
 	{
-		if (strcasecmp("soundFxVolume", key) == 0)
+		if (strcasecmp("masterVolume", key) == 0)
+		{
+			s_soundSettings.masterVolume = parseFloat(value);
+		}
+		else if (strcasecmp("soundFxVolume", key) == 0)
 		{
 			s_soundSettings.soundFxVolume = parseFloat(value);
 		}

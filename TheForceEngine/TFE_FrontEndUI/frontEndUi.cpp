@@ -2454,6 +2454,7 @@ namespace TFE_FrontEndUI
 		ImGui::Separator();
 
 		ImGui::LabelText("##ConfigLabel", "Sound Volume");
+		labelSliderPercent(&sound->masterVolume, "Master Volume");
 		labelSliderPercent(&sound->soundFxVolume, "Game SoundFX");
 		labelSliderPercent(&sound->musicVolume,   "Game Music");
 		labelSliderPercent(&sound->cutsceneSoundFxVolume, "Cutscene SoundFX");
@@ -2481,8 +2482,8 @@ namespace TFE_FrontEndUI
 			sound->disableSoundInMenus = disableSoundInMenus;
 		}
 
-		TFE_Audio::setVolume(sound->soundFxVolume);
-		TFE_MidiPlayer::setVolume(sound->musicVolume);
+		TFE_Audio::setVolume(sound->soundFxVolume * sound->masterVolume);
+		TFE_MidiPlayer::setVolume(sound->musicVolume * sound->masterVolume);
 	}
 
 	void configSystem()
