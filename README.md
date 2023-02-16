@@ -9,7 +9,7 @@
 
 **Linux is now supported but it requires additional setup.** For now, you will need to compile from source in order to run Linux. See the **Linux** section below.
 
-In addition, a Flatpak/snap (or similar) package is planned for version 1.10, alleviating the need to manually compile the project. Think of version 1.08 as "Linux Early Access." If you don't want to compile the code or setup a midi server, it might be better to use Windows for now or wait for version 1.10.
+In addition, a Flatpak/snap (or similar) package is planned for version 1.10, alleviating the need to manually compile the project. If you don't want to compile the code, it might be better to use Windows for now or wait for version 1.10.
 
 ## Current Features
 * Full Dark Forces support, including mods. Outlaws support is coming in version 2.0.
