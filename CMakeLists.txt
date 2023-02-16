@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
+# force Release by default.
+if(NOT DEFINED CMAKE_BUILD_TYPE)
+       set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+endif()
+
 project(TheForceEngine
 	HOMEPAGE_URL "https://theforceengine.github.io"
 	DESCRIPTION "Modern 'Jedi Engine' replacement supporting Dark Forces, mods, and in the future Outlaws."
@@ -16,12 +21,6 @@ if (UNIX AND NOT APPLE)
 	set(LINUX ON)
 elseif (UNIX AND APPLE)
 	set(MACOS ON)
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-	if(CMAKE_BUILD_TYPE MATCHES "debug")
-		add_compile_options(-O1 -ggdb3)
-	endif()
 endif()
 
 if(WIN32)
