@@ -65,8 +65,8 @@ This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 * Unpack the source or fetch from github
 * Create a build directory and chdir into it:
 __mkdir tfe-build; cd tfe-build__
-* Run CMake in the build directory:
-__cmake -S /path/to/tfe-source/__
+* Run CMake in the build directory, the build type must be specified (debug or release):
+__cmake -DCMAKE_BUILD_TYPE=release /path/to/tfe-source/__
 * Build it:
 __make__
 * Install it:
