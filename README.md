@@ -20,6 +20,7 @@ In addition, a Flatpak/snap (or similar) package is planned for version 1.10, al
 * Full input binding, mouse sensitivity adjustment, and controller support. Note, however, that menus currently require the mouse.
 * Optional Quality of Life improvements, such as full mouselook, aiming reticle, improved Boba Fett AI, autorun, and more.
 * A new save system that works seamlessly with the exiting checkpoint and lives system. You can ignore it entirely, use it just as an exit save so you don't have to play long user levels in one sitting, or full save and load with quicksaves like Doom or Duke Nukem 3D.
+* Sound Font (sf2) and OPL3 emulation support.
 * Optional and quality of life features, even mouselook, can be disabled if you want the original experience. Play in 320x200, turn the mouse mode (Input menu) to Menus only or horizontal, and enable the Classic (software) renderer - and it will look and play just like DOS, but with a higher framerate and without needing to adjust cycles in DosBox.
 
 ## About
