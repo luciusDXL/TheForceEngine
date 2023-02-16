@@ -75,14 +75,9 @@ __sudo make install__
 
 #### Running TFE
 ##### External application dependencies
-* "KDialog" for file dialog on KDE Plasma Desktop Environment
-* "zenity" for file dialog on all other desktop environments
-* "TiMidity++" or "FluidSynth" software synthesizer for glorious MIDI Music.
-* or external MIDI Hardware.
+* "KDialog" for file dialog on KDE Plasma Desktop Environment.
+* "zenity" for file dialog on all other desktop environments.
+* external midi is no longer required but still supported through the "System Midi" device.
 
 ##### Launch
-* Start your preferred MIDI Software Synthesizer first:
-	* __timidity -iA --sequencer-ports=1__
-	* __fluidsynth -s -L2 -m alsa_seq /path/to/soundfont.sf2__
 * Start the Engine by clicking on the __"The Force Engine"__ Desktop icon or by running  __"theforceengine"__ in a shell.
-
