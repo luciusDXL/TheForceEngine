@@ -12,6 +12,7 @@ using namespace TFE_Jedi;
 
 struct JediModel;
 struct RSector;
+struct Light;
 	
 enum ObjectType
 {
@@ -106,7 +107,18 @@ struct SecObject
 	s16 index;
 
 	// TFE
+	s32 lightOverride;
 	u32 serializeIndex;
+};
+
+// TFE Specific
+struct Light
+{
+	Vec3f pos;         // position in world space.
+	Vec3f color[2];	   // inner and outter colors.
+	Vec2f radii;	   // inner and outter radii.
+	f32 decay;         // falloff decay.
+	f32 amp;           // light amplitude/intensity.
 };
 
 namespace TFE_Jedi

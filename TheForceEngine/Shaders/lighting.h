@@ -1,4 +1,49 @@
 // Lighting
+// 28 bytes per light.
+uniform samplerBuffer  lightPosition;	// vec3  x max lights = 12 * L; L = 8192, size = 96kB
+uniform usamplerBuffer lightData;	// uvec4 x max lights = 16 * L; L = 8192, size = 128kB
+
+vec3 unpackColor(uint packedClr)
+{
+	float scale = 1.0 / 255.0;
+
+	vec3 color;
+	color.x = float(packedClr & 255u) * scale;
+	color.y = float((packedClr >> 8u) & 255u) * scale;
+	color.z = float((packedClr >> 16u) & 255u) * scale;
+	return color;
+}
+
+vec2 unpackFixed10_6(uint packedV2)
+{
+	float scale = 1.0 / 63.0;
+
+	vec2 v2;
+	v2.x = float(packedV2 & 65535u) * scale;
+	v2.y = float((packedV2 >> 16u) & 65535u) * scale;
+	return v2;
+}
+
+vec2 unpackFixed4_12(uint packedV2)
+{
+	float scale = 1.0 / 4095.0;
+
+	vec2 v2;
+	v2.x = float(packedV2 & 65535u) * scale;
+	v2.y = float((packedV2 >> 16u) & 65535u) * scale;
+	return v2;
+}
+
+void getLightData(int index, out vec3 pos, out vec3 c0, out vec3 c1, out vec2 radius, out vec2 decayAmp)
+{
+	pos = texelFetch(lightPosition, index).xyz;
+	uvec4 packedData = texelFetch(lightData, index);
+
+	c0 = unpackColor(packedData.x);
+	c1 = unpackColor(packedData.y);
+	radius = unpackFixed10_6(packedData.z);
+	decayAmp = unpackFixed4_12(packedData.w);
+}
 
 float sqr(float x)
 {
@@ -88,14 +133,16 @@ vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambie
 	albedo = pow(albedo, gamma);
 	ambient = pow(ambient, gamma);
 
-	vec3 lightPos0 = vec3(201.0, -8.0, 280.0);
-	vec3 lightPos1 = cameraPos;//vec3(212.0, -8.0, 242.0);
-	vec3 lightColor0 = vec3(1.0, 1.0, 1.0);
-	vec3 lightColor1 = vec3(0.25, 1.0, 1.0);
-
 	vec3 light = vec3(0.0);
-	light += computeLightContrib(pos, nrml, lightPos0, 20.0, 40.0, 1.0, 2.0, lightColor1, lightColor1);
-	light += computeLightContrib(pos, nrml, lightPos1, 0.0, 40.0, 1.0, 2.0, lightColor0, lightColor1);
+	for (int i = 0; i < 8; i++)
+	{
+		vec3 lightPos;
+		vec3 c0, c1;
+		vec2 radii, decayAmp;
+		getLightData(i, lightPos, c0, c1, radii, decayAmp);
+
+		light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+	}
 
 	// final color.
 	vec3 colorLinear = tonemapLighting(light) * albedo + ambient;

@@ -31,6 +31,7 @@ namespace TFE_Jedi
 		obj->flags = OBJ_FLAG_NEEDS_TRANSFORM | OBJ_FLAG_MOVABLE;
 		obj->self = obj;
 		obj->serializeIndex = 0;
+		obj->lightOverride = -1;
 		return obj;
 	}
 

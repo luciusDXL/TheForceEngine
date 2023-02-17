@@ -4,6 +4,7 @@
 #include "pickup.h"
 #include "animLogic.h"
 #include <TFE_FileSystem/paths.h>
+#include <TFE_Jedi/Level/objOverrides.h>
 
 using namespace TFE_Jedi;
 
@@ -86,11 +87,13 @@ namespace TFE_DarkForces
 			{
 				s_itemData[i].wax = TFE_Sprite_Jedi::getWax(item, POOL_GAME);
 				s_itemData[i].isWax = JTRUE;
+				s_itemData[i].lightOverride = TFE_Jedi::objOverrides_getIndex(item);
 			}
 			else
 			{
 				s_itemData[i].frame = TFE_Sprite_Jedi::getFrame(item, POOL_GAME);
 				s_itemData[i].isWax = JFALSE;
+				s_itemData[i].lightOverride = TFE_Jedi::objOverrides_getIndex(item);
 			}
 		}
 	}
@@ -113,6 +116,7 @@ namespace TFE_DarkForces
 		{
 			obj_setSpriteAnim(newObj);
 		}
+		newObj->lightOverride = s_itemData[itemId].lightOverride;
 
 		return newObj;
 	}

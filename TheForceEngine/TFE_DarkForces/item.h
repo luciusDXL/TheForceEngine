@@ -80,6 +80,8 @@ namespace TFE_DarkForces
 			WaxFrame* frame;
 		};
 		JBool isWax;
+		// TFE
+		s32 lightOverride;
 	};
 
 	extern SoundSourceId s_powerupPickupSnd;

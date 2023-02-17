@@ -24,6 +24,9 @@ public:
 	// Enable : as a seperator but do not remove it.
 	void enableColonSeperator();
 
+	// Enable : use '{' and '}' as "scope" tokens.
+	void enableScopeTokens();
+
 	// Add a string representing a comment, such as ";" "#" "//"
 	void addCommentString(const char* comment);
 
@@ -43,8 +46,9 @@ private:
 	bool m_enableBlockComments;
 	bool m_blockComment;
 	bool m_enableColorSeperator;
+	bool m_enableScopeTokens;
 	bool m_convertToUppercase;
-
+	
 private:
 	bool isComment(const char* buffer);
 };

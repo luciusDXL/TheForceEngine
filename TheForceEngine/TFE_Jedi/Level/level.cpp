@@ -3,6 +3,7 @@
 
 #include "level.h"
 #include "levelData.h"
+#include "objOverrides.h"
 #include "rwall.h"
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
@@ -723,11 +724,13 @@ namespace TFE_Jedi
 		{
 			if (sscanf(line, "PODS %d", &s_levelIntState.podCount) == 1)
 			{
+				s_levelIntState.lightType[0] = (s32*)level_alloc(sizeof(s32)*s_levelIntState.podCount);
 				s_levelIntState.pods = (JediModel**)level_alloc(sizeof(JediModel*)*s_levelIntState.podCount);
 				for (s32 p = 0; p < s_levelIntState.podCount; p++)
 				{
 					line = parser.readLine(bufferPos);
 					s_levelIntState.pods[p] = nullptr;
+					s_levelIntState.lightType[0][p] = -1;
 
 					if (line)
 					{
@@ -739,6 +742,9 @@ namespace TFE_Jedi
 							{
 								s_levelIntState.pods[p] = TFE_Model_Jedi::get("default.3do");
 							}
+
+							// Read in lighting data...
+							s_levelIntState.lightType[0][p] = objOverrides_getIndex(podName);
 						}
 						else
 						{
@@ -749,11 +755,13 @@ namespace TFE_Jedi
 			}
 			else if (sscanf(line, "SPRS %d", &s_levelIntState.spriteCount) == 1)
 			{
+				s_levelIntState.lightType[1] = (s32*)level_alloc(sizeof(s32)*s_levelIntState.spriteCount);
 				s_levelIntState.sprites = (JediWax**)level_alloc(sizeof(JediWax*)*s_levelIntState.spriteCount);
 				for (s32 s = 0; s < s_levelIntState.spriteCount; s++)
 				{
 					line = parser.readLine(bufferPos);
 					s_levelIntState.sprites[s] = nullptr;
+					s_levelIntState.lightType[1][s] = -1;
 
 					if (line)
 					{
@@ -765,6 +773,9 @@ namespace TFE_Jedi
 							{
 								s_levelIntState.sprites[s] = TFE_Sprite_Jedi::getWax("default.wax");
 							}
+
+							// Read in lighting data...
+							s_levelIntState.lightType[1][s] = objOverrides_getIndex(name);
 						}
 						else
 						{
@@ -775,11 +786,13 @@ namespace TFE_Jedi
 			}
 			else if (sscanf(line, "FMES %d", &s_levelIntState.fmeCount) == 1)
 			{
+				s_levelIntState.lightType[2] = (s32*)level_alloc(sizeof(s32)*s_levelIntState.fmeCount);
 				s_levelIntState.frames = (JediFrame**)level_alloc(sizeof(JediFrame*)*s_levelIntState.fmeCount);
 				for (s32 f = 0; f < s_levelIntState.fmeCount; f++)
 				{
 					line = parser.readLine(bufferPos);
 					s_levelIntState.frames[f] = nullptr;
+					s_levelIntState.lightType[2][f] = -1;
 
 					if (line)
 					{
@@ -791,6 +804,9 @@ namespace TFE_Jedi
 							{
 								s_levelIntState.frames[f] = TFE_Sprite_Jedi::getFrame("default.fme");
 							}
+
+							// Read in lighting data...
+							s_levelIntState.lightType[2][f] = objOverrides_getIndex(name);
 						}
 						else
 						{
@@ -879,16 +895,19 @@ namespace TFE_Jedi
 								sector_addObject(sector, obj);
 								obj3d_setData(obj, s_levelIntState.pods[s_dataIndex]);
 								obj3d_computeTransform(obj);
+								obj->lightOverride = s_levelIntState.lightType[0][s_dataIndex];
 							} break;
 							case KW_SPRITE:
 							{
 								sector_addObject(sector, obj);
 								sprite_setData(obj, s_levelIntState.sprites[s_dataIndex]);
+								obj->lightOverride = s_levelIntState.lightType[1][s_dataIndex];
 							} break;
 							case KW_FRAME:
 							{
 								sector_addObject(sector, obj);
 								frame_setData(obj, s_levelIntState.frames[s_dataIndex]);
+								obj->lightOverride = s_levelIntState.lightType[2][s_dataIndex];
 							} break;
 							case KW_SPIRIT:
 							{

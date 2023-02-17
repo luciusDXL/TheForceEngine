@@ -108,6 +108,7 @@ namespace TFE_Jedi
 		if (serialization_getMode() == SMODE_READ)
 		{
 			obj->index = -1;
+			obj->lightOverride = -1;	// for now.
 		}
 
 		SERIALIZE(ObjState_InitVersion, obj->serializeIndex, 0);

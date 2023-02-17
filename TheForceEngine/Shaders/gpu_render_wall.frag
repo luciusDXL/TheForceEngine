@@ -404,7 +404,7 @@ void main()
 		vec3 albedo = texelFetch(Palette, ivec2(baseColor, 0), 0).rgb;
 		Out_Color.rgb = handleLighting(albedo, lightPos, Frag_Normal, CameraPos, Out_Color.rgb);
 
-		int clusterId = getLightClusterId(lightPos, CameraPos);
-		Out_Color.rgb = vec3(float(1-((clusterId/64)&1)), float(clusterId & 63) / 64.0, float((clusterId/64)&1));
+		//int clusterId = getLightClusterId(lightPos, CameraPos);
+		//Out_Color.rgb = vec3(float(1-((clusterId/64)&1)), float(clusterId & 63) / 64.0, float((clusterId/64)&1));
 	}
 }

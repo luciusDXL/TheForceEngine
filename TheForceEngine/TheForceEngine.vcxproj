@@ -552,6 +552,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Level\level.h" />
     <ClInclude Include="TFE_Jedi\Level\levelData.h" />
     <ClInclude Include="TFE_Jedi\Level\levelTextures.h" />
+    <ClInclude Include="TFE_Jedi\Level\objOverrides.h" />
     <ClInclude Include="TFE_Jedi\Level\rfont.h" />
     <ClInclude Include="TFE_Jedi\Level\robjData.h" />
     <ClInclude Include="TFE_Jedi\Level\robject.h" />
@@ -598,6 +599,7 @@ echo ^)";
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_Float\rwallFloat.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\debug.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\frustum.h" />
+    <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\lighting.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\modelGPU.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\objectPortalPlanes.h" />
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.h" />
@@ -869,6 +871,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Level\level.cpp" />
     <ClCompile Include="TFE_Jedi\Level\levelData.cpp" />
     <ClCompile Include="TFE_Jedi\Level\levelTextures.cpp" />
+    <ClCompile Include="TFE_Jedi\Level\objOverrides.cpp" />
     <ClCompile Include="TFE_Jedi\Level\rfont.cpp" />
     <ClCompile Include="TFE_Jedi\Level\robjData.cpp" />
     <ClCompile Include="TFE_Jedi\Level\robject.cpp" />
@@ -909,6 +912,7 @@ echo ^)";
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_Float\rwallFloat.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\debug.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\frustum.cpp" />
+    <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\lighting.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\modelGPU.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\objectPortalPlanes.cpp" />
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\rclassicGPU.cpp" />

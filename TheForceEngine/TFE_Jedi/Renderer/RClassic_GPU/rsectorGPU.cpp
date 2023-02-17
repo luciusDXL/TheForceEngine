@@ -9,6 +9,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Level/objOverrides.h>
 #include <TFE_Jedi/Level/levelTextures.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -23,6 +24,7 @@
 
 #include <TFE_FrontEndUI/console.h>
 
+#include "lighting.h"
 #include "rclassicGPU.h"
 #include "rsectorGPU.h"
 #include "modelGPU.h"
@@ -188,6 +190,9 @@ namespace TFE_Jedi
 		s_wallShader[index].bindTextureNameToSlot("Palette",        6);
 		s_wallShader[index].bindTextureNameToSlot("Textures",       7);
 		s_wallShader[index].bindTextureNameToSlot("TextureTable",   8);
+
+		s_wallShader[index].bindTextureNameToSlot("lightPosition",  9);
+		s_wallShader[index].bindTextureNameToSlot("lightData", 10);
 
 		return true;
 	}
@@ -1101,6 +1106,17 @@ namespace TFE_Jedi
 				{
 					model_add(obj, obj->model, posWS, obj->transform, ambient, floorOffset, ceilOffset, portalInfo);
 				}
+
+				// Hack! Add a test light.
+				if (obj->lightOverride >= 0)
+				{
+					Light light;
+					objOverrides_getLight(obj->lightOverride, &light);
+					light.pos.x += posWS.x;
+					light.pos.y += posWS.y;
+					light.pos.z += posWS.z;
+					lighting_add(light);
+				}
 			}
 		}
 	}
@@ -1387,12 +1403,19 @@ namespace TFE_Jedi
 			assert(result);
 		}
 
+		// Clear the light buffers.
+		lighting_enable(true);
+		lighting_clear();
+
 		// Build the draw list.
 		if (!traverseScene(sector))
 		{
 			return;
 		}
 
+		// Submit the light results.
+		lighting_submit();
+				
 		// State
 		TFE_RenderState::setStateEnable(false, STATE_BLEND);
 		TFE_RenderState::setStateEnable(true, STATE_DEPTH_WRITE | STATE_DEPTH_TEST | STATE_CULLING);
@@ -1401,16 +1424,20 @@ namespace TFE_Jedi
 			TFE_RenderState::setStateEnable(true, STATE_WIREFRAME);
 		}
 
+		lighting_bind(9);
 		for (s32 i = 0; i < SECTOR_PASS_COUNT - 1; i++)
 		{
 			drawPass(SectorPass(i));
 		}
+		lighting_unbind(9);
 				
 		// Draw Sprites.
 		drawSprites();
 
 		// Draw transparent pass.
+		lighting_bind(9);
 		drawPass(SECTOR_PASS_TRANS);
+		lighting_unbind(9);
 
 		// Draw 3D Objects.
 		draw3d();

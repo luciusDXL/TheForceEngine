@@ -45,6 +45,7 @@
 #include <TFE_Archive/gobMemoryArchive.h>
 #include <TFE_Jedi/Level/rfont.h>
 #include <TFE_Jedi/Level/level.h>
+#include <TFE_Jedi/Level/objOverrides.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Task/task.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
@@ -1161,6 +1162,10 @@ namespace TFE_DarkForces
 				
 	void gameStartup()
 	{
+		// TFE
+		objOverrides_init();
+
+		//
 		hud_loadGraphics();
 		hud_loadGameMessages();
 		loadMapNumFont();

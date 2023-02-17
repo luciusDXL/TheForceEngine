@@ -46,6 +46,11 @@ void TFE_Parser::enableColonSeperator()
 	m_enableColorSeperator = true;
 }
 
+void TFE_Parser::enableScopeTokens()
+{
+	m_enableScopeTokens = true;
+}
+
 // Add a string representing a comment, such as ";" "#" "//"
 void TFE_Parser::addCommentString(const char* comment)
 {
@@ -208,6 +213,19 @@ void TFE_Parser::tokenizeLine(const char* line, TokenList& tokens)
 			curToken[0] = 0;
 		}
 		else if (!inQuote && m_enableColorSeperator && line[c] == ':')
+		{
+			curToken[curTokenPos++] = line[c];
+
+			curToken[curTokenPos] = 0;
+			if (curTokenPos)
+			{
+				tokens.push_back(curToken);
+			}
+
+			curTokenPos = 0;
+			curToken[0] = 0;
+		}
+		else if (!inQuote && m_enableScopeTokens && (line[c] == '{' || line[c] == '}'))
 		{
 			curToken[curTokenPos++] = line[c];
 

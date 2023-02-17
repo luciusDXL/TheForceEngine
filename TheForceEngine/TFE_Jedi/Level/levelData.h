@@ -94,6 +94,8 @@ namespace TFE_Jedi
 		JediFrame** frames = nullptr;
 		SoundSourceId* soundIds = nullptr;
 
+		s32* lightType[3] = { 0 };
+
 		Task* ambientSoundTask = nullptr;
 		Task* soundEmitterTask = nullptr;
 	};
