@@ -1227,6 +1227,7 @@
     </ClInclude>
     <ClInclude Include="Shaders\lighting.h">
       <Filter>Source\Shaders</Filter>
+	</ClInclude>
     <ClInclude Include="TFE_Audio\MidiSynth\tsf.h">
       <Filter>Source\TFE_Audio\MidiSynth</Filter>
     </ClInclude>
