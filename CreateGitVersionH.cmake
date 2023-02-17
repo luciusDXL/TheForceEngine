@@ -12,38 +12,39 @@ function(create_git_version_h)
           OUTPUT_VARIABLE GIT_DESCRIBE_VERSION
           ERROR_QUIET)
       if(status)
-          set(GIT_DESCRIBE_VERSION "v0.0.0")
-      endif()
+          # git returned error, just leave it, build will pick up the
+          # shipped gitVersion.h instead.
+          return()
+      else()
+          string(STRIP ${GIT_DESCRIBE_VERSION} GIT_DESCRIBE_VERSION)
 
-      string(STRIP ${GIT_DESCRIBE_VERSION} GIT_DESCRIBE_VERSION)
+          # Work out if the repository is dirty
+          execute_process(COMMAND ${GIT_EXECUTABLE} update-index -q --refresh
+              WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+              OUTPUT_QUIET
+              ERROR_QUIET)
+          execute_process(COMMAND ${GIT_EXECUTABLE} diff-index --name-only HEAD --
+              WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+              OUTPUT_VARIABLE GIT_DIFF_INDEX
+              ERROR_QUIET)
+          string(COMPARE NOTEQUAL "${GIT_DIFF_INDEX}" "" GIT_DIRTY)
+          if (${GIT_DIRTY})
+              set(GIT_DESCRIBE_VERSION "${GIT_DESCRIBE_VERSION}+")
+          endif()
 
-      # Work out if the repository is dirty
-      execute_process(COMMAND ${GIT_EXECUTABLE} update-index -q --refresh
-          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-          OUTPUT_QUIET
-          ERROR_QUIET)
-      execute_process(COMMAND ${GIT_EXECUTABLE} diff-index --name-only HEAD --
-          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-          OUTPUT_VARIABLE GIT_DIFF_INDEX
-          ERROR_QUIET)
-      string(COMPARE NOTEQUAL "${GIT_DIFF_INDEX}" "" GIT_DIRTY)
-      if (${GIT_DIRTY})
-          set(GIT_DESCRIBE_VERSION "${GIT_DESCRIBE_VERSION}+")
+          message(STATUS "git version: ${GIT_DESCRIBE_VERSION}")
+          set(VERSFILE ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.h)
+          #string(TIMESTAMP TODAY "%Y%m%d %H%M%S")
+          set(VERSION "const char c_gitVersion[] = R\"(${GIT_DESCRIBE_VERSION} ${TODAY})\";")
+          if(EXISTS ${VERSFILE})
+              file(READ ${VERSFILE} VERSIONX)
+          else()
+              set(VERSIONX "")
+          endif()
+          if (NOT "${VERSION}" STREQUAL "${VERSIONX}")
+              file(WRITE ${VERSFILE} "${VERSION}")
+              message(STATUS "wrote new ${VERSFILE}")
+          endif()
       endif()
-  else()
-      set(GIT_DESCRIBE_VERSION "0.0.0")
-  endif()
-  message(STATUS "git version: ${GIT_DESCRIBE_VERSION}")
-  set(VERSFILE ${CMAKE_CURRENT_BINARY_DIR}/gitVersion.h)
-  #string(TIMESTAMP TODAY "%Y%m%d %H%M%S")
-  set(VERSION "const char c_gitVersion[] = R\"(${GIT_DESCRIBE_VERSION} ${TODAY})\";")
-  if(EXISTS ${VERSFILE})
-      file(READ ${VERSFILE} VERSIONX)
-  else()
-      set(VERSIONX "")
-  endif()
-  if (NOT "${VERSION}" STREQUAL "${VERSIONX}")
-      file(WRITE ${VERSFILE} "${VERSION}")
-      message(STATUS "wrote new ${VERSFILE}")
-  endif()
+    endif()
 endfunction()

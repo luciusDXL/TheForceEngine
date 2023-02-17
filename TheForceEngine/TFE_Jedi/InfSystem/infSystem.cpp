@@ -2047,8 +2047,6 @@ namespace TFE_Jedi
 					s32 wallIndex1 = strToInt(s_infArg4);
 
 					// DT 4 bug with adjoin commands - handle invalid wall indices.
-					assert(sector0 && wallIndex0 >= 0 && wallIndex0 < sector0->wallCount);
-					assert(sector1 && wallIndex1 >= 0 && wallIndex1 < sector1->wallCount);
 					adjoinCmd->wall0 = (sector0 && wallIndex0 >= 0 && wallIndex0 < sector0->wallCount) ? &sector0->walls[wallIndex0] : nullptr;
 					adjoinCmd->wall1 = (sector1 && wallIndex1 >= 0 && wallIndex1 < sector1->wallCount) ? &sector1->walls[wallIndex1] : nullptr;
 					adjoinCmd->sector0 = sector0;

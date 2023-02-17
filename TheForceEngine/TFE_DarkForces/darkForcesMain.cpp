@@ -394,6 +394,13 @@ namespace TFE_DarkForces
 		if (pause) { pauseLevelSound(); }
 		else { resumeLevelSound(); }
 	}
+
+	void DarkForces::restartMusic()
+	{
+		gameMusic_setState(MUS_STATE_NULLSTATE);
+		ImReintializeMidi();
+		gameMusic_setState(MUS_STATE_STALK);
+	}
 		
 	void handleLevelComplete()
 	{
@@ -677,6 +684,11 @@ namespace TFE_DarkForces
 	{
 		TFE_MidiPlayer::resume();
 		TFE_Audio::resume();
+	}
+
+	void clearBufferedSound()
+	{
+		TFE_Audio::bufferedAudioClear();
 	}
 
 	void startNextMode()
@@ -1175,10 +1187,6 @@ namespace TFE_DarkForces
 		{
 			FileStream::readContents(&filePath, s_loadingScreenPal, 768);
 		}
-		if (TFE_Paths::getFilePath("secbase.pal", &filePath))
-		{
-			FileStream::readContents(&filePath, s_escMenuPalette, 768);
-		}
 
 		weapon_enableAutomount(s_config.wpnAutoMount);
 		s_sharedState.screenShotSndSrc = sound_load("scrshot.voc", SOUND_PRIORITY_HIGH0);
@@ -1208,7 +1216,7 @@ namespace TFE_DarkForces
 			TFE_System::logWrite(LOG_ERROR, "DarkForcesMain", "Failed to load diskerr image.");
 		}
 	}
-
+		
 	void startMissionFromSave(s32 levelIndex)
 	{
 		// We have returned from the mission tasks.

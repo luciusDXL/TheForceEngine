@@ -21,7 +21,7 @@ namespace TFE_DarkForces
 	AgentData s_agentData[MAX_AGENT_COUNT];
 	JBool s_levelComplete = JFALSE;
 	JBool s_invalidLevelIndex;
-	s32 s_maxLevelIndex;
+	s32 s_maxLevelIndex = 0;
 	s32 s_levelIndex = -1;	// This is actually s_levelIndex2 in the RE code.
 	s32 s_agentId = 0;
 	s32 s_headerSize = (s32)sizeof(PilotConfigHeader);
@@ -227,12 +227,16 @@ namespace TFE_DarkForces
 		
 	const char* agent_getLevelName()
 	{
-		return s_levelGamePaths[s_levelIndex - 1];
+		if (!s_maxLevelIndex) { return nullptr; }
+		const s32 index = clamp(s_levelIndex, 1, s_maxLevelIndex);
+		return s_levelGamePaths[index - 1];
 	}
 
 	const char* agent_getLevelDisplayName()
 	{
-		return s_levelDisplayNames[s_levelIndex - 1];
+		if (!s_maxLevelIndex) { return nullptr; }
+		const s32 index = clamp(s_levelIndex, 1, s_maxLevelIndex);
+		return s_levelDisplayNames[index - 1];
 	}
 
 	void  agent_setLevelComplete(JBool complete)

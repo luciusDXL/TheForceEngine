@@ -2,6 +2,7 @@
 #include <TFE_System/types.h>
 #include <TFE_FileSystem/paths.h>
 #include "audioOutput.h"
+#include "audioFilters.h"
 
 // Source data type. The sound data will be converted to float time during mixing.
 enum SoundDataType
@@ -44,8 +45,8 @@ enum SoundType
 #define MONO_SEPERATION 0.5f
 #define MAX_SOUND_SOURCES 128
 
-typedef void (*SoundFinishedCallback)(void* userData, s32 arg);
-typedef void (*AudioThreadCallback)(f32* buffer, u32 bufferSize, f32 systemVolume);
+typedef void(*SoundFinishedCallback)(void* userData, s32 arg);
+typedef void(*AudioThreadCallback)(f32* buffer, u32 bufferSize, f32 systemVolume);
 
 namespace TFE_Audio
 {
@@ -56,10 +57,13 @@ namespace TFE_Audio
 	static const f32 c_clipDistance = 140.0f;
 
 	// functions
-	bool init(bool useNullDevice=false, s32 outputId=-1);
+	bool init(bool useNullDevice = false, s32 outputId = -1);
 	void shutdown();
 	void stopAllSounds();
 	void selectDevice(s32 id);
+
+	void setUpsampleFilter(AudioUpsampleFilter filter = AUF_DEFAULT);
+	AudioUpsampleFilter getUpsampleFilter();
 
 	void setVolume(f32 volume);
 	f32  getVolume();
@@ -69,13 +73,15 @@ namespace TFE_Audio
 	void lock();
 	void unlock();
 
+	void bufferedAudioClear();
+
 	void setAudioThreadCallback(AudioThreadCallback callback = nullptr);
 	const OutputDeviceInfo* getOutputDeviceList(s32& count, s32& curOutput);
 
 	// One shot, play and forget. Only do this if the client needs no control until stopAllSounds() is called.
 	// Note that looping one shots are valid though may generate too many sound sources if not used carefully.
 	bool playOneShot(SoundType type, f32 volume, const SoundBuffer* buffer, bool looping,
-					 SoundFinishedCallback finishedCallback = nullptr, void* cbUserData = nullptr, s32 cbArg = 0);
+		SoundFinishedCallback finishedCallback = nullptr, void* cbUserData = nullptr, s32 cbArg = 0);
 
 	// Sound source that the client holds onto.
 	SoundSource* createSoundSource(SoundType type, f32 volume, const SoundBuffer* buffer, SoundFinishedCallback callback = nullptr, void* userData = nullptr);

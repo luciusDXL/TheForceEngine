@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
+# force Release by default.
+if(NOT DEFINED CMAKE_BUILD_TYPE)
+       set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+endif()
+
 project(TheForceEngine
 	HOMEPAGE_URL "https://theforceengine.github.io"
 	DESCRIPTION "Modern 'Jedi Engine' replacement supporting Dark Forces, mods, and in the future Outlaws."
@@ -18,18 +23,13 @@ elseif (UNIX AND APPLE)
 	set(MACOS ON)
 endif()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-	if(CMAKE_BUILD_TYPE MATCHES "debug")
-		add_compile_options(-O1 -ggdb3)
-	endif()
-endif()
-
 if(WIN32)
 	# windows: drop everything into one folder
         set(CMAKE_INSTALL_BINDIR ".")
         set(CMAKE_INSTALL_LIBDIR ".")
         set(CMAKE_INSTALL_DATADIR ".")
 else()
+	set(TFE_ICONDIR "share/icons/hicolor")
 	# tweak DATADIR to end up with ./share/TheForceEngine/
         set(CMAKE_INSTALL_DATADIR "share/${PROJECT_NAME}"
                 CACHE PATH "Read-only architecture-independent data"
@@ -39,11 +39,9 @@ include(GNUInstallDirs)
 
 
 add_executable(tfe)
+set_target_properties(tfe PROPERTIES OUTPUT_NAME "theforceengine")
 
-if(WIN32)
-	set_target_properties(tfe PROPERTIES OUTPUT_NAME "TheForceEngine")
-elseif(LINUX)
-	set_target_properties(tfe PROPERTIES OUTPUT_NAME "tfelnx")
+if(LINUX)
 	find_package(PkgConfig REQUIRED)
 	find_package(Threads REQUIRED)
 	pkg_check_modules(RTAUDIO REQUIRED rtaudio>=5.2.0)
@@ -65,12 +63,14 @@ elseif(LINUX)
 				${RTAUDIO_LIBRARIES}
 				${RTMIDI_LIBRARIES}
 	)
-
+	
 	# set up build directory to be able to run TFE immediately: symlink
 	# the necessary support file directories into the build env.
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Documentation)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Fonts)
+	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Mods)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/Shaders)
+	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/SoundFonts)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Images)
 	execute_process(COMMAND /usr/bin/ln -sf ${CMAKE_SOURCE_DIR}/TheForceEngine/UI_Text)
 	include(CreateGitVersionH.cmake)
@@ -96,7 +96,9 @@ install(DIRECTORY
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Text"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/UI_Images"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Shaders"
+	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/SoundFonts"
 	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Fonts"
+	"${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/Mods"
 	DESTINATION "${CMAKE_INSTALL_DATADIR}"
         FILE_PERMISSIONS
           OWNER_READ OWNER_WRITE
@@ -107,3 +109,13 @@ install(DIRECTORY
           GROUP_READ GROUP_EXECUTE GROUP_WRITE
           WORLD_READ WORLD_EXECUTE
 )
+
+# Linux .desktop files
+if(LINUX)
+	install(
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.desktop" DESTINATION "share/applications"
+	)
+	install(
+		FILES "${CMAKE_CURRENT_SOURCE_DIR}/TheForceEngine/TheForceEngine.png" DESTINATION "${TFE_ICONDIR}/256x256/apps"
+	)
+endif()

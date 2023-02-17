@@ -74,6 +74,7 @@ namespace TFE_DarkForces
 	};
 	static const Vec2i c_escButtonDim = { 96, 16 };
 	static Vec4i s_confirmButtonRange[4];
+	static u32 s_escMenuPalette[256];
 
 	struct EscapeMenuState
 	{
@@ -107,6 +108,7 @@ namespace TFE_DarkForces
 
 	extern void pauseLevelSound();
 	extern void resumeLevelSound();
+	extern void clearBufferedSound();
 
 	void escapeMenu_resetState()
 	{
@@ -140,12 +142,15 @@ namespace TFE_DarkForces
 		s_emState.langKeys = langKeys;
 		if (!s_emState.escMenuFrames)
 		{
+			u8 paletteBuffer[768] = { 0 };
+
 			FilePath filePath;
 			if (!TFE_Paths::getFilePath("MENU.LFD", &filePath)) { return; }
 			Archive* archive = Archive::getArchive(ARCHIVE_LFD, "MENU", filePath.path);
 			TFE_Paths::addLocalArchive(archive);
 				s_emState.escMenuFrameCount = getFramesFromAnim("escmenu.anim", &s_emState.escMenuFrames);
 				s_emState.confirmMenuFrameCount = getFramesFromAnim("yesno.anim", &s_emState.confirmMenuFrames);
+				loadPaletteFromPltt("menu.pltt", paletteBuffer);
 			TFE_Paths::removeLastArchive();
 
 			// Adjust button ranges since different languages seem to move the menu around for some reason...
@@ -167,6 +172,13 @@ namespace TFE_DarkForces
 			
 			// TFE
 			TFE_Jedi::renderer_addHudTextureCallback(escapeMenu_getTextures);
+
+			// convert palette to argb entries now since we don't need the raw format anywhere.
+			u8* pal = paletteBuffer;
+			for (u32 i = 0; i < 256; i++, pal += 3)
+			{
+				s_escMenuPalette[i] = 0xffu << 24 | ((u32)pal[0]) | ((u32)(pal[1]) << 8) | ((u32)pal[2] << 16);
+			}
 		}
 	}
 
@@ -507,10 +519,17 @@ namespace TFE_DarkForces
 
 	EscapeMenuAction escapeMenu_update()
 	{
+		vfb_setPalette(s_escMenuPalette);
+
 		EscapeMenuAction action = escapeMenu_updateUI();
 		if (action != ESC_CONTINUE)
 		{
 			s_emState.escMenuOpen = JFALSE;
+			// Avoid sound pops due to buffered sound when returning to the Agent or Main menu.
+			if (!s_levelComplete || action != ESC_ABORT_OR_NEXT)
+			{
+				clearBufferedSound();
+			}
 			resumeLevelSound();
 
 			// TFE
