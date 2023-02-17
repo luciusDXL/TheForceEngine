@@ -1,0 +1,54 @@
+/******************************
+Light Overrides
+Any missing fields will use the listed defaults, unless the field says it is required.
+
+Format:
+{
+	name = "Name of Asset"	-- name of the asset, required.
+	offset = { x, y, z }	-- light offset from the asset origin, default = { 0.0, 0.0, 0.0 }
+	color0 = { r, g, b }    -- Inner Red, Green, and Blue color, each value must be between 0.0 and 1.0; default = { 1.0, 1.0, 1.0 }
+	color1 = { r, g, b }    -- Outer color, default = color0
+	innerRadius = 0 - 1023  -- The inner radius of the light, the point where the light starts to attenuate. default = 0.0
+	outerRadius = 0 - 1023  -- The outer radius of the light, the point where the light intensity = 0. default = 5.0
+	decay = 0 - 15          -- How sharply the light falls off, where 1.0 = quadratic, 15.0 = small hot spot. default = 1.0
+	amp   = 0 - 15          -- How bright the light is. default = 1.0
+}
+
+Light:
+         Center   InnerRadius       OuterRadius
+            |------------|------------------|
+Attenuation 1.0          1.0                0.0
+Color       Color0       Color0             Color1
+
+If the InnerRadius = 0 (default); attenuation works like a normal point light.
+If the InnerRadius is close to OuterRadius; the light looks more light a spotlight.
+
+Decay controls the speed of the falloff from the Inner and Outer radius, where larger values produces a sharper falloff. 
+*******************************/
+
+{
+	name = "IENERGY.FME"
+	offset = { 0.0, -2.0, 0.0 }
+	color0 = { 0.25, 0.25, 1.0 }
+}
+{
+	name = "IKEYR.FME"
+	offset = { 0.0, -2.0, 0.0 }
+	color0 = { 1.0, 0.0, 0.0 }
+}
+{
+	name = "IKEYY.FME"
+	offset = { 0.0, -2.0, 0.0 }
+	color0 = { 1.0, 1.0, 0.0 }
+}
+{
+	name = "IKEYB.FME"
+	offset = { 0.0, -2.0, 0.0 }
+	color0 = { 0.0, 0.0, 1.0 }
+}
+{
+	name = "IARMOR.WAX"
+	offset = { 0.0, -2.0, 0.0 }
+	color0 = { 0.0, 1.0, 0.0 }
+	outerRadius = 10.0
+}
