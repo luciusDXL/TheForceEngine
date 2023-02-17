@@ -73,7 +73,7 @@ namespace TFE_Paths
 
 	// System Paths: where all the support data is located, which is
 	// accessed mainly via relative paths. We look at, in this order:
-	// [debug build] $PWD
+	// directory of executable
 	// /usr/local/share/
 	// /usr/share/
 	// $HOME/.local/share/
@@ -84,10 +84,8 @@ namespace TFE_Paths
 	bool setProgramDataPath(const char *append)
 	{
 		std::string s;
-#ifndef NDEBUG
-		// debug build: look at where we're running from first.
+
 		s_systemPaths.push_back(getPath(PATH_PROGRAM));
-#endif
 		s = std::string("/usr/local/share/") + append + "/";
 		s_systemPaths.push_back(s);
 		s = std::string("/usr/share/") + append + "/";

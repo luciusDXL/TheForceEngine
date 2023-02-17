@@ -392,12 +392,14 @@ namespace TFE_Settings
 	void writeSoundSettings(FileStream& settings)
 	{
 		writeHeader(settings, c_sectionNames[SECTION_SOUND]);
+		writeKeyValue_Float(settings, "masterVolume", s_soundSettings.masterVolume);
 		writeKeyValue_Float(settings, "soundFxVolume", s_soundSettings.soundFxVolume);
 		writeKeyValue_Float(settings, "musicVolume", s_soundSettings.musicVolume);
 		writeKeyValue_Float(settings, "cutsceneSoundFxVolume", s_soundSettings.cutsceneSoundFxVolume);
 		writeKeyValue_Float(settings, "cutsceneMusicVolume", s_soundSettings.cutsceneMusicVolume);
 		writeKeyValue_Int(settings, "audioDevice", s_soundSettings.audioDevice);
-		writeKeyValue_Int(settings, "midiDevice", s_soundSettings.midiDevice);
+		writeKeyValue_Int(settings, "midiOutput", s_soundSettings.midiOutput);
+		writeKeyValue_Int(settings, "midiType", s_soundSettings.midiType);
 		writeKeyValue_Bool(settings, "use16Channels", s_soundSettings.use16Channels);
 		writeKeyValue_Bool(settings, "disableSoundInMenus", s_soundSettings.disableSoundInMenus);
 	}
@@ -746,7 +748,11 @@ namespace TFE_Settings
 
 	void parseSoundSettings(const char* key, const char* value)
 	{
-		if (strcasecmp("soundFxVolume", key) == 0)
+		if (strcasecmp("masterVolume", key) == 0)
+		{
+			s_soundSettings.masterVolume = parseFloat(value);
+		}
+		else if (strcasecmp("soundFxVolume", key) == 0)
 		{
 			s_soundSettings.soundFxVolume = parseFloat(value);
 		}
@@ -766,9 +772,13 @@ namespace TFE_Settings
 		{
 			s_soundSettings.audioDevice = parseInt(value);
 		}
-		else if (strcasecmp("midiDevice", key) == 0)
+		else if (strcasecmp("midiOutput", key) == 0)
 		{
-			s_soundSettings.midiDevice = parseInt(value);
+			s_soundSettings.midiOutput = parseInt(value);
+		}
+		else if (strcasecmp("midiType", key) == 0)
+		{
+			s_soundSettings.midiType = parseInt(value);
 		}
 		else if (strcasecmp("use16Channels", key) == 0)
 		{

@@ -6,6 +6,7 @@
 #include <TFE_Audio/midiPlayer.h>
 #include <TFE_Audio/midiDevice.h>
 #include <TFE_DarkForces/config.h>
+#include <TFE_Game/igame.h>
 #include <TFE_Game/reticle.h>
 #include <TFE_Game/saveSystem.h>
 #include <TFE_RenderBackend/renderBackend.h>
@@ -28,11 +29,13 @@
 #include <TFE_Ui/imGUI/imgui.h>
 // Game
 #include <TFE_DarkForces/mission.h>
+#include <TFE_DarkForces/gameMusic.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 
 #include <climits>
 
 using namespace TFE_Input;
+using namespace TFE_Audio;
 
 namespace TFE_FrontEndUI
 {
@@ -93,6 +96,7 @@ namespace TFE_FrontEndUI
 		{800,600},
 		{960,720},
 		{1024,768},
+		{1066,800},
 		{1280,960},
 		{1440,1050},
 		{1440,1080},
@@ -111,6 +115,7 @@ namespace TFE_FrontEndUI
 		"600p  (800x600)",
 		"720p  (960x720)",
 		"768p  (1024x768)",
+		"800p  (1066x800)",
 		"960p  (1280x960)",
 		"1050p (1440x1050)",
 		"1080p (1440x1080)",
@@ -131,6 +136,7 @@ namespace TFE_FrontEndUI
 		"600p",
 		"720p",
 		"768p",
+		"800p",
 		"960p",
 		"1050p",
 		"1080p",
@@ -183,6 +189,8 @@ namespace TFE_FrontEndUI
 
 	static MenuItemSelected s_menuItemselected[8];
 	static const size_t s_menuItemCount = TFE_ARRAYSIZE(s_menuItemselected);
+
+	static IGame* s_game = nullptr;
 
 	static const char* c_axisBinding[] =
 	{
@@ -492,6 +500,11 @@ namespace TFE_FrontEndUI
 		ImGui::Text("FPS: %d", s32(aveFps + 0.5));
 		ImGui::End();
 		ImGui::PopFont();
+	}
+		
+	void setCurrentGame(IGame* game)
+	{
+		s_game = game;
 	}
 
 	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults, bool showFps)
@@ -2339,6 +2352,7 @@ namespace TFE_FrontEndUI
 
 		const char* outputAudioNames[MAX_AUDIO_OUTPUTS];
 		char outputMidiNames[MAX_AUDIO_OUTPUTS * 256];
+		char outputMidiTypeNames[MIDI_TYPE_COUNT * 256];
 		{
 			s32 outputCount = 0, curOutput = 0;
 			const OutputDeviceInfo* outputInfo = TFE_Audio::getOutputDeviceList(outputCount, curOutput);
@@ -2361,34 +2375,84 @@ namespace TFE_FrontEndUI
 		}
 		ImGui::Separator();
 		{
-			s32 outputCount = 0, curOutput = TFE_MidiDevice::getActiveDevice();
-			outputCount = min(MAX_AUDIO_OUTPUTS, (s32)TFE_MidiDevice::getDeviceCount());
-			char* midiList = outputMidiNames;
-			memset(outputMidiNames, 0, 256 * MAX_AUDIO_OUTPUTS);
-			for (s32 i = 0; i < outputCount; i++)
+			// Select between types.
+			MidiDevice* device = TFE_MidiPlayer::getMidiDevice();
+
+			s32 typeCount = MIDI_TYPE_COUNT;
+			s32 curType = (s32)device->getType();
+			char* typeList = outputMidiTypeNames;
+			memset(outputMidiTypeNames, 0, 256 * MIDI_TYPE_COUNT);
+			for (s32 i = 0; i < typeCount; i++)
 			{
-				TFE_MidiDevice::getDeviceName(i, midiList, 256);
-				midiList += strlen(midiList) + 1;	// +1 as imgui entry divider
+				strcpy(typeList, TFE_MidiPlayer::getMidiDeviceTypeName(MidiDeviceType(i)));
+				typeList += strlen(typeList) + 1;	// +1 as imgui entry divider
 			}
 
 			ImGui::LabelText("##ConfigLabel", "Midi Device:"); ImGui::SameLine(150 * s_uiScale);
 			ImGui::SetNextItemWidth(256 * s_uiScale);
+			if (ImGui::Combo("##Midi Type", &curType, (const char*)outputMidiTypeNames, typeCount))
+			{
+				TFE_Audio::pause();
+				TFE_MidiPlayer::pauseThread();
+
+				TFE_MidiPlayer::setDeviceType(MidiDeviceType(curType));
+				device = TFE_MidiPlayer::getMidiDevice();
+				if (device)
+				{
+					sound->midiType = (s32)device->getType();
+					sound->midiOutput = device->getActiveOutput();
+				}
+				
+				TFE_MidiPlayer::resumeThread();
+				TFE_Audio::resume();
+
+				if (s_game) { s_game->restartMusic(); }
+			}
+
+			//////////////////////////////
+			device = TFE_MidiPlayer::getMidiDevice();
+
+			s32 outputCount = 0, curOutput = device->getActiveOutput();
+			outputCount = min(MAX_AUDIO_OUTPUTS, (s32)device->getOutputCount());
+			char* midiList = outputMidiNames;
+			memset(outputMidiNames, 0, 256 * MAX_AUDIO_OUTPUTS);
+			for (s32 i = 0; i < outputCount; i++)
+			{
+				device->getOutputName(i, midiList, 256);
+				midiList += strlen(midiList) + 1;	// +1 as imgui entry divider
+			}
+
+			ImGui::LabelText("##ConfigLabel", "Midi Output:"); ImGui::SameLine(150 * s_uiScale);
+			ImGui::SetNextItemWidth(256 * s_uiScale);
 			bool hasChanged = ImGui::Combo("##Midi Output", &curOutput, (const char*)outputMidiNames, outputCount);
 			if (ImGui::Button("Reset Midi Output"))
 			{
+				TFE_MidiPlayer::setDeviceType(MIDI_TYPE_DEFAULT);
+				device = TFE_MidiPlayer::getMidiDevice();
+
 				curOutput = -1;
 				hasChanged = true;
 			}
 			if (hasChanged)
 			{
-				TFE_MidiDevice::selectDevice(u32(curOutput));
-				sound->midiDevice = TFE_MidiDevice::getActiveDevice();
+				TFE_Audio::pause();
+				TFE_MidiPlayer::pauseThread();
+
+				device->selectOutput(curOutput);
+				sound->midiType = (s32)device->getType();
+				sound->midiOutput = device->getActiveOutput();
+
+				TFE_MidiPlayer::resumeThread();
+				TFE_Audio::resume();
+
+				if (s_game) { s_game->restartMusic(); }
 			}
 		}
 
 		ImGui::Separator();
 
 		ImGui::LabelText("##ConfigLabel", "Sound Volume");
+		labelSliderPercent(&sound->masterVolume, "Master Volume");
 		labelSliderPercent(&sound->soundFxVolume, "Game SoundFX");
 		labelSliderPercent(&sound->musicVolume,   "Game Music");
 		labelSliderPercent(&sound->cutsceneSoundFxVolume, "Cutscene SoundFX");
@@ -2416,8 +2480,8 @@ namespace TFE_FrontEndUI
 			sound->disableSoundInMenus = disableSoundInMenus;
 		}
 
-		TFE_Audio::setVolume(sound->soundFxVolume);
-		TFE_MidiPlayer::setVolume(sound->musicVolume);
+		TFE_Audio::setVolume(sound->soundFxVolume * sound->masterVolume);
+		TFE_MidiPlayer::setVolume(sound->musicVolume * sound->masterVolume);
 	}
 
 	void configSystem()

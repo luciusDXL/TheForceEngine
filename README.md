@@ -7,9 +7,9 @@
 
 **A purchased copy of the original game is required and is not provided by The Force Engine.** The documentation - https://theforceengine.github.io/Documentation.html - has information on how to legally purchase Dark Forces. TFE is **not** a remaster, it is essentially a source port designed to run the *original* game natively on modern systems with quality of life improvements and optional enhancements. Dark Forces and Outlaws are owned by Disney and are still active, commercial products. The IP is owned solely by Disney.
 
-**Linux is now supported but it requires additional setup.** For now, you will need to compile from source in order to run Linux. You will also need to setup your own midi server, assuming you don't have a midi hardware. <ins>Version 1.10 will have integrated midi synthesis options</ins>, which will remove the midi server requirement. For more information, see the **Linux** section below.
+**Linux is now supported but it requires additional setup.** For now, you will need to compile from source in order to run Linux. See the **Linux** section below.
 
-In addition, a Flatpak/snap (or similar) package is planned for version 1.10, alleviating the need to manually compile the project. Think of version 1.08 as "Linux Early Access." If you don't want to compile the code or setup a midi server, it might be better to use Windows for now or wait for version 1.10.
+In addition, a Flatpak/snap (or similar) package is planned for version 1.10, alleviating the need to manually compile the project. If you don't want to compile the code, it might be better to use Windows for now or wait for version 1.10.
 
 ## Current Features
 * Full Dark Forces support, including mods. Outlaws support is coming in version 2.0.
@@ -20,6 +20,7 @@ In addition, a Flatpak/snap (or similar) package is planned for version 1.10, al
 * Full input binding, mouse sensitivity adjustment, and controller support. Note, however, that menus currently require the mouse.
 * Optional Quality of Life improvements, such as full mouselook, aiming reticle, improved Boba Fett AI, autorun, and more.
 * A new save system that works seamlessly with the exiting checkpoint and lives system. You can ignore it entirely, use it just as an exit save so you don't have to play long user levels in one sitting, or full save and load with quicksaves like Doom or Duke Nukem 3D.
+* Sound Font (sf2) and OPL3 emulation support.
 * Optional and quality of life features, even mouselook, can be disabled if you want the original experience. Play in 320x200, turn the mouse mode (Input menu) to Menus only or horizontal, and enable the Classic (software) renderer - and it will look and play just like DOS, but with a higher framerate and without needing to adjust cycles in DosBox.
 
 ## About
@@ -65,7 +66,7 @@ This can be overridden by defining the "__TFE_DATA_HOME__" environment variable.
 * Unpack the source or fetch from github
 * Create a build directory and chdir into it:
 __mkdir tfe-build; cd tfe-build__
-* Run CMake in the build directory:
+* Run CMake in the build directory, the build type must be specified (debug or release):
 __cmake -S /path/to/tfe-source/__
 * Build it:
 __make__
@@ -74,9 +75,10 @@ __sudo make install__
 * If no additional parameters were added to CMake, files will be installed in __/usr/local/bin__, __/usr/local/share/TheForceEngine/__
 
 #### Running TFE
-* "KDialog" for file dialog on KDE Plasma Desktop Environment
-* "zenity" for file dialog on all other desktop environments
-* "TiMidity++" or "FluidSynth" software synthesizer for glorious MIDI Music.
-	* __timidity -iA --sequencer-ports=1__
-	* __fluidsynth -s -L2 /path/to/preferred/soundfont.sf2__
-* or external MIDI Hardware.
+##### External application dependencies
+* "KDialog" for file dialog on KDE Plasma Desktop Environment.
+* "zenity" for file dialog on all other desktop environments.
+* external midi is no longer required but still supported through the "System Midi" device.
+
+##### Launch
+* Start the Engine by clicking on the __"The Force Engine"__ Desktop icon or by running  __"theforceengine"__ in a shell.

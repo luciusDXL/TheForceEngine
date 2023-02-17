@@ -622,7 +622,7 @@ int main(int argc, char* argv[])
 	}
 	TFE_FrontEndUI::initConsole();
 	TFE_Audio::init(s_nullAudioDevice, TFE_Settings::getSoundSettings()->audioDevice);
-	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiDevice);
+	TFE_MidiPlayer::init(TFE_Settings::getSoundSettings()->midiOutput, (MidiDeviceType)TFE_Settings::getSoundSettings()->midiType);
 	TFE_Polygon::init();
 	TFE_Image::init();
 	TFE_Palette::createDefault256();
@@ -847,6 +847,7 @@ int main(int argc, char* argv[])
 		bool drawFps = s_curGame && graphics->showFps;
 		if (s_curGame) { drawFps = drawFps && (!s_curGame->isPaused()); }
 
+		TFE_FrontEndUI::setCurrentGame(s_curGame);
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA || s_curState == APP_STATE_SET_DEFAULTS,
 			s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_SET_DEFAULTS, drawFps);
 

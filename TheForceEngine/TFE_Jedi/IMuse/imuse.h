@@ -102,6 +102,8 @@ enum iMuseErrorCode
 	imIllegalErr     = -7
 };
 
+#define IM_AUDIO_OVERSAMPLE 2
+
 namespace TFE_Jedi
 {
 	////////////////////////////////////////////////////
@@ -131,6 +133,7 @@ namespace TFE_Jedi
 	// TFE
 	////////////////////////////////////////////////////
 	s32 ImSetDigitalChannelCount(s32 count);
+	s32 ImReintializeMidi();
 
 	////////////////////////////////////////////////////
 	// Low level functions

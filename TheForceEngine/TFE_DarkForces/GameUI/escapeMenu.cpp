@@ -112,6 +112,7 @@ namespace TFE_DarkForces
 
 	extern void pauseLevelSound();
 	extern void resumeLevelSound();
+	extern void clearBufferedSound();
 
 	void escapeMenu_resetState()
 	{
@@ -261,9 +262,14 @@ namespace TFE_DarkForces
 		s_emState.escMenuOpen = JFALSE;
 	}
 
-	void escapeMenu_close()
+	void escapeMenu_close(EscapeMenuAction action)
 	{
 		s_emState.escMenuOpen = JFALSE;
+		// Avoid sound pops due to buffered sound when returning to the Agent or Main menu.
+		if (!s_levelComplete || action != ESC_ABORT_OR_NEXT)
+		{
+			clearBufferedSound();
+		}
 		resumeLevelSound();
 
 		// TFE
@@ -534,7 +540,7 @@ namespace TFE_DarkForces
 		EscapeMenuAction action = escapeMenu_updateUI();
 		if (action != ESC_CONTINUE)
 		{
-			escapeMenu_close();
+			escapeMenu_close(action);
 		}
 
 		escapeMenu_draw(JTRUE, JTRUE);

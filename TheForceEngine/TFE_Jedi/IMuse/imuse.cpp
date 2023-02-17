@@ -2353,12 +2353,9 @@ namespace TFE_Jedi
 		return imSuccess;
 	}
 
-	s32 ImInitializeSlots(iMuseInitData* initData)
+	// TFE: Used to reinitialize Midi when devices are changed.
+	s32 ImReintializeMidi()
 	{
-		IM_LOG_MSG("SLOTS module...");
-
-		ImMidiCall(0, 0, 0, 0, 0);
-		s_midiDriverNotReady = 0;
 		for (s32 i = 0; i < MIDI_INSTRUMENT_COUNT; i++)
 		{
 			s_midiInstrumentChannelMask[i] = 0;
@@ -2384,7 +2381,7 @@ namespace TFE_Jedi
 			channel->modulation = 0;
 			channel->finalPan = 0;
 			channel->sustain = 0;
-			channel->instrumentMask  = s_midiInstrumentChannelMask;
+			channel->instrumentMask = s_midiInstrumentChannelMask;
 			channel->instrumentMask2 = s_midiInstrumentChannelMask1;
 
 			ImMidiChannel* sharedChannel = (ImMidiChannel*)&channel->sharedPart;
@@ -2400,7 +2397,7 @@ namespace TFE_Jedi
 			sharedChannel->modulation = 0;
 			sharedChannel->finalPan = 0;
 			sharedChannel->sustain = 0;
-			sharedChannel->instrumentMask  = s_midiInstrumentChannelMaskShared;
+			sharedChannel->instrumentMask = s_midiInstrumentChannelMaskShared;
 			sharedChannel->instrumentMask2 = s_midiInstrumentChannelMask3;
 
 			ImProgramChange(sharedChannel->channelId, sharedChannel->pgm);
@@ -2409,7 +2406,7 @@ namespace TFE_Jedi
 			ImControlChange(sharedChannel->channelId, MID_VOLUME_MSB, sharedChannel->volume);
 			ImControlChange(sharedChannel->channelId, MID_PAN_MSB, sharedChannel->pan);
 			ImControlChange(sharedChannel->channelId, MID_MODULATIONWHEEL_MSB, sharedChannel->modulation);
-			ImSetPanFine(sharedChannel->channelId, sharedChannel->finalPan*2 + 8192);
+			ImSetPanFine(sharedChannel->channelId, sharedChannel->finalPan * 2 + 8192);
 		}
 		// Channel 15 maps to 9 and only uses 3 parameters.
 		s_ImCh9_priority = 0;
@@ -2419,6 +2416,15 @@ namespace TFE_Jedi
 		ImControlChange(9, MID_GPC2_MSB, s_ImCh9_partNoteReq);
 		ImControlChange(9, MID_VOLUME_MSB, s_ImCh9_volume);
 		return imSuccess;
+	}
+
+	s32 ImInitializeSlots(iMuseInitData* initData)
+	{
+		IM_LOG_MSG("SLOTS module...");
+
+		ImMidiCall(0, 0, 0, 0, 0);
+		s_midiDriverNotReady = 0;
+		return ImReintializeMidi();
 	}
 
 	s32 ImInitializeSustain()
