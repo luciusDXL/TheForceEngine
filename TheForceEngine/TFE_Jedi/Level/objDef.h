@@ -14,6 +14,8 @@ namespace TFE_Jedi
 	void objDef_destroy();
 
 	s32  objDef_getIndex(const char* assetName);
-	s32  objDef_addLight(const char* assetName, Light light);
+	s32  objDef_addAsset(const char* assetName);
 	bool objDef_getLight(s32 index, s32 animId, s32 frameId, Light* light);
+
+	void objDef_addLight(s32 assetId, Light light);
 }

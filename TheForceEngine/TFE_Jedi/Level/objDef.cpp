@@ -88,15 +88,22 @@ namespace TFE_Jedi
 		return id;
 	}
 
-	void readLightValue(Light& light, char* assetName, Identifier id, s32 offset, const char* str)
+	void readAssetValue(s32& assetId, Identifier id, s32 offset, const char* str)
 	{
-		char* endPtr = nullptr;
 		switch (id)
 		{
 			case IdName:
 			{
-				strcpy(assetName, str);
+				assetId = objDef_addAsset(str);
 			} break;
+		}
+	}
+
+	void readLightValue(Light& light, Identifier id, s32 offset, const char* str)
+	{
+		char* endPtr = nullptr;
+		switch (id)
+		{
 			case IdOffset:
 			{
 				if (offset < 3)
@@ -211,7 +218,7 @@ namespace TFE_Jedi
 		size_t bufferPos = 0;
 		s32 scopeLevel = 0;	// global
 		s32 offset = 0;
-		char assetName[256] = { 0 };
+		s32 assetId = -1;
 		Identifier curId = IdInvalid;
 
 		DefType defType = DefInvalid;
@@ -237,7 +244,7 @@ namespace TFE_Jedi
 					{
 						if (curId == IdAsset)
 						{
-							memset(assetName, 0, 256);
+							assetId = -1;
 							defType = DefAsset;
 						}
 						else
@@ -276,7 +283,7 @@ namespace TFE_Jedi
 					{
 						if (subDefType == DefLight)
 						{
-							objDef_addLight(assetName, light);
+							objDef_addLight(assetId, light);
 						}
 						subDefType = DefInvalid;
 					}
@@ -293,7 +300,20 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					readLightValue(light, assetName, curId, offset, str);
+					if (subDefType == DefInvalid)
+					{
+						if (defType == DefAsset)
+						{
+							readAssetValue(assetId, curId, offset, str);
+						}
+					}
+					else
+					{
+						if (subDefType == DefLight)
+						{
+							readLightValue(light, curId, offset, str);
+						}
+					}
 					offset++;
 
 					if ((scopeLevel == 2 && subDefType != DefInvalid) || (scopeLevel == 1 && defType != DefInvalid))
@@ -320,25 +340,27 @@ namespace TFE_Jedi
 		return id;
 	}
 
-	s32 objDef_addLight(const char* assetName, Light light)
+	s32 objDef_addAsset(const char* assetName)
 	{
-		s32 id = -1;
-
-		std::map<std::string, s32>::iterator iAsset = s_objDefMap.find(assetName);
-		if (iAsset == s_objDefMap.end())
+		s32 id = objDef_getIndex(assetName);
+		if (id < 0)
 		{
 			id = (s32)s_objDef.size();
 			s_objDefMap[assetName] = id;
-			s_objDef.push_back({ assetName, DFLAG_LIGHT, light });
+			s_objDef.push_back({ assetName, DFLAG_NONE, {} });
 		}
-		else
-		{
-			id = iAsset->second;
-			s_objDef[id].flags |= DFLAG_LIGHT;
-			s_objDef[id].light = light;
-		}
-
 		return id;
+	}
+
+	void objDef_addLight(s32 assetId, Light light)
+	{
+		if (assetId >= 0)
+		{
+			s_objDef[assetId].flags |= DFLAG_LIGHT;
+			s_objDef[assetId].light = light;
+			return;
+		}
+		TFE_System::logWrite(LOG_ERROR, "Definition Parser", "Cannot add a light to an asset that doesn't exist %d.", assetId);
 	}
 
 	bool objDef_getLight(s32 index, s32 animId, s32 frameId, Light* light)
