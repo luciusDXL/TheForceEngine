@@ -156,6 +156,10 @@ namespace TFE_Jedi
 		s_spriteShader.bindTextureNameToSlot("TextureTable",   6);
 		s_spriteShader.bindTextureNameToSlot("DrawListPlanes", 7);
 
+		s_spriteShader.bindTextureNameToSlot("lightPosition", 9);
+		s_spriteShader.bindTextureNameToSlot("lightData",     10);
+		s_spriteShader.bindTextureNameToSlot("lightClusters", 11);
+
 		return true;
 	}
 	
@@ -1434,13 +1438,11 @@ namespace TFE_Jedi
 		{
 			drawPass(SectorPass(i));
 		}
-		lighting_unbind(9);
-				
+
 		// Draw Sprites.
 		drawSprites();
 
 		// Draw transparent pass.
-		lighting_bind(9);
 		drawPass(SECTOR_PASS_TRANS);
 		lighting_unbind(9);
 

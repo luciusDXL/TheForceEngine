@@ -1,3 +1,7 @@
+// #ifdef DYNAMIC_LIGHTING
+#include "Shaders/lighting.h"
+// #endif
+
 uniform vec3 CameraPos;
 uniform vec3 CameraRight;
 uniform mat3 CameraView;
@@ -13,6 +17,7 @@ uniform samplerBuffer DrawListPlanes;
 // in int gl_VertexID;
 out vec2 Frag_Uv; // base uv coordinates (0 - 1)
 out vec3 Frag_Pos;     // camera relative position for lighting.
+flat out vec3 Frag_Lighting;
 out float gl_ClipDistance[8];
 flat out vec4 Texture_Data; // not much here yet.
 flat out int Frag_TextureId;
@@ -45,7 +50,7 @@ void main()
 	vec2 vtx_uv;
 	vtx_uv.x = mix(posTextureYU.z, posTextureYU.w, u);
 	vtx_uv.y = v * float(texelFetch(TextureTable, Frag_TextureId).w);
-
+		
 	vec4 texture_data = vec4(0.0);
 	texture_data.y = float((tex_flags >> 16u) & 31u);
 
@@ -75,4 +80,15 @@ void main()
 	// Write out the per-vertex uv and color.
 	Frag_Uv = vtx_uv;
 	Texture_Data = texture_data;
+
+	// Light the center?
+	{
+		// Compute the center.
+		vec3 center;
+		float s = (0.5*float(texelFetch(TextureTable, Frag_TextureId).z) - posTextureYU.z) / (posTextureYU.w - posTextureYU.z);
+		center.xz = mix(posTextureXZ.xy, posTextureXZ.zw, s);
+		center.y  = (posTextureYU.x + posTextureYU.y) * 0.5;
+
+		Frag_Lighting = handleLightingSprite(center, CameraPos);
+	}
 }

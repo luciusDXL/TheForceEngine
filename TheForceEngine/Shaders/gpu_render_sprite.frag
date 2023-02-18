@@ -16,6 +16,7 @@ uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;
 in vec3 Frag_Pos;
+flat in vec3 Frag_Lighting;
 
 flat in int Frag_TextureId;
 flat in vec4 Texture_Data;
@@ -138,6 +139,15 @@ void main()
 	}
 
 	//Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.8, 0.6) : getAttenuatedColor(int(baseColor), int(light));
-	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.8, 0.6) : getAttenuatedColorBlend(baseColor, light);
+	Out_Color.rgb = getAttenuatedColorBlend(baseColor, light);
+	if (baseColor >= 16.0)
+	{
+		vec3 gamma = vec3(2.2);
+		vec3 invGamma = vec3(1.0) / gamma;
+
+		vec3 albedo = pow(texelFetch(Palette, ivec2(baseColor, 0), 0).rgb, gamma);
+		vec3 ambient = pow(Out_Color.rgb, gamma);
+		Out_Color.rgb = pow(Frag_Lighting * albedo + ambient, invGamma);
+	}
 	Out_Color.a = 1.0;
 }

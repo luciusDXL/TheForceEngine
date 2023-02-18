@@ -98,6 +98,7 @@ vec3 computeLightContrib(vec3 pos, vec3 nrml, vec3 lightPos, float Ri, float Ro,
 	else if (d > 0.0) { offset *= vec3(1.0/d); }
 
 	vec3 colorAtten = computeAttenuationColor(d, Ri, Ro, D, A, ci, co);
+	if (dot(nrml, nrml) < 0.01) { return colorAtten; }
 	return colorAtten * saturate(dot(offset, nrml));
 }
 
@@ -204,4 +205,61 @@ vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambie
 
 	// linear -> gamma.
 	return pow(colorLinear, invGamma);
+}
+
+vec3 handleLightingSprite(vec3 pos, vec3 cameraPos)
+{
+	vec3 gamma = vec3(2.2);
+	vec3 invGamma = vec3(1.0) / gamma;
+	vec3 Lweights = vec3(0.299, 0.587, 0.114);
+
+	vec3 nrml = vec3(0.0);
+	vec3 light = vec3(0.0);
+	int clusterId = getLightClusterId(pos, cameraPos);
+	uvec4 lightIndices = texelFetch(lightClusters, clusterId);
+	for (int i = 0; i < 4; i++)
+	{
+		uint data = lightIndices[i];
+		if (data == 0u) { break; }
+		int index0 = int(data & 65535u);
+		int index1 = int((data >> 16u) & 65535u);
+
+		if (index0 != 0)
+		{
+			vec3 lightPos;
+			vec3 c0, c1;
+			vec2 radii, decayAmp;
+			getLightData(index0 - 1, lightPos, c0, c1, radii, decayAmp);
+
+			// desaturate and darken the light when it is near the sprite center.
+			vec2 offsetXZ = pos.xz - lightPos.xz;
+			if (dot(offsetXZ, offsetXZ) < 1.0)
+			{
+				c0 = vec3(dot(c0, Lweights)) * 0.5;
+				c1 = vec3(dot(c1, Lweights)) * 0.5;
+			}
+
+			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+		}
+		if (index1 != 0)
+		{
+			vec3 lightPos;
+			vec3 c0, c1;
+			vec2 radii, decayAmp;
+			getLightData(index1 - 1, lightPos, c0, c1, radii, decayAmp);
+
+			// desaturate and darken the light when it is near the sprite center.
+			vec2 offsetXZ = pos.xz - lightPos.xz;
+			if (dot(offsetXZ, offsetXZ) < 1.0)
+			{
+				c0 = vec3(dot(c0, Lweights)) * 0.5;
+				c1 = vec3(dot(c1, Lweights)) * 0.5;
+			}
+
+			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+		}
+	}
+
+	// final color.
+	return tonemapLighting(light);
 }
