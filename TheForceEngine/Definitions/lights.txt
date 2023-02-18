@@ -1,0 +1,194 @@
+/******************************
+Light Overrides
+Any missing fields will use the listed defaults, unless the field says it is required.
+
+Format:
+{
+	name = "Name of Asset"	-- name of the asset, required.
+	offset = { x, y, z }	-- light offset from the asset origin, default = { 0.0, 0.0, 0.0 }
+	color0 = { r, g, b }    -- Inner Red, Green, and Blue color, each value must be between 0.0 and 1.0; default = { 1.0, 1.0, 1.0 }
+	color1 = { r, g, b }    -- Outer color, default = color0
+	innerRadius = 0 - 1023  -- The inner radius of the light, the point where the light starts to attenuate. default = 0.0
+	outerRadius = 0 - 1023  -- The outer radius of the light, the point where the light intensity = 0. default = 5.0
+	decay = 0 - 15          -- How sharply the light falls off, where 1.0 = quadratic, 15.0 = small hot spot. default = 1.0
+	amp   = 0 - 15          -- How bright the light is. default = 1.0
+}
+
+Light:
+         Center   InnerRadius       OuterRadius
+            |------------|------------------|
+Attenuation 1.0          1.0                0.0
+Color       Color0       Color0             Color1
+
+If the InnerRadius = 0 (default); attenuation works like a normal point light.
+If the InnerRadius is close to OuterRadius; the light looks more light a spotlight.
+
+Decay controls the speed of the falloff from the Inner and Outer radius, where larger values produces a sharper falloff. 
+
+Stuff to add:
+LIT2.WAX
+TALLIT1.WAX
+LIT1.WAX
+SMALITE1.FME
+SMALITE2.FME
+
+TODO:
+Format = 
+asset
+{
+	name = "ASSET"
+	Light
+	{
+		animId = id // default = -1 = all animations
+		// Base Values
+		color0 = {}
+		// ...
+		// Optional per-frame overrides.
+		// If no per-frame overrides are specified, than the light values are valid across all frames.
+		frame = 0
+		amp = 0.5
+		// 
+		frame = 10
+		amp = 0.1
+	}
+	Light
+	{
+		animId = id2
+		//...
+	}
+}
+
+*******************************/
+
+asset
+{
+	name = "IENERGY.FME"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 0.25, 0.25, 1.0 }
+		outerRadius = 5
+	}
+}
+
+asset
+{
+	name = "IKEYR.FME"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 1.0, 0.0, 0.0 }
+	}
+}
+
+asset
+{
+	name = "IKEYY.FME"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 1.0, 1.0, 0.0 }
+	}
+}
+
+asset
+{
+	name = "IKEYB.FME"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 0.0, 0.0, 1.0 }
+	}
+}
+
+asset
+{
+	name = "IARMOR.WAX"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 0.0, 1.0, 0.0 }
+		amp = 0.8
+		outerRadius = 5
+	}
+}
+
+asset
+{
+	name = "ILIFE.WAX"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 1.0, 0.0, 0.0 }
+		outerRadius = 10.0
+	}
+}
+
+asset
+{
+	name = "IREVIVE.WAX"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 0.9, 0.6, 0.1 }
+		outerRadius = 10.0
+	}
+}
+
+asset
+{
+	name = "IDPLANS.WAX"
+	Light
+	{
+		color0 = { 1.0, 0.0, 0.0 }
+		color1 = { 1.0, 0.5, 0.0 }
+		innerRadius = 2.0
+		outerRadius = 10.0
+	}
+}
+
+asset
+{
+	name = "REDLIT.WAX"
+	Light
+	{
+		offset = { 0.0, 2.0, 0.0 }
+		color0 = { 1.0, 0.0, 0.0 }
+		outerRadius = 15.0
+	}
+}
+
+asset
+{
+	name = "TALLIT1.WAX"
+	Light
+	{
+		offset = { 0.0, -11.0, 0.0 }
+		color0 = { 1.0, 1.0, 1.0 }
+		color1 = { 0.0, 1.0, 1.0 }
+		outerRadius = 20.0
+	}
+}
+
+asset
+{
+	name = "LIT1.WAX"
+	Light
+	{
+		offset = { 0.0, -4.0, 0.0 }
+		color0 = { 1.0, 1.0, 1.0 }
+		color1 = { 0.5, 1.0, 1.0 }
+		outerRadius = 10.0
+	}
+}
+
+asset
+{
+	name = "DEATH.3DO"
+	Light
+	{
+		color0 = { 0.1, 1.0, 0.1 }
+		innerRadius = 5.0
+		outerRadius = 15.0
+	}
+}
