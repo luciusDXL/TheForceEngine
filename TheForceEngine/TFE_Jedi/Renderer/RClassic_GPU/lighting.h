@@ -11,11 +11,11 @@
 
 namespace TFE_Jedi
 {
-	void lighting_enable(bool enable);	// enable dynamic lighting.
+	void lighting_enable(bool enable, s32 sectorCount);	// enable dynamic lighting.
 	void lighting_destroy();			// free buffers.
 
 	void lighting_clear();
-	void lighting_add(const Light& light);	// add a light to the scene.
+	void lighting_add(const Light& light, s32 objIndex, s32 sectorIndex);	// add a light to the scene.
 	void lighting_submit();					// submit the light list to GPU data.
 
 	void lighting_bind(s32 index);

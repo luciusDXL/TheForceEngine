@@ -16,7 +16,9 @@ namespace TFE_Jedi
 {
 	enum Identifier
 	{
-		IdName = 0,
+		IdAsset = 0,
+		IdLight,
+		IdName,
 		IdOffset,
 		IdColor0,
 		IdColor1,
@@ -29,14 +31,16 @@ namespace TFE_Jedi
 	};
 	static const char* c_ident[IdCount]=
 	{
-		"name",        // IdName = 0,
-		"offset",      // IdOffset,
-		"color0",      // IdColor0,
-		"color1",      // IdColor1,
-		"innerRadius", // IdInnerRadius,
-		"outerRadius", // IdOuterRadius,
-		"decay",       // IdDecay,
-		"amp",         // IdAmp,
+		"asset",	   // IdAsset
+		"light",       // IdLight
+		"name",        // IdName
+		"offset",      // IdOffset
+		"color0",      // IdColor0
+		"color1",      // IdColor1
+		"innerRadius", // IdInnerRadius
+		"outerRadius", // IdOuterRadius
+		"decay",       // IdDecay
+		"amp",         // IdAmp
 	};
 
 	struct LightOverride
@@ -88,7 +92,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_WARNING, "Override Parser", "Offset has too many arguments %d / 3: asset: '%s'", offset + 1, str);
+					TFE_System::logWrite(LOG_WARNING, "Definition Parser", "Offset has too many arguments %d / 3: asset: '%s'", offset + 1, str);
 				}
 			} break;
 			case IdColor0:
@@ -101,7 +105,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_WARNING, "Override Parser", "Color0 has too many arguments %d / 3: asset: '%s'", offset + 1, str);
+					TFE_System::logWrite(LOG_WARNING, "Definition Parser", "Color0 has too many arguments %d / 3: asset: '%s'", offset + 1, str);
 				}
 			} break;
 			case IdColor1:
@@ -112,7 +116,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_WARNING, "Override Parser", "Color1 has too many arguments %d / 3: asset: '%s'", offset + 1, str);
+					TFE_System::logWrite(LOG_WARNING, "Definition Parser", "Color1 has too many arguments %d / 3: asset: '%s'", offset + 1, str);
 				}
 			} break;
 			case IdInnerRadius:
@@ -123,7 +127,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_WARNING, "Override Parser", "InnerRadius should only have a single value: asset: '%s'", str);
+					TFE_System::logWrite(LOG_WARNING, "Definition Parser", "InnerRadius should only have a single value: asset: '%s'", str);
 				}
 			} break;
 			case IdOuterRadius:
@@ -134,7 +138,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_WARNING, "Override Parser", "OuterRadius should only have a single value: asset: '%s'", str);
+					TFE_System::logWrite(LOG_WARNING, "Definition Parser", "OuterRadius should only have a single value: asset: '%s'", str);
 				}
 			} break;
 			case IdDecay:
@@ -145,7 +149,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_WARNING, "Override Parser", "Decay should only have a single value: asset: '%s'", str);
+					TFE_System::logWrite(LOG_WARNING, "Definition Parser", "Decay should only have a single value: asset: '%s'", str);
 				}
 			} break;
 			case IdAmp:
@@ -156,7 +160,7 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					TFE_System::logWrite(LOG_WARNING, "Override Parser", "Amplitude should only have a single value: asset: '%s'", str);
+					TFE_System::logWrite(LOG_WARNING, "Definition Parser", "Amplitude should only have a single value: asset: '%s'", str);
 				}
 			} break;
 		}
@@ -170,7 +174,7 @@ namespace TFE_Jedi
 		// Read from disk.
 		char path[TFE_MAX_PATH];
 		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		sprintf(path, "%sMods/TFE/Lights/lightOverrides.txt", programDir);
+		sprintf(path, "%sDefinitions/lights.txt", programDir);
 
 		std::vector<char> buffer;
 		size_t len = 0u;
@@ -196,6 +200,10 @@ namespace TFE_Jedi
 		s32 offset = 0;
 		char assetName[256] = { 0 };
 		Identifier curId = IdInvalid;
+
+		bool inAsset = false;
+		bool inLight = false;
+
 		while (bufferPos < len)
 		{
 			const char* line = parser.readLine(bufferPos, true);
@@ -214,9 +222,21 @@ namespace TFE_Jedi
 					// New override.
 					if (scopeLevel == 1)
 					{
-						setLightDefaults(light);
+						if (curId == IdAsset)
+						{
+							memset(assetName, 0, 256);
+							inAsset = true;
+						}
 						curId = IdInvalid;
-						memset(assetName, 0, 256);
+					}
+					else if (scopeLevel == 2)
+					{
+						if (curId == IdLight)
+						{
+							setLightDefaults(light);
+							inLight = true;
+						}
+						curId = IdInvalid;
 					}
 				}
 				else if (str[0] == '}')
@@ -225,9 +245,14 @@ namespace TFE_Jedi
 					curId = IdInvalid;
 
 					// Add the item.
-					if (scopeLevel == 0)
+					if (scopeLevel == 0 && inAsset)
+					{
+						inAsset = false;
+					}
+					else if (scopeLevel == 1 && inLight)
 					{
 						objOverrides_addLight(assetName, light);
+						inLight = false;
 					}
 				}
 				else if (curId == IdInvalid)  // this should be an identifier.
@@ -236,7 +261,7 @@ namespace TFE_Jedi
 					offset = 0;
 					if (curId == IdInvalid)
 					{
-						TFE_System::logWrite(LOG_ERROR, "Override Parser", "Invalid identifier '%s'.", str);
+						TFE_System::logWrite(LOG_ERROR, "Definition Parser", "Invalid identifier '%s'.", str);
 						return;
 					}
 				}
@@ -244,13 +269,12 @@ namespace TFE_Jedi
 				{
 					readValue(light, assetName, curId, offset, str);
 					offset++;
-				}
-			}
 
-			// If we are at the end of a line and the scope == 1, then treat this as the end of the current value.
-			if (scopeLevel == 1)
-			{
-				curId = IdInvalid;
+					if ((scopeLevel == 2 && inLight) || (scopeLevel == 1 && inAsset))
+					{
+						curId = IdInvalid;
+					}
+				}
 			}
 		}
 	}
@@ -289,7 +313,7 @@ namespace TFE_Jedi
 		return id;
 	}
 
-	void objOverrides_getLight(s32 index, Light* light)
+	void objOverrides_getLight(s32 index, s32 animId, s32 frameId, Light* light)
 	{
 		assert(light);
 		if (index >= 0 && index < (s32)s_overrides.size())

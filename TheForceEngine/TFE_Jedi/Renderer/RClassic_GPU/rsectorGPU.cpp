@@ -192,7 +192,8 @@ namespace TFE_Jedi
 		s_wallShader[index].bindTextureNameToSlot("TextureTable",   8);
 
 		s_wallShader[index].bindTextureNameToSlot("lightPosition",  9);
-		s_wallShader[index].bindTextureNameToSlot("lightData", 10);
+		s_wallShader[index].bindTextureNameToSlot("lightData",     10);
+		s_wallShader[index].bindTextureNameToSlot("lightClusters", 11);
 
 		return true;
 	}
@@ -1069,6 +1070,7 @@ namespace TFE_Jedi
 			if (!obj) { continue; }
 			i++;
 
+			s32 animId = 0, frameId = 0;
 			if ((obj->flags & OBJ_FLAG_NEEDS_TRANSFORM) && obj->ptr)
 			{
 				const s32 type = obj->type;
@@ -1088,6 +1090,7 @@ namespace TFE_Jedi
 						// Get the animation based on the object state.
 						Wax* wax = obj->wax;
 						WaxAnim* anim = WAX_AnimPtr(wax, obj->anim & 31);
+						animId = obj->anim & 31;
 						if (anim)
 						{
 							// Then get the Sequence from the angle difference.
@@ -1095,6 +1098,7 @@ namespace TFE_Jedi
 							// And finally the frame from the current sequence.
 							WaxFrame* frame = WAX_FramePtr(wax, view, obj->frame & 31);
 							clipSpriteToView(curSector, posWS, frame, wax, obj, (obj->flags & OBJ_FLAG_FULLBRIGHT) != 0, portalInfo);
+							frameId = obj->frame & 31;
 						}
 					}
 					else if (type == OBJ_TYPE_FRAME)
@@ -1107,15 +1111,16 @@ namespace TFE_Jedi
 					model_add(obj, obj->model, posWS, obj->transform, ambient, floorOffset, ceilOffset, portalInfo);
 				}
 
-				// Hack! Add a test light.
+				// TODO: Proper light culling and addition to the light grid.
+				// Add the light.
 				if (obj->lightOverride >= 0)
 				{
 					Light light;
-					objOverrides_getLight(obj->lightOverride, &light);
+					objOverrides_getLight(obj->lightOverride, animId, frameId, &light);
 					light.pos.x += posWS.x;
 					light.pos.y += posWS.y;
 					light.pos.z += posWS.z;
-					lighting_add(light);
+					lighting_add(light, obj->index, obj->sector->index);
 				}
 			}
 		}
@@ -1404,7 +1409,7 @@ namespace TFE_Jedi
 		}
 
 		// Clear the light buffers.
-		lighting_enable(true);
+		lighting_enable(true, s_levelState.sectorCount);
 		lighting_clear();
 
 		// Build the draw list.

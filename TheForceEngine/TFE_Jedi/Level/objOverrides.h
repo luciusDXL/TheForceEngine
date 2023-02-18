@@ -15,5 +15,5 @@ namespace TFE_Jedi
 
 	s32 objOverrides_getIndex(const char* assetName);
 	s32 objOverrides_addLight(const char* assetName, Light light);
-	void objOverrides_getLight(s32 index, Light* light);
+	void objOverrides_getLight(s32 index, s32 animId, s32 frameId, Light* light);
 }

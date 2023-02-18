@@ -42,7 +42,7 @@ namespace TFE_Jedi
 	};
 			
 	// Temp State.
-	static s32 s_dataIndex;
+	static s32 s_srcDataIndex;
 	static char s_readBuffer[256];
 	static std::vector<char> s_buffer;
 
@@ -92,7 +92,7 @@ namespace TFE_Jedi
 	JBool level_loadGeometry(const char* levelName)
 	{
 		s_levelState.secretCount = 0;
-		s_dataIndex = 0;
+		s_srcDataIndex = 0;
 		s_levelState.minLayer = INT_MAX;
 		s_levelState.maxLayer = INT_MIN;
 		message_free();
@@ -857,7 +857,7 @@ namespace TFE_Jedi
 					f32 x, y, z, pch, yaw, rol;
 					char objClass[32];
 
-					if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_dataIndex, &x, &y, &z, &pch, &yaw, &rol, &objDiff) > 5)
+					if (sscanf(line, " CLASS: %s DATA: %d X: %f Y: %f Z: %f PCH: %f YAW: %f ROL: %f DIFF: %d", objClass, &s_srcDataIndex, &x, &y, &z, &pch, &yaw, &rol, &objDiff) > 5)
 					{
 						objIndex++;
 						// objDiff >= 0: This difficulty and all greater.
@@ -893,21 +893,21 @@ namespace TFE_Jedi
 							case KW_3D:
 							{
 								sector_addObject(sector, obj);
-								obj3d_setData(obj, s_levelIntState.pods[s_dataIndex]);
+								obj3d_setData(obj, s_levelIntState.pods[s_srcDataIndex]);
 								obj3d_computeTransform(obj);
-								obj->lightOverride = s_levelIntState.lightType[0][s_dataIndex];
+								obj->lightOverride = s_levelIntState.lightType[0][s_srcDataIndex];
 							} break;
 							case KW_SPRITE:
 							{
 								sector_addObject(sector, obj);
-								sprite_setData(obj, s_levelIntState.sprites[s_dataIndex]);
-								obj->lightOverride = s_levelIntState.lightType[1][s_dataIndex];
+								sprite_setData(obj, s_levelIntState.sprites[s_srcDataIndex]);
+								obj->lightOverride = s_levelIntState.lightType[1][s_srcDataIndex];
 							} break;
 							case KW_FRAME:
 							{
 								sector_addObject(sector, obj);
-								frame_setData(obj, s_levelIntState.frames[s_dataIndex]);
-								obj->lightOverride = s_levelIntState.lightType[2][s_dataIndex];
+								frame_setData(obj, s_levelIntState.frames[s_srcDataIndex]);
+								obj->lightOverride = s_levelIntState.lightType[2][s_srcDataIndex];
 							} break;
 							case KW_SPIRIT:
 							{
@@ -916,7 +916,7 @@ namespace TFE_Jedi
 							} break;
 							case KW_SOUND:
 							{
-								level_addAmbientSound(s_levelIntState.soundIds[s_dataIndex], obj->posWS);
+								level_addAmbientSound(s_levelIntState.soundIds[s_srcDataIndex], obj->posWS);
 								freeObject(obj);
 								obj = nullptr;
 							} break;

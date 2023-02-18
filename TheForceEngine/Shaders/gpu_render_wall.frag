@@ -399,7 +399,7 @@ void main()
 	Out_Color.a = 1.0;
 
 	// Optional dynamic lighting.
-	if (!sky)
+	if (!sky && baseColor >= 16.0)	// do not light fullbright colors or sky.
 	{
 		vec3 albedo = texelFetch(Palette, ivec2(baseColor, 0), 0).rgb;
 		Out_Color.rgb = handleLighting(albedo, lightPos, Frag_Normal, CameraPos, Out_Color.rgb);

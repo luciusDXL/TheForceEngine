@@ -1,7 +1,8 @@
 // Lighting
 // 28 bytes per light.
 uniform samplerBuffer  lightPosition;	// vec3  x max lights = 12 * L; L = 8192, size = 96kB
-uniform usamplerBuffer lightData;	// uvec4 x max lights = 16 * L; L = 8192, size = 128kB
+uniform usamplerBuffer lightData;		// uvec4 x max lights = 16 * L; L = 8192, size = 128kB
+uniform usamplerBuffer lightClusters;	// uvec4 x max clusters = 16 * 1024 = 16kB.
 
 vec3 unpackColor(uint packedClr)
 {
@@ -118,6 +119,41 @@ vec3 tonemapLighting(vec3 light)
 	return light * Lnew / L;
 }
 
+int getLightClusterId(vec3 posWS, vec3 cameraPos)
+{
+	vec2 offset = abs(posWS.xz - cameraPos.xz);
+
+	float d = max(offset.x, offset.y) / 16.0;
+	float mip = log2(max(1.0, d));
+	float scale = pow(2.0, floor(mip) + 3.0);
+
+	// This is the minimum corner for the current mip-level.
+	vec2 clusterOffset = vec2(scale * 4.0);
+	// This generates a clusterAddr such that x : [0, 7] and z : [0, 7]
+	ivec2 clusterAddr = ivec2((posWS.xz - cameraPos.xz + clusterOffset) / scale);
+	// This generates a final ID ranging from [0, 63]
+	int clusterId = clusterAddr.x + clusterAddr.y * 8;
+
+	int mipIndex = int(mip);
+	if (mipIndex >= 1)
+	{
+		// In larger mips, the center 4x4 is the previous mip.
+		// So those Ids need to be adjusted.
+		if (clusterAddr.y >= 6)
+		{
+			clusterId = 32 + (clusterAddr.y - 6) * 8 + clusterAddr.x;
+		}
+		else if (clusterAddr.y >= 2)
+		{
+			clusterId = 16 + (clusterAddr.y - 2) * 4 + ((clusterAddr.x < 2) ? clusterAddr.x : clusterAddr.x - 4);
+		}
+		// Finally linearlize the ID factoring in the current mip.
+		clusterId += 64 + (mipIndex - 1) * 48;
+	}
+
+	return clusterId;
+}
+
 // Gamma correction is only handled for dynamic lighting -
 // this is to avoid modifying the look of the original sector and Z-based lighting.
 // albedo: true-color texture value.
@@ -134,14 +170,33 @@ vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambie
 	ambient = pow(ambient, gamma);
 
 	vec3 light = vec3(0.0);
-	for (int i = 0; i < 8; i++)
+	int clusterId = getLightClusterId(pos, cameraPos);
+	uvec4 lightIndices = texelFetch(lightClusters, clusterId);
+	for (int i = 0; i < 4; i++)
 	{
-		vec3 lightPos;
-		vec3 c0, c1;
-		vec2 radii, decayAmp;
-		getLightData(i, lightPos, c0, c1, radii, decayAmp);
+		uint data = lightIndices[i];
+		if (data == 0u) { break; }
+		int index0 = int(data & 65535u);
+		int index1 = int((data >> 16u) & 65535u);
+		
+		if (index0 != 0)
+		{
+			vec3 lightPos;
+			vec3 c0, c1;
+			vec2 radii, decayAmp;
+			getLightData(index0 - 1, lightPos, c0, c1, radii, decayAmp);
 
-		light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+		}
+		if (index1 != 0)
+		{
+			vec3 lightPos;
+			vec3 c0, c1;
+			vec2 radii, decayAmp;
+			getLightData(index1 - 1, lightPos, c0, c1, radii, decayAmp);
+
+			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+		}
 	}
 
 	// final color.
@@ -149,39 +204,4 @@ vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambie
 
 	// linear -> gamma.
 	return pow(colorLinear, invGamma);
-}
-
-int getLightClusterId(vec3 posWS, vec3 cameraPos)
-{
-	vec2 offset = abs(posWS.xz - cameraPos.xz);
-
-	float d = max(offset.x, offset.y) / 16.0;
-	float mip = log2(max(1.0, d));
-	float scale = pow(2.0, floor(mip) + 3.0);
-
-	// This is the minimum corner for the current mip-level.
-	vec2 clusterOffset = vec2(scale * 4.0);
-	// This generates a clusterAddr such that x : [0, 7] and z : [0, 7]
-	ivec2 clusterAddr = ivec2((posWS.xz - cameraPos.xz + clusterOffset) / scale);
-	// This generates a final ID ranging from [0, 63]
-	int clusterId = clusterAddr.x + clusterAddr.y*8;
-
-	int mipIndex = int(mip);
-	if (mipIndex >= 1)
-	{
-		// In larger mips, the center 4x4 is the previous mip.
-		// So those Ids need to be adjusted.
-		if (clusterAddr.y >= 6)
-		{
-			clusterId = 32 + (clusterAddr.y - 6)*8 + clusterAddr.x;
-		}
-		else if (clusterAddr.y >= 2)
-		{
-			clusterId = 16 + (clusterAddr.y - 2)*4 + ((clusterAddr.x < 2) ? clusterAddr.x : clusterAddr.x - 4);
-		}
-		// Finally linearlize the ID factoring in the current mip.
-		clusterId += 64 + (mipIndex - 1)*48;
-	}
-
-	return clusterId;
 }
