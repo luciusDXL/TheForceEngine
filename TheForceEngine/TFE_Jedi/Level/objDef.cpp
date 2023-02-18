@@ -1,5 +1,5 @@
 #include "robject.h"
-#include "objOverrides.h"
+#include "objDef.h"
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
@@ -42,14 +42,27 @@ namespace TFE_Jedi
 		"decay",       // IdDecay
 		"amp",         // IdAmp
 	};
+	enum DefType
+	{
+		DefAsset = 0,
+		DefLight,
+		DefCount,
+		DefInvalid
+	};
+	enum DefFlags
+	{
+		DFLAG_NONE  = 0,
+		DFLAG_LIGHT = FLAG_BIT(0),
+	};
 
-	struct LightOverride
+	struct ObjDef
 	{
 		std::string assetName;
+		u32 flags;
 		Light light;
 	};
-	std::vector<LightOverride> s_overrides;
-	std::map<std::string, s32> s_overrideMap;
+	std::vector<ObjDef> s_objDef;
+	std::map<std::string, s32> s_objDefMap;
 
 	void setLightDefaults(Light& light)
 	{
@@ -75,7 +88,7 @@ namespace TFE_Jedi
 		return id;
 	}
 
-	void readValue(Light& light, char* assetName, Identifier id, s32 offset, const char* str)
+	void readLightValue(Light& light, char* assetName, Identifier id, s32 offset, const char* str)
 	{
 		char* endPtr = nullptr;
 		switch (id)
@@ -166,10 +179,10 @@ namespace TFE_Jedi
 		}
 	}
 
-	void objOverrides_init()
+	void objDef_init()
 	{
-		s_overrides.clear();
-		s_overrideMap.clear();
+		s_objDef.clear();
+		s_objDefMap.clear();
 
 		// Read from disk.
 		char path[TFE_MAX_PATH];
@@ -201,8 +214,8 @@ namespace TFE_Jedi
 		char assetName[256] = { 0 };
 		Identifier curId = IdInvalid;
 
-		bool inAsset = false;
-		bool inLight = false;
+		DefType defType = DefInvalid;
+		DefType subDefType = DefInvalid;
 
 		while (bufferPos < len)
 		{
@@ -225,7 +238,12 @@ namespace TFE_Jedi
 						if (curId == IdAsset)
 						{
 							memset(assetName, 0, 256);
-							inAsset = true;
+							defType = DefAsset;
+						}
+						else
+						{
+							TFE_System::logWrite(LOG_ERROR, "Definition Parser", "Invalid definition type.");
+							return;
 						}
 						curId = IdInvalid;
 					}
@@ -234,7 +252,12 @@ namespace TFE_Jedi
 						if (curId == IdLight)
 						{
 							setLightDefaults(light);
-							inLight = true;
+							subDefType = DefLight;
+						}
+						else
+						{
+							TFE_System::logWrite(LOG_ERROR, "Definition Parser", "Invalid definition sub-type.");
+							return;
 						}
 						curId = IdInvalid;
 					}
@@ -245,14 +268,17 @@ namespace TFE_Jedi
 					curId = IdInvalid;
 
 					// Add the item.
-					if (scopeLevel == 0 && inAsset)
+					if (scopeLevel == 0)
 					{
-						inAsset = false;
+						defType = DefInvalid;
 					}
-					else if (scopeLevel == 1 && inLight)
+					else if (scopeLevel == 1)
 					{
-						objOverrides_addLight(assetName, light);
-						inLight = false;
+						if (subDefType == DefLight)
+						{
+							objDef_addLight(assetName, light);
+						}
+						subDefType = DefInvalid;
 					}
 				}
 				else if (curId == IdInvalid)  // this should be an identifier.
@@ -267,10 +293,10 @@ namespace TFE_Jedi
 				}
 				else
 				{
-					readValue(light, assetName, curId, offset, str);
+					readLightValue(light, assetName, curId, offset, str);
 					offset++;
 
-					if ((scopeLevel == 2 && inLight) || (scopeLevel == 1 && inAsset))
+					if ((scopeLevel == 2 && subDefType != DefInvalid) || (scopeLevel == 1 && defType != DefInvalid))
 					{
 						curId = IdInvalid;
 					}
@@ -279,50 +305,53 @@ namespace TFE_Jedi
 		}
 	}
 
-	void objOverrides_destroy()
+	void objDef_destroy()
 	{
 	}
 		
-	s32 objOverrides_getIndex(const char* assetName)
+	s32 objDef_getIndex(const char* assetName)
 	{
 		s32 id = -1;
-		std::map<std::string, s32>::iterator iAsset = s_overrideMap.find(assetName);
-		if (iAsset != s_overrideMap.end())
+		std::map<std::string, s32>::iterator iAsset = s_objDefMap.find(assetName);
+		if (iAsset != s_objDefMap.end())
 		{
 			id = iAsset->second;
 		}
 		return id;
 	}
 
-	s32 objOverrides_addLight(const char* assetName, Light light)
+	s32 objDef_addLight(const char* assetName, Light light)
 	{
 		s32 id = -1;
 
-		std::map<std::string, s32>::iterator iAsset = s_overrideMap.find(assetName);
-		if (iAsset == s_overrideMap.end())
+		std::map<std::string, s32>::iterator iAsset = s_objDefMap.find(assetName);
+		if (iAsset == s_objDefMap.end())
 		{
-			id = (s32)s_overrides.size();
-			s_overrideMap[assetName] = id;
+			id = (s32)s_objDef.size();
+			s_objDefMap[assetName] = id;
+			s_objDef.push_back({ assetName, DFLAG_LIGHT, light });
 		}
 		else
 		{
 			id = iAsset->second;
+			s_objDef[id].flags |= DFLAG_LIGHT;
+			s_objDef[id].light = light;
 		}
 
-		s_overrides.push_back({ assetName, light });
 		return id;
 	}
 
-	void objOverrides_getLight(s32 index, s32 animId, s32 frameId, Light* light)
+	bool objDef_getLight(s32 index, s32 animId, s32 frameId, Light* light)
 	{
 		assert(light);
-		if (index >= 0 && index < (s32)s_overrides.size())
+		if (index >= 0 && index < (s32)s_objDef.size())
 		{
-			*light = s_overrides[index].light;
+			if (s_objDef[index].flags & DFLAG_LIGHT)
+			{
+				*light = s_objDef[index].light;
+				return true;
+			}
 		}
-		else
-		{
-			memset(light, 0, sizeof(Light));
-		}
+		return false;
 	}
 }

@@ -10,10 +10,10 @@
 
 namespace TFE_Jedi
 {
-	void objOverrides_init();
-	void objOverrides_destroy();
+	void objDef_init();
+	void objDef_destroy();
 
-	s32 objOverrides_getIndex(const char* assetName);
-	s32 objOverrides_addLight(const char* assetName, Light light);
-	void objOverrides_getLight(s32 index, s32 animId, s32 frameId, Light* light);
+	s32  objDef_getIndex(const char* assetName);
+	s32  objDef_addLight(const char* assetName, Light light);
+	bool objDef_getLight(s32 index, s32 animId, s32 frameId, Light* light);
 }

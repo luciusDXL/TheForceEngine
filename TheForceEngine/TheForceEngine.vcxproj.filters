@@ -1255,7 +1255,7 @@
     <ClInclude Include="TFE_Jedi\Renderer\RClassic_GPU\lighting.h">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_Jedi\Level\objOverrides.h">
+    <ClInclude Include="TFE_Jedi\Level\objDef.h">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClInclude>
   </ItemGroup>
@@ -2124,7 +2124,7 @@
     <ClCompile Include="TFE_Jedi\Renderer\RClassic_GPU\lighting.cpp">
       <Filter>Source\TFE_Jedi\Renderer\RClassic_GPU</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_Jedi\Level\objOverrides.cpp">
+    <ClCompile Include="TFE_Jedi\Level\objDef.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClCompile>
   </ItemGroup>

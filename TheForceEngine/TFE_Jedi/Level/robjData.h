@@ -107,7 +107,7 @@ struct SecObject
 	s16 index;
 
 	// TFE
-	s32 lightOverride;
+	s32 defIndex;
 	u32 serializeIndex;
 };
 

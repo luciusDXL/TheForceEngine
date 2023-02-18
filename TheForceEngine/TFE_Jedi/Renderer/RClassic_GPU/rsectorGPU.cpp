@@ -9,7 +9,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>
-#include <TFE_Jedi/Level/objOverrides.h>
+#include <TFE_Jedi/Level/objDef.h>
 #include <TFE_Jedi/Level/levelTextures.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
@@ -1115,16 +1115,18 @@ namespace TFE_Jedi
 					model_add(obj, obj->model, posWS, obj->transform, ambient, floorOffset, ceilOffset, portalInfo);
 				}
 
-				// TODO: Proper light culling and addition to the light grid.
 				// Add the light.
-				if (obj->lightOverride >= 0)
+				if (obj->defIndex >= 0)
 				{
+					// TODO: Proper light culling and addition to the light grid.
 					Light light;
-					objOverrides_getLight(obj->lightOverride, animId, frameId, &light);
-					light.pos.x += posWS.x;
-					light.pos.y += posWS.y;
-					light.pos.z += posWS.z;
-					lighting_add(light, obj->index, obj->sector->index);
+					if (objDef_getLight(obj->defIndex, animId, frameId, &light))
+					{
+						light.pos.x += posWS.x;
+						light.pos.y += posWS.y;
+						light.pos.z += posWS.z;
+						lighting_add(light, obj->index, obj->sector->index);
+					}
 				}
 			}
 		}

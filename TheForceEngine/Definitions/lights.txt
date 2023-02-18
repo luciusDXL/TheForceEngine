@@ -137,6 +137,29 @@ asset
 
 asset
 {
+	name = "IINVINC.WAX"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 0.6, 0.9, 0.1 }
+		outerRadius = 10.0
+	}
+}
+
+asset
+{
+	name = "ICHARGE.FME"
+	Light
+	{
+		offset = { 0.0, -0.5, 0.0 }
+		color0 = { 0.9, 0.2, 0.1 }
+		outerRadius = 4.0
+		amp = 0.2
+	}
+}
+
+asset
+{
 	name = "IDPLANS.WAX"
 	Light
 	{
@@ -155,6 +178,17 @@ asset
 		offset = { 0.0, 2.0, 0.0 }
 		color0 = { 1.0, 0.0, 0.0 }
 		outerRadius = 15.0
+	}
+}
+
+asset
+{
+	name = "ICEILIT2.WAX"
+	Light
+	{
+		offset = { 0.0, 0.03, 0.0 }
+		color0 = { 1.0, 1.0, 1.0 }
+		outerRadius = 10.0
 	}
 }
 
@@ -179,6 +213,42 @@ asset
 		color0 = { 1.0, 1.0, 1.0 }
 		color1 = { 0.5, 1.0, 1.0 }
 		outerRadius = 10.0
+	}
+}
+
+asset
+{
+	name = "LIT2.WAX"
+	Light
+	{
+		offset = { 0.0, -4.0, 0.0 }
+		color0 = { 1.0, 1.0, 1.0 }
+		color1 = { 0.5, 1.0, 1.0 }
+		outerRadius = 10.0
+	}
+}
+
+asset
+{
+	name = "SMALITE1.FME"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 1.0, 1.0, 1.0 }
+		color1 = { 0.5, 1.0, 1.0 }
+		amp = 0.1
+	}
+}
+
+asset
+{
+	name = "SMALITE2.FME"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 1.0, 1.0, 1.0 }
+		color1 = { 0.5, 1.0, 1.0 }
+		amp = 0.1
 	}
 }
 

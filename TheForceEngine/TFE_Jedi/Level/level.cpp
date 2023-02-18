@@ -3,7 +3,7 @@
 
 #include "level.h"
 #include "levelData.h"
-#include "objOverrides.h"
+#include "objDef.h"
 #include "rwall.h"
 #include "rtexture.h"
 #include <TFE_Game/igame.h>
@@ -744,7 +744,7 @@ namespace TFE_Jedi
 							}
 
 							// Read in lighting data...
-							s_levelIntState.lightType[0][p] = objOverrides_getIndex(podName);
+							s_levelIntState.lightType[0][p] = objDef_getIndex(podName);
 						}
 						else
 						{
@@ -775,7 +775,7 @@ namespace TFE_Jedi
 							}
 
 							// Read in lighting data...
-							s_levelIntState.lightType[1][s] = objOverrides_getIndex(name);
+							s_levelIntState.lightType[1][s] = objDef_getIndex(name);
 						}
 						else
 						{
@@ -806,7 +806,7 @@ namespace TFE_Jedi
 							}
 
 							// Read in lighting data...
-							s_levelIntState.lightType[2][f] = objOverrides_getIndex(name);
+							s_levelIntState.lightType[2][f] = objDef_getIndex(name);
 						}
 						else
 						{
@@ -895,19 +895,19 @@ namespace TFE_Jedi
 								sector_addObject(sector, obj);
 								obj3d_setData(obj, s_levelIntState.pods[s_srcDataIndex]);
 								obj3d_computeTransform(obj);
-								obj->lightOverride = s_levelIntState.lightType[0][s_srcDataIndex];
+								obj->defIndex = s_levelIntState.lightType[0][s_srcDataIndex];
 							} break;
 							case KW_SPRITE:
 							{
 								sector_addObject(sector, obj);
 								sprite_setData(obj, s_levelIntState.sprites[s_srcDataIndex]);
-								obj->lightOverride = s_levelIntState.lightType[1][s_srcDataIndex];
+								obj->defIndex = s_levelIntState.lightType[1][s_srcDataIndex];
 							} break;
 							case KW_FRAME:
 							{
 								sector_addObject(sector, obj);
 								frame_setData(obj, s_levelIntState.frames[s_srcDataIndex]);
-								obj->lightOverride = s_levelIntState.lightType[2][s_srcDataIndex];
+								obj->defIndex = s_levelIntState.lightType[2][s_srcDataIndex];
 							} break;
 							case KW_SPIRIT:
 							{
