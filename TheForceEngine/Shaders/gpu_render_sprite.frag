@@ -142,12 +142,9 @@ void main()
 	Out_Color.rgb = getAttenuatedColorBlend(baseColor, light);
 	if (baseColor >= 16.0)
 	{
-		vec3 gamma = vec3(2.2);
-		vec3 invGamma = vec3(1.0) / gamma;
-
-		vec3 albedo = pow(texelFetch(Palette, ivec2(baseColor, 0), 0).rgb, gamma);
-		vec3 ambient = pow(Out_Color.rgb, gamma);
-		Out_Color.rgb = pow(Frag_Lighting * albedo + ambient, invGamma);
+		vec3 albedo   = colorToLinear(texelFetch(Palette, ivec2(baseColor, 0), 0).rgb);
+		vec3 ambient  = colorToLinear(Out_Color.rgb);
+		Out_Color.rgb = linearToColor(Frag_Lighting * albedo + ambient);
 	}
 	Out_Color.a = 1.0;
 }

@@ -35,6 +35,16 @@ vec2 unpackFixed4_12(uint packedV2)
 	return v2;
 }
 
+vec3 colorToLinear(vec3 inColor)
+{
+	return pow(inColor, vec3(2.2));
+}
+
+vec3 linearToColor(vec3 inLinear)
+{
+	return pow(inLinear, vec3(1.0/2.2));
+}
+
 void getLightData(int index, out vec3 pos, out vec3 c0, out vec3 c1, out vec2 radius, out vec2 decayAmp)
 {
 	pos = texelFetch(lightPosition, index).xyz;
@@ -163,12 +173,8 @@ int getLightClusterId(vec3 posWS, vec3 cameraPos)
 // ambient:   current color value (sector ambient, headlamp, etc.).
 vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambient)
 {
-	vec3 gamma = vec3(2.2);
-	vec3 invGamma = vec3(1.0) / gamma;
-
-	// gamma -> linear.
-	albedo = pow(albedo, gamma);
-	ambient = pow(ambient, gamma);
+	albedo  = colorToLinear(albedo);
+	ambient = colorToLinear(ambient);
 
 	vec3 light = vec3(0.0);
 	int clusterId = getLightClusterId(pos, cameraPos);
@@ -199,18 +205,11 @@ vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambie
 			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
 		}
 	}
-
-	// final color.
-	vec3 colorLinear = tonemapLighting(light) * albedo + ambient;
-
-	// linear -> gamma.
-	return pow(colorLinear, invGamma);
+	return linearToColor(tonemapLighting(light) * albedo + ambient);
 }
 
 vec3 handleLightingSprite(vec3 pos, vec3 cameraPos)
 {
-	vec3 gamma = vec3(2.2);
-	vec3 invGamma = vec3(1.0) / gamma;
 	vec3 Lweights = vec3(0.299, 0.587, 0.114);
 
 	vec3 nrml = vec3(0.0);
