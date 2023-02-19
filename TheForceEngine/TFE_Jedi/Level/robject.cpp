@@ -3,6 +3,7 @@
 #include <TFE_Game/igame.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/lighting.h>
 #include <TFE_DarkForces/logic.h>
 #include <TFE_Memory/chunkedArray.h>
 
@@ -32,11 +33,18 @@ namespace TFE_Jedi
 		obj->self = obj;
 		obj->serializeIndex = 0;
 		obj->defIndex = -1;
+		obj->lightInfo = { 0 };
 		return obj;
 	}
 
 	void freeObject(SecObject* obj)
 	{
+		if (obj->lightInfo.light)
+		{
+			lighting_freeLight(obj->lightInfo.light);
+			obj->lightInfo.light = nullptr;
+		}
+
 		s_freeObjLock = JTRUE;
 		// Free Logics
 		Logic** head = (Logic**)allocator_getHead((Allocator*)obj->logic);

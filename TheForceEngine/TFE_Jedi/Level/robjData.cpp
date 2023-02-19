@@ -104,11 +104,12 @@ namespace TFE_Jedi
 		SERIALIZE(ObjState_InitVersion, obj->yaw, 0);
 		SERIALIZE(ObjState_InitVersion, obj->roll, 0);
 
+		SERIALIZE(ObjState_ObjDefAdded, obj->defIndex, -1);
+
 		// obj->index will be reset once the object is re-added to its sector.
 		if (serialization_getMode() == SMODE_READ)
 		{
 			obj->index = -1;
-			obj->defIndex = -1;	// for now.
 		}
 
 		SERIALIZE(ObjState_InitVersion, obj->serializeIndex, 0);

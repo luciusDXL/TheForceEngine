@@ -4,12 +4,14 @@
 #include <TFE_System/math.h>
 #include <TFE_Asset/modelAsset_jedi.h>
 #include <TFE_Game/igame.h>
+#include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
+#include <TFE_Memory/chunkedArray.h>
 
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
@@ -24,6 +26,22 @@
 
 #define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
 using namespace TFE_RenderBackend;
+using namespace TFE_Memory;
+
+#define MAX_LIGHT_SECTORS 16
+
+// Scene
+struct SceneLight
+{
+	Light light;
+	s32 sectorCount;
+	s32 sectorId[MAX_LIGHT_SECTORS];
+	u32 frameIndex;
+};
+struct SectorBucket
+{
+	std::vector<SceneLight*> lights;
+};
 
 namespace TFE_Jedi
 {
@@ -52,6 +70,12 @@ namespace TFE_Jedi
 	static bool s_enable = false;
 	static u32  s_dynlightCount = 0;
 	static u32  s_maxClusterId = 0;
+	static u32  s_frameIndex = 0;
+		
+	std::vector<SceneLight*> s_sceneLights;
+	ChunkedArray* s_lightPool = nullptr;
+	std::vector<SectorBucket> s_sectorBuckets;
+	//
 
 	u32 packColor(Vec3f color);
 	u32 packFixed10_6(Vec2f v2);
@@ -131,7 +155,7 @@ namespace TFE_Jedi
 		// This is the minimum corner for the current mip-level.
 		f32 clusterOffset = scale * 4.0f;
 		// This generates a clusterAddr such that x : [0, 7] and z : [0, 7]
-		Vec2i clusterAddr = { (posWS.x - s_cameraPos.x + clusterOffset) / scale, (posWS.z - s_cameraPos.z + clusterOffset) / scale };
+		Vec2i clusterAddr = { s32((posWS.x - s_cameraPos.x + clusterOffset) / scale), s32((posWS.z - s_cameraPos.z + clusterOffset) / scale) };
 		// This generates a final ID ranging from [0, 63]
 		s32 clusterId = clusterAddr.x + clusterAddr.z*8;
 		
@@ -189,8 +213,8 @@ namespace TFE_Jedi
 
 		// This generates a clusterAddr such that x : [0, 7] and z : [0, 7]
 		f32 clusterOffset = scale * 4.0f;
-		Vec2i clusterAddr0 = { floorf((mn.x - s_cameraPos.x + clusterOffset) / scale), floorf((mn.z - s_cameraPos.z + clusterOffset) / scale) };
-		Vec2i clusterAddr1 = { ceilf((mx.x - s_cameraPos.x + clusterOffset) / scale), ceilf((mx.z - s_cameraPos.z + clusterOffset) / scale) };
+		Vec2i clusterAddr0 = { s32(floorf((mn.x - s_cameraPos.x + clusterOffset) / scale)), s32(floorf((mn.z - s_cameraPos.z + clusterOffset) / scale)) };
+		Vec2i clusterAddr1 = { s32(ceilf(( mx.x - s_cameraPos.x + clusterOffset) / scale)), s32(ceilf(( mx.z - s_cameraPos.z + clusterOffset) / scale)) };
 
 		bool processPrevMip = false;
 		s32 baseIndex = ((mipIndex > 0) ? 64 : 0) + max(0, mipIndex - 1) * 48;
@@ -226,18 +250,9 @@ namespace TFE_Jedi
 		}
 	}
 
-	void lighting_add(const Light& light, s32 objIndex, s32 sectorIndex)
+	void lighting_add(const Light& light)
 	{
 		if (s_dynlightCount >= MaxLightCount) { return; }
-
-		// Make sure the light hasn't been added already.
-		SectorLights* lights = &s_sectorLights[sectorIndex];
-		for (s32 i = 0; i < lights->count; i++)
-		{
-			if (lights->lightId[i] == objIndex) { return; }
-		}
-		// Then add it.
-		lights->lightId[lights->count++] = objIndex;
 
 		// Add the light to the overall list.
 		const u32 index = s_dynlightCount;
@@ -262,8 +277,8 @@ namespace TFE_Jedi
 		Vec2f mx = { light.pos.x + w, light.pos.z + w };
 
 		f32 clusterOffset = scale * 4.0f;
-		Vec2i clusterAddr0 = { floorf((mn.x - s_cameraPos.x + clusterOffset) / scale), floorf((mn.z - s_cameraPos.z + clusterOffset) / scale) };
-		Vec2i clusterAddr1 = { ceilf((mx.x - s_cameraPos.x + clusterOffset) / scale), ceilf((mx.z - s_cameraPos.z + clusterOffset) / scale) };
+		Vec2i clusterAddr0 = { s32(floorf((mn.x - s_cameraPos.x + clusterOffset) / scale)), s32(floorf((mn.z - s_cameraPos.z + clusterOffset) / scale)) };
+		Vec2i clusterAddr1 = { s32(ceilf(( mx.x - s_cameraPos.x + clusterOffset) / scale)), s32(ceilf(( mx.z - s_cameraPos.z + clusterOffset) / scale)) };
 
 		// If not, then move up a mip level.
 		// We assume that lights are small enough that they can only straddle one mip level.
@@ -277,15 +292,6 @@ namespace TFE_Jedi
 
 	void lighting_submit()
 	{
-		// HACK! For now clear out any extra lights.
-		s32 start = s_dynlightCount;
-		for (s32 i = start; i < 8; i++)
-		{
-			s_lightPosCpu[i] = { 0 };
-			s_lightDataCpu[i] = { 0 };
-			s_dynlightCount++;
-		}
-
 		if (s_dynlightCount)
 		{
 			s_lightPos.update( s_lightPosCpu,  sizeof(Vec4f)  * s_dynlightCount);
@@ -294,6 +300,7 @@ namespace TFE_Jedi
 
 		// Clusters
 		s_clusters.update(s_clustersCpu, sizeof(Vec4ui) * (s_maxClusterId + 1));
+		s_frameIndex++;
 	}
 
 	void lighting_bind(s32 index)
@@ -333,5 +340,197 @@ namespace TFE_Jedi
 		const u32 x = u32(clamp(v2.x * scale, 0.0f, 65535.0f));
 		const u32 y = u32(clamp(v2.z * scale, 0.0f, 65535.0f)) << 16u;
 		return x | y;
+	}
+
+	////////////////////////////////////////
+	// Scene
+	////////////////////////////////////////
+		
+	void lighting_addToBucket(SectorBucket* bucket, SceneLight* light)
+	{
+		bucket->lights.push_back(light);
+	}
+
+	void lighting_removeFromBucket(SectorBucket* bucket, SceneLight* sceneLight)
+	{
+		std::vector<SceneLight*>::iterator iter = bucket->lights.begin();
+		for (; iter != bucket->lights.end(); ++iter)
+		{
+			SceneLight* light = *iter;
+			if (light == sceneLight)
+			{
+				bucket->lights.erase(iter);
+				break;
+			}
+		}
+	}
+
+	void lighting_clearScene()
+	{
+		s_sceneLights.clear();
+		chunkedArrayClear(s_lightPool);
+		s_frameIndex = 0;
+	}
+
+	void lighting_initScene(s32 sectorCount)
+	{
+		if (!s_lightPool)
+		{
+			s_lightPool = createChunkedArray(sizeof(SceneLight), 512, 1, s_gameRegion);
+		}
+		lighting_clearScene();
+		s_sectorBuckets.resize(sectorCount);
+		for (size_t i = 0; i < sectorCount; i++)
+		{
+			s_sectorBuckets[i].lights.clear();
+		}
+	}
+
+	Vec2f closestPointOnLine(const Vec2f& a, const Vec2f& b, const Vec2f& p)
+	{
+		const Vec2f ap  = { p.x - a.x, p.z - a.z };
+		const Vec2f dir = { b.x - a.x, b.z - a.z };
+		const f32 u = ap.x * dir.x + ap.z * dir.z;
+		if (u <= 0.0f)
+		{
+			return a;
+		}
+
+		const f32 lenSq = dir.x*dir.x + dir.z*dir.z;
+		if (u >= lenSq)
+		{
+			return b;
+		}
+
+		const f32 scale = u / lenSq;
+		return { a.x + dir.x*scale, a.z + dir.z*scale };
+	}
+
+	bool lighting_addLightSector(SceneLight* sceneLight, s32 sectorId)
+	{
+		// Make sure there is room.
+		if (sceneLight->sectorCount >= MAX_LIGHT_SECTORS) { return false; }
+		// Make sure it isn't already there...
+		for (s32 i = 0; i < sceneLight->sectorCount; i++)
+		{
+			if (sceneLight->sectorId[i] == sectorId)
+			{
+				return false;
+			}
+		}
+		// Finally add it.
+		sceneLight->sectorId[sceneLight->sectorCount++] = sectorId;
+		return true;
+	}
+
+	void lighting_traversePortals(SceneLight* sceneLight, s32 sectorId)
+	{
+		const RSector* sector = &s_levelState.sectors[sectorId];
+		const RWall* wall = sector->walls;
+		const s32 wallCount = sector->wallCount;
+		const f32 r = sceneLight->light.radii.z;
+		const f32 rSq = r * r;
+		const Vec2f lightPos = { sceneLight->light.pos.x, sceneLight->light.pos.z };
+		const f32 lightHeight = sceneLight->light.pos.y;
+		for (s32 w = 0; w < wallCount; w++, wall++)
+		{
+			RSector* next = wall->nextSector;
+			if (!next) { continue; }
+			Vec2f w0 = { fixed16ToFloat(wall->w0->x), fixed16ToFloat(wall->w0->z) };
+			Vec2f w1 = { fixed16ToFloat(wall->w1->x), fixed16ToFloat(wall->w1->z) };
+
+			// Sidedness test.
+			const Vec2f wallNormal = { -(w1.z - w0.z), w1.x - w0.x };
+			const Vec2f lightVec = { w0.x - lightPos.x, w0.z - lightPos.z };
+			if (wallNormal.x*lightVec.x + wallNormal.z*lightVec.z < 0.0f) { continue; }
+
+			// Approximate height check.
+			const f32 nextFloor = fixed16ToFloat(min(next->floorHeight, sector->floorHeight));
+			const f32 nextCeil  = fixed16ToFloat(max(next->ceilingHeight, sector->ceilingHeight));
+			if (lightHeight - nextFloor > r || nextCeil - lightHeight > r) { continue; }
+
+			// Minimum distance from light to portal line check (2D).
+			const Vec2f p = closestPointOnLine(w0, w1, lightPos);
+			const Vec2f offset = { lightPos.x - p.x, lightPos.z - p.z };
+			if (offset.x*offset.x + offset.z*offset.z < rSq)
+			{
+				if (lighting_addLightSector(sceneLight, next->index))
+				{
+					lighting_traversePortals(sceneLight, next->index);
+				}
+			}
+		}
+	}
+
+	void lighting_handleVisibility(SceneLight* sceneLight, s32 sectorId)
+	{
+		sceneLight->sectorCount = 0;
+		// Assume that the light is actually in the specified sector.
+		sceneLight->sectorId[sceneLight->sectorCount++] = sectorId;
+		
+		// Next go through all of the potential portals and see if the light overlaps.
+		lighting_traversePortals(sceneLight, sectorId);
+
+		// Finally add it to all of the sector buckets.
+		for (s32 i = 0; i < sceneLight->sectorCount; i++)
+		{
+			lighting_addToBucket(&s_sectorBuckets[sceneLight->sectorId[i]], sceneLight);
+		}
+	}
+	
+	SceneLight* lighting_addToScene(const Light& light, s32 sectorId)
+	{
+		if (sectorId < 0) { return nullptr; }
+
+		SceneLight* sceneLight = (SceneLight*)allocFromChunkedArray(s_lightPool);
+		sceneLight->light = light;
+		s_sceneLights.push_back(sceneLight);
+
+		lighting_handleVisibility(sceneLight, sectorId);
+		return sceneLight;
+	}
+
+	void lighting_updateLight(SceneLight* sceneLight, const Light& light, s32 newSector)
+	{
+		for (s32 i = 0; i < sceneLight->sectorCount; i++)
+		{
+			lighting_removeFromBucket(&s_sectorBuckets[sceneLight->sectorId[i]], sceneLight);
+		}
+		sceneLight->light = light;
+		lighting_handleVisibility(sceneLight, newSector);
+	}
+
+	void lighting_freeLight(SceneLight* sceneLight)
+	{
+		std::vector<SceneLight*>::iterator iter = s_sceneLights.begin();
+		for (; iter != s_sceneLights.end(); ++iter)
+		{
+			SceneLight* light = *iter;
+			if (light == sceneLight)
+			{
+				s_sceneLights.erase(iter);
+				break;
+			}
+		}
+		for (s32 i = 0; i < sceneLight->sectorCount; i++)
+		{
+			lighting_removeFromBucket(&s_sectorBuckets[sceneLight->sectorId[i]], sceneLight);
+		}
+		freeToChunkedArray(s_lightPool, sceneLight);
+	}
+
+	void lighting_addSectorLights(s32 sectorId)
+	{
+		SectorBucket* bucket = &s_sectorBuckets[sectorId];
+		const size_t count   = s_sectorBuckets[sectorId].lights.size();
+		SceneLight** lights  = s_sectorBuckets[sectorId].lights.data();
+		for (size_t i = 0; i < count; i++)
+		{
+			SceneLight* light = lights[i];
+			if (light->frameIndex == s_frameIndex) { continue; }
+
+			light->frameIndex = s_frameIndex;
+			lighting_add(light->light);
+		}
 	}
 }

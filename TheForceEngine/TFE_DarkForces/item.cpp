@@ -117,7 +117,7 @@ namespace TFE_DarkForces
 			obj_setSpriteAnim(newObj);
 		}
 		newObj->defIndex = s_itemData[itemId].defIndex;
-
+		
 		return newObj;
 	}
 }  // TFE_DarkForces

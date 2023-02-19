@@ -22,6 +22,8 @@
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/InfSystem/message.h>
 
+#include <TFE_Jedi/Renderer/RClassic_GPU/lighting.h>
+
 // TODO: Fix game dependency?
 #include <TFE_DarkForces/logic.h>
 
@@ -236,6 +238,9 @@ namespace TFE_Jedi
 			TFE_System::logWrite(LOG_ERROR, "level_loadGeometry", "Cannot read sector count.");
 			return false;
 		}
+
+		// Lighting
+		lighting_initScene(s_levelState.sectorCount);
 
 		s_levelState.sectors = (RSector*)level_alloc(sizeof(RSector) * s_levelState.sectorCount);
 		memset(s_levelState.sectors, 0, sizeof(RSector) * s_levelState.sectorCount);
@@ -947,6 +952,16 @@ namespace TFE_Jedi
 
 						if (obj)
 						{
+							if (obj->defIndex >= 0)
+							{
+								Light light;
+								objDef_getLight(obj->defIndex, 0, 0, &light);
+								obj->lightInfo.offset = light.pos;
+
+								light.pos = { light.pos.x + fixed16ToFloat(obj->posWS.x), light.pos.y + fixed16ToFloat(obj->posWS.y), light.pos.z + fixed16ToFloat(obj->posWS.z) };
+								obj->lightInfo.light = lighting_addToScene(light, obj->sector->index);
+							}
+
 							readNextLine = object_parseSeq(obj, &parser, &bufferPos);
 							if (obj->entityFlags & ETFLAG_PLAYER)
 							{

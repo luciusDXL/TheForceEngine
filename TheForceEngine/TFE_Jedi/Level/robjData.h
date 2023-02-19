@@ -12,7 +12,7 @@ using namespace TFE_Jedi;
 
 struct JediModel;
 struct RSector;
-struct Light;
+struct SceneLight;
 	
 enum ObjectType
 {
@@ -58,18 +58,34 @@ enum EntityTypeFlags
 
 enum ObjStateVersion : u32
 {
-	ObjState_InitVersion = 1,
+	ObjState_InitVersion  = 1,
 	ObjState_FlyModeAdded = 2,
-	ObjState_CurVersion = ObjState_FlyModeAdded,
+	ObjState_ObjDefAdded  = 3,
+	ObjState_CurVersion = ObjState_ObjDefAdded,
 };
 
 #define SPRITE_SCALE_FIXED FIXED(10)
+
+// TFE Specific
+struct Light
+{
+	Vec3f pos;         // position in world space.
+	Vec3f color[2];	   // inner and outter colors.
+	Vec2f radii;	   // inner and outter radii.
+	f32 decay;         // falloff decay.
+	f32 amp;           // light amplitude/intensity.
+};
+struct LightInfo
+{
+	Vec3f offset;
+	SceneLight* light;
+};
 
 struct SecObject
 {
 	SecObject* self;
 	ObjectType type;
-	u32 entityFlags;    // see EntityTypeFlags above.
+	u32 entityFlags;		// see EntityTypeFlags above.
 	void* projectileLogic;	// projectile logic.
 
 	// Position
@@ -108,17 +124,9 @@ struct SecObject
 
 	// TFE
 	s32 defIndex;
+	LightInfo lightInfo;
+	
 	u32 serializeIndex;
-};
-
-// TFE Specific
-struct Light
-{
-	Vec3f pos;         // position in world space.
-	Vec3f color[2];	   // inner and outter colors.
-	Vec2f radii;	   // inner and outter radii.
-	f32 decay;         // falloff decay.
-	f32 amp;           // light amplitude/intensity.
 };
 
 namespace TFE_Jedi

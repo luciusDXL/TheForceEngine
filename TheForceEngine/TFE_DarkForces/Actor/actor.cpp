@@ -25,9 +25,11 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/levelData.h>
+#include <TFE_Jedi/Level/objDef.h>
 #include <TFE_Jedi/InfSystem/message.h>
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/lighting.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 
 using namespace TFE_Jedi;
@@ -635,6 +637,15 @@ namespace TFE_DarkForces
 					if (item->sector->secHeight - 1 >= 0)
 					{
 						freeObject(item);
+					}
+					else if (item->defIndex >= 0)
+					{
+						Light light;
+						objDef_getLight(item->defIndex, 0, 0, &light);
+						item->lightInfo.offset = light.pos;
+
+						light.pos = { light.pos.x + fixed16ToFloat(item->posWS.x), light.pos.y + fixed16ToFloat(item->posWS.y), light.pos.z + fixed16ToFloat(item->posWS.z) };
+						item->lightInfo.light = lighting_addToScene(light, item->sector->index);
 					}
 				}
 				s32 animIndex = actor_getAnimationIndex(4);

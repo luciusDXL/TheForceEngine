@@ -9,13 +9,24 @@
 #include <TFE_Jedi/Level/robjData.h>
 #include "../rsectorRender.h"
 
+struct SceneLight;
+
 namespace TFE_Jedi
 {
 	void lighting_enable(bool enable, s32 sectorCount);	// enable dynamic lighting.
 	void lighting_destroy();			// free buffers.
 
+	// Scene
+	void lighting_initScene(s32 sectorCount);
+	SceneLight* lighting_addToScene(const Light& light, s32 sectorId);
+	void lighting_updateLight(SceneLight* sceneLight, const Light& light, s32 newSector);
+	void lighting_freeLight(SceneLight* sceneLight);
+
+	// Per-frame scene traversal
+	void lighting_addSectorLights(s32 sectorId);
+
+	// Per-Frame
 	void lighting_clear();
-	void lighting_add(const Light& light, s32 objIndex, s32 sectorIndex);	// add a light to the scene.
 	void lighting_submit();					// submit the light list to GPU data.
 
 	void lighting_bind(s32 index);

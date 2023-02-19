@@ -1025,6 +1025,8 @@ namespace TFE_Jedi
 		s32 topPortal = portalId;
 		s32 botPortal = portalId;
 
+		lighting_addSectorLights(curSector->index);
+
 		if (prevSector)
 		{
 			fixed16_16 nextTop = curSector->ceilingHeight;
@@ -1115,6 +1117,7 @@ namespace TFE_Jedi
 					model_add(obj, obj->model, posWS, obj->transform, ambient, floorOffset, ceilOffset, portalInfo);
 				}
 
+				/*
 				// Add the light.
 				if (obj->defIndex >= 0)
 				{
@@ -1128,6 +1131,7 @@ namespace TFE_Jedi
 						lighting_add(light, obj->index, obj->sector->index);
 					}
 				}
+				*/
 			}
 		}
 	}
