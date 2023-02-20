@@ -7,6 +7,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Level/robjData.h>
+#include "frustum.h"
 #include "../rsectorRender.h"
 
 struct SceneLight;
@@ -22,7 +23,7 @@ namespace TFE_Jedi
 	void lighting_freeLight(SceneLight* sceneLight);
 
 	// Per-frame scene traversal
-	void lighting_addSectorLights(s32 sectorId);
+	void lighting_addSectorLights(s32 sectorId, Frustum* viewFrustum);
 
 	// Per-Frame
 	void lighting_clear();

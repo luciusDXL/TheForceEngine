@@ -496,7 +496,7 @@ namespace TFE_Jedi
 		}
 	}
 
-	void lighting_addSectorLights(s32 sectorId)
+	void lighting_addSectorLights(s32 sectorId, Frustum* viewFrustum)
 	{
 		SectorBucket* bucket = &s_sectorBuckets[sectorId];
 		const size_t count   = bucket->lights.size();
@@ -504,8 +504,13 @@ namespace TFE_Jedi
 		for (size_t i = 0; i < count; i++)
 		{
 			SceneLight* sceneLight = lights[i];
+			// Make sure this light hasn't already been added from a different view.
 			if (sceneLight->frameIndex == s_frameIndex) { continue; }
 
+			// Cull the light against the current frustum.
+			if (!frustum_sphereInside(sceneLight->light.pos, sceneLight->light.radii.z)) { continue; }
+
+			// Finally add the light.
 			sceneLight->frameIndex = s_frameIndex;
 			lighting_add(sceneLight->light);
 		}

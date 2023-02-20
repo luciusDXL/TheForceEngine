@@ -1025,7 +1025,7 @@ namespace TFE_Jedi
 		s32 topPortal = portalId;
 		s32 botPortal = portalId;
 
-		lighting_addSectorLights(curSector->index);
+		lighting_addSectorLights(curSector->index, frustum_getBack());
 
 		if (prevSector)
 		{
