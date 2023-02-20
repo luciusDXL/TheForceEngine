@@ -22,6 +22,7 @@
 #include <TFE_System/frameLimiter.h>
 #include <TFE_System/tfeMessage.h>
 #include <TFE_Jedi/Task/task.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/lighting.h>
 #include <TFE_RenderShared/texturePacker.h>
 #include <TFE_Asset/paletteAsset.h>
 #include <TFE_Asset/imageAsset.h>
@@ -890,6 +891,7 @@ int main(int argc, char* argv[])
 	TFE_RenderBackend::updateSettings();
 	TFE_Settings::shutdown();
 	TFE_Jedi::texturepacker_freeGlobal();
+	TFE_Jedi::lighting_destroy();
 	TFE_RenderBackend::destroy();
 	TFE_SaveSystem::destroy();
 	SDL_Quit();

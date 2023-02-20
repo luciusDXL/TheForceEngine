@@ -1116,22 +1116,6 @@ namespace TFE_Jedi
 				{
 					model_add(obj, obj->model, posWS, obj->transform, ambient, floorOffset, ceilOffset, portalInfo);
 				}
-
-				/*
-				// Add the light.
-				if (obj->defIndex >= 0)
-				{
-					// TODO: Proper light culling and addition to the light grid.
-					Light light;
-					if (objDef_getLight(obj->defIndex, animId, frameId, &light))
-					{
-						light.pos.x += posWS.x;
-						light.pos.y += posWS.y;
-						light.pos.z += posWS.z;
-						lighting_add(light, obj->index, obj->sector->index);
-					}
-				}
-				*/
 			}
 		}
 	}
@@ -1419,7 +1403,6 @@ namespace TFE_Jedi
 		}
 
 		// Clear the light buffers.
-		lighting_enable(true, s_levelState.sectorCount);
 		lighting_clear();
 
 		// Build the draw list.

@@ -13,7 +13,6 @@ struct SceneLight;
 
 namespace TFE_Jedi
 {
-	void lighting_enable(bool enable, s32 sectorCount);	// enable dynamic lighting.
 	void lighting_destroy();			// free buffers.
 
 	// Scene

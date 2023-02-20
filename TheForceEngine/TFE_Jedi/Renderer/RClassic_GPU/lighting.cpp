@@ -34,6 +34,7 @@ using namespace TFE_Memory;
 struct SceneLight
 {
 	Light light;
+	s32 id;
 	s32 sectorCount;
 	s32 sectorId[MAX_LIGHT_SECTORS];
 	u32 frameIndex;
@@ -53,12 +54,6 @@ namespace TFE_Jedi
 		MaxClusterCount = 1024,
 	};
 
-	struct SectorLights
-	{
-		u32 count;
-		u16 lightId[256];
-	};
-	static SectorLights* s_sectorLights = nullptr;
 	static s32 s_sectorCount = 0;
 
 	static ShaderBuffer s_lightPos;
@@ -69,51 +64,18 @@ namespace TFE_Jedi
 	static Vec4ui* s_clustersCpu = nullptr;
 	static bool s_enable = false;
 	static u32  s_dynlightCount = 0;
+	static u32  s_lightPoolUsed = 0;
 	static u32  s_maxClusterId = 0;
 	static u32  s_frameIndex = 0;
 		
-	std::vector<SceneLight*> s_sceneLights;
-	ChunkedArray* s_lightPool = nullptr;
+	std::vector<SceneLight*> s_freeSceneLights;
 	std::vector<SectorBucket> s_sectorBuckets;
+	SceneLight* s_lightPool = nullptr;
 	//
 
 	u32 packColor(Vec3f color);
 	u32 packFixed10_6(Vec2f v2);
 	u32 packFixed4_12(Vec2f v2);
-
-	void lighting_enable(bool enable, s32 sectorCount)
-	{
-		if (enable)
-		{
-			if (!s_enable)
-			{
-				const ShaderBufferDef lightPosDef  = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
-				const ShaderBufferDef lightDataDef = { 4, sizeof(u32), BUF_CHANNEL_UINT };
-				s_lightPos.create( MaxLightCount, lightPosDef,  true);
-				s_lightData.create(MaxLightCount, lightDataDef, true);
-				s_clusters.create(MaxClusterCount, lightDataDef, true);
-
-				s_lightPosCpu = (Vec4f*)malloc(sizeof(Vec4f) * MaxLightCount);
-				s_lightDataCpu = (Vec4ui*)malloc(sizeof(Vec4ui) * MaxLightCount);
-				s_clustersCpu = (Vec4ui*)malloc(sizeof(Vec4ui) * MaxClusterCount);
-
-				memset(s_lightPosCpu, 0, sizeof(Vec4f) * MaxLightCount);
-				memset(s_lightDataCpu, 0, sizeof(Vec4ui) * MaxLightCount);
-				memset(s_clustersCpu, 0, sizeof(Vec4ui) * MaxClusterCount);
-			}
-			if (sectorCount != s_sectorCount)
-			{
-				s_sectorLights = (SectorLights*)game_realloc(s_sectorLights, sizeof(SectorLights) * sectorCount);
-				memset(s_sectorLights, 0, sizeof(SectorLights) * sectorCount);
-				s_sectorCount = sectorCount;
-			}
-		}
-		else
-		{
-			lighting_destroy();
-		}
-		s_enable = enable;
-	}
 
 	void lighting_destroy()
 	{
@@ -123,9 +85,11 @@ namespace TFE_Jedi
 		free(s_lightPosCpu);
 		free(s_lightDataCpu);
 		free(s_clustersCpu);
-		s_lightPosCpu = nullptr;
+		free(s_lightPool);
+		s_lightPosCpu  = nullptr;
 		s_lightDataCpu = nullptr;
-		s_clustersCpu = nullptr;
+		s_clustersCpu  = nullptr;
+		s_lightPool = nullptr;
 		s_enable = false;
 	}
 
@@ -133,11 +97,6 @@ namespace TFE_Jedi
 	{
 		if (!s_enable) { return; }
 		s_dynlightCount = 0;
-		for (s32 i = 0; i < s_sectorCount; i++)
-		{
-			s_sectorLights[i].count = 0;
-		}
-
 		s_maxClusterId = 0;
 		for (s32 i = 0; i < MaxClusterCount; i++)
 		{
@@ -367,23 +326,42 @@ namespace TFE_Jedi
 
 	void lighting_clearScene()
 	{
-		s_sceneLights.clear();
-		chunkedArrayClear(s_lightPool);
+		s_freeSceneLights.clear();
 		s_frameIndex = 0;
+		s_lightPoolUsed = 0;
 	}
 
 	void lighting_initScene(s32 sectorCount)
 	{
-		if (!s_lightPool)
-		{
-			s_lightPool = createChunkedArray(sizeof(SceneLight), 512, 1, s_gameRegion);
-		}
+		bool allocRequired = !s_enable;
+		s_enable = true;
 		lighting_clearScene();
 		s_sectorBuckets.resize(sectorCount);
 		for (size_t i = 0; i < sectorCount; i++)
 		{
 			s_sectorBuckets[i].lights.clear();
 		}
+
+		// GPU data -- allocate once, even if changing games.
+		if (allocRequired)
+		{
+			s_lightPool = (SceneLight*)malloc(sizeof(SceneLight) * MaxLightCount);
+
+			const ShaderBufferDef lightPosDef  = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
+			const ShaderBufferDef lightDataDef = { 4, sizeof(u32), BUF_CHANNEL_UINT };
+			s_lightPos.create(MaxLightCount,   lightPosDef, true);
+			s_lightData.create(MaxLightCount,  lightDataDef, true);
+			s_clusters.create(MaxClusterCount, lightDataDef, true);
+
+			s_lightPosCpu  = (Vec4f*)malloc(sizeof(Vec4f)   * MaxLightCount);
+			s_lightDataCpu = (Vec4ui*)malloc(sizeof(Vec4ui) * MaxLightCount);
+			s_clustersCpu  = (Vec4ui*)malloc(sizeof(Vec4ui) * MaxClusterCount);
+
+			memset(s_lightPosCpu,  0, sizeof(Vec4f)  * MaxLightCount);
+			memset(s_lightDataCpu, 0, sizeof(Vec4ui) * MaxLightCount);
+			memset(s_clustersCpu,  0, sizeof(Vec4ui) * MaxClusterCount);
+		}
+		s_sectorCount = sectorCount;
 	}
 
 	Vec2f closestPointOnLine(const Vec2f& a, const Vec2f& b, const Vec2f& p)
@@ -482,55 +460,66 @@ namespace TFE_Jedi
 	{
 		if (sectorId < 0) { return nullptr; }
 
-		SceneLight* sceneLight = (SceneLight*)allocFromChunkedArray(s_lightPool);
-		sceneLight->light = light;
-		s_sceneLights.push_back(sceneLight);
-
-		lighting_handleVisibility(sceneLight, sectorId);
+		SceneLight* sceneLight = nullptr;
+		if (!s_freeSceneLights.empty())
+		{
+			sceneLight = s_freeSceneLights.back();
+			s_freeSceneLights.pop_back();
+		}
+		else if (s_lightPoolUsed < MaxLightCount)
+		{
+			sceneLight = (SceneLight*)&s_lightPool[s_lightPoolUsed];
+			sceneLight->id = s_lightPoolUsed;
+			s_lightPoolUsed++;
+		}
+		
+		if (sceneLight)
+		{
+			sceneLight->light = light;
+			lighting_handleVisibility(sceneLight, sectorId);
+		}
 		return sceneLight;
 	}
 
 	void lighting_updateLight(SceneLight* sceneLight, const Light& light, s32 newSector)
 	{
-		for (s32 i = 0; i < sceneLight->sectorCount; i++)
-		{
-			lighting_removeFromBucket(&s_sectorBuckets[sceneLight->sectorId[i]], sceneLight);
-		}
+		const bool posRadChanged = (light.pos.x != sceneLight->light.pos.x || light.pos.y != sceneLight->light.pos.y || light.pos.z != sceneLight->light.pos.z ||
+		                            light.radii.z != sceneLight->light.radii.z);
+
 		sceneLight->light = light;
-		lighting_handleVisibility(sceneLight, newSector);
+		// Only change sectors if the light position or radius has changed.
+		if (posRadChanged)
+		{
+			for (s32 i = 0; i < sceneLight->sectorCount; i++)
+			{
+				lighting_removeFromBucket(&s_sectorBuckets[sceneLight->sectorId[i]], sceneLight);
+			}
+			lighting_handleVisibility(sceneLight, newSector);
+		}
 	}
 
 	void lighting_freeLight(SceneLight* sceneLight)
 	{
-		std::vector<SceneLight*>::iterator iter = s_sceneLights.begin();
-		for (; iter != s_sceneLights.end(); ++iter)
-		{
-			SceneLight* light = *iter;
-			if (light == sceneLight)
-			{
-				s_sceneLights.erase(iter);
-				break;
-			}
-		}
+		s_freeSceneLights.push_back(sceneLight);
+
 		for (s32 i = 0; i < sceneLight->sectorCount; i++)
 		{
 			lighting_removeFromBucket(&s_sectorBuckets[sceneLight->sectorId[i]], sceneLight);
 		}
-		freeToChunkedArray(s_lightPool, sceneLight);
 	}
 
 	void lighting_addSectorLights(s32 sectorId)
 	{
 		SectorBucket* bucket = &s_sectorBuckets[sectorId];
-		const size_t count   = s_sectorBuckets[sectorId].lights.size();
-		SceneLight** lights  = s_sectorBuckets[sectorId].lights.data();
+		const size_t count   = bucket->lights.size();
+		SceneLight** lights  = bucket->lights.data();
 		for (size_t i = 0; i < count; i++)
 		{
-			SceneLight* light = lights[i];
-			if (light->frameIndex == s_frameIndex) { continue; }
+			SceneLight* sceneLight = lights[i];
+			if (sceneLight->frameIndex == s_frameIndex) { continue; }
 
-			light->frameIndex = s_frameIndex;
-			lighting_add(light->light);
+			sceneLight->frameIndex = s_frameIndex;
+			lighting_add(sceneLight->light);
 		}
 	}
 }
