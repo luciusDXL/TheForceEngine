@@ -1,34 +1,22 @@
-#include <cstring>
-
-#include <TFE_System/profiler.h>
+#include "lighting.h"
 #include <TFE_System/math.h>
-#include <TFE_Asset/modelAsset_jedi.h>
-#include <TFE_Game/igame.h>
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/robject.h>
-#include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Memory/chunkedArray.h>
 
 #include <TFE_RenderBackend/renderBackend.h>
-#include <TFE_RenderBackend/vertexBuffer.h>
-#include <TFE_RenderBackend/indexBuffer.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/shaderBuffer.h>
 
-#include "lighting.h"
-#include "rclassicGPU.h"
-#include "rsectorGPU.h"
-#include "../rcommon.h"
+#include <cstring>
 
-#define PTR_OFFSET(ptr, base) size_t((u8*)ptr - (u8*)base)
-using namespace TFE_RenderBackend;
 using namespace TFE_Memory;
-
-#define MAX_LIGHT_SECTORS 16
+#define MAX_LIGHT_SECTORS 8
 
 // Scene
 struct SceneLight
@@ -387,7 +375,7 @@ namespace TFE_Jedi
 	bool lighting_addLightSector(SceneLight* sceneLight, s32 sectorId)
 	{
 		// Make sure there is room.
-		if (sceneLight->sectorCount >= MAX_LIGHT_SECTORS) { return false; }
+		if (sceneLight->sectorCount >= MAX_LIGHT_SECTORS) { assert(0); return false; }
 		// Make sure it isn't already there...
 		for (s32 i = 0; i < sceneLight->sectorCount; i++)
 		{
