@@ -1,5 +1,6 @@
 #include "lighting.h"
 #include <TFE_System/math.h>
+#include <TFE_System/system.h>
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/rsector.h>
@@ -39,6 +40,8 @@ namespace TFE_Jedi
 	enum
 	{
 		MaxLightCount = 8192,
+		LightPoolStep = 8192,
+		LightPoolMax  = 65536,
 		MaxClusterCount = 1024,
 	};
 
@@ -53,6 +56,7 @@ namespace TFE_Jedi
 	static bool s_enable = false;
 	static u32  s_dynlightCount = 0;
 	static u32  s_lightPoolUsed = 0;
+	static u32  s_lightPoolCapacity = 0;
 	static u32  s_maxClusterId = 0;
 	static u32  s_frameIndex = 0;
 		
@@ -79,6 +83,7 @@ namespace TFE_Jedi
 		s_clustersCpu  = nullptr;
 		s_lightPool = nullptr;
 		s_enable = false;
+		s_lightPoolCapacity = 0;
 	}
 
 	void lighting_clear()
@@ -319,6 +324,19 @@ namespace TFE_Jedi
 		s_lightPoolUsed = 0;
 	}
 
+	void lighting_growLightPool(u32 newCount)
+	{
+		if (newCount <= s_lightPoolCapacity) { return; }
+		s_lightPoolCapacity += LightPoolStep;
+		if (s_lightPoolCapacity >= LightPoolMax)
+		{
+			assert(0);
+			TFE_System::logWrite(LOG_ERROR, "Lighting", "Light pool is too large, requested %d, maximum %d.", newCount, LightPoolMax);
+			s_lightPoolCapacity = LightPoolMax;
+		}
+		s_lightPool = (SceneLight*)realloc(s_lightPool, sizeof(SceneLight) * s_lightPoolCapacity);
+	}
+
 	void lighting_initScene(s32 sectorCount)
 	{
 		bool allocRequired = !s_enable;
@@ -333,7 +351,7 @@ namespace TFE_Jedi
 		// GPU data -- allocate once, even if changing games.
 		if (allocRequired)
 		{
-			s_lightPool = (SceneLight*)malloc(sizeof(SceneLight) * MaxLightCount);
+			lighting_growLightPool(LightPoolStep);
 
 			const ShaderBufferDef lightPosDef  = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
 			const ShaderBufferDef lightDataDef = { 4, sizeof(u32), BUF_CHANNEL_UINT };
@@ -454,8 +472,10 @@ namespace TFE_Jedi
 			sceneLight = s_freeSceneLights.back();
 			s_freeSceneLights.pop_back();
 		}
-		else if (s_lightPoolUsed < MaxLightCount)
+		else if (s_lightPoolUsed < LightPoolMax)
 		{
+			lighting_growLightPool(s_lightPoolUsed + 1);
+
 			sceneLight = (SceneLight*)&s_lightPool[s_lightPoolUsed];
 			sceneLight->id = s_lightPoolUsed;
 			s_lightPoolUsed++;
