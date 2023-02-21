@@ -190,22 +190,32 @@ namespace TFE_Jedi
 	{
 		s_objDef.clear();
 		s_objDefMap.clear();
+	}
 
-		// Read from disk.
+	bool objDef_open(const char* fileName, FileStream& file)
+	{
+		// First check to see if it exists in a mod.
+		FilePath filePath;
+		if (TFE_Paths::getFilePath("lights.txt", &filePath))
+		{
+			return file.open(&filePath, Stream::MODE_READ);
+		}
+		
+		// If not, then load directly.
 		char path[TFE_MAX_PATH];
 		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
 		sprintf(path, "%sDefinitions/lights.txt", programDir);
+		return file.open(path, Stream::MODE_READ);
+	}
 
+	// General definitions parser.
+	void objDef_parseDefinitions(FileStream& file)
+	{
 		std::vector<char> buffer;
-		size_t len = 0u;
-		FileStream file;
-		if (file.open(path, Stream::MODE_READ))
-		{
-			len = file.getSize();
-			buffer.resize(len + 1);
-			file.readBuffer(buffer.data(), len);
-			file.close();
-		}
+		size_t len = file.getSize();
+		buffer.resize(len + 1);
+		file.readBuffer(buffer.data(), (u32)len);
+		file.close();
 
 		TFE_Parser parser;
 		parser.init(buffer.data(), len);
@@ -216,12 +226,11 @@ namespace TFE_Jedi
 
 		Light light;
 		size_t bufferPos = 0;
-		s32 scopeLevel = 0;	// global
-		s32 offset = 0;
-		s32 assetId = -1;
-		Identifier curId = IdInvalid;
-
-		DefType defType = DefInvalid;
+		s32 scopeLevel   = 0;
+		s32 offset       = 0;
+		s32 assetId      = -1;
+		Identifier curId   = IdInvalid;
+		DefType defType    = DefInvalid;
 		DefType subDefType = DefInvalid;
 
 		while (bufferPos < len)
@@ -316,12 +325,23 @@ namespace TFE_Jedi
 					}
 					offset++;
 
+					// Auto-line statement ending - when *not* scoping the statement values, end the statement with the newline.
+					// Scoping values allows statements to extend across multiple lines.
 					if ((scopeLevel == 2 && subDefType != DefInvalid) || (scopeLevel == 1 && defType != DefInvalid))
 					{
 						curId = IdInvalid;
 					}
 				}
 			}
+		}
+	}
+
+	void objDef_loadLightDef()
+	{
+		FileStream file;
+		if (objDef_open("lights.txt", file))
+		{
+			objDef_parseDefinitions(file);
 		}
 	}
 
@@ -354,7 +374,7 @@ namespace TFE_Jedi
 
 	void objDef_addLight(s32 assetId, Light light)
 	{
-		if (assetId >= 0)
+		if (assetId >= 0 && assetId < (s32)s_objDef.size())
 		{
 			s_objDef[assetId].flags |= DFLAG_LIGHT;
 			s_objDef[assetId].light = light;

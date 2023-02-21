@@ -1164,6 +1164,7 @@ namespace TFE_DarkForces
 	{
 		// TFE
 		objDef_init();
+		objDef_loadLightDef();
 
 		//
 		hud_loadGraphics();
