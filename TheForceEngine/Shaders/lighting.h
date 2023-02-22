@@ -3,6 +3,7 @@
 uniform samplerBuffer  lightPosition;	// vec3  x max lights = 12 * L; L = 8192, size = 96kB
 uniform usamplerBuffer lightData;		// uvec4 x max lights = 16 * L; L = 8192, size = 128kB
 uniform usamplerBuffer lightClusters;	// uvec4 x max clusters = 16 * 1024 = 16kB.
+uniform sampler2D shadowMaps;
 
 vec3 unpackColor(uint packedClr)
 {
@@ -45,9 +46,11 @@ vec3 linearToColor(vec3 inLinear)
 	return pow(inLinear, vec3(1.0/2.2));
 }
 
-void getLightData(int index, out vec3 pos, out vec3 c0, out vec3 c1, out vec2 radius, out vec2 decayAmp)
+void getLightData(int index, out vec3 pos, out vec3 c0, out vec3 c1, out vec2 radius, out vec2 decayAmp, out int id)
 {
-	pos = texelFetch(lightPosition, index).xyz;
+	vec4 posSample = texelFetch(lightPosition, index);
+	pos = posSample.xyz;
+	id = int(posSample.w);
 	uvec4 packedData = texelFetch(lightData, index);
 
 	c0 = unpackColor(packedData.x);
@@ -165,6 +168,62 @@ int getLightClusterId(vec3 posWS, vec3 cameraPos)
 	return clusterId;
 }
 
+float fmodS(float x, float y)
+{
+	return x - floor(x / y)*y;
+}
+
+float projectToUnitSquare(vec2 coord)
+{
+	// Handle the singularity.
+	if (abs(coord.x) < 0.0001 && abs(coord.y) < 0.0001)
+	{
+		return 0.0;
+	}
+
+	// Find the largest axis.
+	int axis = 0;
+	if (abs(coord.x) > abs(coord.y))
+	{
+		axis = coord.x < 0.0 ? 2 : 0;
+	}
+	else
+	{
+		axis = coord.y < 0.0 ? 3 : 1;
+	}
+	float axisScale = coord[axis & 1] != 0.0 ? 1.0f / abs(coord[axis & 1]) : 0.0;
+	float value = coord[(1 + axis) & 1] * axisScale * 0.5 + 0.5;
+	if (axis == 1 || axis == 2) { value = 1.0f - value; }
+
+	// Switch the direction to match the wall direction.
+	float proj = 4.0 - fmodS(float(axis) + value, 4.0);	// this wraps around to 0.0 at 4.0
+	if (proj < 0.0) { proj += 4.0; }
+	if (proj >= 4.0) { proj -= 4.0; }
+	return proj;
+}
+
+float getShadowValue(vec3 lightDir, float radius, int id, vec3 nrml)
+{
+	float curDepth = length(lightDir.xz) / radius;
+	float bias = max(0.0025, (1.0 - abs(nrml.y)) * 0.02);
+	float proj = projectToUnitSquare(lightDir.xz);
+	proj = clamp(proj * 256.0, 0.0, 1024.0);
+
+	// Bilinear filter the shadow results.
+	float p0 = floor(proj);
+	float p1 = p0 + 1.0;
+	if (p0 > 1023.0) { p0 -= 1023.0; }
+	if (p1 > 1023.0) { p1 -= 1023.0; }
+
+	float u  = fract(proj);
+	float shadowDepth0 = texelFetch(shadowMaps, ivec2(p0, id), 0).r;
+	float shadowDepth1 = texelFetch(shadowMaps, ivec2(p1, id), 0).r;
+	float vis0 = (curDepth < shadowDepth0 + bias) ? 1.0 : 0.0;
+	float vis1 = (curDepth < shadowDepth1 + bias) ? 1.0 : 0.0;
+
+	return mix(vis0, vis1, u);
+}
+
 // Gamma correction is only handled for dynamic lighting -
 // this is to avoid modifying the look of the original sector and Z-based lighting.
 // albedo: true-color texture value.
@@ -185,24 +244,27 @@ vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambie
 		if (data == 0u) { break; }
 		int index0 = int(data & 65535u);
 		int index1 = int((data >> 16u) & 65535u);
+		int shadowId;
 		
 		if (index0 != 0)
 		{
 			vec3 lightPos;
 			vec3 c0, c1;
 			vec2 radii, decayAmp;
-			getLightData(index0 - 1, lightPos, c0, c1, radii, decayAmp);
+			getLightData(index0 - 1, lightPos, c0, c1, radii, decayAmp, shadowId);
 
-			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+			float vis = getShadowValue(pos - lightPos, radii.y, shadowId, nrml);
+			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1) * vis;
 		}
 		if (index1 != 0)
 		{
 			vec3 lightPos;
 			vec3 c0, c1;
 			vec2 radii, decayAmp;
-			getLightData(index1 - 1, lightPos, c0, c1, radii, decayAmp);
+			getLightData(index1 - 1, lightPos, c0, c1, radii, decayAmp, shadowId);
 
-			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+			float vis = getShadowValue(pos - lightPos, radii.y, shadowId, nrml);
+			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1) * vis;
 		}
 	}
 	return linearToColor(tonemapLighting(light) * albedo + ambient);
@@ -222,13 +284,14 @@ vec3 handleLightingSprite(vec3 pos, vec3 cameraPos)
 		if (data == 0u) { break; }
 		int index0 = int(data & 65535u);
 		int index1 = int((data >> 16u) & 65535u);
+		int shadowId;
 
 		if (index0 != 0)
 		{
 			vec3 lightPos;
 			vec3 c0, c1;
 			vec2 radii, decayAmp;
-			getLightData(index0 - 1, lightPos, c0, c1, radii, decayAmp);
+			getLightData(index0 - 1, lightPos, c0, c1, radii, decayAmp, shadowId);
 
 			// desaturate and darken the light when it is near the sprite center.
 			vec2 offsetXZ = pos.xz - lightPos.xz;
@@ -238,14 +301,15 @@ vec3 handleLightingSprite(vec3 pos, vec3 cameraPos)
 				c1 = vec3(dot(c1, Lweights)) * 0.5;
 			}
 
-			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+			float vis = getShadowValue(pos - lightPos, radii.y, shadowId, nrml);
+			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1) * vis;
 		}
 		if (index1 != 0)
 		{
 			vec3 lightPos;
 			vec3 c0, c1;
 			vec2 radii, decayAmp;
-			getLightData(index1 - 1, lightPos, c0, c1, radii, decayAmp);
+			getLightData(index1 - 1, lightPos, c0, c1, radii, decayAmp, shadowId);
 
 			// desaturate and darken the light when it is near the sprite center.
 			vec2 offsetXZ = pos.xz - lightPos.xz;
@@ -255,7 +319,8 @@ vec3 handleLightingSprite(vec3 pos, vec3 cameraPos)
 				c1 = vec3(dot(c1, Lweights)) * 0.5;
 			}
 
-			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1);
+			float vis = getShadowValue(pos - lightPos, radii.y, shadowId, nrml);
+			light += computeLightContrib(pos, nrml, lightPos, radii.x, radii.y, decayAmp.x, decayAmp.y, c0, c1) * vis;
 		}
 	}
 

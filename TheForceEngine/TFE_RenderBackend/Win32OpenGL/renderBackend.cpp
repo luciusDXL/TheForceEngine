@@ -683,10 +683,10 @@ namespace TFE_RenderBackend
 		*height = texture->getHeight();
 	}
 
-	TextureGpu* createTexture(u32 width, u32 height, u32 channels)
+	TextureGpu* createTexture(u32 width, u32 height, u32 channels, u32 bytesPerChannel)
 	{
 		TextureGpu* texture = new TextureGpu();
-		texture->create(width, height, channels);
+		texture->create(width, height, channels, bytesPerChannel);
 		return texture;
 	}
 

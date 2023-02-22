@@ -196,15 +196,18 @@ namespace TFE_Jedi
 	{
 		// First check to see if it exists in a mod.
 		FilePath filePath;
-		if (TFE_Paths::getFilePath("lights.txt", &filePath))
+		if (TFE_Paths::getFilePath(fileName, &filePath))
 		{
 			return file.open(&filePath, Stream::MODE_READ);
 		}
 		
 		// If not, then load directly.
 		char path[TFE_MAX_PATH];
-		const char* programDir = TFE_Paths::getPath(PATH_PROGRAM);
-		sprintf(path, "%sDefinitions/lights.txt", programDir);
+		sprintf(path, "Definitions/%s", fileName);
+		if (!TFE_Paths::mapSystemPath(path))
+		{
+			sprintf(path, "%sDefinitions/%s", TFE_Paths::getPath(PATH_PROGRAM), fileName);
+		}
 		return file.open(path, Stream::MODE_READ);
 	}
 

@@ -4,6 +4,7 @@
 #include <assert.h>
 
 static std::vector<u8> s_workBuffer;
+const GLenum c_channelFormat[] = { 0, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, 0, GL_UNSIGNED_INT };
 
 TextureGpu::~TextureGpu()
 {
@@ -22,6 +23,7 @@ bool TextureGpu::create(u32 width, u32 height, u32 channels)
 	m_width = width;
 	m_height = height;
 	m_channels = channels;
+	m_bytesPerChannel = 1;
 	m_layers = 1;
 
 	glGenTextures(1, &m_gpuHandle);
@@ -30,11 +32,43 @@ bool TextureGpu::create(u32 width, u32 height, u32 channels)
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
 	if (channels == 1)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, c_channelFormat[m_bytesPerChannel], nullptr);
 	}
 	else if (channels == 4)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, c_channelFormat[m_bytesPerChannel], nullptr);
+	}
+	assert(glGetError() == GL_NO_ERROR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return true;
+}
+
+bool TextureGpu::create(u32 width, u32 height, u32 channels, u32 bytesPerChannel)
+{
+	m_width = width;
+	m_height = height;
+	m_channels = channels;
+	m_bytesPerChannel = bytesPerChannel;
+	m_layers = 1;
+
+	glGenTextures(1, &m_gpuHandle);
+	if (!m_gpuHandle) { return false; }
+
+	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
+	if (channels == 1)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, c_channelFormat[bytesPerChannel], nullptr);
+	}
+	else if (channels == 4)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, c_channelFormat[bytesPerChannel], nullptr);
 	}
 	assert(glGetError() == GL_NO_ERROR);
 
@@ -59,6 +93,7 @@ bool TextureGpu::createArray(u32 width, u32 height, u32 layers, u32 channels)
 	m_width = width;
 	m_height = height;
 	m_channels = channels;
+	m_bytesPerChannel = 1;
 	m_layers = layers;
 
 	glGenTextures(1, &m_gpuHandle);
@@ -67,11 +102,11 @@ bool TextureGpu::createArray(u32 width, u32 height, u32 layers, u32 channels)
 	glBindTexture(GL_TEXTURE_2D_ARRAY, m_gpuHandle);
 	if (channels == 1)
 	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, width, height, layers, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8, width, height, layers, 0, GL_RED, c_channelFormat[m_bytesPerChannel], nullptr);
 	}
 	else if (channels == 4)
 	{
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, width, height, layers, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA8, width, height, layers, 0, GL_RGBA, c_channelFormat[m_bytesPerChannel], nullptr);
 	}
 	assert(glGetError() == GL_NO_ERROR);
 
@@ -91,13 +126,14 @@ bool TextureGpu::createWithData(u32 width, u32 height, const void* buffer, MagFi
 	m_width = width;
 	m_height = height;
 	m_channels = 4;
+	m_bytesPerChannel = 1;
 	m_layers = 1;
 
 	glGenTextures(1, &m_gpuHandle);
 	if (!m_gpuHandle) { return false; }
 
 	glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, c_channelFormat[m_bytesPerChannel], buffer);
 	
 	f32 maxAniso = 1.0f;
 	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
@@ -122,14 +158,14 @@ bool TextureGpu::update(const void* buffer, size_t size, s32 layer)
 	if (m_layers == 1)
 	{
 		glBindTexture(GL_TEXTURE_2D, m_gpuHandle);
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, m_channels == 4 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, buffer);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, m_width, m_height, m_channels == 4 ? GL_RGBA : GL_RED, c_channelFormat[m_bytesPerChannel], buffer);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	else
 	{
 		glBindTexture(GL_TEXTURE_2D_ARRAY, m_gpuHandle);
 		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0/*level*/, 0/*xOffset*/, 0/*yOffset*/, layerIndex, m_width, m_height, layerCount,
-			m_channels == 4 ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, buffer);
+			m_channels == 4 ? GL_RGBA : GL_RED, c_channelFormat[m_bytesPerChannel], buffer);
 		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	}
 

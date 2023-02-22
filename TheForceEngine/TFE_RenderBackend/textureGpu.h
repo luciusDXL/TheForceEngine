@@ -22,10 +22,11 @@ enum TexFormat
 class TextureGpu
 {
 public:
-	TextureGpu() : m_width(0), m_height(0), m_channels(4), m_layers(1), m_gpuHandle(0) {}
+	TextureGpu() : m_width(0), m_height(0), m_channels(4), m_bytesPerChannel(1), m_layers(1), m_gpuHandle(0) {}
 	~TextureGpu();
 
 	bool create(u32 width, u32 height, u32 channels = 4);
+	bool create(u32 width, u32 height, u32 channels, u32 bytesPerChannel);
 	bool createArray(u32 width, u32 height, u32 layers, u32 channels = 4);
 	bool createWithData(u32 width, u32 height, const void* buffer, MagFilter magFilter = MAG_FILTER_NONE);
 	bool update(const void* buffer, size_t size, s32 layer = -1);	// layer = -1 means update all layers, otherwise it is the layer index.
@@ -43,6 +44,7 @@ private:
 	u32 m_width;
 	u32 m_height;
 	u32 m_channels;
+	u32 m_bytesPerChannel;
 	u32 m_layers;
 	u32 m_gpuHandle;
 };

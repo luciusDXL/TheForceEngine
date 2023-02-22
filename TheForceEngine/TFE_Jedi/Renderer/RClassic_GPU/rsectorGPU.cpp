@@ -156,9 +156,10 @@ namespace TFE_Jedi
 		s_spriteShader.bindTextureNameToSlot("TextureTable",   6);
 		s_spriteShader.bindTextureNameToSlot("DrawListPlanes", 7);
 
-		s_spriteShader.bindTextureNameToSlot("lightPosition", 9);
+		s_spriteShader.bindTextureNameToSlot("lightPosition",  9);
 		s_spriteShader.bindTextureNameToSlot("lightData",     10);
 		s_spriteShader.bindTextureNameToSlot("lightClusters", 11);
+		s_spriteShader.bindTextureNameToSlot("shadowMaps",    12);
 
 		return true;
 	}
@@ -198,6 +199,7 @@ namespace TFE_Jedi
 		s_wallShader[index].bindTextureNameToSlot("lightPosition",  9);
 		s_wallShader[index].bindTextureNameToSlot("lightData",     10);
 		s_wallShader[index].bindTextureNameToSlot("lightClusters", 11);
+		s_wallShader[index].bindTextureNameToSlot("shadowMaps",    12);
 
 		return true;
 	}

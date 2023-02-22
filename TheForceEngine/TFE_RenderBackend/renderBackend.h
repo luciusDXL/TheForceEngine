@@ -149,7 +149,7 @@ namespace TFE_RenderBackend
 	   
 	// Create a GPU version of a texture, assumes RGBA8 and returns a GPU handle.
 	TextureGpu* createTexture(u32 width, u32 height, const u32* data, MagFilter magFilter = MAG_FILTER_NONE);
-	TextureGpu* createTexture(u32 width, u32 height, u32 channels);
+	TextureGpu* createTexture(u32 width, u32 height, u32 channels, u32 bytesPerChannel = 1);
 	TextureGpu* createTextureArray(u32 width, u32 height, u32 layers, u32 channels);
 	void freeTexture(TextureGpu* texture);
 	void getTextureDim(TextureGpu* texture, u32* width, u32* height);

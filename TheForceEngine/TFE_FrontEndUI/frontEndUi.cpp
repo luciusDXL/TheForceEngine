@@ -244,7 +244,8 @@ namespace TFE_FrontEndUI
 	{
 		char imagePath[TFE_MAX_PATH];
 		strcpy(imagePath, localPath);
-		if (!TFE_Paths::mapSystemPath(imagePath)) {
+		if (!TFE_Paths::mapSystemPath(imagePath))
+		{
 			memset(imagePath, 0, TFE_MAX_PATH);
 			TFE_Paths::appendPath(TFE_PathType::PATH_PROGRAM, localPath, imagePath, TFE_MAX_PATH);
 		}

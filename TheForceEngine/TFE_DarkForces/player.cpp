@@ -22,6 +22,7 @@
 #include <TFE_Jedi/InfSystem/infSystem.h>
 #include <TFE_Jedi/Renderer/rlimits.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/lighting.h>
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
@@ -272,6 +273,7 @@ namespace TFE_DarkForces
 	// TFE
 	void player_warp(const ConsoleArgList& args);
 	void player_sector(const ConsoleArgList& args);
+	void player_addTestLight(const ConsoleArgList& args);
 		
 	///////////////////////////////////////////
 	// API Implentation
@@ -306,6 +308,7 @@ namespace TFE_DarkForces
 		s_automapLocked = JTRUE;
 
 		CCMD("warp", player_warp, 3, "Warp to the specific x, y, z position.");
+		CCMD("addLight", player_addTestLight, 0, "Add a test light");
 		CCMD_NOREPEAT("sector", player_sector, 0, "Get the current sector ID.");
 	}
 
@@ -2924,6 +2927,23 @@ namespace TFE_DarkForces
 			{
 				hud_sendTextMessage(msg, 1);	// high priority.
 			}
+		}
+	}
+
+	void player_addTestLight(const ConsoleArgList& args)
+	{
+		RSector* sector = s_playerObject->sector;
+		if (sector)
+		{
+			const Light light =
+			{
+				{ fixed16ToFloat(s_playerObject->posWS.x), fixed16ToFloat(s_playerObject->posWS.y) - 5.0f, fixed16ToFloat(s_playerObject->posWS.z) },
+				{ {0.9f, 0.5f, 0.1f}, {0.9f, 0.5f, 0.1f} },
+				{ 0.0f, 20.0f },
+				1.0f,
+				1.0f,
+			};
+			TFE_Jedi::lighting_addToScene(light, sector->index);
 		}
 	}
 }  // TFE_DarkForces
