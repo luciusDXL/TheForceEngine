@@ -509,12 +509,10 @@ namespace TFE_Jedi
 
 	void lighting_rasterizeSegment(const LightWallSeg& seg, u16* depth, f32 radius)
 	{
-		/*
-		(-1,  1) 2               (1,  1) 3
-		(-1, -1) 1				 (1, -1) 0, 4
-		*/
+		/* (-1,  1) 2    (1,  1) 3
+		   (-1, -1) 1	 (1, -1) 0,4  */
 		const Vec2f planePos[4] = { {1, -1}, {-1, -1}, {-1, 1}, {1, 1} };
-		const Vec2f planeDir[4] = { {0, -1}, {-1, 0}, {0, 1}, {1, 0} };
+		const Vec2f planeDir[4] = { {0, -1}, {-1,  0}, { 0, 1}, {1, 0} };
 
 		// Split into linear parts.
 		if (seg.proj.x < 1.0f && seg.proj.z > 0.0f)
@@ -522,13 +520,11 @@ namespace TFE_Jedi
 			LightWallSeg subSeg = seg;
 			if (seg.proj.x < 0.0f)
 			{
-				// split along {1,-1}
 				subSeg.pos[0] = lighting_clip(seg.pos[0], seg.pos[1], planePos[0]);
 				subSeg.proj.x = 0.0f;
 			}
 			if (seg.proj.z > 1.0f)
 			{
-				// split along {1,-1}
 				subSeg.pos[1] = lighting_clip(seg.pos[0], seg.pos[1], planePos[1]);
 				subSeg.proj.z = 1.0f;
 			}
@@ -539,13 +535,11 @@ namespace TFE_Jedi
 			LightWallSeg subSeg = seg;
 			if (seg.proj.x < 1.0f)
 			{
-				// split along {1,-1}
 				subSeg.pos[0] = lighting_clip(seg.pos[0], seg.pos[1], planePos[1]);
 				subSeg.proj.x = 1.0f;
 			}
 			if (seg.proj.z > 2.0f)
 			{
-				// split along {1,-1}
 				subSeg.pos[1] = lighting_clip(seg.pos[0], seg.pos[1], planePos[2]);
 				subSeg.proj.z = 2.0f;
 			}
@@ -556,13 +550,11 @@ namespace TFE_Jedi
 			LightWallSeg subSeg = seg;
 			if (seg.proj.x < 2.0f)
 			{
-				// split along {1,-1}
 				subSeg.pos[0] = lighting_clip(seg.pos[0], seg.pos[1], planePos[2]);
 				subSeg.proj.x = 2.0f;
 			}
 			if (seg.proj.z > 3.0f)
 			{
-				// split along {1,-1}
 				subSeg.pos[1] = lighting_clip(seg.pos[0], seg.pos[1], planePos[3]);
 				subSeg.proj.z = 3.0f;
 			}
@@ -573,13 +565,11 @@ namespace TFE_Jedi
 			LightWallSeg subSeg = seg;
 			if (seg.proj.x < 3.0f)
 			{
-				// split along {1,-1}
 				subSeg.pos[0] = lighting_clip(seg.pos[0], seg.pos[1], planePos[3]);
 				subSeg.proj.x = 3.0f;
 			}
 			if (seg.proj.z > 4.0f)
 			{
-				// split along {1,-1}
 				subSeg.pos[1] = lighting_clip(seg.pos[0], seg.pos[1], planePos[0]);
 				subSeg.proj.z = 4.0f;
 			}

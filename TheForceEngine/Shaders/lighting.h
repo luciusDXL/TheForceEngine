@@ -270,7 +270,7 @@ vec3 handleLighting(vec3 albedo, vec3 pos, vec3 nrml, vec3 cameraPos, vec3 ambie
 	return linearToColor(tonemapLighting(light) * albedo + ambient);
 }
 
-vec3 handleLightingSprite(vec3 pos, vec3 cameraPos)
+vec3 handleLightingSprite(vec3 pos, vec3 cameraPos, bool applyDesaturate)
 {
 	vec3 Lweights = vec3(0.299, 0.587, 0.114);
 
@@ -294,11 +294,14 @@ vec3 handleLightingSprite(vec3 pos, vec3 cameraPos)
 			getLightData(index0 - 1, lightPos, c0, c1, radii, decayAmp, shadowId);
 
 			// desaturate and darken the light when it is near the sprite center.
-			vec2 offsetXZ = pos.xz - lightPos.xz;
-			if (dot(offsetXZ, offsetXZ) < 1.0)
+			if (applyDesaturate)
 			{
-				c0 = vec3(dot(c0, Lweights)) * 0.5;
-				c1 = vec3(dot(c1, Lweights)) * 0.5;
+				vec2 offsetXZ = pos.xz - lightPos.xz;
+				if (dot(offsetXZ, offsetXZ) < 1.0)
+				{
+					c0 = vec3(dot(c0, Lweights)) * 0.5;
+					c1 = vec3(dot(c1, Lweights)) * 0.5;
+				}
 			}
 
 			float vis = getShadowValue(pos - lightPos, radii.y, shadowId, nrml);
@@ -312,11 +315,14 @@ vec3 handleLightingSprite(vec3 pos, vec3 cameraPos)
 			getLightData(index1 - 1, lightPos, c0, c1, radii, decayAmp, shadowId);
 
 			// desaturate and darken the light when it is near the sprite center.
-			vec2 offsetXZ = pos.xz - lightPos.xz;
-			if (dot(offsetXZ, offsetXZ) < 1.0)
+			if (applyDesaturate)
 			{
-				c0 = vec3(dot(c0, Lweights)) * 0.5;
-				c1 = vec3(dot(c1, Lweights)) * 0.5;
+				vec2 offsetXZ = pos.xz - lightPos.xz;
+				if (dot(offsetXZ, offsetXZ) < 1.0)
+				{
+					c0 = vec3(dot(c0, Lweights)) * 0.5;
+					c1 = vec3(dot(c1, Lweights)) * 0.5;
+				}
 			}
 
 			float vis = getShadowValue(pos - lightPos, radii.y, shadowId, nrml);

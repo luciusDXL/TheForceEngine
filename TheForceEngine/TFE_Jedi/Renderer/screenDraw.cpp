@@ -931,7 +931,7 @@ namespace TFE_Jedi
 		if (s_gpuEnabled)
 		{
 			u8 lightLevel = RClassic_Fixed::getLightLevelFromAtten(atten);
-			screenGPU_blitTextureScaled(texture, rect, intToFixed16(x0), intToFixed16(y0), xScale, yScale, lightLevel);
+			screenGPU_blitTextureScaled(texture, rect, intToFixed16(x0), intToFixed16(y0), xScale, yScale, lightLevel, JFALSE, JTRUE);
 			return;
 		}
 		ScreenImage image = 

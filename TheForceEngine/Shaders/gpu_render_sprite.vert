@@ -89,6 +89,6 @@ void main()
 		center.xz = mix(posTextureXZ.xy, posTextureXZ.zw, s);
 		center.y  = (posTextureYU.x + posTextureYU.y) * 0.5;
 
-		Frag_Lighting = handleLightingSprite(center, CameraPos);
+		Frag_Lighting = handleLightingSprite(center, CameraPos, /*applyDesaturate*/true);
 	}
 }

@@ -2,6 +2,7 @@
 #include <TFE_Jedi/Math/fixedPoint.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/lighting.h>
 #include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_RenderBackend/shader.h>
 #include <TFE_RenderBackend/vertexBuffer.h>
@@ -16,6 +17,7 @@
 namespace TFE_Jedi
 {
 	static bool s_initialized = false;
+	extern Vec3f s_cameraPos;
 
 	struct ScreenQuadVertex
 	{
@@ -37,6 +39,7 @@ namespace TFE_Jedi
 
 	static s32 s_screenQuadCount = 0;
 	static s32 s_svScaleOffset = -1;
+	static s32 s_svCameraPos = -1;
 	static u32 s_scrQuadsWidth;
 	static u32 s_scrQuadsHeight;
 
@@ -53,15 +56,18 @@ namespace TFE_Jedi
 		}
 
 		s_svScaleOffset = s_scrQuadShader.getVariableId("ScaleOffset");
-		if (s_svScaleOffset < 0)
-		{
-			return false;
-		}
+		s_svCameraPos   = s_scrQuadShader.getVariableId("CameraPos");
+		if (s_svScaleOffset < 0 || s_svCameraPos < 0) { return false; }
 
 		s_scrQuadShader.bindTextureNameToSlot("Colormap",     0);
 		s_scrQuadShader.bindTextureNameToSlot("Palette",      1);
 		s_scrQuadShader.bindTextureNameToSlot("Textures",     2);
 		s_scrQuadShader.bindTextureNameToSlot("TextureTable", 3);
+
+		s_scrQuadShader.bindTextureNameToSlot("lightPosition",  4);
+		s_scrQuadShader.bindTextureNameToSlot("lightData",      5);
+		s_scrQuadShader.bindTextureNameToSlot("lightClusters",  6);
+		s_scrQuadShader.bindTextureNameToSlot("shadowMaps",     7);
 
 		return true;
 	}
@@ -154,6 +160,7 @@ namespace TFE_Jedi
 
 			const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
 			s_scrQuadShader.setVariable(s_svScaleOffset, SVT_VEC4, scaleOffset);
+			s_scrQuadShader.setVariable(s_svCameraPos, SVT_VEC3, s_cameraPos.m);
 
 			const TextureGpu* palette  = TFE_RenderBackend::getPaletteTexture();
 			const TextureGpu* colormap = TFE_Sectors_GPU::getColormap();
@@ -163,11 +170,13 @@ namespace TFE_Jedi
 			TexturePacker* texturePacker = texturepacker_getGlobal();
 			texturePacker->texture->bind(2);
 			texturePacker->textureTableGPU.bind(3);
+			lighting_bind(4);
 
 			TFE_RenderBackend::drawIndexedTriangles(2 * s_screenQuadCount, sizeof(u16));
 
 			s_scrQuadVb.unbind();
 			s_scrQuadShader.unbind();
+			lighting_unbind(4);
 		}
 	}
 		
@@ -329,7 +338,7 @@ namespace TFE_Jedi
 	}
 
 	// Scaled versions.
-	void screenGPU_blitTextureScaled(TextureData* texture, DrawRect* rect, fixed16_16 x0, fixed16_16 y0, fixed16_16 xScale, fixed16_16 yScale, u8 lightLevel, JBool forceTransparency)
+	void screenGPU_blitTextureScaled(TextureData* texture, DrawRect* rect, fixed16_16 x0, fixed16_16 y0, fixed16_16 xScale, fixed16_16 yScale, u8 lightLevel, JBool forceTransparency, JBool applyDynamicLights)
 	{
 		if (s_screenQuadCount >= SCR_MAX_QUAD_COUNT)
 		{
@@ -340,7 +349,7 @@ namespace TFE_Jedi
 		fixed16_16 y1 = y0 + mul16(intToFixed16(texture->height), yScale);
 		s32 textureId = texture->textureId;
 
-		u8 color = 0;
+		u8 color = applyDynamicLights ? 1 : 0;
 		u32 textureId_Color = textureId | (u32(color) << 16u) | (u32(lightLevel) << 24u);
 
 		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
