@@ -25,12 +25,6 @@ If the InnerRadius is close to OuterRadius; the light looks more light a spotlig
 
 Decay controls the speed of the falloff from the Inner and Outer radius, where larger values produces a sharper falloff. 
 
-Stuff to add:
-LIT2.WAX
-TALLIT1.WAX
-LIT1.WAX
-SMALITE1.FME
-SMALITE2.FME
 
 TODO:
 Format = 
@@ -103,6 +97,16 @@ asset
 
 asset
 {
+	name = "DET_CODE.FME"
+	Light
+	{
+		offset = { 0.0, -2.0, 0.0 }
+		color0 = { 1.0, 0.0, 1.0 }
+	}
+}
+
+asset
+{
 	name = "IARMOR.WAX"
 	Light
 	{
@@ -160,11 +164,35 @@ asset
 
 asset
 {
+	name = "IDET.FME"
+	Light
+	{
+		offset = { 0.0, -0.5, 0.0 }
+		color0 = { 1.0, 0.0, 0.0 }
+		outerRadius = 1.75
+		amp = 0.6
+	}
+}
+
+asset
+{
 	name = "IDPLANS.WAX"
 	Light
 	{
 		color0 = { 1.0, 0.0, 0.0 }
 		color1 = { 1.0, 0.5, 0.0 }
+		innerRadius = 2.0
+		outerRadius = 10.0
+	}
+}
+
+asset
+{
+	name = "INAVA.WAX"
+	Light
+	{
+		color0 = { 0.0, 0.0, 1.0 }
+		color1 = { 0.0, 0.5, 1.0 }
 		innerRadius = 2.0
 		outerRadius = 10.0
 	}

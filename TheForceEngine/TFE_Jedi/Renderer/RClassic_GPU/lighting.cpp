@@ -25,6 +25,7 @@ struct SceneLight
 {
 	Light light;
 	s32 id;
+	s32 shadowId;
 	s32 sectorCount;
 	s32 sectorId[MAX_LIGHT_SECTORS];
 	u32 frameIndex;
@@ -41,11 +42,19 @@ namespace TFE_Jedi
 	enum
 	{
 		MaxVisLightCount = 1024,
+		MaxShadowCount = 1024,
 		ShadowWidth = 1024,
 		LightPoolStep = 1024,
 		LightPoolMax  = 65536,
 		MaxClusterCount = 1024,
 	};
+
+	struct ShadowCacheEntry
+	{
+		u32 lightId;
+		u32 lastFrame;
+	};
+	static ShadowCacheEntry* s_shadowCache = nullptr;
 
 	static s32 s_sectorCount = 0;
 
@@ -86,12 +95,14 @@ namespace TFE_Jedi
 		free(s_clustersCpu);
 		free(s_lightPool);
 		free(s_shadowBufferCpu);
+		free(s_shadowCache);
 		s_lightPosCpu  = nullptr;
 		s_lightDataCpu = nullptr;
 		s_clustersCpu  = nullptr;
 		s_lightPool = nullptr;
 		s_shadowBuffer = nullptr;
 		s_shadowBufferCpu = nullptr;
+		s_shadowCache = nullptr;
 		s_enable = false;
 		s_lightPoolCapacity = 0;
 	}
@@ -366,7 +377,7 @@ namespace TFE_Jedi
 		{
 			s_sectorBuckets[i].lights.clear();
 		}
-
+		
 		// GPU data -- allocate once, even if changing games.
 		if (allocRequired)
 		{
@@ -385,13 +396,64 @@ namespace TFE_Jedi
 			// Limited shadow map cache, regenerate as needed.
 			s_shadowBuffer = TFE_RenderBackend::createTexture(MaxVisLightCount, ShadowWidth, 1/*channelCount*/, 2/*bytesPerChannel*/);	// 16-bit, single channel
 			s_shadowBufferCpu = (u16*)malloc(sizeof(u16) * MaxVisLightCount * ShadowWidth);
+			s_shadowCache = (ShadowCacheEntry*)malloc(sizeof(ShadowCacheEntry) * MaxShadowCount);
 			s_shadowBufferDirty = false;
 
 			memset(s_lightPosCpu,  0, sizeof(Vec4f)  * MaxVisLightCount);
 			memset(s_lightDataCpu, 0, sizeof(Vec4ui) * MaxVisLightCount);
 			memset(s_clustersCpu,  0, sizeof(Vec4ui) * MaxClusterCount);
 		}
+		memset(s_shadowCache, 0, sizeof(ShadowCacheEntry) * MaxShadowCount);
 		s_sectorCount = sectorCount;
+	}
+
+	u16 getShadowCacheEntry(u32 lightId, u16 shadowId, bool& updateRequired)
+	{
+		// If the light already has a shadow, just reuse it if possible.
+		if (shadowId && s_shadowCache[shadowId-1].lightId == lightId)
+		{
+			s_shadowCache[shadowId-1].lastFrame = s_frameIndex;
+			updateRequired = false;
+			return shadowId;
+		}
+
+		updateRequired = true;
+		// Otherwise time to find a free shadow...
+		// initially try to map to the id - note reusing a slot if the ID matches is fine, since the light itself is being reused.
+		u16 newId = 1 + ((lightId - 1) & (MaxShadowCount - 1));
+		if (s_shadowCache[newId-1].lightId == 0 || s_shadowCache[newId-1].lightId == lightId)
+		{
+			s_shadowCache[newId-1].lightId = lightId;
+			s_shadowCache[newId-1].lastFrame = s_frameIndex;
+			return newId;
+		}
+
+		// Finally just search.
+		u32 bestFitFrame = UINT32_MAX;
+		s32 bestFitIndex = -1;
+		for (s32 i = 0; i < MaxShadowCount; i++)
+		{
+			if (s_shadowCache[i].lightId == 0)
+			{
+				bestFitIndex = i;
+				break;
+			}
+			else if (s_shadowCache[i].lastFrame < bestFitFrame)
+			{
+				bestFitFrame = s_shadowCache[i].lastFrame;
+				bestFitIndex = i;
+			}
+		}
+		if (bestFitIndex >= 0)
+		{
+			u16 newId = bestFitIndex + 1;
+			s_shadowCache[newId - 1].lightId = lightId;
+			s_shadowCache[newId - 1].lastFrame = s_frameIndex;
+			return newId;
+		}
+
+		// No room.
+		return 0;
 	}
 
 	Vec2f closestPointOnLine(const Vec2f& a, const Vec2f& b, const Vec2f& p)
@@ -608,6 +670,8 @@ namespace TFE_Jedi
 
 	void lighting_rasterizeWalls(SceneLight* sceneLight, s32 sectorId, u16* depth)
 	{
+		if (!depth) { return; }
+
 		const RSector* sector = &s_levelState.sectors[sectorId];
 		const RWall* wall     = sector->walls;
 		const s32 wallCount   = sector->wallCount;
@@ -706,10 +770,15 @@ namespace TFE_Jedi
 		// Assume that the light is actually in the specified sector.
 		sceneLight->sectorId[sceneLight->sectorCount++] = sectorId;
 
-		// test..
-		u16* depth = &s_shadowBufferCpu[ShadowWidth * sceneLight->id];
-		for (s32 i = 0; i < 1024; i++) { depth[i] = 0xffff; }
-		s_shadowBufferDirty = true;
+		bool updateRequired = false;
+		sceneLight->shadowId = getShadowCacheEntry(sceneLight->id+1, sceneLight->shadowId, updateRequired);
+		u16* depth = nullptr;
+		if (sceneLight->shadowId)
+		{
+			depth = &s_shadowBufferCpu[ShadowWidth * (sceneLight->shadowId - 1)];
+			for (s32 i = 0; i < ShadowWidth; i++) { depth[i] = 0xffff; }
+			s_shadowBufferDirty = true;
+		}
 		
 		// Next go through all of the potential portals and see if the light overlaps.
 		lighting_traversePortals(sceneLight, sectorId, depth);
@@ -743,6 +812,7 @@ namespace TFE_Jedi
 		if (sceneLight)
 		{
 			sceneLight->light = light;
+			sceneLight->shadowId = 0;
 			lighting_handleVisibility(sceneLight, sectorId);
 		}
 		return sceneLight;
@@ -791,7 +861,7 @@ namespace TFE_Jedi
 
 			// Finally add the light.
 			sceneLight->frameIndex = s_frameIndex;
-			lighting_add(sceneLight->light, sceneLight->id);
+			lighting_add(sceneLight->light, sceneLight->shadowId);
 		}
 	}
 }

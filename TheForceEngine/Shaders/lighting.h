@@ -204,6 +204,9 @@ float projectToUnitSquare(vec2 coord)
 
 float getShadowValue(vec3 lightDir, float radius, int id, vec3 nrml)
 {
+	// The "no shadow" case.
+	if (id == 0) { return 1.0; }
+
 	float curDepth = length(lightDir.xz) / radius;
 	float bias = max(0.0025, (1.0 - abs(nrml.y)) * 0.02);
 	float proj = projectToUnitSquare(lightDir.xz);
@@ -216,8 +219,8 @@ float getShadowValue(vec3 lightDir, float radius, int id, vec3 nrml)
 	if (p1 > 1023.0) { p1 -= 1023.0; }
 
 	float u  = fract(proj);
-	float shadowDepth0 = texelFetch(shadowMaps, ivec2(p0, id), 0).r;
-	float shadowDepth1 = texelFetch(shadowMaps, ivec2(p1, id), 0).r;
+	float shadowDepth0 = texelFetch(shadowMaps, ivec2(p0, id-1), 0).r;
+	float shadowDepth1 = texelFetch(shadowMaps, ivec2(p1, id-1), 0).r;
 	float vis0 = (curDepth < shadowDepth0 + bias) ? 1.0 : 0.0;
 	float vis1 = (curDepth < shadowDepth1 + bias) ? 1.0 : 0.0;
 
