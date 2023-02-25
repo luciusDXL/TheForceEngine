@@ -183,7 +183,7 @@ float projectToUnitSquare(vec2 coord)
 
 	// Find the largest axis.
 	int axis = 0;
-	if (abs(coord.x) > abs(coord.y))
+	if (abs(coord.x) > abs(coord.y)) 
 	{
 		axis = coord.x < 0.0 ? 2 : 0;
 	}
@@ -209,7 +209,7 @@ float getShadowValue(vec3 lightDir, float radius, int id, vec3 nrml)
 	float proj = projectToUnitSquare(lightDir.xz);
 	proj = clamp(proj * 256.0, 0.0, 1024.0);
 
-	// Bilinear filter the shadow results.
+	// Linear filter the shadow results.
 	float p0 = floor(proj);
 	float p1 = p0 + 1.0;
 	if (p0 > 1023.0) { p0 -= 1023.0; }

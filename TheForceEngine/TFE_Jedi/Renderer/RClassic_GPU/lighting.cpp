@@ -163,7 +163,7 @@ namespace TFE_Jedi
 				break;
 			}
 		}
-		assert(freeSlotFound);
+		// assert(freeSlotFound);
 	}
 
 	void processMip(s32 mipIndex, f32 scale, Vec3f posWS, s32 lightId, const Light& light)

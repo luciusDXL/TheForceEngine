@@ -344,7 +344,7 @@ void main()
 			}
 			light = max(light, sectorAmbient);
 
-			float minAmbient = sectorAmbient * 7.0 / 8.0;
+			float minAmbient = sectorAmbient * 0.875;
 			//float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
 			// Smooth out the attenuation.
 			float depthAtten = z * 0.09375;
