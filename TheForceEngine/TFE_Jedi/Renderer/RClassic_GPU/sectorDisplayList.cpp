@@ -89,12 +89,13 @@ namespace TFE_Jedi
 		//				   : MAX_DISP_ITEMS = 8192  = 192 * 8192  = 1.5Mb
 		//                 : MAX_DISP_ITEMS = 65536 = 192 * 65536 = 12Mb
 		// TODO: Can increase the display list size here, up to ShaderBuffer::getMaxSize().
+		//       (Note ShaderBuffer maximum size is *atleast* 128 MB)
 		//       Or reduce size needed to 1 item per wall segment (instead of 5 - 7).
 		s_displayListPos    = (Vec4f*)malloc(sizeof(Vec4f) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
 		s_displayListData   = (Vec4ui*)malloc(sizeof(Vec4ui) * SECTOR_PASS_COUNT * MAX_DISP_ITEMS);
 		s_displayListPlanes = (Vec4f*)malloc(sizeof(Vec4f) * MAX_BUFFER_SIZE);
-		s_portalPlaneInfo   = (u32*)malloc(sizeof(u32) * MAX_DISP_ITEMS);
-		s_portalFrustumVert = (Frustum*)malloc(sizeof(Frustum) * MAX_DISP_ITEMS);
+		s_portalPlaneInfo   = (u32*)malloc(sizeof(u32) * MAX_BUFFER_SIZE);
+		s_portalFrustumVert = (Frustum*)malloc(sizeof(Frustum) * MAX_BUFFER_SIZE);
 
 		const ShaderBufferDef bufferDefDisplayListPos  = { 4, sizeof(f32), BUF_CHANNEL_FLOAT };
 		const ShaderBufferDef bufferDefDisplayListData = { 4, sizeof(u32), BUF_CHANNEL_UINT };
@@ -310,6 +311,7 @@ namespace TFE_Jedi
 		assert(s_displayListCount[bufferIndex] < MAX_DISP_ITEMS);
 		if (s_displayListCount[bufferIndex] >= MAX_DISP_ITEMS)
 		{
+			TFE_System::logWrite(LOG_WARNING, "GPU Renderer", "Too many display items.");
 			return;
 		}
 
@@ -352,6 +354,10 @@ namespace TFE_Jedi
 		Vec4f pos = { wallSeg->v0.x, wallSeg->v0.z, wallSeg->v1.x, wallSeg->v1.z };
 		const Vec4ui data = {  nextId/*partId | nextSector*/, (u32)curSector->index/*sectorId*/,
 				    		   wallLight | portalInfo, 0u/*textureId*/ };
+
+		// TODO:
+		// Display Items consist of { pos, data }
+		// pos is the same for all items generated from a segment, only the data changes.
 
 		if (nextSector)
 		{
@@ -421,7 +427,7 @@ namespace TFE_Jedi
 			}
 			else
 			{
-				addDisplayListItem(pos, {data.x | SPARTID_WALL_MID, data.y, data.z | flip,
+				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID, data.y, data.z | flip,
 					wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 			}
 		}
@@ -443,7 +449,7 @@ namespace TFE_Jedi
 			else
 			{
 				// Transparent mid-texture.
-				addDisplayListItem(pos, {data.x | SPARTID_WALL_MID, data.y, data.z | flip,
+				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID, data.y, data.z | flip,
 					wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_TRANS);
 			}
 		}
@@ -453,7 +459,7 @@ namespace TFE_Jedi
 		//////////////////////////////
 		if ((srcWall->drawFlags & WDF_TOP) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !noWallDraw && !noTop)
 		{
-			addDisplayListItem(pos, {data.x | SPARTID_WALL_TOP, data.y, data.z | flip,
+			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP, data.y, data.z | flip,
 				wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
 		}
 		else if ((srcWall->drawFlags & WDF_TOP) && nextSector && noWallDraw && !noTop)
@@ -567,7 +573,7 @@ namespace TFE_Jedi
 		s_displayListDataGPU[passId].bind(s_dataIndex[passId]);
 		s_displayListPlanesGPU.bind(s_planesIndex);
 
-		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount[passId], sizeof(u16));
+		TFE_RenderBackend::drawIndexedTriangles(2u * s_displayListCount[passId], sizeof(u32));
 
 		s_displayListPosGPU[passId].unbind(s_posIndex[passId]);
 		s_displayListDataGPU[passId].unbind(s_dataIndex[passId]);

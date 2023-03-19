@@ -178,7 +178,7 @@ namespace TFE_Jedi
 		s_displayListTexIdTextureGPU.bind(s_texIdTextureIndex);
 		objectPortalPlanes_bind(s_planesIndex);
 
-		TFE_RenderBackend::drawIndexedTriangles(2 * s_displayListCount, sizeof(u16));
+		TFE_RenderBackend::drawIndexedTriangles(2u * s_displayListCount, sizeof(u32));
 
 		s_displayListPosXZTextureGPU.unbind(s_posXZTextureIndex);
 		s_displayListPosYUTextureGPU.unbind(s_posYUTextureIndex);

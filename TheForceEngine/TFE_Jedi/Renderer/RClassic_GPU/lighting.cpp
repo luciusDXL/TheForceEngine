@@ -18,7 +18,7 @@
 #include <cstring>
 
 using namespace TFE_Memory;
-#define MAX_LIGHT_SECTORS 8
+#define MAX_LIGHT_SECTORS 16
 
 // Scene
 struct SceneLight
@@ -43,11 +43,13 @@ namespace TFE_Jedi
 	{
 		MaxVisLightCount = 1024,
 		MaxShadowCount = 1024,
+		ShadowCountMask = MaxShadowCount - 1,
 		ShadowWidth = 1024,
 		LightPoolStep = 1024,
 		LightPoolMax  = 65536,
 		MaxClusterCount = 1024,
 	};
+#define SIMPLE_HEIGHT_SHADOW 0.5f
 
 	struct ShadowCacheEntry
 	{
@@ -409,23 +411,26 @@ namespace TFE_Jedi
 
 	u16 getShadowCacheEntry(u32 lightId, u16 shadowId, bool& updateRequired)
 	{
+		assert(lightId);
+
 		// If the light already has a shadow, just reuse it if possible.
-		if (shadowId && s_shadowCache[shadowId-1].lightId == lightId)
+		u16 shadowIndex = shadowId ? shadowId - 1 : 0;
+		if (shadowId && s_shadowCache[shadowIndex].lightId == lightId)
 		{
-			s_shadowCache[shadowId-1].lastFrame = s_frameIndex;
+			s_shadowCache[shadowIndex].lastFrame = s_frameIndex;
 			updateRequired = false;
-			return shadowId;
+			return shadowIndex + 1;
 		}
 
 		updateRequired = true;
 		// Otherwise time to find a free shadow...
 		// initially try to map to the id - note reusing a slot if the ID matches is fine, since the light itself is being reused.
-		u16 newId = 1 + ((lightId - 1) & (MaxShadowCount - 1));
-		if (s_shadowCache[newId-1].lightId == 0 || s_shadowCache[newId-1].lightId == lightId)
+		const u16 index = (lightId - 1) & ShadowCountMask;
+		if (s_shadowCache[index].lightId == 0 || s_shadowCache[index].lightId == lightId)
 		{
-			s_shadowCache[newId-1].lightId = lightId;
-			s_shadowCache[newId-1].lastFrame = s_frameIndex;
-			return newId;
+			s_shadowCache[index].lightId = lightId;
+			s_shadowCache[index].lastFrame = s_frameIndex;
+			return index + 1;
 		}
 
 		// Finally just search.
@@ -446,10 +451,9 @@ namespace TFE_Jedi
 		}
 		if (bestFitIndex >= 0)
 		{
-			u16 newId = bestFitIndex + 1;
-			s_shadowCache[newId - 1].lightId = lightId;
-			s_shadowCache[newId - 1].lastFrame = s_frameIndex;
-			return newId;
+			s_shadowCache[bestFitIndex].lightId = lightId;
+			s_shadowCache[bestFitIndex].lastFrame = s_frameIndex;
+			return bestFitIndex + 1;
 		}
 
 		// No room.
@@ -479,7 +483,10 @@ namespace TFE_Jedi
 	bool lighting_addLightSector(SceneLight* sceneLight, s32 sectorId)
 	{
 		// Make sure there is room.
-		if (sceneLight->sectorCount >= MAX_LIGHT_SECTORS) { return false; }
+		if (sceneLight->sectorCount >= MAX_LIGHT_SECTORS)
+		{
+			return false;
+		}
 		// Make sure it isn't already there...
 		for (s32 i = 0; i < sceneLight->sectorCount; i++)
 		{
@@ -724,17 +731,27 @@ namespace TFE_Jedi
 		}
 	}
 
-	void lighting_traversePortals(SceneLight* sceneLight, s32 sectorId, u16* depth)
+	// TODO: Improve accuracy of the traversal to avoid lights showing up in incorrect areas (such as overlapping sectors).
+	void lighting_traversePortals(SceneLight* sceneLight, s32 sectorId, u16* depth, Vec2f s0, Vec2f s1)
 	{
 		lighting_rasterizeWalls(sceneLight, sectorId, depth);
 
+		Vec2f n = { 0.0f };
+		bool hasFrustum = false;
+		if (s0.x != 0.0f || s0.z != 0.0f || s1.x != 0.0f || s1.z != 0.0f)
+		{
+			hasFrustum = true;
+			n = { -(s1.z - s0.z), s1.x - s0.x };
+		}
+
 		const RSector* sector = &s_levelState.sectors[sectorId];
-		const RWall* wall = sector->walls;
-		const s32 wallCount = sector->wallCount;
 		const f32 r = sceneLight->light.radii.z;
 		const f32 rSq = r * r;
 		const Vec2f lightPos = { sceneLight->light.pos.x, sceneLight->light.pos.z };
 		const f32 lightHeight = sceneLight->light.pos.y;
+
+		const RWall* wall = sector->walls;
+		const s32 wallCount = sector->wallCount;
 		const Vec2f zero = { 0 };
 		for (s32 w = 0; w < wallCount; w++, wall++)
 		{
@@ -752,13 +769,17 @@ namespace TFE_Jedi
 			const f32 nextCeil  = fixed16ToFloat(max(next->ceilingHeight, sector->ceilingHeight));
 			if (lightHeight - nextFloor > r || nextCeil - lightHeight > r) { continue; }
 
+			// Check against the portal plane.
+			if ((w0.x - s0.x) * n.x + (w0.z - s0.z) * n.z < 0.0f && (w1.x - s0.x) * n.x + (w1.z - s0.z) * n.z < 0.0f) { continue; }
+
 			// Minimum distance from light to portal line check (2D).
 			const Vec2f offset = closestPointOnLine(w0, w1, zero);
 			if (offset.x*offset.x + offset.z*offset.z < rSq)
 			{
 				if (lighting_addLightSector(sceneLight, next->index))
 				{
-					lighting_traversePortals(sceneLight, next->index, depth);
+					// TODO: Use the clipped line.
+					lighting_traversePortals(sceneLight, next->index, depth, w0, w1);
 				}
 			}
 		}
@@ -781,7 +802,7 @@ namespace TFE_Jedi
 		}
 		
 		// Next go through all of the potential portals and see if the light overlaps.
-		lighting_traversePortals(sceneLight, sectorId, depth);
+		lighting_traversePortals(sceneLight, sectorId, depth, { 0.0f }, { 0.0f });
 
 		// Finally add it to all of the sector buckets.
 		for (s32 i = 0; i < sceneLight->sectorCount; i++)

@@ -249,7 +249,7 @@ namespace TFE_Jedi
 			s_gpuFrame = 1;
 			if (!s_portalList)
 			{
-				s_portalList = (Portal*)malloc(sizeof(Portal) * MAX_DISP_ITEMS);
+				s_portalList = (Portal*)malloc(sizeof(Portal) * MAX_BUFFER_SIZE);
 			}
 
 			// Read the current graphics settings before compiling shaders.
@@ -268,20 +268,20 @@ namespace TFE_Jedi
 			assert(result);
 
 			// Handles up to 65536 sector quads in the view.
-			u16* indices = (u16*)level_alloc(sizeof(u16) * 6 * MAX_DISP_ITEMS);
-			u16* index = indices;
-			for (s32 q = 0; q < MAX_DISP_ITEMS; q++, index += 6)
+			u32* indices = (u32*)level_alloc(sizeof(u32) * 6u * MAX_DISP_ITEMS);
+			u32* index = indices;
+			for (u32 q = 0; q < MAX_DISP_ITEMS; q++, index += 6u)
 			{
-				const s32 i = q * 4;
-				index[0] = i + 0;
-				index[1] = i + 1;
-				index[2] = i + 2;
+				const u32 i = q * 4u;
+				index[0] = i + 0u;
+				index[1] = i + 1u;
+				index[2] = i + 2u;
 
-				index[3] = i + 1;
-				index[4] = i + 3;
-				index[5] = i + 2;
+				index[3] = i + 1u;
+				index[4] = i + 3u;
+				index[5] = i + 2u;
 			}
-			s_indexBuffer.create(6 * MAX_DISP_ITEMS, sizeof(u16), false, (void*)indices);
+			s_indexBuffer.create(6u * MAX_DISP_ITEMS, sizeof(u32), false, (void*)indices);
 			level_free(indices);
 
 			// Initialize the display list with the GPU buffers.
