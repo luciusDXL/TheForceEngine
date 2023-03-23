@@ -10,12 +10,6 @@
 #include <TFE_System/system.h>
 #include <cstring>
 
-// Required for serialization.
-namespace TFE_DarkForces
-{
-	extern void logic_serialize(Logic*& logic, Stream* stream);
-}
-
 namespace TFE_Jedi
 {
 	// Serialization - Keep a global list of objects...
@@ -59,10 +53,9 @@ namespace TFE_Jedi
 			assert(obj && obj->sector && obj->sector->id == obj->sector->index);
 		}
 
-		const vec3_fixed def = { 0 };
 		SERIALIZE(ObjState_InitVersion, obj->type, ObjectType::OBJ_TYPE_SPIRIT);
 		SERIALIZE(ObjState_InitVersion, obj->entityFlags, 0);
-		SERIALIZE(ObjState_InitVersion, obj->posWS, def);
+		SERIALIZE(ObjState_InitVersion, obj->posWS, { 0 });
 		// obj->posVS is derived at runtime.
 
 		SERIALIZE(ObjState_InitVersion, obj->worldWidth,  -1);
@@ -214,6 +207,9 @@ namespace TFE_Jedi
 				{
 					TFE_System::logWrite(LOG_ERROR, "Game Load", "Object [%d] has no sector.", i);
 				}
+
+				// For now clear out light data...
+				obj->lightInfo = { 0 };
 
 				u32 logicCount;
 				SERIALIZE(ObjState_InitVersion, logicCount, 0);

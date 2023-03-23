@@ -29,6 +29,7 @@ namespace TFE_Jedi
 	s32 s_maxWallSeg = 4096;
 	s32 s_portalsTraversed;
 	s32 s_wallSegGenerated;
+	s32 s_wallPartsGenerated;
 
 	void debug_update()
 	{

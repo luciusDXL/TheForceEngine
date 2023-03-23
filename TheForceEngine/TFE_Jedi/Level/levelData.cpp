@@ -9,6 +9,7 @@
 #include <TFE_System/system.h>
 #include <TFE_Asset/spriteAsset_Jedi.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Jedi/Renderer/RClassic_GPU/lighting.h>
 
 // TODO: coupling between Dark Forces and Jedi.
 using namespace TFE_DarkForces;
@@ -107,8 +108,6 @@ namespace TFE_Jedi
 		
 	void level_serialize(Stream* stream)
 	{
-		bool debug = serialization_getMode() == SMODE_WRITE;
-
 		if (serialization_getMode() == SMODE_READ)
 		{
 			level_clearData();
@@ -215,6 +214,12 @@ namespace TFE_Jedi
 			}
 
 			level_serializeFixupMirrors();
+		}
+
+		// Lighting.
+		if (serialization_getMode() == SMODE_READ)
+		{
+			lighting_initScene(s_levelState.sectorCount);
 		}
 
 		// Serialize objects.

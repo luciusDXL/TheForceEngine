@@ -77,7 +77,10 @@ namespace TFE_Jedi
 
 	u32 objectPortalPlanes_add(u32 count, const Vec4f* planes)
 	{
-		if (count < 1 || s_objectPlaneCount >= MAX_BUFFER_SIZE) { return 0; }
+		if (count < 1 || s_objectPlaneCount >= MAX_BUFFER_SIZE)
+		{
+			return 0;
+		}
 
 		const u32 planeInfo = PACK_PORTAL_INFO(s_objectPlaneCount, count);
 		memcpy(&s_objectPlanes[s_objectPlaneCount], planes, sizeof(Vec4f) * count);

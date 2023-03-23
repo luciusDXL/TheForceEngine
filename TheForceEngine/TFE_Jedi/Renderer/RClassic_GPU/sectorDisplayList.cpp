@@ -329,8 +329,9 @@ namespace TFE_Jedi
 	* Textures (unique) - 16384  (because of texture packer)
 	* Sectors - 4M               (because of nextId, 0xfffffc00 = no sector)
 	**********************************/
-	void sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg, bool forceTreatAsSolid)
+	s32 sdisplayList_addSegment(RSector* curSector, GPUCachedSector* cached, SegmentClipped* wallSeg, bool forceTreatAsSolid)
 	{
+		s32 partsAdded = 0;
 		s32 wallId = wallSeg->seg->id;
 		RWall* srcWall = &curSector->walls[wallId];
 		RSector* nextSector = srcWall->nextSector;
@@ -411,6 +412,8 @@ namespace TFE_Jedi
 					u32 flags = 0;
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
 						wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+
+					partsAdded++;
 				}
 				else
 				{
@@ -423,12 +426,16 @@ namespace TFE_Jedi
 					flags = 2 << 10;
 					addDisplayListItem(pos, { flags | SPARTID_WALL_MID | SPARTID_SKY, data.y, data.z,
 						wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+
+					partsAdded += 2;
 				}
 			}
 			else
 			{
 				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID, data.y, data.z | flip,
 					wallGpuId | (srcWall->midTex && *srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+
+				partsAdded++;
 			}
 		}
 		else if (srcWall->midTex && (*srcWall->midTex) && nextSector && (srcWall->flags1 & WF1_ADJ_MID_TEX))
@@ -452,6 +459,7 @@ namespace TFE_Jedi
 				addDisplayListItem(pos, { data.x | SPARTID_WALL_MID, data.y, data.z | flip,
 					wallGpuId | (*srcWall->midTex ? (*srcWall->midTex)->textureId : 0) }, SECTOR_PASS_TRANS);
 			}
+			partsAdded++;
 		}
 
 		//////////////////////////////
@@ -461,33 +469,39 @@ namespace TFE_Jedi
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP, data.y, data.z | flip,
 				wallGpuId | (srcWall->topTex && *srcWall->topTex ? (*srcWall->topTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+			partsAdded++;
 		}
 		else if ((srcWall->drawFlags & WDF_TOP) && nextSector && noWallDraw && !noTop)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP | SPARTID_SKY, data.y, data.z | flip,
 				wallGpuId | (curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+			partsAdded++;
 		}
 		else if ((srcWall->drawFlags & WDF_TOP) && nextSector && (nextSector->flags1 & SEC_FLAGS1_EXT_ADJ) && !(curSector->flags1 & SEC_FLAGS1_EXTERIOR) && !noTop)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_TOP | SPARTID_SKY, data.y, data.z | flip,
 				wallGpuId | (nextSector->ceilTex && *nextSector->ceilTex ? (*nextSector->ceilTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+			partsAdded++;
 		}
 
 		if ((srcWall->drawFlags & WDF_BOT) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !noWallDraw)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT, data.y, data.z | flip,
 				wallGpuId | (srcWall->botTex && *srcWall->botTex ? (*srcWall->botTex)->textureId : 0) }, SECTOR_PASS_OPAQUE);
+			partsAdded++;
 		}
 		else if ((srcWall->drawFlags & WDF_BOT) && nextSector && noWallDraw)
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT | SPARTID_SKY, data.y, data.z | flip,
 				wallGpuId | (curSector->floorTex && *curSector->floorTex ? (*curSector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+			partsAdded++;
 		}
 		// If there is an exterior pit adjoin, we only add an item if the current sector is *not* a pit.
 		else if ((srcWall->drawFlags & WDF_BOT) && nextSector && (nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ) && !(curSector->flags1 & SEC_FLAGS1_PIT))
 		{
 			addDisplayListItem(pos, { data.x | SPARTID_WALL_BOT | SPARTID_SKY, data.y, data.z | flip,
 				wallGpuId | (nextSector->floorTex && *nextSector->floorTex ? (*nextSector->floorTex)->textureId : 0u) }, SECTOR_PASS_OPAQUE);
+			partsAdded++;
 		}
 
 		//////////////////////////////
@@ -510,16 +524,19 @@ namespace TFE_Jedi
 			if ((srcWall->drawFlags & WDF_BOT) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_FLOOR_ADJ))
 			{
 				addDisplayListItem(pos, { signFlags | SPARTID_WALL_BOT_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
+				partsAdded++;
 			}
 			// Otherwise if there is a top
 			else if ((srcWall->drawFlags & WDF_TOP) && nextSector && !(nextSector->flags1 & SEC_FLAGS1_EXT_ADJ))
 			{
 				addDisplayListItem(pos, { signFlags | SPARTID_WALL_TOP_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
+				partsAdded++;
 			}
 			// And finally mid.
 			else if (srcWall->midTex && srcWall->drawFlags == WDF_MIDDLE && !nextSector)
 			{
 				addDisplayListItem(pos, { signFlags | SPARTID_WALL_MID_SIGN, data.y, data.z, signGpuId }, SECTOR_PASS_TRANS);
+				partsAdded++;
 			}
 		}
 
@@ -558,6 +575,9 @@ namespace TFE_Jedi
 			curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
 		addDisplayListItem(pos, { data.x | SPARTID_CEIL_CAP | ceilSkyFlags, data.y, data.z,
 			curSector->ceilTex && *curSector->ceilTex ? (*curSector->ceilTex)->textureId : 0u }, SECTOR_PASS_OPAQUE);
+
+		partsAdded += 4;
+		return partsAdded;
 	}
 
 	s32 sdisplayList_getSize(SectorPass passId)

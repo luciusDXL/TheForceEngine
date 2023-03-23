@@ -244,6 +244,7 @@ namespace TFE_Jedi
 		{
 			CVAR_BOOL(s_showWireframe, "d_enableWireframe", CVFLAG_DO_NOT_SERIALIZE, "Enable wireframe rendering.");
 			TFE_COUNTER(s_wallSegGenerated, "Wall Segments");
+			TFE_COUNTER(s_wallPartsGenerated, "Wall Parts");
 			
 			m_gpuInit = true;
 			s_gpuFrame = 1;
@@ -267,7 +268,7 @@ namespace TFE_Jedi
 			result = loadSpriteShader();
 			assert(result);
 
-			// Handles up to 65536 sector quads in the view.
+			// Handles up to MAX_DISP_ITEMS sector quads in the view.
 			u32* indices = (u32*)level_alloc(sizeof(u32) * 6u * MAX_DISP_ITEMS);
 			u32* index = indices;
 			for (u32 q = 0; q < MAX_DISP_ITEMS; q++, index += 6u)
@@ -628,7 +629,7 @@ namespace TFE_Jedi
 			debug_addQuad(segment->v0, segment->v1, segment->seg->y0, segment->seg->y1,
 				          segment->seg->portalY0, segment->seg->portalY1, segment->seg->portal);
 
-			sdisplayList_addSegment(curSector, &s_cachedSectors[curSector->index], segment, forceTreatAsSolid);
+			s_wallPartsGenerated += sdisplayList_addSegment(curSector, &s_cachedSectors[curSector->index], segment, forceTreatAsSolid);
 			s_wallSegGenerated++;
 			segment = segment->next;
 		}
@@ -1194,6 +1195,7 @@ namespace TFE_Jedi
 		s_portalsTraversed = 0;
 		s_portalListCount = 0;
 		s_wallSegGenerated = 0;
+		s_wallPartsGenerated = 0;
 		Vec2f startView[] = { {0,0}, {0,0} };
 
 		// Compute an XZ direction for sprite culling.
