@@ -146,19 +146,14 @@ namespace TFE_Jedi
 	
 	Vec2f sbuffer_clip(Vec2f v0, Vec2f v1, Vec2f pointOnPlane)
 	{
-		Vec2f p1 = { pointOnPlane.x - s_cameraPos.x, pointOnPlane.z - s_cameraPos.z };
-		Vec2f planeNormal = { -p1.z, p1.x };
-		f32 lenSq = p1.x*p1.x + p1.z*p1.z;
-		f32 scale = (lenSq > FLT_EPSILON) ? 1.0f / sqrtf(lenSq) : 0.0f;
+		const Vec2f p1 = { pointOnPlane.x - s_cameraPos.x, pointOnPlane.z - s_cameraPos.z };
+		const Vec2f planeNormal = { -p1.z, p1.x };
 
-		f32 d0 = ((v0.x - s_cameraPos.x)*planeNormal.x + (v0.z - s_cameraPos.z)*planeNormal.z) * scale;
-		f32 d1 = ((v1.x - s_cameraPos.x)*planeNormal.x + (v1.z - s_cameraPos.z)*planeNormal.z) * scale;
-		f32 t = -d0 / (d1 - d0);
+		const f32 d0 = ((v0.x - s_cameraPos.x)*planeNormal.x + (v0.z - s_cameraPos.z)*planeNormal.z);
+		const f32 d1 = ((v1.x - s_cameraPos.x)*planeNormal.x + (v1.z - s_cameraPos.z)*planeNormal.z);
+		const f32 t = -d0 / (d1 - d0);
 
-		Vec2f intersection;
-		intersection.x = (1.0f-t)*v0.x + t * v1.x;
-		intersection.z = (1.0f-t)*v0.z + t * v1.z;
-		return intersection;
+		return { (1.0f - t)*v0.x + t*v1.x, (1.0f - t)*v0.z + t*v1.z };
 	}
 
 	void sbuffer_clear()
