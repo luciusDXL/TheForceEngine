@@ -42,7 +42,7 @@ namespace TFE_ProfilerView
 		{
 			TFE_CounterInfo info;
 			TFE_Profiler::getCounterInfo(c, &info);
-			ImGui::Text("%d", info.value); ImGui::SameLine(64);
+			ImGui::Text("%d", info.value); ImGui::SameLine(80);
 			ImGui::Text("%s", info.name);
 		}
 		ImGui::Unindent();

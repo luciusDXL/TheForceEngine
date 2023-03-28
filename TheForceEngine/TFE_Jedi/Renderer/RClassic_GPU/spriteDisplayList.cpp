@@ -82,6 +82,8 @@ namespace TFE_Jedi
 		// TODO: Refactor
 		s_planesIndex = 7;
 
+		TFE_COUNTER(s_displayListCount, "Sprites Rendered");
+
 		sprdisplayList_clear();
 	}
 

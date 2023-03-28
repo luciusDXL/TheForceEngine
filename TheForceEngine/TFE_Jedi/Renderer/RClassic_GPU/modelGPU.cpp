@@ -85,6 +85,9 @@ namespace TFE_Jedi
 	static std::vector<ModelVertex> s_vertexData;
 	static std::vector<u32> s_indexData;
 
+	static s32 s_3doRendered = 0;
+	static s32 s_3doPolygons = 0;
+
 	struct ShaderInputs
 	{
 		s32 cameraPosId;
@@ -194,6 +197,9 @@ namespace TFE_Jedi
 			{"MODEL_TRANSPARENT_PASS", "1"}
 		};
 		result = result && model_buildShaderVariant(MGPU_SHADER_TRANS, TFE_ARRAYSIZE(defines), defines);
+
+		TFE_COUNTER(s_3doRendered, "3DO Objects Rendered");
+		TFE_COUNTER(s_3doPolygons, "3DO Polygons Rendered");
 		return result;
 	}
 
@@ -659,6 +665,8 @@ namespace TFE_Jedi
 		{
 			s_modelDrawList[i].clear();
 		}
+		s_3doRendered = 0;
+		s_3doPolygons = 0;
 	}
 
 	void model_drawListFinish()
@@ -703,6 +711,9 @@ namespace TFE_Jedi
 			floorOffset.x, floorOffset.z,
 			ceilOffset.x, ceilOffset.z,
 		};
+
+		s_3doRendered++;
+		s_3doPolygons += modelGPU->polyCount;
 	}
 
 	void model_drawList()
