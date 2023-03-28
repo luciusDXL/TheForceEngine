@@ -99,8 +99,7 @@ namespace TFE_Jedi
 		s32 portalInfo;
 	};
 	static ShaderInputs s_shaderInputs[MGPU_SHADER_COUNT];
-
-	static std::vector<ModelDraw*> s_modelDrawList[MGPU_SHADER_COUNT];
+	static std::vector<ModelDraw> s_modelDrawList[MGPU_SHADER_COUNT];
 
 	extern Mat3  s_cameraMtx;
 	extern Mat4  s_cameraProj;
@@ -658,13 +657,21 @@ namespace TFE_Jedi
 	{
 		for (s32 i = 0; i < MGPU_SHADER_COUNT; i++)
 		{
-			std::for_each(s_modelDrawList[i].begin(), s_modelDrawList[i].end(), [](ModelDraw *m){ delete m;});
 			s_modelDrawList[i].clear();
 		}
 	}
 
 	void model_drawListFinish()
 	{
+	}
+
+	// This will only reallocate the array if size > capacity.
+	// At some point the system will settle on a maximum capacity and no more allocations will be needed.
+	ModelDraw* getDrawItem(ModelShader shader)
+	{
+		// This will allocate in chunks and only when size > capacity.
+		s_modelDrawList[shader].resize(s_modelDrawList[shader].size() + 1);
+		return &s_modelDrawList[shader].back();
 	}
 
 	void model_add(void* obj, JediModel* model, Vec3f posWS, fixed16_16* transform, f32 ambient, Vec2f floorOffset, Vec2f ceilOffset, u32 portalInfo)
@@ -676,12 +683,8 @@ namespace TFE_Jedi
 		}
 
 		ModelGPU* modelGPU = (ModelGPU *)model->drawId;
-		ModelDraw* drawItem = new ModelDraw;
-		if (!drawItem) { return; }
-
-		memset(drawItem, 0, sizeof(*drawItem));
-		s_modelDrawList[modelGPU->shader].push_back(drawItem);
-
+		ModelDraw* drawItem = getDrawItem(modelGPU->shader);
+		
 		drawItem->modelId = model->drawId;
 		drawItem->posWS = posWS;
 		drawItem->portalInfo = portalInfo;
@@ -712,7 +715,7 @@ namespace TFE_Jedi
 		for (s32 s = 0; s < MGPU_SHADER_COUNT; s++, shader++)
 		{
 			const size_t listCount = s_modelDrawList[s].size();
-			ModelDraw** drawList = s_modelDrawList[s].data();
+			const ModelDraw* drawList = s_modelDrawList[s].data();
 			if (!listCount) { continue; }
 
 			// Bind the shader and set per-frame shader variables.
@@ -727,8 +730,8 @@ namespace TFE_Jedi
 			// Draw items in the current draw list (draw lists are bucketed by shader).
 			for (size_t i = 0; i < listCount; i++)
 			{
-				ModelDraw* drawItem = drawList[i];
-				const ModelGPU *model = (ModelGPU *)drawItem->modelId;
+				const ModelDraw* drawItem = &drawList[i];
+				const ModelGPU* model = (ModelGPU *)drawItem->modelId;
 				const u32 portalInfo[] = { drawItem->portalInfo, drawItem->portalInfo };
 
 				// Per-draw shader variables.
