@@ -325,6 +325,8 @@ echo ^)";
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Shaders\config.h" />
+    <ClInclude Include="Shaders\filter.h" />
     <ClInclude Include="Shaders\grid.h" />
     <ClInclude Include="Shaders\lighting.h" />
     <ClInclude Include="TFE_Archive\archive.h" />

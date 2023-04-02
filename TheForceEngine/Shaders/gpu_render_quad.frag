@@ -1,6 +1,7 @@
-// #ifdef DYNAMIC_LIGHTING
+#include "Shaders/config.h"
+#ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
-// #endif
+#endif
 
 uniform sampler2D Colormap;
 uniform sampler2D Palette;
@@ -9,7 +10,9 @@ uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;		// base uv coordinates (0 - 1)
 flat in vec4 Frag_TextureId_Color;
+#ifdef OPT_DYNAMIC_LIGHTING
 flat in vec3 Frag_Lighting;
+#endif
 out vec4 Out_Color;
 
 vec3 getAttenuatedColor(int baseColor, int light)
@@ -63,10 +66,12 @@ void main()
 	Out_Color.rgb = getAttenuatedColor(baseColor, lightLevel);
 	Out_Color.a = 1.0;
 
+#ifdef OPT_DYNAMIC_LIGHTING
 	if (textureId < 65535 && color > 0 && baseColor >= 16)
 	{
 		vec3 albedo   = colorToLinear(texelFetch(Palette, ivec2(baseColor, 0), 0).rgb);
 		vec3 ambient  = colorToLinear(Out_Color.rgb);
 		Out_Color.rgb = linearToColor(Frag_Lighting * albedo + ambient);
 	}
+#endif
 }

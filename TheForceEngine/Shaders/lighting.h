@@ -69,19 +69,6 @@ float saturate(float x)
 	return max(0.0, min(1.0, x));
 }
 
-// t is between 0, 1; sample is between x1 and x2.
-float cubicInterpolation(float x0, float x1, float x2, float x3, float t)
-{
-	float a = (3.0*x1 - 3.0*x2 + x3 - x0) * 0.5;
-	float b = (2.0*x0 - 5.0*x1 + 4.0*x2 - x3) * 0.5;
-	float c = (x2 - x0) * 0.5;
-	float d = x1;
-
-	float t2 = t * t;
-	float t3 = t2 * t;
-	return a*t3 + b*t2 + c*t + d;
-}
-
 // Compute the point-light attenuation and final color based on the current distance from the light.
 // The model consists of the following components:
 // Ri : inner radius - where attenuation begins. Default = 0.0, Range: [0, Ro)

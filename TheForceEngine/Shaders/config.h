@@ -1,0 +1,5 @@
+// Render Options
+#define OPT_COLORMAP_INTERP 1
+#define OPT_SMOOTH_LIGHTRAMP 1
+#define OPT_DYNAMIC_LIGHTING 1
+//#define OPT_BILINEAR_DITHER 1

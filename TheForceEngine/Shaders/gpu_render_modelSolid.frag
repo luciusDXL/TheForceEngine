@@ -1,3 +1,8 @@
+#include "Shaders/config.h"
+#if defined(OPT_BILINEAR_DITHER) || defined(OPT_SMOOTH_LIGHTRAMP)
+#include "Shaders/filter.h"
+#endif
+
 uniform sampler2D Palette;
 uniform sampler2D Colormap;
 uniform sampler2DArray Textures;
@@ -47,6 +52,11 @@ float sampleTexture(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec3 iuv;
+
+	#ifdef OPT_BILINEAR_DITHER
+	uv = bilinearDither(uv);
+	#endif
+
 	iuv.xy = ivec2(uv);
 	iuv.z = 0;
 

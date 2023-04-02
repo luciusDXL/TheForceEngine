@@ -1,6 +1,10 @@
-// #ifdef DYNAMIC_LIGHTING
+#include "Shaders/config.h"
+#ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
-// #endif
+#endif
+#if defined(OPT_BILINEAR_DITHER) || defined(OPT_SMOOTH_LIGHTRAMP)
+#include "Shaders/filter.h"
+#endif
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
@@ -59,6 +63,11 @@ float sampleTextureClamp(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec3 iuv;
+
+	#ifdef OPT_BILINEAR_DITHER
+	uv = bilinearDither(uv);
+	#endif
+
 	iuv.xy = ivec2(uv);
 	iuv.z = 0;
 
@@ -94,6 +103,7 @@ void main()
 			light = 0.0;
 			if (worldAmbient < 31.0 || cameraLightSource != 0.0)
 			{
+			#ifdef OPT_SMOOTH_LIGHTRAMP // Smooth out light ramp.
 				float depthScaled = min(z * 4.0, 127.0);
 				float base = floor(depthScaled);
 
@@ -110,11 +120,10 @@ void main()
 				float lightSource3 = 31.0 - (texture(Colormap, vec2(d3/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
 
 				float lightSource = cubicInterpolation(lightSource0, lightSource1, lightSource2, lightSource3, blendFactor);
-
-				/*
+			#else // Vanilla style light ramp.
 				float depthScaled = min(floor(z * 4.0), 127.0);
 				float lightSource = 31.0 - (texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient);
-				*/
+			#endif
 				if (lightSource > 0)
 				{
 					light += lightSource;
@@ -123,9 +132,11 @@ void main()
 			light = max(light, sectorAmbient);
 
 			float minAmbient = sectorAmbient * 7.0 / 8.0;
-			//float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
-			// Smooth out the attenuation.
+		#ifdef OPT_COLORMAP_INTERP // Smooth out the attenuation.
 			float depthAtten = z * 0.09375;
+		#else
+			float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
+		#endif
 			light = max(light - depthAtten, minAmbient);
 			light = clamp(light, 0.0, 31.0);
 		}
@@ -138,13 +149,18 @@ void main()
 		discard;
 	}
 
-	//Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.8, 0.6) : getAttenuatedColor(int(baseColor), int(light));
-	Out_Color.rgb = getAttenuatedColorBlend(baseColor, light);
+	#ifdef OPT_COLORMAP_INTERP
+		Out_Color.rgb = getAttenuatedColorBlend(baseColor, light);
+	#else
+		Out_Color.rgb = getAttenuatedColor(int(baseColor), int(light));
+	#endif
+	#ifdef OPT_DYNAMIC_LIGHTING
 	if (baseColor >= 16.0)
 	{
 		vec3 albedo   = colorToLinear(texelFetch(Palette, ivec2(baseColor, 0), 0).rgb);
 		vec3 ambient  = colorToLinear(Out_Color.rgb);
 		Out_Color.rgb = linearToColor(Frag_Lighting * albedo + ambient);
 	}
+	#endif
 	Out_Color.a = 1.0;
 }

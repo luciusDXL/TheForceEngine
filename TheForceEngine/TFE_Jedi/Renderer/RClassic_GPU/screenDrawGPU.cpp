@@ -57,7 +57,7 @@ namespace TFE_Jedi
 
 		s_svScaleOffset = s_scrQuadShader.getVariableId("ScaleOffset");
 		s_svCameraPos   = s_scrQuadShader.getVariableId("CameraPos");
-		if (s_svScaleOffset < 0 || s_svCameraPos < 0) { return false; }
+		if (s_svScaleOffset < 0) { return false; }
 
 		s_scrQuadShader.bindTextureNameToSlot("Colormap",     0);
 		s_scrQuadShader.bindTextureNameToSlot("Palette",      1);

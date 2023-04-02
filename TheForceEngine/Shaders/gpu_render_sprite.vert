@@ -1,6 +1,7 @@
-// #ifdef DYNAMIC_LIGHTING
+#include "Shaders/config.h"
+#ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
-// #endif
+#endif
 
 uniform vec3 CameraPos;
 uniform vec3 CameraRight;
@@ -81,6 +82,7 @@ void main()
 	Frag_Uv = vtx_uv;
 	Texture_Data = texture_data;
 
+#ifdef OPT_DYNAMIC_LIGHTING
 	// Light the center?
 	{
 		// Compute the center.
@@ -91,4 +93,7 @@ void main()
 
 		Frag_Lighting = handleLightingSprite(center, CameraPos, /*applyDesaturate*/true);
 	}
+#else
+	Frag_Lighting = vec3(0.0);
+#endif
 }

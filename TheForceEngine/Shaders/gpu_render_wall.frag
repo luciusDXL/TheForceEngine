@@ -1,6 +1,11 @@
-// #ifdef DYNAMIC_LIGHTING
+#include "Shaders/config.h"
+
+#ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
-// #endif
+#endif
+#if defined(OPT_BILINEAR_DITHER) || defined(OPT_SMOOTH_LIGHTRAMP)
+#include "Shaders/filter.h"
+#endif
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
@@ -24,9 +29,9 @@ flat in vec4 Frag_Color;
 flat in float Frag_Scale;
 flat in int Frag_TextureId;
 flat in int Frag_Flags;
-// #ifdef DYNAMIC_LIGHTING
+#ifdef OPT_DYNAMIC_LIGHTING
 flat in vec3 Frag_Normal;
-// #endif
+#endif
 in vec3 Frag_Pos;
 in vec4 Texture_Data;
 out vec4 Out_Color;
@@ -103,6 +108,11 @@ float sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec3 iuv;
+
+	#ifdef OPT_BILINEAR_DITHER
+	uv = bilinearDither(uv);
+	#endif
+
 	iuv.xy = ivec2(floor(uv));
 	iuv.z = 0;
 
@@ -137,7 +147,7 @@ float sampleTexture(int id, vec2 uv, bool sky, bool flip, bool applyFlatWarp)
 	}
 	iuv.xy += (sampleData.xy & ivec2(4095));
 	iuv.z = sampleData.x >> 12;
-
+	
 	return texelFetch(Textures, iuv, 0).r * 255.0;
 }
 
@@ -145,6 +155,11 @@ float sampleTextureClamp(int id, vec2 uv, bool opaque)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);
 	ivec3 iuv;
+
+	#ifdef OPT_BILINEAR_DITHER
+	uv = bilinearDither(uv);
+	#endif
+
 	iuv.xy = ivec2(floor(uv));
 	iuv.z = 0;
 
@@ -306,6 +321,7 @@ void main()
 			light = 0.0;
 			if (worldAmbient < 31.0 || cameraLightSource != 0.0)
 			{
+			#ifdef OPT_SMOOTH_LIGHTRAMP // Smooth out light ramp.
 				float depthScaled = min(z * 4.0, 127.0);
 				float base = floor(depthScaled);
 
@@ -322,20 +338,10 @@ void main()
 				float lightSource3 = 31.0 - (texture(Colormap, vec2(d3/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
 
 				float lightSource = cubicInterpolation(lightSource0, lightSource1, lightSource2, lightSource3, blendFactor);
-				
-				/* // Linear
-				float d0 = base;
-				float d1 = min(127.0, base + 1.0);
-				float blendFactor = fract(depthScaled);
-				float lightSource0 = 31.0 - (texture(Colormap, vec2(d0/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
-				float lightSource1 = 31.0 - (texture(Colormap, vec2(d1/256.0, 0.0)).g*255.0/8.23 + worldAmbient);
-				float lightSource = mix(lightSource0, lightSource1, blendFactor);
-				*/
-
-				/* // Point
+			#else // Vanilla style light ramp.
 				float depthScaled = min(floor(z * 4.0), 127.0);
 				float lightSource = 31.0 - (texture(Colormap, vec2(depthScaled/256.0, 0.0)).g*255.0 + worldAmbient);
-				*/
+			#endif
 
 				if (lightSource > 0)
 				{
@@ -345,10 +351,11 @@ void main()
 			light = max(light, sectorAmbient);
 
 			float minAmbient = sectorAmbient * 0.875;
-			//float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
-			// Smooth out the attenuation.
+		#ifdef OPT_COLORMAP_INTERP // Smooth out the attenuation.
 			float depthAtten = z * 0.09375;
-			//light = max(light - depthAtten, minAmbient) + lightOffset;
+		#else
+			float depthAtten = floor(z / 16.0f) + floor(z / 32.0f);
+		#endif
 			light = max(light - depthAtten, minAmbient) + lightOffset;
 			light = clamp(light, 0.0, 31.0);
 		}
@@ -394,14 +401,19 @@ void main()
 	}
 
 	// Enable solid color rendering for wireframe.
-	//Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColor(int(baseColor), int(light));
-	Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColorBlend(baseColor, light);
+	#ifdef OPT_COLORMAP_INTERP
+		Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColorBlend(baseColor, light);
+	#else
+		Out_Color.rgb = LightData.w > 0.5 ? vec3(0.6, 0.7, 0.8) : getAttenuatedColor(int(baseColor), int(light));
+	#endif
 	Out_Color.a = 1.0;
 
 	// Optional dynamic lighting.
+	#ifdef OPT_DYNAMIC_LIGHTING
 	if (!sky && baseColor >= 16.0)	// do not light fullbright colors or sky.
 	{
 		vec3 albedo = texelFetch(Palette, ivec2(baseColor, 0), 0).rgb;
 		Out_Color.rgb = handleLighting(albedo, lightPos, Frag_Normal, CameraPos, Out_Color.rgb);
 	}
+	#endif
 }

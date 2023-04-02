@@ -1,3 +1,4 @@
+#include "Shaders/config.h"
 uniform vec3 CameraPos;
 uniform vec3 CameraRight;
 uniform vec3 CameraDir;

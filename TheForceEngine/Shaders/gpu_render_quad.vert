@@ -1,6 +1,7 @@
-// #ifdef DYNAMIC_LIGHTING
+#include "Shaders/config.h"
+#ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
-// #endif
+#endif
 
 uniform vec4 ScaleOffset;
 uniform vec3 CameraPos;
@@ -10,12 +11,15 @@ in vec4 vtx_color;
 
 out vec2 Frag_Uv;		// base uv coordinates (0 - 1)
 flat out vec4 Frag_TextureId_Color;
+#ifdef OPT_DYNAMIC_LIGHTING
 flat out vec3 Frag_Lighting;
+#endif
 
 void main()
 {
 	Frag_Uv = vtx_pos.zw;
 	Frag_TextureId_Color = vtx_color;
+#ifdef OPT_DYNAMIC_LIGHTING
 	Frag_Lighting = vec3(0.0);
 
 	// Lighting - since color is normally ignored, we use it as a flag to enable lighting.
@@ -26,7 +30,7 @@ void main()
 		vec3 posWS = CameraPos;
 		Frag_Lighting = handleLightingSprite(posWS, CameraPos, /*applyDesaturate*/false);
 	}
-
+#endif
 	vec2 pos = vtx_pos.xy*ScaleOffset.xy + ScaleOffset.zw;
 	gl_Position = vec4(pos.xy, 0, 1);
 }
