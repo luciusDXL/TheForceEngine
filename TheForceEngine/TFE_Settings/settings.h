@@ -48,6 +48,7 @@ struct TFE_Settings_Graphics
 	bool  extendAjoinLimits = true;
 	bool  vsync = true;
 	bool  showFps = false;
+	bool  fix3doNormalOverflow = true;
 	s32   frameRateLimit = 0;
 	f32   brightness = 1.0f;
 	f32   contrast = 1.0f;

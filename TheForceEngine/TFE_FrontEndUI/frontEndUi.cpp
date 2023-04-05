@@ -2139,6 +2139,9 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Rendering");
 		ImGui::PopFont();
 
+		// 3DO normal fix
+		ImGui::Checkbox("3DO Normal Fix (Restart Required)", &graphics->fix3doNormalOverflow);
+
 		// Frame Rate Limiter.
 		s32 frameRateLimit = graphics->frameRateLimit;
 		bool limitEnable = frameRateLimit != 0;
