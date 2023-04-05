@@ -1,18 +1,13 @@
 #include "Shaders/config.h"
+#include "Shaders/textureSampleFunc.h"
 #if defined(OPT_BILINEAR_DITHER) || defined(OPT_SMOOTH_LIGHTRAMP)
 #include "Shaders/filter.h"
 #endif
-
-uniform sampler2D Palette;
-uniform sampler2D Colormap;
-uniform sampler2DArray Textures;
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
 uniform vec2 LightData;
 uniform vec4 TextureOffsets;
-
-uniform isamplerBuffer TextureTable;
 
 in vec2 Frag_Uv;
 in vec3 Frag_WorldPos;
@@ -23,49 +18,6 @@ flat in int Frag_TextureId;
 flat in int Frag_TextureMode;
 
 out vec4 Out_Color;
-
-vec3 getAttenuatedColor(int baseColor, int light)
-{
-	int color = baseColor;
-	if (light < 31)
-	{
-		ivec2 uv = ivec2(color, light);
-		color = int(texelFetch(Colormap, uv, 0).r * 255.0);
-	}
-	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
-}
-
-ivec2 imod(ivec2 x, ivec2 y)
-{
-	return x - (x/y)*y;
-}
-
-ivec2 wrapCoord(ivec2 uv, ivec2 edge)
-{
-	uv = imod(uv, edge);
-	uv.x += (uv.x < 0) ? edge.x : 0;
-	uv.y += (uv.y < 0) ? edge.y : 0;
-	return uv;
-}
-
-float sampleTexture(int id, vec2 uv)
-{
-	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec3 iuv;
-
-	#ifdef OPT_BILINEAR_DITHER
-	uv = bilinearDither(uv);
-	#endif
-
-	iuv.xy = ivec2(uv);
-	iuv.z = 0;
-
-	iuv.xy = wrapCoord(iuv.xy, sampleData.zw);
-	iuv.xy += (sampleData.xy & ivec2(4095));
-	iuv.z = sampleData.x >> 12;
-
-	return texelFetch(Textures, iuv, 0).r * 255.0;
-}
 
 void main()
 {
@@ -132,6 +84,11 @@ void main()
 		lightLevel = int(Frag_Light + 0.5*dither);
 	}
 
-	Out_Color.rgb = getAttenuatedColor(baseColor, lightLevel);
+	#ifdef OPT_COLORMAP_INTERP
+		Out_Color.rgb = getAttenuatedColorBlend(baseColor, lightLevel);
+	#else
+		Out_Color.rgb = getAttenuatedColor(int(baseColor), int(lightLevel));
+	#endif
+
 	Out_Color.a = 1.0;
 }

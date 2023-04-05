@@ -12,6 +12,28 @@ vec2 bilinearSharpness(vec2 uv, float sharpness)
 	return uv;
 }
 
+vec2 bilinearSharpnessAuto(vec2 uv, vec2 uvBase, float sharpness)
+{
+	if (sharpness == 0.0)
+	{
+		return uv;
+	}
+
+	if (sharpness == 1.0)
+	{
+		vec2 w = fwidth(uvBase);
+		float scale = 0.5;
+		float mag = clamp(-log2(dot(w, w))*scale, 0.0, 1.0);
+		sharpness = mag * 0.5 + 0.5;
+	}
+
+	float ex = max(1.0, (sharpness - 0.5) * 32.0);
+	vec2 uvNew = pow(uv*uv*(3.0 - 2.0*uv), vec2(ex));
+	uv = mix(uv, uvNew, min(1.0, sharpness*2.0));
+
+	return uv;
+}
+
 vec2 bilinearDither(vec2 uv)
 {
 	// Hack: fake bilinear...

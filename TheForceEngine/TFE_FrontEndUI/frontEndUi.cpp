@@ -2151,7 +2151,7 @@ namespace TFE_FrontEndUI
 		{
 			if (frameRateLimit < 30)
 			{
-				frameRateLimit = 74;
+				frameRateLimit = 72;
 			}
 			ImGui::LabelText("##ConfigLabel", "Maximum Framerate:"); ImGui::SameLine(150 * s_uiScale);
 			ImGui::SetNextItemWidth(196 * s_uiScale);

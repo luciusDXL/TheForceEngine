@@ -1264,6 +1264,9 @@
     <ClInclude Include="Shaders\config.h">
       <Filter>Source\Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="Shaders\textureSampleFunc.h">
+      <Filter>Source\Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

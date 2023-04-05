@@ -1,4 +1,5 @@
 #include "Shaders/config.h"
+#include "Shaders/textureSampleFunc.h"
 #ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
 #endif
@@ -12,12 +13,6 @@ uniform vec4 LightData;
 uniform vec4 GlobalLightData;	// x = flat lighting, y = flat light value.
 uniform vec2 SkyParallax;
 
-uniform sampler2D Colormap;	// The color map has full RGB pre-backed in.
-uniform sampler2D Palette;
-uniform sampler2DArray Textures;
-
-uniform isamplerBuffer TextureTable;
-
 in vec2 Frag_Uv;
 in vec3 Frag_Pos;
 flat in vec3 Frag_Lighting;
@@ -25,62 +20,6 @@ flat in vec3 Frag_Lighting;
 flat in int Frag_TextureId;
 flat in vec4 Texture_Data;
 out vec4 Out_Color;
-
-vec3 getAttenuatedColor(int baseColor, int light)
-{
-	int color = baseColor;
-	if (light < 31)
-	{
-		ivec2 uv = ivec2(color, light);
-		color = int(texelFetch(Colormap, uv, 0).r * 255.0);
-	}
-	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
-}
-
-vec3 getAttenuatedColorBlend(float baseColor, float light)
-{
-	int color = int(baseColor);
-	if (light < 31)
-	{
-		int l0 = int(light);
-		int l1 = min(31, l0 + 1);
-		float blendFactor = fract(light);
-
-		ivec4 uv = ivec4(color, l0, color, l1);
-		int color0 = int(texelFetch(Colormap, uv.xy, 0).r * 255.0);
-		int color1 = int(texelFetch(Colormap, uv.zw, 0).r * 255.0);
-
-		vec3 value0 = texelFetch(Palette, ivec2(color0, 0), 0).rgb;
-		vec3 value1 = texelFetch(Palette, ivec2(color1, 0), 0).rgb;
-		return mix(value0, value1, blendFactor);
-		//return vec3(light/31.0);
-	}
-	//return vec3(1.0);
-	return texelFetch(Palette, ivec2(color, 0), 0).rgb;
-}
-
-float sampleTextureClamp(int id, vec2 uv)
-{
-	ivec4 sampleData = texelFetch(TextureTable, id);
-	ivec3 iuv;
-
-	#ifdef OPT_BILINEAR_DITHER
-	uv = bilinearDither(uv);
-	#endif
-
-	iuv.xy = ivec2(uv);
-	iuv.z = 0;
-
-	if ( any(lessThan(iuv.xy, ivec2(0))) || any(greaterThan(iuv.xy, sampleData.zw-1)) )
-	{
-		return 0.0;
-	}
-
-	iuv.xy += (sampleData.xy & ivec2(4095));
-	iuv.z = sampleData.x >> 12;
-	
-	return texelFetch(Textures, iuv, 0).r * 255.0;
-}
 
 void main()
 {
