@@ -2,6 +2,7 @@
 
 #include "modelAsset_jedi.h"
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_Asset/assetSystem.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
@@ -34,10 +35,23 @@ namespace TFE_Jedi_Object3d
 		const fixed16_16 dx = vIn->x - v0->x;
 		const fixed16_16 dy = vIn->y - v0->y;
 		const fixed16_16 dz = vIn->z - v0->z;
-		const fixed16_16 xSq = mul16(dx, dx);
-		const fixed16_16 ySq = mul16(dy, dy);
-		const fixed16_16 zSq = mul16(dz, dz);
-		const fixed16_16 len = fixedSqrt(xSq + ySq + zSq);
+		fixed16_16 len;
+
+		if (TFE_Settings::getGraphicsSettings()->fix3doNormalOverflow)
+		{
+			const f32 xf = fixed16ToFloat(dx);
+			const f32 yf = fixed16ToFloat(dy);
+			const f32 zf = fixed16ToFloat(dz);
+			const f32 lenf = sqrtf(xf*xf + yf*yf + zf*zf);
+			len = floatToFixed16(lenf);
+		}
+		else
+		{
+			const fixed16_16 xSq = mul16(dx, dx);
+			const fixed16_16 ySq = mul16(dy, dy);
+			const fixed16_16 zSq = mul16(dz, dz);
+			len = fixedSqrt(xSq + ySq + zSq);
+		}
 
 		// The Jedi 3D object renderer expect normals in the form of v0 + dir rather than just dir as used today.
 		vOut->x = v0->x;
