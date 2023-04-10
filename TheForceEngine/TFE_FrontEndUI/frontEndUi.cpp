@@ -70,6 +70,13 @@ namespace TFE_FrontEndUI
 		CONFIG_COUNT
 	};
 
+	enum SettingsTemplate
+	{
+		TEMPLATE_MODERN = 0,
+		TEMPLATE_RETRO,
+		TEMPLATE_VANILLA,
+	};
+
 	enum
 	{
 		MAX_AUDIO_OUTPUTS = 16
@@ -250,6 +257,7 @@ namespace TFE_FrontEndUI
 
 	void configSaveLoadBegin(bool save);
 	void renderBackground();
+	void setSettingsTemplate(SettingsTemplate temp);
 
 	void menuItem_Start();
 	void menuItem_Load();
@@ -528,7 +536,7 @@ namespace TFE_FrontEndUI
 	{
 		s_game = game;
 	}
-
+		
 	void draw(bool drawFrontEnd, bool noGameData, bool setDefaults, bool showFps)
 	{
 		const u32 windowInvisFlags = ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings;
@@ -644,104 +652,23 @@ namespace TFE_FrontEndUI
 				ImGui::LabelText("##ConfigLabel", "         Interpolated 8-bit color.");
 				ImGui::LabelText("##ConfigLabel", "Vanilla: Play using the original resolution and controls.");
 				ImGui::Separator();
-
-				s_inputConfig = inputMapping_get();
-				TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
-				TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
-								
+							
 				ImGui::SetCursorPosX(1280.0f * s_uiScale * 0.5f - 128.0f*s_uiScale);
 				if (ImGui::Button("Modern"))
 				{
-					// Controls
-					s_inputConfig->mouseMode = MMODE_LOOK;
-					// Game
-					gameSettings->df_showSecretFoundMsg = true;
-					gameSettings->df_bobaFettFacePlayer = true;
-					// Graphics
-					graphicsSettings->rendererIndex = RENDERER_HARDWARE;
-					graphicsSettings->skyMode = SKYMODE_CYLINDER;
-					graphicsSettings->widescreen = true;
-					graphicsSettings->gameResolution.x = displayInfo.width;
-					graphicsSettings->gameResolution.z = displayInfo.height;
-					graphicsSettings->bloomEnabled = true;
-					graphicsSettings->colorMode = COLORMODE_TRUE_COLOR;
-					graphicsSettings->texMagFilter = TMAG_LINEAR;
-					graphicsSettings->texMinFilter = TMIN_LINEAR;
-					graphicsSettings->bilinearSharpness = 1.0f;
-					graphicsSettings->dynamicLighting = true;
-					graphicsSettings->shadowQuality = 2;
-					// Reticle.
-					graphicsSettings->reticleEnable = true;
-					graphicsSettings->reticleIndex = 4;
-					graphicsSettings->reticleRed = 0.25f;
-					graphicsSettings->reticleGreen = 1.0f;
-					graphicsSettings->reticleBlue = 0.25f;
-					graphicsSettings->reticleOpacity = 1.0f;
-					graphicsSettings->reticleScale = 0.5f;
-
-					reticle_setShape(graphicsSettings->reticleIndex);
-					reticle_setScale(graphicsSettings->reticleScale);
-					reticle_setColor(&graphicsSettings->reticleRed);
-					// Now go to the menu.
-					TFE_Settings::writeToDisk();
-					inputMapping_serialize();
+					setSettingsTemplate(TEMPLATE_MODERN);
 					s_appState = APP_STATE_MENU;
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Retro"))
 				{
-					// Controls
-					s_inputConfig->mouseMode = MMODE_LOOK;
-					// Game
-					gameSettings->df_showSecretFoundMsg = true;
-					gameSettings->df_bobaFettFacePlayer = true;
-					// Graphics
-					graphicsSettings->rendererIndex = RENDERER_HARDWARE;
-					graphicsSettings->skyMode = SKYMODE_CYLINDER;
-					graphicsSettings->widescreen = true;
-					graphicsSettings->gameResolution.x = displayInfo.width;
-					graphicsSettings->gameResolution.z = displayInfo.height;
-					graphicsSettings->bloomEnabled = true;
-					graphicsSettings->colorMode = COLORMODE_8BIT_INTERP;
-					graphicsSettings->dynamicLighting = true;
-					graphicsSettings->shadowQuality = 1;
-					// Reticle.
-					graphicsSettings->reticleEnable = true;
-					graphicsSettings->reticleIndex = 4;
-					graphicsSettings->reticleRed = 0.25f;
-					graphicsSettings->reticleGreen = 1.0f;
-					graphicsSettings->reticleBlue = 0.25f;
-					graphicsSettings->reticleOpacity = 1.0f;
-					graphicsSettings->reticleScale = 0.5f;
-
-					reticle_setShape(graphicsSettings->reticleIndex);
-					reticle_setScale(graphicsSettings->reticleScale);
-					reticle_setColor(&graphicsSettings->reticleRed);
-					// Now go to the menu.
-					TFE_Settings::writeToDisk();
-					inputMapping_serialize();
+					setSettingsTemplate(TEMPLATE_RETRO);
 					s_appState = APP_STATE_MENU;
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Vanilla"))
 				{
-					// Controls
-					s_inputConfig->mouseMode = MMODE_TURN;
-					// Game
-					gameSettings->df_showSecretFoundMsg = false;
-					gameSettings->df_bobaFettFacePlayer = false;
-					// Graphics
-					graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
-					graphicsSettings->widescreen = false;
-					graphicsSettings->gameResolution.x = 320;
-					graphicsSettings->gameResolution.z = 200;
-					graphicsSettings->bloomEnabled = false;
-					graphicsSettings->dynamicLighting = false;
-					// Reticle.
-					graphicsSettings->reticleEnable = false;
-					// Now go to the menu.
-					TFE_Settings::writeToDisk();
-					inputMapping_serialize();
+					setSettingsTemplate(TEMPLATE_VANILLA);
 					s_appState = APP_STATE_MENU;
 				}
 				ImGui::End();
@@ -2727,5 +2654,107 @@ namespace TFE_FrontEndUI
 			TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
 			TFE_DarkForces::mission_render(graphics->rendererIndex);
 		}
+	}
+
+	void setSettingsTemplate(SettingsTemplate temp)
+	{
+		DisplayInfo displayInfo;
+		TFE_RenderBackend::getDisplayInfo(&displayInfo);
+
+		s_inputConfig = inputMapping_get();
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		TFE_Settings_Graphics* graphicsSettings = TFE_Settings::getGraphicsSettings();
+
+		switch (temp)
+		{
+		case TEMPLATE_MODERN:
+		{
+			// Controls
+			s_inputConfig->mouseMode = MMODE_LOOK;
+			// Game
+			gameSettings->df_showSecretFoundMsg = true;
+			gameSettings->df_bobaFettFacePlayer = true;
+			// Graphics
+			graphicsSettings->rendererIndex = RENDERER_HARDWARE;
+			graphicsSettings->skyMode = SKYMODE_CYLINDER;
+			graphicsSettings->widescreen = true;
+			graphicsSettings->gameResolution.x = displayInfo.width;
+			graphicsSettings->gameResolution.z = displayInfo.height;
+			graphicsSettings->bloomEnabled = true;
+			graphicsSettings->colorMode = COLORMODE_TRUE_COLOR;
+			graphicsSettings->texMagFilter = TMAG_LINEAR;
+			graphicsSettings->texMinFilter = TMIN_LINEAR;
+			graphicsSettings->bilinearSharpness = 1.0f;
+			graphicsSettings->dynamicLighting = true;
+			graphicsSettings->shadowQuality = 2;
+			// Reticle.
+			graphicsSettings->reticleEnable = true;
+			graphicsSettings->reticleIndex = 4;
+			graphicsSettings->reticleRed = 0.25f;
+			graphicsSettings->reticleGreen = 1.0f;
+			graphicsSettings->reticleBlue = 0.25f;
+			graphicsSettings->reticleOpacity = 1.0f;
+			graphicsSettings->reticleScale = 0.5f;
+
+			reticle_setShape(graphicsSettings->reticleIndex);
+			reticle_setScale(graphicsSettings->reticleScale);
+			reticle_setColor(&graphicsSettings->reticleRed);
+		} break;
+		case TEMPLATE_RETRO:
+		{
+			// Controls
+			s_inputConfig->mouseMode = MMODE_LOOK;
+			// Game
+			gameSettings->df_showSecretFoundMsg = true;
+			gameSettings->df_bobaFettFacePlayer = true;
+			// Graphics
+			graphicsSettings->rendererIndex = RENDERER_HARDWARE;
+			graphicsSettings->skyMode = SKYMODE_CYLINDER;
+			graphicsSettings->widescreen = true;
+			graphicsSettings->gameResolution.x = displayInfo.width;
+			graphicsSettings->gameResolution.z = displayInfo.height;
+			graphicsSettings->bloomEnabled = true;
+			graphicsSettings->colorMode = COLORMODE_8BIT_INTERP;
+			graphicsSettings->dynamicLighting = true;
+			graphicsSettings->shadowQuality = 1;
+			// Reticle.
+			graphicsSettings->reticleEnable = true;
+			graphicsSettings->reticleIndex = 4;
+			graphicsSettings->reticleRed = 0.25f;
+			graphicsSettings->reticleGreen = 1.0f;
+			graphicsSettings->reticleBlue = 0.25f;
+			graphicsSettings->reticleOpacity = 1.0f;
+			graphicsSettings->reticleScale = 0.5f;
+
+			reticle_setShape(graphicsSettings->reticleIndex);
+			reticle_setScale(graphicsSettings->reticleScale);
+			reticle_setColor(&graphicsSettings->reticleRed);
+		} break;
+		case TEMPLATE_VANILLA:
+		{
+			// Controls
+			s_inputConfig->mouseMode = MMODE_TURN;
+			// Game
+			gameSettings->df_showSecretFoundMsg = false;
+			gameSettings->df_bobaFettFacePlayer = false;
+			// Graphics
+			graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
+			graphicsSettings->widescreen = false;
+			graphicsSettings->gameResolution.x = 320;
+			graphicsSettings->gameResolution.z = 200;
+			graphicsSettings->bloomEnabled = false;
+			graphicsSettings->dynamicLighting = false;
+			// Reticle.
+			graphicsSettings->reticleEnable = false;
+		} break;
+		default:
+		{
+			TFE_System::logWrite(LOG_ERROR, "Settings", "Invalid settings template: %d", s32(temp));
+			return;
+		}
+		}
+
+		TFE_Settings::writeToDisk();
+		inputMapping_serialize();
 	}
 }
