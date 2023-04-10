@@ -361,6 +361,8 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "vsync", s_graphicsSettings.vsync);
 		writeKeyValue_Bool(settings, "show_fps", s_graphicsSettings.showFps);
 		writeKeyValue_Bool(settings, "3doNormalFix", s_graphicsSettings.fix3doNormalOverflow);
+		writeKeyValue_Bool(settings, "ignore3doLimits", s_graphicsSettings.ignore3doLimits);
+		writeKeyValue_Bool(settings, "ditheredBilinear", s_graphicsSettings.ditheredBilinear);
 		writeKeyValue_Int(settings, "frameRateLimit", s_graphicsSettings.frameRateLimit);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
@@ -375,7 +377,18 @@ namespace TFE_Settings
 		writeKeyValue_Float(settings, "reticleOpacity", s_graphicsSettings.reticleOpacity);
 		writeKeyValue_Float(settings, "reticleScale",   s_graphicsSettings.reticleScale);
 
+		writeKeyValue_Int(settings, "texMagFilter", s_graphicsSettings.texMagFilter);
+		writeKeyValue_Int(settings, "texMinFilter", s_graphicsSettings.texMinFilter);
+		writeKeyValue_Float(settings, "bilinearSharpness", s_graphicsSettings.bilinearSharpness);
+		writeKeyValue_Bool(settings, "dynamicLighting", s_graphicsSettings.dynamicLighting);
+		writeKeyValue_Int(settings, "shadowQuality", s_graphicsSettings.shadowQuality);
+
+		writeKeyValue_Bool(settings, "bloomEnabled", s_graphicsSettings.bloomEnabled);
+		writeKeyValue_Float(settings, "bloomStrength", s_graphicsSettings.bloomStrength);
+		writeKeyValue_Float(settings, "bloomBlurSize", s_graphicsSettings.bloomBlurSize);
+
 		writeKeyValue_Int(settings, "renderer", s_graphicsSettings.rendererIndex);
+		writeKeyValue_Int(settings, "colorMode", s_graphicsSettings.colorMode);
 		writeKeyValue_Int(settings, "skyMode", s_graphicsSettings.skyMode);
 	}
 		
@@ -651,6 +664,14 @@ namespace TFE_Settings
 		{
 			s_graphicsSettings.fix3doNormalOverflow = parseBool(value);
 		}
+		else if (strcasecmp("ignore3doLimits", key) == 0)
+		{
+			s_graphicsSettings.ignore3doLimits = parseBool(value);
+		}
+		else if (strcasecmp("ditheredBilinear", key) == 0)
+		{
+			s_graphicsSettings.ditheredBilinear = parseBool(value);
+		}
 		else if (strcasecmp("frameRateLimit", key) == 0)
 		{
 			s_graphicsSettings.frameRateLimit = parseInt(value);
@@ -699,9 +720,45 @@ namespace TFE_Settings
 		{
 			s_graphicsSettings.reticleScale = parseFloat(value);
 		}
+		else if (strcasecmp("texMagFilter", key) == 0)
+		{
+			s_graphicsSettings.texMagFilter = parseInt(value);
+		}
+		else if (strcasecmp("texMinFilter", key) == 0)
+		{
+			s_graphicsSettings.texMinFilter = parseInt(value);
+		}
+		else if (strcasecmp("bilinearSharpness", key) == 0)
+		{
+			s_graphicsSettings.bilinearSharpness = parseFloat(value);
+		}
+		else if (strcasecmp("dynamicLighting", key) == 0)
+		{
+			s_graphicsSettings.dynamicLighting = parseBool(value);
+		}
+		else if (strcasecmp("shadowQuality", key) == 0)
+		{
+			s_graphicsSettings.shadowQuality = parseInt(value);
+		}
+		else if (strcasecmp("bloomEnabled", key) == 0)
+		{
+			s_graphicsSettings.bloomEnabled = parseBool(value);
+		}
+		else if (strcasecmp("bloomStrength", key) == 0)
+		{
+			s_graphicsSettings.bloomStrength = parseFloat(value);
+		}
+		else if (strcasecmp("bloomBlurSize", key) == 0)
+		{
+			s_graphicsSettings.bloomBlurSize = parseFloat(value);
+		}
 		else if (strcasecmp("renderer", key) == 0)
 		{
 			s_graphicsSettings.rendererIndex = parseInt(value);
+		}
+		else if (strcasecmp("colorMode", key) == 0)
+		{
+			s_graphicsSettings.colorMode = parseInt(value);
 		}
 		else if (strcasecmp("skyMode", key) == 0)
 		{

@@ -623,7 +623,7 @@ namespace TFE_FrontEndUI
 				bool active = true;
 				ImGui::PushFont(s_dialogFont);
 				ImGui::SetNextWindowPos(ImVec2(max(0.0f, (displayInfo.width - 1280.0f * s_uiScale) * 0.5f), max(0.0f, (displayInfo.height - 300.0f * s_uiScale) * 0.5f)));
-				ImGui::SetNextWindowSize(ImVec2(1280.0f * s_uiScale, 300.0f * s_uiScale));
+				ImGui::SetNextWindowSize(ImVec2(1280.0f * s_uiScale, 400.0f * s_uiScale));
 				ImGui::Begin("Select Default Settings", &active, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings);
 
 				ImGui::LabelText("##ConfigLabel", "Please select the appropriate defaults.");
@@ -638,7 +638,10 @@ namespace TFE_FrontEndUI
 				ImGui::Separator();
 				ImGui::PushFont(s_dialogFont);
 
-				ImGui::LabelText("##ConfigLabel", "Modern:  Play in high resolution, widescreen, and use modern controls.");
+				ImGui::LabelText("##ConfigLabel", "Modern:  Play in high resolution, widescreen, and use modern controls in");
+				ImGui::LabelText("##ConfigLabel", "         True Color.");
+				ImGui::LabelText("##ConfigLabel", "Retro:   Play in high resolution, widescreen, and use modern controls in");
+				ImGui::LabelText("##ConfigLabel", "         Interpolated 8-bit color.");
 				ImGui::LabelText("##ConfigLabel", "Vanilla: Play using the original resolution and controls.");
 				ImGui::Separator();
 
@@ -660,6 +663,48 @@ namespace TFE_FrontEndUI
 					graphicsSettings->widescreen = true;
 					graphicsSettings->gameResolution.x = displayInfo.width;
 					graphicsSettings->gameResolution.z = displayInfo.height;
+					graphicsSettings->bloomEnabled = true;
+					graphicsSettings->colorMode = COLORMODE_TRUE_COLOR;
+					graphicsSettings->texMagFilter = TMAG_LINEAR;
+					graphicsSettings->texMinFilter = TMIN_LINEAR;
+					graphicsSettings->bilinearSharpness = 1.0f;
+					graphicsSettings->dynamicLighting = true;
+					graphicsSettings->shadowQuality = 2;
+					// Reticle.
+					graphicsSettings->reticleEnable = true;
+					graphicsSettings->reticleIndex = 4;
+					graphicsSettings->reticleRed = 0.25f;
+					graphicsSettings->reticleGreen = 1.0f;
+					graphicsSettings->reticleBlue = 0.25f;
+					graphicsSettings->reticleOpacity = 1.0f;
+					graphicsSettings->reticleScale = 0.5f;
+
+					reticle_setShape(graphicsSettings->reticleIndex);
+					reticle_setScale(graphicsSettings->reticleScale);
+					reticle_setColor(&graphicsSettings->reticleRed);
+					// Now go to the menu.
+					TFE_Settings::writeToDisk();
+					inputMapping_serialize();
+					s_appState = APP_STATE_MENU;
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Retro"))
+				{
+					// Controls
+					s_inputConfig->mouseMode = MMODE_LOOK;
+					// Game
+					gameSettings->df_showSecretFoundMsg = true;
+					gameSettings->df_bobaFettFacePlayer = true;
+					// Graphics
+					graphicsSettings->rendererIndex = RENDERER_HARDWARE;
+					graphicsSettings->skyMode = SKYMODE_CYLINDER;
+					graphicsSettings->widescreen = true;
+					graphicsSettings->gameResolution.x = displayInfo.width;
+					graphicsSettings->gameResolution.z = displayInfo.height;
+					graphicsSettings->bloomEnabled = true;
+					graphicsSettings->colorMode = COLORMODE_8BIT_INTERP;
+					graphicsSettings->dynamicLighting = true;
+					graphicsSettings->shadowQuality = 1;
 					// Reticle.
 					graphicsSettings->reticleEnable = true;
 					graphicsSettings->reticleIndex = 4;
@@ -690,6 +735,8 @@ namespace TFE_FrontEndUI
 					graphicsSettings->widescreen = false;
 					graphicsSettings->gameResolution.x = 320;
 					graphicsSettings->gameResolution.z = 200;
+					graphicsSettings->bloomEnabled = false;
+					graphicsSettings->dynamicLighting = false;
 					// Reticle.
 					graphicsSettings->reticleEnable = false;
 					// Now go to the menu.

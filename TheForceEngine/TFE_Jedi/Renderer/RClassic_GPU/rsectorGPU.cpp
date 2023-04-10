@@ -317,6 +317,7 @@ namespace TFE_Jedi
 	bool TFE_Sectors_GPU::updateShaderSettings(bool initialize)
 	{
 		TFE_Settings_Graphics* graphics = TFE_Settings::getGraphicsSettings();
+		// First check to see if an update is needed. Generally this happens when initializing or if settings are changed at runtime.
 		bool needsUpdate = initialize ||
 			s_shaderSettings.skyMode != SkyMode(graphics->skyMode) ||
 			s_shaderSettings.ditheredBilinear != graphics->ditheredBilinear ||
@@ -325,14 +326,17 @@ namespace TFE_Jedi
 			s_shaderSettings.colormapInterp != (graphics->colorMode == COLORMODE_8BIT_INTERP);
 		if (!needsUpdate) { return true; }
 
+		// Then update the settings.
 		s_shaderSettings.skyMode = SkyMode(graphics->skyMode);
 		s_shaderSettings.ditheredBilinear = graphics->ditheredBilinear;
 		s_shaderSettings.dynamicLighting  = graphics->dynamicLighting;
 		s_shaderSettings.trueColor = (graphics->colorMode == COLORMODE_TRUE_COLOR);
 		s_shaderSettings.colormapInterp = (graphics->colorMode == COLORMODE_8BIT_INTERP);
 
+		// Update the color map based on interpolation or true color settings.
 		updateColorMap();
 
+		// Update the shaders.
 		bool result = updateShaders();
 		assert(result);
 		return result;
