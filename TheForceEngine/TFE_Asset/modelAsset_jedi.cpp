@@ -23,6 +23,10 @@ extern MemoryRegion* s_gameRegion;
 extern MemoryRegion* s_levelRegion;
 static MemoryRegion* s_memRegion;
 
+// Set to 1 to assert on vanilla overflow errors when normalizing polygon normals.
+// Set to 0 to allow the normal overflow fix that take effect (this should be the RELEASE setting).
+#define SHOW_VANILLA_NORMAL_ERRORS 0
+
 #define model_alloc(size) TFE_Memory::region_alloc(s_memRegion, size)
 #define model_free(ptr) TFE_Memory::region_free(s_memRegion, ptr)
 
@@ -37,6 +41,7 @@ namespace TFE_Jedi_Object3d
 		const fixed16_16 dz = vIn->z - v0->z;
 		fixed16_16 len;
 
+	#if SHOW_VANILLA_NORMAL_ERRORS == 0
 		if (TFE_Settings::getGraphicsSettings()->fix3doNormalOverflow)
 		{
 			const f32 xf = fixed16ToFloat(dx);
@@ -46,10 +51,14 @@ namespace TFE_Jedi_Object3d
 			len = floatToFixed16(lenf);
 		}
 		else
+	#endif
 		{
 			const fixed16_16 xSq = mul16(dx, dx);
 			const fixed16_16 ySq = mul16(dy, dy);
 			const fixed16_16 zSq = mul16(dz, dz);
+		#if SHOW_VANILLA_NORMAL_ERRORS == 1
+			assert((::abs(dx) < ONE_16 || xSq != 0) && (::abs(dy) < ONE_16 || ySq != 0) && (::abs(dz) < ONE_16 || zSq != 0));
+		#endif
 			len = fixedSqrt(xSq + ySq + zSq);
 		}
 

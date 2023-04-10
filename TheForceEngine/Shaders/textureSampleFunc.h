@@ -39,6 +39,21 @@ ivec2 wrapCoordFlat(ivec2 uv, ivec2 edge)
 	return uv;
 }
 
+// Approximate a bilinear filter using a screenspace dither
+// This technique was first seen in Unreal 1 (as far as I know).
+vec2 bilinearDither(vec2 uv)
+{
+	vec2 bilinearOffset[4] = vec2[4](
+		vec2(0.25, 0.00), vec2(0.50, 0.75),
+		vec2(0.75, 0.50), vec2(0.00, 0.25));
+
+	int ix = int(gl_FragCoord.x) & 1;
+	int iy = int(gl_FragCoord.y) & 1;
+	uv += bilinearOffset[iy * 2 + ix];
+
+	return uv;
+}
+
 float sampleTexture(int id, vec2 uv)
 {
 	ivec4 sampleData = texelFetch(TextureTable, id);

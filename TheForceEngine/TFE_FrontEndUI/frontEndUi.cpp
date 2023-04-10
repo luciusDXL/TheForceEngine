@@ -155,6 +155,26 @@ namespace TFE_FrontEndUI
 		"GPU / OpenGL",
 	};
 
+	static const char* c_colorMode[] =
+	{
+		"8-bit (Classic)",		// COLORMODE_8BIT
+		"8-bit Interpolated",   // COLORMODE_8BIT_INTERP
+		"True Color",           // COLORMODE_TRUE_COLOR
+	};
+
+	static const char* c_textureMagFilter[] =
+	{
+		"None",		// TMAG_NONE
+		"Linear",   // TMAG_LINEAR
+	};
+
+	static const char* c_textureMinFilter[] =
+	{
+		"None",		// TMIN_NONE
+		"Point",    // TMIN_POINT
+		"Linear",   // TMIN_LINEAR
+	};
+	
 	typedef void(*MenuItemSelected)();
 
 	static s32 s_resIndex = 0;
@@ -2139,8 +2159,9 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Rendering");
 		ImGui::PopFont();
 
-		// 3DO normal fix
+		// 3DO normal fix and limits.
 		ImGui::Checkbox("3DO Normal Fix (Restart Required)", &graphics->fix3doNormalOverflow);
+		ImGui::Checkbox("3DO Ignore Limits (Restart Required)", &graphics->ignore3doLimits);
 
 		// Frame Rate Limiter.
 		s32 frameRateLimit = graphics->frameRateLimit;
@@ -2187,6 +2208,7 @@ namespace TFE_FrontEndUI
 
 			// Hardware
 
+			// Common
 			// Pitch Limit
 			s32 s_pitchLimit = game->df_pitchLimit;
 			ImGui::LabelText("##ConfigLabel", "Pitch Limit"); ImGui::SameLine(comboOffset);
@@ -2203,6 +2225,42 @@ namespace TFE_FrontEndUI
 			if (ImGui::Combo("##SkyMode", &skyMode, c_tfeSkyModeStrings, IM_ARRAYSIZE(c_tfeSkyModeStrings)))
 			{
 				graphics->skyMode = SkyMode(skyMode);
+			}
+
+			// Dynamic lighting.
+			ImGui::Checkbox("Dynamic Lighting", &graphics->dynamicLighting);
+			if (graphics->dynamicLighting)
+			{
+				ImGui::SetNextItemWidth(196 * s_uiScale);
+				ImGui::SliderInt("Shadow Quality", &graphics->shadowQuality, 0, 3);
+			}
+
+			ImGui::Separator();
+
+			// Color Mode
+			ImGui::LabelText("##ConfigLabel", "Color Mode"); ImGui::SameLine(90 * s_uiScale);
+			ImGui::SetNextItemWidth(196 * s_uiScale);
+			ImGui::Combo("##ColorMode", &graphics->colorMode, c_colorMode, IM_ARRAYSIZE(c_colorMode));
+
+			if (graphics->colorMode == COLORMODE_8BIT || graphics->colorMode == COLORMODE_8BIT_INTERP)
+			{
+				ImGui::Checkbox("Dithered Bilinear", &graphics->ditheredBilinear);
+			}
+			else // COLORMODE_TRUE_COLOR
+			{
+				ImGui::LabelText("##ConfigLabel", "Texture Mag Filter"); ImGui::SameLine(comboOffset);
+				ImGui::SetNextItemWidth(196 * s_uiScale);
+				ImGui::Combo("##TexMagFilter", &graphics->texMagFilter, c_textureMagFilter, IM_ARRAYSIZE(c_textureMagFilter));
+
+				ImGui::LabelText("##ConfigLabel", "Texture Min Filter"); ImGui::SameLine(comboOffset);
+				ImGui::SetNextItemWidth(196 * s_uiScale);
+				ImGui::Combo("##TexMinFilter", &graphics->texMinFilter, c_textureMinFilter, IM_ARRAYSIZE(c_textureMinFilter));
+
+				if (graphics->texMagFilter == TMAG_LINEAR)
+				{
+					ImGui::SetNextItemWidth(196 * s_uiScale);
+					ImGui::SliderFloat("Filter Sharpness", &graphics->bilinearSharpness, 0.0f, 1.0f);
+				}
 			}
 		}
 		ImGui::Separator();
@@ -2277,18 +2335,13 @@ namespace TFE_FrontEndUI
 		ImGui::LabelText("##ConfigLabel", "Post-FX");
 		ImGui::PopFont();
 
-		static bool s_bloom = false;
-		static f32  s_bloomSoftness = 0.5f;
-		static f32  s_bloomIntensity = 0.5f;
-
-		//ImGui::Checkbox("Bloom", &s_bloom);
-		ImGui::TextColored({ 1.0f, 1.0f, 1.0f, 0.33f }, "Bloom [TODO]");
-		if (s_bloom)
+		ImGui::Checkbox("Bloom", &graphics->bloomEnabled);
+		if (graphics->bloomEnabled)
 		{
 			ImGui::SetNextItemWidth(196*s_uiScale);
-			ImGui::SliderFloat("Softness", &s_bloomSoftness, 0.0f, 1.0f);
+			ImGui::SliderFloat("Strength", &graphics->bloomStrength, 0.0f, 1.0f);
 			ImGui::SetNextItemWidth(196*s_uiScale);
-			ImGui::SliderFloat("Intensity", &s_bloomIntensity, 0.0f, 1.0f);
+			ImGui::SliderFloat("Blur Size", &graphics->bloomBlurSize, 0.0f, 1.0f);
 		}
 	}
 

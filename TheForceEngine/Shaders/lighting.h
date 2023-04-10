@@ -46,16 +46,20 @@ vec3 linearToColor(vec3 inLinear)
 	return pow(inLinear, vec3(1.0/2.2));
 }
 
-void getLightData(int index, out vec3 pos, out vec3 c0, out vec3 c1, out vec2 radius, out vec2 decayAmp, out int id)
+void getLightData(int index, out vec3 pos, out vec3 c0, out vec3 c1, out vec2 radius, out vec2 decayAmp, out int shadowId)
 {
-	vec4 posSample = texelFetch(lightPosition, index);
-	pos = posSample.xyz;
-	id = int(posSample.w);
+	// Fetch memory.
+	vec4  posSample  = texelFetch(lightPosition, index);
 	uvec4 packedData = texelFetch(lightData, index);
 
+	// Unpack Position and Shadow ID.
+	pos = posSample.xyz;
+	shadowId = int(posSample.w);
+
+	// Unpack light data - Colors, Radii, Decay, Amplitude.
 	c0 = unpackColor(packedData.x);
 	c1 = unpackColor(packedData.y);
-	radius = unpackFixed10_6(packedData.z);
+	radius   = unpackFixed10_6(packedData.z);
 	decayAmp = unpackFixed4_12(packedData.w);
 }
 

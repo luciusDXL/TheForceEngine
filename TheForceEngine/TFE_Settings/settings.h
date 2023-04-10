@@ -20,6 +20,27 @@ enum SkyMode
 	SKYMODE_COUNT
 };
 
+enum ColorMode
+{
+	COLORMODE_8BIT = 0,
+	COLORMODE_8BIT_INTERP,
+	COLORMODE_TRUE_COLOR,
+	COLORMODE_COUNT
+};
+
+enum TextureMagFilter
+{
+	TMAG_NONE = 0,
+	TMAG_LINEAR,
+};
+
+enum TextureMinFilter
+{
+	TMIN_NONE = 0,
+	TMIN_POINT,
+	TMIN_LINEAR,
+};
+
 static const char* c_tfeSkyModeStrings[] =
 {
 	"Vanilla",		// SKYMODE_VANILLA
@@ -49,12 +70,26 @@ struct TFE_Settings_Graphics
 	bool  vsync = true;
 	bool  showFps = false;
 	bool  fix3doNormalOverflow = true;
+	bool  ignore3doLimits = true;
 	s32   frameRateLimit = 0;
 	f32   brightness = 1.0f;
 	f32   contrast = 1.0f;
 	f32   saturation = 1.0f;
 	f32   gamma = 1.0f;
 	s32   rendererIndex = 0;
+	s32   colorMode = COLORMODE_8BIT;
+
+	// 8-bit options.
+	bool ditheredBilinear = false;
+
+	// True-color options.
+	s32 texMagFilter = TMAG_NONE;
+	s32 texMinFilter = TMIN_NONE;
+	f32 bilinearSharpness = 0.0f;
+
+	// Dynamic Light options.
+	bool dynamicLighting = false;
+	s32  shadowQuality = 0;			// Number of layers - 1.
 
 	// Reticle
 	bool reticleEnable  = false;
@@ -64,6 +99,11 @@ struct TFE_Settings_Graphics
 	f32  reticleBlue    = 0.25f;
 	f32  reticleOpacity = 1.00f;
 	f32  reticleScale   = 1.0f;
+
+	// Bloom options
+	bool bloomEnabled = false;
+	f32  bloomStrength = 0.5f;
+	f32  bloomBlurSize = 0.5f;
 
 	// Sky (Ignored when using the software renderer)
 	s32  skyMode = SKYMODE_CYLINDER;

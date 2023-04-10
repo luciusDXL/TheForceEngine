@@ -1,52 +1,27 @@
+// Adjust the output 
 vec2 bilinearSharpness(vec2 uv, float sharpness)
 {
-	if (sharpness == 0.0)
-	{
-		return uv;
-	}
+	// Sharpness == 0 is the same as standard bilinear.
+	if (sharpness == 0.0) { return uv; }
 
-	float ex = max(1.0, (sharpness - 0.5) * 32.0);
-	vec2 uvNew = pow(uv*uv*(3.0 - 2.0*uv), vec2(ex));
-	uv = mix(uv, uvNew, min(1.0, sharpness*2.0));
-
-	return uv;
-}
-
-vec2 bilinearSharpnessAuto(vec2 uv, vec2 uvBase, float sharpness)
-{
-	if (sharpness == 0.0)
-	{
-		return uv;
-	}
-
+	// Sharpness == 1 adjust the filter width based on the per-pixel texel size in order
+	// to approximate "antialised point-sampling".
 	if (sharpness == 1.0)
 	{
-		vec2 w = fwidth(uvBase);
+		vec2 w = fwidth(uv);
 		float scale = 0.5;
 		float mag = clamp(-log2(dot(w, w))*scale, 0.0, 1.0);
 		sharpness = mag * 0.5 + 0.5;
 	}
 
+	// Adjust the sub-texel sample position by mapping the linear change to an exponentiated S-Curve.
 	float ex = max(1.0, (sharpness - 0.5) * 32.0);
-	vec2 uvNew = pow(uv*uv*(3.0 - 2.0*uv), vec2(ex));
-	uv = mix(uv, uvNew, min(1.0, sharpness*2.0));
+	vec2 st = fract(uv);
+	vec2 stAdj = pow(uv*uv*(3.0 - 2.0*st), vec2(ex));
+	st = mix(st, stAdj, min(1.0, sharpness*2.0));
 
-	return uv;
-}
-
-vec2 bilinearDither(vec2 uv)
-{
-	// Hack: fake bilinear...
-	vec2 bilinearOffset[4] = vec2[4](
-		vec2(0.25, 0.00), vec2(0.50, 0.75),
-		vec2(0.75, 0.50), vec2(0.00, 0.25));
-
-	vec2 st = bilinearSharpness(fract(uv), 0.0);
-	int ix = int(gl_FragCoord.x) & 1;
-	int iy = int(gl_FragCoord.y) & 1;
-	uv = floor(uv) + st + bilinearOffset[iy * 2 + ix];
-
-	return uv;
+	// The final texture coordinate is the integer position + adjusted sub-texel position.
+	return floor(uv) + st;
 }
 
 // t is between 0, 1; sample is between x1 and x2.
