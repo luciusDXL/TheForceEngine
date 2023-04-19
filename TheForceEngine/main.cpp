@@ -56,6 +56,9 @@
 #define INSTALL_CRASH_HANDLER 0
 #endif
 
+// TODO: Fix performance issues and re-enable with proper re-binding support.
+#define ENABLE_GIF_RECORDING 0
+
 #pragma comment(lib, "SDL2main.lib")
 using namespace TFE_Input;
 
@@ -160,6 +163,7 @@ void handleEvent(SDL_Event& Event)
 
 					TFE_RenderBackend::queueScreenshot(screenshotPath);
 				}
+			#if ENABLE_GIF_RECORDING
 				else if (code == KeyboardCode::KEY_F2 && altHeld)
 				{
 					static u64 _gifIndex = 0;
@@ -183,6 +187,7 @@ void handleEvent(SDL_Event& Event)
 						_recording = false;
 					}
 				}
+			#endif		
 			}
 		} break;
 		case SDL_TEXTINPUT:
