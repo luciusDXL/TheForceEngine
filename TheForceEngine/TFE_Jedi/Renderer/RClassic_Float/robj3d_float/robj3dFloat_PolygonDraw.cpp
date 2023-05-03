@@ -157,7 +157,7 @@ namespace RClassic_Float
 		lightLevel += floorFloat(lighting * fixed16ToFloat(s_sectorAmbientFraction));
 		if (lightLevel >= 31) { return 31; }
 
-		if (s_cameraLightSource)
+		if (s_worldAmbient < 31 || s_cameraLightSource)
 		{
 			const s32 depthScaled = (s32)min(z * 4.0f, 127.0f);
 			const s32 cameraSource = MAX_LIGHT_LEVEL - (s_lightSourceRamp[depthScaled] + s_worldAmbient);
