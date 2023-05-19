@@ -268,7 +268,6 @@ namespace TFE_DarkForces
 	void mouseBotLocalMsgFunc(MessageType msg)
 	{
 		MouseBot* mouseBot = (MouseBot*)task_getUserData();
-
 		if (msg == MSG_DAMAGE)
 		{
 			mousebot_handleDamage(msg, mouseBot);
@@ -276,6 +275,13 @@ namespace TFE_DarkForces
 		else if (msg == MSG_EXPLOSION)
 		{
 			mousebot_handleExplosion(msg, mouseBot);
+		}
+
+		// Wake up the mousebot if it has been hit.
+		if (mouseBot->actor.state == MBSTATE_SLEEPING && (msg == MSG_DAMAGE || msg == MSG_EXPLOSION))
+		{
+			mouseBot->actor.state = MBSTATE_ACTIVE;
+			task_makeActive(mouseBot->actor.actorTask);
 		}
 	}
 
@@ -293,25 +299,42 @@ namespace TFE_DarkForces
 
 		while (local(mouseBot)->actor.alive)
 		{
-			if (local(actor)->state == MBSTATE_ACTIVE)
-			{
-				s_curMouseBot = local(mouseBot);
-				task_callTaskFunc(mousebot_handleActiveState);
-				continue;
-			}
-			else if (local(actor)->state == MBSTATE_DYING)
+			task_setMessage(MSG_RUN_TASK);
+			if (local(actor)->state == MBSTATE_DYING)
 			{
 				s_curMouseBot = local(mouseBot);
 				task_callTaskFunc(mousebot_die);
-				continue;
 			}
-
-			local(obj) = local(mouseBot)->logic.obj;
-			while (local(actor)->state == MBSTATE_SLEEPING)
+			else if (local(actor)->state == MBSTATE_ACTIVE)
 			{
-				entity_yield(145);
-				if (msg == MSG_RUN_TASK)
+				s_curMouseBot = local(mouseBot);
+				task_callTaskFunc(mousebot_handleActiveState);
+			}
+			else
+			{
+				local(obj) = local(mouseBot)->logic.obj;
+				while (local(actor)->state == MBSTATE_SLEEPING)
 				{
+					do
+					{
+						entity_yield(145);
+						if (msg == MSG_DAMAGE)
+						{
+							msg = mousebot_handleExplosion(msg, local(mouseBot));
+						}
+						else if (msg == MSG_EXPLOSION)
+						{
+							msg = mousebot_handleDamage(msg, local(mouseBot));
+						}
+
+						if (msg == MSG_DAMAGE || msg == MSG_EXPLOSION)
+						{
+							local(actor)->state = MBSTATE_ACTIVE;
+							task_makeActive(local(actor)->actorTask);
+							task_yield(TASK_NO_DELAY);
+						}
+					} while (msg != MSG_RUN_TASK);
+
 					// Wakeup if the player is visible.
 					if (local(actor)->state == MBSTATE_SLEEPING && actor_isObjectVisible(local(obj), s_playerObject, 0x4000/*full 360 degree fov*/, FIXED(25)/*25 units "close distance"*/))
 					{
