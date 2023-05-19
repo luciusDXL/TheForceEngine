@@ -558,7 +558,8 @@ namespace TFE_FrontEndUI
 				if (txtIndex >= 0 && zipArchive.openFile(txtIndex))
 				{
 					textLen = zipArchive.getFileLength();
-					s_fileBuffer.resize(textLen);
+					s_fileBuffer.resize(textLen + 1);
+					s_fileBuffer[0] = 0;
 					zipArchive.readFile(s_fileBuffer.data(), textLen);
 					zipArchive.closeFile();
 				}
@@ -575,11 +576,12 @@ namespace TFE_FrontEndUI
 				return false;
 			}
 			textLen = textFile.getSize();
-			s_fileBuffer.resize(textLen);
+			s_fileBuffer.resize(textLen + 1);
+			s_fileBuffer[0] = 0;
 			textFile.readBuffer(s_fileBuffer.data(), (u32)textLen);
 			textFile.close();
 		}
-		if (!textLen)
+		if (!textLen || s_fileBuffer[0] == 0)
 		{
 			return false;
 		}
@@ -954,11 +956,18 @@ namespace TFE_FrontEndUI
 					size_t bufferLen = zipArchive.getFileLength(gobIndex);
 					u8* buffer = (u8*)malloc(bufferLen);
 					zipArchive.openFile(gobIndex);
-					zipArchive.readFile(buffer, bufferLen);
+					const size_t lengthRead = zipArchive.readFile(buffer, bufferLen);
 					zipArchive.closeFile();
 
-					gobMemArchive.open(buffer, bufferLen);
-					archiveMod = &gobMemArchive;
+					if (lengthRead > 0)
+					{
+						gobMemArchive.open(buffer, bufferLen);
+						archiveMod = &gobMemArchive;
+					}
+					else
+					{
+						TFE_System::logWrite(LOG_ERROR, "ModLoader", "Cannot open zip: '%s'", modPath);
+					}
 				}
 
 				zipArchive.close();
