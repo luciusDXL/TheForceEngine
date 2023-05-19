@@ -759,6 +759,7 @@ namespace TFE_FrontEndUI
 				mod.gobFiles = gobFiles;
 				mod.textFile = txtFiles.empty() ? "" : txtFiles[0];
 				mod.imageFile = imgFiles.empty() ? "" : imgFiles[0];
+				mod.text = "";
 
 				size_t fullDirLen = strlen(subDir);
 				for (size_t i = 0; i < fullDirLen; i++)
@@ -837,6 +838,7 @@ namespace TFE_FrontEndUI
 					s_mods.push_back({});
 					ModData& mod = s_mods.back();
 					mod.gobFiles.push_back(zipName);
+					mod.text = "";
 
 					char name[TFE_MAX_PATH];
 					if (!parseNameFromText(mod.gobFiles[0].c_str(), modPath, name, &mod.text))
