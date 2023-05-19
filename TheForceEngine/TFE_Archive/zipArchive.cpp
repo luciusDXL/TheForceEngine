@@ -188,9 +188,9 @@ size_t ZipArchive::getFileLength()
 	return m_entries[m_curFile].length;
 }
 
-size_t ZipArchive::readFile(void *data, size_t size)
+size_t ZipArchive::readFile(void* data, size_t size)
 {
-	if (m_curFile == INVALID_FILE) { return false; }
+	if (m_curFile == INVALID_FILE) { return 0u; }
 	if (size == 0) { size = m_entries[m_curFile].length; }
 
 	const size_t sizeToRead = std::min(size, m_entries[m_curFile].length);
@@ -199,7 +199,12 @@ size_t ZipArchive::readFile(void *data, size_t size)
 	if (m_fileOffset == 0 && sizeToRead == m_entries[m_curFile].length)
 	{
 		m_fileOffset += (s32)sizeToRead;
-		return zip_entry_noallocread((struct zip_t*)m_fileHandle, data, sizeToRead);
+		s64 actualSizeRead = zip_entry_noallocread((struct zip_t*)m_fileHandle, data, sizeToRead);
+		if (actualSizeRead <= 0)
+		{
+			return 0u;
+		}
+		return size_t(actualSizeRead);
 	}
 
 	// Otherwise go through the slower path - a one time decompression and read, followed
@@ -208,9 +213,9 @@ size_t ZipArchive::readFile(void *data, size_t size)
 	{
 		// Read the whole entry into temporary memory.
 		assert(m_tempBufferSize >= m_entries[m_curFile].length);
-		if (!zip_entry_noallocread((struct zip_t*)m_fileHandle, m_tempBuffer, m_entries[m_curFile].length))
+		if (zip_entry_noallocread((struct zip_t*)m_fileHandle, m_tempBuffer, m_entries[m_curFile].length) <= 0)
 		{
-			return false;
+			return 0u;
 		}
 		m_entryRead = true;
 	}
