@@ -159,7 +159,7 @@ namespace TFE_DarkForces
 				{
 					*pickup->item = JTRUE;
 					hud_sendTextMessage(pickup->msgId[0]);
-					s_playerInfo.selectedWeapon = pickup->index;
+					s_playerInfo.newWeapon = pickup->index;
 				}
 			}
 			else
@@ -1126,7 +1126,7 @@ namespace TFE_DarkForces
 	void pickupInventory()
 	{
 		// Get the size of the PlayerInfo structure up to but not including s_playerInfo.stateUnknown.
-		size_t size = (size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo;
+		size_t size = (size_t)&s_playerInfo.pileSaveMarker - (size_t)&s_playerInfo;
 		if (s_playerInvSaved)
 		{
 			// Copy the saved player info and add it to the current player info.
@@ -1148,7 +1148,7 @@ namespace TFE_DarkForces
 				}
 				else
 				{
-					s_playerInfo.index2 = s_playerInfo.maxWeapon;
+					s_playerInfo.saveWeapon = s_playerInfo.maxWeapon;
 				}
 			}
 
