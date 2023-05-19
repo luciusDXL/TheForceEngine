@@ -18,6 +18,9 @@ struct Logic;
 
 namespace TFE_DarkForces
 {
+	// TODO: Factor out the PlayerItems into a struct
+	// so that it can be directly allocated and copied when saving the inventory for
+	// Jabba's Ship.
 	struct PlayerInfo
 	{
 		// Items
@@ -61,15 +64,15 @@ namespace TFE_DarkForces
 		s32 ammoMine;
 		s32 ammoMissile;
 		//   Health & Shields
-		s32 stateUnknown;
+		s32 pileSaveMarker;
 		s32 shields;
 		s32 health;
 		s32 healthFract;
 		//   Weapon
-		s32 selectedWeapon;
+		s32 newWeapon;
 		s32 curWeapon;
 		s32 maxWeapon;
-		s32 index2;
+		s32 saveWeapon;
 	};
 
 	extern PlayerInfo s_playerInfo;

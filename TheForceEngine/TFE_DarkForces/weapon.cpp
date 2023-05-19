@@ -507,7 +507,7 @@ namespace TFE_DarkForces
 		}
 		else
 		{
-			s_playerInfo.index2 = nextWeapon;
+			s_playerInfo.saveWeapon = nextWeapon;
 		}
 	}
 

@@ -360,7 +360,7 @@ namespace TFE_DarkForces
 		s32 curWeapon = inv[30];
 		weapon_setNext(curWeapon);
 		s_playerInfo.maxWeapon = max(curWeapon, s_playerInfo.maxWeapon);
-		s_playerInfo.selectedWeapon = -1;
+		s_playerInfo.newWeapon = -1;
 
 		// Life Count.
 		s_lifeCount = inv[31];
@@ -544,7 +544,7 @@ namespace TFE_DarkForces
 		if (!strcasecmp(levelName, "jabship"))
 		{
 			u8* src  = (u8*)&s_playerInfo;
-			size_t size = (size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo;
+			size_t size = (size_t)&s_playerInfo.pileSaveMarker - (size_t)&s_playerInfo;
 			assert(size == 140);
 			s_playerInvSaved = nullptr;	// This should already be null, but...
 			if (!s_playerInvSaved)
@@ -2203,10 +2203,7 @@ namespace TFE_DarkForces
 				}
 
 				s_shieldDamageFx += (shieldDmg << 2);
-				if (s_shieldDamageFx > FIXED(17))
-				{
-					s_shieldDamageFx = FIXED(17);
-				}
+				s_shieldDamageFx = min(FIXED(17), s_shieldDamageFx);
 			}
 		}
 		applyDmg = (s_invincibility == -2) ? 0 : 1;
@@ -2239,13 +2236,13 @@ namespace TFE_DarkForces
 					s_nextPainSndTick = s_curTick + 72;	// half a second.
 				}
 				health = max(0, health);
-				s32 healthInt = floor16(health);
+				s32 healthInt  = floor16(health);
 				s32 healthFrac = fract16(health);
 				s_playerInfo.health = healthInt;
 				s_playerInfo.healthFract = healthFrac;
 			}
 			s_healthDamageFx += TFE_Jedi::abs(healthDmg) >> 1;
-			s_healthDamageFx = max(ONE_16, min(FIXED(17), s_healthDamageFx));
+			s_healthDamageFx = clamp(s_healthDamageFx, ONE_16, FIXED(17));
 		}
 	}
 
@@ -2448,59 +2445,59 @@ namespace TFE_DarkForces
 			// Weapon select.
 			if (inputMapping_getActionState(IADF_WEAPON_1) == STATE_PRESSED)
 			{
-				s_playerInfo.selectedWeapon = WPN_FIST;
+				s_playerInfo.newWeapon = WPN_FIST;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_2) == STATE_PRESSED && s_playerInfo.itemPistol)
 			{
-				s_playerInfo.selectedWeapon = WPN_PISTOL;
+				s_playerInfo.newWeapon = WPN_PISTOL;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_3) == STATE_PRESSED && s_playerInfo.itemRifle)
 			{
-				s_playerInfo.selectedWeapon = WPN_RIFLE;
+				s_playerInfo.newWeapon = WPN_RIFLE;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_4) == STATE_PRESSED)
 			{
-				s_playerInfo.selectedWeapon = WPN_THERMAL_DET;
+				s_playerInfo.newWeapon = WPN_THERMAL_DET;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_5) == STATE_PRESSED && s_playerInfo.itemAutogun)
 			{
-				s_playerInfo.selectedWeapon = WPN_REPEATER;
+				s_playerInfo.newWeapon = WPN_REPEATER;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_6) == STATE_PRESSED && s_playerInfo.itemFusion)
 			{
-				s_playerInfo.selectedWeapon = WPN_FUSION;
+				s_playerInfo.newWeapon = WPN_FUSION;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_7) == STATE_PRESSED)
 			{
-				s_playerInfo.selectedWeapon = WPN_MINE;
+				s_playerInfo.newWeapon = WPN_MINE;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_8) == STATE_PRESSED && s_playerInfo.itemMortar)
 			{
-				s_playerInfo.selectedWeapon = WPN_MORTAR;
+				s_playerInfo.newWeapon = WPN_MORTAR;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_9) == STATE_PRESSED && s_playerInfo.itemConcussion)
 			{
-				s_playerInfo.selectedWeapon = WPN_CONCUSSION;
+				s_playerInfo.newWeapon = WPN_CONCUSSION;
 			}
 			if (inputMapping_getActionState(IADF_WEAPON_10) == STATE_PRESSED && s_playerInfo.itemCannon)
 			{
-				s_playerInfo.selectedWeapon = WPN_CANNON;
+				s_playerInfo.newWeapon = WPN_CANNON;
 			}
 			if (inputMapping_getActionState(IADF_WPN_PREV) == STATE_PRESSED)
 			{
-				s_playerInfo.selectedWeapon = WPN_COUNT;
+				s_playerInfo.newWeapon = WPN_COUNT;
 			}
 
-			s32 selectedWpn = s_playerInfo.selectedWeapon;
-			if (selectedWpn != -1)
+			s32 newWeapon = s_playerInfo.newWeapon;
+			if (newWeapon != -1)
 			{
 				s32 curWeapon = s_playerInfo.curWeapon;
-				if (selectedWpn != curWeapon)
+				if (newWeapon != curWeapon)
 				{
 					if (s_playerWeaponTask)
 					{
 						// Change weapon
-						s_msgArg1 = selectedWpn < WPN_COUNT ? selectedWpn : -1;
+						s_msgArg1 = newWeapon < WPN_COUNT ? newWeapon : -1;
 						task_runAndReturn(s_playerWeaponTask, MSG_SWITCH_WPN);
 
 						if (s_playerInfo.curWeapon > s_playerInfo.maxWeapon)
@@ -2510,10 +2507,10 @@ namespace TFE_DarkForces
 					}
 					else
 					{
-						s_playerInfo.index2 = selectedWpn;
+						s_playerInfo.saveWeapon = newWeapon;
 					}
 				}
-				s_playerInfo.selectedWeapon = -1;
+				s_playerInfo.newWeapon = -1;
 			}
 		}
 	}
@@ -2831,7 +2828,7 @@ namespace TFE_DarkForces
 		s32 invSavedSize = 0;
 		if (serialization_getMode() == SMODE_WRITE && s_playerInvSaved)
 		{
-			invSavedSize = s32((size_t)&s_playerInfo.stateUnknown - (size_t)&s_playerInfo);
+			invSavedSize = s32((size_t)&s_playerInfo.pileSaveMarker - (size_t)&s_playerInfo);
 			assert(invSavedSize == 140);
 		}
 		else if (serialization_getMode() == SMODE_READ)
