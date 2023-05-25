@@ -26,7 +26,7 @@ namespace TFE_DarkForces
 		"TESTBASE",
 		"GROMAS",
 		"DTENTION",
-		"RAMSHAD",
+		"RAMSHED",
 		"ROBOTICS",
 		"NARSHADA",
 		"JABSHIP",
