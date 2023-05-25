@@ -169,7 +169,7 @@ namespace TFE_DarkForces
 	CHEAT_CMD(LATESTBASE);
 	CHEAT_CMD(LAGROMAS);
 	CHEAT_CMD(LADTENTION);
-	CHEAT_CMD(LARAMSHAD);
+	CHEAT_CMD(LARAMSHED);
 	CHEAT_CMD(LAROBOTICS);
 	CHEAT_CMD(LANARSHADA);
 	CHEAT_CMD(LAJABSHIP);
@@ -313,7 +313,7 @@ namespace TFE_DarkForces
 			console_LATESTBASE, // CHEAT_LATESTBASE,
 			console_LAGROMAS,	// CHEAT_LAGROMAS,
 			console_LADTENTION, // CHEAT_LADTENTION,
-			console_LARAMSHAD,	// CHEAT_LARAMSHAD,
+			console_LARAMSHED,	// CHEAT_LARAMSHED,
 			console_LAROBOTICS, // CHEAT_LAROBOTICS,
 			console_LANARSHADA, // CHEAT_LANARSHADA,
 			console_LAJABSHIP,	// CHEAT_LAJABSHIP,
@@ -1045,7 +1045,7 @@ namespace TFE_DarkForces
 			{
 				cheat_gotoLevel(5);
 			} break;
-			case CHEAT_LARAMSHAD:
+			case CHEAT_LARAMSHED:
 			{
 				cheat_gotoLevel(6);
 			} break;
