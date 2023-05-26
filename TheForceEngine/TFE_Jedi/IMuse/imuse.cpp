@@ -34,10 +34,7 @@ namespace TFE_Jedi
 		ImSound* next;
 		ImSoundId id;
 		char name[10];
-		s16 u16;
-		s32 u18;
-		s32 u1c;
-		s32 u20;
+		// 14-bytes unused by Dark Forces/iMuse in struct, removed in TFE.
 		s32 refCount;
 	};
 
