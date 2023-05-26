@@ -12,6 +12,7 @@
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_System/profiler.h>
 
 namespace TFE_DarkForces
 {
@@ -22,6 +23,12 @@ namespace TFE_DarkForces
 	{
 		PASS_ALWAYS_WALK = 0,
 		PASS_DEFAULT = 0xffffffff,
+	};
+
+	enum CollisionAjustments
+	{
+		COL_BOT_ADJ_THRESHOLD = 800,	// The delta time threshold at which point the collision bottom should be adjusted.
+		COL_BOT_ADJ = 8192,				// The collision bottom is adjusted by 1/8 DFU.
 	};
 
 	///////////////////////////////////////////
@@ -435,7 +442,7 @@ namespace TFE_DarkForces
 		s_curPlayerLogic->move.x =  mul16(overlap, dirZ) + mul16(proj, dirX);
 		s_curPlayerLogic->move.z = -mul16(overlap, dirX) + mul16(proj, dirZ);
 	}
-
+		
 	// Returns JTRUE in the case of a collision, otherwise returns JFALSE.
 	JBool handlePlayerCollision(PlayerLogic* playerLogic, fixed16_16 yVel)
 	{
@@ -452,7 +459,11 @@ namespace TFE_DarkForces
 		s_colSrcPosY = obj->posWS.y;
 
 		// Handles maximum stair height.
-		s_colBottom = obj->posWS.y - playerLogic->stepHeight;
+		// This has to be adjusted to handle differences between odd and even tick counts
+		// due to small differences in how high the player can reach before gravity kicks in.
+		// Note anything much over 60fps no longer needs the delta.
+		const fixed16_16 tickAdj = s_deltaTime > COL_BOT_ADJ_THRESHOLD ? COL_BOT_ADJ : 0;
+		s_colBottom = obj->posWS.y - playerLogic->stepHeight - tickAdj;
 
 		s_colSrcPosZ = obj->posWS.z;
 		s_colTop = obj->posWS.y - obj->worldHeight - ONE_16;
