@@ -36,7 +36,8 @@ enum iMuseConst
 	imPanMax       = 127,
 	imVolumeShift  = 7,    // Amount to shift when multiplying volumes.
 	imGetValue     = -1,   // Magic number to get values instead of set them.
-	imWildcard     = -1
+	imWildcard     = -1,
+	imOutDrumChannel = 9,
 };
 
 // Time in iMuse is stored like the following:

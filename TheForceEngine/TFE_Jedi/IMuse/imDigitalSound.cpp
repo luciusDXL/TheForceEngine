@@ -589,7 +589,7 @@ namespace TFE_Jedi
 		sound->priority = priority;
 		sound->volume = 128;
 		sound->baseVolume = ImGetGroupVolume(0);
-		sound->pan = 64;
+		sound->pan = imPanCenter;
 		sound->detune = 0;
 		sound->transpose = 0;
 		sound->detuneTrans = 0;
@@ -683,7 +683,7 @@ namespace TFE_Jedi
 		}
 		
 		s32 panTop = (pan >> 3) - 8;
-		if (pan > 64)
+		if (pan > imPanCenter)
 		{
 			panTop++;
 		}

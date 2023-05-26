@@ -130,7 +130,7 @@ namespace TFE_Jedi
 	
 	void ImHandleNoteOff(ImMidiChannel* midiChannel, s32 instrumentId);
 	void ImHandleNoteOn(ImMidiChannel* channel, s32 instrumentId, s32 velocity);
-	void ImMidi_Channel9_NoteOn(s32 priority, s32 partNoteReq, s32 volume, s32 instrumentId, s32 velocity);
+	void ImMidi_DrumOut_NoteOn(s32 priority, s32 partNoteReq, s32 volume, s32 instrumentId, s32 velocity);
 
 	// Initialization
 	s32 ImSetupFilesModule(iMuseInitData* initData);
@@ -196,9 +196,9 @@ namespace TFE_Jedi
 	static ImSound s_sounds[IM_MAX_SOUNDS];
 	static ImSound* s_soundList = nullptr;
 
-	static s32 s_ImCh9_priority;
-	static s32 s_ImCh9_partNoteReq;
-	static s32 s_ImCh9_volume;
+	static s32 s_ImDrumOutCh_priority;
+	static s32 s_ImDrumOutCh_partNoteReq;
+	static s32 s_ImDrumOutCh_volume;
 
 	// Midi files loaded.
 	static u32 s_midiFileCount = 0;
@@ -794,7 +794,7 @@ namespace TFE_Jedi
 			{
 				ImMidiCommand(data->player, c, MID_SUSTAIN_SWITCH, 0);
 				ImMidiCommand(data->player, c, MID_MODULATIONWHEEL_MSB, 0);
-				ImHandleChannelPitchBend(data->player, c, 0, 64);
+				ImHandleChannelPitchBend(data->player, c, 0, imPanCenter);
 			}
 			ImJumpSustain(data->player, sndData, &s_imSoundPrevState, &s_imSoundNextState);
 		}
@@ -2021,7 +2021,7 @@ namespace TFE_Jedi
 	void ImHandleChannelPitchBend(ImMidiPlayer* player, s32 channelIndex, s32 fractValue, s32 intValue)
 	{
 		ImMidiOutChannel* channel = &player->channels[channelIndex];
-		s32 pitchBend = ((intValue << 7) | fractValue) - (64 << 7);
+		s32 pitchBend = ((intValue << 7) | fractValue) - (imPanCenter << 7);
 		if (channel->outChannelCount)
 		{
 			channel->pan = (channel->outChannelCount * pitchBend) >> 5;	// range -256, 256
@@ -2194,7 +2194,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			ImNoteOff(9, instrumentId);
+			ImNoteOff(imOutDrumChannel, instrumentId);
 		}
 	}
 
@@ -2216,7 +2216,7 @@ namespace TFE_Jedi
 		}
 		else
 		{
-			ImMidi_Channel9_NoteOn(channel->priority, channel->partNoteReq, channel->groupVolume, instrumentId, velocity);
+			ImMidi_DrumOut_NoteOn(channel->priority, channel->partNoteReq, channel->groupVolume, instrumentId, velocity);
 		}
 	}
 			
@@ -2242,7 +2242,7 @@ namespace TFE_Jedi
 		const s32 pitchBendInt = arg2;
 
 		ImMidiOutChannel* channel = &player->channels[channelId];
-		s32 pitchBend = ((pitchBendInt << 7) | pitchBendFract) - (64 << 7);
+		s32 pitchBend = ((pitchBendInt << 7) | pitchBendFract) - (imPanCenter << 7);
 		s32 channelCount = channel->outChannelCount;
 
 		// There should always be channels.
@@ -2297,24 +2297,24 @@ namespace TFE_Jedi
 		ImNoteOn(channel->channelId, instrumentId, velocity);
 	}
 
-	void ImMidi_Channel9_NoteOn(s32 priority, s32 partNoteReq, s32 volume, s32 instrumentId, s32 velocity)
+	void ImMidi_DrumOut_NoteOn(s32 priority, s32 partNoteReq, s32 volume, s32 instrumentId, s32 velocity)
 	{
-		if (s_ImCh9_priority != priority)
+		if (s_ImDrumOutCh_priority != priority)
 		{
-			s_ImCh9_priority = priority;
-			ImControlChange(9, MID_GPC3_MSB, priority);
+			s_ImDrumOutCh_priority = priority;
+			ImControlChange(imOutDrumChannel, MID_GPC3_MSB, priority);
 		}
-		if (s_ImCh9_partNoteReq != partNoteReq)
+		if (s_ImDrumOutCh_partNoteReq != partNoteReq)
 		{
-			s_ImCh9_partNoteReq = partNoteReq;
-			ImControlChange(9, MID_GPC2_MSB, partNoteReq);
+			s_ImDrumOutCh_partNoteReq = partNoteReq;
+			ImControlChange(imOutDrumChannel, MID_GPC2_MSB, partNoteReq);
 		}
-		if (s_ImCh9_volume != volume)
+		if (s_ImDrumOutCh_volume != volume)
 		{
-			s_ImCh9_volume = volume;
-			ImControlChange(9, MID_VOLUME_MSB, volume);
+			s_ImDrumOutCh_volume = volume;
+			ImControlChange(imOutDrumChannel, MID_VOLUME_MSB, volume);
 		}
-		ImNoteOn(9, instrumentId, velocity);
+		ImNoteOn(imOutDrumChannel, instrumentId, velocity);
 	}
 
 	void ImHandleNoteOff(ImMidiChannel* midiChannel, s32 instrumentId)
@@ -2347,8 +2347,8 @@ namespace TFE_Jedi
 	{
 		for (s32 i = 0; i < MIDI_CHANNEL_COUNT; i++)
 		{
-			s_groupVolume[i] = 127;
-			s_soundGroupVolume[i] = 127;
+			s_groupVolume[i] = imMaxVolume;
+			s_soundGroupVolume[i] = imMaxVolume;
 		}
 		return imSuccess;
 	}
@@ -2372,12 +2372,12 @@ namespace TFE_Jedi
 			// There are two channels embedded in the structure that point to each other.
 			channel->sharedMidiChannel = (ImMidiChannel*)&channel->sharedPart;
 			// Initialize values.
-			channel->channelId = (i < 9) ? i : i + 1;
+			channel->channelId = (i < imOutDrumChannel) ? i : i + 1;
 			channel->pgm = 0;
 			channel->priority = 0;
 			channel->noteReq = 0;
-			channel->volume = 127;
-			channel->pan = 64;
+			channel->volume = imMaxVolume;
+			channel->pan = imPanCenter;
 			channel->modulation = 0;
 			channel->finalPan = 0;
 			channel->sustain = 0;
@@ -2388,12 +2388,12 @@ namespace TFE_Jedi
 			sharedChannel->player = nullptr;
 			sharedChannel->channel = nullptr;
 			sharedChannel->sharedMidiChannel = channel;
-			sharedChannel->channelId = (i < 9) ? i : i + 1;
+			sharedChannel->channelId = (i < imOutDrumChannel) ? i : i + 1;
 			sharedChannel->pgm = 0;
 			sharedChannel->priority = 0;
 			sharedChannel->noteReq = 0;
-			sharedChannel->volume = 127;
-			sharedChannel->pan = 64;
+			sharedChannel->volume = imMaxVolume;
+			sharedChannel->pan = imPanCenter;
 			sharedChannel->modulation = 0;
 			sharedChannel->finalPan = 0;
 			sharedChannel->sustain = 0;
@@ -2409,12 +2409,12 @@ namespace TFE_Jedi
 			ImSetPanFine(sharedChannel->channelId, sharedChannel->finalPan * 2 + 8192);
 		}
 		// Channel 15 maps to 9 and only uses 3 parameters.
-		s_ImCh9_priority = 0;
-		s_ImCh9_partNoteReq = 1;
-		s_ImCh9_volume = 127;
-		ImControlChange(9, MID_GPC3_MSB, s_ImCh9_priority);
-		ImControlChange(9, MID_GPC2_MSB, s_ImCh9_partNoteReq);
-		ImControlChange(9, MID_VOLUME_MSB, s_ImCh9_volume);
+		s_ImDrumOutCh_priority = 0;
+		s_ImDrumOutCh_partNoteReq = 1;
+		s_ImDrumOutCh_volume = imMaxVolume;
+		ImControlChange(imOutDrumChannel, MID_GPC3_MSB, s_ImDrumOutCh_priority);
+		ImControlChange(imOutDrumChannel, MID_GPC2_MSB, s_ImDrumOutCh_partNoteReq);
+		ImControlChange(imOutDrumChannel, MID_VOLUME_MSB, s_ImDrumOutCh_volume);
 		return imSuccess;
 	}
 

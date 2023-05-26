@@ -104,19 +104,20 @@ namespace TFE_Jedi
 		// Setup Debug CVars.
 		s_maxWallCount = 0xffff;
 		s_maxDepthCount = 0xffff;
-		CVAR_INT(s_maxWallCount, "d_maxWallCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum wall count for a given sector.");
+		CVAR_INT(s_maxWallCount,  "d_maxWallCount",  CVFLAG_DO_NOT_SERIALIZE, "Maximum wall count for a given sector.");
 		CVAR_INT(s_maxDepthCount, "d_maxDepthCount", CVFLAG_DO_NOT_SERIALIZE, "Maximum adjoin depth count.");
+		CVAR_INT(s_sectorAmbient, "d_sectorAmbient", CVFLAG_DO_NOT_SERIALIZE, "Current Sector Ambient.");
 
 		// Remove temporarily until they do something useful again.
-		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU");
+		CCMD("rsetSubRenderer", console_setSubRenderer, 1, "Set the sub-renderer - valid values are: Classic_Fixed, Classic_Float, Classic_GPU.");
 		CCMD("rgetSubRenderer", console_getSubRenderer, 0, "Get the current sub-renderer.");
 
 		// Setup performance counters.
 		TFE_COUNTER(s_maxAdjoinDepth, "Maximum Adjoin Depth");
 		TFE_COUNTER(s_maxAdjoinIndex, "Maximum Adjoin Count");
-		TFE_COUNTER(s_sectorIndex, "Sector Count");
-		TFE_COUNTER(s_flatCount, "Flat Count");
-		TFE_COUNTER(s_curWallSeg, "Wall Segment Count");
+		TFE_COUNTER(s_sectorIndex,    "Sector Count");
+		TFE_COUNTER(s_flatCount,      "Flat Count");
+		TFE_COUNTER(s_curWallSeg,     "Wall Segment Count");
 		TFE_COUNTER(s_adjoinSegCount, "Adjoin Segment Count");
 
 		s_sectorRenderer = renderer_getSectorRenderer(TSR_CLASSIC_FIXED);
