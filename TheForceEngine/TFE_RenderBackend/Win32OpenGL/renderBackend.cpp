@@ -7,6 +7,9 @@
 #include <TFE_Asset/imageAsset.h>	// For image saving, this should be refactored...
 #include <TFE_System/profiler.h>
 #include <TFE_PostProcess/blit.h>
+#include <TFE_PostProcess/bloomThreshold.h>
+#include <TFE_PostProcess/blur7x7_X.h>
+#include <TFE_PostProcess/blur7x7_Y.h>
 #include <TFE_PostProcess/postprocess.h>
 #include "renderTarget.h"
 #include "screenCapture.h"
@@ -40,6 +43,10 @@ namespace TFE_RenderBackend
 	static DynamicTexture* s_palette = nullptr;
 	static TextureGpu* s_virtualRenderTexture = nullptr;
 	static RenderTarget* s_virtualRenderTarget = nullptr;
+
+	static TextureGpu* s_bloomThresholdTexture[16] = { nullptr };
+	static RenderTarget* s_bloomThresholdRT[16] = { nullptr };
+
 	static ScreenCapture*  s_screenCapture = nullptr;
 
 	static RenderTarget* s_copyTarget = nullptr;
@@ -56,7 +63,10 @@ namespace TFE_RenderBackend
 	static f32 s_clearColor[4] = { 0.0f };
 	static u32 s_rtWidth, s_rtHeight;
 
-	static Blit* s_postEffectBlit;
+	static Blit* s_postEffectBlit = nullptr;
+	static BloomThreshold* s_bloomThreshold = nullptr;
+	static Blur7x7_X* s_blur7x7_X = nullptr;
+	static Blur7x7_Y* s_blur7x7_Y = nullptr;
 	static std::vector<SDL_Rect> s_displayBounds;
 
 	void drawVirtualDisplay();
@@ -142,6 +152,15 @@ namespace TFE_RenderBackend
 		s_postEffectBlit = new Blit();
 		s_postEffectBlit->init();
 		s_postEffectBlit->enableFeatures(BLIT_GPU_COLOR_CONVERSION);
+
+		s_bloomThreshold = new BloomThreshold();
+		s_bloomThreshold->init();
+
+		s_blur7x7_X = new Blur7x7_X();
+		s_blur7x7_X->init();
+
+		s_blur7x7_Y = new Blur7x7_Y();
+		s_blur7x7_Y->init();
 		
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClearDepth(0.0f);
@@ -165,11 +184,25 @@ namespace TFE_RenderBackend
 		s_postEffectBlit->destroy();
 		delete s_postEffectBlit;
 
+		s_bloomThreshold->destroy();
+		delete s_bloomThreshold;
+
+		s_blur7x7_X->destroy();
+		delete s_blur7x7_X;
+
+		s_blur7x7_Y->destroy();
+		delete s_blur7x7_Y;
+
 		TFE_PostProcess::destroy();
 		TFE_Ui::shutdown();
 
 		delete s_virtualDisplay;
 		delete s_virtualRenderTarget;
+		for (s32 i = 0; i < 16; i++)
+		{
+			delete s_bloomThresholdRT[i];
+			s_bloomThresholdRT[i] = nullptr;
+		}
 		SDL_DestroyWindow((SDL_Window*)m_window);
 
 		s_virtualDisplay = nullptr;
@@ -433,6 +466,14 @@ namespace TFE_RenderBackend
 		{
 			delete s_virtualRenderTarget;
 		}
+		if (s_bloomThresholdRT[0])
+		{
+			for (s32 i = 0; i < 16; i++)
+			{
+				delete s_bloomThresholdRT[i];
+				s_bloomThresholdRT[i] = nullptr;
+			}
+		}
 		s_virtualDisplay = nullptr;
 		s_virtualRenderTarget = nullptr;
 
@@ -452,8 +493,26 @@ namespace TFE_RenderBackend
 			s_virtualRenderTarget = new RenderTarget();
 			s_virtualRenderTexture = new TextureGpu();
 
-			result  = s_virtualRenderTexture->create(s_virtualWidth, s_virtualHeight);
+			result  = s_virtualRenderTexture->create(s_virtualWidth, s_virtualHeight, 4u, false, MAG_FILTER_LINEAR);
 			result &= s_virtualRenderTarget->create(s_virtualRenderTexture, true);
+
+			s32 w = s_virtualWidth / 2;
+			s32 h = s_virtualHeight / 2;
+			for (s32 i = 0; i < 8; i++)
+			{
+				s_bloomThresholdRT[i*2+0] = new RenderTarget();
+				s_bloomThresholdRT[i*2+1] = new RenderTarget();
+				s_bloomThresholdTexture[i*2+0] = new TextureGpu();
+				s_bloomThresholdTexture[i*2+1] = new TextureGpu();
+
+				result &= s_bloomThresholdTexture[i*2+0]->create(w, h, 4u, false, MAG_FILTER_LINEAR);
+				result &= s_bloomThresholdTexture[i*2+1]->create(w, h, 4u, false, MAG_FILTER_LINEAR);
+				result &= s_bloomThresholdRT[i*2+0]->create(s_bloomThresholdTexture[i*2+0], false);
+				result &= s_bloomThresholdRT[i*2+1]->create(s_bloomThresholdTexture[i*2+1], false);
+
+				w = max(1, w >> 1);
+				h = max(1, h >> 1);
+			}
 
 			// The renderer will handle this instead.
 			s_postEffectBlit->disableFeatures(BLIT_GPU_COLOR_CONVERSION);
@@ -609,11 +668,11 @@ namespace TFE_RenderBackend
 	// GPU commands
 	// core gpu functionality for UI and editor.
 	// Render target.
-	RenderTargetHandle createRenderTarget(u32 width, u32 height, bool hasDepthBuffer)
+	RenderTargetHandle createRenderTarget(u32 width, u32 height, bool hasDepthBuffer, bool hasMipmaps)
 	{
 		RenderTarget* newTarget = new RenderTarget();
 		TextureGpu* texture = new TextureGpu();
-		texture->create(width, height);
+		texture->create(width, height, 4u, hasMipmaps);
 		newTarget->create(texture, hasDepthBuffer);
 
 		return RenderTargetHandle(newTarget);
@@ -627,7 +686,7 @@ namespace TFE_RenderBackend
 		delete renderTarget->getTexture();
 		delete renderTarget;
 	}
-
+		
 	void bindRenderTarget(RenderTargetHandle handle)
 	{
 		RenderTarget* renderTarget = (RenderTarget*)handle;
@@ -776,10 +835,52 @@ namespace TFE_RenderBackend
 		}
 		else
 		{
+			// Bloom.
+			s32 blurW = w >> 1;
+			s32 blurH = h >> 1;
+			s32 prevInput = -1;
+			for (s32 i = 0; i < 8; i++)
+			{
+				const PostEffectInput bloomThresholdInputs[] =
+				{
+					{ PTYPE_TEXTURE, prevInput < 0 ? (void*)s_virtualRenderTarget->getTexture() : (void*)s_bloomThresholdRT[prevInput]->getTexture() },
+				};
+				TFE_PostProcess::appendEffect(s_bloomThreshold, TFE_ARRAYSIZE(bloomThresholdInputs), bloomThresholdInputs, s_bloomThresholdRT[i*2+0], x, y, blurW, blurH);
+
+				s32 iter = 4;
+				for (s32 j = 0; j < iter; j++)
+				{
+					const PostEffectInput blurXInputs[] =
+					{
+						{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[i*2+0]->getTexture() },
+					};
+					TFE_PostProcess::appendEffect(s_blur7x7_X, TFE_ARRAYSIZE(blurXInputs), blurXInputs, s_bloomThresholdRT[i*2+1], x, y, blurW, blurH);
+
+					const PostEffectInput blurYInputs[] =
+					{
+						{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[i*2+1]->getTexture() },
+					};
+					TFE_PostProcess::appendEffect(s_blur7x7_Y, TFE_ARRAYSIZE(blurYInputs), blurYInputs, s_bloomThresholdRT[i*2+0], x, y, blurW, blurH);
+				}
+
+				blurW = max(1, blurW >> 1);
+				blurH = max(1, blurH >> 1);
+				prevInput = i*2 + 0;
+			}
+
+			// Blit.
 			const PostEffectInput blitInputs[] =
 			{
 				{ PTYPE_TEXTURE, (void*)s_virtualRenderTarget->getTexture() },
-				{ PTYPE_DYNAMIC_TEX, s_palette }
+				{ PTYPE_DYNAMIC_TEX, s_palette },
+				{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[0]->getTexture() },
+				{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[2]->getTexture() },
+				{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[4]->getTexture() },
+				{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[6]->getTexture() },
+				{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[8]->getTexture() },
+				{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[10]->getTexture() },
+				{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[12]->getTexture() },
+				{ PTYPE_TEXTURE, (void*)s_bloomThresholdRT[14]->getTexture() },
 			};
 			TFE_PostProcess::appendEffect(s_postEffectBlit, TFE_ARRAYSIZE(blitInputs), blitInputs, nullptr, x, y, w, h);
 		}

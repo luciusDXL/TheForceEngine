@@ -4,9 +4,7 @@
 #ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
 #endif
-#if defined(OPT_BILINEAR_DITHER) || defined(OPT_SMOOTH_LIGHTRAMP)
 #include "Shaders/filter.h"
-#endif
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
@@ -157,17 +155,18 @@ void main()
 	#endif
 
 	float light = 31.0;
+	float ambient = 31.0;
 	if (!sky && !fullbright)
 	{
 		float z = dot(cameraRelativePos, CameraDir);
 		float lightOffset   = Frag_Color.r;
-		float sectorAmbient = Frag_Color.b;
+		ambient = Frag_Color.b;
 		if (GlobalLightData.x != 0.0)
 		{
-			sectorAmbient = GlobalLightData.y;
+			ambient = GlobalLightData.y;
 		}
 
-		if (sectorAmbient < 31.0)
+		if (ambient < 31.0)
 		{
 			// Camera light and world ambient.
 			float worldAmbient = floor(LightData.x + 0.5);
@@ -203,9 +202,9 @@ void main()
 					light += lightSource;
 				}
 			}
-			light = max(light, sectorAmbient);
+			light = max(light, ambient);
 
-			float minAmbient = sectorAmbient * 0.875;
+			float minAmbient = ambient * 0.875;
 		#ifdef OPT_COLORMAP_INTERP // Smooth out the attenuation.
 			float depthAtten = z * 0.09375;
 		#else
@@ -268,11 +267,20 @@ void main()
 
 		// Optional dynamic lighting.
 		#ifdef OPT_DYNAMIC_LIGHTING
-		if (!sky && baseColor >= 16.0)	// do not light fullbright colors or sky.
+		if (!sky && baseColor >= 32.0)	// do not light fullbright colors or sky.
 		{
 			vec3 albedo = texelFetch(Palette, ivec2(baseColor, 0), 0).rgb;
 			Out_Color.rgb = handleLighting(albedo, lightPos, Frag_Normal, CameraPos, Out_Color.rgb);
 		}
 		#endif
+
+		// Reduce the bloom intensity as ambient increases. This is to simulate a reduction in brightness delta, which translates to
+		// less light bleed. In a modern HDR based renderer, this will be handled automatically by the tonemapper.
+		float minBloom = 0.5;	// Minimum bloom intensity even in bright areas.
+		float bloomIntensity = 1.0;//(1.0 - smoothstep(16.0, 31.0, ambient))*(1.0 - minBloom) + minBloom;
+		//float zScale = clamp(dot(cameraRelativePos, CameraDir) * 0.02, 0.25, 1.0);
+		//bloomIntensity *= zScale;
+		Out_Color.a = writeBloomMask(int(baseColor), bloomIntensity);
+		//Out_Color.rgb = Out_Color.rgb*0.25 + 0.75*((Out_Color.a - 0.5) * 2.0);
 	#endif
 }

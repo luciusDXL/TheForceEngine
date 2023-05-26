@@ -1267,6 +1267,15 @@
     <ClInclude Include="Shaders\textureSampleFunc.h">
       <Filter>Source\Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="TFE_PostProcess\bloomThreshold.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\blur7x7_X.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
+    <ClInclude Include="TFE_PostProcess\blur7x7_Y.h">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -2136,6 +2145,15 @@
     <ClCompile Include="TFE_Jedi\Level\objDef.cpp">
       <Filter>Source\TFE_Jedi\Level</Filter>
     </ClCompile>
+    <ClCompile Include="TFE_PostProcess\bloomThreshold.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\blur7x7_X.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
+    <ClCompile Include="TFE_PostProcess\blur7x7_Y.cpp">
+      <Filter>Source\TFE_PostProcess</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TheForceEngine.rc">
@@ -2323,6 +2341,12 @@
       <Filter>Source\Shaders</Filter>
     </None>
     <None Include="Shaders\quad2d.vert">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\bloomDownsample1.frag">
+      <Filter>Source\Shaders</Filter>
+    </None>
+    <None Include="Shaders\blur7x7.frag">
       <Filter>Source\Shaders</Filter>
     </None>
   </ItemGroup>

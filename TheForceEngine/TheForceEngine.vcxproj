@@ -633,6 +633,9 @@ echo ^)";
     <ClInclude Include="TFE_Polygon\MPE_fastpoly2tri.h" />
     <ClInclude Include="TFE_Polygon\polygon.h" />
     <ClInclude Include="TFE_PostProcess\blit.h" />
+    <ClInclude Include="TFE_PostProcess\bloomThreshold.h" />
+    <ClInclude Include="TFE_PostProcess\blur7x7_X.h" />
+    <ClInclude Include="TFE_PostProcess\blur7x7_Y.h" />
     <ClInclude Include="TFE_PostProcess\overlay.h" />
     <ClInclude Include="TFE_PostProcess\postprocess.h" />
     <ClInclude Include="TFE_PostProcess\postprocesseffect.h" />
@@ -938,6 +941,9 @@ echo ^)";
     <ClCompile Include="TFE_Polygon\clipper.cpp" />
     <ClCompile Include="TFE_Polygon\polygon.cpp" />
     <ClCompile Include="TFE_PostProcess\blit.cpp" />
+    <ClCompile Include="TFE_PostProcess\bloomThreshold.cpp" />
+    <ClCompile Include="TFE_PostProcess\blur7x7_X.cpp" />
+    <ClCompile Include="TFE_PostProcess\blur7x7_Y.cpp" />
     <ClCompile Include="TFE_PostProcess\overlay.cpp" />
     <ClCompile Include="TFE_PostProcess\postprocess.cpp" />
     <ClCompile Include="TFE_RenderBackend\Win32OpenGL\dynamicTexture.cpp" />
@@ -1012,6 +1018,8 @@ echo ^)";
     <None Include="Documentation\markdown\Manual.md" />
     <None Include="Shaders\blit.frag" />
     <None Include="Shaders\blit.vert" />
+    <None Include="Shaders\bloomDownsample1.frag" />
+    <None Include="Shaders\blur7x7.frag" />
     <None Include="Shaders\gpu_render_modelHologram.frag" />
     <None Include="Shaders\gpu_render_modelHologram.vert" />
     <None Include="Shaders\gpu_render_modelSolid.frag" />

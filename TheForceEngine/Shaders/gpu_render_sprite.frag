@@ -3,9 +3,7 @@
 #ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
 #endif
-#if defined(OPT_BILINEAR_DITHER) || defined(OPT_SMOOTH_LIGHTRAMP)
 #include "Shaders/filter.h"
-#endif
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
@@ -94,12 +92,19 @@ void main()
 		Out_Color.rgb = getAttenuatedColor(int(baseColor), int(light));
 	#endif
 	#ifdef OPT_DYNAMIC_LIGHTING
-	if (baseColor >= 16.0)
+	if (baseColor >= 32.0)
 	{
 		vec3 albedo   = colorToLinear(texelFetch(Palette, ivec2(baseColor, 0), 0).rgb);
 		vec3 ambient  = colorToLinear(Out_Color.rgb);
 		Out_Color.rgb = linearToColor(Frag_Lighting * albedo + ambient);
 	}
 	#endif
-	Out_Color.a = 1.0;
+
+	// Optional bloom.
+	Out_Color.a = writeBloomMask(int(baseColor), 1.0);
+	// Adjust based on depth (move into writeBloomMask())
+	//float mask = clamp(2.0*(Out_Color.a - 0.5), 0.0, 1.0);
+	//float z = clamp(dot(cameraRelativePos, CameraDir) * 0.04, 0.25, 1.0);
+	//mask *= z;
+	//Out_Color.a = mask*0.5 + 0.5;
 }

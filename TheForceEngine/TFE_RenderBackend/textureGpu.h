@@ -25,12 +25,13 @@ public:
 	TextureGpu() : m_width(0), m_height(0), m_channels(4), m_bytesPerChannel(1), m_layers(1), m_gpuHandle(0) {}
 	~TextureGpu();
 
-	bool create(u32 width, u32 height, u32 channels = 4);
+	bool create(u32 width, u32 height, u32 channels = 4, bool hasMipmaps = false, MagFilter magFilter = MAG_FILTER_NONE);
 	bool create(u32 width, u32 height, u32 channels, u32 bytesPerChannel);
 	bool createArray(u32 width, u32 height, u32 layers, u32 channels = 4);
 	bool createWithData(u32 width, u32 height, const void* buffer, MagFilter magFilter = MAG_FILTER_NONE);
 	bool update(const void* buffer, size_t size, s32 layer = -1);	// layer = -1 means update all layers, otherwise it is the layer index.
 	void bind(u32 slot = 0) const;
+	void generateMipmaps();
 	static void clear(u32 slot = 0);
 	static void clearSlots(u32 count, u32 start = 0);
 

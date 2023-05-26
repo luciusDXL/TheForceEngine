@@ -1,8 +1,6 @@
 #include "Shaders/config.h"
 #include "Shaders/textureSampleFunc.h"
-#if defined(OPT_BILINEAR_DITHER) || defined(OPT_SMOOTH_LIGHTRAMP)
 #include "Shaders/filter.h"
-#endif
 
 uniform vec3 CameraPos;
 uniform vec3 CameraDir;
@@ -90,5 +88,5 @@ void main()
 		Out_Color.rgb = getAttenuatedColor(int(baseColor), int(lightLevel));
 	#endif
 
-	Out_Color.a = 1.0;
+	Out_Color.a = writeBloomMask(baseColor, 1.0);
 }

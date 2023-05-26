@@ -24,6 +24,14 @@ vec2 bilinearSharpness(vec2 uv, float sharpness)
 	return floor(uv) + st;
 }
 
+float computeMipLevel(vec2 uv)
+{
+	vec2 dx = dFdx(uv);
+	vec2 dy = dFdy(uv);
+	float maxSq = max(dot(dx, dx), dot(dy, dy));
+	return 0.5 * log2(maxSq);	// same as log2(maxSq^0.5)
+}
+
 // t is between 0, 1; sample is between x1 and x2.
 float cubicInterpolation(float x0, float x1, float x2, float x3, float t)
 {
@@ -35,4 +43,16 @@ float cubicInterpolation(float x0, float x1, float x2, float x3, float t)
 	float t2 = t * t;
 	float t3 = t2 * t;
 	return a * t3 + b * t2 + c * t + d;
+}
+
+float writeBloomMask(int baseColor, float intensity)
+{
+	float mask = 0.5;
+#ifdef OPT_BLOOM
+	if (baseColor > 0 && baseColor < 32)
+	{
+		mask = 0.5 + 0.5*intensity;
+	}
+#endif
+	return mask;
 }

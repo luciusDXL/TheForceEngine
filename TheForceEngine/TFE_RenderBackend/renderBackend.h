@@ -137,7 +137,7 @@ namespace TFE_RenderBackend
 
 	// core gpu functionality for UI and editor.
 	// Render target.
-	RenderTargetHandle createRenderTarget(u32 width, u32 height, bool hasDepthBuffer = false);
+	RenderTargetHandle createRenderTarget(u32 width, u32 height, bool hasDepthBuffer = false, bool hasMipmaps = false);
 	void freeRenderTarget(RenderTargetHandle handle);
 	void bindRenderTarget(RenderTargetHandle handle);
 	void clearRenderTarget(RenderTargetHandle handle, const f32* clearColor, f32 clearDepth = 1.0f);

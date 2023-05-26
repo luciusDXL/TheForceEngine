@@ -18,7 +18,7 @@ TextureGpu::~TextureGpu()
 	}
 }
 
-bool TextureGpu::create(u32 width, u32 height, u32 channels)
+bool TextureGpu::create(u32 width, u32 height, u32 channels, bool hasMipmaps, MagFilter magFilter)
 {
 	m_width = width;
 	m_height = height;
@@ -39,9 +39,14 @@ bool TextureGpu::create(u32 width, u32 height, u32 channels)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, c_channelFormat[m_bytesPerChannel], nullptr);
 	}
 	assert(glGetError() == GL_NO_ERROR);
+	if (hasMipmaps)
+	{
+		// Allocate memory for the mipmaps.
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, hasMipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter == MAG_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -200,3 +205,15 @@ void TextureGpu::clearSlots(u32 count, u32 start/* = 0*/)
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }
+
+
+void TextureGpu::generateMipmaps()
+{
+	const GLenum target = (m_layers == 1) ? GL_TEXTURE_2D : GL_TEXTURE_2D_ARRAY;
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(target, m_gpuHandle);
+	glGenerateMipmap(target);
+	glBindTexture(target, 0);
+}
+

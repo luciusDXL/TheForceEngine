@@ -64,7 +64,7 @@ void main()
 
 	// Get the final attenuated color.
 	Out_Color.rgb = getAttenuatedColor(baseColor, lightLevel);
-	Out_Color.a = 1.0;
+	Out_Color.a = 0.5;
 
 #ifdef OPT_DYNAMIC_LIGHTING
 	if (textureId < 65535 && color > 0 && baseColor >= 16)
