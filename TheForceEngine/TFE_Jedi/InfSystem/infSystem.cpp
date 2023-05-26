@@ -1375,6 +1375,11 @@ namespace TFE_Jedi
 								break;
 							}
 						}
+						else
+						{
+							// Invalid item class.
+							line = parser.readLine(bufferPos);
+						}
 					}
 				} break;
 				case KW_LINE:
