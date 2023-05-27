@@ -34,6 +34,12 @@
 
 using namespace TFE_Input;
 
+namespace TFE_Jedi
+{
+	extern s32 s_flatAmbient;
+	extern JBool s_flatLighting;
+}
+
 namespace TFE_DarkForces
 {
 	///////////////////////////////////////////
@@ -2861,6 +2867,16 @@ namespace TFE_DarkForces
 		{
 			s_playerObject = playerObjId < 0 ? nullptr : objData_getObjectBySerializationId(playerObjId);
 			s_playerEye    = playerEyeId < 0 ? nullptr : objData_getObjectBySerializationId(playerEyeId);
+
+			if (s_nightvisionActive)
+			{
+				TFE_Jedi::s_flatAmbient = 16;
+				TFE_Jedi::s_flatLighting = JTRUE;
+			}
+			else
+			{
+				TFE_Jedi::s_flatLighting = JFALSE;
+			}
 		}
 
 		SERIALIZE(ObjState_InitVersion, s_eyePos, defV3);

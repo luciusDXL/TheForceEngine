@@ -405,6 +405,8 @@ namespace TFE_DarkForces
 
 						reticle_enable(true);
 					}
+					s_flatLighting = JFALSE;
+					s_nightvisionActive = JFALSE;
 				}
 			}
 			else // Loading from save.
@@ -417,8 +419,6 @@ namespace TFE_DarkForces
 			s_loadingFromSave = JFALSE;
 			TFE_Input::clearAccumulatedMouseMove();
 
-			s_flatLighting = JFALSE;
-			s_nightvisionActive = JFALSE;
 			s_gamePaused = JFALSE;
 			escapeMenu_resetLevel();
 		}
