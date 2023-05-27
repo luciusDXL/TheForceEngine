@@ -976,7 +976,7 @@ namespace TFE_FrontEndUI
 			// The document has not been loaded yet.
 			char path[TFE_MAX_PATH];
 			char fileName[TFE_MAX_PATH];
-			strcpy(fileName, "Documentation/markdown/theforceengine.md");
+			strcpy(fileName, "Documentation/markdown/TheForceEngine.md");
 			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
 
 			FileStream file;
@@ -1083,6 +1083,12 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Boba Fett Face Player Fix", &bobaFettFacePlayer))
 		{
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
+		}
+
+		bool ignoreInfLimit = gameSettings->df_ignoreInfLimit;
+		if (ImGui::Checkbox("Remove INF Item Limit (requires restart)", &ignoreInfLimit))
+		{
+			gameSettings->df_ignoreInfLimit = ignoreInfLimit;
 		}
 
 		if (s_drawNoGameDataMsg)

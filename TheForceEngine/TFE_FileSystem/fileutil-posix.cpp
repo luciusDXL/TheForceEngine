@@ -15,6 +15,8 @@
 // implement TFE FileUtil for Linux and compatibles.
 namespace FileUtil
 {
+	static char *findFileObjectNoCase(const char *filename, bool objisdir);
+
 	void readDirectory(const char *dir, const char *ext, FileList& fileList)
 	{
 		char buf[PATH_MAX];
@@ -221,14 +223,19 @@ namespace FileUtil
 		}
 	}
 
-	bool directoryExits(const char *path)
+	bool directoryExits(const char *path, char *outPath)
 	{
-		struct stat st;
-		int ret = stat(path, &st);
-		if (ret != 0)
+		char *ret;
+
+		ret = findFileObjectNoCase(path, true);
+		if (ret == NULL)
 			return false;
-		
-		return (st.st_mode & S_IFDIR) != 0;
+
+		// replace input with found path
+		if (outPath)
+			snprintf(outPath, TFE_MAX_PATH, "%s/", ret);
+		free(ret);
+		return true;
 	}
 
 	bool exists(const char *path)
@@ -237,10 +244,13 @@ namespace FileUtil
 	}
 
 	// Linux filesystems are case-sensitive; try to open the
-	// base directory and find a file that has the same name
+	// base directory and find a file/directory that has the same name
 	// with different case.
 	// Caller MUST free the pointer returned by this function!
-	char *findFileNoCase(const char *filename)
+	// Input: full path to file or dir: /abs/path/to/object
+	// This function will try to find "object" with differently cased name
+	// in path "/abs/path/to/".
+	static char *findFileObjectNoCase(const char *filename, bool objisdir)
 	{
 		char *fncopy, *dn, *fn;
 		char *result = NULL;
@@ -281,8 +291,15 @@ namespace FileUtil
 			memset(buf, 0, PATH_MAX);
 			snprintf(buf, PATH_MAX - 2, "%s/%s", dn, de->d_name);
 			ret = stat(buf, &st);
-			if ((ret != 0) || (!S_ISREG(st.st_mode)))
+			if (ret != 0)
 				continue;
+			if (objisdir) {
+				if (!S_ISDIR(st.st_mode))
+					continue;
+			} else {
+				if (!S_ISREG(st.st_mode))
+					continue;
+			}
 
 			nfl = strlen(de->d_name);
 			if (nfl != fl)
@@ -302,6 +319,11 @@ namespace FileUtil
 		free(fncopy);
 		closedir(dir);
 		return result;
+	}
+
+	char *findFileNoCase(const char *filename)
+	{
+		return findFileObjectNoCase(filename, false);
 	}
 
 	bool existsNoCase(const char *filename)

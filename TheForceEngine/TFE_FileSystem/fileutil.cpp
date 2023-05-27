@@ -221,7 +221,7 @@ namespace FileUtil
 		DeleteFile(srcFile);
 	}
 
-	bool directoryExits(const char* path)
+	bool directoryExits(const char* path, char* outPath)
 	{
 		DWORD attr = GetFileAttributesA(path);
 		if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES) { return false; }

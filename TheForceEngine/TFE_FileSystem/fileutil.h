@@ -25,7 +25,7 @@ namespace FileUtil
 
 	bool exists(const char* path);
 	bool existsNoCase(const char* path);
-	bool directoryExits(const char* path);
+	bool directoryExits(const char* path, char* outPath = nullptr);
 	u64  getModifiedTime(const char* path);
 
 	void fixupPath(char* path);

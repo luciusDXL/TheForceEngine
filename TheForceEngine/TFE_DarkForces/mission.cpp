@@ -149,6 +149,10 @@ namespace TFE_DarkForces
 #define CHEAT_CMD(c) \
 	void console_##c (const ConsoleArgList& args)\
 	{	\
+		if (s_playerDying) \
+		{ \
+			return; \
+		} \
 		s_queuedCheatID = CHEAT_##c ;	\
 		TFE_FrontEndUI::toggleConsole(); \
 		mission_pause(JFALSE); \
@@ -401,6 +405,8 @@ namespace TFE_DarkForces
 
 						reticle_enable(true);
 					}
+					s_flatLighting = JFALSE;
+					s_nightvisionActive = JFALSE;
 				}
 			}
 			else // Loading from save.
@@ -413,8 +419,6 @@ namespace TFE_DarkForces
 			s_loadingFromSave = JFALSE;
 			TFE_Input::clearAccumulatedMouseMove();
 
-			s_flatLighting = JFALSE;
-			s_nightvisionActive = JFALSE;
 			s_gamePaused = JFALSE;
 			escapeMenu_resetLevel();
 		}
@@ -1112,6 +1116,11 @@ namespace TFE_DarkForces
 	{
 		const char* bufferedText = TFE_Input::getBufferedText();
 		const size_t bufferedLen = strlen(bufferedText);
+		if (s_playerDying)
+		{
+			return;
+		}
+
 		for (size_t i = 0; i < bufferedLen; i++)
 		{
 			char c = toupper(bufferedText[i]);

@@ -15,6 +15,7 @@
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/Level/levelData.h>
 #include <TFE_Jedi/Collision/collision.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_System/parser.h>
 #include <TFE_System/system.h>
 #include <TFE_System/memoryPool.h>
@@ -1276,13 +1277,17 @@ namespace TFE_Jedi
 			}
 		}
 
-		// Then loop through all of the items and parse their classes.
-		if (itemCount > MAX_INF_ITEMS)
+		// Verify that we are under or are ignoring the limit.
+		if (!TFE_Settings::getGameSettings()->df_ignoreInfLimit)
 		{
-			TFE_System::logWrite(LOG_WARNING, "level_loadINF", "Too many INF items - skipping extra items.");
-			itemCount = MAX_INF_ITEMS;
+			if (itemCount > MAX_INF_ITEMS)
+			{
+				TFE_System::logWrite(LOG_WARNING, "level_loadINF", "Too many INF items - skipping extra items.");
+				itemCount = MAX_INF_ITEMS;
+			}
 		}
 
+		// Then loop through all of the items and parse their classes.
 		s32 wallNum = 0;
 		for (s32 i = 0; i < itemCount; i++)
 		{

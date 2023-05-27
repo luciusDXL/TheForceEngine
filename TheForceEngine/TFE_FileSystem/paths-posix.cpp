@@ -172,34 +172,38 @@ namespace TFE_Paths
 
 	void addSearchPath(const char *fullPath)
 	{
-		if (!FileUtil::directoryExits(fullPath))
+		char workpath[TFE_MAX_PATH];
+
+		if (!FileUtil::directoryExits(fullPath, workpath))
 			return;
 
 		for (auto it = s_searchPaths.begin(); it != s_searchPaths.end(); it++)
 		{
 			// If the path already exists, then don't add it again.
-			if (!strcasecmp(it->c_str(), fullPath))
+			if (!strcasecmp(it->c_str(), workpath))
 			{
 				return;
 			}
 		}
-		s_searchPaths.push_back(fullPath);
+		s_searchPaths.push_back(workpath);
 	}
 
 	void addSearchPathToHead(const char *fullPath)
 	{
-		if (!FileUtil::directoryExits(fullPath))
+		char workpath[TFE_MAX_PATH];
+
+		if (!FileUtil::directoryExits(fullPath, workpath))
 			return;
 
 		for (auto it = s_searchPaths.begin(); it != s_searchPaths.end(); it++)
 		{
 			// If the path already exists, then don't add it again.
-			if (!strcasecmp(it->c_str(), fullPath))
+			if (!strcasecmp(it->c_str(), workpath))
 			{
 				return;
 			}
 		}
-		s_searchPaths.push_front(fullPath);
+		s_searchPaths.push_front(workpath);
 	}
 
 	void clearSearchPaths(void)
