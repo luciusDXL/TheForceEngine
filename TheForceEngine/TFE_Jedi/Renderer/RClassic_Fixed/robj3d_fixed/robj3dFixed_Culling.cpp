@@ -19,7 +19,7 @@ namespace RClassic_Fixed
 	};
 
 	// List of potentially visible polygons (after backface culling).
-	JmPolygon* s_visPolygons[MAX_POLYGON_COUNT_3DO];
+	std::vector<JmPolygon*> s_visPolygons;
 
 	s32 getPolygonFacing(const vec3_fixed* normal, const vec3_fixed* pos)
 	{
@@ -29,7 +29,7 @@ namespace RClassic_Fixed
 
 	s32 robj3d_backfaceCull(JediModel* model)
 	{
-		vec3_fixed* polygonNormal = s_polygonNormalsVS;
+		vec3_fixed* polygonNormal = s_polygonNormalsVS.data();
 		s32 polygonCount = model->polygonCount;
 		JmPolygon* polygon = model->polygons;
 		for (s32 i = 0; i < polygonCount; i++, polygonNormal++, polygon++)
@@ -40,11 +40,16 @@ namespace RClassic_Fixed
 			polygonNormal->z -= vertex->z;
 		}
 
-		JmPolygon** visPolygon = s_visPolygons;
+		if (polygonCount > s_visPolygons.size())
+		{
+			s_visPolygons.resize(polygonCount * 2);
+		}
+
+		JmPolygon** visPolygon = s_visPolygons.data();
 		s32 visPolygonCount = 0;
 
 		polygon = model->polygons;
-		polygonNormal = s_polygonNormalsVS;
+		polygonNormal = s_polygonNormalsVS.data();
 		for (s32 i = 0; i < model->polygonCount; i++, polygon++, polygonNormal++)
 		{
 			vec3_fixed* pos = &s_verticesVS[polygon->indices[1]];

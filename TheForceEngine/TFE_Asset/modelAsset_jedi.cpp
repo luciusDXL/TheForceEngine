@@ -23,15 +23,13 @@ extern MemoryRegion* s_gameRegion;
 extern MemoryRegion* s_levelRegion;
 static MemoryRegion* s_memRegion;
 
-// Set to 1 to assert on vanilla overflow errors when normalizing polygon normals.
-// Set to 0 to allow the normal overflow fix that take effect (this should be the RELEASE setting).
-#define SHOW_VANILLA_NORMAL_ERRORS 0
-
 #define model_alloc(size) TFE_Memory::region_alloc(s_memRegion, size)
 #define model_free(ptr) TFE_Memory::region_free(s_memRegion, ptr)
 
 // Jedi code for processing models.
-// TODO: Move to the Jedi_ObjectRenderer (once it exists)?
+// TODO: Move model processing to its own file.
+// TODO: Consider processed model binary caching - once models get large for mods, parsing and processiong
+//       will drastically slow down load times.
 namespace TFE_Jedi_Object3d
 {
 	void vec3_computeNormalOffset(const vec3* vIn, const vec3* v0, vec3* vOut)
@@ -41,24 +39,22 @@ namespace TFE_Jedi_Object3d
 		const fixed16_16 dz = vIn->z - v0->z;
 		fixed16_16 len;
 
-	#if SHOW_VANILLA_NORMAL_ERRORS == 0
 		if (TFE_Settings::getGraphicsSettings()->fix3doNormalOverflow)
 		{
+			// Convert to floating point before calculating the length to avoid
+			// fixed-point overflow.
 			const f32 xf = fixed16ToFloat(dx);
 			const f32 yf = fixed16ToFloat(dy);
 			const f32 zf = fixed16ToFloat(dz);
 			const f32 lenf = sqrtf(xf*xf + yf*yf + zf*zf);
+			// Then convert back so the rest of the code stays the same.
 			len = floatToFixed16(lenf);
 		}
 		else
-	#endif
 		{
 			const fixed16_16 xSq = mul16(dx, dx);
 			const fixed16_16 ySq = mul16(dy, dy);
 			const fixed16_16 zSq = mul16(dz, dz);
-		#if SHOW_VANILLA_NORMAL_ERRORS == 1
-			assert((::abs(dx) < ONE_16 || xSq != 0) && (::abs(dy) < ONE_16 || ySq != 0) && (::abs(dz) < ONE_16 || zSq != 0));
-		#endif
 			len = fixedSqrt(xSq + ySq + zSq);
 		}
 
@@ -168,7 +164,8 @@ namespace TFE_Model_Jedi
 	static NameList s_modelNames[POOL_COUNT];
 	static std::vector<char> s_buffer;
 
-	static vec2 s_tmpVtx[MAX_VERTEX_COUNT_3DO];
+	// Remove 3DO limits.
+	static std::vector<vec2> s_tmpVtx;
 
 	bool parseModel(JediModel* model, const char* name, AssetPool pool);
 
@@ -448,7 +445,7 @@ namespace TFE_Model_Jedi
 			assert(0);
 			return false;
 		}
-		if (vertexCount > MAX_VERTEX_COUNT_3DO)
+		if (!TFE_Settings::getGraphicsSettings()->ignore3doLimits && vertexCount > MAX_VERTEX_COUNT_3DO)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has too many vertices: %d / %d.", name, vertexCount, MAX_VERTEX_COUNT_3DO);
 			assert(0);
@@ -465,7 +462,7 @@ namespace TFE_Model_Jedi
 			assert(0);
 			return false;
 		}
-		if (polygonCount > MAX_POLYGON_COUNT_3DO)
+		if (!TFE_Settings::getGraphicsSettings()->ignore3doLimits && polygonCount > MAX_POLYGON_COUNT_3DO)
 		{
 			TFE_System::logWrite(LOG_ERROR, "Object3D_Load", "'%s' has too many polygons: %d / %d.", name, polygonCount, MAX_POLYGON_COUNT_3DO);
 			assert(0);
@@ -773,12 +770,22 @@ namespace TFE_Model_Jedi
 					return false;
 				}
 
+				// pre-allocate
+				s_tmpVtx.resize(texVertexCount * 2);
+
 				nextLine = true;
 				// Keep reading until the format no longer matches...
 				for (s32 v = 0; ; v++)
 				{
 					buffer = parser.readLine(bufferPos, true);
 					if (!buffer) { return false; }
+
+					// Just in case the reported vertex count is too small.
+					// Unfortunately data errors like this are common.
+					if (v >= s_tmpVtx.size())
+					{
+						s_tmpVtx.resize(v * 2);
+					}
 
 					s32 num;
 					f32 x, y;
