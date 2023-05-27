@@ -981,7 +981,7 @@ namespace TFE_FrontEndUI
 			// The document has not been loaded yet.
 			char path[TFE_MAX_PATH];
 			char fileName[TFE_MAX_PATH];
-			strcpy(fileName, "Documentation/markdown/theforceengine.md");
+			strcpy(fileName, "Documentation/markdown/TheForceEngine.md");
 			TFE_Paths::appendPath(PATH_PROGRAM, fileName, path);
 
 			FileStream file;
