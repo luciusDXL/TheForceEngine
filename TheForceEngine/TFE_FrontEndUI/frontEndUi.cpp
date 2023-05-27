@@ -1090,6 +1090,12 @@ namespace TFE_FrontEndUI
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
 		}
 
+		bool ignoreInfLimit = gameSettings->df_ignoreInfLimit;
+		if (ImGui::Checkbox("Remove INF Item Limit (requires restart)", &ignoreInfLimit))
+		{
+			gameSettings->df_ignoreInfLimit = ignoreInfLimit;
+		}
+
 		if (s_drawNoGameDataMsg)
 		{
 			ImGui::Separator();
