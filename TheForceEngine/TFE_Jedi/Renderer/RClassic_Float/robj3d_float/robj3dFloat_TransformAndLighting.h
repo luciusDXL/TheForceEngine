@@ -17,12 +17,12 @@ namespace TFE_Jedi
 	{
 		extern s32 s_enableFlatShading;
 		// Vertex attributes transformed to viewspace.
-		extern vec3_float s_verticesVS[MAX_VERTEX_COUNT_3DO];
-		extern vec3_float s_vertexNormalsVS[MAX_VERTEX_COUNT_3DO];
+		extern std::vector<vec3_float> s_verticesVS;
+		extern std::vector<vec3_float> s_vertexNormalsVS;
 		// Vertex Lighting.
-		extern f32 s_vertexIntensity[MAX_VERTEX_COUNT_3DO];
+		extern std::vector<f32> s_vertexIntensity;
 		// Polygon normals in viewspace (used for culling).
-		extern vec3_float s_polygonNormalsVS[MAX_POLYGON_COUNT_3DO];
+		extern std::vector<vec3_float> s_polygonNormalsVS;
 
 		void robj3d_transformAndLight(SecObject* obj, JediModel* model);
 	}

@@ -20,16 +20,16 @@ namespace RClassic_Float
 	// Vertex Processing
 	/////////////////////////////////////////////
 	// Vertex attributes transformed to viewspace.
-	vec3_float s_verticesVS[MAX_VERTEX_COUNT_3DO];
-	vec3_float s_vertexNormalsVS[MAX_VERTEX_COUNT_3DO];
+	std::vector<vec3_float> s_verticesVS;
+	std::vector<vec3_float> s_vertexNormalsVS;
 	// Vertex Lighting.
-	f32 s_vertexIntensity[MAX_VERTEX_COUNT_3DO];
+	std::vector<f32> s_vertexIntensity;
 
 	/////////////////////////////////////////////
 	// Polygon Processing
 	/////////////////////////////////////////////
 	// Polygon normals in viewspace (used for culling).
-	vec3_float s_polygonNormalsVS[MAX_POLYGON_COUNT_3DO];
+	std::vector<vec3_float> s_polygonNormalsVS;
 			
 	void robj3d_transformVertices(s32 vertexCount, vec3_fixed* vtxIn, f32* xform, vec3_float* offset, vec3_float* vtxOut)
 	{
@@ -138,6 +138,20 @@ namespace RClassic_Float
 			*outShading = intensity;
 		}
 	}
+
+	void robj3d_allocateBuffers(JediModel* model)
+	{
+		if (model->vertexCount > s_verticesVS.size())
+		{
+			s_verticesVS.resize(model->vertexCount);
+			s_vertexNormalsVS.resize(model->vertexCount);
+			s_vertexIntensity.resize(model->vertexCount);
+		}
+		if (model->polygonCount > s_polygonNormalsVS.size())
+		{
+			s_polygonNormalsVS.resize(model->polygonCount);
+		}
+	}
 		
 	void robj3d_transformAndLight(SecObject* obj, JediModel* model)
 	{
@@ -145,6 +159,9 @@ namespace RClassic_Float
 		offsetWS.x = fixed16ToFloat(obj->posWS.x) - s_rcfltState.cameraPos.x;
 		offsetWS.y = fixed16ToFloat(obj->posWS.y) - s_rcfltState.eyeHeight;
 		offsetWS.z = fixed16ToFloat(obj->posWS.z) - s_rcfltState.cameraPos.z;
+
+		// Allocate buffers.
+		robj3d_allocateBuffers(model);
 
 		// Calculate the view space object camera offset.
 		vec3_float offsetVS;
@@ -155,19 +172,19 @@ namespace RClassic_Float
 		robj3d_mulMatrix3x3(s_rcfltState.cameraMtx, obj->transform, xform);
 
 		// Transform model vertices into view space.
-		robj3d_transformVertices(model->vertexCount, (vec3_fixed*)model->vertices, xform, &offsetVS, s_verticesVS);
+		robj3d_transformVertices(model->vertexCount, (vec3_fixed*)model->vertices, xform, &offsetVS, s_verticesVS.data());
 
 		// No need for polygon normals or lighting if MFLAG_DRAW_VERTICES is set.
 		if (model->flags & MFLAG_DRAW_VERTICES) { return; }
 
 		// Polygon normals (used for backface culling)
-		robj3d_transformVertices(model->polygonCount, (vec3_fixed*)model->polygonNormals, xform, &offsetVS, s_polygonNormalsVS);
+		robj3d_transformVertices(model->polygonCount, (vec3_fixed*)model->polygonNormals, xform, &offsetVS, s_polygonNormalsVS.data());
 
 		// Lighting
 		if (model->flags & MFLAG_VERTEX_LIT)
 		{
-			robj3d_transformVertices(model->vertexCount, (vec3_fixed*)model->vertexNormals, xform, &offsetVS, s_vertexNormalsVS);
-			robj3d_shadeVertices(model->vertexCount, s_vertexIntensity, s_verticesVS, s_vertexNormalsVS);
+			robj3d_transformVertices(model->vertexCount, (vec3_fixed*)model->vertexNormals, xform, &offsetVS, s_vertexNormalsVS.data());
+			robj3d_shadeVertices(model->vertexCount, s_vertexIntensity.data(), s_verticesVS.data(), s_vertexNormalsVS.data());
 		}
 	}
 

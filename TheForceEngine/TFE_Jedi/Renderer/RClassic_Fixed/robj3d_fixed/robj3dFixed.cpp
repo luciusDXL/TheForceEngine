@@ -33,7 +33,7 @@ namespace RClassic_Fixed
 		if (model->flags & MFLAG_DRAW_VERTICES)
 		{
 			// If the MFLAG_DRAW_VERTICES flag is set, draw all vertices as points. 
-			robj3d_drawVertices(model->vertexCount, s_verticesVS, model->polygons[0].color);
+			robj3d_drawVertices(model->vertexCount, s_verticesVS.data(), model->polygons[0].color);
 			return;
 		}
 
@@ -43,10 +43,10 @@ namespace RClassic_Fixed
 		if (visPolygonCount < 1) { return; }
 
 		// Sort polygons from back to front.
-		qsort(s_visPolygons, visPolygonCount, sizeof(JmPolygon*), polygonSort);
+		qsort(s_visPolygons.data(), visPolygonCount, sizeof(JmPolygon*), polygonSort);
 
 		// Draw polygons
-		JmPolygon** visPolygon = s_visPolygons;
+		JmPolygon** visPolygon = s_visPolygons.data();
 		JBool drawn = JFALSE;
 		for (s32 i = 0; i < visPolygonCount; i++, visPolygon++)
 		{

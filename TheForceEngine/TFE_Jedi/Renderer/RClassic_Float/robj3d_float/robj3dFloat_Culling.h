@@ -10,7 +10,7 @@ namespace TFE_Jedi
 {
 	namespace RClassic_Float
 	{
-		extern JmPolygon* s_visPolygons[MAX_POLYGON_COUNT_3DO];
+		extern std::vector<JmPolygon*> s_visPolygons;
 		s32 robj3d_backfaceCull(JediModel* model);
 	}
 }

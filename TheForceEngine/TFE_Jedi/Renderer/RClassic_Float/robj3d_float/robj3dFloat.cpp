@@ -39,7 +39,7 @@ namespace RClassic_Float
 			const s32 scale = max(1, (s32)(height / 200));
 
 			// If the MFLAG_DRAW_VERTICES flag is set, draw all vertices as points. 
-			robj3d_drawVertices(model->vertexCount, s_verticesVS, model->polygons[0].color, scale);
+			robj3d_drawVertices(model->vertexCount, s_verticesVS.data(), model->polygons[0].color, scale);
 			return;
 		}
 
@@ -49,10 +49,10 @@ namespace RClassic_Float
 		if (visPolygonCount < 1) { return; }
 
 		// Sort polygons from back to front.
-		qsort(s_visPolygons, visPolygonCount, sizeof(JmPolygon*), polygonSort);
+		qsort(s_visPolygons.data(), visPolygonCount, sizeof(JmPolygon*), polygonSort);
 
 		// Draw polygons
-		JmPolygon** visPolygon = s_visPolygons;
+		JmPolygon** visPolygon = s_visPolygons.data();
 		JBool drawn = JFALSE;
 		for (s32 i = 0; i < visPolygonCount; i++, visPolygon++)
 		{
