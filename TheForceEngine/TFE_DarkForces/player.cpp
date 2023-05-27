@@ -1129,6 +1129,8 @@ namespace TFE_DarkForces
 				player_revive();
 				player_reset();
 				s_headlampActive = JFALSE;
+				s_nightvisionActive = JFALSE;
+				disableNightvisionInternal();
 
 				s_playerObject->yaw = s_curSafe->yaw;
 				s_playerYaw = s_curSafe->yaw;
