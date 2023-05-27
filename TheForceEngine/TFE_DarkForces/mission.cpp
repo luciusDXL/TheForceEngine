@@ -149,6 +149,10 @@ namespace TFE_DarkForces
 #define CHEAT_CMD(c) \
 	void console_##c (const ConsoleArgList& args)\
 	{	\
+		if (s_playerDying) \
+		{ \
+			return; \
+		} \
 		s_queuedCheatID = CHEAT_##c ;	\
 		TFE_FrontEndUI::toggleConsole(); \
 		mission_pause(JFALSE); \
@@ -1112,6 +1116,11 @@ namespace TFE_DarkForces
 	{
 		const char* bufferedText = TFE_Input::getBufferedText();
 		const size_t bufferedLen = strlen(bufferedText);
+		if (s_playerDying)
+		{
+			return;
+		}
+
 		for (size_t i = 0; i < bufferedLen; i++)
 		{
 			char c = toupper(bufferedText[i]);
