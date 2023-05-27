@@ -144,6 +144,12 @@ namespace TFE_DarkForces
 		}
 
 		JBool pickedUpItem = s_playerDying ? JFALSE : JTRUE;
+		// Cannot pickup items while dying!
+		if (!pickedUpItem)
+		{
+			return;
+		}
+
 		// Handle pickup based on type.
 		if (pickup->type == ITYPE_WEAPON)
 		{
