@@ -361,6 +361,7 @@ namespace TFE_Settings
 		writeKeyValue_Bool(settings, "vsync", s_graphicsSettings.vsync);
 		writeKeyValue_Bool(settings, "show_fps", s_graphicsSettings.showFps);
 		writeKeyValue_Bool(settings, "3doNormalFix", s_graphicsSettings.fix3doNormalOverflow);
+		writeKeyValue_Bool(settings, "ignore3doLimits", s_graphicsSettings.ignore3doLimits);
 		writeKeyValue_Int(settings, "frameRateLimit", s_graphicsSettings.frameRateLimit);
 		writeKeyValue_Float(settings, "brightness", s_graphicsSettings.brightness);
 		writeKeyValue_Float(settings, "contrast", s_graphicsSettings.contrast);
@@ -651,6 +652,10 @@ namespace TFE_Settings
 		else if (strcasecmp("3doNormalFix", key) == 0)
 		{
 			s_graphicsSettings.fix3doNormalOverflow = parseBool(value);
+		}
+		else if (strcasecmp("ignore3doLimits", key) == 0)
+		{
+			s_graphicsSettings.ignore3doLimits = parseBool(value);
 		}
 		else if (strcasecmp("frameRateLimit", key) == 0)
 		{

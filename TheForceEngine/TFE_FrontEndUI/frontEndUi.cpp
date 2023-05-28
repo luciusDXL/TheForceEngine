@@ -2146,6 +2146,7 @@ namespace TFE_FrontEndUI
 
 		// 3DO normal fix
 		ImGui::Checkbox("3DO Normal Fix (Restart Required)", &graphics->fix3doNormalOverflow);
+		ImGui::Checkbox("3DO Ignore Limits (Restart Required)", &graphics->ignore3doLimits);
 
 		// Frame Rate Limiter.
 		s32 frameRateLimit = graphics->frameRateLimit;
