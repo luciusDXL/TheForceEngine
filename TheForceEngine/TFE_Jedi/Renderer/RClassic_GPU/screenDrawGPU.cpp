@@ -21,8 +21,8 @@ namespace TFE_Jedi
 
 	enum ScreenQuadShader
 	{
-		SQ_SHADER_UI = 0,
-		SQ_SHADER_LIT,
+		SQ_SHADER_LIT = 0,
+		SQ_SHADER_UI,
 		SQ_SHADER_COUNT
 	};
 
