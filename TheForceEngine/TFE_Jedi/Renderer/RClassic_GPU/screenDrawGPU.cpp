@@ -19,6 +19,13 @@ namespace TFE_Jedi
 	static bool s_initialized = false;
 	extern Vec3f s_cameraPos;
 
+	enum ScreenQuadShader
+	{
+		SQ_SHADER_UI = 0,
+		SQ_SHADER_LIT,
+		SQ_SHADER_COUNT
+	};
+
 	struct ScreenQuadVertex
 	{
 		Vec4f posUv;			// position (xy) and texture coordinates (zw)
@@ -32,14 +39,14 @@ namespace TFE_Jedi
 	};
 	static const u32 c_quadAttrCount = TFE_ARRAYSIZE(c_quadAttrMapping);
 
-	static VertexBuffer s_scrQuadVb;	// Dynamic vertex buffer.
+	static VertexBuffer s_scrQuadVb[SQ_SHADER_COUNT];	// Dynamic vertex buffer.
 	static IndexBuffer  s_scrQuadIb;	// Static index buffer.
-	static Shader       s_scrQuadShader;
-	static ScreenQuadVertex* s_scrQuads = nullptr;
+	static Shader       s_scrQuadShader[SQ_SHADER_COUNT];
+	static ScreenQuadVertex* s_scrQuads[SQ_SHADER_COUNT] = { nullptr };
 
-	static s32 s_screenQuadCount = 0;
-	static s32 s_svScaleOffset = -1;
-	static s32 s_svCameraPos = -1;
+	static s32 s_screenQuadCount[SQ_SHADER_COUNT] = { 0 };
+	static s32 s_svScaleOffset[SQ_SHADER_COUNT] = { -1, -1 };
+	static s32 s_svCameraPos[SQ_SHADER_COUNT] = { -1, -1 };
 	static u32 s_scrQuadsWidth;
 	static u32 s_scrQuadsHeight;
 
@@ -48,26 +55,44 @@ namespace TFE_Jedi
 		SCR_MAX_QUAD_COUNT = 4096,
 	};
 
-	bool screenGPU_loadShaders()
+	ScreenQuadVertex* allocateQuad(ScreenQuadShader shader);
+
+	bool screenGPU_loadShader(s32 index)
 	{
-		if (!s_scrQuadShader.load("Shaders/gpu_render_quad.vert", "Shaders/gpu_render_quad.frag", 0, nullptr, SHADER_VER_STD))
+		ShaderDefine defines[16] = {};
+		s32 defineCount = 0;
+		if (index == SQ_SHADER_LIT)
+		{
+			defines[defineCount].name = "OPT_DYNAMIC_LIGHTING";
+			defines[defineCount].value = "1";
+			defineCount++;
+
+			defines[defineCount].name = "OPT_BLOOM";
+			defines[defineCount].value = "1";
+			defineCount++;
+		}
+
+		if (!s_scrQuadShader[index].load("Shaders/gpu_render_quad.vert", "Shaders/gpu_render_quad.frag", defineCount, defines, SHADER_VER_STD))
 		{
 			return false;
 		}
 
-		s_svScaleOffset = s_scrQuadShader.getVariableId("ScaleOffset");
-		s_svCameraPos   = s_scrQuadShader.getVariableId("CameraPos");
-		if (s_svScaleOffset < 0) { return false; }
+		s_svScaleOffset[index] = s_scrQuadShader[index].getVariableId("ScaleOffset");
+		s_svCameraPos[index] = s_scrQuadShader[index].getVariableId("CameraPos");
+		if (s_svScaleOffset[index] < 0)
+		{
+			return false;
+		}
 
-		s_scrQuadShader.bindTextureNameToSlot("Colormap",     0);
-		s_scrQuadShader.bindTextureNameToSlot("Palette",      1);
-		s_scrQuadShader.bindTextureNameToSlot("Textures",     2);
-		s_scrQuadShader.bindTextureNameToSlot("TextureTable", 3);
+		s_scrQuadShader[index].bindTextureNameToSlot("Colormap",     0);
+		s_scrQuadShader[index].bindTextureNameToSlot("Palette",      1);
+		s_scrQuadShader[index].bindTextureNameToSlot("Textures",     2);
+		s_scrQuadShader[index].bindTextureNameToSlot("TextureTable", 3);
 
-		s_scrQuadShader.bindTextureNameToSlot("lightPosition",  4);
-		s_scrQuadShader.bindTextureNameToSlot("lightData",      5);
-		s_scrQuadShader.bindTextureNameToSlot("lightClusters",  6);
-		s_scrQuadShader.bindTextureNameToSlot("shadowMaps",     7);
+		s_scrQuadShader[index].bindTextureNameToSlot("lightPosition",  4);
+		s_scrQuadShader[index].bindTextureNameToSlot("lightData",      5);
+		s_scrQuadShader[index].bindTextureNameToSlot("lightClusters",  6);
+		s_scrQuadShader[index].bindTextureNameToSlot("shadowMaps",     7);
 
 		return true;
 	}
@@ -80,25 +105,31 @@ namespace TFE_Jedi
 			TFE_RenderShared::quadInit();
 
 			// Create the index and vertex buffer for quads.
-			s_scrQuadVb.create(SCR_MAX_QUAD_COUNT * 4, sizeof(ScreenQuadVertex), c_quadAttrCount, c_quadAttrMapping, true);
-			u16 indices[SCR_MAX_QUAD_COUNT * 6];
-			u16* idx = indices;
-			for (s32 q = 0, vtx = 0; q < SCR_MAX_QUAD_COUNT; q++, idx += 6, vtx += 4)
+			for (s32 s = 0; s < SQ_SHADER_COUNT; s++)
 			{
-				idx[0] = vtx + 0;
-				idx[1] = vtx + 1;
-				idx[2] = vtx + 2;
+				s_scrQuadVb[s].create(SCR_MAX_QUAD_COUNT * 4, sizeof(ScreenQuadVertex), c_quadAttrCount, c_quadAttrMapping, true);
+				if (s == 0)
+				{
+					u16 indices[SCR_MAX_QUAD_COUNT * 6];
+					u16* idx = indices;
+					for (s32 q = 0, vtx = 0; q < SCR_MAX_QUAD_COUNT; q++, idx += 6, vtx += 4)
+					{
+						idx[0] = vtx + 0;
+						idx[1] = vtx + 1;
+						idx[2] = vtx + 2;
 
-				idx[3] = vtx + 0;
-				idx[4] = vtx + 2;
-				idx[5] = vtx + 3;
+						idx[3] = vtx + 0;
+						idx[4] = vtx + 2;
+						idx[5] = vtx + 3;
+					}
+					s_scrQuadIb.create(SCR_MAX_QUAD_COUNT * 6, sizeof(u16), false, indices);
+				}
+				s_scrQuads[s] = (ScreenQuadVertex*)malloc(sizeof(ScreenQuadVertex) * SCR_MAX_QUAD_COUNT * 4);
+				s_screenQuadCount[s] = 0;
+
+				// Shaders and variables.
+				screenGPU_loadShader(ScreenQuadShader(s));
 			}
-			s_scrQuadIb.create(SCR_MAX_QUAD_COUNT * 6, sizeof(u16), false, indices);
-			s_scrQuads = (ScreenQuadVertex*)malloc(sizeof(ScreenQuadVertex) * SCR_MAX_QUAD_COUNT * 4);
-			s_screenQuadCount = 0;
-
-			// Shaders and variables.
-			screenGPU_loadShaders();
 		}
 		s_initialized = true;
 	}
@@ -109,11 +140,14 @@ namespace TFE_Jedi
 		{
 			TFE_RenderShared::destroy();
 			TFE_RenderShared::quadDestroy();
-			s_scrQuadVb.destroy();
 			s_scrQuadIb.destroy();
-			free(s_scrQuads);
+			for (s32 s = 0; s < SQ_SHADER_COUNT; s++)
+			{
+				s_scrQuadVb[s].destroy();
+				free(s_scrQuads[s]);
+				s_scrQuads[s] = nullptr;
+			}
 		}
-		s_scrQuads = nullptr;
 		s_initialized = false;
 	}
 
@@ -136,20 +170,27 @@ namespace TFE_Jedi
 		
 	void screenGPU_beginQuads(u32 width, u32 height)
 	{
-		s_screenQuadCount = 0;
+		for (s32 s = 0; s < SQ_SHADER_COUNT; s++)
+		{
+			s_screenQuadCount[s] = 0;
+		}
 		s_scrQuadsWidth = width;
 		s_scrQuadsHeight = height;
 	}
 
 	void screenGPU_endQuads()
 	{
-		if (s_screenQuadCount)
+		for (s32 s = 0; s < SQ_SHADER_COUNT; s++)
 		{
-			s_scrQuadVb.update(s_scrQuads, sizeof(ScreenQuadVertex) * s_screenQuadCount * 4);
+			if (!s_screenQuadCount[s])
+			{
+				continue;
+			}
+			s_scrQuadVb[s].update(s_scrQuads[s], sizeof(ScreenQuadVertex) * s_screenQuadCount[s] * 4);
 			TFE_RenderState::setStateEnable(false, STATE_CULLING | STATE_DEPTH_TEST | STATE_DEPTH_WRITE | STATE_BLEND);
 			
-			s_scrQuadShader.bind();
-			s_scrQuadVb.bind();
+			s_scrQuadShader[s].bind();
+			s_scrQuadVb[s].bind();
 			s_scrQuadIb.bind();
 
 			// Bind Uniforms & Textures.
@@ -159,8 +200,8 @@ namespace TFE_Jedi
 			const f32 offsetY = -1.0f;
 
 			const f32 scaleOffset[] = { scaleX, scaleY, offsetX, offsetY };
-			s_scrQuadShader.setVariable(s_svScaleOffset, SVT_VEC4, scaleOffset);
-			s_scrQuadShader.setVariable(s_svCameraPos, SVT_VEC3, s_cameraPos.m);
+			s_scrQuadShader[s].setVariable(s_svScaleOffset[s], SVT_VEC4, scaleOffset);
+			s_scrQuadShader[s].setVariable(s_svCameraPos[s], SVT_VEC3, s_cameraPos.m);
 
 			const TextureGpu* palette  = TFE_RenderBackend::getPaletteTexture();
 			const TextureGpu* colormap = TFE_Sectors_GPU::getColormap();
@@ -172,12 +213,12 @@ namespace TFE_Jedi
 			texturePacker->textureTableGPU.bind(3);
 			lighting_bind(4);
 
-			TFE_RenderBackend::drawIndexedTriangles(2 * s_screenQuadCount, sizeof(u16));
+			TFE_RenderBackend::drawIndexedTriangles(2 * s_screenQuadCount[s], sizeof(u16));
 
-			s_scrQuadVb.unbind();
-			s_scrQuadShader.unbind();
-			lighting_unbind(4);
+			s_scrQuadVb[s].unbind();
+			s_scrQuadShader[s].unbind();
 		}
+		lighting_unbind(4);
 	}
 		
 	void screenGPU_beginLines(u32 width, u32 height)
@@ -251,14 +292,13 @@ namespace TFE_Jedi
 
 	void screenGPU_blitTexture(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, JBool forceTransparency, JBool forceOpaque)
 	{
-		if (s_screenQuadCount >= SCR_MAX_QUAD_COUNT)
+		if (s_screenQuadCount[SQ_SHADER_UI] >= SCR_MAX_QUAD_COUNT)
 		{
 			return;
 		}
 
 		u32 textureId_Color = texture->textureId;
-		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
-		s_screenQuadCount++;
+		ScreenQuadVertex* quad = allocateQuad(SQ_SHADER_UI);
 
 		f32 fx0 = f32(x0);
 		f32 fy0 = f32(y0);
@@ -281,7 +321,7 @@ namespace TFE_Jedi
 
 	void screenGPU_blitTextureLit(TextureData* texture, DrawRect* rect, s32 x0, s32 y0, u8 lightLevel, JBool forceTransparency)
 	{
-		if (s_screenQuadCount >= SCR_MAX_QUAD_COUNT)
+		if (s_screenQuadCount[SQ_SHADER_UI] >= SCR_MAX_QUAD_COUNT)
 		{
 			return;
 		}
@@ -293,8 +333,7 @@ namespace TFE_Jedi
 		u8 color = 0;
 		u32 textureId_Color = textureId | (u32(color) << 16u) | (u32(lightLevel) << 24u);
 
-		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
-		s_screenQuadCount++;
+		ScreenQuadVertex* quad = allocateQuad(SQ_SHADER_UI);
 
 		f32 fx0 = fixed16ToFloat(x0);
 		f32 fy0 = fixed16ToFloat(y0);
@@ -323,8 +362,7 @@ namespace TFE_Jedi
 		f32 fy1 = fixed16ToFloat(y1);
 		u32 textureId_Color = 0xffffu | (u32(color) << 16u) | (31u << 24u);
 
-		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
-		s_screenQuadCount++;
+		ScreenQuadVertex* quad = allocateQuad(SQ_SHADER_UI);
 
 		quad[0].posUv = { fx0, fy0, 0.0f, 1.0f };
 		quad[1].posUv = { fx1, fy0, 1.0f, 1.0f };
@@ -337,10 +375,18 @@ namespace TFE_Jedi
 		quad[3].textureId_Color = textureId_Color;
 	}
 
+	ScreenQuadVertex* allocateQuad(ScreenQuadShader shader)
+	{
+		ScreenQuadVertex* quad = &s_scrQuads[shader][s_screenQuadCount[shader] * 4];
+		s_screenQuadCount[shader]++;
+		return quad;
+	}
+
 	// Scaled versions.
 	void screenGPU_blitTextureScaled(TextureData* texture, DrawRect* rect, fixed16_16 x0, fixed16_16 y0, fixed16_16 xScale, fixed16_16 yScale, u8 lightLevel, JBool forceTransparency, JBool applyDynamicLights)
 	{
-		if (s_screenQuadCount >= SCR_MAX_QUAD_COUNT)
+		const ScreenQuadShader shader = applyDynamicLights ? SQ_SHADER_LIT : SQ_SHADER_UI;
+		if (s_screenQuadCount[shader] >= SCR_MAX_QUAD_COUNT)
 		{
 			return;
 		}
@@ -352,9 +398,7 @@ namespace TFE_Jedi
 		u8 color = applyDynamicLights ? 1 : 0;
 		u32 textureId_Color = textureId | (u32(color) << 16u) | (u32(lightLevel) << 24u);
 
-		ScreenQuadVertex* quad = &s_scrQuads[s_screenQuadCount * 4];
-		s_screenQuadCount++;
-
+		ScreenQuadVertex* quad = allocateQuad(shader);
 		f32 fx0 = fixed16ToFloat(x0);
 		f32 fy0 = fixed16ToFloat(y0);
 		f32 fx1 = fixed16ToFloat(x1);

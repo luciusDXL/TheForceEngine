@@ -100,11 +100,8 @@ void main()
 	}
 	#endif
 
-	// Optional bloom.
+	// Write out the bloom mask.
+	// TODO: Replace baseColor with emissive factor, derived from an emissive texture.
+	// TODO: Write to a secondary render target.
 	Out_Color.a = writeBloomMask(int(baseColor), 1.0);
-	// Adjust based on depth (move into writeBloomMask())
-	//float mask = clamp(2.0*(Out_Color.a - 0.5), 0.0, 1.0);
-	//float z = clamp(dot(cameraRelativePos, CameraDir) * 0.04, 0.25, 1.0);
-	//mask *= z;
-	//Out_Color.a = mask*0.5 + 0.5;
 }

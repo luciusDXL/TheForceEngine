@@ -274,13 +274,9 @@ void main()
 		}
 		#endif
 
-		// Reduce the bloom intensity as ambient increases. This is to simulate a reduction in brightness delta, which translates to
-		// less light bleed. In a modern HDR based renderer, this will be handled automatically by the tonemapper.
-		float minBloom = 0.5;	// Minimum bloom intensity even in bright areas.
-		float bloomIntensity = 1.0;//(1.0 - smoothstep(16.0, 31.0, ambient))*(1.0 - minBloom) + minBloom;
-		//float zScale = clamp(dot(cameraRelativePos, CameraDir) * 0.02, 0.25, 1.0);
-		//bloomIntensity *= zScale;
-		Out_Color.a = writeBloomMask(int(baseColor), bloomIntensity);
-		//Out_Color.rgb = Out_Color.rgb*0.25 + 0.75*((Out_Color.a - 0.5) * 2.0);
+		// Write out the bloom mask.
+		// TODO: Replace baseColor with emissive factor, derived from an emissive texture.
+		// TODO: Write to a secondary render target.
+		Out_Color.a = writeBloomMask(int(baseColor), 1.0);
 	#endif
 }

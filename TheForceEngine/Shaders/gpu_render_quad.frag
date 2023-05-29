@@ -2,6 +2,7 @@
 #ifdef OPT_DYNAMIC_LIGHTING
 #include "Shaders/lighting.h"
 #endif
+#include "Shaders/filter.h"
 
 uniform sampler2D Colormap;
 uniform sampler2D Palette;
@@ -67,11 +68,16 @@ void main()
 	Out_Color.a = 0.5;
 
 #ifdef OPT_DYNAMIC_LIGHTING
-	if (textureId < 65535 && color > 0 && baseColor >= 16)
+	if (textureId < 65535 && color > 0 && baseColor >= 32)
 	{
 		vec3 albedo   = colorToLinear(texelFetch(Palette, ivec2(baseColor, 0), 0).rgb);
 		vec3 ambient  = colorToLinear(Out_Color.rgb);
 		Out_Color.rgb = linearToColor(Frag_Lighting * albedo + ambient);
 	}
+
+	// Write out the bloom mask.
+	// TODO: Replace baseColor with emissive factor, derived from an emissive texture.
+	// TODO: Write to a secondary render target.
+	Out_Color.a = writeBloomMask(baseColor, 1.0);
 #endif
 }

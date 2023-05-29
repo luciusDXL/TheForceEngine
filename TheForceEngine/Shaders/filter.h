@@ -45,6 +45,7 @@ float cubicInterpolation(float x0, float x1, float x2, float x3, float t)
 	return a * t3 + b * t2 + c * t + d;
 }
 
+// TODO: Replace baseColor with emissive factor, derived from an emissive texture.
 float writeBloomMask(int baseColor, float intensity)
 {
 	float mask = 0.5;
