@@ -1161,6 +1161,12 @@ namespace TFE_DarkForces
 
 	void handleGeneralInput()
 	{
+		// Early out if the player is dying.
+		if (s_playerDying)
+		{
+			return;
+		}
+
 		// In the DOS code, the game would just loop here - checking to see if paused has been pressed and then continue.
 		// Obviously that won't work for TFE, so the game paused variable is set and the game will have to handle it.
 		if (inputMapping_getActionState(IADF_PAUSE) == STATE_PRESSED)
@@ -1168,7 +1174,7 @@ namespace TFE_DarkForces
 			mission_pause(~s_gamePaused);
 		}
 
-		if (!s_gamePaused && !s_playerDying)
+		if (!s_gamePaused)
 		{
 			handleBufferedInput();
 			if (s_queuedCheatID != CHEAT_NONE)
