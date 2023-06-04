@@ -1116,10 +1116,6 @@ namespace TFE_DarkForces
 	{
 		const char* bufferedText = TFE_Input::getBufferedText();
 		const size_t bufferedLen = strlen(bufferedText);
-		if (s_playerDying)
-		{
-			return;
-		}
 
 		for (size_t i = 0; i < bufferedLen; i++)
 		{
@@ -1172,7 +1168,7 @@ namespace TFE_DarkForces
 			mission_pause(~s_gamePaused);
 		}
 
-		if (!s_gamePaused)
+		if (!s_gamePaused && !s_playerDying)
 		{
 			handleBufferedInput();
 			if (s_queuedCheatID != CHEAT_NONE)
