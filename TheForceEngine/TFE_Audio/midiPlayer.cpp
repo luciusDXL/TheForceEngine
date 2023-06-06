@@ -11,13 +11,7 @@
 #include <TFE_Audio/MidiSynth/fm4Opl3Device.h>
 #include <algorithm>
 #include <assert.h>
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN 1
-#include <Windows.h>
-#undef min
-#undef max
-#endif
+#include <mutex>
 
 using namespace TFE_Audio;
 
@@ -57,7 +51,7 @@ namespace TFE_MidiPlayer
 
 	static atomic_bool s_runMusicThread;
 	static u8 s_channelSrcVolume[MIDI_CHANNEL_COUNT] = { 0 };
-	static Mutex s_mutex;
+	static std::mutex* s_mutex = nullptr;
 
 	static MidiDevice* s_midiDevice = nullptr;
 	static MidiCallback s_midiCallback = {};
@@ -111,7 +105,9 @@ namespace TFE_MidiPlayer
 		}
 
 		s_runMusicThread.store(true);
-		MUTEX_INITIALIZE(&s_mutex);
+		if (s_mutex != nullptr)
+			delete s_mutex;
+		s_mutex = new std::mutex;
 
 		s_thread = Thread::create("MidiThread", midiUpdateFunc, nullptr);
 		if (s_thread)
@@ -142,8 +138,8 @@ namespace TFE_MidiPlayer
 
 		delete s_thread;
 		delete s_midiDevice;
-
-		MUTEX_DESTROY(&s_mutex);
+		delete s_mutex;
+		s_mutex = nullptr;
 	}
 
 	MidiDevice* getMidiDevice()
@@ -198,14 +194,14 @@ namespace TFE_MidiPlayer
 	//////////////////////////////////////////////////
 	void setVolume(f32 volume)
 	{
-		MUTEX_LOCK(&s_mutex);
+		s_mutex->lock();
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_CHANGE_VOL;
 			midiCmd->newVolume = volume;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		s_mutex->unlock();
 	}
 	
 	// Set the length in seconds that a note is allowed to play for in seconds.
@@ -232,35 +228,35 @@ namespace TFE_MidiPlayer
 
 	void pause()
 	{
-		MUTEX_LOCK(&s_mutex);
+		s_mutex->lock();
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_PAUSE;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		s_mutex->unlock();
 	}
 
 	void resume()
 	{
-		MUTEX_LOCK(&s_mutex);
+		s_mutex->lock();
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_RESUME;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		s_mutex->unlock();
 	}
 
 	void stopMidiSound()
 	{
-		MUTEX_LOCK(&s_mutex);
+		s_mutex->lock();
 		MidiCmd* midiCmd = midiAllocCmd();
 		if (midiCmd)
 		{
 			midiCmd->cmd = MIDI_STOP_NOTES;
 		}
-		MUTEX_UNLOCK(&s_mutex);
+		s_mutex->unlock();
 	}
 
 	void synthesizeMidi(f32* buffer, u32 stereoSampleCount, bool updateBuffer)
@@ -278,7 +274,7 @@ namespace TFE_MidiPlayer
 				s_sampleBufferPtr = s_sampleBuffer.data();
 			}
 
-			MUTEX_LOCK(&s_mutex);
+			s_mutex->lock();
 			// This is checked again, in case it was immediately changed in another thread; such as when changing midi devices or outputs.
 			if (s_midiDevice && s_midiDevice->canRender())
 			{
@@ -293,7 +289,7 @@ namespace TFE_MidiPlayer
 					}
 				}
 			}
-			MUTEX_UNLOCK(&s_mutex);
+			s_mutex->unlock();
 		}
 	}
 
@@ -304,7 +300,7 @@ namespace TFE_MidiPlayer
 
 	void midiSetCallback(void(*callback)(void), f64 timeStep)
 	{
-		MUTEX_LOCK(&s_mutex);
+		s_mutex->lock();
 		s_midiCallback.callback = callback;
 		s_midiCallback.timeStep = timeStep;
 		s_midiCallback.accumulator = 0.0;
@@ -314,16 +310,16 @@ namespace TFE_MidiPlayer
 			s_channelSrcVolume[i] = CHANNEL_MAX_VOLUME;
 		}
 		changeVolume();
-		MUTEX_UNLOCK(&s_mutex);
+		s_mutex->unlock();
 	}
 
 	void midiClearCallback()
 	{
-		MUTEX_LOCK(&s_mutex);
+		s_mutex->lock();
 		s_midiCallback.callback = nullptr;
 		s_midiCallback.timeStep = 0.0;
 		s_midiCallback.accumulator = 0.0;
-		MUTEX_UNLOCK(&s_mutex);
+		s_mutex->unlock();
 	}
 
 	//////////////////////////////////////////////////
@@ -444,7 +440,7 @@ namespace TFE_MidiPlayer
 		f64 dt = 0.0;
 		while (runThread)
 		{
-			MUTEX_LOCK(&s_mutex);
+			s_mutex->lock();
 						
 			// Read from the command buffer.
 			MidiCmd* midiCmd = s_midiCmdBuffer;
@@ -494,7 +490,7 @@ namespace TFE_MidiPlayer
 				detectHangingNotes();
 			}
 
-			MUTEX_UNLOCK(&s_mutex);
+			s_mutex->unlock();
 			runThread = s_runMusicThread.load();
 		};
 		

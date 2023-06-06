@@ -361,9 +361,6 @@
     <ClInclude Include="TFE_Audio\midiPlayer.h">
       <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_System\Threads\mutex.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_System\Threads\signal.h">
       <Filter>Source\TFE_System\Threads</Filter>
     </ClInclude>

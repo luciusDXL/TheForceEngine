@@ -656,7 +656,6 @@ echo ^)";
     <ClInclude Include="TFE_System\profiler.h" />
     <ClInclude Include="TFE_System\system.h" />
     <ClInclude Include="TFE_System\tfeMessage.h" />
-    <ClInclude Include="TFE_System\Threads\mutex.h" />
     <ClInclude Include="TFE_System\Threads\signal.h" />
     <ClInclude Include="TFE_System\Threads\thread.h" />
     <ClInclude Include="TFE_System\Threads\Win32\mutexWin32.h" />
