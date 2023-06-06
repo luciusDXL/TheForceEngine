@@ -379,11 +379,12 @@ namespace TFE_DarkForces
 		if (sscanf(line, "LEVELS %d", &count) < 1)
 		{
 			game_free(buffer);
+			s_maxLevelIndex = 0;
 			return JFALSE;
 		}
 		else
 		{
-			s_maxLevelIndex = count;
+			s_maxLevelIndex = min(count, MAX_LEVEL_COUNT);
 			if (count)
 			{
 				s_levelDisplayNames = (char**)game_alloc(count * sizeof(char*));
