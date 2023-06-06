@@ -30,6 +30,7 @@ namespace TFE_Jedi
 	void sector_moveWallVertex(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
 	JBool sector_objOverlapsWall(RWall* wall, SecObject* obj, s32* objSide);
 	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
+	void sector_moveObject(SecObject* obj, fixed16_16 offsetX, fixed16_16 offsetZ);
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ);
 
 	f32 isLeft(Vec2f p0, Vec2f p1, Vec2f p2);
@@ -228,24 +229,30 @@ namespace TFE_Jedi
 		fixed16_16 offsetX = mul16(delta, dirX);
 		fixed16_16 offsetZ = mul16(delta, dirZ);
 
-		JBool sectorBlocked = JFALSE;
+		JBool sectorBlockedByPlayer = JFALSE;
 		s32 wallCount = sector->wallCount;
 		RWall* wall = sector->walls;
-		for (s32 i = 0; i < wallCount && !sectorBlocked; i++, wall++)
+		for (s32 i = 0; i < wallCount && !sectorBlockedByPlayer; i++, wall++)
 		{
 			if (wall->flags1 & WF1_WALL_MORPHS)
 			{
-				sectorBlocked |= sector_canWallMove(wall, offsetX, offsetZ);
+				sectorBlockedByPlayer |= sector_canWallMove(wall, offsetX, offsetZ);
 
 				RWall* mirror = wall->mirrorWall;
 				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 				{
-					sectorBlocked |= sector_canWallMove(mirror, offsetX, offsetZ);
+					sectorBlockedByPlayer |= sector_canWallMove(mirror, offsetX, offsetZ);
 				}
 			}
 		}
 
-		if (!sectorBlocked)
+		if (sectorBlockedByPlayer)
+		{
+			sector_moveObject(s_playerObject, offsetX, offsetZ);
+			sectorBlockedByPlayer = JFALSE;
+		}
+		
+		if (!sectorBlockedByPlayer)
 		{
 			sector->dirtyFlags |= SDF_VERTICES;
 
@@ -267,7 +274,7 @@ namespace TFE_Jedi
 			sector_computeBounds(sector);
 		}
 
-		return ~sectorBlocked;
+		return ~sectorBlockedByPlayer;
 	}
 
 	void sector_changeWallLight(RSector* sector, fixed16_16 delta)
