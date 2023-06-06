@@ -280,6 +280,7 @@ namespace TFE_Audio
 		fm4_setVoiceVolumeSide(FM4_OutLeft,  voice, offset, volume);
 
 		s32* output = &m_noteOutput[voice*NoteOut_Count];
+		/*
 		if (output[NoteTimbre0_Right] == 1)
 		{
 			assert(0);
@@ -288,6 +289,7 @@ namespace TFE_Audio
 		{
 			assert(0);
 		}
+		*/
 	}
 
 	void Fm4Opl3Device::fm4_controlChange(s32 channelId, s32 arg1, s32 arg2)
