@@ -32,6 +32,7 @@ namespace TFE_Jedi
 	JBool sector_canWallMove(RWall* wall, fixed16_16 offsetX, fixed16_16 offsetZ);
 	void sector_moveObject(SecObject* obj, fixed16_16 offsetX, fixed16_16 offsetZ);
 	void sector_moveObjects(RSector* sector, u32 flags, fixed16_16 offsetX, fixed16_16 offsetZ);
+	void sector_moveObjectsIfBlockingWall(RWall* wall, SecObject** objects, s32 objectCount, fixed16_16 offsetX, fixed16_16 offsetZ);
 
 	f32 isLeft(Vec2f p0, Vec2f p1, Vec2f p2);
 	
@@ -238,10 +239,16 @@ namespace TFE_Jedi
 			{
 				sectorBlockedByPlayer |= sector_canWallMove(wall, offsetX, offsetZ);
 
+				SecObject** objectsThisSector = sector->objectList;
+				sector_moveObjectsIfBlockingWall(wall, objectsThisSector, sector->objectCount, offsetX, offsetZ);
+
 				RWall* mirror = wall->mirrorWall;
 				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 				{
 					sectorBlockedByPlayer |= sector_canWallMove(mirror, offsetX, offsetZ);
+
+					SecObject** objectsNextSector = wall->nextSector->objectList;
+					sector_moveObjectsIfBlockingWall(mirror, objectsNextSector, wall->nextSector->objectCount, offsetX, offsetZ);
 				}
 			}
 		}
@@ -275,6 +282,23 @@ namespace TFE_Jedi
 		}
 
 		return ~sectorBlockedByPlayer;
+	}
+
+	void sector_moveObjectsIfBlockingWall(RWall* wall, SecObject** objects, s32 objectCount, fixed16_16 offsetX, fixed16_16 offsetZ)
+	{
+		for (s32 i = 0; i < objectCount; i++)
+		{
+			SecObject* obj = objects[i];
+			s32 objSide = 0;
+			
+			if (obj && (obj->flags & OBJ_FLAG_MOVABLE) && (obj->entityFlags != ETFLAG_PLAYER))
+			{
+				if (sector_objOverlapsWall(wall, obj, &objSide) && objSide == 1)
+				{
+					sector_moveObject(obj, offsetX, offsetZ);
+				}
+			}
+		}
 	}
 
 	void sector_changeWallLight(RSector* sector, fixed16_16 delta)
@@ -1130,7 +1154,7 @@ namespace TFE_Jedi
 		RSector* next = wall->nextSector;
 		if (next)
 		{
-			RSector* sector = wall->sector;
+			RSector* sector = wall->nextSector;
 			if (sector->floorHeight >= obj->posWS.y)
 			{
 				fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
