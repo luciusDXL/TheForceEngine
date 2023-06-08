@@ -1166,13 +1166,20 @@ namespace TFE_Jedi
 		RSector* next = wall->nextSector;
 		if (next)
 		{
-			RSector* sector = wall->sector;
-			if (sector->floorHeight >= obj->posWS.y)
+			if ((wall->flags3 & WF3_SOLID_WALL) || wall->mirrorWall->flags3 & WF3_SOLID_WALL)
 			{
-				fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
-				if (sector->ceilingHeight < objTop)
+				// the wall is "solid" so skip this escape route
+			}
+			else
+			{
+				RSector* sector = wall->sector;				// It is likely that this was supposed to be wall->nextSector
+				if (sector->floorHeight >= obj->posWS.y)
 				{
-					return JFALSE;
+					fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
+					if (sector->ceilingHeight < objTop)
+					{
+						return JFALSE;
+					}
 				}
 			}
 		}
