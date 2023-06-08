@@ -293,10 +293,22 @@ namespace TFE_Jedi
 			
 			if (obj && (obj->flags & OBJ_FLAG_MOVABLE) && (obj->entityFlags != ETFLAG_PLAYER))
 			{
-				if (sector_objOverlapsWall(wall, obj, &objSide) && objSide == 1)
+				// This has to be done because of what I suspect is a bug/typo in sector_objOverlapsWall() where the floor and ceiling
+				// heights of wall->sector are tested instead of wall->nextSector
+				RWall* wallToCheckForOverlap = wall->mirror == -1 ? wall : wall->mirrorWall;
+
+				fixed16_16 x0 = wallToCheckForOverlap->w0->x;
+				fixed16_16 z0 = wallToCheckForOverlap->w0->z;
+				wallToCheckForOverlap->w0->x += offsetX;
+				wallToCheckForOverlap->w0->z += offsetZ;
+				
+				if (sector_objOverlapsWall(wallToCheckForOverlap, obj, &objSide))
 				{
 					sector_moveObject(obj, offsetX, offsetZ);
 				}
+
+				wallToCheckForOverlap->w0->x = x0;
+				wallToCheckForOverlap->w0->z = z0;
 			}
 		}
 	}
@@ -1154,7 +1166,7 @@ namespace TFE_Jedi
 		RSector* next = wall->nextSector;
 		if (next)
 		{
-			RSector* sector = wall->nextSector;
+			RSector* sector = wall->sector;
 			if (sector->floorHeight >= obj->posWS.y)
 			{
 				fixed16_16 objTop = obj->posWS.y - obj->worldHeight;
