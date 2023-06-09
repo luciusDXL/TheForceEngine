@@ -240,7 +240,7 @@ namespace TFE_Jedi
 				sectorBlockedByPlayer |= sector_canWallMove(wall, offsetX, offsetZ);
 
 				SecObject** objectsThisSector = sector->objectList;
-				sector_moveObjectsIfBlockingWall(wall, objectsThisSector, sector->objectCount, offsetX, offsetZ);
+				sector_moveObjectsIfBlockingWall(wall, objectsThisSector, sector->objectCapacity, offsetX, offsetZ);
 
 				RWall* mirror = wall->mirrorWall;
 				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
@@ -248,7 +248,7 @@ namespace TFE_Jedi
 					sectorBlockedByPlayer |= sector_canWallMove(mirror, offsetX, offsetZ);
 
 					SecObject** objectsNextSector = wall->nextSector->objectList;
-					sector_moveObjectsIfBlockingWall(mirror, objectsNextSector, wall->nextSector->objectCount, offsetX, offsetZ);
+					sector_moveObjectsIfBlockingWall(mirror, objectsNextSector, wall->nextSector->objectCapacity, offsetX, offsetZ);
 				}
 			}
 		}
@@ -284,11 +284,13 @@ namespace TFE_Jedi
 		return ~sectorBlockedByPlayer;
 	}
 
-	void sector_moveObjectsIfBlockingWall(RWall* wall, SecObject** objects, s32 objectCount, fixed16_16 offsetX, fixed16_16 offsetZ)
+	void sector_moveObjectsIfBlockingWall(RWall* wall, SecObject** objects, s32 objectCapacity, fixed16_16 offsetX, fixed16_16 offsetZ)
 	{
-		for (s32 i = 0; i < objectCount; i++)
+		for (s32 i = 0; i < objectCapacity; i++)
 		{
 			SecObject* obj = objects[i];
+			if (!obj) { continue; }
+
 			s32 objSide = 0;
 			
 			if (obj && (obj->flags & OBJ_FLAG_MOVABLE) && (obj->entityFlags != ETFLAG_PLAYER))
