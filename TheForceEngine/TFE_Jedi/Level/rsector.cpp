@@ -239,21 +239,16 @@ namespace TFE_Jedi
 			{
 				sectorBlockedByPlayer |= sector_canWallMove(wall, offsetX, offsetZ);
 
-				SecObject** objectsThisSector = sector->objectList;
-				sector_moveObjectsIfBlockingWall(wall, objectsThisSector, sector->objectCapacity, offsetX, offsetZ);
-
 				RWall* mirror = wall->mirrorWall;
 				if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 				{
 					sectorBlockedByPlayer |= sector_canWallMove(mirror, offsetX, offsetZ);
-
-					SecObject** objectsNextSector = wall->nextSector->objectList;
-					sector_moveObjectsIfBlockingWall(mirror, objectsNextSector, wall->nextSector->objectCapacity, offsetX, offsetZ);
 				}
 			}
 		}
 
-		if (sectorBlockedByPlayer)
+		// If "crushing" sector, move the player and allow the walls to continue moving
+		if (sectorBlockedByPlayer && sector->flags1 & SEC_FLAGS1_CRUSHING)
 		{
 			sector_moveObject(s_playerObject, offsetX, offsetZ);
 			sectorBlockedByPlayer = JFALSE;
@@ -269,11 +264,20 @@ namespace TFE_Jedi
 				if (wall->flags1 & WF1_WALL_MORPHS)
 				{
 					sector_moveWallVertex(wall, offsetX, offsetZ);
+
+					// Move objects that are in the way
+					SecObject** objectsThisSector = sector->objectList;
+					sector_moveObjectsIfBlockingWall(wall, objectsThisSector, sector->objectCapacity, offsetX, offsetZ);
+
 					RWall* mirror = wall->mirrorWall;
 					if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
 					{
 						mirror->sector->dirtyFlags |= SDF_VERTICES;
 						sector_moveWallVertex(mirror, offsetX, offsetZ);
+
+						// Move objects that are in the way
+						SecObject** objectsNextSector = wall->nextSector->objectList;
+						sector_moveObjectsIfBlockingWall(mirror, objectsNextSector, wall->nextSector->objectCapacity, offsetX, offsetZ);
 					}
 				}
 			}

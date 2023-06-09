@@ -3469,6 +3469,7 @@ namespace TFE_Jedi
 		// First attempt to move walls in the sector.
 		if (!sector_moveWalls(elev->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags))
 		{
+			elev->nextStop = inf_advanceStops(elev->stops, 0, -1);		// return to previous stop if non-crushing sector and player is in the way
 			return elev->iValue;
 		}
 
@@ -3513,6 +3514,11 @@ namespace TFE_Jedi
 		const angle14_32 angleInt = floor16(angle);
 		if (!sector_canRotateWalls(sector, angleInt, centerX, centerZ))
 		{
+			if (!(sector->flags1 & SEC_FLAGS1_CRUSHING))
+			{
+				elev->nextStop = inf_advanceStops(elev->stops, 0, -1);		// return to previous stop if non-crushing sector and player is in the way
+			}
+			
 			return elev->iValue;
 		}
 
