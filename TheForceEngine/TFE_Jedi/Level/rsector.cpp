@@ -247,8 +247,9 @@ namespace TFE_Jedi
 			}
 		}
 
-		// If "crushing" sector, move the player and allow the walls to continue moving
-		if (sectorBlockedByPlayer && sector->flags1 & SEC_FLAGS1_CRUSHING)
+		// Normally: Move the player if he is blocking the elevator, and allow the walls to continue moving
+		// If "rebound" flag is set, the elevator will be sent back to its previous stop (door behaviour)
+		if (sectorBlockedByPlayer && !(sector->flags2 & SEC_FLAGS2_MORPH_ELEV_REBOUND))
 		{
 			sector_moveObject(s_playerObject, offsetX, offsetZ);
 			sectorBlockedByPlayer = JFALSE;

@@ -38,6 +38,12 @@ enum SectorFlags1
 	SEC_FLAGS1_SECRET        = FLAG_BIT(19),
 };
 
+enum SectorFlags2
+{
+	SEC_FLAGS2_MORPH_ELEV_REBOUND	= FLAG_BIT(0)		// JK added: used to instruct a morph_move or morph_spin elevator to rebound on contact with player (door behaviour)
+};
+
+
 // Added for TFE to support floating point and GPU sub-renderers.
 // Floating point or GPU based sector data should be cached and only parts updated based
 // on these flags.
