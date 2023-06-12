@@ -437,6 +437,8 @@ namespace TFE_Settings
 				writeKeyValue_Bool(settings, "autorun", s_gameSettings.df_autorun);
 				writeKeyValue_Bool(settings, "ignoreInfLimit", s_gameSettings.df_ignoreInfLimit);
 				writeKeyValue_Int(settings, "pitchLimit", s_gameSettings.df_pitchLimit);
+				writeKeyValue_Bool(settings, "morphPatch1", s_gameSettings.df_morphPatch1);
+				writeKeyValue_Bool(settings, "morphPatch2", s_gameSettings.df_morphPatch2);
 			}
 		}
 	}
@@ -884,6 +886,14 @@ namespace TFE_Settings
 		else if (strcasecmp("pitchLimit", key) == 0)
 		{
 			s_gameSettings.df_pitchLimit = PitchLimit(parseInt(value));
+		}
+		else if (strcasecmp("morphPatch1", key) == 0)
+		{
+			s_gameSettings.df_morphPatch1 = parseBool(value);
+		}
+		else if (strcasecmp("morphPatch2", key) == 0)
+		{
+			s_gameSettings.df_morphPatch2 = parseBool(value);
 		}
 	}
 

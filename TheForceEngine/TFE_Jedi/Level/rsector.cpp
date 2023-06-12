@@ -8,6 +8,7 @@
 #include "levelData.h"
 #include <TFE_Game/igame.h>
 #include <TFE_System/system.h>
+#include <TFE_Settings/settings.h>
 #include <TFE_DarkForces/player.h>
 #include <TFE_DarkForces/projectile.h>
 #include <TFE_Jedi/Collision/collision.h>
@@ -247,14 +248,18 @@ namespace TFE_Jedi
 			}
 		}
 
-		// Normally: Move the player if he is blocking the elevator, and allow the walls to continue moving
-		// If "rebound" flag is set, the elevator will be sent back to its previous stop (door behaviour)
-		if (sectorBlockedByPlayer && !(sector->flags2 & SEC_FLAGS2_MORPH_ELEV_REBOUND))
+		TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+		if (gameSettings->df_morphPatch2)
 		{
-			sector_moveObject(s_playerObject, offsetX, offsetZ);
-			sectorBlockedByPlayer = JFALSE;
+			// Normally: Move the player if he is blocking the elevator, and allow the walls to continue moving
+			// If "rebound" flag is set, the elevator will be sent back to its previous stop (door behaviour)
+			if (sectorBlockedByPlayer && !(sector->flags2 & SEC_FLAGS2_MORPH_ELEV_REBOUND))
+			{
+				sector_moveObject(s_playerObject, offsetX, offsetZ);
+				sectorBlockedByPlayer = JFALSE;
+			}
 		}
-		
+
 		if (!sectorBlockedByPlayer)
 		{
 			sector->dirtyFlags |= SDF_VERTICES;
@@ -266,9 +271,12 @@ namespace TFE_Jedi
 				{
 					sector_moveWallVertex(wall, offsetX, offsetZ);
 
-					// Move objects that are in the way
-					SecObject** objectsThisSector = sector->objectList;
-					sector_moveObjectsIfBlockingWall(wall, objectsThisSector, sector->objectCapacity, offsetX, offsetZ);
+					if (gameSettings->df_morphPatch2)
+					{
+						// Move objects that are in the way
+						SecObject** objectsThisSector = sector->objectList;
+						sector_moveObjectsIfBlockingWall(wall, objectsThisSector, sector->objectCapacity, offsetX, offsetZ);
+					}
 
 					RWall* mirror = wall->mirrorWall;
 					if (mirror && (mirror->flags1 & WF1_WALL_MORPHS))
@@ -276,9 +284,12 @@ namespace TFE_Jedi
 						mirror->sector->dirtyFlags |= SDF_VERTICES;
 						sector_moveWallVertex(mirror, offsetX, offsetZ);
 
-						// Move objects that are in the way
-						SecObject** objectsNextSector = wall->nextSector->objectList;
-						sector_moveObjectsIfBlockingWall(mirror, objectsNextSector, wall->nextSector->objectCapacity, offsetX, offsetZ);
+						if (gameSettings->df_morphPatch2)
+						{
+							// Move objects that are in the way
+							SecObject** objectsNextSector = wall->nextSector->objectList;
+							sector_moveObjectsIfBlockingWall(mirror, objectsNextSector, wall->nextSector->objectCapacity, offsetX, offsetZ);
+						}
 					}
 				}
 			}
@@ -1173,9 +1184,10 @@ namespace TFE_Jedi
 		RSector* next = wall->nextSector;
 		if (next)
 		{
-			if ((wall->flags3 & WF3_SOLID_WALL) || wall->mirrorWall->flags3 & WF3_SOLID_WALL)
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+			if (gameSettings->df_morphPatch1 && (wall->flags3 & WF3_SOLID_WALL || wall->mirrorWall->flags3 & WF3_SOLID_WALL))
 			{
-				// the wall is "solid" so skip this escape route
+				// the wall is "solid" so treat it like a non-adjoined wall
 			}
 			else
 			{

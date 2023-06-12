@@ -163,6 +163,8 @@ struct TFE_Settings_Game
 	bool df_showSecretFoundMsg = true;  // Show a message when the player finds a secret.
 	bool df_autorun = false;			// Run by default instead of walk.
 	bool df_ignoreInfLimit = true;		// Ignore the vanilla INF limit.
+	bool df_morphPatch1 = true;			// "No walk" (solid wall) flag is enforced for collision with moving walls.
+	bool df_morphPatch2 = false;		// Moving (not rotating) walls will push the player and other objects. Option for moving and rotating elevators to rebound on contact with player.
 	PitchLimit df_pitchLimit  = PITCH_VANILLA_PLUS;
 };
 

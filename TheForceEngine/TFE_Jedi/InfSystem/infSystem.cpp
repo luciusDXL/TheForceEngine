@@ -3469,7 +3469,12 @@ namespace TFE_Jedi
 		// First attempt to move walls in the sector.
 		if (!sector_moveWalls(elev->sector, delta, elev->dirOrCenter.x, elev->dirOrCenter.z, elev->flags))
 		{
-			elev->nextStop = inf_advanceStops(elev->stops, 0, -1);		// elevator is blocked by player and "rebound" flag is set; return to previous stop
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+			if (gameSettings->df_morphPatch2)
+			{
+				elev->nextStop = inf_advanceStops(elev->stops, 0, -1);		// elevator is blocked by player and "rebound" flag is set; return to previous stop
+			}
+			
 			return elev->iValue;
 		}
 
@@ -3514,7 +3519,8 @@ namespace TFE_Jedi
 		const angle14_32 angleInt = floor16(angle);
 		if (!sector_canRotateWalls(sector, angleInt, centerX, centerZ))
 		{
-			if (sector->flags2 & SEC_FLAGS2_MORPH_ELEV_REBOUND)
+			TFE_Settings_Game* gameSettings = TFE_Settings::getGameSettings();
+			if (gameSettings->df_morphPatch2 && sector->flags2 & SEC_FLAGS2_MORPH_ELEV_REBOUND)
 			{
 				elev->nextStop = inf_advanceStops(elev->stops, 0, -1);		// return to previous stop if "rebound" flag is set
 			}

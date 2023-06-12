@@ -664,6 +664,8 @@ namespace TFE_FrontEndUI
 					// Game
 					gameSettings->df_showSecretFoundMsg = false;
 					gameSettings->df_bobaFettFacePlayer = false;
+					gameSettings->df_morphPatch1 = false;
+					gameSettings->df_morphPatch2 = false;
 					// Graphics
 					graphicsSettings->rendererIndex = RENDERER_SOFTWARE;
 					graphicsSettings->widescreen = false;
@@ -1094,6 +1096,18 @@ namespace TFE_FrontEndUI
 		if (ImGui::Checkbox("Remove INF Item Limit (requires restart)", &ignoreInfLimit))
 		{
 			gameSettings->df_ignoreInfLimit = ignoreInfLimit;
+		}
+
+		bool morphPatch1 = gameSettings->df_morphPatch1;
+		if (ImGui::Checkbox("Enforce no-walk wall flag for moving walls", &morphPatch1))
+		{
+			gameSettings->df_morphPatch1 = morphPatch1;
+		}
+
+		bool morphPatch2 = gameSettings->df_morphPatch2;
+		if (ImGui::Checkbox("Morph_move elevators will push objects", &morphPatch2))
+		{
+			gameSettings->df_morphPatch2 = morphPatch2;
 		}
 
 		if (s_drawNoGameDataMsg)
