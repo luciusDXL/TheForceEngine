@@ -49,15 +49,15 @@ enum InfEventMask
 	INF_EVENT_CROSS_LINE_BACK  = FLAG_BIT(1),
 	INF_EVENT_ENTER_SECTOR     = FLAG_BIT(2),
 	INF_EVENT_LEAVE_SECTOR     = FLAG_BIT(3),
-	INF_EVENT_NUDGE_FRONT      = FLAG_BIT(4),	// front of line or inside sector.
-	INF_EVENT_NUDGE_BACK       = FLAG_BIT(5),	// back of line or outside sector.
+	INF_EVENT_NUDGE_FRONT      = FLAG_BIT(4),	// Front of line or inside sector.
+	INF_EVENT_NUDGE_BACK       = FLAG_BIT(5),	// Back of line or outside sector.
 	INF_EVENT_EXPLOSION        = FLAG_BIT(6),
-	INF_EVENT_UNKNOWN          = FLAG_BIT(7),	// skipped slot or unused event?
+	INF_EVENT_UNUSED1          = FLAG_BIT(7),	// Unused slot.
 	INF_EVENT_SHOOT_LINE       = FLAG_BIT(8),	// Shoot or punch line.
 	INF_EVENT_LAND             = FLAG_BIT(9),	// Land on floor
-	INF_EVENT_10               = FLAG_BIT(10),	// Unknown event
-	INF_EVENT_11               = FLAG_BIT(11),	// Unknown Event
-	INF_EVENT_INTERNAL         = FLAG_BIT(31),	// Unknown Event
+	INF_EVENT_UNUSED2          = FLAG_BIT(10),
+	INF_EVENT_UNUSED3          = FLAG_BIT(11),
+	INF_EVENT_INTERNAL         = FLAG_BIT(31),	// Internal Event
 	INF_EVENT_NONE = 0,
 	INF_EVENT_ANY = 0xffffffff
 };

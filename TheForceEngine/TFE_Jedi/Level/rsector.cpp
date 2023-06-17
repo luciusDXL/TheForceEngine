@@ -134,6 +134,9 @@ namespace TFE_Jedi
 					obj->posWS.y += heightOffset;
 					if (obj->entityFlags & ETFLAG_PLAYER)
 					{
+						// Dark Forces Bug:
+						// The original code was `s_playerYPos += floorOffset;` here instead, which made second-height based elevators
+						// jittery in DOS. This change makes the elevators smooth (such as move_offset).
 						s_playerYPos += heightOffset;
 					}
 				}
