@@ -359,7 +359,7 @@ namespace TFE_Jedi
 				elev->trigMove = TRIGMOVE_CONT;
 				elev->speed = FIXED(8);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
-				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
+				link->eventMask = INF_EVENT_UNUSED2 | INF_EVENT_UNUSED3 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
 			} break;
 			case IELEV_SP_BASIC_AUTO:
 			{
@@ -398,7 +398,7 @@ namespace TFE_Jedi
 				elev->trigMove = TRIGMOVE_CONT;
 				stop1->delay = IDELAY_HOLD;
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
-				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
+				link->eventMask = INF_EVENT_UNUSED2 | INF_EVENT_UNUSED3 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
 			} break;
 			case IELEV_SP_UNIMPLEMENTED:
 			case IELEV_SP_MID:
@@ -412,7 +412,7 @@ namespace TFE_Jedi
 				elev->trigMove = TRIGMOVE_CONT;
 				elev->speed = FIXED(8);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
-				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
+				link->eventMask = INF_EVENT_UNUSED2 | INF_EVENT_UNUSED3 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT | INF_EVENT_ENTER_SECTOR;
 			} break;
 			case IELEV_SP_DOOR:
 			{
@@ -435,7 +435,7 @@ namespace TFE_Jedi
 
 				elev->speed = FIXED(30);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
-				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
+				link->eventMask = INF_EVENT_UNUSED2 | INF_EVENT_UNUSED3 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
 			} break;
 			case IELEV_SP_DOOR_INV:
 			{
@@ -453,7 +453,7 @@ namespace TFE_Jedi
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = FIXED(15);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
-				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
+				link->eventMask = INF_EVENT_UNUSED2 | INF_EVENT_UNUSED3 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
 			} break;
 			case IELEV_SP_DOOR_MID:
 			{
@@ -477,7 +477,7 @@ namespace TFE_Jedi
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = FIXED(15);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
-				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
+				link->eventMask = INF_EVENT_UNUSED2 | INF_EVENT_UNUSED3 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
 
 				// Lower Part
 				elev = inf_allocateElevItem(sector, IELEV_MOVE_FLOOR);
@@ -495,7 +495,7 @@ namespace TFE_Jedi
 				elev->trigMove = TRIGMOVE_LAST;
 				elev->speed = FIXED(15);
 				link->entityMask = INF_ENTITY_PLAYER | INF_ENTITY_SMART_OBJ;
-				link->eventMask = INF_EVENT_11 | INF_EVENT_10 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
+				link->eventMask = INF_EVENT_UNUSED2 | INF_EVENT_UNUSED3 | INF_EVENT_NUDGE_BACK | INF_EVENT_NUDGE_FRONT;
 			} break;
 			case IELEV_SP_MORPH_SPIN1:
 			{

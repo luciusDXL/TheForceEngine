@@ -333,7 +333,7 @@ namespace TFE_RenderBackend
 		for (size_t i = 0; i < s_displayBounds.size(); i++)
 		{
 			if (x >= s_displayBounds[i].x && x < s_displayBounds[i].x + s_displayBounds[i].w &&
-				y >= s_displayBounds[i].y && y < s_displayBounds[i].x + s_displayBounds[i].h)
+				y >= s_displayBounds[i].y && y < s_displayBounds[i].y + s_displayBounds[i].h)
 			{
 				displayIndex = s32(i);
 				break;
