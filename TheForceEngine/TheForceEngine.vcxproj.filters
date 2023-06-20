@@ -361,22 +361,10 @@
     <ClInclude Include="TFE_Audio\midiPlayer.h">
       <Filter>Source\TFE_Audio</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_System\Threads\mutex.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_System\Threads\signal.h">
       <Filter>Source\TFE_System\Threads</Filter>
     </ClInclude>
-    <ClInclude Include="TFE_System\Threads\thread.h">
-      <Filter>Source\TFE_System\Threads</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\Win32\mutexWin32.h">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClInclude>
     <ClInclude Include="TFE_System\Threads\Win32\signalWin32.h">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="TFE_System\Threads\Win32\threadWin32.h">
       <Filter>Source\TFE_System\Threads\Win32</Filter>
     </ClInclude>
     <ClInclude Include="TFE_FrontEndUI\console.h">
@@ -1401,13 +1389,7 @@
     <ClCompile Include="TFE_Audio\midiPlayer.cpp">
       <Filter>Source\TFE_Audio</Filter>
     </ClCompile>
-    <ClCompile Include="TFE_System\Threads\Win32\mutexWin32.cpp">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClCompile>
     <ClCompile Include="TFE_System\Threads\Win32\signalWin32.cpp">
-      <Filter>Source\TFE_System\Threads\Win32</Filter>
-    </ClCompile>
-    <ClCompile Include="TFE_System\Threads\Win32\threadWin32.cpp">
       <Filter>Source\TFE_System\Threads\Win32</Filter>
     </ClCompile>
     <ClCompile Include="TFE_FrontEndUI\console.cpp">
