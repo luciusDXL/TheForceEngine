@@ -4,7 +4,6 @@
 #include "systemMidiDevice.h"
 #include <TFE_Asset/gmidAsset.h>
 #include <TFE_System/system.h>
-#include <TFE_System/Threads/thread.h>
 #include <TFE_Settings/settings.h>
 #include <TFE_FrontEndUI/console.h>
 #include <TFE_Audio/MidiSynth/soundFontDevice.h>
@@ -12,6 +11,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <mutex>
+#include <thread>
 
 using namespace TFE_Audio;
 
@@ -47,7 +47,7 @@ namespace TFE_MidiPlayer
 	static const f32 c_musicVolumeScale = 0.75f;
 	static f32 s_masterVolume = 1.0f;
 	static f32 s_masterVolumeScaled = s_masterVolume * c_musicVolumeScale;
-	static Thread* s_thread = nullptr;
+	static std::thread* s_thread = nullptr;
 
 	static atomic_bool s_runMusicThread;
 	static u8 s_channelSrcVolume[MIDI_CHANNEL_COUNT] = { 0 };
@@ -68,7 +68,7 @@ namespace TFE_MidiPlayer
 	static Instrument s_instrOn[MIDI_INSTRUMENT_COUNT] = { 0 };
 	static f64 s_curNoteTime = 0.0;
 
-	TFE_THREADRET midiUpdateFunc(void* userData);
+	void midiUpdateFunc(void* userData);
 	void stopAllNotes();
 	void changeVolume();
 	void allocateMidiDevice(MidiDeviceType type);
@@ -109,11 +109,7 @@ namespace TFE_MidiPlayer
 			delete s_mutex;
 		s_mutex = new std::mutex;
 
-		s_thread = Thread::create("MidiThread", midiUpdateFunc, nullptr);
-		if (s_thread)
-		{
-			s_thread->run();
-		}
+		s_thread = new std::thread(midiUpdateFunc, nullptr);
 
 		CCMD("setMusicVolume", setMusicVolumeConsole, 1, "Sets the music volume, range is 0.0 to 1.0");
 		CCMD("getMusicVolume", getMusicVolumeConsole, 0, "Get the current music volume where 0 = silent, 1 = maximum.");
@@ -130,13 +126,12 @@ namespace TFE_MidiPlayer
 		TFE_System::logWrite(LOG_MSG, "MidiPlayer", "Shutdown");
 		// Destroy the thread before shutting down the Midi Device.
 		s_runMusicThread.store(false);
-		if (s_thread->isPaused())
+		if (s_thread)
 		{
-			s_thread->resume();
+			s_thread->join();
+			delete s_thread;
+			s_thread = nullptr;
 		}
-		s_thread->waitOnExit();
-
-		delete s_thread;
 		delete s_midiDevice;
 		if (s_mutex)
 		{
@@ -211,22 +206,6 @@ namespace TFE_MidiPlayer
 	void setMaximumNoteLength(f32 dt)
 	{
 		s_maxNoteLength = f64(dt);
-	}
-
-	void pauseThread()
-	{
-		if (s_thread)
-		{
-			s_thread->pause();
-		}
-	}
-
-	void resumeThread()
-	{
-		if (s_thread)
-		{
-			s_thread->resume();
-		}
 	}
 
 	void pause()
@@ -431,7 +410,7 @@ namespace TFE_MidiPlayer
 	}
 
 	// Thread Function
-	TFE_THREADRET midiUpdateFunc(void* userData)
+	void midiUpdateFunc(void* userData)
 	{
 		bool runThread  = true;
 		bool wasPlaying = false;
@@ -496,8 +475,6 @@ namespace TFE_MidiPlayer
 			s_mutex->unlock();
 			runThread = s_runMusicThread.load();
 		};
-		
-		return (TFE_THREADRET)0;
 	}
 
 	// Console Functions

@@ -31,9 +31,6 @@ namespace TFE_MidiPlayer
 	void midiSetCallback(void(*callback)(void) = nullptr, f64 timeStep = 0.0);
 	void midiClearCallback();
 
-	void pauseThread();
-	void resumeThread();
-		
 	// Pause the midi player, which also stops all sound channels.
 	void pause();
 	// Resume midi playback from where it left off.
