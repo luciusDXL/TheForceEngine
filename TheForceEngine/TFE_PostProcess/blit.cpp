@@ -42,27 +42,27 @@ bool Blit::buildShaders()
 	m_featureShaders[1].load("Shaders/blit.vert", "Shaders/blit.frag", 1, defines);
 	m_featureShaders[1].bindTextureNameToSlot("VirtualDisplay", 0);
 	m_featureShaders[1].bindTextureNameToSlot("Palette", 1);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom0", 2);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom1", 3);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom2", 4);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom3", 5);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom4", 6);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom5", 7);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom6", 8);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom7", 9);
+	m_featureShaders[1].bindTextureNameToSlot("Bloom0", 2);
+	m_featureShaders[1].bindTextureNameToSlot("Bloom1", 3);
+	m_featureShaders[1].bindTextureNameToSlot("Bloom2", 4);
+	m_featureShaders[1].bindTextureNameToSlot("Bloom3", 5);
+	m_featureShaders[1].bindTextureNameToSlot("Bloom4", 6);
+	m_featureShaders[1].bindTextureNameToSlot("Bloom5", 7);
+	m_featureShaders[1].bindTextureNameToSlot("Bloom6", 8);
+	m_featureShaders[1].bindTextureNameToSlot("Bloom7", 9);
 
 	// BLIT_GPU_COLOR_CORRECTION feature
 	defines[0] = { "ENABLE_GPU_COLOR_CORRECTION", "1" };
 	m_featureShaders[2].load("Shaders/blit.vert", "Shaders/blit.frag", 1, defines);
 	m_featureShaders[2].bindTextureNameToSlot("VirtualDisplay", 0);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom0", 2);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom1", 3);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom2", 4);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom3", 5);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom4", 6);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom5", 7);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom6", 8);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom7", 9);
+	m_featureShaders[2].bindTextureNameToSlot("Bloom0", 2);
+	m_featureShaders[2].bindTextureNameToSlot("Bloom1", 3);
+	m_featureShaders[2].bindTextureNameToSlot("Bloom2", 4);
+	m_featureShaders[2].bindTextureNameToSlot("Bloom3", 5);
+	m_featureShaders[2].bindTextureNameToSlot("Bloom4", 6);
+	m_featureShaders[2].bindTextureNameToSlot("Bloom5", 7);
+	m_featureShaders[2].bindTextureNameToSlot("Bloom6", 8);
+	m_featureShaders[2].bindTextureNameToSlot("Bloom7", 9);
 
 	// BLIT_GPU_COLOR_CONVERSION + BLIT_GPU_COLOR_CORRECTION features
 	defines[0] = { "ENABLE_GPU_COLOR_CONVERSION", "1" };
@@ -70,14 +70,14 @@ bool Blit::buildShaders()
 	m_featureShaders[3].load("Shaders/blit.vert", "Shaders/blit.frag", 2, defines);
 	m_featureShaders[3].bindTextureNameToSlot("VirtualDisplay", 0);
 	m_featureShaders[3].bindTextureNameToSlot("Palette", 1);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom0", 2);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom1", 3);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom2", 4);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom3", 5);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom4", 6);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom5", 7);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom6", 8);
-	m_featureShaders[0].bindTextureNameToSlot("Bloom7", 9);
+	m_featureShaders[3].bindTextureNameToSlot("Bloom0", 2);
+	m_featureShaders[3].bindTextureNameToSlot("Bloom1", 3);
+	m_featureShaders[3].bindTextureNameToSlot("Bloom2", 4);
+	m_featureShaders[3].bindTextureNameToSlot("Bloom3", 5);
+	m_featureShaders[3].bindTextureNameToSlot("Bloom4", 6);
+	m_featureShaders[3].bindTextureNameToSlot("Bloom5", 7);
+	m_featureShaders[3].bindTextureNameToSlot("Bloom6", 8);
+	m_featureShaders[3].bindTextureNameToSlot("Bloom7", 9);
 
 	return true;
 }

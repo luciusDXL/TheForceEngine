@@ -275,7 +275,7 @@ namespace TFE_DarkForces
 					}
 					else
 					{
-						pickedUpItem = 0;
+						pickedUpItem = JFALSE;
 					}
 				} break;
 			}
