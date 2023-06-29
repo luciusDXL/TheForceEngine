@@ -10,6 +10,7 @@
 #include <TFE_FileSystem/paths.h>
 #include <TFE_System/system.h>
 #include <TFE_System/parser.h>
+#include <TFE_System/endian.h>
 #include <TFE_Jedi/Serialization/serialization.h>
 #include <assert.h>
 
@@ -434,15 +435,27 @@ namespace TFE_DarkForces
 		{
 			return JFALSE;
 		}
+		saveData->agentData.selectedMission = TFE_Endian::swapLE32(saveData->agentData.selectedMission);
+		saveData->agentData.nextMission = TFE_Endian::swapLE32(saveData->agentData.nextMission);
+		for (s32 i = 0; i < 140; i++)
+		{
+			saveData->ammo[i] = TFE_Endian::swapLE32(saveData->ammo[i]);
+		}
 		return JTRUE;
 	}
 
-	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, const LevelSaveData* saveData)
+	JBool agent_writeAgentConfigData(FileStream* file, s32 agentId, LevelSaveData* saveData)
 	{
 		s32 fileOffset = agentId*sizeof(LevelSaveData) + s_headerSize;
 		if (!file->seek(fileOffset))
 		{
 			return JFALSE;
+		}
+		saveData->agentData.selectedMission = TFE_Endian::swapLE32(saveData->agentData.selectedMission);
+		saveData->agentData.nextMission = TFE_Endian::swapLE32(saveData->agentData.nextMission);
+		for (s32 i = 0; i < 140; i++)
+		{
+			saveData->ammo[i] = TFE_Endian::swapLE32(saveData->ammo[i]);
 		}
 		file->writeBuffer(saveData, sizeof(LevelSaveData));
 		return JTRUE;

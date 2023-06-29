@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include "delt.h"
+#include <TFE_System/endian.h>
 #include <TFE_Game/igame.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_FileSystem/filestream.h>
@@ -93,7 +94,9 @@ namespace TFE_DarkForces
 		file.readBuffer(buffer, (u32)size);
 		file.close();
 
-		const s16 frameCount = *((s16*)buffer);
+		s16 frameCount = *((s16*)buffer);
+		frameCount = TFE_Endian::swapLE16(frameCount);
+		
 		const u8* frames = buffer + 2;
 
 		*outFrames = (DeltFrame*)game_alloc(sizeof(DeltFrame) * frameCount);
@@ -102,6 +105,7 @@ namespace TFE_DarkForces
 		for (s32 i = 0; i < frameCount; i++)
 		{
 			u32 size = *((u32*)frames);
+			size = TFE_Endian::swapLE32(size);
 			frames += 4;
 
 			loadDeltIntoFrame(&outFramePtr[i], frames, size);
@@ -226,6 +230,10 @@ namespace TFE_DarkForces
 	void loadDeltIntoFrame(DeltFrame* frame, const u8* buffer, u32 size)
 	{
 		DeltHeader header = *((DeltHeader*)buffer);
+		header.offsetX = TFE_Endian::swapLE16(header.offsetX);
+		header.offsetY = TFE_Endian::swapLE16(header.offsetY);
+		header.sizeX = TFE_Endian::swapLE16(header.sizeX);
+		header.sizeY = TFE_Endian::swapLE16(header.sizeY);
 		header.sizeX++;
 		header.sizeY++;
 
@@ -255,10 +263,10 @@ namespace TFE_DarkForces
 
 			data += sizeof(DeltLine);
 
-			const s32 startX = line->xStart;
-			const s32 startY = line->yStart;
-			const bool rle = (line->sizeAndType & 1) ? true : false;
-			s32 pixelCount = (line->sizeAndType >> 1) & 0x3FFF;
+			const s32 startX = TFE_Endian::swapLE16(line->xStart);
+			const s32 startY = TFE_Endian::swapLE16(line->yStart);
+			const bool rle = (TFE_Endian::swapLE16(line->sizeAndType) & 1) ? true : false;
+			s32 pixelCount = (TFE_Endian::swapLE16(line->sizeAndType) >> 1) & 0x3FFF;
 
 			u8* image = frame->texture.image + startX + startY * header.sizeX;
 			while (pixelCount > 0)

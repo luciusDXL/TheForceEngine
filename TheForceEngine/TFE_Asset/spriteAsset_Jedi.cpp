@@ -2,6 +2,7 @@
 
 #include "spriteAsset_Jedi.h"
 #include <TFE_System/system.h>
+#include <TFE_System/endian.h>
 #include <TFE_FileSystem/filestream.h>
 #include <TFE_FileSystem/paths.h>
 #include <TFE_Asset/assetSystem.h>
@@ -62,8 +63,20 @@ namespace TFE_Sprite_Jedi
 		const u8* data = s_buffer.data();
 
 		// Determine ahead of time how much we need to allocate.
-		const WaxFrame* base_frame = (WaxFrame*)data;
-		const WaxCell* base_cell = WAX_CellPtr(data, base_frame);
+		WaxFrame* base_frame = (WaxFrame*)data;
+		base_frame->offsetX = TFE_Endian::swapLE32(base_frame->offsetX);
+		base_frame->offsetY = TFE_Endian::swapLE32(base_frame->offsetY);
+		base_frame->flip = TFE_Endian::swapLE32(base_frame->flip);
+		base_frame->cellOffset = TFE_Endian::swapLE32(base_frame->cellOffset);
+		base_frame->widthWS = TFE_Endian::swapLE32(base_frame->widthWS);
+		base_frame->heightWS = TFE_Endian::swapLE32(base_frame->heightWS);
+
+		WaxCell* base_cell = WAX_CellPtr(data, base_frame);
+		base_cell->sizeX = TFE_Endian::swapLE32(base_cell->sizeX);
+		base_cell->sizeY = TFE_Endian::swapLE32(base_cell->sizeY);
+		base_cell->compressed = TFE_Endian::swapLE32(base_cell->compressed);
+		base_cell->dataSize = TFE_Endian::swapLE32(base_cell->dataSize);
+		base_cell->columnOffset = TFE_Endian::swapLE32(base_cell->columnOffset);
 		const u32 columnSize = base_cell->sizeX * sizeof(u32);
 
 		// This is a "load in place" format in the original code.
@@ -90,6 +103,11 @@ namespace TFE_Sprite_Jedi
 		{
 			// Update the column offset, it starts right after the cell data.
 			cell->columnOffset = frame->cellOffset + sizeof(WaxCell);
+			u32* columns = (u32*)((u8*)asset + cell->columnOffset);
+			for (s32 c = 0; c < cell->sizeX; c++)
+			{
+				columns[c] = TFE_Endian::swapLE32(columns[c]);
+			}
 		}
 		else
 		{
@@ -211,7 +229,18 @@ namespace TFE_Sprite_Jedi
 		file.close();
 
 		const u8* data = s_buffer.data();
-		const Wax* srcWax = (Wax*)data;
+		Wax* srcWax = (Wax*)data;
+		srcWax->version = TFE_Endian::swapLE32(srcWax->version);
+		srcWax->animCount = TFE_Endian::swapLE32(srcWax->animCount);
+		srcWax->frameCount = TFE_Endian::swapLE32(srcWax->frameCount);
+		srcWax->cellCount = TFE_Endian::swapLE32(srcWax->cellCount);
+		srcWax->xScale = TFE_Endian::swapLE32(srcWax->xScale);
+		srcWax->yScale = TFE_Endian::swapLE32(srcWax->yScale);
+		srcWax->xtraLight = TFE_Endian::swapLE32(srcWax->xtraLight);
+		for (s32 animIdx = 0; animIdx < WAX_MAX_ANIM; animIdx++)
+		{
+			srcWax->animOffsets[animIdx] = TFE_Endian::swapLE32(srcWax->animOffsets[animIdx]);
+		}
 		
 		// every animation is filled out until the end, so no animations = no wax.
 		if (!srcWax->animOffsets[0])
@@ -221,20 +250,71 @@ namespace TFE_Sprite_Jedi
 		s_cellOffsets.clear();
 
 		// First determine the size to allocate (note that this will overallocate a bit because cells are shared).
+		std::vector<u32> swappedAnims;
+		std::vector<u32> swappedViews;
+		std::vector<u32> swappedFrames;
+		std::vector<u32> swappedCells;
 		u32 sizeToAlloc = sizeof(JediWax) + (u32)s_buffer.size();
 		const s32* animOffset = srcWax->animOffsets;
 		for (s32 animIdx = 0; animIdx < 32 && animOffset[animIdx]; animIdx++)
 		{
 			WaxAnim* anim = (WaxAnim*)(data + animOffset[animIdx]);
+			if (animOffset[animIdx] && std::find(swappedAnims.begin(), swappedAnims.end(), animOffset[animIdx]) == swappedAnims.end())
+			{
+				swappedAnims.push_back(animOffset[animIdx]);
+				anim->worldWidth = TFE_Endian::swapLE32(anim->worldWidth);
+				anim->worldHeight = TFE_Endian::swapLE32(anim->worldHeight);
+				anim->frameRate = TFE_Endian::swapLE32(anim->frameRate);
+				anim->frameCount = TFE_Endian::swapLE32(anim->frameCount);
+				for (s32 v = 0; v < WAX_MAX_VIEWS; v++)
+				{
+					anim->viewOffsets[v] = TFE_Endian::swapLE32(anim->viewOffsets[v]);
+				}
+			}
 			const s32* viewOffsets = anim->viewOffsets;
 			for (s32 v = 0; v < 32; v++)
 			{
-				const WaxView* view = (WaxView*)(data + viewOffsets[v]);
+				WaxView* view = (WaxView*)(data + viewOffsets[v]);
+				if (viewOffsets[v] && std::find(swappedViews.begin(), swappedViews.end(), viewOffsets[v]) == swappedViews.end())
+				{
+					swappedViews.push_back(viewOffsets[v]);
+					for (s32 f = 0; f < WAX_MAX_FRAMES; f++)
+					{
+						view->frameOffsets[f] = TFE_Endian::swapLE32(view->frameOffsets[f]);
+					}
+				}
 				const s32* frameOffset = view->frameOffsets;
 				for (s32 f = 0; f < 32 && frameOffset[f]; f++)
 				{
-					const WaxFrame* frame = (WaxFrame*)(data + frameOffset[f]);
-					const WaxCell* cell = frame->cellOffset ? (WaxCell*)(data + frame->cellOffset) : nullptr;
+					WaxFrame* frame = (WaxFrame*)(data + frameOffset[f]);
+					if (frameOffset[f] && std::find(swappedFrames.begin(), swappedFrames.end(), frameOffset[f]) == swappedFrames.end())
+					{
+						swappedFrames.push_back(frameOffset[f]);
+						frame->offsetX = TFE_Endian::swapLE32(frame->offsetX);
+						frame->offsetY = TFE_Endian::swapLE32(frame->offsetY);
+						frame->flip = TFE_Endian::swapLE32(frame->flip);
+						frame->cellOffset = TFE_Endian::swapLE32(frame->cellOffset);
+						frame->widthWS = TFE_Endian::swapLE32(frame->widthWS);
+						frame->heightWS = TFE_Endian::swapLE32(frame->heightWS);
+					}
+					WaxCell* cell = frame->cellOffset ? (WaxCell*)(data + frame->cellOffset) : nullptr;
+					if (frame->cellOffset && std::find(swappedCells.begin(), swappedCells.end(), frame->cellOffset) == swappedCells.end())
+					{
+						swappedCells.push_back(frame->cellOffset);
+						cell->sizeX = TFE_Endian::swapLE32(cell->sizeX);
+						cell->sizeY = TFE_Endian::swapLE32(cell->sizeY);
+						cell->compressed = TFE_Endian::swapLE32(cell->compressed);
+						cell->dataSize = TFE_Endian::swapLE32(cell->dataSize);
+						cell->columnOffset = TFE_Endian::swapLE32(cell->columnOffset);
+						if (cell->compressed == 1)
+						{
+							u32* columns = (u32*)(data + frame->cellOffset + sizeof(WaxCell));
+							for (s32 c = 0; c < cell->sizeX; c++)
+							{
+								columns[c] = TFE_Endian::swapLE32(columns[c]);
+							}
+						}
+					}
 					if (cell && cell->compressed == 0 && isUniqueCell(frame->cellOffset))
 					{
 						sizeToAlloc += cell->sizeX * sizeof(u32);

@@ -5,6 +5,7 @@
 #include "lview.h"
 #include "ldraw.h"
 #include "ltimer.h"
+#include <TFE_System/endian.h>
 #include <TFE_Game/igame.h>
 #include <assert.h>
 
@@ -42,7 +43,7 @@ namespace TFE_DarkForces
 		s16* data = (s16*)actor->data;
 		if (data)
 		{
-			lrect_set(rect, data[0], data[1], data[2], data[3]);
+			lrect_set(rect, TFE_Endian::swapLE16(data[0]), TFE_Endian::swapLE16(data[1]), TFE_Endian::swapLE16(data[2]), TFE_Endian::swapLE16(data[3]));
 			JBool hFlip, vFlip;
 			lactor_getFlip(actor, &hFlip, &vFlip);
 			lrect_flip(rect, &actor->bounds, hFlip, JFALSE);
@@ -153,11 +154,11 @@ namespace TFE_DarkForces
 	JBool lactorDelt_drawClipped(u8* data, s16 x, s16 y, JBool dirty)
 	{
 		s16* data16 = (s16*)data;
-		s16 sx = data16[0] + x;
-		s16 sy = data16[1] + y;
+		s16 sx = TFE_Endian::swapLE16(data16[0]) + x;
+		s16 sy = TFE_Endian::swapLE16(data16[1]) + y;
 
-		s16 ex = data16[2] + x;
-		s16 ey = data16[3] + y;
+		s16 ex = TFE_Endian::swapLE16(data16[2]) + x;
+		s16 ey = TFE_Endian::swapLE16(data16[3]) + y;
 		data16 += 4;
 
 		LRect drect;
@@ -197,17 +198,17 @@ namespace TFE_DarkForces
 		s16 ex, ey;
 		if (hFlip)
 		{
-			ex = w - data16[0] + x;
-			sy = data16[1] + y;
-			sx = w - data16[2] + x;
-			ey = data16[3] + y;
+			ex = w - TFE_Endian::swapLE16(data16[0]) + x;
+			sy = TFE_Endian::swapLE16(data16[1]) + y;
+			sx = w - TFE_Endian::swapLE16(data16[2]) + x;
+			ey = TFE_Endian::swapLE16(data16[3]) + y;
 		}
 		else
 		{
-			sx = data16[0] + x;
-			sy = data16[1] + y;
-			ex = data16[2] + x;
-			ey = data16[3] + y;
+			sx = TFE_Endian::swapLE16(data16[0]) + x;
+			sy = TFE_Endian::swapLE16(data16[1]) + y;
+			ex = TFE_Endian::swapLE16(data16[2]) + x;
+			ey = TFE_Endian::swapLE16(data16[3]) + y;
 		}
 		data16 += 4;
 
