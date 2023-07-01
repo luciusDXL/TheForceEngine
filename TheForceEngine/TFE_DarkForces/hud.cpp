@@ -247,6 +247,21 @@ namespace TFE_DarkForces
 		s_hudShieldFont    = hud_loadFont("ArmNum.fnt");
 		s_hudHealthFont    = hud_loadFont("HelNum.fnt");
 
+		// Gracefully handle 'StatusLf' or 'StatusRt' not loading correctly.
+		// The original code just crashes (probably) in this case.
+		bool canDrawHud = true;
+		if (!s_hudStatusL)
+		{
+			TFE_System::logWrite(LOG_ERROR, "HUD", "Failed to load 'StatusLf.bm' - cannot draw HUD.");
+			canDrawHud = false;
+		}
+		if (!s_hudStatusR)
+		{
+			TFE_System::logWrite(LOG_ERROR, "HUD", "Failed to load 'StatusRt.bm' - cannot draw HUD.");
+			canDrawHud = false;
+		}
+		if (!canDrawHud) { return; }
+
 		// Create offscreen buffers for the HUD elements.
 		s_cachedHudLeft  = createOffScreenBuffer(s_hudStatusL->width, s_hudStatusL->height, OBF_TRANS);
 		s_cachedHudRight = createOffScreenBuffer(s_hudStatusR->width, s_hudStatusR->height, OBF_TRANS);
@@ -686,6 +701,9 @@ namespace TFE_DarkForces
 		
 	void hud_drawAndUpdate(u8* framebuffer)
 	{
+		// Handle the case where the HUD has not been loaded.
+		if (!s_hudStatusL || !s_hudStatusR) { return; }
+
 		ScreenRect* screenRect = vfb_getScreenRect(VFB_RECT_UI);
 
 		// TFE Note: drawing the HUD when GPU rendering is enabled is a bit different, since we can just draw all of the items scaled.
