@@ -1194,6 +1194,14 @@ namespace TFE_FrontEndUI
 		s_saveImageView->update(s_saveDir[index].imageData, TFE_SaveSystem::SAVE_IMAGE_WIDTH * TFE_SaveSystem::SAVE_IMAGE_HEIGHT * 4);
 	}
 
+	void openLoadConfirmPopup()
+	{
+		sprintf(s_saveGameConfirmMsg, "Load '%s'?###SaveConfirm", s_newSaveName);
+		ImGui::OpenPopup(s_saveGameConfirmMsg);
+		s_popupOpen = true;
+		s_popupSetFocus = true;
+	}
+
 	void openSaveNameEditPopup(const char* prevName)
 	{
 		if (prevName[0] == 0)
@@ -1217,10 +1225,17 @@ namespace TFE_FrontEndUI
 		ImGui::CloseCurrentPopup();
 	}
 
-	void saveConfirmed()
+	void saveLoadConfirmed(bool isSaving)
 	{
 		s_saveLoadSetupRequired = true;
-		TFE_SaveSystem::postSaveRequest(s_fileName, s_newSaveName, 3);
+		if (isSaving)
+		{
+			TFE_SaveSystem::postSaveRequest(s_fileName, s_newSaveName, 3);
+		}
+		else // loading
+		{
+			TFE_SaveSystem::postLoadRequest(s_fileName);
+		}
 		closeSaveNameEditPopup();
 	}
 
@@ -1389,8 +1404,9 @@ namespace TFE_FrontEndUI
 						}
 						else
 						{
-							TFE_SaveSystem::postLoadRequest(s_saveDir[s_selectedSaveSlot].fileName);
-							shouldExit = true;
+							strcpy(s_fileName, s_saveDir[s_selectedSaveSlot].fileName);
+							strcpy(s_newSaveName, s_saveDir[s_selectedSaveSlot].saveName);
+							openLoadConfirmPopup();
 						}
 
 						if (shouldExit)
@@ -1427,15 +1443,20 @@ namespace TFE_FrontEndUI
 					s_popupSetFocus = false;
 				}
 				ImGui::SetNextItemWidth(768 * s_uiScale);
-				if (ImGui::InputText("###SaveNameText", s_newSaveName, TFE_SaveSystem::SAVE_MAX_NAME_LEN, ImGuiInputTextFlags_EnterReturnsTrue))
+				if (save && ImGui::InputText("###SaveNameText", s_newSaveName, TFE_SaveSystem::SAVE_MAX_NAME_LEN, ImGuiInputTextFlags_EnterReturnsTrue))
 				{
 					shouldExit = true;
-					saveConfirmed();
+					saveLoadConfirmed(save);
+				}
+				else if (!save && TFE_Input::keyPressed(KEY_RETURN))
+				{
+					shouldExit = true;
+					saveLoadConfirmed(save);
 				}
 				if (ImGui::Button("OK", ImVec2(120, 0)))
 				{
 					shouldExit = true;
-					saveConfirmed();
+					saveLoadConfirmed(save);
 				}
 				ImGui::SameLine(0.0f, 32.0f);
 				if (ImGui::Button("Cancel", ImVec2(120, 0)))
