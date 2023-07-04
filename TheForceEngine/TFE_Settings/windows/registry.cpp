@@ -241,6 +241,21 @@ namespace WindowsRegistry
 			sprintf(outPath, "%s/SteamApps/common/%s", steamPath, localPath);
 			fixPathSlashes(outPath);
 			pathFound = TFE_Settings::validatePath(outPath, fileToValidate);
+
+			// If that fails, try to use the library paths directly...
+			if (!pathFound && hasLibraryPaths)
+			{
+				for (size_t i = 0; i < libraryPaths.size(); i++)
+				{
+					sprintf(outPath, "%s/SteamApps/common/%s", libraryPaths[i].c_str(), localPath);
+					fixPathSlashes(outPath);
+					pathFound = TFE_Settings::validatePath(outPath, fileToValidate);
+					if (pathFound)
+					{
+						break;
+					}
+				}
+			}
 		}
 		return pathFound;
 	}
