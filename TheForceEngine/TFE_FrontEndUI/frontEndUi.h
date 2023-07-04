@@ -58,6 +58,8 @@ namespace TFE_FrontEndUI
 	void* getGradientTexture();
 	void  setState(AppState state);
 	void  clearMenuState();
+	void  clearNoDataState();
+	bool  isNoDataMessageSet();
 	ImFont* getDialogFont();
 
 	void setCanSave(bool canSave);
