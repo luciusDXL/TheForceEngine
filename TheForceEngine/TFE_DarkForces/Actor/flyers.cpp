@@ -22,12 +22,12 @@ namespace TFE_DarkForces
 	{
 		ThinkerModule* flyingMod = (ThinkerModule*)module;
 		SecObject* obj = flyingMod->header.obj;
-		if (flyingMod->anim.state == 0)
+		if (flyingMod->anim.state == STATE_DELAY)
 		{
 			flyingMod->anim.state = STATE_FIRE1;
 			return s_curTick + random(flyingMod->delay);
 		}
-		else if (flyingMod->anim.state == 1)
+		else if (flyingMod->anim.state == STATE_ANIMATEATTACK)
 		{
 			if (actor_handleSteps(moveMod, &flyingMod->target))
 			{
@@ -66,19 +66,19 @@ namespace TFE_DarkForces
 		ActorTarget* target = &flyingMod->target;
 		SecObject* obj = flyingMod->header.obj;
 
-		if (flyingMod->anim.state == 0)
+		if (flyingMod->anim.state == STATE_DELAY)
 		{
 			flyingMod->anim.state = STATE_FIRE1;
 			return s_curTick + random(flyingMod->delay);
 		}
-		else if (flyingMod->anim.state == 1)
+		else if (flyingMod->anim.state == STATE_ANIMATEATTACK)
 		{
 			if (actor_arrivedAtTarget(target, obj))
 			{
 				flyingMod->anim.state = STATE_DELAY;
 			}
 		}
-		else if (flyingMod->anim.state == 2)
+		else if (flyingMod->anim.state == STATE_FIRE1)
 		{
 			target->yaw   = random_next() & ANGLE_MASK;
 			target->pitch = obj->pitch;

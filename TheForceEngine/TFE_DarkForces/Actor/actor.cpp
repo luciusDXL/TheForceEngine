@@ -1139,7 +1139,7 @@ namespace TFE_DarkForces
 		ThinkerModule* thinkerMod = (ThinkerModule*)module;
 		SecObject* obj = thinkerMod->header.obj;
 
-		if (thinkerMod->anim.state == 1)
+		if (thinkerMod->anim.state == STATE_ANIMATEATTACK)
 		{
 			ActorTarget* target = &thinkerMod->target;
 			JBool arrivedAtTarget = actor_arrivedAtTarget(target, obj);
@@ -1183,7 +1183,7 @@ namespace TFE_DarkForces
 				}
 			}
 		}
-		else if (thinkerMod->anim.state == 2)
+		else if (thinkerMod->anim.state == STATE_FIRE1)
 		{
 			ActorDispatch* logic = actor_getCurrentLogic();
 			fixed16_16 targetX, targetZ;
