@@ -1296,7 +1296,7 @@ namespace TFE_Jedi
 
 	void ImHandleChannelPriorityChange(ImMidiPlayer* player, ImMidiOutChannel* channel)
 	{
-		channel->priority = channel->partPriority + player->priority;
+		channel->priority = std::min(channel->partPriority + player->priority, 127);
 		if (channel->data)
 		{
 			ImMidiChannelSetPriority(channel->data, channel->priority);
