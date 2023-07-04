@@ -23,6 +23,9 @@ out vec4 Out_Color;
 // All components are in the range [0…1], including hue.
 vec3 rgb2hsv(vec3 c)
 {
+	// RGB to HSV requires colors to be clamped to 0..1.
+	c = clamp(c, vec3(0.0), vec3(1.0));
+
     vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
     vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
     vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
@@ -111,10 +114,6 @@ void main()
 	vec3 Bp = mix(B, Cp, f);
 	vec3 bloom = mix(A, Bp, f);
 	Out_Color.rgb += bloom;
-
-	//float mask = clamp(2.0*(Out_Color.a-0.5), 0.0, 0.5);
-	//Out_Color.rgb += (bloom * 6.0 / 36.0);// * (1.0-mask);
-	//Out_Color.rgb = mix(Out_Color.rgb, bloom * 6.0 / 36.0, 1.0-clamp(2.0*(Out_Color.a-0.5),0.0, 1.0));//(bloom * 6.0 / 37.0);
 #endif
 
 #ifdef ENABLE_GPU_COLOR_CORRECTION

@@ -1267,6 +1267,9 @@ namespace TFE_Jedi
 		model_drawListClear();
 		objectPortalPlanes_clear();
 
+		// Set the portal cull threshold to 1 pixel.
+		sbuffer_setPortalSizeThreshold(1.0f);
+
 		updateCachedSector(sector, uploadFlags);
 		traverseSector(sector, nullptr, nullptr, 0, level, uploadFlags, startView[0], startView[1]);
 		frustum_pop();

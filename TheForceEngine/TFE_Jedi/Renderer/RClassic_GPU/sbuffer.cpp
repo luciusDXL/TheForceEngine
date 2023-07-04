@@ -31,8 +31,9 @@ using namespace TFE_RenderBackend;
 namespace TFE_Jedi
 {
 	extern Vec3f s_cameraPos;
+	extern s32 s_displayPortalCulled;
 	const f32 c_sideEps = 0.0001f;
-
+	
 	enum
 	{
 		SEG_CLIP_POOL_SIZE = 8192
@@ -42,6 +43,7 @@ namespace TFE_Jedi
 	SegmentClipped* s_segClippedHead;
 	SegmentClipped* s_segClippedTail;
 	s32 s_segClippedPoolCount = 0;
+	static f32 s_portalCullThreshold = 0.0f;
 
 	SegmentClipped* sbuffer_getClippedSeg(Segment* seg);
 	void insertSegmentBefore(SegmentClipped* cur, SegmentClipped* seg);
@@ -50,7 +52,7 @@ namespace TFE_Jedi
 	void swapSegments(SegmentClipped* a, SegmentClipped* b);
 	bool segmentInFront(Vec2f w0left, Vec2f w0right, Vec3f w0nrml, Vec2f w1left, Vec2f w1right, Vec3f w1nrml);
 	bool segmentsOverlap(f32 ax0, f32 ax1, f32 bx0, f32 bx1);
-	SegmentClipped* mergeSegments(SegmentClipped* a, SegmentClipped* b);
+	SegmentClipped* mergeSegments(SegmentClipped* a, SegmentClipped* b, bool copyV1);
 
 	///////////////////////////////////////////////////////////////
 	// API
@@ -162,6 +164,29 @@ namespace TFE_Jedi
 		s_segClippedTail = nullptr;
 		s_segClippedPoolCount = 0;
 	}
+		
+	void sbuffer_setPortalSizeThreshold(f32 sizeInPixels)
+	{
+		s_portalCullThreshold = sizeInPixels / (f32)getVirtualDisplayWidth3D();
+	}
+
+	bool canMerge(SegmentClipped* cur, SegmentClipped* next)
+	{
+		if (cur->x1 == next->x0)
+		{
+			if (cur->seg->id == next->seg->id)
+			{
+				return true;
+			}
+			// Cull portals that are too small by merging with non-portal segments.
+			if (!cur->seg->portal && next->seg->portal && (next->x1 - next->x0) < s_portalCullThreshold)
+			{
+				s_displayPortalCulled++;
+				return true;
+			}
+		}
+		return false;
+	}
 
 	void sbuffer_mergeSegments()
 	{
@@ -169,9 +194,9 @@ namespace TFE_Jedi
 		while (cur)
 		{
 			SegmentClipped* curNext = cur->next;
-			while (curNext && cur->x1 == curNext->x0 && cur->seg->id == curNext->seg->id)
+			while (curNext && canMerge(cur, curNext))
 			{
-				cur = mergeSegments(cur, curNext);
+				cur = mergeSegments(cur, curNext, cur->seg->id == curNext->seg->id);
 				curNext = cur->next;
 			}
 			cur = cur->next;
@@ -835,11 +860,21 @@ namespace TFE_Jedi
 		}
 	}
 
-	SegmentClipped* mergeSegments(SegmentClipped* a, SegmentClipped* b)
+	SegmentClipped* mergeSegments(SegmentClipped* a, SegmentClipped* b, bool copyV1)
 	{
 		a->next = b->next;
+		if (copyV1)
+		{
+			// Just copy from the second segment.
+			a->v1 = b->v1;
+		}
+		else
+		{
+			// Project.
+			const f32 u = (b->x1 - a->x0) / (a->x1 - a->x0);
+			a->v1 = { a->v0.x * (1.0f - u) + a->v1.x * u, a->v0.z * (1.0f - u) + a->v1.z * u };
+		}
 		a->x1 = b->x1;
-		a->v1 = b->v1;
 
 		if (a->next)
 		{

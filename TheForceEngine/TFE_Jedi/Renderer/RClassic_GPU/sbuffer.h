@@ -37,6 +37,8 @@ namespace TFE_Jedi
 	// Return true if the segment should clip the incoming segment.
 	typedef bool(*SBufferClipRule)(s32 id);
 
+	void sbuffer_setPortalSizeThreshold(f32 sizeInPixels);
+
 	f32   sbuffer_projectToUnitSquare(Vec2f coord);
 	void  sbuffer_handleEdgeWrapping(f32& x0, f32& x1);
 	bool  sbuffer_splitByRange(Segment* seg, Vec2f* range, Vec2f* points, s32 rangeCount);

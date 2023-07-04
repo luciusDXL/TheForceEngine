@@ -13,6 +13,6 @@ void main()
 	vec4 color3 = texture(VirtualDisplay, Frag_UV + vec2( offset.x, -offset.y));
 	vec4 color = 0.25 * (color0 + color1 + color2 + color3);
 
-	Out_Color.rgb = color.rgb * clamp(2.0 * (color.a - 0.5), 0.0, 1.0);
+	Out_Color.rgb = color.rgb * max(1.0/256.0, clamp(2.0 * (color.a - 0.5), 0.0, 1.0));
 	Out_Color.a = 1.0;
 }

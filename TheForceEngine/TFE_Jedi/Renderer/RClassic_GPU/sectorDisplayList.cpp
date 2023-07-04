@@ -60,8 +60,9 @@ namespace TFE_Jedi
 
 	// TODO: factor out so the sprite, sector, and geometry passes can use it.
 	s32 s_displayCurrentPortalId = 0;
+	s32 s_displayPortalCulled = 0;
 	ShaderBuffer s_displayListPlanesGPU;
-
+		
 	static s32 s_displayListCount[SECTOR_PASS_COUNT];
 	static s32 s_displayPlaneCount  = 0;
 	static s32 s_displayPortalCount = 0;
@@ -81,6 +82,7 @@ namespace TFE_Jedi
 	void sdisplayList_init(s32* posIndex, s32* dataIndex, s32 planesIndex)
 	{
 		TFE_COUNTER(s_displayPortalCount, "GPU Portal Count");
+		TFE_COUNTER(s_displayPortalCulled, "GPU Portals Culled");
 		TFE_COUNTER(s_displayPlaneCount, "GPU Plane Count");
 		
 		// Allocate CPU buffers
@@ -144,6 +146,7 @@ namespace TFE_Jedi
 		}
 		s_displayPlaneCount = 0;
 		s_displayPortalCount = 0;
+		s_displayPortalCulled = 0;
 		s_displayCurrentPortalId = 0;
 	}
 
