@@ -332,7 +332,9 @@ void setAppState(AppState newState, int argc, char* argv[])
 		}
 		break;
 	case APP_STATE_LOAD:
-		if (validatePath() && s_loadRequestFilename)
+	{
+		bool pathIsValid = validatePath();
+		if (pathIsValid && s_loadRequestFilename)
 		{
 			newState = APP_STATE_GAME;
 			TFE_FrontEndUI::setAppState(APP_STATE_GAME);
@@ -363,12 +365,16 @@ void setAppState(AppState newState, int argc, char* argv[])
 				TFE_Input::enableRelativeMode(true);
 			}
 		}
-		else
+		else if (!pathIsValid)
 		{
 			newState = APP_STATE_NO_GAME_DATA;
 		}
+		else
+		{
+			newState = s_curState;
+		}
 		s_loadRequestFilename = nullptr;
-		break;
+	} break;
 	case APP_STATE_GAME:
 		if (validatePath())
 		{
@@ -504,9 +510,14 @@ bool validatePath()
 	{
 		// Does DARK.GOB exist?
 		sprintf(testFile, "%s%s", TFE_Paths::getPath(PATH_SOURCE_DATA), "DARK.GOB");
-		if (!FileUtil::exists(testFile) || !GobArchive::validate(testFile, 130))
+		if (!FileUtil::exists(testFile))
 		{
-			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s'", TFE_Paths::getPath(PATH_SOURCE_DATA));
+			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s' - '%s' does not exist.", TFE_Paths::getPath(PATH_SOURCE_DATA), testFile);
+			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
+		}
+		else if (!GobArchive::validate(testFile, 130))
+		{
+			TFE_System::logWrite(LOG_ERROR, "Main", "Invalid game source path: '%s' - '%s' GOB is invalid, too few files.", TFE_Paths::getPath(PATH_SOURCE_DATA), testFile);
 			TFE_Paths::setPath(PATH_SOURCE_DATA, "");
 		}
 	}
@@ -849,6 +860,12 @@ int main(int argc, char* argv[])
 		TFE_FrontEndUI::setCurrentGame(s_curGame);
 		TFE_FrontEndUI::draw(s_curState == APP_STATE_MENU || s_curState == APP_STATE_NO_GAME_DATA || s_curState == APP_STATE_SET_DEFAULTS,
 			s_curState == APP_STATE_NO_GAME_DATA, s_curState == APP_STATE_SET_DEFAULTS, drawFps);
+
+		// Make sure the clear the no game data state if the data becomes valid.
+		if (TFE_FrontEndUI::isNoDataMessageSet() && validatePath())
+		{
+			TFE_FrontEndUI::clearNoDataState();
+		}
 
 		bool swap = s_curState != APP_STATE_EDITOR && (s_curState != APP_STATE_MENU || TFE_FrontEndUI::isConfigMenuOpen());
 		if (s_curState == APP_STATE_EDITOR)

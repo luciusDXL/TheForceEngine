@@ -1014,14 +1014,40 @@ namespace TFE_FrontEndUI
 		ImGui::Spacing();
 
 		ImGui::Text("Dark Forces:"); ImGui::SameLine(100*s_uiScale);
-		ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024); ImGui::SameLine();
+		if (ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024))
+		{
+			char testFile[TFE_MAX_PATH];
+			char testPath[TFE_MAX_PATH];
+			strcpy(testPath, darkForces->sourcePath);
+			FileUtil::fixupPath(testPath);
+
+			sprintf(testFile, "%sDARK.GOB", testPath);
+			strcpy(darkForces->sourcePath, testPath);
+			TFE_Paths::setPath(PATH_SOURCE_DATA, testPath);
+
+			if (FileUtil::exists(testFile))
+			{
+				strcpy(darkForces->sourcePath, testPath);
+				TFE_Paths::setPath(PATH_SOURCE_DATA, testPath);
+			}
+			else
+			{
+				s_drawNoGameDataMsg = true;
+				TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+			}
+		}
+		ImGui::SameLine();
 		if (ImGui::Button("Browse##DarkForces"))
 		{
 			browseWinOpen = 0;
 		}
 
 		ImGui::Text("Outlaws:"); ImGui::SameLine(100*s_uiScale);
-		ImGui::InputText("##OutlawsSource", outlaws->sourcePath, 1024); ImGui::SameLine();
+		if (ImGui::InputText("##OutlawsSource", outlaws->sourcePath, 1024))
+		{
+			// TODO
+		}
+		ImGui::SameLine();
 		if (ImGui::Button("Browse##Outlaws"))
 		{
 			browseWinOpen = 1;
@@ -1139,7 +1165,7 @@ namespace TFE_FrontEndUI
 						ImGui::OpenPopup("Invalid Source Data");
 					}
 				}
-				else if (browseWinOpen == 0)
+				else if (browseWinOpen == 1)
 				{
 					// Before accepting this path, verify that some of the required files are here...
 					char testFile[TFE_MAX_PATH];
@@ -2671,6 +2697,16 @@ namespace TFE_FrontEndUI
 	void clearMenuState()
 	{
 		s_subUI = FEUI_NONE;
+		s_drawNoGameDataMsg = false;
+	}
+
+	bool isNoDataMessageSet()
+	{
+		return s_drawNoGameDataMsg;
+	}
+
+	void clearNoDataState()
+	{
 		s_drawNoGameDataMsg = false;
 	}
 
