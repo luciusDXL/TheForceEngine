@@ -1103,8 +1103,8 @@ namespace TFE_Jedi
 		// There is a portal but the sector beyond is degenerate but has a sky.
 		// In this case the software renderer will still fill in the sky even though no walls are visible, so the GPU
 		// renderer needs to emulate the same behavior.
-		JBool canTreatPortalAsSky = ((curSector->flags1 & SEC_FLAGS1_EXTERIOR) && (curSector->flags1 & SEC_FLAGS1_PIT)) &&
-			prevSector && ((prevSector->flags1 & SEC_FLAGS1_EXTERIOR) && (prevSector->flags1 & SEC_FLAGS1_PIT));
+		const u32 extAndPit = SEC_FLAGS1_EXTERIOR | SEC_FLAGS1_PIT;
+		const JBool canTreatPortalAsSky = (curSector->flags1 & extAndPit) && prevSector && (prevSector->flags1 & extAndPit);
 		if (segCount == 0 && canTreatPortalAsSky)
 		{
 			addPortalAsSky(prevSector, portalWall);

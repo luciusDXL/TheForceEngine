@@ -770,8 +770,8 @@ namespace TFE_Model_Jedi
 					return false;
 				}
 
-				// pre-allocate
-				s_tmpVtx.resize(texVertexCount * 2);
+				// pre-allocate; make sure it handles at least one primitive...
+				s_tmpVtx.resize(max(texVertexCount, 4) * 2);
 
 				nextLine = true;
 				// Keep reading until the format no longer matches...

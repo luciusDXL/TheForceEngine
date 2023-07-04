@@ -54,16 +54,10 @@ bool GobArchive::validate(const char *archivePath, s32 minFileCount)
 		return false;
 	}
 	file.seek(header.MASTERX);
-
 	file.readBuffer(&MASTERN, sizeof(long));
-	if (MASTERN < minFileCount)
-	{
-		file.close();
-		return false;
-	}
-
 	file.close();
-	return true;
+
+	return MASTERN >= minFileCount;
 }
 
 bool GobArchive::open(const char *archivePath)
@@ -104,11 +98,11 @@ bool GobArchive::openFile(const char *file)
 	m_fileOffset = 0;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{
-			m_curFile = i;
+			m_curFile = s32(i);
 			break;
 		}
 	}
@@ -147,7 +141,7 @@ u32 GobArchive::getFileIndex(const char* file)
 	if (!m_archiveOpen) { return INVALID_FILE; }
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{
@@ -163,7 +157,7 @@ bool GobArchive::fileExists(const char *file)
 	m_curFile = -1;
 
 	//search for this file.
-	for (s32 i = 0; i < m_fileList.MASTERN; i++)
+	for (u32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		if (strcasecmp(file, m_fileList.entries[i].NAME) == 0)
 		{
@@ -275,9 +269,9 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 
 	// Read all of the file data.
 	std::vector<std::vector<u8>> fileData(m_fileList.MASTERN);
-	if (m_file.open(m_archivePath, Stream::MODE_READ))
+	if (m_file.open(m_archivePath, Stream::MODE_READ) && m_fileList.MASTERN >= 1)
 	{
-		for (s32 f = 0; f < m_fileList.MASTERN - 1; f++)
+		for (u32 f = 0; f < m_fileList.MASTERN - 1; f++)
 		{
 			fileData[f].resize(m_fileList.entries[f].LEN);
 			m_file.seek(m_fileList.entries[f].IX);
@@ -294,7 +288,7 @@ void GobArchive::addFile(const char* fileName, const char* filePath)
 	if (m_file.open(m_archivePath, Stream::MODE_WRITE))
 	{
 		m_file.writeBuffer(&m_header, sizeof(GOB_Header_t));
-		for (s32 f = 0; f < m_fileList.MASTERN; f++)
+		for (u32 f = 0; f < m_fileList.MASTERN; f++)
 		{
 			m_file.writeBuffer(fileData[f].data(), m_fileList.entries[f].LEN);
 		}

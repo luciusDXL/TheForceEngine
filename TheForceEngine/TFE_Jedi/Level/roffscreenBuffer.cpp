@@ -39,6 +39,8 @@ namespace TFE_Jedi
 
 	void offscreenBuffer_drawTexture(OffScreenBuffer* buffer, TextureData* tex, s32 x, s32 y)
 	{
+		if (!buffer || !tex) { return; }
+
 		s32 x0 = x, y0 = y;
 		// Early out if the texture does not overlap with the buffer.
 		if (x0 >= buffer->width || x0 + tex->width < 0 || y0 >= buffer->height || y0 + tex->height < 0)

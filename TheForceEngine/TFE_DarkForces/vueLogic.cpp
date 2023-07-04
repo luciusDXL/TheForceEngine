@@ -46,8 +46,8 @@ namespace TFE_DarkForces
 		fixed16_16 mtx[9];
 		vec3_fixed offset;
 
-		angle14_16 maxYaw;
-		angle14_16 maxPitch;
+		angle14_16 pitch;
+		angle14_16 yaw;
 		angle14_16 roll;
 		u32 flags;
 	};
@@ -208,9 +208,9 @@ namespace TFE_DarkForces
 					frame->offset.x = floatToFixed16(x1);
 					frame->offset.y = floatToFixed16(y1);
 					frame->offset.z = floatToFixed16(z1);
-					frame->maxYaw = vec2ToAngle(floatToFixed16(x2 - x1), floatToFixed16(z2 - z1));
-					frame->maxPitch = 0;
-					frame->roll = angle14_32(r * 16383.0f / 360.0f);
+					frame->yaw   = vec2ToAngle(floatToFixed16(x2 - x1), floatToFixed16(z2 - z1));
+					frame->pitch = 0;
+					frame->roll  = angle14_32(r * 16383.0f / 360.0f);
 				}
 			}
 		}
@@ -286,7 +286,7 @@ namespace TFE_DarkForces
 						frame->offset.y = -floatToFixed16(f11);
 						frame->offset.z =  floatToFixed16(f10);
 
-						frame->maxPitch = 8191;
+						frame->yaw = 8191;
 						frame->flags = 0;
 					}
 				}
@@ -532,6 +532,7 @@ namespace TFE_DarkForces
 							}
 
 							local(obj)->posWS = local(frame)->offset;
+							local(obj)->yaw = local(frame)->yaw;
 						task_localBlockEnd;
 
 						entity_yield(TASK_NO_DELAY);
