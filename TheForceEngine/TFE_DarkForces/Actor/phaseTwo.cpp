@@ -962,7 +962,7 @@ namespace TFE_DarkForces
 						}
 					} while (msg != MSG_RUN_TASK);
 
-					if (local(physicsActor)->state == 0 && phaseTwo_updatePlayerPos(local(trooper)))
+					if (local(physicsActor)->state == P2STATE_DEFAULT && phaseTwo_updatePlayerPos(local(trooper)))
 					{
 						sound_playCued(s_shared.phase2aSndID, local(obj)->posWS);
 						local(physicsActor)->state = P2STATE_CHARGE;

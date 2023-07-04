@@ -9,6 +9,17 @@
 
 namespace TFE_DarkForces
 {
+	enum DragonStates
+	{
+		DRAGONSTATE_DEFAULT = 0,
+		DRAGONSTATE_CHARGE,
+		DRAGONSTATE_RETREAT,
+		DRAGONSTATE_JUMPING,
+		DRAGONSTATE_ATTACK,
+		DRAGONSTATE_DYING,
+		DRAGONSTATE_SEARCH,
+	};
+
 	void kellDragon_exit();
 	void kellDragon_precache();
 	Logic* kellDragon_setup(SecObject* obj, LogicSetupFunc* setupFunc);
