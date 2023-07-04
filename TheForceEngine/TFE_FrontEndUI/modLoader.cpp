@@ -24,6 +24,7 @@
 #include <TFE_DarkForces/mission.h>
 #include <TFE_Jedi/Renderer/jediRenderer.h>
 #include <map>
+#include <algorithm>
 
 using namespace TFE_Input;
 
@@ -79,7 +80,12 @@ namespace TFE_FrontEndUI
 	bool parseNameFromText(const char* textFileName, const char* path, char* name, std::string* fullText);
 	void extractPosterFromImage(const char* baseDir, const char* zipFile, const char* imageFileName, EditorTexture* poster);
 	void extractPosterFromMod(const char* baseDir, const char* archiveFileName, EditorTexture* poster);
-	void filterMods(bool filterByName);
+	void filterMods(bool filterByName, bool sort = true);
+
+	bool sortQueueByName(QueuedRead& a, QueuedRead& b)
+	{
+		return strcasecmp(a.fileName.c_str(), b.fileName.c_str()) < 0;
+	}
 
 	void modLoader_read()
 	{
@@ -206,6 +212,8 @@ namespace TFE_FrontEndUI
 				++iEntry;
 			}
 		}
+
+		std::sort(s_readQueue.begin(), s_readQueue.end(), sortQueueByName);
 	}
 
 	void modLoader_cleanupResources()
@@ -779,7 +787,7 @@ namespace TFE_FrontEndUI
 		return true;
 	}
 
-	bool filter(std::string& name)
+	bool filter(const std::string& name)
 	{
 		// No filter applied.
 		if (s_modFilter[0] == 0 || s_filterLen == 0) { return true; }
@@ -801,33 +809,38 @@ namespace TFE_FrontEndUI
 		return false;
 	}
 
-	void filterMods(bool filterByName)
+	bool sortFilteredByName(ModData*& a, ModData*& b)
+	{
+		return strcasecmp(a->name.c_str(), b->name.c_str()) < 0;
+	}
+
+	bool sortFilteredByFile(ModData*& a, ModData*& b)
+	{
+		return strcasecmp(a->gobFiles[0].c_str(), b->gobFiles[0].c_str()) < 0;
+	}
+
+	void filterMods(bool filterByName, bool sort)
 	{
 		const size_t count = s_mods.size();
-
 		s_filteredMods.clear();
 		s_filteredMods.reserve(count);
 
-		// for now just add them all...
-		if (filterByName)
+		// Filter by Mod name or by filename.
+		// This is done by looping through all of the mods in the list and then adding them to
+		// filtered mods if the filter passes.
+		for (size_t i = 0; i < count; i++)
 		{
-			for (size_t i = 0; i < count; i++)
+			if (filter(filterByName ? s_mods[i].name : s_mods[i].gobFiles[0]))
 			{
-				if (filter(s_mods[i].name))
-				{
-					s_filteredMods.push_back(&s_mods[i]);
-				}
+				s_filteredMods.push_back(&s_mods[i]);
 			}
 		}
-		else
+
+		// Then apply an alphabetical sorting to the filtered result.
+		// Note - other methods of sorting can be implemented if needed in the future by changing the sort functions.
+		if (sort)
 		{
-			for (size_t i = 0; i < count; i++)
-			{
-				if (filter(s_mods[i].gobFiles[0]))
-				{
-					s_filteredMods.push_back(&s_mods[i]);
-				}
-			}
+			std::sort(s_filteredMods.begin(), s_filteredMods.end(), filterByName ? sortFilteredByName : sortFilteredByFile);
 		}
 	}
 
@@ -973,7 +986,9 @@ namespace TFE_FrontEndUI
 		// Update the filtered list.
 		if (updateFilter)
 		{
-			filterMods(s_viewMode != VIEW_FILE_LIST);
+			// Only sort once the full list is loaded, otherwise the entries constantly suffle around since the name sorting doesn't
+			// match file name sorting very well.
+			filterMods(s_viewMode != VIEW_FILE_LIST, /*sort*/s_readIndex == s_readQueue.size() || s_viewMode == VIEW_FILE_LIST);
 		}
 	}
 
