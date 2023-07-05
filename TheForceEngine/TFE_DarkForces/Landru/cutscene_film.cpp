@@ -135,7 +135,7 @@ namespace TFE_DarkForces
 		{
 			s32 type;
 			file->read(&type);
-			type = TFE_Endian::swapBE32(type);
+			type = TFE_Endian::be32_to_cpu(type);
 
 			char name[32];
 			file->readBuffer(name, 8);
@@ -147,10 +147,10 @@ namespace TFE_DarkForces
 			file->read(&id);
 			file->read(&chunks);
 			file->read(&used);
-			size = TFE_Endian::swapLE32(size);
-			id = TFE_Endian::swapLE16(id);
-			chunks = TFE_Endian::swapLE16(chunks);
-			used = TFE_Endian::swapLE16(used);
+			size = TFE_Endian::le32_to_cpu(size);
+			id = TFE_Endian::le16_to_cpu(id);
+			chunks = TFE_Endian::le16_to_cpu(chunks);
+			used = TFE_Endian::le16_to_cpu(used);
 
 			// Allocate space for the object.
 			FilmObject* obj = (FilmObject*)landru_alloc(sizeof(FilmObject) + used);
@@ -376,9 +376,9 @@ namespace TFE_DarkForces
 			file.read(&version);
 			file.read(&cellCount);
 			file.read(&arraySize);
-			version = TFE_Endian::swapLE16(version);
-			cellCount = TFE_Endian::swapLE16(cellCount);
-			arraySize = TFE_Endian::swapLE16(arraySize);
+			version = TFE_Endian::le16_to_cpu(version);
+			cellCount = TFE_Endian::le16_to_cpu(cellCount);
+			arraySize = TFE_Endian::le16_to_cpu(arraySize);
 
 			if (version != CF_VERSION)
 			{
@@ -462,7 +462,7 @@ namespace TFE_DarkForces
 	JBool cutsceneFilm_isTimeStamp(Film* film, FilmObject* filmObj, u8* data)
 	{
 		s16* chunk = (s16*)(data + filmObj->offset);
-		if (TFE_Endian::swapLE16(chunk[1]) == CF_CMD_TIMESTAMP && TFE_Endian::swapLE16(chunk[2]) == (s16)film->curCell)
+		if (TFE_Endian::le16_to_cpu(chunk[1]) == CF_CMD_TIMESTAMP && TFE_Endian::le16_to_cpu(chunk[2]) == (s16)film->curCell)
 		{
 			return JTRUE;
 		}
@@ -598,13 +598,13 @@ namespace TFE_DarkForces
 	void cutsceneFilm_stepFilmFrame(FilmObject* filmObj, u8* data)
 	{
 		s16* chunk = (s16*)(data + filmObj->offset);
-		filmObj->offset += TFE_Endian::swapLE16(chunk[0]);
+		filmObj->offset += TFE_Endian::le16_to_cpu(chunk[0]);
 	}
 
 	JBool cutsceneFilm_isNextFrame(FilmObject* filmObj, u8* data)
 	{
 		s16* chunk = (s16*)(data + filmObj->offset);
-		if (TFE_Endian::swapLE16(chunk[1]) == CF_CMD_TIMESTAMP || TFE_Endian::swapLE16(chunk[1]) == CF_CMD_END)
+		if (TFE_Endian::le16_to_cpu(chunk[1]) == CF_CMD_TIMESTAMP || TFE_Endian::le16_to_cpu(chunk[1]) == CF_CMD_END)
 		{
 			return JTRUE;
 		}
@@ -614,55 +614,55 @@ namespace TFE_DarkForces
 	void cutsceneFilm_setActorToFilm(FilmObject* filmObj, u8* data)
 	{
 		s16* chunk = (s16*)(data + filmObj->offset);
-		u32 type = TFE_Endian::swapLE16(chunk[1]);
+		u32 type = TFE_Endian::le16_to_cpu(chunk[1]);
 		LActor* actor = (LActor*)filmObj->data;
 		chunk += 2;
 
 		switch (type)
 		{
 			case CF_CMD_ACTOR_POS:
-				lactor_setPos(actor, TFE_Endian::swapLE16(chunk[0]), TFE_Endian::swapLE16(chunk[1]), TFE_Endian::swapLE16(chunk[2]), TFE_Endian::swapLE16(chunk[3]));
+				lactor_setPos(actor, TFE_Endian::le16_to_cpu(chunk[0]), TFE_Endian::le16_to_cpu(chunk[1]), TFE_Endian::le16_to_cpu(chunk[2]), TFE_Endian::le16_to_cpu(chunk[3]));
 				break;
 
 			case CF_CMD_ACTOR_VEL:
-				lactor_setSpeed(actor, TFE_Endian::swapLE16(chunk[0]), TFE_Endian::swapLE16(chunk[1]), TFE_Endian::swapLE16(chunk[2]), TFE_Endian::swapLE16(chunk[3]));
+				lactor_setSpeed(actor, TFE_Endian::le16_to_cpu(chunk[0]), TFE_Endian::le16_to_cpu(chunk[1]), TFE_Endian::le16_to_cpu(chunk[2]), TFE_Endian::le16_to_cpu(chunk[3]));
 				break;
 
 			case CF_CMD_ACTOR_Z:
-				lactor_setZPlane(actor, TFE_Endian::swapLE16(chunk[0]));
+				lactor_setZPlane(actor, TFE_Endian::le16_to_cpu(chunk[0]));
 				break;
 
 			case CF_CMD_ACTOR_STATE:
-				lactor_setState(actor, TFE_Endian::swapLE16(chunk[0]), TFE_Endian::swapLE16(chunk[1]));
+				lactor_setState(actor, TFE_Endian::le16_to_cpu(chunk[0]), TFE_Endian::le16_to_cpu(chunk[1]));
 				break;
 
 			case CF_CMD_ACTOR_STATEV:
-				lactor_setStateSpeed(actor, TFE_Endian::swapLE16(chunk[0]), TFE_Endian::swapLE16(chunk[1]));
+				lactor_setStateSpeed(actor, TFE_Endian::le16_to_cpu(chunk[0]), TFE_Endian::le16_to_cpu(chunk[1]));
 				break;
 
 			case CF_CMD_ACTOR_VAR1:
-				actor->var1 = TFE_Endian::swapLE16(chunk[0]);
+				actor->var1 = TFE_Endian::le16_to_cpu(chunk[0]);
 				break;
 
 			case CF_CMD_ACTOR_VAR2:
-				actor->var2 = TFE_Endian::swapLE16(chunk[0]);
+				actor->var2 = TFE_Endian::le16_to_cpu(chunk[0]);
 				break;
 
 			case CF_CMD_ACTOR_CLIP:
-				lrect_set(&actor->frame, TFE_Endian::swapLE16(chunk[0]), TFE_Endian::swapLE16(chunk[1]), TFE_Endian::swapLE16(chunk[2]), TFE_Endian::swapLE16(chunk[3]));
+				lrect_set(&actor->frame, TFE_Endian::le16_to_cpu(chunk[0]), TFE_Endian::le16_to_cpu(chunk[1]), TFE_Endian::le16_to_cpu(chunk[2]), TFE_Endian::le16_to_cpu(chunk[3]));
 				break;
 
 			case CF_CMD_ACTOR_CLIPV:
-				lrect_set(&actor->frameVelocity, TFE_Endian::swapLE16(chunk[0]), TFE_Endian::swapLE16(chunk[1]), TFE_Endian::swapLE16(chunk[2]), TFE_Endian::swapLE16(chunk[3]));
+				lrect_set(&actor->frameVelocity, TFE_Endian::le16_to_cpu(chunk[0]), TFE_Endian::le16_to_cpu(chunk[1]), TFE_Endian::le16_to_cpu(chunk[2]), TFE_Endian::le16_to_cpu(chunk[3]));
 				break;
 
 			case CF_CMD_ACTOR_SHOW:
-				if (TFE_Endian::swapLE16(chunk[0])) { lactor_show(actor); }
+				if (TFE_Endian::le16_to_cpu(chunk[0])) { lactor_show(actor); }
 				else { lactor_hide(actor); }
 				break;
 
 			case CF_CMD_ACTOR_FLIP:
-				lactor_setFlip(actor, TFE_Endian::swapLE16(chunk[0]), TFE_Endian::swapLE16(chunk[1]));
+				lactor_setFlip(actor, TFE_Endian::le16_to_cpu(chunk[0]), TFE_Endian::le16_to_cpu(chunk[1]));
 				break;
 		}
 	}
@@ -671,7 +671,7 @@ namespace TFE_DarkForces
 	{
 		s16* chunk = (s16*)(data + filmObj->offset);
 		u8*  byteChunk = (u8*)chunk;
-		u16  type = TFE_Endian::swapLE16(chunk[1]);
+		u16  type = TFE_Endian::le16_to_cpu(chunk[1]);
 
 		switch (type)
 		{
@@ -695,8 +695,8 @@ namespace TFE_DarkForces
 			} break;
 			case CF_CMD_VIEW_FADE:
 			{
-				s16 fade = TFE_Endian::swapLE16(chunk[2]);
-				s16 colorFade = TFE_Endian::swapLE16(chunk[3]);
+				s16 fade = TFE_Endian::le16_to_cpu(chunk[2]);
+				s16 colorFade = TFE_Endian::le16_to_cpu(chunk[3]);
 				cutsceneFilm_setFade(fade, colorFade);
 			} break;
 		}
@@ -705,7 +705,7 @@ namespace TFE_DarkForces
 	void cutsceneFilm_setPaletteToFilm(Film* film, FilmObject* filmObj, u8* data)
 	{
 		s16* chunk = (s16*)(data + filmObj->offset);
-		if (TFE_Endian::swapLE16(chunk[1]) == CF_CMD_PALETTE_SET)
+		if (TFE_Endian::le16_to_cpu(chunk[1]) == CF_CMD_PALETTE_SET)
 		{
 			lpalette_setDstPal((LPalette*)filmObj->data);
 		}
@@ -715,7 +715,7 @@ namespace TFE_DarkForces
 	{
 		LSound* sound = (LSound*)filmObj->data;
 		s16* chunk = (s16*)(data + filmObj->offset);
-		u16  type = TFE_Endian::swapLE16(chunk[1]);
+		u16  type = TFE_Endian::le16_to_cpu(chunk[1]);
 		chunk += 2;
 
 		switch (type)
@@ -737,15 +737,15 @@ namespace TFE_DarkForces
 			} break;
 			case CF_CMD_SOUND_VOLUME:
 			{
-				setSoundVolume(sound, TFE_Endian::swapLE16(chunk[0]));
+				setSoundVolume(sound, TFE_Endian::le16_to_cpu(chunk[0]));
 			} break;
 			case CF_CMD_SOUND_FADE:
 			{
-				setSoundFade(sound, TFE_Endian::swapLE16(chunk[0]), TFE_Endian::swapLE16(chunk[1]));
+				setSoundFade(sound, TFE_Endian::le16_to_cpu(chunk[0]), TFE_Endian::le16_to_cpu(chunk[1]));
 			} break;
 			case CF_CMD_SOUND_VAR1:
 			{
-				sound->var1 = TFE_Endian::swapLE16(chunk[0]);
+				sound->var1 = TFE_Endian::le16_to_cpu(chunk[0]);
 				if (sound->var1 == 1)
 				{
 					setSoundKeep(sound);
@@ -753,11 +753,11 @@ namespace TFE_DarkForces
 			} break;
 			case CF_CMD_SOUND_VAR2:
 			{
-				sound->var2 = TFE_Endian::swapLE16(chunk[0]);
+				sound->var2 = TFE_Endian::le16_to_cpu(chunk[0]);
 			} break;
 			case CF_CMD_SOUND_CMD:
 			{
-				if (TFE_Endian::swapLE16(chunk[0]))
+				if (TFE_Endian::le16_to_cpu(chunk[0]))
 				{
 					if (sound->var2 == 1)
 					{
@@ -769,15 +769,15 @@ namespace TFE_DarkForces
 					}
 				}
 
-				if (TFE_Endian::swapLE16(chunk[1])) { setSoundVolume(sound, TFE_Endian::swapLE16(chunk[1])); }
-				if (TFE_Endian::swapLE16(chunk[2]) || TFE_Endian::swapLE16(chunk[3]))
+				if (TFE_Endian::le16_to_cpu(chunk[1])) { setSoundVolume(sound, TFE_Endian::le16_to_cpu(chunk[1])); }
+				if (TFE_Endian::le16_to_cpu(chunk[2]) || TFE_Endian::le16_to_cpu(chunk[3]))
 				{
-					setSoundFade(sound, TFE_Endian::swapLE16(chunk[2]), TFE_Endian::swapLE16(chunk[3]));
+					setSoundFade(sound, TFE_Endian::le16_to_cpu(chunk[2]), TFE_Endian::le16_to_cpu(chunk[3]));
 				}
 			} break;
 			case CF_CMD_SOUND_CMD2:
 			{
-				if (TFE_Endian::swapLE16(chunk[0]))
+				if (TFE_Endian::le16_to_cpu(chunk[0]))
 				{
 					if (sound->var2 == 1)
 					{
@@ -789,14 +789,14 @@ namespace TFE_DarkForces
 					}
 				}
 
-				if (TFE_Endian::swapLE16(chunk[1])) { setSoundVolume(sound, TFE_Endian::swapLE16(chunk[1])); }
-				if (TFE_Endian::swapLE16(chunk[2]) || TFE_Endian::swapLE16(chunk[3]))
+				if (TFE_Endian::le16_to_cpu(chunk[1])) { setSoundVolume(sound, TFE_Endian::le16_to_cpu(chunk[1])); }
+				if (TFE_Endian::le16_to_cpu(chunk[2]) || TFE_Endian::le16_to_cpu(chunk[3]))
 				{
-					setSoundFade(sound, TFE_Endian::swapLE16(chunk[2]), TFE_Endian::swapLE16(chunk[3]));
+					setSoundFade(sound, TFE_Endian::le16_to_cpu(chunk[2]), TFE_Endian::le16_to_cpu(chunk[3]));
 				}
 
-				if (TFE_Endian::swapLE16(chunk[4])) { setSoundPan(sound, TFE_Endian::swapLE16(chunk[4])); }
-				if (TFE_Endian::swapLE16(chunk[5]) || TFE_Endian::swapLE16(chunk[6])) { setSoundPanFade(sound, TFE_Endian::swapLE16(chunk[5]), TFE_Endian::swapLE16(chunk[6])); }
+				if (TFE_Endian::le16_to_cpu(chunk[4])) { setSoundPan(sound, TFE_Endian::le16_to_cpu(chunk[4])); }
+				if (TFE_Endian::le16_to_cpu(chunk[5]) || TFE_Endian::le16_to_cpu(chunk[6])) { setSoundPanFade(sound, TFE_Endian::le16_to_cpu(chunk[5]), TFE_Endian::le16_to_cpu(chunk[6])); }
 			} break;
 		}
 	}

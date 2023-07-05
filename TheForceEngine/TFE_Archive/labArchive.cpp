@@ -26,9 +26,9 @@ bool LabArchive::open(const char *archivePath)
 
 	// Read the directory.
 	m_file.readBuffer(&m_header, sizeof(LAB_Header_t));
-	m_header.version = TFE_Endian::swapLE32(m_header.version);
-	m_header.fileCount = TFE_Endian::swapLE32(m_header.fileCount);
-	m_header.stringTableSize = TFE_Endian::swapLE32(m_header.stringTableSize);
+	m_header.version = TFE_Endian::le32_to_cpu(m_header.version);
+	m_header.fileCount = TFE_Endian::le32_to_cpu(m_header.fileCount);
+	m_header.stringTableSize = TFE_Endian::le32_to_cpu(m_header.stringTableSize);
 	m_stringTable = new char[m_header.stringTableSize + 1];
 	m_entries = new LAB_Entry_t[m_header.fileCount];
 
@@ -36,9 +36,9 @@ bool LabArchive::open(const char *archivePath)
 	m_file.readBuffer(m_entries, sizeof(LAB_Entry_t), m_header.fileCount);
 	for (u32 i = 0; i < m_header.fileCount; i++)
 	{
-		m_entries[i].nameOffset = TFE_Endian::swapLE32(m_entries[i].nameOffset);
-		m_entries[i].dataOffset = TFE_Endian::swapLE32(m_entries[i].dataOffset);
-		m_entries[i].len = TFE_Endian::swapLE32(m_entries[i].len);
+		m_entries[i].nameOffset = TFE_Endian::le32_to_cpu(m_entries[i].nameOffset);
+		m_entries[i].dataOffset = TFE_Endian::le32_to_cpu(m_entries[i].dataOffset);
+		m_entries[i].len = TFE_Endian::le32_to_cpu(m_entries[i].len);
 	}
 
 	// Read string table.

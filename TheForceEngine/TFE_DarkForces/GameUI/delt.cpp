@@ -95,7 +95,7 @@ namespace TFE_DarkForces
 		file.close();
 
 		s16 frameCount = *((s16*)buffer);
-		frameCount = TFE_Endian::swapLE16(frameCount);
+		frameCount = TFE_Endian::le16_to_cpu(frameCount);
 		
 		const u8* frames = buffer + 2;
 
@@ -105,7 +105,7 @@ namespace TFE_DarkForces
 		for (s32 i = 0; i < frameCount; i++)
 		{
 			u32 size = *((u32*)frames);
-			size = TFE_Endian::swapLE32(size);
+			size = TFE_Endian::le32_to_cpu(size);
 			frames += 4;
 
 			loadDeltIntoFrame(&outFramePtr[i], frames, size);
@@ -230,10 +230,10 @@ namespace TFE_DarkForces
 	void loadDeltIntoFrame(DeltFrame* frame, const u8* buffer, u32 size)
 	{
 		DeltHeader header = *((DeltHeader*)buffer);
-		header.offsetX = TFE_Endian::swapLE16(header.offsetX);
-		header.offsetY = TFE_Endian::swapLE16(header.offsetY);
-		header.sizeX = TFE_Endian::swapLE16(header.sizeX);
-		header.sizeY = TFE_Endian::swapLE16(header.sizeY);
+		header.offsetX = TFE_Endian::le16_to_cpu(header.offsetX);
+		header.offsetY = TFE_Endian::le16_to_cpu(header.offsetY);
+		header.sizeX = TFE_Endian::le16_to_cpu(header.sizeX);
+		header.sizeY = TFE_Endian::le16_to_cpu(header.sizeY);
 		header.sizeX++;
 		header.sizeY++;
 
@@ -263,10 +263,10 @@ namespace TFE_DarkForces
 
 			data += sizeof(DeltLine);
 
-			const s32 startX = TFE_Endian::swapLE16(line->xStart);
-			const s32 startY = TFE_Endian::swapLE16(line->yStart);
-			const bool rle = (TFE_Endian::swapLE16(line->sizeAndType) & 1) ? true : false;
-			s32 pixelCount = (TFE_Endian::swapLE16(line->sizeAndType) >> 1) & 0x3FFF;
+			const s32 startX = TFE_Endian::le16_to_cpu(line->xStart);
+			const s32 startY = TFE_Endian::le16_to_cpu(line->yStart);
+			const bool rle = (TFE_Endian::le16_to_cpu(line->sizeAndType) & 1) ? true : false;
+			s32 pixelCount = (TFE_Endian::le16_to_cpu(line->sizeAndType) >> 1) & 0x3FFF;
 
 			u8* image = frame->texture.image + startX + startY * header.sizeX;
 			while (pixelCount > 0)

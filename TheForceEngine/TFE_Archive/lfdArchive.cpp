@@ -40,7 +40,7 @@ bool LfdArchive::open(const char *archivePath)
 	// Read the directory.
 	LFD_Entry_t root, entry;
 	m_file.readBuffer(&root, sizeof(LFD_Entry_t));
-	root.LENGTH = TFE_Endian::swapLE32(root.LENGTH);
+	root.LENGTH = TFE_Endian::le32_to_cpu(root.LENGTH);
 	m_fileList.MASTERN = root.LENGTH / sizeof(LFD_Entry_t);
 	m_fileList.entries = new LFD_EntryFinal_t[m_fileList.MASTERN];
 
@@ -48,7 +48,7 @@ bool LfdArchive::open(const char *archivePath)
 	for (s32 i = 0; i < m_fileList.MASTERN; i++)
 	{
 		m_file.readBuffer(&entry, sizeof(LFD_Entry_t));
-		entry.LENGTH = TFE_Endian::swapLE32(entry.LENGTH);
+		entry.LENGTH = TFE_Endian::le32_to_cpu(entry.LENGTH);
 
 		char name[9] = { 0 };
 		char ext[5]  = { 0 };

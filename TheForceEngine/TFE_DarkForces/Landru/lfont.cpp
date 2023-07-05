@@ -161,10 +161,10 @@ namespace TFE_DarkForces
 		file.read(&font->numChars);
 		file.read(&font->width);
 		file.read(&font->height);
-		font->firstChar = TFE_Endian::swapLE16(font->firstChar);
-		font->numChars = TFE_Endian::swapLE16(font->numChars);
-		font->width = TFE_Endian::swapLE16(font->width);
-		font->height = TFE_Endian::swapLE16(font->height);
+		font->firstChar = TFE_Endian::le16_to_cpu(font->firstChar);
+		font->numChars = TFE_Endian::le16_to_cpu(font->numChars);
+		font->width = TFE_Endian::le16_to_cpu(font->width);
+		font->height = TFE_Endian::le16_to_cpu(font->height);
 		font->charSize = (font->width >> 3) * font->height;
 
 		if (font->height > MAX_FONT_HEIGHT)
@@ -176,8 +176,8 @@ namespace TFE_DarkForces
 
 		file.read(&font->baseline);
 		file.read(&font->isColor);
-		font->baseline = TFE_Endian::swapLE16(font->baseline);
-		font->isColor = TFE_Endian::swapLE16(font->isColor);
+		font->baseline = TFE_Endian::le16_to_cpu(font->baseline);
+		font->isColor = TFE_Endian::le16_to_cpu(font->isColor);
 		
 		font->widthArray = (u8*)landru_alloc(256);
 		memset(font->widthArray, 0, 256);

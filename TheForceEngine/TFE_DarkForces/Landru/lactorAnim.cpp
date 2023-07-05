@@ -42,7 +42,7 @@ namespace TFE_DarkForces
 		s16* data = (s16*)lactor_getArrayData(actor, actor->state);
 		if (data && data[0] != -1 && data[1] != -1)
 		{
-			lrect_set(rect, TFE_Endian::swapLE16(data[0]), TFE_Endian::swapLE16(data[1]), TFE_Endian::swapLE16(data[2]) + 1, TFE_Endian::swapLE16(data[3]) + 1);
+			lrect_set(rect, TFE_Endian::le16_to_cpu(data[0]), TFE_Endian::le16_to_cpu(data[1]), TFE_Endian::le16_to_cpu(data[2]) + 1, TFE_Endian::le16_to_cpu(data[3]) + 1);
 			JBool xFlip, yFlip;
 			lactor_getFlip(actor, &xFlip, &yFlip);
 			lrect_flip(rect, &actor->bounds, xFlip, yFlip);
@@ -90,7 +90,7 @@ namespace TFE_DarkForces
 
 			s16 animCount;
 			file.read(&animCount);
-			animCount = TFE_Endian::swapLE16(animCount); 
+			animCount = TFE_Endian::le16_to_cpu(animCount); 
 			u8** array = (u8**)landru_alloc(sizeof(u8*) * animCount);
 			if (array)
 			{
@@ -98,7 +98,7 @@ namespace TFE_DarkForces
 				{
 					s32 deltaSize;
 					file.read(&deltaSize);
-					deltaSize = TFE_Endian::swapLE32(deltaSize); 
+					deltaSize = TFE_Endian::le32_to_cpu(deltaSize); 
 					if (deltaSize <= 0) { array[i] = nullptr; continue; }
 
 					array[i] = (u8*)landru_alloc(deltaSize);

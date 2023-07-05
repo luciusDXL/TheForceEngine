@@ -54,10 +54,10 @@ bool GobArchive::validate(const char *archivePath, s32 minFileCount)
 		file.close();
 		return false;
 	}
-	header.MASTERX = TFE_Endian::swapLE32(header.MASTERX);
+	header.MASTERX = TFE_Endian::le32_to_cpu(header.MASTERX);
 	file.seek(header.MASTERX);
 	file.readBuffer(&MASTERN, sizeof(long));
-	MASTERN = TFE_Endian::swapLE32(MASTERN);
+	MASTERN = TFE_Endian::le32_to_cpu(MASTERN);
 	file.close();
 
 	return MASTERN >= minFileCount;
@@ -71,17 +71,17 @@ bool GobArchive::open(const char *archivePath)
 
 	// Read the directory.
 	m_file.readBuffer(&m_header, sizeof(GOB_Header_t));
-	m_header.MASTERX = TFE_Endian::swapLE32(m_header.MASTERX);
+	m_header.MASTERX = TFE_Endian::le32_to_cpu(m_header.MASTERX);
 	m_file.seek(m_header.MASTERX);
 
 	m_file.readBuffer(&m_fileList.MASTERN, sizeof(u32));
-	m_fileList.MASTERN = TFE_Endian::swapLE32(m_fileList.MASTERN);
+	m_fileList.MASTERN = TFE_Endian::le32_to_cpu(m_fileList.MASTERN);
 	m_fileList.entries = new GOB_Entry_t[m_fileList.MASTERN];
 	m_file.readBuffer(m_fileList.entries, sizeof(GOB_Entry_t), m_fileList.MASTERN);
 	for (s32 i = 0; i < m_fileList.MASTERN; i++)
 	{
-		m_fileList.entries[i].IX = TFE_Endian::swapLE32(m_fileList.entries[i].IX);
-		m_fileList.entries[i].LEN = TFE_Endian::swapLE32(m_fileList.entries[i].LEN);
+		m_fileList.entries[i].IX = TFE_Endian::le32_to_cpu(m_fileList.entries[i].IX);
+		m_fileList.entries[i].LEN = TFE_Endian::le32_to_cpu(m_fileList.entries[i].LEN);
 	}
 
 	strcpy(m_archivePath, archivePath);

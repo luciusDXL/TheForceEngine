@@ -76,14 +76,14 @@ namespace TFE_DarkForces
 		while (1)
 		{
 			const s16* deltaLine = (s16*)srcImage;
-			s16 sizeAndType = TFE_Endian::swapLE16(deltaLine[0]);
+			s16 sizeAndType = TFE_Endian::le16_to_cpu(deltaLine[0]);
 			if (sizeAndType == 0)
 			{
 				break;
 			}
 
-			s16 xStart = TFE_Endian::swapLE16(deltaLine[1]) + x;
-			s16 yStart = TFE_Endian::swapLE16(deltaLine[2]) + y;
+			s16 xStart = TFE_Endian::le16_to_cpu(deltaLine[1]) + x;
+			s16 yStart = TFE_Endian::le16_to_cpu(deltaLine[2]) + y;
 			// Size of the Delta Line structure.
 			srcImage += sizeof(s16) * 3;
 
@@ -170,9 +170,9 @@ namespace TFE_DarkForces
 		while (1)
 		{
 			const s16* deltaLine = (s16*)srcImage;
-			s16 sizeAndType = TFE_Endian::swapLE16(deltaLine[0]);
-			s16 xStart = TFE_Endian::swapLE16(deltaLine[1]) + x;
-			s16 yStart = TFE_Endian::swapLE16(deltaLine[2]) + y;
+			s16 sizeAndType = TFE_Endian::le16_to_cpu(deltaLine[0]);
+			s16 xStart = TFE_Endian::le16_to_cpu(deltaLine[1]) + x;
+			s16 yStart = TFE_Endian::le16_to_cpu(deltaLine[2]) + y;
 			srcImage += 3 * sizeof(s16);
 
 			if (sizeAndType == 0) { break; }
@@ -241,14 +241,14 @@ namespace TFE_DarkForces
 		while (1)
 		{
 			const s16* deltaLine = (s16*)srcImage;
-			s16 sizeAndType = TFE_Endian::swapLE16(deltaLine[0]);
+			s16 sizeAndType = TFE_Endian::le16_to_cpu(deltaLine[0]);
 			if (sizeAndType == 0)
 			{
 				break;
 			}
 
-			s16 xCur = w - TFE_Endian::swapLE16(deltaLine[1]) + x;
-			s16 yStart = TFE_Endian::swapLE16(deltaLine[2]) + y;
+			s16 xCur = w - TFE_Endian::le16_to_cpu(deltaLine[1]) + x;
+			s16 yStart = TFE_Endian::le16_to_cpu(deltaLine[2]) + y;
 			// Size of the Delta Line structure.
 			srcImage += sizeof(s16) * 3;
 
@@ -306,9 +306,9 @@ namespace TFE_DarkForces
 		while (1)
 		{
 			const s16* deltaLine = (s16*)srcImage;
-			s16 sizeAndType = TFE_Endian::swapLE16(deltaLine[0]);
-			s16 xStart = TFE_Endian::swapLE16(deltaLine[1]) + x;
-			s16 yStart = TFE_Endian::swapLE16(deltaLine[2]) + y;
+			s16 sizeAndType = TFE_Endian::le16_to_cpu(deltaLine[0]);
+			s16 xStart = TFE_Endian::le16_to_cpu(deltaLine[1]) + x;
+			s16 yStart = TFE_Endian::le16_to_cpu(deltaLine[2]) + y;
 			srcImage += 3 * sizeof(s16);
 
 			if (sizeAndType == 0) { break; }
@@ -317,7 +317,7 @@ namespace TFE_DarkForces
 			s32 pixelCount = (sizeAndType >> 1) & 0x3fff;
 			u8* dstImage = &framebuffer[yStart*stride];
 
-			s16 xCur = w - TFE_Endian::swapLE16(deltaLine[1]) + x;
+			s16 xCur = w - TFE_Endian::le16_to_cpu(deltaLine[1]) + x;
 			s16 yCur = yStart;
 			JBool writeRow = (yCur >= clipRect.top && yCur < clipRect.bottom) ? JTRUE : JFALSE;
 
