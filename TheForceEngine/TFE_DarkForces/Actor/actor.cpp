@@ -29,6 +29,7 @@
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 
 using namespace TFE_Jedi;
 
@@ -1201,11 +1202,20 @@ namespace TFE_DarkForces
 			fixed16_16 targetOffset;
 			if (!actorLogic_isStopFlagSet())
 			{
-				// Offset the target by |dx| / 4
-				// This is obviously a typo and bug in the DOS code and should be min(|dx|, |dz|)
-				// but the original code is min(|dx|, |dx|) => |dx|
 				fixed16_16 dx = TFE_Jedi::abs(s_playerObject->posWS.x - obj->posWS.x);
-				targetOffset = dx >> 2;
+				if (!TFE_Settings::getGameSettings()->df_fixTargetOffsetBug) {
+					// Offset the target by |dx| / 4
+					// This is obviously a typo and bug in the DOS code and should be min(|dx|, |dz|)
+					// but the original code is min(|dx|, |dx|) => |dx|
+					targetOffset = dx >> 2;
+				}
+				else
+				{
+					//optional fix to apply the originally intended logic. this has a subtle effect on 
+					// AI movement patterns, usually not affecting a path by more than a few degrees
+					fixed16_16 dz = TFE_Jedi::abs(s_playerObject->posWS.z - obj->posWS.z);
+					targetOffset = TFE_Jedi::min(dx, dz) >> 2;
+				}
 			}
 			else
 			{

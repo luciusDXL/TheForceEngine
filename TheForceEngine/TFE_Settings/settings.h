@@ -158,6 +158,7 @@ struct TFE_Settings_Game
 	// Dark Forces
 	s32  df_airControl = 0;				// Air control, default = 0, where 0 = speed/256 and 8 = speed; range = [0, 8]
 	bool df_bobaFettFacePlayer = false;	// Make Boba Fett try to face the player in all his attack phases.
+	bool df_fixTargetOffsetBug = false;	// Fix a bug caused by a typo in the original AI that caused AI to only consider offset along the X axis.
 	bool df_disableFightMusic  = false;	// Set to true to disable fight music and music transitions during gameplay.
 	bool df_enableAutoaim      = true;  // Set to true to enable autoaim, false to disable.
 	bool df_showSecretFoundMsg = true;  // Show a message when the player finds a secret.

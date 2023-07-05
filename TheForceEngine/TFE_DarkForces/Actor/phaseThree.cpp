@@ -19,6 +19,7 @@
 #include <TFE_Jedi/Memory/list.h>
 #include <TFE_Jedi/Memory/allocator.h>
 #include <TFE_Jedi/Serialization/serialization.h>
+#include <TFE_Settings/settings.h>
 
 namespace TFE_DarkForces
 {
@@ -812,9 +813,19 @@ namespace TFE_DarkForces
 					targetX = s_eyePos.x;
 					targetZ = s_eyePos.z;
 				}
-				// This is a copy-paste bug in the original code, it really should be the min of dx and dz.
+				
 				fixed16_16 dx = TFE_Jedi::abs(s_playerObject->posWS.x - local(obj)->posWS.x);
-				fixed16_16 offset = dx >> 2;
+				fixed16_16 offset;
+				if (!TFE_Settings::getGameSettings()->df_fixTargetOffsetBug)
+				{
+					// This is a copy-paste bug in the original code, it really should be the min of dx and dz.
+					offset = dx >> 2;
+				}
+				else
+				{
+					fixed16_16 dz = TFE_Jedi::abs(s_playerObject->posWS.z - local(obj)->posWS.z);
+					offset = TFE_Jedi::min(dx, dz) >> 2;
+				}
 				angle14_32 angle = vec2ToAngle(local(obj)->posWS.x - targetX, local(obj)->posWS.z - targetZ);
 
 				local(target)->pos.x = targetX;

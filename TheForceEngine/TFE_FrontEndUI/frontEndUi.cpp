@@ -1115,6 +1115,12 @@ namespace TFE_FrontEndUI
 		{
 			gameSettings->df_bobaFettFacePlayer = bobaFettFacePlayer;
 		}
+		
+		bool fixTargetOffsetBug = gameSettings->df_fixTargetOffsetBug;
+		if (ImGui::Checkbox("Fix target offset bug", &fixTargetOffsetBug))
+		{
+			gameSettings->df_fixTargetOffsetBug = fixTargetOffsetBug;
+		}
 
 		bool ignoreInfLimit = gameSettings->df_ignoreInfLimit;
 		if (ImGui::Checkbox("Remove INF Item Limit (requires restart)", &ignoreInfLimit))
