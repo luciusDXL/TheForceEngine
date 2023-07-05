@@ -454,9 +454,10 @@ namespace TFE_DarkForces
 			{
 				if (local(vue)->isCamera > 0)
 				{
-					// TODO
-					assert(0);
-					continue;
+					// The original code sets the camera pointer to the VUE.
+					// But then this is never used.
+					//
+					// s_camera = local(vue);
 				}
 
 				local(frame) = (VueFrame*)allocator_getHead(local(vue)->frames);
