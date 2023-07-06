@@ -17,7 +17,7 @@
 
 // TFE
 #include <TFE_Jedi/Level/rtexture.h>
-#include <TFE_RenderBackend/renderBackend.h>d
+#include <TFE_RenderBackend/renderBackend.h>
 #include <TFE_Asset/imageAsset.h>
 #include <TFE_FileSystem/fileutil.h>
 
@@ -767,8 +767,6 @@ namespace TFE_DarkForces
 		if (!hitTex) { return; }
 
 		// Now export the texture.
-		AssetPool pool;
-		s32 index;
 		const char* name = getTextureName(hitTex);
 		if (name)
 		{
@@ -785,12 +783,9 @@ namespace TFE_DarkForces
 			{
 				// Load the data.
 				FileStream file;
-				if (!file.open(&path, Stream::MODE_READ))
-				{
-					return;
-				}
+				if (!file.open(&path, Stream::MODE_READ)) { return; }
 				s_exportBuffer.resize(file.getSize());
-				file.readBuffer(s_exportBuffer.data(), file.getSize());
+				file.readBuffer(s_exportBuffer.data(), (u32)file.getSize());
 				file.close();
 				
 				// Write it out to disk.
@@ -798,7 +793,7 @@ namespace TFE_DarkForces
 				sprintf(outputName, "Exports/%s", name);
 				if (file.open(outputName, Stream::MODE_WRITE))
 				{
-					file.writeBuffer(s_exportBuffer.data(), s_exportBuffer.size());
+					file.writeBuffer(s_exportBuffer.data(), (u32)s_exportBuffer.size());
 					file.close();
 				}
 			}
