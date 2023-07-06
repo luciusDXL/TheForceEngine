@@ -9,10 +9,24 @@
 #include <TFE_Jedi/Level/robject.h>
 #include <TFE_Jedi/Level/level.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
+#include <TFE_FrontEndUI/console.h>
 // Internal types need to be included in this case.
 #include <TFE_Jedi/InfSystem/infTypesInternal.h>
 #include <TFE_Jedi/Collision/collision.h>
 #include <TFE_System/profiler.h>
+
+// TFE
+#include <TFE_Jedi/Level/rtexture.h>
+#include <TFE_RenderBackend/renderBackend.h>d
+#include <TFE_Asset/imageAsset.h>
+#include <TFE_FileSystem/fileutil.h>
+
+// TFE
+namespace TFE_Jedi
+{
+	extern Vec3f s_cameraPos;
+	extern Vec3f s_cameraDir;
+}
 
 namespace TFE_DarkForces
 {
@@ -82,6 +96,8 @@ namespace TFE_DarkForces
 	JBool s_colResponseStep;
 	JBool s_objCollisionEnabled = JTRUE;
 	vec2_fixed s_colResponseDir;
+
+	void console_exportTexture(const std::vector<std::string>& args);
 
 	///////////////////////////////////////////
 	// Implementation
@@ -688,5 +704,123 @@ namespace TFE_DarkForces
 			}
 		}
 		return JTRUE;
+	}
+
+	// TFE
+	static std::vector<u8> s_exportBuffer;
+
+	void initPlayerCollision()
+	{
+		CCMD("dexportTexture", console_exportTexture, 0, "Export the texture at the center of the screen.");
+	}
+
+	void console_exportTexture(const std::vector<std::string>& args)
+	{
+		// Raycast to determine the wall, floor, or ceiling hit.
+		SecObject* playerObj = s_curPlayerLogic->logic.obj;
+		vec3_fixed p0 = { floatToFixed16(s_cameraPos.x), floatToFixed16(s_cameraPos.y), floatToFixed16(s_cameraPos.z) };
+		vec3_fixed p1 = { p0.x + floatToFixed16(TFE_Jedi::s_cameraDir.x * 100.0f),
+			p0.y + floatToFixed16(TFE_Jedi::s_cameraDir.y * 100.0f), p0.z + floatToFixed16(TFE_Jedi::s_cameraDir.z * 100.0f) };
+
+		const RayHitInfo hitInfo = collision_rayCast3d(playerObj->sector, p0, p1, true);
+		TextureData* hitTex = nullptr;
+		if (hitInfo.hit == RHit_Floor)
+		{
+			hitTex = hitInfo.sector->floorTex ? *hitInfo.sector->floorTex : nullptr;
+		}
+		else if (hitInfo.hit == RHit_Ceiling)
+		{
+			hitTex = hitInfo.sector->ceilTex ? *hitInfo.sector->ceilTex : nullptr;
+		}
+		else if (hitInfo.hit == RHit_WallMid || hitInfo.hit == RHit_WallMid_Trans)
+		{
+			hitTex = hitInfo.wall->midTex ? *hitInfo.wall->midTex : nullptr;
+		}
+		else if (hitInfo.hit == RHit_WallBot)
+		{
+			hitTex = hitInfo.wall->botTex ? *hitInfo.wall->botTex : nullptr;
+		}
+		else if (hitInfo.hit == RHit_WallTop)
+		{
+			hitTex = hitInfo.wall->topTex ? *hitInfo.wall->topTex : nullptr;
+		}
+		if (!hitTex) { return; }
+
+		// Now export the texture.
+		AssetPool pool;
+		s32 index;
+		if (bitmap_getTextureIndex(hitTex, &index, &pool))
+		{
+			// Create a folder
+			FileUtil::makeDirectory("Exports");
+
+			const char* name = bitmap_getTextureName(index, pool);
+
+			char msg[TFE_MAX_PATH];
+			sprintf(msg, "Export '%s' to 'Exports/%s'", name, name);
+			TFE_Console::addToHistory(msg);
+
+			// Write the original BM to the current directory.
+			FilePath path;
+			if (TFE_Paths::getFilePath(name, &path))
+			{
+				// Load the data.
+				FileStream file;
+				if (!file.open(&path, Stream::MODE_READ))
+				{
+					return;
+				}
+				s_exportBuffer.resize(file.getSize());
+				file.readBuffer(s_exportBuffer.data(), file.getSize());
+				file.close();
+				
+				// Write it out to disk.
+				char outputName[TFE_MAX_PATH];
+				sprintf(outputName, "Exports/%s", name);
+				if (file.open(outputName, Stream::MODE_WRITE))
+				{
+					file.writeBuffer(s_exportBuffer.data(), s_exportBuffer.size());
+					file.close();
+				}
+			}
+
+			// Write out a PNG of the original texture.
+			char baseName[TFE_MAX_PATH];
+			char outputName[TFE_MAX_PATH];
+			FileUtil::getFileNameFromPath(name, baseName);
+			sprintf(outputName, "Exports/%s.png", baseName);
+
+			s_exportBuffer.resize(4 * hitTex->width * hitTex->height);
+			u32* outBuffer = (u32*)s_exportBuffer.data();
+			// Use the current palette.
+			const u32* pal = TFE_RenderBackend::getPalette();
+			const u32 pixelCount = hitTex->width * hitTex->height;
+			for (u32 i = 0; i < pixelCount; i++)
+			{
+				const u32 x = i % hitTex->width;
+				const u32 y = i / hitTex->width;
+				const u8 color = hitTex->image[x * hitTex->height + y];
+				outBuffer[i] = pal[color];
+				if (hitInfo.hit == RHit_WallMid_Trans && color == 0)
+				{
+					outBuffer[i] = 0;
+				}
+			}
+			TFE_Image::writeImage(outputName, hitTex->width, hitTex->height, outBuffer);
+
+			// Now write the generated emissive map.
+			sprintf(outputName, "Exports/%s_mtl.png", baseName);
+			outBuffer = (u32*)s_exportBuffer.data();
+			const u32 white = 0xffffffff;
+			const u32 black = 0xff000000;
+			for (u32 i = 0; i < pixelCount; i++)
+			{
+				const u32 x = i % hitTex->width;
+				const u32 y = i / hitTex->width;
+				const u8 color = hitTex->image[x * hitTex->height + y];
+				outBuffer[i] = (color > 0 && color < 32) ? white : black;
+			}
+			TFE_Image::writeImage(outputName, hitTex->width, hitTex->height, outBuffer);
+		}
 	}
 }  // TFE_DarkForces

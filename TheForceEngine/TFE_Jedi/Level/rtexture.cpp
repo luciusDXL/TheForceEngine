@@ -140,6 +140,11 @@ namespace TFE_Jedi
 		return s_textureList[pool][index].texture;
 	}
 
+	const char* bitmap_getTextureName(s32 index, AssetPool pool)
+	{
+		return s_textureList[pool][index].name.c_str();
+	}
+
 	// Serialize only level textures.
 	void bitmap_serializeLevelTextures(Stream* stream)
 	{
