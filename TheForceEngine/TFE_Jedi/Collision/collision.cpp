@@ -3,6 +3,7 @@
 #include <TFE_Jedi/Level/rsector.h>
 #include <TFE_Jedi/Level/rwall.h>
 #include <TFE_Jedi/Level/robject.h>
+#include <TFE_Jedi/Level/rtexture.h>
 #include <TFE_Jedi/Math/core_math.h>
 #include <TFE_Jedi/InfSystem/infSystem.h>
 // Merge player collision into collision
@@ -1045,6 +1046,59 @@ namespace TFE_Jedi
 		return p0.y + floatToFixed16(u * dy);
 	}
 
+	bool hitSign(RWall* hitWall, fixed16_16 paramPos, fixed16_16 yPos)
+	{
+		fixed16_16 baseHeight = 0;
+		fixed16_16 uOffset = 0;
+		switch (hitWall->drawFlags)
+		{
+			case WDF_MIDDLE:
+			{
+				baseHeight = hitWall->sector->floorHeight;
+				uOffset = hitWall->midOffset.x;
+			} break;
+			case WDF_TOP:
+			{
+				baseHeight = hitWall->nextSector->ceilingHeight;
+				uOffset = hitWall->topOffset.x;
+			} break;
+			case WDF_BOT:
+			case WDF_TOP_AND_BOT:
+			{
+				baseHeight = hitWall->sector->floorHeight;
+				uOffset = hitWall->botOffset.x;
+			} break;
+		}
+
+		if (yPos)
+		{
+			fixed16_16 base = baseHeight + (hitWall->signOffset.z >> 3);
+			// base + 0.5
+			fixed16_16 y0 = base + HALF_16;
+			// base - texHeight/8 - 0.5
+			fixed16_16 y1 = base - ((*hitWall->signTex)->height << 13) - HALF_16;
+			if (y0 < yPos || y1 > yPos)
+			{
+				return false;
+			}
+		}
+
+		if (paramPos)
+		{
+			fixed16_16 base = (hitWall->signOffset.x - uOffset) >> 3;
+			// base - 0.5
+			fixed16_16 left = base - HALF_16;
+			// base + texWidth/8 + 0.5
+			fixed16_16 right = base + ((*hitWall->signTex)->width << 13) + HALF_16;
+			if (paramPos < left || paramPos > right)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	RayHitInfo collision_rayCast3d(RSector* sector, vec3_fixed p0, vec3_fixed p1, bool stopAtMidTex)
 	{
 		RayHitInfo outRayHit = { RHit_None, nullptr, nullptr };
@@ -1136,6 +1190,18 @@ namespace TFE_Jedi
 			else
 			{
 				outRayHit.hit = RHit_WallMid;
+				if (wall->signTex && *wall->signTex)
+				{
+					fixed16_16 distFromW0 = vec2Length(wall->w0->x - p1.x, wall->w0->z - p1.z);
+					if (hitSign(wall, distFromW0, y))
+					{
+						outRayHit.hit = RHit_WallSign;
+						outRayHit.sector = sector;
+						outRayHit.wall = wall;
+						break;
+					}
+				}
+
 				if (wall->nextSector && wall->nextSector->ceilingHeight > sector->ceilingHeight && y < wall->nextSector->ceilingHeight)
 				{
 					outRayHit.hit = RHit_WallTop;
@@ -1148,8 +1214,6 @@ namespace TFE_Jedi
 				{
 					outRayHit.hit = RHit_WallMid_Trans;
 				}
-
-				// TODO: RHit_WallSign
 
 				outRayHit.sector = sector;
 				outRayHit.wall = wall;

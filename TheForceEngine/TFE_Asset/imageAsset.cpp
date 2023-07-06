@@ -145,6 +145,7 @@ namespace TFE_Image
 
 		ilTexImage(width, height, 1, 4, IL_RGBA, IL_UNSIGNED_BYTE, (void*)pixelData);
 		ilSetData((void*)pixelData);
+		ilEnable(IL_FILE_OVERWRITE);
 		ilSaveImage(path);
 
 		ilBindImage(0);

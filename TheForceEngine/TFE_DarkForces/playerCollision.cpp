@@ -714,6 +714,22 @@ namespace TFE_DarkForces
 		CCMD("dexportTexture", console_exportTexture, 0, "Export the texture at the center of the screen.");
 	}
 
+	const char* getTextureName(TextureData* hitTex)
+	{
+		AssetPool pool;
+		s32 index;
+		if (bitmap_getTextureIndex(hitTex, &index, &pool))
+		{
+			return bitmap_getTextureName(index, pool);
+		}
+
+		if (hitTex->animIndex >= 0)
+		{
+			return bitmap_getTextureName(hitTex->animIndex, POOL_LEVEL);
+		}
+		return nullptr;
+	}
+
 	void console_exportTexture(const std::vector<std::string>& args)
 	{
 		// Raycast to determine the wall, floor, or ceiling hit.
@@ -744,17 +760,20 @@ namespace TFE_DarkForces
 		{
 			hitTex = hitInfo.wall->topTex ? *hitInfo.wall->topTex : nullptr;
 		}
+		else if (hitInfo.hit == RHit_WallSign)
+		{
+			hitTex = hitInfo.wall->signTex ? *hitInfo.wall->signTex : nullptr;
+		}
 		if (!hitTex) { return; }
 
 		// Now export the texture.
 		AssetPool pool;
 		s32 index;
-		if (bitmap_getTextureIndex(hitTex, &index, &pool))
+		const char* name = getTextureName(hitTex);
+		if (name)
 		{
 			// Create a folder
 			FileUtil::makeDirectory("Exports");
-
-			const char* name = bitmap_getTextureName(index, pool);
 
 			char msg[TFE_MAX_PATH];
 			sprintf(msg, "Export '%s' to 'Exports/%s'", name, name);
@@ -801,7 +820,7 @@ namespace TFE_DarkForces
 				const u32 y = i / hitTex->width;
 				const u8 color = hitTex->image[x * hitTex->height + y];
 				outBuffer[i] = pal[color];
-				if (hitInfo.hit == RHit_WallMid_Trans && color == 0)
+				if ((hitInfo.hit == RHit_WallMid_Trans || hitInfo.hit == RHit_WallSign) && color == 0)
 				{
 					outBuffer[i] = 0;
 				}
