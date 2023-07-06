@@ -1018,6 +1018,12 @@ namespace TFE_FrontEndUI
 		ImGui::PopStyleColor();
 		ImGui::Spacing();
 
+		if (ImGui::Button("Autodetect Paths"))
+		{
+			TFE_Settings::autodetectGamePaths();
+			TFE_Paths::setPath(PATH_SOURCE_DATA, darkForces->sourcePath);
+		}
+
 		ImGui::Text("Dark Forces:"); ImGui::SameLine(100*s_uiScale);
 		if (ImGui::InputText("##DarkForcesSource", darkForces->sourcePath, 1024))
 		{

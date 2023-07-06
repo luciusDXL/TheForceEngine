@@ -117,7 +117,7 @@ namespace TFE_Settings
 		}
 
 		firstRun = true;
-		checkGameData();
+		autodetectGamePaths();
 		return writeToDisk();
 	}
 
@@ -127,7 +127,7 @@ namespace TFE_Settings
 		writeToDisk();
 	}
 
-	void checkGameData()
+	void autodetectGamePaths()
 	{
 		for (u32 gameId = 0; gameId < Game_Count; gameId++)
 		{
@@ -223,7 +223,7 @@ namespace TFE_Settings
 			settings.close();
 
 			parseIniFile(s_iniBuffer.data(), len);
-			checkGameData();
+			autodetectGamePaths();
 
 			return true;
 		}

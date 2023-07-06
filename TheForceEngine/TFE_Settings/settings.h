@@ -190,4 +190,5 @@ namespace TFE_Settings
 	TFE_Settings_Game* getGameSettings();
 
 	bool validatePath(const char* path, const char* sentinel);
+	void autodetectGamePaths();
 }
