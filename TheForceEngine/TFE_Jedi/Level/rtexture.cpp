@@ -257,6 +257,10 @@ namespace TFE_Jedi
 		texture->animSetup = 0;
 		// value is ignored.
 		data++;
+
+		// Added for TFE, this fixes textures created by old tools.
+		if (texture->uvWidth == 0) { texture->uvWidth = texture->width; }
+		if (texture->uvHeight == 0) { texture->uvHeight = texture->height; }
 		
 		if (texture->compressed)
 		{
