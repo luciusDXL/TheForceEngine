@@ -365,6 +365,21 @@ namespace TFE_Console
 		s_history.clear();
 	}
 
+	//Returns the number of times that `find` occurs in `str`
+	s32 countOccurences(std::string str, std::string find)
+	{
+		std::string::size_type pos = 0;
+		int count = 0;
+		for (;;) {
+			pos = str.find(find, pos);
+			if (pos == std::string::npos)
+				break;
+			++count;
+			++pos;
+		}
+		return count;
+	}
+
 	void c_cmdHelp(const ConsoleArgList& args)
 	{
 		const size_t count = s_cmd.size();
@@ -584,6 +599,9 @@ namespace TFE_Console
 			s32 y = (s32)consoleHeight - 16 - 2*s_fontSize;
 			for (s32 i = start; i >= 0 && y > -s_fontSize; i--, y -= s_fontSize)
 			{
+				//fix text overflowing the console if this history entry contained newlines
+				int newLineOccurences = countOccurences(s_history[i].text, "\n");
+				y -= s_fontSize * newLineOccurences;
 				ImGui::SetCursorPosY(f32(y));
 				ImGui::TextColored(ImVec4(s_history[i].color.x, s_history[i].color.y, s_history[i].color.z, s_history[i].color.w), "%s", s_history[i].text.c_str());
 			}
